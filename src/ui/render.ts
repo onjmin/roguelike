@@ -125,6 +125,7 @@ export class FloorView {
 		time: number,
 		itemIcon: (kind: string) => string,
 		fakeItems: { x: number; y: number; kind: string }[] = [],
+		facing: { strong: boolean } = { strong: false },
 	): void {
 		if (this.dirty || this.terrainFloor !== s.floor)
 			this.buildTerrain(s, lastDepth);
@@ -234,6 +235,44 @@ export class FloorView {
 				ctx.fillText("z", x + 12, y + 3 - bob);
 			}
 			ctx.globalAlpha = 1;
+		}
+
+		// キリコの向き（歩行グラは4方向しかなく、斜めの向きが絵では わからないので印を出す）
+		const me = figures.find((g) => g.id === 0);
+		if (me && me.fade < 1) {
+			const d = me.dir;
+			const vx = [0, 1, 1, 1, 0, -1, -1, -1][d];
+			const vy = [-1, -1, 0, 1, 1, 1, 0, -1][d];
+			const len = Math.hypot(vx, vy);
+			const ux = vx / len;
+			const uy = vy / len;
+			const cx = me.fx * TILE + TILE / 2 - ox;
+			const cy = me.fy * TILE + TILE / 2 - oy;
+			if (facing.strong) {
+				// 向きを変えるあいだは、向いている先のマスも囲む
+				ctx.strokeStyle = "rgba(255, 207, 74, 0.9)";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(
+					Math.round(cx - TILE / 2 + vx * TILE) + 0.5,
+					Math.round(cy - TILE / 2 + vy * TILE) + 0.5,
+					TILE - 1,
+					TILE - 1,
+				);
+			}
+			const px = cx + ux * 10;
+			const py = cy + uy * 10;
+			ctx.beginPath();
+			ctx.moveTo(px + ux * 3.5, py + uy * 3.5);
+			ctx.lineTo(px - ux * 2 - uy * 3, py - uy * 2 + ux * 3);
+			ctx.lineTo(px - ux * 2 + uy * 3, py - uy * 2 - ux * 3);
+			ctx.closePath();
+			ctx.fillStyle = facing.strong
+				? "rgba(255, 207, 74, 1)"
+				: "rgba(255, 207, 74, 0.75)";
+			ctx.strokeStyle = "rgba(0, 0, 0, 0.7)";
+			ctx.lineWidth = 1;
+			ctx.fill();
+			ctx.stroke();
 		}
 
 		// 霧：見たことのない所は黒、今は見えない所は暗く

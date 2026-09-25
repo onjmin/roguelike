@@ -145,6 +145,15 @@ const toDir4 = (d: Dir8): Dir =>
 				? "right"
 				: "left";
 
+/** 指を追い続ける（取れない環境では何もしない。処理を止めないように）。 */
+const capture = (el: HTMLElement, id: number): void => {
+	try {
+		el.setPointerCapture(id);
+	} catch {
+		// 自動操作の合成イベントなど
+	}
+};
+
 export class Input {
 	/** キーボードで押している方向キー（code → 向き）。 */
 	private keysHeld = new Map<string, Dir8>();
@@ -161,6 +170,10 @@ export class Input {
 	private keyMods: Mods = { dash: false, diag: false, turn: false };
 	/** 画面のボタンで入れた切り替え（ダッシュ・斜め・向き）。 */
 	readonly toggles: Mods = { dash: false, diag: false, turn: false };
+	/** 画面のボタンを押さえているあいだ（押しながら十字キー）。 */
+	readonly heldMods: Mods = { dash: false, diag: false, turn: false };
+	/** 押さえているあいだに使ったか（使ったなら、離しても切り替えにしない）。 */
+	private usedWhileHeld: Mods = { dash: false, diag: false, turn: false };
 	/** フィールドでのタップ（canvas の左上から数えた CSS 画素）。 */
 	onFieldTap: ((x: number, y: number) => void) | null = null;
 	/** 何かしら入力があったとき（オーディオのアンロック用）。 */
@@ -270,10 +283,22 @@ export class Input {
 	/** 押しっぱなしのキーと画面の切り替えを合わせたもの。 */
 	mods(): Mods {
 		return {
-			dash: this.keyMods.dash || this.toggles.dash,
-			diag: this.keyMods.diag || this.toggles.diag,
-			turn: this.keyMods.turn || this.toggles.turn,
+			dash: this.keyMods.dash || this.toggles.dash || this.heldMods.dash,
+			diag: this.keyMods.diag || this.toggles.diag || this.heldMods.diag,
+			turn: this.keyMods.turn || this.toggles.turn || this.heldMods.turn,
 		};
+	}
+
+	/**
+	 * 向き変えを1回使った。押さえているあいだなら「使った」印をつけ（離しても切り替えにしない）、
+	 * タップで入れた1回ぶんなら切る。
+	 */
+	useMod(k: keyof Mods): void {
+		if (this.heldMods[k] || this.keyMods[k]) {
+			this.usedWhileHeld[k] = true;
+			return;
+		}
+		if (this.toggles[k]) this.setToggle(k, false);
 	}
 
 	setToggle(k: keyof Mods, v: boolean): void {
@@ -336,7 +361,7 @@ export class Input {
 		el.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
 			active = e.pointerId;
-			el.setPointerCapture(e.pointerId);
+			capture(el, e.pointerId);
 			update(e);
 		});
 		el.addEventListener("pointermove", (e) => {
@@ -364,6 +389,36 @@ export class Input {
 		el.addEventListener("pointerup", up);
 		el.addEventListener("pointercancel", up);
 		el.addEventListener("pointerleave", up);
+	}
+
+	/**
+	 * 押しながら使うボタン（トルネコの「ボタン＋方向」）。押さえているあいだだけ効く。
+	 * 何もせずに すぐ離したら、次の1回ぶんだけ入れておく（もう一度タップで取り消し）。
+	 */
+	bindHold(el: HTMLElement, k: keyof Mods): void {
+		let active: number | null = null;
+		let downAt = 0;
+		el.addEventListener("pointerdown", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.onAnyInput?.();
+			active = e.pointerId;
+			capture(el, e.pointerId);
+			downAt = performance.now();
+			this.usedWhileHeld[k] = false;
+			this.heldMods[k] = true;
+			this.onModsChange?.();
+		});
+		const end = (e: PointerEvent) => {
+			if (e.pointerId !== active) return;
+			active = null;
+			this.heldMods[k] = false;
+			if (!this.usedWhileHeld[k] && performance.now() - downAt < 400)
+				this.toggles[k] = !this.toggles[k];
+			this.onModsChange?.();
+		};
+		el.addEventListener("pointerup", end);
+		el.addEventListener("pointercancel", end);
 	}
 
 	/** 画面上の切り替えボタン（押すたびに ON/OFF）。 */

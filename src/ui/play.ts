@@ -82,6 +82,8 @@ export class Play {
 	private resolveEnd: (() => void) | null = null;
 	/** タップ移動の行き先。 */
 	private travel: Pos | null = null;
+	/** 向きを変えたあと、方向がはなされるのを待っている。 */
+	private waitRelease = false;
 	private statusKey = "";
 
 	constructor(run: Run, ctx: Ctx, screen: Screen, hud: Hud) {
@@ -303,6 +305,7 @@ export class Play {
 			t,
 			itemIcon,
 			fakeItems,
+			{ strong: this.ctx.input.mods().turn },
 		);
 	}
 
@@ -381,6 +384,15 @@ export class Play {
 			return;
 		}
 		const held = input.heldDir();
+		// 向きを変えたあとは、方向を一度はなすまで歩かない
+		// （向きボタンをはなした瞬間に、押したままの方へ歩きださないように）
+		if (this.waitRelease) {
+			if (held === null && !input.pendingDirPress) this.waitRelease = false;
+			else if (!input.mods().turn) {
+				input.takeDirPress();
+				return;
+			}
+		}
 		// キーボードの斜め（2つ同時押し）を少しだけ待つ
 		if (input.heldFor() < 45 && (held !== null || input.pendingDirPress))
 			return;
@@ -394,7 +406,10 @@ export class Play {
 			this.travel = null;
 			const mods = input.mods();
 			if (mods.turn) {
+				// その場で向きだけ変える（時間は進まない）
 				if (this.run.p.dir !== dir) void this.exec({ c: "turn", dir });
+				input.useMod("turn");
+				this.waitRelease = true;
 				return;
 			}
 			if (mods.diag && !isDiagonal(dir)) return;

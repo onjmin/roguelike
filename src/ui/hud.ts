@@ -52,7 +52,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	input.bindButton(map, "map");
 	input.bindToggle(dash, "dash");
 	input.bindToggle(diag, "diag");
-	input.bindToggle(turn, "turn");
+	input.bindHold(turn, "turn");
 	mute.addEventListener("pointerdown", (e) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -64,6 +64,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 		dash.classList.toggle("on", input.toggles.dash);
 		diag.classList.toggle("on", input.toggles.diag);
 		turn.classList.toggle("on", input.toggles.turn);
+		turn.classList.toggle("down", input.heldMods.turn);
 	};
 	input.onModsChange = syncToggles;
 	syncToggles();
