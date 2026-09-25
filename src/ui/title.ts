@@ -52,7 +52,13 @@ import { el } from "./dom";
 import { openStorage, pickCarry } from "./home";
 import { openHowto } from "./howto";
 import { infoWindow, listWindow, onTap } from "./list";
-import { esc, escBr, openRecords, showStory } from "./records";
+import {
+	esc,
+	escBr,
+	openRecords,
+	showProgressNews,
+	showStory,
+} from "./records";
 import { openSettings } from "./settings";
 import { drawTown, TOWN_H, TOWN_W } from "./town";
 
@@ -73,12 +79,17 @@ const FRIEND_WALK: Record<string, string> = {
 	rei: "sa:TI21YC",
 };
 
-/** 持ち帰ったダンジョンに応じて、タイトルで キリコのうしろを歩く仲間。 */
-const cameos = (cleared: readonly DungeonId[]): string[] =>
-	TITLE_CAMEOS.filter((c) => cleared.includes(c.after))
+/**
+ * 持ち帰ったダンジョンに応じて、タイトルで キリコのうしろを歩く仲間
+ * （先のダンジョンを持ち帰っていれば、前の段の仲間もいる。救いで 本編に来た人・前の版の人も 5人 そろう）。
+ */
+const cameos = (cleared: readonly DungeonId[]): string[] => {
+	const reached = Math.max(-1, ...cleared.map((d) => DUNGEON_IDS.indexOf(d)));
+	return TITLE_CAMEOS.filter((c) => DUNGEON_IDS.indexOf(c.after) <= reached)
 		.flatMap((c) => c.who)
 		.map((w) => FRIEND_WALK[w])
 		.filter(Boolean);
+};
 
 /** ダンジョンの ひとことの説明（選ぶ窓）。 */
 const DUNGEON_DESC: Record<DungeonId, string> = {
@@ -147,7 +158,10 @@ const quoteContext = (): QuoteContext => {
 		depth: last.kind === "clear" ? last.maxDepth : last.depth,
 		cause: last.cause,
 		runs: st.runs,
-		clears: st.clears,
+		// 本編の たまり（「また 行ってきたんか」）なので、本編を 持ち帰った回数だけ（ちょっと・もっと は 数えない）
+		clears: loadRecords().filter(
+			(r) => r.kind === "clear" && (r.dungeon ?? "main") === "main",
+		).length,
 	};
 };
 
@@ -329,6 +343,8 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				await sleep(500);
 				root.remove();
 				await showStory(ctx, intro.map(escBr));
+				// 見終わってから 覚える（語りの途中で 閉じたら、次も はじめから 見せる）
+				if (choice.kind === "new") notePicked(choice.dungeon, true);
 			}
 			void ctx.audio.fadeBgm(500);
 			await sleep(500);
@@ -381,10 +397,14 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 						const old = loadRun();
 						if (old) {
 							addRecord(recordFromRun(old));
-							noteRunEnd(old.dungeon, "dead", old.seed);
+							// 何もせずに すてた冒険は 救い（10回で開く）に数えない（すぐ すてるのを くり返して 開けないように）
+							if (old.stats.maxDepth >= 2)
+								noteRunEnd(old.dungeon, "dead", old.seed);
 						}
 						clearRun();
 						saved = null;
+						// すてたので 次のダンジョンが開いたなら、ここで知らせる
+						await showProgressNews(ctx);
 					}
 				}
 				if (!hasRunSave()) {
@@ -397,7 +417,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 						// そのダンジョンに はじめて もぐるなら 語りを見せる
 						const p = loadProgress();
 						const first = !p.intro.includes(dungeon);
-						notePicked(dungeon, true);
+						notePicked(dungeon, false);
 						void leave(
 							{ kind: "new", dungeon, carry },
 							first ? STORY[dungeon].intro : null,

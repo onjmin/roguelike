@@ -5,6 +5,10 @@
 // - 途中の指紋（#…）が ぜんぶ合うか。記録を1つ抜くと、指紋で ずれがわかるか。
 // - コマンドの短い文字が、どの形でも 元にもどるか。
 
+import { MAIN_DECK } from "../core/data/items";
+import { deckSize } from "../core/deck";
+import { randomFloorPos, spawnMonster } from "../core/floor";
+import { deckOf } from "../core/item";
 import {
 	decodeCmd,
 	digest,
@@ -114,11 +118,29 @@ test("an old (v1) suspended save loads as the main dungeon", () => {
 	const s = JSON.parse(serializeRun(Run.create("rp-v1").s));
 	s.v = 1;
 	delete s.dungeon;
+	// 前の版の本編には 帰還スレが無かった（仮の名前も 配られた札も無い）
+	delete s.ids.fake.s_escape;
 	const m = migrateRun(deserializeRun(JSON.stringify(s)));
 	ok(
 		m && m.v === 2 && m.dungeon === "main",
 		`migrated to ${JSON.stringify(m && { v: m.v, d: m.dungeon })}`,
 	);
+	if (!m) return;
+	ok(
+		!deckOf(m).some((e) => e.kind === "s_escape") &&
+			deckSize(deckOf(m)) === deckSize(MAIN_DECK) - 3,
+		"the old run's deck lists 帰還スレ, which it never dealt",
+	);
+	const old = new Run(m);
+	for (let i = 0; i < 300; i++) {
+		const at = randomFloorPos(old, true);
+		const f = at && spawnMonster(old, "bakefuda", at, {});
+		ok(
+			f?.disguise !== "s_escape",
+			"a mimic disguised as 帰還スレ in an old run",
+		);
+		if (f) old.f.monsters = old.f.monsters.filter((x) => x !== f);
+	}
 	const bad = deserializeRun(serializeRun(Run.create("rp-bad").s));
 	(bad as { dungeon: string }).dungeon = "nowhere";
 	ok(migrateRun(bad) === null, "accepted an unknown dungeon");

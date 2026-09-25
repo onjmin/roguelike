@@ -4,9 +4,8 @@
 // ただし未識別の種類は正体の説明を出さない（出したら識別になってしまう）。
 // 名前にはプレイヤーのつけた名前も入るので、HTML に入れる文字はぜんぶ逃がす。
 
-import { dungeonById } from "../core/data/dungeons";
 import { CAT_NAME } from "../core/data/items";
-import { defOf, isKnownKind, isUnidentifiedCat } from "../core/item";
+import { deckOf, defOf, isKnownKind, isUnidentifiedCat } from "../core/item";
 import type { Run } from "../core/run";
 import type { Item, ItemCat } from "../core/types";
 
@@ -94,7 +93,7 @@ export const itemInfo = (run: Run, it: Item): string => {
 		out.push('<p class="hint">投げたり　置いたり　できない</p>');
 	} else if (isUnidentifiedCat(it.kind) && !known) {
 		// 候補（まだ正体のわからない、同じカテゴリの種類）と山札の枚数。数えて しぼるための材料
-		const cands = dungeonById(s.dungeon).deck.filter(
+		const cands = deckOf(s).filter(
 			(e) => defOf(e.kind).cat === d.cat && !isKnownKind(s, e.kind),
 		);
 		out.push(
@@ -102,7 +101,7 @@ export const itemInfo = (run: Run, it: Item): string => {
 			`<table>${cands.map((e) => row(esc(defOf(e.kind).name), `全${e.count}枚`)).join("")}</table>`,
 		);
 	} else {
-		const e = dungeonById(s.dungeon).deck.find((x) => x.kind === it.kind);
+		const e = deckOf(s).find((x) => x.kind === it.kind);
 		if (e) out.push(`<p class="hint">山札に　全${e.count}枚</p>`);
 	}
 	return out.join("");

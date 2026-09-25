@@ -8,7 +8,13 @@
 
 import { INVENTORY_MAX } from "../core/balance";
 import { needsTarget } from "../core/effects";
-import { defOf, isKeyItem, isKnownKind, isUnidentifiedCat } from "../core/item";
+import {
+	deckOf,
+	defOf,
+	isKeyItem,
+	isKnownKind,
+	isUnidentifiedCat,
+} from "../core/item";
 import type { Run } from "../core/run";
 import { trapName } from "../core/traps";
 import type { Command, Item, ItemCat, TrapKind } from "../core/types";
@@ -223,7 +229,7 @@ const pickName = async (
 	kind: string,
 ): Promise<MenuAction | null> => {
 	const cat = defOf(kind).cat;
-	const cands = run.dungeon.deck.filter(
+	const cands = deckOf(run.s).filter(
 		(e) => defOf(e.kind).cat === cat && !isKnownKind(run.s, e.kind),
 	);
 	const named = run.s.ids.named[kind];

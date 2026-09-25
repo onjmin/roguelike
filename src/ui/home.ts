@@ -6,7 +6,7 @@ import { defOf } from "../core/item";
 import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
 import type { Item } from "../core/types";
 import { STAGE_NAMES, STAGE_UP, TOWN_MSG } from "../data/town";
-import { loadTown, settleReturn, takeFromStorage } from "../engine/save";
+import { loadTown, settleReturn } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { esc, escBr, showStory, storyLine } from "./records";
@@ -50,14 +50,31 @@ export const settleHome = async (ctx: Ctx): Promise<void> => {
 				rows,
 				{ start },
 			);
-			if (v === null || v === "done") break;
+			if (v === "done") break;
+			if (v === null) {
+				// B・とじる・外のタップは 決定ではない：のこりを 売ってよいか 聞く
+				const ok = await listWindow(
+					ctx,
+					escBr(TOWN_MSG.sellRest.text),
+					[
+						{ label: "はい", value: "yes" },
+						{ label: "いいえ", value: "no" },
+					],
+					{ start: 1 },
+				);
+				if (ok === "yes") break;
+				continue;
+			}
 			const uid = Number(v);
 			if (chosen.has(uid)) chosen.delete(uid);
 			else if (room > 0) chosen.add(uid);
 			start = rows.findIndex((r) => r.value === v);
 		}
 	}
-	const r = settleReturn(t, [...chosen]);
+	// 選んでいるあいだに 別のタブで 決められていたら、ここでは 何もしない（古い町で 上書きしない）
+	const cur = loadTown();
+	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
+	const r = settleReturn(cur, [...chosen]);
 	const lines = [
 		storyLine(TOWN_MSG.sold.who, fill(TOWN_MSG.sold.text, { points: r.sold })),
 	];
@@ -72,7 +89,11 @@ export const settleHome = async (ctx: Ctx): Promise<void> => {
 		);
 };
 
-/** 過去ログの底へ 持っていく道具を 倉庫から選ぶ（max 個まで）。やめたら null。 */
+/**
+ * 過去ログの底へ 持っていく道具を 倉庫から選ぶ（max 個まで）。やめたら null。
+ * ここでは 倉庫から 取り出さない（冒険を作る直前に main.ts が takeFromStorage で取り出して すぐ保存する。
+ * 語りの途中で 閉じても 道具が消えないように）。
+ */
 export const pickCarry = async (
 	ctx: Ctx,
 	max: number,
@@ -101,7 +122,7 @@ export const pickCarry = async (
 		else if (chosen.size < max) chosen.add(i);
 		start = i;
 	}
-	return takeFromStorage([...chosen]);
+	return [...chosen].map((i) => t.storage[i]);
 };
 
 /** 倉庫を見る（タイトルから）。 */

@@ -274,7 +274,14 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	box.classList.remove("shown");
 	await sleep(600);
 	box.remove();
-	// 次のダンジョンが開いた（持ち帰った・何度も倒れた）
+	await showProgressNews(ctx);
+};
+
+/**
+ * 次のダンジョンが開いた（持ち帰った・何度も倒れた）知らせを、まだ見せていなければ見せる。
+ * 記録の札のあと・タイトルの前（札の途中で 閉じていたとき）・冒険を すてたとき に呼ぶ。
+ */
+export const showProgressNews = async (ctx: Ctx): Promise<void> => {
 	for (const n of takeProgressNews()) {
 		const lines =
 			UNLOCK_LINES[

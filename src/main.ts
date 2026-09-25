@@ -7,12 +7,18 @@ import { bgm } from "./data/bgm";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import { Input } from "./engine/input";
-import { DEBUG_SEED, type SavedReplay } from "./engine/save";
+import {
+	DEBUG_SEED,
+	type SavedReplay,
+	saveRun,
+	takeFromStorage,
+} from "./engine/save";
 import { Screen } from "./engine/screen";
 import type { Ctx } from "./ui/ctx";
 import { settleHome } from "./ui/home";
 import { mountHud } from "./ui/hud";
 import { Play } from "./ui/play";
+import { showProgressNews } from "./ui/records";
 import { showTitle } from "./ui/title";
 
 const app = document.getElementById("app");
@@ -132,6 +138,8 @@ const loop = async () => {
 		if (!run) {
 			// 帰ってきた持ち物を 倉庫へ・売る（決める前に閉じていても ここで続きから）
 			await settleHome(ctx);
+			// 開いた知らせを 見せる前に 閉じていたら ここで
+			await showProgressNews(ctx);
 			const choice = await showTitle(ctx);
 			if (choice.kind === "replay") {
 				// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
@@ -141,11 +149,13 @@ const loop = async () => {
 					replay.dungeon ?? "main",
 					replay.carry ?? [],
 				);
-			} else
-				run =
-					choice.kind === "new"
-						? Run.create(newSeed(), choice.dungeon, choice.carry)
-						: new Run(choice.state);
+			} else if (choice.kind === "new") {
+				// 倉庫から 取り出すのは ここ（冒険を作って すぐ保存する。取り出したのに 冒険が無い、にならないように）。
+				// 選んだあとで 別のタブが 持っていった道具は 持っていけない
+				const carry = choice.carry.length ? takeFromStorage(choice.carry) : [];
+				run = Run.create(newSeed(), choice.dungeon, carry);
+				if (carry.length) saveRun(run.s);
+			} else run = new Run(choice.state);
 		}
 		hud.root.classList.remove("hidden");
 		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;

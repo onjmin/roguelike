@@ -104,6 +104,7 @@ export const RETURN_PAGES: readonly StoryPage[] = [
 export const TOWN_MSG: Record<
 	| "noStorage"
 	| "storePrompt"
+	| "sellRest"
 	| "storeDone"
 	| "storageFull"
 	| "storageEmpty"
@@ -118,6 +119,7 @@ export const TOWN_MSG: Record<
 > = {
 	noStorage: q("roze", "倉庫は　まだ　ないアル。\nぜんぶ、店で　売るアル"),
 	storePrompt: q("teto", "あずける　ものを　えらべ。\nのこりは、ロゼが　売る"),
+	sellRest: q("roze", "のこりは　ぜんぶ　売るアルよ？"),
 	storeDone: q("teto", "あずかった。……DVDと　ちがって、\n延長は　いらない"),
 	storageFull: q("teto", "……もう　入らない。\n倉庫は、これで　いっぱいだ"),
 	storageEmpty: q(

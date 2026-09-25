@@ -58,12 +58,16 @@ export const saveRun = (s: RunState): void => {
 		// 先に中断セーブを消す（中にリプレイの写しが入っているので、記録・リプレイの場所を空ける。
 		// ここは続けて動くので、途中でタブを閉じられて古い中断セーブだけ残ることはない）
 		clearRun();
-		addRecord(recordFromRun(s));
+		const fresh = addRecord(recordFromRun(s));
 		addReplay(s);
+		// 同じ終わりを 二度 数えない（演出の途中で タブを隠す・閉じるたびに 保存が来ても、
+		// 倒れた回数・図鑑・町の売上が ふえないように）
+		if (!fresh) return;
 		addBookKills(s.kills);
-		noteRunEnd(s.dungeon, s.end.kind);
-		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）
+		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）。
+		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
+		noteRunEnd(s.dungeon, s.end.kind);
 		return;
 	}
 	const text = serializeRun(s);
@@ -238,8 +242,9 @@ export const runStats = (): Stats => {
  * 記録を足す（最後の50回ぶんを残す）。
  * 同じ冒険の終わりを2回足さない（saveRun と記録の画面の両方から呼ばれることがある）。
  */
-export const addRecord = (r: RunRecord): void => {
-	if (r.seed.startsWith(DEBUG_SEED)) return;
+/** 記録に足す。同じ終わりが もう先頭にあれば 足さずに false。 */
+export const addRecord = (r: RunRecord): boolean => {
+	if (r.seed.startsWith(DEBUG_SEED)) return false;
 	const list = loadRecords();
 	const last = list[0];
 	if (
@@ -248,7 +253,7 @@ export const addRecord = (r: RunRecord): void => {
 		last.turn === r.turn &&
 		last.kind === r.kind
 	)
-		return;
+		return false;
 	const stats = runStats();
 	list.unshift(r);
 	if (list.length > RECORDS_MAX) list.length = RECORDS_MAX;
@@ -263,6 +268,7 @@ export const addRecord = (r: RunRecord): void => {
 	} catch {
 		// 保存できなくても遊べる
 	}
+	return true;
 };
 
 // ───────────────────────── どこまで開いたか ─────────────────────────
@@ -275,7 +281,7 @@ export type Progress = {
 	unlocked: DungeonId[];
 	/** 持ち帰ったことのあるダンジョン。 */
 	cleared: DungeonId[];
-	/** 倒れた（やめた）回数（ダンジョンごと。救いの条件に使う）。 */
+	/** 倒れた回数（B2 より先で すてた冒険も。ダンジョンごと。救いの条件に使う）。 */
 	fails: Partial<Record<DungeonId, number>>;
 	/** はじめの語り（intro）を見たダンジョン。 */
 	intro: DungeonId[];
@@ -316,18 +322,34 @@ export const loadProgress = (): Progress => {
 	} catch {
 		// 読めなければ 記録から決めなおす
 	}
+	// 保存できない（プライベートモード等）ときは、この回のあいだ 覚えている分を使う
+	if (progressMemo) return JSON.parse(JSON.stringify(progressMemo)) as Progress;
 	// ここで決めた形を すぐ保存する（はじめて遊ぶ人の 最初の冒険の記録を「前の版で遊んだ」と取りちがえないように。
 	// タイトルを開いたときに 必ず一度ここを通る）
 	const st = runStats();
-	const legacy = st.runs > 0 || hasRunSave();
-	const mainCleared = st.clears > 0;
+	const recs = loadRecords();
+	// ダンジョンの無い記録は 前の版（本編だけ）のもの
+	const dg = (r: RunRecord): DungeonId => r.dungeon ?? "main";
+	const cleared = DUNGEON_IDS.filter((d) =>
+		recs.some((r) => r.kind === "clear" && dg(r) === d),
+	);
+	// 記録が消えていれば 通算から（通算の clears は 前の版なら 本編のもの）
+	if (!recs.length && st.clears > 0 && !cleared.includes("main"))
+		cleared.push("main");
+	const legacy = recs.length
+		? recs.some((r) => r.dungeon === undefined)
+		: st.runs > 0 || hasRunSave();
+	const unlocked: DungeonId[] = ["shallow"];
+	if (
+		legacy ||
+		cleared.includes("shallow") ||
+		recs.some((r) => dg(r) !== "shallow")
+	)
+		unlocked.push("main");
+	if (cleared.includes("main")) unlocked.push("deep");
 	const fresh: Progress = {
-		unlocked: legacy
-			? mainCleared
-				? ["shallow", "main", "deep"]
-				: ["shallow", "main"]
-			: ["shallow"],
-		cleared: mainCleared ? ["main"] : [],
+		unlocked,
+		cleared,
 		fails: {},
 		// 前の版の前口上は 本編のもの。ちょっと の語りは まだ見ていない
 		intro: legacy ? ["main"] : [],
@@ -338,11 +360,20 @@ export const loadProgress = (): Progress => {
 	return fresh;
 };
 
+/** この回のあいだの 進み具合の写し（保存できなくても、開いたダンジョンが また閉じないように）。 */
+let progressMemo: Progress | null = null;
+
+/** 試験用：この回の写しを忘れる（保存の場所を 入れかえたとき）。 */
+export const forgetProgressMemo = (): void => {
+	progressMemo = null;
+};
+
 export const saveProgress = (p: Progress): void => {
+	progressMemo = JSON.parse(JSON.stringify(p)) as Progress;
 	try {
 		localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
 	} catch {
-		// 保存できなくても遊べる（次に開いたとき 記録から決めなおす）
+		// 保存できなくても遊べる（この回は 写しで続ける。次に開いたとき 記録から決めなおす）
 	}
 };
 
@@ -413,7 +444,11 @@ export type Town = {
 	storage: Item[];
 	/** まだ決めていない 持ち帰り。 */
 	pending: PendingReturn | null;
+	/** もう町へ帰ってきた冒険のシード（新しい順）。1つの冒険は 1回しか 帰れない（別のタブで 続けても）。 */
+	returned: string[];
 };
+
+const RETURNED_KEEP = 50;
 
 const isItem = (x: unknown): x is Item =>
 	!!x &&
@@ -435,6 +470,9 @@ export const loadTown = (): Town => {
 					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
 						? { ...pend, items: pend.items.filter(isItem) }
 						: null,
+				returned: Array.isArray(o.returned)
+					? o.returned.filter((x): x is string => typeof x === "string")
+					: [],
 			};
 		}
 	} catch {
@@ -451,6 +489,7 @@ export const loadTown = (): Town => {
 				: 0,
 		storage: [],
 		pending: null,
+		returned: [],
 	};
 };
 
@@ -465,6 +504,8 @@ export const saveTown = (t: Town): void => {
 const addPendingReturn = (s: RunState): void => {
 	if (!s.end || s.end.kind === "dead") return;
 	const t = loadTown();
+	// もう帰ってきた冒険（同じ終わりの 保存し直し・別のタブで 続けた同じ冒険）は 二度 持ち帰らない
+	if (t.returned.includes(s.seed)) return;
 	// 前の おあずかりが残っていれば、先に ぜんぶ売ってしまう（取りこぼさない）
 	if (t.pending) settleReturn(t, []);
 	t.pending = {
@@ -474,6 +515,7 @@ const addPendingReturn = (s: RunState): void => {
 		// 目的の品は 町に置く物ではないので 入れない
 		items: s.player.items.filter((it) => defOf(it.kind).cat !== "goal"),
 	};
+	t.returned = [s.seed, ...t.returned].slice(0, RETURNED_KEEP);
 	saveTown(t);
 };
 
@@ -510,13 +552,19 @@ export const settleReturn = (
 	return { sold, from, to: t.stage };
 };
 
-/** 倉庫から 持ちこむ道具を取り出す（取り出したら 倉庫から消える。倒れたら もどらない）。 */
-export const takeFromStorage = (indexes: readonly number[]): Item[] => {
+/**
+ * 倉庫から 持ちこむ道具を取り出す（取り出したら 倉庫から消える。倒れたら もどらない）。
+ * 選んだときの 中身で さがす（別のタブで 倉庫が変わっていても、ちがう道具を 取らない。もう無ければ 取らない）。
+ * uid は 冒険ごとの番号で 倉庫の中では かさなりうるので 使わない。
+ */
+export const takeFromStorage = (picked: readonly Item[]): Item[] => {
 	const t = loadTown();
-	const out = indexes
-		.filter((i) => i >= 0 && i < t.storage.length)
-		.map((i) => t.storage[i]);
-	t.storage = t.storage.filter((_, i) => !indexes.includes(i));
+	const out: Item[] = [];
+	for (const p of picked) {
+		const key = JSON.stringify(p);
+		const i = t.storage.findIndex((it) => JSON.stringify(it) === key);
+		if (i >= 0) out.push(...t.storage.splice(i, 1));
+	}
 	saveTown(t);
 	return out;
 };

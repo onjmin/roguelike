@@ -4,7 +4,7 @@ import { ITEM_LIST } from "../core/data/items";
 import { isKnownKind } from "../core/item";
 import { parseReplay } from "../core/replay";
 import { Run } from "../core/run";
-import { serializeRun } from "../core/serial";
+import { deserializeRun, serializeRun } from "../core/serial";
 import {
 	CARRY_MAX,
 	nextStage,
@@ -15,6 +15,16 @@ import {
 	TOWN_STAGES,
 } from "../core/town";
 import type { Item } from "../core/types";
+import {
+	forgetProgressMemo,
+	loadProgress,
+	loadTown,
+	noteRunEnd,
+	saveRun,
+	saveTown,
+	settleReturn,
+	takeFromStorage,
+} from "../engine/save";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 
@@ -142,6 +152,138 @@ test("carried-in items start in the bag, known, and replay identically", () => {
 		serializeRun(again.s) === serializeRun(run.s),
 		"a run with carried-in items did not replay identically",
 	);
+});
+
+// ───────────────── 保存（localStorage の代わりに 入れものを置いて 試す） ─────────────────
+
+/** 試験のあいだだけ localStorage を 覚えるだけの入れものに かえる（write が false なら 書けない）。 */
+const withStorage = (fn: () => void, write = true): void => {
+	const mem = new Map<string, string>();
+	const store = {
+		getItem: (k: string) => mem.get(k) ?? null,
+		setItem: (k: string, v: string) => {
+			if (!write) throw new Error("QuotaExceededError");
+			mem.set(k, String(v));
+		},
+		removeItem: (k: string) => void mem.delete(k),
+		clear: () => mem.clear(),
+		key: (i: number) => [...mem.keys()][i] ?? null,
+		get length() {
+			return mem.size;
+		},
+	};
+	const prev = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+	Object.defineProperty(globalThis, "localStorage", {
+		value: store,
+		configurable: true,
+		writable: true,
+	});
+	forgetProgressMemo();
+	try {
+		fn();
+	} finally {
+		if (prev) Object.defineProperty(globalThis, "localStorage", prev);
+		else delete (globalThis as { localStorage?: unknown }).localStorage;
+		forgetProgressMemo();
+	}
+};
+
+/** 帰還スレで 帰ってくる（聞かれて、はい）。 */
+const escapeRun = (run: Run): void => {
+	const scroll = run.newItem("s_escape");
+	run.s.player.items.push(scroll);
+	run.act({ c: "use", item: scroll.uid });
+	run.act({ c: "use", item: scroll.uid, target: 0 });
+};
+
+test("a finished run saved again (tab hidden during the ending) counts once", () => {
+	withStorage(() => {
+		loadProgress();
+		const run = Run.create("save-once", "main");
+		escapeRun(run);
+		ok(run.s.end?.kind === "escape", "did not escape");
+		for (let i = 0; i < 3; i++) saveRun(run.s);
+		const t = loadTown();
+		ok(t.points === 0, `the haul was sold ${t.points} before choosing`);
+		ok(
+			t.pending?.items.length === run.s.player.items.length,
+			"the pending haul is not the bag",
+		);
+		const dead = Run.create("save-once-dead", "shallow");
+		dead.finish("dead", "試験");
+		for (let i = 0; i < 3; i++) saveRun(dead.s);
+		ok(
+			loadProgress().fails.shallow === 1,
+			`one death counted ${loadProgress().fails.shallow} times`,
+		);
+	});
+});
+
+test("the first shallow clear on a new profile opens the stall (0 → 1)", () => {
+	withStorage(() => {
+		loadProgress();
+		const run = Run.create("first-clear", "shallow");
+		run.finish("clear", "試験");
+		saveRun(run.s);
+		const r = settleReturn(loadTown(), []);
+		ok(r.from === 0 && r.to === 1, `settled ${r.from} → ${r.to}`);
+	});
+});
+
+test("one run returns to town only once, even when continued in two tabs", () => {
+	withStorage(() => {
+		loadProgress();
+		saveTown({ ...loadTown(), stage: 4 });
+		const a = Run.create("two-tabs", "main");
+		a.s.player.items.push(a.newItem("starsword"));
+		const b = new Run(deserializeRun(serializeRun(a.s)));
+		escapeRun(a);
+		saveRun(a.s);
+		const all = (loadTown().pending?.items ?? []).map((it) => it.uid);
+		settleReturn(loadTown(), all);
+		const stored = loadTown().storage.length;
+		ok(stored > 0, "nothing was stored");
+		escapeRun(b);
+		saveRun(b.s);
+		const t = loadTown();
+		ok(!t.pending, "the second tab brought the same haul home again");
+		ok(t.storage.length === stored, "storage grew from the second tab");
+	});
+});
+
+test("carrying out takes the chosen items by content, once", () => {
+	withStorage(() => {
+		loadProgress();
+		const mk = (kind: string, plus = 0): Item => ({
+			uid: 1,
+			kind,
+			plus,
+			cursed: false,
+			charges: 0,
+			known: true,
+			count: 1,
+		});
+		saveTown({
+			...loadTown(),
+			stage: 4,
+			storage: [mk("steel"), mk("steel", 2), mk("h_heal")],
+		});
+		const got = takeFromStorage([mk("steel", 2)]);
+		ok(got.length === 1 && got[0].plus === 2, "took the wrong item");
+		ok(loadTown().storage.length === 2, "storage did not shrink by one");
+		ok(takeFromStorage([mk("steel", 2)]).length === 0, "took it twice");
+	});
+});
+
+test("unlocks last for the session when storage cannot be written", () => {
+	withStorage(() => {
+		ok(loadProgress().unlocked.join() === "shallow", "a new player has more");
+		noteRunEnd("shallow", "clear");
+		ok(
+			loadProgress().unlocked.includes("main"),
+			"the main dungeon closed again",
+		);
+	}, false);
 });
 
 export const runTownTests = (): TestResult[] =>

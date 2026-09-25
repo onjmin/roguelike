@@ -12,6 +12,7 @@ import {
 import { MONSTERS, monstersFor } from "./data/monsters";
 import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
+import { deckOf } from "./item";
 import { generateLayout, idx, roomAt, roomTiles } from "./mapgen";
 import type { Run } from "./run";
 import {
@@ -253,7 +254,7 @@ export const spawnMonster = (
 			disguise: null,
 		};
 		if (def.abilities.some((a) => a.k === "mimic") && !opts.awake) {
-			m.disguise = rng.weighted(r.dungeon.deck, (e) => e.count).kind;
+			m.disguise = rng.weighted(deckOf(r.s), (e) => e.count).kind;
 			m.status.sleep = 0;
 		}
 		f.monsters.push(m);

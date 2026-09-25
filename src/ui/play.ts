@@ -232,12 +232,21 @@ export class Play {
 		resolve?.();
 	}
 
+	/** 終わった冒険を もう記録した（演出の途中で タブを隠しても、二度 記録しない）。 */
+	private endSaved = false;
+
+	/** 終わった冒険を 一度だけ記録する（saveRun が記録して 中断セーブを消し、町へ 持ち帰る）。 */
+	private saveEnd(): void {
+		if (this.rp || this.endSaved) return;
+		this.endSaved = true;
+		saveRun(this.run.s);
+	}
+
 	private save(force = false): void {
 		if (this.rp) return; // 見ているだけ（保存も記録もしない）
 		const s = this.run.s;
 		if (s.end) {
-			// 終わった冒険は saveRun が記録して中断セーブを消す
-			saveRun(s);
+			this.saveEnd();
 			return;
 		}
 		if (!force && s.turn - this.lastSavedTurn < 8) return;
@@ -761,7 +770,7 @@ export class Play {
 			ev = run.act(cmd);
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
-			if (run.s.end && !this.rp) saveRun(run.s);
+			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
 			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);

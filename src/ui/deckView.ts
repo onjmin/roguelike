@@ -10,7 +10,7 @@
 //   代わりに、見た札を「見えている名前」ごとに数えて出す。
 
 import { CAT_NAME } from "../core/data/items";
-import { defOf, isKnownKind } from "../core/item";
+import { deckOf, defOf, isKnownKind } from "../core/item";
 import type { Run } from "../core/run";
 import { type ItemCat, UNIDENTIFIED_CATS } from "../core/types";
 import type { Ctx } from "./ctx";
@@ -31,7 +31,7 @@ const CATS: readonly ItemCat[] = [
 
 const deckHtml = (run: Run): string => {
 	const s = run.s;
-	const deck = run.dungeon.deck;
+	const deck = deckOf(run.s);
 	const total = deck.reduce((n, e) => n + e.count, 0);
 	const dealt = Object.keys(s.cardKind).length;
 	// 見た札を種類ごとに。数えるのは配ったときの種類（糧変えで種類が変わっても、札は札）
