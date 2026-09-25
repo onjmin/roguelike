@@ -463,6 +463,10 @@ export class Run {
 			this.msg("ここに　階段は　ない");
 			return false;
 		}
+		if (!this.s.returning && this.s.depth >= LAST_DEPTH) {
+			this.msg("これより　下へは　行けないようだ");
+			return false;
+		}
 		this.se("stairs");
 		if (this.s.returning) {
 			const next = this.s.depth - 1;

@@ -354,6 +354,10 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		}
 	}
 
+	// ふらふら動く敵は、となりにいても半分は どこかへ飛んでいく
+	const erratic = has(m, "random") && r.rng.chance(1 / 2);
+	if (erratic && randomStep(r, m)) return;
+
 	// となりにいれば なぐる
 	const adj = adjacentDir();
 	if (adj !== null) {
@@ -366,9 +370,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	}
 
 	// 動く
-	const erratic = has(m, "random") && r.rng.chance(1 / 2);
 	const moveOnce = (): boolean => {
-		if (erratic) return randomStep(r, m);
 		if (sees) return approach(r, m, p);
 		if (m.lastSeen) {
 			if (m.lastSeen.x === m.x && m.lastSeen.y === m.y) m.lastSeen = null;

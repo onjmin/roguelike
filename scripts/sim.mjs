@@ -21,6 +21,8 @@ const arg = (name, def) => {
 const N = Number(arg("n", 200));
 const ONE = arg("seed", null);
 const QUIET = args.includes("--quiet");
+// 倒れないモード：HP と満腹度を補って、深い階・帰り道まで通す（落ちないかの検査用）
+const GOD = args.includes("--god");
 const MAX_ACTIONS = 60000;
 
 const server = await createServer({
@@ -43,7 +45,20 @@ try {
 	const results = [];
 	const seeds = ONE ? [ONE] : Array.from({ length: N }, (_, i) => `sim-${i}`);
 	for (const seed of seeds) {
-		let run = Run.create(seed);
+		// 倒れないモード：HP が 0 になる前に満タンにする
+		const godify = (r) => {
+			if (!GOD) return r;
+			const orig = r.hurtPlayer.bind(r);
+			r.hurtPlayer = (amount, cause) => {
+				if (r.s.player.hp - amount <= 0) {
+					r.s.player.hp = r.s.player.maxHp;
+					return false;
+				}
+				return orig(amount, cause);
+			};
+			return r;
+		};
+		let run = godify(Run.create(seed));
 		const lvAt = {};
 		const turnsAt = {};
 		let actions = 0;
@@ -53,6 +68,11 @@ try {
 				const cmd = botCommand(run);
 				const ev = run.act(cmd);
 				actions++;
+				if (GOD && !run.s.end) {
+					const p = run.s.player;
+					if (p.hunger < 400) p.hunger = 2000;
+					if (p.lv < run.s.depth + 3) run.gainExp(200 * run.s.depth);
+				}
 				if (ONE && !QUIET)
 					for (const e of ev) if (e.t === "msg") console.log(`[B${run.s.depth} T${run.s.turn}] ${e.text}`);
 				if (run.s.depth !== lastDepth) {
@@ -61,7 +81,7 @@ try {
 					lastDepth = run.s.depth;
 				}
 				// ときどき中断セーブを通す（読み直しで壊れないか）
-				if (actions % 997 === 0) run = new Run(deserializeRun(serializeRun(run.s)));
+				if (actions % 997 === 0) run = godify(new Run(deserializeRun(serializeRun(run.s))));
 			}
 		} catch (e) {
 			failed = true;
@@ -116,6 +136,9 @@ try {
 		rows.push(`B${d}:Lv${avg(lv)}/T${avg(tt)}(${lv.length})`);
 	}
 	console.log("階を出たとき:", rows.join("  "));
+	const stuckList = results.filter((r) => r.end === "stuck");
+	if (stuckList.length)
+		console.log("止まった:", stuckList.slice(0, 8).map((r) => `${r.seed}(B${r.finalDepth}${r.returning ? "↑" : ""})`).join(" "));
 	const avg = (k) => (results.reduce((a, r) => a + r[k], 0) / n).toFixed(1);
 	console.log(`平均：見た札 ${avg("seen")}　流れた札 ${avg("flowed")}　なくなった札 ${avg("lost")}　ターン ${avg("turn")}`);
 	const starved = results.filter((r) => r.cause.includes("おなか")).length;

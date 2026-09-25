@@ -3,10 +3,10 @@
 // ふつうのプレイヤーがやりそうなことを、単純な優先順で行う：
 // 回復 → 食事 → となりの敵をなぐる → 装備の更新 → 識別 → 見えている道具を拾う → 探索 → 階段。
 
-import { HUNGER_UNIT } from "../core/balance";
+import { HUNGER_UNIT, LAST_DEPTH } from "../core/balance";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
 import { defOf, isKnownKind } from "../core/item";
-import { isFloor } from "../core/mapgen";
+import { isFloor, roomAt, roomExits } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
 import type { Command, Item } from "../core/types";
@@ -171,6 +171,23 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 			items.find((i) => i.kind === "f_moldy");
 		if (food) return { c: "use", item: food.uid };
 	}
+	// 部屋で2体以上に向かってこられたら、通路（入口）へ下がって1体ずつ相手にする
+	const inRoom = roomAt(f.layout, p.x, p.y) >= 0;
+	if (inRoom && threats.length >= 2 && adjacent.length <= 1) {
+		const exits = roomExits(
+			f.layout,
+			f.layout.rooms[roomAt(f.layout, p.x, p.y)],
+		)
+			.filter((e) => !r.monsterAt(e.x, e.y))
+			.sort((a, b) => dist(a, p) - dist(b, p));
+		const exit = exits.find((e) =>
+			threats.every((m) => dist(m, e) >= dist(p, e)),
+		);
+		if (exit && dist(exit, p) <= 4) {
+			const d = pathStep(r, exit, true);
+			if (d !== null) return { c: "move", dir: d };
+		}
+	}
 	// となりの敵
 	if (adjacent.length) {
 		const m = adjacent.sort((a, b) => a.hp - b.hp)[0];
@@ -278,21 +295,44 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 		f.turns < opts.floorTurnLimit
 	)
 		return { c: "wait" };
+	// いちばん底で持ち物がいっぱいなら、原盤のために1つ捨てる
+	if (
+		r.s.depth >= LAST_DEPTH &&
+		!r.s.returning &&
+		items.length >= 20 &&
+		!r.itemAt(p.x, p.y) &&
+		!r.onStairs()
+	) {
+		const junk =
+			items.find((i) => BAD_HERBS.has(i.kind) && known(i)) ??
+			items.find((i) => !r.isEquipped(i) && defOf(i.kind).cat !== "food");
+		if (junk) return { c: "drop", item: junk.uid };
+	}
 	// 見えている道具を拾いにいく
 	if (!r.s.returning && items.length < 20) {
 		const seen = new Set(r.s.seen);
+		const bottomNow = r.s.depth >= LAST_DEPTH;
 		const it = f.items
-			.filter((fi) => seen.has(fi.item.uid) && !(fi.x === p.x && fi.y === p.y))
+			.filter(
+				(fi) =>
+					seen.has(fi.item.uid) &&
+					!(fi.x === p.x && fi.y === p.y) &&
+					(!bottomNow || fi.item.kind === "genban"),
+			)
 			.sort((a, b) => dist(a, p) - dist(b, p))[0];
 		if (it) {
 			const d = pathStep(r, it, true);
 			if (d !== null) return { c: "move", dir: d };
 		}
 	}
-	if (r.onStairs() && (leave || !frontierExists(r) || r.s.depth === 20)) {
+	const bottom = r.s.depth >= LAST_DEPTH && !r.s.returning;
+	const sIdx = f.stairs.y * f.layout.w + f.stairs.x;
+	const stairsKnown = f.seen[sIdx] === 1;
+	if (!bottom && r.onStairs() && (leave || !frontierExists(r))) {
 		return { c: "stairs" };
 	}
-	if (!leave) {
+	// いちばん底では原盤を、帰り道・出るときは階段を 見つけるまで探索する
+	if (!leave || !stairsKnown || bottom) {
 		const fr = frontier(r);
 		if (fr) {
 			const d = pathStep(r, fr, true);
@@ -300,8 +340,7 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 		}
 	}
 	// 階段へ
-	const sIdx = f.stairs.y * f.layout.w + f.stairs.x;
-	if (f.seen[sIdx]) {
+	if (stairsKnown && !bottom) {
 		if (r.onStairs()) return { c: "stairs" };
 		const d = pathStep(r, f.stairs, true);
 		if (d !== null) return { c: "move", dir: d };

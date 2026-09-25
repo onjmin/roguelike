@@ -98,8 +98,6 @@ export class FloorView {
 				}
 			}
 		}
-		// 階段
-		drawRefInCell(ctx, theme.stairs, f.stairs.x * TILE, f.stairs.y * TILE);
 		this.dirty = false;
 	}
 
@@ -117,6 +115,7 @@ export class FloorView {
 		camY: number,
 		time: number,
 		itemIcon: (kind: string) => string,
+		fakeItems: { x: number; y: number; kind: string }[] = [],
 	): void {
 		if (this.dirty || this.terrainFloor !== s.floor)
 			this.buildTerrain(s, lastDepth);
@@ -132,11 +131,38 @@ export class FloorView {
 
 		// 見えているマス
 		const visible = new Uint8Array(l.w * l.h);
-		forEachVisible(l, s.player, (x, y) => {
-			visible[y * l.w + x] = 1;
-		});
+		if (s.player.status.blind > 0) {
+			// 目が見えないときは まわり1マスだけ
+			for (let dy = -1; dy <= 1; dy++)
+				for (let dx = -1; dx <= 1; dx++) {
+					const x = s.player.x + dx;
+					const y = s.player.y + dy;
+					if (x >= 0 && y >= 0 && x < l.w && y < l.h) visible[y * l.w + x] = 1;
+				}
+		} else
+			forEachVisible(l, s.player, (x, y) => {
+				visible[y * l.w + x] = 1;
+			});
 		const seenItem = new Set(s.seen);
 
+		// 階段（いちばん底は、原盤を拾うまで無い。帰り道は上り）
+		const si = f.stairs.y * l.w + f.stairs.x;
+		if (f.seen[si] && (s.depth < lastDepth || s.returning)) {
+			const sx = f.stairs.x * TILE - ox;
+			const sy = f.stairs.y * TILE - oy;
+			drawRefInCell(ctx, theme.stairs, sx, sy);
+			if (s.returning) {
+				ctx.fillStyle = "rgba(120, 200, 255, 0.35)";
+				ctx.fillRect(sx, sy, TILE, TILE);
+				ctx.fillStyle = "#e8f6ff";
+				ctx.beginPath();
+				ctx.moveTo(sx + 8, sy + 3);
+				ctx.lineTo(sx + 13, sy + 9);
+				ctx.lineTo(sx + 3, sy + 9);
+				ctx.closePath();
+				ctx.fill();
+			}
+		}
 		// 見つけた罠
 		for (const t of f.traps) {
 			if (!t.found || !f.seen[t.y * l.w + t.x]) continue;
@@ -154,7 +180,12 @@ export class FloorView {
 		// 床の道具（見えている所と、見たことのある道具）
 		for (const fi of f.items) {
 			const i = fi.y * l.w + fi.x;
-			if (!visible[i] && !(f.seen[i] && seenItem.has(fi.item.uid))) continue;
+			if (
+				!visible[i] &&
+				!(f.seen[i] && seenItem.has(fi.item.uid)) &&
+				!f.senseItems
+			)
+				continue;
 			drawRefInCell(
 				ctx,
 				itemIcon(fi.item.kind),
@@ -162,6 +193,10 @@ export class FloorView {
 				fi.y * TILE - oy,
 			);
 		}
+
+		// 化けている敵（道具の見た目で描く）
+		for (const fk of fakeItems)
+			drawRefInCell(ctx, itemIcon(fk.kind), fk.x * TILE - ox, fk.y * TILE - oy);
 
 		// キャラ（奥から）
 		const sorted = [...figures].sort((a, b) => a.fy - b.fy);
@@ -270,7 +305,10 @@ export const drawMap = (
 		if (t.found) dot(t.x, t.y, "#ff6ad5", Math.floor(cell / 4));
 	const seenItem = new Set(s.seen);
 	for (const fi of f.items)
-		if (f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid))
+		if (
+			f.senseItems ||
+			(f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid))
+		)
 			dot(fi.x, fi.y, "#5ff0ff", Math.floor(cell / 4));
 	for (const m of opt.visibleMonsters) dot(m.x, m.y, "#ff5060");
 	dot(s.player.x, s.player.y, "#ffcf4a");

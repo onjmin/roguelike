@@ -1,0 +1,145 @@
+// あそびかた（タイトルから開く）。項目の一覧 → 1項目ずつ見るだけの窓。
+//
+// 1つの長い窓にすると、スマホでは読みたい所まで巻き取るのが手間なので、項目ごとに分けている。
+// 1ページが だいたい画面に収まるくらいの量にする。
+
+import { LAST_DEPTH } from "../core/balance";
+import { DECK } from "../core/data/items";
+import type { Ctx } from "./ctx";
+import { infoWindow, listWindow } from "./list";
+
+const DECK_TOTAL = DECK.reduce((a, e) => a + e.count, 0);
+
+/** 見出し。 */
+const h = (text: string): string => `<h3>${text}</h3>`;
+
+/** キーと説明の表（左の列はキー・ボタンの名前）。 */
+const keys = (rows: [string, string][]): string =>
+	`<table class="howto-keys">${rows
+		.map(([k, v]) => `<tr><th>${k}</th><td>${v}</td></tr>`)
+		.join("")}</table>`;
+
+/** 箇条書き（1行ずつ）。 */
+const lines = (ls: string[]): string =>
+	`<ul class="howto-list">${ls.map((l) => `<li>${l}</li>`).join("")}</ul>`;
+
+const PAGES: { value: string; label: string; sub: string; html: string }[] = [
+	{
+		value: "touch",
+		label: "そうさ",
+		sub: "スマホ",
+		html:
+			h("ボタン") +
+			keys([
+				["十字キー", "8方向に　歩く（ななめも）"],
+				["A", "こうげき・決定"],
+				["B", "メニュー・キャンセル"],
+				["画面を　タップ", "そこまで　歩く"],
+			]) +
+			h("小さい　ボタン") +
+			keys([
+				["足踏み", "その場で　1ターン　まつ"],
+				["足元", "足元の　道具や　階段を　しらべる"],
+				["地図", "この階の　地図を　見る"],
+				["ダッシュ", "ONにして　歩くと、何かあるまで　走る"],
+				["斜め", "ONの間は　ななめにしか　動かない"],
+				["向き", "ONの間は　歩かずに　向きだけ　かえる"],
+			]) +
+			`<p class="hint">ダッシュ・斜め・向きは　押すたびに　ON／OFF。<br>十字キーは　せっていで　かくせる（タップで歩く）。</p>`,
+	},
+	{
+		value: "keys",
+		label: "キーボード",
+		sub: "PC",
+		html:
+			h("歩く") +
+			keys([
+				["矢印キー", "2つ　同時押しで　ななめ"],
+				["テンキー", "8方向（5で　足踏み）"],
+				["hjkl yubn", "8方向（vi キー）"],
+			]) +
+			h("ボタンの　かわり") +
+			keys([
+				["Z・Enter", "A（こうげき・決定）"],
+				["X・Esc", "B（メニュー・キャンセル）"],
+				["Shift", "押しながら　歩くと　ダッシュ"],
+				["R", "押している間　斜め固定"],
+				["F", "押しながら　向き変え"],
+				[".", "足踏み"],
+				["G", "足元"],
+				["M", "地図"],
+				["T", "投げる"],
+			]),
+	},
+	{
+		value: "rules",
+		label: "きまり",
+		sub: "ターン・満腹度・未識別",
+		html:
+			h("ターン") +
+			lines([
+				"1歩　歩くと　1ターン。敵も　同じだけ　動く。",
+				"考えている間は　だれも　動かない。あわてなくて　いい。",
+			]) +
+			h("満腹度") +
+			lines([
+				"歩くと　満腹度が　へる。0になると　HPが　へっていく。",
+				"パンを　食べて　しのごう。",
+			]) +
+			h("毎回　はじめから") +
+			lines([
+				"レベルは　毎回　1から。持ち物は　大きなパン　1つだけ。",
+				"草・巻物・指輪・杖は、はじめは　名前が　わからない（未識別）。使うか　識別の巻物で　正体が　わかる。",
+				"のろわれた　装備は　はずせない。",
+				"罠は　ふむまで　見えない。",
+			]) +
+			h("セーブ") +
+			lines([
+				"とちゅうで　やめても、つぎは　「つづきから」　もぐれる（自動で　セーブ）。",
+				"倒れたら、持ち物も　レベルも　なくなる。やりなおしは　できない。",
+			]),
+	},
+	{
+		value: "deck",
+		label: "山札",
+		sub: "道具は　数えられる",
+		html:
+			h("山札") +
+			`<p>この冒険で　出る道具は　全${DECK_TOTAL}枚の　山札から　配られる。中身は　毎回同じで、並びだけが　ちがう。</p>` +
+			`<p>メニューの「山札」で、何を　何枚　見たかが　わかる。数えれば、未識別の道具の　正体が　しぼれる。</p>` +
+			h("流れた札") +
+			`<p>見ないまま　階を　はなれた札は　「流れた」ことになり、もう　出てこない。</p>` +
+			`<p class="hint">モンスターが　持っている　道具も、その階に　配られた札の　1枚。</p>`,
+	},
+	{
+		value: "return",
+		label: "帰り道",
+		sub: "原盤を　拾ったら",
+		html:
+			h("帰り道") +
+			lines([
+				`B${LAST_DEPTH}の　底で　「はじまりの原盤」を　拾うと、階段が　上り向きに　なる。`,
+				"帰りの階には　何も　落ちていない。行きで　集めた道具で　のぼりきろう。",
+				"帰り道では　満腹度は　へらない。",
+				"地上まで　もどれば、冒険は　おしまい。",
+			]),
+	},
+];
+
+export const openHowto = async (ctx: Ctx): Promise<void> => {
+	let start = 0;
+	for (;;) {
+		const v = await listWindow(
+			ctx,
+			"あそびかた",
+			PAGES.map((p) => ({ label: p.label, sub: p.sub, value: p.value })),
+			{ start },
+		);
+		if (v === null) return;
+		const i = PAGES.findIndex((p) => p.value === v);
+		const page = PAGES[i];
+		if (!page) return;
+		start = i;
+		await infoWindow(ctx, page.label, page.html, { cls: "howto" });
+	}
+};

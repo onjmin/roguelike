@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<!-- Google tag (gtag.js)。公開サイト（onjmin.github.io）でだけ読みこむ（開発中の表示を数えないため） -->
+		<script>
+			if (location.hostname === "onjmin.github.io") {
+				const s = document.createElement("script");
+				s.async = true;
+				s.src = "https://www.googletagmanager.com/gtag/js?id=G-DC1CXVMLXR";
+				document.head.appendChild(s);
+				window.dataLayer = window.dataLayer || [];
+				window.gtag = function gtag() {
+					// biome-ignore lint/complexity/noArguments: gtag.js は arguments オブジェクトそのものを要求する（配列にすると送られない）
+					window.dataLayer.push(arguments);
+				};
+				window.gtag("js", new Date());
+				window.gtag("config", "G-DC1CXVMLXR");
+			}
+		</script>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+		/>
+		<meta name="theme-color" content="#0d0a16" />
+		<meta
+			name="description"
+			content="蓄音キリコが　過去ログの底へもぐる、トルネコ1風のローグライク。スマホで遊べます。"
+		/>
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="mobile-web-app-capable" content="yes" />
+		<meta name="google-site-verification" content="umOJryZRtZeDsWC10CFmGjDOJy7SjkpL3DWlXblOnyE" />
+		<!-- favicon: 作者の描いたキリコのドット絵（32×32。64・180 はドットのまま拡大。public/favicon-*.png・apple-touch-icon.png） -->
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+		<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap"
+			rel="stylesheet"
+		/>
+		<title>蓄音キリコと過去ログの底</title>
+	</head>
+	<body>
+		<div id="app"></div>
+		<script type="module" src="/src/main.ts"></script>
+	</body>
+</html>
