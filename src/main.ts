@@ -70,6 +70,16 @@ syncHud();
 document.addEventListener("gesturestart", (e) => e.preventDefault());
 document.addEventListener("contextmenu", (e) => e.preventDefault());
 
+// iOS（Safari・Brave）は 長押しで 拡大鏡や選択が出て、画面が拡大されてしまう。
+// 操作する場所（十字キー・ボタン・画面）では タッチの既定動作を止める（操作は すべて pointer イベントで受ける。
+// 一覧・窓は 指で送れるように 止めない）
+const noTouchDefault = (e: TouchEvent) => {
+	const t = e.target as Element | null;
+	if (t?.closest?.(".hud, #screen")) e.preventDefault();
+};
+document.addEventListener("touchstart", noTouchDefault, { passive: false });
+document.addEventListener("touchmove", noTouchDefault, { passive: false });
+
 // iOS は user-scalable=no を聞かず、すばやく 2 回たたくと拡大してしまう。
 // 2 回目のタップの既定動作を止める（操作はすべて pointer イベントで受けている）
 let lastTouchEnd = 0;

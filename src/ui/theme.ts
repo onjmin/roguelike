@@ -4,7 +4,7 @@
 // その上に「上の面」、それ以外の壁は闇の色で塗る。
 // 階は 層（ZONES）に分かれていて、層ごとに 見た目・曲・ただよう粒 が変わる。
 
-import type { DungeonId } from "../core/types";
+import type { DungeonId, TrapKind } from "../core/types";
 import { type ThemeName, ZONE_NAMES, type ZoneSpec } from "../data/story";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
@@ -186,15 +186,15 @@ export const zoneFor = (dungeon: DungeonId, depth: number): Zone => {
 export const themeFor = (dungeon: DungeonId, depth: number): Theme =>
 	zoneFor(dungeon, depth).theme;
 
-/** 罠の見た目（見つけたものだけ描く）。 */
-export const TRAP_ICON: Record<string, string> = {
-	pit: cut(2, 190),
+/** 罠の見た目（見つけたものだけ描く）。罠の種類が ふえたら ここも（型で 抜けを見つける）。 */
+export const TRAP_ICON: Record<TrapKind, string> = {
+	bear: cut(5, 13), // とげの輪
+	acid: cut(3, 189), // 緑の あわ
+	sleep: cut(6, 13),
+	trip: cut(0, 13), // 小石
 	mine: cut(0, 250),
 	arrow: cut(2, 187),
-	sleep: cut(6, 13),
-	spin: cut(7, 13),
+	dart: cut(3, 187), // 矢の罠の 色ちがい
 	warp: cut(7, 13),
-	rust: cut(4, 187),
-	hunger: cut(6, 187),
-	summon: cut(0, 187),
+	pit: cut(2, 190),
 };

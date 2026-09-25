@@ -59,6 +59,8 @@ import { zoneFor } from "./theme";
 const KIRIKO = "pub:sprites/kiriko.png";
 /** 武器を振る長さ（振りかぶる → ななめ → 前 の3つの形）。 */
 const SWING_MS = 180;
+/** 長押しの足踏みの間（ms。1秒に 10回ほど）。 */
+const REST_GAP_MS = 100;
 
 type Disp = Figure & {
 	/** 行き先（マス）。 */
@@ -110,6 +112,8 @@ export class Play {
 	 * 階の札が出るまでは 前の階のまま見せる）。落ちなかったときは null。
 	 */
 	private shownFloor: Floor | null = null;
+	/** 長押しの足踏みを 止めている（指を離すまで）。 */
+	private restHalt = false;
 	/** 向きを変えたあと、方向がはなされるのを待っている。 */
 	private waitRelease = false;
 	/** 食べる・飲む・読むときに キリコの頭の上に出す道具。 */
@@ -511,6 +515,7 @@ export class Play {
 	private control(t: number): void {
 		const input = this.ctx.input;
 		if (input.busy) return;
+		if (!input.restHeld()) this.restHalt = false;
 		const key = input.takeField();
 		if (key) {
 			this.travel = null;
@@ -553,6 +558,14 @@ export class Play {
 			else void this.exec({ c: "move", dir });
 			return;
 		}
+		// 十字キーの まん中を 長押し：足踏み（押さえているあいだ 続ける。トルネコの A＋B 押しっぱなし）
+		if (input.restHeld()) {
+			if (this.restHalt || t - this.lastStepAt < REST_GAP_MS) return;
+			this.travel = null;
+			this.lastStepAt = t;
+			void this.restStep();
+			return;
+		}
 		// 画面を押さえつづけたら、その方へ歩きつづける（どこでも十字キー）
 		const hold = input.fieldHold();
 		if (hold) {
@@ -577,6 +590,26 @@ export class Play {
 			return;
 		}
 		if (this.travel) void this.travelStep();
+	}
+
+	/**
+	 * 長押しの足踏み 1回。敵が新しく見えた・傷ついた・階が変わったら、指を離すまで 止める
+	 * （押さえたまま なぐられつづけないように）。
+	 */
+	private async restStep(): Promise<void> {
+		const run = this.run;
+		const seen = new Set(
+			run.f.monsters.filter((m) => run.monsterVisible(m)).map((m) => m.uid),
+		);
+		const hp = run.p.hp;
+		const floor = run.s.floor;
+		await this.exec({ c: "wait" });
+		if (
+			run.p.hp < hp ||
+			run.s.floor !== floor ||
+			run.f.monsters.some((m) => run.monsterVisible(m) && !seen.has(m.uid))
+		)
+			this.restHalt = true;
 	}
 
 	private async onKey(key: string): Promise<void> {

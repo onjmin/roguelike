@@ -71,6 +71,8 @@ export const drawRefInCell = (
 	y: number,
 	cell = 16,
 ): boolean => {
+	// 絵の決まっていない物は 描かない（1つの抜けで 毎コマ 例外になり、画面ごと止まらないように）
+	if (!ref) return false;
 	const img = getImage(ref);
 	if (!img) return false;
 	const c = cropOf(ref);

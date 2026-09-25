@@ -1,8 +1,10 @@
-// 画面上のボタン類：8方向の十字キー・A/B・小さいボタン（足踏み・足元・地図・ダッシュ・斜め・向き）・
-// メニュー・ミュート。
+// 画面上のボタン類：8方向の十字キー・A/B・小さいボタン（向き・足元・地図）・メニュー・ミュート。
 //
-// トルネコのボタンの組み合わせ（B＋方向でダッシュ、R で斜め固定、Y で向き変え…）は
-// スマホでは押しにくいので、切り替えボタン（押すたびに ON/OFF）にしている。
+// スマホの画面を ふさがないよう、小さいボタンは 3つに しぼる。
+// - 足踏みは 十字キーの まん中を 長押し（トルネコの A＋B 押しっぱなし。押さえているあいだ 続ける）
+// - ダッシュは 十字キーの 押しっぱなしで 足りる（歩きつづける）。キーボードでは Shift＋方向
+// - 斜め固定は キーボードの R だけ（十字キーは 8方向）
+// - 向きは 押しながら十字キー（トルネコの Y＋方向）。すぐ離せば 次の1回ぶん
 
 import type { Input } from "../engine/input";
 import { onSettingsChange, saveSettings, settings } from "../engine/settings";
@@ -18,16 +20,16 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const arrows = [0, 1, 2, 3, 4, 5, 6, 7].map((d) =>
 		el("i", { class: `d${d}${d % 2 ? " diag" : ""}` }),
 	);
-	const pad = el("div", { class: "pad" }, arrows);
+	const pad = el("div", { class: "pad" }, [
+		...arrows,
+		el("b", { class: "pad-rest", text: "足踏み" }),
+	]);
 	const a = el("button", { class: "btn btn-a", text: "A" });
 	const b = el("button", { class: "btn btn-b", text: "B" });
 	const small = (label: string, cls: string) =>
 		el("button", { class: `mini ${cls}`, html: label });
-	const wait = small("足踏み", "mini-wait");
 	const foot = small("足元", "mini-foot");
 	const map = small("地図", "mini-map");
-	const dash = small("ダッシュ", "mini-dash toggle");
-	const diag = small("斜め", "mini-diag toggle");
 	const turn = small("向き", "mini-turn toggle");
 	const menu = el("button", { class: "icon-btn menu-btn", text: "☰" });
 	menu.title = "メニュー";
@@ -38,7 +40,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 		status,
 		pad,
 		el("div", { class: "ab" }, [b, a]),
-		el("div", { class: "minis" }, [dash, diag, turn, wait, foot, map]),
+		el("div", { class: "minis" }, [turn, foot, map]),
 		el("div", { class: "top-btns" }, [mute, menu]),
 	]);
 	root.appendChild(hud);
@@ -47,11 +49,8 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	input.bindButton(a, "a");
 	input.bindButton(b, "b");
 	input.bindButton(menu, "b");
-	input.bindButton(wait, "wait");
 	input.bindButton(foot, "foot");
 	input.bindButton(map, "map");
-	input.bindToggle(dash, "dash");
-	input.bindToggle(diag, "diag");
 	input.bindHold(turn, "turn");
 	mute.addEventListener("pointerdown", (e) => {
 		e.preventDefault();
@@ -61,8 +60,6 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	});
 
 	const syncToggles = () => {
-		dash.classList.toggle("on", input.toggles.dash);
-		diag.classList.toggle("on", input.toggles.diag);
 		turn.classList.toggle("on", input.toggles.turn);
 		turn.classList.toggle("down", input.heldMods.turn);
 	};

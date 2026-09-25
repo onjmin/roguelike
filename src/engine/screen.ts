@@ -2,14 +2,17 @@
 //
 // ドット絵をにじませないため、1ソース画素 = 整数個のデバイス画素 で描く。
 // canvas は「見えている箱」（viewport.ts。ブラウザのバーの裏は除く）全体を覆い、
-// その短辺に 14 マス前後が入る拡大率を選ぶ（ローグライクは部屋を見渡したいので rpg より広め）。
+// その短辺に 14 マス前後（スマホは 11 マス前後）が入る拡大率を選ぶ（ローグライクは部屋を見渡したいので rpg より広め。
+// スマホは 画面が小さいので、1マスを 大きくする）。
 // 描画側はソース画素の座標系（setTransform 済み）でそのまま描けばよい。
 
 import { TILE } from "./types";
 import { onViewportChange, viewport } from "./viewport";
 
-/** 画面の短辺に入れたいマス数の目安。 */
+/** 画面の短辺に入れたいマス数の目安（スマホは 1マスを 大きく。短辺が PHONE_CSS 未満ならスマホ）。 */
 const TILES_ON_SHORT_SIDE = 14;
+const TILES_ON_SHORT_SIDE_PHONE = 11;
+const PHONE_CSS = 600;
 
 export class Screen {
 	readonly canvas: HTMLCanvasElement;
@@ -41,8 +44,12 @@ export class Screen {
 		const devW = Math.round(cssW * this.dpr);
 		const devH = Math.round(cssH * this.dpr);
 		const short = Math.min(devW, devH);
+		const tiles =
+			Math.min(cssW, cssH) < PHONE_CSS
+				? TILES_ON_SHORT_SIDE_PHONE
+				: TILES_ON_SHORT_SIDE;
 		// 四捨五入で選ぶ（切り捨てだと 320px 幅の 2倍画面で 1マスが 16px と小さくなりすぎる）
-		this.scale = Math.max(1, Math.round(short / (TILE * TILES_ON_SHORT_SIDE)));
+		this.scale = Math.max(1, Math.round(short / (TILE * tiles)));
 		this.canvas.width = devW;
 		this.canvas.height = devH;
 		this.canvas.style.width = `${devW / this.dpr}px`;

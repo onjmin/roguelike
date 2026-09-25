@@ -147,6 +147,8 @@ const toDir4 = (d: Dir8): Dir =>
 
 /** 画面を これより長く押さえたら「押しっぱなしで歩く」、短ければタップ。 */
 const FIELD_HOLD_MS = 220;
+/** 十字キーの まん中を これより長く押さえたら 足踏み（トルネコの A＋B 押しっぱなし）。 */
+const PAD_REST_MS = 350;
 /** 窓が開いてから、外のタップで閉じられるようになるまで（ms）。 */
 const WINDOW_TAP_GRACE_MS = 300;
 
@@ -164,6 +166,8 @@ export class Input {
 	private keysHeld = new Map<string, Dir8>();
 	/** 十字キー（画面）で押している向き。 */
 	private padDir: Dir8 | null = null;
+	/** 十字キーの まん中を 押さえはじめた時刻（押さえていなければ 0）。 */
+	private padCenterSince = 0;
 	/** 最後に方向を押し始めた時刻（同時押しの待ち合わせ用）。 */
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
@@ -241,6 +245,7 @@ export class Input {
 		window.addEventListener("blur", () => {
 			this.keysHeld.clear();
 			this.padDir = null;
+			this.padCenterSince = 0;
 			this.keyMods = { dash: false, diag: false, turn: false };
 		});
 	}
@@ -271,6 +276,14 @@ export class Input {
 			dy += VEC[d][1];
 		}
 		return dirFromVec(dx, dy);
+	}
+
+	/** 十字キーの まん中を 長押ししている（足踏みを 続ける）。 */
+	restHeld(): boolean {
+		return (
+			this.padCenterSince > 0 &&
+			performance.now() - this.padCenterSince >= PAD_REST_MS
+		);
 	}
 
 	/** 押したが まだ使っていない向きがあるか。 */
@@ -358,7 +371,8 @@ export class Input {
 			const r = el.getBoundingClientRect();
 			const dx = e.clientX - (r.left + r.width / 2);
 			const dy = e.clientY - (r.top + r.height / 2);
-			const dead = r.width * 0.12;
+			// まん中は 向きなし（長押しで 足踏み）。指で押さえやすい大きさにする
+			const dead = r.width * 0.2;
 			let dir: Dir8 | null = null;
 			if (Math.hypot(dx, dy) > dead) {
 				// 上を 0 にして時計回りに 45° ずつ
@@ -375,9 +389,18 @@ export class Input {
 				}
 				el.dataset.dir = dir === null ? "" : String(dir);
 			}
+			// まん中を 押さえている（長押しで 足踏み。見た目は まん中が だんだん光る）
+			if (dir === null && !this.padCenterSince) {
+				this.padCenterSince = performance.now();
+				el.dataset.center = "1";
+			} else if (dir !== null && this.padCenterSince) {
+				this.padCenterSince = 0;
+				el.dataset.center = "";
+			}
 		};
 		el.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
+			this.onAnyInput?.();
 			active = e.pointerId;
 			capture(el, e.pointerId);
 			update(e);
@@ -389,7 +412,9 @@ export class Input {
 			if (e.pointerId !== active) return;
 			active = null;
 			this.padDir = null;
+			this.padCenterSince = 0;
 			el.dataset.dir = "";
+			el.dataset.center = "";
 		};
 		el.addEventListener("pointerup", end);
 		el.addEventListener("pointercancel", end);
@@ -437,16 +462,6 @@ export class Input {
 		};
 		el.addEventListener("pointerup", end);
 		el.addEventListener("pointercancel", end);
-	}
-
-	/** 画面上の切り替えボタン（押すたびに ON/OFF）。 */
-	bindToggle(el: HTMLElement, k: keyof Mods): void {
-		el.addEventListener("pointerdown", (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-			this.onAnyInput?.();
-			this.setToggle(k, !this.toggles[k]);
-		});
 	}
 
 	/**
