@@ -24,6 +24,14 @@
 // | sad      | -24.9    | 26 → 29 | -24.0    |
 // | ending   | -23.6    | 18 → 17 | -24.1    |
 // （2026-09 測定。「直した後」は比例から出した値。勝利のジングル＝title の 21〜24 小節は M-max -21.2）
+//
+// 足した曲は pnpm dev の /dev/bgm.html（dev/bgm-measure.ts。ゲームと同じ形で1周鳴らして I を出す）で測った。
+// この測り方では dungeon が -23.7 と出る（上の表より 0.6 低い）ので、足した曲は dungeon と同じ値にそろえた。
+// 大きい #volume では dtm のリミッタで つぶれて比例しない（retro は 50 で -14.0、16 で -27.9）。測り直して決めること。
+// | 曲       | 測った I          | #volume | 直した後 |
+// |----------|-------------------|---------|----------|
+// | retro    | -14.0（50）/-27.9（16）| 50 → 26 | -23.6    |
+// | retro2   | -12.9（50）/-28.1（14）| 50 → 23 | -23.7    |
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
@@ -34,6 +42,9 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
+// うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）
+import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
+import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」
 import tense from "./bgm/tense.mml?raw"; // 1d9e7eed2db44ce7「荒ぶるメロディライン」
 import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽っぽい何か」
@@ -51,4 +62,6 @@ export const bgm: Record<string, string> = {
 	tense,
 	lastboss,
 	ending,
+	retro,
+	retro2,
 };
