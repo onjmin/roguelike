@@ -640,12 +640,12 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				const sh = r.shield();
 				if (!sh) break;
 				if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
-					r.msg("しかし　盾は　錆びなかった");
+					r.msg("しかし　板は　錆びなかった");
 					break;
 				}
 				sh.plus -= 1;
 				sh.known = true;
-				r.msg(`盾が　錆びてしまった！（${r.name(sh)}）`, "warn");
+				r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
 				break;
 			}
 			case "poison": {
@@ -660,12 +660,12 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				break;
 			}
 			case "drainLv":
-				if (r.hasRing("r_ward")) r.msg("しかし　指輪が　守ってくれた");
+				if (r.hasRing("r_ward")) r.msg("しかし　トリップが　守ってくれた");
 				else r.drainLevel();
 				break;
 			case "drainMax": {
 				if (r.hasRing("r_ward")) {
-					r.msg("しかし　指輪が　守ってくれた");
+					r.msg("しかし　トリップが　守ってくれた");
 					break;
 				}
 				if (r.rng.chance(1 / 2)) {

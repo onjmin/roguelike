@@ -32,7 +32,7 @@ const FIRST: readonly Quote[] = [
 	q("nanj", "ひとりで　行くんか。\nほな、上で　保守しとくわ"),
 	q("roze", "落ちた子が　どこへ　行くのか、\nわたしも　知らないアル"),
 	q("feris", "いってらっしゃ〜い。\n落ちても、私が　ageるからね〜"),
-	q("teto", "べ、別に　心配してない。\n……パン、持ってけ"),
+	q("teto", "べ、別に　心配してない。\n……おにぎり、持ってけ"),
 	q("rei", "入場を　記録しました。\n「おかえりなさい」は、用意して　あります"),
 ];
 
@@ -43,7 +43,7 @@ const SHALLOW: readonly Quote[] = [
 	q("nanj", "草。……いや、笑ってへんで。\n笑ってへんけど、草"),
 	q("feris", "もう　もどってきた〜？\nお茶、まだ　あったかいよ〜"),
 	q("roze", "入口の　あたりは　ひとだまが\n多いアル。……知り合いアル"),
-	q("teto", "……早いな。\nパン、まだ　あたたかいぞ"),
+	q("teto", "……早いな。\nおにぎり、まだ　あたたかいぞ"),
 	q("rei", "短い　ログも、ログです。\n……記録しました"),
 ];
 
@@ -70,8 +70,8 @@ const DEEP: readonly Quote[] = [
 // ───────────────── たおれ方で ─────────────────
 /** おなかが　すいて。 */
 const STARVE: readonly Quote[] = [
-	q("teto", "……パン、食えって　言っただろ。\nべ、別に　怒ってない"),
-	q("nanj", "パン松に　言うたろか。\n「パンを　食え」って"),
+	q("teto", "……おにぎり、食えって　言っただろ。\nべ、別に　怒ってない"),
+	q("nanj", "パン松に　言うたろか。\n「メシを　食え」って"),
 	q("feris", "おなか、すいたでしょ〜。\nはい、あ〜ん"),
 	q("roze", "麻婆豆腐、作っておいたアル。\n……34キロ、もどすアル"),
 	q("rei", "燃料切れを　検知。\n……当機は　電気ですが、心配は　します"),
@@ -131,7 +131,7 @@ const NINPO: readonly Quote[] = [
 const TENSAI: readonly Quote[] = [
 	q("nanj", "転載は　あかんで。ほんまに。\n……ワイの　レスも　まとめられたわ"),
 	q("feris", "私の　絵も、まとめられたこと\nあるよ〜。……ふぇ……ふぇ……"),
-	q("teto", "持ち物、ぜんぶか。\n……パンは？　パンは　ぶじか？"),
+	q("teto", "持ち物、ぜんぶか。\n……おにぎりは？　おにぎりは　ぶじか？"),
 	q("rei", "無断転載を　検出。\n……通報、しておきました"),
 ];
 
@@ -193,7 +193,7 @@ const CAUSE_POOLS: readonly {
 	pool: readonly Quote[];
 }[] = [
 	{ match: (c) => c.includes("おなかが"), pool: STARVE },
-	{ match: (c) => c.includes("毒草"), pool: POISON },
+	{ match: (c) => c.includes("荒らし草"), pool: POISON },
 	{ match: (c) => c.includes("爆発") || c.includes("地雷"), pool: BLAST },
 	{ match: (c) => c.includes("寝落ち民"), pool: NEOCHI },
 	{ match: (c) => c.includes("コピペ"), pool: COPIPE },

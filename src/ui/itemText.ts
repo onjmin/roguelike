@@ -56,10 +56,10 @@ const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 
 /** 正体のわかりかた（未識別のとき「せつめい」に出す）。 */
 const HOW_TO_ID: Partial<Record<ItemCat, string>> = {
-	herb: "飲むか　鑑定スレで　わかる",
-	scroll: "読むか　鑑定スレで　わかる",
-	staff: "振って　効き目が　見えるか、鑑定スレで　わかる",
-	ring: "装備して　わかる　ものも　ある。鑑定スレなら　かならず　わかる",
+	herb: "飲むか　有識者スレで　わかる",
+	scroll: "読むか　有識者スレで　わかる",
+	staff: "振って　効き目が　見えるか、有識者スレで　わかる",
+	ring: "装備して　わかる　ものも　ある。有識者スレなら　かならず　わかる",
 };
 
 const row = (k: string, v: string): string =>
@@ -103,7 +103,7 @@ export const itemInfo = (run: Run, it: Item): string => {
 	if (rows.length) out.push(`<table>${rows.join("")}</table>`);
 	if (plusUnknown(it))
 		out.push(
-			'<p class="hint">修正値と　のろいは、装備するか　鑑定スレで　わかる（−1なら　のろわれていて　外せない）</p>',
+			'<p class="hint">修正値と　のろいは、装備するか　有識者スレで　わかる（−1なら　のろわれていて　外せない）</p>',
 		);
 	if (d.cat === "goal") {
 		out.push('<p class="hint">投げたり　置いたり　できない</p>');

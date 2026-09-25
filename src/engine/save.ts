@@ -8,6 +8,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
+import { FAKE_NAMES, OLD_FAKE_NAMES } from "../core/data/names";
 import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
@@ -125,6 +126,13 @@ export const loadRun = (): RunState | null => {
 		// 巻物を「スレ」と呼ぶ前の中断セーブ：未識別の名前を今の呼び方にそろえる
 		for (const [k, v] of Object.entries(s.ids.fake))
 			s.ids.fake[k] = v.replace(/の巻物$/, "スレ");
+		// 草・杖・指輪を 2ch のことばにする前の中断セーブ：同じ番目の 今の名前に
+		for (const [k, v] of Object.entries(s.ids.fake)) {
+			const cat = ITEMS[k]?.cat;
+			const i = cat ? (OLD_FAKE_NAMES[cat]?.indexOf(v) ?? -1) : -1;
+			const now = cat ? FAKE_NAMES[cat]?.[i] : undefined;
+			if (i >= 0 && now) s.ids.fake[k] = now;
+		}
 		return s;
 	} catch {
 		return null;

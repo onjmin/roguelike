@@ -85,12 +85,12 @@ const eat = (r: Run, it: Item): boolean => {
 		r.msg("おなかが　いっぱいに　なった");
 	} else {
 		r.feed(100);
-		r.msg("うっ……　くさっている！", "warn");
+		r.msg("うっ……　カビている！", "warn");
 		if (!r.hasRing("r_purity") && r.p.str > 1) {
 			r.p.str--;
 			r.msg("ちからが　1　下がった", "warn");
 		}
-		r.hurtPlayer(5, "くさったパンに　あたった");
+		r.hurtPlayer(5, "カビおにぎりに　あたった");
 	}
 	return true;
 };
@@ -130,7 +130,7 @@ const drink = (r: Run, it: Item): boolean => {
 				if (p.str < before)
 					r.msg(`ちからが　${before - p.str}　下がった`, "warn");
 			}
-			r.hurtPlayer(5, "毒草を　飲んで　たおれた");
+			r.hurtPlayer(5, "荒らし草を　飲んで　たおれた");
 			break;
 		case "h_might":
 			r.se("heal");
@@ -266,7 +266,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		}
 		case "s_temper": {
 			const sh = r.shield();
-			if (!sh) r.msg("しかし　盾を　持っていなかった");
+			if (!sh) r.msg("しかし　板を　持っていなかった");
 			else {
 				sh.plus++;
 				sh.cursed = false;
@@ -287,11 +287,11 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		}
 		case "s_rustproof": {
 			const sh = r.shield();
-			if (!sh) r.msg("しかし　盾を　持っていなかった");
+			if (!sh) r.msg("しかし　板を　持っていなかった");
 			else {
 				sh.rustproof = true;
 				sh.cursed = false;
-				r.msg("盾が　錆びなくなった", "good");
+				r.msg("板が　錆びなくなった", "good");
 			}
 			break;
 		}
@@ -350,7 +350,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		case "s_ward": {
 			const i = p.y * f.layout.w + p.x;
 			if (!f.wards.includes(i)) f.wards.push(i);
-			r.msg("足元が　結界に　なった", "good");
+			r.msg("足元が　避難所に　なった", "good");
 			break;
 		}
 		case "s_recharge": {
@@ -382,7 +382,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			tgt.charges = 0;
 			tgt.count = 1;
 			tgt.known = true;
-			r.msg(`${before}が　大きなパンに　なった`, "good");
+			r.msg(`${before}が　特大おにぎりに　なった`, "good");
 			break;
 		}
 		case "s_snare": {

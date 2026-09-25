@@ -17,163 +17,163 @@ add({
 	id: "club",
 	cat: "weapon",
 	sound: { swing: "swing_blunt", hit: "hit_club" },
-	name: "こん棒",
+	name: "ぬるぽ棒",
 	atk: 1,
-	desc: "木を　けずった　棒",
+	desc: "木を　けずった　ぬるい棒",
 });
 add({
 	id: "copper",
 	cat: "weapon",
 	sound: { swing: "swing_blade", hit: "hit_copper" },
-	name: "銅の剣",
+	name: "名無しの剣",
 	atk: 3,
-	desc: "ありふれた　剣",
+	desc: "ありふれた　剣。名無しさんの　標準装備",
 });
 add({
 	id: "bat",
 	cat: "weapon",
 	sound: { swing: "swing_blunt", hit: "hit_bat" },
-	name: "金属バット",
+	name: "ガッのバット",
 	atk: 4,
-	desc: "よく　しなる　バット",
+	desc: "よく　しなる　バット。ぬるぽに　ガッ",
 });
 add({
 	id: "wyrmbane",
 	cat: "weapon",
 	sound: { swing: "swing_blade", hit: "hit_wyrm" },
-	name: "竜断ちの剣",
+	name: "ワイ断ちの剣",
 	atk: 5,
-	desc: "竜には　ダメージが　2倍",
+	desc: "竜（ワイ　バーン）には　ダメージが　2倍",
 });
 add({
 	id: "steel",
 	cat: "weapon",
 	sound: { swing: "swing_blade", hit: "hit_steel" },
-	name: "鋼の剣",
+	name: "コテハンの剣",
 	atk: 6,
-	desc: "よく　切れる　剣",
+	desc: "よく　切れる　剣。名無しより　一段上",
 });
 add({
 	id: "starsword",
 	cat: "weapon",
 	sound: { swing: "swing_blade", hit: "hit_star" },
-	name: "星鉄の剣",
+	name: "降臨の剣",
 	atk: 7,
-	desc: "空から　落ちた　鉄の剣",
+	desc: "空から　降臨した　鉄の剣",
 });
 add({
 	id: "mic",
 	cat: "weapon",
 	sound: { swing: "swing_blunt", hit: "hit_mic" },
-	name: "マイクスタンド",
+	name: "ネ申マイク",
 	atk: 10,
-	desc: "いちばん　重くて　いちばん　強い",
+	desc: "スタンドごと　振る。いちばん　重くて　いちばん　強い",
 });
 
 // ───────── 盾 ─────────
 add({
 	id: "leather",
 	cat: "shield",
-	name: "革の盾",
+	name: "ダイエット板",
 	def: 2,
-	desc: "錆びない。おなかが　へりにくい",
+	desc: "うすい　板。錆びない。おなかが　へりにくい",
 });
 add({
 	id: "bronze",
 	cat: "shield",
-	name: "青銅の盾",
+	name: "雑談板",
 	def: 3,
-	desc: "ありふれた　盾",
+	desc: "ありふれた　板",
 });
 add({
 	id: "scale",
 	cat: "shield",
-	name: "うろこの盾",
+	name: "スルー板",
 	def: 4,
-	desc: "毒で　ちからを　下げられない",
+	desc: "毒で　ちからを　下げられない（荒らしは　スルー）",
 });
 add({
 	id: "mirror",
 	cat: "shield",
-	name: "鏡銀の盾",
+	name: "永久保存板",
 	def: 5,
-	desc: "錆びない",
+	desc: "錆びない（永久保存版）",
 });
 add({
 	id: "steelsh",
 	cat: "shield",
-	name: "鋼の盾",
+	name: "鉄板",
 	def: 6,
-	desc: "かたい　盾",
+	desc: "かたい　板。守りは　鉄板",
 });
 add({
 	id: "fireward",
 	cat: "shield",
-	name: "耐火の盾",
+	name: "火消し板",
 	def: 7,
-	desc: "炎の　ダメージが　半分",
+	desc: "炎の　ダメージが　半分（炎上の　火消し）",
 });
 add({
 	id: "starshield",
 	cat: "shield",
-	name: "星鉄の盾",
+	name: "ネ申板",
 	def: 10,
-	desc: "空から　落ちた　鉄の盾",
+	desc: "空から　降臨した　鉄の板",
 });
 
 // ───────── 指輪（未識別） ─────────
 add({
 	id: "r_might",
 	cat: "ring",
-	name: "剛力の指輪",
+	name: "◆筋肉",
 	desc: "ちからが　3　上がる（のろいなら　下がる）",
 });
 add({
 	id: "r_sustain",
 	cat: "ring",
-	name: "不食の指輪",
+	name: "◆腹いっぱい",
 	desc: "おなかが　へらない",
 });
 add({
 	id: "r_hunger",
 	cat: "ring",
-	name: "大食らいの指輪",
+	name: "◆大食い",
 	desc: "おなかが　2倍　へる",
 });
 add({
 	id: "r_trap",
 	cat: "ring",
-	name: "罠よけの指輪",
+	name: "◆釣られない",
 	desc: "罠に　かからない",
 });
 add({
 	id: "r_awake",
 	cat: "ring",
-	name: "不眠の指輪",
+	name: "◆徹夜",
 	desc: "眠らなくなる",
 });
 add({
 	id: "r_purity",
 	cat: "ring",
-	name: "解毒の指輪",
+	name: "◆スルースキル",
 	desc: "ちからを　下げられない",
 });
 add({
 	id: "r_stealth",
 	cat: "ring",
-	name: "忍び足の指輪",
+	name: "◆sage進行",
 	desc: "眠っている　敵が　起きない",
 });
 add({
 	id: "r_clamor",
 	cat: "ring",
-	name: "騒音の指輪",
+	name: "◆全力age",
 	desc: "眠っている　敵が　すぐ起きる",
 });
 add({
 	id: "r_ward",
 	cat: "ring",
-	name: "守りの指輪",
+	name: "◆保守",
 	desc: "レベルや　最大HPを　下げられない",
 });
 
@@ -181,79 +181,81 @@ add({
 add({
 	id: "h_heal",
 	cat: "herb",
-	name: "薬草",
+	name: "笑い草",
 	desc: "HPが　25　回復（満タンなら　最大HP＋1）",
 });
 add({
 	id: "h_greater",
 	cat: "herb",
-	name: "大薬草",
+	name: "大草原",
 	desc: "HPが　100　回復（満タンなら　最大HP＋2）",
 });
 add({
 	id: "h_poison",
 	cat: "herb",
-	name: "毒草",
+	name: "荒らし草",
 	desc: "HPが　5　へり、ちからが　3　下がる",
 });
 add({
 	id: "h_might",
 	cat: "herb",
-	name: "ちからの実",
+	name: "プロテイン草",
 	desc: "ちからが　1　上がる",
 });
 add({
 	id: "h_growth",
 	cat: "herb",
-	name: "成長の実",
-	desc: "レベルが　1　上がる",
+	name: "忍法帖の実",
+	desc: "めったに　ない　実。レベルが　1　上がる",
+	// メタルとうすこの 落とし物。はじめから 正体が わかり、見た目も 専用
+	rare: true,
 });
 add({
 	id: "h_swift",
 	cat: "herb",
-	name: "疾風の実",
+	name: "ksk草",
 	desc: "しばらく　倍速で　動ける",
 });
 add({
 	id: "h_blind",
 	cat: "herb",
-	name: "暗闇草",
+	name: "あぼーん草",
 	desc: "目が　見えなくなる。投げると　敵の目を　ふさぐ",
 });
 add({
 	id: "h_blink",
 	cat: "herb",
-	name: "跳び草",
+	name: "誘導草",
 	desc: "この階の　どこかへ　跳ぶ",
 });
 add({
 	id: "h_reel",
 	cat: "herb",
-	name: "千鳥草",
+	name: "カオス草",
 	desc: "混乱する。投げると　敵を　混乱させる",
 });
 add({
 	id: "h_sleep",
 	cat: "herb",
-	name: "眠り草",
+	name: "寝落ち草",
 	desc: "眠ってしまう。投げると　敵を　眠らせる",
 });
 add({
 	id: "h_antidote",
 	cat: "herb",
-	name: "解毒草",
+	name: "復旧草",
 	desc: "下がった　ちからが　元にもどる",
 });
 add({
 	id: "h_fire",
 	cat: "herb",
-	name: "火吹き草",
+	name: "燃料投下草",
 	desc: "前に　炎を　吐く（足元の道具も　燃える）",
 });
 add({
 	id: "h_sight",
 	cat: "herb",
-	name: "見透し草",
+	name: "晒し草",
 	desc: "この階の　罠と　見えない敵が　見える",
 });
 
@@ -261,55 +263,55 @@ add({
 add({
 	id: "s_appraise",
 	cat: "scroll",
-	name: "鑑定スレ",
-	desc: "道具を　1つ　識別する",
+	name: "有識者スレ",
+	desc: "有識者ニキが　道具を　1つ　識別する",
 });
 add({
 	id: "s_whet",
 	cat: "scroll",
-	name: "研ぎスレ",
+	name: "腹筋スレ",
 	desc: "装備中の　武器が　＋1。のろいも　とける",
 });
 add({
 	id: "s_temper",
 	cat: "scroll",
-	name: "鍛えスレ",
-	desc: "装備中の　盾が　＋1。のろいも　とける",
+	name: "耐久スレ",
+	desc: "装備中の　板が　＋1。のろいも　とける",
 });
 add({
 	id: "s_uncurse",
 	cat: "scroll",
-	name: "解呪スレ",
+	name: "お祓いスレ",
 	desc: "装備の　のろいを　とく",
 });
 add({
 	id: "s_rustproof",
 	cat: "scroll",
-	name: "防錆スレ",
-	desc: "装備中の　盾が　錆びなくなる",
+	name: "延命スレ",
+	desc: "装備中の　板が　錆びなくなる",
 });
 add({
 	id: "s_map",
 	cat: "scroll",
-	name: "地図スレ",
+	name: "聖地巡礼スレ",
 	desc: "この階の　地形と　罠が　わかる",
 });
 add({
 	id: "s_sense",
 	cat: "scroll",
-	name: "気配スレ",
+	name: "ヲチスレ",
 	desc: "この階の　敵の　いる所が　わかる",
 });
 add({
 	id: "s_treasure",
 	cat: "scroll",
-	name: "宝探しスレ",
+	name: "発掘スレ",
 	desc: "この階の　道具の　ある所が　わかる",
 });
 add({
 	id: "s_hold",
 	cat: "scroll",
-	name: "金縛りスレ",
+	name: "凍結スレ",
 	desc: "まわりの　敵が　動けなくなる",
 });
 add({
@@ -321,20 +323,20 @@ add({
 add({
 	id: "s_ward",
 	cat: "scroll",
-	name: "結界スレ",
-	desc: "読むと　足元が　結界になる。その上では　となりから　なぐられない",
+	name: "避難所スレ",
+	desc: "読むと　足元が　避難所になる。その上では　となりから　なぐられない",
 });
 add({
 	id: "s_recharge",
 	cat: "scroll",
-	name: "充填スレ",
+	name: "次スレ",
 	desc: "杖を　1本　えらんで　回数を　ふやす",
 });
 add({
 	id: "s_bread",
 	cat: "scroll",
 	name: "飯テロスレ",
-	desc: "道具を　1つ　えらんで　大きなパンに　変える",
+	desc: "道具を　1つ　えらんで　特大おにぎりに　変える",
 });
 add({
 	id: "s_snare",
@@ -353,49 +355,49 @@ add({
 add({
 	id: "w_bolt",
 	cat: "staff",
-	name: "雷の杖",
+	name: "フルボッコの杖",
 	charges: [4, 6],
 	desc: "敵に　20　前後の　ダメージ（かならず　当たる）",
 });
 add({
 	id: "w_reel",
 	cat: "staff",
-	name: "混乱の杖",
+	name: "カオスの杖",
 	charges: [4, 6],
 	desc: "敵を　混乱させる",
 });
 add({
 	id: "w_sleep",
 	cat: "staff",
-	name: "眠りの杖",
+	name: "寝落ちの杖",
 	charges: [3, 6],
 	desc: "敵を　眠らせる",
 });
 add({
 	id: "w_seal",
 	cat: "staff",
-	name: "封印の杖",
+	name: "規制の杖",
 	charges: [5, 8],
 	desc: "敵の　とくぎを　封じる",
 });
 add({
 	id: "w_change",
 	cat: "staff",
-	name: "変化の杖",
+	name: "改変の杖",
 	charges: [3, 6],
 	desc: "敵を　ほかの　敵に　変える",
 });
 add({
 	id: "w_send",
 	cat: "staff",
-	name: "転送の杖",
+	name: "隔離の杖",
 	charges: [3, 5],
 	desc: "敵を　この階の　どこかへ　飛ばす",
 });
 add({
 	id: "w_slow",
 	cat: "staff",
-	name: "鈍足の杖",
+	name: "ラグの杖",
 	charges: [3, 5],
 	desc: "敵を　鈍足にする",
 });
@@ -409,14 +411,14 @@ add({
 add({
 	id: "w_split",
 	cat: "staff",
-	name: "分裂の杖",
+	name: "重複の杖",
 	charges: [3, 5],
 	desc: "敵が　2匹に　ふえる",
 });
 add({
 	id: "w_haste",
 	cat: "staff",
-	name: "加速の杖",
+	name: "kskの杖",
 	charges: [3, 6],
 	desc: "敵が　倍速になる",
 });
@@ -425,30 +427,35 @@ add({
 add({
 	id: "a_wood",
 	cat: "arrow",
-	name: "木の矢",
+	name: "煽りの矢",
 	atk: 4,
-	desc: "投げると　1本ずつ　飛ぶ。外れた矢は　ひろえる",
+	desc: "軽い　ひとこと。撃つと　1本ずつ　飛ぶ。外れた矢は　ひろえる",
 });
 add({
 	id: "a_iron",
 	cat: "arrow",
-	name: "鉄の矢",
+	name: "正論の矢",
 	atk: 12,
-	desc: "投げると　1本ずつ　飛ぶ。外れた矢は　ひろえる",
+	desc: "ぐうの音も　出ない　一撃。撃つと　1本ずつ　飛ぶ。外れた矢は　ひろえる",
 });
 
 // ───────── 食べもの ─────────
-add({ id: "f_bread", cat: "food", name: "パン", desc: "満腹度が　50　回復" });
+add({
+	id: "f_bread",
+	cat: "food",
+	name: "おにぎり",
+	desc: "満腹度が　50　回復",
+});
 add({
 	id: "f_large",
 	cat: "food",
-	name: "大きなパン",
+	name: "特大おにぎり",
 	desc: "満腹度が　100　回復",
 });
 add({
 	id: "f_moldy",
 	cat: "food",
-	name: "くさったパン",
+	name: "カビおにぎり",
 	desc: "満腹度が　100　回復。ちからが　1　下がり、HPも　へる",
 });
 
@@ -566,12 +573,12 @@ export const MAIN_DECK: readonly DeckEntry[] = [
 /** カテゴリの表示名（山札・図鑑の見出し）。 */
 export const CAT_NAME: Record<ItemCat, string> = {
 	weapon: "武器",
-	shield: "盾",
-	ring: "指輪",
+	shield: "板",
+	ring: "トリップ",
 	herb: "草",
 	scroll: "スレ",
 	staff: "杖",
 	arrow: "矢",
-	food: "食べもの",
+	food: "メシ",
 	goal: "目的の品",
 };

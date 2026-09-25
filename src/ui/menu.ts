@@ -141,7 +141,7 @@ const statsHtml = (run: Run): string => {
 		cell("満腹度", `${Math.ceil(p.hunger / HUNGER_UNIT)}%`),
 		cell("武器の強さ", power(run.weapon(), "atk")),
 		cell("ちから", `${p.str}/${p.maxStr}`),
-		cell("盾の強さ", power(run.shield(), "def")),
+		cell("板の強さ", power(run.shield(), "def")),
 		cell("経験値", `${p.exp}`),
 	].join("")}</div>`;
 };
@@ -262,7 +262,7 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 		: run.onStairs()
 			? "階段の　上には　置けない"
 			: onWard
-				? "結界の　上には　置けない"
+				? "避難所の　上には　置けない"
 				: "";
 	rows.push({
 		label: "置く",
@@ -427,7 +427,7 @@ export const pickItem = async (
 /** 罠の一言（足元の罠を選んだとき）。 */
 const TRAP_DESC: Record<TrapKind, string> = {
 	bear: "足を　はさまれて　しばらく　動けない",
-	acid: "盾が　錆びて　弱くなる",
+	acid: "板が　錆びて　弱くなる",
 	sleep: "眠ってしまう",
 	trip: "転んで　持ち物を　1つ　落とす",
 	mine: "爆発して　HPが　半分になる。まわりの　道具も　燃える",

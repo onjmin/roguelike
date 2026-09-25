@@ -37,16 +37,16 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 		case "acid": {
 			const sh = r.shield();
 			if (!sh) {
-				r.msg("しかし　盾を　持っていなかった");
+				r.msg("しかし　板を　持っていなかった");
 				return;
 			}
 			if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
-				r.msg("しかし　盾は　錆びなかった");
+				r.msg("しかし　板は　錆びなかった");
 				return;
 			}
 			sh.plus--;
 			sh.known = true;
-			r.msg(`盾が　錆びてしまった！（${r.name(sh)}）`, "warn");
+			r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
 			return;
 		}
 		case "sleep":

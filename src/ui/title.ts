@@ -94,8 +94,8 @@ const cameos = (cleared: readonly DungeonId[]): string[] => {
 /** ダンジョンの ひとことの説明（選ぶ窓）。 */
 const DUNGEON_DESC: Record<DungeonId, string> = {
 	shallow: "10階。杖だけ　名前が　わからない。のろいも　祭りも　ない",
-	main: "20階。草・スレ・指輪・杖の　名前が　わからない",
-	deep: "30階。大きなパンと　不食の指輪が　出ない。罠が　多い",
+	main: "20階。草・スレ・トリップ・杖の　名前が　わからない",
+	deep: "30階。特大おにぎりと　◆腹いっぱいが　出ない。罠が　多い",
 };
 
 /** まだ開いていないダンジョンの 開き方。 */

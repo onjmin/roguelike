@@ -138,7 +138,7 @@ const M: MonsterDef[] = [
 		weight: 28,
 		abilities: [{ k: "revive" }],
 		tags: ["undead"],
-		desc: "たおしても　一度だけ　起き上がる。薬草を　投げつけて　たおせば　起きない",
+		desc: "たおしても　一度だけ　起き上がる。笑い草を　投げつけて　たおせば　起きない",
 	},
 	// ───────── 中ほどの階 ─────────
 	{
@@ -219,7 +219,7 @@ const M: MonsterDef[] = [
 		weight: 28,
 		abilities: [{ k: "rust", rate: 1 / 2 }],
 		tags: ["undead"],
-		desc: "ふれた　盾を　錆びさせる",
+		desc: "ふれた　板を　錆びさせる",
 	},
 	{
 		id: "metal",
@@ -235,7 +235,7 @@ const M: MonsterDef[] = [
 		tags: ["metal"],
 		sleep: "never",
 		drop: "h_growth",
-		desc: "ダメージは　1しか　通らない。すぐ　逃げる。たおすと　成長の実を　落とす",
+		desc: "ダメージは　1しか　通らない。すぐ　逃げる。たおすと　忍法帖の実を　落とす",
 	},
 	{
 		id: "yuki",
