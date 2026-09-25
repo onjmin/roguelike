@@ -5,9 +5,8 @@
 // 話すのは 外で待っている仲間だけ（キリコはしゃべらない。ナレーションで動作だけ描く）。
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
 
+import type { DungeonId } from "../core/types";
 import { ENDING, INTRO, type Speaker } from "./quotes";
-
-export type DungeonId = "shallow" | "main" | "deep";
 
 /** 仲間の ひとこと（タイトルや 開いたときの ひとこと）。 */
 export type Line = { who: Speaker; text: string };

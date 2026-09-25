@@ -5,6 +5,7 @@
 // 階は 層（ZONES）に分かれていて、層ごとに 見た目・曲・ただよう粒 が変わる。
 
 import type { DungeonId } from "../core/types";
+import { type ThemeName, ZONE_NAMES, type ZoneSpec } from "../data/story";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
 const cut = (c: number, r: number, w = 1, h = 1): string =>
@@ -119,31 +120,29 @@ export type Zone = {
 	ambient: Ambient;
 };
 
-/** 層の並び（ダンジョンごと。last の昇順で、最後の層は いちばん底の階で終わる）。 */
+const THEMES: Record<ThemeName, Theme> = {
+	earth: EARTH,
+	moss: MOSS,
+	crystal: CRYSTAL,
+	cyber: CYBER,
+	lava: LAVA,
+	gold: GOLD,
+};
+
+/** 物語の側（data/story.ts）の層の名前・見た目の名前 → 層。 */
+const fromSpec = (list: readonly ZoneSpec[]): Zone[] =>
+	list.map((z) => ({
+		...z,
+		theme: THEMES[z.theme],
+		ambient: z.ambient as Ambient,
+	}));
+
+/**
+ * 層の並び（ダンジョンごと。last の昇順で、最後の層は いちばん底の階で終わる）。
+ * 本編は ここ、ちょっと・もっと の名前と見た目は data/story.ts。
+ */
 export const ZONES: Record<DungeonId, readonly Zone[]> = {
-	shallow: [
-		{
-			last: 4,
-			name: "ちょっと浅瀬",
-			theme: EARTH,
-			bgm: "dungeon",
-			ambient: "dust",
-		},
-		{
-			last: 7,
-			name: "ちょっと苔むした所",
-			theme: MOSS,
-			bgm: "field",
-			ambient: "spores",
-		},
-		{
-			last: 10,
-			name: "ちょっと底",
-			theme: CRYSTAL,
-			bgm: "field2",
-			ambient: "snow",
-		},
-	],
+	shallow: fromSpec(ZONE_NAMES.shallow),
 	main: [
 		{
 			last: 4,
@@ -176,50 +175,7 @@ export const ZONES: Record<DungeonId, readonly Zone[]> = {
 			ambient: "glitter",
 		},
 	],
-	deep: [
-		{
-			last: 5,
-			name: "もっと浅瀬",
-			theme: EARTH,
-			bgm: "dungeon",
-			ambient: "dust",
-		},
-		{
-			last: 10,
-			name: "もっと苔むした所",
-			theme: MOSS,
-			bgm: "field",
-			ambient: "spores",
-		},
-		{
-			last: 15,
-			name: "もっと凍った所",
-			theme: CRYSTAL,
-			bgm: "field2",
-			ambient: "snow",
-		},
-		{
-			last: 21,
-			name: "もっと鯖の奥",
-			theme: CYBER,
-			bgm: "tense",
-			ambient: "data",
-		},
-		{
-			last: 29,
-			name: "もっと燃える所",
-			theme: LAVA,
-			bgm: "boss",
-			ambient: "embers",
-		},
-		{
-			last: 30,
-			name: "もっと底",
-			theme: GOLD,
-			bgm: "lastboss",
-			ambient: "glitter",
-		},
-	],
+	deep: fromSpec(ZONE_NAMES.deep),
 };
 
 export const zoneFor = (dungeon: DungeonId, depth: number): Zone => {

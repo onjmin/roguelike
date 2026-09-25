@@ -450,13 +450,13 @@ add({
 	id: "needle",
 	cat: "goal",
 	name: "蓄音機の針",
-	desc: "いちばん底に　落ちていた　針。持ち帰ろう",
+	desc: "ちょっと下に　落ちていた　針。持ち帰ろう",
 });
 add({
-	id: "bside",
+	id: "tsuzuki",
 	cat: "goal",
-	name: "原盤のB面",
-	desc: "もっと底に　あった　もう一枚。持ち帰ろう",
+	name: "つづきの原盤",
+	desc: "底の　さらに　下の　レコード。まだ、なにも　入っていない",
 });
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(

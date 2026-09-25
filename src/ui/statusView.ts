@@ -3,6 +3,7 @@
 // 攻撃は「素の攻撃力」（レベルと 武器の強さ＋ちから で決まる。ダメージはここから乱数と相手の守りで減る）。
 
 import { attackPower, EXP_AT, HUNGER_UNIT, MAX_LV } from "../core/balance";
+import { defOf } from "../core/item";
 import type { Run } from "../core/run";
 import type { Item } from "../core/types";
 import type { Ctx } from "./ctx";
@@ -56,7 +57,9 @@ const statusHtml = (run: Run): string => {
 	if (floor.length)
 		out.push(`<p class="hint">この階では　${floor.join("・")}が　わかる</p>`);
 	if (s.returning)
-		out.push('<p class="hint">原盤を　持って　地上へ　もどろう</p>');
+		out.push(
+			`<p class="hint">${esc(defOf(run.dungeon.goal).name)}を　持って　地上へ　もどろう</p>`,
+		);
 	return out.join("");
 };
 

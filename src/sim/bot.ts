@@ -386,6 +386,8 @@ const decide = (r: Run, opts: BotOpts): Command => {
 				(fi) =>
 					seen.has(fi.item.uid) &&
 					!(fi.x === p.x && fi.y === p.y) &&
+					// 捨てた（捨てる）はずの 正体のわかった悪い草は 拾いにいかない（拾う・捨てるを くり返さない）
+					!(BAD_HERBS.has(fi.item.kind) && known(fi.item)) &&
 					(!bottomNow || fi.item.kind === r.dungeon.goal),
 			)
 			.sort((a, b) => dist(a, p) - dist(b, p))[0];

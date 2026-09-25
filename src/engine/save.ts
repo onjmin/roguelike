@@ -5,6 +5,7 @@
 //   （50回より古い記録が押し出されても、通算は減らない）。
 // - プライベートモード等で保存できなくても遊べるように、読み書きはすべて try/catch。
 
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
 import { migrateRun } from "../core/run";
@@ -17,6 +18,7 @@ const RECORDS_KEY = `${PREFIX}records`;
 const STATS_KEY = `${PREFIX}stats`;
 const BOOK_KEY = `${PREFIX}book`;
 const REPLAYS_KEY = `${PREFIX}replays`;
+const PROGRESS_KEY = `${PREFIX}progress`;
 const RECORDS_MAX = 50;
 /** リプレイを残す数（新しい順。1つ数十KB）。 */
 export const REPLAYS_KEEP = 20;
@@ -56,6 +58,7 @@ export const saveRun = (s: RunState): void => {
 		addRecord(recordFromRun(s));
 		addReplay(s);
 		addBookKills(s.kills);
+		noteRunEnd(s.dungeon, s.end.kind);
 		return;
 	}
 	const text = serializeRun(s);
@@ -255,6 +258,134 @@ export const addRecord = (r: RunRecord): void => {
 	} catch {
 		// 保存できなくても遊べる
 	}
+};
+
+// ───────────────────────── どこまで開いたか ─────────────────────────
+// トルネコ1と同じく、ちょっと → 本編 → もっと の順に開く（持ちこせるのは 知識と これだけ。強さは持ちこさない）。
+
+export type ProgressNews = { dungeon: DungeonId; reason: "clear" | "relief" };
+
+export type Progress = {
+	/** もぐれるダンジョン。 */
+	unlocked: DungeonId[];
+	/** 持ち帰ったことのあるダンジョン。 */
+	cleared: DungeonId[];
+	/** 倒れた（やめた）回数（ダンジョンごと。救いの条件に使う）。 */
+	fails: Partial<Record<DungeonId, number>>;
+	/** はじめの語り（intro）を見たダンジョン。 */
+	intro: DungeonId[];
+	/** 前に選んだダンジョン。 */
+	last?: DungeonId;
+	/** まだ知らせていない「開いた」（記録の札のあとに ひとこと）。 */
+	news: ProgressNews[];
+};
+
+const isDungeon = (x: unknown): x is DungeonId =>
+	typeof x === "string" && DUNGEON_IDS.includes(x as DungeonId);
+
+/** どこまで開いたか。まだ無ければ、これまでの記録から決める（ダンジョンが1つだったころに遊んだ人は 本編も開いている）。 */
+export const loadProgress = (): Progress => {
+	try {
+		const raw = localStorage.getItem(PROGRESS_KEY);
+		if (raw) {
+			const o = JSON.parse(raw) as Partial<Progress>;
+			const list = (a: unknown) =>
+				Array.isArray(a) ? a.filter(isDungeon) : [];
+			const unlocked = list(o.unlocked);
+			if (!unlocked.includes("shallow")) unlocked.unshift("shallow");
+			return {
+				unlocked,
+				cleared: list(o.cleared),
+				fails: o.fails && typeof o.fails === "object" ? o.fails : {},
+				intro: list(o.intro),
+				last: isDungeon(o.last) ? o.last : undefined,
+				news: Array.isArray(o.news)
+					? o.news.filter(
+							(n) =>
+								isDungeon(n?.dungeon) &&
+								(n.reason === "clear" || n.reason === "relief"),
+						)
+					: [],
+			};
+		}
+	} catch {
+		// 読めなければ 記録から決めなおす
+	}
+	// ここで決めた形を すぐ保存する（はじめて遊ぶ人の 最初の冒険の記録を「前の版で遊んだ」と取りちがえないように。
+	// タイトルを開いたときに 必ず一度ここを通る）
+	const st = runStats();
+	const legacy = st.runs > 0 || hasRunSave();
+	const mainCleared = st.clears > 0;
+	const fresh: Progress = {
+		unlocked: legacy
+			? mainCleared
+				? ["shallow", "main", "deep"]
+				: ["shallow", "main"]
+			: ["shallow"],
+		cleared: mainCleared ? ["main"] : [],
+		fails: {},
+		// 前の版の前口上は 本編のもの。ちょっと の語りは まだ見ていない
+		intro: legacy ? ["main"] : [],
+		last: legacy ? "main" : undefined,
+		news: [],
+	};
+	saveProgress(fresh);
+	return fresh;
+};
+
+export const saveProgress = (p: Progress): void => {
+	try {
+		localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+	} catch {
+		// 保存できなくても遊べる（次に開いたとき 記録から決めなおす）
+	}
+};
+
+/** 冒険が終わった（持ち帰った・倒れた・やめた）。次のダンジョンが開いたら 知らせを残す。 */
+export const noteRunEnd = (
+	dungeon: DungeonId,
+	kind: "dead" | "clear",
+	seed?: string,
+): void => {
+	if (seed?.startsWith(DEBUG_SEED)) return;
+	const p = loadProgress();
+	const unlock = (id: DungeonId, reason: ProgressNews["reason"]) => {
+		if (p.unlocked.includes(id)) return;
+		p.unlocked.push(id);
+		p.news.push({ dungeon: id, reason });
+	};
+	if (kind === "clear") {
+		if (!p.cleared.includes(dungeon)) p.cleared.push(dungeon);
+		for (const d of DUNGEON_IDS)
+			if (DUNGEONS[d].unlockAfter === dungeon) unlock(d, "clear");
+	} else {
+		const n = (p.fails[dungeon] ?? 0) + 1;
+		p.fails[dungeon] = n;
+		for (const d of DUNGEON_IDS) {
+			const dg = DUNGEONS[d];
+			if (dg.unlockAfter === dungeon && dg.reliefAfter && n >= dg.reliefAfter)
+				unlock(d, "relief");
+		}
+	}
+	saveProgress(p);
+};
+
+/** 知らせを受けとる（受けとったら消す）。 */
+export const takeProgressNews = (): ProgressNews[] => {
+	const p = loadProgress();
+	if (!p.news.length) return [];
+	const news = p.news;
+	p.news = [];
+	saveProgress(p);
+	return news;
+};
+
+/** ダンジョンを選んだ（次は そこから カーソルを置く）。語りを見たなら それも覚える。 */
+export const notePicked = (dungeon: DungeonId, sawIntro: boolean): void => {
+	const p = loadProgress();
+	p.last = dungeon;
+	if (sawIntro && !p.intro.includes(dungeon)) p.intro.push(dungeon);
+	saveProgress(p);
 };
 
 // ───────────────────────── リプレイ ─────────────────────────

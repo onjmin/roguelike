@@ -3,16 +3,35 @@
 // - もぐる（新しく）／つづきから（中断セーブ）／冒険の記録／あそびかた／せってい。
 // - 窓（記録・あそびかた・せってい）を開いている間は、タイトルの背景のタップで窓を閉じる
 //   （ゲーム中と同じく「窓の外をタップ＝とじる」。input.bindField が一番上の窓の tap キーを押す）。
-// - はじめて もぐるときだけ、前口上（INTRO）を1ページずつ見せてから始める。
+// - ダンジョンは ちょっと → 本編 → もっと の順に開く（トルネコ1と同じ）。2つ以上開いていれば もぐるときに選ぶ。
+// - そのダンジョンに はじめて もぐるときだけ、語り（intro）を1ページずつ見せてから始める。
+// - 持ち帰るたびに、キリコのうしろを歩く仲間が ふえる（トルネコの店が 大きくなるのに あたる。見た目だけ）。
 
-import type { RunState } from "../core/types";
-import { INTRO, pickQuote, type QuoteContext, SPEAKERS } from "../data/quotes";
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import type { DungeonId, RunState } from "../core/types";
+import {
+	pickQuote,
+	type Quote,
+	type QuoteContext,
+	SPEAKERS,
+} from "../data/quotes";
+import {
+	CLEAR,
+	DUNGEON_NAMES,
+	FIRST_SHALLOW,
+	SHALLOW_DEATH,
+	STORY,
+	TITLE_CAMEOS,
+} from "../data/story";
 import {
 	addRecord,
 	clearRun,
 	hasRunSave,
+	loadProgress,
 	loadRecords,
 	loadRun,
+	notePicked,
+	noteRunEnd,
 	recordFromRun,
 	runStats,
 	type SavedReplay,
@@ -28,13 +47,43 @@ import { esc, escBr, openRecords, showStory } from "./records";
 import { openSettings } from "./settings";
 
 export type TitleChoice =
-	| { kind: "new" }
+	| { kind: "new"; dungeon: DungeonId }
 	| { kind: "continue"; state: RunState }
 	| { kind: "replay"; replay: SavedReplay };
 
 const KIRIKO = "pub:sprites/kiriko.png";
 /** とうすこ（1階の敵）。キリコのうしろを ついて歩く。 */
 const TOUSUKO = "sa:2kJYAl";
+/** 仲間の歩行グラ（rpg の cast.ts と同じ）。 */
+const FRIEND_WALK: Record<string, string> = {
+	nanj: "sa:29aYeF",
+	roze: "sa:mHhx69",
+	feris: "sa:4KtOzD",
+	teto: "sa:3xUW5Y",
+	rei: "sa:TI21YC",
+};
+
+/** 持ち帰ったダンジョンに応じて、タイトルで キリコのうしろを歩く仲間。 */
+const cameos = (cleared: readonly DungeonId[]): string[] =>
+	TITLE_CAMEOS.filter((c) => cleared.includes(c.after))
+		.flatMap((c) => c.who)
+		.map((w) => FRIEND_WALK[w])
+		.filter(Boolean);
+
+/** ダンジョンの ひとことの説明（選ぶ窓）。 */
+const DUNGEON_DESC: Record<DungeonId, string> = {
+	shallow: "10階。杖だけ　名前が　わからない。のろいも　祭りも　ない",
+	main: "20階。草・スレ・指輪・杖の　名前が　わからない",
+	deep: "30階。大きなパンと　不食の指輪が　出ない。罠が　多い",
+};
+
+/** まだ開いていないダンジョンの 開き方。 */
+const lockedHint = (d: DungeonId): string => {
+	const after = DUNGEONS[d].unlockAfter;
+	if (!after) return "";
+	const relief = DUNGEONS[d].reliefAfter;
+	return `「${DUNGEON_NAMES[after].name}」を　持ち帰ると　開く${relief ? `（${relief}回　たおれても　開く）` : ""}`;
+};
 
 type Choice = "new" | "continue" | "records" | "book" | "howto" | "settings";
 
@@ -48,6 +97,22 @@ const GRID: Choice[][] = [
 	["records", "book"],
 	["howto", "settings"],
 ];
+
+/**
+ * タイトルの ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
+ * 無ければ 本編の たまり（data/quotes.ts の pickQuote）。
+ */
+const titleQuote = (seed: number): Quote | null => {
+	const last = loadRecords()[0];
+	const pick = (pool: readonly Quote[], salt: number) =>
+		pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
+	if (!last) return pick(FIRST_SHALLOW, 1);
+	const d = last.dungeon ?? "main";
+	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
+	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
+		return pick(SHALLOW_DEATH, 3);
+	return pickQuote(quoteContext(), seed);
+};
 
 /** いちばん新しい記録から、タイトルの一言の手がかりを作る。 */
 const quoteContext = (): QuoteContext => {
@@ -68,10 +133,15 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 	new Promise((resolve) => {
 		ctx.audio.bgm("title");
 
+		const progress = loadProgress();
+		const friends = cameos(progress.cleared);
 		const walkers = el("canvas", { class: "title-walkers" });
-		walkers.width = 60;
+		// キリコ・仲間・とうすこ を 18 ずつ（仲間がいなければ 前と同じ 60）
+		walkers.width = 60 + friends.length * 18;
 		walkers.height = 20;
-		const quote = pickQuote(quoteContext(), Date.now() % 1e9);
+		walkers.style.width = `min(${walkers.width * 4}px, calc(var(--app-w) * 0.9))`;
+		walkers.style.aspectRatio = `${walkers.width} / 20`;
+		const quote = titleQuote(Date.now() % 1e9);
 		const quoteEl = el("div", { class: "title-quote" });
 		if (quote) {
 			const sp = SPEAKERS[quote.who];
@@ -103,9 +173,25 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			g.imageSmoothingEnabled = false;
 			g.clearRect(0, 0, walkers.width, walkers.height);
 			drawWalk(g, KIRIKO, "down", stepFrame(t, true), 13, 2);
+			for (const [i, f] of friends.entries())
+				drawWalk(
+					g,
+					f,
+					"down",
+					stepFrame(t + 70 * (i + 1), true),
+					31 + i * 18,
+					2,
+				);
 			// とうすこは少し遅れて足踏みし、ときどき跳ねる
 			const hop = Math.floor(t / 900) % 3 === 0 ? -1 : 0;
-			drawWalk(g, TOUSUKO, "down", stepFrame(t + 130, true), 31, 2 + hop);
+			drawWalk(
+				g,
+				TOUSUKO,
+				"down",
+				stepFrame(t + 130, true),
+				31 + friends.length * 18,
+				2 + hop,
+			);
 			raf = requestAnimationFrame(anim);
 		};
 		raf = requestAnimationFrame(anim);
@@ -118,7 +204,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				text: "つづきから",
 				sub: () =>
 					saved
-						? `B${saved.depth}　Lv${saved.player.lv}${saved.returning ? "　帰り道" : ""}`
+						? `${DUNGEON_NAMES[saved.dungeon]?.short ?? ""}　B${saved.depth}　Lv${saved.player.lv}${saved.returning ? "　帰り道" : ""}`
 						: hasRunSave()
 							? "中断した　冒険"
 							: "中断した　冒険は　ない",
@@ -195,7 +281,10 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			{ tap: null },
 		);
 
-		const leave = async (choice: TitleChoice, intro: boolean) => {
+		const leave = async (
+			choice: TitleChoice,
+			intro: readonly string[] | null,
+		) => {
 			leaving = true;
 			pop();
 			cancelAnimationFrame(raf);
@@ -203,7 +292,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			if (intro) {
 				await sleep(500);
 				root.remove();
-				await showStory(ctx, INTRO.map(escBr));
+				await showStory(ctx, intro.map(escBr));
 			}
 			void ctx.audio.fadeBgm(500);
 			await sleep(500);
@@ -221,7 +310,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			if (c === "records") {
 				const replay = await openRecords(ctx);
 				if (replay) {
-					void leave({ kind: "replay", replay }, false);
+					void leave({ kind: "replay", replay }, null);
 					return;
 				}
 			} else if (c === "book") await openBook(ctx);
@@ -231,7 +320,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				// いつも読み直す（タイトルを開いたままの別タブの古い写しから 始めないように）
 				const state = loadRun();
 				if (state) {
-					void leave({ kind: "continue", state }, false);
+					void leave({ kind: "continue", state }, null);
 					return;
 				}
 				clearRun();
@@ -240,8 +329,6 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				render();
 				await infoWindow(ctx, "", "<p>続きの　記録が　こわれていました。</p>");
 			} else if (c === "new") {
-				// はじめての冒険（記録も中断セーブも無い）なら前口上を見せる
-				const first = runStats().runs === 0 && !hasRunSave();
 				if (hasRunSave()) {
 					const v = await listWindow(
 						ctx,
@@ -255,18 +342,56 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 					if (v === "yes") {
 						// すてた冒険も記録に残す（やめた、として）
 						const old = loadRun();
-						if (old) addRecord(recordFromRun(old));
+						if (old) {
+							addRecord(recordFromRun(old));
+							noteRunEnd(old.dungeon, "dead", old.seed);
+						}
 						clearRun();
 						saved = null;
 					}
 				}
 				if (!hasRunSave()) {
-					void leave({ kind: "new" }, first);
-					return;
+					const dungeon = await pickDungeon();
+					if (dungeon) {
+						// そのダンジョンに はじめて もぐるなら 語りを見せる
+						const p = loadProgress();
+						const first = !p.intro.includes(dungeon);
+						notePicked(dungeon, true);
+						void leave(
+							{ kind: "new", dungeon },
+							first ? STORY[dungeon].intro : null,
+						);
+						return;
+					}
 				}
 			}
 			busy = false;
 			render();
+		};
+
+		/** もぐるダンジョンを選ぶ（1つしか開いていなければ そこ）。やめたら null。 */
+		const pickDungeon = async (): Promise<DungeonId | null> => {
+			const p = loadProgress();
+			if (p.unlocked.length <= 1) return p.unlocked[0] ?? "shallow";
+			const rows = DUNGEON_IDS.map((d) =>
+				p.unlocked.includes(d)
+					? {
+							label: DUNGEON_NAMES[d].name,
+							sub: `B${DUNGEONS[d].floors}${p.cleared.includes(d) ? "　★" : ""}`,
+							desc: DUNGEON_DESC[d],
+							value: d,
+						}
+					: {
+							label: "？？？",
+							sub: "",
+							desc: lockedHint(d),
+							value: d,
+							disabled: true,
+						},
+			);
+			const start = Math.max(0, DUNGEON_IDS.indexOf(p.last ?? "shallow"));
+			const v = await listWindow(ctx, "どこへ　もぐる？", rows, { start });
+			return v as DungeonId | null;
 		};
 
 		render();

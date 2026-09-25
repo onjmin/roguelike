@@ -131,7 +131,9 @@ const loop = async () => {
 				run = Run.create(replay.seed, replay.dungeon ?? "main");
 			} else
 				run =
-					choice.kind === "new" ? Run.create(newSeed()) : new Run(choice.state);
+					choice.kind === "new"
+						? Run.create(newSeed(), choice.dungeon)
+						: new Run(choice.state);
 		}
 		hud.root.classList.remove("hidden");
 		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;

@@ -987,7 +987,7 @@ export class Play {
 			? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
 			: end
 				? end.kind === "clear"
-					? `原盤を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
+					? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
 					: `${this.run.s.returning ? "帰り道の　" : ""}B${end.depth}で　${esc(end.cause)}`
 				: `記録は　ここまで<br><small>（B${r.depth}で　${esc(r.cause)}）</small>`;
 		const card = el("div", { class: "replay-end" }, [

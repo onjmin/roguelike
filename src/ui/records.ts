@@ -2,9 +2,10 @@
 // 1ページずつタップで送る語りの札（showStory。はじめての前口上・持ち帰ったあと）もここに置く。
 
 import { dungeonById } from "../core/data/dungeons";
-import { itemName } from "../core/item";
+import { defOf, itemName } from "../core/item";
 import type { RunState } from "../core/types";
-import { ENDING, SPEAKERS } from "../data/quotes";
+import { SPEAKERS } from "../data/quotes";
+import { DUNGEON_NAMES, STORY, UNLOCK_LINES } from "../data/story";
 import {
 	addRecord,
 	clearRun,
@@ -16,6 +17,7 @@ import {
 	replayMatches,
 	runStats,
 	type SavedReplay,
+	takeProgressNews,
 } from "../engine/save";
 import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
@@ -141,11 +143,16 @@ const storyLine = (who: keyof typeof SPEAKERS | null, text: string): string => {
 
 /** 終わり方の1行（倒れた階と理由・持ち帰ったなら いちばん深い階）。 */
 const endLine = (
-	r: Pick<RunRecord, "kind" | "depth" | "maxDepth" | "cause" | "returning">,
+	r: Pick<
+		RunRecord,
+		"kind" | "depth" | "maxDepth" | "cause" | "returning" | "dungeon"
+	>,
 ): string =>
-	r.kind === "clear"
-		? `B${r.maxDepth}から　地上へ　もどった`
-		: `${r.returning ? "帰り道の　" : ""}B${r.depth}で　${r.cause}`;
+	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
+		r.kind === "clear"
+			? `B${r.maxDepth}から　地上へ　もどった`
+			: `${r.returning ? "帰り道の　" : ""}B${r.depth}で　${r.cause}`
+	}`;
 
 const pad2 = (n: number): string => String(n).padStart(2, "0");
 
@@ -197,7 +204,9 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-head", text: "冒険の記録" }),
 		el("div", {
 			class: "runend-headline",
-			text: clear ? "原盤を　持ち帰った" : "たおれた",
+			text: clear
+				? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
+				: "たおれた",
 		}),
 		el("p", { class: "matome-line runend-cause", text: endLine(rec) }),
 		el("p", { class: "runend-nth", text: `${nth}回目の　冒険` }),
@@ -235,7 +244,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		// そのまま札が見える。語りのあとに札を出すと、そのすき間に下の画面がちらつく）
 		await showStory(
 			ctx,
-			ENDING.map((l) => storyLine(l.who, l.text)),
+			STORY[s.dungeon].ending.map((l) => storyLine(l.who, l.text)),
 			{ onCovered: () => box.classList.add("instant", "shown") },
 		);
 		box.classList.remove("instant");
@@ -248,6 +257,22 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	box.classList.remove("shown");
 	await sleep(600);
 	box.remove();
+	// 次のダンジョンが開いた（持ち帰った・何度も倒れた）
+	for (const n of takeProgressNews()) {
+		const lines =
+			UNLOCK_LINES[
+				n.reason === "relief"
+					? "relief"
+					: n.dungeon === "deep"
+						? "deep"
+						: "main"
+			];
+		await showStory(ctx, [
+			...lines.map((l) => storyLine(l.who, l.text)),
+			escBr(`「${DUNGEON_NAMES[n.dungeon].name}」に
+もぐれるように　なった`),
+		]);
+	}
 };
 
 /**
