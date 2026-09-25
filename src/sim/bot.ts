@@ -99,6 +99,18 @@ const itemScore = (it: Item): number => {
 
 /** ボットの次のコマンド。 */
 export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
+	const cmd = decide(r, opts);
+	// 見えている敵の方へ歩いても向くだけなので、道をふさぐ敵は なぐる
+	if (cmd.c === "move") {
+		const to = step(r.p, cmd.dir);
+		const m = r.monsterAt(to.x, to.y);
+		if (m && !m.disguise && r.monsterVisible(m) && r.cornerOk(r.p, cmd.dir))
+			return { c: "attack", dir: cmd.dir };
+	}
+	return cmd;
+};
+
+const decide = (r: Run, opts: BotOpts): Command => {
 	const p = r.p;
 	const f = r.f;
 	const items = p.items;

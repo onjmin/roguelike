@@ -38,13 +38,15 @@ const KIRIKO = "pub:sprites/kiriko.png";
 const SWING_MS = 180;
 
 type Disp = Figure & {
-	/** 動きの始まり・終わり（マス）と時刻。 */
-	sx: number;
-	sy: number;
+	/** 行き先（マス）。 */
 	tx: number;
 	ty: number;
-	t0: number;
-	dur: number;
+	/**
+	 * 動きの道のり：通るマスと、そこに着く時刻。この間を線でつなぐ。
+	 * 倍速の2歩は2つの点になる（角をすり抜けて見えないように）。
+	 * 押しっぱなしで歩くときは、次の1歩を後ろに足す（止まって見える絵をはさまない）。
+	 */
+	keys: { x: number; y: number; t: number }[];
 	lungeT0: number;
 	fadeT0: number;
 	dying: boolean;
@@ -190,12 +192,9 @@ export class Play {
 					sprite,
 					fx: x,
 					fy: y,
-					sx: x,
-					sy: y,
 					tx: x,
 					ty: y,
-					t0: 0,
-					dur: 0,
+					keys: [{ x, y, t: 0 }],
 					dir,
 					lunge: 0,
 					lungeT0: 0,
@@ -209,14 +208,11 @@ export class Play {
 			d.sprite = sprite;
 			d.dir = dir;
 			if (d.tx !== x || d.ty !== y) {
-				d.sx = x;
-				d.sy = y;
 				d.tx = x;
 				d.ty = y;
+				d.keys = [{ x, y, t: now }];
 				d.fx = x;
 				d.fy = y;
-				d.t0 = now;
-				d.dur = 0;
 			}
 		};
 		put(PLAYER_ID, KIRIKO, run.p.x, run.p.y, run.p.dir);
@@ -228,15 +224,12 @@ export class Play {
 	}
 
 	private update(t: number): void {
+		// 先に入力を見る（押しっぱなしの次の1歩を、この絵から動かしはじめる）
+		if (!this.busy) this.control(t);
 		for (const d of this.disp.values()) {
-			if (d.dur > 0) {
-				const k = Math.min(1, (t - d.t0) / d.dur);
-				d.fx = d.sx + (d.tx - d.sx) * k;
-				d.fy = d.sy + (d.ty - d.sy) * k;
-			} else {
-				d.fx = d.tx;
-				d.fy = d.ty;
-			}
+			const at = posAt(d.keys, t);
+			d.fx = at.x;
+			d.fy = at.y;
 			const lk = (t - d.lungeT0) / 150;
 			d.lunge = lk >= 0 && lk < 1 ? Math.sin(lk * Math.PI) : 0;
 			if (d.dying) {
@@ -244,7 +237,6 @@ export class Play {
 				if (d.fade >= 1) this.disp.delete(d.id);
 			}
 		}
-		if (!this.busy) this.control(t);
 		this.noteSeen();
 		this.updateCamera();
 		this.updateStatus();
@@ -423,7 +415,8 @@ export class Play {
 		// キーボードの斜め（2つ同時押し）を少しだけ待つ
 		if (input.heldFor() < 45 && (held !== null || input.pendingDirPress))
 			return;
-		const gap = settings.speed === "fast" ? 70 : 115;
+		// 押しっぱなしの歩きは 1歩の動き（playEvents の stepMs）が終わりしだい続ける。ここは連打の間隔だけ
+		const gap = settings.speed === "fast" ? 50 : 80;
 		if (t - this.lastStepAt < gap && (held !== null || input.pendingDirPress))
 			return;
 		// 押しっぱなしでなくても、短く押した向きには1歩進む
@@ -457,7 +450,7 @@ export class Play {
 				return;
 			}
 			if (mods.diag && !isDiagonal(want)) return;
-			// 敵がいる向きは そのまま（なぐる）。いなければ 近い歩ける向きへ
+			// 敵がいる向きは そのまま（向くだけ）。いなければ 近い歩ける向きへ
 			const ahead = step(this.run.p, want);
 			const m = this.run.monsterAt(ahead.x, ahead.y);
 			const dir =
@@ -557,8 +550,11 @@ export class Play {
 		const d = dirOf(x - p.x, y - p.y);
 		if (dist(p, { x, y }) === 1 && d !== null) {
 			const m = run.monsterAt(x, y);
-			if (m && (run.monsterVisible(m) || m.disguise)) {
-				void this.exec({ c: "attack", dir: d });
+			// となりの敵をタップ：まず そちらを向く。向いていれば なぐる
+			if (m && run.monsterVisible(m) && !m.disguise) {
+				void this.exec(
+					p.dir === d ? { c: "attack", dir: d } : { c: "turn", dir: d },
+				);
 				return;
 			}
 		}
@@ -727,34 +723,53 @@ export class Play {
 		let combat = false;
 		while (i < ev.length) {
 			const e = ev[i];
-			// 続けて動く出来事はまとめて同時に動かす
+			// 続けて動く出来事はまとめて同時に動かす（倍速の2歩も、同じ時間の中で 通るマスをたどる）
 			if (e.t === "move") {
 				const now = performance.now();
 				let j = i;
-				const movedIds = new Set<number>();
+				const paths = new Map<number, Pos[]>();
+				let shown = false;
 				while (j < ev.length && (ev[j].t === "move" || ev[j].t === "turn")) {
 					const m = ev[j];
-					// 同じキャラが2回動くとき（倍速）は、そこで区切る（角をすり抜けて見えないように）
-					if (m.t === "move" && movedIds.has(m.id)) break;
+					if (m.t !== "move" && m.t !== "turn") break;
+					const d = this.disp.get(m.id);
+					if (d) d.dir = m.dir;
 					if (m.t === "move") {
-						movedIds.add(m.id);
-						const d = this.disp.get(m.id);
-						if (d) {
-							d.sx = d.fx;
-							d.sy = d.fy;
-							d.tx = m.to.x;
-							d.ty = m.to.y;
-							d.t0 = now;
-							d.dur = stepMs;
-							d.dir = m.dir;
-						}
-					} else if (m.t === "turn") {
-						const d = this.disp.get(m.id);
-						if (d) d.dir = m.dir;
+						const path = paths.get(m.id) ?? [];
+						path.push(m.to);
+						paths.set(m.id, path);
+						if (this.moveShown(m.id)) shown = true;
 					}
 					j++;
 				}
-				await wait(stepMs);
+				let end = now;
+				for (const [id, path] of paths) {
+					const d = this.disp.get(id);
+					if (!d) continue;
+					// 前の1歩の終わりぎわに続けて動くなら、その道のりの後ろに足す。そうでなければ 今の所から
+					const last = d.keys[d.keys.length - 1];
+					const lag = now - last.t;
+					const t0 = d.keys.length > 1 && lag > -25 && lag < 50 ? last.t : now;
+					const keys =
+						t0 === now
+							? [{ x: d.fx, y: d.fy, t: now }]
+							: d.keys.filter(
+									(_, i, a) => i === a.length - 1 || a[i + 1].t > now - 50,
+								);
+					path.forEach((q, i) => {
+						keys.push({
+							x: q.x,
+							y: q.y,
+							t: t0 + (stepMs * (i + 1)) / path.length,
+						});
+					});
+					d.keys = keys;
+					d.tx = path[path.length - 1].x;
+					d.ty = path[path.length - 1].y;
+					if (this.moveShown(id)) end = Math.max(end, t0 + stepMs);
+				}
+				// 見えない所の動きは待たない。見える動きも 1コマぶん早めに次へ進める（次の1歩が 続きから動けるように）
+				if (shown) await wait(end - performance.now() - FRAME_MS);
 				i = j;
 				continue;
 			}
@@ -820,12 +835,9 @@ export class Play {
 							sprite: mdef(m).sprite,
 							fx: e.pos.x,
 							fy: e.pos.y,
-							sx: e.pos.x,
-							sy: e.pos.y,
 							tx: e.pos.x,
 							ty: e.pos.y,
-							t0: 0,
-							dur: 0,
+							keys: [{ x: e.pos.x, y: e.pos.y, t: 0 }],
 							dir: m.dir,
 							lunge: 0,
 							lungeT0: 0,
@@ -840,9 +852,9 @@ export class Play {
 				case "warp": {
 					const d = this.disp.get(e.id);
 					if (d) {
-						d.sx = d.tx = d.fx = e.to.x;
-						d.sy = d.ty = d.fy = e.to.y;
-						d.dur = 0;
+						d.tx = d.fx = e.to.x;
+						d.ty = d.fy = e.to.y;
+						d.keys = [{ x: e.to.x, y: e.to.y, t: 0 }];
 					}
 					await wait(80 * speed);
 					break;
@@ -876,6 +888,13 @@ export class Play {
 		}
 		// 戦いの音が鳴っていたら、その区切りまで次の行動を待つ（連打で音が重ならないように）
 		if (combat && !fast) await this.ctx.audio.seSettled();
+	}
+
+	/** その動きが画面に見えているか（見えない敵・視界の外は待たない）。 */
+	private moveShown(id: number): boolean {
+		if (id === PLAYER_ID) return true;
+		const m = this.run.f.monsters.find((x) => x.uid === id);
+		return !!m && !m.disguise && this.run.monsterVisible(m);
 	}
 
 	private isShown(id: number, pos: Pos): boolean {
@@ -1120,6 +1139,25 @@ export class Play {
 		return dirOf(x - run.p.x, y - run.p.y);
 	}
 }
+
+/** 道のり keys の、時刻 t の位置。 */
+const posAt = (keys: Disp["keys"], t: number): Pos => {
+	const a = keys[0];
+	if (keys.length === 1 || t <= a.t) return { x: a.x, y: a.y };
+	for (let i = 1; i < keys.length; i++) {
+		const b = keys[i];
+		if (t < b.t) {
+			const p0 = keys[i - 1];
+			const u = (t - p0.t) / (b.t - p0.t);
+			return { x: p0.x + (b.x - p0.x) * u, y: p0.y + (b.y - p0.y) * u };
+		}
+	}
+	const z = keys[keys.length - 1];
+	return { x: z.x, y: z.y };
+};
+
+/** 1コマ（60fps）の長さ。 */
+const FRAME_MS = 17;
 
 const wait = (ms: number): Promise<void> =>
 	new Promise((r) => setTimeout(r, Math.max(0, ms)));

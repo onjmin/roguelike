@@ -127,6 +127,8 @@ const loop = async () => {
 		hud.root.classList.remove("hidden");
 		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;
 		const play = new Play(run, ctx, screen, hud);
+		if (import.meta.env.DEV)
+			(window as unknown as { __play: Play }).__play = play;
 		await play.start();
 		// 画面を消してからタイトルへ
 		const c = screen.begin();

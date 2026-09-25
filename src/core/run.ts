@@ -945,21 +945,21 @@ export class Run {
 	private doMove(dir: Dir8, noPickup: boolean): boolean {
 		const p = this.p;
 		const st = p.status;
-		// つかまれていても・はさまれていても、となりの敵には ぶつかって なぐれる
-		if (st.heldBy !== null || st.trapped > 0) {
-			const d0 = this.confusedDir(dir);
-			const t0 = step(p, d0);
-			const target = this.monsterAt(t0.x, t0.y);
-			if (target && this.cornerOk(p, d0)) {
+		// 見えている敵の方へは、向くだけ（なぐるのは A。向いてから投げたり 杖を振ったりできるように）
+		{
+			const d0 = st.confuse > 0 ? null : dir;
+			const t0 = d0 === null ? null : step(p, d0);
+			const target = t0 ? this.monsterAt(t0.x, t0.y) : null;
+			if (
+				d0 !== null &&
+				target &&
+				!target.disguise &&
+				this.monsterVisible(target) &&
+				this.cornerOk(p, d0)
+			) {
 				p.dir = d0;
-				if (target.disguise) {
-					target.disguise = null;
-					wakeMonster(this, target, true);
-					this.msg(`${monsterName(this, target)}が　化けていた！`, "warn");
-					return true;
-				}
-				this.playerAttack(target);
-				return true;
+				this.emit({ t: "turn", id: PLAYER_ID, dir: d0 });
+				return false;
 			}
 		}
 		if (st.heldBy !== null) {
@@ -985,14 +985,20 @@ export class Run {
 		const to = step(p, d);
 		const m = this.monsterAt(to.x, to.y);
 		if (m && this.cornerOk(p, d)) {
+			this.emit({ t: "turn", id: PLAYER_ID, dir: d });
 			if (m.disguise) {
 				m.disguise = null;
 				wakeMonster(this, m, true);
 				this.msg(`${monsterName(this, m)}が　化けていた！`, "warn");
 				return true;
 			}
-			// 見えない敵や、動いた先の敵には ぶつかる（なぐる）
-			this.playerAttack(m);
+			// 混乱してよろけた先の敵は なぐってしまう
+			if (st.confuse > 0) {
+				this.playerAttack(m);
+				return true;
+			}
+			// 見えない敵には ぶつかって 進めない（時間は進む）
+			this.msg("なにかに　ぶつかった");
 			return true;
 		}
 		if (!this.canStepTerrain(p, d)) {
