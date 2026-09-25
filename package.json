@@ -14,6 +14,7 @@
 		"format": "biome check src --write",
 		"sim": "node scripts/sim.mjs",
 		"test": "node scripts/test-monsters.mjs",
+		"chase": "node scripts/chase.mjs",
 		"equip": "node scripts/make-equip.mjs",
 		"loudness": "node scripts/measure-loudness.mjs"
 	},

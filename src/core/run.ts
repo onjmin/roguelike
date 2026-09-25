@@ -51,7 +51,13 @@ import {
 	rollItem,
 } from "./item";
 import { isFloor, roomAt, T_WALL, tileAt } from "./mapgen";
-import { mdef, monsterAct, monsterName, wakeMonster } from "./monster";
+import {
+	mdef,
+	monsterAct,
+	monsterName,
+	noticeAdjacent,
+	wakeMonster,
+} from "./monster";
 import { Rng } from "./rng";
 import { triggerTrap } from "./traps";
 import {
@@ -396,7 +402,7 @@ export class Run {
 			}
 			this.emit({ t: "house" });
 			this.se("encounter");
-			this.msg("祭りだ！　モンスターが　あふれている！", "warn");
+			this.msg("祭りだ！　野次馬が　あふれている！", "warn");
 		}
 	}
 
@@ -834,6 +840,7 @@ export class Run {
 		}
 		s.time = p.nextAt;
 		if (s.end) return;
+		if (this.f === f) noticeAdjacent(this);
 		// 状態の時間切れ（敵の番のあと。目を覚ましたら、次はキリコが先に動ける）
 		this.tickStatus();
 		if (this.f !== f) return;

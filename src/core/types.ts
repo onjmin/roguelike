@@ -57,7 +57,7 @@ export type Item = {
 	known: boolean;
 	/** 矢の本数（矢以外は 1）。 */
 	count: number;
-	/** 錆びない（防錆の巻物）。 */
+	/** 錆びない（防錆スレ）。 */
 	rustproof?: boolean;
 };
 
@@ -155,6 +155,12 @@ export type Monster = {
 	goal: Pos | null;
 	/** 最後にプレイヤーを見た位置。 */
 	lastSeen: Pos | null;
+	/** 見失ったあと、向いている方へ通路をたどっている（あと何歩たどるか。0 なら たどっていない）。 */
+	hunt?: number;
+	/** 進めなかったターン数（続けて）。 */
+	stuck?: number;
+	/** stuck を最後に数えた時刻（1ターンに1回だけ数える）。 */
+	stuckAt?: number;
 	/** 化けている道具の種類（見破られたら null）。 */
 	disguise: string | null;
 	/** 盗んだあと逃げている。 */
@@ -244,9 +250,9 @@ export type Floor = {
 	houseAwake: boolean;
 	/** この階に来てからのターン数（湧きと地震）。 */
 	turns: number;
-	/** 気配の巻物：敵の位置がわかる。 */
+	/** 気配スレ：敵の位置がわかる。 */
 	senseMonsters: boolean;
-	/** 宝探しの巻物：道具の位置がわかる。 */
+	/** 宝探しスレ：道具の位置がわかる。 */
 	senseItems: boolean;
 	/** 見透し草：罠と見えない敵が見える。 */
 	sight: boolean;

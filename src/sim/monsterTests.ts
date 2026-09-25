@@ -11,7 +11,15 @@ import { MONSTER_LIST, MONSTERS } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
 import { spawnMonster } from "../core/floor";
 import { canSee } from "../core/fov";
-import { DX, DY, dirOf, dist, type Pos } from "../core/geom";
+import {
+	type Dir8,
+	DX,
+	DY,
+	dirOf,
+	dist,
+	type Pos,
+	samePos,
+} from "../core/geom";
 import { defOf } from "../core/item";
 import {
 	bigRoomLayout,
@@ -19,9 +27,11 @@ import {
 	MAP_H,
 	MAP_W,
 	type Room,
+	roomAt,
+	T_CORR,
 	T_ROOM,
 } from "../core/mapgen";
-import { mdef, transformMonster } from "../core/monster";
+import { mdef, noticeAdjacent, transformMonster } from "../core/monster";
 import { Run } from "../core/run";
 import {
 	type Ability,
@@ -1435,6 +1445,624 @@ test("wyvern", "another weapon is not doubled against it", () => {
 	const [lo, hi] = dmgRange(attackPower(r.p.lv, r.meleePower()), mdef(m).def);
 	const got = firstHit(r, m);
 	ok(got >= lo && got <= hi, `dealt ${got} (expected ${lo}..${hi})`);
+});
+
+// ───────────────── 追いかけ（pursuit） ─────────────────
+//
+// 敵がキリコを追うしくみ（monster.ts の canTrack・track・forget・noticeAdjacent と、動くときの
+// 「最後に見た所へ → 着いたら 左折の法則で たどる → 部屋は別の出口へ → ふさがれたら待つ」）。
+// 部屋と通路を手で掘った階で確かめる。
+
+/** monster.ts の GIVE_UP（ふさがれて待つターン数）と HUNT_STEPS（見失ったあと たどる歩数）。 */
+const GIVE_UP = 5;
+const HUNT_STEPS = 40;
+
+/** 通路を掘る（点から点へ、たてか よこに まっすぐ。部屋の床は そのまま）。 */
+const dig = (l: Layout, ...pts: Pos[]): Layout => {
+	for (let i = 1; i < pts.length; i++) {
+		const a = pts[i - 1];
+		const b = pts[i];
+		const dx = Math.sign(b.x - a.x);
+		const dy = Math.sign(b.y - a.y);
+		ok(dx === 0 || dy === 0, "harness: a corridor must be straight");
+		for (let x = a.x, y = a.y; ; x += dx, y += dy) {
+			const k = y * l.w + x;
+			if (l.tiles[k] !== T_ROOM) l.tiles[k] = T_CORR;
+			if (x === b.x && y === b.y) break;
+		}
+	}
+	return l;
+};
+
+const pp = (p: Pos | null | undefined): string => (p ? `(${p.x},${p.y})` : "-");
+
+/** p を覚えているか。 */
+const remembers = (m: Monster, p: Pos): boolean =>
+	!!m.lastSeen && samePos(m.lastSeen, p);
+
+/** いま立っている所で キリコを見失った（次の行動で d の向きに あとをたどりはじめる）。 */
+const lostHere = (m: Monster, d: Dir8): void => {
+	m.lastSeen = { x: m.x, y: m.y };
+	m.dir = d;
+};
+
+/** 西に小部屋、そこから東へ y=16 の まっすぐな通路（x=7〜toX）。 */
+const corridorLayout = (toX: number): Layout =>
+	dig(
+		makeLayout([{ x: 2, y: 14, w: 5, h: 5 }]),
+		{ x: 7, y: 16 },
+		{ x: toX, y: 16 },
+	);
+
+test("pursuit", "corridor: a chaser right behind stays adjacent", () => {
+	// HUNT_STEPS より長く歩く（あとをたどるだけでは 途中で あきらめてしまう）
+	const r = arena("pursuit-corridor", corridorLayout(52), { x: 9, y: 16 });
+	const m = put(r, "knight", { x: 8, y: 16 });
+	turn(r); // となりで なぐらせる（キリコを見た）
+	let steps = 0;
+	while (r.p.x < 52) {
+		turn(r, { c: "move", dir: 2 });
+		steps++;
+		ok(dist(m, r.p) <= 1, `step ${steps}: ${dist(m, r.p)} behind`);
+		ok(
+			remembers(m, r.p),
+			`step ${steps}: adjacent but remembers ${pp(m.lastSeen)}, not the player's tile ${pp(r.p)}`,
+		);
+	}
+	ok(steps > HUNT_STEPS, "harness: the corridor is too short");
+});
+
+test("pursuit", "room exit: follows the player down the corridor", () => {
+	// 出口が東に1つだけの部屋と、そこから のびる行き止まりの通路（ほかに部屋はない）
+	const exit = { x: 13, y: 15 };
+	const l = dig(makeLayout([{ x: 2, y: 10, w: 11, h: 11 }]), exit, {
+		x: 40,
+		y: 15,
+	});
+	const r = arena("pursuit-exit", l, { x: 11, y: 15 });
+	const m = put(r, "knight", { x: 9, y: 15 });
+	while (r.p.x < exit.x + 8) turn(r, { c: "move", dir: 2 });
+	ok(
+		dist(m, r.p) <= 2,
+		`${dist(m, r.p)} away at ${pp(m)} after the player walked 8 tiles past the exit (player ${pp(r.p)}, hunt=${m.hunt})`,
+	);
+});
+
+test(
+	"pursuit",
+	"queue: the one stuck behind waits instead of giving up",
+	() => {
+		const r = arena("pursuit-queue", corridorLayout(40), { x: 20, y: 16 });
+		const front = put(r, "knight", { x: 19, y: 16 });
+		const back = put(r, "knight", { x: 18, y: 16 });
+		// 2体とも キリコを見た。うしろの1体は まえの1体に ふさがれて 近づけない
+		for (const m of [front, back]) m.lastSeen = { x: r.p.x, y: r.p.y };
+		for (let t = 1; t <= 3; t++) {
+			turn(r);
+			ok(back.lastSeen !== null, `turn ${t}: the second one forgot the player`);
+			ok(
+				back.x === 18 && back.y === 16,
+				`turn ${t}: the second one left the line for ${pp(back)}`,
+			);
+		}
+		// 列が動けば ついてくる
+		for (let i = 0; i < 6; i++) turn(r, { c: "move", dir: 2 });
+		ok(
+			dist(back, r.p) <= 2,
+			`the second one is ${dist(back, r.p)} away after the player walked 6 tiles`,
+		);
+	},
+);
+
+/** あきらめるまでの「ターン」は 速さによらない（倍速は重ねない・2ターンに1回の敵は1回で2ターンぶん）。 */
+const SPEEDS: {
+	label: string;
+	kind: string;
+	status?: Partial<Monster["status"]>;
+}[] = [
+	{ label: "knight", kind: "knight" },
+	{ label: "hitodama (fastMove)", kind: "hitodama" },
+	{ label: "ninja (fastAct)", kind: "ninja" },
+	{ label: "hasted knight", kind: "knight", status: { fast: 999 } },
+	{ label: "tousuko (slow)", kind: "tousuko" },
+	{ label: "slowed knight", kind: "knight", status: { slow: 999 } },
+	{ label: "hasted tousuko", kind: "tousuko", status: { fast: 999 } },
+];
+
+for (const { label, kind, status } of SPEEDS)
+	test(
+		"pursuit",
+		`give up: ${label} blocked in a dead end waits ${GIVE_UP} turns`,
+		() => {
+			// 行き止まりの通路（西の部屋から x=9〜20）。キリコは つながっていない部屋
+			const l = dig(
+				makeLayout([
+					{ x: 2, y: 20, w: 7, h: 7 },
+					{ x: 40, y: 2, w: 11, h: 9 },
+				]),
+				{ x: 9, y: 23 },
+				{ x: 20, y: 23 },
+			);
+			const r = arena(`pursuit-giveup-${label}`, l, { x: 45, y: 6 });
+			const m = put(r, kind, { x: 20, y: 23 });
+			Object.assign(m.status, status);
+			lostHere(m, 2); // 行き止まりの奥で 東を向いて見失った
+			let gaveUp = 0;
+			for (let t = 1; t <= GIVE_UP + 1 && !gaveUp; t++) {
+				turn(r);
+				if (!m.hunt) gaveUp = t;
+				else ok(m.x === 20 && m.y === 23, `turn ${t}: moved while blocked`);
+			}
+			ok(gaveUp > 0, `still hunting after ${GIVE_UP + 1} turns`);
+			ok(gaveUp >= GIVE_UP, `gave up after ${gaveUp} turn(s)`);
+		},
+	);
+
+test(
+	"pursuit",
+	`hunt budget: a loop is given up within ${HUNT_STEPS + GIVE_UP} acts`,
+	() => {
+		// 輪になった通路（左折の法則だけなら いつまでも回る）。キリコは つながっていない部屋
+		const l = dig(
+			makeLayout([{ x: 40, y: 20, w: 11, h: 9 }]),
+			{ x: 4, y: 4 },
+			{ x: 30, y: 4 },
+			{ x: 30, y: 14 },
+			{ x: 4, y: 14 },
+			{ x: 4, y: 4 },
+		);
+		const r = arena("pursuit-loop", l, { x: 45, y: 24 });
+		const m = put(r, "knight", { x: 10, y: 4 });
+		lostHere(m, 2);
+		let moves = 0;
+		const n = waitTurns(r, 100, (ev) => {
+			moves += count(ev, "move", m.uid);
+			return !m.hunt;
+		});
+		ok(n > 0, `still hunting after 100 turns (hunt=${m.hunt})`);
+		ok(moves >= HUNT_STEPS / 2, `followed the loop only ${moves} steps`);
+		ok(n <= HUNT_STEPS + GIVE_UP, `hunted for ${n} acts`);
+	},
+);
+
+test(
+	"pursuit",
+	"room crossing: leaves by the other exit, then keeps going",
+	() => {
+		// 西の通路 → 部屋（入口は西と北）→ 北の出口 → 通路。キリコは つながっていない部屋
+		const room = { x: 15, y: 12, w: 11, h: 9 };
+		const west = { x: 14, y: 16 };
+		const north = { x: 20, y: 11 };
+		for (let i = 0; i < 6; i++) {
+			const l = makeLayout([room, { x: 40, y: 22, w: 11, h: 8 }]);
+			dig(l, { x: 3, y: 16 }, west);
+			dig(l, north, { x: 20, y: 3 }, { x: 35, y: 3 });
+			const r = arena(`pursuit-room-${i}`, l, { x: 45, y: 25 });
+			const m = put(r, "knight", { x: 8, y: 16 });
+			lostHere(m, 2);
+			const path: Pos[] = [];
+			let inside = -1;
+			let out = -1;
+			for (let t = 0; t < 40 && (out < 0 || path.length < out + 5); t++) {
+				turn(r);
+				path.push({ x: m.x, y: m.y });
+				const rm = roomAt(l, m.x, m.y);
+				if (inside < 0 && rm === 0) inside = path.length - 1;
+				else if (inside >= 0 && out < 0 && rm < 0) out = path.length - 1;
+			}
+			const trail = path.map(pp).join(" ");
+			ok(inside >= 0, `seed ${i}: never entered the room: ${trail}`);
+			ok(out >= 0, `seed ${i}: never left the room: ${trail}`);
+			ok(
+				samePos(path[out], north),
+				`seed ${i}: left by ${pp(path[out])}, not the other exit ${pp(north)}: ${trail}`,
+			);
+			const back = path.slice(out + 1).find((p) => roomAt(l, p.x, p.y) >= 0);
+			ok(
+				!back,
+				`seed ${i}: walked back into the room at ${pp(back)}: ${trail}`,
+			);
+			ok(m.hunt, `seed ${i}: stopped hunting in the corridor: ${trail}`);
+		}
+	},
+);
+
+test("pursuit", "sleep: a pursuer that falls asleep forgets the chase", () => {
+	// 見えていた敵に 眠りの杖
+	const r = arena("pursuit-sleep");
+	const m = put(r, "knight", at(-5, 0));
+	turn(r);
+	ok(remembers(m, r.p), "harness: did not see the player");
+	staffEffect(r, "w_sleep", m);
+	turn(r);
+	ok(m.status.sleep > 0, "harness: woke up");
+	ok(
+		m.lastSeen === null && !m.hunt,
+		`asleep but remembers ${pp(m.lastSeen)} (hunt=${m.hunt})`,
+	);
+
+	// あとをたどっている敵が眠った（status.sleep）。起きても たどりなおさない
+	const r2 = arena("pursuit-sleep-hunt", corridorLayout(40), { x: 4, y: 16 });
+	const h = put(r2, "knight", { x: 30, y: 16 });
+	lostHere(h, 2);
+	turn(r2);
+	ok(h.hunt, "harness: not hunting");
+	h.status.sleep = 5;
+	turn(r2);
+	ok(
+		!h.hunt && h.lastSeen === null,
+		`asleep but still hunting (hunt=${h.hunt})`,
+	);
+	waitTurns(r2, 6, () => false);
+	ok(h.status.sleep === 0, "harness: still asleep");
+	ok(
+		!h.hunt && h.lastSeen === null,
+		`picked the chase up after waking (hunt=${h.hunt}, lastSeen ${pp(h.lastSeen)})`,
+	);
+});
+
+/**
+ * 飛ばされる前の場：西と東に部屋、そのあいだの通路（y=5）から南へ のびる行き止まり（x=24）。
+ * キリコは行き止まりの奥、敵は そのとなり。飛ばされた先（どちらかの部屋）から さまようだけなら
+ * 行き止まりには入らない。キリコの位置を覚えていれば まっすぐ戻ってくる。
+ */
+const spurArena = (seed: string): { r: Run; m: Monster } => {
+	const l = makeLayout([
+		{ x: 2, y: 2, w: 7, h: 7 },
+		{ x: 40, y: 2, w: 9, h: 7 },
+	]);
+	dig(l, { x: 9, y: 5 }, { x: 39, y: 5 });
+	dig(l, { x: 24, y: 6 }, { x: 24, y: 14 });
+	const r = arena(seed, l, { x: 24, y: 14 });
+	const m = put(r, "knight", { x: 24, y: 13 });
+	turn(r); // となりで なぐらせる（キリコを見た）
+	ok(remembers(m, r.p), "harness: did not see the player");
+	return { r, m };
+};
+
+/** 飛ばされたあと n ターン：キリコの所へ戻ってこない・思い出さない。 */
+const staysAway = (r: Run, m: Monster, n: number, how: string): void => {
+	ok(
+		m.lastSeen === null && !m.hunt,
+		`${how}: remembers ${pp(m.lastSeen)} after the warp (hunt=${m.hunt})`,
+	);
+	for (let t = 1; t <= n; t++) {
+		turn(r);
+		ok(dist(m, r.p) > 1, `${how}: came back to the player on turn ${t}`);
+		ok(
+			m.lastSeen === null,
+			`${how}: turn ${t}: heading for ${pp(m.lastSeen)} without seeing the player`,
+		);
+	}
+};
+
+test("pursuit", "warp: thrown h_blink makes it lose the player", () => {
+	const { r, m } = spurArena("pursuit-blink");
+	let warped = false;
+	for (let i = 0; i < 10 && !warped; i++) {
+		const it = give(r, "h_blink");
+		warped =
+			count(turn(r, { c: "throw", item: it.uid, dir: 0 }), "warp", m.uid) > 0;
+	}
+	ok(warped, "the herb never hit");
+	staysAway(r, m, 40, "h_blink");
+});
+
+test("pursuit", "warp: w_send makes it lose the player", () => {
+	const { r, m } = spurArena("pursuit-send");
+	staffEffect(r, "w_send", m);
+	ok(dist(m, r.p) > 1, "harness: not sent away");
+	staysAway(r, m, 40, "w_send");
+});
+
+test("pursuit", "thrown hit from out of sight: heads for the thrower", () => {
+	const r = arena("pursuit-throw", corridorLayout(40), { x: 20, y: 16 });
+	const home = { x: 26, y: 16 };
+	const m = put(r, "knight", home);
+	m.maxHp = 999;
+	m.hp = 999;
+	ok(!canSee(r.f.layout, m, r.p), "harness: it can see the player");
+	let hit = false;
+	for (let i = 0; i < 10 && !hit; i++) {
+		m.x = home.x;
+		m.y = home.y;
+		ok(m.lastSeen === null, "remembered the player before being hit");
+		const it = give(r, "a_wood");
+		hit =
+			hurts(turn(r, { c: "throw", item: it.uid, dir: 2 }), m.uid).length > 0;
+	}
+	ok(hit, "the arrow never hit");
+	ok(
+		remembers(m, r.p),
+		`remembers ${pp(m.lastSeen)}, not the thrower at ${pp(r.p)}`,
+	);
+	ok(m.x < home.x, `did not come toward the thrower (at ${pp(m)})`);
+});
+
+/** 追いかけを覚えない敵（となりにいても lastSeen がつかない）。 */
+const NON_TRACKERS: {
+	why: string;
+	kind: string;
+	status?: Partial<Monster["status"]>;
+	set?: Partial<Monster>;
+}[] = [
+	{ why: "shy", kind: "funamushi" },
+	{ why: "metal", kind: "metal" },
+	{ why: "grab", kind: "kaso" },
+	{ why: "asleep", kind: "knight", status: { sleep: DEEP } },
+	{ why: "dormant statue", kind: "statue" },
+	{ why: "disguised mimic", kind: "bakefuda" },
+	{ why: "confused", kind: "knight", status: { confuse: 10 } },
+	{ why: "paralyzed", kind: "knight", status: { paralyze: 5 } },
+	{ why: "blind", kind: "knight", status: { blind: true } },
+	{ why: "fused bomb", kind: "bomb", set: { fuse: true } },
+	{ why: "fleeing thief", kind: "tensai", set: { fleeing: true } },
+	{ why: "retreating chimera", kind: "chimera", set: { retreating: true } },
+];
+
+test(
+	"pursuit",
+	"non-trackers: being adjacent does not make them remember",
+	() => {
+		for (const c of NON_TRACKERS) {
+			const r = arena(`pursuit-notrack-${c.why}`);
+			// ばけ札は 起きている指定だと化けない
+			const m = put(
+				r,
+				c.kind,
+				at(1, 0),
+				c.kind === "bakefuda" ? {} : undefined,
+			);
+			Object.assign(m.status, c.status);
+			Object.assign(m, c.set);
+			ok(
+				c.kind !== "bakefuda" || m.disguise,
+				"harness: the mimic is not disguised",
+			);
+			ok(
+				c.kind !== "statue" || m.status.dormant,
+				"harness: the statue is awake",
+			);
+			const control = put(r, "knight", at(-1, 0));
+			noticeAdjacent(r);
+			ok(
+				remembers(control, r.p),
+				"harness: an ordinary knight did not remember",
+			);
+			ok(m.lastSeen === null, `${c.why} ${c.kind} remembered the player`);
+		}
+	},
+);
+
+test(
+	"pursuit",
+	"sealed: a retreating chimera stops retreating, tracks again",
+	() => {
+		// 封印の杖：逃げるのをやめる（ほかの所からも 逃げていないと見える）
+		const r = arena("pursuit-chimera");
+		const m = put(r, "chimera", at(1, 0));
+		m.hp = Math.floor(m.maxHp * 0.4);
+		turn(r);
+		ok(m.retreating, "harness: did not start retreating");
+		staffEffect(r, "w_seal", m);
+		ok(!now(m).retreating, "still retreating after w_seal");
+		m.x = CENTER.x + 1;
+		m.y = CENTER.y;
+		noticeAdjacent(r);
+		ok(remembers(m, r.p), "a sealed chimera did not remember the player");
+
+		// 逃げている印が残っていても、逃げる力が封じられていれば 追いかけを覚える
+		const r2 = arena("pursuit-chimera-flag");
+		const c = put(r2, "chimera", at(1, 0));
+		c.retreating = true;
+		noticeAdjacent(r2);
+		ok(c.lastSeen === null, "harness: a retreating chimera remembered");
+		c.status.sealed = true;
+		noticeAdjacent(r2);
+		ok(remembers(c, r2.p), "sealed but still counts as retreating");
+	},
+);
+
+test("pursuit", "transformed: loses berserk/accel speed and the chase", () => {
+	const r = arena("pursuit-change-oni");
+	const oni = put(r, "oni", at(-3, 0));
+	turn(r);
+	r.damageMonster(oni, oni.hp - Math.floor(oni.maxHp / 2), "hit");
+	ok(oni.enraged && oni.status.fast === 999, "harness: not enraged");
+	ok(remembers(oni, r.p), "harness: did not see the player");
+	transformMonster(r, oni);
+	ok(oni.kind !== "oni", "harness: did not transform");
+	ok(
+		!now(oni).enraged && now(oni).status.fast === 0,
+		`kept the berserk speed as ${oni.kind} (fast=${oni.status.fast})`,
+	);
+	ok(
+		oni.lastSeen === null && !oni.hunt,
+		`still remembers ${pp(oni.lastSeen)} as ${oni.kind}`,
+	);
+
+	const r2 = arena("pursuit-change-ksk");
+	const ksk = put(r2, "ksk", at(1, 0));
+	waitTurns(r2, 8, () => ksk.status.fast === 999);
+	ok(ksk.status.fast === 999, "harness: did not accelerate");
+	transformMonster(r2, ksk);
+	ok(
+		now(ksk).status.fast === 0 && !now(ksk).seenTurns,
+		`kept the accel speed as ${ksk.kind} (fast=${ksk.status.fast})`,
+	);
+});
+
+test("pursuit", "transformed: a haste from w_haste is kept", () => {
+	const r = arena("pursuit-change-haste");
+	const ksk = put(r, "ksk", at(1, 0));
+	turn(r); // となりで1回 やりあった（まだ加速していない）
+	ok(
+		ksk.seenTurns === 1 && ksk.status.fast === 0,
+		`harness: seenTurns=${ksk.seenTurns} fast=${ksk.status.fast}`,
+	);
+	staffEffect(r, "w_haste", ksk);
+	transformMonster(r, ksk);
+	ok(
+		now(ksk).status.fast === 999,
+		`lost the w_haste speed as ${ksk.kind} (fast=${ksk.status.fast})`,
+	);
+});
+
+test("pursuit", "sealed: berserk/accel speed goes, a w_haste stays", () => {
+	// 封印の杖・目つぶし草：とくちょうで ついた速さは消える（杖で速くしたのは そのまま）
+	const r = arena("pursuit-seal-oni");
+	const oni = put(r, "oni", at(-3, 0));
+	turn(r);
+	r.damageMonster(oni, oni.hp - Math.floor(oni.maxHp / 2), "hit");
+	ok(oni.enraged && oni.status.fast === 999, "harness: not enraged");
+	staffEffect(r, "w_seal", oni);
+	ok(
+		now(oni).status.fast === 0 && !now(oni).enraged,
+		`sealed oni kept its berserk speed (fast=${oni.status.fast})`,
+	);
+
+	const r2 = arena("pursuit-seal-ksk");
+	const ksk = put(r2, "ksk", at(1, 0));
+	for (let i = 0; i < 6 && ksk.status.fast === 0; i++) turn(r2);
+	ok(ksk.status.fast === 999, "harness: ksk did not accelerate");
+	let blinded = false;
+	for (let i = 0; i < 10 && !blinded; i++) {
+		const it = give(r2, "h_blind");
+		turn(r2, { c: "throw", item: it.uid, dir: 2 });
+		blinded = !!ksk.status.blind;
+	}
+	ok(blinded, "the herb never hit");
+	ok(
+		now(ksk).status.sealed && now(ksk).status.fast === 0,
+		`blinded ksk kept its accel speed (fast=${now(ksk).status.fast})`,
+	);
+
+	const r3 = arena("pursuit-seal-haste");
+	const k3 = put(r3, "knight", at(1, 0));
+	staffEffect(r3, "w_haste", k3);
+	staffEffect(r3, "w_seal", k3);
+	ok(now(k3).status.fast === 999, "a w_haste speed was removed by the seal");
+});
+
+/**
+ * 部屋を抜けている途中の敵：西の小部屋（キリコ）→ 通路 → 部屋（入口は西と北。北の先は行き止まり）。
+ * 通路で見失って 部屋に入り、北の出口へ向かっているところで返す。
+ */
+const crossing = (seed: string): { r: Run; m: Monster; exit: Pos } => {
+	const exit = { x: 20, y: 11 };
+	const l = makeLayout([
+		{ x: 2, y: 14, w: 5, h: 5 },
+		{ x: 15, y: 12, w: 11, h: 9 },
+	]);
+	dig(l, { x: 7, y: 16 }, { x: 14, y: 16 });
+	dig(l, exit, { x: 20, y: 3 }, { x: 35, y: 3 });
+	const r = arena(seed, l, { x: 3, y: 16 });
+	const m = put(r, "knight", { x: 9, y: 16 });
+	lostHere(m, 2);
+	waitTurns(r, 8, () => false);
+	ok(
+		m.hunt && m.goal && samePos(m.goal, exit) && roomAt(l, m.x, m.y) === 1,
+		`harness: not crossing the room toward ${pp(exit)} (at ${pp(m)}, goal ${pp(m.goal)})`,
+	);
+	return { r, m, exit };
+};
+
+test("pursuit", "forgetting also drops the exit it was heading for", () => {
+	const cases: [string, (r: Run, m: Monster) => void][] = [
+		["w_send", (r, m) => staffEffect(r, "w_send", m)],
+		["w_sleep", (r, m) => staffEffect(r, "w_sleep", m)],
+		["w_change", (r, m) => transformMonster(r, m)],
+	];
+	for (const [how, act] of cases) {
+		const { r, m, exit } = crossing(`pursuit-forget-goal-${how}`);
+		act(r, m);
+		for (let t = 1; t <= 12; t++) {
+			turn(r);
+			ok(
+				!samePos(m, exit) && !(m.goal && samePos(m.goal, exit)),
+				`${how}: turn ${t}: still heading for the old exit ${pp(exit)} (at ${pp(m)} as ${m.kind})`,
+			);
+		}
+	}
+});
+
+test(
+	"pursuit",
+	"room crossing: waits while the way to the other exit is blocked",
+	() => {
+		const room = { x: 15, y: 12, w: 11, h: 9 };
+		const west = { x: 14, y: 16 };
+		const north = { x: 20, y: 11 };
+		const inside = { x: 15, y: 16 };
+		const setup = (seed: string) => {
+			const l = makeLayout([room, { x: 40, y: 22, w: 11, h: 8 }]);
+			dig(l, { x: 3, y: 16 }, west);
+			dig(l, north, { x: 20, y: 3 }, { x: 35, y: 3 });
+			const r = arena(seed, l, { x: 45, y: 25 });
+			const m = put(r, "knight", west);
+			lostHere(m, 2); // 西の入口で見失った（東を向いて）
+			// 入って すぐの まわりを 眠った敵で ふさぐ（戻る向きの 入口だけ あく）
+			const wall = [
+				{ x: 15, y: 15 },
+				{ x: 16, y: 15 },
+				{ x: 16, y: 16 },
+				{ x: 16, y: 17 },
+				{ x: 15, y: 17 },
+			].map((p) => put(r, "knight", p, { sleep: DEEP }));
+			turn(r);
+			ok(samePos(m, inside) && m.hunt, "harness: did not step into the room");
+			return { r, m, wall };
+		};
+		const blocked = (m: Monster, t: number): void => {
+			ok(m.hunt, `blocked turn ${t}: stopped hunting`);
+			ok(samePos(m, inside), `blocked turn ${t}: moved to ${pp(m)}`);
+			ok(
+				!!m.goal && samePos(m.goal, north),
+				`blocked turn ${t}: no longer heading for ${pp(north)} (goal ${pp(m.goal)})`,
+			);
+		};
+
+		// ふさがれて 2ターン待ち、道があいたら 北の出口へ
+		const a = setup("pursuit-room-blocked-clear");
+		for (let t = 1; t <= 2; t++) {
+			turn(a.r);
+			blocked(a.m, t);
+		}
+		a.r.f.monsters = a.r.f.monsters.filter((x) => !a.wall.includes(x));
+		const n = waitTurns(a.r, 12, () => samePos(a.m, north));
+		ok(n > 0, `did not go on to ${pp(north)} (at ${pp(a.m)})`);
+
+		// ふさがれたままなら GIVE_UP ターンで あきらめる
+		const b = setup("pursuit-room-blocked-stay");
+		for (let t = 1; t < GIVE_UP; t++) {
+			turn(b.r);
+			blocked(b.m, t);
+		}
+		ok(
+			waitTurns(b.r, 2, () => !b.m.hunt) > 0,
+			`still waiting after ${GIVE_UP + 1} blocked turns`,
+		);
+	},
+);
+
+test("pursuit", "fastMove: looks again before the second step", () => {
+	// 通路（x=11）が 部屋の西の壁ぞいを通る：y=12〜18 は 部屋の入口
+	const l = dig(
+		makeLayout([{ x: 12, y: 12, w: 9, h: 7 }]),
+		{ x: 11, y: 5 },
+		{ x: 11, y: 25 },
+	);
+	const r = arena("pursuit-fast-look", l, { x: 16, y: 16 });
+	const m = put(r, "hitodama", { x: 11, y: 19 });
+	m.lastSeen = { x: 11, y: 5 }; // 前に見た所（通路の北）へ向かっている
+	ok(!canSee(l, m, r.p), "harness: it can see the player already");
+	turn(r);
+	// 1歩目で入口 (11,18) に出て キリコが見えた → 2歩目は 部屋の中のキリコへ（通路を北へ ではなく）
+	ok(
+		roomAt(l, m.x, m.y) === 0,
+		`kept going up the corridor to ${pp(m)} after the player came into view`,
+	);
+	ok(remembers(m, r.p), `still heading for ${pp(m.lastSeen)}`);
 });
 
 // ───────────────── ぜんぶ ─────────────────

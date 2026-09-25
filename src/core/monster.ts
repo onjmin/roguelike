@@ -7,9 +7,20 @@
 import { HIT_RATE, rollDamage } from "./balance";
 import { MONSTERS } from "./data/monsters";
 import { canSee } from "./fov";
-import { DIRS8, type Dir8, DX, DY, dirOf, dist, type Pos, step } from "./geom";
+import {
+	DIRS8,
+	type Dir8,
+	DX,
+	DY,
+	dirOf,
+	dist,
+	opposite,
+	type Pos,
+	rotate,
+	step,
+} from "./geom";
 import { defOf, isKeyItem } from "./item";
-import { isFloor, roomAt, roomTiles } from "./mapgen";
+import { isFloor, roomAt, roomExits, roomTiles } from "./mapgen";
 import type { Run } from "./run";
 import {
 	DEEP,
@@ -149,6 +160,60 @@ const randomStep = (r: Run, m: Monster): boolean => {
 	return true;
 };
 
+/** 左折の法則：前・左前・右前・左・右の順に、あいている方へ1歩（後ろへは行かない）。 */
+const LEFT_TURN = [0, -1, 1, -2, 2];
+const followStep = (r: Run, m: Monster): boolean => {
+	for (const k of LEFT_TURN) {
+		const d = rotate(m.dir, k);
+		if (canEnter(r, m, d)) {
+			moveTo(r, m, d);
+			return true;
+		}
+	}
+	return false;
+};
+
+/** 追いかけを覚えていられる敵か（逃げる敵・つかむ敵・動けない敵は覚えない）。 */
+export const canTrack = (m: Monster): boolean => {
+	const st = m.status;
+	if (m.hp <= 0 || st.sleep > 0 || st.paralyze > 0 || st.confuse > 0)
+		return false;
+	if (st.blind || st.dormant || m.disguise || m.fuse || m.fleeing) return false;
+	// 弱って逃げている（封印・変化で逃げる力が消えたら、もう逃げていない）
+	if (m.retreating && has(m, "retreat")) return false;
+	return !(has(m, "shy") || has(m, "metal") || has(m, "grab"));
+};
+
+/** キリコの居場所を覚える（見えた・となりにいる・投げつけられた）。前の追いかけの続きは捨てる。 */
+export const track = (m: Monster, at: Pos): void => {
+	m.lastSeen = { x: at.x, y: at.y };
+	m.hunt = 0;
+	m.stuck = 0;
+	m.goal = null;
+};
+
+/** キリコの居場所を忘れる（眠った・飛ばされた・姿が変わった）。 */
+export const forget = (m: Monster): void => {
+	m.lastSeen = null;
+	m.hunt = 0;
+	m.stuck = 0;
+	m.goal = null;
+};
+
+/** となり判定（敵の番のあと）：となりにいる敵は キリコの今の位置を覚える。 */
+export const noticeAdjacent = (r: Run): void => {
+	const p = r.p;
+	for (const m of r.f.monsters) if (dist(m, p) <= 1 && canTrack(m)) track(m, p);
+};
+
+/** 進めないまま これだけ待ったら（ターン）あきらめる。 */
+const GIVE_UP = 5;
+/**
+ * 見失ったあと たどる歩数の上限（通路・部屋を抜けて次の通路まで。
+ * 通路が輪になっていても 回りつづけないように）。
+ */
+const HUNT_STEPS = 40;
+
 /** さまよう：部屋のどこかを目指す。着いた・行けないなら次の目的地。 */
 const wander = (r: Run, m: Monster): boolean => {
 	const l = r.f.layout;
@@ -198,6 +263,8 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	}
 	if (st.sleep > 0) {
 		if (st.sleep < DOZE) st.sleep--;
+		// 眠っているあいだに 追いかけは忘れる（起きたら 見えるまで さまよう）
+		forget(m);
 		return;
 	}
 	if (m.disguise) return; // 化けているあいだは じっとしている
@@ -249,8 +316,8 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		return;
 	}
 
-	const sees = canSee(r.f.layout, m, p);
-	if (sees) m.lastSeen = { x: p.x, y: p.y };
+	let sees = canSee(r.f.layout, m, p);
+	if (sees && canTrack(m)) track(m, p);
 
 	// 加速（kskボット）：となりで やりあううちに 倍速になる
 	const accel = d.abilities.find((a) => a.k === "accel");
@@ -433,18 +500,86 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	}
 
 	// 動く
+	// 進めなかった：あきらめるまでは その場で待つ。ターンで数える
+	// （倍速の2歩目・2回目の行動では 重ねない。2ターンに1回しか動かない敵は 1回で2ターンぶん）
+	const stuck = (): boolean => {
+		if (m.stuckAt !== r.s.time) {
+			m.stuckAt = r.s.time;
+			const slowNow =
+				st.slow > 0 || (st.fast === 0 && !has(m, "fastAct") && has(m, "slow"));
+			m.stuck = (m.stuck ?? 0) + (slowNow ? 2 : 1);
+		}
+		if ((m.stuck ?? 0) < GIVE_UP) return true;
+		m.stuck = 0;
+		return false;
+	};
 	const moveOnce = (): boolean => {
 		if (sees) return approach(r, m, p);
 		if (m.lastSeen) {
-			if (m.lastSeen.x === m.x && m.lastSeen.y === m.y) m.lastSeen = null;
-			else if (approach(r, m, m.lastSeen)) return true;
-			m.lastSeen = null;
+			if (m.lastSeen.x === m.x && m.lastSeen.y === m.y) {
+				m.lastSeen = null;
+				m.hunt = HUNT_STEPS;
+			} else if (approach(r, m, m.lastSeen)) {
+				m.stuck = 0;
+				return true;
+			} else if (stuck()) return false;
+			else m.lastSeen = null;
+		}
+		if (m.hunt) {
+			const l = r.f.layout;
+			const g = m.goal;
+			// 部屋に入ったときに決めた出口へ向かっている
+			if (g && (g.x !== m.x || g.y !== m.y)) {
+				if (approach(r, m, g)) {
+					m.stuck = 0;
+					m.hunt--;
+					return true;
+				}
+				if (stuck()) return false;
+				m.hunt = 0;
+				m.goal = null;
+				return wander(r, m);
+			}
+			m.goal = null;
+			const room = roomAt(l, m.x, m.y);
+			if (room < 0) {
+				// 通路（出口に着いたときも）：左折の法則でたどる
+				if (followStep(r, m)) {
+					m.stuck = 0;
+					m.hunt--;
+					return true;
+				}
+				if (stuck()) return false;
+				m.hunt = 0;
+			} else {
+				// 部屋に入った：入ってきた所とは別の出口へ（出口がほかに無ければ 引き返す）
+				const back = step(m, opposite(m.dir));
+				const exits = roomExits(l, l.rooms[room]).filter(
+					(e) => e.x !== back.x || e.y !== back.y,
+				);
+				const exit = exits.length ? r.rng.pick(exits) : null;
+				if (exit) {
+					m.goal = exit;
+					if (approach(r, m, exit)) {
+						m.stuck = 0;
+						m.hunt--;
+						return true;
+					}
+					if (stuck()) return false;
+					m.goal = null;
+				}
+				m.hunt = 0;
+			}
 		}
 		return wander(r, m);
 	};
 	moveOnce();
-	// 倍速で動く（攻撃は1回まで）
-	if (has(m, "fastMove") && adjacentDir() === null) moveOnce();
+	// 倍速で動く（攻撃は1回まで）。2歩目の前に もう一度見る
+	if (has(m, "fastMove") && adjacentDir() === null) {
+		sees = canSee(r.f.layout, m, p);
+		if (sees && canTrack(m)) track(m, p);
+		moveOnce();
+	}
 };
 
 // ───────────────── なぐる ─────────────────
@@ -606,12 +741,35 @@ const randomAway = (r: Run, m: Monster): Pos | null => {
 };
 
 /** モンスターを別の種類に変える（変化の杖）。 */
+/** とくちょうで速くなっていたか（加速した kskボット・怒った赤鬼）。杖や草で速くしたのは入らない。 */
+const traitFast = (m: Monster): boolean => {
+	const accel = mdef(m).abilities.find((a) => a.k === "accel") as
+		| { k: "accel"; after: number }
+		| undefined;
+	return !!m.enraged || (!!accel && (m.seenTurns ?? 0) >= accel.after);
+};
+
+/**
+ * とくぎを封じる（封印の杖・目つぶし草・毒消し草）。とくちょうで ついていた様子
+ * （加速・怒りの速さ・弱って逃げている・爆発しかけ・石像）も いっしょに消える。
+ */
+export const sealMonster = (m: Monster): void => {
+	if (traitFast(m)) m.status.fast = 0;
+	m.status.sealed = true;
+	m.status.dormant = false;
+	m.fuse = false;
+	m.retreating = false;
+	m.enraged = false;
+};
+
 export const transformMonster = (r: Run, m: Monster): void => {
 	const cands = Object.values(MONSTERS).filter(
 		(d) => d.id !== m.kind && d.floors[0] <= r.f.depth + 4,
 	);
 	const d = r.rng.pick(cands);
 	const ratio = m.hp / m.maxHp;
+	// 前の姿の とくちょうで 速くなっていたか（杖で速くしたのは そのまま）
+	const wasTraitFast = traitFast(m);
 	m.kind = d.id;
 	m.maxHp = d.hp;
 	m.hp = Math.max(1, Math.round(d.hp * ratio));
@@ -620,6 +778,13 @@ export const transformMonster = (r: Run, m: Monster): void => {
 	m.disguise = null;
 	m.fuse = false;
 	m.fleeing = false;
+	// 前の姿の とくちょうで ついた様子は消える（加速・怒り・逃げ・起き上がり）
+	if (wasTraitFast) m.status.fast = 0;
+	m.enraged = false;
+	m.seenTurns = 0;
+	m.retreating = false;
+	m.revived = false;
+	forget(m);
 	if (r.p.status.heldBy === m.uid) r.p.status.heldBy = null;
 };
 

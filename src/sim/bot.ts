@@ -78,28 +78,37 @@ const pathStepVia = (
 
 /** 未踏の境目（見たことのある床で、となりに見ていないマスがある所）のうち近いもの。 */
 const frontier = (r: Run): Pos | null => {
+	// 歩いて近い順（まっすぐの距離で選ぶと、左右に同じくらい遠い境目があるとき 行ったり来たりする）
 	const f = r.f;
 	const l = f.layout;
-	let best: Pos | null = null;
-	let bestD = 1e9;
-	for (let y = 0; y < l.h; y++)
-		for (let x = 0; x < l.w; x++) {
-			const i = y * l.w + x;
-			if (!f.seen[i] || !isFloor(l, x, y)) continue;
-			let open = false;
-			for (const d of DIRS8) {
-				const n = step({ x, y }, d);
-				if (n.x < 0 || n.y < 0 || n.x >= l.w || n.y >= l.h) continue;
-				if (!f.seen[n.y * l.w + n.x] && isFloor(l, n.x, n.y)) open = true;
-			}
-			if (!open) continue;
-			const dd = dist(r.p, { x, y });
-			if (dd < bestD && (x !== r.p.x || y !== r.p.y)) {
-				best = { x, y };
-				bestD = dd;
-			}
+	const w = l.w;
+	const isOpen = (x: number, y: number): boolean => {
+		for (const d of DIRS8) {
+			const n = step({ x, y }, d);
+			if (n.x < 0 || n.y < 0 || n.x >= l.w || n.y >= l.h) continue;
+			if (!f.seen[n.y * w + n.x] && isFloor(l, n.x, n.y)) return true;
 		}
-	return best;
+		return false;
+	};
+	const start = r.p.y * w + r.p.x;
+	const seenAt = new Uint8Array(l.w * l.h);
+	seenAt[start] = 1;
+	const q = [start];
+	for (let h = 0; h < q.length; h++) {
+		const i = q[h];
+		const x = i % w;
+		const y = (i - x) / w;
+		if (i !== start && isOpen(x, y)) return { x, y };
+		for (const d of DIRS8) {
+			const n = step({ x, y }, d);
+			if (!isFloor(l, n.x, n.y)) continue;
+			const ni = n.y * w + n.x;
+			if (seenAt[ni] || !f.seen[ni] || !r.cornerOk({ x, y }, d)) continue;
+			seenAt[ni] = 1;
+			q.push(ni);
+		}
+	}
+	return null;
 };
 
 const itemScore = (it: Item): number => {

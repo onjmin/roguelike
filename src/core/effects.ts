@@ -1,7 +1,7 @@
 // 道具を使う・投げる。
 //
-// - 草・巻物は使うと正体がわかる。杖は弾が敵に当たって効き目が見えたらわかる。
-// - 相手を選ぶ巻物（鑑定・充填・糧変え）は target が要る。無いときは時間を進めずに
+// - 草・スレは使うと正体がわかる。杖は弾が敵に当たって効き目が見えたらわかる。
+// - 相手を選ぶスレ（鑑定・充填・飯テロ）は target が要る。無いときは時間を進めずに
 //   「えらんで」と知らせる（needsTarget）。キャンセルすれば減らない。
 
 import {
@@ -17,9 +17,13 @@ import { DIRS8, type Dir8, dist, type Pos, step } from "./geom";
 import { defOf, identifyKind, isKeyItem } from "./item";
 import { roomAt, roomTiles } from "./mapgen";
 import {
+	canTrack,
 	firstInLine,
+	forget,
 	mdef,
 	monsterName,
+	sealMonster,
+	track,
 	transformMonster,
 	wakeMonster,
 } from "./monster";
@@ -433,9 +437,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			r.msg(`${nm}は　眠ってしまった`);
 			return;
 		case "w_seal":
-			m.status.sealed = true;
-			m.fuse = false;
-			m.status.dormant = false;
+			sealMonster(m);
 			r.msg(`${nm}の　とくぎを　封じた`);
 			return;
 		case "w_change": {
@@ -453,6 +455,8 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 				r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
 				m.x = to.x;
 				m.y = to.y;
+				// 飛ばされた敵は キリコを見失う（投げつけられて覚えた位置も忘れる）
+				forget(m);
 				r.msg(`${nm}を　どこかへ　飛ばした`);
 			}
 			return;
@@ -531,6 +535,8 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 		return true;
 	}
 	wakeMonster(r, hit, true);
+	// 投げつけられた敵は、投げてきた所へ向かう（見えない所から投げても）
+	if (canTrack(hit)) track(hit, r.p);
 	onThrownHit(r, it, hit, last);
 	return true;
 };
@@ -607,7 +613,7 @@ const herbOnMonster = (
 			return;
 		case "h_blind":
 			m.status.blind = true;
-			m.status.sealed = true;
+			sealMonster(m);
 			r.msg(`${nm}は　目が　見えなくなった`);
 			return;
 		case "h_blink": {
@@ -624,7 +630,7 @@ const herbOnMonster = (
 			return;
 		case "h_antidote":
 			if (md.tags?.includes("plant") || md.tags?.includes("doll")) {
-				m.status.sealed = true;
+				sealMonster(m);
 				r.damageMonster(m, 50, "throw");
 			} else r.msg(`${nm}には　効かなかった`);
 			return;
