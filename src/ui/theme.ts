@@ -2,6 +2,9 @@
 //
 // 壁は 3/4 見下ろしの2段（上の面・下の面）。床のすぐ上の壁マスに「下の面」、
 // その上に「上の面」、それ以外の壁は闇の色で塗る。
+// 階は 層（ZONES）に分かれていて、層ごとに 見た目・曲・ただよう粒 が変わる。
+
+import { LAST_DEPTH } from "../core/balance";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
 const cut = (c: number, r: number, w = 1, h = 1): string =>
@@ -64,6 +67,32 @@ const LAVA: Theme = {
 	fog: "rgba(8, 2, 4, 0.6)",
 };
 
+/** 苔（緑）。 */
+const MOSS: Theme = {
+	name: "moss",
+	floor: cut(4, 164),
+	corridor: cut(5, 164),
+	stairs: cut(4, 165),
+	wallUpper: walls(175),
+	wallLower: walls(176),
+	dark: "#050a05",
+	floorColor: "#3f5e34",
+	fog: "rgba(2, 8, 4, 0.6)",
+};
+
+/** 電脳（紫）。 */
+const CYBER: Theme = {
+	name: "cyber",
+	floor: cut(4, 166),
+	corridor: cut(5, 166),
+	stairs: cut(4, 167),
+	wallUpper: walls(181),
+	wallLower: walls(182),
+	dark: "#07040d",
+	floorColor: "#3a2a5a",
+	fog: "rgba(6, 2, 14, 0.62)",
+};
+
 /** 最下層（金）。 */
 const GOLD: Theme = {
 	name: "gold",
@@ -77,12 +106,68 @@ const GOLD: Theme = {
 	fog: "rgba(6, 4, 2, 0.58)",
 };
 
-export const themeFor = (depth: number, last: number): Theme => {
-	if (depth >= last) return GOLD;
-	if (depth <= 8) return EARTH;
-	if (depth <= 16) return CRYSTAL;
-	return LAVA;
+/** 空気の中を ただようもの（階の雰囲気）。 */
+export type Ambient =
+	| "dust"
+	| "spores"
+	| "snow"
+	| "data"
+	| "embers"
+	| "glitter";
+
+/** 層：何階から何階までが同じ見た目・同じ曲か。深くなるほど 景色も曲も 出る敵も変わる。 */
+export type Zone = {
+	/** この層の いちばん深い階。 */
+	last: number;
+	name: string;
+	theme: Theme;
+	bgm: string;
+	ambient: Ambient;
 };
+
+export const ZONES: readonly Zone[] = [
+	{
+		last: 4,
+		name: "過去ログの浅瀬",
+		theme: EARTH,
+		bgm: "dungeon",
+		ambient: "dust",
+	},
+	{
+		last: 8,
+		name: "苔むしたスレ跡",
+		theme: MOSS,
+		bgm: "field",
+		ambient: "spores",
+	},
+	{
+		last: 12,
+		name: "凍結された書庫",
+		theme: CRYSTAL,
+		bgm: "field2",
+		ambient: "snow",
+	},
+	{ last: 16, name: "鯖の深部", theme: CYBER, bgm: "tense", ambient: "data" },
+	{
+		last: LAST_DEPTH - 1,
+		name: "炎上の底",
+		theme: LAVA,
+		bgm: "boss",
+		ambient: "embers",
+	},
+	{
+		last: LAST_DEPTH,
+		name: "はじまりの原盤",
+		theme: GOLD,
+		bgm: "lastboss",
+		ambient: "glitter",
+	},
+];
+
+export const zoneFor = (depth: number): Zone =>
+	ZONES.find((z) => depth <= z.last) ?? ZONES[ZONES.length - 1];
+
+export const themeFor = (depth: number): Theme => zoneFor(depth).theme;
 
 /** 罠の見た目（見つけたものだけ描く）。 */
 export const TRAP_ICON: Record<string, string> = {

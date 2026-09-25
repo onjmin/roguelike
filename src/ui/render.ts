@@ -15,7 +15,24 @@ import type { Screen } from "../engine/screen";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import { TILE } from "../engine/types";
 import { drawEquip, type EquipLook } from "./equip";
-import { type Theme, TRAP_ICON, themeFor } from "./theme";
+import {
+	type Ambient,
+	type Theme,
+	TRAP_ICON,
+	themeFor,
+	zoneFor,
+} from "./theme";
+
+/** 倒れた所に立つ墓（RPGEN の単体スプライト）。 */
+export const GRAVE = "sp:07DETe3";
+
+/** 描くときの ついでの指定。 */
+export type DrawOpts = {
+	/** 向きを変えるあいだ（向きの印を強く出す）。 */
+	strong?: boolean;
+	/** 倒れた所の墓。drop は 落ちてくる進み（0〜1、1 で着地）。 */
+	grave?: { x: number; y: number; drop: number } | null;
+};
 
 /** 画面に描くキャラ（キリコ・モンスター）。 */
 export type Figure = {
@@ -72,10 +89,10 @@ export class FloorView {
 		this.dirty = true;
 	}
 
-	private buildTerrain(s: RunState, lastDepth: number): void {
+	private buildTerrain(s: RunState): void {
 		const f = s.floor;
 		const l = f.layout;
-		const theme = themeFor(f.depth, lastDepth);
+		const theme = themeFor(f.depth);
 		this.theme = theme;
 		if (!this.terrain || this.terrainFloor !== f) {
 			this.terrain = document.createElement("canvas");
@@ -130,10 +147,10 @@ export class FloorView {
 		time: number,
 		itemIcon: (kind: string) => string,
 		fakeItems: { x: number; y: number; kind: string }[] = [],
-		facing: { strong: boolean } = { strong: false },
+		opts: DrawOpts = {},
 	): void {
-		if (this.dirty || this.terrainFloor !== s.floor)
-			this.buildTerrain(s, lastDepth);
+		const facing = { strong: !!opts.strong };
+		if (this.dirty || this.terrainFloor !== s.floor) this.buildTerrain(s);
 		const ctx = screen.begin();
 		const theme = this.theme as Theme;
 		const f = s.floor;
@@ -248,9 +265,40 @@ export class FloorView {
 			ctx.globalAlpha = 1;
 		}
 
+		// 倒れた所の墓（上から落ちてきて、少しはねる）
+		if (opts.grave) {
+			const g = opts.grave;
+			const k = Math.max(0, Math.min(1, g.drop));
+			const fall =
+				k < 0.7
+					? (1 - k / 0.7) ** 2 * -40
+					: -Math.sin(((k - 0.7) / 0.3) * Math.PI) * 3;
+			const x = g.x * TILE - ox;
+			const y = Math.round(g.y * TILE - oy + fall);
+			if (k > 0) {
+				ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
+				ctx.beginPath();
+				ctx.ellipse(
+					x + 8,
+					g.y * TILE - oy + 15,
+					5 * k + 1,
+					1.5,
+					0,
+					0,
+					Math.PI * 2,
+				);
+				ctx.fill();
+				if (getImage(GRAVE)) drawRefInCell(ctx, GRAVE, x, y);
+				else {
+					ctx.fillStyle = "#9a98a8";
+					ctx.fillRect(x + 4, y + 3, 8, 12);
+				}
+			}
+		}
+
 		// キリコの向き（歩行グラは4方向しかなく、斜めの向きが絵では わからないので印を出す）
 		const me = figures.find((g) => g.id === 0);
-		if (me && me.fade < 1) {
+		if (me && me.fade <= 0 && !opts.grave) {
 			const d = me.dir;
 			const vx = [0, 1, 1, 1, 0, -1, -1, -1][d];
 			const vy = [-1, -1, 0, 1, 1, 1, 0, -1][d];
@@ -286,6 +334,17 @@ export class FloorView {
 			ctx.stroke();
 		}
 
+		// ただよう粒（層ごとの雰囲気。霧の下に描くので、見えている所にだけ出る）
+		drawAmbient(
+			ctx,
+			zoneFor(f.depth).ambient,
+			time,
+			ox,
+			oy,
+			screen.width,
+			screen.height,
+		);
+
 		// 霧：見たことのない所は黒、今は見えない所は暗く
 		for (let y = Math.max(0, Math.floor(oy / TILE)); y < l.h; y++) {
 			const py = y * TILE - oy;
@@ -314,6 +373,90 @@ export class FloorView {
 		}
 	}
 }
+
+/** 0〜1 の決まった乱数（粒の置き場所など。毎コマ同じ値になる）。 */
+const hash01 = (n: number): number => {
+	const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+	return x - Math.floor(x);
+};
+
+/**
+ * 層の粒を描く。粒は地面に対して止まった空間にあり（歩くと景色といっしょに流れる）、
+ * 画面の大きさの箱を くり返して しきつめる。
+ */
+const drawAmbient = (
+	ctx: CanvasRenderingContext2D,
+	kind: Ambient,
+	time: number,
+	ox: number,
+	oy: number,
+	w: number,
+	h: number,
+): void => {
+	const sec = time / 1000;
+	const n = Math.round(((w * h) / (240 * 400)) * 40);
+	const wrap = (v: number, m: number) => ((v % m) + m) % m;
+	for (let i = 0; i < n; i++) {
+		const r1 = hash01(i);
+		const r2 = hash01(i + 101);
+		const r3 = hash01(i + 211);
+		let x = r1 * w;
+		let y = r2 * h;
+		let a = 0.5;
+		let size = 1;
+		let color = "#fff";
+		switch (kind) {
+			case "dust":
+				y += sec * (3 + r3 * 4);
+				x += Math.sin(sec * 0.6 + i) * 4;
+				a = 0.35 + r3 * 0.35;
+				size = r3 > 0.75 ? 2 : 1;
+				color = "#e6d3a8";
+				break;
+			case "spores":
+				y -= sec * (4 + r3 * 5);
+				x += Math.sin(sec * 0.8 + i * 1.3) * 7;
+				a = 0.55 + 0.4 * Math.sin(sec * 2 + i);
+				size = r3 > 0.6 ? 2 : 1;
+				color = "#d8ff8a";
+				break;
+			case "snow":
+				y += sec * (10 + r3 * 10);
+				x += -sec * 4 + Math.sin(sec * 1.1 + i) * 5;
+				a = 0.5 + r3 * 0.35;
+				size = r3 > 0.7 ? 2 : 1;
+				color = "#e6f4ff";
+				break;
+			case "data":
+				y += sec * (28 + r3 * 30);
+				a = Math.floor(sec * 6 + i * 0.7) % 3 === 0 ? 0.15 : 0.55;
+				color = i % 3 === 0 ? "#6fe6ff" : "#b58cff";
+				break;
+			case "embers":
+				y -= sec * (12 + r3 * 14);
+				x += Math.sin(sec * 1.7 + i * 2.1) * 5;
+				a = 0.45 + 0.4 * Math.sin(sec * 9 + i * 3.7);
+				size = r3 > 0.8 ? 2 : 1;
+				color = r3 > 0.5 ? "#ffb04a" : "#ff6a3a";
+				break;
+			case "glitter":
+				a = Math.max(0, Math.sin(sec * 1.6 + i * 1.7)) ** 6;
+				color = "#ffe9a0";
+				break;
+		}
+		if (a <= 0.02) continue;
+		const px = Math.round(wrap(x - ox, w));
+		const py = Math.round(wrap(y - oy, h));
+		ctx.globalAlpha = Math.min(1, a);
+		ctx.fillStyle = color;
+		if (kind === "data") ctx.fillRect(px, py, 1, 3);
+		else if (kind === "glitter") {
+			ctx.fillRect(px, py - 1, 1, 3);
+			ctx.fillRect(px - 1, py, 3, 1);
+		} else ctx.fillRect(px, py, size, size);
+	}
+	ctx.globalAlpha = 1;
+};
 
 /** 全体の地図（見たことのある所だけ）。画面の上に半透明で重ねる。 */
 export const drawMap = (

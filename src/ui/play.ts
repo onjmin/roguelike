@@ -19,6 +19,7 @@ import { isFloor, roomAt } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
 import { type Command, type GameEvent, PLAYER_ID } from "../core/types";
+import { loadImage } from "../engine/assets";
 import { DEBUG_SEED, loadBook, markSeenMonster, saveRun } from "../engine/save";
 import type { Screen } from "../engine/screen";
 import { settings } from "../engine/settings";
@@ -30,8 +31,15 @@ import { itemIcon } from "./icons";
 import { listWindow } from "./list";
 import { type MenuAction, openFootMenu, openMainMenu, pickItem } from "./menu";
 import { showRunEnd } from "./records";
-import { drawMap, type Figure, FloorView, type Projectile } from "./render";
+import {
+	drawMap,
+	type Figure,
+	FloorView,
+	GRAVE,
+	type Projectile,
+} from "./render";
 import { openSettings } from "./settings";
+import { zoneFor } from "./theme";
 
 const KIRIKO = "pub:sprites/kiriko.png";
 /** 武器を振る長さ（振りかぶる → ななめ → 前 の3つの形）。 */
@@ -52,15 +60,11 @@ type Disp = Figure & {
 	dying: boolean;
 };
 
-/** 階ごとの BGM。 */
+/** 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。 */
 const floorBgm = (run: Run): string => {
 	if (run.f.houseAwake) return "battle";
-	if (run.s.returning) return "tense";
-	const d = run.s.depth;
-	if (d >= LAST_DEPTH) return "lastboss";
-	if (d <= 7) return "dungeon";
-	if (d <= 13) return "field2";
-	return "tense";
+	if (run.s.returning) return "title";
+	return zoneFor(run.s.depth).bgm;
 };
 
 export class Play {
@@ -88,6 +92,8 @@ export class Play {
 	private travel: Pos | null = null;
 	/** 向きを変えたあと、方向がはなされるのを待っている。 */
 	private waitRelease = false;
+	/** 倒れた所に立てる墓（倒れたときの演出）。 */
+	private grave: { x: number; y: number; t0: number } | null = null;
 	/** 図鑑に載っている敵（毎フレーム保存を読まないように覚えておく）。 */
 	private bookSeen = new Set(loadBook().seen);
 	private statusKey = "";
@@ -113,6 +119,7 @@ export class Play {
 				suspended = true;
 			};
 			this.syncDisp(true);
+			void loadImage(GRAVE);
 			this.ctx.audio.bgm(floorBgm(this.run));
 			this.ctx.input.onFieldTap = (x, y) => this.onTap(x, y);
 			// 最初の札のあいだは操作を受けない（タイトルで押したキーも捨てる）
@@ -143,6 +150,7 @@ export class Play {
 
 	private stop(): void {
 		this.stopped = true;
+		this.screen.canvas.classList.remove("dead");
 		cancelAnimationFrame(this.raf);
 		this.ctx.input.onFieldTap = null;
 		document.removeEventListener("visibilitychange", this.onHide);
@@ -324,7 +332,14 @@ export class Play {
 			t,
 			itemIcon,
 			fakeItems,
-			{ strong: this.ctx.input.mods().turn },
+			{
+				strong: this.ctx.input.mods().turn,
+				grave: this.grave && {
+					x: this.grave.x,
+					y: this.grave.y,
+					drop: (t - this.grave.t0) / GRAVE_DROP_MS,
+				},
+			},
 		);
 	}
 
@@ -779,6 +794,8 @@ export class Play {
 					this.addLog(e.text, e.tone);
 					break;
 				case "se":
+					// 全滅の音は、倒れる演出で 墓が落ちたときに鳴らす
+					if (e.name === "wipeout" && this.run.s.end?.kind === "dead") break;
 					this.ctx.audio.se(e.name);
 					break;
 				case "turn": {
@@ -951,7 +968,7 @@ export class Play {
 		const card = el("div", { class: "chapter shown" }, [
 			el("div", {
 				class: "chapter-label",
-				text: up ? "帰り道" : "過去ログの底",
+				text: `${up ? "帰り道　" : ""}${zoneFor(run.s.depth).name}`,
 			}),
 			el("div", { class: "chapter-title", text: `地下　${run.s.depth}階` }),
 			el("div", {
@@ -978,10 +995,51 @@ export class Play {
 
 	private async ending(): Promise<void> {
 		const s = this.run.s;
-		await wait(700);
 		this.busy = true;
+		if (s.end?.kind === "dead") await this.deathScene();
+		else await wait(700);
 		await showRunEnd(this.ctx, s);
 		this.stop();
+	}
+
+	/**
+	 * 倒れたときの演出：キリコが くるくる回って消え、その場に墓が落ちてくる。
+	 * 画面の色が抜けて、どこで何に倒されたかを出す。タップ・キーで先へ。
+	 */
+	private async deathScene(): Promise<void> {
+		const run = this.run;
+		const end = run.s.end;
+		if (!end) return;
+		void this.ctx.audio.fadeBgm(600);
+		const pd = this.disp.get(PLAYER_ID);
+		await wait(250);
+		if (pd) {
+			pd.flashUntil = performance.now() + 420;
+			for (const d of [4, 6, 0, 2, 4, 6, 0, 2, 4] as Dir8[]) {
+				pd.dir = d;
+				await wait(65);
+			}
+			pd.dying = true;
+			pd.fadeT0 = performance.now();
+		}
+		this.grave = { x: run.p.x, y: run.p.y, t0: performance.now() + 120 };
+		await wait(120 + GRAVE_DROP_MS * 0.7);
+		this.ctx.audio.se("wipeout");
+		this.screen.canvas.classList.add("dead");
+		const scene = el("div", { class: "death" }, [
+			el("div", { class: "death-title", text: "キリコは　たおれた" }),
+			el("div", {
+				class: "death-cause",
+				text: `${end.depth === 0 ? "" : `${run.s.returning ? "帰り道の　" : ""}地下${end.depth}階で　`}${end.cause}`,
+			}),
+		]);
+		this.ctx.ui.appendChild(scene);
+		await nextFrame();
+		scene.classList.add("shown");
+		await waitOrSkip(3200, 900);
+		this.ctx.input.clearField();
+		this.ctx.input.takeDirPress();
+		scene.remove();
 	}
 
 	// ───────────────── ダッシュ・タップ移動 ─────────────────
@@ -1155,6 +1213,29 @@ const posAt = (keys: Disp["keys"], t: number): Pos => {
 	const z = keys[keys.length - 1];
 	return { x: z.x, y: z.y };
 };
+
+/** 墓が落ちてくる時間（7割で着地して、残りで少しはねる）。 */
+const GRAVE_DROP_MS = 600;
+
+/** ms たつか、after ms より後に 画面に触れる・キーを押すまで待つ。 */
+const waitOrSkip = (ms: number, after: number): Promise<void> =>
+	new Promise((resolve) => {
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			clearTimeout(tid);
+			window.removeEventListener("pointerdown", finish, true);
+			window.removeEventListener("keydown", finish, true);
+			resolve();
+		};
+		const tid = setTimeout(finish, ms);
+		setTimeout(() => {
+			if (done) return;
+			window.addEventListener("pointerdown", finish, true);
+			window.addEventListener("keydown", finish, true);
+		}, after);
+	});
 
 /** 1コマ（60fps）の長さ。 */
 const FRAME_MS = 17;
