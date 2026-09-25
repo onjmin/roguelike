@@ -202,7 +202,9 @@ export class Play {
 		this.screen.canvas.classList.remove("dead");
 		this.deathEl?.remove();
 		this.rp?.bar?.remove();
-		this.hud.root.classList.remove("replay");
+		this.hud.root.classList.remove("replay", "on-stairs");
+		const foot = this.hud.root.querySelector(".mini-foot");
+		if (foot) foot.textContent = "足元";
 		this.ctx.ui.classList.remove("replaying");
 		cancelAnimationFrame(this.raf);
 		this.ctx.input.onFieldTap = null;
@@ -405,6 +407,13 @@ export class Play {
 
 	private updateStatus(): void {
 		const run = this.run;
+		// 使える階段の上では、足元ボタンを「階段」にして光らせる（聞かれたのを閉じても 降りられるように）
+		const onStairs = this.onUsableStairs() && !this.rp;
+		if (this.hud.root.classList.contains("on-stairs") !== onStairs) {
+			this.hud.root.classList.toggle("on-stairs", onStairs);
+			const foot = this.hud.root.querySelector(".mini-foot");
+			if (foot) foot.textContent = onStairs ? "階段" : "足元";
+		}
 		const p = run.p;
 		const hunger = Math.ceil(p.hunger / HUNGER_UNIT);
 		const left = run.s.returning ? -1 : run.cardsLeft();
@@ -550,7 +559,9 @@ export class Play {
 				await this.exec({ c: "wait" });
 				return;
 			case "foot":
-				await this.menu(openFootMenu(this.ctx, run));
+				// 階段の上では そのまま「降りますか？」
+				if (this.onUsableStairs()) await this.askStairs();
+				else await this.menu(openFootMenu(this.ctx, run));
 				return;
 			case "map":
 				this.toggleMap();
@@ -1393,8 +1404,20 @@ export class Play {
 		};
 	}
 
-	/** d の向きに、何かあるまで走る。 */
+	/** d の向きに、何かあるまで走る。階段に乗って止まったら 聞く。 */
 	private async dash(d: Dir8): Promise<void> {
+		const wasOnStairs = this.onUsableStairs();
+		await this.dashSteps(d);
+		if (
+			!wasOnStairs &&
+			this.onUsableStairs() &&
+			!this.stopped &&
+			!this.run.s.end
+		)
+			await this.askStairs();
+	}
+
+	private async dashSteps(d: Dir8): Promise<void> {
 		const run = this.run;
 		// 混乱しているときは走らない（1歩だけ）
 		if (run.p.status.confuse > 0) {
@@ -1431,7 +1454,6 @@ export class Play {
 				if (ways > 2) break;
 			}
 		}
-		if (this.onUsableStairs() && !this.stopped) await this.askStairs();
 	}
 
 	/** タップした所へ1歩進む（知っている床だけを通る）。 */
@@ -1452,9 +1474,20 @@ export class Play {
 			return;
 		}
 		if (run.p.status.confuse > 0 || snap.monsters > 0) this.travel = null;
+		const wasOnStairs = this.onUsableStairs();
 		const ev = await this.exec({ c: "move", dir: d }, true);
 		if (this.stopped || run.s.end) {
 			this.travel = null;
+			return;
+		}
+		// 階段に乗ったら、行き先の途中でも・敵がいても 聞く（なぐられた1歩でも）
+		if (
+			!wasOnStairs &&
+			this.onUsableStairs() &&
+			ev.some((e) => e.t === "move" && e.id === PLAYER_ID)
+		) {
+			this.travel = null;
+			await this.askStairs();
 			return;
 		}
 		if (!ev.length || this.shouldStop(snap, ev, false)) {

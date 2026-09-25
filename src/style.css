@@ -559,6 +559,23 @@ body.shake #app {
 	transition: opacity 0.15s;
 }
 
+/* 階段の上では 足元ボタンが「階段」になって光る */
+.hud.on-stairs .mini-foot {
+	color: var(--accent);
+	border-color: var(--accent);
+	box-shadow: 0 0 8px rgba(255, 207, 74, 0.6);
+	animation: stairs-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes stairs-glow {
+	from {
+		box-shadow: 0 0 3px rgba(255, 207, 74, 0.35);
+	}
+	to {
+		box-shadow: 0 0 10px rgba(255, 207, 74, 0.8);
+	}
+}
+
 /* リプレイを見ているあいだは 操作のボタンを隠す（下の帯で操作する） */
 .hud.replay .pad,
 .hud.replay .ab,

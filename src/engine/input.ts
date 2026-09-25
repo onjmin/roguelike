@@ -147,6 +147,8 @@ const toDir4 = (d: Dir8): Dir =>
 
 /** 画面を これより長く押さえたら「押しっぱなしで歩く」、短ければタップ。 */
 const FIELD_HOLD_MS = 220;
+/** 窓が開いてから、外のタップで閉じられるようになるまで（ms）。 */
+const WINDOW_TAP_GRACE_MS = 300;
 
 /** 指を追い続ける（取れない環境では何もしない。処理を止めないように）。 */
 const capture = (el: HTMLElement, id: number): void => {
@@ -177,7 +179,7 @@ export class Input {
 		y: number;
 		t0: number;
 	} | null = null;
-	private handlers: { fn: Handler; tap: Key | null }[] = [];
+	private handlers: { fn: Handler; tap: Key | null; at: number }[] = [];
 	private fieldQueue: Key[] = [];
 	private keyMods: Mods = { dash: false, diag: false, turn: false };
 	/** 画面のボタンで入れた切り替え（ダッシュ・斜め・向き）。 */
@@ -320,7 +322,11 @@ export class Input {
 
 	/** ハンドラを積む。戻り値を呼ぶと外れる。 */
 	push(handler: Handler, opt: PushOptions = {}): () => void {
-		const h = { fn: handler, tap: opt.tap === undefined ? "a" : opt.tap };
+		const h = {
+			fn: handler,
+			tap: opt.tap === undefined ? "a" : opt.tap,
+			at: performance.now(),
+		};
 		this.handlers.push(h);
 		this.fieldQueue = [];
 		this.pendingDir = null;
@@ -459,7 +465,10 @@ export class Input {
 			this.onAnyInput?.();
 			const top = this.handlers[this.handlers.length - 1];
 			if (top) {
-				if (top.tap) this.press(top.tap);
+				// 窓が開いた直後のタップは数えない（歩こうとして続けて押したタップで、
+				// 開いたばかりの「階段を降りますか？」などを すぐ閉じてしまわないように）
+				if (top.tap && performance.now() - top.at >= WINDOW_TAP_GRACE_MS)
+					this.press(top.tap);
 				return;
 			}
 			const p = rel(e);
