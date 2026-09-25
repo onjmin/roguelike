@@ -75,7 +75,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 		} else quoteEl.style.display = "none";
 		const buttons = el("div", { class: "title-buttons" });
 		const root = el("div", { class: "title" }, [
-			el("div", { class: "title-sub", text: "トルネコ風　ローグライク" }),
+			el("div", { class: "title-sub", text: "1歩1ターンの　ローグライク" }),
 			el("h1", {
 				class: "title-logo",
 				html: `蓄音キリコと<span class="title-logo-sub">過去ログの底</span>`,

@@ -7,6 +7,7 @@ import { bgm } from "./data/bgm";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import { Input } from "./engine/input";
+import { DEBUG_SEED } from "./engine/save";
 import { Screen } from "./engine/screen";
 import type { Ctx } from "./ui/ctx";
 import { mountHud } from "./ui/hud";
@@ -101,7 +102,8 @@ const devRun = (): Run | null => {
 	const depth = Number(q.get("depth") ?? 0);
 	const seed = q.get("seed");
 	if (!depth && !seed) return null;
-	const run = Run.create(seed ?? newSeed());
+	// シードの頭に debug: を付けておくと、中断セーブにも記録にも残らない（本物のセーブを上書きしない）
+	const run = Run.create(`${DEBUG_SEED}${seed ?? newSeed()}`);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
 	if (depth > 1) run.enterFloor(depth, false);

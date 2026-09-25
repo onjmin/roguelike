@@ -501,6 +501,14 @@ export class Play {
 		}
 		const l = run.f.layout;
 		if (x < 0 || y < 0 || x >= l.w || y >= l.h) return;
+		// 離れた敵をタップしたら、歩かずに その敵の名前と ようすを出す（はじめて見る敵の特技がわかるように）
+		const far = run.monsterAt(x, y);
+		if (far && run.monsterVisible(far) && !far.disguise) {
+			const d0 = mdef(far);
+			this.addLog(`${d0.name}：${d0.desc}`);
+			this.ctx.se("cursor");
+			return;
+		}
 		if (!run.f.seen[y * l.w + x] || !isFloor(l, x, y)) return;
 		this.travel = { x, y };
 	}

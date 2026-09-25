@@ -40,7 +40,11 @@ export const clearRun = (): void => {
  * 終わった冒険を渡されたら保存せず、記録に残して中断セーブを消す。
  * 倒れた直後にタブを閉じても、古い中断セーブから やり直せないように（記録も失わないように）。
  */
+/** 開発用に始めた冒険のシードの頭（保存も記録もしない）。 */
+export const DEBUG_SEED = "debug:";
+
 export const saveRun = (s: RunState): void => {
+	if (s.seed.startsWith(DEBUG_SEED)) return;
 	if (s.end) {
 		addRecord(recordFromRun(s));
 		clearRun();
@@ -191,6 +195,7 @@ export const runStats = (): Stats => {
  * 同じ冒険の終わりを2回足さない（saveRun と記録の画面の両方から呼ばれることがある）。
  */
 export const addRecord = (r: RunRecord): void => {
+	if (r.seed.startsWith(DEBUG_SEED)) return;
 	const list = loadRecords();
 	const last = list[0];
 	if (
