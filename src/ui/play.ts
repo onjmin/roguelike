@@ -808,6 +808,19 @@ export class Play {
 			this.ctx.se("cursor");
 			return;
 		}
+		// まだ見ていない所（暗い通路の先など）を 2マス以上 先にタップしたら、その方へ 何かあるまで走る
+		// （近くの 知っている床＝となりのマス に寄せると 1マスずつしか 進めないので）
+		const lay = run.f.layout;
+		const seenTap =
+			x >= 0 && y >= 0 && x < lay.w && y < lay.h && !!run.f.seen[y * lay.w + x];
+		if (!seenTap && dist(p, { x, y }) >= 2) {
+			const toward = this.dirFromScreen(cssX, cssY);
+			const first = toward === null ? null : this.passableNear(toward, 2);
+			if (first !== null) {
+				void this.dash(first);
+				return;
+			}
+		}
 		// 知っている床ならそこへ。少しずれて壁をタップしたときは、となりの知っている床に寄せる
 		const target = this.nearKnownFloor(x, y, 1);
 		if (target) {
