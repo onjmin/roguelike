@@ -475,25 +475,41 @@ body.shake #app {
 }
 
 .menu.main-menu {
-	width: 220px;
+	width: min(340px, calc(var(--app-w) - 24px));
 }
 
-/* メインメニューの下の つよさ（トルネコ1の 最深階・満腹度・剣の強さ・ちから・盾の強さ・経験値） */
+/* 2列の一覧（メインメニュー） */
+.menu-grid.cols-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 4px;
+}
+
+.menu-grid .menu-item {
+	font-size: 15px;
+	padding: 9px 6px 9px 22px;
+	gap: 4px;
+}
+
+.menu-grid .menu-item small {
+	font-size: 11px;
+}
+
+.menu-grid .menu-item.cur::before {
+	left: 6px;
+	font-size: 10px;
+}
+
+/* メインメニューの 上の つよさ（トルネコ1の 最深階・満腹度・剣の強さ・ちから・盾の強さ・経験値） */
 .menu-stats {
-	position: absolute;
-	left: calc(12px + var(--safe-l));
-	right: calc(12px + var(--safe-r));
-	bottom: calc(14px + var(--safe-b));
-	max-width: 460px;
-	margin: 0 auto;
 	display: grid;
 	grid-template-columns: auto 1fr auto 1fr;
-	column-gap: 12px;
-	row-gap: 4px;
-	padding: 10px 14px;
-	font-size: 15px;
-	z-index: 29;
-	pointer-events: none;
+	column-gap: 8px;
+	row-gap: 2px;
+	padding: 2px 6px 8px;
+	margin-bottom: 6px;
+	font-size: 13px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .menu-stats .k {
@@ -1531,16 +1547,35 @@ body.shake #app {
 }
 
 /* 横持ち：メニューが縦にはみ出さないよう、行を詰めて2列にする */
+/* 横長で背の低い画面：つよさを 左、メニューの 2列を 右に（上下に積むと 入りきらない） */
 .short-landscape .menu.main-menu {
-	width: min(420px, calc(var(--app-w) - 24px));
+	width: min(600px, calc(var(--app-w) - 24px));
 	display: grid;
-	grid-template-columns: 1fr 1fr;
-	column-gap: 4px;
-	align-content: start;
+	grid-template-columns: minmax(170px, 210px) 1fr;
+	column-gap: 12px;
+	align-items: start;
 }
 
-.short-landscape .menu.main-menu .menu-close {
+.short-landscape .menu.main-menu > .menu-header {
+	grid-column: 1;
+	grid-row: 1 / span 2;
+}
+
+.short-landscape .menu.main-menu > .menu-grid {
+	grid-column: 2;
+}
+
+.short-landscape .menu.main-menu > .menu-pager,
+.short-landscape .menu.main-menu > .menu-close {
 	grid-column: 1 / -1;
+}
+
+.short-landscape .menu.main-menu .menu-stats {
+	grid-template-columns: auto 1fr;
+	row-gap: 6px;
+	border-bottom: none;
+	margin-bottom: 0;
+	padding-top: 8px;
 }
 
 .short-landscape .menu-item {

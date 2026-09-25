@@ -123,10 +123,11 @@ const footHint = (run: Run): string | undefined => {
 };
 
 /**
- * メニューの下に出す つよさの窓（トルネコ1と同じく、最深階・満腹度・武器と盾の強さ・ちから・経験値）。
+ * メニューの窓の上に出す つよさ（トルネコ1と同じく、最深階・満腹度・武器と盾の強さ・ちから・経験値）。
+ * 窓の中に入れる（スマホで 別の窓にすると メニューと 重なって 見えなくなる）。
  * 武器・盾の強さは 修正値を入れた値（装備すると 修正値は わかる）。
  */
-const statsPanel = (run: Run): HTMLElement => {
+const statsHtml = (run: Run): string => {
 	const p = run.p;
 	const power = (it: Item | null, base: "atk" | "def"): string => {
 		if (!it) return "0";
@@ -135,17 +136,14 @@ const statsPanel = (run: Run): HTMLElement => {
 	};
 	const cell = (k: string, v: string) =>
 		`<span class="k">${k}</span><span class="v">${v}</span>`;
-	return el("div", {
-		class: "menu-stats window",
-		html: [
-			cell("最深階", `${run.s.stats.maxDepth}`),
-			cell("満腹度", `${Math.ceil(p.hunger / HUNGER_UNIT)}%`),
-			cell("武器の強さ", power(run.weapon(), "atk")),
-			cell("ちから", `${p.str}/${p.maxStr}`),
-			cell("盾の強さ", power(run.shield(), "def")),
-			cell("経験値", `${p.exp}`),
-		].join(""),
-	});
+	return `<div class="menu-stats">${[
+		cell("最深階", `${run.s.stats.maxDepth}`),
+		cell("満腹度", `${Math.ceil(p.hunger / HUNGER_UNIT)}%`),
+		cell("武器の強さ", power(run.weapon(), "atk")),
+		cell("ちから", `${p.str}/${p.maxStr}`),
+		cell("盾の強さ", power(run.shield(), "def")),
+		cell("経験値", `${p.exp}`),
+	].join("")}</div>`;
 };
 
 const confirmSuspend = async (ctx: Ctx): Promise<boolean> =>
@@ -174,7 +172,7 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				value: "items",
 			},
 			{ label: "足元", sub: footHint(run), value: "foot" },
-			{ label: "山札", sub: `この階 のこり${run.cardsLeft()}`, value: "deck" },
+			{ label: "山札", sub: `のこり${run.cardsLeft()}`, value: "deck" },
 			{ label: "つよさ", sub: `Lv${run.p.lv}`, value: "status" },
 			{ label: "図鑑", value: "book" },
 			{ label: "ログ", value: "log" },
@@ -182,14 +180,13 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "せってい", value: "settings" },
 			{ label: "中断する", value: "suspend" },
 		];
-		const stats = statsPanel(run);
-		ctx.ui.appendChild(stats);
-		let v: string | null;
-		try {
-			v = await listWindow(ctx, "", rows, { cls: "main-menu", start });
-		} finally {
-			stats.remove();
-		}
+		// トルネコ1のように 2列（縦に長いと スマホで 画面を ふさぐ）。つよさは 窓の上に
+		const v = await listWindow(ctx, "", rows, {
+			cls: "main-menu",
+			start,
+			cols: 2,
+			header: statsHtml(run),
+		});
 		if (v === null) return NONE;
 		start = Math.max(
 			0,

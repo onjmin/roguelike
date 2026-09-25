@@ -142,6 +142,8 @@ const showPage = (
 /**
  * 縦に並ぶ選択ウィンドウ。B・とじる・外のタップで null。
  * actions は とじるの横に並べるボタン（もちものの「整理」など）。押すと その value で閉じる。
+ * header は 題の下・行の上に出す 見るだけの HTML（メインメニューの つよさ）。
+ * cols が 2 なら 行を 2 列に並べる（トルネコ1のメニューのように。上下で 段、左右で 列を動く）。
  */
 export const listWindow = (
 	ctx: UiCtx,
@@ -152,6 +154,8 @@ export const listWindow = (
 		start?: number;
 		closeLabel?: string;
 		actions?: { label: string; value: string }[];
+		header?: string;
+		cols?: number;
 	} = {},
 ): Promise<string | null> =>
 	new Promise((resolve) => {
@@ -163,6 +167,13 @@ export const listWindow = (
 			const firstOk = items.findIndex((i) => !i.disabled);
 			if (firstOk >= 0) cur = firstOk;
 		}
+		if (opt.header)
+			box.appendChild(el("div", { class: "menu-header", html: opt.header }));
+		const cols = Math.max(1, opt.cols ?? 1);
+		const rowsBox =
+			cols > 1
+				? box.appendChild(el("div", { class: `menu-grid cols-${cols}` }))
+				: box;
 		const buttons = items.map((it) => {
 			const b = el("button", {
 				class: "menu-item",
@@ -173,7 +184,7 @@ export const listWindow = (
 			onTap(b, box, () => {
 				if (!it.disabled) done(it.value);
 			});
-			box.appendChild(b);
+			rowsBox.appendChild(b);
 			return b;
 		});
 		const pager = makePager((d) => flip(d));
@@ -236,10 +247,16 @@ export const listWindow = (
 		render();
 		const pop = ctx.input.push(
 			(k, repeat) => {
-				if (k === "up" || k === "down") {
+				if (
+					k === "up" ||
+					k === "down" ||
+					(cols > 1 && (k === "left" || k === "right"))
+				) {
 					if (!items.length) return;
-					// 選べない行は とばす（ぜんぶ選べないときは そのまま動く）
-					const step = k === "up" ? -1 : 1;
+					// 選べない行は とばす（ぜんぶ選べないときは そのまま動く）。2列なら 上下は 段を、左右は 列を動く
+					const step =
+						(k === "up" || k === "left" ? -1 : 1) *
+						(k === "up" || k === "down" ? cols : 1);
 					let next = cur;
 					for (let n = 0; n < items.length; n++) {
 						next = (next + step + items.length) % items.length;
