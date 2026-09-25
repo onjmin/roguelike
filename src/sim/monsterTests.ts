@@ -1944,6 +1944,34 @@ test("pursuit", "sealed: berserk/accel speed goes, a w_haste stays", () => {
 	ok(now(k3).status.fast === 999, "a w_haste speed was removed by the seal");
 });
 
+test(
+	"floor",
+	"earthquake: shakes at 1534 and 1574, the floor gives way at 1614",
+	() => {
+		// トルネコ1と同じ回数（同じ階で 1534・1574 ターン目に揺れ、1614 ターン目に下の階へ）
+		const r = arena("quake");
+		const at = (turns: number): GameEvent[] => {
+			r.f.turns = turns - 1;
+			r.p.hunger = HUNGER_MAX;
+			return r.act({ c: "wait" });
+		};
+		const quakes = (ev: GameEvent[]) =>
+			ev
+				.filter((e) => e.t === "quake")
+				.map((e) => (e as { level: number }).level);
+		ok(quakes(at(1533)).length === 0, "shook before 1534");
+		ok(quakes(at(1534)).join() === "1", "no first quake at 1534");
+		ok(quakes(at(1574)).join() === "2", "no second quake at 1574");
+		const depth = r.s.depth;
+		ok(
+			quakes(at(1613)).length === 0 && r.s.depth === depth,
+			"fell before 1614",
+		);
+		at(1614);
+		ok(r.s.depth === depth + 1, `did not fall at 1614 (depth ${r.s.depth})`);
+	},
+);
+
 /**
  * 部屋を抜けている途中の敵：西の小部屋（キリコ）→ 通路 → 部屋（入口は西と北。北の先は行き止まり）。
  * 通路で見失って 部屋に入り、北の出口へ向かっているところで返す。

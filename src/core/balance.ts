@@ -100,8 +100,11 @@ export const TRAP_CHANCE = 3 / 4;
 /** 眠っているモンスターが、入室・となりで起きる確率。 */
 export const WAKE_CHANCE = 1 / 2;
 
-/** 地震（1つの階に長くいると、下の階へ落ちる）。 */
-export const QUAKE_TURNS: readonly number[] = [1500, 1540, 1580];
+/**
+ * 地震（1つの階に長くいると、下の階へ落ちる）。トルネコ1と同じく 1534・1574 ターン目に揺れ、
+ * 1614 ターン目に床がぬける（トルネコ1は向き変え・命名なども行動に数えるが、ここでは時間の進むターンだけ）。
+ */
+export const QUAKE_TURNS: readonly number[] = [1534, 1574, 1614];
 
 /** モンスターが最初から札を持っている確率。 */
 export const CARRY_CHANCE = 1 / 6;
