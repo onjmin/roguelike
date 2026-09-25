@@ -16,6 +16,7 @@ const add = (d: Omit<ItemDef, "order">): void => {
 add({
 	id: "club",
 	cat: "weapon",
+	sound: { swing: "swing_blunt", hit: "hit_club" },
 	name: "こん棒",
 	atk: 1,
 	desc: "木を　けずった　棒",
@@ -23,6 +24,7 @@ add({
 add({
 	id: "copper",
 	cat: "weapon",
+	sound: { swing: "swing_blade", hit: "hit_copper" },
 	name: "銅の剣",
 	atk: 3,
 	desc: "ありふれた　剣",
@@ -30,6 +32,7 @@ add({
 add({
 	id: "bat",
 	cat: "weapon",
+	sound: { swing: "swing_blunt", hit: "hit_bat" },
 	name: "金属バット",
 	atk: 4,
 	desc: "よく　しなる　バット",
@@ -37,6 +40,7 @@ add({
 add({
 	id: "wyrmbane",
 	cat: "weapon",
+	sound: { swing: "swing_blade", hit: "hit_wyrm" },
 	name: "竜断ちの剣",
 	atk: 5,
 	desc: "竜には　ダメージが　2倍",
@@ -44,6 +48,7 @@ add({
 add({
 	id: "steel",
 	cat: "weapon",
+	sound: { swing: "swing_blade", hit: "hit_steel" },
 	name: "鋼の剣",
 	atk: 6,
 	desc: "よく　切れる　剣",
@@ -51,6 +56,7 @@ add({
 add({
 	id: "starsword",
 	cat: "weapon",
+	sound: { swing: "swing_blade", hit: "hit_star" },
 	name: "星鉄の剣",
 	atk: 7,
 	desc: "空から　落ちた　鉄の剣",
@@ -58,6 +64,7 @@ add({
 add({
 	id: "mic",
 	cat: "weapon",
+	sound: { swing: "swing_blunt", hit: "hit_mic" },
 	name: "マイクスタンド",
 	atk: 10,
 	desc: "いちばん　重くて　いちばん　強い",

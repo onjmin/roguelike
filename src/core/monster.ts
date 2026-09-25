@@ -621,7 +621,8 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 		return;
 	}
 	if (!r.rng.chance(HIT_RATE)) {
-		r.se("miss");
+		// 敵の はずれは キリコの はずれ（振った音）とは 別の音
+		r.se("enemyMiss");
 		r.emit({ t: "miss", id: PLAYER_ID, pos: { x: p.x, y: p.y } });
 		r.msg(`${nm}の　攻撃は　はずれた`);
 		return;

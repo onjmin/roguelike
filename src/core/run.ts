@@ -674,6 +674,14 @@ export class Run {
 		return 112 + this.rng.int(32);
 	}
 
+	/** 武器の音（振った・当たった）。素手なら 素手の音。 */
+	private weaponSound(): { swing: string; hit: string } {
+		const w = this.weapon();
+		return (
+			(w && defOf(w.kind).sound) ?? { swing: "swing_fist", hit: "hit_fist" }
+		);
+	}
+
 	/** プレイヤーがモンスターをなぐる。 */
 	playerAttack(m: Monster): void {
 		const d = mdef(m);
@@ -684,7 +692,8 @@ export class Run {
 		}
 		wakeMonster(this, m, true);
 		if (!this.rng.chance(HIT_RATE)) {
-			this.se("miss");
+			// はずれは 振った音だけ（トルネコ1と同じ）
+			this.se(this.weaponSound().swing);
 			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
 			this.msg("キリコの　攻撃は　はずれた");
 			return;
@@ -693,7 +702,7 @@ export class Run {
 		let dmg = rollDamage(atk, d.def, this.dmgRoll());
 		if (d.tags?.includes("dragon") && this.weapon()?.kind === "wyrmbane")
 			dmg *= 2;
-		this.se("attack");
+		this.se(this.weaponSound().hit);
 		this.damageMonster(m, dmg, "hit");
 	}
 
@@ -1327,6 +1336,7 @@ export class Run {
 		}
 		// 空ぶり：前のマスの罠を見つける
 		this.emit({ t: "attack", id: PLAYER_ID, dir: d });
+		this.se(this.weaponSound().swing);
 		const trap = this.f.traps.find((t) => t.x === to.x && t.y === to.y);
 		if (trap && !trap.found) {
 			trap.found = true;

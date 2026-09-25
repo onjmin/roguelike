@@ -15,6 +15,8 @@ import {
 	TOWN_STAGES,
 } from "../core/town";
 import type { Item } from "../core/types";
+import { SE_LOUDNESS } from "../data/loudness";
+import { sfx } from "../data/sfx";
 import {
 	forgetProgressMemo,
 	loadProgress,
@@ -63,6 +65,27 @@ test("every item except goal items has a price", () => {
 		priceOf(it("a_wood", { count: 10 })) === 10 * priceOf(it("a_wood")),
 		"arrows are not priced per arrow",
 	);
+});
+
+test("every weapon has its own hit sound, and every attack sound is measured", () => {
+	const names = [
+		"swing_fist",
+		"hit_fist",
+		"enemyMiss",
+		"damage",
+		...ITEM_LIST.filter((d) => d.cat === "weapon").flatMap((d) => {
+			ok(d.sound, `${d.id} has no sound`);
+			return d.sound ? [d.sound.swing, d.sound.hit] : [];
+		}),
+	];
+	for (const n of names) {
+		ok(sfx[n], `no sound file for ${n}`);
+		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
+	}
+	const hits = ITEM_LIST.filter((d) => d.cat === "weapon").map(
+		(d) => d.sound?.hit,
+	);
+	ok(new Set(hits).size === hits.length, "two weapons share a hit sound");
 });
 
 test("town stage rules: one step per return, the main clear jumps to the top", () => {

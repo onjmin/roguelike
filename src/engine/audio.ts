@@ -55,6 +55,9 @@ const SE_LATE_MS = 600;
 const SE_HOLD_MAX_MS = SE_WAIT.jingleMaxMs;
 /** 効果音を鳴らしてから次へ進めるまでの ms（測っていない音は待たない）。 */
 const seWaitMs = (name: string): number => SE_LOUDNESS[name]?.[7] ?? 0;
+/** 効果音の頭の無音（ms。鳴り始めの 10 ms 手前まで とばす）。 */
+const seLeadMs = (name: string): number =>
+	Math.max(0, (SE_LOUDNESS[name]?.[5] ?? 0) - 10);
 
 /** dtm studio の出口の音量（createDtmStudio の masterVolume）。 */
 const STUDIO_MASTER_VOLUME = 100;
@@ -550,9 +553,11 @@ export class GameAudio {
 			level.gain.value = seLevel(name);
 			src.connect(level).connect(gain);
 			src.onended = () => level.disconnect();
-			src.start();
-			// 実際に鳴り始めた音だけ、本体が鳴り終わるまで次へ進めない
-			this.hold(seWaitMs(name));
+			// 頭の無音は とばす（押してから 鳴るまでが おそく感じないように）
+			const lead = seLeadMs(name);
+			src.start(0, lead / 1000);
+			// 実際に鳴り始めた音だけ、本体が鳴り終わるまで次へ進めない（待ちは ファイルの頭から数えてあるので、とばした分を引く）
+			this.hold(Math.max(0, seWaitMs(name) - lead));
 		});
 	}
 

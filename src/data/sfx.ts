@@ -52,6 +52,21 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		shock: "rpgen:usF2l8",
 		/** アイテムを投げる。 */
 		throw: "rpgen:3JcWxQ", // 爆弾を投げる（unj-reze の onj-reze プリセット）
+		// ── キリコの攻撃（武器ごと。data/items.ts の sound）。当たったら hit_*、空振り・はずれたら swing_*
+		// （トルネコ1と同じく、はずれは 振った音だけ）。頭の無音は とばして鳴らす（engine/audio.ts）
+		swing_fist: "rpgen:BQhjMK", // 空振り
+		swing_blade: "rpgen:hFhBTQ", // 剣を振るう音
+		swing_blunt: "rpgen:Cz7Sg7", // バールを振る
+		hit_fist: "rpgen:7rPdXL", // [マリオRPG]パンチ
+		hit_club: "rpgen:M7xnmE", // [マリオRPG]ハンマー
+		hit_copper: "rpgen:7JKd21", // ﾄﾞﾗｸｴ攻撃
+		hit_steel: "rpgen:mLgxu0", // ドルアーガ/攻撃
+		hit_bat: "rpgen:sne8yX", // 金属バット
+		hit_wyrm: "rpgen:mLHxrK", // ドルアーガ/斬る
+		hit_star: "rpgen:eIw6qU", // FF 剣攻撃
+		hit_mic: "rpgen:mL4xt3", // サイクロップス/謎の金属音
+		// ── 敵の攻撃。当たったら damage、はずれたら enemyMiss（キリコの はずれ・空振りとは 別の音）
+		enemyMiss: "rpgen:DUvPmQ", // ミス
 	},
 	/** いちばん目立たせる音。 */
 	impact: {

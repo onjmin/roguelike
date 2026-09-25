@@ -54,6 +54,8 @@ export type ItemDef = {
 	atk?: number;
 	/** 盾の強さ。 */
 	def?: number;
+	/** 武器の音（振った・当たった。data/sfx.ts の名前）。無ければ 素手と同じ。 */
+	sound?: { swing: string; hit: string };
 	/** 杖の回数（配るときにこの範囲で決める）。 */
 	charges?: [number, number];
 	/** 図鑑・山札の並び順。 */
