@@ -67,6 +67,11 @@ const KIRIKO = "pub:sprites/kiriko.png";
 const SWING_MS = 180;
 /** 長押しの足踏みの間（ms。1秒に 10回ほど）。 */
 const REST_GAP_MS = 100;
+/**
+ * ログの1行ごとの 最短の間（ms）。1ターンに いくつも起きたとき、行が 一度に 流れて 読めないように
+ * （トルネコ1の メッセージ窓のように 1行ずつ 送る。そのあいだ 出来事の再生も 待つ）。
+ */
+const LOG_GAP_MS = { normal: 350, fast: 180, replay: 40 } as const;
 
 type Disp = Figure & {
 	/** 行き先（マス）。 */
@@ -107,6 +112,8 @@ export class Play {
 	private raf = 0;
 	private stopped = false;
 	private logEl: HTMLElement;
+	/** 最後に ログの行を 出した時刻（performance.now()）。 */
+	private lastLogAt = 0;
 	private popsEl: HTMLElement;
 	private mapEl: HTMLCanvasElement;
 	private mapOn = false;
@@ -507,8 +514,11 @@ export class Play {
 			text,
 		});
 		this.logEl.appendChild(line);
+		// 残す行数：縦に 余裕のある画面（スマホの縦持ち など）は 4行、ほかは 3行
+		const keep = window.innerHeight >= 640 ? 4 : 3;
 		const lines = [...this.logEl.children];
-		for (const l of lines.slice(0, Math.max(0, lines.length - 3))) l.remove();
+		for (const l of lines.slice(0, Math.max(0, lines.length - keep)))
+			l.remove();
 		for (const l of [...this.logEl.children].slice(0, -1))
 			l.classList.add("old");
 		setTimeout(() => line.classList.add("gone"), 4200);
@@ -1203,9 +1213,19 @@ export class Play {
 			}
 			i++;
 			switch (e.t) {
-				case "msg":
+				case "msg": {
+					// 前の行から 間を空けて 1行ずつ 出す（読めるように）
+					const gap = fast
+						? LOG_GAP_MS.replay
+						: settings.speed === "fast"
+							? LOG_GAP_MS.fast
+							: LOG_GAP_MS.normal;
+					const since = performance.now() - this.lastLogAt;
+					if (since < gap) await wait(gap - since);
 					this.addLog(e.text, e.tone);
+					this.lastLogAt = performance.now();
 					break;
+				}
 				case "se":
 					// 全滅の音は、倒れる演出で 墓が落ちたときに鳴らす
 					if (e.name === "wipeout" && this.run.s.end?.kind === "dead") break;
