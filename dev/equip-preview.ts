@@ -1,10 +1,10 @@
 // 装備の見た目のプレビュー（pnpm dev で /dev/equip.html。ビルドには入らない）。
-// ?w=steel&s=bronze で装備を選ぶ。行＝向き（正面・右・左・うしろ）、列＝足踏み2コマと攻撃の3つの形。
+// public/sprites/equip の PNG を重ねて見る（pnpm equip で書き出してから）。?w=steel&s=bronze で装備を選ぶ。行＝向き（正面・右・左・うしろ）、列＝足踏み2コマと攻撃の3つの形。
 
 import type { SpriteDir } from "../src/core/geom";
 import { loadImage } from "../src/engine/assets";
 import { drawWalk } from "../src/engine/sprite";
-import { drawEquip } from "../src/ui/equip";
+import { drawEquip, equipSheet } from "../src/ui/equip";
 
 const q = new URLSearchParams(location.search);
 const look = { weapon: q.get("w") ?? "steel", shield: q.get("s") ?? "bronze" };
@@ -23,6 +23,8 @@ c.width = poses.length * cell * S;
 c.height = dirs.length * cell * S;
 const ctx = c.getContext("2d") as CanvasRenderingContext2D;
 await loadImage("pub:sprites/kiriko.png");
+await loadImage(equipSheet(look.weapon));
+await loadImage(equipSheet(look.shield));
 ctx.setTransform(S, 0, 0, S, 0, 0);
 ctx.imageSmoothingEnabled = false;
 dirs.forEach((dir, row) => {
