@@ -842,7 +842,11 @@ body.shake #app {
 
 .mapview {
 	position: absolute;
-	inset: 0;
+	left: 0;
+	top: 0;
+	/* canvas は大きさを CSS で決めておく（自分の大きさを測って描くので、決めないと描くたびに ふくらむ） */
+	width: 100%;
+	height: 100%;
 	z-index: 19;
 	image-rendering: pixelated;
 	display: none;
