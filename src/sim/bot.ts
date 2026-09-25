@@ -3,7 +3,7 @@
 // ふつうのプレイヤーがやりそうなことを、単純な優先順で行う：
 // 回復 → 食事 → となりの敵をなぐる → 装備の更新 → 識別 → 見えている道具を拾う → 探索 → 階段。
 
-import { HUNGER_UNIT, LAST_DEPTH } from "../core/balance";
+import { HUNGER_UNIT } from "../core/balance";
 import { roomsSeenFrom } from "../core/fov";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
 import { defOf, isKnownKind } from "../core/item";
@@ -366,7 +366,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		return { c: "wait" };
 	// いちばん底で持ち物がいっぱいなら、原盤のために1つ捨てる
 	if (
-		r.s.depth >= LAST_DEPTH &&
+		r.s.depth >= r.dungeon.floors &&
 		!r.s.returning &&
 		items.length >= 20 &&
 		!r.itemAt(p.x, p.y) &&
@@ -380,13 +380,13 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	// 見えている道具を拾いにいく
 	if (!r.s.returning && items.length < 20) {
 		const seen = new Set(r.s.seen);
-		const bottomNow = r.s.depth >= LAST_DEPTH;
+		const bottomNow = r.s.depth >= r.dungeon.floors;
 		const it = f.items
 			.filter(
 				(fi) =>
 					seen.has(fi.item.uid) &&
 					!(fi.x === p.x && fi.y === p.y) &&
-					(!bottomNow || fi.item.kind === "genban"),
+					(!bottomNow || fi.item.kind === r.dungeon.goal),
 			)
 			.sort((a, b) => dist(a, p) - dist(b, p))[0];
 		if (it) {
@@ -394,7 +394,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			if (d !== null) return { c: "move", dir: d };
 		}
 	}
-	const bottom = r.s.depth >= LAST_DEPTH && !r.s.returning;
+	const bottom = r.s.depth >= r.dungeon.floors && !r.s.returning;
 	const sIdx = f.stairs.y * f.layout.w + f.stairs.x;
 	const stairsKnown = f.seen[sIdx] === 1;
 	if (!bottom && r.onStairs() && (leave || !frontierExists(r))) {
@@ -410,7 +410,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		// 地図スレで地形は全部わかっても、原盤そのものは まだ見ていないことがある。
 		// 人なら まだ入っていない部屋を見て回るところ。ボットは原盤の部屋へ まっすぐ行く
 		if (bottom && !fr) {
-			const g = f.items.find((fi) => fi.item.kind === "genban");
+			const g = f.items.find((fi) => fi.item.kind === r.dungeon.goal);
 			if (g && (g.x !== p.x || g.y !== p.y)) {
 				const d = pathStep(r, g, true);
 				if (d !== null) return { c: "move", dir: d };

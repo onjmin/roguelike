@@ -7,10 +7,8 @@ import {
 	HOUSE_MONSTERS,
 	HOUSE_MONSTERS_EARLY,
 	INITIAL_MONSTERS,
-	LAST_DEPTH,
 	trapCount,
 } from "./balance";
-import { DECK } from "./data/items";
 import { MONSTERS, monstersFor } from "./data/monsters";
 import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
@@ -38,9 +36,10 @@ const TRAP_KINDS: { kind: TrapKind; weight: number; from: number }[] = [
 	{ kind: "pit", weight: 2, from: 3 },
 ];
 
-export const pickTrapKind = (r: Run, depth: number): TrapKind =>
+/** 罠の種類を引く。level は 本編の何階ぶんか（Run.levelAt）。 */
+export const pickTrapKind = (r: Run, level: number): TrapKind =>
 	r.rng.weighted(
-		TRAP_KINDS.filter((t) => Math.max(3, depth) >= t.from),
+		TRAP_KINDS.filter((t) => Math.max(3, level) >= t.from),
 		(t) => t.weight,
 	).kind;
 
@@ -109,14 +108,14 @@ export const buildFloor = (
 			: cands.reduce((a, b) => (area(b) > area(a) ? b : a));
 	}
 
-	// いちばん底：原盤を置く（階段の代わりに原盤。帰り道は上り階段）
-	if (depth === LAST_DEPTH && !r.s.returning) {
+	// いちばん底：目的の品を置く（階段の代わりに。帰り道は上り階段）
+	if (depth === r.dungeon.floors && !r.s.returning) {
 		const spot = rng.pick(
 			freeRoomTiles(r, f, stairRoom).filter(
 				(t) => t.x !== start.x || t.y !== start.y,
 			),
 		);
-		f.items.push({ x: spot.x, y: spot.y, item: r.newItem("genban") });
+		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
 	}
 
 	// 札：モンスターハウスがあれば半分以上をハウスの中へ
@@ -142,7 +141,8 @@ export const buildFloor = (
 	}
 
 	// 罠（部屋の中だけ。道具の下には置かない）
-	const [tlo, thi] = trapCount(depth);
+	const level = r.levelAt(depth);
+	const [tlo, thi] = depth < r.dungeon.trapsFrom ? [0, 0] : trapCount(level);
 	const nTraps = rng.range(tlo, thi) + (f.house >= 0 ? rng.range(3, 5) : 0);
 	for (let i = 0; i < nTraps; i++) {
 		const inHouse = f.house >= 0 && i >= nTraps - 4;
@@ -154,7 +154,7 @@ export const buildFloor = (
 			f.traps.push({
 				x: at.x,
 				y: at.y,
-				kind: pickTrapKind(r, Math.max(3, depth)),
+				kind: pickTrapKind(r, Math.max(3, level)),
 				found: false,
 			});
 	}
@@ -177,7 +177,9 @@ export const buildFloor = (
 	}
 	if (f.house >= 0) {
 		const [hlo, hhi] =
-			f.depth <= HOUSE_EARLY_BY ? HOUSE_MONSTERS_EARLY : HOUSE_MONSTERS;
+			r.levelAt(f.depth) <= HOUSE_EARLY_BY
+				? HOUSE_MONSTERS_EARLY
+				: HOUSE_MONSTERS;
 		// 部屋の広さの 1/3 まで（ぎゅうぎゅうにしない）
 		const room = rooms[f.house];
 		const hn = Math.min(rng.range(hlo, hhi), Math.floor((room.w * room.h) / 3));
@@ -212,7 +214,8 @@ export const spawnMonster = (
 	let def: MonsterDef | undefined;
 	if (kind) def = MONSTERS[kind];
 	else {
-		const list = monstersFor(Math.max(1, Math.min(LAST_DEPTH, f.depth)));
+		// 敵の顔ぶれは 本編の何階ぶんか で引く（本編の表は20階まで。それより深い階は20階の顔ぶれ）
+		const list = monstersFor(Math.max(1, Math.min(20, r.levelAt(f.depth))));
 		if (!list.length) return null;
 		def = rng.weighted(list, (m) => m.weight);
 	}
@@ -250,7 +253,7 @@ export const spawnMonster = (
 			disguise: null,
 		};
 		if (def.abilities.some((a) => a.k === "mimic") && !opts.awake) {
-			m.disguise = rng.weighted(DECK, (e) => e.count).kind;
+			m.disguise = rng.weighted(r.dungeon.deck, (e) => e.count).kind;
 			m.status.sleep = 0;
 		}
 		f.monsters.push(m);

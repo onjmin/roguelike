@@ -4,6 +4,7 @@
 //   pnpm sim -- --n 1000     … 回数
 //   pnpm sim -- --seed abc   … 1回だけ（ログつき）
 //   pnpm sim -- --quiet      … 表だけ
+//   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep。既定は main）
 //
 // Vite の SSR で src/core を読み込む（ビルドせずに TS のまま動かす）。
 // 例外が出たら シードと スタックを出して 終了コード 1。
@@ -23,6 +24,8 @@ const ONE = arg("seed", null);
 const QUIET = args.includes("--quiet");
 // 倒れないモード：HP と満腹度を補って、深い階・帰り道まで通す（落ちないかの検査用）
 const GOD = args.includes("--god");
+// どのダンジョンで遊ばせるか（shallow / main / deep）
+const DUNGEON = arg("dungeon", "main");
 const MAX_ACTIONS = 60000;
 
 const server = await createServer({
@@ -40,7 +43,14 @@ try {
 	const { serializeRun, deserializeRun } = await server.ssrLoadModule(
 		"/src/core/serial.ts",
 	);
-	const { LAST_DEPTH } = await server.ssrLoadModule("/src/core/balance.ts");
+	const { dungeonById } = await server.ssrLoadModule(
+		"/src/core/data/dungeons.ts",
+	);
+	const LAST_DEPTH = dungeonById(DUNGEON).floors;
+	if (dungeonById(DUNGEON).id !== DUNGEON) {
+		console.error(`知らないダンジョン: ${DUNGEON}`);
+		process.exit(1);
+	}
 
 	const results = [];
 	const seeds = ONE ? [ONE] : Array.from({ length: N }, (_, i) => `sim-${i}`);
@@ -58,7 +68,7 @@ try {
 			};
 			return r;
 		};
-		let run = godify(Run.create(seed));
+		let run = godify(Run.create(seed, DUNGEON));
 		const lvAt = {};
 		const turnsAt = {};
 		let actions = 0;

@@ -5,7 +5,7 @@
 //   今は見えない所は暗く）→ 演出（飛ぶ道具・攻撃の踏み込み）の順に重ねる。
 // - モンスターの表示位置は UI 側が持つ（core の状態は一瞬で変わるので、演出の途中は古い位置に描く）。
 
-import { LAST_DEPTH as LAST_DEPTH_FOR_MAP } from "../core/balance";
+import { dungeonById } from "../core/data/dungeons";
 import { forEachVisible } from "../core/fov";
 import { type Dir8, spriteDir } from "../core/geom";
 import { T_WALL, tileAt } from "../core/mapgen";
@@ -100,7 +100,7 @@ export class FloorView {
 	private buildTerrain(s: RunState): void {
 		const f = s.floor;
 		const l = f.layout;
-		const theme = themeFor(f.depth);
+		const theme = themeFor(s.dungeon, f.depth);
 		this.theme = theme;
 		if (!this.terrain || this.terrainFloor !== f) {
 			this.terrain = document.createElement("canvas");
@@ -360,7 +360,7 @@ export class FloorView {
 		// ただよう粒（層ごとの雰囲気。霧の下に描くので、見えている所にだけ出る）
 		drawAmbient(
 			ctx,
-			zoneFor(f.depth).ambient,
+			zoneFor(s.dungeon, f.depth).ambient,
 			time,
 			ox,
 			oy,
@@ -527,7 +527,7 @@ export const drawMap = (
 	// いちばん底は、原盤を拾うまで階段が無い
 	if (
 		f.seen[f.stairs.y * l.w + f.stairs.x] &&
-		(f.depth < LAST_DEPTH_FOR_MAP || s.returning)
+		(f.depth < dungeonById(s.dungeon).floors || s.returning)
 	)
 		dot(f.stairs.x, f.stairs.y, "#ffffff");
 	for (const t of f.traps)

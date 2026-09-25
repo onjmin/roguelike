@@ -383,7 +383,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				f.traps.push({
 					x: t.x,
 					y: t.y,
-					kind: pickTrapKind(r, f.depth),
+					kind: pickTrapKind(r, r.levelAt(f.depth)),
 					found: false,
 				});
 			r.msg("どこかで　カチリと　音がした……", "warn");

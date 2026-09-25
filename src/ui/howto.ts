@@ -3,12 +3,9 @@
 // 1つの長い窓にすると、スマホでは読みたい所まで巻き取るのが手間なので、項目ごとに分けている。
 // 1ページが だいたい画面に収まるくらいの量にする。
 
-import { LAST_DEPTH } from "../core/balance";
-import { DECK } from "../core/data/items";
+import { MAIN_DECK } from "../core/data/items";
 import type { Ctx } from "./ctx";
 import { infoWindow, listWindow } from "./list";
-
-const DECK_TOTAL = DECK.reduce((a, e) => a + e.count, 0);
 
 /** 見出し。 */
 const h = (text: string): string => `<h3>${text}</h3>`;
@@ -110,7 +107,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 		sub: "道具は　数えられる",
 		html:
 			h("山札") +
-			`<p>この冒険で　出る道具は　全${DECK_TOTAL}枚の　山札から　配られる。中身は　毎回同じで、並びだけが　ちがう。</p>` +
+			`<p>この冒険で　出る道具は、ダンジョンごとに　決まった　枚数の　山札から　配られる（過去ログの底は　全${MAIN_DECK.reduce((a, e) => a + e.count, 0)}枚）。中身は　毎回同じで、並びだけが　ちがう。</p>` +
 			`<p>メニューの「山札」で、何を　何枚　見たかが　わかる。数えれば、未識別の道具の　正体が　しぼれる。</p>` +
 			h("流れた札") +
 			`<p>見ないまま　階を　はなれた札は　「流れた」ことになり、もう　出てこない。</p>` +
@@ -119,11 +116,11 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 	{
 		value: "return",
 		label: "帰り道",
-		sub: "原盤を　拾ったら",
+		sub: "目的の品を　拾ったら",
 		html:
 			h("帰り道") +
 			lines([
-				`B${LAST_DEPTH}の　底で　「はじまりの原盤」を　拾うと、階段が　上り向きに　なる。`,
+				"いちばん　底で　目的の品（過去ログの底なら　「はじまりの原盤」）を　拾うと、階段が　上り向きに　なる。",
 				"帰りの階には　何も　落ちていない。行きで　集めた道具で　のぼりきろう。",
 				"帰り道では　満腹度は　へらない。",
 				"地上まで　もどれば、冒険は　おしまい。",

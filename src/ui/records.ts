@@ -1,7 +1,7 @@
 // 冒険の記録：倒れた・持ち帰ったときの全画面の札（showRunEnd）と、タイトルから見る過去の記録（openRecords）。
 // 1ページずつタップで送る語りの札（showStory。はじめての前口上・持ち帰ったあと）もここに置く。
 
-import { DECK } from "../core/data/items";
+import { dungeonById } from "../core/data/dungeons";
 import { itemName } from "../core/item";
 import type { RunState } from "../core/types";
 import { ENDING, SPEAKERS } from "../data/quotes";
@@ -22,8 +22,9 @@ import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { infoWindow, listWindow } from "./list";
 
-/** 山札の枚数（毎回同じ）。 */
-const DECK_TOTAL = DECK.reduce((a, e) => a + e.count, 0);
+/** そのダンジョンの山札の枚数（毎回同じ）。 */
+const deckTotal = (dungeon: string | undefined): number =>
+	dungeonById(dungeon).deck.reduce((a, e) => a + e.count, 0);
 
 /** HTML に埋めこむ文字の逃がし。 */
 export const esc = (s: string): string =>
@@ -212,7 +213,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-sec" }, [
 			el("div", { class: "matome-title", text: "山札" }),
 			grid([
-				["見た札", `${rec.seen}／${DECK_TOTAL}`],
+				["見た札", `${rec.seen}／${deckTotal(rec.dungeon)}`],
 				["流れた札", String(rec.flowed)],
 			]),
 		]),

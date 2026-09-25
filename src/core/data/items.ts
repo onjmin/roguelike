@@ -446,6 +446,18 @@ add({
 	name: "はじまりの原盤",
 	desc: "いちばん底に　あった　レコード。持ち帰ろう",
 });
+add({
+	id: "needle",
+	cat: "goal",
+	name: "蓄音機の針",
+	desc: "いちばん底に　落ちていた　針。持ち帰ろう",
+});
+add({
+	id: "bside",
+	cat: "goal",
+	name: "原盤のB面",
+	desc: "もっと底に　あった　もう一枚。持ち帰ろう",
+});
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(
 	defs.map((d) => [d.id, d]),
@@ -456,10 +468,11 @@ export const itemsOfCat = (cat: ItemCat): ItemDef[] =>
 	defs.filter((d) => d.cat === cat);
 
 /**
- * 山札の中身（毎回同じ。並びだけ冒険ごとに切る）。全141枚。
+ * 本編（過去ログの底）の山札の中身（毎回同じ。並びだけ冒険ごとに切る）。全141枚。
  * トルネコ1の出現率（/256）を、階の数と「数えて識別できる」ことに合わせて丸めたもの。
+ * ほかのダンジョンの山札は data/dungeons.ts。
  */
-export const DECK: readonly DeckEntry[] = [
+export const MAIN_DECK: readonly DeckEntry[] = [
 	// 武器 10
 	{ kind: "club", count: 2 },
 	{ kind: "copper", count: 2 },

@@ -128,7 +128,7 @@ const loop = async () => {
 			if (choice.kind === "replay") {
 				// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
 				replay = choice.replay;
-				run = Run.create(replay.seed);
+				run = Run.create(replay.seed, replay.dungeon ?? "main");
 			} else
 				run =
 					choice.kind === "new" ? Run.create(newSeed()) : new Run(choice.state);

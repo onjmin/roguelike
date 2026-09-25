@@ -4,7 +4,7 @@
 // その上に「上の面」、それ以外の壁は闇の色で塗る。
 // 階は 層（ZONES）に分かれていて、層ごとに 見た目・曲・ただよう粒 が変わる。
 
-import { LAST_DEPTH } from "../core/balance";
+import type { DungeonId } from "../core/types";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
 const cut = (c: number, r: number, w = 1, h = 1): string =>
@@ -119,49 +119,116 @@ export type Zone = {
 	ambient: Ambient;
 };
 
-export const ZONES: readonly Zone[] = [
-	{
-		last: 4,
-		name: "過去ログの浅瀬",
-		theme: EARTH,
-		bgm: "dungeon",
-		ambient: "dust",
-	},
-	{
-		last: 8,
-		name: "苔むしたスレ跡",
-		theme: MOSS,
-		bgm: "field",
-		ambient: "spores",
-	},
-	{
-		last: 12,
-		name: "凍結された書庫",
-		theme: CRYSTAL,
-		bgm: "field2",
-		ambient: "snow",
-	},
-	{ last: 16, name: "鯖の深部", theme: CYBER, bgm: "tense", ambient: "data" },
-	{
-		last: LAST_DEPTH - 1,
-		name: "炎上の底",
-		theme: LAVA,
-		bgm: "boss",
-		ambient: "embers",
-	},
-	{
-		last: LAST_DEPTH,
-		name: "はじまりの原盤",
-		theme: GOLD,
-		bgm: "lastboss",
-		ambient: "glitter",
-	},
-];
+/** 層の並び（ダンジョンごと。last の昇順で、最後の層は いちばん底の階で終わる）。 */
+export const ZONES: Record<DungeonId, readonly Zone[]> = {
+	shallow: [
+		{
+			last: 4,
+			name: "ちょっと浅瀬",
+			theme: EARTH,
+			bgm: "dungeon",
+			ambient: "dust",
+		},
+		{
+			last: 7,
+			name: "ちょっと苔むした所",
+			theme: MOSS,
+			bgm: "field",
+			ambient: "spores",
+		},
+		{
+			last: 10,
+			name: "ちょっと底",
+			theme: CRYSTAL,
+			bgm: "field2",
+			ambient: "snow",
+		},
+	],
+	main: [
+		{
+			last: 4,
+			name: "過去ログの浅瀬",
+			theme: EARTH,
+			bgm: "dungeon",
+			ambient: "dust",
+		},
+		{
+			last: 8,
+			name: "苔むしたスレ跡",
+			theme: MOSS,
+			bgm: "field",
+			ambient: "spores",
+		},
+		{
+			last: 12,
+			name: "凍結された書庫",
+			theme: CRYSTAL,
+			bgm: "field2",
+			ambient: "snow",
+		},
+		{ last: 16, name: "鯖の深部", theme: CYBER, bgm: "tense", ambient: "data" },
+		{ last: 19, name: "炎上の底", theme: LAVA, bgm: "boss", ambient: "embers" },
+		{
+			last: 20,
+			name: "はじまりの原盤",
+			theme: GOLD,
+			bgm: "lastboss",
+			ambient: "glitter",
+		},
+	],
+	deep: [
+		{
+			last: 5,
+			name: "もっと浅瀬",
+			theme: EARTH,
+			bgm: "dungeon",
+			ambient: "dust",
+		},
+		{
+			last: 10,
+			name: "もっと苔むした所",
+			theme: MOSS,
+			bgm: "field",
+			ambient: "spores",
+		},
+		{
+			last: 15,
+			name: "もっと凍った所",
+			theme: CRYSTAL,
+			bgm: "field2",
+			ambient: "snow",
+		},
+		{
+			last: 21,
+			name: "もっと鯖の奥",
+			theme: CYBER,
+			bgm: "tense",
+			ambient: "data",
+		},
+		{
+			last: 29,
+			name: "もっと燃える所",
+			theme: LAVA,
+			bgm: "boss",
+			ambient: "embers",
+		},
+		{
+			last: 30,
+			name: "もっと底",
+			theme: GOLD,
+			bgm: "lastboss",
+			ambient: "glitter",
+		},
+	],
+};
 
-export const zoneFor = (depth: number): Zone =>
-	ZONES.find((z) => depth <= z.last) ?? ZONES[ZONES.length - 1];
+export const zoneFor = (dungeon: DungeonId, depth: number): Zone => {
+	const list = ZONES[dungeon] ?? ZONES.main;
+	return list.find((z) => depth <= z.last) ?? list[list.length - 1];
+};
 
-export const themeFor = (depth: number): Theme => zoneFor(depth).theme;
+export const themeFor = (dungeon: DungeonId, depth: number): Theme =>
+	zoneFor(dungeon, depth).theme;
 
 /** 罠の見た目（見つけたものだけ描く）。 */
 export const TRAP_ICON: Record<string, string> = {

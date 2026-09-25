@@ -1,9 +1,6 @@
 // 数値の決まり。トルネコ1（SFC）の解析値に寄せている（scratchpad の調査レポートより）。
 // 調整はここだけでできるようにしておく。
 
-/** いちばん底の階（原盤がある）。 */
-export const LAST_DEPTH = 20;
-
 /** 持ち物の枠（装備中の品も数える。トルネコ1と同じく増やす手段は無い）。 */
 export const INVENTORY_MAX = 20;
 
@@ -92,8 +89,16 @@ export const HOUSE_EARLY_FROM = 4;
 export const HOUSE_EARLY_BY = 6;
 
 /** 罠の数（階ごと）。 */
-export const trapCount = (depth: number): [number, number] =>
-	depth <= 2 ? [0, 0] : depth <= 8 ? [1, 3] : depth <= 15 ? [3, 5] : [5, 7];
+export const trapCount = (level: number): [number, number] =>
+	level <= 2
+		? [0, 0]
+		: level <= 8
+			? [1, 3]
+			: level <= 15
+				? [3, 5]
+				: level <= 20
+					? [5, 7]
+					: [7, 9];
 /** 罠が発動する確率。 */
 export const TRAP_CHANCE = 3 / 4;
 

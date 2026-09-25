@@ -7,6 +7,9 @@ import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
 import type { RngState } from "./rng";
 
+/** ダンジョン（ちょっと・本編・もっと。data/dungeons.ts）。 */
+export type DungeonId = "shallow" | "main" | "deep";
+
 // ───────────────────────── 道具 ─────────────────────────
 
 export type ItemCat =
@@ -279,6 +282,8 @@ export type Ending = {
 export type RunState = {
 	v: number;
 	seed: string;
+	/** どのダンジョンか。 */
+	dungeon: DungeonId;
 	rng: RngState;
 	depth: number;
 	turn: number;
@@ -303,7 +308,7 @@ export type RunState = {
 	log: string[];
 	/** 倒したモンスター（記録・図鑑用）。 */
 	kills: Record<string, number>;
-	/** 帰り道（原盤を持って上っている）。 */
+	/** 帰り道（目的の品を持って上っている）。 */
 	returning: boolean;
 	/** 終わった（倒れた・持ち帰った）。 */
 	end: Ending | null;

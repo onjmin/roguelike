@@ -23,8 +23,16 @@ export const isUnidentifiedCat = (kind: string): boolean =>
 export const isKnownKind = (s: RunState, kind: string): boolean =>
 	!isUnidentifiedCat(kind) || !!s.ids.known[kind];
 
-/** 新しい道具（修正値・呪い・回数・本数はここで決める）。 */
-export const rollItem = (rng: Rng, uid: number, kind: string): Item => {
+/**
+ * 新しい道具（修正値・呪い・回数・本数はここで決める）。
+ * curses が false なら のろわれた道具は出ない（乱数の引き方は同じ。−1 は +0 に、のろいの指輪は ふつうに）。
+ */
+export const rollItem = (
+	rng: Rng,
+	uid: number,
+	kind: string,
+	opt: { curses: boolean } = { curses: true },
+): Item => {
 	const d = defOf(kind);
 	const it: Item = {
 		uid,
@@ -42,13 +50,13 @@ export const rollItem = (rng: Rng, uid: number, kind: string): Item => {
 		else if (r < 13) it.plus = 1;
 		else if (r < 14) it.plus = 2;
 		else if (r < 15) it.plus = 3;
-		else {
+		else if (opt.curses) {
 			it.plus = -1;
 			it.cursed = true;
 		}
 	} else if (d.cat === "ring") {
 		// 指輪の 1/4 はのろわれている。剛力の指輪は のろいなら −3
-		it.cursed = rng.chance(1 / 4);
+		it.cursed = rng.chance(1 / 4) && opt.curses;
 		if (kind === "r_might") it.plus = it.cursed ? -3 : 3;
 	} else if (d.cat === "staff") {
 		const [lo, hi] = d.charges ?? [3, 5];

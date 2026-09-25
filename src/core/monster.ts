@@ -764,7 +764,7 @@ export const sealMonster = (m: Monster): void => {
 
 export const transformMonster = (r: Run, m: Monster): void => {
 	const cands = Object.values(MONSTERS).filter(
-		(d) => d.id !== m.kind && d.floors[0] <= r.f.depth + 4,
+		(d) => d.id !== m.kind && d.floors[0] <= r.levelAt(r.f.depth) + 4,
 	);
 	const d = r.rng.pick(cands);
 	const ratio = m.hp / m.maxHp;

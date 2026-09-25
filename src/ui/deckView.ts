@@ -9,7 +9,7 @@
 // - 未識別の種類ごとの「見た」枚数（種類ごとに数えると、正体がばれる）。
 //   代わりに、見た札を「見えている名前」ごとに数えて出す。
 
-import { CAT_NAME, DECK } from "../core/data/items";
+import { CAT_NAME } from "../core/data/items";
 import { defOf, isKnownKind } from "../core/item";
 import type { Run } from "../core/run";
 import { type ItemCat, UNIDENTIFIED_CATS } from "../core/types";
@@ -31,7 +31,8 @@ const CATS: readonly ItemCat[] = [
 
 const deckHtml = (run: Run): string => {
 	const s = run.s;
-	const total = DECK.reduce((n, e) => n + e.count, 0);
+	const deck = run.dungeon.deck;
+	const total = deck.reduce((n, e) => n + e.count, 0);
 	const dealt = Object.keys(s.cardKind).length;
 	// 見た札を種類ごとに。数えるのは配ったときの種類（糧変えで種類が変わっても、札は札）
 	const seenBy = new Map<string, number>();
@@ -48,7 +49,7 @@ const deckHtml = (run: Run): string => {
 	];
 	const rows: string[] = [];
 	for (const cat of CATS) {
-		const entries = DECK.filter((e) => defOf(e.kind).cat === cat);
+		const entries = deck.filter((e) => defOf(e.kind).cat === cat);
 		if (!entries.length) continue;
 		const catTotal = entries.reduce((n, e) => n + e.count, 0);
 		rows.push(

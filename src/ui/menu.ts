@@ -6,8 +6,7 @@
 // - 道具の行には必ず2行目の説明を出す（名前だけでは効果がわからない、への対策）。
 // - 奥の窓を閉じたら、1つ手前の窓へ カーソルの位置ごと もどる。
 
-import { INVENTORY_MAX, LAST_DEPTH } from "../core/balance";
-import { DECK } from "../core/data/items";
+import { INVENTORY_MAX } from "../core/balance";
 import { needsTarget } from "../core/effects";
 import { defOf, isKeyItem, isKnownKind, isUnidentifiedCat } from "../core/item";
 import type { Run } from "../core/run";
@@ -224,7 +223,7 @@ const pickName = async (
 	kind: string,
 ): Promise<MenuAction | null> => {
 	const cat = defOf(kind).cat;
-	const cands = DECK.filter(
+	const cands = run.dungeon.deck.filter(
 		(e) => defOf(e.kind).cat === cat && !isKnownKind(run.s, e.kind),
 	);
 	const named = run.s.ids.named[kind];
@@ -403,7 +402,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			rows.push({ label: "せつめい", value: "info" });
 		}
 		if (stairs) {
-			const deepest = !s.returning && s.depth >= LAST_DEPTH;
+			const deepest = run.atBottom;
 			rows.push({
 				label: s.returning ? "上る" : "降りる",
 				desc: s.returning

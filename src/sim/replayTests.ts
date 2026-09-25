@@ -12,9 +12,9 @@ import {
 	parseReplay,
 	type ReplayStep,
 } from "../core/replay";
-import { Run } from "../core/run";
+import { migrateRun, Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import type { Command } from "../core/types";
+import type { Command, DungeonId } from "../core/types";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 import { MAIN_PARITY } from "./parityFixture";
@@ -25,8 +25,13 @@ const ok = (cond: unknown, why: string): void => {
 };
 
 /** ボットに遊ばせる（every 行動ごとに 中断セーブ→読み直し）。 */
-const playBot = (seed: string, maxActs: number, every: number): Run => {
-	let run = Run.create(seed);
+const playBot = (
+	seed: string,
+	maxActs: number,
+	every: number,
+	dungeon: DungeonId = "main",
+): Run => {
+	let run = Run.create(seed, dungeon);
 	for (let i = 1; i <= maxActs && !run.s.end; i++) {
 		run.act(botCommand(run));
 		if (i % every === 0) run = new Run(deserializeRun(serializeRun(run.s)));
@@ -38,8 +43,9 @@ const playBot = (seed: string, maxActs: number, every: number): Run => {
 const replay = (
 	seed: string,
 	steps: ReplayStep[],
+	dungeon: DungeonId = "main",
 ): { run: Run; driftAt: number; checks: number } => {
-	const run = Run.create(seed);
+	const run = Run.create(seed, dungeon);
 	let checks = 0;
 	for (let i = 0; i < steps.length; i++) {
 		const st = steps[i];
@@ -84,6 +90,38 @@ test("encode/decode round-trips every command shape", () => {
 			`${JSON.stringify(c)} → ${t} → ${JSON.stringify(decodeCmd(t))}`,
 		);
 	}
+});
+
+test("every dungeon: a bot run (with suspend/resume) replays identically", () => {
+	for (const dungeon of ["shallow", "main", "deep"] as DungeonId[]) {
+		const seed = `rp-${dungeon}`;
+		const played = playBot(seed, 900, 200, dungeon);
+		ok(played.s.dungeon === dungeon, `${dungeon}: wrong dungeon`);
+		const { run, driftAt } = replay(
+			seed,
+			parseReplay(played.s.replay as string),
+			dungeon,
+		);
+		ok(driftAt < 0, `${dungeon}: drifted at step ${driftAt}`);
+		ok(
+			serializeRun(run.s) === serializeRun(played.s),
+			`${dungeon}: the replayed state differs`,
+		);
+	}
+});
+
+test("an old (v1) suspended save loads as the main dungeon", () => {
+	const s = JSON.parse(serializeRun(Run.create("rp-v1").s));
+	s.v = 1;
+	delete s.dungeon;
+	const m = migrateRun(deserializeRun(JSON.stringify(s)));
+	ok(
+		m && m.v === 2 && m.dungeon === "main",
+		`migrated to ${JSON.stringify(m && { v: m.v, d: m.dungeon })}`,
+	);
+	const bad = deserializeRun(serializeRun(Run.create("rp-bad").s));
+	(bad as { dungeon: string }).dungeon = "nowhere";
+	ok(migrateRun(bad) === null, "accepted an unknown dungeon");
 });
 
 test("a corrupted record stops cleanly instead of throwing", () => {

@@ -9,14 +9,10 @@ import {
 	attackPower,
 	EXP_AT,
 	HIT_RATE,
-	HOUSE_CHANCE,
-	HOUSE_EARLY_BY,
-	HOUSE_EARLY_FROM,
 	HP_GAIN,
 	HUNGER_MAX,
 	HUNGER_UNIT,
 	INVENTORY_MAX,
-	LAST_DEPTH,
 	MAX_HP_CAP,
 	MAX_LV,
 	MONSTER_CAP,
@@ -28,7 +24,8 @@ import {
 	START_STR,
 	WAKE_CHANCE,
 } from "./balance";
-import { DECK } from "./data/items";
+import { type Dungeon, dungeonById } from "./data/dungeons";
+import { ITEM_LIST } from "./data/items";
 import { FAKE_NAMES } from "./data/names";
 import { dealDeck } from "./deck";
 import { throwItem, useItem } from "./effects";
@@ -67,6 +64,7 @@ import { triggerTrap } from "./traps";
 import {
 	type Command,
 	DOZE,
+	type DungeonId,
 	type Floor,
 	type FloorItem,
 	type GameEvent,
@@ -80,7 +78,21 @@ import {
 	UNIDENTIFIED_CATS,
 } from "./types";
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
+
+/**
+ * 古い版の中断セーブを 今の形にそろえる（読めなければ null）。
+ * v1：ダンジョンが1つだったころ → 本編（main）。
+ */
+export const migrateRun = (s: RunState): RunState | null => {
+	if (s.v === 1) {
+		s.dungeon = "main";
+		s.v = 2;
+	}
+	if (s.v !== SAVE_VERSION) return null;
+	if (!s.dungeon || dungeonById(s.dungeon).id !== s.dungeon) return null;
+	return s;
+};
 
 export class Run {
 	s: RunState;
@@ -92,31 +104,44 @@ export class Run {
 		this.rng = new Rng(s.rng);
 	}
 
-	/** 新しく潜る。 */
-	static create(seed: string): Run {
+	/**
+	 * 新しく潜る。本編（main）は ダンジョンを増やす前と 同じ順に乱数を引く
+	 * （中断セーブ・リプレイ・parity の基準が そのまま通るように）。
+	 */
+	static create(seed: string, dungeon: DungeonId = "main"): Run {
+		const dg = dungeonById(dungeon);
 		const rng = Rng.fromSeed(seed);
-		const deal = dealDeck(rng, DECK, LAST_DEPTH);
-		// モンスターハウス（祭り）の階（3階から 1/16 ずつ。B6 までに無ければ B4〜6 のどこかに1つ）。
+		const deal = dealDeck(rng, dg.deck, dg.floors);
+		// モンスターハウス（祭り）の階（本編は 3階から 1/16 ずつ。B6 までに無ければ B4〜6 のどこかに1つ）。
 		// ハウスの階には札を多めに寄せる
 		const houses: number[] = [];
-		for (let d = 3; d <= LAST_DEPTH; d++)
-			if (rng.chance(HOUSE_CHANCE)) houses.push(d);
-		if (!houses.some((d) => d <= HOUSE_EARLY_BY)) {
-			houses.push(rng.range(HOUSE_EARLY_FROM, HOUSE_EARLY_BY));
-			houses.sort((a, b) => a - b);
+		if (dg.houses) {
+			const h = dg.houses;
+			for (let d = h.from; d <= dg.floors; d++)
+				if (rng.chance(h.chance)) houses.push(d);
+			const early = h.early;
+			if (early && !houses.some((d) => d <= early[1])) {
+				houses.push(rng.range(early[0], early[1]));
+				houses.sort((a, b) => a - b);
+			}
 		}
 		rebalanceForHouses(rng, deal, houses);
-		// 未識別の名前の割り当て
+		// 未識別の名前の割り当て（このダンジョンの山札にある種類）
 		const fake: Record<string, string> = {};
 		for (const cat of UNIDENTIFIED_CATS) {
 			const names = rng.shuffle([...(FAKE_NAMES[cat] ?? [])]);
-			const kinds = [...new Set(DECK.map((e) => e.kind))].filter(
+			const kinds = [...new Set(dg.deck.map((e) => e.kind))].filter(
 				(k) => defOf(k).cat === cat,
 			);
 			kinds.forEach((k, i) => {
 				fake[k] = names[i % names.length];
 			});
 		}
+		// このダンジョンで未識別でない分類は、はじめから ぜんぶ わかっている
+		const known: Record<string, true> = {};
+		for (const d of ITEM_LIST)
+			if (UNIDENTIFIED_CATS.includes(d.cat) && !dg.unidentified.includes(d.cat))
+				known[d.id] = true;
 		const player: Player = {
 			x: 0,
 			y: 0,
@@ -146,6 +171,7 @@ export class Run {
 		const s: RunState = {
 			v: SAVE_VERSION,
 			seed,
+			dungeon: dg.id,
 			rng: rng.state(),
 			depth: 0,
 			turn: 0,
@@ -158,7 +184,7 @@ export class Run {
 			seen: [],
 			lost: [],
 			flowed: 0,
-			ids: { fake, known: {}, named: {} },
+			ids: { fake, known, named: {} },
 			nextUid: 1,
 			log: [],
 			replay: "",
@@ -170,8 +196,8 @@ export class Run {
 		};
 		const run = new Run(s);
 		run.rng = rng;
-		// 始めの持ち物（山札の外。毎回同じ）：大きなパン
-		player.items.push(run.newItem("f_large"));
+		// 始めの持ち物（山札の外。毎回同じ）：本編は大きなパン
+		for (const k of dg.start) player.items.push(run.newItem(k));
 		run.enterFloor(1, false);
 		run.s.rng = run.rng.state();
 		return run;
@@ -204,7 +230,25 @@ export class Run {
 	// ───────────────── 道具 ─────────────────
 
 	newItem(kind: string): Item {
-		return rollItem(this.rng, this.s.nextUid++, kind);
+		return rollItem(this.rng, this.s.nextUid++, kind, {
+			curses: this.dungeon.curses,
+		});
+	}
+
+	/** このダンジョン。 */
+	get dungeon(): Dungeon {
+		return dungeonById(this.s.dungeon);
+	}
+
+	/** その階が 本編の何階ぶんの強さか（敵・罠・祭りの大きさ・変化の杖を引くのに使う）。 */
+	levelAt(depth: number): number {
+		const l = this.dungeon.level;
+		return l[Math.max(1, Math.min(l.length - 1, depth))];
+	}
+
+	/** いちばん底で、まだ下りられない（目的の品を拾う前）。 */
+	get atBottom(): boolean {
+		return !this.s.returning && this.s.depth >= this.dungeon.floors;
 	}
 
 	name(it: Item): string {
@@ -493,7 +537,7 @@ export class Run {
 			this.msg("ここに　階段は　ない");
 			return false;
 		}
-		if (!this.s.returning && this.s.depth >= LAST_DEPTH) {
+		if (this.atBottom) {
 			this.msg("これより　下へは　行けないようだ");
 			return false;
 		}
@@ -501,7 +545,7 @@ export class Run {
 		if (this.s.returning) {
 			const next = this.s.depth - 1;
 			if (next <= 0) {
-				this.finish("clear", "原盤を　持ち帰った");
+				this.finish("clear", `${defOf(this.dungeon.goal).name}を　持ち帰った`);
 				return false;
 			}
 			this.enterFloor(next, false);
@@ -513,7 +557,7 @@ export class Run {
 
 	/** 落とし穴・地震で下の階へ。 */
 	fallDown(): void {
-		if (this.s.depth >= LAST_DEPTH) {
+		if (this.s.depth >= this.dungeon.floors) {
 			this.msg("しかし　これより　下は　なかった");
 			return;
 		}
@@ -1082,12 +1126,15 @@ export class Run {
 		return true;
 	}
 
-	/** 持ち物に入った（拾った・交換した）。原盤なら帰り道になる。 */
+	/** 持ち物に入った（拾った・交換した）。目的の品なら帰り道になる。 */
 	private onAcquire(it: Item): void {
-		if (it.kind === "genban" && !this.s.returning) {
+		if (it.kind === this.dungeon.goal && !this.s.returning) {
 			this.s.returning = true;
 			this.emit({ t: "goal" });
-			this.msg("原盤を　手に入れた！　階段が　上り向きに　変わった", "good");
+			this.msg(
+				`${defOf(it.kind).name}を　手に入れた！　階段が　上り向きに　変わった`,
+				"good",
+			);
 		}
 	}
 

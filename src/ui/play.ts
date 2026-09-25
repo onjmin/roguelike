@@ -5,7 +5,7 @@
 // - 押しっぱなしで歩き続ける（トルネコと同じ）。キーボードは斜めの同時押しを少し待つ。
 // - ダッシュ・タップ移動は、何かあったら止まる（敵が見えた・道具・階段・分かれ道・部屋の出入り）。
 
-import { HUNGER_UNIT, LAST_DEPTH } from "../core/balance";
+import { HUNGER_UNIT } from "../core/balance";
 import {
 	DIRS8,
 	type Dir8,
@@ -73,7 +73,7 @@ type Disp = Figure & {
 const floorBgm = (run: Run): string => {
 	if (run.f.houseAwake) return "battle";
 	if (run.s.returning) return "title";
-	return zoneFor(run.s.depth).bgm;
+	return zoneFor(run.s.dungeon, run.s.depth).bgm;
 };
 
 export class Play {
@@ -383,7 +383,7 @@ export class Play {
 		this.view.draw(
 			this.screen,
 			run.s,
-			LAST_DEPTH,
+			run.dungeon.floors,
 			figs,
 			this.projectiles,
 			this.camX,
@@ -1009,7 +1009,7 @@ export class Play {
 	/** 使える階段の上にいるか（いちばん底は、原盤を拾うまで階段が無い）。 */
 	private onUsableStairs(): boolean {
 		const run = this.run;
-		return run.onStairs() && (run.s.depth < LAST_DEPTH || run.s.returning);
+		return run.onStairs() && !run.atBottom;
 	}
 
 	private async askStairs(): Promise<void> {
@@ -1274,14 +1274,14 @@ export class Play {
 		const card = el("div", { class: "chapter shown" }, [
 			el("div", {
 				class: "chapter-label",
-				text: `${up ? "帰り道　" : ""}${zoneFor(run.s.depth).name}`,
+				text: `${up ? "帰り道　" : ""}${zoneFor(run.s.dungeon, run.s.depth).name}`,
 			}),
 			el("div", { class: "chapter-title", text: `地下　${run.s.depth}階` }),
 			el("div", {
 				class: "chapter-sub",
 				text: up
 					? "上り階段を　さがそう"
-					: run.s.depth >= LAST_DEPTH
+					: run.s.depth >= run.dungeon.floors
 						? "いちばん　底"
 						: "",
 			}),

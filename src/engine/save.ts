@@ -7,9 +7,9 @@
 
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
-import { SAVE_VERSION } from "../core/run";
+import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import type { RunState } from "../core/types";
+import type { DungeonId, RunState } from "../core/types";
 
 const PREFIX = "kiriko-roguelike/";
 const RUN_KEY = `${PREFIX}run`;
@@ -100,8 +100,8 @@ export const loadRun = (): RunState | null => {
 	try {
 		const raw = localStorage.getItem(RUN_KEY);
 		if (!raw) return null;
-		const s = deserializeRun(raw);
-		if (s.v !== SAVE_VERSION || !s.player || !s.floor || s.end) return null;
+		const s = migrateRun(deserializeRun(raw));
+		if (!s?.player || !s.floor || s.end) return null;
 		// あとの版で消えた モンスター・道具が入っていたら 読まない（途中で落ちるより良い）
 		const items = [
 			...s.player.items,
@@ -138,9 +138,11 @@ export type RunRecord = {
 	seen: number;
 	/** 見ないまま流れた札の数。 */
 	flowed: number;
-	/** 帰り道（原盤を持って上っている）だった。 */
+	/** 帰り道（目的の品を持って上っている）だった。 */
 	returning: boolean;
 	seed: string;
+	/** どのダンジョンか（ダンジョンが1つだったころの記録には無い＝本編）。 */
+	dungeon?: DungeonId;
 };
 
 type Stats = { runs: number; clears: number; best: number };
@@ -167,6 +169,7 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		flowed: s.flowed,
 		returning: s.returning,
 		seed: s.seed,
+		dungeon: s.dungeon,
 	};
 };
 
@@ -259,6 +262,8 @@ export const addRecord = (r: RunRecord): void => {
 
 export type SavedReplay = {
 	seed: string;
+	/** どのダンジョンか（無ければ本編）。 */
+	dungeon?: DungeonId;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -302,6 +307,7 @@ export const loadReplays = (): SavedReplay[] => {
  */
 export const replayMatches = (p: SavedReplay, r: RunRecord): boolean =>
 	p.seed === r.seed &&
+	(p.dungeon ?? "main") === (r.dungeon ?? "main") &&
 	p.kind === r.kind &&
 	p.turn === r.turn &&
 	p.depth === r.depth &&
@@ -318,6 +324,7 @@ const addReplay = (s: RunState): void => {
 	);
 	list.unshift({
 		seed: s.seed,
+		dungeon: s.dungeon,
 		at: Date.now(),
 		builds: s.builds ?? [],
 		text: s.replay,
