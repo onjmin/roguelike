@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<!-- ゲーム本体（index.html）とまったく同じ指定にする -->
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+		/>
+		<meta name="theme-color" content="#1b1026" />
+		<title>画面の測りもの（viewport-check）</title>
+		<style>
+			:root {
+				--safe-t: env(safe-area-inset-top, 0px);
+				--safe-b: env(safe-area-inset-bottom, 0px);
+				--safe-l: env(safe-area-inset-left, 0px);
+				--safe-r: env(safe-area-inset-right, 0px);
+				--app-x: 0px;
+				--app-y: 0px;
+				--app-w: 100vw;
+				--app-h: 100vh;
+			}
+			@supports (height: 100svh) {
+				:root {
+					--app-w: 100svw;
+					--app-h: 100svh;
+				}
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: var(--app-h);
+				overflow: hidden;
+				background: #1b1026;
+				color: #fbf8ff;
+				font:
+					13px/1.5 "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+				overscroll-behavior: none;
+				touch-action: none;
+				-webkit-user-select: none;
+				user-select: none;
+			}
+			body {
+				position: fixed;
+				left: 0;
+				top: 0;
+				width: 100%;
+			}
+			/* ゲームの #app と同じ置きかた */
+			#app {
+				position: fixed;
+				left: var(--app-x);
+				top: var(--app-y);
+				width: var(--app-w);
+				height: var(--app-h);
+				overflow: hidden;
+				background: linear-gradient(#2b1a44, #150d2c);
+				outline: 3px solid #ffcf4a;
+				outline-offset: -3px;
+			}
+			/* ゲームの .top-btns と同じ置きかた（ここが押せるかを見る） */
+			.top-btns {
+				position: absolute;
+				top: calc(10px + var(--safe-t));
+				right: calc(10px + var(--safe-r));
+				display: flex;
+				gap: 8px;
+			}
+			.btn {
+				width: 44px;
+				height: 44px;
+				border-radius: 10px;
+				border: 2px solid rgba(255, 255, 255, 0.45);
+				background: rgba(0, 0, 0, 0.45);
+				color: inherit;
+				font-size: 20px;
+				font-family: inherit;
+			}
+			.btn.hit {
+				border-color: #62e07a;
+				background: #1d5c2c;
+			}
+			/* 下の端（ここが見えているかも見る） */
+			.foot {
+				position: absolute;
+				left: calc(10px + var(--safe-l));
+				bottom: calc(10px + var(--safe-b));
+				padding: 6px 10px;
+				border: 2px solid #6fb7ff;
+				border-radius: 8px;
+				background: rgba(0, 0, 0, 0.45);
+			}
+			pre {
+				position: absolute;
+				left: 10px;
+				right: 10px;
+				top: 64px;
+				margin: 0;
+				max-height: calc(100% - 130px);
+				overflow: auto;
+				touch-action: pan-y;
+				white-space: pre-wrap;
+				word-break: break-all;
+				font-size: 12px;
+				line-height: 1.55;
+				background: rgba(0, 0, 0, 0.45);
+				border: 2px solid rgba(255, 255, 255, 0.3);
+				border-radius: 8px;
+				padding: 8px 10px;
+			}
+			b {
+				color: #ffcf4a;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<div class="top-btns">
+				<button class="btn" id="a">🔇</button>
+				<button class="btn" id="b">☰</button>
+			</div>
+			<pre id="out">測っています…</pre>
+			<div class="foot">下の端</div>
+		</div>
+		<script>
+			// ゲームの src/engine/viewport.ts と同じ測りかた
+			const measure = () => {
+				const fb = { x: 0, y: 0, w: innerWidth, h: innerHeight };
+				const vv = window.visualViewport;
+				if (!vv) return fb;
+				if ((vv.scale || 1) > 1.01) return fb;
+				const w = Math.round(vv.width);
+				const h = Math.round(vv.height);
+				if (w < 1 || h < 1) return fb;
+				return {
+					x: Math.round(vv.offsetLeft),
+					y: Math.round(vv.offsetTop),
+					w,
+					h,
+				};
+			};
+			const out = document.getElementById("out");
+			const app = document.getElementById("app");
+			const btns = document.querySelector(".top-btns");
+			const apply = () => {
+				const v = measure();
+				const s = document.documentElement.style;
+				s.setProperty("--app-x", v.x + "px");
+				s.setProperty("--app-y", v.y + "px");
+				s.setProperty("--app-w", v.w + "px");
+				s.setProperty("--app-h", v.h + "px");
+				const cs = getComputedStyle(document.documentElement);
+				const safe = ["t", "r", "b", "l"]
+					.map((k) => k + ":" + cs.getPropertyValue("--safe-" + k).trim())
+					.join(" ");
+				const vv = window.visualViewport;
+				const r = btns.getBoundingClientRect();
+				const ar = app.getBoundingClientRect();
+				out.innerHTML =
+					"<b>まとめ</b>\n" +
+					"ボタンの上端が 0 に近いほど、ブラウザのバーに近い。\n" +
+					"マイナスなら バーの裏（押せない）。\n\n" +
+					"<b>ボタン(🔇☰)</b> 上端 " +
+					Math.round(r.top) +
+					" / 下端 " +
+					Math.round(r.bottom) +
+					" / 右端 " +
+					Math.round(r.right) +
+					"\n<b>#app</b> " +
+					Math.round(ar.width) +
+					"x" +
+					Math.round(ar.height) +
+					" @ " +
+					Math.round(ar.left) +
+					"," +
+					Math.round(ar.top) +
+					"\n<b>測った箱</b> " +
+					v.w +
+					"x" +
+					v.h +
+					" @ " +
+					v.x +
+					"," +
+					v.y +
+					"\n<b>visualViewport</b> " +
+					(vv
+						? Math.round(vv.width) +
+							"x" +
+							Math.round(vv.height) +
+							" offset " +
+							Math.round(vv.offsetLeft) +
+							"," +
+							Math.round(vv.offsetTop) +
+							" scale " +
+							(vv.scale || 1)
+						: "無し") +
+					"\n<b>innerW/H</b> " +
+					innerWidth +
+					"x" +
+					innerHeight +
+					"\n<b>documentElement</b> " +
+					document.documentElement.clientWidth +
+					"x" +
+					document.documentElement.clientHeight +
+					"\n<b>screen</b> " +
+					screen.width +
+					"x" +
+					screen.height +
+					" dpr " +
+					devicePixelRatio +
+					"\n<b>safe-area</b> " +
+					safe +
+					"\n<b>ページのはみ出し</b> " +
+					(document.documentElement.scrollHeight >
+					document.documentElement.clientHeight
+						? "あり（動く）"
+						: "なし") +
+					"\n<b>UA</b> " +
+					navigator.userAgent;
+			};
+			apply();
+			const sync = () => requestAnimationFrame(apply);
+			window.visualViewport?.addEventListener("resize", sync);
+			window.visualViewport?.addEventListener("scroll", sync);
+			addEventListener("resize", sync);
+			addEventListener("pageshow", sync);
+			addEventListener("orientationchange", () => {
+				sync();
+				for (const ms of [100, 300, 600]) setTimeout(sync, ms);
+			});
+			// 押せたかどうか（押せたら緑になる）
+			for (const id of ["a", "b"]) {
+				const el = document.getElementById(id);
+				el.addEventListener("pointerdown", (e) => {
+					e.preventDefault();
+					el.classList.add("hit");
+					el.textContent = "OK";
+				});
+			}
+		</script>
+	</body>
+</html>

@@ -1,0 +1,36 @@
+{
+	"author": "onjmin",
+	"license": "AGPL-3.0",
+	"name": "roguelike",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "tsc --noEmit && vite build",
+		"preview": "vite preview",
+		"check": "tsc --noEmit",
+		"lint": "biome check src",
+		"format": "biome check src --write",
+		"sim": "node scripts/sim.mjs",
+		"loudness": "node scripts/measure-loudness.mjs"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild"
+		]
+	},
+	"volta": {
+		"node": "22.20.0",
+		"pnpm": "10.17.1"
+	},
+	"dependencies": {
+		"@onjmin/dtm": "2.1.24"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.14",
+		"@types/node": "^22.20.4",
+		"typescript": "7.0.2",
+		"vite": "8.3.0"
+	}
+}

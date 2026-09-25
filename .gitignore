@@ -141,3 +141,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Vite build output
+build/
+
+# Claude Code のローカル設定
+.claude/

@@ -1,0 +1,1141 @@
+/* 蓄音キリコの不思議なダンジョン — 画面のスタイル（スマホ縦持ち優先、横持ち・PC も可）
+   土台は rpg（蓄音キリコの大冒険）の style.css。スマホで苦労して直した所はそのまま残している。 */
+
+:root {
+	--bg: #0d0a16;
+	--win-bg: rgba(12, 10, 28, 0.9);
+	--win-border: #f4f1ff;
+	--text: #fbf8ff;
+	--muted: #b9b0d6;
+	--accent: #ffcf4a;
+	--hp: #62e07a;
+	--mp: #6fb7ff;
+	--danger: #ff5d6c;
+	--safe-b: env(safe-area-inset-bottom, 0px);
+	--safe-t: env(safe-area-inset-top, 0px);
+	--safe-l: env(safe-area-inset-left, 0px);
+	--safe-r: env(safe-area-inset-right, 0px);
+	/*
+	 * 画面の「いま見えている箱」（ブラウザのバーの裏は含まない）。
+	 * engine/viewport.ts が visualViewport で実測して px で入れ直す。
+	 * ここの値はその前・JS が動かないときの控え。100vh はバーが引っこんだときの
+	 * 大きい画面なので、バーの出ている小さいほう（svh）を使う
+	 */
+	--app-x: 0px;
+	--app-y: 0px;
+	--app-w: 100vw;
+	--app-h: 100vh;
+	/* 下のボタン類（十字キー・A/B）が占める高さ。ログやカメラはこの上に置く */
+	--controls-h: 180px;
+	--font:
+		"DotGothic16", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic",
+		sans-serif;
+}
+
+@supports (height: 100svh) {
+	:root {
+		--app-w: 100svw;
+		--app-h: 100svh;
+	}
+}
+
+* {
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+	margin: 0;
+	/* ページ自体を見えている高さに切りつめる（はみ出しでバーが出入りするのを防ぐ） */
+	height: var(--app-h);
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font);
+	overflow: hidden;
+	overscroll-behavior: none;
+	touch-action: none;
+	user-select: none;
+	-webkit-user-select: none;
+	-webkit-touch-callout: none;
+}
+
+/*
+ * iOS の Safari は overflow: hidden だけではページが指で動いてしまうことがある。
+ * ページが 1px でも画面より高いと、その分だけずれて上がバーの裏に入りタッチできなくなるので、
+ * ページ自体を画面に貼りつけて動かせなくする
+ */
+body {
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+}
+
+button {
+	font-family: inherit;
+	color: inherit;
+	touch-action: manipulation;
+}
+
+/*
+ * ゲームの中身は必ず「見えている箱」の中だけに置く。
+ * inset: 0 だと position: fixed の基準がバーの裏まで広がる画面があり、
+ * そこに乗った右上の 🔇・☰ が隠れてタッチできなくなる
+ */
+#app {
+	position: fixed;
+	left: var(--app-x);
+	top: var(--app-y);
+	width: var(--app-w);
+	height: var(--app-h);
+	overflow: hidden;
+}
+
+#screen {
+	position: absolute;
+	left: 0;
+	top: 0;
+	image-rendering: pixelated;
+}
+
+#ui {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 20;
+}
+
+#ui > * {
+	pointer-events: auto;
+}
+
+/* 見た目だけの層はタップを下へ通す */
+#ui > .fade,
+#ui > .flash,
+#ui > .toast,
+#ui > .log,
+#ui > .pops,
+#ui > .mapview {
+	pointer-events: none;
+}
+
+body.shake #app {
+	animation: shake 0.1s linear infinite;
+}
+
+@keyframes shake {
+	0% {
+		transform: translate(0, 0);
+	}
+	25% {
+		transform: translate(-3px, 1px);
+	}
+	50% {
+		transform: translate(2px, -2px);
+	}
+	75% {
+		transform: translate(-1px, 2px);
+	}
+}
+
+@keyframes blink {
+	50% {
+		opacity: 0.2;
+	}
+}
+
+@keyframes pop-in {
+	from {
+		transform: translateY(6px);
+		opacity: 0.4;
+	}
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+
+/* ───────── 共通ウィンドウ ───────── */
+
+.window {
+	background: var(--win-bg);
+	border: 3px solid var(--win-border);
+	border-radius: 8px;
+	box-shadow:
+		0 0 0 2px #000,
+		0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+/* ───────── メッセージ窓（確認・会話） ───────── */
+
+.msg {
+	position: absolute;
+	left: calc(6px + var(--safe-l));
+	right: calc(6px + var(--safe-r));
+	bottom: calc(10px + var(--safe-b));
+	min-height: 96px;
+	max-width: 760px;
+	margin: 0 auto;
+	padding: 14px 10px 22px;
+	font-size: clamp(13px, calc((var(--app-w) - 34px) / 22.4), 17px);
+	line-height: 1.65;
+	display: none;
+	z-index: 22;
+	cursor: pointer;
+}
+
+.msg.shown {
+	display: block;
+	animation: pop-in 0.12s ease-out;
+}
+
+.msg-name {
+	position: absolute;
+	top: -15px;
+	left: 12px;
+	padding: 1px 12px;
+	font-size: 14px;
+	background: #000;
+	border: 2px solid var(--char, #fff);
+	border-radius: 6px;
+	color: var(--char, #fff);
+	text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
+}
+
+.msg-text {
+	white-space: pre-wrap;
+	word-break: break-all;
+}
+
+.msg-next {
+	position: absolute;
+	right: 14px;
+	bottom: 4px;
+	font-size: 12px;
+	opacity: 0;
+}
+
+.msg-next.shown {
+	opacity: 1;
+	animation: blink 0.9s steps(2) infinite;
+}
+
+/* ───────── ログ（入力を止めない。ボタンの上に最新の数行） ───────── */
+
+.log {
+	position: absolute;
+	left: calc(8px + var(--safe-l));
+	right: calc(8px + var(--safe-r));
+	bottom: calc(var(--controls-h) + 8px + var(--safe-b));
+	max-width: 640px;
+	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	z-index: 22;
+	font-size: clamp(13px, calc((var(--app-w) - 40px) / 24), 16px);
+	line-height: 1.45;
+}
+
+.log-line {
+	align-self: flex-start;
+	max-width: 100%;
+	padding: 2px 8px;
+	background: rgba(8, 6, 18, 0.72);
+	border-left: 3px solid rgba(255, 255, 255, 0.5);
+	border-radius: 3px;
+	text-shadow: 0 1px 0 #000;
+	word-break: break-all;
+	transition: opacity 0.6s;
+}
+
+.log-line.old {
+	opacity: 0.55;
+}
+
+.log-line.gone {
+	opacity: 0;
+}
+
+.log-line.warn {
+	border-left-color: var(--danger);
+}
+
+.log-line.good {
+	border-left-color: var(--accent);
+}
+
+/* ───────── ステータス行（左上） ───────── */
+
+.status {
+	position: absolute;
+	top: calc(8px + var(--safe-t));
+	left: calc(8px + var(--safe-l));
+	right: calc(118px + var(--safe-r));
+	font-size: clamp(12px, calc((var(--app-w) - 130px) / 17), 16px);
+	line-height: 1.35;
+	text-shadow:
+		0 1px 0 #000,
+		1px 0 0 #000,
+		-1px 0 0 #000,
+		0 -1px 0 #000;
+	pointer-events: none;
+	white-space: nowrap;
+}
+
+.hud.hidden .status {
+	display: none;
+}
+
+.status .st-row {
+	display: flex;
+	gap: 0.7em;
+	align-items: baseline;
+}
+
+.status .st-depth {
+	color: var(--accent);
+}
+
+.status .st-hp.low {
+	color: var(--danger);
+}
+
+.status .st-hunger.low {
+	color: var(--danger);
+}
+
+.status .st-bar {
+	position: relative;
+	height: 5px;
+	margin: 3px 0 2px;
+	width: min(220px, 100%);
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(0, 0, 0, 0.8);
+}
+
+.status .st-bar i {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--hp);
+}
+
+.status .st-bar.low i {
+	background: var(--danger);
+}
+
+.status .st-cards {
+	color: #9fe6ff;
+}
+
+/* ───────── 選択肢・メニュー ───────── */
+
+.choice {
+	position: absolute;
+	right: calc(14px + var(--safe-r));
+	bottom: calc(118px + var(--safe-b));
+	min-width: 180px;
+	max-width: calc(var(--app-w) - 28px - var(--safe-l) - var(--safe-r));
+	padding: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	z-index: 30;
+}
+
+.choice-item,
+.menu-item,
+.menu-close {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 12px;
+	width: 100%;
+	text-align: left;
+	padding: 10px 12px 10px 26px;
+	font-size: 17px;
+	background: transparent;
+	border: none;
+	border-radius: 6px;
+	position: relative;
+	cursor: pointer;
+}
+
+.choice-item {
+	font-size: clamp(14px, calc((var(--app-w) - 90px) / 15), 17px);
+}
+
+.choice-item.cur,
+.menu-item.cur {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.choice-item.cur::before,
+.menu-item.cur::before {
+	content: "▶";
+	position: absolute;
+	left: 8px;
+	font-size: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	animation: blink 0.9s steps(2) infinite;
+}
+
+.menu-item small {
+	color: var(--accent);
+	font-size: 13px;
+	white-space: nowrap;
+}
+
+.menu-item.disabled,
+.title-btn.disabled {
+	opacity: 0.35;
+}
+
+/*
+ * 2行目の説明（道具の効果）。タップは押した瞬間に決まるので、選ぶ前から行の中に見せておく。
+ */
+.menu-item.has-desc {
+	flex-wrap: wrap;
+	row-gap: 3px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+.menu-item.has-desc.cur::before {
+	top: 19px;
+}
+
+.menu-item .desc {
+	flex-basis: 100%;
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--muted);
+	text-align: left;
+	word-break: keep-all;
+	overflow-wrap: anywhere;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+}
+
+.desc .tag,
+.info-body .tag {
+	display: inline-block;
+	font-weight: normal;
+	font-size: 11px;
+	line-height: 1.25;
+	padding: 0 4px;
+	margin-right: 6px;
+	border: 1px solid currentColor;
+	border-radius: 3px;
+}
+
+.tag.curse {
+	color: var(--danger);
+}
+
+.tag.equip {
+	color: var(--accent);
+}
+
+.menu {
+	position: absolute;
+	top: calc(60px + var(--safe-t));
+	right: calc(12px + var(--safe-r));
+	width: min(380px, calc(var(--app-w) - 24px));
+	max-height: calc(100% - 76px - var(--safe-t) - var(--safe-b));
+	overflow-y: auto;
+	padding: 10px;
+	z-index: 30;
+	touch-action: pan-y;
+}
+
+.menu.main-menu {
+	width: 220px;
+}
+
+/* もちもの一覧の上に重ねる小さいメニュー（つかう・なげる…） */
+.menu.sub-menu {
+	top: auto;
+	bottom: calc(24px + var(--safe-b));
+	width: 190px;
+	z-index: 31;
+}
+
+.menu-title {
+	padding: 4px 8px 8px;
+	color: var(--muted);
+	font-size: 14px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	margin-bottom: 6px;
+}
+
+.menu-close {
+	justify-content: center;
+	padding: 8px;
+	margin-top: 6px;
+	color: var(--muted);
+	font-size: 14px;
+	border-top: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 0;
+}
+
+.info-body {
+	padding: 4px 8px;
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+.info-body p {
+	margin: 0 0 8px;
+}
+
+.info-body table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.info-body td,
+.info-body th {
+	padding: 3px 4px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+	text-align: left;
+	font-weight: normal;
+}
+
+.info-body th {
+	color: var(--accent);
+	padding-top: 10px;
+}
+
+.info-body td.num {
+	text-align: right;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+}
+
+.info-body .dim {
+	color: var(--muted);
+}
+
+.info-body .gone {
+	color: #7c7497;
+	text-decoration: line-through;
+}
+
+.info-body .hint {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+/* ───────── HUD ───────── */
+
+.hud {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 21;
+	transition: opacity 0.15s;
+}
+
+/* タイトル画面ではミュートボタンだけ出す */
+.hud.hidden .pad,
+.hud.hidden .ab,
+.hud.hidden .minis,
+.hud.hidden .menu-btn {
+	display: none;
+}
+
+.hud.modal .pad,
+.hud.modal .ab,
+.hud.modal .minis {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.hud > * {
+	pointer-events: auto;
+}
+
+.hud > .status {
+	pointer-events: none;
+}
+
+/* 8方向の十字キー。矢印は中心から回して並べる（--d × 45°） */
+.pad {
+	position: absolute;
+	left: calc(14px + var(--safe-l));
+	bottom: calc(18px + var(--safe-b));
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.3);
+	border: 2px solid rgba(255, 255, 255, 0.35);
+	touch-action: none;
+}
+
+.hud.no-pad .pad {
+	display: none;
+}
+
+.pad i {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 38px;
+	height: 38px;
+	margin: -19px 0 0 -19px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.22);
+	pointer-events: none;
+	transform: rotate(calc(var(--d) * 45deg)) translateY(-50px);
+}
+
+.pad i.diag {
+	width: 26px;
+	height: 26px;
+	margin: -13px 0 0 -13px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.14);
+	transform: rotate(calc(var(--d) * 45deg)) translateY(-54px);
+}
+
+.pad i::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	margin: auto;
+	width: 0;
+	height: 0;
+	border: 7px solid transparent;
+	border-bottom-color: #fff;
+	transform: translateY(-4px);
+}
+
+.pad i.diag::after {
+	border-width: 5px;
+	transform: translateY(-3px);
+}
+
+.pad .d0 {
+	--d: 0;
+}
+.pad .d1 {
+	--d: 1;
+}
+.pad .d2 {
+	--d: 2;
+}
+.pad .d3 {
+	--d: 3;
+}
+.pad .d4 {
+	--d: 4;
+}
+.pad .d5 {
+	--d: 5;
+}
+.pad .d6 {
+	--d: 6;
+}
+.pad .d7 {
+	--d: 7;
+}
+
+.pad[data-dir="0"] .d0,
+.pad[data-dir="1"] .d1,
+.pad[data-dir="2"] .d2,
+.pad[data-dir="3"] .d3,
+.pad[data-dir="4"] .d4,
+.pad[data-dir="5"] .d5,
+.pad[data-dir="6"] .d6,
+.pad[data-dir="7"] .d7 {
+	background: rgba(255, 207, 74, 0.75);
+}
+
+/* 斜め固定のあいだは、まっすぐの矢印を淡くする */
+.hud.diag-lock .pad i:not(.diag) {
+	opacity: 0.25;
+}
+
+.ab {
+	position: absolute;
+	right: calc(14px + var(--safe-r));
+	bottom: calc(18px + var(--safe-b));
+	width: 140px;
+	height: 112px;
+}
+
+.btn {
+	position: absolute;
+	width: 66px;
+	height: 66px;
+	border-radius: 50%;
+	border: 2px solid rgba(255, 255, 255, 0.5);
+	background: rgba(0, 0, 0, 0.38);
+	font-size: 22px;
+	cursor: pointer;
+}
+
+.btn.down {
+	background: rgba(255, 207, 74, 0.6);
+}
+
+.btn-a {
+	right: 0;
+	top: 0;
+}
+.btn-b {
+	left: 0;
+	bottom: 0;
+	width: 56px;
+	height: 56px;
+	font-size: 19px;
+}
+
+/* 小さいボタン（A/B の上に 3×2） */
+.minis {
+	position: absolute;
+	right: calc(10px + var(--safe-r));
+	bottom: calc(136px + var(--safe-b));
+	display: grid;
+	grid-template-columns: repeat(3, 50px);
+	gap: 5px;
+}
+
+.mini {
+	height: 30px;
+	padding: 0;
+	font-size: 11px;
+	border-radius: 7px;
+	border: 1.5px solid rgba(255, 255, 255, 0.4);
+	background: rgba(0, 0, 0, 0.45);
+	cursor: pointer;
+	white-space: nowrap;
+	letter-spacing: -0.03em;
+}
+
+.mini.down {
+	background: rgba(255, 207, 74, 0.6);
+}
+
+.mini.toggle.on {
+	border-color: var(--accent);
+	color: var(--accent);
+	background: rgba(255, 207, 74, 0.18);
+}
+
+/* 十字キーを右手側に */
+.hud.pad-right .pad {
+	left: auto;
+	right: calc(14px + var(--safe-r));
+}
+.hud.pad-right .ab {
+	right: auto;
+	left: calc(14px + var(--safe-l));
+}
+.hud.pad-right .minis {
+	right: auto;
+	left: calc(10px + var(--safe-l));
+}
+
+.top-btns {
+	position: absolute;
+	top: calc(8px + var(--safe-t));
+	right: calc(8px + var(--safe-r));
+	display: flex;
+	gap: 8px;
+}
+
+.icon-btn {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	border: 2px solid rgba(255, 255, 255, 0.45);
+	background: rgba(0, 0, 0, 0.45);
+	font-size: 20px;
+	cursor: pointer;
+}
+
+.icon-btn.off {
+	border-color: var(--danger);
+}
+
+/* ───────── ダメージの数字・地図 ───────── */
+
+.pops {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	z-index: 21;
+}
+
+.pop {
+	position: absolute;
+	transform: translate(-50%, -100%);
+	font-size: 15px;
+	color: #fff;
+	text-shadow:
+		0 1px 0 #000,
+		1px 0 0 #000,
+		-1px 0 0 #000,
+		0 -1px 0 #000;
+	animation: pop-up 0.8s ease-out forwards;
+	white-space: nowrap;
+}
+
+.pop.hurt-player {
+	color: #ff8a95;
+}
+
+.pop.heal {
+	color: var(--hp);
+}
+
+.pop.miss {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+@keyframes pop-up {
+	0% {
+		opacity: 0;
+		margin-top: 6px;
+	}
+	15% {
+		opacity: 1;
+		margin-top: 0;
+	}
+	70% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		margin-top: -14px;
+	}
+}
+
+.mapview {
+	position: absolute;
+	inset: 0;
+	z-index: 19;
+	image-rendering: pixelated;
+	display: none;
+}
+
+.mapview.shown {
+	display: block;
+}
+
+/* ───────── フェード・トースト ───────── */
+
+.fade {
+	position: absolute;
+	inset: 0;
+	background: #000;
+	opacity: 0;
+	pointer-events: none;
+	z-index: 50;
+}
+
+.flash {
+	position: absolute;
+	inset: 0;
+	opacity: 0.8;
+	pointer-events: none;
+	z-index: 51;
+}
+
+.toast {
+	position: absolute;
+	top: calc(58px + var(--safe-t));
+	left: calc(14px + var(--safe-l));
+	padding: 6px 14px;
+	background: rgba(0, 0, 0, 0.6);
+	border-left: 4px solid var(--accent);
+	font-size: 15px;
+	opacity: 0;
+	pointer-events: none;
+	z-index: 24;
+}
+
+.toast.shown {
+	animation: toast 2.6s ease forwards;
+}
+
+@keyframes toast {
+	0% {
+		opacity: 0;
+		transform: translateX(-10px);
+	}
+	12% {
+		opacity: 1;
+		transform: none;
+	}
+	80% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+
+/* ───────── 階の札（〇階） ───────── */
+
+.chapter {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: #000;
+	opacity: 0;
+	transition: opacity 0.35s;
+	z-index: 60;
+	gap: 14px;
+	text-align: center;
+	padding: 20px;
+}
+
+.chapter.shown {
+	opacity: 1;
+}
+
+.chapter-label {
+	color: var(--accent);
+	letter-spacing: 0.3em;
+	font-size: 15px;
+}
+
+.chapter-title {
+	font-size: clamp(22px, var(--app-w) * 0.07, 40px);
+	word-break: keep-all;
+	text-shadow: 0 0 12px rgba(160, 120, 255, 0.8);
+}
+
+.chapter-sub {
+	color: var(--muted);
+	font-size: 13px;
+}
+
+/* ───────── タイトル ───────── */
+
+.title {
+	position: absolute;
+	inset: 0;
+	z-index: 19;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	padding: 20px;
+	text-align: center;
+	background:
+		radial-gradient(
+			circle at 50% 35%,
+			rgba(120, 200, 255, 0.14),
+			transparent 45%
+		),
+		repeating-radial-gradient(
+			circle at 50% 35%,
+			rgba(255, 255, 255, 0.045) 0 2px,
+			transparent 2px 14px
+		),
+		linear-gradient(#1a1440, #07051a 70%);
+	transition: opacity 0.5s;
+}
+
+.title.leaving {
+	opacity: 0;
+}
+
+.title-sub {
+	color: var(--muted);
+	font-size: 14px;
+	letter-spacing: 0.2em;
+}
+
+.title-logo {
+	margin: 0;
+	font-weight: normal;
+	font-size: clamp(28px, var(--app-w) * 0.095, 54px);
+	word-break: keep-all;
+	line-height: 1.2;
+	color: #fff4c9;
+	text-shadow:
+		0 3px 0 #4a6ab0,
+		0 6px 0 #1a2464,
+		0 0 24px rgba(120, 180, 255, 0.6);
+}
+
+.title-logo .title-logo-sub {
+	display: block;
+	font-size: 0.56em;
+	margin-top: 0.3em;
+	letter-spacing: 0.02em;
+}
+
+.title-walkers {
+	width: 240px;
+	max-width: calc(var(--app-w) * 0.7);
+	image-rendering: pixelated;
+	aspect-ratio: 3 / 1;
+	height: auto;
+}
+
+.title-buttons {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: min(280px, var(--app-w) * 0.8);
+}
+
+.title-btn {
+	padding: 11px;
+	font-size: 18px;
+	background: var(--win-bg);
+	border: 3px solid var(--win-border);
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.title-btn small {
+	display: block;
+	font-size: 11px;
+	color: var(--muted);
+	margin-top: 2px;
+}
+
+.title-btn.cur {
+	border-color: var(--accent);
+	color: var(--accent);
+}
+
+.title-foot {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.title-quote {
+	max-width: min(340px, calc(var(--app-w) - 40px));
+	font-size: 13px;
+	line-height: 1.6;
+	color: #e8e2ff;
+	min-height: 2.6em;
+}
+
+.title-quote b {
+	color: var(--char, var(--accent));
+	font-weight: normal;
+}
+
+/* ───────── 冒険の記録（死んだ・クリアした） ───────── */
+
+.matome {
+	position: absolute;
+	inset: 0;
+	z-index: 56;
+	background: #000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
+	gap: 16px;
+	padding: calc(58px + var(--safe-t)) calc(16px + var(--safe-r))
+		calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
+	overflow-x: hidden;
+	overflow-y: auto;
+	touch-action: pan-y;
+	opacity: 0;
+	transition: opacity 0.8s;
+}
+
+.matome.shown {
+	opacity: 1;
+}
+
+.matome > :first-child {
+	margin-top: auto;
+}
+
+.matome > :last-child {
+	margin-bottom: auto;
+}
+
+.matome-card {
+	flex: none;
+	width: 100%;
+	max-width: calc(22em + 32px);
+	padding: 12px 14px;
+	border: 2px solid var(--win-border);
+	border-radius: 6px;
+	background: var(--win-bg);
+	text-align: left;
+	font-size: min(14px, calc((var(--app-w) - 66px) / 22));
+	line-height: 1.7;
+}
+
+.matome-head {
+	text-align: center;
+	color: #fff4c9;
+	font-size: 16px;
+	letter-spacing: 0.1em;
+	margin-bottom: 8px;
+}
+
+.matome-sec + .matome-sec {
+	margin-top: 12px;
+}
+
+.matome-title {
+	color: var(--accent);
+}
+
+.matome-line {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.matome-tap {
+	flex: none;
+	font-size: 13px;
+	color: var(--muted);
+	animation: blink 1.4s steps(2) infinite;
+}
+
+/* ───────── 横持ち ───────── */
+
+.short-landscape {
+	--controls-h: 0px;
+}
+
+.short-landscape .log {
+	left: 180px;
+	right: 170px;
+	bottom: calc(10px + var(--safe-b));
+}
+
+.short-landscape .msg {
+	left: 180px;
+	right: 170px;
+	min-height: 86px;
+	font-size: 15px;
+}
+
+.short-landscape .matome-card {
+	font-size: 13px;
+	line-height: 1.55;
+}
+
+.narrow .minis {
+	grid-template-columns: repeat(3, 46px);
+}
