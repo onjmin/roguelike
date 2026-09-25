@@ -80,8 +80,14 @@ try {
 	const H = CELL * eq.EQUIP_ROWS;
 	const only = process.argv[2]?.split(",").filter(Boolean);
 	const jobs = [
-		...art.WEAPON_KINDS.map((k) => ({ kind: k, look: { weapon: k, shield: null } })),
-		...art.SHIELD_KINDS.map((k) => ({ kind: k, look: { weapon: null, shield: k } })),
+		...art.WEAPON_KINDS.map((k) => ({
+			kind: k,
+			look: { weapon: k, shield: null },
+		})),
+		...art.SHIELD_KINDS.map((k) => ({
+			kind: k,
+			look: { weapon: null, shield: k },
+		})),
 	].filter((j) => !only || only.includes(j.kind));
 	mkdirSync(OUT, { recursive: true });
 	for (const { kind, look } of jobs) {
@@ -120,7 +126,9 @@ try {
 					);
 				}
 		writeFileSync(join(OUT, `${kind}.png`), encodePng(W, H, buf));
-		console.log(`${kind}.png${clipped ? `（セルの外に出た ${clipped} ドットは切れた）` : ""}`);
+		console.log(
+			`${kind}.png${clipped ? `（セルの外に出た ${clipped} ドットは切れた）` : ""}`,
+		);
 	}
 } finally {
 	await server.close();

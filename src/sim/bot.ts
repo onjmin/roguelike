@@ -115,7 +115,14 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 					!["neochi", "tensai", "yuki"].includes(m.kind))) &&
 			r.cornerOk(p, dirOf(m.x - p.x, m.y - p.y) as Dir8),
 	);
-	const threats = visible.filter((m) => awake(m) && dist(m, p) <= 4);
+	// 逃げる敵（フナムシ・弱ったキメラ）は向かってこないので数えない
+	const threats = visible.filter(
+		(m) =>
+			awake(m) &&
+			dist(m, p) <= 4 &&
+			!m.retreating &&
+			!mdef(m).abilities.some((a) => a.k === "shy"),
+	);
 	const hpRate = p.hp / p.maxHp;
 	const known = (it: Item) => isKnownKind(r.s, it.kind);
 	const faceAnd = (dir: Dir8, cmd: Command): Command =>
@@ -271,7 +278,12 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 				return { c: "use", item: it.uid };
 		}
 		const junk = items.find((i) => BAD_HERBS.has(i.kind) && known(i));
-		if (junk && items.length >= 18) return { c: "drop", item: junk.uid };
+		const canDrop =
+			!r.itemAt(p.x, p.y) &&
+			!r.onStairs() &&
+			!f.wards.includes(p.y * f.layout.w + p.x);
+		if (junk && items.length >= 18 && canDrop)
+			return { c: "drop", item: junk.uid };
 	}
 	// 見えている敵に近づく（倒して経験値）
 	// 余裕があれば、寝ている敵も先に倒して経験値にする（起こすと危ない敵は放っておく）
@@ -279,7 +291,7 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 	const target = visible
 		.filter(
 			(m) =>
-				!mdef(m).abilities.some((a) => a.k === "metal") &&
+				!mdef(m).abilities.some((a) => a.k === "metal" || a.k === "shy") &&
 				!m.status.dormant &&
 				(m.status.sleep === 0 ||
 					(huntSleepers && !["neochi", "tensai", "yuki"].includes(m.kind))),

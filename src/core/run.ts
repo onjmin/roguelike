@@ -615,18 +615,55 @@ export class Run {
 	damageMonster(
 		m: Monster,
 		amount: number,
-		by: "hit" | "throw" | "magic" | "blast" | "none",
+		by: "hit" | "throw" | "magic" | "blast" | "none" | "holy",
 	): boolean {
 		const d = mdef(m);
+		const sealed = m.status.sealed;
 		if (d.abilities.some((a) => a.k === "metal")) amount = Math.min(amount, 1);
+		// かたい鎧：なぐる攻撃は半分（杖・投げた物・爆発は そのまま）
+		if (by === "hit" && !sealed && d.abilities.some((a) => a.k === "armor")) {
+			amount = Math.max(1, Math.ceil(amount / 2));
+			this.msg("かたい　鎧に　はばまれた");
+		}
 		amount = Math.max(0, amount);
 		m.hp -= amount;
 		this.emit({ t: "hurt", id: m.uid, pos: { x: m.x, y: m.y }, amount });
 		const nm = monsterName(this, m);
 		this.msg(`${nm}に　${amount}の　ダメージ`);
 		if (m.hp <= 0) {
+			// 一度だけ起き上がる（投げた薬草で たおすか、封印していれば起きない）
+			if (
+				!m.revived &&
+				by !== "holy" &&
+				by !== "none" &&
+				!sealed &&
+				d.abilities.some((a) => a.k === "revive")
+			) {
+				m.revived = true;
+				m.hp = Math.max(1, Math.ceil(m.maxHp / 4));
+				this.emit({
+					t: "heal",
+					id: m.uid,
+					pos: { x: m.x, y: m.y },
+					amount: m.hp,
+				});
+				this.msg(`${nm}は　起き上がった！　……ほ……しゅ……`, "warn");
+				return false;
+			}
 			this.killMonster(m, by !== "none");
 			return true;
+		}
+		// 怒る（赤鬼）
+		if (
+			!sealed &&
+			!m.enraged &&
+			m.hp <= m.maxHp / 2 &&
+			d.abilities.some((a) => a.k === "berserk")
+		) {
+			m.enraged = true;
+			m.status.fast = 999;
+			m.status.slow = 0;
+			this.msg(`${nm}は　怒りだした！`, "warn");
 		}
 		// なぐられたときの反応
 		if (by === "hit" || by === "throw" || by === "magic") {
@@ -1148,7 +1185,9 @@ export class Run {
 /** モンスターの1回の行動にかかる時間（半ターン）。 */
 const monsterCost = (m: Monster): number => {
 	const d = mdef(m);
-	let c = d.abilities.some((a) => a.k === "fastAct") ? 1 : 2;
+	const has = (k: string) =>
+		!m.status.sealed && d.abilities.some((a) => a.k === k);
+	let c = has("fastAct") ? 1 : has("slow") ? 4 : 2;
 	if (m.status.fast > 0) c = 1;
 	if (m.status.slow > 0) c = 4;
 	return c;

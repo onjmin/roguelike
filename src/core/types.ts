@@ -86,7 +86,16 @@ export type Ability =
 	| { k: "statue" } // 近づくまで動かない
 	| { k: "pack" } // 4体の群れで出てくる
 	| { k: "invisible" } // 見えない
-	| { k: "metal" }; // 逃げる・ダメージは最大1・なぐられるとワープ
+	| { k: "metal" } // 逃げる・ダメージは最大1・なぐられるとワープ
+	| { k: "slow" } // 2ターンに1回しか動かない
+	| { k: "shy" } // 近づくと逃げる（追いつめられると戦う）
+	| { k: "accel"; after: number } // となりに after ターンいると倍速になる
+	| { k: "revive" } // たおしても一度だけ起き上がる（投げた薬草・封印で防げる）
+	| { k: "retreat" } // 弱ると逃げて回復する
+	| { k: "armor" } // なぐる攻撃のダメージが半分
+	| { k: "knockback"; rate: number } // なぐった相手を吹きとばす
+	| { k: "berserk" } // HP が半分を切ると怒って倍速になる
+	| { k: "curse"; rate: number }; // なぐった相手の装備をのろう
 
 export type MonsterTag = "dragon" | "undead" | "plant" | "doll" | "metal";
 
@@ -152,6 +161,14 @@ export type Monster = {
 	fleeing?: boolean;
 	/** 爆発しかけ（HP が減って動かなくなった）。 */
 	fuse?: boolean;
+	/** キリコのとなりにいたターン数（加速する敵）。 */
+	seenTurns?: number;
+	/** 一度 起き上がった（よみがえる敵）。 */
+	revived?: boolean;
+	/** 弱って逃げている（回復したら戻る）。 */
+	retreating?: boolean;
+	/** 怒った（赤鬼）。 */
+	enraged?: boolean;
 };
 
 // ───────────────────────── 罠 ─────────────────────────

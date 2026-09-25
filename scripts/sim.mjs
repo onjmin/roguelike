@@ -74,18 +74,23 @@ try {
 					if (p.lv < run.s.depth + 3) run.gainExp(200 * run.s.depth);
 				}
 				if (ONE && !QUIET)
-					for (const e of ev) if (e.t === "msg") console.log(`[B${run.s.depth} T${run.s.turn}] ${e.text}`);
+					for (const e of ev)
+						if (e.t === "msg")
+							console.log(`[B${run.s.depth} T${run.s.turn}] ${e.text}`);
 				if (run.s.depth !== lastDepth) {
 					lvAt[lastDepth] = run.s.player.lv;
 					turnsAt[lastDepth] = run.s.turn;
 					lastDepth = run.s.depth;
 				}
 				// ときどき中断セーブを通す（読み直しで壊れないか）
-				if (actions % 997 === 0) run = godify(new Run(deserializeRun(serializeRun(run.s))));
+				if (actions % 997 === 0)
+					run = godify(new Run(deserializeRun(serializeRun(run.s))));
 			}
 		} catch (e) {
 			failed = true;
-			console.error(`\n[例外] seed=${seed} actions=${actions} depth=${run.s.depth}`);
+			console.error(
+				`\n[例外] seed=${seed} actions=${actions} depth=${run.s.depth}`,
+			);
 			console.error(e);
 			if (ONE) break;
 			continue;
@@ -115,22 +120,38 @@ try {
 	const clears = results.filter((r) => r.end === "clear").length;
 	const stuck = results.filter((r) => r.end === "stuck").length;
 	const reached = results.filter((r) => r.depth >= LAST_DEPTH).length;
-	console.log(`\n${n}回　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}`);
+	console.log(
+		`\n${n}回　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}`,
+	);
 	// 倒れた階
 	const byDepth = {};
-	for (const r of results) if (r.end === "dead") byDepth[r.finalDepth] = (byDepth[r.finalDepth] ?? 0) + 1;
-	console.log("倒れた階:", Object.entries(byDepth).map(([d, c]) => `B${d}:${c}`).join(" "));
+	for (const r of results)
+		if (r.end === "dead")
+			byDepth[r.finalDepth] = (byDepth[r.finalDepth] ?? 0) + 1;
+	console.log(
+		"倒れた階:",
+		Object.entries(byDepth)
+			.map(([d, c]) => `B${d}:${c}`)
+			.join(" "),
+	);
 	// 死因
 	const causes = {};
-	for (const r of results) if (r.end === "dead") causes[r.cause] = (causes[r.cause] ?? 0) + 1;
+	for (const r of results)
+		if (r.end === "dead") causes[r.cause] = (causes[r.cause] ?? 0) + 1;
 	console.log("死因:");
-	for (const [c, k] of Object.entries(causes).sort((a, b) => b[1] - a[1]).slice(0, 15))
+	for (const [c, k] of Object.entries(causes)
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 15))
 		console.log(`  ${k}\t${c}`);
 	// 階ごとのレベル・ターン（着いたとき）
 	const rows = [];
 	for (let d = 1; d <= LAST_DEPTH; d++) {
-		const lv = results.filter((r) => r.lvAt[d] !== undefined).map((r) => r.lvAt[d]);
-		const tt = results.filter((r) => r.turnsAt[d] !== undefined).map((r) => r.turnsAt[d]);
+		const lv = results
+			.filter((r) => r.lvAt[d] !== undefined)
+			.map((r) => r.lvAt[d]);
+		const tt = results
+			.filter((r) => r.turnsAt[d] !== undefined)
+			.map((r) => r.turnsAt[d]);
 		if (!lv.length) continue;
 		const avg = (a) => (a.reduce((x, y) => x + y, 0) / a.length).toFixed(1);
 		rows.push(`B${d}:Lv${avg(lv)}/T${avg(tt)}(${lv.length})`);
@@ -138,9 +159,17 @@ try {
 	console.log("階を出たとき:", rows.join("  "));
 	const stuckList = results.filter((r) => r.end === "stuck");
 	if (stuckList.length)
-		console.log("止まった:", stuckList.slice(0, 8).map((r) => `${r.seed}(B${r.finalDepth}${r.returning ? "↑" : ""})`).join(" "));
+		console.log(
+			"止まった:",
+			stuckList
+				.slice(0, 8)
+				.map((r) => `${r.seed}(B${r.finalDepth}${r.returning ? "↑" : ""})`)
+				.join(" "),
+		);
 	const avg = (k) => (results.reduce((a, r) => a + r[k], 0) / n).toFixed(1);
-	console.log(`平均：見た札 ${avg("seen")}　流れた札 ${avg("flowed")}　なくなった札 ${avg("lost")}　ターン ${avg("turn")}`);
+	console.log(
+		`平均：見た札 ${avg("seen")}　流れた札 ${avg("flowed")}　なくなった札 ${avg("lost")}　ターン ${avg("turn")}`,
+	);
 	const starved = results.filter((r) => r.cause.includes("おなか")).length;
 	console.log(`飢え死に ${starved}（${pct(starved)}）`);
 } finally {

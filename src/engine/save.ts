@@ -15,6 +15,7 @@ const PREFIX = "kiriko-roguelike/";
 const RUN_KEY = `${PREFIX}run`;
 const RECORDS_KEY = `${PREFIX}records`;
 const STATS_KEY = `${PREFIX}stats`;
+const BOOK_KEY = `${PREFIX}book`;
 const RECORDS_MAX = 50;
 
 // ───────────────────────── 中断セーブ ─────────────────────────
@@ -47,6 +48,7 @@ export const saveRun = (s: RunState): void => {
 	if (s.seed.startsWith(DEBUG_SEED)) return;
 	if (s.end) {
 		addRecord(recordFromRun(s));
+		addBookKills(s.kills);
 		clearRun();
 		return;
 	}
@@ -219,4 +221,53 @@ export const addRecord = (r: RunRecord): void => {
 	} catch {
 		// 保存できなくても遊べる
 	}
+};
+
+// ───────────────────────── モンスター図鑑 ─────────────────────────
+// 冒険をまたいで残るのは知識だけ。会った敵と、倒した数を覚えておく。
+
+export type Book = { seen: string[]; kills: Record<string, number> };
+
+export const loadBook = (): Book => {
+	try {
+		const raw = localStorage.getItem(BOOK_KEY);
+		if (raw) {
+			const b = JSON.parse(raw) as Partial<Book>;
+			return {
+				seen: Array.isArray(b.seen)
+					? b.seen.filter((x) => typeof x === "string")
+					: [],
+				kills: b.kills && typeof b.kills === "object" ? b.kills : {},
+			};
+		}
+	} catch {
+		// 壊れていたら空から
+	}
+	return { seen: [], kills: {} };
+};
+
+const saveBook = (b: Book): void => {
+	try {
+		localStorage.setItem(BOOK_KEY, JSON.stringify(b));
+	} catch {
+		// 残せなくても遊べる
+	}
+};
+
+/** はじめて会った敵を図鑑に載せる（もう載っていれば何もしない）。 */
+export const markSeenMonster = (kind: string): void => {
+	const b = loadBook();
+	if (b.seen.includes(kind)) return;
+	b.seen.push(kind);
+	saveBook(b);
+};
+
+/** 冒険が終わったときに、倒した数を足す。 */
+export const addBookKills = (kills: Record<string, number>): void => {
+	const b = loadBook();
+	for (const [k, n] of Object.entries(kills)) {
+		b.kills[k] = (b.kills[k] ?? 0) + n;
+		if (!b.seen.includes(k)) b.seen.push(k);
+	}
+	saveBook(b);
 };

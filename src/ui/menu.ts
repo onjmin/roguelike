@@ -13,6 +13,7 @@ import { defOf, isKeyItem, isKnownKind, isUnidentifiedCat } from "../core/item";
 import type { Run } from "../core/run";
 import { trapName } from "../core/traps";
 import type { Command, Item, ItemCat, TrapKind } from "../core/types";
+import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { openDeck } from "./deckView";
 import { el } from "./dom";
@@ -119,6 +120,7 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "足元", sub: footHint(run), value: "foot" },
 			{ label: "山札", sub: `この階 のこり${run.cardsLeft()}`, value: "deck" },
 			{ label: "つよさ", sub: `Lv${run.p.lv}`, value: "status" },
+			{ label: "図鑑", value: "book" },
 			{ label: "ログ", value: "log" },
 			{ label: "地図", value: "map" },
 			{ label: "せってい", value: "settings" },
@@ -143,6 +145,9 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				break;
 			case "status":
 				await openStatus(ctx, run);
+				break;
+			case "book":
+				await openBook(ctx);
 				break;
 			case "log":
 				await openLog(ctx, run);

@@ -19,7 +19,7 @@ import { isFloor, roomAt } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
 import { type Command, type GameEvent, PLAYER_ID } from "../core/types";
-import { saveRun } from "../engine/save";
+import { DEBUG_SEED, loadBook, markSeenMonster, saveRun } from "../engine/save";
 import type { Screen } from "../engine/screen";
 import { settings } from "../engine/settings";
 import { TILE } from "../engine/types";
@@ -86,6 +86,8 @@ export class Play {
 	private travel: Pos | null = null;
 	/** 向きを変えたあと、方向がはなされるのを待っている。 */
 	private waitRelease = false;
+	/** 図鑑に載っている敵（毎フレーム保存を読まないように覚えておく）。 */
+	private bookSeen = new Set(loadBook().seen);
 	private statusKey = "";
 
 	constructor(run: Run, ctx: Ctx, screen: Screen, hud: Hud) {
@@ -243,6 +245,7 @@ export class Play {
 			}
 		}
 		if (!this.busy) this.control(t);
+		this.noteSeen();
 		this.updateCamera();
 		this.updateStatus();
 		if (this.mapOn) {
@@ -250,6 +253,18 @@ export class Play {
 				(m) => this.run.monsterVisible(m) && !m.disguise,
 			);
 			drawMap(this.mapEl, this.run.s, { visibleMonsters: vis });
+		}
+	}
+
+	/** 見えた敵を図鑑に載せる（はじめて会ったときだけ保存する）。 */
+	private noteSeen(): void {
+		const run = this.run;
+		if (run.s.seed.startsWith(DEBUG_SEED)) return;
+		for (const m of run.f.monsters) {
+			if (this.bookSeen.has(m.kind) || m.disguise || !run.monsterVisible(m))
+				continue;
+			this.bookSeen.add(m.kind);
+			markSeenMonster(m.kind);
 		}
 	}
 

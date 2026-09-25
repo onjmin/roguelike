@@ -592,7 +592,8 @@ const herbOnMonster = (
 		case "h_heal":
 		case "h_greater": {
 			const v = kind === "h_greater" ? 100 : 25;
-			if (undead) r.damageMonster(m, v, "throw");
+			// 生ける屍には毒。この一撃で たおすと、もう起き上がらない
+			if (undead) r.damageMonster(m, v, "holy");
 			else {
 				m.hp = Math.min(m.maxHp, m.hp + v);
 				r.msg(`${nm}の　HPが　回復した`);

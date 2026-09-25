@@ -18,6 +18,7 @@ import {
 } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import { sleep } from "../engine/types";
+import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { openHowto } from "./howto";
@@ -33,7 +34,7 @@ const KIRIKO = "pub:sprites/kiriko.png";
 /** とうすこ（1階の敵）。キリコのうしろを ついて歩く。 */
 const TOUSUKO = "sa:2kJYAl";
 
-type Choice = "new" | "continue" | "records" | "howto" | "settings";
+type Choice = "new" | "continue" | "records" | "book" | "howto" | "settings";
 
 /**
  * ボタンの並び（行ごと）。上下で行を、左右で行の中を動く。
@@ -42,7 +43,8 @@ type Choice = "new" | "continue" | "records" | "howto" | "settings";
 const GRID: Choice[][] = [
 	["new"],
 	["continue"],
-	["records", "howto", "settings"],
+	["records", "book"],
+	["howto", "settings"],
 ];
 
 /** いちばん新しい記録から、タイトルの一言の手がかりを作る。 */
@@ -120,6 +122,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 							: "中断した　冒険は　ない",
 			},
 			records: { text: "冒険の記録" },
+			book: { text: "図鑑" },
 			howto: { text: "あそびかた" },
 			settings: { text: "せってい" },
 		};
@@ -214,6 +217,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			cur = c;
 			render();
 			if (c === "records") await openRecords(ctx);
+			else if (c === "book") await openBook(ctx);
 			else if (c === "howto") await openHowto(ctx);
 			else if (c === "settings") await openSettings(ctx);
 			else if (c === "continue") {

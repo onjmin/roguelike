@@ -252,6 +252,63 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	const sees = canSee(r.f.layout, m, p);
 	if (sees) m.lastSeen = { x: p.x, y: p.y };
 
+	// 加速（kskボット）：となりで やりあううちに 倍速になる
+	const accel = d.abilities.find((a) => a.k === "accel");
+	if (
+		accel &&
+		!st.sealed &&
+		sees &&
+		dist(m, p) === 1 &&
+		(m.seenTurns ?? 0) < (accel as { after: number }).after
+	) {
+		m.seenTurns = (m.seenTurns ?? 0) + 1;
+		if (m.seenTurns >= (accel as { after: number }).after) {
+			st.fast = 999;
+			st.slow = 0;
+			if (r.playerSees(m)) r.msg(`${d.name}が　加速した！　kskst`, "warn");
+		}
+	}
+
+	// 弱ると逃げて回復（キメラ）
+	if (has(m, "retreat")) {
+		if (!m.retreating && m.hp <= m.maxHp * 0.4) {
+			m.retreating = true;
+			if (r.playerSees(m)) r.msg(`${d.name}は　逃げだした`);
+		}
+		if (m.retreating) {
+			m.hp = Math.min(m.maxHp, m.hp + 2);
+			if (m.hp >= m.maxHp * 0.8) m.retreating = false;
+			else {
+				if (sees || dist(m, p) <= 3) {
+					if (!flee(r, m, p)) {
+						// 追いつめられたら戦う
+						const dir = adjacentDir();
+						if (dir !== null) {
+							m.dir = dir;
+							meleePlayer(r, m);
+						}
+					}
+				} else wander(r, m);
+				return;
+			}
+		}
+	}
+
+	// 近づくと逃げる（フナムシ）。追いかけてもこない。追いつめられたら戦う
+	if (has(m, "shy") && sees) {
+		if (dist(m, p) > 2) {
+			wander(r, m);
+			return;
+		}
+		if (flee(r, m, p)) return;
+		const dir = adjacentDir();
+		if (dir !== null) {
+			m.dir = dir;
+			meleePlayer(r, m);
+			return;
+		}
+	}
+
 	// 逃げる（盗んだあと・メタル）
 	if (m.fleeing || has(m, "metal")) {
 		const dir = adjacentDir();
@@ -490,7 +547,47 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				r.msg(`${nm}に　吹きとばされた！`, "warn");
 				r.warpPlayer();
 				return;
+			case "knockback":
+				knockPlayer(r, m, 2);
+				return;
+			case "curse": {
+				const eq = [r.weapon(), r.shield(), r.ring()].filter(
+					(x): x is NonNullable<typeof x> => !!x && !x.cursed,
+				);
+				if (!eq.length) break;
+				const it = r.rng.pick(eq);
+				it.cursed = true;
+				it.known = true;
+				r.msg(`${r.name(it)}が　のろわれた！`, "warn");
+				break;
+			}
 		}
+	}
+};
+
+/** キリコを m から遠ざかる向きへ n マス吹きとばす。壁や敵にぶつかると 5 ダメージ。 */
+const knockPlayer = (r: Run, m: Monster, n: number): void => {
+	const p = r.p;
+	const d = dirOf(p.x - m.x, p.y - m.y);
+	if (d === null) return;
+	const from = { x: p.x, y: p.y };
+	let moved = 0;
+	for (let i = 0; i < n; i++) {
+		const to = step(p, d);
+		if (!r.cornerOk(p, d) || !r.isFree(to.x, to.y)) {
+			r.msg(`${mdef(m).name}に　吹きとばされて　ぶつかった！`, "warn");
+			r.hurtPlayer(5, `${mdef(m).name}に　吹きとばされた`);
+			break;
+		}
+		p.x = to.x;
+		p.y = to.y;
+		moved++;
+	}
+	if (moved > 0) {
+		p.status.heldBy = null;
+		r.emit({ t: "warp", id: PLAYER_ID, from, to: { x: p.x, y: p.y } });
+		if (moved === n) r.msg(`${mdef(m).name}に　吹きとばされた！`, "warn");
+		r.updateVision();
 	}
 };
 
