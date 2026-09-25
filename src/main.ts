@@ -106,6 +106,8 @@ const devRun = (): Run | null => {
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
 	if (depth > 1) run.enterFloor(depth, false);
 	run.ev = [];
+	// act の外で乱数を使ったので、状態を入れなおす（中断セーブで同じ乱数を2回引かないように）
+	run.s.rng = run.rng.state();
 	return run;
 };
 

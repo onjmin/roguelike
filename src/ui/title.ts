@@ -8,10 +8,12 @@
 import type { RunState } from "../core/types";
 import { INTRO, pickQuote, type QuoteContext, SPEAKERS } from "../data/quotes";
 import {
+	addRecord,
 	clearRun,
 	hasRunSave,
 	loadRecords,
 	loadRun,
+	recordFromRun,
 	runStats,
 } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
@@ -215,7 +217,8 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			else if (c === "howto") await openHowto(ctx);
 			else if (c === "settings") await openSettings(ctx);
 			else if (c === "continue") {
-				const state = saved ?? loadRun();
+				// いつも読み直す（タイトルを開いたままの別タブの古い写しから 始めないように）
+				const state = loadRun();
 				if (state) {
 					void leave({ kind: "continue", state }, false);
 					return;
@@ -239,6 +242,9 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 						{ start: 1 },
 					);
 					if (v === "yes") {
+						// すてた冒険も記録に残す（やめた、として）
+						const old = loadRun();
+						if (old) addRecord(recordFromRun(old));
 						clearRun();
 						saved = null;
 					}

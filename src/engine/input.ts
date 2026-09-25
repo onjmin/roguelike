@@ -154,6 +154,8 @@ export class Input {
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
 	private pendingDir: Dir8 | null = null;
+	/** 斜めの片方を離した時刻。 */
+	private releasedAt = 0;
 	private handlers: { fn: Handler; tap: Key | null }[] = [];
 	private fieldQueue: Key[] = [];
 	private keyMods: Mods = { dash: false, diag: false, turn: false };
@@ -187,7 +189,9 @@ export class Input {
 				if (!this.keysHeld.size && this.padDir === null)
 					this.dirSince = performance.now();
 				this.keysHeld.set(e.code, d);
-				if (!e.repeat) this.pendingDir = this.heldDir();
+				// メニューが開いているあいだの向きは、閉じたあとの1歩にしない
+				if (!e.repeat && !this.handlers.length)
+					this.pendingDir = this.heldDir();
 				this.press(toDir4(d), e.repeat);
 				return;
 			}
@@ -200,7 +204,12 @@ export class Input {
 			const code = codeOf(ev);
 			const mod = MOD_KEYS[code];
 			if (mod) this.keyMods[mod] = false;
+			const before = this.heldDir();
 			this.keysHeld.delete(code);
+			// 斜め（2つ押し）から片方だけ離したときは、少し待つ（両方を離すまでの間に
+			// 残った向きへ1歩ずれないように）
+			if (before !== null && before % 2 === 1 && this.keysHeld.size)
+				this.releasedAt = performance.now();
 		});
 		window.addEventListener("blur", () => {
 			this.keysHeld.clear();
@@ -249,9 +258,13 @@ export class Input {
 		return d;
 	}
 
-	/** 方向を押し始めてからの ms（キーボードの同時押しを待つのに使う）。 */
+	/**
+	 * 方向を押し始めてからの ms（キーボードの同時押しを待つのに使う）。
+	 * 斜めの片方を離した直後も、少しのあいだ「押し始め」とみなす。
+	 */
 	heldFor(): number {
-		return performance.now() - this.dirSince;
+		const now = performance.now();
+		return Math.min(now - this.dirSince, now - this.releasedAt + 45 - 70);
 	}
 
 	/** 押しっぱなしのキーと画面の切り替えを合わせたもの。 */
@@ -277,6 +290,8 @@ export class Input {
 		return () => {
 			const i = this.handlers.lastIndexOf(h);
 			if (i >= 0) this.handlers.splice(i, 1);
+			this.pendingDir = null;
+			this.fieldQueue = [];
 		};
 	}
 
@@ -312,7 +327,7 @@ export class Input {
 					this.dirSince = performance.now();
 				this.padDir = dir;
 				if (dir !== null) {
-					this.pendingDir = dir;
+					if (!this.handlers.length) this.pendingDir = dir;
 					this.press(toDir4(dir));
 				}
 				el.dataset.dir = dir === null ? "" : String(dir);

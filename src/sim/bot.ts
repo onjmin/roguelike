@@ -105,10 +105,14 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 	const visible = f.monsters.filter((m) => r.monsterVisible(m) && !m.disguise);
 	const awake = (m: (typeof visible)[number]) =>
 		m.status.sleep === 0 && !m.status.dormant && m.status.paralyze === 0;
+	const hunting = p.hp / p.maxHp > 0.7;
 	const adjacent = visible.filter(
 		(m) =>
 			dist(m, p) === 1 &&
-			awake(m) &&
+			(awake(m) ||
+				(hunting &&
+					m.status.sleep > 0 &&
+					!["neochi", "tensai", "yuki"].includes(m.kind))) &&
 			r.cornerOk(p, dirOf(m.x - p.x, m.y - p.y) as Dir8),
 	);
 	const threats = visible.filter((m) => awake(m) && dist(m, p) <= 4);
@@ -270,12 +274,15 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 		if (junk && items.length >= 18) return { c: "drop", item: junk.uid };
 	}
 	// 見えている敵に近づく（倒して経験値）
+	// 余裕があれば、寝ている敵も先に倒して経験値にする（起こすと危ない敵は放っておく）
+	const huntSleepers = hpRate > 0.7 && threats.length === 0;
 	const target = visible
 		.filter(
 			(m) =>
 				!mdef(m).abilities.some((a) => a.k === "metal") &&
-				m.status.sleep === 0 &&
-				!m.status.dormant,
+				!m.status.dormant &&
+				(m.status.sleep === 0 ||
+					(huntSleepers && !["neochi", "tensai", "yuki"].includes(m.kind))),
 		)
 		.sort((a, b) => dist(a, p) - dist(b, p))[0];
 	// 帰り道・階を出るとき

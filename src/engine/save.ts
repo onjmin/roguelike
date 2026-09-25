@@ -5,6 +5,8 @@
 //   （50回より古い記録が押し出されても、通算は減らない）。
 // - プライベートモード等で保存できなくても遊べるように、読み書きはすべて try/catch。
 
+import { ITEMS } from "../core/data/items";
+import { MONSTERS } from "../core/data/monsters";
 import { SAVE_VERSION } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import type { RunState } from "../core/types";
@@ -44,10 +46,18 @@ export const saveRun = (s: RunState): void => {
 		clearRun();
 		return;
 	}
+	const text = serializeRun(s);
 	try {
-		localStorage.setItem(RUN_KEY, serializeRun(s));
+		localStorage.setItem(RUN_KEY, text);
 	} catch {
-		// 容量不足・プライベートモード。中断はできないが遊べる
+		// 容量不足のときは、古い中断セーブを消してから もう一度（古いのが残ると、
+		// 読み直したときに 何階も前へ 巻きもどってしまう）
+		try {
+			localStorage.removeItem(RUN_KEY);
+			localStorage.setItem(RUN_KEY, text);
+		} catch {
+			// プライベートモードなど。中断はできないが遊べる
+		}
 	}
 };
 
@@ -58,6 +68,14 @@ export const loadRun = (): RunState | null => {
 		if (!raw) return null;
 		const s = deserializeRun(raw);
 		if (s.v !== SAVE_VERSION || !s.player || !s.floor || s.end) return null;
+		// あとの版で消えた モンスター・道具が入っていたら 読まない（途中で落ちるより良い）
+		const items = [
+			...s.player.items,
+			...s.floor.items.map((i) => i.item),
+			...s.floor.monsters.flatMap((m) => (m.carry ? [m.carry] : [])),
+		];
+		if (items.some((i) => !ITEMS[i.kind])) return null;
+		if (s.floor.monsters.some((m) => !MONSTERS[m.kind])) return null;
 		return s;
 	} catch {
 		return null;
@@ -107,7 +125,8 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		lv: s.player.lv,
 		turn: end.turn,
 		kills: Object.values(s.kills).reduce((a, n) => a + n, 0),
-		seen: s.seen.length,
+		// 山札の札だけを数える（原盤・始めのパン・分けて飛ばした矢は札ではない）
+		seen: s.seen.filter((u) => s.cardKind[u] !== undefined).length,
 		flowed: s.flowed,
 		returning: s.returning,
 		seed: s.seed,

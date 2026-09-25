@@ -107,7 +107,13 @@ export class Play {
 			this.syncDisp(true);
 			this.ctx.audio.bgm(floorBgm(this.run));
 			this.ctx.input.onFieldTap = (x, y) => this.onTap(x, y);
-			void this.floorCard(true);
+			// 最初の札のあいだは操作を受けない（タイトルで押したキーも捨てる）
+			this.ctx.input.clearField();
+			this.ctx.input.takeDirPress();
+			this.busy = true;
+			void this.floorCard(true).finally(() => {
+				this.busy = false;
+			});
 			const frame = (t: number) => {
 				if (this.stopped) return;
 				this.update(t);
@@ -138,12 +144,19 @@ export class Play {
 		this.mapEl.remove();
 		this.fadeEl.remove();
 		this.hud.status.innerHTML = "";
-		this.resolveEnd?.();
+		this.view.dispose();
+		const resolve = this.resolveEnd;
+		this.resolveEnd = null;
+		resolve?.();
 	}
 
 	private save(force = false): void {
 		const s = this.run.s;
-		if (s.end) return;
+		if (s.end) {
+			// 終わった冒険は saveRun が記録して中断セーブを消す
+			saveRun(s);
+			return;
+		}
 		if (!force && s.turn - this.lastSavedTurn < 8) return;
 		this.lastSavedTurn = s.turn;
 		saveRun(s);
@@ -247,7 +260,7 @@ export class Play {
 			"short-landscape",
 		)
 			? 40
-			: 230;
+			: 260;
 		const hCss = sc.height * cssPerSrc;
 		const centerCss = topCss + Math.max(40, hCss - topCss - bottomCss) / 2;
 		const cx = pd.fx * TILE + TILE / 2 - sc.width / 2;
@@ -504,6 +517,8 @@ export class Play {
 		let ev: GameEvent[] = [];
 		try {
 			ev = run.act(cmd);
+			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
+			if (run.s.end) saveRun(run.s);
 			await this.playEvents(ev, fast);
 			this.syncDisp();
 			// 巻物の「どれに？」（メニューを通さずに来たとき）
@@ -523,8 +538,6 @@ export class Play {
 				return ev;
 			}
 			if (run.s.end) {
-				// 倒れた（持ち帰った）その場で中断セーブを片づける（閉じても やり直せないように）
-				saveRun(run.s);
 				await this.ending();
 				return ev;
 			}
@@ -534,7 +547,7 @@ export class Play {
 			if (
 				!fast &&
 				moved &&
-				run.onStairs() &&
+				this.onUsableStairs() &&
 				!wasOnStairs &&
 				!ev.some((e) => e.t === "floor")
 			) {
@@ -547,12 +560,15 @@ export class Play {
 		return ev;
 	}
 
+	/** 使える階段の上にいるか（いちばん底は、原盤を拾うまで階段が無い）。 */
+	private onUsableStairs(): boolean {
+		const run = this.run;
+		return run.onStairs() && (run.s.depth < LAST_DEPTH || run.s.returning);
+	}
+
 	private async askStairs(): Promise<void> {
 		const run = this.run;
-		if (run.s.depth >= LAST_DEPTH && !run.s.returning) {
-			this.addLog("これより　下へは　行けないようだ");
-			return;
-		}
+		if (this.stopped || run.s.end || !this.onUsableStairs()) return;
 		const left = run.cardsLeft();
 		const up = run.s.returning;
 		const title = up
@@ -585,9 +601,13 @@ export class Play {
 			if (e.t === "move") {
 				const now = performance.now();
 				let j = i;
+				const movedIds = new Set<number>();
 				while (j < ev.length && (ev[j].t === "move" || ev[j].t === "turn")) {
 					const m = ev[j];
+					// 同じキャラが2回動くとき（倍速）は、そこで区切る（角をすり抜けて見えないように）
+					if (m.t === "move" && movedIds.has(m.id)) break;
 					if (m.t === "move") {
+						movedIds.add(m.id);
 						const d = this.disp.get(m.id);
 						if (d) {
 							d.sx = d.fx;
@@ -661,9 +681,32 @@ export class Play {
 					await wait(120 * speed);
 					break;
 				}
-				case "appear":
-					this.syncDisp();
+				case "appear": {
+					// ふえた敵だけ足す（ほかのキャラの動きの途中を崩さない）
+					const m = this.run.f.monsters.find((x) => x.uid === e.id);
+					if (m && !this.disp.has(e.id)) {
+						this.disp.set(e.id, {
+							id: e.id,
+							sprite: mdef(m).sprite,
+							fx: e.pos.x,
+							fy: e.pos.y,
+							sx: e.pos.x,
+							sy: e.pos.y,
+							tx: e.pos.x,
+							ty: e.pos.y,
+							t0: 0,
+							dur: 0,
+							dir: m.dir,
+							lunge: 0,
+							lungeT0: 0,
+							flashUntil: 0,
+							fade: 0,
+							fadeT0: 0,
+							dying: false,
+						});
+					}
 					break;
+				}
 				case "warp": {
 					const d = this.disp.get(e.id);
 					if (d) {
@@ -805,11 +848,20 @@ export class Play {
 		if (ev.some((e) => e.t === "hurt" || e.t === "floor" || e.t === "warp"))
 			return true;
 		const p = run.p;
-		if (run.itemAt(p.x, p.y) || run.onStairs()) return true;
+		if (run.itemAt(p.x, p.y) || this.onUsableStairs()) return true;
 		const vis = run.f.monsters.filter(
 			(m) => run.monsterVisible(m) && !m.disguise,
 		).length;
 		if (vis > before.monsters) return true;
+		// 敵に ねらわれた（なぐられた・撃たれた）ら止まる。はずれても止まる
+		if (
+			ev.some(
+				(e) =>
+					(e.t === "attack" && e.id !== PLAYER_ID) ||
+					(e.t === "miss" && e.id === PLAYER_ID),
+			)
+		)
+			return true;
 		const room = roomAt(run.f.layout, p.x, p.y);
 		if (room !== before.room) return true;
 		if (p.hp <= p.maxHp / 3) return true;
@@ -829,6 +881,11 @@ export class Play {
 	/** d の向きに、何かあるまで走る。 */
 	private async dash(d: Dir8): Promise<void> {
 		const run = this.run;
+		// 混乱しているときは走らない（1歩だけ）
+		if (run.p.status.confuse > 0) {
+			await this.exec({ c: "move", dir: d });
+			return;
+		}
 		let dir = d;
 		for (let n = 0; n < 60; n++) {
 			if (this.stopped) return;
@@ -859,7 +916,7 @@ export class Play {
 				if (ways > 2) break;
 			}
 		}
-		if (this.run.onStairs() && !this.stopped) await this.askStairs();
+		if (this.onUsableStairs() && !this.stopped) await this.askStairs();
 	}
 
 	/** タップした所へ1歩進む（知っている床だけを通る）。 */
@@ -869,21 +926,26 @@ export class Play {
 		if (!to) return;
 		if (to.x === run.p.x && to.y === run.p.y) {
 			this.travel = null;
-			if (run.onStairs()) await this.askStairs();
+			await this.askStairs();
 			return;
 		}
+		// 混乱しているとき・敵が見えているときは、タップした方へ1歩だけ
+		const snap = this.snapshot();
 		const d = this.pathStep(to);
 		if (d === null) {
 			this.travel = null;
 			return;
 		}
-		const snap = this.snapshot();
+		if (run.p.status.confuse > 0 || snap.monsters > 0) this.travel = null;
 		const ev = await this.exec({ c: "move", dir: d }, true);
+		if (this.stopped || run.s.end) {
+			this.travel = null;
+			return;
+		}
 		if (!ev.length || this.shouldStop(snap, ev)) {
 			const arrived = run.p.x === to.x && run.p.y === to.y;
 			this.travel = null;
-			if (run.onStairs() && (arrived || snap.monsters === 0))
-				await this.askStairs();
+			if (arrived || snap.monsters === 0) await this.askStairs();
 		}
 	}
 

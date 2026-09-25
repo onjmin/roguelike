@@ -21,10 +21,11 @@ export const esc = (s: string): string =>
 export const itemDesc = (run: Run, it: Item): string => {
 	const d = defOf(it.kind);
 	const known = isKnownKind(run.s, it.kind);
-	let h = `<b class="tag">${esc(CAT_NAME[d.cat])}</b>${esc(known ? d.desc : "まだ　正体が　わからない")}`;
-	if (run.isEquipped(it)) h += ' <b class="tag equip">装備中</b>';
-	if (it.known && it.cursed) h += ' <b class="tag curse">のろい</b>';
-	return h;
+	// 装備中・のろいの札は先に出す（2行で切るとき、うしろにあると消えてしまう）
+	let h = `<b class="tag">${esc(CAT_NAME[d.cat])}</b>`;
+	if (run.isEquipped(it)) h += '<b class="tag equip">装備中</b>';
+	if (it.known && it.cursed) h += '<b class="tag curse">のろい</b>';
+	return h + esc(known ? d.desc : "まだ　正体が　わからない");
 };
 
 /** 一覧の名前（HTML）。装備中なら頭に E。 */

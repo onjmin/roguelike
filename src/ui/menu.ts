@@ -190,11 +190,14 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	const p = run.p;
 	const under = run.itemAt(p.x, p.y);
 	// 置けない所では先に知らせる（選んでから「置けない」と言われるより親切）
+	const onWard = run.f.wards.includes(run.p.y * run.f.layout.w + run.p.x);
 	const blocked = under
 		? "足元に　ものが　ある"
 		: run.onStairs()
 			? "階段の　上には　置けない"
-			: "";
+			: onWard
+				? "結界の　上には　置けない"
+				: "";
 	rows.push({
 		label: "置く",
 		value: "drop",
@@ -272,6 +275,9 @@ const itemActions = async (
 				// 相手を選ぶ巻物（鑑定・充填・糧変え）。聞かれること自体で種類がしぼれるのはトルネコと同じ
 				const need = needsTarget(it);
 				if (!need) return command({ c: "use", item: it.uid });
+				// 正体のわからないうちは、どの巻物でも同じ一覧（杖だけ出すと 充填だと ばれるので）。
+				// 杖でない物に 充填を使えば、読んだうえで何も起きない
+				const staffOnly = need === "staff" && isKnownKind(run.s, it.kind);
 				const target = await pickItem(
 					ctx,
 					run,
@@ -279,7 +285,7 @@ const itemActions = async (
 					(x) =>
 						x.uid !== it.uid &&
 						!isKeyItem(x.kind) &&
-						(need === "any" || defOf(x.kind).cat === "staff"),
+						(!staffOnly || defOf(x.kind).cat === "staff"),
 				);
 				// キャンセルなら読まずに もどる（巻物は減らない）
 				if (target !== null) return command({ c: "use", item: it.uid, target });

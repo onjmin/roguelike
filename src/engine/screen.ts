@@ -41,7 +41,8 @@ export class Screen {
 		const devW = Math.round(cssW * this.dpr);
 		const devH = Math.round(cssH * this.dpr);
 		const short = Math.min(devW, devH);
-		this.scale = Math.max(1, Math.floor(short / (TILE * TILES_ON_SHORT_SIDE)));
+		// 四捨五入で選ぶ（切り捨てだと 320px 幅の 2倍画面で 1マスが 16px と小さくなりすぎる）
+		this.scale = Math.max(1, Math.round(short / (TILE * TILES_ON_SHORT_SIDE)));
 		this.canvas.width = devW;
 		this.canvas.height = devH;
 		this.canvas.style.width = `${devW / this.dpr}px`;

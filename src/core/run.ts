@@ -56,7 +56,6 @@ import { Rng } from "./rng";
 import { triggerTrap } from "./traps";
 import {
 	type Command,
-	DEEP,
 	DOZE,
 	type Floor,
 	type FloorItem,
@@ -227,10 +226,11 @@ export class Run {
 	/** 持ち物から外す（装備も外す）。 */
 	removeItem(it: Item): void {
 		const p = this.p;
+		// 指輪の後始末は、持ち物から消す前に（剛力の指輪のちからを戻すのに指輪を引くので）
+		if (p.ring === it.uid) this.unsetRing();
 		p.items = p.items.filter((i) => i !== it);
 		if (p.weapon === it.uid) p.weapon = null;
 		if (p.shield === it.uid) p.shield = null;
-		if (p.ring === it.uid) this.unsetRing();
 	}
 
 	/** 指輪を外したときの後始末（剛力の指輪）。 */
@@ -294,6 +294,8 @@ export class Run {
 
 	/** 床の道具を消す（地雷・爆発・火）。 */
 	destroyFloorItem(fi: FloorItem): void {
+		// 原盤は燃えない・爆発で消えない（持ち帰れなくなるので）
+		if (isKeyItem(fi.item.kind)) return;
 		this.f.items = this.f.items.filter((i) => i !== fi);
 		this.loseItem(fi.item);
 	}
@@ -386,11 +388,7 @@ export class Run {
 			f.houseAwake = true;
 			if (!this.hasRing("r_stealth")) {
 				for (const m of f.monsters)
-					if (
-						roomAt(l, m.x, m.y) === f.house &&
-						m.status.sleep > 0 &&
-						m.status.sleep < DEEP
-					)
+					if (roomAt(l, m.x, m.y) === f.house && m.status.sleep === DOZE)
 						m.status.sleep = 0;
 			}
 			this.emit({ t: "house" });
@@ -404,7 +402,8 @@ export class Run {
 		before: Map<number, { near: boolean; adj: boolean }>,
 	): void {
 		for (const m of this.f.monsters) {
-			if (m.hp <= 0 || m.status.sleep <= 0 || m.status.sleep >= DEEP) continue;
+			// 近づいて起きるのは ふつうの眠り（DOZE）だけ。杖や草で眠らせた5ターンは起きない
+			if (m.hp <= 0 || m.status.sleep !== DOZE) continue;
 			const near = canSee(this.f.layout, m, this.p);
 			const adj = dist(m, this.p) <= 1;
 			const was = before.get(m.uid);
@@ -682,6 +681,12 @@ export class Run {
 		this.msg(`${monsterName(this, m)}は　爆発した！`, "warn");
 		m.hp = 0;
 		this.f.monsters = this.f.monsters.filter((x) => x !== m);
+		// 持っていた札も いっしょに燃える
+		if (m.carry) {
+			this.loseItem(m.carry);
+			m.carry = null;
+		}
+		if (this.p.status.heldBy === m.uid) this.p.status.heldBy = null;
 		const inArea = (p: Pos) =>
 			Math.abs(p.x - cx) <= 2 && Math.abs(p.y - cy) <= 2;
 		for (const o of [...this.f.monsters])
@@ -718,6 +723,7 @@ export class Run {
 		this.p.x = to.x;
 		this.p.y = to.y;
 		this.p.status.heldBy = null;
+		this.p.status.trapped = 0;
 		this.se("warp");
 		this.emit({ t: "warp", id: PLAYER_ID, from, to });
 		this.updateVision();
@@ -902,9 +908,30 @@ export class Run {
 	private doMove(dir: Dir8, noPickup: boolean): boolean {
 		const p = this.p;
 		const st = p.status;
+		// つかまれていても・はさまれていても、となりの敵には ぶつかって なぐれる
+		if (st.heldBy !== null || st.trapped > 0) {
+			const d0 = this.confusedDir(dir);
+			const t0 = step(p, d0);
+			const target = this.monsterAt(t0.x, t0.y);
+			if (target && this.cornerOk(p, d0)) {
+				p.dir = d0;
+				if (target.disguise) {
+					target.disguise = null;
+					wakeMonster(this, target, true);
+					this.msg(`${monsterName(this, target)}が　化けていた！`, "warn");
+					return true;
+				}
+				this.playerAttack(target);
+				return true;
+			}
+		}
 		if (st.heldBy !== null) {
 			const h = this.f.monsters.find((m) => m.uid === st.heldBy);
-			if (h && h.hp > 0 && dist(h, p) <= 1) {
+			const grabs =
+				!!h &&
+				!h.status.sealed &&
+				mdef(h).abilities.some((a) => a.k === "grab");
+			if (h && grabs && h.hp > 0 && dist(h, p) <= 1) {
 				p.dir = dir;
 				this.msg(`${monsterName(this, h)}に　足を　つかまれている！`, "warn");
 				return true;
@@ -974,12 +1001,17 @@ export class Run {
 		if (!this.s.seen.includes(fi.item.uid)) this.s.seen.push(fi.item.uid);
 		this.se("item");
 		this.msg(`${this.name(fi.item)}を　拾った`);
-		if (fi.item.kind === "genban" && !this.s.returning) {
+		this.onAcquire(fi.item);
+		return true;
+	}
+
+	/** 持ち物に入った（拾った・交換した）。原盤なら帰り道になる。 */
+	private onAcquire(it: Item): void {
+		if (it.kind === "genban" && !this.s.returning) {
 			this.s.returning = true;
 			this.emit({ t: "goal" });
 			this.msg("原盤を　手に入れた！　階段が　上り向きに　変わった", "good");
 		}
-		return true;
 	}
 
 	private doDrop(uid: number): boolean {
@@ -1022,10 +1054,12 @@ export class Run {
 		}
 		this.removeItem(it);
 		this.f.items = this.f.items.filter((i) => i !== fi);
-		this.p.items.push(fi.item);
+		this.addItem(fi.item); // 1つ空けたので必ず入る（矢は同じ種類にまとまる）
 		this.f.items.push({ x: this.p.x, y: this.p.y, item: it });
+		if (!this.s.seen.includes(fi.item.uid)) this.s.seen.push(fi.item.uid);
 		this.se("item");
 		this.msg(`${this.name(it)}と　${this.name(fi.item)}を　入れかえた`);
+		this.onAcquire(fi.item);
 		return true;
 	}
 
@@ -1079,7 +1113,11 @@ export class Run {
 			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
 			return false;
 		}
-		if (this.p.ring === it.uid) this.unsetRing();
+		if (this.p.ring === it.uid) {
+			this.unsetRing();
+			// 外せた＝のろわれていない、とわかった
+			it.known = true;
+		}
 		if (this.p.weapon === it.uid) this.p.weapon = null;
 		if (this.p.shield === it.uid) this.p.shield = null;
 		this.msg(`${this.name(it)}を　外した`);

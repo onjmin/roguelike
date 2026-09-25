@@ -69,15 +69,16 @@ const distanceMap = (r: Run, target: Pos): Int16Array => {
 	return d;
 };
 
-let cacheKey = "";
-let cacheMap: Int16Array | null = null;
+/** 道のりの使い回し（同じ階の形・同じ目的地なら同じ地図。階の形ごとに持つ）。 */
+const cache = new WeakMap<object, { key: string; map: Int16Array }>();
 
 const distanceTo = (r: Run, target: Pos): Int16Array => {
-	const key = `${r.s.turn}:${r.f.depth}:${target.x},${target.y}:${r.f.layout.w}`;
-	if (key === cacheKey && cacheMap) return cacheMap;
-	cacheKey = key;
-	cacheMap = distanceMap(r, target);
-	return cacheMap;
+	const key = `${target.x},${target.y}`;
+	const hit = cache.get(r.f.layout);
+	if (hit && hit.key === key) return hit.map;
+	const map = distanceMap(r, target);
+	cache.set(r.f.layout, { key, map });
+	return map;
 };
 
 /** m が動けるマスか（地形・角・キャラ）。 */
@@ -222,7 +223,6 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		const dir = adjacentDir();
 		if (dir !== null) {
 			m.dir = dir;
-			r.p.status.heldBy = m.uid;
 			meleePlayer(r, m);
 		}
 		return;
@@ -286,7 +286,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	}
 
 	// 飛び道具・息・呪文
-	if (sees && !st.sealed && p.status.blind <= 0) {
+	if (sees && !st.sealed) {
 		for (const a of d.abilities) {
 			if (a.k === "ranged") {
 				const dir = inLine(r, m, p, 10);
@@ -344,7 +344,13 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				}
 				return;
 			}
-			if (a.k === "gaze" && p.status.confuse === 0 && r.rng.chance(a.rate)) {
+			// 目が見えないと、にらまれても 目が合わない
+			if (
+				a.k === "gaze" &&
+				p.status.confuse === 0 &&
+				p.status.blind <= 0 &&
+				r.rng.chance(a.rate)
+			) {
 				r.se("spell");
 				r.msg(`${d.name}と　目が　合った`);
 				p.status.confuse = Math.max(p.status.confuse, 5);
@@ -391,6 +397,9 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	const d = mdef(m);
 	const p = r.p;
 	const nm = d.name;
+	// 結界の上にいれば、となりからは なぐれない（つかむのも）
+	if (r.f.wards.includes(p.y * r.f.layout.w + p.x)) return;
+	if (has(m, "grab")) p.status.heldBy = m.uid;
 	r.emit({ t: "attack", id: m.uid, dir: m.dir });
 	// 盗む：なぐる代わりに
 	if (has(m, "steal") && !m.carry) {
@@ -514,6 +523,7 @@ export const transformMonster = (r: Run, m: Monster): void => {
 	m.disguise = null;
 	m.fuse = false;
 	m.fleeing = false;
+	if (r.p.status.heldBy === m.uid) r.p.status.heldBy = null;
 };
 
 /** 投げた道具・杖の弾が当たったモンスター（プレイヤーから見て d の方向の最初の1体）。 */

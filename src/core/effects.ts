@@ -178,7 +178,7 @@ const drink = (r: Run, it: Item): boolean => {
 			r.msg("キリコは　炎を　吐いた！");
 			if (hit) {
 				const under = r.itemAt(hit.x, hit.y);
-				if (under) {
+				if (under && !isKeyItem(under.item.kind)) {
 					r.msg(`${r.name(under.item)}が　燃えてしまった`, "warn");
 					r.destroyFloorItem(under);
 				}
@@ -549,9 +549,9 @@ const onThrownHit = (r: Run, it: Item, m: Monster, at: Pos): void => {
 			const atk = attackPower(r.p.lv, power);
 			const dmg = rollDamage(atk, md.def, r.dmgRoll());
 			r.se("attack");
-			const dead = r.damageMonster(m, dmg, "throw");
-			// 武器は落ちる。当たった矢はなくなる
-			if (d.cat === "weapon") r.placeItem(it, dead ? at : m);
+			r.damageMonster(m, dmg, "throw");
+			// 武器は当たった所に落ちる（メタルがワープしても ついていかない）。当たった矢はなくなる
+			if (d.cat === "weapon") r.placeItem(it, at);
 			return;
 		}
 		case "shield":
@@ -566,8 +566,8 @@ const onThrownHit = (r: Run, it: Item, m: Monster, at: Pos): void => {
 			staffEffect(r, it.kind, m);
 			if (identifyKind(r.s, it.kind))
 				r.msg(`${r.kindName(it.kind)}　だった！`, "good");
-			if (m.hp > 0) r.placeItem(it, m);
-			else r.placeItem(it, at);
+			// 当たった所に落ちる（転送の杖で敵が飛んでも、杖は ついていかない）
+			r.placeItem(it, at);
 			return;
 		case "herb":
 			identifyKind(r.s, it.kind);

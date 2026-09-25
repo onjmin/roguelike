@@ -113,12 +113,22 @@ export const listWindow = (
 		ctx.ui.appendChild(box);
 		render();
 		const pop = ctx.input.push(
-			(k) => {
+			(k, repeat) => {
 				if (k === "up" || k === "down") {
 					if (!items.length) return;
-					cur = (cur + (k === "up" ? -1 : 1) + items.length) % items.length;
+					// 選べない行は とばす（ぜんぶ選べないときは そのまま動く）
+					const step = k === "up" ? -1 : 1;
+					let next = cur;
+					for (let n = 0; n < items.length; n++) {
+						next = (next + step + items.length) % items.length;
+						if (!items[next].disabled) break;
+					}
+					cur = next;
 					ctx.se("cursor");
 					render();
+				} else if (repeat) {
+					// 押しっぱなしの自動くり返しでは 決めない・閉じない（次の窓まで決まってしまうので）
+					return;
 				} else if (k === "a" && items[cur] && !items[cur].disabled) {
 					done(items[cur].value);
 				} else if (k === "b") {
@@ -153,8 +163,8 @@ export const infoWindow = (
 		box.appendChild(close);
 		ctx.ui.appendChild(box);
 		const pop = ctx.input.push(
-			(k) => {
-				if (k === "a" || k === "b") done();
+			(k, repeat) => {
+				if ((k === "a" || k === "b") && !repeat) done();
 				else if (k === "up" || k === "down")
 					box.scrollBy({ top: k === "up" ? -48 : 48 });
 			},

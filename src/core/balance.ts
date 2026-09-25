@@ -39,7 +39,10 @@ export const STR_CAP = 99;
 const roundHalfAway = (x: number): number =>
 	Math.sign(x) * Math.round(Math.abs(x));
 
-/** 攻撃力。power は 武器の強さ＋ちから（矢・投げた武器ならその強さ＋8）。 */
+/**
+ * 攻撃力。power は 武器の強さ＋ちから。矢・投げた武器は「武器の強さ＋ちから」の代わりに
+ * その道具の強さだけを入れる（トルネコ1と同じ。木の矢4なら 素の攻撃力の 3/4）。
+ */
 export const attackPower = (lv: number, power: number): number => {
 	const b = BASE_ATK[Math.max(0, Math.min(BASE_ATK.length, lv) - 1)];
 	return Math.max(0, Math.min(255, b + roundHalfAway((b * (power - 8)) / 16)));

@@ -71,11 +71,14 @@ const deckHtml = (run: Run): string => {
 			}
 		}
 		if (!UNIDENTIFIED_CATS.includes(cat)) continue;
-		// 正体のわからない札を、見えている名前（仮の名前か、つけた名前）ごとに数える
+		// 正体のわからない札を、仮の名前ごとに数える（名前をつけていたら うしろに添える。
+		// つけた名前でまとめると、同じ名前をつけた2種類が1行になって 数えられなくなる）
 		const groups = new Map<string, number>();
 		for (const [k, n] of seenBy) {
 			if (defOf(k).cat !== cat || isKnownKind(s, k)) continue;
-			const shown = run.kindName(k);
+			const fake = s.ids.fake[k] ?? defOf(k).name;
+			const named = s.ids.named[k];
+			const shown = named ? `${fake}（${named}？）` : fake;
 			groups.set(shown, (groups.get(shown) ?? 0) + n);
 		}
 		if (!groups.size) continue;
