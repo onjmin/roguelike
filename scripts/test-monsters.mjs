@@ -1,4 +1,4 @@
-// モンスターの特技と対策の試験（pnpm test）。
+// モンスターの特技と対策・リプレイの試験（pnpm test）。
 //
 // Vite の SSR で src/sim/monsterTests.ts を読み込み（ビルドせずに TS のまま動かす）、
 // 1つずつ「✓ id: 名前」か「✗ id: 名前 — 理由」を出す。1つでも失敗すれば終了コード 1。
@@ -22,7 +22,10 @@ try {
 	const { runMonsterTests } = await server.ssrLoadModule(
 		"/src/sim/monsterTests.ts",
 	);
-	const results = runMonsterTests();
+	const { runReplayTests } = await server.ssrLoadModule(
+		"/src/sim/replayTests.ts",
+	);
+	const results = [...runMonsterTests(), ...runReplayTests()];
 	for (const t of results)
 		console.log(
 			t.ok ? `✓ ${t.id}: ${t.name}` : `✗ ${t.id}: ${t.name} — ${t.reason}`,

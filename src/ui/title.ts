@@ -15,6 +15,7 @@ import {
 	loadRun,
 	recordFromRun,
 	runStats,
+	type SavedReplay,
 } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import { sleep } from "../engine/types";
@@ -28,7 +29,8 @@ import { openSettings } from "./settings";
 
 export type TitleChoice =
 	| { kind: "new" }
-	| { kind: "continue"; state: RunState };
+	| { kind: "continue"; state: RunState }
+	| { kind: "replay"; replay: SavedReplay };
 
 const KIRIKO = "pub:sprites/kiriko.png";
 /** とうすこ（1階の敵）。キリコのうしろを ついて歩く。 */
@@ -216,8 +218,13 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			// タップで選んだボタンにもカーソルを移す（窓を閉じたあと、そこから続けられるように）
 			cur = c;
 			render();
-			if (c === "records") await openRecords(ctx);
-			else if (c === "book") await openBook(ctx);
+			if (c === "records") {
+				const replay = await openRecords(ctx);
+				if (replay) {
+					void leave({ kind: "replay", replay }, false);
+					return;
+				}
+			} else if (c === "book") await openBook(ctx);
 			else if (c === "howto") await openHowto(ctx);
 			else if (c === "settings") await openSettings(ctx);
 			else if (c === "continue") {

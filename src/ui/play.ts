@@ -18,10 +18,17 @@ import {
 import { defOf } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
 import { mdef } from "../core/monster";
+import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import type { Run } from "../core/run";
 import { type Command, type GameEvent, PLAYER_ID } from "../core/types";
 import { loadImage } from "../engine/assets";
-import { DEBUG_SEED, loadBook, markSeenMonster, saveRun } from "../engine/save";
+import {
+	DEBUG_SEED,
+	loadBook,
+	markSeenMonster,
+	type SavedReplay,
+	saveRun,
+} from "../engine/save";
 import type { Screen } from "../engine/screen";
 import { settings } from "../engine/settings";
 import { TILE } from "../engine/types";
@@ -29,6 +36,7 @@ import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import type { Hud } from "./hud";
 import { itemIcon } from "./icons";
+import { esc } from "./itemText";
 import { listWindow } from "./list";
 import { type MenuAction, openFootMenu, openMainMenu, pickItem } from "./menu";
 import { showRunEnd } from "./records";
@@ -97,12 +105,38 @@ export class Play {
 	private useFx: UseFx | null = null;
 	/** 倒れた所に立てる墓（倒れたときの演出）。 */
 	private grave: { x: number; y: number; t0: number } | null = null;
+	/** 倒れたときの「キリコは たおれた」の画面（途中で閉じたときに消すため）。 */
+	private deathEl: HTMLElement | null = null;
 	/** 図鑑に載っている敵（毎フレーム保存を読まないように覚えておく）。 */
 	private bookSeen = new Set(loadBook().seen);
 	private statusKey = "";
+	/** リプレイを見ているとき（入力の代わりに 記録のコマンドを入れる）。 */
+	private rp: ReplayDriver | null = null;
 
-	constructor(run: Run, ctx: Ctx, screen: Screen, hud: Hud) {
+	constructor(
+		run: Run,
+		ctx: Ctx,
+		screen: Screen,
+		hud: Hud,
+		opts: { replay?: SavedReplay } = {},
+	) {
 		this.run = run;
+		if (opts.replay) {
+			const steps = parseReplay(opts.replay.text);
+			this.rp = {
+				replay: opts.replay,
+				steps,
+				i: 0,
+				done: 0,
+				total: steps.filter((x) => x.kind === "cmd").length,
+				paused: false,
+				speed: 1,
+				nextAt: 0,
+				bar: null,
+				drift: false,
+				skip: false,
+			};
+		}
 		this.ctx = ctx;
 		this.screen = screen;
 		this.hud = hud;
@@ -121,10 +155,22 @@ export class Play {
 			this.onSuspend = () => {
 				suspended = true;
 			};
+			// 前の冒険（やめたリプレイ）の色抜けが残っていても消す
+			this.screen.canvas.classList.remove("dead");
 			this.syncDisp(true);
 			void loadImage(GRAVE);
 			this.ctx.audio.bgm(floorBgm(this.run));
-			this.ctx.input.onFieldTap = (x, y) => this.onTap(x, y);
+			if (this.rp) {
+				this.ctx.input.onFieldTap = null;
+				this.mountReplayBar();
+			} else {
+				this.ctx.input.onFieldTap = (x, y) => this.onTap(x, y);
+				// 遊んだ版を覚える（リプレイを見返すとき、版が変わっていないかを見る）
+				const s = this.run.s;
+				const builds = s.builds ?? [];
+				if (builds[builds.length - 1] !== __CORE_VERSION__)
+					s.builds = [...builds, __CORE_VERSION__];
+			}
 			// 最初の札のあいだは操作を受けない（タイトルで押したキーも捨てる）
 			this.ctx.input.clearField();
 			this.ctx.input.takeDirPress();
@@ -154,6 +200,10 @@ export class Play {
 	private stop(): void {
 		this.stopped = true;
 		this.screen.canvas.classList.remove("dead");
+		this.deathEl?.remove();
+		this.rp?.bar?.remove();
+		this.hud.root.classList.remove("replay");
+		this.ctx.ui.classList.remove("replaying");
 		cancelAnimationFrame(this.raf);
 		this.ctx.input.onFieldTap = null;
 		document.removeEventListener("visibilitychange", this.onHide);
@@ -170,6 +220,7 @@ export class Play {
 	}
 
 	private save(force = false): void {
+		if (this.rp) return; // 見ているだけ（保存も記録もしない）
 		const s = this.run.s;
 		if (s.end) {
 			// 終わった冒険は saveRun が記録して中断セーブを消す
@@ -236,7 +287,10 @@ export class Play {
 
 	private update(t: number): void {
 		// 先に入力を見る（押しっぱなしの次の1歩を、この絵から動かしはじめる）
-		if (!this.busy) this.control(t);
+		if (!this.busy) {
+			if (this.rp) this.replayTick(t);
+			else this.control(t);
+		}
 		for (const d of this.disp.values()) {
 			const at = posAt(d.keys, t);
 			d.fx = at.x;
@@ -262,7 +316,7 @@ export class Play {
 	/** 見えた敵を図鑑に載せる（はじめて会ったときだけ保存する）。 */
 	private noteSeen(): void {
 		const run = this.run;
-		if (run.s.seed.startsWith(DEBUG_SEED)) return;
+		if (run.s.seed.startsWith(DEBUG_SEED) || this.rp) return;
 		for (const m of run.f.monsters) {
 			if (this.bookSeen.has(m.kind) || m.disguise || !run.monsterVisible(m))
 				continue;
@@ -670,14 +724,16 @@ export class Play {
 		try {
 			ev = run.act(cmd);
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
-			if (run.s.end) saveRun(run.s);
+			if (run.s.end && !this.rp) saveRun(run.s);
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
 			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);
+			if (this.stopped) return ev;
 			this.syncDisp();
 			// スレの「どれに？」（メニューを通さずに来たとき）
 			const pick = ev.find((e) => e.t === "fx" && e.kind.startsWith("pick:"));
-			if (pick && pick.t === "fx" && cmd.c === "use") {
+			// （リプレイでは 次のコマンドに えらんだ相手が入っている）
+			if (pick && pick.t === "fx" && cmd.c === "use" && !this.rp) {
 				this.busy = false;
 				const staffOnly = pick.kind === "pick:staff";
 				const uid = await pickItem(
@@ -699,6 +755,7 @@ export class Play {
 			// 階段に乗ったら聞く（ダッシュ・タップ移動の途中では聞かない）
 			const moved = before.x !== run.p.x || before.y !== run.p.y;
 			if (
+				!this.rp &&
 				!fast &&
 				moved &&
 				this.onUsableStairs() &&
@@ -744,6 +801,200 @@ export class Play {
 		if (pd) pd.dir = this.run.p.dir;
 	}
 
+	// ───────────────── リプレイ ─────────────────
+
+	/** リプレイの操作（下の帯）：一時停止・速さ・次の階へ・やめる。十字キー・キーでも。 */
+	private mountReplayBar(): void {
+		const rp = this.rp;
+		if (!rp) return;
+		this.hud.root.classList.add("replay");
+		this.ctx.ui.classList.add("replaying");
+		const btn = (cls: string, text: string, fn: () => void) => {
+			const b = el("button", { class: `rp-btn ${cls}`, text });
+			b.addEventListener("pointerdown", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				this.ctx.audio.unlock();
+				fn();
+			});
+			return b;
+		};
+		const bar = el("div", { class: "replay-bar" }, [
+			el("div", { class: "rp-head" }, [
+				el("span", { class: "rp-label", text: "リプレイ" }),
+				el("span", { class: "rp-where" }),
+			]),
+			el("div", { class: "rp-prog" }, [el("i")]),
+			el("div", { class: "rp-btns" }, [
+				btn("rp-play", "⏸", () => this.replayToggle()),
+				btn("rp-speed", "×1", () => this.replaySpeed(1)),
+				btn("rp-next", "次の階へ", () => this.replayRequestSkip()),
+				btn("rp-quit", "やめる", () => void this.replayQuit()),
+			]),
+		]);
+		rp.bar = bar;
+		this.ctx.ui.appendChild(bar);
+		this.updateReplayBar();
+	}
+
+	private updateReplayBar(): void {
+		const rp = this.rp;
+		if (!rp?.bar) return;
+		const q = (c: string) => rp.bar?.querySelector(c) as HTMLElement;
+		q(".rp-play").textContent = rp.paused ? "▶" : "⏸";
+		q(".rp-speed").textContent = `×${rp.speed}`;
+		q(".rp-where").textContent =
+			`B${this.run.s.depth}　${this.run.s.turn}ターン`;
+		(q(".rp-prog i") as HTMLElement).style.width =
+			`${rp.total ? (rp.done / rp.total) * 100 : 100}%`;
+	}
+
+	private replayToggle(): void {
+		const rp = this.rp;
+		if (!rp || this.stopped) return;
+		rp.paused = !rp.paused;
+		this.ctx.se("cursor");
+		this.updateReplayBar();
+	}
+
+	/** 速さを変える（1 → 2 → 4 → 8 → 1。step が −1 なら遅く）。 */
+	private replaySpeed(step: 1 | -1): void {
+		const rp = this.rp;
+		if (!rp) return;
+		const list = [1, 2, 4, 8];
+		const i = list.indexOf(rp.speed);
+		rp.speed =
+			step > 0 ? list[(i + 1) % list.length] : list[Math.max(0, i - 1)];
+		this.ctx.se("cursor");
+		this.updateReplayBar();
+	}
+
+	/** 次のコマンドを1つ取る（あいだの指紋は ここで確かめる）。無くなった・ずれたら null。 */
+	private replayNext(): Command | null {
+		const rp = this.rp;
+		if (!rp) return null;
+		while (rp.i < rp.steps.length) {
+			const st = rp.steps[rp.i++];
+			if (st.kind === "cmd") {
+				rp.done++;
+				return st.cmd;
+			}
+			if (digest(this.run.s) !== st.digest) {
+				rp.drift = true;
+				return null;
+			}
+		}
+		return null;
+	}
+
+	/** 毎コマ：入力の代わりに、記録のコマンドを1つずつ入れる。 */
+	private replayTick(t: number): void {
+		const rp = this.rp;
+		if (!rp || this.stopped) return;
+		const input = this.ctx.input;
+		const key = input.takeField();
+		if (key === "a" || key === "wait") this.replayToggle();
+		else if (key === "b") void this.replayQuit();
+		else if (key === "map") this.toggleMap();
+		const d = input.takeDirPress();
+		if (d === 2) this.replaySpeed(1);
+		else if (d === 6) this.replaySpeed(-1);
+		else if (d === 4) this.replayRequestSkip();
+		if (rp.skip) {
+			rp.skip = false;
+			void this.replaySkipFloor();
+			return;
+		}
+		if (rp.paused || t < rp.nextAt) return;
+		const cmd = this.replayNext();
+		if (!cmd) {
+			void this.replayEnd();
+			return;
+		}
+		const fast = rp.speed >= 4;
+		void this.exec(cmd, fast).then(() => {
+			rp.nextAt = performance.now() + REPLAY_GAP / rp.speed;
+			this.updateReplayBar();
+		});
+	}
+
+	/** 「次の階へ」：再生中の1手が終わってから とばす（毎コマの replayTick が拾う）。 */
+	private replayRequestSkip(): void {
+		if (!this.rp || this.stopped) return;
+		this.rp.skip = true;
+		this.ctx.se("cursor");
+	}
+
+	/** 次の階まで（演出なしで）とばす。 */
+	private async replaySkipFloor(): Promise<void> {
+		const rp = this.rp;
+		if (!rp || this.busy || this.stopped) return;
+		this.busy = true;
+		const run = this.run;
+		// 階が変わるまで（原盤を拾って帰り道になるのは 同じ階の中なので とめない）
+		const depth = run.s.depth;
+		try {
+			while (!run.s.end && run.s.depth === depth) {
+				const cmd = this.replayNext();
+				if (!cmd) break;
+				run.act(cmd);
+			}
+			this.logEl.innerHTML = "";
+			this.syncDisp(true);
+			this.view.invalidate();
+			this.updateReplayBar();
+			if (run.s.end) {
+				await this.ending();
+				return;
+			}
+			if (run.s.depth !== depth) {
+				this.ctx.se("stairs");
+				await this.floorCard(false);
+			} else await this.replayEnd();
+		} finally {
+			this.busy = false;
+		}
+	}
+
+	private async replayQuit(): Promise<void> {
+		if (!this.rp || this.stopped) return;
+		this.ctx.se("cancel");
+		void this.ctx.audio.fadeBgm(300);
+		this.stop();
+	}
+
+	/** リプレイの終わり（最後まで見た・ずれて止まった）。タップで タイトルへ。 */
+	private async replayEnd(): Promise<void> {
+		const rp = this.rp;
+		if (!rp || this.stopped) return;
+		this.busy = true;
+		rp.paused = true;
+		this.updateReplayBar();
+		const r = rp.replay;
+		const end = this.run.s.end;
+		const line = rp.drift
+			? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
+			: end
+				? end.kind === "clear"
+					? `原盤を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
+					: `${this.run.s.returning ? "帰り道の　" : ""}B${end.depth}で　${esc(end.cause)}`
+				: `記録は　ここまで<br><small>（B${r.depth}で　${esc(r.cause)}）</small>`;
+		const card = el("div", { class: "replay-end" }, [
+			el("div", { class: "rp-end-title", text: "リプレイ　おわり" }),
+			el("div", { class: "rp-end-line", html: line }),
+			el("div", { class: "rp-end-hint", text: "タップで　もどる" }),
+		]);
+		this.ctx.ui.appendChild(card);
+		await nextFrame();
+		card.classList.add("shown");
+		await waitOrSkip(60_000, 600);
+		card.remove();
+		this.ctx.input.clearField();
+		this.ctx.input.takeDirPress();
+		void this.ctx.audio.fadeBgm(300);
+		this.stop();
+	}
+
 	/** 使える階段の上にいるか（いちばん底は、原盤を拾うまで階段が無い）。 */
 	private onUsableStairs(): boolean {
 		const run = this.run;
@@ -779,7 +1030,8 @@ export class Play {
 		const stepMs = (fast ? 45 : 110) * (settings.speed === "fast" ? 0.7 : 1);
 		let i = 0;
 		let combat = false;
-		while (i < ev.length) {
+		// 途中で閉じたら（リプレイの「やめる」）残りの出来事は流さない
+		while (i < ev.length && !this.stopped) {
 			const e = ev[i];
 			// 続けて動く出来事はまとめて同時に動かす（倍速の2歩も、同じ時間の中で 通るマスをたどる）
 			if (e.t === "move") {
@@ -1026,6 +1278,10 @@ export class Play {
 		this.ctx.ui.appendChild(card);
 		if (!first) await this.ctx.audio.fadeBgm(300);
 		await wait(first ? 900 : 1100);
+		if (this.stopped) {
+			card.remove();
+			return;
+		}
 		this.ctx.audio.bgm(floorBgm(run));
 		card.classList.remove("shown");
 		this.fadeEl.style.transition = "opacity 0.35s";
@@ -1041,6 +1297,10 @@ export class Play {
 		this.busy = true;
 		if (s.end?.kind === "dead") await this.deathScene();
 		else await wait(700);
+		if (this.rp) {
+			await this.replayEnd();
+			return;
+		}
 		await showRunEnd(this.ctx, s);
 		this.stop();
 	}
@@ -1067,6 +1327,8 @@ export class Play {
 		}
 		this.grave = { x: run.p.x, y: run.p.y, t0: performance.now() + 120 };
 		await wait(120 + GRAVE_DROP_MS * 0.7);
+		// リプレイを「やめる」で閉じたあとなら ここで終わる（タイトルの上に出さない・色を抜かない）
+		if (this.stopped) return;
 		this.ctx.audio.se("wipeout");
 		this.screen.canvas.classList.add("dead");
 		const scene = el("div", { class: "death" }, [
@@ -1077,6 +1339,7 @@ export class Play {
 			}),
 		]);
 		this.ctx.ui.appendChild(scene);
+		this.deathEl = scene;
 		await nextFrame();
 		scene.classList.add("shown");
 		await waitOrSkip(3200, 900);
@@ -1256,6 +1519,30 @@ const posAt = (keys: Disp["keys"], t: number): Pos => {
 	const z = keys[keys.length - 1];
 	return { x: z.x, y: z.y };
 };
+
+/** リプレイを見ているときの 再生の様子。 */
+type ReplayDriver = {
+	replay: SavedReplay;
+	steps: ReplayStep[];
+	/** 次に入れる こま。 */
+	i: number;
+	/** 入れたコマンドの数。 */
+	done: number;
+	total: number;
+	paused: boolean;
+	/** 速さ（1・2・4・8 倍）。 */
+	speed: number;
+	/** 次のコマンドを入れてよい時刻。 */
+	nextAt: number;
+	bar: HTMLElement | null;
+	/** 今の版では同じにならなかった（指紋が合わない）。 */
+	drift: boolean;
+	/** 「次の階へ」を押された（再生中の1手が終わったら とばす）。 */
+	skip: boolean;
+};
+
+/** コマンドとコマンドの間（ms。1倍のとき）。 */
+const REPLAY_GAP = 160;
 
 /** 食べる・飲む・読む演出。 */
 type UseFx = {

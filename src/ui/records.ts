@@ -9,14 +9,18 @@ import {
 	addRecord,
 	clearRun,
 	loadRecords,
+	loadReplays,
+	REPLAYS_KEEP,
 	type RunRecord,
 	recordFromRun,
+	replayMatches,
 	runStats,
+	type SavedReplay,
 } from "../engine/save";
 import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
-import { infoWindow } from "./list";
+import { infoWindow, listWindow } from "./list";
 
 /** 山札の枚数（毎回同じ）。 */
 const DECK_TOTAL = DECK.reduce((a, e) => a + e.count, 0);
@@ -245,8 +249,11 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	box.remove();
 };
 
-/** タイトルの「冒険の記録」：通算と、これまでの冒険（新しい順）。 */
-export const openRecords = async (ctx: Ctx): Promise<void> => {
+/**
+ * タイトルの「冒険の記録」：通算と、これまでの冒険（新しい順）。
+ * 冒険を選ぶと、残っていれば「リプレイを見る」。見るなら そのリプレイを返す。
+ */
+export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	const list = loadRecords();
 	const st = runStats();
 	const total = `<div class="rec-total">${[
@@ -256,19 +263,57 @@ export const openRecords = async (ctx: Ctx): Promise<void> => {
 	]
 		.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
 		.join("")}</div>`;
-	const rows = list.length
-		? list
-				.map(
-					(r) =>
-						`<div class="rec ${r.kind}"><div class="rec-top"><span class="rec-kind">${r.kind === "clear" ? "持ち帰った" : "たおれた"}</span><span class="rec-date">${dateLabel(r.at)}</span></div><div class="rec-cause">${esc(endLine(r))}</div><div class="rec-sub">Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}　見た札${r.seen}</div></div>`,
-				)
-				.join("")
-		: `<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`;
+	if (!list.length) {
+		await infoWindow(
+			ctx,
+			"冒険の記録",
+			`${total}<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`,
+			{ cls: "records" },
+		);
+		return null;
+	}
+	const replays = loadReplays();
+	const replayOf = (r: RunRecord) => replays.find((p) => replayMatches(p, r));
+	// 残す数がいっぱいのとき、それより古い記録のリプレイは押し出されている
+	const oldestKept =
+		replays.length >= REPLAYS_KEEP
+			? Math.min(...replays.map((x) => x.at))
+			: Number.NEGATIVE_INFINITY;
 	const note =
-		list.length && st.runs > list.length
+		st.runs > list.length
 			? `<p class="hint">記録は　新しい　${list.length}回ぶんだけ　のこる</p>`
 			: "";
-	await infoWindow(ctx, "冒険の記録", total + rows + note, {
-		cls: "records",
-	});
+	let start = 0;
+	for (;;) {
+		const rows = list.map((r, i) => ({
+			label: `<b class="rec-kind ${r.kind}">${r.kind === "clear" ? "持ち帰った" : "たおれた"}</b>　${esc(endLine(r))}`,
+			sub: replayOf(r) ? "▶" : "",
+			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}　見た札${r.seen}`,
+			value: String(i),
+		}));
+		const v = await listWindow(ctx, `冒険の記録${total}${note}`, rows, {
+			cls: "records",
+			start,
+		});
+		if (v === null) return null;
+		start = Number(v);
+		const r = list[start];
+		const rp = replayOf(r);
+		const head = `${esc(endLine(r))}<br><small>${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン</small>`;
+		if (!rp) {
+			await infoWindow(
+				ctx,
+				"",
+				`<p>${head}</p><p class="dim">この冒険の　リプレイは　のこっていない${r.at < oldestKept ? `<br>（リプレイは　新しい　${REPLAYS_KEEP}回ぶんだけ　のこる）` : ""}</p>`,
+			);
+			continue;
+		}
+		const old = rp.builds.some((b) => b !== __CORE_VERSION__);
+		const pick = await listWindow(
+			ctx,
+			`${head}${old ? `<br><small class="warn">前の版で　遊んだ冒険です。途中から　ずれて、最後まで　見られない　ことが　あります</small>` : ""}`,
+			[{ label: "リプレイを　見る", value: "play" }],
+		);
+		if (pick === "play") return rp;
+	}
 };

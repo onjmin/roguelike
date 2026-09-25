@@ -16,7 +16,10 @@ const RUN_KEY = `${PREFIX}run`;
 const RECORDS_KEY = `${PREFIX}records`;
 const STATS_KEY = `${PREFIX}stats`;
 const BOOK_KEY = `${PREFIX}book`;
+const REPLAYS_KEY = `${PREFIX}replays`;
 const RECORDS_MAX = 50;
+/** リプレイを残す数（新しい順。1つ数十KB）。 */
+export const REPLAYS_KEEP = 20;
 
 // ───────────────────────── 中断セーブ ─────────────────────────
 
@@ -47,9 +50,12 @@ export const DEBUG_SEED = "debug:";
 export const saveRun = (s: RunState): void => {
 	if (s.seed.startsWith(DEBUG_SEED)) return;
 	if (s.end) {
-		addRecord(recordFromRun(s));
-		addBookKills(s.kills);
+		// 先に中断セーブを消す（中にリプレイの写しが入っているので、記録・リプレイの場所を空ける。
+		// ここは続けて動くので、途中でタブを閉じられて古い中断セーブだけ残ることはない）
 		clearRun();
+		addRecord(recordFromRun(s));
+		addReplay(s);
+		addBookKills(s.kills);
 		return;
 	}
 	const text = serializeRun(s);
@@ -60,9 +66,31 @@ export const saveRun = (s: RunState): void => {
 		// 読み直したときに 何階も前へ 巻きもどってしまう）
 		try {
 			localStorage.removeItem(RUN_KEY);
-			localStorage.setItem(RUN_KEY, text);
 		} catch {
-			// プライベートモードなど。中断はできないが遊べる
+			// 消せなくても続ける
+		}
+		// それでも入らなければ、残してあるリプレイを古いものから捨てる（見返しより中断セーブが大事）
+		const replays = loadReplays();
+		for (;;) {
+			try {
+				localStorage.setItem(RUN_KEY, text);
+				return;
+			} catch {
+				if (!replays.length) return; // プライベートモードなど。中断はできないが遊べる
+				replays.pop();
+				try {
+					if (replays.length)
+						localStorage.setItem(REPLAYS_KEY, JSON.stringify(replays));
+					else localStorage.removeItem(REPLAYS_KEY);
+				} catch {
+					replays.length = 0;
+					try {
+						localStorage.removeItem(REPLAYS_KEY);
+					} catch {
+						// あきらめる
+					}
+				}
+			}
 		}
 	}
 };
@@ -224,6 +252,92 @@ export const addRecord = (r: RunRecord): void => {
 	} catch {
 		// 保存できなくても遊べる
 	}
+};
+
+// ───────────────────────── リプレイ ─────────────────────────
+// 終わった冒険の「シード＋コマンドの列」（core/replay.ts）。記録とはシードで結びつく。
+
+export type SavedReplay = {
+	seed: string;
+	/** 終わった時刻（ms）。 */
+	at: number;
+	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
+	builds: string[];
+	/** コマンドの列。 */
+	text: string;
+	/** コマンドの数。 */
+	n: number;
+	kind: "dead" | "clear";
+	depth: number;
+	turn: number;
+	cause: string;
+};
+
+const isReplay = (r: unknown): r is SavedReplay => {
+	if (!r || typeof r !== "object") return false;
+	const o = r as Partial<SavedReplay>;
+	return (
+		typeof o.seed === "string" &&
+		typeof o.text === "string" &&
+		Array.isArray(o.builds) &&
+		(o.kind === "dead" || o.kind === "clear")
+	);
+};
+
+/** 残っているリプレイ（新しい順）。 */
+export const loadReplays = (): SavedReplay[] => {
+	try {
+		const raw = localStorage.getItem(REPLAYS_KEY);
+		if (!raw) return [];
+		const list = JSON.parse(raw) as unknown;
+		return Array.isArray(list) ? list.filter(isReplay) : [];
+	} catch {
+		return [];
+	}
+};
+
+/**
+ * そのリプレイが その記録のものか（シードに加えて 終わり方も同じ。
+ * 2つのタブで同じ冒険を続けると、1つのシードに終わりが2つできることがある）。
+ */
+export const replayMatches = (p: SavedReplay, r: RunRecord): boolean =>
+	p.seed === r.seed &&
+	p.kind === r.kind &&
+	p.turn === r.turn &&
+	p.depth === r.depth &&
+	p.cause === r.cause;
+
+/** 終わった冒険のリプレイを残す（記録していない冒険・開発用の冒険は残さない）。 */
+const addReplay = (s: RunState): void => {
+	if (s.seed.startsWith(DEBUG_SEED) || !s.end) return;
+	if (typeof s.replay !== "string" || !s.replayN) return;
+	// 同じ冒険の 同じ終わりだけ入れかえる（別のタブで続けた終わりは 別に残す）
+	const end = s.end;
+	const list = loadReplays().filter(
+		(r) => !(r.seed === s.seed && r.kind === end.kind && r.turn === end.turn),
+	);
+	list.unshift({
+		seed: s.seed,
+		at: Date.now(),
+		builds: s.builds ?? [],
+		text: s.replay,
+		n: s.replayN,
+		kind: s.end.kind,
+		depth: s.end.depth,
+		turn: s.end.turn,
+		cause: s.end.cause,
+	});
+	if (list.length > REPLAYS_KEEP) list.length = REPLAYS_KEEP;
+	// 入りきらなければ 古いものから捨てる（中断セーブ・記録の場所を取りすぎないように）
+	while (list.length) {
+		try {
+			localStorage.setItem(REPLAYS_KEY, JSON.stringify(list));
+			return;
+		} catch {
+			list.pop();
+		}
+	}
+	// 新しいもの1つでも入らない：このリプレイは残せないが、前からのものは そのまま
 };
 
 // ───────────────────────── モンスター図鑑 ─────────────────────────

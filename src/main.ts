@@ -7,7 +7,7 @@ import { bgm } from "./data/bgm";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import { Input } from "./engine/input";
-import { DEBUG_SEED } from "./engine/save";
+import { DEBUG_SEED, type SavedReplay } from "./engine/save";
 import { Screen } from "./engine/screen";
 import type { Ctx } from "./ui/ctx";
 import { mountHud } from "./ui/hud";
@@ -122,14 +122,20 @@ const loop = async () => {
 		hud.root.classList.add("hidden");
 		let run = first;
 		first = null;
+		let replay: SavedReplay | undefined;
 		if (!run) {
 			const choice = await showTitle(ctx);
-			run =
-				choice.kind === "new" ? Run.create(newSeed()) : new Run(choice.state);
+			if (choice.kind === "replay") {
+				// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
+				replay = choice.replay;
+				run = Run.create(replay.seed);
+			} else
+				run =
+					choice.kind === "new" ? Run.create(newSeed()) : new Run(choice.state);
 		}
 		hud.root.classList.remove("hidden");
 		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;
-		const play = new Play(run, ctx, screen, hud);
+		const play = new Play(run, ctx, screen, hud, { replay });
 		if (import.meta.env.DEV)
 			(window as unknown as { __play: Play }).__play = play;
 		await play.start();

@@ -61,6 +61,7 @@ import {
 	noticeAdjacent,
 	wakeMonster,
 } from "./monster";
+import { recordCmd } from "./replay";
 import { Rng } from "./rng";
 import { triggerTrap } from "./traps";
 import {
@@ -160,6 +161,8 @@ export class Run {
 			ids: { fake, known: {}, named: {} },
 			nextUid: 1,
 			log: [],
+			replay: "",
+			replayN: 0,
 			kills: {},
 			returning: false,
 			end: null,
@@ -809,6 +812,8 @@ export class Run {
 			this.endTurn(this.nearMap());
 		}
 		this.s.rng = this.rng.state();
+		// リプレイの記録（指紋は このコマンドのあとの状態で とる）
+		recordCmd(this.s, cmd);
 		return this.ev;
 	}
 

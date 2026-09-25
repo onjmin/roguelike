@@ -311,6 +311,15 @@ export type RunState = {
 		maxDepth: number;
 		itemsUsed: number;
 	};
+	/**
+	 * リプレイの記録（入れたコマンドを短い文字にしてカンマでつないだもの。core/replay.ts）。
+	 * この仕組みより前の中断セーブから続けた冒険は null（記録できない）。
+	 */
+	replay?: string | null;
+	/** 記録したコマンドの数。 */
+	replayN?: number;
+	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 足していく。UI が入れる）。 */
+	builds?: string[];
 };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────

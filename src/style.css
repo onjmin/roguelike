@@ -559,6 +559,14 @@ body.shake #app {
 	transition: opacity 0.15s;
 }
 
+/* リプレイを見ているあいだは 操作のボタンを隠す（下の帯で操作する） */
+.hud.replay .pad,
+.hud.replay .ab,
+.hud.replay .minis,
+.hud.replay .menu-btn {
+	display: none;
+}
+
 /* タイトル画面ではミュートボタンだけ出す */
 .hud.hidden .pad,
 .hud.hidden .ab,
@@ -952,6 +960,132 @@ body.shake #app {
 .chapter-sub {
 	color: var(--muted);
 	font-size: 13px;
+}
+
+/* ───────── リプレイ ───────── */
+
+.replay-bar {
+	position: absolute;
+	left: calc(16px + var(--safe-l));
+	right: calc(16px + var(--safe-r));
+	bottom: calc(16px + var(--safe-b));
+	z-index: 30;
+	padding: 8px 10px 10px;
+	background: var(--win-bg);
+	border: 1px solid rgba(255, 255, 255, 0.35);
+	border-radius: 8px;
+	max-width: 520px;
+	margin: 0 auto;
+}
+
+.replay-bar .rp-head {
+	display: flex;
+	justify-content: space-between;
+	font-size: 13px;
+	margin-bottom: 6px;
+}
+
+.replay-bar .rp-label {
+	color: var(--accent);
+	letter-spacing: 0.2em;
+}
+
+.replay-bar .rp-where {
+	color: var(--muted);
+}
+
+.replay-bar .rp-prog {
+	height: 4px;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: 2px;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.replay-bar .rp-prog i {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: var(--accent);
+}
+
+.replay-bar .rp-btns {
+	display: grid;
+	grid-template-columns: 1fr 1fr 2fr 2fr;
+	gap: 6px;
+}
+
+.replay-bar .rp-btn {
+	min-height: 40px;
+	font-size: 15px;
+	color: var(--text);
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-radius: 6px;
+	touch-action: manipulation;
+}
+
+.replay-bar .rp-btn:active {
+	background: rgba(255, 207, 74, 0.25);
+}
+
+.replay-end {
+	position: absolute;
+	inset: 0;
+	z-index: 56;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 0 16px;
+	text-align: center;
+	background: rgba(0, 0, 0, 0.62);
+	opacity: 0;
+	transition: opacity 0.5s;
+}
+
+.replay-end.shown {
+	opacity: 1;
+}
+
+.replay-end .rp-end-title {
+	font-size: clamp(20px, var(--app-w) * 0.06, 32px);
+	letter-spacing: 0.15em;
+	color: var(--accent);
+}
+
+.replay-end .rp-end-line {
+	font-size: 15px;
+	line-height: 1.6;
+}
+
+.replay-end .rp-end-hint {
+	font-size: 12px;
+	color: var(--muted);
+}
+
+/* リプレイの帯の上に ログを出す */
+.replaying > .log {
+	bottom: calc(118px + var(--safe-b));
+}
+
+/* 冒険の記録の一覧（選ぶとリプレイ） */
+.records .menu-item .rec-kind {
+	font-weight: normal;
+	color: var(--danger);
+}
+
+.records .menu-item .rec-kind.clear {
+	color: var(--accent);
+}
+
+.records .menu-item small {
+	color: var(--accent);
+}
+
+.menu-title small.warn {
+	color: var(--danger);
 }
 
 /* ───────── 倒れたとき ───────── */
