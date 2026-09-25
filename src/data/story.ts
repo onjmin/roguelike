@@ -57,14 +57,14 @@ export const ZONE_NAMES: Record<"shallow" | "deep", readonly ZoneSpec[]> = {
 			last: 4,
 			name: "落ちたてのスレ",
 			theme: "earth",
-			bgm: "retro",
+			bgm: "dungeon",
 			ambient: "dust",
 		},
 		{
 			last: 8,
 			name: "草の生えたスレ",
 			theme: "moss",
-			bgm: "retro2",
+			bgm: "field",
 			ambient: "spores",
 		},
 		{

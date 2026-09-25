@@ -57,7 +57,8 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
-// うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）
+// うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）。アップテンポなので 序盤ではなく、
+// retro は 本編 B13〜16「鯖の深部」、retro2 は 祭り（モンスターハウス）で 鳴らす
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」

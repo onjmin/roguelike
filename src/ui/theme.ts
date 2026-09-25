@@ -165,7 +165,8 @@ export const ZONES: Record<DungeonId, readonly Zone[]> = {
 			bgm: "field2",
 			ambient: "snow",
 		},
-		{ last: 16, name: "鯖の深部", theme: CYBER, bgm: "tense", ambient: "data" },
+		// 名無し155さんの 手書きメロディの曲。アップテンポなので 序盤ではなく 中盤の 電子の廃墟に
+		{ last: 16, name: "鯖の深部", theme: CYBER, bgm: "retro", ambient: "data" },
 		{ last: 19, name: "炎上の底", theme: LAVA, bgm: "boss", ambient: "embers" },
 		{
 			last: 20,

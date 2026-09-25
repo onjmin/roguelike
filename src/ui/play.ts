@@ -83,9 +83,12 @@ type Disp = Figure & {
 	dying: boolean;
 };
 
+/** 祭り（モンスターハウス）の曲。名無し155さんの アップテンポな曲（オクターブを直した版）。 */
+const HOUSE_BGM = "retro2";
+
 /** 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。 */
 const floorBgm = (run: Run): string => {
-	if (run.f.houseAwake) return "battle";
+	if (run.f.houseAwake) return HOUSE_BGM;
 	if (run.s.returning) return "title";
 	return zoneFor(run.s.dungeon, run.s.depth).bgm;
 };
@@ -1299,7 +1302,7 @@ export class Play {
 				case "levelup":
 					break;
 				case "house":
-					this.ctx.audio.bgm("battle");
+					this.ctx.audio.bgm(HOUSE_BGM);
 					break;
 				case "quake":
 					document.body.classList.add("shake");
