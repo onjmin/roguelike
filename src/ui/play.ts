@@ -20,7 +20,13 @@ import { isFloor, roomAt } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import type { Run } from "../core/run";
-import { type Command, type GameEvent, PLAYER_ID } from "../core/types";
+import {
+	type Command,
+	type Floor,
+	type GameEvent,
+	PLAYER_ID,
+	type RunState,
+} from "../core/types";
 import { loadImage } from "../engine/assets";
 import {
 	DEBUG_SEED,
@@ -99,6 +105,11 @@ export class Play {
 	private resolveEnd: (() => void) | null = null;
 	/** タップ移動の行き先。 */
 	private travel: Pos | null = null;
+	/**
+	 * 出来事を流しているあいだ、まだ映している前の階（落とし穴・地震で 下の階へ 移っても、
+	 * 階の札が出るまでは 前の階のまま見せる）。落ちなかったときは null。
+	 */
+	private shownFloor: Floor | null = null;
 	/** 向きを変えたあと、方向がはなされるのを待っている。 */
 	private waitRelease = false;
 	/** 食べる・飲む・読むときに キリコの頭の上に出す道具。 */
@@ -349,6 +360,18 @@ export class Play {
 
 	private draw(t: number): void {
 		const run = this.run;
+		// 落ちている途中は、階の札まで 前の階を キリコの見えている位置から映す（敵は もう いない）
+		const shown = this.shownFloor;
+		const pd = this.disp.get(PLAYER_ID);
+		const s: RunState =
+			shown && pd
+				? {
+						...run.s,
+						floor: shown,
+						depth: shown.depth,
+						player: { ...run.s.player, x: pd.tx, y: pd.ty },
+					}
+				: run.s;
 		const figs: Figure[] = [];
 		const fakeItems: { x: number; y: number; kind: string }[] = [];
 		for (const d of this.disp.values()) {
@@ -370,6 +393,7 @@ export class Play {
 				figs.push(d);
 				continue;
 			}
+			if (s !== run.s) continue;
 			const m = run.f.monsters.find((x) => x.uid === d.id);
 			if (!m) continue;
 			if (m.disguise) {
@@ -382,7 +406,7 @@ export class Play {
 		}
 		this.view.draw(
 			this.screen,
-			run.s,
+			s,
 			run.dungeon.floors,
 			figs,
 			this.projectiles,
@@ -426,11 +450,11 @@ export class Play {
 			st.trapped > 0 ? "はさまれ" : "",
 			st.heldBy !== null ? "つかまれ" : "",
 		].filter(Boolean);
-		const key = `${run.s.depth}|${p.lv}|${p.hp}|${p.maxHp}|${hunger}|${left}|${badges.join()}|${run.s.returning}`;
+		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${p.hp}|${p.maxHp}|${hunger}|${left}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		const low = p.hp <= p.maxHp / 4;
-		const depthLabel = `${run.s.returning ? "↑" : ""}B${run.s.depth}`;
+		const depthLabel = `${run.s.returning ? "↑" : ""}B${this.shownFloor?.depth ?? run.s.depth}`;
 		this.hud.status.innerHTML =
 			`<div class="st-row"><span class="st-depth">${depthLabel}</span><span>Lv${p.lv}</span>` +
 			`<span class="st-hp${low ? " low" : ""}">HP ${p.hp}/${p.maxHp}</span></div>` +
@@ -732,8 +756,10 @@ export class Play {
 					run.f.items.find((fi) => fi.item.uid === cmd.item)?.item)
 				: undefined;
 		const turn0 = run.s.turn;
+		const floor0 = run.s.floor;
 		try {
 			ev = run.act(cmd);
+			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end && !this.rp) saveRun(run.s);
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
@@ -796,6 +822,7 @@ export class Play {
 				await this.askStairs();
 			}
 		} finally {
+			this.shownFloor = null;
 			this.busy = false;
 		}
 		return ev;
@@ -1220,6 +1247,11 @@ export class Play {
 					document.body.classList.add("shake");
 					await wait(e.level >= 3 ? 700 : 400);
 					document.body.classList.remove("shake");
+					if (e.level >= 3)
+						await this.overThread(
+							ev.slice(i).some((x) => x.t === "floor"),
+							fast,
+						);
 					break;
 				case "goal":
 					this.ctx.audio.bgm(floorBgm(this.run));
@@ -1282,8 +1314,48 @@ export class Play {
 	}
 
 	/** 階の札（〇階）。 */
+	/**
+	 * 地震の3回目：2ch の 1001 のように「このスレッドは1000を超えました」が書きこまれ、
+	 * もう書けないので 下の階へ 落ちる（画面ごと 沈んで 暗くなり、つぎの階の札へ）。
+	 */
+	private async overThread(falls: boolean, fast: boolean): Promise<void> {
+		const post = el("div", { class: "over1000" }, [
+			el("div", { class: "over1000-head" }, [
+				"1001 ：",
+				el("b", { text: "１００１" }),
+				"：Over 1000 Thread",
+			]),
+			el("div", {
+				class: "over1000-body",
+				text: "このスレッドは１０００を超えました。",
+			}),
+			el("div", {
+				class: "over1000-body",
+				text: falls
+					? "もう書けないので、下の階へ落ちます。。。"
+					: "もう書けませんが、これより下は　ありません。。。",
+			}),
+		]);
+		this.ctx.ui.appendChild(post);
+		await nextFrame();
+		post.classList.add("shown");
+		await wait(fast ? 500 : 1600);
+		if (this.stopped) {
+			post.remove();
+			return;
+		}
+		if (falls) {
+			post.classList.add("falling");
+			this.fadeEl.style.transition = "opacity 0.45s";
+			this.fadeEl.style.opacity = "1";
+		} else post.classList.remove("shown");
+		await wait(460);
+		post.remove();
+	}
+
 	private async floorCard(first: boolean): Promise<void> {
 		const run = this.run;
+		this.shownFloor = null;
 		this.view.invalidate();
 		this.syncDisp(true);
 		this.travel = null;

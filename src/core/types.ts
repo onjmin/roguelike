@@ -119,6 +119,8 @@ export type MonsterDef = {
 	tags?: MonsterTag[];
 	/** 出てきたときに眠っているか（既定は半々）。"deep" は なぐられるまで起きない。 */
 	sleep?: "never" | "always" | "deep";
+	/** たおすと 必ず落とす道具（メタルとうすこ → 成長の実。トルネコ1の しあわせのたね）。 */
+	drop?: string;
 	/** 図鑑の一言。 */
 	desc: string;
 };

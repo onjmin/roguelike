@@ -779,7 +779,8 @@ export class Run {
 		return false;
 	}
 
-	killMonster(m: Monster, giveExp: boolean): void {
+	/** burnt：爆発で たおれた（落とす道具も 燃える）。 */
+	killMonster(m: Monster, giveExp: boolean, burnt = false): void {
 		const d = mdef(m);
 		m.hp = 0;
 		this.emit({ t: "die", id: m.uid, pos: { x: m.x, y: m.y } });
@@ -791,6 +792,16 @@ export class Run {
 		if (m.carry) {
 			const it = m.carry;
 			m.carry = null;
+			this.placeItem(it, m);
+		}
+		// 必ず落とす道具（メタルとうすこ → 成長の実）。何を落とすかは 知られているので 正体もわかる
+		if (d.drop && !burnt) {
+			const it = this.newItem(d.drop);
+			identifyKind(this.s, it.kind);
+			this.msg(
+				`${monsterName(this, m)}は　${this.name(it)}を　落とした！`,
+				"good",
+			);
 			this.placeItem(it, m);
 		}
 		if (giveExp) this.gainExp(d.exp);
@@ -814,7 +825,7 @@ export class Run {
 		const inArea = (p: Pos) =>
 			Math.abs(p.x - cx) <= 2 && Math.abs(p.y - cy) <= 2;
 		for (const o of [...this.f.monsters])
-			if (inArea(o)) this.killMonster(o, false);
+			if (inArea(o)) this.killMonster(o, false, true);
 		for (const fi of [...this.f.items])
 			if (inArea(fi)) this.destroyFloorItem(fi);
 		if (inArea(this.p)) {
@@ -936,12 +947,16 @@ export class Run {
 		if (qi >= 0) {
 			this.emit({ t: "quake", level: qi + 1 });
 			if (qi < QUAKE_TURNS.length - 1) {
+				// 2ch の スレの おわりに なぞらえる（950 で 次スレ、1000 まで 埋め、1001 で 落ちる）
 				this.msg(
-					qi === 0 ? "地面が　ゆれている……" : "ゆれが　強くなってきた！",
+					qi === 0
+						? "このスレも　950を　こえた……　床が　ゆれている"
+						: "埋めが　はじまった！　ゆれが　強くなってきた！",
 					"warn",
 				);
 			} else {
-				this.msg("床が　ぬけた！", "warn");
+				this.msg("このスレッドは　1000を　超えました。", "warn");
+				this.msg("もう　書けないので、下の階へ　落ちる……", "warn");
 				this.fallDown();
 				return;
 			}

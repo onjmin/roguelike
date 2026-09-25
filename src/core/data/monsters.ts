@@ -234,7 +234,8 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "metal" }, { k: "fastMove" }],
 		tags: ["metal"],
 		sleep: "never",
-		desc: "ダメージは　1しか　通らない。すぐ　逃げる",
+		drop: "h_growth",
+		desc: "ダメージは　1しか　通らない。すぐ　逃げる。たおすと　成長の実を　落とす",
 	},
 	{
 		id: "yuki",

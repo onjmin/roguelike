@@ -979,6 +979,57 @@ body.shake #app {
 	font-size: 13px;
 }
 
+/* 地震の3回目：2ch の 1001（このスレッドは1000を超えました）。書きこまれて、下の階へ 落ちる */
+.over1000 {
+	position: absolute;
+	left: 50%;
+	top: 42%;
+	width: min(420px, calc(var(--app-w) - 32px));
+	transform: translate(-50%, -50%) translateY(10px);
+	padding: 10px 14px 12px;
+	background: #efefef;
+	color: #000;
+	border: 1px solid #999;
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+	font-family:
+		"MS PGothic", "ＭＳ Ｐゴシック", "IPAMonaPGothic", "Mona", sans-serif;
+	font-size: 15px;
+	line-height: 1.6;
+	text-align: left;
+	opacity: 0;
+	transition:
+		opacity 0.25s,
+		transform 0.25s;
+	z-index: 55;
+	pointer-events: none;
+}
+
+.over1000.shown {
+	opacity: 1;
+	transform: translate(-50%, -50%);
+}
+
+.over1000.falling {
+	opacity: 0;
+	transform: translate(-50%, -50%) translateY(120px);
+	transition:
+		opacity 0.45s ease-in,
+		transform 0.45s ease-in;
+}
+
+.over1000-head {
+	font-size: 13px;
+	margin-bottom: 4px;
+}
+
+.over1000-head b {
+	color: #008000;
+}
+
+.over1000-body {
+	padding-left: 1.5em;
+}
+
 /* ───────── リプレイ ───────── */
 
 .replay-bar {

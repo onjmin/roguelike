@@ -20,7 +20,7 @@ import {
 	type Pos,
 	samePos,
 } from "../core/geom";
-import { defOf } from "../core/item";
+import { defOf, isKnownKind } from "../core/item";
 import {
 	bigRoomLayout,
 	type Layout,
@@ -942,6 +942,27 @@ test("metal", "damage capped at 1; warps out of sight when hit", () => {
 		ok(!canSee(r.f.layout, m, r.p), `warped into view after ${by}`);
 	}
 });
+
+test(
+	"metal",
+	"drops a known 成長の実 when defeated, but not in an explosion",
+	() => {
+		const r = arena("metal-drop");
+		const m = put(r, "metal", at(1, 0));
+		m.hp = 1;
+		ok(dealt(r, m, 1, "hit") === 1, "the last hit did not land");
+		const drop = r.f.items.find((fi) => fi.item.kind === "h_growth");
+		ok(drop, "no 成長の実 on the floor");
+		ok(isKnownKind(r.s, "h_growth"), "the dropped fruit is not identified");
+		const r2 = arena("metal-burn");
+		const m2 = put(r2, "metal", at(1, 0));
+		r2.killMonster(m2, false, true);
+		ok(
+			!r2.f.items.some((fi) => fi.item.kind === "h_growth"),
+			"a fruit dropped in an explosion",
+		);
+	},
+);
 
 // ───────────────── 雪だるま（pack） ─────────────────
 
