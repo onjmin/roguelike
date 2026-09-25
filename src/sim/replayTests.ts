@@ -8,7 +8,7 @@
 import { MAIN_DECK } from "../core/data/items";
 import { deckSize } from "../core/deck";
 import { randomFloorPos, spawnMonster } from "../core/floor";
-import { deckOf } from "../core/item";
+import { deckOf, defOf, kindName } from "../core/item";
 import {
 	decodeCmd,
 	digest,
@@ -18,7 +18,7 @@ import {
 } from "../core/replay";
 import { migrateRun, Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import type { Command, DungeonId } from "../core/types";
+import { CAT_ORDER, type Command, type DungeonId } from "../core/types";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 import { MAIN_PARITY } from "./parityFixture";
@@ -144,6 +144,40 @@ test("an old (v1) suspended save loads as the main dungeon", () => {
 	const bad = deserializeRun(serializeRun(Run.create("rp-bad").s));
 	(bad as { dungeon: string }).dungeon = "nowhere";
 	ok(migrateRun(bad) === null, "accepted an unknown dungeon");
+});
+
+test("sorting the bag takes no turn, groups by category, hides unknown order, and replays", () => {
+	const run = Run.create("rp-sort");
+	for (const k of ["f_bread", "s_map", "h_heal", "steel", "h_poison", "w_bolt"])
+		run.s.player.items.push(run.newItem(k));
+	const turn = run.s.turn;
+	run.act({ c: "sort" });
+	ok(run.s.turn === turn, "sorting used a turn");
+	const cats = run.s.player.items.map((it) =>
+		CAT_ORDER.indexOf(defOf(it.kind).cat),
+	);
+	ok(
+		cats.every((c, i) => i === 0 || cats[i - 1] <= c),
+		`not grouped by category: ${run.s.player.items.map((it) => it.kind)}`,
+	);
+	// わからない草どうしは 呼び名の順（本当の順ではない）
+	const herbs = run.s.player.items.filter(
+		(it) => defOf(it.kind).cat === "herb",
+	);
+	const names = herbs.map((it) => kindName(run.s, it.kind));
+	ok(
+		names.every((n, i) => i === 0 || names[i - 1] <= n),
+		`unknown herbs not ordered by their shown names: ${names}`,
+	);
+	const again = Run.create("rp-sort");
+	for (const k of ["f_bread", "s_map", "h_heal", "steel", "h_poison", "w_bolt"])
+		again.s.player.items.push(again.newItem(k));
+	for (const st of parseReplay(run.s.replay as string))
+		if (st.kind === "cmd") again.act(st.cmd);
+	ok(
+		serializeRun(again.s) === serializeRun(run.s),
+		"a sorted bag did not replay identically",
+	);
 });
 
 test("a corrupted record stops cleanly instead of throwing", () => {

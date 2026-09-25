@@ -23,6 +23,19 @@ export type ItemCat =
 	| "food"
 	| "goal";
 
+/** 持ち物の 整理の順（分類）。 */
+export const CAT_ORDER: readonly ItemCat[] = [
+	"weapon",
+	"shield",
+	"ring",
+	"herb",
+	"scroll",
+	"staff",
+	"arrow",
+	"food",
+	"goal",
+];
+
 /** 名前が冒険ごとに入れかわる（未識別になる）種類。 */
 export const UNIDENTIFIED_CATS: readonly ItemCat[] = [
 	"ring",
@@ -349,6 +362,7 @@ export type Command =
 	| { c: "unequip"; item: number }
 	| { c: "swap"; item: number }
 	| { c: "stairs" }
+	| { c: "sort" }
 	| { c: "name"; kind: string; text: string };
 
 /** 表示側（UI）に知らせる出来事。UI はこれを順に演出し、最後の状態を描く。 */

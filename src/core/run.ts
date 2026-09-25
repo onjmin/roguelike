@@ -46,6 +46,7 @@ import {
 	defOf,
 	identifyKind,
 	isKeyItem,
+	isKnownKind,
 	itemName,
 	kindName,
 	rollItem,
@@ -62,6 +63,7 @@ import { recordCmd } from "./replay";
 import { Rng } from "./rng";
 import { triggerTrap } from "./traps";
 import {
+	CAT_ORDER,
 	type Command,
 	DOZE,
 	type DungeonId,
@@ -1039,7 +1041,45 @@ export class Run {
 				if (cmd.text) this.s.ids.named[cmd.kind] = cmd.text;
 				else delete this.s.ids.named[cmd.kind];
 				return false;
+			case "sort":
+				this.sortItems();
+				return false;
 		}
+	}
+
+	/**
+	 * 持ち物を 整理する（時間は進まない）。分類の順（武器・盾・指輪・草・スレ・杖・矢・食べもの）に並べ、
+	 * 同じ分類では 正体のわかる物を 図鑑の順に、わからない物は そのあとに 呼び名の順で まとめる
+	 * （わからない物を 本当の順に並べると 正体が もれるので）。同じ物どうしは もとの順のまま。
+	 */
+	sortItems(): void {
+		const s = this.s;
+		const known = (it: Item) => isKnownKind(s, it.kind);
+		const rows = this.p.items.map((it, i) => ({
+			it,
+			i,
+			cat: CAT_ORDER.indexOf(defOf(it.kind).cat),
+			known: known(it),
+			order: defOf(it.kind).order,
+			name: kindName(s, it.kind),
+		}));
+		rows.sort(
+			(a, b) =>
+				a.cat - b.cat ||
+				Number(b.known) - Number(a.known) ||
+				(a.known
+					? a.order - b.order
+					: a.name < b.name
+						? -1
+						: a.name > b.name
+							? 1
+							: 0) ||
+				a.i - b.i,
+		);
+		const before = this.p.items.map((it) => it.uid).join();
+		this.p.items = rows.map((r) => r.it);
+		if (this.p.items.map((it) => it.uid).join() !== before)
+			this.msg("持ち物を　整理した");
 	}
 
 	/** 混乱しているときの向き。 */

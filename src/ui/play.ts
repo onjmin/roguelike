@@ -44,7 +44,13 @@ import type { Hud } from "./hud";
 import { itemIcon } from "./icons";
 import { esc } from "./itemText";
 import { listWindow } from "./list";
-import { type MenuAction, openFootMenu, openMainMenu, pickItem } from "./menu";
+import {
+	type MenuAction,
+	openFootMenu,
+	openInventory,
+	openMainMenu,
+	pickItem,
+} from "./menu";
 import { showRunEnd } from "./records";
 import {
 	drawMap,
@@ -665,6 +671,8 @@ export class Play {
 		switch (a.kind) {
 			case "command":
 				await this.exec(a.cmd);
+				if (a.reopen === "items" && !this.run.s.end && !this.stopped)
+					await this.menu(openInventory(this.ctx, this.run));
 				return;
 			case "map":
 				this.toggleMap();
@@ -1103,13 +1111,9 @@ export class Play {
 	private async askStairs(): Promise<void> {
 		const run = this.run;
 		if (this.stopped || run.s.end || !this.onUsableStairs()) return;
-		const left = run.cardsLeft();
 		const up = run.s.returning;
-		const title = up
-			? "階段を　上りますか？"
-			: left > 0
-				? `階段を　降りますか？<br><small>この階には　まだ　札が　${left}枚　あります</small>`
-				: "階段を　降りますか？";
+		// トルネコ1と同じく 聞くだけ（この階に残っている札の数は 山札の表で見られる）
+		const title = up ? "階段を　上りますか？" : "階段を　降りますか？";
 		this.busy = true;
 		const v = await listWindow(
 			this.ctx,

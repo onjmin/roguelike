@@ -6,7 +6,7 @@
 // - 道具の行には必ず2行目の説明を出す（名前だけでは効果がわからない、への対策）。
 // - 奥の窓を閉じたら、1つ手前の窓へ カーソルの位置ごと もどる。
 
-import { INVENTORY_MAX } from "../core/balance";
+import { HUNGER_UNIT, INVENTORY_MAX } from "../core/balance";
 import { needsTarget } from "../core/effects";
 import {
 	deckOf,
@@ -23,11 +23,18 @@ import type { Ctx } from "./ctx";
 import { openDeck } from "./deckView";
 import { el } from "./dom";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
-import { infoWindow, keepInView, type ListItem, listWindow } from "./list";
+import {
+	infoWindow,
+	keepInView,
+	type ListItem,
+	listWindow,
+	paginate,
+} from "./list";
 import { openStatus } from "./statusView";
 
 export type MenuAction =
-	| { kind: "command"; cmd: Command } // 呼び出し側が run.act(cmd) する
+	// 呼び出し側が run.act(cmd) する（reopen なら そのあと もちものを 開きなおす）
+	| { kind: "command"; cmd: Command; reopen?: "items" }
 	| { kind: "map" } // 階全体の地図を出す
 	| { kind: "settings" } // せってい（呼び出し側が開く）
 	| { kind: "suspend" } // 中断して タイトルへ（セーブは呼び出し側）
@@ -80,8 +87,26 @@ const ghostList = (
 		e.stopPropagation();
 		ctx.input.press("b");
 	});
+	// うしろの一覧と 同じページを見せる（入りきらない一覧は ページに分けてある）
+	const pager = el("div", { class: "menu-pager" }, [
+		el("span", { class: "menu-pager-label" }),
+	]);
+	box.appendChild(pager);
+	box.appendChild(el("div", { class: "menu-close", text: "とじる" }));
 	ctx.ui.appendChild(box);
-	if (els[cur]) keepInView(box, els[cur]);
+	const pages = paginate(box, els, pager);
+	if (pages.length > 1) {
+		const p = Math.max(
+			0,
+			pages.findIndex((pg) => pg.includes(cur)),
+		);
+		const on = new Set(pages[p]);
+		els.forEach((r, i) => {
+			r.style.display = on.has(i) ? "" : "none";
+		});
+		const label = pager.querySelector(".menu-pager-label");
+		if (label) label.textContent = `${p + 1}／${pages.length}`;
+	} else if (els[cur]) keepInView(box, els[cur]);
 	return () => box.remove();
 };
 
@@ -95,6 +120,32 @@ const footHint = (run: Run): string | undefined => {
 	if (run.f.traps.some((t) => t.found && t.x === p.x && t.y === p.y))
 		return "罠";
 	return undefined;
+};
+
+/**
+ * メニューの下に出す つよさの窓（トルネコ1と同じく、最深階・満腹度・武器と盾の強さ・ちから・経験値）。
+ * 武器・盾の強さは 修正値を入れた値（装備すると 修正値は わかる）。
+ */
+const statsPanel = (run: Run): HTMLElement => {
+	const p = run.p;
+	const power = (it: Item | null, base: "atk" | "def"): string => {
+		if (!it) return "0";
+		const v = Math.max(0, (defOf(it.kind)[base] ?? 0) + it.plus);
+		return it.known ? String(v) : "？";
+	};
+	const cell = (k: string, v: string) =>
+		`<span class="k">${k}</span><span class="v">${v}</span>`;
+	return el("div", {
+		class: "menu-stats window",
+		html: [
+			cell("最深階", `${run.s.stats.maxDepth}`),
+			cell("満腹度", `${Math.ceil(p.hunger / HUNGER_UNIT)}%`),
+			cell("武器の強さ", power(run.weapon(), "atk")),
+			cell("ちから", `${p.str}/${p.maxStr}`),
+			cell("盾の強さ", power(run.shield(), "def")),
+			cell("経験値", `${p.exp}`),
+		].join(""),
+	});
 };
 
 const confirmSuspend = async (ctx: Ctx): Promise<boolean> =>
@@ -131,7 +182,14 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "せってい", value: "settings" },
 			{ label: "中断する", value: "suspend" },
 		];
-		const v = await listWindow(ctx, "", rows, { cls: "main-menu", start });
+		const stats = statsPanel(run);
+		ctx.ui.appendChild(stats);
+		let v: string | null;
+		try {
+			v = await listWindow(ctx, "", rows, { cls: "main-menu", start });
+		} finally {
+			stats.remove();
+		}
 		if (v === null) return NONE;
 		start = Math.max(
 			0,
@@ -331,8 +389,14 @@ export const openInventory = async (
 		const rows = items.length
 			? items.map((it) => itemRow(run, it))
 			: [emptyRow("何も　持っていない")];
-		const v = await listWindow(ctx, title, rows, { start });
+		const v = await listWindow(ctx, title, rows, {
+			start,
+			// 整理：分類の順に並べなおす（時間は進まない。並びが変わるので コマンドにして 記録に残す）
+			actions: items.length > 1 ? [{ label: "整理", value: "sort" }] : [],
+		});
 		if (v === null || v === "") return NONE;
+		if (v === "sort")
+			return { kind: "command", cmd: { c: "sort" }, reopen: "items" };
 		const idx = rows.findIndex((r) => r.value === v);
 		start = Math.max(0, idx);
 		const it = run.findItem(Number(v));
