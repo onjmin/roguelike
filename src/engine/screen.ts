@@ -2,14 +2,14 @@
 //
 // ドット絵をにじませないため、1ソース画素 = 整数個のデバイス画素 で描く。
 // canvas は「見えている箱」（viewport.ts。ブラウザのバーの裏は除く）全体を覆い、
-// その短辺に 11 マス前後が入る拡大率を選ぶ。
+// その短辺に 14 マス前後が入る拡大率を選ぶ（ローグライクは部屋を見渡したいので rpg より広め）。
 // 描画側はソース画素の座標系（setTransform 済み）でそのまま描けばよい。
 
 import { TILE } from "./types";
 import { onViewportChange, viewport } from "./viewport";
 
 /** 画面の短辺に入れたいマス数の目安。 */
-const TILES_ON_SHORT_SIDE = 11;
+const TILES_ON_SHORT_SIDE = 14;
 
 export class Screen {
 	readonly canvas: HTMLCanvasElement;

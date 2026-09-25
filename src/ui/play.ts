@@ -337,8 +337,7 @@ export class Play {
 		});
 		this.logEl.appendChild(line);
 		const lines = [...this.logEl.children];
-		if (lines.length > 3)
-			lines.slice(0, lines.length - 3).forEach((l) => l.remove());
+		for (const l of lines.slice(0, Math.max(0, lines.length - 3))) l.remove();
 		for (const l of [...this.logEl.children].slice(0, -1))
 			l.classList.add("old");
 		setTimeout(() => line.classList.add("gone"), 4200);
@@ -368,19 +367,24 @@ export class Play {
 			void this.onKey(key);
 			return;
 		}
-		const dir = input.heldDir();
+		const held = input.heldDir();
+		// キーボードの斜め（2つ同時押し）を少しだけ待つ
+		if (input.heldFor() < 45 && (held !== null || input.pendingDirPress))
+			return;
+		const gap = settings.speed === "fast" ? 70 : 115;
+		if (t - this.lastStepAt < gap && (held !== null || input.pendingDirPress))
+			return;
+		// 押しっぱなしでなくても、短く押した向きには1歩進む
+		const pressed = input.takeDirPress();
+		const dir = held ?? pressed;
 		if (dir !== null) {
 			this.travel = null;
-			// キーボードの斜め（2つ同時押し）を少しだけ待つ
-			if (input.heldFor() < 45) return;
 			const mods = input.mods();
 			if (mods.turn) {
 				if (this.run.p.dir !== dir) void this.exec({ c: "turn", dir });
 				return;
 			}
 			if (mods.diag && !isDiagonal(dir)) return;
-			const gap = settings.speed === "fast" ? 70 : 115;
-			if (t - this.lastStepAt < gap) return;
 			this.lastStepAt = t;
 			if (mods.dash) void this.dash(dir);
 			else void this.exec({ c: "move", dir });

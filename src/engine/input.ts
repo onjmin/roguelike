@@ -81,6 +81,24 @@ const OTHER_KEYS: Record<string, Key> = {
 	KeyV: "stairs",
 };
 
+/**
+ * キーの場所の名前（KeyboardEvent.code）。code を付けない環境（一部の自動操作・古いブラウザ）では
+ * key から引き直す（英字キーは KeyX の形に、記号は代表的なものだけ）。
+ */
+const codeOf = (e: KeyboardEvent): string => {
+	if (e.code) return e.code;
+	const k = e.key;
+	if (/^[a-zA-Z]$/.test(k)) return `Key${k.toUpperCase()}`;
+	const named: Record<string, string> = {
+		" ": "Space",
+		".": "Period",
+		",": "Comma",
+		Shift: "ShiftLeft",
+		Control: "ControlLeft",
+	};
+	return named[k] ?? k;
+};
+
 /** 押しっぱなしで意味が変わるキー（トルネコのボタンの組み合わせの代わり）。 */
 const MOD_KEYS: Record<string, keyof Mods> = {
 	ShiftLeft: "dash",
@@ -134,6 +152,8 @@ export class Input {
 	private padDir: Dir8 | null = null;
 	/** 最後に方向を押し始めた時刻（同時押しの待ち合わせ用）。 */
 	private dirSince = 0;
+	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
+	private pendingDir: Dir8 | null = null;
 	private handlers: { fn: Handler; tap: Key | null }[] = [];
 	private fieldQueue: Key[] = [];
 	private keyMods: Mods = { dash: false, diag: false, turn: false };
@@ -147,9 +167,14 @@ export class Input {
 	onModsChange: (() => void) | null = null;
 
 	constructor() {
-		window.addEventListener("keydown", (e) => {
-			const t = e.target as HTMLElement | null;
+		window.addEventListener("keydown", (ev) => {
+			const t = ev.target as HTMLElement | null;
 			if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+			const e = {
+				code: codeOf(ev),
+				repeat: ev.repeat,
+				preventDefault: () => ev.preventDefault(),
+			};
 			const mod = MOD_KEYS[e.code];
 			if (mod) {
 				this.keyMods[mod] = true;
@@ -162,6 +187,7 @@ export class Input {
 				if (!this.keysHeld.size && this.padDir === null)
 					this.dirSince = performance.now();
 				this.keysHeld.set(e.code, d);
+				if (!e.repeat) this.pendingDir = this.heldDir();
 				this.press(toDir4(d), e.repeat);
 				return;
 			}
@@ -170,10 +196,11 @@ export class Input {
 			e.preventDefault();
 			this.press(key, e.repeat);
 		});
-		window.addEventListener("keyup", (e) => {
-			const mod = MOD_KEYS[e.code];
+		window.addEventListener("keyup", (ev) => {
+			const code = codeOf(ev);
+			const mod = MOD_KEYS[code];
 			if (mod) this.keyMods[mod] = false;
-			this.keysHeld.delete(e.code);
+			this.keysHeld.delete(code);
 		});
 		window.addEventListener("blur", () => {
 			this.keysHeld.clear();
@@ -210,6 +237,18 @@ export class Input {
 		return dirFromVec(dx, dy);
 	}
 
+	/** 押したが まだ使っていない向きがあるか。 */
+	get pendingDirPress(): boolean {
+		return this.pendingDir !== null;
+	}
+
+	/** 押したが まだ使っていない向きを取り出す（短く押して離したとき用）。 */
+	takeDirPress(): Dir8 | null {
+		const d = this.pendingDir;
+		this.pendingDir = null;
+		return d;
+	}
+
 	/** 方向を押し始めてからの ms（キーボードの同時押しを待つのに使う）。 */
 	heldFor(): number {
 		return performance.now() - this.dirSince;
@@ -234,6 +273,7 @@ export class Input {
 		const h = { fn: handler, tap: opt.tap === undefined ? "a" : opt.tap };
 		this.handlers.push(h);
 		this.fieldQueue = [];
+		this.pendingDir = null;
 		return () => {
 			const i = this.handlers.lastIndexOf(h);
 			if (i >= 0) this.handlers.splice(i, 1);
@@ -271,7 +311,10 @@ export class Input {
 				if (this.padDir === null && dir !== null)
 					this.dirSince = performance.now();
 				this.padDir = dir;
-				if (dir !== null) this.press(toDir4(dir));
+				if (dir !== null) {
+					this.pendingDir = dir;
+					this.press(toDir4(dir));
+				}
 				el.dataset.dir = dir === null ? "" : String(dir);
 			}
 		};
