@@ -14,6 +14,7 @@ import { drawRefInCell, getImage, onImageLoaded } from "../engine/assets";
 import type { Screen } from "../engine/screen";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import { TILE } from "../engine/types";
+import { drawEquip, type EquipLook } from "./equip";
 import { type Theme, TRAP_ICON, themeFor } from "./theme";
 
 /** 画面に描くキャラ（キリコ・モンスター）。 */
@@ -32,6 +33,10 @@ export type Figure = {
 	fade: number;
 	/** 眠っている（Z を出す）。 */
 	asleep?: boolean;
+	/** 装備（キリコだけ）。 */
+	equip?: EquipLook;
+	/** 攻撃で武器を振っている進み（0〜1。振っていなければ −1）。 */
+	swing?: number;
 };
 
 /** 飛んでいるもの（投げた道具・杖の光）。 */
@@ -220,7 +225,13 @@ export class FloorView {
 			const y = Math.round(g.fy * TILE - oy + dy);
 			ctx.globalAlpha = 1 - g.fade;
 			const frame = g.asleep ? 0 : stepFrame(time + ((g.id * 97) % 400), false);
-			const drawn = drawWalk(ctx, g.sprite, spriteDir(g.dir), frame, x, y);
+			const sd = spriteDir(g.dir);
+			// 装備：体のうしろに隠れる側 → 体 → 体の前に出る側
+			if (g.equip)
+				drawEquip(ctx, g.equip, sd, frame, x, y, "under", g.swing ?? -1);
+			const drawn = drawWalk(ctx, g.sprite, sd, frame, x, y);
+			if (g.equip && drawn)
+				drawEquip(ctx, g.equip, sd, frame, x, y, "over", g.swing ?? -1);
 			if (!drawn) {
 				// 画像がまだ読めていないときは色の丸で代わりに
 				ctx.fillStyle = g.id === 0 ? "#6fe0c0" : "#e05060";

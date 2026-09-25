@@ -34,6 +34,8 @@ import { drawMap, type Figure, FloorView, type Projectile } from "./render";
 import { openSettings } from "./settings";
 
 const KIRIKO = "pub:sprites/kiriko.png";
+/** 武器を振る長さ（振りかぶる → ななめ → 前 の3つの形）。 */
+const SWING_MS = 180;
 
 type Disp = Figure & {
 	/** 動きの始まり・終わり（マス）と時刻。 */
@@ -277,7 +279,17 @@ export class Play {
 		const fakeItems: { x: number; y: number; kind: string }[] = [];
 		for (const d of this.disp.values()) {
 			if (d.id === PLAYER_ID) {
-				figs.push({ ...d, asleep: run.p.status.sleep > 0 });
+				// 装備している武器・盾を重ねて描く。攻撃の踏みこみに合わせて振る
+				const k = (t - d.lungeT0) / SWING_MS;
+				figs.push({
+					...d,
+					asleep: run.p.status.sleep > 0,
+					equip: {
+						weapon: run.weapon()?.kind ?? null,
+						shield: run.shield()?.kind ?? null,
+					},
+					swing: k >= 0 && k < 1 ? k : -1,
+				});
 				continue;
 			}
 			if (d.dying) {
