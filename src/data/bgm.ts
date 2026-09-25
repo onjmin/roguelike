@@ -32,11 +32,26 @@
 // |----------|-------------------|---------|----------|
 // | retro    | -14.0（50）/-27.9（16）| 50 → 26 | -23.6    |
 // | retro2   | -12.9（50）/-28.1（14）| 50 → 23 | -23.7    |
+// | shallow3 | -31.9（20）        | 20 → 51 | -23.8    |
+// | deep1    | -25.4（20）        | 20 → 24 | （比例） |
+// | deep2    | -32.1（20）        | 20 → 53 | -23.7    |
+// | deep3    | -29.4（20）        | 20 → 39 | -23.7    |
+// | deep4    | -29.0（20）        | 20 → 37 | -23.7    |
+// | deep5    | -26.1（20）        | 20 → 26 | （比例） |
+// | deep6    | -26.0（20）        | 20 → 26 | （比例） |
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
 import battle from "./bgm/battle.mml?raw"; // b5ed6f97d24d49a4「ゲームっぽい」
 import boss from "./bgm/boss.mml?raw"; // 028dced82045410e「歌抜いたら戦闘曲っぽい？」
+// 層ごとの曲（2026-09。作曲エージェントが dtm の手書き譜面 docs/handscore.md で書き、hand-compile で MML にした。
+// 24小節の A/B/A' で、最後は 属和音か sus4 で 頭へ戻る。譜面は dtm/tmp/handscore/kiriko-<名前>.json）
+import deep1 from "./bgm/deep1.mml?raw"; // もっと B1〜6 掘りかけの穴：ハ短調 128・retro_game・8beat（掘る動機の行進）
+import deep2 from "./bgm/deep2.mml?raw"; // もっと B7〜12 保守の墓場：ト短調 90・orchestra（ライン・クリシェ、打楽器なし）
+import deep3 from "./bgm/deep3.mml?raw"; // もっと B13〜18 文字化けの海：ニ・ドリア／変ロ・リディア 104・ambient_cloud・bossa
+import deep4 from "./bgm/deep4.mml?raw"; // もっと B19〜24 落ちた鯖：ニ短調 150・cyber_punk・16beat
+import deep5 from "./bgm/deep5.mml?raw"; // もっと B25〜29 名無しの荒野：ロ短調 140・rock・8beat
+import deep6 from "./bgm/deep6.mml?raw"; // もっと B30 つづきの原盤：ニ短調→ニ長調 104・retro_game・4beat
 import dungeon from "./bgm/dungeon.mml?raw"; // 5c8b9ca2c4514e10
 import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G♭) デュエット」
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
@@ -46,6 +61,7 @@ import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バ�
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」
+import shallow3 from "./bgm/shallow3.mml?raw"; // ちょっと B9〜10 過去ログ倉庫：ホ短調 112・fantasy_rpg（ハープの雪、打楽器なし）
 import tense from "./bgm/tense.mml?raw"; // 1d9e7eed2db44ce7「荒ぶるメロディライン」
 import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽っぽい何か」
 import town from "./bgm/town.mml?raw"; // 2826c0b1ce744003「？」
@@ -64,4 +80,11 @@ export const bgm: Record<string, string> = {
 	ending,
 	retro,
 	retro2,
+	shallow3,
+	deep1,
+	deep2,
+	deep3,
+	deep4,
+	deep5,
+	deep6,
 };
