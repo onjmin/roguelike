@@ -8,7 +8,7 @@
 // 描き方：
 // - 武器は「にぎり → つば → 刃（柄）→ 先」を、にぎる手から ある向きへ1ドットずつ並べて描く。
 //   向き（まっすぐ上・ななめ・横）を変えても同じ武器に見え、振る動きも作れる。
-// - 盾は左腕に つけて持つ。正面・横・うら の3つの見え方を、形と色から組み立てる。
+// - 盾（板）は左手で かかげて持つ。正面・横・うら の3つの見え方を、ドットの型と色から組み立てる。
 // - にぎる手の位置は、向き（4方向）と足踏みのコマ（2つ）ごとに決めてある（腕のふりに合わせて動く）。
 // - キリコの向きで、体の前に出る（over）か うしろに隠れる（under）かが変わる。
 //   正面：両手とも前。うしろ向き：両手とも体の向こう。横向き：手前の手は前、奥の手はうしろ。
@@ -116,85 +116,102 @@ const WEAPONS: Record<string, WeaponLook> = {
 	},
 };
 
-// ───────────────── 盾の見た目 ─────────────────
+// ───────────────── 盾（板）の見た目 ─────────────────
+//
+// 盾は「板」（2ch の板＝掲示板の木の板）。縦長の板を 看板のように かかげて持つ。
+// 形は7種とも同じ（上の角だけ丸い長方形・四隅に釘・上のほうに小さな名札）で、色味だけ変える。
 
 type ShieldLook = {
-	/** 形：丸い / 上が平らで下がとがる。 */
-	shape: "round" | "heater";
+	/** ふち（1ドットの輪郭）。釘が目立つよう、釘より明るくする。 */
 	rim: string;
+	/** 板の面。 */
 	face: string;
-	/** 面の光（左上）。 */
-	light: string;
-	/** しるし（中央）。 */
-	mark: string;
-	/** しるしの形。 */
-	markShape: "boss" | "cross" | "scale" | "shine" | "flame" | "star" | "stitch";
+	/** 縦の木目（鉄板は筋）。 */
+	grain: string;
+	/** 四隅の釘（鉄板は明るいリベット）。 */
+	nail: string;
+	/** 名札。 */
+	plate: string;
+	/** うら。 */
 	back: string;
+	/** うらの横木（取っ手）。 */
+	batten: string;
+	/** 左上の光る点（銀・金の板だけ）。 */
+	glint?: string;
 };
 
 const SHIELDS: Record<string, ShieldLook> = {
+	// ダイエット板：うすくて白っぽい木
 	leather: {
-		shape: "round",
-		rim: "#5a3a1c",
-		face: "#a0703c",
-		light: "#c8955a",
-		mark: "#e8d0a0",
-		markShape: "stitch",
-		back: "#4a3020",
+		rim: "#8a6a40",
+		face: "#e2cc9c",
+		grain: "#c4a870",
+		nail: "#2e1c10",
+		plate: "#fffaf0",
+		back: "#c8ac7c",
+		batten: "#7a5c38",
 	},
+	// 雑談板：ふつうの木の板
 	bronze: {
-		shape: "round",
-		rim: "#7a4a1a",
-		face: "#c88a3a",
-		light: "#f0c070",
-		mark: "#ffe0a0",
-		markShape: "boss",
-		back: "#5a3a1a",
+		rim: "#7a4e24",
+		face: "#c8955a",
+		grain: "#a8742e",
+		nail: "#1e100a",
+		plate: "#f4e6c0",
+		back: "#a0703c",
+		batten: "#5a3a1c",
 	},
+	// スルー板：うすい灰緑
 	scale: {
-		shape: "heater",
-		rim: "#2a5a30",
-		face: "#4c9a50",
-		light: "#8ad08a",
-		mark: "#2a6a34",
-		markShape: "scale",
-		back: "#24402a",
+		rim: "#5a6c5c",
+		face: "#a8bca4",
+		grain: "#8ca488",
+		nail: "#1c2620",
+		plate: "#f4e6c0",
+		back: "#8aa088",
+		batten: "#46564a",
 	},
+	// 永久保存板：銀
 	mirror: {
-		shape: "round",
-		rim: "#8890a0",
-		face: "#e4ecf4",
-		light: "#ffffff",
-		mark: "#a8c8f0",
-		markShape: "shine",
-		back: "#586070",
+		rim: "#6c7484",
+		face: "#cdd4de",
+		grain: "#a8b2c0",
+		nail: "#22262e",
+		plate: "#f4e6c0",
+		back: "#9aa2b0",
+		batten: "#5c6474",
+		glint: "#ffffff",
 	},
+	// 鉄板：灰の鉄板に 明るいリベット
 	steelsh: {
-		shape: "heater",
-		rim: "#505864",
-		face: "#a4acb8",
-		light: "#dde2ea",
-		mark: "#6a7280",
-		markShape: "cross",
-		back: "#3c424c",
+		rim: "#2e3238",
+		face: "#848c96",
+		grain: "#6c747e",
+		nail: "#dde2ea",
+		plate: "#f4e6c0",
+		back: "#6a727c",
+		batten: "#2e3238",
 	},
+	// 火消し板：赤茶
 	fireward: {
-		shape: "heater",
-		rim: "#6a1a14",
-		face: "#c8342a",
-		light: "#f07050",
-		mark: "#ffc040",
-		markShape: "flame",
-		back: "#4a1a14",
+		rim: "#642414",
+		face: "#a8482c",
+		grain: "#88361e",
+		nail: "#1a0804",
+		plate: "#f4e6c0",
+		back: "#8a3a22",
+		batten: "#4a1a10",
 	},
+	// ネ申板：金
 	starshield: {
-		shape: "heater",
-		rim: "#20184a",
-		face: "#4a3ca8",
-		light: "#8a7ce8",
-		mark: "#fff6a0",
-		markShape: "star",
-		back: "#1c163a",
+		rim: "#8a6010",
+		face: "#e8b834",
+		grain: "#c8901c",
+		nail: "#2e1c02",
+		plate: "#fff8e0",
+		back: "#c89a28",
+		batten: "#6a4a10",
+		glint: "#ffffff",
 	},
 };
 
@@ -393,73 +410,84 @@ const drawWeapon = (
 	}
 };
 
-/** 盾（正面）の形。1 = 面、2 = ふち、0 = なし。7×8。 */
-const SHAPES: Record<ShieldLook["shape"], string[]> = {
-	round: [
-		"0022200",
-		"0211120",
-		"2111112",
-		"2111112",
-		"2111112",
-		"0211120",
-		"0022200",
-		"0000000",
-	],
-	heater: [
-		"2222222",
-		"2111112",
-		"2111112",
-		"2111112",
-		"0211120",
-		"0211120",
-		"0021200",
-		"0002000",
-	],
-};
-
-const MARKS: Record<ShieldLook["markShape"], [number, number][]> = {
-	boss: [[3, 3]],
-	cross: [
-		[3, 2],
-		[2, 3],
-		[3, 3],
-		[4, 3],
-		[3, 4],
-	],
-	scale: [
-		[2, 2],
-		[4, 2],
-		[3, 3],
-		[2, 4],
-		[4, 4],
-	],
-	shine: [
-		[4, 2],
-		[3, 3],
-	],
-	flame: [
-		[3, 2],
-		[2, 3],
-		[3, 3],
-		[4, 4],
-		[3, 4],
-	],
-	star: [
-		[3, 2],
-		[2, 3],
-		[3, 3],
-		[4, 3],
-		[3, 4],
-	],
-	stitch: [
-		[1, 3],
-		[5, 3],
-		[3, 1],
-		[3, 5],
-	],
-};
-
 type ShieldView = "front" | "side" | "back";
+
+/**
+ * 板の形（見え方ごと）。rows の1文字が1ドット：
+ * . なし / o ふち（名札の下の影にも使う）/ w 面 / g 木目 / n 釘 /
+ * * 光る点（銀・金だけ。ほかは面）/ p 名札 / b うら / k うらの横木。
+ * (hx, hy) は にぎる手が来るドット。板は顔にかからないよう、手から体の外側へ のばす。
+ */
+const BOARDS: Record<ShieldView, { rows: string[]; hx: number; hy: number }> = {
+	// 正面：6×8。手は左から2列目（体の側）、板は体の外（見て右）へ
+	front: {
+		rows: [
+			".oooo.",
+			"onwwno",
+			"owppwo",
+			"o*oogo",
+			"owgwgo",
+			"owgwwo",
+			"onwwno",
+			"oooooo",
+		],
+		hx: 1,
+		hy: 3,
+	},
+	// 横：5×8。面を ななめに見て、少し細く（右向きの形。左向きは左右を返す）。手は体の側から2列目
+	side: {
+		rows: [
+			".ooo.",
+			"onwno",
+			"owpwo",
+			"o*owo",
+			"owgwo",
+			"owgwo",
+			"onwno",
+			"ooooo",
+		],
+		hx: 1,
+		hy: 3,
+	},
+	// うら：6×8。手は横木をにぎる。板は体の外（見て左）へ
+	back: {
+		rows: [
+			".oooo.",
+			"onbbno",
+			"obbbbo",
+			"okkkko",
+			"obbbbo",
+			"obbbbo",
+			"onbbno",
+			"oooooo",
+		],
+		hx: 4,
+		hy: 3,
+	},
+};
+
+const boardColor = (s: ShieldLook, c: string): string | null => {
+	switch (c) {
+		case "o":
+			return s.rim;
+		case "w":
+			return s.face;
+		case "g":
+			return s.grain;
+		case "n":
+			return s.nail;
+		case "*":
+			return s.glint ?? s.face;
+		case "p":
+			return s.plate;
+		case "b":
+			return s.back;
+		case "k":
+			return s.batten;
+		default:
+			return null;
+	}
+};
 
 const drawShield = (
 	put: Put,
@@ -469,48 +497,15 @@ const drawShield = (
 	view: ShieldView,
 	flip: boolean,
 ): void => {
-	const shape = SHAPES[s.shape];
-	if (view === "side") {
-		// 横から：ふちの線と、面の うすい1列
-		for (let y = 0; y < 7; y++) {
-			if (s.shape === "heater" && y === 6) {
-				put(hx, hy - 3 + y, s.rim);
-				continue;
-			}
-			const top = y === 0 || y === 6;
-			put(hx, hy - 3 + y, top ? s.rim : s.face);
-			put(hx + (flip ? -1 : 1), hy - 3 + y, s.rim);
+	const b = BOARDS[view];
+	const w = b.rows[0].length;
+	const ox = hx - (flip ? w - 1 - b.hx : b.hx);
+	const oy = hy - b.hy;
+	for (let y = 0; y < b.rows.length; y++)
+		for (let x = 0; x < w; x++) {
+			const c = boardColor(s, b.rows[y][flip ? w - 1 - x : x]);
+			if (c) put(ox + x, oy + y, c);
 		}
-		return;
-	}
-	// 正面・うら：手を中心に 7×8
-	const ox = hx - 3;
-	const oy = hy - 3;
-	for (let y = 0; y < 8; y++)
-		for (let x = 0; x < 7; x++) {
-			const c = shape[y][flip ? 6 - x : x];
-			if (c === "0") continue;
-			if (c === "2") {
-				put(ox + x, oy + y, s.rim);
-				continue;
-			}
-			if (view === "back") {
-				put(ox + x, oy + y, s.back);
-				continue;
-			}
-			// 左上に光
-			const lit = x + y <= 3;
-			put(ox + x, oy + y, lit ? s.light : s.face);
-		}
-	if (view === "back") {
-		// うらの取っ手
-		put(hx - 1, hy, "#2a1a10");
-		put(hx, hy, "#2a1a10");
-		put(hx + 1, hy, "#2a1a10");
-		return;
-	}
-	for (const [mx, my] of MARKS[s.markShape])
-		put(ox + (flip ? 6 - mx : mx), oy + my, s.mark);
 };
 
 // ───────────────── まとめて描く ─────────────────
