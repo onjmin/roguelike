@@ -24,6 +24,12 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		item: "rpgen:gbcHf7", // ﾄﾞﾗｸｴ宝箱
 		/** HP の回復・満腹度の回復。 */
 		heal: "rpgen:n0UqyV", // ﾄﾞﾗｸｴ5回復
+		/** 食べる（3口ぶん続けて鳴らす）。 */
+		eat: "rpgen:DjrP3h", // 食べる音
+		/** 草を飲む。 */
+		drink: "rpgen:QMyArQ", // 飲み音
+		/** 巻物を読む。 */
+		read: "rpgen:DkePps", // 紙をめくる音
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {

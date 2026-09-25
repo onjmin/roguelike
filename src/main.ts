@@ -40,6 +40,9 @@ input.onAnyInput = () => {
 			"item",
 			"stairs",
 			"heal",
+			"eat",
+			"drink",
+			"read",
 			"throw",
 			"spell",
 		]);

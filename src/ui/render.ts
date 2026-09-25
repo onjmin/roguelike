@@ -32,6 +32,14 @@ export type DrawOpts = {
 	strong?: boolean;
 	/** 倒れた所の墓。drop は 落ちてくる進み（0〜1、1 で着地）。 */
 	grave?: { x: number; y: number; drop: number } | null;
+	/** キリコの頭の上に出す道具（食べる・飲む・読む演出）。dy は上へずらす画素、angle はラジアン。 */
+	overhead?: {
+		icon: string;
+		dy: number;
+		scale: number;
+		angle: number;
+		alpha: number;
+	} | null;
 };
 
 /** 画面に描くキャラ（キリコ・モンスター）。 */
@@ -296,9 +304,24 @@ export class FloorView {
 			}
 		}
 
-		// キリコの向き（歩行グラは4方向しかなく、斜めの向きが絵では わからないので印を出す）
+		// キリコの頭の上の道具（食べる・飲む・読む）
 		const me = figures.find((g) => g.id === 0);
-		if (me && me.fade <= 0 && !opts.grave) {
+		if (opts.overhead && me) {
+			const o = opts.overhead;
+			ctx.save();
+			ctx.globalAlpha = Math.max(0, Math.min(1, o.alpha));
+			ctx.translate(
+				Math.round(me.fx * TILE + TILE / 2 - ox),
+				Math.round(me.fy * TILE - oy + 2 - o.dy),
+			);
+			ctx.rotate(o.angle);
+			ctx.scale(o.scale, o.scale);
+			drawRefInCell(ctx, o.icon, -TILE / 2, -TILE);
+			ctx.restore();
+		}
+
+		// キリコの向き（歩行グラは4方向しかなく、斜めの向きが絵では わからないので印を出す）
+		if (me && me.fade <= 0 && !opts.grave && !opts.overhead) {
 			const d = me.dir;
 			const vx = [0, 1, 1, 1, 0, -1, -1, -1][d];
 			const vy = [-1, -1, 0, 1, 1, 1, 0, -1][d];

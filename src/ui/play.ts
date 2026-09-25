@@ -15,6 +15,7 @@ import {
 	type Pos,
 	step,
 } from "../core/geom";
+import { defOf } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
@@ -92,6 +93,8 @@ export class Play {
 	private travel: Pos | null = null;
 	/** 向きを変えたあと、方向がはなされるのを待っている。 */
 	private waitRelease = false;
+	/** 食べる・飲む・読むときに キリコの頭の上に出す道具。 */
+	private useFx: UseFx | null = null;
 	/** 倒れた所に立てる墓（倒れたときの演出）。 */
 	private grave: { x: number; y: number; t0: number } | null = null;
 	/** 図鑑に載っている敵（毎フレーム保存を読まないように覚えておく）。 */
@@ -334,6 +337,7 @@ export class Play {
 			fakeItems,
 			{
 				strong: this.ctx.input.mods().turn,
+				overhead: this.useFx && overheadPose(this.useFx, t),
 				grave: this.grave && {
 					x: this.grave.x,
 					y: this.grave.y,
@@ -656,10 +660,19 @@ export class Play {
 		const wasOnStairs = run.onStairs();
 		const before = { x: run.p.x, y: run.p.y };
 		let ev: GameEvent[] = [];
+		// 使う道具（食べる・飲む・読む演出のため、使う前に見ておく）
+		const using =
+			cmd.c === "use"
+				? (run.findItem(cmd.item) ??
+					run.f.items.find((fi) => fi.item.uid === cmd.item)?.item)
+				: undefined;
+		const turn0 = run.s.turn;
 		try {
 			ev = run.act(cmd);
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) saveRun(run.s);
+			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
+			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);
 			this.syncDisp();
 			// 巻物の「どれに？」（メニューを通さずに来たとき）
@@ -699,6 +712,36 @@ export class Play {
 			this.busy = false;
 		}
 		return ev;
+	}
+
+	/**
+	 * 食べる・飲む・読む演出：キリコが こちらを向き、頭の上に道具を出して動かす。
+	 * パンは3口 もぐもぐ（ひと口ごとに小さくなる）、草は持ち上げて傾ける、巻物は浮かんで消える。
+	 */
+	private async useAnim(kind: string): Promise<void> {
+		const style = USE_STYLE[defOf(kind).cat];
+		if (!style) return;
+		const k = settings.speed === "fast" ? 0.6 : 1;
+		const dur = USE_MS[style] * k;
+		const pd = this.disp.get(PLAYER_ID);
+		if (pd) pd.dir = 4;
+		this.useFx = {
+			icon: itemIcon(kind),
+			style,
+			t0: performance.now(),
+			dur,
+		};
+		if (style === "eat") {
+			for (let i = 0; i < 3; i++) {
+				this.ctx.audio.se("eat");
+				await wait(dur / 3);
+			}
+		} else {
+			this.ctx.audio.se(style);
+			await wait(dur);
+		}
+		this.useFx = null;
+		if (pd) pd.dir = this.run.p.dir;
 	}
 
 	/** 使える階段の上にいるか（いちばん底は、原盤を拾うまで階段が無い）。 */
@@ -1212,6 +1255,63 @@ const posAt = (keys: Disp["keys"], t: number): Pos => {
 	}
 	const z = keys[keys.length - 1];
 	return { x: z.x, y: z.y };
+};
+
+/** 食べる・飲む・読む演出。 */
+type UseFx = {
+	icon: string;
+	style: "eat" | "drink" | "read";
+	t0: number;
+	dur: number;
+};
+
+/** 道具の区分ごとの演出（ほかの区分は演出なし）。 */
+const USE_STYLE: Record<string, UseFx["style"] | undefined> = {
+	food: "eat",
+	herb: "drink",
+	scroll: "read",
+};
+
+const USE_MS: Record<UseFx["style"], number> = {
+	eat: 900,
+	drink: 650,
+	read: 650,
+};
+
+/** 演出の途中の、頭の上の道具の形。 */
+const overheadPose = (u: UseFx, t: number) => {
+	const k = Math.max(0, Math.min(1, (t - u.t0) / u.dur));
+	// 出るときは ぽんと大きくなり、終わりぎわに消える
+	const pop = Math.min(1, 0.4 + k * 6);
+	const alpha = k > 0.82 ? 1 - (k - 0.82) / 0.18 : 1;
+	switch (u.style) {
+		case "eat": {
+			// 3口。口ごとに はねて、ひと口ぶん小さくなる
+			const bite = Math.min(2, Math.floor(k * 3));
+			const ph = (k * 3) % 1;
+			return {
+				icon: u.icon,
+				dy: Math.abs(Math.sin(ph * Math.PI)) * 3,
+				scale: pop * (1 - bite * 0.2),
+				angle: 0,
+				alpha,
+			};
+		}
+		case "drink": {
+			// 持ち上げて、口もとへ傾ける
+			const lift = Math.sin(Math.min(1, k * 1.8) * (Math.PI / 2));
+			return {
+				icon: u.icon,
+				dy: lift * 4,
+				scale: pop,
+				angle: -lift * 0.7,
+				alpha,
+			};
+		}
+		case "read":
+			// ふわっと浮かんで 消える
+			return { icon: u.icon, dy: k * 6, scale: pop, angle: 0, alpha };
+	}
 };
 
 /** 墓が落ちてくる時間（7割で着地して、残りで少しはねる）。 */
