@@ -1216,8 +1216,8 @@ test(
 	},
 );
 
-test("kage", "気配の巻物 (senseMonsters) alone does not show it", () => {
-	// 気配の巻物は「敵のいる所」、見えない敵は 見透し草 の役目（items.ts の説明・statusView の表示）
+test("kage", "気配スレ (senseMonsters) alone does not show it", () => {
+	// 気配スレは「敵のいる所」、見えない敵は 見透し草 の役目（items.ts の説明・statusView の表示）
 	const r = arena("kage-sense");
 	const m = put(r, "kage", at(5, 0));
 	r.f.senseMonsters = true;

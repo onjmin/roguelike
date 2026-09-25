@@ -44,10 +44,10 @@ const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 
 /** 正体のわかりかた（未識別のとき「せつめい」に出す）。 */
 const HOW_TO_ID: Partial<Record<ItemCat, string>> = {
-	herb: "飲むか　鑑定の巻物で　わかる",
-	scroll: "読むか　鑑定の巻物で　わかる",
-	staff: "振って　効き目が　見えるか、鑑定の巻物で　わかる",
-	ring: "装備して　わかる　ものも　ある。鑑定の巻物なら　かならず　わかる",
+	herb: "飲むか　鑑定スレで　わかる",
+	scroll: "読むか　鑑定スレで　わかる",
+	staff: "振って　効き目が　見えるか、鑑定スレで　わかる",
+	ring: "装備して　わかる　ものも　ある。鑑定スレなら　かならず　わかる",
 };
 
 const row = (k: string, v: string): string =>

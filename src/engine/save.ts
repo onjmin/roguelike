@@ -82,6 +82,9 @@ export const loadRun = (): RunState | null => {
 		];
 		if (items.some((i) => !ITEMS[i.kind])) return null;
 		if (s.floor.monsters.some((m) => !MONSTERS[m.kind])) return null;
+		// 巻物を「スレ」と呼ぶ前の中断セーブ：未識別の名前を今の呼び方にそろえる
+		for (const [k, v] of Object.entries(s.ids.fake))
+			s.ids.fake[k] = v.replace(/の巻物$/, "スレ");
 		return s;
 	} catch {
 		return null;

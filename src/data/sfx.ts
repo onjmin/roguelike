@@ -28,7 +28,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		eat: "rpgen:DjrP3h", // 食べる音
 		/** 草を飲む。 */
 		drink: "rpgen:QMyArQ", // 飲み音
-		/** 巻物を読む。 */
+		/** スレを読む。 */
 		read: "rpgen:DkePps", // 紙をめくる音
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
@@ -42,7 +42,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** プレイヤーが攻撃を受けた。 */
 		damage: "rpgen:bC3ZP1", // [ﾄﾞﾗｸｴ]敵攻撃（被弾）
 		miss: "rpgen:AeNs0l", // ﾄﾞﾗｸｴﾐｽ
-		/** 杖を振る・巻物を読む。 */
+		/** 杖を振る・スレを読む。 */
 		spell: "rpgen:wGCfnC", // ﾄﾞﾗｸｴ呪文
 		/** 敵をたおした。 */
 		enemyDown: "rpgen:DApPoE", // 撃破音

@@ -12,7 +12,7 @@ export const CAT_ICON: Record<ItemCat, string> = {
 	shield: cut(7, 146),
 	ring: cut(4, 571),
 	herb: cut(0, 140),
-	scroll: cut(0, 139),
+	scroll: cut(4, 38), // 掲示板（スレ）
 	staff: cut(7, 144),
 	arrow: cut(2, 143),
 	food: cut(6, 139),

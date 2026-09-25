@@ -250,89 +250,89 @@ add({
 	desc: "この階の　罠と　見えない敵が　見える",
 });
 
-// ───────── 巻物（未識別） ─────────
+// ───────── スレ（巻物にあたる。未識別） ─────────
 add({
 	id: "s_appraise",
 	cat: "scroll",
-	name: "鑑定の巻物",
+	name: "鑑定スレ",
 	desc: "道具を　1つ　識別する",
 });
 add({
 	id: "s_whet",
 	cat: "scroll",
-	name: "研ぎの巻物",
+	name: "研ぎスレ",
 	desc: "装備中の　武器が　＋1。のろいも　とける",
 });
 add({
 	id: "s_temper",
 	cat: "scroll",
-	name: "鍛えの巻物",
+	name: "鍛えスレ",
 	desc: "装備中の　盾が　＋1。のろいも　とける",
 });
 add({
 	id: "s_uncurse",
 	cat: "scroll",
-	name: "解呪の巻物",
+	name: "解呪スレ",
 	desc: "装備の　のろいを　とく",
 });
 add({
 	id: "s_rustproof",
 	cat: "scroll",
-	name: "防錆の巻物",
+	name: "防錆スレ",
 	desc: "装備中の　盾が　錆びなくなる",
 });
 add({
 	id: "s_map",
 	cat: "scroll",
-	name: "地図の巻物",
+	name: "地図スレ",
 	desc: "この階の　地形と　罠が　わかる",
 });
 add({
 	id: "s_sense",
 	cat: "scroll",
-	name: "気配の巻物",
+	name: "気配スレ",
 	desc: "この階の　敵の　いる所が　わかる",
 });
 add({
 	id: "s_treasure",
 	cat: "scroll",
-	name: "宝探しの巻物",
+	name: "宝探しスレ",
 	desc: "この階の　道具の　ある所が　わかる",
 });
 add({
 	id: "s_hold",
 	cat: "scroll",
-	name: "金縛りの巻物",
+	name: "金縛りスレ",
 	desc: "まわりの　敵が　動けなくなる",
 });
 add({
 	id: "s_blast",
 	cat: "scroll",
-	name: "爆炎の巻物",
+	name: "炎上スレ",
 	desc: "部屋じゅうの　敵に　ダメージ",
 });
 add({
 	id: "s_ward",
 	cat: "scroll",
-	name: "結界の巻物",
+	name: "結界スレ",
 	desc: "読むと　足元が　結界になる。その上では　となりから　なぐられない",
 });
 add({
 	id: "s_recharge",
 	cat: "scroll",
-	name: "充填の巻物",
+	name: "充填スレ",
 	desc: "杖を　1本　えらんで　回数を　ふやす",
 });
 add({
 	id: "s_bread",
 	cat: "scroll",
-	name: "糧変えの巻物",
+	name: "飯テロスレ",
 	desc: "道具を　1つ　えらんで　大きなパンに　変える",
 });
 add({
 	id: "s_snare",
 	cat: "scroll",
-	name: "罠呼びの巻物",
+	name: "釣りスレ",
 	desc: "この階に　罠が　ふえる",
 });
 
@@ -500,7 +500,7 @@ export const DECK: readonly DeckEntry[] = [
 	{ kind: "h_antidote", count: 3 },
 	{ kind: "h_fire", count: 3 },
 	{ kind: "h_sight", count: 2 },
-	// 巻物 38
+	// スレ 38
 	{ kind: "s_appraise", count: 8 },
 	{ kind: "s_whet", count: 3 },
 	{ kind: "s_temper", count: 3 },
@@ -541,7 +541,7 @@ export const CAT_NAME: Record<ItemCat, string> = {
 	shield: "盾",
 	ring: "指輪",
 	herb: "草",
-	scroll: "巻物",
+	scroll: "スレ",
 	staff: "杖",
 	arrow: "矢",
 	food: "食べもの",

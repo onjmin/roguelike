@@ -230,7 +230,7 @@ const connect = (
 	}
 };
 
-/** 大部屋（ひとつの大きな部屋）。巻物で今の階を作り替えるときにも使う。 */
+/** 大部屋（ひとつの大きな部屋）。スレで今の階を作り替えるときにも使う。 */
 export const bigRoomLayout = (): Layout => {
 	const l = emptyLayout(MAP_W, MAP_H);
 	const room: Room = { id: 0, x: 2, y: 2, w: MAP_W - 4, h: MAP_H - 4 };

@@ -675,7 +675,7 @@ export class Play {
 			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);
 			this.syncDisp();
-			// 巻物の「どれに？」（メニューを通さずに来たとき）
+			// スレの「どれに？」（メニューを通さずに来たとき）
 			const pick = ev.find((e) => e.t === "fx" && e.kind.startsWith("pick:"));
 			if (pick && pick.t === "fx" && cmd.c === "use") {
 				this.busy = false;
@@ -716,7 +716,7 @@ export class Play {
 
 	/**
 	 * 食べる・飲む・読む演出：キリコが こちらを向き、頭の上に道具を出して動かす。
-	 * パンは3口 もぐもぐ（ひと口ごとに小さくなる）、草は持ち上げて傾ける、巻物は浮かんで消える。
+	 * パンは3口 もぐもぐ（ひと口ごとに小さくなる）、草は持ち上げて傾ける、スレは浮かんで消える。
 	 */
 	private async useAnim(kind: string): Promise<void> {
 		const style = USE_STYLE[defOf(kind).cat];
