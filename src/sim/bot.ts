@@ -407,6 +407,15 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			const d = pathStep(r, fr, true);
 			if (d !== null) return { c: "move", dir: d };
 		}
+		// 地図スレで地形は全部わかっても、原盤そのものは まだ見ていないことがある。
+		// 人なら まだ入っていない部屋を見て回るところ。ボットは原盤の部屋へ まっすぐ行く
+		if (bottom && !fr) {
+			const g = f.items.find((fi) => fi.item.kind === "genban");
+			if (g && (g.x !== p.x || g.y !== p.y)) {
+				const d = pathStep(r, g, true);
+				if (d !== null) return { c: "move", dir: d };
+			}
+		}
 	}
 	// 階段へ
 	if (stairsKnown && !bottom) {
