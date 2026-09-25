@@ -17,6 +17,7 @@ import { deserializeRun, serializeRun } from "../core/serial";
 import type { Command } from "../core/types";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
+import { MAIN_PARITY } from "./parityFixture";
 
 class Fail extends Error {}
 const ok = (cond: unknown, why: string): void => {
@@ -94,6 +95,37 @@ test("a corrupted record stops cleanly instead of throwing", () => {
 		steps.length === 2 && steps[1].kind === "cmd",
 		`parse did not stop at the bad token (${steps.length} steps)`,
 	);
+});
+
+test("main dungeon parity: the recorded runs replay to the same states", () => {
+	// ダンジョンを増やす前に ボットで遊んだ本編の冒険（parityFixture）。本編の動きが変わっていないか
+	const fnv = (text: string): string => {
+		let h = 0x811c9dc5;
+		for (let i = 0; i < text.length; i++) {
+			h ^= text.charCodeAt(i);
+			h = Math.imul(h, 0x01000193) >>> 0;
+		}
+		return h.toString(36);
+	};
+	for (const c of MAIN_PARITY) {
+		const { run, driftAt } = replay(c.seed, parseReplay(c.replay));
+		ok(driftAt < 0, `${c.seed}: drifted at step ${driftAt}`);
+		ok(
+			run.s.turn === c.turn && run.s.depth === c.depth,
+			`${c.seed}: turn ${run.s.turn}/${c.turn} depth ${run.s.depth}/${c.depth}`,
+		);
+		ok(
+			digest(run.s) === c.digest,
+			`${c.seed}: digest ${digest(run.s)} vs ${c.digest}`,
+		);
+		const o = JSON.parse(serializeRun(run.s)) as Record<string, unknown>;
+		delete o.v;
+		delete o.dungeon;
+		ok(
+			fnv(JSON.stringify(o)) === c.state,
+			`${c.seed}: the final state differs`,
+		);
+	}
 });
 
 test("a bot run (with suspend/resume) replays to the identical state", () => {
