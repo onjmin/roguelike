@@ -24,7 +24,12 @@ import {
 	STORY,
 	TITLE_CAMEOS,
 } from "../data/story";
-import { ESCAPE_QUOTES, TITLE_TOWN_QUOTES } from "../data/town";
+import {
+	ESCAPE_QUOTES,
+	STAGE_NAMES,
+	TITLE_TOWN_QUOTES,
+	TOWN_NAME,
+} from "../data/town";
 import {
 	addRecord,
 	clearRun,
@@ -49,6 +54,7 @@ import { openHowto } from "./howto";
 import { infoWindow, listWindow, onTap } from "./list";
 import { esc, escBr, openRecords, showStory } from "./records";
 import { openSettings } from "./settings";
+import { drawTown, TOWN_H, TOWN_W } from "./town";
 
 export type TitleChoice =
 	| { kind: "new"; dungeon: DungeonId; carry: Item[] }
@@ -154,12 +160,17 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 		// 倉庫が開いていれば（町の段4から）ボタンを出す
 		const GRID = gridFor((STORAGE_CAP[town.stage] ?? 0) > 0);
 		const friends = cameos(progress.cleared);
-		const walkers = el("canvas", { class: "title-walkers" });
-		// キリコ・仲間・とうすこ を 18 ずつ（仲間がいなければ 前と同じ 60）
-		walkers.width = 60 + friends.length * 18;
-		walkers.height = 20;
-		walkers.style.width = `min(${walkers.width * 4}px, calc(var(--app-w) * 0.9))`;
-		walkers.style.aspectRatio = `${walkers.width} / 20`;
+		// 地上の町（保守村。持ち帰るたびに育つ）と、その前の道を歩く キリコ・仲間・とうすこ
+		const walkers = el("canvas", { class: "title-walkers title-town" });
+		walkers.width = TOWN_W;
+		walkers.height = TOWN_H;
+		const townCaption =
+			town.stage > 0
+				? el("div", {
+						class: "title-town-name",
+						text: `${TOWN_NAME}　${STAGE_NAMES[town.stage] ?? ""}`,
+					})
+				: null;
 		const quote = titleQuote(Date.now() % 1e9);
 		const quoteEl = el("div", { class: "title-quote" });
 		if (quote) {
@@ -174,6 +185,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				html: `蓄音キリコと<span class="title-logo-sub">過去ログの底</span>`,
 			}),
 			walkers,
+			...(townCaption ? [townCaption] : []),
 			quoteEl,
 			buttons,
 			el("div", {
@@ -191,15 +203,19 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			if (!g || !root.isConnected) return;
 			g.imageSmoothingEnabled = false;
 			g.clearRect(0, 0, walkers.width, walkers.height);
-			drawWalk(g, KIRIKO, "down", stepFrame(t, true), 13, 2);
+			drawTown(g, town.stage, t);
+			// 歩く列は 町の下の道（y = 64〜80）。洞窟の入口の少し右から
+			const row = TOWN_H - 17;
+			const x0 = 44;
+			drawWalk(g, KIRIKO, "down", stepFrame(t, true), x0, row);
 			for (const [i, f] of friends.entries())
 				drawWalk(
 					g,
 					f,
 					"down",
 					stepFrame(t + 70 * (i + 1), true),
-					31 + i * 18,
-					2,
+					x0 + 18 + i * 18,
+					row,
 				);
 			// とうすこは少し遅れて足踏みし、ときどき跳ねる
 			const hop = Math.floor(t / 900) % 3 === 0 ? -1 : 0;
@@ -208,8 +224,8 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				TOUSUKO,
 				"down",
 				stepFrame(t + 130, true),
-				31 + friends.length * 18,
-				2 + hop,
+				x0 + 18 + friends.length * 18,
+				row + hop,
 			);
 			raf = requestAnimationFrame(anim);
 		};

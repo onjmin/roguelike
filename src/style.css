@@ -1219,6 +1219,21 @@ body.shake #app {
 	height: auto;
 }
 
+/* 地上の町（保守村）。16×5 マス（256×80） */
+.title-walkers.title-town {
+	width: 512px;
+	max-width: calc(var(--app-w) * 0.94);
+	aspect-ratio: 256 / 80;
+	border-radius: 6px;
+}
+
+.title-town-name {
+	font-size: 12px;
+	color: var(--muted);
+	letter-spacing: 0.1em;
+	margin-top: -4px;
+}
+
 .title-buttons {
 	display: flex;
 	flex-direction: column;
@@ -1513,6 +1528,14 @@ body.shake #app {
 .short-landscape .title-walkers {
 	grid-area: walk;
 	width: 150px;
+}
+
+.short-landscape .title-walkers.title-town {
+	width: min(320px, calc(var(--app-w) * 0.45));
+}
+
+.short-landscape .title-town-name {
+	display: none;
 }
 
 .short-landscape .title-quote {
