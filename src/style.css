@@ -457,6 +457,11 @@ body.shake #app {
 	color: var(--accent);
 }
 
+/* 修正値の わからない 武器・盾の名前（トルネコ1と同じく 黄色。わかると 白に もどる） */
+.unk {
+	color: #f5d76e;
+}
+
 .menu {
 	position: absolute;
 	top: calc(60px + var(--safe-t));

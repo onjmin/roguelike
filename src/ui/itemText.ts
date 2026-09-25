@@ -28,15 +28,27 @@ export const itemDesc = (run: Run, it: Item): string => {
 	return h + esc(known ? d.desc : "まだ　正体が　わからない");
 };
 
-/** 一覧の名前（HTML）。装備中なら頭に E。 */
-export const itemLabel = (run: Run, it: Item): string =>
-	`${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${esc(run.name(it))}`;
+/** 武器・盾で、修正値と のろいが まだ わからない（装備するか 鑑定スレで わかる）。 */
+const plusUnknown = (it: Item): boolean => {
+	const c = defOf(it.kind).cat;
+	return (c === "weapon" || c === "shield") && !it.known;
+};
 
-/** 一覧の右に出す小さい数（武器・盾の素の強さ。修正値は名前の +1 のほうに出る）。 */
+/**
+ * 一覧の名前（HTML）。装備中なら頭に E。
+ * 修正値の わからない 武器・盾は 名前を黄色に（トルネコ1と同じ。装備するか 鑑定すると 白に もどり、+1 などが つく）。
+ */
+export const itemLabel = (run: Run, it: Item): string => {
+	const name = esc(run.name(it));
+	return `${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${plusUnknown(it) ? `<span class="unk">${name}</span>` : name}`;
+};
+
+/** 一覧の右に出す小さい数（武器・盾の素の強さ。修正値は名前の +1 のほうに出る。わからなければ ？）。 */
 export const itemSub = (it: Item): string | undefined => {
 	const d = defOf(it.kind);
-	if (d.cat === "weapon") return `強さ${d.atk ?? 0}`;
-	if (d.cat === "shield") return `強さ${d.def ?? 0}`;
+	const q = plusUnknown(it) ? "？" : "";
+	if (d.cat === "weapon") return `強さ${d.atk ?? 0}${q}`;
+	if (d.cat === "shield") return `強さ${d.def ?? 0}${q}`;
 	return undefined;
 };
 
@@ -89,6 +101,10 @@ export const itemInfo = (run: Run, it: Item): string => {
 	}
 	if (run.isEquipped(it)) rows.push(row("いま", "装備中"));
 	if (rows.length) out.push(`<table>${rows.join("")}</table>`);
+	if (plusUnknown(it))
+		out.push(
+			'<p class="hint">修正値と　のろいは、装備するか　鑑定スレで　わかる（−1なら　のろわれていて　外せない）</p>',
+		);
 	if (d.cat === "goal") {
 		out.push('<p class="hint">投げたり　置いたり　できない</p>');
 	} else if (isUnidentifiedCat(it.kind) && !known) {
