@@ -54,6 +54,36 @@ export const forEachVisible = (
 				if (x >= 0 && y >= 0 && x < l.w && y < l.h) f(x, y);
 };
 
+/**
+ * 見えている部屋の出入口の先（通路の1マス目）。「見たことのある所」として地図に載せる
+ * （今見えている所ではないので、そこにいる敵は見えない）。出入口が壁のくぼみに見えず、
+ * 通路が続いているとわかるように。
+ */
+export const forEachExitPeek = (
+	l: Layout,
+	from: Pos,
+	f: (x: number, y: number) => void,
+): void => {
+	for (const r of roomsSeenFrom(l, from.x, from.y))
+		for (let y = r.y - 1; y <= r.y + r.h; y++)
+			for (let x = r.x - 1; x <= r.x + r.w; x++) {
+				const ring =
+					x === r.x - 1 || x === r.x + r.w || y === r.y - 1 || y === r.y + r.h;
+				if (!ring || tileAt(l, x, y) === T_WALL) continue;
+				for (const [dx, dy] of [
+					[0, -1],
+					[1, 0],
+					[0, 1],
+					[-1, 0],
+				]) {
+					const nx = x + dx;
+					const ny = y + dy;
+					if (inRoomView(r, nx, ny) || tileAt(l, nx, ny) === T_WALL) continue;
+					f(nx, ny);
+				}
+			}
+};
+
 /** 見えるマスのうち床（通れる所）かどうか。描画の明るさ用。 */
 export const isOpen = (l: Layout, x: number, y: number): boolean =>
 	tileAt(l, x, y) !== T_WALL;

@@ -30,7 +30,7 @@ import { FAKE_NAMES } from "./data/names";
 import { dealDeck } from "./deck";
 import { throwItem, useItem } from "./effects";
 import { buildFloor, randomFloorPos, spawnMonster } from "./floor";
-import { canSee, forEachVisible } from "./fov";
+import { canSee, forEachExitPeek, forEachVisible } from "./fov";
 import {
 	DIRS8,
 	type Dir8,
@@ -372,6 +372,9 @@ export class Run {
 		const l = f.layout;
 		if (this.p.status.blind > 0) return;
 		forEachVisible(l, this.p, (x, y) => {
+			f.seen[y * l.w + x] = 1;
+		});
+		forEachExitPeek(l, this.p, (x, y) => {
 			f.seen[y * l.w + x] = 1;
 		});
 		const seen = new Set(this.s.seen);

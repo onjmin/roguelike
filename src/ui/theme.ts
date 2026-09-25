@@ -12,8 +12,8 @@ const cut = (c: number, r: number, w = 1, h = 1): string =>
 
 export type Theme = {
 	name: string;
+	/** 床（部屋も通路も同じ。通路の入口が壁に見えないように）。 */
 	floor: string;
-	corridor: string;
 	stairs: string;
 	wallUpper: string[];
 	wallLower: string[];
@@ -32,7 +32,6 @@ const walls = (row: number): string[] =>
 const EARTH: Theme = {
 	name: "earth",
 	floor: cut(0, 162),
-	corridor: cut(1, 162),
 	stairs: cut(0, 163),
 	wallUpper: walls(169),
 	wallLower: walls(170),
@@ -45,7 +44,6 @@ const EARTH: Theme = {
 const CRYSTAL: Theme = {
 	name: "crystal",
 	floor: cut(0, 164),
-	corridor: cut(1, 164),
 	stairs: cut(0, 165),
 	wallUpper: walls(173),
 	wallLower: walls(174),
@@ -58,7 +56,6 @@ const CRYSTAL: Theme = {
 const LAVA: Theme = {
 	name: "lava",
 	floor: cut(4, 162),
-	corridor: cut(5, 162),
 	stairs: cut(4, 163),
 	wallUpper: walls(171),
 	wallLower: walls(172),
@@ -71,7 +68,6 @@ const LAVA: Theme = {
 const MOSS: Theme = {
 	name: "moss",
 	floor: cut(4, 164),
-	corridor: cut(5, 164),
 	stairs: cut(4, 165),
 	wallUpper: walls(175),
 	wallLower: walls(176),
@@ -84,7 +80,6 @@ const MOSS: Theme = {
 const CYBER: Theme = {
 	name: "cyber",
 	floor: cut(4, 166),
-	corridor: cut(5, 166),
 	stairs: cut(4, 167),
 	wallUpper: walls(181),
 	wallLower: walls(182),
@@ -97,7 +92,6 @@ const CYBER: Theme = {
 const GOLD: Theme = {
 	name: "gold",
 	floor: cut(0, 168),
-	corridor: cut(1, 168),
 	stairs: cut(0, 167),
 	wallUpper: walls(177),
 	wallLower: walls(178),

@@ -114,7 +114,7 @@ export class FloorView {
 				if (t !== T_WALL) {
 					ctx.fillStyle = theme.floorColor;
 					ctx.fillRect(px, py, TILE, TILE);
-					drawRefInCell(ctx, t === 2 ? theme.corridor : theme.floor, px, py);
+					drawRefInCell(ctx, theme.floor, px, py);
 					continue;
 				}
 				// 壁：下が床なら「下の面」、その上は「上の面」
