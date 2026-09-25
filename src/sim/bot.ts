@@ -26,7 +26,19 @@ export const DEFAULT_BOT: BotOpts = {
 };
 
 /** 知っているマスの上の道のり（罠を避ける）。to へ向かう最初の一歩。 */
-const pathStep = (r: Run, to: Pos, avoidMonsters: boolean): Dir8 | null => {
+const pathStep = (r: Run, to: Pos, avoidMonsters: boolean): Dir8 | null =>
+	// 見つけた罠は よけて通る。よけられない（通路をふさいでいる）ときだけ 踏んで通る。
+	// 寝ている敵が通路をふさいでいたら、なぐって通る（botCommand が なぐるに変える）
+	pathStepVia(r, to, avoidMonsters, true) ??
+	pathStepVia(r, to, avoidMonsters, false) ??
+	(avoidMonsters ? pathStepVia(r, to, false, false) : null);
+
+const pathStepVia = (
+	r: Run,
+	to: Pos,
+	avoidMonsters: boolean,
+	avoidTraps: boolean,
+): Dir8 | null => {
 	const f = r.f;
 	const l = f.layout;
 	const w = l.w;
@@ -50,7 +62,7 @@ const pathStep = (r: Run, to: Pos, avoidMonsters: boolean): Dir8 | null => {
 			if (prev[ni] !== -2) continue;
 			if (!f.seen[ni] && ni !== goal) continue;
 			if (!r.cornerOk({ x, y }, d)) continue;
-			if (traps.has(ni) && ni !== goal) continue;
+			if (avoidTraps && traps.has(ni) && ni !== goal) continue;
 			if (avoidMonsters && r.monsterAt(n.x, n.y) && ni !== goal) continue;
 			prev[ni] = i;
 			q.push(ni);
@@ -100,11 +112,12 @@ const itemScore = (it: Item): number => {
 /** ボットの次のコマンド。 */
 export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 	const cmd = decide(r, opts);
-	// 見えている敵の方へ歩いても向くだけなので、道をふさぐ敵は なぐる
+	// 敵の方へ歩いても 向くだけ（見えない敵には ぶつかるだけ）なので、道をふさぐ敵は なぐる。
+	// 見えない敵も なぐる（人なら「なにかに　ぶつかった」のあと A を押す。ボットは その1手を省く）
 	if (cmd.c === "move") {
 		const to = step(r.p, cmd.dir);
 		const m = r.monsterAt(to.x, to.y);
-		if (m && !m.disguise && r.monsterVisible(m) && r.cornerOk(r.p, cmd.dir))
+		if (m && !m.disguise && r.cornerOk(r.p, cmd.dir))
 			return { c: "attack", dir: cmd.dir };
 	}
 	return cmd;
