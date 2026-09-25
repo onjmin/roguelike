@@ -1,4 +1,5 @@
-// 画面上のボタン類：8方向の十字キー・A/B・小さいボタン（向き・足元・地図）・メニュー・ミュート。
+// 画面上のボタン類：8方向の十字キー・A/B・矢（装備しているときだけ）・小さいボタン（向き・足元・地図）・
+// メニュー・ミュート。
 //
 // スマホの画面を ふさがないよう、小さいボタンは 3つに しぼる。
 // - 足踏みは 十字キーの まん中を 長押し（トルネコの A＋B 押しっぱなし。押さえているあいだ 続ける）
@@ -26,6 +27,11 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	]);
 	const a = el("button", { class: "btn btn-a", text: "A" });
 	const b = el("button", { class: "btn btn-b", text: "B" });
+	// 装備した矢を撃つ（矢を装備しているときだけ出る。トルネコ1の 矢の装備と同じ）
+	const shoot = el("button", {
+		class: "btn btn-shoot",
+		html: "矢<small></small>",
+	});
 	const small = (label: string, cls: string) =>
 		el("button", { class: `mini ${cls}`, html: label });
 	const foot = small("足元", "mini-foot");
@@ -39,7 +45,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const hud = el("div", { class: "hud" }, [
 		status,
 		pad,
-		el("div", { class: "ab" }, [b, a]),
+		el("div", { class: "ab" }, [b, shoot, a]),
 		el("div", { class: "minis" }, [turn, foot, map]),
 		el("div", { class: "top-btns" }, [mute, menu]),
 	]);
@@ -48,6 +54,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	input.bindPad(pad);
 	input.bindButton(a, "a");
 	input.bindButton(b, "b");
+	input.bindButton(shoot, "shoot");
 	input.bindButton(menu, "b");
 	input.bindButton(foot, "foot");
 	input.bindButton(map, "map");

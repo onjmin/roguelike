@@ -180,6 +180,38 @@ test("sorting the bag takes no turn, groups by category, hides unknown order, an
 	);
 });
 
+test("equipped arrows are shot one by one and the shots replay", () => {
+	const run = Run.create("rp-arrow");
+	const quiver = run.newItem("a_wood");
+	quiver.count = 2;
+	run.s.player.items.push(quiver);
+	run.act({ c: "shoot" });
+	ok(quiver.count === 2, "shot without equipping");
+	run.act({ c: "equip", item: quiver.uid });
+	ok(run.s.player.arrow === quiver.uid, "arrows are not equipped");
+	const turn = run.s.turn;
+	run.act({ c: "shoot" });
+	ok(
+		quiver.count === 1 && run.s.turn > turn,
+		"one shot did not use one arrow and a turn",
+	);
+	run.act({ c: "shoot" });
+	ok(
+		!run.findItem(quiver.uid) && !run.s.player.arrow,
+		"the last arrow did not clear the equipped slot",
+	);
+	const again = Run.create("rp-arrow");
+	const q2 = again.newItem("a_wood");
+	q2.count = 2;
+	again.s.player.items.push(q2);
+	for (const st of parseReplay(run.s.replay as string))
+		if (st.kind === "cmd") again.act(st.cmd);
+	ok(
+		serializeRun(again.s) === serializeRun(run.s),
+		"arrow shots did not replay identically",
+	);
+});
+
 test("a corrupted record stops cleanly instead of throwing", () => {
 	// 壊れた % の並び・数でない向き・知らない頭 → そこまで（例外にしない）
 	for (const bad of ["n%E0.x", "mx", "tq", "u", "Tz.1", "zz", ""])

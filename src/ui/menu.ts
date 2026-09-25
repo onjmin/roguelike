@@ -244,13 +244,14 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	const cat = defOf(it.kind).cat;
 	if (cat === "goal") return [{ label: "せつめい", value: "info" }];
 	const rows: ListItem[] = [];
-	if (cat === "weapon" || cat === "shield" || cat === "ring")
+	// 矢も 装備できる（装備すると A の横の「矢」ボタン・Q キーで 1本ずつ撃てる。トルネコ1と同じ）
+	if (cat === "weapon" || cat === "shield" || cat === "ring" || cat === "arrow")
 		rows.push(
 			run.isEquipped(it)
 				? { label: "外す", value: "unequip" }
 				: { label: "装備する", value: "equip" },
 		);
-	else if (cat !== "arrow") rows.push({ label: USE_VERB[cat], value: "use" });
+	else rows.push({ label: USE_VERB[cat], value: "use" });
 	rows.push({ label: cat === "arrow" ? "撃つ" : "投げる", value: "throw" });
 	const p = run.p;
 	const under = run.itemAt(p.x, p.y);

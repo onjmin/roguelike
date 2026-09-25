@@ -450,6 +450,14 @@ export class Play {
 
 	private updateStatus(): void {
 		const run = this.run;
+		// 矢を装備していれば A の横に「矢」ボタン（のこりの本数つき）
+		const arrows = run.arrows();
+		const hasArrow = !!arrows && !this.rp;
+		if (this.hud.root.classList.contains("has-arrow") !== hasArrow)
+			this.hud.root.classList.toggle("has-arrow", hasArrow);
+		const count = this.hud.root.querySelector(".btn-shoot small");
+		const n = arrows ? String(arrows.count) : "";
+		if (count && count.textContent !== n) count.textContent = n;
 		// 使える階段の上では、足元ボタンを「階段」にして光らせる（聞かれたのを閉じても 降りられるように）
 		const onStairs = this.onUsableStairs() && !this.rp;
 		if (this.hud.root.classList.contains("on-stairs") !== onStairs) {
@@ -640,6 +648,10 @@ export class Play {
 				return;
 			case "stairs":
 				if (run.onStairs()) await this.exec({ c: "stairs" });
+				return;
+			case "shoot":
+				// 装備した矢を 向いている方へ 1本（トルネコ1と同じ）
+				await this.exec({ c: "shoot" });
 				return;
 			case "throw": {
 				const uid = await pickItem(

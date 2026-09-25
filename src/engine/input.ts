@@ -18,6 +18,7 @@ export type Key =
 	| "foot"
 	| "map"
 	| "throw"
+	| "shoot"
 	| "stairs";
 type Handler = (key: Key, repeat: boolean) => void;
 /**
@@ -78,6 +79,7 @@ const OTHER_KEYS: Record<string, Key> = {
 	Comma: "foot",
 	KeyM: "map",
 	KeyT: "throw",
+	KeyQ: "shoot",
 	KeyV: "stairs",
 };
 

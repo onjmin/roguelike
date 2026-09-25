@@ -244,6 +244,8 @@ export type Player = {
 	weapon: number | null;
 	shield: number | null;
 	ring: number | null;
+	/** 装備した矢（撃つで 1本ずつ 向いている方へ。トルネコ1と同じ。前の版の中断セーブには無い）。 */
+	arrow?: number | null;
 	items: Item[];
 	status: PlayerStatus;
 	nextAt: number;
@@ -365,6 +367,7 @@ export type Command =
 	| { c: "swap"; item: number }
 	| { c: "stairs" }
 	| { c: "sort" }
+	| { c: "shoot" }
 	| { c: "name"; kind: string; text: string };
 
 /** 表示側（UI）に知らせる出来事。UI はこれを順に演出し、最後の状態を描く。 */

@@ -279,7 +279,17 @@ export class Run {
 
 	isEquipped(it: Item): boolean {
 		const p = this.p;
-		return p.weapon === it.uid || p.shield === it.uid || p.ring === it.uid;
+		return (
+			p.weapon === it.uid ||
+			p.shield === it.uid ||
+			p.ring === it.uid ||
+			p.arrow === it.uid
+		);
+	}
+
+	/** 装備している矢（撃つ ボタンで 撃つ束）。 */
+	arrows(): Item | null {
+		return this.findItem(this.p.arrow ?? -1) ?? null;
 	}
 
 	weapon(): Item | null {
@@ -306,6 +316,7 @@ export class Run {
 		p.items = p.items.filter((i) => i !== it);
 		if (p.weapon === it.uid) p.weapon = null;
 		if (p.shield === it.uid) p.shield = null;
+		if (p.arrow === it.uid) p.arrow = null;
 	}
 
 	/** 指輪を外したときの後始末（剛力の指輪）。 */
@@ -1053,6 +1064,15 @@ export class Run {
 			case "sort":
 				this.sortItems();
 				return false;
+			case "shoot": {
+				// 装備した矢を 1本、向いている方へ（トルネコ1の 矢の装備と同じ）
+				const a = this.arrows();
+				if (!a) {
+					this.msg("矢を　装備していない");
+					return false;
+				}
+				return throwItem(this, a.uid, p.dir);
+			}
 		}
 	}
 
@@ -1269,14 +1289,16 @@ export class Run {
 		const it = this.findItem(uid);
 		if (!it) return false;
 		const cat = defOf(it.kind).cat as ItemCat;
-		const slot: "weapon" | "shield" | "ring" | null =
+		const slot: "weapon" | "shield" | "ring" | "arrow" | null =
 			cat === "weapon"
 				? "weapon"
 				: cat === "shield"
 					? "shield"
 					: cat === "ring"
 						? "ring"
-						: null;
+						: cat === "arrow"
+							? "arrow"
+							: null;
 		if (!slot) return false;
 		if (p[slot] === it.uid) return this.doUnequip(uid);
 		const cur = this.findItem(p[slot] ?? -1);
@@ -1320,6 +1342,7 @@ export class Run {
 		}
 		if (this.p.weapon === it.uid) this.p.weapon = null;
 		if (this.p.shield === it.uid) this.p.shield = null;
+		if (this.p.arrow === it.uid) this.p.arrow = null;
 		this.msg(`${this.name(it)}を　外した`);
 		return true;
 	}
