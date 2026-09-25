@@ -430,6 +430,29 @@ export class Play {
 			else void this.exec({ c: "move", dir });
 			return;
 		}
+		// 画面を押さえつづけたら、その方へ歩きつづける（どこでも十字キー）
+		const hold = input.fieldHold();
+		if (hold) {
+			this.travel = null;
+			const want = this.dirFromScreen(hold.x, hold.y);
+			if (want === null || t - this.lastStepAt < gap) return;
+			const mods = input.mods();
+			if (mods.turn) {
+				if (this.run.p.dir !== want) void this.exec({ c: "turn", dir: want });
+				return;
+			}
+			if (mods.diag && !isDiagonal(want)) return;
+			// 敵がいる向きは そのまま（なぐる）。いなければ 近い歩ける向きへ
+			const ahead = step(this.run.p, want);
+			const m = this.run.monsterAt(ahead.x, ahead.y);
+			const dir =
+				m && this.run.monsterVisible(m)
+					? want
+					: (this.passableNear(want, 1) ?? want);
+			this.lastStepAt = t;
+			void this.exec({ c: "move", dir });
+			return;
+		}
 		if (this.travel) void this.travelStep();
 	}
 
@@ -523,21 +546,78 @@ export class Play {
 				void this.exec({ c: "attack", dir: d });
 				return;
 			}
-			void this.exec({ c: "move", dir: d });
-			return;
 		}
 		const l = run.f.layout;
-		if (x < 0 || y < 0 || x >= l.w || y >= l.h) return;
 		// 離れた敵をタップしたら、歩かずに その敵の名前と ようすを出す（はじめて見る敵の特技がわかるように）
 		const far = run.monsterAt(x, y);
-		if (far && run.monsterVisible(far) && !far.disguise) {
+		if (far && run.monsterVisible(far) && !far.disguise && dist(p, far) > 1) {
 			const d0 = mdef(far);
 			this.addLog(`${d0.name}：${d0.desc}`);
 			this.ctx.se("cursor");
 			return;
 		}
-		if (!run.f.seen[y * l.w + x] || !isFloor(l, x, y)) return;
-		this.travel = { x, y };
+		// 知っている床ならそこへ。少しずれて壁をタップしたときは、となりの知っている床に寄せる
+		const known = (tx: number, ty: number) =>
+			tx >= 0 &&
+			ty >= 0 &&
+			tx < l.w &&
+			ty < l.h &&
+			isFloor(l, tx, ty) &&
+			!!run.f.seen[ty * l.w + tx] &&
+			(tx !== p.x || ty !== p.y);
+		let target: Pos | null = known(x, y) ? { x, y } : null;
+		if (!target) {
+			let best = 99;
+			for (let dy = -1; dy <= 1; dy++)
+				for (let dx = -1; dx <= 1; dx++) {
+					if (!known(x + dx, y + dy)) continue;
+					const dd = Math.abs(dx) + Math.abs(dy);
+					if (dd < best) {
+						best = dd;
+						target = { x: x + dx, y: y + dy };
+					}
+				}
+		}
+		if (target) {
+			const td = dirOf(target.x - p.x, target.y - p.y);
+			if (dist(p, target) === 1 && td !== null) {
+				void this.exec({ c: "move", dir: td });
+				return;
+			}
+			this.travel = target;
+			return;
+		}
+		// 見ていない所（通路の先など）をタップしたら、その方へ 何かあるまで走る（通路の角はついていく）
+		const toward = this.dirFromScreen(cssX, cssY);
+		const first = toward === null ? null : this.passableNear(toward, 2);
+		if (first !== null) void this.dash(first);
+	}
+
+	/** 画面の点（canvas の CSS 画素）が、キリコから見てどの向きか。キリコの上なら null。 */
+	private dirFromScreen(cssX: number, cssY: number): Dir8 | null {
+		const pd = this.disp.get(PLAYER_ID);
+		if (!pd) return null;
+		const k = this.screen.tileCss / TILE;
+		const px = (pd.fx * TILE + TILE / 2 - this.camX) * k;
+		const py = (pd.fy * TILE + TILE / 2 - this.camY) * k;
+		const dx = cssX - px;
+		const dy = cssY - py;
+		if (Math.hypot(dx, dy) < this.screen.tileCss * 0.6) return null;
+		return ((Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) + 8) % 8) as Dir8;
+	}
+
+	/**
+	 * d に近い向きのうち、歩ける向き（まず d、つぎに ±45°、spread が 2 なら ±90° まで）。
+	 * 通路の入口を少しずれてタップ・押さえても、通路へ入れるように。どこも歩けなければ null。
+	 */
+	private passableNear(d: Dir8, spread: 1 | 2): Dir8 | null {
+		const run = this.run;
+		const order = spread === 2 ? [0, 1, -1, 2, -2] : [0, 1, -1];
+		for (const o of order) {
+			const c = ((((d + o) % 8) + 8) % 8) as Dir8;
+			if (run.canStepTerrain(run.p, c)) return c;
+		}
+		return null;
 	}
 
 	// ───────────────── 実行と演出 ─────────────────
@@ -876,6 +956,7 @@ export class Play {
 	private shouldStop(
 		before: { monsters: number; room: number },
 		ev: GameEvent[],
+		dash = true,
 	): boolean {
 		const run = this.run;
 		if (run.s.end) return true;
@@ -897,8 +978,9 @@ export class Play {
 			)
 		)
 			return true;
+		// ダッシュは部屋の出入りで止まる（行き先を決めたタップ移動は止まらない）
 		const room = roomAt(run.f.layout, p.x, p.y);
-		if (room !== before.room) return true;
+		if (dash && room !== before.room) return true;
 		if (p.hp <= p.maxHp / 3) return true;
 		return false;
 	}
@@ -977,7 +1059,7 @@ export class Play {
 			this.travel = null;
 			return;
 		}
-		if (!ev.length || this.shouldStop(snap, ev)) {
+		if (!ev.length || this.shouldStop(snap, ev, false)) {
 			const arrived = run.p.x === to.x && run.p.y === to.y;
 			this.travel = null;
 			if (arrived || snap.monsters === 0) await this.askStairs();

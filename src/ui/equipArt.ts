@@ -344,11 +344,12 @@ const drawWeapon = (
 	// 影は光の反対（ななめは もう一方のとなり）
 	const sx = diag ? (lx === 0 ? vx : 0) : -lx;
 	const sy = diag ? (ly === 0 ? vy : 0) : -ly;
-	// ななめは1ドットで √2 進むので、すこし短く
-	const len = diag ? Math.max(3, Math.round(w.len * 0.75)) : w.len;
-	const grip = w.grip;
-	// にぎり（手より少しうしろから）
-	for (let i = -1; i < grip; i++) put(hx + vx * i, hy + vy * i, w.gripColor);
+	// ななめは1ドットで √2 進むので、刃も にぎりも 1/√2 にして、まっすぐのときと同じ長さに見せる
+	const len = diag ? Math.max(3, Math.round(w.len / Math.SQRT2)) : w.len;
+	const grip = diag ? Math.max(1, Math.round(w.grip / Math.SQRT2)) : w.grip;
+	// にぎり（まっすぐのときは 手より1ドットうしろから。ななめは手から）
+	for (let i = diag ? 0 : -1; i < grip; i++)
+		put(hx + vx * i, hy + vy * i, w.gripColor);
 	let cx = hx + vx * grip;
 	let cy = hy + vy * grip;
 	// つば（刃に直角に3ドット）

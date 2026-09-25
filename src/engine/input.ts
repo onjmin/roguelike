@@ -145,6 +145,9 @@ const toDir4 = (d: Dir8): Dir =>
 				? "right"
 				: "left";
 
+/** 画面を これより長く押さえたら「押しっぱなしで歩く」、短ければタップ。 */
+const FIELD_HOLD_MS = 220;
+
 /** 指を追い続ける（取れない環境では何もしない。処理を止めないように）。 */
 const capture = (el: HTMLElement, id: number): void => {
 	try {
@@ -165,6 +168,15 @@ export class Input {
 	private pendingDir: Dir8 | null = null;
 	/** 斜めの片方を離した時刻。 */
 	private releasedAt = 0;
+	/** 画面（マップ）を押さえている指。 */
+	private fieldPtr: {
+		id: number;
+		x0: number;
+		y0: number;
+		x: number;
+		y: number;
+		t0: number;
+	} | null = null;
 	private handlers: { fn: Handler; tap: Key | null }[] = [];
 	private fieldQueue: Key[] = [];
 	private keyMods: Mods = { dash: false, diag: false, turn: false };
@@ -436,6 +448,12 @@ export class Input {
 	 * （メッセージ送りは A、メニューは B）、空ならタップ移動としてフィールドへ渡す。
 	 */
 	bindField(el: HTMLElement): void {
+		// canvas は画面の左上とはかぎらない（ブラウザのバーのぶんだけ下にずれる）ので、
+		// canvas の枠を基準に数え直す
+		const rel = (e: PointerEvent) => {
+			const r = el.getBoundingClientRect();
+			return { x: e.clientX - r.left, y: e.clientY - r.top };
+		};
 		el.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
 			this.onAnyInput?.();
@@ -444,10 +462,43 @@ export class Input {
 				if (top.tap) this.press(top.tap);
 				return;
 			}
-			// canvas は画面の左上とはかぎらない（ブラウザのバーのぶんだけ下にずれる）ので、
-			// canvas の枠を基準に数え直す
-			const r = el.getBoundingClientRect();
-			this.onFieldTap?.(e.clientX - r.left, e.clientY - r.top);
+			const p = rel(e);
+			this.fieldPtr = {
+				id: e.pointerId,
+				x0: p.x,
+				y0: p.y,
+				x: p.x,
+				y: p.y,
+				t0: performance.now(),
+			};
+			capture(el, e.pointerId);
 		});
+		el.addEventListener("pointermove", (e) => {
+			if (this.fieldPtr?.id !== e.pointerId) return;
+			const p = rel(e);
+			this.fieldPtr.x = p.x;
+			this.fieldPtr.y = p.y;
+		});
+		const end = (e: PointerEvent) => {
+			const f = this.fieldPtr;
+			if (!f || f.id !== e.pointerId) return;
+			this.fieldPtr = null;
+			// すぐ離したらタップ（押しっぱなしで歩いていたなら何もしない）
+			if (performance.now() - f.t0 < FIELD_HOLD_MS && !this.handlers.length)
+				this.onFieldTap?.(f.x0, f.y0);
+		};
+		el.addEventListener("pointerup", end);
+		el.addEventListener("pointercancel", end);
+	}
+
+	/**
+	 * 画面（マップ）を押さえつづけている指の位置（canvas の左上から数えた CSS 画素）。
+	 * 押してすぐは null（タップと見分けるため）。
+	 */
+	fieldHold(): { x: number; y: number } | null {
+		const f = this.fieldPtr;
+		if (!f || this.handlers.length) return null;
+		if (performance.now() - f.t0 < FIELD_HOLD_MS) return null;
+		return { x: f.x, y: f.y };
 	}
 }
