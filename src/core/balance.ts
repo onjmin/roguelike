@@ -72,15 +72,24 @@ export const HOUSE_CARD_WEIGHT = 3;
 
 /** 最初に置くモンスターの数。 */
 export const INITIAL_MONSTERS: [number, number] = [5, 7];
-/** モンスターハウスの追加の数。 */
+/** モンスターハウスの追加の数（浅い階は少なめ。HOUSE_EARLY_BY の階まで）。 */
 export const HOUSE_MONSTERS: [number, number] = [10, 15];
+export const HOUSE_MONSTERS_EARLY: [number, number] = [5, 8];
+/** モンスターハウスにする部屋の広さ（マス数）の下限（足りる部屋が無ければ いちばん広い部屋）。 */
+export const HOUSE_MIN_AREA = 30;
 /** 同時にいるモンスターの上限。 */
 export const MONSTER_CAP = 19;
 /** この間隔（ターン）ごとに1体湧く。 */
 export const SPAWN_EVERY = 64;
 
-/** モンスターハウスの出る確率（3階から）。 */
+/** モンスターハウス（祭り）の出る確率（3階から）。 */
 export const HOUSE_CHANCE = 1 / 16;
+/**
+ * この階までに 祭りが1つも無ければ、HOUSE_EARLY_FROM からこの階のどこかに1つ置く
+ * （1回の冒険で 浅いうちに1度は出会えるように）。
+ */
+export const HOUSE_EARLY_FROM = 4;
+export const HOUSE_EARLY_BY = 6;
 
 /** 罠の数（階ごと）。 */
 export const trapCount = (depth: number): [number, number] =>

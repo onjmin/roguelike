@@ -4,6 +4,7 @@
 // 回復 → 食事 → となりの敵をなぐる → 装備の更新 → 識別 → 見えている道具を拾う → 探索 → 階段。
 
 import { HUNGER_UNIT, LAST_DEPTH } from "../core/balance";
+import { roomsSeenFrom } from "../core/fov";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
 import { defOf, isKnownKind } from "../core/item";
 import { isFloor, roomAt, roomExits } from "../core/mapgen";
@@ -231,6 +232,21 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		if (exit && dist(exit, p) <= 4) {
 			const d = pathStep(r, exit, true);
 			if (d !== null) return { c: "move", dir: d };
+		}
+	}
+	// 入口に立っていると 部屋の中から撃たれる・呪文をかけられる。もう1歩 通路へ下がって、見えない所で1体ずつ
+	const onDoorway = !inRoom && roomsSeenFrom(f.layout, p.x, p.y).length > 0;
+	if (onDoorway && threats.length >= 2 && adjacent.length <= 1) {
+		for (const d of DIRS8) {
+			const n = step(p, d);
+			if (
+				isFloor(f.layout, n.x, n.y) &&
+				roomAt(f.layout, n.x, n.y) < 0 &&
+				roomsSeenFrom(f.layout, n.x, n.y).length === 0 &&
+				!r.monsterAt(n.x, n.y) &&
+				r.cornerOk(p, d)
+			)
+				return { c: "move", dir: d };
 		}
 	}
 	// となりの敵

@@ -2,7 +2,10 @@
 
 import {
 	CARRY_CHANCE,
+	HOUSE_EARLY_BY,
+	HOUSE_MIN_AREA,
 	HOUSE_MONSTERS,
+	HOUSE_MONSTERS_EARLY,
 	INITIAL_MONSTERS,
 	LAST_DEPTH,
 	trapCount,
@@ -96,10 +99,14 @@ export const buildFloor = (
 	r.p.x = start.x;
 	r.p.y = start.y;
 
-	// モンスターハウス（キリコのいない部屋）
+	// モンスターハウス（キリコのいない部屋。入ったとたんに囲まれないよう、広い部屋を選ぶ）
 	if (house && rooms.length > 1) {
 		const cands = rooms.map((_, i) => i).filter((i) => i !== startRoom);
-		f.house = rng.pick(cands);
+		const area = (i: number) => rooms[i].w * rooms[i].h;
+		const wide = cands.filter((i) => area(i) >= HOUSE_MIN_AREA);
+		f.house = wide.length
+			? rng.pick(wide)
+			: cands.reduce((a, b) => (area(b) > area(a) ? b : a));
 	}
 
 	// いちばん底：原盤を置く（階段の代わりに原盤。帰り道は上り階段）
@@ -169,8 +176,11 @@ export const buildFloor = (
 		if (at) spawnMonster(r, null, at, {});
 	}
 	if (f.house >= 0) {
-		const [hlo, hhi] = HOUSE_MONSTERS;
-		const hn = rng.range(hlo, hhi);
+		const [hlo, hhi] =
+			f.depth <= HOUSE_EARLY_BY ? HOUSE_MONSTERS_EARLY : HOUSE_MONSTERS;
+		// 部屋の広さの 1/3 まで（ぎゅうぎゅうにしない）
+		const room = rooms[f.house];
+		const hn = Math.min(rng.range(hlo, hhi), Math.floor((room.w * room.h) / 3));
 		for (let i = 0; i < hn; i++) {
 			const at = place(f.house);
 			if (at) spawnMonster(r, null, at, { sleep: DOZE });

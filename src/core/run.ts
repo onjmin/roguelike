@@ -9,6 +9,9 @@ import {
 	attackPower,
 	EXP_AT,
 	HIT_RATE,
+	HOUSE_CHANCE,
+	HOUSE_EARLY_BY,
+	HOUSE_EARLY_FROM,
 	HP_GAIN,
 	HUNGER_MAX,
 	HUNGER_UNIT,
@@ -92,10 +95,15 @@ export class Run {
 	static create(seed: string): Run {
 		const rng = Rng.fromSeed(seed);
 		const deal = dealDeck(rng, DECK, LAST_DEPTH);
-		// モンスターハウスの階（3階から 1/16 ずつ）。ハウスの階には札を多めに寄せる
+		// モンスターハウス（祭り）の階（3階から 1/16 ずつ。B6 までに無ければ B4〜6 のどこかに1つ）。
+		// ハウスの階には札を多めに寄せる
 		const houses: number[] = [];
 		for (let d = 3; d <= LAST_DEPTH; d++)
-			if (rng.chance(1 / 16)) houses.push(d);
+			if (rng.chance(HOUSE_CHANCE)) houses.push(d);
+		if (!houses.some((d) => d <= HOUSE_EARLY_BY)) {
+			houses.push(rng.range(HOUSE_EARLY_FROM, HOUSE_EARLY_BY));
+			houses.sort((a, b) => a - b);
+		}
 		rebalanceForHouses(rng, deal, houses);
 		// 未識別の名前の割り当て
 		const fake: Record<string, string> = {};
@@ -397,8 +405,10 @@ export class Run {
 			f.houseAwake = true;
 			if (!this.hasRing("r_stealth")) {
 				for (const m of f.monsters)
-					if (roomAt(l, m.x, m.y) === f.house && m.status.sleep === DOZE)
+					if (roomAt(l, m.x, m.y) === f.house && m.status.sleep === DOZE) {
 						m.status.sleep = 0;
+						this.graceAfterWake(m);
+					}
 			}
 			this.emit({ t: "house" });
 			this.se("encounter");
@@ -422,8 +432,17 @@ export class Run {
 			if (this.hasRing("r_stealth")) continue;
 			if (this.hasRing("r_clamor") || this.rng.chance(WAKE_CHANCE)) {
 				wakeMonster(this, m);
+				this.graceAfterWake(m);
 			}
 		}
+	}
+
+	/**
+	 * 近づかれて目を覚ました敵は、このターンは まだ動かない（寝起き。トルネコ1と同じく、
+	 * 起こしたとたんに なぐられはしない）。次のキリコの番のあとから動く。
+	 */
+	private graceAfterWake(m: Monster): void {
+		m.nextAt = Math.max(m.nextAt, this.p.nextAt + 2);
 	}
 
 	private nearMap(): Map<number, { near: boolean; adj: boolean }> {
