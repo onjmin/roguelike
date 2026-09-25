@@ -482,6 +482,41 @@ const drawAmbient = (
 };
 
 /** 全体の地図（見たことのある所だけ）。画面の上に半透明で重ねる。 */
+/** 地図の升目（デバイス画素）：1マスの大きさと 左上の位置。描くのも タップを マスに直すのも これで。 */
+const mapGeometry = (
+	canvas: HTMLCanvasElement,
+	l: { w: number; h: number },
+) => {
+	const rect = canvas.getBoundingClientRect();
+	const dpr = window.devicePixelRatio || 1;
+	const w = Math.round(rect.width * dpr);
+	const h = Math.round(rect.height * dpr);
+	const cell = Math.max(2, Math.floor(Math.min(w / (l.w + 2), h / (l.h + 8))));
+	return {
+		rect,
+		dpr,
+		w,
+		h,
+		cell,
+		mx: Math.floor((w - cell * l.w) / 2),
+		my: Math.floor((h - cell * l.h) / 2),
+	};
+};
+
+/** 地図の上で タップした所（画面の座標）の マス。地図の外なら null。 */
+export const mapTileAt = (
+	canvas: HTMLCanvasElement,
+	s: RunState,
+	clientX: number,
+	clientY: number,
+): { x: number; y: number } | null => {
+	const l = s.floor.layout;
+	const g = mapGeometry(canvas, l);
+	const x = Math.floor(((clientX - g.rect.left) * g.dpr - g.mx) / g.cell);
+	const y = Math.floor(((clientY - g.rect.top) * g.dpr - g.my) / g.cell);
+	return x >= 0 && y >= 0 && x < l.w && y < l.h ? { x, y } : null;
+};
+
 export const drawMap = (
 	canvas: HTMLCanvasElement,
 	s: RunState,
@@ -489,10 +524,7 @@ export const drawMap = (
 ): void => {
 	const f = s.floor;
 	const l = f.layout;
-	const rect = canvas.getBoundingClientRect();
-	const dpr = window.devicePixelRatio || 1;
-	const w = Math.round(rect.width * dpr);
-	const h = Math.round(rect.height * dpr);
+	const { w, h, cell, mx, my } = mapGeometry(canvas, l);
 	if (canvas.width !== w || canvas.height !== h) {
 		canvas.width = w;
 		canvas.height = h;
@@ -500,9 +532,6 @@ export const drawMap = (
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
 	ctx.clearRect(0, 0, w, h);
-	const cell = Math.max(2, Math.floor(Math.min(w / (l.w + 2), h / (l.h + 8))));
-	const mx = Math.floor((w - cell * l.w) / 2);
-	const my = Math.floor((h - cell * l.h) / 2);
 	ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
 	ctx.fillRect(0, 0, w, h);
 	for (let y = 0; y < l.h; y++)

@@ -863,7 +863,7 @@ body.shake #app {
 	bottom: 0;
 	width: 56px;
 	height: 56px;
-	font-size: 19px;
+	font-size: 15px;
 }
 
 /* 装備した矢を撃つ（A の左上。矢を装備しているときだけ） */

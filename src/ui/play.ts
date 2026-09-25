@@ -57,6 +57,7 @@ import {
 	type Figure,
 	FloorView,
 	GRAVE,
+	mapTileAt,
 	type Projectile,
 } from "./render";
 import { openSettings } from "./settings";
@@ -646,6 +647,10 @@ export class Play {
 				await this.exec({ c: "attack" });
 				return;
 			case "b":
+				// 道具は ワンタップで もちものへ（メニューを はさまない）
+				await this.menu(openInventory(this.ctx, run));
+				return;
+			case "menu":
 				await this.menu(openMainMenu(this.ctx, run));
 				return;
 			case "wait":
@@ -718,8 +723,62 @@ export class Play {
 		}
 	}
 
+	/**
+	 * 地図を開いているときの タップ：そのマス（少しずれても 近くの 知っている床）まで 自動で歩く。
+	 * 歩きだしたら 地図は閉じる（まわりを見ながら 歩けるように。敵が見えたら 止まるのは タップ移動と同じ）。
+	 */
+	private mapTap(cssX: number, cssY: number): void {
+		const run = this.run;
+		const r = this.screen.canvas.getBoundingClientRect();
+		const at = mapTileAt(this.mapEl, run.s, r.left + cssX, r.top + cssY);
+		const p = run.p;
+		if (!at || (at.x === p.x && at.y === p.y)) {
+			this.toggleMap();
+			return;
+		}
+		const target = this.nearKnownFloor(at.x, at.y, 2);
+		if (!target) {
+			this.ctx.se("cancel");
+			return;
+		}
+		this.toggleMap();
+		this.travel = target;
+	}
+
+	/** (x, y) か、そのまわり radius マスの中で いちばん近い 知っている床（自分のいるマスは のぞく）。 */
+	private nearKnownFloor(x: number, y: number, radius: number): Pos | null {
+		const run = this.run;
+		const p = run.p;
+		const l = run.f.layout;
+		const known = (tx: number, ty: number) =>
+			tx >= 0 &&
+			ty >= 0 &&
+			tx < l.w &&
+			ty < l.h &&
+			isFloor(l, tx, ty) &&
+			!!run.f.seen[ty * l.w + tx] &&
+			(tx !== p.x || ty !== p.y);
+		if (known(x, y)) return { x, y };
+		let best = 99;
+		let target: Pos | null = null;
+		for (let dy = -radius; dy <= radius; dy++)
+			for (let dx = -radius; dx <= radius; dx++) {
+				if (!known(x + dx, y + dy)) continue;
+				const dd = Math.abs(dx) + Math.abs(dy);
+				if (dd < best) {
+					best = dd;
+					target = { x: x + dx, y: y + dy };
+				}
+			}
+		return target;
+	}
+
 	private onTap(cssX: number, cssY: number): void {
 		if (this.busy) return;
+		if (this.mapOn) {
+			this.mapTap(cssX, cssY);
+			return;
+		}
 		const sc = this.screen;
 		const src = sc.cssToSource(cssX, cssY);
 		const x = Math.floor((src.x + this.camX) / TILE);
@@ -741,7 +800,6 @@ export class Play {
 				return;
 			}
 		}
-		const l = run.f.layout;
 		// 離れた敵をタップしたら、歩かずに その敵の名前と ようすを出す（はじめて見る敵の特技がわかるように）
 		const far = run.monsterAt(x, y);
 		if (far && run.monsterVisible(far) && !far.disguise && dist(p, far) > 1) {
@@ -751,27 +809,7 @@ export class Play {
 			return;
 		}
 		// 知っている床ならそこへ。少しずれて壁をタップしたときは、となりの知っている床に寄せる
-		const known = (tx: number, ty: number) =>
-			tx >= 0 &&
-			ty >= 0 &&
-			tx < l.w &&
-			ty < l.h &&
-			isFloor(l, tx, ty) &&
-			!!run.f.seen[ty * l.w + tx] &&
-			(tx !== p.x || ty !== p.y);
-		let target: Pos | null = known(x, y) ? { x, y } : null;
-		if (!target) {
-			let best = 99;
-			for (let dy = -1; dy <= 1; dy++)
-				for (let dx = -1; dx <= 1; dx++) {
-					if (!known(x + dx, y + dy)) continue;
-					const dd = Math.abs(dx) + Math.abs(dy);
-					if (dd < best) {
-						best = dd;
-						target = { x: x + dx, y: y + dy };
-					}
-				}
-		}
+		const target = this.nearKnownFloor(x, y, 1);
 		if (target) {
 			const td = dirOf(target.x - p.x, target.y - p.y);
 			if (dist(p, target) === 1 && td !== null) {
@@ -1026,7 +1064,7 @@ export class Play {
 		const input = this.ctx.input;
 		const key = input.takeField();
 		if (key === "a" || key === "wait") this.replayToggle();
-		else if (key === "b") void this.replayQuit();
+		else if (key === "b" || key === "menu") void this.replayQuit();
 		else if (key === "map") this.toggleMap();
 		const d = input.takeDirPress();
 		if (d === 2) this.replaySpeed(1);

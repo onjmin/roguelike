@@ -19,6 +19,7 @@ export type Key =
 	| "map"
 	| "throw"
 	| "shoot"
+	| "menu"
 	| "stairs";
 type Handler = (key: Key, repeat: boolean) => void;
 /**
@@ -69,7 +70,9 @@ const OTHER_KEYS: Record<string, Key> = {
 	NumpadEnter: "a",
 	Space: "a",
 	KeyX: "b",
-	Escape: "b",
+	// Esc・Tab はメニュー（窓が開いていれば とじる）。X・I・B は フィールドでは もちもの
+	Escape: "menu",
+	Tab: "menu",
 	Backspace: "b",
 	KeyI: "b",
 	Period: "wait",
@@ -257,7 +260,8 @@ export class Input {
 		this.onAnyInput?.();
 		const top = this.handlers[this.handlers.length - 1];
 		if (top) {
-			top.fn(key, repeat);
+			// 窓の中では メニューのキーは「とじる」
+			top.fn(key === "menu" ? "b" : key, repeat);
 			return;
 		}
 		const isDir =

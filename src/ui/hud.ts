@@ -26,7 +26,8 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 		el("b", { class: "pad-rest", text: "足踏み" }),
 	]);
 	const a = el("button", { class: "btn btn-a", text: "A" });
-	const b = el("button", { class: "btn btn-b", text: "B" });
+	// B はフィールドでは もちもの（道具を ワンタップで。窓の中では 隠れて、窓の「とじる」を使う）
+	const b = el("button", { class: "btn btn-b", text: "道具" });
 	// 装備した矢を撃つ（矢を装備しているときだけ出る。トルネコ1の 矢の装備と同じ）
 	const shoot = el("button", {
 		class: "btn btn-shoot",
@@ -55,7 +56,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	input.bindButton(a, "a");
 	input.bindButton(b, "b");
 	input.bindButton(shoot, "shoot");
-	input.bindButton(menu, "b");
+	input.bindButton(menu, "menu");
 	input.bindButton(foot, "foot");
 	input.bindButton(map, "map");
 	input.bindHold(turn, "turn");
