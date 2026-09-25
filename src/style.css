@@ -1093,6 +1093,10 @@ body.shake #app {
 	color: var(--danger);
 }
 
+.records .menu-item .rec-kind.escape {
+	color: var(--mp);
+}
+
 .records .menu-item .rec-kind.clear {
 	color: var(--accent);
 }

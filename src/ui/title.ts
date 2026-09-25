@@ -8,7 +8,8 @@
 // - 持ち帰るたびに、キリコのうしろを歩く仲間が ふえる（トルネコの店が 大きくなるのに あたる。見た目だけ）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
-import type { DungeonId, RunState } from "../core/types";
+import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
+import type { DungeonId, Item, RunState } from "../core/types";
 import {
 	pickQuote,
 	type Quote,
@@ -23,6 +24,7 @@ import {
 	STORY,
 	TITLE_CAMEOS,
 } from "../data/story";
+import { ESCAPE_QUOTES, TITLE_TOWN_QUOTES } from "../data/town";
 import {
 	addRecord,
 	clearRun,
@@ -30,6 +32,7 @@ import {
 	loadProgress,
 	loadRecords,
 	loadRun,
+	loadTown,
 	notePicked,
 	noteRunEnd,
 	recordFromRun,
@@ -41,13 +44,14 @@ import { sleep } from "../engine/types";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { openStorage, pickCarry } from "./home";
 import { openHowto } from "./howto";
 import { infoWindow, listWindow, onTap } from "./list";
 import { esc, escBr, openRecords, showStory } from "./records";
 import { openSettings } from "./settings";
 
 export type TitleChoice =
-	| { kind: "new"; dungeon: DungeonId }
+	| { kind: "new"; dungeon: DungeonId; carry: Item[] }
 	| { kind: "continue"; state: RunState }
 	| { kind: "replay"; replay: SavedReplay };
 
@@ -85,16 +89,23 @@ const lockedHint = (d: DungeonId): string => {
 	return `「${DUNGEON_NAMES[after].name}」を　持ち帰ると　開く${relief ? `（${relief}回　たおれても　開く）` : ""}`;
 };
 
-type Choice = "new" | "continue" | "records" | "book" | "howto" | "settings";
+type Choice =
+	| "new"
+	| "continue"
+	| "records"
+	| "book"
+	| "storage"
+	| "howto"
+	| "settings";
 
 /**
  * ボタンの並び（行ごと）。上下で行を、左右で行の中を動く。
  * 3行目（記録・あそびかた・せってい）は小さいボタンを横に並べる（スマホの縦に収めるため）。
  */
-const GRID: Choice[][] = [
+const gridFor = (storage: boolean): Choice[][] => [
 	["new"],
 	["continue"],
-	["records", "book"],
+	storage ? ["records", "book", "storage"] : ["records", "book"],
 	["howto", "settings"],
 ];
 
@@ -108,6 +119,11 @@ const titleQuote = (seed: number): Quote | null => {
 		pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
 	if (!last) return pick(FIRST_SHALLOW, 1);
 	const d = last.dungeon ?? "main";
+	if (last.kind === "escape") return pick(ESCAPE_QUOTES, 4);
+	// ときどき 町の様子の ひとこと（屋台が出てから）
+	const stage = loadTown().stage;
+	if (stage >= 1 && seed % 3 === 0)
+		return pick(TITLE_TOWN_QUOTES[stage] ?? [], 5);
 	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
 	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
 		return pick(SHALLOW_DEATH, 3);
@@ -134,6 +150,9 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 		ctx.audio.bgm("title");
 
 		const progress = loadProgress();
+		const town = loadTown();
+		// 倉庫が開いていれば（町の段4から）ボタンを出す
+		const GRID = gridFor((STORAGE_CAP[town.stage] ?? 0) > 0);
 		const friends = cameos(progress.cleared);
 		const walkers = el("canvas", { class: "title-walkers" });
 		// キリコ・仲間・とうすこ を 18 ずつ（仲間がいなければ 前と同じ 60）
@@ -211,6 +230,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 			},
 			records: { text: "冒険の記録" },
 			book: { text: "図鑑" },
+			storage: { text: "倉庫" },
 			howto: { text: "あそびかた" },
 			settings: { text: "せってい" },
 		};
@@ -314,6 +334,7 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 					return;
 				}
 			} else if (c === "book") await openBook(ctx);
+			else if (c === "storage") await openStorage(ctx);
 			else if (c === "howto") await openHowto(ctx);
 			else if (c === "settings") await openSettings(ctx);
 			else if (c === "continue") {
@@ -352,13 +373,17 @@ export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 				}
 				if (!hasRunSave()) {
 					const dungeon = await pickDungeon();
-					if (dungeon) {
+					// 過去ログの底 には 倉庫から 持っていける（町の段に応じて 1〜4個）
+					const max =
+						dungeon === CARRY_DUNGEON ? (CARRY_MAX[loadTown().stage] ?? 0) : 0;
+					const carry = dungeon ? await pickCarry(ctx, max) : null;
+					if (dungeon && carry) {
 						// そのダンジョンに はじめて もぐるなら 語りを見せる
 						const p = loadProgress();
 						const first = !p.intro.includes(dungeon);
 						notePicked(dungeon, true);
 						void leave(
-							{ kind: "new", dungeon },
+							{ kind: "new", dungeon, carry },
 							first ? STORY[dungeon].intro : null,
 						);
 						return;

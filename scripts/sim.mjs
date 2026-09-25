@@ -39,7 +39,10 @@ const server = await createServer({
 let failed = false;
 try {
 	const { Run } = await server.ssrLoadModule("/src/core/run.ts");
-	const { botCommand } = await server.ssrLoadModule("/src/sim/bot.ts");
+	const { botCommand, DEFAULT_BOT } =
+		await server.ssrLoadModule("/src/sim/bot.ts");
+	// 倒れないモードは 深い階・帰り道まで通したいので 帰還スレで もどらない
+	const botOpts = GOD ? { ...DEFAULT_BOT, escape: false } : DEFAULT_BOT;
 	const { serializeRun, deserializeRun } = await server.ssrLoadModule(
 		"/src/core/serial.ts",
 	);
@@ -75,7 +78,7 @@ try {
 		let lastDepth = run.s.depth;
 		try {
 			while (!run.s.end && actions < MAX_ACTIONS) {
-				const cmd = botCommand(run);
+				const cmd = botCommand(run, botOpts);
 				const ev = run.act(cmd);
 				actions++;
 				if (GOD && !run.s.end) {
@@ -128,10 +131,11 @@ try {
 	const n = results.length;
 	const pct = (x) => `${((x / n) * 100).toFixed(1)}%`;
 	const clears = results.filter((r) => r.end === "clear").length;
+	const escapes = results.filter((r) => r.end === "escape").length;
 	const stuck = results.filter((r) => r.end === "stuck").length;
 	const reached = results.filter((r) => r.depth >= LAST_DEPTH).length;
 	console.log(
-		`\n${n}回　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}`,
+		`\n${n}回　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
 	);
 	// 倒れた階
 	const byDepth = {};

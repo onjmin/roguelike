@@ -6,6 +6,7 @@ import { defOf, itemName } from "../core/item";
 import type { RunState } from "../core/types";
 import { SPEAKERS } from "../data/quotes";
 import { DUNGEON_NAMES, STORY, UNLOCK_LINES } from "../data/story";
+import { RETURN_PAGES } from "../data/town";
 import {
 	addRecord,
 	clearRun,
@@ -135,7 +136,10 @@ export const showStory = async (
 export const escBr = (s: string): string => esc(s).replace(/\n/g, "<br>");
 
 /** 語りの1ページ（話し手がいれば、色つきの名前を上に出して「」でくくる）。 */
-const storyLine = (who: keyof typeof SPEAKERS | null, text: string): string => {
+export const storyLine = (
+	who: keyof typeof SPEAKERS | null,
+	text: string,
+): string => {
 	if (!who) return escBr(text);
 	const sp = SPEAKERS[who];
 	return `<b class="story-name" style="--char:${sp.color}">${esc(sp.name)}</b>「${escBr(text)}」`;
@@ -151,8 +155,17 @@ const endLine = (
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
 		r.kind === "clear"
 			? `B${r.maxDepth}から　地上へ　もどった`
-			: `${r.returning ? "帰り道の　" : ""}B${r.depth}で　${r.cause}`
+			: r.kind === "escape"
+				? `B${r.depth}から　帰還スレで　もどった`
+				: `${r.returning ? "帰り道の　" : ""}B${r.depth}で　${r.cause}`
 	}`;
+
+/** 記録の一覧の 終わり方の札。 */
+const KIND_LABEL: Record<RunRecord["kind"], string> = {
+	clear: "持ち帰った",
+	escape: "帰ってきた",
+	dead: "たおれた",
+};
 
 const pad2 = (n: number): string => String(n).padStart(2, "0");
 
@@ -173,9 +186,10 @@ const dateLabel = (at: number): string => {
 export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	const rec = recordFromRun(s);
 	const clear = rec.kind === "clear";
+	const escaped = rec.kind === "escape";
 	addRecord(rec);
 	clearRun();
-	ctx.audio.bgm(clear ? "ending" : "sad");
+	ctx.audio.bgm(clear ? "ending" : escaped ? "town" : "sad");
 	const nth = runStats().runs;
 
 	const p = s.player;
@@ -206,7 +220,9 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 			class: "runend-headline",
 			text: clear
 				? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
-				: "たおれた",
+				: escaped
+					? "地上へ　もどった"
+					: "たおれた",
 		}),
 		el("p", { class: "matome-line runend-cause", text: endLine(rec) }),
 		el("p", { class: "runend-nth", text: `${nth}回目の　冒険` }),
@@ -239,12 +255,13 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-tap", text: "タップで　タイトルへ" }),
 	]);
 	ctx.ui.appendChild(box);
-	if (clear) {
-		// 持ち帰ったときは、語りが画面を覆ったら その下に札を置いておく（語りが消えると
+	if (clear || escaped) {
+		// 持ち帰った・帰ってきたときは、語りが画面を覆ったら その下に札を置いておく（語りが消えると
 		// そのまま札が見える。語りのあとに札を出すと、そのすき間に下の画面がちらつく）
+		const pages = clear ? STORY[s.dungeon].ending : RETURN_PAGES;
 		await showStory(
 			ctx,
-			STORY[s.dungeon].ending.map((l) => storyLine(l.who, l.text)),
+			pages.map((l) => storyLine(l.who, l.text)),
 			{ onCovered: () => box.classList.add("instant", "shown") },
 		);
 		box.classList.remove("instant");
@@ -312,7 +329,7 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	let start = 0;
 	for (;;) {
 		const rows = list.map((r, i) => ({
-			label: `<b class="rec-kind ${r.kind}">${r.kind === "clear" ? "持ち帰った" : "たおれた"}</b>　${esc(endLine(r))}`,
+			label: `<b class="rec-kind ${r.kind}">${KIND_LABEL[r.kind]}</b>　${esc(endLine(r))}`,
 			sub: replayOf(r) ? "▶" : "",
 			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}　見た札${r.seen}`,
 			value: String(i),

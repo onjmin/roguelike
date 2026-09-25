@@ -10,6 +10,7 @@ import { Input } from "./engine/input";
 import { DEBUG_SEED, type SavedReplay } from "./engine/save";
 import { Screen } from "./engine/screen";
 import type { Ctx } from "./ui/ctx";
+import { settleHome } from "./ui/home";
 import { mountHud } from "./ui/hud";
 import { Play } from "./ui/play";
 import { showTitle } from "./ui/title";
@@ -91,6 +92,11 @@ const resetZoom = () => {
 };
 window.visualViewport?.addEventListener("resize", resetZoom);
 
+// 開発用：?raf を付けると、見えていないタブでも コマを進める（ブラウザが rAF を止めるため。試験の自動操作用）
+if (import.meta.env.DEV && new URLSearchParams(location.search).has("raf"))
+	window.requestAnimationFrame = (cb) =>
+		setTimeout(() => cb(performance.now()), 16) as unknown as number;
+
 /** 新しいシード（core は Math.random を使わないので、ここで決める）。 */
 const newSeed = (): string =>
 	`${Date.now().toString(36)}-${Math.floor(Math.random() * 1e9).toString(36)}`;
@@ -124,15 +130,21 @@ const loop = async () => {
 		first = null;
 		let replay: SavedReplay | undefined;
 		if (!run) {
+			// 帰ってきた持ち物を 倉庫へ・売る（決める前に閉じていても ここで続きから）
+			await settleHome(ctx);
 			const choice = await showTitle(ctx);
 			if (choice.kind === "replay") {
 				// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
 				replay = choice.replay;
-				run = Run.create(replay.seed, replay.dungeon ?? "main");
+				run = Run.create(
+					replay.seed,
+					replay.dungeon ?? "main",
+					replay.carry ?? [],
+				);
 			} else
 				run =
 					choice.kind === "new"
-						? Run.create(newSeed(), choice.dungeon)
+						? Run.create(newSeed(), choice.dungeon, choice.carry)
 						: new Run(choice.state);
 		}
 		hud.root.classList.remove("hidden");

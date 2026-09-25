@@ -335,6 +335,12 @@ add({
 	name: "釣りスレ",
 	desc: "この階に　罠が　ふえる",
 });
+add({
+	id: "s_escape",
+	cat: "scroll",
+	name: "帰還スレ",
+	desc: "読むと　その場で　地上へ　もどる。持ち帰る品を　持っていると　きかない",
+});
 
 // ───────── 杖（未識別。前に魔法の弾を撃つ。投げても効く） ─────────
 add({
@@ -528,6 +534,8 @@ export const MAIN_DECK: readonly DeckEntry[] = [
 	{ kind: "s_recharge", count: 2 },
 	{ kind: "s_bread", count: 2 },
 	{ kind: "s_snare", count: 2 },
+	// 帰還 3（リレミトにあたる。読むと その場で地上へ。持ちこみ・倉庫に つながる）
+	{ kind: "s_escape", count: 3 },
 	// 杖 10
 	{ kind: "w_bolt", count: 1 },
 	{ kind: "w_reel", count: 1 },

@@ -216,12 +216,29 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 	}
 	const tgt = target !== undefined ? r.findItem(target) : undefined;
 	if (need && (!tgt || tgt === it)) return false;
+	// 帰還スレ：読む前に「地上へ もどる？」と聞く（うっかり 冒険を終えないように）。
+	// 聞かれた時点で 正体はわかる（相手を選ぶスレの「どれに？」と同じ）。やめれば 減らない
+	if (it.kind === "s_escape" && target === undefined && !r.s.returning) {
+		if (identifyKind(r.s, it.kind))
+			r.msg(`${r.kindName(it.kind)}　だった！`, "good");
+		r.emit({ t: "fx", kind: "confirm:escape", pos: { x: p.x, y: p.y } });
+		return false;
+	}
 	consume(r, it);
 	r.se("spell");
 	r.msg(`${r.name(it)}を　読んだ`);
 	if (identifyKind(r.s, it.kind))
 		r.msg(`${r.kindName(it.kind)}　だった！`, "good");
 	switch (it.kind) {
+		case "s_escape":
+			// 持ち帰る品を持っていると 効かない（帰り道は 歩いて のぼる。トルネコ1のリレミトと同じ）
+			if (r.s.returning) {
+				r.msg("しかし、持ち帰る品が　キリコを　ひきとめた");
+				break;
+			}
+			r.msg("キリコは　地上へ　もどった", "good");
+			r.finish("escape", "帰還スレで　地上へ　もどった");
+			break;
 		case "s_appraise": {
 			if (!tgt) break;
 			const all = r.rng.chance(1 / 16);

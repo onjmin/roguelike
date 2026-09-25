@@ -19,11 +19,14 @@ export type BotOpts = {
 	floorTurnLimit: number;
 	/** 階の札を見つけきったら降りる。 */
 	leaveWhenNoCards: boolean;
+	/** 危ないときに 帰還スレで 地上へ もどる（倒れないモードでは 深い階まで行きたいので 使わない）。 */
+	escape: boolean;
 };
 
 export const DEFAULT_BOT: BotOpts = {
 	floorTurnLimit: 700,
 	leaveWhenNoCards: true,
+	escape: true,
 };
 
 /** 知っているマスの上の道のり（罠を避ける）。to へ向かう最初の一歩。 */
@@ -183,6 +186,10 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			);
 			if (staff) return faceAnd(dir, { c: "use", item: staff.uid });
 			if (hpRate < 0.25) {
+				// 正体のわかった帰還スレで 地上へ（帰り道では効かない）
+				const esc = items.find((i) => i.kind === "s_escape" && known(i));
+				if (esc && !r.s.returning && opts.escape)
+					return { c: "use", item: esc.uid, target: 0 };
 				const unk = items.find(
 					(i) => defOf(i.kind).cat === "herb" && !known(i),
 				);

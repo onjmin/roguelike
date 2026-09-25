@@ -8,9 +8,11 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
+import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import type { DungeonId, RunState } from "../core/types";
+import { nextStage, priceOf, STORAGE_CAP } from "../core/town";
+import type { DungeonId, Item, RunState } from "../core/types";
 
 const PREFIX = "kiriko-roguelike/";
 const RUN_KEY = `${PREFIX}run`;
@@ -19,6 +21,7 @@ const STATS_KEY = `${PREFIX}stats`;
 const BOOK_KEY = `${PREFIX}book`;
 const REPLAYS_KEY = `${PREFIX}replays`;
 const PROGRESS_KEY = `${PREFIX}progress`;
+const TOWN_KEY = `${PREFIX}town`;
 const RECORDS_MAX = 50;
 /** リプレイを残す数（新しい順。1つ数十KB）。 */
 export const REPLAYS_KEEP = 20;
@@ -59,6 +62,8 @@ export const saveRun = (s: RunState): void => {
 		addReplay(s);
 		addBookKills(s.kills);
 		noteRunEnd(s.dungeon, s.end.kind);
+		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）
+		if (s.end.kind !== "dead") addPendingReturn(s);
 		return;
 	}
 	const text = serializeRun(s);
@@ -127,7 +132,7 @@ export const loadRun = (): RunState | null => {
 export type RunRecord = {
 	/** 終わった時刻（ms）。 */
 	at: number;
-	kind: "dead" | "clear";
+	kind: "dead" | "clear" | "escape";
 	cause: string;
 	/** 終わった階。 */
 	depth: number;
@@ -180,7 +185,7 @@ const isRecord = (r: unknown): r is RunRecord => {
 	if (!r || typeof r !== "object") return false;
 	const o = r as Partial<RunRecord>;
 	return (
-		(o.kind === "dead" || o.kind === "clear") &&
+		(o.kind === "dead" || o.kind === "clear" || o.kind === "escape") &&
 		typeof o.at === "number" &&
 		typeof o.depth === "number" &&
 		typeof o.cause === "string"
@@ -344,7 +349,7 @@ export const saveProgress = (p: Progress): void => {
 /** 冒険が終わった（持ち帰った・倒れた・やめた）。次のダンジョンが開いたら 知らせを残す。 */
 export const noteRunEnd = (
 	dungeon: DungeonId,
-	kind: "dead" | "clear",
+	kind: "dead" | "clear" | "escape",
 	seed?: string,
 ): void => {
 	if (seed?.startsWith(DEBUG_SEED)) return;
@@ -358,7 +363,7 @@ export const noteRunEnd = (
 		if (!p.cleared.includes(dungeon)) p.cleared.push(dungeon);
 		for (const d of DUNGEON_IDS)
 			if (DUNGEONS[d].unlockAfter === dungeon) unlock(d, "clear");
-	} else {
+	} else if (kind === "dead") {
 		const n = (p.fails[dungeon] ?? 0) + 1;
 		p.fails[dungeon] = n;
 		for (const d of DUNGEON_IDS) {
@@ -388,11 +393,141 @@ export const notePicked = (dungeon: DungeonId, sawIntro: boolean): void => {
 	saveProgress(p);
 };
 
+// ───────────────────────── 地上の町 ─────────────────────────
+// 帰ってきた持ち物は いったん「おあずかり」（pending）に入れ、次の画面で 倉庫へ・売る を決める
+// （決める前に タブを閉じても、次にタイトルを開いたとき 続きから決められるように）。
+
+export type PendingReturn = {
+	kind: "clear" | "escape";
+	dungeon: DungeonId;
+	seed: string;
+	items: Item[];
+};
+
+export type Town = {
+	/** 売上の合計。 */
+	points: number;
+	/** 町の段（0〜7。core/town.ts）。 */
+	stage: number;
+	/** 倉庫の道具。 */
+	storage: Item[];
+	/** まだ決めていない 持ち帰り。 */
+	pending: PendingReturn | null;
+};
+
+const isItem = (x: unknown): x is Item =>
+	!!x &&
+	typeof x === "object" &&
+	typeof (x as Item).kind === "string" &&
+	!!ITEMS[(x as Item).kind];
+
+export const loadTown = (): Town => {
+	try {
+		const raw = localStorage.getItem(TOWN_KEY);
+		if (raw) {
+			const o = JSON.parse(raw) as Partial<Town>;
+			const pend = o.pending;
+			return {
+				points: typeof o.points === "number" ? o.points : 0,
+				stage: typeof o.stage === "number" ? o.stage : 0,
+				storage: Array.isArray(o.storage) ? o.storage.filter(isItem) : [],
+				pending:
+					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
+						? { ...pend, items: pend.items.filter(isItem) }
+						: null,
+			};
+		}
+	} catch {
+		// 読めなければ はじめから
+	}
+	// まだ無ければ：ちょっと を持ち帰っていれば屋台、過去ログの底 を持ち帰っていれば いちばん上
+	const p = loadProgress();
+	return {
+		points: 0,
+		stage: p.cleared.includes("main")
+			? 7
+			: p.cleared.includes("shallow")
+				? 1
+				: 0,
+		storage: [],
+		pending: null,
+	};
+};
+
+export const saveTown = (t: Town): void => {
+	try {
+		localStorage.setItem(TOWN_KEY, JSON.stringify(t));
+	} catch {
+		// 保存できなくても遊べる
+	}
+};
+
+const addPendingReturn = (s: RunState): void => {
+	if (!s.end || s.end.kind === "dead") return;
+	const t = loadTown();
+	// 前の おあずかりが残っていれば、先に ぜんぶ売ってしまう（取りこぼさない）
+	if (t.pending) settleReturn(t, []);
+	t.pending = {
+		kind: s.end.kind,
+		dungeon: s.dungeon,
+		seed: s.seed,
+		// 目的の品は 町に置く物ではないので 入れない
+		items: s.player.items.filter((it) => defOf(it.kind).cat !== "goal"),
+	};
+	saveTown(t);
+};
+
+/**
+ * おあずかりを 決める：stored（uid）を倉庫へ、残りを売って 売上に。段を上げる。
+ * 倉庫に入れた道具は 正体がわかる（町で 見てもらう）。返り値は 売上と 段の前後。
+ */
+export const settleReturn = (
+	t: Town,
+	stored: readonly number[],
+): { sold: number; from: number; to: number } => {
+	const pend = t.pending;
+	const from = t.stage;
+	if (!pend) return { sold: 0, from, to: from };
+	const cap = STORAGE_CAP[t.stage] ?? 0;
+	let sold = 0;
+	for (const it of pend.items) {
+		if (
+			pend.kind === "escape" &&
+			stored.includes(it.uid) &&
+			t.storage.length < cap
+		)
+			t.storage.push({ ...it, known: true });
+		else sold += priceOf(it);
+	}
+	t.points += sold;
+	const cleared = pend.kind === "clear";
+	t.stage = nextStage(t.stage, t.points, {
+		shallowCleared: cleared && pend.dungeon === "shallow",
+		mainCleared: cleared && pend.dungeon === "main",
+	});
+	t.pending = null;
+	saveTown(t);
+	return { sold, from, to: t.stage };
+};
+
+/** 倉庫から 持ちこむ道具を取り出す（取り出したら 倉庫から消える。倒れたら もどらない）。 */
+export const takeFromStorage = (indexes: readonly number[]): Item[] => {
+	const t = loadTown();
+	const out = indexes
+		.filter((i) => i >= 0 && i < t.storage.length)
+		.map((i) => t.storage[i]);
+	t.storage = t.storage.filter((_, i) => !indexes.includes(i));
+	saveTown(t);
+	return out;
+};
+
 // ───────────────────────── リプレイ ─────────────────────────
 // 終わった冒険の「シード＋コマンドの列」（core/replay.ts）。記録とはシードで結びつく。
 
 export type SavedReplay = {
 	seed: string;
+	/** 倉庫から持ちこんだ道具（同じに始めるため）。 */
+	carry?: Item[];
 	/** どのダンジョンか（無ければ本編）。 */
 	dungeon?: DungeonId;
 	/** 終わった時刻（ms）。 */
@@ -403,7 +538,7 @@ export type SavedReplay = {
 	text: string;
 	/** コマンドの数。 */
 	n: number;
-	kind: "dead" | "clear";
+	kind: "dead" | "clear" | "escape";
 	depth: number;
 	turn: number;
 	cause: string;
@@ -416,7 +551,7 @@ const isReplay = (r: unknown): r is SavedReplay => {
 		typeof o.seed === "string" &&
 		typeof o.text === "string" &&
 		Array.isArray(o.builds) &&
-		(o.kind === "dead" || o.kind === "clear")
+		(o.kind === "dead" || o.kind === "clear" || o.kind === "escape")
 	);
 };
 
@@ -455,6 +590,7 @@ const addReplay = (s: RunState): void => {
 	);
 	list.unshift({
 		seed: s.seed,
+		carry: s.carriedIn,
 		dungeon: s.dungeon,
 		at: Date.now(),
 		builds: s.builds ?? [],

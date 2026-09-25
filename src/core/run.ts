@@ -108,7 +108,11 @@ export class Run {
 	 * 新しく潜る。本編（main）は ダンジョンを増やす前と 同じ順に乱数を引く
 	 * （中断セーブ・リプレイ・parity の基準が そのまま通るように）。
 	 */
-	static create(seed: string, dungeon: DungeonId = "main"): Run {
+	static create(
+		seed: string,
+		dungeon: DungeonId = "main",
+		carry: readonly Item[] = [],
+	): Run {
 		const dg = dungeonById(dungeon);
 		const rng = Rng.fromSeed(seed);
 		const deal = dealDeck(rng, dg.deck, dg.floors);
@@ -198,6 +202,14 @@ export class Run {
 		run.rng = rng;
 		// 始めの持ち物（山札の外。毎回同じ）：本編は大きなパン
 		for (const k of dg.start) player.items.push(run.newItem(k));
+		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
+		if (carry.length) {
+			s.carriedIn = carry.map((it) => ({ ...it }));
+			for (const it of carry) {
+				player.items.push({ ...it, uid: s.nextUid++ });
+				s.ids.known[it.kind] = true;
+			}
+		}
 		run.enterFloor(1, false);
 		run.s.rng = run.rng.state();
 		return run;
@@ -566,7 +578,7 @@ export class Run {
 
 	// ───────────────── 終わり ─────────────────
 
-	finish(kind: "dead" | "clear", cause: string): void {
+	finish(kind: "dead" | "clear" | "escape", cause: string): void {
 		if (this.s.end) return;
 		this.s.end = { kind, cause, depth: this.s.depth, turn: this.s.turn };
 		if (kind === "dead") this.se("wipeout");

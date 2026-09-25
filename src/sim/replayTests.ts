@@ -167,6 +167,7 @@ test("main dungeon parity: the recorded runs replay to the same states", () => {
 });
 
 test("a bot run (with suspend/resume) replays to the identical state", () => {
+	let totalChecks = 0;
 	for (const seed of ["rp-1", "rp-2", "rp-3", "rp-4", "rp-5"]) {
 		const played = playBot(seed, 1200, 250);
 		const text = played.s.replay;
@@ -178,13 +179,15 @@ test("a bot run (with suspend/resume) replays to the identical state", () => {
 			`${seed}: ${n} commands vs replayN ${played.s.replayN}`,
 		);
 		const { run, driftAt, checks } = replay(seed, steps);
-		ok(checks > 0, `${seed}: no checkpoints in ${n} commands`);
+		totalChecks += checks;
 		ok(driftAt < 0, `${seed}: drifted at step ${driftAt}`);
 		ok(
 			serializeRun(run.s) === serializeRun(played.s),
 			`${seed}: the replayed state differs (turn ${run.s.turn} vs ${played.s.turn}, depth ${run.s.depth} vs ${played.s.depth})`,
 		);
 	}
+	// 早く倒れた冒険（64コマンドに届かない）もあるので、5つ あわせて 指紋を確かめていれば よい
+	ok(totalChecks > 0, "no checkpoints were checked in any run");
 });
 
 test("a run that ended replays to the same ending", () => {

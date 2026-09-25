@@ -758,6 +758,25 @@ export class Play {
 					return this.exec({ c: "use", item: cmd.item, target: uid });
 				return ev;
 			}
+			// 帰還スレ：「地上へ もどる？」
+			const confirm = ev.some(
+				(e) => e.t === "fx" && e.kind === "confirm:escape",
+			);
+			if (confirm && cmd.c === "use" && !this.rp) {
+				this.busy = false;
+				const v = await listWindow(
+					this.ctx,
+					"地上へ　もどりますか？<br><small>持ち物を　持って　帰れる。冒険は　ここで　おわる</small>",
+					[
+						{ label: "もどる", value: "go" },
+						{ label: "やめる", value: "stay" },
+					],
+					{ start: 1 },
+				);
+				if (v === "go")
+					return this.exec({ c: "use", item: cmd.item, target: 0 });
+				return ev;
+			}
 			if (run.s.end) {
 				await this.ending();
 				return ev;

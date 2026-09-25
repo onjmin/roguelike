@@ -273,7 +273,8 @@ export type IdTable = {
 };
 
 export type Ending = {
-	kind: "dead" | "clear";
+	/** 倒れた・持ち帰った（目的の品）・帰還スレで地上へもどった。 */
+	kind: "dead" | "clear" | "escape";
 	cause: string;
 	depth: number;
 	turn: number;
@@ -325,6 +326,8 @@ export type RunState = {
 	replayN?: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 足していく。UI が入れる）。 */
 	builds?: string[];
+	/** 倉庫から持ちこんだ道具（はじめの形。リレミトならぬ 帰還スレで持ち帰った道具を、次の冒険へ。リプレイで同じに始めるため）。 */
+	carriedIn?: Item[];
 };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────

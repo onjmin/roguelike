@@ -25,7 +25,12 @@ try {
 	const { runReplayTests } = await server.ssrLoadModule(
 		"/src/sim/replayTests.ts",
 	);
-	const results = [...runMonsterTests(), ...runReplayTests()];
+	const { runTownTests } = await server.ssrLoadModule("/src/sim/townTests.ts");
+	const results = [
+		...runMonsterTests(),
+		...runReplayTests(),
+		...runTownTests(),
+	];
 	for (const t of results)
 		console.log(
 			t.ok ? `✓ ${t.id}: ${t.name}` : `✗ ${t.id}: ${t.name} — ${t.reason}`,

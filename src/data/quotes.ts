@@ -18,7 +18,7 @@ export type Quote = { who: Speaker; text: string };
 
 /** 前の冒険の結果（null は まだ一度も降りていない）。 */
 export type QuoteContext = {
-	kind: "dead" | "clear";
+	kind: "dead" | "clear" | "escape";
 	depth: number;
 	cause: string;
 	runs: number;
