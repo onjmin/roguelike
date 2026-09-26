@@ -249,9 +249,10 @@ test("main dungeon parity: the recorded runs replay to the same states", () => {
 		const o = JSON.parse(serializeRun(run.s)) as Record<string, unknown>;
 		delete o.v;
 		delete o.dungeon;
+		const state = fnv(JSON.stringify(o));
 		ok(
-			fnv(JSON.stringify(o)) === c.state,
-			`${c.seed}: the final state differs`,
+			state === c.state,
+			`${c.seed}: the final state differs (${state} vs ${c.state})`,
 		);
 	}
 });

@@ -24,6 +24,7 @@ import {
 	monsterName,
 	sealMonster,
 	track,
+	traitFast,
 	transformMonster,
 	wakeMonster,
 } from "./monster";
@@ -177,24 +178,23 @@ const drink = (r: Run, it: Item): boolean => {
 			break;
 		case "h_fire": {
 			r.se("fire");
-			const { hit, last } = firstInLine(r, p, p.dir, THROW_RANGE);
+			// 炎が とどくのは 目の前の 1マスだけ（そこの 道具も 燃える）
+			const { hit, last } = firstInLine(r, p, p.dir, 1);
 			r.emit({ t: "bolt", from: { x: p.x, y: p.y }, to: last, kind: "fire" });
 			r.msg("キリコは　炎を　吐いた！");
-			if (hit) {
-				const under = r.itemAt(hit.x, hit.y);
-				if (under && !isKeyItem(under.item.kind)) {
-					r.msg(`${r.name(under.item)}が　燃えてしまった`, "warn");
-					r.destroyFloorItem(under);
-				}
-				r.damageMonster(hit, r.rng.range(65, 75), "magic");
+			const under =
+				last.x !== p.x || last.y !== p.y ? r.itemAt(last.x, last.y) : undefined;
+			if (under && !isKeyItem(under.item.kind)) {
+				r.msg(`${r.name(under.item)}が　燃えてしまった`, "warn");
+				r.destroyFloorItem(under);
 			}
+			if (hit) r.damageMonster(hit, r.rng.range(65, 75), "magic");
 			break;
 		}
 		case "h_sight":
 			r.f.sight = true;
-			for (const t of r.f.traps) t.found = true;
 			p.status.blind = 0;
-			r.msg("目が　すみわたった。罠が　見える", "good");
+			r.msg("目が　すみわたった", "good");
 			break;
 	}
 	return true;
@@ -347,12 +347,10 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			}
 			break;
 		}
-		case "s_ward": {
-			const i = p.y * f.layout.w + p.x;
-			if (!f.wards.includes(i)) f.wards.push(i);
-			r.msg("足元が　避難所に　なった", "good");
+		case "s_ward":
+			// 読んでも 効かない。床に 置くと 効く（run.ts の doDrop）
+			r.msg("何も　起きなかった");
 			break;
-		}
 		case "s_recharge": {
 			if (!tgt || defOf(tgt.kind).cat !== "staff") {
 				r.msg("何も　起きなかった");
@@ -396,7 +394,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 						(t.x !== p.x || t.y !== p.y),
 				);
 			r.rng.shuffle(spots);
-			for (const t of spots.slice(0, 12))
+			for (const t of spots.slice(0, 30))
 				f.traps.push({
 					x: t.x,
 					y: t.y,
@@ -479,9 +477,17 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			return;
 		}
 		case "w_slow":
-			m.status.slow = 999;
-			m.status.fast = 0;
-			r.msg(`${nm}の　足が　おそくなった`);
+			// 倍速の 敵は ふつうに もどり、もう 遅い 敵には 効かない
+			// （とくちょうで 加速した 敵は、加速ごと 消えて 遅くなる）
+			if (m.status.slow > 0) r.msg("しかし　何も　起きなかった");
+			else if (m.status.fast > 0 && !traitFast(m)) {
+				m.status.fast = 0;
+				r.msg(`${nm}の　動きが　もとに　もどった`);
+			} else {
+				m.status.slow = 999;
+				m.status.fast = 0;
+				r.msg(`${nm}の　足が　おそくなった`);
+			}
 			return;
 		case "w_edge": {
 			const p = r.p;
@@ -496,9 +502,15 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			r.splitMonster(m);
 			return;
 		case "w_haste":
-			m.status.fast = 999;
-			m.status.slow = 0;
-			r.msg(`${nm}の　動きが　速くなった！`, "warn");
+			// 遅い 敵は ふつうに もどり、もう 速い 敵には 効かない
+			if (m.status.fast > 0) r.msg("しかし　何も　起きなかった");
+			else if (m.status.slow > 0) {
+				m.status.slow = 0;
+				r.msg(`${nm}の　足が　もとに　もどった`);
+			} else {
+				m.status.fast = 999;
+				r.msg(`${nm}の　動きが　速くなった！`, "warn");
+			}
 			return;
 	}
 };

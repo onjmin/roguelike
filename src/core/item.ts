@@ -76,7 +76,7 @@ export const rollItem = (
 		const [lo, hi] = d.charges ?? [3, 5];
 		it.charges = rng.range(lo, hi);
 	} else if (d.cat === "arrow") {
-		it.count = kind === "a_iron" ? rng.range(5, 12) : rng.range(8, 16);
+		it.count = kind === "a_iron" ? rng.range(5, 15) : rng.range(10, 20);
 		it.known = true;
 	} else {
 		it.known = true;

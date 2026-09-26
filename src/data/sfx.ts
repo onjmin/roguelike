@@ -50,6 +50,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		flee: "rpgen:FTCG4H", // 逃走
 		fire: "rpgen:HyTVhK",
 		shock: "rpgen:usF2l8",
+		/** トラばさみに はさまれた（トルネコ1と おなじく 金属の 音）。 */
+		bearTrap: "rpgen:mL4xt3", // サイクロップス/謎の金属音
 		/** アイテムを投げる。 */
 		throw: "rpgen:3JcWxQ", // 爆弾を投げる（unj-reze の onj-reze プリセット）
 		// ── キリコの攻撃（武器ごと。data/items.ts の sound）。当たったら hit_*、空振り・はずれたら swing_*

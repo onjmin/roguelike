@@ -394,7 +394,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	// 床の道具をさらう
 	if (has(m, "pickup") && !m.carry) {
 		const here = r.itemAt(m.x, m.y);
-		if (here && !isKeyItem(here.item.kind)) {
+		if (here && !isKeyItem(here.item.kind) && !r.isWardItem(here)) {
 			r.f.items = r.f.items.filter((i) => i !== here);
 			m.carry = here.item;
 			if (r.playerSees(m))
@@ -746,7 +746,7 @@ const randomAway = (r: Run, m: Monster): Pos | null => {
 
 /** モンスターを別の種類に変える（変化の杖）。 */
 /** とくちょうで速くなっていたか（加速した kskボット・怒った赤鬼）。杖や草で速くしたのは入らない。 */
-const traitFast = (m: Monster): boolean => {
+export const traitFast = (m: Monster): boolean => {
 	const accel = mdef(m).abilities.find((a) => a.k === "accel") as
 		| { k: "accel"; after: number }
 		| undefined;

@@ -32,6 +32,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 	switch (t.kind) {
 		case "bear":
 			p.status.trapped = 5;
+			r.se("bearTrap");
 			r.msg("足を　はさまれた！", "warn");
 			return;
 		case "acid": {

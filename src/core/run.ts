@@ -382,8 +382,21 @@ export class Run {
 	destroyFloorItem(fi: FloorItem): void {
 		// 原盤は燃えない・爆発で消えない（持ち帰れなくなるので）
 		if (isKeyItem(fi.item.kind)) return;
+		if (this.isWardItem(fi))
+			this.f.wards = this.f.wards.filter((i) => i !== this.tileIndex(fi));
 		this.f.items = this.f.items.filter((i) => i !== fi);
 		this.loseItem(fi.item);
+	}
+
+	private tileIndex(p: Pos): number {
+		return p.y * this.f.layout.w + p.x;
+	}
+
+	/** 床に 置かれて 効いている 避難所スレ（拾えない）。 */
+	isWardItem(fi: FloorItem): boolean {
+		return (
+			fi.item.kind === "s_ward" && this.f.wards.includes(this.tileIndex(fi))
+		);
 	}
 
 	// ───────────────── 地形・位置 ─────────────────
@@ -1213,6 +1226,10 @@ export class Run {
 			if (explicit) this.msg("足元には　何もない");
 			return false;
 		}
+		if (this.isWardItem(fi)) {
+			this.msg(`${this.name(fi.item)}は　床に　はりついていて　拾えない`);
+			return explicit;
+		}
 		if (!this.addItem(fi.item)) {
 			this.msg(`持ち物が　いっぱいで　${this.name(fi.item)}を　拾えない`);
 			return explicit;
@@ -1260,6 +1277,8 @@ export class Run {
 		this.removeItem(it);
 		this.f.items.push({ x: this.p.x, y: this.p.y, item: it });
 		this.msg(`${this.name(it)}を　置いた`);
+		// 避難所スレは 置くと 効く（その マスは 避難所に なり、もう 拾えない）
+		if (it.kind === "s_ward") this.f.wards.push(ward);
 		return true;
 	}
 
@@ -1267,6 +1286,10 @@ export class Run {
 		const it = this.findItem(uid);
 		const fi = this.itemAt(this.p.x, this.p.y);
 		if (!it || !fi) return false;
+		if (this.isWardItem(fi)) {
+			this.msg(`${this.name(fi.item)}は　床に　はりついていて　拾えない`);
+			return false;
+		}
 		if (isKeyItem(it.kind)) {
 			this.msg("これは　手放せない");
 			return false;
