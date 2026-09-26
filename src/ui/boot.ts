@@ -1,6 +1,7 @@
-// 起動の札：村（保守村）の上に 重ねる 小さな タイトル。ロゴ・ひとこと・はじめる／つづきから。
+// 起動の札：村（保守村）の上に 重ねる 小さな タイトル。ロゴ・ひとこと・村へ／冒険に　もどる。
 // トルネコ1の「冒険の書」の 画面に あたる（村の 絵は 後ろで 動いている）。
-// 中断して もどったときも これが 出る（つづきからが 選ばれた状態で）。
+// 中断して もどったときも これが 出る（冒険に　もどる が 選ばれた状態で）。
+// ぜんぶ 消して はじめから やりなおすのは、村の せってい の「セーブデータを　消す」。
 // 冒険の記録・図鑑・あそびかた・せってい は 村の中（人と B／☰ の メニュー）へ 移した。
 
 import type { RunState } from "../core/types";
@@ -19,7 +20,7 @@ export type BootChoice =
 	| { kind: "start" }
 	| { kind: "continue"; state: RunState };
 
-/** つづきからの 小さな札（ダンジョン・階・レベル）。 */
+/** 中断した 冒険の 小さな札（ダンジョン・階・レベル）。 */
 export const runSaveLabel = (s: RunState | null): string =>
 	s
 		? `${DUNGEON_NAMES[s.dungeon]?.short ?? ""}　B${s.depth}　Lv${s.player.lv}${s.returning ? "　帰り道" : ""}`
@@ -77,8 +78,8 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 						class: `title-btn${c === cur ? " cur" : ""}`,
 						html: `<span class="title-btn-no">${i + 1}:</span>${
 							c === "start"
-								? "はじめる<small>村を　歩く</small>"
-								: `つづきから<small>${esc(runSaveLabel(saved))}</small>`
+								? "村へ<small>保守村を　歩く</small>"
+								: `冒険に　もどる<small>${esc(runSaveLabel(saved))}</small>`
 						}`,
 					});
 					onTap(b, root, () => {

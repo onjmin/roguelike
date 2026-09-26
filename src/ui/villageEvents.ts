@@ -111,12 +111,15 @@ const mouthScript =
 			await back();
 			return;
 		}
-		// 中断した冒険が あれば 先に きく（つづきから・すてて はじめから・やめる）
+		// 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）
 		if (hasRunSave()) {
 			await s.narrate(`${VILLAGE_MSG.suspended}\n${runSaveLabel(loadRun())}`);
-			const n = await s.choose(["つづきから", "すてて　はじめから", "やめる"], {
-				cancel: 2,
-			});
+			const n = await s.choose(
+				["冒険に　もどる", "すてて　新しく　もぐる", "やめる"],
+				{
+					cancel: 2,
+				},
+			);
 			if (n === 2) {
 				await back();
 				return;
@@ -425,6 +428,6 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 		} else if (v === "book") await openBook(ctx);
 		else if (v === "storage") await openStorage(ctx);
 		else if (v === "howto") await openHowto(ctx);
-		else if (v === "settings") await openSettings(ctx);
+		else if (v === "settings") await openSettings(ctx, { wipe: true });
 	}
 };

@@ -24,6 +24,23 @@ const REPLAYS_KEY = `${PREFIX}replays`;
 const PROGRESS_KEY = `${PREFIX}progress`;
 const TOWN_KEY = `${PREFIX}town`;
 const RECORDS_MAX = 50;
+
+/**
+ * セーブデータを ぜんぶ 消す（はじめから やりなおす）。この ゲームの 記録は ぜんぶ PREFIX の 下に あるので、
+ * せってい（音・十字キー）だけ のこして まとめて 消す。消したら 読みなおして 村の はじめから。
+ */
+export const wipeSaves = (): void => {
+	try {
+		const keys: string[] = [];
+		for (let i = 0; i < localStorage.length; i++) {
+			const k = localStorage.key(i);
+			if (k?.startsWith(PREFIX) && k !== `${PREFIX}settings`) keys.push(k);
+		}
+		for (const k of keys) localStorage.removeItem(k);
+	} catch {
+		// 使えない ときは 何もしない
+	}
+};
 /** リプレイを残す数（新しい順。1つ数十KB）。 */
 export const REPLAYS_KEEP = 20;
 

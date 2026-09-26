@@ -3,7 +3,9 @@
 // - 2択・3択は、押すたびに次の値へ切りかえる（一覧を開き直す手間をはぶく）。
 // - 音量だけは 0〜100 を 10 刻みの一覧から選ぶ。
 // - 変えたら すぐ saveSettings（音・十字キーは onSettingsChange で その場に効く）。
+// - 村から 開いたときだけ「セーブデータを　消す」（はじめから やりなおす。2回 きいてから 消して 読みなおす）。
 
+import { wipeSaves } from "../engine/save";
 import { type Settings, saveSettings, settings } from "../engine/settings";
 import type { Ctx } from "./ctx";
 import { listWindow } from "./list";
@@ -48,9 +50,37 @@ const KEYS = [
 	"pad",
 	"padSide",
 	"speed",
+	"wipe",
 ] as const;
 
-export const openSettings = async (ctx: Ctx): Promise<void> => {
+/** セーブデータを 消すか 2回 きく。消したら 読みなおす（村の はじめから）。 */
+const askWipe = async (ctx: Ctx): Promise<void> => {
+	const no = [
+		{ label: "消す", value: "yes" },
+		{ label: "やめる", value: "no" },
+	];
+	const v1 = await listWindow(
+		ctx,
+		"セーブデータを　消して<br>はじめから　やりなおしますか？<br><small>村の　育ち・倉庫・図鑑・冒険の記録・リプレイ・中断した　冒険が　ぜんぶ　消える（せっていは　のこる）</small>",
+		no,
+		{ start: 1 },
+	);
+	if (v1 !== "yes") return;
+	const v2 = await listWindow(
+		ctx,
+		"ほんとうに　消しますか？<br><small>もとに　もどせません</small>",
+		no,
+		{ start: 1 },
+	);
+	if (v2 !== "yes") return;
+	wipeSaves();
+	location.reload();
+};
+
+export const openSettings = async (
+	ctx: Ctx,
+	opt: { wipe?: boolean } = {},
+): Promise<void> => {
 	let start = 0;
 	for (;;) {
 		const v = await listWindow(
@@ -88,6 +118,15 @@ export const openSettings = async (ctx: Ctx): Promise<void> => {
 					sub: settings.speed === "fast" ? "はやい" : "ふつう",
 					value: "speed",
 				},
+				...(opt.wipe
+					? [
+							{
+								label: "セーブデータを　消す",
+								sub: "はじめから",
+								value: "wipe",
+							},
+						]
+					: []),
 			],
 			{ start },
 		);
@@ -110,5 +149,6 @@ export const openSettings = async (ctx: Ctx): Promise<void> => {
 			saveSettings({ padSide: settings.padSide === "left" ? "right" : "left" });
 		else if (v === "speed")
 			saveSettings({ speed: settings.speed === "fast" ? "normal" : "fast" });
+		else if (v === "wipe") await askWipe(ctx);
 	}
 };

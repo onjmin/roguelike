@@ -10,7 +10,7 @@
 // - 窓（会話・選択肢・メニュー）が 開いている間は 歩かない（input.busy）。
 // - 入るたびに onEnter（帰ってきた場面・開いた知らせ・持ち帰った物。ui/villageReturn.ts）。その間は 歩かない・
 //   うろうろ しない・「！」を 出さない（scene）。場面では カメラを 人や 建物に 向ける（look）。
-// - start() は 村を出ると（もぐる・つづきから・リプレイ）VillageExit で 解決する。
+// - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
 import type { Dir8 } from "../core/geom";
@@ -124,8 +124,8 @@ export class Village {
 	// ───────────────── 入る・出る ─────────────────
 
 	/**
-	 * 村に入る。boot なら 起動の札（はじめる／つづきから）を 重ねる。
-	 * 村を出ると（もぐる・つづきから・リプレイ）その行き先で 解決する。
+	 * 村に入る。boot なら 起動の札（村へ／冒険に　もどる）を 重ねる。
+	 * 村を出ると（もぐる・冒険に　もどる・リプレイ）その行き先で 解決する。
 	 */
 	start(o: { boot: boolean; arrival: Arrival }): Promise<VillageExit> {
 		return new Promise((resolve) => {
