@@ -126,12 +126,17 @@ export const loadRun = (): RunState | null => {
 		// 巻物を「スレ」と呼ぶ前の中断セーブ：未識別の名前を今の呼び方にそろえる
 		for (const [k, v] of Object.entries(s.ids.fake))
 			s.ids.fake[k] = v.replace(/の巻物$/, "スレ");
-		// 草・杖・指輪を 2ch のことばにする前の中断セーブ：同じ番目の 今の名前に
+		// 前の版の 未識別名（草・杖・指輪）の中断セーブ：同じ番目の 今の名前に
 		for (const [k, v] of Object.entries(s.ids.fake)) {
 			const cat = ITEMS[k]?.cat;
-			const i = cat ? (OLD_FAKE_NAMES[cat]?.indexOf(v) ?? -1) : -1;
-			const now = cat ? FAKE_NAMES[cat]?.[i] : undefined;
-			if (i >= 0 && now) s.ids.fake[k] = now;
+			if (!cat || FAKE_NAMES[cat]?.includes(v)) continue;
+			for (const old of OLD_FAKE_NAMES[cat] ?? []) {
+				const now = FAKE_NAMES[cat]?.[old.indexOf(v)];
+				if (old.includes(v) && now) {
+					s.ids.fake[k] = now;
+					break;
+				}
+			}
 		}
 		return s;
 	} catch {
