@@ -943,7 +943,7 @@ export class Run {
 		const before = this.nearMap();
 		const used = this.doCommand(cmd);
 		if (used && !this.s.end) this.endTurn(before);
-		// 眠っている・動けないあいだは自動で進む
+		// 眠っている あいだは 自動で 進む（キリコが 自分で 止まる 状態は 眠りだけ）
 		let guard = 0;
 		while (!this.s.end && this.p.status.sleep > 0 && guard++ < 50) {
 			this.emit({ t: "doze" });
