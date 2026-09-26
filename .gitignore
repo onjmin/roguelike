@@ -147,3 +147,4 @@ build/
 
 # Claude Code のローカル設定
 .claude/
+.agents/
