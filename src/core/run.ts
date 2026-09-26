@@ -946,6 +946,7 @@ export class Run {
 		// 眠っている・動けないあいだは自動で進む
 		let guard = 0;
 		while (!this.s.end && this.p.status.sleep > 0 && guard++ < 50) {
+			this.emit({ t: "doze" });
 			this.endTurn(this.nearMap());
 		}
 		this.s.rng = this.rng.state();

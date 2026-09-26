@@ -1678,11 +1678,15 @@ export class Play {
 					break;
 				case "sleep":
 					if (e.id === PLAYER_ID) {
-						// 眠っている あいだの ターンは 一気に 進むので、Z を 出したまま 少し 見せてから 起こす
+						// 眠っている あいだは Z を 出したまま。目が さめたら 少し 見せてから 起こす
 						if (e.on) this.sleepShown = true;
-						if (!fast) await wait((e.on ? 900 : 700) * speed);
+						if (!fast) await wait((e.on ? 500 : 400) * speed);
 						if (!e.on) this.sleepShown = false;
 					}
+					break;
+				case "doze":
+					// 眠っている 1ターンごとに 区切る（敵の 動きが 1ターンずつ 見えるように）
+					if (!fast) await wait(260 * speed);
 					break;
 				case "quake":
 					document.body.classList.add("shake");
