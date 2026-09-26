@@ -76,6 +76,8 @@ const SPLIT_MS = 260;
  * （トルネコ1の メッセージ窓のように 1行ずつ 送る。そのあいだ 出来事の再生も 待つ）。
  */
 const LOG_GAP_MS = { normal: 350, fast: 180, replay: 40 } as const;
+/** 祭り（モンスターハウス）に 入ったとき 止めて 見せる 間（ms）。 */
+const HOUSE_PAUSE_MS = 900;
 
 type Disp = Figure & {
 	/** 行き先（マス）。 */
@@ -1182,6 +1184,14 @@ export class Play {
 			// 倒したら、演出中に 押しておいた 次の 攻撃は 捨てる（相手の いない 空振りに ならないように）
 			if (!this.rp && ev.some((e) => e.t === "die"))
 				this.ctx.input.clearField();
+			// 祭りに 入ったら、そのまま 突き進まないように 止める：演出中に 押した 入力は 捨て、
+			// 押さえている 向き・足踏みは 指を 離すまで 止める。自動の 歩きも やめる
+			if (!this.rp && ev.some((e) => e.t === "house")) {
+				this.swallowInput();
+				this.walkHalt = true;
+				this.restHalt = true;
+				this.travel = null;
+			}
 			this.syncDisp();
 			if (!this.rp && !run.s.end) await this.faceAttacker(ev);
 			// スレの「どれに？」（メニューを通さずに来たとき）
@@ -1675,6 +1685,8 @@ export class Play {
 					break;
 				case "house":
 					this.ctx.audio.bgm(HOUSE_BGM);
+					// 祭りに 気づく 間（走っている 途中でも 止めて 見せる。早送りの リプレイだけ 待たない）
+					if (!(this.rp && fast)) await wait(HOUSE_PAUSE_MS);
 					break;
 				case "sleep":
 					if (e.id === PLAYER_ID) {
