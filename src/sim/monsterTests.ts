@@ -1216,9 +1216,9 @@ test("ninpo", "r_ward blocks level drain", () => {
 	ok(blocked > 0, "drain never triggered (the counter was not exercised)");
 });
 
-// ───────────────── 過疎（grab） ─────────────────
+// ───────────────── かまってちゃん（grab） ─────────────────
 
-/** 過疎につかまれた状態を作る（キリコの左に過疎）。 */
+/** かまってちゃんにつかまれた状態を作る（キリコの左にかまってちゃん）。 */
 const grabbed = (seed: string): { r: Run; m: Monster } => {
 	const r = arena(seed);
 	const m = put(r, "kaso", at(-1, 0));

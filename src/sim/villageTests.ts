@@ -536,7 +536,7 @@ test("the friends react to how the last run ended", () => {
 			"ワイ バーンに　たおされた",
 			"ぷゆゆに　たおされた",
 			"とうすこに　たおされた",
-			"過疎に　たおされた",
+			"かまってちゃんに　たおされた",
 		])
 			for (const depth of [2, 9, 18]) {
 				pushRecord({ kind: "dead", cause, depth });
@@ -647,7 +647,7 @@ test("the boot title's quote keeps its two lines on a 320px phone (name and 「�
 		"忍法帖",
 		"転載ガモ",
 		"ワイ バーン",
-		"過疎",
+		"かまってちゃん",
 		"ゾンJ民",
 		"文字化け",
 		"ぷゆゆ",
@@ -1855,6 +1855,7 @@ test("old records with the renamed monsters read with the new names", () => {
 			["ひとだまに　たおされた", "dat落ちの霊に　たおされた"],
 			["ばくだんの　爆発に　巻きこまれた", "炎上案件の　爆発に　巻きこまれた"],
 			["ゴーレムに　吹きとばされた", "ゴリラに　吹きとばされた"],
+			["過疎に　たおされた", "かまってちゃんに　たおされた"],
 			// 影 は 1文字なので「影に」だけ 読みかえる
 			["影に　たおされた", "透明あぼーんに　たおされた"],
 		] as const) {

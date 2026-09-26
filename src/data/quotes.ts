@@ -157,10 +157,10 @@ const WYVERN: readonly Quote[] = [
 	q("feris", "炎〜？　私の　タンクトップと\nおそろいだね〜"),
 ];
 
-/** 過疎。 */
+/** かまってちゃん（前の名前は 過疎）。 */
 const KASO: readonly Quote[] = [
 	q("nanj", "過疎に　つかまったんか。\n……ワイが　保守しとったらなあ"),
-	q("roze", "過疎は　わたしも　こわいアル。\n……ちょっとだけアル"),
+	q("roze", "かまってちゃんは　こわいアル。\n……ちょっとだけアル"),
 ];
 
 /** ゾンJ民。 */
@@ -218,7 +218,7 @@ const CAUSE_POOLS: readonly {
 	{ match: (c) => c.includes("忍法帖"), pool: NINPO },
 	{ match: (c) => c.includes("転載ガモ"), pool: TENSAI },
 	{ match: (c) => c.includes("ワイ バーン"), pool: WYVERN },
-	{ match: (c) => c.includes("過疎"), pool: KASO },
+	{ match: (c) => c.includes("かまってちゃん"), pool: KASO },
 	{ match: (c) => c.includes("ゾンJ民"), pool: ZONJ },
 	{ match: (c) => c.includes("文字化け"), pool: MOJIBAKE },
 	{

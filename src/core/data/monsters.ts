@@ -325,8 +325,9 @@ const M: MonsterDef[] = [
 		desc: "レベルを　1つ　うばっていく",
 	},
 	{
+		// 前の名前は 過疎。動かずに 足を つかんで 離さない 役と、女の子の 絵に 合わせた。絵は そのまま
 		id: "kaso",
-		name: "過疎",
+		name: "かまってちゃん",
 		sprite: "sa:YkoESZ",
 		hp: 72,
 		atk: 7,
@@ -336,7 +337,7 @@ const M: MonsterDef[] = [
 		weight: 27,
 		abilities: [{ k: "grab" }],
 		sleep: "never",
-		desc: "動かない。となりに　来た　足を　つかんで　離さない",
+		desc: "動かない。となりに　来ると　足を　つかんで　離さない",
 	},
 	{
 		// 前の名前は ばけ札。絵は そのまま
