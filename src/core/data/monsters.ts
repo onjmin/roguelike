@@ -1,5 +1,5 @@
 // モンスターの定義。トルネコ1の32種の役割・数値・出る階（27階ぶんを20階に縮めた）に沿って、
-// rpg と同じ「おんJ・ネットの怪異」と とうすこ系・汎用の歩行グラ（RPGEN）を当てている。
+// rpg と同じ「おんJ・ネットの怪異」と ぷゆゆ・汎用の歩行グラ（RPGEN）を当てている。
 // DQ の固有名は使わない。
 
 import type { MonsterDef } from "../types";
@@ -7,9 +7,10 @@ import type { MonsterDef } from "../types";
 const M: MonsterDef[] = [
 	// ───────── 浅い階 ─────────
 	{
+		// 前の名前は とうすこ。id は 図鑑・中断セーブの 鍵なので そのまま
 		id: "tousuko",
-		name: "とうすこ",
-		sprite: "sa:2kJYAl",
+		name: "ぷゆゆ",
+		sprite: "sa:DszPWT",
 		hp: 5,
 		atk: 2,
 		def: 1,
@@ -17,7 +18,7 @@ const M: MonsterDef[] = [
 		floors: [1, 2],
 		weight: 64,
 		abilities: [{ k: "slow" }],
-		desc: "豆腐のように　のろい。2ターンに　1回しか　動かない",
+		desc: "落ちた　レスの　すみの　子。よちよち　あるく。2ターンに　1回しか　動かない",
 	},
 	{
 		id: "hitodama",
@@ -223,8 +224,8 @@ const M: MonsterDef[] = [
 	},
 	{
 		id: "metal",
-		name: "メタルとうすこ",
-		sprite: "sa:Gb8UX4",
+		name: "メタルぷゆゆ",
+		sprite: "pub:sprites/metal_puyu.png",
 		hp: 3,
 		atk: 30,
 		def: 49,

@@ -9,7 +9,7 @@
 //   フェリス＝図鑑・あそびかた、テト＝倉庫、おんJ民＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
 // - 小屋の扉・板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
-// - おんJマイナーズ（町が 育つと 越してくる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
+// - おんJマイナーズ（町が 育つと 越してくる）と ぷゆゆ（はじめから いる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
 // - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
 //   倉庫・売り → 町が 育つ（場面は ui/villageReturn.ts。あずける 一覧だけ ui/home.ts）。
@@ -291,7 +291,10 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 	if (p.mob) {
 		const id = p.mob;
 		return {
-			...npc(p.id, p.x, p.y, p.sprite ?? "", mobScript(id), { dir: p.dir }),
+			...npc(p.id, p.x, p.y, p.sprite ?? "", mobScript(id), {
+				dir: p.dir,
+				wander: p.wander,
+			}),
 			notice: () => hasMobNews(id),
 		};
 	}
@@ -323,17 +326,6 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 			{ dir: p.dir, wander: p.wander },
 		);
 	}
-	if (p.id === "tousuko")
-		return {
-			...at,
-			sprite: p.sprite,
-			dir: p.dir,
-			trigger: "talk",
-			wander: p.wander,
-			run: async (s) => {
-				await s.narrate(VILLAGE_MSG.tousuko);
-			},
-		};
 	return { ...at, sprite: p.sprite, trigger: p.trigger };
 };
 

@@ -15,7 +15,14 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { SEASONS, season } from "../data/calendar";
-import { MOB_IDS, MOBS, type MobLine, SENKYO } from "../data/mobs";
+import {
+	MOB_IDS,
+	MOBS,
+	type MobCtx,
+	type MobId,
+	type MobLine,
+	SENKYO,
+} from "../data/mobs";
 import {
 	pickQuote,
 	type Quote,
@@ -57,10 +64,13 @@ import type { Story, TileDef, VState } from "../engine/defs";
 import {
 	forgetProgressMemo,
 	loadProgress,
+	loadRecords,
+	loadReplays,
 	loadTown,
 	type PendingReturn,
 	type ProgressNews,
 	type RunRecord,
+	replayMatches,
 	type Town,
 } from "../engine/save";
 import {
@@ -524,6 +534,7 @@ test("the friends react to how the last run ended", () => {
 		// どの 死因・深さでも、だれもが 何か 新しく 言う（その人の 分が 無い たまりは 深さへ）
 		for (const cause of [
 			"ワイ バーンに　たおされた",
+			"ぷゆゆに　たおされた",
 			"とうすこに　たおされた",
 			"過疎に　たおされた",
 		])
@@ -639,6 +650,7 @@ test("the boot title's quote keeps its two lines on a 320px phone (name and 「�
 		"過疎",
 		"ゾンJ民",
 		"文字化け",
+		"ぷゆゆ",
 		"とうすこ",
 		"罠",
 	];
@@ -1165,6 +1177,11 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 	const texts: [string, string][] = [];
 	const talk = (where: string, ls: readonly MobLine[]) => {
 		ok(ls.length >= 1 && ls.length <= 4, `${where}: ${ls.length} windows`);
+		// 本人と 地の文で 3窓まで（4窓目は 仲間・ほかの子の 口出しの ときだけ）
+		ok(
+			ls.filter((l) => l.who === "mob" || l.who === null).length <= 3,
+			`${where}: more than 3 windows without a chime-in`,
+		);
 		ls.forEach((l, i) => {
 			texts.push([`${where}[${i}]`, l.text]);
 		});
@@ -1182,6 +1199,7 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 		ok(d.chats.length >= 3, `${id}: only ${d.chats.length} chats`);
 		for (const c of d.chats) {
 			talk(`${id}.chats.${c.key}`, c.lines);
+			ok(c.with !== id, `${id}.chats.${c.key}: with itself`);
 			// with の 話は その仲間が 話す
 			if (c.with)
 				ok(
@@ -1205,7 +1223,10 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 			if (line) texts.push([`${id}.season.${s}`, line]);
 		}
 		for (const [k, v] of Object.entries(d.react))
-			texts.push([`${id}.react.${k}`, v]);
+			if (typeof v === "string") texts.push([`${id}.react.${k}`, v]);
+		d.react.by?.forEach((b, i) => {
+			texts.push([`${id}.react.by[${i}]`, b.text]);
+		});
 		const idle = typeof d.idle === "string" ? [d.idle] : d.idle;
 		ok(idle.length === 1 || idle.length === 7, `${id}: idle by weekday`);
 		idle.forEach((l, i) => {
@@ -1229,8 +1250,13 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 	const froms = MOB_IDS.map((id) => MOBS[id].from);
 	ok(
 		new Set(froms).size === froms.length &&
-			froms.every((f) => f >= 1 && f < TOWN_STAGES),
+			froms.every((f) => f >= 0 && f < TOWN_STAGES),
 		`move-in stages: ${froms}`,
+	);
+	// はじめから いるのは ぷゆゆ だけ（マイナーズは 町が 育ってから）
+	ok(
+		MOB_IDS.filter((id) => MOBS[id].from === 0).join() === "puyu",
+		"only ぷゆゆ is there from the start",
 	);
 });
 
@@ -1410,5 +1436,414 @@ test("the very first village: premise, おんJ民 points at the left mouth, the 
 		setProgress(["shallow"]);
 		pushRecord({});
 		ok(!needsOpening(), "the opening plays after a run");
+	});
+});
+
+// ───────────────── ぷゆゆ（はじめから いる 子。data/mobs.ts の MOBS.puyu） ─────────────────
+
+/** 図鑑を 置く（会った 敵の id と たおした 数）。 */
+const setBook = (seen: string[], kills: Record<string, number> = {}): void =>
+	localStorage.setItem(
+		"kiriko-roguelike/book",
+		JSON.stringify({ seen, kills }),
+	);
+
+/** 何も ない 帰りの 手がかり。 */
+const BARE: MobCtx = {
+	last: null,
+	seen: [],
+	met: [],
+	talked: [],
+	today: { m: 3, d: 3, w: 3 },
+};
+
+/** fakeStory の 記録で その窓が どう 見えるか（ぷゆゆの 声は おんJ民の 色、ほかの子は 色なし）。 */
+const logOf = (id: MobId, l: MobLine): string => {
+	if (l.who === null) return `narrate: ${l.text}`;
+	const mob: MobId | null =
+		l.who === "mob" ? id : l.who in MOBS ? (l.who as MobId) : null;
+	if (mob === null) return `say ${l.who}: ${l.text}`;
+	return `say ${MOBS[mob].voice ?? null}: ${l.text}`;
+};
+
+test("ぷゆゆ・マイナーズ: every conditional talk and reaction can happen, and none is always on", () => {
+	const every = MOB_IDS.flatMap((id) =>
+		MOBS[id].chats.map((c) => `${id}:${c.key}`),
+	);
+	const rich: MobCtx[] = [];
+	for (let m = 1; m <= 12; m++)
+		for (let w = 0; w < 7; w++)
+			for (const [cause, depth, returning] of [
+				["ぷゆゆに　たおされた", 1, false],
+				["メタルぷゆゆに　たおされた", 12, false],
+				["おなかが　すいて　たおれた", 9, false],
+				["コピペに　たおされた", 15, true],
+				["ひとだまに　たおされた", 2, false],
+			] as const)
+				rich.push({
+					last: { kind: "dead", cause, depth, returning },
+					seen: ["tousuko", "metal"],
+					met: [...MOB_IDS],
+					talked: every,
+					today: { m, d: 25, w },
+				});
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		const conds: [string, (x: MobCtx) => boolean][] = [
+			...d.chats.flatMap((c): [string, (x: MobCtx) => boolean][] =>
+				c.when ? [[`chats.${c.key}`, c.when]] : [],
+			),
+			...(d.react.by ?? []).map((b, i): [string, (x: MobCtx) => boolean] => [
+				`react.by[${i}]`,
+				b.when,
+			]),
+		];
+		for (const [k, when] of conds) {
+			ok(rich.some(when), `${id}.${k}: never happens`);
+			ok(!when(BARE), `${id}.${k}: always happens (drop when)`);
+		}
+	}
+});
+
+test("ぷゆゆ: rpg voice rules (🥺🤪✋ only, one 🥺 at a line end, rare plain speech, no AVOID words)", () => {
+	const EMOJI = /\p{Extended_Pictographic}/u;
+	const ALLOWED = new Set(["🥺", "🤪", "✋"]);
+	const hers: [string, string][] = [];
+	const rest: [string, string][] = [];
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		const talks: [string, readonly MobLine[]][] = [
+			["meet", d.meet],
+			["thx", d.thx],
+			...Object.entries(d.milestones).map(
+				([k, v]): [string, readonly MobLine[]] => [`@${k}`, v ?? []],
+			),
+			...d.chats.map((c): [string, readonly MobLine[]] => [c.key, c.lines]),
+		];
+		if (d.ask)
+			talks.push(
+				["ask", d.ask.lines],
+				["ask.yes", d.ask.yes],
+				["ask.no", d.ask.no],
+			);
+		for (const [k, ls] of talks)
+			ls.forEach((l, i) => {
+				const mine = (id === "puyu" && l.who === "mob") || l.who === "puyu";
+				(mine ? hers : rest).push([`${id}.${k}[${i}]`, l.text]);
+			});
+		const single = [
+			...Object.values(d.season),
+			...Object.values(d.react).filter(
+				(v): v is string => typeof v === "string",
+			),
+			...(d.react.by ?? []).map((b) => b.text),
+			...(typeof d.idle === "string" ? [d.idle] : d.idle),
+		];
+		for (const t of single)
+			(id === "puyu" ? hers : rest).push([`${id}.line`, t]);
+	}
+	for (const [where, t] of [...hers, ...rest]) {
+		// 肌の 色の 件（rpg の 決まり）
+		for (const w of ["黄色", "きいろ", "山吹"])
+			ok(!t.includes(w), `${where}: "${w}"`);
+		ok(!/[️‍]/u.test(t), `${where}: FE0F / ZWJ`);
+	}
+	// キリコ・地の文・仲間・ほかの子には 絵文字を つけない
+	for (const [where, t] of rest)
+		ok(!EMOJI.test(t), `${where}: emoji outside ぷゆゆ's own lines`);
+	let plain = 0;
+	let ikite = 0;
+	for (const [where, t] of hers) {
+		for (const ch of t)
+			if (EMOJI.test(ch)) ok(ALLOWED.has(ch), `${where}: ${ch}`);
+		// ぷゆゆを 食べ物に しない・キリコは「きみ」
+		for (const w of ["豆腐", "麻婆", "キリコちゃん"])
+			ok(!t.includes(w), `${where}: "${w}"`);
+		ok(
+			[...t].filter((ch) => ch === "🥺").length <= 1,
+			`${where}: more than one 🥺`,
+		);
+		const ls = t.split("\n");
+		ok(
+			!(ls.length === 2 && EMOJI.test(ls[0] ?? "") && EMOJI.test(ls[1] ?? "")),
+			`${where}: emoji on both lines`,
+		);
+		for (const l of ls) {
+			const cs = [...l];
+			const i = cs.findIndex((ch) => EMOJI.test(ch));
+			ok(
+				i < 0 || cs.slice(i).every((ch) => EMOJI.test(ch)),
+				`${where}: emoji inside "${l}"`,
+			);
+			ok(
+				i < 0 || width(l) <= 21,
+				`${where}: emoji line "${l}" is ${width(l)} wide`,
+			);
+		}
+		// 標準語の ひとこと（「……」で 始まり「。」で 終わる。絵文字なし）は まれに
+		if (t.startsWith("……") && t.endsWith("。") && !EMOJI.test(t)) plain++;
+		else ok(EMOJI.test(t), `${where}: baby talk without 🥺`);
+		if (t.includes("生きてこそだ")) ikite++;
+	}
+	ok(plain <= 3, `${plain} plain-speech lines (3 at most)`);
+	ok(ikite <= 2, `生きてこそだ ${ikite} times (2 at most)`);
+});
+
+test("ぷゆゆ・マイナーズ: small moves are few, come before the mob's own or narration window, and stay near home", () => {
+	let n = 0;
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		const all: [string, MobLine][] = [
+			...d.meet.map((l, i): [string, MobLine] => [`meet[${i}]`, l]),
+			...Object.entries(d.milestones).flatMap(([k, v]) =>
+				(v ?? []).map((l, i): [string, MobLine] => [`@${k}[${i}]`, l]),
+			),
+			...d.chats.flatMap((c) =>
+				c.lines.map((l, i): [string, MobLine] => [`${c.key}[${i}]`, l]),
+			),
+		];
+		for (const [where, l] of all) {
+			const bt = l.beat;
+			if (!bt) continue;
+			n++;
+			ok(
+				l.who === "mob" || l.who === null,
+				`${id}.${where}: a move on someone else's window`,
+			);
+			if (bt.k === "turn")
+				ok(/^[UDLRw]+$/.test(bt.route), `${id}.${where}: a turn that walks`);
+			if (bt.k !== "walk") continue;
+			// 家の まわり 2マスの 中（うろうろの 範囲。外へ 出ると 建て直すまで もどれない）
+			const [x, y] = bt.to;
+			ok(
+				!!d.wander &&
+					Math.abs(x - d.spot[0]) <= 2 &&
+					Math.abs(y - d.spot[1]) <= 2,
+				`${id}.${where}: (${x},${y}) is outside the wander box`,
+			);
+			ok(
+				!(x === VILLAGE_SPOTS.boot[0] && y === VILLAGE_SPOTS.boot[1]),
+				`${id}.${where}: onto the boot spot`,
+			);
+			for (const v of VIEWS) {
+				const s = survey(v);
+				const taken = s.places.some(
+					(p) => p.sprite && !p.wander && p.x === x && p.y === y,
+				);
+				ok(
+					!!s.tile(x, y)?.passable && !taken,
+					`${label(v)} ${id}.${where}: cannot stand on (${x},${y})`,
+				);
+			}
+		}
+	}
+	ok(n <= 4, `${n} small moves (4 at most)`);
+});
+
+test("ぷゆゆ: there from the first visit with the おんJ民 name bar, not a candidate, answers the last run once", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 0 });
+		const d = MOBS.puyu;
+		const said = (t: string | undefined) => `say nanj: ${t}`;
+		const chat = (k: string) => d.chats.find((c) => c.key === k)?.lines ?? [];
+		const place = villagePlaces(villageView()).find((p) => p.mob === "puyu");
+		ok(
+			place?.x === 8 && place.y === 16 && place.wander === true,
+			`stage 0: ${JSON.stringify(place)}`,
+		);
+		ok(hasMobNews("puyu"), "no 「！」 on the very first visit");
+		const a = fakeStory({ near: ["rei"] });
+		await mobScript("puyu")(a.s);
+		ok(
+			a.log[0] === said(d.meet[0]?.text) &&
+				a.log.includes(`say rei: ${d.meet[3]?.text}`),
+			`meet:\n${a.log.join("\n")}`,
+		);
+		// マイナーズでは ない：ぷゆゆ ＋ 1人では はり紙は 出ない
+		await mobScript("nichie")(fakeStory().s);
+		ok(!senkyoOpen(), "ぷゆゆ counts as a 総選挙 candidate");
+		// 1回目の 帰り：B1 で たおれた → 早すぎる 帰りの 話。反応を かねるので 次は いつもの ひとこと
+		setBook(["tousuko"]);
+		pushRecord({ kind: "dead", cause: "ひとだまに　たおされた", depth: 1 });
+		ok(hasMobNews("puyu"), "no 「！」 after an early fall");
+		const b = fakeStory();
+		await mobScript("puyu")(b.s);
+		ok(
+			b.log[0] === said(chat("hayai")[0]?.text),
+			`early fall:\n${b.log.join("\n")}`,
+		);
+		const b2 = fakeStory();
+		await mobScript("puyu")(b2.s);
+		ok(
+			b2.log.join() === said(seasonalToday(d) ?? idleOf(d)),
+			`the same fall answered twice:\n${b2.log.join("\n")}`,
+		);
+		// 2回目：下で 会った 子の 話（図鑑に ぷゆゆ）
+		pushRecord({ kind: "dead", cause: "コピペに　たおされた", depth: 6 });
+		const c = fakeStory();
+		await mobScript("puyu")(c.s);
+		ok(
+			c.log[0] === said(chat("nakama")[0]?.text),
+			`nakama:\n${c.log.join("\n")}`,
+		);
+		// 3回目：ぷゆゆに たおされた（前の版の 名前の 記録でも）→ 標準語の ひとこと
+		pushRecord({ kind: "dead", cause: "とうすこに　たおされた", depth: 2 });
+		const e = fakeStory();
+		await mobScript("puyu")(e.s);
+		ok(
+			e.log.includes(said(chat("maketa")[1]?.text)),
+			`lost to ぷゆゆ:\n${e.log.join("\n")}`,
+		);
+		// たおれ方ごとの 反応（メタルが 先。前の版の 名前でも）
+		for (const [cause, depth, i] of [
+			["メタルぷゆゆに　たおされた", 12, 0],
+			["メタルとうすこに　たおされた", 12, 0],
+			["ぷゆゆに　たおされた", 1, 1],
+			["とうすこに　たおされた", 2, 1],
+			["ひとだまに　たおされた", 2, 3],
+		] as const) {
+			pushRecord({ kind: "dead", cause, depth });
+			ok(
+				reactionOf(d) === d.react.by?.[i]?.text,
+				`reaction to ${cause}: ${reactionOf(d)}`,
+			);
+		}
+		pushRecord({
+			kind: "dead",
+			cause: "コピペに　たおされた",
+			depth: 15,
+			returning: true,
+		});
+		ok(reactionOf(d) === d.react.by?.[2]?.text, "no reaction on the way back");
+		pushRecord({ kind: "dead", cause: "おなかが　すいて　たおれた", depth: 8 });
+		ok(reactionOf(d) === d.react.starve, "no reaction to hunger");
+		pushRecord({ kind: "escape" });
+		ok(reactionOf(d) === d.react.escape, "no reaction to an escape");
+	});
+});
+
+test("ぷゆゆ: one new talk per return in array order, mob pairs only when both are near, callbacks after their setup", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		putTown({ stage: 7 });
+		setBook(["tousuko", "metal"]);
+		for (const id of MOB_IDS) await mobScript(id)(fakeStory().s);
+		const first = (id: MobId, k: string): string => {
+			const l = MOBS[id].chats.find((c) => c.key === k)?.lines[0];
+			return l ? logOf(id, l) : "?";
+		};
+		const talkMany = async (
+			id: MobId,
+			near: string[],
+			times: number,
+		): Promise<string[]> => {
+			const out: string[] = [];
+			for (let i = 0; i < times; i++) {
+				pushRecord({ kind: "escape" });
+				const t = fakeStory({ near });
+				await mobScript(id)(t.s);
+				out.push(...t.log);
+			}
+			return out;
+		};
+		// パン松 ↔ ぷゆゆ：ぷゆゆが 近くに いなければ 出ない
+		const panLine = MOBS.panmatsu.chats.find((c) => c.key === "puyu")?.lines[1];
+		const pan = panLine ? logOf("panmatsu", panLine) : "?";
+		ok(
+			!(await talkMany("panmatsu", ["roze", "nanj", "rei"], 8)).includes(pan),
+			"パン松 talked with a ぷゆゆ who was not near",
+		);
+		ok(
+			(await talkMany("panmatsu", ["mob_puyu"], 2)).includes(pan),
+			"パン松 never talked with ぷゆゆ",
+		);
+		// ンゴ姉・おんすちゃんの あとの 話は、ぷゆゆの 話を 聞くまで 出ない
+		const ngo = first("ngoane", "puyu");
+		const onsu = first("onsu", "puyu");
+		ok(
+			!(await talkMany("ngoane", [], 8)).includes(ngo),
+			"ンゴ姉 heard about the 図鑑 too early",
+		);
+		ok(
+			!(await talkMany("onsu", [], 8)).includes(onsu),
+			"おんすちゃん heard about the tea too early",
+		);
+		// ぷゆゆ：みんな 近くに いれば、雑談は 上から 1回ずつ（節目が あいだに 入る）
+		const near = [
+			"rei",
+			"roze",
+			"nanj",
+			"feris",
+			"mob_nichie",
+			"mob_panmatsu",
+			"mob_onchan",
+		];
+		const logs: string[][] = [];
+		for (let i = 0; i < 40; i++) {
+			pushRecord({ kind: "escape" });
+			const t = fakeStory({ near });
+			await mobScript("puyu")(t.s);
+			logs.push(t.log);
+		}
+		let last = -1;
+		for (const ch of MOBS.puyu.chats) {
+			const f = first("puyu", ch.key);
+			const at = logs
+				.map((l, i) => (l.includes(f) ? i : -1))
+				.filter((i) => i >= 0);
+			ok(at.length <= 1, `puyu.${ch.key} played ${at.length} times`);
+			if (!at.length) {
+				// 出なかったのは その日・前の冒険に 合わない 話だけ
+				ok(!!ch.when, `puyu.${ch.key} never played`);
+				continue;
+			}
+			ok((at[0] ?? 0) > last, `puyu.${ch.key} played out of order`);
+			last = at[0] ?? last;
+		}
+		ok(
+			logs.some((l) => l.includes("goto mob_puyu 8,16")),
+			"ぷゆゆ never toddled home (zukan)",
+		);
+		ok(!hasMobNews("puyu"), "「！」 after every talk was heard");
+		ok(
+			(await talkMany("ngoane", [], 3)).includes(ngo),
+			"ンゴ姉 never mentioned the 図鑑",
+		);
+		ok(
+			(await talkMany("onsu", [], 3)).includes(onsu),
+			"おんすちゃん never set out the cup",
+		);
+	});
+});
+
+test("old records and replays that say とうすこ read as ぷゆゆ and still pair up", () => {
+	withStorage(() => {
+		const cause = "メタルとうすこに　たおされた";
+		pushRecord({ kind: "dead", cause, depth: 9, turn: 321, seed: "old-1" });
+		localStorage.setItem(
+			"kiriko-roguelike/replays",
+			JSON.stringify([
+				{
+					seed: "old-1",
+					dungeon: "main",
+					at: 1,
+					builds: [],
+					text: "",
+					n: 0,
+					kind: "dead",
+					depth: 9,
+					turn: 321,
+					cause,
+				},
+			]),
+		);
+		const r = loadRecords()[0];
+		const p = loadReplays()[0];
+		ok(r?.cause === "メタルぷゆゆに　たおされた", `record: ${r?.cause}`);
+		ok(
+			!!r && !!p && p.cause === r.cause && replayMatches(p, r),
+			"the old replay lost its record",
+		);
 	});
 });

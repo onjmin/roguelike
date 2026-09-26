@@ -144,13 +144,14 @@ export type Story = {
 	): Promise<void>;
 	/**
 	 * (x, y) まで 歩かせる（道は 地形だけで 決める。ほかの人は すりぬけ、キリコの マスは よける）。
+	 * avoid なら ほかの人・置物も よける（村の 子の 小さな しぐさ。data/mobs.ts の Beat）。
 	 * 行けなければ 何もしない。
 	 */
 	goto(
 		target: string,
 		x: number,
 		y: number,
-		opt?: { speed?: number },
+		opt?: { speed?: number; avoid?: boolean },
 	): Promise<void>;
 	face(target: string, dir: Dir | "player"): void;
 	/** 人（イベント ID）が 見えていて、キリコから r マス以内（たて・よこ・ななめの 大きい方）に いるか。 */

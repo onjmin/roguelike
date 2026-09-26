@@ -305,7 +305,7 @@ const dmgRange = (atk: number, def: number): [number, number] => [
 	rollDamage(atk, def, 143),
 ];
 
-// ───────────────── とうすこ（slow） ─────────────────
+// ───────────────── ぷゆゆ（slow。id は 前の名前の tousuko） ─────────────────
 
 test("tousuko", "slow: moves at most every other turn", () => {
 	const r = arena("tousuko-slow");
@@ -939,7 +939,7 @@ for (const kind of ["leather", "mirror", "rustproof"]) {
 	});
 }
 
-// ───────────────── メタルとうすこ（metal） ─────────────────
+// ───────────────── メタルぷゆゆ（metal） ─────────────────
 
 test("metal", "damage capped at 1; warps out of sight when hit", () => {
 	const r = arena("metal", hideoutLayout(), HIDE_AT);

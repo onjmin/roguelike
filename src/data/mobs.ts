@@ -1,4 +1,6 @@
 // 保守村に 住みつく おんJマイナーズ（rpg の data/minors.ts の子たち）。町が 育つと 1人ずつ 越してくる。
+// ぷゆゆ（レスの 文末の 🥺 が 歩きだした子。マイナーズでは ない）は はじめから 広場の 下で うろうろ している
+// （名前欄は おんJ民の 色で rpg の ぷゆゆと 同じ。総選挙には 出ない。下の 敵の ぷゆゆとは べつの子）。
 // 話すのは 本人（名前欄だけ）・地の文・近くに いる 仲間。キリコは しゃべらない（うなずく・首を ふる で 返す）。
 // どの子も 寄り道で、口への 道を ふさがず、何も くれない（冒険の外で 強くならない。トルネコ1の 村と 同じ）。
 //
@@ -8,14 +10,20 @@
 //   見た話は くり返さない。ぜんぶ 見たら 短い ひとこと（前の冒険への 反応・期間限定・いつもの）。
 // - 仲間の 口出し（who が 仲間の 行）は、その仲間が キリコの 近くに いるときだけ 出る。
 //   with の ある 雑談は、その仲間が 近くに いないと 選ばれない（「！」の 数には 入れない）。
+//   who・need・with には ほかの子（MobId）も 書ける（その子が 近くに いるときだけ）。
+// - when の ある 雑談は、合う 帰りにだけ 選ばれる（前の冒険・図鑑・会った子・見た話・端末の 日付。MobCtx）。
+//   answersRun の 話は その 帰りの 反応を かねる（同じ 冒険に 2回 ふれない）。雑談は 上から 順に 出る。
+// - beat は 窓の 前の 小さな しぐさ（窓には 数えない。歩くのは 家の まわり 2マスの 中だけ）。
 // - 期間限定・曜日は 遊んでいる 端末の 日付（data/calendar.ts）。
 // ロジックは ui/villageMobs.ts、置き場所は data/village/map.ts。
 
 import type { Dir } from "../engine/types";
-import type { Season } from "./calendar";
+import type { Season, Today } from "./calendar";
+import { PUYU_WALK } from "./cast";
 import type { Speaker } from "./quotes";
 
 export type MobId =
+	| "puyu"
 	| "nichie"
 	| "panmatsu"
 	| "ngoane"
@@ -23,26 +31,74 @@ export type MobId =
 	| "onchan"
 	| "yayapoji";
 
-/** 1窓。who が "mob" なら その子、null なら 地の文、仲間なら 近くに いるときだけ。need は その仲間が 近くに いるときだけ。 */
+/** 村で 口を きく だれか（仲間か、ほかの子）。 */
+export type Cast = Speaker | MobId;
+
+/**
+ * 窓の 前の 小さな しぐさ（窓には 数えない。なくても 話は 通じる）。
+ * turn は その場で 向きだけ かえる（U・D・L・R と 待ちの w。s.move）。face は 向く（s.face）。
+ * walk は 家（spot）の まわり 2マスの 中へ 歩く（人と キリコを よける。行けなければ 何もしない。s.goto）。
+ */
+export type Beat =
+	| { k: "turn"; route: string }
+	| { k: "face"; to: Dir | "player" }
+	| { k: "walk"; to: readonly [number, number]; face?: Dir };
+
+/** 1窓。who が "mob" なら その子、null なら 地の文、仲間・ほかの子なら 近くに いるときだけ。need も 同じ。 */
 export type MobLine = {
-	who: "mob" | Speaker | null;
+	who: "mob" | Cast | null;
 	text: string;
-	need?: Speaker;
+	need?: Cast;
+	beat?: Beat;
 };
 
-/** 節目（持ち帰った ダンジョン・もぐった回数）。 */
-export type Milestone = "main" | "deep" | "runs10";
+/** 節目（持ち帰った ダンジョン・もぐった回数）。shallow は 段0から いる ぷゆゆ だけ。 */
+export type Milestone = "shallow" | "main" | "deep" | "runs10";
 
-export type MobChat = { key: string; with?: Speaker; lines: MobLine[] };
+/** 話を えらぶ 手がかり（ui/villageMobs.ts が 保存と 端末の 日付から 作る。data は 保存を 読まない）。 */
+export type MobCtx = {
+	/** 前の冒険（まだ 無ければ null）。cause は「〜に　たおされた」など。 */
+	last: {
+		kind: "dead" | "clear" | "escape";
+		cause: string;
+		depth: number;
+		/** 持ち帰る 途中だった。 */
+		returning: boolean;
+	} | null;
+	/** 図鑑で 会った 敵（id。ぷゆゆは 前の 名前の まま "tousuko"、メタルぷゆゆは "metal"）。 */
+	seen: readonly string[];
+	/** 会った子。 */
+	met: readonly MobId[];
+	/** 見た 話（`<id>:<key>`。節目は `<id>:@<節目>`）。 */
+	talked: readonly string[];
+	today: Today;
+};
+
+export type MobChat = {
+	key: string;
+	/** その人・その子が 近くに いるときだけ（「！」には 数えない）。 */
+	with?: Cast;
+	/** 合う 帰りにだけ 選ばれる（「！」も そのときだけ）。 */
+	when?: (x: MobCtx) => boolean;
+	/** 前の冒険への 反応を かねる（聞いた 帰りは 反応を 出さない）。 */
+	answersRun?: boolean;
+	lines: MobLine[];
+};
 
 export type MobDef = {
 	name: string;
 	/** 歩行グラ（RPGEN 形式）。 */
 	sprite: string;
-	/** 越してくる 町の段。 */
+	/** 越してくる 町の段（0 は はじめから いる）。 */
 	from: number;
 	spot: readonly [number, number];
 	dir: Dir;
+	/** 家の まわり 2マスを うろうろ する。 */
+	wander?: boolean;
+	/** 名前欄の 色を かりる 仲間（立ち絵は 出さない）。ぷゆゆは おんJ民（rpg と 同じ）。 */
+	voice?: Speaker;
+	/** 総選挙の 候補に ならない（殿堂入りの おんちゃん・マイナーズでは ない ぷゆゆ）。 */
+	noVote?: boolean;
 	meet: MobLine[];
 	/** はじめましての あと、書きこむまで 毎回 きく（おんすちゃん）。 */
 	ask?: {
@@ -54,13 +110,17 @@ export type MobDef = {
 	milestones: Partial<Record<Milestone, MobLine[]>>;
 	chats: MobChat[];
 	season: Partial<Record<Season, string>>;
-	/** 前の冒険への 反応（1回の 帰りに 1回。starve は おなかが すいて たおれたとき）。 */
+	/**
+	 * 前の冒険への 反応（1回の 帰りに 1回。starve は おなかが すいて たおれたとき）。
+	 * by は たおれたときの 条件つき（上から 見て 最初に 合った もの。starve・深さより 先）。
+	 */
 	react: {
 		dead: string;
 		deep: string;
 		clear: string;
 		escape: string;
 		starve?: string;
+		by?: readonly { when: (x: MobCtx) => boolean; text: string }[];
 	};
 	/** いつもの ひとこと（7つなら 曜日で。日曜 はじまり）。 */
 	idle: string | readonly string[];
@@ -68,19 +128,369 @@ export type MobDef = {
 	thx: MobLine[];
 };
 
-const m = (text: string, need?: Speaker): MobLine => ({
+const m = (text: string, need?: Cast): MobLine => ({
 	who: "mob",
 	text,
 	need,
 });
-const n = (text: string, need?: Speaker): MobLine => ({
+const n = (text: string, need?: Cast): MobLine => ({
 	who: null,
 	text,
 	need,
 });
-const c = (who: Speaker, text: string): MobLine => ({ who, text });
+/** 仲間か ほかの子の 1窓（近くに いるときだけ）。 */
+const c = (who: Cast, text: string): MobLine => ({ who, text });
+/** 窓の 前に しぐさを つける。 */
+const b = (beat: Beat, line: MobLine): MobLine => ({ ...line, beat });
+
+// ───── ぷゆゆの 手がかり（死因は 前の版の 名前「とうすこ」も 見る） ─────
+const PUYU_NAMES = ["ぷゆゆ", "とうすこ"] as const;
+const died = (x: MobCtx): boolean => x.last?.kind === "dead";
+const causeHas = (x: MobCtx, w: string): boolean =>
+	x.last?.cause.includes(w) ?? false;
+/** メタルぷゆゆに たおされた。 */
+const byMetal = (x: MobCtx): boolean =>
+	died(x) && causeHas(x, "メタル") && PUYU_NAMES.some((w) => causeHas(x, w));
+/** ぷゆゆに たおされた（メタルは べつ）。 */
+const byPuyu = (x: MobCtx): boolean =>
+	died(x) && !byMetal(x) && PUYU_NAMES.some((w) => causeHas(x, w));
+const months =
+	(...ms: number[]) =>
+	(x: MobCtx): boolean =>
+		ms.includes(x.today.m);
 
 export const MOBS: Record<MobId, MobDef> = {
+	// レスの 文末の 🥺 が 歩きだした子（rpg の ぷゆゆ）。はじめから 広場の 下を うろうろ。総選挙には 出ない
+	puyu: {
+		name: "ぷゆゆ",
+		sprite: PUYU_WALK,
+		from: 0,
+		spot: [8, 16],
+		dir: "down",
+		wander: true,
+		voice: "nanj",
+		noVote: true,
+		meet: [
+			m("ぷゆうゆ。……こんぷゆ🥺\nぼくちん、ぷゆゆ。きみわ？"),
+			n("キリコは　しゃがんで、\nちいさく　頭を　さげた。"),
+			m("しゃべらない　子ゆ？\n……じゃあ、ぼくちんが　しゃべゆ🥺"),
+			c("rei", "……当機が　来る　前から、\nここに　います"),
+		],
+		milestones: {
+			shallow: [
+				m("ちくおんき、ざらざら　いってゆ🥺\nきみが　なおちたの？"),
+				n("キリコは　うなずいた。"),
+				m("……ざらざらの　むこう、\nだれか　いゆ？🥺"),
+			],
+			main: [
+				b(
+					{ k: "walk", to: [9, 14], face: "right" },
+					n("ぷゆゆが　蓄音機に　むかって、\n「ぷゆうゆ」と　よびかけた。"),
+				),
+				n("針の　むこうで、ざらざら……\n「あー、あー」"),
+				m("……へんじ、きたゆ！🥺"),
+				c("nanj", "……草。ぷゆテストかいな"),
+			],
+			deep: [
+				m("みんなの　「あー、あー」、\nきいたゆ🥺"),
+				n("キリコは　蓄音機の　ラッパを、\nそっと　ぷゆゆに　向けた。"),
+				m("……ぷゆうゆ🥺"),
+			],
+			runs10: [
+				m("きみの　おかえり、\nもう　10かいゆ🥺"),
+				n("ぷゆゆは　りょうての　ゆびを\nぜんぶ　ひろげて　みせた。"),
+				m("……つぎから、あしの　ゆびも\nつかうゆ🥺"),
+			],
+		},
+		// 上から 順に 1回の 帰りに 1本（前の冒険に こたえる 話 → 暦 → 知りあって いく 順）
+		chats: [
+			// ── 前の冒険に こたえる（その 帰りの 反応を かねる） ──
+			{
+				key: "maketa",
+				when: (x) => byPuyu(x) && x.talked.includes("puyu:nakama"),
+				answersRun: true,
+				lines: [
+					m("あの子たちに、\nまけちゃったの？🥺"),
+					m("……2ターンに　1回しか　動かないのに。"),
+					m("……うそゆ。どんまいぷゆ🥺"),
+				],
+			},
+			{
+				key: "hayai",
+				when: (x) => died(x) && (x.last?.depth ?? 99) <= 2,
+				answersRun: true,
+				lines: [
+					m("うゆ？　もう　かえって　きたゆ？🥺"),
+					n("ぷゆゆの　手に、かじりかけの\nおかちが　ある。"),
+					m("ぼくちん、まだ\nたべおわって　ないゆ🥺"),
+				],
+			},
+			{
+				key: "hara",
+				when: (x) => died(x) && causeHas(x, "おなかが"),
+				answersRun: true,
+				lines: [
+					m("おなか　すいたの？\nぼくちんの　おかち、はんぶん……🥺"),
+					n("ぷゆゆは　はんぶんを　じっと　見て、\nぜんぶ　口に　入れた。"),
+					m("……いまのは、ぼくちんの　ぶん。"),
+				],
+			},
+			// ── 下の ぷゆゆ（図鑑で 会った 帰りから。遠まわしに だけ） ──
+			{
+				key: "nakama",
+				when: (x) => x.seen.includes("tousuko"),
+				lines: [
+					m("下にも、ぼくちんみたいな\nまるいの　いたゆ？🥺"),
+					n("キリコは　すこし　まよって、\nうなずいた。"),
+					m("よちよち　ちてた？\n……なら、いいゆ🥺"),
+				],
+			},
+			// ── 暦（端末の 日付） ──
+			{
+				key: "nichiyou",
+				with: "nichie",
+				when: (x) => x.today.w === 0,
+				lines: [
+					m("にぃちぇ、きょう\n日曜日だゆ🥺"),
+					c("nichie", "……知ってるニィ。\nでも、もう1回　言ってほしいニィ"),
+					m("日曜日だから\nぷゆってる🥺"),
+					n("ふたりは　しばらく　ならんで\n日なたに　いた。"),
+				],
+			},
+			{
+				key: "oimo",
+				when: months(9, 10, 11),
+				lines: [
+					m("おいも、ふかちたゆ🥺\nはい、どーぞ"),
+					n("ちいさな　手から、もっと\nちいさな　おいもを　もらった。"),
+					m("……もくもく🥺"),
+				],
+			},
+			{
+				key: "egao",
+				when: months(6, 7, 8),
+				lines: [
+					m("エガオくんから　おてがみ\nきたゆ🥺"),
+					m("きたの　はたけが、ぜんぶ\nむらさき　だって🥺"),
+					n("手紙から、すこしだけ\nいい　においが　した。"),
+				],
+			},
+			// ── いつでも（知りあって いく 順） ──
+			{
+				key: "unazuki",
+				lines: [
+					m("うなずいたら、「はい」ゆ。\n……ぼくちん、かわいい？🥺"),
+					n("キリコは　うなずいた。"),
+					b({ k: "turn", route: "RDLUD" }, m("……知ってた。")),
+				],
+			},
+			{
+				key: "doko",
+				lines: [
+					m("かくれんぼ　ちよう。\nぷゆゆわ　ど〜こだ？🥺"),
+					n("ぷゆゆは　その場で、\n目を　ぎゅっと　つむった。"),
+					c("rei", "……まる見え、です"),
+					m("……ここ！🥺"),
+				],
+			},
+			{
+				key: "rei",
+				with: "rei",
+				lines: [
+					c("rei", "ぷゆゆさんの　発言を　記録すると、\n9割が　「ゆ」です"),
+					m("うゆ？　のこりの　1わりわ？🥺"),
+					c("rei", "……「ぷ」です"),
+				],
+			},
+			{
+				key: "okachimachi",
+				lines: [
+					m("ぼくちんの　ふるさと、\nおかちまちって　いうの🥺"),
+					m("おうちも　はしも、\nおかちで　できてゆの🥺"),
+					c("roze", "……いい　まちアル。\n住んで　みたいアル"),
+					m("……かじっちゃ　だめゆ🥺"),
+				],
+			},
+			{
+				key: "chikun",
+				lines: [
+					m("チーくんがね、バイクで\nくゆって　いってたゆ🥺"),
+					m("……チーくん、くゆって　いうと\nこないの🥺"),
+					b(
+						{ k: "face", to: "up" },
+						n("ぷゆゆは　しばらく、\n崖の　ほうを　見ていた。"),
+					),
+				],
+			},
+			{
+				key: "zukan",
+				with: "feris",
+				when: (x) => x.seen.includes("tousuko"),
+				lines: [
+					m("フェリスちゃん、ずかんに\nぼくちん　いゆ？🥺"),
+					c("feris", "いるよ〜。「よちよち　あるく」\nって　書いといた〜"),
+					m("よちよち　ちてないゆ🥺"),
+					b(
+						{ k: "walk", to: [8, 16] },
+						n("ぷゆゆは　よちよち　帰っていった。"),
+					),
+				],
+			},
+			{
+				key: "peyuyu",
+				lines: [
+					m("ぺゆゆって　子がね、\n「ぼく、ぷゆゆ」って　いうの🥺"),
+					m("……ちぎゃうゆ。\nあの子、目が　まんまるゆ🥺"),
+					n(
+						"ぷゆゆは　おかちを　ふたつに　わって、\nひとつを　ポケットに　しまった。",
+					),
+				],
+			},
+			{
+				key: "pan",
+				with: "panmatsu",
+				lines: [
+					m("さっき　ぷゆゆパンが\nあそびに　きたゆ🥺"),
+					c("panmatsu", "……パンなのか。\nどこの　板の　パンだ"),
+					m("おかちまちの　パンゆ🥺\nきょうわ　メロンの　かっこう"),
+					c("panmatsu", "……パン板に、\nスカウト　したい"),
+				],
+			},
+			{
+				key: "youbi",
+				with: "nanj",
+				lines: [
+					c("nanj", "毎日　ぷゆってるって\n言うとるけど、なんなんや"),
+					m("ぷゆってるのわ、\nぷゆってる　ことゆ🥺"),
+					c("nanj", "……ワイが　ナイター\n見とるのと、いっしょか"),
+					m("いっしょゆ🥺"),
+				],
+			},
+			{
+				key: "metal",
+				when: (x) => x.seen.includes("metal"),
+				lines: [
+					m("ぴかぴかの　ぷゆゆ、みた？\nぼくちんも　なれゆかな🥺"),
+					n("ぷゆゆは　ほっぺを\nごしごし　こすった。"),
+					m("……ぷにぷにの　ままゆ🥺"),
+				],
+			},
+			{
+				key: "bunmatsu",
+				with: "nanj",
+				lines: [
+					c("nanj", "ワイの　レスの　文末にも、\n昔、ぷゆゆ　おったわ"),
+					m("うゆ。ときどき　ついて\nいってたゆ🥺"),
+					c("nanj", "……どおりで、レスが　まるう\nなっとったわ"),
+				],
+			},
+			{
+				key: "roze",
+				with: "roze",
+				lines: [
+					m("ロゼちゃんも、ごびに\n「ゆ」って　つけてみて🥺"),
+					c("roze", "……ロゼアルゆ"),
+					m("うゆおー！🥺"),
+					c("roze", "……今のは、なかったことに\nするアル"),
+				],
+			},
+			{
+				key: "otya",
+				when: (x) => x.met.includes("onsu"),
+				lines: [
+					m("おんすちゃんの　とこで、\nおちゃ　のんできたゆ🥺"),
+					m("おさとう　7つ　いれたら、\n「まあ」って　いわれたゆ🥺"),
+				],
+			},
+			{
+				key: "onchan",
+				with: "onchan",
+				lines: [
+					m("おんちゃんも　まるいゆ。\nおそろい🥺"),
+					c("onchan", "……まるさでは、\nまけないおん"),
+					n("ふたりは　しばらく　ならんで、\nまるく　なっていた。"),
+				],
+			},
+			{
+				key: "chikun2",
+				lines: [
+					m("チーくん、きのう　きたゆ🥺\n「こないチー」って　いってたのに"),
+					n("崖の下の　道に、\nほそい　タイヤの　あとが　ある。"),
+				],
+			},
+			{
+				key: "dore",
+				with: "nanj",
+				lines: [
+					m("かわいい　ぼくちん、\nど〜れだ？🥺"),
+					n("キリコは　ぷゆゆを　ゆびさした。"),
+					m("ざんねん、ぷゆゆでした〜🥺\n名無しさんわ　みんな　ぷゆゆなの"),
+					c("nanj", "……ワイ、名無しやけど"),
+				],
+			},
+			{
+				key: "mimi",
+				lines: [
+					m("テトちゃんが、パンの　みみ\nくれたゆ🥺"),
+					m("ありがちょうって　いったら、\n「べ、べちゅに」って🥺"),
+					n("ぷゆゆは　パンの　みみを\nりょうてで　かかえている。"),
+				],
+			},
+			{
+				key: "yomu",
+				lines: [
+					m("しーっ……いま、\nむかしの　スレ　よんでゆ🥺"),
+					n("ぷゆゆは　地面に　かおを\nくっつけるように　して　見ている。"),
+					n("のぞきこむと、ありが　一列に\nならんで　あるいていた。"),
+				],
+			},
+		],
+		season: {
+			newyear: "あけぷゆ！　ことしも\n生きてこそだ✋🥺",
+			valentine: "ちょこ、ひとつ　あゆの。\n……ひとつだけ、あゆの🥺",
+			april: "きょうわ　ぷゆって　ないゆ🥺\n……うそゆ",
+			tanabata: "七夕だから　ぷゆってる🥺\n……ねがいごとわ、おかち",
+			halloween: "おかち　くれないと……\n……くれないと……🥺",
+			xmas: "クリスマスだから　ぷゆってる🥺\n……たまにわ　いいゆ",
+			omisoka: "おおみそかだから　ぷゆってる🥺\n……おそば、ずるずる",
+		},
+		react: {
+			dead: "おはぷゆ🥺\n……じゃなくて、おかえりぷゆ",
+			deep: "そんな　ふかくまで……\nかんがえただけで　めが　まわゆ🤪",
+			clear: "もってかえったの？\nたどりついてこそだ✋🥺",
+			escape: "スレで　かえったゆ？\n……生きてこそだ✋🥺",
+			starve: "おなか、ぺこぺこ？🥺\n……おかち、あげたかったゆ",
+			by: [
+				{
+					when: byMetal,
+					text: "ぴかぴかの　ぼくちん、\nそんなに　かたかった？🥺",
+				},
+				{
+					when: byPuyu,
+					text: "よちよちの　子に？🥺\n……ぼくちん、なにも　いわないゆ",
+				},
+				{
+					when: (x) => died(x) && x.last?.returning === true,
+					text: "もうすこし　だったゆ……🥺\nきょうわ　となりで　ぷゆろう",
+				},
+				{
+					when: (x) => died(x) && (x.last?.depth ?? 99) <= 2,
+					text: "「いってらっちゃい」、\nまだ　いって　ないのに🥺",
+				},
+			],
+		},
+		idle: [
+			"日曜日だから　ぷゆってる🥺",
+			"月曜日だけど　ぷゆってる🥺",
+			"火曜日だから　ぷゆってる🥺",
+			"水曜日だから　ぷゆってる🥺",
+			"木曜日だから　ぷゆってる🥺",
+			"華金だから　ぷゆってる🥺\n……うゆうゆ　ちてきたな",
+			"土曜日だから　ぷゆってる🥺\n……あしたも　ぷゆる",
+		],
+		thx: [],
+	},
+
 	// 日曜日の子。屋台が 出ると 広場に 来る
 	nichie: {
 		name: "にぃちぇ",
@@ -148,6 +558,15 @@ export const MOBS: Record<MobId, MobDef> = {
 					c("rei", "日曜日を、帳簿に\n記録しますか"),
 					m("……毎週　書いてほしいニィ"),
 					c("rei", "承知しました。\n……毎週、書きます"),
+				],
+			},
+			{
+				key: "puyu",
+				with: "puyu",
+				lines: [
+					c("puyu", "きょうも　ぷゆってる🥺"),
+					m("……毎日、なにかの　曜日で\nいいニィ……"),
+					n("にぃちぇは　ゆびを　おるのを\nやめた。"),
 				],
 			},
 		],
@@ -242,6 +661,15 @@ export const MOBS: Record<MobId, MobDef> = {
 					n("パン松は　すこし\nかたく　なった。"),
 				],
 			},
+			{
+				key: "puyu",
+				with: "puyu",
+				lines: [
+					m("まるいの。……おまえも\nパン板に　来るか"),
+					c("puyu", "おかち、あゆ？🥺"),
+					m("……パンしか　ない"),
+				],
+			},
 		],
 		season: {
 			newyear: "正月か。\n……もちより　パンだ",
@@ -322,6 +750,15 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ンゴって　言うのは、\n弟の　まねンゴねぇ……"),
 					m("……年季は、わたしの\nほうが　上ンゴねぇ"),
+				],
+			},
+			{
+				// ぷゆゆと フェリスの 図鑑の 話（puyu:zukan）を 聞いたあと。ぷゆゆは ここまで 来ない
+				key: "puyu",
+				when: (x) => x.talked.includes("puyu:zukan"),
+				lines: [
+					m("フェリスちゃんの　図鑑に\nのってる　子が　いるンゴねぇ……"),
+					n("ンゴ姉は　じぶんの　ほっぺを\nそっと　ふくらませてみた。"),
 				],
 			},
 		],
@@ -409,6 +846,16 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("ふ、ふん。\n知ってたわぁ"),
 				],
 			},
+			{
+				// ぷゆゆの お茶の 話（puyu:otya）を 聞いたあと。ぷゆゆは ここまで 来ない
+				key: "puyu",
+				when: (x) => x.talked.includes("puyu:otya"),
+				lines: [
+					m("あの　まるい子、また\nお紅茶を　のみに　来たわぁ"),
+					m("……お砂糖、7つも\n入れるのよぉ"),
+					n("おんすちゃんは　カップを\nひとつ　よけいに　出している。"),
+				],
+			},
 		],
 		season: {
 			newyear: "あけまして……。\n今年も　おんSを　よろしくてよ",
@@ -435,6 +882,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		from: 5,
 		spot: [12, 15],
 		dir: "down",
+		noVote: true,
 		meet: [
 			m("キリコちゃん、はじめましてだおん"),
 			c("nanj", "おんちゃんや。\n……ワイらより　有名やで"),
@@ -493,6 +941,16 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					c("rei", "おんちゃんの　直径を\n記録しても　いいですか"),
 					m("……ひみつだおん"),
+				],
+			},
+			{
+				key: "puyu",
+				with: "puyu",
+				lines: [
+					c("puyu", "おんちゃんわ、一軍ゆ？🥺"),
+					m("一軍だおん"),
+					c("puyu", "ぼくちんわ？🥺"),
+					m("……殿堂の　となりに、\nいすを　おいておくおん"),
 				],
 			},
 		],
@@ -578,6 +1036,14 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("……わたしは　これで　いいんだ"),
 				],
 			},
+			{
+				key: "puyu",
+				with: "puyu",
+				lines: [
+					c("puyu", "かっても　まけても、\nぼくちん　ぷゆってる🥺"),
+					m("……それ、10割なんだ。\nちょっと　多いんだ"),
+				],
+			},
 		],
 		season: {
 			newyear: "今年は　5割で　いいんだ。\n……毎年　言ってるんだ",
@@ -599,7 +1065,7 @@ export const MOB_IDS = Object.keys(MOBS) as MobId[];
 // ───────────────── 総選挙（まとめ掲示板の はり紙） ─────────────────
 /**
  * 2人 以上に 会うと、まとめ掲示板に はり紙が 出る。1票だけ（入れた子は 次に 話しかけたとき 1回 ひとこと）。
- * おんちゃんは 殿堂入り なので 候補に 入らない。{name} は 入れた子。
+ * おんちゃん（殿堂入り）と ぷゆゆ（マイナーズでは ない）は 候補に 入らない（noVote）。{name} は 入れた子。
  */
 export const SENKYO = {
 	title: "かたすみに　はり紙。\n『おんJマイナーズ　一軍選抜総選挙』",

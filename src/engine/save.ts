@@ -209,13 +209,22 @@ const isRecord = (r: unknown): r is RunRecord => {
 	);
 };
 
+/**
+ * 前の版の 敵の 名前を 今の 名前に（とうすこ → ぷゆゆ。メタルとうすこ → メタルぷゆゆ も これで 直る）。
+ * 記録と リプレイの 両方で 直す（replayMatches が 死因の 文字で 結ぶので、片方だけだと 結べなくなる）。
+ */
+const renamed = <T extends { cause: string }>(r: T): T =>
+	typeof r.cause === "string" && r.cause.includes("とうすこ")
+		? { ...r, cause: r.cause.replaceAll("とうすこ", "ぷゆゆ") }
+		: r;
+
 /** 記録（新しい順）。 */
 export const loadRecords = (): RunRecord[] => {
 	try {
 		const raw = localStorage.getItem(RECORDS_KEY);
 		if (!raw) return [];
 		const list = JSON.parse(raw) as unknown;
-		return Array.isArray(list) ? list.filter(isRecord) : [];
+		return Array.isArray(list) ? list.filter(isRecord).map(renamed) : [];
 	} catch {
 		return [];
 	}
@@ -625,7 +634,7 @@ export const loadReplays = (): SavedReplay[] => {
 		const raw = localStorage.getItem(REPLAYS_KEY);
 		if (!raw) return [];
 		const list = JSON.parse(raw) as unknown;
-		return Array.isArray(list) ? list.filter(isReplay) : [];
+		return Array.isArray(list) ? list.filter(isReplay).map(renamed) : [];
 	} catch {
 		return [];
 	}

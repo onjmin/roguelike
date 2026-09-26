@@ -39,8 +39,11 @@ export const CAST: Record<Speaker, CastDef> = Object.fromEntries(
 /** キリコの歩行グラ。 */
 export const KIRIKO_WALK = "pub:sprites/kiriko.png";
 
-/** とうすこ（1階の敵）。村では キリコの あとを うろうろ している。 */
-export const TOUSUKO_WALK = "sa:2kJYAl";
+/**
+ * ぷゆゆ（ぴえんの 顔。rpg の SPR.puyu と 同じ）。村では 広場の 下を うろうろ している（data/mobs.ts）。
+ * 下の 敵の ぷゆゆ（core/data/monsters.ts。core は data を 読まないので 同じ id を じかに 書く）も 同じ絵。
+ */
+export const PUYU_WALK = "sa:DszPWT";
 
 /** 段7（祭り）の 野次馬（rpg の SPR j_yakiu・j_nanashi・j_gakuran と同じ）。 */
 export const YAJI_WALK: readonly string[] = [

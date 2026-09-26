@@ -95,10 +95,13 @@ const BLAST: readonly Quote[] = [
 	q("rei", "振動を　検知。\n……冷却水、こぼれました"),
 ];
 
-/** とうすこ（メタルは べつ）。 */
-const TOUSUKO: readonly Quote[] = [
-	q("nanj", "豆腐に　負けたんか。\n……いや、ええ豆腐やった"),
-	q("roze", "とうすこは　麻婆豆腐に\nすると　おいしいアル"),
+/** ぷゆゆ（メタルは べつ。前の版の 記録の「とうすこ」も）。 */
+const PUYU: readonly Quote[] = [
+	q("nanj", "ぷゆゆに　負けたんか。\n……村の　あいつには、だまっとくわ"),
+	q("roze", "あの子たち、泣きそうな　顔で\n来るアル。……ずるいアル"),
+	q("feris", "ぷゆゆに〜？\nあの子、よちよちだよ〜？"),
+	q("teto", "……あの目に　ひるんだのか。\nべ、別に、ボクは　平気だ"),
+	q("rei", "敗因を　解析……。\n『上目づかい』と　出ました"),
 ];
 
 /** 寝落ち民。 */
@@ -204,8 +207,9 @@ const CAUSE_POOLS: readonly {
 	{ match: (c) => c.includes("ゾンJ民"), pool: ZONJ },
 	{ match: (c) => c.includes("文字化け"), pool: MOJIBAKE },
 	{
-		match: (c) => c.includes("とうすこ") && !c.includes("メタル"),
-		pool: TOUSUKO,
+		match: (c) =>
+			(c.includes("ぷゆゆ") || c.includes("とうすこ")) && !c.includes("メタル"),
+		pool: PUYU,
 	},
 ];
 

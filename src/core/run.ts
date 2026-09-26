@@ -816,7 +816,7 @@ export class Run {
 			m.carry = null;
 			this.placeItem(it, m);
 		}
-		// 必ず落とす道具（メタルとうすこ → 成長の実）。何を落とすかは 知られているので 正体もわかる
+		// 必ず落とす道具（メタルぷゆゆ → 成長の実）。何を落とすかは 知られているので 正体もわかる
 		if (d.drop && !burnt) {
 			const it = this.newItem(d.drop);
 			identifyKind(this.s, it.kind);

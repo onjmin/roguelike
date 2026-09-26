@@ -478,9 +478,14 @@ export class Village {
 
 	/**
 	 * 場面で 人を 歩かせる 道（幅優先）。地形だけを 見て、ほかの人は すりぬける（場面の 人どうしが
-	 * ふさぎあわないように）。キリコの マスは よける。
+	 * ふさぎあわないように）。avoid なら ほかの人・置物も よける。キリコの マスは よける。
 	 */
-	private routeTo(a: Actor, tx: number, ty: number): Dir[] | null {
+	private routeTo(
+		a: Actor,
+		tx: number,
+		ty: number,
+		avoid = false,
+	): Dir[] | null {
 		const field = this.field;
 		if (!field?.inBounds(tx, ty)) return null;
 		const me = this.player;
@@ -504,6 +509,7 @@ export class Village {
 				const ny = y + DIR_VEC[d].dy;
 				const k = key(nx, ny);
 				if (prev.has(k) || !field.tileAt(nx, ny).passable) continue;
+				if (avoid && !field.canEnter(nx, ny, a)) continue;
 				if (a !== me && nx === me.x && ny === me.y) continue;
 				prev.set(k, { k: key(x, y), d });
 				queue.push([nx, ny]);
@@ -955,7 +961,7 @@ export class Village {
 			},
 			goto: async (target, x, y, opt) => {
 				const a = this.actorFor(target);
-				const route = a ? this.routeTo(a, x, y) : null;
+				const route = a ? this.routeTo(a, x, y, opt?.avoid) : null;
 				if (!a || !route) {
 					console.warn(`[goto] ${target} は (${x},${y}) へ 行けません`);
 					return;

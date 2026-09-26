@@ -11,6 +11,7 @@
 // - 人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人 うろうろ する。
 // - おんJマイナーズ（data/mobs.ts）は 町が 育つと 1人ずつ 越してくる（段1 にぃちぇ 13,13・段2 パン松 8,11・
 //   段3 ンゴ姉 19,15・段4 おんすちゃん 20,5・段5 おんちゃん 12,15・段6 ヤヤポジ 2,15）。どこも 口への 道の 外。
+//   ぷゆゆ（同じ data/mobs.ts）は 段0 から 8,16 の まわり 2マスを うろうろ している。
 // - 帰ってきたとき 仲間が 口の前に 並ぶ マス（lineupSpots）と、町が 育ったとき カメラを 向ける 所（VILLAGE_SPOTS.growth）。
 //
 // 段ごとの 区画（前の段の物は 形を かえて 残る）
@@ -38,7 +39,7 @@
 // 13 h,,,::::::..::::::@,,h  広場（野次馬）
 // 14 H,Y,::Kk@:@::::U::,Y,H  まとめ掲示板 6..7・レイ 8・蓄音機 10・井戸 15
 // 15 h,,,:@::::::::::@:,,,h  キリコ（起きる所）10・フェリス 16
-// 16 H*,,,,,,@,,,,@,,,,,,*H  とうすこ 8
+// 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
 
 import { DUNGEON_IDS } from "../../core/data/dungeons";
@@ -46,7 +47,7 @@ import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
-import { CAST, TOUSUKO_WALK, YAJI_WALK } from "../cast";
+import { CAST, YAJI_WALK } from "../cast";
 import { MOB_IDS, MOBS, type MobId } from "../mobs";
 import type { Speaker } from "../quotes";
 import {
@@ -104,7 +105,6 @@ export const VILLAGE_SPOTS = {
 	] as readonly Cell[],
 	rei: [8, 14] as Cell,
 	feris: [16, 15] as Cell,
-	tousuko: [8, 16] as Cell,
 	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
 	roze: (stage: number): Cell => (stage === 0 ? [4, 11] : [4, 10]),
 	/** テト（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
@@ -377,17 +377,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	out.push(friend("rei", VILLAGE_SPOTS.rei));
 	out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
 	out.push(friend("feris", VILLAGE_SPOTS.feris, true));
-	const [tx, ty] = VILLAGE_SPOTS.tousuko;
-	out.push({
-		id: "tousuko",
-		x: tx,
-		y: ty,
-		trigger: "talk",
-		sprite: TOUSUKO_WALK,
-		dir: "down",
-		wander: true,
-	});
-	// おんJマイナーズ（町が 育つと 越してくる）
+	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of MOB_IDS) {
 		const d = MOBS[id];
 		if (stage < d.from) continue;
@@ -398,6 +388,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			trigger: "talk",
 			sprite: d.sprite,
 			dir: d.dir,
+			wander: d.wander,
 			mob: id,
 		});
 	}
