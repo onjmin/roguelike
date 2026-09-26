@@ -160,7 +160,7 @@ export const listWindow = (
 		cls?: string;
 		start?: number;
 		closeLabel?: string;
-		actions?: { label: string; value: string; key?: Key }[];
+		actions?: { label: string; value: string; key?: Key; keyHint?: string }[];
 		header?: string;
 		cols?: number;
 	} = {},
@@ -208,6 +208,9 @@ export const listWindow = (
 					class: "menu-close menu-action",
 					text: a.label,
 				});
+				// PC の キー（マウスの ある 画面だけ 見える。style.css の .kbd-hint）
+				if (a.keyHint)
+					b.appendChild(el("kbd", { class: "kbd-hint", text: a.keyHint }));
 				onTap(b, box, () => done(a.value));
 				foot.appendChild(b);
 			}

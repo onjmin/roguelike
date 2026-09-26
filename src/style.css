@@ -749,6 +749,10 @@ body.shake #app {
 	display: none;
 }
 
+.menu-action {
+	position: relative;
+}
+
 @media (hover: hover) and (pointer: fine) {
 	.kbd-hint {
 		display: block;

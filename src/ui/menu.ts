@@ -421,7 +421,7 @@ export const openInventory = async (
 				// 整理：分類の順に並べなおす（時間は進まない。並びが変わるので コマンドにして 記録に残す）
 				actions:
 					items.length > 1
-						? [{ label: "整理", value: "sort", key: "sort" }]
+						? [{ label: "整理", value: "sort", key: "sort", keyHint: "O" }]
 						: [],
 			}));
 		jump = null;

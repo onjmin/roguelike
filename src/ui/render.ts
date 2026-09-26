@@ -86,6 +86,8 @@ export type Projectile = {
 	y: number;
 	icon: string | null;
 	color: string;
+	/** 炎（燃料投下草・炎を 吐く敵）：吐いた マスから 先まで 炎の 帯を 描く。alpha は 消えぎわ。 */
+	flame?: { x: number; y: number; alpha: number };
 };
 
 export class FloorView {
@@ -460,7 +462,8 @@ export class FloorView {
 		for (const p of projectiles) {
 			const x = Math.round(p.x * TILE - ox);
 			const y = Math.round(p.y * TILE - oy);
-			if (p.icon && getImage(p.icon)) drawRefInCell(ctx, p.icon, x, y);
+			if (p.flame) drawFlame(ctx, p.flame, p, ox, oy, time);
+			else if (p.icon && getImage(p.icon)) drawRefInCell(ctx, p.icon, x, y);
 			else {
 				ctx.fillStyle = p.color;
 				ctx.beginPath();
@@ -470,6 +473,58 @@ export class FloorView {
 		}
 	}
 }
+
+/**
+ * 炎の 帯（from の マスの ふちから to まで）。先ほど 大きく、ちらちら ゆれる。
+ * 外は 赤・だいだい、芯は 黄色。
+ */
+const drawFlame = (
+	ctx: CanvasRenderingContext2D,
+	from: { x: number; y: number; alpha: number },
+	to: { x: number; y: number },
+	ox: number,
+	oy: number,
+	time: number,
+): void => {
+	const cx = (v: number, o: number) => v * TILE - o + TILE / 2;
+	let dx = to.x - from.x;
+	let dy = to.y - from.y;
+	const len = Math.hypot(dx, dy);
+	// 吐いた マスの ふちから（口もと）。先が まだ 近ければ となりの マスへ 少し だけ
+	const ux = len > 0 ? dx / len : 0;
+	const uy = len > 0 ? dy / len : 0;
+	const sx = cx(from.x, ox) + ux * TILE * 0.4;
+	const sy = cy0(from.y, oy) + uy * TILE * 0.4;
+	const ex = cx(to.x, ox);
+	const ey = cy0(to.y, oy);
+	dx = ex - sx;
+	dy = ey - sy;
+	const px = Math.hypot(dx, dy);
+	const n = Math.max(2, Math.ceil(px / 4));
+	const tick = Math.floor(time / 50);
+	ctx.save();
+	for (let i = 0; i <= n; i++) {
+		const u = i / n;
+		const f = hash01(i * 13 + tick);
+		const r = 2.5 + 4.5 * u + f * 2;
+		const jx = (hash01(i * 7 + tick * 3) - 0.5) * 2;
+		const jy = (hash01(i * 11 + tick * 5) - 0.5) * 2;
+		const x = sx + dx * u + jx;
+		const y = sy + dy * u + jy;
+		ctx.globalAlpha = from.alpha * (0.45 + 0.55 * u);
+		ctx.fillStyle = f > 0.55 ? "#ff5a1f" : "#ff9a2e";
+		ctx.beginPath();
+		ctx.arc(x, y, r, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.fillStyle = "#fff0a0";
+		ctx.beginPath();
+		ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
+		ctx.fill();
+	}
+	ctx.restore();
+};
+
+const cy0 = (v: number, o: number) => v * TILE - o + TILE / 2;
 
 /** 0〜1 の決まった乱数（粒の置き場所など。毎コマ同じ値になる）。 */
 const hash01 = (n: number): number => {

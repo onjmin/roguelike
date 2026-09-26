@@ -1663,7 +1663,10 @@ export class Play {
 		speed: number,
 	): Promise<void> {
 		const n = Math.max(1, dist(e.from, e.to));
-		const ms = Math.min(420, n * 38) * speed;
+		const fire = e.kind === "fire";
+		// 炎は 帯なので となりでも 見える 長さに（矢・杖は 今までどおり）
+		const ms =
+			(fire ? Math.min(480, 220 + n * 40) : Math.min(420, n * 38)) * speed;
 		const proj: Projectile = {
 			x: e.from.x,
 			y: e.from.y,
@@ -1674,14 +1677,23 @@ export class Play {
 					: e.kind === "staff"
 						? "#a8e0ff"
 						: "#f4f1ff",
+			flame: fire ? { x: e.from.x, y: e.from.y, alpha: 1 } : undefined,
 		};
 		this.projectiles.push(proj);
 		const t0 = performance.now();
+		// 炎は 先が 早く 伸びきって、しばらく 燃えてから 消える
+		const reach = fire ? ms * 0.45 : ms;
 		for (;;) {
-			const k = Math.min(1, (performance.now() - t0) / ms);
+			const elapsed = performance.now() - t0;
+			const k = Math.min(1, elapsed / reach);
 			proj.x = e.from.x + (e.to.x - e.from.x) * k;
 			proj.y = e.from.y + (e.to.y - e.from.y) * k;
-			if (k >= 1) break;
+			if (proj.flame)
+				proj.flame.alpha =
+					elapsed < ms * 0.7
+						? 1
+						: Math.max(0, 1 - (elapsed - ms * 0.7) / (ms * 0.3));
+			if (elapsed >= ms) break;
 			await nextFrameP();
 		}
 		this.projectiles = this.projectiles.filter((p) => p !== proj);
