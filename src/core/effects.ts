@@ -13,7 +13,7 @@ import {
 } from "./balance";
 import { pickTrapKind } from "./floor";
 import { canSee } from "./fov";
-import { DIRS8, type Dir8, dist, type Pos, step } from "./geom";
+import { DIRS8, type Dir8, dist, step } from "./geom";
 import { defOf, identifyKind, isKeyItem } from "./item";
 import { roomAt, roomTiles } from "./mapgen";
 import {
@@ -571,12 +571,16 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 	wakeMonster(r, hit, true);
 	// 投げつけられた敵は、投げてきた所へ向かう（見えない所から投げても）
 	if (canTrack(hit)) track(hit, r.p);
-	onThrownHit(r, it, hit, last);
+	onThrownHit(r, it, hit);
 	return true;
 };
 
-/** 投げた道具が当たった。 */
-const onThrownHit = (r: Run, it: Item, m: Monster, at: Pos): void => {
+/**
+ * 投げた道具が当たった。当たった道具は なくなる（トルネコ1と 同じ。杖は 回数0でも 振ったのと 同じに 効く）。
+ * はずれたときだけ 床に 落ちる（throwItem）。
+ */
+const onThrownHit = (r: Run, it: Item, m: Monster): void => {
+	r.loseItem(it);
 	const d = defOf(it.kind);
 	const md = mdef(m);
 	const undead = md.tags?.includes("undead");
@@ -590,24 +594,18 @@ const onThrownHit = (r: Run, it: Item, m: Monster, at: Pos): void => {
 			const dmg = rollDamage(atk, md.def, r.dmgRoll());
 			r.se("attack");
 			r.damageMonster(m, dmg, "throw");
-			// 武器は当たった所に落ちる（メタルがワープしても ついていかない）。当たった矢はなくなる
-			if (d.cat === "weapon") r.placeItem(it, at);
 			return;
 		}
 		case "shield":
 			r.damageMonster(m, Math.max(1, (d.def ?? 1) - r.rng.int(2)), "throw");
-			r.placeItem(it, at);
 			return;
 		case "ring":
 			r.damageMonster(m, r.rng.range(1, 2), "throw");
-			r.placeItem(it, at);
 			return;
 		case "staff":
 			staffEffect(r, it.kind, m);
 			if (identifyKind(r.s, it.kind))
 				r.msg(`${r.kindName(it.kind)}　だった！`, "good");
-			// 当たった所に落ちる（転送の杖で敵が飛んでも、杖は ついていかない）
-			r.placeItem(it, at);
 			return;
 		case "herb":
 			identifyKind(r.s, it.kind);
