@@ -1680,7 +1680,7 @@ export class Play {
 					if (e.id === PLAYER_ID) {
 						// 眠っている あいだの ターンは 一気に 進むので、Z を 出したまま 少し 見せてから 起こす
 						if (e.on) this.sleepShown = true;
-						if (!fast) await wait((e.on ? 400 : 600) * speed);
+						if (!fast) await wait((e.on ? 900 : 700) * speed);
 						if (!e.on) this.sleepShown = false;
 					}
 					break;
