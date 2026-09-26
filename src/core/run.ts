@@ -683,6 +683,7 @@ export class Run {
 		const g = this.rng.pick(HP_GAIN);
 		p.maxHp = Math.max(1, p.maxHp - g);
 		p.hp = Math.min(p.hp, p.maxHp);
+		this.se("debuff");
 		this.msg(`レベルが　${p.lv}に　下がった`, "warn");
 	}
 
@@ -1041,6 +1042,7 @@ export class Run {
 	 */
 	sleepPlayer(turns: number): void {
 		this.p.status.sleep = turns;
+		this.se("sleep");
 		this.emit({ t: "sleep", id: PLAYER_ID, on: true });
 	}
 
@@ -1309,6 +1311,7 @@ export class Run {
 		}
 		if (this.isEquipped(it) && it.cursed) {
 			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
+			this.se("curse");
 			return false;
 		}
 		if (this.itemAt(this.p.x, this.p.y) || this.onStairs()) {
@@ -1342,6 +1345,7 @@ export class Run {
 		}
 		if (this.isEquipped(it) && it.cursed) {
 			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
+			this.se("curse");
 			return false;
 		}
 		this.removeItem(it);
@@ -1376,6 +1380,7 @@ export class Run {
 		const cur = this.findItem(p[slot] ?? -1);
 		if (cur?.cursed) {
 			this.msg(`${this.name(cur)}は　のろわれていて　外せない！`, "warn");
+			this.se("curse");
 			return false;
 		}
 		if (slot === "ring") {
@@ -1395,7 +1400,7 @@ export class Run {
 		if (it.cursed) {
 			it.known = true;
 			this.msg("のろわれていた！", "warn");
-			this.se("damage");
+			this.se("curse");
 		}
 		return true;
 	}
@@ -1405,6 +1410,7 @@ export class Run {
 		if (!it || !this.isEquipped(it)) return false;
 		if (it.cursed) {
 			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
+			this.se("curse");
 			return false;
 		}
 		if (this.p.ring === it.uid) {

@@ -89,6 +89,7 @@ const eat = (r: Run, it: Item): boolean => {
 		r.msg("うっ……　カビている！", "warn");
 		if (!r.hasRing("r_purity") && r.p.str > 1) {
 			r.p.str--;
+			r.se("debuff");
 			r.msg("ちからが　1　下がった", "warn");
 		}
 		r.hurtPlayer(5, "チギュリパンに　あたった");
@@ -128,8 +129,10 @@ const drink = (r: Run, it: Item): boolean => {
 			if (!r.hasRing("r_purity")) {
 				const before = p.str;
 				p.str = Math.max(1, p.str - 3);
-				if (p.str < before)
+				if (p.str < before) {
+					r.se("debuff");
 					r.msg(`ちからが　${before - p.str}　下がった`, "warn");
+				}
 			}
 			r.hurtPlayer(5, "荒らし草を　飲んで　たおれた");
 			break;
@@ -154,6 +157,7 @@ const drink = (r: Run, it: Item): boolean => {
 			break;
 		case "h_blind":
 			p.status.blind = 50;
+			r.se("debuff");
 			r.msg("目が　見えなくなった！", "warn");
 			break;
 		case "h_blink":
@@ -161,6 +165,7 @@ const drink = (r: Run, it: Item): boolean => {
 			break;
 		case "h_reel":
 			p.status.confuse = 10;
+			r.se("debuff");
 			r.msg("頭が　くらくらする……", "warn");
 			break;
 		case "h_sleep":

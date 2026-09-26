@@ -52,6 +52,13 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		shock: "rpgen:usF2l8",
 		/** トラばさみに はさまれた（トルネコ1と おなじく 金属の 音）。 */
 		bearTrap: "rpgen:mL4xt3", // サイクロップス/謎の金属音
+		// ── キリコに かかる 悪い 状態（トルネコ1のように 音でも わかるように）
+		/** 眠った（眠りガスの罠・眠り草・眠りの呪文）。 */
+		sleep: "rpgen:Adwsg4", // [ツクール]催眠
+		/** のろわれた装備を 身につけた・外せない。 */
+		curse: "rpgen:WiZ0AR", // [ツクール]デバフ
+		/** 目つぶし・混乱・ちから／最大HP・レベルが 下がった・板が 錆びた。 */
+		debuff: "rpgen:NQtzgI", // [ツクール]麻痺
 		/** アイテムを投げる。 */
 		throw: "rpgen:3JcWxQ", // 爆弾を投げる（unj-reze の onj-reze プリセット）
 		// ── キリコの攻撃（武器ごと。data/items.ts の sound）。当たったら hit_*、空振り・はずれたら swing_*

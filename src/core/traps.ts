@@ -47,6 +47,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			}
 			sh.plus--;
 			sh.known = true;
+			r.se("debuff");
 			r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
 			return;
 		}
@@ -90,6 +91,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			if (r.hurtPlayer(dmg, `${trapName(t)}で　たおれた`)) return;
 			if (t.kind === "dart" && !r.hasRing("r_purity") && p.str > 1) {
 				p.str--;
+				r.se("debuff");
 				r.msg("ちからが　1　下がった", "warn");
 			}
 			return;

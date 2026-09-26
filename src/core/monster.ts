@@ -513,6 +513,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				r.se("spell");
 				r.msg(`${d.name}と　目が　合った`);
 				p.status.confuse = Math.max(p.status.confuse, 5);
+				r.se("debuff");
 				r.msg("キリコは　混乱した", "warn");
 				return;
 			}
@@ -682,6 +683,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				}
 				sh.plus -= 1;
 				sh.known = true;
+				r.se("debuff");
 				r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
 				break;
 			}
@@ -694,6 +696,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				}
 				if (p.str > 1) {
 					p.str--;
+					r.se("debuff");
 					r.msg("ちからが　1　下がった", "warn");
 				}
 				break;
@@ -710,10 +713,12 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				if (r.rng.chance(1 / 2)) {
 					p.maxHp = Math.max(1, p.maxHp - 5);
 					p.hp = Math.min(p.hp, p.maxHp);
+					r.se("debuff");
 					r.msg("最大HPが　5　下がった", "warn");
 				} else if (!r.hasRing("r_purity")) {
 					p.maxStr = Math.max(1, p.maxStr - 1);
 					p.str = Math.min(p.str, p.maxStr);
+					r.se("debuff");
 					r.msg("最大ちからが　1　下がった", "warn");
 				}
 				break;

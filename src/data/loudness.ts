@@ -121,6 +121,9 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	fire: ["HyTVhK", -10.9, -2.3, -10.1, 0.313, 50, 1820, 1000], // battle → -21.0
 	shock: ["usF2l8", -9.9, -2.1, -11.1, 0.279, 10, 2180, 440], // battle → -21.0
 	bearTrap: ["mL4xt3", -16.8, -6.8, -4.2, 0.617, 0, 510, 280], // battle → -21.0
+	sleep: ["Adwsg4", -6.4, -0.3, -14.6, 0.186, 80, 1420, 710], // battle → -21.0
+	curse: ["WiZ0AR", -9, -0.1, -12, 0.251, 20, 1720, 450], // battle → -21.0
+	debuff: ["NQtzgI", -10.8, -2, -10.2, 0.309, 50, 900, 840], // battle → -21.0
 	throw: ["3JcWxQ", -10.3, -2.3, -10.7, 0.292, 70, 760, 340], // battle → -21.0
 	swing_fist: ["BQhjMK", -9, 0, -12, 0.251, 0, 190, 90], // battle → -21.0
 	swing_blade: ["hFhBTQ", -10.6, 0.4, -10.4, 0.302, 330, 1010, 510], // battle → -21.0
