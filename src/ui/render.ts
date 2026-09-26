@@ -613,9 +613,8 @@ export const drawMap = (
 	}
 	const ctx = canvas.getContext("2d");
 	if (!ctx) return;
+	// 画面は 暗くしない（トルネコ・シレンと 同じく、地図だけ うっすら 重ねる。まわりの 敵・床も 見える）
 	ctx.clearRect(0, 0, w, h);
-	ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-	ctx.fillRect(0, 0, w, h);
 	for (let y = 0; y < l.h; y++)
 		for (let x = 0; x < l.w; x++) {
 			const i = y * l.w + x;
@@ -626,14 +625,16 @@ export const drawMap = (
 				t === 1 ? "rgba(90, 140, 255, 0.55)" : "rgba(120, 160, 255, 0.4)";
 			ctx.fillRect(mx + x * cell, my + y * cell, cell, cell);
 		}
+	// 印は 暗い ふちで かこむ（明るい 床の 上でも 見えるように）
 	const dot = (x: number, y: number, color: string, shrink = 0) => {
+		const px = mx + x * cell + shrink;
+		const py = my + y * cell + shrink;
+		const sz = cell - shrink * 2;
+		const edge = Math.max(1, Math.round(cell / 8));
+		ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+		ctx.fillRect(px - edge, py - edge, sz + edge * 2, sz + edge * 2);
 		ctx.fillStyle = color;
-		ctx.fillRect(
-			mx + x * cell + shrink,
-			my + y * cell + shrink,
-			cell - shrink * 2,
-			cell - shrink * 2,
-		);
+		ctx.fillRect(px, py, sz, sz);
 	};
 	// いちばん底は、原盤を拾うまで階段が無い
 	if (
