@@ -13,7 +13,6 @@
 |---|---|---|---|
 | 革命シヨ（倉庫番） | `portraits/shiyo.png` | 仮の 絵（右下に「仮」） | 16歳・金髪ポニテ（赤い 髪ゴム）・猫耳カチューシャ・丸眼鏡・赤い目・紺の メイド服に 白エプロン。気が強い ツンデレ |
 | 解音ゼロ（帳簿・記録） | `portraits/zero.png` | 仮の 絵（右下に「仮」） | 束音ロゼの 反転：うすい 金髪ロング・青い 耳の パーツ（アンドロイド）・水色の 目・白い 着物に 青い 帯・紺の 袴 |
-| ぷゆゆ | `portraits/puyu.png` | ファイル無し（ダミー） | 🥺 の 顔の まるい 子。手の ポーズ（✋🥺）が 定番。※「黄色い」とは 書かない 決まり（rpg と 同じ） |
 | にぃちぇ | `portraits/nichie.png` | ファイル無し（ダミー） | 日曜日を 待っている 子（歩行グラ `sprites/minors_nichie.png`） |
 | パン松 | `portraits/panmatsu.png` | ファイル無し（ダミー） | パン板から 来た 食パン（六枚切り） |
 | ンゴ姉 | `portraits/ngoane.png` | ファイル無し（ダミー） | 歩行グラ `sprites/minors_ngoane.png` |
@@ -21,9 +20,9 @@
 | おんちゃん | `portraits/onchan.png` | ファイル無し（ダミー） | 殿堂入り。歩行グラは RPGEN の `sa:oLrlUq` |
 | ヤヤポジ | `portraits/yayapoji.png` | ファイル無し（ダミー） | 歩行グラ `sprites/minors_yayapoji.png` |
 
-- おんJ民は 立ち絵なしが 正しい形なので、ここには 入れていません。
+- おんJ民・ぷゆゆは 立ち絵なしが 正しい形なので、ここには 入れていません。
 - キリコ・ロゼ・フェリスは 描いてあります。
-- 絵の 大きさや 位置が 合わないときは `src/data/cast.ts`（仲間）の `scale`、マイナーズ・ぷゆゆは `src/data/mobs.ts` の `portrait` で パスを 変えられます。
+- 絵の 大きさや 位置が 合わないときは `src/data/cast.ts`（仲間）の `scale`、マイナーズは `src/data/mobs.ts` の `portrait` で パスを 変えられます。
 
 ## 歩行グラ（`public/sprites/`。描きなおしたければ）
 

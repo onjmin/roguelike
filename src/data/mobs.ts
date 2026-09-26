@@ -95,8 +95,8 @@ export type MobDef = {
 	dir: Dir;
 	/** 家の まわり 2マスを うろうろ する。 */
 	wander?: boolean;
-	/** 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。 */
-	portrait: string;
+	/** 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。無ければ 立ち絵なし（ぷゆゆ。おんJ民と 同じ）。 */
+	portrait?: string;
 	/** 名前欄の 色を かりる 仲間（立ち絵は かりない）。ぷゆゆは おんJ民（rpg と 同じ）。 */
 	voice?: Speaker;
 	/** 総選挙の 候補に ならない（殿堂入りの おんちゃん・マイナーズでは ない ぷゆゆ）。 */
@@ -165,7 +165,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// レスの 文末の 🥺 が 歩きだした子（rpg の ぷゆゆ）。はじめから 広場の 下を うろうろ。総選挙には 出ない
 	puyu: {
 		name: "ぷゆゆ",
-		portrait: "portraits/puyu.png",
 		sprite: PUYU_WALK,
 		from: 0,
 		spot: [8, 16],
