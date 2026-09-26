@@ -58,6 +58,17 @@ const SNEERS: readonly string[] = [
 	"てやんでいｗ",
 ];
 
+/**
+ * 風呂キャンセル界隈（rust）の ひとこと。風呂に 入らない 報告で、ふれた 板を 汚して 錆びさせる。
+ * 語録は 作らず、実際に 出回っている 言い回しだけ（X の 投稿・用語の 解説に 出てくる 例文）。
+ */
+const FUROCAN: readonly string[] = [
+	"今日は　風呂キャンする",
+	"風呂キャンセルし過ぎて　頭が　かゆい",
+	"疲れすぎて　風呂キャンして　朝を　迎えた",
+	"完全に　風呂キャンセル界隈の　住人です",
+];
+
 const has = (m: Monster, k: string): boolean =>
 	!m.status.sealed && mdef(m).abilities.some((a) => a.k === k);
 
@@ -663,6 +674,8 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 			case "rust": {
 				const sh = r.shield();
 				if (!sh) break;
+				// 風呂キャンセルの ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
+				r.msg(`${nm}「${FUROCAN[r.s.turn % FUROCAN.length]}」`);
 				if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
 					r.msg("しかし　板は　錆びなかった");
 					break;

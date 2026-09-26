@@ -937,7 +937,7 @@ test("knight", "armor: melee halved; throw/magic/blast unchanged", () => {
 	ok(dealt(r, m, 20, "hit") === 20, "sealed knight still halves melee");
 });
 
-// ───────────────── 錆び亡者（rust） ─────────────────
+// ───────────────── 風呂キャンセル界隈（rust。前の名前は 錆び亡者） ─────────────────
 
 test("sabi", "rust: lowers the shield's plus", () => {
 	const r = arena("sabi");

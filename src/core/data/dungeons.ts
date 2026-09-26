@@ -135,7 +135,7 @@ export const DEEP_DECK: readonly DeckEntry[] = [
 	{ kind: "leather", count: 3 }, // おなかが半分。もっと の命綱（もっと の盾の 20%）。各層に1枚
 	{ kind: "bronze", count: 3 }, // ありふれた盾。各層に1枚
 	{ kind: "scale", count: 2 }, // 毒で ちからを下げられない（毒草8・チギュリパン5 の迷宮で 価値が上がる）
-	{ kind: "mirror", count: 2 }, // 錆びない。錆び亡者（レベル8〜15）・錆びの罠 対策
+	{ kind: "mirror", count: 2 }, // 錆びない。風呂キャンセル界隈（レベル8〜15）・錆びの罠 対策
 	{ kind: "steelsh", count: 2 }, // 防御6。本編1 × 1.5 を切り上げ
 	{ kind: "fireward", count: 1 }, // ワイバーンの炎が半分。深い階で強いので 1枚のまま
 	{ kind: "starshield", count: 1 }, // 防御10。いちばん強い盾は 1枚のまま

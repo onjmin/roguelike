@@ -213,9 +213,12 @@ const M: MonsterDef[] = [
 		desc: "かたい　鎧で、なぐる　攻撃は　半分しか　通らない",
 	},
 	{
+		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。ふれた 板を 汚して 錆びさせる
+		// （ひとことは core/monster.ts の FUROCAN）。絵は とうすこ民（泥版）を くすませた もの（scripts/make-furocan.mjs）。
+		// 投げた 草の 効き目（undead）は 前の 役の まま
 		id: "sabi",
-		name: "錆び亡者",
-		sprite: "sa:F6EGaJ",
+		name: "風呂キャンセル界隈",
+		sprite: "pub:sprites/furocan.png",
 		hp: 30,
 		atk: 8,
 		def: 19,
@@ -224,7 +227,7 @@ const M: MonsterDef[] = [
 		weight: 28,
 		abilities: [{ k: "rust", rate: 1 / 2 }],
 		tags: ["undead"],
-		desc: "ふれた　板を　錆びさせる",
+		desc: "風呂に　入っていない。ふれた　板を　汚して　錆びさせる",
 	},
 	{
 		id: "metal",
