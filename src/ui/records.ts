@@ -1,12 +1,11 @@
-// 冒険の記録：倒れた・持ち帰ったときの全画面の札（showRunEnd）と、タイトルから見る過去の記録（openRecords）。
-// 1ページずつタップで送る語りの札（showStory。はじめての前口上・持ち帰ったあと）もここに置く。
+// 冒険の記録：倒れた・持ち帰ったときの全画面の札（showRunEnd）と、村で見る過去の記録（openRecords。
+// まとめ掲示板・レイ・村のメニューから）。
+// 1ページずつタップで送る語りの札（showStory。はじめての前口上）もここに置く。
 
 import { dungeonById } from "../core/data/dungeons";
 import { defOf, itemName } from "../core/item";
 import type { RunState } from "../core/types";
-import { SPEAKERS } from "../data/quotes";
-import { DUNGEON_NAMES, STORY, UNLOCK_LINES } from "../data/story";
-import { RETURN_PAGES } from "../data/town";
+import { DUNGEON_NAMES } from "../data/story";
 import {
 	addRecord,
 	clearRun,
@@ -18,7 +17,6 @@ import {
 	replayMatches,
 	runStats,
 	type SavedReplay,
-	takeProgressNews,
 } from "../engine/save";
 import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
@@ -92,20 +90,10 @@ const waitClose = (
 
 /**
  * 語りの札。1つが1ページ（HTML）で、タップで次へ送る。
- * 黒い全画面に文字だけを出す（はじめての前口上・原盤を持ち帰ったあと）。
+ * 黒い全画面に文字だけを出す（はじめての前口上）。
  */
-export const showStory = async (
-	ctx: Ctx,
-	pages: string[],
-	opt: {
-		/** 黒い幕が画面を覆いきったとき（下の画面を差しかえるなら ここで）。 */
-		onCovered?: () => void;
-	} = {},
-): Promise<void> => {
-	if (!pages.length) {
-		opt.onCovered?.();
-		return;
-	}
+export const showStory = async (ctx: Ctx, pages: string[]): Promise<void> => {
+	if (!pages.length) return;
 	const text = el("div", { class: "story-text" });
 	const box = el("div", { class: "story" }, [
 		text,
@@ -114,11 +102,6 @@ export const showStory = async (
 	ctx.ui.appendChild(box);
 	await nextFrame();
 	box.classList.add("shown");
-	if (opt.onCovered) {
-		// .story の opacity のトランジション（0.5s）が終わるまで待つ
-		await sleep(500);
-		opt.onCovered();
-	}
 	for (const html of pages) {
 		text.innerHTML = html;
 		await nextFrame();
@@ -134,16 +117,6 @@ export const showStory = async (
 
 /** 文字を逃がして、\n を改行にする（セリフは2行に分けて書かれている）。 */
 export const escBr = (s: string): string => esc(s).replace(/\n/g, "<br>");
-
-/** 語りの1ページ（話し手がいれば、色つきの名前を上に出して「」でくくる）。 */
-export const storyLine = (
-	who: keyof typeof SPEAKERS | null,
-	text: string,
-): string => {
-	if (!who) return escBr(text);
-	const sp = SPEAKERS[who];
-	return `<b class="story-name" style="--char:${sp.color}">${esc(sp.name)}</b>「${escBr(text)}」`;
-};
 
 /** 終わり方の1行（倒れた階と理由・持ち帰ったなら いちばん深い階）。 */
 const endLine = (
@@ -179,17 +152,11 @@ const dateLabel = (at: number): string => {
 };
 
 /**
- * 倒れた・持ち帰ったあとの「冒険の記録」の札（全画面）。
+ * 倒れた・持ち帰ったあとの「冒険の記録」の札（全画面。トルネコ1の 冒険の記録の 画面）。
  * 記録を足して中断セーブを消すのは、札を出す前にやる（見ている間にタブを閉じても残るように）。
- * 持ち帰ったときは、先に ENDING の語りを流す。
- * story が false（歩ける村）なら 語りも 開いた知らせも 出さない（村の中で 仲間が 話す。ui/villageReturn.ts）。
+ * 持ち帰りの 語りと 開いた知らせは、札を 閉じたあと 村の中で 仲間が 話す（ui/villageReturn.ts）。
  */
-export const showRunEnd = async (
-	ctx: Ctx,
-	s: RunState,
-	opt: { story?: boolean } = {},
-): Promise<void> => {
-	const story = opt.story ?? true;
+export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	const rec = recordFromRun(s);
 	const clear = rec.kind === "clear";
 	const escaped = rec.kind === "escape";
@@ -258,58 +225,20 @@ export const showRunEnd = async (
 	]);
 	const box = el("div", { class: "matome" }, [
 		card,
-		el("div", {
-			class: "matome-tap",
-			text: story ? "タップで　タイトルへ" : "タップで　地上へ",
-		}),
+		el("div", { class: "matome-tap", text: "タップで　地上へ" }),
 	]);
 	ctx.ui.appendChild(box);
-	if (story && (clear || escaped)) {
-		// 持ち帰った・帰ってきたときは、語りが画面を覆ったら その下に札を置いておく（語りが消えると
-		// そのまま札が見える。語りのあとに札を出すと、そのすき間に下の画面がちらつく）
-		const pages = clear ? STORY[s.dungeon].ending : RETURN_PAGES;
-		await showStory(
-			ctx,
-			pages.map((l) => storyLine(l.who, l.text)),
-			{ onCovered: () => box.classList.add("instant", "shown") },
-		);
-		box.classList.remove("instant");
-	} else {
-		await nextFrame();
-		box.classList.add("shown");
-	}
+	await nextFrame();
+	box.classList.add("shown");
 	await waitClose(ctx, box, 800, box);
 	ctx.se("decide");
 	box.classList.remove("shown");
 	await sleep(600);
 	box.remove();
-	if (story) await showProgressNews(ctx);
 };
 
 /**
- * 次のダンジョンが開いた（持ち帰った・何度も倒れた）知らせを、まだ見せていなければ見せる。
- * 記録の札のあと・タイトルの前（札の途中で 閉じていたとき）・冒険を すてたとき に呼ぶ。
- */
-export const showProgressNews = async (ctx: Ctx): Promise<void> => {
-	for (const n of takeProgressNews()) {
-		const lines =
-			UNLOCK_LINES[
-				n.reason === "relief"
-					? "relief"
-					: n.dungeon === "deep"
-						? "deep"
-						: "main"
-			];
-		await showStory(ctx, [
-			...lines.map((l) => storyLine(l.who, l.text)),
-			escBr(`「${DUNGEON_NAMES[n.dungeon].name}」に
-もぐれるように　なった`),
-		]);
-	}
-};
-
-/**
- * タイトルの「冒険の記録」：通算と、これまでの冒険（新しい順）。
+ * 「冒険の記録」（村の まとめ掲示板・レイ・メニューから）：通算と、これまでの冒険（新しい順）。
  * 冒険を選ぶと、残っていれば「リプレイを見る」。見るなら そのリプレイを返す。
  */
 export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {

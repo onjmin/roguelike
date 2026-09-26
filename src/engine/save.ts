@@ -333,7 +333,7 @@ export const loadProgress = (): Progress => {
 	// 保存できない（プライベートモード等）ときは、この回のあいだ 覚えている分を使う
 	if (progressMemo) return JSON.parse(JSON.stringify(progressMemo)) as Progress;
 	// ここで決めた形を すぐ保存する（はじめて遊ぶ人の 最初の冒険の記録を「前の版で遊んだ」と取りちがえないように。
-	// タイトルを開いたときに 必ず一度ここを通る）
+	// 村を開いたときに 必ず一度ここを通る）
 	const st = runStats();
 	const recs = loadRecords();
 	// ダンジョンの無い記録は 前の版（本編だけ）のもの
@@ -414,18 +414,8 @@ export const noteRunEnd = (
 	saveProgress(p);
 };
 
-/** 知らせを受けとる（受けとったら消す）。 */
-export const takeProgressNews = (): ProgressNews[] => {
-	const p = loadProgress();
-	if (!p.news.length) return [];
-	const news = p.news;
-	p.news = [];
-	saveProgress(p);
-	return news;
-};
-
 /**
- * 知らせを 1つ 見せおえた（歩ける村：見せてから 消す。見せている 途中で 閉じたら 次に 開いたとき また 見せる）。
+ * 知らせを 1つ 見せおえた（村で 見せてから 消す。見せている 途中で 閉じたら 次に 開いたとき また 見せる）。
  */
 export const doneProgressNews = (n: ProgressNews): void => {
 	const p = loadProgress();
@@ -437,7 +427,7 @@ export const doneProgressNews = (n: ProgressNews): void => {
 	saveProgress(p);
 };
 
-/** ダンジョンを選んだ（次は そこから カーソルを置く）。語りを見たなら それも覚える。 */
+/** ダンジョンに もぐる（最後に もぐった所として 残す）。語りを見たなら それも覚える。 */
 export const notePicked = (dungeon: DungeonId, sawIntro: boolean): void => {
 	const p = loadProgress();
 	p.last = dungeon;
@@ -446,8 +436,8 @@ export const notePicked = (dungeon: DungeonId, sawIntro: boolean): void => {
 };
 
 // ───────────────────────── 地上の町 ─────────────────────────
-// 帰ってきた持ち物は いったん「おあずかり」（pending）に入れ、次の画面で 倉庫へ・売る を決める
-// （決める前に タブを閉じても、次にタイトルを開いたとき 続きから決められるように）。
+// 帰ってきた持ち物は いったん「おあずかり」（pending）に入れ、村に入ってから 倉庫へ・売る を決める
+// （決める前に タブを閉じても、次に村に入ったとき 続きから決められるように）。
 
 export type PendingReturn = {
 	kind: "clear" | "escape";

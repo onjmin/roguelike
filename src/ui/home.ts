@@ -1,21 +1,17 @@
-// 地上に帰ってきたあと（帰還スレ・持ち帰り）：持ち物を 倉庫へ あずける／売る、町が育つ。
-// トルネコ1で ネネが 持ち帰った道具を売り、店が大きくなるのに あたる。
-// 町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
-// 歩ける村（?village）では あずける 一覧（chooseStored）だけを 使い、会話と 町の 建て直しは 村の中（ui/villageReturn.ts）。
+// 地上（保守村）の 倉庫の 一覧：帰ってきた 持ち物から あずける物を えらぶ（chooseStored）・
+// 過去ログの底へ 持っていく物を えらぶ（pickCarry）・倉庫を 見る（openStorage）。
+// トルネコ1で ネネが 持ち帰った道具を売り、店が大きくなるのに あたる（会話・売り・町の 建て直しは
+// 村の中。ui/villageReturn.ts）。町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
 
 import { defOf } from "../core/item";
-import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
+import { priceOf, STORAGE_CAP } from "../core/town";
 import type { Item } from "../core/types";
-import { STAGE_NAMES, STAGE_UP, TOWN_MSG } from "../data/town";
-import {
-	loadTown,
-	type PendingReturn,
-	settleReturn,
-	type Town,
-} from "../engine/save";
+import { TOWN_MSG } from "../data/town";
+import { loadTown, type PendingReturn, type Town } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { infoWindow, type ListItem, listWindow } from "./list";
-import { esc, escBr, showStory, storyLine } from "./records";
+import { esc, escBr } from "./records";
+import { fill } from "./villageTalk";
 
 /** 町での 道具の呼び名（本当の名前。修正値・本数・回数・のろい）。 */
 export const townItemName = (it: Item): string => {
@@ -29,34 +25,19 @@ export const townItemName = (it: Item): string => {
 	return s;
 };
 
-const fill = (text: string, vars: Record<string, string | number>): string =>
-	text.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
-
 /**
  * 帰ってきた持ち物から 倉庫に あずける道具を えらぶ（uid。ここでは 保存しない。決めるのは 呼ぶ側の settleReturn）。
- * B・とじる・外のタップは 決定ではない：のこりを 売ってよいか 聞いて（confirmSell）、はい なら そこで 決める。
- * prompt は 一覧の 題（HTML）。歩ける村では テトが 先に 窓で 言うので 短い題、ロゼが 村の窓で 売ってよいか きく。
+ * B・とじる・外のタップは 決定ではない：のこりを 売ってよいか 聞いて（confirmSell。ロゼが 村の窓で きく）、
+ * はい なら そこで 決める。prompt は 一覧の 題（HTML。テトが 先に 村の窓で 言うので 短い題）。
  */
 export const chooseStored = async (
 	ctx: Ctx,
 	t: Town,
 	pend: PendingReturn,
-	opt: { prompt?: string; confirmSell?: () => Promise<boolean> } = {},
+	opt: { prompt: string; confirmSell: () => Promise<boolean> },
 ): Promise<number[]> => {
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	const chosen = new Set<number>();
-	const confirmSell =
-		opt.confirmSell ??
-		(async () =>
-			(await listWindow(
-				ctx,
-				escBr(TOWN_MSG.sellRest.text),
-				[
-					{ label: "はい", value: "yes" },
-					{ label: "いいえ", value: "no" },
-				],
-				{ start: 1 },
-			)) === "yes");
 	let start = 0;
 	for (;;) {
 		const room = cap - t.storage.length - chosen.size;
@@ -69,13 +50,13 @@ export const chooseStored = async (
 		rows.push({ label: "これで　きめる", value: "done" });
 		const v = await listWindow(
 			ctx,
-			`${opt.prompt ?? escBr(TOWN_MSG.storePrompt.text)}<br><small>倉庫　${t.storage.length + chosen.size}／${cap}　えらばなかった　道具は　売る</small>`,
+			`${opt.prompt}<br><small>倉庫　${t.storage.length + chosen.size}／${cap}　えらばなかった　道具は　売る</small>`,
 			rows,
 			{ start },
 		);
 		if (v === "done") break;
 		if (v === null) {
-			if (await confirmSell()) break;
+			if (await opt.confirmSell()) break;
 			continue;
 		}
 		const uid = Number(v);
@@ -84,34 +65,6 @@ export const chooseStored = async (
 		start = rows.findIndex((r) => r.value === v);
 	}
 	return [...chosen];
-};
-
-/** 帰ってきた持ち物を 決める（おあずかりが無ければ 何もしない）。 */
-export const settleHome = async (ctx: Ctx): Promise<void> => {
-	const t = loadTown();
-	const pend = t.pending;
-	if (!pend) return;
-	const cap = STORAGE_CAP[t.stage] ?? 0;
-	const chosen =
-		pend.kind === "escape" && cap > 0 && pend.items.length
-			? await chooseStored(ctx, t, pend)
-			: [];
-	// 選んでいるあいだに 別のタブで 決められていたら、ここでは 何もしない（古い町で 上書きしない）
-	const cur = loadTown();
-	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
-	const r = settleReturn(cur, chosen);
-	const lines = [
-		storyLine(TOWN_MSG.sold.who, fill(TOWN_MSG.sold.text, { points: r.sold })),
-	];
-	if (r.to > r.from)
-		for (const l of STAGE_UP[r.to] ?? []) lines.push(storyLine(l.who, l.text));
-	await showStory(ctx, lines);
-	if (r.to > r.from)
-		await infoWindow(
-			ctx,
-			"",
-			`<p>町が　「${esc(STAGE_NAMES[r.to])}」に　なった</p>${CARRY_MAX[r.to] > CARRY_MAX[r.from] ? `<p class="hint">倉庫から　過去ログの底へ　${CARRY_MAX[r.to]}つまで　持っていける</p>` : ""}`,
-		);
 };
 
 /**
@@ -150,7 +103,7 @@ export const pickCarry = async (
 	return [...chosen].map((i) => t.storage[i]);
 };
 
-/** 倉庫を見る（タイトルから）。 */
+/** 倉庫を見る（村の テト・メニューから）。 */
 export const openStorage = async (ctx: Ctx): Promise<void> => {
 	const t = loadTown();
 	const cap = STORAGE_CAP[t.stage] ?? 0;

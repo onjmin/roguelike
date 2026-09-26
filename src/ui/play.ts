@@ -152,18 +152,15 @@ export class Play {
 	private statusKey = "";
 	/** リプレイを見ているとき（入力の代わりに 記録のコマンドを入れる）。 */
 	private rp: ReplayDriver | null = null;
-	/** 歩ける村から もぐった（終わりの札のあと、語りは 村の中で 仲間が 話す）。 */
-	private readonly village: boolean;
 
 	constructor(
 		run: Run,
 		ctx: Ctx,
 		screen: Screen,
 		hud: Hud,
-		opts: { replay?: SavedReplay; village?: boolean } = {},
+		opts: { replay?: SavedReplay } = {},
 	) {
 		this.run = run;
-		this.village = opts.village ?? false;
 		if (opts.replay) {
 			const steps = parseReplay(opts.replay.text);
 			this.rp = {
@@ -214,7 +211,7 @@ export class Play {
 				if (builds[builds.length - 1] !== __CORE_VERSION__)
 					s.builds = [...builds, __CORE_VERSION__];
 			}
-			// 最初の札のあいだは操作を受けない（タイトルで押したキーも捨てる）
+			// 最初の札のあいだは操作を受けない（村で押したキーも捨てる）
 			this.ctx.input.clearField();
 			this.ctx.input.takeDirPress();
 			this.busy = true;
@@ -1340,7 +1337,7 @@ export class Play {
 		this.stop();
 	}
 
-	/** リプレイの終わり（最後まで見た・ずれて止まった）。タップで タイトルへ。 */
+	/** リプレイの終わり（最後まで見た・ずれて止まった）。タップで 村へ。 */
 	private async replayEnd(): Promise<void> {
 		const rp = this.rp;
 		if (!rp || this.stopped) return;
@@ -1730,7 +1727,7 @@ export class Play {
 			await this.replayEnd();
 			return;
 		}
-		await showRunEnd(this.ctx, s, { story: !this.village });
+		await showRunEnd(this.ctx, s);
 		this.stop();
 	}
 
@@ -1756,7 +1753,7 @@ export class Play {
 		}
 		this.grave = { x: run.p.x, y: run.p.y, t0: performance.now() + 120 };
 		await wait(120 + GRAVE_DROP_MS * 0.7);
-		// リプレイを「やめる」で閉じたあとなら ここで終わる（タイトルの上に出さない・色を抜かない）
+		// リプレイを「やめる」で閉じたあとなら ここで終わる（村の上に出さない・色を抜かない）
 		if (this.stopped) return;
 		this.ctx.audio.se("wipeout");
 		this.screen.canvas.classList.add("dead");

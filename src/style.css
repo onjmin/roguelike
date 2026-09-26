@@ -590,8 +590,7 @@ body.shake #app {
 	white-space: nowrap;
 }
 
-.menu-item.disabled,
-.title-btn.disabled {
+.menu-item.disabled {
 	opacity: 0.35;
 }
 
@@ -883,7 +882,7 @@ body.shake #app {
 	display: none;
 }
 
-/* タイトル画面ではミュートボタンだけ出す */
+/* 起動の札（タイトル）ではミュートボタンだけ出す */
 .hud.hidden .pad,
 .hud.hidden .ab,
 .hud.hidden .minis,
@@ -1582,8 +1581,9 @@ body.shake #app {
 	word-break: keep-all;
 }
 
-/* ───────── タイトル ───────── */
+/* ───────── タイトル（起動の札。ui/boot.ts） ───────── */
 
+/* 歩ける村の上に 重ねる（うしろで 村が 動いているのが 見えるように 半分すける） */
 .title {
 	position: absolute;
 	inset: 0;
@@ -1598,15 +1598,10 @@ body.shake #app {
 	background:
 		radial-gradient(
 			circle at 50% 35%,
-			rgba(120, 200, 255, 0.14),
+			rgba(120, 200, 255, 0.12),
 			transparent 45%
 		),
-		repeating-radial-gradient(
-			circle at 50% 35%,
-			rgba(255, 255, 255, 0.045) 0 2px,
-			transparent 2px 14px
-		),
-		linear-gradient(#1a1440, #07051a 70%);
+		linear-gradient(rgba(26, 20, 64, 0.72), rgba(7, 5, 26, 0.9) 75%);
 	transition: opacity 0.5s;
 }
 
@@ -1638,29 +1633,6 @@ body.shake #app {
 	font-size: 0.56em;
 	margin-top: 0.3em;
 	letter-spacing: 0.02em;
-}
-
-.title-walkers {
-	width: 240px;
-	max-width: calc(var(--app-w) * 0.7);
-	image-rendering: pixelated;
-	aspect-ratio: 3 / 1;
-	height: auto;
-}
-
-/* 地上の町（保守村）。16×5 マス（256×80） */
-.title-walkers.title-town {
-	width: 512px;
-	max-width: calc(var(--app-w) * 0.94);
-	aspect-ratio: 256 / 80;
-	border-radius: 6px;
-}
-
-.title-town-name {
-	font-size: 12px;
-	color: var(--muted);
-	letter-spacing: 0.1em;
-	margin-top: -4px;
 }
 
 .title-buttons {
@@ -1920,44 +1892,15 @@ body.shake #app {
 	pointer-events: none;
 }
 
-.title-row {
-	display: flex;
-	gap: 8px;
-}
-
-.title-btn.title-mini {
-	flex: 1 1 0;
-	min-width: 0;
-	padding: 9px 2px;
-	font-size: 13px;
-	border-width: 2px;
-	white-space: nowrap;
-}
-
 @media (max-height: 640px) {
 	.title {
 		gap: 10px;
-	}
-
-	.title-walkers {
-		width: 180px;
 	}
 
 	.title-btn {
 		padding: 8px;
 		font-size: 16px;
 	}
-}
-
-/* 起動の札（歩ける村の上に 重ねる。うしろで 村が 動いているのが 見えるように 半分すける） */
-.title.boot {
-	background:
-		radial-gradient(
-			circle at 50% 35%,
-			rgba(120, 200, 255, 0.12),
-			transparent 45%
-		),
-		linear-gradient(rgba(26, 20, 64, 0.72), rgba(7, 5, 26, 0.9) 75%);
 }
 
 /* 横持ち：左にロゴ、右にボタン */
@@ -1967,7 +1910,6 @@ body.shake #app {
 	grid-template-areas:
 		"sub btns"
 		"logo btns"
-		"walk btns"
 		"quote btns"
 		"foot btns";
 	align-content: center;
@@ -1989,19 +1931,6 @@ body.shake #app {
 	font-size: clamp(26px, var(--app-h) * 0.11, 44px);
 }
 
-.short-landscape .title-walkers {
-	grid-area: walk;
-	width: 150px;
-}
-
-.short-landscape .title-walkers.title-town {
-	width: min(320px, calc(var(--app-w) * 0.45));
-}
-
-.short-landscape .title-town-name {
-	display: none;
-}
-
 .short-landscape .title-quote {
 	grid-area: quote;
 }
@@ -2016,7 +1945,7 @@ body.shake #app {
 	grid-area: foot;
 }
 
-/* ───────── 語りの札（前口上・持ち帰ったあと） ───────── */
+/* ───────── 語りの札（はじめての 前口上） ───────── */
 
 .story {
 	position: absolute;
@@ -2051,12 +1980,6 @@ body.shake #app {
 .story-text.shown {
 	opacity: 1;
 	transform: none;
-}
-
-.story-name {
-	display: block;
-	color: var(--char, var(--accent));
-	font-weight: normal;
 }
 
 .story-tap {
@@ -2137,7 +2060,7 @@ body.shake #app {
 	color: var(--muted);
 }
 
-/* ───────── 冒険の記録（タイトルから見る一覧） ───────── */
+/* ───────── 冒険の記録（村から見る一覧） ───────── */
 
 .records .rec-total {
 	display: grid;
@@ -2238,11 +2161,6 @@ body.shake #app {
 .title-quote {
 	word-break: keep-all;
 	overflow-wrap: anywhere;
-}
-
-/* 語りの幕の下で、札を一瞬で出しておく（records.ts showRunEnd） */
-.matome.instant {
-	transition: none;
 }
 
 /* とても背の低い縦持ちでは、副題が右上の 🔊 の下にもぐるので消す */

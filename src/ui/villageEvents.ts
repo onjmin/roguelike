@@ -3,13 +3,13 @@
 //
 // - ダンジョンの口：踏むと 中断した冒険の 確認 → もぐる？ → （本編なら）倉庫からの 持ちこみ →
 //   はじめてなら 語り → 村を出る。やめたら 1歩 もどる。
-// - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。
+// - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
 // - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと（頭の上に「！」）。聞いたら 町の様子の
 //   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（レイ＝冒険の記録と 売り上げの 帳簿、
 //   フェリス＝図鑑・あそびかた、テト＝倉庫、おんJ民＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
 // - 小屋の扉・板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
-// - 開発用の 段の 下見（?village&stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
+// - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
 // - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
 //   倉庫・売り → 町が 育つ（場面は ui/villageReturn.ts。あずける 一覧だけ ui/home.ts）。
 
@@ -69,6 +69,10 @@ import {
 /** まだ開いていないダンジョンの 開き方（1行目 持ち帰り、2行目 たおれた回数の 救い）。 */
 const hintText = (d: DungeonId): string => lockedHint(d).replace("（", "\n（");
 
+/** 開いた ダンジョンの 札（名前・階の数・持ち帰ったら ★、2行目に 説明）。口と 立て札で 読む。 */
+const signText = (d: DungeonId): string =>
+	`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}${loadProgress().cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`;
+
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
 
@@ -81,7 +85,7 @@ const records = async (ctx: Ctx, s: Story): Promise<boolean> => {
 	return true;
 };
 
-/** 中断した冒険を すてる（やめた、として 記録に残す。タイトルの「もぐる」と同じ）。 */
+/** 中断した冒険を すてる（やめた、として 記録に残す）。 */
 const abandonRun = (): void => {
 	const old = loadRun();
 	if (old) {
@@ -128,10 +132,7 @@ const mouthScript =
 				await newsScript(s);
 			}
 		}
-		const p = loadProgress();
-		await s.narrate(
-			`「${DUNGEON_NAMES[d].name}」${p.cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`,
-		);
+		await s.narrate(signText(d));
 		if ((await s.choose(["もぐる", "やめる"], { cancel: 1 })) !== 0) {
 			await back();
 			return;
@@ -176,17 +177,14 @@ const mouthScript =
 const signScript =
 	(d: DungeonId): Script =>
 	async (s) => {
-		const p = loadProgress();
-		if (!p.unlocked.includes(d)) {
+		if (!loadProgress().unlocked.includes(d)) {
 			// 名前は まだ 読めない。開き方だけ（救いが あれば 次の ページ）
 			const [cond, relief] = hintText(d).split("\n");
 			await s.narrate(`「？？？」\n${cond}`);
 			if (relief) await s.narrate(relief);
 			return;
 		}
-		await s.narrate(
-			`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}${p.cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`,
-		);
+		await s.narrate(signText(d));
 	};
 
 /** 仲間の ひとこと（1回の 帰りに 1つ 新しい話。聞いたら 決まった ひとこと）。 */
@@ -323,7 +321,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 
 /**
  * 村の窓で あずける物を えらぶ（一覧は ui/home.ts。のこりを 売るかは ロゼが 村の窓で きく。
- * タイトルの ときと 同じく「いいえ」から：押しすぎて 売ってしまわないように）。
+ * 「いいえ」から：押しすぎて 売ってしまわないように）。
  */
 const storeChooser =
 	(ctx: Ctx): StoreChooser =>

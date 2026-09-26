@@ -35,7 +35,7 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 			quoteEl.innerHTML = `<b style="--char:${sp.color}">${esc(sp.name)}</b>「${escBr(quote.text)}」`;
 		} else quoteEl.style.display = "none";
 		const buttons = el("div", { class: "title-buttons" });
-		const root = el("div", { class: "title boot" }, [
+		const root = el("div", { class: "title" }, [
 			el("div", { class: "title-sub", text: "1歩1ターンの　ローグライク" }),
 			el("h1", {
 				class: "title-logo",

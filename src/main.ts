@@ -1,5 +1,5 @@
-// 起動：画面・入力・音を組み立て、タイトル → 冒険 → タイトル… を回す。
-// URL に ?village を付けると、タイトルの かわりに 歩ける村（保守村）→ 冒険 → 村… を回す（作りかけ）。
+// 起動：画面・入力・音を組み立て、歩ける村（保守村）→ 冒険 → 村… を回す。
+// タイトルは 村の上に 重ねる 起動の札（ui/boot.ts）だけ。
 
 import "./style.css";
 import { EXP_AT } from "./core/balance";
@@ -17,11 +17,8 @@ import {
 } from "./engine/save";
 import { Screen } from "./engine/screen";
 import type { Ctx } from "./ui/ctx";
-import { settleHome } from "./ui/home";
 import { mountHud } from "./ui/hud";
 import { Play } from "./ui/play";
-import { showProgressNews } from "./ui/records";
-import { showTitle } from "./ui/title";
 import { type Arrival, Village } from "./ui/village";
 
 const app = document.getElementById("app");
@@ -141,49 +138,7 @@ const devRun = (): Run | null => {
 	return run;
 };
 
-const loop = async () => {
-	let first = devRun();
-	for (;;) {
-		hud.root.classList.add("hidden");
-		let run = first;
-		first = null;
-		let replay: SavedReplay | undefined;
-		if (!run) {
-			// 帰ってきた持ち物を 倉庫へ・売る（決める前に閉じていても ここで続きから）
-			await settleHome(ctx);
-			// 開いた知らせを 見せる前に 閉じていたら ここで
-			await showProgressNews(ctx);
-			const choice = await showTitle(ctx);
-			if (choice.kind === "replay") {
-				// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
-				replay = choice.replay;
-				run = Run.create(
-					replay.seed,
-					replay.dungeon ?? "main",
-					replay.carry ?? [],
-				);
-			} else if (choice.kind === "new") {
-				// 倉庫から 取り出すのは ここ（冒険を作って すぐ保存する。取り出したのに 冒険が無い、にならないように）。
-				// 選んだあとで 別のタブが 持っていった道具は 持っていけない
-				const carry = choice.carry.length ? takeFromStorage(choice.carry) : [];
-				run = Run.create(newSeed(), choice.dungeon, carry);
-				if (carry.length) saveRun(run.s);
-			} else run = new Run(choice.state);
-		}
-		hud.root.classList.remove("hidden");
-		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;
-		const play = new Play(run, ctx, screen, hud, { replay });
-		if (import.meta.env.DEV)
-			(window as unknown as { __play: Play }).__play = play;
-		await play.start();
-		// 画面を消してからタイトルへ
-		const c = screen.begin();
-		c.fillStyle = "#000";
-		c.fillRect(0, 0, screen.width, screen.height);
-	}
-};
-
-/** 村を出て 冒険を 作る（旧タイトルと 同じ。倉庫から 取り出すのは ここ）。 */
+/** 村を出て 冒険を 作る（倉庫から 取り出すのは ここ）。 */
 const runFor = (
 	choice: VillageExit,
 ): { run: Run; replay: SavedReplay | undefined } => {
@@ -211,15 +166,16 @@ const runFor = (
 };
 
 /**
- * 歩ける村（?village のときだけ）：村 → 冒険 → 村…。
+ * 村 → 冒険 → 村…。
  * 起動したときと 中断したあとは 村の上に 起動の札（はじめる／つづきから）を出す。
+ * 開発用の 冒険（?seed=…&depth=…）は 村を とばして すぐ始め、終わったら 札なしで 村へ。
  */
-const villageLoop = async () => {
+const loop = async () => {
 	const village = new Village(ctx, screen, hud);
 	if (import.meta.env.DEV)
 		(window as unknown as { __village: Village }).__village = village;
 	let first = devRun();
-	let boot = true;
+	let boot = !first;
 	let arrival: Arrival = null;
 	for (;;) {
 		let run = first;
@@ -234,7 +190,7 @@ const villageLoop = async () => {
 		hud.setMode("dungeon");
 		hud.root.classList.remove("hidden");
 		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;
-		const play = new Play(run, ctx, screen, hud, { replay, village: true });
+		const play = new Play(run, ctx, screen, hud, { replay });
 		if (import.meta.env.DEV)
 			(window as unknown as { __play: Play }).__play = play;
 		const r = await play.start();
@@ -247,11 +203,11 @@ const villageLoop = async () => {
 				: run.s.end
 					? { kind: run.s.end.kind, dungeon: run.s.dungeon }
 					: null;
+		// 画面を消してから村へ
 		const c = screen.begin();
 		c.fillStyle = "#000";
 		c.fillRect(0, 0, screen.width, screen.height);
 	}
 };
 
-if (new URLSearchParams(location.search).has("village")) void villageLoop();
-else void loop();
+void loop();

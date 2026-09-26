@@ -6,16 +6,31 @@
 // - 本編の口は 開くまで おんJ民が ふさぐ・もっとの口は 開くまで 板で ふさぐ
 // - 町の段ごとに 建物が ふえる・売る人は 台の うしろ（囲いの中へは 入れない）・絵は 同梱の Base.png だけ
 // - 仲間の ひとこと（ui/villageTalk.ts）：1回の 帰りに 1人 1つ 新しい話（「！」）、聞いたら 決まった ひとこと。
-//   レイの 帳簿。村の 新しい文は 全角22字・2行まで（localStorage の かわりに 入れものを 置いて 試す）
+//   レイの 帳簿。村の窓で 読む 文（村の 新しい文・口と 立て札・仲間の たまり）は 全角22字・2行まで
+//   （localStorage の かわりに 入れものを 置いて 試す）
 // - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
 //   （おんJ民が どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
 
-import { DUNGEON_IDS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
-import { SPEAKERS, type Speaker } from "../data/quotes";
-import { STORY, UNLOCK_LINES } from "../data/story";
 import {
+	pickQuote,
+	type Quote,
+	type QuoteContext,
+	SPEAKERS,
+	type Speaker,
+} from "../data/quotes";
+import {
+	CLEAR,
+	DUNGEON_NAMES,
+	FIRST_SHALLOW,
+	SHALLOW_DEATH,
+	STORY,
+	UNLOCK_LINES,
+} from "../data/story";
+import {
+	ESCAPE_QUOTES,
 	RETURN_PAGES,
 	STAGE_NAMES,
 	STAGE_UP,
@@ -55,10 +70,12 @@ import {
 	villageView,
 } from "../ui/villageReturn";
 import {
+	DUNGEON_DESC,
 	fill,
 	forgetHeardMemo,
 	hasNews,
 	ledgerLine,
+	lockedHint,
 	talkLine,
 } from "../ui/villageTalk";
 import type { TestResult } from "./monsterTests";
@@ -521,6 +538,16 @@ test("レイ reads the ledger: sales so far and the rest to the next stage", () 
 const width = (line: string): number =>
 	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
 
+/** 村の窓（スマホで 全角22字）に 2行まで で 収まるか。 */
+const fitsWindow = (texts: readonly [string, string][]): void => {
+	for (const [where, t] of texts) {
+		const lines = t.split("\n");
+		ok(lines.length <= 2, `${where}: ${lines.length} lines`);
+		for (const l of lines)
+			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
+	}
+};
+
 test("new village lines fit the message window (22 full-width × 2 lines)", () => {
 	const texts: [string, string][] = [];
 	for (const [k, v] of Object.entries(VILLAGE_MSG))
@@ -531,11 +558,90 @@ test("new village lines fit the message window (22 full-width × 2 lines)", () =
 			]);
 	for (const [k, v] of Object.entries(VILLAGE_IDLE))
 		texts.push([`VILLAGE_IDLE.${k}`, v]);
-	for (const [where, t] of texts) {
-		const lines = t.split("\n");
-		ok(lines.length <= 2, `${where}: ${lines.length} lines`);
-		for (const l of lines)
-			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
+	fitsWindow(texts);
+});
+
+test("everything the village window reads out fits it (22 full-width × 2 lines)", () => {
+	const texts: [string, string][] = [];
+	const pool = (where: string, ls: readonly { text: string }[]) =>
+		ls.forEach((l, i) => {
+			texts.push([`${where}[${i}]`, l.text]);
+		});
+	for (const d of DUNGEON_IDS) {
+		// 口・立て札の 札（ui/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
+		texts.push([
+			`sign ${d}`,
+			`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}　★\n${DUNGEON_DESC[d]}`,
+		]);
+		texts.push([`hint ${d}`, lockedHint(d).replace("（", "\n（")]);
+		pool(`CLEAR.${d}`, CLEAR[d]);
+		pool(`STORY.${d}.ending`, STORY[d].ending);
+	}
+	pool("FIRST_SHALLOW", FIRST_SHALLOW);
+	pool("SHALLOW_DEATH", SHALLOW_DEATH);
+	pool("ESCAPE_QUOTES", ESCAPE_QUOTES);
+	pool("RETURN_PAGES", RETURN_PAGES);
+	for (const [k, v] of Object.entries(UNLOCK_LINES))
+		pool(`UNLOCK_LINES.${k}`, v);
+	STAGE_UP.forEach((v, i) => {
+		pool(`STAGE_UP[${i}]`, v);
+	});
+	TITLE_TOWN_QUOTES.forEach((v, i) => {
+		pool(`TITLE_TOWN_QUOTES[${i}]`, v);
+	});
+	for (const [k, v] of Object.entries(TOWN_MSG))
+		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
+	fitsWindow(texts);
+});
+
+test("the boot title's quote keeps its two lines on a 320px phone (name and 「」 included)", () => {
+	// 起動の札の ひとことは「名前「1行目」…「2行目」」の形。13px の字で 幅は 320px の画面で 280px（全角 21.5字）
+	const quotes = new Map<string, Quote>();
+	const add = (ls: readonly Quote[]) => {
+		for (const q of ls) quotes.set(q.text, q);
+	};
+	add(FIRST_SHALLOW);
+	add(SHALLOW_DEATH);
+	add(ESCAPE_QUOTES);
+	for (const d of DUNGEON_IDS) add(CLEAR[d]);
+	for (const ls of TITLE_TOWN_QUOTES) add(ls);
+	// 本編の たまり（data/quotes.ts。外へは 出していないので 引いて 集める）
+	const causes = [
+		"おなかが　すいて　たおれた",
+		"荒らし草",
+		"爆発",
+		"寝落ち民",
+		"コピペ",
+		"忍法帖",
+		"転載ガモ",
+		"ワイ バーン",
+		"過疎",
+		"ゾンJ民",
+		"文字化け",
+		"とうすこ",
+		"罠",
+	];
+	const contexts: QuoteContext[] = [null];
+	for (const kind of ["dead", "clear", "escape"] as const)
+		for (const depth of [1, 8, 15])
+			for (const cause of causes)
+				for (const runs of [1, 12])
+					for (const clears of [0, 3])
+						contexts.push({ kind, depth, cause, runs, clears });
+	const whos = [undefined, ...(Object.keys(SPEAKERS) as Speaker[])];
+	for (const c of contexts)
+		for (const who of whos)
+			for (let seed = 0; seed < 64; seed++) {
+				const q = pickQuote(c, seed, who);
+				if (q) quotes.set(q.text, q);
+			}
+	for (const q of quotes.values()) {
+		const lines = q.text.split("\n");
+		const first = `${SPEAKERS[q.who].name}「${lines[0]}`;
+		const last = `${lines[lines.length - 1]}」`;
+		ok(lines.length <= 2, `${q.who}: ${lines.length} lines`);
+		for (const l of lines.length > 1 ? [first, last] : [`${first}」`])
+			ok(width(l) <= 21.5, `${q.who}: "${l}" is ${width(l)} wide`);
 	}
 });
 

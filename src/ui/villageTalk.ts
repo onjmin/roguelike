@@ -1,5 +1,5 @@
 // 地上の ひとこと：タイトル（起動の札）の ひとこと、村で 仲間に 話しかけたときの ひとこと（1回の 帰りに
-// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、レイの 帳簿、ダンジョンの ひとことの説明（選ぶ窓・立て札）。
+// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、レイの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
 import { DUNGEONS } from "../core/data/dungeons";
@@ -26,11 +26,14 @@ import {
 } from "../data/town";
 import { loadRecords, loadTown, runStats } from "../engine/save";
 
-/** ダンジョンの ひとことの説明（選ぶ窓・立て札）。 */
+/**
+ * ダンジョンの ひとことの説明（口・立て札の 2行目。階の数は 1行目の 名前の 横に 出す）。
+ * 村の窓に 収まるよう 1行（全角22字まで）。
+ */
 export const DUNGEON_DESC: Record<DungeonId, string> = {
-	shallow: "10階。杖だけ　名前が　わからない。のろいも　祭りも　ない",
-	main: "20階。草・スレ・トリップ・杖の　名前が　わからない",
-	deep: "30階。特大おにぎりと　◆腹いっぱいが　出ない。罠が　多い",
+	shallow: "杖だけ　未識別。のろいも　祭りも　ない",
+	main: "草・スレ・トリップ・杖が　未識別",
+	deep: "特大おにぎり・◆腹いっぱい　なし。罠が　多い",
 };
 
 /** まだ開いていないダンジョンの 開き方。 */
@@ -41,7 +44,7 @@ export const lockedHint = (d: DungeonId): string => {
 	return `「${DUNGEON_NAMES[after].name}」を　持ち帰ると　開く${relief ? `（${relief}回　たおれても　開く）` : ""}`;
 };
 
-/** いちばん新しい記録から、タイトルの一言の手がかりを作る。 */
+/** いちばん新しい記録から、ひとことの手がかりを作る。 */
 const quoteContext = (): QuoteContext => {
 	const last = loadRecords()[0];
 	if (!last) return null;
@@ -60,7 +63,7 @@ const quoteContext = (): QuoteContext => {
 };
 
 /**
- * タイトルの ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
+ * 起動の札の ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
  * 無ければ 本編の たまり（data/quotes.ts の pickQuote）。
  */
 export const titleQuote = (seed: number): Quote | null => {

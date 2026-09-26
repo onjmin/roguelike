@@ -767,6 +767,8 @@ export class Village {
 		const enter = this.field?.def.onEnter;
 		if (!enter) {
 			this.scene = false;
+			this.ctx.input.clearField();
+			this.ctx.input.takeDirPress();
 			this.checkAuto();
 			return;
 		}
@@ -822,7 +824,10 @@ export class Village {
 			return;
 		}
 		this.refreshActors();
+		// 場面の すき間（人が 歩く・暗転）で 押した キー・向きは 捨てる（終わった とたんに 1歩 出ないように）。
+		// 押しっぱなしの 向きは 残る（そのまま 歩きだす）
 		this.ctx.input.clearField();
+		this.ctx.input.takeDirPress();
 		this.checkAuto();
 	}
 

@@ -92,7 +92,7 @@ export type MapDef = {
 
 // ───────────────── 村を出るとき ─────────────────
 
-/** 村を出て 冒険へ（main.ts が受け取る。旧タイトルの TitleChoice と同じ形）。 */
+/** 村を出て 冒険へ（main.ts が受け取る）。 */
 export type VillageExit =
 	| { kind: "new"; dungeon: DungeonId; carry: Item[] }
 	| { kind: "continue"; state: RunState }

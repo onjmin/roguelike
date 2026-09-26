@@ -1,6 +1,6 @@
 // 村（保守村）の マップチップ。rpg の data/tiles.ts から、村で使う物を 移した。
 // 同梱の 16px チップシート public/assets/rpg-reze/Base.png（8列×652行）から 1マスずつ切り出す
-// （ui/town.ts の 町の帯と 同じ絵。RPGEN の CDN の置物 `sp:` は使わない）。
+// （RPGEN の CDN の置物 `sp:` は使わない）。
 //
 // (c, r) はマス単位の列・行。w×h マスぶん切り出すと、マスの「下端そろえ・左右中央」で描かれる
 // （16x32 の扉・立て札・掲示板は上のマスへ、32x32 の木は左右と上へ はみ出す）。
@@ -54,12 +54,12 @@ export const counter = (color: string, ...layers: string[]): TileDef => ({
 export const TURF = base(0, 4);
 /** 土の道（町の段 4 まで）。 */
 export const DIRT = base(5, 4);
-/** 石だたみの道（町の段 5 から。ui/town.ts と同じ）。 */
+/** 石だたみの道（町の段 5 から）。 */
 export const STONE = base(2, 47);
 /** 広場の 石畳（町の段 5 から）。 */
 export const PLAZA = base(2, 46);
 
-/** 画像が まだ読めないときの色（ui/town.ts と同じ）。 */
+/** 画像が まだ読めないときの色。 */
 export const C_GRASS = "#97bc25";
 export const C_DIRT = "#b29f6e";
 export const C_STONE = "#81664d";
@@ -88,17 +88,17 @@ export const GROUND: Record<string, TileDef> = {
 	x: solid(C_GRASS, TURF, base(4, 123)),
 	X: solid(C_GRASS, TURF, base(3, 125)),
 	u: solid(C_GRASS, TURF, base(0, 123)),
-	// ui/town.ts の lantern と同じ切り出し
+	// 灯ったランプ（マスの 区切りから ずれているので 画素で 切り出す）
 	L: solid(C_GRASS, TURF, basePx(96, 2250)),
 	" ": BLACK,
 };
 
 // ───────────────── 北の崖と ダンジョンの口 ─────────────────
-// 崖は 上から 4段（ui/town.ts の cliff と同じ絵）。いちばん下の段の絵は 下の端が透けるので 草を敷く。
+// 崖は 上から 4段。いちばん下の段の絵は 下の端が透けるので 草を敷く。
 //   1  崖の上（草）  2  崖のふち  3  岩肌（上）  4  岩肌（下）
 //   M  ダンジョンの口（通れる。踏むと もぐる）  m  板で ふさいだ口（通れない）
 //   !  立て札（崖の足もとに立つ。道は ふさがない）
-//   y  崖のふちに 桜（段7。ui/town.ts の 崖の上の桜）
+//   y  崖のふちに 桜（段7）
 // 口の絵 base(2,23,1,2) は 右の端が 丸いので、下に 岩肌を 敷いて すき間を 埋める。
 const ROCK_LOW = base(1, 19);
 const MOUTH = base(2, 23, 1, 2);
@@ -140,7 +140,7 @@ export const STALL: Record<string, TileDef> = {
 };
 
 // ───────────────── 店（常識堂。段5から） ─────────────────
-// 白い壁・赤い屋根（ui/town.ts の smallShop・bigShop と 同じ）。屋根は 棟（82）と 軒（84）の 2段、壁は 上段・下段。
+// 白い壁・赤い屋根。屋根は 棟（82）と 軒（84）の 2段、壁は 上段・下段。
 //   n N  屋根（棟・軒）   ( )  白壁（上段・下段）   w  窓   f  窓と 花の箱（2階）
 //   O  本の 看板（壁に 付ける）   l  ちょうちん   d  扉（見るだけ。通れない）   a  下段に 日よけ
 const WIN_WHITE = basePx(48, 1382); // 木枠の窓（壁装飾 3,86 を 半マス上げて切り出し）
@@ -165,7 +165,7 @@ export const SHOP: Record<string, TileDef> = {
 };
 
 // ───────────────── 小屋（段3から） ─────────────────
-// 板壁・わら屋根・煙突（ui/town.ts の hut）。
+// 板壁・わら屋根・煙突。
 //   C  煙突（棟に 重ねる）   z Z  わら屋根（棟・軒）   [ ]  板壁（上段・下段）   J  窓
 //   e  扉（見るだけ）   E  下段に 花の箱（段6から）
 const PLANK_UP = base(1, 55);

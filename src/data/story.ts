@@ -1,6 +1,6 @@
 // 3つのダンジョン（トルネコ1の ちょっと／不思議／もっと）の物語の部品。
 // - 名前と層の名前、目的の品、はじめて入る前の語り（intro）と 持ち帰ったあとの語り（ending）、
-//   次のダンジョンが開いたときの ひとこと、タイトルの ひとことの たまり、タイトルに出る仲間。
+//   次のダンジョンが開いたときの ひとこと、起動の札と 村の ひとことの たまり。
 // - 本編（main）の intro / ending は quotes.ts の INTRO / ENDING をそのまま使う。
 // 話すのは 外で待っている仲間だけ（キリコはしゃべらない。ナレーションで動作だけ描く）。
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
@@ -8,7 +8,7 @@
 import type { DungeonId } from "../core/types";
 import { ENDING, INTRO, type Speaker } from "./quotes";
 
-/** 仲間の ひとこと（タイトルや 開いたときの ひとこと）。 */
+/** 仲間の ひとこと（起動の札・村・開いたときの ひとこと）。 */
 export type Line = { who: Speaker; text: string };
 
 /** 語りの1ページ（who が null なら ナレーション）。 */
@@ -225,7 +225,7 @@ export const UNLOCK_LINES: Record<"main" | "deep" | "relief", readonly Line[]> =
 		],
 	};
 
-// ───────────────── タイトルの ひとこと ─────────────────
+// ───────────────── 起動の札と 村の ひとこと ─────────────────
 /** 持ち帰ったあと（ダンジョンごと）。 */
 export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	shallow: [
@@ -268,20 +268,6 @@ export const SHALLOW_DEATH: readonly Line[] = [
 	q("nanj", "ちょっと下やで？　ちょっと。\n……いや、ちょっとでも　下は　下か"),
 	q("roze", "針は　ちいさいアル。\nあわてないのが　常識アル"),
 	q("feris", "ちょっと下でも、ころぶよね〜。\n私も　よく　ころぶ〜"),
-	q("teto", "……杖は、ふって　みるまで　わからない。\nべ、別に　教えてない"),
+	q("teto", "……杖は、ふるまで　わからない。\nべ、別に　教えてない"),
 	q("rei", "浅い　ログを　記録。\n……短くても、読みます"),
-];
-
-// ───────────────── タイトルに出る仲間 ─────────────────
-/**
- * 持ち帰るたびに タイトルの キリコの列に 仲間が ふえる（トルネコの 店が 大きくなるのに あたる）。
- * 前の段の 仲間は そのまま残る（もっと を持ち帰ると 5人 そろう）。
- */
-export const TITLE_CAMEOS: readonly {
-	after: DungeonId;
-	who: readonly Speaker[];
-}[] = [
-	{ after: "shallow", who: ["nanj"] },
-	{ after: "main", who: ["feris", "roze"] },
-	{ after: "deep", who: ["teto", "rei"] },
 ];

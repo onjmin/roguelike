@@ -40,7 +40,7 @@ import {
 import { fill } from "./villageTalk";
 
 /**
- * 開発用：`?village&stage=N` で 描く 町の段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
+ * 開発用：`?stage=N` で 描く 町の段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
  * 保存は 書きかえない（売り上げ・倉庫・会話は 本当の段のまま）。帰ってきた 持ち物の 精算も しない。
  */
 export const previewStage = (): number | null => {
