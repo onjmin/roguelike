@@ -21,8 +21,9 @@ const M: MonsterDef[] = [
 		desc: "落ちた　レスの　すみの　子。よちよち　あるく。2ターンに　1回しか　動かない",
 	},
 	{
+		// 前の名前は ひとだま。絵は そのまま
 		id: "hitodama",
-		name: "ひとだま",
+		name: "dat落ちの霊",
 		sprite: "sa:xBroMV",
 		hp: 5,
 		atk: 3,
@@ -32,11 +33,12 @@ const M: MonsterDef[] = [
 		weight: 64,
 		abilities: [{ k: "fastMove" }],
 		tags: ["undead"],
-		desc: "すばやく　ただよう　青い火。なぐるのは　1回",
+		desc: "落ちた　スレの　霊。すばやく　ただよう。なぐるのは　1回",
 	},
 	{
+		// 前の名前は 迷いコウモリ。絵は そのまま
 		id: "bat",
-		name: "迷いコウモリ",
+		name: "深夜テンション",
 		sprite: "sa:rfpCZH",
 		hp: 7,
 		atk: 3,
@@ -45,11 +47,12 @@ const M: MonsterDef[] = [
 		floors: [1, 4],
 		weight: 64,
 		abilities: [{ k: "random" }],
-		desc: "どこへ　飛ぶか　自分でも　わからない",
+		desc: "夜ふかしで、どこへ　飛ぶか　自分でも　わからない",
 	},
 	{
+		// 前の名前は フナムシ。絵は そのまま
 		id: "funamushi",
-		name: "フナムシ",
+		name: "バグ",
 		sprite: "sa:9RtFUy",
 		hp: 7,
 		atk: 2,
@@ -58,7 +61,7 @@ const M: MonsterDef[] = [
 		floors: [1, 4],
 		weight: 64,
 		abilities: [{ k: "shy" }],
-		desc: "近づくと　逃げる。追いつめれば　戦う",
+		desc: "見つけようと　近づくと　逃げる。追いつめれば　戦う",
 	},
 	{
 		id: "ksk",
@@ -147,8 +150,9 @@ const M: MonsterDef[] = [
 	},
 	// ───────── 中ほどの階 ─────────
 	{
+		// 前の名前は さらいUFO。絵は そのまま
 		id: "ufo",
-		name: "さらいUFO",
+		name: "拾い画UFO",
 		sprite: "sa:HcYVTc",
 		hp: 20,
 		atk: 0,
@@ -157,7 +161,7 @@ const M: MonsterDef[] = [
 		floors: [6, 12],
 		weight: 37,
 		abilities: [{ k: "pickup" }],
-		desc: "床の　道具を　さらって　持ち歩く。たおせば　落とす",
+		desc: "床の　道具を　拾って　持ち歩く。たおせば　落とす",
 	},
 	{
 		id: "kaze",
@@ -173,8 +177,9 @@ const M: MonsterDef[] = [
 		desc: "なぐった　相手を　どこかへ　吹きとばす",
 	},
 	{
+		// 前の名前は キメラ。絵は そのまま
 		id: "chimera",
-		name: "キメラ",
+		name: "自演くん",
 		sprite: "sa:iHaD7p",
 		hp: 27,
 		atk: 22,
@@ -183,7 +188,7 @@ const M: MonsterDef[] = [
 		floors: [7, 12],
 		weight: 32,
 		abilities: [{ k: "retreat" }],
-		desc: "弱ると　逃げて　傷を　なおし、また　もどってくる",
+		desc: "弱ると　逃げて　傷を　なおし、IDを　変えて　もどってくる",
 	},
 	{
 		id: "tensai",
@@ -200,8 +205,9 @@ const M: MonsterDef[] = [
 		desc: "持ち物を　盗んで　消える。たおせば　取り返せる",
 	},
 	{
+		// 前の名前は さまよう騎士。絵は そのまま
 		id: "knight",
-		name: "さまよう騎士",
+		name: "鋼メンタル",
 		sprite: "sa:j8Lwkw",
 		hp: 35,
 		atk: 15,
@@ -210,7 +216,7 @@ const M: MonsterDef[] = [
 		floors: [8, 14],
 		weight: 28,
 		abilities: [{ k: "armor" }],
-		desc: "かたい　鎧で、なぐる　攻撃は　半分しか　通らない",
+		desc: "なにを　言われても　効かない。なぐる　攻撃は　半分しか　通らない",
 	},
 	{
 		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。ふれた 板を 汚して 錆びさせる
@@ -246,8 +252,9 @@ const M: MonsterDef[] = [
 		desc: "ダメージは　1しか　通らない。すぐ　逃げる。たおすと　忍法帖の実を　落とす",
 	},
 	{
+		// 前の名前は 雪だるま。絵は そのまま
 		id: "yuki",
-		name: "雪だるま",
+		name: "凍結アカ",
 		sprite: "sa:UejLXD",
 		hp: 60,
 		atk: 11,
@@ -257,11 +264,12 @@ const M: MonsterDef[] = [
 		weight: 9,
 		abilities: [{ k: "pack" }, { k: "fastMove" }],
 		sleep: "deep",
-		desc: "4体で　眠っている。1体が　起きると　みんな　起きる",
+		desc: "4体で　凍って　眠っている。1体が　起きると　みんな　起きる",
 	},
 	{
+		// 前の名前は 石像。絵は そのまま
 		id: "statue",
-		name: "石像",
+		name: "置物",
 		sprite: "sa:VOpXq9",
 		hp: 45,
 		atk: 18,
@@ -274,8 +282,9 @@ const M: MonsterDef[] = [
 		desc: "となりに　来るまで　動かない",
 	},
 	{
+		// 前の名前は ばくだん。絵は そのまま
 		id: "bomb",
-		name: "ばくだん",
+		name: "炎上案件",
 		sprite: "sa:0fhT0t",
 		hp: 70,
 		atk: 12,
@@ -284,12 +293,13 @@ const M: MonsterDef[] = [
 		floors: [11, 20],
 		weight: 31,
 		abilities: [{ k: "explode" }],
-		desc: "弱ると　止まり、さらに　弱ると　爆発する",
+		desc: "弱ると　止まり、さらに　弱ると　炎上して　爆発する",
 	},
 	// ───────── 深い階 ─────────
 	{
+		// 前の名前は ゴーレム。絵は そのまま
 		id: "golem",
-		name: "ゴーレム",
+		name: "ゴリラ",
 		sprite: "sa:arntMO",
 		hp: 52,
 		atk: 32,
@@ -298,7 +308,7 @@ const M: MonsterDef[] = [
 		floors: [13, 18],
 		weight: 27,
 		abilities: [{ k: "knockback", rate: 1 / 3 }],
-		desc: "なぐった　相手を　吹きとばす。壁に　ぶつかると　痛い",
+		desc: "なぐった　相手を　投げとばす。壁に　ぶつかると　痛い",
 	},
 	{
 		id: "ninpo",
@@ -329,8 +339,9 @@ const M: MonsterDef[] = [
 		desc: "動かない。となりに　来た　足を　つかんで　離さない",
 	},
 	{
+		// 前の名前は ばけ札。絵は そのまま
 		id: "bakefuda",
-		name: "ばけ札",
+		name: "釣り",
 		sprite: "sa:AeNs0l",
 		hp: 50,
 		atk: 24,
@@ -339,11 +350,12 @@ const M: MonsterDef[] = [
 		floors: [15, 20],
 		weight: 31,
 		abilities: [{ k: "mimic" }],
-		desc: "道具の　ふりをして　床に　ある",
+		desc: "道具の　ふりをして　床に　ある。拾おうと　すると　釣られる",
 	},
 	{
+		// 前の名前は 影。絵は そのまま
 		id: "kage",
-		name: "影",
+		name: "透明あぼーん",
 		sprite: "sa:AeCss3",
 		hp: 60,
 		atk: 17,
@@ -357,8 +369,9 @@ const M: MonsterDef[] = [
 		desc: "見えない。ふらふらと　動く",
 	},
 	{
+		// 前の名前は 赤鬼。絵は そのまま
 		id: "oni",
-		name: "赤鬼",
+		name: "顔真っ赤",
 		sprite: "sa:m9nxuZ",
 		hp: 51,
 		atk: 51,
@@ -367,11 +380,12 @@ const M: MonsterDef[] = [
 		floors: [16, 20],
 		weight: 27,
 		abilities: [{ k: "berserk" }],
-		desc: "HPが　半分を　切ると　怒って　倍速になる",
+		desc: "HPが　半分を　切ると　顔真っ赤に　なって　倍速になる",
 	},
 	{
+		// 前の名前は 凝視の目。絵は そのまま
 		id: "eye",
-		name: "凝視の目",
+		name: "特定班",
 		sprite: "sa:f5k9hM",
 		hp: 62,
 		atk: 31,
@@ -380,7 +394,7 @@ const M: MonsterDef[] = [
 		floors: [17, 20],
 		weight: 27,
 		abilities: [{ k: "gaze", rate: 1 / 4 }],
-		desc: "目が　合うと　混乱する",
+		desc: "目を　つけられると　混乱する",
 	},
 	{
 		id: "mojibake",
@@ -397,8 +411,9 @@ const M: MonsterDef[] = [
 		desc: "ふれると　最大HPか　最大ちからが　欠ける",
 	},
 	{
+		// 前の名前は 黒装束。絵は そのまま
 		id: "ninja",
-		name: "黒装束",
+		name: "連投荒らし",
 		sprite: "sa:zE9cKS",
 		hp: 78,
 		atk: 26,
@@ -410,8 +425,9 @@ const M: MonsterDef[] = [
 		desc: "1ターンに　2回　なぐってくる",
 	},
 	{
+		// 前の名前は 闇堕ち兵。絵は そのまま
 		id: "fallen",
-		name: "闇堕ち兵",
+		name: "粘着アンチ",
 		sprite: "sa:pyPkIs",
 		hp: 75,
 		atk: 51,
@@ -420,7 +436,7 @@ const M: MonsterDef[] = [
 		floors: [19, 20],
 		weight: 21,
 		abilities: [{ k: "curse", rate: 1 / 4 }],
-		desc: "なぐった　相手の　装備を　のろう",
+		desc: "なぐった　相手の　装備に　粘着して　のろう",
 	},
 	{
 		id: "wyvern",

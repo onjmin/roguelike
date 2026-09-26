@@ -153,7 +153,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					!["neochi", "tensai", "yuki"].includes(m.kind))) &&
 			r.cornerOk(p, dirOf(m.x - p.x, m.y - p.y) as Dir8),
 	);
-	// 逃げる敵（フナムシ・弱ったキメラ）は向かってこないので数えない
+	// 逃げる敵（バグ・弱った自演くん）は向かってこないので数えない
 	const threats = visible.filter(
 		(m) =>
 			awake(m) &&

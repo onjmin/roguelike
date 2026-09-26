@@ -335,7 +335,7 @@ test("tousuko", "sealed: moves every turn", () => {
 	ok(moves === N, `moved ${moves} times in ${N} turns (expected ${N})`);
 });
 
-// ───────────────── ひとだま（fastMove） ─────────────────
+// ───────────────── dat落ちの霊（fastMove） ─────────────────
 
 test("hitodama", "fastMove: closes 2 tiles per turn when far", () => {
 	const r = arena("hitodama-move");
@@ -363,7 +363,7 @@ test("hitodama", "sealed: closes only 1 tile per turn", () => {
 	ok(dist(m, r.p) === 9, `distance ${dist(m, r.p)} after 1 turn (expected 9)`);
 });
 
-// ───────────────── 迷いコウモリ（random） ─────────────────
+// ───────────────── 深夜テンション（random） ─────────────────
 
 test("bat", "random: sometimes flutters away instead of attacking", () => {
 	const r = arena("bat");
@@ -394,7 +394,7 @@ test("bat", "sealed: always attacks while adjacent", () => {
 	}
 });
 
-// ───────────────── フナムシ（shy） ─────────────────
+// ───────────────── バグ（shy） ─────────────────
 
 test("funamushi", "shy: backs away when the player is within 2", () => {
 	const r = arena("funamushi-shy");
@@ -768,7 +768,7 @@ test("zonj", "sealed: no revive", () => {
 	ok(!r.f.monsters.includes(m) && !m.revived, "still on the floor");
 });
 
-// ───────────────── さらいUFO（pickup） ─────────────────
+// ───────────────── 拾い画UFO（pickup） ─────────────────
 
 test("ufo", "pickup: carries a floor item; killing it drops the item", () => {
 	const r = arena("ufo");
@@ -823,7 +823,7 @@ test("kaze", "sealed: never warps the player", () => {
 	ok(hits > 0, "never hit the player");
 });
 
-// ───────────────── キメラ（retreat） ─────────────────
+// ───────────────── 自演くん（retreat） ─────────────────
 
 test(
 	"chimera",
@@ -920,7 +920,7 @@ test("tensai", "never steals the genban or equipped items", () => {
 	);
 });
 
-// ───────────────── さまよう騎士（armor） ─────────────────
+// ───────────────── 鋼メンタル（armor） ─────────────────
 
 test("knight", "armor: melee halved; throw/magic/blast unchanged", () => {
 	const r = arena("knight");
@@ -1002,7 +1002,7 @@ test(
 	},
 );
 
-// ───────────────── 雪だるま（pack） ─────────────────
+// ───────────────── 凍結アカ（pack） ─────────────────
 
 test("yuki", "pack: hitting one wakes the others within 3", () => {
 	const r = arena("yuki");
@@ -1026,7 +1026,7 @@ test("yuki", "pack: hitting one wakes the others within 3", () => {
 	ok(far.status.sleep === DEEP, "a yuki 4 tiles away woke up too");
 });
 
-// ───────────────── 石像（statue） ─────────────────
+// ───────────────── 置物（statue） ─────────────────
 
 test(
 	"statue",
@@ -1055,7 +1055,7 @@ test(
 	},
 );
 
-// ───────────────── ばくだん（explode） ─────────────────
+// ───────────────── 炎上案件（explode） ─────────────────
 
 test(
 	"bomb",
@@ -1146,7 +1146,7 @@ test(
 	},
 );
 
-// ───────────────── ゴーレム（knockback） ─────────────────
+// ───────────────── ゴリラ（knockback） ─────────────────
 
 test("golem", "knockback: pushes the player 2 tiles away", () => {
 	const r = arena("golem");
@@ -1256,7 +1256,7 @@ test("kaso", "transformed: releases the player", () => {
 	ok(r.p.x === CENTER.x + 1, "could not walk away");
 });
 
-// ───────────────── ばけ札（mimic） ─────────────────
+// ───────────────── 釣り（mimic） ─────────────────
 
 test(
 	"bakefuda",
@@ -1282,7 +1282,7 @@ test(
 	},
 );
 
-// ───────────────── 影（invisible） ─────────────────
+// ───────────────── 透明あぼーん（invisible） ─────────────────
 
 test(
 	"kage",
@@ -1311,7 +1311,7 @@ test("kage", "気配スレ (senseMonsters) alone does not show it", () => {
 	ok(r.monsterVisible(m), "not visible with sight + sense");
 });
 
-// ───────────────── 赤鬼（berserk） ─────────────────
+// ───────────────── 顔真っ赤（berserk） ─────────────────
 
 test("oni", "berserk: at <= half HP becomes fast=999, only once", () => {
 	const r = arena("oni");
@@ -1342,7 +1342,7 @@ test("oni", "sealed: never berserks", () => {
 	ok(!m.enraged && m.status.fast === 0, "sealed oni enraged");
 });
 
-// ───────────────── 凝視の目（gaze） ─────────────────
+// ───────────────── 特定班（gaze） ─────────────────
 
 const confuseWatch = (r: Run): { n: number } => {
 	const s = { n: 0 };
@@ -1396,7 +1396,7 @@ test("mojibake", "r_ward blocks drainMax", () => {
 	ok(blocked > 0, "drain never triggered (the counter was not exercised)");
 });
 
-// ───────────────── 黒装束（fastAct） ─────────────────
+// ───────────────── 連投荒らし（fastAct） ─────────────────
 
 test("ninja", "fastAct: attacks twice every turn", () => {
 	const r = arena("ninja");
@@ -1417,7 +1417,7 @@ test("ninja", "sealed: attacks once per turn", () => {
 	}
 });
 
-// ───────────────── 闇堕ち兵（curse） ─────────────────
+// ───────────────── 粘着アンチ（curse） ─────────────────
 
 test("fallen", "curse: an equipped item becomes cursed (and sticks)", () => {
 	const r = arena("fallen");
@@ -1881,7 +1881,7 @@ test(
 	() => {
 		for (const c of NON_TRACKERS) {
 			const r = arena(`pursuit-notrack-${c.why}`);
-			// ばけ札は 起きている指定だと化けない
+			// 釣りは 起きている指定だと化けない
 			const m = put(
 				r,
 				c.kind,

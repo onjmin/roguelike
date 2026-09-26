@@ -25,7 +25,7 @@ export const isUnidentifiedCat = (kind: string): boolean => {
 
 /**
  * この冒険の山札。冒険を作ったあとで 山札に足された 未識別の種類（仮の名前が無い）は、
- * 配られていないので のぞく（前の版の中断セーブで、帰還スレが 候補や ばけ札に出ないように）。
+ * 配られていないので のぞく（前の版の中断セーブで、帰還スレが 候補や 釣りに出ないように）。
  */
 export const deckOf = (s: RunState): readonly DeckEntry[] =>
 	dungeonById(s.dungeon).deck.filter(

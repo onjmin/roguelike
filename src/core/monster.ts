@@ -301,7 +301,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	}
 	if (m.disguise) return; // 化けているあいだは じっとしている
 	if (st.dormant) {
-		// 石像：となりに来たら 目を覚まして すぐなぐる
+		// 置物：となりに来たら 目を覚まして すぐなぐる
 		if (dist(m, p) <= 1) {
 			st.dormant = false;
 			r.msg(`${d.name}が　動きだした！`, "warn");
@@ -310,7 +310,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		}
 		return;
 	}
-	if (m.fuse) return; // ばくだん：止まっている
+	if (m.fuse) return; // 炎上案件：止まっている
 	const adjacentDir = (): Dir8 | null => {
 		if (dist(m, p) !== 1) return null;
 		const dir = dirOf(p.x - m.x, p.y - m.y);
@@ -368,7 +368,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		}
 	}
 
-	// 弱ると逃げて回復（キメラ）
+	// 弱ると逃げて回復（自演くん）
 	if (has(m, "retreat")) {
 		if (!m.retreating && m.hp <= m.maxHp * 0.4) {
 			m.retreating = true;
@@ -393,7 +393,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		}
 	}
 
-	// 近づくと逃げる（フナムシ）。追いかけてもこない。追いつめられたら戦う
+	// 近づくと逃げる（バグ）。追いかけてもこない。追いつめられたら戦う
 	if (has(m, "shy") && sees) {
 		if (dist(m, p) > 2) {
 			wander(r, m);
@@ -781,7 +781,7 @@ const randomAway = (r: Run, m: Monster): Pos | null => {
 };
 
 /** モンスターを別の種類に変える（変化の杖）。 */
-/** とくちょうで速くなっていたか（加速した kskボット・怒った赤鬼）。杖や草で速くしたのは入らない。 */
+/** とくちょうで速くなっていたか（加速した kskボット・怒った顔真っ赤）。杖や草で速くしたのは入らない。 */
 export const traitFast = (m: Monster): boolean => {
 	const accel = mdef(m).abilities.find((a) => a.k === "accel") as
 		| { k: "accel"; after: number }
@@ -791,7 +791,7 @@ export const traitFast = (m: Monster): boolean => {
 
 /**
  * とくぎを封じる（封印の杖・目つぶし草・毒消し草）。とくちょうで ついていた様子
- * （加速・怒りの速さ・弱って逃げている・爆発しかけ・石像）も いっしょに消える。
+ * （加速・怒りの速さ・弱って逃げている・爆発しかけ・置物）も いっしょに消える。
  */
 export const sealMonster = (m: Monster): void => {
 	if (traitFast(m)) m.status.fast = 0;

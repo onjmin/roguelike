@@ -152,7 +152,7 @@ export type MonsterStatus = {
 	fast: number;
 	blind: boolean;
 	sealed: boolean;
-	/** 動き出していない石像。 */
+	/** 動き出していない置物。 */
 	dormant: boolean;
 };
 
@@ -195,7 +195,7 @@ export type Monster = {
 	revived?: boolean;
 	/** 弱って逃げている（回復したら戻る）。 */
 	retreating?: boolean;
-	/** 怒った（赤鬼）。 */
+	/** 怒った（顔真っ赤）。 */
 	enraged?: boolean;
 };
 

@@ -264,7 +264,7 @@ export const spawnMonster = (
 		return m;
 	};
 	const first = make(at);
-	// 群れ（雪だるま）は 4体で出る
+	// 群れ（凍結アカ）は 4体で出る
 	// （モンスターハウスでは 1体ずつ。トルネコ1の イエティと 同じ）
 	if (def.abilities.some((a) => a.k === "pack") && !kind && !opts.single) {
 		let placed = 1;

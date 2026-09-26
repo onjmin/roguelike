@@ -493,9 +493,9 @@ export class Run {
 			if (!this.hasRing("r_stealth")) {
 				for (const m of f.monsters) {
 					if (roomAt(l, m.x, m.y) !== f.house) continue;
-					// ばけ札は 正体を あらわす（トルネコ1の ミミックと 同じ）
+					// 釣りは 正体を あらわす（トルネコ1の ミミックと 同じ）
 					if (m.disguise) m.disguise = null;
-					// 石像は 眠ったまま（先に なぐってこない）
+					// 置物は 眠ったまま（先に なぐってこない）
 					if (m.status.sleep === DOZE && !m.status.dormant) {
 						m.status.sleep = 0;
 						this.graceAfterWake(m);
@@ -783,7 +783,7 @@ export class Run {
 			this.killMonster(m, by !== "none");
 			return true;
 		}
-		// 怒る（赤鬼）
+		// 怒る（顔真っ赤）
 		if (
 			!sealed &&
 			!m.enraged &&
@@ -867,7 +867,7 @@ export class Run {
 		if (giveExp) this.gainExp(d.exp);
 	}
 
-	/** ばくだんの爆発（5×5 のモンスターと道具が消える。巻きこまれると HP が 1 に）。 */
+	/** 炎上案件の爆発（5×5 のモンスターと道具が消える。巻きこまれると HP が 1 に）。 */
 	explode(m: Monster): void {
 		const cx = m.x;
 		const cy = m.y;
@@ -884,7 +884,7 @@ export class Run {
 		if (this.p.status.heldBy === m.uid) this.p.status.heldBy = null;
 		const inArea = (p: Pos) =>
 			Math.abs(p.x - cx) <= 2 && Math.abs(p.y - cy) <= 2;
-		// 巻きこまれた ばくだんは 連鎖して 爆発する（トルネコ1の 爆弾岩。2発 受けると たおれる）
+		// 巻きこまれた 炎上案件は 連鎖して 爆発する（トルネコ1の 爆弾岩。2発 受けると たおれる）
 		const chain: Monster[] = [];
 		for (const o of [...this.f.monsters]) {
 			if (!inArea(o)) continue;
@@ -896,8 +896,8 @@ export class Run {
 			if (inArea(fi)) this.destroyFloorItem(fi);
 		if (inArea(this.p)) {
 			if (this.p.hp <= 1)
-				this.hurtPlayer(1, "ばくだんの　爆発に　巻きこまれた");
-			else this.hurtPlayer(this.p.hp - 1, "ばくだんの　爆発に　巻きこまれた");
+				this.hurtPlayer(1, "炎上案件の　爆発に　巻きこまれた");
+			else this.hurtPlayer(this.p.hp - 1, "炎上案件の　爆発に　巻きこまれた");
 		}
 		for (const o of chain)
 			if (!this.s.end && this.f.monsters.includes(o)) this.explode(o);
