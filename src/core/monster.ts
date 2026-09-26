@@ -37,6 +37,23 @@ export const mdef = (m: Monster): MonsterDef => MONSTERS[m.kind];
 export const monsterName = (r: Run, m: Monster): string =>
 	m.disguise ? r.kindName(m.disguise) : mdef(m).name;
 
+/**
+ * まんぜう軍（poison）の 冷笑。真剣な 相手を 上から 茶化して、ちからを そぐ。
+ * スルー板・◆スルースキルなら スルーできる。1行は 窓に 収まる 長さで。
+ */
+const SNEERS: readonly string[] = [
+	"本気に　なってて　草",
+	"で？ｗ",
+	"つまんね",
+	"意識　高そう",
+	"必死すぎん？",
+	"それ　意味　あるんか？",
+	"効いてて　草",
+	"かっこいいね　ｗ",
+	"はいはい　えらいえらい",
+	"冷静に　なれよ",
+];
+
 const has = (m: Monster, k: string): boolean =>
 	!m.status.sealed && mdef(m).abilities.some((a) => a.k === k);
 
@@ -652,8 +669,10 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				break;
 			}
 			case "poison": {
+				// 冷笑の ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
+				r.msg(`${nm}「${SNEERS[r.s.turn % SNEERS.length]}」`);
 				if (r.hasRing("r_purity") || r.shield()?.kind === "scale") {
-					r.msg("しかし　毒は　効かなかった");
+					r.msg("しかし　キリコは　スルーした");
 					break;
 				}
 				if (p.str > 1) {

@@ -210,12 +210,13 @@ const isRecord = (r: unknown): r is RunRecord => {
 };
 
 /**
- * 前の版の 名前を 今の 名前に（とうすこ → ぷゆゆ。メタルとうすこ → メタルぷゆゆ も これで 直る。くさったパン → チギュリパン）。
+ * 前の版の 名前を 今の 名前に（とうすこ → ぷゆゆ。メタルとうすこ → メタルぷゆゆ も これで 直る。くさったパン → チギュリパン。毒カボチャ → まんぜう軍）。
  * 記録と リプレイの 両方で 直す（replayMatches が 死因の 文字で 結ぶので、片方だけだと 結べなくなる）。
  */
 const RENAMES: readonly (readonly [string, string])[] = [
 	["とうすこ", "ぷゆゆ"],
 	["くさったパン", "チギュリパン"],
+	["毒カボチャ", "まんぜう軍"],
 ];
 const renamed = <T extends { cause: string }>(r: T): T => {
 	if (typeof r.cause !== "string") return r;

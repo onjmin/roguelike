@@ -101,9 +101,13 @@ const M: MonsterDef[] = [
 		desc: "まっすぐ　ならぶと　ボールを　投げてくる",
 	},
 	{
+		// 前の名前は 毒カボチャ。まんぜう軍（🐮 の ネタ）の 冷笑系（真剣な人を 上から 茶化す）の 牛。
+		// 冷笑で ちからを 下げる（セリフは core/monster.ts の SNEERS）。
+		// 絵は RPGEN の「不良牛」sp:AXTDsXV から 組んだ 歩行グラ（scripts/make-reisho-ushi.mjs）。
+		// 復旧草を 投げると 50（トルネコ1の どくけしそう → おばけキノコ と 同じ 役）なので plant の まま
 		id: "pumpkin",
-		name: "毒カボチャ",
-		sprite: "sa:DUvPmQ",
+		name: "まんぜう軍",
+		sprite: "pub:sprites/reisho_ushi.png",
 		hp: 17,
 		atk: 6,
 		def: 8,
@@ -112,7 +116,7 @@ const M: MonsterDef[] = [
 		weight: 32,
 		abilities: [{ k: "poison", rate: 1 / 3 }],
 		tags: ["plant"],
-		desc: "なぐると　ときどき　ちからを　下げてくる",
+		desc: "なぐると　ときどき　冷笑して、ちからを　下げてくる",
 	},
 	{
 		id: "copipe",

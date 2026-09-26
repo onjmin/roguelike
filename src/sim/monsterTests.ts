@@ -640,7 +640,7 @@ test("pitcher", "not in a straight line: never throws", () => {
 	}
 });
 
-// ───────────────── 毒カボチャ（poison） ─────────────────
+// ───────────────── まんぜう軍（poison。前の名前は 毒カボチャ） ─────────────────
 
 test("pumpkin", "poison: lowers str", () => {
 	const r = arena("pumpkin");
@@ -661,7 +661,7 @@ for (const [kind, label] of [
 		const s0 = r.p.str;
 		let blocked = 0;
 		waitTurns(r, 60, (ev) => {
-			if (saw(ev, "毒は")) blocked++;
+			if (saw(ev, "スルーした")) blocked++;
 			return false;
 		});
 		ok(r.p.str === s0, `str dropped to ${r.p.str}`);
