@@ -118,6 +118,13 @@ export class Play {
 	private logEl: HTMLElement;
 	/** 最後に ログの行を 出した時刻（performance.now()）。 */
 	private lastLogAt = 0;
+	/**
+	 * まだ 出していない ログの行（1行ずつ 間を空けて 出す）。出すのを 待っても 歩きは 止めない
+	 * （待つと 行が 出るたびに 次の 1歩が つっかかった）。
+	 */
+	private logQueue: { text: string; tone?: "warn" | "good"; fast: boolean }[] =
+		[];
+	private logTimer = 0;
 	private popsEl: HTMLElement;
 	private mapEl: HTMLCanvasElement;
 	private mapOn = false;
@@ -134,10 +141,10 @@ export class Play {
 	private shownFloor: Floor | null = null;
 	/** 長押しの足踏みを 止めている（指を離すまで）。 */
 	private restHalt = false;
-	/** 押さえて歩くのを 止めている（新しい敵が見えた・傷ついた。指を離すか 押しなおすまで）。 */
+	/** 押さえて歩くのを 止めている（傷ついた。指を離すか 押しなおすまで）。 */
 	private walkHalt = false;
 	/**
-	 * この階で もう 見た敵（uid）。押さえて歩く・足踏みを 止めるのは、はじめて 見えた敵だけ
+	 * この階で もう 見た敵（uid）。長押しの 足踏みを 止めるのは、はじめて 見えた敵だけ
 	 * （見えていた敵が 暗い通路・入口の 外へ 出て また 見えただけでは 止めない。同時に 動く敵で 止まりつづけた）。
 	 */
 	private spotted = new Set<number>();
@@ -248,6 +255,8 @@ export class Play {
 
 	private stop(): void {
 		this.stopped = true;
+		this.logQueue = [];
+		clearTimeout(this.logTimer);
 		this.ctx.input.fieldHoldEnabled = true;
 		this.screen.canvas.classList.remove("dead");
 		this.deathEl?.remove();
@@ -540,6 +549,28 @@ export class Play {
 
 	// ───────────────── ログ ─────────────────
 
+	/** たまった ログを 間を空けて 1行ずつ 出す（たまりすぎたら 間を つめる）。 */
+	private pumpLog(): void {
+		clearTimeout(this.logTimer);
+		while (this.logQueue.length) {
+			const q = this.logQueue[0];
+			const gap =
+				q.fast || this.logQueue.length > 3
+					? LOG_GAP_MS.replay
+					: settings.speed === "fast"
+						? LOG_GAP_MS.fast
+						: LOG_GAP_MS.normal;
+			const since = performance.now() - this.lastLogAt;
+			if (since < gap) {
+				this.logTimer = window.setTimeout(() => this.pumpLog(), gap - since);
+				return;
+			}
+			this.logQueue.shift();
+			this.addLog(q.text, q.tone);
+			this.lastLogAt = performance.now();
+		}
+	}
+
 	private addLog(text: string, tone?: "warn" | "good"): void {
 		const line = el("div", {
 			class: `log-line${tone ? ` ${tone}` : ""}`,
@@ -628,7 +659,7 @@ export class Play {
 			if (mods.diag && !isDiagonal(dir)) return;
 			this.lastStepAt = t;
 			if (mods.dash) void this.dash(dir);
-			else void this.walkStep(dir);
+			else void this.walkStep(mods.diag ? dir : this.slideDir(dir));
 			return;
 		}
 		// 十字キーの まん中を 長押し：足踏み（押さえているあいだ 続ける。トルネコの A＋B 押しっぱなし）
@@ -685,6 +716,27 @@ export class Play {
 			this.syncDisp();
 			return;
 		}
+	}
+
+	/**
+	 * 斜めが 壁・角で 進めないとき、たて・よこの 片方だけ 進めるなら そちらへ（壁に そって すべる）。
+	 * 進めない 斜めは もともと 何も 起きない（時間も 進まない）ので、そのかわり。どちらも・どちらも だめなら そのまま。
+	 * 敵の いる 向きは かえない（向く・なぐるの じゃまを しない）。
+	 */
+	private slideDir(dir: Dir8): Dir8 {
+		const run = this.run;
+		if (!isDiagonal(dir) || run.p.status.confuse > 0) return dir;
+		const ahead = step(run.p, dir);
+		const m = run.monsterAt(ahead.x, ahead.y);
+		if (run.canStepTerrain(run.p, dir) || (m && run.monsterVisible(m)))
+			return dir;
+		const open = [((dir + 7) % 8) as Dir8, ((dir + 1) % 8) as Dir8].filter(
+			(c) => {
+				const n = step(run.p, c);
+				return run.canStepTerrain(run.p, c) && !run.monsterAt(n.x, n.y);
+			},
+		);
+		return open.length === 1 ? open[0] : dir;
 	}
 
 	/** 自動で歩くのを止めた入力を 捨てる（十字キーは 一度はなすまで 歩かない）。 */
@@ -747,15 +799,15 @@ export class Play {
 	}
 
 	/**
-	 * 押さえて歩く 1歩。新しい敵が見えた・傷ついたら、指を離すまで 止める
-	 * （縦持ちのスマホは 横に10マスほどしか見えず、敵に 気づくのが おくれるので）。
+	 * 押さえて歩く 1歩。傷ついたら、指を離すまで 止める。
+	 * 敵が 見えただけでは 止めない（トルネコ1の 歩きと 同じ。止まるのは ダッシュだけ。
+	 * 画面の 外の 敵は ふちの 印で わかる）。
 	 */
 	private async walkStep(dir: Dir8): Promise<void> {
 		const run = this.run;
-		this.spotNew();
 		const hp = run.p.hp;
 		await this.exec({ c: "move", dir });
-		if (this.spotNew() || run.p.hp < hp) this.walkHalt = true;
+		if (run.p.hp < hp) this.walkHalt = true;
 	}
 
 	/** いま 見えている敵のうち、この階で はじめて 見えた敵が いたか（見たと 覚える）。 */
@@ -1356,6 +1408,7 @@ export class Play {
 				if (!cmd) break;
 				run.act(cmd);
 			}
+			this.logQueue = [];
 			this.logEl.innerHTML = "";
 			this.syncDisp(true);
 			this.view.invalidate();
@@ -1440,7 +1493,8 @@ export class Play {
 
 	private async playEvents(ev: GameEvent[], fast: boolean): Promise<void> {
 		const speed = settings.speed === "fast" || fast ? 0.55 : 1;
-		const stepMs = (fast ? 45 : 110) * (settings.speed === "fast" ? 0.7 : 1);
+		// 1歩の 動き（ms）。軽く 歩けるように 短め
+		const stepMs = (fast ? 45 : 95) * (settings.speed === "fast" ? 0.7 : 1);
 		let i = 0;
 		let combat = false;
 		// 途中で閉じたら（リプレイの「やめる」）残りの出来事は流さない
@@ -1498,19 +1552,11 @@ export class Play {
 			}
 			i++;
 			switch (e.t) {
-				case "msg": {
-					// 前の行から 間を空けて 1行ずつ 出す（読めるように）
-					const gap = fast
-						? LOG_GAP_MS.replay
-						: settings.speed === "fast"
-							? LOG_GAP_MS.fast
-							: LOG_GAP_MS.normal;
-					const since = performance.now() - this.lastLogAt;
-					if (since < gap) await wait(gap - since);
-					this.addLog(e.text, e.tone);
-					this.lastLogAt = performance.now();
+				case "msg":
+					// 前の行から 間を空けて 1行ずつ 出す（読めるように。待つのは ログだけで、次の 1歩は 待たない）
+					this.logQueue.push({ text: e.text, tone: e.tone, fast });
+					this.pumpLog();
 					break;
-				}
 				case "se":
 					// 全滅の音は、倒れる演出で 墓が落ちたときに鳴らす
 					if (e.name === "wipeout" && this.run.s.end?.kind === "dead") break;
