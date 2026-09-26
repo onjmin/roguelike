@@ -101,6 +101,42 @@ const GOLD: Theme = {
 	fog: "rgba(6, 4, 2, 0.58)",
 };
 
+/** 石組み（灰色。本編の 2つめの層。トルネコ1の 石組みのダンジョン）。 */
+const STONE: Theme = {
+	name: "stone",
+	floor: cut(0, 166),
+	stairs: cut(0, 167),
+	wallUpper: walls(179),
+	wallLower: walls(180),
+	dark: "#070708",
+	floorColor: "#55565c",
+	fog: "rgba(3, 3, 8, 0.6)",
+};
+
+/** 朽ちた板張り（茶色のタイルに 土の壁。トルネコ1の くさった板のダンジョン）。 */
+const RUINS: Theme = {
+	name: "ruins",
+	floor: cut(4, 168),
+	stairs: cut(0, 163),
+	wallUpper: walls(169),
+	wallLower: walls(170),
+	dark: "#0a0706",
+	floorColor: "#6a5446",
+	fog: "rgba(6, 3, 4, 0.6)",
+};
+
+/** 白（あぼーんの跡。白い床に 氷の壁）。 */
+const WHITE: Theme = {
+	name: "white",
+	floor: cut(2, 168),
+	stairs: cut(0, 165),
+	wallUpper: walls(173),
+	wallLower: walls(174),
+	dark: "#06080c",
+	floorColor: "#b8bcc4",
+	fog: "rgba(4, 6, 14, 0.6)",
+};
+
 /** 空気の中を ただようもの（階の雰囲気）。 */
 export type Ambient =
 	| "dust"
@@ -122,6 +158,9 @@ export type Zone = {
 
 const THEMES: Record<ThemeName, Theme> = {
 	earth: EARTH,
+	stone: STONE,
+	ruins: RUINS,
+	white: WHITE,
 	moss: MOSS,
 	crystal: CRYSTAL,
 	cyber: CYBER,
@@ -143,19 +182,34 @@ const fromSpec = (list: readonly ZoneSpec[]): Zone[] =>
  */
 export const ZONES: Record<DungeonId, readonly Zone[]> = {
 	shallow: fromSpec(ZONE_NAMES.shallow),
+	// トルネコ1（27階）の 刻み（B1〜2・3〜4・5〜6 と 2階ずつ、そのあと 3階ずつ）を 20階に 縮めた 9層
 	main: [
 		{
-			last: 4,
+			last: 2,
 			name: "過去ログの浅瀬",
 			theme: EARTH,
 			bgm: "dungeon",
 			ambient: "dust",
 		},
 		{
-			last: 8,
+			last: 4,
+			name: "dat の石室",
+			theme: STONE,
+			bgm: "stone",
+			ambient: "dust",
+		},
+		{
+			last: 6,
 			name: "苔むしたスレ跡",
 			theme: MOSS,
 			bgm: "field",
+			ambient: "spores",
+		},
+		{
+			last: 9,
+			name: "朽ちたまとめ跡",
+			theme: RUINS,
+			bgm: "ruins",
 			ambient: "spores",
 		},
 		{
@@ -166,7 +220,14 @@ export const ZONES: Record<DungeonId, readonly Zone[]> = {
 			ambient: "snow",
 		},
 		// 名無し155さんの 手書きメロディの曲。アップテンポなので 序盤ではなく 中盤の 電子の廃墟に
-		{ last: 16, name: "鯖の深部", theme: CYBER, bgm: "retro", ambient: "data" },
+		{ last: 15, name: "鯖の深部", theme: CYBER, bgm: "retro", ambient: "data" },
+		{
+			last: 17,
+			name: "あぼーんの白野",
+			theme: WHITE,
+			bgm: "white",
+			ambient: "snow",
+		},
 		{ last: 19, name: "炎上の底", theme: LAVA, bgm: "boss", ambient: "embers" },
 		{
 			last: 20,

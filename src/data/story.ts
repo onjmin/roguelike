@@ -30,6 +30,9 @@ export const DUNGEON_NAMES: Record<DungeonId, { name: string; short: string }> =
 /** ui/theme.ts の Theme.name。 */
 export type ThemeName =
 	| "earth"
+	| "stone"
+	| "ruins"
+	| "white"
 	| "moss"
 	| "crystal"
 	| "cyber"
@@ -47,24 +50,39 @@ export type ZoneSpec = {
 };
 
 /**
- * 層の名前（本編の6層は ui/theme.ts の ZONES にある）。
+ * 層の名前（本編の9層は ui/theme.ts の ZONES にある）。
  * - ちょっと：落ちたばかりの スレが つもる浅い穴。針は 過去ログ倉庫（rpg で 落ちたスレが ねむる所）に。
  * - もっと：底の さらに下。だれかが 掘りかけた穴から はじまり、いちばん下は 本編の B20 と同じ 金。
  */
 export const ZONE_NAMES: Record<"shallow" | "deep", readonly ZoneSpec[]> = {
+	// トルネコ1の ちょっと（B1〜2・3〜4・5〜6・7〜9・10）と 同じ 刻み
 	shallow: [
 		{
-			last: 4,
+			last: 2,
 			name: "落ちたてのスレ",
 			theme: "earth",
 			bgm: "dungeon",
 			ambient: "dust",
 		},
 		{
-			last: 8,
+			last: 4,
+			name: "固まったスレ",
+			theme: "stone",
+			bgm: "stone",
+			ambient: "dust",
+		},
+		{
+			last: 6,
 			name: "草の生えたスレ",
 			theme: "moss",
 			bgm: "field",
+			ambient: "spores",
+		},
+		{
+			last: 9,
+			name: "朽ちかけのスレ",
+			theme: "ruins",
+			bgm: "ruins",
 			ambient: "spores",
 		},
 		{

@@ -39,6 +39,9 @@
 // | deep4    | -29.0（20）        | 20 → 37 | -23.7    |
 // | deep5    | -26.1（20）        | 20 → 26 | （比例） |
 // | deep6    | -26.0（20）        | 20 → 26 | （比例） |
+// | stone    | -29.8（20）        | 20 → 40 | -23.9    |
+// | ruins    | -29.6（20）        | 20 → 39 | -23.9    |
+// | white    | -28.7（20）        | 20 → 36 | -23.5    |
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
@@ -57,15 +60,19 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
-// うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）。アップテンポなので 序盤ではなく、
-// retro は 本編 B13〜16「鯖の深部」、retro2 は 祭り（モンスターハウス）で 鳴らす
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
+// うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）。アップテンポなので 序盤ではなく、
+// retro は 本編 B13〜15「鯖の深部」、retro2 は 祭り（モンスターハウス）で 鳴らす
+// 本編の 層を トルネコ1の 刻みに 細かくしたときに 足した 3曲（2026-09。deep と 同じ 手書き譜面。譜面は dtm/tmp/handscore/kiriko-main-<名前>.json）
+import ruins from "./bgm/ruins.mml?raw"; // 本編 B7〜9・ちょっと B7〜9 朽ちたまとめ跡：嬰ヘ短調 94・jazz_night・4beat（ページを めくる 動機）
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」
-import shallow3 from "./bgm/shallow3.mml?raw"; // ちょっと B9〜10 過去ログ倉庫：ホ短調 112・fantasy_rpg（ハープの雪、打楽器なし）
+import shallow3 from "./bgm/shallow3.mml?raw"; // ちょっと B10 過去ログ倉庫：ホ短調 112・fantasy_rpg（ハープの雪、打楽器なし）
+import stone from "./bgm/stone.mml?raw"; // 本編 B3〜4・ちょっと B3〜4 dat の石室：イ短調 104・acoustic・shuffle（足音の 動機）
 import tense from "./bgm/tense.mml?raw"; // 1d9e7eed2db44ce7「荒ぶるメロディライン」
 import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽っぽい何か」
 import town from "./bgm/town.mml?raw"; // 2826c0b1ce744003「？」
+import white from "./bgm/white.mml?raw"; // 本編 B16〜17 あぼーんの白野：変ホ短調 130・synth_pop・dance
 
 export const bgm: Record<string, string> = {
 	title,
@@ -82,6 +89,9 @@ export const bgm: Record<string, string> = {
 	retro,
 	retro2,
 	shallow3,
+	stone,
+	ruins,
+	white,
 	deep1,
 	deep2,
 	deep3,
