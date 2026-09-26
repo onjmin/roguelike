@@ -122,9 +122,10 @@ const M: MonsterDef[] = [
 		desc: "なぐると　ときどき　冷笑して、ちからを　下げてくる",
 	},
 	{
+		// 絵は「コピー」の アイコン（2枚 かさなった 紙）に 顔を つけた もの（scripts/make-copipe.mjs）
 		id: "copipe",
 		name: "コピペ",
-		sprite: "sa:R7Ve5N",
+		sprite: "pub:sprites/copipe.png",
 		hp: 10,
 		atk: 4,
 		def: 15,

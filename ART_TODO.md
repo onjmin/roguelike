@@ -35,6 +35,7 @@
 | メタルぷゆゆ（敵） | `sprites/metal_puyu.png` | RPGEN「PIEN」を 銀色に ぬった もの（`scripts/make-metal-puyu.mjs`） |
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
 | まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |
+| コピペ（敵） | `sprites/copipe.png` | Claude が 描いた もの。2枚 かさなった 紙（コピーの アイコン）に 顔（`scripts/make-copipe.mjs`） |
 
 - 手で 描いた ファイルに 差し替えたら、上の スクリプトを 流すと 上書きされるので 流さないこと（または スクリプトから その子を 消す）。
 - ぷゆゆ（村・1階の 敵）は RPGEN「PIEN」`sa:DszPWT` を そのまま 使っています。
