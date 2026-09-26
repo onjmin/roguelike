@@ -866,7 +866,10 @@ export class Run {
 			);
 			this.placeItem(it, m);
 		}
-		if (giveExp) this.gainExp(d.exp);
+		if (giveExp && d.exp > 0) {
+			this.msg(`${d.exp}ポイントの　経験値を　かせいだ`);
+			this.gainExp(d.exp);
+		}
 	}
 
 	/** 炎上案件の爆発（5×5 のモンスターと道具が消える。巻きこまれると HP が 1 に）。 */
