@@ -547,10 +547,11 @@ export class Run {
 			s.houses.includes(depth) && !s.returning,
 		);
 		const p = this.p;
-		// トルネコ1と おなじく、階が かわれば 目つぶし・混乱・眠りは とける
+		// トルネコ1と おなじく、階が かわれば 目つぶし・混乱・眠り・倍速は とける
 		p.status.sleep = 0;
 		p.status.confuse = 0;
 		p.status.blind = 0;
+		p.status.fast = 0;
 		p.status.trapped = 0;
 		p.status.heldBy = null;
 		p.nextAt = s.time;
