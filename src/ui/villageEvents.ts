@@ -3,11 +3,15 @@
 //
 // - ダンジョンの口：踏むと 中断した冒険の 確認 → もぐる？ → （本編なら）倉庫からの 持ちこみ →
 //   はじめてなら 語り → 村を出る。やめたら 1歩 もどる。
-// - 立て札：ダンジョンの 名前と 説明（開いていなければ 開き方）。
-// - 仲間：前の冒険・町の様子の ひとこと（ui/villageTalk.ts）と、役目（レイ＝冒険の記録、フェリス＝図鑑・あそびかた、
-//   テト＝倉庫）。どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
-// - 帰ってきたとき（onEnter）：洞窟から 1歩 出て、持ち帰った物の 倉庫・売り（home.ts の窓）と 開いた知らせ。
-//   村の中の 場面（仲間が 口の前で 話す）は まだ（いまは 前と 同じ 窓で出す）。
+// - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。
+// - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと（頭の上に「！」）。聞いたら 町の様子の
+//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（レイ＝冒険の記録と 売り上げの 帳簿、
+//   フェリス＝図鑑・あそびかた、テト＝倉庫、おんJ民＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
+//   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
+// - 小屋の扉・板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
+// - 開発用の 段の 下見（?village&stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
+// - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
+//   倉庫・売り → 町が 育つ（場面は ui/villageReturn.ts。あずける 一覧だけ ui/home.ts）。
 
 import { DUNGEONS } from "../core/data/dungeons";
 import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
@@ -18,7 +22,6 @@ import { DUNGEON_NAMES, STORY } from "../data/story";
 import { STAGE_NAMES, TOWN_MSG, TOWN_NAME, VILLAGE_MSG } from "../data/town";
 import { npc, sign } from "../data/village/helpers";
 import {
-	VILLAGE_SPOTS,
 	type VillagePlace,
 	type VillageView,
 	villagePalette,
@@ -40,23 +43,31 @@ import {
 import { openBook } from "./bookView";
 import { runSaveLabel } from "./boot";
 import type { Ctx } from "./ctx";
-import { openStorage, pickCarry, settleHome } from "./home";
+import { chooseStored, openStorage, pickCarry } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
-import { escBr, openRecords, showProgressNews, showStory } from "./records";
+import { escBr, openRecords, showStory } from "./records";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
-import { barkFor, DUNGEON_DESC, lockedHint } from "./villageTalk";
+import {
+	lineUp,
+	newsScript,
+	previewStage,
+	type ReturnArrival,
+	returnScene,
+	type StoreChooser,
+	settleScript,
+} from "./villageReturn";
+import {
+	DUNGEON_DESC,
+	hasNews,
+	ledgerLine,
+	lockedHint,
+	talkLine,
+} from "./villageTalk";
 
-/** いまの 町の段・開いたダンジョン（保存から 読む）。 */
-export const villageView = (): VillageView => {
-	const p = loadProgress();
-	return {
-		stage: loadTown().stage,
-		unlocked: [...p.unlocked],
-		cleared: [...p.cleared],
-	};
-};
+/** まだ開いていないダンジョンの 開き方（1行目 持ち帰り、2行目 たおれた回数の 救い）。 */
+const hintText = (d: DungeonId): string => lockedHint(d).replace("（", "\n（");
 
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
@@ -87,7 +98,7 @@ const mouthScript =
 	async (s) => {
 		const back = () => s.move("player", "d");
 		if (!loadProgress().unlocked.includes(d)) {
-			await s.narrate(lockedHint(d));
+			await s.narrate(hintText(d));
 			await back();
 			return;
 		}
@@ -113,9 +124,8 @@ const mouthScript =
 				await s.narrate(VILLAGE_MSG.broken);
 			} else {
 				abandonRun();
-				// すてたので 次のダンジョンが開いたなら、ここで知らせる
-				await hideMsg(s);
-				await showProgressNews(ctx);
+				// すてたので 次のダンジョンが開いたなら（救い）、ここで知らせる
+				await newsScript(s);
 			}
 		}
 		const p = loadProgress();
@@ -168,7 +178,10 @@ const signScript =
 	async (s) => {
 		const p = loadProgress();
 		if (!p.unlocked.includes(d)) {
-			await s.narrate(`「？？？」\n${lockedHint(d)}`);
+			// 名前は まだ 読めない。開き方だけ（救いが あれば 次の ページ）
+			const [cond, relief] = hintText(d).split("\n");
+			await s.narrate(`「？？？」\n${cond}`);
+			if (relief) await s.narrate(relief);
 			return;
 		}
 		await s.narrate(
@@ -176,31 +189,32 @@ const signScript =
 		);
 	};
 
-/** 話しかけた回数（ひとことを 回す）。 */
-const talked: Partial<Record<Speaker, number>> = {};
-
-/** 仲間の ひとこと（無ければ 何も言わない）。 */
-const bark = async (s: Story, who: Speaker): Promise<void> => {
-	const n = talked[who] ?? 0;
-	talked[who] = n + 1;
-	const text = barkFor(who, n);
-	if (text) await s.say(who, text);
+/** 仲間の ひとこと（1回の 帰りに 1つ 新しい話。聞いたら 決まった ひとこと）。 */
+const speak = async (
+	s: Story,
+	who: Speaker,
+	o: { gate?: boolean } = {},
+): Promise<void> => {
+	await s.say(who, talkLine(who, o));
 };
 
-/** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。 */
+/** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。役目は どれも B／☰ の メニューにも ある。 */
 const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	switch (who) {
 		case "rei":
-			// 帳簿の係：冒険の記録（リプレイも）
+			// 帳簿の係：冒険の記録（リプレイも）と 売り上げ
 			return async (s) => {
-				await bark(s, who);
-				const n = await s.choose(["冒険の記録", "やめる"], { cancel: 1 });
+				await speak(s, who);
+				const n = await s.choose(["冒険の記録", "売り上げ", "やめる"], {
+					cancel: 2,
+				});
 				if (n === 0) await records(ctx, s);
+				else if (n === 1) await s.say(who, ledgerLine());
 			};
 		case "feris":
 			// 看板の係：図鑑（目が いいから）・あそびかた
 			return async (s) => {
-				await bark(s, who);
+				await speak(s, who);
 				const n = await s.choose(["図鑑", "あそびかた", "やめる"], {
 					cancel: 2,
 				});
@@ -211,7 +225,7 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 		case "teto":
 			// 倉庫番（倉庫が 建ってから）
 			return async (s) => {
-				await bark(s, who);
+				await speak(s, who);
 				if ((STORAGE_CAP[loadTown().stage] ?? 0) <= 0) return;
 				const n = await s.choose(["倉庫を　見る", "やめる"], { cancel: 1 });
 				if (n !== 0) return;
@@ -219,14 +233,15 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 				await openStorage(ctx);
 			};
 		case "nanj":
-			// 本編が 開くまでは 口の前で 見張っている
+			// 本編が 開くまでは 口の前で 見張っている（開いたら 小屋の前で 大工）
 			return async (s) => {
-				await bark(s, who);
-				if (!loadProgress().unlocked.includes("main"))
-					await s.narrate(lockedHint("main"));
+				const gate = !loadProgress().unlocked.includes("main");
+				await speak(s, who, { gate });
+				if (gate) await s.narrate(hintText("main"));
 			};
 		default:
-			return (s) => bark(s, who);
+			// ロゼ（屋台・店）
+			return (s) => speak(s, who);
 	}
 };
 
@@ -244,12 +259,17 @@ const phonoScript: Script = async (s) => {
 /** 置き場所に スクリプトを付けて イベントにする。 */
 const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
-	if (p.who)
-		return npc(p.id, p.x, p.y, CAST[p.who].walk, friendScript(ctx, p.who), {
-			who: p.who,
-			dir: p.dir,
-			wander: p.wander,
-		});
+	if (p.who) {
+		const who = p.who;
+		return {
+			...npc(p.id, p.x, p.y, CAST[who].walk, friendScript(ctx, who), {
+				who,
+				dir: p.dir,
+				wander: p.wander,
+			}),
+			notice: () => hasNews(who),
+		};
+	}
 	if (p.dungeon && p.trigger === "touch")
 		return {
 			...at,
@@ -261,7 +281,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 		const d = p.dungeon;
 		return sign(p.id, p.x, p.y, async (s) => {
 			await s.narrate(VILLAGE_MSG.boarded);
-			await s.narrate(lockedHint(d));
+			await s.narrate(hintText(d));
 		});
 	}
 	if (p.dungeon) return sign(p.id, p.x, p.y, signScript(p.dungeon));
@@ -271,6 +291,22 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 			await records(ctx, s);
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
+	if (p.id === "door_hut") return sign(p.id, p.x, p.y, VILLAGE_MSG.hutDoor);
+	if (p.id.startsWith("yaji_") && p.sprite) {
+		// 祭りの 野次馬（J民。名前欄は おんJ民の 色で「野次馬」）
+		const line =
+			VILLAGE_MSG.yaji[Number(p.id.slice(5)) % VILLAGE_MSG.yaji.length];
+		return npc(
+			p.id,
+			p.x,
+			p.y,
+			p.sprite,
+			async (s) => {
+				await s.say("nanj", line, { name: "野次馬" });
+			},
+			{ dir: p.dir, wander: p.wander },
+		);
+	}
 	if (p.id === "tousuko")
 		return {
 			...at,
@@ -286,29 +322,45 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 };
 
 /**
- * 帰ってきたとき（村に入るたび）。洞窟から 1歩 出て、持ち帰った物を 倉庫へ・売る（決める前に
- * 閉じていても ここで 続きから）、開いた知らせ。町が 変わったら 暗転して 建て直す。
+ * 村の窓で あずける物を えらぶ（一覧は ui/home.ts。のこりを 売るかは ロゼが 村の窓で きく。
+ * タイトルの ときと 同じく「いいえ」から：押しすぎて 売ってしまわないように）。
+ */
+const storeChooser =
+	(ctx: Ctx): StoreChooser =>
+	(s, t, pend) =>
+		chooseStored(ctx, t, pend, {
+			prompt: "あずける　ものを　えらぶ",
+			confirmSell: async () => {
+				await s.say(TOWN_MSG.sellRest.who, TOWN_MSG.sellRest.text);
+				const yes =
+					(await s.choose(["はい", "いいえ"], { cancel: 1, start: 1 })) === 0;
+				await hideMsg(s);
+				return yes;
+			},
+		});
+
+/** 場面の ある 帰り方（持ち帰った・帰還スレ）なら その形。 */
+const returnOf = (a: Arrival): ReturnArrival | null =>
+	a && (a.kind === "clear" || a.kind === "escape")
+		? { kind: a.kind, dungeon: a.dungeon }
+		: null;
+
+/**
+ * 帰ってきたとき（村に入るたび。ui/villageReturn.ts）。持ち帰った・帰還スレなら 口から 出て 仲間の 語り、
+ * それから 開いた知らせと 持ち帰った物の 倉庫・売り（どちらも 保存から。決める前に 閉じていても ここで 続きから）。
  */
 const arrivalScript =
 	(ctx: Ctx, arrival: Arrival): Script =>
 	async (s) => {
 		if (arrival?.kind === "replay") return;
-		// 口の中に 立っていたら（ui/village.ts の spotFor）1歩 出る
-		if (arrival?.kind === "clear" || arrival?.kind === "escape") {
-			const [mx, my] = VILLAGE_SPOTS.mouth[arrival.dungeon];
-			if (s.state.x === mx && s.state.y === my) await s.move("player", "d");
-		}
-		const before = JSON.stringify(villageView());
-		if (loadTown().pending) {
-			await hideMsg(s);
-			await settleHome(ctx);
-		}
-		await showProgressNews(ctx);
-		if (JSON.stringify(villageView()) !== before) {
-			await s.fadeOut(300);
-			await s.rebuild();
-			await s.fadeIn(300);
-		}
+		const back = returnOf(arrival);
+		if (back) await returnScene(s, back);
+		// 持ち帰りの 曲（ending）のまま 入ったときも ここからは 村の曲
+		s.bgm("town");
+		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）
+		if (previewStage() !== null) return;
+		await newsScript(s);
+		await settleScript(s, storeChooser(ctx));
 	};
 
 /** 村の マップ（町の段・開いたダンジョンから）。 */
@@ -316,16 +368,24 @@ export const buildVillage = (
 	v: VillageView,
 	ctx: Ctx,
 	opt: { arrival?: Arrival } = {},
-): MapDef => ({
-	id: "village",
-	name: `${TOWN_NAME}　${STAGE_NAMES[v.stage] ?? ""}`,
-	bgm: "town",
-	tiles: villagePalette(v),
-	rows: villageRows(v),
-	outside: "#1f2a14",
-	events: villagePlaces(v).map((p) => eventFor(ctx, p)),
-	onEnter: arrivalScript(ctx, opt.arrival ?? null),
-});
+): MapDef => {
+	const arrival = opt.arrival ?? null;
+	return {
+		id: "village",
+		name: `${TOWN_NAME}　${STAGE_NAMES[v.stage] ?? ""}`,
+		bgm: "town",
+		tiles: villagePalette(v),
+		rows: villageRows(v),
+		outside: "#1f2a14",
+		events: villagePlaces(v).map((p) => eventFor(ctx, p)),
+		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
+		prepare: (s) => {
+			const back = returnOf(arrival);
+			if (back) lineUp(s, back, v);
+		},
+		onEnter: arrivalScript(ctx, arrival),
+	};
+};
 
 /** B／☰ の 村の メニュー（仲間の 役目を ぜんぶ ここからも）。とじるまで 何度でも。 */
 export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {

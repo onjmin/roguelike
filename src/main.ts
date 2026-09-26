@@ -234,7 +234,7 @@ const villageLoop = async () => {
 		hud.setMode("dungeon");
 		hud.root.classList.remove("hidden");
 		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;
-		const play = new Play(run, ctx, screen, hud, { replay });
+		const play = new Play(run, ctx, screen, hud, { replay, village: true });
 		if (import.meta.env.DEV)
 			(window as unknown as { __play: Play }).__play = play;
 		const r = await play.start();

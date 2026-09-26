@@ -152,15 +152,18 @@ export class Play {
 	private statusKey = "";
 	/** リプレイを見ているとき（入力の代わりに 記録のコマンドを入れる）。 */
 	private rp: ReplayDriver | null = null;
+	/** 歩ける村から もぐった（終わりの札のあと、語りは 村の中で 仲間が 話す）。 */
+	private readonly village: boolean;
 
 	constructor(
 		run: Run,
 		ctx: Ctx,
 		screen: Screen,
 		hud: Hud,
-		opts: { replay?: SavedReplay } = {},
+		opts: { replay?: SavedReplay; village?: boolean } = {},
 	) {
 		this.run = run;
+		this.village = opts.village ?? false;
 		if (opts.replay) {
 			const steps = parseReplay(opts.replay.text);
 			this.rp = {
@@ -1727,7 +1730,7 @@ export class Play {
 			await this.replayEnd();
 			return;
 		}
-		await showRunEnd(this.ctx, s);
+		await showRunEnd(this.ctx, s, { story: !this.village });
 		this.stop();
 	}
 

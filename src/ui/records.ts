@@ -182,8 +182,14 @@ const dateLabel = (at: number): string => {
  * 倒れた・持ち帰ったあとの「冒険の記録」の札（全画面）。
  * 記録を足して中断セーブを消すのは、札を出す前にやる（見ている間にタブを閉じても残るように）。
  * 持ち帰ったときは、先に ENDING の語りを流す。
+ * story が false（歩ける村）なら 語りも 開いた知らせも 出さない（村の中で 仲間が 話す。ui/villageReturn.ts）。
  */
-export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
+export const showRunEnd = async (
+	ctx: Ctx,
+	s: RunState,
+	opt: { story?: boolean } = {},
+): Promise<void> => {
+	const story = opt.story ?? true;
 	const rec = recordFromRun(s);
 	const clear = rec.kind === "clear";
 	const escaped = rec.kind === "escape";
@@ -252,10 +258,13 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	]);
 	const box = el("div", { class: "matome" }, [
 		card,
-		el("div", { class: "matome-tap", text: "タップで　タイトルへ" }),
+		el("div", {
+			class: "matome-tap",
+			text: story ? "タップで　タイトルへ" : "タップで　地上へ",
+		}),
 	]);
 	ctx.ui.appendChild(box);
-	if (clear || escaped) {
+	if (story && (clear || escaped)) {
 		// 持ち帰った・帰ってきたときは、語りが画面を覆ったら その下に札を置いておく（語りが消えると
 		// そのまま札が見える。語りのあとに札を出すと、そのすき間に下の画面がちらつく）
 		const pages = clear ? STORY[s.dungeon].ending : RETURN_PAGES;
@@ -274,7 +283,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	box.classList.remove("shown");
 	await sleep(600);
 	box.remove();
-	await showProgressNews(ctx);
+	if (story) await showProgressNews(ctx);
 };
 
 /**

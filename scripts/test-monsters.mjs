@@ -33,7 +33,7 @@ try {
 		...runMonsterTests(),
 		...runReplayTests(),
 		...runTownTests(),
-		...runVillageTests(),
+		...(await runVillageTests()),
 	];
 	for (const t of results)
 		console.log(

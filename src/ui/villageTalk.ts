@@ -1,13 +1,15 @@
-// 地上の ひとこと：タイトル（起動の札）の ひとこと、村で 仲間に 話しかけたときの ひとこと、
-// ダンジョンの ひとことの説明（選ぶ窓・立て札）。
+// 地上の ひとこと：タイトル（起動の札）の ひとこと、村で 仲間に 話しかけたときの ひとこと（1回の 帰りに
+// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、レイの 帳簿、ダンジョンの ひとことの説明（選ぶ窓・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
 import { DUNGEONS } from "../core/data/dungeons";
+import { STAGE_POINTS, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import {
 	pickQuote,
 	type Quote,
 	type QuoteContext,
+	SPEAKERS,
 	type Speaker,
 } from "../data/quotes";
 import {
@@ -16,7 +18,12 @@ import {
 	FIRST_SHALLOW,
 	SHALLOW_DEATH,
 } from "../data/story";
-import { ESCAPE_QUOTES, TITLE_TOWN_QUOTES } from "../data/town";
+import {
+	ESCAPE_QUOTES,
+	TITLE_TOWN_QUOTES,
+	VILLAGE_IDLE,
+	VILLAGE_MSG,
+} from "../data/town";
 import { loadRecords, loadTown, runStats } from "../engine/save";
 
 /** ダンジョンの ひとことの説明（選ぶ窓・立て札）。 */
@@ -73,9 +80,62 @@ export const titleQuote = (seed: number): Quote | null => {
 	return pickQuote(quoteContext(), seed);
 };
 
-/** 前の冒険への その人の ひとこと（無ければ null）。 */
-const runBark = (who: Speaker, seed: number): Quote | null => {
+// ───────────────── 村で 話しかけたとき ─────────────────
+// 1回の 帰りに 1人 1つだけ、前の冒険への 新しい ひとこと（頭の上に「！」）。聞いたら、次に 帰ってくるまで
+// 短い 決まった ひとこと（その段の 町の様子。無い人は 役目の ひとこと）。
+// 「帰り」は いちばん新しい 冒険の記録（終わった時刻）で 見分ける。聞いたかどうかは 村の 印として
+// 別の 保存場所に 残す（中断セーブ・記録・町には 手を ふれない。保存できなくても この回は 覚えている）。
+
+const HEARD_KEY = "kiriko-roguelike/village";
+
+/** 仲間ごとに、聞いた ひとことの 帰り（記録の 終わった時刻。記録が 無ければ 0）。 */
+type Heard = Partial<Record<Speaker, number>>;
+
+/** 保存できないときの この回の 写し。 */
+let heardMemo: Heard = {};
+
+const loadHeard = (): Heard => {
+	try {
+		const raw = localStorage.getItem(HEARD_KEY);
+		if (raw) {
+			const o = JSON.parse(raw) as { heard?: unknown };
+			const out: Heard = {};
+			if (o?.heard && typeof o.heard === "object")
+				for (const [k, v] of Object.entries(o.heard))
+					if (k in SPEAKERS && typeof v === "number") out[k as Speaker] = v;
+			return out;
+		}
+	} catch {
+		// 読めなければ この回の 写し
+	}
+	return { ...heardMemo };
+};
+
+const saveHeard = (h: Heard): void => {
+	heardMemo = { ...h };
+	try {
+		localStorage.setItem(HEARD_KEY, JSON.stringify({ heard: h }));
+	} catch {
+		// 保存できなくても 遊べる（この回は 写しで 覚えている）
+	}
+};
+
+/** 試験用：この回の 写しを 忘れる。 */
+export const forgetHeardMemo = (): void => {
+	heardMemo = {};
+};
+
+/** いまの 帰り（いちばん新しい 冒険の記録の 終わった時刻。まだ無ければ 0）。 */
+const returnAt = (): number => loadRecords()[0]?.at ?? 0;
+
+/**
+ * 前の冒険への その人の ひとこと（無ければ null）。帰りごとに 決まる（同じ帰りの あいだは 同じ）。
+ * ちょっと・もっと の たまり（data/story.ts）と 帰還スレの たまりを 先に見て、無ければ 本編の たまり
+ * （data/quotes.ts。死因・深さ）。
+ */
+const reaction = (who: Speaker): Quote | null => {
 	const last = loadRecords()[0];
+	const seed = (last?.at ?? 0) % 9973;
 	const mine = (pool: readonly Quote[]) => {
 		const p = pool.filter((x) => x.who === who);
 		return p.length ? p[seed % p.length] : null;
@@ -89,20 +149,54 @@ const runBark = (who: Speaker, seed: number): Quote | null => {
 	return pickQuote(quoteContext(), seed, who);
 };
 
+/** その人の 決まった ひとこと（新しい話を 聞いたあと）。 */
+const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
+	// 口の前で 見張っている間は 見張りの ひとこと
+	if (who === "nanj" && o.gate) return VILLAGE_IDLE.gate;
+	const stage = loadTown().stage;
+	const town = (TITLE_TOWN_QUOTES[stage] ?? []).find((x) => x.who === who);
+	if (town) return town.text;
+	if (who === "teto" && (STORAGE_CAP[stage] ?? 0) > 0)
+		return VILLAGE_IDLE.store;
+	return VILLAGE_IDLE[who];
+};
+
+/** まだ 聞いていない 新しい ひとことが あるか（頭の上の「！」）。 */
+export const hasNews = (who: Speaker): boolean =>
+	loadHeard()[who] !== returnAt() && reaction(who) !== null;
+
 /**
- * 村で 話しかけたときの ひとこと。n は その人に 話しかけた回数（0 から）。
- * 前の冒険への ひとことと、町の様子の ひとことを 交互に（その人の分が 無ければ もう片方）。
+ * 話しかけたときの ひとこと。新しい話が あれば それ（聞いたと 覚える）、無ければ 決まった ひとこと。
+ * gate は おんJ民が 本編の口の前で 見張っているとき。
  */
-export const barkFor = (who: Speaker, n: number): string | null => {
-	const last = loadRecords()[0];
-	// 同じ冒険のあいだは 同じ たまりから 回数ぶん ずらして引く
-	const seed = ((last?.at ?? 0) % 9973) + n;
-	const town = (TITLE_TOWN_QUOTES[loadTown().stage] ?? []).filter(
-		(x) => x.who === who,
-	);
-	const townLine = town.length ? town[seed % town.length] : null;
-	const runLine = runBark(who, seed);
-	const first = n % 2 === 0 ? runLine : townLine;
-	const second = n % 2 === 0 ? townLine : runLine;
-	return (first ?? second)?.text ?? null;
+export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string => {
+	const at = returnAt();
+	const heard = loadHeard();
+	if (heard[who] !== at) {
+		const news = reaction(who);
+		heard[who] = at;
+		saveHeard(heard);
+		if (news) return news.text;
+	}
+	return idleLine(who, o);
+};
+
+/** 文の {name} を 埋める。 */
+export const fill = (
+	text: string,
+	vars: Record<string, string | number>,
+): string =>
+	text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
+
+/** レイの 帳簿：売り上げの 合計と、次の 段までの のこり。 */
+export const ledgerLine = (): string => {
+	const t = loadTown();
+	if (t.stage >= TOWN_STAGES - 1)
+		return fill(VILLAGE_MSG.ledgerMax, { points: t.points });
+	if (t.points <= 0) return VILLAGE_MSG.ledgerNone;
+	const rest = (STAGE_POINTS[t.stage + 1] ?? 0) - t.points;
+	// 足りていても 1回の 帰りで 上がるのは 1段まで（core/town.ts の nextStage）
+	return rest > 0
+		? fill(VILLAGE_MSG.ledger, { points: t.points, rest })
+		: fill(VILLAGE_MSG.ledgerSoon, { points: t.points });
 };

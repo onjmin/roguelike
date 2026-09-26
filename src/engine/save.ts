@@ -424,6 +424,19 @@ export const takeProgressNews = (): ProgressNews[] => {
 	return news;
 };
 
+/**
+ * 知らせを 1つ 見せおえた（歩ける村：見せてから 消す。見せている 途中で 閉じたら 次に 開いたとき また 見せる）。
+ */
+export const doneProgressNews = (n: ProgressNews): void => {
+	const p = loadProgress();
+	const i = p.news.findIndex(
+		(x) => x.dungeon === n.dungeon && x.reason === n.reason,
+	);
+	if (i < 0) return;
+	p.news.splice(i, 1);
+	saveProgress(p);
+};
+
 /** ダンジョンを選んだ（次は そこから カーソルを置く）。語りを見たなら それも覚える。 */
 export const notePicked = (dungeon: DungeonId, sawIntro: boolean): void => {
 	const p = loadProgress();

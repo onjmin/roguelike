@@ -41,3 +41,10 @@ export const KIRIKO_WALK = "pub:sprites/kiriko.png";
 
 /** とうすこ（1階の敵）。村では キリコの あとを うろうろ している。 */
 export const TOUSUKO_WALK = "sa:2kJYAl";
+
+/** 段7（祭り）の 野次馬（rpg の SPR j_yakiu・j_nanashi・j_gakuran と同じ）。 */
+export const YAJI_WALK: readonly string[] = [
+	"sa:4rSOzo",
+	"sa:lcBiHO",
+	"sa:XvdbmA",
+];

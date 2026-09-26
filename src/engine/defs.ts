@@ -56,6 +56,8 @@ export type EventDef = {
 	when?: (s: VState) => boolean;
 	/** 1回だけ実行する（実行後 `done:<map>:<id>` が立ち、以後は消える）。 */
 	once?: boolean;
+	/** まだ 聞いていない 新しい話が ある（頭の上に「！」。スクリプトの あとに 見なおす）。 */
+	notice?: () => boolean;
 	run?: Script;
 };
 
@@ -70,7 +72,12 @@ export type MapDef = {
 	/** マップ本体（1文字 = 1マス）。全行同じ長さにする。 */
 	rows: string[];
 	events?: EventDef[];
-	/** マップに入るたびに走るスクリプト。 */
+	/**
+	 * 入るとき、幕が 上がる前に 1回だけ 呼ぶ（人を 置く・隠すだけ。待たない）。
+	 * 帰ってきた場面で 仲間を 口の前に 並べておく（ui/villageReturn.ts）。
+	 */
+	prepare?: (s: Story) => void;
+	/** マップに入るたびに走るスクリプト（幕が 上がってから）。 */
 	onEnter?: Script;
 	/** マップの外側の色。 */
 	outside?: string;
@@ -108,14 +115,20 @@ export type Story = {
 	say(who: Speaker | null, text: string, opt?: SayOptions): Promise<void>;
 	/** 地の文。 */
 	narrate(text: string): Promise<void>;
-	/** 選択肢。選ばれた番号を返す（cancel があれば B・外のタップで その番号）。 */
-	choose(options: string[], opt?: { cancel?: number }): Promise<number>;
-	/** 窓を隠して待つ。 */
+	/** 選択肢。選ばれた番号を返す（cancel があれば B・外のタップで その番号。start は はじめの カーソル）。 */
+	choose(
+		options: string[],
+		opt?: { cancel?: number; start?: number },
+	): Promise<number>;
+	/** 窓と 立ち絵を 片付けて 待つ（一覧の窓・人が 歩く 前に）。 */
 	wait(ms: number): Promise<void>;
+	/** 暗転する（会話の窓と 立ち絵は 先に 片付ける）。 */
 	fadeOut(ms?: number): Promise<void>;
 	fadeIn(ms?: number): Promise<void>;
 	/** BGM を切り替える（null で止める）。 */
 	bgm(name: string | null): void;
+	/** 鳴っている BGM を ms かけて 絞って 止める。 */
+	fadeBgm(ms: number): Promise<void>;
 	/** 効果音（data/sfx.ts の名前）。 */
 	se(name: string): void;
 	flag(name: string): boolean | number | string | undefined;
@@ -129,8 +142,27 @@ export type Story = {
 		route: string,
 		opt?: { speed?: number; through?: boolean },
 	): Promise<void>;
+	/**
+	 * (x, y) まで 歩かせる（道は 地形だけで 決める。ほかの人は すりぬけ、キリコの マスは よける）。
+	 * 行けなければ 何もしない。
+	 */
+	goto(
+		target: string,
+		x: number,
+		y: number,
+		opt?: { speed?: number },
+	): Promise<void>;
 	face(target: string, dir: Dir | "player"): void;
-	/** イベントを出す／消す（村を出るまで）。 */
+	/**
+	 * カメラを 人（イベント ID。歩けば ついていく）か マスに 向ける。null で キリコに もどす。
+	 * ゆっくり 動いて 着いたら 解決する。instant なら すぐ（暗転の 中で）。
+	 * いちばん外の スクリプトが 終われば キリコに もどる。
+	 */
+	look(
+		target: string | readonly [number, number] | null,
+		opt?: { instant?: boolean },
+	): Promise<void>;
+	/** イベントを出す／消す（村を出るまで）。"player" は キリコ（村に 入りなおすまで）。 */
 	show(eventId: string): void;
 	hide(eventId: string): void;
 	/** イベントの位置を変える（見た目だけ。村を建て直すと元に戻る）。 */

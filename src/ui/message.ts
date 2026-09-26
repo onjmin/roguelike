@@ -565,11 +565,6 @@ export class MessageWindow {
 		this.left.clear();
 		this.right.clear();
 	}
-
-	/** 窓だけ隠す（選択肢・戦闘の前など）。立ち絵は残す。 */
-	hideWindow(): void {
-		this.win.classList.remove("shown");
-	}
 }
 
 /** 選択肢。 */
@@ -593,9 +588,10 @@ export class ChoiceWindow {
 		options: string[],
 		cancel?: number,
 		se?: (name: string) => void,
+		start = 0,
 	): Promise<number> {
 		const box = el("div", { class: "choice window" });
-		let cur = 0;
+		let cur = start;
 		const items = options.map((label, i) => {
 			const b = el("button", { class: "choice-item", text: label });
 			b.addEventListener("pointerdown", (e) => {

@@ -3,9 +3,13 @@
 //
 // - 4方向で 1マスずつ歩く（十字キー・キーボード。斜めは 縦を先に 試して、だめなら 横へ すべる）。
 //   画面を タップすると そこまで 歩く（人・看板なら 前まで行って 話す。カウンターの 向こうの人も。
-//   ダンジョンの口を タップすれば 口まで 歩いて もぐるか きく）。画面を 押さえつづけると 指の方へ 歩きつづける。
+//   ダンジョンの口を タップすれば 口まで 歩いて もぐるか きく。前に 人が 立って ふさいでいる口なら その人と 話す）。
+//   画面を 押さえつづけると 指の方へ 歩きつづける。
 // - A で 目の前の 人・物を 調べる（カウンター越しも）。B・☰ で 村の メニュー（ui/villageEvents.ts）。
+// - まだ 聞いていない 新しい話が ある人の 頭の上に「！」（EventDef.notice。スクリプトの あとに 見なおす）。
 // - 窓（会話・選択肢・メニュー）が 開いている間は 歩かない（input.busy）。
+// - 入るたびに onEnter（帰ってきた場面・開いた知らせ・持ち帰った物。ui/villageReturn.ts）。その間は 歩かない・
+//   うろうろ しない・「！」を 出さない（scene）。場面では カメラを 人や 建物に 向ける（look）。
 // - start() は 村を出ると（もぐる・つづきから・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
@@ -39,7 +43,8 @@ import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
-import { buildVillage, villageMenu, villageView } from "./villageEvents";
+import { buildVillage, villageMenu } from "./villageEvents";
+import { villageView } from "./villageReturn";
 
 /** 1マス歩く ms（rpg と同じ）。うろうろする人は この 1.6倍。 */
 const WALK_MS = 170;
@@ -75,8 +80,18 @@ export class Village {
 	private marker: { x: number; y: number; t: number } | null = null;
 	private time = 0;
 	private last = 0;
+	/** 描くときの カメラ（画面の 画素に 丸めた）。 */
 	private camX = 0;
 	private camY = 0;
+	/** 丸める前の カメラ（なめらかに 動かすとき）。 */
+	private camFX = 0;
+	private camFY = 0;
+	/** カメラが 見る先（人の ID か マス。null なら キリコ）。 */
+	private lookAt: string | readonly [number, number] | null = null;
+	/** カメラを なめらかに 動かしている（見る先を かえてから キリコに もどりきるまで）。 */
+	private easing = false;
+	/** 入ったときの 場面の 最中（歩かない・うろうろ しない・「！」を 出さない）。 */
+	private scene = false;
 	private running = false;
 	private rafId = 0;
 	private arrival: Arrival = null;
@@ -86,6 +101,8 @@ export class Village {
 	private resolveStart: ((c: VillageExit) => void) | null = null;
 	/** 最後に 立っていた マス（リプレイを 見て もどったとき）。 */
 	private lastSpot: Spot | null = null;
+	/** 頭の上に「！」を出す人（まだ 聞いていない 新しい話が ある。スクリプトの あとに 見なおす）。 */
+	private noticed = new Set<string>();
 
 	constructor(ctx: Ctx, screen: Screen, hud: Hud) {
 		this.ctx = ctx;
@@ -122,9 +139,15 @@ export class Village {
 		this.leaving = false;
 		this.scriptDepth = 0;
 		this.arrival = o.arrival;
+		// 起動の札の うしろでは 村が 動いている（うろうろ する。場面は 札を 閉じてから）
+		this.scene = !o.boot;
+		this.lookAt = null;
+		this.easing = false;
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
 		await this.build(this.spotFor(o.arrival));
+		// 幕が 上がる前に 並べる（帰ってきた場面：口の前で 待つ 仲間）
+		this.field?.def.prepare?.(this.story);
 		const input = this.ctx.input;
 		input.onFieldTap = (x, y) => this.onTap(x, y);
 		// 前の画面で 押したキー・向きは 捨てる
@@ -139,6 +162,7 @@ export class Village {
 			this.hud.root.classList.add("hidden");
 			void this.fadeIn(600);
 			const c = await showBootTitle(this.ctx);
+			this.scene = true;
 			if (c.kind === "continue") {
 				await this.leave({ kind: "continue", state: c.state });
 				return;
@@ -149,7 +173,9 @@ export class Village {
 			await this.fadeIn(400);
 		}
 		const def = this.field?.def;
-		if (def?.bgm !== undefined) this.ctx.audio.bgm(def.bgm);
+		// 持ち帰ったときは 終わりの札の 曲（ending）のまま。語りの あとで 村の曲へ（ui/villageReturn.ts）
+		if (def?.bgm !== undefined && o.arrival?.kind !== "clear")
+			this.ctx.audio.bgm(def.bgm);
 		if (def) this.toast(def.name);
 		this.runEnter();
 	}
@@ -271,6 +297,9 @@ export class Village {
 			);
 		}
 		field.actors = keep;
+		this.noticed = new Set(
+			keep.filter((a) => a.def?.notice?.()).map((a) => a.id),
+		);
 	}
 
 	private syncState(): void {
@@ -292,7 +321,12 @@ export class Village {
 	}
 
 	private get idle(): boolean {
-		return this.scriptDepth === 0 && !this.ctx.input.busy && !this.leaving;
+		return (
+			this.scriptDepth === 0 &&
+			!this.scene &&
+			!this.ctx.input.busy &&
+			!this.leaving
+		);
 	}
 
 	private update(dt: number): void {
@@ -314,6 +348,7 @@ export class Village {
 				a.def?.wander &&
 				!a.moving &&
 				this.scriptDepth === 0 &&
+				!this.scene &&
 				a !== this.pathTalk
 			) {
 				a.wanderWait -= dt;
@@ -340,7 +375,7 @@ export class Village {
 			}
 		}
 		if (this.idle && !this.player.moving) this.control();
-		this.updateCamera();
+		this.updateCamera(dt);
 	}
 
 	/** タップで決めた 道の上か（うろうろする人が 道を ふさがないように）。 */
@@ -441,6 +476,42 @@ export class Village {
 		this.player.dir = tries[0];
 	}
 
+	/**
+	 * 場面で 人を 歩かせる 道（幅優先）。地形だけを 見て、ほかの人は すりぬける（場面の 人どうしが
+	 * ふさぎあわないように）。キリコの マスは よける。
+	 */
+	private routeTo(a: Actor, tx: number, ty: number): Dir[] | null {
+		const field = this.field;
+		if (!field?.inBounds(tx, ty)) return null;
+		const me = this.player;
+		const key = (x: number, y: number) => y * field.w + x;
+		const prev = new Map<number, { k: number; d: Dir } | null>();
+		prev.set(key(a.x, a.y), null);
+		const queue: [number, number][] = [[a.x, a.y]];
+		for (let head = 0; head < queue.length; head++) {
+			const [x, y] = queue[head];
+			if (x === tx && y === ty) {
+				const route: Dir[] = [];
+				let cur = prev.get(key(x, y));
+				while (cur) {
+					route.push(cur.d);
+					cur = prev.get(cur.k) ?? null;
+				}
+				return route.reverse();
+			}
+			for (const d of ["up", "right", "down", "left"] as Dir[]) {
+				const nx = x + DIR_VEC[d].dx;
+				const ny = y + DIR_VEC[d].dy;
+				const k = key(nx, ny);
+				if (prev.has(k) || !field.tileAt(nx, ny).passable) continue;
+				if (a !== me && nx === me.x && ny === me.y) continue;
+				prev.set(k, { k: key(x, y), d });
+				queue.push([nx, ny]);
+			}
+		}
+		return null;
+	}
+
 	private faceTo(a: Actor, x: number, y: number): void {
 		const dx = x - a.x;
 		const dy = y - a.y;
@@ -506,6 +577,8 @@ export class Village {
 		if (!target?.def?.run) return;
 		if (!target.def.fixedDir && !target.still)
 			target.dir = OPPOSITE[this.player.dir];
+		// 話しはじめたら「！」は 消す（話し終わったら 見なおす）
+		if (this.idle) this.noticed.delete(target.id);
 		void this.runEvent(target.def);
 	}
 
@@ -515,13 +588,21 @@ export class Village {
 		if (!field || !this.idle) return;
 		const p = this.screen.cssToSource(x, y);
 		const tx = Math.floor((p.x + this.camX) / TILE);
-		const ty = Math.floor((p.y + this.camY) / TILE);
+		let ty = Math.floor((p.y + this.camY) / TILE);
 		if (!field.inBounds(tx, ty)) return;
-		const talk =
+		const talkAt = (x: number, y: number) =>
 			field.actors.find(
-				(a) =>
-					a.x === tx && a.y === ty && a.def?.trigger === "talk" && a.visible,
+				(a) => a.x === x && a.y === y && a.def?.trigger === "talk" && a.visible,
 			) ?? null;
+		let talk = talkAt(tx, ty);
+		// 前に 人が 立って ふさいでいる 口（本編が 開くまでの おんJ民）を タップしたら、その人に 話しかける
+		if (!talk && this.touchAt(tx, ty)) {
+			const guard = talkAt(tx, ty + 1);
+			if (guard && !guard.through) {
+				ty += 1;
+				talk = guard;
+			}
+		}
 		// となりの人・物を タップしたら、そちらを向いて 話す
 		if (
 			talk &&
@@ -580,11 +661,20 @@ export class Village {
 		return ((Math.round(Math.atan2(dx, -dy) / (Math.PI / 4)) + 8) % 8) as Dir8;
 	}
 
+	/** カメラが 見る 人・マス（マス単位・小数）。 */
+	private focus(): { fx: number; fy: number } {
+		const t = this.lookAt;
+		if (t === null) return this.player;
+		if (typeof t === "string") return this.actorFor(t) ?? this.player;
+		return { fx: t[0], fy: t[1] };
+	}
+
 	/**
-	 * カメラ。キリコを 下の ボタン（十字キー・A/B）より 上の まんなかに 置き、地図の はしで 止める。
+	 * カメラ。キリコ（場面では 見る先）を 下の ボタン（十字キー・A/B）より 上の まんなかに 置き、地図の はしで 止める。
 	 * 地図が 画面に 収まる向きは まんなかに 置く（高さは ボタンより 上の 部分で）。
+	 * 見る先を かえたら dt ごとに なめらかに 寄せる（キリコに もどりきったら また ぴったり ついていく）。
 	 */
-	private updateCamera(): void {
+	private updateCamera(dt = 0): void {
 		const field = this.field;
 		if (!field) return;
 		const sc = this.screen;
@@ -601,13 +691,26 @@ export class Village {
 		const mh = field.h * TILE;
 		// いちばん上の段（崖）も タップできるよう、上に 半マス あける
 		const topPad = TILE / 2;
-		const cx = this.player.fx * TILE + TILE / 2 - w / 2;
-		const cy = this.player.fy * TILE + TILE / 2 - hv / 2;
-		this.camX = mw <= w ? (mw - w) / 2 : clamp(cx, 0, mw - w);
-		this.camY =
-			mh + topPad <= hv ? -(hv - mh) / 2 : clamp(cy, -topPad, mh - hv);
-		this.camX = sc.snap(this.camX);
-		this.camY = sc.snap(this.camY);
+		const f = this.focus();
+		const cx = f.fx * TILE + TILE / 2 - w / 2;
+		const cy = f.fy * TILE + TILE / 2 - hv / 2;
+		const tx = mw <= w ? (mw - w) / 2 : clamp(cx, 0, mw - w);
+		const ty = mh + topPad <= hv ? -(hv - mh) / 2 : clamp(cy, -topPad, mh - hv);
+		if (!this.easing) {
+			this.camFX = tx;
+			this.camFY = ty;
+		} else if (dt > 0) {
+			const k = 1 - Math.exp(-dt / 110);
+			this.camFX += (tx - this.camFX) * k;
+			this.camFY += (ty - this.camFY) * k;
+			if (Math.abs(tx - this.camFX) < 0.5 && Math.abs(ty - this.camFY) < 0.5) {
+				this.camFX = tx;
+				this.camFY = ty;
+				if (this.lookAt === null) this.easing = false;
+			}
+		}
+		this.camX = sc.snap(this.camFX);
+		this.camY = sc.snap(this.camFY);
 	}
 
 	private render(): void {
@@ -634,16 +737,46 @@ export class Village {
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		field.drawAbove(g, ox, oy);
 		field.def.decor?.(g, ox, oy, this.time);
+		if (!this.scene)
+			for (const a of field.actors)
+				if (a.visible && this.noticed.has(a.id)) this.drawNotice(g, a, ox, oy);
+	}
+
+	/** 頭の上の「！」（白い ふきだしに 赤い！。ゆっくり 上下に ゆれる）。 */
+	private drawNotice(
+		g: CanvasRenderingContext2D,
+		a: Actor,
+		ox: number,
+		oy: number,
+	): void {
+		const bob = Math.sin(this.time / 240) > 0 ? 0 : 1;
+		const x = Math.round(a.fx * TILE - ox) + 5;
+		const y = Math.round(a.fy * TILE - oy) - 12 + bob;
+		g.fillStyle = "#000";
+		g.fillRect(x - 1, y - 1, 8, 12);
+		g.fillStyle = "#fff";
+		g.fillRect(x, y, 6, 10);
+		g.fillStyle = "#e0303a";
+		g.fillRect(x + 2, y + 1, 2, 5);
+		g.fillRect(x + 2, y + 7, 2, 2);
 	}
 
 	// ───────────────── スクリプト ─────────────────
 
 	private runEnter(): void {
-		const def = this.field?.def;
-		if (def?.onEnter) {
-			const enter = def.onEnter;
-			void this.runScript(enter);
-		} else this.checkAuto();
+		const enter = this.field?.def.onEnter;
+		if (!enter) {
+			this.scene = false;
+			this.checkAuto();
+			return;
+		}
+		void this.runScript(async (s) => {
+			try {
+				await enter(s);
+			} finally {
+				this.scene = false;
+			}
+		});
 	}
 
 	/** 条件を満たした 自動イベントを 始める。 */
@@ -679,6 +812,11 @@ export class Village {
 		}
 		if (this.scriptDepth > 0 || !this.running) return;
 		this.msg.close();
+		// カメラを 人や 建物に 向けたままなら キリコへ もどす
+		if (this.lookAt !== null) {
+			this.lookAt = null;
+			this.easing = true;
+		}
 		if (this.exitChoice) {
 			await this.leave(this.exitChoice);
 			return;
@@ -691,6 +829,8 @@ export class Village {
 	// ───────────────── 演出 ─────────────────
 
 	private async fadeOut(ms = 300): Promise<void> {
+		// 窓と 立ち絵は 暗転の 前に 片付ける（明けたときに 前の セリフが 残らないように）
+		this.msg.close();
 		this.fadeEl.style.background = "#000";
 		this.fadeEl.style.transition = `opacity ${ms}ms linear`;
 		await nextFrame();
@@ -749,16 +889,21 @@ export class Village {
 			say: (who, text, opt) => this.say(who, text, opt),
 			narrate: (text) => this.say(null, text),
 			choose: (options, opt) =>
-				this.choice.choose(options, opt?.cancel, (name) =>
-					this.ctx.audio.se(name),
+				this.choice.choose(
+					options,
+					opt?.cancel,
+					(name) => this.ctx.audio.se(name),
+					opt?.start,
 				),
 			wait: (ms) => {
-				this.msg.hideWindow();
+				// 窓と 立ち絵を 片付ける（一覧・歩く 場面の 前に。立ち絵が 人を 隠さないように）
+				this.msg.close();
 				return sleep(ms);
 			},
 			fadeOut: (ms) => this.fadeOut(ms),
 			fadeIn: (ms) => this.fadeIn(ms),
 			bgm: (name) => this.ctx.audio.bgm(name),
+			fadeBgm: (ms) => this.ctx.audio.fadeBgm(ms),
 			se: (name) => this.ctx.audio.se(name),
 			flag: (name) => this.state.flags[name],
 			set: (name, value = true) => {
@@ -803,6 +948,28 @@ export class Village {
 				}
 				if (a === this.player) this.syncState();
 			},
+			goto: async (target, x, y, opt) => {
+				const a = this.actorFor(target);
+				const route = a ? this.routeTo(a, x, y) : null;
+				if (!a || !route) {
+					console.warn(`[goto] ${target} は (${x},${y}) へ 行けません`);
+					return;
+				}
+				const ms = WALK_MS / (opt?.speed ?? 1);
+				for (const d of route) await a.walk(d, ms);
+				if (a === this.player) this.syncState();
+			},
+			look: async (target, opt) => {
+				this.lookAt = target;
+				if (opt?.instant) {
+					this.easing = false;
+					this.updateCamera();
+					this.easing = target !== null;
+					return;
+				}
+				this.easing = true;
+				await sleep(450);
+			},
 			face: (target, dir) => {
 				const a = this.actorFor(target);
 				if (!a) return;
@@ -810,10 +977,18 @@ export class Village {
 				else a.dir = dir;
 			},
 			show: (id) => {
+				if (id === "player") {
+					this.player.visible = true;
+					return;
+				}
 				delete this.state.flags[`hide:village:${id}`];
 				this.refreshActors();
 			},
 			hide: (id) => {
+				if (id === "player") {
+					this.player.visible = false;
+					return;
+				}
 				this.state.flags[`hide:village:${id}`] = true;
 				this.refreshActors();
 			},

@@ -234,7 +234,9 @@ const at = (
 /**
  * タイトル画面の ひとこと。前の冒険の結果から たまりを選び、seed で1つ引く
  * （同じ seed なら 同じセリフ）。null は まだ一度も降りていないとき。
- * who を渡すと その人の セリフだけから引く（村で 話しかけたとき。その人の分が 無い たまりなら null）。
+ * who を渡すと その人の セリフだけから引く（村で 話しかけたとき）。選んだ たまりに その人の分が 無ければ、
+ * 次の たまり（持ち帰りなら 1回目の たまり、たおれなら 深さの たまり）から引く。
+ * who を渡さないときは どの たまりにも セリフが あるので、引き方は 前と 同じ。
  */
 export const pickQuote = (
 	last: QuoteContext,
@@ -246,11 +248,17 @@ export const pickQuote = (
 	if (!last) return pick(FIRST, 1);
 	if (last.kind === "clear") {
 		const again = last.clears >= 2 && mix(seed, 2) % 2 === 0;
-		return pick(again ? CLEAR_AGAIN : CLEAR, 3);
+		return (again ? pick(CLEAR_AGAIN, 3) : null) ?? pick(CLEAR, 3);
 	}
-	if (last.runs >= 10 && mix(seed, 4) % 4 === 0) return pick(MANY, 5);
+	if (last.runs >= 10 && mix(seed, 4) % 4 === 0) {
+		const many = pick(MANY, 5);
+		if (many) return many;
+	}
 	const cause = CAUSE_POOLS.find((c) => c.match(last.cause))?.pool;
-	if (cause && mix(seed, 6) % 3 !== 0) return pick(cause, 7);
+	if (cause && mix(seed, 6) % 3 !== 0) {
+		const line = pick(cause, 7);
+		if (line) return line;
+	}
 	return pick(depthPool(last.depth), 8);
 };
 
