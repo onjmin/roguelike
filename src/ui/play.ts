@@ -117,6 +117,8 @@ export class Play {
 	private busy = false;
 	/** キリコが 眠っていると 見せる（sleep の 出来事を 流している あいだ）。 */
 	private sleepShown = false;
+	/** 祭りの 曲を 始める 予約（始まりの 音が 鳴り終わるのを 待つ）。 */
+	private houseBgmTimer = 0;
 	private raf = 0;
 	private stopped = false;
 	private logEl: HTMLElement;
@@ -259,6 +261,7 @@ export class Play {
 
 	private stop(): void {
 		this.stopped = true;
+		clearTimeout(this.houseBgmTimer);
 		this.logQueue = [];
 		clearTimeout(this.logTimer);
 		this.ctx.input.fieldHoldEnabled = true;
@@ -1506,6 +1509,24 @@ export class Play {
 		if (v === "go") await this.exec({ c: "stairs" });
 	}
 
+	/**
+	 * 祭りの 始まりの 音（encounter）を 鳴らし、祭りの 曲は それが 鳴り終わってから。
+	 * それまで 階の 曲は 止めておく。待つのは 曲だけで、手番は 止めない（音は 2秒ほど ある）。
+	 */
+	private startHouseBgm(): void {
+		const audio = this.ctx.audio;
+		audio.bgm(null);
+		audio.se("encounter");
+		const span = audio.seSpan("encounter");
+		const ms = span ? span.endMs - span.startMs : 0;
+		clearTimeout(this.houseBgmTimer);
+		this.houseBgmTimer = window.setTimeout(() => {
+			// そのあいだに 階を 出た・冒険が 終わったら 鳴らさない
+			if (this.stopped || floorBgm(this.run) !== HOUSE_BGM) return;
+			audio.bgm(HOUSE_BGM);
+		}, ms);
+	}
+
 	private async playEvents(ev: GameEvent[], fast: boolean): Promise<void> {
 		const speed = settings.speed === "fast" || fast ? 0.55 : 1;
 		// 1歩の 動き（ms）。軽く 歩けるように 短め
@@ -1575,6 +1596,8 @@ export class Play {
 				case "se":
 					// 全滅の音は、倒れる演出で 墓が落ちたときに鳴らす
 					if (e.name === "wipeout" && this.run.s.end?.kind === "dead") break;
+					// 祭りの 始まりの 音は「house」で 曲と 合わせて 鳴らした
+					if (e.name === "encounter") break;
 					this.ctx.audio.se(e.name);
 					break;
 				case "turn": {
@@ -1684,7 +1707,7 @@ export class Play {
 				case "levelup":
 					break;
 				case "house":
-					this.ctx.audio.bgm(HOUSE_BGM);
+					this.startHouseBgm();
 					// 祭りに 気づく 間（走っている 途中でも 止めて 見せる。早送りの リプレイだけ 待たない）
 					if (!(this.rp && fast)) await wait(HOUSE_PAUSE_MS);
 					break;
