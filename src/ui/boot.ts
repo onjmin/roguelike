@@ -35,20 +35,30 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 			quoteEl.innerHTML = `<b style="--char:${sp.color}">${esc(sp.name)}</b>「${escBr(quote.text)}」`;
 		} else quoteEl.style.display = "none";
 		const buttons = el("div", { class: "title-buttons" });
+		const logs = el("canvas", { class: "title-logs" });
 		const root = el("div", { class: "title" }, [
-			el("div", { class: "title-sub", text: "1歩1ターンの　ローグライク" }),
+			logs,
+			el("div", { class: "title-disc" }, [
+				el("div", { class: "title-disc-spin" }),
+				el("div", { class: "title-disc-arm" }),
+			]),
 			el("h1", {
 				class: "title-logo",
-				html: `蓄音キリコと<span class="title-logo-sub">過去ログの底</span>`,
+				html: `<span class="title-logo-pre">蓄音キリコと</span><span class="title-logo-main">過去ログの<span class="title-logo-deep">底</span></span>`,
+			}),
+			el("div", {
+				class: "title-sub",
+				text: "このスレッドは　過去ログ倉庫に　格納されています",
 			}),
 			quoteEl,
 			buttons,
 			el("div", {
 				class: "title-foot",
-				text: "BGM・効果音は　右上の　🔊で　切りかえ",
+				text: "1歩1ターンの　ローグライク　／　音は　右上の　🔊",
 			}),
 		]);
 		ctx.ui.appendChild(root);
+		sinkLogs(logs, root);
 		// 窓（こわれた記録の知らせ）が開いていれば、背景のタップで閉じる
 		ctx.input.bindField(root);
 
@@ -62,13 +72,14 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 
 		const render = () => {
 			buttons.replaceChildren(
-				...choices().map((c) => {
+				...choices().map((c, i) => {
 					const b = el("button", {
 						class: `title-btn${c === cur ? " cur" : ""}`,
-						html:
+						html: `<span class="title-btn-no">${i + 1}:</span>${
 							c === "start"
 								? "はじめる<small>村を　歩く</small>"
-								: `つづきから<small>${esc(runSaveLabel(saved))}</small>`,
+								: `つづきから<small>${esc(runSaveLabel(saved))}</small>`
+						}`,
 					});
 					onTap(b, root, () => {
 						ctx.input.onAnyInput?.();
@@ -139,3 +150,108 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 
 		render();
 	});
+
+// ── うしろで 沈んでいく 過去ログ ──
+// dat落ちした スレの 書きこみが ゆっくり 底へ 沈み、深いほど 暗く かすれて 消える。
+
+const LOG_LINES = [
+	"乙",
+	">>1　乙",
+	"保守",
+	"ほんま草",
+	"まだ　おるで",
+	"このスレッドは　1000を　超えました",
+	"dat落ち",
+	"誰も　おらんのか",
+	"キリコ　すこ",
+	"ワイも　もぐる",
+	"底には　なにが　あるんや",
+	"針を　落とせ",
+	"原盤　どこ",
+	"B10で　力尽きた",
+	"腹へった",
+	"はえーすっごい",
+	"せやな",
+	"ぷゆゆ",
+	"また　明日",
+];
+const WEEK = "日月火水木金土";
+
+const logLine = (r: () => number): string => {
+	const pick = LOG_LINES[Math.floor(r() * LOG_LINES.length)];
+	if (r() < 0.45) return pick;
+	const n = 1 + Math.floor(r() * 999);
+	const y = 2009 + Math.floor(r() * 15);
+	const mo = 1 + Math.floor(r() * 12);
+	const d = 1 + Math.floor(r() * 28);
+	const hh = String(Math.floor(r() * 24)).padStart(2, "0");
+	const mm = String(Math.floor(r() * 60)).padStart(2, "0");
+	const id = Math.floor(r() * 36 ** 6)
+		.toString(36)
+		.padStart(6, "0");
+	const w = WEEK[new Date(y, mo - 1, d).getDay()];
+	return r() < 0.5
+		? `${n} ：名無しさん：${y}/${mo}/${d}(${w}) ${hh}:${mm} ID:${id}`
+		: `${n} ：${pick}`;
+};
+
+const sinkLogs = (cv: HTMLCanvasElement, root: HTMLElement): void => {
+	const g = cv.getContext("2d");
+	if (!g) return;
+	const r = Math.random;
+	type Drop = { text: string; x: number; y: number; v: number; size: number };
+	let w = 0;
+	let h = 0;
+	const drops: Drop[] = [];
+	const spawn = (y: number): Drop => ({
+		text: logLine(r),
+		x: r() * w * 0.9 - w * 0.1,
+		y,
+		v: 6 + r() * 10,
+		size: 10 + Math.floor(r() * 3) * 2,
+	});
+	const resize = () => {
+		const dpr = Math.min(2, window.devicePixelRatio || 1);
+		w = root.clientWidth;
+		h = root.clientHeight;
+		cv.width = Math.round(w * dpr);
+		cv.height = Math.round(h * dpr);
+		g.setTransform(dpr, 0, 0, dpr, 0, 0);
+		const want = Math.max(10, Math.round(h / 44));
+		while (drops.length < want) drops.push(spawn(r() * h));
+		drops.length = want;
+	};
+	const draw = () => {
+		g.clearRect(0, 0, w, h);
+		for (const d of drops) {
+			// 上では まだ 読めるが、底に 近いほど かすれて 消える
+			const depth = d.y / h;
+			const a = Math.max(0, 0.2 * (1 - depth) ** 1.4);
+			if (a <= 0) continue;
+			g.font = `${d.size}px DotGothic16, sans-serif`;
+			g.fillStyle = `rgba(214, 196, 255, ${a.toFixed(3)})`;
+			g.fillText(d.text, d.x, d.y);
+		}
+	};
+	resize();
+	const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+	if (still) {
+		draw();
+		return;
+	}
+	let last = performance.now();
+	const tick = (t: number) => {
+		if (!root.isConnected) return;
+		if (root.clientWidth !== w || root.clientHeight !== h) resize();
+		const dt = Math.min(0.1, (t - last) / 1000);
+		last = t;
+		for (let i = 0; i < drops.length; i++) {
+			const d = drops[i];
+			d.y += d.v * dt;
+			if (d.y > h + 20) drops[i] = spawn(-10 - r() * 40);
+		}
+		draw();
+		requestAnimationFrame(tick);
+	};
+	requestAnimationFrame(tick);
+};

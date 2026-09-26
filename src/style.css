@@ -1628,7 +1628,8 @@ body.shake #app {
 
 /* ───────── タイトル（起動の札。ui/boot.ts） ───────── */
 
-/* 歩ける村の上に 重ねる（うしろで 村が 動いているのが 見えるように 半分すける） */
+/* 歩ける村の上に 重ねる。上は 村が うっすら 見え、下へ いくほど 底の 闇に 沈む。
+   モチーフは 蓄音機（回る 原盤と 針）と、沈んでいく dat落ちの 書きこみ。 */
 .title {
 	position: absolute;
 	inset: 0;
@@ -1637,63 +1638,226 @@ body.shake #app {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 16px;
+	gap: 12px;
 	padding: 20px;
 	text-align: center;
+	overflow: hidden;
 	background:
 		radial-gradient(
-			circle at 50% 35%,
-			rgba(120, 200, 255, 0.12),
-			transparent 45%
+			ellipse 70% 40% at 50% 30%,
+			rgba(255, 190, 110, 0.14),
+			transparent 70%
 		),
-		linear-gradient(rgba(26, 20, 64, 0.72), rgba(7, 5, 26, 0.9) 75%);
+		linear-gradient(
+			rgba(20, 14, 40, 0.74),
+			rgba(10, 6, 22, 0.9) 45%,
+			#030208 100%
+		);
 	transition: opacity 0.5s;
+}
+
+.title > * {
+	position: relative;
 }
 
 .title.leaving {
 	opacity: 0;
 }
 
-.title-sub {
-	color: var(--muted);
-	font-size: 14px;
-	letter-spacing: 0.2em;
+.title > .title-logs {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+/* 回る 原盤（33⅓回転）と 針 */
+.title-disc {
+	--disc: clamp(120px, var(--app-w) * 0.4, 190px);
+	width: var(--disc);
+	height: var(--disc);
+	margin-bottom: calc(var(--disc) * -0.3);
+	flex: none;
+}
+
+.title-disc-spin,
+.title-disc::after {
+	position: absolute;
+	inset: 0;
+	border-radius: 50%;
+}
+
+.title-disc-spin {
+	background:
+		radial-gradient(circle, #1a1208 0 3%, transparent 3.5%),
+		radial-gradient(circle, #e8a34e 0 17%, #9c5a22 17.5% 30%, transparent 30.5%),
+		repeating-radial-gradient(circle, #15131c 0 1.5px, #26222f 1.5px 3px);
+	box-shadow:
+		0 0 0 2px #0b0a10,
+		0 10px 30px rgba(0, 0, 0, 0.7),
+		0 0 40px rgba(255, 170, 80, 0.15);
+	animation: title-spin 1.8s linear infinite;
+}
+
+/* ラベルの 印（回っているのが わかるように） */
+.title-disc-spin::before {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 24%;
+	width: 3%;
+	height: 8%;
+	margin-left: -1.5%;
+	border-radius: 2px;
+	background: #fff1cf;
+	opacity: 0.8;
+}
+
+/* 光の すじ（回らない） */
+.title-disc::after {
+	content: "";
+	background: conic-gradient(
+		from 20deg,
+		transparent 0 10%,
+		rgba(255, 255, 255, 0.1) 14%,
+		transparent 20% 60%,
+		rgba(255, 255, 255, 0.07) 64%,
+		transparent 70%
+	);
+	pointer-events: none;
+}
+
+.title-disc-arm {
+	position: absolute;
+	right: -8%;
+	top: -6%;
+	width: 8%;
+	height: 62%;
+	transform-origin: 50% 6%;
+	transform: rotate(28deg);
+	z-index: 1;
+}
+
+.title-disc-arm::before {
+	/* 支点 */
+	content: "";
+	position: absolute;
+	left: -30%;
+	top: -8%;
+	width: 160%;
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: radial-gradient(circle at 35% 35%, #f3e3bf, #8a6a3a);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.title-disc-arm::after {
+	/* うでと 針先 */
+	content: "";
+	position: absolute;
+	left: 30%;
+	top: 0;
+	width: 40%;
+	height: 100%;
+	border-radius: 2px;
+	background: linear-gradient(90deg, #d9c49a, #7d6540);
+	box-shadow:
+		0 4px 0 1px #3a2c18,
+		0 3px 6px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes title-spin {
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 .title-logo {
 	margin: 0;
 	font-weight: normal;
-	font-size: clamp(28px, var(--app-w) * 0.095, 54px);
+	font-size: clamp(34px, var(--app-w) * 0.115, 62px);
+	line-height: 1.1;
 	word-break: keep-all;
-	line-height: 1.2;
-	color: #fff4c9;
-	text-shadow:
-		0 3px 0 #4a6ab0,
-		0 6px 0 #1a2464,
-		0 0 24px rgba(120, 180, 255, 0.6);
+	z-index: 1;
 }
 
-.title-logo .title-logo-sub {
+.title-logo-pre {
 	display: block;
-	font-size: 0.56em;
-	margin-top: 0.3em;
-	letter-spacing: 0.02em;
+	font-size: 0.44em;
+	letter-spacing: 0.3em;
+	margin-right: -0.3em;
+	color: #f6e3b8;
+	text-shadow:
+		0 2px 0 #3a2210,
+		0 0 10px rgba(0, 0, 0, 0.9);
 }
 
+.title-logo-main {
+	display: block;
+	color: #fff2d2;
+	background: linear-gradient(#fff6e0 30%, #f0b867 70%, #a8622a);
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	filter: drop-shadow(0 3px 0 #3d200c) drop-shadow(0 0 14px rgba(0, 0, 0, 0.9));
+}
+
+/* 「底」だけ 一段 沈み、ゆっくり ゆれる */
+.title-logo-deep {
+	display: inline-block;
+	font-size: 1.22em;
+	transform: translateY(0.18em);
+	background: linear-gradient(#ffe0a0 10%, #d27a2c 60%, #5a2410);
+	-webkit-background-clip: text;
+	background-clip: text;
+	animation: title-sink 4s ease-in-out infinite;
+}
+
+@keyframes title-sink {
+	50% {
+		transform: translateY(0.3em);
+	}
+}
+
+/* 2ch の「過去ログ倉庫」の 知らせ風 */
+.title-sub {
+	font-size: 12px;
+	letter-spacing: 0.08em;
+	color: #ff8b7a;
+	padding: 3px 10px;
+	border-top: 1px solid rgba(255, 139, 122, 0.35);
+	border-bottom: 1px solid rgba(255, 139, 122, 0.35);
+	margin-top: 10px;
+}
+
+/* スレ一覧の 行のような 選択肢 */
 .title-buttons {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
+	gap: 6px;
 	width: min(280px, var(--app-w) * 0.8);
 }
 
 .title-btn {
-	padding: 11px;
+	position: relative;
+	padding: 9px 12px 9px 44px;
 	font-size: 18px;
-	background: var(--win-bg);
-	border: 3px solid var(--win-border);
-	border-radius: 8px;
+	text-align: left;
+	color: var(--text);
+	background: rgba(8, 6, 16, 0.78);
+	border: 1px solid rgba(214, 196, 255, 0.25);
+	border-left: 4px solid rgba(214, 196, 255, 0.35);
+	border-radius: 2px;
 	cursor: pointer;
+}
+
+.title-btn-no {
+	position: absolute;
+	left: 14px;
+	top: 11px;
+	font-size: 14px;
+	color: var(--muted);
 }
 
 .title-btn small {
@@ -1704,13 +1868,23 @@ body.shake #app {
 }
 
 .title-btn.cur {
-	border-color: var(--accent);
-	color: var(--accent);
+	color: #ffd88a;
+	border-color: rgba(255, 190, 110, 0.6);
+	border-left-color: #ffb454;
+	background: linear-gradient(
+		90deg,
+		rgba(120, 70, 20, 0.55),
+		rgba(8, 6, 16, 0.8)
+	);
+}
+
+.title-btn.cur .title-btn-no {
+	color: #ffb454;
 }
 
 .title-foot {
-	font-size: 12px;
-	color: var(--muted);
+	font-size: 11px;
+	color: rgba(185, 176, 214, 0.7);
 }
 
 .title-quote {
@@ -1719,11 +1893,19 @@ body.shake #app {
 	line-height: 1.6;
 	color: #e8e2ff;
 	min-height: 2.6em;
+	text-shadow: 0 0 6px #000;
 }
 
 .title-quote b {
 	color: var(--char, var(--accent));
 	font-weight: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.title-disc-spin,
+	.title-logo-deep {
+		animation: none;
+	}
 }
 
 /* ───────── 冒険の記録（死んだ・クリアした） ───────── */
@@ -1920,11 +2102,11 @@ body.shake #app {
 		calc(16px + var(--safe-b)) calc(16px + var(--safe-l));
 }
 
-.title > :first-child {
+.title-disc {
 	margin-top: auto;
 }
 
-.title > :last-child {
+.title-foot {
 	margin-bottom: auto;
 }
 
@@ -1943,8 +2125,12 @@ body.shake #app {
 	}
 
 	.title-btn {
-		padding: 8px;
+		padding: 8px 8px 8px 40px;
 		font-size: 16px;
+	}
+
+	.title-btn-no {
+		top: 10px;
 	}
 }
 
@@ -1953,8 +2139,9 @@ body.shake #app {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) min(260px, 42%);
 	grid-template-areas:
-		"sub btns"
+		"disc btns"
 		"logo btns"
+		"sub btns"
 		"quote btns"
 		"foot btns";
 	align-content: center;
@@ -1965,6 +2152,11 @@ body.shake #app {
 
 .short-landscape .title > * {
 	margin: 0;
+}
+
+.short-landscape .title-disc {
+	grid-area: disc;
+	--disc: clamp(70px, var(--app-h) * 0.26, 130px);
 }
 
 .short-landscape .title-sub {
