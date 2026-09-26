@@ -33,7 +33,7 @@ import { loadRecords, loadTown, runStats } from "../engine/save";
 export const DUNGEON_DESC: Record<DungeonId, string> = {
 	shallow: "杖だけ　未識別。のろいも　祭りも　ない",
 	main: "草・スレ・トリップ・杖が　未識別",
-	deep: "特大おにぎり・◆腹いっぱい　なし。罠が　多い",
+	deep: "ぷゆゆパン・◆腹いっぱい　なし。罠が　多い",
 };
 
 /** まだ開いていないダンジョンの 開き方。 */

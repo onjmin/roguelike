@@ -336,7 +336,7 @@ add({
 	id: "s_bread",
 	cat: "scroll",
 	name: "飯テロスレ",
-	desc: "道具を　1つ　えらんで　特大おにぎりに　変える",
+	desc: "道具を　1つ　えらんで　ぷゆゆパンに　変える",
 });
 add({
 	id: "s_snare",
@@ -443,19 +443,19 @@ add({
 add({
 	id: "f_bread",
 	cat: "food",
-	name: "おにぎり",
+	name: "パン",
 	desc: "満腹度が　50　回復",
 });
 add({
 	id: "f_large",
 	cat: "food",
-	name: "特大おにぎり",
+	name: "ぷゆゆパン",
 	desc: "満腹度が　100　回復",
 });
 add({
 	id: "f_moldy",
 	cat: "food",
-	name: "カビおにぎり",
+	name: "くさったパン",
 	desc: "満腹度が　100　回復。ちからが　1　下がり、HPも　へる",
 });
 

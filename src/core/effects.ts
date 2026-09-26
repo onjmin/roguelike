@@ -90,7 +90,7 @@ const eat = (r: Run, it: Item): boolean => {
 			r.p.str--;
 			r.msg("ちからが　1　下がった", "warn");
 		}
-		r.hurtPlayer(5, "カビおにぎりに　あたった");
+		r.hurtPlayer(5, "くさったパンに　あたった");
 	}
 	return true;
 };
@@ -382,7 +382,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			tgt.charges = 0;
 			tgt.count = 1;
 			tgt.known = true;
-			r.msg(`${before}が　特大おにぎりに　なった`, "good");
+			r.msg(`${before}が　ぷゆゆパンに　なった`, "good");
 			break;
 		}
 		case "s_snare": {

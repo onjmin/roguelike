@@ -15,7 +15,7 @@ export const CAT_ICON: Record<ItemCat, string> = {
 	scroll: art("scroll"), // スレ（赤い【 と 緑の名前欄）
 	staff: art("staff"), // AA の顔の彫り物の杖
 	arrow: art("arrow"), // ＞＞ の矢羽
-	food: art("food"), // おにぎり
+	food: art("food"), // パン
 	goal: "pub:sprites/phono.png#0,0,16,16",
 };
 
