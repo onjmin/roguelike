@@ -454,11 +454,14 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					return;
 				}
 			}
+			// 眠りの呪文は となりに いるときだけ（トルネコ1の まどうしと 同じ。離れていれば 矢で 先に 叩ける）
 			if (
 				a.k === "sleepSpell" &&
 				p.status.sleep === 0 &&
+				adjacentDir() !== null &&
 				r.rng.chance(a.rate)
 			) {
+				m.dir = adjacentDir() ?? m.dir;
 				r.se("spell");
 				r.msg(`${d.name}は　眠りの　呪文を　となえた`);
 				if (r.hasRing("r_awake")) r.msg("しかし　キリコは　眠らなかった");

@@ -523,6 +523,20 @@ test(
 	},
 );
 
+test("neochi", "sleepSpell: never cast from afar (adjacent only)", () => {
+	const r = arena("neochi-far");
+	const home = at(4, 0);
+	const m = put(r, "neochi", home);
+	const s = spellWatch(r);
+	for (let i = 0; i < 40; i++) {
+		// 毎ターン元の位置へ戻す（となりに来させない）
+		m.x = home.x;
+		m.y = home.y;
+		turn(r);
+	}
+	ok(s.casts === 0, `cast ${s.casts} times from 4 tiles away`);
+});
+
 test("neochi", "r_awake: the spell is cast but the player never sleeps", () => {
 	const r = arena("neochi-awake");
 	equip(r, "r_awake");
