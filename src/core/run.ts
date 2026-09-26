@@ -489,11 +489,16 @@ export class Run {
 		) {
 			f.houseAwake = true;
 			if (!this.hasRing("r_stealth")) {
-				for (const m of f.monsters)
-					if (roomAt(l, m.x, m.y) === f.house && m.status.sleep === DOZE) {
+				for (const m of f.monsters) {
+					if (roomAt(l, m.x, m.y) !== f.house) continue;
+					// ばけ札は 正体を あらわす（トルネコ1の ミミックと 同じ）
+					if (m.disguise) m.disguise = null;
+					// 石像は 眠ったまま（先に なぐってこない）
+					if (m.status.sleep === DOZE && !m.status.dormant) {
 						m.status.sleep = 0;
 						this.graceAfterWake(m);
 					}
+				}
 			}
 			this.emit({ t: "house" });
 			this.se("encounter");
@@ -802,6 +807,23 @@ export class Run {
 						this.msg(`${nm}は　どこかへ　逃げた`);
 					}
 				}
+				// 盗んで 逃げている 転載ガモは、なぐられても 1/2 で また 飛ぶ（トルネコ1の ベビーサタン）
+				if (
+					a.k === "steal" &&
+					by === "hit" &&
+					m.carry &&
+					m.fleeing &&
+					this.rng.chance(1 / 2)
+				) {
+					const to = randomFloorPos(this, true);
+					if (to) {
+						this.se("flee");
+						this.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
+						m.x = to.x;
+						m.y = to.y;
+						this.msg(`${nm}は　どこかへ　逃げた`);
+					}
+				}
 			}
 			if (d.abilities.some((a) => a.k === "explode") && !m.status.sealed) {
 				if (m.hp <= 9) {
@@ -860,8 +882,14 @@ export class Run {
 		if (this.p.status.heldBy === m.uid) this.p.status.heldBy = null;
 		const inArea = (p: Pos) =>
 			Math.abs(p.x - cx) <= 2 && Math.abs(p.y - cy) <= 2;
-		for (const o of [...this.f.monsters])
-			if (inArea(o)) this.killMonster(o, false, true);
+		// 巻きこまれた ばくだんは 連鎖して 爆発する（トルネコ1の 爆弾岩。2発 受けると たおれる）
+		const chain: Monster[] = [];
+		for (const o of [...this.f.monsters]) {
+			if (!inArea(o)) continue;
+			if (!o.status.sealed && mdef(o).abilities.some((a) => a.k === "explode"))
+				chain.push(o);
+			else this.killMonster(o, false, true);
+		}
 		for (const fi of [...this.f.items])
 			if (inArea(fi)) this.destroyFloorItem(fi);
 		if (inArea(this.p)) {
@@ -869,6 +897,8 @@ export class Run {
 				this.hurtPlayer(1, "ばくだんの　爆発に　巻きこまれた");
 			else this.hurtPlayer(this.p.hp - 1, "ばくだんの　爆発に　巻きこまれた");
 		}
+		for (const o of chain)
+			if (!this.s.end && this.f.monsters.includes(o)) this.explode(o);
 	}
 
 	splitMonster(m: Monster): void {

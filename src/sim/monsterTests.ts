@@ -488,6 +488,30 @@ test("ksk", "w_slow on an accelerated ksk is not undone", () => {
 	);
 });
 
+test(
+	"ksk",
+	"w_haste on a slowed foe only undoes the slow; w_slow twice does nothing more",
+	() => {
+		const r = arena("haste-slow");
+		const m = put(r, "bat", at(2, 0), { sleep: DEEP });
+		staffEffect(r, "w_slow", m);
+		ok(m.status.slow > 0 && m.status.fast === 0, "w_slow did not apply");
+		staffEffect(r, "w_haste", m);
+		ok(
+			m.status.slow === 0 && m.status.fast === 0,
+			`not back to normal (fast=${m.status.fast})`,
+		);
+		staffEffect(r, "w_haste", m);
+		ok(m.status.fast > 0, "w_haste did not apply");
+		staffEffect(r, "w_haste", m);
+		staffEffect(r, "w_slow", m);
+		ok(
+			m.status.fast === 0 && m.status.slow === 0,
+			`not back to normal (slow=${m.status.slow})`,
+		);
+	},
+);
+
 // ───────────────── 寝落ち民（sleepSpell・深い眠り） ─────────────────
 
 /** 眠りの呪文を数える（となえた回数・眠っているのに となえた回数・眠らされた回数）。 */
@@ -1105,6 +1129,22 @@ test("bomb", "sealed: no fuse and no explosion", () => {
 	ok(r.f.monsters.includes(m) && m.hp === 5, "exploded while sealed");
 	ok(r.p.hp === hp0, "the player was hurt");
 });
+
+test(
+	"bomb",
+	"a blast sets off other bombs in range; two blasts fell the player",
+	() => {
+		const r = arena("bomb-chain");
+		const a = put(r, "bomb", at(2, 0), { sleep: DEEP });
+		const b = put(r, "bomb", at(1, 1), { sleep: DEEP });
+		r.p.hp = r.p.maxHp = 50;
+		a.hp = 10;
+		r.damageMonster(a, 1, "hit");
+		ok(!r.f.monsters.includes(a), "did not explode");
+		ok(!r.f.monsters.includes(b), "the second bomb did not go off");
+		ok(r.s.end?.kind === "dead", `survived two blasts (hp ${r.p.hp})`);
+	},
+);
 
 // ───────────────── ゴーレム（knockback） ─────────────────
 

@@ -256,6 +256,9 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		case "s_whet": {
 			const w = r.weapon();
 			if (!w) r.msg("しかし　武器を　持っていなかった");
+			// −30 以下と ＋99 以上には 効かない（トルネコ1と 同じ）
+			else if (w.plus <= -30 || w.plus >= 99)
+				r.msg("しかし　何も　起きなかった");
 			else {
 				w.plus++;
 				w.cursed = false;
@@ -267,6 +270,8 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		case "s_temper": {
 			const sh = r.shield();
 			if (!sh) r.msg("しかし　板を　持っていなかった");
+			else if (sh.plus <= -30 || sh.plus >= 99)
+				r.msg("しかし　何も　起きなかった");
 			else {
 				sh.plus++;
 				sh.cursed = false;

@@ -189,7 +189,7 @@ export const buildFloor = (
 		const hn = Math.min(rng.range(hlo, hhi), Math.floor((room.w * room.h) / 3));
 		for (let i = 0; i < hn; i++) {
 			const at = place(f.house);
-			if (at) spawnMonster(r, null, at, { sleep: DOZE });
+			if (at) spawnMonster(r, null, at, { sleep: DOZE, single: true });
 		}
 	}
 	// 持たせる札（最初からいるモンスターに1枚ずつ）
@@ -211,7 +211,7 @@ export const spawnMonster = (
 	r: Run,
 	kind: string | null,
 	at: Pos,
-	opts: { sleep?: number; awake?: boolean },
+	opts: { sleep?: number; awake?: boolean; single?: boolean },
 ): Monster | null => {
 	const f = r.f;
 	const rng = r.rng;
@@ -265,7 +265,8 @@ export const spawnMonster = (
 	};
 	const first = make(at);
 	// 群れ（雪だるま）は 4体で出る
-	if (def.abilities.some((a) => a.k === "pack") && !kind) {
+	// （モンスターハウスでは 1体ずつ。トルネコ1の イエティと 同じ）
+	if (def.abilities.some((a) => a.k === "pack") && !kind && !opts.single) {
 		let placed = 1;
 		for (const d of rng.shuffle([...DIRS8])) {
 			if (placed >= 4) break;
