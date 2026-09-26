@@ -55,7 +55,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 				r.msg("しかし　眠くならなかった");
 				return;
 			}
-			p.status.sleep = 5;
+			r.sleepPlayer(5);
 			r.msg("キリコは　眠ってしまった", "warn");
 			return;
 		case "trip": {

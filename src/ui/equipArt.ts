@@ -315,8 +315,10 @@ const FORWARD: Record<SpriteDir, number> = {
 const weaponAngle = (dir: SpriteDir, swing: number): number => {
 	const fwd = FORWARD[dir];
 	if (swing < 0) {
-		// 右向きは手前の手で 前へ ななめに。左向きは奥の手なので まっすぐ立てて、肩の上に先だけ見せる
+		// 右向きは手前の手で 前へ ななめに。左向きは奥の手なので、背中の うしろへ ななめに 立てて
+		// 刃が 体から はみ出して 見えるように（まっすぐ 立てると 頭と 体に かくれて 消える）
 		if (dir === "right") return 1;
+		if (dir === "left") return 1;
 		return 0;
 	}
 	// 正面・うしろ向きは、刃を 体の外側から 前へ振りおろす

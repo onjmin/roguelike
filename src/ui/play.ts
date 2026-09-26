@@ -113,6 +113,8 @@ export class Play {
 	private camX = 0;
 	private camY = 0;
 	private busy = false;
+	/** キリコが 眠っていると 見せる（sleep の 出来事を 流している あいだ）。 */
+	private sleepShown = false;
 	private raf = 0;
 	private stopped = false;
 	private logEl: HTMLElement;
@@ -441,7 +443,7 @@ export class Play {
 				const k = (t - d.lungeT0) / SWING_MS;
 				figs.push({
 					...d,
-					asleep: run.p.status.sleep > 0,
+					asleep: this.sleepShown || run.p.status.sleep > 0,
 					equip: {
 						weapon: run.weapon()?.kind ?? null,
 						shield: run.shield()?.kind ?? null,
@@ -1673,6 +1675,14 @@ export class Play {
 					break;
 				case "house":
 					this.ctx.audio.bgm(HOUSE_BGM);
+					break;
+				case "sleep":
+					if (e.id === PLAYER_ID) {
+						// 眠っている あいだの ターンは 一気に 進むので、Z を 出したまま 少し 見せてから 起こす
+						if (e.on) this.sleepShown = true;
+						if (!fast) await wait((e.on ? 400 : 600) * speed);
+						if (!e.on) this.sleepShown = false;
+					}
 					break;
 				case "quake":
 					document.body.classList.add("shake");

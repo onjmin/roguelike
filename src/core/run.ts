@@ -363,6 +363,8 @@ export class Run {
 			if (!isFloor(this.f.layout, c.x, c.y)) continue;
 			if (this.itemAt(c.x, c.y)) continue;
 			if (samePos(c, this.f.stairs)) continue;
+			// 罠の 上には 落ちない（転び石で ばらまいても 罠を よける）
+			if (this.f.traps.some((t) => samePos(t, c))) continue;
 			if (this.f.wards.includes(c.y * this.f.layout.w + c.x)) continue;
 			this.f.items.push({ x: c.x, y: c.y, item: it });
 			return true;
@@ -1032,9 +1034,21 @@ export class Run {
 		this.updateVision();
 	}
 
+	/**
+	 * キリコを 眠らせる。眠っているあいだは 1つの コマンドの 中で 時間が 進むので、
+	 * 画面に 眠りの 始まりと 終わりを 出来事で 知らせる（Z を 出す）。
+	 */
+	sleepPlayer(turns: number): void {
+		this.p.status.sleep = turns;
+		this.emit({ t: "sleep", id: PLAYER_ID, on: true });
+	}
+
 	private tickStatus(): void {
 		const st = this.p.status;
-		if (st.sleep > 0 && --st.sleep === 0) this.msg("キリコは　目を　さました");
+		if (st.sleep > 0 && --st.sleep === 0) {
+			this.emit({ t: "sleep", id: PLAYER_ID, on: false });
+			this.msg("キリコは　目を　さました");
+		}
 		if (st.confuse > 0 && --st.confuse === 0) this.msg("混乱が　とけた");
 		if (st.blind > 0 && --st.blind === 0) {
 			this.msg("目が　見えるように　なった");
@@ -1197,6 +1211,7 @@ export class Run {
 		}
 		if (st.trapped > 0) {
 			p.dir = dir;
+			this.se("bearTrap");
 			this.msg("トラばさみに　はさまれて　動けない", "warn");
 			return true;
 		}

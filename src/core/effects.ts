@@ -166,7 +166,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_sleep":
 			if (r.hasRing("r_awake")) r.msg("しかし　眠くならなかった");
 			else {
-				p.status.sleep = 5;
+				r.sleepPlayer(5);
 				r.msg("キリコは　眠ってしまった", "warn");
 			}
 			break;
@@ -432,9 +432,8 @@ const wave = (r: Run, it: Item): boolean => {
 		r.msg("魔法の　弾は　どこかへ　消えた");
 		return true;
 	}
+	// 振っても 正体は わからない（効き目を 見て 当てる。トルネコ1と 同じ）
 	staffEffect(r, it.kind, hit);
-	if (identifyKind(r.s, it.kind))
-		r.msg(`${r.kindName(it.kind)}　だった！`, "good");
 	return true;
 };
 
@@ -604,8 +603,6 @@ const onThrownHit = (r: Run, it: Item, m: Monster): void => {
 			return;
 		case "staff":
 			staffEffect(r, it.kind, m);
-			if (identifyKind(r.s, it.kind))
-				r.msg(`${r.kindName(it.kind)}　だった！`, "good");
 			return;
 		case "herb":
 			identifyKind(r.s, it.kind);

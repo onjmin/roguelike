@@ -466,7 +466,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				r.msg(`${d.name}は　眠りの　呪文を　となえた`);
 				if (r.hasRing("r_awake")) r.msg("しかし　キリコは　眠らなかった");
 				else {
-					p.status.sleep = 5;
+					r.sleepPlayer(5);
 					r.msg("キリコは　眠ってしまった", "warn");
 				}
 				return;
