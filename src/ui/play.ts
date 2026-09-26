@@ -674,7 +674,7 @@ export class Play {
 		const hold = input.fieldHold();
 		if (hold) {
 			this.travel = null;
-			const want = this.dirFromScreen(hold.x, hold.y);
+			const want = input.fieldHoldDir((x, y) => this.dirFromScreen(x, y));
 			if (want === null || t - this.lastStepAt < gap) return;
 			const mods = input.mods();
 			if (mods.turn) {

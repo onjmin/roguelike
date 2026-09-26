@@ -422,7 +422,7 @@ export class Village {
 		const hold = input.fieldHold();
 		if (hold) {
 			this.clearPath();
-			const d = this.dirFromScreen(hold.x, hold.y);
+			const d = input.fieldHoldDir((x, y) => this.dirFromScreen(x, y));
 			if (d !== null) this.stepToward(d);
 			return;
 		}

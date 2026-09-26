@@ -210,6 +210,10 @@ export class Input {
 		y: number;
 		t0: number;
 		held: boolean;
+		/** 押さえて歩く向き（決めたときの 指の位置 ax, ay）。歩いて キリコが 動いても 決めなおさない。 */
+		dir?: Dir8;
+		ax: number;
+		ay: number;
 	} | null = null;
 	/**
 	 * 何かを押すたびに ふえる番号（走る・自動で歩く のを、さわったら 止めるのに使う）。
@@ -534,6 +538,8 @@ export class Input {
 				y: p.y,
 				t0: performance.now(),
 				held: false,
+				ax: p.x,
+				ay: p.y,
 			};
 			capture(el, e.pointerId);
 		});
@@ -569,5 +575,27 @@ export class Input {
 		if (performance.now() - f.t0 < FIELD_HOLD_MS) return null;
 		f.held = true;
 		return { x: f.x, y: f.y };
+	}
+
+	/**
+	 * 押さえて歩く向き。押さえはじめに 1度だけ 決め、指を 大きく 動かしたときだけ 決めなおす
+	 * （歩くたびに キリコ・カメラが 動くので、毎回 指との 角度を 取りなおすと ジグザグに 進んでしまう）。
+	 * dirAt は 画面の点が キリコから どの向きか（キリコの上なら null）。
+	 */
+	fieldHoldDir(dirAt: (x: number, y: number) => Dir8 | null): Dir8 | null {
+		const f = this.fieldPtr;
+		if (!f) return null;
+		if (
+			f.dir === undefined ||
+			Math.hypot(f.x - f.ax, f.y - f.ay) >= TAP_SLOP_PX
+		) {
+			f.ax = f.x;
+			f.ay = f.y;
+			const d = dirAt(f.x, f.y);
+			// キリコの上を 押さえているあいだは 決めずに おく（指を ずらしたら その向き）
+			f.dir = d ?? undefined;
+			return d;
+		}
+		return f.dir;
 	}
 }
