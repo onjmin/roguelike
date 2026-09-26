@@ -948,6 +948,7 @@ export class Run {
 		let guard = 0;
 		while (!this.s.end && this.p.status.sleep > 0 && guard++ < 50) {
 			this.emit({ t: "doze" });
+			this.msg("キリコは　眠っている");
 			this.endTurn(this.nearMap());
 		}
 		this.s.rng = this.rng.state();
