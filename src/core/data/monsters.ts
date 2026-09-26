@@ -253,10 +253,10 @@ const M: MonsterDef[] = [
 		desc: "ダメージは　1しか　通らない。すぐ　逃げる。たおすと　忍法帖の実を　落とす",
 	},
 	{
-		// 前の名前は 雪だるま。絵は そのまま
+		// 前の名前は 雪だるま。絵は 氷に とじこめられた 初期アイコン（scripts/make-enemies.mjs）
 		id: "yuki",
 		name: "凍結アカ",
-		sprite: "sa:UejLXD",
+		sprite: "pub:sprites/touketsu.png",
 		hp: 60,
 		atk: 11,
 		def: 3,
@@ -283,10 +283,10 @@ const M: MonsterDef[] = [
 		desc: "となりに　来るまで　動かない",
 	},
 	{
-		// 前の名前は ばくだん。絵は そのまま
+		// 前の名前は ばくだん。絵は RPGEN の ばくだんに 炎を 足した もの（scripts/make-enemies.mjs）
 		id: "bomb",
 		name: "炎上案件",
-		sprite: "sa:0fhT0t",
+		sprite: "pub:sprites/enjo.png",
 		hp: 70,
 		atk: 12,
 		def: 23,
@@ -341,10 +341,10 @@ const M: MonsterDef[] = [
 		desc: "動かない。となりに　来ると　足を　つかんで　離さない",
 	},
 	{
-		// 前の名前は ばけ札。絵は そのまま
+		// 前の名前は ばけ札。絵は 顔の ある 浮きと 釣り針（scripts/make-enemies.mjs）
 		id: "bakefuda",
 		name: "釣り",
-		sprite: "sa:AeNs0l",
+		sprite: "pub:sprites/tsuri.png",
 		hp: 50,
 		atk: 24,
 		def: 24,
@@ -413,10 +413,10 @@ const M: MonsterDef[] = [
 		desc: "ふれると　最大HPか　最大ちからが　欠ける",
 	},
 	{
-		// 前の名前は 黒装束。絵は そのまま
+		// 前の名前は 黒装束。絵は 怒った ふきだしと 残像（scripts/make-enemies.mjs）
 		id: "ninja",
 		name: "連投荒らし",
-		sprite: "sa:zE9cKS",
+		sprite: "pub:sprites/rento.png",
 		hp: 78,
 		atk: 26,
 		def: 23,
@@ -427,10 +427,10 @@ const M: MonsterDef[] = [
 		desc: "1ターンに　2回　なぐってくる",
 	},
 	{
-		// 前の名前は 闇堕ち兵。絵は そのまま
+		// 前の名前は 闇堕ち兵。絵は むらさきの ねばねば（scripts/make-enemies.mjs）
 		id: "fallen",
 		name: "粘着アンチ",
-		sprite: "sa:pyPkIs",
+		sprite: "pub:sprites/nenchaku.png",
 		hp: 75,
 		atk: 51,
 		def: 29,

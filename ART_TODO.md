@@ -36,6 +36,8 @@
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
 | まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |
 | コピペ（敵） | `sprites/copipe.png` | Claude が 描いた もの。2枚 かさなった 紙（コピーの アイコン）に 顔（`scripts/make-copipe.mjs`） |
+| 釣り・粘着アンチ・連投荒らし・凍結アカ（敵） | `sprites/tsuri.png` `nenchaku.png` `rento.png` `touketsu.png` | Claude が 描いた もの（`scripts/make-enemies.mjs`）。浮きと 釣り針・むらさきの ねばねば・怒った ふきだしと 残像・氷に とじこめられた 初期アイコン |
+| 炎上案件（敵） | `sprites/enjo.png` | RPGEN「ばくだん」（sa:0fhT0t）の 下から 炎を 足した もの（`scripts/make-enemies.mjs`） |
 
 - 手で 描いた ファイルに 差し替えたら、上の スクリプトを 流すと 上書きされるので 流さないこと（または スクリプトから その子を 消す）。
 - ぷゆゆ（村・1階の 敵）は RPGEN「PIEN」`sa:DszPWT` を そのまま 使っています。
