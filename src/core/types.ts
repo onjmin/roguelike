@@ -398,6 +398,8 @@ export type GameEvent =
 	/** 眠った・目が さめた（キリコ。画面の Z）。 */
 	| { t: "sleep"; id: number; on: boolean }
 	| { t: "quake"; level: number }
+	/** 地図に 載る ことが わかった（聖地巡礼スレ・ヲチスレ・発掘スレ。地図を 閉じていれば 画面が ひとこと 添える）。 */
+	| { t: "reveal" }
 	| { t: "goal" }
 	| { t: "end" };
 

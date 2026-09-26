@@ -1697,6 +1697,13 @@ export class Play {
 				case "goal":
 					this.ctx.audio.bgm(floorBgm(this.run));
 					break;
+				case "reveal":
+					// わかった所は 地図に 載る。地図を 閉じていれば ひとこと（記録の ログには 残さない）
+					if (!this.mapOn) {
+						this.logQueue.push({ text: "地図を　開いて　みよう", fast });
+						this.pumpLog();
+					}
+					break;
 				case "end":
 					break;
 			}

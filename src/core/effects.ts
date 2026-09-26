@@ -316,16 +316,19 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				}
 			for (const t of f.traps) t.found = true;
 			r.msg("この階の　ようすが　わかった");
+			r.emit({ t: "reveal" });
 			break;
 		}
 		case "s_sense":
 			f.senseMonsters = true;
 			for (const m of f.monsters) if (m.disguise) m.disguise = null;
 			r.msg("敵の　気配が　わかる");
+			r.emit({ t: "reveal" });
 			break;
 		case "s_treasure":
 			f.senseItems = true;
 			r.msg("道具の　ありかが　わかる");
+			r.emit({ t: "reveal" });
 			break;
 		case "s_hold": {
 			let n = 0;
