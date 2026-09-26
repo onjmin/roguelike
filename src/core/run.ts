@@ -649,6 +649,7 @@ export class Run {
 				id: PLAYER_ID,
 				pos: { x: p.x, y: p.y },
 				amount: got,
+				hp: p.hp,
 			});
 		return got;
 	}

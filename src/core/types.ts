@@ -378,7 +378,7 @@ export type GameEvent =
 	| { t: "turn"; id: number; dir: Dir8 }
 	| { t: "attack"; id: number; dir: Dir8 }
 	| { t: "hurt"; id: number; pos: Pos; amount: number; hp?: number }
-	| { t: "heal"; id: number; pos: Pos; amount: number }
+	| { t: "heal"; id: number; pos: Pos; amount: number; hp?: number }
 	| { t: "miss"; id: number; pos: Pos }
 	| { t: "die"; id: number; pos: Pos }
 	/** 敵が ふえた（from は もとの敵の マス。そこから 分かれて 出てくる）。 */

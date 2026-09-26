@@ -145,6 +145,11 @@ export class Play {
 	 * 階の札が出るまでは 前の階のまま見せる）。落ちなかったときは null。
 	 */
 	private shownFloor: Floor | null = null;
+	/**
+	 * 出来事を流しているあいだ、ステータスに 出す HP（傷ついた・回復した 出来事の 演出で 追いつく。
+	 * 草を 飲む・爆発の スレなどで、演出より 先に 数字が 変わらないように）。流していないときは null。
+	 */
+	private shownHp: number | null = null;
 	/** 長押しの足踏みを 止めている（指を離すまで）。 */
 	private restHalt = false;
 	/** 押さえて歩くのを 止めている（傷ついた。指を離すか 押しなおすまで）。 */
@@ -520,6 +525,7 @@ export class Play {
 			if (label) label.textContent = onStairs ? "階段" : "足元";
 		}
 		const p = run.p;
+		const hp = Math.min(this.shownHp ?? p.hp, p.maxHp);
 		const hunger = Math.ceil(p.hunger / HUNGER_UNIT);
 		const left = run.s.returning ? -1 : run.cardsLeft();
 		const st = p.status;
@@ -531,19 +537,19 @@ export class Play {
 			st.trapped > 0 ? "はさまれ" : "",
 			st.heldBy !== null ? "つかまれ" : "",
 		].filter(Boolean);
-		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${p.hp}|${p.maxHp}|${hunger}|${left}|${badges.join()}|${run.s.returning}`;
+		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${left}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
-		const ink = hpInk(p.hp, p.maxHp);
+		const ink = hpInk(hp, p.maxHp);
 		if (ink) this.logEl.style.setProperty("--ink", ink);
 		else this.logEl.style.removeProperty("--ink");
 		this.hud.status.style.cssText = ink ? `--ink:${ink}` : "";
 		const depthLabel = `${run.s.returning ? "↑" : ""}B${this.shownFloor?.depth ?? run.s.depth}`;
 		this.hud.status.innerHTML =
 			`<div class="st-row"><span class="st-depth">${depthLabel}</span><span>Lv${p.lv}</span>` +
-			`<span class="st-hp${ink ? " inked" : ""}">HP ${p.hp}/${p.maxHp}</span></div>` +
-			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((p.hp / p.maxHp) * 100)}%"></i></div>` +
+			`<span class="st-hp${ink ? " inked" : ""}">HP ${hp}/${p.maxHp}</span></div>` +
+			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((hp / p.maxHp) * 100)}%"></i></div>` +
 			`<div class="st-row"><span class="st-hunger${hunger <= 10 ? " low" : ""}">満腹 ${hunger}%</span>` +
 			(left >= 0
 				? `<span class="st-cards">のこり札 ${left}</span>`
@@ -1175,14 +1181,17 @@ export class Play {
 				: undefined;
 		const turn0 = run.s.turn;
 		const floor0 = run.s.floor;
+		const hp0 = run.p.hp;
 		try {
 			ev = run.act(cmd);
+			this.shownHp = hp0;
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
 			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);
+			this.shownHp = null;
 			if (this.stopped) return ev;
 			// 倒したら、演出中に 押しておいた 次の 攻撃は 捨てる（相手の いない 空振りに ならないように）
 			if (!this.rp && ev.some((e) => e.t === "die"))
@@ -1253,6 +1262,7 @@ export class Play {
 			}
 		} finally {
 			this.shownFloor = null;
+			this.shownHp = null;
 			this.busy = false;
 		}
 		return ev;
@@ -1616,6 +1626,8 @@ export class Play {
 					break;
 				}
 				case "hurt": {
+					if (e.id === PLAYER_ID && e.hp !== undefined && this.shownHp !== null)
+						this.shownHp = e.hp;
 					const d = this.disp.get(e.id);
 					if (d) d.flashUntil = performance.now() + 260;
 					if (this.isShown(e.id, e.pos))
@@ -1629,6 +1641,8 @@ export class Play {
 					break;
 				}
 				case "heal":
+					if (e.id === PLAYER_ID && e.hp !== undefined && this.shownHp !== null)
+						this.shownHp = e.hp;
 					this.pop(e.pos, `+${e.amount}`, "heal");
 					break;
 				case "miss":
