@@ -8,7 +8,9 @@
 import { MAIN_DECK } from "../core/data/items";
 import { deckSize } from "../core/deck";
 import { randomFloorPos, spawnMonster } from "../core/floor";
+import { type Dir8, step } from "../core/geom";
 import { deckOf, defOf, kindName } from "../core/item";
+import { isFloor, roomAt } from "../core/mapgen";
 import {
 	decodeCmd,
 	digest,
@@ -252,6 +254,47 @@ test("main dungeon parity: the recorded runs replay to the same states", () => {
 			`${c.seed}: the final state differs`,
 		);
 	}
+});
+
+test("a festival room gets 3-5 extra hidden traps (like Torneko 1)", () => {
+	let houses = 0;
+	for (let i = 0; i < 30; i++) {
+		const run = Run.create(`house-traps-${i}`);
+		run.s.houses = [8];
+		run.enterFloor(8, false);
+		const f = run.f;
+		if (f.house < 0) continue;
+		houses++;
+		const inHouse = f.traps.filter(
+			(t) => roomAt(f.layout, t.x, t.y) === f.house,
+		);
+		ok(
+			inHouse.length >= 3,
+			`seed ${i}: only ${inHouse.length} traps in the festival room`,
+		);
+		ok(
+			inHouse.every((t) => !t.found),
+			`seed ${i}: festival traps are visible from the start`,
+		);
+	}
+	ok(houses >= 20, `harness: only ${houses}/30 floors had a festival room`);
+});
+
+test("swinging at an empty tile reveals a trap there", () => {
+	const run = Run.create("swing-trap");
+	run.enterFloor(3, false);
+	const p = run.s.player;
+	run.f.monsters = [];
+	const dir = ([0, 1, 2, 3, 4, 5, 6, 7] as const).find((d) => {
+		const to = step(p, d);
+		return isFloor(run.f.layout, to.x, to.y);
+	});
+	ok(dir !== undefined, "harness: no open tile next to the player");
+	const to = step(p, dir as Dir8);
+	run.f.traps = [{ x: to.x, y: to.y, kind: "sleep", found: false }];
+	run.act({ c: "attack", dir: dir as Dir8 });
+	ok(run.f.traps[0].found, "the trap in front was not revealed by a swing");
+	ok(p.x !== to.x || p.y !== to.y, "the swing moved the player onto the trap");
 });
 
 test("a bot run (with suspend/resume) replays to the identical state", () => {

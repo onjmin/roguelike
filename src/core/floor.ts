@@ -144,9 +144,12 @@ export const buildFloor = (
 	// 罠（部屋の中だけ。道具の下には置かない）
 	const level = r.levelAt(depth);
 	const [tlo, thi] = depth < r.dungeon.trapsFrom ? [0, 0] : trapCount(level);
-	const nTraps = rng.range(tlo, thi) + (f.house >= 0 ? rng.range(3, 5) : 0);
+	// 祭りの部屋には 3〜5個 足す（トルネコ1と 同じ）
+	const nBase = rng.range(tlo, thi);
+	const nHouse = f.house >= 0 ? rng.range(3, 5) : 0;
+	const nTraps = nBase + nHouse;
 	for (let i = 0; i < nTraps; i++) {
-		const inHouse = f.house >= 0 && i >= nTraps - 4;
+		const inHouse = i >= nTraps - nHouse;
 		const spots = freeRoomTiles(r, f, inHouse ? f.house : null).filter(
 			(t) => t.x !== start.x || t.y !== start.y,
 		);
