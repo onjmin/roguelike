@@ -647,6 +647,54 @@ export const loadReplays = (): SavedReplay[] => {
 	}
 };
 
+/** 持ちこんだ道具として 読めるか（人から もらった リプレイは 形を ぜんぶ 確かめる）。 */
+const isCarryItem = (x: unknown): x is Item => {
+	if (!isItem(x)) return false;
+	const o = x as Item;
+	return (
+		typeof o.uid === "number" &&
+		typeof o.plus === "number" &&
+		typeof o.cursed === "boolean" &&
+		typeof o.charges === "number" &&
+		typeof o.known === "boolean" &&
+		typeof o.count === "number" &&
+		(o.rustproof === undefined || typeof o.rustproof === "boolean")
+	);
+};
+
+/**
+ * 人から もらった リプレイ（共有コードを 読んだもの）を 確かめて、使う ところだけ 取り出す。
+ * 形が ちがえば null。
+ */
+export const toReplay = (o: unknown): SavedReplay | null => {
+	if (!isReplay(o)) return null;
+	const r = o as SavedReplay;
+	const nums = [r.at, r.n, r.depth, r.turn];
+	if (!nums.every((v) => typeof v === "number" && Number.isFinite(v)))
+		return null;
+	if (typeof r.cause !== "string") return null;
+	if (!r.builds.every((b) => typeof b === "string")) return null;
+	if (r.dungeon !== undefined && !DUNGEON_IDS.includes(r.dungeon)) return null;
+	if (
+		r.carry !== undefined &&
+		!(Array.isArray(r.carry) && r.carry.every(isCarryItem))
+	)
+		return null;
+	return renamed({
+		seed: r.seed,
+		...(r.carry?.length ? { carry: r.carry } : {}),
+		...(r.dungeon ? { dungeon: r.dungeon } : {}),
+		at: r.at,
+		builds: r.builds,
+		text: r.text,
+		n: r.n,
+		kind: r.kind,
+		depth: r.depth,
+		turn: r.turn,
+		cause: r.cause,
+	});
+};
+
 /**
  * そのリプレイが その記録のものか（シードに加えて 終わり方も同じ。
  * 2つのタブで同じ冒険を続けると、1つのシードに終わりが2つできることがある）。

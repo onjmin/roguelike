@@ -22,6 +22,12 @@ import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { infoWindow, listWindow } from "./list";
+import {
+	importWindow,
+	isOldReplay,
+	OLD_REPLAY_WARN,
+	shareWindow,
+} from "./share";
 
 /** そのダンジョンの山札の枚数（毎回同じ）。 */
 const deckTotal = (dungeon: string | undefined): number =>
@@ -239,7 +245,8 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 
 /**
  * 「冒険の記録」（村の まとめ掲示板・ゼロ・メニューから）：通算と、これまでの冒険（新しい順）。
- * 冒険を選ぶと、残っていれば「リプレイを見る」。見るなら そのリプレイを返す。
+ * 冒険を選ぶと、残っていれば「リプレイを見る」「リプレイを わたす」。見るなら そのリプレイを返す。
+ * 「読み込む」で 人から もらった リプレイも 見られる。
  */
 export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	const list = loadRecords();
@@ -251,14 +258,20 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	]
 		.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
 		.join("")}</div>`;
+	// もらった リプレイを 読み込む（ui/share.ts）。記録が 無くても できる
+	const importAction = [{ label: "読み込む", value: "import" }];
 	if (!list.length) {
-		await infoWindow(
-			ctx,
-			"冒険の記録",
-			`${total}<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`,
-			{ cls: "records" },
-		);
-		return null;
+		for (;;) {
+			const v = await listWindow(
+				ctx,
+				`冒険の記録${total}<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`,
+				[],
+				{ cls: "records", actions: importAction },
+			);
+			if (v !== "import") return null;
+			const got = await importWindow(ctx);
+			if (got) return got;
+		}
 	}
 	const replays = loadReplays();
 	const replayOf = (r: RunRecord) => replays.find((p) => replayMatches(p, r));
@@ -282,8 +295,14 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 		const v = await listWindow(ctx, `冒険の記録${total}${note}`, rows, {
 			cls: "records",
 			start,
+			actions: importAction,
 		});
 		if (v === null) return null;
+		if (v === "import") {
+			const got = await importWindow(ctx);
+			if (got) return got;
+			continue;
+		}
 		start = Number(v);
 		const r = list[start];
 		const rp = replayOf(r);
@@ -296,12 +315,18 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 			);
 			continue;
 		}
-		const old = rp.builds.some((b) => b !== __CORE_VERSION__);
-		const pick = await listWindow(
-			ctx,
-			`${head}${old ? `<br><small class="warn">前の版で　遊んだ冒険です。途中から　ずれて、最後まで　見られない　ことが　あります</small>` : ""}`,
-			[{ label: "リプレイを　見る", value: "play" }],
-		);
-		if (pick === "play") return rp;
+		for (;;) {
+			const pick = await listWindow(
+				ctx,
+				`${head}${isOldReplay(rp) ? `<br>${OLD_REPLAY_WARN}` : ""}`,
+				[
+					{ label: "リプレイを　見る", value: "play" },
+					{ label: "リプレイを　わたす", value: "share" },
+				],
+			);
+			if (pick === "play") return rp;
+			if (pick !== "share") break;
+			await shareWindow(ctx, rp);
+		}
 	}
 };

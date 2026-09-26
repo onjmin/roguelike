@@ -16,9 +16,12 @@ import {
 	takeFromStorage,
 } from "./engine/save";
 import { Screen } from "./engine/screen";
+import { decodeShare, takeSharedHash } from "./engine/share";
 import type { Ctx } from "./ui/ctx";
 import { mountHud } from "./ui/hud";
+import { infoWindow } from "./ui/list";
 import { Play } from "./ui/play";
+import { confirmShared } from "./ui/share";
 import { type Arrival, Village } from "./ui/village";
 
 const app = document.getElementById("app");
@@ -177,10 +180,24 @@ const loop = async () => {
 	let first = devRun();
 	let boot = !first;
 	let arrival: Arrival = null;
+	// もらった リプレイの リンク（#r=…）で 開いたら、村の前に 見るか 聞く（engine/share.ts）
+	let shared = takeSharedHash();
 	for (;;) {
 		let run = first;
 		first = null;
 		let replay: SavedReplay | undefined;
+		if (!run && shared) {
+			const rp = await decodeShare(shared);
+			shared = null;
+			if (!rp)
+				await infoWindow(
+					ctx,
+					"",
+					`<p class="dim">リプレイの　リンクが　読めませんでした<br><small>（ぜんぶ　コピー　できていない　かも）</small></p>`,
+				);
+			else if (await confirmShared(ctx, rp))
+				({ run, replay } = runFor({ kind: "replay", replay: rp }));
+		}
 		if (!run) {
 			hud.setMode("village");
 			const choice = await village.start({ boot, arrival });
@@ -209,5 +226,10 @@ const loop = async () => {
 		c.fillRect(0, 0, screen.width, screen.height);
 	}
 };
+
+// 開いている タブで リプレイの リンクを 開きなおしたとき（# だけ 変わると 読みなおされない）
+window.addEventListener("hashchange", () => {
+	if (location.hash.startsWith("#r=")) location.reload();
+});
 
 void loop();

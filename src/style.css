@@ -842,6 +842,41 @@ body.shake #app {
 	border-radius: 0;
 }
 
+/* リプレイを わたす／読み込む（ui/share.ts） */
+.share .share-text {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	height: 96px;
+	margin: 6px 0;
+	padding: 6px;
+	resize: none;
+	color: var(--text);
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: 4px;
+	font: 12px / 1.4 monospace;
+	word-break: break-all;
+	user-select: text;
+	-webkit-user-select: text;
+	touch-action: auto;
+}
+
+.share .share-note {
+	padding: 0 4px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--muted);
+}
+
+.share .share-note .warn {
+	color: var(--danger);
+}
+
+.share .menu-foot > .menu-action {
+	flex: 1;
+}
+
 .info-body {
 	padding: 4px 8px;
 	font-size: 14px;
