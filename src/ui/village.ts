@@ -879,7 +879,19 @@ export class Village {
 			name: opt.name ?? c?.name,
 			color: c?.color,
 			text,
-			portrait: opt.noPortrait || !who ? null : this.portraitOf(who),
+			portrait: opt.noPortrait
+				? null
+				: opt.portrait
+					? {
+							id: opt.portrait.id,
+							name: opt.name ?? c?.name ?? "",
+							color: opt.portrait.color ?? c?.color ?? "#b8b8c8",
+							src: opt.portrait.src,
+							side: "right",
+						}
+					: who
+						? this.portraitOf(who)
+						: null,
 		});
 	}
 

@@ -210,11 +210,12 @@ export const hasMobNews = (id: MobId): boolean => {
 
 // ───────────────── 話す ─────────────────
 
-/** その子の 声で 1窓（名前欄は その子。voice が あれば その仲間の 色。立ち絵は 出さない）。 */
+/** その子の 声で 1窓（名前欄は その子。voice が あれば その仲間の 色。立ち絵は その子の）。 */
 const sayAs = (s: Story, def: MobDef, text: string): Promise<void> =>
-	def.voice
-		? s.say(def.voice, text, { name: def.name, noPortrait: true })
-		: s.say(null, text, { name: def.name });
+	s.say(def.voice ?? null, text, {
+		name: def.name,
+		portrait: { id: `mob:${def.name}`, src: def.portrait },
+	});
 
 /** 窓の 前の しぐさ（窓には 数えない。行けなければ 何もしない）。 */
 const runBeat = async (s: Story, id: MobId, beat: Beat): Promise<void> => {

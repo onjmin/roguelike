@@ -107,6 +107,8 @@ export type SayOptions = {
 	name?: string;
 	/** 立ち絵を出さない。 */
 	noPortrait?: boolean;
+	/** 仲間でない人の 立ち絵（public/ からの パス。無ければ 「立ち絵（仮）」の ダミー）。 */
+	portrait?: { id: string; src: string; color?: string };
 };
 
 export type Story = {

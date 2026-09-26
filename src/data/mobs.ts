@@ -95,7 +95,9 @@ export type MobDef = {
 	dir: Dir;
 	/** 家の まわり 2マスを うろうろ する。 */
 	wander?: boolean;
-	/** 名前欄の 色を かりる 仲間（立ち絵は 出さない）。ぷゆゆは おんJ民（rpg と 同じ）。 */
+	/** 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。 */
+	portrait: string;
+	/** 名前欄の 色を かりる 仲間（立ち絵は かりない）。ぷゆゆは おんJ民（rpg と 同じ）。 */
 	voice?: Speaker;
 	/** 総選挙の 候補に ならない（殿堂入りの おんちゃん・マイナーズでは ない ぷゆゆ）。 */
 	noVote?: boolean;
@@ -163,6 +165,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// レスの 文末の 🥺 が 歩きだした子（rpg の ぷゆゆ）。はじめから 広場の 下を うろうろ。総選挙には 出ない
 	puyu: {
 		name: "ぷゆゆ",
+		portrait: "portraits/puyu.png",
 		sprite: PUYU_WALK,
 		from: 0,
 		spot: [8, 16],
@@ -571,6 +574,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 日曜日の子。屋台が 出ると 広場に 来る
 	nichie: {
 		name: "にぃちぇ",
+		portrait: "portraits/nichie.png",
 		sprite: "pub:sprites/minors_nichie.png",
 		from: 1,
 		spot: [13, 13],
@@ -674,6 +678,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// パン板から 侵略に 来た 食パン。屋根が つくと 屋台の となりに 出張所
 	panmatsu: {
 		name: "パン松",
+		portrait: "portraits/panmatsu.png",
 		sprite: "pub:sprites/minors_panmatsu.png",
 		from: 2,
 		spot: [8, 11],
@@ -767,6 +772,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// おんJ民の 姉。フェリスの となりを ねらっている。小屋が 建つと 広場の はしに
 	ngoane: {
 		name: "ンゴ姉",
+		portrait: "portraits/ngoane.png",
 		sprite: "pub:sprites/minors_ngoane.png",
 		from: 3,
 		spot: [19, 15],
@@ -857,6 +863,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// だれも 来ない おんS の お嬢さま。倉庫が 建つと 崖の下の すみっこに
 	onsu: {
 		name: "おんすちゃん",
+		portrait: "portraits/onsu.png",
 		sprite: "pub:sprites/minors_onsu.png",
 		from: 4,
 		spot: [20, 5],
@@ -959,6 +966,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 一軍（総選挙の 殿堂入り）。小さな店に なると 広場の まんなかに。今日の おんちゃんは 曜日で かわる
 	onchan: {
 		name: "おんちゃん",
+		portrait: "portraits/onchan.png",
 		sprite: "sa:oLrlUq",
 		from: 5,
 		spot: [12, 15],
@@ -1065,6 +1073,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// ひかえめな ポジハメ。5割が 好き。倉庫Part2 の ころ 広場の 西の はしに
 	yayapoji: {
 		name: "ヤヤポジ",
+		portrait: "portraits/yayapoji.png",
 		sprite: "pub:sprites/minors_yayapoji.png",
 		from: 6,
 		spot: [2, 15],
