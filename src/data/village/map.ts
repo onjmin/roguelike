@@ -18,7 +18,7 @@
 //   店   0 空き地（ロゼと 麻婆豆腐の鍋）  1 屋台（台と品物・本の看板）  2〜4 日よけ・ランプ・木箱
 //        5〜6 小さな店（常識堂。白い壁・赤い屋根）  7 2階建ての 大きな店（窓の花・ちょうちん）
 //   小屋 3〜 わら屋根・煙突（6〜 窓の下に 花の箱）
-//   倉庫 4〜5 板張りの 物置  6〜 石造りの 倉庫。テトが 台の うしろに 立つ（それまでは 崖の そば）
+//   倉庫 4〜5 板張りの 物置  6〜 石造りの 倉庫。シヨが 台の うしろに 立つ（それまでは 崖の そば）
 //   道   0〜4 土  5〜 石だたみ（広場も 石畳に。井戸）。6〜 花。7 桜と 野次馬
 //
 // 段7・3つとも 開いたときの 形（ほかの段は 区画を 差しかえる。@ は 人と 蓄音機。字は data/village/tiles.ts）
@@ -28,16 +28,16 @@
 //  2 3333333333333333333333  岩肌
 //  3 4444M!44444M!44444M!44  口と 立て札
 //  4 H....................H  崖の下の道（本編が 開くまで おんJ民 11,4）
-//  5 h,nnnnnn,,..,,,,,,,,,h  店の 屋根                  （倉庫が 建つまで テト 17,5）
+//  5 h,nnnnnn,,..,,,,,,,,,h  店の 屋根                  （倉庫が 建つまで シヨ 17,5）
 //  6 H,NNNNNN,,..,,,,rrrrrH                               倉庫の 屋根
 //  7 h,ffOfff,,..,,,,RRRRRh  2階（窓の花・本の看板）
 //  8 H,l((w(l,,..,Cz,{{{g{H  1階（ちょうちん）  小屋（煙突）  倉庫の 壁（袋の看板）
 //  9 h,)d)aa),,..,ZZ,}78}}h  扉・日よけ                   扉（7 8）
-// 10 H,X,@,Lx,,..*J[,x,@,xH  ロゼ 4,10                    テト 18,10
+// 10 H,X,@,Lx,,..*J[,x,@,xH  ロゼ 4,10                    シヨ 18,10
 // 11 h,XqQ>ux,,..@Ee&x<->xh  台           おんJ民 12,11・小屋の扉 14,11
 // 12 H....................H  町の通り
 // 13 h,,,::::::..::::::@,,h  広場（野次馬）
-// 14 H,Y,::Kk@:@::::U::,Y,H  まとめ掲示板 6..7・レイ 8・蓄音機 10・井戸 15
+// 14 H,Y,::Kk@:@::::U::,Y,H  まとめ掲示板 6..7・ゼロ 8・蓄音機 10・井戸 15
 // 15 h,,,:@::::::::::@:,,,h  キリコ（起きる所）10・フェリス 16
 // 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
@@ -103,12 +103,12 @@ export const VILLAGE_SPOTS = {
 		[6, 14],
 		[7, 14],
 	] as readonly Cell[],
-	rei: [8, 14] as Cell,
+	zero: [8, 14] as Cell,
 	feris: [16, 15] as Cell,
 	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
 	roze: (stage: number): Cell => (stage === 0 ? [4, 11] : [4, 10]),
-	/** テト（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
-	teto: (stage: number): Cell => (stage >= 4 ? [18, 10] : [17, 5]),
+	/** シヨ（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
+	shiyo: (stage: number): Cell => (stage >= 4 ? [18, 10] : [17, 5]),
 	/** おんJ民（本編が 開くまでは 口の前で ふさぐ。開いたら 小屋の前で 大工）。 */
 	nanj: (v: VillageView): Cell =>
 		v.unlocked.includes("main") ? [12, 11] : [11, 4],
@@ -373,8 +373,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		out.push({ id: "door_hut", x: hx, y: hy, trigger: "talk" });
 	}
 	out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
-	out.push(friend("teto", VILLAGE_SPOTS.teto(stage)));
-	out.push(friend("rei", VILLAGE_SPOTS.rei));
+	out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
+	out.push(friend("zero", VILLAGE_SPOTS.zero));
 	out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
 	out.push(friend("feris", VILLAGE_SPOTS.feris, true));
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）

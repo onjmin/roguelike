@@ -5,8 +5,8 @@
 //   はじめてなら 語り → 村を出る。やめたら 1歩 もどる。
 // - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
 // - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと（頭の上に「！」）。聞いたら 町の様子の
-//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（レイ＝冒険の記録と 売り上げの 帳簿、
-//   フェリス＝図鑑・あそびかた、テト＝倉庫、おんJ民＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
+//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（ゼロ＝冒険の記録と 売り上げの 帳簿、
+//   フェリス＝図鑑・あそびかた、シヨ＝倉庫、おんJ民＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
 // - 小屋の扉・板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
 // - おんJマイナーズ（町が 育つと 越してくる）と ぷゆゆ（はじめから いる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
@@ -204,7 +204,7 @@ const speak = async (
 /** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。役目は どれも B／☰ の メニューにも ある。 */
 const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	switch (who) {
-		case "rei":
+		case "zero":
 			// 帳簿の係：冒険の記録（リプレイも）と 売り上げ
 			return async (s) => {
 				await speak(s, who);
@@ -225,7 +225,7 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 				await hideMsg(s);
 				await (n === 0 ? openBook(ctx) : openHowto(ctx));
 			};
-		case "teto":
+		case "shiyo":
 			// 倉庫番（倉庫が 建ってから）
 			return async (s) => {
 				await speak(s, who);

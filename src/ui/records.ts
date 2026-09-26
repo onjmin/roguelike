@@ -1,5 +1,5 @@
 // 冒険の記録：倒れた・持ち帰ったときの全画面の札（showRunEnd）と、村で見る過去の記録（openRecords。
-// まとめ掲示板・レイ・村のメニューから）。
+// まとめ掲示板・ゼロ・村のメニューから）。
 // 1ページずつタップで送る語りの札（showStory。はじめての前口上）もここに置く。
 
 import { dungeonById } from "../core/data/dungeons";
@@ -238,7 +238,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 };
 
 /**
- * 「冒険の記録」（村の まとめ掲示板・レイ・メニューから）：通算と、これまでの冒険（新しい順）。
+ * 「冒険の記録」（村の まとめ掲示板・ゼロ・メニューから）：通算と、これまでの冒険（新しい順）。
  * 冒険を選ぶと、残っていれば「リプレイを見る」。見るなら そのリプレイを返す。
  */
 export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {

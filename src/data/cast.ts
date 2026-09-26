@@ -1,4 +1,5 @@
-// 村（保守村）に立つ人たち。名前・色は quotes.ts の SPEAKERS、歩行グラ・立ち絵は rpg の cast.ts と同じ。
+// 村（保守村）に立つ人たち。名前・色は quotes.ts の SPEAKERS、歩行グラ・立ち絵は rpg の cast.ts と同じ
+// （シヨ・ゼロは rpg に いないので 歩行グラは public/sprites/ の 自作、立ち絵は 仮）。
 // 歩行グラは RPGEN 形式（16x16・2コマ×4方向）。立ち絵は public/portraits/ の透過 PNG（右向きに描いた絵。
 // 右に立つときは ui/message.ts が左右反転する）。おんJ民は 立ち絵が無いので 出さない（ダミーも出さない）。
 // キリコは しゃべらないので ここには入れない（歩行グラだけ KIRIKO_WALK）。
@@ -17,14 +18,15 @@ const WALK: Record<Speaker, string> = {
 	nanj: "sa:29aYeF",
 	roze: "sa:mHhx69",
 	feris: "sa:4KtOzD",
-	teto: "sa:3xUW5Y",
-	rei: "sa:TI21YC",
+	shiyo: "pub:sprites/shiyo.png",
+	zero: "pub:sprites/zero.png",
 };
 
 const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
 	roze: { src: "portraits/roze.png", side: "right" },
-	teto: { src: "portraits/teto.png", side: "right" },
-	rei: { src: "portraits/rei.png", side: "right" },
+	// シヨ・ゼロ（おんJ／おーぷん2ch 有志の 創作キャラ）の 立ち絵は 仮の 絵
+	shiyo: { src: "portraits/shiyo.png", side: "right" },
+	zero: { src: "portraits/zero.png", side: "right" },
 	// 頭の大きい絵なので 少し小さく（rpg と同じ）
 	feris: { src: "portraits/feris.png", side: "right", scale: 0.9 },
 };

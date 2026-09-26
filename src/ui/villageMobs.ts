@@ -359,5 +359,5 @@ export const senkyoScript: Script = async (s) => {
 	save(w);
 	s.se("read");
 	await s.narrate(fill(SENKYO.done, { name: MOBS[pick].name }));
-	if (s.near("rei", NEAR)) await s.say("rei", SENKYO.rei);
+	if (s.near("zero", NEAR)) await s.say("zero", SENKYO.zero);
 };

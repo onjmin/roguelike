@@ -28,7 +28,7 @@ export const townItemName = (it: Item): string => {
 /**
  * 帰ってきた持ち物から 倉庫に あずける道具を えらぶ（uid。ここでは 保存しない。決めるのは 呼ぶ側の settleReturn）。
  * B・とじる・外のタップは 決定ではない：のこりを 売ってよいか 聞いて（confirmSell。ロゼが 村の窓で きく）、
- * はい なら そこで 決める。prompt は 一覧の 題（HTML。テトが 先に 村の窓で 言うので 短い題）。
+ * はい なら そこで 決める。prompt は 一覧の 題（HTML。シヨが 先に 村の窓で 言うので 短い題）。
  */
 export const chooseStored = async (
 	ctx: Ctx,
@@ -103,7 +103,7 @@ export const pickCarry = async (
 	return [...chosen].map((i) => t.storage[i]);
 };
 
-/** 倉庫を見る（村の テト・メニューから）。 */
+/** 倉庫を見る（村の シヨ・メニューから）。 */
 export const openStorage = async (ctx: Ctx): Promise<void> => {
 	const t = loadTown();
 	const cap = STORAGE_CAP[t.stage] ?? 0;

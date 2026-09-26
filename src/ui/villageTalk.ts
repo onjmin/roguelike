@@ -1,5 +1,5 @@
 // 地上の ひとこと：タイトル（起動の札）の ひとこと、村で 仲間に 話しかけたときの ひとこと（1回の 帰りに
-// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、レイの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
+// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、ゼロの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
 import { DUNGEONS } from "../core/data/dungeons";
@@ -94,6 +94,12 @@ const HEARD_KEY = "kiriko-roguelike/village";
 /** 仲間ごとに、聞いた ひとことの 帰り（記録の 終わった時刻。記録が 無ければ 0）。 */
 type Heard = Partial<Record<Speaker, number>>;
 
+/** 前の版の 仲間の id（倉庫番 teto → shiyo、帳簿 rei → zero）。 */
+const OLD_SPEAKERS: Readonly<Record<string, Speaker>> = {
+	teto: "shiyo",
+	rei: "zero",
+};
+
 /** 保存できないときの この回の 写し。 */
 let heardMemo: Heard = {};
 
@@ -104,8 +110,11 @@ const loadHeard = (): Heard => {
 			const o = JSON.parse(raw) as { heard?: unknown };
 			const out: Heard = {};
 			if (o?.heard && typeof o.heard === "object")
-				for (const [k, v] of Object.entries(o.heard))
+				for (const [key, v] of Object.entries(o.heard)) {
+					// 前の版の 仲間（テト・レイ）は 役目を 継いだ シヨ・ゼロ として 読む
+					const k = OLD_SPEAKERS[key] ?? key;
 					if (k in SPEAKERS && typeof v === "number") out[k as Speaker] = v;
+				}
 			return out;
 		}
 	} catch {
@@ -159,7 +168,7 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
 	const stage = loadTown().stage;
 	const town = (TITLE_TOWN_QUOTES[stage] ?? []).find((x) => x.who === who);
 	if (town) return town.text;
-	if (who === "teto" && (STORAGE_CAP[stage] ?? 0) > 0)
+	if (who === "shiyo" && (STORAGE_CAP[stage] ?? 0) > 0)
 		return VILLAGE_IDLE.store;
 	return VILLAGE_IDLE[who];
 };
@@ -191,7 +200,7 @@ export const fill = (
 ): string =>
 	text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
 
-/** レイの 帳簿：売り上げの 合計と、次の 段までの のこり。 */
+/** ゼロの 帳簿：売り上げの 合計と、次の 段までの のこり。 */
 export const ledgerLine = (): string => {
 	const t = loadTown();
 	if (t.stage >= TOWN_STAGES - 1)

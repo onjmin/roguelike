@@ -6,7 +6,7 @@
 // - 本編の口は 開くまで おんJ民が ふさぐ・もっとの口は 開くまで 板で ふさぐ
 // - 町の段ごとに 建物が ふえる・売る人は 台の うしろ（囲いの中へは 入れない）・絵は 同梱の Base.png だけ
 // - 仲間の ひとこと（ui/villageTalk.ts）：1回の 帰りに 1人 1つ 新しい話（「！」）、聞いたら 決まった ひとこと。
-//   レイの 帳簿。村の窓で 読む 文（村の 新しい文・口と 立て札・仲間の たまり）は 全角22字・2行まで
+//   ゼロの 帳簿。村の窓で 読む 文（村の 新しい文・口と 立て札・仲間の たまり）は 全角22字・2行まで
 //   （localStorage の かわりに 入れものを 置いて 試す）
 // - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
 //   （おんJ民が どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
@@ -334,7 +334,7 @@ test("the village is drawn only from the bundled Base.png and sprites (no CDN ti
 	}
 });
 
-test("ロゼ and テト work behind closed counters once the stall and storehouse are built", () => {
+test("ロゼ and シヨ work behind closed counters once the stall and storehouse are built", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		const seller = (who: Speaker, counterFrom: number, closedFrom: number) => {
@@ -354,7 +354,7 @@ test("ロゼ and テト work behind closed counters once the stall and storehous
 				);
 		};
 		seller("roze", 1, 2);
-		seller("teto", 4, 4);
+		seller("shiyo", 4, 4);
 		// 小屋の扉は 3段から（見るだけ）
 		ok(
 			s.places.some((p) => p.id === "door_hut") === v.stage >= 3,
@@ -498,12 +498,12 @@ test("each friend has one new line per return (「！」), then a short fixed li
 			);
 		}
 		for (const who of FRIENDS) ok(!hasNews(who), `${who} has two new lines`);
-		// 倉庫が 建ったら テトの 決まった ひとことは 倉庫番
+		// 倉庫が 建ったら シヨの 決まった ひとことは 倉庫番
 		setTown(4, 3000);
-		const teto = TITLE_TOWN_QUOTES[4].find((q) => q.who === "teto")?.text;
+		const shiyo = TITLE_TOWN_QUOTES[4].find((q) => q.who === "shiyo")?.text;
 		ok(
-			talkLine("teto") === (teto ?? VILLAGE_IDLE.store),
-			"テト does not keep the storehouse",
+			talkLine("shiyo") === (shiyo ?? VILLAGE_IDLE.store),
+			"シヨ does not keep the storehouse",
 		);
 		// 聞いたことは ページを 開きなおしても 覚えている
 		forgetHeardMemo();
@@ -546,7 +546,7 @@ test("the friends react to how the last run ended", () => {
 	});
 });
 
-test("レイ reads the ledger: sales so far and the rest to the next stage", () => {
+test("ゼロ reads the ledger: sales so far and the rest to the next stage", () => {
 	withStorage(() => {
 		setTown(0, 0);
 		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "stage 0 with no sales");
@@ -986,19 +986,19 @@ test("unlock news: the gate stays shut until shown, おんJ民 steps aside, a cl
 			]),
 			`the もっと news is out of order:\n${deep.log.join("\n")}`,
 		);
-		// 10回 たおれて 開いた（救い）：テトが 針を 用意する
+		// 10回 たおれて 開いた（救い）：シヨが 針を 用意する
 		setProgress(["shallow", "main"], [{ dungeon: "main", reason: "relief" }]);
 		const relief = fakeStory();
 		await newsScript(relief.s);
 		ok(
-			relief.log.includes(`say teto: ${UNLOCK_LINES.relief[0].text}`) &&
+			relief.log.includes(`say shiyo: ${UNLOCK_LINES.relief[0].text}`) &&
 				relief.log.includes(`goto nanj ${bx},${by}`),
 			`the relief news is wrong:\n${relief.log.join("\n")}`,
 		);
 	});
 });
 
-/** テトに 渡す 仮の 手（えらぶ uid を 決めておく。when で 途中の ことを おこす）。 */
+/** シヨに 渡す 仮の 手（えらぶ uid を 決めておく。when で 途中の ことを おこす）。 */
 const chooser =
 	(uids: number[], when?: () => void): StoreChooser =>
 	async () => {
@@ -1006,7 +1006,7 @@ const chooser =
 		return uids;
 	};
 
-test("settling in the village: テト stores, the rest is sold, レイ reads the sales", async () => {
+test("settling in the village: シヨ stores, the rest is sold, ゼロ reads the sales", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow", "main"], [], ["shallow"]);
 		const keep = item(1, "bat", { plus: 2 });
@@ -1024,7 +1024,7 @@ test("settling in the village: テト stores, the rest is sold, レイ reads the
 				asked++;
 			}),
 		);
-		ok(asked === 1, "テト did not ask what to store");
+		ok(asked === 1, "シヨ did not ask what to store");
 		const t = loadTown();
 		ok(!t.pending, "the haul is still pending");
 		ok(
@@ -1036,9 +1036,9 @@ test("settling in the village: テト stores, the rest is sold, レイ reads the
 		ok(t.points === 1000 + priceOf(sell), `points: ${t.points}`);
 		ok(
 			inOrder(log, [
-				`say teto: ${TOWN_MSG.storePrompt.text}`,
-				`say teto: ${TOWN_MSG.storeDone.text}`,
-				`say rei: ${fill(TOWN_MSG.sold.text, { points: priceOf(sell) })}`,
+				`say shiyo: ${TOWN_MSG.storePrompt.text}`,
+				`say shiyo: ${TOWN_MSG.storeDone.text}`,
+				`say zero: ${fill(TOWN_MSG.sold.text, { points: priceOf(sell) })}`,
 			]),
 			`the settle is out of order:\n${log.join("\n")}`,
 		);
@@ -1060,7 +1060,7 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
 		ok(
 			inOrder(first.log, [
-				`say rei: ${fill(TOWN_MSG.sold.text, { points: priceOf(herb) })}`,
+				`say zero: ${fill(TOWN_MSG.sold.text, { points: priceOf(herb) })}`,
 				"fadeOut",
 				"rebuild",
 				`look ${VILLAGE_SPOTS.growth(1).join(",")}`,
@@ -1122,7 +1122,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 			"the other tab's settle was overwritten",
 		);
 		ok(
-			!a.log.some((l) => l.startsWith("say rei")),
+			!a.log.some((l) => l.startsWith("say zero")),
 			"sales were read for a haul another tab settled",
 		);
 		// 一覧の 途中で タブを 閉じた：おあずかりは そのまま（次に 開いたとき 続きから）
@@ -1150,7 +1150,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 			chooser([1], () => ok(false, "asked with a full storehouse")),
 		);
 		ok(
-			c.log[0] === `say teto: ${TOWN_MSG.storageFull.text}` &&
+			c.log[0] === `say shiyo: ${TOWN_MSG.storageFull.text}` &&
 				loadTown().storage.length === 10 &&
 				!loadTown().pending,
 			`full storehouse:\n${c.log.join("\n")}`,
@@ -1161,7 +1161,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 		await settleScript(d.s, chooser([]));
 		ok(
 			d.log.length === 1 &&
-				d.log[0] === `say teto: ${TOWN_MSG.nothingToStore.text}`,
+				d.log[0] === `say shiyo: ${TOWN_MSG.nothingToStore.text}`,
 			`empty escape:\n${d.log.join("\n")}`,
 		);
 		// おあずかりが 無い（倒れた・もう 決めた）：何もしない
@@ -1327,7 +1327,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 		const heard = new Set<string>();
 		for (let i = 0; i < 12; i++) {
 			pushRecord({ kind: "escape" });
-			const t = fakeStory({ near: ["roze", "nanj", "rei"] });
+			const t = fakeStory({ near: ["roze", "nanj", "zero"] });
 			await mobScript(id)(t.s);
 			const first = t.log[0] ?? "";
 			ok(
@@ -1363,11 +1363,11 @@ test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick 
 		await mobScript("nichie")(fakeStory().s);
 		ok(senkyoOpen(), "no poster after meeting two");
 		// 1票（候補は 表の順：にぃちぇ・おんすちゃん）
-		const v = fakeStory({ pick: 0, near: ["rei"] });
+		const v = fakeStory({ pick: 0, near: ["zero"] });
 		await senkyoScript(v.s);
 		ok(
 			v.log.includes(`narrate: ${fill(SENKYO.done, { name: "にぃちぇ" })}`) &&
-				v.log.includes(`say rei: ${SENKYO.rei}`),
+				v.log.includes(`say zero: ${SENKYO.zero}`),
 			`vote:\n${v.log.join("\n")}`,
 		);
 		const again = fakeStory();
@@ -1653,11 +1653,11 @@ test("ぷゆゆ: there from the first visit with the おんJ民 name bar, not a 
 			`stage 0: ${JSON.stringify(place)}`,
 		);
 		ok(hasMobNews("puyu"), "no 「！」 on the very first visit");
-		const a = fakeStory({ near: ["rei"] });
+		const a = fakeStory({ near: ["zero"] });
 		await mobScript("puyu")(a.s);
 		ok(
 			a.log[0] === said(d.meet[0]?.text) &&
-				a.log.includes(`say rei: ${d.meet[3]?.text}`),
+				a.log.includes(`say zero: ${d.meet[3]?.text}`),
 			`meet:\n${a.log.join("\n")}`,
 		);
 		// マイナーズでは ない：ぷゆゆ ＋ 1人では はり紙は 出ない
@@ -1751,7 +1751,7 @@ test("ぷゆゆ: one new talk per return in array order, mob pairs only when bot
 		const panLine = MOBS.panmatsu.chats.find((c) => c.key === "puyu")?.lines[1];
 		const pan = panLine ? logOf("panmatsu", panLine) : "?";
 		ok(
-			!(await talkMany("panmatsu", ["roze", "nanj", "rei"], 8)).includes(pan),
+			!(await talkMany("panmatsu", ["roze", "nanj", "zero"], 8)).includes(pan),
 			"パン松 talked with a ぷゆゆ who was not near",
 		);
 		ok(
@@ -1771,7 +1771,8 @@ test("ぷゆゆ: one new talk per return in array order, mob pairs only when bot
 		);
 		// ぷゆゆ：みんな 近くに いれば、雑談は 上から 1回ずつ（節目が あいだに 入る）
 		const near = [
-			"rei",
+			"zero",
+			"shiyo",
 			"roze",
 			"nanj",
 			"feris",
