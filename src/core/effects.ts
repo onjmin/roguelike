@@ -91,7 +91,7 @@ const eat = (r: Run, it: Item): boolean => {
 			r.p.str--;
 			r.msg("ちからが　1　下がった", "warn");
 		}
-		r.hurtPlayer(5, "くさったパンに　あたった");
+		r.hurtPlayer(5, "チギュリパンに　あたった");
 	}
 	return true;
 };

@@ -202,7 +202,7 @@ export class Run {
 		};
 		const run = new Run(s);
 		run.rng = rng;
-		// 始めの持ち物（山札の外。毎回同じ）：本編は大きなパン
+		// 始めの持ち物（山札の外。毎回同じ）：本編は ぷゆゆパン
 		for (const k of dg.start) player.items.push(run.newItem(k));
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {

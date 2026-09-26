@@ -443,7 +443,7 @@ add({
 add({
 	id: "f_bread",
 	cat: "food",
-	name: "パン",
+	name: "片親パン",
 	desc: "満腹度が　50　回復",
 });
 add({
@@ -455,7 +455,7 @@ add({
 add({
 	id: "f_moldy",
 	cat: "food",
-	name: "くさったパン",
+	name: "チギュリパン",
 	desc: "満腹度が　100　回復。ちからが　1　下がり、HPも　へる",
 });
 
