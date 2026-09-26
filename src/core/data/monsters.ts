@@ -283,7 +283,7 @@ const M: MonsterDef[] = [
 		desc: "となりに　来るまで　動かない",
 	},
 	{
-		// 前の名前は ばくだん。絵は RPGEN の ばくだんに 炎を 足した もの（scripts/make-enemies.mjs）
+		// 前の名前は ばくだん。絵は 燃えている スマホ（怒った 顔の 画面。scripts/make-enemies.mjs）
 		id: "bomb",
 		name: "炎上案件",
 		sprite: "pub:sprites/enjo.png",

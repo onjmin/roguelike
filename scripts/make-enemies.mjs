@@ -5,7 +5,7 @@
 //   粘着アンチ（nenchaku.png） … むらさきの ねばねば。怒り眉。2コマ目は つぶれて、しずくが のびる
 //   連投荒らし（rento.png）   … 怒った 顔の ふきだし。うしろに うすい 残像。2コマ目は 残像が ずれる
 //   凍結アカ（touketsu.png）   … 氷の かたまりに とじこめられた、初期アイコンの 人がた。2コマ目は 光が 動く
-//   炎上案件（enjo.png）       … RPGEN の「ばくだん」（sa:0fhT0t）の 下から 炎が 立つ。2コマ目は 炎が ゆれる
+//   炎上案件（enjo.png）       … 怒った 顔の スマホから 炎が 立つ。2コマ目は 炎が ゆれる。背中は カメラの レンズ
 //
 // 右・左は 顔を その向きへ 1ドット 寄せる。上（背中）は 顔なし。乱数は 使わない（毎回 同じ 絵）。
 //
@@ -17,11 +17,10 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { deflateSync, inflateSync } from "node:zlib";
+import { deflateSync } from "node:zlib";
 const HERE = dirname(fileURLToPath(import.meta.url));
-const BOMB_URL = "https://rpgen-search.pages.dev/data/images/sAnims/0fhT0t.png";
 
-// ───────────────── 最小 PNG（書き: RGBA 8bit。読み: 非インターレースの パレット/RGB/RGBA） ─────────────────
+// ───────────────── 最小 PNG（書き: RGBA 8bit） ─────────────────
 
 const CRC_TABLE = new Uint32Array(256).map((_, n) => {
 	let c = n;
@@ -58,74 +57,6 @@ const encodePng = (w, h, rgba) => {
 		chunk("IDAT", deflateSync(raw)),
 		chunk("IEND", Buffer.alloc(0)),
 	]);
-};
-const paeth = (a, b, c) => {
-	const p = a + b - c;
-	const pa = Math.abs(p - a);
-	const pb = Math.abs(p - b);
-	const pc = Math.abs(p - c);
-	return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
-};
-const decodePng = (buf) => {
-	let p = 8;
-	let w = 0;
-	let h = 0;
-	let depth = 0;
-	let ctype = 0;
-	let plte = null;
-	let trns = null;
-	const idat = [];
-	while (p < buf.length) {
-		const len = buf.readUInt32BE(p);
-		const type = buf.toString("ascii", p + 4, p + 8);
-		const data = buf.subarray(p + 8, p + 8 + len);
-		if (type === "IHDR") {
-			w = data.readUInt32BE(0);
-			h = data.readUInt32BE(4);
-			depth = data[8];
-			ctype = data[9];
-			if (data[12]) throw new Error("インターレースは読めません");
-		} else if (type === "PLTE") plte = data;
-		else if (type === "tRNS") trns = data;
-		else if (type === "IDAT") idat.push(data);
-		p += 12 + len;
-	}
-	const chans = { 2: 3, 3: 1, 6: 4 }[ctype];
-	if (!chans || (ctype !== 3 && depth !== 8)) throw new Error(`色の形 ${ctype}/${depth} は読めません`);
-	const bpp = Math.max(1, (chans * depth) >> 3);
-	const stride = Math.ceil((w * chans * depth) / 8);
-	const raw = inflateSync(Buffer.concat(idat));
-	const lines = Buffer.alloc(stride * h);
-	for (let y = 0; y < h; y++) {
-		const f = raw[y * (stride + 1)];
-		const src = raw.subarray(y * (stride + 1) + 1, (y + 1) * (stride + 1));
-		const cur = lines.subarray(y * stride, (y + 1) * stride);
-		const prev = y ? lines.subarray((y - 1) * stride, y * stride) : null;
-		for (let i = 0; i < stride; i++) {
-			const a = i >= bpp ? cur[i - bpp] : 0;
-			const b = prev ? prev[i] : 0;
-			const c = prev && i >= bpp ? prev[i - bpp] : 0;
-			const add = [0, a, b, (a + b) >> 1, paeth(a, b, c)][f];
-			cur[i] = (src[i] + add) & 255;
-		}
-	}
-	const rgba = Buffer.alloc(w * h * 4);
-	for (let y = 0; y < h; y++) {
-		const line = lines.subarray(y * stride, (y + 1) * stride);
-		for (let x = 0; x < w; x++) {
-			const o = (y * w + x) * 4;
-			if (ctype === 3) {
-				const per = 8 / depth;
-				const idx = (line[Math.floor(x / per)] >> (8 - depth * ((x % per) + 1))) & ((1 << depth) - 1);
-				plte.copy(rgba, o, idx * 3, idx * 3 + 3);
-				rgba[o + 3] = trns && idx < trns.length ? trns[idx] : 255;
-			} else if (ctype === 2) {
-				line.copy(rgba, o, x * 3, x * 3 + 3);
-				rgba[o + 3] = 255;
-			} else line.copy(rgba, o, x * 4, x * 4 + 4);
-		}
-	}
-	return { w, h, rgba };
 };
 
 // ───────────────── 描く 道具 ─────────────────
@@ -379,27 +310,62 @@ const touketsu = () => {
 	return img;
 };
 
-// ───────────────── 炎上案件：ばくだんの 下から 炎 ─────────────────
+// ───────────────── 炎上案件：燃えている スマホ ─────────────────
 
 const FIRE_RED = hex("#e03800");
 const FIRE_ORANGE = hex("#f89800");
 const FIRE_YELLOW = hex("#f8f000");
-// 列ごとの 炎の 高さ（2コマで 入れかわり、ゆれて 見える）
+const PHONE = hex("#3a3f58");
+const PHONE_LIGHT = hex("#565d7e");
+const SCREEN = hex("#ffd9cf"); // 赤みの 画面（荒れている）
+const SCREEN_SHADE = hex("#f5b8a8");
+const LENS = hex("#9fd3ff");
+// 列（x = 2..13）ごとの 炎の 高さ。2コマで 入れかわり、ゆれて 見える
 const FLAME = [
-	[2, 4, 6, 4, 2, 3, 5, 3, 2, 4, 7, 5, 2, 3, 5, 2],
-	[3, 6, 4, 2, 3, 6, 3, 2, 4, 6, 4, 2, 4, 6, 3, 1],
+	[2, 4, 3, 5, 3, 4, 5, 3, 5, 3, 4, 2],
+	[3, 2, 5, 3, 5, 3, 4, 5, 3, 5, 2, 3],
 ];
 
-const enjo = (bomb) => {
+const enjo = () => {
 	const img = sheet();
-	img.rgba.set(bomb.rgba);
-	for (const row of [0, 1, 2, 3])
-		for (const col of [0, 1])
-			for (let x = 0; x < 16; x++) {
-				const h = FLAME[col][x];
-				for (let t = 0; t < h; t++)
-					img.put(col, row, x, 16 - h + t, t === 0 ? FIRE_RED : t === 1 || x === 0 || x === 15 ? FIRE_ORANGE : FIRE_YELLOW);
+	DIRS.forEach((dir, row) => {
+		for (const col of [0, 1]) {
+			const put = img.put;
+			// 炎（スマホの 上から 立ち、両がわの 肩にも 舌が 出る。スマホが 下を 隠す）
+			FLAME[col].forEach((h, i) => {
+				const x = i + 2;
+				const outer = x === 2 || x === 13;
+				const inner = x === 3 || x === 12;
+				const base = outer ? 8 : inner ? 9 : 5;
+				const top = Math.max(0, (outer ? 8 : inner ? 7 : 5) - h);
+				for (let y = top; y <= base; y++) {
+					const t = y - top;
+					put(col, row, x, y, t === 0 ? FIRE_RED : t === 1 || outer ? FIRE_ORANGE : FIRE_YELLOW);
+				}
+			});
+			// スマホ（x 4..11, y 4..15。たて長）
+			shape(
+				put,
+				col,
+				row,
+				(x, y) => x >= 4 && x <= 11 && y >= 4 && y <= 15 && !((x === 4 || x === 11) && (y === 4 || y === 15)),
+				(x, y) => (x === 5 && y >= 6 && y <= 12 ? PHONE_LIGHT : PHONE),
+			);
+			if (dir === "up") {
+				// 背中：カメラの レンズ
+				put(col, row, 6, 6, LENS);
+				put(col, row, 6, 7, LENS);
+				continue;
 			}
+			// 受話口・画面・ホームバー
+			put(col, row, 7, 5, PHONE_LIGHT);
+			put(col, row, 8, 5, PHONE_LIGHT);
+			for (let y = 6; y <= 13; y++) for (let x = 5; x <= 10; x++) put(col, row, x, y, y === 13 ? SCREEN_SHADE : SCREEN);
+			for (let x = 6; x <= 9; x++) put(col, row, x, 14, PHONE_LIGHT);
+			// 顔は 画面の はばいっぱいなので 向きでは 寄せない
+			angryFace(put, col, row, 5, 8);
+		}
+	});
 	return img;
 };
 
@@ -432,14 +398,12 @@ const opt = (name) => {
 };
 const outDir = resolve(opt("--out") ?? join(HERE, "..", "public/sprites"));
 const previewDir = opt("--preview");
-const bomb = decodePng(Buffer.from(await (await fetch(BOMB_URL)).arrayBuffer()));
-if (bomb.w !== 32 || bomb.h !== 64) throw new Error(`32x64 ではありません: ${bomb.w}x${bomb.h}`);
 for (const [name, img] of [
 	["tsuri", tsuri()],
 	["nenchaku", nenchaku()],
 	["rento", rento()],
 	["touketsu", touketsu()],
-	["enjo", enjo(bomb)],
+	["enjo", enjo()],
 ]) {
 	save(join(outDir, `${name}.png`), img);
 	if (previewDir) save(join(resolve(previewDir), `${name}.png`), scaleOn(img, 8, [88, 120, 72]));
