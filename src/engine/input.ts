@@ -301,7 +301,8 @@ export class Input {
 		}
 		const isDir =
 			key === "up" || key === "down" || key === "left" || key === "right";
-		if (!repeat && !isDir) this.fieldQueue.push(key);
+		// 先に押せるのは 1つだけ（演出中の 連打を ためこむと、敵を 倒した あとも 空振りを 続けてしまう）
+		if (!repeat && !isDir) this.fieldQueue = [key];
 	}
 
 	/**

@@ -1177,6 +1177,9 @@ export class Play {
 			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);
 			if (this.stopped) return ev;
+			// 倒したら、演出中に 押しておいた 次の 攻撃は 捨てる（相手の いない 空振りに ならないように）
+			if (!this.rp && ev.some((e) => e.t === "die"))
+				this.ctx.input.clearField();
 			this.syncDisp();
 			if (!this.rp && !run.s.end) await this.faceAttacker(ev);
 			// スレの「どれに？」（メニューを通さずに来たとき）
