@@ -43,13 +43,25 @@ export const itemLabel = (run: Run, it: Item): string => {
 	return `${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${plusUnknown(it) ? `<span class="unk">${name}</span>` : name}`;
 };
 
-/** 一覧の右に出す小さい数（武器・盾の素の強さ。修正値は名前の +1 のほうに出る。わからなければ ？）。 */
-export const itemSub = (it: Item): string | undefined => {
+/**
+ * 武器・盾の 強さ。修正値が わかっていれば 入れた値（つよさの窓と 同じ。0 より 下には しない）、
+ * わからなければ 素の 強さ（unknown が true）。
+ */
+export const gearPower = (
+	it: Item,
+): { value: number; unknown: boolean } | null => {
 	const d = defOf(it.kind);
-	const q = plusUnknown(it) ? "？" : "";
-	if (d.cat === "weapon") return `強さ${d.atk ?? 0}${q}`;
-	if (d.cat === "shield") return `強さ${d.def ?? 0}${q}`;
-	return undefined;
+	const base =
+		d.cat === "weapon" ? d.atk : d.cat === "shield" ? d.def : undefined;
+	if (base === undefined) return null;
+	if (plusUnknown(it)) return { value: base, unknown: true };
+	return { value: Math.max(0, base + it.plus), unknown: false };
+};
+
+/** 一覧の右に出す小さい数（武器・盾の強さ。修正値が わかれば 入れた値、わからなければ 素の値に ？）。 */
+export const itemSub = (it: Item): string | undefined => {
+	const g = gearPower(it);
+	return g ? `強さ${g.value}${g.unknown ? "？" : ""}` : undefined;
 };
 
 const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
@@ -74,8 +86,18 @@ export const itemInfo = (run: Run, it: Item): string => {
 		`<p><b class="tag">${esc(CAT_NAME[d.cat])}</b>${esc(known ? d.desc : `まだ　正体が　わからない。${HOW_TO_ID[d.cat] ?? ""}`)}</p>`,
 	];
 	const rows: string[] = [];
-	if (d.cat === "weapon" || d.cat === "shield") {
-		rows.push(row("強さ", String((d.cat === "weapon" ? d.atk : d.def) ?? 0)));
+	const g = gearPower(it);
+	if (g) {
+		// 修正値が わかれば 入れた 強さ（素の 強さは かっこで）
+		const base = (d.cat === "weapon" ? d.atk : d.def) ?? 0;
+		rows.push(
+			row(
+				"強さ",
+				g.unknown || it.plus === 0
+					? `${g.value}`
+					: `${g.value}（${base}${signed(it.plus)}）`,
+			),
+		);
 		rows.push(row("修正値", it.known ? signed(it.plus) : "？"));
 	}
 	if (d.cat === "arrow") {
