@@ -419,7 +419,10 @@ export const openInventory = async (
 			(await listWindow(ctx, title, rows, {
 				start,
 				// 整理：分類の順に並べなおす（時間は進まない。並びが変わるので コマンドにして 記録に残す）
-				actions: items.length > 1 ? [{ label: "整理", value: "sort" }] : [],
+				actions:
+					items.length > 1
+						? [{ label: "整理", value: "sort", key: "sort" }]
+						: [],
 			}));
 		jump = null;
 		if (v === null || v === "") return NONE;

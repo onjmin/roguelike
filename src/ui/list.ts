@@ -5,7 +5,7 @@
 // - 2行目に説明（desc）を出せる（名前だけでは効果がわからない、への対策）。
 // - 画面の高さに入りきらない一覧は ページに分ける（◀ ▶・左右キーで めくる。上下で はしを こえると 次のページ）。
 
-import type { Input } from "../engine/input";
+import type { Input, Key } from "../engine/input";
 import { el } from "./dom";
 
 export type UiCtx = {
@@ -148,6 +148,7 @@ const showPage = (
 /**
  * 縦に並ぶ選択ウィンドウ。B・とじる・外のタップで null。
  * actions は とじるの横に並べるボタン（もちものの「整理」など）。押すと その value で閉じる。
+ * key を つけた ボタンは その キー（PC）でも 押せる。
  * header は 題の下・行の上に出す 見るだけの HTML（メインメニューの つよさ）。
  * cols が 2 なら 行を 2 列に並べる（トルネコ1のメニューのように。上下で 段、左右で 列を動く）。
  */
@@ -159,7 +160,7 @@ export const listWindow = (
 		cls?: string;
 		start?: number;
 		closeLabel?: string;
-		actions?: { label: string; value: string }[];
+		actions?: { label: string; value: string; key?: Key }[];
 		header?: string;
 		cols?: number;
 	} = {},
@@ -281,6 +282,9 @@ export const listWindow = (
 					done(items[cur].value);
 				} else if (k === "b") {
 					done(null);
+				} else {
+					const act = opt.actions?.find((a) => a.key === k);
+					if (act) done(act.value);
 				}
 			},
 			{ tap: "b" },

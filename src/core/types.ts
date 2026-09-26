@@ -381,7 +381,8 @@ export type GameEvent =
 	| { t: "heal"; id: number; pos: Pos; amount: number }
 	| { t: "miss"; id: number; pos: Pos }
 	| { t: "die"; id: number; pos: Pos }
-	| { t: "appear"; id: number; pos: Pos }
+	/** 敵が ふえた（from は もとの敵の マス。そこから 分かれて 出てくる）。 */
+	| { t: "appear"; id: number; pos: Pos; from?: Pos }
 	| {
 			t: "bolt";
 			from: Pos;

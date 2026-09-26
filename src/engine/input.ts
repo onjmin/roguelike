@@ -20,7 +20,8 @@ export type Key =
 	| "throw"
 	| "shoot"
 	| "menu"
-	| "stairs";
+	| "stairs"
+	| "sort";
 type Handler = (key: Key, repeat: boolean) => void;
 /**
  * ハンドラを積むときの設定。
@@ -84,6 +85,8 @@ const OTHER_KEYS: Record<string, Key> = {
 	KeyT: "throw",
 	KeyQ: "shoot",
 	KeyV: "stairs",
+	// 持ち物の 整理（Organize。フィールドでも もちものの窓でも）
+	KeyO: "sort",
 };
 
 /**

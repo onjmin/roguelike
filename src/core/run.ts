@@ -867,8 +867,10 @@ export class Run {
 		if (!at) return;
 		const c = spawnMonster(this, mdef(m).id, at, { awake: true });
 		if (c) {
+			// 分かれる 音と 絵（ui/play.ts の appear）を 先に、それから ログ
+			this.se("spell");
+			this.emit({ t: "appear", id: c.uid, pos: at, from: { x: m.x, y: m.y } });
 			this.msg(`${monsterName(this, m)}が　ふえた！`, "warn");
-			this.emit({ t: "appear", id: c.uid, pos: at });
 		}
 	}
 

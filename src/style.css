@@ -447,6 +447,11 @@ body.shake #app {
 	transition: opacity 0.6s;
 }
 
+/* HP が 半分を 切ると 字が 黄色 → 赤（ui/hpInk.ts。--ink は ui/play.ts が 入れる） */
+.log {
+	color: var(--ink, inherit);
+}
+
 .log-line.old {
 	opacity: 0.55;
 }
@@ -500,6 +505,14 @@ body.shake #app {
 
 .status .st-hp.low {
 	color: var(--danger);
+}
+
+.status .st-hp.inked {
+	color: var(--ink);
+}
+
+.status .st-bar.inked i {
+	background: var(--ink);
 }
 
 .status .st-hunger.low {
@@ -729,6 +742,28 @@ body.shake #app {
 .btn,
 .mini {
 	position: relative;
+}
+
+/* PC の キー（マウスの ある 画面だけ。ui/hud.ts） */
+.kbd-hint {
+	display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+	.kbd-hint {
+		display: block;
+		position: absolute;
+		right: -4px;
+		bottom: -6px;
+		padding: 0 3px;
+		font: 10px / 1.4 monospace;
+		color: #fff;
+		background: rgba(0, 0, 0, 0.75);
+		border: 1px solid rgba(255, 255, 255, 0.45);
+		border-radius: 3px;
+		pointer-events: none;
+		z-index: 1;
+	}
 }
 
 .btn::after,
@@ -1181,6 +1216,7 @@ body.shake #app {
 }
 
 .icon-btn {
+	position: relative;
 	width: 44px;
 	height: 44px;
 	border-radius: 10px;
@@ -1223,6 +1259,11 @@ body.shake #app {
 
 .pop.heal {
 	color: var(--hp);
+}
+
+.pop.dup {
+	color: #ffd84a;
+	font-size: 13px;
 }
 
 .pop.miss {

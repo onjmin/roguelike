@@ -105,6 +105,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 				["M", "地図"],
 				["T", "投げる"],
 				["Q", "装備した　矢を　撃つ"],
+				["O", "持ち物を　整理（もちものの　窓でも）"],
 			]),
 	},
 	{

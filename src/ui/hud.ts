@@ -6,6 +6,7 @@
 // - ダッシュは 十字キーの 押しっぱなしで 足りる（歩きつづける）。キーボードでは Shift＋方向
 // - 斜め固定は キーボードの R だけ（十字キーは 8方向）
 // - 向きは 押しながら十字キー（トルネコの Y＋方向）。すぐ離せば 次の1回ぶん
+// - PC（マウスの ある 画面）では ボタンの すみに キーを 小さく 出す（engine/input.ts の キーと 同じ）
 
 import type { Input } from "../engine/input";
 import { onSettingsChange, saveSettings, settings } from "../engine/settings";
@@ -56,6 +57,16 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 		el("div", { class: "top-btns" }, [mute, menu]),
 	]);
 	root.appendChild(hud);
+	// PC の キー（CSS で マウスの ある 画面だけ 見せる）
+	const kbd = (b: HTMLElement, key: string) =>
+		b.appendChild(el("kbd", { class: "kbd-hint", text: key }));
+	kbd(a, "Z");
+	kbd(b, "X");
+	kbd(shoot, "Q");
+	kbd(foot, "G");
+	kbd(map, "M");
+	kbd(turn, "F");
+	kbd(menu, "Esc");
 
 	input.bindPad(pad);
 	input.bindButton(a, "a");
@@ -89,7 +100,9 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	onSettingsChange(sync);
 	const setMode = (mode: "village" | "dungeon") => {
 		hud.classList.toggle("village", mode === "village");
-		b.textContent = mode === "village" ? "メニュー" : "道具";
+		// 文字だけ かえる（すみの キーは 残す）
+		const label = b.firstChild;
+		if (label) label.textContent = mode === "village" ? "メニュー" : "道具";
 	};
 	return { root: hud, status, setMode };
 };

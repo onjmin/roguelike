@@ -40,6 +40,7 @@ import { settings } from "../engine/settings";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
+import { hpInk } from "./hpInk";
 import type { Hud } from "./hud";
 import { itemIcon } from "./icons";
 import { esc } from "./itemText";
@@ -68,6 +69,8 @@ const KIRIKO = "pub:sprites/kiriko.png";
 const SWING_MS = 180;
 /** 長押しの足踏みの間（ms。1秒に 10回ほど）。 */
 const REST_GAP_MS = 100;
+/** 敵が ふえるとき、もとの マスから 分かれ出る 時間（ms）。 */
+const SPLIT_MS = 260;
 /**
  * ログの1行ごとの 最短の間（ms）。1ターンに いくつも起きたとき、行が 一度に 流れて 読めないように
  * （トルネコ1の メッセージ窓のように 1行ずつ 送る。そのあいだ 出来事の再生も 待つ）。
@@ -133,6 +136,12 @@ export class Play {
 	private restHalt = false;
 	/** 押さえて歩くのを 止めている（新しい敵が見えた・傷ついた。指を離すか 押しなおすまで）。 */
 	private walkHalt = false;
+	/**
+	 * この階で もう 見た敵（uid）。押さえて歩く・足踏みを 止めるのは、はじめて 見えた敵だけ
+	 * （見えていた敵が 暗い通路・入口の 外へ 出て また 見えただけでは 止めない。同時に 動く敵で 止まりつづけた）。
+	 */
+	private spotted = new Set<number>();
+	private spottedOn: Floor | null = null;
 	/** 自動で歩きだしたときの 入力の番号（そのあと 何かに さわったら 止める）。 */
 	private autoSerial = -1;
 	/** 地図で タップして選んだ 行き先（閉じる前に 一瞬 光らせる）。 */
@@ -490,7 +499,9 @@ export class Play {
 		if (this.hud.root.classList.contains("on-stairs") !== onStairs) {
 			this.hud.root.classList.toggle("on-stairs", onStairs);
 			const foot = this.hud.root.querySelector(".mini-foot");
-			if (foot) foot.textContent = onStairs ? "階段" : "足元";
+			// 文字だけ かえる（PC の すみの キーは 残す）
+			const label = foot?.firstChild;
+			if (label) label.textContent = onStairs ? "階段" : "足元";
 		}
 		const p = run.p;
 		const hunger = Math.ceil(p.hunger / HUNGER_UNIT);
@@ -507,12 +518,16 @@ export class Play {
 		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${p.hp}|${p.maxHp}|${hunger}|${left}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
-		const low = p.hp <= p.maxHp / 4;
+		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
+		const ink = hpInk(p.hp, p.maxHp);
+		if (ink) this.logEl.style.setProperty("--ink", ink);
+		else this.logEl.style.removeProperty("--ink");
+		this.hud.status.style.cssText = ink ? `--ink:${ink}` : "";
 		const depthLabel = `${run.s.returning ? "↑" : ""}B${this.shownFloor?.depth ?? run.s.depth}`;
 		this.hud.status.innerHTML =
 			`<div class="st-row"><span class="st-depth">${depthLabel}</span><span>Lv${p.lv}</span>` +
-			`<span class="st-hp${low ? " low" : ""}">HP ${p.hp}/${p.maxHp}</span></div>` +
-			`<div class="st-bar${low ? " low" : ""}"><i style="width:${Math.round((p.hp / p.maxHp) * 100)}%"></i></div>` +
+			`<span class="st-hp${ink ? " inked" : ""}">HP ${p.hp}/${p.maxHp}</span></div>` +
+			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((p.hp / p.maxHp) * 100)}%"></i></div>` +
 			`<div class="st-row"><span class="st-hunger${hunger <= 10 ? " low" : ""}">満腹 ${hunger}%</span>` +
 			(left >= 0
 				? `<span class="st-cards">のこり札 ${left}</span>`
@@ -650,6 +665,28 @@ export class Play {
 		if (this.travel) void this.travelStep();
 	}
 
+	/**
+	 * となりの敵に なぐられたら そちらを向く（シレンと 同じ。A で すぐ なぐり返せるように）。
+	 * 規則（core）は かえず、ふつうの「向く」コマンドとして 出す（時間は 進まない。リプレイにも 残るので
+	 * 前の リプレイも そのまま 再生できる）。何匹かに なぐられたら 最後の 敵。
+	 */
+	private async faceAttacker(ev: readonly GameEvent[]): Promise<void> {
+		const run = this.run;
+		const p = run.p;
+		for (let i = ev.length - 1; i >= 0; i--) {
+			const e = ev[i];
+			if (e.t !== "attack" || e.id === PLAYER_ID) continue;
+			const m = run.f.monsters.find((x) => x.uid === e.id);
+			if (!m || !run.monsterVisible(m) || m.disguise || dist(p, m) !== 1)
+				continue;
+			const d = dirOf(m.x - p.x, m.y - p.y);
+			if (d === null || d === p.dir) return;
+			await this.playEvents(run.act({ c: "turn", dir: d }), true);
+			this.syncDisp();
+			return;
+		}
+	}
+
 	/** 自動で歩くのを止めた入力を 捨てる（十字キーは 一度はなすまで 歩かない）。 */
 	private swallowInput(): void {
 		const input = this.ctx.input;
@@ -715,16 +752,26 @@ export class Play {
 	 */
 	private async walkStep(dir: Dir8): Promise<void> {
 		const run = this.run;
-		const seen = new Set(
-			run.f.monsters.filter((m) => run.monsterVisible(m)).map((m) => m.uid),
-		);
+		this.spotNew();
 		const hp = run.p.hp;
 		await this.exec({ c: "move", dir });
-		if (
-			run.p.hp < hp ||
-			run.f.monsters.some((m) => run.monsterVisible(m) && !seen.has(m.uid))
-		)
-			this.walkHalt = true;
+		if (this.spotNew() || run.p.hp < hp) this.walkHalt = true;
+	}
+
+	/** いま 見えている敵のうち、この階で はじめて 見えた敵が いたか（見たと 覚える）。 */
+	private spotNew(): boolean {
+		const run = this.run;
+		if (this.spottedOn !== run.s.floor) {
+			this.spottedOn = run.s.floor;
+			this.spotted.clear();
+		}
+		let fresh = false;
+		for (const m of run.f.monsters)
+			if (run.monsterVisible(m) && !this.spotted.has(m.uid)) {
+				this.spotted.add(m.uid);
+				fresh = true;
+			}
+		return fresh;
 	}
 
 	/**
@@ -733,17 +780,11 @@ export class Play {
 	 */
 	private async restStep(): Promise<void> {
 		const run = this.run;
-		const seen = new Set(
-			run.f.monsters.filter((m) => run.monsterVisible(m)).map((m) => m.uid),
-		);
+		this.spotNew();
 		const hp = run.p.hp;
 		const floor = run.s.floor;
 		await this.exec({ c: "wait" });
-		if (
-			run.p.hp < hp ||
-			run.s.floor !== floor ||
-			run.f.monsters.some((m) => run.monsterVisible(m) && !seen.has(m.uid))
-		)
+		if (run.p.hp < hp || run.s.floor !== floor || this.spotNew())
 			this.restHalt = true;
 	}
 
@@ -773,6 +814,10 @@ export class Play {
 				return;
 			case "stairs":
 				if (run.onStairs()) await this.exec({ c: "stairs" });
+				return;
+			case "sort":
+				// 持ち物の 整理（PC の O キー。時間は 進まない）
+				if (run.p.items.length > 1) await this.exec({ c: "sort" });
 				return;
 			case "shoot":
 				// 装備した矢を 向いている方へ 1本（トルネコ1と同じ）
@@ -984,13 +1029,10 @@ export class Play {
 				return;
 			}
 		}
-		// 離れた敵をタップしたら、歩かずに その敵の名前と ようすを出す（はじめて見る敵の特技がわかるように）
+		// 離れた敵をタップしたら 歩かない。まっすぐ 並んでいれば そちらを向く
+		// （時間は進まない。矢・杖・投げるの ねらいに。敵の 解説は 出さない。図鑑で 見られる）
 		const far = run.monsterAt(x, y);
 		if (far && run.monsterVisible(far) && !far.disguise && dist(p, far) > 1) {
-			const d0 = mdef(far);
-			this.addLog(`${d0.name}：${d0.desc}`);
-			this.ctx.se("cursor");
-			// まっすぐ 並んでいれば そちらを向く（時間は進まない。矢・杖・投げるの ねらいに）
 			const dx = far.x - p.x;
 			const dy = far.y - p.y;
 			if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
@@ -1084,6 +1126,7 @@ export class Play {
 			await this.playEvents(ev, fast);
 			if (this.stopped) return ev;
 			this.syncDisp();
+			if (!this.rp && !run.s.end) await this.faceAttacker(ev);
 			// スレの「どれに？」（メニューを通さずに来たとき）
 			const pick = ev.find((e) => e.t === "fx" && e.kind.startsWith("pick:"));
 			// （リプレイでは 次のコマンドに えらんだ相手が入っている）
@@ -1522,22 +1565,38 @@ export class Play {
 					// ふえた敵だけ足す（ほかのキャラの動きの途中を崩さない）
 					const m = this.run.f.monsters.find((x) => x.uid === e.id);
 					if (m && !this.disp.has(e.id)) {
+						// 見えていれば もとの敵の マスから 光って 分かれ出る（コピペ。ふえたのが わかるように）
+						const from = e.from && this.run.monsterVisible(m) ? e.from : null;
+						const now = performance.now();
 						this.disp.set(e.id, {
 							id: e.id,
 							sprite: mdef(m).sprite,
-							fx: e.pos.x,
-							fy: e.pos.y,
+							fx: from?.x ?? e.pos.x,
+							fy: from?.y ?? e.pos.y,
 							tx: e.pos.x,
 							ty: e.pos.y,
-							keys: [{ x: e.pos.x, y: e.pos.y, t: 0 }],
+							keys: from
+								? [
+										{ x: from.x, y: from.y, t: now },
+										{ x: e.pos.x, y: e.pos.y, t: now + SPLIT_MS },
+									]
+								: [{ x: e.pos.x, y: e.pos.y, t: 0 }],
 							dir: m.dir,
 							lunge: 0,
 							lungeT0: 0,
-							flashUntil: 0,
+							flashUntil: from ? now + SPLIT_MS + 260 : 0,
 							fade: 0,
 							fadeT0: 0,
 							dying: false,
 						});
+						if (from) {
+							const orig = [...this.disp.values()].find(
+								(d) => d.id !== e.id && d.tx === from.x && d.ty === from.y,
+							);
+							if (orig) orig.flashUntil = now + SPLIT_MS + 260;
+							this.pop(from, "コピペ", "dup");
+							await wait(SPLIT_MS + 60);
+						}
 					}
 					break;
 				}
