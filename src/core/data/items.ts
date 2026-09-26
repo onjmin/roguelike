@@ -181,7 +181,7 @@ add({
 add({
 	id: "h_heal",
 	cat: "herb",
-	name: "笑い草",
+	name: "草",
 	desc: "HPが　25　回復（満タンなら　最大HP＋1）",
 });
 add({
