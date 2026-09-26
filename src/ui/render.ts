@@ -40,6 +40,22 @@ export type DrawOpts = {
 		angle: number;
 		alpha: number;
 	} | null;
+	/** 自動で歩いている 行き先（小さな輪）。 */
+	travel?: { x: number; y: number } | null;
+	/** 向きを変えるあいだの ねらいの線（向いている先の マス。hit は 当たる敵のマス）。 */
+	aim?: {
+		cells: { x: number; y: number }[];
+		hit: { x: number; y: number } | null;
+	} | null;
+	/**
+	 * 見えている敵で、画面の 見える所（上のステータスと 下のボタンを のぞく。ソース画素）の外にいる敵。
+	 * 画面の はしに 小さな 赤い印を出す。
+	 */
+	edge?: {
+		threats: { x: number; y: number }[];
+		top: number;
+		bottom: number;
+	} | null;
 };
 
 /** 画面に描くキャラ（キリコ・モンスター）。 */
@@ -320,6 +336,42 @@ export class FloorView {
 			ctx.restore();
 		}
 
+		// 自動で歩いている 行き先
+		if (opts.travel) {
+			ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+			ctx.lineWidth = 1;
+			ctx.beginPath();
+			ctx.arc(
+				opts.travel.x * TILE + TILE / 2 - ox,
+				opts.travel.y * TILE + TILE / 2 - oy,
+				4.5,
+				0,
+				Math.PI * 2,
+			);
+			ctx.stroke();
+		}
+		// 向きを変えるあいだの ねらいの線（矢・杖・投げた物の 通り道。当たる敵は 赤い枠）
+		if (opts.aim) {
+			ctx.fillStyle = "rgba(255, 207, 74, 0.35)";
+			for (const c of opts.aim.cells)
+				ctx.fillRect(
+					c.x * TILE + TILE / 2 - 1.5 - ox,
+					c.y * TILE + TILE / 2 - 1.5 - oy,
+					3,
+					3,
+				);
+			if (opts.aim.hit) {
+				ctx.strokeStyle = "rgba(255, 80, 96, 0.9)";
+				ctx.lineWidth = 1;
+				ctx.strokeRect(
+					opts.aim.hit.x * TILE - ox + 0.5,
+					opts.aim.hit.y * TILE - oy + 0.5,
+					TILE - 1,
+					TILE - 1,
+				);
+			}
+		}
+
 		// キリコの向き（歩行グラは4方向しかなく、斜めの向きが絵では わからないので印を出す）
 		if (me && me.fade <= 0 && !opts.grave && !opts.overhead) {
 			const d = me.dir;
@@ -356,6 +408,28 @@ export class FloorView {
 			ctx.fill();
 			ctx.stroke();
 		}
+
+		// 画面の外（上のステータス・下のボタンの裏も）にいる 見えている敵：はしに 小さな 赤い三角
+		if (opts.edge)
+			for (const t of opts.edge.threats) {
+				const sx = t.x * TILE + TILE / 2 - ox;
+				const sy = t.y * TILE + TILE / 2 - oy;
+				const left = 6;
+				const right = screen.width - 6;
+				const top = opts.edge.top + 6;
+				const bottom = opts.edge.bottom - 6;
+				if (sx >= left && sx <= right && sy >= top && sy <= bottom) continue;
+				const ex = Math.min(right, Math.max(left, sx));
+				const ey = Math.min(bottom, Math.max(top, sy));
+				const a = Math.atan2(sy - ey, sx - ex);
+				ctx.fillStyle = "rgba(255, 80, 96, 0.9)";
+				ctx.beginPath();
+				ctx.moveTo(ex + Math.cos(a) * 5, ey + Math.sin(a) * 5);
+				ctx.lineTo(ex + Math.cos(a + 2.4) * 4, ey + Math.sin(a + 2.4) * 4);
+				ctx.lineTo(ex + Math.cos(a - 2.4) * 4, ey + Math.sin(a - 2.4) * 4);
+				ctx.closePath();
+				ctx.fill();
+			}
 
 		// ただよう粒（層ごとの雰囲気。霧の下に描くので、見えている所にだけ出る）
 		drawAmbient(
@@ -503,24 +577,32 @@ const mapGeometry = (
 	};
 };
 
-/** 地図の上で タップした所（画面の座標）の マス。地図の外なら null。 */
+/** 地図の上で タップした所（画面の座標）の マスと、1マスの CSS 画素。地図の外なら null。 */
 export const mapTileAt = (
 	canvas: HTMLCanvasElement,
 	s: RunState,
 	clientX: number,
 	clientY: number,
-): { x: number; y: number } | null => {
+): { x: number; y: number; cellCss: number } | null => {
 	const l = s.floor.layout;
 	const g = mapGeometry(canvas, l);
 	const x = Math.floor(((clientX - g.rect.left) * g.dpr - g.mx) / g.cell);
 	const y = Math.floor(((clientY - g.rect.top) * g.dpr - g.my) / g.cell);
-	return x >= 0 && y >= 0 && x < l.w && y < l.h ? { x, y } : null;
+	return x >= 0 && y >= 0 && x < l.w && y < l.h
+		? { x, y, cellCss: g.cell / g.dpr }
+		: null;
 };
 
 export const drawMap = (
 	canvas: HTMLCanvasElement,
 	s: RunState,
-	opt: { visibleMonsters: { x: number; y: number }[] },
+	opt: {
+		visibleMonsters: { x: number; y: number }[];
+		/** タップで選んだ 行き先（地図を閉じる前に 一瞬 光らせる）。 */
+		mark?: { x: number; y: number } | null;
+		/** 途中で止まった 行き先（タップすると 続きを 歩く）。 */
+		resume?: { x: number; y: number } | null;
+	},
 ): void => {
 	const f = s.floor;
 	const l = f.layout;
@@ -570,4 +652,28 @@ export const drawMap = (
 			dot(fi.x, fi.y, "#5ff0ff", Math.floor(cell / 4));
 	for (const m of opt.visibleMonsters) dot(m.x, m.y, "#ff5060");
 	dot(s.player.x, s.player.y, "#ffcf4a");
+	if (opt.resume) {
+		ctx.strokeStyle = "rgba(255, 207, 74, 0.9)";
+		ctx.lineWidth = Math.max(1, cell / 4);
+		ctx.strokeRect(
+			mx + opt.resume.x * cell - cell * 0.5,
+			my + opt.resume.y * cell - cell * 0.5,
+			cell * 2,
+			cell * 2,
+		);
+	}
+	if (opt.mark) {
+		const r = Math.max(cell * 1.6, 8);
+		ctx.strokeStyle = "#ffffff";
+		ctx.lineWidth = Math.max(2, cell / 3);
+		ctx.beginPath();
+		ctx.arc(
+			mx + (opt.mark.x + 0.5) * cell,
+			my + (opt.mark.y + 0.5) * cell,
+			r,
+			0,
+			Math.PI * 2,
+		);
+		ctx.stroke();
+	}
 };

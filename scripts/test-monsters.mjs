@@ -26,10 +26,14 @@ try {
 		"/src/sim/replayTests.ts",
 	);
 	const { runTownTests } = await server.ssrLoadModule("/src/sim/townTests.ts");
+	const { runVillageTests } = await server.ssrLoadModule(
+		"/src/sim/villageTests.ts",
+	);
 	const results = [
 		...runMonsterTests(),
 		...runReplayTests(),
 		...runTownTests(),
+		...runVillageTests(),
 	];
 	for (const t of results)
 		console.log(

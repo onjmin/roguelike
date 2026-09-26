@@ -150,12 +150,31 @@ const toDir4 = (d: Dir8): Dir =>
 				? "right"
 				: "left";
 
+const DIR4_TRY: readonly (readonly Dir[])[] = [
+	["up"],
+	["up", "right"],
+	["right"],
+	["down", "right"],
+	["down"],
+	["down", "left"],
+	["left"],
+	["up", "left"],
+];
+
+/**
+ * 4方向で歩くマップ（村）で、8方向の入力を 試す順に並べた向き。
+ * 斜めは 縦を先に、だめなら 横へ すべる（ドラクエの 斜め押し）。
+ */
+export const dir4Candidates = (d: Dir8): readonly Dir[] => DIR4_TRY[d];
+
 /** 画面を これより長く押さえたら「押しっぱなしで歩く」、短ければタップ。 */
 const FIELD_HOLD_MS = 220;
 /** 十字キーの まん中を これより長く押さえたら 足踏み（トルネコの A＋B 押しっぱなし）。 */
 const PAD_REST_MS = 350;
 /** 窓が開いてから、外のタップで閉じられるようになるまで（ms）。 */
 const WINDOW_TAP_GRACE_MS = 300;
+/** 画面を押して これより 指が動いたら、タップではなく なぞり（CSS 画素。半マスほど）。 */
+const TAP_SLOP_PX = 16;
 
 /** 指を追い続ける（取れない環境では何もしない。処理を止めないように）。 */
 const capture = (el: HTMLElement, id: number): void => {
@@ -179,7 +198,7 @@ export class Input {
 	private pendingDir: Dir8 | null = null;
 	/** 斜めの片方を離した時刻。 */
 	private releasedAt = 0;
-	/** 画面（マップ）を押さえている指。 */
+	/** 画面（マップ）を押さえている指。held は 押さえて歩くのに 使ったか。 */
 	private fieldPtr: {
 		id: number;
 		x0: number;
@@ -187,7 +206,15 @@ export class Input {
 		x: number;
 		y: number;
 		t0: number;
+		held: boolean;
 	} | null = null;
+	/**
+	 * 何かを押すたびに ふえる番号（走る・自動で歩く のを、さわったら 止めるのに使う）。
+	 * 指を動かしているだけ（pointermove）では ふえない。
+	 */
+	serial = 0;
+	/** 画面を押さえて 歩けるか（地図を開いているあいだは 押さえても歩かず、離したときの タップにする）。 */
+	fieldHoldEnabled = true;
 	private handlers: { fn: Handler; tap: Key | null; at: number }[] = [];
 	private fieldQueue: Key[] = [];
 	private keyMods: Mods = { dash: false, diag: false, turn: false };
@@ -258,6 +285,7 @@ export class Input {
 	/** 押した瞬間のキーを配る。 */
 	press(key: Key, repeat = false): void {
 		this.onAnyInput?.();
+		if (!repeat) this.serial++;
 		const top = this.handlers[this.handlers.length - 1];
 		if (top) {
 			// 窓の中では メニューのキーは「とじる」
@@ -407,6 +435,7 @@ export class Input {
 		el.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
 			this.onAnyInput?.();
+			this.serial++;
 			active = e.pointerId;
 			capture(el, e.pointerId);
 			update(e);
@@ -493,6 +522,7 @@ export class Input {
 				return;
 			}
 			const p = rel(e);
+			this.serial++;
 			this.fieldPtr = {
 				id: e.pointerId,
 				x0: p.x,
@@ -500,6 +530,7 @@ export class Input {
 				x: p.x,
 				y: p.y,
 				t0: performance.now(),
+				held: false,
 			};
 			capture(el, e.pointerId);
 		});
@@ -513,8 +544,12 @@ export class Input {
 			const f = this.fieldPtr;
 			if (!f || f.id !== e.pointerId) return;
 			this.fieldPtr = null;
-			// すぐ離したらタップ（押しっぱなしで歩いていたなら何もしない）
-			if (performance.now() - f.t0 < FIELD_HOLD_MS && !this.handlers.length)
+			// タップ：押して歩くのに 使っておらず（すぐ離した か、地図を開いていて 押さえても 歩かないとき）、
+			// 指が ほとんど動いていない（なぞった のは タップにしない）
+			const quick =
+				performance.now() - f.t0 < FIELD_HOLD_MS || !this.fieldHoldEnabled;
+			const still = Math.hypot(f.x - f.x0, f.y - f.y0) < TAP_SLOP_PX;
+			if (!f.held && quick && still && !this.handlers.length)
 				this.onFieldTap?.(f.x0, f.y0);
 		};
 		el.addEventListener("pointerup", end);
@@ -527,8 +562,9 @@ export class Input {
 	 */
 	fieldHold(): { x: number; y: number } | null {
 		const f = this.fieldPtr;
-		if (!f || this.handlers.length) return null;
+		if (!f || this.handlers.length || !this.fieldHoldEnabled) return null;
 		if (performance.now() - f.t0 < FIELD_HOLD_MS) return null;
+		f.held = true;
 		return { x: f.x, y: f.y };
 	}
 }

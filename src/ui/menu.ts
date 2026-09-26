@@ -25,9 +25,11 @@ import { el } from "./dom";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
 	infoWindow,
+	justOpened,
 	keepInView,
 	type ListItem,
 	listWindow,
+	markOpened,
 	paginate,
 } from "./list";
 import { openStatus } from "./statusView";
@@ -68,6 +70,8 @@ const ghostList = (
 	title: string,
 	rows: ListItem[],
 	cur: number,
+	/** ほかの道具の行を タップしたら（その道具の メニューへ 切りかえる）。 */
+	onPick?: (value: string) => void,
 ): (() => void) => {
 	const box = el("div", { class: "menu window ghost" });
 	if (title) box.appendChild(el("div", { class: "menu-title", html: title }));
@@ -79,12 +83,24 @@ const ghostList = (
 		if (it.desc) b.classList.add("has-desc");
 		if (it.disabled) b.classList.add("disabled");
 		if (i === cur) b.classList.add("cur");
+		b.dataset.value = it.value;
 		box.appendChild(b);
 		return b;
 	});
 	box.addEventListener("pointerdown", (e) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (justOpened(box)) return;
+		// ほかの道具の行なら その道具へ 切りかえる（とじて もう一度 押さなくてよい）。それ以外は とじる
+		const row = (e.target as HTMLElement).closest<HTMLElement>(".menu-item");
+		const v = row?.dataset.value;
+		if (
+			onPick &&
+			v &&
+			v !== rows[cur]?.value &&
+			!row?.classList.contains("disabled")
+		)
+			onPick(v);
 		ctx.input.press("b");
 	});
 	// うしろの一覧と 同じページを見せる（入りきらない一覧は ページに分けてある）
@@ -94,6 +110,7 @@ const ghostList = (
 	box.appendChild(pager);
 	box.appendChild(el("div", { class: "menu-close", text: "とじる" }));
 	ctx.ui.appendChild(box);
+	markOpened(box);
 	const pages = paginate(box, els, pager);
 	if (pages.length > 1) {
 		const p = Math.max(
@@ -252,6 +269,9 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 				: { label: "装備する", value: "equip" },
 		);
 	else rows.push({ label: USE_VERB[cat], value: "use" });
+	// 並びは いつも同じ（使う → せつめい → 投げる → 置く …）。せつめいを はさんで、よく使う 1行目の すぐ下に
+	// 取り返しのつかない「投げる」が 来ないように（シレンのスマホ版の「壺投げ」の 反省）
+	rows.push({ label: "せつめい", value: "info" });
 	rows.push({ label: cat === "arrow" ? "撃つ" : "投げる", value: "throw" });
 	const p = run.p;
 	const under = run.itemAt(p.x, p.y);
@@ -274,7 +294,6 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	// 名前をつける：文字を打たずに、候補（山札にある まだ正体のわからない種類）から選ぶ
 	if (isUnidentifiedCat(it.kind) && !isKnownKind(run.s, it.kind))
 		rows.push({ label: "名前をつける", value: "name" });
-	rows.push({ label: "せつめい", value: "info" });
 	return rows;
 };
 
@@ -376,22 +395,33 @@ const itemActions = async (
 };
 
 /** もちもの。 */
+/** 前に もちもので 選んだ道具（次に開いたとき そこから。ページも そこになる）。 */
+let lastItemUid: number | null = null;
+
 export const openInventory = async (
 	ctx: Ctx,
 	run: Run,
 ): Promise<MenuAction> => {
-	let start = 0;
+	let start = Math.max(
+		0,
+		run.p.items.findIndex((it) => it.uid === lastItemUid),
+	);
+	/** うしろの一覧で ほかの道具を タップした（一覧を出さずに その道具の メニューへ）。 */
+	let jump: string | null = null;
 	for (;;) {
 		const items = run.p.items;
 		const title = `もちもの　${items.length}/${INVENTORY_MAX}`;
 		const rows = items.length
 			? items.map((it) => itemRow(run, it))
 			: [emptyRow("何も　持っていない")];
-		const v = await listWindow(ctx, title, rows, {
-			start,
-			// 整理：分類の順に並べなおす（時間は進まない。並びが変わるので コマンドにして 記録に残す）
-			actions: items.length > 1 ? [{ label: "整理", value: "sort" }] : [],
-		});
+		const v =
+			jump ??
+			(await listWindow(ctx, title, rows, {
+				start,
+				// 整理：分類の順に並べなおす（時間は進まない。並びが変わるので コマンドにして 記録に残す）
+				actions: items.length > 1 ? [{ label: "整理", value: "sort" }] : [],
+			}));
+		jump = null;
 		if (v === null || v === "") return NONE;
 		if (v === "sort")
 			return { kind: "command", cmd: { c: "sort" }, reopen: "items" };
@@ -399,10 +429,15 @@ export const openInventory = async (
 		start = Math.max(0, idx);
 		const it = run.findItem(Number(v));
 		if (!it) continue;
+		lastItemUid = it.uid;
+		const pick = { v: null as string | null };
 		const a = await itemActions(ctx, run, it, () =>
-			ghostList(ctx, title, rows, idx),
+			ghostList(ctx, title, rows, idx, (val) => {
+				pick.v = val;
+			}),
 		);
 		if (a.kind !== "none") return a;
+		jump = pick.v;
 	}
 };
 

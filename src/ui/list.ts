@@ -23,32 +23,38 @@ export type ListItem = {
 	disabled?: boolean;
 };
 
-/** 指でなぞって巻き取れるか（はみ出していて、しかも overflow で巻き取る箱か）。 */
-const canScroll = (s: HTMLElement): boolean => {
-	if (s.scrollHeight <= s.clientHeight + 1) return false;
-	const o = getComputedStyle(s).overflowY;
-	return o === "auto" || o === "scroll";
+/** 窓が開いてから この間の タップは 数えない（前の窓で 続けて押した タップで、開いたばかりの 窓の行を 決めないように）。 */
+export const ROW_GRACE_MS = 250;
+
+/** 窓を 画面に置いた時刻を 覚えておく（onTap の 猶予に使う）。 */
+export const markOpened = (box: HTMLElement): void => {
+	box.dataset.openedAt = String(performance.now());
 };
 
+/** 窓が 開いたばかりか（開いてから ROW_GRACE_MS より前）。 */
+export const justOpened = (box: HTMLElement): boolean =>
+	performance.now() - Number(box.dataset.openedAt ?? 0) < ROW_GRACE_MS;
+
 /**
- * タップで決める。ふつうは押した瞬間に決まるが、はみ出して巻き取れる一覧では、
- * 指でなぞって巻き取れるよう、ほとんど動かさずに離したときに決める。
+ * タップで決める。押して、指を ほとんど動かさずに 離したときに決める（押したまま 行の外へ なぞれば 取り消し）。
+ * 窓が 開いたばかりの あいだに 押したものは 数えない（二度押しで 開いたばかりの「投げる」「降りる」を 押さないように）。
  */
 export const onTap = (
 	b: HTMLElement,
 	scroller: HTMLElement,
 	fn: () => void,
 ): void => {
-	let from: { id: number; y: number } | null = null;
+	let from: { id: number; x: number; y: number } | null = null;
 	b.addEventListener("pointerdown", (e) => {
 		e.preventDefault();
 		e.stopPropagation();
-		if (canScroll(scroller)) from = { id: e.pointerId, y: e.clientY };
-		else fn();
+		from = justOpened(scroller)
+			? null
+			: { id: e.pointerId, x: e.clientX, y: e.clientY };
 	});
 	b.addEventListener("pointerup", (e) => {
 		if (!from || from.id !== e.pointerId) return;
-		const moved = Math.abs(e.clientY - from.y);
+		const moved = Math.hypot(e.clientX - from.x, e.clientY - from.y);
 		from = null;
 		if (moved < 10) fn();
 	});
@@ -243,6 +249,7 @@ export const listWindow = (
 			render();
 		};
 		ctx.ui.appendChild(box);
+		markOpened(box);
 		pages = paginate(box, buttons, pager);
 		render();
 		const pop = ctx.input.push(
@@ -303,6 +310,7 @@ export const infoWindow = (
 		onTap(close, box, () => done());
 		box.appendChild(close);
 		ctx.ui.appendChild(box);
+		markOpened(box);
 		const pop = ctx.input.push(
 			(k, repeat) => {
 				if ((k === "a" || k === "b") && !repeat) done();

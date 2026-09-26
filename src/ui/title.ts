@@ -10,38 +10,19 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item, RunState } from "../core/types";
-import {
-	pickQuote,
-	type Quote,
-	type QuoteContext,
-	SPEAKERS,
-} from "../data/quotes";
-import {
-	CLEAR,
-	DUNGEON_NAMES,
-	FIRST_SHALLOW,
-	SHALLOW_DEATH,
-	STORY,
-	TITLE_CAMEOS,
-} from "../data/story";
-import {
-	ESCAPE_QUOTES,
-	STAGE_NAMES,
-	TITLE_TOWN_QUOTES,
-	TOWN_NAME,
-} from "../data/town";
+import { SPEAKERS } from "../data/quotes";
+import { DUNGEON_NAMES, STORY, TITLE_CAMEOS } from "../data/story";
+import { STAGE_NAMES, TOWN_NAME } from "../data/town";
 import {
 	addRecord,
 	clearRun,
 	hasRunSave,
 	loadProgress,
-	loadRecords,
 	loadRun,
 	loadTown,
 	notePicked,
 	noteRunEnd,
 	recordFromRun,
-	runStats,
 	type SavedReplay,
 } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
@@ -61,6 +42,7 @@ import {
 } from "./records";
 import { openSettings } from "./settings";
 import { drawTown, TOWN_H, TOWN_W } from "./town";
+import { DUNGEON_DESC, lockedHint, titleQuote } from "./villageTalk";
 
 export type TitleChoice =
 	| { kind: "new"; dungeon: DungeonId; carry: Item[] }
@@ -91,21 +73,6 @@ const cameos = (cleared: readonly DungeonId[]): string[] => {
 		.filter(Boolean);
 };
 
-/** ダンジョンの ひとことの説明（選ぶ窓）。 */
-const DUNGEON_DESC: Record<DungeonId, string> = {
-	shallow: "10階。杖だけ　名前が　わからない。のろいも　祭りも　ない",
-	main: "20階。草・スレ・トリップ・杖の　名前が　わからない",
-	deep: "30階。特大おにぎりと　◆腹いっぱいが　出ない。罠が　多い",
-};
-
-/** まだ開いていないダンジョンの 開き方。 */
-const lockedHint = (d: DungeonId): string => {
-	const after = DUNGEONS[d].unlockAfter;
-	if (!after) return "";
-	const relief = DUNGEONS[d].reliefAfter;
-	return `「${DUNGEON_NAMES[after].name}」を　持ち帰ると　開く${relief ? `（${relief}回　たおれても　開く）` : ""}`;
-};
-
 type Choice =
 	| "new"
 	| "continue"
@@ -125,45 +92,6 @@ const gridFor = (storage: boolean): Choice[][] => [
 	storage ? ["records", "book", "storage"] : ["records", "book"],
 	["howto", "settings"],
 ];
-
-/**
- * タイトルの ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
- * 無ければ 本編の たまり（data/quotes.ts の pickQuote）。
- */
-const titleQuote = (seed: number): Quote | null => {
-	const last = loadRecords()[0];
-	const pick = (pool: readonly Quote[], salt: number) =>
-		pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
-	if (!last) return pick(FIRST_SHALLOW, 1);
-	const d = last.dungeon ?? "main";
-	if (last.kind === "escape") return pick(ESCAPE_QUOTES, 4);
-	// ときどき 町の様子の ひとこと（屋台が出てから）
-	const stage = loadTown().stage;
-	if (stage >= 1 && seed % 3 === 0)
-		return pick(TITLE_TOWN_QUOTES[stage] ?? [], 5);
-	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
-	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
-		return pick(SHALLOW_DEATH, 3);
-	return pickQuote(quoteContext(), seed);
-};
-
-/** いちばん新しい記録から、タイトルの一言の手がかりを作る。 */
-const quoteContext = (): QuoteContext => {
-	const last = loadRecords()[0];
-	if (!last) return null;
-	const st = runStats();
-	return {
-		kind: last.kind,
-		// 持ち帰ったときの depth は地上の手前（1）なので、いちばん深い階を渡す
-		depth: last.kind === "clear" ? last.maxDepth : last.depth,
-		cause: last.cause,
-		runs: st.runs,
-		// 本編の たまり（「また 行ってきたんか」）なので、本編を 持ち帰った回数だけ（ちょっと・もっと は 数えない）
-		clears: loadRecords().filter(
-			(r) => r.kind === "clear" && (r.dungeon ?? "main") === "main",
-		).length,
-	};
-};
 
 export const showTitle = (ctx: Ctx): Promise<TitleChoice> =>
 	new Promise((resolve) => {

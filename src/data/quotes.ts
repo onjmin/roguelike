@@ -234,17 +234,24 @@ const at = (
 /**
  * タイトル画面の ひとこと。前の冒険の結果から たまりを選び、seed で1つ引く
  * （同じ seed なら 同じセリフ）。null は まだ一度も降りていないとき。
+ * who を渡すと その人の セリフだけから引く（村で 話しかけたとき。その人の分が 無い たまりなら null）。
  */
-export const pickQuote = (last: QuoteContext, seed: number): Quote | null => {
-	if (!last) return at(FIRST, seed, 1);
+export const pickQuote = (
+	last: QuoteContext,
+	seed: number,
+	who?: Speaker,
+): Quote | null => {
+	const pick = (pool: readonly Quote[], salt: number) =>
+		at(who ? pool.filter((x) => x.who === who) : pool, seed, salt);
+	if (!last) return pick(FIRST, 1);
 	if (last.kind === "clear") {
 		const again = last.clears >= 2 && mix(seed, 2) % 2 === 0;
-		return at(again ? CLEAR_AGAIN : CLEAR, seed, 3);
+		return pick(again ? CLEAR_AGAIN : CLEAR, 3);
 	}
-	if (last.runs >= 10 && mix(seed, 4) % 4 === 0) return at(MANY, seed, 5);
+	if (last.runs >= 10 && mix(seed, 4) % 4 === 0) return pick(MANY, 5);
 	const cause = CAUSE_POOLS.find((c) => c.match(last.cause))?.pool;
-	if (cause && mix(seed, 6) % 3 !== 0) return at(cause, seed, 7);
-	return at(depthPool(last.depth), seed, 8);
+	if (cause && mix(seed, 6) % 3 !== 0) return pick(cause, 7);
+	return pick(depthPool(last.depth), 8);
 };
 
 // ───────────────── はじめて降りる前 ─────────────────

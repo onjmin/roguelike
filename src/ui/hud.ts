@@ -15,6 +15,11 @@ export type Hud = {
 	root: HTMLElement;
 	/** 上のステータス行。 */
 	status: HTMLElement;
+	/**
+	 * 村（保守村）と ダンジョンで ボタンを 切りかえる。村では ステータス行・小さいボタン・矢を 隠し、
+	 * B は「メニュー」（村に 道具は 無い）。
+	 */
+	setMode(mode: "village" | "dungeon"): void;
 };
 
 export const mountHud = (root: HTMLElement, input: Input): Hud => {
@@ -82,5 +87,9 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	};
 	sync();
 	onSettingsChange(sync);
-	return { root: hud, status };
+	const setMode = (mode: "village" | "dungeon") => {
+		hud.classList.toggle("village", mode === "village");
+		b.textContent = mode === "village" ? "メニュー" : "道具";
+	};
+	return { root: hud, status, setMode };
 };

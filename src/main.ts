@@ -1,4 +1,5 @@
 // 起動：画面・入力・音を組み立て、タイトル → 冒険 → タイトル… を回す。
+// URL に ?village を付けると、タイトルの かわりに 歩ける村（保守村）→ 冒険 → 村… を回す（作りかけ）。
 
 import "./style.css";
 import { EXP_AT } from "./core/balance";
@@ -6,6 +7,7 @@ import { Run } from "./core/run";
 import { bgm } from "./data/bgm";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
+import type { VillageExit } from "./engine/defs";
 import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
@@ -20,6 +22,7 @@ import { mountHud } from "./ui/hud";
 import { Play } from "./ui/play";
 import { showProgressNews } from "./ui/records";
 import { showTitle } from "./ui/title";
+import { type Arrival, Village } from "./ui/village";
 
 const app = document.getElementById("app");
 if (!app) throw new Error("#app がありません");
@@ -180,4 +183,75 @@ const loop = async () => {
 	}
 };
 
-void loop();
+/** 村を出て 冒険を 作る（旧タイトルと 同じ。倉庫から 取り出すのは ここ）。 */
+const runFor = (
+	choice: VillageExit,
+): { run: Run; replay: SavedReplay | undefined } => {
+	if (choice.kind === "replay") {
+		// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
+		const replay = choice.replay;
+		return {
+			run: Run.create(
+				replay.seed,
+				replay.dungeon ?? "main",
+				replay.carry ?? [],
+			),
+			replay,
+		};
+	}
+	if (choice.kind === "new") {
+		// 冒険を作って すぐ保存する（取り出したのに 冒険が無い、にならないように）。
+		// 選んだあとで 別のタブが 持っていった道具は 持っていけない
+		const carry = choice.carry.length ? takeFromStorage(choice.carry) : [];
+		const run = Run.create(newSeed(), choice.dungeon, carry);
+		if (carry.length) saveRun(run.s);
+		return { run, replay: undefined };
+	}
+	return { run: new Run(choice.state), replay: undefined };
+};
+
+/**
+ * 歩ける村（?village のときだけ）：村 → 冒険 → 村…。
+ * 起動したときと 中断したあとは 村の上に 起動の札（はじめる／つづきから）を出す。
+ */
+const villageLoop = async () => {
+	const village = new Village(ctx, screen, hud);
+	if (import.meta.env.DEV)
+		(window as unknown as { __village: Village }).__village = village;
+	let first = devRun();
+	let boot = true;
+	let arrival: Arrival = null;
+	for (;;) {
+		let run = first;
+		first = null;
+		let replay: SavedReplay | undefined;
+		if (!run) {
+			hud.setMode("village");
+			const choice = await village.start({ boot, arrival });
+			boot = false;
+			({ run, replay } = runFor(choice));
+		}
+		hud.setMode("dungeon");
+		hud.root.classList.remove("hidden");
+		if (import.meta.env.DEV) (window as unknown as { __run: Run }).__run = run;
+		const play = new Play(run, ctx, screen, hud, { replay });
+		if (import.meta.env.DEV)
+			(window as unknown as { __play: Play }).__play = play;
+		const r = await play.start();
+		// 中断は トルネコの「終わる」：起動の札に もどる
+		if (r === "suspend") boot = true;
+		arrival = replay
+			? { kind: "replay" }
+			: r === "suspend"
+				? { kind: "suspend" }
+				: run.s.end
+					? { kind: run.s.end.kind, dungeon: run.s.dungeon }
+					: null;
+		const c = screen.begin();
+		c.fillStyle = "#000";
+		c.fillRect(0, 0, screen.width, screen.height);
+	}
+};
+
+if (new URLSearchParams(location.search).has("village")) void villageLoop();
+else void loop();

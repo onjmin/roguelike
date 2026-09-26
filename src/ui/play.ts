@@ -131,6 +131,14 @@ export class Play {
 	private shownFloor: Floor | null = null;
 	/** 長押しの足踏みを 止めている（指を離すまで）。 */
 	private restHalt = false;
+	/** 押さえて歩くのを 止めている（新しい敵が見えた・傷ついた。指を離すか 押しなおすまで）。 */
+	private walkHalt = false;
+	/** 自動で歩きだしたときの 入力の番号（そのあと 何かに さわったら 止める）。 */
+	private autoSerial = -1;
+	/** 地図で タップして選んだ 行き先（閉じる前に 一瞬 光らせる）。 */
+	private mapMark: Pos | null = null;
+	/** 途中で止まった 自動の歩きの 行き先（地図に 印を出し、そこを タップすれば 続きを 歩く）。 */
+	private lastTravel: Pos | null = null;
 	/** 向きを変えたあと、方向がはなされるのを待っている。 */
 	private waitRelease = false;
 	/** 食べる・飲む・読むときに キリコの頭の上に出す道具。 */
@@ -231,6 +239,7 @@ export class Play {
 
 	private stop(): void {
 		this.stopped = true;
+		this.ctx.input.fieldHoldEnabled = true;
 		this.screen.canvas.classList.remove("dead");
 		this.deathEl?.remove();
 		this.rp?.bar?.remove();
@@ -352,7 +361,11 @@ export class Play {
 			const vis = this.run.f.monsters.filter(
 				(m) => this.run.monsterVisible(m) && !m.disguise,
 			);
-			drawMap(this.mapEl, this.run.s, { visibleMonsters: vis });
+			drawMap(this.mapEl, this.run.s, {
+				visibleMonsters: vis,
+				mark: this.mapMark,
+				resume: this.lastTravel,
+			});
 		}
 	}
 
@@ -447,6 +460,9 @@ export class Play {
 			fakeItems,
 			{
 				strong: this.ctx.input.mods().turn,
+				travel: this.travel,
+				aim: this.ctx.input.mods().turn ? this.aimLine() : null,
+				edge: this.edgeThreats(),
 				overhead: this.useFx && overheadPose(this.useFx, t),
 				grave: this.grave && {
 					x: this.grave.x,
@@ -544,6 +560,14 @@ export class Play {
 		const input = this.ctx.input;
 		if (input.busy) return;
 		if (!input.restHeld()) this.restHalt = false;
+		// 自動で歩いている（タップ・地図のタップ）あいだに 何かに さわったら 止める。
+		// さわった入力は 捨てる（止めるつもりの 十字キーで 1歩・A で 空振り、に ならないように）
+		if (this.travel && input.serial !== this.autoSerial) {
+			this.lastTravel = this.travel;
+			this.travel = null;
+			this.swallowInput();
+			return;
+		}
 		const key = input.takeField();
 		if (key) {
 			this.travel = null;
@@ -551,6 +575,12 @@ export class Play {
 			return;
 		}
 		const held = input.heldDir();
+		// 押さえて歩いている途中で 新しい敵が見えた・傷ついたら、指を離すまで 止まる（押しなおせば 歩ける）
+		if (this.walkHalt) {
+			if (input.pendingDirPress) this.walkHalt = false;
+			else if (held === null && !input.fieldHold()) this.walkHalt = false;
+			else return;
+		}
 		// 向きを変えたあとは、方向を一度はなすまで歩かない
 		// （向きボタンをはなした瞬間に、押したままの方へ歩きださないように）
 		if (this.waitRelease) {
@@ -583,7 +613,7 @@ export class Play {
 			if (mods.diag && !isDiagonal(dir)) return;
 			this.lastStepAt = t;
 			if (mods.dash) void this.dash(dir);
-			else void this.exec({ c: "move", dir });
+			else void this.walkStep(dir);
 			return;
 		}
 		// 十字キーの まん中を 長押し：足踏み（押さえているあいだ 続ける。トルネコの A＋B 押しっぱなし）
@@ -614,10 +644,87 @@ export class Play {
 					? want
 					: (this.passableNear(want, 1) ?? want);
 			this.lastStepAt = t;
-			void this.exec({ c: "move", dir });
+			void this.walkStep(dir);
 			return;
 		}
 		if (this.travel) void this.travelStep();
+	}
+
+	/** 自動で歩くのを止めた入力を 捨てる（十字キーは 一度はなすまで 歩かない）。 */
+	private swallowInput(): void {
+		const input = this.ctx.input;
+		input.takeDirPress();
+		input.clearField();
+		this.waitRelease = true;
+	}
+
+	/** 自動で歩きだす（タップ・地図のタップ）。このあと 何かに さわったら 止まる。 */
+	private startTravel(to: Pos): void {
+		this.travel = to;
+		this.lastTravel = null;
+		this.autoSerial = this.ctx.input.serial;
+	}
+
+	/** 向いている先の マス（壁か 見えている敵まで。敵がいれば hit）。向きを変えるあいだの ねらいの線。 */
+	private aimLine(): {
+		cells: Pos[];
+		hit: Pos | null;
+	} {
+		const run = this.run;
+		const cells: Pos[] = [];
+		let at: Pos = { x: run.p.x, y: run.p.y };
+		for (let i = 0; i < 12; i++) {
+			const nx = step(at, run.p.dir);
+			if (!isFloor(run.f.layout, nx.x, nx.y)) break;
+			const m = run.monsterAt(nx.x, nx.y);
+			if (m && run.monsterVisible(m) && !m.disguise) return { cells, hit: nx };
+			cells.push(nx);
+			at = nx;
+		}
+		return { cells, hit: null };
+	}
+
+	/** 見えている敵と、画面の 見える所（上のステータス・下のボタンを のぞく）の 上下（ソース画素）。 */
+	private edgeThreats(): {
+		threats: Pos[];
+		top: number;
+		bottom: number;
+	} | null {
+		if (this.rp) return null;
+		const run = this.run;
+		const threats = run.f.monsters
+			.filter((m) => run.monsterVisible(m) && !m.disguise)
+			.map((m) => ({ x: m.x, y: m.y }));
+		if (!threats.length) return null;
+		const k = this.screen.tileCss / TILE;
+		const controls = this.hud.root.classList.contains("hidden")
+			? 0
+			: Number.parseFloat(
+					getComputedStyle(this.hud.root).getPropertyValue("--controls-h"),
+				) || 0;
+		return {
+			threats,
+			top: 56 / k,
+			bottom: this.screen.height - controls / k,
+		};
+	}
+
+	/**
+	 * 押さえて歩く 1歩。新しい敵が見えた・傷ついたら、指を離すまで 止める
+	 * （縦持ちのスマホは 横に10マスほどしか見えず、敵に 気づくのが おくれるので）。
+	 */
+	private async walkStep(dir: Dir8): Promise<void> {
+		const run = this.run;
+		const seen = new Set(
+			run.f.monsters.filter((m) => run.monsterVisible(m)).map((m) => m.uid),
+		);
+		const hp = run.p.hp;
+		await this.exec({ c: "move", dir });
+		if (
+			run.p.hp < hp ||
+			run.f.monsters.some((m) => run.monsterVisible(m) && !seen.has(m.uid))
+		)
+			this.walkHalt = true;
 	}
 
 	/**
@@ -687,6 +794,8 @@ export class Play {
 	private toggleMap(): void {
 		this.mapOn = !this.mapOn;
 		this.mapEl.classList.toggle("shown", this.mapOn);
+		// 地図を開いているあいだは 画面を押さえても 歩かない（ゆっくり押しても タップになる）
+		this.ctx.input.fieldHoldEnabled = !this.mapOn;
 		this.ctx.se("cursor");
 	}
 
@@ -736,13 +845,82 @@ export class Play {
 			this.toggleMap();
 			return;
 		}
-		const target = this.nearKnownFloor(at.x, at.y, 2);
+		// 小さい地図では 階段や道具の点に ぴったり触れないので、指の幅（約 20 CSS 画素）の中の 階段・道具に 寄せる
+		const target =
+			this.mapPoint(at.x, at.y, Math.max(1, Math.ceil(20 / at.cellCss))) ??
+			this.nearKnownFloor(at.x, at.y, 2);
 		if (!target) {
 			this.ctx.se("cancel");
 			return;
 		}
-		this.toggleMap();
-		this.travel = target;
+		// 選んだ所を 一瞬 光らせてから 閉じて 歩きだす
+		this.ctx.se("cursor");
+		this.mapMark = target;
+		setTimeout(() => {
+			this.mapMark = null;
+			if (this.stopped) return;
+			if (this.mapOn) this.toggleMap();
+			this.startTravel(target);
+		}, 170);
+	}
+
+	/** 地図の (x, y) のまわり radius マスで いちばん近い 階段か 見えている道具（自分のいるマスは のぞく）。 */
+	private mapPoint(x: number, y: number, radius: number): Pos | null {
+		const run = this.run;
+		const f = run.f;
+		const l = f.layout;
+		const p = run.p;
+		const seenItem = new Set(run.s.seen);
+		const pts: Pos[] = [];
+		if (this.lastTravel) pts.push(this.lastTravel);
+		if (f.seen[f.stairs.y * l.w + f.stairs.x]) pts.push(f.stairs);
+		for (const fi of f.items)
+			if (
+				f.senseItems ||
+				(f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid))
+			)
+				pts.push(fi);
+		let best: Pos | null = null;
+		let bd = 99;
+		for (const q of pts) {
+			if (q.x === p.x && q.y === p.y) continue;
+			const d = Math.max(Math.abs(q.x - x), Math.abs(q.y - y));
+			if (d <= radius && d < bd) {
+				bd = d;
+				best = { x: q.x, y: q.y };
+			}
+		}
+		return best;
+	}
+
+	/** 画面の点（canvas の CSS 画素）が、十字キー・A/B・小さいボタンの まわり 24 画素の中か。 */
+	private nearControls(cssX: number, cssY: number): boolean {
+		const r = this.screen.canvas.getBoundingClientRect();
+		const cx = r.left + cssX;
+		const cy = r.top + cssY;
+		const pad = 24;
+		for (const e of this.hud.root.querySelectorAll<HTMLElement>(
+			".pad, .ab .btn, .minis .mini",
+		)) {
+			if (!e.offsetParent) continue; // 隠れている
+			const b = e.getBoundingClientRect();
+			if (
+				cx >= b.left - pad &&
+				cx <= b.right + pad &&
+				cy >= b.top - pad &&
+				cy <= b.bottom + pad
+			)
+				return true;
+		}
+		return false;
+	}
+
+	/** 見えている敵が n マス以内にいるか。 */
+	private enemyWithin(n: number): boolean {
+		const run = this.run;
+		return run.f.monsters.some(
+			(m) => run.monsterVisible(m) && !m.disguise && dist(m, run.p) <= n,
+		);
 	}
 
 	/** (x, y) か、そのまわり radius マスの中で いちばん近い 知っている床（自分のいるマスは のぞく）。 */
@@ -779,6 +957,12 @@ export class Play {
 			this.mapTap(cssX, cssY);
 			return;
 		}
+		// 下のボタン（十字キー・A/B・小さいボタン）の すぐそばの タップは、敵が近くにいれば 歩かない
+		// （A を押しそこねて 敵のそばで 歩きだす・走りだす のを ふせぐ）
+		if (this.nearControls(cssX, cssY) && this.enemyWithin(3)) {
+			this.ctx.se("cancel");
+			return;
+		}
 		const sc = this.screen;
 		const src = sc.cssToSource(cssX, cssY);
 		const x = Math.floor((src.x + this.camX) / TILE);
@@ -806,6 +990,13 @@ export class Play {
 			const d0 = mdef(far);
 			this.addLog(`${d0.name}：${d0.desc}`);
 			this.ctx.se("cursor");
+			// まっすぐ 並んでいれば そちらを向く（時間は進まない。矢・杖・投げるの ねらいに）
+			const dx = far.x - p.x;
+			const dy = far.y - p.y;
+			if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
+				const fd = dirOf(Math.sign(dx), Math.sign(dy));
+				if (fd !== null && fd !== p.dir) void this.exec({ c: "turn", dir: fd });
+			}
 			return;
 		}
 		// まだ見ていない所（暗い通路の先など）を 2マス以上 先にタップしたら、その方へ 何かあるまで走る
@@ -829,7 +1020,7 @@ export class Play {
 				void this.exec({ c: "move", dir: td });
 				return;
 			}
-			this.travel = target;
+			this.startTravel(target);
 			return;
 		}
 		// 見ていない所（通路の先など）をタップしたら、その方へ 何かあるまで走る（通路の角はついていく）
@@ -1488,6 +1679,7 @@ export class Play {
 	private async floorCard(first: boolean): Promise<void> {
 		const run = this.run;
 		this.shownFloor = null;
+		this.lastTravel = null;
 		this.view.invalidate();
 		this.syncDisp(true);
 		this.travel = null;
@@ -1648,8 +1840,14 @@ export class Play {
 			return;
 		}
 		let dir = d;
+		const serial = this.ctx.input.serial;
 		for (let n = 0; n < 60; n++) {
 			if (this.stopped) return;
+			// 走っているあいだに 何かに さわったら 止まる（さわった入力は 捨てる）
+			if (n > 0 && this.ctx.input.serial !== serial) {
+				this.swallowInput();
+				return;
+			}
 			const snap = this.snapshot();
 			if (n > 0 && snap.monsters > 0) return;
 			if (
@@ -1716,6 +1914,7 @@ export class Play {
 		if (!ev.length || this.shouldStop(snap, ev, false)) {
 			const arrived = run.p.x === to.x && run.p.y === to.y;
 			this.travel = null;
+			this.lastTravel = arrived ? null : to;
 			if (arrived || snap.monsters === 0) await this.askStairs();
 		}
 	}
