@@ -37,11 +37,21 @@ const plusUnknown = (it: Item): boolean => {
 /**
  * 一覧の名前（HTML）。装備中なら頭に E。
  * 修正値の わからない 武器・盾は 名前を黄色に（トルネコ1と同じ。装備するか 鑑定すると 白に もどり、+1 などが つく）。
+ * 名前を つけた 未識別の 道具は 水色に（仮の 名前と 見わける。正体が わかると 白に もどる）。
  */
 export const itemLabel = (run: Run, it: Item): string => {
 	const name = esc(run.name(it));
-	return `${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${plusUnknown(it) ? `<span class="unk">${name}</span>` : name}`;
+	const cls = plusUnknown(it)
+		? "unk"
+		: isNamedKind(run, it.kind)
+			? "named"
+			: "";
+	return `${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${cls ? `<span class="${cls}">${name}</span>` : name}`;
 };
+
+/** 名前を つけた まま、まだ 正体の わからない 種類。 */
+const isNamedKind = (run: Run, kind: string): boolean =>
+	!!run.s.ids.named[kind] && !isKnownKind(run.s, kind);
 
 /**
  * 武器・盾の 強さ。修正値が わかっていれば 入れた値（つよさの窓と 同じ。0 より 下には しない）、

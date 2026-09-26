@@ -661,6 +661,11 @@ body.shake #app {
 	color: #f5d76e;
 }
 
+/* 名前を つけた 未識別の 道具（仮の 名前と 見わける。正体が わかると 白に もどる） */
+.named {
+	color: var(--mp);
+}
+
 .menu {
 	position: absolute;
 	top: calc(60px + var(--safe-t));

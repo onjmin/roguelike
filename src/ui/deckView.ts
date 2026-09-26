@@ -79,7 +79,9 @@ const deckHtml = (run: Run): string => {
 			if (defOf(k).cat !== cat || isKnownKind(s, k)) continue;
 			const fake = s.ids.fake[k] ?? defOf(k).name;
 			const named = s.ids.named[k];
-			const shown = named ? `${fake}（${named}？）` : fake;
+			const shown = named
+				? `${esc(fake)}<span class="named">（${esc(named)}？）</span>`
+				: esc(fake);
 			groups.set(shown, (groups.get(shown) ?? 0) + n);
 		}
 		if (!groups.size) continue;
@@ -87,9 +89,7 @@ const deckHtml = (run: Run): string => {
 			'<tr><td class="sub-head" colspan="3">正体の　わからない　札</td></tr>',
 		);
 		for (const [shown, n] of [...groups].sort((a, b) => b[1] - a[1]))
-			rows.push(
-				`<tr><td>${esc(shown)}</td><td></td><td class="num">${n}</td></tr>`,
-			);
+			rows.push(`<tr><td>${shown}</td><td></td><td class="num">${n}</td></tr>`);
 	}
 	out.push(`<table>${rows.join("")}</table>`);
 	out.push(
