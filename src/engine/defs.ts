@@ -153,6 +153,8 @@ export type Story = {
 		opt?: { speed?: number },
 	): Promise<void>;
 	face(target: string, dir: Dir | "player"): void;
+	/** 人（イベント ID）が 見えていて、キリコから r マス以内（たて・よこ・ななめの 大きい方）に いるか。 */
+	near(target: string, r: number): boolean;
 	/**
 	 * カメラを 人（イベント ID。歩けば ついていく）か マスに 向ける。null で キリコに もどす。
 	 * ゆっくり 動いて 着いたら 解決する。instant なら すぐ（暗転の 中で）。

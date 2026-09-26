@@ -14,6 +14,8 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
+import { SEASONS, season } from "../data/calendar";
+import { MOB_IDS, MOBS, type MobLine, SENKYO } from "../data/mobs";
 import {
 	pickQuote,
 	type Quote,
@@ -31,6 +33,7 @@ import {
 } from "../data/story";
 import {
 	ESCAPE_QUOTES,
+	OPENING,
 	RETURN_PAGES,
 	STAGE_NAMES,
 	STAGE_UP,
@@ -60,6 +63,20 @@ import {
 	type RunRecord,
 	type Town,
 } from "../engine/save";
+import {
+	forgetMobMemo,
+	hasMobNews,
+	idleOf,
+	mobScript,
+	reactionOf,
+	senkyoOpen,
+	senkyoScript,
+} from "../ui/villageMobs";
+import {
+	forgetOpeningMemo,
+	needsOpening,
+	openingScript,
+} from "../ui/villageOpening";
 import {
 	lineUp,
 	newsScript,
@@ -369,11 +386,15 @@ const swapStorage = (write: boolean): (() => void) => {
 	});
 	forgetProgressMemo();
 	forgetHeardMemo();
+	forgetMobMemo();
+	forgetOpeningMemo();
 	return () => {
 		if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 		else delete (globalThis as { localStorage?: unknown }).localStorage;
 		forgetProgressMemo();
 		forgetHeardMemo();
+		forgetMobMemo();
+		forgetOpeningMemo();
 	};
 };
 
@@ -737,6 +758,8 @@ const fakeStory = (
 		at?: readonly [number, number];
 		onSay?: (n: number) => void;
 		pick?: number;
+		/** キリコの 近くに いる 人。 */
+		near?: readonly string[];
 	} = {},
 ) => {
 	const log: string[] = [];
@@ -792,6 +815,7 @@ const fakeStory = (
 			log.push(`goto ${target} ${x},${y}`);
 		},
 		face: () => {},
+		near: (id) => o.near?.includes(id) ?? false,
 		look: async (target) => {
 			log.push(
 				`look ${target === null ? "kiriko" : typeof target === "string" ? target : target.join(",")}`,
@@ -1135,6 +1159,210 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 	});
 });
 
+// ───────────────── おんJマイナーズ（ui/villageMobs.ts） ─────────────────
+
+test("おんJマイナーズ: lines fit the window, one talk is at most 4 windows, companions only chime in", () => {
+	const texts: [string, string][] = [];
+	const talk = (where: string, ls: readonly MobLine[]) => {
+		ok(ls.length >= 1 && ls.length <= 4, `${where}: ${ls.length} windows`);
+		ls.forEach((l, i) => {
+			texts.push([`${where}[${i}]`, l.text]);
+		});
+	};
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		talk(`${id}.meet`, d.meet);
+		if (d.ask) {
+			talk(`${id}.ask`, d.ask.lines);
+			talk(`${id}.ask.yes`, d.ask.yes);
+			talk(`${id}.ask.no`, d.ask.no);
+		}
+		for (const [k, v] of Object.entries(d.milestones))
+			talk(`${id}.milestones.${k}`, v ?? []);
+		ok(d.chats.length >= 3, `${id}: only ${d.chats.length} chats`);
+		for (const c of d.chats) {
+			talk(`${id}.chats.${c.key}`, c.lines);
+			// with の 話は その仲間が 話す
+			if (c.with)
+				ok(
+					c.lines.some((l) => l.who === c.with),
+					`${id}.chats.${c.key}: ${c.with} never speaks`,
+				);
+			// 仲間が 近くに いなくても 1窓は 本人か 地の文
+			ok(
+				c.lines.some((l) => l.who === "mob" || l.who === null),
+				`${id}.chats.${c.key}: only companions speak`,
+			);
+		}
+		// 仲間が いなくても 見られる 雑談が ある（「！」の もと）
+		ok(
+			d.chats.some((c) => !c.with),
+			`${id}: every chat needs a companion`,
+		);
+		if (d.thx.length) talk(`${id}.thx`, d.thx);
+		for (const s of SEASONS) {
+			const line = d.season[s];
+			if (line) texts.push([`${id}.season.${s}`, line]);
+		}
+		for (const [k, v] of Object.entries(d.react))
+			texts.push([`${id}.react.${k}`, v]);
+		const idle = typeof d.idle === "string" ? [d.idle] : d.idle;
+		ok(idle.length === 1 || idle.length === 7, `${id}: idle by weekday`);
+		idle.forEach((l, i) => {
+			texts.push([`${id}.idle[${i}]`, l]);
+		});
+	}
+	for (const [k, v] of Object.entries(SENKYO))
+		texts.push([`SENKYO.${k}`, fill(v, { name: "おんすちゃん" })]);
+	fitsWindow(texts);
+});
+
+test("おんJマイナーズ move in one by one as the town grows", () => {
+	for (const v of VIEWS) {
+		const here = villagePlaces(v).filter((p) => p.mob);
+		const want = MOB_IDS.filter((id) => MOBS[id].from <= v.stage);
+		ok(
+			here.length === want.length,
+			`${label(v)}: ${here.map((p) => p.id).join()}`,
+		);
+	}
+	const froms = MOB_IDS.map((id) => MOBS[id].from);
+	ok(
+		new Set(froms).size === froms.length &&
+			froms.every((f) => f >= 1 && f < TOWN_STAGES),
+		`move-in stages: ${froms}`,
+	);
+});
+
+/** 今日が 期間限定なら その子の ひとこと（反応・いつもの より 先に 出る）。 */
+const seasonalToday = (d: (typeof MOBS)[keyof typeof MOBS]): string | null => {
+	const s = season();
+	return (s && d.season[s]) || null;
+};
+
+test("a mob: hello first, then one new talk per return, then a reaction and the usual line", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"]);
+		putTown({ stage: 7 });
+		const id = "panmatsu";
+		const d = MOBS[id];
+		const plain = (line: string) => `say null: ${seasonalToday(d) ?? line}`;
+		ok(hasMobNews(id), "no 「！」 before meeting");
+		const a = fakeStory({ near: ["roze"] });
+		await mobScript(id)(a.s);
+		ok(
+			a.log[0] === `say null: ${d.meet[0]?.text}` &&
+				a.log[1] === `say roze: ${d.meet[1]?.text}`,
+			`meet:\n${a.log.join("\n")}`,
+		);
+		ok(!hasMobNews(id), "「！」 stays after meeting");
+		// 同じ 帰りの あいだは 新しい話は 出ない（まだ もぐっていないので 反応も ない）
+		const b = fakeStory();
+		await mobScript(id)(b.s);
+		ok(b.log.join() === plain(idleOf(d)), `same return:\n${b.log.join("\n")}`);
+		// 帰ってきた：新しい話（ロゼが 近くに いないので ロゼとの 話は とばす）
+		pushRecord({ kind: "dead", cause: "おなかが　すいて　たおれた" });
+		ok(hasMobNews(id), "no 「！」 after a return");
+		const c = fakeStory();
+		await mobScript(id)(c.s);
+		const plainChat = d.chats.find((x) => !x.with);
+		ok(
+			c.log[0] === `say null: ${plainChat?.lines[0]?.text}` &&
+				!c.log.some((l) => l.startsWith("say roze")),
+			`plain chat:\n${c.log.join("\n")}`,
+		);
+		ok(!hasMobNews(id), "「！」 stays after the new talk");
+		// 次は 前の冒険への 反応（おなかが すいて）、そのあと いつもの
+		const e = fakeStory();
+		await mobScript(id)(e.s);
+		ok(e.log.join() === plain(d.react.starve ?? ""), `reaction: ${e.log}`);
+		const f = fakeStory();
+		await mobScript(id)(f.s);
+		ok(f.log.join() === plain(idleOf(d)), `idle: ${f.log.join()}`);
+		// 次の 帰り：ロゼが 近ければ ロゼとの 話
+		pushRecord({ kind: "clear", dungeon: "shallow" });
+		const g = fakeStory({ near: ["roze"] });
+		await mobScript(id)(g.s);
+		ok(
+			g.log[0] === `say roze: ${d.chats[0]?.lines[0]?.text}`,
+			`with roze:\n${g.log.join("\n")}`,
+		);
+		// 原盤を 持ち帰ったら 節目が 先
+		setProgress(["shallow", "main"], [], ["shallow", "main"]);
+		pushRecord({ kind: "clear", dungeon: "main" });
+		const h = fakeStory();
+		await mobScript(id)(h.s);
+		ok(
+			h.log[0] === `say null: ${d.milestones.main?.[0]?.text}`,
+			`milestone:\n${h.log.join("\n")}`,
+		);
+		ok(reactionOf(d) === d.react.clear, "reaction to a clear");
+		// 見た話は くり返さない（ぜんぶ 見たら 反応か 期間限定）
+		const heard = new Set<string>();
+		for (let i = 0; i < 12; i++) {
+			pushRecord({ kind: "escape" });
+			const t = fakeStory({ near: ["roze", "nanj", "rei"] });
+			await mobScript(id)(t.s);
+			const first = t.log[0] ?? "";
+			ok(
+				!heard.has(first) || first === plain(d.react.escape),
+				`repeated: ${first}`,
+			);
+			heard.add(first);
+		}
+		ok(!hasMobNews(id), "「！」 after every talk was heard");
+	});
+});
+
+test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick once", async () => {
+	await withStorageAsync(async () => {
+		putTown({ stage: 7 });
+		const d = MOBS.onsu;
+		const no = fakeStory({ pick: 1 });
+		await mobScript("onsu")(no.s);
+		ok(
+			no.log.includes(`say null: ${d.ask?.no[0]?.text}`),
+			`declined:\n${no.log.join("\n")}`,
+		);
+		ok(!hasMobNews("onsu"), "「！」 while she waits for a post");
+		const yes = fakeStory({ pick: 0 });
+		await mobScript("onsu")(yes.s);
+		ok(
+			yes.log[0] === `say null: ${d.ask?.lines[0]?.text}` &&
+				yes.log.includes(`narrate: ${d.ask?.yes[0]?.text}`),
+			`wrote:\n${yes.log.join("\n")}`,
+		);
+		// 1人だけでは はり紙は 出ない
+		ok(!senkyoOpen(), "the poster is up with one candidate");
+		await mobScript("nichie")(fakeStory().s);
+		ok(senkyoOpen(), "no poster after meeting two");
+		// 1票（候補は 表の順：にぃちぇ・おんすちゃん）
+		const v = fakeStory({ pick: 0, near: ["rei"] });
+		await senkyoScript(v.s);
+		ok(
+			v.log.includes(`narrate: ${fill(SENKYO.done, { name: "にぃちぇ" })}`) &&
+				v.log.includes(`say rei: ${SENKYO.rei}`),
+			`vote:\n${v.log.join("\n")}`,
+		);
+		const again = fakeStory();
+		await senkyoScript(again.s);
+		ok(
+			again.log.includes(
+				`narrate: ${fill(SENKYO.voted, { name: "にぃちぇ" })}`,
+			) && !again.log.some((l) => l.startsWith("choose")),
+			`voted twice:\n${again.log.join("\n")}`,
+		);
+		ok(hasMobNews("nichie"), "no 「！」 for the thanks");
+		const t = fakeStory();
+		await mobScript("nichie")(t.s);
+		const thx = `say null: ${MOBS.nichie.thx[0]?.text}`;
+		ok(t.log.join() === thx, `thanks:\n${t.log.join("\n")}`);
+		const t2 = fakeStory();
+		await mobScript("nichie")(t2.s);
+		ok(!t2.log.includes(thx), "thanked twice");
+	});
+});
+
 export const runVillageTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];
 	for (const c of CASES) {
@@ -1152,3 +1380,35 @@ export const runVillageTests = async (): Promise<TestResult[]> => {
 	}
 	return out;
 };
+
+test("the very first village: premise, おんJ民 points at the left mouth, the goal — once", async () => {
+	const texts: [string, string][] = [];
+	for (const [k, v] of Object.entries(OPENING))
+		v.forEach((t, i) => {
+			texts.push([`OPENING.${k}[${i}]`, t]);
+		});
+	fitsWindow(texts);
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		ok(needsOpening(), "no opening on the first boot");
+		const a = fakeStory();
+		await openingScript(a.s);
+		ok(
+			inOrder(a.log, [
+				`narrate: ${OPENING.premise[0]}`,
+				"look nanj",
+				`say nanj: ${OPENING.nanjCall[0]}`,
+				`look ${VILLAGE_SPOTS.mouth.shallow.join(",")}`,
+				"look kiriko",
+				`narrate: ${OPENING.goal[0]}`,
+			]),
+			`opening:\n${a.log.join("\n")}`,
+		);
+		ok(!needsOpening(), "the opening plays twice");
+	});
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		pushRecord({});
+		ok(!needsOpening(), "the opening plays after a run");
+	});
+});

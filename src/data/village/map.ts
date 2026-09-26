@@ -9,6 +9,8 @@
 // - 本編が まだ 開いていないうちは、おんJ民が 本編の口の前（11,4）に 立って ふさぐ（そこしか 口へ 行けない）。
 //   開いたら 小屋の前（12,11）で 大工を する。もっとの口は 開くまで 板で ふさぐ（m）。
 // - 人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人 うろうろ する。
+// - おんJマイナーズ（data/mobs.ts）は 町が 育つと 1人ずつ 越してくる（段1 にぃちぇ 13,13・段2 パン松 8,11・
+//   段3 ンゴ姉 19,15・段4 おんすちゃん 20,5・段5 おんちゃん 12,15・段6 ヤヤポジ 2,15）。どこも 口への 道の 外。
 // - 帰ってきたとき 仲間が 口の前に 並ぶ マス（lineupSpots）と、町が 育ったとき カメラを 向ける 所（VILLAGE_SPOTS.growth）。
 //
 // 段ごとの 区画（前の段の物は 形を かえて 残る）
@@ -45,6 +47,7 @@ import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, TOUSUKO_WALK, YAJI_WALK } from "../cast";
+import { MOB_IDS, MOBS, type MobId } from "../mobs";
 import type { Speaker } from "../quotes";
 import {
 	base,
@@ -312,6 +315,8 @@ export type VillagePlace = {
 	who?: Speaker;
 	/** 口・立て札なら その ダンジョン。 */
 	dungeon?: DungeonId;
+	/** おんJマイナーズなら その子。 */
+	mob?: MobId;
 };
 
 const friend = (who: Speaker, [x, y]: Cell, wander = false): VillagePlace => ({
@@ -382,6 +387,20 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		dir: "down",
 		wander: true,
 	});
+	// おんJマイナーズ（町が 育つと 越してくる）
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		if (stage < d.from) continue;
+		out.push({
+			id: `mob_${id}`,
+			x: d.spot[0],
+			y: d.spot[1],
+			trigger: "talk",
+			sprite: d.sprite,
+			dir: d.dir,
+			mob: id,
+		});
+	}
 	// 祭り（段7）：野次馬が うろうろ している
 	if (stage >= 7)
 		VILLAGE_SPOTS.yaji.forEach(([x, y], i) => {

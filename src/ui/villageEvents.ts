@@ -9,14 +9,17 @@
 //   フェリス＝図鑑・あそびかた、テト＝倉庫、おんJ民＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
 // - 小屋の扉・板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
+// - おんJマイナーズ（町が 育つと 越してくる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
 // - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
 //   倉庫・売り → 町が 育つ（場面は ui/villageReturn.ts。あずける 一覧だけ ui/home.ts）。
+// - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/villageOpening.ts）。
 
 import { DUNGEONS } from "../core/data/dungeons";
 import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
+import { BOARD_MENU } from "../data/mobs";
 import type { Speaker } from "../data/quotes";
 import { DUNGEON_NAMES, STORY } from "../data/story";
 import { STAGE_NAMES, TOWN_MSG, TOWN_NAME, VILLAGE_MSG } from "../data/town";
@@ -49,6 +52,8 @@ import { type ListItem, listWindow } from "./list";
 import { escBr, openRecords, showStory } from "./records";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
+import { hasMobNews, mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
+import { needsOpening, openingScript } from "./villageOpening";
 import {
 	lineUp,
 	newsScript,
@@ -283,9 +288,22 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 		});
 	}
 	if (p.dungeon) return sign(p.id, p.x, p.y, signScript(p.dungeon));
+	if (p.mob) {
+		const id = p.mob;
+		return {
+			...npc(p.id, p.x, p.y, p.sprite ?? "", mobScript(id), { dir: p.dir }),
+			notice: () => hasMobNews(id),
+		};
+	}
 	if (p.id.startsWith("board_"))
 		return sign(p.id, p.x, p.y, async (s) => {
 			await s.narrate(VILLAGE_MSG.board);
+			// 総選挙の はり紙が 出たら どちらを 読むか きく
+			if (senkyoOpen()) {
+				const n = await s.choose([...BOARD_MENU], { cancel: 2 });
+				if (n === 1) await senkyoScript(s);
+				if (n !== 0) return;
+			}
 			await records(ctx, s);
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
@@ -357,6 +375,8 @@ const arrivalScript =
 		s.bgm("town");
 		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）
 		if (previewStage() !== null) return;
+		// はじめての 村：前口上と、どこへ 行けば いいか
+		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
 		await settleScript(s, storeChooser(ctx));
 	};

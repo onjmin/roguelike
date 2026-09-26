@@ -981,6 +981,16 @@ export class Village {
 				if (dir === "player") this.faceTo(a, this.player.x, this.player.y);
 				else a.dir = dir;
 			},
+			near: (id, r) => {
+				const a = this.actorFor(id);
+				if (!a || a === this.player || !a.visible) return false;
+				return (
+					Math.max(
+						Math.abs(a.x - this.player.x),
+						Math.abs(a.y - this.player.y),
+					) <= r
+				);
+			},
 			show: (id) => {
 				if (id === "player") {
 					this.player.visible = true;
