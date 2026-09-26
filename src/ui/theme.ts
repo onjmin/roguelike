@@ -137,6 +137,30 @@ const WHITE: Theme = {
 	fog: "rgba(4, 6, 14, 0.6)",
 };
 
+/** 赤い格子（紫の壁。もっと の 規制の檻）。 */
+const LATTICE: Theme = {
+	name: "lattice",
+	floor: cut(6, 168),
+	stairs: cut(4, 167),
+	wallUpper: walls(181),
+	wallLower: walls(182),
+	dark: "#0c0408",
+	floorColor: "#7a3038",
+	fog: "rgba(8, 2, 8, 0.62)",
+};
+
+/** 焦げ（灰色の床に 赤い壁。もっと の 焦げた回線）。 */
+const FORGE: Theme = {
+	name: "forge",
+	floor: cut(0, 166),
+	stairs: cut(0, 167),
+	wallUpper: walls(171),
+	wallLower: walls(172),
+	dark: "#0c0605",
+	floorColor: "#4e4648",
+	fog: "rgba(8, 2, 2, 0.6)",
+};
+
 /** 空気の中を ただようもの（階の雰囲気）。 */
 export type Ambient =
 	| "dust"
@@ -161,6 +185,8 @@ const THEMES: Record<ThemeName, Theme> = {
 	stone: STONE,
 	ruins: RUINS,
 	white: WHITE,
+	lattice: LATTICE,
+	forge: FORGE,
 	moss: MOSS,
 	crystal: CRYSTAL,
 	cyber: CYBER,

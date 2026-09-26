@@ -122,7 +122,7 @@ const newSeed = (): string =>
 
 /**
  * 開発用：URL で好きな階から始める（pnpm dev か ?debug のときだけ）。
- * 例 `?seed=abc&depth=12&lv=10`
+ * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ちょっと・もっと も）
  */
 const devRun = (): Run | null => {
 	const q = new URLSearchParams(location.search);
@@ -131,7 +131,11 @@ const devRun = (): Run | null => {
 	const seed = q.get("seed");
 	if (!depth && !seed) return null;
 	// シードの頭に debug: を付けておくと、中断セーブにも記録にも残らない（本物のセーブを上書きしない）
-	const run = Run.create(`${DEBUG_SEED}${seed ?? newSeed()}`);
+	const d = q.get("dungeon");
+	const run = Run.create(
+		`${DEBUG_SEED}${seed ?? newSeed()}`,
+		d === "shallow" || d === "deep" ? d : "main",
+	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
 	if (depth > 1) run.enterFloor(depth, false);

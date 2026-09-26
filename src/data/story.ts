@@ -33,6 +33,8 @@ export type ThemeName =
 	| "stone"
 	| "ruins"
 	| "white"
+	| "lattice"
+	| "forge"
 	| "moss"
 	| "crystal"
 	| "cyber"
@@ -93,34 +95,70 @@ export const ZONE_NAMES: Record<"shallow" | "deep", readonly ZoneSpec[]> = {
 			ambient: "snow",
 		},
 	],
+	// トルネコ1の もっと（B1〜2・3〜4・5〜6・7〜9・10〜12・13〜15・16〜18・19〜21・22〜24・25〜29・30〜）と 同じ 刻み
 	deep: [
 		{
-			last: 6,
+			last: 2,
 			name: "掘りかけの穴",
 			theme: "earth",
 			bgm: "deep1",
 			ambient: "dust",
 		},
 		{
-			last: 12,
+			last: 4,
+			name: "埋もれた dat",
+			theme: "stone",
+			bgm: "deep_dat",
+			ambient: "dust",
+		},
+		{
+			last: 6,
+			name: "崩れたまとめ",
+			theme: "ruins",
+			bgm: "deep_matome",
+			ambient: "spores",
+		},
+		{
+			last: 9,
 			name: "保守の墓場",
 			theme: "moss",
 			bgm: "deep2",
 			ambient: "spores",
 		},
 		{
-			last: 18,
+			last: 12,
+			name: "白紙の回廊",
+			theme: "white",
+			bgm: "deep_hakushi",
+			ambient: "snow",
+		},
+		{
+			last: 15,
 			name: "文字化けの海",
 			theme: "crystal",
 			bgm: "deep3",
 			ambient: "snow",
 		},
 		{
-			last: 24,
+			last: 18,
+			name: "規制の檻",
+			theme: "lattice",
+			bgm: "deep_kisei",
+			ambient: "data",
+		},
+		{
+			last: 21,
 			name: "落ちた鯖",
 			theme: "cyber",
 			bgm: "deep4",
 			ambient: "data",
+		},
+		{
+			last: 24,
+			name: "焦げた回線",
+			theme: "forge",
+			bgm: "deep_koge",
+			ambient: "embers",
 		},
 		{
 			last: 29,

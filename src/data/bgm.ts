@@ -42,17 +42,28 @@
 // | stone    | -29.8（20）        | 20 → 40 | -23.9    |
 // | ruins    | -29.6（20）        | 20 → 39 | -23.9    |
 // | white    | -28.7（20）        | 20 → 36 | -23.5    |
+// | deep_dat     | -31.8（20）    | 20 → 51 | -23.7    |
+// | deep_matome  | -31.3（20）    | 20 → 48 | -23.7    |
+// | deep_hakushi | -30.9（20）    | 20 → 46 | -23.7    |
+// | deep_kisei   | -32.5（20）    | 20 → 55 | -23.7    |
+// | deep_koge    | -33.4（20）    | 20 → 61 | -23.8    |
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
 import battle from "./bgm/battle.mml?raw"; // b5ed6f97d24d49a4「ゲームっぽい」
 import boss from "./bgm/boss.mml?raw"; // 028dced82045410e「歌抜いたら戦闘曲っぽい？」
+// もっと の 層を トルネコ1の 刻み（11層）に 細かくしたときに 足した 5曲（2026-09。同じ 手書き譜面。譜面は dtm/tmp/handscore/kiriko-deep-<名前>.json）
+import deep_dat from "./bgm/deep_dat.mml?raw"; // もっと B3〜4 埋もれた dat：ヘ短調 116・piano・8beat（掘る 連打の 動機）
+import deep_hakushi from "./bgm/deep_hakushi.mml?raw"; // もっと B10〜12 白紙の回廊：嬰ハ短調 88・acoustic（打楽器なし。水滴の 副旋律）
+import deep_kisei from "./bgm/deep_kisei.mml?raw"; // もっと B16〜18 規制の檻：嬰ト短調 120・japanese_wa・8beat（都節の 半音）
+import deep_koge from "./bgm/deep_koge.mml?raw"; // もっと B22〜24 焦げた回線：ホ短調 144・orchestra・16beat
+import deep_matome from "./bgm/deep_matome.mml?raw"; // もっと B5〜6 崩れたまとめ：変ロ短調 108・arabic_exotic・shuffle（増2度）
 // 層ごとの曲（2026-09。作曲エージェントが dtm の手書き譜面 docs/handscore.md で書き、hand-compile で MML にした。
 // 24小節の A/B/A' で、最後は 属和音か sus4 で 頭へ戻る。譜面は dtm/tmp/handscore/kiriko-<名前>.json）
-import deep1 from "./bgm/deep1.mml?raw"; // もっと B1〜6 掘りかけの穴：ハ短調 128・retro_game・8beat（掘る動機の行進）
-import deep2 from "./bgm/deep2.mml?raw"; // もっと B7〜12 保守の墓場：ト短調 90・orchestra（ライン・クリシェ、打楽器なし）
-import deep3 from "./bgm/deep3.mml?raw"; // もっと B13〜18 文字化けの海：ニ・ドリア／変ロ・リディア 104・ambient_cloud・bossa
-import deep4 from "./bgm/deep4.mml?raw"; // もっと B19〜24 落ちた鯖：ニ短調 150・cyber_punk・16beat
+import deep1 from "./bgm/deep1.mml?raw"; // もっと B1〜2 掘りかけの穴：ハ短調 128・retro_game・8beat（掘る動機の行進）
+import deep2 from "./bgm/deep2.mml?raw"; // もっと B7〜9 保守の墓場：ト短調 90・orchestra（ライン・クリシェ、打楽器なし）
+import deep3 from "./bgm/deep3.mml?raw"; // もっと B13〜15 文字化けの海：ニ・ドリア／変ロ・リディア 104・ambient_cloud・bossa
+import deep4 from "./bgm/deep4.mml?raw"; // もっと B19〜21 落ちた鯖：ニ短調 150・cyber_punk・16beat
 import deep5 from "./bgm/deep5.mml?raw"; // もっと B25〜29 名無しの荒野：ロ短調 140・rock・8beat
 import deep6 from "./bgm/deep6.mml?raw"; // もっと B30 つづきの原盤：ニ短調→ニ長調 104・retro_game・4beat
 import dungeon from "./bgm/dungeon.mml?raw"; // 5c8b9ca2c4514e10
@@ -98,4 +109,9 @@ export const bgm: Record<string, string> = {
 	deep4,
 	deep5,
 	deep6,
+	deep_dat,
+	deep_matome,
+	deep_hakushi,
+	deep_kisei,
+	deep_koge,
 };
