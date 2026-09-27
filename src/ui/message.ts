@@ -46,9 +46,12 @@ export type PortraitSpec = {
 /** 全身絵のうち、会話で見せる上半身の割合の既定値。 */
 const DEFAULT_CROP = 0.58;
 
-/** この文字を出したあとの間（1文字ぶんの何倍か。句読点で少し止める）。 */
-const pauseAfter = (c: string | undefined): number =>
-	c === "、" || c === "。" ? 4 : 1;
+/**
+ * この文字を出したあとの間（1文字ぶんの何倍か）。句読点で少し止め、「……」は出しきったところで
+ * 「。」より長く止める（続いている間は止めない。rpg の b62e7cd と同じ）。
+ */
+const pauseAfter = (c: string | undefined, next: string | undefined): number =>
+	c === "、" || c === "。" ? 4 : c === "…" && next !== "…" ? 7 : 1;
 
 /** 読み込んで測った立ち絵。 */
 type Art = {
@@ -414,7 +417,11 @@ export class MessageWindow {
 				shown++;
 				this.textEl.textContent = chars.slice(0, shown).join("");
 				if (shown >= chars.length) finish();
-				else timer = window.setTimeout(tick, ms * pauseAfter(chars[shown - 1]));
+				else
+					timer = window.setTimeout(
+						tick,
+						ms * pauseAfter(chars[shown - 1], chars[shown]),
+					);
 			};
 			tick();
 			const pop = this.input.push((key, repeat) => {
