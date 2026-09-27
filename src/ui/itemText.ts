@@ -1,4 +1,4 @@
-// 道具の文（一覧の名前・2行目の説明・「せつめい」の窓）。もちもの・足元・選ぶ窓で共用。
+// 道具の文（一覧の名前・2行目の説明・「せつめい」の文）。もちもの・足元・選ぶ窓で共用。
 //
 // 前作で「名前だけでは効果がわからない」と言われたので、どの行にも2行目の説明を出す。
 // ただし未識別の種類は正体の説明を出さない（出したら識別になってしまう）。
@@ -89,72 +89,65 @@ const HOW_TO_ID: Partial<Record<ItemCat, string>> = {
 	ring: "装備して　わかる　ものも　ある。有識者スレなら　かならず　わかる",
 };
 
-const row = (k: string, v: string): string =>
-	`<tr><td class="dim">${k}</td><td class="num">${v}</td></tr>`;
+/** 候補の名前を 1ページに いくつまで 並べるか（スマホの 縦持ちでも メッセージ窓の 3行に 収まるように）。 */
+const CANDS_PER_PAGE = 10;
 
-/** 「せつめい」の窓の本文（HTML）。 */
-export const itemInfo = (run: Run, it: Item): string => {
+/**
+ * 「せつめい」の文。メッセージ窓に 1ページずつ 送って 出す（トルネコ1と同じ。一度に 全部 並べない）。
+ * 説明 → ひとこと → 強さなどの 数字 → 注意 → 候補 の 順。
+ */
+export const itemInfo = (run: Run, it: Item): string[] => {
 	const s = run.s;
 	const d = defOf(it.kind);
 	const known = isKnownKind(s, it.kind);
-	const out: string[] = [
-		`<p><b class="tag">${esc(CAT_NAME[d.cat])}</b>${esc(known ? d.desc : `まだ　正体が　わからない。${HOW_TO_ID[d.cat] ?? ""}`)}</p>`,
+	const pages: string[] = [
+		known
+			? `【${CAT_NAME[d.cat]}】${d.desc}`
+			: `【${CAT_NAME[d.cat]}】まだ　正体が　わからない。${HOW_TO_ID[d.cat] ?? ""}`,
 	];
 	// ひとこと（正体が わかっている ときだけ。未識別で 出すと 識別に なってしまう）
-	if (known) out.push(`<p class="hint">${esc(d.flavor)}</p>`);
+	if (known) pages.push(d.flavor);
 	const rows: string[] = [];
 	const g = gearPower(it);
 	if (g) {
 		// 修正値が わかれば 入れた 強さ（素の 強さは かっこで）
 		const base = (d.cat === "weapon" ? d.atk : d.def) ?? 0;
 		rows.push(
-			row(
-				"強さ",
+			`強さ　${
 				g.unknown || it.plus === 0
 					? `${g.value}`
-					: `${g.value}（${base}${signed(it.plus)}）`,
-			),
+					: `${g.value}（${base}${signed(it.plus)}）`
+			}　修正値　${it.known ? signed(it.plus) : "？"}`,
 		);
-		rows.push(row("修正値", it.known ? signed(it.plus) : "？"));
 	}
-	if (d.cat === "arrow") {
-		rows.push(row("強さ", String(d.atk ?? 0)));
-		rows.push(row("本数", `${it.count}本`));
-	}
+	if (d.cat === "arrow") rows.push(`強さ　${d.atk ?? 0}　${it.count}本`);
 	if (d.cat === "staff")
-		rows.push(row("残り回数", it.known && known ? `${it.charges}回` : "？"));
+		rows.push(`残り回数　${it.known && known ? `${it.charges}回` : "？"}`);
 	if (d.cat === "weapon" || d.cat === "shield" || d.cat === "ring") {
 		// のろわれた品は装備した時点で知らされる（known になる）ので、
 		// 装備していて known でないなら のろわれていない
 		const curseKnown = it.known || run.isEquipped(it);
 		rows.push(
-			row(
-				"のろい",
-				!curseKnown
-					? "？"
-					: it.cursed
-						? '<b class="tag curse">のろわれている</b>'
-						: "なし",
-			),
+			`のろい　${!curseKnown ? "？" : it.cursed ? "のろわれている" : "なし"}`,
 		);
 	}
-	if (run.isEquipped(it)) rows.push(row("いま", "装備中"));
-	if (rows.length) out.push(`<table>${rows.join("")}</table>`);
+	if (run.isEquipped(it)) rows.push("いま　装備中");
+	if (rows.length) pages.push(rows.join("\n"));
 	if (plusUnknown(it))
-		out.push(
-			'<p class="hint">修正値と　のろいは、装備するか　有識者スレで　わかる（−1なら　のろわれていて　外せない）</p>',
+		pages.push(
+			"修正値と　のろいは、装備するか　有識者スレで　わかる（−1なら　のろわれていて　外せない）",
 		);
 	if (d.cat === "goal") {
-		out.push('<p class="hint">投げたり　置いたり　できない</p>');
+		pages.push("投げたり　置いたり　できない");
 	} else if (isUnidentifiedCat(it.kind) && !known) {
 		// 候補（このダンジョンで出る、まだ正体のわからない 同じカテゴリの種類）
-		const cands = itemTableOf(s).filter(
-			(e) => defOf(e.kind).cat === d.cat && !isKnownKind(s, e.kind),
-		);
-		out.push(
-			'<p class="dim">この　どれか</p>',
-			`<p>${cands.map((e) => esc(defOf(e.kind).name)).join("・")}</p>`,
-		);
+		const cands = itemTableOf(s)
+			.filter((e) => defOf(e.kind).cat === d.cat && !isKnownKind(s, e.kind))
+			.map((e) => defOf(e.kind).name);
+		for (let i = 0; i < cands.length; i += CANDS_PER_PAGE)
+			pages.push(
+				`${i === 0 ? "この　どれか" : "……または"}\n${cands.slice(i, i + CANDS_PER_PAGE).join("・")}`,
+			);
 	}
-	return out.join("");
+	return pages;
 };

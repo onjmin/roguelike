@@ -31,6 +31,7 @@ import {
 	markOpened,
 	paginate,
 } from "./list";
+import { MessageWindow } from "./message";
 import { openStatus } from "./statusView";
 
 export type MenuAction =
@@ -292,6 +293,31 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	return rows;
 };
 
+/** 「せつめい」の 1文字あたりの ms（村の 会話と 同じ）。 */
+const TEXT_MS = 28;
+/** 「せつめい」を 出す メッセージ窓（画面ごとに 1つ。はじめて 使うときに 置く）。 */
+const explainWins = new WeakMap<HTMLElement, MessageWindow>();
+
+/**
+ * 「せつめい」：ふだんの メッセージ窓に 1ページずつ 文字送りで 出す（A/B で 送る。トルネコ1と同じ）。
+ * 開いている メニューの 上に 重ねる。
+ */
+const explain = async (ctx: Ctx, pages: string[]): Promise<void> => {
+	let win = explainWins.get(ctx.ui);
+	if (!win) {
+		win = new MessageWindow(
+			ctx.ui,
+			ctx.input,
+			() => TEXT_MS,
+			() => ctx.audio.seSettled(),
+			"over-menu",
+		);
+		explainWins.set(ctx.ui, win);
+	}
+	for (const text of pages) await win.show({ text });
+	win.close();
+};
+
 /** 未識別の種類に名前をつける（候補から選ぶ）。キャンセルなら null。 */
 const pickName = async (
 	ctx: Ctx,
@@ -382,7 +408,7 @@ const itemActions = async (
 				break;
 			}
 			case "info":
-				await infoWindow(ctx, esc(run.name(it)), itemInfo(run, it));
+				await explain(ctx, itemInfo(run, it));
 				break;
 		}
 	}
@@ -549,16 +575,11 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				break;
 			}
 			case "info":
-				if (fi)
-					await infoWindow(ctx, esc(run.name(fi.item)), itemInfo(run, fi.item));
+				if (fi) await explain(ctx, itemInfo(run, fi.item));
 				break;
 			case "trap":
 				if (trap)
-					await infoWindow(
-						ctx,
-						esc(trapName(trap)),
-						`<p>${TRAP_DESC[trap.kind]}</p>`,
-					);
+					await explain(ctx, [`${trapName(trap)}：${TRAP_DESC[trap.kind]}`]);
 				break;
 		}
 	}

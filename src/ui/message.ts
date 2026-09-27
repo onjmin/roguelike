@@ -374,6 +374,8 @@ export class MessageWindow {
 		input: Input,
 		msPerChar: () => number,
 		settled: () => Promise<void> = () => Promise.resolve(),
+		/** 窓に 足す class（ダンジョンの メニューの 上に 重ねる とき など）。 */
+		cls = "",
 	) {
 		this.input = input;
 		this.msPerChar = msPerChar;
@@ -385,7 +387,7 @@ export class MessageWindow {
 		this.nameEl = el("div", { class: "msg-name" });
 		this.textEl = el("div", { class: "msg-text" });
 		this.nextEl = el("div", { class: "msg-next", text: "▼" });
-		this.win = el("div", { class: "msg window" }, [
+		this.win = el("div", { class: `msg window ${cls}`.trim() }, [
 			this.nameEl,
 			this.textEl,
 			this.nextEl,
