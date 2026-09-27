@@ -5,7 +5,7 @@
 // - 倍速・鈍足は「行動できる時刻」（半ターン単位）で並べる。ふつうは 2 ずつ進む。
 // - 乱数はすべて this.rng（状態は中断セーブに入る）。
 
-import { ankaHit, scheduleAnka, tickAnka } from "./anka";
+import { ankaHit, carryAnka, scheduleAnka, tickAnka } from "./anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -557,6 +557,7 @@ export class Run {
 	/** 階に入る（下りなら depth+1、帰り道なら depth−1）。 */
 	enterFloor(depth: number, fell: boolean): void {
 		const s = this.s;
+		const carried = carryAnka(s.floor);
 		s.depth = depth;
 		s.stats.maxDepth = Math.max(s.stats.maxDepth, depth);
 		s.floor = buildFloor(this, depth, s.houses.includes(depth) && !s.returning);
@@ -566,7 +567,7 @@ export class Run {
 		p.status.heldBy = null;
 		p.nextAt = s.time;
 		for (const m of s.floor.monsters) m.nextAt = s.time;
-		scheduleAnka(this);
+		scheduleAnka(this, carried);
 		this.emit({ t: "floor", depth, up: s.returning });
 		if (fell)
 			this.msg(

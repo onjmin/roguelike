@@ -22,6 +22,7 @@ import { mdef } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import type { Run } from "../core/run";
 import {
+	type Anka,
 	type Command,
 	type Floor,
 	type GameEvent,
@@ -194,7 +195,7 @@ export class Play {
 	private bookSeen = new Set(loadBook().seen);
 	private statusKey = "";
 	/** もう 知らせた 安価（期限の レス数。出ていなければ -1）。 */
-	private ankaSeen = -1;
+	private ankaSeen: Anka | null = null;
 	/** リプレイを見ているとき（入力の代わりに 記録のコマンドを入れる）。 */
 	private rp: ReplayDriver | null = null;
 
@@ -591,10 +592,11 @@ export class Play {
 			? `安価：${ankaText(anka)}（あと${ankaLeft}レス）`
 			: "";
 		// 来たばかりの 安価は、スレの レスとして 画面に 出す（ログ 1行だと 気づきにくい）
-		const ankaDue = anka?.due ?? -1;
-		if (ankaDue !== this.ankaSeen) {
-			this.ankaSeen = ankaDue;
-			if (anka) void this.ankaPost(ankaText(anka), anka.due - ANKA_DUE);
+		// 階を かわって 持ちこした 安価は 同じ 物なので、もう 一度は 出さない
+		if ((anka ?? null) !== this.ankaSeen) {
+			this.ankaSeen = anka ?? null;
+			if (anka)
+				void this.ankaPost(ankaText(anka), Math.max(1, anka.due - ANKA_DUE));
 		}
 		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${res}|${ankaLine}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;

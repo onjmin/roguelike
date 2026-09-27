@@ -2244,6 +2244,25 @@ test(
 
 test(
 	"floor",
+	"anka: a pending anka follows Kiriko to the next floor with the res it had left",
+	() => {
+		const r = arena("anka-carry");
+		const a = { kind: "scroll" as const, need: 1, done: 0, due: 0 };
+		r.f.res = 400;
+		a.due = r.f.res + 30;
+		r.f.anka = a;
+		r.enterFloor(r.s.depth + 1, false);
+		ok(r.f.anka === a, "the anka vanished on the next floor");
+		ok(
+			r.f.anka.due - r.f.res === 30,
+			`the carried anka has ${r.f.anka.due - r.f.res} res left, not 30`,
+		);
+		ok(r.f.ankaAt === -1, "a new anka was scheduled on top of the carried one");
+	},
+);
+
+test(
+	"floor",
 	"gramophone: a kill records its voice; playing it freezes the same kind in sight only",
 	() => {
 		const r = arena("voice");

@@ -5,13 +5,14 @@
 // - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
 // - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く。
 // - 帰り道には 来ない（帰り道は 補給なし）。
+// - 出ている 安価は 階を かわっても 消えない（次スレに 持ちこし。のこりの レス数も そのまま）。
 
 import { randomFloorPos, spawnMonster } from "./floor";
 import { defOf, identifyKind, itemHidden, itemTableOf } from "./item";
 import { rollKinds } from "./itemTable";
 import { wakeMonster } from "./monster";
 import type { Run } from "./run";
-import type { Anka, AnkaKind } from "./types";
+import type { Anka, AnkaKind, Floor } from "./types";
 
 /** 階に 入ったとき 安価が 来る 確率。 */
 export const ANKA_CHANCE = 2 / 5;
@@ -37,11 +38,33 @@ const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
 /** 画面に 出す お題（「草を　1つ　飲め」）。 */
 export const ankaText = (a: Anka): string => ANKA_TEXT[a.kind](a.need);
 
-/** 階に 入ったとき：この階に 安価が 来るか（来るなら 何レス目か）を 決める。 */
-export const scheduleAnka = (r: Run): void => {
+/** 階を 出るとき：出ている 安価を のこりの レス数つきで 持ち出す（無ければ null）。 */
+export const carryAnka = (
+	f: Floor | null | undefined,
+): { a: Anka; left: number } | null =>
+	f?.anka ? { a: f.anka, left: Math.max(1, f.anka.due - f.res) } : null;
+
+/**
+ * 階に 入ったとき：この階に 安価が 来るか（来るなら 何レス目か）を 決める。
+ * 前の 階から 持ちこした 安価が あれば それが つづき、この階には 新しく 来ない。
+ */
+export const scheduleAnka = (
+	r: Run,
+	carried: { a: Anka; left: number } | null = null,
+): void => {
 	const f = r.f;
 	f.anka = null;
 	f.ankaAt = -1;
+	if (carried) {
+		// 同じ 物を 使う（画面は 物が かわったときだけ「安価が　来た」の レスを 出す）
+		f.anka = carried.a;
+		f.anka.due = f.res + carried.left;
+		r.msg(
+			`前スレの　安価は　まだ　生きている：>>キリコ　${ankaText(f.anka)}（のこり　${carried.left}レス）`,
+			"warn",
+		);
+		return;
+	}
 	if (r.s.returning || r.s.depth < 2) return;
 	if (!r.rng.chance(ANKA_CHANCE)) return;
 	f.ankaAt = r.rng.range(ANKA_AT[0], ANKA_AT[1]);
