@@ -48,6 +48,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		enemyDown: "rpgen:DApPoE", // 撃破音
 		/** 逃げる・吹き飛ばす。 */
 		flee: "rpgen:FTCG4H", // 逃走
+		/** 道具を 盗まれた（盗んだ 敵が 逃げていく）。 */
+		steal: "rpgen:cAauAI", // 何かが逃げる
 		fire: "rpgen:HyTVhK",
 		shock: "rpgen:usF2l8",
 		/** トラばさみに はさまれた（トルネコ1と おなじく 金属の 音）。 */

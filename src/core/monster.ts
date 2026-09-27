@@ -667,7 +667,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				r.removeItem(it);
 				m.carry = it;
 				m.fleeing = true;
-				r.se("flee");
+				r.se("steal");
 				r.msg(`${nm}は　${r.name(it)}を　盗んだ！`, "warn");
 				const to = randomAway(r, m);
 				if (to) {
