@@ -121,6 +121,7 @@ const stage = (seed: string, depth: number): Run => {
 	f.house = -1;
 	f.houseAwake = false;
 	f.turns = 0;
+	f.res = 0;
 	const p = r.p;
 	p.maxHp = 99999;
 	p.hp = 99999;
@@ -291,6 +292,7 @@ type Trial = {
 
 const freeze = (r: Run): void => {
 	r.f.turns = 0;
+	r.f.res = 0;
 	r.p.hunger = HUNGER_MAX;
 	r.p.hp = r.p.maxHp;
 };

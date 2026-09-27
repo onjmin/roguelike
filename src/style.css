@@ -533,7 +533,8 @@ body.shake #app {
 	background: var(--ink);
 }
 
-.status .st-hunger.low {
+.status .st-hunger.low,
+.status .st-res.low {
 	color: var(--danger);
 }
 

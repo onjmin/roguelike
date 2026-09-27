@@ -5,7 +5,7 @@
 // - 押しっぱなしで歩き続ける（トルネコと同じ）。キーボードは斜めの同時押しを少し待つ。
 // - ダッシュ・タップ移動は、何かあったら止まる（敵が見えた・道具・階段・分かれ道・部屋の出入り）。
 
-import { HUNGER_UNIT } from "../core/balance";
+import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
 import {
 	DIRS8,
 	type Dir8,
@@ -570,7 +570,9 @@ export class Play {
 			st.trapped > 0 ? "はさまれ" : "",
 			st.heldBy !== null ? "つかまれ" : "",
 		].filter(Boolean);
-		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${badges.join()}|${run.s.returning}`;
+		// この階（スレ）の レス数。950 を こえたら 赤く
+		const res = Math.min(RES_LIMIT, (this.shownFloor ?? run.f).res);
+		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${res}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
@@ -584,6 +586,7 @@ export class Play {
 			`<span class="st-hp${ink ? " inked" : ""}">HP ${hp}/${p.maxHp}</span></div>` +
 			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((hp / p.maxHp) * 100)}%"></i></div>` +
 			`<div class="st-row"><span class="st-hunger${hunger <= 10 ? " low" : ""}">満腹 ${hunger}%</span>` +
+			`<span class="st-res${res >= RES_WARN[0] ? " low" : ""}">${res}レス</span>` +
 			(run.s.returning ? `<span class="st-return">帰り道</span>` : "") +
 			(badges.length
 				? `<span class="st-hp low">${badges.join(" ")}</span>`

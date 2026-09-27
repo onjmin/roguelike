@@ -113,11 +113,13 @@ export const TRAP_CHANCE = 3 / 4;
 export const WAKE_CHANCE = 1 / 2;
 
 /**
- * 地震（1つの階に長くいると、下の階へ落ちる）。トルネコ1と同じく 1534・1574 ターン目に揺れ、
- * 1614 ターン目に床がぬける（トルネコ1は向き変え・命名なども行動に数えるが、ここでは時間の進むターンだけ）。
- * 見せ方は 2ch の スレの おわり（950 → 埋め → 「このスレッドは1000を超えました」で 下の階へ 落ちる）。
+ * 1つの階は 1本の スレ。1ターンで 1レス 伸び、1000 で 埋まって dat落ち（下の階へ 落ちる）。
+ * 950 で 次スレの 声、980 で 埋めが 始まる（画面が 揺れる）。
  */
-export const QUAKE_TURNS: readonly number[] = [1534, 1574, 1614];
+export const RES_LIMIT = 1000;
+export const RES_WARN: readonly number[] = [950, 980, RES_LIMIT];
+/** 祭りが 起きていて 部屋に 野次馬が これだけ 残っていれば、1ターンで もう1レス 伸びる（勢い）。 */
+export const RES_RUSH_CROWD = 3;
 
 /** 階に置く道具を、最初からいるモンスターに 持たせる確率。 */
 export const CARRY_CHANCE = 1 / 6;

@@ -147,6 +147,7 @@ const arena = (
 	f.house = -1;
 	f.houseAwake = false;
 	f.turns = 0;
+	f.res = 0;
 	f.senseMonsters = false;
 	f.senseItems = false;
 	f.sight = false;
@@ -185,6 +186,7 @@ const put = (
 /** 1ターン進める（湧き・地震・空腹は止める）。 */
 const turn = (r: Run, cmd: Command = { c: "wait" }): GameEvent[] => {
 	r.f.turns = 0;
+	r.f.res = 0;
 	r.p.hunger = HUNGER_MAX;
 	const ev = r.act(cmd);
 	if (r.s.end) throw new Fail(`the player died: ${r.s.end.cause}`);
@@ -2150,12 +2152,12 @@ test("scroll", "s_map then s_snare: the new traps are already found", () => {
 
 test(
 	"floor",
-	"earthquake: shakes at 1534 and 1574, the floor gives way at 1614",
+	"thread: 1 res a turn; shakes at 950 and 980, dat-falls to the next floor at 1000",
 	() => {
-		// トルネコ1と同じ回数（同じ階で 1534・1574 ターン目に揺れ、1614 ターン目に下の階へ）
+		// 1つの階は 1本の スレ。950 で 揺れ、980 で 埋め、1000 で 下の階へ
 		const r = arena("quake");
-		const at = (turns: number): GameEvent[] => {
-			r.f.turns = turns - 1;
+		const at = (res: number): GameEvent[] => {
+			r.f.res = res - 1;
 			r.p.hunger = HUNGER_MAX;
 			return r.act({ c: "wait" });
 		};
@@ -2163,16 +2165,16 @@ test(
 			ev
 				.filter((e) => e.t === "quake")
 				.map((e) => (e as { level: number }).level);
-		ok(quakes(at(1533)).length === 0, "shook before 1534");
-		ok(quakes(at(1534)).join() === "1", "no first quake at 1534");
-		ok(quakes(at(1574)).join() === "2", "no second quake at 1574");
+		ok(quakes(at(949)).length === 0, "shook before 950");
+		ok(r.f.res === 949, `res did not grow by 1 a turn (${r.f.res})`);
+		ok(quakes(at(950)).join() === "1", "no first quake at 950");
+		ok(quakes(at(960)).length === 0, "shook again between 950 and 980");
+		ok(quakes(at(980)).join() === "2", "no second quake at 980");
 		const depth = r.s.depth;
-		ok(
-			quakes(at(1613)).length === 0 && r.s.depth === depth,
-			"fell before 1614",
-		);
-		at(1614);
-		ok(r.s.depth === depth + 1, `did not fall at 1614 (depth ${r.s.depth})`);
+		ok(quakes(at(999)).length === 0 && r.s.depth === depth, "fell before 1000");
+		at(1000);
+		ok(r.s.depth === depth + 1, `did not fall at 1000 (depth ${r.s.depth})`);
+		ok(r.f.res <= 1, `the new floor did not start a new thread (${r.f.res})`);
 	},
 );
 

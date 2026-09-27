@@ -16,8 +16,10 @@ import {
 	MAX_HP_CAP,
 	MAX_LV,
 	MONSTER_CAP,
-	QUAKE_TURNS,
 	REGEN_STEP,
+	RES_LIMIT,
+	RES_RUSH_CROWD,
+	RES_WARN,
 	rollDamage,
 	SPAWN_EVERY,
 	START_HP,
@@ -97,6 +99,14 @@ export const migrateRun = (s: RunState): RunState | null => {
 	const old = s as RunState & Record<string, unknown>;
 	for (const k of ["deal", "cardKind", "lost", "flowed"]) delete old[k];
 	delete (s.floor as Floor & { cards?: unknown }).cards;
+	// レス数の ない 中断セーブ（地震が ターンで 来ていた ころ）：1614 ターンを 1000 レスに 読みかえる
+	if (typeof s.floor.res !== "number") {
+		s.floor.res = Math.min(
+			RES_LIMIT - 1,
+			Math.floor((s.floor.turns * RES_LIMIT) / 1614),
+		);
+		s.floor.resWarned = RES_WARN.filter((n) => s.floor.res >= n).length;
+	}
 	return s;
 };
 
@@ -996,26 +1006,50 @@ export class Run {
 			if (at) spawnMonster(this, null, at, {});
 		}
 
-		// 地震
-		const qi = QUAKE_TURNS.indexOf(f.turns);
-		if (qi >= 0) {
-			this.emit({ t: "quake", level: qi + 1 });
-			if (qi < QUAKE_TURNS.length - 1) {
-				// 2ch の スレの おわりに なぞらえる（950 で 次スレ、1000 まで 埋め、1001 で 落ちる）
-				this.msg(
-					qi === 0
-						? "このスレも　950を　こえた……　床が　ゆれている"
-						: "埋めが　はじまった！　ゆれが　強くなってきた！",
-					"warn",
-				);
-			} else {
-				this.msg("このスレッドは　1000を　超えました。", "warn");
-				this.msg("もう　書けないので、下の階へ　落ちる……", "warn");
-				this.fallDown();
-				return;
-			}
-		}
+		// レス（1ターンで 1。祭りの 最中は 勢いで もう1）。1000 で dat落ち
+		f.res += 1 + (this.festivalRush() ? 1 : 0);
+		if (this.checkRes()) return;
 		this.updateVision();
+	}
+
+	/** 起きた 祭りの 部屋に 野次馬が まだ 残っている（スレの 勢いが 増す）。 */
+	private festivalRush(): boolean {
+		const f = this.f;
+		if (f.house < 0 || !f.houseAwake) return false;
+		let n = 0;
+		for (const m of f.monsters)
+			if (m.hp > 0 && roomAt(f.layout, m.x, m.y) === f.house) n++;
+		return n >= RES_RUSH_CROWD;
+	}
+
+	/** レスを 足す（安価を 無視した など）。知らせと dat落ちは ターンの 終わりに。 */
+	addRes(n: number): void {
+		this.f.res = Math.max(0, this.f.res + n);
+	}
+
+	/**
+	 * レス数の 知らせ（950・980 で 揺れ、1000 で dat落ちして 下の階へ）。落ちたら true。
+	 * 2ch の スレの おわりに なぞらえる。
+	 */
+	private checkRes(): boolean {
+		const f = this.f;
+		const lv = RES_WARN.filter((n) => f.res >= n).length;
+		if (lv <= f.resWarned) return false;
+		f.resWarned = lv;
+		this.emit({ t: "quake", level: lv });
+		if (lv < RES_WARN.length) {
+			this.msg(
+				lv === 1
+					? "このスレも　950を　こえた……　床が　ゆれている"
+					: "埋めが　はじまった！　ゆれが　強くなってきた！",
+				"warn",
+			);
+			return false;
+		}
+		this.msg("このスレッドは　1000を　超えました。", "warn");
+		this.msg("もう　書けないので、下の階へ　落ちる……", "warn");
+		this.fallDown();
+		return true;
 	}
 
 	/**

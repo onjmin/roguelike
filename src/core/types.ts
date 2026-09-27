@@ -281,8 +281,12 @@ export type Floor = {
 	house: number;
 	/** モンスターハウスに入った。 */
 	houseAwake: boolean;
-	/** この階に来てからのターン数（湧きと地震）。 */
+	/** この階に来てからのターン数（湧き）。 */
 	turns: number;
+	/** この階（スレ）の レス数。1000 で dat落ち（balance.ts の RES_LIMIT）。 */
+	res: number;
+	/** 出した レスの 知らせの 段（0：まだ・1：950・2：980・3：1000）。 */
+	resWarned: number;
 	/** 気配スレ：敵の位置がわかる。 */
 	senseMonsters: boolean;
 	/** 宝探しスレ：道具の位置がわかる。 */

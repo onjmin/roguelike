@@ -2,7 +2,13 @@
 //
 // 攻撃は「素の攻撃力」（レベルと 武器の強さ＋ちから で決まる。ダメージはここから乱数と相手の守りで減る）。
 
-import { attackPower, EXP_AT, HUNGER_UNIT, MAX_LV } from "../core/balance";
+import {
+	attackPower,
+	EXP_AT,
+	HUNGER_UNIT,
+	MAX_LV,
+	RES_LIMIT,
+} from "../core/balance";
 import { defOf } from "../core/item";
 import type { Run } from "../core/run";
 import type { Item } from "../core/types";
@@ -52,6 +58,7 @@ const statusHtml = (run: Run): string => {
 		row("トリップ", equip(run.ring())),
 		'<tr><th colspan="2">冒険</th></tr>',
 		row("階", `${s.depth}階${s.returning ? "（帰り道）" : ""}`),
+		row("スレ", `${Math.min(RES_LIMIT, run.f.res)}レス（1000で　dat落ち）`),
 		row("ターン", String(s.turn)),
 	];
 	const out = [`<table>${rows.join("")}</table>`];

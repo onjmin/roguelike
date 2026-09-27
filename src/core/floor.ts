@@ -94,6 +94,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		house: -1,
 		houseAwake: false,
 		turns: 0,
+		res: 0,
+		resWarned: 0,
 		senseMonsters: false,
 		senseItems: false,
 		sight: false,
