@@ -83,7 +83,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "h_greater", weight: 3 }, // 弟切草。ちょっと では 薬草と同じだけ出たが、ここは 強いので少なめ
 	{ kind: "h_antidote", weight: 4 }, // ちょっと では 草の中で倍の率。まんぜう軍・毒矢の罠・チギュリパンの あと始末
 	{ kind: "h_might", weight: 2 }, // ちからの種
-	{ kind: "h_blink", weight: 2 }, // ルーラ草。逃げ道
+	{ kind: "h_blink", weight: 2 }, // 左遷草。逃げ道
 	{ kind: "h_fire", weight: 2 }, // 火炎草。飲めば 65〜75 で 風吹けば名無し（HP23）も一撃
 	{ kind: "h_daze", weight: 2 }, // まどわし草。投げれば 敵が逃げる（ちょっと に メダパニ草は 無い）
 	{ kind: "h_sleep", weight: 1 }, // 飲めば マイナス、投げれば 敵が眠る。「投げて使う草」を1つ
