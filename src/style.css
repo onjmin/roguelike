@@ -2527,6 +2527,104 @@ body.shake #app {
 	touch-action: none;
 }
 
+.wm-stage {
+	position: relative;
+	line-height: 0;
+}
+
+.wm-stage > .wm-canvas {
+	display: block;
+}
+
+/* えらんでいる 行き先の フキダシ（カーソルに ついていく。タップは 地図へ 通す） */
+.wm-bubble {
+	position: absolute;
+	transform: translate(-50%, -100%);
+	padding: 3px 8px 4px;
+	background: var(--win-bg);
+	border: 2px solid var(--win-border);
+	border-radius: 6px;
+	box-shadow: 0 0 0 2px #000;
+	line-height: 1.35;
+	text-align: center;
+	white-space: nowrap;
+	pointer-events: none;
+}
+
+.wm-bubble.below {
+	transform: translate(-50%, 0);
+}
+
+.wm-bubble:empty {
+	display: none;
+}
+
+.wm-bubble b {
+	display: block;
+	font-size: 13px;
+	font-weight: normal;
+}
+
+.wm-bubble small {
+	display: block;
+	font-size: 11px;
+	color: var(--accent);
+}
+
+.wm-bubble.locked b,
+.wm-bubble.locked small {
+	color: var(--muted);
+}
+
+/* しっぽ（外の 白と 中の 紺を 重ねる） */
+.wm-bubble::before,
+.wm-bubble::after {
+	content: "";
+	position: absolute;
+	left: calc(50% + var(--tail, 0px));
+	border: solid transparent;
+	transform: translateX(-50%);
+}
+
+.wm-bubble::before {
+	top: 100%;
+	border-width: 7px 6px 0;
+	border-top-color: var(--win-border);
+}
+
+.wm-bubble::after {
+	top: calc(100% - 1px);
+	border-width: 5px 4px 0;
+	border-top-color: #0c0a1c;
+}
+
+.wm-bubble.below::before {
+	top: auto;
+	bottom: 100%;
+	border-width: 0 6px 7px;
+	border-top-color: transparent;
+	border-bottom-color: var(--win-border);
+}
+
+.wm-bubble.below::after {
+	top: auto;
+	bottom: calc(100% - 1px);
+	border-width: 0 4px 5px;
+	border-top-color: transparent;
+	border-bottom-color: #0c0a1c;
+}
+
+.wm-bubble.pop {
+	animation: wm-bubble-pop 0.18s ease-out;
+}
+
+@keyframes wm-bubble-pop {
+	from {
+		opacity: 0.4;
+		scale: 0.85;
+	}
+}
+
 .wm-panel {
 	width: min(calc(var(--app-w) - 24px), 560px);
 	min-height: 5.2em;

@@ -344,11 +344,21 @@ type Mode =
 	| { k: "walk"; path: Pt[]; t: number }
 	| { k: "idle" };
 
+/** カーソルが 次の 建物へ すべる 時間（ms）。 */
+const GLIDE_MS = 220;
+
+/** ▼ を 建物の 上に 置けない（地図の 上の はし）なら 下に ▲。 */
+const cursorBelow = (y: number): boolean => y - 30 < 2;
+
 /** 地図の 画面（キャンバスと 下の 札）。 */
 class MapView {
 	readonly box: HTMLElement;
 	readonly canvas: HTMLCanvasElement;
 	readonly panel: HTMLElement;
+	/** えらんでいる 行き先の フキダシ（カーソルに ついていく。タップは 通す）。 */
+	readonly bubble: HTMLElement;
+	/** カーソルの すべり（from → to を GLIDE_MS で）。 */
+	private glide: { from: Pt; to: Pt; t0: number } | null = null;
 	private readonly g: CanvasRenderingContext2D | null;
 	private raf = 0;
 	private alive = true;
@@ -364,9 +374,10 @@ class MapView {
 		this.g = this.canvas.getContext("2d");
 		if (this.g) this.g.imageSmoothingEnabled = false;
 		this.panel = el("div", { class: "wm-panel window" });
+		this.bubble = el("div", { class: "wm-bubble" });
 		this.box = el("div", { class: "worldmap" }, [
 			el("div", { class: "wm-title", text: title }),
-			this.canvas,
+			el("div", { class: "wm-stage" }, [this.canvas, this.bubble]),
 			this.panel,
 		]);
 		ctx.ui.appendChild(this.box);
@@ -402,6 +413,60 @@ class MapView {
 		];
 	}
 
+	/** カーソルを その 建物へ（はじめは その場に。あとは すべらせる）。 */
+	aim(d: DungeonId): void {
+		const to = spotOf(d);
+		const now = performance.now();
+		const from = this.glide ? this.cursorAt(now) : to;
+		this.glide = { from, to, t0: now };
+	}
+
+	/** いまの カーソルの 位置（建物の 足もと。すべり中は あいだ）。 */
+	private cursorAt(t: number): Pt {
+		const gl = this.glide;
+		if (!gl) return VILLAGE_PT;
+		const k = Math.max(0, Math.min(1, (t - gl.t0) / GLIDE_MS));
+		const e = 1 - (1 - k) ** 3;
+		return [
+			gl.from[0] + (gl.to[0] - gl.from[0]) * e,
+			gl.from[1] + (gl.to[1] - gl.from[1]) * e,
+		];
+	}
+
+	/** フキダシの 中身（名前と 階・向き。まだ 開いていなければ ？？？）。 */
+	say(d: DungeonId): void {
+		const open = this.open.includes(d);
+		const n = DUNGEON_NAMES[d];
+		this.bubble.innerHTML = open
+			? `<b>${n.name}</b><small>${DUNGEONS[d].floors}階・${isUpBoard(d) ? "上り" : "下り"}</small>`
+			: "<b>？？？</b><small>まだ　行けない</small>";
+		this.bubble.classList.toggle("locked", !open);
+		// 変わるたびに ぽんと 出す
+		this.bubble.classList.remove("pop");
+		void this.bubble.offsetWidth;
+		this.bubble.classList.add("pop");
+	}
+
+	/** フキダシを カーソルの 上（上の はしでは 下）に。横は 地図から はみ出さない。 */
+	private placeBubble(at: Pt): void {
+		const b = this.bubble;
+		const w = this.canvas.clientWidth;
+		const h = this.canvas.clientHeight;
+		if (!w || !h) return;
+		const below = cursorBelow(at[1]);
+		const px = (at[0] / MAP_W) * w;
+		const py = ((below ? at[1] + 8 : at[1] - 32) / MAP_H) * h;
+		const half = b.offsetWidth / 2;
+		const left = Math.max(half + 2, Math.min(w - half - 2, px));
+		b.classList.toggle("below", below);
+		b.style.left = `${left}px`;
+		b.style.top = `${py}px`;
+		b.style.setProperty(
+			"--tail",
+			`${Math.max(-half + 10, Math.min(half - 10, px - left))}px`,
+		);
+	}
+
 	draw(t: number): void {
 		const g = this.g;
 		if (!g) return;
@@ -434,12 +499,21 @@ class MapView {
 			}
 			if (this.cleared.includes(d)) drawStar(g, x + 8, y - 16);
 		}
-		// えらんでいる 植民地の 目印（▼ が はねる）
+		// えらんでいる 植民地の 目印（▼ が はねる。えらび直すと すべって いく。上の はしでは 下に ▲）
 		if (this.mode.k === "pick") {
-			const [x, y] = spotOf(this.mode.cur);
-			const top = y - 30 - (Math.floor(t / 300) % 2);
+			const at = this.cursorAt(t);
+			const x = Math.round(at[0]);
+			const bob = Math.floor(t / 300) % 2;
 			g.fillStyle = "#ffe040";
-			for (let i = 0; i < 4; i++) g.fillRect(x - 3 + i, top + i, 7 - i * 2, 1);
+			if (cursorBelow(at[1])) {
+				const top = Math.round(at[1]) + 3 + bob;
+				for (let i = 0; i < 4; i++) g.fillRect(x - i, top + i, 1 + i * 2, 1);
+			} else {
+				const top = Math.round(at[1]) - 30 - bob;
+				for (let i = 0; i < 4; i++)
+					g.fillRect(x - 3 + i, top + i, 7 - i * 2, 1);
+			}
+			this.placeBubble(at);
 		}
 		// キリコ（歩いている あいだ。選んでいる あいだは 村の 前）
 		const walk = this.mode.k === "walk" ? this.mode : null;
@@ -503,7 +577,9 @@ export const pickColony = (
 			if (d !== cur) ctx.se("cursor");
 			cur = d;
 			v.mode = { k: "pick", cur };
+			v.aim(cur);
 			v.info(cur);
+			v.say(cur);
 			go.classList.toggle("disabled", !o.open.includes(cur));
 		};
 		select(cur);
