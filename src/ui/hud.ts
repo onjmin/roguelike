@@ -27,10 +27,8 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const arrows = [0, 1, 2, 3, 4, 5, 6, 7].map((d) =>
 		el("i", { class: `d${d}${d % 2 ? " diag" : ""}` }),
 	);
-	const pad = el("div", { class: "pad" }, [
-		...arrows,
-		el("b", { class: "pad-rest", text: "足踏み" }),
-	]);
+	const rest = el("b", { class: "pad-rest", text: "足踏み" });
+	const pad = el("div", { class: "pad" }, [...arrows, rest]);
 	const a = el("button", { class: "btn btn-a", text: "A" });
 	// B はフィールドでは もちもの（道具を ワンタップで。窓の中では 隠れて、窓の「とじる」を使う）
 	const b = el("button", { class: "btn btn-b", text: "道具" });
@@ -67,6 +65,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	kbd(map, "M");
 	kbd(turn, "F");
 	kbd(menu, "Esc");
+	kbd(rest, "E");
 
 	input.bindPad(pad);
 	input.bindButton(a, "a");

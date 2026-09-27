@@ -89,7 +89,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 			h("歩く") +
 			keys([
 				["矢印キー", "2つ　同時押しで　ななめ"],
-				["テンキー", "8方向（5で　足踏み。長押しで　つづける）"],
+				["テンキー", "8方向（5で　足踏み）"],
 				["hjkl yubn", "8方向（vi キー）"],
 			]) +
 			h("ボタンの　かわり") +
@@ -101,7 +101,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 				["R", "押している間　斜め固定"],
 				["F", "押しながら　向き変え"],
 				[
-					".",
+					"E・.",
 					"足踏み（長押しで　つづける。敵が　見えたり　傷ついたら　止まる）",
 				],
 				["G", "足元"],

@@ -76,6 +76,8 @@ const OTHER_KEYS: Record<string, Key> = {
 	Tab: "menu",
 	Backspace: "b",
 	KeyI: "b",
+	// 足踏み（E は 見つけやすい 英字。. と テンキーの5 は ローグライクの ならい）
+	KeyE: "wait",
 	Period: "wait",
 	Numpad5: "wait",
 	Clear: "wait",
@@ -197,6 +199,8 @@ export class Input {
 	private padCenterSince = 0;
 	/** 足踏みのキー（. ・テンキーの5）を 押さえはじめた時刻（押さえていなければ 0）。 */
 	private restKeySince = 0;
+	/** 画面の十字キー（足踏みのキーを 押さえているあいだ まん中を 光らせる）。 */
+	private padEl: HTMLElement | null = null;
 	/** 最後に方向を押し始めた時刻（同時押しの待ち合わせ用）。 */
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
@@ -271,8 +275,10 @@ export class Input {
 			if (!key) return;
 			e.preventDefault();
 			// 足踏みのキーは 押しっぱなしで 足踏みを 続ける（十字キーの まん中の 長押しと 同じ）
-			if (key === "wait" && !e.repeat && !this.handlers.length)
+			if (key === "wait" && !e.repeat && !this.handlers.length) {
 				this.restKeySince = performance.now();
+				if (this.padEl) this.padEl.dataset.center = "1";
+			}
 			this.press(key, e.repeat);
 		});
 		window.addEventListener("keyup", (ev) => {
@@ -280,6 +286,8 @@ export class Input {
 			const mod = MOD_KEYS[code];
 			if (mod) this.keyMods[mod] = false;
 			if (OTHER_KEYS[code] === "wait") this.restKeySince = 0;
+			if (OTHER_KEYS[code] === "wait" && this.padEl && !this.padCenterSince)
+				this.padEl.dataset.center = "";
 			const before = this.heldDir();
 			this.keysHeld.delete(code);
 			// 斜め（2つ押し）から片方だけ離したときは、少し待つ（両方を離すまでの間に
@@ -416,6 +424,7 @@ export class Input {
 
 	/** 画面上の十字キー（1つの要素。中心からの角度で8方向を決める）。 */
 	bindPad(el: HTMLElement): void {
+		this.padEl = el;
 		let active: number | null = null;
 		const update = (e: PointerEvent) => {
 			const r = el.getBoundingClientRect();
