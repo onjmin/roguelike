@@ -78,7 +78,7 @@ export const VOICE_TARGET = -21;
 
 /**
  * 声ごとの大きさ（studio.speak の volume 1.0 でのセリフの I、LUFS）。
- * roze は rpg で ブラウザの 最終出力を 録って 測った値（2026-09）。shiyo は まだ 測っていない。
+ * roze は rpg で ブラウザの 最終出力を 録って 測った値（2026-09）。shiyo・rino は まだ 測っていない。
  */
 export const VOICE_LUFS: Record<string, number> = {
 	roze: -14.5,

@@ -15,6 +15,7 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { SEASONS, season } from "../data/calendar";
+import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
 import {
 	MOB_IDS,
 	MOBS,
@@ -61,7 +62,7 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
-import type { Story, TileDef, VState } from "../engine/defs";
+import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
 import {
 	forgetProgressMemo,
@@ -631,7 +632,9 @@ test("new village lines fit the message window (22 full-width × 2 lines)", () =
 			]);
 	for (const [k, v] of Object.entries(VILLAGE_IDLE))
 		texts.push([`VILLAGE_IDLE.${k}`, v]);
-	ZERO_VOICELESS.forEach((v, i) => texts.push([`ZERO_VOICELESS[${i}]`, v]));
+	ZERO_VOICELESS.forEach((v, i) => {
+		texts.push([`ZERO_VOICELESS[${i}]`, v]);
+	});
 	fitsWindow(texts);
 });
 
@@ -1300,6 +1303,36 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 		MOB_IDS.filter((id) => MOBS[id].from === 0).join() === "puyu",
 		"only ぷゆゆ is there from the start",
 	);
+});
+
+test("住人の 声: 音源の ある子（春音リノ）だけ 読み上げ、その 音源も 取ってくる", async () => {
+	ok(VOICE_MODELS.includes("rino"), `VOICE_MODELS: ${VOICE_MODELS.join()}`);
+	ok(
+		MOB_IDS.filter((id) => MOB_VOICE[id]).join() === "rino",
+		"only リノ has a voice among the residents",
+	);
+	await withStorageAsync(async () => {
+		putTown({ stage: 7 });
+		for (const id of MOB_IDS) {
+			const t = fakeStory({ near: ["nanj"] });
+			const said: (SayOptions | undefined)[] = [];
+			const say = t.s.say;
+			t.s.say = async (who, text, opt) => {
+				said.push(opt);
+				await say(who, text, opt);
+			};
+			await mobScript(id)(t.s);
+			const own = said.filter((o) => o?.name === MOBS[id].name);
+			ok(own.length > 0, `${id}: never spoke`);
+			for (const o of own) {
+				ok(
+					o?.tts?.model === MOB_VOICE[id]?.model,
+					`${id}: tts ${o?.tts?.model}`,
+				);
+				ok(o?.color === MOBS[id].color, `${id}: color ${o?.color}`);
+			}
+		}
+	});
 });
 
 /** 今日が 期間限定なら その子の ひとこと（反応・いつもの より 先に 出る）。 */

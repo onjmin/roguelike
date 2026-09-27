@@ -6,6 +6,8 @@
 //   ゼロ … 束音ロゼの 特ちょうを反転して生まれた アンドロイド。
 //          黒髪→うすい金髪（ボリューム多め）、中華風→白と青の和装、厚着・スリム、関節が機械。
 //          ロゼの 赤・ピンクの差し色は 青・水色に反転し、耳には 機械の イヤーパーツ。
+//   リノ … 春音リノ（おんJ生まれの UTAU。村の 住人なので 歩行グラだけ・立ち絵なし）。
+//          カーキの 軍帽と 軍服、メタリックな 銀紫の 髪、銃みたいな コッペパン。
 //
 // 歩行グラは RPGEN の形：32x64・16x16 のマスが 2コマ×4段（上＝背中・右・下＝正面・左）、背景は透明、足もとを下にそろえる。
 // 1文字が1ドット：'.' は透明、ほかの文字は palette の色（src/ui/itemArt.ts と同じ書き方）。
@@ -14,7 +16,7 @@
 // 立ち絵（public/portraits/<名前>.png・1024x1024・右向き・透明）は、本人が描くまでの 仮の シルエット。
 // 色と 形の目じるし（シヨ＝ポニテ・猫耳・眼鏡、ゼロ＝髪のボリューム・イヤーパーツ・和装）だけを置き、すみに「仮」を入れる。
 //
-//   node scripts/make-cast.mjs                    … public/sprites/{shiyo,zero}.png と public/portraits/{shiyo,zero}.png
+//   node scripts/make-cast.mjs                    … public/sprites/{shiyo,zero,rino}.png と public/portraits/{shiyo,zero}.png
 //   node scripts/make-cast.mjs shiyo              … 指定したものだけ
 //   node scripts/make-cast.mjs --sheet out.png    … 歩行グラを 8倍で並べた 見くらべ用の一覧も書く（草・石の床の2段）
 //   node scripts/make-cast.mjs --no-portrait      … 立ち絵は書かない
@@ -240,6 +242,87 @@ const CAST = {
 			down: { 15: "...oll....llo..." },
 		},
 		portrait: "zero",
+	},
+	// 春音リノ：カーキの 軍帽（金の 帽章）と 軍服、メタリックな 銀紫の 髪（アバンギャルドメタリック）、きつい目。
+	// 小物は 銃みたいな コッペパン（横向きでは 銃のように 前へ 構える）。立ち絵は 無い（村の 住人は 無くてよい）。
+	rino: {
+		palette: {
+			o: "#2a2418", // ふち
+			K: "#9c9a5a", // カーキ（軍帽・軍服）
+			c: "#4a4a2c", // 帽子の 帯・襟
+			b: "#e8c040", // 帽章・ボタン
+			M: "#a8a0c8", // 銀紫の 髪
+			H: "#eeeaff", // 髪の 照り
+			m: "#6a6090", // 髪の 影
+			s: "#f6d8c0", // 肌
+			e: "#3a2a3a", // 目
+			B: "#4a3a24", // ベルト
+			P: "#d89a4a", // コッペパン
+			Q: "#f4c47a", // パンの 照り
+			p: "#a8682a", // パンの 影
+			l: "#26241e", // 長靴
+		},
+		frames: {
+			up: [
+				"....oooooooo....",
+				"...oKKKKKKKKo...",
+				"..oKKKKKKKKKKo..",
+				"..occcccccccco..",
+				".oMMMMMMMMMMMMo.",
+				".oMHMMMMMMMMHMo.",
+				".oMMMMMMMMMMMMo.",
+				".omMMMMMMMMMMmo.",
+				"..omMMMMMMMMmo..",
+				".oKoKKKKKKKKoKo.",
+				".oKKKKKKKKKKKKo.",
+				"oKsKKKKKKKKKsPPo",
+				".oBBBBBBBBBBBBo.",
+				"..oKKKKKKKKKKo..",
+				"..oKKKKooKKKKo..",
+				"...olll..lllo...",
+			],
+			right: [
+				".....oooooooo...",
+				"....oKKKKKKKKo..",
+				"....oKKKKKKKbKo.",
+				"....occcccccccco",
+				"...ooooooooooooo",
+				"..oMMMMMHsssssso",
+				"..oMMMMMssssesso",
+				"..oMMMMmssssssso",
+				"..oMMmmossssooo.",
+				"...oMoKKccKKo...",
+				"...oKKKKKKKKKo..",
+				"...oKKKsQQQQQQQo",
+				"...oKBBBpPPPPPpo",
+				"...oKKKKKKKKo...",
+				"...oKKKKKKKKo...",
+				".....oll.oll....",
+			],
+			down: [
+				"....oooooooo....",
+				"...oKKKKKKKKo...",
+				"..oKKKKbbKKKKo..",
+				"..occcccccccco..",
+				".oooooooooooooo.",
+				".oMHssssssssHMo.",
+				".oMssessssessMo.",
+				".oMssssoossssMo.",
+				".oMmoossssoomMo.",
+				".oMoKKKccKKKoMo.",
+				"oQQQQQQQoKKbKKo.",
+				"oPPPPPPPpKKKsKo.",
+				".oopppppoBBBBBo.",
+				"..oKKKKKKKKKKo..",
+				"..oKKKKooKKKKo..",
+				"...olll..lllo...",
+			],
+		},
+		step: {
+			up: { 15: "..olll....lllo.." },
+			right: { 14: "...oKKKKKKKKKo..", 15: "....oll...oll..." },
+			down: { 15: "..olll....lllo.." },
+		},
 	},
 };
 
@@ -491,7 +574,7 @@ for (const name of names) {
 	const { w, h, buf } = sheetOf(name);
 	writeFileSync(join(ROOT, `public/sprites/${name}.png`), encodePng(w, h, buf));
 	console.log(`public/sprites/${name}.png`);
-	if (!noPortrait) {
+	if (!noPortrait && CAST[name].portrait) {
 		const cv = makeCanvas();
 		PORTRAITS[CAST[name].portrait](cv.fill);
 		writeFileSync(join(ROOT, `public/portraits/${name}.png`), encodePng(P, P, cv.out()));

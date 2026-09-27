@@ -6,6 +6,7 @@
 // 声（voice）は 村の 会話の 読み上げ（設定の ボイス。engine/audio.ts）。無い人は 読み上げない。
 
 import type { VoiceDef } from "../engine/defs";
+import type { MobId } from "./mobs";
 import { SPEAKERS, type Speaker } from "./quotes";
 
 export type CastDef = {
@@ -37,7 +38,7 @@ const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
 
 /**
  * 読み上げの 声。ロゼは rpg と 同じ roze、シヨは dtm に 入っている shiyo（革命シヨ）。
- * おんJ民・フェリスは rpg でも 声なし。ゼロ・地の文・モブ（ぷゆゆ・おんJマイナーズ）も いまは 声なし。
+ * おんJ民・フェリスは rpg でも 声なし。ゼロ（音源が まだ 無い）・地の文も 声なし。
  */
 const VOICE: Partial<Record<Speaker, VoiceDef>> = {
 	roze: { model: "roze" },
@@ -56,9 +57,19 @@ export const CAST: Record<Speaker, CastDef> = Object.fromEntries(
 	]),
 ) as Record<Speaker, CastDef>;
 
+/**
+ * 村の 住人（data/mobs.ts）の 読み上げの 声。音源の ある子だけ（春音リノ＝dtm の rino）。
+ * ぷゆゆ・おんJマイナーズは 声なし。
+ */
+export const MOB_VOICE: Partial<Record<MobId, VoiceDef>> = {
+	rino: { model: "rino" },
+};
+
 /** 読み上げで 使う 音源（ボイスを ON に したとき これだけ 取ってくる）。 */
 export const VOICE_MODELS: readonly string[] = [
-	...new Set(Object.values(VOICE).map((v) => v.model)),
+	...new Set(
+		[...Object.values(VOICE), ...Object.values(MOB_VOICE)].map((v) => v.model),
+	),
 ];
 
 /** キリコの歩行グラ。 */

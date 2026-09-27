@@ -10,6 +10,7 @@
 // 保存できなくても この回は 覚えている）。ダンジョンの 中には 一切 かかわらない。
 
 import { season, today } from "../data/calendar";
+import { MOB_VOICE } from "../data/cast";
 import {
 	type Beat,
 	type Cast,
@@ -210,14 +211,21 @@ export const hasMobNews = (id: MobId): boolean => {
 
 // ───────────────── 話す ─────────────────
 
-/** その子の 声で 1窓（名前欄は その子。voice が あれば その仲間の 色。立ち絵は その子の。無い子は 出さない）。 */
-const sayAs = (s: Story, def: MobDef, text: string): Promise<void> =>
-	s.say(def.voice ?? null, text, {
+/**
+ * その子の 声で 1窓（名前欄は その子。色は color か、voice の 仲間の 色。立ち絵は その子の。無い子は 出さない）。
+ * 音源の ある子（data/cast.ts の MOB_VOICE）は 読み上げる。
+ */
+const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
+	const def = MOBS[id];
+	return s.say(def.voice ?? null, text, {
 		name: def.name,
+		...(def.color ? { color: def.color } : {}),
+		...(MOB_VOICE[id] ? { tts: MOB_VOICE[id] } : {}),
 		...(def.portrait
 			? { portrait: { id: `mob:${def.name}`, src: def.portrait } }
 			: { noPortrait: true }),
 	});
+};
 
 /** 窓の 前の しぐさ（窓には 数えない。行けなければ 何もしない）。 */
 const runBeat = async (s: Story, id: MobId, beat: Beat): Promise<void> => {
@@ -242,14 +250,13 @@ const play = async (
 	id: MobId,
 	lines: readonly MobLine[],
 ): Promise<void> => {
-	const def = MOBS[id];
 	for (const l of lines) {
 		if (l.need && !nearCast(s, l.need)) continue;
 		if (l.who !== null && l.who !== "mob" && !nearCast(s, l.who)) continue;
 		if (l.beat) await runBeat(s, id, l.beat);
 		if (l.who === null) await s.narrate(l.text);
-		else if (l.who === "mob") await sayAs(s, def, l.text);
-		else if (isMob(l.who)) await sayAs(s, MOBS[l.who], l.text);
+		else if (l.who === "mob") await sayAs(s, id, l.text);
+		else if (isMob(l.who)) await sayAs(s, l.who, l.text);
 		else await s.say(l.who, l.text);
 	}
 };
@@ -316,7 +323,7 @@ export const mobScript =
 		const sea = season();
 		const seasonal = sea ? def.season[sea] : undefined;
 		if (seasonal) {
-			await sayAs(s, def, seasonal);
+			await sayAs(s, id, seasonal);
 			return;
 		}
 		if (v.reacted[id] !== at) {
@@ -324,11 +331,11 @@ export const mobScript =
 			v.reacted[id] = at;
 			save(v);
 			if (r) {
-				await sayAs(s, def, r);
+				await sayAs(s, id, r);
 				return;
 			}
 		}
-		await sayAs(s, def, idleOf(def));
+		await sayAs(s, id, idleOf(def));
 	};
 
 // ───────────────── 総選挙 ─────────────────

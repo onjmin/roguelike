@@ -890,11 +890,11 @@ export class Village {
 		opt: SayOptions = {},
 	): Promise<void> {
 		const c = who ? CAST[who] : undefined;
-		// 声の ある 人（data/cast.ts の voice）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
-		const voice = c?.voice;
+		// 声の ある 人（data/cast.ts の voice・MOB_VOICE）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
+		const voice = opt.tts ?? c?.voice;
 		return this.msg.show({
 			name: opt.name ?? c?.name,
-			color: c?.color,
+			color: opt.color ?? c?.color,
 			text,
 			onShow:
 				voice && settings.voice
@@ -906,7 +906,7 @@ export class Village {
 					? {
 							id: opt.portrait.id,
 							name: opt.name ?? c?.name ?? "",
-							color: opt.portrait.color ?? c?.color ?? "#b8b8c8",
+							color: opt.portrait.color ?? opt.color ?? c?.color ?? "#b8b8c8",
 							src: opt.portrait.src,
 							side: "right",
 						}
