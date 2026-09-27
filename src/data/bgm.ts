@@ -9,6 +9,7 @@
 // （BS.1770。既定の 40 では setVolume = #volume × 0.2）。
 // 直し方: 新しい #volume = 今の #volume × 10^((目標 − 測った I) / 20) を整数に丸める。
 // 曲を足したり書き換えたりしたら、測って同じ式で直す。#volume= 以外は変えない。
+// トラックごとの 設定を 書いていない 曲には 既定を 足してから 鳴らす（下の withTrackDefaults。前の 曲の 設定を 引きつがない）。
 //
 // | 曲       | 測った I | #volume | 直した後 |
 // |----------|----------|---------|----------|
@@ -85,7 +86,35 @@ import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽�
 import town from "./bgm/town.mml?raw"; // 2826c0b1ce744003「？」
 import white from "./bgm/white.mml?raw"; // 本編 B16〜17 あぼーんの白野：変ホ短調 130・synth_pop・dance
 
-export const bgm: Record<string, string> = {
+/**
+ * dtm の studio は トラックごとの 音の 通り道（コンプ・広がり・EQ・リバーブと ディレイの 送り・パン）を 曲を
+ * またいで 使い回し、曲に 書いていない ものは 前の 曲の 値の まま 鳴らす。足した 曲は これらを 書いていないので、
+ * rpg の 曲（#t0comp=30 など）の あとに 鳴ると コンプが かかった まま 3 dB ほど 大きく なっていた
+ * （retro は 1曲目なら -23.7 LUFS、ending の あとだと -20.4）。書いていない ものは studio の 既定
+ * （どれも かけない・広がり 100・パン まんなか 64）を 頭に 足して、前の 曲に よらない ように する。
+ */
+const TRACKS = 16;
+const TRACK_DEFAULTS: readonly [key: string, value: number][] = [
+	["comp", 0],
+	["width", 100],
+	["eqlo", 0],
+	["eqmid", 0],
+	["eqhi", 0],
+	["rev", 0],
+	["dly", 0],
+	["pan", 64],
+];
+
+const withTrackDefaults = (mml: string): string => {
+	let head = "";
+	for (let t = 0; t < TRACKS; t++)
+		for (const [key, v] of TRACK_DEFAULTS)
+			if (!new RegExp(`#t${t}${key}=`, "i").test(mml))
+				head += `#t${t}${key}=${v}`;
+	return head + mml;
+};
+
+const songs: Record<string, string> = {
 	title,
 	town,
 	field,
@@ -115,3 +144,6 @@ export const bgm: Record<string, string> = {
 	deep_kisei,
 	deep_koge,
 };
+export const bgm: Record<string, string> = Object.fromEntries(
+	Object.entries(songs).map(([name, mml]) => [name, withTrackDefaults(mml)]),
+);
