@@ -19,6 +19,7 @@ const M: MonsterDef[] = [
 		weight: 64,
 		abilities: [{ k: "slow" }],
 		desc: "落ちた　レスの　すみの　子。よちよち　あるく。2ターンに　1回しか　動かない",
+		flavor: "のろいのは　足だけ。愛され　ぶりは　だれより　速い",
 	},
 	{
 		// 前の名前は ひとだま。絵は そのまま
@@ -34,6 +35,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "fastMove" }],
 		tags: ["undead"],
 		desc: "落ちた　スレの　霊。すばやく　ただよう。なぐるのは　1回",
+		flavor: "落ちた　スレは　もどらない。未練だけが　まだ　ageている",
 	},
 	{
 		// 前の名前は 迷いコウモリ。絵は そのまま
@@ -48,6 +50,7 @@ const M: MonsterDef[] = [
 		weight: 64,
 		abilities: [{ k: "random" }],
 		desc: "夜ふかしで、どこへ　飛ぶか　自分でも　わからない",
+		flavor: "書いた　ときは　名文。朝　読むと　黒歴史",
 	},
 	{
 		// 前の名前は フナムシ。絵は そのまま
@@ -62,6 +65,7 @@ const M: MonsterDef[] = [
 		weight: 64,
 		abilities: [{ k: "shy" }],
 		desc: "見つけようと　近づくと　逃げる。追いつめれば　戦う",
+		flavor: "見つけた　ころには、もう　仕様に　なっている",
 	},
 	{
 		id: "ksk",
@@ -75,6 +79,7 @@ const M: MonsterDef[] = [
 		weight: 43,
 		abilities: [{ k: "accel", after: 3 }],
 		desc: "となりで　やりあううちに　加速する。長引かせずに　たおすこと",
+		flavor: "スレを　伸ばすのは　得意。中身は　ない",
 	},
 	{
 		id: "neochi",
@@ -89,6 +94,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "sleepSpell", rate: 1 / 4 }],
 		sleep: "deep",
 		desc: "なぐられるまで　起きない。起きると　眠りの呪文",
+		flavor: "「ちょっと　目を　閉じるだけ」と　言って　朝を　むかえる",
 	},
 	{
 		id: "pitcher",
@@ -102,6 +108,7 @@ const M: MonsterDef[] = [
 		weight: 32,
 		abilities: [{ k: "ranged", rate: 3 / 4, atk: 6, verb: "ボールを　投げた" }],
 		desc: "まっすぐ　ならぶと　ボールを　投げてくる",
+		flavor: "投げるのは　ボールより、試合の　ほうが　多い",
 	},
 	{
 		// 前の名前は 毒カボチャ。まんぜう軍（🐮 の ネタ）の 冷笑系（真剣な人を 上から 茶化す）の 牛。
@@ -120,6 +127,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "poison", rate: 1 / 3 }],
 		tags: ["plant"],
 		desc: "なぐると　ときどき　冷笑して、ちからを　下げてくる",
+		flavor: "冷笑は　いちばん　安い　武器。弾は　いくらでも　ある",
 	},
 	{
 		// 絵は「コピー」の アイコン（2枚 かさなった 紙）に 顔を つけた もの（scripts/make-copipe.mjs）
@@ -134,6 +142,7 @@ const M: MonsterDef[] = [
 		weight: 32,
 		abilities: [{ k: "split", rate: 1 / 2 }],
 		desc: "なぐって　たおしきれないと　ふえる",
+		flavor: "元ネタは　とうに　忘れられた。ふえる　ことだけ　覚えている",
 	},
 	{
 		id: "zonj",
@@ -148,6 +157,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "revive" }],
 		tags: ["undead"],
 		desc: "たおしても　一度だけ　起き上がる。草を　投げつけて　たおせば　起きない",
+		flavor: "「もう　来ない」と　言った　人ほど、次の日も　いる",
 	},
 	// ───────── 中ほどの階 ─────────
 	{
@@ -163,6 +173,7 @@ const M: MonsterDef[] = [
 		weight: 37,
 		abilities: [{ k: "pickup" }],
 		desc: "床の　道具を　拾って　持ち歩く。たおせば　落とす",
+		flavor: "拾った　ものは　自分の　もの。出典は　書かない",
 	},
 	{
 		id: "kaze",
@@ -176,6 +187,7 @@ const M: MonsterDef[] = [
 		weight: 37,
 		abilities: [{ k: "warpPlayer", rate: 1 / 3 }],
 		desc: "なぐった　相手を　どこかへ　吹きとばす",
+		flavor: "議論を　吹きとばして、本人は　どこにも　いない",
 	},
 	{
 		// 前の名前は キメラ。絵は そのまま
@@ -190,6 +202,7 @@ const M: MonsterDef[] = [
 		weight: 32,
 		abilities: [{ k: "retreat" }],
 		desc: "弱ると　逃げて　傷を　なおし、IDを　変えて　もどってくる",
+		flavor: "IDは　変えられても、文体は　変えられない",
 	},
 	{
 		id: "tensai",
@@ -204,6 +217,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "steal", rate: 1 / 2 }],
 		sleep: "deep",
 		desc: "持ち物を　盗んで　消える。たおせば　取り返せる",
+		flavor: "盗むのは　一瞬。「無断転載禁止」を　読む　ひまは　ない",
 	},
 	{
 		// 前の名前は さまよう騎士。絵は そのまま
@@ -218,6 +232,7 @@ const M: MonsterDef[] = [
 		weight: 28,
 		abilities: [{ k: "armor" }],
 		desc: "なにを　言われても　効かない。なぐる　攻撃は　半分しか　通らない",
+		flavor: "効いていない　ことを、3レス　かけて　説明してくる",
 	},
 	{
 		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。ふれた 板を 汚して 錆びさせる
@@ -235,6 +250,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "rust", rate: 1 / 2 }],
 		tags: ["undead"],
 		desc: "風呂に　入っていない。ふれた　板を　汚して　錆びさせる",
+		flavor: "キャンセル　したのは　風呂か、人づきあいか",
 	},
 	{
 		id: "metal",
@@ -251,6 +267,7 @@ const M: MonsterDef[] = [
 		sleep: "never",
 		drop: "h_growth",
 		desc: "ダメージは　1しか　通らない。すぐ　逃げる。たおすと　忍法帖の実を　落とす",
+		flavor: "見つけた　ときの　興奮と、逃げられた　ときの　絶望が　セット",
 	},
 	{
 		// 前の名前は 雪だるま。絵は 氷に とじこめられた 初期アイコン（scripts/make-enemies.mjs）
@@ -266,6 +283,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "pack" }, { k: "fastMove" }],
 		sleep: "deep",
 		desc: "4体で　凍って　眠っている。1体が　起きると　みんな　起きる",
+		flavor: "1体　起きれば　みんな　起きる。通報の　連鎖と　同じ",
 	},
 	{
 		// 前の名前は 石像。絵は そのまま
@@ -281,6 +299,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "statue" }],
 		sleep: "never",
 		desc: "となりに　来るまで　動かない",
+		flavor: "何も　しない　ことに　かけては、だれにも　負けない",
 	},
 	{
 		// 前の名前は ばくだん。絵は 燃えている スマホ（怒った 顔の 画面。scripts/make-enemies.mjs）
@@ -295,6 +314,7 @@ const M: MonsterDef[] = [
 		weight: 31,
 		abilities: [{ k: "explode" }],
 		desc: "弱ると　止まり、さらに　弱ると　炎上して　爆発する",
+		flavor: "火消しに　来た　人から　燃えていく",
 	},
 	// ───────── 深い階 ─────────
 	{
@@ -310,6 +330,7 @@ const M: MonsterDef[] = [
 		weight: 27,
 		abilities: [{ k: "knockback", rate: 1 / 3 }],
 		desc: "なぐった　相手を　投げとばす。壁に　ぶつかると　痛い",
+		flavor: "話し合いの　余地は　ない。握力で　決める",
 	},
 	{
 		id: "ninpo",
@@ -324,6 +345,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "drainLv", rate: 1 / 4 }],
 		tags: ["doll"],
 		desc: "レベルを　1つ　うばっていく",
+		flavor: "何年　積んだ　レベルも、エラー　ひとつで　初心者",
 	},
 	{
 		// 前の名前は 過疎。動かずに 足を つかんで 離さない 役と、女の子の 絵に 合わせた。絵は そのまま
@@ -339,6 +361,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "grab" }],
 		sleep: "never",
 		desc: "動かない。となりに　来ると　足を　つかんで　離さない",
+		flavor: "無視すると　ついてくる。かまうと　もっと　ついてくる",
 	},
 	{
 		// 前の名前は ばけ札。絵は 顔の ある 浮きと 釣り針（scripts/make-enemies.mjs）
@@ -353,6 +376,7 @@ const M: MonsterDef[] = [
 		weight: 31,
 		abilities: [{ k: "mimic" }],
 		desc: "道具の　ふりをして　床に　ある。拾おうと　すると　釣られる",
+		flavor: "餌は　いつも　おいしそう。針は　いつも　見えない",
 	},
 	{
 		// 前の名前は 影。絵は そのまま
@@ -369,6 +393,7 @@ const M: MonsterDef[] = [
 		tags: ["undead"],
 		sleep: "never",
 		desc: "見えない。ふらふらと　動く",
+		flavor: "見えないのに、いると　わかる。NGにしても　気配は　消えない",
 	},
 	{
 		// 前の名前は 赤鬼。絵は そのまま
@@ -383,6 +408,7 @@ const M: MonsterDef[] = [
 		weight: 27,
 		abilities: [{ k: "berserk" }],
 		desc: "HPが　半分を　切ると　顔真っ赤に　なって　倍速になる",
+		flavor: "「顔真っ赤で　草」と　言われて、さらに　赤くなる",
 	},
 	{
 		// 前の名前は 凝視の目。絵は そのまま
@@ -397,6 +423,7 @@ const M: MonsterDef[] = [
 		weight: 27,
 		abilities: [{ k: "gaze", rate: 1 / 4 }],
 		desc: "目を　つけられると　混乱する",
+		flavor: "その　熱意を　仕事に　使えば、たぶん　出世する",
 	},
 	{
 		id: "mojibake",
@@ -411,6 +438,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "drainMax", rate: 1 / 2 }],
 		tags: ["doll"],
 		desc: "ふれると　最大HPか　最大ちからが　欠ける",
+		flavor: "縺ｧ縺ｯ……何を　言っているかは、本人にも　わからない",
 	},
 	{
 		// 前の名前は 黒装束。絵は 怒った ふきだしと 残像（scripts/make-enemies.mjs）
@@ -425,6 +453,7 @@ const M: MonsterDef[] = [
 		weight: 23,
 		abilities: [{ k: "fastAct" }],
 		desc: "1ターンに　2回　なぐってくる",
+		flavor: "1回で　言えば　いい　ことを、2回　言う",
 	},
 	{
 		// 前の名前は 闇堕ち兵。絵は むらさきの ねばねば（scripts/make-enemies.mjs）
@@ -439,6 +468,7 @@ const M: MonsterDef[] = [
 		weight: 21,
 		abilities: [{ k: "curse", rate: 1 / 4 }],
 		desc: "なぐった　相手の　装備に　粘着して　のろう",
+		flavor: "嫌いな　はずなのに、いちばん　くわしい",
 	},
 	{
 		id: "wyvern",
@@ -453,6 +483,7 @@ const M: MonsterDef[] = [
 		abilities: [{ k: "breath", rate: 1 / 2, dmg: [17, 23] }],
 		tags: ["dragon"],
 		desc: "まっすぐ　ならぶと　炎を　吐く",
+		flavor: "ワイの　話を　聞け、と　火を　吐く",
 	},
 ];
 

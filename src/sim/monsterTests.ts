@@ -2303,6 +2303,10 @@ test("all", "31 monsters, each with a desc and at least one ability", () => {
 	ok(MONSTER_LIST.length === 31, `${MONSTER_LIST.length} monsters`);
 	const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 	ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
+	const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(
+		(d) => d.id,
+	);
+	ok(!noFlavor.length, `no flavor: ${noFlavor.join(", ")}`);
 	const plain = MONSTER_LIST.filter((d) => !d.abilities.length).map(
 		(d) => d.id,
 	);

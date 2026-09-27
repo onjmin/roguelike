@@ -147,6 +147,8 @@ export type MonsterDef = {
 	drop?: string;
 	/** 図鑑の一言。 */
 	desc: string;
+	/** ひとこと（皮肉の きいた 1文。図鑑の「せつめい」に 出す）。 */
+	flavor: string;
 };
 
 export type MonsterStatus = {

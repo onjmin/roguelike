@@ -22,11 +22,12 @@ const floors = (d: MonsterDef): string =>
 		? `B${d.floors[0]}`
 		: `B${d.floors[0]}〜B${d.floors[1]}`;
 
-/** 「せつめい」の文（メッセージ窓に 1ページずつ）。とくちょう → 強さ → たおした数。 */
+/** 「せつめい」の文（メッセージ窓に 1ページずつ）。とくちょう → ひとこと → 強さ → たおした数。 */
 const detail = (d: MonsterDef, kills: number): string[] => {
 	const tags = (d.tags ?? []).map((t) => `【${TAG_NAME[t]}】`).join("");
 	return [
 		`${tags}${d.desc}`,
+		d.flavor,
 		`出る階　${floors(d)}　経験値　${d.exp}\nHP　${d.hp}　攻撃　${d.atk}　守り　${d.def}`,
 		kills > 0
 			? `これまでに　${kills}匹　たおした`
