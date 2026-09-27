@@ -48,6 +48,7 @@ import {
 	TOWN_MSG,
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
+	ZERO_VOICELESS,
 } from "../data/town";
 import {
 	lineupSpots,
@@ -630,6 +631,7 @@ test("new village lines fit the message window (22 full-width × 2 lines)", () =
 			]);
 	for (const [k, v] of Object.entries(VILLAGE_IDLE))
 		texts.push([`VILLAGE_IDLE.${k}`, v]);
+	ZERO_VOICELESS.forEach((v, i) => texts.push([`ZERO_VOICELESS[${i}]`, v]));
 	fitsWindow(texts);
 });
 

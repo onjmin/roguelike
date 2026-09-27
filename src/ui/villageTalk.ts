@@ -23,8 +23,10 @@ import {
 	TITLE_TOWN_QUOTES,
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
+	ZERO_VOICELESS,
 } from "../data/town";
 import { loadRecords, loadTown, runStats } from "../engine/save";
+import { settings } from "../engine/settings";
 
 /**
  * ダンジョンの ひとことの説明（口・立て札の 2行目。階の数は 1行目の 名前の 横に 出す）。
@@ -170,6 +172,9 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
 	if (town) return town.text;
 	if (who === "shiyo" && (STORAGE_CAP[stage] ?? 0) > 0)
 		return VILLAGE_IDLE.store;
+	// ボイスを オンに しても、ゼロだけは 声が 出ない（音源が まだ 無い）
+	if (who === "zero" && settings.voice)
+		return ZERO_VOICELESS[(returnAt() % 9973) % ZERO_VOICELESS.length];
 	return VILLAGE_IDLE[who];
 };
 
