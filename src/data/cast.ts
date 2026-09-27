@@ -3,7 +3,9 @@
 // 歩行グラは RPGEN 形式（16x16・2コマ×4方向）。立ち絵は public/portraits/ の透過 PNG（右向きに描いた絵。
 // 右に立つときは ui/message.ts が左右反転する）。おんJ民は 立ち絵が無いので 出さない（ダミーも出さない）。
 // キリコは しゃべらないので ここには入れない（歩行グラだけ KIRIKO_WALK）。
+// 声（voice）は 村の 会話の 読み上げ（設定の ボイス。engine/audio.ts）。無い人は 読み上げない。
 
+import type { VoiceDef } from "../engine/defs";
 import { SPEAKERS, type Speaker } from "./quotes";
 
 export type CastDef = {
@@ -12,6 +14,8 @@ export type CastDef = {
 	/** 歩行グラ（`sa:<id>`）。 */
 	walk: string;
 	portrait?: { src: string; side: "left" | "right"; scale?: number };
+	/** 読み上げの 声（dtm の koe 音源）。無ければ 声なし。 */
+	voice?: VoiceDef;
 };
 
 const WALK: Record<Speaker, string> = {
@@ -31,12 +35,31 @@ const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
 	feris: { src: "portraits/feris.png", side: "right", scale: 0.9 },
 };
 
+/**
+ * 読み上げの 声。ロゼは rpg と 同じ roze、シヨは dtm に 入っている shiyo（革命シヨ）。
+ * おんJ民・フェリスは rpg でも 声なし。ゼロ・地の文・モブ（ぷゆゆ・おんJマイナーズ）も いまは 声なし。
+ */
+const VOICE: Partial<Record<Speaker, VoiceDef>> = {
+	roze: { model: "roze" },
+	shiyo: { model: "shiyo" },
+};
+
 export const CAST: Record<Speaker, CastDef> = Object.fromEntries(
 	(Object.keys(SPEAKERS) as Speaker[]).map((id) => [
 		id,
-		{ ...SPEAKERS[id], walk: WALK[id], portrait: PORTRAIT[id] },
+		{
+			...SPEAKERS[id],
+			walk: WALK[id],
+			portrait: PORTRAIT[id],
+			voice: VOICE[id],
+		},
 	]),
 ) as Record<Speaker, CastDef>;
+
+/** 読み上げで 使う 音源（ボイスを ON に したとき これだけ 取ってくる）。 */
+export const VOICE_MODELS: readonly string[] = [
+	...new Set(Object.values(VOICE).map((v) => v.model)),
+];
 
 /** キリコの歩行グラ。 */
 export const KIRIKO_WALK = "pub:sprites/kiriko.png";

@@ -2,9 +2,12 @@
 //
 // - 2択・3択は、押すたびに次の値へ切りかえる（一覧を開き直す手間をはぶく）。
 // - 音量だけは 0〜100 を 10 刻みの一覧から選ぶ。
+// - ボイス（村の 会話の 読み上げ。rpg と 同じ）は ON に するとき、はじめに 約45MBを 取ってくると 断ってから。
+//   取ってくる あいだは「じゅんび中 N%」（開き直すたびに 今の 進み）。
 // - 変えたら すぐ saveSettings（音・十字キーは onSettingsChange で その場に効く）。
 // - 村から 開いたときだけ「セーブデータを　消す」（はじめから やりなおす。2回 きいてから 消して 読みなおす）。
 
+import type { GameAudio } from "../engine/audio";
 import { wipeSaves } from "../engine/save";
 import { type Settings, saveSettings, settings } from "../engine/settings";
 import type { Ctx } from "./ctx";
@@ -42,11 +45,36 @@ const pickVolume = async (
 	return v === null ? null : Number(v);
 };
 
+/** ボイスの 行の 右の 字（取ってくる あいだは 進み）。rpg の voiceLabel と 同じ。 */
+const voiceLabel = (audio: GameAudio): string => {
+	if (!settings.voice) return "OFF";
+	const p = audio.voiceProgress;
+	if (p && p.total > 0 && p.loaded < p.total)
+		return `ON（じゅんび中 ${Math.floor((p.loaded / p.total) * 100)}%）`;
+	return "ON";
+};
+
+/** ボイスを ON に するか きく（はじめに データを 取ってくるので）。 */
+const askVoice = async (ctx: Ctx): Promise<void> => {
+	const v = await listWindow(
+		ctx,
+		"ボイスを　ONにすると、はじめに<br>やく45MBの　データを　よみこみます。<br><small>村の　会話を　読み上げます（ロゼ・シヨ）。2回目からは　すぐに　はじまります</small>",
+		[
+			{ label: "ONにする", value: "yes" },
+			{ label: "やめておく", value: "no" },
+		],
+		{ start: 0 },
+	);
+	if (v === "yes") saveSettings({ voice: true });
+};
+
 const KEYS = [
+	"voice",
 	"mute",
 	"bgm",
 	"bgmVolume",
 	"seVolume",
+	"voiceVolume",
 	"pad",
 	"padSide",
 	"speed",
@@ -87,6 +115,7 @@ export const openSettings = async (
 			ctx,
 			"せってい",
 			[
+				{ label: "ボイス", sub: voiceLabel(ctx.audio), value: "voice" },
 				{
 					label: "BGM・効果音",
 					sub: settings.mute ? "ミュート中" : "ON",
@@ -102,6 +131,11 @@ export const openSettings = async (
 					label: "効果音の大きさ",
 					sub: String(settings.seVolume),
 					value: "seVolume",
+				},
+				{
+					label: "ボイスの大きさ",
+					sub: String(settings.voiceVolume),
+					value: "voiceVolume",
 				},
 				{
 					label: "十字キー",
@@ -132,7 +166,10 @@ export const openSettings = async (
 		);
 		if (v === null) return;
 		start = Math.max(0, KEYS.indexOf(v as (typeof KEYS)[number]));
-		if (v === "mute") saveSettings({ mute: !settings.mute });
+		if (v === "voice") {
+			if (settings.voice) saveSettings({ voice: false });
+			else await askVoice(ctx);
+		} else if (v === "mute") saveSettings({ mute: !settings.mute });
 		else if (v === "bgm") saveSettings({ bgm: NEXT_BGM[settings.bgm] });
 		else if (v === "bgmVolume") {
 			const n = await pickVolume(ctx, "BGMの大きさ", settings.bgmVolume);
@@ -144,6 +181,9 @@ export const openSettings = async (
 				// 決めた大きさで1回鳴らして聞かせる（決定の音と重ならないよう少し待つ）
 				setTimeout(() => ctx.se("cursor"), 250);
 			}
+		} else if (v === "voiceVolume") {
+			const n = await pickVolume(ctx, "ボイスの大きさ", settings.voiceVolume);
+			if (n !== null) saveSettings({ voiceVolume: n });
 		} else if (v === "pad") saveSettings({ pad: !settings.pad });
 		else if (v === "padSide")
 			saveSettings({ padSide: settings.padSide === "left" ? "right" : "left" });

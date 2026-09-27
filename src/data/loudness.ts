@@ -1,10 +1,11 @@
 // 音の大きさ（ラウドネス）の目標と実測。
 //
 // 効果音は RPGEN のいろいろな素材の寄せ集めで、ファイルのままだと大きさが 20 LU 近く（-24.9〜-5.9）ばらつく。
-// BGM（MML）も曲ごとに違う。そこで測ったラウドネスから、
-// 既定の音量設定（BGM 40・効果音 60）で下の目標の大きさになるよう補正する。
+// BGM（MML）と 村の 会話の 読み上げの声も、曲・声ごとに違う。そこで測ったラウドネスから、
+// 既定の音量設定（BGM 40・効果音 60・声 80）で下の目標の大きさになるよう補正する。
 // - 効果音: SE_LOUDNESS の倍率を1音ずつ掛ける（pnpm loudness が測って書き換える）
 // - BGM: 曲ごとに MML の #volume= を直してある（実測の表は data/bgm.ts）
+// - 声: VOICE_LUFS から声ごとの倍率を出す（rpg の data/loudness.ts と 同じ）
 // 値はどれも最終出力（ステレオ）での LUFS。モノラルの素材は左右に同じ音で鳴る（Web Audio）ので、
 // L=R のステレオにして測る（1ch で測るより +3 dB）。
 //
@@ -44,7 +45,7 @@
 // 鳴らすときは 頭の無音（鳴り始めの 10 ms 手前まで）を とばし、待ちも その分 引く（engine/audio.ts）。
 
 /** 補正を決めたときの音量設定（settings の既定値）。 */
-export const REF_VOLUME = { bgm: 40, se: 60 } as const;
+export const REF_VOLUME = { bgm: 40, se: 60, voice: 80 } as const;
 
 /** 効果音の区分ごとの目標（既定の設定での L、LUFS）。区分は data/sfx.ts。 */
 export const SE_TARGET = {
@@ -71,6 +72,24 @@ export const SE_UNMEASURED_GAIN = 0.3;
  * share: 本体とみなすエネルギーの割合、maxMs / jingleMaxMs: 待つ長さの上限。
  */
 export const SE_WAIT = { share: 0.85, maxMs: 1200, jingleMaxMs: 1500 } as const;
+
+/** 声の目標（既定の設定でのセリフの I、LUFS）。rpg と 同じ。 */
+export const VOICE_TARGET = -21;
+
+/**
+ * 声ごとの大きさ（studio.speak の volume 1.0 でのセリフの I、LUFS）。
+ * roze は rpg で ブラウザの 最終出力を 録って 測った値（2026-09）。shiyo は まだ 測っていない。
+ */
+export const VOICE_LUFS: Record<string, number> = {
+	roze: -14.5,
+};
+
+/** 測っていない声は、rpg の 4人（uc・roze・teto・rei）の 中くらいと みなす。 */
+const VOICE_LUFS_DEFAULT = -16.5;
+
+/** 声の倍率（声の音量が既定の 80 のときの studio.speak の volume）。 */
+export const voiceGain = (model: string): number =>
+	10 ** ((VOICE_TARGET - (VOICE_LUFS[model] ?? VOICE_LUFS_DEFAULT)) / 20);
 
 /** 効果音1つの実測と補正。 */
 export type SeLoudness = readonly [

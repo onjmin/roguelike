@@ -1,13 +1,19 @@
-// 音：BGM（MML を @onjmin/dtm で再生）・効果音（RPGEN の mp3）。
+// 音：BGM（MML を @onjmin/dtm で再生）・効果音（RPGEN の mp3）・村の 会話の 読み上げ（koe UtauTTS）。
 //
 // - AudioContext は1つだけ。スマホの自動再生制限のため、最初のタップ／キー入力で作る（unlock）。
 // - BGM と効果音は画面右上のボタンでまとめてミュートできる（settings.mute）。
 //   ミュート中も「今どの曲のはずか」は覚えておき、解除したらその曲から鳴らす。
 // - dtm のシーケンサは 0.5 秒以上止まる（タブ切替・画面ロック・重い処理）と黙って再生をやめる。
 //   onStop で「自分で止めたのではない」停止を見分け、最後の位置から鳴らし直す。
+// - 読み上げは rpg の engine/audio.ts から 移した（村の 会話だけ。ダンジョンの ログは 読まない）。
+//   既定 OFF（初回に 約45MBの TTS データを 取得するため）。設定で ON にする。準備するのは
+//   声の ある 人（data/cast.ts の VOICE_MODELS）の 音源だけ。
+//   頭が欠けないよう、合成の最初のかたまり（＋声ごとの貯め。SPEECH_BUFFER_SEC）が出来てから
+//   頭から鳴らす（awaitRender: "first-chunk"）。合成が追いつかなければ後ろをずらす（言葉は欠けない）。
+//   鳴り始める時刻を返すので、メッセージ窓は文字送りをそこまで待たせる（ui/message.ts）。
 // - dtm は重いので、最初の音が要るまで動的 import で遅らせる。
 // - 大きさは測ったラウドネスでそろえる（data/loudness.ts）。既定の音量設定のとき、
-//   BGM は曲ごとの #volume で、効果音は1音ずつの倍率で目標の大きさになる。
+//   BGM は曲ごとの #volume で、効果音は1音ずつの倍率で、声は声ごとの倍率で目標の大きさになる。
 // - 効果音が鳴り始めたら、その音の本体が鳴り終わる時刻（waitMs。data/loudness.ts）まで「区切り待ち」にする。
 //   次の行動・選択肢の決定などはそれまで効かない（seSettled / seHeld）。
 //   連打で次の効果音が畳みかけて重ならないように。余韻までは待たせない。
@@ -15,14 +21,17 @@
 //   ループの BGM も絞って止められる（fadeBgm。階段を降りるとき）。
 //   dtm の stop は先読みで予約済みの音符（約0.5秒ぶん）を鳴らし残すので、出口の音量ごと絞る。
 
-import type { DtmStudio, MmlPlayback } from "@onjmin/dtm";
+import type { DtmStudio, MmlPlayback, SpeechHandle } from "@onjmin/dtm";
+import { VOICE_MODELS } from "../data/cast";
 import {
 	REF_VOLUME,
 	SE_LOUDNESS,
 	SE_UNMEASURED_GAIN,
 	SE_WAIT,
+	voiceGain,
 } from "../data/loudness";
 import { soundUrl } from "./assets";
+import type { VoiceDef } from "./defs";
 import { onSettingsChange, settings } from "./settings";
 
 type Dtm = typeof import("@onjmin/dtm");
@@ -89,6 +98,86 @@ const sleep = (ms: number): Promise<void> =>
 const hasIntro = (mml: string): boolean =>
 	/@0\s*t\d+\s*v\d+\s*(?:o\d\s*)?r1r1r1r1/.test(mml);
 
+/** 固有名詞の読み（OpenJTalk が誤読するもの）。長いものから置き換える（rpg と 同じ）。 */
+const READINGS: ReadonlyArray<readonly [string, string]> = [
+	["蓄音キリコ", "ちくねキリコ"],
+	["束音ロゼ", "たばねロゼ"],
+	["重音テト", "かさねテト"],
+	["蓄音", "ちくね"],
+	["束音", "たばね"],
+	["重音", "かさね"],
+	["吾輩", "わがはい"],
+	["おーぷん2ちゃんねる", "おーぷんにちゃんねる"],
+	["おんJ", "おんジェイ"],
+	["なんJ", "なんジェイ"],
+	["LV", "レベル"],
+	["Lv", "レベル"],
+];
+
+/**
+ * セリフ本文 → 読み上げ用の文。読めるものが残らなければ null（声なしで文字だけ出す）。
+ * dtm の調査（planSpeech のモーラ列の実測）に基づく（rpg と 同じ）。
+ */
+export const speechText = (raw: string): string | null => {
+	let s = raw.normalize("NFKC");
+	for (const [from, to] of READINGS) s = s.replaceAll(from, to);
+	s = s
+		.replace(/[（(][^）)]*[）)]/g, "") // ト書き（…）は読まない
+		.replace(/\p{Extended_Pictographic}|\u{FE0F}|\u{200D}/gu, "")
+		.replace(/(^|[^A-Za-z])[wW]+(?=$|[^A-Za-z])/g, "$1、") // 草w / www（笑い）→ 間
+		.replace(/草{2,}/g, "")
+		.replace(/[♪♫☆★♡♥※→←↑↓]/g, "")
+		.replace(/[「」『』【】［］<>＜＞]/g, "、")
+		.replace(/[…‥]+|・{2,}|\.{2,}/g, "、")
+		.replace(/[~〜]+/g, "ー")
+		.replace(/\s+/g, "")
+		.replace(/、{2,}/g, "、")
+		.replace(/^[、\s]+|[、\s]+$/g, "")
+		.trim();
+	if (
+		!/[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}A-Za-z0-9]/u.test(s)
+	)
+		return null;
+	return s;
+};
+
+/**
+ * 読み上げを鳴らし始める前に合成しておく秒数（dtm の minBufferSec。最初のモーラから）。
+ * 最初のかたまりは数モーラしかないので、合成が再生に追いつかないと行の途中に間が空く
+ * （dtm が後ろをずらす）。少し貯めてから鳴らすと減る。合成の遅い roze は多めにする。
+ * 鳴り出しはそのぶん遅れる（メッセージ窓の文字送りは声の頭まで待つ。ui/message.ts）。
+ */
+const SPEECH_BUFFER_SEC: Readonly<Record<string, number>> = { roze: 0.4 };
+/** {@link SPEECH_BUFFER_SEC} に無い声の貯め（秒）。 */
+const SPEECH_BUFFER_DEFAULT_SEC = 0.2;
+
+/** 読み上げの鳴り始め（{@link GameAudio.speak} の started）。 */
+export type SpeechStart = {
+	/** 最初のモーラが鳴る AudioContext の時刻（秒）。 */
+	startTime: number;
+	/** その音が聞こえる時刻（performance.now の時計、ms。出力の遅れを含む）。 */
+	at: number;
+	/** 声の長さ（秒。合成待ちでずれた間は含まない）。 */
+	durationSec: number;
+	/**
+	 * 声が鳴り終わって聞こえる見込みの時刻（performance.now の時計、ms）。合成が遅れて
+	 * 後ろがずれる（dtm の shiftSec）と延び、次のかたまりを待って止まっている間
+	 * （dtm の position() が進まない間）も延びるので、読むたびに今の値を返す。
+	 */
+	endAt: () => number;
+};
+
+/** {@link GameAudio.speak} の戻り値。 */
+export type Speaking = {
+	/** 止める（準備中なら準備ごと中断）。 */
+	stop: () => void;
+	/**
+	 * 鳴り始める時刻が決まったら解決する。鳴らない（失敗・鳴る前に止めた）ときは null。
+	 * 読み上げない（OFF・読めない本文）ときは無い。
+	 */
+	started?: Promise<SpeechStart | null>;
+};
+
 export class GameAudio {
 	private ctx: AudioContext | null = null;
 	private seGain: GainNode | null = null;
@@ -120,6 +209,13 @@ export class GameAudio {
 	 * すぐ鳴って待ちが始まるので、その間も進めない）。
 	 */
 	private sePending = new Set<{ until: number }>();
+	private voiceReady: Promise<void> | null = null;
+	private speaking: {
+		abort: AbortController;
+		handle: SpeechHandle | null;
+	} | null = null;
+	/** 読み上げの準備の進み具合（設定画面の表示用）。 */
+	voiceProgress: { loaded: number; total: number } | null = null;
 
 	constructor(bgm: Record<string, string>, sfx: Record<string, string>) {
 		this.bgmData = bgm;
@@ -128,12 +224,14 @@ export class GameAudio {
 			bgm: settings.bgm,
 			mute: settings.mute,
 			bgmVolume: settings.bgmVolume,
+			voice: settings.voice,
 		};
 		onSettingsChange(() => {
 			const cur = {
 				bgm: settings.bgm,
 				mute: settings.mute,
 				bgmVolume: settings.bgmVolume,
+				voice: settings.voice,
 			};
 			if (cur.bgm !== prev.bgm || cur.mute !== prev.mute) {
 				this.restartBgm(0);
@@ -146,6 +244,8 @@ export class GameAudio {
 					this.volumeFor(this.bgmData[this.bgmName] ?? ""),
 				);
 			}
+			if (cur.voice && !prev.voice) void this.prepareVoice();
+			if (!cur.voice) this.stopSpeech();
 			if (this.seGain) this.seGain.gain.value = seGainOf(settings.seVolume);
 			// 音を消したら、鳴っていた音の区切りも待たない
 			if (!this.seAudible()) {
@@ -178,6 +278,7 @@ export class GameAudio {
 			this.seGain.connect(this.ctx.destination);
 			// 鳴らすはずだった曲があれば始める
 			if (this.bgmName) this.restartBgm(0);
+			if (settings.voice) void this.prepareVoice();
 		}
 		const ctx = this.ctx;
 		if (ctx.state === "suspended") void ctx.resume();
@@ -205,8 +306,8 @@ export class GameAudio {
 				dtm.createDtmStudio({
 					audioContext: ctx,
 					masterVolume: STUDIO_MASTER_VOLUME,
-					// 歌声合成は使わない（ワーカーを立てない）
-					voiceWorkerUrl: null,
+					// voiceWorkerUrl は省略：Vite が dist/voice-worker.js を assets/ へ出力して URL を書き換える
+					// （ワーカーは 読み上げを 使うときに 立つ。rpg と 同じ）
 					features: { midi: false, chord: false, presetUI: false, help: false },
 				}),
 			);
@@ -366,11 +467,16 @@ export class GameAudio {
 		if (j.bus) releaseBus(j.bus);
 	}
 
-	/** fadeBgm・fadeOutJingle で絞った studio の出口を、絞った音の残りが消えてから戻す。 */
-	private unduck(studio: DtmStudio): void {
+	/**
+	 * fadeBgm・fadeOutJingle で絞った studio の出口を、絞った音の残りが消えてから戻す。
+	 * now なら すぐ 戻す（読み上げ。声を 待たせない。rpg と 同じ）。
+	 */
+	private unduck(studio: DtmStudio, now = false): void {
 		const ctx = this.ctx;
 		if (this.duckUntil === null || !ctx) return;
-		const at = Math.max(ctx.currentTime, this.duckUntil);
+		const at = now
+			? ctx.currentTime
+			: Math.max(ctx.currentTime, this.duckUntil);
 		this.duckUntil = null;
 		const g = studio.masterGain.gain;
 		g.cancelScheduledValues(at);
@@ -600,5 +706,120 @@ export class GameAudio {
 	seSpan(name: string): { startMs: number; endMs: number } | null {
 		const m = SE_LOUDNESS[name];
 		return m ? { startMs: m[5], endMs: m[6] } : null;
+	}
+
+	// ───────────────── 読み上げ ─────────────────
+
+	/** 読み上げの準備（TTS データ。2回目以降はブラウザのキャッシュ）。 */
+	prepareVoice(): Promise<void> {
+		if (!this.ctx) return Promise.resolve();
+		this.voiceReady ??= (async () => {
+			try {
+				const studio = await this.studio();
+				await studio.prepareSpeech(VOICE_MODELS, {
+					onProgress: (loaded: number, total: number) => {
+						this.voiceProgress = { loaded: Math.min(loaded, total), total };
+					},
+				});
+				this.voiceProgress = null;
+			} catch (e) {
+				console.warn("[audio] 読み上げの準備に失敗しました", e);
+				this.voiceReady = null;
+			}
+		})();
+		return this.voiceReady;
+	}
+
+	/** AudioContext の時刻 t（秒）に鳴らした音が聞こえる時刻（performance.now の時計、ms）。 */
+	private audibleAt(t: number): number {
+		const ctx = this.ctx;
+		if (!ctx) return performance.now();
+		// outputLatency は Safari に無い（Bluetooth のイヤホンなどで大きくなる）
+		const latency = Number.isFinite(ctx.outputLatency) ? ctx.outputLatency : 0;
+		return performance.now() + (t - ctx.currentTime + latency) * 1000;
+	}
+
+	/**
+	 * セリフを読み上げる。stop を呼ぶと止まる（準備中なら準備ごと中断）。
+	 * 合成が終わる前に次のセリフへ進んだときは、遅れて届いた声を捨てる。
+	 * started で鳴り始める時刻が分かる（文字送りを声の頭に合わせる用）。
+	 * leadMs を渡すと、今からそのぶんより前には鳴らさない（「……」で始まる文の間）。
+	 */
+	speak(text: string, voice: VoiceDef, leadMs = 0): Speaking {
+		this.stopSpeech();
+		const body = speechText(text);
+		const ctx = this.ctx;
+		if (!settings.voice || !ctx || !body) return { stop: () => {} };
+		const at = leadMs > 0 ? ctx.currentTime + leadMs / 1000 : undefined;
+		const entry = {
+			abort: new AbortController(),
+			handle: null as SpeechHandle | null,
+		};
+		this.speaking = entry;
+		const started = (async (): Promise<SpeechStart | null> => {
+			try {
+				await this.prepareVoice();
+				const studio = await this.studio();
+				if (entry.abort.signal.aborted) return null;
+				this.unduck(studio, true);
+				const handle = await studio.speak(body, {
+					model: voice.model,
+					pitchOffset: voice.pitchOffset ?? 0,
+					emotion: voice.emotion ?? "neutral",
+					style: voice.style ?? "neutral",
+					// 既定（80）で声ごとの倍率＝目標の大きさ（data/loudness.ts）
+					volume:
+						voiceGain(voice.model) * (settings.voiceVolume / REF_VOLUME.voice),
+					// 最初のかたまり（＋貯め）が出来たら頭から鳴らす。後続の合成が遅れたら
+					// 飛ばさずに後ろをずらす（lateChunks の既定 "shift"）
+					awaitRender: "first-chunk",
+					at,
+					minBufferSec:
+						SPEECH_BUFFER_SEC[voice.model] ?? SPEECH_BUFFER_DEFAULT_SEC,
+					signal: entry.abort.signal,
+				});
+				if (this.speaking !== entry || entry.abort.signal.aborted) {
+					handle?.stop();
+					return null;
+				}
+				if (!handle) return null;
+				entry.handle = handle;
+				return {
+					startTime: handle.startTime,
+					at: this.audibleAt(handle.startTime),
+					durationSec: handle.durationSec,
+					// 鳴り終わりの見込み。ずれが分かっていればその分（shiftSec）、次のかたまりを
+					// 待って止まっていれば今から残りの長さ（position() は止まっている間進まない）。
+					// 遅い方を取る
+					endAt: () =>
+						this.audibleAt(
+							Math.max(
+								handle.startTime + handle.shiftSec + handle.durationSec,
+								ctx.currentTime +
+									Math.max(0, handle.durationSec - handle.position()),
+							),
+						),
+				};
+			} catch (e) {
+				if (!entry.abort.signal.aborted)
+					console.warn("[audio] 読み上げに失敗しました", e);
+				return null;
+			}
+		})();
+		return {
+			stop: () => {
+				if (this.speaking === entry) this.stopSpeech();
+			},
+			started,
+		};
+	}
+
+	/** 読み上げを止める（送った・村を 出た・ボイスを OFF に した）。 */
+	stopSpeech(): void {
+		const s = this.speaking;
+		this.speaking = null;
+		if (!s) return;
+		s.abort.abort();
+		s.handle?.stop();
 	}
 }

@@ -105,6 +105,15 @@ export type VillageExit =
 
 export type Script = (s: Story) => Promise<void>;
 
+/** 読み上げの声（data/cast.ts の voice。rpg の VoiceDef と 同じ）。 */
+export type VoiceDef = {
+	/** dtm の koe 音源キーワード（roze / shiyo …）。 */
+	model: string;
+	pitchOffset?: number;
+	emotion?: "neutral" | "happy" | "sad" | "angry";
+	style?: "neutral" | "calm" | "lively";
+};
+
 export type SayOptions = {
 	/** 名前欄を差し替える（モブ・「？？？」等）。 */
 	name?: string;

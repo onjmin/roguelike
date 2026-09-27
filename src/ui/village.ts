@@ -30,6 +30,7 @@ import type {
 import { Actor, Field } from "../engine/field";
 import { dir4Candidates } from "../engine/input";
 import type { Screen } from "../engine/screen";
+import { settings } from "../engine/settings";
 import {
 	clamp,
 	DIR_VEC,
@@ -258,6 +259,8 @@ export class Village {
 		cancelAnimationFrame(this.rafId);
 		this.ctx.input.onFieldTap = null;
 		this.msg.close();
+		// 読み上げは 村の 会話だけ（ダンジョンへ 持ちこまない）
+		this.ctx.audio.stopSpeech();
 		this.toastEl.classList.remove("shown");
 		this.lastSpot = {
 			x: this.player.x,
@@ -887,10 +890,16 @@ export class Village {
 		opt: SayOptions = {},
 	): Promise<void> {
 		const c = who ? CAST[who] : undefined;
+		// 声の ある 人（data/cast.ts の voice）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
+		const voice = c?.voice;
 		return this.msg.show({
 			name: opt.name ?? c?.name,
 			color: c?.color,
 			text,
+			onShow:
+				voice && settings.voice
+					? (leadMs) => this.ctx.audio.speak(text, voice, leadMs)
+					: undefined,
 			portrait: opt.noPortrait
 				? null
 				: opt.portrait

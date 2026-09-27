@@ -5,11 +5,14 @@ const KEY = "kiriko-roguelike/settings";
 export type Settings = {
 	/** BGM と効果音をまとめて消す（画面右上のボタン）。 */
 	mute: boolean;
+	/** 村の 会話の 読み上げ（初回に 約45MBの データを 取得する）。既定 OFF（rpg と 同じ）。 */
+	voice: boolean;
 	/** BGM の鳴らし方。hq = SoundFont（楽器の音色つき）/ light = 内蔵シンセ / off。 */
 	bgm: "hq" | "light" | "off";
 	/** 0-100 */
 	bgmVolume: number;
 	seVolume: number;
+	voiceVolume: number;
 	/** 画面の十字キーを出す（タップ移動だけで遊ぶ人は消せる）。 */
 	pad: boolean;
 	/** 動きの速さ（敵の番の見せ方）。 */
@@ -20,9 +23,11 @@ export type Settings = {
 
 const DEFAULTS: Settings = {
 	mute: false,
+	voice: false,
 	bgm: "hq",
 	bgmVolume: 40,
 	seVolume: 60,
+	voiceVolume: 80,
 	pad: true,
 	speed: "normal",
 	padSide: "left",
