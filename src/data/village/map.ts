@@ -56,6 +56,7 @@ import {
 	C_GRASS,
 	C_PLAZA,
 	C_STONE,
+	CAFE,
 	CLIFF,
 	DIRT,
 	floor,
@@ -100,6 +101,8 @@ export const VILLAGE_SPOTS = {
 	exit: [27, 0] as Cell,
 	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
 	exitSign: [28, 12] as Cell,
+	/** 喫茶「保守」の 扉（段5 から。調べると 話を 聞く）。 */
+	cafeDoor: [4, 18] as Cell,
 	/** おんJ 本館の 扉（見るだけ）。 */
 	hallDoor: [20, 10] as Cell,
 	/** 起きたとき・倒れて もどったときに 立つ所（蓄音機の前）。 */
@@ -346,6 +349,12 @@ const EDGE_CELLS: readonly [number, number, string][] = [
 	[27, 24, "b"],
 ];
 
+/** 喫茶「保守」が 建つ 町の 段。 */
+export const CAFE_FROM = 5;
+
+/** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 調べる）。 */
+const CAFE_BLOCK: readonly string[] = ["99999", "/////", "@|`|@", "''?''"];
+
 /** 村の 出口（地図の 四方の はし。踏むと 全体マップ）。inward は 村へ もどる 向き。 */
 export type VillageExit = {
 	side: "n" | "s" | "w" | "e";
@@ -414,6 +423,8 @@ export const villageRows = (v: VillageView): string[] => {
 		rows.push(r);
 	}
 	for (const [x0, y, line] of OUTSKIRTS_ROWS) stamp(rows, x0, y, [line]);
+	// 喫茶「保守」（段5 から。西の 空き地の 奥。扉は 下の 道から）
+	if (layoutStage(v) >= CAFE_FROM) stamp(rows, 2, 15, CAFE_BLOCK);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
 	return rows;
 };
@@ -435,6 +446,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...HUT,
 		...(stage >= 6 ? STOREHOUSE : SHED),
 		...hallTiles(stage),
+		...CAFE,
 		".": paved ? floor(C_STONE, STONE) : floor(C_DIRT, DIRT),
 		":": floor(C_PLAZA, PLAZA),
 		U: solid(C_PLAZA, PLAZA, base(2, 37)),
@@ -505,6 +517,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	{
 		const [dx, dy] = VILLAGE_SPOTS.hallDoor;
 		out.push({ id: "door_hall", x: dx, y: dy, trigger: "talk" });
+	}
+	if (stage >= CAFE_FROM) {
+		const [cx, cy] = VILLAGE_SPOTS.cafeDoor;
+		out.push({ id: "door_cafe", x: cx, y: cy, trigger: "talk" });
 	}
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;

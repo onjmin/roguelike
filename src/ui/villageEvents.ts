@@ -45,6 +45,7 @@ import {
 } from "../engine/save";
 import { openBook } from "./bookView";
 import { runSaveLabel } from "./boot";
+import { cafeScript, hasCafeNews } from "./cafe";
 import type { Ctx } from "./ctx";
 import { chooseStored, openStorage, pickCarry } from "./home";
 import { openHowto } from "./howto";
@@ -321,6 +322,11 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
 	if (p.id === "door_hut") return sign(p.id, p.x, p.y, VILLAGE_MSG.hutDoor);
+	if (p.id === "door_cafe")
+		return {
+			...sign(p.id, p.x, p.y, cafeScript(ctx)),
+			notice: hasCafeNews,
+		};
 	if (p.id === "door_hall") {
 		const stage = loadTown().stage;
 		const i = stage >= 6 ? 2 : stage >= 3 ? 1 : 0;

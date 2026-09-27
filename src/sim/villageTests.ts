@@ -14,6 +14,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
+import { CAFE_TALKS } from "../data/cafe";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
 import {
@@ -53,6 +54,7 @@ import {
 	ZERO_VOICELESS,
 } from "../data/town";
 import {
+	CAFE_FROM,
 	exitFor,
 	lineupSpots,
 	VILLAGE_EXITS,
@@ -668,6 +670,27 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
 	fitsWindow(texts);
+});
+
+test("喫茶「保守」: every talk fits the village window, and the door appears from its stage and can be reached", () => {
+	fitsWindow(
+		CAFE_TALKS.flatMap((t) =>
+			t.lines.map((l, i): [string, string] => [`cafe ${t.id}[${i}]`, l.text]),
+		),
+	);
+	ok(
+		new Set(CAFE_TALKS.map((t) => t.id)).size === CAFE_TALKS.length,
+		"two cafe talks share an id",
+	);
+	for (const v of VIEWS) {
+		const s = survey(v);
+		const door = s.places.find((p) => p.id === "door_cafe");
+		ok(
+			!!door === v.stage >= CAFE_FROM,
+			`${label(v)}: the cafe door does not match the stage`,
+		);
+		if (door) ok(s.talkable(door), `${label(v)}: cannot reach the cafe door`);
+	}
 });
 
 test("the boot title's quote keeps its two lines on a 320px phone (name and 「」 included)", () => {

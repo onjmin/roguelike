@@ -241,6 +241,19 @@ export const hallTiles = (stage: number): Record<string, TileDef> => {
 	};
 };
 
+// ───────────────── 喫茶「保守」（西の 空き地。町の 段5 から） ─────────────────
+//   9  屋根の 棟   /  屋根の 軒   |  板壁（上段）   `  窓   '  板壁（下段）   ?  扉（2マスの 絵）   @  ちょうちん
+const CAFE_WALL = "#7a5a3a";
+export const CAFE: Record<string, TileDef> = {
+	"9": solid("#8a4a2a", base(1, 82)),
+	"/": solid("#9a5a32", base(1, 84)),
+	"|": solid(CAFE_WALL, base(1, 57)),
+	"`": solid(CAFE_WALL, base(1, 57), basePx(48, 1382)),
+	"'": solid(CAFE_WALL, base(1, 58)),
+	"?": solid(CAFE_WALL, base(1, 58), base(7, 57, 1, 2)),
+	"@": solid(CAFE_WALL, base(1, 57), basePx(2 * 16 + 3, 297 * 16 + 2, 10, 13)),
+};
+
 // ───────────────── 村の まわり（森・西の 空き地・東の 畑・南の 池） ─────────────────
 //   ^  紅葉の 木（2マス幅）   ;  草むら（通れる）   %  小石   B  大岩   =  切り株   _  丸太（2マス幅）
 //   ~  池の 水（field.png の 海）   G  畑の 畝   S  かかし   W  麦
