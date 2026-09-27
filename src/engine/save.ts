@@ -598,11 +598,8 @@ export const settleReturn = (
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	let sold = 0;
 	for (const it of pend.items) {
-		if (
-			pend.kind === "escape" &&
-			stored.includes(it.uid) &&
-			t.storage.length < cap
-		)
+		// 持ち帰っても 帰還スレでも、選んだ 道具は 倉庫へ
+		if (stored.includes(it.uid) && t.storage.length < cap)
 			t.storage.push({ ...it, known: true });
 		else sold += priceOf(it);
 	}

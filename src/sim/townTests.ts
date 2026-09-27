@@ -253,6 +253,26 @@ test("the first shallow clear on a new profile opens the stall (0 → 1)", () =>
 	});
 });
 
+test("a clear can also put the chosen items in storage (not only 帰還スレ)", () => {
+	withStorage(() => {
+		loadProgress();
+		saveTown({ ...loadTown(), stage: 4 });
+		const run = Run.create("clear-store", "main");
+		run.s.player.items.push(run.newItem("h_heal"));
+		run.finish("clear", "試験");
+		saveRun(run.s);
+		const herb = (loadTown().pending?.items ?? []).find(
+			(it) => it.kind === "h_heal",
+		);
+		if (!herb) throw new Error("harness: the herb did not come home");
+		settleReturn(loadTown(), [herb.uid]);
+		ok(
+			loadTown().storage.some((it) => it.kind === "h_heal"),
+			"the herb was not stored after a clear",
+		);
+	});
+});
+
 test("one run returns to town only once, even when continued in two tabs", () => {
 	withStorage(() => {
 		loadProgress();

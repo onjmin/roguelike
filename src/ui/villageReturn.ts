@@ -209,7 +209,7 @@ export type StoreChooser = (
 
 /**
  * 持ち帰った物を 倉庫へ・売る（おあずかりが 無ければ 何もしない）。
- * 帰還スレで 帰って 倉庫が あれば シヨが あずける物を きく。のこりは 売って ゼロが 売り上げを 読む。
+ * 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずける物を きく。のこりは 売って ゼロが 売り上げを 読む。
  */
 export const settleScript = async (
 	s: Story,
@@ -219,7 +219,8 @@ export const settleScript = async (
 	const pend = t.pending;
 	if (!pend) return;
 	const cap = STORAGE_CAP[t.stage] ?? 0;
-	const canStore = pend.kind === "escape" && cap > 0;
+	// 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずかる 物を きく
+	const canStore = cap > 0;
 	const say = (l: { who: Speaker; text: string }) => s.say(l.who, l.text);
 	let chosen: number[] = [];
 	if (!pend.items.length)
@@ -231,7 +232,7 @@ export const settleScript = async (
 			await s.wait(0);
 			chosen = await choose(s, t, pend);
 		}
-	} else if (pend.kind === "escape") await say(TOWN_MSG.noStorage);
+	} else await say(TOWN_MSG.noStorage);
 	// 選んでいるあいだに 別のタブで 決められていたら、ここでは 何もしない（古い町で 上書きしない）
 	const cur = loadTown();
 	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
