@@ -85,8 +85,8 @@ const OTHER_KEYS: Record<string, Key> = {
 	KeyT: "throw",
 	KeyQ: "shoot",
 	KeyV: "stairs",
-	// 持ち物の 整理（Organize。フィールドでも もちものの窓でも）
-	KeyO: "sort",
+	// 持ち物の 整理（もちもの の X の となり。O は 数字の 0 と まちがえやすい。フィールドでも もちものの窓でも）
+	KeyC: "sort",
 };
 
 /**
@@ -195,6 +195,8 @@ export class Input {
 	private padDir: Dir8 | null = null;
 	/** 十字キーの まん中を 押さえはじめた時刻（押さえていなければ 0）。 */
 	private padCenterSince = 0;
+	/** 足踏みのキー（. ・テンキーの5）を 押さえはじめた時刻（押さえていなければ 0）。 */
+	private restKeySince = 0;
 	/** 最後に方向を押し始めた時刻（同時押しの待ち合わせ用）。 */
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
@@ -268,12 +270,16 @@ export class Input {
 			const key = OTHER_KEYS[e.code];
 			if (!key) return;
 			e.preventDefault();
+			// 足踏みのキーは 押しっぱなしで 足踏みを 続ける（十字キーの まん中の 長押しと 同じ）
+			if (key === "wait" && !e.repeat && !this.handlers.length)
+				this.restKeySince = performance.now();
 			this.press(key, e.repeat);
 		});
 		window.addEventListener("keyup", (ev) => {
 			const code = codeOf(ev);
 			const mod = MOD_KEYS[code];
 			if (mod) this.keyMods[mod] = false;
+			if (OTHER_KEYS[code] === "wait") this.restKeySince = 0;
 			const before = this.heldDir();
 			this.keysHeld.delete(code);
 			// 斜め（2つ押し）から片方だけ離したときは、少し待つ（両方を離すまでの間に
@@ -285,6 +291,7 @@ export class Input {
 			this.keysHeld.clear();
 			this.padDir = null;
 			this.padCenterSince = 0;
+			this.restKeySince = 0;
 			this.keyMods = { dash: false, diag: false, turn: false };
 		});
 	}
@@ -320,11 +327,12 @@ export class Input {
 		return dirFromVec(dx, dy);
 	}
 
-	/** 十字キーの まん中を 長押ししている（足踏みを 続ける）。 */
+	/** 十字キーの まん中・足踏みのキーを 長押ししている（足踏みを 続ける）。 */
 	restHeld(): boolean {
+		const now = performance.now();
 		return (
-			this.padCenterSince > 0 &&
-			performance.now() - this.padCenterSince >= PAD_REST_MS
+			(this.padCenterSince > 0 && now - this.padCenterSince >= PAD_REST_MS) ||
+			(this.restKeySince > 0 && now - this.restKeySince >= PAD_REST_MS)
 		);
 	}
 
