@@ -39,7 +39,7 @@ export const itemDesc = (run: Run, it: Item): string => {
 	return h + esc(known ? d.desc : "まだ　正体が　わからない");
 };
 
-/** 武器・盾で、修正値と のろいが まだ わからない（装備するか 鑑定スレで わかる）。 */
+/** 武器・盾で、修正値と のろいが まだ わからない（修正値は 有識者スレで、のろいは 装備しても わかる）。 */
 const plusUnknown = (it: Item): boolean => {
 	const c = defOf(it.kind).cat;
 	return (c === "weapon" || c === "shield") && !it.known;
@@ -47,7 +47,7 @@ const plusUnknown = (it: Item): boolean => {
 
 /**
  * 一覧の名前（HTML）。装備中なら頭に E。
- * 修正値の わからない 武器・盾は 名前を黄色に（トルネコ1と同じ。装備するか 鑑定すると 白に もどり、+1 などが つく）。
+ * 修正値の わからない 武器・盾は 名前を黄色に（トルネコ1と同じ。鑑定すると 白に もどり、+1 などが つく）。
  * 名前を つけた 未識別の 道具は 水色に（仮の 名前と 見わける。正体が わかると 白に もどる）。
  */
 export const itemLabel = (run: Run, it: Item): string => {
@@ -142,7 +142,7 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 	if (rows.length) pages.push(rows.join("\n"));
 	if (plusUnknown(it))
 		pages.push(
-			"修正値と　のろいは、装備するか　有識者スレで　わかる（−1なら　のろわれていて　外せない）",
+			"修正値は　有識者スレで　わかる。のろいは　装備しても　わかる（のろわれていたら　外せない）",
 		);
 	if (d.cat === "goal") {
 		pages.push("投げたり　置いたり　できない");

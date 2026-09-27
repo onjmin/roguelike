@@ -2244,6 +2244,26 @@ test(
 
 test(
 	"floor",
+	"equip: wearing a weapon does not reveal its plus; a cursed one reveals itself",
+	() => {
+		const r = arena("equip-id");
+		const kind = "club";
+		const plain = give(r, kind);
+		plain.plus = 2;
+		plain.known = false;
+		r.doEquip(plain.uid);
+		ok(!plain.known, "equipping told the plus of a plain weapon");
+		const bad = give(r, kind);
+		bad.plus = -1;
+		bad.cursed = true;
+		bad.known = false;
+		r.doEquip(bad.uid);
+		ok(bad.known, "a cursed weapon did not reveal itself when equipped");
+	},
+);
+
+test(
+	"floor",
 	"anka: a pending anka follows Kiriko to the next floor with the res it had left",
 	() => {
 		const r = arena("anka-carry");

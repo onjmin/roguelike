@@ -12,7 +12,7 @@ const add = (d: Omit<ItemDef, "order">): void => {
 	defs.push({ ...d, order: order++ });
 };
 
-// ───────── 武器（強さ。修正値は装備か識別でわかる） ─────────
+// ───────── 武器（強さ。修正値は識別でわかる） ─────────
 add({
 	id: "club",
 	cat: "weapon",

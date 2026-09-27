@@ -1481,8 +1481,8 @@ export class Run {
 					this.msg(`${this.name(it)}だった！`, "good");
 			}
 		} else {
+			// 装備しても 修正値は わからない（トルネコ1と 同じ。わかるのは 有識者スレか、のろわれていたとき）
 			p[slot] = it.uid;
-			it.known = true;
 		}
 		this.msg(`${this.name(it)}を　装備した`);
 		if (it.cursed) {
