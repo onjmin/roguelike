@@ -23,6 +23,11 @@ export type TileDef = {
 	above?: string[];
 	/** カウンター（向こう側の人に話しかけられる）。 */
 	counter?: boolean;
+	/**
+	 * オートタイル（layers の上に重ねる）。16x80 の 縦長の 切り出しで、上から 外の角・左右の岸・
+	 * 上下の岸・内の角・まんなか（WOLF RPG エディターと 同じ）。同じ auto の マスどうしで つながる。
+	 */
+	auto?: string;
 };
 
 export type EventTrigger =

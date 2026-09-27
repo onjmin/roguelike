@@ -1,6 +1,12 @@
 // フィールド（マップ1枚ぶんの実行時状態）：地形の描画キャッシュ・通行判定・キャラの移動。
 
-import { drawRefInCell, onImageLoaded, overflowsCell } from "./assets";
+import {
+	cropOf,
+	drawRefInCell,
+	getImage,
+	onImageLoaded,
+	overflowsCell,
+} from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
@@ -253,6 +259,7 @@ export class Field {
 			ctx.fillStyle = t.color;
 			ctx.fillRect(px, py, TILE, TILE);
 			for (const ref of t.layers) drawRefInCell(ctx, ref, px, py, TILE, "cell");
+			if (t.auto) this.drawAuto(ctx, t.auto, px / TILE, py / TILE);
 		});
 		if (this.above)
 			draw(this.above, (ctx, t, px, py) => {
@@ -374,12 +381,56 @@ export class Field {
 		ctx.restore();
 	}
 
+	/**
+	 * オートタイルを 8x8 の 4つに 分けて 描く。角ごとに、縦・横・ななめの となりが
+	 * 同じ auto か で 5つの 形（外の角・左右の岸・上下の岸・内の角・まんなか）から えらぶ。
+	 * 地図の 外は つながっている ことに する。
+	 */
+	private drawAuto(
+		ctx: CanvasRenderingContext2D,
+		ref: string,
+		x: number,
+		y: number,
+	): void {
+		const img = getImage(ref);
+		const c = cropOf(ref);
+		if (!img || !c) return;
+		const same = (dx: number, dy: number) =>
+			!this.inBounds(x + dx, y + dy) ||
+			this.tileAt(x + dx, y + dy).auto === ref;
+		const H = TILE / 2;
+		for (const [qx, qy] of [
+			[0, 0],
+			[1, 0],
+			[0, 1],
+			[1, 1],
+		]) {
+			const dx = qx ? 1 : -1;
+			const dy = qy ? 1 : -1;
+			const v = same(0, dy);
+			const h = same(dx, 0);
+			const kind = !v && !h ? 0 : !h ? 1 : !v ? 2 : same(dx, dy) ? 4 : 3;
+			ctx.drawImage(
+				img,
+				c.sx + qx * H,
+				c.sy + kind * TILE + qy * H,
+				H,
+				H,
+				x * TILE + qx * H,
+				y * TILE + qy * H,
+				H,
+				H,
+			);
+		}
+	}
+
 	/** マップで使う画像参照を全部集める（先読み用）。 */
 	imageRefs(): string[] {
 		const refs = new Set<string>();
 		for (const t of Object.values(this.def.tiles)) {
 			for (const r of t.layers) refs.add(r);
 			for (const r of t.above ?? []) refs.add(r);
+			if (t.auto) refs.add(t.auto);
 		}
 		return [...refs];
 	}

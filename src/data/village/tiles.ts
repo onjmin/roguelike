@@ -256,8 +256,9 @@ export const CAFE: Record<string, TileDef> = {
 
 // ───────────────── 村の まわり（森・西の 空き地・東の 畑・南の 池） ─────────────────
 //   ^  紅葉の 木（2マス幅）   ;  草むら（通れる）   %  小石   B  大岩   =  切り株   _  丸太（2マス幅）
-//   ~  池の 水（field.png の 海）   G  畑の 畝   S  かかし   W  麦
-const WATER = "pub:assets/rpg-reze/field.png#16,96,16,16";
+//   ~  池の 水（芝に 岸の オートタイル。まわりに 合わせて 角が 丸く なる）   G  畑の 畝   S  かかし   W  麦
+/** 池の 岸（field.png の 左上から 草を ぬいた もの。scripts/make-pond.mjs）。 */
+const POND = "pub:assets/rpg-reze/pond.png#0,0,16,80";
 const C_WATER = "#2a5aa8";
 
 export const OUTSKIRTS: Record<string, TileDef> = {
@@ -267,7 +268,7 @@ export const OUTSKIRTS: Record<string, TileDef> = {
 	B: solid(C_GRASS, TURF, base(1, 13)),
 	"=": solid(C_GRASS, TURF, base(5, 10)),
 	_: big(C_GRASS, TURF, base(6, 10, 2, 1)),
-	"~": solid(C_WATER, WATER),
+	"~": { ...solid(C_WATER, TURF), auto: POND },
 	G: solid(C_DIRT, base(1, 27)),
 	S: big(C_GRASS, TURF, base(3, 26)),
 	W: solid(C_GRASS, TURF, base(4, 27)),
