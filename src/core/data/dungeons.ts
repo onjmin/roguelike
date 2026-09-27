@@ -59,7 +59,7 @@ const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	// 武器 6（ちょっと：こん棒・銅の剣・鉄の斧 だけ。強い武器は出ない）
 	{ kind: "club", weight: 2 }, // 攻撃1。弱い武器・投げる物として。ちょっと では銅の剣と同じくらい出た
-	{ kind: "copper", weight: 3 }, // 攻撃3。ありふれた剣
+	{ kind: "copper", weight: 4 }, // 攻撃3。ありふれた剣
 	{ kind: "bat", weight: 1 }, // 攻撃4。鉄の斧の位置（ちょっと の武器の 14%）。当たりの1本
 	// 盾 7（ちょっと：青銅・うろこ・鋼鉄）
 	{ kind: "leather", weight: 1 }, // 防御2。おなかが へりにくい。ちょっと には無いが、もっと深い迷宮で要る知恵を ここで見せる
@@ -71,7 +71,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "a_iron", weight: 2 }, // 本編は 27階で3束。ここは 10階で2束（ちょっと は 鉄・銀の矢のほうが 木より多かった）
 	// 食べもの 6（ちょっと：片親パン・ぷゆゆパン・チギュリパン が 1:1:1、全体の 9.4%）
 	{ kind: "f_bread", weight: 5 }, // +50%。出る数が ばらつくので、山札のころの 3 より多め
-	{ kind: "f_large", weight: 2 }, // +100%。始めの1つとは別
+	{ kind: "f_large", weight: 3 }, // +100%。始めの1つとは別
 	{ kind: "f_moldy", weight: 1 }, // +100% だが ちから−1・HP−5。「食べものにも 外れがある」を1回だけ
 	// 杖 5（ちょっと の4種：いかずち・バシルーラ・変化・メダパニ。ここだけ未識別。振って見分ける）
 	{ kind: "w_bolt", weight: 2 }, // いかずち。20前後のダメージで いちばん見分けやすい。2本目で「わかった杖を また拾う」を味わう
@@ -79,8 +79,8 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_reel", weight: 1 }, // メダパニ
 	{ kind: "w_change", weight: 1 }, // へんげ（候補は レベル+4 まで。B10 なら レベル11 の敵もありうる）
 	// 草 21（識別ずみ。ちょっと：弟切草・薬草・毒けし草×2・ちからの種・ルーラ草・火炎草・まどわし草）
-	{ kind: "h_heal", weight: 6 }, // 始めの1つと合わせて 10階で およそ7つ（本編は 27階で11）
-	{ kind: "h_greater", weight: 2 }, // 弟切草。ちょっと では 薬草と同じだけ出たが、ここは 強いので少なめ
+	{ kind: "h_heal", weight: 7 }, // 始めの1つと合わせて 10階で およそ8つ（本編は 27階で11）
+	{ kind: "h_greater", weight: 3 }, // 弟切草。ちょっと では 薬草と同じだけ出たが、ここは 強いので少なめ
 	{ kind: "h_antidote", weight: 4 }, // ちょっと では 草の中で倍の率。まんぜう軍・毒矢の罠・チギュリパンの あと始末
 	{ kind: "h_might", weight: 2 }, // ちからの種
 	{ kind: "h_blink", weight: 2 }, // ルーラ草。逃げ道
