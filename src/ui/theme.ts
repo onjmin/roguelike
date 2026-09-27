@@ -9,6 +9,8 @@ import type { DungeonId, TrapKind } from "../core/types";
 import { BOARD_LOOKS, DUNGEON_NAMES, type ThemeName } from "../data/story";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
+/** 野外の シート（WOLF の 地形。砂浜の 砂だけ ここから）。 */
+const FIELD = "pub:assets/rpg-reze/field.png";
 const cut = (c: number, r: number, w = 1, h = 1): string =>
 	`${BASE}#${c * 16},${r * 16},${w * 16},${h * 16}`;
 
@@ -138,6 +140,18 @@ const WHITE: Theme = {
 	fog: "rgba(4, 6, 14, 0.6)",
 };
 
+/** 砂浜（field.png の 砂の まんなかの マスに 南国の 緑の 壁。離島・沖縄板）。 */
+const BEACH: Theme = {
+	name: "beach",
+	floor: `${FIELD}#112,32,16,16`,
+	stairs: cut(0, 163),
+	wallUpper: walls(175),
+	wallLower: walls(176),
+	dark: "#050a05",
+	floorColor: "#f4be8a",
+	fog: "rgba(2, 6, 10, 0.58)",
+};
+
 /** 赤い格子（紫の壁。もっと の 規制の檻）。 */
 const LATTICE: Theme = {
 	name: "lattice",
@@ -188,6 +202,7 @@ const THEMES: Record<ThemeName, Theme> = {
 	stone: STONE,
 	ruins: RUINS,
 	white: WHITE,
+	beach: BEACH,
 	lattice: LATTICE,
 	forge: FORGE,
 	moss: MOSS,

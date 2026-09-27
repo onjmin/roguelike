@@ -132,6 +132,7 @@ export type ThemeName =
 	| "stone"
 	| "ruins"
 	| "white"
+	| "beach"
 	| "lattice"
 	| "forge"
 	| "moss"
@@ -288,8 +289,8 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	deep: { theme: "cyber", bgm: "retro", ambient: "data" },
 	// 苔と 胞子
 	kinoko: { theme: "moss", bgm: "field", ambient: "spores" },
-	// 白い 砂浜と 水の しずく
-	tropical: { theme: "white", bgm: "deep_hakushi", ambient: "glitter" },
+	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく
+	tropical: { theme: "beach", bgm: "deep_hakushi", ambient: "glitter" },
 	// 鉄板の 焦げ
 	konamono: { theme: "lava", bgm: "deep_koge", ambient: "embers" },
 	// 提灯の 赤。都節の 曲
