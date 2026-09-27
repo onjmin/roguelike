@@ -2000,11 +2000,13 @@ export class Play {
 				class: "chapter-sub",
 				text: up
 					? `${isUpBoard(run.s.dungeon) ? "下り" : "上り"}階段を　さがそう`
-					: run.s.depth >= run.dungeon.floors
-						? isUpBoard(run.s.dungeon)
-							? "いちばん　上"
-							: "いちばん　底"
-						: "",
+					: zoneFor(run.s.dungeon, run.s.depth).note
+						? (zoneFor(run.s.dungeon, run.s.depth).note ?? "")
+						: run.s.depth >= run.dungeon.floors
+							? isUpBoard(run.s.dungeon)
+								? "いちばん　上"
+								: "いちばん　底"
+							: "",
 			}),
 		]);
 		this.ctx.ui.appendChild(card);

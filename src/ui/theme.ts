@@ -179,6 +179,8 @@ export type Zone = {
 	theme: Theme;
 	bgm: string;
 	ambient: Ambient;
+	/** 層に 入った 階の 札に 出す 1行（層の ある 板だけ）。 */
+	note?: string;
 };
 
 const THEMES: Record<ThemeName, Theme> = {
@@ -216,9 +218,12 @@ export const zoneFor = (dungeon: DungeonId, depth = 1): Zone => {
 	const zones = BOARD_LOOKS[dungeonById(dungeon).id].zones;
 	if (!zones?.length) return lookOf(dungeon);
 	const z = zones.find((x) => depth <= x.last) ?? zones[zones.length - 1];
+	const i = zones.indexOf(z);
+	const first = i > 0 ? zones[i - 1].last + 1 : 1;
 	return {
 		last: z.last,
 		name: z.name,
+		note: depth === first ? z.note : undefined,
 		theme: THEMES[z.theme],
 		bgm: z.bgm,
 		ambient: z.ambient as Ambient,

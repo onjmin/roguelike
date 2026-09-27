@@ -153,6 +153,8 @@ export type BoardLook = {
 export type ZoneSpec = {
 	last: number;
 	name: string;
+	/** その 層に 入った ときの 階の 札に 出す 1行（落ちた スレの 最後の レス。説明は しない）。 */
+	note?: string;
 	theme: ThemeName;
 	bgm: string;
 	ambient: string;
@@ -166,6 +168,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 5,
 		name: "過去ログの浅瀬",
+		note: "「保守」",
 		theme: "earth",
 		bgm: "deep1",
 		ambient: "dust",
@@ -173,6 +176,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 10,
 		name: "dat の石室",
+		note: "「まだ　見てる　やつ　おる？」",
 		theme: "stone",
 		bgm: "stone",
 		ambient: "dust",
@@ -180,6 +184,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 15,
 		name: "埋もれた dat",
+		note: "「落ちる前に　言っとく。楽しかった」",
 		theme: "stone",
 		bgm: "deep_dat",
 		ambient: "dust",
@@ -187,6 +192,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 20,
 		name: "苔むしたスレ跡",
+		note: "「ほな、また」",
 		theme: "moss",
 		bgm: "field",
 		ambient: "spores",
@@ -194,6 +200,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 25,
 		name: "崩れたまとめ",
+		note: "「まとめられて、それきり」",
 		theme: "ruins",
 		bgm: "deep_matome",
 		ambient: "spores",
@@ -201,6 +208,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 30,
 		name: "保守の墓場",
+		note: "「保守」「保守」「保守」",
 		theme: "ruins",
 		bgm: "ruins",
 		ambient: "spores",
@@ -208,6 +216,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 40,
 		name: "凍結された書庫",
+		note: "「このスレは　凍結されました」",
 		theme: "crystal",
 		bgm: "deep2",
 		ambient: "snow",
@@ -215,6 +224,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 50,
 		name: "白紙の回廊",
+		note: "「　」",
 		theme: "white",
 		bgm: "deep_hakushi",
 		ambient: "snow",
@@ -222,6 +232,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 60,
 		name: "文字化けの海",
+		note: "「縺ｾ縺溘・縺ｭ」",
 		theme: "crystal",
 		bgm: "deep3",
 		ambient: "snow",
@@ -229,14 +240,23 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 70,
 		name: "規制の檻",
+		note: "「規制で　書けん。……見てるで」",
 		theme: "lattice",
 		bgm: "deep_kisei",
 		ambient: "data",
 	},
-	{ last: 80, name: "落ちた鯖", theme: "cyber", bgm: "deep4", ambient: "data" },
+	{
+		last: 80,
+		name: "落ちた鯖",
+		note: "「鯖落ち？」",
+		theme: "cyber",
+		bgm: "deep4",
+		ambient: "data",
+	},
 	{
 		last: 90,
 		name: "焦げた回線",
+		note: "「燃えた。でも、ここに　おった」",
 		theme: "forge",
 		bgm: "deep_koge",
 		ambient: "embers",
@@ -244,11 +264,19 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 98,
 		name: "炎上の底",
+		note: "「次スレ　立てられる人　おる？」",
 		theme: "lava",
 		bgm: "deep5",
 		ambient: "embers",
 	},
-	{ last: 99, name: "1001", theme: "gold", bgm: "deep6", ambient: "glitter" },
+	{
+		last: 99,
+		name: "1001",
+		note: "「このスレッドは　1000を　超えました」",
+		theme: "gold",
+		bgm: "deep6",
+		ambient: "glitter",
+	},
 ];
 
 export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
@@ -437,8 +465,9 @@ export const STORY: Record<
 			),
 			s("zero", "……新しい　スレッドを、\n立ててください、ですって"),
 			s("feris", "じゃあ、立てよ〜。\nつぎの　スレ〜"),
-			n("キリコは　うなずいた。"),
-			s("nanj", "ほな、>>1は　キリコや。\n……次スレ、はよ"),
+			n("キリコは　蓄音機に　むかって、\n「あー、あー」と　吹きこんだ。"),
+			s("zero", "……次スレの　>>1、\n「あー、あー」で　立ちました"),
+			s("nanj", "はじまりの　原盤と　同じやんけ。\n……ほな、次スレ　はよ"),
 		],
 	},
 };
