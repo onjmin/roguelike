@@ -1,5 +1,5 @@
-// 3つのダンジョン（トルネコ1の ちょっと／不思議／もっと）の物語の部品。
-// - 名前と層の名前、目的の品、はじめて入る前の語り（intro）と 持ち帰ったあとの語り（ending）、
+// 植民地（ダンジョン）の物語の部品。
+// - 名前と板の決まり・見た目と曲、目的の品、はじめて入る前の語り（intro）と 持ち帰ったあとの語り（ending）、
 //   次のダンジョンが開いたときの ひとこと、起動の札と 村の ひとことの たまり。
 // - 本編（main）の intro / ending は quotes.ts の INTRO / ENDING をそのまま使う。
 // 話すのは 外で待っている仲間だけ（キリコはしゃべらない。ナレーションで動作だけ描く）。
@@ -19,13 +19,56 @@ const n = (text: string): StoryPage => ({ who: null, text });
 const s = (who: Speaker, text: string): StoryPage => ({ who, text });
 
 // ───────────────── 名前 ─────────────────
-/** ダンジョンの名前と、記録の一覧に出す短い札。 */
-export const DUNGEON_NAMES: Record<DungeonId, { name: string; short: string }> =
+/**
+ * 植民地（ダンジョン）の 名前・通称・マスコット・板の 決まり（村の 立て札と あそびかたに 出す）。
+ * 板の 気風は おんJwiki（3代目）と 植民地一覧スレ（awabi.open2ch.net/test/read.cgi/bath/1442242433/）から。
+ */
+export const DUNGEON_NAMES: Record<
+	DungeonId,
 	{
-		shallow: { name: "ちょっと過去ログの底", short: "ちょっと" },
-		main: { name: "過去ログの底", short: "ログの底" },
-		deep: { name: "もっと過去ログの底", short: "もっと" },
-	};
+		name: string;
+		/** 記録の 一覧に 出す 短い 札。 */
+		short: string;
+		nick: string;
+		mascot: string;
+		/** 板の 決まり（1つ 1行）。 */
+		rules: readonly string[];
+	}
+> = {
+	shallow: {
+		name: "パン板",
+		short: "パン板",
+		nick: "ぱんJ",
+		mascot: "パン松　|｀°Ο°´|",
+		rules: [
+			"いちばん　栄えた　植民地。入門の　10階",
+			"パン松の　縄張り：パンが　よく　出る",
+			"杖だけ　未識別。のろいも　祭りも　ない",
+		],
+	},
+	main: {
+		name: "風呂板",
+		short: "風呂板",
+		nick: "おふJ",
+		mascot: "おふ郎くん　[o'ω'f]",
+		rules: [
+			"植民地で　いちばん　雰囲気が　ええ。27階",
+			"湯治：HPの　自然回復が　1.5倍",
+			"倉庫の　道具を　持ちこめる",
+		],
+	},
+	deep: {
+		name: "電池板",
+		short: "電池板",
+		nick: "でんJ",
+		mascot: "でんちゃん　{+'w'-]",
+		rules: [
+			"過疎で　謎が　多い　植民地。30階",
+			"充電：杖の　回数が　1　多い",
+			"ぜんぶ　未識別。ぷゆゆパンは　出ない。罠と　祭りが　多い",
+		],
+	},
+};
 
 /** ui/theme.ts の Theme.name。 */
 export type ThemeName =
@@ -41,140 +84,16 @@ export type ThemeName =
 	| "lava"
 	| "gold";
 
-export type ZoneSpec = {
-	/** この層の いちばん深い階。 */
-	last: number;
-	name: string;
-	theme: ThemeName;
-	/** 本編の同じ見た目の層に合わせた 曲と ただよう粒（ui/theme.ts の ZONES と同じ語）。 */
-	bgm: string;
-	ambient: string;
-};
+/** 植民地の 見た目と 曲（板ごとに 1つ。全フロア 同じ。ui/theme.ts が 読む）。 */
+export type BoardLook = { theme: ThemeName; bgm: string; ambient: string };
 
-/**
- * 層の名前（本編の9層は ui/theme.ts の ZONES にある）。
- * - ちょっと：落ちたばかりの スレが つもる浅い穴。針は 過去ログ倉庫（rpg で 落ちたスレが ねむる所）に。
- * - もっと：底の さらに下。だれかが 掘りかけた穴から はじまり、いちばん下は 本編の B27 と同じ 金。
- */
-export const ZONE_NAMES: Record<"shallow" | "deep", readonly ZoneSpec[]> = {
-	// トルネコ1の ちょっと（B1〜2・3〜4・5〜6・7〜9・10）と 同じ 刻み
-	shallow: [
-		{
-			last: 2,
-			name: "落ちたてのスレ",
-			theme: "earth",
-			bgm: "dungeon",
-			ambient: "dust",
-		},
-		{
-			last: 4,
-			name: "固まったスレ",
-			theme: "stone",
-			bgm: "stone",
-			ambient: "dust",
-		},
-		{
-			last: 6,
-			name: "草の生えたスレ",
-			theme: "moss",
-			bgm: "field",
-			ambient: "spores",
-		},
-		{
-			last: 9,
-			name: "朽ちかけのスレ",
-			theme: "ruins",
-			bgm: "ruins",
-			ambient: "spores",
-		},
-		{
-			last: 10,
-			name: "過去ログ倉庫",
-			theme: "crystal",
-			bgm: "shallow3",
-			ambient: "snow",
-		},
-	],
-	// トルネコ1の もっと（B1〜2・3〜4・5〜6・7〜9・10〜12・13〜15・16〜18・19〜21・22〜24・25〜29・30〜）と 同じ 刻み
-	deep: [
-		{
-			last: 2,
-			name: "掘りかけの穴",
-			theme: "earth",
-			bgm: "deep1",
-			ambient: "dust",
-		},
-		{
-			last: 4,
-			name: "埋もれた dat",
-			theme: "stone",
-			bgm: "deep_dat",
-			ambient: "dust",
-		},
-		{
-			last: 6,
-			name: "崩れたまとめ",
-			theme: "ruins",
-			bgm: "deep_matome",
-			ambient: "spores",
-		},
-		{
-			last: 9,
-			name: "保守の墓場",
-			theme: "moss",
-			bgm: "deep2",
-			ambient: "spores",
-		},
-		{
-			last: 12,
-			name: "白紙の回廊",
-			theme: "white",
-			bgm: "deep_hakushi",
-			ambient: "snow",
-		},
-		{
-			last: 15,
-			name: "文字化けの海",
-			theme: "crystal",
-			bgm: "deep3",
-			ambient: "snow",
-		},
-		{
-			last: 18,
-			name: "規制の檻",
-			theme: "lattice",
-			bgm: "deep_kisei",
-			ambient: "data",
-		},
-		{
-			last: 21,
-			name: "落ちた鯖",
-			theme: "cyber",
-			bgm: "deep4",
-			ambient: "data",
-		},
-		{
-			last: 24,
-			name: "焦げた回線",
-			theme: "forge",
-			bgm: "deep_koge",
-			ambient: "embers",
-		},
-		{
-			last: 29,
-			name: "名無しの荒野",
-			theme: "lava",
-			bgm: "deep5",
-			ambient: "embers",
-		},
-		{
-			last: 30,
-			name: "つづきの原盤",
-			theme: "gold",
-			bgm: "deep6",
-			ambient: "glitter",
-		},
-	],
+export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
+	// 焼き色の 土。はじめの 曲
+	shallow: { theme: "earth", bgm: "dungeon", ambient: "dust" },
+	// 湯気の 立つ 青白い 石
+	main: { theme: "crystal", bgm: "field2", ambient: "snow" },
+	// 回路の 床（漏電の 火花）。名無し155さんの 曲
+	deep: { theme: "cyber", bgm: "retro", ambient: "data" },
 };
 
 // ───────────────── 目的の品 ─────────────────
@@ -186,18 +105,18 @@ export const GOAL_ITEMS: Record<
 	shallow: {
 		id: "hari",
 		name: "蓄音機の針",
-		desc: "ちょっと下に　落ちていた　針。持ち帰ろう",
+		desc: "パン板の　過去ログに　落ちていた　針。持ち帰ろう",
 	},
 	deep: {
 		id: "tsuzuki",
 		name: "つづきの原盤",
-		desc: "底の　さらに　下の　レコード。まだ、なにも　入っていない",
+		desc: "電池板の　いちばん　下の　レコード。まだ、なにも　入っていない",
 	},
 };
 
 // ───────────────── 語り ─────────────────
 /**
- * intro：そのダンジョンに はじめて入る前の ナレーション。ちょっと の intro が このゲームの いちばん最初の前口上。
+ * intro：そのダンジョンに はじめて入る前の ナレーション。パン板の intro が このゲームの いちばん最初の前口上。
  * ending：目的の品を 持ち帰ったとき（記録の札の前）。
  */
 export const STORY: Record<
@@ -207,10 +126,10 @@ export const STORY: Record<
 	shallow: {
 		intro: [
 			// 前口上は 最初の 村（data/town.ts の OPENING）で 見せたので、ここは 中の 決まり
-			"ちょっと過去ログの底。\n落ちた　ばかりの　スレが　つもる　穴。",
+			"パン板の　過去ログ。\nおんJ民が　いちばん　栄えさせた　植民地。",
 			"キリコが　1歩　すすむと、\n下の　ものたちも　1歩　すすむ。",
 			"たおれたら、持ち物も　レベルも\n置いて、地上へ　もどされる。",
-			"キリコは　蓄音機を　かかえた。\n……まず、ちょっとだけ、降りる。",
+			"キリコは　蓄音機を　かかえた。\n……まず、パン板から　降りる。",
 		],
 		ending: [
 			n("階段を　のぼりきると、\n山吹色が　うでを　組んで　待っていた。"),
@@ -232,11 +151,11 @@ export const STORY: Record<
 	main: { intro: INTRO, ending: ENDING },
 	deep: {
 		intro: [
-			"底の　さらに　下から、\nちいさな　ログが　聞こえるという。",
-			"落ちた　スレの、そのまた　下。\nなにが　あるのか、だれも　知らない。",
+			"過疎の　電池板から、\nちいさな　ログが　聞こえるという。",
+			"植民は　されたが、住む　人は　いない。\nなにが　あるのか、だれも　知らない。",
 			"はじまりの　原盤は、地上で\nまだ、ちいさく　鳴っている。",
 			"キリコは　蓄音機の　ハンドルを　まわした。\n……針は、ある。",
-			"……もっと、降りる。",
+			"……でん、と　鳴った。",
 		],
 		ending: [
 			n("階段を　のぼりきると、\n五つの　色が、ならんで　立っていた。"),
@@ -266,18 +185,18 @@ export const STORY: Record<
 export const UNLOCK_LINES: Record<"main" | "deep" | "relief", readonly Line[]> =
 	{
 		main: [
-			q("nanj", "約束や。底、行ってええで。\n……行ってええ、けど"),
+			q("nanj", "約束や。風呂板、行ってええで。\n……のぼせんなよ"),
 			q(
 				"zero",
-				"底への　入口、開きました！\nゼロ、いっしょには　行けませんが……",
+				"風呂板への　入口、開きました！\nゼロ、いっしょには　行けませんが……",
 			),
 		],
 		deep: [
 			q(
 				"zero",
-				"底の　さらに　下から、音が　します。\n……サブ機たちも、ざわざわ　してます",
+				"電池板から、音が　します。\n……サブ機たちも、ビリビリ　してます",
 			),
-			q("nanj", "底の　下って　なんやねん。\n……延長戦や。延長戦"),
+			q("nanj", "電池板て　なんやねん。\n……延長戦や。延長戦"),
 		],
 		relief: [
 			q(
@@ -293,15 +212,12 @@ export const UNLOCK_LINES: Record<"main" | "deep" | "relief", readonly Line[]> =
 export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	shallow: [
 		q("nanj", "針、取ってきたんか。\n……ほな、次は　本番やな"),
-		q("roze", "ちょっと下でも、下は　下アル。\n……おつかれアル"),
+		q("roze", "パン板でも、下は　下アル。\n……おつかれアル"),
 		q(
 			"feris",
 			"針、見つかって　よかったね〜。\n私、目が　いいから　見えてたよ〜",
 		),
-		q(
-			"shiyo",
-			"ちょっと下、でしょ。……ふん。\nま、まあ、よく　やったんじゃない",
-		),
+		q("shiyo", "パン板、でしょ。……ふん。\nま、まあ、よく　やったんじゃない"),
 		q(
 			"zero",
 			"針の　回収、おめでとうございます！\n……ケーキは、焼けませんでした",
@@ -315,7 +231,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 		q("zero", "原盤、今日も　聞きました。\n……再生回数、ゼロが　1位です"),
 	],
 	deep: [
-		q("nanj", "底の　下まで　行った子、\nワイが　名付けたんやで（自称）"),
+		q("nanj", "電池板の　底まで　行った子、\nワイが　名付けたんやで（自称）"),
 		q("roze", "わたしの　「アル」、\nちゃんと　入ってたアル？"),
 		q("feris", "私の　くしゃみ、入ってない〜？\n……入ってても、いいか〜"),
 		q("shiyo", "……あたすの　「あー」、\n聞き返さないで。声、大きすぎ"),
@@ -323,11 +239,11 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 };
 
-/** まだ一度も降りていない（針を 取りにいく前）。quotes.ts の FIRST の ちょっと 版。 */
+/** まだ一度も降りていない（針を 取りにいく前）。quotes.ts の FIRST の パン板 版。 */
 export const FIRST_SHALLOW: readonly Line[] = [
-	q("nanj", "ちょっと下やで。ちょっと。\n……ほな、上で　保守しとくわ"),
+	q("nanj", "パン板やで。パン松が　おるで。\n……ほな、上で　保守しとくわ"),
 	q("roze", "針は　ちいさいアル。\nよく　見て　さがすアル。常識アル"),
-	q("feris", "ちょっと　下なら、私も\n飛んで　行けるかな〜。……行かないけど〜"),
+	q("feris", "パン板なら、私も\n飛んで　行けるかな〜。……行かないけど〜"),
 	q("shiyo", "心配なんか　してないわよ。\n……針、なくさないでよね"),
 	q(
 		"zero",
@@ -335,11 +251,11 @@ export const FIRST_SHALLOW: readonly Line[] = [
 	),
 ];
 
-/** ちょっと で倒れたとき（たおれ方の たまりより 前に見る）。 */
+/** パン板で倒れたとき（たおれ方の たまりより 前に見る）。 */
 export const SHALLOW_DEATH: readonly Line[] = [
-	q("nanj", "ちょっと下やで？　ちょっと。\n……いや、ちょっとでも　下は　下か"),
+	q("nanj", "パン板やで？　入門の。\n……いや、パン板でも　下は　下か"),
 	q("roze", "針は　ちいさいアル。\nあわてないのが　常識アル"),
-	q("feris", "ちょっと下でも、ころぶよね〜。\n私も　よく　ころぶ〜"),
+	q("feris", "パン板でも、ころぶよね〜。\n私も　よく　ころぶ〜"),
 	q("shiyo", "杖は、ふるまで　わからないの。\n……教えて　あげたんだからね"),
-	q("zero", "ちょっと下の　ログ、読みました。\n……短いけど、ゼロは　好きです"),
+	q("zero", "パン板の　ログ、読みました。\n……短いけど、ゼロは　好きです"),
 ];

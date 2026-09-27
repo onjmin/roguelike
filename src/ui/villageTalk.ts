@@ -33,9 +33,9 @@ import { settings } from "../engine/settings";
  * 村の窓に 収まるよう 1行（全角22字まで）。
  */
 export const DUNGEON_DESC: Record<DungeonId, string> = {
-	shallow: "杖だけ　未識別。のろいも　祭りも　ない",
-	main: "草・スレ・トリップ・杖が　未識別",
-	deep: "ぷゆゆパン・◆腹いっぱい　なし。罠が　多い",
+	shallow: DUNGEON_NAMES.shallow.rules[1],
+	main: DUNGEON_NAMES.main.rules[1],
+	deep: DUNGEON_NAMES.deep.rules[1],
 };
 
 /** まだ開いていないダンジョンの 開き方。 */

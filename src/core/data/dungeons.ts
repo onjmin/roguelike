@@ -1,8 +1,12 @@
-// ダンジョン（トルネコ1の「ちょっと不思議 → 不思議 → もっと不思議」にならう3つ）。
+// ダンジョン＝おんJの 植民地（おーぷん2ch の ほかの板）。村の 入口で 行き先を 選ぶ。
+// 板ごとに 階の数・道具の出かた・決まり（板の 気風から）が ちがう。名前と 語りは data/story.ts、
+// 見た目と 曲（板ごとに 1つ。全フロア 同じ）は ui/theme.ts。
 //
-// - shallow：はじめの10階。杖だけ未識別・のろいなし・祭りなし・罠は B5 から。持ち帰るのは「蓄音機の針」。
-// - main：本編の27階（過去ログの底。トルネコ1の 不思議のダンジョンで 目的の箱が出る 27階と同じ）。
-// - deep：本編を持ち帰ると開く30階。ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い。
+// - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 10階。入門：杖だけ未識別・のろいなし・祭りなし・
+//   罠は B5 から。パン松の 縄張りで パンが よく出る。持ち帰るのは「蓄音機の針」。
+// - main：風呂板（おふJ）の 27階。湯治：HP の 自然回復が 1.5倍。倉庫から 持ちこめる。
+// - deep：電池板（でんJ。過疎で 謎が多い）の 30階。充電：杖の 回数が 1 多い。
+//   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい。
 //
 // level は「その階が 本編の何階ぶんの強さか」。敵の顔ぶれ・罠の数と種類・祭りの大きさ・変化の杖は
 // これで引く（本編は 階 = level）。見た目と曲の層は UI 側（ui/theme.ts）。
@@ -38,8 +42,12 @@ export type Dungeon = {
 	trapsFrom: number;
 	/** このダンジョンを持ち帰ると開く（null ははじめから開いている）。 */
 	unlockAfter: DungeonId | null;
-	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く（トルネコ1の30回にあたる）。 */
+	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く。 */
 	reliefAfter: number | null;
+	/** 自然回復の 刻み（balance.ts の REGEN_STEP の 代わり。小さいほど はやい）。 */
+	regenStep?: number;
+	/** 杖の 回数に 足す 数。 */
+	charge?: number;
 };
 
 const identity = (n: number): number[] =>
@@ -53,7 +61,7 @@ const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 ];
 
 /**
- * はじめの10階の 道具の出かた（重みの合計 70。トルネコ1の ちょっと不思議 の出現率を 10階ぶんに丸めたもの）。
+ * パン板の 10階の 道具の出かた（重みの合計 72。入門の 10階ぶん。パンが 多め）。
  * 指輪は無し・杖は4種（ここだけ未識別）。食べものは 始めの200% ＋ 650% で、1階 450ターンでも 足りる。
  */
 export const SHALLOW_ITEMS: readonly ItemWeight[] = [
@@ -70,7 +78,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "a_wood", weight: 3 }, // 寝落ち民・ゾンJ民を 離れて削る
 	{ kind: "a_iron", weight: 2 }, // 本編は 27階で3束。ここは 10階で2束（ちょっと は 鉄・銀の矢のほうが 木より多かった）
 	// 食べもの 6（ちょっと：片親パン・ぷゆゆパン・チギュリパン が 1:1:1、全体の 9.4%）
-	{ kind: "f_bread", weight: 5 }, // +50%。出る数が ばらつくので、山札のころの 3 より多め
+	{ kind: "f_bread", weight: 7 }, // +50%。パン板なので パンが よく出る（パン松の 縄張り）
 	{ kind: "f_large", weight: 3 }, // +100%。始めの1つとは別
 	{ kind: "f_moldy", weight: 1 }, // +100% だが ちから−1・HP−5。「食べものにも 外れがある」を1回だけ
 	// 杖 5（ちょっと の4種：いかずち・バシルーラ・変化・メダパニ。ここだけ未識別。振って見分ける）
@@ -232,6 +240,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		trapsFrom: 3,
 		unlockAfter: "shallow",
 		reliefAfter: 10,
+		// 湯治：150 → 100（1.5倍）
+		regenStep: 100,
 	},
 	deep: {
 		id: "deep",
@@ -247,6 +257,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		trapsFrom: 3,
 		unlockAfter: "main",
 		reliefAfter: null,
+		// 充電ずみの 杖
+		charge: 1,
 	},
 };
 

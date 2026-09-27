@@ -4,8 +4,9 @@
 // その上に「上の面」、それ以外の壁は闇の色で塗る。
 // 階は 層（ZONES）に分かれていて、層ごとに 見た目・曲・ただよう粒 が変わる。
 
+import { dungeonById } from "../core/data/dungeons";
 import type { DungeonId, TrapKind } from "../core/types";
-import { type ThemeName, ZONE_NAMES, type ZoneSpec } from "../data/story";
+import { BOARD_LOOKS, DUNGEON_NAMES, type ThemeName } from "../data/story";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
 const cut = (c: number, r: number, w = 1, h = 1): string =>
@@ -170,7 +171,7 @@ export type Ambient =
 	| "embers"
 	| "glitter";
 
-/** 層：何階から何階までが同じ見た目・同じ曲か。深くなるほど 景色も曲も 出る敵も変わる。 */
+/** 植民地の 見た目と 曲（last は いちばん 底の 階）。 */
 export type Zone = {
 	/** この層の いちばん深い階。 */
 	last: number;
@@ -194,83 +195,22 @@ const THEMES: Record<ThemeName, Theme> = {
 	gold: GOLD,
 };
 
-/** 物語の側（data/story.ts）の層の名前・見た目の名前 → 層。 */
-const fromSpec = (list: readonly ZoneSpec[]): Zone[] =>
-	list.map((z) => ({
-		...z,
-		theme: THEMES[z.theme],
-		ambient: z.ambient as Ambient,
-	}));
-
-/**
- * 層の並び（ダンジョンごと。last の昇順で、最後の層は いちばん底の階で終わる）。
- * 本編は ここ、ちょっと・もっと の名前と見た目は data/story.ts。
- */
-export const ZONES: Record<DungeonId, readonly Zone[]> = {
-	shallow: fromSpec(ZONE_NAMES.shallow),
-	// トルネコ1（27階）の 刻み（B1〜2・3〜4・5〜6 と 2階ずつ、そのあと 3階ずつ）の 9層。
-	// 炎上の底は 顔真っ赤（ギガンテス）の 出はじめる B20 から、はじまりの原盤は いちばん底の B27 だけ
-	main: [
-		{
-			last: 2,
-			name: "過去ログの浅瀬",
-			theme: EARTH,
-			bgm: "dungeon",
-			ambient: "dust",
-		},
-		{
-			last: 4,
-			name: "dat の石室",
-			theme: STONE,
-			bgm: "stone",
-			ambient: "dust",
-		},
-		{
-			last: 6,
-			name: "苔むしたスレ跡",
-			theme: MOSS,
-			bgm: "field",
-			ambient: "spores",
-		},
-		{
-			last: 9,
-			name: "朽ちたまとめ跡",
-			theme: RUINS,
-			bgm: "ruins",
-			ambient: "spores",
-		},
-		{
-			last: 12,
-			name: "凍結された書庫",
-			theme: CRYSTAL,
-			bgm: "field2",
-			ambient: "snow",
-		},
-		// 名無し155さんの 手書きメロディの曲。アップテンポなので 序盤ではなく 中盤の 電子の廃墟に
-		{ last: 15, name: "鯖の深部", theme: CYBER, bgm: "retro", ambient: "data" },
-		{
-			last: 19,
-			name: "あぼーんの白野",
-			theme: WHITE,
-			bgm: "white",
-			ambient: "snow",
-		},
-		{ last: 26, name: "炎上の底", theme: LAVA, bgm: "boss", ambient: "embers" },
-		{
-			last: 27,
-			name: "はじまりの原盤",
-			theme: GOLD,
-			bgm: "lastboss",
-			ambient: "glitter",
-		},
-	],
-	deep: fromSpec(ZONE_NAMES.deep),
+/** 植民地ごとの 見た目と 曲（板ごとに 1つ。全フロア 同じ。data/story.ts の BOARD_LOOKS）。 */
+const lookOf = (dungeon: DungeonId): Zone => {
+	const d = dungeonById(dungeon);
+	const look = BOARD_LOOKS[d.id];
+	return {
+		last: d.floors,
+		name: DUNGEON_NAMES[d.id].name,
+		theme: THEMES[look.theme],
+		bgm: look.bgm,
+		ambient: look.ambient as Ambient,
+	};
 };
 
-export const zoneFor = (dungeon: DungeonId, depth: number): Zone => {
-	const list = ZONES[dungeon] ?? ZONES.main;
-	return list.find((z) => depth <= z.last) ?? list[list.length - 1];
-};
+/** その階の 見た目と 曲（植民地ごとに 1つなので depth は 見ない）。 */
+export const zoneFor = (dungeon: DungeonId, _depth?: number): Zone =>
+	lookOf(dungeon);
 
 export const themeFor = (dungeon: DungeonId, depth: number): Theme =>
 	zoneFor(dungeon, depth).theme;

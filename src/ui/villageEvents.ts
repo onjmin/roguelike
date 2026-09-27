@@ -74,9 +74,18 @@ import {
 /** まだ開いていないダンジョンの 開き方（1行目 持ち帰り、2行目 たおれた回数の 救い）。 */
 const hintText = (d: DungeonId): string => lockedHint(d).replace("（", "\n（");
 
-/** 開いた ダンジョンの 札（名前・階の数・持ち帰ったら ★、2行目に 説明）。口と 立て札で 読む。 */
+/** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
 const signText = (d: DungeonId): string =>
-	`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}${loadProgress().cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`;
+	`「${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）」　${DUNGEONS[d].floors}階${loadProgress().cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`;
+
+/** 立て札の 2枚目から（板の ようすと ほかの 決まり・マスコット）。 */
+const signMore = (d: DungeonId): string[] => {
+	const n = DUNGEON_NAMES[d];
+	return [
+		n.rules.filter((_, i) => i !== 1).join("\n"),
+		`マスコット：${n.mascot}`,
+	];
+};
 
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
@@ -193,6 +202,7 @@ const signScript =
 			return;
 		}
 		await s.narrate(signText(d));
+		for (const t of signMore(d)) await s.narrate(t);
 	};
 
 /** 仲間の ひとこと（1回の 帰りに 1つ 新しい話。聞いたら 決まった ひとこと）。 */

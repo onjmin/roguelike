@@ -1004,7 +1004,7 @@ test("unlock news: the gate stays shut until shown, おんJ民 steps aside, a cl
 				`goto nanj ${bx},${by}`,
 				"rebuild",
 				"se chapter",
-				"narrate: 「過去ログの底」に\nもぐれるように　なった",
+				"narrate: 「風呂板」に\nもぐれるように　なった",
 				"look kiriko",
 			]),
 			`the 本編 news is out of order:\n${log.join("\n")}`,
@@ -1027,7 +1027,7 @@ test("unlock news: the gate stays shut until shown, おんJ民 steps aside, a cl
 				"fadeOut",
 				"rebuild",
 				"fadeIn",
-				"narrate: 「もっと過去ログの底」に\nもぐれるように　なった",
+				"narrate: 「電池板」に\nもぐれるように　なった",
 			]),
 			`the もっと news is out of order:\n${deep.log.join("\n")}`,
 		);
@@ -1136,7 +1136,7 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 		);
 		ok(
 			store.log.includes(
-				`narrate: 倉庫から　過去ログの底へ\n${CARRY_MAX[4]}つまで　持っていける`,
+				`narrate: 倉庫から　風呂板へ\n${CARRY_MAX[4]}つまで　持っていける`,
 			),
 			`no carry hint:\n${store.log.join("\n")}`,
 		);

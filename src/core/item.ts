@@ -40,12 +40,13 @@ export const isKnownKind = (s: RunState, kind: string): boolean =>
 /**
  * 新しい道具（修正値・呪い・回数・本数はここで決める）。
  * curses が false なら のろわれた道具は出ない（乱数の引き方は同じ。−1 は +0 に、のろいの指輪は ふつうに）。
+ * charge は 杖の 回数に 足す 数（植民地の 決まり。乱数の 引き方は 同じ）。
  */
 export const rollItem = (
 	rng: Rng,
 	uid: number,
 	kind: string,
-	opt: { curses: boolean } = { curses: true },
+	opt: { curses: boolean; charge?: number } = { curses: true },
 ): Item => {
 	const d = defOf(kind);
 	const it: Item = {
@@ -74,7 +75,8 @@ export const rollItem = (
 		if (kind === "r_might") it.plus = it.cursed ? -3 : 3;
 	} else if (d.cat === "staff") {
 		const [lo, hi] = d.charges ?? [3, 5];
-		it.charges = rng.range(lo, hi);
+		// 電池板では 充電ずみ（回数が 多い）
+		it.charges = rng.range(lo, hi) + (opt.charge ?? 0);
 	} else if (d.cat === "arrow") {
 		it.count = kind === "a_iron" ? rng.range(5, 15) : rng.range(10, 20);
 		it.known = true;

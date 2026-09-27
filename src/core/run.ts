@@ -257,6 +257,7 @@ export class Run {
 	newItem(kind: string): Item {
 		return rollItem(this.rng, this.s.nextUid++, kind, {
 			curses: this.dungeon.curses,
+			charge: this.dungeon.charge,
 		});
 	}
 
@@ -1006,11 +1007,12 @@ export class Run {
 		if (!s.returning) this.tickHunger();
 		if (s.end) return;
 
-		// 自然回復（おなかが空っぽのときは回復しない）
+		// 自然回復（おなかが空っぽのときは回復しない。風呂板は 湯治で はやい）
 		if (p.hunger > 0 && p.hp < p.maxHp) {
+			const regenStep = this.dungeon.regenStep ?? REGEN_STEP;
 			p.regenAcc += p.maxHp;
-			while (p.regenAcc >= REGEN_STEP) {
-				p.regenAcc -= REGEN_STEP;
+			while (p.regenAcc >= regenStep) {
+				p.regenAcc -= regenStep;
 				if (p.hp < p.maxHp) p.hp++;
 			}
 		}
