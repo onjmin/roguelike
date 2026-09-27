@@ -458,10 +458,12 @@ const wave = (r: Run, it: Item): boolean => {
 export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 	const nm = monsterName(r, m);
 	if (m.disguise) m.disguise = null;
+	// 当たった敵は 起きる（ラリホーの杖は のぞく）。群れの 仲間まで 起こすのは
+	// ダメージの ある いかずちの杖だけ（トルネコ1と 同じ）
+	if (kind !== "w_sleep") wakeMonster(r, m, true, kind === "w_bolt");
 	switch (kind) {
 		case "w_bolt":
 			r.se("shock");
-			wakeMonster(r, m, true);
 			r.damageMonster(m, r.rng.range(18, 22), "magic");
 			return;
 		case "w_reel":
@@ -519,7 +521,6 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			return;
 		}
 		case "w_split":
-			wakeMonster(r, m, true);
 			r.splitMonster(m);
 			return;
 		case "w_haste":

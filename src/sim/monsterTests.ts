@@ -1032,6 +1032,31 @@ test("yuki", "pack: hitting one wakes the others within 3", () => {
 	ok(far.status.sleep === DEEP, "a yuki 4 tiles away woke up too");
 });
 
+test(
+	"yuki",
+	"pack: a harmless staff wakes only the one it hits; w_bolt wakes the others; w_sleep wakes nobody",
+	() => {
+		for (const kind of ["w_reel", "w_seal", "w_slow", "w_send", "w_edge"]) {
+			const r = arena(`yuki-${kind}`);
+			const a = put(r, "yuki", at(1, 0), { sleep: DEEP });
+			const b = put(r, "yuki", at(2, 0), { sleep: DEEP });
+			staffEffect(r, kind, a);
+			ok(a.status.sleep === 0, `${kind}: the one hit is still asleep`);
+			ok(b.status.sleep === DEEP, `${kind}: woke its pack mate too`);
+		}
+		const r = arena("yuki-bolt");
+		const a = put(r, "yuki", at(1, 0), { sleep: DEEP });
+		const b = put(r, "yuki", at(2, 0), { sleep: DEEP });
+		staffEffect(r, "w_sleep", a);
+		ok(b.status.sleep === DEEP, "w_sleep woke a pack mate");
+		staffEffect(r, "w_bolt", a);
+		ok(
+			now(a).status.sleep === 0 && now(b).status.sleep === 0,
+			"w_bolt did not wake the pack",
+		);
+	},
+);
+
 // ───────────────── 置物（statue） ─────────────────
 
 test(

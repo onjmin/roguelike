@@ -81,13 +81,21 @@ const FUROCAN: readonly string[] = [
 const has = (m: Monster, k: string): boolean =>
 	!m.status.sealed && mdef(m).abilities.some((a) => a.k === k);
 
-/** 起こす。byAttack なら深い眠り・金縛りも解ける。 */
-export const wakeMonster = (r: Run, m: Monster, byAttack = false): void => {
+/**
+ * 起こす。byAttack なら深い眠り・金縛りも解ける。
+ * rouse=false なら 群れの仲間は 起こさない（ダメージの ない 杖。トルネコ1の イエティと 同じ）。
+ */
+export const wakeMonster = (
+	r: Run,
+	m: Monster,
+	byAttack = false,
+	rouse = true,
+): void => {
 	const st = m.status;
 	if (st.sleep > 0 && (byAttack || st.sleep < DEEP)) {
 		st.sleep = 0;
 		// 群れはみんな起きる
-		if (mdef(m).abilities.some((a) => a.k === "pack"))
+		if (rouse && mdef(m).abilities.some((a) => a.k === "pack"))
 			for (const o of r.f.monsters)
 				if (o.kind === m.kind && dist(o, m) <= 3) o.status.sleep = 0;
 	}
