@@ -166,7 +166,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "h_antidote", weight: 6 }, // 毒草8・チギュリパン5・まんぜう軍・毒矢の罠 が 多いので 本編3 → 6
 	{ kind: "h_fire", weight: 2 }, // もっと では 消えた 火炎草。1つ減らして 本編より まれに
 	{ kind: "h_sight", weight: 3 }, // 罠7〜9 と 透明あぼーん（見えない。レベル15〜）に。本編2 → 3
-	// スレ 57（未識別）
+	// スレ 58（未識別）
 	{ kind: "s_appraise", weight: 12 }, // 本編8 × 1.5。マイナスの品が多いぶん 階あたりは 本編と同じに保つ
 	{ kind: "s_whet", weight: 5 }, // 30階ぶんの 装備の育ち。本編3 × 1.5 を切り上げ
 	{ kind: "s_temper", weight: 5 }, // 同じ
@@ -181,7 +181,8 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "s_recharge", weight: 3 }, // もっと の 祈り。本編2 → 3
 	{ kind: "s_bread", weight: 3 }, // もっと の パンの巻物。ぷゆゆパンが 床に無いぶんの 逃げ道
 	{ kind: "s_snare", weight: 5 }, // マイナス（ワナの巻物）。本編2 → 5
-	// 杖 15（未識別）
+	{ kind: "s_gacha", weight: 1 }, // もっと だけの パルプンテ。当たりも 外れも 大きいので 1枚
+	// 杖 16（未識別）
 	{ kind: "w_bolt", weight: 1 }, // もっと では 消えた いかずち。1本のまま
 	{ kind: "w_reel", weight: 1 }, // もっと では 消えた メダパニ。1本のまま
 	{ kind: "w_sleep", weight: 1 }, // もっと では 消えた ラリホー。1本のまま
@@ -192,6 +193,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_edge", weight: 1 }, // もろ刃。強くて 危ないので 1本のまま
 	{ kind: "w_split", weight: 2 }, // マイナス（もっと にも ある）。本編1 → 2
 	{ kind: "w_haste", weight: 2 }, // マイナス（ピオリム）。本編1 → 2
+	{ kind: "w_rebut", weight: 1 }, // もっと だけの ザキ。回数0で 出るので 次スレと 組んで はじめて 強い
 	// 矢 9
 	{ kind: "a_wood", weight: 6 }, // 本編4 × 1.5
 	{ kind: "a_iron", weight: 3 }, // 本編2 × 1.5

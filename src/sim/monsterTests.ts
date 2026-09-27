@@ -2083,6 +2083,40 @@ test("scroll", "s_blast from a room's entrance hits the whole room", () => {
 	);
 });
 
+test("staff", "w_rebut: found with 0 charges, then kills in one shot", () => {
+	const r = arena("rebut");
+	const m = put(r, "knight", at(3, 0));
+	const it = give(r, "w_rebut");
+	ok(r.newItem("w_rebut").charges === 0, "w_rebut was found with charges");
+	it.charges = 1;
+	turn(r, { c: "use", item: it.uid });
+	ok(!r.f.monsters.includes(m), "the monster survived");
+	ok(it.charges === 0, "no charge was used");
+});
+
+test("scroll", "s_gacha: every one of the 8 outcomes can happen", () => {
+	const marks: [string, (r: Run, depth0: number) => boolean][] = [
+		["全快", (r) => r.s.log.some((l) => l.includes("満タンに"))],
+		["最大+3", (r) => r.s.log.some((l) => l.includes("3　上がった"))],
+		["Lv+3", (r) => r.p.lv >= 4],
+		["装備+3", (r) => r.s.log.some((l) => l.includes("強くなった"))],
+		["全滅", (r) => r.s.log.some((l) => l.includes("いなくなった"))],
+		["道具に", (r) => r.s.log.some((l) => l.includes("道具に　なった"))],
+		["メタル", (r) => r.f.monsters.some((m) => m.kind === "metal")],
+		["落ちる", (r, d0) => r.s.depth === d0 + 5],
+	];
+	const seen = new Set<string>();
+	for (let i = 0; i < 200 && seen.size < marks.length; i++) {
+		const r = arena(`gacha-${i}`);
+		put(r, "knight", at(0, 5), { sleep: 99 });
+		const d0 = r.s.depth;
+		turn(r, { c: "use", item: give(r, "s_gacha").uid });
+		for (const [name, hit] of marks) if (hit(r, d0)) seen.add(name);
+	}
+	const missing = marks.map(([n]) => n).filter((n) => !seen.has(n));
+	ok(!missing.length, `never happened: ${missing.join(", ")}`);
+});
+
 test("scroll", "s_map then s_snare: the new traps are already found", () => {
 	const r = arena("map-then-snare");
 	turn(r, { c: "use", item: give(r, "s_map").uid });

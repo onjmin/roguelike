@@ -8,13 +8,17 @@ import {
 	attackPower,
 	EXP_AT,
 	HIT_RATE,
+	HUNGER_MAX,
+	MAX_HP_CAP,
+	MAX_LV,
 	rollDamage,
 	THROW_RANGE,
 } from "./balance";
 import { pickTrapKind } from "./floor";
 import { canSee } from "./fov";
 import { DIRS8, type Dir8, dist, step } from "./geom";
-import { defOf, identifyKind, isKeyItem } from "./item";
+import { defOf, identifyKind, isKeyItem, itemTableOf } from "./item";
+import { rollKinds } from "./itemTable";
 import { roomTiles } from "./mapgen";
 import {
 	canTrack,
@@ -217,6 +221,90 @@ const drink = (r: Run, it: Item): boolean => {
 /** 次のレベルまでの経験値。 */
 const expToNext = (r: Run): number => (EXP_AT[r.p.lv] ?? r.p.exp) - r.p.exp;
 
+/** ガチャスレで 下へ 落ちる 階の数（トルネコ1の パルプンテと 同じ 5階）。 */
+const GACHA_FALL = 5;
+
+/**
+ * ガチャスレ（トルネコ1の パルプンテの巻物）：8つの うち 1つが 同じ 確からしさで 起きる。
+ * 落ちられない（帰り道・いちばん下）ときは 落ちる 目を のぞいて 引く。
+ */
+const gacha = (r: Run): void => {
+	const p = r.p;
+	const f = r.f;
+	const canFall = !r.s.returning && r.s.depth < r.dungeon.floors;
+	const roll = r.rng.int(canFall ? 8 : 7);
+	r.msg("ガチャを　回した……");
+	switch (roll) {
+		case 0:
+			// 全快（HP・ちから・満腹度）
+			r.se("heal");
+			p.hp = p.maxHp;
+			p.str = p.maxStr;
+			p.hunger = HUNGER_MAX;
+			r.msg("HPも　ちからも　おなかも　満タンに　なった！", "good");
+			return;
+		case 1:
+			// 最大 HP と ちからの 最大が 3 上がる
+			r.se("heal");
+			p.maxHp = Math.min(MAX_HP_CAP, p.maxHp + 3);
+			p.hp = Math.min(p.maxHp, p.hp + 3);
+			p.maxStr += 3;
+			p.str += 3;
+			r.msg("最大HPと　ちからが　3　上がった！", "good");
+			return;
+		case 2: {
+			// レベルが 3 上がる
+			const to = Math.min(MAX_LV - 1, p.lv + 2);
+			r.gainExp(Math.max(0, EXP_AT[to] - p.exp));
+			return;
+		}
+		case 3: {
+			// 装備（武器・板・剛力の トリップ）と 持っている 杖が ＋3
+			const w = r.weapon();
+			if (w) w.plus = Math.min(99, w.plus + 3);
+			const sh = r.shield();
+			if (sh) sh.plus = Math.min(99, sh.plus + 3);
+			const ring = r.ring();
+			if (ring?.kind === "r_might") {
+				ring.plus += 3;
+				r.applyMight(3);
+			}
+			for (const it of p.items)
+				if (defOf(it.kind).cat === "staff")
+					it.charges = Math.min(99, it.charges + 3);
+			r.msg("装備と　杖が　3　強くなった！", "good");
+			return;
+		}
+		case 4:
+			// この階の 敵が 全滅（経験値は 入らない）
+			for (const m of [...f.monsters]) r.killMonster(m, false);
+			r.msg("この階の　敵が　いなくなった！", "good");
+			return;
+		case 5:
+			// この階の 敵が みんな 道具に なる
+			for (const m of [...f.monsters]) {
+				f.monsters = f.monsters.filter((x) => x !== m);
+				if (r.p.status.heldBy === m.uid) r.p.status.heldBy = null;
+				const [kind] = rollKinds(r.rng, itemTableOf(r.s), 1);
+				r.placeItem(r.newItem(kind), m, true);
+			}
+			r.msg("この階の　敵が　道具に　なった！", "good");
+			return;
+		case 6:
+			// この階の 敵が みんな メタルぷゆゆに なる
+			for (const m of f.monsters) transformMonster(r, m, "metal");
+			r.msg("この階の　敵が　みんな　メタルぷゆゆに　なった！", "good");
+			return;
+		default: {
+			// 5階 下へ 落ちる（いちばん下で 止まる）
+			const to = Math.min(r.dungeon.floors, r.s.depth + GACHA_FALL);
+			r.se("flee");
+			r.enterFloor(to, true);
+			return;
+		}
+	}
+};
+
 // ───────────────── 読む ─────────────────
 
 const read = (r: Run, it: Item, target?: number): boolean => {
@@ -372,6 +460,9 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			}
 			break;
 		}
+		case "s_gacha":
+			gacha(r);
+			break;
 		case "s_ward":
 			// 読んでも 効かない。床に 置くと 効く（run.ts の doDrop）
 			r.msg("何も　起きなかった");
@@ -526,6 +617,11 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 		}
 		case "w_split":
 			r.splitMonster(m);
+			return;
+		case "w_rebut":
+			// 一撃で たおす（トルネコ1の ザキ。経験値も 入る）
+			r.msg(`${nm}を　論破した！`);
+			r.killMonster(m, true);
 			return;
 		case "w_haste":
 			// 遅い 敵は ふつうに もどり、もう 速い 敵には 効かない

@@ -828,11 +828,12 @@ export const sealMonster = (m: Monster): void => {
 	m.enraged = false;
 };
 
-export const transformMonster = (r: Run, m: Monster): void => {
+/** 別の モンスターに 変える（to を 渡せば その種類に。ガチャスレの メタル）。 */
+export const transformMonster = (r: Run, m: Monster, to?: string): void => {
 	const cands = Object.values(MONSTERS).filter(
 		(d) => d.id !== m.kind && d.floors[0] <= r.levelAt(r.f.depth) + 4,
 	);
-	const d = r.rng.pick(cands);
+	const d = to ? MONSTERS[to] : r.rng.pick(cands);
 	const ratio = m.hp / m.maxHp;
 	// 前の姿の とくちょうで 速くなっていたか（杖で速くしたのは そのまま）
 	const wasTraitFast = traitFast(m);

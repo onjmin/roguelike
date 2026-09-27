@@ -84,6 +84,7 @@ const PRICE: Record<string, number> = {
 	s_bread: 200,
 	s_snare: 20,
 	s_escape: 500,
+	s_gacha: 1000,
 	// 杖（残りの回数ぶん 足す）
 	w_bolt: 500,
 	w_reel: 400,
@@ -95,6 +96,7 @@ const PRICE: Record<string, number> = {
 	w_edge: 800,
 	w_split: 100,
 	w_haste: 100,
+	w_rebut: 1500,
 	// 矢（1本）
 	a_wood: 5,
 	a_iron: 15,
