@@ -14,7 +14,12 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
-import { CAFE_TALKS } from "../data/cafe";
+import {
+	CAFE_DRINKS,
+	CAFE_TALKS,
+	TREAT_REACTIONS,
+	TREAT_TALKS,
+} from "../data/cafe";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
 import {
@@ -82,6 +87,7 @@ import {
 	type Town,
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
+import { cafeTalks } from "../ui/cafe";
 import {
 	forgetMobMemo,
 	hasMobNews,
@@ -673,10 +679,43 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 });
 
 test("喫茶「保守」: every talk fits the village window, and the door appears from its stage and can be reached", () => {
-	fitsWindow(
-		CAFE_TALKS.flatMap((t) =>
+	// {drink} は いちばん 長い 一杯の 名前で 測る
+	const longest = Object.values(CAFE_DRINKS)
+		.map((d) => d.name)
+		.sort((x, y) => y.length - x.length)[0];
+	const fill = (t: string) => t.replaceAll("{drink}", longest);
+	fitsWindow([
+		...[...CAFE_TALKS, ...TREAT_TALKS].flatMap((t) =>
 			t.lines.map((l, i): [string, string] => [`cafe ${t.id}[${i}]`, l.text]),
 		),
+		...Object.entries(CAFE_DRINKS).flatMap(([k, d]) =>
+			d.lines.map((l, i): [string, string] => [`drink ${k}[${i}]`, l.text]),
+		),
+		...Object.entries(TREAT_REACTIONS).flatMap(([w, rs]) =>
+			rs.flatMap((ls, i) =>
+				ls.map((l): [string, string] => [`treat ${w}[${i}]`, fill(l.text)]),
+			),
+		),
+	]);
+	// おごった 回数で 話が ふえる（3杯・6杯）
+	const base = cafeTalks(CAFE_FROM, {
+		heard: [],
+		treats: {},
+		sentAt: 0,
+	}).length;
+	const three = cafeTalks(CAFE_FROM, {
+		heard: [],
+		treats: { roze: 3 },
+		sentAt: 0,
+	}).length;
+	const six = cafeTalks(CAFE_FROM, {
+		heard: [],
+		treats: { roze: 6 },
+		sentAt: 0,
+	}).length;
+	ok(
+		three === base + 1 && six === base + 2,
+		`treat talks: ${base} → ${three} → ${six}`,
 	);
 	ok(
 		new Set(CAFE_TALKS.map((t) => t.id)).size === CAFE_TALKS.length,
