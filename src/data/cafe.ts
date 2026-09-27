@@ -247,6 +247,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 
 // ───────────────── 一杯 おごる（倉庫の 草で 作って、仲間に「あちらの　お客様からです」） ─────────────────
 // 推しへの 投げ銭。強さには 何も 効かない。一杯ごとに 好みの 仲間（who）が いて、その 仲間に 送ると 特別な 反応
+// （飲むのは 受け取った 仲間。キリコは 送るだけ）
 // （lines）。ほかの 仲間なら その人の いつもの 反応（TREAT_REACTIONS）。おごった 回数で 話が ふえる（CafeTalk.treats）。
 
 export type CafeDrink = {
@@ -279,9 +280,9 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		name: "荒らしカクテル",
 		who: "shiyo",
 		lines: [
-			s("shiyo", "……それ、飲むの？\nあなた、ほんとに　ばかなんだから"),
-			n("キリコは　ひとくち　飲んだ。\n……むせた。"),
-			s("shiyo", "ほら。……水、いれて　あげるわよ"),
+			s("shiyo", "荒らしカクテル？　あたすに\n荒らしを　送りつける　わけ？"),
+			n("シヨは　ひとくち　飲んだ。\n……むせた。"),
+			s("shiyo", "……ばか。\n……でも、お礼は　言って　あげる"),
 		],
 	},
 	h_might: {
@@ -297,7 +298,7 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		who: "feris",
 		lines: [
 			s("feris", "レアだ〜！\n……レベルが　上がる　味〜"),
-			s("feris", "ひとくち　ちょうだい〜。\n……だめ？　だよね〜"),
+			s("feris", "……いいの〜？\nレアなのに〜、ありがと〜"),
 		],
 	},
 	h_swift: {
@@ -328,9 +329,9 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		name: "安価ショット",
 		who: "nanj",
 		lines: [
-			s("nanj", "安価ショットや！\n>>キリコ　一気で"),
-			n("キリコは　一気に　飲んだ。"),
-			s("nanj", "安価は　絶対や。\n……ようやった"),
+			s("nanj", "安価ショットか。\n>>ワイ　一気で、ってことやな"),
+			n("おんJ民は　一気に　飲んだ。"),
+			s("nanj", "安価は　絶対や。\n……うまい"),
 		],
 	},
 	h_daze: {
@@ -345,8 +346,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		name: "寝落ちミルク",
 		who: "shiyo",
 		lines: [
-			s("shiyo", "寝落ちミルク？\n……夜ふかし　ばかり　してるんでしょ"),
-			s("shiyo", "飲んだら　ちゃんと　寝なさいよ。\n……おやすみ"),
+			s("shiyo", "寝落ちミルク？　……あたすが\n夜ふかし　してるの、見てたの？"),
+			s("shiyo", "……今夜は　ちゃんと　寝るわよ。\nおやすみ"),
 		],
 	},
 	h_antidote: {
@@ -362,8 +363,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		who: "nanj",
 		lines: [
 			s("nanj", "燃料投下ショットは　あかん。\nスレが　燃える"),
-			n("キリコの　口から　火が　出た。"),
-			s("nanj", "言わんこっちゃない。草"),
+			n("おんJ民の　口から　火が　出た。"),
+			s("nanj", "……送る　ほうも　送る　ほうや。\n草"),
 		],
 	},
 	h_sight: {
