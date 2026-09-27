@@ -76,7 +76,7 @@ const OTHER_KEYS: Record<string, Key> = {
 	Tab: "menu",
 	Backspace: "b",
 	KeyI: "b",
-	// 足踏み（E は 見つけやすい 英字。. と テンキーの5 は ローグライクの ならい）
+	// 足踏み（X＋Z でも。E は 見つけやすい 英字。. と テンキーの5 は ローグライクの ならい）
 	KeyE: "wait",
 	Period: "wait",
 	Numpad5: "wait",
@@ -176,6 +176,8 @@ export const dir4Candidates = (d: Dir8): readonly Dir[] => DIR4_TRY[d];
 const FIELD_HOLD_MS = 220;
 /** 十字キーの まん中を これより長く押さえたら 足踏み（トルネコの A＋B 押しっぱなし）。 */
 const PAD_REST_MS = 350;
+/** X（B）を これより短く 押して離したら もちもの。長く 押さえただけなら 開かない。 */
+const B_TAP_MS = 500;
 /** 窓が開いてから、外のタップで閉じられるようになるまで（ms）。 */
 const WINDOW_TAP_GRACE_MS = 300;
 /** 画面を押して これより 指が動いたら、タップではなく なぞり（CSS 画素。半マスほど）。 */
@@ -201,6 +203,14 @@ export class Input {
 	private restKeySince = 0;
 	/** 画面の十字キー（足踏みのキーを 押さえているあいだ まん中を 光らせる）。 */
 	private padEl: HTMLElement | null = null;
+	/**
+	 * フィールドで X（B ボタン）を 押さえている。トルネコ・シレンの B と 同じく、
+	 * 押しながら 方向で ダッシュ・押しながら Z で 足踏み・軽く押して 離せば もちもの。
+	 * used は 押さえているあいだに ダッシュ・足踏みに 使ったか（使ったら 離しても もちものを 開かない）。
+	 */
+	private bKey: { since: number; used: boolean } | null = null;
+	/** X を 押しながら Z（A＋B）で 足踏みしている。 */
+	private restChord = false;
 	/** 最後に方向を押し始めた時刻（同時押しの待ち合わせ用）。 */
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
@@ -257,6 +267,9 @@ export class Input {
 			if (mod) {
 				this.keyMods[mod] = true;
 				e.preventDefault();
+				// 窓の中の F は 並び替え（シレンの「方向切り替え、道具並び替え」と 同じ キー）
+				if (e.code === "KeyF" && !e.repeat && this.handlers.length)
+					this.press("sort");
 				return;
 			}
 			const d = DIR_KEYS[e.code];
@@ -265,6 +278,7 @@ export class Input {
 				if (!this.keysHeld.size && this.padDir === null)
 					this.dirSince = performance.now();
 				this.keysHeld.set(e.code, d);
+				if (this.bKey) this.bKey.used = true;
 				// メニューが開いているあいだの向きは、閉じたあとの1歩にしない
 				if (!e.repeat && !this.handlers.length)
 					this.pendingDir = this.heldDir();
@@ -274,20 +288,46 @@ export class Input {
 			const key = OTHER_KEYS[e.code];
 			if (!key) return;
 			e.preventDefault();
-			// 足踏みのキーは 押しっぱなしで 足踏みを 続ける（十字キーの まん中の 長押しと 同じ）
-			if (key === "wait" && !e.repeat && !this.handlers.length) {
-				this.restKeySince = performance.now();
-				if (this.padEl) this.padEl.dataset.center = "1";
+			// フィールドの X は 離したときに もちもの（押さえているあいだは ダッシュ・足踏みの 組み合わせ）
+			if (e.code === "KeyX" && !this.handlers.length) {
+				if (!e.repeat) this.bKey = { since: performance.now(), used: false };
+				return;
 			}
+			// X を 押しながら Z：足踏み（トルネコの A＋B。押さえているあいだ 続ける）
+			if (key === "a" && this.bKey && !this.handlers.length) {
+				if (e.repeat) return;
+				this.bKey.used = true;
+				this.restChord = true;
+				this.startRestKey();
+				this.press("wait");
+				return;
+			}
+			// 足踏みのキーは 押しっぱなしで 足踏みを 続ける（十字キーの まん中の 長押しと 同じ）
+			if (key === "wait" && !e.repeat && !this.handlers.length)
+				this.startRestKey();
 			this.press(key, e.repeat);
 		});
 		window.addEventListener("keyup", (ev) => {
 			const code = codeOf(ev);
 			const mod = MOD_KEYS[code];
 			if (mod) this.keyMods[mod] = false;
-			if (OTHER_KEYS[code] === "wait") this.restKeySince = 0;
-			if (OTHER_KEYS[code] === "wait" && this.padEl && !this.padCenterSince)
-				this.padEl.dataset.center = "";
+			const key = OTHER_KEYS[code];
+			if (key === "wait") this.stopRestKey();
+			if (this.restChord && (code === "KeyX" || key === "a")) {
+				this.restChord = false;
+				this.stopRestKey();
+			}
+			if (code === "KeyX" && this.bKey) {
+				const b = this.bKey;
+				this.bKey = null;
+				// 軽く押して 離した：もちもの（長く 押さえただけなら 何もしない）
+				if (
+					!b.used &&
+					!this.handlers.length &&
+					performance.now() - b.since < B_TAP_MS
+				)
+					this.press("b");
+			}
 			const before = this.heldDir();
 			this.keysHeld.delete(code);
 			// 斜め（2つ押し）から片方だけ離したときは、少し待つ（両方を離すまでの間に
@@ -300,6 +340,8 @@ export class Input {
 			this.padDir = null;
 			this.padCenterSince = 0;
 			this.restKeySince = 0;
+			this.bKey = null;
+			this.restChord = false;
 			this.keyMods = { dash: false, diag: false, turn: false };
 		});
 	}
@@ -335,6 +377,17 @@ export class Input {
 		return dirFromVec(dx, dy);
 	}
 
+	/** 足踏みのキーを 押さえはじめた（十字キーの まん中も 光らせる）。 */
+	private startRestKey(): void {
+		this.restKeySince = performance.now();
+		if (this.padEl) this.padEl.dataset.center = "1";
+	}
+
+	private stopRestKey(): void {
+		this.restKeySince = 0;
+		if (this.padEl && !this.padCenterSince) this.padEl.dataset.center = "";
+	}
+
 	/** 十字キーの まん中・足踏みのキーを 長押ししている（足踏みを 続ける）。 */
 	restHeld(): boolean {
 		const now = performance.now();
@@ -368,7 +421,11 @@ export class Input {
 	/** 押しっぱなしのキーと画面の切り替えを合わせたもの。 */
 	mods(): Mods {
 		return {
-			dash: this.keyMods.dash || this.toggles.dash || this.heldMods.dash,
+			dash:
+				this.keyMods.dash ||
+				this.bKey !== null ||
+				this.toggles.dash ||
+				this.heldMods.dash,
 			diag: this.keyMods.diag || this.toggles.diag || this.heldMods.diag,
 			turn: this.keyMods.turn || this.toggles.turn || this.heldMods.turn,
 		};
