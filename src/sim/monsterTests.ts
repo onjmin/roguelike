@@ -43,6 +43,7 @@ import {
 	type Ability,
 	type Command,
 	DEEP,
+	DOZE,
 	type DungeonId,
 	type GameEvent,
 	type Item,
@@ -2184,7 +2185,7 @@ test(
 
 test(
 	"floor",
-	"anka: comes at its res; doing it drops an item at your feet, ignoring it adds res and a troll",
+	"anka: comes at its res; doing it gives 2 known items and res back, ignoring it adds res, wakes the floor and 3 trolls",
 	() => {
 		const r = arena("anka");
 		const herb = give(r, "h_heal");
@@ -2194,12 +2195,19 @@ test(
 		r.act({ c: "wait" });
 		ok(r.f.anka, "no anka at its res");
 		ok(r.f.ankaAt === -1, "the anka was left scheduled");
-		// こなす：草を 飲めば 足元に 道具が 1つ
+		// こなす：草を 飲めば 足元に 正体つきの 道具が 2つ、レスが もどる（保守）
 		r.f.anka = { kind: "herb", need: 1, done: 0, due: r.f.res + 100 };
+		r.f.res = 500;
 		const items = r.f.items.length;
 		r.act({ c: "use", item: herb.uid });
 		ok(!r.f.anka, "drinking a herb did not clear the herb anka");
-		ok(r.f.items.length === items + 1, "no item was dropped for the anka");
+		const gifts = r.f.items.slice(items);
+		ok(gifts.length === 2, `${gifts.length} gifts for the anka`);
+		ok(
+			gifts.every((fi) => fi.item.known && isKnownKind(r.s, fi.item.kind)),
+			"a gift was not identified",
+		);
+		ok(r.f.res <= 401, `the anka did not give back res (${r.f.res})`);
 		// 敵を 2体 たおせ：1体では まだ
 		r.f.anka = { kind: "kill", need: 2, done: 0, due: r.f.res + 100 };
 		for (let i = 0; i < 2; i++) {
@@ -2209,14 +2217,29 @@ test(
 			ok(m.hp <= 0, "harness: could not kill the target");
 			ok(!!r.f.anka === (i === 0), `the kill anka was wrong after ${i + 1}`);
 		}
-		// 守らない：期限で レスが 伸び、荒らしが 来る
+		// 守らない：期限で レスが 伸び、眠っていた 敵が 起き、荒らしが 3体 来る
+		const sleeper = put(
+			r,
+			"tousuko",
+			{ x: CENTER.x + 6, y: CENTER.y + 6 },
+			{
+				sleep: DOZE,
+			},
+		);
 		r.f.anka = { kind: "scroll", need: 1, done: 0, due: r.f.res + 1 };
 		const res = r.f.res;
 		const mons = r.f.monsters.length;
 		r.act({ c: "wait" });
 		ok(!r.f.anka, "the anka did not expire");
-		ok(r.f.res >= res + 50, `the ignored anka added only ${r.f.res - res} res`);
-		ok(r.f.monsters.length === mons + 1, "no troll came for the ignored anka");
+		ok(
+			r.f.res >= res + 100,
+			`the ignored anka added only ${r.f.res - res} res`,
+		);
+		ok(
+			r.f.monsters.length === mons + 3,
+			`${r.f.monsters.length - mons} trolls came for the ignored anka`,
+		);
+		ok(sleeper.status.sleep === 0, "a sleeping monster slept through it");
 	},
 );
 
