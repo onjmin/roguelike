@@ -114,6 +114,17 @@ export const CLIFF: Record<string, TileDef> = {
 	m: solid(C_CAVE, TURF, ROCK_LOW, MOUTH, base(4, 123)),
 	"!": solid(C_ROCK, TURF, ROCK_LOW, base(5, 37, 1, 2)),
 	y: big(C_GRASS, base(1, 17), base(0, 292, 2, 2)),
+	// 崖の 切れ目（村の 出口の 道）の 両がわ：左の 崖の 右はし（A D F I）・右の 崖の 左はし（V j s t）
+	A: solid(C_GRASS, base(2, 16)),
+	D: solid(C_GRASS, base(2, 17)),
+	F: solid(C_ROCK, base(2, 18)),
+	I: solid(C_ROCK, TURF, base(2, 19)),
+	V: solid(C_GRASS, base(0, 16)),
+	j: solid(C_GRASS, base(0, 17)),
+	s: solid(C_ROCK, base(0, 18)),
+	t: solid(C_ROCK, TURF, base(0, 19)),
+	// 道の わきの 立て札（草地）
+	i: solid(C_GRASS, TURF, base(5, 37, 1, 2)),
 };
 
 // ───────────────── 屋台と 店先 ─────────────────
