@@ -15,7 +15,7 @@ import { pickTrapKind } from "./floor";
 import { canSee } from "./fov";
 import { DIRS8, type Dir8, dist, step } from "./geom";
 import { defOf, identifyKind, isKeyItem } from "./item";
-import { roomAt, roomTiles } from "./mapgen";
+import { roomTiles } from "./mapgen";
 import {
 	canTrack,
 	firstInLine,
@@ -356,11 +356,8 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			break;
 		}
 		case "s_blast": {
-			const room = roomAt(f.layout, p.x, p.y);
-			const targets = f.monsters.filter(
-				(m) =>
-					dist(m, p) <= 1 || (room >= 0 && roomAt(f.layout, m.x, m.y) === room),
-			);
+			// 見えている 範囲の 敵（トルネコ1の イオと 同じ）。部屋の 入口からでも 部屋じゅうに 効く
+			const targets = f.monsters.filter((m) => canSee(f.layout, p, m));
 			r.se("explosion");
 			r.emit({
 				t: "fx",

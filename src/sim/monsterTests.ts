@@ -2071,6 +2071,18 @@ test("herb", "h_blind: even an adjacent monster is not visible", () => {
 	ok(!r.monsterVisible(now(m)), "an adjacent monster was visible while blind");
 });
 
+test("scroll", "s_blast from a room's entrance hits the whole room", () => {
+	// トルネコ1の イオと 同じく 見えている 敵に 効く（入口からは 部屋ぜんぶが 見える）
+	const r = arena("blast-entrance", corridorLayout(20), { x: 7, y: 16 });
+	const far = put(r, "knight", { x: 3, y: 15 }, { sleep: 99 });
+	const hp0 = far.hp;
+	turn(r, { c: "use", item: give(r, "s_blast").uid });
+	ok(
+		!r.f.monsters.includes(far) || far.hp < hp0,
+		"a monster inside the room was not hit",
+	);
+});
+
 test("scroll", "s_map then s_snare: the new traps are already found", () => {
 	const r = arena("map-then-snare");
 	turn(r, { c: "use", item: give(r, "s_map").uid });
