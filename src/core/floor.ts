@@ -7,6 +7,8 @@ import {
 	HOUSE_MIN_AREA,
 	HOUSE_MONSTERS,
 	HOUSE_MONSTERS_EARLY,
+	HOUSE_SHAPE_CHANCE,
+	HOUSE_SHAPE_FROM,
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
@@ -15,7 +17,14 @@ import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
 import { itemTableOf } from "./item";
 import { rollKinds } from "./itemTable";
-import { generateLayout, idx, roomAt, roomTiles } from "./mapgen";
+import {
+	generateLayout,
+	type HouseShape,
+	houseShapeLayout,
+	idx,
+	roomAt,
+	roomTiles,
+} from "./mapgen";
 import type { Run } from "./run";
 import {
 	DEEP,
@@ -64,7 +73,14 @@ const freeRoomTiles = (r: Run, f: Floor, roomId: number | null): Pos[] => {
 
 export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	const rng = r.rng;
-	const layout = generateLayout(rng);
+	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
+	const shape: HouseShape | null =
+		house &&
+		r.levelAt(depth) >= HOUSE_SHAPE_FROM &&
+		rng.chance(HOUSE_SHAPE_CHANCE)
+			? rng.pick<HouseShape>(["big", "split2", "split4"])
+			: null;
+	const layout = shape ? houseShapeLayout(rng, shape) : generateLayout(rng);
 	const rooms = layout.rooms;
 	const f: Floor = {
 		depth,
@@ -95,8 +111,10 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	r.p.x = start.x;
 	r.p.y = start.y;
 
-	// モンスターハウス（キリコのいない部屋。入ったとたんに囲まれないよう、広い部屋を選ぶ）
-	if (house && rooms.length > 1) {
+	// モンスターハウス（キリコのいない部屋。入ったとたんに囲まれないよう、広い部屋を選ぶ）。
+	// 大部屋は ひと部屋 まるごと 祭りで、はじめから 中に いる（開幕の 祭り）
+	if (house && rooms.length === 1) f.house = 0;
+	else if (house) {
 		const cands = rooms.map((_, i) => i).filter((i) => i !== startRoom);
 		const area = (i: number) => rooms[i].w * rooms[i].h;
 		const wide = cands.filter((i) => area(i) >= HOUSE_MIN_AREA);
@@ -161,10 +179,12 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			});
 	}
 
-	// モンスター（最初からいるもの。キリコの部屋には置かない）
+	// モンスター（最初からいるもの。キリコの部屋には置かない。大部屋では キリコの 2マス 以内に 置かない）
 	const place = (roomId: number | null): Pos | null => {
-		const spots = freeRoomTiles(r, f, roomId).filter(
-			(t) => roomAt(layout, t.x, t.y) !== startRoom,
+		const spots = freeRoomTiles(r, f, roomId).filter((t) =>
+			rooms.length === 1
+				? Math.max(Math.abs(t.x - start.x), Math.abs(t.y - start.y)) > 2
+				: roomAt(layout, t.x, t.y) !== startRoom,
 		);
 		return spots.length ? rng.pick(spots) : null;
 	};

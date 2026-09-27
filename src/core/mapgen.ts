@@ -230,12 +230,60 @@ const connect = (
 	}
 };
 
-/** 大部屋（ひとつの大きな部屋）。スレで今の階を作り替えるときにも使う。 */
+/** 大部屋（ひとつの大きな部屋）。祭りの階の 大部屋と、試験で使う。 */
 export const bigRoomLayout = (): Layout => {
 	const l = emptyLayout(MAP_W, MAP_H);
 	const room: Room = { id: 0, x: 2, y: 2, w: MAP_W - 4, h: MAP_H - 4 };
 	l.rooms.push(room);
 	carveRoom(l, room);
+	return l;
+};
+
+/** 祭りの階の 特別な形（トルネコ1）。 */
+export type HouseShape = "big" | "split2" | "split4";
+
+/**
+ * 祭りの階の 特別な形。big は 大部屋、split2 は 大部屋を 縦に 割って 1本の 通路で つないだ 二分割、
+ * split4 は さらに 横にも 割って 1本の 通路で ぐるりと 回る 四分割（トルネコ1と 同じ）。
+ */
+export const houseShapeLayout = (rng: Rng, shape: HouseShape): Layout => {
+	if (shape === "big") return bigRoomLayout();
+	const l = emptyLayout(MAP_W, MAP_H);
+	// 部屋の あいだは 壁 5マス（通路が 中で 曲がれる）
+	const GAP = 5;
+	const x0 = 2;
+	const x1 = MAP_W - 3;
+	const y0 = 2;
+	const y1 = MAP_H - 3;
+	const lw = Math.floor((x1 - x0 + 1 - GAP) / 2);
+	const xs: [number, number][] = [
+		[x0, lw],
+		[x0 + lw + GAP, x1 - (x0 + lw + GAP) + 1],
+	];
+	const th = Math.floor((y1 - y0 + 1 - GAP) / 2);
+	const ys: [number, number][] =
+		shape === "split2"
+			? [[y0, y1 - y0 + 1]]
+			: [
+					[y0, th],
+					[y0 + th + GAP, y1 - (y0 + th + GAP) + 1],
+				];
+	const cells: Cell[][] = ys.map(([y, h], row) =>
+		xs.map(([x, w], col) => {
+			const room: Room = { id: l.rooms.length, x, y, w, h };
+			l.rooms.push(room);
+			carveRoom(l, room);
+			return { col, row, room, jx: 0, jy: 0 };
+		}),
+	);
+	if (shape === "split2") connect(l, rng, cells[0][0], cells[0][1], true);
+	else {
+		// 輪（左上 → 右上 → 右下 → 左下 → 左上）
+		connect(l, rng, cells[0][0], cells[0][1], true);
+		connect(l, rng, cells[1][0], cells[1][1], true);
+		connect(l, rng, cells[0][0], cells[1][0], false);
+		connect(l, rng, cells[0][1], cells[1][1], false);
+	}
 	return l;
 };
 

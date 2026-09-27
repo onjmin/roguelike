@@ -79,6 +79,13 @@ export const MONSTER_CAP = 19;
 /** この間隔（ターン）ごとに1体湧く。 */
 export const SPAWN_EVERY = 64;
 
+/**
+ * 祭りの階が 大部屋・二分割・四分割に なる 確率と、なりはじめる階（本編の何階ぶんか）。
+ * トルネコ1の 大部屋は 祭りの 一種で、遊んだ 記録では 6階が いちばん浅い。
+ */
+export const HOUSE_SHAPE_CHANCE = 1 / 3;
+export const HOUSE_SHAPE_FROM = 6;
+
 /** モンスターハウス（祭り）の出る確率（3階から）。 */
 export const HOUSE_CHANCE = 1 / 16;
 /**

@@ -291,6 +291,63 @@ test("a festival room gets 3-5 extra hidden traps (like Torneko 1)", () => {
 	ok(houses >= 20, `harness: only ${houses}/30 floors had a festival room`);
 });
 
+test("some deeper festival floors are a big room / split in 2 / split in 4 (like Torneko 1)", () => {
+	const seen = new Map<number, number>();
+	for (let i = 0; i < 90; i++) {
+		const run = Run.create(`house-shape-${i}`);
+		run.s.houses = [10];
+		run.enterFloor(10, false);
+		const f = run.f;
+		const l = f.layout;
+		const n = l.rooms.length;
+		seen.set(n, (seen.get(n) ?? 0) + 1);
+		ok(f.house >= 0, `seed ${i}: no festival room`);
+		// 階段まで 歩いて 行けるか（すべての 床が つながっているか）
+		const p = run.s.player;
+		const reach = new Set([`${p.x},${p.y}`]);
+		const queue = [{ x: p.x, y: p.y }];
+		for (let q = queue.shift(); q; q = queue.shift())
+			for (const d of [0, 1, 2, 3, 4, 5, 6, 7] as const) {
+				const t = step(q, d);
+				const k = `${t.x},${t.y}`;
+				if (reach.has(k) || !isFloor(l, t.x, t.y)) continue;
+				reach.add(k);
+				queue.push(t);
+			}
+		let floors = 0;
+		for (let y = 0; y < l.h; y++)
+			for (let x = 0; x < l.w; x++) if (isFloor(l, x, y)) floors++;
+		ok(reach.size === floors, `seed ${i} (${n} rooms): the floor is split`);
+		if (n === 1) {
+			// 大部屋：はじめから 祭りの 中。となりには 敵が いない
+			ok(f.houseAwake, `seed ${i}: the big room festival did not start`);
+			ok(
+				f.monsters.every(
+					(m) => Math.max(Math.abs(m.x - p.x), Math.abs(m.y - p.y)) > 2,
+				),
+				`seed ${i}: a monster starts right next to the player in the big room`,
+			);
+		} else if (n === 2 || n === 4)
+			ok(
+				roomAt(l, p.x, p.y) !== f.house,
+				`seed ${i}: the player starts in the festival half`,
+			);
+	}
+	for (const n of [1, 2, 4])
+		ok(seen.get(n), `no ${n}-room festival floor in 90 seeds`);
+	ok(
+		(seen.get(1) ?? 0) + (seen.get(2) ?? 0) + (seen.get(4) ?? 0) < 60,
+		"too many festival floors took a special shape",
+	);
+	// 浅い階では ならない
+	for (let i = 0; i < 30; i++) {
+		const run = Run.create(`house-shape-shallow-${i}`);
+		run.s.houses = [4];
+		run.enterFloor(4, false);
+		ok(run.f.layout.rooms.length >= 5, `seed ${i}: a special shape on B4`);
+	}
+});
+
 test("swinging at an empty tile reveals a trap there", () => {
 	const run = Run.create("swing-trap");
 	run.enterFloor(3, false);
