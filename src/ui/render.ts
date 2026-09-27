@@ -6,6 +6,7 @@
 // - モンスターの表示位置は UI 側が持つ（core の状態は一瞬で変わるので、演出の途中は古い位置に描く）。
 
 import { dungeonById } from "../core/data/dungeons";
+import { MONSTERS } from "../core/data/monsters";
 import { forEachVisible } from "../core/fov";
 import { type Dir8, spriteDir } from "../core/geom";
 import { itemHidden } from "../core/item";
@@ -13,7 +14,7 @@ import { T_WALL, tileAt } from "../core/mapgen";
 import type { Floor, RunState } from "../core/types";
 import { drawRefInCell, getImage, onImageLoaded } from "../engine/assets";
 import type { Screen } from "../engine/screen";
-import { drawWalk, stepFrame } from "../engine/sprite";
+import { drawWalk, isWalkRef, stepFrame } from "../engine/sprite";
 import { TILE } from "../engine/types";
 import { drawEquip, type EquipLook } from "./equip";
 import { isUpBoard } from "./floorName";
@@ -24,6 +25,9 @@ import {
 	themeFor,
 	zoneFor,
 } from "./theme";
+
+/** ただの 置物の 絵（動きだす 前の 置物の 敵と 同じ。data/monsters.ts の still）。 */
+const STATUE_STILL = Object.values(MONSTERS).find((d) => d.still)?.still ?? "";
 
 /** 倒れた所に立つ墓（RPGEN の単体スプライト）。 */
 export const GRAVE = "sp:07DETe3";
@@ -172,12 +176,22 @@ export class FloorView {
 		ctx.imageSmoothingEnabled = false;
 		ctx.fillStyle = theme.dark;
 		ctx.fillRect(0, 0, this.terrain.width, this.terrain.height);
-		const isOpen = (x: number, y: number) => tileAt(l, x, y) !== T_WALL;
+		// ただの 置物は 通れないが、床の 上に 立つ 物として 描く（壁の 面は つけない）
+		const statues = new Set(f.statues ?? []);
+		const isOpen = (x: number, y: number) =>
+			tileAt(l, x, y) !== T_WALL || statues.has(y * l.w + x);
 		for (let y = 0; y < l.h; y++) {
 			for (let x = 0; x < l.w; x++) {
 				const px = x * TILE;
 				const py = y * TILE;
 				const t = tileAt(l, x, y);
+				if (statues.has(y * l.w + x)) {
+					ctx.fillStyle = theme.floorColor;
+					ctx.fillRect(px, py, TILE, TILE);
+					drawRefInCell(ctx, theme.floor, px, py);
+					drawRefInCell(ctx, STATUE_STILL, px, py);
+					continue;
+				}
 				if (t !== T_WALL) {
 					ctx.fillStyle = theme.floorColor;
 					ctx.fillRect(px, py, TILE, TILE);
@@ -315,7 +329,10 @@ export class FloorView {
 			// 装備：体のうしろに隠れる側 → 体 → 体の前に出る側
 			if (g.equip)
 				drawEquip(ctx, g.equip, sd, frame, x, y, "under", g.swing ?? -1);
-			const drawn = drawWalk(ctx, g.sprite, sd, frame, x, y);
+			// 1コマの 絵（動きだす 前の 置物）は 歩かず そのまま
+			const drawn = isWalkRef(g.sprite)
+				? drawWalk(ctx, g.sprite, sd, frame, x, y)
+				: drawRefInCell(ctx, g.sprite, x, y);
 			if (g.equip && drawn)
 				drawEquip(ctx, g.equip, sd, frame, x, y, "over", g.swing ?? -1);
 			if (!drawn) {
@@ -781,7 +798,7 @@ export const drawMap = (
 		for (let x = 0; x < l.w; x++) {
 			const i = y * l.w + x;
 			if (!f.seen[i]) continue;
-			const t = l.tiles[i];
+			const t = f.statues?.includes(i) ? 1 : l.tiles[i];
 			if (t === T_WALL) continue;
 			ctx.fillStyle =
 				t === 1 ? "rgba(90, 140, 255, 0.55)" : "rgba(120, 160, 255, 0.4)";

@@ -33,6 +33,10 @@ import {
 
 export const mdef = (m: Monster): MonsterDef => MONSTERS[m.kind];
 
+/** 動きだす 前の 置物（ただの 置物と 同じ 見た目。画面では 敵として あつかわない）。 */
+export const posing = (m: Monster): boolean =>
+	m.status.dormant && !!MONSTERS[m.kind]?.still;
+
 /** まどわされているときの 敵の呼び名（みんな キリコの姿に 見えて 見分けが つかない）。 */
 const DAZED_NAME = "なにか";
 

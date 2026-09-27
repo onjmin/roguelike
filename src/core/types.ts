@@ -145,6 +145,11 @@ export type MonsterDef = {
 	name: string;
 	/** 歩行グラの参照（`sa:<id>` か `pub:sprites/...`）。 */
 	sprite: string;
+	/**
+	 * 動いていない ときの 絵（置物。`pub:sprites/...png#0,0,16,16` の 1コマ。歩かず いつも 前向き）。
+	 * あれば、動きだす まで 階に 置く ただの 置物（Floor.statues）と 同じ 見た目に なる。
+	 */
+	still?: string;
 	hp: number;
 	atk: number;
 	def: number;
@@ -315,6 +320,8 @@ export type Floor = {
 	mapped?: boolean;
 	/** 見透し草：罠と見えない敵が見える。 */
 	sight: boolean;
+	/** ただの 置物（通れない 地形。idx）。置物の 敵が 出る 階だけ（core/floor.ts の placeStatues）。 */
+	statues?: number[];
 };
 
 // ───────────────────────── 冒険（1回の挑戦） ─────────────────────────

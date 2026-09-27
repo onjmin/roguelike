@@ -26,7 +26,7 @@ import {
 	itemTableOf,
 } from "./item";
 import { rollKinds } from "./itemTable";
-import { roomTiles } from "./mapgen";
+import { isFloor, roomTiles } from "./mapgen";
 import {
 	canTrack,
 	firstInLine,
@@ -529,6 +529,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				.filter(
 					(t) =>
 						!f.traps.some((x) => x.x === t.x && x.y === t.y) &&
+						isFloor(f.layout, t.x, t.y) &&
 						!r.itemAt(t.x, t.y) &&
 						(t.x !== f.stairs.x || t.y !== f.stairs.y) &&
 						(t.x !== p.x || t.y !== p.y),

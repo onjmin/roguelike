@@ -22,8 +22,10 @@ import {
 	type HouseShape,
 	houseShapeLayout,
 	idx,
+	isFloor,
 	roomAt,
 	roomTiles,
+	T_WALL,
 } from "./mapgen";
 import type { Run } from "./run";
 import {
@@ -62,6 +64,7 @@ const freeRoomTiles = (r: Run, f: Floor, roomId: number | null): Pos[] => {
 	for (const room of rooms)
 		for (const t of roomTiles(room)) {
 			if (t.x === f.stairs.x && t.y === f.stairs.y) continue;
+			if (!isFloor(f.layout, t.x, t.y)) continue; // ただの 置物
 			if (f.items.some((i) => i.x === t.x && i.y === t.y)) continue;
 			if (f.traps.some((i) => i.x === t.x && i.y === t.y)) continue;
 			if (f.monsters.some((m) => m.x === t.x && m.y === t.y)) continue;
@@ -134,6 +137,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		);
 		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
 	}
+
+	placeStatues(r, f, start);
 
 	// 道具（トルネコ1と同じく 表から引く。帰り道は 何も置かない）。モンスターハウスがあれば半分以上をハウスの中へ
 	let nItems = 0;
@@ -225,6 +230,51 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 	r.s.floor = prevFloor;
 	return f;
+};
+
+/** ただの 置物の 数（置物の 敵が 出る 階だけ）。 */
+export const STATUES: [number, number] = [2, 4];
+
+/**
+ * ただの 置物（動かない。通れない 地形）を 置く。置物の 敵（still の ある 敵）が 出る 階だけで、
+ * 動きだす まで 見分けが つかない（ほかの 階では 乱数を 引かない）。
+ * 部屋の 内がわ（まわり 8マスが 同じ 部屋の 床）で、ほかの 置物・階段・キリコ・目的の品の となりには 置かない
+ * （まわりが あいて いるので 部屋は 分かれない）。
+ */
+const placeStatues = (r: Run, f: Floor, start: Pos): void => {
+	const foes = r.dungeon.foes ?? {};
+	const level = Math.max(1, Math.min(30, r.levelAt(f.depth)));
+	const still = monstersFor(level, r.s.dungeon).some(
+		(m) => m.still && (foes[m.id] ?? 1) > 0,
+	);
+	if (!still || r.s.returning) return;
+	const l = f.layout;
+	const near = (a: Pos, b: Pos) =>
+		Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1;
+	const taken: Pos[] = [f.stairs, start, ...f.items];
+	const n = r.rng.range(STATUES[0], STATUES[1]);
+	f.statues = [];
+	for (let i = 0; i < n; i++) {
+		const cands = l.rooms
+			.flatMap((room) => roomTiles(room))
+			.filter(
+				(t) =>
+					DIRS8.every((d) => {
+						const q = step(t, d);
+						return (
+							roomAt(l, q.x, q.y) === roomAt(l, t.x, t.y) &&
+							isFloor(l, q.x, q.y)
+						);
+					}) &&
+					isFloor(l, t.x, t.y) &&
+					!taken.some((q) => near(q, t)),
+			);
+		if (!cands.length) break;
+		const at = r.rng.pick(cands);
+		l.tiles[idx(l, at.x, at.y)] = T_WALL;
+		f.statues.push(idx(l, at.x, at.y));
+		taken.push(at);
+	}
 };
 
 /** モンスターを出す。kind が null なら その階の表から選ぶ。 */

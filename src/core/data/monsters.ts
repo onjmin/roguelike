@@ -290,6 +290,8 @@ const M: MonsterDef[] = [
 		id: "statue",
 		name: "置物",
 		sprite: "sa:VOpXq9",
+		// 動きだす まで：前向きの 1コマで 目は 黒（scripts/make-statue.mjs）。ただの 置物も 同じ 絵
+		still: "pub:sprites/statue_still.png#0,0,16,16",
 		hp: 45,
 		atk: 18,
 		def: 27,
@@ -298,7 +300,7 @@ const M: MonsterDef[] = [
 		weight: 31,
 		abilities: [{ k: "statue" }],
 		sleep: "never",
-		desc: "となりに　来るまで　動かない",
+		desc: "となりに　来るまで　動かない。ただの　置物に　まざって　いる",
 		flavor: "何も　しない　ことに　かけては、だれにも　負けない",
 	},
 	{

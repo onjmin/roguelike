@@ -18,7 +18,7 @@ import {
 } from "../core/geom";
 import { defOf, itemHidden } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
-import { mdef } from "../core/monster";
+import { mdef, posing } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import type { Run } from "../core/run";
 import {
@@ -412,7 +412,7 @@ export class Play {
 			const pre = this.preWarp && pd ? this.preWarp : null;
 			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : this.run.p;
 			const vis = this.run.f.monsters.filter(
-				(m) => this.run.monsterVisible(m, eye) && !m.disguise,
+				(m) => this.run.monsterVisible(m, eye) && !m.disguise && !posing(m),
 			);
 			const s: RunState =
 				pre && pd
@@ -435,7 +435,12 @@ export class Play {
 		const run = this.run;
 		if (run.s.seed.startsWith(DEBUG_SEED) || this.rp) return;
 		for (const m of run.f.monsters) {
-			if (this.bookSeen.has(m.kind) || m.disguise || !run.monsterVisible(m))
+			if (
+				this.bookSeen.has(m.kind) ||
+				m.disguise ||
+				posing(m) ||
+				!run.monsterVisible(m)
+			)
 				continue;
 			this.bookSeen.add(m.kind);
 			markSeenMonster(m.kind);
@@ -519,7 +524,12 @@ export class Play {
 			if (!run.monsterVisible(m, eye)) continue;
 			figs.push({
 				...d,
-				sprite: dazed ? KIRIKO : d.sprite,
+				// 動きだす 前の 置物は、ただの 置物と 同じ 絵（歩かず 前向き）
+				sprite: dazed
+					? KIRIKO
+					: posing(m)
+						? (mdef(m).still ?? d.sprite)
+						: d.sprite,
 				asleep: m.status.sleep > 0 || m.status.paralyze > 0,
 			});
 		}
@@ -786,7 +796,13 @@ export class Play {
 			const e = ev[i];
 			if (e.t !== "attack" || e.id === PLAYER_ID) continue;
 			const m = run.f.monsters.find((x) => x.uid === e.id);
-			if (!m || !run.monsterVisible(m) || m.disguise || dist(p, m) !== 1)
+			if (
+				!m ||
+				!run.monsterVisible(m) ||
+				m.disguise ||
+				posing(m) ||
+				dist(p, m) !== 1
+			)
 				continue;
 			const d = dirOf(m.x - p.x, m.y - p.y);
 			if (d === null || d === p.dir) return;
@@ -860,7 +876,7 @@ export class Play {
 		if (this.rp) return null;
 		const run = this.run;
 		const threats = run.f.monsters
-			.filter((m) => run.monsterVisible(m) && !m.disguise)
+			.filter((m) => run.monsterVisible(m) && !m.disguise && !posing(m))
 			.map((m) => ({ x: m.x, y: m.y }));
 		if (!threats.length) return null;
 		const k = this.screen.tileCss / TILE;
@@ -1099,7 +1115,11 @@ export class Play {
 	private enemyWithin(n: number): boolean {
 		const run = this.run;
 		return run.f.monsters.some(
-			(m) => run.monsterVisible(m) && !m.disguise && dist(m, run.p) <= n,
+			(m) =>
+				run.monsterVisible(m) &&
+				!m.disguise &&
+				!posing(m) &&
+				dist(m, run.p) <= n,
 		);
 	}
 
@@ -1157,7 +1177,7 @@ export class Play {
 		if (dist(p, { x, y }) === 1 && d !== null) {
 			const m = run.monsterAt(x, y);
 			// となりの敵をタップ：まず そちらを向く。向いていれば なぐる
-			if (m && run.monsterVisible(m) && !m.disguise) {
+			if (m && run.monsterVisible(m) && !m.disguise && !posing(m)) {
 				void this.exec(
 					p.dir === d ? { c: "attack", dir: d } : { c: "turn", dir: d },
 				);
@@ -1167,7 +1187,13 @@ export class Play {
 		// 離れた敵をタップしたら 歩かない。まっすぐ 並んでいれば そちらを向く
 		// （時間は進まない。矢・杖・投げるの ねらいに。敵の 解説は 出さない。図鑑で 見られる）
 		const far = run.monsterAt(x, y);
-		if (far && run.monsterVisible(far) && !far.disguise && dist(p, far) > 1) {
+		if (
+			far &&
+			run.monsterVisible(far) &&
+			!far.disguise &&
+			!posing(far) &&
+			dist(p, far) > 1
+		) {
 			const dx = far.x - p.x;
 			const dy = far.y - p.y;
 			if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
@@ -1870,7 +1896,7 @@ export class Play {
 	private moveShown(id: number): boolean {
 		if (id === PLAYER_ID) return true;
 		const m = this.run.f.monsters.find((x) => x.uid === id);
-		return !!m && !m.disguise && this.run.monsterVisible(m);
+		return !!m && !m.disguise && !posing(m) && this.run.monsterVisible(m);
 	}
 
 	private isShown(id: number, pos: Pos): boolean {
@@ -2142,14 +2168,18 @@ export class Play {
 		const p = run.p;
 		if (run.itemAt(p.x, p.y) || this.onUsableStairs()) return true;
 		const vis = run.f.monsters.filter(
-			(m) => run.monsterVisible(m) && !m.disguise,
+			(m) => run.monsterVisible(m) && !m.disguise && !posing(m),
 		).length;
 		if (!tapped && vis > before.monsters) return true;
 		// タップの 自動移動は、見えている敵が となりに 来たら 止まる（先に なぐられないように）
 		if (
 			tapped &&
 			run.f.monsters.some(
-				(m) => run.monsterVisible(m) && !m.disguise && dist(m, p) === 1,
+				(m) =>
+					run.monsterVisible(m) &&
+					!m.disguise &&
+					!posing(m) &&
+					dist(m, p) === 1,
 			)
 		)
 			return true;
@@ -2173,7 +2203,7 @@ export class Play {
 		const run = this.run;
 		return {
 			monsters: run.f.monsters.filter(
-				(m) => run.monsterVisible(m) && !m.disguise,
+				(m) => run.monsterVisible(m) && !m.disguise && !posing(m),
 			).length,
 			room: roomAt(run.f.layout, run.p.x, run.p.y),
 		};

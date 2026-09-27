@@ -24,6 +24,7 @@ import {
 import { defOf, isKnownKind } from "../core/item";
 import {
 	bigRoomLayout,
+	isFloor,
 	type Layout,
 	MAP_H,
 	MAP_W,
@@ -31,11 +32,13 @@ import {
 	roomAt,
 	T_CORR,
 	T_ROOM,
+	T_WALL,
 } from "../core/mapgen";
 import {
 	mdef,
 	monsterName,
 	noticeAdjacent,
+	posing,
 	transformMonster,
 } from "../core/monster";
 import { Run } from "../core/run";
@@ -2239,6 +2242,69 @@ test(
 			`${r.f.monsters.length - mons} trolls came for the ignored anka`,
 		);
 		ok(sleeper.status.sleep === 0, "a sleeping monster slept through it");
+	},
+);
+
+test(
+	"floor",
+	"statue: plain statues stand on statue floors only, block the way without splitting rooms, and look like a posing statue",
+	() => {
+		let seen = 0;
+		for (let i = 0; i < 12; i++) {
+			const r = Run.create(`statue-floor-${i}`);
+			r.enterFloor(15, false);
+			const f = r.f;
+			const l = f.layout;
+			const st = f.statues ?? [];
+			seen += st.length;
+			ok(st.length <= 4, `${st.length} statues on one floor`);
+			for (const k of st)
+				ok(l.tiles[k] === T_WALL, "a statue can be walked through");
+			// 置物が あっても 床は ぜんぶ つながっている
+			const floors: number[] = [];
+			for (let k = 0; k < l.tiles.length; k++)
+				if (l.tiles[k] !== T_WALL) floors.push(k);
+			const reach = new Set<number>([r.p.y * l.w + r.p.x]);
+			const todo = [...reach];
+			while (todo.length) {
+				const k = todo.pop() as number;
+				const x = k % l.w;
+				const y = (k - x) / l.w;
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1],
+				]) {
+					const n = (y + dy) * l.w + x + dx;
+					if (!reach.has(n) && isFloor(l, x + dx, y + dy)) {
+						reach.add(n);
+						todo.push(n);
+					}
+				}
+			}
+			ok(
+				reach.size === floors.length,
+				`statues cut off ${floors.length - reach.size} floor tiles`,
+			);
+			ok(
+				!f.items.some((it) => st.includes(it.y * l.w + it.x)) &&
+					!f.monsters.some((m) => st.includes(m.y * l.w + m.x)),
+				"something was put on a statue",
+			);
+		}
+		ok(seen > 0, "no plain statues on the statue floors");
+		// 置物の 敵が 出ない 階には 置かない
+		const early = Run.create("statue-floor-early");
+		ok(!early.f.statues?.length, "plain statues on floor 1");
+		// 動きだす 前の 置物の 敵は ただの 置物と 同じ 見た目、となりに 来ると 動きだす
+		const r = arena("statue-pose");
+		const m = put(r, "statue", { x: CENTER.x + 3, y: CENTER.y });
+		ok(m.status.dormant && posing(m), "a fresh statue is not posing");
+		ok(!!mdef(m).still, "the statue has no still picture");
+		m.x = CENTER.x + 1;
+		for (let k = 0; k < 3 && m.status.dormant; k++) r.act({ c: "wait" });
+		ok(!posing(m), "the statue kept posing next to Kiriko");
 	},
 );
 
