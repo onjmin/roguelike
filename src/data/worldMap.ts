@@ -68,7 +68,8 @@ export type BuildingKind =
 	| "pylon"
 	| "island"
 	| "building"
-	| "yagura";
+	| "yagura"
+	| "well";
 
 export type ColonySpot = {
 	/** 置かれている サーバー。 */
@@ -143,6 +144,16 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[126, 108],
 			[148, 88],
 			[160, 78],
+		],
+	},
+	// 隠し：保守村の 下の 古井戸（開くまで 地図に 出ない）
+	hidden: {
+		server: "hayabusa",
+		place: "保守村の　下の　古井戸",
+		building: "well",
+		route: [
+			[106, 138],
+			[98, 144],
 		],
 	},
 	main: {

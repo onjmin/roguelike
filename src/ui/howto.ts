@@ -159,12 +159,16 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 				"ダンジョンは　おんJの　植民地（よその　板）。村の　入口で　行き先を　えらぶ。",
 				"板ごとに　階の　数と　決まりが　ちがう。入口の　立て札で　読める。",
 			]) +
-			DUNGEON_IDS.map(
-				(d) =>
-					h(
-						`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${DUNGEONS[d].floors}階`,
-					) + lines([...DUNGEON_NAMES[d].rules, lockedHint(d)].filter(Boolean)),
-			).join(""),
+			// 隠しの 板は のせない（見つけてからの お楽しみ）
+			DUNGEON_IDS.filter((d) => !DUNGEONS[d].secret)
+				.map(
+					(d) =>
+						h(
+							`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${DUNGEONS[d].floors}階`,
+						) +
+						lines([...DUNGEON_NAMES[d].rules, lockedHint(d)].filter(Boolean)),
+				)
+				.join(""),
 	},
 	{
 		value: "thread",

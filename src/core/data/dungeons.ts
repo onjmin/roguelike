@@ -57,6 +57,10 @@ export type Dungeon = {
 	foes?: Readonly<Record<string, number>>;
 	/** 😡：どの 敵も HP が 半分を 切ると 怒って 倍速に なる。 */
 	angry?: boolean;
+	/** 持ち帰る 品を 持ったまま 帰還スレで 帰れる（99階ある 隠しの 板だけ）。 */
+	escapeWithGoal?: boolean;
+	/** 全体マップに 開くまで 出さない（隠し）。 */
+	secret?: boolean;
 	/**
 	 * 上りの 植民地（塔・やぐら・山）。階は 上へ 数え、帰り道は 降りる。中の 動きは 下りと 同じで、
 	 * 文と 見せかただけ 逆（depth が 大きいほど 高い）。
@@ -251,6 +255,21 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 /** 階 → 本編の 何階ぶんか（入門の つぎ。パン板より 少し 強い 顔ぶれまで）。 */
 const KINOKO_LEVEL: readonly number[] = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 7];
 
+/**
+ * 隠しの 99階の 道具の出かた：風呂板の 表で、食べものを ふやした（99階ぶん 歩くので。
+ * ぷゆゆパン・片親パン を 倍、飯テロスレも 倍）。
+ */
+const HIDDEN_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
+	e.kind === "f_bread" || e.kind === "f_large" || e.kind === "s_bread"
+		? { kind: e.kind, weight: e.weight * 2 }
+		: e,
+);
+
+/** 隠しの 99階：本編の 30階ぶんまで 少しずつ 強くなり、61階から 先は ずっと 30階ぶん。 */
+const HIDDEN_LEVEL: readonly number[] = Array.from({ length: 100 }, (_, i) =>
+	i === 0 ? 0 : Math.min(30, 1 + Math.floor(((i - 1) * 29) / 60)),
+);
+
 /** 階 → 本編の 何階ぶんか（1階 おくれ。😡の 板は 弱い 敵でも 怒るので 出だしを ゆるく）。 */
 const lagged = (n: number): number[] =>
 	Array.from({ length: n + 1 }, (_, i) => (i === 0 ? 0 : Math.max(1, i - 1)));
@@ -394,6 +413,25 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockAfter: "main",
 		reliefAfter: null,
 	},
+	// 隠し：過去ログの底（保守村の 下の 古井戸。電池板を 持ち帰ると 開く）。99階で、階の 層ごとに 見た目と 曲が 変わる
+	// （data/story.ts の BOARD_LOOKS の zones）。いちばん底の「1001の原盤」を 持ったまま 帰還スレで 帰れる
+	hidden: {
+		id: "hidden",
+		floors: 99,
+		items: HIDDEN_ITEMS,
+		perFloor: [5, 7],
+		level: HIDDEN_LEVEL,
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "g1001",
+		houses: { from: 3, chance: 1 / 10, early: [4, 6] },
+		trapsFrom: 3,
+		unlockAfter: "deep",
+		reliefAfter: null,
+		escapeWithGoal: true,
+		secret: true,
+	},
 };
 
 export const DUNGEON_IDS: readonly DungeonId[] = [
@@ -404,6 +442,7 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"tropical",
 	"konamono",
 	"festival",
+	"hidden",
 ];
 
 /** 村に 口（穴）が ある 植民地。ほかの 植民地へは 口から 行き先を えらんで 行く。 */

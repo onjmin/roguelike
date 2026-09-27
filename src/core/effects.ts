@@ -352,6 +352,12 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 	switch (it.kind) {
 		case "s_escape":
 			// 持ち帰る品を持っていると 効かない（帰り道は 歩いて のぼる。トルネコ1のリレミトと同じ）
+			if (r.s.returning && r.dungeon.escapeWithGoal) {
+				// 過去ログの底（99階）だけは 品ごと 帰れる
+				r.msg("キリコは　品を　かかえて　地上へ　もどった", "good");
+				r.finish("clear", `${defOf(r.dungeon.goal).name}を　持ち帰った`);
+				break;
+			}
 			if (r.s.returning) {
 				r.msg("しかし、持ち帰る品が　キリコを　ひきとめた");
 				break;

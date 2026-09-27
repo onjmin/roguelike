@@ -22,6 +22,7 @@ import {
 import { migrateRun, Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { CAT_ORDER, type Command, type DungeonId } from "../core/types";
+import { BOARD_LOOKS } from "../data/story";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 import { MAIN_PARITY } from "./parityFixture";
@@ -296,6 +297,35 @@ test("colonies: each board keeps its own rule", () => {
 	ok(m.enraged, "an ordinary monster did not get angry in おんたこ");
 	// 風呂板（湯治）：自然回復が はやい
 	ok((DUNGEONS.main.regenStep ?? 150) < 150, "風呂板 does not heal faster");
+});
+
+test("hidden board: 99 floors in zones, and the goal can go home by 帰還スレ", () => {
+	ok(DUNGEONS.hidden.floors === 99, "the hidden board is not 99 floors");
+	ok(DUNGEONS.hidden.secret, "the hidden board is not secret");
+	// 層：1〜99階を すきまなく、となりの 層は ちがう 曲
+	const zones = BOARD_LOOKS.hidden.zones ?? [];
+	ok(zones.length >= 10, `only ${zones.length} zones`);
+	ok(zones[zones.length - 1].last === 99, "the last zone does not end at 99");
+	for (let i = 1; i < zones.length; i++) {
+		ok(zones[i].last > zones[i - 1].last, `zone ${i} is out of order`);
+		ok(zones[i].bgm !== zones[i - 1].bgm, `zone ${i} keeps the same music`);
+	}
+	// 帰還スレ：品を 持っていても 帰れる（ほかの 板では ひきとめられる）
+	for (const [d, clears] of [
+		["hidden", true],
+		["main", false],
+	] as const) {
+		const r = Run.create(`hidden-escape-${d}`, d);
+		r.s.returning = true;
+		const it = r.newItem("s_escape");
+		r.s.ids.known.s_escape = true;
+		r.p.items.push(it);
+		r.act({ c: "use", item: it.uid, target: 0 });
+		ok(
+			(r.s.end?.kind === "clear") === clears,
+			`${d}: escape with the goal ended as ${r.s.end?.kind ?? "nothing"}`,
+		);
+	}
 });
 
 test("a festival room gets 3-5 extra hidden traps (like Torneko 1)", () => {

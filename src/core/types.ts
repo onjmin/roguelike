@@ -15,7 +15,8 @@ export type DungeonId =
 	| "kinoko"
 	| "tropical"
 	| "konamono"
-	| "festival";
+	| "festival"
+	| "hidden";
 
 // ───────────────────────── 道具 ─────────────────────────
 

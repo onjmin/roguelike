@@ -208,9 +208,22 @@ const lookOf = (dungeon: DungeonId): Zone => {
 	};
 };
 
-/** その階の 見た目と 曲（植民地ごとに 1つなので depth は 見ない）。 */
-export const zoneFor = (dungeon: DungeonId, _depth?: number): Zone =>
-	lookOf(dungeon);
+/**
+ * その階の 見た目と 曲。植民地は 板ごとに 1つ（depth は 見ない）。層の ある 板（隠しの 過去ログの底）は
+ * 深さで 変わる。
+ */
+export const zoneFor = (dungeon: DungeonId, depth = 1): Zone => {
+	const zones = BOARD_LOOKS[dungeonById(dungeon).id].zones;
+	if (!zones?.length) return lookOf(dungeon);
+	const z = zones.find((x) => depth <= x.last) ?? zones[zones.length - 1];
+	return {
+		last: z.last,
+		name: z.name,
+		theme: THEMES[z.theme],
+		bgm: z.bgm,
+		ambient: z.ambient as Ambient,
+	};
+};
 
 export const themeFor = (dungeon: DungeonId, depth: number): Theme =>
 	zoneFor(dungeon, depth).theme;

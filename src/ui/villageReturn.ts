@@ -145,13 +145,15 @@ export const newsScript = async (s: Story): Promise<void> => {
 		const colony = !(MOUTH_IDS as readonly string[]).includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
 		const lines = UNLOCK_LINES[
-			colony
-				? "colony"
-				: n.reason === "relief"
-					? "relief"
-					: n.dungeon === "deep"
-						? "deep"
-						: "main"
+			n.dungeon === "hidden"
+				? "hidden"
+				: colony
+					? "colony"
+					: n.reason === "relief"
+						? "relief"
+						: n.dungeon === "deep"
+							? "deep"
+							: "main"
 		].map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
 		// 開く 口の方を 見る（本編は 口の前で 見張る おんJ民、もっとは 板で ふさいだ口）
 		await s.look(main ? "nanj" : VILLAGE_SPOTS.mouth[mouthOf(n.dungeon)]);

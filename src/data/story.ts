@@ -112,6 +112,18 @@ export const DUNGEON_NAMES: Record<
 			"ぜんぶ　未識別",
 		],
 	},
+	// 隠し（電池板を 持ち帰ると 開く）。植民地では なく、おんJ（保守村）の 真下
+	hidden: {
+		name: "過去ログの底",
+		short: "ログの底",
+		nick: "おんJの　真下",
+		mascot: "1001（どの　スレも　最後は　これ）",
+		rules: [
+			"保守村の　下の　古井戸。99階",
+			"層ごとに　景色と　曲が　かわる",
+			"底の　品を　持ったまま　帰還スレで　帰れる",
+		],
+	},
 };
 
 /** ui/theme.ts の Theme.name。 */
@@ -129,7 +141,115 @@ export type ThemeName =
 	| "gold";
 
 /** 植民地の 見た目と 曲（板ごとに 1つ。全フロア 同じ。ui/theme.ts が 読む）。 */
-export type BoardLook = { theme: ThemeName; bgm: string; ambient: string };
+export type BoardLook = {
+	theme: ThemeName;
+	bgm: string;
+	ambient: string;
+	/** 層（深さで 見た目と 曲が 変わる 板だけ。隠しの 過去ログの底）。 */
+	zones?: readonly ZoneSpec[];
+};
+
+/** 層：この階（last）までが 同じ 見た目・同じ 曲。 */
+export type ZoneSpec = {
+	last: number;
+	name: string;
+	theme: ThemeName;
+	bgm: string;
+	ambient: string;
+};
+
+/**
+ * 隠しの 過去ログの底（99階）の 層。浅い ところは 植民地に 似た 景色、深くなるほど 2ch の
+ * 奥（規制・落ちた鯖・炎上）へ。いちばん底は 1001 の 金。どの 層にも ちがう 曲。
+ */
+const HIDDEN_ZONES: readonly ZoneSpec[] = [
+	{
+		last: 5,
+		name: "過去ログの浅瀬",
+		theme: "earth",
+		bgm: "deep1",
+		ambient: "dust",
+	},
+	{
+		last: 10,
+		name: "dat の石室",
+		theme: "stone",
+		bgm: "stone",
+		ambient: "dust",
+	},
+	{
+		last: 15,
+		name: "埋もれた dat",
+		theme: "stone",
+		bgm: "deep_dat",
+		ambient: "dust",
+	},
+	{
+		last: 20,
+		name: "苔むしたスレ跡",
+		theme: "moss",
+		bgm: "field",
+		ambient: "spores",
+	},
+	{
+		last: 25,
+		name: "崩れたまとめ",
+		theme: "ruins",
+		bgm: "deep_matome",
+		ambient: "spores",
+	},
+	{
+		last: 30,
+		name: "保守の墓場",
+		theme: "ruins",
+		bgm: "ruins",
+		ambient: "spores",
+	},
+	{
+		last: 40,
+		name: "凍結された書庫",
+		theme: "crystal",
+		bgm: "deep2",
+		ambient: "snow",
+	},
+	{
+		last: 50,
+		name: "白紙の回廊",
+		theme: "white",
+		bgm: "deep_hakushi",
+		ambient: "snow",
+	},
+	{
+		last: 60,
+		name: "文字化けの海",
+		theme: "crystal",
+		bgm: "deep3",
+		ambient: "snow",
+	},
+	{
+		last: 70,
+		name: "規制の檻",
+		theme: "lattice",
+		bgm: "deep_kisei",
+		ambient: "data",
+	},
+	{ last: 80, name: "落ちた鯖", theme: "cyber", bgm: "deep4", ambient: "data" },
+	{
+		last: 90,
+		name: "焦げた回線",
+		theme: "forge",
+		bgm: "deep_koge",
+		ambient: "embers",
+	},
+	{
+		last: 98,
+		name: "炎上の底",
+		theme: "lava",
+		bgm: "deep5",
+		ambient: "embers",
+	},
+	{ last: 99, name: "1001", theme: "gold", bgm: "deep6", ambient: "glitter" },
+];
 
 export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// 焼き色の 土。はじめの 曲
@@ -146,6 +266,13 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	konamono: { theme: "lava", bgm: "deep_koge", ambient: "embers" },
 	// 提灯の 赤。都節の 曲
 	festival: { theme: "lattice", bgm: "deep_kisei", ambient: "glitter" },
+	// 隠し：層ごとに かわる（theme・bgm は 層が 無い ときの 予備）
+	hidden: {
+		theme: "earth",
+		bgm: "deep1",
+		ambient: "dust",
+		zones: HIDDEN_ZONES,
+	},
 };
 
 // ───────────────── 目的の品 ─────────────────
@@ -290,6 +417,30 @@ export const STORY: Record<
 			s("shiyo", "……べ、べつに　暑くないわよ。\n……もう　少し　あおいで"),
 		],
 	},
+	hidden: {
+		intro: [
+			"保守村の　下に、古い　井戸が　ある。\nおんJの　スレも、ここへ　落ちてきた。",
+			"落ちて、落ちて、いちばん　下。\nどの　スレも、最後は　同じ　レスで　終わる。",
+			"「このスレッドは　1000を\n超えました。」",
+			"その　1001が　刻まれた　レコードが、\n底に　あるという。",
+			"キリコは　蓄音機の　ハンドルを　まわした。\n……ひとりで、降りる。",
+		],
+		ending: [
+			n("村に　帰りつくと、\nみんなが　井戸を　のぞきこんでいた。"),
+			s(
+				"nanj",
+				"ほんまに　底まで　行ったんか。\n……1001て、終わりの　レスやんけ",
+			),
+			n("キリコは　1001の原盤を　のせた。\n針が、おりる。"),
+			n(
+				"「このスレッドは　1000を　超えました。\nもう書けないので、新しいスレッドを……」",
+			),
+			s("zero", "……新しい　スレッドを、\n立ててください、ですって"),
+			s("feris", "じゃあ、立てよ〜。\nつぎの　スレ〜"),
+			n("キリコは　うなずいた。"),
+			s("nanj", "ほな、>>1は　キリコや。\n……次スレ、はよ"),
+		],
+	},
 };
 
 // ───────────────── 次が開いたとき ─────────────────
@@ -298,7 +449,7 @@ export const STORY: Record<
  * relief は ちょっと で10回 倒れて 本編が開いたとき（針は シヨが 用意する）。
  */
 export const UNLOCK_LINES: Record<
-	"main" | "deep" | "relief" | "colony",
+	"main" | "deep" | "relief" | "colony" | "hidden",
 	readonly Line[]
 > = {
 	main: [
@@ -318,6 +469,11 @@ export const UNLOCK_LINES: Record<
 			"針なら、あたすが　用意したわよ。\n……あなたの　ためじゃ　ないから",
 		),
 		q("zero", "10回の　挑戦、ぜんぶ　見てました。\n……11回目も、応援します！"),
+	],
+	// 隠しの 過去ログの底（保守村の 下の 古井戸）
+	hidden: [
+		q("zero", "村の　古井戸から、音が　します。\n……いちばん　下から、です"),
+		q("nanj", "過去ログの底や。\n……ほんまに　あったんか"),
 	],
 	// 口の ない 植民地（{name} は 板の 名前）。口から 一覧で 行ける
 	colony: [
@@ -377,6 +533,13 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	festival: [
 		q("shiyo", "うちわ、あたすが　あずかってるわ。\n……使っては　ないわよ"),
 		q("nanj", "祭りのあとの　うちわや。\n……ええ　祭りやった"),
+	],
+	hidden: [
+		q("nanj", "次スレ、立ったで。\n……>>1乙や"),
+		q(
+			"zero",
+			"1001の原盤、毎日　聞いてます。\n……終わりの　レスなのに、元気が　出ます",
+		),
 	],
 };
 

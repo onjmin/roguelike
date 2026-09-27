@@ -301,6 +301,17 @@ export const drawBuilding = (
 			r(5, -14, 3, 5, blink ? "#ff4a2a" : "#d03a20");
 			r(6, -12, 1, 1, "#ffe0a0");
 			break;
+		case "well": {
+			// 古井戸（石の ふちと 暗い 口。つるべ）
+			r(-7, -5, 14, 5, "#8a8a92");
+			r(-6, -6, 12, 1, "#a4a4ae");
+			r(-5, -4, 10, 2, "#0a0810");
+			r(-6, -13, 1, 8, "#6a4a2a");
+			r(5, -13, 1, 8, "#6a4a2a");
+			r(-7, -14, 14, 1, "#7a5a32");
+			r(-1, -12, 2, 3, "#9a7a4a");
+			break;
+		}
 		case "yagura": {
 			// 祭りの やぐら（提灯が ゆれる）
 			r(-6, -14, 1, 14, "#8a5a2a");
@@ -415,6 +426,7 @@ class MapView {
 		for (const d of DUNGEON_IDS) {
 			const [x, y] = spotOf(d);
 			const open = this.open.includes(d);
+			if (!open && DUNGEONS[d].secret) continue;
 			drawBuilding(g, COLONY_SPOTS[d].building, x, y, 1, t, !open);
 			if (!open) {
 				g.fillStyle = "rgba(255,255,255,0.7)";
@@ -513,6 +525,7 @@ export const pickColony = (
 			let bestScore = Number.POSITIVE_INFINITY;
 			for (const d of DUNGEON_IDS) {
 				if (d === cur) continue;
+				if (DUNGEONS[d].secret && !o.open.includes(d)) continue;
 				const [x, y] = spotOf(d);
 				const along = (x - cx) * dx + (y - cy) * dy;
 				if (along <= 0) continue;
@@ -541,6 +554,7 @@ export const pickColony = (
 			let near: DungeonId | null = null;
 			let nd = 18;
 			for (const d of DUNGEON_IDS) {
+				if (DUNGEONS[d].secret && !o.open.includes(d)) continue;
 				const [x, y] = spotOf(d);
 				const dd = Math.hypot(mx - x, my - (y - 8));
 				if (dd < nd) {
