@@ -15,7 +15,7 @@ import {
 	type Pos,
 	step,
 } from "../core/geom";
-import { defOf } from "../core/item";
+import { defOf, itemHidden } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
@@ -1017,8 +1017,9 @@ export class Play {
 		if (f.seen[f.stairs.y * l.w + f.stairs.x]) pts.push(f.stairs);
 		for (const fi of f.items)
 			if (
-				f.senseItems ||
-				(f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid))
+				!itemHidden(run.s, fi.item.kind) &&
+				(f.senseItems ||
+					(f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid)))
 			)
 				pts.push(fi);
 		let best: Pos | null = null;
@@ -1506,13 +1507,19 @@ export class Play {
 		this.updateReplayBar();
 		const r = rp.replay;
 		const end = this.run.s.end;
-		const line = rp.drift
-			? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
-			: end
-				? end.kind === "clear"
-					? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
-					: `${this.run.s.returning ? "帰り道の　" : ""}B${end.depth}で　${esc(end.cause)}`
-				: `記録は　ここまで<br><small>（B${r.depth}で　${esc(r.cause)}）</small>`;
+		// 指紋は 64手ごと なので、そのあいだで ずれて 先に 終わることも ある（記録と 終わり方が ちがう）
+		const mismatch =
+			!!end &&
+			(end.kind !== r.kind || end.depth !== r.depth || end.turn !== r.turn);
+		const line = mismatch
+			? `今の版では　記録と　ちがう　ところで　終わりました<br><small>（記録では　B${r.depth}で　${esc(r.cause)}。リプレイを残したあとで ゲームの中身が 変わった）</small>`
+			: rp.drift
+				? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
+				: end
+					? end.kind === "clear"
+						? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
+						: `${this.run.s.returning ? "帰り道の　" : ""}B${end.depth}で　${esc(end.cause)}`
+					: `記録は　ここまで<br><small>（B${r.depth}で　${esc(r.cause)}）</small>`;
 		const card = el("div", { class: "replay-end" }, [
 			el("div", { class: "rp-end-title", text: "リプレイ　おわり" }),
 			el("div", { class: "rp-end-line", html: line }),
