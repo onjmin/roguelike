@@ -9,6 +9,7 @@
 // 会った・見た・聞いた 帰り・1票は 村の 印として 別の 保存場所に 残す（中断セーブ・記録・町には ふれない。
 // 保存できなくても この回は 覚えている）。ダンジョンの 中には 一切 かかわらない。
 
+import { dungeonById } from "../core/data/dungeons";
 import { season, today } from "../data/calendar";
 import { MOB_VOICE } from "../data/cast";
 import {
@@ -127,6 +128,9 @@ const ctxOf = (v: MobMemo): MobCtx => {
 					cause: r.cause,
 					depth: r.depth,
 					returning: r.returning === true,
+					far:
+						!dungeonById(r.dungeon).up &&
+						r.depth / dungeonById(r.dungeon).floors >= 0.7,
 				}
 			: null,
 		seen: loadBook().seen,
@@ -184,7 +188,7 @@ export const reactionOf = (def: MobDef): string | null => {
 	if (by) return by.text;
 	if (def.react.starve && last.cause.includes("おなかが"))
 		return def.react.starve;
-	return last.depth >= 19 ? def.react.deep : def.react.dead;
+	return last.far ? def.react.deep : def.react.dead;
 };
 
 /** いつもの ひとこと（7つなら 曜日で）。 */

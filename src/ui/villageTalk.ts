@@ -2,7 +2,7 @@
 // 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、ゼロの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
-import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, dungeonById } from "../core/data/dungeons";
 import { STAGE_POINTS, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import {
@@ -59,6 +59,10 @@ const quoteContext = (): QuoteContext => {
 		clears: loadRecords().filter(
 			(r) => r.kind === "clear" && (r.dungeon ?? "main") === "main",
 		).length,
+		ratio:
+			(last.kind === "clear" ? last.maxDepth : last.depth) /
+			dungeonById(last.dungeon).floors,
+		up: !!dungeonById(last.dungeon).up,
 	};
 };
 

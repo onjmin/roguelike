@@ -16,13 +16,17 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 
 export type Quote = { who: Speaker; text: string };
 
-/** 前の冒険の結果（null は まだ一度も降りていない）。 */
+/** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
 export type QuoteContext = {
 	kind: "dead" | "clear" | "escape";
 	depth: number;
 	cause: string;
 	runs: number;
 	clears: number;
+	/** その板の 何割まで 行ったか（0〜1。無ければ 風呂板の 27階で 数える）。 */
+	ratio?: number;
+	/** 上りの 板（塔・やぐら・山）だった。 */
+	up?: boolean;
 } | null;
 
 const q = (who: Speaker, text: string): Quote => ({ who, text });
@@ -37,7 +41,7 @@ const FIRST: readonly Quote[] = [
 ];
 
 // ───────────────── 深さで（たおれた階） ─────────────────
-/** B1〜B7。 */
+/** 板の 3割まで。 */
 const SHALLOW: readonly Quote[] = [
 	q("nanj", "はっや。ナイター、\nまだ　1回の　表やで"),
 	q("nanj", "草。……いや、笑ってへんで。\n笑ってへんけど、草"),
@@ -47,7 +51,7 @@ const SHALLOW: readonly Quote[] = [
 	q("zero", "おかえりなさい！　ハグの　準備が\n……あ、いらない。了解です"),
 ];
 
-/** B8〜B18。 */
+/** 板の 7割まで。 */
 const MID: readonly Quote[] = [
 	q("roze", "その　あたりは　風が　吹くアル。\n……カツラ、おさえるアル"),
 	q("nanj", "おかえり。ナイターは\nいま　5回の　裏や"),
@@ -57,7 +61,7 @@ const MID: readonly Quote[] = [
 	q("zero", "まんなかまで　行ったんですね。\nサブ機たちと　拍手　しました"),
 ];
 
-/** B19〜B27。 */
+/** 板の 奥（7割から）。下りの 板。 */
 const DEEP: readonly Quote[] = [
 	q("shiyo", "そんな　底まで　行って……。\nあなた、ほんとに　ばかなんだから"),
 	q("shiyo", "……あと　少しだった、なんて\nあたすは　言わないわよ"),
@@ -65,6 +69,16 @@ const DEEP: readonly Quote[] = [
 	q("roze", "そんな　深くまで……。\n麻婆豆腐、食べながら　聞くアル"),
 	q("feris", "そんな　下まで〜？\n私、飛んでも　届かないよ〜"),
 	q("zero", "そんな　深くの　ログ、\nゼロ、はじめて　見ました！"),
+];
+
+/** 板の 奥（7割から）。上りの 板（塔・やぐら・山）。 */
+const HIGH: readonly Quote[] = [
+	q("shiyo", "そんな　上まで　行って……。\nあなた、ほんとに　ばかなんだから"),
+	q("shiyo", "……あと　少しだった、なんて\nあたすは　言わないわよ"),
+	q("nanj", "9回の　裏まで　来とったで。\n……延長戦、あるやろ？"),
+	q("roze", "そんな　高くまで……。\n麻婆豆腐、食べながら　聞くアル"),
+	q("feris", "そんな　上まで〜？\n私なら、飛んで　届くかな〜"),
+	q("zero", "そんな　高くの　ログ、\nゼロ、はじめて　見ました！"),
 ];
 
 // ───────────────── たおれ方で ─────────────────
@@ -228,8 +242,11 @@ const CAUSE_POOLS: readonly {
 	},
 ];
 
-const depthPool = (depth: number): readonly Quote[] =>
-	depth <= 7 ? SHALLOW : depth <= 18 ? MID : DEEP;
+/** どこまで 行ったかで（板の 何割か。上りの 板の 奥は 高さの ことば）。 */
+const depthPool = (last: NonNullable<QuoteContext>): readonly Quote[] => {
+	const ratio = last.ratio ?? last.depth / 27;
+	return ratio < 0.3 ? SHALLOW : ratio < 0.7 ? MID : last.up ? HIGH : DEEP;
+};
 
 /** seed と salt から 32bit の値（同じ seed なら いつも同じ）。 */
 const mix = (seed: number, salt: number): number => {
@@ -278,14 +295,14 @@ export const pickQuote = (
 		const line = pick(cause, 7);
 		if (line) return line;
 	}
-	return pick(depthPool(last.depth), 8);
+	return pick(depthPool(last), 8);
 };
 
 // ───────────────── はじめて降りる前 ─────────────────
 export const INTRO: string[] = [
 	"風呂板の　過去ログ。\nおんJに　あきた　民が　ひらいた　湯。",
-	"だれも　読まなくなった　レスが、\nそこで　まだ、ちいさく　鳴っている。",
-	"いちばん底には、一枚の　レコードが\nあるという。まだ、だれも　聞いていない。",
+	"だれも　読まなくなった　レスが、\n湯の　底で　まだ、ちいさく　鳴っている。",
+	"おんJを　出た　民は、はじまりの　音を\n持っていった。……源泉の　底へ。",
 	"キリコは　蓄音機の　ハンドルを　まわした。",
 	"……ひとりで、降りる。",
 ];
@@ -294,7 +311,7 @@ export const INTRO: string[] = [
 export const ENDING: { who: Speaker | null; text: string }[] = [
 	{
 		who: null,
-		text: "階段を　のぼりきると、\n見なれた　山吹色が　立っていた。",
+		text: "村に　帰りつくと、\n見なれた　山吹色が　立っていた。",
 	},
 	{ who: "nanj", text: "おっそ。……何日　待たせんねん" },
 	{ who: "feris", text: "おかえり〜。くしゃみ、\nずっと　がまんしてたよ〜" },

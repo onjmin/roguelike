@@ -68,6 +68,8 @@ export type MobCtx = {
 		depth: number;
 		/** 持ち帰る 途中だった。 */
 		returning: boolean;
+		/** 下りの 板の 奥（7割から）まで 行った（「深くまで」の ひとこと）。 */
+		far?: boolean;
 	} | null;
 	/** 図鑑で 会った 敵（id。ぷゆゆは 前の 名前の まま "tousuko"、メタルぷゆゆは "metal"）。 */
 	seen: readonly string[];
