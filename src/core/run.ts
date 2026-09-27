@@ -29,7 +29,12 @@ import { ITEM_LIST } from "./data/items";
 import { FAKE_NAMES } from "./data/names";
 import { throwItem, useItem } from "./effects";
 import { buildFloor, randomFloorPos, spawnMonster } from "./floor";
-import { canSee, forEachExitPeek, forEachVisible } from "./fov";
+import {
+	canSee,
+	forEachExitPeek,
+	forEachVisible,
+	roomsSeenFrom,
+} from "./fov";
 import {
 	DIRS8,
 	type Dir8,
@@ -467,11 +472,12 @@ export class Run {
 			if (seen.has(fi.item.uid)) continue;
 			if (this.playerSees(fi)) this.s.seen.push(fi.item.uid);
 		}
-		// モンスターハウス
+		// モンスターハウス（部屋の 入口に 立っても 始まる。入口からは 部屋ぜんぶが 見え、
+		// 敵からも 見えるので、トルネコ1と 同じく 入口も 部屋の うちに 数える）
 		if (
 			f.house >= 0 &&
 			!f.houseAwake &&
-			roomAt(l, this.p.x, this.p.y) === f.house
+			roomsSeenFrom(l, this.p.x, this.p.y).some((r) => r.id === f.house)
 		) {
 			f.houseAwake = true;
 			if (!this.hasRing("r_stealth")) {
