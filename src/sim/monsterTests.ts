@@ -2185,7 +2185,7 @@ test(
 
 test(
 	"floor",
-	"anka: comes at its res; doing it gives 2 known items and res back, ignoring it adds res, wakes the floor and 3 trolls",
+	"anka: comes at its res; doing it gives 2 known items, ignoring it adds res, wakes the floor and 3 trolls",
 	() => {
 		const r = arena("anka");
 		const herb = give(r, "h_heal");
@@ -2195,7 +2195,7 @@ test(
 		r.act({ c: "wait" });
 		ok(r.f.anka, "no anka at its res");
 		ok(r.f.ankaAt === -1, "the anka was left scheduled");
-		// こなす：草を 飲めば 足元に 正体つきの 道具が 2つ、レスが もどる（保守）
+		// こなす：草を 飲めば 足元に 正体つきの 道具が 2つ
 		r.f.anka = { kind: "herb", need: 1, done: 0, due: r.f.res + 100 };
 		r.f.res = 500;
 		const items = r.f.items.length;
@@ -2207,7 +2207,6 @@ test(
 			gifts.every((fi) => fi.item.known && isKnownKind(r.s, fi.item.kind)),
 			"a gift was not identified",
 		);
-		ok(r.f.res <= 401, `the anka did not give back res (${r.f.res})`);
 		// 敵を 2体 たおせ：1体では まだ
 		r.f.anka = { kind: "kill", need: 2, done: 0, due: r.f.res + 100 };
 		for (let i = 0; i < 2; i++) {

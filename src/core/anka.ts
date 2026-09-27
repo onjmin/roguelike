@@ -2,8 +2,7 @@
 //
 // - 2階から、階に 入ったとき ANKA_CHANCE で「来る レス数」を 決めておき、そこまで 伸びたら 来る。
 // - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　飲め」は 来ない）。
-// - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置き、
-//   スレが 盛り上がって 保守される（レスが ANKA_HOSHU もどる）。
+// - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
 // - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く。
 // - 帰り道には 来ない（帰り道は 補給なし）。
 
@@ -26,8 +25,6 @@ export const ANKA_PENALTY = 100;
 export const ANKA_TROLLS = 3;
 /** 神安価で スレ民が 置いていく 道具の 数（正体つき）。 */
 export const ANKA_GIFTS = 2;
-/** 神安価で もどる レス（保守）。 */
-export const ANKA_HOSHU = 100;
 
 const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
 	herb: () => "草を　1つ　飲め",
@@ -121,10 +118,4 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 		it.known = true;
 		r.placeItem(it, { x: r.p.x, y: r.p.y });
 	}
-	// スレが 盛り上がって 保守される（dat落ちが 遠のく）
-	r.addRes(-ANKA_HOSHU);
-	r.msg(
-		`スレが　盛り上がって　保守された（${ANKA_HOSHU}レス　もどった）`,
-		"good",
-	);
 };
