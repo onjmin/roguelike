@@ -1716,7 +1716,14 @@ export class Play {
 					await this.flyBolt(e, speed);
 					break;
 				case "fx":
-					if (e.kind === "explosion" || e.kind === "blast")
+					// 爆発（地雷・炎上案件）は その場に 火の玉も 出す（見えている ときだけ）。
+					// 炎上スレ（blast）は 部屋じゅうなので 画面の 光だけ
+					if (e.kind === "explosion" && this.run.playerSees(e.pos))
+						await Promise.all([
+							this.flash("rgba(255,160,60,0.45)", 160),
+							this.blastAt(e.pos, e.r ?? 1, fast ? 0.4 : speed),
+						]);
+					else if (e.kind === "explosion" || e.kind === "blast")
 						await this.flash("rgba(255,160,60,0.6)", 220);
 					break;
 				case "floor":
@@ -1817,6 +1824,27 @@ export class Play {
 						? 1
 						: Math.max(0, 1 - (elapsed - ms * 0.7) / (ms * 0.3));
 			if (elapsed >= ms) break;
+			await nextFrameP();
+		}
+		this.projectiles = this.projectiles.filter((p) => p !== proj);
+	}
+
+	/** 爆発の 火の玉（ふくらんで、けむりを 残して 消える）。 */
+	private async blastAt(pos: Pos, r: number, speed: number): Promise<void> {
+		const ms = 620 * speed;
+		const proj: Projectile = {
+			x: pos.x,
+			y: pos.y,
+			icon: null,
+			color: "",
+			blast: { r, k: 0 },
+		};
+		this.projectiles.push(proj);
+		const t0 = performance.now();
+		for (;;) {
+			const k = Math.min(1, (performance.now() - t0) / ms);
+			if (proj.blast) proj.blast.k = k;
+			if (k >= 1) break;
 			await nextFrameP();
 		}
 		this.projectiles = this.projectiles.filter((p) => p !== proj);

@@ -88,6 +88,8 @@ export type Projectile = {
 	color: string;
 	/** 炎（燃料投下草・炎を 吐く敵）：吐いた マスから 先まで 炎の 帯を 描く。alpha は 消えぎわ。 */
 	flame?: { x: number; y: number; alpha: number };
+	/** 爆発（地雷・炎上案件）：(x, y) の マスを 中心に まわり r マスまで ふくらむ 火の玉。k は 0〜1 の 進み。 */
+	blast?: { r: number; k: number };
 };
 
 /** 眠りの Z（ドット。文字だと 小さく にじんで 見えないので 画素で 描く）。小 4×4・大 5×5。 */
@@ -494,7 +496,8 @@ export class FloorView {
 		for (const p of projectiles) {
 			const x = Math.round(p.x * TILE - ox);
 			const y = Math.round(p.y * TILE - oy);
-			if (p.flame) drawFlame(ctx, p.flame, p, ox, oy, time);
+			if (p.blast) drawBlast(ctx, p, p.blast, ox, oy);
+			else if (p.flame) drawFlame(ctx, p.flame, p, ox, oy, time);
 			else if (p.icon && getImage(p.icon)) drawRefInCell(ctx, p.icon, x, y);
 			else {
 				ctx.fillStyle = p.color;
@@ -557,6 +560,74 @@ const drawFlame = (
 };
 
 const cy0 = (v: number, o: number) => v * TILE - o + TILE / 2;
+
+/**
+ * 爆発。はじめに 白い 閃光、火の玉が まわり r マス（巻きこむ 範囲の ふち）まで 一気に ふくらみ、
+ * 火が 引くと 黒い けむりが 残って 消える。粒の 置き場所は 決まった 乱数（毎コマ 同じ）。
+ */
+const drawBlast = (
+	ctx: CanvasRenderingContext2D,
+	at: { x: number; y: number },
+	b: { r: number; k: number },
+	ox: number,
+	oy: number,
+): void => {
+	const x0 = cy0(at.x, ox);
+	const y0 = cy0(at.y, oy);
+	const reach = (b.r + 0.5) * TILE;
+	const k = b.k;
+	// ふくらみは 最初の 3割で ほぼ 出きる（ease-out）
+	const grow = 1 - (1 - Math.min(1, k / 0.35)) ** 3;
+	const n = 12 + b.r * 10;
+	ctx.save();
+	// けむり（火の 下に。後半に 濃く なって 消える）
+	for (let i = 0; i < n; i++) {
+		const a = hash01(i * 3.7) * Math.PI * 2;
+		const d = Math.sqrt(hash01(i * 5.3 + 1)) * reach * grow;
+		const rise = k * 6;
+		const alpha = k < 0.3 ? 0 : Math.min(1, (k - 0.3) / 0.2) * (1 - k) * 0.8;
+		if (alpha <= 0) continue;
+		ctx.globalAlpha = alpha;
+		ctx.fillStyle = hash01(i * 9.1) > 0.5 ? "#4a3e3a" : "#6a5c56";
+		ctx.beginPath();
+		ctx.arc(
+			x0 + Math.cos(a) * d,
+			y0 + Math.sin(a) * d - rise,
+			TILE * (0.3 + 0.25 * hash01(i * 2.9)) * (0.8 + k * 0.6),
+			0,
+			Math.PI * 2,
+		);
+		ctx.fill();
+	}
+	// 火の玉（外は 赤・だいだい、芯は 黄色。後半は しぼんで 消える）
+	const fire = k < 0.7 ? 1 : Math.max(0, 1 - (k - 0.7) / 0.3);
+	if (fire > 0)
+		for (let i = 0; i < n; i++) {
+			const a = hash01(i * 7.3 + 4) * Math.PI * 2;
+			const d = Math.sqrt(hash01(i * 11.7 + 2)) * reach * grow * 0.85;
+			const r = TILE * (0.35 + 0.3 * hash01(i * 13.1)) * (1.1 - k * 0.6);
+			const x = x0 + Math.cos(a) * d;
+			const y = y0 + Math.sin(a) * d;
+			ctx.globalAlpha = fire;
+			ctx.fillStyle = hash01(i * 17.3) > 0.5 ? "#ff5a1f" : "#ff9a2e";
+			ctx.beginPath();
+			ctx.arc(x, y, r, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.fillStyle = "#fff0a0";
+			ctx.beginPath();
+			ctx.arc(x, y, r * 0.45, 0, Math.PI * 2);
+			ctx.fill();
+		}
+	// はじめの 閃光（まん中の 白い 玉）
+	if (k < 0.2) {
+		ctx.globalAlpha = 1 - k / 0.2;
+		ctx.fillStyle = "#fffbe8";
+		ctx.beginPath();
+		ctx.arc(x0, y0, TILE * (0.6 + b.r * 0.5) * (0.5 + grow), 0, Math.PI * 2);
+		ctx.fill();
+	}
+	ctx.restore();
+};
 
 /** 0〜1 の決まった乱数（粒の置き場所など。毎コマ同じ値になる）。 */
 const hash01 = (n: number): number => {

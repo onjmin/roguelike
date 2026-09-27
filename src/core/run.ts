@@ -29,12 +29,7 @@ import { ITEM_LIST } from "./data/items";
 import { FAKE_NAMES } from "./data/names";
 import { throwItem, useItem } from "./effects";
 import { buildFloor, randomFloorPos, spawnMonster } from "./floor";
-import {
-	canSee,
-	forEachExitPeek,
-	forEachVisible,
-	roomsSeenFrom,
-} from "./fov";
+import { canSee, forEachExitPeek, forEachVisible, roomsSeenFrom } from "./fov";
 import {
 	DIRS8,
 	type Dir8,
@@ -856,7 +851,7 @@ export class Run {
 		const cx = m.x;
 		const cy = m.y;
 		this.se("explosion");
-		this.emit({ t: "fx", kind: "explosion", pos: { x: cx, y: cy } });
+		this.emit({ t: "fx", kind: "explosion", pos: { x: cx, y: cy }, r: 2 });
 		this.msg(`${monsterName(this, m)}は　爆発した！`, "warn");
 		m.hp = 0;
 		this.f.monsters = this.f.monsters.filter((x) => x !== m);

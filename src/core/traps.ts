@@ -74,7 +74,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 		}
 		case "mine": {
 			r.se("explosion");
-			r.emit({ t: "fx", kind: "explosion", pos: { x: p.x, y: p.y } });
+			r.emit({ t: "fx", kind: "explosion", pos: { x: p.x, y: p.y }, r: 1 });
 			r.msg("地雷が　爆発した！", "warn");
 			for (const m of [...r.f.monsters])
 				if (dist(m, p) <= 1) r.killMonster(m, false);
