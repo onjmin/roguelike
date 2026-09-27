@@ -46,6 +46,7 @@ import {
 	identifyKind,
 	isKeyItem,
 	isKnownKind,
+	itemHidden,
 	itemName,
 	kindName,
 	rollItem,
@@ -468,6 +469,8 @@ export class Run {
 		const seen = new Set(this.s.seen);
 		for (const fi of f.items) {
 			if (seen.has(fi.item.uid)) continue;
+			// 見えない 道具は 見透し草を 飲むまで 地図に 載らない
+			if (itemHidden(this.s, fi.item.kind)) continue;
 			if (this.playerSees(fi)) this.s.seen.push(fi.item.uid);
 		}
 		// モンスターハウス（部屋の 入口に 立っても 始まる。入口からは 部屋ぜんぶが 見え、

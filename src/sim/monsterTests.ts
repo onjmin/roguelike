@@ -2109,12 +2109,31 @@ test("scroll", "s_gacha: every one of the 8 outcomes can happen", () => {
 	for (let i = 0; i < 200 && seen.size < marks.length; i++) {
 		const r = arena(`gacha-${i}`);
 		put(r, "knight", at(0, 5), { sleep: 99 });
+		r.f.sight = true; // 見透し草を 飲んだ 階でだけ 読める
 		const d0 = r.s.depth;
 		turn(r, { c: "use", item: give(r, "s_gacha").uid });
 		for (const [name, hit] of marks) if (hit(r, d0)) seen.add(name);
 	}
 	const missing = marks.map(([n]) => n).filter((n) => !seen.has(n));
 	ok(!missing.length, `never happened: ${missing.join(", ")}`);
+});
+
+test("scroll", "s_gacha: hidden and unreadable until h_sight", () => {
+	const r = arena("gacha-hidden");
+	const it = give(r, "s_gacha");
+	const fi = r.newItem("s_gacha");
+	r.f.items.push({ x: r.p.x + 2, y: r.p.y, item: fi });
+	turn(r);
+	ok(!r.s.seen.includes(fi.uid), "the hidden scroll on the floor was seen");
+	ok(r.name(it) === "見えない　何か", `named ${r.name(it)}`);
+	const t0 = r.s.turn;
+	turn(r, { c: "use", item: it.uid });
+	ok(r.s.turn === t0 && r.findItem(it.uid), "read without h_sight");
+	turn(r, { c: "use", item: give(r, "h_sight").uid });
+	ok(r.name(it) !== "見えない　何か", "still hidden after h_sight");
+	ok(r.s.seen.includes(fi.uid), "the floor scroll stayed unseen after h_sight");
+	turn(r, { c: "use", item: it.uid });
+	ok(!r.findItem(it.uid), "could not read it after h_sight");
 });
 
 test("scroll", "s_map then s_snare: the new traps are already found", () => {

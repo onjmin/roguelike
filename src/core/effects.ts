@@ -17,7 +17,13 @@ import {
 import { pickTrapKind } from "./floor";
 import { canSee } from "./fov";
 import { DIRS8, type Dir8, dist, step } from "./geom";
-import { defOf, identifyKind, isKeyItem, itemTableOf } from "./item";
+import {
+	defOf,
+	identifyKind,
+	isKeyItem,
+	itemHidden,
+	itemTableOf,
+} from "./item";
 import { rollKinds } from "./itemTable";
 import { roomTiles } from "./mapgen";
 import {
@@ -310,6 +316,11 @@ const gacha = (r: Run): void => {
 const read = (r: Run, it: Item, target?: number): boolean => {
 	const p = r.p;
 	const f = r.f;
+	// 見えない スレ（ガチャスレ）は 見透し草を 飲んだ 階でしか 読めない（トルネコ1の パルプンテ）
+	if (itemHidden(r.s, it.kind)) {
+		r.msg("見えないので　読めない");
+		return false;
+	}
 	const need = needsTarget(it);
 	if (need && target === undefined) {
 		// どれを？ と聞かれる（キャンセルすれば減らない）

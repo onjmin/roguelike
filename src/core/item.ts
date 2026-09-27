@@ -95,8 +95,16 @@ export const kindName = (s: RunState, kind: string): string => {
 
 const signed = (n: number): string => (n > 0 ? `+${n}` : n < 0 ? `${n}` : "");
 
+/** 見えない 道具で、この階では 見透し草を 飲んでいない（床に 見えず、読めない。名前も わからない）。 */
+export const itemHidden = (s: RunState, kind: string): boolean =>
+	!!defOf(kind).invisible && !s.floor.sight;
+
+/** 見えない 道具の 呼び名。 */
+export const HIDDEN_NAME = "見えない　何か";
+
 /** 道具の呼び名（修正値・回数・本数つき）。 */
 export const itemName = (s: RunState, it: Item): string => {
+	if (itemHidden(s, it.kind)) return HIDDEN_NAME;
 	const d = defOf(it.kind);
 	let name = kindName(s, it.kind);
 	if ((d.cat === "weapon" || d.cat === "shield") && it.known)

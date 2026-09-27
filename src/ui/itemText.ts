@@ -9,6 +9,7 @@ import {
 	defOf,
 	isKnownKind,
 	isUnidentifiedCat,
+	itemHidden,
 	itemTableOf,
 } from "../core/item";
 import type { Run } from "../core/run";
@@ -22,6 +23,10 @@ export const esc = (s: string): string =>
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;");
 
+/** 見えない 道具（ガチャスレ）の 説明。 */
+const HIDDEN_DESC =
+	"何かが　ある　手ざわり。見透し草を　飲んだ　階でだけ　見えて　読める";
+
 /** 一覧の2行目（HTML）。頭にカテゴリの札、うしろに装備中・のろいの札。 */
 export const itemDesc = (run: Run, it: Item): string => {
 	const d = defOf(it.kind);
@@ -30,6 +35,7 @@ export const itemDesc = (run: Run, it: Item): string => {
 	let h = `<b class="tag">${esc(CAT_NAME[d.cat])}</b>`;
 	if (run.isEquipped(it)) h += '<b class="tag equip">装備中</b>';
 	if (it.known && it.cursed) h += '<b class="tag curse">のろい</b>';
+	if (itemHidden(run.s, it.kind)) return h + esc(HIDDEN_DESC);
 	return h + esc(known ? d.desc : "まだ　正体が　わからない");
 };
 
@@ -100,6 +106,7 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 	const s = run.s;
 	const d = defOf(it.kind);
 	const known = isKnownKind(s, it.kind);
+	if (itemHidden(s, it.kind)) return [`【${CAT_NAME[d.cat]}】${HIDDEN_DESC}`];
 	const pages: string[] = [
 		known
 			? `【${CAT_NAME[d.cat]}】${d.desc}`

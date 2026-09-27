@@ -8,6 +8,7 @@
 import { dungeonById } from "../core/data/dungeons";
 import { forEachVisible } from "../core/fov";
 import { type Dir8, spriteDir } from "../core/geom";
+import { itemHidden } from "../core/item";
 import { T_WALL, tileAt } from "../core/mapgen";
 import type { Floor, RunState } from "../core/types";
 import { drawRefInCell, getImage, onImageLoaded } from "../engine/assets";
@@ -277,6 +278,8 @@ export class FloorView {
 		// 床の道具（見えている所と、見たことのある道具）
 		for (const fi of f.items) {
 			const i = fi.y * l.w + fi.x;
+			// 見えない 道具（ガチャスレ）は 見透し草を 飲むまで 描かない
+			if (itemHidden(s, fi.item.kind)) continue;
 			if (
 				!visible[i] &&
 				!(f.seen[i] && seenItem.has(fi.item.uid)) &&
@@ -805,8 +808,8 @@ export const drawMap = (
 	const seenItem = new Set(s.seen);
 	for (const fi of f.items)
 		if (
-			f.senseItems ||
-			(f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid))
+			!itemHidden(s, fi.item.kind) &&
+			(f.senseItems || (f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid)))
 		)
 			dot(fi.x, fi.y, "#5ff0ff", Math.floor(cell / 4));
 	for (const m of opt.visibleMonsters) dot(m.x, m.y, "#ff5060");
