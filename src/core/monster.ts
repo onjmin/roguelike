@@ -828,7 +828,7 @@ export const sealMonster = (m: Monster): void => {
 	m.enraged = false;
 };
 
-/** 別の モンスターに 変える（to を 渡せば その種類に。ガチャスレの メタル）。 */
+/** 別の モンスターに 変える（to を 渡せば その種類に。!skスレの メタル）。 */
 export const transformMonster = (r: Run, m: Monster, to?: string): void => {
 	const cands = Object.values(MONSTERS).filter(
 		(d) => d.id !== m.kind && d.floors[0] <= r.levelAt(r.f.depth) + 4,

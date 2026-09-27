@@ -278,7 +278,7 @@ export class FloorView {
 		// 床の道具（見えている所と、見たことのある道具）
 		for (const fi of f.items) {
 			const i = fi.y * l.w + fi.x;
-			// 見えない 道具（ガチャスレ）は 見透し草を 飲むまで 描かない
+			// 見えない 道具（!skスレ）は 見透し草を 飲むまで 描かない
 			if (itemHidden(s, fi.item.kind)) continue;
 			if (
 				!visible[i] &&

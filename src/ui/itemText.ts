@@ -23,7 +23,7 @@ export const esc = (s: string): string =>
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;");
 
-/** 見えない 道具（ガチャスレ）の 説明。 */
+/** 見えない 道具（!skスレ）の 説明。 */
 const HIDDEN_DESC =
 	"何かが　ある　手ざわり。見透し草を　飲んだ　階でだけ　見えて　読める";
 

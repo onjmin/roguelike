@@ -227,11 +227,11 @@ const drink = (r: Run, it: Item): boolean => {
 /** 次のレベルまでの経験値。 */
 const expToNext = (r: Run): number => (EXP_AT[r.p.lv] ?? r.p.exp) - r.p.exp;
 
-/** ガチャスレで 下へ 落ちる 階の数（トルネコ1の パルプンテと 同じ 5階）。 */
+/** !skスレで 下へ 落ちる 階の数（トルネコ1の パルプンテと 同じ 5階）。 */
 const GACHA_FALL = 5;
 
 /**
- * ガチャスレ（トルネコ1の パルプンテの巻物）：8つの うち 1つが 同じ 確からしさで 起きる。
+ * !skスレ（トルネコ1の パルプンテの巻物）：8つの うち 1つが 同じ 確からしさで 起きる。
  * 落ちられない（帰り道・いちばん下）ときは 落ちる 目を のぞいて 引く。
  */
 const gacha = (r: Run): void => {
@@ -239,7 +239,7 @@ const gacha = (r: Run): void => {
 	const f = r.f;
 	const canFall = !r.s.returning && r.s.depth < r.dungeon.floors;
 	const roll = r.rng.int(canFall ? 8 : 7);
-	r.msg("ガチャを　回した……");
+	r.msg("!sk ……サイコロが　転がった");
 	switch (roll) {
 		case 0:
 			// 全快（HP・ちから・満腹度）
@@ -316,7 +316,7 @@ const gacha = (r: Run): void => {
 const read = (r: Run, it: Item, target?: number): boolean => {
 	const p = r.p;
 	const f = r.f;
-	// 見えない スレ（ガチャスレ）は 見透し草を 飲んだ 階でしか 読めない（トルネコ1の パルプンテ）
+	// 見えない スレ（!skスレ）は 見透し草を 飲んだ 階でしか 読めない（トルネコ1の パルプンテ）
 	if (itemHidden(r.s, it.kind)) {
 		r.msg("見えないので　読めない");
 		return false;
