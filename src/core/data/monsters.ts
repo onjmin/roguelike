@@ -2,7 +2,7 @@
 // rpg と同じ「おんJ・ネットの怪異」と ぷゆゆ・汎用の歩行グラ（RPGEN）を当てている。
 // DQ の固有名は使わない。
 
-import type { MonsterDef } from "../types";
+import type { DungeonId, MonsterDef } from "../types";
 
 const M: MonsterDef[] = [
 	// ───────── 浅い階 ─────────
@@ -485,6 +485,119 @@ const M: MonsterDef[] = [
 		desc: "まっすぐ　ならぶと　炎を　吐く",
 		flavor: "ワイの　話を　聞け、と　火を　吐く",
 	},
+	// ───────── 植民地（板）だけの 敵。絵は 仮（scripts/make-colony-enemies.mjs・ART_TODO.md） ─────────
+	// 出る階は その板の 何階ぶんの 強さか（data/dungeons.ts の level）。ほかの 板には 出ない
+	{
+		// パン松（村の 住人）の 軍勢。パン松の 正式名は パン兵 らしい（植民地一覧スレ）
+		id: "panhei",
+		name: "パン兵",
+		sprite: "pub:sprites/panhei.png",
+		hp: 12,
+		atk: 4,
+		def: 3,
+		exp: 6,
+		floors: [2, 7],
+		weight: 40,
+		abilities: [{ k: "steal", rate: 1 / 2 }],
+		board: "shallow",
+		desc: "パン松の　軍勢。持ち物を　1つ　ひったくって　逃げる。たおせば　取り返せる",
+		flavor: "やきうの　スレを　立てると、どこからともなく　行進してくる",
+	},
+	{
+		id: "kinonyan",
+		name: "きのにゃん",
+		sprite: "pub:sprites/kinonyan.png",
+		hp: 18,
+		atk: 5,
+		def: 4,
+		exp: 9,
+		floors: [2, 7],
+		weight: 30,
+		abilities: [{ k: "statue" }, { k: "armor" }],
+		tags: ["plant"],
+		sleep: "never",
+		board: "kinoko",
+		desc: "ふんぞりかえって　動かない。近づくと　動きだす。なぐる　攻撃は　半分",
+		flavor: "植民地の　植民地。いちばん　態度が　でかい",
+	},
+	{
+		id: "ofurou",
+		name: "おふ郎くん",
+		sprite: "pub:sprites/ofurou.png",
+		hp: 20,
+		atk: 7,
+		def: 6,
+		exp: 20,
+		floors: [4, 14],
+		weight: 30,
+		abilities: [{ k: "sleepSpell", rate: 1 / 4 }],
+		board: "main",
+		desc: "となりで　湯気を　あてて、のぼせさせて　眠らせる",
+		flavor: "お風呂で　やきうを　実況する。混浴でしてよ",
+	},
+	{
+		id: "denchan",
+		name: "でんちゃん",
+		sprite: "pub:sprites/denchan.png",
+		hp: 28,
+		atk: 10,
+		def: 8,
+		exp: 40,
+		floors: [6, 24],
+		weight: 30,
+		abilities: [{ k: "ranged", rate: 1 / 3, atk: 9, verb: "漏電した" }],
+		board: "deep",
+		desc: "まっすぐ　ならぶと　漏電して　しびれさせる",
+		flavor: "仕事と　やきうで　つかれた　体を　充電してくれる　……はず",
+	},
+	{
+		id: "natsuko",
+		name: "ナツコ",
+		sprite: "pub:sprites/natsuko.png",
+		hp: 16,
+		atk: 5,
+		def: 5,
+		exp: 30,
+		floors: [2, 15],
+		weight: 25,
+		abilities: [{ k: "shy" }],
+		tags: ["plant"],
+		board: "tropical",
+		desc: "ヤシの木の　精。人見知りで、近づくと　逃げる。追いつめると　戦う",
+		flavor: "ヤッシッシ～。島民は　6人しか　いない",
+	},
+	{
+		id: "takonomin",
+		name: "たこのみん",
+		sprite: "pub:sprites/takonomin.png",
+		hp: 22,
+		atk: 8,
+		def: 6,
+		exp: 24,
+		floors: [5, 18],
+		weight: 30,
+		abilities: [
+			{ k: "breath", rate: 1 / 4, dmg: [5, 10], what: "熱々の　たこ焼き" },
+		],
+		board: "konamono",
+		desc: "まっすぐ　ならぶと　熱々の　たこ焼きを　飛ばしてくる",
+		flavor: "😡に　見えるのは　たこ焼きの　顔。怒っては　いない",
+	},
+	{
+		id: "mashii",
+		name: "マシー",
+		sprite: "pub:sprites/mashii.png",
+		hp: 14,
+		atk: 6,
+		def: 4,
+		exp: 12,
+		floors: [4, 16],
+		weight: 20,
+		abilities: [{ k: "pack" }],
+		board: "festival",
+		desc: "祭りの　仲間と　4人で　やってくる",
+		flavor: "外で　名乗るときは　屯田兵。祭りの　あとは　だれも　いない",
+	},
 ];
 
 export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
@@ -492,6 +605,11 @@ export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
 );
 export const MONSTER_LIST: readonly MonsterDef[] = M;
 
-/** その階に出るモンスター。 */
-export const monstersFor = (depth: number): MonsterDef[] =>
-	M.filter((m) => depth >= m.floors[0] && depth <= m.floors[1]);
+/** その階に出るモンスター（板だけの 敵は その板でだけ）。 */
+export const monstersFor = (depth: number, dungeon?: DungeonId): MonsterDef[] =>
+	M.filter(
+		(m) =>
+			depth >= m.floors[0] &&
+			depth <= m.floors[1] &&
+			(!m.board || m.board === dungeon),
+	);

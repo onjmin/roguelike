@@ -3,6 +3,7 @@
 
 import { MONSTER_LIST } from "../core/data/monsters";
 import type { MonsterDef, MonsterTag } from "../core/types";
+import { DUNGEON_NAMES } from "../data/story";
 import { loadBook } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { explain } from "./explain";
@@ -18,9 +19,11 @@ const TAG_NAME: Record<MonsterTag, string> = {
 };
 
 const floors = (d: MonsterDef): string =>
-	d.floors[0] === d.floors[1]
+	(d.floors[0] === d.floors[1]
 		? `B${d.floors[0]}`
-		: `B${d.floors[0]}〜B${d.floors[1]}`;
+		: `B${d.floors[0]}〜B${d.floors[1]}`) +
+	// 板だけの 敵は その板の 名前を 添える
+	(d.board ? `（${DUNGEON_NAMES[d.board].name}だけ）` : "");
 
 /** 「せつめい」の文（メッセージ窓に 1ページずつ）。とくちょう → ひとこと → 強さ → たおした数。 */
 const detail = (d: MonsterDef, kills: number): string[] => {

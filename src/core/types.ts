@@ -108,7 +108,13 @@ export type Ability =
 	| { k: "sleepSpell"; rate: number } // 眠らせる呪文
 	| { k: "gaze"; rate: number } // にらんで混乱させる
 	| { k: "ranged"; rate: number; atk: number; verb: string } // まっすぐ撃つ
-	| { k: "breath"; rate: number; dmg: [number, number] } // 炎を吐く
+	| {
+			k: "breath";
+			rate: number;
+			dmg: [number, number];
+			/** 吐く 物（既定は 炎）。 */
+			what?: string;
+	  } // 炎を吐く
 	| { k: "split"; rate: number } // なぐられると分裂する
 	| { k: "warpPlayer"; rate: number } // なぐった相手をワープさせる
 	| { k: "fastMove" } // 倍速で動く（攻撃は1回）
@@ -152,6 +158,8 @@ export type MonsterDef = {
 	sleep?: "never" | "always" | "deep";
 	/** たおすと 必ず落とす道具（メタルぷゆゆ → 成長の実。トルネコ1の しあわせのたね）。 */
 	drop?: string;
+	/** その植民地（板）だけの 敵（ほかの 板には 出ない。改変の杖でも ならない）。 */
+	board?: DungeonId;
 	/** 図鑑の一言。 */
 	desc: string;
 	/** ひとこと（皮肉の きいた 1文。図鑑の「せつめい」に 出す）。 */

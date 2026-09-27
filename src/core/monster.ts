@@ -500,10 +500,10 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					let dmg = r.rng.range(a.dmg[0], a.dmg[1]);
 					if (r.shield()?.kind === "fireward") dmg = Math.floor(dmg / 2);
 					r.msg(
-						`${seenName(r, m)}は　炎を　吐いた！　${dmg}の　ダメージ`,
+						`${seenName(r, m)}は　${a.what ?? "炎"}を　吐いた！　${dmg}の　ダメージ`,
 						"warn",
 					);
-					r.hurtPlayer(dmg, `${d.name}の　炎で　たおれた`);
+					r.hurtPlayer(dmg, `${d.name}の　${a.what ?? "炎"}で　たおれた`);
 					return;
 				}
 			}
@@ -831,7 +831,10 @@ export const sealMonster = (m: Monster): void => {
 /** 別の モンスターに 変える（to を 渡せば その種類に。!skスレの メタル）。 */
 export const transformMonster = (r: Run, m: Monster, to?: string): void => {
 	const cands = Object.values(MONSTERS).filter(
-		(d) => d.id !== m.kind && d.floors[0] <= r.levelAt(r.f.depth) + 4,
+		(d) =>
+			d.id !== m.kind &&
+			d.floors[0] <= r.levelAt(r.f.depth) + 4 &&
+			(!d.board || d.board === r.s.dungeon),
 	);
 	const d = to ? MONSTERS[to] : r.rng.pick(cands);
 	const ratio = m.hp / m.maxHp;

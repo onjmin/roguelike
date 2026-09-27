@@ -240,9 +240,14 @@ export const spawnMonster = (
 	if (kind) def = MONSTERS[kind];
 	else {
 		// 敵の顔ぶれは 本編の何階ぶんか で引く（表は もっと の 30階まで。それより深い階は30階の顔ぶれ）
-		const list = monstersFor(Math.max(1, Math.min(30, r.levelAt(f.depth))));
+		// 板ごとの 出やすさ（data/dungeons.ts の foes。0 は 出ない）
+		const foes = r.dungeon.foes ?? {};
+		const list = monstersFor(
+			Math.max(1, Math.min(30, r.levelAt(f.depth))),
+			r.s.dungeon,
+		).filter((m) => (foes[m.id] ?? 1) > 0);
 		if (!list.length) return null;
-		def = rng.weighted(list, (m) => m.weight);
+		def = rng.weighted(list, (m) => m.weight * (foes[m.id] ?? 1));
 	}
 	if (!def) return null;
 	const make = (p: Pos): Monster => {

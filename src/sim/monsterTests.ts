@@ -7,7 +7,8 @@
 // - 湧きと地震は止める（毎ターン f.turns を 0 に戻す）。
 
 import { attackPower, EXP_AT, HUNGER_MAX, rollDamage } from "../core/balance";
-import { MONSTER_LIST, MONSTERS } from "../core/data/monsters";
+import { DUNGEON_IDS } from "../core/data/dungeons";
+import { MONSTER_LIST, MONSTERS, monstersFor } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
 import { spawnMonster } from "../core/floor";
 import { canSee } from "../core/fov";
@@ -42,6 +43,7 @@ import {
 	type Ability,
 	type Command,
 	DEEP,
+	type DungeonId,
 	type GameEvent,
 	type Item,
 	type Monster,
@@ -2367,19 +2369,132 @@ test("pursuit", "fastMove: looks again before the second step", () => {
 
 // ───────────────── ぜんぶ ─────────────────
 
-test("all", "31 monsters, each with a desc and at least one ability", () => {
-	ok(MONSTER_LIST.length === 31, `${MONSTER_LIST.length} monsters`);
-	const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
-	ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
-	const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(
-		(d) => d.id,
-	);
-	ok(!noFlavor.length, `no flavor: ${noFlavor.join(", ")}`);
-	const plain = MONSTER_LIST.filter((d) => !d.abilities.length).map(
-		(d) => d.id,
-	);
-	ok(!plain.length, `no ability: ${plain.join(", ")}`);
+// ───────────────── 植民地（板）だけの 敵 ─────────────────
+
+const COLONY_FOES: readonly [string, DungeonId][] = [
+	["panhei", "shallow"],
+	["kinonyan", "kinoko"],
+	["ofurou", "main"],
+	["denchan", "deep"],
+	["natsuko", "tropical"],
+	["takonomin", "konamono"],
+	["mashii", "festival"],
+];
+
+for (const [id, board] of COLONY_FOES)
+	test(id, `only appears on its own board (${board})`, () => {
+		const lv = MONSTERS[id].floors[0];
+		ok(
+			monstersFor(lv, board).some((m) => m.id === id),
+			`not in the ${board} pool`,
+		);
+		for (const other of DUNGEON_IDS)
+			if (other !== board)
+				ok(
+					!monstersFor(lv, other).some((m) => m.id === id),
+					`appears on ${other}`,
+				);
+	});
+
+test("panhei", "steal: snatches a loose item and runs", () => {
+	const r = arena("panhei", hideoutLayout(), HIDE_AT);
+	r.s.dungeon = "shallow";
+	r.p.items = [];
+	const herb = give(r, "h_heal");
+	const m = put(r, "panhei", at(1, 0, HIDE_AT));
+	waitTurns(r, 40, () => m.carry !== null);
+	ok(m.carry === herb, `stole ${m.carry?.kind ?? "nothing"}`);
 });
+
+test("kinonyan", "sits still until Kiriko comes near", () => {
+	const r = arena("kinonyan");
+	const m = put(r, "kinonyan", at(6, 0), {});
+	const start = { x: m.x, y: m.y };
+	waitTurns(r, 10, () => false);
+	ok(m.x === start.x && m.y === start.y, "moved while nobody was near");
+});
+
+test("ofurou", "sleepSpell: puts Kiriko to sleep from next to her", () => {
+	const r = arena("ofurou");
+	put(r, "ofurou", at(1, 0));
+	const w = spellWatch(r);
+	waitTurns(r, 60, () => false);
+	ok(w.slept > 0, `never put Kiriko to sleep (${w.casts} casts)`);
+});
+
+test("denchan", "ranged: shocks Kiriko along a line", () => {
+	const r = arena("denchan");
+	const home = at(4, 0);
+	const m = put(r, "denchan", home);
+	const hit = waitTurns(r, 40, () => {
+		// 毎ターン元の位置へ戻す（近づかせない）
+		m.x = home.x;
+		m.y = home.y;
+		return r.s.log.some((l) => l.includes("漏電した"));
+	});
+	ok(hit > 0, "never shocked");
+});
+
+test("natsuko", "shy: keeps away when Kiriko comes near", () => {
+	const r = arena("natsuko");
+	const m = put(r, "natsuko", at(2, 0));
+	waitTurns(r, 6, () => false);
+	ok(
+		Math.max(Math.abs(m.x - r.p.x), Math.abs(m.y - r.p.y)) >= 2,
+		"came closer",
+	);
+});
+
+test("takonomin", "breath: throws hot takoyaki, not fire", () => {
+	const r = arena("takonomin");
+	const home = at(4, 0);
+	const m = put(r, "takonomin", home);
+	const hit = waitTurns(r, 60, () => {
+		m.x = home.x;
+		m.y = home.y;
+		return r.s.log.some((l) => l.includes("たこ焼きを　吐いた"));
+	});
+	ok(hit > 0, "never threw takoyaki");
+	ok(!r.s.log.some((l) => l.includes("炎を　吐いた")), "said it breathed fire");
+});
+
+test("mashii", "pack: comes in a group of four", () => {
+	const r = arena("mashii");
+	r.s.dungeon = "festival";
+	r.s.depth = 5;
+	r.f.depth = 5;
+	const m = spawnMonster(r, null, at(5, 0), {});
+	// 表から 引くと ほかの 敵も 出るので、マシーが 出るまで 引きなおす
+	let tries = 0;
+	let got = m;
+	while (got?.kind !== "mashii" && tries++ < 200) {
+		r.f.monsters = [];
+		got = spawnMonster(r, null, at(5, 0), {});
+	}
+	ok(got?.kind === "mashii", "harness: mashii was never drawn");
+	ok(
+		r.f.monsters.filter((x) => x.kind === "mashii").length === 4,
+		`came as ${r.f.monsters.filter((x) => x.kind === "mashii").length}`,
+	);
+});
+
+test(
+	"all",
+	"every monster has a desc, a flavor line and at least one ability",
+	() => {
+		ok(MONSTER_LIST.length === 38, `${MONSTER_LIST.length} monsters`);
+		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
+		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
+		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(
+			(d) => d.id,
+		);
+		ok(!noFlavor.length, `no flavor: ${noFlavor.join(", ")}`);
+		const plain = MONSTER_LIST.filter((d) => !d.abilities.length).map(
+			(d) => d.id,
+		);
+		ok(!plain.length, `no ability: ${plain.join(", ")}`);
+	},
+);
 
 test("all", "every monster has a trait test", () => {
 	const tested = new Set(CASES.map((c) => c.id));

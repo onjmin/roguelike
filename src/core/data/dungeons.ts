@@ -50,6 +50,11 @@ export type Dungeon = {
 	charge?: number;
 	/** 過疎：はじめから いる 敵の 数と 湧く 間隔に かける 数（0.5 なら 半分・間隔は 倍）。 */
 	sparse?: number;
+	/**
+	 * 敵の 出やすさ（id → 重みに かける 数。0 は 出ない）。板の 気風に 合う 敵を 多めに。
+	 * その板だけの 敵は data/monsters.ts の board。
+	 */
+	foes?: Readonly<Record<string, number>>;
 	/** 😡：どの 敵も HP が 半分を 切ると 怒って 倍速に なる。 */
 	angry?: boolean;
 	/**
@@ -253,6 +258,8 @@ const lagged = (n: number): number[] =>
 export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	shallow: {
 		id: "shallow",
+		// パン松は やきうが きらい（ピッチャーは 追い出した）。まんじゅう（まんぜう軍）は パンの なかま
+		foes: { pumpkin: 2, pitcher: 0 },
 		floors: 10,
 		items: SHALLOW_ITEMS,
 		perFloor: [5, 9],
@@ -268,6 +275,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	main: {
 		id: "main",
+		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
+		foes: { sabi: 2, neochi: 1.5 },
 		floors: 27,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
@@ -285,6 +294,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	deep: {
 		id: "deep",
+		// 機械と 回線の 敵が 多い
+		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
 		floors: 30,
 		items: DEEP_ITEMS,
 		perFloor: [5, 8],
@@ -305,6 +316,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// きのこ板（パン板の 植民地。植民地の 植民地）：草が 多く、当たり外れも 大きい
 	kinoko: {
 		id: "kinoko",
+		// 胞子で 眠くなり（寝落ち民）、毒きのこ（まんぜう軍）が 多い
+		foes: { neochi: 2, pumpkin: 2, pitcher: 0 },
 		floors: 12,
 		items: KINOKO_ITEMS,
 		perFloor: [5, 8],
@@ -321,6 +334,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 離島・沖縄板（総島民 6人）：過疎。敵も 道具も 少ない
 	tropical: {
 		id: "tropical",
+		// 風の 島（風吹けば名無し）と 浜の フナムシ（バグ）
+		foes: { kaze: 3, funamushi: 2 },
 		floors: 15,
 		items: MAIN_ITEMS,
 		perFloor: [4, 6],
@@ -340,6 +355,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
 		id: "konamono",
+		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ
+		foes: { oni: 3, ninja: 1.5, fallen: 1.5 },
 		floors: 20,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
@@ -360,6 +377,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// お祭り会場（おまC）：祭りが よく 出る
 	festival: {
 		id: "festival",
+		// 野次馬（コピペ）・群れ（凍結アカ）・炎上
+		foes: { copipe: 2, yuki: 2, bomb: 2 },
 		floors: 20,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
