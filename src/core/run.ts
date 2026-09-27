@@ -568,7 +568,10 @@ export class Run {
 		for (const m of s.floor.monsters) m.nextAt = s.time;
 		scheduleAnka(this);
 		this.emit({ t: "floor", depth, up: s.returning });
-		if (fell) this.msg("下の階に　落ちた");
+		if (fell)
+			this.msg(
+				this.dungeon.up ? "上の階へ　押し上げられた" : "下の階に　落ちた",
+			);
 		this.updateVision();
 	}
 
@@ -579,7 +582,11 @@ export class Run {
 			return false;
 		}
 		if (this.atBottom) {
-			this.msg("これより　下へは　行けないようだ");
+			this.msg(
+				this.dungeon.up
+					? "これより　上へは　行けないようだ"
+					: "これより　下へは　行けないようだ",
+			);
 			return false;
 		}
 		this.se("stairs");
@@ -596,10 +603,14 @@ export class Run {
 		return false;
 	}
 
-	/** 落とし穴・地震で下の階へ。 */
+	/** 落とし穴・dat落ちで 次の階へ（下りの 板は 下、上りの 板は 上）。 */
 	fallDown(): void {
 		if (this.s.depth >= this.dungeon.floors) {
-			this.msg("しかし　これより　下は　なかった");
+			this.msg(
+				this.dungeon.up
+					? "しかし　これより　上は　なかった"
+					: "しかし　これより　下は　なかった",
+			);
 			return;
 		}
 		this.enterFloor(this.s.depth + 1, true);
@@ -1099,7 +1110,12 @@ export class Run {
 			return false;
 		}
 		this.msg("このスレッドは　1000を　超えました。", "warn");
-		this.msg("もう　書けないので、下の階へ　落ちる……", "warn");
+		this.msg(
+			this.dungeon.up
+				? "もう　書けないので、上の階へ　押し出される……"
+				: "もう　書けないので、下の階へ　落ちる……",
+			"warn",
+		);
 		this.fallDown();
 		return true;
 	}
@@ -1367,7 +1383,7 @@ export class Run {
 			this.s.returning = true;
 			this.emit({ t: "goal" });
 			this.msg(
-				`${defOf(it.kind).name}を　手に入れた！　階段が　上り向きに　変わった`,
+				`${defOf(it.kind).name}を　手に入れた！　階段が　${this.dungeon.up ? "下り" : "上り"}向きに　変わった`,
 				"good",
 			);
 		}

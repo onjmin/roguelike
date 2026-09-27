@@ -14,6 +14,7 @@ import {
 } from "../engine/share";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { floorShort } from "./floorName";
 import { listWindow, markOpened, onTap } from "./list";
 import { esc } from "./records";
 
@@ -24,8 +25,8 @@ const sharedHead = (rp: SavedReplay): string => {
 		rp.kind === "clear"
 			? "持ち帰った"
 			: rp.kind === "escape"
-				? `B${rp.depth}から　帰還スレで　もどった`
-				: `B${rp.depth}で　${esc(rp.cause)}`;
+				? `${floorShort(rp.dungeon, rp.depth)}から　帰還スレで　もどった`
+				: `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`;
 	return `${esc(where)}　${how}<br><small>${rp.turn}ターン</small>`;
 };
 

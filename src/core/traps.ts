@@ -102,7 +102,8 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 		case "pit": {
 			r.se("flee");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
-			r.msg("落とし穴に　落ちた！");
+			// 上りの 板では 穴から 吹き上げられる
+			r.msg(r.dungeon.up ? "吹き上げの　穴だ！" : "落とし穴に　落ちた！");
 			if (r.hurtPlayer(dmg, "落とし穴で　たおれた")) return;
 			r.fallDown();
 			return;

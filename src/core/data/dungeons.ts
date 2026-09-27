@@ -52,6 +52,11 @@ export type Dungeon = {
 	sparse?: number;
 	/** 😡：どの 敵も HP が 半分を 切ると 怒って 倍速に なる。 */
 	angry?: boolean;
+	/**
+	 * 上りの 植民地（塔・やぐら・山）。階は 上へ 数え、帰り道は 降りる。中の 動きは 下りと 同じで、
+	 * 文と 見せかただけ 逆（depth が 大きいほど 高い）。
+	 */
+	up?: boolean;
 };
 
 const identity = (n: number): number[] =>
@@ -294,6 +299,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		reliefAfter: null,
 		// 充電ずみの 杖
 		charge: 1,
+		// 送電鉄塔を 上る
+		up: true,
 	},
 	// きのこ板（パン板の 植民地。植民地の 植民地）：草が 多く、当たり外れも 大きい
 	kinoko: {
@@ -327,6 +334,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockAfter: "shallow",
 		reliefAfter: null,
 		sparse: 0.5,
+		// 島の 山を 上る
+		up: true,
 	},
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
@@ -345,6 +354,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockAfter: "main",
 		reliefAfter: null,
 		angry: true,
+		// 雑居ビルを 上る
+		up: true,
 	},
 	// お祭り会場（おまC）：祭りが よく 出る
 	festival: {
@@ -358,6 +369,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		start: ["f_large"],
 		goal: "uchiwa",
 		houses: { from: 3, chance: 1 / 3, early: [3, 5] },
+		// やぐらを 上る
+		up: true,
 		trapsFrom: 3,
 		unlockAfter: "main",
 		reliefAfter: null,

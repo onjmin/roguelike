@@ -21,6 +21,7 @@ import {
 import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
+import { floorShort } from "./floorName";
 import { infoWindow, listWindow } from "./list";
 import {
 	importWindow,
@@ -129,10 +130,10 @@ const endLine = (
 ): string =>
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
 		r.kind === "clear"
-			? `B${r.maxDepth}から　地上へ　もどった`
+			? `${floorShort(r.dungeon, r.maxDepth)}から　地上へ　もどった`
 			: r.kind === "escape"
-				? `B${r.depth}から　帰還スレで　もどった`
-				: `${r.returning ? "帰り道の　" : ""}B${r.depth}で　${r.cause}`
+				? `${floorShort(r.dungeon, r.depth)}から　帰還スレで　もどった`
+				: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で　${r.cause}`
 	}`;
 
 /** 記録の一覧の 終わり方の札。 */
@@ -207,7 +208,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 				["レベル", String(rec.lv)],
 				["ターン", String(rec.turn)],
 				["倒した数", String(rec.kills)],
-				["最深", `B${rec.maxDepth}`],
+				["いちばん　遠く", floorShort(rec.dungeon, rec.maxDepth)],
 			]),
 		]),
 		el("div", { class: "matome-sec" }, [
@@ -243,7 +244,7 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	const total = `<div class="rec-total">${[
 		["もぐった", `${st.runs}回`],
 		["持ち帰った", `${st.clears}回`],
-		["いちばん深い", st.best ? `B${st.best}` : "―"],
+		["いちばん遠く", st.best ? `${st.best}階` : "―"],
 	]
 		.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
 		.join("")}</div>`;

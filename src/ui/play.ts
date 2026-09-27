@@ -41,6 +41,13 @@ import { settings } from "../engine/settings";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
+import {
+	backVerb,
+	floorLong,
+	floorShort,
+	goVerb,
+	isUpBoard,
+} from "./floorName";
 import { hpInk } from "./hpInk";
 import type { Hud } from "./hud";
 import { FLOWER_ICON, itemIcon } from "./icons";
@@ -586,7 +593,9 @@ export class Play {
 		if (ink) this.logEl.style.setProperty("--ink", ink);
 		else this.logEl.style.removeProperty("--ink");
 		this.hud.status.style.cssText = ink ? `--ink:${ink}` : "";
-		const depthLabel = `${run.s.returning ? "↑" : ""}B${this.shownFloor?.depth ?? run.s.depth}`;
+		// 帰り道の 向き（下りの 板は ↑、上りの 板は ↓）
+		const back = isUpBoard(run.s.dungeon) ? "↓" : "↑";
+		const depthLabel = `${run.s.returning ? back : ""}${floorShort(run.s.dungeon, this.shownFloor?.depth ?? run.s.depth)}`;
 		this.hud.status.innerHTML =
 			`<div class="st-row"><span class="st-depth">${depthLabel}</span><span>Lv${p.lv}</span>` +
 			`<span class="st-hp${ink ? " inked" : ""}">HP ${hp}/${p.maxHp}</span></div>` +
@@ -1392,7 +1401,7 @@ export class Play {
 		q(".rp-play").textContent = rp.paused ? "▶" : "⏸";
 		q(".rp-speed").textContent = `×${rp.speed}`;
 		q(".rp-where").textContent =
-			`B${this.run.s.depth}　${this.run.s.turn}ターン`;
+			`${floorShort(this.run.s.dungeon, this.run.s.depth)}　${this.run.s.turn}ターン`;
 		(q(".rp-prog i") as HTMLElement).style.width =
 			`${rp.total ? (rp.done / rp.total) * 100 : 100}%`;
 	}
@@ -1526,14 +1535,14 @@ export class Play {
 			!!end &&
 			(end.kind !== r.kind || end.depth !== r.depth || end.turn !== r.turn);
 		const line = mismatch
-			? `今の版では　記録と　ちがう　ところで　終わりました<br><small>（記録では　B${r.depth}で　${esc(r.cause)}。リプレイを残したあとで ゲームの中身が 変わった）</small>`
+			? `今の版では　記録と　ちがう　ところで　終わりました<br><small>（記録では　${floorShort(this.run.s.dungeon, r.depth)}で　${esc(r.cause)}。リプレイを残したあとで ゲームの中身が 変わった）</small>`
 			: rp.drift
 				? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
 				: end
 					? end.kind === "clear"
 						? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
-						: `${this.run.s.returning ? "帰り道の　" : ""}B${end.depth}で　${esc(end.cause)}`
-					: `記録は　ここまで<br><small>（B${r.depth}で　${esc(r.cause)}）</small>`;
+						: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}で　${esc(end.cause)}`
+					: `記録は　ここまで<br><small>（${floorShort(this.run.s.dungeon, r.depth)}で　${esc(r.cause)}）</small>`;
 		const card = el("div", { class: "replay-end" }, [
 			el("div", { class: "rp-end-title", text: "リプレイ　おわり" }),
 			el("div", { class: "rp-end-line", html: line }),
@@ -1559,15 +1568,17 @@ export class Play {
 	private async askStairs(): Promise<void> {
 		const run = this.run;
 		if (this.stopped || run.s.end || !this.onUsableStairs()) return;
-		const up = run.s.returning;
-		// トルネコ1と同じく 聞くだけ
-		const title = up ? "階段を　上りますか？" : "階段を　降りますか？";
+		// 行きは 板の 向き（下り・上り）、帰り道は その 逆
+		const verb = run.s.returning
+			? backVerb(run.s.dungeon)
+			: goVerb(run.s.dungeon);
+		const title = `階段を　${verb === "上る" ? "上り" : "降り"}ますか？`;
 		this.busy = true;
 		const v = await listWindow(
 			this.ctx,
 			title,
 			[
-				{ label: up ? "上る" : "降りる", value: "go" },
+				{ label: verb, value: "go" },
 				{ label: "そのまま", value: "stay" },
 			],
 			{ cls: "main-menu" },
@@ -1941,8 +1952,12 @@ export class Play {
 			el("div", {
 				class: "over1000-body",
 				text: falls
-					? "もう書けないので、下の階へ落ちます。。。"
-					: "もう書けませんが、これより下は　ありません。。。",
+					? isUpBoard(this.run.s.dungeon)
+						? "もう書けないので、上の階へ押し出されます。。。"
+						: "もう書けないので、下の階へ落ちます。。。"
+					: isUpBoard(this.run.s.dungeon)
+						? "もう書けませんが、これより上は　ありません。。。"
+						: "もう書けませんが、これより下は　ありません。。。",
 			}),
 		]);
 		this.ctx.ui.appendChild(post);
@@ -1977,13 +1992,18 @@ export class Play {
 				class: "chapter-label",
 				text: `${up ? "帰り道　" : ""}${zoneFor(run.s.dungeon, run.s.depth).name}`,
 			}),
-			el("div", { class: "chapter-title", text: `地下　${run.s.depth}階` }),
+			el("div", {
+				class: "chapter-title",
+				text: floorLong(run.s.dungeon, run.s.depth),
+			}),
 			el("div", {
 				class: "chapter-sub",
 				text: up
-					? "上り階段を　さがそう"
+					? `${isUpBoard(run.s.dungeon) ? "下り" : "上り"}階段を　さがそう`
 					: run.s.depth >= run.dungeon.floors
-						? "いちばん　底"
+						? isUpBoard(run.s.dungeon)
+							? "いちばん　上"
+							: "いちばん　底"
 						: "",
 			}),
 		]);
@@ -2047,7 +2067,7 @@ export class Play {
 			el("div", { class: "death-title", text: "キリコは　たおれた" }),
 			el("div", {
 				class: "death-cause",
-				text: `${end.depth === 0 ? "" : `${run.s.returning ? "帰り道の　" : ""}地下${end.depth}階で　`}${end.cause}`,
+				text: `${end.depth === 0 ? "" : `${run.s.returning ? "帰り道の　" : ""}${floorLong(run.s.dungeon, end.depth).replace("　", "")}で　`}${end.cause}`,
 			}),
 		]);
 		this.ctx.ui.appendChild(scene);

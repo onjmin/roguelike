@@ -16,6 +16,7 @@ import type { Screen } from "../engine/screen";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import { TILE } from "../engine/types";
 import { drawEquip, type EquipLook } from "./equip";
+import { isUpBoard } from "./floorName";
 import {
 	type Ambient,
 	type Theme,
@@ -243,13 +244,13 @@ export class FloorView {
 			});
 		const seenItem = new Set(s.seen);
 
-		// 階段（いちばん底は、原盤を拾うまで無い。帰り道は上り）
+		// 階段（いちばん奥は、持ち帰る品を拾うまで無い）。上りの 印は 下りの 板の 帰り道と、上りの 板の 行き
 		const si = f.stairs.y * l.w + f.stairs.x;
 		if (f.seen[si] && (s.depth < lastDepth || s.returning)) {
 			const sx = f.stairs.x * TILE - ox;
 			const sy = f.stairs.y * TILE - oy;
 			drawRefInCell(ctx, theme.stairs, sx, sy);
-			if (s.returning) {
+			if (s.returning !== isUpBoard(s.dungeon)) {
 				ctx.fillStyle = "rgba(120, 200, 255, 0.35)";
 				ctx.fillRect(sx, sy, TILE, TILE);
 				ctx.fillStyle = "#e8f6ff";

@@ -12,6 +12,7 @@ import { clearRun, hasRunSave, loadRun } from "../engine/save";
 import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { floorShort } from "./floorName";
 import { infoWindow, onTap } from "./list";
 import { esc, escBr } from "./records";
 import { titleQuote } from "./villageTalk";
@@ -23,7 +24,7 @@ export type BootChoice =
 /** 中断した 冒険の 小さな札（ダンジョン・階・レベル）。 */
 export const runSaveLabel = (s: RunState | null): string =>
 	s
-		? `${DUNGEON_NAMES[s.dungeon]?.short ?? ""}　B${s.depth}　Lv${s.player.lv}${s.returning ? "　帰り道" : ""}`
+		? `${DUNGEON_NAMES[s.dungeon]?.short ?? ""}　${floorShort(s.dungeon, s.depth)}　Lv${s.player.lv}${s.returning ? "　帰り道" : ""}`
 		: "中断した　冒険";
 
 export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>

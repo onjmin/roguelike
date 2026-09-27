@@ -309,7 +309,7 @@ const gacha = (r: Run): void => {
 			r.msg("この階の　敵が　みんな　メタルぷゆゆに　なった！", "good");
 			return;
 		default: {
-			// 5階 下へ 落ちる（いちばん下で 止まる）
+			// 5階 先へ（下りの 板は 下、上りの 板は 上。いちばん奥で 止まる）
 			const to = Math.min(r.dungeon.floors, r.s.depth + GACHA_FALL);
 			r.se("flee");
 			r.enterFloor(to, true);

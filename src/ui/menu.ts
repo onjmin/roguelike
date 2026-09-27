@@ -23,6 +23,7 @@ import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { explain } from "./explain";
+import { backVerb, goVerb, isUpBoard } from "./floorName";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
 	infoWindow,
@@ -501,7 +502,7 @@ const TRAP_DESC: Record<TrapKind, string> = {
 	arrow: "矢が　飛んでくる",
 	dart: "毒矢が　飛んでくる。ちからが　下がる",
 	warp: "この階の　どこかへ　飛ばされる",
-	pit: "下の階へ　落ちる",
+	pit: "次の　階へ　落ちる（上りの　板では　吹き上げられる）",
 };
 
 /** 拾えるか（持ち物の枠。矢は同じ種類の束にまとまるので、いっぱいでも拾える）。 */
@@ -539,13 +540,13 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 		if (stairs) {
 			const deepest = run.atBottom;
 			rows.push({
-				label: s.returning ? "上る" : "降りる",
+				label: s.returning ? backVerb(s.dungeon) : goVerb(s.dungeon),
 				desc: s.returning
 					? s.depth <= 1
 						? "地上へ　もどる"
 						: `${s.depth - 1}階へ`
 					: deepest
-						? "これより　下へは　行けない"
+						? `これより　${isUpBoard(s.dungeon) ? "上" : "下"}へは　行けない`
 						: `${s.depth + 1}階へ`,
 				value: "stairs",
 				disabled: deepest,
