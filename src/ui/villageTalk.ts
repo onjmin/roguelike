@@ -198,7 +198,7 @@ export const hasNews = (who: Speaker): boolean =>
 
 /**
  * 話しかけたときの ひとこと。新しい話が あれば それ（聞いたと 覚える）、無ければ 決まった ひとこと。
- * gate は おんJ民が 本編の口の前で 見張っているとき。
+ * gate は やきうが 本編の口の前で 見張っているとき。
  */
 export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string => {
 	const at = returnAt();

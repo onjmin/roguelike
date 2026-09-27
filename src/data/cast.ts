@@ -1,7 +1,7 @@
 // 村（保守村）に立つ人たち。名前・色は quotes.ts の SPEAKERS、歩行グラ・立ち絵は rpg の cast.ts と同じ
 // （シヨ・ゼロは rpg に いないので 歩行グラは public/sprites/ の 自作、立ち絵は 仮）。
 // 歩行グラは RPGEN 形式（16x16・2コマ×4方向）。立ち絵は public/portraits/ の透過 PNG（右向きに描いた絵。
-// 右に立つときは ui/message.ts が左右反転する）。おんJ民は 立ち絵が無いので 出さない（ダミーも出さない）。
+// 右に立つときは ui/message.ts が左右反転する）。やきうは 立ち絵が無いので 出さない（ダミーも出さない）。
 // キリコは しゃべらないので ここには入れない（歩行グラだけ KIRIKO_WALK）。
 // 声（voice）は 村の 会話の 読み上げ（設定の ボイス。engine/audio.ts）。無い人は 読み上げない。
 
@@ -38,7 +38,7 @@ const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
 
 /**
  * 読み上げの 声。ロゼは rpg と 同じ roze、シヨは dtm に 入っている shiyo（革命シヨ）。
- * おんJ民・フェリスは rpg でも 声なし。ゼロ（音源が まだ 無い）・地の文も 声なし。
+ * やきう・フェリスは rpg でも 声なし。ゼロ（音源が まだ 無い）・地の文も 声なし。
  */
 const VOICE: Partial<Record<Speaker, VoiceDef>> = {
 	roze: { model: "roze" },

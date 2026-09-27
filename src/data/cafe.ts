@@ -172,7 +172,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		title: "保守とは",
 		cast: ["zero", "nanj"],
 		lines: [
-			s("zero", "おんJ民さん。保守って、\nなんのために　するんですか？"),
+			s("zero", "やきうさん。保守って、\nなんのために　するんですか？"),
 			s("nanj", "なんのためて……。\n落としたく　ないからや"),
 			s("zero", "読む人が　いなくても、ですか？"),
 			s(
@@ -330,7 +330,7 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		who: "nanj",
 		lines: [
 			s("nanj", "安価ショットか。\n>>ワイ　一気で、ってことやな"),
-			n("おんJ民は　一気に　飲んだ。"),
+			n("やきうは　一気に　飲んだ。"),
 			s("nanj", "安価は　絶対や。\n……うまい"),
 		],
 	},
@@ -363,7 +363,7 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		who: "nanj",
 		lines: [
 			s("nanj", "燃料投下ショットは　あかん。\nスレが　燃える"),
-			n("おんJ民の　口から　火が　出た。"),
+			n("やきうの　口から　火が　出た。"),
 			s("nanj", "……送る　ほうも　送る　ほうや。\n草"),
 		],
 	},
@@ -422,7 +422,7 @@ export const TREAT_REACTIONS: Readonly<
 export const TREAT_TALKS: readonly CafeTalk[] = [
 	{
 		id: "nanj_bond1",
-		title: "おんJ民の　本名",
+		title: "やきうの　本名",
 		cast: ["nanj"],
 		treats: 3,
 		lines: [

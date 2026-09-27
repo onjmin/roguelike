@@ -607,7 +607,7 @@ export class Village {
 				(a) => a.x === x && a.y === y && a.def?.trigger === "talk" && a.visible,
 			) ?? null;
 		let talk = talkAt(tx, ty);
-		// 前に 人が 立って ふさいでいる 口（本編が 開くまでの おんJ民）を タップしたら、その人に 話しかける
+		// 前に 人が 立って ふさいでいる 口（本編が 開くまでの やきう）を タップしたら、その人に 話しかける
 		if (!talk && this.touchAt(tx, ty)) {
 			const guard = talkAt(tx, ty + 1);
 			if (guard && !guard.through) {

@@ -11,7 +11,8 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 	shiyo: { name: "シヨ", color: "#e8483f" },
 	feris: { name: "フェリス", color: "#ffd166" },
 	zero: { name: "ゼロ", color: "#5cc8f0" },
-	nanj: { name: "おんJ民", color: "#f5d142" },
+	// やきう（ワイ）。呼び名は みんな「やきう」、フェリスだけ「やきうくん」
+	nanj: { name: "やきう", color: "#f5d142" },
 };
 
 export type Quote = { who: Speaker; text: string };

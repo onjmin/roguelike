@@ -3,13 +3,13 @@
 // - 形（22×18）・知らない文字が 無い・イベントが 地図の中で 1マスに 1つ・踏むイベントは 通れるマス
 // - 起きる所（蓄音機の前）から、開いた口の すべてへ 歩いて行けて、人・看板・掲示板の すべてに
 //   となり（か カウンター越し）から 話しかけられる（口の中には 立たずに）
-// - 本編の口は 開くまで おんJ民が ふさぐ・もっとの口は 開くまで 板で ふさぐ
+// - 本編の口は 開くまで やきうが ふさぐ・もっとの口は 開くまで 板で ふさぐ
 // - 町の段ごとに 建物が ふえる・売る人は 台の うしろ（囲いの中へは 入れない）・絵は 同梱の Base.png だけ
 // - 仲間の ひとこと（ui/villageTalk.ts）：1回の 帰りに 1人 1つ 新しい話（「！」）、聞いたら 決まった ひとこと。
 //   ゼロの 帳簿。村の窓で 読む 文（村の 新しい文・口と 立て札・仲間の たまり）は 全角22字・2行まで
 //   （localStorage の かわりに 入れものを 置いて 試す）
 // - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
-//   （おんJ民が どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
+//   （やきうが どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
@@ -335,7 +335,7 @@ test("the village has an exit on each side (and one sign); nobody guards them", 
 		);
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
 		const [mx, my] = VILLAGE_SPOTS.exit;
-		ok(!(nx === mx && ny === my + 1), `${label(v)}: おんJ民 blocks the exit`);
+		ok(!(nx === mx && ny === my + 1), `${label(v)}: やきう blocks the exit`);
 	}
 });
 
@@ -530,7 +530,7 @@ test("each friend has one new line per return (「！」), then a short fixed li
 			);
 			ok(talkLine(who) === again, `${who} changes the fixed line`);
 		}
-		// 見張りの おんJ民は 見張りの ひとこと
+		// 見張りの やきうは 見張りの ひとこと
 		ok(
 			talkLine("nanj", { gate: true }) === VILLAGE_IDLE.gate,
 			"the gatekeeper does not guard",
@@ -1571,7 +1571,7 @@ export const runVillageTests = async (): Promise<TestResult[]> => {
 	return out;
 };
 
-test("the very first village: premise, おんJ民 points at the left mouth, the goal — once", async () => {
+test("the very first village: premise, やきう points at the left mouth, the goal — once", async () => {
 	const texts: [string, string][] = [];
 	for (const [k, v] of Object.entries(OPENING))
 		v.forEach((t, i) => {
@@ -1621,7 +1621,7 @@ const BARE: MobCtx = {
 	today: { m: 3, d: 3, w: 3 },
 };
 
-/** fakeStory の 記録で その窓が どう 見えるか（ぷゆゆの 声は おんJ民の 色、ほかの子は 色なし）。 */
+/** fakeStory の 記録で その窓が どう 見えるか（ぷゆゆの 声は やきうの 色、ほかの子は 色なし）。 */
 const logOf = (id: MobId, l: MobLine): string => {
 	if (l.who === null) return `narrate: ${l.text}`;
 	const mob: MobId | null =
@@ -1804,7 +1804,7 @@ test("ぷゆゆ・マイナーズ: small moves are few, come before the mob's ow
 	ok(n <= 4, `${n} small moves (4 at most)`);
 });
 
-test("ぷゆゆ: there from the first visit with the おんJ民 name bar, not a candidate, answers the last run once", async () => {
+test("ぷゆゆ: there from the first visit with the やきう name bar, not a candidate, answers the last run once", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
 		putTown({ stage: 0 });
