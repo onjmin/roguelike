@@ -102,15 +102,23 @@ const abandonRun = (): void => {
 	clearRun();
 };
 
+/** 出口から 村へ 1歩 もどる（出口の イベントの 向き → Story.move の 1文字）。 */
+const stepOf: Record<string, string> = {
+	down: "d",
+	up: "u",
+	left: "l",
+	right: "r",
+};
+
 /** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
-	(ctx: Ctx): Script =>
+	(ctx: Ctx, step = "d"): Script =>
 	async (s) => {
 		// 行き先（はじめは 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる）
 		const last = loadProgress().last;
 		let d: DungeonId =
 			last && loadProgress().unlocked.includes(last) ? last : "shallow";
-		const back = () => s.move("player", "d");
+		const back = () => s.move("player", step);
 		// 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）
 		if (hasRunSave()) {
 			await s.narrate(`${VILLAGE_MSG.suspended}\n${runSaveLabel(loadRun())}`);
@@ -286,7 +294,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: mouthScript(ctx),
+			run: mouthScript(ctx, stepOf[p.dir ?? "down"]),
 		};
 	if (p.exit) return sign(p.id, p.x, p.y, exitSignScript);
 	if (p.mob) {

@@ -52,7 +52,9 @@ import {
 	ZERO_VOICELESS,
 } from "../data/town";
 import {
+	exitFor,
 	lineupSpots,
+	VILLAGE_EXITS,
 	VILLAGE_H,
 	VILLAGE_SPOTS,
 	VILLAGE_W,
@@ -304,11 +306,19 @@ test("tall things (boards, signs) cannot be read from behind, and each can be re
 	ok(tall > 0, "no tall thing in the village has a back");
 });
 
-test("the village has one exit (and one sign); nobody guards it", () => {
+test("the village has an exit on each side (and one sign); nobody guards them", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		const exits = s.places.filter((p) => p.trigger === "touch" && p.exit);
-		ok(exits.length === 1, `${label(v)}: ${exits.length} exits`);
+		ok(exits.length === 4, `${label(v)}: ${exits.length} exits`);
+		for (const e of VILLAGE_EXITS) {
+			const [x, y] = e.cell;
+			ok(
+				x === 0 || y === 0 || x === VILLAGE_W - 1 || y === VILLAGE_H - 1,
+				`${label(v)}: the ${e.side} exit is not at the edge`,
+			);
+			ok(s.reachable(x, y), `${label(v)}: cannot walk to the ${e.side} exit`);
+		}
 		ok(
 			s.places.filter((p) => p.exit && p.trigger === "talk").length === 1,
 			`${label(v)}: not one exit sign`,
@@ -716,8 +726,9 @@ test("the friends line up beside the exit Kiriko comes back through", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		for (const d of v.unlocked) {
-			const [mx, my] = VILLAGE_SPOTS.exit;
-			const spots = lineupSpots(v, 5);
+			const exit = exitFor(d);
+			const [mx, my] = exit.cell;
+			const spots = lineupSpots(v, 5, exit);
 			ok(spots.length === 5, `${label(v)} ${d}: ${spots.length} spots`);
 			ok(
 				new Set(spots.map(([x, y]) => `${x},${y}`)).size === spots.length,
@@ -728,13 +739,21 @@ test("the friends line up beside the exit Kiriko comes back through", () => {
 					s.canEnter(x, y),
 					`${label(v)} ${d}: (${x},${y}) is a wall or taken`,
 				);
+				const [ix, iy] =
+					exit.inward === "down"
+						? [0, 1]
+						: exit.inward === "up"
+							? [0, -1]
+							: exit.inward === "right"
+								? [1, 0]
+								: [-1, 0];
 				ok(
-					!(x === mx && y === my + 1),
+					!(x === mx + ix && y === my + iy),
 					`${label(v)} ${d}: a friend blocks the way out`,
 				);
 				ok(
-					y === my + 1 && Math.abs(x - mx) <= 3,
-					`${label(v)} ${d}: (${x},${y}) is far from the mouth`,
+					Math.abs(x - mx) + Math.abs(y - my) <= 7,
+					`${label(v)} ${d}: (${x},${y}) is far from the exit`,
 				);
 				ok(
 					!s.places.some(
@@ -1698,7 +1717,7 @@ test("ぷゆゆ: there from the first visit with the おんJ民 name bar, not a 
 		const chat = (k: string) => d.chats.find((c) => c.key === k)?.lines ?? [];
 		const place = villagePlaces(villageView()).find((p) => p.mob === "puyu");
 		ok(
-			place?.x === 12 && place.y === 18 && place.wander === true,
+			place?.x === 17 && place.y === 23 && place.wander === true,
 			`stage 0: ${JSON.stringify(place)}`,
 		);
 		ok(hasMobNews("puyu"), "no 「！」 on the very first visit");
@@ -1852,7 +1871,7 @@ test("ぷゆゆ: one new talk per return in array order, mob pairs only when bot
 			last = at[0] ?? last;
 		}
 		ok(
-			logs.some((l) => l.includes("goto mob_puyu 12,18")),
+			logs.some((l) => l.includes("goto mob_puyu 17,23")),
 			"ぷゆゆ never toddled home (zukan)",
 		);
 		ok(!hasMobNews("puyu"), "「！」 after every talk was heard");

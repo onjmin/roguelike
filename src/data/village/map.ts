@@ -49,6 +49,7 @@ import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../cast";
 import { MOB_IDS, MOBS, type MobId } from "../mobs";
 import type { Speaker } from "../quotes";
+import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
 	base,
 	C_DIRT,
@@ -72,15 +73,15 @@ import {
 	TURF,
 } from "./tiles";
 
-export const VILLAGE_W = 30;
-export const VILLAGE_H = 24;
+export const VILLAGE_W = 40;
+export const VILLAGE_H = 32;
 
 /**
  * 町（22×18 の 区画。下の 図の 座標）を 地図の どこに 置くか。まわりは 森で、西の 空き地・東の 畑・
  * 南の 池へ 抜けられる（OUTSKIRTS）。VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標。
  */
-const OX = 4;
-const OY = 2;
+const OX = 9;
+const OY = 7;
 const TOWN_W = 22;
 const TOWN_H = 18;
 
@@ -95,35 +96,35 @@ export type Cell = readonly [x: number, y: number];
 
 /** 村の 決まった場所。 */
 export const VILLAGE_SPOTS = {
-	/** 村の 出口（崖の 切れ目。踏むと 全体マップで 行き先の 植民地を 選ぶ）。 */
-	exit: [22, 5] as Cell,
+	/** 北の 出口（崖の 切れ目を 抜けた 丘の 先。地図の 上はし）。はじめの 場面・開いた 知らせで 見る 所。 */
+	exit: [27, 0] as Cell,
 	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
-	exitSign: [23, 7] as Cell,
+	exitSign: [28, 12] as Cell,
 	/** おんJ 本館の 扉（見るだけ）。 */
-	hallDoor: [15, 5] as Cell,
+	hallDoor: [20, 10] as Cell,
 	/** 起きたとき・倒れて もどったときに 立つ所（蓄音機の前）。 */
-	boot: [14, 17] as Cell,
-	phono: [14, 16] as Cell,
+	boot: [19, 22] as Cell,
+	phono: [19, 21] as Cell,
 	/** まとめ掲示板（2マス）。 */
 	board: [
-		[10, 16],
-		[11, 16],
+		[15, 21],
+		[16, 21],
 	] as readonly Cell[],
-	zero: [12, 16] as Cell,
-	feris: [20, 17] as Cell,
+	zero: [17, 21] as Cell,
+	feris: [25, 22] as Cell,
 	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
-	roze: (stage: number): Cell => (stage === 0 ? [8, 13] : [8, 12]),
+	roze: (stage: number): Cell => (stage === 0 ? [13, 18] : [13, 17]),
 	/** シヨ（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
-	shiyo: (stage: number): Cell => (stage >= 4 ? [22, 12] : [21, 7]),
+	shiyo: (stage: number): Cell => (stage >= 4 ? [27, 17] : [26, 12]),
 	/** おんJ民（小屋の前で 大工）。 */
-	nanj: (_v: VillageView): Cell => [16, 13],
+	nanj: (_v: VillageView): Cell => [21, 18],
 	/** 小屋の扉（段3から。見るだけ）。 */
-	hutDoor: [18, 13] as Cell,
+	hutDoor: [23, 18] as Cell,
 	/** 段7 の 野次馬（うろうろ する）。 */
 	yaji: [
-		[9, 17],
-		[17, 18],
-		[22, 15],
+		[14, 22],
+		[22, 23],
+		[27, 20],
 	] as readonly Cell[],
 	/**
 	 * 町が その段に なったとき カメラを 向ける 所（建った・変わった 建物）。
@@ -131,12 +132,12 @@ export const VILLAGE_SPOTS = {
 	 */
 	growth: (stage: number): Cell =>
 		stage === 3
-			? [17, 11]
+			? [22, 16]
 			: stage === 4 || stage === 6
-				? [22, 10]
+				? [27, 15]
 				: stage >= 7
-					? [10, 12]
-					: [9, 11],
+					? [15, 17]
+					: [14, 16],
 } as const;
 
 /** 地図の形に使う 町の段（0〜7 に 丸める）。 */
@@ -266,32 +267,49 @@ const forestAt = (x: number, y: number): string =>
 
 /**
  * 村の まわりに 置く 物（地図の 座標 x, y から 右へ 字の 並び）。字は data/village/tiles.ts の OUTSKIRTS。
- * 西の 空き地（切り株・丸太・花）、東の 畑（かかし・畝・麦）、南の 池（岩と 草の へり）。
+ * 北の 丘（崖の 切れ目の 上）、西の 空き地（切り株・丸太・花）、東の 畑（かかし・畝・麦）、南の 池。
+ * どこからも 地図の はしへ 道が 抜けて、はしが 村の 出口（VILLAGE_EXITS）。
  */
 const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
-	[22, 0, "."],
-	[22, 1, "."],
-	[0, 12, "bb,,"],
-	[0, 13, "b=,;"],
-	[0, 14, "b,.."],
-	[0, 15, "b,v,"],
-	[0, 16, "b_,,"],
-	[0, 17, "b;*,"],
-	[0, 18, "bb,,"],
-	[0, 19, "bb,,"],
-	[26, 6, ",,bb"],
-	[26, 7, ",;,b"],
-	[26, 8, ",,Sb"],
-	[26, 9, "GGGb"],
-	[26, 10, "GGGb"],
-	[26, 11, "WWWb"],
-	[26, 12, ",,,b"],
-	[26, 13, "*,;b"],
-	[26, 14, "..,b"],
-	[26, 15, ",,bb"],
-	[4, 20, "b,,%,,~~~,;,;,,,,*,,,bb"],
-	[4, 21, "b,B,~~~~~~~,,&,,=,;,,bb"],
-	[4, 22, "bb,,;,~~~~,%,,,,,,,,bbb"],
+	// 北の 丘
+	[27, 0, "."],
+	[26, 1, ",.,"],
+	[22, 2, ",,*,,.;,,"],
+	[20, 3, ",,,,Y,,.,,*,"],
+	[19, 4, "b,*,,,,,.,,,,b"],
+	[20, 5, ",,,,=,,.,,;,"],
+	[21, 6, ",,,,,,.,,,"],
+	// 西の 空き地
+	[2, 15, ",,,,,,"],
+	[1, 16, ",=,,;,,"],
+	[1, 17, ",,_,,,v,"],
+	[1, 18, ";,,,*,,,"],
+	[0, 19, "........."],
+	[1, 20, ",,v,,%,,"],
+	[1, 21, ",*,,,,,,"],
+	[2, 22, ",,B,,;"],
+	[3, 23, ",,,,"],
+	// 東の 畑
+	[31, 11, ",,,,b"],
+	[31, 12, ",,,,,,,b"],
+	[31, 13, ",GGGG,S,"],
+	[31, 14, ",GGGG,,,"],
+	[31, 15, ",WWWW,;,"],
+	[31, 16, ",,,,,,,,"],
+	[31, 17, ",GGG,,*,"],
+	[31, 18, ",WWW,,,,"],
+	[31, 19, "........."],
+	[31, 20, ",,;,,,,b"],
+	[31, 21, "*,,,,,bb"],
+	[32, 22, ",,,bb"],
+	// 南の 池
+	[10, 25, ",,%,,,,,,,.,,,;,,,*,,"],
+	[10, 26, ",~~~~~,,,,.,,,,,~~~,,"],
+	[10, 27, "~~~~~~~,,;.,,&,~~~~~,"],
+	[10, 28, ",~~~~~~,,,.,,,,,~~~,,"],
+	[10, 29, ",,~~~,,B,,.,,=,,,,,,,"],
+	[11, 30, ",,,,,,,,,.,,,,,,,"],
+	[20, 31, "."],
 ];
 
 /**
@@ -300,32 +318,64 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
  */
 const EDGE_CELLS: readonly [number, number, string][] = [
 	// 西：町の 通りと 広場から 空き地へ
-	[4, 13, ","],
-	[4, 14, "."],
-	[4, 15, ","],
-	[4, 16, ","],
-	[4, 8, "T"],
-	[4, 10, "b"],
-	[4, 18, "T"],
+	[9, 18, ","],
+	[9, 19, "."],
+	[9, 20, ","],
+	[9, 21, ","],
+	[9, 13, "T"],
+	[9, 15, "b"],
+	[9, 23, "T"],
 	// 東：崖下の 道・町の 通りから 畑へ
-	[25, 6, "."],
-	[25, 7, ","],
-	[25, 8, ","],
-	[25, 12, ","],
-	[25, 13, ","],
-	[25, 14, "."],
-	[25, 10, "T"],
-	[25, 17, "^"],
+	[30, 11, "."],
+	[30, 12, ","],
+	[30, 13, ","],
+	[30, 17, ","],
+	[30, 18, ","],
+	[30, 19, "."],
+	[30, 20, ","],
+	[30, 15, "T"],
+	[30, 22, "^"],
 	// 南：広場の 下から 池へ
-	[13, 19, ","],
-	[14, 19, ","],
-	[15, 19, ","],
-	[16, 19, ","],
-	[6, 19, "T"],
-	[9, 19, "^"],
-	[19, 19, "T"],
-	[22, 19, "b"],
+	[18, 24, ","],
+	[19, 24, ","],
+	[20, 24, "."],
+	[21, 24, ","],
+	[11, 24, "T"],
+	[14, 24, "^"],
+	[24, 24, "T"],
+	[27, 24, "b"],
 ];
+
+/** 村の 出口（地図の 四方の はし。踏むと 全体マップ）。inward は 村へ もどる 向き。 */
+export type VillageExit = {
+	side: "n" | "s" | "w" | "e";
+	cell: Cell;
+	inward: Dir;
+	/** Story.move の 1歩（村へ 1歩 もどる）。 */
+	step: "u" | "d" | "l" | "r";
+};
+
+export const VILLAGE_EXITS: readonly VillageExit[] = [
+	{ side: "n", cell: [27, 0], inward: "down", step: "d" },
+	{ side: "w", cell: [0, 19], inward: "right", step: "r" },
+	{ side: "e", cell: [39, 19], inward: "left", step: "l" },
+	{ side: "s", cell: [20, 31], inward: "up", step: "u" },
+];
+
+/** その 植民地から 帰ってくる 出口（全体マップで 村から 見た 植民地の 方角）。 */
+export const exitFor = (d: DungeonId): VillageExit => {
+	const r = COLONY_SPOTS[d].route;
+	const [x, y] = r[r.length - 1];
+	const dx = x - VILLAGE_PT[0];
+	const dy = y - VILLAGE_PT[1];
+	const side =
+		Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "w" : "e") : dy < 0 ? "n" : "s";
+	return VILLAGE_EXITS.find((e) => e.side === side) ?? VILLAGE_EXITS[0];
+};
+
+/** 出口の セルか（そこの 出口）。 */
+export const exitAt = (x: number, y: number): VillageExit | undefined =>
+	VILLAGE_EXITS.find((e) => e.cell[0] === x && e.cell[1] === y);
 
 /** 町の 区画（22×18）。区画の 中の 座標は 上の 図の とおり。 */
 const townRows = (v: VillageView): string[] => {
@@ -347,7 +397,7 @@ const townRows = (v: VillageView): string[] => {
 	return rows;
 };
 
-/** 村の地図（24行 × 30文字）。森の 中に 町の 区画を 置き、まわりへ 抜ける 道を 開ける。 */
+/** 村の地図（32行 × 40文字）。森の 中に 町の 区画を 置き、まわりへ 抜ける 道を 開ける。 */
 export const villageRows = (v: VillageView): string[] => {
 	const town = townRows(v);
 	const rows: string[] = [];
@@ -429,9 +479,16 @@ const friend = (who: Speaker, [x, y]: Cell, wander = false): VillagePlace => ({
 export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	const stage = layoutStage(v);
 	const out: VillagePlace[] = [];
-	// 村の 出口（1つ。出ると 全体マップで 行き先を 選ぶ）と その 立て札
-	const [ex, ey] = VILLAGE_SPOTS.exit;
-	out.push({ id: "exit", x: ex, y: ey, trigger: "touch", exit: true });
+	// 村の 出口（四方の はし。出ると 全体マップで 行き先を 選ぶ）と その 立て札
+	for (const e of VILLAGE_EXITS)
+		out.push({
+			id: e.side === "n" ? "exit" : `exit_${e.side}`,
+			x: e.cell[0],
+			y: e.cell[1],
+			trigger: "touch",
+			exit: true,
+			dir: e.inward,
+		});
 	const [sx, sy] = VILLAGE_SPOTS.exitSign;
 	out.push({ id: "exit_sign", x: sx, y: sy, trigger: "talk", exit: true });
 	VILLAGE_SPOTS.board.forEach(([x, y], i) => {
@@ -494,20 +551,30 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
  * 出口の 1つ下（キリコが 出てくる マス）の 左右に 近い順で、崖の下の道に 並ぶ（たりなければ その下の段）。
  * 通れない マス・人や 置物の いる マス・踏むと もぐる 口は とばす。
  */
-export const lineupSpots = (v: VillageView, n: number): Cell[] => {
+export const lineupSpots = (
+	v: VillageView,
+	n: number,
+	exit: VillageExit = VILLAGE_EXITS[0],
+): Cell[] => {
 	const rows = villageRows(v).map((r) => [...r]);
 	const tiles = villagePalette(v);
 	const places = villagePlaces(v);
-	const [mx, my] = VILLAGE_SPOTS.exit;
+	const [mx, my] = exit.cell;
+	const ix = exit.inward === "right" ? 1 : exit.inward === "left" ? -1 : 0;
+	const iy = exit.inward === "down" ? 1 : exit.inward === "up" ? -1 : 0;
 	const free = (x: number, y: number): boolean =>
 		!!tiles[rows[y]?.[x] ?? ""]?.passable &&
 		!places.some(
 			(p) => p.x === x && p.y === y && (p.sprite || p.trigger === "touch"),
 		);
 	const out: Cell[] = [];
-	for (const y of [my + 1, my + 2])
+	// 出口から 村へ 1〜3歩 入った 所の、横（出口に 向かって 左右）に 近い順
+	for (const d of [1, 2, 3])
 		for (let k = 1; k < VILLAGE_W && out.length < n; k++)
-			for (const x of [mx - k, mx + k])
+			for (const side of [-k, k]) {
+				const x = mx + ix * d + iy * side;
+				const y = my + iy * d + ix * side;
 				if (out.length < n && free(x, y)) out.push([x, y]);
+			}
 	return out;
 };

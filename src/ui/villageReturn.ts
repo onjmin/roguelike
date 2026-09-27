@@ -24,8 +24,10 @@ import {
 } from "../data/story";
 import { RETURN_PAGES, STAGE_NAMES, STAGE_UP, TOWN_MSG } from "../data/town";
 import {
+	exitAt,
 	lineupSpots,
 	VILLAGE_SPOTS,
+	type VillageExit,
 	type VillageView,
 } from "../data/village/map";
 import type { Story } from "../engine/defs";
@@ -37,6 +39,7 @@ import {
 	settleReturn,
 	type Town,
 } from "../engine/save";
+import type { Dir } from "../engine/types";
 import { fill } from "./villageTalk";
 
 /**
@@ -80,10 +83,16 @@ const castOf = (pages: readonly StoryPage[]): Speaker[] => [
 	...new Set(pages.flatMap((p) => (p.who ? [p.who] : []))),
 ];
 
-/** キリコが 村の 出口に 立っているか（帰ってきたところ）。 */
-const inMouth = (s: Story, _d: DungeonId): boolean => {
-	const [mx, my] = VILLAGE_SPOTS.exit;
-	return s.state.x === mx && s.state.y === my;
+/** キリコが 立っている 村の 出口（帰ってきたところ。出口で なければ undefined）。 */
+const inMouth = (s: Story, _d: DungeonId): VillageExit | undefined =>
+	exitAt(s.state.x, s.state.y);
+
+/** 出口の ほうを 向く（村へ もどる 向きの 逆）。 */
+const toward: Record<Dir, Dir> = {
+	up: "down",
+	down: "up",
+	left: "right",
+	right: "left",
 };
 
 /**
@@ -91,13 +100,14 @@ const inMouth = (s: Story, _d: DungeonId): boolean => {
  * v は いま 描いている 村（並ぶ マスを 決める）。
  */
 export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
-	if (!inMouth(s, a.dungeon)) return;
+	const exit = inMouth(s, a.dungeon);
+	if (!exit) return;
 	const cast = castOf(pagesFor(a));
-	const spots = lineupSpots(v, cast.length);
+	const spots = lineupSpots(v, cast.length, exit);
 	s.hide("player");
 	cast.forEach((who, i) => {
 		const c = spots[i];
-		if (c) s.place(who, c[0], c[1], "up");
+		if (c) s.place(who, c[0], c[1], toward[exit.inward]);
 	});
 };
 
@@ -106,11 +116,12 @@ export const returnScene = async (
 	s: Story,
 	a: ReturnArrival,
 ): Promise<void> => {
-	if (!inMouth(s, a.dungeon)) return;
+	const exit = inMouth(s, a.dungeon);
+	if (!exit) return;
 	const pages = pagesFor(a);
 	s.se("stairs");
 	s.show("player");
-	await s.move("player", "d");
+	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const p of pages)
 		await (p.who ? s.say(p.who, p.text) : s.narrate(p.text));

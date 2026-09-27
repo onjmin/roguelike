@@ -17,7 +17,7 @@ import type { Dir8 } from "../core/geom";
 import type { DungeonId } from "../core/types";
 import { CAST, KIRIKO_WALK } from "../data/cast";
 import type { Speaker } from "../data/quotes";
-import { VILLAGE_SPOTS } from "../data/village/map";
+import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
 import { preloadImages } from "../engine/assets";
 import type {
 	EventDef,
@@ -187,10 +187,10 @@ export class Village {
 		// 起きたとき・倒れて もどったときは 蓄音機の前（トルネコが 家で 目をさますように）
 		const boot: Spot = { x: bx, y: by, dir: "up" };
 		if (!a) return boot;
-		// 村の 出口から 入ってくる（onEnter で 1歩 下へ）
+		// 植民地の 方角の 出口から 入ってくる（onEnter で 1歩 村へ）
 		if (a.kind === "clear" || a.kind === "escape") {
-			const [mx, my] = VILLAGE_SPOTS.exit;
-			return { x: mx, y: my, dir: "down" };
+			const e = exitFor(a.dungeon);
+			return { x: e.cell[0], y: e.cell[1], dir: e.inward };
 		}
 		if (a.kind === "replay") return this.lastSpot ?? boot;
 		return boot;
