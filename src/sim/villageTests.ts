@@ -1698,7 +1698,7 @@ test("ぷゆゆ: there from the first visit with the おんJ民 name bar, not a 
 		const chat = (k: string) => d.chats.find((c) => c.key === k)?.lines ?? [];
 		const place = villagePlaces(villageView()).find((p) => p.mob === "puyu");
 		ok(
-			place?.x === 8 && place.y === 16 && place.wander === true,
+			place?.x === 12 && place.y === 18 && place.wander === true,
 			`stage 0: ${JSON.stringify(place)}`,
 		);
 		ok(hasMobNews("puyu"), "no 「！」 on the very first visit");
@@ -1852,7 +1852,7 @@ test("ぷゆゆ: one new talk per return in array order, mob pairs only when bot
 			last = at[0] ?? last;
 		}
 		ok(
-			logs.some((l) => l.includes("goto mob_puyu 8,16")),
+			logs.some((l) => l.includes("goto mob_puyu 12,18")),
 			"ぷゆゆ never toddled home (zukan)",
 		);
 		ok(!hasMobNews("puyu"), "「！」 after every talk was heard");

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8" />
+		<title>タイル 早見（開発用）</title>
+		<style>
+			body { margin: 0; background: #333; color: #ddd; font: 12px sans-serif; }
+			canvas { image-rendering: pixelated; display: block; }
+		</style>
+	</head>
+	<body>
+		<canvas id="c"></canvas>
+		<script type="module">
+			// /dev/tiles.html?from=0&rows=40 … Base.png の from 行目から rows 行ぶんを 行番号つきで 3倍に
+			const q = new URLSearchParams(location.search);
+			const from = Number(q.get("from") ?? 0);
+			const rows = Number(q.get("rows") ?? 40);
+			const img = new Image();
+			img.src = "/assets/rpg-reze/Base.png";
+			await img.decode();
+			const s = 3;
+			const c = document.getElementById("c");
+			c.width = (img.width + 24) * s;
+			c.height = rows * 16 * s;
+			const g = c.getContext("2d");
+			g.imageSmoothingEnabled = false;
+			g.fillStyle = "#555";
+			g.fillRect(0, 0, c.width, c.height);
+			g.drawImage(img, 0, from * 16, img.width, rows * 16, 24 * s, 0, img.width * s, rows * 16 * s);
+			g.fillStyle = "#fff";
+			g.font = "20px monospace";
+			for (let r = 0; r < rows; r++) g.fillText(String(from + r), 2, r * 16 * s + 30);
+			g.strokeStyle = "rgba(255,255,255,0.15)";
+			for (let r = 0; r <= rows; r++) { g.beginPath(); g.moveTo(24 * s, r * 16 * s); g.lineTo(c.width, r * 16 * s); g.stroke(); }
+			for (let x = 0; x <= img.width / 16; x++) { g.beginPath(); g.moveTo((24 + x * 16) * s, 0); g.lineTo((24 + x * 16) * s, c.height); g.stroke(); }
+			document.title = `${img.width}x${img.height}`;
+		</script>
+	</body>
+</html>

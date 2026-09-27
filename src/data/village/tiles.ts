@@ -204,3 +204,22 @@ const storeTiles = (
 });
 export const SHED = storeTiles(1, 73, "#9a7a4a");
 export const STOREHOUSE = storeTiles(4, 67, "#8a8a8a");
+
+// ───────────────── 村の まわり（森・西の 空き地・東の 畑・南の 池） ─────────────────
+//   ^  紅葉の 木（2マス幅）   ;  草むら（通れる）   %  小石   B  大岩   =  切り株   _  丸太（2マス幅）
+//   ~  池の 水（field.png の 海）   G  畑の 畝   S  かかし   W  麦
+const WATER = "pub:assets/rpg-reze/field.png#16,96,16,16";
+const C_WATER = "#2a5aa8";
+
+export const OUTSKIRTS: Record<string, TileDef> = {
+	"^": big(C_GRASS, TURF, base(4, 6, 2, 2)),
+	";": floor(C_GRASS, TURF, base(0, 11)),
+	"%": solid(C_GRASS, TURF, base(0, 13)),
+	B: solid(C_GRASS, TURF, base(1, 13)),
+	"=": solid(C_GRASS, TURF, base(5, 10)),
+	_: big(C_GRASS, TURF, base(6, 10, 2, 1)),
+	"~": solid(C_WATER, WATER),
+	G: solid(C_DIRT, base(1, 27)),
+	S: big(C_GRASS, TURF, base(3, 26)),
+	W: solid(C_GRASS, TURF, base(4, 27)),
+};

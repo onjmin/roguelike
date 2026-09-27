@@ -178,7 +178,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ぷゆゆ",
 		sprite: PUYU_WALK,
 		from: 0,
-		spot: [8, 16],
+		spot: [12, 18],
 		dir: "down",
 		wander: true,
 		voice: "nanj",
@@ -197,7 +197,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			],
 			main: [
 				b(
-					{ k: "walk", to: [9, 14], face: "right" },
+					{ k: "walk", to: [13, 16], face: "right" },
 					n("ぷゆゆが　蓄音機に　むかって、\n「ぷゆうゆ」と　よびかけた。"),
 				),
 				n("針の　むこうで、ざらざら……\n「あー、あー」"),
@@ -369,7 +369,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					c("feris", "いるよ〜。「よちよち　あるく」\nって　書いといた〜"),
 					m("よちよち　ちてないゆ🥺"),
 					b(
-						{ k: "walk", to: [8, 16] },
+						{ k: "walk", to: [12, 18] },
 						n("ぷゆゆは　よちよち　帰っていった。"),
 					),
 				],
@@ -601,7 +601,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "にぃちぇ",
 		sprite: "pub:sprites/minors_nichie.png",
 		from: 1,
-		spot: [13, 13],
+		spot: [17, 15],
 		dir: "left",
 		meet: [
 			m("あ！今日　日曜日だ……"),
@@ -704,7 +704,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "パン松",
 		sprite: "pub:sprites/minors_panmatsu.png",
 		from: 2,
-		spot: [8, 11],
+		spot: [12, 13],
 		dir: "left",
 		meet: [
 			m("保守村　侵略！　植民地化！"),
@@ -797,7 +797,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ンゴ姉",
 		sprite: "pub:sprites/minors_ngoane.png",
 		from: 3,
-		spot: [19, 15],
+		spot: [23, 17],
 		dir: "left",
 		meet: [
 			m("あら、フェリスちゃんの\nおともだち……！"),
@@ -887,7 +887,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "おんすちゃん",
 		sprite: "pub:sprites/minors_onsu.png",
 		from: 4,
-		spot: [20, 5],
+		spot: [24, 7],
 		dir: "left",
 		meet: [
 			n("村の　すみっこで、だれかが\nハンカチを　かみしめている。"),
@@ -989,7 +989,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "おんちゃん",
 		sprite: "sa:oLrlUq",
 		from: 5,
-		spot: [12, 15],
+		spot: [16, 17],
 		dir: "down",
 		noVote: true,
 		meet: [
@@ -1095,7 +1095,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ヤヤポジ",
 		sprite: "pub:sprites/minors_yayapoji.png",
 		from: 6,
-		spot: [2, 15],
+		spot: [6, 17],
 		dir: "right",
 		meet: [
 			m("引き分けに　なりそうな\n試合が　好きなんだ"),
@@ -1175,7 +1175,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/rino.png",
 		sprite: "pub:sprites/rino.png",
 		from: 7,
-		spot: [9, 9],
+		spot: [13, 11],
 		dir: "right",
 		color: "#bdb76b",
 		noVote: true,
@@ -1332,7 +1332,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/aru.png",
 		sprite: "pub:sprites/aru.png",
 		from: 7,
-		spot: [3, 13],
+		spot: [7, 15],
 		dir: "down",
 		color: "#8fd694",
 		noVote: true,
