@@ -95,8 +95,8 @@ export const itemInfo = (run: Run, it: Item): string => {
 	const out: string[] = [
 		`<p><b class="tag">${esc(CAT_NAME[d.cat])}</b>${esc(known ? d.desc : `まだ　正体が　わからない。${HOW_TO_ID[d.cat] ?? ""}`)}</p>`,
 	];
-	// 名前の 元ネタ（正体が わかっている ときだけ。未識別で 出すと 識別に なってしまう）
-	if (known) out.push(`<p class="hint">元ネタ：${esc(d.origin)}</p>`);
+	// ひとこと（正体が わかっている ときだけ。未識別で 出すと 識別に なってしまう）
+	if (known) out.push(`<p class="hint">${esc(d.flavor)}</p>`);
 	const rows: string[] = [];
 	const g = gearPower(it);
 	if (g) {

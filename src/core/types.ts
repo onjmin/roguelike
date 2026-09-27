@@ -50,8 +50,8 @@ export type ItemDef = {
 	name: string;
 	/** 説明（全角スペースで区切る。一覧の2行目に出す）。 */
 	desc: string;
-	/** 名前の 元ネタ（2ch・おんJの ことばの 由来を 1文で。「せつめい」の窓に 出す）。 */
-	origin: string;
+	/** ひとこと（皮肉の きいた 1文。「せつめい」の窓に 出す）。 */
+	flavor: string;
 	/** 武器・矢の強さ。 */
 	atk?: number;
 	/** 盾の強さ。 */

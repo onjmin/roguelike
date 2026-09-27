@@ -20,7 +20,7 @@ add({
 	name: "ぬるぽ棒",
 	atk: 1,
 	desc: "木を　けずった　ぬるい棒",
-	origin: "2chで「ぬるぽ」と　書くと「ガッ」と　たたかれる　お約束から",
+	flavor: "ぬるぽと　書けば　ガッと　返る。ネットで　いちばん　たしかな　因果",
 });
 add({
 	id: "copper",
@@ -29,7 +29,7 @@ add({
 	name: "名無しの剣",
 	atk: 3,
 	desc: "ありふれた　剣。名無しさんの　標準装備",
-	origin: "2chで　名前を　書かずに　書きこむと　出る「名無しさん」から",
+	flavor: "だれもが　持っていて、だれも　おぼえていない",
 });
 add({
 	id: "bat",
@@ -38,7 +38,8 @@ add({
 	name: "ガッのバット",
 	atk: 4,
 	desc: "よく　しなる　バット。ぬるぽに　ガッ",
-	origin: "「ぬるぽ」に「ガッ」と　返して　なぐる　お約束の　音から",
+	flavor:
+		"ぬるぽが　なければ　ただの　バット。生きがいを　他人に　あずけている",
 });
 add({
 	id: "wyrmbane",
@@ -47,8 +48,7 @@ add({
 	name: "ワイ断ちの剣",
 	atk: 5,
 	desc: "竜（ワイ　バーン）には　ダメージが　2倍",
-	origin:
-		"なんJ・おんJの　一人称「ワイ」と　竜の「ワイバーン」を　かけた　しゃれ",
+	flavor: "竜も　ワイも　ぶった切る。自分語りの　多い　スレに　1本　ほしい",
 });
 add({
 	id: "steel",
@@ -57,7 +57,7 @@ add({
 	name: "コテハンの剣",
 	atk: 6,
 	desc: "よく　切れる　剣。名無しより　一段上",
-	origin: "名前を　つけて　書きこむ　常連「コテハン（固定ハンドル）」から",
+	flavor: "名前を　出した　ぶん　強い。そして　たたかれやすい",
 });
 add({
 	id: "starsword",
@@ -66,8 +66,7 @@ add({
 	name: "降臨の剣",
 	atk: 7,
 	desc: "空から　降臨した　鉄の剣",
-	origin:
-		"うわさの　本人が　スレに　あらわれる「降臨」から（おんJでも「おんjにワイ降臨」）",
+	flavor: "降臨は　一瞬、ログは　永遠",
 });
 add({
 	id: "mic",
@@ -76,8 +75,7 @@ add({
 	name: "ネ申マイク",
 	atk: 10,
 	desc: "スタンドごと　振る。いちばん　重くて　いちばん　強い",
-	origin:
-		"「神」を　ネと申に　分けて　書く　2chの「ネ申」と、蓄音キリコの　マイクから",
+	flavor: "歌うより　なぐる　ほうが　得意な　マイク",
 });
 
 // ───────── 盾 ─────────
@@ -87,7 +85,7 @@ add({
 	name: "ダイエット板",
 	def: 2,
 	desc: "うすい　板。錆びない。おなかが　へりにくい",
-	origin: "2chに　あった「ダイエット板」から（おなかが　へりにくい）",
+	flavor: "この板の　住人は、だいたい　明日から　本気を　出す",
 });
 add({
 	id: "bronze",
@@ -95,7 +93,7 @@ add({
 	name: "雑談板",
 	def: 3,
 	desc: "ありふれた　板",
-	origin: "どこの　掲示板にも　ある　ふつうの「雑談板」から",
+	flavor: "話題は　なんでも　いい。ただし　かならず　脱線する",
 });
 add({
 	id: "scale",
@@ -103,7 +101,7 @@ add({
 	name: "スルー板",
 	def: 4,
 	desc: "毒で　ちからを　下げられない（荒らしは　スルー）",
-	origin: "「荒らしは　スルー」の　心得から（荒らしの　毒が　効かない）",
+	flavor: "「スルーしろ」と　書きこむ　人が、いちばん　スルー　できていない",
 });
 add({
 	id: "mirror",
@@ -111,7 +109,7 @@ add({
 	name: "永久保存板",
 	def: 5,
 	desc: "錆びない（永久保存版）",
-	origin: "スレタイに　つく「【永久保存版】」を　板に　かけた　しゃれ",
+	flavor: "【永久保存版】と　ついた　スレほど、すぐ　落ちる",
 });
 add({
 	id: "steelsh",
@@ -119,7 +117,7 @@ add({
 	name: "鉄板",
 	def: 6,
 	desc: "かたい　板。守りは　鉄板",
-	origin: "「まちがいない」の　意味の「鉄板」と　鉄の　板を　かけて",
+	flavor: "鉄板ネタも　3回目には　寒い",
 });
 add({
 	id: "fireward",
@@ -127,8 +125,7 @@ add({
 	name: "火消し板",
 	def: 7,
 	desc: "炎の　ダメージが　半分（炎上の　火消し）",
-	origin:
-		"炎上を　しずめに　来る「火消し」から（おんJでも「おんJに火消しが来てる」）",
+	flavor: "火消しが　来ると、だいたい　もっと　燃える",
 });
 add({
 	id: "starshield",
@@ -136,7 +133,7 @@ add({
 	name: "ネ申板",
 	def: 10,
 	desc: "空から　降臨した　鉄の板",
-	origin: "2chで「神」を　2文字に　分けて　書いた「ネ申」から",
+	flavor: "ネ申は　降臨する　たびに、ハードルが　上がる",
 });
 
 // ───────── 指輪（未識別） ─────────
@@ -145,67 +142,63 @@ add({
 	cat: "ring",
 	name: "◆筋肉",
 	desc: "ちからが　3　上がる（のろいなら　下がる）",
-	origin:
-		"名前の　うしろに　つく　本人の　しるし「◆トリップ」に、筋トレ民の「筋肉」を　のせた",
+	flavor: "筋肉は　裏切らない。のろわれて　いなければ",
 });
 add({
 	id: "r_sustain",
 	cat: "ring",
 	name: "◆腹いっぱい",
 	desc: "おなかが　へらない",
-	origin:
-		"本人の　しるし「◆トリップ」に、飯テロにも　負けない「腹いっぱい」を　のせた",
+	flavor: "もう　おなか　いっぱい。この　ネタも",
 });
 add({
 	id: "r_hunger",
 	cat: "ring",
 	name: "◆大食い",
 	desc: "おなかが　2倍　へる",
-	origin: "本人の　しるし「◆トリップ」に「大食い」を　のせた（飯テロに　弱い）",
+	flavor: "ダンジョンより　先に、食費で　力つきる",
 });
 add({
 	id: "r_trap",
 	cat: "ring",
 	name: "◆釣られない",
 	desc: "罠に　かからない",
-	origin: "うそで　ひっかける「釣り」に　釣られない、から",
+	flavor: "釣られない　自信の　ある　人ほど、よく　釣れる",
 });
 add({
 	id: "r_awake",
 	cat: "ring",
 	name: "◆徹夜",
 	desc: "眠らなくなる",
-	origin:
-		"夜通し　起きている「徹夜」から（おんJでも「今日は徹夜する？」の　スレが　立つ）",
+	flavor: "寝ないのでは　ない。寝られないだけ",
 });
 add({
 	id: "r_purity",
 	cat: "ring",
 	name: "◆スルースキル",
 	desc: "ちからを　下げられない",
-	origin: "煽りや　荒らしを　受け流す「スルースキル」から",
+	flavor: "ほんとうに　持っている　人は、持っていると　わざわざ　言わない",
 });
 add({
 	id: "r_stealth",
 	cat: "ring",
 	name: "◆sage進行",
 	desc: "眠っている　敵が　起きない",
-	origin:
-		"メール欄に　sageと　入れて　スレを　上げずに　書く「sage進行」から（おんJにも【sage進行】スレが　ある）",
+	flavor: "しずかに　書けば　だれも　起こさない。だれも　読まない　とも　言う",
 });
 add({
 	id: "r_clamor",
 	cat: "ring",
 	name: "◆全力age",
 	desc: "眠っている　敵が　すぐ起きる",
-	origin: "スレを　一覧の　上に　上げる「age」を　全力で、から",
+	flavor: "上げれば　人が　来る。来てほしくない　人も",
 });
 add({
 	id: "r_ward",
 	cat: "ring",
 	name: "◆保守",
 	desc: "レベルや　最大HPを　下げられない",
-	origin: "スレが　落ちないように　書きこむ「保守」から",
+	flavor: "保守しか　書かれない　スレでも、落ちるよりは　まし",
 });
 
 // ───────── 草・実（未識別） ─────────
@@ -214,36 +207,35 @@ add({
 	cat: "herb",
 	name: "草",
 	desc: "HPが　25　回復（満タンなら　最大HP＋1）",
-	origin: "笑いを　あらわす「w」が　草に　見えることから",
+	flavor: "草。それ以上でも　それ以下でも　ない",
 });
 add({
 	id: "h_greater",
 	cat: "herb",
 	name: "大草原",
 	desc: "HPが　100　回復（満タンなら　最大HP＋2）",
-	origin: "草が　生えまくるほど　笑う「大草原不可避」から",
+	flavor: "笑いすぎて　傷も　ふさがる。不可避",
 });
 add({
 	id: "h_poison",
 	cat: "herb",
 	name: "荒らし草",
 	desc: "HPが　5　へり、ちからが　3　下がる",
-	origin: "スレを　めちゃくちゃに　する「荒らし」から",
+	flavor: "荒らしは　まず　自分を　きずつける",
 });
 add({
 	id: "h_might",
 	cat: "herb",
 	name: "プロテイン草",
 	desc: "ちからが　1　上がる",
-	origin:
-		"筋トレ民の　お供「プロテイン」から（おんJでも「今日もソイプロテイン」）",
+	flavor: "飲んだだけで　強くなった　気が　する。気のせい　ではない",
 });
 add({
 	id: "h_growth",
 	cat: "herb",
 	name: "忍法帖の実",
 	desc: "めったに　ない　実。レベルが　1　上がる",
-	origin: "おーぷんで　毎日　書きこむと　レベルが　上がる「忍法帖」から",
+	flavor: "毎日　書きこむ　だけで　レベルが　上がる。人生にも　ほしい",
 	// メタルぷゆゆの 落とし物。はじめから 正体が わかり、見た目も 専用
 	rare: true,
 });
@@ -252,8 +244,7 @@ add({
 	cat: "herb",
 	name: "ksk草",
 	desc: "しばらく　倍速で　動ける",
-	origin:
-		"「加速」を　ローマ字の　頭文字で　書いた「ksk」から（kskst＝加速しろ）",
+	flavor: "いくら　急いでも、スレは　1000で　終わる",
 });
 add({
 	id: "h_blind",
@@ -261,8 +252,7 @@ add({
 	// おーぷんの スレ主コマンド !aku。アク禁されると スレが 見えない。投げれば 敵を アク禁（とくぎも 封じる）
 	name: "アク禁草",
 	desc: "アク禁されて　何も　見えなくなる。投げると　敵を　アク禁する",
-	origin:
-		"おーぷんの　スレ主コマンド「!aku」で　アク禁されると　書きこめず、運営の　アク禁なら　ページも　見られなくなる、から",
+	flavor: "見えない。書けない。でも　反省は　しない",
 });
 add({
 	id: "h_blink",
@@ -270,8 +260,7 @@ add({
 	// おーぷんの スレ主コマンド !バルス（スレごと 消して 逃げる。「バルスして逃亡」）
 	name: "バルス草",
 	desc: "この階の　どこかへ　跳ぶ",
-	origin:
-		"おーぷんの　スレ主コマンド「!バルス」で　スレごと　消して　逃げる　ことから（元は　ラピュタの　滅びの　呪文）",
+	flavor: "都合が　悪くなったら　ぜんぶ　消して　逃げる。ラピュタより　手軽",
 });
 add({
 	id: "h_reel",
@@ -279,8 +268,7 @@ add({
 	// 安価で 動きを 決められて 思いどおりに 動けない
 	name: "安価草",
 	desc: "安価に　ふりまわされる（混乱）。投げると　敵を　混乱させる",
-	origin:
-		"「>>10が　決める」のように、ほかの　人の　レス（安価）で　動きを　決められる　スレから",
+	flavor: "自分の　人生を、他人の　レスに　まかせた　結果",
 });
 add({
 	// トルネコ1の まどわし草（頭お花畑）
@@ -288,14 +276,14 @@ add({
 	cat: "herb",
 	name: "お花畑草",
 	desc: "まどわされる（敵が　自分の姿に、道具が　お花に　見える）。投げると　敵が　逃げだす",
-	origin: "考えが　甘すぎる　人を　からかう「頭お花畑」から",
+	flavor: "世界が　やさしく　見える。見えている　だけ",
 });
 add({
 	id: "h_sleep",
 	cat: "herb",
 	name: "寝落ち草",
 	desc: "眠ってしまう。投げると　敵を　眠らせる",
-	origin: "書きこむ　とちゅうで　ねむってしまう「寝落ち」から",
+	flavor: "「ちょっと　横に　なるだけ」が　いちばん　あぶない",
 });
 add({
 	id: "h_antidote",
@@ -303,22 +291,21 @@ add({
 	// おんJの「このスレが上がってるの見たら水分補給しろ」。弱ったのが もとに もどる
 	name: "水分補給草",
 	desc: "下がった　ちからが　元にもどる",
-	origin:
-		"おんJで　続いている「このスレが上がってるの見たら水分補給しろ」スレから",
+	flavor: "スレを　見て　水を　飲む。それだけで　立ちなおれる　のが　人間",
 });
 add({
 	id: "h_fire",
 	cat: "herb",
 	name: "燃料投下草",
 	desc: "前に　炎を　吐く（足元の道具も　燃える）",
-	origin: "炎上を　さらに　あおる　ネタを　出す「燃料投下」から",
+	flavor: "消火の　ふりを　して　燃料を　まく　人が、いちばん　燃やす",
 });
 add({
 	id: "h_sight",
 	cat: "herb",
 	name: "晒し草",
 	desc: "この階の　見えない敵が　見える。アク禁も　とける",
-	origin: "人の　書きこみや　正体を　さらす「晒し」から",
+	flavor: "晒す　ほうも、だいたい　晒されている",
 });
 
 // ───────── スレ（巻物にあたる。未識別） ─────────
@@ -327,107 +314,105 @@ add({
 	cat: "scroll",
 	name: "有識者スレ",
 	desc: "有識者ニキが　道具を　1つ　識別する",
-	origin: "くわしい　人を　呼ぶ「有識者ニキ　来てくれ」の　スレから",
+	flavor: "呼べば　かならず　有識者ニキが　来る。ここだけ　ネットより　優秀",
 });
 add({
 	id: "s_whet",
 	cat: "scroll",
 	name: "腹筋スレ",
 	desc: "装備中の　武器が　＋1。のろいも　とける",
-	origin: "IDの　数だけ　腹筋する「ID腹筋スレ」から",
+	flavor: "IDの　数字が　小さいことを　いのる",
 });
 add({
 	id: "s_temper",
 	cat: "scroll",
 	name: "耐久スレ",
 	desc: "装備中の　板が　＋1。のろいも　とける",
-	origin: "年越しや　クリスマスまで　スレで　ねばる「耐久スレ」から",
+	flavor: "耐えた　先に　なにが　あるかは、耐えた　人も　知らない",
 });
 add({
 	id: "s_uncurse",
 	cat: "scroll",
 	name: "お祓いスレ",
 	desc: "装備の　のろいを　とく",
-	origin:
-		"おんJにも　立つ「お祓いって意味あんの？」のような　お祓いの　スレから",
+	flavor: "意味が　あるかは　スレで　もめる。効くのは　たしか",
 });
 add({
 	id: "s_rustproof",
 	cat: "scroll",
 	name: "延命スレ",
 	desc: "装備中の　板が　錆びなくなる",
-	origin: "スレを　長もち　させる「延命」から",
+	flavor: "終わるべき　ものを　終わらせない　技術",
 });
 add({
 	id: "s_map",
 	cat: "scroll",
 	name: "聖地巡礼スレ",
 	desc: "この階の　地形と　罠が　わかる",
-	origin: "アニメの　舞台を　めぐる「聖地巡礼」の　スレから",
+	flavor: "現地に　行っても、アニメの　人は　いない",
 });
 add({
 	id: "s_sense",
 	cat: "scroll",
 	name: "ヲチスレ",
 	desc: "この階の　敵の　いる所が　わかる",
-	origin: "人や　スレを　見はって　楽しむ「ヲチ（ウォッチ）」から",
+	flavor: "見ている　つもりで、見られている",
 });
 add({
 	id: "s_treasure",
 	cat: "scroll",
 	name: "発掘スレ",
 	desc: "この階の　道具の　ある所が　わかる",
-	origin:
-		"昔の　絵や　画像を　掘りだして　貼る「発掘」から（おんJでも「昔のワイの絵発掘した」）",
+	flavor: "掘りだした　ものが　黒歴史で　ある　確率は　高い",
 });
 add({
 	id: "s_hold",
 	cat: "scroll",
 	name: "凍結スレ",
 	desc: "まわりの　敵が　動けなくなる",
-	origin: "アカウントを　止められる「凍結」から",
+	flavor: "凍結の　理由は、だいたい　教えて　もらえない",
 });
 add({
 	id: "s_blast",
 	cat: "scroll",
 	name: "炎上スレ",
 	desc: "部屋じゅうの　敵に　ダメージ",
-	origin: "何かが　燃えて　スレが　あれる「炎上」から",
+	flavor: "燃えている　ときが、いちばん　人が　多い",
 });
 add({
 	id: "s_ward",
 	cat: "scroll",
 	name: "避難所スレ",
 	desc: "床に　置くと　そこが　避難所になる（読んでも　効かない）。その上では　となりから　なぐられない。置くと　拾えない",
-	origin: "スレが　使えないときに　にげこむ「避難所」から",
+	flavor: "避難所は　本スレより　平和。ただし　過疎",
 });
 add({
 	id: "s_recharge",
 	cat: "scroll",
 	name: "次スレ",
 	desc: "杖を　1本　えらんで　回数を　ふやす",
-	origin: "スレが　1000に　なったら　立てる「次スレ」から",
+	flavor: "次スレを　立てた　人は　えらい。えらい　だけ",
 });
 add({
 	id: "s_bread",
 	cat: "scroll",
 	name: "飯テロスレ",
 	desc: "道具を　1つ　えらんで　ぷゆゆパンに　変える",
-	origin: "夜中に　うまそうな　メシの　画像を　貼る「飯テロ」から",
+	flavor: "深夜2時には、なんでも　パンに　見えてくる",
 });
 add({
 	id: "s_snare",
 	cat: "scroll",
 	name: "釣りスレ",
 	desc: "この階に　罠が　ふえる",
-	origin: "うそで　人を　ひっかける「釣りスレ」から",
+	flavor: "釣りだと　わかっていても、釣られに　行くのが　住人",
 });
 add({
 	id: "s_escape",
 	cat: "scroll",
 	name: "帰還スレ",
 	desc: "読むと　その場で　地上へ　もどる。持ち帰る品を　持っていると　きかない",
-	origin: "「【朗報】ワイ、〜から帰還」のような、帰ってきた　報告スレから",
+	flavor: "帰還報告に「で？」と　返すまでが　様式美",
 });
 
 // ───────── 杖（未識別。前に魔法の弾を撃つ。投げて 当てても 効く（回数0でも。当たった 杖は なくなる）） ─────────
@@ -437,7 +422,7 @@ add({
 	name: "フルボッコの杖",
 	charges: [6, 9],
 	desc: "敵に　20　前後の　ダメージ（かならず　当たる）",
-	origin: "よってたかって　たたく「フルボッコ」から",
+	flavor: "1人を　みんなで　たたくと、みんな　正義の　顔に　なる",
 });
 add({
 	id: "w_reel",
@@ -445,7 +430,7 @@ add({
 	name: "安価の杖",
 	charges: [4, 6],
 	desc: "敵を　混乱させる",
-	origin: "スレの　なりゆきを　ほかの　人の　レスに　まかせる「安価」から",
+	flavor: "安価は　絶対。だれが　決めたかは　知らない",
 });
 add({
 	id: "w_sleep",
@@ -453,7 +438,7 @@ add({
 	name: "寝落ちの杖",
 	charges: [3, 6],
 	desc: "敵を　眠らせる",
-	origin: "書きこみの　とちゅうで　力つきる「寝落ち」から",
+	flavor: "おやすみの　ひとことも　なく、ふっと　消える",
 });
 add({
 	id: "w_seal",
@@ -461,7 +446,7 @@ add({
 	name: "規制の杖",
 	charges: [5, 8],
 	desc: "敵の　とくぎを　封じる",
-	origin: "書きこみを　止められる「規制」（連投規制など）から",
+	flavor: "規制に　文句を　言いたくても、規制されて　いて　言えない",
 });
 add({
 	id: "w_change",
@@ -469,7 +454,7 @@ add({
 	name: "改変の杖",
 	charges: [3, 6],
 	desc: "敵を　ほかの　敵に　変える",
-	origin: "コピペの　一部を　かえて　別の　話に　する「改変」から",
+	flavor: "元ネタより　おもしろく　なったら　勝ち",
 });
 add({
 	id: "w_send",
@@ -477,7 +462,7 @@ add({
 	name: "隔離の杖",
 	charges: [3, 5],
 	desc: "敵を　この階の　どこかへ　飛ばす",
-	origin: "困った　話題を　別の　スレに　とじこめる「隔離スレ」から",
+	flavor: "隔離スレは　なぜか　本スレより　伸びる",
 });
 add({
 	id: "w_slow",
@@ -485,7 +470,7 @@ add({
 	name: "ラグの杖",
 	charges: [3, 5],
 	desc: "敵を　鈍足にする",
-	origin: "表示や　書きこみが　おくれる「ラグ」から",
+	flavor: "おそいのは　回線か、自分の　反応か",
 });
 add({
 	id: "w_edge",
@@ -493,8 +478,7 @@ add({
 	name: "諸刃の杖",
 	charges: [3, 5],
 	desc: "自分の　HPが　半分になり、敵の　HPが　1になる",
-	origin:
-		"自分も　きずつく「諸刃の剣」から（おんJでも「片親煽りって諸刃の剣」）",
+	flavor: "相手を　追いつめる　かわりに、自分も　あやうい。レスバと　同じ",
 });
 add({
 	id: "w_split",
@@ -502,7 +486,7 @@ add({
 	name: "重複の杖",
 	charges: [3, 5],
 	desc: "敵が　2匹に　ふえる",
-	origin: "同じ　スレが　2つ　立ってしまう「重複」から",
+	flavor: "重複スレは、どっちを　使うかで　まず　もめる",
 });
 add({
 	id: "w_haste",
@@ -510,7 +494,7 @@ add({
 	name: "kskの杖",
 	charges: [3, 6],
 	desc: "敵が　倍速になる",
-	origin: "「加速」の　ローマ字の　頭文字「ksk」から",
+	flavor: "kskしたいのは　スレで　あって、敵では　ない",
 });
 
 // ───────── 矢（束。投げると1本ずつ飛ぶ） ─────────
@@ -520,7 +504,7 @@ add({
 	name: "煽りの矢",
 	atk: 4,
 	desc: "軽い　ひとこと。撃つと　1本ずつ　飛ぶ。外れた矢は　ひろえる",
-	origin: "相手を　いらだたせる「煽り」レスから",
+	flavor: "軽く　撃った　つもりが、重く　返ってくる",
 });
 add({
 	id: "a_iron",
@@ -528,7 +512,7 @@ add({
 	name: "正論の矢",
 	atk: 12,
 	desc: "ぐうの音も　出ない　一撃。撃つと　1本ずつ　飛ぶ。外れた矢は　ひろえる",
-	origin: "言い返せない「正論」レスから（おんJでも「〜←ぶっちゃけ正論よな」）",
+	flavor: "正しい　ことを　言うと、なぜか　嫌われる",
 });
 
 // ───────── 食べもの ─────────
@@ -537,24 +521,21 @@ add({
 	cat: "food",
 	name: "片親パン",
 	desc: "満腹度が　50　回復",
-	origin:
-		"安くて　大きい　袋入りの　菓子パンを　からかう　ネットの　ことば「片親パン」から",
+	flavor: "安くて　でかい。それが　すべてで、それで　いい",
 });
 add({
 	id: "f_large",
 	cat: "food",
 	name: "ぷゆゆパン",
 	desc: "満腹度が　100　回復",
-	origin:
-		"おんJの　🥺キャラ　ぷゆゆの　パン（Googleの　サジェストにも　乗った）から",
+	flavor: "ぷゆゆが　焼いた　わけでは　ない。たぶん",
 });
 add({
 	id: "f_moldy",
 	cat: "food",
 	name: "チギュリパン",
 	desc: "満腹度が　100　回復。ちからが　1　下がり、HPも　へる",
-	origin:
-		"「チー牛」と「片親パン」を　あわせた　ネットの　ことば「チギュりパン」から",
+	flavor: "食べた　あとの　むなしさ　まで　セット",
 });
 
 // ───────── 目的の品（山札には入らない） ─────────
@@ -563,23 +544,21 @@ add({
 	cat: "goal",
 	name: "はじまりの原盤",
 	desc: "いちばん底に　あった　レコード。持ち帰ろう",
-	origin:
-		"レコードを　作るときの　もとの　盤「原盤」から（キリコは　おんJ生まれの「蓄音」キャラ）",
+	flavor: "すべての　はじまり。持ち帰るまでが　冒険",
 });
 add({
 	id: "needle",
 	cat: "goal",
 	name: "蓄音機の針",
 	desc: "ちょっと下に　落ちていた　針。持ち帰ろう",
-	origin: "レコードを　鳴らす　蓄音機の　針から（蓄音キリコの「蓄音」）",
+	flavor: "針が　なければ、レコードは　ただの　黒い　円盤",
 });
 add({
 	id: "tsuzuki",
 	cat: "goal",
 	name: "つづきの原盤",
 	desc: "底の　さらに　下の　レコード。まだ、なにも　入っていない",
-	origin:
-		"レコードを　作るときの　もとの　盤「原盤」の、まだ　何も　入っていない　つづき",
+	flavor: "つづきは　まだ　書かれて　いない。書くのは　たぶん　きみ",
 });
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(
@@ -600,81 +579,81 @@ export const itemsOfCat = (cat: ItemCat): ItemDef[] =>
  */
 export const MAIN_DECK: readonly DeckEntry[] = [
 	// 武器 12
-	{ kind: "club", count: 2 },
-	{ kind: "copper", count: 3 },
-	{ kind: "bat", count: 2 },
-	{ kind: "wyrmbane", count: 1 },
-	{ kind: "steel", count: 2 },
-	{ kind: "starsword", count: 1 },
-	{ kind: "mic", count: 1 },
+	{ kind: "club", weight: 2 },
+	{ kind: "copper", weight: 3 },
+	{ kind: "bat", weight: 2 },
+	{ kind: "wyrmbane", weight: 1 },
+	{ kind: "steel", weight: 2 },
+	{ kind: "starsword", weight: 1 },
+	{ kind: "mic", weight: 1 },
 	// 盾 12
-	{ kind: "leather", count: 2 },
-	{ kind: "bronze", count: 3 },
-	{ kind: "scale", count: 2 },
-	{ kind: "mirror", count: 1 },
-	{ kind: "steelsh", count: 2 },
-	{ kind: "fireward", count: 1 },
-	{ kind: "starshield", count: 1 },
+	{ kind: "leather", weight: 2 },
+	{ kind: "bronze", weight: 3 },
+	{ kind: "scale", weight: 2 },
+	{ kind: "mirror", weight: 1 },
+	{ kind: "steelsh", weight: 2 },
+	{ kind: "fireward", weight: 1 },
+	{ kind: "starshield", weight: 1 },
 	// 指輪 10
-	{ kind: "r_might", count: 2 },
-	{ kind: "r_sustain", count: 1 },
-	{ kind: "r_hunger", count: 1 },
-	{ kind: "r_trap", count: 1 },
-	{ kind: "r_awake", count: 1 },
-	{ kind: "r_purity", count: 1 },
-	{ kind: "r_stealth", count: 1 },
-	{ kind: "r_clamor", count: 1 },
-	{ kind: "r_ward", count: 1 },
+	{ kind: "r_might", weight: 2 },
+	{ kind: "r_sustain", weight: 1 },
+	{ kind: "r_hunger", weight: 1 },
+	{ kind: "r_trap", weight: 1 },
+	{ kind: "r_awake", weight: 1 },
+	{ kind: "r_purity", weight: 1 },
+	{ kind: "r_stealth", weight: 1 },
+	{ kind: "r_clamor", weight: 1 },
+	{ kind: "r_ward", weight: 1 },
 	// 草・実 51
-	{ kind: "h_heal", count: 11 },
-	{ kind: "h_greater", count: 5 },
-	{ kind: "h_poison", count: 3 },
-	{ kind: "h_might", count: 5 },
-	{ kind: "h_growth", count: 1 },
-	{ kind: "h_swift", count: 2 },
-	{ kind: "h_blind", count: 3 },
-	{ kind: "h_blink", count: 5 },
-	{ kind: "h_reel", count: 3 },
-	{ kind: "h_daze", count: 2 },
-	{ kind: "h_sleep", count: 3 },
-	{ kind: "h_antidote", count: 3 },
-	{ kind: "h_fire", count: 3 },
-	{ kind: "h_sight", count: 2 },
+	{ kind: "h_heal", weight: 11 },
+	{ kind: "h_greater", weight: 5 },
+	{ kind: "h_poison", weight: 3 },
+	{ kind: "h_might", weight: 5 },
+	{ kind: "h_growth", weight: 1 },
+	{ kind: "h_swift", weight: 2 },
+	{ kind: "h_blind", weight: 3 },
+	{ kind: "h_blink", weight: 5 },
+	{ kind: "h_reel", weight: 3 },
+	{ kind: "h_daze", weight: 2 },
+	{ kind: "h_sleep", weight: 3 },
+	{ kind: "h_antidote", weight: 3 },
+	{ kind: "h_fire", weight: 3 },
+	{ kind: "h_sight", weight: 2 },
 	// スレ 42
-	{ kind: "s_appraise", count: 9 },
-	{ kind: "s_whet", count: 4 },
-	{ kind: "s_temper", count: 4 },
-	{ kind: "s_uncurse", count: 2 },
-	{ kind: "s_rustproof", count: 2 },
-	{ kind: "s_map", count: 4 },
-	{ kind: "s_sense", count: 2 },
-	{ kind: "s_treasure", count: 2 },
-	{ kind: "s_hold", count: 3 },
-	{ kind: "s_blast", count: 3 },
-	{ kind: "s_ward", count: 1 },
-	{ kind: "s_recharge", count: 2 },
-	{ kind: "s_bread", count: 2 },
-	{ kind: "s_snare", count: 2 },
+	{ kind: "s_appraise", weight: 9 },
+	{ kind: "s_whet", weight: 4 },
+	{ kind: "s_temper", weight: 4 },
+	{ kind: "s_uncurse", weight: 2 },
+	{ kind: "s_rustproof", weight: 2 },
+	{ kind: "s_map", weight: 4 },
+	{ kind: "s_sense", weight: 2 },
+	{ kind: "s_treasure", weight: 2 },
+	{ kind: "s_hold", weight: 3 },
+	{ kind: "s_blast", weight: 3 },
+	{ kind: "s_ward", weight: 1 },
+	{ kind: "s_recharge", weight: 2 },
+	{ kind: "s_bread", weight: 2 },
+	{ kind: "s_snare", weight: 2 },
 	// 帰還 3（リレミトにあたる。読むと その場で地上へ。持ちこみ・倉庫に つながる）
-	{ kind: "s_escape", count: 3 },
+	{ kind: "s_escape", weight: 3 },
 	// 杖 10
-	{ kind: "w_bolt", count: 1 },
-	{ kind: "w_reel", count: 1 },
-	{ kind: "w_sleep", count: 1 },
-	{ kind: "w_seal", count: 1 },
-	{ kind: "w_change", count: 1 },
-	{ kind: "w_send", count: 1 },
-	{ kind: "w_slow", count: 1 },
-	{ kind: "w_edge", count: 1 },
-	{ kind: "w_split", count: 1 },
-	{ kind: "w_haste", count: 1 },
+	{ kind: "w_bolt", weight: 1 },
+	{ kind: "w_reel", weight: 1 },
+	{ kind: "w_sleep", weight: 1 },
+	{ kind: "w_seal", weight: 1 },
+	{ kind: "w_change", weight: 1 },
+	{ kind: "w_send", weight: 1 },
+	{ kind: "w_slow", weight: 1 },
+	{ kind: "w_edge", weight: 1 },
+	{ kind: "w_split", weight: 1 },
+	{ kind: "w_haste", weight: 1 },
 	// 矢 9
-	{ kind: "a_wood", count: 6 },
-	{ kind: "a_iron", count: 3 },
+	{ kind: "a_wood", weight: 6 },
+	{ kind: "a_iron", weight: 3 },
 	// 食べもの 15
-	{ kind: "f_bread", count: 9 },
-	{ kind: "f_large", count: 3 },
-	{ kind: "f_moldy", count: 3 },
+	{ kind: "f_bread", weight: 9 },
+	{ kind: "f_large", weight: 3 },
+	{ kind: "f_moldy", weight: 3 },
 ];
 
 /** カテゴリの表示名（山札・図鑑の見出し）。 */
