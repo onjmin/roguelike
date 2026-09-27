@@ -444,7 +444,6 @@ body.shake #app {
 	border-radius: 3px;
 	text-shadow: 0 1px 0 #000;
 	word-break: break-all;
-	transition: opacity 0.6s;
 }
 
 /* HP が 半分を 切ると 字が 黄色 → 赤（ui/hpInk.ts。--ink は ui/play.ts が 入れる） */
@@ -452,12 +451,14 @@ body.shake #app {
 	color: var(--ink, inherit);
 }
 
+/*
+ * 新しい行が 下に 足されるたび、上の行は 押し上げられる。opacity を transition で 動かすと、
+ * 動いている あいだ 行が 合成レイヤーに なり、押し上げと 重なった ときに ブラウザ（とくに Safari）が
+ * 前の 位置の 絵を 残して、行が 重なって 見えることが ある。薄くするのは 一気に、消えるのは 色だけを
+ * 動かして（レイヤーを 作らない）、押し上げても ずれないように する。
+ */
 .log-line.old {
 	opacity: 0.55;
-}
-
-.log-line.gone {
-	opacity: 0;
 }
 
 .log-line.warn {
@@ -466,6 +467,18 @@ body.shake #app {
 
 .log-line.good {
 	border-left-color: var(--accent);
+}
+
+.log-line.gone {
+	color: transparent;
+	background-color: transparent;
+	border-left-color: transparent;
+	text-shadow: 0 1px 0 transparent;
+	transition:
+		color 0.6s,
+		background-color 0.6s,
+		border-left-color 0.6s,
+		text-shadow 0.6s;
 }
 
 /* ───────── ステータス行（左上） ───────── */
