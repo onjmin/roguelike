@@ -11,12 +11,7 @@
 // - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
 //   （おんJ民が どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
 
-import {
-	DUNGEON_IDS,
-	DUNGEONS,
-	MOUTH_IDS,
-	mouthOf,
-} from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { SEASONS, season } from "../data/calendar";
@@ -258,20 +253,15 @@ test("village events are inside the map, one per cell, and touch events stand on
 	}
 });
 
-test("from the boot spot, Kiriko can walk into every open mouth and talk to everyone", () => {
+test("from the boot spot, Kiriko can walk to the exit and talk to everyone", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		const [bx, by] = VILLAGE_SPOTS.boot;
 		ok(s.canEnter(bx, by), `${label(v)}: the boot spot is blocked`);
-		for (const d of v.unlocked) {
-			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
-			ok(s.reachable(mx, my), `${label(v)}: cannot walk into the ${d} mouth`);
-			// 帰ってきたとき 口から 1歩 下へ 出られる
-			ok(
-				s.canEnter(mx, my + 1),
-				`${label(v)}: cannot step out of the ${d} mouth`,
-			);
-		}
+		const [mx, my] = VILLAGE_SPOTS.exit;
+		ok(s.reachable(mx, my), `${label(v)}: cannot walk to the exit`);
+		// 帰ってきたとき 出口から 1歩 下へ 出られる
+		ok(s.canEnter(mx, my + 1), `${label(v)}: cannot step out of the exit`);
 		for (const p of s.places)
 			if (p.trigger === "talk")
 				ok(s.talkable(p), `${label(v)}: cannot talk to ${p.id}`);
@@ -314,26 +304,18 @@ test("tall things (boards, signs) cannot be read from behind, and each can be re
 	ok(tall > 0, "no tall thing in the village has a back");
 });
 
-test("locked mouths stay shut: おんJ民 guards 本編, boards cover もっと", () => {
+test("the village has one exit (and one sign); nobody guards it", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
-		for (const d of MOUTH_IDS) {
-			if (v.unlocked.includes(d)) continue;
-			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
-			ok(!s.reachable(mx, my), `${label(v)}: the locked ${d} mouth is open`);
-		}
+		const exits = s.places.filter((p) => p.trigger === "touch" && p.exit);
+		ok(exits.length === 1, `${label(v)}: ${exits.length} exits`);
+		ok(
+			s.places.filter((p) => p.exit && p.trigger === "talk").length === 1,
+			`${label(v)}: not one exit sign`,
+		);
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
-		const guarding = !v.unlocked.includes("main");
-		const [mx, my] = VILLAGE_SPOTS.mouth.main;
-		ok(
-			(nx === mx && ny === my + 1) === guarding,
-			`${label(v)}: おんJ民 ${guarding ? "is not" : "still"} in front of 本編`,
-		);
-		ok(
-			s.places.some((p) => p.id === `boarded_deep`) ===
-				!v.unlocked.includes("deep"),
-			`${label(v)}: the boarded もっと mouth does not match the unlock`,
-		);
+		const [mx, my] = VILLAGE_SPOTS.exit;
+		ok(!(nx === mx && ny === my + 1), `${label(v)}: おんJ民 blocks the exit`);
 	}
 });
 
@@ -730,12 +712,12 @@ test("the boot title's quote keeps its two lines on a 320px phone (name and 「�
 
 // ───────────────── 帰ってきたとき（仮の Story） ─────────────────
 
-test("the friends line up beside the mouth Kiriko comes out of", () => {
+test("the friends line up beside the exit Kiriko comes back through", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		for (const d of v.unlocked) {
-			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
-			const spots = lineupSpots(v, d, 5);
+			const [mx, my] = VILLAGE_SPOTS.exit;
+			const spots = lineupSpots(v, 5);
 			ok(spots.length === 5, `${label(v)} ${d}: ${spots.length} spots`);
 			ok(
 				new Set(spots.map(([x, y]) => `${x},${y}`)).size === spots.length,
@@ -923,10 +905,10 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 			[{ kind: "escape", dungeon: "shallow" }, RETURN_PAGES],
 		];
 		for (const [a, pages] of cases) {
-			const { s, log } = fakeStory({ at: VILLAGE_SPOTS.mouth.shallow });
+			const { s, log } = fakeStory({ at: VILLAGE_SPOTS.exit });
 			lineUp(s, a, v);
 			const who = [...new Set(pages.flatMap((p) => (p.who ? [p.who] : [])))];
-			const spots = lineupSpots(v, "shallow", who.length);
+			const spots = lineupSpots(v, who.length);
 			ok(
 				log[0] === "hide player",
 				`${a.kind}: Kiriko is seen before she comes out`,
@@ -952,11 +934,11 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 				`${a.kind}: the scene is out of order:\n${log.join("\n")}`,
 			);
 			ok(
-				s.state.y === VILLAGE_SPOTS.mouth.shallow[1] + 1,
-				`${a.kind}: Kiriko is still in the mouth`,
+				s.state.y === VILLAGE_SPOTS.exit[1] + 1,
+				`${a.kind}: Kiriko is still in the exit`,
 			);
 		}
-		// 口が ふさがっていて 蓄音機の前に いる（開発用の 冒険など）：場面は ない
+		// 蓄音機の前に いる（出口から 帰っていない）：場面は ない
 		const { s, log } = fakeStory();
 		lineUp(s, { kind: "escape", dungeon: "deep" }, v);
 		await returnScene(s, { kind: "escape", dungeon: "deep" });
@@ -964,18 +946,13 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 	});
 });
 
-test("unlock news: the gate stays shut until shown, おんJ民 steps aside, a closed tab shows it again", async () => {
+test("unlock news: shown at the exit, a closed tab shows it again", async () => {
 	await withStorageAsync(async () => {
 		const news: ProgressNews = { dungeon: "main", reason: "clear" };
 		setProgress(["shallow", "main"], [news], ["shallow"]);
 		putTown({ stage: 0 });
-		// 知らせを 見せるまでは 閉じたまま 描く（おんJ民が 口の前）
+		// 知らせを 見せるまでは 開いていない
 		ok(!villageView().unlocked.includes("main"), "本編 opens before its news");
-		const guard = VILLAGE_SPOTS.nanj(villageView());
-		ok(
-			guard[0] === VILLAGE_SPOTS.mouth.main[0],
-			"おんJ民 is not at the gate before the news",
-		);
 		// 2つ目の セリフで タブを 閉じた：知らせは 残る
 		const closed = fakeStory({
 			onSay: (n) => {
@@ -994,30 +971,24 @@ test("unlock news: the gate stays shut until shown, おんJ民 steps aside, a cl
 				!villageView().unlocked.includes("main"),
 			"the news was lost when the tab closed",
 		);
-		// 開きなおして 最後まで
+		// 開きなおして 最後まで（出口を 見て 話す。村の 見た目は 変わらない）
 		const { s, log } = fakeStory();
 		await newsScript(s);
-		const [bx, by] = VILLAGE_SPOTS.nanj({
-			stage: 0,
-			unlocked: ["shallow", "main"],
-			cleared: [],
-		});
+		const exit = `look ${VILLAGE_SPOTS.exit.join(",")}`;
 		ok(
 			inOrder(log, [
-				"look nanj",
+				exit,
 				...UNLOCK_LINES.main.map((l) => `say ${l.who}: ${l.text}`),
-				`goto nanj ${bx},${by}`,
-				"rebuild",
 				"se chapter",
 				"narrate: 「風呂板」に\nもぐれるように　なった",
 				"look kiriko",
 			]),
 			`the 本編 news is out of order:\n${log.join("\n")}`,
 		);
-		ok(!log.includes("fadeOut"), "the 本編 news fades although nothing moves");
+		ok(!log.includes("fadeOut"), "the news fades although nothing moves");
 		ok(loadProgress().news.length === 0, "the news stays after it was shown");
 		ok(villageView().unlocked.includes("main"), "本編 is still shut");
-		// もっと：板で ふさいだ 口を 見て、暗転の 中で 板を はずす
+		// 電池板
 		setProgress(
 			["shallow", "main", "deep"],
 			[{ dungeon: "deep", reason: "clear" }],
@@ -1027,22 +998,18 @@ test("unlock news: the gate stays shut until shown, おんJ民 steps aside, a cl
 		await newsScript(deep.s);
 		ok(
 			inOrder(deep.log, [
-				`look ${VILLAGE_SPOTS.mouth.deep.join(",")}`,
+				exit,
 				...UNLOCK_LINES.deep.map((l) => `say ${l.who}: ${l.text}`),
-				"fadeOut",
-				"rebuild",
-				"fadeIn",
 				"narrate: 「電池板」に\nもぐれるように　なった",
 			]),
-			`the もっと news is out of order:\n${deep.log.join("\n")}`,
+			`the 電池板 news is out of order:\n${deep.log.join("\n")}`,
 		);
 		// 10回 たおれて 開いた（救い）：シヨが 針を 用意する
 		setProgress(["shallow", "main"], [{ dungeon: "main", reason: "relief" }]);
 		const relief = fakeStory();
 		await newsScript(relief.s);
 		ok(
-			relief.log.includes(`say shiyo: ${UNLOCK_LINES.relief[0].text}`) &&
-				relief.log.includes(`goto nanj ${bx},${by}`),
+			relief.log.includes(`say shiyo: ${UNLOCK_LINES.relief[0].text}`),
 			`the relief news is wrong:\n${relief.log.join("\n")}`,
 		);
 	});
@@ -1506,7 +1473,7 @@ test("the very first village: premise, おんJ民 points at the left mouth, the 
 				`narrate: ${OPENING.premise[0]}`,
 				"look nanj",
 				`say nanj: ${OPENING.nanjCall[0]}`,
-				`look ${VILLAGE_SPOTS.mouth.shallow.join(",")}`,
+				`look ${VILLAGE_SPOTS.exit.join(",")}`,
 				"look kiriko",
 				`narrate: ${OPENING.goal[0]}`,
 			]),

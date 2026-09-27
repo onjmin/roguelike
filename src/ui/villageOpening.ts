@@ -47,10 +47,10 @@ export const needsOpening = (): boolean =>
 /** 最初の 村の 場面。 */
 export const openingScript = async (s: Story): Promise<void> => {
 	for (const t of OPENING.premise) await s.narrate(t);
-	// 口の前で 見張っている おんJ民が 声を かける
+	// 小屋の前の おんJ民が 声を かける
 	await s.look("nanj");
 	for (const t of OPENING.nanjCall) await s.say("nanj", t);
-	await s.look(VILLAGE_SPOTS.mouth.shallow);
+	await s.look(VILLAGE_SPOTS.exit);
 	for (const t of OPENING.nanjMouth) await s.say("nanj", t);
 	await s.look(null);
 	for (const t of OPENING.goal) await s.narrate(t);

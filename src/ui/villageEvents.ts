@@ -63,17 +63,8 @@ import {
 	type StoreChooser,
 	settleScript,
 } from "./villageReturn";
-import {
-	DUNGEON_DESC,
-	hasNews,
-	ledgerLine,
-	lockedHint,
-	talkLine,
-} from "./villageTalk";
+import { DUNGEON_DESC, hasNews, ledgerLine, talkLine } from "./villageTalk";
 import { pickColony, travelTo } from "./worldMap";
-
-/** まだ開いていないダンジョンの 開き方（1行目 持ち帰り、2行目 たおれた回数の 救い）。 */
-const hintText = (d: DungeonId): string => lockedHint(d).replace("（", "\n（");
 
 /** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
 const signText = (d: DungeonId): string =>
@@ -111,18 +102,15 @@ const abandonRun = (): void => {
 	clearRun();
 };
 
-/** 植民地への 口。踏むと 行き先を えらんで もぐるか きく（やめたら 1歩 もどる）。 */
+/** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
-	(ctx: Ctx, mouth: DungeonId): Script =>
+	(ctx: Ctx): Script =>
 	async (s) => {
-		// 行き先（はじめは この口の 植民地。一覧で ほかの 板も えらべる）
-		let d = mouth;
+		// 行き先（はじめは 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる）
+		const last = loadProgress().last;
+		let d: DungeonId =
+			last && loadProgress().unlocked.includes(last) ? last : "shallow";
 		const back = () => s.move("player", "d");
-		if (!loadProgress().unlocked.includes(d)) {
-			await s.narrate(hintText(d));
-			await back();
-			return;
-		}
 		// 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）
 		if (hasRunSave()) {
 			await s.narrate(`${VILLAGE_MSG.suspended}\n${runSaveLabel(loadRun())}`);
@@ -203,19 +191,18 @@ const mouthScript =
 	};
 
 /** 口の 立て札。 */
-const signScript =
-	(d: DungeonId): Script =>
-	async (s) => {
-		if (!loadProgress().unlocked.includes(d)) {
-			// 名前は まだ 読めない。開き方だけ（救いが あれば 次の ページ）
-			const [cond, relief] = hintText(d).split("\n");
-			await s.narrate(`「？？？」\n${cond}`);
-			if (relief) await s.narrate(relief);
-			return;
-		}
-		await s.narrate(signText(d));
-		for (const t of signMore(d)) await s.narrate(t);
-	};
+const exitSignScript: Script = async (s) => {
+	const p = loadProgress();
+	const open = DUNGEON_IDS.filter((d) => p.unlocked.includes(d));
+	await s.narrate(
+		`「植民地へ　つづく　道」\n行ける　板：${open.length}　持ち帰った　板：${p.cleared.length}`,
+	);
+	// 前に 行った 板（無ければ パン板）の 札
+	const d = p.last && open.includes(p.last) ? p.last : open[0];
+	if (!d) return;
+	await s.narrate(signText(d));
+	for (const t of signMore(d)) await s.narrate(t);
+};
 
 /** 仲間の ひとこと（1回の 帰りに 1つ 新しい話。聞いたら 決まった ひとこと）。 */
 const speak = async (
@@ -261,12 +248,8 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 				await openStorage(ctx);
 			};
 		case "nanj":
-			// 本編が 開くまでは 口の前で 見張っている（開いたら 小屋の前で 大工）
-			return async (s) => {
-				const gate = !loadProgress().unlocked.includes("main");
-				await speak(s, who, { gate });
-				if (gate) await s.narrate(hintText("main"));
-			};
+			// 小屋の前で 大工
+			return (s) => speak(s, who);
 		default:
 			// ロゼ（屋台・店）
 			return (s) => speak(s, who);
@@ -298,21 +281,14 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 			notice: () => hasNews(who),
 		};
 	}
-	if (p.dungeon && p.trigger === "touch")
+	if (p.exit && p.trigger === "touch")
 		return {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: mouthScript(ctx, p.dungeon),
+			run: mouthScript(ctx),
 		};
-	if (p.dungeon && p.id.startsWith("boarded_")) {
-		const d = p.dungeon;
-		return sign(p.id, p.x, p.y, async (s) => {
-			await s.narrate(VILLAGE_MSG.boarded);
-			await s.narrate(hintText(d));
-		});
-	}
-	if (p.dungeon) return sign(p.id, p.x, p.y, signScript(p.dungeon));
+	if (p.exit) return sign(p.id, p.x, p.y, exitSignScript);
 	if (p.mob) {
 		const id = p.mob;
 		return {

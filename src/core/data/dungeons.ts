@@ -445,20 +445,6 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"hidden",
 ];
 
-/** 村に 口（穴）が ある 植民地。ほかの 植民地へは 口から 行き先を えらんで 行く。 */
-export const MOUTH_IDS = ["shallow", "main", "deep"] as const;
-export type MouthId = (typeof MOUTH_IDS)[number];
-
 /** 知らない id（壊れた記録など）は本編として読む。 */
 export const dungeonById = (id: string | undefined): Dungeon =>
 	DUNGEONS[id as DungeonId] ?? DUNGEONS.main;
-
-/**
- * その植民地へ 行く 村の 口（口の ない 植民地は、開く もとに なった 植民地の 口。
- * 帰ってきたときに 仲間が 並ぶ 所・開いた 知らせで 見る 所）。
- */
-export const mouthOf = (d: DungeonId): MouthId => {
-	for (let id: DungeonId | null = d; id; id = DUNGEONS[id].unlockAfter)
-		if ((MOUTH_IDS as readonly DungeonId[]).includes(id)) return id as MouthId;
-	return "shallow";
-};

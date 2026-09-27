@@ -13,7 +13,6 @@
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
-import { mouthOf } from "../core/data/dungeons";
 import type { Dir8 } from "../core/geom";
 import type { DungeonId } from "../core/types";
 import { CAST, KIRIKO_WALK } from "../data/cast";
@@ -188,13 +187,9 @@ export class Village {
 		// 起きたとき・倒れて もどったときは 蓄音機の前（トルネコが 家で 目をさますように）
 		const boot: Spot = { x: bx, y: by, dir: "up" };
 		if (!a) return boot;
-		// 口の中から 出てくる（onEnter で 1歩 下へ）。まだ 開いていない口（開発用の 冒険など）は
-		// ふさがっていて 出られないので 蓄音機の前
-		if (
-			(a.kind === "clear" || a.kind === "escape") &&
-			villageView().unlocked.includes(a.dungeon)
-		) {
-			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(a.dungeon)];
+		// 村の 出口から 入ってくる（onEnter で 1歩 下へ）
+		if (a.kind === "clear" || a.kind === "escape") {
+			const [mx, my] = VILLAGE_SPOTS.exit;
 			return { x: mx, y: my, dir: "down" };
 		}
 		if (a.kind === "replay") return this.lastSpot ?? boot;

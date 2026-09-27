@@ -13,7 +13,6 @@
 // - 倒れたときは 場面も 精算も ない（仲間は 話しかけると 反応する。ui/villageTalk.ts）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
-import { MOUTH_IDS, mouthOf } from "../core/data/dungeons";
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import type { Speaker } from "../data/quotes";
@@ -81,9 +80,9 @@ const castOf = (pages: readonly StoryPage[]): Speaker[] => [
 	...new Set(pages.flatMap((p) => (p.who ? [p.who] : []))),
 ];
 
-/** キリコが 口の中に 立っているか（口が ふさがっていれば 蓄音機の前なので 場面は ない）。 */
-const inMouth = (s: Story, d: DungeonId): boolean => {
-	const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
+/** キリコが 村の 出口に 立っているか（帰ってきたところ）。 */
+const inMouth = (s: Story, _d: DungeonId): boolean => {
+	const [mx, my] = VILLAGE_SPOTS.exit;
 	return s.state.x === mx && s.state.y === my;
 };
 
@@ -94,7 +93,7 @@ const inMouth = (s: Story, d: DungeonId): boolean => {
 export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 	if (!inMouth(s, a.dungeon)) return;
 	const cast = castOf(pagesFor(a));
-	const spots = lineupSpots(v, a.dungeon, cast.length);
+	const spots = lineupSpots(v, cast.length);
 	s.hide("player");
 	cast.forEach((who, i) => {
 		const c = spots[i];
@@ -127,22 +126,13 @@ export const returnScene = async (
 
 // ───────────────── 開いた知らせ ─────────────────
 
-/** 本編が 開いたら おんJ民は 口の前から どいて、小屋の前で 大工に もどる。 */
-const NANJ_BUILDER = VILLAGE_SPOTS.nanj({
-	stage: 0,
-	unlocked: ["shallow", "main"],
-	cleared: [],
-});
-
 /**
  * 次のダンジョンが 開いた 知らせ（持ち帰った・何度も たおれた）。開く口を 見て 仲間が 話し、
- * 本編なら おんJ民が 口の前から どく・もっとなら 板が はずれて（建て直す）、「〜に もぐれるように なった」。
+ * 村の 出口を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
  */
 export const newsScript = async (s: Story): Promise<void> => {
 	for (const n of loadProgress().news) {
-		const main = n.dungeon === "main";
-		// 口の ない 植民地（口の 見た目は 変わらない）
-		const colony = !(MOUTH_IDS as readonly string[]).includes(n.dungeon);
+		const colony = !["main", "deep"].includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
 		const lines = UNLOCK_LINES[
 			n.dungeon === "hidden"
@@ -155,24 +145,10 @@ export const newsScript = async (s: Story): Promise<void> => {
 							? "deep"
 							: "main"
 		].map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
-		// 開く 口の方を 見る（本編は 口の前で 見張る おんJ民、もっとは 板で ふさいだ口）
-		await s.look(main ? "nanj" : VILLAGE_SPOTS.mouth[mouthOf(n.dungeon)]);
+		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）
+		await s.look(VILLAGE_SPOTS.exit);
 		for (const l of lines) await s.say(l.who, l.text);
-		if (main) {
-			await s.wait(0);
-			await s.goto("nanj", NANJ_BUILDER[0], NANJ_BUILDER[1], { speed: 1.5 });
-		}
 		doneProgressNews(n);
-		if (colony) {
-			// 村の 見た目は 変わらない
-		} else if (main) {
-			// おんJ民は もう 小屋の前（見た目は そのまま）
-			await s.rebuild();
-		} else {
-			await s.fadeOut(250);
-			await s.rebuild();
-			await s.fadeIn(250);
-		}
 		s.se("chapter");
 		await s.narrate(
 			`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,

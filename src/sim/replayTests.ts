@@ -5,7 +5,7 @@
 // - 途中の指紋（#…）が ぜんぶ合うか。記録を1つ抜くと、指紋で ずれがわかるか。
 // - コマンドの短い文字が、どの形でも 元にもどるか。
 
-import { DUNGEONS, mouthOf } from "../core/data/dungeons";
+import { DUNGEONS } from "../core/data/dungeons";
 import { MAIN_ITEMS } from "../core/data/items";
 import { randomFloorPos, spawnMonster } from "../core/floor";
 import { type Dir8, step } from "../core/geom";
@@ -271,10 +271,6 @@ test("main dungeon parity: the recorded runs replay to the same states", () => {
 });
 
 test("colonies: each board keeps its own rule", () => {
-	// 口の ない 植民地は、開く もとの 植民地の 口から
-	ok(mouthOf("kinoko") === "shallow", "kinoko is not reached from パン板");
-	ok(mouthOf("festival") === "main", "festival is not reached from 風呂板");
-	ok(mouthOf("deep") === "deep", "a mouth colony uses another mouth");
 	// 離島（過疎）：はじめから いる 敵が 少ない
 	let sparse = 0;
 	let full = 0;

@@ -42,7 +42,6 @@
 // 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
 
-import { MOUTH_IDS, type MouthId, mouthOf } from "../../core/data/dungeons";
 import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
@@ -85,16 +84,10 @@ export type Cell = readonly [x: number, y: number];
 
 /** 村の 決まった場所。 */
 export const VILLAGE_SPOTS = {
-	/** ダンジョンの口（踏むと もぐる）。 */
-	mouth: { shallow: [4, 3], main: [11, 3], deep: [18, 3] } as Record<
-		MouthId,
-		Cell
-	>,
-	/** 口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
-	sign: { shallow: [5, 3], main: [12, 3], deep: [19, 3] } as Record<
-		MouthId,
-		Cell
-	>,
+	/** 村の 出口（崖の 切れ目。踏むと 全体マップで 行き先の 植民地を 選ぶ）。 */
+	exit: [11, 3] as Cell,
+	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
+	exitSign: [12, 3] as Cell,
 	/** 起きたとき・倒れて もどったときに 立つ所（蓄音機の前）。 */
 	boot: [10, 15] as Cell,
 	phono: [10, 14] as Cell,
@@ -109,9 +102,8 @@ export const VILLAGE_SPOTS = {
 	roze: (stage: number): Cell => (stage === 0 ? [4, 11] : [4, 10]),
 	/** シヨ（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
 	shiyo: (stage: number): Cell => (stage >= 4 ? [18, 10] : [17, 5]),
-	/** おんJ民（本編が 開くまでは 口の前で ふさぐ。開いたら 小屋の前で 大工）。 */
-	nanj: (v: VillageView): Cell =>
-		v.unlocked.includes("main") ? [12, 11] : [11, 4],
+	/** おんJ民（小屋の前で 大工）。 */
+	nanj: (_v: VillageView): Cell => [12, 11],
 	/** 小屋の扉（段3から。見るだけ）。 */
 	hutDoor: [14, 11] as Cell,
 	/** 段7 の 野次馬（うろうろ する）。 */
@@ -144,7 +136,7 @@ const CLIFF_ROWS: readonly string[] = [
 	"1111111111111111111111",
 	"2222222222222222222222",
 	"3333333333333333333333",
-	"4444M!44444M!44444M!44",
+	"44444444444M!444444444",
 ];
 /** 崖の下の道（y=4）と 町の通り（y=12）。 */
 const ROAD = "H....................H";
@@ -270,8 +262,6 @@ export const villageRows = (v: VillageView): string[] => {
 	}
 	// 崖の上の 桜（段7）
 	if (stage >= 7) put(rows, [1, 1], "y");
-	// もっとの口は 開くまで 板で ふさぐ
-	if (!v.unlocked.includes("deep")) put(rows, VILLAGE_SPOTS.mouth.deep, "m");
 	return rows;
 };
 
@@ -313,8 +303,8 @@ export type VillagePlace = {
 	wander?: boolean;
 	/** 仲間なら その人。 */
 	who?: Speaker;
-	/** 口・立て札なら その ダンジョン。 */
-	dungeon?: DungeonId;
+	/** 村の 出口か その 立て札。 */
+	exit?: true;
 	/** おんJマイナーズなら その子。 */
 	mob?: MobId;
 };
@@ -334,29 +324,11 @@ const friend = (who: Speaker, [x, y]: Cell, wander = false): VillagePlace => ({
 export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	const stage = layoutStage(v);
 	const out: VillagePlace[] = [];
-	for (const d of MOUTH_IDS) {
-		const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
-		// 踏むと もぐる（本編は 開くまで おんJ民が 前に立つので 行けない。念のため 踏んでも 開いていなければ もどす）
-		if (d !== "deep" || v.unlocked.includes(d))
-			out.push({
-				id: `mouth_${d}`,
-				x: mx,
-				y: my,
-				trigger: "touch",
-				dungeon: d,
-			});
-		// 板で ふさいだ口は 調べられる
-		else
-			out.push({
-				id: `boarded_${d}`,
-				x: mx,
-				y: my,
-				trigger: "talk",
-				dungeon: d,
-			});
-		const [sx, sy] = VILLAGE_SPOTS.sign[d];
-		out.push({ id: `sign_${d}`, x: sx, y: sy, trigger: "talk", dungeon: d });
-	}
+	// 村の 出口（1つ。出ると 全体マップで 行き先を 選ぶ）と その 立て札
+	const [ex, ey] = VILLAGE_SPOTS.exit;
+	out.push({ id: "exit", x: ex, y: ey, trigger: "touch", exit: true });
+	const [sx, sy] = VILLAGE_SPOTS.exitSign;
+	out.push({ id: "exit_sign", x: sx, y: sy, trigger: "talk", exit: true });
 	VILLAGE_SPOTS.board.forEach(([x, y], i) => {
 		out.push({ id: `board_${i}`, x, y, trigger: "talk" });
 	});
@@ -410,18 +382,14 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 
 /**
  * 帰ってきたとき 口の前に 仲間が 並んで 待つ マス（n 人ぶん）。
- * 口の 1つ下（キリコが 出てくる マス）の 左右に 近い順で、崖の下の道に 並ぶ（たりなければ その下の段）。
+ * 出口の 1つ下（キリコが 出てくる マス）の 左右に 近い順で、崖の下の道に 並ぶ（たりなければ その下の段）。
  * 通れない マス・人や 置物の いる マス・踏むと もぐる 口は とばす。
  */
-export const lineupSpots = (
-	v: VillageView,
-	d: DungeonId,
-	n: number,
-): Cell[] => {
+export const lineupSpots = (v: VillageView, n: number): Cell[] => {
 	const rows = villageRows(v).map((r) => [...r]);
 	const tiles = villagePalette(v);
 	const places = villagePlaces(v);
-	const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
+	const [mx, my] = VILLAGE_SPOTS.exit;
 	const free = (x: number, y: number): boolean =>
 		!!tiles[rows[y]?.[x] ?? ""]?.passable &&
 		!places.some(
