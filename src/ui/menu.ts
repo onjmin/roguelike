@@ -7,6 +7,7 @@
 // - 奥の窓を閉じたら、1つ手前の窓へ カーソルの位置ごと もどる。
 
 import { HUNGER_UNIT, INVENTORY_MAX } from "../core/balance";
+import { MONSTERS } from "../core/data/monsters";
 import { needsTarget } from "../core/effects";
 import {
 	defOf,
@@ -189,6 +190,11 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				value: "items",
 			},
 			{ label: "足元", sub: footHint(run), value: "foot" },
+			{
+				label: "蓄音機",
+				sub: run.s.voice ? (MONSTERS[run.s.voice]?.name ?? "") : "なし",
+				value: "voice",
+			},
 			{ label: "つよさ", sub: `Lv${run.p.lv}`, value: "status" },
 			{ label: "図鑑", value: "book" },
 			{ label: "ログ", value: "log" },
@@ -216,6 +222,9 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			case "foot":
 				a = await openFootMenu(ctx, run);
 				break;
+			case "voice":
+				a = await openVoice(ctx, run);
+				break;
 			case "status":
 				await openStatus(ctx, run);
 				break;
@@ -235,6 +244,31 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 		}
 		if (a.kind !== "none") return a;
 	}
+};
+
+/** 蓄音機：録った 声を 再生するか 聞く。 */
+const openVoice = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
+	const kind = run.s.voice;
+	if (!kind) {
+		await listWindow(ctx, "蓄音機", [
+			{
+				label: "まだ　何も　録っていない",
+				desc: "敵を　たおすと、その　声を　1つ　録る",
+				value: "",
+			},
+		]);
+		return NONE;
+	}
+	const name = MONSTERS[kind]?.name ?? "";
+	const v = await listWindow(ctx, `蓄音機（${esc(name)}の　声）`, [
+		{
+			label: "再生する",
+			desc: `見えている　${esc(name)}が　自分の　声を　聞かされて　固まる。声は　消える`,
+			value: "play",
+		},
+		{ label: "やめる", value: "" },
+	]);
+	return v === "play" ? { kind: "command", cmd: { c: "play" } } : NONE;
 };
 
 // ───────────────── もちもの ─────────────────

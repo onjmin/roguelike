@@ -925,8 +925,12 @@ export class Play {
 				// 持ち物の 整理（PC の O キー。時間は 進まない）
 				if (run.p.items.length > 1) await this.exec({ c: "sort" });
 				return;
+			case "voice":
+				// 蓄音機の 再生（録っていなければ ひとこと だけ）
+				await this.exec({ c: "play" });
+				return;
 			case "shoot":
-				// 装備した矢を 向いている方へ 1本（トルネコ1と同じ）
+				// 装備した矢を 向いている方へ 1本
 				await this.exec({ c: "shoot" });
 				return;
 			case "throw": {
@@ -1782,6 +1786,9 @@ export class Play {
 						]);
 					} else if (e.kind === "explosion")
 						await this.flash("rgba(255,160,60,0.6)", 220);
+					// 蓄音機の 再生：画面が 一瞬 セピアに
+					else if (e.kind === "voice")
+						await this.flash("rgba(200,160,90,0.35)", fast ? 80 : 260);
 					break;
 				case "floor":
 					await this.floorCard(false);

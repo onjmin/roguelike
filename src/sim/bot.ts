@@ -211,6 +211,10 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			}
 		}
 	}
+	// 蓄音機：同じ 種類が 2体 以上 向かってくるなら 声を 聞かせて 固める
+	const voice = r.s.voice;
+	if (voice && threats.filter((m) => m.kind === voice).length >= 2)
+		return { c: "play" };
 	// 遠くの敵に矢を撃つ
 	const arrow = items.find((i) => defOf(i.kind).cat === "arrow");
 	if (arrow && !adjacent.length) {

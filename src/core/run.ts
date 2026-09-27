@@ -25,10 +25,12 @@ import {
 	SPAWN_EVERY,
 	START_HP,
 	START_STR,
+	VOICE_FREEZE,
 	WAKE_CHANCE,
 } from "./balance";
 import { type Dungeon, dungeonById } from "./data/dungeons";
 import { ITEM_LIST } from "./data/items";
+import { MONSTERS } from "./data/monsters";
 import { FAKE_NAMES } from "./data/names";
 import { throwItem, useItem } from "./effects";
 import { buildFloor, randomFloorPos, spawnMonster } from "./floor";
@@ -833,6 +835,42 @@ export class Run {
 		return false;
 	}
 
+	// ───────────────── 蓄音機 ─────────────────
+
+	/** たおした 敵の 声を 蓄音機に 録る（1つだけ。前の 声は 上書き）。 */
+	private recordVoice(m: Monster): void {
+		if (this.s.voice === m.kind) return;
+		this.s.voice = m.kind;
+		this.msg(`${mdef(m).name}の　声を　録った`);
+	}
+
+	/**
+	 * 録った 声を 再生する。見えている 同じ 種類の 敵は、自分の 声を 聞かされて 固まる
+	 * （VOICE_FREEZE ターン）。声は 消える。
+	 */
+	private playVoice(): boolean {
+		const kind = this.s.voice;
+		if (!kind) {
+			this.msg("蓄音機に　何も　録っていない");
+			return false;
+		}
+		this.s.voice = null;
+		const name = MONSTERS[kind]?.name ?? "だれか";
+		this.se("spell");
+		this.emit({ t: "fx", kind: "voice", pos: { x: this.p.x, y: this.p.y } });
+		this.msg(`蓄音機から　${name}の　声が　流れた`);
+		let n = 0;
+		for (const m of this.f.monsters) {
+			if (m.kind !== kind || !this.monsterVisible(m)) continue;
+			if (m.disguise) m.disguise = null;
+			m.status.paralyze = Math.max(m.status.paralyze, VOICE_FREEZE);
+			n++;
+		}
+		if (n) this.msg(`${name}は　自分の　声を　聞かされて　固まった！`, "good");
+		else this.msg("しかし　聞かせる　相手が　いなかった");
+		return true;
+	}
+
 	/** burnt：爆発で たおれた（落とす道具も 燃える）。 */
 	killMonster(m: Monster, giveExp: boolean, burnt = false): void {
 		const d = mdef(m);
@@ -858,7 +896,10 @@ export class Run {
 			);
 			this.placeItem(it, m);
 		}
-		if (giveExp) ankaHit(this, "kill");
+		if (giveExp) {
+			ankaHit(this, "kill");
+			this.recordVoice(m);
+		}
 		if (giveExp && d.exp > 0) {
 			this.msg(`${d.exp}ポイントの　経験値を　かせいだ`);
 			this.gainExp(d.exp);
@@ -1148,6 +1189,8 @@ export class Run {
 			case "sort":
 				this.sortItems();
 				return false;
+			case "play":
+				return this.playVoice();
 			case "shoot": {
 				// 装備した矢を 1本、向いている方へ（トルネコ1の 矢の装備と同じ）
 				const a = this.arrows();

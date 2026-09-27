@@ -123,3 +123,6 @@ export const RES_RUSH_CROWD = 3;
 
 /** 階に置く道具を、最初からいるモンスターに 持たせる確率。 */
 export const CARRY_CHANCE = 1 / 6;
+
+/** 蓄音機で 自分の 声を 聞かされた 敵が 固まる ターン数。 */
+export const VOICE_FREEZE = 5;

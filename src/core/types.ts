@@ -370,6 +370,8 @@ export type RunState = {
 	replayN?: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 足していく。UI が入れる）。 */
 	builds?: string[];
+	/** 蓄音機に 録った 声（最後に たおした 敵の 種類。再生すると 消える）。 */
+	voice?: string | null;
 	/** 倉庫から持ちこんだ道具（はじめの形。リレミトならぬ 帰還スレで持ち帰った道具を、次の冒険へ。リプレイで同じに始めるため）。 */
 	carriedIn?: Item[];
 };
@@ -391,6 +393,7 @@ export type Command =
 	| { c: "stairs" }
 	| { c: "sort" }
 	| { c: "shoot" }
+	| { c: "play" }
 	| { c: "name"; kind: string; text: string };
 
 /** 表示側（UI）に知らせる出来事。UI はこれを順に演出し、最後の状態を描く。 */

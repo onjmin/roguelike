@@ -2218,6 +2218,32 @@ test(
 	},
 );
 
+test(
+	"floor",
+	"gramophone: a kill records its voice; playing it freezes the same kind in sight only",
+	() => {
+		const r = arena("voice");
+		const first = put(r, "tousuko", { x: CENTER.x, y: CENTER.y - 1 });
+		first.hp = 1;
+		for (let k = 0; k < 20 && first.hp > 0; k++)
+			turn(r, { c: "attack", dir: 0 });
+		ok(first.hp <= 0, "harness: could not kill the first one");
+		ok(r.s.voice === "tousuko", `no voice recorded (${r.s.voice})`);
+		const a = put(r, "tousuko", { x: CENTER.x + 4, y: CENTER.y });
+		const b = put(r, "tousuko", { x: CENTER.x - 4, y: CENTER.y + 2 });
+		const other = put(r, "hitodama", { x: CENTER.x, y: CENTER.y + 4 });
+		turn(r, { c: "play" });
+		ok(r.s.voice === null, "the voice was not used up");
+		ok(
+			a.status.paralyze > 0 && b.status.paralyze > 0,
+			"the same kind did not freeze",
+		);
+		ok(other.status.paralyze === 0, "another kind froze too");
+		const ev = r.act({ c: "play" });
+		ok(!ev.some((e) => e.t === "fx"), "played an empty gramophone");
+	},
+);
+
 /**
  * 部屋を抜けている途中の敵：西の小部屋（キリコ）→ 通路 → 部屋（入口は西と北。北の先は行き止まり）。
  * 通路で見失って 部屋に入り、北の出口へ向かっているところで返す。

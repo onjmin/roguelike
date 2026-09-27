@@ -50,6 +50,8 @@ export const encodeCmd = (c: Command): string => {
 			return "o";
 		case "shoot":
 			return "f";
+		case "play":
+			return "v";
 		case "name":
 			return `n${encodeURIComponent(c.kind)}.${encodeURIComponent(c.text)}`;
 	}
@@ -105,6 +107,8 @@ const decodeRaw = (t: string): Command | null => {
 			return rest === "" ? { c: "sort" } : null;
 		case "f":
 			return rest === "" ? { c: "shoot" } : null;
+		case "v":
+			return rest === "" ? { c: "play" } : null;
 		case "n": {
 			// 名前には「.」が入りうる（encodeURIComponent は「.」を変えない）。種類の id には入らないので、最初の「.」で分ける
 			const i = rest.indexOf(".");

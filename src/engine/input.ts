@@ -19,6 +19,7 @@ export type Key =
 	| "map"
 	| "throw"
 	| "shoot"
+	| "voice"
 	| "menu"
 	| "stairs"
 	| "sort";
@@ -86,6 +87,8 @@ const OTHER_KEYS: Record<string, Key> = {
 	KeyM: "map",
 	KeyT: "throw",
 	KeyQ: "shoot",
+	// 蓄音機の 再生（Play）
+	KeyP: "voice",
 	KeyV: "stairs",
 	// 持ち物の 整理（もちもの の X の となり。O は 数字の 0 と まちがえやすい。フィールドでも もちものの窓でも）
 	KeyC: "sort",
