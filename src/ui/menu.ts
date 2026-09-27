@@ -21,6 +21,7 @@ import type { Command, Item, ItemCat, TrapKind } from "../core/types";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { explain } from "./explain";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
 	infoWindow,
@@ -31,7 +32,6 @@ import {
 	markOpened,
 	paginate,
 } from "./list";
-import { MessageWindow } from "./message";
 import { openStatus } from "./statusView";
 
 export type MenuAction =
@@ -291,31 +291,6 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	if (isUnidentifiedCat(it.kind) && !isKnownKind(run.s, it.kind))
 		rows.push({ label: "名前をつける", value: "name" });
 	return rows;
-};
-
-/** 「せつめい」の 1文字あたりの ms（村の 会話と 同じ）。 */
-const TEXT_MS = 28;
-/** 「せつめい」を 出す メッセージ窓（画面ごとに 1つ。はじめて 使うときに 置く）。 */
-const explainWins = new WeakMap<HTMLElement, MessageWindow>();
-
-/**
- * 「せつめい」：ふだんの メッセージ窓に 1ページずつ 文字送りで 出す（A/B で 送る。トルネコ1と同じ）。
- * 開いている メニューの 上に 重ねる。
- */
-const explain = async (ctx: Ctx, pages: string[]): Promise<void> => {
-	let win = explainWins.get(ctx.ui);
-	if (!win) {
-		win = new MessageWindow(
-			ctx.ui,
-			ctx.input,
-			() => TEXT_MS,
-			() => ctx.audio.seSettled(),
-			"over-menu",
-		);
-		explainWins.set(ctx.ui, win);
-	}
-	for (const text of pages) await win.show({ text });
-	win.close();
 };
 
 /** 未識別の種類に名前をつける（候補から選ぶ）。キャンセルなら null。 */
