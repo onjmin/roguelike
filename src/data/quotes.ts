@@ -81,6 +81,16 @@ const HIGH: readonly Quote[] = [
 	q("zero", "そんな　高くの　ログ、\nゼロ、はじめて　見ました！"),
 ];
 
+// ───────────────── 次スレ（たおれても 終わりじゃない） ─────────────────
+/** たおれて もどったとき ときどき（スレは 落ちても 次スレが 立つ）。 */
+const NEXT_THREAD: readonly Quote[] = [
+	q("nanj", "落ちたか。……ほな、次スレや。\n>>1は　また　キリコな"),
+	q("feris", "スレは　落ちても、\n次スレは　立つよ〜"),
+	q("roze", "落ちたら　立てるのが　常識アル。\n……次スレ、アル"),
+	q("shiyo", "1000まで　行かなくても、\n……次は、あるわよ"),
+	q("zero", "前スレの　ログ、保存しました。\n……次スレも、見ています"),
+];
+
 // ───────────────── たおれ方で ─────────────────
 /** おなかが　すいて。 */
 const STARVE: readonly Quote[] = [
@@ -294,6 +304,11 @@ export const pickQuote = (
 	if (cause && mix(seed, 6) % 3 !== 0) {
 		const line = pick(cause, 7);
 		if (line) return line;
+	}
+	// たおれて もどった ときは ときどき「次スレ」の ひとこと
+	if (last.kind === "dead" && mix(seed, 9) % 4 === 0) {
+		const next = pick(NEXT_THREAD, 10);
+		if (next) return next;
 	}
 	return pick(depthPool(last), 8);
 };
