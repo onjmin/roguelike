@@ -6,6 +6,31 @@
 
 export const ICON_SIZE = 16;
 
+/** レコード（黒い 盤・溝・照り・まんなかの 穴）。label は ラベルの 色。 */
+const RECORD = (
+	label: string,
+): { palette: Record<string, string>; rows: string[] } => ({
+	palette: { k: "#16161c", g: "#3c3c48", s: "#74748a", h: "#050506", L: label },
+	rows: [
+		"................",
+		".....kkkkkk.....",
+		"...kkkggggkkk...",
+		"..kkgkkkkkkgkk..",
+		"..kgksskkkkkgk..",
+		".kgkskkLLkkkkgk.",
+		".kgkskLLLLkkkgk.",
+		".kgkkLLhhLLkkgk.",
+		".kgkkLLhhLLkkgk.",
+		".kgkkkLLLLkkkgk.",
+		".kgkkkkLLkkkkgk.",
+		"..kgkkkkkkssgk..",
+		"..kkgkkkkkkgkk..",
+		"...kkkggggkkk...",
+		".....kkkkkk.....",
+		"................",
+	],
+});
+
 export const ITEM_ART: Record<
 	string,
 	{ palette: Record<string, string>; rows: string[] }
@@ -300,6 +325,72 @@ export const ITEM_ART: Record<
 			".......gG.......",
 			"......ggGG......",
 			".....DDDDDD.....",
+		],
+	},
+
+	// ───── 目的の品（持ち帰る品）。1つずつ 専用の 絵（data/items.ts の icon）
+	// はじまりの原盤：金の ラベルの レコード
+	genban: RECORD("#e8b830"),
+	// つづきの原盤：まだ なにも 入っていない 白い ラベル
+	tsuzuki: RECORD("#f0f0ea"),
+	// 1001の原盤：赤い ラベル（dat落ちの 1001）
+	g1001: RECORD("#d03838"),
+	// 蓄音機の針：ななめの 鋼の 針と 金の 針止め
+	needle: {
+		palette: {
+			y: "#b8862a",
+			Y: "#ffe07a",
+			h: "#f4f8fc",
+			s: "#b4bcc8",
+			m: "#6a7282",
+		},
+		rows: [
+			"................",
+			"...........yy...",
+			"..........yYYy..",
+			"..........yYyy..",
+			"...........yy...",
+			"..........hs....",
+			".........hsm....",
+			"........hsm.....",
+			".......hsm......",
+			"......hsm.......",
+			".....hsm........",
+			"....hsm.........",
+			"...hsm..........",
+			"...sm...........",
+			"..m.............",
+			"................",
+		],
+	},
+	// たこのみんの たこ焼き：😡の 顔の たこ焼き（ソース・マヨ・青のり）
+	takoyaki: {
+		palette: {
+			o: "#5a2410",
+			s: "#6a2a14",
+			m: "#fff4e0",
+			g: "#4a9a30",
+			b: "#d8683a",
+			B: "#f09058",
+			e: "#1a0804",
+		},
+		rows: [
+			"................",
+			"................",
+			".....oooooo.....",
+			"...oosmssgsoo...",
+			"..osgssmsssmso..",
+			"..obsssgssssbo..",
+			".obbebbbbbbebbo.",
+			".obbbeebbeebbbo.",
+			".obbBebbbbeBbbo.",
+			".obBbbbbbbbbBbo.",
+			".obbbbeeeebbbbo.",
+			"..obbebbbbebbo..",
+			"..obbbbbbbbbbo..",
+			"...oobbbbbboo...",
+			".....oooooo.....",
+			"................",
 		],
 	},
 };

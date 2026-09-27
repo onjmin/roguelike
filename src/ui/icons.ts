@@ -1,6 +1,7 @@
 // 床に落ちている道具の見た目（種類ごとではなく、カテゴリごとに1つ。見た目で正体はわからない）。
 // 絵は src/ui/itemArt.ts のドットから scripts/make-items.mjs で書き出した public/sprites/items/<名前>.png。
 // めずらしい道具（忍法帖の実）だけは 正体がわかっているので 専用の絵。
+// 目的の品（持ち帰る品）は 1つずつ 専用の 絵（data/items.ts の icon）。
 
 import { defOf } from "../core/item";
 import type { ItemCat } from "../core/types";
@@ -21,6 +22,7 @@ export const CAT_ICON: Record<ItemCat, string> = {
 
 export const itemIcon = (kind: string): string => {
 	const d = defOf(kind);
+	if (d.icon) return d.icon;
 	return d.rare ? art("growth") : CAT_ICON[d.cat];
 };
 

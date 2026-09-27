@@ -562,9 +562,13 @@ add({
 });
 
 // ───────── 目的の品（床には出ない） ─────────
+/** 目的の品の 専用の 絵（ui/itemArt.ts → scripts/make-items.mjs で 書き出す）。 */
+const art = (name: string): string => `pub:sprites/items/${name}.png`;
+
 add({
 	id: "genban",
 	cat: "goal",
+	icon: art("genban"),
 	name: "はじまりの原盤",
 	desc: "風呂板の　源泉の　底に　あった　レコード。持ち帰ろう",
 	flavor: "すべての　はじまり。持ち帰るまでが　冒険",
@@ -572,6 +576,7 @@ add({
 add({
 	id: "needle",
 	cat: "goal",
+	icon: art("needle"),
 	name: "蓄音機の針",
 	desc: "パン板の　過去ログに　落ちていた　針。持ち帰ろう",
 	flavor: "針が　なければ、レコードは　ただの　黒い　円盤",
@@ -579,6 +584,7 @@ add({
 add({
 	id: "tsuzuki",
 	cat: "goal",
+	icon: art("tsuzuki"),
 	name: "つづきの原盤",
 	desc: "送電鉄塔の　てっぺんに　あった　レコード。まだ、なにも　入っていない",
 	flavor: "つづきは　まだ　書かれて　いない。書くのは　たぶん　きみ",
@@ -588,6 +594,7 @@ add({
 add({
 	id: "g1001",
 	cat: "goal",
+	icon: art("g1001"),
 	name: "1001の原盤",
 	desc: "過去ログの　いちばん底の　レコード。どの　スレも　最後に　書かれる　レスが　刻まれている",
 	flavor: "終わりの　レスは、次スレへの　案内でも　ある",
@@ -597,6 +604,7 @@ add({
 add({
 	id: "kinonyan",
 	cat: "goal",
+	icon: "pub:sprites/kinonyan.png#0,32,16,16", // 敵の きのにゃんの 前向き
 	name: "きのにゃんの　AA",
 	desc: "[ｷ・Д・ﾉ]　きのこ板の　底で　ふんぞりかえっていた。持ち帰ろう",
 	flavor: "態度が　でかい。持ち帰っても　たぶん　でかい",
@@ -604,6 +612,7 @@ add({
 add({
 	id: "yashi",
 	cat: "goal",
+	icon: "sp:NwQNzoN", // RPGEN「ココナッツ　やしのみ」
 	name: "ナツコの　ヤシの実",
 	desc: "離島・沖縄板の　山の　上に　引っかかっていた　ヤシの実。持ち帰ろう",
 	flavor: "ヤッシッシ～。島民は　6人。拾ったのは　7人目",
@@ -611,6 +620,7 @@ add({
 add({
 	id: "takoyaki",
 	cat: "goal",
+	icon: art("takoyaki"),
 	name: "たこのみんの　たこ焼き",
 	desc: "おんたこの　屋上で　焼けていた。😡の　形を　している。持ち帰ろう",
 	flavor: "怒って　いるのでは　ない。焼けて　いるだけ",
@@ -618,6 +628,7 @@ add({
 add({
 	id: "uchiwa",
 	cat: "goal",
+	icon: "sp:SPpbIcP", // RPGEN「うちわ」
 	name: "マシーの　うちわ",
 	desc: "やぐらの　てっぺんに　落ちていた　うちわ。持ち帰ろう",
 	flavor: "祭りの　あとにも、うちわは　残る",
