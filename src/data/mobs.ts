@@ -99,7 +99,10 @@ export type MobDef = {
 	dir: Dir;
 	/** 家の まわり 2マスを うろうろ する。 */
 	wander?: boolean;
-	/** 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。無ければ 立ち絵なし（ぷゆゆ。おんJ民と 同じ）。 */
+	/**
+	 * 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。
+	 * 人の 子（リノ・アル）だけ。マスコット（ぷゆゆ・おんJwiki の 顔文字の マイナーズ）は おんJ民と 同じく 立ち絵なし。
+	 */
 	portrait?: string;
 	/** 名前欄の 色を かりる 仲間（立ち絵は かりない）。ぷゆゆは おんJ民（rpg と 同じ）。 */
 	voice?: Speaker;
@@ -579,7 +582,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 日曜日の子。屋台が 出ると 広場に 来る
 	nichie: {
 		name: "にぃちぇ",
-		portrait: "portraits/nichie.png",
 		sprite: "pub:sprites/minors_nichie.png",
 		from: 1,
 		spot: [13, 13],
@@ -683,7 +685,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// パン板から 侵略に 来た 食パン。屋根が つくと 屋台の となりに 出張所
 	panmatsu: {
 		name: "パン松",
-		portrait: "portraits/panmatsu.png",
 		sprite: "pub:sprites/minors_panmatsu.png",
 		from: 2,
 		spot: [8, 11],
@@ -777,7 +778,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// おんJ民の 姉。フェリスの となりを ねらっている。小屋が 建つと 広場の はしに
 	ngoane: {
 		name: "ンゴ姉",
-		portrait: "portraits/ngoane.png",
 		sprite: "pub:sprites/minors_ngoane.png",
 		from: 3,
 		spot: [19, 15],
@@ -868,7 +868,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// だれも 来ない おんS の お嬢さま。倉庫が 建つと 崖の下の すみっこに
 	onsu: {
 		name: "おんすちゃん",
-		portrait: "portraits/onsu.png",
 		sprite: "pub:sprites/minors_onsu.png",
 		from: 4,
 		spot: [20, 5],
@@ -971,7 +970,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 一軍（総選挙の 殿堂入り）。小さな店に なると 広場の まんなかに。今日の おんちゃんは 曜日で かわる
 	onchan: {
 		name: "おんちゃん",
-		portrait: "portraits/onchan.png",
 		sprite: "sa:oLrlUq",
 		from: 5,
 		spot: [12, 15],
@@ -1078,7 +1076,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	// ひかえめな ポジハメ。5割が 好き。倉庫Part2 の ころ 広場の 西の はしに
 	yayapoji: {
 		name: "ヤヤポジ",
-		portrait: "portraits/yayapoji.png",
 		sprite: "pub:sprites/minors_yayapoji.png",
 		from: 6,
 		spot: [2, 15],
@@ -1158,6 +1155,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 音源が あるので、ボイスが ON なら しゃべる（data/cast.ts の MOB_VOICE）。マイナーズでは ないので 総選挙には 出ない
 	rino: {
 		name: "リノ",
+		portrait: "portraits/rino.png",
 		sprite: "pub:sprites/rino.png",
 		from: 7,
 		spot: [9, 9],
@@ -1314,6 +1312,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 音源（dtm の hibika_aru）が あるので、ボイスが ON なら しゃべる。マイナーズでは ないので 総選挙には 出ない
 	aru: {
 		name: "アル",
+		portrait: "portraits/aru.png",
 		sprite: "pub:sprites/aru.png",
 		from: 7,
 		spot: [3, 13],
