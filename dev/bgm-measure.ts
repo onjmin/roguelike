@@ -4,7 +4,8 @@
 // studio の最終出力（startWavRecording）を録って、BS.1770 の I（ゲート付きの平均。LUFS）を出す。
 // 目標（data/bgm.ts）に合わせた #volume も出す：新しい #volume = 今の #volume × 10^((目標 − I) / 20)。
 // 等速で鳴らすので、曲の長さだけ時間がかかる（前奏のある曲は 前奏も入る。1 周＝ループなしで最後まで）。
-// 「全曲」は 曲ごとに 別の AudioContext で 6 曲ずつ 同時に 鳴らす（全曲 1 つずつだと 30 分ほど）。
+// 「全曲」は 1 曲ずつ 続けて 測る（30 分ほど）。同時に 鳴らすと studio を 分けても 4 dB ほど 大きく 出るので 使えない。
+// NO_HMR=1 の サーバーで 開くと、ほかの 編集で ページが 読み直されない。
 // 音の出るページなので、最初は ボタンを押して始める（ブラウザの自動再生の決まり）。
 
 import { createDtmStudio, type DtmStudio } from "@onjmin/dtm";
@@ -182,20 +183,10 @@ const measure = async (name: string, studio?: DtmStudio): Promise<void> => {
 	] = { I, mMax, vol, next, sec: chans[0].length / fs };
 };
 
-/**
- * 全曲を 同時に lanes 曲ずつ 測る（曲ごとに 別の studio なので 結果は 1曲ずつと 同じ。
- * 重いと 音が とぎれて 低く 出るので、おかしな 値の 曲は 1曲ずつで 測りなおす）。
- */
-const measureAll = async (lanes = 6): Promise<void> => {
-	const queue = Object.keys(bgm);
+/** 全曲を 1曲ずつ 測る（同時に 鳴らすと dtm の 中で まざって 大きく 出るので 1曲ずつ）。 */
+const measureAll = async (): Promise<void> => {
 	const t0 = performance.now();
-	await Promise.all(
-		Array.from({ length: lanes }, async () => {
-			const s = await newStudio();
-			for (let name = queue.shift(); name; name = queue.shift())
-				await measure(name, s);
-		}),
-	);
+	for (const name of Object.keys(bgm)) await measure(name);
 	log(`全曲 おわり（${((performance.now() - t0) / 1000).toFixed(0)} 秒）`);
 };
 
@@ -207,7 +198,7 @@ for (const name of Object.keys(bgm)) {
 	list.appendChild(b);
 }
 const all = document.createElement("button");
-all.textContent = "全曲（6 曲ずつ 同時に）";
+all.textContent = "全曲（1 曲ずつ）";
 all.onclick = () => void measureAll();
 list.appendChild(all);
 (window as unknown as { __measure: typeof measure }).__measure = measure;
