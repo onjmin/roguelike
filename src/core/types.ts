@@ -385,8 +385,11 @@ export type GameEvent =
 			icon?: string;
 	  }
 	| { t: "warp"; id: number; from: Pos; to: Pos }
-	/** r：爆発が 巻きこむ まわりの マス数（地雷 1・炎上案件 2。画面の 火の玉の 大きさ）。 */
-	| { t: "fx"; kind: string; pos: Pos; r?: number }
+	/**
+	 * r：爆発が 巻きこむ まわりの マス数（地雷 1・炎上案件 2。画面の 火の玉の 大きさ）。
+	 * at：炎上スレで 焼かれる 敵の いる マス（それぞれに 火の玉を 出す）。
+	 */
+	| { t: "fx"; kind: string; pos: Pos; r?: number; at?: Pos[] }
 	| { t: "floor"; depth: number; up: boolean }
 	| { t: "levelup"; lv: number }
 	| { t: "house" }

@@ -355,13 +355,18 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			break;
 		}
 		case "s_blast": {
-			r.se("explosion");
-			r.emit({ t: "fx", kind: "blast", pos: { x: p.x, y: p.y } });
 			const room = roomAt(f.layout, p.x, p.y);
 			const targets = f.monsters.filter(
 				(m) =>
 					dist(m, p) <= 1 || (room >= 0 && roomAt(f.layout, m.x, m.y) === room),
 			);
+			r.se("explosion");
+			r.emit({
+				t: "fx",
+				kind: "blast",
+				pos: { x: p.x, y: p.y },
+				at: targets.map((m) => ({ x: m.x, y: m.y })),
+			});
 			if (!targets.length) r.msg("何も　起きなかった");
 			for (const m of targets) {
 				wakeMonster(r, m, true);

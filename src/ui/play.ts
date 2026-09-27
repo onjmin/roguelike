@@ -1717,13 +1717,19 @@ export class Play {
 					break;
 				case "fx":
 					// 爆発（地雷・炎上案件）は その場に 火の玉も 出す（見えている ときだけ）。
-					// 炎上スレ（blast）は 部屋じゅうなので 画面の 光だけ
+					// 炎上スレ（blast）は 焼かれる 敵 1匹ずつに 小さい 火の玉を いっせいに
 					if (e.kind === "explosion" && this.run.playerSees(e.pos))
 						await Promise.all([
 							this.flash("rgba(255,160,60,0.45)", 160),
 							this.blastAt(e.pos, e.r ?? 1, fast ? 0.4 : speed),
 						]);
-					else if (e.kind === "explosion" || e.kind === "blast")
+					else if (e.kind === "blast") {
+						const seen = (e.at ?? []).filter((q) => this.run.playerSees(q));
+						await Promise.all([
+							this.flash("rgba(255,160,60,0.45)", 160),
+							...seen.map((q) => this.blastAt(q, 0.5, fast ? 0.4 : speed)),
+						]);
+					} else if (e.kind === "explosion")
 						await this.flash("rgba(255,160,60,0.6)", 220);
 					break;
 				case "floor":
