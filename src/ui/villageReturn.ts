@@ -22,7 +22,13 @@ import {
 	type StoryPage,
 	UNLOCK_LINES,
 } from "../data/story";
-import { RETURN_PAGES, STAGE_NAMES, STAGE_UP, TOWN_MSG } from "../data/town";
+import {
+	RETURN_PAGES,
+	STAGE_NAMES,
+	STAGE_UP,
+	TOWN_MSG,
+	WAKE_PAGES,
+} from "../data/town";
 import {
 	exitAt,
 	lineupSpots,
@@ -34,13 +40,14 @@ import type { Story } from "../engine/defs";
 import {
 	doneProgressNews,
 	loadProgress,
+	loadRecords,
 	loadTown,
 	type PendingReturn,
 	settleReturn,
 	type Town,
 } from "../engine/save";
 import type { Dir } from "../engine/types";
-import { fill } from "./villageTalk";
+import { deathQuote, fill } from "./villageTalk";
 
 /**
  * 開発用：`?stage=N` で 描く 町の段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
@@ -132,6 +139,29 @@ export const returnScene = async (
 	]);
 	await s.rebuild();
 	s.bgm("town");
+	await s.fadeIn(300);
+};
+
+// ───────────────── たおれて もどったとき ─────────────────
+
+/**
+ * たおれて もどった：蓄音機の 前で 目を さまし、仲間が 1人 歩いてきて ひとこと。暗転の あいだに 持ち場へ もどる。
+ * だれが 来るか・どの 語りかは 前の冒険（記録の 時刻）で 決まる。
+ */
+export const deathScene = async (s: Story): Promise<void> => {
+	const last = loadRecords()[0];
+	if (last?.kind !== "dead") return;
+	const seed = Math.floor(last.at / 1000) + last.turn;
+	const q = deathQuote(seed);
+	await s.narrate(WAKE_PAGES[seed % WAKE_PAGES.length]);
+	if (!q) return;
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	await s.goto(q.who, bx + 1, by, { speed: 1.6 });
+	s.face(q.who, "player");
+	s.face("player", "right");
+	await s.say(q.who, q.text);
+	await s.fadeOut(300);
+	await s.rebuild();
 	await s.fadeIn(300);
 };
 

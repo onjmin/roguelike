@@ -55,6 +55,7 @@ import type { Arrival } from "./village";
 import { hasMobNews, mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
 import { needsOpening, openingScript } from "./villageOpening";
 import {
+	deathScene,
 	lineUp,
 	newsScript,
 	previewStage,
@@ -377,6 +378,9 @@ const arrivalScript =
 		if (arrival?.kind === "replay") return;
 		const back = returnOf(arrival);
 		if (back) await returnScene(s, back);
+		// たおれて もどった：蓄音機の 前で 目を さまし、仲間が 歩いてくる
+		if (arrival?.kind === "dead" && previewStage() === null)
+			await deathScene(s);
 		// 持ち帰りの 曲（ending）のまま 入ったときも ここからは 村の曲
 		s.bgm("town");
 		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）

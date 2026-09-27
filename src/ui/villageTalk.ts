@@ -67,6 +67,18 @@ const quoteContext = (): QuoteContext => {
 };
 
 /**
+ * たおれて もどったとき 歩いてくる 仲間の ひとこと（前の冒険が たおれ で なければ null）。
+ * パン板なら ときどき パン板の たまり、ほかは 深さ・たおれ方・「次スレ」の たまり（pickQuote）。
+ */
+export const deathQuote = (seed: number): Quote | null => {
+	const last = loadRecords()[0];
+	if (last?.kind !== "dead") return null;
+	if ((last.dungeon ?? "main") === "shallow" && seed % 2 === 0)
+		return SHALLOW_DEATH[seed % SHALLOW_DEATH.length] ?? null;
+	return pickQuote(quoteContext(), seed);
+};
+
+/**
  * 起動の札の ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
  * 無ければ 本編の たまり（data/quotes.ts の pickQuote）。
  */

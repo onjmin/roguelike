@@ -49,6 +49,7 @@ import {
 	TOWN_MSG,
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
+	WAKE_PAGES,
 	ZERO_VOICELESS,
 } from "../data/town";
 import {
@@ -94,6 +95,7 @@ import {
 	openingScript,
 } from "../ui/villageOpening";
 import {
+	deathScene,
 	lineUp,
 	newsScript,
 	type ReturnArrival,
@@ -962,6 +964,38 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 		lineUp(s, { kind: "escape", dungeon: "deep" }, v);
 		await returnScene(s, { kind: "escape", dungeon: "deep" });
 		ok(log.length === 0, `a scene played away from the mouth: ${log.join()}`);
+	});
+});
+
+test("coming back after a death: Kiriko wakes at the gramophone and a friend walks up with a line", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"]);
+		pushRecord({ kind: "dead", dungeon: "main", depth: 5 });
+		const { s, log } = fakeStory();
+		await deathScene(s);
+		const wake = log.findIndex((l) => l.startsWith("narrate: "));
+		ok(wake === 0, `does not open with the wake narration:\n${log.join("\n")}`);
+		ok(
+			WAKE_PAGES.some((t) => log[0] === `narrate: ${t}`),
+			"the wake narration is not one of WAKE_PAGES",
+		);
+		const walk = log.findIndex((l) => l.startsWith("goto "));
+		const say = log.findIndex((l) => l.startsWith("say "));
+		ok(
+			walk > 0 && say > walk,
+			`no friend walks up and talks:\n${log.join("\n")}`,
+		);
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		ok(
+			log[walk].endsWith(` ${bx + 1},${by}`),
+			`the friend stops at ${log[walk]}`,
+		);
+		ok(log.includes("rebuild"), "the friend is not sent home");
+		// 持ち帰った あとは この 場面は ない
+		pushRecord({ kind: "clear", dungeon: "shallow" });
+		const b = fakeStory();
+		await deathScene(b.s);
+		ok(b.log.length === 0, `a death scene after a clear: ${b.log.join()}`);
 	});
 });
 
