@@ -162,7 +162,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_blind":
 			p.status.blind = 50;
 			r.se("debuff");
-			r.msg("目が　見えなくなった！", "warn");
+			r.msg("アク禁された！　何も　見えない！", "warn");
 			break;
 		case "h_blink":
 			r.warpPlayer();
@@ -170,7 +170,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_reel":
 			p.status.confuse = 10;
 			r.se("debuff");
-			r.msg("頭が　くらくらする……", "warn");
+			r.msg("安価が　止まらない……", "warn");
 			break;
 		case "h_daze":
 			p.status.daze = 50;
@@ -660,7 +660,7 @@ const herbOnMonster = (
 		case "h_blind":
 			m.status.blind = true;
 			sealMonster(m);
-			r.msg(`${nm}は　目が　見えなくなった`);
+			r.msg(`${nm}を　アク禁した`);
 			return;
 		case "h_blink": {
 			staffEffect(r, "w_send", m);

@@ -20,7 +20,7 @@ export const FAKE_NAMES: Partial<Record<ItemCat, readonly string[]>> = {
 		"【注意】スレ",
 		"【衝撃】スレ",
 		"【謎】スレ",
-		"【安価】スレ",
+		"【検証】スレ",
 		"【雑談】スレ",
 		"【報告】スレ",
 		"【相談】スレ",
@@ -79,6 +79,27 @@ export const FAKE_NAMES: Partial<Record<ItemCat, readonly string[]>> = {
 export const OLD_FAKE_NAMES: Partial<
 	Record<ItemCat, readonly (readonly string[])[]>
 > = {
+	scroll: [
+		// 安価草が できる前（【安価】スレ が あった。13番目だけ ちがう）
+		[
+			"【悲報】スレ",
+			"【朗報】スレ",
+			"【速報】スレ",
+			"【疑問】スレ",
+			"【急募】スレ",
+			"【定期】スレ",
+			"【議論】スレ",
+			"【実況】スレ",
+			"【画像】スレ",
+			"【注意】スレ",
+			"【衝撃】スレ",
+			"【謎】スレ",
+			"【安価】スレ",
+			"【雑談】スレ",
+			"【報告】スレ",
+			"【相談】スレ",
+		],
+	],
 	herb: [
 		// 2ch のことばにする前（ぎざぎざの草 など。色の名前も まじっていた）
 		[

@@ -1062,7 +1062,7 @@ export class Run {
 		}
 		if (st.confuse > 0 && --st.confuse === 0) this.msg("混乱が　とけた");
 		if (st.blind > 0 && --st.blind === 0) {
-			this.msg("目が　見えるように　なった");
+			this.msg("アク禁が　とけた");
 			this.updateVision();
 		}
 		if (st.daze > 0 && --st.daze === 0) this.msg("まどわしが　とけた");

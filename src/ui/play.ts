@@ -538,7 +538,7 @@ export class Play {
 		const badges = [
 			st.sleep > 0 ? "眠り" : "",
 			st.confuse > 0 ? "混乱" : "",
-			st.blind > 0 ? "盲目" : "",
+			st.blind > 0 ? "アク禁" : "",
 			st.daze > 0 ? "まどわし" : "",
 			st.fast > 0 ? "倍速" : "",
 			st.trapped > 0 ? "はさまれ" : "",
