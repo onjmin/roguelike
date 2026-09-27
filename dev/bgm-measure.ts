@@ -4,6 +4,7 @@
 // studio の最終出力（startWavRecording）を録って、BS.1770 の I（ゲート付きの平均。LUFS）を出す。
 // 目標（data/bgm.ts）に合わせた #volume も出す：新しい #volume = 今の #volume × 10^((目標 − I) / 20)。
 // 等速で鳴らすので、曲の長さだけ時間がかかる（前奏のある曲は 前奏も入る。1 周＝ループなしで最後まで）。
+// 「全曲」は 曲ごとに 別の AudioContext で 6 曲ずつ 同時に 鳴らす（全曲 1 つずつだと 30 分ほど）。
 // 音の出るページなので、最初は ボタンを押して始める（ブラウザの自動再生の決まり）。
 
 import { createDtmStudio, type DtmStudio } from "@onjmin/dtm";
@@ -129,25 +130,30 @@ const decodeWav = async (
 
 // ───────────────── 画面 ─────────────────
 
-let studio: DtmStudio | null = null;
 const out = document.getElementById("out") as HTMLElement;
 const log = (s: string) => {
-	out.textContent += `${s}\n`;
+	out.textContent += `${s}
+`;
 };
 
-const measure = async (name: string): Promise<void> => {
+/** 曲ごとに 自分の AudioContext と studio を 作る（同時に 鳴らしても 録音は まざらない）。 */
+const newStudio = async (): Promise<DtmStudio> => {
+	const ctx = new AudioContext();
+	await ctx.resume();
+	return createDtmStudio({
+		audioContext: ctx,
+		masterVolume: 100,
+		voiceWorkerUrl: null,
+		features: { midi: false, chord: false, presetUI: false, help: false },
+	});
+};
+
+let single: DtmStudio | null = null;
+
+const measure = async (name: string, studio?: DtmStudio): Promise<void> => {
 	const mml = bgm[name];
-	if (!studio) {
-		const ctx = new AudioContext();
-		await ctx.resume();
-		studio = await createDtmStudio({
-			audioContext: ctx,
-			masterVolume: 100,
-			voiceWorkerUrl: null,
-			features: { midi: false, chord: false, presetUI: false, help: false },
-		});
-	}
-	const s = studio;
+	single ??= studio ? null : await newStudio();
+	const s = studio ?? (single as DtmStudio);
 	const vol = songVolume(mml);
 	log(`${name}: #volume=${vol} を鳴らしています（1 周）…`);
 	await new Promise<void>((done) => {
@@ -166,7 +172,7 @@ const measure = async (name: string): Promise<void> => {
 	const target = targetFor(name);
 	const next = Math.round(vol * 10 ** ((target - I) / 20));
 	log(
-		`  I = ${I.toFixed(1)} LUFS（M-max ${mMax.toFixed(1)}）・${(chans[0].length / fs).toFixed(1)} 秒 → 目標 ${target} には #volume=${next}`,
+		`  ${name}: I = ${I.toFixed(1)} LUFS（M-max ${mMax.toFixed(1)}）・${(chans[0].length / fs).toFixed(1)} 秒 → 目標 ${target} には #volume=${next}`,
 	);
 	(
 		window as unknown as { __bgmResult: Record<string, unknown> }
@@ -176,6 +182,23 @@ const measure = async (name: string): Promise<void> => {
 	] = { I, mMax, vol, next, sec: chans[0].length / fs };
 };
 
+/**
+ * 全曲を 同時に lanes 曲ずつ 測る（曲ごとに 別の studio なので 結果は 1曲ずつと 同じ。
+ * 重いと 音が とぎれて 低く 出るので、おかしな 値の 曲は 1曲ずつで 測りなおす）。
+ */
+const measureAll = async (lanes = 6): Promise<void> => {
+	const queue = Object.keys(bgm);
+	const t0 = performance.now();
+	await Promise.all(
+		Array.from({ length: lanes }, async () => {
+			const s = await newStudio();
+			for (let name = queue.shift(); name; name = queue.shift())
+				await measure(name, s);
+		}),
+	);
+	log(`全曲 おわり（${((performance.now() - t0) / 1000).toFixed(0)} 秒）`);
+};
+
 const list = document.getElementById("list") as HTMLElement;
 for (const name of Object.keys(bgm)) {
 	const b = document.createElement("button");
@@ -183,4 +206,10 @@ for (const name of Object.keys(bgm)) {
 	b.onclick = () => void measure(name);
 	list.appendChild(b);
 }
+const all = document.createElement("button");
+all.textContent = "全曲（6 曲ずつ 同時に）";
+all.onclick = () => void measureAll();
+list.appendChild(all);
 (window as unknown as { __measure: typeof measure }).__measure = measure;
+(window as unknown as { __measureAll: typeof measureAll }).__measureAll =
+	measureAll;
