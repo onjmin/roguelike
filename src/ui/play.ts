@@ -533,7 +533,6 @@ export class Play {
 		const p = run.p;
 		const hp = Math.min(this.shownHp ?? p.hp, p.maxHp);
 		const hunger = Math.ceil(p.hunger / HUNGER_UNIT);
-		const left = run.s.returning ? -1 : run.cardsLeft();
 		const st = p.status;
 		const badges = [
 			st.sleep > 0 ? "眠り" : "",
@@ -544,7 +543,7 @@ export class Play {
 			st.trapped > 0 ? "はさまれ" : "",
 			st.heldBy !== null ? "つかまれ" : "",
 		].filter(Boolean);
-		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${left}|${badges.join()}|${run.s.returning}`;
+		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
@@ -558,9 +557,7 @@ export class Play {
 			`<span class="st-hp${ink ? " inked" : ""}">HP ${hp}/${p.maxHp}</span></div>` +
 			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((hp / p.maxHp) * 100)}%"></i></div>` +
 			`<div class="st-row"><span class="st-hunger${hunger <= 10 ? " low" : ""}">満腹 ${hunger}%</span>` +
-			(left >= 0
-				? `<span class="st-cards">のこり札 ${left}</span>`
-				: `<span class="st-cards">帰り道</span>`) +
+			(run.s.returning ? `<span class="st-return">帰り道</span>` : "") +
 			(badges.length
 				? `<span class="st-hp low">${badges.join(" ")}</span>`
 				: "") +
@@ -1510,7 +1507,7 @@ export class Play {
 		const run = this.run;
 		if (this.stopped || run.s.end || !this.onUsableStairs()) return;
 		const up = run.s.returning;
-		// トルネコ1と同じく 聞くだけ（この階に残っている札の数は 山札の表で見られる）
+		// トルネコ1と同じく 聞くだけ
 		const title = up ? "階段を　上りますか？" : "階段を　降りますか？";
 		this.busy = true;
 		const v = await listWindow(

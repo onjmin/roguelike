@@ -60,7 +60,7 @@ export type ItemDef = {
 	sound?: { swing: string; hit: string };
 	/** 杖の回数（配るときにこの範囲で決める）。 */
 	charges?: [number, number];
-	/** 図鑑・山札の並び順。 */
+	/** 図鑑の並び順。 */
 	order: number;
 	/** めずらしい道具：未識別の分類でも はじめから 正体が わかり、見た目も 専用（メタルぷゆゆの 落とし物）。 */
 	rare?: true;
@@ -173,7 +173,7 @@ export type Monster = {
 	/** 行動できる時刻（半ターン単位）。 */
 	nextAt: number;
 	status: MonsterStatus;
-	/** 持っている札（倒すと落とす）。盗んだ道具・拾った道具もここ。 */
+	/** 持っている道具（倒すと落とす）。盗んだ道具・拾った道具もここ。 */
 	carry: Item | null;
 	/** さまよう先。 */
 	goal: Pos | null;
@@ -268,8 +268,6 @@ export type Floor = {
 	monsters: Monster[];
 	/** 踏破した（見たことのある）マス。 */
 	seen: Uint8Array;
-	/** この階に配られた札の uid。 */
-	cards: number[];
 	/** 結界のマス（idx）。 */
 	wards: number[];
 	/** モンスターハウスの部屋 id（無ければ -1）。 */
@@ -317,18 +315,10 @@ export type RunState = {
 	time: number;
 	player: Player;
 	floor: Floor;
-	/** 階ごとに配る札の種類。deal[d] が d 階ぶん（配ったら空にする）。 */
-	deal: string[][];
 	/** モンスターハウスのある階。 */
 	houses: number[];
-	/** 配った札の uid → 配ったときの種類（糧変えで種類が変わっても、数えるのはこちら）。 */
-	cardKind: Record<number, string>;
-	/** 見た札の uid。 */
+	/** 見た道具の uid（地図に 出す）。 */
 	seen: number[];
-	/** 燃えた・消えた札の uid（山札の表で「なくなった」と出す）。 */
-	lost: number[];
-	/** 見ないまま流れた札の数（階を降りたとき、見ていない札）。 */
-	flowed: number;
 	ids: IdTable;
 	nextUid: number;
 	log: string[];

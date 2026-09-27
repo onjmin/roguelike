@@ -27,7 +27,6 @@ import {
 import { type Dungeon, dungeonById } from "./data/dungeons";
 import { ITEM_LIST } from "./data/items";
 import { FAKE_NAMES } from "./data/names";
-import { dealDeck } from "./deck";
 import { throwItem, useItem } from "./effects";
 import { buildFloor, randomFloorPos, spawnMonster } from "./floor";
 import { canSee, forEachExitPeek, forEachVisible } from "./fov";
@@ -93,6 +92,10 @@ export const migrateRun = (s: RunState): RunState | null => {
 	}
 	if (s.v !== SAVE_VERSION) return null;
 	if (!s.dungeon || dungeonById(s.dungeon).id !== s.dungeon) return null;
+	// 山札のころの 中断セーブ：配る札の表などは もう使わない（これからの階は 表から引く）
+	const old = s as RunState & Record<string, unknown>;
+	for (const k of ["deal", "cardKind", "lost", "flowed"]) delete old[k];
+	delete (s.floor as Floor & { cards?: unknown }).cards;
 	return s;
 };
 
@@ -117,9 +120,7 @@ export class Run {
 	): Run {
 		const dg = dungeonById(dungeon);
 		const rng = Rng.fromSeed(seed);
-		const deal = dealDeck(rng, dg.deck, dg.floors);
 		// モンスターハウス（祭り）の階（本編は 3階から 1/16 ずつ。B6 までに無ければ B4〜6 のどこかに1つ）。
-		// ハウスの階には札を多めに寄せる
 		const houses: number[] = [];
 		if (dg.houses) {
 			const h = dg.houses;
@@ -131,12 +132,11 @@ export class Run {
 				houses.sort((a, b) => a - b);
 			}
 		}
-		rebalanceForHouses(rng, deal, houses);
-		// 未識別の名前の割り当て（このダンジョンの山札にある種類）
+		// 未識別の名前の割り当て（このダンジョンで出る種類）
 		const fake: Record<string, string> = {};
 		for (const cat of UNIDENTIFIED_CATS) {
 			const names = rng.shuffle([...(FAKE_NAMES[cat] ?? [])]);
-			const kinds = [...new Set(dg.deck.map((e) => e.kind))].filter(
+			const kinds = [...new Set(dg.items.map((e) => e.kind))].filter(
 				(k) => defOf(k).cat === cat,
 			);
 			kinds.forEach((k, i) => {
@@ -185,12 +185,8 @@ export class Run {
 			time: 0,
 			player,
 			floor: null as unknown as Floor,
-			deal,
 			houses,
-			cardKind: {},
 			seen: [],
-			lost: [],
-			flowed: 0,
 			ids: { fake, known, named: {} },
 			nextUid: 1,
 			log: [],
@@ -203,7 +199,7 @@ export class Run {
 		};
 		const run = new Run(s);
 		run.rng = rng;
-		// 始めの持ち物（山札の外。毎回同じ）：本編は ぷゆゆパン
+		// 始めの持ち物（毎回同じ）：本編は ぷゆゆパン
 		for (const k of dg.start) player.items.push(run.newItem(k));
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
@@ -371,14 +367,7 @@ export class Run {
 			return true;
 		}
 		if (!quiet) this.msg(`${this.name(it)}は　消えてしまった`);
-		this.loseItem(it);
 		return false;
-	}
-
-	/** 道具が燃えた・消えた（山札の表で「なくなった」と数える）。 */
-	loseItem(it: Item): void {
-		if (this.s.cardKind[it.uid] && !this.s.lost.includes(it.uid))
-			this.s.lost.push(it.uid);
 	}
 
 	/** 床の道具を消す（地雷・爆発・火）。 */
@@ -388,7 +377,6 @@ export class Run {
 		if (this.isWardItem(fi))
 			this.f.wards = this.f.wards.filter((i) => i !== this.tileIndex(fi));
 		this.f.items = this.f.items.filter((i) => i !== fi);
-		this.loseItem(fi.item);
 	}
 
 	private tileIndex(p: Pos): number {
@@ -459,13 +447,6 @@ export class Run {
 	/** その階の階段の上にいるか。 */
 	onStairs(): boolean {
 		return samePos(this.p, this.f.stairs);
-	}
-
-	/** この階の、まだ見ていない札の数（床・モンスターの持ち物）。 */
-	cardsLeft(): number {
-		const seen = new Set(this.s.seen);
-		const lost = new Set(this.s.lost);
-		return this.f.cards.filter((u) => !seen.has(u) && !lost.has(u)).length;
 	}
 
 	// ───────────────── 見える範囲 ─────────────────
@@ -555,20 +536,9 @@ export class Run {
 	/** 階に入る（下りなら depth+1、帰り道なら depth−1）。 */
 	enterFloor(depth: number, fell: boolean): void {
 		const s = this.s;
-		if (s.floor) {
-			// 見ないまま流れる札
-			s.flowed += this.cardsLeft();
-		}
 		s.depth = depth;
 		s.stats.maxDepth = Math.max(s.stats.maxDepth, depth);
-		const kinds = s.returning ? [] : (s.deal[depth] ?? []);
-		s.deal[depth] = [];
-		s.floor = buildFloor(
-			this,
-			depth,
-			kinds,
-			s.houses.includes(depth) && !s.returning,
-		);
+		s.floor = buildFloor(this, depth, s.houses.includes(depth) && !s.returning);
 		const p = this.p;
 		// 目つぶし・混乱・まどわし・眠り・倍速は 階を かわっても とけない（トルネコ1と おなじ）
 		p.status.trapped = 0;
@@ -884,11 +854,8 @@ export class Run {
 		this.msg(`${monsterName(this, m)}は　爆発した！`, "warn");
 		m.hp = 0;
 		this.f.monsters = this.f.monsters.filter((x) => x !== m);
-		// 持っていた札も いっしょに燃える
-		if (m.carry) {
-			this.loseItem(m.carry);
-			m.carry = null;
-		}
+		// 持っていた道具も いっしょに燃える
+		m.carry = null;
 		if (this.p.status.heldBy === m.uid) this.p.status.heldBy = null;
 		const inArea = (p: Pos) =>
 			Math.abs(p.x - cx) <= 2 && Math.abs(p.y - cy) <= 2;
@@ -1465,25 +1432,6 @@ const monsterCost = (m: Monster): number => {
 	if (m.status.fast > 0) c = 1;
 	if (m.status.slow > 0) c = 4;
 	return c;
-};
-
-/** モンスターハウスの階に札を寄せる（山札の総数は変えない。同じ層の中で配りなおす）。 */
-const rebalanceForHouses = (
-	rng: Rng,
-	deal: string[][],
-	houses: number[],
-): void => {
-	for (const h of houses) {
-		// 同じ層（前後6階ぶん）の、ハウスでない階から 1枚ずつ引いてくる
-		const donors = [];
-		for (let d = Math.max(1, h - 3); d <= Math.min(deal.length - 1, h + 3); d++)
-			if (d !== h && !houses.includes(d) && deal[d].length > 4) donors.push(d);
-		rng.shuffle(donors);
-		for (const d of donors.slice(0, 6)) {
-			const i = rng.int(deal[d].length);
-			deal[h].push(deal[d].splice(i, 1)[0]);
-		}
-	}
 };
 
 export { DOZE, HOLD };

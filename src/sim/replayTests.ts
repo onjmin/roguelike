@@ -5,11 +5,11 @@
 // - 途中の指紋（#…）が ぜんぶ合うか。記録を1つ抜くと、指紋で ずれがわかるか。
 // - コマンドの短い文字が、どの形でも 元にもどるか。
 
-import { MAIN_DECK } from "../core/data/items";
-import { deckSize } from "../core/deck";
+import { MAIN_ITEMS } from "../core/data/items";
 import { randomFloorPos, spawnMonster } from "../core/floor";
 import { type Dir8, step } from "../core/geom";
-import { deckOf, defOf, kindName } from "../core/item";
+import { defOf, itemTableOf, kindName } from "../core/item";
+import { tableTotal } from "../core/itemTable";
 import { isFloor, roomAt } from "../core/mapgen";
 import {
 	decodeCmd,
@@ -120,8 +120,13 @@ test("an old (v1) suspended save loads as the main dungeon", () => {
 	const s = JSON.parse(serializeRun(Run.create("rp-v1").s));
 	s.v = 1;
 	delete s.dungeon;
-	// 前の版の本編には 帰還スレが無かった（仮の名前も 配られた札も無い）
+	// 前の版の本編には 帰還スレが無かった（仮の名前も無い）。山札のころの 配る札の表も 残っている
 	delete s.ids.fake.s_escape;
+	s.deal = [[], ["h_heal"]];
+	s.cardKind = {};
+	s.lost = [];
+	s.flowed = 0;
+	s.floor.cards = [];
 	const m = migrateRun(deserializeRun(JSON.stringify(s)));
 	ok(
 		m && m.v === 2 && m.dungeon === "main",
@@ -129,9 +134,14 @@ test("an old (v1) suspended save loads as the main dungeon", () => {
 	);
 	if (!m) return;
 	ok(
-		!deckOf(m).some((e) => e.kind === "s_escape") &&
-			deckSize(deckOf(m)) === deckSize(MAIN_DECK) - 3,
-		"the old run's deck lists 帰還スレ, which it never dealt",
+		!itemTableOf(m).some((e) => e.kind === "s_escape") &&
+			tableTotal(itemTableOf(m)) === tableTotal(MAIN_ITEMS) - 3,
+		"the old run can roll 帰還スレ, which has no fake name",
+	);
+	ok(
+		!["deal", "cardKind", "lost", "flowed"].some((k) => k in m) &&
+			!("cards" in m.floor),
+		"the deck fields of the old save are left",
 	);
 	const old = new Run(m);
 	for (let i = 0; i < 300; i++) {

@@ -29,10 +29,6 @@ import {
 	shareWindow,
 } from "./share";
 
-/** そのダンジョンの山札の枚数（毎回同じ）。 */
-const deckTotal = (dungeon: string | undefined): number =>
-	dungeonById(dungeon).deck.reduce((a, e) => a + e.count, 0);
-
 /** HTML に埋めこむ文字の逃がし。 */
 export const esc = (s: string): string =>
 	s.replace(
@@ -215,13 +211,6 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 			]),
 		]),
 		el("div", { class: "matome-sec" }, [
-			el("div", { class: "matome-title", text: "山札" }),
-			grid([
-				["見た札", `${rec.seen}／${deckTotal(rec.dungeon)}`],
-				["流れた札", String(rec.flowed)],
-			]),
-		]),
-		el("div", { class: "matome-sec" }, [
 			el("div", {
 				class: "matome-title",
 				text: `持ち物（${p.items.length}）`,
@@ -289,7 +278,7 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 		const rows = list.map((r, i) => ({
 			label: `<b class="rec-kind ${r.kind}">${KIND_LABEL[r.kind]}</b>　${esc(endLine(r))}`,
 			sub: replayOf(r) ? "▶" : "",
-			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}　見た札${r.seen}`,
+			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}`,
 			value: String(i),
 		}));
 		const v = await listWindow(ctx, `冒険の記録${total}${note}`, rows, {

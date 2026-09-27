@@ -597,7 +597,6 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
  * はずれたときだけ 床に 落ちる（throwItem）。
  */
 const onThrownHit = (r: Run, it: Item, m: Monster): void => {
-	r.loseItem(it);
 	const d = defOf(it.kind);
 	const md = mdef(m);
 	const undead = md.tags?.includes("undead");

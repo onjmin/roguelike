@@ -1,4 +1,4 @@
-// ゲーム中のメニュー（B ボタン／☰）：もちもの・足元・山札・つよさ・ログ・地図・せってい・中断。
+// ゲーム中のメニュー（B ボタン／☰）：もちもの・足元・つよさ・図鑑・ログ・地図・せってい・中断。
 //
 // - メニューは run を書きかえない。選んだ行動は Command にして返し、進めるのは呼び出し側（run.act）。
 //   投げた道具が飛ぶ などの演出を play.ts の1か所でまとめて出せるように。
@@ -9,18 +9,17 @@
 import { HUNGER_UNIT, INVENTORY_MAX } from "../core/balance";
 import { needsTarget } from "../core/effects";
 import {
-	deckOf,
 	defOf,
 	isKeyItem,
 	isKnownKind,
 	isUnidentifiedCat,
+	itemTableOf,
 } from "../core/item";
 import type { Run } from "../core/run";
 import { trapName } from "../core/traps";
 import type { Command, Item, ItemCat, TrapKind } from "../core/types";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
-import { openDeck } from "./deckView";
 import { el } from "./dom";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
@@ -189,7 +188,6 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				value: "items",
 			},
 			{ label: "足元", sub: footHint(run), value: "foot" },
-			{ label: "山札", sub: `のこり${run.cardsLeft()}`, value: "deck" },
 			{ label: "つよさ", sub: `Lv${run.p.lv}`, value: "status" },
 			{ label: "図鑑", value: "book" },
 			{ label: "ログ", value: "log" },
@@ -216,9 +214,6 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				break;
 			case "foot":
 				a = await openFootMenu(ctx, run);
-				break;
-			case "deck":
-				await openDeck(ctx, run);
 				break;
 			case "status":
 				await openStatus(ctx, run);
@@ -291,7 +286,7 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 		desc: blocked || undefined,
 	});
 	if (under) rows.push({ label: "足元と交換", value: "swap" });
-	// 名前をつける：文字を打たずに、候補（山札にある まだ正体のわからない種類）から選ぶ
+	// 名前をつける：文字を打たずに、候補（このダンジョンで出る まだ正体のわからない種類）から選ぶ
 	if (isUnidentifiedCat(it.kind) && !isKnownKind(run.s, it.kind))
 		rows.push({ label: "名前をつける", value: "name" });
 	return rows;
@@ -304,7 +299,7 @@ const pickName = async (
 	kind: string,
 ): Promise<MenuAction | null> => {
 	const cat = defOf(kind).cat;
-	const cands = deckOf(run.s).filter(
+	const cands = itemTableOf(run.s).filter(
 		(e) => defOf(e.kind).cat === cat && !isKnownKind(run.s, e.kind),
 	);
 	const named = run.s.ids.named[kind];
@@ -312,7 +307,6 @@ const pickName = async (
 		const d = defOf(e.kind);
 		return {
 			label: esc(d.name),
-			sub: `全${e.count}枚`,
 			desc: esc(d.desc),
 			value: e.kind,
 		};

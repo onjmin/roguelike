@@ -176,10 +176,6 @@ export type RunRecord = {
 	turn: number;
 	/** 倒したモンスターの数。 */
 	kills: number;
-	/** 見た札の数。 */
-	seen: number;
-	/** 見ないまま流れた札の数。 */
-	flowed: number;
 	/** 帰り道（目的の品を持って上っている）だった。 */
 	returning: boolean;
 	seed: string;
@@ -206,9 +202,6 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		lv: s.player.lv,
 		turn: end.turn,
 		kills: Object.values(s.kills).reduce((a, n) => a + n, 0),
-		// 山札の札だけを数える（原盤・始めのパン・分けて飛ばした矢は札ではない）
-		seen: s.seen.filter((u) => s.cardKind[u] !== undefined).length,
-		flowed: s.flowed,
 		returning: s.returning,
 		seed: s.seed,
 		dungeon: s.dungeon,

@@ -23,15 +23,15 @@ const BAD_HERBS = new Set([
 export type BotOpts = {
 	/** この階に長くいすぎたら階段へ（ターン）。 */
 	floorTurnLimit: number;
-	/** 階の札を見つけきったら降りる。 */
-	leaveWhenNoCards: boolean;
+	/** 階の道具を見つけきったら降りる。 */
+	leaveWhenNoItems: boolean;
 	/** 危ないときに 帰還スレで 地上へ もどる（倒れないモードでは 深い階まで行きたいので 使わない）。 */
 	escape: boolean;
 };
 
 export const DEFAULT_BOT: BotOpts = {
 	floorTurnLimit: 700,
-	leaveWhenNoCards: true,
+	leaveWhenNoItems: true,
 	escape: true,
 };
 
@@ -364,7 +364,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	const leave =
 		r.s.returning ||
 		f.turns > opts.floorTurnLimit ||
-		(opts.leaveWhenNoCards && r.cardsLeft() === 0 && !frontierExists(r));
+		(opts.leaveWhenNoItems && unseenItems(r) === 0 && !frontierExists(r));
 	if (target && !leave && dist(target, p) <= 6) {
 		const d = pathStep(r, target, false);
 		if (d !== null) return { c: "move", dir: d };
@@ -448,3 +448,12 @@ const decide = (r: Run, opts: BotOpts): Command => {
 };
 
 const frontierExists = (r: Run): boolean => frontier(r) !== null;
+
+/** この階の、まだ見ていない道具の数（床・モンスターの持ち物。ボットだけが のぞける）。 */
+const unseenItems = (r: Run): number => {
+	const seen = new Set(r.s.seen);
+	return (
+		r.f.items.filter((fi) => !seen.has(fi.item.uid)).length +
+		r.f.monsters.filter((m) => m.carry && !seen.has(m.carry.uid)).length
+	);
+};

@@ -443,8 +443,6 @@ const pushRecord = (r: Partial<RunRecord>): void => {
 		lv: 2,
 		turn: 100,
 		kills: 1,
-		seen: 3,
-		flowed: 0,
 		returning: false,
 		seed: `test-${list.length}`,
 		dungeon: "main",

@@ -64,8 +64,8 @@ export const REGEN_STEP = 150;
 /** 投げて届く距離。 */
 export const THROW_RANGE = 10;
 
-/** 階に最初に置く札の枚数の目安（山札を配るときの重み）。モンスターハウスは多め。 */
-export const HOUSE_CARD_WEIGHT = 3;
+/** モンスターハウス（祭り）の階に 足す 道具の数（トルネコ1の 祭りは 10〜15個で、およそ 1/4 が ゴールド）。 */
+export const HOUSE_ITEMS: [number, number] = [4, 8];
 
 /** 最初に置くモンスターの数。 */
 export const INITIAL_MONSTERS: [number, number] = [5, 7];
@@ -112,5 +112,5 @@ export const WAKE_CHANCE = 1 / 2;
  */
 export const QUAKE_TURNS: readonly number[] = [1534, 1574, 1614];
 
-/** モンスターが最初から札を持っている確率。 */
+/** 階に置く道具を、最初からいるモンスターに 持たせる確率。 */
 export const CARRY_CHANCE = 1 / 6;

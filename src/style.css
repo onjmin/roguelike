@@ -553,7 +553,7 @@ body.shake #app {
 	background: var(--danger);
 }
 
-.status .st-cards {
+.status .st-return {
 	color: #9fe6ff;
 }
 
@@ -2124,13 +2124,6 @@ body.shake #app {
 
 .info-body th.num {
 	text-align: right;
-}
-
-/* 山札：正体のわからない札の小見出し */
-.info-body td.sub-head {
-	color: var(--muted);
-	font-size: 12px;
-	padding-top: 8px;
 }
 
 /* ログ：行を詰める（p の余白は説明文用なので大きい） */

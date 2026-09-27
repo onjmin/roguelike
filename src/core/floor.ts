@@ -1,8 +1,9 @@
-// 階を作る：形・階段・キリコの位置・配られた札・モンスター・罠・モンスターハウス。
+// 階を作る：形・階段・キリコの位置・道具・モンスター・罠・モンスターハウス。
 
 import {
 	CARRY_CHANCE,
 	HOUSE_EARLY_BY,
+	HOUSE_ITEMS,
 	HOUSE_MIN_AREA,
 	HOUSE_MONSTERS,
 	HOUSE_MONSTERS_EARLY,
@@ -12,7 +13,8 @@ import {
 import { MONSTERS, monstersFor } from "./data/monsters";
 import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
-import { deckOf } from "./item";
+import { itemTableOf } from "./item";
+import { rollKinds } from "./itemTable";
 import { generateLayout, idx, roomAt, roomTiles } from "./mapgen";
 import type { Run } from "./run";
 import {
@@ -60,12 +62,7 @@ const freeRoomTiles = (r: Run, f: Floor, roomId: number | null): Pos[] => {
 	return out;
 };
 
-export const buildFloor = (
-	r: Run,
-	depth: number,
-	kinds: string[],
-	house: boolean,
-): Floor => {
+export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	const rng = r.rng;
 	const layout = generateLayout(rng);
 	const rooms = layout.rooms;
@@ -77,7 +74,6 @@ export const buildFloor = (
 		traps: [],
 		monsters: [],
 		seen: new Uint8Array(layout.w * layout.h),
-		cards: [],
 		wards: [],
 		house: -1,
 		houseAwake: false,
@@ -119,15 +115,17 @@ export const buildFloor = (
 		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
 	}
 
-	// 札：モンスターハウスがあれば半分以上をハウスの中へ
-	const cards: Item[] = kinds.map((k) => {
-		const it = r.newItem(k);
-		r.s.cardKind[it.uid] = k;
-		f.cards.push(it.uid);
-		return it;
-	});
+	// 道具（トルネコ1と同じく 表から引く。帰り道は 何も置かない）。モンスターハウスがあれば半分以上をハウスの中へ
+	let nItems = 0;
+	if (!r.s.returning) {
+		nItems = rng.range(r.dungeon.perFloor[0], r.dungeon.perFloor[1]);
+		if (f.house >= 0) nItems += rng.range(HOUSE_ITEMS[0], HOUSE_ITEMS[1]);
+	}
+	const items: Item[] = rollKinds(rng, itemTableOf(r.s), nItems).map((k) =>
+		r.newItem(k),
+	);
 	const toCarry: Item[] = [];
-	for (const it of cards) {
+	for (const it of items) {
 		const inHouse = f.house >= 0 && rng.chance(0.6);
 		const spots = freeRoomTiles(r, f, inHouse ? f.house : null).filter(
 			(t) => t.x !== start.x || t.y !== start.y,
@@ -257,7 +255,7 @@ export const spawnMonster = (
 			disguise: null,
 		};
 		if (def.abilities.some((a) => a.k === "mimic") && !opts.awake) {
-			m.disguise = rng.weighted(deckOf(r.s), (e) => e.count).kind;
+			m.disguise = rng.weighted(itemTableOf(r.s), (e) => e.weight).kind;
 			m.status.sleep = 0;
 		}
 		f.monsters.push(m);

@@ -121,8 +121,6 @@ try {
 			lvAt,
 			turnsAt,
 			seen: s.seen.length,
-			flowed: s.flowed,
-			lost: s.lost.length,
 			hunger: s.player.hunger,
 		});
 	}
@@ -182,7 +180,7 @@ try {
 		);
 	const avg = (k) => (results.reduce((a, r) => a + r[k], 0) / n).toFixed(1);
 	console.log(
-		`平均：見た札 ${avg("seen")}　流れた札 ${avg("flowed")}　なくなった札 ${avg("lost")}　ターン ${avg("turn")}`,
+		`平均：見た道具 ${avg("seen")}　ターン ${avg("turn")}`,
 	);
 	const starved = results.filter((r) => r.cause.includes("おなか")).length;
 	console.log(`飢え死に ${starved}（${pct(starved)}）`);

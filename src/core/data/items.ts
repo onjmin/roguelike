@@ -1,9 +1,9 @@
-// 道具の定義と山札（1回の冒険で出る道具の、中身の決まった束）。
+// 道具の定義と、出かたの表（トルネコ1と同じく 階ごとに 重みで引く）。
 //
 // トルネコ1（不思議・もっと不思議）の顔ぶれと数値に寄せ、DQ の固有名は使わない。
 // 説明文は一覧の2行目に出るので、単語の間を全角スペースで区切る（折り返しの位置になる）。
 
-import type { DeckEntry } from "../deck";
+import type { ItemWeight } from "../itemTable";
 import type { ItemCat, ItemDef } from "../types";
 
 const defs: ItemDef[] = [];
@@ -538,7 +538,7 @@ add({
 	flavor: "食べた　あとの　むなしさ　まで　セット",
 });
 
-// ───────── 目的の品（山札には入らない） ─────────
+// ───────── 目的の品（床には出ない） ─────────
 add({
 	id: "genban",
 	cat: "goal",
@@ -570,14 +570,13 @@ export const itemsOfCat = (cat: ItemCat): ItemDef[] =>
 	defs.filter((d) => d.cat === cat);
 
 /**
- * 本編（過去ログの底）の山札の中身（毎回同じ。並びだけ冒険ごとに切る）。全164枚（帰還スレ 3枚を ふくむ）。
+ * 本編（過去ログの底）の 道具の出かた（重み）。重みの合計 164 は、1回の冒険（27階）で 出る数の 目安。
  * トルネコ1の 不思議のダンジョン 27階で 拾える量に合わせた：床に 5〜7個 × ゴールドでない率 196/256 で 27階 ≈ 124、
  * 祭り（1回の冒険で 約1.6回 × 10〜15個）≈ 15、落とし物 10〜20 で、およそ 150〜160。
- * 分け方は トルネコ1の カテゴリの率（/256：草87・巻物74・武器20・盾20・パン19・矢16・指輪10・杖10）に寄せ、
- * 指輪と杖は「数えて識別できる」ように 1種 1本以上で 10ずつ。
- * ほかのダンジョンの山札は data/dungeons.ts。
+ * 分け方は トルネコ1の カテゴリの率（/256：草87・巻物74・武器20・盾20・パン19・矢16・指輪10・杖10）に寄せた。
+ * ほかのダンジョンの表は data/dungeons.ts。
  */
-export const MAIN_DECK: readonly DeckEntry[] = [
+export const MAIN_ITEMS: readonly ItemWeight[] = [
 	// 武器 12
 	{ kind: "club", weight: 2 },
 	{ kind: "copper", weight: 3 },
@@ -651,12 +650,12 @@ export const MAIN_DECK: readonly DeckEntry[] = [
 	{ kind: "a_wood", weight: 6 },
 	{ kind: "a_iron", weight: 3 },
 	// 食べもの 15
-	{ kind: "f_bread", weight: 9 },
+	{ kind: "f_bread", weight: 11 }, // 出る数が ばらつくので、山札のころの 9 より多め
 	{ kind: "f_large", weight: 3 },
 	{ kind: "f_moldy", weight: 3 },
 ];
 
-/** カテゴリの表示名（山札・図鑑の見出し）。 */
+/** カテゴリの表示名（図鑑の見出し）。 */
 export const CAT_NAME: Record<ItemCat, string> = {
 	weapon: "武器",
 	shield: "板",

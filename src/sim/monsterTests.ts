@@ -143,7 +143,6 @@ const arena = (
 	f.traps = [];
 	f.monsters = [];
 	f.wards = [];
-	f.cards = [];
 	f.stairs = { x: layout.w - 3, y: layout.h - 3 };
 	f.house = -1;
 	f.houseAwake = false;
@@ -215,14 +214,6 @@ const give = (r: Run, kind: string): Item => {
 const equip = (r: Run, kind: string): Item => {
 	const it = give(r, kind);
 	ok(r.doEquip(it.uid) && r.isEquipped(it), `could not equip ${kind}`);
-	return it;
-};
-
-/** 山札の札として数える道具（なくなると s.lost に入る）。 */
-const card = (r: Run, kind: string): Item => {
-	const it = r.newItem(kind);
-	r.s.cardKind[it.uid] = kind;
-	r.f.cards.push(it.uid);
 	return it;
 };
 
@@ -1090,14 +1081,13 @@ test(
 
 test(
 	"bomb",
-	"fuse at hp<=29 (stops), explodes at hp<=9 (5x5, cards lost)",
+	"fuse at hp<=29 (stops), explodes at hp<=9 (5x5, items lost)",
 	() => {
 		const r = arena("bomb");
 		const m = put(r, "bomb", at(2, 0));
-		const carried = card(r, "s_map");
-		m.carry = carried;
-		const inCard = card(r, "h_heal");
-		const outCard = card(r, "h_heal");
+		m.carry = r.newItem("s_map");
+		const inCard = r.newItem("h_heal");
+		const outCard = r.newItem("h_heal");
 		const genban = r.newItem("genban");
 		r.f.items.push({ ...at(3, 1), item: inCard });
 		r.f.items.push({ ...at(1, 1), item: genban });
@@ -1133,9 +1123,6 @@ test(
 			r.f.items.some((fi) => fi.item === outCard),
 			"an item outside was lost",
 		);
-		ok(r.s.lost.includes(inCard.uid), "the destroyed card is not in s.lost");
-		ok(r.s.lost.includes(carried.uid), "the carried card is not in s.lost");
-		ok(!r.s.lost.includes(outCard.uid), "the outside card is in s.lost");
 	},
 );
 

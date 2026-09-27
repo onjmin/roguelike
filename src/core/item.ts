@@ -2,7 +2,7 @@
 
 import { dungeonById } from "./data/dungeons";
 import { ITEMS } from "./data/items";
-import type { DeckEntry } from "./deck";
+import type { ItemWeight } from "./itemTable";
 import type { Rng } from "./rng";
 import {
 	type Item,
@@ -24,11 +24,11 @@ export const isUnidentifiedCat = (kind: string): boolean => {
 };
 
 /**
- * この冒険の山札。冒険を作ったあとで 山札に足された 未識別の種類（仮の名前が無い）は、
- * 配られていないので のぞく（前の版の中断セーブで、帰還スレが 候補や 釣りに出ないように）。
+ * この冒険の 道具の出かた。冒険を作ったあとで 表に足された 未識別の種類（仮の名前が無い）は
+ * のぞく（前の版の中断セーブで、仮の名前の無い道具が 出ないように）。
  */
-export const deckOf = (s: RunState): readonly DeckEntry[] =>
-	dungeonById(s.dungeon).deck.filter(
+export const itemTableOf = (s: RunState): readonly ItemWeight[] =>
+	dungeonById(s.dungeon).items.filter(
 		(e) =>
 			!UNIDENTIFIED_CATS.includes(defOf(e.kind).cat) || e.kind in s.ids.fake,
 	);
