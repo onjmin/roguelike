@@ -70,6 +70,7 @@ import {
 	lockedHint,
 	talkLine,
 } from "./villageTalk";
+import { pickColony, travelTo } from "./worldMap";
 
 /** まだ開いていないダンジョンの 開き方（1行目 持ち帰り、2行目 たおれた回数の 救い）。 */
 const hintText = (d: DungeonId): string => lockedHint(d).replace("（", "\n（");
@@ -151,37 +152,17 @@ const mouthScript =
 				await newsScript(s);
 			}
 		}
-		// 行き先の 植民地（開いた 板が 1つなら 札を 読んで もぐるか きく。2つ 以上なら 板の 一覧から）
+		// 行き先の 植民地（全体マップで 選ぶ。ui/worldMap.ts）
 		const open = DUNGEON_IDS.filter((x) => loadProgress().unlocked.includes(x));
-		if (open.length <= 1) {
-			await s.narrate(signText(d));
-			if ((await s.choose(["もぐる", "やめる"], { cancel: 1 })) !== 0) {
-				await back();
-				return;
-			}
-		} else {
-			await hideMsg(s);
-			const cleared = loadProgress().cleared;
-			const v = await listWindow(
-				ctx,
-				"どの　植民地へ？",
-				open.map(
-					(x): ListItem => ({
-						label: `${DUNGEON_NAMES[x].name}（${DUNGEON_NAMES[x].nick}）`,
-						sub: `${DUNGEONS[x].floors}階${cleared.includes(x) ? "★" : ""}`,
-						desc: DUNGEON_DESC[x],
-						value: x,
-					}),
-				),
-				{ start: Math.max(0, open.indexOf(d)), closeLabel: "やめる" },
-			);
-			if (!v) {
-				await back();
-				return;
-			}
-			d = v as DungeonId;
+		const cleared = loadProgress().cleared;
+		await hideMsg(s);
+		const picked = await pickColony(ctx, { open, cleared, start: d });
+		if (!picked) {
+			await back();
+			return;
 		}
-		// 過去ログの底 には 倉庫から 持っていける（町の段に応じて 1〜4個）。取り出すのは main.ts
+		d = picked;
+		// 風呂板 には 倉庫から 持っていける（町の段に応じて 1〜4個）。取り出すのは main.ts
 		const town = loadTown();
 		let carry: Item[] = [];
 		if (d === CARRY_DUNGEON && (CARRY_MAX[town.stage] ?? 0) > 0) {
@@ -201,12 +182,16 @@ const mouthScript =
 			town.storage.length &&
 			!s.flag("carryNotHere")
 		) {
-			// ちょっと・もっと へは 持ち出せない（村に いるあいだ 1回だけ 言う）
+			// ほかの 植民地へは 持ち出せない（村に いるあいだ 1回だけ 言う）
 			s.set("carryNotHere");
 			await s.say(TOWN_MSG.carryNotHere.who, TOWN_MSG.carryNotHere.text);
 		}
+		// 前に 行ったことが あれば 速く 歩く（語りを 見た＝行った）
+		const been = loadProgress().intro.includes(d);
 		notePicked(d, false);
-		s.se("stairs");
+		// 全体マップの 上を 行き先まで 歩く（着くと 建物の 札）
+		await hideMsg(s);
+		await travelTo(ctx, d, { open, cleared, fast: been });
 		// そのダンジョンに はじめて もぐるなら 語りを見せる（見終わってから 覚える。途中で閉じたら 次も はじめから）
 		if (!loadProgress().intro.includes(d)) {
 			void ctx.audio.fadeBgm(500);

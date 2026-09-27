@@ -1,7 +1,7 @@
 // 起動：画面・入力・音を組み立て、歩ける村（保守村）→ 冒険 → 村… を回す。
 // タイトルは 村の上に 重ねる 起動の札（ui/boot.ts）だけ。
 
-import { dungeonById } from "./core/data/dungeons";
+import { DUNGEON_IDS, dungeonById } from "./core/data/dungeons";
 import "./style.css";
 import { EXP_AT } from "./core/balance";
 import { Run } from "./core/run";
@@ -12,6 +12,7 @@ import type { VillageExit } from "./engine/defs";
 import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
+	loadProgress,
 	type SavedReplay,
 	saveRun,
 	takeFromStorage,
@@ -24,6 +25,7 @@ import { infoWindow } from "./ui/list";
 import { Play } from "./ui/play";
 import { confirmShared } from "./ui/share";
 import { type Arrival, Village } from "./ui/village";
+import { travelHome } from "./ui/worldMap";
 
 const app = document.getElementById("app");
 if (!app) throw new Error("#app がありません");
@@ -229,6 +231,20 @@ const loop = async () => {
 		const c = screen.begin();
 		c.fillStyle = "#000";
 		c.fillRect(0, 0, screen.width, screen.height);
+		// 持ち帰った・帰還スレで もどった：全体マップの 上を 保守村へ 歩いて 帰る（倒れたときは 歩かない）
+		if (
+			!replay &&
+			(run.s.end?.kind === "clear" || run.s.end?.kind === "escape") &&
+			!run.s.seed.startsWith(DEBUG_SEED)
+		) {
+			hud.setMode("village");
+			hud.root.classList.add("hidden");
+			const p = loadProgress();
+			await travelHome(ctx, run.s.dungeon, {
+				open: DUNGEON_IDS.filter((d) => p.unlocked.includes(d)),
+				cleared: p.cleared,
+			});
+		}
 	}
 };
 

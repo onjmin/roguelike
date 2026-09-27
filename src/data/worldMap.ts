@@ -1,0 +1,158 @@
+// 全体マップ（おーぷん2ch の 地図）。島は おーぷんの サーバー（寿司ネタの 名前）で、
+// 植民地は 実際に 置かれている サーバーの 島に 建つ（植民地一覧スレの URL より）。
+// まん中の hayabusa に おんJ（保守村）。座標は 地図の 画素（MAP_W × MAP_H）。ui/worldMap.ts が 描く。
+
+import type { DungeonId } from "../core/types";
+
+export const MAP_W = 224;
+export const MAP_H = 224;
+
+export type Pt = readonly [number, number];
+
+/** 島（サーバー）。blobs は 円の 重なり（x, y, 半径）。 */
+export type Island = {
+	name: string;
+	label: Pt;
+	blobs: readonly (readonly [number, number, number])[];
+};
+
+export const ISLANDS: readonly Island[] = [
+	{
+		name: "hayabusa",
+		label: [112, 158],
+		blobs: [
+			[112, 120, 32],
+			[134, 104, 17],
+			[96, 132, 18],
+		],
+	},
+	{
+		name: "ikura",
+		label: [36, 112],
+		blobs: [
+			[52, 70, 28],
+			[38, 92, 17],
+			[42, 54, 18],
+		],
+	},
+	// ikura の 沖の 小島（離島・沖縄板）
+	{ name: "", label: [0, 0], blobs: [[20, 24, 12]] },
+	{
+		name: "uni",
+		label: [180, 96],
+		blobs: [
+			[172, 62, 28],
+			[190, 42, 16],
+			[160, 76, 14],
+		],
+	},
+	{
+		name: "awabi",
+		label: [182, 214],
+		blobs: [
+			[178, 186, 22],
+			[190, 176, 12],
+		],
+	},
+];
+
+/** 保守村（おんJ）の 位置。道は ここから 出る。 */
+export const VILLAGE_PT: Pt = [110, 128];
+
+/** 建物の 絵の 種類（ui/worldMap.ts の drawBuilding）。 */
+export type BuildingKind =
+	| "village"
+	| "bakery"
+	| "mushroom"
+	| "bathhouse"
+	| "pylon"
+	| "island"
+	| "building"
+	| "yagura";
+
+export type ColonySpot = {
+	/** 置かれている サーバー。 */
+	server: string;
+	/** 建物・地形（着いたときの 札に 出す）。 */
+	place: string;
+	building: BuildingKind;
+	/** 保守村から 建物までの 道（最後の 点が 建物の 足もと）。 */
+	route: readonly Pt[];
+};
+
+export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
+	shallow: {
+		server: "ikura",
+		place: "パン屋の　地下の　窯",
+		building: "bakery",
+		route: [
+			[96, 110],
+			[76, 86],
+			[50, 66],
+		],
+	},
+	konamono: {
+		server: "ikura",
+		place: "大阪の　雑居ビル",
+		building: "building",
+		route: [
+			[96, 110],
+			[76, 86],
+			[62, 90],
+			[40, 96],
+		],
+	},
+	tropical: {
+		server: "ikura",
+		place: "島の　山",
+		building: "island",
+		route: [
+			[96, 110],
+			[76, 86],
+			[50, 66],
+			[40, 48],
+			[28, 34],
+			[20, 26],
+		],
+	},
+	festival: {
+		server: "hayabusa",
+		place: "祭りの　やぐら",
+		building: "yagura",
+		route: [
+			[120, 116],
+			[136, 106],
+		],
+	},
+	deep: {
+		server: "uni",
+		place: "送電鉄塔",
+		building: "pylon",
+		route: [
+			[126, 108],
+			[148, 88],
+			[170, 66],
+			[190, 46],
+		],
+	},
+	kinoko: {
+		server: "uni",
+		place: "地下の　菌床",
+		building: "mushroom",
+		route: [
+			[126, 108],
+			[148, 88],
+			[160, 78],
+		],
+	},
+	main: {
+		server: "awabi",
+		place: "銭湯の　地下の　源泉",
+		building: "bathhouse",
+		route: [
+			[124, 142],
+			[152, 164],
+			[176, 186],
+		],
+	},
+};

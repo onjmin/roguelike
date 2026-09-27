@@ -2462,3 +2462,126 @@ body.shake #app {
 		display: none;
 	}
 }
+
+/* ───────── 全体マップ（ui/worldMap.ts） ───────── */
+
+.worldmap {
+	position: absolute;
+	inset: 0;
+	z-index: 56;
+	background: #0b1a2e;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: calc(12px + var(--safe-t)) calc(12px + var(--safe-r))
+		calc(12px + var(--safe-b)) calc(12px + var(--safe-l));
+	opacity: 0;
+	transition: opacity 0.3s;
+}
+
+.worldmap.shown {
+	opacity: 1;
+}
+
+.wm-title {
+	font-size: 16px;
+	color: var(--accent);
+}
+
+.wm-canvas {
+	width: min(calc(var(--app-w) - 24px), 58vh, 560px);
+	aspect-ratio: 1;
+	image-rendering: pixelated;
+	border: 3px solid var(--win-border);
+	border-radius: 8px;
+	box-shadow: 0 0 0 2px #000;
+	touch-action: none;
+}
+
+.wm-panel {
+	width: min(calc(var(--app-w) - 24px), 560px);
+	min-height: 5.2em;
+	padding: 8px 12px;
+	line-height: 1.6;
+}
+
+.wm-name {
+	font-size: 17px;
+}
+
+.wm-name small {
+	margin-left: 4px;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.wm-sub {
+	font-size: 13px;
+	color: var(--accent);
+}
+
+.wm-desc {
+	font-size: 13px;
+	color: var(--muted);
+}
+
+.wm-foot {
+	display: flex;
+	gap: 8px;
+	width: min(calc(var(--app-w) - 24px), 560px);
+}
+
+.wm-foot > .menu-close {
+	flex: 1;
+	justify-content: center;
+	padding-left: 12px;
+	background: var(--win-bg);
+	border: 2px solid var(--win-border);
+}
+
+.wm-foot > .menu-close.disabled {
+	opacity: 0.4;
+}
+
+/* 着いたときの 建物の 札 */
+.wm-arrive {
+	position: absolute;
+	inset: 0;
+	z-index: 58;
+	background: rgba(0, 0, 0, 0.82);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	opacity: 0;
+	transition: opacity 0.3s;
+}
+
+.wm-arrive.shown {
+	opacity: 1;
+}
+
+.wm-arrive-art {
+	width: min(60vw, 40vh, 288px);
+	aspect-ratio: 1;
+	image-rendering: pixelated;
+	border: 3px solid var(--win-border);
+	border-radius: 8px;
+}
+
+.wm-arrive-name {
+	font-size: 22px;
+	color: var(--accent);
+}
+
+.wm-arrive-sub {
+	font-size: 14px;
+}
+
+.wm-arrive-mascot {
+	font-size: 13px;
+	color: var(--muted);
+}
