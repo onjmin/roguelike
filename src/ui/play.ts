@@ -1122,7 +1122,7 @@ export class Play {
 			const toward = this.dirFromScreen(cssX, cssY);
 			const first = toward === null ? null : this.passableNear(toward, 2);
 			if (first !== null) {
-				void this.dash(first);
+				void this.dash(first, true);
 				return;
 			}
 		}
@@ -1140,7 +1140,7 @@ export class Play {
 		// 見ていない所（通路の先など）をタップしたら、その方へ 何かあるまで走る（通路の角はついていく）
 		const toward = this.dirFromScreen(cssX, cssY);
 		const first = toward === null ? null : this.passableNear(toward, 2);
-		if (first !== null) void this.dash(first);
+		if (first !== null) void this.dash(first, true);
 	}
 
 	/** 画面の点（canvas の CSS 画素）が、キリコから見てどの向きか。キリコの上なら null。 */
@@ -1973,11 +1973,15 @@ export class Play {
 
 	// ───────────────── ダッシュ・タップ移動 ─────────────────
 
-	/** 何かあったら止まるかどうか（ダッシュ・タップ移動）。 */
+	/**
+	 * 何かあったら止まるかどうか（ダッシュ・タップ移動）。
+	 * tapped：タップで決めた 自動移動は 敵が 見えただけでは 止まらない（ねらわれたら 止まる）。
+	 */
 	private shouldStop(
 		before: { monsters: number; room: number },
 		ev: GameEvent[],
 		dash = true,
+		tapped = false,
 	): boolean {
 		const run = this.run;
 		if (run.s.end) return true;
@@ -1989,7 +1993,7 @@ export class Play {
 		const vis = run.f.monsters.filter(
 			(m) => run.monsterVisible(m) && !m.disguise,
 		).length;
-		if (vis > before.monsters) return true;
+		if (!tapped && vis > before.monsters) return true;
 		// 敵に ねらわれた（なぐられた・撃たれた）ら止まる。はずれても止まる
 		if (
 			ev.some(
@@ -2016,10 +2020,10 @@ export class Play {
 		};
 	}
 
-	/** d の向きに、何かあるまで走る。階段に乗って止まったら 聞く。 */
-	private async dash(d: Dir8): Promise<void> {
+	/** d の向きに、何かあるまで走る。階段に乗って止まったら 聞く。tapped は タップで 走りだした（敵が 見えても 止まらない）。 */
+	private async dash(d: Dir8, tapped = false): Promise<void> {
 		const wasOnStairs = this.onUsableStairs();
-		await this.dashSteps(d);
+		await this.dashSteps(d, tapped);
 		if (
 			!wasOnStairs &&
 			this.onUsableStairs() &&
@@ -2029,7 +2033,7 @@ export class Play {
 			await this.askStairs();
 	}
 
-	private async dashSteps(d: Dir8): Promise<void> {
+	private async dashSteps(d: Dir8, tapped: boolean): Promise<void> {
 		const run = this.run;
 		// 混乱しているときは走らない（1歩だけ）
 		if (run.p.status.confuse > 0) {
@@ -2046,7 +2050,7 @@ export class Play {
 				return;
 			}
 			const snap = this.snapshot();
-			if (n > 0 && snap.monsters > 0) return;
+			if (n > 0 && snap.monsters > 0 && !tapped) return;
 			if (
 				!run.canStepTerrain(run.p, dir) ||
 				run.monsterAt(step(run.p, dir).x, step(run.p, dir).y)
@@ -2063,7 +2067,7 @@ export class Play {
 				dir = ways[0];
 			}
 			const ev = await this.exec({ c: "move", dir }, true);
-			if (!ev.length || this.shouldStop(snap, ev)) break;
+			if (!ev.length || this.shouldStop(snap, ev, true, tapped)) break;
 			// 通路の分かれ道で止まる
 			if (roomAt(run.f.layout, run.p.x, run.p.y) < 0) {
 				const ways = DIRS8.filter(
@@ -2084,14 +2088,14 @@ export class Play {
 			await this.askStairs();
 			return;
 		}
-		// 混乱しているとき・敵が見えているときは、タップした方へ1歩だけ
+		// 混乱しているときは、タップした方へ1歩だけ（敵が 見えていても 歩きつづける。ねらわれたら 止まる）
 		const snap = this.snapshot();
 		const d = this.pathStep(to);
 		if (d === null) {
 			this.travel = null;
 			return;
 		}
-		if (run.p.status.confuse > 0 || snap.monsters > 0) this.travel = null;
+		if (run.p.status.confuse > 0) this.travel = null;
 		const wasOnStairs = this.onUsableStairs();
 		const ev = await this.exec({ c: "move", dir: d }, true);
 		if (this.stopped || run.s.end) {
@@ -2108,7 +2112,7 @@ export class Play {
 			await this.askStairs();
 			return;
 		}
-		if (!ev.length || this.shouldStop(snap, ev, false)) {
+		if (!ev.length || this.shouldStop(snap, ev, false, true)) {
 			const arrived = run.p.x === to.x && run.p.y === to.y;
 			this.travel = null;
 			this.lastTravel = arrived ? null : to;
