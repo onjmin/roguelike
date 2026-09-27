@@ -329,6 +329,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					}
 				}
 			for (const t of f.traps) t.found = true;
+			f.mapped = true;
 			r.msg("この階の　ようすが　わかった");
 			r.emit({ t: "reveal" });
 			break;
@@ -426,7 +427,8 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					x: t.x,
 					y: t.y,
 					kind: pickTrapKind(r, r.levelAt(f.depth)),
-					found: false,
+					// 聖地巡礼スレを 読んだ 階なら、ふえた 罠も 地図に のる
+					found: !!f.mapped,
 				});
 			r.msg("どこかで　カチリと　音がした……", "warn");
 			break;

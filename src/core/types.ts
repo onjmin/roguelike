@@ -280,6 +280,8 @@ export type Floor = {
 	senseMonsters: boolean;
 	/** 宝探しスレ：道具の位置がわかる。 */
 	senseItems: boolean;
+	/** 聖地巡礼スレを 読んだ：あとから ふえた 罠（釣りスレ）も はじめから 見える。 */
+	mapped?: boolean;
 	/** 見透し草：罠と見えない敵が見える。 */
 	sight: boolean;
 };

@@ -2071,6 +2071,18 @@ test("herb", "h_blind: even an adjacent monster is not visible", () => {
 	ok(!r.monsterVisible(now(m)), "an adjacent monster was visible while blind");
 });
 
+test("scroll", "s_map then s_snare: the new traps are already found", () => {
+	const r = arena("map-then-snare");
+	turn(r, { c: "use", item: give(r, "s_map").uid });
+	const before = r.f.traps.length;
+	turn(r, { c: "use", item: give(r, "s_snare").uid });
+	ok(r.f.traps.length > before, "harness: s_snare added no traps");
+	ok(
+		r.f.traps.every((t) => t.found),
+		"traps added after s_map were hidden",
+	);
+});
+
 test(
 	"floor",
 	"earthquake: shakes at 1534 and 1574, the floor gives way at 1614",
