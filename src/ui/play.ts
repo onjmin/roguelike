@@ -146,6 +146,12 @@ export class Play {
 	 */
 	private shownFloor: Floor | null = null;
 	/**
+	 * キリコが ワープする ターンで、ワープの 出来事を 流すまで 見せる 階（踏破の 印が ワープ前の 写し）。
+	 * それまでは 見える範囲も キリコの 見えている 位置から 決める（飲む・踏む 演出の あいだに
+	 * ワープ先の 部屋が 先に 明るく なったり 地図に 載ったり しないように）。ワープしないときは null。
+	 */
+	private preWarp: Floor | null = null;
+	/**
 	 * 出来事を流しているあいだ、ステータスに 出す HP（傷ついた・回復した 出来事の 演出で 追いつく。
 	 * 草を 飲む・爆発の スレなどで、演出より 先に 数字が 変わらないように）。流していないときは null。
 	 */
@@ -388,10 +394,22 @@ export class Play {
 		this.updateCamera();
 		this.updateStatus();
 		if (this.mapOn) {
+			// ワープの 出来事までは ワープ前の 見え方で（draw と 同じ）
+			const pd = this.disp.get(PLAYER_ID);
+			const pre = this.preWarp && pd ? this.preWarp : null;
+			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : this.run.p;
 			const vis = this.run.f.monsters.filter(
-				(m) => this.run.monsterVisible(m) && !m.disguise,
+				(m) => this.run.monsterVisible(m, eye) && !m.disguise,
 			);
-			drawMap(this.mapEl, this.run.s, {
+			const s: RunState =
+				pre && pd
+					? {
+							...this.run.s,
+							floor: pre,
+							player: { ...this.run.s.player, ...eye },
+						}
+					: this.run.s;
+			drawMap(this.mapEl, s, {
 				visibleMonsters: vis,
 				mark: this.mapMark,
 				resume: this.lastTravel,
@@ -436,6 +454,7 @@ export class Play {
 		// 落ちている途中は、階の札まで 前の階を キリコの見えている位置から映す（敵は もう いない）
 		const shown = this.shownFloor;
 		const pd = this.disp.get(PLAYER_ID);
+		const warping = !shown && this.preWarp && pd ? this.preWarp : null;
 		const s: RunState =
 			shown && pd
 				? {
@@ -444,7 +463,13 @@ export class Play {
 						depth: shown.depth,
 						player: { ...run.s.player, x: pd.tx, y: pd.ty },
 					}
-				: run.s;
+				: warping && pd
+					? {
+							...run.s,
+							floor: warping,
+							player: { ...run.s.player, x: pd.tx, y: pd.ty },
+						}
+					: run.s;
 		const figs: Figure[] = [];
 		const fakeItems: { x: number; y: number; kind: string }[] = [];
 		// まどわされているときは 敵が みんな キリコの姿に、床の道具が お花に 見える
@@ -468,15 +493,17 @@ export class Play {
 				figs.push(d);
 				continue;
 			}
-			if (s !== run.s) continue;
+			if (s !== run.s && !warping) continue;
 			const m = run.f.monsters.find((x) => x.uid === d.id);
 			if (!m) continue;
+			// ワープの 前は、ワープ前の 位置から 見える 敵だけ
+			const eye = warping ? s.player : run.p;
 			if (m.disguise) {
-				if (run.playerSees(m))
+				if (run.playerSees(m, eye))
 					fakeItems.push({ x: m.x, y: m.y, kind: m.disguise });
 				continue;
 			}
-			if (!run.monsterVisible(m)) continue;
+			if (!run.monsterVisible(m, eye)) continue;
 			figs.push({
 				...d,
 				sprite: dazed ? KIRIKO : d.sprite,
@@ -1186,10 +1213,14 @@ export class Play {
 		const turn0 = run.s.turn;
 		const floor0 = run.s.floor;
 		const hp0 = run.p.hp;
+		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
+		const seen0 = run.f.seen.slice();
 		try {
 			ev = run.act(cmd);
 			this.shownHp = hp0;
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
+			else if (ev.some((e) => e.t === "warp" && e.id === PLAYER_ID))
+				this.preWarp = { ...floor0, seen: seen0 };
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
@@ -1266,6 +1297,7 @@ export class Play {
 			}
 		} finally {
 			this.shownFloor = null;
+			this.preWarp = null;
 			this.shownHp = null;
 			this.busy = false;
 		}
@@ -1709,6 +1741,8 @@ export class Play {
 						d.ty = d.fy = e.to.y;
 						d.keys = [{ x: e.to.x, y: e.to.y, t: 0 }];
 					}
+					// キリコが 着いたので、ここから ワープ先の 見え方に
+					if (e.id === PLAYER_ID) this.preWarp = null;
 					await wait(80 * speed);
 					break;
 				}

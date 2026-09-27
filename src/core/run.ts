@@ -426,13 +426,16 @@ export class Run {
 	}
 
 	/** プレイヤーから見えるか（目が見えないときは となりだけ）。 */
-	playerSees(pos: Pos): boolean {
-		if (this.p.status.blind > 0) return dist(this.p, pos) <= 1;
-		return canSee(this.f.layout, this.p, pos);
+	playerSees(pos: Pos, from: Pos = this.p): boolean {
+		if (this.p.status.blind > 0) return dist(from, pos) <= 1;
+		return canSee(this.f.layout, from, pos);
 	}
 
-	/** そのモンスターがプレイヤーに見えているか（見えない敵・化けた敵は別）。 */
-	monsterVisible(m: Monster): boolean {
+	/**
+	 * そのモンスターがプレイヤーに見えているか（見えない敵・化けた敵は別）。
+	 * from は 見る 位置（画面の 演出で、ワープ前の 位置から 見るとき）。
+	 */
+	monsterVisible(m: Monster, from: Pos = this.p): boolean {
 		if (m.hp <= 0) return false;
 		// 目が見えないときは となりの敵も 見えない（トルネコ1と おなじ。なぐることは できる）
 		if (this.p.status.blind > 0) return false;
@@ -441,7 +444,7 @@ export class Run {
 			if (!this.f.sight) return false;
 		}
 		if (this.f.senseMonsters) return true;
-		return this.playerSees(m);
+		return this.playerSees(m, from);
 	}
 
 	/** その階の階段の上にいるか。 */
