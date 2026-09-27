@@ -33,9 +33,18 @@ import {
 
 export const mdef = (m: Monster): MonsterDef => MONSTERS[m.kind];
 
-/** 呼び名（化けているときは道具の名前）。 */
+/** まどわされているときの 敵の呼び名（みんな キリコの姿に 見えて 見分けが つかない）。 */
+const DAZED_NAME = "なにか";
+
+/** 記録に出す 敵の名前（まどわされているときは 伏せる）。 */
+export const seenName = (r: Run, m: Monster): string =>
+	r.p.status.daze > 0 ? DAZED_NAME : mdef(m).name;
+
+/** 呼び名（化けているときは道具の名前。まどわされているときは 伏せる）。 */
 export const monsterName = (r: Run, m: Monster): string =>
-	m.disguise ? r.kindName(m.disguise) : mdef(m).name;
+	m.disguise && !(r.p.status.daze > 0)
+		? r.kindName(m.disguise)
+		: seenName(r, m);
 
 /**
  * まんぜう軍（poison）の 冷笑。真剣な 相手を 上から 茶化して、ちからを そぐ。
@@ -304,7 +313,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		// 置物：となりに来たら 目を覚まして すぐなぐる
 		if (dist(m, p) <= 1) {
 			st.dormant = false;
-			r.msg(`${d.name}が　動きだした！`, "warn");
+			r.msg(`${seenName(r, m)}が　動きだした！`, "warn");
 			const dir = dirOf(p.x - m.x, p.y - m.y);
 			if (dir !== null && r.cornerOk(m, dir)) meleePlayer(r, m);
 		}
@@ -364,7 +373,8 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		if (m.seenTurns >= (accel as { after: number }).after) {
 			st.fast = 999;
 			st.slow = 0;
-			if (r.playerSees(m)) r.msg(`${d.name}が　加速した！　kskst`, "warn");
+			if (r.playerSees(m))
+				r.msg(`${seenName(r, m)}が　加速した！　kskst`, "warn");
 		}
 	}
 
@@ -372,7 +382,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	if (has(m, "retreat")) {
 		if (!m.retreating && m.hp <= m.maxHp * 0.4) {
 			m.retreating = true;
-			if (r.playerSees(m)) r.msg(`${d.name}は　逃げだした`);
+			if (r.playerSees(m)) r.msg(`${seenName(r, m)}は　逃げだした`);
 		}
 		if (m.retreating) {
 			m.hp = Math.min(m.maxHp, m.hp + 2);
@@ -430,7 +440,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 			r.f.items = r.f.items.filter((i) => i !== here);
 			m.carry = here.item;
 			if (r.playerSees(m))
-				r.msg(`${d.name}は　${r.name(here.item)}を　さらった`, "warn");
+				r.msg(`${seenName(r, m)}は　${r.name(here.item)}を　さらった`, "warn");
 			return;
 		}
 		if (adjacentDir() === null) {
@@ -457,12 +467,12 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					});
 					r.se("throw");
 					if (!r.rng.chance(HIT_RATE)) {
-						r.msg(`${d.name}は　${a.verb}。しかし　はずれた`);
+						r.msg(`${seenName(r, m)}は　${a.verb}。しかし　はずれた`);
 						r.emit({ t: "miss", id: PLAYER_ID, pos: { x: p.x, y: p.y } });
 						return;
 					}
 					const dmg = rollDamage(a.atk, r.playerDef(), r.dmgRoll());
-					r.msg(`${d.name}は　${a.verb}。${dmg}の　ダメージ`);
+					r.msg(`${seenName(r, m)}は　${a.verb}。${dmg}の　ダメージ`);
 					r.se("damage");
 					r.hurtPlayer(dmg, `${d.name}に　たおされた`);
 					return;
@@ -481,7 +491,10 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					r.se("fire");
 					let dmg = r.rng.range(a.dmg[0], a.dmg[1]);
 					if (r.shield()?.kind === "fireward") dmg = Math.floor(dmg / 2);
-					r.msg(`${d.name}は　炎を　吐いた！　${dmg}の　ダメージ`, "warn");
+					r.msg(
+						`${seenName(r, m)}は　炎を　吐いた！　${dmg}の　ダメージ`,
+						"warn",
+					);
 					r.hurtPlayer(dmg, `${d.name}の　炎で　たおれた`);
 					return;
 				}
@@ -495,7 +508,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 			) {
 				m.dir = adjacentDir() ?? m.dir;
 				r.se("spell");
-				r.msg(`${d.name}は　眠りの　呪文を　となえた`);
+				r.msg(`${seenName(r, m)}は　眠りの　呪文を　となえた`);
 				if (r.hasRing("r_awake")) r.msg("しかし　キリコは　眠らなかった");
 				else {
 					r.sleepPlayer(5);
@@ -511,7 +524,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				r.rng.chance(a.rate)
 			) {
 				r.se("spell");
-				r.msg(`${d.name}と　目が　合った`);
+				r.msg(`${seenName(r, m)}と　目が　合った`);
 				p.status.confuse = Math.max(p.status.confuse, 5);
 				r.se("debuff");
 				r.msg("キリコは　混乱した", "warn");
@@ -624,7 +637,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 export const meleePlayer = (r: Run, m: Monster): void => {
 	const d = mdef(m);
 	const p = r.p;
-	const nm = d.name;
+	const nm = seenName(r, m);
 	// 結界の上にいれば、となりからは なぐれない（つかむのも）
 	if (r.f.wards.includes(p.y * r.f.layout.w + p.x)) return;
 	if (has(m, "grab")) p.status.heldBy = m.uid;
@@ -666,7 +679,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	const dmg = rollDamage(d.atk, r.playerDef(), r.dmgRoll());
 	r.se("damage");
 	r.msg(`${nm}の　攻撃。${dmg}の　ダメージ`);
-	if (r.hurtPlayer(dmg, `${nm}に　たおされた`)) return;
+	if (r.hurtPlayer(dmg, `${d.name}に　たおされた`)) return;
 	// なぐったときの特技
 	if (m.status.sealed) return;
 	for (const a of d.abilities) {
@@ -755,7 +768,7 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 	for (let i = 0; i < n; i++) {
 		const to = step(p, d);
 		if (!r.cornerOk(p, d) || !r.isFree(to.x, to.y)) {
-			r.msg(`${mdef(m).name}に　吹きとばされて　ぶつかった！`, "warn");
+			r.msg(`${seenName(r, m)}に　吹きとばされて　ぶつかった！`, "warn");
 			r.hurtPlayer(5, `${mdef(m).name}に　吹きとばされた`);
 			break;
 		}
@@ -766,7 +779,7 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 	if (moved > 0) {
 		p.status.heldBy = null;
 		r.emit({ t: "warp", id: PLAYER_ID, from, to: { x: p.x, y: p.y } });
-		if (moved === n) r.msg(`${mdef(m).name}に　吹きとばされた！`, "warn");
+		if (moved === n) r.msg(`${seenName(r, m)}に　吹きとばされた！`, "warn");
 		r.updateVision();
 	}
 };

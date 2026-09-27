@@ -24,5 +24,8 @@ export const itemIcon = (kind: string): string => {
 	return d.rare ? art("growth") : CAT_ICON[d.cat];
 };
 
+/** まどわされているときの 床の道具（トルネコ1と おなじく ぜんぶ お花に 見える）。 */
+export const FLOWER_ICON = art("flower");
+
 /** 階段（下り・上り）。上りは下りの絵を上下に反転して描く代わりに、同じ絵を使う。 */
 export const STAIRS_UP_TINT = "rgba(120, 200, 255, 0.35)";

@@ -42,7 +42,7 @@ import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { hpInk } from "./hpInk";
 import type { Hud } from "./hud";
-import { itemIcon } from "./icons";
+import { FLOWER_ICON, itemIcon } from "./icons";
 import { esc } from "./itemText";
 import { listWindow } from "./list";
 import {
@@ -447,6 +447,8 @@ export class Play {
 				: run.s;
 		const figs: Figure[] = [];
 		const fakeItems: { x: number; y: number; kind: string }[] = [];
+		// まどわされているときは 敵が みんな キリコの姿に、床の道具が お花に 見える
+		const dazed = run.p.status.daze > 0;
 		for (const d of this.disp.values()) {
 			if (d.id === PLAYER_ID) {
 				// 装備している武器・盾を重ねて描く。攻撃の踏みこみに合わせて振る
@@ -475,7 +477,11 @@ export class Play {
 				continue;
 			}
 			if (!run.monsterVisible(m)) continue;
-			figs.push({ ...d, asleep: m.status.sleep > 0 || m.status.paralyze > 0 });
+			figs.push({
+				...d,
+				sprite: dazed ? KIRIKO : d.sprite,
+				asleep: m.status.sleep > 0 || m.status.paralyze > 0,
+			});
 		}
 		this.view.draw(
 			this.screen,
@@ -486,7 +492,7 @@ export class Play {
 			this.camX,
 			this.camY,
 			t,
-			itemIcon,
+			dazed ? () => FLOWER_ICON : itemIcon,
 			fakeItems,
 			{
 				strong: this.ctx.input.mods().turn,
@@ -533,6 +539,7 @@ export class Play {
 			st.sleep > 0 ? "眠り" : "",
 			st.confuse > 0 ? "混乱" : "",
 			st.blind > 0 ? "盲目" : "",
+			st.daze > 0 ? "まどわし" : "",
 			st.fast > 0 ? "倍速" : "",
 			st.trapped > 0 ? "はさまれ" : "",
 			st.heldBy !== null ? "つかまれ" : "",

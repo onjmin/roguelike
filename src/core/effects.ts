@@ -23,6 +23,7 @@ import {
 	mdef,
 	monsterName,
 	sealMonster,
+	seenName,
 	track,
 	traitFast,
 	transformMonster,
@@ -120,7 +121,10 @@ const drink = (r: Run, it: Item): boolean => {
 				r.msg(`HPが　${got}　回復した`);
 			}
 			p.status.blind = 0;
-			if (big) p.status.confuse = 0;
+			if (big) {
+				p.status.confuse = 0;
+				p.status.daze = 0;
+			}
 			break;
 		}
 		case "h_poison":
@@ -167,6 +171,11 @@ const drink = (r: Run, it: Item): boolean => {
 			p.status.confuse = 10;
 			r.se("debuff");
 			r.msg("頭が　くらくらする……", "warn");
+			break;
+		case "h_daze":
+			p.status.daze = 50;
+			r.se("debuff");
+			r.msg("キリコは　まどわされた！　あたり一面　お花畑……", "warn");
 			break;
 		case "h_sleep":
 			if (r.hasRing("r_awake")) r.msg("しかし　眠くならなかった");
@@ -469,7 +478,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			return;
 		case "w_change": {
 			transformMonster(r, m);
-			r.msg(`${nm}は　${mdef(m).name}に　変わった！`);
+			r.msg(`${nm}は　${seenName(r, m)}に　変わった！`);
 			return;
 		}
 		case "w_send": {
@@ -660,6 +669,12 @@ const herbOnMonster = (
 		case "h_reel":
 			m.status.confuse = 10;
 			r.msg(`${nm}は　混乱した`);
+			return;
+		case "h_daze":
+			// まどわされた敵は ずっと逃げる（トルネコ1の まどわし草）
+			m.fleeing = true;
+			r.se("flee");
+			r.msg(`${nm}は　逃げだした`);
 			return;
 		case "h_sleep":
 			m.status.sleep = 5;

@@ -168,6 +168,7 @@ export class Run {
 				sleep: 0,
 				confuse: 0,
 				blind: 0,
+				daze: 0,
 				fast: 0,
 				trapped: 0,
 				heldBy: null,
@@ -445,11 +446,13 @@ export class Run {
 	/** そのモンスターがプレイヤーに見えているか（見えない敵・化けた敵は別）。 */
 	monsterVisible(m: Monster): boolean {
 		if (m.hp <= 0) return false;
+		// 目が見えないときは となりの敵も 見えない（トルネコ1と おなじ。なぐることは できる）
+		if (this.p.status.blind > 0) return false;
 		const d = mdef(m);
 		if (d.abilities.some((a) => a.k === "invisible") && !m.status.sealed) {
 			if (!this.f.sight) return false;
 		}
-		if (this.f.senseMonsters && this.p.status.blind <= 0) return true;
+		if (this.f.senseMonsters) return true;
 		return this.playerSees(m);
 	}
 
@@ -567,7 +570,7 @@ export class Run {
 			s.houses.includes(depth) && !s.returning,
 		);
 		const p = this.p;
-		// 目つぶし・混乱・眠り・倍速は 階を かわっても とけない（トルネコ1と おなじ）
+		// 目つぶし・混乱・まどわし・眠り・倍速は 階を かわっても とけない（トルネコ1と おなじ）
 		p.status.trapped = 0;
 		p.status.heldBy = null;
 		p.nextAt = s.time;
@@ -1062,6 +1065,7 @@ export class Run {
 			this.msg("目が　見えるように　なった");
 			this.updateVision();
 		}
+		if (st.daze > 0 && --st.daze === 0) this.msg("まどわしが　とけた");
 		if (st.fast > 0 && --st.fast === 0)
 			this.msg("足の　速さが　もとに　もどった");
 		if (st.trapped > 0) st.trapped--;

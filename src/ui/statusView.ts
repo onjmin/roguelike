@@ -26,6 +26,7 @@ const statusHtml = (run: Run): string => {
 		st.sleep > 0 ? "眠り" : "",
 		st.confuse > 0 ? "混乱" : "",
 		st.blind > 0 ? "目が　見えない" : "",
+		st.daze > 0 ? "まどわされている" : "",
 		st.fast > 0 ? "倍速" : "",
 		st.trapped > 0 ? "トラばさみ" : "",
 		st.heldBy !== null ? "つかまれている" : "",

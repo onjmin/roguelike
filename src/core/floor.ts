@@ -218,8 +218,8 @@ export const spawnMonster = (
 	let def: MonsterDef | undefined;
 	if (kind) def = MONSTERS[kind];
 	else {
-		// 敵の顔ぶれは 本編の何階ぶんか で引く（本編の表は20階まで。それより深い階は20階の顔ぶれ）
-		const list = monstersFor(Math.max(1, Math.min(20, r.levelAt(f.depth))));
+		// 敵の顔ぶれは 本編の何階ぶんか で引く（表は もっと の 30階まで。それより深い階は30階の顔ぶれ）
+		const list = monstersFor(Math.max(1, Math.min(30, r.levelAt(f.depth))));
 		if (!list.length) return null;
 		def = rng.weighted(list, (m) => m.weight);
 	}

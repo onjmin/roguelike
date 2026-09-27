@@ -183,7 +183,7 @@ export const reactionOf = (def: MobDef): string | null => {
 	if (by) return by.text;
 	if (def.react.starve && last.cause.includes("おなかが"))
 		return def.react.starve;
-	return last.depth >= 14 ? def.react.deep : def.react.dead;
+	return last.depth >= 19 ? def.react.deep : def.react.dead;
 };
 
 /** いつもの ひとこと（7つなら 曜日で）。 */

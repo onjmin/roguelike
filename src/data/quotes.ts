@@ -37,7 +37,7 @@ const FIRST: readonly Quote[] = [
 ];
 
 // ───────────────── 深さで（たおれた階） ─────────────────
-/** B1〜B5。 */
+/** B1〜B7。 */
 const SHALLOW: readonly Quote[] = [
 	q("nanj", "はっや。ナイター、\nまだ　1回の　表やで"),
 	q("nanj", "草。……いや、笑ってへんで。\n笑ってへんけど、草"),
@@ -47,7 +47,7 @@ const SHALLOW: readonly Quote[] = [
 	q("zero", "おかえりなさい！　ハグの　準備が\n……あ、いらない。了解です"),
 ];
 
-/** B6〜B13。 */
+/** B8〜B18。 */
 const MID: readonly Quote[] = [
 	q("roze", "その　あたりは　風が　吹くアル。\n……カツラ、おさえるアル"),
 	q("nanj", "おかえり。ナイターは\nいま　5回の　裏や"),
@@ -57,7 +57,7 @@ const MID: readonly Quote[] = [
 	q("zero", "まんなかまで　行ったんですね。\nサブ機たちと　拍手　しました"),
 ];
 
-/** B14〜B20。 */
+/** B19〜B27。 */
 const DEEP: readonly Quote[] = [
 	q("shiyo", "そんな　底まで　行って……。\nあなた、ほんとに　ばかなんだから"),
 	q("shiyo", "……あと　少しだった、なんて\nあたすは　言わないわよ"),
@@ -229,7 +229,7 @@ const CAUSE_POOLS: readonly {
 ];
 
 const depthPool = (depth: number): readonly Quote[] =>
-	depth <= 5 ? SHALLOW : depth <= 13 ? MID : DEEP;
+	depth <= 7 ? SHALLOW : depth <= 18 ? MID : DEEP;
 
 /** seed と salt から 32bit の値（同じ seed なら いつも同じ）。 */
 const mix = (seed: number, salt: number): number => {

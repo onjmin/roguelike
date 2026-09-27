@@ -235,6 +235,13 @@ add({
 	desc: "混乱する。投げると　敵を　混乱させる",
 });
 add({
+	// トルネコ1の まどわし草（頭お花畑）
+	id: "h_daze",
+	cat: "herb",
+	name: "お花畑草",
+	desc: "まどわされる（敵が　自分の姿に、道具が　お花に　見える）。投げると　敵が　逃げだす",
+});
+add({
 	id: "h_sleep",
 	cat: "herb",
 	name: "寝落ち草",
@@ -488,25 +495,28 @@ export const itemsOfCat = (cat: ItemCat): ItemDef[] =>
 	defs.filter((d) => d.cat === cat);
 
 /**
- * 本編（過去ログの底）の山札の中身（毎回同じ。並びだけ冒険ごとに切る）。全144枚（帰還スレ 3枚を ふくむ）。
- * トルネコ1の出現率（/256）を、階の数と「数えて識別できる」ことに合わせて丸めたもの。
+ * 本編（過去ログの底）の山札の中身（毎回同じ。並びだけ冒険ごとに切る）。全164枚（帰還スレ 3枚を ふくむ）。
+ * トルネコ1の 不思議のダンジョン 27階で 拾える量に合わせた：床に 5〜7個 × ゴールドでない率 196/256 で 27階 ≈ 124、
+ * 祭り（1回の冒険で 約1.6回 × 10〜15個）≈ 15、落とし物 10〜20 で、およそ 150〜160。
+ * 分け方は トルネコ1の カテゴリの率（/256：草87・巻物74・武器20・盾20・パン19・矢16・指輪10・杖10）に寄せ、
+ * 指輪と杖は「数えて識別できる」ように 1種 1本以上で 10ずつ。
  * ほかのダンジョンの山札は data/dungeons.ts。
  */
 export const MAIN_DECK: readonly DeckEntry[] = [
-	// 武器 10
+	// 武器 12
 	{ kind: "club", count: 2 },
-	{ kind: "copper", count: 2 },
+	{ kind: "copper", count: 3 },
 	{ kind: "bat", count: 2 },
 	{ kind: "wyrmbane", count: 1 },
-	{ kind: "steel", count: 1 },
+	{ kind: "steel", count: 2 },
 	{ kind: "starsword", count: 1 },
 	{ kind: "mic", count: 1 },
-	// 盾 10
+	// 盾 12
 	{ kind: "leather", count: 2 },
-	{ kind: "bronze", count: 2 },
+	{ kind: "bronze", count: 3 },
 	{ kind: "scale", count: 2 },
 	{ kind: "mirror", count: 1 },
-	{ kind: "steelsh", count: 1 },
+	{ kind: "steelsh", count: 2 },
 	{ kind: "fireward", count: 1 },
 	{ kind: "starshield", count: 1 },
 	// 指輪 10
@@ -519,27 +529,28 @@ export const MAIN_DECK: readonly DeckEntry[] = [
 	{ kind: "r_stealth", count: 1 },
 	{ kind: "r_clamor", count: 1 },
 	{ kind: "r_ward", count: 1 },
-	// 草・実 45
-	{ kind: "h_heal", count: 10 },
-	{ kind: "h_greater", count: 4 },
+	// 草・実 51
+	{ kind: "h_heal", count: 11 },
+	{ kind: "h_greater", count: 5 },
 	{ kind: "h_poison", count: 3 },
-	{ kind: "h_might", count: 4 },
+	{ kind: "h_might", count: 5 },
 	{ kind: "h_growth", count: 1 },
 	{ kind: "h_swift", count: 2 },
 	{ kind: "h_blind", count: 3 },
-	{ kind: "h_blink", count: 4 },
+	{ kind: "h_blink", count: 5 },
 	{ kind: "h_reel", count: 3 },
+	{ kind: "h_daze", count: 2 },
 	{ kind: "h_sleep", count: 3 },
 	{ kind: "h_antidote", count: 3 },
 	{ kind: "h_fire", count: 3 },
 	{ kind: "h_sight", count: 2 },
-	// スレ 38
-	{ kind: "s_appraise", count: 8 },
-	{ kind: "s_whet", count: 3 },
-	{ kind: "s_temper", count: 3 },
+	// スレ 42
+	{ kind: "s_appraise", count: 9 },
+	{ kind: "s_whet", count: 4 },
+	{ kind: "s_temper", count: 4 },
 	{ kind: "s_uncurse", count: 2 },
 	{ kind: "s_rustproof", count: 2 },
-	{ kind: "s_map", count: 3 },
+	{ kind: "s_map", count: 4 },
 	{ kind: "s_sense", count: 2 },
 	{ kind: "s_treasure", count: 2 },
 	{ kind: "s_hold", count: 3 },
@@ -561,13 +572,13 @@ export const MAIN_DECK: readonly DeckEntry[] = [
 	{ kind: "w_edge", count: 1 },
 	{ kind: "w_split", count: 1 },
 	{ kind: "w_haste", count: 1 },
-	// 矢 6
-	{ kind: "a_wood", count: 4 },
-	{ kind: "a_iron", count: 2 },
-	// 食べもの 12
-	{ kind: "f_bread", count: 7 },
+	// 矢 9
+	{ kind: "a_wood", count: 6 },
+	{ kind: "a_iron", count: 3 },
+	// 食べもの 15
+	{ kind: "f_bread", count: 9 },
 	{ kind: "f_large", count: 3 },
-	{ kind: "f_moldy", count: 2 },
+	{ kind: "f_moldy", count: 3 },
 ];
 
 /** カテゴリの表示名（山札・図鑑の見出し）。 */

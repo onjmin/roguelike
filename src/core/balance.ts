@@ -88,15 +88,15 @@ export const HOUSE_CHANCE = 1 / 16;
 export const HOUSE_EARLY_FROM = 4;
 export const HOUSE_EARLY_BY = 6;
 
-/** 罠の数（階ごと）。 */
+/** 罠の数（階ごと。トルネコ1と同じ）。 */
 export const trapCount = (level: number): [number, number] =>
 	level <= 2
 		? [0, 0]
-		: level <= 8
+		: level <= 10
 			? [1, 3]
-			: level <= 15
+			: level <= 20
 				? [3, 5]
-				: level <= 20
+				: level <= 30
 					? [5, 7]
 					: [7, 9];
 /** 罠が発動する確率。 */

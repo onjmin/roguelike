@@ -31,7 +31,12 @@ import {
 	T_CORR,
 	T_ROOM,
 } from "../core/mapgen";
-import { mdef, noticeAdjacent, transformMonster } from "../core/monster";
+import {
+	mdef,
+	monsterName,
+	noticeAdjacent,
+	transformMonster,
+} from "../core/monster";
 import { Run } from "../core/run";
 import {
 	type Ability,
@@ -156,6 +161,7 @@ const arena = (
 		sleep: 0,
 		confuse: 0,
 		blind: 0,
+		daze: 0,
 		fast: 0,
 		trapped: 0,
 		heldBy: null,
@@ -2017,6 +2023,40 @@ test("pursuit", "sealed: berserk/accel speed goes, a w_haste stays", () => {
 	staffEffect(r3, "w_haste", k3);
 	staffEffect(r3, "w_seal", k3);
 	ok(now(k3).status.fast === 999, "a w_haste speed was removed by the seal");
+});
+
+test(
+	"herb",
+	"h_daze: drinking dazes, hides names; the big herb cures it",
+	() => {
+		// トルネコ1の まどわし草：飲むと 50ターン まどわされ、弟切草で なおる
+		const r = arena("daze-drink");
+		const m = put(r, "tousuko", at(3, 0));
+		turn(r, { c: "use", item: give(r, "h_daze").uid });
+		ok(r.p.status.daze >= 49, `not dazed (daze=${r.p.status.daze})`);
+		ok(monsterName(r, m) === "なにか", `name shown: ${monsterName(r, m)}`);
+		turn(r, { c: "use", item: give(r, "h_greater").uid });
+		ok(r.p.status.daze === 0, "the big herb did not cure daze");
+		ok(monsterName(r, m) === mdef(m).name, "name still hidden after the cure");
+	},
+);
+
+test("herb", "h_daze: a monster it hits keeps fleeing", () => {
+	const r = arena("daze-throw");
+	const m = put(r, "tousuko", at(1, 0));
+	for (let i = 0; i < 10 && !m.fleeing; i++)
+		turn(r, { c: "throw", item: give(r, "h_daze").uid, dir: 2 });
+	ok(!!m.fleeing, "the herb never made it flee");
+	for (let i = 0; i < 20; i++) turn(r);
+	ok(!!now(m).fleeing && dist(m, r.p) > 1, "the monster stopped fleeing");
+});
+
+test("herb", "h_blind: even an adjacent monster is not visible", () => {
+	const r = arena("blind-adjacent");
+	const m = put(r, "tousuko", at(1, 0));
+	ok(r.monsterVisible(m), "harness: not visible before");
+	turn(r, { c: "use", item: give(r, "h_blind").uid });
+	ok(!r.monsterVisible(now(m)), "an adjacent monster was visible while blind");
 });
 
 test(

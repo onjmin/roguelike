@@ -128,6 +128,7 @@ const stage = (seed: string, depth: number): Run => {
 		sleep: 0,
 		confuse: 0,
 		blind: 0,
+		daze: 0,
 		fast: 0,
 		trapped: 0,
 		heldBy: null,

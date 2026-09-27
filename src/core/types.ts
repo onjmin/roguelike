@@ -220,6 +220,8 @@ export type PlayerStatus = {
 	sleep: number;
 	confuse: number;
 	blind: number;
+	/** まどわし（ターン）。敵が キリコの姿に、床の道具が お花に 見える。 */
+	daze: number;
 	fast: number;
 	/** トラばさみ（ターン）。 */
 	trapped: number;

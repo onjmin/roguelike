@@ -63,6 +63,7 @@ const PRICE: Record<string, number> = {
 	h_blind: 20,
 	h_blink: 100,
 	h_reel: 20,
+	h_daze: 20,
 	h_sleep: 20,
 	h_antidote: 50,
 	h_fire: 200,

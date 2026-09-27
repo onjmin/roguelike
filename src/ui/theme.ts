@@ -208,7 +208,8 @@ const fromSpec = (list: readonly ZoneSpec[]): Zone[] =>
  */
 export const ZONES: Record<DungeonId, readonly Zone[]> = {
 	shallow: fromSpec(ZONE_NAMES.shallow),
-	// トルネコ1（27階）の 刻み（B1〜2・3〜4・5〜6 と 2階ずつ、そのあと 3階ずつ）を 20階に 縮めた 9層
+	// トルネコ1（27階）の 刻み（B1〜2・3〜4・5〜6 と 2階ずつ、そのあと 3階ずつ）の 9層。
+	// 炎上の底は 顔真っ赤（ギガンテス）の 出はじめる B20 から、はじまりの原盤は いちばん底の B27 だけ
 	main: [
 		{
 			last: 2,
@@ -248,15 +249,15 @@ export const ZONES: Record<DungeonId, readonly Zone[]> = {
 		// 名無し155さんの 手書きメロディの曲。アップテンポなので 序盤ではなく 中盤の 電子の廃墟に
 		{ last: 15, name: "鯖の深部", theme: CYBER, bgm: "retro", ambient: "data" },
 		{
-			last: 17,
+			last: 19,
 			name: "あぼーんの白野",
 			theme: WHITE,
 			bgm: "white",
 			ambient: "snow",
 		},
-		{ last: 19, name: "炎上の底", theme: LAVA, bgm: "boss", ambient: "embers" },
+		{ last: 26, name: "炎上の底", theme: LAVA, bgm: "boss", ambient: "embers" },
 		{
-			last: 20,
+			last: 27,
 			name: "はじまりの原盤",
 			theme: GOLD,
 			bgm: "lastboss",

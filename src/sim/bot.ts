@@ -12,7 +12,13 @@ import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
 import type { Command, Item } from "../core/types";
 
-const BAD_HERBS = new Set(["h_poison", "h_blind", "h_reel", "h_sleep"]);
+const BAD_HERBS = new Set([
+	"h_poison",
+	"h_blind",
+	"h_reel",
+	"h_daze",
+	"h_sleep",
+]);
 
 export type BotOpts = {
 	/** この階に長くいすぎたら階段へ（ターン）。 */
