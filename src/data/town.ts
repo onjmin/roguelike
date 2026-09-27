@@ -105,7 +105,7 @@ export const RETURN_PAGES: readonly StoryPage[] = [
  * 地上の画面で出す 短い文（仲間が言う）。
  * - sold の {points} は 売り上げ（レス）、carryPrompt の {n} は 持ち出せる数。
  * - noStorage は 倉庫がまだない（3段目まで）とき、storageEmpty は 倉庫が からのとき、
- *   carryNotHere は パン板／電池板 へ もぐるとき。
+ *   carryNotHere は 風呂板の ほかへ もぐるとき。
  */
 export const TOWN_MSG: Record<
 	| "noStorage"
@@ -150,7 +150,7 @@ export const TOWN_MSG: Record<
 	),
 	carryDone: q("shiyo", "……なくさないでよね。\nちゃんと　持って　帰りなさい"),
 	carryNone: q("shiyo", "手ぶら？　……ふんっ。\nとめないわよ。気をつけて"),
-	carryNotHere: q("roze", "パン板と　電池板へは、\n持ち出せないアル。常識アル"),
+	carryNotHere: q("roze", "風呂板の　ほかへは、\n持ち出せないアル。常識アル"),
 };
 
 // ───────────────── 起動の札と 村の ひとこと（町の様子） ─────────────────

@@ -13,6 +13,7 @@
 // - 倒れたときは 場面も 精算も ない（仲間は 話しかけると 反応する。ui/villageTalk.ts）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
+import { MOUTH_IDS, mouthOf } from "../core/data/dungeons";
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import type { Speaker } from "../data/quotes";
@@ -82,7 +83,7 @@ const castOf = (pages: readonly StoryPage[]): Speaker[] => [
 
 /** キリコが 口の中に 立っているか（口が ふさがっていれば 蓄音機の前なので 場面は ない）。 */
 const inMouth = (s: Story, d: DungeonId): boolean => {
-	const [mx, my] = VILLAGE_SPOTS.mouth[d];
+	const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
 	return s.state.x === mx && s.state.y === my;
 };
 
@@ -140,23 +141,29 @@ const NANJ_BUILDER = VILLAGE_SPOTS.nanj({
 export const newsScript = async (s: Story): Promise<void> => {
 	for (const n of loadProgress().news) {
 		const main = n.dungeon === "main";
-		const lines =
-			UNLOCK_LINES[
-				n.reason === "relief"
+		// 口の ない 植民地（口の 見た目は 変わらない）
+		const colony = !(MOUTH_IDS as readonly string[]).includes(n.dungeon);
+		const name = DUNGEON_NAMES[n.dungeon].name;
+		const lines = UNLOCK_LINES[
+			colony
+				? "colony"
+				: n.reason === "relief"
 					? "relief"
 					: n.dungeon === "deep"
 						? "deep"
 						: "main"
-			];
+		].map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
 		// 開く 口の方を 見る（本編は 口の前で 見張る おんJ民、もっとは 板で ふさいだ口）
-		await s.look(main ? "nanj" : VILLAGE_SPOTS.mouth[n.dungeon]);
+		await s.look(main ? "nanj" : VILLAGE_SPOTS.mouth[mouthOf(n.dungeon)]);
 		for (const l of lines) await s.say(l.who, l.text);
 		if (main) {
 			await s.wait(0);
 			await s.goto("nanj", NANJ_BUILDER[0], NANJ_BUILDER[1], { speed: 1.5 });
 		}
 		doneProgressNews(n);
-		if (main) {
+		if (colony) {
+			// 村の 見た目は 変わらない
+		} else if (main) {
 			// おんJ民は もう 小屋の前（見た目は そのまま）
 			await s.rebuild();
 		} else {

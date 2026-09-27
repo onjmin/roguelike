@@ -11,7 +11,12 @@
 // - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
 //   （おんJ民が どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
 
-import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import {
+	DUNGEON_IDS,
+	DUNGEONS,
+	MOUTH_IDS,
+	mouthOf,
+} from "../core/data/dungeons";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { SEASONS, season } from "../data/calendar";
@@ -259,7 +264,7 @@ test("from the boot spot, Kiriko can walk into every open mouth and talk to ever
 		const [bx, by] = VILLAGE_SPOTS.boot;
 		ok(s.canEnter(bx, by), `${label(v)}: the boot spot is blocked`);
 		for (const d of v.unlocked) {
-			const [mx, my] = VILLAGE_SPOTS.mouth[d];
+			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
 			ok(s.reachable(mx, my), `${label(v)}: cannot walk into the ${d} mouth`);
 			// 帰ってきたとき 口から 1歩 下へ 出られる
 			ok(
@@ -312,9 +317,9 @@ test("tall things (boards, signs) cannot be read from behind, and each can be re
 test("locked mouths stay shut: おんJ民 guards 本編, boards cover もっと", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
-		for (const d of DUNGEON_IDS) {
+		for (const d of MOUTH_IDS) {
 			if (v.unlocked.includes(d)) continue;
-			const [mx, my] = VILLAGE_SPOTS.mouth[d];
+			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
 			ok(!s.reachable(mx, my), `${label(v)}: the locked ${d} mouth is open`);
 		}
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
@@ -729,7 +734,7 @@ test("the friends line up beside the mouth Kiriko comes out of", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		for (const d of v.unlocked) {
-			const [mx, my] = VILLAGE_SPOTS.mouth[d];
+			const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
 			const spots = lineupSpots(v, d, 5);
 			ok(spots.length === 5, `${label(v)} ${d}: ${spots.length} spots`);
 			ok(

@@ -15,7 +15,7 @@
 //   倉庫・売り → 町が 育つ（場面は ui/villageReturn.ts。あずける 一覧だけ ui/home.ts）。
 // - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/villageOpening.ts）。
 
-import { DUNGEONS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
@@ -110,10 +110,12 @@ const abandonRun = (): void => {
 	clearRun();
 };
 
-/** ダンジョンの口。踏むと もぐるか きく（やめたら 1歩 もどる）。 */
+/** 植民地への 口。踏むと 行き先を えらんで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
-	(ctx: Ctx, d: DungeonId): Script =>
+	(ctx: Ctx, mouth: DungeonId): Script =>
 	async (s) => {
+		// 行き先（はじめは この口の 植民地。一覧で ほかの 板も えらべる）
+		let d = mouth;
 		const back = () => s.move("player", "d");
 		if (!loadProgress().unlocked.includes(d)) {
 			await s.narrate(hintText(d));
@@ -149,10 +151,35 @@ const mouthScript =
 				await newsScript(s);
 			}
 		}
-		await s.narrate(signText(d));
-		if ((await s.choose(["もぐる", "やめる"], { cancel: 1 })) !== 0) {
-			await back();
-			return;
+		// 行き先の 植民地（開いた 板が 1つなら 札を 読んで もぐるか きく。2つ 以上なら 板の 一覧から）
+		const open = DUNGEON_IDS.filter((x) => loadProgress().unlocked.includes(x));
+		if (open.length <= 1) {
+			await s.narrate(signText(d));
+			if ((await s.choose(["もぐる", "やめる"], { cancel: 1 })) !== 0) {
+				await back();
+				return;
+			}
+		} else {
+			await hideMsg(s);
+			const cleared = loadProgress().cleared;
+			const v = await listWindow(
+				ctx,
+				"どの　植民地へ？",
+				open.map(
+					(x): ListItem => ({
+						label: `${DUNGEON_NAMES[x].name}（${DUNGEON_NAMES[x].nick}）`,
+						sub: `${DUNGEONS[x].floors}階${cleared.includes(x) ? "★" : ""}`,
+						desc: DUNGEON_DESC[x],
+						value: x,
+					}),
+				),
+				{ start: Math.max(0, open.indexOf(d)), closeLabel: "やめる" },
+			);
+			if (!v) {
+				await back();
+				return;
+			}
+			d = v as DungeonId;
 		}
 		// 過去ログの底 には 倉庫から 持っていける（町の段に応じて 1〜4個）。取り出すのは main.ts
 		const town = loadTown();

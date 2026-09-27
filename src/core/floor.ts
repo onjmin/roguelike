@@ -194,7 +194,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	// spawnMonster は r.f を見るので、一時的にこの階を入れておく
 	r.s.floor = f;
 	const [mlo, mhi] = INITIAL_MONSTERS;
-	const n = rng.range(mlo, mhi);
+	// 過疎の 板（離島）は 少ない
+	const n = Math.round(rng.range(mlo, mhi) * (r.dungeon.sparse ?? 1));
 	for (let i = 0; i < n; i++) {
 		const at = place(null);
 		if (at) spawnMonster(r, null, at, {});

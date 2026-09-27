@@ -7,8 +7,15 @@ import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
 import type { RngState } from "./rng";
 
-/** ダンジョン（ちょっと・本編・もっと。data/dungeons.ts）。 */
-export type DungeonId = "shallow" | "main" | "deep";
+/** ダンジョン＝おんJの 植民地（data/dungeons.ts）。 */
+export type DungeonId =
+	| "shallow"
+	| "main"
+	| "deep"
+	| "kinoko"
+	| "tropical"
+	| "konamono"
+	| "festival";
 
 // ───────────────────────── 道具 ─────────────────────────
 

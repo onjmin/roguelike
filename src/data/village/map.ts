@@ -42,7 +42,7 @@
 // 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
 
-import { DUNGEON_IDS } from "../../core/data/dungeons";
+import { MOUTH_IDS, type MouthId, mouthOf } from "../../core/data/dungeons";
 import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
@@ -87,12 +87,12 @@ export type Cell = readonly [x: number, y: number];
 export const VILLAGE_SPOTS = {
 	/** ダンジョンの口（踏むと もぐる）。 */
 	mouth: { shallow: [4, 3], main: [11, 3], deep: [18, 3] } as Record<
-		DungeonId,
+		MouthId,
 		Cell
 	>,
 	/** 口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
 	sign: { shallow: [5, 3], main: [12, 3], deep: [19, 3] } as Record<
-		DungeonId,
+		MouthId,
 		Cell
 	>,
 	/** 起きたとき・倒れて もどったときに 立つ所（蓄音機の前）。 */
@@ -334,8 +334,8 @@ const friend = (who: Speaker, [x, y]: Cell, wander = false): VillagePlace => ({
 export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	const stage = layoutStage(v);
 	const out: VillagePlace[] = [];
-	for (const d of DUNGEON_IDS) {
-		const [mx, my] = VILLAGE_SPOTS.mouth[d];
+	for (const d of MOUTH_IDS) {
+		const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
 		// 踏むと もぐる（本編は 開くまで おんJ民が 前に立つので 行けない。念のため 踏んでも 開いていなければ もどす）
 		if (d !== "deep" || v.unlocked.includes(d))
 			out.push({
@@ -421,7 +421,7 @@ export const lineupSpots = (
 	const rows = villageRows(v).map((r) => [...r]);
 	const tiles = villagePalette(v);
 	const places = villagePlaces(v);
-	const [mx, my] = VILLAGE_SPOTS.mouth[d];
+	const [mx, my] = VILLAGE_SPOTS.mouth[mouthOf(d)];
 	const free = (x: number, y: number): boolean =>
 		!!tiles[rows[y]?.[x] ?? ""]?.passable &&
 		!places.some(

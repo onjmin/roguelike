@@ -1,6 +1,7 @@
 // 起動：画面・入力・音を組み立て、歩ける村（保守村）→ 冒険 → 村… を回す。
 // タイトルは 村の上に 重ねる 起動の札（ui/boot.ts）だけ。
 
+import { dungeonById } from "./core/data/dungeons";
 import "./style.css";
 import { EXP_AT } from "./core/balance";
 import { Run } from "./core/run";
@@ -134,7 +135,7 @@ const devRun = (): Run | null => {
 	const d = q.get("dungeon");
 	const run = Run.create(
 		`${DEBUG_SEED}${seed ?? newSeed()}`,
-		d === "shallow" || d === "deep" ? d : "main",
+		dungeonById(d ?? undefined).id,
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);

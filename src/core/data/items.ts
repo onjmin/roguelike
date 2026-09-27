@@ -573,15 +573,45 @@ add({
 	id: "needle",
 	cat: "goal",
 	name: "蓄音機の針",
-	desc: "ちょっと下に　落ちていた　針。持ち帰ろう",
+	desc: "パン板の　過去ログに　落ちていた　針。持ち帰ろう",
 	flavor: "針が　なければ、レコードは　ただの　黒い　円盤",
 });
 add({
 	id: "tsuzuki",
 	cat: "goal",
 	name: "つづきの原盤",
-	desc: "底の　さらに　下の　レコード。まだ、なにも　入っていない",
+	desc: "電池板の　いちばん　下の　レコード。まだ、なにも　入っていない",
 	flavor: "つづきは　まだ　書かれて　いない。書くのは　たぶん　きみ",
+});
+
+// 植民地の おみやげ（持ち帰る品。その板の マスコットに ゆかりの 物）
+add({
+	id: "kinonyan",
+	cat: "goal",
+	name: "きのにゃんの　AA",
+	desc: "[ｷ・Д・ﾉ]　きのこ板の　底で　ふんぞりかえっていた。持ち帰ろう",
+	flavor: "態度が　でかい。持ち帰っても　たぶん　でかい",
+});
+add({
+	id: "yashi",
+	cat: "goal",
+	name: "ナツコの　ヤシの実",
+	desc: "離島・沖縄板の　底に　流れついた　ヤシの実。持ち帰ろう",
+	flavor: "ヤッシッシ～。島民は　6人。拾ったのは　7人目",
+});
+add({
+	id: "takoyaki",
+	cat: "goal",
+	name: "たこのみんの　たこ焼き",
+	desc: "おんたこの　底で　焼けていた。😡の　形を　している。持ち帰ろう",
+	flavor: "怒って　いるのでは　ない。焼けて　いるだけ",
+});
+add({
+	id: "uchiwa",
+	cat: "goal",
+	name: "マシーの　うちわ",
+	desc: "お祭り会場の　底に　落ちていた　うちわ。持ち帰ろう",
+	flavor: "祭りの　あとにも、うちわは　残る",
 });
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(

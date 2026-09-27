@@ -13,7 +13,7 @@
 
 import type { ItemWeight } from "../itemTable";
 import type { DungeonId, ItemCat } from "../types";
-import { MAIN_ITEMS } from "./items";
+import { ITEMS, MAIN_ITEMS } from "./items";
 
 export type Dungeon = {
 	id: DungeonId;
@@ -48,6 +48,10 @@ export type Dungeon = {
 	regenStep?: number;
 	/** 杖の 回数に 足す 数。 */
 	charge?: number;
+	/** 過疎：はじめから いる 敵の 数と 湧く 間隔に かける 数（0.5 なら 半分・間隔は 倍）。 */
+	sparse?: number;
+	/** 😡：どの 敵も HP が 半分を 切ると 怒って 倍速に なる。 */
+	angry?: boolean;
 };
 
 const identity = (n: number): number[] =>
@@ -210,6 +214,37 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "f_moldy", weight: 5 }, // +100%（ちから−1・HP−5）
 ];
 
+/**
+ * きのこ板の 12階の 道具の出かた。パン板の 表から 草を ふやし、毒草・眠り草・まどわし草も ふやした
+ * （きのこの 当たり外れ。草は 未識別）。
+ */
+export const KINOKO_ITEMS: readonly ItemWeight[] = [
+	...SHALLOW_ITEMS.filter(
+		(e) => ITEMS[e.kind]?.cat !== "herb" && ITEMS[e.kind]?.cat !== "food",
+	),
+	// 食べもの（12階ぶん。パン板より 多め）
+	{ kind: "f_bread", weight: 9 },
+	{ kind: "f_large", weight: 4 },
+	{ kind: "f_moldy", weight: 1 },
+	{ kind: "h_heal", weight: 9 },
+	{ kind: "h_greater", weight: 3 },
+	{ kind: "h_antidote", weight: 5 },
+	{ kind: "h_might", weight: 3 },
+	{ kind: "h_blink", weight: 3 },
+	{ kind: "h_fire", weight: 2 },
+	{ kind: "h_daze", weight: 3 },
+	{ kind: "h_sleep", weight: 3 },
+	{ kind: "h_poison", weight: 5 },
+	{ kind: "h_blind", weight: 2 },
+];
+
+/** 階 → 本編の 何階ぶんか（入門の つぎ。パン板より 少し 強い 顔ぶれまで）。 */
+const KINOKO_LEVEL: readonly number[] = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 7];
+
+/** 階 → 本編の 何階ぶんか（1階 おくれ。😡の 板は 弱い 敵でも 怒るので 出だしを ゆるく）。 */
+const lagged = (n: number): number[] =>
+	Array.from({ length: n + 1 }, (_, i) => (i === 0 ? 0 : Math.max(1, i - 1)));
+
 export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	shallow: {
 		id: "shallow",
@@ -260,10 +295,99 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 充電ずみの 杖
 		charge: 1,
 	},
+	// きのこ板（パン板の 植民地。植民地の 植民地）：草が 多く、当たり外れも 大きい
+	kinoko: {
+		id: "kinoko",
+		floors: 12,
+		items: KINOKO_ITEMS,
+		perFloor: [5, 8],
+		level: KINOKO_LEVEL,
+		unidentified: ["herb", "staff"],
+		curses: false,
+		start: ["f_large", "h_heal", "s_appraise"],
+		goal: "kinonyan",
+		houses: { from: 5, chance: 1 / 8, early: null },
+		trapsFrom: 4,
+		unlockAfter: "shallow",
+		reliefAfter: null,
+	},
+	// 離島・沖縄板（総島民 6人）：過疎。敵も 道具も 少ない
+	tropical: {
+		id: "tropical",
+		floors: 15,
+		items: MAIN_ITEMS,
+		perFloor: [4, 6],
+		level: identity(15),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "yashi",
+		houses: null,
+		trapsFrom: 3,
+		unlockAfter: "shallow",
+		reliefAfter: null,
+		sparse: 0.5,
+	},
+	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
+	konamono: {
+		id: "konamono",
+		floors: 20,
+		items: MAIN_ITEMS,
+		perFloor: [5, 7],
+		level: lagged(20),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		// 怒った 敵から 立てなおす 草を 2つ
+		start: ["f_large", "h_heal", "h_heal"],
+		goal: "takoyaki",
+		houses: { from: 3, chance: 1 / 16, early: [4, 6] },
+		trapsFrom: 3,
+		unlockAfter: "main",
+		reliefAfter: null,
+		angry: true,
+	},
+	// お祭り会場（おまC）：祭りが よく 出る
+	festival: {
+		id: "festival",
+		floors: 20,
+		items: MAIN_ITEMS,
+		perFloor: [5, 7],
+		level: identity(20),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "uchiwa",
+		houses: { from: 3, chance: 1 / 3, early: [3, 5] },
+		trapsFrom: 3,
+		unlockAfter: "main",
+		reliefAfter: null,
+	},
 };
 
-export const DUNGEON_IDS: readonly DungeonId[] = ["shallow", "main", "deep"];
+export const DUNGEON_IDS: readonly DungeonId[] = [
+	"shallow",
+	"main",
+	"deep",
+	"kinoko",
+	"tropical",
+	"konamono",
+	"festival",
+];
+
+/** 村に 口（穴）が ある 植民地。ほかの 植民地へは 口から 行き先を えらんで 行く。 */
+export const MOUTH_IDS = ["shallow", "main", "deep"] as const;
+export type MouthId = (typeof MOUTH_IDS)[number];
 
 /** 知らない id（壊れた記録など）は本編として読む。 */
 export const dungeonById = (id: string | undefined): Dungeon =>
 	DUNGEONS[id as DungeonId] ?? DUNGEONS.main;
+
+/**
+ * その植民地へ 行く 村の 口（口の ない 植民地は、開く もとに なった 植民地の 口。
+ * 帰ってきたときに 仲間が 並ぶ 所・開いた 知らせで 見る 所）。
+ */
+export const mouthOf = (d: DungeonId): MouthId => {
+	for (let id: DungeonId | null = d; id; id = DUNGEONS[id].unlockAfter)
+		if ((MOUTH_IDS as readonly DungeonId[]).includes(id)) return id as MouthId;
+	return "shallow";
+};

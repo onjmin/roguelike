@@ -2,7 +2,7 @@
 // 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、ゼロの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
-import { DUNGEONS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { STAGE_POINTS, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import {
@@ -32,11 +32,9 @@ import { settings } from "../engine/settings";
  * ダンジョンの ひとことの説明（口・立て札の 2行目。階の数は 1行目の 名前の 横に 出す）。
  * 村の窓に 収まるよう 1行（全角22字まで）。
  */
-export const DUNGEON_DESC: Record<DungeonId, string> = {
-	shallow: DUNGEON_NAMES.shallow.rules[1],
-	main: DUNGEON_NAMES.main.rules[1],
-	deep: DUNGEON_NAMES.deep.rules[1],
-};
+export const DUNGEON_DESC = Object.fromEntries(
+	DUNGEON_IDS.map((d) => [d, DUNGEON_NAMES[d].rules[1]]),
+) as Record<DungeonId, string>;
 
 /** まだ開いていないダンジョンの 開き方。 */
 export const lockedHint = (d: DungeonId): string => {

@@ -403,6 +403,12 @@ export const loadProgress = (): Progress => {
 	)
 		unlocked.push("main");
 	if (cleared.includes("main")) unlocked.push("deep");
+	// 口の ない 植民地：開く もとの 植民地を 持ち帰っていれば
+	for (const d of DUNGEON_IDS) {
+		const after = DUNGEONS[d].unlockAfter;
+		if (!unlocked.includes(d) && after && cleared.includes(after))
+			unlocked.push(d);
+	}
 	const fresh: Progress = {
 		unlocked,
 		cleared,

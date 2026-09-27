@@ -785,12 +785,15 @@ export class Run {
 			!sealed &&
 			!m.enraged &&
 			m.hp <= m.maxHp / 2 &&
-			d.abilities.some((a) => a.k === "berserk")
+			(this.dungeon.angry || d.abilities.some((a) => a.k === "berserk"))
 		) {
 			m.enraged = true;
 			m.status.fast = 999;
 			m.status.slow = 0;
-			this.msg(`${nm}は　怒りだした！`, "warn");
+			this.msg(
+				`${nm}は　怒りだした！${this.dungeon.angry ? "😡" : ""}`,
+				"warn",
+			);
 		}
 		// なぐられたときの反応
 		if (by === "hit" || by === "throw" || by === "magic") {
@@ -1047,7 +1050,9 @@ export class Run {
 		if (this.f !== f) return;
 
 		// 湧き
-		if (f.turns % SPAWN_EVERY === 0 && f.monsters.length < MONSTER_CAP) {
+		// 過疎の 板（離島）は 間隔が のびる
+		const spawnEvery = Math.round(SPAWN_EVERY / (this.dungeon.sparse ?? 1));
+		if (f.turns % spawnEvery === 0 && f.monsters.length < MONSTER_CAP) {
 			const at = randomFloorPos(this, true);
 			if (at) spawnMonster(this, null, at, {});
 		}

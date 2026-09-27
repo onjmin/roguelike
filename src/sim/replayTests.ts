@@ -5,6 +5,7 @@
 // - 途中の指紋（#…）が ぜんぶ合うか。記録を1つ抜くと、指紋で ずれがわかるか。
 // - コマンドの短い文字が、どの形でも 元にもどるか。
 
+import { DUNGEONS, mouthOf } from "../core/data/dungeons";
 import { MAIN_ITEMS } from "../core/data/items";
 import { randomFloorPos, spawnMonster } from "../core/floor";
 import { type Dir8, step } from "../core/geom";
@@ -266,6 +267,35 @@ test("main dungeon parity: the recorded runs replay to the same states", () => {
 			`${c.seed}: the final state differs (${state} vs ${c.state})`,
 		);
 	}
+});
+
+test("colonies: each board keeps its own rule", () => {
+	// 口の ない 植民地は、開く もとの 植民地の 口から
+	ok(mouthOf("kinoko") === "shallow", "kinoko is not reached from パン板");
+	ok(mouthOf("festival") === "main", "festival is not reached from 風呂板");
+	ok(mouthOf("deep") === "deep", "a mouth colony uses another mouth");
+	// 離島（過疎）：はじめから いる 敵が 少ない
+	let sparse = 0;
+	let full = 0;
+	for (let i = 0; i < 20; i++) {
+		sparse += Run.create(`colony-${i}`, "tropical").f.monsters.length;
+		full += Run.create(`colony-${i}`, "main").f.monsters.length;
+	}
+	ok(sparse < full * 0.7, `tropical is not sparse (${sparse} vs ${full})`);
+	// 電池板（充電）：杖の 回数が 1 多い
+	const w = Run.create("colony-staff", "deep").newItem("w_bolt");
+	const [lo] = defOf("w_bolt").charges ?? [3, 5];
+	ok(w.charges >= lo + 1, `a 電池板 staff is not charged (${w.charges})`);
+	// おんたこ（😡）：ふつうの 敵も 弱ると 怒る
+	const r = Run.create("colony-angry", "konamono");
+	const at = randomFloorPos(r, false);
+	const m = at && spawnMonster(r, "tousuko", at, { awake: true });
+	if (!m) throw new Fail("harness: no monster");
+	m.hp = m.maxHp = 40;
+	r.damageMonster(m, 21, "none");
+	ok(m.enraged, "an ordinary monster did not get angry in おんたこ");
+	// 風呂板（湯治）：自然回復が はやい
+	ok((DUNGEONS.main.regenStep ?? 150) < 150, "風呂板 does not heal faster");
 });
 
 test("a festival room gets 3-5 extra hidden traps (like Torneko 1)", () => {
