@@ -61,6 +61,7 @@ import {
 	villageRows,
 } from "../data/village/map";
 import type { Story, TileDef, VState } from "../engine/defs";
+import { type Actor, Field } from "../engine/field";
 import {
 	forgetProgressMemo,
 	loadProgress,
@@ -73,6 +74,7 @@ import {
 	replayMatches,
 	type Town,
 } from "../engine/save";
+import { isWalkRef } from "../engine/sprite";
 import {
 	forgetMobMemo,
 	hasMobNews,
@@ -172,8 +174,11 @@ const survey = (v: VillageView) => {
 	const standable = (x: number, y: number) =>
 		reachable(x, y) &&
 		!places.some((p) => p.trigger === "touch" && p.x === x && p.y === y);
-	/** となり（か カウンター越し）の 立てる マスから 話しかけられるか。 */
-	const talkable = (p: VillagePlace) =>
+	/**
+	 * となり（か カウンター越し）の 立てる マスから 話しかけられるか。
+	 * noBack なら 北どなり（掲示板などの 裏）からは 数えない（ui/village.ts の talkFront と同じ）。
+	 */
+	const talkable = (p: VillagePlace, noBack = false) =>
 		[
 			[0, -1],
 			[1, 0],
@@ -184,6 +189,7 @@ const survey = (v: VillageView) => {
 			const cx = p.x - dx;
 			const cy = p.y - dy;
 			if (tile(cx, cy)?.counter) return standable(cx - dx, cy - dy);
+			if (noBack && dx === 0 && dy === 1) return false;
 			return standable(cx, cy);
 		});
 	return { rows, tiles, places, tile, canEnter, reachable, talkable };
@@ -263,6 +269,42 @@ test("from the boot spot, Kiriko can walk into every open mouth and talk to ever
 			if (p.trigger === "talk")
 				ok(s.talkable(p), `${label(v)}: cannot talk to ${p.id}`);
 	}
+});
+
+/** 掲示板・立て札など 背の高い 物か（engine/field.ts の Field.hasBack を 地図の データで 呼ぶ）。 */
+const hasBack = (s: ReturnType<typeof survey>, p: VillagePlace): boolean => {
+	const tileAt = (x: number, y: number) =>
+		s.tile(x, y) ?? { layers: [], color: "#000", passable: false };
+	const sprite = p.sprite ?? "";
+	return Field.prototype.hasBack.call(
+		{ tileAt } as unknown as Field,
+		{
+			x: p.x,
+			y: p.y,
+			sprite,
+			still: !isWalkRef(sprite),
+		} as Actor,
+	);
+};
+
+test("tall things (boards, signs) cannot be read from behind, and each can be read from the front", () => {
+	let tall = 0;
+	for (const v of VIEWS) {
+		const s = survey(v);
+		for (const p of s.places) {
+			if (p.trigger !== "talk") continue;
+			const back = hasBack(s, p);
+			// 人は 裏から でも 話せる
+			if (p.who || p.mob) ok(!back, `${label(v)}: ${p.id} has a back`);
+			if (!back) continue;
+			tall++;
+			ok(
+				s.talkable(p, true),
+				`${label(v)}: ${p.id} can be read only from behind`,
+			);
+		}
+	}
+	ok(tall > 0, "no tall thing in the village has a back");
 });
 
 test("locked mouths stay shut: おんJ民 guards 本編, boards cover もっと", () => {

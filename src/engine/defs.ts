@@ -10,7 +10,10 @@ import type { Dir } from "./types";
 // ───────────────── マップ ─────────────────
 
 export type TileDef = {
-	/** 下から順に重ねる画像参照（`pub:assets/rpg-reze/Base.png#x,y,w,h` 等。engine/assets.ts の resolveRef）。 */
+	/**
+	 * 下から順に重ねる画像参照（`pub:assets/rpg-reze/Base.png#x,y,w,h` 等。engine/assets.ts の resolveRef）。
+	 * マスより上へはみ出した部分（16x32 の扉・掲示板の上半分など）はキャラより手前に描く。
+	 */
 	layers: string[];
 	/** 画像が読めないときの塗り色。 */
 	color: string;

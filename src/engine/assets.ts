@@ -63,6 +63,7 @@ export const cropOf = (ref: string): Crop | null => {
 /**
  * 参照の画像（切り出しがあればその部分）を、16px のマス (x, y) に
  * 下端そろえ・左右中央で描く。未読込なら false。
+ * part で縦を分けて描ける：`cell` はマスの高さの中だけ、`over` はマスより上へはみ出した部分だけ。
  */
 export const drawRefInCell = (
 	ctx: CanvasRenderingContext2D,
@@ -70,19 +71,38 @@ export const drawRefInCell = (
 	x: number,
 	y: number,
 	cell = 16,
+	part: "all" | "cell" | "over" = "all",
 ): boolean => {
 	// 絵の決まっていない物は 描かない（1つの抜けで 毎コマ 例外になり、画面ごと止まらないように）
 	if (!ref) return false;
 	const img = getImage(ref);
 	if (!img) return false;
-	const c = cropOf(ref);
-	const w = c ? c.sw : img.width;
-	const h = c ? c.sh : img.height;
-	const dx = x + (cell - w) / 2;
-	const dy = y + cell - h;
-	if (c) ctx.drawImage(img, c.sx, c.sy, c.sw, c.sh, dx, dy, w, h);
-	else ctx.drawImage(img, dx, dy);
+	const c = cropOf(ref) ?? { sx: 0, sy: 0, sw: img.width, sh: img.height };
+	const over = Math.max(0, c.sh - cell);
+	const top = part === "cell" ? over : 0;
+	const h = part === "over" ? over : c.sh - top;
+	if (h > 0)
+		ctx.drawImage(
+			img,
+			c.sx,
+			c.sy + top,
+			c.sw,
+			h,
+			x + (cell - c.sw) / 2,
+			y + cell - c.sh + top,
+			c.sw,
+			h,
+		);
 	return true;
+};
+
+/** 画像がマスより上へはみ出すか（未読込で大きさが分からなければ false）。 */
+export const overflowsCell = (ref: string, cell = 16): boolean => {
+	if (!ref) return false;
+	const c = cropOf(ref);
+	if (c) return c.sh > cell;
+	const img = getImage(ref);
+	return !!img && img.height > cell;
 };
 
 type Entry = {

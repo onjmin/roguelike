@@ -581,6 +581,13 @@ export class Village {
 			target = talkAt(tx, ty);
 		}
 		if (!target?.def?.run) return;
+		// 掲示板や 立て札は、裏（北どなりから 下を向いて）からは 調べられない
+		if (
+			target.x === this.player.x &&
+			target.y === this.player.y + 1 &&
+			field.hasBack(target)
+		)
+			return;
 		if (!target.def.fixedDir && !target.still)
 			target.dir = OPPOSITE[this.player.dir];
 		// 話しはじめたら「！」は 消す（話し終わったら 見なおす）
@@ -609,10 +616,11 @@ export class Village {
 				talk = guard;
 			}
 		}
-		// となりの人・物を タップしたら、そちらを向いて 話す
+		// となりの人・物を タップしたら、そちらを向いて 話す（掲示板などの 裏からなら 表へ 回りこむ）
 		if (
 			talk &&
-			Math.abs(tx - this.player.x) + Math.abs(ty - this.player.y) === 1
+			Math.abs(tx - this.player.x) + Math.abs(ty - this.player.y) === 1 &&
+			!(this.player.y === ty - 1 && field.hasBack(talk))
 		) {
 			this.clearPath();
 			this.faceTo(this.player, tx, ty);
@@ -626,15 +634,17 @@ export class Village {
 	 * (tx, ty) へ 歩く道を 決める（着いたら talk に 話しかける）。
 	 * 人・物が 相手なら、その となり（カウンターの 向こうの人なら カウンターの 手前）の うち
 	 * いちばん近い マスまで。踏むと もぐる 口には 立たない（口の となりの 立て札を 読みに行って、
-	 * もぐるか きかれないように）。
+	 * もぐるか きかれないように）。掲示板などの 裏（北どなり）にも 立たない。
 	 */
 	private walkTo(tx: number, ty: number, talk: Actor | null): void {
 		const field = this.field;
 		if (!field) return;
 		const me = this.player;
+		const noBack = !!talk && field.hasBack(talk);
 		let path: Dir[] | null = null;
 		if (talk) {
 			for (const d of ["up", "down", "left", "right"] as Dir[]) {
+				if (noBack && d === "up") continue;
 				let sx = tx + DIR_VEC[d].dx;
 				let sy = ty + DIR_VEC[d].dy;
 				if (field.tileAt(sx, sy).counter) {
@@ -649,7 +659,7 @@ export class Village {
 			}
 		}
 		// 立てる マスが 無ければ、相手の となりの どこかまで
-		path ??= field.findPath(me.x, me.y, tx, ty, me);
+		path ??= field.findPath(me.x, me.y, tx, ty, me, noBack);
 		if (!path) return;
 		this.path = path;
 		this.pathTalk = talk;
@@ -742,6 +752,8 @@ export class Village {
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		field.drawAbove(g, ox, oy);
+		// キリコだけは、掲示板などの 裏に ほとんど隠れたら 薄く見せる（村の人は 隠れたまま）
+		field.drawHidden(g, [this.player], ox, oy, this.time);
 		field.def.decor?.(g, ox, oy, this.time);
 		if (!this.scene)
 			for (const a of field.actors)
