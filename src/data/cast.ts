@@ -58,11 +58,12 @@ export const CAST: Record<Speaker, CastDef> = Object.fromEntries(
 ) as Record<Speaker, CastDef>;
 
 /**
- * 村の 住人（data/mobs.ts）の 読み上げの 声。音源の ある子だけ（春音リノ＝dtm の rino）。
+ * 村の 住人（data/mobs.ts）の 読み上げの 声。音源の ある子だけ（春音リノ＝dtm の rino・響化アル＝hibika_aru）。
  * ぷゆゆ・おんJマイナーズは 声なし。
  */
 export const MOB_VOICE: Partial<Record<MobId, VoiceDef>> = {
 	rino: { model: "rino" },
+	aru: { model: "hibika_aru" },
 };
 
 /** 読み上げで 使う 音源（ボイスを ON に したとき これだけ 取ってくる）。 */

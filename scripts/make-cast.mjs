@@ -8,6 +8,8 @@
 //          ロゼの 赤・ピンクの差し色は 青・水色に反転し、耳には 機械の イヤーパーツ。
 //   リノ … 春音リノ（おんJ生まれの UTAU。村の 住人なので 歩行グラだけ・立ち絵なし）。
 //          カーキの 軍帽と 軍服、メタリックな 銀紫の 髪、銃みたいな コッペパン。
+//   アル … 響化アル（おーぷん2ch 有志の UTAU。18歳・科学部。村の 住人なので 歩行グラだけ）。
+//          長めの マッシュの 髪、白衣（ポケットに 試験管）。
 //
 // 歩行グラは RPGEN の形：32x64・16x16 のマスが 2コマ×4段（上＝背中・右・下＝正面・左）、背景は透明、足もとを下にそろえる。
 // 1文字が1ドット：'.' は透明、ほかの文字は palette の色（src/ui/itemArt.ts と同じ書き方）。
@@ -16,7 +18,7 @@
 // 立ち絵（public/portraits/<名前>.png・1024x1024・右向き・透明）は、本人が描くまでの 仮の シルエット。
 // 色と 形の目じるし（シヨ＝ポニテ・猫耳・眼鏡、ゼロ＝髪のボリューム・イヤーパーツ・和装）だけを置き、すみに「仮」を入れる。
 //
-//   node scripts/make-cast.mjs                    … public/sprites/{shiyo,zero,rino}.png と public/portraits/{shiyo,zero}.png
+//   node scripts/make-cast.mjs                    … public/sprites/{shiyo,zero,rino,aru}.png と public/portraits/{shiyo,zero}.png
 //   node scripts/make-cast.mjs shiyo              … 指定したものだけ
 //   node scripts/make-cast.mjs --sheet out.png    … 歩行グラを 8倍で並べた 見くらべ用の一覧も書く（草・石の床の2段）
 //   node scripts/make-cast.mjs --no-portrait      … 立ち絵は書かない
@@ -321,6 +323,86 @@ const CAST = {
 		step: {
 			up: { 15: "..olll....lllo.." },
 			right: { 14: "...oKKKKKKKKKo..", 15: "....oll...oll..." },
+			down: { 15: "..olll....lllo.." },
+		},
+	},
+	// 響化アル：18歳の 男の子。長めの マッシュの 髪（こげ茶）、科学部の 白衣（ポケットに 試験管）、青い シャツ。
+	// 立ち絵は 無い（村の 住人は 無くてよい）。
+	aru: {
+		palette: {
+			o: "#231c1c", // ふち
+			A: "#5a4638", // 髪（こげ茶）
+			H: "#8a6e58", // 髪の 照り
+			a: "#3a2c24", // 髪の 影
+			s: "#fbe0cc", // 肌
+			e: "#2a2230", // 目
+			r: "#c8705e", // 口
+			W: "#f4f6fa", // 白衣
+			w: "#c4cad8", // 白衣の 影
+			c: "#5a7cc0", // シャツ
+			t: "#6ee0c0", // 試験管
+			n: "#3a3e52", // ズボン
+			l: "#2a2626", // 靴
+		},
+		frames: {
+			up: [
+				"....oooooooo....",
+				"...oAAHHAAAAo...",
+				"..oAAAAAAAAAAo..",
+				".oAAAHAAAAAAAAo.",
+				".oAAAAAAAAAAAAo.",
+				".oAAAAAAAAAAAAo.",
+				".oAAAAAAAAAAAAo.",
+				".oaAAAAAAAAAAao.",
+				"..oaaAAAAAAaao..",
+				"..oWWWWWWWWWWo..",
+				".oWWWWWWWWWWWWo.",
+				".oWsWWWWWWWWsWo.",
+				".owWWWWWWWWWWwo.",
+				"..owWWWWWWWWwo..",
+				"...onnnoonnno...",
+				"...olll..lllo...",
+			],
+			right: [
+				".....oooooooo...",
+				"....oAAAHHAAAo..",
+				"...oAAAAAAAAAAo.",
+				"..oAAAAAAAAAAAAo",
+				"..oAAAAAAAAAAAAo",
+				"..oAAAAAAaaaaaao",
+				"..oAAAAAAsssesso",
+				"..oAAAAAssssssso",
+				"...oAAAosssrsso.",
+				"....oWWoccWo....",
+				"....oWWWWcWWo...",
+				"....oWWWsWtWo...",
+				"....owWWWWWwo...",
+				"....owWWWWWwo...",
+				"....onnnnnnno...",
+				".....oll.oll....",
+			],
+			down: [
+				"....oooooooo....",
+				"...oAAHHAAAAo...",
+				"..oAAAAAAAAAAo..",
+				".oAAAAAAAAAAAAo.",
+				".oAAAAAAAAAAAAo.",
+				".oAaaaaaaaaaaAo.",
+				".oAssessssessAo.",
+				".oAssssrrssssAo.",
+				"..oAossssssoAo..",
+				"..oWWWoccoWWWo..",
+				".oWWWWWccWWWWWo.",
+				".oWsWWWccWWtsWo.",
+				".owWWWWccWWWWwo.",
+				"..owWWWnnWWWwo..",
+				"...onnnoonnno...",
+				"...olll..lllo...",
+			],
+		},
+		step: {
+			up: { 15: "..olll....lllo.." },
+			right: { 14: "...onnnnnnnno...", 15: "....oll...oll..." },
 			down: { 15: "..olll....lllo.." },
 		},
 	},

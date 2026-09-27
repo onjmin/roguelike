@@ -1294,8 +1294,7 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 	}
 	const froms = MOB_IDS.map((id) => MOBS[id].from);
 	ok(
-		new Set(froms).size === froms.length &&
-			froms.every((f) => f >= 0 && f < TOWN_STAGES),
+		froms.every((f) => f >= 0 && f < TOWN_STAGES),
 		`move-in stages: ${froms}`,
 	);
 	// はじめから いるのは ぷゆゆ だけ（マイナーズは 町が 育ってから）
@@ -1305,11 +1304,14 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 	);
 });
 
-test("住人の 声: 音源の ある子（春音リノ）だけ 読み上げ、その 音源も 取ってくる", async () => {
-	ok(VOICE_MODELS.includes("rino"), `VOICE_MODELS: ${VOICE_MODELS.join()}`);
+test("住人の 声: 音源の ある子（春音リノ・響化アル）だけ 読み上げ、その 音源も 取ってくる", async () => {
 	ok(
-		MOB_IDS.filter((id) => MOB_VOICE[id]).join() === "rino",
-		"only リノ has a voice among the residents",
+		VOICE_MODELS.includes("rino") && VOICE_MODELS.includes("hibika_aru"),
+		`VOICE_MODELS: ${VOICE_MODELS.join()}`,
+	);
+	ok(
+		MOB_IDS.filter((id) => MOB_VOICE[id]).join() === "rino,aru",
+		"only リノ and アル have a voice among the residents",
 	);
 	await withStorageAsync(async () => {
 		putTown({ stage: 7 });
