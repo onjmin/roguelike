@@ -5,7 +5,7 @@
 // - 押しっぱなしで歩き続ける（トルネコと同じ）。キーボードは斜めの同時押しを少し待つ。
 // - ダッシュ・タップ移動は、何かあったら止まる（敵が見えた・道具・階段・分かれ道・部屋の出入り）。
 
-import { ankaText } from "../core/anka";
+import { ANKA_DUE, ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
 import {
 	DIRS8,
@@ -72,6 +72,8 @@ import {
 import { openSettings } from "./settings";
 import { zoneFor } from "./theme";
 
+/** 安価の のこりが これ 以下で 赤く。 */
+const ANKA_WARN = 30;
 const KIRIKO = "pub:sprites/kiriko.png";
 /** 武器を振る長さ（振りかぶる → ななめ → 前 の3つの形）。 */
 const SWING_MS = 180;
@@ -191,6 +193,8 @@ export class Play {
 	/** 図鑑に載っている敵（毎フレーム保存を読まないように覚えておく）。 */
 	private bookSeen = new Set(loadBook().seen);
 	private statusKey = "";
+	/** もう 知らせた 安価（期限の レス数。出ていなければ -1）。 */
+	private ankaSeen = -1;
 	/** リプレイを見ているとき（入力の代わりに 記録のコマンドを入れる）。 */
 	private rp: ReplayDriver | null = null;
 
@@ -582,9 +586,16 @@ export class Play {
 		const res = Math.min(RES_LIMIT, (this.shownFloor ?? run.f).res);
 		// 出ている 安価（お題と のこりの レス）
 		const anka = (this.shownFloor ?? run.f).anka;
+		const ankaLeft = anka ? Math.max(0, anka.due - res) : 0;
 		const ankaLine = anka
-			? `安価：${ankaText(anka)}（あと${Math.max(0, anka.due - res)}レス）`
+			? `安価：${ankaText(anka)}（あと${ankaLeft}レス）`
 			: "";
+		// 来たばかりの 安価は、スレの レスとして 画面に 出す（ログ 1行だと 気づきにくい）
+		const ankaDue = anka?.due ?? -1;
+		if (ankaDue !== this.ankaSeen) {
+			this.ankaSeen = ankaDue;
+			if (anka) void this.ankaPost(ankaText(anka), anka.due - ANKA_DUE);
+		}
 		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${res}|${ankaLine}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
@@ -607,7 +618,9 @@ export class Play {
 				? `<span class="st-hp low">${badges.join(" ")}</span>`
 				: "") +
 			"</div>" +
-			(ankaLine ? `<div class="st-row st-anka">${ankaLine}</div>` : "");
+			(ankaLine
+				? `<div class="st-row st-anka${ankaLeft <= ANKA_WARN ? " low" : ""}">${ankaLine}</div>`
+				: "");
 	}
 
 	// ───────────────── ログ ─────────────────
@@ -1931,6 +1944,31 @@ export class Play {
 		this.ctx.ui.appendChild(f);
 		await wait(ms);
 		f.remove();
+	}
+
+	/** 安価が 来た：「>>キリコ　〜」の レスを 上の方に しばらく 出す（操作は とめない）。 */
+	private async ankaPost(text: string, at: number): Promise<void> {
+		const post = el("div", { class: "over1000 anka-post" }, [
+			el("div", { class: "over1000-head" }, [
+				`${at} ：`,
+				el("b", { text: "名無しさん@おんJ" }),
+			]),
+			el("div", { class: "over1000-body" }, [
+				el("span", { class: "anka-to", text: ">>キリコ" }),
+				`　${text}`,
+			]),
+			el("div", {
+				class: "over1000-body anka-note",
+				text: `（${ANKA_DUE}レス　以内に。安価は　絶対）`,
+			}),
+		]);
+		this.ctx.ui.appendChild(post);
+		await nextFrame();
+		post.classList.add("shown");
+		await wait(settings.speed === "fast" ? 1400 : 2400);
+		post.classList.remove("shown");
+		await wait(300);
+		post.remove();
 	}
 
 	/** 階の札（〇階）。 */

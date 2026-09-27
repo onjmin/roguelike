@@ -535,6 +535,18 @@ body.shake #app {
 
 .status .st-anka {
 	color: var(--accent);
+	animation: anka-blink 1.2s steps(2, jump-none) 3;
+}
+
+.status .st-anka.low {
+	color: var(--danger);
+	animation: anka-blink 0.8s steps(2, jump-none) infinite;
+}
+
+@keyframes anka-blink {
+	50% {
+		opacity: 0.35;
+	}
 }
 
 .status .st-hunger.low,
@@ -1513,6 +1525,21 @@ body.shake #app {
 
 .over1000-body {
 	padding-left: 1.5em;
+}
+
+/* 安価（上の方に 出して、盤面は かくさない） */
+.over1000.anka-post {
+	top: 24%;
+}
+
+.anka-post .anka-to {
+	color: #00f;
+	text-decoration: underline;
+}
+
+.anka-post .anka-note {
+	font-size: 13px;
+	color: #555;
 }
 
 /* ───────── リプレイ ───────── */
