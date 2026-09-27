@@ -312,6 +312,11 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
 	if (p.id === "door_hut") return sign(p.id, p.x, p.y, VILLAGE_MSG.hutDoor);
+	if (p.id === "door_hall") {
+		const stage = loadTown().stage;
+		const i = stage >= 6 ? 2 : stage >= 3 ? 1 : 0;
+		return sign(p.id, p.x, p.y, VILLAGE_MSG.hall[i]);
+	}
 	if (p.id.startsWith("yaji_") && p.sprite) {
 		// 祭りの 野次馬（J民。名前欄は おんJ民の 色で「野次馬」）
 		const line =

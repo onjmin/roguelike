@@ -5,7 +5,8 @@
 // まわりの 森は 四角く ならないよう 木と しげみで 囲み、西の 空き地（切り株・丸太）・東の 畑（かかし・畝・麦）・
 // 南の 池へ 抜けられる（OUTSKIRTS_ROWS・EDGE_CELLS）。下の 図と 区画の 関数は 町の 区画の 座標で、
 // VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 4, 2）。
-// - 北に 崖。まん中の 切れ目を 道が 北へ 抜ける（区画 11,3 が 村の 出口。立て札は 道の わき 12,5）。出口を 踏むと 全体マップで 行き先の 植民地を 選ぶ。
+// - 北に 崖。まんなかに おんJ 本館（区画 8〜13。縦の 道が 扉 10〜11 に 突きあたる。段で 集会所 → レンガ → 本館）。
+//   東の 崖の 切れ目を 道が 北へ 抜ける（区画 18,3 が 村の 出口。立て札は 19,5）。出口を 踏むと 全体マップで 行き先の 植民地を 選ぶ。
 // - 崖の下に 道（区画 y=4）。そこから 町の 通り（y=12）まで 道（x=10〜11）が のびる。
 // - 西に 店の区画（x=1〜8）、まんなかに 小屋（x=12〜15）、東に 倉庫の区画（x=16〜20）。その下が 広場（掲示板・蓄音機）。
 //   売り場は「囲い（y=10。売る人が立つ）＋ 台（y=11）」。キリコは 通り（y=12）から 台ごしに 話しかける。
@@ -25,7 +26,7 @@
 //  0 1111111111111111111111  崖の上
 //  1 2y22222222222222222222  崖のふち（y 桜）
 //  2 3333333333333333333333  岩肌
-//  3 4444444444I.t444444444  崖の 切れ目（11,3 が 村の 出口。立て札は 12,5）
+//  3 44444444665566444I.t44  本館の 扉（10〜11）・崖の 切れ目（18,3 が 村の 出口。立て札 19,5）
 //  4 H....................H  崖の下の道
 //  5 h,nnnnnn,,..,,,,,,,,,h  店の 屋根                  （倉庫が 建つまで シヨ 17,5）
 //  6 H,NNNNNN,,..,,,,rrrrrH                               倉庫の 屋根
@@ -59,6 +60,7 @@ import {
 	floor,
 	GROUND,
 	HUT,
+	hallTiles,
 	OUTSKIRTS,
 	PLAZA,
 	SHED,
@@ -94,9 +96,11 @@ export type Cell = readonly [x: number, y: number];
 /** 村の 決まった場所。 */
 export const VILLAGE_SPOTS = {
 	/** 村の 出口（崖の 切れ目。踏むと 全体マップで 行き先の 植民地を 選ぶ）。 */
-	exit: [15, 5] as Cell,
+	exit: [22, 5] as Cell,
 	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
-	exitSign: [16, 7] as Cell,
+	exitSign: [23, 7] as Cell,
+	/** おんJ 本館の 扉（見るだけ）。 */
+	hallDoor: [15, 5] as Cell,
 	/** 起きたとき・倒れて もどったときに 立つ所（蓄音機の前）。 */
 	boot: [14, 17] as Cell,
 	phono: [14, 16] as Cell,
@@ -141,12 +145,12 @@ const layoutStage = (v: VillageView): number =>
 
 // ───────────────── 行 ─────────────────
 
-// 崖に 切れ目（x=11）。町の 縦の 道が そのまま 北へ 抜ける（切れ目の 入り口が 村の 出口）
+// まんなか（x=8〜13）に おんJ 本館（縦の 道が 扉に 突きあたる）。東（x=18）の 崖の 切れ目が 村の 出口
 const CLIFF_ROWS: readonly string[] = [
-	"1111111111A.V111111111",
-	"2222222222D.j222222222",
-	"3333333333F.s333333333",
-	"4444444444I.t444444444",
+	"11111111######111A.V11",
+	"22222222++++++222D.j22",
+	"3333333300$$00333F.s33",
+	"44444444665566444I.t44",
 ];
 /** 崖の下の道（y=4）と 町の通り（y=12）。 */
 const ROAD = "H....................H";
@@ -265,8 +269,8 @@ const forestAt = (x: number, y: number): string =>
  * 西の 空き地（切り株・丸太・花）、東の 畑（かかし・畝・麦）、南の 池（岩と 草の へり）。
  */
 const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
-	[15, 0, "."],
-	[15, 1, "."],
+	[22, 0, "."],
+	[22, 1, "."],
 	[0, 12, "bb,,"],
 	[0, 13, "b=,;"],
 	[0, 14, "b,.."],
@@ -329,7 +333,7 @@ const townRows = (v: VillageView): string[] => {
 	// 町が 小さな店に なったら 雑草は 抜いてある
 	const lot = LOT_ROWS.map((r) => (stage >= 5 ? r.replaceAll("v", ",") : r));
 	const rows = [...CLIFF_ROWS, ROAD, ...lot, ROAD, ...plazaRows(stage), BOTTOM];
-	put(rows, [12, 5], "i");
+	put(rows, [19, 5], "i");
 	stamp(rows, 1, 5, shopBlock(stage));
 	stamp(rows, 12, 8, hutBlock(stage));
 	stamp(rows, 16, 5, storeBlock(stage));
@@ -380,6 +384,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...SHOP,
 		...HUT,
 		...(stage >= 6 ? STOREHOUSE : SHED),
+		...hallTiles(stage),
 		".": paved ? floor(C_STONE, STONE) : floor(C_DIRT, DIRT),
 		":": floor(C_PLAZA, PLAZA),
 		U: solid(C_PLAZA, PLAZA, base(2, 37)),
@@ -440,6 +445,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		trigger: "talk",
 		sprite: PHONO_SPRITE,
 	});
+	{
+		const [dx, dy] = VILLAGE_SPOTS.hallDoor;
+		out.push({ id: "door_hall", x: dx, y: dy, trigger: "talk" });
+	}
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;
 		out.push({ id: "door_hut", x: hx, y: hy, trigger: "talk" });

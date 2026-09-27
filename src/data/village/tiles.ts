@@ -216,6 +216,31 @@ const storeTiles = (
 export const SHED = storeTiles(1, 73, "#9a7a4a");
 export const STOREHOUSE = storeTiles(4, 67, "#8a8a8a");
 
+// ───────────────── おんJ 本館（崖の 前の まんなか。町の 段で 育つ） ─────────────────
+//   #  屋根の 棟   +  屋根の 軒   0  壁（上段）   $  壁（上段）に ちょうちん   6  壁（下段）   5  扉（下段。2マスの 絵）
+// 段0〜2 木造の 集会所（茶の 屋根・板壁・木戸）、段3〜5 レンガ（赤い 瓦・レンガ壁・赤い 扉）、
+// 段6〜 本館（青い 瓦・柱の ならぶ 石の 壁・飾りの 門）
+const hallStyle = (stage: number) =>
+	stage >= 6
+		? { roof: 2, wall: [1, 71], door: [7, 71], color: "#8a8e9a" }
+		: stage >= 3
+			? { roof: 3, wall: [1, 61], door: [7, 61], color: "#a8483a" }
+			: { roof: 0, wall: [1, 55], door: [7, 57], color: "#6a4a2a" };
+
+export const hallTiles = (stage: number): Record<string, TileDef> => {
+	const h = hallStyle(stage);
+	const up = base(h.wall[0], h.wall[1]);
+	const low = base(h.wall[0], h.wall[1] + 1);
+	return {
+		"#": solid(h.color, base(h.roof, 82)),
+		"+": solid(h.color, base(h.roof, 84)),
+		"0": solid(h.color, up),
+		$: solid(h.color, up, basePx(2 * 16 + 3, 297 * 16 + 2, 10, 13)),
+		"6": solid(h.color, low),
+		"5": solid(h.color, low, base(h.door[0], h.door[1], 1, 2)),
+	};
+};
+
 // ───────────────── 村の まわり（森・西の 空き地・東の 畑・南の 池） ─────────────────
 //   ^  紅葉の 木（2マス幅）   ;  草むら（通れる）   %  小石   B  大岩   =  切り株   _  丸太（2マス幅）
 //   ~  池の 水（field.png の 海）   G  畑の 畝   S  かかし   W  麦
