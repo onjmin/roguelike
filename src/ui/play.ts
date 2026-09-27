@@ -1994,6 +1994,14 @@ export class Play {
 			(m) => run.monsterVisible(m) && !m.disguise,
 		).length;
 		if (!tapped && vis > before.monsters) return true;
+		// タップの 自動移動は、見えている敵が となりに 来たら 止まる（先に なぐられないように）
+		if (
+			tapped &&
+			run.f.monsters.some(
+				(m) => run.monsterVisible(m) && !m.disguise && dist(m, p) === 1,
+			)
+		)
+			return true;
 		// 敵に ねらわれた（なぐられた・撃たれた）ら止まる。はずれても止まる
 		if (
 			ev.some(
