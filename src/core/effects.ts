@@ -4,6 +4,7 @@
 // - 相手を選ぶスレ（鑑定・充填・飯テロ）は target が要る。無いときは時間を進めずに
 //   「えらんで」と知らせる（needsTarget）。キャンセルすれば減らない。
 
+import { ankaHit } from "./anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -40,7 +41,7 @@ import {
 	wakeMonster,
 } from "./monster";
 import type { Run } from "./run";
-import { HOLD, type Item, type Monster } from "./types";
+import { type AnkaKind, HOLD, type Item, type Monster } from "./types";
 
 /** 使うときに相手の道具を選ぶ種類。 */
 export const TARGET_KINDS: Record<string, "any" | "staff"> = {
@@ -68,14 +69,20 @@ export const useItem = (r: Run, uid: number, target?: number): boolean => {
 			r.msg("大事に　しまっておこう");
 			return false;
 		case "food":
-			return eat(r, it);
+			return eat(r, it) && ankaDone(r, "eat");
 		case "herb":
-			return drink(r, it);
+			return drink(r, it) && ankaDone(r, "herb");
 		case "scroll":
-			return read(r, it, target);
+			return read(r, it, target) && ankaDone(r, "scroll");
 		case "staff":
 			return wave(r, it);
 	}
+};
+
+/** 安価の お題に あたる ことを した（時間が 進んだ ときだけ 呼ぶ）。 */
+const ankaDone = (r: Run, kind: AnkaKind): true => {
+	ankaHit(r, kind);
+	return true;
 };
 
 const consume = (r: Run, it: Item): void => {
@@ -682,7 +689,10 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 		kind: d.cat === "arrow" ? "arrow" : "item",
 		icon: it.kind,
 	});
-	if (d.cat !== "arrow") r.msg(`${r.name(it)}を　投げた`);
+	if (d.cat !== "arrow") {
+		r.msg(`${r.name(it)}を　投げた`);
+		ankaHit(r, "throw");
+	}
 	if (!hit) {
 		r.placeItem(it, last);
 		return true;

@@ -4,6 +4,7 @@
 // 回復 → 食事 → となりの敵をなぐる → 装備の更新 → 識別 → 見えている道具を拾う → 探索 → 階段。
 
 import { HUNGER_UNIT } from "../core/balance";
+import { needsTarget } from "../core/effects";
 import { roomsSeenFrom } from "../core/fov";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
 import { defOf, isKnownKind } from "../core/item";
@@ -288,6 +289,52 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			}
 		}
 		return { c: "attack", dir };
+	}
+	// 安価：敵が いないうちに こなす（人も 安い お題なら 乗る）
+	const anka = f.anka;
+	if (anka && threats.length === 0) {
+		const pick = (cat: string, ok: (i: Item) => boolean = () => true) =>
+			items.find((i) => defOf(i.kind).cat === cat && !r.isEquipped(i) && ok(i));
+		const cmd: Command | null =
+			anka.kind === "herb"
+				? (() => {
+						const h = pick(
+							"herb",
+							(i) =>
+								!known(i) ||
+								(!BAD_HERBS.has(i.kind) &&
+									!["h_heal", "h_greater"].includes(i.kind)),
+						);
+						return h ? { c: "use", item: h.uid } : null;
+					})()
+				: anka.kind === "scroll"
+					? (() => {
+							const s = pick(
+								"scroll",
+								(i) => !known(i) || !["s_escape", "s_snare"].includes(i.kind),
+							);
+							if (!s) return null;
+							// 相手を 選ぶ スレは ほかの 持ち物を 1つ（帰還スレは 聞かれて やめる）
+							const other = items.find((i) => i !== s);
+							return needsTarget(s) && other
+								? { c: "use", item: s.uid, target: other.uid }
+								: { c: "use", item: s.uid };
+						})()
+					: anka.kind === "eat" && p.hunger < 60 * HUNGER_UNIT
+						? (() => {
+								const food = pick("food");
+								return food ? { c: "use", item: food.uid } : null;
+							})()
+						: anka.kind === "throw"
+							? (() => {
+									const t =
+										pick("arrow") ??
+										pick("weapon", (i) => i.kind === "club") ??
+										pick("herb", (i) => known(i) && BAD_HERBS.has(i.kind));
+									return t ? { c: "throw", item: t.uid, dir: p.dir } : null;
+								})()
+							: null;
+		if (cmd) return cmd;
 	}
 	// 装備の更新
 	for (const slot of ["weapon", "shield"] as const) {

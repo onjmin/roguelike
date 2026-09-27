@@ -5,6 +5,7 @@
 // - 押しっぱなしで歩き続ける（トルネコと同じ）。キーボードは斜めの同時押しを少し待つ。
 // - ダッシュ・タップ移動は、何かあったら止まる（敵が見えた・道具・階段・分かれ道・部屋の出入り）。
 
+import { ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
 import {
 	DIRS8,
@@ -572,7 +573,12 @@ export class Play {
 		].filter(Boolean);
 		// この階（スレ）の レス数。950 を こえたら 赤く
 		const res = Math.min(RES_LIMIT, (this.shownFloor ?? run.f).res);
-		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${res}|${badges.join()}|${run.s.returning}`;
+		// 出ている 安価（お題と のこりの レス）
+		const anka = (this.shownFloor ?? run.f).anka;
+		const ankaLine = anka
+			? `安価：${ankaText(anka)}（あと${Math.max(0, anka.due - res)}レス）`
+			: "";
+		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${res}|${ankaLine}|${badges.join()}|${run.s.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
@@ -591,7 +597,8 @@ export class Play {
 			(badges.length
 				? `<span class="st-hp low">${badges.join(" ")}</span>`
 				: "") +
-			"</div>";
+			"</div>" +
+			(ankaLine ? `<div class="st-row st-anka">${ankaLine}</div>` : "");
 	}
 
 	// ───────────────── ログ ─────────────────

@@ -148,6 +148,8 @@ const arena = (
 	f.houseAwake = false;
 	f.turns = 0;
 	f.res = 0;
+	f.anka = null;
+	f.ankaAt = -1;
 	f.senseMonsters = false;
 	f.senseItems = false;
 	f.sight = false;
@@ -2175,6 +2177,44 @@ test(
 		at(1000);
 		ok(r.s.depth === depth + 1, `did not fall at 1000 (depth ${r.s.depth})`);
 		ok(r.f.res <= 1, `the new floor did not start a new thread (${r.f.res})`);
+	},
+);
+
+test(
+	"floor",
+	"anka: comes at its res; doing it drops an item at your feet, ignoring it adds res and a troll",
+	() => {
+		const r = arena("anka");
+		const herb = give(r, "h_heal");
+		// 来る：決めた レス数まで 伸びたら（お題は 持ち物で できる ものから）
+		r.f.ankaAt = 30;
+		r.f.res = 29;
+		r.act({ c: "wait" });
+		ok(r.f.anka, "no anka at its res");
+		ok(r.f.ankaAt === -1, "the anka was left scheduled");
+		// こなす：草を 飲めば 足元に 道具が 1つ
+		r.f.anka = { kind: "herb", need: 1, done: 0, due: r.f.res + 100 };
+		const items = r.f.items.length;
+		r.act({ c: "use", item: herb.uid });
+		ok(!r.f.anka, "drinking a herb did not clear the herb anka");
+		ok(r.f.items.length === items + 1, "no item was dropped for the anka");
+		// 敵を 2体 たおせ：1体では まだ
+		r.f.anka = { kind: "kill", need: 2, done: 0, due: r.f.res + 100 };
+		for (let i = 0; i < 2; i++) {
+			const m = put(r, "tousuko", { x: CENTER.x, y: CENTER.y - 1 });
+			m.hp = 1;
+			for (let k = 0; k < 20 && m.hp > 0; k++) r.act({ c: "attack", dir: 0 });
+			ok(m.hp <= 0, "harness: could not kill the target");
+			ok(!!r.f.anka === (i === 0), `the kill anka was wrong after ${i + 1}`);
+		}
+		// 守らない：期限で レスが 伸び、荒らしが 来る
+		r.f.anka = { kind: "scroll", need: 1, done: 0, due: r.f.res + 1 };
+		const res = r.f.res;
+		const mons = r.f.monsters.length;
+		r.act({ c: "wait" });
+		ok(!r.f.anka, "the anka did not expire");
+		ok(r.f.res >= res + 50, `the ignored anka added only ${r.f.res - res} res`);
+		ok(r.f.monsters.length === mons + 1, "no troll came for the ignored anka");
 	},
 );
 

@@ -287,6 +287,10 @@ export type Floor = {
 	res: number;
 	/** 出した レスの 知らせの 段（0：まだ・1：950・2：980・3：1000）。 */
 	resWarned: number;
+	/** 安価が 来る レス数（来ない・もう来た なら -1。core/anka.ts）。 */
+	ankaAt?: number;
+	/** いま 出ている 安価。 */
+	anka?: Anka | null;
 	/** 気配スレ：敵の位置がわかる。 */
 	senseMonsters: boolean;
 	/** 宝探しスレ：道具の位置がわかる。 */
@@ -298,6 +302,18 @@ export type Floor = {
 };
 
 // ───────────────────────── 冒険（1回の挑戦） ─────────────────────────
+
+/** 安価の お題（core/anka.ts）。 */
+export type AnkaKind = "herb" | "scroll" | "throw" | "eat" | "kill";
+
+export type Anka = {
+	kind: AnkaKind;
+	/** こなす 回数。 */
+	need: number;
+	done: number;
+	/** この レス数までに。 */
+	due: number;
+};
 
 export type IdTable = {
 	/** 種類 → 未識別の名前。 */

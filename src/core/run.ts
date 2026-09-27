@@ -5,6 +5,7 @@
 // - 倍速・鈍足は「行動できる時刻」（半ターン単位）で並べる。ふつうは 2 ずつ進む。
 // - 乱数はすべて this.rng（状態は中断セーブに入る）。
 
+import { ankaHit, scheduleAnka, tickAnka } from "./anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -562,6 +563,7 @@ export class Run {
 		p.status.heldBy = null;
 		p.nextAt = s.time;
 		for (const m of s.floor.monsters) m.nextAt = s.time;
+		scheduleAnka(this);
 		this.emit({ t: "floor", depth, up: s.returning });
 		if (fell) this.msg("下の階に　落ちた");
 		this.updateVision();
@@ -856,6 +858,7 @@ export class Run {
 			);
 			this.placeItem(it, m);
 		}
+		if (giveExp) ankaHit(this, "kill");
 		if (giveExp && d.exp > 0) {
 			this.msg(`${d.exp}ポイントの　経験値を　かせいだ`);
 			this.gainExp(d.exp);
@@ -1008,6 +1011,7 @@ export class Run {
 
 		// レス（1ターンで 1。祭りの 最中は 勢いで もう1）。1000 で dat落ち
 		f.res += 1 + (this.festivalRush() ? 1 : 0);
+		tickAnka(this);
 		if (this.checkRes()) return;
 		this.updateVision();
 	}
