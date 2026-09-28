@@ -603,6 +603,60 @@ export class GameAudio {
 		}
 	}
 
+	// ───────────────── ピアノ（音楽室。ui/piano.ts） ─────────────────
+
+	/**
+	 * ピアノの 1音（MIDI 番号）。dtm の SoundFont の グランドピアノ（読めなければ 軽量の 単音）。
+	 * 音量は 効果音の 設定に したがう。
+	 */
+	async pianoNote(midi: number, sec = 0.9): Promise<void> {
+		const ctx = this.ctx;
+		if (!ctx || settings.seVolume <= 0) return;
+		const volume = Math.min(1, (settings.seVolume / 100) * 0.9);
+		try {
+			const dtm = await loadDtm();
+			const pitchUnits = dtm.midiToUnits(midi);
+			try {
+				const studio = await this.studio();
+				await studio.playNote({
+					pitchUnits,
+					volume,
+					duration: sec,
+					instrument: "Acoustic Grand Piano",
+				});
+			} catch {
+				dtm.playNote({ audioContext: ctx, pitchUnits, volume, duration: sec });
+			}
+		} catch (e) {
+			console.warn("[audio] ピアノを 鳴らせませんでした", e);
+		}
+	}
+
+	/**
+	 * 曲の 主旋律（MML の いちばん 上の トラック @0）を MIDI 番号の 列に する（和音は いちばん 高い 音、
+	 * 休符は つめる）。はじめの max 音まで。曲が 無い・読めなければ 空。
+	 */
+	async melodyOf(name: string, max = 48): Promise<number[]> {
+		const mml = this.bgmData[name];
+		if (!mml) return [];
+		try {
+			const dtm = await loadDtm();
+			const byStart = new Map<number, number>();
+			for (const p of dtm.parseMML(mml).placements) {
+				if (p.trackIndex !== 0) continue;
+				const midi = Math.round(dtm.unitsToMidi(p.pitchUnits));
+				byStart.set(p.startStep, Math.max(byStart.get(p.startStep) ?? 0, midi));
+			}
+			return [...byStart.entries()]
+				.sort((a, b) => a[0] - b[0])
+				.map(([, m]) => m)
+				.slice(0, max);
+		} catch (e) {
+			console.warn("[audio] 主旋律を 読めませんでした", e);
+			return [];
+		}
+	}
+
 	// ───────────────── 効果音 ─────────────────
 
 	private buffer(name: string): Promise<AudioBuffer | null> | null {

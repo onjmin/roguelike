@@ -2862,3 +2862,103 @@ body.shake #app {
 	font-size: 13px;
 	color: var(--muted);
 }
+
+/* ───────── 音楽室の ピアノ（ui/piano.ts）。12鍵（白 7・黒 5） ───────── */
+
+.menu.piano {
+	left: calc(12px + var(--safe-l));
+	right: calc(12px + var(--safe-r));
+	width: auto;
+	max-width: 520px;
+	margin: 0 auto;
+	touch-action: none;
+}
+
+.piano-info {
+	text-align: center;
+	font-size: 14px;
+	margin: 4px 0 8px;
+	min-height: 1.4em;
+}
+
+.piano-keys {
+	position: relative;
+	height: 150px;
+	margin: 0 2px 10px;
+	user-select: none;
+}
+
+.piano-key {
+	position: absolute;
+	top: 0;
+	padding: 0;
+	border: 2px solid #222;
+	border-radius: 0 0 6px 6px;
+	font: inherit;
+	cursor: pointer;
+	touch-action: none;
+}
+
+.piano-key.white {
+	width: calc(100% / 7);
+	height: 100%;
+	background: #f4f1e8;
+	color: #333;
+	font-size: 12px;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	padding-bottom: 8px;
+	z-index: 1;
+}
+
+.piano-key.black {
+	width: 9%;
+	height: 60%;
+	background: #1c1c1c;
+	z-index: 2;
+}
+
+.piano-key.cur {
+	outline: 3px solid var(--win-border);
+	outline-offset: -5px;
+}
+
+/* ガイドの 次の 音 */
+.piano-key.next {
+	background: #ffd84a;
+	box-shadow: 0 0 12px #ffd84a;
+}
+
+.piano-key.black.next {
+	background: #d8a800;
+}
+
+.piano-key.hit {
+	animation: piano-hit 0.18s ease-out;
+}
+
+@keyframes piano-hit {
+	from {
+		filter: brightness(0.7);
+		transform: translateY(2px);
+	}
+}
+
+.piano-octave {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.piano-octave .menu-close {
+	flex: 0 0 auto;
+	width: auto;
+	padding: 6px 12px;
+}
+
+.piano-oct-label {
+	font-size: 13px;
+}

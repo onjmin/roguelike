@@ -6,11 +6,11 @@
 import { TOWN_STAGES } from "../core/town";
 import { today } from "../data/calendar";
 import { MOBS } from "../data/mobs";
+import { PIANO_DONE, PIANO_MENU, pianoGuides } from "../data/piano";
 import {
 	KEEPER_LINE,
 	MUSIC_CLOSED,
 	PIANO_MSG,
-	PIANO_SONGS,
 	ROOM_DOOR,
 	ROOM_MSG,
 	ROOM_NAMES,
@@ -36,6 +36,7 @@ import { loadProgress } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
+import { openPiano } from "./piano";
 import { fill } from "./villageTalk";
 
 /** 部屋に 入る（扉の 文は 村に いるあいだ 部屋ごとに 1回。店番の「奥へ」は いつも 店番が 言う）。 */
@@ -91,28 +92,37 @@ export const enterMusic: Script = async (s) => {
 	await enterRoom("music")(s);
 };
 
-/** ピアノで 弾ける 曲（持ち帰った 板で ふえる）。 */
-export const pianoSongs = (cleared: readonly string[]) =>
-	PIANO_SONGS.filter((t) => !t.need || cleared.includes(t.need));
-
-/** ピアノ：曲を 選ぶと キリコが 弾く（部屋に いるあいだ その 曲。出れば 村の 曲）。 */
+/**
+ * ピアノ：プレイヤーが 12鍵を 自由に 弾く（ui/piano.ts）か、劇中の 曲の 主旋律の ガイドで 弾く。
+ * 弾いている あいだは 村の 曲を 止める（押した 音だけ 聞こえるように）。最後まで 弾けたら 拍手。
+ */
 const pianoScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
 		await readAll(s, ROOM_MSG.music.piano);
+		const n = await s.choose([...PIANO_MENU], { cancel: 2 });
+		if (n === 2) return;
+		let title = "ピアノ";
+		let guide: number[] | undefined;
+		if (n === 1) {
+			await s.wait(0);
+			const songs = pianoGuides(loadProgress().cleared);
+			const v = await listWindow(
+				ctx,
+				"どの　曲に　する？",
+				songs.map((t): ListItem => ({ label: t.name, value: t.bgm })),
+				{ closeLabel: "やめる" },
+			);
+			const song = songs.find((t) => t.bgm === v);
+			if (!song) return;
+			title = song.name;
+			guide = await ctx.audio.melodyOf(song.bgm);
+		}
 		await s.wait(0);
-		const songs = pianoSongs(loadProgress().cleared);
-		const v = await listWindow(
-			ctx,
-			"なにを　弾く？",
-			songs.map((t): ListItem => ({ label: t.name, value: t.bgm })),
-			{ closeLabel: "やめる" },
-		);
-		const song = songs.find((t) => t.bgm === v);
-		if (!song) return;
-		await s.narrate(PIANO_MSG.sit);
-		s.bgm(song.bgm);
-		await s.narrate(fill(PIANO_MSG.play, { name: song.name }));
+		s.bgm(null);
+		const r = await openPiano(ctx, { title, guide });
+		s.bgm("town");
+		if (r.finished) await s.narrate(PIANO_DONE);
 	};
 
 /** 音楽室の 人（客席の 名無しと、段6 から ステージの レン）。 */

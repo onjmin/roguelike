@@ -49,6 +49,7 @@ import {
 	goalText,
 	objectiveFor,
 } from "../data/objectives";
+import { PIANO_DONE, PIANO_MENU, pianoGuides } from "../data/piano";
 import {
 	pickQuote,
 	type Quote,
@@ -176,7 +177,6 @@ import {
 	enterRoom,
 	isWeekend,
 	leaveRoom,
-	pianoSongs,
 	planLines,
 	thingLines,
 } from "../ui/rooms";
@@ -3688,18 +3688,15 @@ test("音楽室「ピアノ機能」: open only on weekends (a weekday note step
 		}
 	}
 	ok(
-		!pianoSongs([]).some((t) => t.bgm === "ending") &&
-			pianoSongs(["shallow", "main"]).some((t) => t.bgm === "ending"),
+		!pianoGuides([]).some((t) => t.bgm === "ending") &&
+			pianoGuides(["shallow", "main"]).some((t) => t.bgm === "ending"),
 		"the ending song does not wait for the main record",
 	);
 	fitsWindow([
 		["closed", MUSIC_CLOSED],
-		["sit", PIANO_MSG.sit],
+		["done", PIANO_DONE],
+		...PIANO_MENU.map((t): [string, string] => ["menu", t]),
 		...PIANO_MSG.nanashi.map((t): [string, string] => ["nanashi", t]),
 		...PIANO_MSG.ren.map((t): [string, string] => ["ren", t]),
-		...pianoSongs(["main"]).map((t): [string, string] => [
-			`play ${t.bgm}`,
-			fill(PIANO_MSG.play, { name: t.name }),
-		]),
 	]);
 });
