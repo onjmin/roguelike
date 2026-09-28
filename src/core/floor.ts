@@ -308,12 +308,15 @@ export const spawnMonster = (
 		else if (def.sleep === "always") sleep = DOZE;
 		else if (def.sleep === "deep") sleep = DEEP;
 		else sleep = rng.chance(1 / 2) ? DOZE : 0;
+		const dormant = def.abilities.some((a) => a.k === "statue");
+		// 向きの 乱数は 置物でも 引く（引く 順と 回数を 変えない）。置物は 動きだす まで 前向き
+		const dir = rng.pick(DIRS8);
 		const m: Monster = {
 			uid: r.s.nextUid++,
 			kind: def.id,
 			x: p.x,
 			y: p.y,
-			dir: rng.pick(DIRS8),
+			dir: dormant ? 4 : dir,
 			hp: def.hp,
 			maxHp: def.hp,
 			nextAt: r.p.nextAt,
@@ -325,7 +328,7 @@ export const spawnMonster = (
 				fast: 0,
 				blind: false,
 				sealed: false,
-				dormant: def.abilities.some((a) => a.k === "statue"),
+				dormant,
 			},
 			carry: null,
 			goal: null,

@@ -1091,6 +1091,12 @@ test(
 		const home = at(3, 0);
 		const m = put(r, "statue", home);
 		ok(m.status.dormant, "not dormant");
+		// 動きだす まで 前向き（何体 出しても）
+		for (let i = 0; i < 8; i++) {
+			const o = put(r, "statue", at(-3, i - 4));
+			ok(o.dir === 4, `a dormant statue faces ${o.dir}, not down`);
+		}
+		ok(m.dir === 4, `the dormant statue faces ${m.dir}, not down`);
 		let acted = 0;
 		waitTurns(r, 10, (ev) => {
 			acted += count(ev, "move", m.uid) + count(ev, "attack", m.uid);
