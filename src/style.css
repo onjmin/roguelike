@@ -335,8 +335,16 @@ body.shake #app {
  * - --scale・--dy: キャラごとの手直し（大きさの倍率・下へのずれ）
  */
 .portrait-img {
+	/* 幅の 上限は 既定の 切り出し（0.58）の とき slot-w × 2.4。上半身だけ（crop を 小さく）なら 見せる 幅も せまいので そのぶん ゆるめる */
 	--body: calc(
-		min(var(--layer-h) * 0.95 / var(--crop, 1), var(--slot-w) * 2.4) *
+		min(
+			var(--layer-h) *
+			0.95 /
+			var(--crop, 1),
+			var(--slot-w) *
+			2.4 *
+			max(1, 0.58 / var(--crop, 0.58))
+		) *
 		var(--scale, 1)
 	);
 	position: absolute;

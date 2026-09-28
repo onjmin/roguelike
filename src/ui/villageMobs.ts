@@ -226,7 +226,13 @@ const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
 		...(def.color ? { color: def.color } : {}),
 		...(MOB_VOICE[id] ? { tts: MOB_VOICE[id] } : {}),
 		...(def.portrait
-			? { portrait: { id: `mob:${def.name}`, src: def.portrait } }
+			? {
+					portrait: {
+						id: `mob:${def.name}`,
+						src: def.portrait,
+						crop: def.portraitCrop,
+					},
+				}
 			: { noPortrait: true }),
 	});
 };

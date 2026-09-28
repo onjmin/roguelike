@@ -108,6 +108,8 @@ export type MobDef = {
 	 * 人の 子（リノ・アル）だけ。マスコット（ぷゆゆ・おんJwiki の 顔文字の マイナーズ）は やきうと 同じく 立ち絵なし。
 	 */
 	portrait?: string;
+	/** 立ち絵の 上から 何割を 見せるか（既定 0.58。頭身の 高い 絵は 小さく して 上半身だけに）。 */
+	portraitCrop?: number;
 	/** 名前欄の 色を かりる 仲間（立ち絵は かりない）。ぷゆゆは やきう（rpg と 同じ）。 */
 	voice?: Speaker;
 	/** 名前欄の 色（その子 だけの 色。voice より 先）。読み上げの 声は data/cast.ts の MOB_VOICE。 */
@@ -1332,6 +1334,8 @@ export const MOBS: Record<MobId, MobDef> = {
 	aru: {
 		name: "アル",
 		portrait: "portraits/aru.png",
+		// 177cm の 縦長の 全身絵なので、既定では 太ももまで 見える。胸から 上だけに
+		portraitCrop: 0.4,
 		sprite: "pub:sprites/aru.png",
 		from: 7,
 		spot: [12, 20],

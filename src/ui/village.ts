@@ -956,6 +956,7 @@ export class Village {
 							color: opt.portrait.color ?? opt.color ?? c?.color ?? "#b8b8c8",
 							src: opt.portrait.src,
 							side: "right",
+							crop: opt.portrait.crop,
 						}
 					: who
 						? this.portraitOf(who)
