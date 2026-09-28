@@ -12,7 +12,9 @@
 | だれ | ファイル | いま | 見た目の メモ |
 |---|---|---|---|
 | 革命シヨ（倉庫番） | `portraits/shiyo.png` | 描いてあります | 16歳・金髪ポニテ（赤い 髪ゴム）・猫耳カチューシャ・丸眼鏡・赤い目・紺の メイド服に 白エプロン。気が強い ツンデレ |
-| 解音ゼロ（帳簿・記録） | `portraits/zero.png` | 描いてあります | 束音ロゼの 反転：うすい 金髪ロング・青い 耳の パーツ（アンドロイド）・水色の 目・白い 着物に 青い 帯・紺の 袴 |
+| 解音ゼロ VHz8-0・メインさん（帳簿・記録） | `portraits/zero.png` | 描いてあります | 束音ロゼの 反転：うすい 金髪ロング・青い 耳の パーツ（アンドロイド）・水色の 目・白い 着物に 青い 帯・紺の 袴 |
+| 解音ゼロ HeBc-0・プロト（村の 住人） | `portraits/zero_proto.png` | Claude が 画像生成AIで 作った 仮（メインさんの 立ち絵の 線を まねた 下絵を 2値化） | 公式の サブ機（AI生成）。まっすぐな 長い 金髪・切りはなした 長い 袖・肩出し・機械の ひざ・無表情 |
+| 解音ゼロ XQxS-0・レン（村の 住人） | `portraits/zero_ren.png` | Claude が 画像生成AIで 作った 仮（同上） | 公式の サブ機（AI生成）。先が 青い 金髪・黒い 角・黒い 脚の よろい・マイクスタンド |
 | 春音リノ（村の 住人） | `portraits/rino.png` | 描いてあります | 女・45歳・カーキの 軍服と 軍帽・髪は「アバンギャルドメタリック」（歩行グラでは 銀紫）・小物は 銃みたいな コッペパン。ドSで 口数が 少ない |
 | 響化アル（村の 住人） | `portraits/aru.png` | 描いてあります | 男・18歳・177cm・長めの マッシュ・科学部（歩行グラでは 白衣）。いちばん 新しい 子で、キリコを 先輩と 呼ぶ |
 
@@ -28,6 +30,7 @@
 |---|---|---|
 | 春音リノ | `sprites/rino.png` | Claude が 描いた 仮（`scripts/make-cast.mjs`）。カーキの 軍帽と 軍服・銀紫の 髪・コッペパン |
 | 響化アル | `sprites/aru.png` | Claude が 描いた 仮（`scripts/make-cast.mjs`）。こげ茶の マッシュ・白衣・試験管 |
+| 解音ゼロ（メインさん・レン） | `sprites/zero_main.png` `sprites/zero_ren.png` | 作者の プロトの 歩行グラ（RPGEN `sa:KxS5YZ`）を 塗りかえた もの（`scripts/make-zero.mjs`）。メインさん＝赤い 帯・紫の 目・赤い ケーブルの しっぽ、レン＝先が 青い 髪・金の 角・黒い 手袋と 脚 |
 | メタルぷゆゆ（敵） | `sprites/metal_puyu.png` | RPGEN「PIEN」を 銀色に ぬった もの（`scripts/make-metal-puyu.mjs`） |
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
 | まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |

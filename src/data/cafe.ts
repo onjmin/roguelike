@@ -162,7 +162,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["feris", "zero"],
 		lines: [
 			s("feris", "ゼロちゃん、飛べる〜？\n私は　ちょっとだけ　飛べるよ〜"),
-			s("zero", "ゼロは　飛べません。\n……でも、サブ機は　飛ばせます"),
+			s("zero", "ゼロは　飛べません。\n……レンなら、次の　更新で　飛べるかも"),
 			s("feris", "じゃあ　いっしょに　植民地まで\n見に　行こうよ〜"),
 			s("zero", "……キリコさんが　歩いた　道を、\n上から　見てみたいです"),
 		],
@@ -522,7 +522,7 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 		treats: 3,
 		lines: [
 			s("zero", "ゼロの　サブ機たち、\nみんな　名前が　あるんです"),
-			s("zero", "1号、2号、……\nそれから、キリコさん　号"),
+			s("zero", "プロト、レン、……\nそれから、キリコさん　号"),
 			s("zero", "……い、いまの　なしです！\n帳簿から　消して　ください！"),
 		],
 	},

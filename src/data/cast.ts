@@ -1,5 +1,7 @@
 // 村（保守村）に立つ人たち。名前・色は quotes.ts の SPEAKERS、歩行グラ・立ち絵は rpg の cast.ts と同じ
-// （シヨ・ゼロは rpg に いないので、歩行グラは RPGEN に 投入された もの）。
+// （シヨ・ゼロは rpg に いないので、シヨの 歩行グラは RPGEN に 投入された もの）。
+// ゼロは 3体 いる 解音ゼロの メイン機 VHz8-0（通称 メインさん）。サブ機の プロト・レンは 村の 住人（data/mobs.ts）。
+// メインさんの 歩行グラは RPGEN に 無いので、プロト（sa:KxS5YZ）を 塗りかえて 作った（scripts/make-zero.mjs）。
 // 歩行グラは RPGEN 形式（16x16・2コマ×4方向）。立ち絵は public/portraits/ の透過 PNG（右向きに描いた絵。
 // 右に立つときは ui/message.ts が左右反転する）。やきうは 立ち絵が無いので 出さない（ダミーも出さない）。
 // キリコは しゃべらないので ここには入れない（歩行グラだけ KIRIKO_WALK）。
@@ -24,7 +26,7 @@ const WALK: Record<Speaker, string> = {
 	roze: "sa:mHhx69",
 	feris: "sa:4KtOzD",
 	shiyo: "sa:y8Kr53",
-	zero: "sa:KxS5YZ",
+	zero: "pub:sprites/zero_main.png",
 };
 
 const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
