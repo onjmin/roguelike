@@ -4,6 +4,8 @@
 //   キャラの表示位置（Disp）を動かしていく。再生が終わったら状態に合わせなおす。
 // - 押しっぱなしで歩き続ける（トルネコと同じ）。キーボードは斜めの同時押しを少し待つ。
 // - ダッシュ・タップ移動は、何かあったら止まる（敵が見えた・道具・階段・分かれ道・部屋の出入り）。
+// - ログは 1行ずつ 間を空けて 出す。知らせ（音・回復・レベル・安価・床に 置かれた 道具）と ステータスは、
+//   それを 伝える 行より 先に 見せない（行と いっしょか、前の 行が 出てから）。動きと 戦いは 行を 待たない。
 
 import { ANKA_DUE, ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
@@ -105,6 +107,76 @@ type Disp = Figure & {
 	dying: boolean;
 };
 
+/**
+ * ログの 待ち行列の 1つ。with は その 行を 出した ときに いっしょに 走らせる（行に つく 音・回復・レベル）。
+ * text の ない ものは 行を 出さずに、前の 行が ぜんぶ 出てから with だけ 走らせる（間は 空けない）。
+ */
+type LogEntry = {
+	text?: string;
+	tone?: "warn" | "good";
+	fast: boolean;
+	with?: (() => void)[];
+};
+
+/** ステータス行に 出す 値。 */
+type HudView = {
+	depth: number;
+	returning: boolean;
+	lv: number;
+	hp: number;
+	maxHp: number;
+	hunger: number;
+	badges: string;
+	res: number;
+	anka: Anka | null;
+	ankaLine: string;
+	ankaLeft: number;
+};
+
+/**
+ * 動きの 出来事。画面の 動きと いっしょに すぐ 出す（ログを 待たない。戦いの 手ざわりを 変えないように）。
+ * これに 続く 音・前に ある 音は、その 動きの 音。
+ */
+const MOTION = new Set<GameEvent["t"]>([
+	"move",
+	"turn",
+	"attack",
+	"hurt",
+	"miss",
+	"die",
+	"appear",
+	"bolt",
+	"warp",
+	"fx",
+	"floor",
+	"house",
+	"sleep",
+	"doze",
+	"quake",
+]);
+
+/** 行の 前に 来る 知らせ（core は 音・回復・レベル・目的の品・安価を、それを 伝える 行の 直前に 出す）。 */
+const LEAD = new Set<GameEvent["t"]>(["se", "heal", "levelup", "goal", "anka"]);
+
+/** ev[i] から 続く 知らせ（LEAD）の 先が 行なら true。 */
+const leadsToLine = (ev: GameEvent[], i: number): boolean => {
+	for (let j = i; j < ev.length; j++) {
+		const t = ev[j].t;
+		if (t === "msg") return true;
+		if (!LEAD.has(t)) return false;
+	}
+	return false;
+};
+
+/** ev[i] より 前で いちばん 近い、行・音 では ない 出来事が 動きか。 */
+const afterMotion = (ev: GameEvent[], i: number): boolean => {
+	for (let j = i - 1; j >= 0; j--) {
+		const t = ev[j].t;
+		if (t !== "msg" && t !== "se") return MOTION.has(t);
+	}
+	return false;
+};
+
 /** 祭り（モンスターハウス）の曲。名無し155さんの アップテンポな曲（オクターブを直した版）。 */
 const HOUSE_BGM = "retro2";
 
@@ -139,8 +211,9 @@ export class Play {
 	 * まだ 出していない ログの行（1行ずつ 間を空けて 出す）。出すのを 待っても 歩きは 止めない
 	 * （待つと 行が 出るたびに 次の 1歩が つっかかった）。
 	 */
-	private logQueue: { text: string; tone?: "warn" | "good"; fast: boolean }[] =
-		[];
+	private logQueue: LogEntry[] = [];
+	/** ログが ぜんぶ 出るのを 待っている もの（logDrained）。 */
+	private drainWaiters: (() => void)[] = [];
 	private logTimer = 0;
 	private popsEl: HTMLElement;
 	private mapEl: HTMLCanvasElement;
@@ -163,10 +236,20 @@ export class Play {
 	 */
 	private preWarp: Floor | null = null;
 	/**
-	 * 出来事を流しているあいだ、ステータスに 出す HP（傷ついた・回復した 出来事の 演出で 追いつく。
-	 * 草を 飲む・爆発の スレなどで、演出より 先に 数字が 変わらないように）。流していないときは null。
+	 * 出来事を 流して、その ログが ぜんぶ 出るまで ステータスに 出す 値（act の 前の 値。
+	 * HP は 傷ついた・回復した 出来事で、レベルは その 行で 追いつく。のこりは ログに 追いついたら 今の 値に）。
+	 * 草を 飲む・安価・レベルアップ などで、それを 伝える 行より 先に 数字が 変わらないように。ふだんは null。
 	 */
-	private shownHp: number | null = null;
+	private hudHold: HudView | null = null;
+	/** いちばん 新しい act の 番号（前の act の「ログに 追いついた」で 新しい act の 分まで 出さないように）。 */
+	private holdGen = 0;
+	/**
+	 * この act で 床に 置かれた 道具（uid）。置かれた 出来事（item）まで・その 前の 行が 出るまで 描かない
+	 * （安価の ごほうび・敵が 落とした 道具・投げて 落ちた 道具が、行や 動きより 先に 見えないように）。
+	 */
+	private hiddenItems = new Set<number>();
+	/** この act で 床から なくなった 道具（拾った・燃えた など）。ログに 追いつくまで 描いておく。 */
+	private ghostItems: { x: number; y: number; kind: string }[] = [];
 	/** 長押しの足踏みを 止めている（指を離すまで）。 */
 	private restHalt = false;
 	/** 押さえて歩くのを 止めている（傷ついた。指を離すか 押しなおすまで）。 */
@@ -288,6 +371,7 @@ export class Play {
 		clearTimeout(this.houseBgmTimer);
 		this.logQueue = [];
 		clearTimeout(this.logTimer);
+		this.resetShown();
 		this.ctx.input.fieldHoldEnabled = true;
 		this.screen.canvas.classList.remove("dead");
 		this.deathEl?.remove();
@@ -423,6 +507,7 @@ export class Play {
 						}
 					: this.run.s;
 			drawMap(this.mapEl, s, {
+				hideItems: this.hiddenItems,
 				visibleMonsters: vis,
 				mark: this.mapMark,
 				resume: this.lastTravel,
@@ -533,6 +618,10 @@ export class Play {
 				asleep: m.status.sleep > 0 || m.status.paralyze > 0,
 			});
 		}
+		// なくなった 道具は ログに 追いつくまで 残して 描く（拾った 行より 先に 消えないように）
+		if (s === run.s)
+			for (const g of this.ghostItems)
+				if (!itemHidden(s, g.kind) && run.playerSees(g)) fakeItems.push(g);
 		this.view.draw(
 			this.screen,
 			s,
@@ -545,6 +634,7 @@ export class Play {
 			dazed ? () => FLOWER_ICON : itemIcon,
 			fakeItems,
 			{
+				hideItems: this.hiddenItems,
 				strong: this.ctx.input.mods().turn,
 				travel: this.travel,
 				aim: this.ctx.input.mods().turn ? this.aimLine() : null,
@@ -580,83 +670,134 @@ export class Play {
 			const label = foot?.firstChild;
 			if (label) label.textContent = onStairs ? "階段" : "足元";
 		}
-		const p = run.p;
-		const hp = Math.min(this.shownHp ?? p.hp, p.maxHp);
-		const hunger = Math.ceil(p.hunger / HUNGER_UNIT);
-		const st = p.status;
-		const badges = [
-			st.sleep > 0 ? "眠り" : "",
-			st.confuse > 0 ? "混乱" : "",
-			st.blind > 0 ? "アク禁" : "",
-			st.daze > 0 ? "まどわし" : "",
-			st.fast > 0 ? "倍速" : "",
-			st.trapped > 0 ? "はさまれ" : "",
-			st.heldBy !== null ? "つかまれ" : "",
-		].filter(Boolean);
-		// この階（スレ）の レス数。950 を こえたら 赤く
-		const res = Math.min(RES_LIMIT, (this.shownFloor ?? run.f).res);
-		// 出ている 安価（お題と のこりの レス）
-		const anka = (this.shownFloor ?? run.f).anka;
-		const ankaLeft = anka ? Math.max(0, anka.due - res) : 0;
-		const ankaLine = anka
-			? `安価：${ankaText(anka)}（あと${ankaLeft}レス）`
-			: "";
+		// act の あとでも、その ログが 出るまでは 前の 値（hudHold）
+		const v = this.hudHold ?? this.liveHud();
+		const hp = Math.min(v.hp, v.maxHp);
+		const { hunger, res, anka, ankaLine, ankaLeft, badges } = v;
 		// 来たばかりの 安価は、スレの レスとして 画面に 出す（ログ 1行だと 気づきにくい）
 		// 階を かわって 持ちこした 安価は 同じ 物なので、もう 一度は 出さない
-		if ((anka ?? null) !== this.ankaSeen) {
-			this.ankaSeen = anka ?? null;
+		if (anka !== this.ankaSeen) {
+			this.ankaSeen = anka;
 			if (anka)
 				void this.ankaPost(ankaText(anka), Math.max(1, anka.due - ANKA_DUE));
 		}
-		const key = `${this.shownFloor?.depth ?? run.s.depth}|${p.lv}|${hp}|${p.maxHp}|${hunger}|${res}|${ankaLine}|${badges.join()}|${run.s.returning}`;
+		const key = `${v.depth}|${v.lv}|${hp}|${v.maxHp}|${hunger}|${res}|${ankaLine}|${badges}|${v.returning}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
-		const ink = hpInk(hp, p.maxHp);
+		const ink = hpInk(hp, v.maxHp);
 		if (ink) this.logEl.style.setProperty("--ink", ink);
 		else this.logEl.style.removeProperty("--ink");
 		this.hud.status.style.cssText = ink ? `--ink:${ink}` : "";
 		// 帰り道の 向き（下りの 板は ↑、上りの 板は ↓）
 		const back = isUpBoard(run.s.dungeon) ? "↓" : "↑";
-		const depthLabel = `${run.s.returning ? back : ""}${floorShort(run.s.dungeon, this.shownFloor?.depth ?? run.s.depth)}`;
+		const depthLabel = `${v.returning ? back : ""}${floorShort(run.s.dungeon, v.depth)}`;
 		this.hud.status.innerHTML =
-			`<div class="st-row"><span class="st-depth">${depthLabel}</span><span>Lv${p.lv}</span>` +
-			`<span class="st-hp${ink ? " inked" : ""}">HP ${hp}/${p.maxHp}</span></div>` +
-			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((hp / p.maxHp) * 100)}%"></i></div>` +
+			`<div class="st-row"><span class="st-depth">${depthLabel}</span><span>Lv${v.lv}</span>` +
+			`<span class="st-hp${ink ? " inked" : ""}">HP ${hp}/${v.maxHp}</span></div>` +
+			`<div class="st-bar${ink ? " inked" : ""}"><i style="width:${Math.round((hp / v.maxHp) * 100)}%"></i></div>` +
 			`<div class="st-row"><span class="st-hunger${hunger <= 10 ? " low" : ""}">満腹 ${hunger}%</span>` +
 			`<span class="st-res${res >= RES_WARN[0] ? " low" : ""}">${res}レス</span>` +
-			(run.s.returning ? `<span class="st-return">帰り道</span>` : "") +
-			(badges.length
-				? `<span class="st-hp low">${badges.join(" ")}</span>`
-				: "") +
+			(v.returning ? `<span class="st-return">帰り道</span>` : "") +
+			(badges ? `<span class="st-hp low">${badges}</span>` : "") +
 			"</div>" +
 			(ankaLine
 				? `<div class="st-row st-anka${ankaLeft <= ANKA_WARN ? " low" : ""}">${ankaLine}</div>`
 				: "");
 	}
 
+	/** 今の 状態の ステータスの 値（落ちている 途中は 前の 階の レス・安価）。 */
+	private liveHud(): HudView {
+		const run = this.run;
+		const p = run.p;
+		const st = p.status;
+		const f = this.shownFloor ?? run.f;
+		// この階（スレ）の レス数。950 を こえたら 赤く
+		const res = Math.min(RES_LIMIT, f.res);
+		// 出ている 安価（お題と のこりの レス）
+		const anka = f.anka ?? null;
+		const ankaLeft = anka ? Math.max(0, anka.due - res) : 0;
+		return {
+			depth: this.shownFloor?.depth ?? run.s.depth,
+			returning: run.s.returning,
+			lv: p.lv,
+			hp: p.hp,
+			maxHp: p.maxHp,
+			hunger: Math.ceil(p.hunger / HUNGER_UNIT),
+			badges: [
+				st.sleep > 0 ? "眠り" : "",
+				st.confuse > 0 ? "混乱" : "",
+				st.blind > 0 ? "アク禁" : "",
+				st.daze > 0 ? "まどわし" : "",
+				st.fast > 0 ? "倍速" : "",
+				st.trapped > 0 ? "はさまれ" : "",
+				st.heldBy !== null ? "つかまれ" : "",
+			]
+				.filter(Boolean)
+				.join(" "),
+			res,
+			anka,
+			ankaLine: anka ? `安価：${ankaText(anka)}（あと${ankaLeft}レス）` : "",
+			ankaLeft,
+		};
+	}
+
+	/** 出来事と ログを 待たずに、今の 状態を そのまま 見せる（やめた・とばした）。 */
+	private resetShown(): void {
+		this.hudHold = null;
+		this.hiddenItems.clear();
+		this.ghostItems = [];
+		const ws = this.drainWaiters;
+		this.drainWaiters = [];
+		for (const w of ws) w();
+	}
+
 	// ───────────────── ログ ─────────────────
 
-	/** たまった ログを 間を空けて 1行ずつ 出す（たまりすぎたら 間を つめる）。 */
+	/**
+	 * たまった ログを 間を空けて 1行ずつ 出す（たまりすぎたら 間を つめる）。
+	 * 行に ついた もの（with）は その 行と いっしょに、行の ない ものは 前の 行が 出たら すぐ 走らせる。
+	 */
 	private pumpLog(): void {
 		clearTimeout(this.logTimer);
 		while (this.logQueue.length) {
 			const q = this.logQueue[0];
-			const gap =
-				q.fast || this.logQueue.length > 3
-					? LOG_GAP_MS.replay
-					: settings.speed === "fast"
-						? LOG_GAP_MS.fast
-						: LOG_GAP_MS.normal;
-			const since = performance.now() - this.lastLogAt;
-			if (since < gap) {
-				this.logTimer = window.setTimeout(() => this.pumpLog(), gap - since);
-				return;
+			if (q.text !== undefined) {
+				const lines = this.logQueue.filter((x) => x.text !== undefined).length;
+				const gap =
+					q.fast || lines > 3
+						? LOG_GAP_MS.replay
+						: settings.speed === "fast"
+							? LOG_GAP_MS.fast
+							: LOG_GAP_MS.normal;
+				const since = performance.now() - this.lastLogAt;
+				if (since < gap) {
+					this.logTimer = window.setTimeout(() => this.pumpLog(), gap - since);
+					return;
+				}
 			}
 			this.logQueue.shift();
-			this.addLog(q.text, q.tone);
-			this.lastLogAt = performance.now();
+			if (q.text !== undefined) {
+				this.addLog(q.text, q.tone);
+				this.lastLogAt = performance.now();
+			}
+			for (const fn of q.with ?? []) fn();
 		}
+		const ws = this.drainWaiters;
+		this.drainWaiters = [];
+		for (const w of ws) w();
+	}
+
+	/** まだ 出していない ログが ぜんぶ 出たら fn（無ければ すぐ）。待たない。 */
+	private afterLog(fn: () => void): void {
+		if (!this.logQueue.length) fn();
+		else this.logQueue.push({ fast: false, with: [fn] });
+	}
+
+	/** まだ 出していない ログが ぜんぶ 出るまで 待つ（出来事の 再生を 行に 追いつかせる）。 */
+	private logDrained(): Promise<void> {
+		if (!this.logQueue.length || this.stopped) return Promise.resolve();
+		return new Promise((ok) => this.drainWaiters.push(ok));
 	}
 
 	private addLog(text: string, tone?: "warn" | "good"): void {
@@ -1277,12 +1418,22 @@ export class Play {
 				: undefined;
 		const turn0 = run.s.turn;
 		const floor0 = run.s.floor;
-		const hp0 = run.p.hp;
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
+		// ステータスと 床の 道具は、出来事と ログが 追いつくまで act の 前の まま 見せる
+		this.hudHold ??= this.liveHud();
+		const gen = ++this.holdGen;
+		const items0 = new Map(run.f.items.map((fi) => [fi.item.uid, fi]));
 		try {
 			ev = run.act(cmd);
-			this.shownHp = hp0;
+			if (run.s.floor === floor0) {
+				const now = new Set(run.f.items.map((fi) => fi.item.uid));
+				for (const fi of run.f.items)
+					if (!items0.has(fi.item.uid)) this.hiddenItems.add(fi.item.uid);
+				for (const fi of items0.values())
+					if (!now.has(fi.item.uid))
+						this.ghostItems.push({ x: fi.x, y: fi.y, kind: fi.item.kind });
+			}
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			else if (ev.some((e) => e.t === "warp" && e.id === PLAYER_ID))
 				this.preWarp = { ...floor0, seen: seen0 };
@@ -1291,7 +1442,6 @@ export class Play {
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
 			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
 			await this.playEvents(ev, fast);
-			this.shownHp = null;
 			if (this.stopped) return ev;
 			// 倒したら、演出中に 押しておいた 次の 攻撃は 捨てる（相手の いない 空振りに ならないように）
 			if (!this.rp && ev.some((e) => e.t === "die"))
@@ -1363,8 +1513,14 @@ export class Play {
 		} finally {
 			this.shownFloor = null;
 			this.preWarp = null;
-			this.shownHp = null;
 			this.busy = false;
+			// ログに 追いついたら 今の 値に（あとの act が あれば そちらに まかせる）
+			this.afterLog(() => {
+				if (gen !== this.holdGen) return;
+				this.hudHold = null;
+				this.hiddenItems.clear();
+				this.ghostItems = [];
+			});
 		}
 		return ev;
 	}
@@ -1538,6 +1694,8 @@ export class Play {
 				run.act(cmd);
 			}
 			this.logQueue = [];
+			clearTimeout(this.logTimer);
+			this.resetShown();
 			this.logEl.innerHTML = "";
 			this.syncDisp(true);
 			this.view.invalidate();
@@ -1652,9 +1810,38 @@ export class Play {
 		const stepMs = (fast ? 45 : 95) * (settings.speed === "fast" ? 0.7 : 1);
 		let i = 0;
 		let combat = false;
+		// 行に つける 知らせ（音・回復・レベル・目的の品）。次の 行が 出るときに いっしょに 出す
+		let onLine: (() => void)[] = [];
 		// 途中で閉じたら（リプレイの「やめる」）残りの出来事は流さない
 		while (i < ev.length && !this.stopped) {
 			const e = ev[i];
+			// 知らせ（動きでは ない もの）は、それを 伝える 行と いっしょに・前の 行が 出てから 出す。
+			// 行より 先に ごほうびが 見えたり 音が 鳴ったり しないように（動きと 戦いは 今までどおり すぐ）
+			if (e.t === "se" || LEAD.has(e.t) || e.t === "item") {
+				const prev = ev[i - 1];
+				const next = ev[i + 1];
+				const motionSound =
+					e.t === "se" &&
+					((prev && MOTION.has(prev.t)) ||
+						(next && MOTION.has(next.t) && !leadsToLine(ev, i)));
+				if (!motionSound) {
+					if (LEAD.has(e.t) && leadsToLine(ev, i)) {
+						onLine.push(() => this.showNotice(e));
+						i++;
+						continue;
+					}
+					await this.logDrained();
+					if (this.stopped) break;
+					this.showNotice(e);
+					i++;
+					continue;
+				}
+			}
+			// 前に 動きの ない 傷（飲んだ・読んだ など）は、前の 行が 出てから
+			if (e.t === "hurt" && !afterMotion(ev, i)) {
+				await this.logDrained();
+				if (this.stopped) break;
+			}
 			// 続けて動く出来事はまとめて同時に動かす（倍速の2歩も、同じ時間の中で 通るマスをたどる）
 			if (e.t === "move") {
 				const now = performance.now();
@@ -1709,15 +1896,17 @@ export class Play {
 			switch (e.t) {
 				case "msg":
 					// 前の行から 間を空けて 1行ずつ 出す（読めるように。待つのは ログだけで、次の 1歩は 待たない）
-					this.logQueue.push({ text: e.text, tone: e.tone, fast });
+					this.logQueue.push({
+						text: e.text,
+						tone: e.tone,
+						fast,
+						with: onLine.length ? onLine : undefined,
+					});
+					onLine = [];
 					this.pumpLog();
 					break;
 				case "se":
-					// 全滅の音は、倒れる演出で 墓が落ちたときに鳴らす
-					if (e.name === "wipeout" && this.run.s.end?.kind === "dead") break;
-					// 祭りの 始まりの 音は「house」で 曲と 合わせて 鳴らした
-					if (e.name === "encounter") break;
-					this.ctx.audio.se(e.name);
+					this.showNotice(e);
 					break;
 				case "turn": {
 					const d = this.disp.get(e.id);
@@ -1735,8 +1924,8 @@ export class Play {
 					break;
 				}
 				case "hurt": {
-					if (e.id === PLAYER_ID && e.hp !== undefined && this.shownHp !== null)
-						this.shownHp = e.hp;
+					if (e.id === PLAYER_ID && e.hp !== undefined && this.hudHold)
+						this.hudHold.hp = e.hp;
 					const d = this.disp.get(e.id);
 					if (d) d.flashUntil = performance.now() + 260;
 					if (this.isShown(e.id, e.pos))
@@ -1749,11 +1938,6 @@ export class Play {
 					await wait(70 * speed);
 					break;
 				}
-				case "heal":
-					if (e.id === PLAYER_ID && e.hp !== undefined && this.shownHp !== null)
-						this.shownHp = e.hp;
-					this.pop(e.pos, `+${e.amount}`, "heal");
-					break;
 				case "miss":
 					if (this.isShown(e.id, e.pos)) this.pop(e.pos, "ミス", "miss");
 					combat = true;
@@ -1845,8 +2029,6 @@ export class Play {
 				case "floor":
 					await this.floorCard(false);
 					break;
-				case "levelup":
-					break;
 				case "house":
 					this.startHouseBgm();
 					// 祭りに 気づく 間（走っている 途中でも 止めて 見せる。早送りの リプレイだけ 待たない）
@@ -1874,9 +2056,6 @@ export class Play {
 							fast,
 						);
 					break;
-				case "goal":
-					this.ctx.audio.bgm(floorBgm(this.run));
-					break;
 				case "reveal":
 					// わかった所は 地図に 載る。地図を 閉じていれば ひとこと（記録の ログには 残さない）
 					if (!this.mapOn) {
@@ -1888,8 +2067,54 @@ export class Play {
 					break;
 			}
 		}
+		// （行が 来ずに 残った 知らせは ログに 追いついたら）
+		if (onLine.length) {
+			const rest = onLine;
+			this.afterLog(() => {
+				for (const fn of rest) fn();
+			});
+		}
 		// 戦いの音が鳴っていたら、その区切りまで次の行動を待つ（連打で音が重ならないように）
 		if (combat && !fast) await this.ctx.audio.seSettled();
+	}
+
+	/** 知らせを 出す：音を 鳴らす・回復の 数字・レベル・目的の品の 曲・安価・床に 置かれた 道具。 */
+	private showNotice(e: GameEvent): void {
+		if (this.stopped) return;
+		switch (e.t) {
+			case "se":
+				// 全滅の音は、倒れる演出で 墓が落ちたときに鳴らす
+				if (e.name === "wipeout" && this.run.s.end?.kind === "dead") return;
+				// 祭りの 始まりの 音は「house」で 曲と 合わせて 鳴らした
+				if (e.name === "encounter") return;
+				this.ctx.audio.se(e.name);
+				return;
+			case "heal":
+				if (e.id === PLAYER_ID && e.hp !== undefined && this.hudHold)
+					this.hudHold.hp = e.hp;
+				this.pop(e.pos, `+${e.amount}`, "heal");
+				return;
+			case "levelup":
+				if (this.hudHold) {
+					this.hudHold.lv = e.lv;
+					this.hudHold.hp = e.hp;
+					this.hudHold.maxHp = e.maxHp;
+				}
+				return;
+			case "goal":
+				this.ctx.audio.bgm(floorBgm(this.run));
+				if (this.hudHold) this.hudHold.returning = true;
+				return;
+			case "anka":
+				if (this.hudHold) {
+					const { anka, ankaLine, ankaLeft } = this.liveHud();
+					Object.assign(this.hudHold, { anka, ankaLine, ankaLeft });
+				}
+				return;
+			case "item":
+				this.hiddenItems.delete(e.uid);
+				return;
+		}
 	}
 
 	/** その動きが画面に見えているか（見えない敵・視界の外は待たない）。 */
@@ -2046,6 +2271,10 @@ export class Play {
 	private async floorCard(first: boolean): Promise<void> {
 		const run = this.run;
 		this.shownFloor = null;
+		// 新しい 階の ステータスに（前の 階の 床の 道具の 写しは 捨てる）
+		if (this.hudHold) this.hudHold = this.liveHud();
+		this.hiddenItems.clear();
+		this.ghostItems = [];
 		this.lastTravel = null;
 		this.view.invalidate();
 		this.syncDisp(true);

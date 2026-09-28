@@ -383,6 +383,7 @@ export class Run {
 			if (this.f.traps.some((t) => samePos(t, c))) continue;
 			if (this.f.wards.includes(c.y * this.f.layout.w + c.x)) continue;
 			this.f.items.push({ x: c.x, y: c.y, item: it });
+			this.emit({ t: "item", uid: it.uid, pos: c });
 			return true;
 		}
 		if (!quiet) this.msg(`${this.name(it)}は　消えてしまった`);
@@ -681,7 +682,7 @@ export class Run {
 		if (up > 0) {
 			// 何段上がっても音は1回（続けて鳴るとうるさい）
 			this.se("levelup");
-			this.emit({ t: "levelup", lv: p.lv });
+			this.emit({ t: "levelup", lv: p.lv, hp: p.hp, maxHp: p.maxHp });
 			this.msg(`レベルが　${p.lv}に　上がった！`, "good");
 		}
 	}
@@ -1418,6 +1419,7 @@ export class Run {
 		this.removeItem(it);
 		this.f.items.push({ x: this.p.x, y: this.p.y, item: it });
 		this.msg(`${this.name(it)}を　置いた`);
+		this.emit({ t: "item", uid: it.uid, pos: { x: this.p.x, y: this.p.y } });
 		// 避難所スレは 置くと 効く（その マスは 避難所に なり、もう 拾えない）
 		if (it.kind === "s_ward") this.f.wards.push(ward);
 		return true;
@@ -1447,6 +1449,7 @@ export class Run {
 		if (!this.s.seen.includes(fi.item.uid)) this.s.seen.push(fi.item.uid);
 		this.se("item");
 		this.msg(`${this.name(it)}と　${this.name(fi.item)}を　入れかえた`);
+		this.emit({ t: "item", uid: it.uid, pos: { x: this.p.x, y: this.p.y } });
 		this.onAcquire(fi.item);
 		return true;
 	}

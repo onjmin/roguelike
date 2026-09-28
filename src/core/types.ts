@@ -448,7 +448,12 @@ export type GameEvent =
 	 */
 	| { t: "fx"; kind: string; pos: Pos; r?: number; at?: Pos[] }
 	| { t: "floor"; depth: number; up: boolean }
-	| { t: "levelup"; lv: number }
+	/** レベルが 上がった（上がった あとの レベル・HP。画面の ステータスは この 行で 追いつく）。 */
+	| { t: "levelup"; lv: number; hp: number; maxHp: number }
+	/** 床に 道具が 置かれた（落とした・置いた・投げて 落ちた など。画面は ここで 床に 出す）。 */
+	| { t: "item"; uid: number; pos: Pos }
+	/** 安価が 来た・こなした・守らなかった（画面の ステータスの 安価は、これに 続く 行で 追いつく）。 */
+	| { t: "anka" }
 	| { t: "house" }
 	/** 眠った・目が さめた（キリコ。画面の Z）。 */
 	| { t: "sleep"; id: number; on: boolean }

@@ -98,6 +98,7 @@ export const tickAnka = (r: Run): void => {
 		};
 		f.anka = a;
 		r.se("encounter");
+		r.emit({ t: "anka" });
 		r.msg(`安価が　来た：>>キリコ　${ankaText(a)}`, "warn");
 		r.msg(`（${ANKA_DUE}レス　以内に。安価は　絶対）`);
 		return;
@@ -106,6 +107,7 @@ export const tickAnka = (r: Run): void => {
 	if (!a || f.res < a.due) return;
 	f.anka = null;
 	r.se("encounter");
+	r.emit({ t: "anka" });
 	r.msg("安価を　守らなかった……　スレが　荒れた！", "warn");
 	r.addRes(ANKA_PENALTY);
 	// 眠っていた 敵も みんな 起きる（置物は そのまま）
@@ -133,6 +135,7 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 	if (a.done < a.need) return;
 	r.f.anka = null;
 	r.se("jingle");
+	r.emit({ t: "anka" });
 	r.msg("神安価！　スレ民が　いろいろ　置いていった", "good");
 	// 道具（正体つき。見分ける 手間も ごほうび）
 	for (const kind of rollKinds(r.rng, itemTableOf(r.s), ANKA_GIFTS)) {

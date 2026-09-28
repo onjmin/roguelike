@@ -34,6 +34,8 @@ export const GRAVE = "sp:07DETe3";
 
 /** 描くときの ついでの指定。 */
 export type DrawOpts = {
+	/** まだ 描かない 床の 道具（uid。置かれた 出来事・ログに 画面が 追いつくまで）。 */
+	hideItems?: ReadonlySet<number>;
 	/** 向きを変えるあいだ（向きの印を強く出す）。 */
 	strong?: boolean;
 	/** 倒れた所の墓。drop は 落ちてくる進み（0〜1、1 で着地）。 */
@@ -295,6 +297,7 @@ export class FloorView {
 			const i = fi.y * l.w + fi.x;
 			// 見えない 道具（!skスレ）は 見透し草を 飲むまで 描かない
 			if (itemHidden(s, fi.item.kind)) continue;
+			if (opts.hideItems?.has(fi.item.uid)) continue;
 			if (
 				!visible[i] &&
 				!(f.seen[i] && seenItem.has(fi.item.uid)) &&
@@ -781,6 +784,8 @@ export const drawMap = (
 		mark?: { x: number; y: number } | null;
 		/** 途中で止まった 行き先（タップすると 続きを 歩く）。 */
 		resume?: { x: number; y: number } | null;
+		/** まだ 描かない 床の 道具（uid。DrawOpts.hideItems と 同じ）。 */
+		hideItems?: ReadonlySet<number>;
 	},
 ): void => {
 	const f = s.floor;
@@ -827,6 +832,7 @@ export const drawMap = (
 	for (const fi of f.items)
 		if (
 			!itemHidden(s, fi.item.kind) &&
+			!opt.hideItems?.has(fi.item.uid) &&
 			(f.senseItems || (f.seen[fi.y * l.w + fi.x] && seenItem.has(fi.item.uid)))
 		)
 			dot(fi.x, fi.y, "#5ff0ff", Math.floor(cell / 4));
