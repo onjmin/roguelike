@@ -16,20 +16,24 @@ import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { floorShort } from "./floorName";
 import { listWindow, markOpened, onTap } from "./list";
-import { esc } from "./records";
+import { bossHomeLine, esc, isBossClear } from "./records";
 
-/** もらった リプレイの 見出し（どこで どう 終わったか。ボスなら「B10で　〇〇を　たおした」）。 */
-const sharedHead = (rp: SavedReplay): string => {
+/**
+ * もらった リプレイの 見出し（どこで どう 終わったか。ボスなら「B10で　〇〇を　たおした」と、
+ * 2行目に 品ごと どう 帰ったか。持ち帰った ことが わかるように）。
+ */
+export const sharedHead = (rp: SavedReplay): string => {
 	const where = DUNGEON_NAMES[rp.dungeon ?? "main"].short;
-	const how =
-		rp.kind === "clear" && rp.objective === "boss"
-			? `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`
-			: rp.kind === "clear"
-				? "持ち帰った"
-				: rp.kind === "escape"
-					? `${floorShort(rp.dungeon, rp.depth)}から　帰還スレで　もどった`
-					: `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`;
-	return `${esc(where)}　${how}<br><small>${rp.turn}ターン</small>`;
+	const boss = isBossClear(rp);
+	const how = boss
+		? `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`
+		: rp.kind === "clear"
+			? "持ち帰った"
+			: rp.kind === "escape"
+				? `${floorShort(rp.dungeon, rp.depth)}から　帰還スレで　もどった`
+				: `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`;
+	const home = boss ? `${esc(bossHomeLine(rp.dungeon ?? "main"))}　` : "";
+	return `${esc(where)}　${how}<br><small>${home}${rp.turn}ターン</small>`;
 };
 
 /** 前の版で 遊んだ リプレイか（今の版だけで 遊んだ ものでなければ ずれうる）。 */

@@ -121,15 +121,24 @@ export const showStory = async (ctx: Ctx, pages: string[]): Promise<void> => {
 /** 文字を逃がして、\n を改行にする（セリフは2行に分けて書かれている）。 */
 export const escBr = (s: string): string => esc(s).replace(/\n/g, "<br>");
 
-/** ボスを たおして 帰った ひとこと（「（品）ごと、〜　帰った」。冒険の記録の 札・リプレイの 終わり）。 */
+/**
+ * ボスを たおして 帰った ひとこと（「（品）ごと、〜　帰った」。品を 持ち帰った ことも わかるように）。
+ * 冒険の記録の 札・リプレイの 終わり・記録の 見出し・もらった リプレイの 見出し。
+ */
 export const bossHomeLine = (d: DungeonId): string =>
 	`${defOf(dungeonById(d).goal).name}ごと、${BOSS_HOME[d] ?? "入口へ　帰った"}`;
 
+/** ボスを たおして 帰った 冒険か（記録・リプレイ）。 */
+export const isBossClear = (r: {
+	kind: RunRecord["kind"];
+	objective?: RunRecord["objective"];
+}): boolean => r.kind === "clear" && r.objective === "boss";
+
 /**
  * 終わり方の1行（倒れた階と理由・持ち帰ったなら いちばん深い階・ボスを たおしたなら その 階と ボス。
- * ボスの 冒険の 終わりの 理由は「〇〇を　たおした」）。
+ * ボスの 冒険の 終わりの 理由は「〇〇を　たおした」。どう 帰ったかは 見出しの 2行目：recordHead）。
  */
-const endLine = (
+export const endLine = (
 	r: Pick<
 		RunRecord,
 		| "kind"
@@ -142,7 +151,7 @@ const endLine = (
 	>,
 ): string =>
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
-		r.kind === "clear" && r.objective === "boss"
+		isBossClear(r)
 			? `${floorShort(r.dungeon, r.depth)}で　${r.cause}`
 			: r.kind === "clear"
 				? `${floorShort(r.dungeon, r.maxDepth)}から　地上へ　もどった`
@@ -150,6 +159,17 @@ const endLine = (
 					? `${floorShort(r.dungeon, r.depth)}から　帰還スレで　もどった`
 					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で　${r.cause}`
 	}`;
+
+/**
+ * 記録を 開いたときの 見出し（HTML）：終わり方の 1行、ボスなら 品ごと どう 帰ったか、日時・レベル・ターン。
+ * 一覧の 行は 1行の まま（「持ち帰った」の 札で 品を 持ち帰った ことは わかる。帰り方は 開くと 出る）。
+ */
+export const recordHead = (
+	r: Parameters<typeof endLine>[0] & Pick<RunRecord, "at" | "lv" | "turn">,
+): string =>
+	`${esc(endLine(r))}<br><small>${
+		isBossClear(r) ? `${esc(bossHomeLine(r.dungeon ?? "main"))}<br>` : ""
+	}${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン</small>`;
 
 /** 記録の一覧の 終わり方の札。 */
 const KIND_LABEL: Record<RunRecord["kind"], string> = {
@@ -322,7 +342,7 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 		start = Number(v);
 		const r = list[start];
 		const rp = replayOf(r);
-		const head = `${esc(endLine(r))}<br><small>${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン</small>`;
+		const head = recordHead(r);
 		if (!rp) {
 			await infoWindow(
 				ctx,

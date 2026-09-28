@@ -7,6 +7,7 @@
 //   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep / kinoko / tropical / konamono / festival / hidden。既定は main）
 //   pnpm sim -- --objective boss  … 目的（fetch / boss。既定は そのダンジョンの 既定。boss の ない 板は fetch）
 //   pnpm sim -- --reach           … 目的に たどりつくまで 倒れない（底の つり合いを 見る。下の REACH）
+//   pnpm sim -- --reach --lag 3   … --reach で 足す レベルを「その階の 強さ − 3」までに（既定は 下の LAG）
 //
 // Vite の SSR で src/core を読み込む（ビルドせずに TS のまま動かす）。
 // 例外が出たら シードと スタックを出して 終了コード 1。
@@ -27,7 +28,7 @@ const QUIET = args.includes("--quiet");
 // 倒れないモード：HP と満腹度を補って、深い階・帰り道まで通す（落ちないかの検査用）
 const GOD = args.includes("--god");
 // 目的まで 倒れないモード：目的に たどりつくまで（fetch は 品を 拾うまで・boss は ボスを 見るまで）HP と
-// 満腹度を 補い、レベルも「その階の 強さ − 2」までは 足す（底まで 来られる プレイヤーの 目安）。そこからは ふつう。
+// 満腹度を 補い、レベルも「その階の 強さ − LAG」までは 足す（底まで 来られる プレイヤーの 目安）。そこからは ふつう。
 // ボットが 自力では 底まで 行けない 板で、底の つり合い（帰り道・ボスとの 戦い）を 見る
 const REACH = args.includes("--reach");
 // どのダンジョンで遊ばせるか（shallow / main / deep ほか）
@@ -68,7 +69,18 @@ try {
 		console.error(`知らない目的: ${OBJECTIVE}`);
 		process.exit(1);
 	}
+	// ボスの いない 板を boss に しても Run.create は 持ち帰りに するので、表の 見出しが うそに なる
+	if (OBJECTIVE === "boss" && !dungeonById(DUNGEON).boss) {
+		console.error(
+			`${DUNGEON} には ボスが いない（--objective boss は 使えない）`,
+		);
+		process.exit(1);
+	}
 	const objective = OBJECTIVE ?? dungeonById(DUNGEON).objective;
+	// --reach で 足す レベル：その階の 強さ − LAG まで。ボットが 自力で もぐると、ふつうの 板は 強さ − 2 くらいで
+	// ついていく（おんたこ B8 Lv6.9・お祭り B10 Lv9.8・風呂板 B11 Lv10.0）。過疎の 板（sparse）は 敵も 経験値も
+	// 少なく、だんだん 離れて いく（離島 B12 で Lv8.0・強さ 12）ので 5 に する（底の 15F で Lv10 ほど）
+	const LAG = Number(arg("lag", dungeonById(DUNGEON).sparse ? 5 : 2));
 
 	const results = [];
 	const seeds = ONE ? [ONE] : Array.from({ length: N }, (_, i) => `sim-${i}`);
@@ -107,7 +119,7 @@ try {
 					const p = run.s.player;
 					if (p.hunger < 400) p.hunger = 2000;
 					if (GOD && p.lv < run.s.depth + 3) run.gainExp(200 * run.s.depth);
-					const want = run.levelAt(run.s.depth) - 2;
+					const want = Math.max(1, run.levelAt(run.s.depth) - LAG);
 					if (REACH && p.lv < want) run.gainExp(EXP_AT[want - 1] - p.exp);
 				}
 				if (ONE && !QUIET)
@@ -167,7 +179,7 @@ try {
 	const stuck = results.filter((r) => r.end === "stuck").length;
 	const reached = results.filter((r) => r.depth >= LAST_DEPTH).length;
 	console.log(
-		`\n${n}回（${objective}${REACH ? "・目的まで 倒れない" : ""}）　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
+		`\n${n}回（${objective}${REACH ? `・目的まで 倒れない・強さ − ${LAG}` : ""}）　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
 	);
 	// いちばん底に 着いた 冒険の うち：fetch は 入口まで 帰れた・boss は ボスに 勝った 割合
 	{

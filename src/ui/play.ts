@@ -1757,6 +1757,9 @@ export class Play {
 				if (!cmd) break;
 				run.act(cmd);
 			}
+			// とばした あいだに ボスを たおして 終わった：ふつうに 見たときと 同じく ボスの 曲を 止めて 勝ちの 音
+			// （出来事は 流さないので bossDown が 走らない。流れた ままだと 終わりの 札まで ボスの 曲が 鳴る）
+			if (run.s.end?.kind === "clear" && run.bossSpec) this.bossDown();
 			// とばした あいだに 見つけた ボス（出来事は 流さないので、曲と ゲージは 今の 状態から）
 			this.bossShown = !!(run.boss && run.f.bossSeen);
 			this.logQueue = [];
@@ -1953,9 +1956,20 @@ export class Play {
 		let combat = false;
 		// 行に つける 知らせ（音・回復・レベル・目的の品）。次の 行が 出るときに いっしょに 出す
 		let onLine: (() => void)[] = [];
+		// ボスが たおれた（この act の 中）。勝ちの 音（bossDown）が 鳴るので、たおした 音と レベルアップの 音は 鳴らさない
+		// （重なって 聞こえない。レベルが 上がった ことは 行と ステータスで わかる）
+		let bossFell = false;
 		// 途中で閉じたら（リプレイの「やめる」）残りの出来事は流さない
 		while (i < ev.length && !this.stopped) {
 			const e = ev[i];
+			if (
+				bossFell &&
+				e.t === "se" &&
+				(e.name === "enemyDown" || e.name === "levelup")
+			) {
+				i++;
+				continue;
+			}
 			// 知らせ（動きでは ない もの）は、それを 伝える 行と いっしょに・前の 行が 出てから 出す。
 			// 行より 先に ごほうびが 見えたり 音が 鳴ったり しないように（動きと 戦いは 今までどおり すぐ）
 			if (e.t === "se" || LEAD.has(e.t) || e.t === "item") {
@@ -2100,6 +2114,7 @@ export class Play {
 					// ボスを たおした：勝ちの 音は「〜を　たおした」の 行と いっしょに
 					if (e.id === this.bossUid) {
 						this.bossUid = null;
+						bossFell = true;
 						const hb = this.hudHold?.boss;
 						if (hb && this.hudHold)
 							this.hudHold = { ...this.hudHold, boss: { ...hb, hp: 0 } };

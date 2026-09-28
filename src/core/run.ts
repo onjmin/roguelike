@@ -71,6 +71,7 @@ import { triggerTrap } from "./traps";
 import {
 	CAT_ORDER,
 	type Command,
+	DEEP,
 	DOZE,
 	type DungeonId,
 	type Floor,
@@ -503,7 +504,11 @@ export class Run {
 	updateVision(): void {
 		const f = this.f;
 		const l = f.layout;
-		if (this.p.status.blind > 0) return;
+		// 目が 見えない あいだは 何も 見えない（ボスと なぐりあって いれば 戦いは 始まる。checkBossSeen）
+		if (this.p.status.blind > 0) {
+			this.checkBossSeen();
+			return;
+		}
 		forEachVisible(l, this.p, (x, y) => {
 			f.seen[y * l.w + x] = 1;
 		});
@@ -545,22 +550,35 @@ export class Run {
 	}
 
 	/**
-	 * ボスを はじめて 見た：目を さまして 待ちかまえる（それまでは 眠って 動かない）。
-	 * 気配スレで 居場所が わかった だけ では 起きない（キリコの 目に 入った とき）。
+	 * ボスとの 戦いが 始まったか（1回だけ。{t:"boss"} で 画面の 曲と ゲージが 始まる）。
+	 * - 待っている（はじめの 深い 眠りの）ボスは、キリコの 目に 入った とき 目を さまして 待ちかまえる。
+	 *   それまでは 眠って 動かない（気配スレで 居場所が わかった・目が 見えない まま となりに 来た だけ では 起きない）。
+	 * - 見る 前に もう 起きていた（杖・矢・投げた 物が 見えない 所で 当たった、目が 見えない まま なぐった）
+	 *   ボスは、見えたか となりに 来た ときに「あらわれた」だけ。眠らせ直した ぶんを 起こさない・寝起きの 1手も やらない。
 	 * 見た ことは 階に 残す（中断して 続けても 画面の 曲と ゲージが もどる）。
 	 */
 	private checkBossSeen(): void {
 		const f = this.f;
 		if (f.bossSeen || f.boss === undefined) return;
 		const m = this.boss;
-		if (!m || !this.playerSees(m)) return;
+		if (!m) return;
+		const waiting = m.status.sleep >= DEEP || !!m.status.dormant;
+		const sees = this.p.status.blind <= 0 && this.playerSees(m);
+		const engaged = !waiting && dist(m, this.p) <= 1;
+		if (!sees && !engaged) return;
 		f.bossSeen = true;
-		m.status.sleep = 0;
-		m.status.dormant = false;
-		// 目を さました ターンは まだ 動かない（ほかの 寝起きと 同じ）
-		this.graceAfterWake(m);
+		const name = monsterName(this, m);
+		if (waiting) {
+			m.status.sleep = 0;
+			m.status.dormant = false;
+			// 目を さました ターンは まだ 動かない（ほかの 寝起きと 同じ）
+			this.graceAfterWake(m);
+		}
 		this.emit({ t: "boss", id: m.uid });
-		this.msg(`${monsterName(this, m)}が　待ちかまえていた！`, "warn");
+		this.msg(
+			waiting ? `${name}が　待ちかまえていた！` : `${name}が　あらわれた！`,
+			"warn",
+		);
 	}
 
 	/** 眠っている敵を起こす判定（入室・となり）。 */

@@ -12,6 +12,8 @@
 //   （やきうが どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { MONSTERS } from "../core/data/monsters";
+import { defOf } from "../core/item";
 import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import {
@@ -98,10 +100,16 @@ import {
 	type ProgressNews,
 	type RunRecord,
 	replayMatches,
+	type SavedReplay,
 	type Town,
+	toReplay,
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
+import { floorsText } from "../ui/bookView";
 import { cafeTalks } from "../ui/cafe";
+import { floorShort } from "../ui/floorName";
+import { bossHomeLine, endLine, recordHead } from "../ui/records";
+import { sharedHead } from "../ui/share";
 import {
 	forgetMobMemo,
 	hasMobNews,
@@ -2045,6 +2053,134 @@ test("old records with the renamed monsters read with the new names", () => {
 	});
 });
 
+test("boss causes are not rewritten by the old-name renames, and boss records and replays still pair up", () => {
+	withStorage(() => {
+		const replays: SavedReplay[] = [];
+		for (const d of DUNGEON_IDS) {
+			const cause = DUNGEONS[d].boss?.cause;
+			if (!cause) continue;
+			const depth = DUNGEONS[d].floors;
+			const seed = `boss-${d}`;
+			pushRecord({
+				kind: "clear",
+				cause,
+				depth,
+				maxDepth: depth,
+				turn: 1,
+				seed,
+				dungeon: d,
+				objective: "boss",
+			});
+			const rp: SavedReplay = {
+				seed,
+				dungeon: d,
+				objective: "boss",
+				at: 1,
+				builds: [],
+				text: "",
+				n: 0,
+				kind: "clear",
+				depth,
+				turn: 1,
+				cause,
+			};
+			replays.push(rp);
+			// もらった リプレイ（共有）も 同じ 読み方
+			ok(toReplay(rp)?.cause === cause, `${d}: shared ${toReplay(rp)?.cause}`);
+		}
+		localStorage.setItem("kiriko-roguelike/replays", JSON.stringify(replays));
+		const records = loadRecords();
+		const kept = loadReplays();
+		for (const rp of replays) {
+			const rec = records.find((r) => r.seed === rp.seed);
+			const got = kept.find((p) => p.seed === rp.seed);
+			ok(rec?.cause === rp.cause, `${rp.dungeon}: record ${rec?.cause}`);
+			ok(got?.cause === rp.cause, `${rp.dungeon}: replay ${got?.cause}`);
+			ok(
+				!!rec && !!got && replayMatches(got, rec),
+				`${rp.dungeon}: the boss replay lost its record`,
+			);
+		}
+		ok(replays.length === 6, `harness: ${replays.length} boss boards`);
+	});
+});
+
+test("a boss clear reads as a win plus how she got home with the item (records, shared replays), and the book shows the real floor", () => {
+	for (const d of DUNGEON_IDS) {
+		const b = DUNGEONS[d].boss;
+		if (!b) continue;
+		const def = MONSTERS[b.monster];
+		const depth = DUNGEONS[d].floors;
+		const where = floorShort(d, depth);
+		// 図鑑：ボスは その板の いちばん奥の 階（上りの 板は F。floors は 強さなので 出さない）
+		ok(
+			floorsText(def) === `${where}（${DUNGEON_NAMES[d].name}の　ボス）`,
+			`${d}: the book says ${floorsText(def)}`,
+		);
+		const home = bossHomeLine(d);
+		ok(
+			home.startsWith(`${defOf(DUNGEONS[d].goal).name}ごと、`) &&
+				home.endsWith(BOSS_HOME[d] ?? "?"),
+			`${d}: ${home}`,
+		);
+		const rec = {
+			kind: "clear",
+			cause: b.cause,
+			depth,
+			maxDepth: depth,
+			returning: false,
+			dungeon: d,
+			objective: "boss",
+			at: 1,
+			lv: 9,
+			turn: 99,
+		} as const;
+		ok(
+			endLine(rec) === `${DUNGEON_NAMES[d].short}　${where}で　${b.cause}`,
+			`${d}: ${endLine(rec)}`,
+		);
+		ok(
+			recordHead(rec).includes(`<br><small>${home}<br>`),
+			`${d}: the record head lacks how she got home: ${recordHead(rec)}`,
+		);
+		const rp: SavedReplay = {
+			seed: `boss-${d}`,
+			dungeon: d,
+			objective: "boss",
+			at: 1,
+			builds: [],
+			text: "",
+			n: 0,
+			kind: "clear",
+			depth,
+			turn: 99,
+			cause: b.cause,
+		};
+		const head = sharedHead(rp);
+		ok(
+			head.includes(`${where}で　${b.cause}`) &&
+				head.includes(`<small>${home}　99ターン</small>`),
+			`${d}: the shared head reads ${head}`,
+		);
+		// 持ち帰りの 冒険には つけない
+		const { objective: _o, ...fetchRp } = rp;
+		ok(
+			sharedHead(fetchRp).includes("持ち帰った") &&
+				!sharedHead(fetchRp).includes(home),
+			`${d}: a fetch replay got the boss head`,
+		);
+		const { objective: _p, ...fetchRec } = rec;
+		ok(!recordHead(fetchRec).includes(home), `${d}: a fetch record got it`);
+	}
+	// ボスで ない 板の 敵は これまでどおり（強さの 幅と 板の 名前）
+	const kin = MONSTERS.kinonyan;
+	ok(
+		floorsText(kin) ===
+			`B${kin.floors[0]}〜B${kin.floors[1]}（${DUNGEON_NAMES.kinoko.name}だけ）`,
+		`kinonyan: ${floorsText(kin)}`,
+	);
+});
+
 // ───────────────── 目的（持ち帰り・ボス）と 期間限定の イベント ─────────────────
 
 /** 進み具合（イベントの 試験用。保存は 使わない）。 */
@@ -2194,11 +2330,22 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 			}).started,
 			"the march started before パン板 was cleared",
 		);
-		// きのこ狩り：きのこ板に 行けて、出撃が 5の 倍数に なったら（終わりかたも 確率も 問わない）
+		// きのこ狩り：きのこ板に 行けて、出撃が 5の 倍数に なったら 1/2（終わりかたは 問わない）
 		const kin = prog({ unlocked: ["shallow", "kinoko"], outings: 4 });
+		const huntHits = SEEDS.filter(
+			(seed) =>
+				advanceEvents(kin, { dungeon: "shallow", kind: "dead", seed }).started
+					?.id === "kinoko-hunt",
+		);
+		const huntRate = huntHits.length / SEEDS.length;
+		ok(
+			huntRate > 0.4 && huntRate < 0.6,
+			`the hunt started ${huntRate} of the time`,
+		);
+		const huntHit = huntHits[0];
 		for (const kind of ["dead", "clear", "escape"] as const)
 			ok(
-				advanceEvents(kin, { dungeon: "shallow", kind, seed: "x" }).started
+				advanceEvents(kin, { dungeon: "shallow", kind, seed: huntHit }).started
 					?.id === "kinoko-hunt",
 				`the hunt did not start after ${kind}`,
 			);
@@ -2208,7 +2355,7 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 				{
 					dungeon: "shallow",
 					kind: "dead",
-					seed: "x",
+					seed: huntHit,
 				},
 			).started,
 			"the hunt started on the 6th outing",
@@ -2217,7 +2364,7 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 			!advanceEvents(prog({ outings: 4 }), {
 				dungeon: "shallow",
 				kind: "dead",
-				seed: "x",
+				seed: huntHit,
 			}).started,
 			"the hunt started before きのこ板 opened",
 		);
@@ -2280,10 +2427,20 @@ test("events end after their outings or a clear of their own board, and do not s
 		});
 		ok(four.ended?.id === "pan-march", "the march outlived 4 outings");
 		// 終わったら 同じ 知らせの あとで ほかの イベントが 始まる ことは ある（きのこ狩り：出撃 5回目）
-		const swap = advanceEvents(
-			{ ...march(4), unlocked: ["shallow", "main", "kinoko"] },
-			{ dungeon: "main", kind: "dead", seed: "x" },
+		const withKinoko: Progress = {
+			...march(4),
+			unlocked: ["shallow", "main", "kinoko"],
+		};
+		const swapSeed = SEEDS.find(
+			(seed) =>
+				advanceEvents(withKinoko, { dungeon: "main", kind: "dead", seed })
+					.started,
 		);
+		const swap = advanceEvents(withKinoko, {
+			dungeon: "main",
+			kind: "dead",
+			seed: swapSeed ?? "",
+		});
 		ok(
 			swap.ended?.id === "pan-march" && swap.started?.id === "kinoko-hunt",
 			`ended ${swap.ended?.id} / started ${swap.started?.id}`,
@@ -2294,6 +2451,29 @@ test("events end after their outings or a clear of their own board, and do not s
 			{ dungeon: "shallow", kind: "dead", seed: "x" },
 		);
 		ok(!gone.ended && !gone.progress.event, "an unknown event stayed");
+	});
+});
+
+test("the mushroom hunt stays the exception: きのこ板 is a fetch run in well under half of the outings", () => {
+	noRandom(() => {
+		// きのこ狩りしか 起きない とき（ほかの イベントの need を 満たさず、たおれた・帰還スレ だけ）が
+		// いちばん 多く なる。終わった 出撃では また 始まらないので、周期が 短いと かえって ふえる
+		let p = prog({ unlocked: ["shallow", "kinoko"] });
+		let fetch = 0;
+		const n = 600;
+		for (let i = 0; i < n; i++) {
+			if (objectiveFor("kinoko", p).objective === "fetch") fetch++;
+			p = advanceEvents(p, {
+				dungeon: "shallow",
+				kind: i % 2 ? "dead" : "escape",
+				seed: `hunt-${i}`,
+			}).progress;
+		}
+		const share = fetch / n;
+		ok(
+			share > 0.15 && share <= 0.4,
+			`きのこ板 was a fetch run in ${share} of the outings`,
+		);
 	});
 });
 
@@ -2311,7 +2491,16 @@ test("a run end counts the outing and leaves event news; the village reads it on
 		// 開発用の 冒険は 数えない
 		noteRunEnd("shallow", "dead", "debug:x");
 		ok(loadProgress().outings === 4, "a debug run was counted");
-		noteRunEnd("kinoko", "clear", "run-5");
+		// 5回目で 始まる（1/2 に 当たる シード）
+		const huntSeed = SEEDS.find(
+			(seed) =>
+				advanceEvents(prog({ unlocked: ["shallow", "kinoko"], outings: 4 }), {
+					dungeon: "kinoko",
+					kind: "clear",
+					seed,
+				}).started?.id === "kinoko-hunt",
+		);
+		noteRunEnd("kinoko", "clear", huntSeed);
 		const p = loadProgress();
 		ok(p.event?.id === "kinoko-hunt", `event ${p.event?.id}`);
 		ok(
@@ -2354,13 +2543,28 @@ test("a run end counts the outing and leaves event news; the village reads it on
 	});
 });
 
-test("boss wins come home with how they got back, then the usual ending", async () => {
+test("boss wins come home: the arrival, then how they got back, then the rest of the usual ending", async () => {
 	for (const d of DUNGEON_IDS) {
 		const has = !!DUNGEONS[d].boss;
 		ok(!!BOSS_RETURN[d] === has, `${d}: BOSS_RETURN ${!!BOSS_RETURN[d]}`);
 		ok(!!BOSS_HOME[d] === has, `${d}: BOSS_HOME ${!!BOSS_HOME[d]}`);
 		const n = BOSS_RETURN[d]?.length ?? 0;
 		ok(!has || (n >= 1 && n <= 2), `${d}: ${n} boss return pages`);
+		if (!has) continue;
+		// ending の 1枚目は 着いた 語り（だれも 話さない）。仲間が 声を かけるのは その あと
+		const first = STORY[d].ending[0];
+		ok(
+			first && first.who === null && first.text.startsWith("村に　帰りつくと"),
+			`${d}: the ending does not open with the arrival: ${first?.text}`,
+		);
+		const got = pagesFor({ kind: "clear", dungeon: d, objective: "boss" });
+		ok(
+			got[0] === first &&
+				JSON.stringify(got.slice(1, 1 + n)) ===
+					JSON.stringify(BOSS_RETURN[d]) &&
+				got.length === STORY[d].ending.length + n,
+			`${d}: the boss pages are not right after the arrival`,
+		);
 	}
 	await withStorageAsync(async () => {
 		setProgress(["shallow", "kinoko"]);
@@ -2371,10 +2575,14 @@ test("boss wins come home with how they got back, then the usual ending", async 
 			dungeon: "kinoko",
 			objective: "boss",
 		};
-		const pages = [...(BOSS_RETURN.kinoko ?? []), ...STORY.kinoko.ending];
+		const pages = [
+			STORY.kinoko.ending[0],
+			...(BOSS_RETURN.kinoko ?? []),
+			...STORY.kinoko.ending.slice(1),
+		];
 		ok(
 			JSON.stringify(pagesFor(a)) === JSON.stringify(pages),
-			"the boss pages do not come before the ending",
+			"the boss pages do not come right after the arrival",
 		);
 		ok(
 			JSON.stringify(pagesFor({ ...a, objective: "fetch" })) ===

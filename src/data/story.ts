@@ -476,8 +476,9 @@ export const STORY: Record<
 
 // ───────────────── ボスを たおして 帰ったとき ─────────────────
 /**
- * 目的が boss の 板で ボスを たおし、一瞬で 入口へ 帰って きたとき（ending の 前に 村で 話す。
- * ui/villageReturn.ts）。どう 帰って きたかが わかる 1〜2枚。品を 持ち帰った ことは そのあとの ending で。
+ * 目的が boss の 板で ボスを たおし、一瞬で 入口へ 帰って きたとき（ending の 1枚目＝「村に　帰りつくと、…」の
+ * 着いた 語りの あとに 村で 話す。ui/villageReturn.ts）。どう 帰って きたかが わかる 1〜2枚。
+ * 品を 持ち帰った ことは そのあとの ending の 残りで。
  */
 export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	shallow: [

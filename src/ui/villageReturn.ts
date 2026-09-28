@@ -4,7 +4,7 @@
 // - 持ち帰った・帰還スレ：キリコが 口の奥から 出てくると、口の前に 仲間が 並んで 待っている（幕が 上がる前に
 //   並べる。lineUp）。持ち帰りの 語り（STORY[d].ending）か 帰還スレの 語り（RETURN_PAGES）を 村の窓で 話して、
 //   暗転の あいだに 持ち場へ もどる（囲いの中の ロゼ・シヨは 歩いては 帰れない）。語りは 保存しない（閉じたら それきり）。
-//   ボスを たおして 一瞬で 帰ったときは、持ち帰りの 語りの 前に どう 帰ったかの 1〜2枚（BOSS_RETURN[d]）。
+//   ボスを たおして 一瞬で 帰ったときは、着いた 語り（ending の 1枚目）の あとに どう 帰ったかの 1〜2枚（BOSS_RETURN[d]）。
 // - 開いた知らせ（Progress.news）：本編は 口の前で 見張る やきうが どいて 小屋の前へ、もっとは 板が はずれる。
 //   見せおえてから 1つずつ 消す（途中で 閉じても 次に 開いたとき また 見せる）。知らせの 前は 閉じたまま 描く（villageView）。
 //   期間限定の イベントの 始まり・終わり（Progress.eventNews。data/objectives.ts）も そのあとに 1〜2行。
@@ -91,13 +91,16 @@ export type ReturnArrival = {
 	objective?: Objective;
 };
 
-/** 村で 話す 語り（ボスなら どう 帰ったかの 頁 → 持ち帰りの 語り。品を 持ち帰った ことは 同じ）。 */
-export const pagesFor = (a: ReturnArrival): readonly StoryPage[] =>
-	a.kind !== "clear"
-		? RETURN_PAGES
-		: a.objective === "boss"
-			? [...(BOSS_RETURN[a.dungeon] ?? []), ...STORY[a.dungeon].ending]
-			: STORY[a.dungeon].ending;
+/**
+ * 村で 話す 語り（品を 持ち帰った ことは 同じ）。ボスなら 持ち帰りの 語りの 1枚目（「村に　帰りつくと、…」の
+ * 着いた 語り）の あとに どう 帰ったかの 頁を はさむ（仲間が 声を かけるのは 着いてから）。
+ */
+export const pagesFor = (a: ReturnArrival): readonly StoryPage[] => {
+	if (a.kind !== "clear") return RETURN_PAGES;
+	const ending = STORY[a.dungeon].ending;
+	const boss = a.objective === "boss" ? (BOSS_RETURN[a.dungeon] ?? []) : [];
+	return boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending;
+};
 
 /** 語りで 話す 仲間（出てくる順）。 */
 const castOf = (pages: readonly StoryPage[]): Speaker[] => [

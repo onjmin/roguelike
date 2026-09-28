@@ -6,6 +6,7 @@ import "./style.css";
 import { EXP_AT } from "./core/balance";
 import { Run } from "./core/run";
 import { bgm } from "./data/bgm";
+import { devEvent } from "./data/objectives";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
@@ -169,6 +170,18 @@ const runFor = (
 		};
 	}
 	if (choice.kind === "new") {
+		// 開発用の ?event（期間限定の イベントを 起きている ことに する。data/objectives.ts）で 決めた 目的は、
+		// 本物の 進み具合・記録に 残さない：debug: の シード（保存・記録・リプレイ・出撃の 数・★・町の 精算 なし）。
+		// 倉庫からも 取り出さない（写しを 持っていく。終わっても 村に 持ち帰らない）
+		if (devEvent()) {
+			const run = Run.create(
+				`${DEBUG_SEED}${newSeed()}`,
+				choice.dungeon,
+				choice.carry,
+				choice.objective,
+			);
+			return { run, replay: undefined };
+		}
 		// 冒険を作って すぐ保存する（取り出したのに 冒険が無い、にならないように）。
 		// 選んだあとで 別のタブが 持っていった道具は 持っていけない
 		const carry = choice.carry.length ? takeFromStorage(choice.carry) : [];

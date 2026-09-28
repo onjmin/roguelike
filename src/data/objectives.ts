@@ -8,7 +8,8 @@
 // - 目的を 決めるのは 村で 行き先を 決める とき（ui/villageEvents.ts）に 1回だけ。決めた 値は
 //   VillageExit → main.ts → Run.create → RunState.objective（続き・リプレイ・共有は 保存した 値。無ければ 持ち帰り）。
 // - 関数は どれも 純（進み具合を 引数で 受ける。試験で 決め打ち できるように）。
-// - 開発用：?event=<id>（pnpm dev か ?debug の ときだけ）で その イベントが 起きている ことに する（保存は しない）。
+// - 開発用：?event=<id>（pnpm dev か ?debug の ときだけ）で その イベントが 起きている ことに する（保存は しない。
+//   need も 見ない）。その あいだに 村から 出た 冒険は debug: の シード（main.ts。本物の 進み具合・記録に 残さない）。
 
 import { DUNGEONS } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
@@ -69,8 +70,11 @@ export const EVENTS: readonly EventDef[] = [
 		dungeon: "kinoko",
 		objective: "fetch",
 		need: { unlocked: ["kinoko"] },
-		// 結果は 問わない（出撃が 5の 倍数に なったら）。3回 もぐると 終わる
-		start: { on: "any", everyOutings: 5 },
+		// 結果は 問わない（出撃が 5の 倍数に なったら 1/2）。3回 もぐると 終わる。
+		// 終わった 出撃では また 始まらないので、周期 P ごとに 必ず 始まると 3/P（P=3 だと 3/6）が
+		// 持ち帰りに なる。ボスの 板が ふだんは ボスで あるように、1/2 で 引いて およそ 3/10 に おさえる
+		// （ほかの イベントと 重なる ふつうの 遊び方なら もっと 少ない）
+		start: { on: "any", everyOutings: 5, chance: 1 / 2 },
 		end: { outings: 3 },
 		news: "きのこ板の　親玉が　昼寝中。\n底の　AAを　拾ってくる　だけで　いい",
 	},

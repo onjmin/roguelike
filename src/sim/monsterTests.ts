@@ -46,9 +46,10 @@ import {
 	noticeAdjacent,
 	posing,
 	transformMonster,
+	wakeMonster,
 } from "../core/monster";
 import { Run } from "../core/run";
-import { serializeRun } from "../core/serial";
+import { deserializeRun, serializeRun } from "../core/serial";
 import { triggerTrap } from "../core/traps";
 import {
 	type Ability,
@@ -2897,6 +2898,159 @@ test(
 	},
 );
 
+test(
+	"boss",
+	"hit while Kiriko is blind: the fight starts on the hit, and seeing it later neither wakes it again nor gives it a free turn",
+	() => {
+		const { r, b } = bossArena("boss-blind", "shallow", {
+			pos: at(1, 0),
+			opts: { sleep: DEEP },
+		});
+		// なぐりあいだけ 見る（封印して 吹きとばしで 離れないように）
+		b.status.sealed = true;
+		b.maxHp = 9999;
+		b.hp = 9999;
+		r.p.status.blind = 3;
+		const dir = dirOf(1, 0) as Dir8;
+		const first = turn(r, { c: "attack", dir });
+		ok(now(b).status.sleep === 0, "the hit did not wake it");
+		ok(
+			r.f.bossSeen === true && evs(first, "boss").length === 1,
+			"the fight did not start on the hit",
+		);
+		ok(
+			saw(first, "あらわれた") && !saw(first, "待ちかまえていた"),
+			"an awake boss was said to lie in wait",
+		);
+		ok(count(first, "attack", b.uid) === 1, "the boss did not hit back");
+		// 目が 見えるように なっても もう 知らせない。1手も 休まない
+		let events = 0;
+		for (let i = 2; i <= 7; i++) {
+			const ev = turn(r, { c: "attack", dir });
+			events += evs(ev, "boss").length;
+			ok(count(ev, "attack", b.uid) === 1, `turn ${i}: the boss skipped`);
+		}
+		ok(r.p.status.blind === 0, "harness: still blind");
+		ok(events === 0, "the boss event came again");
+		ok(!logHas(r, "待ちかまえていた"), "it lay in wait after the fight began");
+	},
+);
+
+test(
+	"boss",
+	"woken out of sight (a bolt or an arrow): when it comes into view it just appears, with no free turn",
+	() => {
+		const { r, b } = bossArena("boss-woken", "kinoko", {
+			layout: hideoutLayout(),
+			start: HIDE_AT,
+			pos: { x: 46, y: 16 },
+			opts: { sleep: DEEP },
+		});
+		b.status.sealed = true;
+		// 見えない 所で 当たって 起きた
+		wakeMonster(r, b, true);
+		ok(b.status.sleep === 0 && !r.f.bossSeen, "harness: not woken");
+		// 離れ部屋に 入って となりに 立つ
+		r.p.x = 45;
+		r.p.y = 16;
+		const ev = turn(r);
+		ok(
+			r.f.bossSeen === true && evs(ev, "boss").length === 1,
+			"no boss event on sight",
+		);
+		ok(
+			saw(ev, "あらわれた") && !saw(ev, "待ちかまえていた"),
+			"an awake boss was said to lie in wait",
+		);
+		ok(count(ev, "attack", b.uid) === 1, "the awake boss got a wake-up rest");
+	},
+);
+
+test(
+	"boss",
+	"no new anka on the boss floor; an ignored one leaves the sleeping boss asleep and brings no trolls",
+	() => {
+		// いちばん底に 着いても 安価は 来ない（ボスの ない 持ち帰りの 底には 来る ことが ある）
+		let fetchAnka = 0;
+		for (let i = 0; i < 20; i++) {
+			const boss = Run.create(`anka-boss-${i}`, "kinoko", [], "boss");
+			boss.enterFloor(boss.dungeon.floors, false);
+			ok(boss.boss, `harness ${i}: no boss`);
+			ok(
+				(boss.f.ankaAt ?? -1) < 0 && !boss.f.anka,
+				`${i}: an anka is due on the boss floor`,
+			);
+			const fetch = Run.create(`anka-boss-${i}`, "kinoko");
+			fetch.enterFloor(fetch.dungeon.floors, false);
+			if ((fetch.f.ankaAt ?? -1) >= 0) fetchAnka++;
+		}
+		ok(fetchAnka > 0, "harness: no anka on any fetch bottom floor");
+		// 持ちこした 安価は つづく
+		const carried = Run.create("anka-boss-carry", "kinoko", [], "boss");
+		carried.f.anka = {
+			kind: "herb",
+			need: 1,
+			done: 0,
+			due: carried.f.res + 50,
+		};
+		carried.enterFloor(carried.dungeon.floors, false);
+		ok(carried.f.anka?.kind === "herb", "the carried anka was dropped");
+		// 守らなかった：ボスは 眠った まま（見ていない）、荒らしも 湧かない
+		const { r, b } = bossArena("boss-anka", "kinoko", {
+			layout: hideoutLayout(),
+			start: HIDE_AT,
+			pos: { x: 46, y: 16 },
+			opts: { sleep: DEEP },
+		});
+		r.f.anka = { kind: "kill", need: 2, done: 0, due: 1 };
+		const ev = turn(r);
+		ok(saw(ev, "安価を　守らなかった"), "harness: the anka did not run out");
+		ok(b.status.sleep === DEEP, "the ignored anka woke the boss");
+		ok(!r.f.bossSeen && !evs(ev, "boss").length, "the fight started");
+		ok(r.f.monsters.length === 1, `${r.f.monsters.length - 1} trolls came`);
+		ok(!saw(ev, "目を　さました"), "said everyone woke up");
+	},
+);
+
+test(
+	"boss",
+	"帰還スレ on the boss floor asks first, then ends as an ordinary escape",
+	() => {
+		const { r } = bossArena("boss-escape", "tropical", {
+			opts: { sleep: DEEP },
+		});
+		const scroll = give(r, "s_escape");
+		const ask = r.act({ c: "use", item: scroll.uid });
+		ok(
+			ask.some((e) => e.t === "fx" && e.kind === "confirm:escape"),
+			"did not ask",
+		);
+		const askEnded = !!r.s.end;
+		ok(!askEnded, "asking ended the run");
+		r.act({ c: "use", item: scroll.uid, target: 0 });
+		ok(r.s.end?.kind === "escape", `ended as ${r.s.end?.kind}`);
+		ok(!r.s.returning, "went into the walk back");
+	},
+);
+
+test(
+	"boss",
+	"a suspended save after the boss was seen keeps the boss, and that it was seen",
+	() => {
+		const { r, b } = bossArena("boss-save", "festival", {
+			pos: at(3, 0),
+			opts: { sleep: DEEP },
+		});
+		turn(r);
+		ok(r.f.bossSeen === true, "harness: not seen");
+		const back = new Run(deserializeRun(serializeRun(r.s)));
+		ok(back.objective === "boss", `objective ${back.objective}`);
+		ok(back.f.boss === b.uid && back.f.bossSeen === true, "the floor forgot");
+		ok(back.boss?.uid === b.uid && back.boss.kind === b.kind, "no boss");
+		ok(back.bossSpec?.monster === b.kind, "no boss spec");
+	},
+);
+
 test("boss", "no monsters spawn over time while the boss lives", () => {
 	const spawned = (withBoss: boolean): number => {
 		const { r, b } = bossArena(`boss-spawn-${withBoss}`, "kinoko", {
@@ -3020,8 +3174,12 @@ test(
 			b.hp = 1;
 			const dir = dirOf(1, 0) as Dir8;
 			const ev: GameEvent[] = [];
-			for (let i = 0; i < 20 && !r.s.end; i++)
+			for (let i = 0; i < 20 && !r.s.end; i++) {
+				// 吹きとばされても となりに もどす（ここは 勝った ときの 流れだけ 見る）
+				b.x = r.p.x + 1;
+				b.y = r.p.y;
 				ev.push(...r.act({ c: "attack", dir }));
+			}
 			const end = r.s.end;
 			ok(end?.kind === "clear", `${d}: ended as ${end?.kind ?? "nothing"}`);
 			ok(end.cause === spec.cause, `${d}: cause ${end.cause}`);

@@ -3,8 +3,9 @@
 // - 2階から、階に 入ったとき ANKA_CHANCE で「来る レス数」を 決めておき、そこまで 伸びたら 来る。
 // - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　飲め」は 来ない）。
 // - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
-// - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く。
-// - 帰り道には 来ない（帰り道は 補給なし）。
+// - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く
+//   （ボスが 生きている 階には 湧かない）。
+// - 帰り道には 来ない（帰り道は 補給なし）。ボスの 待つ 階にも 来ない（湧かないので 敵を たおす お題が こなせない）。
 // - 出ている 安価は 階を かわっても 消えない（次スレに 持ちこし。のこりの レス数も そのまま）。
 
 import { randomFloorPos, spawnMonster } from "./floor";
@@ -65,7 +66,8 @@ export const scheduleAnka = (
 		);
 		return;
 	}
-	if (r.s.returning || r.s.depth < 2) return;
+	// ボスの 待つ 階にも 来ない（湧かないので「敵を　2体　たおせ」が こなせなく なる。持ちこした 安価は 上で つづく）
+	if (r.s.returning || r.s.depth < 2 || r.boss) return;
 	if (!r.rng.chance(ANKA_CHANCE)) return;
 	f.ankaAt = r.rng.range(ANKA_AT[0], ANKA_AT[1]);
 };
@@ -110,17 +112,18 @@ export const tickAnka = (r: Run): void => {
 	r.emit({ t: "anka" });
 	r.msg("安価を　守らなかった……　スレが　荒れた！", "warn");
 	r.addRes(ANKA_PENALTY);
-	// 眠っていた 敵も みんな 起きる（置物は そのまま）
+	// 眠っていた 敵も みんな 起きる（置物と、待っている ボスの 深い 眠りは そのまま）
 	let woke = 0;
 	for (const m of f.monsters)
 		if (m.hp > 0 && m.status.sleep > 0 && !m.status.dormant) {
 			wakeMonster(r, m);
-			woke++;
+			if (m.status.sleep === 0) woke++;
 		}
 	if (woke) r.msg("スレが　荒れて、みんな　目を　さました", "warn");
-	// 荒らし（ふつうは 見えない 所から。どこも 見える 部屋なら 見える 所に）
+	// 荒らし（ふつうは 見えない 所から。どこも 見える 部屋なら 見える 所に）。
+	// ボスが 生きている 階には 湧かない（時間の 湧きと 同じ。ボスとの 戦いに しぼる）
 	let trolls = 0;
-	for (let i = 0; i < ANKA_TROLLS; i++) {
+	for (let i = 0; i < (r.boss ? 0 : ANKA_TROLLS); i++) {
 		const at = randomFloorPos(r, true) ?? randomFloorPos(r, false);
 		if (at && spawnMonster(r, null, at, { awake: true })) trolls++;
 	}
