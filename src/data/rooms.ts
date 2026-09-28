@@ -23,28 +23,8 @@ export const ROOM_DOOR = {
 export const MUSIC_CLOSED =
 	"音楽室「ピアノ機能」。\n扉に　はり紙。『週末限定です』";
 
-/** ピアノで 弾ける 曲（村の 曲・植民地の 曲。need は 持ち帰った 板）。 */
-export const PIANO_SONGS: readonly {
-	bgm: string;
-	name: string;
-	need?: string;
-}[] = [
-	{ bgm: "town", name: "保守村" },
-	{ bgm: "title", name: "蓄音キリコ" },
-	{ bgm: "ruins", name: "朽ちた　まとめ跡" },
-	{ bgm: "stone", name: "datの　石室" },
-	{ bgm: "shallow3", name: "過去ログ倉庫" },
-	{ bgm: "deq_laundry", name: "乾燥機が　まわるあいだ" },
-	{ bgm: "deq_sea", name: "水底に　さす光" },
-	{ bgm: "retro", name: "名無し155の　曲" },
-	{ bgm: "sad", name: "落ちた　スレ" },
-	{ bgm: "ending", name: "つづきの　原盤", need: "main" },
-];
-
+/** 音楽室の 人の ひとこと（ピアノは ui/piano.ts・data/piano.ts）。 */
 export const PIANO_MSG = {
-	/** 弾く（{name} は 曲の 名前）。 */
-	sit: "キリコは　ピアノの　前に　すわった。",
-	play: "♪　{name}",
 	/** 客席の 名無し。 */
 	nanashi: [
 		"komeの　ピアノ、週末だけ　やったんや。\n……いつの間にか、消えとった",
