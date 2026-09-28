@@ -6,7 +6,7 @@
 //   リノ … 春音リノ（おんJ生まれの UTAU。村の 住人。ここでは 歩行グラだけ 描き、立ち絵は 作者が 描く。ART_TODO.md）。
 //          カーキの 軍帽と 軍服、メタリックな 銀紫の 髪、銃みたいな コッペパン。
 //   アル … 響化アル（おーぷん2ch 有志の UTAU。18歳・科学部。村の 住人。ここでは 歩行グラだけ）。
-//          長めの マッシュの 髪、白衣（ポケットに 試験管）。
+//          紺の 長めの マッシュ・眼鏡・しぶきの ついた 黒い 長コート（公式の 立ち絵どおり）。
 //
 // 歩行グラは RPGEN の形：32x64・16x16 のマスが 2コマ×4段（上＝背中・右・下＝正面・左）、背景は透明、足もとを下にそろえる。
 // 1文字が1ドット：'.' は透明、ほかの文字は palette の色（src/ui/itemArt.ts と同じ書き方）。
@@ -155,23 +155,27 @@ const CAST = {
 			down: { 15: "..olll....lllo.." },
 		},
 	},
-	// 響化アル：18歳の 男の子。長めの マッシュの 髪（こげ茶）、科学部の 白衣（ポケットに 試験管）、青い シャツ。
-	// 立ち絵は ここでは 作らない（ART_TODO.md）。
+	// 響化アル：18歳の 男の子。公式の 立ち絵（ロゴ太郎）どおり、紺の 長めの マッシュ・眼鏡・青と 黄の しぶきの ついた
+	// 黒い 長コート・白い シャツに 青い ネクタイ・紫の ベスト・黒い ズボン・茶色の 靴。
 	aru: {
 		palette: {
-			o: "#231c1c", // ふち
-			A: "#5a4638", // 髪（こげ茶）
-			H: "#8a6e58", // 髪の 照り
-			a: "#3a2c24", // 髪の 影
+			o: "#141018", // ふち
+			A: "#3c4a86", // 髪（紺）
+			H: "#6a7cc0", // 髪の 照り
+			a: "#252c58", // 髪の 影
 			s: "#fbe0cc", // 肌
 			e: "#2a2230", // 目
 			r: "#c8705e", // 口
-			W: "#f4f6fa", // 白衣
-			w: "#c4cad8", // 白衣の 影
-			c: "#5a7cc0", // シャツ
-			t: "#6ee0c0", // 試験管
-			n: "#3a3e52", // ズボン
-			l: "#2a2626", // 靴
+			g: "#6a7088", // 眼鏡
+			K: "#262632", // コート
+			k: "#3e3e52", // コートの ふちの 照り
+			W: "#f4f6fa", // シャツ
+			c: "#3a64d8", // ネクタイ
+			v: "#5a3a78", // ベスト
+			b: "#4a5cf0", // しぶき（青）
+			y: "#f0d850", // しぶき（黄）
+			n: "#1e1e28", // ズボン
+			l: "#6a4028", // 靴
 		},
 		frames: {
 			up: [
@@ -184,11 +188,11 @@ const CAST = {
 				".oAAAAAAAAAAAAo.",
 				".oaAAAAAAAAAAao.",
 				"..oaaAAAAAAaao..",
-				"..oWWWWWWWWWWo..",
-				".oWWWWWWWWWWWWo.",
-				".oWsWWWWWWWWsWo.",
-				".owWWWWWWWWWWwo.",
-				"..owWWWWWWWWwo..",
+				"..oKKKKKKKKKKo..",
+				".oKKKKKKKKKKKKo.",
+				".oKsKKKbKKKKsKo.",
+				".okKKKKKKKyKKko.",
+				"..okKKKKKKKKko..",
 				"...onnnoonnno...",
 				"...olll..lllo...",
 			],
@@ -199,14 +203,14 @@ const CAST = {
 				"..oAAAAAAAAAAAAo",
 				"..oAAAAAAAAAAAAo",
 				"..oAAAAAAaaaaaao",
-				"..oAAAAAAsssesso",
+				"..oAAAAAAgssgego",
 				"..oAAAAAssssssso",
 				"...oAAAosssrsso.",
-				"....oWWoccWo....",
-				"....oWWWWcWWo...",
-				"....oWWWsWtWo...",
-				"....owWWWWWwo...",
-				"....owWWWWWwo...",
+				"....oKKoWcKo....",
+				"....oKKKKvcKo...",
+				"....oKbKsKyKo...",
+				"....okKKKKKko...",
+				"....okKKKKKko...",
 				"....onnnnnnno...",
 				".....oll.oll....",
 			],
@@ -217,14 +221,14 @@ const CAST = {
 				".oAAAAAAAAAAAAo.",
 				".oAAAAAAAAAAAAo.",
 				".oAaaaaaaaaaaAo.",
-				".oAssessssessAo.",
+				".oAsgegssgegsAo.",
 				".oAssssrrssssAo.",
 				"..oAossssssoAo..",
-				"..oWWWoccoWWWo..",
-				".oWWWWWccWWWWWo.",
-				".oWsWWWccWWtsWo.",
-				".owWWWWccWWWWwo.",
-				"..owWWWnnWWWwo..",
+				"..oKKKWccWKKKo..",
+				".oKKKvvccvvKKKo.",
+				".oKsbvvccvvKsKo.",
+				".okKyKKnnKKbKko.",
+				"..okKKKnnKKKko..",
 				"...onnnoonnno...",
 				"...olll..lllo...",
 			],
