@@ -49,6 +49,12 @@
 // | deep_hakushi | -30.9（20）    | 20 → 46 | -23.7    |
 // | deep_kisei   | -32.5（20）    | 20 → 55 | -23.7    |
 // | deep_koge    | -33.4（20）    | 20 → 61 | -23.8    |
+// | deq_sea      | -33.9（20）    | 20 → 65 | -23.7    |
+// | deq_volcano  | -33.2（20）    | 20 → 60 | -23.7    |
+// | deq_strata   | -32.3（20）    | 20 → 54 | -23.6    |
+// | deq_laundry  | -32.1（20）    | 20 → 53 | -23.7    |
+// | deq_ice      | -34.9（20）    | 20 → 73 | -23.7    |
+// （deq_* は 元の 譜面が #volume=80。20 に して 測り、直した 値で 測り直した）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
@@ -68,6 +74,12 @@ import deep3 from "./bgm/deep3.mml?raw"; // もっと B13〜15 文字化けの�
 import deep4 from "./bgm/deep4.mml?raw"; // もっと B19〜21 落ちた鯖：ニ短調 150・cyber_punk・16beat
 import deep5 from "./bgm/deep5.mml?raw"; // もっと B25〜29 名無しの荒野：ロ短調 140・rock・8beat
 import deep6 from "./bgm/deep6.mml?raw"; // もっと B30 つづきの原盤：ニ短調→ニ長調 104・retro_game・4beat
+// Dequivsia 系の 試作 v2（2026-09。作曲エージェントの 試作。ループは 曲全体＝前奏なし。音色を 替えた v3 を 作っているので、1曲 1ファイルで 差し替えやすく してある）
+import deq_ice from "./bgm/deq_ice.mml?raw"; // 薄氷の回廊（氷系）：ホ短調 100・ambient_cloud（ベースの 3+3+2 オスティナート・チェレスタの 点・ビブラフォンの 旋律。中盤に 借用の F）
+import deq_laundry from "./bgm/deq_laundry.mml?raw"; // 乾燥機がまわるあいだ（夜のコインランドリー系）：ハ短調 70・ambient_cloud（電子ピアノの 3+3+2 の 刻みが 乾燥機の 回転。C の 持続の 上で sus2→m7→sus4→madd9）
+import deq_sea from "./bgm/deq_sea.mml?raw"; // 水底にさす光（海の底系）：ニ・ミクソリディア 126・ambient_cloud（Dsus2 と Csus2 を 2小節ずつ 揺らす。チェレスタの 積み5度・ビブラフォンの 疎な 旋律）
+import deq_strata from "./bgm/deq_strata.mml?raw"; // ずれる地層（断層系）：イの 空5度 100・ambient_cloud（和音・低音・動機が 半音／全音ずつ 平行移動。中盤は 低音が 8分 ずれる。ハープ・チェロ・ビブラフォン）
+import deq_volcano from "./bgm/deq_volcano.mml?raw"; // 活火山の底（活火山系）：ホ・フリギア 132（半分の ノリ）・ambient_cloud（低音が F→E→D を 2小節周期で 下りつづける。4小節ごとに 脈動の 細かさが 変わる）
 import dungeon from "./bgm/dungeon.mml?raw"; // 5c8b9ca2c4514e10
 import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G♭) デュエット」
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
@@ -116,4 +128,9 @@ export const bgm: Record<string, string> = {
 	deep_hakushi,
 	deep_kisei,
 	deep_koge,
+	deq_sea,
+	deq_volcano,
+	deq_strata,
+	deq_laundry,
+	deq_ice,
 };
