@@ -751,8 +751,15 @@ export class Village {
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		field.drawAbove(g, ox, oy);
-		// キリコだけは、掲示板などの 裏に ほとんど隠れたら 薄く見せる（村の人は 隠れたまま）
-		field.drawHidden(g, [this.player], ox, oy, this.time);
+		// 掲示板・木などの 裏に ほとんど隠れた 人は 薄く見せる（キリコも 村の人も）。
+		// 向きの ない 絵（置物・看板）は 地形の 一部なので 透かさない
+		field.drawHidden(
+			g,
+			actors.filter((a) => a === this.player || !a.still),
+			ox,
+			oy,
+			this.time,
+		);
 		field.def.decor?.(g, ox, oy, this.time);
 		if (!this.scene)
 			for (const a of field.actors)
