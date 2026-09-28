@@ -82,9 +82,12 @@ export const KIRIKO_WALK = "pub:sprites/kiriko.png";
  */
 export const PUYU_WALK = "sa:DszPWT";
 
-/** 段7（祭り）の 野次馬（rpg の SPR j_yakiu・j_nanashi・j_gakuran と同じ）。 */
+/**
+ * 段7（祭り）の 野次馬（RPGEN「黒タイツJ民」「笠J民」「野球民（学生服）」）。
+ * 下の 敵と 同じ 絵は 使わない（rpg の j_yakiu・j_nanashi は ピッチャー・風吹けば名無しと 同じ 絵なので 替えた）。
+ */
 export const YAJI_WALK: readonly string[] = [
-	"sa:4rSOzo",
-	"sa:lcBiHO",
+	"sa:8DXRgk",
+	"sa:f6k97v",
 	"sa:XvdbmA",
 ];
