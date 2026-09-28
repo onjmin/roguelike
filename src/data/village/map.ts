@@ -65,6 +65,7 @@ import {
 	HUT,
 	hallTier,
 	hallTiles,
+	MUSIC,
 	OUTSKIRTS,
 	PLAZA,
 	SHED,
@@ -131,6 +132,8 @@ export const VILLAGE_SPOTS = {
 	shiyo: (stage: number): Cell => (stage >= 4 ? [27, 17] : [26, 12]),
 	/** やきう（小屋の前で 大工）。 */
 	nanj: (_v: VillageView): Cell => [21, 18],
+	/** 音楽室「ピアノ機能」の 扉（段3 から。週末だけ 踏むと 中へ）。 */
+	musicDoor: [22, 28] as Cell,
 	/** 小屋の扉（段3から。踏むと 中へ）。 */
 	hutDoor: [23, 18] as Cell,
 	/** 段7 の 野次馬（うろうろ する）。 */
@@ -376,6 +379,12 @@ const EDGE_CELLS: readonly [number, number, string][] = [
 /** 喫茶「保守」が 建つ 町の 段。 */
 export const CAFE_FROM = 5;
 
+/** 音楽室「ピアノ機能」が 建つ 町の 段（開くのは 週末だけ。ui/rooms.ts）。 */
+export const MUSIC_FROM = 3;
+
+/** 音楽室（地図の 21, 25 から。池の そばの 道の 東。扉 22,28 は 下の 草地 y=29 から 踏む）。 */
+const MUSIC_BLOCK: readonly string[] = ["ααα", "βββ", "δγδ", "εζε"];
+
 /** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 踏む）。 */
 const CAFE_BLOCK: readonly string[] = ["99999", "/////", "@|`|@", "''?''"];
 
@@ -451,6 +460,8 @@ export const villageRows = (v: VillageView): string[] => {
 	for (const [x0, y, line] of OUTSKIRTS_ROWS) stamp(rows, x0, y, [line]);
 	// 喫茶「保守」（段5 から。西の 空き地の 奥。扉は 下の 道から）
 	if (layoutStage(v) >= CAFE_FROM) stamp(rows, 2, 15, CAFE_BLOCK);
+	// 音楽室「ピアノ機能」（段3 から。南の 池の そば）
+	if (layoutStage(v) >= MUSIC_FROM) stamp(rows, 21, 25, MUSIC_BLOCK);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
 	return rows;
 };
@@ -473,6 +484,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...(stage >= 6 ? STOREHOUSE : SHED),
 		...hallTiles(stage),
 		...CAFE,
+		...MUSIC,
 		".": paved ? floor(C_STONE, STONE) : floor(C_DIRT, DIRT),
 		":": floor(C_PLAZA, PLAZA),
 		U: solid(C_PLAZA, PLAZA, base(2, 37)),
@@ -547,6 +559,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	if (stage >= CAFE_FROM) {
 		const [cx, cy] = VILLAGE_SPOTS.cafeDoor;
 		out.push({ id: "door_cafe", x: cx, y: cy, trigger: "touch" });
+	}
+	if (stage >= MUSIC_FROM) {
+		const [mx, my] = VILLAGE_SPOTS.musicDoor;
+		out.push({ id: "door_music", x: mx, y: my, trigger: "touch" });
 	}
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;

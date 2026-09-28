@@ -4,11 +4,24 @@
 // 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。村の シヨ・メニューと 同じ 窓）。
 
 import { TOWN_STAGES } from "../core/town";
-import { KEEPER_LINE, ROOM_DOOR, ROOM_MSG, ROOM_NAMES } from "../data/rooms";
+import { today } from "../data/calendar";
+import { MOBS } from "../data/mobs";
+import {
+	KEEPER_LINE,
+	MUSIC_CLOSED,
+	PIANO_MSG,
+	PIANO_SONGS,
+	ROOM_DOOR,
+	ROOM_MSG,
+	ROOM_NAMES,
+} from "../data/rooms";
 import { STAGE_NAMES } from "../data/town";
-import { sign } from "../data/village/helpers";
+import { NANASHI_WALK } from "../data/village/hall";
+import { npc, sign } from "../data/village/helpers";
 import type { VillageView } from "../data/village/map";
 import {
+	MUSIC_SEAT,
+	MUSIC_STAGE,
 	ROOM_OUTSIDE,
 	type RoomId,
 	type RoomPlace,
@@ -19,8 +32,10 @@ import {
 	type Spot,
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
+import { loadProgress } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { openStorage } from "./home";
+import { type ListItem, listWindow } from "./list";
 import { fill } from "./villageTalk";
 
 /** 部屋に 入る（扉の 文は 村に いるあいだ 部屋ごとに 1回。店番の「奥へ」は いつも 店番が 言う）。 */
@@ -58,6 +73,84 @@ export const keeperLets = async (
 ): Promise<void> => {
 	await s.say(who, KEEPER_LINE[who]);
 	await enterRoom(id)(s);
+};
+
+/** 週末（土・日。端末の 曜日。開発中は &wday= で 決め打ち）。音楽室が 開く。 */
+export const isWeekend = (): boolean => {
+	const w = today().w;
+	return w === 0 || w === 6;
+};
+
+/** 音楽室の 扉：週末なら 中へ。平日は はり紙を 読んで 1歩 もどる。 */
+export const enterMusic: Script = async (s) => {
+	if (!isWeekend()) {
+		await s.narrate(MUSIC_CLOSED);
+		await s.move("player", "d");
+		return;
+	}
+	await enterRoom("music")(s);
+};
+
+/** ピアノで 弾ける 曲（持ち帰った 板で ふえる）。 */
+export const pianoSongs = (cleared: readonly string[]) =>
+	PIANO_SONGS.filter((t) => !t.need || cleared.includes(t.need));
+
+/** ピアノ：曲を 選ぶと キリコが 弾く（部屋に いるあいだ その 曲。出れば 村の 曲）。 */
+const pianoScript =
+	(ctx: Ctx): Script =>
+	async (s) => {
+		await readAll(s, ROOM_MSG.music.piano);
+		await s.wait(0);
+		const songs = pianoSongs(loadProgress().cleared);
+		const v = await listWindow(
+			ctx,
+			"なにを　弾く？",
+			songs.map((t): ListItem => ({ label: t.name, value: t.bgm })),
+			{ closeLabel: "やめる" },
+		);
+		const song = songs.find((t) => t.bgm === v);
+		if (!song) return;
+		await s.narrate(PIANO_MSG.sit);
+		s.bgm(song.bgm);
+		await s.narrate(fill(PIANO_MSG.play, { name: song.name }));
+	};
+
+/** 音楽室の 人（客席の 名無しと、段6 から ステージの レン）。 */
+const musicPeople = (v: VillageView): EventDef[] => {
+	const out: EventDef[] = [
+		npc(
+			"nanashi",
+			MUSIC_SEAT[0],
+			MUSIC_SEAT[1],
+			NANASHI_WALK[2],
+			async (s) => {
+				for (const l of PIANO_MSG.nanashi)
+					await s.say("nanj", l, { name: "名無し" });
+				s.face("nanashi", "up");
+			},
+			{ dir: "up" },
+		),
+	];
+	if (v.stage >= MOBS.ren.from)
+		out.push(
+			npc(
+				"mob_ren",
+				MUSIC_STAGE[0],
+				MUSIC_STAGE[1],
+				MOBS.ren.sprite,
+				async (s) => {
+					for (const l of PIANO_MSG.ren)
+						await s.say(null, l, {
+							name: MOBS.ren.name,
+							color: MOBS.ren.color,
+							noPortrait: true,
+						});
+					s.face("mob_ren", "down");
+				},
+				{ dir: "down" },
+			),
+		);
+	return out;
 };
 
 /** 部屋から 出たときに 立つ 村の 所（リプレイで 出た ときも）。 */
@@ -103,6 +196,8 @@ const eventFor = (
 			run: leaveRoom(id),
 		};
 	const kind = p.id.replace(/_\d+$/, "");
+	if (id === "music" && kind === "piano")
+		return sign(p.id, p.x, p.y, pianoScript(ctx));
 	return sign(p.id, p.x, p.y, async (s) => {
 		await readAll(s, thingLines(id, kind, v.stage));
 		// あずかった 物の 棚は 倉庫の 一覧（シヨ・メニューと 同じ）
@@ -125,6 +220,9 @@ export const buildRoom = (
 		tiles: roomPalette(id, v.stage),
 		rows: roomRows(id),
 		outside: "#000",
-		events: roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
+		events: [
+			...roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
+			...(id === "music" ? musicPeople(v) : []),
+		],
 	};
 };

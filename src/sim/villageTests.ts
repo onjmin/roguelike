@@ -56,7 +56,13 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../data/quotes";
-import { KEEPER_LINE, ROOM_DOOR, ROOM_MSG } from "../data/rooms";
+import {
+	KEEPER_LINE,
+	MUSIC_CLOSED,
+	PIANO_MSG,
+	ROOM_DOOR,
+	ROOM_MSG,
+} from "../data/rooms";
 import {
 	BOSS_HOME,
 	BOSS_RETURN,
@@ -165,7 +171,15 @@ import {
 } from "../ui/hallEvents";
 import { itemIcon } from "../ui/icons";
 import { bossHomeLine, endLine, recordHead } from "../ui/records";
-import { enterRoom, leaveRoom, planLines, thingLines } from "../ui/rooms";
+import {
+	enterMusic,
+	enterRoom,
+	isWeekend,
+	leaveRoom,
+	pianoSongs,
+	planLines,
+	thingLines,
+} from "../ui/rooms";
 import { sharedHead } from "../ui/share";
 import {
 	forgetMobMemo,
@@ -3490,6 +3504,7 @@ test("建物の 扉: the cafe and hut doors are stepped on from their stage, and
 		for (const [id, door] of [
 			["cafe", "door_cafe"],
 			["hut", "door_hut"],
+			["music", "door_music"],
 		] as const) {
 			const p = s.places.find((q) => q.id === door);
 			ok(
@@ -3644,4 +3659,47 @@ test("建物の 中の 文: every line fits the village window, talks are 1〜4 
 		}
 	}
 	fitsWindow(texts);
+});
+
+test("音楽室「ピアノ機能」: open only on weekends (a weekday note steps her back), the ending song after the main record, and its lines fit", async () => {
+	for (const [wday, open] of [
+		[2, false],
+		[6, true],
+		[0, true],
+	] as const) {
+		const restore = swapLocation(`?debug&wday=${wday}`);
+		try {
+			ok(isWeekend() === open, `wday ${wday}: weekend ${isWeekend()}`);
+			const { s, log } = fakeStory({ at: VILLAGE_SPOTS.musicDoor });
+			await enterMusic(s);
+			if (open)
+				ok(
+					log.some((l) => l.startsWith("warp music")),
+					`wday ${wday}: did not go in:\n${log.join("\n")}`,
+				);
+			else
+				ok(
+					inOrder(log, [`narrate: ${MUSIC_CLOSED}`, "move player d"]) &&
+						!log.some((l) => l.startsWith("warp")),
+					`wday ${wday}: went in on a weekday:\n${log.join("\n")}`,
+				);
+		} finally {
+			restore();
+		}
+	}
+	ok(
+		!pianoSongs([]).some((t) => t.bgm === "ending") &&
+			pianoSongs(["shallow", "main"]).some((t) => t.bgm === "ending"),
+		"the ending song does not wait for the main record",
+	);
+	fitsWindow([
+		["closed", MUSIC_CLOSED],
+		["sit", PIANO_MSG.sit],
+		...PIANO_MSG.nanashi.map((t): [string, string] => ["nanashi", t]),
+		...PIANO_MSG.ren.map((t): [string, string] => ["ren", t]),
+		...pianoSongs(["main"]).map((t): [string, string] => [
+			`play ${t.bgm}`,
+			fill(PIANO_MSG.play, { name: t.name }),
+		]),
+	]);
 });

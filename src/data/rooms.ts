@@ -7,6 +7,7 @@ export const ROOM_NAMES = {
 	hut: "やきうの　小屋",
 	shop: "常識堂の　奥",
 	store: "倉庫",
+	music: "音楽室「ピアノ機能」",
 } as const;
 
 /** 扉・店番の「奥へ」。 */
@@ -15,6 +16,45 @@ export const ROOM_DOOR = {
 	hut: "小屋の　扉を　あけた。\nおがくずの　におい。ナイターの　音。",
 	shop: "ロゼが　のれんを　あげてくれた。\n……店の　奥へ。",
 	store: "シヨが　鍵を　あけてくれた。\n……倉庫の　中へ。",
+	music: "音楽室「ピアノ機能」。\n週末だけ、扉が　あいている。",
+} as const;
+
+/** 音楽室の 扉（平日。週末だけ あく）。 */
+export const MUSIC_CLOSED =
+	"音楽室「ピアノ機能」。\n扉に　はり紙。『週末限定です』";
+
+/** ピアノで 弾ける 曲（村の 曲・植民地の 曲。need は 持ち帰った 板）。 */
+export const PIANO_SONGS: readonly {
+	bgm: string;
+	name: string;
+	need?: string;
+}[] = [
+	{ bgm: "town", name: "保守村" },
+	{ bgm: "title", name: "蓄音キリコ" },
+	{ bgm: "ruins", name: "朽ちた　まとめ跡" },
+	{ bgm: "stone", name: "datの　石室" },
+	{ bgm: "shallow3", name: "過去ログ倉庫" },
+	{ bgm: "deq_laundry", name: "乾燥機が　まわるあいだ" },
+	{ bgm: "deq_sea", name: "水底に　さす光" },
+	{ bgm: "retro", name: "名無し155の　曲" },
+	{ bgm: "sad", name: "落ちた　スレ" },
+	{ bgm: "ending", name: "つづきの　原盤", need: "main" },
+];
+
+export const PIANO_MSG = {
+	/** 弾く（{name} は 曲の 名前）。 */
+	sit: "キリコは　ピアノの　前に　すわった。",
+	play: "♪　{name}",
+	/** 客席の 名無し。 */
+	nanashi: [
+		"komeの　ピアノ、週末だけ　やったんや。\n……いつの間にか、消えとった",
+		"せやから　週末は　ここで　弾くんや。\n……だれも　聞いてへんでも　な",
+	],
+	/** ステージの レン（段6 から）。 */
+	ren: [
+		"ピアノ機能、週末　限定なんだって！\n……レンの　ライブも　週末　限定！",
+		"キリコ、なにか　弾いて！\nレンが　あわせて　歌う！",
+	],
 } as const;
 
 /** 店番の 選択肢。 */
@@ -70,6 +110,14 @@ export const ROOM_MSG = {
 			"貼り紙。『常識　十か条』\n一、麻婆豆腐は　辛い。",
 			"二から　十まで、\nぜんぶ　麻婆豆腐の　ことだ。",
 		],
+	},
+	music: {
+		plaque: [
+			"供養の　札。『ピアノ機能（kome）』\n週末限定。いつの間にか　消えていた。",
+			"……週末だけ、ここで　また　鳴る。",
+		],
+		piano: ["ピアノ。\n週末だけ　鳴る　ピアノ。"],
+		speaker: ["スピーカー。\nかすかな　ノイズ。……だれかの　実況？"],
 	},
 	store: {
 		/** あずかった 物の 棚（倉庫の 一覧を 開く）。 */

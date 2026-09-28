@@ -8,6 +8,10 @@
 //   喫茶・小屋  村の 扉を 踏む（前で A でも）。出ると 扉の 1つ下（下を 向く）。
 //   常識堂・倉庫  店番（ロゼ・シヨ）に 話しかけて「奥へ」。扉は 台の うしろなので、出ると 台の 前の 通り（上を 向く）。
 //
+// 音楽室「ピアノ機能」（町の 段3 から。南の 池の そば。開くのは 週末だけ）
+//   おーぷんの 消えた 機能（kome の 週末限定の ピアノ）を 供養する 部屋。ピアノで 村の 曲を 選んで 鳴らせる。
+//   字：7 8 9 / 1 2 3  赤い ステージ   P p ピアノ   L スピーカー   n 客席の いす（通れる）   m 供養の 札
+//
 // 喫茶「保守」（町の 段5 から）
 //   左に カウンター（台の うしろに マスター、台の 前に 丸いす）。右に ソファの 席。下に 丸テーブルと ピアノ。
 //   仲間 5人は いつもの 席に すわっている（CAFE_SEATS）。話しかけると となりの 席に すわって 話す。
@@ -22,12 +26,22 @@ import type { Speaker } from "../quotes";
 import type { Cell } from "./map";
 import { base, basePx, floor, INDOOR, solid } from "./tiles";
 
-export type RoomId = "cafe" | "hut" | "shop" | "store";
+export type RoomId = "cafe" | "hut" | "shop" | "store" | "music";
 
-export const ROOM_IDS: readonly RoomId[] = ["cafe", "hut", "shop", "store"];
+export const ROOM_IDS: readonly RoomId[] = [
+	"cafe",
+	"hut",
+	"shop",
+	"store",
+	"music",
+];
 
 export const isRoom = (id: string): id is RoomId =>
 	(ROOM_IDS as readonly string[]).includes(id);
+
+/** 音楽室の 人（ステージの 上・客席）。 */
+export const MUSIC_STAGE: Cell = [4, 3];
+export const MUSIC_SEAT: Cell = [3, 6];
 
 /** 立つ 所と 向き。 */
 export type Spot = { x: number; y: number; dir: Dir };
@@ -83,6 +97,19 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#F.......UF#",
 		"####DD######",
 	],
+	// 音楽室「ピアノ機能」：ステージ・ピアノ・スピーカー・客席。壁に 供養の 札
+	music: [
+		"##############",
+		"#HHWHHHHHHWHH#",
+		"#hhhhhmhhhhhh#",
+		"#L.789...Pp.L#",
+		"#..123.......#",
+		"#............#",
+		"#.nnn...nnn..#",
+		"#............#",
+		"#F..........F#",
+		"######DD######",
+	],
 	// 倉庫：あずかった 物の 棚・帰ってこない 人の 棚・鍵の 板・帳簿・シヨの 机
 	store: [
 		"############",
@@ -126,6 +153,7 @@ export const ROOM_OUTSIDE: Record<RoomId, Spot> = {
 	hut: { x: 23, y: 19, dir: "down" },
 	shop: { x: 13, y: 19, dir: "up" },
 	store: { x: 27, y: 19, dir: "up" },
+	music: { x: 22, y: 29, dir: "down" },
 };
 
 /** 入れる 町の 段（常識堂は 小さな 店に なってから。屋台には 奥が ない）。 */
@@ -134,6 +162,7 @@ export const ROOM_FROM: Record<RoomId, number> = {
 	hut: 3,
 	shop: 5,
 	store: 4,
+	music: 3,
 };
 
 // ───────────────── パレット ─────────────────
@@ -183,6 +212,14 @@ const LOOK: Record<RoomId | "shed", Look> = {
 		up: base(1, 67),
 		low: base(1, 68),
 		wallColor: "#8a8a8a",
+	},
+	// 音楽室：白い 壁と 濃い 板の 床
+	music: {
+		floor: base(0, 47),
+		floorColor: "#5a4030",
+		up: base(1, 77),
+		low: base(1, 78),
+		wallColor: "#e8e4dc",
 	},
 	// 板張りの 物置（段4・5）
 	shed: {
@@ -258,6 +295,13 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				u: on(base(7, 141)),
 				T: on(base(2, 108), onTop(2, 152)),
 			};
+		case "music":
+			return {
+				...common,
+				P: on(base(3, 120, 1, 2)),
+				p: on(base(4, 120, 1, 2)),
+				L: on(base(4, 540)),
+			};
 		case "store":
 			return {
 				...common,
@@ -305,6 +349,12 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		x: "stock",
 		U: "barrel",
 		m: "rules",
+	},
+	music: {
+		m: "plaque",
+		P: "piano",
+		p: "piano",
+		L: "speaker",
 	},
 	store: {
 		S: "shelf",

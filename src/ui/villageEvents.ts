@@ -62,7 +62,7 @@ import { chooseStored, openStorage, pickCarry } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
 import { escBr, openRecords, showStory } from "./records";
-import { enterRoom, keeperLets } from "./rooms";
+import { enterMusic, enterRoom, keeperLets } from "./rooms";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
 import { hasMobNews, mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
@@ -347,6 +347,9 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
 	// 小屋・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
+	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）
+	if (p.id === "door_music")
+		return { ...at, trigger: "touch", through: true, run: enterMusic };
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
 	if (p.id === "door_cafe")
