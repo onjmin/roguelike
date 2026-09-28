@@ -5,9 +5,12 @@
 //   画面を タップすると そこまで 歩く（人・看板なら 前まで行って 話す。カウンターの 向こうの人も。
 //   ダンジョンの口を タップすれば 口まで 歩いて もぐるか きく。前に 人が 立って ふさいでいる口なら その人と 話す）。
 //   画面を 押さえつづけると 指の方へ 歩きつづける。
-// - A で 目の前の 人・物を 調べる（カウンター越しも）。B・☰ で 村の メニュー（ui/villageEvents.ts）。
+// - A で 目の前の 人・物を 調べる（カウンター越しも）。目の前が 踏む 所（扉・出口）なら 1歩 踏みこむ。
+//   B・☰ で 村の メニュー（ui/villageEvents.ts）。
 // - まだ 聞いていない 新しい話が ある人の 頭の上に「！」（EventDef.notice。スクリプトの あとに 見なおす）。
 // - 窓（会話・選択肢・メニュー）が 開いている間は 歩かない（input.busy）。
+// - 地図は 村（village）と おんJ 本館の 中（hall。ui/hallEvents.ts）。扉・出口の マットで Story.warp（暗転の 中で
+//   地図を かえる。rpg の Game.loadMap と 同じ）。warp では 入る ときの 場面（prepare・onEnter）は 走らせない。
 // - 入るたびに onEnter（帰ってきた場面・開いた知らせ・持ち帰った物。ui/villageReturn.ts）。その間は 歩かない・
 //   うろうろ しない・「！」を 出さない（scene）。場面では カメラを 人や 建物に 向ける（look）。
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
@@ -17,6 +20,7 @@ import type { Dir8 } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
 import { CAST, KIRIKO_WALK } from "../data/cast";
 import type { Speaker } from "../data/quotes";
+import { HALL_OUT_DIR, hallOutside } from "../data/village/hall";
 import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
 import { preloadImages } from "../engine/assets";
 import type {
@@ -42,6 +46,7 @@ import {
 import { showBootTitle } from "./boot";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
+import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
 import { buildVillage, villageMenu } from "./villageEvents";
@@ -75,6 +80,8 @@ export class Village {
 	private readonly fadeEl: HTMLDivElement;
 	private readonly toastEl: HTMLDivElement;
 	private field: Field | null = null;
+	/** いま 描いている 地図（村 village か 本館の 中 hall）。村に 入る たびに village から。 */
+	private mapId: "village" | "hall" = "village";
 	private player = new Actor("player", 0, 0, "down", KIRIKO_WALK, null);
 	/** キリコの位置と その場かぎりの印（村を 出ても 残す。ページを 閉じれば 消える）。 */
 	private state: VState = { x: 0, y: 0, dir: "down", flags: {} };
@@ -151,6 +158,7 @@ export class Village {
 		this.easing = false;
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
+		this.mapId = "village";
 		await this.build(this.spotFor(o.arrival));
 		// 幕が 上がる前に 並べる（帰ってきた場面：口の前で 待つ 仲間）
 		this.field?.def.prepare?.(this.story);
@@ -201,11 +209,13 @@ export class Village {
 		return boot;
 	}
 
-	/** 地図を 組み立てて キリコを 置く（画像も 先に読む。読めなくても 進む）。 */
+	/** いまの 地図（mapId）を 組み立てて キリコを 置く（画像も 先に読む。読めなくても 進む）。 */
 	private async build(spot: Spot): Promise<void> {
-		const def = buildVillage(villageView(), this.ctx, {
-			arrival: this.arrival,
-		});
+		const v = villageView();
+		const def =
+			this.mapId === "hall"
+				? buildHall(v, this.ctx)
+				: buildVillage(v, this.ctx, { arrival: this.arrival });
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
@@ -242,6 +252,22 @@ export class Village {
 		});
 	}
 
+	/**
+	 * べつの 地図へ 移る（村 ⇔ 本館の 中）。暗転の 中で 呼ぶ。入る ときの 場面（prepare・onEnter）は
+	 * 走らせない（村の onEnter は 帰ってきた 場面。本館から もどる たびに 場面を くり返さない）。
+	 * 曲は 地図に 決まって いれば かえる（同じ 曲なら 続ける）。地名の 札を 出す。
+	 */
+	private async warp(map: string, spot: Spot): Promise<void> {
+		this.mapId = map === "hall" ? "hall" : "village";
+		// 前の 地図の 人・マスを 見ていた カメラは キリコに もどす
+		this.lookAt = null;
+		this.easing = false;
+		await this.build(spot);
+		const def = this.field?.def;
+		if (def?.bgm !== undefined) this.ctx.audio.bgm(def.bgm);
+		if (def) this.toast(def.name);
+	}
+
 	/** 暗転して 村を出る。 */
 	private async leave(c: VillageExit): Promise<void> {
 		if (this.leaving) return;
@@ -263,11 +289,12 @@ export class Village {
 		// 読み上げは 村の 会話だけ（ダンジョンへ 持ちこまない）
 		this.ctx.audio.stopSpeech();
 		this.toastEl.classList.remove("shown");
-		this.lastSpot = {
-			x: this.player.x,
-			y: this.player.y,
-			dir: this.player.dir,
-		};
+		// 本館の 中から 出た（リプレイ）なら、もどる のは 入った 扉の 前（外）
+		const out =
+			this.mapId === "village" ? null : hallOutside(this.state.flags.hallFrom);
+		this.lastSpot = out
+			? { x: out[0], y: out[1], dir: HALL_OUT_DIR }
+			: { x: this.player.x, y: this.player.y, dir: this.player.dir };
 		this.field?.dispose();
 		this.field = null;
 		// 冒険の画面に 村が 一瞬 見えないよう、黒く ぬってから 幕を あげる（冒険は 自分の 幕を 持っている）
@@ -280,10 +307,15 @@ export class Village {
 
 	// ───────────────── イベント ─────────────────
 
+	/** 印の 名前（地図ごと。本館の 中で 同じ id を 使っても ぶつからない）。 */
+	private flagKey(kind: "done" | "hide", id: string, map = this.mapId): string {
+		return `${kind}:${map}:${id}`;
+	}
+
 	private eventActive(e: EventDef): boolean {
 		const f = this.state.flags;
-		if (e.once && f[`done:village:${e.id}`]) return false;
-		if (f[`hide:village:${e.id}`]) return false;
+		if (e.once && f[this.flagKey("done", e.id)]) return false;
+		if (f[this.flagKey("hide", e.id)]) return false;
 		if (e.when && !e.when(this.state)) return false;
 		return true;
 	}
@@ -579,6 +611,11 @@ export class Village {
 				(a) => a.x === x && a.y === y && a.def?.trigger === "talk",
 			);
 		let target = talkAt(tx, ty);
+		// 目の前が 踏む 所（本館の 扉・出口の マット・村の 出口）なら、A でも 1歩 踏みこむ
+		if (!target && this.touchAt(tx, ty)) {
+			void this.tryStep(this.player.dir);
+			return;
+		}
 		if (!target && field.tileAt(tx, ty).counter) {
 			tx += v.dx;
 			ty += v.dy;
@@ -824,9 +861,11 @@ export class Village {
 		// ほかのスクリプトが 動いている間は 始めない（二重起動の防止）
 		if (!e.run || this.scriptDepth > 0 || this.leaving) return;
 		const run = e.run;
+		// 扉で 地図が かわっても、印は 始めた 地図に つける
+		const map = this.mapId;
 		await this.runScript(async (s) => {
 			await run(s);
-			if (e.once) this.state.flags[`done:village:${e.id}`] = true;
+			if (e.once) this.state.flags[this.flagKey("done", e.id, map)] = true;
 		});
 	}
 
@@ -1043,7 +1082,7 @@ export class Village {
 					this.player.visible = true;
 					return;
 				}
-				delete this.state.flags[`hide:village:${id}`];
+				delete this.state.flags[this.flagKey("hide", id)];
 				this.refreshActors();
 			},
 			hide: (id) => {
@@ -1051,7 +1090,7 @@ export class Village {
 					this.player.visible = false;
 					return;
 				}
-				this.state.flags[`hide:village:${id}`] = true;
+				this.state.flags[this.flagKey("hide", id)] = true;
 				this.refreshActors();
 			},
 			place: (id, x, y, dir) => {
@@ -1063,6 +1102,8 @@ export class Village {
 			},
 			toast: (text) => this.toast(text),
 			rebuild: () => this.rebuild(),
+			warp: (map, x, y, dir) =>
+				this.warp(map, { x, y, dir: dir ?? this.player.dir }),
 			exit: (choice) => {
 				this.exitChoice = choice;
 			},

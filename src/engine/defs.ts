@@ -1,6 +1,6 @@
 // 歩ける村（保守村）のデータ（マップ・イベント）と、イベントのスクリプトから使う命令（Story）の型。
 // rpg の engine/defs.ts から、村で使う物だけを残した（戦闘・仲間・なかよし度・セーブは無い）。
-// 村のデータは src/data/village/、スクリプトは src/ui/villageEvents.ts に書く。
+// 村のデータは src/data/village/、スクリプトは src/ui/villageEvents.ts に書く（おんJ 本館の 中は ui/hallEvents.ts）。
 
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import type { Speaker } from "../data/quotes";
@@ -197,6 +197,11 @@ export type Story = {
 	toast(text: string): void;
 	/** 町の段・開いたダンジョンを 読み直して 村を建て直す（キリコは 同じマスのまま）。暗転の中で呼ぶ。 */
 	rebuild(): Promise<void>;
+	/**
+	 * べつの 地図へ 移る（村 "village" ⇔ おんJ 本館 "hall"。rpg の story.warp と 同じ）。キリコは (x, y) に
+	 * dir を 向いて 立つ（省けば 今の 向き）。暗転の 中で 呼ぶ。移った 先の 入る ときの 場面（prepare・onEnter）は 走らせない。
+	 */
+	warp(map: string, x: number, y: number, dir?: Dir): Promise<void>;
 	/** 村を出る（いちばん外のスクリプトが終わってから 暗転して 出る）。 */
 	exit(choice: VillageExit): void;
 };

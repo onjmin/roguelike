@@ -10,6 +10,8 @@
 //   （localStorage の かわりに 入れものを 置いて 試す）
 // - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
 //   （やきうが どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
+// - おんJ 本館（data/village/hall.ts・ui/hallEvents.ts）：外観の 幅・扉、中の 形と 歩ける道（段ごと）、
+//   扉で 入って 出たら 入った 扉の 前、保守の 当番表の 数、期間限定の 告知、飾り棚の 中身、段の 上がる 場面
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
@@ -24,6 +26,7 @@ import {
 } from "../data/cafe";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
+import { HALL_MSG, ON_PHONO_TEXT, TOBAN_MENU } from "../data/hall";
 import {
 	MOB_IDS,
 	MOBS,
@@ -65,6 +68,7 @@ import {
 	RETURN_PAGES,
 	STAGE_NAMES,
 	STAGE_UP,
+	STAGE_UP_HALL,
 	TITLE_TOWN_QUOTES,
 	TOWN_MSG,
 	VILLAGE_IDLE,
@@ -73,6 +77,19 @@ import {
 	ZERO_VOICELESS,
 } from "../data/town";
 import {
+	HALL_NAMES,
+	hallEntry,
+	hallMats,
+	hallOutside,
+	hallPalette,
+	hallPlaces,
+	hallRows,
+	hallTierOf,
+	NANASHI_WALK,
+	ON_PHONO,
+	shelfSlots,
+} from "../data/village/hall";
+import {
 	CAFE_FROM,
 	exitFor,
 	lineupSpots,
@@ -80,12 +97,12 @@ import {
 	VILLAGE_H,
 	VILLAGE_SPOTS,
 	VILLAGE_W,
-	type VillagePlace,
 	type VillageView,
 	villagePalette,
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
+import { hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
 import {
@@ -108,6 +125,20 @@ import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
 import { cafeTalks } from "../ui/cafe";
 import { floorShort } from "../ui/floorName";
+import {
+	canWriteHoshu,
+	enterHall,
+	forgetHallMemo,
+	hasHallNews,
+	hoshuCount,
+	leaveHall,
+	markShelfSeen,
+	noticeScript,
+	noticeTexts,
+	shelfRows,
+	tobanScript,
+	trophies,
+} from "../ui/hallEvents";
 import { bossHomeLine, endLine, recordHead } from "../ui/records";
 import { sharedHead } from "../ui/share";
 import {
@@ -171,11 +202,32 @@ for (let stage = 0; stage < TOWN_STAGES; stage++)
 
 const label = (v: VillageView) => `stage ${v.stage} [${v.unlocked.join(",")}]`;
 
-/** 地図を 引く道具（通れるか・人が いるか・歩いて行けるか）。 */
-const survey = (v: VillageView) => {
-	const rows = villageRows(v).map((r) => [...r]);
-	const tiles = villagePalette(v);
-	const places = villagePlaces(v);
+/** 地図に 置く 物（村の 置き場所・本館の 中の 置き場所に 共通の ところ）。 */
+type Place = {
+	id: string;
+	x: number;
+	y: number;
+	trigger: "talk" | "touch";
+	sprite?: string;
+};
+
+/** 村の 地図を 引く道具（起きる所から）。 */
+const survey = (v: VillageView) =>
+	surveyMap(
+		villageRows(v),
+		villagePalette(v),
+		villagePlaces(v),
+		VILLAGE_SPOTS.boot,
+	);
+
+/** 地図を 引く道具（通れるか・人が いるか・start から 歩いて行けるか）。 */
+const surveyMap = <P extends Place>(
+	lines: readonly string[],
+	tiles: Record<string, TileDef>,
+	places: readonly P[],
+	start: readonly [number, number],
+) => {
+	const rows = lines.map((r) => [...r]);
 	const tile = (x: number, y: number): TileDef | undefined =>
 		rows[y]?.[x] === undefined ? undefined : tiles[rows[y][x]];
 	/** 見た目の ある イベント（人・置物）は 通れない。見えない イベントは 通れる。 */
@@ -183,7 +235,7 @@ const survey = (v: VillageView) => {
 		places.some((p) => p.sprite && p.x === x && p.y === y);
 	const canEnter = (x: number, y: number) =>
 		!!tile(x, y)?.passable && !occupied(x, y);
-	const [bx, by] = VILLAGE_SPOTS.boot;
+	const [bx, by] = start;
 	// 起きる所から 歩いて行ける マス（幅優先）
 	const reach = new Set<string>();
 	const key = (x: number, y: number) => `${x},${y}`;
@@ -215,7 +267,7 @@ const survey = (v: VillageView) => {
 	 * となり（か カウンター越し）の 立てる マスから 話しかけられるか。
 	 * noBack なら 北どなり（掲示板などの 裏）からは 数えない（ui/village.ts の talkFront と同じ）。
 	 */
-	const talkable = (p: VillagePlace, noBack = false) =>
+	const talkable = (p: Place, noBack = false) =>
 		[
 			[0, -1],
 			[1, 0],
@@ -304,7 +356,7 @@ test("from the boot spot, Kiriko can walk to the exit and talk to everyone", () 
 });
 
 /** 掲示板・立て札など 背の高い 物か（engine/field.ts の Field.hasBack を 地図の データで 呼ぶ）。 */
-const hasBack = (s: ReturnType<typeof survey>, p: VillagePlace): boolean => {
+const hasBack = (s: ReturnType<typeof survey>, p: Place): boolean => {
 	const tileAt = (x: number, y: number) =>
 		s.tile(x, y) ?? { layers: [], color: "#000", passable: false };
 	const sprite = p.sprite ?? "";
@@ -472,6 +524,7 @@ const swapStorage = (write: boolean): (() => void) => {
 	forgetHeardMemo();
 	forgetMobMemo();
 	forgetOpeningMemo();
+	forgetHallMemo();
 	return () => {
 		if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 		else delete (globalThis as { localStorage?: unknown }).localStorage;
@@ -479,6 +532,7 @@ const swapStorage = (write: boolean): (() => void) => {
 		forgetHeardMemo();
 		forgetMobMemo();
 		forgetOpeningMemo();
+		forgetHallMemo();
 	};
 };
 
@@ -985,6 +1039,12 @@ const fakeStory = (
 		},
 		rebuild: async () => {
 			log.push("rebuild");
+		},
+		warp: async (map, x, y, dir) => {
+			log.push(`warp ${map} ${x},${y}${dir ? ` ${dir}` : ""}`);
+			state.x = x;
+			state.y = y;
+			if (dir) state.dir = dir;
 		},
 		exit: () => {},
 	};
@@ -2637,4 +2697,504 @@ test("the objective's new village texts fit the message window (22 full-width ×
 				width(`目的：${goalText(d, o)}`) <= 22,
 				`${d} ${o}: 目的：${goalText(d, o)}`,
 			);
+});
+
+// ───────────────── おんJ 本館（data/village/hall.ts・ui/hallEvents.ts） ─────────────────
+
+/** 本館の 中を 引く 道具（外の 扉 i から 入った マスから）。 */
+const surveyHall = (v: VillageView, i = 0) => {
+	const tier = hallTierOf(v);
+	return surveyMap(
+		hallRows(tier),
+		hallPalette(tier),
+		hallPlaces(v),
+		hallEntry(tier, i),
+	);
+};
+
+/** 見本の 段（集会所・レンガ館・本館・祭りの 本館）。 */
+const HALL_STAGES = [0, 3, 6, 7];
+
+/** 置き場所の 種類（id の 番号を 取る）。 */
+const kindOf = (id: string) => id.replace(/_\d+$/, "");
+
+test("おんJ 本館の 中: every tier is a closed room; from both entrances Kiriko reaches the exit mats, every wall thing and everyone", () => {
+	for (let stage = 0; stage < TOWN_STAGES; stage++) {
+		const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
+		const tier = hallTierOf(v);
+		const rows = hallRows(tier);
+		const tiles = hallPalette(tier);
+		const w = [...rows[0]].length;
+		rows.forEach((r, y) => {
+			ok(
+				[...r].length === w,
+				`stage ${stage}: hall row ${y} is ${[...r].length} wide`,
+			);
+			[...r].forEach((ch, x) => {
+				ok(tiles[ch], `stage ${stage}: "${ch}" at (${x},${y}) has no tile`);
+				// まわりは 壁（出口の マットだけ 通れる）
+				const edge = x === 0 || y === 0 || x === w - 1 || y === rows.length - 1;
+				if (edge && ch !== "D")
+					ok(
+						!tiles[ch]?.passable,
+						`stage ${stage}: the hall leaks at (${x},${y})`,
+					);
+			});
+		});
+		// 同梱の 絵だけ
+		for (const ch of new Set(rows.join("")))
+			for (const ref of [
+				...(tiles[ch]?.layers ?? []),
+				...(tiles[ch]?.above ?? []),
+			])
+				ok(ref.startsWith("pub:"), `stage ${stage}: "${ch}" draws ${ref}`);
+		const places = hallPlaces(v);
+		const ids = places.map((p) => p.id);
+		ok(new Set(ids).size === ids.length, `stage ${stage}: duplicate hall ids`);
+		ok(
+			new Set(places.map((p) => `${p.x},${p.y}`)).size === places.length,
+			`stage ${stage}: two hall events share a cell`,
+		);
+		const mats = hallMats(tier);
+		for (const i of [0, 1]) {
+			const s = surveyHall(v, i);
+			const [ex, ey] = hallEntry(tier, i);
+			ok(s.canEnter(ex, ey), `stage ${stage}: entrance ${i} is blocked`);
+			ok(
+				ex === mats[i][0] && ey === mats[i][1] - 1,
+				`stage ${stage}: entrance ${i} is not just inside its mat`,
+			);
+			for (const [mx, my] of mats) {
+				ok(
+					s.reachable(mx, my),
+					`stage ${stage}: cannot walk to the mat (${mx},${my})`,
+				);
+				ok(
+					places.some((p) => p.trigger === "touch" && p.x === mx && p.y === my),
+					`stage ${stage}: the mat (${mx},${my}) does not lead out`,
+				);
+			}
+			for (const p of places) {
+				if (p.trigger === "touch") {
+					ok(
+						s.tile(p.x, p.y)?.passable,
+						`stage ${stage}: ${p.id} is on a wall`,
+					);
+					continue;
+				}
+				if (p.sprite)
+					ok(
+						s.tile(p.x, p.y)?.passable,
+						`stage ${stage}: ${p.id} stands on a wall`,
+					);
+				// 壁や 背の 高い 物は 裏（北）から 読まない。前か 横から 読める
+				ok(
+					s.talkable(p, hasBack(s, p)),
+					`stage ${stage}: cannot reach ${p.id}`,
+				);
+			}
+		}
+	}
+});
+
+test("おんJ 本館の 中: it grows by tier and keeps what the smaller hall had", () => {
+	const kinds = HALL_STAGES.map(
+		(stage) =>
+			new Set(
+				hallPlaces({ stage, unlocked: ["shallow"], cleared: [] }).map((p) =>
+					kindOf(p.id),
+				),
+			),
+	);
+	const want = [
+		["mat", "board", "toban", "template", "notice"],
+		["book", "shelf", "ledger", "nanashi_toban"],
+		["monitor", "dendo", "chair", "nanashi"],
+		["yaji"],
+	];
+	HALL_STAGES.forEach((stage, i) => {
+		for (let j = 0; j <= i; j++)
+			for (const k of want[j])
+				ok(kinds[i].has(k), `stage ${stage}: the hall has no ${k}`);
+		for (const k of want[i + 1] ?? [])
+			ok(!kinds[i].has(k), `stage ${stage}: the hall already has ${k}`);
+	});
+	// 部屋は 段で 広がる
+	const area = ([0, 1, 2] as const).map((t) => {
+		const r = hallRows(t);
+		return r.length * [...r[0]].length;
+	});
+	ok(area[0] < area[1] && area[1] < area[2], `hall sizes ${area}`);
+	// 名無しは 2〜3人（段7 は 野次馬も）。敵と 同じ 絵は 使わない
+	const enemy = new Set(
+		Object.values(MONSTERS).flatMap((m) => [m.sprite, m.still ?? ""]),
+	);
+	for (const stage of HALL_STAGES) {
+		const people = hallPlaces({
+			stage,
+			unlocked: ["shallow"],
+			cleared: [],
+		}).filter((p) => p.sprite);
+		for (const p of people)
+			ok(
+				!enemy.has(p.sprite ?? ""),
+				`stage ${stage}: ${p.id} looks like an enemy`,
+			);
+		const watchers = people.filter(
+			(p) => p.id.startsWith("nanashi_") && p.id !== "nanashi_toban",
+		);
+		if (hallTier(stage) === 2)
+			ok(
+				watchers.length >= 2 && watchers.length <= 3,
+				`stage ${stage}: ${watchers.length} watchers`,
+			);
+	}
+	ok(
+		new Set(NANASHI_WALK).size === NANASHI_WALK.length,
+		"two 名無し share a look",
+	);
+	// 飾り棚は レンガ館から（蓄音機に ついていない 品が ぜんぶ ならぶ）
+	ok(shelfSlots(0).length === 0, "the 集会所 has a shelf");
+	for (const t of [1, 2] as const)
+		ok(
+			shelfSlots(t).length >= trophies(DUNGEON_IDS).length,
+			`tier ${t}: ${shelfSlots(t).length} shelf slots`,
+		);
+	ok(HALL_NAMES.length === 3, "a hall tier has no name");
+});
+
+test("おんJ 本館の 外観: it widens 4 → 6 → 10 by stage, the doors stay put and step in", () => {
+	const widths = [4, 6, 10];
+	for (const v of VIEWS) {
+		const s = survey(v);
+		const rows = villageRows(v);
+		const doors = VILLAGE_SPOTS.hallDoors;
+		// 屋根の 棟の 数が 幅（崖の いちばん上の 段）
+		const ridge = [...rows[doors[0][1] - 3]].filter((c) => c === "#").length;
+		ok(
+			ridge === widths[hallTier(v.stage)],
+			`${label(v)}: the hall is ${ridge} wide`,
+		);
+		for (const [x, y] of doors) {
+			ok(rows[y][x] === "5", `${label(v)}: no door at (${x},${y})`);
+			ok(
+				s.places.some((p) => p.trigger === "touch" && p.x === x && p.y === y),
+				`${label(v)}: the door (${x},${y}) does not lead in`,
+			);
+			ok(
+				s.reachable(x, y),
+				`${label(v)}: cannot walk into the door (${x},${y})`,
+			);
+			// 出てくる マス（崖の 下の 道）
+			const [ox, oy] = hallOutside(x);
+			ok(
+				ox === x && oy === y + 1,
+				`${label(v)}: the way out of (${x},${y}) is (${ox},${oy})`,
+			);
+			ok(
+				s.reachable(ox, oy),
+				`${label(v)}: cannot stand in front of (${x},${y})`,
+			);
+			ok(
+				!s.places.some((p) => p.x === ox && p.y === oy),
+				`${label(v)}: something stands in front of the door (${x},${y})`,
+			);
+		}
+	}
+	// 知らない 扉からは 右の 扉の 前
+	ok(
+		hallOutside(undefined).join() ===
+			hallOutside(VILLAGE_SPOTS.hallDoors[1][0]).join(),
+		"an unknown door does not fall back to the right one",
+	);
+});
+
+test("おんJ 本館の 扉: the door text once per tier, a door sound and a fade, and out again in front of the door she used", async () => {
+	await withStorageAsync(async () => {
+		for (const stage of HALL_STAGES) {
+			const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
+			const tier = hallTierOf(v);
+			for (const i of [0, 1]) {
+				const [dx, dy] = VILLAGE_SPOTS.hallDoors[i];
+				const { s, log } = fakeStory({ at: [dx, dy] });
+				await enterHall(i, v)(s);
+				const [ex, ey] = hallEntry(tier, i);
+				ok(
+					inOrder(log, [
+						`narrate: ${VILLAGE_MSG.hall[tier]}`,
+						"se door",
+						"fadeOut",
+						`warp hall ${ex},${ey} up`,
+						"fadeIn",
+					]),
+					`stage ${stage} door ${i}: the way in is out of order:\n${log.join("\n")}`,
+				);
+				ok(
+					s.state.x === ex && s.state.y === ey,
+					`stage ${stage}: Kiriko is not inside`,
+				);
+				// 2回目からは 扉の 文なし
+				log.length = 0;
+				await enterHall(i, v)(s);
+				ok(
+					!log.some((l) => l.startsWith("narrate")),
+					`stage ${stage}: the door text again`,
+				);
+				// どちらの マットから 出ても 入った 扉の 前
+				const [mx, my] = hallMats(tier)[1 - i];
+				s.state.x = mx;
+				s.state.y = my;
+				log.length = 0;
+				await leaveHall(s);
+				ok(
+					inOrder(log, [
+						"se door",
+						"fadeOut",
+						`warp village ${dx},${dy + 1} down`,
+						"fadeIn",
+					]),
+					`stage ${stage} door ${i}: the way out is out of order:\n${log.join("\n")}`,
+				);
+				ok(
+					s.state.x === dx && s.state.y === dy + 1,
+					`stage ${stage}: not in front of door ${i}`,
+				);
+			}
+		}
+	});
+});
+
+test("保守の 当番表: one 「保守」 per return, counted in its own save, nothing else changes", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 0, points: 10 });
+		const town = localStorage.getItem(TOWN_KEY);
+		const progress = localStorage.getItem(PROGRESS_KEY);
+		const no = fakeStory({ pick: 1 });
+		await tobanScript(0)(no.s);
+		ok(hoshuCount() === 0, "やめる still wrote");
+		ok(
+			no.log.includes(`choose ${TOBAN_MENU.join("/")}`),
+			`no choice:\n${no.log.join("\n")}`,
+		);
+		const yes = fakeStory({ pick: 0 });
+		await tobanScript(0)(yes.s);
+		ok(hoshuCount() === 1, `count ${hoshuCount()}`);
+		ok(
+			inOrder(yes.log, [
+				`narrate: ${HALL_MSG.toban[0]}`,
+				"se read",
+				`narrate: ${fill(HALL_MSG.tobanDone, { n: 1 })}`,
+			]),
+			`wrote:\n${yes.log.join("\n")}`,
+		);
+		// 同じ 帰りの あいだは もう 書けない
+		const again = fakeStory({ pick: 0 });
+		await tobanScript(1)(again.s);
+		ok(hoshuCount() === 1 && !canWriteHoshu(), "wrote twice in one return");
+		ok(
+			again.log.join("\n") ===
+				[
+					`narrate: ${HALL_MSG.toban[1]}`,
+					`narrate: ${fill(HALL_MSG.tobanAgain, { n: 1 })}`,
+				].join("\n"),
+			`again:\n${again.log.join("\n")}`,
+		);
+		// 帰ってきたら また 書ける。数は 読みなおしても 残る
+		pushRecord({ kind: "dead" });
+		ok(canWriteHoshu(), "cannot write after a return");
+		await tobanScript(2)(fakeStory({ pick: 0 }).s);
+		forgetHallMemo();
+		ok(hoshuCount() === 2, `count after a reload: ${hoshuCount()}`);
+		ok(
+			localStorage.getItem(TOWN_KEY) === town &&
+				localStorage.getItem(PROGRESS_KEY) === progress,
+			"writing 「保守」 touched the town or progress",
+		);
+	});
+});
+
+test("期間限定の 告知: nothing, or the event's name, news and goal; the door shows 「！」 until it is read in the hall", async () => {
+	await withStorageAsync(async () => {
+		const v: VillageView = { stage: 0, unlocked: ["shallow"], cleared: [] };
+		setProgress(["shallow"]);
+		ok(
+			noticeTexts().join() === HALL_MSG.noticeNone,
+			`no event: ${noticeTexts()}`,
+		);
+		ok(!hasHallNews(v), "「！」 with no event");
+		const texts: [string, string][] = [];
+		for (const e of EVENTS) {
+			localStorage.setItem(
+				PROGRESS_KEY,
+				JSON.stringify(
+					prog({
+						unlocked: [...DUNGEON_IDS],
+						cleared: [...DUNGEON_IDS],
+						outings: 3,
+						event: { id: e.id, since: 3, clearsSince: 0 },
+					}),
+				),
+			);
+			forgetProgressMemo();
+			const t = noticeTexts();
+			ok(t.length === 3, `${e.id}: ${t.length} windows`);
+			ok(t[0].includes(e.name) && t[1] === e.news, `${e.id}: ${t}`);
+			ok(t[2].includes(goalText(e.dungeon, e.objective)), `${e.id}: ${t[2]}`);
+			t.forEach((x, i) => {
+				texts.push([`notice ${e.id}[${i}]`, x]);
+			});
+		}
+		fitsWindow(texts);
+		// 読むまで「！」。読んだら 消える。べつの イベントが 起きたら また
+		ok(hasHallNews(v), "no 「！」 for a new event");
+		const { s, log } = fakeStory();
+		await noticeScript(s);
+		ok(
+			log.length === 3 && log.every((l) => l.startsWith("narrate: ")),
+			`notice:\n${log.join("\n")}`,
+		);
+		ok(!hasHallNews(v), "「！」 after reading the notice");
+		forgetHallMemo();
+		ok(!hasHallNews(v), "the read notice was forgotten");
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify(
+				prog({
+					unlocked: [...DUNGEON_IDS],
+					event: { id: EVENTS[0].id, since: 0, clearsSince: 0 },
+				}),
+			),
+		);
+		forgetProgressMemo();
+		ok(hasHallNews(v), "no 「！」 for another event");
+	});
+});
+
+test("飾り棚: the goal items of the cleared boards (the needle and the first record are on the gramophone), and 「！」 when one is added", () => {
+	const rows = shelfRows(["kinoko", "shallow", "main"]);
+	ok(
+		rows.map((r) => r.d).join() === "shallow,main,kinoko",
+		`order: ${rows.map((r) => r.d)}`,
+	);
+	for (const r of rows) {
+		const item = defOf(DUNGEONS[r.d].goal);
+		ok(
+			r.name === item.name && r.board === DUNGEON_NAMES[r.d].name,
+			`${r.d}: ${r.name} / ${r.board}`,
+		);
+		ok(
+			r.desc === (ON_PHONO.includes(r.d) ? ON_PHONO_TEXT : item.flavor),
+			`${r.d}: ${r.desc}`,
+		);
+	}
+	ok(shelfRows([]).length === 0, "an empty shelf has rows");
+	ok(
+		trophies(["shallow", "main", "hidden", "kinoko"]).join() ===
+			"kinoko,hidden",
+		`trophies: ${trophies(["shallow", "main", "hidden", "kinoko"])}`,
+	);
+	withStorage(() => {
+		setProgress(["shallow"]);
+		const at = (stage: number, cleared: DungeonId[]): VillageView => ({
+			stage,
+			unlocked: ["shallow"],
+			cleared,
+		});
+		// 針・原盤だけでは 棚は ふえない。集会所には 棚が ない
+		ok(
+			!hasHallNews(at(3, ["shallow", "main"])),
+			"「！」 for the gramophone's items",
+		);
+		ok(
+			!hasHallNews(at(2, ["shallow", "kinoko"])),
+			"「！」 for a shelf the 集会所 does not have",
+		);
+		ok(hasHallNews(at(3, ["shallow", "kinoko"])), "no 「！」 for a new trophy");
+		markShelfSeen(["shallow", "kinoko"]);
+		ok(
+			!hasHallNews(at(3, ["shallow", "kinoko"])),
+			"「！」 after looking at the shelf",
+		);
+		ok(
+			hasHallNews(at(6, ["shallow", "kinoko", "tropical"])),
+			"no 「！」 for another trophy",
+		);
+	});
+});
+
+test("おんJ 本館: every line fits the village window (22 full-width × 2 lines, 1〜3 windows)", () => {
+	const texts: [string, string][] = [];
+	const add = (where: string, v: unknown) => {
+		if (typeof v === "string")
+			texts.push([where, fill(v, { n: 999, name: "風呂板の　湯けむり騒動" })]);
+		else if (Array.isArray(v))
+			v.forEach((x, i) => {
+				add(`${where}[${i}]`, x);
+			});
+	};
+	for (const [k, v] of Object.entries(HALL_MSG))
+		if (k !== "noticeGoal") add(`HALL_MSG.${k}`, v);
+	STAGE_UP_HALL.forEach((l, i) => {
+		if (l) texts.push([`STAGE_UP_HALL[${i}]`, l.text]);
+	});
+	fitsWindow(texts);
+	for (const ls of [
+		HALL_MSG.toban_nanashi,
+		...HALL_MSG.watch,
+		...HALL_MSG.yaji,
+	])
+		ok(
+			ls.length >= 1 && ls.length <= 3,
+			`a hall talk has ${ls.length} windows`,
+		);
+	ok(HALL_MSG.monitor.length <= 3, "the monitor talks too long");
+	ok(
+		STAGE_UP_HALL[0] === null && !!STAGE_UP_HALL[1] && !!STAGE_UP_HALL[2],
+		"STAGE_UP_HALL",
+	);
+});
+
+test("the town grows into a new hall: after the friends, the camera looks at the hall for one more line (also when stages are skipped)", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		const look = `look ${VILLAGE_SPOTS.hallLook.join(",")}`;
+		const cases: [number, number, PendingReturn, number | null][] = [
+			[2, STAGE_POINTS[3] - 10, pending("escape", [item(1, "starsword")]), 1],
+			[5, STAGE_POINTS[6] - 10, pending("escape", [item(1, "starsword")]), 2],
+			[
+				3,
+				STAGE_POINTS[4] - 10,
+				pending("escape", [item(1, "starsword")]),
+				null,
+			],
+			// 風呂板を 持ち帰ると いちどに 段7（本館の 形は 集会所から 本館へ）
+			[1, 100, pending("clear", [item(1, "h_heal")], "main"), 2],
+		];
+		for (const [stage, points, pend, tier] of cases) {
+			putTown({ stage, points, pending: pend });
+			const { s, log } = fakeStory();
+			await settleScript(s, chooser([]));
+			const to = loadTown().stage;
+			ok(to > stage, `stage ${stage} did not grow`);
+			const hall = tier === null ? null : STAGE_UP_HALL[tier];
+			if (!hall) {
+				ok(
+					!log.includes(look),
+					`${stage} → ${to}: looked at the hall:\n${log.join("\n")}`,
+				);
+				continue;
+			}
+			ok(
+				inOrder(log, [
+					"rebuild",
+					...(STAGE_UP[to] ?? []).map((l) => `say ${l.who}: ${l.text}`),
+					look,
+					`say ${hall.who}: ${hall.text}`,
+					"look kiriko",
+				]),
+				`${stage} → ${to}: the hall is not shown:\n${log.join("\n")}`,
+			);
+		}
+	});
 });

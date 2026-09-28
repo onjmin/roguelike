@@ -10,6 +10,7 @@
 //   フェリス＝図鑑・あそびかた、シヨ＝倉庫、やきう＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
 // - 小屋の扉・板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
+// - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/hallEvents.ts）。右の 扉に 新しい 告知・棚の「！」。
 // - おんJマイナーズ（町が 育つと 越してくる）と ぷゆゆ（はじめから いる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
 // - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
@@ -53,6 +54,7 @@ import { openBook } from "./bookView";
 import { runSaveLabel } from "./boot";
 import { cafeScript, hasCafeNews } from "./cafe";
 import type { Ctx } from "./ctx";
+import { enterHall, hasHallNews } from "./hallEvents";
 import { chooseStored, openStorage, pickCarry } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
@@ -289,8 +291,8 @@ const phonoScript: Script = async (s) => {
 	await s.narrate(VILLAGE_MSG.phono[i]);
 };
 
-/** 置き場所に スクリプトを付けて イベントにする。 */
-const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
+/** 置き場所に スクリプトを付けて イベントにする（v は 描いている 村。本館の 段を 絵と 合わせる）。 */
+const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
 	if (p.who) {
 		const who = p.who;
@@ -339,10 +341,15 @@ const eventFor = (ctx: Ctx, p: VillagePlace): EventDef => {
 			...sign(p.id, p.x, p.y, cafeScript(ctx)),
 			notice: hasCafeNews,
 		};
-	if (p.id === "door_hall") {
-		const stage = loadTown().stage;
-		const i = stage >= 6 ? 2 : stage >= 3 ? 1 : 0;
-		return sign(p.id, p.x, p.y, VILLAGE_MSG.hall[i]);
+	if (p.id.startsWith("door_hall_")) {
+		const i = Number(p.id.slice("door_hall_".length));
+		return {
+			...at,
+			trigger: "touch",
+			through: true,
+			run: enterHall(i, v),
+			notice: i === 1 ? () => hasHallNews(v) : undefined,
+		};
 	}
 	if (p.id.startsWith("yaji_") && p.sprite) {
 		// 祭りの 野次馬（J民。名前欄は やきうの 色で「野次馬」）
@@ -423,7 +430,7 @@ export const buildVillage = (
 		tiles: villagePalette(v),
 		rows: villageRows(v),
 		outside: "#1f2a14",
-		events: villagePlaces(v).map((p) => eventFor(ctx, p)),
+		events: villagePlaces(v).map((p) => eventFor(ctx, p, v)),
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
 		prepare: (s) => {
 			const back = returnOf(arrival);

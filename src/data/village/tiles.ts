@@ -217,15 +217,24 @@ export const SHED = storeTiles(1, 73, "#9a7a4a");
 export const STOREHOUSE = storeTiles(4, 67, "#8a8a8a");
 
 // ───────────────── おんJ 本館（崖の 前の まんなか。町の 段で 育つ） ─────────────────
-//   #  屋根の 棟   +  屋根の 軒   0  壁（上段）   $  壁（上段）に ちょうちん   6  壁（下段）   5  扉（下段。2マスの 絵）
+//   #  屋根の 棟   +  屋根の 軒   0  壁（上段）   $  壁（上段）に ちょうちん   6  壁（下段）
+//   5  扉（下段。2マスの 絵。通れる。踏むと 中へ。ui/villageEvents.ts）
 // 段0〜2 木造の 集会所（茶の 屋根・板壁・木戸）、段3〜5 レンガ（赤い 瓦・レンガ壁・赤い 扉）、
-// 段6〜 本館（青い 瓦・柱の ならぶ 石の 壁・飾りの 門）
+// 段6〜 本館（青い 瓦・柱の ならぶ 石の 壁・飾りの 門）。段で 横に 広がる（幅は data/village/map.ts）。
+
+/**
+ * 本館の 段（0 集会所・1 レンガ・2 本館）。外観の 絵と 幅・中の 広さと 中身・扉の 文で 同じ しきいを 使う
+ * （data/village/map.ts・data/village/hall.ts・ui/villageEvents.ts）。
+ */
+export const hallTier = (stage: number): 0 | 1 | 2 =>
+	stage >= 6 ? 2 : stage >= 3 ? 1 : 0;
+
 const hallStyle = (stage: number) =>
-	stage >= 6
-		? { roof: 2, wall: [1, 71], door: [7, 71], color: "#8a8e9a" }
-		: stage >= 3
-			? { roof: 3, wall: [1, 61], door: [7, 61], color: "#a8483a" }
-			: { roof: 0, wall: [1, 55], door: [7, 57], color: "#6a4a2a" };
+	[
+		{ roof: 0, wall: [1, 55], door: [7, 57], color: "#6a4a2a" },
+		{ roof: 3, wall: [1, 61], door: [7, 61], color: "#a8483a" },
+		{ roof: 2, wall: [1, 71], door: [7, 71], color: "#8a8e9a" },
+	][hallTier(stage)];
 
 export const hallTiles = (stage: number): Record<string, TileDef> => {
 	const h = hallStyle(stage);
@@ -237,8 +246,77 @@ export const hallTiles = (stage: number): Record<string, TileDef> => {
 		"0": solid(h.color, up),
 		$: solid(h.color, up, basePx(2 * 16 + 3, 297 * 16 + 2, 10, 13)),
 		"6": solid(h.color, low),
-		"5": solid(h.color, low, base(h.door[0], h.door[1], 1, 2)),
+		"5": floor(h.color, low, base(h.door[0], h.door[1], 1, 2)),
 	};
+};
+
+// ───────────────── 屋内（rpg の data/tiles.ts の INDOOR を そのまま 移した。おんJ 本館の 中の 下地） ─────────────────
+// 部屋の上端は「天井 # ＋ 壁2段（H 上段・h 下段）」。16x32 の家具は壁ぎわの床に置くと上段へはみ出して立つ。
+//   #  天井（黒）  H  壁（上段）  h  壁（下段・腰板）  W  窓  Q  絵  k  柱時計（下段）
+//   .  木の床  ,  タイルの床  ~  赤いじゅうたん  -  金のじゅうたん  D  出入口（床。warp を置く）
+//   [ = ]  カウンター（左端・中・右端。counter）
+//   t  テーブル  o  丸テーブル  O  白い丸テーブル  n  いす  r  赤いいす
+//   Z z  ベッド（枕・布団。縦2マス）  B  本棚  S s  大きな本棚（左右）
+//   P p  ピアノ（木・左右）  G g  ピアノ（黒・左右）  L  スピーカー  V  テレビ  M  モニター（PC）
+//   >  下り階段  < {  上り階段（左右）  u  壺  U  樽  x  木箱  f  花の鉢  F  観葉植物  Y  水晶玉
+//   C  赤い幕（壁の下段に置くと天井まで垂れる）
+//   7 8 9 / 4 5 6 / 1 2 3  赤いステージ（テンキーの並び。1 2 3 が手前の段。5 を並べると広くなる）
+// 本館の 中（data/village/hall.ts）は これに 段ごとの 床・壁と 壁に かける 物を 上書きして 使う。
+const WOOD = base(0, 46);
+const WIN_BRICK = basePx(16, 1382); // 格子窓（壁装飾 1,86 を半マス上げて切り出し）
+
+export const INDOOR: Record<string, TileDef> = {
+	"#": solid("#1b1410"),
+	H: solid("#e8e4dc", base(1, 77)),
+	h: solid("#e8e4dc", base(1, 78)),
+	W: solid("#e8e4dc", base(1, 77), WIN_BRICK),
+	Q: solid("#e8e4dc", base(1, 77), basePx(64, 1446)),
+	k: solid("#e8e4dc", base(1, 78), base(2, 116, 1, 2)),
+	".": floor(C_WOOD, WOOD),
+	",": floor("#9a9a9a", base(3, 46)),
+	"~": floor("#c02020", base(5, 46)),
+	"-": floor("#c0a030", base(5, 47)),
+	D: floor(C_WOOD, WOOD),
+	"[": counter(C_WOOD, WOOD, base(1, 98)),
+	"=": counter(C_WOOD, WOOD, base(2, 98)),
+	"]": counter(C_WOOD, WOOD, base(3, 98)),
+	t: solid(C_WOOD, WOOD, base(2, 108)),
+	o: solid(C_WOOD, WOOD, base(4, 104)),
+	O: solid(C_WOOD, WOOD, base(3, 108)),
+	n: solid(C_WOOD, WOOD, base(2, 109)),
+	r: solid(C_WOOD, WOOD, base(3, 109)),
+	Z: solid(C_WOOD, WOOD, base(0, 112)),
+	z: solid(C_WOOD, WOOD, base(0, 113)),
+	B: solid(C_WOOD, WOOD, base(3, 104, 1, 2)),
+	S: solid(C_WOOD, WOOD, base(0, 108, 1, 2)),
+	s: solid(C_WOOD, WOOD, base(1, 108, 1, 2)),
+	P: solid(C_WOOD, WOOD, base(3, 120, 1, 2)),
+	p: solid(C_WOOD, WOOD, base(4, 120, 1, 2)),
+	G: solid(C_WOOD, WOOD, basePx(96, 5088, 16, 48)),
+	g: solid(C_WOOD, WOOD, basePx(112, 5088, 16, 48)),
+	L: solid(C_WOOD, WOOD, base(4, 540)),
+	V: solid(C_WOOD, WOOD, base(3, 395)),
+	M: solid(C_WOOD, WOOD, base(6, 486)),
+	">": floor(C_WOOD, base(6, 48)),
+	"<": floor(C_WOOD, WOOD, base(6, 49, 1, 2)),
+	"{": floor(C_WOOD, WOOD, base(7, 49, 1, 2)),
+	u: solid(C_WOOD, WOOD, base(0, 123)),
+	U: solid(C_WOOD, WOOD, base(3, 125)),
+	x: solid(C_WOOD, WOOD, base(4, 123)),
+	f: solid(C_WOOD, WOOD, base(7, 133)),
+	F: solid(C_WOOD, WOOD, base(7, 129, 1, 2)),
+	Y: solid(C_WOOD, WOOD, base(3, 140)),
+	C: solid("#e8e4dc", base(1, 78), base(6, 358, 1, 3)),
+	"7": floor("#a01818", base(3, 354)),
+	"8": floor("#a01818", base(4, 354)),
+	"9": floor("#a01818", base(5, 354)),
+	"4": floor("#a01818", base(3, 355)),
+	"5": floor("#a01818", base(4, 355)),
+	"6": floor("#a01818", base(5, 355)),
+	"1": floor("#a01818", base(3, 356)),
+	"2": floor("#a01818", base(4, 356)),
+	"3": floor("#a01818", base(5, 356)),
+	" ": BLACK,
 };
 
 // ───────────────── 喫茶「保守」（西の 空き地。町の 段5 から） ─────────────────

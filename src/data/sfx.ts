@@ -17,6 +17,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 	},
 	/** 移動・拾う・回復。 */
 	field: {
+		/** 扉を あける（村の おんJ 本館に 入る・出る。rpg と 同じ 素材）。 */
+		door: "rpgen:8gPREU", // ﾄﾞﾗｸｴ扉
 		/** ワープの罠・場所がえ。 */
 		warp: "rpgen:vfCmoe",
 		stairs: "rpgen:gO9HUJ", // 階段

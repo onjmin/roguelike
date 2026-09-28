@@ -1,11 +1,12 @@
 // 村（保守村）の地図。DOM も保存も使わない 組み立てだけ（src/sim/villageTests.ts で 形と 歩ける道を 調べる）。
 // スクリプトは ui/villageEvents.ts が id ごとに 付ける。
 //
-// 地図は 30×24 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
+// 地図は 40×32 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
 // まわりの 森は 四角く ならないよう 木と しげみで 囲み、西の 空き地（切り株・丸太）・東の 畑（かかし・畝・麦）・
 // 南の 池へ 抜けられる（OUTSKIRTS_ROWS・EDGE_CELLS）。下の 図と 区画の 関数は 町の 区画の 座標で、
-// VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 4, 2）。
-// - 北に 崖。まんなかに おんJ 本館（区画 8〜13。縦の 道が 扉 10〜11 に 突きあたる。段で 集会所 → レンガ → 本館）。
+// VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 9, 7）。
+// - 北に 崖。まんなかに おんJ 本館（縦の 道が 扉 10〜11 に 突きあたる。段で 集会所 幅4 → レンガ 幅6 → 本館 幅10。
+//   扉を 踏むと 中の 地図へ。中は data/village/hall.ts）。
 //   東の 崖の 切れ目を 道が 北へ 抜ける（区画 18,3 が 村の 出口。立て札は 19,5）。出口を 踏むと 全体マップで 行き先の 植民地を 選ぶ。
 // - 崖の下に 道（区画 y=4）。そこから 町の 通り（y=12）まで 道（x=10〜11）が のびる。
 // - 西に 店の区画（x=1〜8）、まんなかに 小屋（x=12〜15）、東に 倉庫の区画（x=16〜20）。その下が 広場（掲示板・蓄音機）。
@@ -23,10 +24,10 @@
 //
 // 段7 の 町の 区画の 形（ほかの段は 区画を 差しかえる。@ は 人と 蓄音機。字は data/village/tiles.ts）
 //    0123456789012345678901
-//  0 1111111111111111111111  崖の上
-//  1 2y22222222222222222222  崖のふち（y 桜）
-//  2 3333333333333333333333  岩肌
-//  3 44444444665566444I.t44  本館の 扉（10〜11）・崖の 切れ目（18,3 が 村の 出口。立て札 19,5）
+//  0 111111##########1A.V11  崖の上・本館の 屋根（段6〜 は 幅10）
+//  1 2y2222++++++++++2D.j22  崖のふち（y 桜）
+//  2 3333330$0$00$0$03F.s33  岩肌・本館の 壁（ちょうちん）
+//  3 44444466665566664I.t44  本館の 扉（10〜11。踏むと 中へ）・崖の 切れ目（18,3 が 村の 出口。立て札 19,5）
 //  4 H....................H  崖の下の道
 //  5 h,nnnnnn,,..,,,,,,,,,h  店の 屋根                  （倉庫が 建つまで シヨ 17,5）
 //  6 H,NNNNNN,,..,,,,rrrrrH                               倉庫の 屋根
@@ -62,6 +63,7 @@ import {
 	floor,
 	GROUND,
 	HUT,
+	hallTier,
 	hallTiles,
 	OUTSKIRTS,
 	PLAZA,
@@ -103,8 +105,16 @@ export const VILLAGE_SPOTS = {
 	exitSign: [28, 12] as Cell,
 	/** 喫茶「保守」の 扉（段5 から。調べると 話を 聞く）。 */
 	cafeDoor: [4, 18] as Cell,
-	/** おんJ 本館の 扉（見るだけ）。 */
-	hallDoor: [20, 10] as Cell,
+	/**
+	 * おんJ 本館の 扉（2マス。踏むと 中へ。data/village/hall.ts）。出てくると 入った 扉の 1つ下（崖の 下の 道）。
+	 * 「！」は 右の 扉に 出す。
+	 */
+	hallDoors: [
+		[19, 10],
+		[20, 10],
+	] as readonly Cell[],
+	/** 本館の 形が かわったとき（段3・6）カメラを 向ける 所（2つの 扉の あいだの 壁）。 */
+	hallLook: [19.5, 9] as Cell,
 	/** 起きたとき・倒れて もどったときに 立つ所（蓄音機の前）。 */
 	boot: [19, 22] as Cell,
 	phono: [19, 21] as Cell,
@@ -149,13 +159,27 @@ const layoutStage = (v: VillageView): number =>
 
 // ───────────────── 行 ─────────────────
 
-// まんなか（x=8〜13）に おんJ 本館（縦の 道が 扉に 突きあたる）。東（x=18）の 崖の 切れ目が 村の 出口
+// まんなかに おんJ 本館（hallBlock。縦の 道が 扉に 突きあたる）。東（x=18）の 崖の 切れ目が 村の 出口
 const CLIFF_ROWS: readonly string[] = [
-	"11111111######111A.V11",
-	"22222222++++++222D.j22",
-	"3333333300$$00333F.s33",
-	"44444444665566444I.t44",
+	"11111111111111111A.V11",
+	"22222222222222222D.j22",
+	"33333333333333333F.s33",
+	"44444444444444444I.t44",
 ];
+
+/**
+ * おんJ 本館の 外観（崖の 4段に はめこむ。扉 5 は いつも 区画の 10〜11）。本館の 段（hallTier）で 横に 広がる：
+ * 集会所 幅4（x=9〜12）・レンガ 幅6（8〜13）・本館 幅10（6〜15）。下へは のばせない（崖の 下は 道）。
+ */
+const hallBlock = (stage: number): { x: number; rows: readonly string[] } =>
+	[
+		{ x: 9, rows: ["####", "++++", "$00$", "6556"] },
+		{ x: 8, rows: ["######", "++++++", "0$00$0", "665566"] },
+		{
+			x: 6,
+			rows: ["##########", "++++++++++", "0$0$00$0$0", "6666556666"],
+		},
+	][hallTier(stage)];
 /** 崖の下の道（y=4）と 町の通り（y=12）。 */
 const ROAD = "H....................H";
 /** 崖の下から 通りの上まで（y=5〜11）。空き地（雑草）。x=10〜11 は 道。 */
@@ -393,6 +417,8 @@ const townRows = (v: VillageView): string[] => {
 	const lot = LOT_ROWS.map((r) => (stage >= 5 ? r.replaceAll("v", ",") : r));
 	const rows = [...CLIFF_ROWS, ROAD, ...lot, ROAD, ...plazaRows(stage), BOTTOM];
 	put(rows, [19, 5], "i");
+	const hall = hallBlock(stage);
+	stamp(rows, hall.x, 0, hall.rows);
 	stamp(rows, 1, 5, shopBlock(stage));
 	stamp(rows, 12, 8, hutBlock(stage));
 	stamp(rows, 16, 5, storeBlock(stage));
@@ -514,10 +540,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		trigger: "talk",
 		sprite: PHONO_SPRITE,
 	});
-	{
-		const [dx, dy] = VILLAGE_SPOTS.hallDoor;
-		out.push({ id: "door_hall", x: dx, y: dy, trigger: "talk" });
-	}
+	// おんJ 本館の 扉（踏むと 中へ。前で A でも）
+	VILLAGE_SPOTS.hallDoors.forEach(([x, y], i) => {
+		out.push({ id: `door_hall_${i}`, x, y, trigger: "touch" });
+	});
 	if (stage >= CAFE_FROM) {
 		const [cx, cy] = VILLAGE_SPOTS.cafeDoor;
 		out.push({ id: "door_cafe", x: cx, y: cy, trigger: "talk" });

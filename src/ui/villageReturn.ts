@@ -9,7 +9,8 @@
 //   見せおえてから 1つずつ 消す（途中で 閉じても 次に 開いたとき また 見せる）。知らせの 前は 閉じたまま 描く（villageView）。
 //   期間限定の イベントの 始まり・終わり（Progress.eventNews。data/objectives.ts）も そのあとに 1〜2行。
 // - 持ち帰った物（Town.pending）：シヨが あずける物を きいて（一覧は ui/home.ts の chooseStored）、のこりを ロゼが 売り、
-//   ゼロが 売り上げを 読む。町が 育ったら 暗転して 建て直し、建った所を 見せて「町が「…」に なった」。
+//   ゼロが 売り上げを 読む。町が 育ったら 暗転して 建て直し、建った所を 見せて「町が「…」に なった」
+//   （おんJ 本館の 形が かわった 段なら 本館も 見せる）。
 //   決める前に 閉じても pending が 残るので 次に 村に 入ったとき 続きから。選んでいるあいだに 別のタブで
 //   決められていたら 何もしない（古い町で 上書きしない）。
 // - 倒れたときは 場面も 精算も ない（仲間は 話しかけると 反応する。ui/villageTalk.ts）。
@@ -30,6 +31,7 @@ import {
 	RETURN_PAGES,
 	STAGE_NAMES,
 	STAGE_UP,
+	STAGE_UP_HALL,
 	TOWN_MSG,
 	WAKE_PAGES,
 } from "../data/town";
@@ -40,6 +42,7 @@ import {
 	type VillageExit,
 	type VillageView,
 } from "../data/village/map";
+import { hallTier } from "../data/village/tiles";
 import type { Story } from "../engine/defs";
 import {
 	doneEventNews,
@@ -272,7 +275,10 @@ export const settleScript = async (
 	if (r.to > r.from) await stageUp(s, r.from, r.to);
 };
 
-/** 町が 育った：暗転して 建て直し、建った所を 見せて 知らせる。仲間の ひとことと 持ちこみの 数。 */
+/**
+ * 町が 育った：暗転して 建て直し、建った所を 見せて 知らせる。仲間の ひとことと 持ちこみの 数。
+ * おんJ 本館の 形が かわったら（段3・6。段を とばしても）本館を 見て ひとこと。
+ */
 const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
 	await s.fadeOut(400);
 	await s.rebuild();
@@ -281,6 +287,11 @@ const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
 	s.se("levelup");
 	s.toast(`町が　「${STAGE_NAMES[to] ?? ""}」に　なった`);
 	for (const l of STAGE_UP[to] ?? []) await s.say(l.who, l.text);
+	const hall = STAGE_UP_HALL[hallTier(to)];
+	if (hall && hallTier(to) > hallTier(from)) {
+		await s.look(VILLAGE_SPOTS.hallLook);
+		await s.say(hall.who, hall.text);
+	}
 	const carry = CARRY_MAX[to] ?? 0;
 	if (carry > (CARRY_MAX[from] ?? 0))
 		await s.narrate(`倉庫から　風呂板へ\n${carry}つまで　持っていける`);
