@@ -1,10 +1,11 @@
 // 音楽室の ピアノ（data/piano.ts）。プレイヤーが 1オクターブ（12音）の 鍵盤を 自由に 弾く 窓。
-// - 鍵盤を タップ（押した 瞬間に 鳴る）。十字キーの 左右で 鍵盤を えらび A で 弾く、上下で オクターブ。
-// - ガイド：劇中の 曲の 主旋律の 次の 音の 鍵盤が 光る（オクターブも その 音に 合わせて 動く）。
-//   光った 鍵盤を 押すと 次へ。ほかの 鍵盤も 鳴る（進まない）。最後まで 弾くと「おしまい」。
+// - 鍵盤は 真ん中の ドから シまでの 12音だけ（オクターブは 動かさない）。タップで 押した 瞬間に 鳴る。
+//   十字キーの 左右で 鍵盤を えらび A で 弾く。
+// - ガイド：劇中の 曲の 主旋律の 次の 音の 鍵盤が 光る（旋律は 12音に 折りたたむ。高い・低い 音も
+//   同じ 音名の 鍵盤）。光った 鍵盤を 押すと 次へ。ほかの 鍵盤も 鳴る（進まない）。最後まで 弾くと「おしまい」。
 // 曲は 自動では 鳴らない（押した 音だけ）。B・やめる で 閉じる。
 
-import { isBlack, KEY_NAMES, octaveOf, PIANO_OCTAVES } from "../data/piano";
+import { isBlack, KEY_NAMES, PIANO_BASE, pitchClass } from "../data/piano";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { markOpened, onTap } from "./list";
@@ -27,8 +28,6 @@ export const openPiano = (
 		const guide = opt.guide ?? [];
 		let step = 0;
 		let played = 0;
-		let base: number =
-			guide.length > 0 ? octaveOf(guide[0]) : PIANO_OCTAVES.start;
 		let cur = 0;
 		const box = el("div", { class: "menu window piano" });
 		box.appendChild(el("div", { class: "menu-title", text: opt.title }));
@@ -53,47 +52,32 @@ export const openPiano = (
 			kb.appendChild(b);
 			keys[k] = b;
 		}
-		const row = box.appendChild(el("div", { class: "piano-octave" }));
-		const down = el("button", { class: "menu-close", text: "◀ 低く" });
-		const label = el("span", { class: "piano-oct-label" });
-		const up = el("button", { class: "menu-close", text: "高く ▶" });
-		row.append(down, label, up);
-		onTap(down, box, () => shift(-12));
-		onTap(up, box, () => shift(12));
 		const close = el("button", { class: "menu-close", text: "やめる" });
 		onTap(close, box, () => done());
 		box.appendChild(close);
 
-		const nextMidi = (): number | undefined => guide[step];
+		/** 次に 押す 鍵盤（ガイドの 音を 12音に 折りたたんだ もの。ガイドが 無い・終わったら undefined）。 */
+		const nextKey = (): number | undefined =>
+			step < guide.length ? pitchClass(guide[step]) : undefined;
 		const render = () => {
-			const n = nextMidi();
-			if (n !== undefined && octaveOf(n) !== base) base = octaveOf(n);
-			label.textContent = `オクターブ ${base / 12 - 1}`;
+			const n = nextKey();
 			keys.forEach((b, k) => {
 				b.classList.toggle("cur", k === cur);
-				b.classList.toggle("next", n !== undefined && base + k === n);
+				b.classList.toggle("next", k === n);
 			});
 			if (!guide.length) info.textContent = "すきに　弾いて　みよう";
 			else if (step >= guide.length) info.textContent = "♪　おしまい";
 			else
 				info.textContent = `光る　鍵盤を　押そう　${step + 1} / ${guide.length}`;
 		};
-		const shift = (d: number) => {
-			const n = base + d;
-			if (n < PIANO_OCTAVES.min || n > PIANO_OCTAVES.max) return;
-			base = n;
-			// ガイドの 途中は 次の 音の オクターブに もどる（見本の 高さと ずれないように）
-			render();
-		};
 		const press = (k: number) => {
-			const midi = base + k;
-			void ctx.audio.pianoNote(midi);
+			void ctx.audio.pianoNote(PIANO_BASE + k);
 			played++;
 			const b = keys[k];
 			b.classList.remove("hit");
 			void b.offsetWidth;
 			b.classList.add("hit");
-			if (nextMidi() === midi) step++;
+			if (nextKey() === k) step++;
 			render();
 		};
 		ctx.ui.appendChild(box);
@@ -104,8 +88,6 @@ export const openPiano = (
 				if (k === "left" || k === "right") {
 					cur = (cur + (k === "left" ? 11 : 1)) % 12;
 					render();
-				} else if (k === "up" || k === "down") {
-					if (!repeat) shift(k === "up" ? 12 : -12);
 				} else if (k === "a") {
 					if (!repeat) press(cur);
 				} else if (k === "b" && !repeat) done();

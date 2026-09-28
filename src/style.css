@@ -2944,21 +2944,3 @@ body.shake #app {
 		transform: translateY(2px);
 	}
 }
-
-.piano-octave {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 8px;
-	margin-bottom: 6px;
-}
-
-.piano-octave .menu-close {
-	flex: 0 0 auto;
-	width: auto;
-	padding: 6px 12px;
-}
-
-.piano-oct-label {
-	font-size: 13px;
-}
