@@ -8,6 +8,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import type { DungeonId } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
+import { eventText, goalText, type ObjectiveInfo } from "../data/objectives";
 import { DUNGEON_NAMES } from "../data/story";
 import {
 	type BuildingKind,
@@ -367,6 +368,8 @@ class MapView {
 	/** 行き先に 選べる（開いた）植民地。 */
 	open: DungeonId[] = [];
 	cleared: DungeonId[] = [];
+	/** 板ごとの 目的（行き先を 選ぶ ときだけ。村で 決めた 値。data/objectives.ts）。 */
+	goals: Partial<Record<DungeonId, ObjectiveInfo>> = {};
 
 	constructor(ctx: Ctx, title: string) {
 		this.canvas = el("canvas", { class: "wm-canvas" });
@@ -434,12 +437,15 @@ class MapView {
 		];
 	}
 
-	/** フキダシの 中身（名前と 階・向き。まだ 開いていなければ ？？？）。 */
+	/** フキダシの 中身（名前と 階・向き・ボス・期間限定。まだ 開いていなければ ？？？）。 */
 	say(d: DungeonId): void {
 		const open = this.open.includes(d);
 		const n = DUNGEON_NAMES[d];
+		const g = this.goals[d];
+		const boss = g?.objective === "boss" ? "・ボス" : "";
 		this.bubble.innerHTML = open
-			? `<b>${n.name}</b><small>${DUNGEONS[d].floors}階・${isUpBoard(d) ? "上り" : "下り"}</small>`
+			? `<b>${n.name}</b><small>${DUNGEONS[d].floors}階・${isUpBoard(d) ? "上り" : "下り"}${boss}</small>` +
+				(g?.event ? `<small class="wm-limited">期間限定</small>` : "")
 			: "<b>？？？</b><small>まだ　行けない</small>";
 		this.bubble.classList.toggle("locked", !open);
 		// 変わるたびに ぽんと 出す
@@ -531,15 +537,20 @@ class MapView {
 		);
 	}
 
-	/** 下の 札（行き先の 名前・階・向き・決まり）。 */
+	/** 下の 札（行き先の 名前・階・向き・目的（期間限定なら その 名前と 残り）・決まり）。 */
 	info(d: DungeonId): void {
 		const n = DUNGEON_NAMES[d];
 		const open = this.open.includes(d);
 		const dg = DUNGEONS[d];
 		const star = this.cleared.includes(d) ? "　★" : "";
+		const g = this.goals[d];
 		this.panel.innerHTML = open
 			? `<div class="wm-name">${n.name}<small>（${n.nick}）${star}</small></div>` +
 				`<div class="wm-sub">${dg.floors}階・${isUpBoard(d) ? "上り" : "下り"}　${COLONY_SPOTS[d].place}</div>` +
+				(g
+					? `<div class="wm-goal${g.objective === "boss" ? " boss" : ""}">目的：${goalText(d, g.objective)}</div>` +
+						(g.event ? `<div class="wm-limited">${eventText(g)}</div>` : "")
+					: "") +
 				`<div class="wm-desc">${DUNGEON_DESC[d]}</div>`
 			: `<div class="wm-name">？？？</div><div class="wm-desc">${lockedHint(d)}</div>`;
 	}
@@ -564,11 +575,18 @@ const tick = (): Promise<void> =>
  */
 export const pickColony = async (
 	ctx: Ctx,
-	o: { open: DungeonId[]; cleared: DungeonId[]; start: DungeonId },
+	o: {
+		open: DungeonId[];
+		cleared: DungeonId[];
+		start: DungeonId;
+		/** 板ごとの 目的（村で 1回だけ 決めた 値。札と フキダシに 出す）。 */
+		goals?: Partial<Record<DungeonId, ObjectiveInfo>>;
+	},
 ): Promise<DungeonId | null> => {
 	const v = new MapView(ctx, "どの　植民地へ？");
 	v.open = o.open;
 	v.cleared = o.cleared;
+	v.goals = o.goals ?? {};
 	// 地図に 出る 植民地（ひみつの 板は 開くまで 出さない）と、さいごに やめる
 	const spots = DUNGEON_IDS.filter(
 		(d) => o.open.includes(d) || !DUNGEONS[d].secret,

@@ -18,15 +18,17 @@ import { floorShort } from "./floorName";
 import { listWindow, markOpened, onTap } from "./list";
 import { esc } from "./records";
 
-/** もらった リプレイの 見出し（どこで どう 終わったか）。 */
+/** もらった リプレイの 見出し（どこで どう 終わったか。ボスなら「B10で　〇〇を　たおした」）。 */
 const sharedHead = (rp: SavedReplay): string => {
 	const where = DUNGEON_NAMES[rp.dungeon ?? "main"].short;
 	const how =
-		rp.kind === "clear"
-			? "持ち帰った"
-			: rp.kind === "escape"
-				? `${floorShort(rp.dungeon, rp.depth)}から　帰還スレで　もどった`
-				: `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`;
+		rp.kind === "clear" && rp.objective === "boss"
+			? `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`
+			: rp.kind === "clear"
+				? "持ち帰った"
+				: rp.kind === "escape"
+					? `${floorShort(rp.dungeon, rp.depth)}から　帰還スレで　もどった`
+					: `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`;
 	return `${esc(where)}　${how}<br><small>${rp.turn}ターン</small>`;
 };
 

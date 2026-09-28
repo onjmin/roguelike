@@ -2,7 +2,8 @@
 // 地図の形と 人・物の 置き場所は data/village/map.ts（DOM を使わない）。ここで id ごとに スクリプトを付ける。
 //
 // - ダンジョンの口：踏むと 中断した冒険の 確認 → もぐる？ → （本編なら）倉庫からの 持ちこみ →
-//   はじめてなら 語り → 村を出る。やめたら 1歩 もどる。
+//   はじめてなら 語り → 村を出る。やめたら 1歩 もどる。板ごとの 目的（持ち帰り・ボス。期間限定の
+//   イベントも。data/objectives.ts）は 行き先を 選ぶ 前に 1回だけ 決めて、地図と 冒険に 同じ 値を 渡す。
 // - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
 // - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと（頭の上に「！」）。聞いたら 町の様子の
 //   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（ゼロ＝冒険の記録と 売り上げの 帳簿、
@@ -20,6 +21,11 @@ import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
 import { BOARD_MENU } from "../data/mobs";
+import {
+	type ObjectiveInfo,
+	objectiveFor,
+	withDevEvent,
+} from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { DUNGEON_NAMES, STORY } from "../data/story";
 import { STAGE_NAMES, TOWN_MSG, TOWN_NAME, VILLAGE_MSG } from "../data/town";
@@ -153,8 +159,14 @@ const mouthScript =
 		// 行き先の 植民地（全体マップで 選ぶ。ui/worldMap.ts）
 		const open = DUNGEON_IDS.filter((x) => loadProgress().unlocked.includes(x));
 		const cleared = loadProgress().cleared;
+		// 板ごとの 目的（期間限定の イベントも）は ここで 1回だけ 決める。地図に 出す 目的と
+		// Run.create に 渡す 目的を 同じに する（歩いている あいだに イベントが かわっても ずれない）
+		const prog = withDevEvent(loadProgress());
+		const goals = Object.fromEntries(
+			DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
+		) as Record<DungeonId, ObjectiveInfo>;
 		await hideMsg(s);
-		const picked = await pickColony(ctx, { open, cleared, start: d });
+		const picked = await pickColony(ctx, { open, cleared, start: d, goals });
 		if (!picked) {
 			await back();
 			return;
@@ -197,7 +209,7 @@ const mouthScript =
 			await showStory(ctx, STORY[d].intro.map(escBr));
 			notePicked(d, true);
 		}
-		s.exit({ kind: "new", dungeon: d, carry });
+		s.exit({ kind: "new", dungeon: d, carry, objective: goals[d].objective });
 	};
 
 /** 口の 立て札。 */
@@ -371,7 +383,7 @@ const storeChooser =
 /** 場面の ある 帰り方（持ち帰った・帰還スレ）なら その形。 */
 const returnOf = (a: Arrival): ReturnArrival | null =>
 	a && (a.kind === "clear" || a.kind === "escape")
-		? { kind: a.kind, dungeon: a.dungeon }
+		? { kind: a.kind, dungeon: a.dungeon, objective: a.objective }
 		: null;
 
 /**

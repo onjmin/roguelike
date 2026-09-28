@@ -4,8 +4,10 @@
 // - 持ち帰った・帰還スレ：キリコが 口の奥から 出てくると、口の前に 仲間が 並んで 待っている（幕が 上がる前に
 //   並べる。lineUp）。持ち帰りの 語り（STORY[d].ending）か 帰還スレの 語り（RETURN_PAGES）を 村の窓で 話して、
 //   暗転の あいだに 持ち場へ もどる（囲いの中の ロゼ・シヨは 歩いては 帰れない）。語りは 保存しない（閉じたら それきり）。
+//   ボスを たおして 一瞬で 帰ったときは、持ち帰りの 語りの 前に どう 帰ったかの 1〜2枚（BOSS_RETURN[d]）。
 // - 開いた知らせ（Progress.news）：本編は 口の前で 見張る やきうが どいて 小屋の前へ、もっとは 板が はずれる。
 //   見せおえてから 1つずつ 消す（途中で 閉じても 次に 開いたとき また 見せる）。知らせの 前は 閉じたまま 描く（villageView）。
+//   期間限定の イベントの 始まり・終わり（Progress.eventNews。data/objectives.ts）も そのあとに 1〜2行。
 // - 持ち帰った物（Town.pending）：シヨが あずける物を きいて（一覧は ui/home.ts の chooseStored）、のこりを ロゼが 売り、
 //   ゼロが 売り上げを 読む。町が 育ったら 暗転して 建て直し、建った所を 見せて「町が「…」に なった」。
 //   決める前に 閉じても pending が 残るので 次に 村に 入ったとき 続きから。選んでいるあいだに 別のタブで
@@ -14,9 +16,11 @@
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../core/town";
-import type { DungeonId } from "../core/types";
+import type { DungeonId, Objective } from "../core/types";
+import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import {
+	BOSS_RETURN,
 	DUNGEON_NAMES,
 	STORY,
 	type StoryPage,
@@ -38,6 +42,7 @@ import {
 } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import {
+	doneEventNews,
 	doneProgressNews,
 	loadProgress,
 	loadRecords,
@@ -79,11 +84,20 @@ export const villageView = (): VillageView => {
 
 // ───────────────── 口から 出てくる ─────────────────
 
-/** 場面の ある 帰り方（持ち帰った・帰還スレ）。 */
-export type ReturnArrival = { kind: "clear" | "escape"; dungeon: DungeonId };
+/** 場面の ある 帰り方（持ち帰った・帰還スレ）。objective が boss なら ボスを たおして 一瞬で 帰った。 */
+export type ReturnArrival = {
+	kind: "clear" | "escape";
+	dungeon: DungeonId;
+	objective?: Objective;
+};
 
-const pagesFor = (a: ReturnArrival): readonly StoryPage[] =>
-	a.kind === "clear" ? STORY[a.dungeon].ending : RETURN_PAGES;
+/** 村で 話す 語り（ボスなら どう 帰ったかの 頁 → 持ち帰りの 語り。品を 持ち帰った ことは 同じ）。 */
+export const pagesFor = (a: ReturnArrival): readonly StoryPage[] =>
+	a.kind !== "clear"
+		? RETURN_PAGES
+		: a.objective === "boss"
+			? [...(BOSS_RETURN[a.dungeon] ?? []), ...STORY[a.dungeon].ending]
+			: STORY[a.dungeon].ending;
 
 /** 語りで 話す 仲間（出てくる順）。 */
 const castOf = (pages: readonly StoryPage[]): Speaker[] => [
@@ -195,6 +209,15 @@ export const newsScript = async (s: Story): Promise<void> => {
 			`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,
 		);
 		await s.look(null);
+	}
+	// 期間限定の イベントが 終わった・始まった（見せてから 1つずつ 消す。知らない id は 黙って 消す）
+	for (const n of loadProgress().eventNews ?? []) {
+		const e = eventById(n.id);
+		if (e) {
+			if (n.started) s.se("chapter");
+			for (const t of eventNewsText(e, n.started)) await s.narrate(t);
+		}
+		doneEventNews(n);
 	}
 };
 

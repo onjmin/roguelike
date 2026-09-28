@@ -579,6 +579,41 @@ body.shake #app {
 	color: #9fe6ff;
 }
 
+/* 見つけた ボスの 名前と HP の ゲージ（小さく。はみ出したら 名前を 切る） */
+.status .st-boss {
+	flex-wrap: nowrap;
+	align-items: center;
+	column-gap: 0.5em;
+	margin-top: 2px;
+}
+
+.status .st-boss-name {
+	flex: 0 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: #ff9a8a;
+	font-size: 0.85em;
+}
+
+.status .st-boss-bar {
+	position: relative;
+	flex: 0 1 120px;
+	min-width: 40px;
+	height: 5px;
+	background: rgba(0, 0, 0, 0.6);
+	border: 1px solid rgba(0, 0, 0, 0.8);
+}
+
+.status .st-boss-bar i {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	background: #e0506a;
+	transition: width 0.25s;
+}
+
 /* ───────── 選択肢・メニュー ───────── */
 
 .choice {
@@ -2627,9 +2662,29 @@ body.shake #app {
 
 .wm-panel {
 	width: min(calc(var(--app-w) - 24px), 560px);
-	min-height: 5.2em;
+	/* 名前・階・目的・決まり の 4行（期間限定なら 5行。えらび直しで 下の 選択肢が はねないように）。
+	   背の 低い 画面では 札は 縮めず、下の 選択肢の ほうを 巻き取りに する（文字が 重ならないように） */
+	min-height: 5.6em;
+	flex-shrink: 0;
 	padding: 8px 12px;
 	line-height: 1.6;
+}
+
+.wm-goal {
+	font-size: 13px;
+}
+
+.wm-goal.boss {
+	color: #ff9a8a;
+}
+
+.wm-panel .wm-limited {
+	font-size: 12px;
+	color: #9fe6ff;
+}
+
+.wm-bubble small.wm-limited {
+	color: #9fe6ff;
 }
 
 .wm-name {

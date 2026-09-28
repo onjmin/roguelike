@@ -125,7 +125,7 @@ const newSeed = (): string =>
 
 /**
  * 開発用：URL で好きな階から始める（pnpm dev か ?debug のときだけ）。
- * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ちょっと・もっと も）
+ * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ほかの 板も。`&objective=boss` で いちばん底に ボス）
  */
 const devRun = (): Run | null => {
 	const q = new URLSearchParams(location.search);
@@ -138,6 +138,8 @@ const devRun = (): Run | null => {
 	const run = Run.create(
 		`${DEBUG_SEED}${seed ?? newSeed()}`,
 		dungeonById(d ?? undefined).id,
+		[],
+		q.get("objective") === "boss" ? "boss" : "fetch",
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
@@ -154,12 +156,14 @@ const runFor = (
 ): { run: Run; replay: SavedReplay | undefined } => {
 	if (choice.kind === "replay") {
 		// リプレイ：同じシードから始めて、記録のコマンドを入れなおす
+		// （目的も 記録の もの。無ければ 持ち帰り。今の 板の 既定・イベントからは 決めない）
 		const replay = choice.replay;
 		return {
 			run: Run.create(
 				replay.seed,
 				replay.dungeon ?? "main",
 				replay.carry ?? [],
+				replay.objective ?? "fetch",
 			),
 			replay,
 		};
@@ -168,7 +172,7 @@ const runFor = (
 		// 冒険を作って すぐ保存する（取り出したのに 冒険が無い、にならないように）。
 		// 選んだあとで 別のタブが 持っていった道具は 持っていけない
 		const carry = choice.carry.length ? takeFromStorage(choice.carry) : [];
-		const run = Run.create(newSeed(), choice.dungeon, carry);
+		const run = Run.create(newSeed(), choice.dungeon, carry, choice.objective);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };
 	}
@@ -225,7 +229,11 @@ const loop = async () => {
 			: r === "suspend"
 				? { kind: "suspend" }
 				: run.s.end
-					? { kind: run.s.end.kind, dungeon: run.s.dungeon }
+					? {
+							kind: run.s.end.kind,
+							dungeon: run.s.dungeon,
+							objective: run.objective,
+						}
 					: null;
 		// 画面を消してから村へ
 		const c = screen.begin();

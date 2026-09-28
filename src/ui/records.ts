@@ -4,8 +4,8 @@
 
 import { dungeonById } from "../core/data/dungeons";
 import { defOf, itemName } from "../core/item";
-import type { RunState } from "../core/types";
-import { DUNGEON_NAMES } from "../data/story";
+import type { DungeonId, RunState } from "../core/types";
+import { BOSS_HOME, DUNGEON_NAMES } from "../data/story";
 import {
 	addRecord,
 	clearRun,
@@ -121,19 +121,34 @@ export const showStory = async (ctx: Ctx, pages: string[]): Promise<void> => {
 /** 文字を逃がして、\n を改行にする（セリフは2行に分けて書かれている）。 */
 export const escBr = (s: string): string => esc(s).replace(/\n/g, "<br>");
 
-/** 終わり方の1行（倒れた階と理由・持ち帰ったなら いちばん深い階）。 */
+/** ボスを たおして 帰った ひとこと（「（品）ごと、〜　帰った」。冒険の記録の 札・リプレイの 終わり）。 */
+export const bossHomeLine = (d: DungeonId): string =>
+	`${defOf(dungeonById(d).goal).name}ごと、${BOSS_HOME[d] ?? "入口へ　帰った"}`;
+
+/**
+ * 終わり方の1行（倒れた階と理由・持ち帰ったなら いちばん深い階・ボスを たおしたなら その 階と ボス。
+ * ボスの 冒険の 終わりの 理由は「〇〇を　たおした」）。
+ */
 const endLine = (
 	r: Pick<
 		RunRecord,
-		"kind" | "depth" | "maxDepth" | "cause" | "returning" | "dungeon"
+		| "kind"
+		| "depth"
+		| "maxDepth"
+		| "cause"
+		| "returning"
+		| "dungeon"
+		| "objective"
 	>,
 ): string =>
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
-		r.kind === "clear"
-			? `${floorShort(r.dungeon, r.maxDepth)}から　地上へ　もどった`
-			: r.kind === "escape"
-				? `${floorShort(r.dungeon, r.depth)}から　帰還スレで　もどった`
-				: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で　${r.cause}`
+		r.kind === "clear" && r.objective === "boss"
+			? `${floorShort(r.dungeon, r.depth)}で　${r.cause}`
+			: r.kind === "clear"
+				? `${floorShort(r.dungeon, r.maxDepth)}から　地上へ　もどった`
+				: r.kind === "escape"
+					? `${floorShort(r.dungeon, r.depth)}から　帰還スレで　もどった`
+					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で　${r.cause}`
 	}`;
 
 /** 記録の一覧の 終わり方の札。 */
@@ -162,6 +177,7 @@ const dateLabel = (at: number): string => {
 export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	const rec = recordFromRun(s);
 	const clear = rec.kind === "clear";
+	const boss = rec.objective === "boss";
 	const escaped = rec.kind === "escape";
 	addRecord(rec);
 	clearRun();
@@ -194,13 +210,23 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-head", text: "冒険の記録" }),
 		el("div", {
 			class: "runend-headline",
-			text: clear
-				? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
-				: escaped
-					? "地上へ　もどった"
-					: "たおれた",
+			// ボス：見出しは「〇〇を　たおした」（終わりの 理由）、下の 行で 品ごと どう 帰ったか
+			text:
+				clear && boss
+					? rec.cause
+					: clear
+						? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
+						: escaped
+							? "地上へ　もどった"
+							: "たおれた",
 		}),
-		el("p", { class: "matome-line runend-cause", text: endLine(rec) }),
+		el("p", {
+			class: "matome-line runend-cause",
+			text:
+				clear && boss
+					? `${DUNGEON_NAMES[s.dungeon].short}　${bossHomeLine(s.dungeon)}`
+					: endLine(rec),
+		}),
 		el("p", { class: "runend-nth", text: `${nth}回目の　冒険` }),
 		el("div", { class: "matome-sec" }, [
 			el("div", { class: "matome-title", text: "きろく" }),

@@ -14,7 +14,7 @@
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
 import type { Dir8 } from "../core/geom";
-import type { DungeonId } from "../core/types";
+import type { DungeonId, Objective } from "../core/types";
 import { CAST, KIRIKO_WALK } from "../data/cast";
 import type { Speaker } from "../data/quotes";
 import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
@@ -54,7 +54,12 @@ const TEXT_MS = 28;
 
 /** 冒険から どう もどってきたか（村での 立ち位置と、入ったときの 場面を 決める）。 */
 export type Arrival =
-	| { kind: "clear" | "escape" | "dead"; dungeon: DungeonId }
+	| {
+			kind: "clear" | "escape" | "dead";
+			dungeon: DungeonId;
+			/** 目的（ボスを たおして 帰ったなら boss。無ければ 持ち帰り）。 */
+			objective?: Objective;
+	  }
 	| { kind: "suspend" }
 	| { kind: "replay" }
 	| null;

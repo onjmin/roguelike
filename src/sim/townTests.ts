@@ -20,12 +20,16 @@ import { sfx } from "../data/sfx";
 import {
 	forgetProgressMemo,
 	loadProgress,
+	loadRecords,
+	loadReplays,
 	loadTown,
 	noteRunEnd,
+	replayMatches,
 	saveRun,
 	saveTown,
 	settleReturn,
 	takeFromStorage,
+	toReplay,
 } from "../engine/save";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
@@ -315,6 +319,42 @@ test("carrying out takes the chosen items by content, once", () => {
 		ok(got.length === 1 && got[0].plus === 2, "took the wrong item");
 		ok(loadTown().storage.length === 2, "storage did not shrink by one");
 		ok(takeFromStorage([mk("steel", 2)]).length === 0, "took it twice");
+	});
+});
+
+test("a boss run's record and replay keep the objective; replays without it (old, shared) read as fetch", () => {
+	withStorage(() => {
+		loadProgress();
+		const boss = Run.create("boss-record", "kinoko", [], "boss");
+		boss.act({ c: "wait" });
+		boss.finish("clear", "親玉きのにゃんを　たおした");
+		saveRun(boss.s);
+		const rec = loadRecords()[0];
+		const rp = loadReplays()[0];
+		ok(rec?.objective === "boss", `record objective ${rec?.objective}`);
+		ok(rp?.objective === "boss", `replay objective ${rp?.objective}`);
+		if (!rp) throw new Error("harness: no replay");
+		// 持ち帰りの 冒険は 書かない（前の 版と 同じ 形）
+		const fetch = Run.create("fetch-record", "kinoko");
+		fetch.act({ c: "wait" });
+		fetch.finish("dead", "試験");
+		saveRun(fetch.s);
+		ok(!("objective" in (loadRecords()[0] ?? {})), "fetch record wrote one");
+		ok(!("objective" in (loadReplays()[0] ?? {})), "fetch replay wrote one");
+		// 共有の リプレイ：無い・fetch は 持ち帰り（書かない）、boss は 通す、ほかは 読まない
+		const { objective: _drop, ...old } = rp;
+		ok(toReplay(old)?.objective === undefined, "an old replay became boss");
+		ok(
+			toReplay({ ...rp, objective: "fetch" })?.objective === undefined,
+			"a fetch replay kept its objective",
+		);
+		ok(toReplay(rp)?.objective === "boss", "a shared boss replay lost it");
+		ok(
+			toReplay({ ...rp, objective: "raid" }) === null,
+			"an unknown objective was read",
+		);
+		// 記録と リプレイは 目的が あっても 結べる
+		ok(replayMatches(rp, rec), "the boss replay lost its record");
 	});
 });
 

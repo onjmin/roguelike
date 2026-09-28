@@ -2,7 +2,7 @@
 // rpg の engine/defs.ts から、村で使う物だけを残した（戦闘・仲間・なかよし度・セーブは無い）。
 // 村のデータは src/data/village/、スクリプトは src/ui/villageEvents.ts に書く。
 
-import type { DungeonId, Item, RunState } from "../core/types";
+import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import type { Speaker } from "../data/quotes";
 import type { SavedReplay } from "./save";
 import type { Dir } from "./types";
@@ -100,9 +100,9 @@ export type MapDef = {
 
 // ───────────────── 村を出るとき ─────────────────
 
-/** 村を出て 冒険へ（main.ts が受け取る）。 */
+/** 村を出て 冒険へ（main.ts が受け取る）。objective は 村で 行き先を 決めた ときの 目的（data/objectives.ts）。 */
 export type VillageExit =
-	| { kind: "new"; dungeon: DungeonId; carry: Item[] }
+	| { kind: "new"; dungeon: DungeonId; carry: Item[]; objective: Objective }
 	| { kind: "continue"; state: RunState }
 	| { kind: "replay"; replay: SavedReplay };
 

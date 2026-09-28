@@ -86,6 +86,8 @@ export type Figure = {
 	equip?: EquipLook;
 	/** 攻撃で武器を振っている進み（0〜1。振っていなければ −1）。 */
 	swing?: number;
+	/** 絵の 倍率（ボス。足もとを マスの 下の まんなかに そろえて 大きく 描く。無ければ 1）。 */
+	scale?: number;
 };
 
 /** 飛んでいるもの（投げた道具・杖の光）。 */
@@ -332,9 +334,20 @@ export class FloorView {
 			// 装備：体のうしろに隠れる側 → 体 → 体の前に出る側
 			if (g.equip)
 				drawEquip(ctx, g.equip, sd, frame, x, y, "under", g.swing ?? -1);
-			// 1コマの 絵（動きだす 前の 置物）は 歩かず そのまま
+			// 1コマの 絵（動きだす 前の 置物）は 歩かず そのまま。
+			// 大きく 描く 絵（ボス）は 足もとを マスの 下の まんなかに そろえる（drawWalk の scale は
+			// 大きい マスの 左上から 描くので、その ぶん 左上へ ずらす）
+			const sc = g.scale ?? 1;
 			const drawn = isWalkRef(g.sprite)
-				? drawWalk(ctx, g.sprite, sd, frame, x, y)
+				? drawWalk(
+						ctx,
+						g.sprite,
+						sd,
+						frame,
+						x - (TILE * (sc - 1)) / 2,
+						y - TILE * (sc - 1),
+						sc,
+					)
 				: drawRefInCell(ctx, g.sprite, x, y);
 			if (g.equip && drawn)
 				drawEquip(ctx, g.equip, sd, frame, x, y, "over", g.swing ?? -1);
@@ -345,7 +358,14 @@ export class FloorView {
 				ctx.arc(x + 8, y + 9, 5, 0, Math.PI * 2);
 				ctx.fill();
 			}
-			if (g.asleep) drawSleepZ(ctx, x, y, time + g.id * 311, 1 - g.fade);
+			if (g.asleep)
+				drawSleepZ(
+					ctx,
+					x + (TILE * (sc - 1)) / 2,
+					y - TILE * (sc - 1),
+					time + g.id * 311,
+					1 - g.fade,
+				);
 			ctx.globalAlpha = 1;
 		}
 

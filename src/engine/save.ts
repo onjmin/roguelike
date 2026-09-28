@@ -13,7 +13,8 @@ import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { nextStage, priceOf, STORAGE_CAP } from "../core/town";
-import type { DungeonId, Item, RunState } from "../core/types";
+import type { DungeonId, Item, Objective, RunState } from "../core/types";
+import { type ActiveEvent, advanceEvents } from "../data/objectives";
 
 const PREFIX = "kiriko-roguelike/";
 const RUN_KEY = `${PREFIX}run`;
@@ -85,7 +86,7 @@ export const saveRun = (s: RunState): void => {
 		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）。
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
-		noteRunEnd(s.dungeon, s.end.kind);
+		noteRunEnd(s.dungeon, s.end.kind, s.seed);
 		return;
 	}
 	const text = serializeRun(s);
@@ -181,6 +182,8 @@ export type RunRecord = {
 	seed: string;
 	/** どのダンジョンか（ダンジョンが1つだったころの記録には無い＝本編）。 */
 	dungeon?: DungeonId;
+	/** 目的（ボスの ときだけ 書く。無ければ 持ち帰り）。 */
+	objective?: Objective;
 };
 
 type Stats = { runs: number; clears: number; best: number };
@@ -205,6 +208,7 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		returning: s.returning,
 		seed: s.seed,
 		dungeon: s.dungeon,
+		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 	};
 };
 
@@ -332,10 +336,13 @@ export const addRecord = (r: RunRecord): boolean => {
 
 export type ProgressNews = { dungeon: DungeonId; reason: "clear" | "relief" };
 
+/** 期間限定の イベントの 知らせ（始まった・終わった。data/objectives.ts）。 */
+export type EventNews = { id: string; started: boolean };
+
 export type Progress = {
 	/** もぐれるダンジョン。 */
 	unlocked: DungeonId[];
-	/** 持ち帰ったことのあるダンジョン。 */
+	/** 持ち帰ったことのあるダンジョン（ボスを たおして 品ごと 帰ったのも）。 */
 	cleared: DungeonId[];
 	/** 倒れた回数（B2 より先で すてた冒険も。ダンジョンごと。救いの条件に使う）。 */
 	fails: Partial<Record<DungeonId, number>>;
@@ -345,10 +352,27 @@ export type Progress = {
 	last?: DungeonId;
 	/** まだ知らせていない「開いた」（記録の札のあとに ひとこと）。 */
 	news: ProgressNews[];
+	/** 出撃の 回数（冒険が 終わるたびに 1。期間限定の イベントの きっかけ。無ければ 0）。 */
+	outings?: number;
+	/** 起きている 期間限定の イベント（0か 1つ。data/objectives.ts）。 */
+	event?: ActiveEvent;
+	/** まだ 知らせていない イベントの 始まり・終わり（村に 帰ったとき）。 */
+	eventNews?: EventNews[];
 };
 
 const isDungeon = (x: unknown): x is DungeonId =>
 	typeof x === "string" && DUNGEON_IDS.includes(x as DungeonId);
+
+const isActiveEvent = (x: unknown): x is ActiveEvent => {
+	const o = x as Partial<ActiveEvent> | null;
+	return (
+		!!o &&
+		typeof o === "object" &&
+		typeof o.id === "string" &&
+		typeof o.since === "number" &&
+		typeof o.clearsSince === "number"
+	);
+};
 
 /** どこまで開いたか。まだ無ければ、これまでの記録から決める（ダンジョンが1つだったころに遊んだ人は 本編も開いている）。 */
 export const loadProgress = (): Progress => {
@@ -373,6 +397,16 @@ export const loadProgress = (): Progress => {
 								(n.reason === "clear" || n.reason === "relief"),
 						)
 					: [],
+				...(typeof o.outings === "number" ? { outings: o.outings } : {}),
+				...(isActiveEvent(o.event) ? { event: o.event } : {}),
+				...(Array.isArray(o.eventNews)
+					? {
+							eventNews: o.eventNews.filter(
+								(n) =>
+									typeof n?.id === "string" && typeof n.started === "boolean",
+							),
+						}
+					: {}),
 			};
 		}
 	} catch {
@@ -439,14 +473,17 @@ export const saveProgress = (p: Progress): void => {
 	}
 };
 
-/** 冒険が終わった（持ち帰った・倒れた・やめた）。次のダンジョンが開いたら 知らせを残す。 */
+/**
+ * 冒険が終わった（持ち帰った・倒れた・やめた）。次のダンジョンが開いたら 知らせを残す。
+ * そのあと 期間限定の イベントを 進める（出撃を 数えて、終わった・始まったら 知らせを残す。data/objectives.ts）。
+ */
 export const noteRunEnd = (
 	dungeon: DungeonId,
 	kind: "dead" | "clear" | "escape",
 	seed?: string,
 ): void => {
 	if (seed?.startsWith(DEBUG_SEED)) return;
-	const p = loadProgress();
+	let p = loadProgress();
 	const unlock = (id: DungeonId, reason: ProgressNews["reason"]) => {
 		if (p.unlocked.includes(id)) return;
 		p.unlocked.push(id);
@@ -465,6 +502,24 @@ export const noteRunEnd = (
 				unlock(d, "relief");
 		}
 	}
+	const ev = advanceEvents(p, { dungeon, kind, seed: seed ?? "" });
+	p = ev.progress;
+	const news = [...(p.eventNews ?? [])];
+	if (ev.ended) news.push({ id: ev.ended.id, started: false });
+	if (ev.started) news.push({ id: ev.started.id, started: true });
+	if (news.length) p.eventNews = news;
+	saveProgress(p);
+};
+
+/** イベントの 知らせを 1つ 見せおえた（見せてから 消す。途中で 閉じたら 次に また 見せる）。 */
+export const doneEventNews = (n: EventNews): void => {
+	const p = loadProgress();
+	const list = p.eventNews ?? [];
+	const i = list.findIndex((x) => x.id === n.id && x.started === n.started);
+	if (i < 0) return;
+	list.splice(i, 1);
+	if (list.length) p.eventNews = list;
+	else delete p.eventNews;
 	saveProgress(p);
 };
 
@@ -640,6 +695,8 @@ export type SavedReplay = {
 	carry?: Item[];
 	/** どのダンジョンか（無ければ本編）。 */
 	dungeon?: DungeonId;
+	/** 目的（ボスの ときだけ 書く。無ければ 持ち帰り。今の 板の 既定からは 決めない）。 */
+	objective?: Objective;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -706,6 +763,12 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (!r.builds.every((b) => typeof b === "string")) return null;
 	if (r.dungeon !== undefined && !DUNGEON_IDS.includes(r.dungeon)) return null;
 	if (
+		r.objective !== undefined &&
+		r.objective !== "fetch" &&
+		r.objective !== "boss"
+	)
+		return null;
+	if (
 		r.carry !== undefined &&
 		!(Array.isArray(r.carry) && r.carry.every(isCarryItem))
 	)
@@ -714,6 +777,7 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
+		...(r.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: r.at,
 		builds: r.builds,
 		text: r.text,
@@ -750,6 +814,7 @@ const addReplay = (s: RunState): void => {
 		seed: s.seed,
 		carry: s.carriedIn,
 		dungeon: s.dungeon,
+		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),
 		builds: s.builds ?? [],
 		text: s.replay,

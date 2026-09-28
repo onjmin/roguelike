@@ -31,6 +31,16 @@ import {
 	SENKYO,
 } from "../data/mobs";
 import {
+	advanceEvents,
+	bossName,
+	EVENTS,
+	eventById,
+	eventNewsText,
+	eventText,
+	goalText,
+	objectiveFor,
+} from "../data/objectives";
+import {
 	pickQuote,
 	type Quote,
 	type QuoteContext,
@@ -38,6 +48,8 @@ import {
 	type Speaker,
 } from "../data/quotes";
 import {
+	BOSS_HOME,
+	BOSS_RETURN,
 	CLEAR,
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
@@ -80,7 +92,9 @@ import {
 	loadRecords,
 	loadReplays,
 	loadTown,
+	noteRunEnd,
 	type PendingReturn,
+	type Progress,
 	type ProgressNews,
 	type RunRecord,
 	replayMatches,
@@ -106,6 +120,7 @@ import {
 	deathScene,
 	lineUp,
 	newsScript,
+	pagesFor,
 	type ReturnArrival,
 	returnScene,
 	type StoreChooser,
@@ -2028,4 +2043,390 @@ test("old records with the renamed monsters read with the new names", () => {
 			ok(r?.cause === now, `${old} → ${r?.cause}`);
 		}
 	});
+});
+
+// ───────────────── 目的（持ち帰り・ボス）と 期間限定の イベント ─────────────────
+
+/** 進み具合（イベントの 試験用。保存は 使わない）。 */
+const prog = (o: Partial<Progress> = {}): Progress => ({
+	unlocked: ["shallow"],
+	cleared: [],
+	fails: {},
+	intro: [],
+	news: [],
+	...o,
+});
+
+/** 試しの シード（確率の 当たり・はずれを 数える）。 */
+const SEEDS = Array.from({ length: 600 }, (_, i) => `ev-${i}`);
+
+/** Math.random を 呼んだら 投げる（イベントは 決まった 値だけで 決める）。 */
+const noRandom = <T>(fn: () => T): T => {
+	const orig = Math.random;
+	Math.random = () => {
+		throw new Error("Math.random was used");
+	};
+	try {
+		return fn();
+	} finally {
+		Math.random = orig;
+	}
+};
+
+test("objectives: colonies default to boss, story boards to fetch, and an event changes only its own board", () => {
+	for (const d of DUNGEON_IDS) {
+		const g = objectiveFor(d, prog());
+		ok(g.objective === DUNGEONS[d].objective, `${d}: ${g.objective}`);
+		ok(!g.event, `${d} has an event with none running`);
+	}
+	const ids = new Set<string>();
+	for (const e of EVENTS) {
+		ok(!ids.has(e.id), `${e.id} twice`);
+		ids.add(e.id);
+		ok(eventById(e.id) === e, `${e.id} is not found by id`);
+		ok(
+			e.objective === "fetch" || !!DUNGEONS[e.dungeon].boss,
+			`${e.id}: ${e.dungeon} has no boss`,
+		);
+		ok(
+			e.objective !== DUNGEONS[e.dungeon].objective,
+			`${e.id} does not change ${e.dungeon}`,
+		);
+		ok(
+			e.end.clears !== undefined || e.end.outings !== undefined,
+			`${e.id} never ends`,
+		);
+	}
+	// パン板の 大行進：パン板だけ ボス。残りは 次の クリアか 出撃の 回数
+	const march = prog({
+		outings: 2,
+		event: { id: "pan-march", since: 1, clearsSince: 0 },
+	});
+	const g = objectiveFor("shallow", march);
+	ok(g.objective === "boss", "the march does not make パン板 a boss run");
+	ok(
+		g.event?.name === "パン板の　大行進" &&
+			g.event.endsIn === "次の　クリアか　あと　3回",
+		`the march reads ${g.event?.name} / ${g.event?.endsIn}`,
+	);
+	ok(
+		eventText(g) === "期間限定：パン板の　大行進（次の　クリアか　あと　3回）",
+		eventText(g),
+	);
+	ok(
+		objectiveFor("kinoko", march).objective === "boss" &&
+			!objectiveFor("kinoko", march).event,
+		"the march changed きのこ板",
+	);
+	ok(
+		objectiveFor("main", march).objective === "fetch",
+		"the march changed 風呂板",
+	);
+	// きのこ狩り：きのこ板が 持ち帰りに（出撃の 回数だけで 終わる）
+	const hunt = prog({
+		outings: 6,
+		event: { id: "kinoko-hunt", since: 5, clearsSince: 0 },
+	});
+	const k = objectiveFor("kinoko", hunt);
+	ok(k.objective === "fetch", "the hunt keeps the boss");
+	ok(k.event?.endsIn === "あと　2回", `the hunt reads ${k.event?.endsIn}`);
+	// 知らない イベント（あとの 版で 消えた）は 無かった ことに
+	const gone = prog({ event: { id: "no-such", since: 0, clearsSince: 0 } });
+	for (const d of DUNGEON_IDS)
+		ok(
+			objectiveFor(d, gone).objective === DUNGEONS[d].objective,
+			`an unknown event changed ${d}`,
+		);
+	// 目的の ひとこと
+	ok(
+		goalText("kinoko", "boss") === "親玉きのにゃんを　たおす",
+		goalText("kinoko", "boss"),
+	);
+	ok(
+		goalText("shallow", "fetch") === "蓄音機の針を　持ち帰る",
+		goalText("shallow", "fetch"),
+	);
+	ok(
+		goalText("deep", "boss") === "つづきの原盤を　持ち帰る",
+		"a board without a boss reads as a boss run",
+	);
+	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);
+	ok(bossName("hidden") === null, "過去ログの底 has a boss");
+});
+
+test("events start from how a run ended, a need, and a fixed value of the seed (no Math.random), one at a time", () => {
+	noRandom(() => {
+		// パン板の 大行進：パン板を クリアずみで、クリアの あと 1/3
+		const base = prog({ unlocked: ["shallow", "main"], cleared: ["shallow"] });
+		const clear = { dungeon: "main" as DungeonId, kind: "clear" as const };
+		const hits = SEEDS.filter(
+			(seed) =>
+				advanceEvents(base, { ...clear, seed }).started?.id === "pan-march",
+		);
+		const rate = hits.length / SEEDS.length;
+		ok(rate > 0.25 && rate < 0.42, `the march started ${rate} of the time`);
+		for (const seed of SEEDS.slice(0, 50)) {
+			const a = advanceEvents(base, { ...clear, seed });
+			const b = advanceEvents(base, { ...clear, seed });
+			ok(
+				JSON.stringify(a) === JSON.stringify(b),
+				`${seed} started differently twice`,
+			);
+			ok(a.progress.outings === 1, `outings ${a.progress.outings}`);
+			ok(base.outings === undefined, "the progress was written in place");
+		}
+		const hit = hits[0];
+		const won = advanceEvents(base, { ...clear, seed: hit });
+		ok(
+			JSON.stringify(won.progress.event) ===
+				JSON.stringify({ id: "pan-march", since: 1, clearsSince: 0 }),
+			`the march state: ${JSON.stringify(won.progress.event)}`,
+		);
+		// たおれた・帰還スレでは 始まらない。パン板を クリアしていなければ 始まらない
+		ok(
+			!advanceEvents(base, { ...clear, kind: "escape", seed: hit }).started,
+			"the march started after an escape",
+		);
+		ok(
+			!advanceEvents(prog({ unlocked: ["shallow", "main"] }), {
+				...clear,
+				seed: hit,
+			}).started,
+			"the march started before パン板 was cleared",
+		);
+		// きのこ狩り：きのこ板に 行けて、出撃が 5の 倍数に なったら（終わりかたも 確率も 問わない）
+		const kin = prog({ unlocked: ["shallow", "kinoko"], outings: 4 });
+		for (const kind of ["dead", "clear", "escape"] as const)
+			ok(
+				advanceEvents(kin, { dungeon: "shallow", kind, seed: "x" }).started
+					?.id === "kinoko-hunt",
+				`the hunt did not start after ${kind}`,
+			);
+		ok(
+			!advanceEvents(
+				{ ...kin, outings: 5 },
+				{
+					dungeon: "shallow",
+					kind: "dead",
+					seed: "x",
+				},
+			).started,
+			"the hunt started on the 6th outing",
+		);
+		ok(
+			!advanceEvents(prog({ outings: 4 }), {
+				dungeon: "shallow",
+				kind: "dead",
+				seed: "x",
+			}).started,
+			"the hunt started before きのこ板 opened",
+		);
+		// 起きている あいだは ほかの イベントは 始まらない
+		const busy = {
+			...base,
+			outings: 1,
+			event: { id: "kinoko-hunt", since: 1, clearsSince: 0 },
+		};
+		const next = advanceEvents(busy, { ...clear, seed: hit });
+		ok(
+			!next.started && next.progress.event?.id === "kinoko-hunt",
+			"a second event started while one was running",
+		);
+	});
+});
+
+test("events end after their outings or a clear of their own board, and do not start again at once", () => {
+	noRandom(() => {
+		const base = prog({ unlocked: ["shallow", "main"], cleared: ["shallow"] });
+		const march = (outings: number, clearsSince = 0): Progress => ({
+			...base,
+			outings,
+			event: { id: "pan-march", since: 1, clearsSince },
+		});
+		// ほかの 板の クリア・たおれた では 終わらない
+		for (const r of [
+			{ dungeon: "main" as DungeonId, kind: "clear" as const },
+			{ dungeon: "shallow" as DungeonId, kind: "dead" as const },
+		]) {
+			const n = advanceEvents(march(1), { ...r, seed: "x" });
+			ok(
+				!n.ended && n.progress.event?.id === "pan-march",
+				`the march ended after ${r.dungeon} ${r.kind}`,
+			);
+			ok(n.progress.event?.clearsSince === 0, "a clear elsewhere counted");
+		}
+		// パン板を クリアしたら 終わる（同じ 終わりで また 始まらない）
+		for (const seed of SEEDS.slice(0, 100)) {
+			const n = advanceEvents(march(1), {
+				dungeon: "shallow",
+				kind: "clear",
+				seed,
+			});
+			ok(n.ended?.id === "pan-march", `${seed}: the march went on`);
+			ok(n.started?.id !== "pan-march", `${seed}: the march restarted`);
+			ok(n.progress.event?.id !== "pan-march", `${seed}: still marching`);
+		}
+		// 出撃 4回で 終わる（始まってから 数える）
+		const three = advanceEvents(march(3), {
+			dungeon: "main",
+			kind: "dead",
+			seed: "x",
+		});
+		ok(!three.ended, "the march ended after 3 outings");
+		const four = advanceEvents(march(4), {
+			dungeon: "main",
+			kind: "dead",
+			seed: "x",
+		});
+		ok(four.ended?.id === "pan-march", "the march outlived 4 outings");
+		// 終わったら 同じ 知らせの あとで ほかの イベントが 始まる ことは ある（きのこ狩り：出撃 5回目）
+		const swap = advanceEvents(
+			{ ...march(4), unlocked: ["shallow", "main", "kinoko"] },
+			{ dungeon: "main", kind: "dead", seed: "x" },
+		);
+		ok(
+			swap.ended?.id === "pan-march" && swap.started?.id === "kinoko-hunt",
+			`ended ${swap.ended?.id} / started ${swap.started?.id}`,
+		);
+		// 知らない イベントは 黙って 消える
+		const gone = advanceEvents(
+			prog({ event: { id: "no-such", since: 0, clearsSince: 0 } }),
+			{ dungeon: "shallow", kind: "dead", seed: "x" },
+		);
+		ok(!gone.ended && !gone.progress.event, "an unknown event stayed");
+	});
+});
+
+test("a run end counts the outing and leaves event news; the village reads it once", async () => {
+	await withStorageAsync(async () => {
+		// 前の 版の 進み具合（出撃の 回数も イベントも 無い）
+		setProgress(["shallow", "kinoko"]);
+		ok(loadProgress().outings === undefined, "old progress got outings");
+		ok(!loadProgress().event, "old progress got an event");
+		for (let i = 1; i <= 4; i++) {
+			noteRunEnd("shallow", "dead", `run-${i}`);
+			ok(loadProgress().outings === i, `outings ${loadProgress().outings}`);
+		}
+		ok(!loadProgress().eventNews, "news before any event");
+		// 開発用の 冒険は 数えない
+		noteRunEnd("shallow", "dead", "debug:x");
+		ok(loadProgress().outings === 4, "a debug run was counted");
+		noteRunEnd("kinoko", "clear", "run-5");
+		const p = loadProgress();
+		ok(p.event?.id === "kinoko-hunt", `event ${p.event?.id}`);
+		ok(
+			JSON.stringify(p.eventNews) ===
+				JSON.stringify([{ id: "kinoko-hunt", started: true }]),
+			`news ${JSON.stringify(p.eventNews)}`,
+		);
+		ok(
+			objectiveFor("kinoko", p).objective === "fetch",
+			"the hunt did not make きのこ板 a fetch run",
+		);
+		const hunt = eventById("kinoko-hunt");
+		if (!hunt) throw new Error("harness: no hunt");
+		const a = fakeStory();
+		await newsScript(a.s);
+		ok(
+			inOrder(a.log, [
+				"se chapter",
+				...eventNewsText(hunt, true).map((t) => `narrate: ${t}`),
+			]),
+			`the start news is out of order:\n${a.log.join("\n")}`,
+		);
+		ok(!loadProgress().eventNews, "the news stays after it was read");
+		const b = fakeStory();
+		await newsScript(b.s);
+		ok(b.log.length === 0, `the news was read twice: ${b.log.join()}`);
+		// 3回 もぐると 終わる
+		for (let i = 6; i <= 8; i++) noteRunEnd("shallow", "dead", `run-${i}`);
+		ok(!loadProgress().event, "the hunt went on after 3 outings");
+		const c = fakeStory();
+		await newsScript(c.s);
+		ok(
+			inOrder(
+				c.log,
+				eventNewsText(hunt, false).map((t) => `narrate: ${t}`),
+			),
+			`the end news is missing:\n${c.log.join("\n")}`,
+		);
+		ok(!c.log.includes("se chapter"), "the end news rang the chapter bell");
+	});
+});
+
+test("boss wins come home with how they got back, then the usual ending", async () => {
+	for (const d of DUNGEON_IDS) {
+		const has = !!DUNGEONS[d].boss;
+		ok(!!BOSS_RETURN[d] === has, `${d}: BOSS_RETURN ${!!BOSS_RETURN[d]}`);
+		ok(!!BOSS_HOME[d] === has, `${d}: BOSS_HOME ${!!BOSS_HOME[d]}`);
+		const n = BOSS_RETURN[d]?.length ?? 0;
+		ok(!has || (n >= 1 && n <= 2), `${d}: ${n} boss return pages`);
+	}
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "kinoko"]);
+		putTown({ stage: 1 });
+		const v = villageView();
+		const a: ReturnArrival = {
+			kind: "clear",
+			dungeon: "kinoko",
+			objective: "boss",
+		};
+		const pages = [...(BOSS_RETURN.kinoko ?? []), ...STORY.kinoko.ending];
+		ok(
+			JSON.stringify(pagesFor(a)) === JSON.stringify(pages),
+			"the boss pages do not come before the ending",
+		);
+		ok(
+			JSON.stringify(pagesFor({ ...a, objective: "fetch" })) ===
+				JSON.stringify(STORY.kinoko.ending) &&
+				JSON.stringify(pagesFor({ kind: "clear", dungeon: "kinoko" })) ===
+					JSON.stringify(STORY.kinoko.ending),
+			"a fetch clear got boss pages",
+		);
+		ok(
+			pagesFor({ kind: "escape", dungeon: "kinoko", objective: "boss" }) ===
+				RETURN_PAGES,
+			"an escape from a boss run got boss pages",
+		);
+		const { s, log } = fakeStory({ at: exitFor("kinoko").cell });
+		lineUp(s, a, v);
+		for (const who of new Set(pages.flatMap((p) => (p.who ? [p.who] : []))))
+			ok(
+				log.some((l) => l.startsWith(`place ${who} `)),
+				`${who} does not wait at the mouth`,
+			);
+		await returnScene(s, a);
+		ok(
+			inOrder(log, [
+				"show player",
+				...pages.map((p) =>
+					p.who ? `say ${p.who}: ${p.text}` : `narrate: ${p.text}`,
+				),
+				"fadeOut",
+				"bgm town",
+			]),
+			`the boss return is out of order:\n${log.join("\n")}`,
+		);
+	});
+});
+
+test("the objective's new village texts fit the message window (22 full-width × 2 lines)", () => {
+	const texts: [string, string][] = [];
+	for (const [d, pages] of Object.entries(BOSS_RETURN))
+		(pages ?? []).forEach((p, i) => {
+			texts.push([`BOSS_RETURN.${d}[${i}]`, p.text]);
+		});
+	for (const e of EVENTS)
+		for (const started of [true, false])
+			eventNewsText(e, started).forEach((t, i) => {
+				texts.push([`event ${e.id} ${started}[${i}]`, t]);
+			});
+	fitsWindow(texts);
+	// 地図の 札の 目的の 行（1行に 収める。スマホの 札は 全角22字くらい）
+	for (const d of DUNGEON_IDS)
+		for (const o of ["fetch", "boss"] as const)
+			ok(
+				width(`目的：${goalText(d, o)}`) <= 22,
+				`${d} ${o}: 目的：${goalText(d, o)}`,
+			);
 });

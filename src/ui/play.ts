@@ -6,6 +6,8 @@
 // - ダッシュ・タップ移動は、何かあったら止まる（敵が見えた・道具・階段・分かれ道・部屋の出入り）。
 // - ログは 1行ずつ 間を空けて 出す。知らせ（音・回復・レベル・安価・床に 置かれた 道具）と ステータスは、
 //   それを 伝える 行より 先に 見せない（行と いっしょか、前の 行が 出てから）。動きと 戦いは 行を 待たない。
+// - ボス（目的が boss の いちばん底）：見つけたら 始まりの 音 → ボスの 曲と、上に 名前と HP の ゲージ。
+//   たおしたら 勝ちの 音、帰り方の 演出（rescue）→ 暗転して 冒険の記録。どれも その 行と いっしょに 出す。
 
 import { ANKA_DUE, ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
@@ -20,7 +22,7 @@ import {
 } from "../core/geom";
 import { defOf, itemHidden } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
-import { mdef, posing } from "../core/monster";
+import { mdef, monsterName, posing } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import type { Run } from "../core/run";
 import {
@@ -29,6 +31,7 @@ import {
 	type Floor,
 	type GameEvent,
 	PLAYER_ID,
+	type RescueKind,
 	type RunState,
 } from "../core/types";
 import { loadImage } from "../engine/assets";
@@ -63,7 +66,7 @@ import {
 	openMainMenu,
 	pickItem,
 } from "./menu";
-import { showRunEnd } from "./records";
+import { bossHomeLine, showRunEnd } from "./records";
 import {
 	drawMap,
 	type Figure,
@@ -131,6 +134,8 @@ type HudView = {
 	anka: Anka | null;
 	ankaLine: string;
 	ankaLeft: number;
+	/** 見つけた ボスの 名前と HP（上の ゲージ。見つける 前・たおした あとは null）。 */
+	boss: { name: string; hp: number; maxHp: number } | null;
 };
 
 /**
@@ -155,8 +160,19 @@ const MOTION = new Set<GameEvent["t"]>([
 	"quake",
 ]);
 
-/** 行の 前に 来る 知らせ（core は 音・回復・レベル・目的の品・安価を、それを 伝える 行の 直前に 出す）。 */
-const LEAD = new Set<GameEvent["t"]>(["se", "heal", "levelup", "goal", "anka"]);
+/**
+ * 行の 前に 来る 知らせ（core は 音・回復・レベル・目的の品・安価・ボスを 見つけた・帰り方を、
+ * それを 伝える 行の 直前に 出す）。
+ */
+const LEAD = new Set<GameEvent["t"]>([
+	"se",
+	"heal",
+	"levelup",
+	"goal",
+	"anka",
+	"boss",
+	"rescue",
+]);
 
 /** ev[i] から 続く 知らせ（LEAD）の 先が 行なら true。 */
 const leadsToLine = (ev: GameEvent[], i: number): boolean => {
@@ -179,12 +195,26 @@ const afterMotion = (ev: GameEvent[], i: number): boolean => {
 
 /** 祭り（モンスターハウス）の曲。名無し155さんの アップテンポな曲（オクターブを直した版）。 */
 const HOUSE_BGM = "retro2";
+/** ボスの 曲（見つけてから たおすまで）。 */
+const BOSS_BGM = "boss";
 
-/** 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。 */
-const floorBgm = (run: Run): string => {
+/**
+ * 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。
+ * bossShown：ボスを 見つけた 知らせを もう 見せた（その あいだ 生きていれば ボスの 曲）。
+ */
+const floorBgm = (run: Run, bossShown = false): string => {
 	if (run.f.houseAwake) return HOUSE_BGM;
+	if (bossShown && run.boss) return BOSS_BGM;
 	if (run.s.returning) return "title";
 	return zoneFor(run.s.dungeon, run.s.depth).bgm;
+};
+
+/** 帰り方の 演出の 色（光・暗転）。escort は 送ってもらう ので 暗転は 黒。 */
+const RESCUE_LOOK: Record<RescueKind, { flash: string; fade: string }> = {
+	sprout: { flash: "rgba(150,230,120,0.5)", fade: "#e8f6d8" },
+	escort: { flash: "rgba(255,220,150,0.35)", fade: "#000" },
+	eruption: { flash: "rgba(255,140,60,0.6)", fade: "#ffd8b0" },
+	geyser: { flash: "rgba(170,225,255,0.55)", fade: "#eef8ff" },
 };
 
 export class Play {
@@ -200,8 +230,19 @@ export class Play {
 	private busy = false;
 	/** キリコが 眠っていると 見せる（sleep の 出来事を 流している あいだ）。 */
 	private sleepShown = false;
-	/** 祭りの 曲を 始める 予約（始まりの 音が 鳴り終わるのを 待つ）。 */
+	/** 祭り・ボスの 曲を 始める 予約（始まりの 音が 鳴り終わるのを 待つ）。 */
 	private houseBgmTimer = 0;
+	/**
+	 * ボスを 見つけた 知らせ（その 行）を もう 見せた（ボスの 曲に する。続きから 始めたら はじめから）。
+	 * core の Floor.bossSeen は act の 中で 先に 立つので、曲は こちらで 行に そろえる。
+	 */
+	private bossShown = false;
+	/** act の 前の 生きている ボスの uid（たおれた 出来事で 勝ちの 音。いなければ null）。 */
+	private bossUid: number | null = null;
+	/** 帰り方の 演出（rescue。冒険の記録の 前に 終わるのを 待つ）。 */
+	private rescueFx: Promise<void> | null = null;
+	/** カメラを 止める（帰り方の 演出で キリコだけ 動かす あいだ）。 */
+	private camFreeze = false;
 	private raf = 0;
 	private stopped = false;
 	private logEl: HTMLElement;
@@ -328,7 +369,9 @@ export class Play {
 			this.screen.canvas.classList.remove("dead");
 			this.syncDisp(true);
 			void loadImage(GRAVE);
-			this.ctx.audio.bgm(floorBgm(this.run));
+			// 続きから：もう 見つけて いた ボスが 生きていれば ボスの 曲と ゲージ
+			this.bossShown = !!(this.run.boss && this.run.f.bossSeen);
+			this.ctx.audio.bgm(floorBgm(this.run, this.bossShown));
 			if (this.rp) {
 				this.ctx.input.onFieldTap = null;
 				this.mountReplayBar();
@@ -463,7 +506,12 @@ export class Play {
 			}
 		};
 		put(PLAYER_ID, KIRIKO, run.p.x, run.p.y, run.p.dir);
-		for (const m of run.f.monsters) put(m.uid, mdef(m).sprite, m.x, m.y, m.dir);
+		for (const m of run.f.monsters) {
+			put(m.uid, mdef(m).sprite, m.x, m.y, m.dir);
+			// ボスは 大きく 描く
+			const d = this.disp.get(m.uid);
+			if (d) d.scale = mdef(m).scale;
+		}
 		for (const id of [...this.disp.keys()]) {
 			const d = this.disp.get(id);
 			if (!keep.has(id) && d && !d.dying) this.disp.delete(id);
@@ -534,7 +582,7 @@ export class Play {
 
 	private updateCamera(): void {
 		const pd = this.disp.get(PLAYER_ID);
-		if (!pd) return;
+		if (!pd || this.camFreeze) return;
 		const sc = this.screen;
 		const cssPerSrc = sc.tileCss / TILE;
 		// 上のステータス行と下のボタンの間の、まんなかにキリコを置く
@@ -615,6 +663,8 @@ export class Play {
 					: posing(m)
 						? (mdef(m).still ?? d.sprite)
 						: d.sprite,
+				// まどわされていると みんな 同じ 大きさの キリコに 見える
+				scale: dazed ? undefined : d.scale,
 				asleep: m.status.sleep > 0 || m.status.paralyze > 0,
 			});
 		}
@@ -681,7 +731,8 @@ export class Play {
 			if (anka)
 				void this.ankaPost(ankaText(anka), Math.max(1, anka.due - ANKA_DUE));
 		}
-		const key = `${v.depth}|${v.lv}|${hp}|${v.maxHp}|${hunger}|${res}|${ankaLine}|${badges}|${v.returning}`;
+		const boss = v.boss;
+		const key = `${v.depth}|${v.lv}|${hp}|${v.maxHp}|${hunger}|${res}|${ankaLine}|${badges}|${v.returning}|${boss ? `${boss.name}:${boss.hp}/${boss.maxHp}` : ""}`;
 		if (key === this.statusKey) return;
 		this.statusKey = key;
 		// HP が 半分を 切ったら、ログの 字・HP の 数字・バーを 黄色 → 赤へ（減るほど 赤く）
@@ -701,6 +752,11 @@ export class Play {
 			(v.returning ? `<span class="st-return">帰り道</span>` : "") +
 			(badges ? `<span class="st-hp low">${badges}</span>` : "") +
 			"</div>" +
+			// 見つけた ボス：名前と HP の ゲージ（数字は 出さない）
+			(boss
+				? `<div class="st-row st-boss"><span class="st-boss-name">${esc(boss.name)}</span>` +
+					`<span class="st-boss-bar"><i style="width:${Math.max(0, Math.min(100, Math.round((boss.hp / boss.maxHp) * 100)))}%"></i></span></div>`
+				: "") +
 			(ankaLine
 				? `<div class="st-row st-anka${ankaLeft <= ANKA_WARN ? " low" : ""}">${ankaLine}</div>`
 				: "");
@@ -717,7 +773,13 @@ export class Play {
 		// 出ている 安価（お題と のこりの レス）
 		const anka = f.anka ?? null;
 		const ankaLeft = anka ? Math.max(0, anka.due - res) : 0;
+		// 見つけた ボス（見つけた 知らせを 見せてから。落ちている 途中の 前の 階には いない）
+		const b = this.shownFloor ? null : run.boss;
 		return {
+			boss:
+				b && run.f.bossSeen && this.bossShown
+					? { name: monsterName(run, b), hp: b.hp, maxHp: b.maxHp }
+					: null,
 			depth: this.shownFloor?.depth ?? run.s.depth,
 			returning: run.s.returning,
 			lv: p.lv,
@@ -1424,6 +1486,8 @@ export class Play {
 		this.hudHold ??= this.liveHud();
 		const gen = ++this.holdGen;
 		const items0 = new Map(run.f.items.map((fi) => [fi.item.uid, fi]));
+		// この act で ボスが たおれたら 勝ちの 音（たおれると 階から 消えるので 先に 覚える）
+		this.bossUid = run.f.boss ?? null;
 		try {
 			ev = run.act(cmd);
 			if (run.s.floor === floor0) {
@@ -1693,6 +1757,8 @@ export class Play {
 				if (!cmd) break;
 				run.act(cmd);
 			}
+			// とばした あいだに 見つけた ボス（出来事は 流さないので、曲と ゲージは 今の 状態から）
+			this.bossShown = !!(run.boss && run.f.bossSeen);
 			this.logQueue = [];
 			clearTimeout(this.logTimer);
 			this.resetShown();
@@ -1738,9 +1804,11 @@ export class Play {
 			: rp.drift
 				? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
 				: end
-					? end.kind === "clear"
-						? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
-						: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}で　${esc(end.cause)}`
+					? end.kind === "clear" && this.run.objective === "boss"
+						? `${esc(end.cause)}<br><small>${bossHomeLine(this.run.s.dungeon)}　${this.run.s.turn}ターン</small>`
+						: end.kind === "clear"
+							? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
+							: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}で　${esc(end.cause)}`
 					: `記録は　ここまで<br><small>（${floorShort(this.run.s.dungeon, r.depth)}で　${esc(r.cause)}）</small>`;
 		const card = el("div", { class: "replay-end" }, [
 			el("div", { class: "rp-end-title", text: "リプレイ　おわり" }),
@@ -1791,6 +1859,14 @@ export class Play {
 	 * それまで 階の 曲は 止めておく。待つのは 曲だけで、手番は 止めない（音は 2秒ほど ある）。
 	 */
 	private startHouseBgm(): void {
+		this.startEncounterBgm(HOUSE_BGM);
+	}
+
+	/**
+	 * 始まりの 音（encounter）の あとに その 曲（祭り・ボス）。それまで 階の 曲は 止めておく。
+	 * 鳴り終わる 前に 階を 出た・冒険が 終わった・ボスを たおした なら 鳴らさない。
+	 */
+	private startEncounterBgm(name: string): void {
 		const audio = this.ctx.audio;
 		audio.bgm(null);
 		audio.se("encounter");
@@ -1798,10 +1874,75 @@ export class Play {
 		const ms = span ? span.endMs - span.startMs : 0;
 		clearTimeout(this.houseBgmTimer);
 		this.houseBgmTimer = window.setTimeout(() => {
-			// そのあいだに 階を 出た・冒険が 終わったら 鳴らさない
-			if (this.stopped || floorBgm(this.run) !== HOUSE_BGM) return;
-			audio.bgm(HOUSE_BGM);
+			if (this.stopped || floorBgm(this.run, this.bossShown) !== name) return;
+			audio.bgm(name);
 		}, ms);
+	}
+
+	/** ボスを たおした：ボスの 曲を 止めて 勝ちの 音（「〜を　たおした」の 行と いっしょに）。 */
+	private bossDown(): void {
+		if (this.stopped) return;
+		this.bossShown = false;
+		clearTimeout(this.houseBgmTimer);
+		this.ctx.audio.bgm(null);
+		this.ctx.audio.se("victory");
+	}
+
+	/**
+	 * 帰り方の 演出（帰り方の 最初の 行と いっしょに。表示だけ：冒険の 状態・乱数には 触らない）。
+	 * sprout・geyser・eruption：揺れて 光り、キリコが 押し上げられて 上へ 飛んでいく（カメラは 止める）。
+	 * escort：「わっしょい」と かつがれて はずむ。暗転は 冒険の記録の 前（ending）。
+	 */
+	private async rescueScene(kind: RescueKind): Promise<void> {
+		const pd = this.disp.get(PLAYER_ID);
+		const look = RESCUE_LOOK[kind];
+		const fast = settings.speed === "fast" || !!(this.rp && this.rp.speed >= 4);
+		const k = fast ? 0.6 : 1;
+		this.travel = null;
+		this.camFreeze = true;
+		if (kind === "escort") {
+			if (pd) {
+				// かつがれて はずむ（上下に 4回）
+				const now = performance.now();
+				const x = pd.tx;
+				const y = pd.ty;
+				pd.dir = 4;
+				pd.keys = [{ x, y, t: now }];
+				for (let i = 1; i <= 8; i++)
+					pd.keys.push({ x, y: i % 2 ? y - 0.35 : y, t: now + i * 160 * k });
+				this.pop({ x, y }, "わっしょい", "dup");
+				void wait(640 * k).then(() => {
+					if (!this.stopped) this.pop({ x, y }, "わっしょい", "dup");
+				});
+			}
+			await this.flash(look.flash, 200 * k);
+			await wait(1100 * k);
+			return;
+		}
+		const shake = kind === "eruption" ? 700 : kind === "geyser" ? 500 : 300;
+		document.body.classList.add("shake");
+		const lift = pd ? { x: pd.tx, y: pd.ty } : null;
+		await Promise.all([
+			this.flash(look.flash, 260 * k),
+			kind === "eruption" && lift
+				? this.blastAt(lift, 1, k)
+				: Promise.resolve(),
+			wait(shake * k),
+		]);
+		document.body.classList.remove("shake");
+		if (pd && lift && !this.stopped) {
+			// 足もとから 押し上げられて 上へ（画面の 外まで）
+			const now = performance.now();
+			pd.dir = 4;
+			pd.keys = [
+				{ x: lift.x, y: lift.y, t: now },
+				{ x: lift.x, y: lift.y - 0.6, t: now + 250 * k },
+				{ x: lift.x, y: lift.y - 9, t: now + 900 * k },
+			];
+			pd.tx = lift.x;
+			pd.ty = lift.y - 9;
+		}
+		await wait(900 * k);
 	}
 
 	private async playEvents(ev: GameEvent[], fast: boolean): Promise<void> {
@@ -1926,6 +2067,13 @@ export class Play {
 				case "hurt": {
 					if (e.id === PLAYER_ID && e.hp !== undefined && this.hudHold)
 						this.hudHold.hp = e.hp;
+					// ボスの ゲージは 傷の たびに 減らす（ゲージは act の 前の 値から）
+					const hb = this.hudHold?.boss;
+					if (hb && e.id === this.bossUid)
+						this.hudHold = {
+							...(this.hudHold as HudView),
+							boss: { ...hb, hp: Math.max(0, hb.hp - e.amount) },
+						};
 					const d = this.disp.get(e.id);
 					if (d) d.flashUntil = performance.now() + 260;
 					if (this.isShown(e.id, e.pos))
@@ -1949,6 +2097,14 @@ export class Play {
 						d.dying = true;
 						d.fadeT0 = performance.now();
 					}
+					// ボスを たおした：勝ちの 音は「〜を　たおした」の 行と いっしょに
+					if (e.id === this.bossUid) {
+						this.bossUid = null;
+						const hb = this.hudHold?.boss;
+						if (hb && this.hudHold)
+							this.hudHold = { ...this.hudHold, boss: { ...hb, hp: 0 } };
+						onLine.push(() => this.bossDown());
+					}
 					await wait(120 * speed);
 					break;
 				}
@@ -1962,6 +2118,7 @@ export class Play {
 						this.disp.set(e.id, {
 							id: e.id,
 							sprite: mdef(m).sprite,
+							scale: mdef(m).scale,
 							fx: from?.x ?? e.pos.x,
 							fy: from?.y ?? e.pos.y,
 							tx: e.pos.x,
@@ -2102,8 +2259,20 @@ export class Play {
 				}
 				return;
 			case "goal":
-				this.ctx.audio.bgm(floorBgm(this.run));
+				this.ctx.audio.bgm(floorBgm(this.run, this.bossShown));
 				if (this.hudHold) this.hudHold.returning = true;
+				return;
+			case "boss": {
+				// ボスを 見つけた：始まりの 音 → ボスの 曲。ゲージも ここから（その 行と いっしょに）
+				this.bossShown = true;
+				this.startEncounterBgm(BOSS_BGM);
+				const live = this.liveHud().boss;
+				if (this.hudHold && live)
+					this.hudHold = { ...this.hudHold, boss: live };
+				return;
+			}
+			case "rescue":
+				this.rescueFx = this.rescueScene(e.kind);
 				return;
 			case "anka":
 				if (this.hudHold) {
@@ -2282,6 +2451,8 @@ export class Play {
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
 		const up = run.s.returning;
+		// ボスの 待つ いちばん底は 副題で 知らせる
+		const boss = run.boss;
 		const card = el("div", { class: "chapter shown" }, [
 			el("div", {
 				class: "chapter-label",
@@ -2295,13 +2466,15 @@ export class Play {
 				class: "chapter-sub",
 				text: up
 					? `${isUpBoard(run.s.dungeon) ? "下り" : "上り"}階段を　さがそう`
-					: zoneFor(run.s.dungeon, run.s.depth).note
-						? (zoneFor(run.s.dungeon, run.s.depth).note ?? "")
-						: run.s.depth >= run.dungeon.floors
-							? isUpBoard(run.s.dungeon)
-								? "いちばん　上"
-								: "いちばん　底"
-							: "",
+					: boss
+						? `${mdef(boss).name}が　待ちかまえている`
+						: zoneFor(run.s.dungeon, run.s.depth).note
+							? (zoneFor(run.s.dungeon, run.s.depth).note ?? "")
+							: run.s.depth >= run.dungeon.floors
+								? isUpBoard(run.s.dungeon)
+									? "いちばん　上"
+									: "いちばん　底"
+								: "",
 			}),
 		]);
 		this.ctx.ui.appendChild(card);
@@ -2311,7 +2484,7 @@ export class Play {
 			card.remove();
 			return;
 		}
-		this.ctx.audio.bgm(floorBgm(run));
+		this.ctx.audio.bgm(floorBgm(run, this.bossShown));
 		card.classList.remove("shown");
 		this.fadeEl.style.transition = "opacity 0.35s";
 		await nextFrame();
@@ -2325,7 +2498,21 @@ export class Play {
 		const s = this.run.s;
 		this.busy = true;
 		if (s.end?.kind === "dead") await this.deathScene();
-		else await wait(700);
+		else if (s.end?.kind === "clear" && this.run.bossSpec) {
+			// ボスを たおして 帰る：帰り方の 行と 演出（その 行で 始まる）が 終わるのを 待って、その 色で 暗転
+			await this.logDrained();
+			await this.rescueFx;
+			this.rescueFx = null;
+			// 最後の 行を 読む 間
+			await wait(500);
+			if (this.stopped) return;
+			const look = RESCUE_LOOK[this.run.bossSpec.rescue];
+			this.fadeEl.style.background = look.fade;
+			this.fadeEl.style.transition = "opacity 0.5s";
+			await nextFrame();
+			this.fadeEl.style.opacity = "1";
+			await wait(700);
+		} else await wait(700);
 		if (this.rp) {
 			await this.replayEnd();
 			return;

@@ -10,9 +10,12 @@ import {
 	RES_LIMIT,
 } from "../core/balance";
 import { defOf } from "../core/item";
+import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
 import type { Item } from "../core/types";
+import { goalText } from "../data/objectives";
 import type { Ctx } from "./ctx";
+import { isUpBoard } from "./floorName";
 import { esc } from "./itemText";
 import { infoWindow } from "./list";
 
@@ -57,6 +60,7 @@ const statusHtml = (run: Run): string => {
 		row("板", equip(run.shield())),
 		row("トリップ", equip(run.ring())),
 		'<tr><th colspan="2">冒険</th></tr>',
+		row("目的", esc(goalText(s.dungeon, run.objective))),
 		row("階", `${s.depth}階${s.returning ? "（帰り道）" : ""}`),
 		row("スレ", `${Math.min(RES_LIMIT, run.f.res)}レス（1000で　dat落ち）`),
 		row("ターン", String(s.turn)),
@@ -67,6 +71,16 @@ const statusHtml = (run: Run): string => {
 	if (s.returning)
 		out.push(
 			`<p class="hint">${esc(defOf(run.dungeon.goal).name)}を　持って　地上へ　もどろう</p>`,
+		);
+	// ボス：いちばん底で 待っている（たおせば 品ごと その場で 入口へ 帰れる）
+	const boss = run.boss;
+	if (boss && run.f.bossSeen)
+		out.push(
+			`<p class="hint">${esc(mdef(boss).name)}を　たおせば、${esc(defOf(run.dungeon.goal).name)}ごと　入口へ　帰れる</p>`,
+		);
+	else if (run.bossSpec)
+		out.push(
+			`<p class="hint">${run.atBottom ? "この　階の　どこか" : `いちばん　${isUpBoard(s.dungeon) ? "上" : "底"}`}で　ボスが　待っている</p>`,
 		);
 	return out.join("");
 };
