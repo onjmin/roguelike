@@ -110,6 +110,10 @@ export const migrateRun = (s: RunState): RunState | null => {
 		);
 		s.floor.resWarned = RES_WARN.filter((n) => s.floor.res >= n).length;
 	}
+	// 装備しても 修正値が わからなかった ころの 中断セーブ：装備中の 武器・盾は わかった ことに（その 1本だけ）
+	for (const it of s.player.items)
+		if (it.uid === s.player.weapon || it.uid === s.player.shield)
+			it.known = true;
 	return s;
 };
 
@@ -1481,8 +1485,9 @@ export class Run {
 					this.msg(`${this.name(it)}だった！`, "good");
 			}
 		} else {
-			// 装備しても 修正値は わからない（トルネコ1と 同じ。わかるのは 有識者スレか、のろわれていたとき）
+			// 装備すると その 1本の 修正値と のろいが わかる（トルネコ1と 同じ。同じ 名前の ほかの 品は わからない まま）
 			p[slot] = it.uid;
+			it.known = true;
 		}
 		this.msg(`${this.name(it)}を　装備した`);
 		if (it.cursed) {

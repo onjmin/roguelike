@@ -90,7 +90,7 @@ export type Item = {
 	cursed: boolean;
 	/** 杖の残り回数。 */
 	charges: number;
-	/** 修正値・呪い・残り回数がわかっているか（識別すると true。武器・盾は のろわれていれば 装備で true）。 */
+	/** 修正値・呪い・残り回数がわかっているか（装備するか識別すると true。装備で わかるのは その 1つだけ）。 */
 	known: boolean;
 	/** 矢の本数（矢以外は 1）。 */
 	count: number;

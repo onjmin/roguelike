@@ -2310,21 +2310,33 @@ test(
 
 test(
 	"floor",
-	"equip: wearing a weapon does not reveal its plus; a cursed one reveals itself",
+	"equip: wearing a weapon or shield reveals that one item's plus and curse, not others of the same kind",
 	() => {
 		const r = arena("equip-id");
 		const kind = "club";
 		const plain = give(r, kind);
 		plain.plus = 2;
 		plain.known = false;
+		const twin = give(r, kind);
+		twin.plus = 1;
+		twin.known = false;
 		r.doEquip(plain.uid);
-		ok(!plain.known, "equipping told the plus of a plain weapon");
+		ok(plain.known, "equipping did not tell the plus of the weapon");
+		ok(
+			!twin.known,
+			"equipping told the plus of another weapon of the same kind",
+		);
 		const bad = give(r, kind);
 		bad.plus = -1;
 		bad.cursed = true;
 		bad.known = false;
 		r.doEquip(bad.uid);
 		ok(bad.known, "a cursed weapon did not reveal itself when equipped");
+		const sh = give(r, "leather");
+		sh.plus = 1;
+		sh.known = false;
+		r.doEquip(sh.uid);
+		ok(sh.known, "equipping did not tell the plus of the shield");
 	},
 );
 
