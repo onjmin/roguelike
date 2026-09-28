@@ -604,7 +604,7 @@ add({
 add({
 	id: "kinonyan",
 	cat: "goal",
-	icon: "pub:sprites/kinonyan.png#0,32,16,16", // 敵の きのにゃんの 前向き
+	icon: art("kinonyan"), // 額に 入った AA（敵の 絵とは 別）
 	name: "きのにゃんの　AA",
 	desc: "[ｷ・Д・ﾉ]　きのこ板の　底で　ふんぞりかえっていた。持ち帰ろう",
 	flavor: "態度が　でかい。持ち帰っても　たぶん　でかい",

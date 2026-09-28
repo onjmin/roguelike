@@ -393,4 +393,34 @@ export const ITEM_ART: Record<
 			"................",
 		],
 	},
+	// きのにゃんの AA：金の 額に 入った 白い 紙に、赤い きのこの 傘と [ ・Д・ ] を 墨で 書いた 絵
+	// （敵の きのにゃんと 見分けが つくよう、生きものの 絵に しない）
+	kinonyan: {
+		palette: {
+			y: "#e8b830",
+			Y: "#a07818",
+			p: "#f5f0dc",
+			r: "#d03030",
+			w: "#ffffff",
+			k: "#2a2a2a",
+		},
+		rows: [
+			"................",
+			"................",
+			"................",
+			"..yyyyyyyyyyyy..",
+			"..yppppppppppY..",
+			"..ypppprrppppY..",
+			"..ypprrwrrrppY..",
+			"..yprrrrrrwrpY..",
+			"..ypkppppppkpY..",
+			"..ypkpkppkpkpY..",
+			"..ypkppkkppkpY..",
+			"..ypkpkkkkpkpY..",
+			"..ypkppppppkpY..",
+			"..yppppppppppY..",
+			"..yYYYYYYYYYYY..",
+			"................",
+		],
+	},
 };
