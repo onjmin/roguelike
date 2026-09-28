@@ -42,6 +42,7 @@ import {
 	transformMonster,
 } from "../core/monster";
 import { Run } from "../core/run";
+import { triggerTrap } from "../core/traps";
 import {
 	type Ability,
 	type Command,
@@ -1006,6 +1007,28 @@ test(
 			!r2.f.items.some((fi) => fi.item.kind === "h_growth"),
 			"a fruit dropped in an explosion",
 		);
+	},
+);
+
+test(
+	"metal",
+	"a mine blast erases the neighbours with their drops and carried items (Torneko 1)",
+	() => {
+		const r = arena("mine-blast");
+		const m = put(r, "metal", at(1, 0));
+		const thief = put(r, "tousuko", at(-1, 0));
+		thief.carry = r.newItem("h_heal");
+		const far = put(r, "tousuko", at(3, 0));
+		const hp = r.p.hp;
+		triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "mine", found: false });
+		ok(!r.f.monsters.includes(m), "the metal next to the mine survived");
+		ok(!r.f.monsters.includes(thief), "the thief next to the mine survived");
+		ok(r.f.monsters.includes(far), "a monster 3 tiles away was caught");
+		ok(
+			r.f.items.length === 0,
+			`items were left: ${r.f.items.map((fi) => fi.item.kind)}`,
+		);
+		ok(r.p.hp === hp - Math.ceil(hp / 2), `hp ${hp} -> ${r.p.hp}`);
 	},
 );
 

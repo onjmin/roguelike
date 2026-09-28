@@ -891,7 +891,7 @@ export class Run {
 		return true;
 	}
 
-	/** burnt：爆発で たおれた（落とす道具も 燃える）。 */
+	/** burnt：爆発で たおれた（持っていた 道具も 落とす 道具も 燃える。トルネコ1の 爆風で 消え去る）。 */
 	killMonster(m: Monster, giveExp: boolean, burnt = false): void {
 		const d = mdef(m);
 		m.hp = 0;
@@ -904,7 +904,7 @@ export class Run {
 		if (m.carry) {
 			const it = m.carry;
 			m.carry = null;
-			this.placeItem(it, m);
+			if (!burnt) this.placeItem(it, m);
 		}
 		// 必ず落とす道具（メタルぷゆゆ → 成長の実）。何を落とすかは 知られているので 正体もわかる
 		if (d.drop && !burnt) {

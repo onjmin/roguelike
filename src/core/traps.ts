@@ -76,8 +76,9 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			r.se("explosion");
 			r.emit({ t: "fx", kind: "explosion", pos: { x: p.x, y: p.y }, r: 1 });
 			r.msg("地雷が　爆発した！", "warn");
+			// 爆風で 消え去る（経験値なし・落とす 道具も 燃える。巻きこまれた 炎上案件も 誘爆しない。トルネコ1と 同じ）
 			for (const m of [...r.f.monsters])
-				if (dist(m, p) <= 1) r.killMonster(m, false);
+				if (dist(m, p) <= 1) r.killMonster(m, false, true);
 			for (const fi of [...r.f.items])
 				if (dist(fi, p) <= 1) r.destroyFloorItem(fi);
 			r.hurtPlayer(Math.ceil(p.hp / 2), "地雷で　たおれた");
