@@ -587,13 +587,16 @@ export const pickColony = async (
 	v.open = o.open;
 	v.cleared = o.cleared;
 	v.goals = o.goals ?? {};
-	// 地図に 出る 植民地（ひみつの 板は 開くまで 出さない）と、さいごに やめる
+	// 地図に 出る 植民地（ひみつの 板は 開くまで 出さない）と、さいごに やめる。
+	// 目的を 1度でも はたした 板には 地図・札と 同じく ★
 	const spots = DUNGEON_IDS.filter(
 		(d) => o.open.includes(d) || !DUNGEONS[d].secret,
 	);
 	const labels = [
 		...spots.map((d) =>
-			o.open.includes(d) ? DUNGEON_NAMES[d].name : "？？？",
+			o.open.includes(d)
+				? `${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`
+				: "？？？",
 		),
 		"やめる",
 	];

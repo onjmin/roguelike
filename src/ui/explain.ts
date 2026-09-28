@@ -11,9 +11,13 @@ const explainWins = new WeakMap<HTMLElement, MessageWindow>();
 
 /**
  * 「せつめい」：ふだんの メッセージ窓に 1ページずつ 文字送りで 出す（A/B で 送る。トルネコ1と同じ）。
- * 開いている メニューの 上に 重ねる。
+ * 開いている メニューの 上に 重ねる。art は 窓の 上に 添える 絵（図鑑の モンスター。閉じると しまう）。
  */
-export const explain = async (ctx: Ctx, pages: string[]): Promise<void> => {
+export const explain = async (
+	ctx: Ctx,
+	pages: string[],
+	opt: { art?: HTMLElement } = {},
+): Promise<void> => {
 	let win = explainWins.get(ctx.ui);
 	if (!win) {
 		win = new MessageWindow(
@@ -25,6 +29,7 @@ export const explain = async (ctx: Ctx, pages: string[]): Promise<void> => {
 		);
 		explainWins.set(ctx.ui, win);
 	}
+	win.setArt(opt.art ?? null);
 	for (const text of pages) await win.show({ text });
 	win.close();
 };

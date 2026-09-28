@@ -706,6 +706,76 @@ body.shake #app {
 	overflow: hidden;
 }
 
+/*
+ * 絵の ある 行（図鑑の モンスター）：左に 絵、右に 名前・階・説明を 積む。
+ * まだ 会っていない 行は 文字だけ うすく して、黒い 影は はっきり 見せる。
+ */
+.menu-item.has-icon {
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: 8px;
+}
+
+.menu-item-body {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	align-items: baseline;
+	column-gap: 12px;
+	row-gap: 3px;
+}
+
+.menu-item.has-icon.disabled {
+	opacity: 1;
+}
+
+.menu-item.has-icon.disabled .menu-item-body {
+	opacity: 0.35;
+}
+
+/* モンスターの 絵（16px の キャンバスを CSS で 大きく する） */
+.mon-art {
+	flex: none;
+	image-rendering: pixelated;
+}
+
+.menu-item .mon-art {
+	background: rgba(255, 255, 255, 0.08);
+	border-radius: 4px;
+}
+
+/* 図鑑の「せつめい」：窓の 上に 大きな 絵と 名前（ドラクエの 図鑑のように。足もとに 影） */
+.msg-art {
+	position: absolute;
+	left: 50%;
+	bottom: calc(100% + 10px);
+	transform: translateX(-50%);
+}
+
+.book-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	min-width: 120px;
+	padding: 10px 16px 6px;
+}
+
+.book-card .mon-art {
+	background: radial-gradient(
+		ellipse 40% 9% at 50% 93%,
+		rgba(0, 0, 0, 0.55),
+		transparent
+	);
+}
+
+.book-card-name {
+	font-size: 14px;
+	white-space: nowrap;
+}
+
 .desc .tag,
 .info-body .tag {
 	display: inline-block;
@@ -2726,10 +2796,18 @@ body.shake #app {
 	padding: 6px;
 }
 
+/* 右の あきを 詰めて、★ の ついた 長い 名前（離島・沖縄板　★）も 1行に おさめる */
 .wm-choice > .choice-item {
-	padding-top: 6px;
-	padding-bottom: 6px;
+	padding: 6px 6px 6px 22px;
 	font-size: 15px;
+}
+
+.wm-choice > .choice-item.cur::before {
+	left: 6px;
+}
+
+.narrow .wm-choice > .choice-item {
+	font-size: 13px;
 }
 
 .wm-choice > .choice-item.disabled {

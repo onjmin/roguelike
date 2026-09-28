@@ -368,6 +368,8 @@ export class MessageWindow {
 	private settled: () => Promise<void>;
 	/** show のたびに増える（前の文の区切り待ちが、次の文の ▼ を出さないように）。 */
 	private showToken = 0;
+	/** 窓の 上に 添えている 絵（図鑑の モンスター）。 */
+	private artEl: HTMLElement | null = null;
 
 	constructor(
 		root: HTMLElement,
@@ -572,9 +574,22 @@ export class MessageWindow {
 		});
 	}
 
+	/**
+	 * 窓の 上の はしに 絵を 添える（図鑑の モンスター。null で しまう）。窓の 中に 置くので、
+	 * 文の 行数で 窓の 高さが 変わっても 上に ついていく（横持ちの 細い 窓でも 同じ）。
+	 */
+	setArt(node: HTMLElement | null): void {
+		this.artEl?.remove();
+		this.artEl = node;
+		if (!node) return;
+		node.classList.add("msg-art");
+		this.win.appendChild(node);
+	}
+
 	/** 窓と立ち絵を片付ける（スクリプト終了時）。 */
 	close(): void {
 		this.win.classList.remove("shown");
+		this.setArt(null);
 		this.left.clear();
 		this.right.clear();
 	}

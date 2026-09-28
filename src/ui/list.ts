@@ -21,6 +21,8 @@ export type ListItem = {
 	desc?: string;
 	value: string;
 	disabled?: boolean;
+	/** 行の 左に 置く 絵（図鑑の モンスター。2行の まんなかに そろえる）。 */
+	icon?: HTMLElement;
 };
 
 /** 窓が開いてから この間の タップは 数えない（前の窓で 続けて押した タップで、開いたばかりの 窓の行を 決めないように）。 */
@@ -182,10 +184,14 @@ export const listWindow = (
 				? box.appendChild(el("div", { class: `menu-grid cols-${cols}` }))
 				: box;
 		const buttons = items.map((it) => {
-			const b = el("button", {
-				class: "menu-item",
-				html: `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}${it.desc ? `<span class="desc">${it.desc}</span>` : ""}`,
-			});
+			const html = `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}${it.desc ? `<span class="desc">${it.desc}</span>` : ""}`;
+			// 絵の ある 行は 絵の 右に 名前・説明を 積む
+			const b = it.icon
+				? el("button", { class: "menu-item has-icon" }, [
+						it.icon,
+						el("span", { class: "menu-item-body", html }),
+					])
+				: el("button", { class: "menu-item", html });
 			if (it.disabled) b.classList.add("disabled");
 			if (it.desc) b.classList.add("has-desc");
 			onTap(b, box, () => {
