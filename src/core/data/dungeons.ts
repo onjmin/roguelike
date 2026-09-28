@@ -8,15 +8,44 @@
 // - deep：電池板（でんJ。過疎で 謎が多い）の 30階。充電：杖の 回数が 1 多い。
 //   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい。
 //
+// 目的（objective）：物語の 品を 運ぶ 板（パン板・風呂板・電池板・過去ログの底）は 持ち帰り（fetch）、
+// 4つの 植民地は いちばん底の ボスを たおす（boss。たおすと 品ごと 一瞬で 入口へ 帰る）。
+// パン板・風呂板にも 期間限定の ボスが いる（いつ boss に なるかは 村の イベント：data/objectives.ts。core は 決めない）。
+//
 // level は「その階が 本編の何階ぶんの強さか」。敵の顔ぶれ・罠の数と種類・祭りの大きさ・変化の杖は
 // これで引く（本編は 階 = level）。見た目と曲の層は UI 側（ui/theme.ts）。
 
 import type { ItemWeight } from "../itemTable";
-import type { DungeonId, ItemCat } from "../types";
+import type { DungeonId, ItemCat, Objective, RescueKind } from "../types";
 import { ITEMS, MAIN_ITEMS } from "./items";
+
+/**
+ * 目的が boss の ときの いちばん底：ボスと、たおした あとに 一瞬で 入口へ 帰る わけ。
+ * 文は 決まった もの（乱数は 使わない。記録・リプレイで 同じに なるように）。
+ */
+export type BossSpec = {
+	/** ボスの 種類（data/monsters.ts の boss: true の id）。持ち帰る 品（goal）を 持っている。 */
+	monster: string;
+	/** 帰り方（画面の 演出の 種類）。 */
+	rescue: RescueKind;
+	/** 帰り方の 行（たおして 品を 手に 入れた あと、順に 出す）。 */
+	lines: readonly string[];
+	/**
+	 * 終わりの 理由（Ending.cause。記録・リプレイの 組み合わせに 使う ので 変えない。
+	 * engine/save.ts の RENAMES の 左の 名前を 含めない）。
+	 */
+	cause: string;
+};
 
 export type Dungeon = {
 	id: DungeonId;
+	/**
+	 * 目的の 既定（村の 期間限定の イベントで かわる ことも ある：data/objectives.ts）。
+	 * boss に できるのは boss の ある 板だけ。
+	 */
+	objective: Objective;
+	/** 目的が boss の ときの ボス（無い 板は boss に ならない）。 */
+	boss?: BossSpec;
 	floors: number;
 	/** 道具の出かた（重み。合計は 1回の冒険で 出る数の 目安）。 */
 	items: readonly ItemWeight[];
@@ -277,6 +306,17 @@ const lagged = (n: number): number[] =>
 export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	shallow: {
 		id: "shallow",
+		objective: "fetch",
+		boss: {
+			monster: "boss_panhei",
+			rescue: "escort",
+			lines: [
+				"どこからか　パン松の　号令が　ひびいた！",
+				"パン兵たちが　キリコを　かつぎあげた",
+				"わっしょい　わっしょい……　入口まで　運ばれた",
+			],
+			cause: "パン兵長を　たおした",
+		},
 		// パン松は やきうが きらい（ピッチャーは 追い出した）。まんじゅう（まんぜう軍）は パンの なかま
 		foes: { pumpkin: 2, pitcher: 0 },
 		floors: 10,
@@ -294,6 +334,17 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	main: {
 		id: "main",
+		objective: "fetch",
+		boss: {
+			monster: "boss_ofurou",
+			rescue: "geyser",
+			lines: [
+				"足もとの　源泉が　ごぼごぼと　わきだした……",
+				"湯柱が　噴きあがった！",
+				"湯柱に　押し上げられて、入口まで　もどった",
+			],
+			cause: "湯守おふ郎くんを　たおした",
+		},
 		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
 		foes: { sabi: 2, neochi: 1.5 },
 		floors: 27,
@@ -313,6 +364,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	deep: {
 		id: "deep",
+		objective: "fetch",
 		// 機械と 回線の 敵が 多い
 		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
 		floors: 30,
@@ -335,6 +387,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// きのこ板（パン板の 植民地。植民地の 植民地）：草が 多く、当たり外れも 大きい
 	kinoko: {
 		id: "kinoko",
+		objective: "boss",
+		boss: {
+			monster: "boss_kinonyan",
+			rescue: "sprout",
+			lines: [
+				"足もとの　きのこが　ぐんぐん　伸びだした！",
+				"きのこに　押し上げられて、地上まで　運ばれた",
+			],
+			cause: "親玉きのにゃんを　たおした",
+		},
 		// 胞子で 眠くなり（寝落ち民）、毒きのこ（まんぜう軍）が 多い
 		foes: { neochi: 2, pumpkin: 2, pitcher: 0 },
 		floors: 12,
@@ -353,6 +415,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 離島・沖縄板（総島民 6人）：過疎。敵も 道具も 少ない
 	tropical: {
 		id: "tropical",
+		objective: "boss",
+		boss: {
+			monster: "boss_natsuko",
+			rescue: "escort",
+			lines: [
+				"島民たちが　小舟で　迎えに　来た！",
+				"川を　くだって、ふもとまで　降ろしてもらった",
+			],
+			cause: "怒れるナツコを　たおした",
+		},
 		// 風の 島（風吹けば名無し）と 浜の フナムシ（バグ）
 		foes: { kaze: 3, funamushi: 2 },
 		floors: 15,
@@ -374,6 +446,17 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
 		id: "konamono",
+		objective: "boss",
+		boss: {
+			monster: "boss_takonomin",
+			rescue: "eruption",
+			lines: [
+				"鉄板が　ぐつぐつと　煮えたぎる……",
+				"鉄板が　噴火した！",
+				"熱風で　ビルの　入口まで　吹き飛ばされた",
+			],
+			cause: "大たこのみんを　たおした",
+		},
 		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ
 		foes: { oni: 3, ninja: 1.5, fallen: 1.5 },
 		floors: 20,
@@ -396,6 +479,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// お祭り会場（おまC）：祭りが よく 出る
 	festival: {
 		id: "festival",
+		objective: "boss",
+		boss: {
+			monster: "boss_mashii",
+			rescue: "escort",
+			lines: [
+				"野次馬たちが　わっしょいと　集まってきた！",
+				"神輿に　のせられて、やぐらの　下まで　運ばれた",
+			],
+			cause: "祭りの親分マシーを　たおした",
+		},
 		// 野次馬（コピペ）・群れ（凍結アカ）・炎上
 		foes: { copipe: 2, yuki: 2, bomb: 2 },
 		floors: 20,
@@ -417,6 +510,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// （data/story.ts の BOARD_LOOKS の zones）。いちばん底の「1001の原盤」を 持ったまま 帰還スレで 帰れる
 	hidden: {
 		id: "hidden",
+		objective: "fetch",
 		floors: 99,
 		items: HIDDEN_ITEMS,
 		perFloor: [5, 7],

@@ -600,6 +600,134 @@ const M: MonsterDef[] = [
 		desc: "祭りの　仲間と　4人で　やってくる",
 		flavor: "外で　名乗るときは　屯田兵。祭りの　あとは　だれも　いない",
 	},
+	// ───────── ボス（目的が boss の 板の いちばん底に 1体だけ。data/dungeons.ts の boss） ─────────
+	// 絵は その板の 敵の 絵を 1.5倍（同じ 階に 同じ 種類の 雑魚が いても 見分けが つく）。
+	// 出る階は その板の いちばん底の 強さ（level。図鑑の 表示用。ふつうの 階の 表には 出ない：monstersFor）。
+	// 強さは pnpm sim -- --objective boss で「いちばん底に 着いた 冒険の 75〜90% が 勝つ」ように 合わせた。
+	// パン板・きのこ板は ボットが 自力で 底まで 行ける（--n 200）。ほかの 4つは 自力では ほぼ 着かない
+	// （100回で 0〜1）ので --reach（目的に たどりつくまで 倒れない・レベルは その階の 強さ − 2 まで 足す。
+	// --n 100）で 見た。右は 同じ 条件の fetch で 底から 入口まで 帰れた 割合（2026-09-28）：
+	//   パン兵長          勝ち 83.7%（154/184）  fetch 97.3%（179/184）  着いたとき Lv6.9
+	//   親玉きのにゃん    勝ち 82.5%（99/120）   fetch 92.5%（111/120）  Lv7.2
+	//   怒れるナツコ      勝ち 85%               fetch 71%               Lv13（--reach）
+	//   大たこのみん      勝ち 85%               fetch 11%               Lv17（--reach。😡で 半分から 倍速）
+	//   祭りの親分マシー  勝ち 76%               fetch 25%               Lv18（--reach。怒ると 倍速）
+	//   湯守おふ郎くん    勝ち 81%               fetch 0%                Lv25（--reach）
+	// 攻撃は 同じ 階の 雑魚より 弱め（1対1で 長く 戦うので。こわさは 息・飛び道具・吹きとばし・怒りで 出す）。
+	{
+		id: "boss_panhei",
+		name: "パン兵長",
+		sprite: "pub:sprites/panhei.png",
+		scale: 1.5,
+		boss: true,
+		hp: 100,
+		atk: 8,
+		def: 10,
+		exp: 25,
+		floors: [7, 7],
+		weight: 0,
+		abilities: [{ k: "knockback", rate: 1 / 4 }],
+		board: "shallow",
+		desc: "パン兵を　たばねる　兵長。なぐった　相手を　吹きとばす",
+		flavor: "窯の　前から　一歩も　動かない。……寝ている　だけ　とも　いう",
+	},
+	{
+		id: "boss_kinonyan",
+		name: "親玉きのにゃん",
+		sprite: "pub:sprites/kinonyan.png",
+		scale: 1.5,
+		boss: true,
+		hp: 60,
+		atk: 7,
+		def: 12,
+		exp: 25,
+		floors: [7, 7],
+		weight: 0,
+		abilities: [
+			{ k: "armor" },
+			{ k: "breath", rate: 1 / 4, dmg: [3, 7], what: "胞子" },
+		],
+		board: "kinoko",
+		desc: "きのこ板の　親玉。まっすぐ　ならぶと　胞子を　吐く。なぐる　攻撃は　半分",
+		flavor: "植民地の　植民地の　親玉。態度は　板で　いちばん　でかい",
+	},
+	{
+		id: "boss_natsuko",
+		name: "怒れるナツコ",
+		sprite: "pub:sprites/natsuko.png",
+		scale: 1.5,
+		boss: true,
+		hp: 130,
+		atk: 10,
+		def: 16,
+		exp: 50,
+		floors: [15, 15],
+		weight: 0,
+		abilities: [
+			{ k: "ranged", rate: 1 / 3, atk: 14, verb: "ヤシの実を　投げた" },
+		],
+		board: "tropical",
+		desc: "人見知りを　やめた　ナツコ。まっすぐ　ならぶと　ヤシの実を　投げてくる",
+		flavor: "ヤッシッシ～！　島の　てっぺんは　ゆずらない",
+	},
+	{
+		id: "boss_takonomin",
+		name: "大たこのみん",
+		sprite: "pub:sprites/takonomin.png",
+		scale: 1.5,
+		boss: true,
+		hp: 110,
+		atk: 7,
+		def: 20,
+		exp: 180,
+		floors: [19, 19],
+		weight: 0,
+		abilities: [
+			{ k: "breath", rate: 1 / 5, dmg: [6, 10], what: "熱々の　たこ焼き" },
+		],
+		board: "konamono",
+		desc: "鉄板の　主。まっすぐ　ならぶと　熱々の　たこ焼きを　飛ばしてくる",
+		flavor:
+			"😡に　見えるのは　たこ焼きの　顔。……今日は　ほんとうに　怒っている",
+	},
+	{
+		id: "boss_mashii",
+		name: "祭りの親分マシー",
+		sprite: "pub:sprites/mashii.png",
+		scale: 1.5,
+		boss: true,
+		hp: 120,
+		atk: 7,
+		def: 20,
+		exp: 380,
+		floors: [20, 20],
+		weight: 0,
+		abilities: [{ k: "knockback", rate: 1 / 4 }, { k: "berserk" }],
+		board: "festival",
+		desc: "祭りを　しきる　親分。うちわで　吹きとばし、弱ると　怒って　速くなる",
+		flavor:
+			"外で　名乗るときは　屯田兵長。祭りの　あとも　ひとりで　残っている",
+	},
+	{
+		id: "boss_ofurou",
+		name: "湯守おふ郎くん",
+		sprite: "pub:sprites/ofurou.png",
+		scale: 1.5,
+		boss: true,
+		hp: 130,
+		atk: 10,
+		def: 20,
+		exp: 750,
+		floors: [27, 27],
+		weight: 0,
+		abilities: [
+			{ k: "ranged", rate: 1 / 3, atk: 18, verb: "熱い　湯を　かけた" },
+			{ k: "sleepSpell", rate: 1 / 10 },
+		],
+		board: "main",
+		desc: "源泉を　守る　湯守。まっすぐ　ならぶと　熱い　湯を　かけ、となりでは　眠らせる",
+		flavor: "混浴でしてよ。……湯あたりには　お気をつけあそばせ",
+	},
 ];
 
 export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
@@ -607,10 +735,11 @@ export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
 );
 export const MONSTER_LIST: readonly MonsterDef[] = M;
 
-/** その階に出るモンスター（板だけの 敵は その板でだけ）。 */
+/** その階に出るモンスター（板だけの 敵は その板でだけ。ボスは 出ない）。 */
 export const monstersFor = (depth: number, dungeon?: DungeonId): MonsterDef[] =>
 	M.filter(
 		(m) =>
+			!m.boss &&
 			depth >= m.floors[0] &&
 			depth <= m.floors[1] &&
 			(!m.board || m.board === dungeon),

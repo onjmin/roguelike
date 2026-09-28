@@ -6,8 +6,14 @@
 //   シードが決まっているので、結果は毎回同じ。
 // - 湧きと地震は止める（毎ターン f.turns を 0 に戻す）。
 
-import { attackPower, EXP_AT, HUNGER_MAX, rollDamage } from "../core/balance";
-import { DUNGEON_IDS } from "../core/data/dungeons";
+import {
+	attackPower,
+	EXP_AT,
+	HUNGER_MAX,
+	rollDamage,
+	SPAWN_EVERY,
+} from "../core/balance";
+import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTER_LIST, MONSTERS, monstersFor } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
 import { spawnMonster } from "../core/floor";
@@ -42,6 +48,7 @@ import {
 	transformMonster,
 } from "../core/monster";
 import { Run } from "../core/run";
+import { serializeRun } from "../core/serial";
 import { triggerTrap } from "../core/traps";
 import {
 	type Ability,
@@ -52,6 +59,7 @@ import {
 	type GameEvent,
 	type Item,
 	type Monster,
+	type Objective,
 	PLAYER_ID,
 } from "../core/types";
 
@@ -141,8 +149,10 @@ const arena = (
 	seed: string,
 	layout: Layout = bigRoomLayout(),
 	start: Pos = CENTER,
+	dungeon: DungeonId = "main",
+	objective: Objective = "fetch",
 ): Run => {
-	const r = Run.create(`monster-test:${seed}`);
+	const r = Run.create(`monster-test:${seed}`, dungeon, [], objective);
 	const f = r.s.floor;
 	f.layout = layout;
 	f.seen = new Uint8Array(layout.w * layout.h);
@@ -2646,11 +2656,562 @@ test("mashii", "pack: comes in a group of four", () => {
 	);
 });
 
+// ───────────────── ボス（目的が boss の 板の いちばん底。data/dungeons.ts の boss） ─────────────────
+
+/** ボスの いる 板（boss が 既定の 植民地と、期間限定の パン板・風呂板）。 */
+const BOSS_BOARDS: readonly DungeonId[] = [
+	"shallow",
+	"kinoko",
+	"tropical",
+	"konamono",
+	"festival",
+	"main",
+];
+
+/** ボスに 持たせない とくぎ（逃げる・消える・ふえる・化ける・飛ばす）。 */
+const NOT_FOR_BOSSES: readonly Ability["k"][] = [
+	"split",
+	"explode",
+	"steal",
+	"shy",
+	"retreat",
+	"metal",
+	"warpPlayer",
+	"random",
+	"invisible",
+	"mimic",
+];
+
+/**
+ * 目的が boss の いちばん底を 大部屋に した 場。ボスを pos に 置いて、この階の ボスに する（f.boss）。
+ * 既定は 起きていて、キリコから 見える 所。
+ */
+const bossArena = (
+	seed: string,
+	dungeon: DungeonId,
+	o: {
+		layout?: Layout;
+		start?: Pos;
+		pos?: Pos;
+		opts?: { sleep?: number; awake?: boolean };
+	} = {},
+): { r: Run; b: Monster } => {
+	const start = o.start ?? CENTER;
+	const r = arena(seed, o.layout ?? bigRoomLayout(), start, dungeon, "boss");
+	r.s.depth = r.dungeon.floors;
+	r.f.depth = r.s.depth;
+	const spec = r.bossSpec;
+	ok(spec, `harness: ${dungeon} has no boss`);
+	const b = put(r, spec.monster, o.pos ?? at(5, 0, start), o.opts);
+	r.f.boss = b.uid;
+	return { r, b };
+};
+
+/** 向こうの 敵を 同じ 位置に 置きなおしながら 待つ（近づかせずに 飛び道具・息を 見る）。 */
+const holdAndWait = (
+	r: Run,
+	m: Monster,
+	n: number,
+	done: () => boolean,
+): number => {
+	const home = { x: m.x, y: m.y };
+	return waitTurns(r, n, () => {
+		m.x = home.x;
+		m.y = home.y;
+		return done();
+	});
+};
+
+const isBossDef = (m: Monster): boolean => !!mdef(m).boss;
+
+const logHas = (r: Run, text: string): boolean =>
+	r.s.log.some((l) => l.includes(text));
+
+test(
+	"boss",
+	"each boss board has one boss that never shows up anywhere else",
+	() => {
+		for (const d of DUNGEON_IDS) {
+			const spec = DUNGEONS[d].boss;
+			if (!BOSS_BOARDS.includes(d)) {
+				ok(!spec, `${d} has a boss`);
+				ok(DUNGEONS[d].objective === "fetch", `${d} is not fetch`);
+				continue;
+			}
+			ok(spec, `${d} has no boss`);
+			const def = MONSTERS[spec.monster];
+			ok(def?.boss, `${d}: ${spec.monster} is not a boss`);
+			ok(def.board === d, `${spec.monster} is on ${def.board}`);
+			ok(
+				def.floors[0] === DUNGEONS[d].level[DUNGEONS[d].floors] &&
+					def.floors[1] === def.floors[0],
+				`${spec.monster} floors ${def.floors}`,
+			);
+			ok(def.scale === 1.5, `${spec.monster} is drawn at ${def.scale}`);
+			const bad = def.abilities.filter((a) => NOT_FOR_BOSSES.includes(a.k));
+			ok(!bad.length, `${spec.monster} has ${bad.map((a) => a.k)}`);
+			ok(
+				spec.lines.length >= 2 && spec.lines.length <= 3,
+				`${d}: ${spec.lines.length} rescue lines`,
+			);
+			// 記録の 1行に おさまる（ほかの 行と 同じ 24字まで）
+			const long = spec.lines.filter((l) => [...l].length > 24);
+			ok(!long.length, `${d}: long rescue lines ${long.join(" / ")}`);
+			ok(spec.cause === `${def.name}を　たおした`, `${d}: cause ${spec.cause}`);
+			for (let lv = 1; lv <= 30; lv++)
+				for (const other of DUNGEON_IDS)
+					ok(
+						!monstersFor(lv, other).some((m) => m.boss),
+						`a boss is in the ${other} pool at level ${lv}`,
+					);
+		}
+		// 既定：物語の 品の 板は 持ち帰り、4つの 植民地は ボス
+		for (const d of ["kinoko", "tropical", "konamono", "festival"] as const)
+			ok(DUNGEONS[d].objective === "boss", `${d} is not a boss board`);
+		for (const d of ["shallow", "main", "deep", "hidden"] as const)
+			ok(DUNGEONS[d].objective === "fetch", `${d} is not a fetch board`);
+		ok(
+			MONSTER_LIST.filter((m) => m.boss).length === BOSS_BOARDS.length,
+			"a boss is not on any board",
+		);
+	},
+);
+
+test(
+	"boss",
+	"the objective draws no random number and is saved only for boss",
+	() => {
+		const fetch = Run.create("boss-create", "kinoko");
+		const boss = Run.create("boss-create", "kinoko", [], "boss");
+		ok(fetch.s.objective === undefined, "fetch wrote an objective");
+		ok(fetch.objective === "fetch", `fetch reads as ${fetch.objective}`);
+		ok(boss.s.objective === "boss" && boss.objective === "boss", "not boss");
+		ok(
+			JSON.stringify(boss.s.rng) === JSON.stringify(fetch.s.rng),
+			"the boss objective drew a random number",
+		);
+		const o = JSON.parse(serializeRun(boss.s)) as Record<string, unknown>;
+		delete o.objective;
+		ok(
+			JSON.stringify(o) === serializeRun(fetch.s),
+			"B1 of a boss run differs from the fetch run",
+		);
+		// ボスの いない 板は 持ち帰りの まま
+		const deep = Run.create("boss-create", "deep", [], "boss");
+		ok(
+			deep.s.objective === undefined && deep.bossSpec === null,
+			"a board without a boss became boss",
+		);
+	},
+);
+
+test(
+	"boss",
+	"the bottom floor: the boss sleeps in the stairs room, no goal on the floor, no festival",
+	() => {
+		for (const d of BOSS_BOARDS) {
+			const bottom = DUNGEONS[d].floors;
+			let inStairs = 0;
+			for (let i = 0; i < 6; i++) {
+				const r = Run.create(`boss-floor-${d}-${i}`, d, [], "boss");
+				r.s.houses = [bottom];
+				r.enterFloor(bottom, false);
+				const f = r.f;
+				const b = r.boss;
+				ok(b, `${d} ${i}: no boss`);
+				ok(b.kind === DUNGEONS[d].boss?.monster, `${d}: ${b.kind}`);
+				ok(
+					f.monsters.filter((m) => isBossDef(m)).length === 1,
+					`${d} ${i}: not one boss`,
+				);
+				ok(
+					b.status.sleep === DEEP || f.bossSeen,
+					`${d} ${i}: awake before it was seen`,
+				);
+				ok(f.house < 0, `${d} ${i}: the boss floor is a festival`);
+				ok(
+					!f.items.some((fi) => fi.item.kind === r.dungeon.goal),
+					`${d} ${i}: the goal is on the floor`,
+				);
+				ok(!b.carry, `${d} ${i}: the boss carries ${b.carry?.kind}`);
+				if (
+					roomAt(f.layout, b.x, b.y) ===
+					roomAt(f.layout, f.stairs.x, f.stairs.y)
+				)
+					inStairs++;
+				// 同じ 種の fetch：品が 床に あって ボスは いない
+				const g = Run.create(`boss-floor-${d}-${i}`, d);
+				g.enterFloor(bottom, false);
+				ok(
+					g.f.boss === undefined && !g.f.monsters.some(isBossDef),
+					`${d} ${i}: a fetch run has a boss`,
+				);
+				ok(
+					g.f.items.some((fi) => fi.item.kind === g.dungeon.goal),
+					`${d} ${i}: a fetch run has no goal`,
+				);
+			}
+			ok(inStairs >= 5, `${d}: the boss was in the stairs room ${inStairs}/6`);
+		}
+	},
+);
+
+test(
+	"boss",
+	"sleeps without moving until Kiriko first sees it, then waits for her",
+	() => {
+		// 見えない 離れ部屋に ボス。気配スレで 居場所が わかっても 起きない
+		const { r, b } = bossArena("boss-wake", "kinoko", {
+			layout: hideoutLayout(),
+			start: HIDE_AT,
+			pos: { x: 46, y: 16 },
+			opts: { sleep: DEEP },
+		});
+		r.f.senseMonsters = true;
+		const home = { x: b.x, y: b.y };
+		let events = 0;
+		waitTurns(r, 12, (ev) => {
+			events += evs(ev, "boss").length;
+			return false;
+		});
+		ok(events === 0 && !r.f.bossSeen, "woke up without being seen");
+		ok(samePos(b, home) && b.status.sleep === DEEP, "moved while unseen");
+		// 離れ部屋に 入る（キリコを 移す）→ 見た とたんに 起きて 待ちかまえる
+		r.p.x = 43;
+		r.p.y = 16;
+		const ev = turn(r);
+		const seen = evs(ev, "boss");
+		ok(seen.length === 1 && seen[0].id === b.uid, "no boss event on sight");
+		ok(r.f.bossSeen === true, "bossSeen was not saved");
+		ok(now(b).status.sleep === 0, "still asleep after being seen");
+		ok(saw(ev, "待ちかまえていた"), "no line when it was seen");
+		// 以後は ふつうに 動く（もう 知らせない）
+		let moved = 0;
+		waitTurns(r, 6, (e) => {
+			events += evs(e, "boss").length;
+			moved += count(e, "move", b.uid) + count(e, "attack", b.uid);
+			return false;
+		});
+		ok(events === 0, "the boss event came twice");
+		ok(moved > 0, "the boss did not move after waking");
+	},
+);
+
+test("boss", "no monsters spawn over time while the boss lives", () => {
+	const spawned = (withBoss: boolean): number => {
+		const { r, b } = bossArena(`boss-spawn-${withBoss}`, "kinoko", {
+			layout: hideoutLayout(),
+			start: HIDE_AT,
+			pos: { x: 46, y: 16 },
+			opts: { sleep: DEEP },
+		});
+		if (!withBoss) {
+			r.f.monsters = r.f.monsters.filter((m) => m !== b);
+			delete r.f.boss;
+		}
+		const before = r.f.monsters.length;
+		for (let i = 0; i < 3; i++) {
+			r.f.turns = SPAWN_EVERY * (i + 1) - 1;
+			r.f.res = 0;
+			r.act({ c: "wait" });
+		}
+		return r.f.monsters.length - before;
+	};
+	ok(spawned(false) > 0, "harness: nothing spawned without a boss");
+	ok(spawned(true) === 0, "monsters spawned while the boss lived");
+});
+
+test(
+	"boss",
+	"change / split / rebut / edge staffs and a thrown daze herb do not work on it",
+	() => {
+		for (const kind of ["w_change", "w_split", "w_rebut", "w_edge"]) {
+			const { r, b } = bossArena(`boss-staff-${kind}`, "festival");
+			const hp = b.hp;
+			const php = r.p.hp;
+			staffEffect(r, kind, b);
+			ok(b.kind === "boss_mashii", `${kind}: became ${b.kind}`);
+			ok(r.f.monsters.length === 1, `${kind}: ${r.f.monsters.length} monsters`);
+			ok(
+				b.hp === hp && r.f.monsters.includes(b),
+				`${kind}: hp ${hp} → ${b.hp}`,
+			);
+			ok(r.p.hp === php, `${kind}: the player lost HP`);
+			ok(!r.s.end, `${kind}: the run ended`);
+			ok(logHas(r, "効かなかった"), `${kind}: no "didn't work" line`);
+		}
+		const { r, b } = bossArena("boss-daze", "festival", {
+			pos: at(3, 0),
+			opts: { sleep: DEEP },
+		});
+		const dir = dirOf(1, 0) as Dir8;
+		for (let i = 0; i < 6 && !logHas(r, "効かなかった"); i++) {
+			const it = give(r, "h_daze");
+			turn(r, { c: "throw", item: it.uid, dir });
+		}
+		ok(logHas(r, "効かなかった"), "harness: the herb never hit");
+		ok(!b.fleeing, "the boss runs away");
+	},
+);
+
+test("boss", "!sk: wipe-out, items and metal leave the boss as it is", () => {
+	const { r, b } = bossArena("boss-gacha", "konamono", { pos: at(4, 0) });
+	r.f.sight = true;
+	const seen = new Set<string>();
+	for (let i = 0; i < 60 && seen.size < 3; i++) {
+		const it = give(r, "s_gacha");
+		r.s.ids.known.s_gacha = true;
+		r.f.monsters
+			.filter((m) => m !== b)
+			.forEach((m) => {
+				r.f.monsters = r.f.monsters.filter((x) => x !== m);
+			});
+		put(r, "tousuko", at(-4, 0), { sleep: DEEP });
+		const ev = turn(r, { c: "use", item: it.uid });
+		for (const t of ["いなくなった", "道具に　なった", "メタルぷゆゆに"])
+			if (saw(ev, t)) {
+				seen.add(t);
+				ok(saw(ev, "効かなかった"), `${t}: no "didn't work" line`);
+			}
+		ok(r.f.monsters.includes(b), `the boss is gone after ${[...seen]}`);
+		ok(b.kind === "boss_takonomin", `the boss became ${b.kind}`);
+		b.hp = b.maxHp;
+		b.enraged = false;
+		b.status.fast = 0;
+	}
+	ok(seen.size === 3, `harness: only saw ${[...seen].join(", ")}`);
+});
+
+test(
+	"boss",
+	"a mine or a 炎上案件 blast takes a quarter of its max HP, not all of it",
+	() => {
+		const { r, b } = bossArena("boss-mine", "tropical", {
+			pos: at(1, 0),
+			opts: { sleep: DEEP },
+		});
+		const q = Math.ceil(b.maxHp / 4);
+		for (let i = 0; i < 20 && !logHas(r, "地雷が　爆発した"); i++)
+			triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "mine", found: false });
+		ok(logHas(r, "地雷が　爆発した"), "harness: the mine never went off");
+		ok(r.f.monsters.includes(b), "the mine blew the boss away");
+		ok(b.hp === b.maxHp - q, `mine: hp ${b.hp}/${b.maxHp}`);
+		ok(!r.s.end, "the run ended");
+		const bomb = put(r, "bomb", at(3, 0), { sleep: DEEP });
+		bomb.hp = 10;
+		r.damageMonster(bomb, 1, "hit");
+		ok(!r.f.monsters.includes(bomb), "harness: the bomb did not go off");
+		ok(r.f.monsters.includes(b), "the blast blew the boss away");
+		ok(b.hp === b.maxHp - 2 * q, `blast: hp ${b.hp}/${b.maxHp}`);
+		ok(!r.s.end, "the run ended");
+	},
+);
+
+test(
+	"boss",
+	"felling it ends the run on the spot: the goal goes into the bag and she is sent home",
+	() => {
+		for (const d of BOSS_BOARDS) {
+			const { r, b } = bossArena(`boss-win-${d}`, d, { pos: at(1, 0) });
+			const spec = DUNGEONS[d].boss;
+			ok(spec, "harness");
+			// 袋が いっぱいでも 品は 持つ
+			while (r.p.items.length < 20) give(r, "f_bread");
+			b.hp = 1;
+			const dir = dirOf(1, 0) as Dir8;
+			const ev: GameEvent[] = [];
+			for (let i = 0; i < 20 && !r.s.end; i++)
+				ev.push(...r.act({ c: "attack", dir }));
+			const end = r.s.end;
+			ok(end?.kind === "clear", `${d}: ended as ${end?.kind ?? "nothing"}`);
+			ok(end.cause === spec.cause, `${d}: cause ${end.cause}`);
+			ok(end.depth === r.dungeon.floors, `${d}: end depth ${end.depth}`);
+			ok(!r.s.returning, `${d}: went into the walk back`);
+			ok(!ev.some((e) => e.t === "goal"), `${d}: a goal event`);
+			ok(
+				r.p.items.some((it) => it.kind === r.dungeon.goal),
+				`${d}: the goal is not in the bag`,
+			);
+			ok(r.p.items.length === 21, `${d}: ${r.p.items.length} items`);
+			ok(
+				!r.f.items.some((fi) => fi.item.kind === r.dungeon.goal),
+				`${d}: the goal was put on the floor`,
+			);
+			ok(
+				r.f.boss === undefined && r.boss === null,
+				`${d}: the boss is still set`,
+			);
+			ok(r.s.kills[b.kind] === 1, `${d}: the kill was not counted`);
+			// 順：たおれる → 経験値 → 品 → 帰り方 → 終わり
+			const die = ev.findIndex((e) => e.t === "die" && e.id === b.uid);
+			const rescue = ev.findIndex((e) => e.t === "rescue");
+			const fin = ev.findIndex((e) => e.t === "end");
+			ok(die >= 0 && die < rescue && rescue < fin, `${d}: events out of order`);
+			const rs = ev[rescue];
+			ok(rs.t === "rescue" && rs.kind === spec.rescue, `${d}: rescue kind`);
+			const msgs = ev.filter((e) => e.t === "msg").map((e) => e.text);
+			const got = msgs.findIndex((t) => t.includes("手に入れた"));
+			const exp = msgs.findIndex((t) => t.includes("経験値"));
+			ok(exp >= 0 && exp < got, `${d}: the goal came before the exp`);
+			ok(
+				spec.lines.every((l, i) => msgs[got + 1 + i] === l),
+				`${d}: rescue lines ${msgs.slice(got + 1).join(" / ")}`,
+			);
+			const afterRescue = ev
+				.slice(rescue + 1, fin)
+				.filter((e) => e.t !== "msg");
+			ok(
+				!afterRescue.length,
+				`${d}: ${afterRescue.map((e) => e.t)} after rescue`,
+			);
+		}
+	},
+);
+
+test(
+	"boss",
+	"felled by a blast it still counts as a win, and the blast does not fell her after",
+	() => {
+		// 地雷（キリコの HP が 1 でも、ボスが たおれたら そこで 終わり）
+		{
+			const { r, b } = bossArena("boss-mine-win", "shallow", {
+				pos: at(1, 0),
+				opts: { sleep: DEEP },
+			});
+			b.hp = 2;
+			r.p.hp = 1;
+			for (let i = 0; i < 20 && !r.s.end; i++)
+				triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "mine", found: false });
+			ok(r.s.end?.kind === "clear", `mine: ended as ${r.s.end?.kind}`);
+			ok(r.p.hp === 1, `mine: the player hp ${r.p.hp}`);
+			ok(!logHas(r, "たおれた……"), "mine: she fell after the win");
+		}
+		// 炎上案件
+		{
+			const { r, b } = bossArena("boss-bomb-win", "festival", {
+				pos: at(1, 0),
+				opts: { sleep: DEEP },
+			});
+			b.hp = 2;
+			r.p.hp = 1;
+			const bomb = put(r, "bomb", at(2, 1), { sleep: DEEP });
+			bomb.hp = 10;
+			r.damageMonster(bomb, 1, "hit");
+			ok(r.s.end?.kind === "clear", `bomb: ended as ${r.s.end?.kind}`);
+			ok(r.p.hp === 1, `bomb: the player hp ${r.p.hp}`);
+			ok(
+				r.p.items.some((it) => it.kind === r.dungeon.goal),
+				"bomb: the goal burnt",
+			);
+		}
+	},
+);
+
+test(
+	"boss",
+	"a boss felled in a fetch run (or a trait test) does not end the run",
+	() => {
+		const r = arena("boss-fetch");
+		const m = put(r, "boss_panhei", at(1, 0), { sleep: DEEP });
+		r.damageMonster(m, m.hp, "hit");
+		ok(!r.f.monsters.includes(m), "harness: not felled");
+		ok(!r.s.end, `ended as ${r.s.end?.kind}`);
+	},
+);
+
+// 1体ずつの とくちょう（ボスの 絵は 1.5倍・図鑑の 階は その板の いちばん底。ここは とくぎ）
+
+test("boss_panhei", "knockback: pushes Kiriko back", () => {
+	const r = arena("boss-panhei");
+	const m = put(r, "boss_panhei", at(-1, 0));
+	const n = waitTurns(r, 80, (ev) =>
+		evs(ev, "warp").some((w) => w.id === PLAYER_ID),
+	);
+	ok(n > 0, `${m.kind} never knocked Kiriko back in 80 turns`);
+});
+
+test(
+	"boss_kinonyan",
+	"armor halves melee; breathes spores along a line",
+	() => {
+		const r = arena("boss-kinonyan");
+		const m = put(r, "boss_kinonyan", at(4, 0));
+		m.maxHp = 9999;
+		m.hp = 9999;
+		ok(dealt(r, m, 20, "hit") === 10, "melee was not halved");
+		ok(dealt(r, m, 20, "magic") === 20, "magic was halved");
+		const n = holdAndWait(r, m, 60, () => logHas(r, "胞子を　吐いた"));
+		ok(n > 0, "never breathed spores");
+	},
+);
+
+test(
+	"boss_natsuko",
+	"throws coconuts along a line and does not run away",
+	() => {
+		const r = arena("boss-natsuko");
+		const m = put(r, "boss_natsuko", at(4, 0));
+		const n = holdAndWait(r, m, 40, () => logHas(r, "ヤシの実を　投げた"));
+		ok(n > 0, "never threw a coconut");
+		const r2 = arena("boss-natsuko-near");
+		const m2 = put(r2, "boss_natsuko", at(2, 0));
+		const near = waitTurns(r2, 12, () => dist(m2, r2.p) === 1);
+		ok(near > 0, `kept away (at distance ${dist(m2, r2.p)})`);
+	},
+);
+
+test(
+	"boss_takonomin",
+	"throws hot takoyaki; gets angry at half HP in おんたこ",
+	() => {
+		const r = arena("boss-takonomin", bigRoomLayout(), CENTER, "konamono");
+		const m = put(r, "boss_takonomin", at(4, 0));
+		const n = holdAndWait(r, m, 60, () => logHas(r, "たこ焼きを　吐いた"));
+		ok(n > 0, "never threw takoyaki");
+		r.damageMonster(m, Math.ceil(m.maxHp / 2), "hit");
+		ok(m.enraged && m.status.fast === 999, "did not get angry");
+	},
+);
+
+test(
+	"boss_mashii",
+	"berserk at half HP; knocks Kiriko back with the fan",
+	() => {
+		const r = arena("boss-mashii");
+		const m = put(r, "boss_mashii", at(-1, 0));
+		const n = waitTurns(r, 80, (ev) =>
+			evs(ev, "warp").some((w) => w.id === PLAYER_ID),
+		);
+		ok(n > 0, "never knocked Kiriko back in 80 turns");
+		r.damageMonster(m, m.hp - Math.floor(m.maxHp / 2), "hit");
+		ok(
+			m.enraged && m.status.fast === 999,
+			"did not go berserk (main is not angry)",
+		);
+	},
+);
+
+test(
+	"boss_ofurou",
+	"splashes hot water along a line; puts Kiriko to sleep from next to her",
+	() => {
+		const r = arena("boss-ofurou");
+		const m = put(r, "boss_ofurou", at(4, 0));
+		const n = holdAndWait(r, m, 40, () => logHas(r, "湯を　かけた"));
+		ok(n > 0, "never splashed hot water");
+		const r2 = arena("boss-ofurou-near");
+		put(r2, "boss_ofurou", at(1, 0));
+		const w = spellWatch(r2);
+		waitTurns(r2, 120, () => false);
+		ok(w.slept > 0, `never put Kiriko to sleep (${w.casts} casts)`);
+	},
+);
+
 test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",
 	() => {
-		ok(MONSTER_LIST.length === 38, `${MONSTER_LIST.length} monsters`);
+		ok(MONSTER_LIST.length === 44, `${MONSTER_LIST.length} monsters`);
 		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
 		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(

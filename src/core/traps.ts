@@ -3,6 +3,7 @@
 import { rollDamage, TRAP_CHANCE } from "./balance";
 import { DIRS8, dist, step } from "./geom";
 import { isKeyItem } from "./item";
+import { isBoss } from "./monster";
 import type { Run } from "./run";
 import type { Trap } from "./types";
 
@@ -76,12 +77,14 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			r.se("explosion");
 			r.emit({ t: "fx", kind: "explosion", pos: { x: p.x, y: p.y }, r: 1 });
 			r.msg("地雷が　爆発した！", "warn");
-			// 爆風で 消え去る（経験値なし・落とす 道具も 燃える。巻きこまれた 炎上案件も 誘爆しない。トルネコ1と 同じ）
-			for (const m of [...r.f.monsters])
-				if (dist(m, p) <= 1) r.killMonster(m, false, true);
+			// 爆風で 消え去る（経験値なし・落とす 道具も 燃える。巻きこまれた 炎上案件も 誘爆しない。トルネコ1と 同じ）。
+			// ボスは 消え去らず、最大HPの 1/4 の ダメージ（ほかの 敵の あとで。たおれたら その場で 冒険が 終わる）
+			const near = r.f.monsters.filter((m) => dist(m, p) <= 1);
+			for (const m of near) if (!isBoss(m)) r.killMonster(m, false, true);
 			for (const fi of [...r.f.items])
 				if (dist(fi, p) <= 1) r.destroyFloorItem(fi);
-			r.hurtPlayer(Math.ceil(p.hp / 2), "地雷で　たおれた");
+			for (const m of near) if (isBoss(m)) r.blastBoss(m);
+			if (!r.s.end) r.hurtPlayer(Math.ceil(p.hp / 2), "地雷で　たおれた");
 			return;
 		}
 		case "arrow":

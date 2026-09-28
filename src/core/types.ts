@@ -18,6 +18,19 @@ export type DungeonId =
 	| "festival"
 	| "hidden";
 
+/**
+ * 冒険の 目的。fetch：いちばん底の 品を 拾って 入口まで 持ち帰る。
+ * boss：いちばん底に いる ボス（品を 持っている）を たおすと、その場で 入口へ 帰れる。
+ */
+export type Objective = "fetch" | "boss";
+
+/**
+ * ボスを たおした あと、一瞬で 入口へ 帰る わけ（画面の 演出の 種類）。
+ * sprout：きのこが 伸びて 押し上げる・escort：住人に 送ってもらう・
+ * eruption：噴火の 熱風で 吹き飛ぶ・geyser：源泉の 湯柱で 押し上げられる。
+ */
+export type RescueKind = "sprout" | "escort" | "eruption" | "geyser";
+
 // ───────────────────────── 道具 ─────────────────────────
 
 export type ItemCat =
@@ -168,6 +181,14 @@ export type MonsterDef = {
 	drop?: string;
 	/** その植民地（板）だけの 敵（ほかの 板には 出ない。改変の杖でも ならない）。 */
 	board?: DungeonId;
+	/**
+	 * ボス（その板の いちばん底に 1体だけ。ふつうの 階の 表・変化の杖・置物には 出ない。
+	 * 変化・分裂・論破・諸刃・まどわし・!skスレの 全滅/道具/メタルが 効かず、爆風でも 即死しない）。
+	 * 見分けは これで（封印で 消える とくぎ（has）では 見ない）。
+	 */
+	boss?: true;
+	/** 絵の 倍率（ボスは 大きく 描く。無ければ 1）。 */
+	scale?: number;
 	/** 図鑑の一言。 */
 	desc: string;
 	/** ひとこと（皮肉の きいた 1文。図鑑の「せつめい」に 出す）。 */
@@ -324,6 +345,10 @@ export type Floor = {
 	sight: boolean;
 	/** ただの 置物（通れない 地形。idx）。置物の 敵が 出る 階だけ（core/floor.ts の placeStatues）。 */
 	statues?: number[];
+	/** 生きている ボスの uid（目的が boss の いちばん底だけ。たおしたら 消す）。 */
+	boss?: number;
+	/** ボスを 見た（目を さまして 待ちかまえていた。画面の 曲と HP の ゲージ）。 */
+	bossSeen?: true;
 };
 
 // ───────────────────────── 冒険（1回の挑戦） ─────────────────────────
@@ -350,7 +375,10 @@ export type IdTable = {
 };
 
 export type Ending = {
-	/** 倒れた・持ち帰った（目的の品）・帰還スレで地上へもどった。 */
+	/**
+	 * 倒れた・持ち帰った（目的の品。目的が boss なら ボスを たおして 品ごと 一瞬で 帰った）・
+	 * 帰還スレで地上へもどった。
+	 */
 	kind: "dead" | "clear" | "escape";
 	cause: string;
 	depth: number;
@@ -362,6 +390,11 @@ export type RunState = {
 	seed: string;
 	/** どのダンジョンか。 */
 	dungeon: DungeonId;
+	/**
+	 * 目的（村で 決めて Run.create に 渡す）。fetch のときは 書かない（無ければ fetch。
+	 * 前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
+	 */
+	objective?: Objective;
 	rng: RngState;
 	depth: number;
 	turn: number;
@@ -463,6 +496,10 @@ export type GameEvent =
 	/** 地図に 載る ことが わかった（聖地巡礼スレ・ヲチスレ・発掘スレ。地図を 閉じていれば 画面が ひとこと 添える）。 */
 	| { t: "reveal" }
 	| { t: "goal" }
+	/** ボスを はじめて 見た（目を さました。id は その uid。続く 行で「待ちかまえていた！」）。 */
+	| { t: "boss"; id: number }
+	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
+	| { t: "rescue"; kind: RescueKind }
 	| { t: "end" };
 
 /** プレイヤーの id（イベントの id）。モンスターは uid（1 以上）。 */

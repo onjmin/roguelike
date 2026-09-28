@@ -28,7 +28,7 @@ import {
 	VOICE_FREEZE,
 	WAKE_CHANCE,
 } from "./balance";
-import { type Dungeon, dungeonById } from "./data/dungeons";
+import { type BossSpec, type Dungeon, dungeonById } from "./data/dungeons";
 import { ITEM_LIST } from "./data/items";
 import { MONSTERS } from "./data/monsters";
 import { FAKE_NAMES } from "./data/names";
@@ -58,6 +58,7 @@ import {
 } from "./item";
 import { isFloor, roomAt, T_WALL, tileAt } from "./mapgen";
 import {
+	isBoss,
 	mdef,
 	monsterAct,
 	monsterName,
@@ -79,6 +80,7 @@ import {
 	type Item,
 	type ItemCat,
 	type Monster,
+	type Objective,
 	PLAYER_ID,
 	type Player,
 	type RunState,
@@ -130,13 +132,17 @@ export class Run {
 	/**
 	 * 新しく潜る。本編（main）は ダンジョンを増やす前と 同じ順に乱数を引く
 	 * （中断セーブ・リプレイ・parity の基準が そのまま通るように）。
+	 * objective は 村で 決めた 目的（乱数は 引かない。ボスの いない 板では fetch）。
+	 * 目的で 変わるのは いちばん底の 階だけ。
 	 */
 	static create(
 		seed: string,
 		dungeon: DungeonId = "main",
 		carry: readonly Item[] = [],
+		objective: Objective = "fetch",
 	): Run {
 		const dg = dungeonById(dungeon);
+		const boss = objective === "boss" && !!dg.boss;
 		const rng = Rng.fromSeed(seed);
 		// モンスターハウス（祭り）の階（本編は 3階から 1/16 ずつ。B6 までに無ければ B4〜6 のどこかに1つ）。
 		const houses: number[] = [];
@@ -197,6 +203,8 @@ export class Run {
 			v: SAVE_VERSION,
 			seed,
 			dungeon: dg.id,
+			// fetch は 書かない（無ければ fetch。前の 版と 同じ 形の まま）
+			...(boss ? { objective: "boss" as const } : {}),
 			rng: rng.state(),
 			depth: 0,
 			turn: 0,
@@ -276,9 +284,26 @@ export class Run {
 		return l[Math.max(1, Math.min(l.length - 1, depth))];
 	}
 
-	/** いちばん底で、まだ下りられない（目的の品を拾う前）。 */
+	/** いちばん底で、まだ下りられない（目的の品を拾う前。ボスの 階も 階段は 無い）。 */
 	get atBottom(): boolean {
 		return !this.s.returning && this.s.depth >= this.dungeon.floors;
+	}
+
+	/** この冒険の 目的（書いていなければ 持ち帰り）。 */
+	get objective(): Objective {
+		return this.s.objective ?? "fetch";
+	}
+
+	/** 目的が boss の ときの ボス（その板の data/dungeons.ts の boss。fetch なら null）。 */
+	get bossSpec(): BossSpec | null {
+		return this.objective === "boss" ? (this.dungeon.boss ?? null) : null;
+	}
+
+	/** この階で 生きている ボス（いちばん底で、まだ たおしていない とき。画面の HP の ゲージにも）。 */
+	get boss(): Monster | null {
+		const uid = this.f?.boss;
+		if (uid === undefined) return null;
+		return this.f.monsters.find((m) => m.uid === uid && m.hp > 0) ?? null;
 	}
 
 	name(it: Item): string {
@@ -516,6 +541,26 @@ export class Run {
 			this.se("encounter");
 			this.msg("祭りだ！　野次馬が　あふれている！", "warn");
 		}
+		this.checkBossSeen();
+	}
+
+	/**
+	 * ボスを はじめて 見た：目を さまして 待ちかまえる（それまでは 眠って 動かない）。
+	 * 気配スレで 居場所が わかった だけ では 起きない（キリコの 目に 入った とき）。
+	 * 見た ことは 階に 残す（中断して 続けても 画面の 曲と ゲージが もどる）。
+	 */
+	private checkBossSeen(): void {
+		const f = this.f;
+		if (f.bossSeen || f.boss === undefined) return;
+		const m = this.boss;
+		if (!m || !this.playerSees(m)) return;
+		f.bossSeen = true;
+		m.status.sleep = 0;
+		m.status.dormant = false;
+		// 目を さました ターンは まだ 動かない（ほかの 寝起きと 同じ）
+		this.graceAfterWake(m);
+		this.emit({ t: "boss", id: m.uid });
+		this.msg(`${monsterName(this, m)}が　待ちかまえていた！`, "warn");
 	}
 
 	/** 眠っている敵を起こす判定（入室・となり）。 */
@@ -925,6 +970,38 @@ export class Run {
 			this.msg(`${d.exp}ポイントの　経験値を　かせいだ`);
 			this.gainExp(d.exp);
 		}
+		// ボス：経験値と レベルアップの あとに、品を 手に 入れて 入口へ
+		if (d.boss) this.bossDefeated(m);
+	}
+
+	/**
+	 * ボスを たおした：持っていた 品を 袋に 入れ（床には 置かない。袋が いっぱいでも 持つ。目的の 品は
+	 * 数の 外）、帰り方の 行を 出して、その場で 冒険を 終える。たおれたのと 同じ act の 中で 終える
+	 * （すぐ 保存されるので、遅らせると 階段の ない いちばん底に 取り残される）。
+	 * 帰り道（returning）には しない（目的の品の 出来事 goal も 出さない）。
+	 */
+	private bossDefeated(m: Monster): void {
+		if (this.f.boss === m.uid) delete this.f.boss;
+		const spec = this.bossSpec;
+		if (!spec || this.s.end) return;
+		const it = this.newItem(this.dungeon.goal);
+		if (!this.addItem(it)) this.p.items.push(it);
+		const goal = defOf(it.kind).name;
+		this.msg(`${monsterName(this, m)}は　${goal}を　落とした`);
+		this.msg(`キリコは　${goal}を　手に入れた！`, "good");
+		// 帰り方（画面の 演出は この 出来事から。文は 板ごとに 決まっている）
+		this.emit({ t: "rescue", kind: spec.rescue });
+		for (const line of spec.lines) this.msg(line);
+		this.finish("clear", spec.cause);
+	}
+
+	/**
+	 * ボスが 爆風（地雷・炎上案件）に 巻きこまれた：即死は しない。最大HPの 1/4 の ダメージ
+	 * （経験値は 入らない。これで たおれたら ふつうに たおした ことに）。
+	 */
+	blastBoss(m: Monster): void {
+		if (m.hp <= 0 || !this.f.monsters.includes(m)) return;
+		this.damageMonster(m, Math.ceil(m.maxHp / 4), "none");
 	}
 
 	/** 炎上案件の爆発（5×5 のモンスターと道具が消える。巻きこまれると HP が 1 に）。 */
@@ -943,15 +1020,22 @@ export class Run {
 			Math.abs(p.x - cx) <= 2 && Math.abs(p.y - cy) <= 2;
 		// 巻きこまれた 炎上案件は 連鎖して 爆発する（トルネコ1の 爆弾岩。2発 受けると たおれる）
 		const chain: Monster[] = [];
+		const bosses: Monster[] = [];
 		for (const o of [...this.f.monsters]) {
 			if (!inArea(o)) continue;
-			if (!o.status.sealed && mdef(o).abilities.some((a) => a.k === "explode"))
+			if (isBoss(o)) bosses.push(o);
+			else if (
+				!o.status.sealed &&
+				mdef(o).abilities.some((a) => a.k === "explode")
+			)
 				chain.push(o);
 			else this.killMonster(o, false, true);
 		}
 		for (const fi of [...this.f.items])
 			if (inArea(fi)) this.destroyFloorItem(fi);
-		if (inArea(this.p)) {
+		// ボスは 消え去らない（ほかの 敵の あとで。たおれたら その場で 冒険が 終わる）
+		for (const o of bosses) this.blastBoss(o);
+		if (inArea(this.p) && !this.s.end) {
 			if (this.p.hp <= 1)
 				this.hurtPlayer(1, "炎上案件の　爆発に　巻きこまれた");
 			else this.hurtPlayer(this.p.hp - 1, "炎上案件の　爆発に　巻きこまれた");
@@ -961,7 +1045,8 @@ export class Run {
 	}
 
 	splitMonster(m: Monster): void {
-		if (this.f.monsters.length >= MONSTER_CAP) return;
+		// ボスは ふえない（2体目の ボスは 出さない）
+		if (isBoss(m) || this.f.monsters.length >= MONSTER_CAP) return;
 		const spots = this.rng
 			.shuffle([...DIRS8])
 			.map((d) => step(m, d))
@@ -1069,7 +1154,12 @@ export class Run {
 		// 湧き
 		// 過疎の 板（離島）は 間隔が のびる
 		const spawnEvery = Math.round(SPAWN_EVERY / (this.dungeon.sparse ?? 1));
-		if (f.turns % spawnEvery === 0 && f.monsters.length < MONSTER_CAP) {
+		// ボスが 生きている あいだは 湧かない（ボスとの 戦いに しぼる）
+		if (
+			f.turns % spawnEvery === 0 &&
+			f.monsters.length < MONSTER_CAP &&
+			!this.boss
+		) {
 			const at = randomFloorPos(this, true);
 			if (at) spawnMonster(this, null, at, {});
 		}

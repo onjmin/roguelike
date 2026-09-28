@@ -21,7 +21,12 @@ import {
 } from "../core/replay";
 import { migrateRun, Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import { CAT_ORDER, type Command, type DungeonId } from "../core/types";
+import {
+	CAT_ORDER,
+	type Command,
+	type DungeonId,
+	type Objective,
+} from "../core/types";
 import { BOARD_LOOKS } from "../data/story";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
@@ -38,8 +43,9 @@ const playBot = (
 	maxActs: number,
 	every: number,
 	dungeon: DungeonId = "main",
+	objective: Objective = "fetch",
 ): Run => {
-	let run = Run.create(seed, dungeon);
+	let run = Run.create(seed, dungeon, [], objective);
 	for (let i = 1; i <= maxActs && !run.s.end; i++) {
 		run.act(botCommand(run));
 		if (i % every === 0) run = new Run(deserializeRun(serializeRun(run.s)));
@@ -52,8 +58,9 @@ const replay = (
 	seed: string,
 	steps: ReplayStep[],
 	dungeon: DungeonId = "main",
+	objective: Objective = "fetch",
 ): { run: Run; driftAt: number; checks: number } => {
-	const run = Run.create(seed, dungeon);
+	const run = Run.create(seed, dungeon, [], objective);
 	let checks = 0;
 	for (let i = 0; i < steps.length; i++) {
 		const st = steps[i];
@@ -117,6 +124,40 @@ test("every dungeon: a bot run (with suspend/resume) replays identically", () =>
 			`${dungeon}: the replayed state differs`,
 		);
 	}
+});
+
+test("a boss run (with suspend/resume) replays identically through the win", () => {
+	// パン板（期間限定の ボス。ボットが 底まで 行きやすい）で、ボスに 勝つまで 遊ばせて 入れなおす
+	let played: Run | null = null;
+	for (let i = 0; i < 8 && played?.s.end?.kind !== "clear"; i++)
+		played = playBot(`rp-boss-${i}`, 12000, 400, "shallow", "boss");
+	const p = played as Run;
+	ok(
+		p.s.end?.kind === "clear" && p.s.objective === "boss",
+		`harness: no boss run was won (${p.s.end?.kind ?? "none"} at B${p.s.depth})`,
+	);
+	ok(
+		p.s.end?.cause === DUNGEONS.shallow.boss?.cause,
+		`ended by ${p.s.end?.cause}`,
+	);
+	const { run, driftAt } = replay(
+		p.s.seed,
+		parseReplay(p.s.replay as string),
+		"shallow",
+		"boss",
+	);
+	ok(driftAt < 0, `drifted at step ${driftAt}`);
+	ok(
+		serializeRun(run.s) === serializeRun(p.s),
+		`the replayed state differs (turn ${run.s.turn} vs ${p.s.turn})`,
+	);
+	// 目的を 忘れて（fetch で）入れなおすと 底で ずれる（目的も 記録に 要る）
+	const wrong = replay(p.s.seed, parseReplay(p.s.replay as string), "shallow");
+	ok(
+		wrong.driftAt >= 0 ||
+			JSON.stringify(wrong.run.s.end) !== JSON.stringify(p.s.end),
+		"a fetch replay of a boss run ended the same",
+	);
 });
 
 test("an old (v1) suspended save loads as the main dungeon", () => {

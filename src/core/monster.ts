@@ -33,6 +33,9 @@ import {
 
 export const mdef = (m: Monster): MonsterDef => MONSTERS[m.kind];
 
+/** ボスか（定義で 見る。封印しても ボスの まま）。 */
+export const isBoss = (m: Monster): boolean => !!MONSTERS[m.kind]?.boss;
+
 /** 動きだす 前の 置物（ただの 置物と 同じ 見た目。画面では 敵として あつかわない）。 */
 export const posing = (m: Monster): boolean =>
 	m.status.dormant && !!MONSTERS[m.kind]?.still;
@@ -834,8 +837,12 @@ export const sealMonster = (m: Monster): void => {
 
 /** 別の モンスターに 変える（to を 渡せば その種類に。!skスレの メタル）。 */
 export const transformMonster = (r: Run, m: Monster, to?: string): void => {
+	// ボスは 変わらない（呼ぶ 側が「効かなかった」と 言う）
+	if (mdef(m).boss) return;
+	// ボスには ならない
 	const cands = Object.values(MONSTERS).filter(
 		(d) =>
+			!d.boss &&
 			d.id !== m.kind &&
 			d.floors[0] <= r.levelAt(r.f.depth) + 4 &&
 			(!d.board || d.board === r.s.dungeon),

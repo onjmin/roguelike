@@ -2,6 +2,8 @@
 //
 // ふつうのプレイヤーがやりそうなことを、単純な優先順で行う：
 // 回復 → 食事 → となりの敵をなぐる → 装備の更新 → 識別 → 見えている道具を拾う → 探索 → 階段。
+// 目的が boss の いちばん底では 階を 出ようとせず、道具を 拾いつつ 探索し、ボスを 見つけて 戦う
+// （ボスの 居場所は のぞいて よい。ボスから 逃げない）。
 
 import { HUNGER_UNIT } from "../core/balance";
 import { needsTarget } from "../core/effects";
@@ -160,13 +162,14 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					!["neochi", "tensai", "yuki"].includes(m.kind))) &&
 			r.cornerOk(p, dirOf(m.x - p.x, m.y - p.y) as Dir8),
 	);
-	// 逃げる敵（バグ・弱った自演くん）は向かってこないので数えない
+	// 逃げる敵（バグ・弱った自演くん）と 動かない敵（かまってちゃん）は向かってこないので数えない
+	// （数えると、通路へ 下がって 待つのを いつまでも くり返す）
 	const threats = visible.filter(
 		(m) =>
 			awake(m) &&
 			dist(m, p) <= 4 &&
 			!m.retreating &&
-			!mdef(m).abilities.some((a) => a.k === "shy"),
+			!mdef(m).abilities.some((a) => a.k === "shy" || a.k === "grab"),
 	);
 	const hpRate = p.hp / p.maxHp;
 	const known = (it: Item) => isKnownKind(r.s, it.kind);
@@ -399,6 +402,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		if (junk && items.length >= 18 && canDrop)
 			return { c: "drop", item: junk.uid };
 	}
+	// 目的が boss の いちばん底：生きている ボス（ほかの 階や fetch では null）
+	const boss = r.boss;
+	const bossMode = r.bossSpec !== null;
 	// 見えている敵に近づく（倒して経験値）
 	// 余裕があれば、寝ている敵も先に倒して経験値にする（起こすと危ない敵は放っておく）
 	const huntSleepers = hpRate > 0.7 && threats.length === 0;
@@ -411,12 +417,13 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					(huntSleepers && !["neochi", "tensai", "yuki"].includes(m.kind))),
 		)
 		.sort((a, b) => dist(a, p) - dist(b, p))[0];
-	// 帰り道・階を出るとき
+	// 帰り道・階を出るとき（ボスの いる 階は 出ない）
 	const leave =
-		r.s.returning ||
-		f.turns > opts.floorTurnLimit ||
-		(opts.leaveWhenNoItems && unseenItems(r) === 0 && !frontierExists(r));
-	if (target && !leave && dist(target, p) <= 6) {
+		!boss &&
+		(r.s.returning ||
+			f.turns > opts.floorTurnLimit ||
+			(opts.leaveWhenNoItems && unseenItems(r) === 0 && !frontierExists(r)));
+	if (target && !leave && (dist(target, p) <= 6 || target === boss)) {
 		const d = pathStep(r, target, false);
 		if (d !== null) return { c: "move", dir: d };
 	}
@@ -428,8 +435,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		f.turns < opts.floorTurnLimit
 	)
 		return { c: "wait" };
-	// いちばん底で持ち物がいっぱいなら、原盤のために1つ捨てる
+	// いちばん底で持ち物がいっぱいなら、原盤のために1つ捨てる（ボスの 品は 袋の 数の 外）
 	if (
+		!bossMode &&
 		r.s.depth >= r.dungeon.floors &&
 		!r.s.returning &&
 		items.length >= 20 &&
@@ -452,7 +460,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					!(fi.x === p.x && fi.y === p.y) &&
 					// 捨てた（捨てる）はずの 正体のわかった悪い草は 拾いにいかない（拾う・捨てるを くり返さない）
 					!(BAD_HERBS.has(fi.item.kind) && known(fi.item)) &&
-					(!bottomNow || fi.item.kind === r.dungeon.goal),
+					(!bottomNow || bossMode || fi.item.kind === r.dungeon.goal),
 			)
 			.sort((a, b) => dist(a, p) - dist(b, p))[0];
 		if (it) {
@@ -479,6 +487,11 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			const g = f.items.find((fi) => fi.item.kind === r.dungeon.goal);
 			if (g && (g.x !== p.x || g.y !== p.y)) {
 				const d = pathStep(r, g, true);
+				if (d !== null) return { c: "move", dir: d };
+			}
+			// ボス：見て 回った あとは ボスの 所へ まっすぐ
+			if (boss) {
+				const d = pathStep(r, boss, false);
 				if (d !== null) return { c: "move", dir: d };
 			}
 		}

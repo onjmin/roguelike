@@ -4,7 +4,9 @@
 //   pnpm sim -- --n 1000     … 回数
 //   pnpm sim -- --seed abc   … 1回だけ（ログつき）
 //   pnpm sim -- --quiet      … 表だけ
-//   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep。既定は main）
+//   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep / kinoko / tropical / konamono / festival / hidden。既定は main）
+//   pnpm sim -- --objective boss  … 目的（fetch / boss。既定は そのダンジョンの 既定。boss の ない 板は fetch）
+//   pnpm sim -- --reach           … 目的に たどりつくまで 倒れない（底の つり合いを 見る。下の REACH）
 //
 // Vite の SSR で src/core を読み込む（ビルドせずに TS のまま動かす）。
 // 例外が出たら シードと スタックを出して 終了コード 1。
@@ -24,8 +26,14 @@ const ONE = arg("seed", null);
 const QUIET = args.includes("--quiet");
 // 倒れないモード：HP と満腹度を補って、深い階・帰り道まで通す（落ちないかの検査用）
 const GOD = args.includes("--god");
-// どのダンジョンで遊ばせるか（shallow / main / deep）
+// 目的まで 倒れないモード：目的に たどりつくまで（fetch は 品を 拾うまで・boss は ボスを 見るまで）HP と
+// 満腹度を 補い、レベルも「その階の 強さ − 2」までは 足す（底まで 来られる プレイヤーの 目安）。そこからは ふつう。
+// ボットが 自力では 底まで 行けない 板で、底の つり合い（帰り道・ボスとの 戦い）を 見る
+const REACH = args.includes("--reach");
+// どのダンジョンで遊ばせるか（shallow / main / deep ほか）
 const DUNGEON = arg("dungeon", "main");
+// 目的（fetch / boss）。無ければ その板の 既定
+const OBJECTIVE = arg("objective", null);
 const MAX_ACTIONS = 60000;
 
 const server = await createServer({
@@ -42,28 +50,42 @@ try {
 	const { botCommand, DEFAULT_BOT } =
 		await server.ssrLoadModule("/src/sim/bot.ts");
 	// 倒れないモードは 深い階・帰り道まで通したいので 帰還スレで もどらない
-	const botOpts = GOD ? { ...DEFAULT_BOT, escape: false } : DEFAULT_BOT;
+	const noEscape = { ...DEFAULT_BOT, escape: false };
+	const botOpts = GOD ? noEscape : DEFAULT_BOT;
 	const { serializeRun, deserializeRun } = await server.ssrLoadModule(
 		"/src/core/serial.ts",
 	);
 	const { dungeonById } = await server.ssrLoadModule(
 		"/src/core/data/dungeons.ts",
 	);
+	const { EXP_AT } = await server.ssrLoadModule("/src/core/balance.ts");
 	const LAST_DEPTH = dungeonById(DUNGEON).floors;
 	if (dungeonById(DUNGEON).id !== DUNGEON) {
 		console.error(`知らないダンジョン: ${DUNGEON}`);
 		process.exit(1);
 	}
+	if (OBJECTIVE !== null && OBJECTIVE !== "fetch" && OBJECTIVE !== "boss") {
+		console.error(`知らない目的: ${OBJECTIVE}`);
+		process.exit(1);
+	}
+	const objective = OBJECTIVE ?? dungeonById(DUNGEON).objective;
 
 	const results = [];
 	const seeds = ONE ? [ONE] : Array.from({ length: N }, (_, i) => `sim-${i}`);
 	for (const seed of seeds) {
+		// いちばん底に 着いたとき（レベル・HP・ターン）と、ボスを 見た ターン
+		let bottomAt = null;
+		let bossSeenAt = null;
+		let run = null;
+		// 倒れないか（--god は ずっと、--reach は 目的に たどりつくまで）
+		const guarded = () =>
+			GOD || (REACH && !run?.s.returning && bossSeenAt === null);
 		// 倒れないモード：HP が 0 になる前に満タンにする
 		const godify = (r) => {
-			if (!GOD) return r;
+			if (!GOD && !REACH) return r;
 			const orig = r.hurtPlayer.bind(r);
 			r.hurtPlayer = (amount, cause) => {
-				if (r.s.player.hp - amount <= 0) {
+				if (guarded() && r.s.player.hp - amount <= 0) {
 					r.s.player.hp = r.s.player.maxHp;
 					return false;
 				}
@@ -71,20 +93,22 @@ try {
 			};
 			return r;
 		};
-		let run = godify(Run.create(seed, DUNGEON));
+		run = godify(Run.create(seed, DUNGEON, [], objective));
 		const lvAt = {};
 		const turnsAt = {};
 		let actions = 0;
 		let lastDepth = run.s.depth;
 		try {
 			while (!run.s.end && actions < MAX_ACTIONS) {
-				const cmd = botCommand(run, botOpts);
+				const cmd = botCommand(run, guarded() ? noEscape : botOpts);
 				const ev = run.act(cmd);
 				actions++;
-				if (GOD && !run.s.end) {
+				if (guarded() && !run.s.end) {
 					const p = run.s.player;
 					if (p.hunger < 400) p.hunger = 2000;
-					if (p.lv < run.s.depth + 3) run.gainExp(200 * run.s.depth);
+					if (GOD && p.lv < run.s.depth + 3) run.gainExp(200 * run.s.depth);
+					const want = run.levelAt(run.s.depth) - 2;
+					if (REACH && p.lv < want) run.gainExp(EXP_AT[want - 1] - p.exp);
 				}
 				if (ONE && !QUIET)
 					for (const e of ev)
@@ -95,6 +119,12 @@ try {
 					turnsAt[lastDepth] = run.s.turn;
 					lastDepth = run.s.depth;
 				}
+				if (!bottomAt && run.s.depth >= LAST_DEPTH) {
+					const p = run.s.player;
+					bottomAt = { lv: p.lv, maxHp: p.maxHp, turn: run.s.turn };
+				}
+				if (bossSeenAt === null && ev.some((e) => e.t === "boss"))
+					bossSeenAt = run.s.turn;
 				// ときどき中断セーブを通す（読み直しで壊れないか）
 				if (actions % 997 === 0)
 					run = godify(new Run(deserializeRun(serializeRun(run.s))));
@@ -109,7 +139,11 @@ try {
 			continue;
 		}
 		const s = run.s;
+		const boss = s.floor.boss !== undefined ? run.boss : null;
 		results.push({
+			bottomAt,
+			bossSeenAt,
+			bossHp: boss ? `${boss.hp}/${boss.maxHp}` : null,
 			seed,
 			end: s.end?.kind ?? "stuck",
 			cause: s.end?.cause ?? "(行動の上限)",
@@ -133,8 +167,35 @@ try {
 	const stuck = results.filter((r) => r.end === "stuck").length;
 	const reached = results.filter((r) => r.depth >= LAST_DEPTH).length;
 	console.log(
-		`\n${n}回　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
+		`\n${n}回（${objective}${REACH ? "・目的まで 倒れない" : ""}）　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
 	);
+	// いちばん底に 着いた 冒険の うち：fetch は 入口まで 帰れた・boss は ボスに 勝った 割合
+	{
+		const got = results.filter((r) => r.depth >= LAST_DEPTH);
+		const won = got.filter((r) => r.end === "clear").length;
+		const rate = got.length ? ((won / got.length) * 100).toFixed(1) : "-";
+		const kinds = {};
+		for (const r of got)
+			if (r.end !== "clear") {
+				const k = `${r.end}:${r.cause}`;
+				kinds[k] = (kinds[k] ?? 0) + 1;
+			}
+		const avgOf = (a, f) =>
+			a.length ? (a.reduce((x, r) => x + f(r), 0) / a.length).toFixed(1) : "-";
+		console.log(
+			`最下層から ${objective === "boss" ? "ボスに勝った" : "帰れた"}: ${won}/${got.length}（${rate}%）　着いたとき Lv${avgOf(got, (r) => r.bottomAt?.lv ?? 0)} 最大HP${avgOf(got, (r) => r.bottomAt?.maxHp ?? 0)}`,
+		);
+		if (objective === "boss") {
+			const fights = got.filter((r) => r.bossSeenAt !== null);
+			console.log(
+				`  ボスを 見た ${fights.length}　見てから 終わるまで 平均 ${avgOf(fights, (r) => r.turn - r.bossSeenAt)}ターン　着いてから 見るまで ${avgOf(fights, (r) => r.bossSeenAt - (r.bottomAt?.turn ?? 0))}ターン`,
+			);
+		}
+		for (const [k, c] of Object.entries(kinds).sort((a, b) => b[1] - a[1]))
+			console.log(`  ${c}	${k}`);
+		const left = got.filter((r) => r.bossHp).map((r) => r.bossHp);
+		if (left.length) console.log(`  負けたときの ボスの HP: ${left.join(" ")}`);
+	}
 	// 倒れた階
 	const byDepth = {};
 	for (const r of results)
@@ -179,9 +240,7 @@ try {
 				.join(" "),
 		);
 	const avg = (k) => (results.reduce((a, r) => a + r[k], 0) / n).toFixed(1);
-	console.log(
-		`平均：見た道具 ${avg("seen")}　ターン ${avg("turn")}`,
-	);
+	console.log(`平均：見た道具 ${avg("seen")}　ターン ${avg("turn")}`);
 	const starved = results.filter((r) => r.cause.includes("おなか")).length;
 	console.log(`飢え死に ${starved}（${pct(starved)}）`);
 } finally {

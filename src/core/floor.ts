@@ -76,9 +76,14 @@ const freeRoomTiles = (r: Run, f: Floor, roomId: number | null): Pos[] => {
 
 export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	const rng = r.rng;
+	// 目的が boss の いちばん底：品は 置かず、ボスが 待つ。祭りにも しない（祭りの 階は Run.create で
+	// 決まっているが、乱数の 順を 変えないよう ここで 消す）
+	const bossFloor =
+		depth === r.dungeon.floors && !r.s.returning && r.bossSpec !== null;
+	const festival = house && !bossFloor;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
-		house &&
+		festival &&
 		r.levelAt(depth) >= HOUSE_SHAPE_FROM &&
 		rng.chance(HOUSE_SHAPE_CHANCE)
 			? rng.pick<HouseShape>(["big", "split2", "split4"])
@@ -118,8 +123,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 
 	// モンスターハウス（キリコのいない部屋。入ったとたんに囲まれないよう、広い部屋を選ぶ）。
 	// 大部屋は ひと部屋 まるごと 祭りで、はじめから 中に いる（開幕の 祭り）
-	if (house && rooms.length === 1) f.house = 0;
-	else if (house) {
+	if (festival && rooms.length === 1) f.house = 0;
+	else if (festival) {
 		const cands = rooms.map((_, i) => i).filter((i) => i !== startRoom);
 		const area = (i: number) => rooms[i].w * rooms[i].h;
 		const wide = cands.filter((i) => area(i) >= HOUSE_MIN_AREA);
@@ -128,8 +133,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			: cands.reduce((a, b) => (area(b) > area(a) ? b : a));
 	}
 
-	// いちばん底：目的の品を置く（階段の代わりに。帰り道は上り階段）
-	if (depth === r.dungeon.floors && !r.s.returning) {
+	// いちばん底：目的の品を置く（階段の代わりに。帰り道は上り階段）。ボスの 階は ボスが 持っている
+	if (depth === r.dungeon.floors && !r.s.returning && !bossFloor) {
 		const spot = rng.pick(
 			freeRoomTiles(r, f, stairRoom).filter(
 				(t) => t.x !== start.x || t.y !== start.y,
@@ -227,6 +232,21 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			const at = rng.pick(freeRoomTiles(r, f, null));
 			if (at) f.items.push({ x: at.x, y: at.y, item: it });
 		}
+	}
+	// ボス：階段の 部屋に 1体（持たせる 道具を 配った あと。何も 持たない）。見られるまで 眠って 動かない
+	// （run.ts の checkBossSeen で 起きる）。部屋が 1つなら キリコの 2マス 以内には 置かない
+	const spec = bossFloor ? r.bossSpec : null;
+	if (spec) {
+		const away = (t: Pos) =>
+			Math.max(Math.abs(t.x - start.x), Math.abs(t.y - start.y)) > 2;
+		const inStairs = freeRoomTiles(r, f, stairRoom).filter(away);
+		const spots = inStairs.length
+			? inStairs
+			: freeRoomTiles(r, f, null).filter(away);
+		const at = spots.length ? rng.pick(spots) : null;
+		const m =
+			at && spawnMonster(r, spec.monster, at, { sleep: DEEP, single: true });
+		if (m) f.boss = m.uid;
 	}
 	r.s.floor = prevFloor;
 	return f;

@@ -31,6 +31,7 @@ import {
 	canTrack,
 	firstInLine,
 	forget,
+	isBoss,
 	mdef,
 	monsterName,
 	sealMonster,
@@ -234,6 +235,12 @@ const drink = (r: Run, it: Item): boolean => {
 /** 次のレベルまでの経験値。 */
 const expToNext = (r: Run): number => (EXP_AT[r.p.lv] ?? r.p.exp) - r.p.exp;
 
+/** !skスレの 全滅・道具・メタルは ボスに 効かない（生きている ボスが いれば ひとこと）。 */
+const bossStays = (r: Run): void => {
+	const b = r.boss;
+	if (b) r.msg(`しかし　${monsterName(r, b)}には　効かなかった`, "warn");
+};
+
 /** !skスレで 下へ 落ちる 階の数（トルネコ1の パルプンテと 同じ 5階）。 */
 const GACHA_FALL = 5;
 
@@ -289,24 +296,29 @@ const gacha = (r: Run): void => {
 			return;
 		}
 		case 4:
-			// この階の 敵が 全滅（経験値は 入らない）
-			for (const m of [...f.monsters]) r.killMonster(m, false);
+			// この階の 敵が 全滅（経験値は 入らない）。ボスは 残る
+			for (const m of [...f.monsters]) if (!isBoss(m)) r.killMonster(m, false);
 			r.msg("この階の　敵が　いなくなった！", "good");
+			bossStays(r);
 			return;
 		case 5:
-			// この階の 敵が みんな 道具に なる
+			// この階の 敵が みんな 道具に なる。ボスは 残る
 			for (const m of [...f.monsters]) {
+				if (isBoss(m)) continue;
 				f.monsters = f.monsters.filter((x) => x !== m);
 				if (r.p.status.heldBy === m.uid) r.p.status.heldBy = null;
 				const [kind] = rollKinds(r.rng, itemTableOf(r.s), 1);
 				r.placeItem(r.newItem(kind), m, true);
 			}
 			r.msg("この階の　敵が　道具に　なった！", "good");
+			bossStays(r);
 			return;
 		case 6:
-			// この階の 敵が みんな メタルぷゆゆに なる
-			for (const m of f.monsters) transformMonster(r, m, "metal");
+			// この階の 敵が みんな メタルぷゆゆに なる。ボスは ならない
+			for (const m of f.monsters)
+				if (!isBoss(m)) transformMonster(r, m, "metal");
 			r.msg("この階の　敵が　みんな　メタルぷゆゆに　なった！", "good");
+			bossStays(r);
 			return;
 		default: {
 			// 5階 先へ（下りの 板は 下、上りの 板は 上。いちばん奥で 止まる）
@@ -479,6 +491,8 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			});
 			if (!targets.length) r.msg("何も　起きなかった");
 			for (const m of targets) {
+				// ボスを たおして 冒険が 終わったら そこまで
+				if (r.s.end) break;
 				wakeMonster(r, m, true);
 				r.damageMonster(m, r.rng.range(5, 35), "blast");
 			}
@@ -574,6 +588,16 @@ const wave = (r: Run, it: Item): boolean => {
 	return true;
 };
 
+/**
+ * ボスには 効かない（変化・分裂・論破・諸刃・まどわし。ボスが 消える・ふえる・一撃で たおれる のを ふせぐ）。
+ * 効かなければ ひとこと 言って true。
+ */
+const bossShrugs = (r: Run, m: Monster, nm: string): boolean => {
+	if (!isBoss(m)) return false;
+	r.msg(`${nm}には　効かなかった`);
+	return true;
+};
+
 /** 杖の効き目（振ったとき・投げて当たったとき）。 */
 export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 	const nm = monsterName(r, m);
@@ -599,6 +623,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			r.msg(`${nm}の　とくぎを　封じた`);
 			return;
 		case "w_change": {
+			if (bossShrugs(r, m, nm)) return;
 			transformMonster(r, m);
 			r.msg(`${nm}は　${seenName(r, m)}に　変わった！`);
 			return;
@@ -633,6 +658,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			}
 			return;
 		case "w_edge": {
+			if (bossShrugs(r, m, nm)) return;
 			const p = r.p;
 			const lose = p.hp - Math.ceil(p.hp / 2);
 			if (lose > 0) r.hurtPlayer(lose, "諸刃の杖で　たおれた");
@@ -641,9 +667,11 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			return;
 		}
 		case "w_split":
+			if (bossShrugs(r, m, nm)) return;
 			r.splitMonster(m);
 			return;
 		case "w_rebut":
+			if (bossShrugs(r, m, nm)) return;
 			// 一撃で たおす（トルネコ1の ザキ。経験値も 入る）
 			r.msg(`${nm}を　論破した！`);
 			r.killMonster(m, true);
@@ -799,7 +827,8 @@ const herbOnMonster = (
 			r.msg(`${nm}は　混乱した`);
 			return;
 		case "h_daze":
-			// まどわされた敵は ずっと逃げる（トルネコ1の まどわし草）
+			// まどわされた敵は ずっと逃げる（トルネコ1の まどわし草）。ボスは 逃げない
+			if (bossShrugs(r, m, nm)) return;
 			m.fleeing = true;
 			r.se("flee");
 			r.msg(`${nm}は　逃げだした`);
