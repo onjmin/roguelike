@@ -224,6 +224,17 @@ export class Play {
 	private readonly hud: Hud;
 	private view = new FloorView();
 	private disp = new Map<number, Disp>();
+	/**
+	 * 敵の 直前の 見え方（姿・化けた 道具・見えない＝null）。状態からは もう 消えたが
+	 * たおれる 演出（die）が まだ 来ていない 敵を、それまで 同じ 見え方で 描く
+	 * （炎上スレで 焼かれる 敵が 火の玉より 先に 消えないように）。
+	 */
+	private lastLook = new Map<
+		number,
+		| { sprite: string; scale?: number; asleep: boolean }
+		| { item: string }
+		| null
+	>();
 	private projectiles: Projectile[] = [];
 	private camX = 0;
 	private camY = 0;
@@ -516,6 +527,8 @@ export class Play {
 			const d = this.disp.get(id);
 			if (!keep.has(id) && d && !d.dying) this.disp.delete(id);
 		}
+		for (const id of [...this.lastLook.keys()])
+			if (!this.disp.has(id)) this.lastLook.delete(id);
 	}
 
 	private update(t: number): void {
@@ -646,17 +659,28 @@ export class Play {
 			}
 			if (s !== run.s && !warping) continue;
 			const m = run.f.monsters.find((x) => x.uid === d.id);
-			if (!m) continue;
+			if (!m) {
+				// もう たおれたが たおれる 演出の 前：直前の 見え方の まま 描く
+				const look = this.lastLook.get(d.id);
+				if (!look) continue;
+				if ("item" in look)
+					fakeItems.push({ x: d.tx, y: d.ty, kind: look.item });
+				else figs.push({ ...d, ...look });
+				continue;
+			}
 			// ワープの 前は、ワープ前の 位置から 見える 敵だけ
 			const eye = warping ? s.player : run.p;
 			if (m.disguise) {
-				if (run.playerSees(m, eye))
-					fakeItems.push({ x: m.x, y: m.y, kind: m.disguise });
+				const seen = run.playerSees(m, eye);
+				this.lastLook.set(d.id, seen ? { item: m.disguise } : null);
+				if (seen) fakeItems.push({ x: m.x, y: m.y, kind: m.disguise });
 				continue;
 			}
-			if (!run.monsterVisible(m, eye)) continue;
-			figs.push({
-				...d,
+			if (!run.monsterVisible(m, eye)) {
+				this.lastLook.set(d.id, null);
+				continue;
+			}
+			const look = {
 				// 動きだす 前の 置物は、ただの 置物と 同じ 絵（歩かず 前向き）
 				sprite: dazed
 					? KIRIKO_WALK
@@ -666,7 +690,9 @@ export class Play {
 				// まどわされていると みんな 同じ 大きさの キリコに 見える
 				scale: dazed ? undefined : d.scale,
 				asleep: m.status.sleep > 0 || m.status.paralyze > 0,
-			});
+			};
+			this.lastLook.set(d.id, look);
+			figs.push({ ...d, ...look });
 		}
 		// なくなった 道具は ログに 追いつくまで 残して 描く（拾った 行より 先に 消えないように）
 		if (s === run.s)
