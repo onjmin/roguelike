@@ -2652,22 +2652,28 @@ body.shake #app {
 	color: var(--muted);
 }
 
-.wm-foot {
-	display: flex;
-	gap: 8px;
+/* 行き先の 選択肢（2列。カーソルに 地図が ついていく） */
+.choice.wm-choice {
+	position: static;
 	width: min(calc(var(--app-w) - 24px), 560px);
+	max-width: none;
+	min-height: 0;
+	flex: 0 1 auto;
+	overflow-y: auto;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 2px 4px;
+	padding: 6px;
 }
 
-.wm-foot > .menu-close {
-	flex: 1;
-	justify-content: center;
-	padding-left: 12px;
-	background: var(--win-bg);
-	border: 2px solid var(--win-border);
+.wm-choice > .choice-item {
+	padding-top: 6px;
+	padding-bottom: 6px;
+	font-size: 15px;
 }
 
-.wm-foot > .menu-close.disabled {
-	opacity: 0.4;
+.wm-choice > .choice-item.disabled {
+	color: var(--muted);
 }
 
 /* 着いたときの 建物の 札 */

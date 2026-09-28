@@ -580,6 +580,22 @@ export class MessageWindow {
 	}
 }
 
+/** 選択肢に 外から つなぐもの（全体マップの 行き先えらびが 使う）。 */
+export type ChoiceHooks = {
+	/** 窓を 置く 所（既定は ChoiceWindow の root）。 */
+	parent?: HTMLElement;
+	/** 窓に 足す class。 */
+	className?: string;
+	/** 横に ならべる 数（上下は その数だけ、左右は 1つ 動く）。 */
+	cols?: number;
+	/** カーソルが 動いたとき（はじめの 1回も）。 */
+	onMove?: (i: number) => void;
+	/** 決められない 項目（押すと カーソルを 合わせるだけ）。 */
+	disabled?: (i: number) => boolean;
+	/** 外から カーソルを 動かす・決める（choose が 中身を 入れる）。 */
+	ctl?: { move?: (i: number) => void; pick?: (i: number) => void };
+};
+
 /** 選択肢。 */
 export class ChoiceWindow {
 	private root: HTMLElement;
@@ -602,21 +618,22 @@ export class ChoiceWindow {
 		cancel?: number,
 		se?: (name: string) => void,
 		start = 0,
+		hooks: ChoiceHooks = {},
 	): Promise<number> {
-		const box = el("div", { class: "choice window" });
+		const box = el("div", {
+			class: `choice window ${hooks.className ?? ""}`.trim(),
+		});
+		const n = options.length;
+		const cols = Math.max(1, hooks.cols ?? 1);
 		let cur = start;
 		const items = options.map((label, i) => {
 			const b = el("button", { class: "choice-item", text: label });
 			b.addEventListener("pointerdown", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
-				// 区切り待ちの間は、押した項目にカーソルを合わせるだけ（もう一度押すと決まる）
-				if (this.held()) {
-					if (cur !== i) {
-						cur = i;
-						se?.("cursor");
-						render();
-					}
+				// 区切り待ちの間・決められない 項目は、押した項目にカーソルを合わせるだけ（もう一度押すと決まる）
+				if (this.held() || hooks.disabled?.(i)) {
+					move(i);
 					return;
 				}
 				pick(i);
@@ -624,39 +641,61 @@ export class ChoiceWindow {
 			box.appendChild(b);
 			return b;
 		});
-		const render = () =>
+		const render = () => {
 			items.forEach((b, i) => {
 				b.classList.toggle("cur", i === cur);
+				b.classList.toggle("disabled", !!hooks.disabled?.(i));
 			});
+			// 窓が 狭くて 巻くときは カーソルを 見える 所へ
+			if (hooks.parent) items[cur]?.scrollIntoView({ block: "nearest" });
+		};
+		const move = (i: number) => {
+			if (i === cur || i < 0 || i >= n) return;
+			cur = i;
+			se?.("cursor");
+			render();
+			hooks.onMove?.(cur);
+		};
+		(hooks.parent ?? this.root).appendChild(box);
 		render();
-		this.root.appendChild(box);
+		hooks.onMove?.(cur);
 		let pop: () => void = () => {};
 		let resolveFn: (n: number) => void = () => {};
+		let done = false;
 		const pick = (i: number) => {
 			// 前の効果音の本体が鳴り終わるまでは決めない（カーソルは動かせる）
-			if (this.held()) return;
+			if (done || this.held() || hooks.disabled?.(i)) return;
+			done = true;
 			se?.("decide");
 			pop();
 			box.remove();
 			resolveFn(i);
 		};
+		if (hooks.ctl) {
+			hooks.ctl.move = move;
+			hooks.ctl.pick = pick;
+		}
+		/** 上下（横に ならべるときは 同じ 列の 上・下。はしでは 反対の はしへ）。 */
+		const vertical = (d: number): number => {
+			if (cols === 1) return (cur + d + n) % n;
+			const next = cur + d * cols;
+			if (next >= 0 && next < n) return next;
+			const col = cur % cols;
+			if (d > 0) return col;
+			let last = col;
+			while (last + cols < n) last += cols;
+			return last;
+		};
 		return new Promise((resolve) => {
 			resolveFn = resolve;
 			pop = this.input.push(
 				(key) => {
-					if (key === "up" || key === "left") {
-						cur = (cur + options.length - 1) % options.length;
-						se?.("cursor");
-						render();
-					} else if (key === "down" || key === "right") {
-						cur = (cur + 1) % options.length;
-						se?.("cursor");
-						render();
-					} else if (key === "a") {
-						pick(cur);
-					} else if (key === "b" && cancel !== undefined) {
-						pick(cancel);
-					}
+					if (key === "up") move(vertical(-1));
+					else if (key === "down") move(vertical(1));
+					else if (key === "left") move((cur + n - 1) % n);
+					else if (key === "right") move((cur + 1) % n);
+					else if (key === "a") pick(cur);
+					else if (key === "b" && cancel !== undefined) pick(cancel);
 				},
 				{ tap: cancel === undefined ? null : "b" },
 			);

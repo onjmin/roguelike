@@ -24,6 +24,7 @@ import type { Dir } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { isUpBoard } from "./floorName";
+import { ChoiceWindow } from "./message";
 import { DUNGEON_DESC, lockedHint } from "./villageTalk";
 
 // ───────────────── 色 ─────────────────
@@ -557,94 +558,82 @@ const tick = (): Promise<void> =>
 // ───────────────── 行き先を 選ぶ ─────────────────
 
 /**
- * 全体マップで 行き先の 植民地を 選ぶ（やめたら null）。十字キーで その向きの いちばん 近い 建物へ、
- * A か 同じ 建物を もう一度 タップで 決める。まだ 開いていない 植民地も 選べて、開き方が 出る。
+ * 全体マップで 行き先の 植民地を 選ぶ（やめたら null）。下の 選択肢（植民地と やめる）の カーソルに
+ * 地図の ▼ と フキダシと 札が ついていく。A か 選択肢を 押すか、同じ 建物を もう一度 タップで 決める
+ * （建物を タップすると 選択肢の カーソルも そこへ）。まだ 開いていない 植民地も 選べて、開き方が 出る。
  */
-export const pickColony = (
+export const pickColony = async (
 	ctx: Ctx,
 	o: { open: DungeonId[]; cleared: DungeonId[]; start: DungeonId },
-): Promise<DungeonId | null> =>
-	new Promise((resolve) => {
-		const v = new MapView(ctx, "どの　植民地へ？");
-		v.open = o.open;
-		v.cleared = o.cleared;
-		let cur: DungeonId = o.open.includes(o.start) ? o.start : o.open[0];
-		const go = el("button", { class: "menu-close wm-go", text: "行く" });
-		const stop = el("button", { class: "menu-close", text: "やめる" });
-		const foot = el("div", { class: "wm-foot" }, [go, stop]);
-		v.box.appendChild(foot);
-		const select = (d: DungeonId) => {
-			if (d !== cur) ctx.se("cursor");
-			cur = d;
-			v.mode = { k: "pick", cur };
-			v.aim(cur);
-			v.info(cur);
-			v.say(cur);
-			go.classList.toggle("disabled", !o.open.includes(cur));
-		};
-		select(cur);
-		void v.show();
-		let done = false;
-		const finish = async (d: DungeonId | null) => {
-			if (done) return;
-			if (d && !o.open.includes(d)) return;
-			done = true;
-			pop();
-			ctx.se(d ? "decide" : "cancel");
-			await v.close();
-			resolve(d);
-		};
-		/** その向きで いちばん 近い 建物。 */
-		const move = (dx: number, dy: number) => {
-			const [cx, cy] = spotOf(cur);
-			let best: DungeonId | null = null;
-			let bestScore = Number.POSITIVE_INFINITY;
-			for (const d of DUNGEON_IDS) {
-				if (d === cur) continue;
-				if (DUNGEONS[d].secret && !o.open.includes(d)) continue;
-				const [x, y] = spotOf(d);
-				const along = (x - cx) * dx + (y - cy) * dy;
-				if (along <= 0) continue;
-				const across = Math.abs((x - cx) * dy - (y - cy) * dx);
-				const score = along + across * 2;
-				if (score < bestScore) {
-					bestScore = score;
-					best = d;
-				}
+): Promise<DungeonId | null> => {
+	const v = new MapView(ctx, "どの　植民地へ？");
+	v.open = o.open;
+	v.cleared = o.cleared;
+	// 地図に 出る 植民地（ひみつの 板は 開くまで 出さない）と、さいごに やめる
+	const spots = DUNGEON_IDS.filter(
+		(d) => o.open.includes(d) || !DUNGEONS[d].secret,
+	);
+	const labels = [
+		...spots.map((d) =>
+			o.open.includes(d) ? DUNGEON_NAMES[d].name : "？？？",
+		),
+		"やめる",
+	];
+	const cancel = spots.length;
+	const first = o.open.includes(o.start) ? o.start : o.open[0];
+	const onMove = (i: number) => {
+		const d = spots[i];
+		if (!d) {
+			// やめる：▼ と フキダシを しまう
+			v.mode = { k: "idle" };
+			v.bubble.innerHTML = "";
+			v.panel.innerHTML = `<div class="wm-name">やめる</div><div class="wm-desc">保守村に　のこる。</div>`;
+			return;
+		}
+		v.mode = { k: "pick", cur: d };
+		v.aim(d);
+		v.info(d);
+		v.say(d);
+	};
+	const ctl: { move?: (i: number) => void; pick?: (i: number) => void } = {};
+	const onTap = (e: PointerEvent) => {
+		const [mx, my] = v.toMap(e);
+		let near = -1;
+		let nd = 18;
+		spots.forEach((d, i) => {
+			const [x, y] = spotOf(d);
+			const dd = Math.hypot(mx - x, my - (y - 8));
+			if (dd < nd) {
+				nd = dd;
+				near = i;
 			}
-			if (best) select(best);
-		};
-		const pop = ctx.input.push(
-			(k, repeat) => {
-				if (k === "a" && !repeat) void finish(cur);
-				else if (k === "b" && !repeat) void finish(null);
-				else if (k === "up") move(0, -1);
-				else if (k === "down") move(0, 1);
-				else if (k === "left") move(-1, 0);
-				else if (k === "right") move(1, 0);
-			},
-			{ tap: null },
-		);
-		v.canvas.addEventListener("pointerup", (e) => {
-			const [mx, my] = v.toMap(e);
-			let near: DungeonId | null = null;
-			let nd = 18;
-			for (const d of DUNGEON_IDS) {
-				if (DUNGEONS[d].secret && !o.open.includes(d)) continue;
-				const [x, y] = spotOf(d);
-				const dd = Math.hypot(mx - x, my - (y - 8));
-				if (dd < nd) {
-					nd = dd;
-					near = d;
-				}
-			}
-			if (!near) return;
-			if (near === cur) void finish(cur);
-			else select(near);
 		});
-		go.addEventListener("click", () => void finish(cur));
-		stop.addEventListener("click", () => void finish(null));
-	});
+		if (near < 0) return;
+		const m = v.mode;
+		if (m.k === "pick" && m.cur === spots[near]) ctl.pick?.(near);
+		else ctl.move?.(near);
+	};
+	v.canvas.addEventListener("pointerup", onTap);
+	void v.show();
+	const choice = new ChoiceWindow(ctx.ui, ctx.input, () => ctx.audio.seHeld);
+	const i = await choice.choose(
+		labels,
+		cancel,
+		(name) => ctx.se(name),
+		Math.max(0, spots.indexOf(first)),
+		{
+			parent: v.box,
+			className: "wm-choice",
+			cols: 2,
+			onMove,
+			disabled: (i) => i < cancel && !o.open.includes(spots[i]),
+			ctl,
+		},
+	);
+	v.canvas.removeEventListener("pointerup", onTap);
+	await v.close();
+	return spots[i] ?? null;
+};
 
 // ───────────────── 向かう・もどる ─────────────────
 
