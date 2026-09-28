@@ -49,7 +49,7 @@ import {
 	goalText,
 	objectiveFor,
 } from "../data/objectives";
-import { PIANO_DONE, PIANO_MENU, pianoGuides } from "../data/piano";
+import { guideKeys, PIANO_DONE, PIANO_GUIDES, PIANO_MENU } from "../data/piano";
 import {
 	pickQuote,
 	type Quote,
@@ -3687,15 +3687,19 @@ test("音楽室「ピアノ機能」: open only on weekends (a weekday note step
 			restore();
 		}
 	}
-	ok(
-		!pianoGuides([]).some((t) => t.bgm === "ending") &&
-			pianoGuides(["shallow", "main"]).some((t) => t.bgm === "ending"),
-		"the ending song does not wait for the main record",
-	);
+	// ガイドの 童謡は どの 字も 音名（読めない 字で 旋律が 欠けない）
+	for (const g of PIANO_GUIDES) {
+		const tokens = g.notes.split(/\s+/).filter((t) => t !== "|");
+		ok(
+			guideKeys(g.notes).length === tokens.length && tokens.length >= 12,
+			`${g.id}: ${guideKeys(g.notes).length} of ${tokens.length} notes read`,
+		);
+	}
 	fitsWindow([
 		["closed", MUSIC_CLOSED],
 		["done", PIANO_DONE],
 		...PIANO_MENU.map((t): [string, string] => ["menu", t]),
+		...PIANO_GUIDES.map((t): [string, string] => ["guide", t.name]),
 		...PIANO_MSG.nanashi.map((t): [string, string] => ["nanashi", t]),
 		...PIANO_MSG.ren.map((t): [string, string] => ["ren", t]),
 	]);

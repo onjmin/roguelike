@@ -1,29 +1,69 @@
 // 音楽室の ピアノ（ui/piano.ts）。プレイヤーが 1オクターブ（12音）の 鍵盤を 自由に 弾ける。
-// 「ガイド」を えらぶと 劇中の 曲の 主旋律（MML の @0。engine/audio.ts の melodyOf）の 次の 音の 鍵盤が 光る
-// （旋律は 12音に 折りたたむ。オクターブは 動かさない）。
-// 曲は 自動では 鳴らない（押した 音だけ 鳴る）。
+// 「ガイドで　弾く」を えらぶと、だれでも 知っている 童謡・わらべうたの 旋律の 次の 音の 鍵盤が 光る
+// （ハ長調の 12音に 折りたたむ。オクターブは 動かさない）。曲は 自動では 鳴らない（押した 音だけ 鳴る）。
+// 曲は 著作権の 切れた もの だけ（外国の 民謡・わらべうた・作曲者の 没後 70年を すぎた もの）。
+// 「チューリップ」「うみ」などの 作曲者（井上武士、1974年没）は まだ なので 入れない。
 
-/** ガイドで 弾ける 曲（bgm は data/bgm.ts の 名前。need は 持ち帰った 板で ふえる）。 */
+/** ガイドで 弾ける 曲。notes は 音名（ド レ ミ ファ ソ ラ シ）を 空白で 区切る（| は 読みやすさの 区切り）。 */
 export const PIANO_GUIDES: readonly {
-	bgm: string;
+	id: string;
 	name: string;
-	need?: string;
+	notes: string;
 }[] = [
-	{ bgm: "town", name: "保守村" },
-	{ bgm: "title", name: "蓄音キリコ" },
-	{ bgm: "ruins", name: "朽ちた　まとめ跡" },
-	{ bgm: "stone", name: "datの　石室" },
-	{ bgm: "shallow3", name: "過去ログ倉庫" },
-	{ bgm: "deq_laundry", name: "乾燥機が　まわるあいだ" },
-	{ bgm: "deq_sea", name: "水底に　さす光" },
-	{ bgm: "retro", name: "名無し155の　曲" },
-	{ bgm: "sad", name: "落ちた　スレ" },
-	{ bgm: "ending", name: "つづきの　原盤", need: "main" },
+	{
+		// フランスの 民謡（モーツァルトの 変奏曲でも 知られる）
+		id: "kirakira",
+		name: "きらきら星",
+		notes:
+			"ド ド ソ ソ ラ ラ ソ | ファ ファ ミ ミ レ レ ド | ソ ソ ファ ファ ミ ミ レ | ソ ソ ファ ファ ミ ミ レ | ド ド ソ ソ ラ ラ ソ | ファ ファ ミ ミ レ レ ド",
+	},
+	{
+		// ドイツの 民謡（岡本敏明 訳詞）
+		id: "kaeru",
+		name: "かえるの　合唱",
+		notes:
+			"ド レ ミ ファ ミ レ ド | ミ ファ ソ ラ ソ ファ ミ | ド ド ド ド | ド ド レ レ ミ ミ ファ ファ ミ レ ド",
+	},
+	{
+		// アメリカの 童謡
+		id: "mary",
+		name: "メリーさんの　ひつじ",
+		notes:
+			"ミ レ ド レ ミ ミ ミ | レ レ レ | ミ ソ ソ | ミ レ ド レ ミ ミ ミ | レ レ ミ レ ド",
+	},
+	{
+		// イギリスの わらべうた
+		id: "london",
+		name: "ロンドン橋",
+		notes:
+			"ソ ラ ソ ファ ミ ファ ソ | レ ミ ファ | ミ ファ ソ | ソ ラ ソ ファ ミ ファ ソ | レ ソ ミ ド",
+	},
+	{
+		// 日本の 古謡（ラ シ ド ミ ファ の 都節）
+		id: "sakura",
+		name: "さくら　さくら",
+		notes:
+			"ラ ラ シ | ラ ラ シ | ラ シ ド シ | ラ シ ラ ファ | ミ ド ミ ファ | ミ ミ ド シ",
+	},
 ];
 
-/** 持ち帰った 板で 弾ける ガイドの 曲。 */
-export const pianoGuides = (cleared: readonly string[]) =>
-	PIANO_GUIDES.filter((t) => !t.need || cleared.includes(t.need));
+/** 音名 → ドからの 半音。 */
+const SOLFEGE: Record<string, number> = {
+	ド: 0,
+	レ: 2,
+	ミ: 4,
+	ファ: 5,
+	ソ: 7,
+	ラ: 9,
+	シ: 11,
+};
+
+/** ガイドの 旋律（鍵盤の 番号 0〜11 の 列）。知らない 字は とばす。 */
+export const guideKeys = (notes: string): number[] =>
+	notes
+		.split(/\s+/)
+		.filter((t) => t in SOLFEGE)
+		.map((t) => SOLFEGE[t]);
 
 /** 鍵盤の 音名（ド〜シ。半音は ♯）。 */
 export const KEY_NAMES: readonly string[] = [

@@ -6,7 +6,13 @@
 import { TOWN_STAGES } from "../core/town";
 import { today } from "../data/calendar";
 import { MOBS } from "../data/mobs";
-import { PIANO_DONE, PIANO_MENU, pianoGuides } from "../data/piano";
+import {
+	guideKeys,
+	PIANO_BASE,
+	PIANO_DONE,
+	PIANO_GUIDES,
+	PIANO_MENU,
+} from "../data/piano";
 import {
 	KEEPER_LINE,
 	MUSIC_CLOSED,
@@ -32,7 +38,6 @@ import {
 	type Spot,
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadProgress } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
@@ -106,17 +111,16 @@ const pianoScript =
 		let guide: number[] | undefined;
 		if (n === 1) {
 			await s.wait(0);
-			const songs = pianoGuides(loadProgress().cleared);
 			const v = await listWindow(
 				ctx,
 				"どの　曲に　する？",
-				songs.map((t): ListItem => ({ label: t.name, value: t.bgm })),
+				PIANO_GUIDES.map((t): ListItem => ({ label: t.name, value: t.id })),
 				{ closeLabel: "やめる" },
 			);
-			const song = songs.find((t) => t.bgm === v);
+			const song = PIANO_GUIDES.find((t) => t.id === v);
 			if (!song) return;
 			title = song.name;
-			guide = await ctx.audio.melodyOf(song.bgm);
+			guide = guideKeys(song.notes).map((k) => PIANO_BASE + k);
 		}
 		await s.wait(0);
 		s.bgm(null);

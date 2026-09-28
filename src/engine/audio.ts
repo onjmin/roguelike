@@ -646,31 +646,6 @@ export class GameAudio {
 		});
 	}
 
-	/**
-	 * 曲の 主旋律（MML の いちばん 上の トラック @0）を MIDI 番号の 列に する（和音は いちばん 高い 音、
-	 * 休符は つめる）。はじめの max 音まで。曲が 無い・読めなければ 空。
-	 */
-	async melodyOf(name: string, max = 48): Promise<number[]> {
-		const mml = this.bgmData[name];
-		if (!mml) return [];
-		try {
-			const dtm = await loadDtm();
-			const byStart = new Map<number, number>();
-			for (const p of dtm.parseMML(mml).placements) {
-				if (p.trackIndex !== 0) continue;
-				const midi = Math.round(dtm.unitsToMidi(p.pitchUnits));
-				byStart.set(p.startStep, Math.max(byStart.get(p.startStep) ?? 0, midi));
-			}
-			return [...byStart.entries()]
-				.sort((a, b) => a[0] - b[0])
-				.map(([, m]) => m)
-				.slice(0, max);
-		} catch (e) {
-			console.warn("[audio] 主旋律を 読めませんでした", e);
-			return [];
-		}
-	}
-
 	// ───────────────── 効果音 ─────────────────
 
 	private buffer(name: string): Promise<AudioBuffer | null> | null {
