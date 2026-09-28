@@ -22,7 +22,7 @@ export type CastDef = {
 };
 
 const WALK: Record<Speaker, string> = {
-	nanj: "sa:29aYeF",
+	nanj: "sa:4rSOzo", // 野球民
 	roze: "sa:mHhx69",
 	feris: "sa:4KtOzD",
 	shiyo: "sa:y8Kr53",
