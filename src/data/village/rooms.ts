@@ -14,7 +14,8 @@
 //
 // 喫茶「保守」（町の 段5 から）
 //   左に カウンター（台の うしろに マスター、台の 前に 丸いす）。右に ソファの 席。下に 丸テーブルと ピアノ。
-//   仲間 5人は いつもの 席に すわっている（CAFE_SEATS）。話しかけると となりの 席に すわって 話す。
+//   客は 冒険から 帰るたびに 抽選（ui/cafe.ts の cafeLayout）。仲間は 席（CAFE_SLOTS）に すわり、
+//   となりが 空いていれば キリコが すわって 話す。となりに だれか いれば 話しこんでいる（そばで 聞ける）。
 //   住人（おんJマイナーズ）は 越してきた 子の なかから 帰りごとに 何人か 来ている（CAFE_PATRON_SPOTS）。
 //   字：b 酒棚（壁の 下段。瓶は ui/cafe.ts の decor が 描く）  A 杯の 看板  m 品書き  k 柱時計  Q 絵
 //       [ = ]  カウンター（台ごしに マスターと 話す）  U 樽  s S ソファ  t 低い 机  n 丸いす（通れる）
@@ -409,24 +410,25 @@ export const roomPlaces = (id: RoomId): RoomPlace[] => {
 // ───────────────── 喫茶の 席 ─────────────────
 
 /**
- * 仲間の いつもの 席。at に すわり（dir を 向く）、キリコは kiriko に すわる。
- * talk は 話す ときの 向き（カウンターは 顔を 見あわせる、ソファは 前を 向く）。
- * guest は 掛け合いの 相手が 来て 立つ 所、stand は 席を 立った キリコの 所。
+ * 仲間の すわる 席（帰りごとに 抽選で 割りふる）。at に すわり（dir を 向く）、となりの kiriko に キリコか
+ * 話し相手が すわる。talk は となりと 話す ときの 向き（カウンターは 顔を 見あわせる、ソファは 前を 向く）。
+ * guest は 3人目が 来て 立つ 所（掛け合いの 相手・話しこんでいる ところを そばで 聞く キリコ）、
+ * stand は 席を 立った キリコの 所。
  */
 export type CafeSeat = {
 	at: Cell;
 	dir: Dir;
 	kiriko: Cell;
-	/** 話す ときの 向き（仲間・キリコ）。 */
+	/** 話す ときの 向き（席の 人・となり）。 */
 	talk: readonly [Dir, Dir];
 	guest: Cell;
 	guestDir: Dir;
 	stand: Spot;
 };
 
-export const CAFE_SEATS: Record<Speaker, CafeSeat> = {
+export const CAFE_SLOTS: readonly CafeSeat[] = [
 	// カウンターの 丸いす（台の 向こうに マスター）
-	nanj: {
+	{
 		at: [2, 5],
 		dir: "up",
 		kiriko: [3, 5],
@@ -435,7 +437,7 @@ export const CAFE_SEATS: Record<Speaker, CafeSeat> = {
 		guestDir: "right",
 		stand: { x: 3, y: 6, dir: "up" },
 	},
-	zero: {
+	{
 		at: [6, 5],
 		dir: "up",
 		kiriko: [5, 5],
@@ -444,8 +446,8 @@ export const CAFE_SEATS: Record<Speaker, CafeSeat> = {
 		guestDir: "left",
 		stand: { x: 5, y: 6, dir: "up" },
 	},
-	// ソファ（前を 向いて 並んで すわる）
-	feris: {
+	// ソファ（ならんで すわる）
+	{
 		at: [10, 3],
 		dir: "down",
 		kiriko: [11, 3],
@@ -454,7 +456,7 @@ export const CAFE_SEATS: Record<Speaker, CafeSeat> = {
 		guestDir: "left",
 		stand: { x: 12, y: 4, dir: "left" },
 	},
-	roze: {
+	{
 		at: [17, 3],
 		dir: "down",
 		kiriko: [16, 3],
@@ -463,7 +465,7 @@ export const CAFE_SEATS: Record<Speaker, CafeSeat> = {
 		guestDir: "left",
 		stand: { x: 15, y: 3, dir: "right" },
 	},
-	shiyo: {
+	{
 		at: [16, 8],
 		dir: "down",
 		kiriko: [15, 8],
@@ -472,7 +474,7 @@ export const CAFE_SEATS: Record<Speaker, CafeSeat> = {
 		guestDir: "left",
 		stand: { x: 14, y: 8, dir: "right" },
 	},
-};
+];
 
 /** みんなの 話（5人 ぜんぶ）は カウンターに 並ぶ（キリコは まんなか。マスターの 前）。 */
 export const CAFE_ALL_SEATS: Record<Speaker | "kiriko", Cell> = {

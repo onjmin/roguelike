@@ -22,7 +22,9 @@ import {
 	CAFE_DRINKS,
 	CAFE_GREET,
 	CAFE_TALKS,
+	CHAT_MSG,
 	MASTER_MSG,
+	NANASHI_CAFE,
 	SEAT_MSG,
 	TREAT_REACTIONS,
 	TREAT_TALKS,
@@ -119,7 +121,7 @@ import {
 	CAFE_MASTER,
 	CAFE_ORDER,
 	CAFE_PATRON_SPOTS,
-	CAFE_SEATS,
+	CAFE_SLOTS,
 	ROOM_FROM,
 	ROOM_IDS,
 	ROOM_OUTSIDE,
@@ -151,7 +153,7 @@ import {
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
-import { cafePatrons, cafeTalks, forgetCafeMemo, mixScene } from "../ui/cafe";
+import { cafeLayout, cafeTalks, forgetCafeMemo, mixScene } from "../ui/cafe";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
 import {
@@ -3390,11 +3392,11 @@ const cafePeople = (): Place[] => [
 		trigger: "talk",
 		sprite: "sa:x",
 	},
-	...(Object.keys(CAFE_SEATS) as Speaker[]).map(
-		(w): Place => ({
-			id: w,
-			x: CAFE_SEATS[w].at[0],
-			y: CAFE_SEATS[w].at[1],
+	...CAFE_SLOTS.map(
+		(seat, i): Place => ({
+			id: `seat_${i}`,
+			x: seat.at[0],
+			y: seat.at[1],
 			trigger: "talk",
 			sprite: "sa:x",
 		}),
@@ -3470,8 +3472,7 @@ test("喫茶の 席: Kiriko's seat is next to each friend, guests and stand spot
 		people.some((p) => p.x === x && p.y === y);
 	const dist = (a: readonly [number, number], b: readonly [number, number]) =>
 		Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
-	for (const w of Object.keys(CAFE_SEATS) as Speaker[]) {
-		const seat = CAFE_SEATS[w];
+	for (const [w, seat] of CAFE_SLOTS.entries()) {
 		ok(dist(seat.at, seat.kiriko) === 1, `${w}: Kiriko does not sit next`);
 		ok(!taken(...seat.kiriko), `${w}: Kiriko's seat is taken`);
 		ok(!taken(...seat.guest), `${w}: the guest cell is taken`);
@@ -3596,21 +3597,86 @@ test("一杯を まぜる: hand the herb, the master spins with a drum roll, it 
 	});
 });
 
-test("喫茶の 住人: Proto and Ren always come once moved in, at most one per spot, and it changes by return", () => {
-	const at7 = cafePatrons(7, 1000);
+/** 抽選に 渡す 話（2人で 話せる 仲間どうしの 話・住人が その 仲間と 話せる 店での 話）。 */
+const layoutTalks = {
+	pairTalk: (a: Speaker, b: Speaker) =>
+		CAFE_TALKS.find(
+			(t) => t.cast.length === 2 && t.cast.includes(a) && t.cast.includes(b),
+		)?.id,
+	mobTalk: (id: MobId, who: Speaker) =>
+		CAFE_MOBS[id].talks.find((t) => t.with === who)?.key,
+};
+
+test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friends, one always free to sit by, chats have a talk, nobody shares a cell", () => {
+	const sets = new Set<string>();
+	let chats = 0;
+	let nanashi = 0;
+	let all = 0;
+	for (let at = 1000; at < 1200; at++) {
+		const l = cafeLayout(7, at, layoutTalks);
+		ok(
+			JSON.stringify(l) === JSON.stringify(cafeLayout(7, at, layoutTalks)),
+			`${at}: not the same for the same return`,
+		);
+		const friends = l.friends.flatMap((f) =>
+			f.partner && !(MOB_IDS as string[]).includes(f.partner)
+				? [f.who, f.partner]
+				: [f.who],
+		);
+		ok(
+			friends.length >= 2 && new Set(friends).size === friends.length,
+			`${at}: friends ${friends.join(",")}`,
+		);
+		if (friends.length === 5) all++;
+		sets.add([...friends].sort().join(","));
+		ok(
+			l.friends.some((f) => !f.partner),
+			`${at}: nobody has a free seat beside`,
+		);
+		const cells: string[] = [];
+		for (const f of l.friends) {
+			const seat = CAFE_SLOTS[f.slot];
+			ok(seat, `${at}: ${f.who} has no seat`);
+			cells.push(seat.at.join(","));
+			if (!f.partner) continue;
+			chats++;
+			cells.push(seat.kiriko.join(","));
+			const isMob = (MOB_IDS as string[]).includes(f.partner);
+			ok(
+				isMob
+					? CAFE_MOBS[f.partner as MobId].talks.some(
+							(t) => t.key === f.talk && t.with === f.who,
+						)
+					: CAFE_TALKS.some(
+							(t) =>
+								t.id === f.talk &&
+								t.cast.includes(f.who) &&
+								t.cast.includes(f.partner as Speaker),
+						),
+				`${at}: ${f.who} and ${f.partner} chat about nothing`,
+			);
+		}
+		for (const p of l.patrons) {
+			ok(MOBS[p.id].from <= 7, `${at}: ${p.id} has not moved in`);
+			cells.push(CAFE_PATRON_SPOTS[p.spot].at.join(","));
+		}
+		for (const n of l.nanashi) {
+			nanashi++;
+			const spot = CAFE_PATRON_SPOTS[n.spot];
+			cells.push(spot.at.join(","));
+			if (n.pair) cells.push(spot.kiriko.join(","));
+		}
+		ok(new Set(cells).size === cells.length, `${at}: two share a cell`);
+	}
+	ok(sets.size > 5, `only ${sets.size} different sets of friends`);
 	ok(
-		at7[0] === "proto" && at7[1] === "ren",
-		`proto and ren first: ${at7.join(",")}`,
+		chats > 0 && nanashi > 0 && all > 0,
+		`chats ${chats} / nanashi ${nanashi} / all five ${all}`,
 	);
-	ok(at7.length === CAFE_PATRON_SPOTS.length, `${at7.length} patrons`);
-	ok(new Set(at7).size === at7.length, "a resident twice");
-	ok(
-		cafePatrons(5, 1000).every((id) => MOBS[id].from <= 5),
-		"a resident who has not moved in yet",
-	);
-	const seen = new Set<string>();
-	for (let at = 1000; at < 1020; at++) seen.add(cafePatrons(7, at).join(","));
-	ok(seen.size > 1, "the same residents every return");
+	// 段5 は 越してきた 子だけ
+	for (let at = 1000; at < 1050; at++)
+		for (const p of cafeLayout(5, at, layoutTalks).patrons)
+			ok(MOBS[p.id].from <= 5, `stage 5: ${p.id}`);
 });
 
 test("建物の 中の 文: every line fits the village window, talks are 1〜4 windows, and every resident has cafe lines", () => {
@@ -3633,8 +3699,13 @@ test("建物の 中の 文: every line fits the village window, talks are 1〜4 
 		]);
 	for (const [k, t] of Object.entries(SEAT_MSG))
 		texts.push([`seat ${k}`, fill(t, { name: "フェリス" })]);
-	for (const [k, t] of Object.entries(CAFE_GREET))
-		texts.push([`greet ${k}`, t]);
+	for (const [k, ls] of Object.entries(CAFE_GREET))
+		for (const t of ls) texts.push([`greet ${k}`, t]);
+	for (const t of Object.values(CHAT_MSG))
+		texts.push(["chat", fill(t, { a: "おんすちゃん", b: "フェリス" })]);
+	for (const ls of NANASHI_CAFE.pair)
+		for (const t of ls) texts.push(["nanashi", t]);
+	for (const t of NANASHI_CAFE.solo) texts.push(["nanashi", t]);
 	for (const [k, d] of Object.entries(CAFE_DRINKS))
 		texts.push([`taste ${k}`, d.taste]);
 	for (const id of MOB_IDS) {
