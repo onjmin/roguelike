@@ -288,12 +288,12 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	main: { theme: "crystal", bgm: "field2", ambient: "snow" },
 	// 回路の 床（漏電の 火花）。名無し155さんの 曲
 	deep: { theme: "cyber", bgm: "retro", ambient: "data" },
-	// 苔と 胞子
-	kinoko: { theme: "moss", bgm: "field", ambient: "spores" },
-	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく
-	tropical: { theme: "beach", bgm: "deep_hakushi", ambient: "glitter" },
-	// 鉄板の 焦げ
-	konamono: { theme: "lava", bgm: "deep_koge", ambient: "embers" },
+	// 苔と 胞子。地下の 菌床（曲は ずれる 地層）
+	kinoko: { theme: "moss", bgm: "deq_strata", ambient: "spores" },
+	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく（曲は 水底に さす 光）
+	tropical: { theme: "beach", bgm: "deq_sea", ambient: "glitter" },
+	// 鉄板の 焦げ（曲は 活火山の 底）
+	konamono: { theme: "lava", bgm: "deq_volcano", ambient: "embers" },
 	// 提灯の 赤。都節の 曲
 	festival: { theme: "lattice", bgm: "deep_kisei", ambient: "glitter" },
 	// 隠し：層ごとに かわる（theme・bgm は 層が 無い ときの 予備）
