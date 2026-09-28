@@ -1467,6 +1467,8 @@ export const MOBS: Record<MobId, MobDef> = {
 	proto: {
 		name: "プロト",
 		portrait: "portraits/zero_proto.png",
+		// 頭身の 高い 絵なので 胸から 上だけに（アルと 同じ）
+		portraitCrop: 0.42,
 		sprite: "sa:KxS5YZ",
 		from: 2,
 		spot: [13, 22],
@@ -1589,6 +1591,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	ren: {
 		name: "レン",
 		portrait: "portraits/zero_ren.png",
+		portraitCrop: 0.42,
 		sprite: "pub:sprites/zero_ren.png",
 		from: 6,
 		spot: [25, 20],
