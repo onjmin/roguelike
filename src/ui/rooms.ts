@@ -120,6 +120,7 @@ const pianoScript =
 		}
 		await s.wait(0);
 		s.bgm(null);
+		await ctx.audio.preparePiano();
 		const r = await openPiano(ctx, { title, guide });
 		s.bgm("town");
 		if (r.finished) await s.narrate(PIANO_DONE);

@@ -71,7 +71,7 @@ export const openPiano = (
 				info.textContent = `光る　鍵盤を　押そう　${step + 1} / ${guide.length}`;
 		};
 		const press = (k: number) => {
-			void ctx.audio.pianoNote(PIANO_BASE + k);
+			ctx.audio.pianoNote(PIANO_BASE + k);
 			played++;
 			const b = keys[k];
 			b.classList.remove("hit");

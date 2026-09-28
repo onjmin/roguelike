@@ -21,7 +21,7 @@
 //   ループの BGM も絞って止められる（fadeBgm。階段を降りるとき）。
 //   dtm の stop は先読みで予約済みの音符（約0.5秒ぶん）を鳴らし残すので、出口の音量ごと絞る。
 
-import type { DtmStudio, MmlPlayback, SpeechHandle } from "@onjmin/dtm";
+import type { DtmStudio, MmlPlayback, SpeechHandle, Units } from "@onjmin/dtm";
 import { VOICE_MODELS } from "../data/cast";
 import {
 	REF_VOLUME,
@@ -67,6 +67,9 @@ const seWaitMs = (name: string): number => SE_LOUDNESS[name]?.[7] ?? 0;
 /** 効果音の頭の無音（ms。鳴り始めの 10 ms 手前まで とばす）。 */
 const seLeadMs = (name: string): number =>
 	Math.max(0, (SE_LOUDNESS[name]?.[5] ?? 0) - 10);
+
+/** 1半音の ピッチ（dtm の units は 1/372オクターブ。12平均律の 1半音 = 31）。 */
+const PIANO_UNITS_PER_SEMITONE = 31;
 
 /** dtm studio の出口の音量（createDtmStudio の masterVolume）。 */
 const STUDIO_MASTER_VOLUME = 100;
@@ -606,30 +609,41 @@ export class GameAudio {
 	// ───────────────── ピアノ（音楽室。ui/piano.ts） ─────────────────
 
 	/**
-	 * ピアノの 1音（MIDI 番号）。dtm の SoundFont の グランドピアノ（読めなければ 軽量の 単音）。
-	 * 音量は 効果音の 設定に したがう。
+	 * ピアノの 音色を 用意する（音楽室の 鍵盤を 開く とき）。dtm の studio の トラック 0 に SoundFont の
+	 * グランドピアノを 読みこむ（音の ない 1小節を 鳴らして 楽器を 読ませる）。studio.playNote は
+	 * 楽器を 読まずに すぐ 返って 鳴らないので、読みこんだ トラックへ playNoteEvent で 鳴らす（遅れ なし）。
 	 */
-	async pianoNote(midi: number, sec = 0.9): Promise<void> {
-		const ctx = this.ctx;
-		if (!ctx || settings.seVolume <= 0) return;
-		const volume = Math.min(1, (settings.seVolume / 100) * 0.9);
+	async preparePiano(): Promise<void> {
+		if (!this.ctx) return;
 		try {
-			const dtm = await loadDtm();
-			const pitchUnits = dtm.midiToUnits(midi);
-			try {
-				const studio = await this.studio();
-				await studio.playNote({
-					pitchUnits,
-					volume,
-					duration: sec,
-					instrument: "Acoustic Grand Piano",
-				});
-			} catch {
-				dtm.playNote({ audioContext: ctx, pitchUnits, volume, duration: sec });
-			}
+			const studio = await this.studio();
+			this.unduck(studio, true);
+			const pb = studio.play(
+				"#inst=piano#t0inst=Acoustic Grand Piano;@0t120v0r4;#end;",
+			);
+			await sleep(400);
+			this.dispose(pb);
+			this.pianoStudio = studio;
 		} catch (e) {
-			console.warn("[audio] ピアノを 鳴らせませんでした", e);
+			console.warn("[audio] ピアノを 用意できませんでした", e);
 		}
+	}
+
+	/** 用意した ピアノの studio（preparePiano の あと）。 */
+	private pianoStudio: DtmStudio | null = null;
+
+	/** ピアノの 1音（MIDI 番号）。preparePiano の あとに 鳴る。音量は 効果音の 設定（ミュートなら 鳴らない）。 */
+	pianoNote(midi: number, sec = 0.9): void {
+		const studio = this.pianoStudio;
+		if (!studio || !this.seAudible()) return;
+		studio.playNoteEvent({
+			trackId: "0",
+			pitchUnits: (midi * PIANO_UNITS_PER_SEMITONE) as unknown as Units,
+			velocity: 100,
+			volume: Math.min(1, (settings.seVolume / 100) * 0.6),
+			when: 0,
+			duration: sec,
+		});
 	}
 
 	/**
