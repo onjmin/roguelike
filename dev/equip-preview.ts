@@ -2,6 +2,7 @@
 // public/sprites/equip の PNG を重ねて見る（pnpm equip で書き出してから）。?w=steel&s=bronze で装備を選ぶ。行＝向き（正面・右・左・うしろ）、列＝足踏み2コマと攻撃の3つの形。
 
 import type { SpriteDir } from "../src/core/geom";
+import { KIRIKO_WALK } from "../src/data/cast";
 import { loadImage } from "../src/engine/assets";
 import { drawWalk } from "../src/engine/sprite";
 import { drawEquip, equipSheet } from "../src/ui/equip";
@@ -22,7 +23,7 @@ const c = document.getElementById("c") as HTMLCanvasElement;
 c.width = poses.length * cell * S;
 c.height = dirs.length * cell * S;
 const ctx = c.getContext("2d") as CanvasRenderingContext2D;
-await loadImage("pub:sprites/kiriko.png");
+await loadImage(KIRIKO_WALK);
 await loadImage(equipSheet(look.weapon));
 await loadImage(equipSheet(look.shield));
 ctx.setTransform(S, 0, 0, S, 0, 0);
@@ -39,7 +40,7 @@ dirs.forEach((dir, row) => {
 		const x = ox + 4;
 		const y = oy + 5;
 		drawEquip(ctx, look, dir, p.frame, x, y, "under", p.swing);
-		drawWalk(ctx, "pub:sprites/kiriko.png", dir, p.frame, x, y);
+		drawWalk(ctx, KIRIKO_WALK, dir, p.frame, x, y);
 		drawEquip(ctx, look, dir, p.frame, x, y, "over", p.swing);
 	});
 });

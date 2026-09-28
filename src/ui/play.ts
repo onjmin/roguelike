@@ -34,6 +34,7 @@ import {
 	type RescueKind,
 	type RunState,
 } from "../core/types";
+import { KIRIKO_WALK } from "../data/cast";
 import { loadImage } from "../engine/assets";
 import {
 	DEBUG_SEED,
@@ -80,7 +81,6 @@ import { zoneFor } from "./theme";
 
 /** 安価の のこりが これ 以下で 赤く。 */
 const ANKA_WARN = 30;
-const KIRIKO = "pub:sprites/kiriko.png";
 /** 武器を振る長さ（振りかぶる → ななめ → 前 の3つの形）。 */
 const SWING_MS = 180;
 /** 長押しの足踏みの間（ms。1秒に 10回ほど）。 */
@@ -505,7 +505,7 @@ export class Play {
 				d.fy = y;
 			}
 		};
-		put(PLAYER_ID, KIRIKO, run.p.x, run.p.y, run.p.dir);
+		put(PLAYER_ID, KIRIKO_WALK, run.p.x, run.p.y, run.p.dir);
 		for (const m of run.f.monsters) {
 			put(m.uid, mdef(m).sprite, m.x, m.y, m.dir);
 			// ボスは 大きく 描く
@@ -659,7 +659,7 @@ export class Play {
 				...d,
 				// 動きだす 前の 置物は、ただの 置物と 同じ 絵（歩かず 前向き）
 				sprite: dazed
-					? KIRIKO
+					? KIRIKO_WALK
 					: posing(m)
 						? (mdef(m).still ?? d.sprite)
 						: d.sprite,
