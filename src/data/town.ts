@@ -289,7 +289,6 @@ export const VILLAGE_MSG = {
 	],
 	suspended: "中断した　冒険が　あります。",
 	broken: "続きの　記録が　こわれていました。",
-	hutDoor: "小屋の　扉。\n中から、ナイターの　音が　する。",
 	ledger:
 		"売り上げ、ぜんぶで　{points}レス。\nつぎの　段まで、あと　{rest}レス",
 	ledgerNone: "売り上げは、まだ　ゼロです。\n……ゼロと　同じ　名前ですね",

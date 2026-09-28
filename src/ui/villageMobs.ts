@@ -219,7 +219,7 @@ export const hasMobNews = (id: MobId): boolean => {
  * その子の 声で 1窓（名前欄は その子。色は color か、voice の 仲間の 色。立ち絵は その子の。無い子は 出さない）。
  * 音源の ある子（data/cast.ts の MOB_VOICE）は 読み上げる。
  */
-const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
+export const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
 	const def = MOBS[id];
 	return s.say(def.voice ?? null, text, {
 		name: def.name,
@@ -255,7 +255,7 @@ const runBeat = async (s: Story, id: MobId, beat: Beat): Promise<void> => {
 };
 
 /** 1窓ずつ。仲間・ほかの子の 行と need の 行は、その人・その子が 近くに いるときだけ（しぐさも その窓と いっしょ）。 */
-const play = async (
+export const play = async (
 	s: Story,
 	id: MobId,
 	lines: readonly MobLine[],

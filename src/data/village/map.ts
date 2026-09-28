@@ -103,7 +103,7 @@ export const VILLAGE_SPOTS = {
 	exit: [27, 0] as Cell,
 	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
 	exitSign: [28, 12] as Cell,
-	/** 喫茶「保守」の 扉（段5 から。調べると 話を 聞く）。 */
+	/** 喫茶「保守」の 扉（段5 から。踏むと 中へ。data/village/rooms.ts）。 */
 	cafeDoor: [4, 18] as Cell,
 	/**
 	 * おんJ 本館の 扉（2マス。踏むと 中へ。data/village/hall.ts）。出てくると 入った 扉の 1つ下（崖の 下の 道）。
@@ -131,7 +131,7 @@ export const VILLAGE_SPOTS = {
 	shiyo: (stage: number): Cell => (stage >= 4 ? [27, 17] : [26, 12]),
 	/** やきう（小屋の前で 大工）。 */
 	nanj: (_v: VillageView): Cell => [21, 18],
-	/** 小屋の扉（段3から。見るだけ）。 */
+	/** 小屋の扉（段3から。踏むと 中へ）。 */
 	hutDoor: [23, 18] as Cell,
 	/** 段7 の 野次馬（うろうろ する）。 */
 	yaji: [
@@ -376,7 +376,7 @@ const EDGE_CELLS: readonly [number, number, string][] = [
 /** 喫茶「保守」が 建つ 町の 段。 */
 export const CAFE_FROM = 5;
 
-/** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 調べる）。 */
+/** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 踏む）。 */
 const CAFE_BLOCK: readonly string[] = ["99999", "/////", "@|`|@", "''?''"];
 
 /** 村の 出口（地図の 四方の はし。踏むと 全体マップ）。inward は 村へ もどる 向き。 */
@@ -546,11 +546,11 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	});
 	if (stage >= CAFE_FROM) {
 		const [cx, cy] = VILLAGE_SPOTS.cafeDoor;
-		out.push({ id: "door_cafe", x: cx, y: cy, trigger: "talk" });
+		out.push({ id: "door_cafe", x: cx, y: cy, trigger: "touch" });
 	}
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;
-		out.push({ id: "door_hut", x: hx, y: hy, trigger: "talk" });
+		out.push({ id: "door_hut", x: hx, y: hy, trigger: "touch" });
 	}
 	out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
 	out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));

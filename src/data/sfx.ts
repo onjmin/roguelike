@@ -32,6 +32,12 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		drink: "rpgen:QMyArQ", // 飲み音
 		/** スレを読む。 */
 		read: "rpgen:DkePps", // 紙をめくる音
+		/** 喫茶の マスターが 一杯を まぜる（くるくる 回る あいだ）。 */
+		mix: "rpgen:M7lnrK", // [マリオRPG]ドラムロール
+		/** まぜた 一杯が 泡だつ。 */
+		bubble: "rpgen:RSetbN", // 泡の音1
+		/** グラスを 置く。 */
+		glass: "rpgen:IQXvTI", // チーン
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {
@@ -98,6 +104,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		save: "rpgen:jVOw87", // [自然癒]セーブ
 		/** 新しい階に着いた（システム音らしいチャイム）。 */
 		chapter: "rpgen:thHyyN", // [ツクール]チャイム2
+		/** 喫茶の 一杯が できあがった。 */
+		served: "rpgen:wMSfsJ", // [ポケダン]レベルアップ
 	},
 };
 

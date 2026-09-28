@@ -20,10 +20,14 @@ import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import {
 	CAFE_DRINKS,
+	CAFE_GREET,
 	CAFE_TALKS,
+	MASTER_MSG,
+	SEAT_MSG,
 	TREAT_REACTIONS,
 	TREAT_TALKS,
 } from "../data/cafe";
+import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
 import { HALL_MSG, ON_PHONO_TEXT, TOBAN_MENU } from "../data/hall";
@@ -52,6 +56,7 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../data/quotes";
+import { KEEPER_LINE, ROOM_DOOR, ROOM_MSG } from "../data/rooms";
 import {
 	BOSS_HOME,
 	BOSS_RETURN,
@@ -102,6 +107,22 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
+import {
+	CAFE_ALL_SEATS,
+	CAFE_MASTER,
+	CAFE_ORDER,
+	CAFE_PATRON_SPOTS,
+	CAFE_SEATS,
+	ROOM_FROM,
+	ROOM_IDS,
+	ROOM_OUTSIDE,
+	type RoomId,
+	roomEntry,
+	roomMats,
+	roomPalette,
+	roomPlaces,
+	roomRows,
+} from "../data/village/rooms";
 import { hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
@@ -123,7 +144,7 @@ import {
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
-import { cafeTalks } from "../ui/cafe";
+import { cafePatrons, cafeTalks, forgetCafeMemo, mixScene } from "../ui/cafe";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
 import {
@@ -144,6 +165,7 @@ import {
 } from "../ui/hallEvents";
 import { itemIcon } from "../ui/icons";
 import { bossHomeLine, endLine, recordHead } from "../ui/records";
+import { enterRoom, leaveRoom, planLines, thingLines } from "../ui/rooms";
 import { sharedHead } from "../ui/share";
 import {
 	forgetMobMemo,
@@ -823,7 +845,11 @@ test("喫茶「保守」: every talk fits the village window, and the door appea
 			!!door === v.stage >= CAFE_FROM,
 			`${label(v)}: the cafe door does not match the stage`,
 		);
-		if (door) ok(s.talkable(door), `${label(v)}: cannot reach the cafe door`);
+		if (door)
+			ok(
+				s.reachable(door.x, door.y),
+				`${label(v)}: cannot reach the cafe door`,
+			);
 	}
 });
 
@@ -3326,4 +3352,296 @@ test("the town grows into a new hall: after the friends, the camera looks at the
 			);
 		}
 	});
+});
+
+// ───────────────── 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。data/village/rooms.ts・ui/rooms.ts・ui/cafe.ts） ─────────────────
+
+/** 部屋の 地図を 引く（入口から）。extra は 部屋に 置く 人（喫茶の マスター・仲間・住人）。 */
+const surveyRoom = (id: RoomId, extra: Place[] = []) => {
+	const e = roomEntry(id);
+	return surveyMap(
+		roomRows(id),
+		roomPalette(id),
+		[...roomPlaces(id), ...extra],
+		[e.x, e.y],
+	);
+};
+
+/** 喫茶の 人（マスター・仲間 5人・住人の 来る 所 ぜんぶ）。 */
+const cafePeople = (): Place[] => [
+	{
+		id: "master",
+		x: CAFE_MASTER[0],
+		y: CAFE_MASTER[1],
+		trigger: "talk",
+		sprite: "sa:x",
+	},
+	...(Object.keys(CAFE_SEATS) as Speaker[]).map(
+		(w): Place => ({
+			id: w,
+			x: CAFE_SEATS[w].at[0],
+			y: CAFE_SEATS[w].at[1],
+			trigger: "talk",
+			sprite: "sa:x",
+		}),
+	),
+	...CAFE_PATRON_SPOTS.map(
+		(p, i): Place => ({
+			id: `patron_${i}`,
+			x: p.at[0],
+			y: p.at[1],
+			trigger: "talk",
+			sprite: "sa:x",
+		}),
+	),
+];
+
+test("建物の 中: every room is closed, draws only bundled art, and from the entrance Kiriko reaches the mats and every thing", () => {
+	for (const id of ROOM_IDS) {
+		const rows = roomRows(id);
+		const tiles = roomPalette(id);
+		const w = [...rows[0]].length;
+		rows.forEach((r, y) => {
+			ok([...r].length === w, `${id}: row ${y} is ${[...r].length} wide`);
+			[...r].forEach((ch, x) => {
+				ok(tiles[ch], `${id}: "${ch}" at (${x},${y}) has no tile`);
+				const edge = x === 0 || y === 0 || x === w - 1 || y === rows.length - 1;
+				if (edge && ch !== "D")
+					ok(!tiles[ch]?.passable, `${id}: leaks at (${x},${y})`);
+			});
+		});
+		for (const stage of [4, 7])
+			for (const t of Object.values(roomPalette(id, stage)))
+				for (const ref of [...t.layers, ...(t.above ?? [])])
+					ok(ref.startsWith("pub:"), `${id}: draws ${ref}`);
+		const people = id === "cafe" ? cafePeople() : [];
+		const places = roomPlaces(id);
+		const ids = places.map((p) => p.id);
+		ok(new Set(ids).size === ids.length, `${id}: duplicate ids`);
+		const all = [...places, ...people];
+		ok(
+			new Set(all.map((p) => `${p.x},${p.y}`)).size === all.length,
+			`${id}: two things share a cell`,
+		);
+		const s = surveyRoom(id, people);
+		const e = roomEntry(id);
+		ok(s.canEnter(e.x, e.y), `${id}: the entrance is blocked`);
+		for (const [mx, my] of roomMats(id))
+			ok(
+				s.reachable(mx, my) &&
+					places.some((p) => p.trigger === "touch" && p.x === mx && p.y === my),
+				`${id}: the mat (${mx},${my}) does not lead out`,
+			);
+		for (const p of all) {
+			if (p.trigger === "touch") continue;
+			ok(s.talkable(p, hasBack(s, p)), `${id}: cannot reach ${p.id}`);
+		}
+		// 調べる 物には 文が ある
+		for (const p of places) {
+			if (p.trigger === "touch") continue;
+			const kind = p.id.replace(/_\d+$/, "");
+			const lines =
+				id === "cafe"
+					? ((ROOM_MSG.cafe as Record<string, readonly string[]>)[kind] ?? [])
+					: thingLines(id, kind, 5);
+			ok(lines.length > 0, `${id}: ${p.id} has nothing to say`);
+		}
+	}
+});
+
+test("喫茶の 席: Kiriko's seat is next to each friend, guests and stand spots are free floor, and the order stool faces the master", () => {
+	const people = cafePeople();
+	const s = surveyRoom("cafe", people);
+	const taken = (x: number, y: number) =>
+		people.some((p) => p.x === x && p.y === y);
+	const dist = (a: readonly [number, number], b: readonly [number, number]) =>
+		Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+	for (const w of Object.keys(CAFE_SEATS) as Speaker[]) {
+		const seat = CAFE_SEATS[w];
+		ok(dist(seat.at, seat.kiriko) === 1, `${w}: Kiriko does not sit next`);
+		ok(!taken(...seat.kiriko), `${w}: Kiriko's seat is taken`);
+		ok(!taken(...seat.guest), `${w}: the guest cell is taken`);
+		ok(s.tile(...seat.guest)?.passable, `${w}: the guest stands on a wall`);
+		ok(
+			s.reachable(seat.stand.x, seat.stand.y),
+			`${w}: cannot stand up to (${seat.stand.x},${seat.stand.y})`,
+		);
+	}
+	for (const [i, p] of CAFE_PATRON_SPOTS.entries()) {
+		ok(!taken(...p.kiriko) && !taken(...p.guest), `patron ${i}: seat taken`);
+		ok(s.tile(...p.guest)?.passable, `patron ${i}: guest on a wall`);
+		ok(s.reachable(p.stand.x, p.stand.y), `patron ${i}: cannot stand up`);
+	}
+	// みんなの 話は カウンターの 丸いす（重ならない）
+	const all = Object.values(CAFE_ALL_SEATS).map(([x, y]) => `${x},${y}`);
+	ok(new Set(all).size === all.length, "two share a stool in the all-talk");
+	ok(
+		CAFE_ORDER.x === CAFE_MASTER[0] &&
+			CAFE_ORDER.y === CAFE_MASTER[1] + 2 &&
+			s.tile(CAFE_MASTER[0], CAFE_MASTER[1] + 1)?.counter &&
+			s.reachable(CAFE_ORDER.x, CAFE_ORDER.y),
+		"the order stool does not face the master over the counter",
+	);
+});
+
+test("建物の 扉: the cafe and hut doors are stepped on from their stage, and every room lets Kiriko out onto the road", () => {
+	for (const v of VIEWS) {
+		const s = survey(v);
+		for (const [id, door] of [
+			["cafe", "door_cafe"],
+			["hut", "door_hut"],
+		] as const) {
+			const p = s.places.find((q) => q.id === door);
+			ok(
+				!!p === v.stage >= ROOM_FROM[id],
+				`${label(v)}: ${door} does not match the stage`,
+			);
+			if (p)
+				ok(
+					p.trigger === "touch" && s.reachable(p.x, p.y),
+					`${label(v)}: cannot step on ${door}`,
+				);
+		}
+		for (const id of ROOM_IDS) {
+			if (v.stage < ROOM_FROM[id]) continue;
+			const o = ROOM_OUTSIDE[id];
+			ok(
+				s.reachable(o.x, o.y),
+				`${label(v)}: out of ${id} onto a cell she cannot stand on (${o.x},${o.y})`,
+			);
+		}
+	}
+});
+
+test("建物に 入る・出る: door text once, a door sound and a fade, then out where the room says", async () => {
+	for (const id of ROOM_IDS) {
+		const { s, log } = fakeStory();
+		await enterRoom(id)(s);
+		const e = roomEntry(id);
+		ok(
+			inOrder(log, [
+				`narrate: ${ROOM_DOOR[id]}`,
+				"se door",
+				"fadeOut",
+				`warp ${id} ${e.x},${e.y} up`,
+				"fadeIn",
+			]),
+			`${id}: the way in:\n${log.join("\n")}`,
+		);
+		log.length = 0;
+		await enterRoom(id)(s);
+		ok(!log.some((l) => l.startsWith("narrate")), `${id}: door text again`);
+		log.length = 0;
+		await leaveRoom(id)(s);
+		const o = ROOM_OUTSIDE[id];
+		ok(
+			inOrder(log, [
+				"se door",
+				"fadeOut",
+				`warp village ${o.x},${o.y} ${o.dir}`,
+				"fadeIn",
+			]),
+			`${id}: the way out:\n${log.join("\n")}`,
+		);
+	}
+});
+
+test("一杯を まぜる: hand the herb, the master spins with a drum roll, it bubbles, flashes and the jingle plays", async () => {
+	await withStorageAsync(async () => {
+		forgetCafeMemo();
+		const { s, log } = fakeStory();
+		const herb = { kind: "h_heal" } as Item;
+		const drink = CAFE_DRINKS.h_heal;
+		await mixScene(s, herb, drink);
+		ok(
+			inOrder(log, [
+				`narrate: キリコは　${defOf("h_heal").name}を　わたした。`,
+				`look ${CAFE_MASTER.join(",")}`,
+				`say null: ${fill(MASTER_MSG.take, { herb: defOf("h_heal").name })}`,
+				`narrate: ${MASTER_MSG.spin}`,
+				"se mix",
+				"move master LDRULDRULDRULDRULDRU",
+				"se bubble",
+				`narrate: ${MASTER_MSG.shake}`,
+				"se glass",
+				"se served",
+				`say null: ${fill(MASTER_MSG.done, { drink: drink.name })}`,
+				"look kiriko",
+			]),
+			`mix:\n${log.join("\n")}`,
+		);
+		// 4杯目は 目が まわる
+		for (let i = 0; i < 2; i++) await mixScene(fakeStory().s, herb, drink);
+		const dizzy = fakeStory();
+		await mixScene(dizzy.s, herb, drink);
+		ok(
+			dizzy.log.includes(`say null: ${MASTER_MSG.dizzy}`),
+			`the 4th cup did not make the master dizzy:\n${dizzy.log.join("\n")}`,
+		);
+	});
+});
+
+test("喫茶の 住人: Proto and Ren always come once moved in, at most one per spot, and it changes by return", () => {
+	const at7 = cafePatrons(7, 1000);
+	ok(
+		at7[0] === "proto" && at7[1] === "ren",
+		`proto and ren first: ${at7.join(",")}`,
+	);
+	ok(at7.length === CAFE_PATRON_SPOTS.length, `${at7.length} patrons`);
+	ok(new Set(at7).size === at7.length, "a resident twice");
+	ok(
+		cafePatrons(5, 1000).every((id) => MOBS[id].from <= 5),
+		"a resident who has not moved in yet",
+	);
+	const seen = new Set<string>();
+	for (let at = 1000; at < 1020; at++) seen.add(cafePatrons(7, at).join(","));
+	ok(seen.size > 1, "the same residents every return");
+});
+
+test("建物の 中の 文: every line fits the village window, talks are 1〜4 windows, and every resident has cafe lines", () => {
+	const longest = Object.values(CAFE_DRINKS)
+		.map((d) => d.name)
+		.sort((x, y) => y.length - x.length)[0];
+	const texts: [string, string][] = [];
+	for (const [room, table] of Object.entries(ROOM_MSG))
+		for (const [k, v] of Object.entries(table))
+			for (const t of v)
+				texts.push([`ROOM_MSG.${room}.${k}`, fill(t, { next: "倉庫Part2" })]);
+	for (const t of planLines(0)) texts.push(["plan", t]);
+	for (const [k, t] of Object.entries(ROOM_DOOR)) texts.push([`door ${k}`, t]);
+	for (const [k, t] of Object.entries(KEEPER_LINE))
+		texts.push([`keeper ${k}`, t]);
+	for (const [k, t] of Object.entries(MASTER_MSG))
+		texts.push([
+			`master ${k}`,
+			fill(t, { herb: "水分補給の草", drink: longest, name: "おんすちゃん" }),
+		]);
+	for (const [k, t] of Object.entries(SEAT_MSG))
+		texts.push([`seat ${k}`, fill(t, { name: "フェリス" })]);
+	for (const [k, t] of Object.entries(CAFE_GREET))
+		texts.push([`greet ${k}`, t]);
+	for (const [k, d] of Object.entries(CAFE_DRINKS))
+		texts.push([`taste ${k}`, d.taste]);
+	for (const id of MOB_IDS) {
+		const c = CAFE_MOBS[id];
+		ok(
+			c.hello && c.idle && c.treat.includes("{drink}"),
+			`${id}: cafe lines missing`,
+		);
+		texts.push([`${id} hello`, c.hello], [`${id} idle`, c.idle]);
+		texts.push([`${id} treat`, fill(c.treat, { drink: longest })]);
+		ok(c.talks.length > 0, `${id}: no cafe talks`);
+		ok(
+			new Set(c.talks.map((t) => t.key)).size === c.talks.length,
+			`${id}: two cafe talks share a key`,
+		);
+		for (const t of c.talks) {
+			ok(
+				t.lines.length >= 1 && t.lines.length <= 4,
+				`${id}:${t.key} is ${t.lines.length} windows`,
+			);
+			for (const l of t.lines) texts.push([`${id}:${t.key}`, l.text]);
+		}
+	}
+	fitsWindow(texts);
 });

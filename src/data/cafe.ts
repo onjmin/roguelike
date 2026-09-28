@@ -1,4 +1,4 @@
-// 喫茶「保守」（村の 西の 空き地。町の 段5 から）で 聞ける 話。ui/cafe.ts が 一覧に して 見せる。
+// 喫茶「保守」（村の 西の 空き地。町の 段5 から）で 聞ける 話。ui/cafe.ts が 仲間の となりの 席で 一覧に して 見せる。
 // 仲間ひとりの 話と、ふたり・みんなの 掛け合い。どれも 寄り道で、何も くれない（聞いた 印だけ 残る）。
 // 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは しゃべらない（ナレーションで 動作だけ）。
 
@@ -253,6 +253,10 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 export type CafeDrink = {
 	/** 一杯の 名前。 */
 	name: string;
+	/** グラスの 中の 色（できあがりの 演出。ui/cafe.ts の decor）。 */
+	color: string;
+	/** キリコが じぶんで 飲んだ ときの 地の文。 */
+	taste: string;
 	/** 話す 仲間。 */
 	who: Speaker;
 	lines: readonly CafeLine[];
@@ -262,6 +266,8 @@ export type CafeDrink = {
 export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	h_heal: {
 		name: "草スムージー",
+		color: "#7ac050",
+		taste: "草の　味。……草。",
 		who: "feris",
 		lines: [
 			s("feris", "草スムージー〜？\n名前が　もう　笑ってるよね〜"),
@@ -270,6 +276,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_greater: {
 		name: "大草原ソーダ",
+		color: "#9ae070",
+		taste: "しゅわしゅわ。\n口の　中が　大草原。",
 		who: "nanj",
 		lines: [
 			s("nanj", "大草原て。\n……しゅわしゅわ　笑っとるやん"),
@@ -278,6 +286,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_poison: {
 		name: "荒らしカクテル",
+		color: "#8a3aa0",
+		taste: "……むせた。",
 		who: "shiyo",
 		lines: [
 			s("shiyo", "荒らしカクテル？　あたすに\n荒らしを　送りつける　わけ？"),
@@ -287,6 +297,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_might: {
 		name: "プロテインシェイク",
+		color: "#e8d8c0",
+		taste: "粉っぽい。\n力は……つかない。",
 		who: "nanj",
 		lines: [
 			s("nanj", "おっ、プロテインか。\nワイも　筋トレスレ　住んどった"),
@@ -295,6 +307,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_growth: {
 		name: "忍法帖スムージー",
+		color: "#e0a030",
+		taste: "……レベルは　上がらなかった。",
 		who: "feris",
 		lines: [
 			s("feris", "レアだ〜！\n……レベルが　上がる　味〜"),
@@ -303,6 +317,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_swift: {
 		name: "kskエスプレッソ",
+		color: "#4a2a1a",
+		taste: "にがい。\n……目が　さえた。",
 		who: "zero",
 		lines: [
 			s("zero", "kskエスプレッソ。飲むと\n書きこみが　速く　なるそうです"),
@@ -311,6 +327,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_blind: {
 		name: "アク禁ブラック",
+		color: "#202020",
+		taste: "まっくろ。\nなにも　見えない　味。",
 		who: "roze",
 		lines: [
 			s("roze", "まっくろアル。\n……なにも　見えない　味アル"),
@@ -319,6 +337,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_blink: {
 		name: "左遷ティー",
+		color: "#c0a060",
+		taste: "遠くの　味が　した。",
 		who: "zero",
 		lines: [
 			s("zero", "左遷ティー……。\nどこか　遠くへ　飛ばされる　味です"),
@@ -327,6 +347,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_reel: {
 		name: "安価ショット",
+		color: "#d04040",
+		taste: "一気に　飲んだ。\n……安価は　絶対。",
 		who: "nanj",
 		lines: [
 			s("nanj", "安価ショットか。\n>>ワイ　一気で、ってことやな"),
@@ -336,6 +358,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_daze: {
 		name: "お花畑ハーブティー",
+		color: "#f0a0c0",
+		taste: "頭の　中に　花が　さいた。",
 		who: "feris",
 		lines: [
 			s("feris", "いい　におい〜。\n頭の　中が　お花畑〜"),
@@ -344,6 +368,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_sleep: {
 		name: "寝落ちミルク",
+		color: "#f8f8f0",
+		taste: "……まぶたが　重い。",
 		who: "shiyo",
 		lines: [
 			s("shiyo", "寝落ちミルク？　……あたすが\n夜ふかし　してるの、見てたの？"),
@@ -352,6 +378,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_antidote: {
 		name: "水分補給レモネード",
+		color: "#f0e060",
+		taste: "すっぱい。\n……しゃきっと　した。",
 		who: "roze",
 		lines: [
 			s("roze", "水分補給は　常識アル。\n……冒険の　前に　飲むアル"),
@@ -360,6 +388,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_fire: {
 		name: "燃料投下ショット",
+		color: "#ff6020",
+		taste: "口から　火が　出た。",
 		who: "nanj",
 		lines: [
 			s("nanj", "燃料投下ショットは　あかん。\nスレが　燃える"),
@@ -369,6 +399,8 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 	},
 	h_sight: {
 		name: "晒しソーダ",
+		color: "#60c0f0",
+		taste: "……なにもかも　見える　気が　した。",
 		who: "zero",
 		lines: [
 			s("zero", "晒しソーダ……。飲むと、\nぜんぶ　見えるそうです"),
@@ -538,3 +570,63 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 		],
 	},
 ];
+
+// ───────────────── 店の 中（ui/cafe.ts）。マスター・席・一杯を まぜる 演出 ─────────────────
+// マスターは 白ひげの おじいさん（名前は ない。「〜ですぞ」）。一杯は 台の うしろで くるくる まわって まぜる
+// （ポケダン 空の パッチールの カフェの ような 演出。まわる → 泡だつ → できあがりの 曲）。
+
+/** マスター（歩行グラは RPGEN「白ひげ老人」）。 */
+export const MASTER = {
+	name: "マスター",
+	sprite: "sa:OyBJNb",
+	color: "#c8b890",
+} as const;
+
+export const MASTER_MSG = {
+	hello: "いらっしゃい。\n……草を　お持ちですかな？",
+	/** 倉庫に 一杯に できる 草が ない。 */
+	noHerb: "草が　ないと、\nまぜる　ものが　ありませんぞ",
+	/** まぜる 前（{herb} は 草の 名前）。 */
+	take: "{herb}ですな。\n……では、まぜますぞ！",
+	/** まわりだす。 */
+	spin: "マスターは　くるくる　まわりだした！",
+	/** まわりながら（泡の 音）。 */
+	shake: "しゃかしゃか……\nぽこぽこ……",
+	/** 4杯に 1杯は 目が まわる（できあがりは 同じ）。 */
+	dizzy: "……め、目が　まわりますぞ……",
+	/** できあがり（{drink}）。 */
+	done: "おまちどう。\n{drink}ですぞ！",
+	/** 仲間の 席へ はこぶ（{name}）。 */
+	carry:
+		"マスターが　{name}の　席へ　はこんだ。\nキリコも　となりに　すわった。",
+	/** じぶんで 飲む。 */
+	self: "キリコは　{drink}を　飲んだ。",
+} as const;
+
+/** マスターの 選択肢。 */
+export const MASTER_MENU = ["注文する", "品書き", "やめる"] as const;
+
+/** 仲間の 席で（話しかけた とき。いつもの 席の ひとこと）。 */
+export const CAFE_GREET: Readonly<Record<Speaker, string>> = {
+	nanj: "おう、キリコ。\nとなり、空いとるで",
+	roze: "ソファは　ふかふかが　常識アル。\nすわるアル",
+	feris: "キリコ〜、こっち　こっち〜。\nとなり　あいてるよ〜",
+	shiyo: "……なに。すわりたいなら\nすわれば？　べつに　いいけど",
+	zero: "キリコさん！　ここ、\nどうぞ！　あたためて　おきました！",
+};
+
+/** 席の 窓の とじる 字と、となりに すわる 地の文（{name}）。 */
+export const SEAT_MSG = {
+	sit: "キリコは　{name}の　となりに　すわった。",
+	leave: "席を　立つ",
+	/** 掛け合いの 相手が 来る（{name}）。 */
+	join: "{name}が　やってきた。",
+	/** みんなの 話（カウンターに 集まる）。 */
+	all: "みんなが　カウンターに　集まってきた。",
+	/** 話が ふえた（{name}）。 */
+	more: "{name}と　話せる　ことが　ふえた。",
+	/** 品書きの ひとこと（好みを 知らない 一杯）。 */
+	unknown: "だれの　好みだろう",
+	/** 品書き（好みを 知った 一杯。{name}）。 */
+	known: "{name}の　好み",
+} as const;

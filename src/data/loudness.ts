@@ -129,6 +129,9 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	eat: ["DjrP3h", -9.8, 0.6, -13.2, 0.219, 10, 220, 120], // field → -23.0
 	drink: ["QMyArQ", -13.2, 0, -9.8, 0.324, 0, 530, 80], // field → -23.0
 	read: ["DkePps", -17.4, 0.2, -5.7, 0.519, 100, 450, 380], // field → -23.1（ピーク上限）
+	mix: ["M7lnrK", -14.4, -5.1, -8.6, 0.372, 0, 1830, 1200], // field → -23.0
+	bubble: ["RSetbN", -9.5, -4.7, -13.5, 0.211, 0, 490, 230], // field → -23.0
+	glass: ["IQXvTI", -10.8, -2, -12.2, 0.245, 30, 1640, 780], // field → -23.0
 	encounter: ["qm03Mw", -19.2, -9.2, -1.8, 0.813, 360, 2390, 1200], // battle → -21.0
 	attackStart: ["n0fqek", -10.3, -3.6, -10.7, 0.292, 40, 290, 240], // battle → -21.0
 	attack: ["7JKd21", -5.9, -0.7, -15.1, 0.176, 20, 210, 180], // battle → -21.0
@@ -165,5 +168,6 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	wipeout: ["rEaCCP", -10.7, -5.8, -11.3, 0.272, 560, 6690, 1500], // jingle → -22.0
 	save: ["jVOw87", -10.4, -0.3, -11.6, 0.263, 90, 3730, 1100], // jingle → -22.0
 	chapter: ["thHyyN", -7.7, -2, -14.3, 0.193, 50, 1220, 410], // jingle → -22.0
+	served: ["wMSfsJ", -11.7, -2.9, -10.3, 0.305, 60, 1810, 1410], // jingle → -22.0
 };
 // </loudness:se>

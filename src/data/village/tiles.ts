@@ -180,7 +180,7 @@ export const SHOP: Record<string, TileDef> = {
 // ───────────────── 小屋（段3から） ─────────────────
 // 板壁・わら屋根・煙突。
 //   C  煙突（棟に 重ねる）   z Z  わら屋根（棟・軒）   [ ]  板壁（上段・下段）   J  窓
-//   e  扉（見るだけ）   E  下段に 花の箱（段6から）
+//   e  扉（踏むと 中へ）   E  下段に 花の箱（段6から）
 const PLANK_UP = base(1, 55);
 const PLANK_LOW = base(1, 56);
 const C_PLANK = "#6a4a2a";
@@ -192,7 +192,8 @@ export const HUT: Record<string, TileDef> = {
 	"[": solid(C_PLANK, PLANK_UP),
 	"]": solid(C_PLANK, PLANK_LOW),
 	J: solid(C_PLANK, PLANK_UP, WIN_WHITE),
-	e: solid(C_PLANK, PLANK_LOW, base(7, 55, 1, 2)),
+	// 扉（通れる。踏むと 中へ。data/village/rooms.ts）
+	e: floor(C_PLANK, PLANK_LOW, base(7, 55, 1, 2)),
 	E: solid(C_PLANK, PLANK_LOW, base(3, 362)),
 };
 
@@ -320,7 +321,7 @@ export const INDOOR: Record<string, TileDef> = {
 };
 
 // ───────────────── 喫茶「保守」（西の 空き地。町の 段5 から） ─────────────────
-//   9  屋根の 棟   /  屋根の 軒   |  板壁（上段）   `  窓   '  板壁（下段）   ?  扉（2マスの 絵）   @  ちょうちん
+//   9  屋根の 棟   /  屋根の 軒   |  板壁（上段）   `  窓   '  板壁（下段）   ?  扉（2マスの 絵。通れる。踏むと 中へ）   @  ちょうちん
 const CAFE_WALL = "#7a5a3a";
 export const CAFE: Record<string, TileDef> = {
 	"9": solid("#8a4a2a", base(1, 82)),
@@ -328,7 +329,7 @@ export const CAFE: Record<string, TileDef> = {
 	"|": solid(CAFE_WALL, base(1, 57)),
 	"`": solid(CAFE_WALL, base(1, 57), basePx(48, 1382)),
 	"'": solid(CAFE_WALL, base(1, 58)),
-	"?": solid(CAFE_WALL, base(1, 58), base(7, 57, 1, 2)),
+	"?": floor(CAFE_WALL, base(1, 58), base(7, 57, 1, 2)),
 	"@": solid(CAFE_WALL, base(1, 57), basePx(2 * 16 + 3, 297 * 16 + 2, 10, 13)),
 };
 

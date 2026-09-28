@@ -9,7 +9,8 @@
 //   B・☰ で 村の メニュー（ui/villageEvents.ts）。
 // - まだ 聞いていない 新しい話が ある人の 頭の上に「！」（EventDef.notice。スクリプトの あとに 見なおす）。
 // - 窓（会話・選択肢・メニュー）が 開いている間は 歩かない（input.busy）。
-// - 地図は 村（village）と おんJ 本館の 中（hall。ui/hallEvents.ts）。扉・出口の マットで Story.warp（暗転の 中で
+// - 地図は 村（village）と おんJ 本館の 中（hall。ui/hallEvents.ts）と 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。
+//   ui/cafe.ts・ui/rooms.ts）。扉・出口の マットで Story.warp（暗転の 中で
 //   地図を かえる。rpg の Game.loadMap と 同じ）。warp では 入る ときの 場面（prepare・onEnter）は 走らせない。
 // - 入るたびに onEnter（帰ってきた場面・開いた知らせ・持ち帰った物。ui/villageReturn.ts）。その間は 歩かない・
 //   うろうろ しない・「！」を 出さない（scene）。場面では カメラを 人や 建物に 向ける（look）。
@@ -22,6 +23,7 @@ import { CAST, KIRIKO_WALK } from "../data/cast";
 import type { Speaker } from "../data/quotes";
 import { HALL_OUT_DIR, hallOutside } from "../data/village/hall";
 import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
+import { isRoom, type RoomId } from "../data/village/rooms";
 import { preloadImages } from "../engine/assets";
 import type {
 	EventDef,
@@ -44,11 +46,13 @@ import {
 	TILE,
 } from "../engine/types";
 import { showBootTitle } from "./boot";
+import { buildCafe } from "./cafe";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
+import { buildRoom, roomOutside } from "./rooms";
 import { buildVillage, villageMenu } from "./villageEvents";
 import { villageView } from "./villageReturn";
 
@@ -80,8 +84,8 @@ export class Village {
 	private readonly fadeEl: HTMLDivElement;
 	private readonly toastEl: HTMLDivElement;
 	private field: Field | null = null;
-	/** いま 描いている 地図（村 village か 本館の 中 hall）。村に 入る たびに village から。 */
-	private mapId: "village" | "hall" = "village";
+	/** いま 描いている 地図（村 village・本館の 中 hall・建物の 中 RoomId）。村に 入る たびに village から。 */
+	private mapId: "village" | "hall" | RoomId = "village";
 	private player = new Actor("player", 0, 0, "down", KIRIKO_WALK, null);
 	/** キリコの位置と その場かぎりの印（村を 出ても 残す。ページを 閉じれば 消える）。 */
 	private state: VState = { x: 0, y: 0, dir: "down", flags: {} };
@@ -215,7 +219,11 @@ export class Village {
 		const def =
 			this.mapId === "hall"
 				? buildHall(v, this.ctx)
-				: buildVillage(v, this.ctx, { arrival: this.arrival });
+				: this.mapId === "cafe"
+					? buildCafe(v, this.ctx)
+					: isRoom(this.mapId)
+						? buildRoom(this.mapId, v, this.ctx)
+						: buildVillage(v, this.ctx, { arrival: this.arrival });
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
@@ -258,7 +266,7 @@ export class Village {
 	 * 曲は 地図に 決まって いれば かえる（同じ 曲なら 続ける）。地名の 札を 出す。
 	 */
 	private async warp(map: string, spot: Spot): Promise<void> {
-		this.mapId = map === "hall" ? "hall" : "village";
+		this.mapId = map === "hall" || isRoom(map) ? map : "village";
 		// 前の 地図の 人・マスを 見ていた カメラは キリコに もどす
 		this.lookAt = null;
 		this.easing = false;
@@ -289,12 +297,14 @@ export class Village {
 		// 読み上げは 村の 会話だけ（ダンジョンへ 持ちこまない）
 		this.ctx.audio.stopSpeech();
 		this.toastEl.classList.remove("shown");
-		// 本館の 中から 出た（リプレイ）なら、もどる のは 入った 扉の 前（外）
-		const out =
-			this.mapId === "village" ? null : hallOutside(this.state.flags.hallFrom);
-		this.lastSpot = out
-			? { x: out[0], y: out[1], dir: HALL_OUT_DIR }
-			: { x: this.player.x, y: this.player.y, dir: this.player.dir };
+		// 本館・建物の 中から 出た（リプレイ）なら、もどる のは 入った 扉の 前（外）
+		const out = hallOutside(this.state.flags.hallFrom);
+		this.lastSpot =
+			this.mapId === "hall"
+				? { x: out[0], y: out[1], dir: HALL_OUT_DIR }
+				: isRoom(this.mapId)
+					? roomOutside(this.mapId)
+					: { x: this.player.x, y: this.player.y, dir: this.player.dir };
 		this.field?.dispose();
 		this.field = null;
 		// 冒険の画面に 村が 一瞬 見えないよう、黒く ぬってから 幕を あげる（冒険は 自分の 幕を 持っている）
