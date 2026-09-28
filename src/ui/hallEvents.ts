@@ -8,7 +8,9 @@
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
 //   - 飾り棚：持ち帰った 品を 絵で 並べる（針・はじまりの原盤は 蓄音機に ついているので 一覧だけ）。
 // 扉の「！」：告知が まだ 本館で 読んでいない イベントか、飾り棚に 品が ふえた（喫茶の hasCafeNews と 同じ）。
+//   同じ イベントも また 起きるので、読んだ 告知は 回（始まった 出撃）ごとに 覚える。
 // 書いた 数・読んだ 告知・見た 棚は 別の 保存場所（kiriko-roguelike/hall）に 残す（保存 できなくても この回は 覚えている）。
+// 開発用の 下見（?stage=・?event=）の あいだは 保存を 書きかえない（村の 下見と 同じ。この回だけ 覚えている）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { defOf } from "../core/item";
@@ -20,6 +22,7 @@ import {
 	TOBAN_MENU,
 } from "../data/hall";
 import {
+	devEvent,
 	eventById,
 	goalText,
 	objectiveFor,
@@ -48,7 +51,7 @@ import {
 	VILLAGE_SPOTS,
 	type VillageView,
 } from "../data/village/map";
-import { drawRefInCell, getImage } from "../engine/assets";
+import { drawRefInCell, getImage, loadImage } from "../engine/assets";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress, loadRecords } from "../engine/save";
 import { TILE } from "../engine/types";
@@ -60,6 +63,7 @@ import { itemIcon } from "./icons";
 import { type ListItem, listWindow } from "./list";
 import { openRecords } from "./records";
 import { senkyoOpen, senkyoScript } from "./villageMobs";
+import { previewStage } from "./villageReturn";
 import { fill, ledgerLine } from "./villageTalk";
 
 // ───────────────── 保存（kiriko-roguelike/hall） ─────────────────
@@ -71,7 +75,7 @@ type HallMemo = {
 	hoshu: number;
 	/** 最後に 書いた 帰り（記録の 時刻。まだ 書いていなければ -1）。 */
 	hoshuAt: number;
-	/** 本館で 読んだ 告知（イベントの id。読んでいなければ 空）。 */
+	/** 本館で 読んだ 告知（イベントの 回「id@始まった 出撃」。読んでいなければ 空）。 */
 	event: string;
 	/** 飾り棚で 見た 板。 */
 	shelf: DungeonId[];
@@ -102,8 +106,14 @@ const load = (): HallMemo => {
 	return { ...EMPTY, shelf: [] };
 };
 
+/** 開発用の 下見（?stage=・?event=）の あいだ（保存は 書きかえない）。 */
+const previewing = (): boolean =>
+	previewStage() !== null || devEvent() !== null;
+
 const save = (m: HallMemo): void => {
 	memo = JSON.parse(JSON.stringify(m)) as HallMemo;
+	// 下見の あいだは この回だけ 覚えている（本当の 保存に 下見の 告知・段の 棚を 残さない）
+	if (previewing()) return;
 	try {
 		localStorage.setItem(KEY, JSON.stringify(m));
 	} catch {
@@ -127,13 +137,16 @@ export const canWriteHoshu = (): boolean => load().hoshuAt !== returnAt();
 
 // ───────────────── 告知・飾り棚 ─────────────────
 
-/** 起きている 期間限定の イベント（?event= の 下見も）と その 目的。無ければ null。 */
+/**
+ * 起きている 期間限定の イベント（?event= の 下見も）と その 目的。無ければ null。
+ * key は その 回（同じ イベントが また 起きたら 始まった 出撃 since が かわる）。読んだ 告知の 印に する。
+ */
 const currentEvent = () => {
 	const p = withDevEvent(loadProgress());
 	const e = p.event ? eventById(p.event.id) : undefined;
-	if (!e) return null;
+	if (!e || !p.event) return null;
 	const info = objectiveFor(e.dungeon, p);
-	return info.event ? { e, info } : null;
+	return info.event ? { e, info, key: `${e.id}@${p.event.since}` } : null;
 };
 
 /** 告知の 文（窓ごと。村の 窓で 読む）。 */
@@ -162,7 +175,7 @@ export const trophies = (cleared: readonly DungeonId[]): DungeonId[] =>
 export const hasHallNews = (v: VillageView): boolean => {
 	const m = load();
 	const cur = currentEvent();
-	if (cur && m.event !== cur.e.id) return true;
+	if (cur && m.event !== cur.key) return true;
 	return (
 		hallTierOf(v) >= 1 && trophies(v.cleared).some((d) => !m.shelf.includes(d))
 	);
@@ -246,7 +259,7 @@ export const noticeScript: Script = async (s) => {
 	const cur = currentEvent();
 	if (cur) {
 		const m = load();
-		m.event = cur.e.id;
+		m.event = cur.key;
 		save(m);
 	}
 };
@@ -264,8 +277,8 @@ const itemArt = (ref: string): HTMLCanvasElement => {
 		g.clearRect(0, 0, TILE, TILE);
 		return drawRefInCell(g, ref, 0, 0);
 	};
-	// 読み込み中なら 少し あとで もう一度
-	if (!draw()) setTimeout(draw, 400);
+	// 読み込み中なら 読めたら 描く（読めなければ 空の まま。窓を 閉じた あとに 描いても かまわない）
+	if (!draw()) void loadImage(ref).then(() => draw());
 	return c;
 };
 
@@ -283,6 +296,19 @@ export const shelfRows = (
 		};
 	});
 
+/** 品の 絵の 参照（飾り棚の 一覧の 行の 順）。 */
+const shelfRefs = (cleared: readonly DungeonId[]): string[] =>
+	shelfRows(cleared).map((r) => itemIcon(DUNGEONS[r.d].goal));
+
+/**
+ * 飾り棚を 調べた ときの 語り（棚に 描いて いる ものと 合わせる）：何も 持ち帰って いない・
+ * 棚に 品が ならんでいる・針と はじまりの原盤だけ（どちらも 蓄音機に ついていて 棚は からっぽ）。
+ */
+export const shelfLine = (cleared: readonly DungeonId[]): string => {
+	if (!shelfRows(cleared).length) return HALL_MSG.shelfEmpty;
+	return trophies(cleared).length ? HALL_MSG.shelf : HALL_MSG.shelfPhono;
+};
+
 /** 飾り棚：持ち帰った 品の 一覧（名前・板・品の ひとこと）。見たら 扉の「！」は 消える。 */
 const shelfScript =
 	(ctx: Ctx): Script =>
@@ -290,11 +316,8 @@ const shelfScript =
 		const cleared = loadProgress().cleared;
 		const rows = shelfRows(cleared);
 		markShelfSeen(cleared);
-		if (!rows.length) {
-			await s.narrate(HALL_MSG.shelfEmpty);
-			return;
-		}
-		await s.narrate(HALL_MSG.shelf);
+		await s.narrate(shelfLine(cleared));
+		if (!rows.length) return;
 		await hideMsg(s);
 		const items: ListItem[] = rows.map((r) => ({
 			label: r.name,
@@ -435,7 +458,7 @@ const shelfDecor = (
 		g.clip();
 		refs.forEach((ref, i) => {
 			const c = slots[i];
-			if (c) drawRefInCell(g, ref, c[0] * TILE - ox, c[1] * TILE - oy - 2);
+			if (c) drawRefInCell(g, ref, c[0] * TILE - ox, c[1] * TILE - oy);
 		});
 		g.restore();
 	};
@@ -496,6 +519,8 @@ export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 		tiles: hallPalette(tier),
 		rows,
 		outside: "#000",
+		// 飾り棚の 品の 絵（棚に 描く 品と 一覧だけの 針・原盤）も 入る 前に 読んでおく
+		images: shelfSlots(tier).length ? shelfRefs(v.cleared) : undefined,
 		events: hallPlaces(v).map((p) => eventFor(ctx, p, tier)),
 		decor: decor.length
 			? (g, ox, oy, t) => {

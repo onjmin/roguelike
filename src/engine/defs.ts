@@ -89,6 +89,8 @@ export type MapDef = {
 	onEnter?: Script;
 	/** マップの外側の色。 */
 	outside?: string;
+	/** タイルの ほかに 使う 画像（decor で 描く 絵など。入る 前に 先読みする）。 */
+	images?: string[];
 	/** キャラの上に重ねて描く動く飾り（灯り・煙など）。ox・oy はカメラの位置（ソース画素）、t はミリ秒。 */
 	decor?: (
 		g: CanvasRenderingContext2D,

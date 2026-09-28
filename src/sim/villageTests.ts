@@ -124,8 +124,10 @@ import {
 import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
 import { cafeTalks } from "../ui/cafe";
+import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
 import {
+	buildHall,
 	canWriteHoshu,
 	enterHall,
 	forgetHallMemo,
@@ -135,10 +137,12 @@ import {
 	markShelfSeen,
 	noticeScript,
 	noticeTexts,
+	shelfLine,
 	shelfRows,
 	tobanScript,
 	trophies,
 } from "../ui/hallEvents";
+import { itemIcon } from "../ui/icons";
 import { bossHomeLine, endLine, recordHead } from "../ui/records";
 import { sharedHead } from "../ui/share";
 import {
@@ -556,6 +560,20 @@ const withStorageAsync = async (fn: () => Promise<void>): Promise<void> => {
 	}
 };
 
+/** 試験の あいだだけ location.search を かえる（開発用の 下見 ?stage=・?event=）。もどす 手を 返す。 */
+const swapLocation = (search: string): (() => void) => {
+	const prev = Object.getOwnPropertyDescriptor(globalThis, "location");
+	Object.defineProperty(globalThis, "location", {
+		value: { search },
+		configurable: true,
+		writable: true,
+	});
+	return () => {
+		if (prev) Object.defineProperty(globalThis, "location", prev);
+		else delete (globalThis as { location?: unknown }).location;
+	};
+};
+
 const FRIENDS = Object.keys(SPEAKERS) as Speaker[];
 
 /** 冒険の記録を 1つ 足す（新しい順の 先頭）。 */
@@ -909,6 +927,7 @@ test("the friends line up beside the exit Kiriko comes back through", () => {
 
 const PROGRESS_KEY = "kiriko-roguelike/progress";
 const TOWN_KEY = "kiriko-roguelike/town";
+const HALL_KEY = "kiriko-roguelike/hall";
 
 /** 進み具合を 置く（開いた ダンジョンと まだ 見せていない 知らせ）。 */
 const setProgress = (
@@ -3068,6 +3087,84 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		);
 		forgetProgressMemo();
 		ok(hasHallNews(v), "no 「！」 for another event");
+		await noticeScript(fakeStory().s);
+		ok(!hasHallNews(v), "「！」 after reading that event");
+		// 同じ イベントが また 起きたら（始まった 出撃が かわる）また「！」。読みなおしても 同じ
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify(
+				prog({
+					unlocked: [...DUNGEON_IDS],
+					outings: 5,
+					event: { id: EVENTS[0].id, since: 5, clearsSince: 0 },
+				}),
+			),
+		);
+		forgetProgressMemo();
+		forgetHallMemo();
+		ok(hasHallNews(v), "no 「！」 when the same event starts again");
+		await noticeScript(fakeStory().s);
+		ok(!hasHallNews(v), "「！」 after reading the new run of the event");
+	});
+});
+
+test("期間限定の 告知: the same event starting again after it ended (advanceEvents) brings the door 「！」 back", async () => {
+	await withStorageAsync(async () => {
+		const v: VillageView = { stage: 0, unlocked: ["shallow"], cleared: [] };
+		// パン板を クリアしつづけて、同じ イベントが 2回 始まる まで 回す（読むのは 1回目だけ）
+		let p = prog({ unlocked: [...DUNGEON_IDS], cleared: ["shallow"] });
+		const starts: string[] = [];
+		for (let i = 0; i < 400 && starts.length < 2; i++) {
+			const r = advanceEvents(p, {
+				kind: "clear",
+				dungeon: "shallow",
+				seed: `again-${i}`,
+			});
+			p = r.progress;
+			if (!r.started) continue;
+			localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+			forgetProgressMemo();
+			if (starts.length && r.started.id === starts[0]) {
+				starts.push(r.started.id);
+				break;
+			}
+			if (starts.length) continue;
+			starts.push(r.started.id);
+			ok(hasHallNews(v), `${r.started.id}: no 「！」 when it starts`);
+			await noticeScript(fakeStory().s);
+			ok(!hasHallNews(v), `${r.started.id}: 「！」 after reading it`);
+		}
+		ok(starts.length === 2, `the event did not start again: ${starts}`);
+		ok(hasHallNews(v), `${starts[0]}: no 「！」 when it started again`);
+	});
+});
+
+test("おんJ 本館の 下見（?stage=・?event=）: reading, 「保守」 and the shelf are kept for this visit only, the hall save is not written", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"], [], ["shallow", "kinoko"]);
+		const v: VillageView = {
+			stage: 3,
+			unlocked: ["shallow"],
+			cleared: ["shallow", "kinoko"],
+		};
+		const restore = swapLocation(`?debug&stage=3&event=${EVENTS[0].id}`);
+		try {
+			ok(hasHallNews(v), "no 「！」 in the preview");
+			await noticeScript(fakeStory().s);
+			await tobanScript(1)(fakeStory({ pick: 0 }).s);
+			markShelfSeen(v.cleared);
+			ok(!hasHallNews(v), "「！」 after reading and looking in the preview");
+			ok(hoshuCount() === 1, `preview count ${hoshuCount()}`);
+			ok(
+				localStorage.getItem(HALL_KEY) === null,
+				`the preview wrote the hall save: ${localStorage.getItem(HALL_KEY)}`,
+			);
+		} finally {
+			restore();
+		}
+		forgetHallMemo();
+		ok(hoshuCount() === 0, `count after the preview: ${hoshuCount()}`);
+		ok(hasHallNews(v), "the preview's look at the shelf was saved");
 	});
 });
 
@@ -3121,6 +3218,38 @@ test("飾り棚: the goal items of the cleared boards (the needle and the first 
 			"no 「！」 for another trophy",
 		);
 	});
+});
+
+test("飾り棚: what is said matches what is drawn (only the needle and the first record → the shelf is empty), and its pictures are loaded before the hall fades in", () => {
+	const cases: [DungeonId[], string][] = [
+		[[], HALL_MSG.shelfEmpty],
+		[["shallow"], HALL_MSG.shelfPhono],
+		[["shallow", "main"], HALL_MSG.shelfPhono],
+		[["shallow", "kinoko"], HALL_MSG.shelf],
+		[["shallow", "main", "tropical", "festival"], HALL_MSG.shelf],
+	];
+	for (const [cleared, line] of cases) {
+		ok(shelfLine(cleared) === line, `${cleared}: ${shelfLine(cleared)}`);
+		// 「ならんでいる」と 言うなら 棚に 描く 品が ある
+		ok(
+			(shelfLine(cleared) === HALL_MSG.shelf) === trophies(cleared).length > 0,
+			`${cleared}: said 「ならんでいる」 with ${trophies(cleared)} on the shelf`,
+		);
+	}
+	const ctx = {} as Ctx;
+	const all = [...DUNGEON_IDS];
+	ok(
+		buildHall({ stage: 0, unlocked: all, cleared: all }, ctx).images ===
+			undefined,
+		"the 集会所 (no shelf) loads shelf pictures",
+	);
+	for (const stage of [3, 6]) {
+		const imgs = buildHall({ stage, unlocked: all, cleared: all }, ctx).images;
+		for (const d of all) {
+			const ref = itemIcon(DUNGEONS[d].goal);
+			ok(!!imgs?.includes(ref), `stage ${stage}: ${d} (${ref}) not preloaded`);
+		}
+	}
 });
 
 test("おんJ 本館: every line fits the village window (22 full-width × 2 lines, 1〜3 windows)", () => {

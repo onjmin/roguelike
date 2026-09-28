@@ -443,6 +443,7 @@ export class Field {
 			for (const r of t.above ?? []) refs.add(r);
 			if (t.auto) refs.add(t.auto);
 		}
+		for (const r of this.def.images ?? []) refs.add(r);
 		return [...refs];
 	}
 
