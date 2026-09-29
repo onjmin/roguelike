@@ -24,7 +24,7 @@ import {
 import { STAGE_NAMES } from "../data/town";
 import { NANASHI_WALK } from "../data/village/hall";
 import { npc, sign } from "../data/village/helpers";
-import type { VillageView } from "../data/village/map";
+import { stepOf, type VillageView } from "../data/village/map";
 import {
 	MUSIC_SEAT,
 	MUSIC_STAGE,
@@ -146,7 +146,7 @@ const musicPeople = (v: VillageView): EventDef[] => {
 			{ dir: "up" },
 		),
 	];
-	if (v.stage >= MOBS.ren.from)
+	if (stepOf(v) >= MOBS.ren.from)
 		out.push(
 			npc(
 				"mob_ren",

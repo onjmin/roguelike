@@ -19,8 +19,15 @@
 //   離れた 人の 声だけが 飛んでくる 掛け合いは しない（そばに いる 人とだけ 話す）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
-import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../core/town";
+import {
+	CARRY_MAX,
+	lastStepOf,
+	STORAGE_CAP,
+	TOWN_STAGES,
+	townStep,
+} from "../core/town";
 import type { DungeonId, Objective } from "../core/types";
+import { MOB_IDS, MOBS } from "../data/mobs";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { SPEAKERS } from "../data/quotes";
@@ -44,6 +51,7 @@ import {
 	STAGE_NAMES,
 	STAGE_UP,
 	STAGE_UP_HALL,
+	TOWN_GREW_MSG,
 	TOWN_MSG,
 	WAKE_PAGES,
 } from "../data/town";
@@ -93,10 +101,14 @@ export const previewStage = (): number | null => {
 export const villageView = (): VillageView => {
 	const p = loadProgress();
 	const fresh = new Set(p.news.map((n) => n.dungeon));
+	const t = loadTown();
+	const preview = previewStage();
 	return {
-		stage: previewStage() ?? loadTown().stage,
+		stage: preview ?? t.stage,
 		unlocked: p.unlocked.filter((d) => !fresh.has(d)),
 		cleared: [...p.cleared],
+		// 下見（?stage=N）は その 段の いちばん上（住人は みんな いる）
+		step: preview === null ? townStep(t.stage, t.points) : lastStepOf(preview),
 	};
 };
 
@@ -394,6 +406,8 @@ export const settleScript = async (
 	// 選んでいるあいだに 別のタブで 決められていたら、ここでは 何もしない（古い町で 上書きしない）
 	const cur = loadTown();
 	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
+	// 売る 前の 小段（売れて 小段が 上がると 住人が 越してくる）
+	const stepFrom = townStep(cur.stage, cur.points);
 	const r = settleReturn(cur, chosen);
 	if (chosen.length) await say(TOWN_MSG.storeDone);
 	if (r.sold > 0) {
@@ -406,6 +420,37 @@ export const settleScript = async (
 		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
 	}
 	if (r.to > r.from) await stageUp(s, r.from, r.to);
+	await movedIn(s, stepFrom, townStep(r.to, loadTown().points), r.to > r.from);
+};
+
+/**
+ * 小段が 上がって 住人が 越してきた（data/mobs.ts の from）。越してきた 子を 見せて「〜が、村に　越してきた。」。
+ * 建物の 段が 上がった ときは stageUp で もう 建て直して いるので、見せて 知らせる だけ。
+ * 小段だけの ときは 暗転して 建て直し、町に 人が ふえた 知らせ。1回の 帰りで 何人でも（まとめて 1回）。
+ */
+const movedIn = async (
+	s: Story,
+	from: number,
+	to: number,
+	rebuilt: boolean,
+): Promise<void> => {
+	const ids = MOB_IDS.filter(
+		(id) => MOBS[id].from > from && MOBS[id].from <= to,
+	);
+	if (!ids.length) return;
+	const first = `mob_${ids[0]}`;
+	if (!rebuilt) {
+		await s.fadeOut(300);
+		await s.rebuild();
+		await s.look(first, { instant: true });
+		await s.fadeIn(300);
+		s.se("jingle");
+		s.toast(TOWN_GREW_MSG);
+	} else await s.look(first);
+	await s.narrate(
+		fill(ARRIVE_MSG, { names: ids.map((id) => MOBS[id].name).join("と　") }),
+	);
+	await s.look(null);
 };
 
 /**

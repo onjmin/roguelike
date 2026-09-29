@@ -9,12 +9,15 @@ import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import {
 	CARRY_MAX,
+	lastStepOf,
 	nextStage,
 	pricedKinds,
 	priceOf,
 	STAGE_POINTS,
 	STORAGE_CAP,
 	TOWN_STAGES,
+	TOWN_STEPS,
+	townStep,
 } from "../core/town";
 import type { Item } from "../core/types";
 import { SE_LOUDNESS } from "../data/loudness";
@@ -96,6 +99,38 @@ test("every weapon has its own hit sound, and every attack sound is measured", (
 		(d) => d.sound?.hit,
 	);
 	ok(new Set(hits).size === hits.length, "two weapons share a hit sound");
+});
+
+test("町の 小段：建物の 段の あいだを 約1.1倍ずつ 刻む。段を こえた 小段は 済み、いまの 段の 小段は 売上しだい", () => {
+	// 建物の 段は 小段の 表の 中に あり、小段は 段の 順・売上の 順
+	for (let s = 0; s < TOWN_STAGES; s++)
+		ok(
+			TOWN_STEPS.some((x) => x.stage === s && x.points === STAGE_POINTS[s]),
+			`stage ${s} is not a step`,
+		);
+	for (let i = 1; i < TOWN_STEPS.length; i++) {
+		const [a, b] = [TOWN_STEPS[i - 1], TOWN_STEPS[i]];
+		ok(b.stage >= a.stage && b.points >= a.points, `step ${i} is out of order`);
+	}
+	// 差は だいたい 1.1倍ずつ（段1 の 屋台は パン板で 開くので 0）
+	const gaps = TOWN_STEPS.slice(2).map(
+		(x, i) => x.points - TOWN_STEPS[i + 1].points,
+	);
+	for (let i = 1; i < gaps.length; i++) {
+		const r = gaps[i] / gaps[i - 1];
+		ok(r > 1.05 && r < 1.15, `step ${i + 2}: x${r.toFixed(2)}`);
+	}
+	// 段の 中は 売上しだい・段を こえた 小段は 済み・次の 段の 小段には 建つまで 上がらない
+	ok(
+		townStep(1, 2999) === 1 && townStep(1, 3000) === 2,
+		"the first small step",
+	);
+	ok(townStep(1, 999999) === 2, "went past the next building without it");
+	ok(
+		townStep(7, 0) === lastStepOf(6) + 1,
+		"a jump to the top leaves steps behind",
+	);
+	ok(lastStepOf(TOWN_STAGES - 1) === TOWN_STEPS.length - 1, "lastStepOf");
 });
 
 test("town stage rules: one step per return, the deep (電池板) clear jumps to the top", () => {

@@ -101,7 +101,7 @@ export type MobDef = {
 	name: string;
 	/** 歩行グラ（RPGEN 形式）。 */
 	sprite: string;
-	/** 越してくる 町の段（0 は はじめから いる）。 */
+	/** 越してくる 町の 小段（core/town.ts の TOWN_STEPS。0 は はじめから いる）。小段ごとに 1人ずつ。 */
 	from: number;
 	spot: readonly [number, number];
 	dir: Dir;
@@ -629,7 +629,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	nichie: {
 		name: "にぃちぇ",
 		sprite: "pub:sprites/minors_nichie.png",
-		from: 1,
+		from: 2,
 		spot: [22, 20],
 		dir: "left",
 		meet: [
@@ -765,7 +765,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	panmatsu: {
 		name: "パン松",
 		sprite: "pub:sprites/minors_panmatsu.png",
-		from: 2,
+		from: 5,
 		spot: [17, 18],
 		dir: "left",
 		meet: [
@@ -885,7 +885,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	ngoane: {
 		name: "ンゴ姉",
 		sprite: "pub:sprites/minors_ngoane.png",
-		from: 3,
+		from: 7,
 		spot: [28, 22],
 		dir: "left",
 		meet: [
@@ -1002,7 +1002,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	onsu: {
 		name: "おんすちゃん",
 		sprite: "pub:sprites/minors_onsu.png",
-		from: 4,
+		from: 10,
 		spot: [29, 12],
 		dir: "left",
 		meet: [
@@ -1131,7 +1131,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	onchan: {
 		name: "おんちゃん",
 		sprite: "sa:oLrlUq",
-		from: 5,
+		from: 13,
 		spot: [21, 22],
 		dir: "down",
 		noVote: true,
@@ -1267,7 +1267,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	yayapoji: {
 		name: "ヤヤポジ",
 		sprite: "pub:sprites/minors_yayapoji.png",
-		from: 6,
+		from: 16,
 		spot: [11, 22],
 		dir: "right",
 		meet: [
@@ -1377,7 +1377,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ムッジェ",
 		sprite: "pub:sprites/minors_mujje.png",
 		color: "#e0584a",
-		from: 3,
+		from: 8,
 		spot: [23, 23],
 		dir: "down",
 		meet: [
@@ -1465,7 +1465,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "朝コンロ",
 		sprite: "pub:sprites/minors_asakonro.png",
 		color: "#ff8a4a",
-		from: 4,
+		from: 11,
 		spot: [10, 20],
 		dir: "right",
 		meet: [
@@ -1545,7 +1545,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ジェイトルマン",
 		sprite: "pub:sprites/minors_jtleman.png",
 		color: "#9aa0c8",
-		from: 5,
+		from: 14,
 		spot: [5, 21],
 		dir: "right",
 		meet: [
@@ -1622,7 +1622,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ミャウミャウ",
 		sprite: "pub:sprites/minors_miaumiau.png",
 		color: "#e4e4f0",
-		from: 7,
+		from: 18,
 		spot: [15, 23],
 		dir: "right",
 		meet: [
@@ -1695,7 +1695,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "リノ",
 		portrait: "portraits/rino.png",
 		sprite: "pub:sprites/rino.png",
-		from: 7,
+		from: 19,
 		spot: [18, 16],
 		dir: "right",
 		color: "#bdb76b",
@@ -1880,7 +1880,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		// 177cm の 縦長の 全身絵なので、既定では 太ももまで 見える。胸から 上だけに
 		portraitCrop: 0.4,
 		sprite: "pub:sprites/aru.png",
-		from: 7,
+		from: 20,
 		spot: [12, 20],
 		dir: "down",
 		color: "#8fd694",
@@ -2040,7 +2040,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		// 頭身の 高い 絵なので 胸から 上だけに（アルと 同じ）
 		portraitCrop: 0.42,
 		sprite: "sa:KxS5YZ",
-		from: 2,
+		from: 4,
 		spot: [13, 22],
 		dir: "right",
 		color: "#9ab8d8",
@@ -2234,7 +2234,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/zero_ren.png",
 		portraitCrop: 0.42,
 		sprite: "pub:sprites/zero_ren.png",
-		from: 6,
+		from: 17,
 		spot: [25, 20],
 		dir: "down",
 		color: "#e0b040",

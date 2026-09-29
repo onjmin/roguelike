@@ -206,7 +206,10 @@ export const BARE_TOWN_MSG: readonly { of: Line; line: Line }[] = [
 /** 売り上げの 地の文（ゼロが まだ いない とき）。{points} は 売り上げ。 */
 export const SOLD_BARE = "貼った　ネタに、{points}レス　ついた。";
 
-/** 町が 育って 仲間が 越してきた ときの 地の文（{names} は 名前を「と　」で つないだ もの）。 */
+/** 小段が 上がって 住人が 越してきた ときの 知らせ（建物は かわらない。ui/villageReturn.ts の movedIn）。 */
+export const TOWN_GREW_MSG = "町に　人が　ふえた";
+
+/** 町が 育って 仲間・住人が 越してきた ときの 地の文（{names} は 名前を「と　」で つないだ もの）。 */
 export const ARRIVE_MSG = "{names}が、村に　越してきた。";
 
 export const CARRY_CHASE = "シヨが　追いかけてきた。";

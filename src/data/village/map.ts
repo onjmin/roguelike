@@ -43,7 +43,7 @@
 // 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
 
-import { TOWN_STAGES } from "../../core/town";
+import { lastStepOf, TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
@@ -95,7 +95,13 @@ export type VillageView = {
 	stage: number;
 	unlocked: readonly DungeonId[];
 	cleared: readonly DungeonId[];
+	/** 町の 小段（core/town.ts の TOWN_STEPS。住人が 何人 越してきたか）。省くと その段の いちばん上。 */
+	step?: number;
 };
+
+/** その 村の 小段（省いたら その 段の いちばん上）。 */
+export const stepOf = (v: VillageView): number =>
+	v.step ?? lastStepOf(layoutStage(v));
 
 export type Cell = readonly [x: number, y: number];
 
@@ -589,7 +595,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of MOB_IDS) {
 		const d = MOBS[id];
-		if (stage < d.from) continue;
+		if (stepOf(v) < d.from) continue;
 		out.push({
 			id: `mob_${id}`,
 			x: d.spot[0],

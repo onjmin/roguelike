@@ -16,7 +16,14 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
-import { CARRY_MAX, priceOf, STAGE_POINTS, TOWN_STAGES } from "../core/town";
+import {
+	CARRY_MAX,
+	lastStepOf,
+	priceOf,
+	STAGE_POINTS,
+	TOWN_STAGES,
+	TOWN_STEPS,
+} from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import {
 	CAFE_DRINKS,
@@ -90,6 +97,7 @@ import {
 	STAGE_UP,
 	STAGE_UP_HALL,
 	TITLE_TOWN_QUOTES,
+	TOWN_GREW_MSG,
 	TOWN_MSG,
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
@@ -1611,6 +1619,44 @@ test("settling in the village: シヨ stores, the rest is sold, ゼロ reads the
 	});
 });
 
+test("小段が 上がると 住人が 越してくる：暗転・建て直し・その子を 見せて「〜が、村に　越してきた。」（建物は かわらない）", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		// 屋台（段1）で 売上 1000 → 3500（小段 2：にぃちぇ）。建物の 段は まだ（6300）
+		putTown({
+			stage: 1,
+			points: 1000,
+			pending: pending("escape", [item(1, "starsword")]),
+		});
+		const { s, log } = fakeStory();
+		await settleScript(s, chooser([]));
+		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
+		ok(
+			inOrder(log, [
+				"rebuild",
+				"look mob_nichie",
+				"se jingle",
+				`toast ${TOWN_GREW_MSG}`,
+				`narrate: ${fill(ARRIVE_MSG, { names: MOBS.nichie.name })}`,
+				"look kiriko",
+			]),
+			`nichie did not move in:\n${log.join("\n")}`,
+		);
+		// 小段が かわらなければ 何も しない
+		putTown({
+			stage: 1,
+			points: 3100,
+			pending: pending("escape", [item(2, "h_heal")]),
+		});
+		const quiet = fakeStory();
+		await settleScript(quiet.s, chooser([]));
+		ok(
+			!quiet.log.includes(`toast ${TOWN_GREW_MSG}`),
+			"the town grew without a new step",
+		);
+	});
+});
+
 test("the town grows in the village: fade, rebuild, show the new building, then the friends", async () => {
 	await withStorageAsync(async () => {
 		// はじめて ちょっと を 持ち帰った：空き地 → 屋台
@@ -1810,17 +1856,25 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 test("おんJマイナーズ move in one by one as the town grows", () => {
 	for (const v of VIEWS) {
 		const here = villagePlaces(v).filter((p) => p.mob);
-		const want = MOB_IDS.filter((id) => MOBS[id].from <= v.stage);
+		const want = MOB_IDS.filter((id) => MOBS[id].from <= lastStepOf(v.stage));
 		ok(
 			here.length === want.length,
 			`${label(v)}: ${here.map((p) => p.id).join()}`,
 		);
+		// 小段の 途中：その 小段までに 越してきた 子だけ
+		for (let step = 0; step <= lastStepOf(v.stage); step++) {
+			const at = villagePlaces({ ...v, step }).filter((p) => p.mob).length;
+			const n = MOB_IDS.filter((id) => MOBS[id].from <= step).length;
+			ok(at === n, `${label(v)} step ${step}: ${at} residents (want ${n})`);
+		}
 	}
 	const froms = MOB_IDS.map((id) => MOBS[id].from);
 	ok(
-		froms.every((f) => f >= 0 && f < TOWN_STAGES),
-		`move-in stages: ${froms}`,
+		froms.every((f) => f >= 0 && f < TOWN_STEPS.length),
+		`move-in steps: ${froms}`,
 	);
+	// 小段ごとに 1人ずつ（同じ 小段に 2人は 来ない）
+	ok(new Set(froms).size === froms.length, `two move in at once: ${froms}`);
 	// はじめから いるのは ぷゆゆ だけ（マイナーズは 町が 育ってから）
 	ok(
 		MOB_IDS.filter((id) => MOBS[id].from === 0).join() === "puyu",
@@ -3982,7 +4036,7 @@ test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friend
 			);
 		}
 		for (const p of l.patrons) {
-			ok(MOBS[p.id].from <= 7, `${at}: ${p.id} has not moved in`);
+			ok(MOBS[p.id].from <= lastStepOf(7), `${at}: ${p.id} has not moved in`);
 			cells.push(CAFE_PATRON_SPOTS[p.spot].at.join(","));
 		}
 		for (const n of l.nanashi) {
@@ -4001,7 +4055,7 @@ test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friend
 	// 段5 は 越してきた 子だけ
 	for (let at = 1000; at < 1050; at++)
 		for (const p of cafeLayout(5, at, layoutTalks).patrons)
-			ok(MOBS[p.id].from <= 5, `stage 5: ${p.id}`);
+			ok(MOBS[p.id].from <= lastStepOf(5), `stage 5: ${p.id}`);
 });
 
 test("建物の 中の 文: every line fits the village window, talks are 1〜4 windows, and every resident has cafe lines", () => {

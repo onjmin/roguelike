@@ -1,6 +1,7 @@
 // 地上の町（トルネコ1の「店」にあたる）。帰還スレで持ち帰った道具を「売った」分だけ育つ。
 //
 // - 段は 0〜7。1回の帰りで 上がるのは 1段まで（トルネコ1と同じ）。段1（屋台）は ちょっと を持ち帰ると開く。
+// - 段の あいだは 小段（TOWN_STEPS）で 刻む。小段ごとに 住人が 1人 越してくる（data/mobs.ts の from）。
 // - 電池板 を持ち帰ると いちばん上の段へ（トルネコ1の しあわせの箱 と同じ。STORY.md §5 の 転）。
 // - 段4 で倉庫が開き、倉庫の道具を 過去ログの底 へ 1〜4個 持ちこめる（ちょっと・もっと には持ちこめない）。
 // - 倒れたら 持ち物は ぜんぶ なくなる（持ちこんだ道具も）。町は 見た目と会話と 倉庫・持ちこみだけ。
@@ -11,10 +12,67 @@ import type { Item } from "./types";
 
 export const TOWN_STAGES = 8;
 
-/** 段 → その段になるのに要る 売上の合計（段1 は ちょっと を持ち帰ったとき。売上は要らない）。 */
-export const STAGE_POINTS: readonly number[] = [
-	0, 0, 300, 1000, 2500, 5000, 10000, 20000,
+/**
+ * 町の 小段（段＝建物の あいだを 刻む。建物の 段の あとに 2つずつ、住人が 1人ずつ 越してくる）。
+ * stage は その 小段が 属する 建物の 段、points は そこまでに 要る 売上の 合計。
+ * 1段ごとの 差は 前の 約1.1倍（はじめは 3000レス。ボットの 1回の 帰りの 売上は パン板 約5000・深い 板 約8000〜10000
+ * （scripts/sales-sim.mjs）なので、はじめは 帰り 1回ほど、終わりの ほうは 2〜3回ほどで 1段）。
+ * 建物の 段は 1回の 帰りで 1つまで（nextStage）、小段は その 段の 中なら 何段でも まとめて 上がる。
+ * 建物の 段を こえて いれば、その 前の 小段は みんな 済み（電池板で いちどに 最上段に なった ときも 住人は そろう）。
+ */
+export const TOWN_STEPS: readonly { stage: number; points: number }[] = [
+	{ stage: 0, points: 0 }, // 空き地
+	{ stage: 1, points: 0 }, // 屋台（パン板を 持ち帰ると）
+	{ stage: 1, points: 3000 },
+	{ stage: 2, points: 6300 }, // 屋根つき屋台
+	{ stage: 2, points: 9900 },
+	{ stage: 2, points: 13900 },
+	{ stage: 3, points: 18300 }, // 小屋
+	{ stage: 3, points: 23100 },
+	{ stage: 3, points: 28500 },
+	{ stage: 4, points: 34300 }, // 倉庫
+	{ stage: 4, points: 40700 },
+	{ stage: 4, points: 47800 },
+	{ stage: 5, points: 55600 }, // 小さな店
+	{ stage: 5, points: 64200 },
+	{ stage: 5, points: 73600 },
+	{ stage: 6, points: 83900 }, // 倉庫Part2
+	{ stage: 6, points: 95300 },
+	{ stage: 6, points: 107800 },
+	{ stage: 7, points: 121600 }, // 大きな店
+	{ stage: 7, points: 136800 },
+	{ stage: 7, points: 153500 },
 ];
+
+/** 段 → その段になるのに要る 売上の合計（小段の 表の 建物の 段。段1 は パン板を持ち帰ったとき。売上は要らない）。 */
+export const STAGE_POINTS: readonly number[] = Array.from(
+	{ length: TOWN_STAGES },
+	(_, s) => TOWN_STEPS.find((x) => x.stage === s)?.points ?? 0,
+);
+
+/** いまの 小段（段と 売上から。段を こえた 小段は 済み、いまの 段の 小段は 売上しだい）。 */
+export const townStep = (stage: number, points: number): number => {
+	let at = 0;
+	TOWN_STEPS.forEach((x, i) => {
+		// 段の はじめの 小段（建物）は 段に なれば 済み（電池板で いちどに 上がった ときも）
+		const building = i === 0 || TOWN_STEPS[i - 1].stage !== x.stage;
+		if (
+			x.stage < stage ||
+			(x.stage === stage && (building || points >= x.points))
+		)
+			at = i;
+	});
+	return at;
+};
+
+/** その 段で いちばん 上の 小段（開発用の 下見・試験で 段だけ 決めたとき。その段の 住人は みんな いる）。 */
+export const lastStepOf = (stage: number): number => {
+	let at = 0;
+	TOWN_STEPS.forEach((x, i) => {
+		if (x.stage <= stage) at = i;
+	});
+	return at;
+};
 
 /** 段 → 倉庫に あずけられる数。 */
 export const STORAGE_CAP: readonly number[] = [0, 0, 0, 0, 10, 20, 40, 60];
