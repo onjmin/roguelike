@@ -31,6 +31,15 @@ import {
 	PLAYER_ID,
 } from "./types";
 
+/** パン兵が 変える パン（片親パン 3・ぷゆゆパン 1・チギュリパン 1 の 重みで 引く）。 */
+const BAKE_BREADS: readonly string[] = [
+	"f_bread",
+	"f_bread",
+	"f_bread",
+	"f_large",
+	"f_moldy",
+];
+
 export const mdef = (m: Monster): MonsterDef => MONSTERS[m.kind];
 
 /** ボスか（定義で 見る。封印しても ボスの まま）。 */
@@ -657,6 +666,37 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	if (r.f.wards.includes(p.y * r.f.layout.w + p.x)) return;
 	if (has(m, "grab")) p.status.heldBy = m.uid;
 	r.emit({ t: "attack", id: m.uid, dir: m.dir });
+	// パンに 変える：なぐる 代わりに、持ち物を 1つ ランダムな パンに（1体 1回だけ。パン板の パン兵）。
+	// パン松は パンの すばらしさを 広めに おんJを 侵略しに 来る（「殺しはしない。我らに従え」。おんJwiki）
+	if (has(m, "bake") && !m.baked) {
+		const rate = (d.abilities.find((a) => a.k === "bake") as { rate: number })
+			.rate;
+		if (r.rng.chance(rate)) {
+			const cands = p.items.filter(
+				(i) =>
+					!r.isEquipped(i) &&
+					!isKeyItem(i.kind) &&
+					defOf(i.kind).cat !== "food",
+			);
+			if (cands.length) {
+				const it = r.rng.pick(cands);
+				const before = r.name(it);
+				// 片親パン が 多め、たまに ぷゆゆパン、はずれの チギュリパン
+				const bread = r.rng.pick(BAKE_BREADS);
+				it.kind = bread;
+				it.plus = 0;
+				it.cursed = false;
+				it.charges = 0;
+				it.count = 1;
+				it.known = true;
+				m.baked = true;
+				r.se("steal");
+				r.msg(`${nm}は　${before}を　パンに　した！`, "warn");
+				r.msg(`「パンに　従え」`);
+				return;
+			}
+		}
+	}
 	// 盗む：なぐる代わりに
 	if (has(m, "steal") && !m.carry) {
 		const rate = (d.abilities.find((a) => a.k === "steal") as { rate: number })

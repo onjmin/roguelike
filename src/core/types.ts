@@ -116,6 +116,7 @@ export type Item = {
 /** モンスターの特技（トルネコ1の役割。資源を奪うものが中心）。 */
 export type Ability =
 	| { k: "steal"; rate: number } // 持ち物を盗んでワープする（倒せば取り返せる）
+	| { k: "bake"; rate: number } // なぐる かわりに 持ち物を 1つ パンに 変える（1体 1回だけ）
 	| { k: "pickup" } // 床の道具を拾って持ち歩く
 	| { k: "rust"; rate: number } // 盾の修正値を下げる
 	| { k: "poison"; rate: number } // ちからを下げる
@@ -240,6 +241,8 @@ export type Monster = {
 	disguise: string | null;
 	/** 盗んだあと逃げている。 */
 	fleeing?: boolean;
+	/** 持ち物を パンに 変えた（bake は 1体 1回だけ）。 */
+	baked?: boolean;
 	/** 爆発しかけ（HP が減って動かなくなった）。 */
 	fuse?: boolean;
 	/** キリコのとなりにいたターン数（加速する敵）。 */

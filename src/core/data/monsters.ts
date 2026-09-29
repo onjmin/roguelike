@@ -500,9 +500,9 @@ const M: MonsterDef[] = [
 		exp: 6,
 		floors: [2, 7],
 		weight: 40,
-		abilities: [{ k: "steal", rate: 1 / 2 }],
+		abilities: [{ k: "bake", rate: 1 / 2 }],
 		board: "shallow",
-		desc: "パン松の　軍勢。持ち物を　1つ　ひったくって　逃げる。たおせば　取り返せる",
+		desc: "パン松の　軍勢。持ち物を　1つ　パンに　変えてくる（1体　1回だけ）",
 		flavor: "やきうの　スレを　立てると、どこからともなく　行進してくる",
 	},
 	{

@@ -2575,14 +2575,27 @@ for (const [id, board] of COLONY_FOES)
 				);
 	});
 
-test("panhei", "steal: snatches a loose item and runs", () => {
-	const r = arena("panhei", hideoutLayout(), HIDE_AT);
+test("panhei", "bake: turns one loose item into bread, only once", () => {
+	const r = arena("panhei");
 	r.s.dungeon = "shallow";
 	r.p.items = [];
 	const herb = give(r, "h_heal");
-	const m = put(r, "panhei", at(1, 0, HIDE_AT));
-	waitTurns(r, 40, () => m.carry !== null);
-	ok(m.carry === herb, `stole ${m.carry?.kind ?? "nothing"}`);
+	const scroll = give(r, "s_appraise");
+	const m = put(r, "panhei", at(1, 0));
+	waitTurns(r, 40, () => m.baked === true);
+	const baked = [herb, scroll].filter((it) => defOf(it.kind).cat === "food");
+	ok(
+		baked.length === 1 &&
+			["f_bread", "f_large", "f_moldy"].includes(baked[0].kind),
+		`baked: ${[herb, scroll].map((it) => it.kind)}`,
+	);
+	ok(r.p.items.length === 2, "an item went missing");
+	// 1体 1回だけ：もう 変えない
+	waitTurns(r, 40, () => false);
+	ok(
+		[herb, scroll].filter((it) => defOf(it.kind).cat === "food").length === 1,
+		"baked twice",
+	);
 });
 
 test("kinonyan", "sits still until Kiriko comes near", () => {
