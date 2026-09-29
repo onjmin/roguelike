@@ -267,15 +267,16 @@ const HANDS: Record<
 			shield: { x: 13, y: 11, layer: "under" },
 		},
 	],
-	// 左向き：左手が手前（前）、右手は奥（うしろ）
+	// 左向き：歩行グラが右向きを左右に返した絵なので、持ち方も右向きを左右に返す（x → 15 − x）。
+	// 武器は手前の手で前へ、盾は奥の手で体の前のふちに
 	left: [
 		{
-			weapon: { x: 13, y: 10, layer: "under" },
-			shield: { x: 2, y: 10, layer: "over" },
+			weapon: { x: 6, y: 11, layer: "over" },
+			shield: { x: 2, y: 10, layer: "under" },
 		},
 		{
-			weapon: { x: 13, y: 11, layer: "under" },
-			shield: { x: 2, y: 11, layer: "over" },
+			weapon: { x: 7, y: 11, layer: "over" },
+			shield: { x: 2, y: 11, layer: "under" },
 		},
 	],
 };
@@ -315,10 +316,9 @@ const FORWARD: Record<SpriteDir, number> = {
 const weaponAngle = (dir: SpriteDir, swing: number): number => {
 	const fwd = FORWARD[dir];
 	if (swing < 0) {
-		// 右向きは手前の手で 前へ ななめに。左向きは奥の手なので、背中の うしろへ ななめに 立てて
-		// 刃が 体から はみ出して 見えるように（まっすぐ 立てると 頭と 体に かくれて 消える）
+		// 横向きは手前の手で 前へ ななめに（左向きは右向きを左右に返す）
 		if (dir === "right") return 1;
-		if (dir === "left") return 1;
+		if (dir === "left") return 7;
 		return 0;
 	}
 	// 正面・うしろ向きは、刃を 体の外側から 前へ振りおろす
