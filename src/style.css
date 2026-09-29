@@ -2944,3 +2944,18 @@ body.shake #app {
 		transform: translateY(2px);
 	}
 }
+
+/* 村の 口：地図を 開いた まま、本当に 行くか・持ち物・出発の 一言を 地図の 上に 出す（ui/worldMap.ts の openWorldMap） */
+.wm-keep .portrait-layer {
+	z-index: 57;
+}
+
+.wm-keep .msg,
+.wm-keep .menu {
+	z-index: 58;
+}
+
+.wm-keep .choice,
+.wm-keep .msg.over-menu {
+	z-index: 59;
+}

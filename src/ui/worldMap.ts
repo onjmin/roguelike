@@ -353,8 +353,9 @@ const GLIDE_MS = 220;
 const cursorBelow = (y: number): boolean => y - 30 < 2;
 
 /** 地図の 画面（キャンバスと 下の 札）。 */
-class MapView {
+export class MapView {
 	readonly box: HTMLElement;
+	private readonly title: HTMLElement;
 	readonly canvas: HTMLCanvasElement;
 	readonly panel: HTMLElement;
 	/** えらんでいる 行き先の フキダシ（カーソルに ついていく。タップは 通す）。 */
@@ -379,8 +380,9 @@ class MapView {
 		if (this.g) this.g.imageSmoothingEnabled = false;
 		this.panel = el("div", { class: "wm-panel window" });
 		this.bubble = el("div", { class: "wm-bubble" });
+		this.title = el("div", { class: "wm-title", text: title });
 		this.box = el("div", { class: "worldmap" }, [
-			el("div", { class: "wm-title", text: title }),
+			this.title,
 			el("div", { class: "wm-stage" }, [this.canvas, this.bubble]),
 			this.panel,
 		]);
@@ -400,7 +402,13 @@ class MapView {
 		this.box.classList.add("shown");
 	}
 
+	setTitle(text: string): void {
+		this.title.textContent = text;
+	}
+
 	async close(): Promise<void> {
+		// 地図の 上に 出していた 窓を もとの 重なりに
+		this.box.parentElement?.classList.remove("wm-keep");
 		this.box.classList.remove("shown");
 		await new Promise((r) => setTimeout(r, 300));
 		this.alive = false;
@@ -569,9 +577,31 @@ const tick = (): Promise<void> =>
 // ───────────────── 行き先を 選ぶ ─────────────────
 
 /**
+ * 地図を 開いた ままに する（村の 口：選ぶ → 本当に 行くか → 持ち物 → 向かう まで 同じ 地図）。
+ * そのあいだ 語りの 窓・選択肢・一覧は 地図の 上に 出す（#ui.wm-keep。close で もどる）。
+ */
+export const openWorldMap = (
+	ctx: Ctx,
+	o: {
+		open: DungeonId[];
+		cleared: DungeonId[];
+		goals?: Partial<Record<DungeonId, ObjectiveInfo>>;
+	},
+): MapView => {
+	const v = new MapView(ctx, "どの　植民地へ？");
+	v.open = o.open;
+	v.cleared = o.cleared;
+	v.goals = o.goals ?? {};
+	ctx.ui.classList.add("wm-keep");
+	void v.show();
+	return v;
+};
+
+/**
  * 全体マップで 行き先の 植民地を 選ぶ（やめたら null）。下の 選択肢（植民地と やめる）の カーソルに
  * 地図の ▼ と フキダシと 札が ついていく。A か 選択肢を 押すか、同じ 建物を もう一度 タップで 決める
  * （建物を タップすると 選択肢の カーソルも そこへ）。まだ 開いていない 植民地も 選べて、開き方が 出る。
+ * view を わたすと その 地図で 選び、閉じない（openWorldMap）。
  */
 export const pickColony = async (
 	ctx: Ctx,
@@ -581,12 +611,15 @@ export const pickColony = async (
 		start: DungeonId;
 		/** 板ごとの 目的（村で 1回だけ 決めた 値。札と フキダシに 出す）。 */
 		goals?: Partial<Record<DungeonId, ObjectiveInfo>>;
+		view?: MapView;
 	},
 ): Promise<DungeonId | null> => {
-	const v = new MapView(ctx, "どの　植民地へ？");
-	v.open = o.open;
-	v.cleared = o.cleared;
-	v.goals = o.goals ?? {};
+	const v = o.view ?? new MapView(ctx, "どの　植民地へ？");
+	if (!o.view) {
+		v.open = o.open;
+		v.cleared = o.cleared;
+		v.goals = o.goals ?? {};
+	}
 	// 地図に 出る 植民地（ひみつの 板は 開くまで 出さない）と、さいごに やめる。
 	// 目的を 1度でも はたした 板には 地図・札と 同じく ★
 	const spots = DUNGEON_IDS.filter(
@@ -635,7 +668,7 @@ export const pickColony = async (
 		else ctl.move?.(near);
 	};
 	v.canvas.addEventListener("pointerup", onTap);
-	void v.show();
+	if (!o.view) void v.show();
 	const choice = new ChoiceWindow(ctx.ui, ctx.input, () => ctx.audio.seHeld);
 	const i = await choice.choose(
 		labels,
@@ -652,7 +685,7 @@ export const pickColony = async (
 		},
 	);
 	v.canvas.removeEventListener("pointerup", onTap);
-	await v.close();
+	if (!o.view) await v.close();
 	return spots[i] ?? null;
 };
 
@@ -761,17 +794,20 @@ const arrivalCard = async (ctx: Ctx, d: DungeonId): Promise<void> => {
 
 /**
  * 行き先へ 向かう（保守村から 道を 歩いて、着いたら 建物の 札）。fast は 前に 行ったことの ある 板（速く 歩く）。
+ * view を わたすと 開いている 地図の まま 歩く（最後に 閉じる）。
  */
 export const travelTo = async (
 	ctx: Ctx,
 	d: DungeonId,
-	o: { open: DungeonId[]; cleared: DungeonId[]; fast: boolean },
+	o: { open: DungeonId[]; cleared: DungeonId[]; fast: boolean; view?: MapView },
 ): Promise<void> => {
-	const v = new MapView(ctx, DUNGEON_NAMES[d].name);
+	const v = o.view ?? new MapView(ctx, DUNGEON_NAMES[d].name);
+	v.setTitle(DUNGEON_NAMES[d].name);
+	v.bubble.innerHTML = "";
 	v.open = o.open;
 	v.cleared = o.cleared;
 	v.info(d);
-	await v.show();
+	if (!o.view) await v.show();
 	await walkAlong(ctx, v, pathOf(d), o.fast ? 150 : 75);
 	await arrivalCard(ctx, d);
 	await v.close();

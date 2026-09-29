@@ -87,7 +87,7 @@ import {
 	settleScript,
 } from "./villageReturn";
 import { DUNGEON_DESC, hasNews, ledgerLine, talkLine } from "./villageTalk";
-import { pickColony, travelTo } from "./worldMap";
+import { openWorldMap, pickColony, travelTo } from "./worldMap";
 
 /** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
 const signText = (d: DungeonId): string =>
@@ -219,12 +219,26 @@ const mouthScript =
 		const goals = Object.fromEntries(
 			DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
 		) as Record<DungeonId, ObjectiveInfo>;
+		// 地図は 向かい おわるまで 開いた まま（本当に 行くか・持ち物・出発の 一言も 地図の 上で）
+		await hideMsg(s);
+		const map = openWorldMap(ctx, { open, cleared, goals });
+		const quit = async () => {
+			await hideMsg(s);
+			await map.close();
+			await back();
+		};
 		// 選んだら 本当に 行くか きく（地図の 押しまちがいで 出ないように。えらびなおすと 地図へ）
 		for (;;) {
 			await hideMsg(s);
-			const picked = await pickColony(ctx, { open, cleared, start: d, goals });
+			const picked = await pickColony(ctx, {
+				open,
+				cleared,
+				start: d,
+				goals,
+				view: map,
+			});
 			if (!picked) {
-				await back();
+				await quit();
 				return;
 			}
 			d = picked;
@@ -234,7 +248,7 @@ const mouthScript =
 			});
 			if (ok === 0) break;
 			if (ok === 2) {
-				await back();
+				await quit();
 				return;
 			}
 		}
@@ -246,7 +260,7 @@ const mouthScript =
 				await hideMsg(s);
 				const picked = await pickCarry(ctx, CARRY_MAX[town.stage] ?? 0);
 				if (!picked) {
-					await back();
+					await quit();
 					return;
 				}
 				carry = picked;
@@ -273,7 +287,7 @@ const mouthScript =
 		notePicked(d, false);
 		// 全体マップの 上を 行き先まで 歩く（着くと 建物の 札）
 		await hideMsg(s);
-		await travelTo(ctx, d, { open, cleared, fast: been });
+		await travelTo(ctx, d, { open, cleared, fast: been, view: map });
 		// そのダンジョンに はじめて もぐるなら 語りを見せる（見終わってから 覚える。途中で閉じたら 次も はじめから）
 		if (!loadProgress().intro.includes(d)) {
 			void ctx.audio.fadeBgm(500);
