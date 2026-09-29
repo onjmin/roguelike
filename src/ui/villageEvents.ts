@@ -133,6 +133,33 @@ const stepOf: Record<string, string> = {
 	right: "r",
 };
 
+/**
+ * 冒険を すてる 前の 問題（押しまちがいで すてないように）。その場で 作る たし算・ひき算を 4つの 中から 選ぶ。
+ * 見た目の 乱数なので Math.random（冒険の 乱数は 使わない）。まちがえたら すてない。
+ */
+const discardQuiz = async (s: Parameters<Script>[0]): Promise<boolean> => {
+	const r = (lo: number, hi: number) =>
+		lo + Math.floor(Math.random() * (hi - lo + 1));
+	const add = Math.random() < 0.5;
+	const a = r(11, 49);
+	const b = r(3, add ? 49 : a - 1);
+	const ans = add ? a + b : a - b;
+	const opts = new Set([ans]);
+	while (opts.size < 4) opts.add(Math.max(0, ans + r(-10, 10)));
+	const list = [...opts].sort(() => Math.random() - 0.5);
+	await s.narrate(
+		`すてる　なら、問題に　答えて。\n${a}　${add ? "＋" : "－"}　${b}　は？`,
+	);
+	const n = await s.choose([...list.map(String), "やめる"], {
+		cancel: 4,
+		start: 4,
+	});
+	if (n === 4) return false;
+	if (list[n] === ans) return true;
+	await s.narrate("ちがう。すてるのは　やめておいた。");
+	return false;
+};
+
 /** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
 	(ctx: Ctx, step = "d"): Script =>
@@ -155,7 +182,9 @@ const mouthScript =
 			if (n === 1) {
 				await s.narrate("中断した　冒険は　もどらない。\n本当に　すてる？");
 				if (
-					(await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !== 0
+					(await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !==
+						0 ||
+					!(await discardQuiz(s))
 				) {
 					await back();
 					return;
