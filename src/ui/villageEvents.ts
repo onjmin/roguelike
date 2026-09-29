@@ -151,6 +151,16 @@ const mouthScript =
 					cancel: 2,
 				},
 			);
+			// すてるのは もどせないので もう一度 きく
+			if (n === 1) {
+				await s.narrate("中断した　冒険は　もどらない。\n本当に　すてる？");
+				if (
+					(await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !== 0
+				) {
+					await back();
+					return;
+				}
+			}
 			if (n === 2) {
 				await back();
 				return;
@@ -180,13 +190,25 @@ const mouthScript =
 		const goals = Object.fromEntries(
 			DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
 		) as Record<DungeonId, ObjectiveInfo>;
-		await hideMsg(s);
-		const picked = await pickColony(ctx, { open, cleared, start: d, goals });
-		if (!picked) {
-			await back();
-			return;
+		// 選んだら 本当に 行くか きく（地図の 押しまちがいで 出ないように。えらびなおすと 地図へ）
+		for (;;) {
+			await hideMsg(s);
+			const picked = await pickColony(ctx, { open, cleared, start: d, goals });
+			if (!picked) {
+				await back();
+				return;
+			}
+			d = picked;
+			await s.narrate(`「${DUNGEON_NAMES[d].name}」へ　行く？`);
+			const ok = await s.choose(["行く", "えらびなおす", "やめる"], {
+				cancel: 1,
+			});
+			if (ok === 0) break;
+			if (ok === 2) {
+				await back();
+				return;
+			}
 		}
-		d = picked;
 		// 風呂板 には 倉庫から 持っていける（町の段に応じて 1〜4個）。取り出すのは main.ts
 		const town = loadTown();
 		let carry: Item[] = [];
@@ -215,6 +237,8 @@ const mouthScript =
 		if (awayFriends(loadProgress().cleared).includes("nanj"))
 			await s.kiriko(DEPART.kiriko, "think");
 		else await s.say("nanj", DEPART.nanj);
+		// 毎回 はじめから 持っている ぷゆゆパンは、出口まで かけてくる ぷゆゆが 持たせる（トルネコ1の ネネの お弁当の 役）
+		if (DUNGEONS[d].start.includes("f_large")) await s.narrate(DEPART.puyu);
 		// 前に 行ったことが あれば 速く 歩く（語りを 見た＝行った）
 		const been = loadProgress().intro.includes(d);
 		notePicked(d, false);
