@@ -343,7 +343,14 @@ const mouthScript =
 		const to = d;
 		// 全体マップの 上を 行き先まで 歩く（着くと 建物の 札）
 		await departTo(ctx, s, to, goals[to], () =>
-			travelTo(ctx, to, { open, cleared, fast: been, view: map }),
+			travelTo(ctx, to, {
+				open,
+				cleared,
+				fast: been,
+				view: map,
+				// 地図の 下で 村を 先に 暗くして、地図から そのまま 暗転する（村に いちど もどって 見えないように）
+				beforeClose: () => s.fadeOut(0),
+			}),
 		);
 	};
 

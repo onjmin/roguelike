@@ -810,7 +810,17 @@ const arrivalCard = async (ctx: Ctx, d: DungeonId): Promise<void> => {
 export const travelTo = async (
 	ctx: Ctx,
 	d: DungeonId,
-	o: { open: DungeonId[]; cleared: DungeonId[]; fast: boolean; view?: MapView },
+	o: {
+		open: DungeonId[];
+		cleared: DungeonId[];
+		fast: boolean;
+		view?: MapView;
+		/**
+		 * 地図を 閉じる 前（着いた 札の あと）。村を 下で 暗くしておけば、地図が そのまま 暗転する
+		 * （いちど 村が 見えてから 暗く なるのを さける）。
+		 */
+		beforeClose?: () => Promise<void>;
+	},
 ): Promise<void> => {
 	const v = o.view ?? new MapView(ctx, DUNGEON_NAMES[d].name);
 	v.setTitle(DUNGEON_NAMES[d].name);
@@ -821,6 +831,7 @@ export const travelTo = async (
 	if (!o.view) await v.show();
 	await walkAlong(ctx, v, pathOf(d), o.fast ? 150 : 75);
 	await arrivalCard(ctx, d);
+	await o.beforeClose?.();
 	await v.close();
 };
 
