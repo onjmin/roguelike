@@ -143,7 +143,7 @@ const stageNow = (): number => villageView().stage;
 export const cafeTalks = (
 	stage: number,
 	st: CafeState = load(),
-	away: readonly Speaker[] = awayFriends(loadProgress().cleared),
+	away: readonly Speaker[] = awayFriends(loadProgress().cleared, stage),
 ): CafeTalk[] =>
 	[...CAFE_TALKS, ...TREAT_TALKS].filter(
 		(t) =>
@@ -234,7 +234,7 @@ export const cafeLayout = (
 		return a;
 	};
 	// 出ていった 仲間（やきう）は 店に 来ない
-	const away = awayFriends(loadProgress().cleared);
+	const away = awayFriends(loadProgress().cleared, stage);
 	const all = (Object.keys(SPEAKERS) as Speaker[]).filter(
 		(w) => !away.includes(w),
 	);

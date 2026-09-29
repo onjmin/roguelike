@@ -50,7 +50,7 @@ import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../cast";
 import { MOB_IDS, MOBS, type MobId } from "../mobs";
 import type { Speaker } from "../quotes";
-import { awayFriends } from "../story";
+import { awayFriends, FRIEND_FROM } from "../story";
 import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
 	base,
@@ -575,15 +575,17 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;
 		out.push({ id: "door_hut", x: hx, y: hy, trigger: "touch" });
 	}
-	out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
-	out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
-	out.push(friend("zero", VILLAGE_SPOTS.zero));
+	// 仲間は 越してきてから（data/story.ts の FRIEND_FROM。はじめの 保守村には やきうだけ）
+	const here = (w: Speaker) => stage >= FRIEND_FROM[w];
+	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
+	if (here("shiyo")) out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
+	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
 	// やきうは 過去ログの底の 結末で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story.ts）
 	if (awayFriends(v.cleared).includes("nanj")) {
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
 		out.push({ id: "hoshu_sign", x: nx, y: ny, trigger: "talk" });
 	} else out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
-	out.push(friend("feris", VILLAGE_SPOTS.feris, true));
+	if (here("feris")) out.push(friend("feris", VILLAGE_SPOTS.feris, true));
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of MOB_IDS) {
 		const d = MOBS[id];

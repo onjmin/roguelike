@@ -81,8 +81,9 @@ export const deathQuote = (seed: number): Quote | null => {
 	return pickQuote(quoteContext(), seed, undefined, away);
 };
 
-/** 村に いない 仲間（出ていった やきう）。 */
-const away_ = (): Speaker[] => awayFriends(loadProgress().cleared);
+/** 村に いない 仲間（まだ 来ていない・出ていった やきう）。 */
+const away_ = (): Speaker[] =>
+	awayFriends(loadProgress().cleared, loadTown().stage);
 
 /**
  * 起動の札の ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、

@@ -32,13 +32,37 @@ export const playPage = (
 			? st.say(p.who, p.text)
 			: st.narrate(p.text);
 
-// ───────────────── 村を 出ていった 仲間 ─────────────────
+// ───────────────── 村に いない 仲間（まだ 来ていない・出ていった） ─────────────────
 /**
- * 過去ログの底の 結末で やきうは 外へ 出ていく（STORY.md §5）。そのあとは 村に 立たず、ひとことも 言わない。
- * 小屋の 前には キリコが 書いた「保守」の 札。潜る ときの やきうの 一言は キリコの 独白に 変わる。
+ * 仲間が 村に 来る 町の 段（STORY.md §5「伸びた スレには 人が 来る」）。はじめの 保守村には やきうだけ
+ * （と、前から いる ぷゆゆ）。建物と いっしょに 越してくる：屋台で 売る ロゼと 帳簿の ゼロ、屋根つき屋台の
+ * 看板と 客よせの フェリス、倉庫番の シヨ。越してくる 場面は 町が 育つ とき（ui/villageReturn.ts の stageUp）。
  */
-export const awayFriends = (cleared: readonly DungeonId[]): Speaker[] =>
-	cleared.includes("hidden") ? ["nanj"] : [];
+export const FRIEND_FROM: Record<Speaker, number> = {
+	nanj: 0,
+	roze: 1,
+	zero: 1,
+	feris: 2,
+	shiyo: 4,
+};
+
+/**
+ * 村に いない 仲間。まだ 来ていない（stage が FRIEND_FROM より 前）か、出ていった
+ * （過去ログの底の 結末で やきうは 外へ 出ていく。STORY.md §5。そのあとは 村に 立たず、ひとことも 言わない。
+ * 小屋の 前には キリコが 書いた「保守」の 札。潜る ときの やきうの 一言は キリコの 独白に 変わる）。
+ * いない 人は 村に 立たず、語り・知らせ・喫茶・起動の札でも 話さない。stage を 省くと いちばん上の 段（みんな 来ている）。
+ */
+export const awayFriends = (
+	cleared: readonly DungeonId[],
+	stage = Number.POSITIVE_INFINITY,
+): Speaker[] => [
+	...(Object.keys(FRIEND_FROM) as Speaker[]).filter(
+		(w) => stage < FRIEND_FROM[w],
+	),
+	...(cleared.includes("hidden") && stage >= FRIEND_FROM.nanj
+		? (["nanj"] as Speaker[])
+		: []),
+];
 
 /** 村に いない 人が 話す・出てくる ページか。 */
 const gone = (p: StoryPage, away: readonly Speaker[]): boolean =>

@@ -68,20 +68,24 @@ import {
 	ROOM_MSG,
 } from "../data/rooms";
 import {
+	awayFriends,
 	BOSS_HOME,
 	BOSS_RETURN,
 	CLEAR,
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
+	FRIEND_FROM,
 	SHALLOW_DEATH,
 	STORY,
 	type StoryPage,
 	UNLOCK_LINES,
 } from "../data/story";
 import {
+	ARRIVE_MSG,
 	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
+	SOLD_BARE,
 	STAGE_NAMES,
 	STAGE_UP,
 	STAGE_UP_HALL,
@@ -525,12 +529,46 @@ test("the village is drawn only from the bundled Base.png and sprites (no CDN ti
 	}
 });
 
+test("はじめの 保守村には やきう（と ぷゆゆ）だけ。仲間は 町が 育つと 越してきて、来る 前は 語りでも 話さない", async () => {
+	const FRIENDS = ["roze", "shiyo", "zero", "feris", "nanj"] as const;
+	for (let stage = 0; stage < TOWN_STAGES; stage++) {
+		const places = villagePlaces({ stage, unlocked: ["shallow"], cleared: [] });
+		for (const w of FRIENDS)
+			ok(
+				places.some((p) => p.who === w) === stage >= FRIEND_FROM[w],
+				`stage ${stage}: ${w} ${stage >= FRIEND_FROM[w] ? "is missing" : "is there before moving in"}`,
+			);
+	}
+	ok(
+		villagePlaces({ stage: 0, unlocked: ["shallow"], cleared: [] }).some(
+			(p) => p.id === "mob_puyu",
+		),
+		"ぷゆゆ is not there from the start",
+	);
+	// はじめて パン板を 持ち帰った 語り（まだ 段0）：やきうと 地の文だけ
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 0 });
+		const who = new Set(
+			pagesFor({ kind: "clear", dungeon: "shallow" }).map((p) => p.who),
+		);
+		ok(
+			[...who].every((w) => w === null || w === "nanj"),
+			`speakers before anyone moved in: ${[...who].join(",")}`,
+		);
+	});
+});
+
 test("ロゼ and シヨ work behind closed counters once the stall and storehouse are built", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		const seller = (who: Speaker, counterFrom: number, closedFrom: number) => {
 			const p = s.places.find((x) => x.who === who);
-			ok(p, `${label(v)}: ${who} is missing`);
+			// 越してくる 前は いない（data/story.ts の FRIEND_FROM）
+			ok(
+				!!p === v.stage >= FRIEND_FROM[who],
+				`${label(v)}: ${who} is ${p ? "there before moving in" : "missing"}`,
+			);
 			if (!p || v.stage < counterFrom) return;
 			ok(
 				s.tile(p.x, p.y + 1)?.counter,
@@ -1233,7 +1271,8 @@ const inOrder = (log: readonly string[], want: readonly string[]): boolean => {
 test("coming back: friends wait at the mouth, Kiriko steps out, they speak the ending in the village", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
-		putTown({ stage: 0 });
+		// 仲間が みんな 越してきた 町（まだ 来ていない 仲間の 場合は 下の 試験）
+		putTown({ stage: 7 });
 		const v = villageView();
 		const cases: [
 			ReturnArrival,
@@ -1324,7 +1363,7 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 	await withStorageAsync(async () => {
 		const news: ProgressNews = { dungeon: "main", reason: "clear" };
 		setProgress(["shallow", "main"], [news], ["shallow"]);
-		putTown({ stage: 0 });
+		putTown({ stage: 7 });
 		// 知らせを 見せるまでは 開いていない
 		ok(!villageView().unlocked.includes("main"), "本編 opens before its news");
 		// 2つ目の セリフで タブを 閉じた：知らせは 残る
@@ -1559,13 +1598,14 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
 		ok(
 			inOrder(first.log, [
-				`say zero: ${fill(TOWN_MSG.sold.text, { points: priceOf(herb) })}`,
+				`narrate: ${fill(SOLD_BARE, { points: priceOf(herb) })}`,
 				"fadeOut",
 				"rebuild",
 				`look ${VILLAGE_SPOTS.growth(1).join(",")}`,
 				"fadeIn",
 				"se levelup",
 				`toast 町が　「${STAGE_NAMES[1]}」に　なった`,
+				`narrate: ${fill(ARRIVE_MSG, { names: "ロゼと　ゼロ" })}`,
 				...STAGE_UP[1].map((l) => `say ${l.who}: ${l.text}`),
 				"look kiriko",
 			]),
@@ -2911,7 +2951,12 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			first && first.who === null && first.text.startsWith("村に　帰りつくと"),
 			`${d}: the ending does not open with the arrival: ${first?.text}`,
 		);
-		const got = pagesFor({ kind: "clear", dungeon: d, objective: "boss" });
+		// 仲間が みんな 越してきた 町で（まだ 来ていない 仲間の 頁は 出ない）
+		let got: readonly StoryPage[] = [];
+		await withStorageAsync(async () => {
+			putTown({ stage: 7 });
+			got = pagesFor({ kind: "clear", dungeon: d, objective: "boss" });
+		});
 		ok(
 			got[0] === first &&
 				JSON.stringify(got.slice(1, 1 + n)) ===
@@ -2922,7 +2967,7 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 	}
 	await withStorageAsync(async () => {
 		setProgress(["shallow", "kinoko"]);
-		putTown({ stage: 1 });
+		putTown({ stage: 7 });
 		const v = villageView();
 		const a: ReturnArrival = {
 			kind: "clear",
@@ -3592,7 +3637,11 @@ test("the town grows into a new hall: after the friends, the camera looks at the
 			ok(
 				inOrder(log, [
 					"rebuild",
-					...(STAGE_UP[to] ?? []).map((l) => `say ${l.who}: ${l.text}`),
+					...(STAGE_UP[to] ?? [])
+						.filter(
+							(l) => !awayFriends(loadProgress().cleared, to).includes(l.who),
+						)
+						.map((l) => `say ${l.who}: ${l.text}`),
 					look,
 					`say ${hall.who}: ${hall.text}`,
 					"look kiriko",

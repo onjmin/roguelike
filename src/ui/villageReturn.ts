@@ -23,18 +23,23 @@ import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId, Objective } from "../core/types";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
+import { SPEAKERS } from "../data/quotes";
 import {
 	awayFriends,
 	BOSS_RETURN,
 	DUNGEON_NAMES,
 	endingFor,
+	FRIEND_FROM,
 	playPage,
 	type StoryPage,
 	UNLOCK_LINES,
 	withoutAway,
 } from "../data/story";
 import {
+	ARRIVE_MSG,
+	BARE_TOWN_MSG,
 	RETURN_PAGES,
+	SOLD_BARE,
 	STAGE_NAMES,
 	STAGE_UP,
 	STAGE_UP_HALL,
@@ -114,6 +119,7 @@ const firstEnding = (a: ReturnArrival, p: Progress): boolean =>
 const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] =>
 	awayFriends(
 		firstEnding(a, p) ? p.cleared.filter((d) => d !== a.dungeon) : p.cleared,
+		loadTown().stage,
 	);
 
 /**
@@ -276,7 +282,7 @@ export const deathScene = async (s: Story): Promise<void> => {
  */
 export const newsScript = async (s: Story): Promise<void> => {
 	// 出ていった 仲間は 知らせでも 話さない
-	const away = awayFriends(loadProgress().cleared);
+	const away = awayFriends(loadProgress().cleared, loadTown().stage);
 	// 知らせを 話す 仲間を そばへ
 	const news = loadProgress().news;
 	if (news.length)
@@ -347,17 +353,31 @@ export const settleScript = async (
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	// 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずかる 物を きく
 	const canStore = cap > 0;
-	const say = (l: { who: Speaker; text: string }) => s.say(l.who, l.text);
-	// あずかる シヨ・売る ロゼ・読む ゼロを そばへ
+	// まだ 来ていない 仲間の 行は、やきうの 行（BARE_TOWN_MSG）か 地の文に かわる（data/story.ts の FRIEND_FROM）
+	const away = awayFriends(loadProgress().cleared, t.stage);
+	const here = (w: Speaker) => !away.includes(w);
+	const say = (l: { who: Speaker; text: string }) => {
+		if (here(l.who)) return s.say(l.who, l.text);
+		const bare = BARE_TOWN_MSG.find((b) => b.of === l);
+		return bare && here(bare.line.who)
+			? s.say(bare.line.who, bare.line.text)
+			: Promise.resolve();
+	};
+	// あずかる シヨ・売る ロゼ・読む ゼロを そばへ（いる 人だけ）
 	await gather(
 		s,
-		pend.items.length
+		(pend.items.length
 			? [
-					canStore ? TOWN_MSG.storePrompt.who : TOWN_MSG.noStorage.who,
-					TOWN_MSG.sellRest.who,
-					TOWN_MSG.sold.who,
+					canStore ? TOWN_MSG.storePrompt : TOWN_MSG.noStorage,
+					TOWN_MSG.sellRest,
+					TOWN_MSG.sold,
 				]
-			: [canStore ? TOWN_MSG.nothingToStore.who : TOWN_MSG.soldNothing.who],
+			: [canStore ? TOWN_MSG.nothingToStore : TOWN_MSG.soldNothing]
+		).map((l) =>
+			here(l.who)
+				? l.who
+				: (BARE_TOWN_MSG.find((b) => b.of === l)?.line.who ?? null),
+		),
 	);
 	let chosen: number[] = [];
 	if (!pend.items.length)
@@ -375,11 +395,15 @@ export const settleScript = async (
 	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
 	const r = settleReturn(cur, chosen);
 	if (chosen.length) await say(TOWN_MSG.storeDone);
-	if (r.sold > 0)
-		await s.say(
-			TOWN_MSG.sold.who,
-			fill(TOWN_MSG.sold.text, { points: r.sold }),
-		);
+	if (r.sold > 0) {
+		// ゼロが まだ いなければ 地の文で
+		if (here(TOWN_MSG.sold.who))
+			await s.say(
+				TOWN_MSG.sold.who,
+				fill(TOWN_MSG.sold.text, { points: r.sold }),
+			);
+		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
+	}
 	if (r.to > r.from) await stageUp(s, r.from, r.to);
 };
 
@@ -388,28 +412,38 @@ export const settleScript = async (
  * おんJ 本館の 形が かわったら（段3・6。段を とばしても）本館を 見て ひとこと。
  */
 const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
+	// 話すのは 村に いる 人だけ（まだ 来ていない・出ていった 仲間の 行は 出さない）
+	const away = awayFriends(loadProgress().cleared, to);
+	const lines = (STAGE_UP[to] ?? []).filter((l) => !away.includes(l.who));
+	const hall =
+		hallTier(to) > hallTier(from) ? STAGE_UP_HALL[hallTier(to)] : null;
+	const hallLine = hall && !away.includes(hall.who) ? hall : null;
+	// この 段で 越してきた 仲間（data/story.ts の FRIEND_FROM）
+	const moved = (Object.keys(FRIEND_FROM) as Speaker[]).filter(
+		(w) => FRIEND_FROM[w] > from && FRIEND_FROM[w] <= to && !away.includes(w),
+	);
 	await s.fadeOut(400);
 	await s.rebuild();
 	// 建て直すと 持ち場に もどるので、話す 仲間を もう一度 そばへ（暗い うちに）
 	await gather(
 		s,
-		[
-			...(STAGE_UP[to] ?? []).map((l) => l.who),
-			...(hallTier(to) > hallTier(from)
-				? [STAGE_UP_HALL[hallTier(to)]?.who ?? null]
-				: []),
-		],
+		[...moved, ...lines.map((l) => l.who), hallLine?.who ?? null],
 		{ dark: true },
 	);
 	await s.look(VILLAGE_SPOTS.growth(to), { instant: true });
 	await s.fadeIn(400);
 	s.se("levelup");
 	s.toast(`町が　「${STAGE_NAMES[to] ?? ""}」に　なった`);
-	for (const l of STAGE_UP[to] ?? []) await s.say(l.who, l.text);
-	const hall = STAGE_UP_HALL[hallTier(to)];
-	if (hall && hallTier(to) > hallTier(from)) {
+	if (moved.length)
+		await s.narrate(
+			fill(ARRIVE_MSG, {
+				names: moved.map((w) => SPEAKERS[w].name).join("と　"),
+			}),
+		);
+	for (const l of lines) await s.say(l.who, l.text);
+	if (hallLine) {
 		await s.look(VILLAGE_SPOTS.hallLook);
-		await s.say(hall.who, hall.text);
+		await s.say(hallLine.who, hallLine.text);
 	}
 	const carry = CARRY_MAX[to] ?? 0;
 	if (carry > (CARRY_MAX[from] ?? 0))

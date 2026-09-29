@@ -185,6 +185,30 @@ export const TOWN_MSG: Record<
  * 持ちこめない 板（core/data/dungeons.ts の noCarry）へ 出るとき、引き取った 道具を シヨが 倉庫へ もどす わけ。
  * 全体マップの 札にも「持ちこみ：できない」と 出る。
  */
+/**
+ * まだ ロゼ（売る 人）が 来ていない ころ（はじめの 保守村。data/story.ts の FRIEND_FROM）の 精算の 行。
+ * of の 行の 人が いなければ、かわりに line を 言う。売り上げは ゼロが いなければ 地の文（SOLD_BARE）。
+ */
+export const BARE_TOWN_MSG: readonly { of: Line; line: Line }[] = [
+	{
+		of: TOWN_MSG.noStorage,
+		line: q(
+			"nanj",
+			"拾いもんは、ワイが　貼っとくわ。\n……店は、まだ　ないけどな",
+		),
+	},
+	{
+		of: TOWN_MSG.soldNothing,
+		line: q("nanj", "手ぶらか。……まあ、ええわ。\n帰ってきたんが　いちばんや"),
+	},
+];
+
+/** 売り上げの 地の文（ゼロが まだ いない とき）。{points} は 売り上げ。 */
+export const SOLD_BARE = "貼った　ネタに、{points}レス　ついた。";
+
+/** 町が 育って 仲間が 越してきた ときの 地の文（{names} は 名前を「と　」で つないだ もの）。 */
+export const ARRIVE_MSG = "{names}が、村に　越してきた。";
+
 export const CARRY_CHASE = "シヨが　追いかけてきた。";
 
 export const CARRY_REFUSE: Record<"deep" | "tropical" | "hidden", Line> = {
