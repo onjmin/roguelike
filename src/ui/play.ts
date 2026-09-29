@@ -2076,6 +2076,16 @@ export class Play {
 			i++;
 			switch (e.t) {
 				case "msg":
+					// 拾った 行が 出たら、足もとに 残して 描いていた 道具（ghostItems）を その場で 消す
+					// （act の ログが ぜんぶ 出るまで 待つと、拾った あとも しばらく 残像のように 見えていた）
+					if (e.text.endsWith("を　拾った")) {
+						const at = { x: this.run.p.x, y: this.run.p.y };
+						onLine.push(() => {
+							this.ghostItems = this.ghostItems.filter(
+								(g) => g.x !== at.x || g.y !== at.y,
+							);
+						});
+					}
 					// 前の行から 間を空けて 1行ずつ 出す（読めるように。待つのは ログだけで、次の 1歩は 待たない）
 					this.logQueue.push({
 						text: e.text,
