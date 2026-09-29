@@ -34,6 +34,7 @@ import { SPEAKERS } from "../data/quotes";
 import {
 	awayFriends,
 	BOSS_RETURN,
+	DEPART,
 	DUNGEON_NAMES,
 	endingFor,
 	FRIEND_FROM,
@@ -68,6 +69,7 @@ import type { Story } from "../engine/defs";
 import {
 	doneEventNews,
 	doneProgressNews,
+	giveLunch,
 	loadProgress,
 	loadRecords,
 	loadTown,
@@ -262,6 +264,18 @@ export const sendBack = async (s: Story): Promise<void> => {
 	await s.fadeOut(250);
 	await s.rebuild();
 	await s.fadeIn(250);
+};
+
+// ───────────────── ぷゆゆの お弁当 ─────────────────
+
+/**
+ * 村に 帰って 持ち物（倉庫から 引き取った 道具）が からっぽなら、ぷゆゆが かけてきて ぷゆゆパンを 持たせる
+ * （トルネコ1の ネネの お弁当の 役。出るときに 持っていく。data/story.ts の DEPART.puyu）。
+ */
+export const lunchScript = async (s: Story): Promise<void> => {
+	if (!giveLunch()) return;
+	s.se("item");
+	await s.narrate(DEPART.puyu);
 };
 
 // ───────────────── たおれて もどったとき ─────────────────

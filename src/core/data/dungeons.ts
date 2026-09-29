@@ -66,7 +66,9 @@ export type Dungeon = {
 	unidentified: readonly ItemCat[];
 	/** のろわれた道具が出るか。 */
 	curses: boolean;
-	/** 始めの持ち物。 */
+	/**
+	 * 始めの持ち物（ぷゆゆが 持たせる お弁当の ぷゆゆパン。村で もらって いなければ 持たない：Run.create の lunch）。
+	 */
 	start: readonly string[];
 	/** いちばん底で拾って 持ち帰る品。 */
 	goal: string;
@@ -303,7 +305,7 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 ];
 
 /** 階 → 本編の 何階ぶんか（入門の つぎ。パン板より 少し 強い 顔ぶれまで）。 */
-const KINOKO_LEVEL: readonly number[] = ramp(6, 6);
+const KINOKO_LEVEL: readonly number[] = ramp(6, 5);
 
 /**
  * 隠しの 99階の 道具の出かた：風呂板の 表で、食べものを ふやした（99階ぶん 歩くので。
@@ -342,7 +344,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		level: SHALLOW_LEVEL,
 		unidentified: ["staff"],
 		curses: false,
-		start: ["f_large", "h_heal", "s_appraise"],
+		start: ["f_large"],
 		goal: "needle",
 		houses: null,
 		trapsFrom: 3,
@@ -423,7 +425,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		level: KINOKO_LEVEL,
 		unidentified: ["herb", "staff"],
 		curses: false,
-		start: ["f_large", "h_heal", "s_appraise"],
+		start: ["f_large"],
 		goal: "kinonyan",
 		houses: { from: 3, chance: 1 / 8, early: null },
 		trapsFrom: 3,
@@ -484,8 +486,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		level: ramp(13, 19),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
-		// 怒った 敵から 立てなおす 草を 2つ
-		start: ["f_large", "h_heal", "h_heal"],
+		start: ["f_large"],
 		goal: "takoyaki",
 		houses: { from: 3, chance: 1 / 16, early: [4, 6] },
 		trapsFrom: 3,

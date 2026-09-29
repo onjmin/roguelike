@@ -87,6 +87,7 @@ import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
 	lineUp,
+	lunchScript,
 	newsScript,
 	previewStage,
 	type ReturnArrival,
@@ -247,8 +248,6 @@ const departTo = async (
 	if (awayFriends(loadProgress().cleared).includes("nanj"))
 		await s.kiriko(DEPART.kiriko, "think");
 	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
-	// 毎回 はじめから 持っている ぷゆゆパンは、かけてくる ぷゆゆが 持たせる（トルネコ1の ネネの お弁当の 役）
-	if (DUNGEONS[d].start.includes("f_large")) await s.narrate(DEPART.puyu);
 	notePicked(d, false);
 	await hideMsg(s);
 	await travel();
@@ -259,7 +258,14 @@ const departTo = async (
 		await showStory(ctx, STORY[d].intro.map(escBr));
 		notePicked(d, true);
 	}
-	s.exit({ kind: "new", dungeon: d, carry, objective: goal.objective });
+	// ぷゆゆの お弁当（村に 帰って 持ち物が からっぽなら もらえる。ui/villageReturn.ts の lunchScript）
+	s.exit({
+		kind: "new",
+		dungeon: d,
+		carry,
+		objective: goal.objective,
+		lunch: loadTown().lunch,
+	});
 };
 
 /**
@@ -578,6 +584,8 @@ const arrivalScript =
 		await newsScript(s);
 		await settleScript(s, storeChooser(ctx));
 		await sendBack(s);
+		// 持ち物が からっぽなら ぷゆゆが お弁当を 持たせに くる
+		await lunchScript(s);
 	};
 
 /** 村の マップ（町の段・開いたダンジョンから）。 */

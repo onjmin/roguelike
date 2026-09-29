@@ -17,6 +17,7 @@ import {
 	type SavedReplay,
 	saveRun,
 	takeFromBag,
+	takeLunch,
 } from "./engine/save";
 import { Screen } from "./engine/screen";
 import { decodeShare, takeSharedHash } from "./engine/share";
@@ -165,6 +166,7 @@ const runFor = (
 				replay.dungeon ?? "main",
 				replay.carry ?? [],
 				replay.objective ?? "fetch",
+				!replay.noLunch,
 			),
 			replay,
 		};
@@ -179,13 +181,22 @@ const runFor = (
 				choice.dungeon,
 				choice.carry,
 				choice.objective,
+				choice.lunch,
 			);
 			return { run, replay: undefined };
 		}
 		// 冒険を作って すぐ保存する（取り出したのに 冒険が無い、にならないように）。
 		// 村で 引き取った 持ち物から 取り出す。別のタブが 持っていった道具は 持っていけない
 		const carry = choice.carry.length ? takeFromBag(choice.carry) : [];
-		const run = Run.create(newSeed(), choice.dungeon, carry, choice.objective);
+		// ぷゆゆの お弁当（別の タブで 持っていかれて いたら 持たない）
+		const lunch = choice.lunch && takeLunch();
+		const run = Run.create(
+			newSeed(),
+			choice.dungeon,
+			carry,
+			choice.objective,
+			lunch,
+		);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };
 	}

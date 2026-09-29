@@ -122,11 +122,17 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 	for (;;) {
 		const t = loadTown();
 		const max = CARRY_MAX[t.stage] ?? 0;
+		// ぷゆゆの お弁当（倉庫の 道具とは べつ。数に 入らない）
+		const lunch = t.lunch
+			? `<br><small>ぷゆゆパン（ぷゆゆの　お弁当）も　持っていく</small>`
+			: "";
 		if (!t.bag.length) {
 			await infoWindow(
 				ctx,
 				`持ち物　0／${max}`,
-				`<p class="dim">${escBr(TOWN_MSG.bagEmpty.text)}</p>`,
+				t.lunch
+					? `<p>ぷゆゆパン（ぷゆゆの　お弁当）</p>`
+					: `<p class="dim">${escBr(TOWN_MSG.bagEmpty.text)}</p>`,
 			);
 			return;
 		}
@@ -136,7 +142,7 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 		}));
 		const v = await listWindow(
 			ctx,
-			`持ち物　${t.bag.length}／${max}<br><small>このまま　出口から　出れば　持っていく。えらぶと　倉庫へ　もどす</small>`,
+			`持ち物　${t.bag.length}／${max}<br><small>このまま　出口から　出れば　持っていく。えらぶと　倉庫へ　もどす</small>${lunch}`,
 			rows,
 			{ start },
 		);

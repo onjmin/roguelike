@@ -104,7 +104,14 @@ export type MapDef = {
 
 /** 村を出て 冒険へ（main.ts が受け取る）。objective は 村で 行き先を 決めた ときの 目的（data/objectives.ts）。 */
 export type VillageExit =
-	| { kind: "new"; dungeon: DungeonId; carry: Item[]; objective: Objective }
+	| {
+			kind: "new";
+			dungeon: DungeonId;
+			carry: Item[];
+			objective: Objective;
+			/** ぷゆゆの お弁当を 持って 出る。 */
+			lunch: boolean;
+	  }
 	| { kind: "continue"; state: RunState }
 	| { kind: "replay"; replay: SavedReplay };
 

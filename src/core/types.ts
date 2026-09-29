@@ -442,6 +442,8 @@ export type RunState = {
 	voice?: string | null;
 	/** この 冒険で 拾った「最後の レス」の id（core/data/lastRes.ts。拾ったら 足す。無ければ まだ 無い）。 */
 	lastRes?: string[];
+	/** ぷゆゆの お弁当（始めの持ち物）を 持たずに 出た（リプレイで 同じに 始めるため）。 */
+	noLunch?: boolean;
 	/** 倉庫から持ちこんだ道具（はじめの形。リレミトならぬ 帰還スレで持ち帰った道具を、次の冒険へ。リプレイで同じに始めるため）。 */
 	carriedIn?: Item[];
 };

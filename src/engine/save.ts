@@ -582,6 +582,11 @@ export type Town = {
 	 * 持ちこめない 板へ 出るときは シヨが 倉庫へ もどす（core/data/dungeons.ts の noCarry）。
 	 */
 	bag: Item[];
+	/**
+	 * ぷゆゆの お弁当（ぷゆゆパン）を もらって いる。村に 帰って 持ち物（bag）が からっぽなら ぷゆゆが 持たせる
+	 * （ui/villageReturn.ts の lunchScript）。出るときに 持っていく（持ちこめない 板でも。倉庫の 道具とは べつ）。
+	 */
+	lunch: boolean;
 	/** 帰りごとの 売り上げ（古い順。SALES_KEEP 件まで。ゼロの 帳簿の グラフ：ui/home.ts の openSales）。 */
 	sales: Sale[];
 	/** まだ決めていない 持ち帰り。 */
@@ -628,6 +633,7 @@ export const loadTown = (): Town => {
 				stage: typeof o.stage === "number" ? o.stage : 0,
 				storage: Array.isArray(o.storage) ? o.storage.filter(isItem) : [],
 				bag: Array.isArray(o.bag) ? o.bag.filter(isItem) : [],
+				lunch: o.lunch === true,
 				sales: Array.isArray(o.sales) ? o.sales.filter(isSale) : [],
 				pending:
 					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
@@ -652,6 +658,7 @@ export const loadTown = (): Town => {
 				: 0,
 		storage: [],
 		bag: [],
+		lunch: false,
 		sales: [],
 		pending: null,
 		returned: [],
@@ -761,6 +768,24 @@ export const depositItem = (i: number): void => {
 	saveTown(t);
 };
 
+/** ぷゆゆの お弁当を 持たせる（持ち物が からっぽで まだ もらって いなければ）。持たせたら true。 */
+export const giveLunch = (): boolean => {
+	const t = loadTown();
+	if (t.lunch || t.bag.length) return false;
+	t.lunch = true;
+	saveTown(t);
+	return true;
+};
+
+/** 出るときに お弁当を 受け取る（持っていれば 消して true。別の タブで 持っていかれて いれば false）。 */
+export const takeLunch = (): boolean => {
+	const t = loadTown();
+	if (!t.lunch) return false;
+	t.lunch = false;
+	saveTown(t);
+	return true;
+};
+
 /** 村の 持ち物を ぜんぶ 倉庫へ もどす（持ちこめない 板へ 出るとき）。もどした 数。 */
 export const depositBag = (): number => {
 	const t = loadTown();
@@ -794,6 +819,8 @@ export type SavedReplay = {
 	seed: string;
 	/** 倉庫から持ちこんだ道具（同じに始めるため）。 */
 	carry?: Item[];
+	/** ぷゆゆの お弁当を 持たずに 出た（同じに始めるため）。 */
+	noLunch?: boolean;
 	/** どのダンジョンか（無ければ本編）。 */
 	dungeon?: DungeonId;
 	/** 目的（ボスの ときだけ 書く。無ければ 持ち帰り。今の 板の 既定からは 決めない）。 */
@@ -874,9 +901,11 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		!(Array.isArray(r.carry) && r.carry.every(isCarryItem))
 	)
 		return null;
+	if (r.noLunch !== undefined && typeof r.noLunch !== "boolean") return null;
 	return renamed({
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
+		...(r.noLunch ? { noLunch: true } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
 		...(r.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: r.at,
@@ -914,6 +943,7 @@ const addReplay = (s: RunState): void => {
 	list.unshift({
 		seed: s.seed,
 		carry: s.carriedIn,
+		...(s.noLunch ? { noLunch: true } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

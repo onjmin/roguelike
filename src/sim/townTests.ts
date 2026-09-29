@@ -1,6 +1,6 @@
 // 地上の町・帰還スレ・持ちこみ の試験（pnpm test で いっしょに動く）。
 
-import { dungeonById } from "../core/data/dungeons";
+import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
 import { ITEM_LIST } from "../core/data/items";
 import { LAST_RES } from "../core/data/lastRes";
 import { isKnownKind } from "../core/item";
@@ -26,6 +26,7 @@ import {
 	depositBag,
 	depositItem,
 	forgetProgressMemo,
+	giveLunch,
 	loadProgress,
 	loadRecords,
 	loadReplays,
@@ -37,6 +38,7 @@ import {
 	settleReturn,
 	takeFromBag,
 	takeFromStorage,
+	takeLunch,
 	toReplay,
 	withdrawItem,
 } from "../engine/save";
@@ -370,6 +372,50 @@ test("carrying out takes the chosen items by content, once", () => {
 		ok(loadTown().storage.length === 2, "storage did not shrink by one");
 		ok(takeFromStorage([mk("steel", 2)]).length === 0, "took it twice");
 	});
+});
+
+test("ぷゆゆの お弁当：持ち物が からっぽなら もらえて、出るときに 持っていく。はじめの 持ち物は どの 板も ぷゆゆパン だけ", () => {
+	for (const d of DUNGEON_IDS)
+		ok(
+			JSON.stringify(dungeonById(d).start) === JSON.stringify(["f_large"]),
+			`${d} starts with ${dungeonById(d).start}`,
+		);
+	withStorage(() => {
+		loadProgress();
+		saveTown({ ...loadTown(), stage: 5 });
+		ok(giveLunch() && loadTown().lunch, "no lunch with an empty bag");
+		ok(!giveLunch(), "lunch given twice");
+		ok(takeLunch() && !loadTown().lunch, "lunch not taken");
+		ok(!takeLunch(), "lunch taken twice");
+		// 倉庫から 引き取った 道具が あれば もらえない
+		saveTown({
+			...loadTown(),
+			storage: [
+				{
+					uid: 1,
+					kind: "h_heal",
+					plus: 0,
+					cursed: false,
+					charges: 0,
+					known: true,
+					count: 1,
+				},
+			],
+		});
+		withdrawItem(0);
+		ok(!giveLunch(), "lunch given with a full bag");
+	});
+	// お弁当なしで 出た 冒険は 手ぶらで 始まり、リプレイも 手ぶら
+	const bare = Run.create("no-lunch", "main", [], "fetch", false);
+	ok(
+		!bare.s.player.items.length && bare.s.noLunch === true,
+		`items: ${bare.s.player.items.map((it) => it.kind)}`,
+	);
+	const fed = Run.create("no-lunch", "main");
+	ok(
+		fed.s.player.items.length === 1 && fed.s.player.items[0].kind === "f_large",
+		"the lunch is not the start item",
+	);
 });
 
 test("the village bag: withdraw up to CARRY_MAX, put back, a no-carry board sends it all back, the run takes it", () => {

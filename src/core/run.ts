@@ -142,6 +142,8 @@ export class Run {
 		dungeon: DungeonId = "main",
 		carry: readonly Item[] = [],
 		objective: Objective = "fetch",
+		/** ぷゆゆの お弁当（始めの持ち物）を 持って 出るか（村で 引き取った 道具が あると もらえない）。 */
+		lunch = true,
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
@@ -227,8 +229,9 @@ export class Run {
 		};
 		const run = new Run(s);
 		run.rng = rng;
-		// 始めの持ち物（毎回同じ）：本編は ぷゆゆパン
-		for (const k of dg.start) player.items.push(run.newItem(k));
+		// 始めの持ち物：ぷゆゆが 持たせる お弁当（ぷゆゆパン）。もらって いなければ 持たない（リプレイの ため 覚える）
+		if (lunch) for (const k of dg.start) player.items.push(run.newItem(k));
+		else s.noLunch = true;
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
 			s.carriedIn = carry.map((it) => ({ ...it }));
