@@ -18,7 +18,7 @@
 | 春音リノ（村の 住人） | `portraits/rino.png` | 描いてあります | 女・45歳・カーキの 軍服と 軍帽・髪は「アバンギャルドメタリック」（歩行グラでは 銀紫）・小物は 銃みたいな コッペパン。ドSで 口数が 少ない |
 | 響化アル（村の 住人） | `portraits/aru.png` | 描いてあります | 男・18歳・177cm・紺の 長めの マッシュ・眼鏡・しぶきの ついた 黒い 長コートに ネクタイ（公式の 立ち絵）・科学部。いちばん 新しい 子で、キリコを 先輩と 呼ぶ |
 
-- やきう・ぷゆゆ・おんJマイナーズ（にぃちぇ・パン松・ンゴ姉・おんすちゃん・おんちゃん・ヤヤポジ。おんJwiki の 顔文字の マスコット）は 立ち絵なしが 正しい形なので、ここには 入れていません（村の 住人で 立ち絵が あるのは 人の 子だけ）。
+- やきう・ぷゆゆ・おんJマイナーズ（にぃちぇ・パン松・ンゴ姉・おんすちゃん・おんちゃん・ヤヤポジ・ムッジェ・朝コンロ・ジェイトルマン・ミャウミャウ。おんJwiki の 顔文字の マスコット）は 立ち絵なしが 正しい形なので、ここには 入れていません（村の 住人で 立ち絵が あるのは 人の 子だけ）。
 - キリコ・ロゼ・フェリスは 描いてあります。
 - 絵の 大きさや 位置が 合わないときは `src/data/cast.ts`（仲間）の `scale`、村の 住人は `src/data/mobs.ts` の `portrait` で パスを 変えられます。
 
@@ -31,6 +31,8 @@
 | 春音リノ | `sprites/rino.png` | Claude が 描いた 仮（`scripts/make-cast.mjs`）。カーキの 軍帽と 軍服・銀紫の 髪・コッペパン |
 | 響化アル | `sprites/aru.png` | Claude が 描いた 仮（`scripts/make-cast.mjs`）。公式の 立ち絵に 合わせた 紺の マッシュ・眼鏡・青と 黄の しぶきの 黒い 長コート・青い ネクタイ・紫の ベスト |
 | 解音ゼロ（メインさん・レン） | `sprites/zero_main.png` `sprites/zero_ren.png` | 作者の プロトの 歩行グラ（RPGEN `sa:KxS5YZ`）を 塗りかえた もの（`scripts/make-zero.mjs`）。メインさん＝赤い 帯・紫の 目・赤い ケーブルの しっぽ、レン＝先が 青い 髪・金の 角・黒い 手袋と 脚 |
+| ミャウミャウ・ジェイトルマン・朝コンロ（村の 住人） | `sprites/minors_miaumiau.png` `minors_jtleman.png` `minors_asakonro.png` | Claude が 描いた 仮（`scripts/make-minors.mjs`）。紙袋に ・ワ・ の顔と とがった 耳・白い 服／シルクハットに 閉じた目と J の鼻・背広／火の 色の 髪と まるい 目。ミャウミャウは 公式にも 絵が 定まっていない |
+| ムッジェ（村の 住人） | `sprites/minors_mujje.png` | rpg の `mujje.png` の 写し |
 | メタルぷゆゆ（敵） | `sprites/metal_puyu.png` | RPGEN「PIEN」を 銀色に ぬった もの（`scripts/make-metal-puyu.mjs`） |
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
 | まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |

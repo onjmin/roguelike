@@ -2038,9 +2038,16 @@ test("ぷゆゆ: rpg voice rules (🥺🤪✋ only, one 🥺 at a line end, rare
 			ok(!t.includes(w), `${where}: "${w}"`);
 		ok(!/[️‍]/u.test(t), `${where}: FE0F / ZWJ`);
 	}
-	// キリコ・地の文・仲間・ほかの子には 絵文字を つけない
+	// キリコ・地の文・仲間・ほかの子には 絵文字を つけない（ミャウミャウの 口癖「ぷゆゆ🥺」は 行の 終わりに だけ）
+	const MIAU = /(^|\n)(……)?ぷゆゆ🥺$/;
 	for (const [where, t] of rest)
-		ok(!EMOJI.test(t), `${where}: emoji outside ぷゆゆ's own lines`);
+		ok(
+			!EMOJI.test(t) ||
+				(where.startsWith("miaumiau.") &&
+					MIAU.test(t) &&
+					!EMOJI.test(t.replace(MIAU, ""))),
+			`${where}: emoji outside ぷゆゆ's own lines`,
+		);
 	let plain = 0;
 	let ikite = 0;
 	for (const [where, t] of hers) {
