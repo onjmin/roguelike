@@ -116,7 +116,7 @@ export type Item = {
 /** モンスターの特技（トルネコ1の役割。資源を奪うものが中心）。 */
 export type Ability =
 	| { k: "steal"; rate: number } // 持ち物を盗んでワープする（倒せば取り返せる）
-	| { k: "bake"; rate: number } // なぐる かわりに 持ち物を 1つ パンに 変える（1体 1回だけ）
+	| { k: "swap"; rate: number } // はじめから パンを 持ち、なぐる かわりに 持ち物と 取りかえて 逃げる（1体 1回だけ。倒せば 持っている 物を 落とす）
 	| { k: "pickup" } // 床の道具を拾って持ち歩く
 	| { k: "rust"; rate: number } // 盾の修正値を下げる
 	| { k: "poison"; rate: number } // ちからを下げる
@@ -241,8 +241,8 @@ export type Monster = {
 	disguise: string | null;
 	/** 盗んだあと逃げている。 */
 	fleeing?: boolean;
-	/** 持ち物を パンに 変えた（bake は 1体 1回だけ）。 */
-	baked?: boolean;
+	/** 持ち物と パンを 取りかえた（swap は 1体 1回だけ）。 */
+	swapped?: boolean;
 	/** 爆発しかけ（HP が減って動かなくなった）。 */
 	fuse?: boolean;
 	/** キリコのとなりにいたターン数（加速する敵）。 */
@@ -357,7 +357,14 @@ export type Floor = {
 // ───────────────────────── 冒険（1回の挑戦） ─────────────────────────
 
 /** 安価の お題（core/anka.ts）。 */
-export type AnkaKind = "herb" | "scroll" | "throw" | "eat" | "kill";
+export type AnkaKind =
+	| "herb"
+	| "scroll"
+	| "throw"
+	| "eat"
+	| "kill"
+	| "sleep"
+	| "hit";
 
 export type Anka = {
 	kind: AnkaKind;

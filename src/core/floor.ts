@@ -12,7 +12,7 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
-import { MONSTERS, monstersFor } from "./data/monsters";
+import { MONSTERS, monstersFor, SWAP_BREADS } from "./data/monsters";
 import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
 import { itemTableOf } from "./item";
@@ -355,6 +355,11 @@ export const spawnMonster = (
 			lastSeen: null,
 			disguise: null,
 		};
+		// パン兵は はじめから パンを 1つ 持っている（取りかえる 前に 倒すと 落とす）
+		if (def.abilities.some((a) => a.k === "swap")) {
+			m.carry = r.newItem(rng.pick(SWAP_BREADS));
+			m.carry.known = true;
+		}
 		if (def.abilities.some((a) => a.k === "mimic") && !opts.awake) {
 			m.disguise = rng.weighted(itemTableOf(r.s), (e) => e.weight).kind;
 			m.status.sleep = 0;

@@ -1251,6 +1251,8 @@ export class Run {
 		this.p.status.sleep = turns;
 		this.se("sleep");
 		this.emit({ t: "sleep", id: PLAYER_ID, on: true });
+		// 安価「寝る」（寝落ち草・罠・眠りの 呪文の どれでも）
+		ankaHit(this, "sleep");
 	}
 
 	private tickStatus(): void {

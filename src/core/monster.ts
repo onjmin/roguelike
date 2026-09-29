@@ -4,6 +4,7 @@
 // - 道のりは地形だけの幅優先探索（BFS）で出し、ほかのキャラのいるマスは避ける。
 // - 特技は「見えている・まっすぐ並んでいる」などの条件がそろったとき、決まった確率で使う。
 
+import { ankaHit } from "./anka";
 import { HIT_RATE, rollDamage } from "./balance";
 import { MONSTERS } from "./data/monsters";
 import { canSee } from "./fov";
@@ -30,15 +31,6 @@ import {
 	type MonsterDef,
 	PLAYER_ID,
 } from "./types";
-
-/** パン兵が 変える パン（片親パン 3・ぷゆゆパン 1・チギュリパン 1 の 重みで 引く）。 */
-const BAKE_BREADS: readonly string[] = [
-	"f_bread",
-	"f_bread",
-	"f_bread",
-	"f_large",
-	"f_moldy",
-];
 
 export const mdef = (m: Monster): MonsterDef => MONSTERS[m.kind];
 
@@ -499,6 +491,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					r.msg(`${seenName(r, m)}は　${a.verb}。${dmg}の　ダメージ`);
 					r.se("damage");
 					r.hurtPlayer(dmg, `${d.name}に　たおされた`);
+					ankaHit(r, "hit");
 					return;
 				}
 			}
@@ -520,6 +513,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 						"warn",
 					);
 					r.hurtPlayer(dmg, `${d.name}の　${a.what ?? "炎"}で　たおれた`);
+					ankaHit(r, "hit");
 					return;
 				}
 			}
@@ -666,10 +660,11 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	if (r.f.wards.includes(p.y * r.f.layout.w + p.x)) return;
 	if (has(m, "grab")) p.status.heldBy = m.uid;
 	r.emit({ t: "attack", id: m.uid, dir: m.dir });
-	// パンに 変える：なぐる 代わりに、持ち物を 1つ ランダムな パンに（1体 1回だけ。パン板の パン兵）。
-	// パン松は パンの すばらしさを 広めに おんJを 侵略しに 来る（「殺しはしない。我らに従え」。おんJwiki）
-	if (has(m, "bake") && !m.baked) {
-		const rate = (d.abilities.find((a) => a.k === "bake") as { rate: number })
+	// 取りかえる：なぐる 代わりに、持っている パンを 押しつけて 持ち物を 1つ 持ち去る（1体 1回だけ。パン板の パン兵）。
+	// パン松は パンの すばらしさを 広めに おんJを 侵略しに 来る（「殺しはしない。我らに従え」。おんJwiki）。
+	// 倒せば 持っている 物を 落とす（取りかえる 前なら パン、あとなら 持ち去った 物）
+	if (has(m, "swap") && !m.swapped && m.carry) {
+		const rate = (d.abilities.find((a) => a.k === "swap") as { rate: number })
 			.rate;
 		if (r.rng.chance(rate)) {
 			const cands = p.items.filter(
@@ -680,19 +675,24 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 			);
 			if (cands.length) {
 				const it = r.rng.pick(cands);
-				const before = r.name(it);
-				// 片親パン が 多め、たまに ぷゆゆパン、はずれの チギュリパン
-				const bread = r.rng.pick(BAKE_BREADS);
-				it.kind = bread;
-				it.plus = 0;
-				it.cursed = false;
-				it.charges = 0;
-				it.count = 1;
-				it.known = true;
-				m.baked = true;
-				r.se("steal");
-				r.msg(`${nm}は　${before}を　パンに　した！`, "warn");
-				r.msg(`「パンに　従え」`);
+				const bread = m.carry;
+				r.removeItem(it);
+				p.items.push(bread);
+				m.carry = it;
+				m.swapped = true;
+				m.fleeing = true;
+				r.se("throw");
+				r.msg(
+					`${nm}は　${r.name(bread)}を　押しつけて、${r.name(it)}を　持っていった！`,
+					"warn",
+				);
+				r.msg("「パンに　従え」");
+				const to = randomAway(r, m);
+				if (to) {
+					r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
+					m.x = to.x;
+					m.y = to.y;
+				}
 				return;
 			}
 		}
@@ -735,6 +735,8 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	r.se("damage");
 	r.msg(`${nm}の　攻撃。${dmg}の　ダメージ`);
 	if (r.hurtPlayer(dmg, `${d.name}に　たおされた`)) return;
+	// 安価「攻撃を　n回　受ける」（当たった ものだけ）
+	ankaHit(r, "hit");
 	// なぐったときの特技
 	if (m.status.sealed) return;
 	for (const a of d.abilities) {

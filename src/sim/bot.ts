@@ -340,7 +340,15 @@ const decide = (r: Run, opts: BotOpts): Command => {
 										pick("herb", (i) => known(i) && BAD_HERBS.has(i.kind));
 									return t ? { c: "throw", item: t.uid, dir: p.dir } : null;
 								})()
-							: null;
+							: anka.kind === "sleep"
+								? (() => {
+										const h = pick(
+											"herb",
+											(i) => i.kind === "h_sleep" && known(i),
+										);
+										return h ? { c: "use", item: h.uid } : null;
+									})()
+								: null;
 		if (cmd) return cmd;
 	}
 	// 装備の更新

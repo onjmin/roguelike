@@ -6,6 +6,7 @@
 //   シードが決まっているので、結果は毎回同じ。
 // - 湧きと地震は止める（毎ターン f.turns を 0 に戻す）。
 
+import { ankaText, tickAnka } from "../core/anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -2287,6 +2288,80 @@ test(
 
 test(
 	"floor",
+	"anka: eat counts bread only, sleep counts any sleep, hit counts 3 landed enemy attacks; each comes only when doable",
+	() => {
+		// 食う：草を 飲んでも 数えない。パンを 食べれば 神安価
+		const r = arena("anka-kinds");
+		const herb = give(r, "h_heal");
+		const bread = give(r, "f_bread");
+		r.f.anka = { kind: "eat", need: 1, done: 0, due: 500 };
+		r.act({ c: "use", item: herb.uid });
+		ok(r.f.anka?.kind === "eat", "drinking a herb cleared the eat anka");
+		r.act({ c: "use", item: bread.uid });
+		ok(!r.f.anka, "eating bread did not clear the eat anka");
+		ok(
+			ankaText({ kind: "eat", need: 1, done: 0, due: 0 }).includes("パン"),
+			"the eat anka does not say bread",
+		);
+		// 寝る：眠りの 罠でも 数える
+		r.f.anka = { kind: "sleep", need: 1, done: 0, due: 500 };
+		triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "sleep", found: false });
+		ok(r.p.status.sleep > 0, "harness: the sleep trap did not fire");
+		ok(!r.f.anka, "falling asleep on a trap did not clear the sleep anka");
+		// 攻撃を 3回 受ける：はずれは 数えない。当たった 3回目で 神安価
+		const h = arena("anka-hit");
+		put(h, "tousuko", { x: CENTER.x, y: CENTER.y - 1 });
+		h.f.anka = { kind: "hit", need: 3, done: 0, due: 5000 };
+		let landed = 0;
+		for (let i = 0; i < 60 && h.f.anka; i++) {
+			const ev = h.act({ c: "wait" });
+			landed += hurts(ev, PLAYER_ID).length;
+			ok(
+				!!h.f.anka === landed < 3,
+				`the hit anka was wrong after ${landed} hits`,
+			);
+			if (h.f.anka)
+				ok(
+					h.f.anka.done === landed,
+					`hit anka counted ${h.f.anka.done}, landed ${landed}`,
+				);
+		}
+		ok(landed >= 3, "harness: the enemy never landed 3 hits");
+		// 来る 条件：寝るは 正体の わかった 寝落ち草を 持つ ときだけ、受けるは 敵が いる ときだけ
+		const kinds = (x: Run): Set<string> => {
+			const seen = new Set<string>();
+			for (let i = 0; i < 80; i++) {
+				x.f.anka = null;
+				x.f.ankaAt = x.f.res;
+				tickAnka(x);
+				// （TS は 上で null を 入れたので null と 思いこむ）
+				const a = x.f.anka as { kind: string } | null;
+				if (a) seen.add(a.kind);
+			}
+			return seen;
+		};
+		const d = arena("anka-doable");
+		d.p.items = [];
+		let got = kinds(d);
+		ok(
+			!got.has("sleep") &&
+				!got.has("hit") &&
+				!got.has("eat") &&
+				!got.has("throw"),
+			`undoable anka came: ${[...got]}`,
+		);
+		give(d, "h_sleep");
+		put(d, "tousuko", at(8, 8));
+		got = kinds(d);
+		ok(!got.has("sleep"), "sleep came with an unidentified sleep herb");
+		ok(got.has("hit"), "hit never came with an enemy on the floor");
+		d.s.ids.known.h_sleep = true;
+		ok(kinds(d).has("sleep"), "sleep never came with a known sleep herb");
+	},
+);
+
+test(
+	"floor",
 	"statue: plain statues stand on statue floors only, block the way without splitting rooms, and look like a posing statue",
 	() => {
 		let seen = 0;
@@ -2575,28 +2650,48 @@ for (const [id, board] of COLONY_FOES)
 				);
 	});
 
-test("panhei", "bake: turns one loose item into bread, only once", () => {
-	const r = arena("panhei");
-	r.s.dungeon = "shallow";
-	r.p.items = [];
-	const herb = give(r, "h_heal");
-	const scroll = give(r, "s_appraise");
-	const m = put(r, "panhei", at(1, 0));
-	waitTurns(r, 40, () => m.baked === true);
-	const baked = [herb, scroll].filter((it) => defOf(it.kind).cat === "food");
-	ok(
-		baked.length === 1 &&
-			["f_bread", "f_large", "f_moldy"].includes(baked[0].kind),
-		`baked: ${[herb, scroll].map((it) => it.kind)}`,
-	);
-	ok(r.p.items.length === 2, "an item went missing");
-	// 1体 1回だけ：もう 変えない
-	waitTurns(r, 40, () => false);
-	ok(
-		[herb, scroll].filter((it) => defOf(it.kind).cat === "food").length === 1,
-		"baked twice",
-	);
-});
+test(
+	"panhei",
+	"swap: pushes its bread on Kiriko, takes one item and runs; drops what it holds",
+	() => {
+		const BREADS = ["f_bread", "f_large", "f_moldy"];
+		const r = arena("panhei");
+		r.s.dungeon = "shallow";
+		r.p.items = [];
+		const herb = give(r, "h_heal");
+		const scroll = give(r, "s_appraise");
+		const m = put(r, "panhei", at(1, 0));
+		// はじめから パンを 持っている
+		ok(!!m.carry && BREADS.includes(m.carry.kind), `holds ${m.carry?.kind}`);
+		const bread = m.carry;
+		waitTurns(r, 40, () => m.swapped === true);
+		const taken = [herb, scroll].find((it) => !r.p.items.includes(it));
+		ok(
+			!!taken && m.carry === taken && !!bread && r.p.items.includes(bread),
+			`swap: took ${taken?.kind}, carries ${m.carry?.kind}, gave ${bread?.kind}`,
+		);
+		ok(r.p.items.length === 2, "the count of items changed");
+		// 1体 1回だけ・倒すと 持ち去った 物を 落とす
+		const where = { x: m.x, y: m.y };
+		r.killMonster(m, false);
+		ok(
+			r.f.items.some(
+				(fi) => fi.item === taken && fi.x === where.x && fi.y === where.y,
+			) || r.f.items.some((fi) => fi.item === taken),
+			"the taken item was not dropped",
+		);
+		// 取りかえる 前に 倒すと パンを 落とす
+		const r2 = arena("panhei-early");
+		r2.s.dungeon = "shallow";
+		const m2 = put(r2, "panhei", at(3, 0), { sleep: DEEP });
+		const held = m2.carry;
+		r2.killMonster(m2, false);
+		ok(
+			!!held && r2.f.items.some((fi) => fi.item === held),
+			"the bread was not dropped",
+		);
+	},
+);
 
 test("kinonyan", "sits still until Kiriko comes near", () => {
 	const r = arena("kinonyan");

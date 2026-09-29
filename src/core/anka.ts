@@ -2,6 +2,7 @@
 //
 // - 2階から、階に 入ったとき ANKA_CHANCE で「来る レス数」を 決めておき、そこまで 伸びたら 来る。
 // - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　1つ　飲む」は 来ない）。
+//   むずかしい お題（寝る・攻撃を 受ける）は 来にくい（doable の 重み）。
 // - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
 // - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く
 //   （ボスが 生きている 階には 湧かない）。
@@ -9,7 +10,13 @@
 // - 出ている 安価は 階を かわっても 消えない（次スレに 持ちこし。のこりの レス数も そのまま）。
 
 import { randomFloorPos, spawnMonster } from "./floor";
-import { defOf, identifyKind, itemHidden, itemTableOf } from "./item";
+import {
+	defOf,
+	identifyKind,
+	isKnownKind,
+	itemHidden,
+	itemTableOf,
+} from "./item";
 import { rollKinds } from "./itemTable";
 import { wakeMonster } from "./monster";
 import type { Run } from "./run";
@@ -32,9 +39,17 @@ const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
 	herb: () => "草を　1つ　飲む",
 	scroll: () => "スレを　1つ　読む",
 	throw: () => "何か　投げる",
-	eat: () => "何か　食う",
+	// 食べられるのは パンだけ（草は「飲む」なので 数えない）
+	eat: () => "パンを　1つ　食う",
 	kill: (n) => `敵を　${n}体　たおす`,
+	// 眠れば 何でも いい（寝落ち草・罠・眠りの 呪文。Run.sleepPlayer で 数える）
+	sleep: () => "寝る",
+	// 敵の 攻撃が 当たった 回数（なぐる・矢・息。はずれや 罠は 数えない。core/monster.ts）
+	hit: (n) => `攻撃を　${n}回　受ける`,
 };
+
+/** お題ごとの こなす 回数。 */
+const ANKA_NEED: Partial<Record<AnkaKind, number>> = { kill: 2, hit: 3 };
 
 /** 画面に 出す お題（「草を　1つ　飲む」）。 */
 export const ankaText = (a: Anka): string => ANKA_TEXT[a.kind](a.need);
@@ -83,6 +98,16 @@ const doable = (r: Run): AnkaKind[] => {
 	if (has("scroll")) out.push("scroll", "scroll");
 	if (has("food")) out.push("eat");
 	if (r.p.items.some((it) => defOf(it.kind).cat !== "goal")) out.push("throw");
+	// 寝る：自分で 寝られる とき だけ（正体の わかった 寝落ち草を 持っていて、起きる指輪を はめていない）。
+	// 罠や 呪文でも 数えるが、それだけでは 運まかせなので 出さない
+	if (
+		!r.hasRing("r_awake") &&
+		isKnownKind(r.s, "h_sleep") &&
+		r.p.items.some((it) => it.kind === "h_sleep")
+	)
+		out.push("sleep");
+	// 攻撃を 受ける：なぐってくる 敵が 階に いるとき（置物だけ なら 出さない）
+	if (r.f.monsters.some((m) => m.hp > 0 && !m.status.dormant)) out.push("hit");
 	return out;
 };
 
@@ -94,7 +119,7 @@ export const tickAnka = (r: Run): void => {
 		const kind = r.rng.pick(doable(r));
 		const a: Anka = {
 			kind,
-			need: kind === "kill" ? 2 : 1,
+			need: ANKA_NEED[kind] ?? 1,
 			done: 0,
 			due: f.res + ANKA_DUE,
 		};

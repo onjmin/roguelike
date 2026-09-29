@@ -500,9 +500,9 @@ const M: MonsterDef[] = [
 		exp: 6,
 		floors: [2, 7],
 		weight: 40,
-		abilities: [{ k: "bake", rate: 1 / 2 }],
+		abilities: [{ k: "swap", rate: 1 / 2 }],
 		board: "shallow",
-		desc: "パン松の　軍勢。持ち物を　1つ　パンに　変えてくる（1体　1回だけ）",
+		desc: "パン松の　軍勢。パンを　押しつけて　持ち物を　1つ　持ち去る。たおせば　取り返せる",
 		flavor: "やきうの　スレを　立てると、どこからともなく　行進してくる",
 	},
 	{
@@ -754,3 +754,12 @@ export const monstersFor = (depth: number, dungeon?: DungeonId): MonsterDef[] =>
 			depth <= m.floors[1] &&
 			(!m.board || m.board === dungeon),
 	);
+
+/** パン兵が はじめから 持っている パン（片親パン 3・ぷゆゆパン 1・チギュリパン 1 の 重みで 引く）。 */
+export const SWAP_BREADS: readonly string[] = [
+	"f_bread",
+	"f_bread",
+	"f_bread",
+	"f_large",
+	"f_moldy",
+];
