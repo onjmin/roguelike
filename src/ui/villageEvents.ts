@@ -92,7 +92,9 @@ import {
 	returnScene,
 	type StoreChooser,
 	sceneView,
+	sendBack,
 	settleScript,
+	TALK_NEAR,
 } from "./villageReturn";
 import { DUNGEON_DESC, hasNews, ledgerLine, talkLine } from "./villageTalk";
 import { openWorldMap, pickColony, travelTo } from "./worldMap";
@@ -213,6 +215,7 @@ const suspendedFirst = async (
 		abandonRun();
 		// すてたので 次のダンジョンが開いたなら（救い）、ここで知らせる
 		await newsScript(s);
+		await sendBack(s);
 	}
 	return true;
 };
@@ -251,10 +254,11 @@ const departTo = async (
 		depositBag();
 		carry = [];
 	}
-	// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）
+	// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）。
+	// キリコは 1人で 出ていく：やきうが そばに いるときだけ 声を かける
 	if (awayFriends(loadProgress().cleared).includes("nanj"))
 		await s.kiriko(DEPART.kiriko, "think");
-	else await s.say("nanj", DEPART.nanj);
+	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
 	// 毎回 はじめから 持っている ぷゆゆパンは、かけてくる ぷゆゆが 持たせる（トルネコ1の ネネの お弁当の 役）
 	if (DUNGEONS[d].start.includes("f_large")) await s.narrate(DEPART.puyu);
 	notePicked(d, false);
@@ -578,6 +582,7 @@ const arrivalScript =
 		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
 		await settleScript(s, storeChooser(ctx));
+		await sendBack(s);
 	};
 
 /** 村の マップ（町の段・開いたダンジョンから）。 */

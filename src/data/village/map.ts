@@ -620,6 +620,36 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
  * 出口の 1つ下（キリコが 出てくる マス）の 左右に 近い順で、崖の下の道に 並ぶ（たりなければ その下の段）。
  * 通れない マス・人や 置物の いる マス・踏むと もぐる 口は とばす。
  */
+/**
+ * (x, y) の まわりの 空いた マス（近い 順に n こ）。村の 場面で 話す 仲間を キリコの そばに 呼ぶ ときに 使う
+ * （ui/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
+ */
+export const spotsAround = (
+	v: VillageView,
+	n: number,
+	[px, py]: readonly [number, number],
+): Cell[] => {
+	const rows = villageRows(v).map((r) => [...r]);
+	const tiles = villagePalette(v);
+	const places = villagePlaces(v);
+	const free = (x: number, y: number): boolean =>
+		!(x === px && y === py) &&
+		!!tiles[rows[y]?.[x] ?? ""]?.passable &&
+		!places.some(
+			(p) => p.x === x && p.y === y && (p.sprite || p.trigger === "touch"),
+		) &&
+		!exitAt(x, y);
+	const out: Cell[] = [];
+	for (let r = 1; r <= 4 && out.length < n; r++)
+		for (let dy = -r; dy <= r; dy++)
+			for (let dx = -r; dx <= r; dx++) {
+				if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+				if (out.length < n && free(px + dx, py + dy))
+					out.push([px + dx, py + dy]);
+			}
+	return out;
+};
+
 export const lineupSpots = (
 	v: VillageView,
 	n: number,

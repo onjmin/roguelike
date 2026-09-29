@@ -208,6 +208,7 @@ import {
 } from "../ui/villageOpening";
 import {
 	deathScene,
+	gather,
 	lineUp,
 	newsScript,
 	pagesFor,
@@ -215,7 +216,9 @@ import {
 	returnScene,
 	type StoreChooser,
 	sceneView,
+	sendBack,
 	settleScript,
+	TALK_NEAR,
 	villageView,
 } from "../ui/villageReturn";
 import {
@@ -1183,6 +1186,43 @@ const fakeStory = (
 	return { s, log };
 };
 
+test("村の 場面で 話す 仲間は そばへ 呼ぶ：遠い 人だけ 暗転中に キリコの まわりへ 置き、終わりに 建て直す", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 4 });
+		// みんな そばに いれば 何も しない
+		const a = fakeStory({ near: ["roze", "zero"] });
+		await gather(a.s, ["roze", "zero", null]);
+		await sendBack(a.s);
+		ok(!a.log.length, `moved although everyone is near:\n${a.log.join("\n")}`);
+		// 遠い 人だけ 置く（同じ 人は 1回）。置く マスは キリコの まわり 4マス 以内
+		const b = fakeStory({ near: ["roze"] });
+		await gather(b.s, ["roze", "zero", "zero", "shiyo"]);
+		const placed = b.log.filter((l) => l.startsWith("place "));
+		ok(
+			placed.length === 2 &&
+				placed.some((l) => l.startsWith("place zero ")) &&
+				placed.some((l) => l.startsWith("place shiyo ")),
+			`placed: ${placed.join(" / ")}`,
+		);
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		for (const l of placed) {
+			const [x, y] = l.split(" ")[2].split(",").map(Number);
+			ok(
+				Math.max(Math.abs(x - bx), Math.abs(y - by)) <= TALK_NEAR,
+				`${l} is far from Kiriko`,
+			);
+		}
+		ok(inOrder(b.log, ["fadeOut", "fadeIn"]), "not placed in the dark");
+		// 終わりに 建て直して 持ち場へ（2回目は 何も しない）
+		await sendBack(b.s);
+		ok(inOrder(b.log, ["fadeOut", "rebuild", "fadeIn"]), "not sent back");
+		const n = b.log.length;
+		await sendBack(b.s);
+		ok(b.log.length === n, "sent back twice");
+	});
+});
+
 /** log の 中で want が この順に 出てくるか（あいだに ほかの 行が あってもよい）。 */
 const inOrder = (log: readonly string[], want: readonly string[]): boolean => {
 	let i = 0;
@@ -1305,8 +1345,10 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 				!villageView().unlocked.includes("main"),
 			"the news was lost when the tab closed",
 		);
-		// 開きなおして 最後まで（出口を 見て 話す。村の 見た目は 変わらない）
-		const { s, log } = fakeStory();
+		// 開きなおして 最後まで（出口を 見て 話す。村の 見た目は 変わらない。話す 仲間は そばに いる）
+		const { s, log } = fakeStory({
+			near: ["roze", "shiyo", "feris", "zero", "nanj"],
+		});
 		await newsScript(s);
 		const exit = `look ${VILLAGE_SPOTS.exit.join(",")}`;
 		ok(
@@ -1609,14 +1651,15 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 			chooser([1], () => ok(false, "asked with a full storehouse")),
 		);
 		ok(
-			c.log[0] === `say shiyo: ${TOWN_MSG.storageFull.text}` &&
+			c.log.find((l) => l.startsWith("say ")) ===
+				`say shiyo: ${TOWN_MSG.storageFull.text}` &&
 				loadTown().storage.length === 10 &&
 				!loadTown().pending,
 			`full storehouse:\n${c.log.join("\n")}`,
 		);
 		// 何も 持ち帰らなかった：ひとことだけ
 		putTown({ stage: 4, points: 1000, pending: pending("escape", []) });
-		const d = fakeStory();
+		const d = fakeStory({ near: ["shiyo"] });
 		await settleScript(d.s, chooser([]));
 		ok(
 			d.log.length === 1 &&

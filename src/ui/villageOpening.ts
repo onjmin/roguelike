@@ -9,6 +9,7 @@ import { OPENING } from "../data/town";
 import { VILLAGE_SPOTS } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadProgress, loadRecords } from "../engine/save";
+import { villageView } from "./villageReturn";
 
 const KEY = "kiriko-roguelike/opening";
 
@@ -51,9 +52,17 @@ export const openingScript = async (s: Story): Promise<void> => {
 	// 小屋の前の やきうが 声を かける
 	await s.look("nanj");
 	for (const t of OPENING.nanjCall) await s.say("nanj", t);
+	// 呼んでから キリコの そばまで 歩いてくる（離れたまま 話しこまない）
+	const [bx, by] = [s.state.x, s.state.y];
+	await s.goto("nanj", bx + 1, by, { speed: 1.6 });
+	s.face("nanj", "player");
+	await s.look(null);
 	await s.look(VILLAGE_SPOTS.exit);
 	for (const t of OPENING.nanjMouth) await s.say("nanj", t);
 	await s.look(null);
+	// 話しおえたら 小屋の 前へ もどる
+	const [nx, ny] = VILLAGE_SPOTS.nanj(villageView());
+	await s.goto("nanj", nx, ny);
 	for (const t of OPENING.goal) await s.narrate(t);
 	markSeen();
 };

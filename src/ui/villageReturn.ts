@@ -14,6 +14,9 @@
 //   決める前に 閉じても pending が 残るので 次に 村に 入ったとき 続きから。選んでいるあいだに 別のタブで
 //   決められていたら 何もしない（古い町で 上書きしない）。
 // - 倒れたときは 場面も 精算も ない（仲間は 話しかけると 反応する。ui/villageTalk.ts）。
+// - キリコは 1人で 動いている。知らせ・精算・町が 育つ 場面で 話す 仲間が 遠ければ（TALK_NEAR より 先）、
+//   暗転の あいだに キリコの そばへ 呼び（gather）、場面の 終わりに 建て直して 持ち場へ もどす（sendBack）。
+//   離れた 人の 声だけが 飛んでくる 掛け合いは しない（そばに いる 人とだけ 話す）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../core/town";
@@ -41,6 +44,7 @@ import {
 import {
 	exitAt,
 	lineupSpots,
+	spotsAround,
 	VILLAGE_SPOTS,
 	type VillageExit,
 	type VillageView,
@@ -198,6 +202,49 @@ export const returnScene = async (
 	await s.fadeIn(300);
 };
 
+// ───────────────── 話す 仲間を そばに ─────────────────
+
+/** これより 離れた 仲間とは 話さない（キリコは 1人で 動いている。村の 窓で 話すのは そばに いる 人だけ）。 */
+export const TALK_NEAR = 4;
+
+/** 仲間を 持ち場から 呼んだ 場面（あとで 建て直して 持ち場へ もどす）。 */
+const called = new WeakSet<Story>();
+
+/**
+ * 村の 場面で 話す 仲間を キリコの そばへ（離れた 人の 声が 飛んでこないように）。遠い 人だけ、暗転の あいだに
+ * キリコの まわりへ 置いて こちらを 向かせる。dark なら もう 暗い（明けるのは 呼ぶ側）。
+ * もどすのは sendBack（場面の 終わりに 建て直す）。
+ */
+export const gather = async (
+	s: Story,
+	who: readonly (Speaker | null)[],
+	opt: { dark?: boolean } = {},
+): Promise<void> => {
+	const far = [...new Set(who.filter((w): w is Speaker => !!w))].filter(
+		(w) => !s.near(w, TALK_NEAR),
+	);
+	if (!far.length) return;
+	if (!opt.dark) await s.fadeOut(250);
+	const spots = spotsAround(villageView(), far.length, [s.state.x, s.state.y]);
+	far.forEach((w, i) => {
+		const c = spots[i];
+		if (!c) return;
+		s.place(w, c[0], c[1]);
+		s.face(w, "player");
+	});
+	called.add(s);
+	if (!opt.dark) await s.fadeIn(250);
+};
+
+/** gather で 呼んだ 仲間を 持ち場へ もどす（暗転して 建て直す）。呼んでいなければ 何もしない。 */
+export const sendBack = async (s: Story): Promise<void> => {
+	if (!called.has(s)) return;
+	called.delete(s);
+	await s.fadeOut(250);
+	await s.rebuild();
+	await s.fadeIn(250);
+};
+
 // ───────────────── たおれて もどったとき ─────────────────
 
 /**
@@ -230,7 +277,17 @@ export const deathScene = async (s: Story): Promise<void> => {
 export const newsScript = async (s: Story): Promise<void> => {
 	// 出ていった 仲間は 知らせでも 話さない
 	const away = awayFriends(loadProgress().cleared);
-	for (const n of loadProgress().news) {
+	// 知らせを 話す 仲間を そばへ
+	const news = loadProgress().news;
+	if (news.length)
+		await gather(
+			s,
+			Object.values(UNLOCK_LINES)
+				.flat()
+				.map((l) => l.who)
+				.filter((w) => !away.includes(w)),
+		);
+	for (const n of news) {
 		const colony = !["main", "deep"].includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
 		const lines = UNLOCK_LINES[
@@ -291,6 +348,17 @@ export const settleScript = async (
 	// 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずかる 物を きく
 	const canStore = cap > 0;
 	const say = (l: { who: Speaker; text: string }) => s.say(l.who, l.text);
+	// あずかる シヨ・売る ロゼ・読む ゼロを そばへ
+	await gather(
+		s,
+		pend.items.length
+			? [
+					canStore ? TOWN_MSG.storePrompt.who : TOWN_MSG.noStorage.who,
+					TOWN_MSG.sellRest.who,
+					TOWN_MSG.sold.who,
+				]
+			: [canStore ? TOWN_MSG.nothingToStore.who : TOWN_MSG.soldNothing.who],
+	);
 	let chosen: number[] = [];
 	if (!pend.items.length)
 		await say(canStore ? TOWN_MSG.nothingToStore : TOWN_MSG.soldNothing);
@@ -322,6 +390,17 @@ export const settleScript = async (
 const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
 	await s.fadeOut(400);
 	await s.rebuild();
+	// 建て直すと 持ち場に もどるので、話す 仲間を もう一度 そばへ（暗い うちに）
+	await gather(
+		s,
+		[
+			...(STAGE_UP[to] ?? []).map((l) => l.who),
+			...(hallTier(to) > hallTier(from)
+				? [STAGE_UP_HALL[hallTier(to)]?.who ?? null]
+				: []),
+		],
+		{ dark: true },
+	);
 	await s.look(VILLAGE_SPOTS.growth(to), { instant: true });
 	await s.fadeIn(400);
 	s.se("levelup");
