@@ -7,6 +7,7 @@
 
 import type { Input, Key } from "../engine/input";
 import { el } from "./dom";
+import { OPEN_WAIT_MS } from "./message";
 
 export type UiCtx = {
 	ui: HTMLElement;
@@ -262,8 +263,14 @@ export const listWindow = (
 		markOpened(box);
 		pages = paginate(box, buttons, pager);
 		render();
+		const openedAt = performance.now();
+		// 開いてから 押しなおした キーが あったか（開く 前からの 押しっぱなしで 行が 動かないように。message.ts の OPEN_WAIT_MS）
+		let fresh = false;
 		const pop = ctx.input.push(
 			(k, repeat) => {
+				if (performance.now() - openedAt < OPEN_WAIT_MS) return;
+				if (repeat && !fresh) return;
+				if (!repeat) fresh = true;
 				if (
 					k === "up" ||
 					k === "down" ||

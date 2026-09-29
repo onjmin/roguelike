@@ -609,7 +609,17 @@ export type ChoiceHooks = {
 	disabled?: (i: number) => boolean;
 	/** 外から カーソルを 動かす・決める（choose が 中身を 入れる）。 */
 	ctl?: { move?: (i: number) => void; pick?: (i: number) => void };
+	/** 開いてから キーを 受けない 時間（ms。既定は OPEN_WAIT_MS）。 */
+	waitMs?: number;
+	/** 押しっぱなしの 自動くり返しで カーソルが 動く 間（ms。省くと くり返しの たびに 動く）。 */
+	repeatMs?: number;
 };
+
+/**
+ * 選択肢が 開いてから キーを 受けない 時間（ms）。歩いて 開いた ときの 押しっぱなしで、すぐに カーソルが 動かないように。
+ * 開く 前から 押していた キーの 自動くり返しは、いちど 離して 押しなおすまで 受けない（choose の fresh）。
+ */
+export const OPEN_WAIT_MS = 200;
 
 /** 選択肢。 */
 export class ChoiceWindow {
@@ -703,8 +713,21 @@ export class ChoiceWindow {
 		};
 		return new Promise((resolve) => {
 			resolveFn = resolve;
+			const openedAt = performance.now();
+			const wait = hooks.waitMs ?? OPEN_WAIT_MS;
+			// 開いてから 押しなおした（自動くり返しでない）キーが あったか
+			let fresh = false;
+			let movedAt = 0;
 			pop = this.input.push(
-				(key) => {
+				(key, repeat) => {
+					const now = performance.now();
+					if (now - openedAt < wait) return;
+					if (repeat && !fresh) return;
+					if (!repeat) fresh = true;
+					// 押しっぱなしは ゆっくり（repeatMs ごとに 1つ）
+					if (repeat && hooks.repeatMs && now - movedAt < hooks.repeatMs)
+						return;
+					movedAt = now;
 					if (key === "up") move(vertical(-1));
 					else if (key === "down") move(vertical(1));
 					else if (key === "left") move((cur + n - 1) % n);

@@ -689,6 +689,10 @@ export const pickColony = async (
 			onMove,
 			disabled: (i) => i < cancel && !o.open.includes(spots[i]),
 			ctl,
+			// 歩いて 口に 入った 押しっぱなしで すぐに カーソルが 動かないように 長めに 待つ
+			waitMs: 400,
+			// 押しっぱなしで 行き先が 走りまわらないように ゆっくり
+			repeatMs: 320,
 		},
 	);
 	v.canvas.removeEventListener("pointerup", onTap);
