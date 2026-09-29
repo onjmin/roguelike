@@ -1,7 +1,7 @@
 // 村に 越してくる おんJマイナーズの 歩行グラ（32x64・16x16 が 2コマ×4方向。RPGEN 歩行グラ規格）を 書き出す
 // （node scripts/make-minors.mjs）。rpg の scripts/make-sprites.mjs と 同じ 作り方（顔文字の 特徴だけを 16x16 に 落とす）。
 //
-// - public/sprites/minors_miaumiau.png … ミャウミャウ <f(・ワ・)t>（紙袋を かぶった エルフ。白い 服）
+// - public/sprites/minors_miaumiau.png … ミャウミャウ <f(・ワ・)t>（紙袋の 服を 着た エルフ。銀の 髪・イカの 頭巾）
 // - public/sprites/minors_jtleman.png  … ジェイトルマン (‐Jし‐)（シルクハットの 紳士。閉じた目・J の鼻・し の口）
 // - public/sprites/minors_asakonro.png … 朝コンロ ( ,,Ծ‸Ծ,,)（火の色の 髪。まるい目・‸ の口・ほっぺの ,,）
 // - public/sprites/minors_mujje.png    … ムッジェ ΣΩΩ>（赤い 毛の 柱・柄の 先の 目玉・横に つき出た 口・白い 手袋）
@@ -97,71 +97,75 @@ const FEET = [".....SS..SS.....", "................"];
 const FEET_B = ["....SS....SS....", "................"];
 
 // ───── ミャウミャウ <f(・ワ・)t> ─────
-// 紙袋を かぶった エルフ（袋の 両わきから とがった 耳）。袋に ・ワ・ の顔。白い 服（イメージカラー 白）。
-const MIAU_BODY = [
-	"...KWWWWWWWWK...",
-	"..KWWWWWWWWWWK..",
-	".KFKWWwWWwWWKFK.",
-	"..KWWWWWWWWWWK..",
-	"..KwwwwwwwwwwK..",
-];
+// おんJwiki（ミャウミャウ）の 絵に 合わせて：紙袋は 服（茶色い 紙袋の ワンピース）。銀の 長い 髪・とがった エルフの 耳・
+// 頭に イカの 胴の ような 白い 頭巾（顔面：ダイオウイカ）・・ワ・ の 顔・はだしの 脚。公式にも 絵は 定まっていない。
 walkSheet(
 	"minors_miaumiau.png",
 	{
-		K: hex("#3a2a1a"),
-		G: hex("#c9a06a"),
-		g: hex("#9c7442"),
+		K: hex("#3a2a3a"),
+		Q: hex("#f2cfe2"),
+		q: hex("#c88aae"),
+		H: hex("#eceaf4"),
+		h: hex("#b8b4cc"),
 		F: hex("#ffe0c8"),
-		W: hex("#f6f6f6"),
-		w: hex("#c8ccd8"),
 		B: hex("#141414"),
-		M: hex("#7a2a2a"),
-		S: hex("#6a5a4a"),
+		M: hex("#c84a5a"),
+		G: hex("#b08050"),
+		g: hex("#8a6038"),
+		S: hex("#f2c8a8"),
 	},
 	{
 		down: [
-			"...KKKKKKKKKK...",
-			"..KGGGGGGGGGGK..",
-			"..KGgGGGGGGgGK..",
-			"FKKGGGGGGGGGGKKF",
-			".FKGGBGGGGBGGKF.",
-			"..KGGBGGGGBGGK..",
-			"..KGGGMGGMGGGK..",
-			"..KGGGGMMGGGGK..",
-			"..KggggggggggK..",
-			...MIAU_BODY,
+			".....KKKKKK.....",
+			"....KQQQQQQK....",
+			"...KQQqQQqQQK...",
+			"..KQQQQQQQQQQK..",
+			".KHHHHHHHHHHHHK.",
+			"FKHFFFFFFFFFFHKF",
+			".KHFBFFFFFFBFHK.",
+			".KHFFFFMMFFFFHK.",
+			".KHHFFFFFFFFHHK.",
+			".KHHKGGGGGGKHHK.",
+			".KHKFGGGGGGFKHK.",
+			".KHKGGgGGgGGKHK.",
+			"..KKGGGGGGGGKK..",
+			"...KgGgGGgGgK...",
 		],
 		up: [
-			"...KKKKKKKKKK...",
-			"..KGGGGGGGGGGK..",
-			"..KGgGGGGGGgGK..",
-			"FKKGGGGGGGGGGKKF",
-			".FKGGGGgGGGGGKF.",
-			"..KGGGGgGGGGGK..",
-			"..KGGGGGGGGGGK..",
-			"..KGGGGGGGGGGK..",
-			"..KggggggggggK..",
-			...MIAU_BODY,
+			".....KKKKKK.....",
+			"....KQQQQQQK....",
+			"...KQQqQQqQQK...",
+			"..KQQQQQQQQQQK..",
+			".KHHHHHHHHHHHHK.",
+			"FKHHHHHHHHHHHHKF",
+			".KHHhHHHHHHhHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHHhHHHHhHHHK.",
+			".KHHHHHHHHHHHHK.",
+			".KHHhHHHHHHhHHK.",
+			".KHHHHHHHHHHHHK.",
+			"..KKGGGGGGGGKK..",
+			"...KgGgGGgGgK...",
 		],
 		right: [
-			"...KKKKKKKKKK...",
-			"..KGGGGGGGGGGK..",
-			"..KGgGGGGGGGGK..",
-			"FKKGGGGGGGGGGK..",
-			".FKGGGGGGBGGGK..",
-			"..KGGGGGGBGGGK..",
-			"..KGGGGGGGGMGK..",
-			"..KGGGGGGGMMGK..",
-			"..KggggggggggK..",
-			"...KWWWWWWWWK...",
-			"..KWWWWWWWWWWK..",
-			"..KWWWWWWFKWWK..",
-			"..KWWWWWWWWWWK..",
-			"..KwwwwwwwwwwK..",
+			".....KKKKKK.....",
+			"....KQQQQQQK....",
+			"...KQQqQQqQQK...",
+			"..KQQQQQQQQQQK..",
+			".KHHHHHHHHHHHK..",
+			"FKHHHHFFFFFFFK..",
+			".KHHHHFFFFFBFK..",
+			".KHHHHFFFFFFMK..",
+			".KHHHHHFFFFFK...",
+			".KHHHHKGGGGK....",
+			".KHHHKGGGFGK....",
+			".KHHKGGgGGGK....",
+			"..KKGGGGGGGK....",
+			"...KgGgGGgK.....",
 		],
 	},
-	FEET,
-	FEET_B,
+	[".....SS..SS.....", "................"],
+	["....SS....SS....", "................"],
 );
 
 // ───── ジェイトルマン (‐Jし‐) ─────
