@@ -2250,7 +2250,7 @@ test(
 			gifts.every((fi) => fi.item.known && isKnownKind(r.s, fi.item.kind)),
 			"a gift was not identified",
 		);
-		// 敵を 2体 たおせ：1体では まだ
+		// 敵を 2体 たおす：1体では まだ
 		r.f.anka = { kind: "kill", need: 2, done: 0, due: r.f.res + 100 };
 		for (let i = 0; i < 2; i++) {
 			const m = put(r, "tousuko", { x: CENTER.x, y: CENTER.y - 1 });

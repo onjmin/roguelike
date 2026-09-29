@@ -2409,16 +2409,20 @@ export class Play {
 		f.remove();
 	}
 
-	/** 安価が 来た：「>>キリコ　〜」の レスを 上の方に しばらく 出す（操作は とめない）。 */
+	/**
+	 * 安価が 来た：前の レス（名無し）が「>>今の レス番　が　〜」と 取っていた、という 2ch の 形で
+	 * 上の方に しばらく 出す（操作は とめない）。前の レス番は 乱数を 使わず 今の レス番から 決める。
+	 */
 	private async ankaPost(text: string, at: number): Promise<void> {
+		const from = Math.max(1, at - 3 - ((at * 7) % 17));
 		const post = el("div", { class: "over1000 anka-post" }, [
 			el("div", { class: "over1000-head" }, [
-				`${at} ：`,
+				`${from} ：`,
 				el("b", { text: "名無しさん@おんJ" }),
 			]),
 			el("div", { class: "over1000-body" }, [
-				el("span", { class: "anka-to", text: ">>キリコ" }),
-				`　${text}`,
+				el("span", { class: "anka-to", text: `>>${at}` }),
+				`　が　${text}`,
 			]),
 			el("div", {
 				class: "over1000-body anka-note",

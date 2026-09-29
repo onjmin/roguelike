@@ -1,7 +1,7 @@
-// 安価（>>キリコ　草を　飲め）。階（スレ）の 途中で ときどき 来る、スレ民からの お題。
+// 安価（前の レスで 取られた「>>今の レス番　が　草を　1つ　飲む」。2ch の 安価の 形）。階（スレ）の 途中で ときどき 来る、スレ民からの お題。
 //
 // - 2階から、階に 入ったとき ANKA_CHANCE で「来る レス数」を 決めておき、そこまで 伸びたら 来る。
-// - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　飲め」は 来ない）。
+// - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　1つ　飲む」は 来ない）。
 // - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
 // - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く
 //   （ボスが 生きている 階には 湧かない）。
@@ -29,14 +29,14 @@ export const ANKA_TROLLS = 3;
 export const ANKA_GIFTS = 2;
 
 const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
-	herb: () => "草を　1つ　飲め",
-	scroll: () => "スレを　1つ　読め",
-	throw: () => "何か　投げろ",
-	eat: () => "何か　食え",
-	kill: (n) => `敵を　${n}体　たおせ`,
+	herb: () => "草を　1つ　飲む",
+	scroll: () => "スレを　1つ　読む",
+	throw: () => "何か　投げる",
+	eat: () => "何か　食う",
+	kill: (n) => `敵を　${n}体　たおす`,
 };
 
-/** 画面に 出す お題（「草を　1つ　飲め」）。 */
+/** 画面に 出す お題（「草を　1つ　飲む」）。 */
 export const ankaText = (a: Anka): string => ANKA_TEXT[a.kind](a.need);
 
 /** 階を 出るとき：出ている 安価を のこりの レス数つきで 持ち出す（無ければ null）。 */
@@ -61,12 +61,12 @@ export const scheduleAnka = (
 		f.anka = carried.a;
 		f.anka.due = f.res + carried.left;
 		r.msg(
-			`前スレの　安価は　まだ　生きている：>>キリコ　${ankaText(f.anka)}（のこり　${carried.left}レス）`,
+			`前スレの　安価は　まだ　生きている：${ankaText(f.anka)}（のこり　${carried.left}レス）`,
 			"warn",
 		);
 		return;
 	}
-	// ボスの 待つ 階にも 来ない（湧かないので「敵を　2体　たおせ」が こなせなく なる。持ちこした 安価は 上で つづく）
+	// ボスの 待つ 階にも 来ない（湧かないので「敵を　2体　たおす」が こなせなく なる。持ちこした 安価は 上で つづく）
 	if (r.s.returning || r.s.depth < 2 || r.boss) return;
 	if (!r.rng.chance(ANKA_CHANCE)) return;
 	f.ankaAt = r.rng.range(ANKA_AT[0], ANKA_AT[1]);
@@ -101,7 +101,7 @@ export const tickAnka = (r: Run): void => {
 		f.anka = a;
 		r.se("encounter");
 		r.emit({ t: "anka" });
-		r.msg(`安価が　来た：>>キリコ　${ankaText(a)}`, "warn");
+		r.msg(`安価が　来た：${ankaText(a)}`, "warn");
 		r.msg(`（${ANKA_DUE}レス　以内に。安価は　絶対）`);
 		return;
 	}
