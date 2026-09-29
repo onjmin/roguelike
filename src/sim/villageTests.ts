@@ -208,6 +208,7 @@ import {
 import {
 	forgetOpeningMemo,
 	needsOpening,
+	openingPrepare,
 	openingScript,
 } from "../ui/villageOpening";
 import {
@@ -1206,6 +1207,10 @@ const fakeStory = (
 		},
 		place: (id, x, y) => {
 			log.push(`place ${id} ${x},${y}`);
+			if (id === "player") {
+				state.x = x;
+				state.y = y;
+			}
 		},
 		toast: (text) => {
 			log.push(`toast ${text}`);
@@ -1981,7 +1986,7 @@ export const runVillageTests = async (): Promise<TestResult[]> => {
 	return out;
 };
 
-test("the very first village: premise, やきう points at the left mouth, the goal — once", async () => {
+test("the very first village: Kiriko walks in from the south road, sets down the phonograph, やきう points at the mouth, the goal — once", async () => {
 	const texts: [string, string][] = [];
 	for (const [k, v] of Object.entries(OPENING))
 		v.forEach((t, i) => {
@@ -1991,11 +1996,26 @@ test("the very first village: premise, やきう points at the left mouth, the g
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
 		ok(needsOpening(), "no opening on the first boot");
+		// 幕が 上がる 前：南の 道の はしに 立ち、蓄音機は まだ 無い
 		const a = fakeStory();
+		openingPrepare(a.s);
+		ok(
+			a.log.includes("place player 20,31") && a.log.includes("hide phono"),
+			`prepare:\n${a.log.join("\n")}`,
+		);
 		await openingScript(a.s);
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		ok(
+			a.s.state.x === bx && a.s.state.y === by,
+			`Kiriko stops at (${a.s.state.x},${a.s.state.y}), not in front of the phonograph`,
+		);
 		ok(
 			inOrder(a.log, [
+				`narrate: ${OPENING.arrive[0]}`,
+				`narrate: ${OPENING.arrive[1]}`,
 				`narrate: ${OPENING.premise[0]}`,
+				"show phono",
+				`narrate: ${OPENING.premise[2]}`,
 				"look nanj",
 				`say nanj: ${OPENING.nanjCall[0]}`,
 				`look ${VILLAGE_SPOTS.exit.join(",")}`,

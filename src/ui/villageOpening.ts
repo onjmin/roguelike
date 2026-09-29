@@ -1,7 +1,8 @@
 // いちばん最初の 村（はじめて 起動して「はじめる」を 押したあと 1回だけ）。
 // それまでは 前口上が ダンジョンの口を 踏んでから だったので、村に 置かれた 時点では
 // だれで・なにを して・どこへ 行けば いいのかが わからなかった。
-// ここで 前口上（人が 散って 保守村に なった・スレが 伸びない）→ キリコの 独白 → やきうが 目的と 口を 教える（カメラで 見せる）→ 目的を 1行 → 困ったら フェリス。
+// ここで 1作目の スレの あと 南の 道から 歩いて 来る → 前口上（人が 散って 保守村に なった）→ 広場に 蓄音機を 置く →
+// キリコの 独白（スレが 伸びない）→ やきうが 声を かけて 歩いてきて 目的と 口を 教える（カメラで 見せる）→ 目的を 1行。
 // 見終わってから 覚える（途中で 閉じたら 次も 見せる）。一度でも もぐった人には 出さない。
 // 文は data/town.ts の OPENING。
 
@@ -45,9 +46,36 @@ export const needsOpening = (): boolean =>
 	loadRecords().length === 0 &&
 	!loadProgress().intro.includes("shallow");
 
+/** 最初の 村に 来る ところ：南の 道の はし（村の 出口）に 立って いる。蓄音機は まだ 置いていない（幕が 上がる 前に）。 */
+export const openingPrepare = (s: Story): void => {
+	const [x, y] = OPENING_START;
+	s.place("player", x, y, "up");
+	s.hide("phono");
+};
+
+/** キリコが 歩きはじめる 所（南の 出口）と、広場で 蓄音機を 置く 所（起きる 所）。 */
+const OPENING_START = [20, 31] as const;
+
 /** 最初の 村の 場面。 */
 export const openingScript = async (s: Story): Promise<void> => {
-	for (const t of OPENING.premise) await s.narrate(t);
+	// 1作目の スレの あと、南の 道から 人の 散った 保守村へ 歩いてくる
+	for (const t of OPENING.arrive) await s.narrate(t);
+	const [sx, sy] = OPENING_START;
+	const [bx0, by0] = VILLAGE_SPOTS.boot;
+	// 窓を しまってから 歩く
+	await s.wait(0);
+	await s.move(
+		"player",
+		"u".repeat(sy - by0) + (bx0 < sx ? "l" : "r").repeat(Math.abs(sx - bx0)),
+	);
+	s.face("player", "up");
+	const [first, second, place] = OPENING.premise;
+	await s.narrate(first);
+	await s.narrate(second);
+	// 広場に 蓄音機を 置く（ここが キリコの 起きる 所に なる）
+	s.show("phono");
+	s.se("item");
+	await s.narrate(place);
 	for (const t of OPENING.think) await s.kiriko(t, "think");
 	// 小屋の前の やきうが 声を かける
 	await s.look("nanj");

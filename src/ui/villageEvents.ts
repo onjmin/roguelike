@@ -83,7 +83,7 @@ import { enterMusic, enterRoom, keeperLets } from "./rooms";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
 import { hasMobNews, mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
-import { needsOpening, openingScript } from "./villageOpening";
+import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
 	lineUp,
@@ -594,6 +594,9 @@ export const buildVillage = (
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
 		prepare: (s) => {
 			if (back) lineUp(s, back, view);
+			// いちばん最初は 南の 道の はしから 歩いてくる（ui/villageOpening.ts）
+			else if (!arrival && previewStage() === null && needsOpening())
+				openingPrepare(s);
 		},
 		onEnter: arrivalScript(ctx, arrival),
 	};
