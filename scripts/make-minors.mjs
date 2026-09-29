@@ -5,7 +5,7 @@
 // - public/sprites/minors_jtleman.png  … ジェイトルマン (‐Jし‐)（シルクハットの 紳士。閉じた目・J の鼻・し の口）
 // - public/sprites/minors_asakonro.png … 朝コンロ ( ,,Ծ‸Ծ,,)（火の色の 髪。まるい目・‸ の口・ほっぺの ,,）
 //
-// ムッジェ（minors_mujje.png）は rpg の public/sprites/mujje.png を そのまま 使う。
+// ムッジェ（minors_mujje.png）は scripts/make-mujje.mjs（やきうの 歩行グラを 赤い 毛に 塗りかえる）。
 // 1コマ目の 絵を 描き、2コマ目は 足もと（下の 2行）だけ 差し替える。左向きは 右向きの 反転。依存なし（zlib だけ）。
 
 import { writeFileSync } from "node:fs";
