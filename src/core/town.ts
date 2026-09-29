@@ -7,7 +7,7 @@
 // 状態（売上・段・倉庫）は engine/save.ts が持つ。ここは 決まりだけ（DOM に触らない。テストできる）。
 
 import { defOf } from "./item";
-import type { DungeonId, Item } from "./types";
+import type { Item } from "./types";
 
 export const TOWN_STAGES = 8;
 
@@ -19,11 +19,10 @@ export const STAGE_POINTS: readonly number[] = [
 /** 段 → 倉庫に あずけられる数。 */
 export const STORAGE_CAP: readonly number[] = [0, 0, 0, 0, 10, 20, 40, 60];
 
-/** 段 → 1回の冒険に 持ちこめる数。 */
+/**
+ * 段 → 倉庫から 引き取って 1回の冒険に 持ちこめる数。持ちこめない 板は core/data/dungeons.ts の noCarry。
+ */
 export const CARRY_MAX: readonly number[] = [0, 0, 0, 0, 1, 2, 3, 4];
-
-/** 持ちこめるダンジョン（トルネコ1の 不思議 と同じく 本編だけ）。 */
-export const CARRY_DUNGEON: DungeonId = "main";
 
 /** 道具の値段（売ったときに 町の売上になる。トルネコ1の売値に寄せた目安）。 */
 const PRICE: Record<string, number> = {

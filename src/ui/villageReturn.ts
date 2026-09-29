@@ -334,6 +334,6 @@ const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
 	}
 	const carry = CARRY_MAX[to] ?? 0;
 	if (carry > (CARRY_MAX[from] ?? 0))
-		await s.narrate(`倉庫から　風呂板へ\n${carry}つまで　持っていける`);
+		await s.narrate(`倉庫から　引き取って\n${carry}つまで　持っていける`);
 	await s.look(null);
 };

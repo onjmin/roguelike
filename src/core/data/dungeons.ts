@@ -4,7 +4,10 @@
 //
 // - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 10階。入門：杖だけ未識別・のろいなし・祭りなし・
 //   罠は B5 から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
-// - main：風呂板（おふJ）の 27階。湯治：HP の 自然回復が 1.5倍。倉庫から 持ちこめる。
+// - main：風呂板（おふJ）の 27階。湯治：HP の 自然回復が 1.5倍。
+//
+// 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
+// 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town.ts の CARRY_REFUSE）。
 // - deep：電池板（でんJ。過疎で 謎が多い）の 30階。充電：杖の 回数が 1 多い。
 //   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい。
 //
@@ -90,6 +93,8 @@ export type Dungeon = {
 	escapeWithGoal?: boolean;
 	/** 全体マップに 開くまで 出さない（隠し）。 */
 	secret?: boolean;
+	/** 倉庫の 道具を 持ちこめない（出るときに シヨが 預かる）。 */
+	noCarry?: boolean;
 	/**
 	 * 上りの 植民地（塔・やぐら・山）。階は 上へ 数え、帰り道は 降りる。中の 動きは 下りと 同じで、
 	 * 文と 見せかただけ 逆（depth が 大きいほど 高い）。
@@ -364,6 +369,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	deep: {
 		id: "deep",
+		noCarry: true,
 		objective: "fetch",
 		// 機械と 回線の 敵が 多い
 		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
@@ -415,6 +421,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 離島・沖縄板（総島民 6人）：過疎。敵も 道具も 少ない
 	tropical: {
 		id: "tropical",
+		noCarry: true,
 		objective: "boss",
 		boss: {
 			monster: "boss_natsuko",
@@ -510,6 +517,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// （data/story.ts の BOARD_LOOKS の zones）。いちばん底の「蓄音キリコのうた」を 持ったまま 帰還スレで 帰れる
 	hidden: {
 		id: "hidden",
+		noCarry: true,
 		objective: "fetch",
 		floors: 99,
 		items: HIDDEN_ITEMS,

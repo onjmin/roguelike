@@ -2790,6 +2790,14 @@ body.shake #app {
 	color: var(--muted);
 }
 
+.wm-carry {
+	font-size: 13px;
+}
+
+.wm-carry.no {
+	color: #ff9a8a;
+}
+
 /* 行き先の 選択肢（2列。カーソルに 地図が ついていく） */
 .choice.wm-choice {
 	position: static;

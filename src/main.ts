@@ -16,7 +16,7 @@ import {
 	loadProgress,
 	type SavedReplay,
 	saveRun,
-	takeFromStorage,
+	takeFromBag,
 } from "./engine/save";
 import { Screen } from "./engine/screen";
 import { decodeShare, takeSharedHash } from "./engine/share";
@@ -151,7 +151,7 @@ const devRun = (): Run | null => {
 	return run;
 };
 
-/** 村を出て 冒険を 作る（倉庫から 取り出すのは ここ）。 */
+/** 村を出て 冒険を 作る（村の 持ち物から 取り出すのは ここ）。 */
 const runFor = (
 	choice: VillageExit,
 ): { run: Run; replay: SavedReplay | undefined } => {
@@ -183,8 +183,8 @@ const runFor = (
 			return { run, replay: undefined };
 		}
 		// 冒険を作って すぐ保存する（取り出したのに 冒険が無い、にならないように）。
-		// 選んだあとで 別のタブが 持っていった道具は 持っていけない
-		const carry = choice.carry.length ? takeFromStorage(choice.carry) : [];
+		// 村で 引き取った 持ち物から 取り出す。別のタブが 持っていった道具は 持っていけない
+		const carry = choice.carry.length ? takeFromBag(choice.carry) : [];
 		const run = Run.create(newSeed(), choice.dungeon, carry, choice.objective);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };

@@ -20,6 +20,8 @@ import type { Item } from "../core/types";
 import { SE_LOUDNESS } from "../data/loudness";
 import { sfx } from "../data/sfx";
 import {
+	depositBag,
+	depositItem,
 	forgetProgressMemo,
 	loadProgress,
 	loadRecords,
@@ -30,8 +32,10 @@ import {
 	saveRun,
 	saveTown,
 	settleReturn,
+	takeFromBag,
 	takeFromStorage,
 	toReplay,
+	withdrawItem,
 } from "../engine/save";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
@@ -321,6 +325,46 @@ test("carrying out takes the chosen items by content, once", () => {
 		ok(got.length === 1 && got[0].plus === 2, "took the wrong item");
 		ok(loadTown().storage.length === 2, "storage did not shrink by one");
 		ok(takeFromStorage([mk("steel", 2)]).length === 0, "took it twice");
+	});
+});
+
+test("the village bag: withdraw up to CARRY_MAX, put back, a no-carry board sends it all back, the run takes it", () => {
+	withStorage(() => {
+		loadProgress();
+		const mk = (kind: string): Item => ({
+			uid: 1,
+			kind,
+			plus: 0,
+			cursed: false,
+			charges: 0,
+			known: true,
+			count: 1,
+		});
+		saveTown({
+			...loadTown(),
+			stage: 5,
+			storage: [mk("steel"), mk("h_heal"), mk("s_appraise")],
+		});
+		ok(withdrawItem(0) && withdrawItem(0), "could not withdraw 2 at stage 5");
+		ok(!withdrawItem(0), "withdrew past CARRY_MAX");
+		ok(loadTown().bag.length === CARRY_MAX[5], "bag is not full");
+		depositItem(0);
+		ok(
+			loadTown().bag.length === 1 && loadTown().storage.length === 2,
+			"put back did not move one item",
+		);
+		ok(depositBag() === 1 && loadTown().bag.length === 0, "bag not emptied");
+		withdrawItem(0);
+		const bag = loadTown().bag;
+		ok(
+			takeFromBag(bag).length === 1 && !loadTown().bag.length,
+			"run did not take the bag",
+		);
+		ok(takeFromBag(bag).length === 0, "took the bag twice");
+		const refuse = (["deep", "tropical", "hidden"] as const).every(
+			(d) => dungeonById(d).noCarry,
+		);
+		ok(refuse && !dungeonById("main").noCarry, "noCarry boards changed");
 	});
 });
 

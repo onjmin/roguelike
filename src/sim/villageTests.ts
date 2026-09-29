@@ -1538,7 +1538,7 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 		);
 		ok(
 			store.log.includes(
-				`narrate: 倉庫から　風呂板へ\n${CARRY_MAX[4]}つまで　持っていける`,
+				`narrate: 倉庫から　引き取って\n${CARRY_MAX[4]}つまで　持っていける`,
 			),
 			`no carry hint:\n${store.log.join("\n")}`,
 		);
@@ -1556,6 +1556,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 			points: 1234,
 			stage: 4,
 			storage: [],
+			bag: [],
 			pending: null,
 			returned: ["x"],
 		};

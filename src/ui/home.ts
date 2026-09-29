@@ -1,13 +1,19 @@
 // 地上（保守村）の 倉庫の 一覧：帰ってきた 持ち物から あずける物を えらぶ（chooseStored）・
-// 過去ログの底へ 持っていく物を えらぶ（pickCarry）・倉庫を 見る（openStorage）。
+// 倉庫から 引き取る（openStorage）・引き取った 持ち物を 見て もどす（openBag）。引き取った 物は そのまま 出口から 持っていく。
 // トルネコ1で ネネが 持ち帰った道具を売り、店が大きくなるのに あたる（会話・売り・町の 建て直しは
 // 村の中。ui/villageReturn.ts）。町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
 
 import { defOf } from "../core/item";
-import { priceOf, STORAGE_CAP } from "../core/town";
+import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
 import type { Item } from "../core/types";
 import { TOWN_MSG } from "../data/town";
-import { loadTown, type PendingReturn, type Town } from "../engine/save";
+import {
+	depositItem,
+	loadTown,
+	type PendingReturn,
+	type Town,
+	withdrawItem,
+} from "../engine/save";
 import type { Ctx } from "./ctx";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { esc, escBr } from "./records";
@@ -68,47 +74,68 @@ export const chooseStored = async (
 };
 
 /**
- * 過去ログの底へ 持っていく道具を 倉庫から選ぶ（max 個まで）。やめたら null。
- * ここでは 倉庫から 取り出さない（冒険を作る直前に main.ts が takeFromStorage で取り出して すぐ保存する。
- * 語りの途中で 閉じても 道具が消えないように）。
+ * 倉庫（村の シヨ・メニューから）：えらぶと 引き取って 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
+ * 引き取った 物は 村の メニューの「持ち物」で 見て、倉庫へ もどせる（openBag）。
  */
-export const pickCarry = async (
-	ctx: Ctx,
-	max: number,
-): Promise<Item[] | null> => {
-	const t = loadTown();
-	if (!t.storage.length || max <= 0) return [];
-	const chosen = new Set<number>();
+export const openStorage = async (ctx: Ctx): Promise<void> => {
 	let start = 0;
 	for (;;) {
+		const t = loadTown();
+		const cap = STORAGE_CAP[t.stage] ?? 0;
+		const max = CARRY_MAX[t.stage] ?? 0;
+		if (!t.storage.length) {
+			await infoWindow(
+				ctx,
+				`倉庫　0／${cap}`,
+				`<p class="dim">${escBr(TOWN_MSG.storageEmpty.text)}</p>`,
+			);
+			return;
+		}
+		const full = t.bag.length >= max;
 		const rows: ListItem[] = t.storage.map((it, i) => ({
-			label: `${chosen.has(i) ? "✓　" : ""}${esc(townItemName(it))}`,
+			label: esc(townItemName(it)),
 			value: String(i),
-			disabled: !chosen.has(i) && chosen.size >= max,
+			disabled: full,
 		}));
-		rows.push({ label: "これで　もぐる", value: "go" });
 		const v = await listWindow(
 			ctx,
-			`${escBr(fill(TOWN_MSG.carryPrompt.text, { n: max }))}<br><small>${chosen.size}／${max}</small>`,
+			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　引き取る　持ち物　${t.bag.length}／${max}${full ? `<br>${escBr(fill(TOWN_MSG.bagFull.text, { n: max }))}` : ""}</small>`,
 			rows,
 			{ start },
 		);
-		if (v === null) return null;
-		if (v === "go") break;
-		const i = Number(v);
-		if (chosen.has(i)) chosen.delete(i);
-		else if (chosen.size < max) chosen.add(i);
-		start = i;
+		if (v === null) return;
+		start = Math.max(0, Math.min(Number(v), t.storage.length - 2));
+		if (withdrawItem(Number(v))) ctx.se("decide");
 	}
-	return [...chosen].map((i) => t.storage[i]);
 };
 
-/** 倉庫を見る（村の シヨ・メニューから）。 */
-export const openStorage = async (ctx: Ctx): Promise<void> => {
-	const t = loadTown();
-	const cap = STORAGE_CAP[t.stage] ?? 0;
-	const body = t.storage.length
-		? `<ul class="storage">${t.storage.map((it) => `<li>${esc(townItemName(it))}</li>`).join("")}</ul>`
-		: `<p class="dim">${escBr(TOWN_MSG.storageEmpty.text)}</p>`;
-	await infoWindow(ctx, `倉庫　${t.storage.length}／${cap}`, body);
+/** 村の 持ち物（倉庫から 引き取った 物）：えらぶと 倉庫へ もどす。 */
+export const openBag = async (ctx: Ctx): Promise<void> => {
+	let start = 0;
+	for (;;) {
+		const t = loadTown();
+		const max = CARRY_MAX[t.stage] ?? 0;
+		if (!t.bag.length) {
+			await infoWindow(
+				ctx,
+				`持ち物　0／${max}`,
+				`<p class="dim">${escBr(TOWN_MSG.bagEmpty.text)}</p>`,
+			);
+			return;
+		}
+		const rows: ListItem[] = t.bag.map((it, i) => ({
+			label: esc(townItemName(it)),
+			value: String(i),
+		}));
+		const v = await listWindow(
+			ctx,
+			`持ち物　${t.bag.length}／${max}<br><small>このまま　出口から　出れば　持っていく。えらぶと　倉庫へ　もどす</small>`,
+			rows,
+			{ start },
+		);
+		if (v === null) return;
+		start = Math.max(0, Math.min(Number(v), t.bag.length - 2));
+		depositItem(Number(v));
+		ctx.se("decide");
+	}
 };

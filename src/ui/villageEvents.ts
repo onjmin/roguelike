@@ -20,7 +20,7 @@
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { LAST_RES } from "../core/data/lastRes";
-import { CARRY_DUNGEON, CARRY_MAX, STORAGE_CAP } from "../core/town";
+import { CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
 import { BOARD_MENU } from "../data/mobs";
@@ -38,7 +38,14 @@ import {
 	HOSHU_SIGN,
 	STORY,
 } from "../data/story";
-import { STAGE_NAMES, TOWN_MSG, TOWN_NAME, VILLAGE_MSG } from "../data/town";
+import {
+	CARRY_CHASE,
+	CARRY_REFUSE,
+	STAGE_NAMES,
+	TOWN_MSG,
+	TOWN_NAME,
+	VILLAGE_MSG,
+} from "../data/town";
 import { npc, sign } from "../data/village/helpers";
 import {
 	type VillagePlace,
@@ -52,6 +59,7 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
 	addRecord,
 	clearRun,
+	depositBag,
 	hasRunSave,
 	loadLastRes,
 	loadProgress,
@@ -66,7 +74,7 @@ import { runSaveLabel } from "./boot";
 import { enterCafe, hasCafeNews } from "./cafe";
 import type { Ctx } from "./ctx";
 import { enterHall, hasHallNews } from "./hallEvents";
-import { chooseStored, openStorage, pickCarry } from "./home";
+import { chooseStored, openBag, openStorage } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
 import { escBr, openRecords, showStory } from "./records";
@@ -221,7 +229,12 @@ const mouthScript =
 		) as Record<DungeonId, ObjectiveInfo>;
 		// 地図は 向かい おわるまで 開いた まま（本当に 行くか・持ち物・出発の 一言も 地図の 上で）
 		await hideMsg(s);
-		const map = openWorldMap(ctx, { open, cleared, goals });
+		const map = openWorldMap(ctx, {
+			open,
+			cleared,
+			goals,
+			carryMax: CARRY_MAX[loadTown().stage] ?? 0,
+		});
 		const quit = async () => {
 			await hideMsg(s);
 			await map.close();
@@ -252,29 +265,17 @@ const mouthScript =
 				return;
 			}
 		}
-		// 風呂板 には 倉庫から 持っていける（町の段に応じて 1〜4個）。取り出すのは main.ts
-		const town = loadTown();
-		let carry: Item[] = [];
-		if (d === CARRY_DUNGEON && (CARRY_MAX[town.stage] ?? 0) > 0) {
-			if (town.storage.length) {
-				await hideMsg(s);
-				const picked = await pickCarry(ctx, CARRY_MAX[town.stage] ?? 0);
-				if (!picked) {
-					await quit();
-					return;
-				}
-				carry = picked;
-				const l = carry.length ? TOWN_MSG.carryDone : TOWN_MSG.carryNone;
-				await s.say(l.who, l.text);
-			}
-		} else if (
-			d !== CARRY_DUNGEON &&
-			town.storage.length &&
-			!s.flag("carryNotHere")
-		) {
-			// ほかの 植民地へは 持ち出せない（村に いるあいだ 1回だけ 言う）
-			s.set("carryNotHere");
-			await s.say(TOWN_MSG.carryNotHere.who, TOWN_MSG.carryNotHere.text);
+		// 村で 倉庫から 引き取った 道具を 持っていく（取り出すのは main.ts）。持ちこめない 板なら
+		// シヨが 出口まで 追いかけてきて 倉庫へ もどす（わけは data/town.ts の CARRY_REFUSE。全体マップの 札にも 出る）
+		let carry: Item[] = loadTown().bag;
+		const refuse = DUNGEONS[d].noCarry
+			? CARRY_REFUSE[d as keyof typeof CARRY_REFUSE]
+			: undefined;
+		if (carry.length && refuse) {
+			await s.narrate(CARRY_CHASE);
+			await s.say(refuse.who, refuse.text);
+			depositBag();
+			carry = [];
 		}
 		// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）
 		if (awayFriends(loadProgress().cleared).includes("nanj"))
@@ -593,7 +594,10 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 				? [{ label: "拾った　最後のレス", value: "lastres" }]
 				: []),
 			...((STORAGE_CAP[stage] ?? 0) > 0
-				? [{ label: "倉庫", value: "storage" }]
+				? [
+						{ label: "持ち物", value: "bag" },
+						{ label: "倉庫", value: "storage" },
+					]
 				: []),
 			{ label: "あそびかた", value: "howto" },
 			{ label: "せってい", value: "settings" },
@@ -612,6 +616,7 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 		} else if (v === "book") await openBook(ctx);
 		else if (v === "lastres") await openLastRes(ctx, s);
 		else if (v === "storage") await openStorage(ctx);
+		else if (v === "bag") await openBag(ctx);
 		else if (v === "howto") await openHowto(ctx);
 		else if (v === "settings") await openSettings(ctx, { wipe: true });
 	}

@@ -12,7 +12,7 @@ import { FAKE_NAMES, OLD_FAKE_NAMES } from "../core/data/names";
 import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import { nextStage, priceOf, STORAGE_CAP } from "../core/town";
+import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
 
@@ -577,6 +577,11 @@ export type Town = {
 	stage: number;
 	/** 倉庫の道具。 */
 	storage: Item[];
+	/**
+	 * 村で 倉庫から 引き取った 道具（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
+	 * 持ちこめない 板へ 出るときは シヨが 倉庫へ もどす（core/data/dungeons.ts の noCarry）。
+	 */
+	bag: Item[];
 	/** まだ決めていない 持ち帰り。 */
 	pending: PendingReturn | null;
 	/** もう町へ帰ってきた冒険のシード（新しい順）。1つの冒険は 1回しか 帰れない（別のタブで 続けても）。 */
@@ -601,6 +606,7 @@ export const loadTown = (): Town => {
 				points: typeof o.points === "number" ? o.points : 0,
 				stage: typeof o.stage === "number" ? o.stage : 0,
 				storage: Array.isArray(o.storage) ? o.storage.filter(isItem) : [],
+				bag: Array.isArray(o.bag) ? o.bag.filter(isItem) : [],
 				pending:
 					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
 						? { ...pend, items: pend.items.filter(isItem) }
@@ -623,6 +629,7 @@ export const loadTown = (): Town => {
 				? 1
 				: 0,
 		storage: [],
+		bag: [],
 		pending: null,
 		returned: [],
 	};
@@ -696,6 +703,53 @@ export const takeFromStorage = (picked: readonly Item[]): Item[] => {
 		const key = JSON.stringify(p);
 		const i = t.storage.findIndex((it) => JSON.stringify(it) === key);
 		if (i >= 0) out.push(...t.storage.splice(i, 1));
+	}
+	saveTown(t);
+	return out;
+};
+
+/** 倉庫の i 番目を 引き取る（持ち物が いっぱいなら 引き取らない）。引き取れたか。 */
+export const withdrawItem = (i: number): boolean => {
+	const t = loadTown();
+	const it = t.storage[i];
+	if (!it || t.bag.length >= (CARRY_MAX[t.stage] ?? 0)) return false;
+	t.storage.splice(i, 1);
+	t.bag.push(it);
+	saveTown(t);
+	return true;
+};
+
+/** 村の 持ち物の i 番目を 倉庫へ もどす（倉庫が いっぱいでも もどす。引き取った 物なので）。 */
+export const depositItem = (i: number): void => {
+	const t = loadTown();
+	const it = t.bag[i];
+	if (!it) return;
+	t.bag.splice(i, 1);
+	t.storage.push(it);
+	saveTown(t);
+};
+
+/** 村の 持ち物を ぜんぶ 倉庫へ もどす（持ちこめない 板へ 出るとき）。もどした 数。 */
+export const depositBag = (): number => {
+	const t = loadTown();
+	const n = t.bag.length;
+	t.storage.push(...t.bag);
+	t.bag = [];
+	saveTown(t);
+	return n;
+};
+
+/**
+ * 冒険に 持っていく 村の 持ち物を 取り出す（冒険を 作る 直前。取り出したら 村から 消える。倒れたら もどらない）。
+ * takeFromStorage と 同じく 選んだときの 中身で さがす（別のタブで 変わっていても ちがう 道具を 取らない）。
+ */
+export const takeFromBag = (picked: readonly Item[]): Item[] => {
+	const t = loadTown();
+	const out: Item[] = [];
+	for (const p of picked) {
+		const key = JSON.stringify(p);
+		const i = t.bag.findIndex((it) => JSON.stringify(it) === key);
+		if (i >= 0) out.push(...t.bag.splice(i, 1));
 	}
 	saveTown(t);
 	return out;
