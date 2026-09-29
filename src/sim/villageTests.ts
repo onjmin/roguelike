@@ -484,6 +484,16 @@ test("each town stage builds on the last, with the same art as the town strip", 
 					villageRows(view(stage - 1)).join("\n"),
 				`stage ${stage} [${unlocked.join(",")}] looks the same as stage ${stage - 1}`,
 			);
+		// 広場の 井戸（5段から）は 話しかけられる（過去ログの底へ 降りる 口）
+		for (let stage = 0; stage < TOWN_STAGES; stage++) {
+			const [wx, wy] = VILLAGE_SPOTS.well;
+			const has = villagePlaces(view(stage)).some((p) => p.id === "well");
+			ok(
+				has === stage >= 5 &&
+					(stage < 5 || villageRows(view(stage))[wy][wx] === "U"),
+				`stage ${stage}: the well place is wrong`,
+			);
+		}
 		// 道は 5段から 石だたみ
 		const stone = villagePalette(view(7))["."]?.layers.join();
 		for (let stage = 0; stage < TOWN_STAGES; stage++) {

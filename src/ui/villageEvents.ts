@@ -168,65 +168,146 @@ const discardQuiz = async (s: Parameters<Script>[0]): Promise<boolean> => {
 	return false;
 };
 
+/**
+ * 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）。村の 出口と 井戸で 同じ。
+ * 続きへ 出た・やめた なら false（呼ぶ側は そこで 終わる。やめたときは back 済み）。
+ */
+const suspendedFirst = async (
+	s: Parameters<Script>[0],
+	back: () => Promise<void>,
+): Promise<boolean> => {
+	if (!hasRunSave()) return true;
+	await s.narrate(`${VILLAGE_MSG.suspended}\n${runSaveLabel(loadRun())}`);
+	const n = await s.choose(
+		["冒険に　もどる", "すてて　新しく　もぐる", "やめる"],
+		{
+			cancel: 2,
+		},
+	);
+	// すてるのは もどせないので もう一度 きく
+	if (n === 1) {
+		await s.narrate("中断した　冒険は　もどらない。\n本当に　すてる？");
+		if (
+			(await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !== 0 ||
+			!(await discardQuiz(s))
+		) {
+			await back();
+			return false;
+		}
+	}
+	if (n === 2) {
+		await back();
+		return false;
+	}
+	if (n === 0) {
+		// いつも読み直す（別タブの 古い写しから 始めないように）
+		const state = loadRun();
+		if (state) {
+			s.se("stairs");
+			s.exit({ kind: "continue", state });
+			return false;
+		}
+		clearRun();
+		await s.narrate(VILLAGE_MSG.broken);
+	} else {
+		abandonRun();
+		// すてたので 次のダンジョンが開いたなら（救い）、ここで知らせる
+		await newsScript(s);
+	}
+	return true;
+};
+
+/**
+ * 板ごとの 目的（期間限定の イベントも）は 出る 前に 1回だけ 決める。地図に 出す 目的と
+ * Run.create に 渡す 目的を 同じに する（歩いている あいだに イベントが かわっても ずれない）。
+ */
+const goalsNow = (): Record<DungeonId, ObjectiveInfo> => {
+	const prog = withDevEvent(loadProgress());
+	return Object.fromEntries(
+		DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
+	) as Record<DungeonId, ObjectiveInfo>;
+};
+
+/**
+ * 行き先が 決まってから 出るまで（村の 出口と 井戸で 同じ）：持ち物・出発の 一言・向かう（travel）・
+ * はじめての 板の 語り。
+ */
+const departTo = async (
+	ctx: Ctx,
+	s: Parameters<Script>[0],
+	d: DungeonId,
+	goal: ObjectiveInfo,
+	travel: () => Promise<void>,
+): Promise<void> => {
+	// 村で 倉庫から 引き取った 道具を 持っていく（取り出すのは main.ts）。持ちこめない 板なら
+	// シヨが 追いかけてきて 倉庫へ もどす（わけは data/town.ts の CARRY_REFUSE。全体マップの 札にも 出る）
+	let carry: Item[] = loadTown().bag;
+	const refuse = DUNGEONS[d].noCarry
+		? CARRY_REFUSE[d as keyof typeof CARRY_REFUSE]
+		: undefined;
+	if (carry.length && refuse) {
+		await s.narrate(CARRY_CHASE);
+		await s.say(refuse.who, refuse.text);
+		depositBag();
+		carry = [];
+	}
+	// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）
+	if (awayFriends(loadProgress().cleared).includes("nanj"))
+		await s.kiriko(DEPART.kiriko, "think");
+	else await s.say("nanj", DEPART.nanj);
+	// 毎回 はじめから 持っている ぷゆゆパンは、かけてくる ぷゆゆが 持たせる（トルネコ1の ネネの お弁当の 役）
+	if (DUNGEONS[d].start.includes("f_large")) await s.narrate(DEPART.puyu);
+	notePicked(d, false);
+	await hideMsg(s);
+	await travel();
+	// そのダンジョンに はじめて もぐるなら 語りを見せる（見終わってから 覚える。途中で閉じたら 次も はじめから）
+	if (!loadProgress().intro.includes(d)) {
+		void ctx.audio.fadeBgm(500);
+		await s.fadeOut(500);
+		await showStory(ctx, STORY[d].intro.map(escBr));
+		notePicked(d, true);
+	}
+	s.exit({ kind: "new", dungeon: d, carry, objective: goal.objective });
+};
+
+/**
+ * 広場の 井戸（5段から）。過去ログの底（保守村の 真下）へは ここからだけ 降りる（全体マップには 出さない）。
+ * 開くまでは のぞくだけ。
+ */
+const wellScript =
+	(ctx: Ctx): Script =>
+	async (s) => {
+		if (!loadProgress().unlocked.includes("hidden")) {
+			await s.narrate(VILLAGE_MSG.wellShut);
+			return;
+		}
+		await s.narrate(VILLAGE_MSG.wellOpen);
+		if ((await s.choose(["降りる", "やめる"], { cancel: 1, start: 1 })) !== 0)
+			return;
+		if (!(await suspendedFirst(s, async () => {}))) return;
+		await departTo(ctx, s, "hidden", goalsNow().hidden, async () => {
+			s.se("stairs");
+			await s.narrate(VILLAGE_MSG.wellDown);
+		});
+	};
+
 /** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
 	(ctx: Ctx, step = "d"): Script =>
 	async (s) => {
-		// 行き先（はじめは 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる）
+		// 行き先（はじめは 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
+		// 過去ログの底は 井戸から なので 地図には 出さない）
 		const last = loadProgress().last;
 		let d: DungeonId =
-			last && loadProgress().unlocked.includes(last) ? last : "shallow";
+			last && !DUNGEONS[last].secret && loadProgress().unlocked.includes(last)
+				? last
+				: "shallow";
 		const back = () => s.move("player", step);
-		// 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）
-		if (hasRunSave()) {
-			await s.narrate(`${VILLAGE_MSG.suspended}\n${runSaveLabel(loadRun())}`);
-			const n = await s.choose(
-				["冒険に　もどる", "すてて　新しく　もぐる", "やめる"],
-				{
-					cancel: 2,
-				},
-			);
-			// すてるのは もどせないので もう一度 きく
-			if (n === 1) {
-				await s.narrate("中断した　冒険は　もどらない。\n本当に　すてる？");
-				if (
-					(await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !==
-						0 ||
-					!(await discardQuiz(s))
-				) {
-					await back();
-					return;
-				}
-			}
-			if (n === 2) {
-				await back();
-				return;
-			}
-			if (n === 0) {
-				// いつも読み直す（別タブの 古い写しから 始めないように）
-				const state = loadRun();
-				if (state) {
-					s.se("stairs");
-					s.exit({ kind: "continue", state });
-					return;
-				}
-				clearRun();
-				await s.narrate(VILLAGE_MSG.broken);
-			} else {
-				abandonRun();
-				// すてたので 次のダンジョンが開いたなら（救い）、ここで知らせる
-				await newsScript(s);
-			}
-		}
+		if (!(await suspendedFirst(s, back))) return;
 		// 行き先の 植民地（全体マップで 選ぶ。ui/worldMap.ts）
 		const open = DUNGEON_IDS.filter((x) => loadProgress().unlocked.includes(x));
 		const cleared = loadProgress().cleared;
-		// 板ごとの 目的（期間限定の イベントも）は ここで 1回だけ 決める。地図に 出す 目的と
-		// Run.create に 渡す 目的を 同じに する（歩いている あいだに イベントが かわっても ずれない）
-		const prog = withDevEvent(loadProgress());
-		const goals = Object.fromEntries(
-			DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
-		) as Record<DungeonId, ObjectiveInfo>;
+		const goals = goalsNow();
 		// 地図は 向かい おわるまで 開いた まま（本当に 行くか・持ち物・出発の 一言も 地図の 上で）
 		await hideMsg(s);
 		const map = openWorldMap(ctx, {
@@ -265,38 +346,13 @@ const mouthScript =
 				return;
 			}
 		}
-		// 村で 倉庫から 引き取った 道具を 持っていく（取り出すのは main.ts）。持ちこめない 板なら
-		// シヨが 出口まで 追いかけてきて 倉庫へ もどす（わけは data/town.ts の CARRY_REFUSE。全体マップの 札にも 出る）
-		let carry: Item[] = loadTown().bag;
-		const refuse = DUNGEONS[d].noCarry
-			? CARRY_REFUSE[d as keyof typeof CARRY_REFUSE]
-			: undefined;
-		if (carry.length && refuse) {
-			await s.narrate(CARRY_CHASE);
-			await s.say(refuse.who, refuse.text);
-			depositBag();
-			carry = [];
-		}
-		// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）
-		if (awayFriends(loadProgress().cleared).includes("nanj"))
-			await s.kiriko(DEPART.kiriko, "think");
-		else await s.say("nanj", DEPART.nanj);
-		// 毎回 はじめから 持っている ぷゆゆパンは、出口まで かけてくる ぷゆゆが 持たせる（トルネコ1の ネネの お弁当の 役）
-		if (DUNGEONS[d].start.includes("f_large")) await s.narrate(DEPART.puyu);
 		// 前に 行ったことが あれば 速く 歩く（語りを 見た＝行った）
 		const been = loadProgress().intro.includes(d);
-		notePicked(d, false);
+		const to = d;
 		// 全体マップの 上を 行き先まで 歩く（着くと 建物の 札）
-		await hideMsg(s);
-		await travelTo(ctx, d, { open, cleared, fast: been, view: map });
-		// そのダンジョンに はじめて もぐるなら 語りを見せる（見終わってから 覚える。途中で閉じたら 次も はじめから）
-		if (!loadProgress().intro.includes(d)) {
-			void ctx.audio.fadeBgm(500);
-			await s.fadeOut(500);
-			await showStory(ctx, STORY[d].intro.map(escBr));
-			notePicked(d, true);
-		}
-		s.exit({ kind: "new", dungeon: d, carry, objective: goals[d].objective });
+		await departTo(ctx, s, to, goals[to], () =>
+			travelTo(ctx, to, { open, cleared, fast: been, view: map }),
+		);
 	};
 
 /** 口の 立て札。 */
@@ -429,6 +485,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			await records(ctx, s);
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
+	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	// 小屋・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）

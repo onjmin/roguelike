@@ -508,7 +508,7 @@ export class MapView {
 		for (const d of DUNGEON_IDS) {
 			const [x, y] = spotOf(d);
 			const open = this.open.includes(d);
-			if (!open && DUNGEONS[d].secret) continue;
+			if (DUNGEONS[d].secret) continue;
 			drawBuilding(g, COLONY_SPOTS[d].building, x, y, 1, t, !open);
 			if (!open) {
 				g.fillStyle = "rgba(255,255,255,0.7)";
@@ -629,11 +629,9 @@ export const pickColony = async (
 		v.cleared = o.cleared;
 		v.goals = o.goals ?? {};
 	}
-	// 地図に 出る 植民地（ひみつの 板は 開くまで 出さない）と、さいごに やめる。
+	// 地図に 出る 植民地（隠しの 板は 出さない。過去ログの底は 村の 井戸から）と、さいごに やめる。
 	// 目的を 1度でも はたした 板には 地図・札と 同じく ★
-	const spots = DUNGEON_IDS.filter(
-		(d) => o.open.includes(d) || !DUNGEONS[d].secret,
-	);
+	const spots = DUNGEON_IDS.filter((d) => !DUNGEONS[d].secret);
 	const labels = [
 		...spots.map((d) =>
 			o.open.includes(d)

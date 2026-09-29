@@ -91,7 +91,7 @@ export type Dungeon = {
 	angry?: boolean;
 	/** 持ち帰る 品を 持ったまま 帰還スレで 帰れる（99階ある 隠しの 板だけ）。 */
 	escapeWithGoal?: boolean;
-	/** 全体マップに 開くまで 出さない（隠し）。 */
+	/** 全体マップに 出さない（隠し。過去ログの底は 村の 広場の 井戸から 降りる）。 */
 	secret?: boolean;
 	/** 倉庫の 道具を 持ちこめない（出るときに シヨが 預かる）。 */
 	noCarry?: boolean;

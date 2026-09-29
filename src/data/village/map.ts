@@ -126,6 +126,8 @@ export const VILLAGE_SPOTS = {
 		[16, 21],
 	] as readonly Cell[],
 	zero: [17, 21] as Cell,
+	/** 広場の 井戸（段5 から）。過去ログの底へは ここから 降りる。 */
+	well: [24, 21] as Cell,
 	feris: [25, 22] as Cell,
 	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
 	roze: (stage: number): Cell => (stage === 0 ? [13, 18] : [13, 17]),
@@ -545,6 +547,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	VILLAGE_SPOTS.board.forEach(([x, y], i) => {
 		out.push({ id: `board_${i}`, x, y, trigger: "talk" });
 	});
+	if (stage >= 5) {
+		const [wx, wy] = VILLAGE_SPOTS.well;
+		out.push({ id: "well", x: wx, y: wy, trigger: "talk" });
+	}
 	const [px, py] = VILLAGE_SPOTS.phono;
 	out.push({
 		id: "phono",

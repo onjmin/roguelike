@@ -180,7 +180,7 @@ export const TOWN_MSG: Record<
  * 持ちこめない 板（core/data/dungeons.ts の noCarry）へ 出るとき、引き取った 道具を シヨが 倉庫へ もどす わけ。
  * 全体マップの 札にも「持ちこみ：できない」と 出る。
  */
-export const CARRY_CHASE = "シヨが　出口まで　追いかけてきた。";
+export const CARRY_CHASE = "シヨが　追いかけてきた。";
 
 export const CARRY_REFUSE: Record<"deep" | "tropical" | "hidden", Line> = {
 	deep: q(
@@ -312,6 +312,10 @@ export const VILLAGE_MSG = {
 	],
 	suspended: "中断した　冒険が　あります。",
 	broken: "続きの　記録が　こわれていました。",
+	/** 広場の 井戸（過去ログの底が 開くまで・開いてから・降りるとき。ui/villageEvents.ts の wellScript）。 */
+	wellShut: "古い　井戸。のぞきこんでも、\n底は　見えない。",
+	wellOpen: "古い　井戸。底の　ほうで、\n1001の　文字が　ゆれている。",
+	wellDown: "キリコは　縄ばしごを　つたって、\n井戸の　底へ　降りていった。",
 	ledger:
 		"売り上げ、ぜんぶで　{points}レス。\nつぎの　段まで、あと　{rest}レス",
 	ledgerNone: "売り上げは、まだ　ゼロです。\n……ゼロと　同じ　名前ですね",
