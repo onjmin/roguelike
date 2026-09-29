@@ -77,6 +77,7 @@ import { enterHall, hasHallNews } from "./hallEvents";
 import { chooseStored, openBag, openSales, openStorage } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
+import { makeQuiz } from "./quiz";
 import { escBr, openRecords, showStory } from "./records";
 import { enterMusic, enterRoom, keeperLets } from "./rooms";
 import { openSettings } from "./settings";
@@ -143,29 +144,16 @@ const stepOf: Record<string, string> = {
 	right: "r",
 };
 
-/**
- * 冒険を すてる 前の 問題（押しまちがいで すてないように）。その場で 作る たし算・ひき算を 4つの 中から 選ぶ。
- * 見た目の 乱数なので Math.random（冒険の 乱数は 使わない）。まちがえたら すてない。
- */
+/** 冒険を すてる 前の 計算問題（ui/quiz.ts）。まちがえたら すてない。 */
 const discardQuiz = async (s: Parameters<Script>[0]): Promise<boolean> => {
-	const r = (lo: number, hi: number) =>
-		lo + Math.floor(Math.random() * (hi - lo + 1));
-	const add = Math.random() < 0.5;
-	const a = r(11, 49);
-	const b = r(3, add ? 49 : a - 1);
-	const ans = add ? a + b : a - b;
-	const opts = new Set([ans]);
-	while (opts.size < 4) opts.add(Math.max(0, ans + r(-10, 10)));
-	const list = [...opts].sort(() => Math.random() - 0.5);
-	await s.narrate(
-		`すてる　なら、問題に　答えて。\n${a}　${add ? "＋" : "－"}　${b}　は？`,
-	);
-	const n = await s.choose([...list.map(String), "やめる"], {
+	const q = makeQuiz();
+	await s.narrate(`すてる　なら、問題に　答えて。\n${q.text}　は？`);
+	const n = await s.choose([...q.options.map(String), "やめる"], {
 		cancel: 4,
 		start: 4,
 	});
 	if (n === 4) return false;
-	if (list[n] === ans) return true;
+	if (q.options[n] === q.answer) return true;
 	await s.narrate("ちがう。すてるのは　やめておいた。");
 	return false;
 };

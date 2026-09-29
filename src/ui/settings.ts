@@ -5,13 +5,14 @@
 // - ボイス（村の 会話の 読み上げ。rpg と 同じ）は ON に するとき、はじめに 約45MBを 取ってくると 断ってから。
 //   取ってくる あいだは「じゅんび中 N%」（開き直すたびに 今の 進み）。
 // - 変えたら すぐ saveSettings（音・十字キーは onSettingsChange で その場に効く）。
-// - 村から 開いたときだけ「セーブデータを　消す」（はじめから やりなおす。2回 きいてから 消して 読みなおす）。
+// - 村から 開いたときだけ「セーブデータを　消す」（はじめから やりなおす。2回 きいて 計算問題に 正しく 答えたら 消して 読みなおす）。
 
 import type { GameAudio } from "../engine/audio";
 import { wipeSaves } from "../engine/save";
 import { type Settings, saveSettings, settings } from "../engine/settings";
 import type { Ctx } from "./ctx";
 import { listWindow } from "./list";
+import { makeQuiz } from "./quiz";
 
 const BGM_LABEL: Record<Settings["bgm"], string> = {
 	hq: "高音質",
@@ -81,7 +82,7 @@ const KEYS = [
 	"wipe",
 ] as const;
 
-/** セーブデータを 消すか 2回 きく。消したら 読みなおす（村の はじめから）。 */
+/** セーブデータを 消すか 2回 きき、計算問題（ui/quiz.ts）に 答えさせる。消したら 読みなおす（村の はじめから）。 */
 const askWipe = async (ctx: Ctx): Promise<void> => {
 	const no = [
 		{ label: "消す", value: "yes" },
@@ -101,6 +102,24 @@ const askWipe = async (ctx: Ctx): Promise<void> => {
 		{ start: 1 },
 	);
 	if (v2 !== "yes") return;
+	// 最後に 計算問題（押しまちがいで 消さないように。ui/quiz.ts）。まちがえたら 消さない
+	const q = makeQuiz();
+	const v3 = await listWindow(
+		ctx,
+		`消すなら、問題に　答えて<br>${q.text}　は？`,
+		[
+			...q.options.map((n) => ({ label: String(n), value: String(n) })),
+			{ label: "やめる", value: "no" },
+		],
+		{ start: 4 },
+	);
+	if (v3 === null || v3 === "no") return;
+	if (Number(v3) !== q.answer) {
+		await listWindow(ctx, "ちがう。<br>消すのは　やめておいた。", [
+			{ label: "もどる", value: "ok" },
+		]);
+		return;
+	}
 	wipeSaves();
 	location.reload();
 };
