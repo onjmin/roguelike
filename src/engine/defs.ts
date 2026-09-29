@@ -3,7 +3,7 @@
 // 村のデータは src/data/village/、スクリプトは src/ui/villageEvents.ts に書く（おんJ 本館の 中は ui/hallEvents.ts）。
 
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
-import type { Speaker } from "../data/quotes";
+import type { KirikoMode, Speaker } from "../data/quotes";
 import type { SavedReplay } from "./save";
 import type { Dir } from "./types";
 
@@ -136,8 +136,13 @@ export type SayOptions = {
 
 export type Story = {
 	readonly state: VState;
-	/** セリフ。who は 仲間（data/cast.ts）か null（地の文。name を渡せばモブ）。キリコは しゃべらない。 */
+	/** セリフ。who は 仲間（data/cast.ts）か null（地の文。name を渡せばモブ）。キリコは kiriko で。 */
 	say(who: Speaker | null, text: string, opt?: SayOptions): Promise<void>;
+	/**
+	 * キリコの ことば。think は 独白（（　）で かこむ・声なし・村の だれにも 聞こえない）、
+	 * voice は 声（過去ログの底の 結末だけ。uc で 読み上げる）。data/quotes.ts の KirikoMode。
+	 */
+	kiriko(text: string, mode: KirikoMode): Promise<void>;
 	/** 地の文。 */
 	narrate(text: string): Promise<void>;
 	/** 選択肢。選ばれた番号を返す（cancel があれば B・外のタップで その番号。start は はじめの カーソル）。 */

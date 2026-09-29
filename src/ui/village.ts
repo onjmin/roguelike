@@ -19,8 +19,8 @@
 
 import type { Dir8 } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
-import { CAST, KIRIKO_WALK } from "../data/cast";
-import type { Speaker } from "../data/quotes";
+import { CAST, KIRIKO, KIRIKO_WALK } from "../data/cast";
+import type { KirikoMode, Speaker } from "../data/quotes";
 import { HALL_OUT_DIR, hallOutside } from "../data/village/hall";
 import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
 import { isRoom, type RoomId } from "../data/village/rooms";
@@ -974,6 +974,30 @@ export class Village {
 		});
 	}
 
+	/**
+	 * キリコの ことば。独白は （　）で かこみ、声なし（村の だれにも 聞こえない）。
+	 * 声は 過去ログの底の 結末だけ（（　）が 外れ、rpg と 同じ uc で 読み上げる）。立ち絵は 左（rpg と 同じ）。
+	 */
+	private sayKiriko(text: string, mode: KirikoMode): Promise<void> {
+		const voice = mode === "voice" ? KIRIKO.voice : undefined;
+		return this.msg.show({
+			name: KIRIKO.name,
+			color: KIRIKO.color,
+			text: mode === "think" ? `（${text}）` : text,
+			onShow:
+				voice && settings.voice
+					? (leadMs) => this.ctx.audio.speak(text, voice, leadMs)
+					: undefined,
+			portrait: {
+				id: "kiriko",
+				name: KIRIKO.name,
+				color: KIRIKO.color,
+				src: KIRIKO.portrait,
+				side: "left",
+			},
+		});
+	}
+
 	private actorFor(target: string): Actor | undefined {
 		if (target === "player") return this.player;
 		return this.field?.actor(target);
@@ -990,6 +1014,7 @@ export class Village {
 			},
 			say: (who, text, opt) => this.say(who, text, opt),
 			narrate: (text) => this.say(null, text),
+			kiriko: (text, mode) => this.sayKiriko(text, mode),
 			choose: (options, opt) =>
 				this.choice.choose(
 					options,

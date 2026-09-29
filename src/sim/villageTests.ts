@@ -53,6 +53,7 @@ import {
 } from "../data/objectives";
 import { guideKeys, PIANO_DONE, PIANO_GUIDES, PIANO_MENU } from "../data/piano";
 import {
+	type KirikoMode,
 	pickQuote,
 	type Quote,
 	type QuoteContext,
@@ -753,6 +754,11 @@ const width = (line: string): number =>
 	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
 
 /** 村の窓（スマホで 全角22字）に 2行まで で 収まるか。 */
+type Shown = { text: string; kiriko?: KirikoMode };
+/** 窓に 出る 文（キリコの 独白は （　）で かこまれる。ui/village.ts の sayKiriko）。 */
+const shown = (l: Shown): string =>
+	l.kiriko === "think" ? `（${l.text}）` : l.text;
+
 const fitsWindow = (texts: readonly [string, string][]): void => {
 	for (const [where, t] of texts) {
 		const lines = t.split("\n");
@@ -780,9 +786,9 @@ test("new village lines fit the message window (22 full-width × 2 lines)", () =
 
 test("everything the village window reads out fits it (22 full-width × 2 lines)", () => {
 	const texts: [string, string][] = [];
-	const pool = (where: string, ls: readonly { text: string }[]) =>
+	const pool = (where: string, ls: readonly Shown[]) =>
 		ls.forEach((l, i) => {
-			texts.push([`${where}[${i}]`, l.text]);
+			texts.push([`${where}[${i}]`, shown(l)]);
 		});
 	for (const d of DUNGEON_IDS) {
 		// 口・立て札の 札（ui/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
@@ -819,7 +825,7 @@ test("喫茶「保守」: every talk fits the village window, and the door appea
 	const fill = (t: string) => t.replaceAll("{drink}", longest);
 	fitsWindow([
 		...[...CAFE_TALKS, ...TREAT_TALKS].flatMap((t) =>
-			t.lines.map((l, i): [string, string] => [`cafe ${t.id}[${i}]`, l.text]),
+			t.lines.map((l, i): [string, string] => [`cafe ${t.id}[${i}]`, shown(l)]),
 		),
 		...Object.entries(CAFE_DRINKS).flatMap(([k, d]) =>
 			d.lines.map((l, i): [string, string] => [`drink ${k}[${i}]`, l.text]),
@@ -1044,6 +1050,9 @@ const fakeStory = (
 		narrate: async (text) => {
 			log.push(`narrate: ${text}`);
 		},
+		kiriko: async (text, mode) => {
+			log.push(`kiriko ${mode}: ${text}`);
+		},
 		choose: async (options) => {
 			log.push(`choose ${options.join("/")}`);
 			return o.pick ?? 0;
@@ -1126,7 +1135,7 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 		const v = villageView();
 		const cases: [
 			ReturnArrival,
-			readonly { who: Speaker | null; text: string }[],
+			readonly { who: Speaker | null; text: string; kiriko?: KirikoMode }[],
 		][] = [
 			[{ kind: "clear", dungeon: "shallow" }, STORY.shallow.ending],
 			[{ kind: "escape", dungeon: "shallow" }, RETURN_PAGES],
@@ -1151,7 +1160,11 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 					"show player",
 					"move player d",
 					...pages.map((p) =>
-						p.who ? `say ${p.who}: ${p.text}` : `narrate: ${p.text}`,
+						p.kiriko
+							? `kiriko ${p.kiriko}: ${p.text}`
+							: p.who
+								? `say ${p.who}: ${p.text}`
+								: `narrate: ${p.text}`,
 					),
 					"fadeOut",
 					"rebuild",

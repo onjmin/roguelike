@@ -1,10 +1,17 @@
 // 喫茶「保守」（村の 西の 空き地。町の 段5 から）で 聞ける 話。ui/cafe.ts が 仲間の となりの 席で 一覧に して 見せる。
 // 仲間ひとりの 話と、ふたり・みんなの 掛け合い。どれも 寄り道で、何も くれない（聞いた 印だけ 残る）。
-// 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは しゃべらない（ナレーションで 動作だけ）。
+// 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは 声が 出ない（動作は ナレーション、
+// 心の 中は 独白 k()。1つの 話に 0〜1行）。過去ログの底を 持ち帰ったあとは 声 kv() で しゃべる（after: "hidden"）。
 
-import type { Speaker } from "./quotes";
+import type { DungeonId } from "../core/types";
+import type { KirikoMode, Speaker } from "./quotes";
 
-export type CafeLine = { who: Speaker | null; text: string };
+export type CafeLine = {
+	who: Speaker | null;
+	text: string;
+	/** キリコの 独白／声（who は null）。 */
+	kiriko?: KirikoMode;
+};
 
 export type CafeTalk = {
 	id: string;
@@ -16,11 +23,17 @@ export type CafeTalk = {
 	from?: number;
 	/** cast[0] に これだけ 一杯 おごったら 聞ける（推すと 話が ふえる）。 */
 	treats?: number;
+	/** この 板を 持ち帰ってから 聞ける（過去ログの底の あと、キリコが しゃべる 話）。 */
+	after?: DungeonId;
 	lines: readonly CafeLine[];
 };
 
 const s = (who: Speaker, text: string): CafeLine => ({ who, text });
 const n = (text: string): CafeLine => ({ who: null, text });
+/** キリコの 独白（（　）で 出る。仲間には 聞こえない）。 */
+const k = (text: string): CafeLine => ({ who: null, text, kiriko: "think" });
+/** キリコの 声（過去ログの底の あとだけ）。 */
+const kv = (text: string): CafeLine => ({ who: null, text, kiriko: "voice" });
 
 export const CAFE_TALKS: readonly CafeTalk[] = [
 	{
@@ -184,6 +197,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["shiyo", "feris"],
 		lines: [
 			s("shiyo", "キリコって、ぜんぜん\nしゃべらないわよね"),
+			k("……しゃべってる、\nつもりンゴ"),
 			s("feris", "しゃべってるよ〜。\n蓄音機で〜"),
 			s("shiyo", "……あれは　しゃべってるって\n言うの？"),
 			s("feris", "言うよ〜。\nざらざら　って　言ってるもん〜"),
@@ -295,6 +309,33 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 			s("zero", "ゼロは、どれでも　いいです。\nみなさんが　書きこむ　なら"),
 			n("キリコは　蓄音機の　ハンドルを　まわした。"),
 			s("nanj", "……ほな、>>1は　キリコな。\n決まりや"),
+		],
+	},
+	// ── 過去ログの底を 持ち帰った あと（キリコの 声が 出る） ──
+	{
+		id: "shiyo_feris_voice",
+		title: "キリコが　しゃべった",
+		cast: ["shiyo", "feris"],
+		after: "hidden",
+		lines: [
+			s("shiyo", "……ねえ。キリコ、あのとき\nしゃべったわよね"),
+			s("feris", "しゃべったよ〜。\n吾輩、って〜"),
+			s("shiyo", "……もう　1回、\n言って　みなさいよ"),
+			kv("……吾輩、ンゴ"),
+			s("shiyo", "……ふ、ふん。\n録っといて　あげるわ"),
+			s("feris", "ざらざら　より、\nこっちが　いいね〜"),
+		],
+	},
+	{
+		id: "nanj_prev",
+		title: "前スレの　キリコ",
+		cast: ["nanj"],
+		after: "hidden",
+		lines: [
+			s("nanj", "前スレの　キリコな。\n……よう　しゃべる　子やった"),
+			s("nanj", "吾輩、吾輩　言うて。\n……うるさい　くらいや"),
+			kv("……いまも、吾輩ンゴ"),
+			s("nanj", "……せやな。草"),
 		],
 	},
 ];
@@ -527,6 +568,7 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 			s("nanj", "「保守」「保守」「保守」。\n……だれも　返事せえへん"),
 			s("nanj", "そしたら　ある日、\n蓄音機の　音が　したんや"),
 			s("nanj", "……キリコやった。\nそれから　ワイ、ここに　おる"),
+			k("……その　夜の　こと、\n覚えてないンゴ"),
 		],
 	},
 	{

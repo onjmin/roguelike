@@ -3,21 +3,42 @@
 //   ボスを たおして 一瞬で 帰ったときの 語り（BOSS_RETURN）、
 //   次のダンジョンが開いたときの ひとこと、起動の札と 村の ひとことの たまり。
 // - 本編（main）の intro / ending は quotes.ts の INTRO / ENDING をそのまま使う。
-// 話すのは 外で待っている仲間だけ（キリコはしゃべらない。ナレーションで動作だけ描く）。
+// 声に 出して 話すのは 外で待っている仲間だけ。キリコは 声が 出ない（動作は ナレーション、心の 中は 独白 k()）。
+// 独白は （　）で 出る。過去ログの底の 結末で、はじめて （　）が 外れる（kv()。README「物語の設計」）。
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
 
 import type { DungeonId } from "../core/types";
-import { ENDING, INTRO, type Speaker } from "./quotes";
+import type { Story } from "../engine/defs";
+import { ENDING, INTRO, type KirikoMode, type Speaker } from "./quotes";
 
 /** 仲間の ひとこと（起動の札・村・開いたときの ひとこと）。 */
 export type Line = { who: Speaker; text: string };
 
-/** 語りの1ページ（who が null なら ナレーション）。 */
-export type StoryPage = { who: Speaker | null; text: string };
+/** 語りの1ページ（who が null なら ナレーション。kiriko が あれば キリコの 独白／声）。 */
+export type StoryPage = {
+	who: Speaker | null;
+	text: string;
+	kiriko?: KirikoMode;
+};
+
+/** 語りの 1ページを 窓に 出す（仲間の セリフ・ナレーション・キリコの 独白／声）。 */
+export const playPage = (
+	st: Story,
+	p: { who: Speaker | null; text: string; kiriko?: KirikoMode },
+): Promise<void> =>
+	p.kiriko
+		? st.kiriko(p.text, p.kiriko)
+		: p.who
+			? st.say(p.who, p.text)
+			: st.narrate(p.text);
 
 const q = (who: Speaker, text: string): Line => ({ who, text });
 const n = (text: string): StoryPage => ({ who: null, text });
 const s = (who: Speaker, text: string): StoryPage => ({ who, text });
+/** キリコの 独白（（　）で 出る。だれにも 聞こえない）。 */
+const k = (text: string): StoryPage => ({ who: null, text, kiriko: "think" });
+/** キリコの 声（過去ログの底の 結末だけ）。 */
+const kv = (text: string): StoryPage => ({ who: null, text, kiriko: "voice" });
 
 // ───────────────── 名前 ─────────────────
 /**
@@ -351,6 +372,7 @@ export const STORY: Record<
 			n("キリコは　蓄音機に　針を　つけた。\nハンドルを　まわす。"),
 			n("ざらざら、と　音が　した。\n……それだけ、だった。"),
 			s("nanj", "……なんも　のってへんやん。草"),
+			k("……ざらざらは、\nのってるンゴ"),
 			n("キリコは　しばらく、\nその　ざらざらを　聞いていた。"),
 			s(
 				"zero",
@@ -383,7 +405,14 @@ export const STORY: Record<
 				"zero",
 				"あー、あー。……ゼロの　声も、\nみんなと　同じ　レコードに　入った",
 			),
+			// 転（README「物語の設計」）：録る 蓄音機が、キリコの 声だけ 録れない
+			n("キリコは　ラッパを、\n自分の　ほうへ　向けた。"),
+			k("あー、あー"),
 			n("針が、あがる。"),
+			s("zero", "……キリコさんの　ところだけ、\nみぞが　ありません"),
+			s("shiyo", "……き、機械の　調子よ。\nそうに　決まってるでしょ"),
+			n("やきうは　だまって、\n村の　古井戸を　見ていた。"),
+			k("……吾輩の　ぶんだけ、\nないンゴ"),
 		],
 	},
 	kinoko: {
@@ -456,6 +485,8 @@ export const STORY: Record<
 			"キリコは　蓄音機の　ハンドルを　まわした。\n……ひとりで、降りる。",
 		],
 		ending: [
+			// 頂点（README「物語の設計」）：前スレの 声（rpg の レコード「はじめての声」と 同じ 一文）が 鳴り、
+			// キリコが はじめて （　）の 外で 名乗る。完走した スレは 底に しまわれる（rpg の 設定）
 			n("村に　帰りつくと、\nみんなが　井戸を　のぞきこんでいた。"),
 			s(
 				"nanj",
@@ -465,11 +496,16 @@ export const STORY: Record<
 			n(
 				"「このスレッドは　1000を　超えました。\nもう書けないので、新しいスレッドを……」",
 			),
-			s("zero", "……新しい　スレッドを、\n立ててください、ですって"),
-			s("feris", "じゃあ、立てよ〜。\nつぎの　スレ〜"),
-			n("キリコは　蓄音機に　むかって、\n「あー、あー」と　吹きこんだ。"),
-			s("zero", "……次スレの　>>1、\n「あー、あー」で　立ちました"),
-			s("nanj", "はじまりの　原盤と　同じやんけ。\n……ほな、次スレ　はよ"),
+			n("……その　あとに、もう　ひとつ、\n声が　のっていた。"),
+			n("「あー、あー。……吾輩、\n蓄音キリコ、ンゴ！」"),
+			n("針が、あがる。"),
+			s("feris", "……いまの、キリコ〜？"),
+			s("nanj", "……前スレの　声や"),
+			n("キリコは　ラッパを、\n自分の　ほうへ　向けた。"),
+			kv("あー、あー。……吾輩、\n蓄音キリコ、ンゴ！"),
+			n("針が、みぞを　きざんだ。"),
+			s("nanj", "……前と　おんなじ　声やんけ。\n草"),
+			s("zero", "……次スレの　>>1、\nいまの　声で　立ちました"),
 		],
 	},
 };
@@ -556,7 +592,7 @@ export const UNLOCK_LINES: Record<
 	// 隠しの 過去ログの底（保守村の 下の 古井戸）
 	hidden: [
 		q("zero", "村の　古井戸から、音が　します。\n……いちばん　下から、です"),
-		q("nanj", "過去ログの底や。\n……ほんまに　あったんか"),
+		q("nanj", "過去ログの底や。\n……声が　落ちとるなら、あそこや"),
 	],
 	// 口の ない 植民地（{name} は 板の 名前）。口から 一覧で 行ける
 	colony: [
@@ -619,6 +655,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	hidden: [
 		q("nanj", "次スレ、立ったで。\n……>>1乙や"),
+		q("shiyo", "……しゃべれるじゃない。\n最初から　そう　言いなさいよ"),
 		q(
 			"zero",
 			"1001の原盤、毎日　聞いてます。\n……終わりの　レスなのに、元気が　出ます",

@@ -1,4 +1,4 @@
-// ダンジョンの外のセリフ。話すのは 外で待っている仲間だけ（キリコはしゃべらない）。
+// ダンジョンの外のセリフ。声に 出して 話すのは 外で待っている仲間だけ（キリコの 声は 出ない。独白だけ）。
 // - 起動の札・村：前の冒険の結果に、仲間のだれかが ひとこと（pickQuote）。
 // - はじめて降りる前の ナレーション（INTRO）と、原盤を持ち帰ったあと（ENDING）。
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
@@ -16,6 +16,15 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 };
 
 export type Quote = { who: Speaker; text: string };
+
+/**
+ * キリコの ことば（ポケダン式）。
+ * - think … 独白。（　）で かこんで 出す。プレイヤーにだけ 聞こえ、村の だれにも 聞こえない（仲間は 返事を しない）。声なし。
+ * - voice … 声。過去ログの底の 結末で、はじめて （　）が 外れる。読み上げは rpg と 同じ uc。
+ * 独白の 決まり（README「物語の設計」）：見た物・聞いた物だけ。気持ちに 名前を つけない。
+ * ダンジョンの 中では 出さない。帰りの 語りで 1回 1行まで、喫茶は 1つの 話に 0〜1行。
+ */
+export type KirikoMode = "think" | "voice";
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
 export type QuoteContext = {
@@ -324,7 +333,11 @@ export const INTRO: string[] = [
 ];
 
 // ───────────────── 原盤を　持ち帰ったあと ─────────────────
-export const ENDING: { who: Speaker | null; text: string }[] = [
+export const ENDING: {
+	who: Speaker | null;
+	text: string;
+	kiriko?: KirikoMode;
+}[] = [
 	{
 		who: null,
 		text: "村に　帰りつくと、\n見なれた　山吹色が　立っていた。",
@@ -340,8 +353,9 @@ export const ENDING: { who: Speaker | null; text: string }[] = [
 	{ who: "nanj", text: "……草。マイクテストかいな" },
 	{
 		who: null,
-		text: "キリコは　蓄音機に　むかって、\n「あー、あー」と　返した。",
+		text: "キリコは　蓄音機に　むかって、\n口を　ひらいた。",
 	},
+	{ who: null, text: "……あー、あー", kiriko: "think" },
 	{
 		who: "zero",
 		text: "……いまの　「あー、あー」、\nゼロの　宝物フォルダに　入れました",

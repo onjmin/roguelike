@@ -23,6 +23,7 @@ import type { Speaker } from "../data/quotes";
 import {
 	BOSS_RETURN,
 	DUNGEON_NAMES,
+	playPage,
 	STORY,
 	type StoryPage,
 	UNLOCK_LINES,
@@ -150,8 +151,7 @@ export const returnScene = async (
 	s.show("player");
 	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
-	for (const p of pages)
-		await (p.who ? s.say(p.who, p.text) : s.narrate(p.text));
+	for (const p of pages) await playPage(s, p);
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲
 	await Promise.all([
 		a.kind === "clear" ? s.fadeBgm(300) : Promise.resolve(),

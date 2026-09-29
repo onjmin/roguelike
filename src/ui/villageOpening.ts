@@ -47,6 +47,7 @@ export const needsOpening = (): boolean =>
 /** 最初の 村の 場面。 */
 export const openingScript = async (s: Story): Promise<void> => {
 	for (const t of OPENING.premise) await s.narrate(t);
+	for (const t of OPENING.think) await s.kiriko(t, "think");
 	// 小屋の前の やきうが 声を かける
 	await s.look("nanj");
 	for (const t of OPENING.nanjCall) await s.say("nanj", t);
