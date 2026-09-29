@@ -30,7 +30,7 @@ import { loadBook, loadProgress, loadRecords, runStats } from "../engine/save";
 import { fill } from "./villageTalk";
 
 /** 仲間が「近くに いる」と みなす 距離（マス。たて・よこ・ななめ の 大きい方）。 */
-export const NEAR = 6;
+export const NEAR = 2;
 
 const KEY = "kiriko-roguelike/mobs";
 

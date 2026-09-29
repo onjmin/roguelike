@@ -205,7 +205,7 @@ export const returnScene = async (
 // ───────────────── 話す 仲間を そばに ─────────────────
 
 /** これより 離れた 仲間とは 話さない（キリコは 1人で 動いている。村の 窓で 話すのは そばに いる 人だけ）。 */
-export const TALK_NEAR = 4;
+export const TALK_NEAR = 2;
 
 /** 仲間を 持ち場から 呼んだ 場面（あとで 建て直して 持ち場へ もどす）。 */
 const called = new WeakSet<Story>();

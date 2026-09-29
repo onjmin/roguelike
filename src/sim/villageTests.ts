@@ -1804,15 +1804,15 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 	await withStorageAsync(async () => {
 		setProgress(["shallow", "main"]);
 		putTown({ stage: 7 });
-		const id = "panmatsu";
+		const id = "ngoane";
 		const d = MOBS[id];
 		const plain = (line: string) => `say null: ${seasonalToday(d) ?? line}`;
 		ok(hasMobNews(id), "no 「！」 before meeting");
-		const a = fakeStory({ near: ["roze"] });
+		const a = fakeStory({ near: ["feris"] });
 		await mobScript(id)(a.s);
 		ok(
 			a.log[0] === `say null: ${d.meet[0]?.text}` &&
-				a.log[1] === `say roze: ${d.meet[1]?.text}`,
+				a.log[2] === `say feris: ${d.meet[2]?.text}`,
 			`meet:\n${a.log.join("\n")}`,
 		);
 		ok(!hasMobNews(id), "「！」 stays after meeting");
@@ -1820,7 +1820,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 		const b = fakeStory();
 		await mobScript(id)(b.s);
 		ok(b.log.join() === plain(idleOf(d)), `same return:\n${b.log.join("\n")}`);
-		// 帰ってきた：新しい話（ロゼが 近くに いないので ロゼとの 話は とばす）
+		// 帰ってきた：新しい話（フェリスが 近くに いないので フェリスとの 話は とばす）
 		pushRecord({ kind: "dead", cause: "おなかが　すいて　たおれた" });
 		ok(hasMobNews(id), "no 「！」 after a return");
 		const c = fakeStory();
@@ -1828,24 +1828,24 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 		const plainChat = d.chats.find((x) => !x.with);
 		ok(
 			c.log[0] === `say null: ${plainChat?.lines[0]?.text}` &&
-				!c.log.some((l) => l.startsWith("say roze")),
+				!c.log.some((l) => l.startsWith("say feris")),
 			`plain chat:\n${c.log.join("\n")}`,
 		);
 		ok(!hasMobNews(id), "「！」 stays after the new talk");
-		// 次は 前の冒険への 反応（おなかが すいて）、そのあと いつもの
+		// 次は 前の冒険への 反応、そのあと いつもの
 		const e = fakeStory();
 		await mobScript(id)(e.s);
-		ok(e.log.join() === plain(d.react.starve ?? ""), `reaction: ${e.log}`);
+		ok(e.log.join() === plain(reactionOf(d) ?? ""), `reaction: ${e.log}`);
 		const f = fakeStory();
 		await mobScript(id)(f.s);
 		ok(f.log.join() === plain(idleOf(d)), `idle: ${f.log.join()}`);
-		// 次の 帰り：ロゼが 近ければ ロゼとの 話
+		// 次の 帰り：フェリスが 近ければ フェリスとの 話
 		pushRecord({ kind: "clear", dungeon: "shallow" });
-		const g = fakeStory({ near: ["roze"] });
+		const g = fakeStory({ near: ["feris"] });
 		await mobScript(id)(g.s);
 		ok(
-			g.log[0] === `say roze: ${d.chats[0]?.lines[0]?.text}`,
-			`with roze:\n${g.log.join("\n")}`,
+			g.log[0] === `say feris: ${d.chats[0]?.lines[0]?.text}`,
+			`with feris:\n${g.log.join("\n")}`,
 		);
 		// 長湯スレを 持ち帰ったら 節目が 先
 		setProgress(["shallow", "main"], [], ["shallow", "main"]);
@@ -1861,7 +1861,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 		const heard = new Set<string>();
 		for (let i = 0; i < 12; i++) {
 			pushRecord({ kind: "escape" });
-			const t = fakeStory({ near: ["roze", "nanj", "zero"] });
+			const t = fakeStory({ near: ["feris", "nanj", "shiyo"] });
 			await mobScript(id)(t.s);
 			const first = t.log[0] ?? "";
 			ok(
