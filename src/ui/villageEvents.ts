@@ -474,7 +474,6 @@ export const buildVillage = (
 	};
 };
 
-/** B／☰ の 村の メニュー（仲間の 役目を ぜんぶ ここからも）。とじるまで 何度でも。 */
 /**
  * 拾った「最後の レス」の 一覧（植民地で 拾った、去った 人の 最後の 書きこみ。core/data/lastRes.ts）。
  * まだ 拾っていない ものは 場所だけ（？？？）。選ぶと その レスを 窓で 読む。
@@ -512,6 +511,7 @@ const openLastRes = async (ctx: Ctx, s: Story): Promise<void> => {
 	}
 };
 
+/** B／☰ の 村の メニュー（仲間の 役目を ぜんぶ ここからも）。とじるまで 何度でも。 */
 export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 	let start = 0;
 	for (;;) {

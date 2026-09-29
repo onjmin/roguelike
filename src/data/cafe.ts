@@ -2,7 +2,6 @@
 // 仲間ひとりの 話と、ふたり・みんなの 掛け合い。どれも 寄り道で、何も くれない（聞いた 印だけ 残る）。
 // 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは しゃべらない（ナレーションで 動作だけ）。
 
-import type { DungeonId } from "../core/types";
 import type { KirikoMode, Speaker } from "./quotes";
 
 export type CafeLine = {
@@ -22,8 +21,6 @@ export type CafeTalk = {
 	from?: number;
 	/** cast[0] に これだけ 一杯 おごったら 聞ける（推すと 話が ふえる）。 */
 	treats?: number;
-	/** この 板を 持ち帰ってから 聞ける。 */
-	after?: DungeonId;
 	lines: readonly CafeLine[];
 };
 

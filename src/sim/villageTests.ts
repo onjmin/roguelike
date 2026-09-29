@@ -154,7 +154,14 @@ import {
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
-import { cafeLayout, cafeTalks, forgetCafeMemo, mixScene } from "../ui/cafe";
+import {
+	cafeLayout,
+	cafeTalks,
+	forgetCafeMemo,
+	hasCafeNews,
+	mixScene,
+	talksWith,
+} from "../ui/cafe";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
 import {
@@ -753,12 +760,12 @@ test("ゼロ reads the ledger: sales so far and the rest to the next stage", () 
 const width = (line: string): number =>
 	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
 
-/** 村の窓（スマホで 全角22字）に 2行まで で 収まるか。 */
 type Shown = { text: string; kiriko?: KirikoMode };
 /** 窓に 出る 文（キリコの 独白は （　）で かこまれる。ui/village.ts の sayKiriko）。 */
 const shown = (l: Shown): string =>
 	l.kiriko === "think" ? `（${l.text}）` : l.text;
 
+/** 村の窓（スマホで 全角22字）に 2行まで で 収まるか。 */
 const fitsWindow = (texts: readonly [string, string][]): void => {
 	for (const [where, t] of texts) {
 		const lines = t.split("\n");
@@ -860,6 +867,41 @@ test("喫茶「保守」: every talk fits the village window, and the door appea
 		new Set(CAFE_TALKS.map((t) => t.id)).size === CAFE_TALKS.length,
 		"two cafe talks share an id",
 	);
+	// 出ていった やきうの 話は 聞けない（扉の「！」も 残らない）
+	withStorage(() => {
+		forgetCafeMemo();
+		putTown({ stage: TOWN_STAGES - 1 });
+		const talks = [...CAFE_TALKS, ...TREAT_TALKS];
+		const his = talks.filter((t) => t.cast.includes("nanj"));
+		ok(his.length > 0, "no cafe talk with やきう to test");
+		localStorage.setItem(
+			"kiriko-roguelike/cafe",
+			JSON.stringify({
+				heard: talks.filter((t) => !his.includes(t)).map((t) => t.id),
+				treats: Object.fromEntries(talks.map((t) => [t.cast[0], 99] as const)),
+				sentAt: 0,
+			}),
+		);
+		const all = [...DUNGEON_IDS];
+		setProgress(
+			all,
+			[],
+			all.filter((d) => d !== "hidden"),
+		);
+		ok(hasCafeNews(), "やきう's unheard talks give no 「！」 while he is here");
+		ok(
+			talksWith("nanj", TOWN_STAGES - 1).length > 0,
+			"no talks with やきう while he is here",
+		);
+		setProgress(all, [], all);
+		ok(!hasCafeNews(), "「！」 stays for the talks of やきう, who has left");
+		ok(
+			talksWith("nanj", TOWN_STAGES - 1).length === 0 &&
+				cafeTalks(TOWN_STAGES - 1).every((t) => !t.cast.includes("nanj")),
+			"talks with やきう after he has left",
+		);
+		forgetCafeMemo();
+	});
 	for (const v of VIEWS) {
 		const s = survey(v);
 		const door = s.places.find((p) => p.id === "door_cafe");
@@ -1276,7 +1318,7 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 			]),
 			`the 電池板 news is out of order:\n${deep.log.join("\n")}`,
 		);
-		// 10回 たおれて 開いた（救い）：シヨが 針を 用意する
+		// 10回 たおれて 開いた（救い）：パン板の ネタは シヨが 貼っておく
 		setProgress(["shallow", "main"], [{ dungeon: "main", reason: "relief" }]);
 		const relief = fakeStory();
 		await newsScript(relief.s);
@@ -1634,7 +1676,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 			g.log[0] === `say roze: ${d.chats[0]?.lines[0]?.text}`,
 			`with roze:\n${g.log.join("\n")}`,
 		);
-		// 原盤を 持ち帰ったら 節目が 先
+		// 長湯スレを 持ち帰ったら 節目が 先
 		setProgress(["shallow", "main"], [], ["shallow", "main"]);
 		pushRecord({ kind: "clear", dungeon: "main" });
 		const h = fakeStory();
@@ -3223,7 +3265,7 @@ test("おんJ 本館の 下見（?stage=・?event=）: reading, 「保守」 and
 	});
 });
 
-test("飾り棚: the goal items of the cleared boards (the needle and the first record are on the gramophone), and 「！」 when one is added", () => {
+test("飾り棚: the goal items of the cleared boards (植民地化宣言 and 長湯スレ play on the gramophone), and 「！」 when one is added", () => {
 	const rows = shelfRows(["kinoko", "shallow", "main"]);
 	ok(
 		rows.map((r) => r.d).join() === "shallow,main,kinoko",
@@ -3253,7 +3295,7 @@ test("飾り棚: the goal items of the cleared boards (the needle and the first 
 			unlocked: ["shallow"],
 			cleared,
 		});
-		// 針・原盤だけでは 棚は ふえない。集会所には 棚が ない
+		// 蓄音機で 鳴らす 2枚だけでは 棚は ふえない。集会所には 棚が ない
 		ok(
 			!hasHallNews(at(3, ["shallow", "main"])),
 			"「！」 for the gramophone's items",
@@ -3275,7 +3317,7 @@ test("飾り棚: the goal items of the cleared boards (the needle and the first 
 	});
 });
 
-test("飾り棚: what is said matches what is drawn (only the needle and the first record → the shelf is empty), and its pictures are loaded before the hall fades in", () => {
+test("飾り棚: what is said matches what is drawn (only the records on the gramophone → the shelf is empty), and its pictures are loaded before the hall fades in", () => {
 	const cases: [DungeonId[], string][] = [
 		[[], HALL_MSG.shelfEmpty],
 		[["shallow"], HALL_MSG.shelfPhono],

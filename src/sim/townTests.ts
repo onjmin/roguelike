@@ -378,8 +378,14 @@ test("the last posts lie on real floors of the colonies (not the main board), fi
 		ids.add(r.id);
 		ok(r.dungeon !== "main", `${r.id}: the main board keeps its parity runs`);
 		const d = dungeonById(r.dungeon);
-		ok(r.depth >= 2 && r.depth < d.floors, `${r.id}: depth ${r.depth} of ${d.floors}`);
-		ok([...r.text].length <= 20, `${r.id}: "${r.text}" is too long for one log line`);
+		ok(
+			r.depth >= 2 && r.depth < d.floors,
+			`${r.id}: depth ${r.depth} of ${d.floors}`,
+		);
+		ok(
+			[...r.text].length <= 20,
+			`${r.id}: "${r.text}" is too long for one log line`,
+		);
 		// その 階に 着くと 1回だけ 拾う（同じ 冒険で もう一度 着いても ふえない）
 		const run = Run.create(`lastres-${r.id}`, r.dungeon);
 		run.enterFloor(r.depth, false);

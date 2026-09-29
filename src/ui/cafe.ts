@@ -18,7 +18,7 @@
 // 聞いた 印・おごった 回数・知った 好みは 別の 保存場所に 残す（中断セーブ・記録・町には 手を ふれない。倉庫の 草だけ へる）。
 
 import { defOf } from "../core/item";
-import type { DungeonId, Item } from "../core/types";
+import type { Item } from "../core/types";
 import {
 	CAFE_DRINKS,
 	CAFE_GREET,
@@ -139,17 +139,17 @@ const returnAt = (): number => loadRecords()[0]?.at ?? 0;
 /** いまの 町の 段（開発用の 下見 ?stage= も）。 */
 const stageNow = (): number => villageView().stage;
 
-/** いまの 町・おごった 回数で 聞ける 話。 */
+/** いまの 町・おごった 回数で 聞ける 話（出ていった 仲間の 出る 話は 聞けない）。 */
 export const cafeTalks = (
 	stage: number,
 	st: CafeState = load(),
-	cleared: readonly DungeonId[] = loadProgress().cleared,
+	away: readonly Speaker[] = awayFriends(loadProgress().cleared),
 ): CafeTalk[] =>
 	[...CAFE_TALKS, ...TREAT_TALKS].filter(
 		(t) =>
 			stage >= (t.from ?? CAFE_FROM) &&
 			(st.treats[t.cast[0]] ?? 0) >= (t.treats ?? 0) &&
-			(!t.after || cleared.includes(t.after)),
+			!t.cast.some((w) => away.includes(w)),
 	);
 
 /** その 仲間が 出る 話（掛け合い・みんなの 話も）。 */

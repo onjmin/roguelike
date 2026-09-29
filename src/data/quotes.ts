@@ -303,9 +303,7 @@ export const pickQuote = (
 ): Quote | null => {
 	const pick = (pool: readonly Quote[], salt: number) =>
 		at(
-			pool.filter(
-				(x) => (!who || x.who === who) && !away.includes(x.who),
-			),
+			pool.filter((x) => (!who || x.who === who) && !away.includes(x.who)),
 			seed,
 			salt,
 		);
