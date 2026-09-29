@@ -32,7 +32,7 @@
 | 響化アル | `sprites/aru.png` | Claude が 描いた 仮（`scripts/make-cast.mjs`）。公式の 立ち絵に 合わせた 紺の マッシュ・眼鏡・青と 黄の しぶきの 黒い 長コート・青い ネクタイ・紫の ベスト |
 | 解音ゼロ（メインさん・レン） | `sprites/zero_main.png` `sprites/zero_ren.png` | 作者の プロトの 歩行グラ（RPGEN `sa:KxS5YZ`）を 塗りかえた もの（`scripts/make-zero.mjs`）。メインさん＝赤い 帯・紫の 目・赤い ケーブルの しっぽ、レン＝先が 青い 髪・金の 角・黒い 手袋と 脚 |
 | ミャウミャウ・ジェイトルマン・朝コンロ（村の 住人） | `sprites/minors_miaumiau.png` `minors_jtleman.png` `minors_asakonro.png` | Claude が 描いた 仮（`scripts/make-minors.mjs`）。紙袋に ・ワ・ の顔と とがった 耳・白い 服／シルクハットに 閉じた目と J の鼻・背広／火の 色の 髪と まるい 目。ミャウミャウは 公式にも 絵が 定まっていない |
-| ムッジェ（村の 住人） | `sprites/minors_mujje.png` | やきうの 歩行グラ（RPGEN「野球民」）の 形の まま、肌を ムックの ような 赤い 毛に 塗りかえ、頭の ふちに 毛の 房を 足した もの（`scripts/make-mujje.mjs`）。見た目は やきう民に 似ていて、毛は ムックが もと |
+| ムッジェ（村の 住人） | `sprites/minors_mujje.png` | Claude が 描いた もの（`scripts/make-minors.mjs`。rpg の `mujje.png` と 同じ 絵）。おんJwiki の お絵かきスレ（2014）の 元絵に 合わせて：首の ない 赤い 柱の 体に ムックの ような まばらな 毛・柄の 先の 目玉 2つ・横に つき出た 口・小さな 白い 手袋 |
 | メタルぷゆゆ（敵） | `sprites/metal_puyu.png` | RPGEN「PIEN」を 銀色に ぬった もの（`scripts/make-metal-puyu.mjs`） |
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
 | まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |

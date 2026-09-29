@@ -4,8 +4,8 @@
 // - public/sprites/minors_miaumiau.png … ミャウミャウ <f(・ワ・)t>（紙袋を かぶった エルフ。白い 服）
 // - public/sprites/minors_jtleman.png  … ジェイトルマン (‐Jし‐)（シルクハットの 紳士。閉じた目・J の鼻・し の口）
 // - public/sprites/minors_asakonro.png … 朝コンロ ( ,,Ծ‸Ծ,,)（火の色の 髪。まるい目・‸ の口・ほっぺの ,,）
+// - public/sprites/minors_mujje.png    … ムッジェ ΣΩΩ>（赤い 毛の 柱・柄の 先の 目玉・横に つき出た 口・白い 手袋）
 //
-// ムッジェ（minors_mujje.png）は scripts/make-mujje.mjs（やきうの 歩行グラを 赤い 毛に 塗りかえる）。
 // 1コマ目の 絵を 描き、2コマ目は 足もと（下の 2行）だけ 差し替える。左向きは 右向きの 反転。依存なし（zlib だけ）。
 
 import { writeFileSync } from "node:fs";
@@ -308,4 +308,78 @@ walkSheet(
 	FEET_B,
 );
 
-console.log("wrote minors_miaumiau.png, minors_jtleman.png, minors_asakonro.png");
+// ───── ムッジェ ΣΩΩ> ─────
+// おんJ 初期の お絵かきスレ「(´・ω・`)ここはぼくたちのあたらしい縄張りだからね」（2014）生まれ。板の バナーにも いる。
+// 元絵：頭と 胴が ひとつづきの 赤い 柱（首は ない）に、ムックの ような まばらな 毛（短い 黒い 毛が ぴんぴん）。
+// てっぺんから 目玉が 2つ 柄で 生え（ΩΩ）、横へ つき出た くちばしの ような 大きな 口（>。よく 開いている）。
+// 手は 小さな 白い 手袋。足は ほとんど 見えない。
+walkSheet(
+	"minors_mujje.png",
+	{
+		K: hex("#3a0d0a"),
+		k: hex("#1a0604"),
+		R: hex("#e0301f"),
+		r: hex("#9e1f17"),
+		W: hex("#ffffff"),
+		B: hex("#141414"),
+		M: hex("#5a0f12"),
+		G: hex("#ffffff"),
+		S: hex("#7a1a12"),
+	},
+	{
+		down: [
+			"....KK...KK.....",
+			"...KWBK.KBWK....",
+			"....KK...KK.....",
+			"....KRK.KRK.....",
+			"...KRRRRRRRRK...",
+			"..kKRrRRRRrRK...",
+			"...KRKMMMMKRK...",
+			"...KRKMMMMKRKk..",
+			"...KRRKKKKRRK...",
+			"..GKRrRRRRrRKG..",
+			".GGKRRRRrRRRKGG.",
+			"..kKRRrRRRRRK...",
+			"...KRRRRRrRRKk..",
+			"..kKrRRRRRRrK...",
+		],
+		up: [
+			"....KK...KK.....",
+			"...KWWK.KWWK....",
+			"....KK...KK.....",
+			"....KRK.KRK.....",
+			"...KRRRRRRRRK...",
+			"..kKRrRRRRrRK...",
+			"...KRRRrRRRRK...",
+			"...KRRRRRRrRKk..",
+			"...KrRRRRRRRK...",
+			"..GKRRRrRRRRKG..",
+			".GGKRRRRRRrRKGG.",
+			"..kKRrRRRRRRK...",
+			"...KRRRRrRRRKk..",
+			"..kKrRRRRRRrK...",
+		],
+		right: [
+			".......KK.KK....",
+			"......KWBKWBK...",
+			".......KK.KK....",
+			".......KRKRK....",
+			"....KRRRRRRK....",
+			"...kKRRRRRRRKK..",
+			"....KRrRRRRRRRK.",
+			"....KRRRRKMMMMK.",
+			"...kKRRRRRRRRK..",
+			"....KRRrRRKK....",
+			"....KRRRGGK.....",
+			"...kKRrRGGK.....",
+			"....KRRRRRKk....",
+			"...kKrRRRrK.....",
+		],
+	},
+	[".....SS..SS.....", "................"],
+	["....SS....SS....", "................"],
+);
+
+console.log(
+	"wrote minors_miaumiau.png, minors_jtleman.png, minors_asakonro.png, minors_mujje.png",
+);
