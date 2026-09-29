@@ -361,6 +361,8 @@ export type Progress = {
 	event?: ActiveEvent;
 	/** まだ 知らせていない イベントの 始まり・終わり（村に 帰ったとき）。 */
 	eventNews?: EventNews[];
+	/** 持ち帰りの 語り（data/story.ts の STORY[d].ending）を 見おえた 板。一度きりの 語りは 二度 出さない。 */
+	endings?: DungeonId[];
 };
 
 const isDungeon = (x: unknown): x is DungeonId =>
@@ -402,6 +404,7 @@ export const loadProgress = (): Progress => {
 					: [],
 				...(typeof o.outings === "number" ? { outings: o.outings } : {}),
 				...(isActiveEvent(o.event) ? { event: o.event } : {}),
+				...(Array.isArray(o.endings) ? { endings: list(o.endings) } : {}),
 				...(Array.isArray(o.eventNews)
 					? {
 							eventNews: o.eventNews.filter(
@@ -511,6 +514,15 @@ export const noteRunEnd = (
 	if (ev.ended) news.push({ id: ev.ended.id, started: false });
 	if (ev.started) news.push({ id: ev.started.id, started: true });
 	if (news.length) p.eventNews = news;
+	saveProgress(p);
+};
+
+/** 持ち帰りの 語りを 見おえた（ui/villageReturn.ts の returnScene）。 */
+export const noteEnding = (d: DungeonId): void => {
+	const p = loadProgress();
+	const seen = p.endings ?? [];
+	if (seen.includes(d)) return;
+	p.endings = [...seen, d];
 	saveProgress(p);
 };
 

@@ -8,17 +8,18 @@
 
 import type { DungeonId } from "../core/types";
 import type { Story } from "../engine/defs";
-import { ENDING, INTRO, type KirikoMode, type Speaker } from "./quotes";
+import {
+	ENDING,
+	INTRO,
+	type KirikoMode,
+	type Speaker,
+	type StoryPage,
+} from "./quotes";
+
+export type { StoryPage };
 
 /** 仲間の ひとこと（起動の札・村・開いたときの ひとこと）。 */
 export type Line = { who: Speaker; text: string };
-
-/** 語りの1ページ（who が null なら ナレーション。kiriko が あれば キリコの 独白）。 */
-export type StoryPage = {
-	who: Speaker | null;
-	text: string;
-	kiriko?: KirikoMode;
-};
 
 /** 語りの 1ページを 窓に 出す（仲間の セリフ・ナレーション・キリコの 独白）。 */
 export const playPage = (
@@ -39,6 +40,34 @@ export const playPage = (
 export const awayFriends = (cleared: readonly DungeonId[]): Speaker[] =>
 	cleared.includes("hidden") ? ["nanj"] : [];
 
+/** 村に いない 人が 話す・出てくる ページか。 */
+const gone = (p: StoryPage, away: readonly Speaker[]): boolean =>
+	(!!p.who && away.includes(p.who)) || (!!p.about && away.includes(p.about));
+
+/** 村に いない 人の ページを かわりに かえる（かわりが 無ければ 出さない）。だれも いなければ そのまま。 */
+export const withoutAway = (
+	pages: readonly StoryPage[],
+	away: readonly Speaker[],
+): readonly StoryPage[] =>
+	away.length
+		? pages.flatMap((p) =>
+				!gone(p, away) ? [p] : p.instead ? [p.instead] : [],
+			)
+		: pages;
+
+/**
+ * 持ち帰りの 語り。一度きりの 出来事（電池板・過去ログの底）は 見おえたら again に かわる。
+ * 出来事に 出てくる 人が もう 村に いなければ、はじめから again。
+ */
+export const endingFor = (
+	d: DungeonId,
+	seen: boolean,
+	away: readonly Speaker[],
+): readonly StoryPage[] => {
+	const { ending, again } = STORY[d];
+	return again && (seen || ending.some((p) => gone(p, away))) ? again : ending;
+};
+
 /** 潜る ときの 一言（口で 行き先を 決めた あと）。やきうが 出ていった あとは キリコの 独白。 */
 export const DEPART = {
 	nanj: "ほな、上で　保守しとくわ",
@@ -52,6 +81,18 @@ export const HOSHU_SIGN =
 const q = (who: Speaker, text: string): Line => ({ who, text });
 const n = (text: string): StoryPage => ({ who: null, text });
 const s = (who: Speaker, text: string): StoryPage => ({ who, text });
+/** 地の文に 出てくる 人（about）と、その 人が 村に いないときの かわりの 地の文。 */
+const nAbout = (text: string, about: Speaker, instead: string): StoryPage => ({
+	who: null,
+	text,
+	about,
+	instead: n(instead),
+});
+/** 話す 人が 村に いないときは、かわりの 人が 言う。 */
+const sOr = (p: StoryPage, instead: StoryPage): StoryPage => ({
+	...p,
+	instead,
+});
 /** キリコの 独白（（　）で 出る。だれにも 聞こえない）。 */
 const k = (text: string): StoryPage => ({ who: null, text, kiriko: "think" });
 
@@ -363,10 +404,15 @@ export const GOAL_ITEMS: Record<
 /**
  * intro：そのダンジョンに はじめて入る前の ナレーション。パン板の intro が このゲームの いちばん最初の前口上。
  * ending：目的の品を 持ち帰ったとき（記録の札の前）。
+ * again：一度きりの 出来事の ある 板だけ。ending を 見おえた あとに 持ち帰ったとき（endingFor）。
  */
 export const STORY: Record<
 	DungeonId,
-	{ intro: readonly string[]; ending: readonly StoryPage[] }
+	{
+		intro: readonly string[];
+		ending: readonly StoryPage[];
+		again?: readonly StoryPage[];
+	}
 > = {
 	shallow: {
 		intro: [
@@ -378,7 +424,11 @@ export const STORY: Record<
 			"キリコは　蓄音機を　かかえた。\n……まず、パン板から　降りる。",
 		],
 		ending: [
-			n("村に　帰りつくと、\n山吹色が　うでを　組んで　待っていた。"),
+			nAbout(
+				"村に　帰りつくと、\n山吹色が　うでを　組んで　待っていた。",
+				"nanj",
+				"村に　帰りつくと、\n小屋の　前の　札が　風に　ゆれていた。",
+			),
 			s("nanj", "取ってきたんか。\n……ほな、貼るで"),
 			n(
 				"キリコは　拾った　レスを　蓄音機に　かけた。\n「ここは　おんJの　植民地や！」",
@@ -423,6 +473,12 @@ export const STORY: Record<
 			),
 			k("……吾輩の、スレンゴ"),
 		],
+		again: [
+			n("村に　帰りつくと、\n村は　今日も　人で　いっぱいだった。"),
+			n("キリコは　鉄塔の　保守スレを　かけた。\n「保守」「保守」「保守」……"),
+			s("feris", "看板の　前、今日も　人だかり〜。\n……知らない　人ばっかり〜"),
+			k("……保守ンゴ"),
+		],
 	},
 	kinoko: {
 		intro: [
@@ -460,7 +516,11 @@ export const STORY: Record<
 			"キリコは　蓄音機を　かかえた。\n……上の　階から、ソースの　においが　する。",
 		],
 		ending: [
-			n("村に　帰りつくと、\nやきうが　鼻を　ひくつかせていた。"),
+			nAbout(
+				"村に　帰りつくと、\nやきうが　鼻を　ひくつかせていた。",
+				"nanj",
+				"村に　帰りつくと、\nロゼが　鼻を　ひくつかせていた。",
+			),
 			s(
 				"nanj",
 				"たこ焼きやんけ！　……😡の　顔しとる。\nやきう→猛虎弁→大阪→たこ焼きや",
@@ -507,6 +567,11 @@ export const STORY: Record<
 			n("山吹色の　背中が、\n小さく　なっていった。"),
 			n("キリコは　小屋の　前の　札に　書いた。\n「保守」"),
 		],
+		again: [
+			n("村に　帰りつくと、\n井戸の　そばには　だれも　いなかった。"),
+			n("キリコは　古い　スレを　ひらいた。\n「次スレ　立てといたで」"),
+			k("……保守ンゴ"),
+		],
 	},
 };
 
@@ -519,7 +584,13 @@ export const STORY: Record<
 export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	shallow: [
 		n("キリコの　服に、\nパンくずが　いっぱい　ついていた。"),
-		s("nanj", "パン兵に　かつがれて　帰ってきたんか。\n……パン松の　手下やんけ"),
+		sOr(
+			s(
+				"nanj",
+				"パン兵に　かつがれて　帰ってきたんか。\n……パン松の　手下やんけ",
+			),
+			s("shiyo", "……パンくず　だらけじゃない。\nは、はらって　あげるわよ"),
+		),
 	],
 	main: [
 		n("キリコの　髪から、\nまだ　湯気が　立ちのぼっていた。"),
@@ -538,7 +609,10 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	],
 	konamono: [
 		n("キリコの　髪は、\nソースと　焦げの　においが　した。"),
-		s("nanj", "……焦げくさっ。\n鉄板が　噴火でも　したんか？"),
+		sOr(
+			s("nanj", "……焦げくさっ。\n鉄板が　噴火でも　したんか？"),
+			s("roze", "……焦げくさいアル。\n鉄板の　火加減も　常識アル"),
+		),
 	],
 	festival: [
 		n("遠くで、神輿の　かけ声が\nまだ　聞こえていた。"),

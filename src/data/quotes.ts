@@ -26,6 +26,20 @@ export type Quote = { who: Speaker; text: string };
  */
 export type KirikoMode = "think" | "voice";
 
+/**
+ * 語りの 1ページ（who が null なら ナレーション。kiriko が あれば キリコの 独白）。
+ * 話す 人か about の 人が 村に いない（出ていった やきう。data/story.ts の awayFriends）ときは
+ * instead に かえる（無ければ その ページは 出さない）。
+ */
+export type StoryPage = {
+	who: Speaker | null;
+	text: string;
+	kiriko?: KirikoMode;
+	/** 地の文に 出てくる 仲間。 */
+	about?: Speaker;
+	instead?: StoryPage;
+};
+
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
 export type QuoteContext = {
 	kind: "dead" | "clear" | "escape";
@@ -339,14 +353,15 @@ export const INTRO: string[] = [
 ];
 
 // ───────────────── 長湯スレを　持ち帰ったあと ─────────────────
-export const ENDING: {
-	who: Speaker | null;
-	text: string;
-	kiriko?: KirikoMode;
-}[] = [
+export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "村に　帰りつくと、\n見なれた　山吹色が　立っていた。",
+		about: "nanj",
+		instead: {
+			who: null,
+			text: "村に　帰りつくと、\nみんなが　入口で　待っていた。",
+		},
 	},
 	{ who: "nanj", text: "おっそ。……何日　待たせんねん" },
 	{ who: "feris", text: "おかえり〜。くしゃみ、\nずっと　がまんしてたよ〜" },

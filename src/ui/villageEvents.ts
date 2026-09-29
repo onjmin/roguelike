@@ -83,6 +83,7 @@ import {
 	type ReturnArrival,
 	returnScene,
 	type StoreChooser,
+	sceneView,
 	settleScript,
 } from "./villageReturn";
 import { DUNGEON_DESC, hasNews, ledgerLine, talkLine } from "./villageTalk";
@@ -457,18 +458,20 @@ export const buildVillage = (
 	opt: { arrival?: Arrival } = {},
 ): MapDef => {
 	const arrival = opt.arrival ?? null;
+	// はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村（やきうが 出ていく 語りでも 村に いる）
+	const back = returnOf(arrival);
+	const view = back ? sceneView(v, back) : v;
 	return {
 		id: "village",
 		name: `${TOWN_NAME}　${STAGE_NAMES[v.stage] ?? ""}`,
 		bgm: "town",
-		tiles: villagePalette(v),
-		rows: villageRows(v),
+		tiles: villagePalette(view),
+		rows: villageRows(view),
 		outside: "#1f2a14",
-		events: villagePlaces(v).map((p) => eventFor(ctx, p, v)),
+		events: villagePlaces(view).map((p) => eventFor(ctx, p, view)),
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
 		prepare: (s) => {
-			const back = returnOf(arrival);
-			if (back) lineUp(s, back, v);
+			if (back) lineUp(s, back, view);
 		},
 		onEnter: arrivalScript(ctx, arrival),
 	};

@@ -75,6 +75,7 @@ import {
 	FIRST_SHALLOW,
 	SHALLOW_DEATH,
 	STORY,
+	type StoryPage,
 	UNLOCK_LINES,
 } from "../data/story";
 import {
@@ -213,6 +214,7 @@ import {
 	type ReturnArrival,
 	returnScene,
 	type StoreChooser,
+	sceneView,
 	settleScript,
 	villageView,
 } from "../ui/villageReturn";
@@ -806,7 +808,15 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 		texts.push([`hint ${d}`, lockedHint(d).replace("（", "\n（")]);
 		pool(`CLEAR.${d}`, CLEAR[d]);
 		pool(`STORY.${d}.ending`, STORY[d].ending);
+		pool(`STORY.${d}.again`, STORY[d].again ?? []);
 	}
+	// やきうが 出ていった あとの かわりの 頁
+	const standIns = [
+		...DUNGEON_IDS.flatMap((d) => STORY[d].ending),
+		...Object.values(BOSS_RETURN).flatMap((ps) => ps ?? []),
+		...RETURN_PAGES,
+	].flatMap((p) => (p.instead ? [p.instead] : []));
+	pool("instead", standIns);
 	pool("FIRST_SHALLOW", FIRST_SHALLOW);
 	pool("SHALLOW_DEATH", SHALLOW_DEATH);
 	pool("ESCAPE_QUOTES", ESCAPE_QUOTES);
@@ -1325,6 +1335,112 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 		ok(
 			relief.log.includes(`say shiyo: ${UNLOCK_LINES.relief[0].text}`),
 			`the relief news is wrong:\n${relief.log.join("\n")}`,
+		);
+	});
+});
+
+test("やきう leaves: the 過去ログの底 ending plays once with him, then no return, boss page or news has him", async () => {
+	const all = [...DUNGEON_IDS];
+	const his = (pages: readonly StoryPage[]) =>
+		pages.filter((p) => p.who === "nanj" || p.about === "nanj");
+	const put = (
+		cleared: DungeonId[],
+		endings: DungeonId[],
+		news: ProgressNews[] = [],
+	) =>
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared,
+				fails: {},
+				intro: all,
+				news,
+				endings,
+			}),
+		);
+	await withStorageAsync(async () => {
+		putTown({ stage: TOWN_STAGES - 1 });
+		// はじめて 持ち帰った：やきうは まだ 村に いて、口の 前で 待ち、結末を 語る
+		put(
+			all,
+			all.filter((d) => d !== "hidden"),
+		);
+		const a: ReturnArrival = { kind: "clear", dungeon: "hidden" };
+		ok(
+			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.hidden.ending),
+			"the 過去ログの底 ending is cut the first time",
+		);
+		const v = villageView();
+		ok(
+			!villagePlaces(v).some((p) => p.id === "nanj"),
+			"やきう stands in the village after 過去ログの底 is cleared",
+		);
+		ok(
+			villagePlaces(sceneView(v, a)).some((p) => p.id === "nanj"),
+			"やきう is not in the village for his own departure",
+		);
+		const { s, log } = fakeStory({ at: exitFor("hidden").cell });
+		lineUp(s, a, sceneView(v, a));
+		ok(
+			log.some((l) => l.startsWith("place nanj ")),
+			"やきう does not wait at the mouth",
+		);
+		await returnScene(s, a);
+		ok(
+			his(STORY.hidden.ending).every(
+				(p) => p.who !== "nanj" || log.includes(`say nanj: ${p.text}`),
+			),
+			`やきう's departure is not played:\n${log.join("\n")}`,
+		);
+		ok(
+			!!loadProgress().endings?.includes("hidden"),
+			"the departure is not remembered",
+		);
+		// 見おえたら（暗転で 建て直すと）もう いない。2回目からは 短い 語り
+		ok(
+			!villagePlaces(sceneView(villageView(), a)).some((p) => p.id === "nanj"),
+			"やきう comes back after his departure",
+		);
+		ok(
+			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.hidden.again),
+			"the departure plays again",
+		);
+		// どの 板・帰り方でも やきうの 頁は 出ない（見た 語りでも、はじめての 語りでも）。着いた 語りから 始まる
+		for (const seen of [all, ["hidden"] as DungeonId[]]) {
+			put(all, seen);
+			for (const d of all)
+				for (const kind of ["clear", "escape"] as const)
+					for (const objective of [undefined, "boss"] as const) {
+						const got = pagesFor({ kind, dungeon: d, objective });
+						const at = `${d} ${kind} ${objective ?? "fetch"} (seen ${seen.length})`;
+						ok(his(got).length === 0, `${at}: やきう is in the scene`);
+						ok(
+							got.length > 0 && got[0]?.who === null,
+							`${at}: does not open with the arrival`,
+						);
+					}
+		}
+		// 開いた 知らせでも 話さない
+		put(all, all, [{ dungeon: "kinoko", reason: "clear" }]);
+		const news = fakeStory();
+		await newsScript(news.s);
+		ok(
+			!news.log.some((l) => l.startsWith("say nanj:")) &&
+				news.log.some((l) => l.startsWith("say ")),
+			`the news after he left:\n${news.log.join("\n")}`,
+		);
+		// 電池板の 転（「そろそろ　外、行くわ」）も 一度きり
+		const deep: ReturnArrival = { kind: "clear", dungeon: "deep" };
+		put(["shallow", "main", "deep"], ["shallow", "main"]);
+		ok(
+			JSON.stringify(pagesFor(deep)) === JSON.stringify(STORY.deep.ending),
+			"the 電池板 ending is cut the first time",
+		);
+		put(["shallow", "main", "deep"], ["shallow", "main", "deep"]);
+		ok(
+			JSON.stringify(pagesFor(deep)) === JSON.stringify(STORY.deep.again),
+			"the 電池板 ending plays again",
 		);
 	});
 });

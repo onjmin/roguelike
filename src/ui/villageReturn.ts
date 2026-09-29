@@ -21,12 +21,14 @@ import type { DungeonId, Objective } from "../core/types";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import {
+	awayFriends,
 	BOSS_RETURN,
 	DUNGEON_NAMES,
+	endingFor,
 	playPage,
-	STORY,
 	type StoryPage,
 	UNLOCK_LINES,
+	withoutAway,
 } from "../data/story";
 import {
 	RETURN_PAGES,
@@ -51,7 +53,9 @@ import {
 	loadProgress,
 	loadRecords,
 	loadTown,
+	noteEnding,
 	type PendingReturn,
+	type Progress,
 	settleReturn,
 	type Town,
 } from "../engine/save";
@@ -95,15 +99,45 @@ export type ReturnArrival = {
 	objective?: Objective;
 };
 
+/** はじめて 見る 持ち帰りの 語りか（見おえるまでは その 板を まだ 持ち帰って いない 村で 語る）。 */
+const firstEnding = (a: ReturnArrival, p: Progress): boolean =>
+	a.kind === "clear" && !(p.endings ?? []).includes(a.dungeon);
+
+/**
+ * 場面で 村に いない 仲間。はじめての 持ち帰りの 語りは その 板を 持ち帰る 前の 村で 語る
+ * （過去ログの底の 結末は やきうが 出ていく 場面なので、やきうは まだ いる）。
+ */
+const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] =>
+	awayFriends(
+		firstEnding(a, p) ? p.cleared.filter((d) => d !== a.dungeon) : p.cleared,
+	);
+
+/**
+ * 帰ってきた 場面の 村（はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村。
+ * 語りの あと 暗転で 建て直すと いまの 村に なる）。
+ */
+export const sceneView = (v: VillageView, a: ReturnArrival): VillageView =>
+	firstEnding(a, loadProgress())
+		? { ...v, cleared: v.cleared.filter((d) => d !== a.dungeon) }
+		: v;
+
 /**
  * 村で 話す 語り（品を 持ち帰った ことは 同じ）。ボスなら 持ち帰りの 語りの 1枚目（「村に　帰りつくと、…」の
  * 着いた 語り）の あとに どう 帰ったかの 頁を はさむ（仲間が 声を かけるのは 着いてから）。
+ * 一度きりの 語りは 見おえたら 短い 語りに かわる。村に いない 仲間の 頁は かわりに かえる（data/story.ts）。
  */
-export const pagesFor = (a: ReturnArrival): readonly StoryPage[] => {
-	if (a.kind !== "clear") return RETURN_PAGES;
-	const ending = STORY[a.dungeon].ending;
+export const pagesFor = (
+	a: ReturnArrival,
+	p: Progress = loadProgress(),
+): readonly StoryPage[] => {
+	const away = sceneAway(a, p);
+	if (a.kind !== "clear") return withoutAway(RETURN_PAGES, away);
+	const ending = endingFor(a.dungeon, !firstEnding(a, p), away);
 	const boss = a.objective === "boss" ? (BOSS_RETURN[a.dungeon] ?? []) : [];
-	return boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending;
+	return withoutAway(
+		boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending,
+		away,
+	);
 };
 
 /** 語りで 話す 仲間（出てくる順）。 */
@@ -152,6 +186,8 @@ export const returnScene = async (
 	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const p of pages) await playPage(s, p);
+	// 見おえた（一度きりの 語りは 次から 短く。やきうが 出ていく 語りなら、建て直すと 村に いない）
+	if (a.kind === "clear") noteEnding(a.dungeon);
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲
 	await Promise.all([
 		a.kind === "clear" ? s.fadeBgm(300) : Promise.resolve(),
@@ -192,6 +228,8 @@ export const deathScene = async (s: Story): Promise<void> => {
  * 村の 出口を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
  */
 export const newsScript = async (s: Story): Promise<void> => {
+	// 出ていった 仲間は 知らせでも 話さない
+	const away = awayFriends(loadProgress().cleared);
 	for (const n of loadProgress().news) {
 		const colony = !["main", "deep"].includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
@@ -205,7 +243,9 @@ export const newsScript = async (s: Story): Promise<void> => {
 						: n.dungeon === "deep"
 							? "deep"
 							: "main"
-		].map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
+		]
+			.filter((l) => !away.includes(l.who))
+			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
 		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）
 		await s.look(VILLAGE_SPOTS.exit);
 		for (const l of lines) await s.say(l.who, l.text);
