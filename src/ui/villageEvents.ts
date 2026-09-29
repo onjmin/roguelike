@@ -74,7 +74,7 @@ import { runSaveLabel } from "./boot";
 import { enterCafe, hasCafeNews } from "./cafe";
 import type { Ctx } from "./ctx";
 import { enterHall, hasHallNews } from "./hallEvents";
-import { chooseStored, openBag, openStorage } from "./home";
+import { chooseStored, openBag, openSales, openStorage } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
 import { escBr, openRecords, showStory } from "./records";
@@ -389,7 +389,11 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 					cancel: 2,
 				});
 				if (n === 0) await records(ctx, s);
-				else if (n === 1) await s.say(who, ledgerLine());
+				else if (n === 1) {
+					await s.say(who, ledgerLine());
+					await hideMsg(s);
+					await openSales(ctx);
+				}
 			};
 		case "feris":
 			// 看板の係：図鑑（目が いいから）・あそびかた
@@ -647,6 +651,7 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 		const items: ListItem[] = [
 			{ label: "冒険の記録", value: "records" },
 			{ label: "図鑑", value: "book" },
+			{ label: "売り上げ", value: "sales" },
 			...(loadLastRes().length
 				? [{ label: "拾った　最後のレス", value: "lastres" }]
 				: []),
@@ -674,6 +679,7 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 		else if (v === "lastres") await openLastRes(ctx, s);
 		else if (v === "storage") await openStorage(ctx);
 		else if (v === "bag") await openBag(ctx);
+		else if (v === "sales") await openSales(ctx);
 		else if (v === "howto") await openHowto(ctx);
 		else if (v === "settings") await openSettings(ctx, { wipe: true });
 	}

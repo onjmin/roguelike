@@ -582,6 +582,8 @@ export type Town = {
 	 * 持ちこめない 板へ 出るときは シヨが 倉庫へ もどす（core/data/dungeons.ts の noCarry）。
 	 */
 	bag: Item[];
+	/** 帰りごとの 売り上げ（古い順。SALES_KEEP 件まで。ゼロの 帳簿の グラフ：ui/home.ts の openSales）。 */
+	sales: Sale[];
 	/** まだ決めていない 持ち帰り。 */
 	pending: PendingReturn | null;
 	/** もう町へ帰ってきた冒険のシード（新しい順）。1つの冒険は 1回しか 帰れない（別のタブで 続けても）。 */
@@ -589,6 +591,25 @@ export type Town = {
 };
 
 const RETURNED_KEEP = 50;
+
+/** 1回の 帰りの 売り上げ。 */
+export type Sale = {
+	/** 売れた レス。 */
+	points: number;
+	dungeon: DungeonId;
+	kind: "clear" | "escape";
+	/** この 帰りで 町の 段が 上がった。 */
+	up: boolean;
+};
+
+const SALES_KEEP = 30;
+
+const isSale = (x: unknown): x is Sale =>
+	!!x &&
+	typeof x === "object" &&
+	typeof (x as Sale).points === "number" &&
+	isDungeon((x as Sale).dungeon) &&
+	((x as Sale).kind === "clear" || (x as Sale).kind === "escape");
 
 const isItem = (x: unknown): x is Item =>
 	!!x &&
@@ -607,6 +628,7 @@ export const loadTown = (): Town => {
 				stage: typeof o.stage === "number" ? o.stage : 0,
 				storage: Array.isArray(o.storage) ? o.storage.filter(isItem) : [],
 				bag: Array.isArray(o.bag) ? o.bag.filter(isItem) : [],
+				sales: Array.isArray(o.sales) ? o.sales.filter(isSale) : [],
 				pending:
 					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
 						? { ...pend, items: pend.items.filter(isItem) }
@@ -630,6 +652,7 @@ export const loadTown = (): Town => {
 				: 0,
 		storage: [],
 		bag: [],
+		sales: [],
 		pending: null,
 		returned: [],
 	};
@@ -687,6 +710,15 @@ export const settleReturn = (
 		topCleared: cleared && pend.dungeon === "deep",
 	});
 	t.pending = null;
+	t.sales = [
+		...t.sales,
+		{
+			points: sold,
+			dungeon: pend.dungeon,
+			kind: pend.kind,
+			up: t.stage > from,
+		},
+	].slice(-SALES_KEEP);
 	saveTown(t);
 	return { sold, from, to: t.stage };
 };

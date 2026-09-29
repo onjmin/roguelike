@@ -1567,6 +1567,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 			stage: 4,
 			storage: [],
 			bag: [],
+			sales: [],
 			pending: null,
 			returned: ["x"],
 		};

@@ -4,9 +4,16 @@
 // 村の中。ui/villageReturn.ts）。町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
 
 import { defOf } from "../core/item";
-import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
+import {
+	CARRY_MAX,
+	priceOf,
+	STAGE_POINTS,
+	STORAGE_CAP,
+	TOWN_STAGES,
+} from "../core/town";
 import type { Item } from "../core/types";
-import { TOWN_MSG } from "../data/town";
+import { DUNGEON_NAMES } from "../data/story";
+import { STAGE_NAMES, TOWN_MSG } from "../data/town";
 import {
 	depositItem,
 	loadTown,
@@ -138,4 +145,52 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 		depositItem(Number(v));
 		ctx.se("decide");
 	}
+};
+
+/**
+ * ゼロの 帳簿（村の ゼロ・メニューから）：帰りごとの 売り上げの 棒グラフ（新しい 12回。段が 上がった 帰りは 色が ちがう）と、
+ * 合計・前回・平均、次の 段までの すすみ。売り上げの 記録は 帰って 精算した ときから（engine/save.ts の Town.sales）。
+ */
+export const openSales = async (ctx: Ctx): Promise<void> => {
+	const t = loadTown();
+	const recent = t.sales.slice(-12);
+	const last = t.sales[t.sales.length - 1];
+	const avg = t.sales.length
+		? Math.round(t.sales.reduce((a, s) => a + s.points, 0) / t.sales.length)
+		: 0;
+	const top = t.stage >= TOWN_STAGES - 1;
+	const from = STAGE_POINTS[t.stage] ?? 0;
+	const next = STAGE_POINTS[t.stage + 1] ?? from;
+	const pct = top
+		? 100
+		: Math.max(
+				0,
+				Math.min(
+					100,
+					Math.round(((t.points - from) / (next - from || 1)) * 100),
+				),
+			);
+	const kpi = (label: string, v: string) =>
+		`<div class="sales-kpi"><small>${label}</small><b>${v}</b></div>`;
+	const max = Math.max(1, ...recent.map((s) => s.points));
+	const bars = recent.length
+		? `<div class="sales-chart">${recent
+				.map(
+					(s) =>
+						`<div class="sales-col"><span class="sales-val">${s.points}</span>` +
+						`<i class="sales-bar${s.up ? " up" : ""}" style="height:${Math.max(2, Math.round((s.points / max) * 100))}%"></i>` +
+						`<small>${esc(DUNGEON_NAMES[s.dungeon].short)}</small></div>`,
+				)
+				.join(
+					"",
+				)}</div><small class="sales-legend">金の　棒は　町の　段が　上がった　帰り</small>`
+		: `<p class="dim">${escBr(TOWN_MSG.salesEmpty.text)}</p>`;
+	const html =
+		`<div class="sales-kpis">${kpi("合計", `${t.points}`)}${kpi("前回", last ? `${last.points}` : "—")}${kpi("平均", t.sales.length ? `${avg}` : "—")}</div>` +
+		bars +
+		`<div class="sales-goal"><small>${top ? "町は　いちばん　上の　段" : `つぎの　段「${STAGE_NAMES[t.stage + 1] ?? ""}」まで　あと　${Math.max(0, next - t.points)}レス`}</small>` +
+		`<div class="sales-track"><i style="width:${pct}%"></i></div></div>`;
+	await infoWindow(ctx, `売り上げ　（単位：レス）`, html, {
+		cls: "sales-window",
+	});
 };

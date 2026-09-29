@@ -2967,3 +2967,101 @@ body.shake #app {
 .wm-keep .msg.over-menu {
 	z-index: 59;
 }
+
+/* ゼロの 帳簿：売り上げの グラフ（ui/home.ts の openSales） */
+.sales-kpis {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.sales-kpi {
+	flex: 1;
+	padding: 4px 6px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 6px;
+	display: flex;
+	flex-direction: column;
+}
+
+.sales-kpi small,
+.sales-goal small {
+	font-size: 11px;
+	color: var(--muted);
+}
+
+.sales-kpi b {
+	font-size: 17px;
+	font-weight: normal;
+	color: var(--accent);
+	font-variant-numeric: tabular-nums;
+}
+
+.sales-chart {
+	display: flex;
+	align-items: flex-end;
+	gap: 3px;
+	height: 140px;
+	padding: 4px 0 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sales-col {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	align-items: center;
+}
+
+.sales-val {
+	font-size: 10px;
+	color: var(--muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.sales-bar {
+	display: block;
+	width: 100%;
+	max-width: 22px;
+	background: #6aa8e0;
+	border-radius: 3px 3px 0 0;
+}
+
+.sales-bar.up {
+	background: #f2c14e;
+}
+
+.sales-col small {
+	font-size: 9px;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	max-width: 100%;
+}
+
+.sales-goal {
+	margin-top: 8px;
+}
+
+.sales-track {
+	height: 8px;
+	border-radius: 4px;
+	background: rgba(255, 255, 255, 0.1);
+	overflow: hidden;
+}
+
+.sales-track i {
+	display: block;
+	height: 100%;
+	background: var(--accent);
+}
+
+.sales-legend {
+	display: block;
+	font-size: 10px;
+	color: var(--muted);
+	text-align: right;
+}

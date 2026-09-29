@@ -260,6 +260,15 @@ test("the first shallow clear on a new profile opens the stall (0 → 1)", () =>
 		saveRun(run.s);
 		const r = settleReturn(loadTown(), []);
 		ok(r.from === 0 && r.to === 1, `settled ${r.from} → ${r.to}`);
+		// ゼロの 帳簿の グラフ：帰りごとに 1本（板・売れた レス・段が 上がったか）
+		const sales = loadTown().sales;
+		ok(
+			sales.length === 1 &&
+				sales[0].dungeon === "shallow" &&
+				sales[0].points === r.sold &&
+				sales[0].up,
+			`sales ${JSON.stringify(sales)}`,
+		);
 	});
 });
 

@@ -141,7 +141,8 @@ export const TOWN_MSG: Record<
 	| "soldNothing"
 	| "carryDone"
 	| "bagFull"
-	| "bagEmpty",
+	| "bagEmpty"
+	| "salesEmpty",
 	Line
 > = {
 	noStorage: q("roze", "倉庫は　まだ　ないアル。\nぜんぶ、店で　売るアル"),
@@ -166,6 +167,10 @@ export const TOWN_MSG: Record<
 	sold: q("zero", "売り上げ、{points}レス！\n……帳簿に、花丸を　つけました"),
 	soldNothing: q("roze", "売る　ものが　ないアル。\n……麻婆豆腐なら　あるアル"),
 	carryDone: q("shiyo", "……なくさないでよね。\nちゃんと　持って　帰りなさい"),
+	salesEmpty: q(
+		"zero",
+		"グラフは、つぎの　売り上げから\nつけます！　……帳簿、新しく　しました",
+	),
 	bagEmpty: q(
 		"shiyo",
 		"……なにも　持ってないじゃない。\n倉庫で　引き取りなさいよ",
