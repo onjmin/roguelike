@@ -18,7 +18,7 @@
 // 聞いた 印・おごった 回数・知った 好みは 別の 保存場所に 残す（中断セーブ・記録・町には 手を ふれない。倉庫の 草だけ へる）。
 
 import { defOf } from "../core/item";
-import type { Item } from "../core/types";
+import type { DungeonId, Item } from "../core/types";
 import {
 	CAFE_DRINKS,
 	CAFE_GREET,
@@ -40,6 +40,7 @@ import { CAST } from "../data/cast";
 import { type Cast, MOB_IDS, MOBS, type MobId } from "../data/mobs";
 import { SPEAKERS, type Speaker } from "../data/quotes";
 import { ROOM_MSG, ROOM_NAMES } from "../data/rooms";
+import { awayFriends, playPage } from "../data/story";
 import { NANASHI_WALK } from "../data/village/hall";
 import { npc, sign } from "../data/village/helpers";
 import { CAFE_FROM, type Cell, type VillageView } from "../data/village/map";
@@ -56,7 +57,12 @@ import {
 	type Spot,
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadRecords, loadTown, takeFromStorage } from "../engine/save";
+import {
+	loadProgress,
+	loadRecords,
+	loadTown,
+	takeFromStorage,
+} from "../engine/save";
 import type { Dir } from "../engine/types";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
@@ -134,11 +140,16 @@ const returnAt = (): number => loadRecords()[0]?.at ?? 0;
 const stageNow = (): number => villageView().stage;
 
 /** いまの 町・おごった 回数で 聞ける 話。 */
-export const cafeTalks = (stage: number, st: CafeState = load()): CafeTalk[] =>
+export const cafeTalks = (
+	stage: number,
+	st: CafeState = load(),
+	cleared: readonly DungeonId[] = loadProgress().cleared,
+): CafeTalk[] =>
 	[...CAFE_TALKS, ...TREAT_TALKS].filter(
 		(t) =>
 			stage >= (t.from ?? CAFE_FROM) &&
-			(st.treats[t.cast[0]] ?? 0) >= (t.treats ?? 0),
+			(st.treats[t.cast[0]] ?? 0) >= (t.treats ?? 0) &&
+			(!t.after || cleared.includes(t.after)),
 	);
 
 /** その 仲間が 出る 話（掛け合い・みんなの 話も）。 */
@@ -222,7 +233,11 @@ export const cafeLayout = (
 		}
 		return a;
 	};
-	const all = Object.keys(SPEAKERS) as Speaker[];
+	// 出ていった 仲間（やきう）は 店に 来ない
+	const away = awayFriends(loadProgress().cleared);
+	const all = (Object.keys(SPEAKERS) as Speaker[]).filter(
+		(w) => !away.includes(w),
+	);
 	const n = rnd() < 0.12 ? all.length : 2 + Math.floor(rnd() * 3);
 	const present = shuffle(all).slice(0, n);
 	const slots = shuffle(CAFE_SLOTS.map((_, i) => i));
@@ -441,8 +456,7 @@ const playLines = async (
 	drink = "",
 ): Promise<void> => {
 	for (const l of lines) {
-		const text = l.text.replaceAll("{drink}", drink);
-		await (l.who ? s.say(l.who, text) : s.narrate(text));
+		await playPage(s, { ...l, text: l.text.replaceAll("{drink}", drink) });
 	}
 };
 

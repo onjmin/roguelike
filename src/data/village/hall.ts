@@ -296,7 +296,7 @@ export const hallPlaces = (v: VillageView): HallPlace[] => {
 
 // ───────────────── 飾り棚 ─────────────────
 
-/** 蓄音機に ついている 品の 板（針・はじまりの原盤。棚には 置かない）。 */
+/** 蓄音機で 鳴らしている 品の 板（植民地化宣言・長湯スレ。棚には 置かない）。 */
 export const ON_PHONO: readonly DungeonId[] = ["shallow", "main"];
 
 /** 飾り棚の 段（上の 段から 左 → 右。絵を 描く マス）。棚が 無い 段は 空。 */

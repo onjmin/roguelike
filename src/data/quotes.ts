@@ -1,6 +1,6 @@
 // ダンジョンの外のセリフ。話すのは 外で待っている仲間だけ（キリコはしゃべらない）。
 // - 起動の札・村：前の冒険の結果に、仲間のだれかが ひとこと（pickQuote）。
-// - はじめて降りる前の ナレーション（INTRO）と、原盤を持ち帰ったあと（ENDING）。
+// - はじめて降りる前の ナレーション（INTRO）と、長湯スレを持ち帰ったあと（ENDING）。
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
 // 名前・色は rpg の cast.ts と同じ（シヨ・ゼロは rpg に いないので ここで 決めた 色）。
 
@@ -16,6 +16,15 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 };
 
 export type Quote = { who: Speaker; text: string };
+
+/**
+ * キリコの ことば（ポケダン式の 作法。主人公は しゃべらず、心の 中だけ 出す。物語の 理由は 作らない）。
+ * - think … 独白。（　）で かこんで 出す。村の だれにも 聞こえない（仲間は 返事を しない）。声なし。
+ * - voice … 声（いまは 使っていない。読み上げは rpg と 同じ uc）。
+ * 決まり（STORY.md）：見た物・聞いた物だけ。気持ちに 名前を つけない。ダンジョンの 中では 出さない。
+ * 帰りの 語りで 1回 1行まで、喫茶は 1つの 話に 0〜1行。
+ */
+export type KirikoMode = "think" | "voice";
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
 export type QuoteContext = {
@@ -202,11 +211,11 @@ const MOJIBAKE: readonly Quote[] = [
 
 // ───────────────── 持ち帰ったあと ─────────────────
 const CLEAR: readonly Quote[] = [
-	q("nanj", "原盤、持って帰ったんか！\n……ワイが　名付けた子や（自称）"),
+	q("nanj", "長湯スレ、持って帰ったんか！\n……ワイが　名付けた子や（自称）"),
 	q("roze", "……おかえりアル。\nそれだけアル。常識アル"),
 	q("feris", "レコード、いっしょに　きこ〜。\nくしゃみ、がまんするから〜"),
 	q("shiyo", "……お、お帰りなさいませ。\nいまのは　練習よ。練習！"),
-	q("zero", "原盤！　ゼロ、拍手の　音量を\n最大に　しました！　……うるさい？"),
+	q("zero", "スレ、伸びました！　ゼロ、拍手の\n音量を　最大に　しました！"),
 ];
 
 /** 2回目からの　持ち帰り。 */
@@ -289,9 +298,17 @@ export const pickQuote = (
 	last: QuoteContext,
 	seed: number,
 	who?: Speaker,
+	/** 村に いない 仲間（出ていった やきう。data/story.ts の awayFriends）。その人の セリフは 引かない。 */
+	away: readonly Speaker[] = [],
 ): Quote | null => {
 	const pick = (pool: readonly Quote[], salt: number) =>
-		at(who ? pool.filter((x) => x.who === who) : pool, seed, salt);
+		at(
+			pool.filter(
+				(x) => (!who || x.who === who) && !away.includes(x.who),
+			),
+			seed,
+			salt,
+		);
 	if (!last) return pick(FIRST, 1);
 	if (last.kind === "clear") {
 		const again = last.clears >= 2 && mix(seed, 2) % 2 === 0;
@@ -316,15 +333,19 @@ export const pickQuote = (
 
 // ───────────────── はじめて降りる前 ─────────────────
 export const INTRO: string[] = [
-	"風呂板の　過去ログ。\nおんJに　あきた　民が　ひらいた　湯。",
-	"だれも　読まなくなった　レスが、\n湯の　底で　まだ、ちいさく　鳴っている。",
-	"おんJを　出た　民は、はじまりの　音を\n持っていった。……源泉の　底へ。",
+	"風呂板の　過去ログ。\nおんJを　出た　民が　ひらいた　湯。",
+	"だれも　読まなくなった　スレが、\n湯の　底で　まだ、ぬくもっている。",
+	"源泉の　底には、よく　伸びた\n長湯スレが　沈んでいるという。",
 	"キリコは　蓄音機の　ハンドルを　まわした。",
 	"……ひとりで、降りる。",
 ];
 
-// ───────────────── 原盤を　持ち帰ったあと ─────────────────
-export const ENDING: { who: Speaker | null; text: string }[] = [
+// ───────────────── 長湯スレを　持ち帰ったあと ─────────────────
+export const ENDING: {
+	who: Speaker | null;
+	text: string;
+	kiriko?: KirikoMode;
+}[] = [
 	{
 		who: null,
 		text: "村に　帰りつくと、\n見なれた　山吹色が　立っていた。",
@@ -334,16 +355,14 @@ export const ENDING: { who: Speaker | null; text: string }[] = [
 	{ who: "roze", text: "帰ってくるのは　常識アル。\n……ちょっと、冷えたアル" },
 	{ who: "shiyo", text: "……待ってないわよ。\nお茶が、さめた　だけ" },
 	{ who: "zero", text: "おかえりなさい！\n……101回目で、やっと　言えました" },
-	{ who: null, text: "キリコは　蓄音機に　原盤を　のせた。\n針が、おりる。" },
-	{ who: null, text: "ざらざら、と　音が　した。\nその　むこうで――" },
-	{ who: null, text: "「あー、あー」" },
-	{ who: "nanj", text: "……草。マイクテストかいな" },
 	{
 		who: null,
-		text: "キリコは　蓄音機に　むかって、\n「あー、あー」と　返した。",
+		text: "キリコは　長湯スレを　蓄音機に　かけた。\n湯気の　むこうで、笑い声が　する。",
 	},
+	{ who: "nanj", text: "……ええ　スレや。\nこれ　貼ったら、人、来るで" },
 	{
 		who: "zero",
-		text: "……いまの　「あー、あー」、\nゼロの　宝物フォルダに　入れました",
+		text: "スレ、また　伸びました。\n……知らない　IDが、書きこんでます",
 	},
+	{ who: null, text: "……知らない　人ンゴ", kiriko: "think" },
 ];

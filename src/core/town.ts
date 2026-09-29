@@ -1,7 +1,7 @@
 // 地上の町（トルネコ1の「店」にあたる）。帰還スレで持ち帰った道具を「売った」分だけ育つ。
 //
 // - 段は 0〜7。1回の帰りで 上がるのは 1段まで（トルネコ1と同じ）。段1（屋台）は ちょっと を持ち帰ると開く。
-// - 過去ログの底 を持ち帰ると いちばん上の段へ（トルネコ1の しあわせの箱 と同じ）。
+// - 電池板 を持ち帰ると いちばん上の段へ（トルネコ1の しあわせの箱 と同じ。STORY.md §5 の 転）。
 // - 段4 で倉庫が開き、倉庫の道具を 過去ログの底 へ 1〜4個 持ちこめる（ちょっと・もっと には持ちこめない）。
 // - 倒れたら 持ち物は ぜんぶ なくなる（持ちこんだ道具も）。町は 見た目と会話と 倉庫・持ちこみだけ。
 // 状態（売上・段・倉庫）は engine/save.ts が持つ。ここは 決まりだけ（DOM に触らない。テストできる）。
@@ -123,14 +123,15 @@ export const pricedKinds = (): string[] => Object.keys(PRICE);
 
 /**
  * 帰ってきたあとの段。1回の帰りで 上がるのは 1段まで。
- * 過去ログの底 を持ち帰ったら いちばん上へ。ちょっと を持ち帰ったら 少なくとも 段1（屋台）。
+ * 電池板 を持ち帰ったら いちばん上へ（STORY.md §5 の 転：村が いちばん にぎやかに なる）。
+ * パン板 を持ち帰ったら 少なくとも 段1（屋台）。
  */
 export const nextStage = (
 	stage: number,
 	points: number,
-	opt: { shallowCleared: boolean; mainCleared: boolean },
+	opt: { shallowCleared: boolean; topCleared: boolean },
 ): number => {
-	if (opt.mainCleared) return TOWN_STAGES - 1;
+	if (opt.topCleared) return TOWN_STAGES - 1;
 	let reach = 0;
 	for (let i = 1; i < TOWN_STAGES; i++)
 		if (

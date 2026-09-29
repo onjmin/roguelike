@@ -13,6 +13,7 @@ import {
 	type Speaker,
 } from "../data/quotes";
 import {
+	awayFriends,
 	CLEAR,
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
@@ -25,7 +26,7 @@ import {
 	VILLAGE_MSG,
 	ZERO_VOICELESS,
 } from "../data/town";
-import { loadRecords, loadTown, runStats } from "../engine/save";
+import { loadProgress, loadRecords, loadTown, runStats } from "../engine/save";
 import { settings } from "../engine/settings";
 
 /**
@@ -73,10 +74,15 @@ const quoteContext = (): QuoteContext => {
 export const deathQuote = (seed: number): Quote | null => {
 	const last = loadRecords()[0];
 	if (last?.kind !== "dead") return null;
-	if ((last.dungeon ?? "main") === "shallow" && seed % 2 === 0)
-		return SHALLOW_DEATH[seed % SHALLOW_DEATH.length] ?? null;
-	return pickQuote(quoteContext(), seed);
+	const away = away_();
+	const here = SHALLOW_DEATH.filter((x) => !away.includes(x.who));
+	if ((last.dungeon ?? "main") === "shallow" && seed % 2 === 0 && here.length)
+		return here[seed % here.length] ?? null;
+	return pickQuote(quoteContext(), seed, undefined, away);
 };
+
+/** 村に いない 仲間（出ていった やきう）。 */
+const away_ = (): Speaker[] => awayFriends(loadProgress().cleared);
 
 /**
  * 起動の札の ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
@@ -84,8 +90,11 @@ export const deathQuote = (seed: number): Quote | null => {
  */
 export const titleQuote = (seed: number): Quote | null => {
 	const last = loadRecords()[0];
-	const pick = (pool: readonly Quote[], salt: number) =>
-		pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
+	const away = away_();
+	const pick = (all: readonly Quote[], salt: number) => {
+		const pool = all.filter((x) => !away.includes(x.who));
+		return pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
+	};
 	if (!last) return pick(FIRST_SHALLOW, 1);
 	const d = last.dungeon ?? "main";
 	if (last.kind === "escape") return pick(ESCAPE_QUOTES, 4);
@@ -96,7 +105,7 @@ export const titleQuote = (seed: number): Quote | null => {
 	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
 	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
 		return pick(SHALLOW_DEATH, 3);
-	return pickQuote(quoteContext(), seed);
+	return pickQuote(quoteContext(), seed, undefined, away);
 };
 
 // ───────────────── 村で 話しかけたとき ─────────────────

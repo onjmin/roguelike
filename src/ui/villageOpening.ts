@@ -1,7 +1,7 @@
 // いちばん最初の 村（はじめて 起動して「はじめる」を 押したあと 1回だけ）。
 // それまでは 前口上が ダンジョンの口を 踏んでから だったので、村に 置かれた 時点では
 // だれで・なにを して・どこへ 行けば いいのかが わからなかった。
-// ここで 前口上（蓄音機に 針が 無い）→ やきうが 口を 教える（カメラで 見せる）→ 目的を 1行 → 困ったら フェリス。
+// ここで 前口上（人が 散って 保守村に なった・スレが 伸びない）→ キリコの 独白 → やきうが 目的と 口を 教える（カメラで 見せる）→ 目的を 1行 → 困ったら フェリス。
 // 見終わってから 覚える（途中で 閉じたら 次も 見せる）。一度でも もぐった人には 出さない。
 // 文は data/town.ts の OPENING。
 
@@ -47,6 +47,7 @@ export const needsOpening = (): boolean =>
 /** 最初の 村の 場面。 */
 export const openingScript = async (s: Story): Promise<void> => {
 	for (const t of OPENING.premise) await s.narrate(t);
+	for (const t of OPENING.think) await s.kiriko(t, "think");
 	// 小屋の前の やきうが 声を かける
 	await s.look("nanj");
 	for (const t of OPENING.nanjCall) await s.say("nanj", t);

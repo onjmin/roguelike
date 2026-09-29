@@ -30,7 +30,13 @@ import {
 } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { SHOP_MENU, STORE_MENU } from "../data/rooms";
-import { DUNGEON_NAMES, STORY } from "../data/story";
+import {
+	awayFriends,
+	DEPART,
+	DUNGEON_NAMES,
+	HOSHU_SIGN,
+	STORY,
+} from "../data/story";
 import { STAGE_NAMES, TOWN_MSG, TOWN_NAME, VILLAGE_MSG } from "../data/town";
 import { npc, sign } from "../data/village/helpers";
 import {
@@ -202,6 +208,10 @@ const mouthScript =
 			s.set("carryNotHere");
 			await s.say(TOWN_MSG.carryNotHere.who, TOWN_MSG.carryNotHere.text);
 		}
+		// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）
+		if (awayFriends(loadProgress().cleared).includes("nanj"))
+			await s.kiriko(DEPART.kiriko, "think");
+		else await s.say("nanj", DEPART.nanj);
 		// 前に 行ったことが あれば 速く 歩く（語りを 見た＝行った）
 		const been = loadProgress().intro.includes(d);
 		notePicked(d, false);
@@ -291,14 +301,16 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	}
 };
 
-/** 蓄音機（針が 無い → ある → 原盤を 持ち帰った）。 */
+/** 蓄音機（まだ 何も → パン板 → 風呂板 → 過去ログの底 の レスを 鳴らす）。 */
 const phonoScript: Script = async (s) => {
 	const p = loadProgress();
-	const i = p.cleared.includes("main")
-		? 2
-		: p.cleared.includes("shallow")
-			? 1
-			: 0;
+	const i = p.cleared.includes("hidden")
+		? 3
+		: p.cleared.includes("main")
+			? 2
+			: p.cleared.includes("shallow")
+				? 1
+				: 0;
 	await s.narrate(VILLAGE_MSG.phono[i]);
 };
 
@@ -346,6 +358,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			await records(ctx, s);
 		});
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
+	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	// 小屋・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）
 	if (p.id === "door_music")

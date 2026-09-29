@@ -6,7 +6,7 @@
 // 本館 だけの もの：
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
-//   - 飾り棚：持ち帰った 品を 絵で 並べる（針・はじまりの原盤は 蓄音機に ついているので 一覧だけ）。
+//   - 飾り棚：持ち帰った 品を 絵で 並べる（植民地化宣言・長湯スレは 蓄音機で 鳴らしていて ついているので 一覧だけ）。
 // 扉の「！」：告知が まだ 本館で 読んでいない イベントか、飾り棚に 品が ふえた（喫茶の hasCafeNews と 同じ）。
 //   同じ イベントも また 起きるので、読んだ 告知は 回（始まった 出撃）ごとに 覚える。
 // 書いた 数・読んだ 告知・見た 棚は 別の 保存場所（kiriko-roguelike/hall）に 残す（保存 できなくても この回は 覚えている）。
@@ -302,7 +302,7 @@ const shelfRefs = (cleared: readonly DungeonId[]): string[] =>
 
 /**
  * 飾り棚を 調べた ときの 語り（棚に 描いて いる ものと 合わせる）：何も 持ち帰って いない・
- * 棚に 品が ならんでいる・針と はじまりの原盤だけ（どちらも 蓄音機に ついていて 棚は からっぽ）。
+ * 棚に 品が ならんでいる・植民地化宣言と 長湯スレだけ（どちらも 蓄音機に ついていて 棚は からっぽ）。
  */
 export const shelfLine = (cleared: readonly DungeonId[]): string => {
 	if (!shelfRows(cleared).length) return HALL_MSG.shelfEmpty;
@@ -519,7 +519,7 @@ export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 		tiles: hallPalette(tier),
 		rows,
 		outside: "#000",
-		// 飾り棚の 品の 絵（棚に 描く 品と 一覧だけの 針・原盤）も 入る 前に 読んでおく
+		// 飾り棚の 品の 絵（棚に 描く 品と 一覧だけの 植民地化宣言・長湯スレ）も 入る 前に 読んでおく
 		images: shelfSlots(tier).length ? shelfRefs(v.cleared) : undefined,
 		events: hallPlaces(v).map((p) => eventFor(ctx, p, tier)),
 		decor: decor.length

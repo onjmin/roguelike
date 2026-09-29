@@ -92,19 +92,19 @@ test("every weapon has its own hit sound, and every attack sound is measured", (
 	ok(new Set(hits).size === hits.length, "two weapons share a hit sound");
 });
 
-test("town stage rules: one step per return, the main clear jumps to the top", () => {
-	const none = { shallowCleared: false, mainCleared: false };
+test("town stage rules: one step per return, the deep (電池板) clear jumps to the top", () => {
+	const none = { shallowCleared: false, topCleared: false };
 	ok(nextStage(0, 0, none) === 0, "grew with nothing");
 	ok(
-		nextStage(0, 0, { shallowCleared: true, mainCleared: false }) === 1,
+		nextStage(0, 0, { shallowCleared: true, topCleared: false }) === 1,
 		"the beginner clear did not open the stall",
 	);
 	ok(nextStage(1, 999999, none) === 2, "grew more than one stage at once");
 	ok(nextStage(3, STAGE_POINTS[4], none) === 4, "did not reach the storehouse");
 	ok(
-		nextStage(2, 0, { shallowCleared: false, mainCleared: true }) ===
+		nextStage(2, 0, { shallowCleared: false, topCleared: true }) ===
 			TOWN_STAGES - 1,
-		"the main clear did not jump to the top",
+		"the deep clear did not jump to the top",
 	);
 	ok(nextStage(5, 0, none) === 5, "the town shrank");
 	ok(

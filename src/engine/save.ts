@@ -598,11 +598,11 @@ export const loadTown = (): Town => {
 	} catch {
 		// 読めなければ はじめから
 	}
-	// まだ無ければ：ちょっと を持ち帰っていれば屋台、過去ログの底 を持ち帰っていれば いちばん上
+	// まだ無ければ：パン板 を持ち帰っていれば屋台、電池板 を持ち帰っていれば いちばん上
 	const p = loadProgress();
 	return {
 		points: 0,
-		stage: p.cleared.includes("main")
+		stage: p.cleared.includes("deep")
 			? 7
 			: p.cleared.includes("shallow")
 				? 1
@@ -662,7 +662,7 @@ export const settleReturn = (
 	const cleared = pend.kind === "clear";
 	t.stage = nextStage(t.stage, t.points, {
 		shallowCleared: cleared && pend.dungeon === "shallow",
-		mainCleared: cleared && pend.dungeon === "main",
+		topCleared: cleared && pend.dungeon === "deep",
 	});
 	t.pending = null;
 	saveTown(t);

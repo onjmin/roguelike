@@ -2,9 +2,15 @@
 // 仲間ひとりの 話と、ふたり・みんなの 掛け合い。どれも 寄り道で、何も くれない（聞いた 印だけ 残る）。
 // 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは しゃべらない（ナレーションで 動作だけ）。
 
-import type { Speaker } from "./quotes";
+import type { DungeonId } from "../core/types";
+import type { KirikoMode, Speaker } from "./quotes";
 
-export type CafeLine = { who: Speaker | null; text: string };
+export type CafeLine = {
+	who: Speaker | null;
+	text: string;
+	/** キリコの 独白（who は null）。 */
+	kiriko?: KirikoMode;
+};
 
 export type CafeTalk = {
 	id: string;
@@ -16,11 +22,15 @@ export type CafeTalk = {
 	from?: number;
 	/** cast[0] に これだけ 一杯 おごったら 聞ける（推すと 話が ふえる）。 */
 	treats?: number;
+	/** この 板を 持ち帰ってから 聞ける。 */
+	after?: DungeonId;
 	lines: readonly CafeLine[];
 };
 
 const s = (who: Speaker, text: string): CafeLine => ({ who, text });
 const n = (text: string): CafeLine => ({ who: null, text });
+/** キリコの 独白（（　）で 出る。仲間には 聞こえない）。 */
+const k = (text: string): CafeLine => ({ who: null, text, kiriko: "think" });
 
 export const CAFE_TALKS: readonly CafeTalk[] = [
 	{
@@ -184,6 +194,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["shiyo", "feris"],
 		lines: [
 			s("shiyo", "キリコって、ぜんぜん\nしゃべらないわよね"),
+			k("……しゃべってる、\nつもりンゴ"),
 			s("feris", "しゃべってるよ〜。\n蓄音機で〜"),
 			s("shiyo", "……あれは　しゃべってるって\n言うの？"),
 			s("feris", "言うよ〜。\nざらざら　って　言ってるもん〜"),
@@ -525,8 +536,8 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 		lines: [
 			s("nanj", "みんな　おらんくなった　夜な、\nワイ、ひとりで　保守しとった"),
 			s("nanj", "「保守」「保守」「保守」。\n……だれも　返事せえへん"),
-			s("nanj", "そしたら　ある日、\n蓄音機の　音が　したんや"),
-			s("nanj", "……キリコやった。\nそれから　ワイ、ここに　おる"),
+			s("nanj", "そしたら　ある日、キリコが\n蓄音機　かかえて　来たんや"),
+			s("nanj", "……ワイが　やった　蓄音機や。\nそれから　ワイ、ここに　おる"),
 		],
 	},
 	{
