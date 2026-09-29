@@ -113,7 +113,7 @@ export type SeLoudness = readonly [
 
 // <loudness:se> ここから下は pnpm loudness（scripts/measure-loudness.mjs）が書き換える。手で直さない。
 /**
- * 効果音ごとの実測と補正（2026-09-28、ffmpeg 8.0 の ebur128）。
+ * 効果音ごとの実測と補正（2026-09-29、ffmpeg 8.0 の ebur128）。
  * [素材 id, L, true peak, 補正 dB, 倍率, 鳴り始め ms, 鳴り終わり ms, 待つ ms]。
  * 行末は「区分 → 既定の設定での L」。
  */
@@ -124,6 +124,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	door: ["8gPREU", -17.7, -13.3, -5.3, 0.543, 0, 640, 450], // field → -23.0
 	warp: ["vfCmoe", -10.8, -0.1, -12.2, 0.245, 0, 350, 90], // field → -23.0
 	stairs: ["gO9HUJ", -24.9, -19.3, 1.9, 1.245, 10, 890, 860], // field → -23.0
+	fall: ["7DJdSZ", -20.8, -18.9, -2.2, 0.776, 10, 850, 710], // field → -23.0
 	item: ["gbcHf7", -10.6, -6.7, -12.4, 0.24, 0, 170, 140], // field → -23.0
 	heal: ["n0UqyV", -23.3, -20.9, 0.3, 1.035, 70, 590, 330], // field → -23.0
 	eat: ["DjrP3h", -9.8, 0.6, -13.2, 0.219, 10, 220, 120], // field → -23.0

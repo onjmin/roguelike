@@ -22,6 +22,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** ワープの罠・場所がえ。 */
 		warp: "rpgen:vfCmoe",
 		stairs: "rpgen:gO9HUJ", // 階段
+		/** 落とし穴に 落ちる。 */
+		fall: "rpgen:7DJdSZ", // 落ちる
 		/** アイテム・ゴールドを拾った。 */
 		item: "rpgen:gbcHf7", // ﾄﾞﾗｸｴ宝箱
 		/** HP の回復・満腹度の回復。 */

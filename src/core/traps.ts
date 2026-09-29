@@ -104,7 +104,8 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			r.warpPlayer();
 			return;
 		case "pit": {
-			r.se("flee");
+			// 上りの 板は 吹き上げ（逃げる 音）、下りは 落ちる 音
+			r.se(r.dungeon.up ? "flee" : "fall");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			// 上りの 板では 穴から 吹き上げられる
 			r.msg(r.dungeon.up ? "吹き上げの　穴だ！" : "落とし穴に　落ちた！");
