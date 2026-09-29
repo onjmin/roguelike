@@ -79,7 +79,8 @@ try {
 	const objective = OBJECTIVE ?? dungeonById(DUNGEON).objective;
 	// --reach で 足す レベル：その階の 強さ − LAG まで。ボットが 自力で もぐると、ふつうの 板は 強さ − 2 くらいで
 	// ついていく（おんたこ B8 Lv6.9・お祭り B10 Lv9.8・風呂板 B11 Lv10.0）。過疎の 板（sparse）は 敵も 経験値も
-	// 少なく、だんだん 離れて いく（離島 B12 で Lv8.0・強さ 12）ので 5 に する（底の 15F で Lv10 ほど）
+	// 少なく、だんだん 離れて いく（離島 B12 で Lv8.0・強さ 12）ので 5 に する（底の 15F で Lv10 ほど）。
+	// 数字は 板の 階数を 縮める（2026-09-30）前に 測った もの。LAG は そのまま 使っている
 	const LAG = Number(arg("lag", dungeonById(DUNGEON).sparse ? 5 : 2));
 
 	const results = [];

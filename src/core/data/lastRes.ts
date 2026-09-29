@@ -3,6 +3,7 @@
 // 3作目（walksim）の レコードが その「続き」（record。無い 去り方は 3作目の 窓の 場面で 見せる）。
 // 本編（風呂板）には 置かない（本編の 動きの 基準 parityFixture を 変えないため）。亡くなった 人は 入れない。
 // 乱数は 使わない（決まった 階で 決まった 文。リプレイも 同じに なる）。
+// 階は 植民地の 途中（1階と いちばん底の あいだ）。板の 階の 数を 変えたら ここも 合わせる。
 
 import type { DungeonId } from "../types";
 
@@ -23,7 +24,7 @@ export const LAST_RES: readonly LastRes[] = [
 	{
 		id: "shakaijin",
 		dungeon: "shallow",
-		depth: 5,
+		depth: 2,
 		text: "来月から　社会人や",
 		why: "就職",
 		record: "rec_a",
@@ -31,21 +32,21 @@ export const LAST_RES: readonly LastRes[] = [
 	{
 		id: "juken",
 		dungeon: "shallow",
-		depth: 8,
+		depth: 3,
 		text: "受かるまで　ROMるわ",
 		why: "受験",
 	},
 	{
 		id: "misskey",
 		dungeon: "kinoko",
-		depth: 6,
+		depth: 3,
 		text: "ノート　書くほうが　性に　合っとった",
 		why: "ミスキー",
 	},
 	{
 		id: "yome",
 		dungeon: "tropical",
-		depth: 8,
+		depth: 5,
 		text: "嫁に　見つかった",
 		why: "結婚",
 		record: "rec_b",
@@ -53,14 +54,14 @@ export const LAST_RES: readonly LastRes[] = [
 	{
 		id: "saba",
 		dungeon: "konamono",
-		depth: 10,
+		depth: 7,
 		text: "鯖　作ったから　来いや",
 		why: "鯖",
 	},
 	{
 		id: "akita",
 		dungeon: "festival",
-		depth: 12,
+		depth: 8,
 		text: "飽きたわ",
 		why: "飽きた",
 		record: "rec_c",

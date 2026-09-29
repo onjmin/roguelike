@@ -2,9 +2,9 @@
 // 板ごとに 階の数・道具の出かた・決まり（板の 気風から）が ちがう。名前と 語りは data/story.ts、
 // 見た目と 曲（板ごとに 1つ。全フロア 同じ）は ui/theme.ts。
 //
-// - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 10階。入門：杖だけ未識別・のろいなし・祭りなし・
-//   罠は B5 から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
-// - main：風呂板（おふJ）の 27階。湯治：HP の 自然回復が 1.5倍。
+// - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 4階。入門：杖だけ未識別・のろいなし・祭りなし・
+//   罠は B3 から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
+// - main：風呂板（おふJ）の 20階。湯治：HP の 自然回復が 1.5倍。
 //
 // 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
 // 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town.ts の CARRY_REFUSE）。
@@ -16,7 +16,13 @@
 // パン板・風呂板にも 期間限定の ボスが いる（いつ boss に なるかは 村の イベント：data/objectives.ts。core は 決めない）。
 //
 // level は「その階が 本編の何階ぶんの強さか」。敵の顔ぶれ・罠の数と種類・祭りの大きさ・変化の杖は
-// これで引く（本編は 階 = level）。見た目と曲の層は UI 側（ui/theme.ts）。
+// これで引く。見た目と曲の層は UI 側（ui/theme.ts）。
+//
+// 階の数は 開く 順に およそ 1.5倍ずつ（ポケダンの ちいさなもり が B3F で はじまるのに ならった）：
+// パン板 4 → きのこ板 6 → 離島板 9 → おんたこ・お祭り 13 → 風呂板 20 → 電池板 30 → 過去ログの底 99。
+// 2026-09-30 に 縮めた（前は 10・12・15・20・20・27）。離島板から 上は いちばん底の 強さを 前と 同じに して、
+// 出だしは ゆるく、底へ 向けて 急に 上げた（ramp）。短い 板は 着いたときの レベルが 低いので、パン板（7 → 4）・
+// きのこ板（7 → 6）は 底を 下げて ボスも 弱めた（pnpm sim で クリア率が 前と 同じ くらいに なるように）。
 
 import type { ItemWeight } from "../itemTable";
 import type { DungeonId, ItemCat, Objective, RescueKind } from "../types";
@@ -105,6 +111,21 @@ export type Dungeon = {
 const identity = (n: number): number[] =>
 	Array.from({ length: n + 1 }, (_, i) => i);
 
+/**
+ * 階 → 本編の 何階ぶんか：1階は 1、いちばん底（n階）は top。あいだは 1.5乗の 曲がりで 上げる（四捨五入）。
+ * まっすぐ だと 3階で もう レベル4〜5 に なり、Lv2〜3 の ころに 倒れる 冒険が 固まった（pnpm sim）。
+ * 出だしは 本編と 同じ 1階に 1 ずつ、後ろほど 急に（着いた ころには 経験値も 多い）。
+ */
+const RAMP_CURVE = 1.5;
+const ramp = (n: number, top: number): number[] =>
+	Array.from({ length: n + 1 }, (_, i) =>
+		i === 0
+			? 0
+			: n === 1
+				? top
+				: Math.round(1 + (top - 1) * ((i - 1) / (n - 1)) ** RAMP_CURVE),
+	);
+
 const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 	"ring",
 	"herb",
@@ -113,8 +134,8 @@ const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 ];
 
 /**
- * パン板の 10階の 道具の出かた（重みの合計 72。入門の 10階ぶん。パンが 多め）。
- * 指輪は無し・杖は4種（ここだけ未識別）。食べものは 始めの200% ＋ 650% で、1階 450ターンでも 足りる。
+ * パン板の 道具の出かた（重みの合計 72。パンが 多め）。重みは 割合で、4階で 出るのは 30ほど
+ * （10階だった ころに 決めた 割合の まま）。指輪は無し・杖は4種（ここだけ未識別）。
  */
 export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	// 武器 6（ちょっと：こん棒・銅の剣・鉄の斧 だけ。強い武器は出ない）
@@ -128,7 +149,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "steelsh", weight: 1 }, // 防御6。鋼鉄の盾の位置。いちばん強い盾で 1枚だけ
 	// 矢 5（ちょっと は 矢が多め：7.8%）
 	{ kind: "a_wood", weight: 3 }, // 寝落ち民・ゾンJ民を 離れて削る
-	{ kind: "a_iron", weight: 2 }, // 本編は 27階で3束。ここは 10階で2束（ちょっと は 鉄・銀の矢のほうが 木より多かった）
+	{ kind: "a_iron", weight: 2 }, // 本編の 3束に 対して 2束の 割合（ちょっと は 鉄・銀の矢のほうが 木より多かった）
 	// 食べもの 6（ちょっと：片親パン・ぷゆゆパン・チギュリパン が 1:1:1、全体の 9.4%）
 	{ kind: "f_bread", weight: 7 }, // +50%。パン板なので パンが よく出る（パン松の 縄張り）
 	{ kind: "f_large", weight: 3 }, // +100%。始めの1つとは別
@@ -137,9 +158,9 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_bolt", weight: 2 }, // いかずち。20前後のダメージで いちばん見分けやすい。2本目で「わかった杖を また拾う」を味わう
 	{ kind: "w_send", weight: 1 }, // バシルーラ。困ったときの逃げ道
 	{ kind: "w_reel", weight: 1 }, // メダパニ
-	{ kind: "w_change", weight: 1 }, // へんげ（候補は レベル+4 まで。B10 なら レベル11 の敵もありうる）
+	{ kind: "w_change", weight: 1 }, // へんげ（候補は レベル+4 まで。B4（レベル7）なら レベル11 の敵もありうる）
 	// 草 21（識別ずみ。ちょっと：弟切草・薬草・毒けし草×2・ちからの種・ルーラ草・火炎草・まどわし草）
-	{ kind: "h_heal", weight: 7 }, // 始めの1つと合わせて 10階で およそ8つ（本編は 27階で11）
+	{ kind: "h_heal", weight: 7 }, // 草の 1/3。始めの1つと合わせて 4階で 3〜4つ
 	{ kind: "h_greater", weight: 3 }, // 弟切草。ちょっと では 薬草と同じだけ出たが、ここは 強いので少なめ
 	{ kind: "h_antidote", weight: 4 }, // ちょっと では 草の中で倍の率。まんぜう軍・毒矢の罠・チギュリパンの あと始末
 	{ kind: "h_might", weight: 2 }, // ちからの種
@@ -163,21 +184,16 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 ];
 
 /**
- * はじめの10階の 階 → 本編の何階ぶんか。B1〜4 は罠なし（レベル2 まで）、B5 から罠、B9〜10 は 本編の B7
- * （自演くん（本編の B8〜）は 出さない。入門の ダンジョンなので いちばん強い 顔ぶれは 本編で）。
+ * はじめの4階の 階 → 本編の何階ぶんか（= ramp(4, 4)）。B1〜2 は罠なし、B3 から罠、B4 は 本編の B4。
+ * 10階だった ころは B10 で 本編の B7 まで 見せたが、4階では ボットが Lv3 ほどで 着くので 4 まで
+ * （7 だと クリア 53%。4 で 90%）。ゾンJ民・風吹けば名無し から 先は きのこ板と 本編で。
  */
 export const SHALLOW_LEVEL: readonly number[] = [
 	0, // [0] 使わない
 	1, // B1：ぷゆゆ・dat落ちの霊・深夜テンション・バグ。罠なし
-	1, // B2：同じ顔ぶれで 慣れる
-	2, // B3：kskボット・寝落ち民（眠りの呪文）が 加わる
-	2, // B4：罠なし最後の階（レベル2 まで 罠 0）
-	3, // B5：罠が出はじめる（1〜3個。トラバサミ・眠り・転び・矢・ワープ・落とし穴）
-	4, // B6：ピッチャー・まんぜう軍・コピペ が 一度に来る。毒矢の罠も。ぷゆゆが 消える
-	4, // B7：同じ顔ぶれを もう1階（3種を 1階で覚えるのは 多い）
-	5, // B8：ゾンJ民（起き上がる）。錆び・地雷の罠も
-	7, // B9：拾い画UFO・風吹けば名無し（吹きとばし）。弱い敵が 抜ける
-	7, // B10：同じ顔ぶれで 針を 拾って 帰る
+	2, // B2：kskボット・寝落ち民（眠りの呪文）が 加わる。罠なし
+	3, // B3：罠が出はじめる（1〜3個。トラバサミ・眠り・転び・矢・ワープ・落とし穴）
+	4, // B4：まんぜう軍・コピペ が 加わる。毒矢の罠も。針を 拾って 帰る
 ];
 
 /**
@@ -263,14 +279,14 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 ];
 
 /**
- * きのこ板の 12階の 道具の出かた。パン板の 表から 草を ふやし、毒草・眠り草・まどわし草も ふやした
+ * きのこ板の 道具の出かた。パン板の 表から 草を ふやし、毒草・眠り草・まどわし草も ふやした
  * （きのこの 当たり外れ。草は 未識別）。
  */
 export const KINOKO_ITEMS: readonly ItemWeight[] = [
 	...SHALLOW_ITEMS.filter(
 		(e) => ITEMS[e.kind]?.cat !== "herb" && ITEMS[e.kind]?.cat !== "food",
 	),
-	// 食べもの（12階ぶん。パン板より 多め）
+	// 食べもの（パン板より 多め）
 	{ kind: "f_bread", weight: 9 },
 	{ kind: "f_large", weight: 4 },
 	{ kind: "f_moldy", weight: 1 },
@@ -287,7 +303,7 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 ];
 
 /** 階 → 本編の 何階ぶんか（入門の つぎ。パン板より 少し 強い 顔ぶれまで）。 */
-const KINOKO_LEVEL: readonly number[] = [0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 7];
+const KINOKO_LEVEL: readonly number[] = ramp(6, 6);
 
 /**
  * 隠しの 99階の 道具の出かた：風呂板の 表で、食べものを ふやした（99階ぶん 歩くので。
@@ -303,10 +319,6 @@ const HIDDEN_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
 const HIDDEN_LEVEL: readonly number[] = Array.from({ length: 100 }, (_, i) =>
 	i === 0 ? 0 : Math.min(30, 1 + Math.floor(((i - 1) * 29) / 60)),
 );
-
-/** 階 → 本編の 何階ぶんか（1階 おくれ。😡の 板は 弱い 敵でも 怒るので 出だしを ゆるく）。 */
-const lagged = (n: number): number[] =>
-	Array.from({ length: n + 1 }, (_, i) => (i === 0 ? 0 : Math.max(1, i - 1)));
 
 export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	shallow: {
@@ -324,7 +336,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// パン松は やきうが きらい（ピッチャーは 追い出した）。まんじゅう（まんぜう軍）は パンの なかま
 		foes: { pumpkin: 2, pitcher: 0 },
-		floors: 10,
+		floors: 4,
 		items: SHALLOW_ITEMS,
 		perFloor: [5, 9],
 		level: SHALLOW_LEVEL,
@@ -333,7 +345,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		start: ["f_large", "h_heal", "s_appraise"],
 		goal: "needle",
 		houses: null,
-		trapsFrom: 5,
+		trapsFrom: 3,
 		unlockAfter: null,
 		reliefAfter: null,
 	},
@@ -352,10 +364,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
 		foes: { sabi: 2, neochi: 1.5 },
-		floors: 27,
+		floors: 20,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: identity(27),
+		level: ramp(20, 27),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -405,7 +417,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 胞子で 眠くなり（寝落ち民）、毒きのこ（まんぜう軍）が 多い
 		foes: { neochi: 2, pumpkin: 2, pitcher: 0 },
-		floors: 12,
+		floors: 6,
 		items: KINOKO_ITEMS,
 		perFloor: [5, 8],
 		level: KINOKO_LEVEL,
@@ -413,8 +425,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		curses: false,
 		start: ["f_large", "h_heal", "s_appraise"],
 		goal: "kinonyan",
-		houses: { from: 5, chance: 1 / 8, early: null },
-		trapsFrom: 4,
+		houses: { from: 3, chance: 1 / 8, early: null },
+		trapsFrom: 3,
 		unlockAfter: "shallow",
 		reliefAfter: null,
 	},
@@ -434,10 +446,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 風の 島（風吹けば名無し）と 浜の フナムシ（バグ）
 		foes: { kaze: 3, funamushi: 2 },
-		floors: 15,
+		floors: 9,
 		items: MAIN_ITEMS,
 		perFloor: [4, 6],
-		level: identity(15),
+		level: ramp(9, 15),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -466,10 +478,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ
 		foes: { oni: 3, ninja: 1.5, fallen: 1.5 },
-		floors: 20,
+		floors: 13,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: lagged(20),
+		level: ramp(13, 19),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		// 怒った 敵から 立てなおす 草を 2つ
@@ -498,10 +510,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 野次馬（コピペ）・群れ（凍結アカ）・炎上
 		foes: { copipe: 2, yuki: 2, bomb: 2 },
-		floors: 20,
+		floors: 13,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: identity(20),
+		level: ramp(13, 20),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],

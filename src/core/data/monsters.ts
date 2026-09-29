@@ -618,6 +618,11 @@ const M: MonsterDef[] = [
 	//   湯守おふ郎くん    勝ち 83%               fetch 0%                Lv25（--reach）
 	// ナツコは はじめ Lv13（LAG 2）で 合わせて HP130・守り16 に して いたが、ふつうに 着く Lv10 では 45% しか
 	// 勝てなかったので HP90・守り12 に 下げた（Lv13 で 着けば 97%）。
+	// 2026-09-30 に 板の 階数を 縮めた（パン板 4・きのこ板 6・離島 9・おんたこ／お祭り 13・風呂板 20）。上の 表は その 前の 値。
+	// 縮めた あと（pnpm sim --n 200）：パン兵長 勝ち 89.8%（Lv3.3）・親玉きのにゃん 77.1%（Lv4.7）・
+	// ナツコ 86.0%（--reach・LAG 5）・大たこのみん 83.0%・マシー 84.5%・おふ郎くん 81.5%（fetch 6.5%）（--reach）。
+	// パン兵長（HP100・攻8・守10）と 親玉きのにゃん（HP60・攻7・守12）は 着く レベルが 下がった（Lv6.9 → 3.3・
+	// 7.2 → 4.7）ので 弱めた（そのままだと 勝ち 28%・49%）。ほかの 4体は 底の 強さが 同じなので そのまま。
 	// 攻撃は 同じ 階の 雑魚より 弱め（1対1で 長く 戦うので。こわさは 息・飛び道具・吹きとばし・怒りで 出す）。
 	{
 		id: "boss_panhei",
@@ -625,11 +630,11 @@ const M: MonsterDef[] = [
 		sprite: "pub:sprites/panhei.png",
 		scale: 1.5,
 		boss: true,
-		hp: 100,
-		atk: 8,
-		def: 10,
+		hp: 60,
+		atk: 6,
+		def: 6,
 		exp: 25,
-		floors: [7, 7],
+		floors: [4, 4],
 		weight: 0,
 		abilities: [{ k: "knockback", rate: 1 / 4 }],
 		board: "shallow",
@@ -642,11 +647,11 @@ const M: MonsterDef[] = [
 		sprite: "pub:sprites/kinonyan.png",
 		scale: 1.5,
 		boss: true,
-		hp: 60,
-		atk: 7,
-		def: 12,
+		hp: 50,
+		atk: 6,
+		def: 8,
 		exp: 25,
-		floors: [7, 7],
+		floors: [6, 6],
 		weight: 0,
 		abilities: [
 			{ k: "armor" },

@@ -4,6 +4,8 @@
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
 // 名前・色は rpg の cast.ts と同じ（シヨ・ゼロは rpg に いないので ここで 決めた 色）。
 
+import { DUNGEONS } from "../core/data/dungeons";
+
 export type Speaker = "roze" | "shiyo" | "feris" | "zero" | "nanj";
 
 export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
@@ -47,7 +49,7 @@ export type QuoteContext = {
 	cause: string;
 	runs: number;
 	clears: number;
-	/** その板の 何割まで 行ったか（0〜1。無ければ 風呂板の 27階で 数える）。 */
+	/** その板の 何割まで 行ったか（0〜1。無ければ 風呂板の 階の 数で 数える）。 */
 	ratio?: number;
 	/** 上りの 板（塔・やぐら・山）だった。 */
 	up?: boolean;
@@ -278,7 +280,7 @@ const CAUSE_POOLS: readonly {
 
 /** どこまで 行ったかで（板の 何割か。上りの 板の 奥は 高さの ことば）。 */
 const depthPool = (last: NonNullable<QuoteContext>): readonly Quote[] => {
-	const ratio = last.ratio ?? last.depth / 27;
+	const ratio = last.ratio ?? last.depth / DUNGEONS.main.floors;
 	return ratio < 0.3 ? SHALLOW : ratio < 0.7 ? MID : last.up ? HIGH : DEEP;
 };
 
