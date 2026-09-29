@@ -30,6 +30,7 @@ import {
 } from "./balance";
 import { type BossSpec, type Dungeon, dungeonById } from "./data/dungeons";
 import { ITEM_LIST } from "./data/items";
+import { lastResAt } from "./data/lastRes";
 import { MONSTERS } from "./data/monsters";
 import { FAKE_NAMES } from "./data/names";
 import { throwItem, useItem } from "./effects";
@@ -641,6 +642,14 @@ export class Run {
 			this.msg(
 				this.dungeon.up ? "上の階へ　押し上げられた" : "下の階に　落ちた",
 			);
+		// 植民地に 落ちている「最後の レス」（行きだけ。その 冒険で まだ 拾っていなければ。core/data/lastRes.ts）
+		const last = s.returning ? undefined : lastResAt(s.dungeon, depth);
+		if (last && !(s.lastRes ?? []).includes(last.id)) {
+			s.lastRes = [...(s.lastRes ?? []), last.id];
+			this.se("item");
+			this.msg("床に、だれかの　最後の　レスが　落ちていた", "good");
+			this.msg(`「${last.text}」`);
+		}
 		this.updateVision();
 	}
 

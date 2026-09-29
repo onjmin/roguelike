@@ -430,6 +430,8 @@ export type RunState = {
 	builds?: string[];
 	/** 蓄音機に 録った 声（最後に たおした 敵の 種類。再生すると 消える）。 */
 	voice?: string | null;
+	/** この 冒険で 拾った「最後の レス」の id（core/data/lastRes.ts。拾ったら 足す。無ければ まだ 無い）。 */
+	lastRes?: string[];
 	/** 倉庫から持ちこんだ道具（はじめの形。リレミトならぬ 帰還スレで持ち帰った道具を、次の冒険へ。リプレイで同じに始めるため）。 */
 	carriedIn?: Item[];
 };
