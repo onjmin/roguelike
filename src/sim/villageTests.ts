@@ -560,6 +560,28 @@ test("はじめの 保守村には やきう（と ぷゆゆ）だけ。仲間�
 	});
 });
 
+test("どの 段でも、まだ 越してきていない 仲間は 帰りの 語り・知らせに 出てこない（話さない・名前も 出ない）", async () => {
+	for (let stage = 0; stage < TOWN_STAGES; stage++)
+		await withStorageAsync(async () => {
+			setProgress(["shallow"], [], ["shallow"]);
+			putTown({ stage });
+			const away = awayFriends(["shallow"], stage);
+			const names = away.map((w) => SPEAKERS[w].name);
+			for (const d of DUNGEON_IDS)
+				for (const kind of ["clear", "escape"] as const)
+					for (const p of pagesFor({ kind, dungeon: d, objective: "boss" })) {
+						ok(
+							!(p.who && away.includes(p.who)),
+							`stage ${stage} ${d} ${kind}: ${p.who} speaks before moving in`,
+						);
+						ok(
+							!names.some((n) => p.text.includes(n)),
+							`stage ${stage} ${d} ${kind}: "${p.text}" names someone not here yet`,
+						);
+					}
+		});
+});
+
 test("ロゼ and シヨ work behind closed counters once the stall and storehouse are built", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
@@ -2254,11 +2276,12 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 			`stage 0: ${JSON.stringify(place)}`,
 		);
 		ok(hasMobNews("puyu"), "no 「！」 on the very first visit");
+		// 段0 には ゼロは まだ 越してきていない：そばに いても ゼロの 口出しは 出ない
 		const a = fakeStory({ near: ["zero"] });
 		await mobScript("puyu")(a.s);
 		ok(
 			a.log[0] === said(d.meet[0]?.text) &&
-				a.log.includes(`say zero: ${d.meet[3]?.text}`),
+				!a.log.includes(`say zero: ${d.meet[3]?.text}`),
 			`meet:\n${a.log.join("\n")}`,
 		);
 		// マイナーズでは ない：ぷゆゆ ＋ 1人では はり紙は 出ない

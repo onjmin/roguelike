@@ -12,6 +12,7 @@ import {
 	ENDING,
 	INTRO,
 	type KirikoMode,
+	SPEAKERS,
 	type Speaker,
 	type StoryPage,
 } from "./quotes";
@@ -64,9 +65,18 @@ export const awayFriends = (
 		: []),
 ];
 
-/** 村に いない 人が 話す・出てくる ページか。 */
+/**
+ * 文に 村に いない 仲間の 名前が 出てくるか（まだ 越してきていない 人・出ていった 人の 話を しない）。
+ * 「フェリスちゃん」「ゼロさん」なども 名前を ふくむので 数える。
+ */
+export const mentionsAway = (text: string, away: readonly Speaker[]): boolean =>
+	away.some((w) => text.includes(SPEAKERS[w].name));
+
+/** 村に いない 人が 話す・出てくる（名前を 呼ばれる）ページか。 */
 const gone = (p: StoryPage, away: readonly Speaker[]): boolean =>
-	(!!p.who && away.includes(p.who)) || (!!p.about && away.includes(p.about));
+	(!!p.who && away.includes(p.who)) ||
+	(!!p.about && away.includes(p.about)) ||
+	mentionsAway(p.text, away);
 
 /** 村に いない 人の ページを かわりに かえる（かわりが 無ければ 出さない）。だれも いなければ そのまま。 */
 export const withoutAway = (
@@ -513,7 +523,11 @@ export const STORY: Record<
 			"キリコは　蓄音機を　かかえた。\n……ふんぞりかえった　声が　する。",
 		],
 		ending: [
-			n("村に　帰りつくと、\nゼロが　かけよってきた。"),
+			nAbout(
+				"村に　帰りつくと、\nゼロが　かけよってきた。",
+				"zero",
+				"村に　帰りつくと、\n広場は　しずかだった。",
+			),
 			s("zero", "きのにゃん、ですね！\n……持ったら、にらまれました"),
 			s("nanj", "態度　でかすぎやろ。\n……パン板の　植民地の　くせに"),
 			n("きのにゃんは　蓄音機の　上に\nすわりこんだ。……どかない。"),
@@ -526,7 +540,11 @@ export const STORY: Record<
 			"キリコは　蓄音機を　かかえた。\n……波の　音が、下から　する。",
 		],
 		ending: [
-			n("村に　帰りつくと、\nフェリスが　手を　ふっていた。"),
+			nAbout(
+				"村に　帰りつくと、\nフェリスが　手を　ふっていた。",
+				"feris",
+				"村に　帰りつくと、\n潮の　においが　ついてきた。",
+			),
 			s("feris", "ヤシの実〜！　ねえ、\n耳に　あてたら　波の　音　する〜？"),
 			n("キリコは　ヤシの実を　蓄音機に\nのせてみた。……回らない。"),
 			s(
@@ -562,7 +580,11 @@ export const STORY: Record<
 			"キリコは　蓄音機を　かかえた。\n……太鼓の　音が、上から　する。",
 		],
 		ending: [
-			n("村に　帰りつくと、\nシヨが　腕を　組んで　待っていた。"),
+			nAbout(
+				"村に　帰りつくと、\nシヨが　腕を　組んで　待っていた。",
+				"shiyo",
+				"村に　帰りつくと、\n太鼓の　音が　耳に　のこっていた。",
+			),
 			s(
 				"shiyo",
 				"うちわ？　……祭りに　行ってたの。\nあたすは　呼ばれて　ないけど",

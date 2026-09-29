@@ -317,7 +317,12 @@ export const pickQuote = (
 ): Quote | null => {
 	const pick = (pool: readonly Quote[], salt: number) =>
 		at(
-			pool.filter((x) => (!who || x.who === who) && !away.includes(x.who)),
+			pool.filter(
+				(x) =>
+					(!who || x.who === who) &&
+					!away.includes(x.who) &&
+					!away.some((w) => x.text.includes(SPEAKERS[w].name)),
+			),
 			seed,
 			salt,
 		);

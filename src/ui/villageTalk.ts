@@ -17,6 +17,7 @@ import {
 	CLEAR,
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
+	mentionsAway,
 	SHALLOW_DEATH,
 } from "../data/story";
 import {
@@ -75,7 +76,9 @@ export const deathQuote = (seed: number): Quote | null => {
 	const last = loadRecords()[0];
 	if (last?.kind !== "dead") return null;
 	const away = away_();
-	const here = SHALLOW_DEATH.filter((x) => !away.includes(x.who));
+	const here = SHALLOW_DEATH.filter(
+		(x) => !away.includes(x.who) && !mentionsAway(x.text, away),
+	);
 	if ((last.dungeon ?? "main") === "shallow" && seed % 2 === 0 && here.length)
 		return here[seed % here.length] ?? null;
 	return pickQuote(quoteContext(), seed, undefined, away);
@@ -93,7 +96,9 @@ export const titleQuote = (seed: number): Quote | null => {
 	const last = loadRecords()[0];
 	const away = away_();
 	const pick = (all: readonly Quote[], salt: number) => {
-		const pool = all.filter((x) => !away.includes(x.who));
+		const pool = all.filter(
+			(x) => !away.includes(x.who) && !mentionsAway(x.text, away),
+		);
 		return pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
 	};
 	if (!last) return pick(FIRST_SHALLOW, 1);

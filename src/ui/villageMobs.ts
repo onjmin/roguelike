@@ -25,8 +25,16 @@ import {
 	type MobLine,
 	SENKYO,
 } from "../data/mobs";
+import type { Speaker } from "../data/quotes";
+import { awayFriends, mentionsAway } from "../data/story";
 import type { Script, Story } from "../engine/defs";
-import { loadBook, loadProgress, loadRecords, runStats } from "../engine/save";
+import {
+	loadBook,
+	loadProgress,
+	loadRecords,
+	loadTown,
+	runStats,
+} from "../engine/save";
 import { fill } from "./villageTalk";
 
 /** 仲間が「近くに いる」と みなす 距離（マス。たて・よこ・ななめ の 大きい方）。 */
@@ -144,10 +152,27 @@ const ctxOf = (v: MobMemo): MobCtx => {
 const eventOf = (w: Cast): string => (isMob(w) ? `mob_${w}` : w);
 const nearCast = (s: Story, w: Cast): boolean => s.near(eventOf(w), NEAR);
 /** when が 無いか、この 帰りに 合う。 */
+/** 村に いない 仲間（まだ 越してきていない・出ていった。data/story.ts の awayFriends）。 */
+const absent = (): Speaker[] =>
+	awayFriends(loadProgress().cleared, loadTown().stage);
+
+/** その 行に 村に いない 仲間が 出てくるか（話す・名前を 呼ばれる）。 */
+const absentIn = (l: MobLine, away: readonly Speaker[]): boolean =>
+	(!!l.who && l.who !== "mob" && away.includes(l.who as Speaker)) ||
+	(!!l.need && away.includes(l.need as Speaker)) ||
+	mentionsAway(l.text, away);
+
+/** when が 無いか 合う。村に いない 仲間の 話（相手・名前）は まだ 選ばない。 */
 const opens =
 	(x: MobCtx) =>
-	(ch: MobChat): boolean =>
-		!ch.when || ch.when(x);
+	(ch: MobChat): boolean => {
+		const away = absent();
+		return (
+			(!ch.when || ch.when(x)) &&
+			!(ch.with && away.includes(ch.with as Speaker)) &&
+			!ch.lines.some((l) => absentIn(l, away))
+		);
+	};
 
 type News = { key: string; lines: readonly MobLine[]; answersRun: boolean };
 
@@ -260,7 +285,10 @@ export const play = async (
 	id: MobId,
 	lines: readonly MobLine[],
 ): Promise<void> => {
+	const away = absent();
 	for (const l of lines) {
+		// 村に いない 仲間の 行（はじめましての 口出し・節目で 名前を 呼ぶ 行など）は 出さない
+		if (absentIn(l, away)) continue;
 		if (l.need && !nearCast(s, l.need)) continue;
 		if (l.who !== null && l.who !== "mob" && !nearCast(s, l.who)) continue;
 		if (l.beat) await runBeat(s, id, l.beat);

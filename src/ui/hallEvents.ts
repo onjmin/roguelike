@@ -28,7 +28,7 @@ import {
 	objectiveFor,
 	withDevEvent,
 } from "../data/objectives";
-import { DUNGEON_NAMES } from "../data/story";
+import { DUNGEON_NAMES, FRIEND_FROM } from "../data/story";
 import { VILLAGE_MSG } from "../data/town";
 import {
 	HALL_NAMES,
@@ -53,7 +53,7 @@ import {
 } from "../data/village/map";
 import { drawRefInCell, getImage, loadImage } from "../engine/assets";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadProgress, loadRecords } from "../engine/save";
+import { loadProgress, loadRecords, loadTown } from "../engine/save";
 import { TILE } from "../engine/types";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
@@ -398,6 +398,11 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 			return sign(p.id, p.x, p.y, shelfScript(ctx));
 		case "ledger":
 			return sign(p.id, p.x, p.y, async (s) => {
+				// ゼロが 越してくる 前は 何も 書いていない（data/story.ts の FRIEND_FROM）
+				if (loadTown().stage < FRIEND_FROM.zero) {
+					await s.narrate(HALL_MSG.ledgerEmpty);
+					return;
+				}
 				await s.narrate(HALL_MSG.ledger);
 				await s.narrate(ledgerLine());
 			});

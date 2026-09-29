@@ -30,6 +30,7 @@ import {
 	DUNGEON_NAMES,
 	endingFor,
 	FRIEND_FROM,
+	mentionsAway,
 	playPage,
 	type StoryPage,
 	UNLOCK_LINES,
@@ -307,7 +308,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 							? "deep"
 							: "main"
 		]
-			.filter((l) => !away.includes(l.who))
+			.filter((l) => !away.includes(l.who) && !mentionsAway(l.text, away))
 			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
 		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）
 		await s.look(VILLAGE_SPOTS.exit);
@@ -414,7 +415,9 @@ export const settleScript = async (
 const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
 	// 話すのは 村に いる 人だけ（まだ 来ていない・出ていった 仲間の 行は 出さない）
 	const away = awayFriends(loadProgress().cleared, to);
-	const lines = (STAGE_UP[to] ?? []).filter((l) => !away.includes(l.who));
+	const lines = (STAGE_UP[to] ?? []).filter(
+		(l) => !away.includes(l.who) && !mentionsAway(l.text, away),
+	);
 	const hall =
 		hallTier(to) > hallTier(from) ? STAGE_UP_HALL[hallTier(to)] : null;
 	const hallLine = hall && !away.includes(hall.who) ? hall : null;
