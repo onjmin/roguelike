@@ -46,6 +46,7 @@ import {
 	type MobCtx,
 	type MobId,
 	type MobLine,
+	PUYU_LUNCH,
 	SENKYO,
 } from "../data/mobs";
 import {
@@ -79,6 +80,7 @@ import {
 	BOSS_HOME,
 	BOSS_RETURN,
 	CLEAR,
+	DEPART,
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
 	FRIEND_FROM,
@@ -223,6 +225,7 @@ import {
 	deathScene,
 	gather,
 	lineUp,
+	lunchScript,
 	newsScript,
 	pagesFor,
 	type ReturnArrival,
@@ -588,6 +591,36 @@ test("どの 段でも、まだ 越してきていない 仲間は 帰りの 語
 						);
 					}
 		});
+});
+
+test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひとこと、持たせて、広場の 下へ もどる（持ち物が あれば 来ない）", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 1 });
+		const { s, log } = fakeStory();
+		await lunchScript(s);
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		const come = log.find((l) => l.startsWith("goto mob_puyu "));
+		const [x, y] = (come ?? "").split(" ")[2]?.split(",").map(Number) ?? [];
+		ok(
+			!!come && Math.max(Math.abs(x - bx), Math.abs(y - by)) === 1,
+			`ぷゆゆ does not come next to Kiriko: ${come}`,
+		);
+		ok(
+			PUYU_LUNCH.some((t) => log.includes(`say nanj: ${t}`)) &&
+				inOrder(log, [
+					come ?? "",
+					`narrate: ${DEPART.puyu}`,
+					`goto mob_puyu ${MOBS.puyu.spot.join(",")}`,
+				]),
+			`lunch scene:\n${log.join("\n")}`,
+		);
+		ok(loadTown().lunch, "no lunch given");
+		// もう 持っている：来ない
+		const again = fakeStory();
+		await lunchScript(again.s);
+		ok(!again.log.length, `came twice: ${again.log.join(" / ")}`);
+	});
 });
 
 test("ロゼ and シヨ work behind closed counters once the stall and storehouse are built", () => {
@@ -2208,6 +2241,10 @@ test("ぷゆゆ: rpg voice rules (🥺🤪✋ only, one 🥺 at a line end, rare
 		for (const t of single)
 			(id === "puyu" ? hers : rest).push([`${id}.line`, t]);
 	}
+	// お弁当の ひとことも ぷゆゆの 声
+	PUYU_LUNCH.forEach((t, i) => {
+		hers.push([`PUYU_LUNCH[${i}]`, t]);
+	});
 	for (const [where, t] of [...hers, ...rest]) {
 		// 肌の 色の 件（rpg の 決まり）
 		for (const w of ["黄色", "きいろ", "山吹"])

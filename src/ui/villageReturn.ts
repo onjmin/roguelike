@@ -27,7 +27,7 @@ import {
 	townStep,
 } from "../core/town";
 import type { DungeonId, Objective } from "../core/types";
-import { MOB_IDS, MOBS } from "../data/mobs";
+import { MOB_IDS, MOBS, PUYU_LUNCH } from "../data/mobs";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { SPEAKERS } from "../data/quotes";
@@ -80,6 +80,7 @@ import {
 	type Town,
 } from "../engine/save";
 import type { Dir } from "../engine/types";
+import { sayAs } from "./villageMobs";
 import { deathQuote, fill } from "./villageTalk";
 
 /**
@@ -274,8 +275,39 @@ export const sendBack = async (s: Story): Promise<void> => {
  */
 export const lunchScript = async (s: Story): Promise<void> => {
 	if (!giveLunch()) return;
+	// ぷゆゆが キリコの となりまで かけてきて 渡し、広場の 下へ もどる
+	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	if (to) {
+		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });
+		s.face("mob_puyu", "player");
+		s.face("player", faceTo(s.state, to));
+	}
+	await sayAs(
+		s,
+		"puyu",
+		PUYU_LUNCH[Math.floor(Math.random() * PUYU_LUNCH.length)] ?? "",
+	);
 	s.se("item");
 	await s.narrate(DEPART.puyu);
+	await s.wait(0);
+	const [hx, hy] = MOBS.puyu.spot;
+	await s.goto("mob_puyu", hx, hy);
+};
+
+/** from から to を 向く 向き（たて・よこの 大きい方）。 */
+const faceTo = (
+	from: { x: number; y: number },
+	[x, y]: readonly [number, number],
+): Dir => {
+	const dx = x - from.x;
+	const dy = y - from.y;
+	return Math.abs(dx) >= Math.abs(dy)
+		? dx < 0
+			? "left"
+			: "right"
+		: dy < 0
+			? "up"
+			: "down";
 };
 
 // ───────────────── たおれて もどったとき ─────────────────
