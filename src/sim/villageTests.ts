@@ -1662,9 +1662,12 @@ test("小段が 上がると 住人が 越してくる：暗転・建て直し�
 		ok(
 			inOrder(log, [
 				"rebuild",
-				"look mob_nichie",
+				"hide mob_nichie",
 				"se jingle",
 				`toast ${TOWN_GREW_MSG}`,
+				"show mob_nichie",
+				"look mob_nichie",
+				`goto mob_nichie ${MOBS.nichie.spot.join(",")}`,
 				`narrate: ${fill(ARRIVE_MSG, { names: MOBS.nichie.name })}`,
 				"look kiriko",
 			]),

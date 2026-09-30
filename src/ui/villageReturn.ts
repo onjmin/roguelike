@@ -27,7 +27,7 @@ import {
 	townStep,
 } from "../core/town";
 import type { DungeonId, Objective } from "../core/types";
-import { MOB_IDS, MOBS, PUYU_LUNCH } from "../data/mobs";
+import { MOB_IDS, MOBS, type MobId, PUYU_LUNCH } from "../data/mobs";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { SPEAKERS } from "../data/quotes";
@@ -60,6 +60,7 @@ import {
 	exitAt,
 	lineupSpots,
 	spotsAround,
+	VILLAGE_EXITS,
 	VILLAGE_SPOTS,
 	type VillageExit,
 	type VillageView,
@@ -484,15 +485,37 @@ const movedIn = async (
 		(id) => MOBS[id].from > from && MOBS[id].from <= to,
 	);
 	if (!ids.length) return;
-	const first = `mob_${ids[0]}`;
+	// 越してきた 子は 村の 口（持ち場に いちばん 近い 出口）から 歩いてきて、持ち場に 着いてから 知らせる
+	const gate = (id: MobId): readonly [number, number] => {
+		const [hx, hy] = MOBS[id].spot;
+		const near = [...VILLAGE_EXITS].sort(
+			(a, b) =>
+				Math.max(Math.abs(a.cell[0] - hx), Math.abs(a.cell[1] - hy)) -
+				Math.max(Math.abs(b.cell[0] - hx), Math.abs(b.cell[1] - hy)),
+		)[0];
+		return near?.cell ?? [hx, hy];
+	};
 	if (!rebuilt) {
 		await s.fadeOut(300);
 		await s.rebuild();
-		await s.look(first, { instant: true });
-		await s.fadeIn(300);
+	} else await s.fadeOut(200);
+	for (const id of ids) s.hide(`mob_${id}`);
+	await s.look(gate(ids[0]), { instant: true });
+	await s.fadeIn(300);
+	if (!rebuilt) {
 		s.se("jingle");
 		s.toast(TOWN_GREW_MSG);
-	} else await s.look(first);
+	}
+	for (const id of ids) {
+		const ev = `mob_${id}`;
+		const [gx, gy] = gate(id);
+		const [hx, hy] = MOBS[id].spot;
+		s.place(ev, gx, gy);
+		s.show(ev);
+		await s.look(ev);
+		await s.goto(ev, hx, hy, { speed: 1.3 });
+		s.face(ev, MOBS[id].dir);
+	}
 	await s.narrate(
 		fill(ARRIVE_MSG, { names: ids.map((id) => MOBS[id].name).join("と　") }),
 	);
