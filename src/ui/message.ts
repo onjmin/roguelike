@@ -661,6 +661,13 @@ export class ChoiceWindow {
 					move(i);
 					return;
 				}
+				// 決める 前に カーソルを 合わせる（地図の ▼ など onMove で ついてくる 物が 前の 項目の ままに ならないように。
+				// 音は 決定だけ。カーソルの 音を 鳴らすと held で 決められなくなる）
+				if (i !== cur) {
+					cur = i;
+					render();
+					hooks.onMove?.(cur);
+				}
 				pick(i);
 			});
 			box.appendChild(b);
