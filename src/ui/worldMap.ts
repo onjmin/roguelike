@@ -385,7 +385,9 @@ export class MapView {
 		this.title = el("div", { class: "wm-title", text: title });
 		this.box = el("div", { class: "worldmap" }, [
 			this.title,
-			el("div", { class: "wm-stage" }, [this.canvas, this.bubble]),
+			el("div", { class: "wm-fit" }, [
+				el("div", { class: "wm-stage" }, [this.canvas, this.bubble]),
+			]),
 			this.panel,
 		]);
 		ctx.ui.appendChild(this.box);

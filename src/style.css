@@ -2630,9 +2630,22 @@ body.shake #app {
 	color: var(--accent);
 }
 
+/* 地図の 置き場。背の 低い 画面では ここが 縮んで（地図が 小さくなって）、下の 札と 選択肢は 縮めない */
+.wm-fit {
+	flex: 0 1 auto;
+	min-height: 0;
+	width: 100%;
+	height: min(calc(var(--app-w) - 24px), 58vh, 560px);
+	container-type: size;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
 .wm-canvas {
-	width: min(calc(var(--app-w) - 24px), 58vh, 560px);
+	width: min(100cqw, 100cqh);
 	aspect-ratio: 1;
+	box-sizing: border-box;
 	image-rendering: pixelated;
 	border: 3px solid var(--win-border);
 	border-radius: 8px;
@@ -2804,7 +2817,8 @@ body.shake #app {
 	width: min(calc(var(--app-w) - 24px), 560px);
 	max-width: none;
 	min-height: 0;
-	flex: 0 1 auto;
+	/* 縮めると 1行しか 見えなくなる（スマホ）。縮むのは 地図の ほう（.wm-fit） */
+	flex: 0 0 auto;
 	overflow-y: auto;
 	display: grid;
 	grid-template-columns: 1fr 1fr;
