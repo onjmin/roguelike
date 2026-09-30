@@ -54,6 +54,7 @@ import { deserializeRun, serializeRun } from "../core/serial";
 import { triggerTrap } from "../core/traps";
 import {
 	type Ability,
+	type AnkaKind,
 	type Command,
 	DEEP,
 	DOZE,
@@ -2357,6 +2358,128 @@ test(
 		ok(got.has("hit"), "hit never came with an enemy on the floor");
 		d.s.ids.known.h_sleep = true;
 		ok(kinds(d).has("sleep"), "sleep never came with a known sleep herb");
+	},
+);
+
+test(
+	"floor",
+	"anka: staff, drop, equip, trap, level and rest count only their own act; each comes only when doable",
+	() => {
+		const r = arena("anka-more");
+		// （関数で 読む：TS が 上の ok で null と 思いこむので）
+		const cur = (): string | undefined => r.f.anka?.kind;
+		const set = (kind: AnkaKind, need = 1) => {
+			r.f.anka = { kind, need, done: 0, due: r.f.res + 5000 };
+		};
+		// 杖を ふる：のこりが 0 でも 数える
+		const staff = give(r, "w_bolt");
+		staff.charges = 0;
+		set("staff");
+		r.act({ c: "use", item: staff.uid });
+		ok(!r.f.anka, "waving a staff did not clear the staff anka");
+		// 置く：投げるのは 数えない
+		const herb = give(r, "h_heal");
+		const club = give(r, "club");
+		set("drop");
+		r.act({ c: "throw", item: club.uid, dir: 0 });
+		ok(cur() === "drop", "throwing cleared the drop anka");
+		r.f.items = [];
+		r.act({ c: "drop", item: herb.uid });
+		ok(!r.f.anka, "dropping did not clear the drop anka");
+		// 装備を かえる：外すだけは 数えない
+		const sword = give(r, "club");
+		set("equip");
+		if (r.weapon()) r.act({ c: "unequip", item: r.weapon()?.uid ?? -1 });
+		ok(cur() === "equip", "unequipping cleared the equip anka");
+		r.act({ c: "equip", item: sword.uid });
+		ok(r.isEquipped(sword), "harness: could not equip");
+		ok(!r.f.anka, "equipping did not clear the equip anka");
+		// 罠を 踏む：動かなくても 数える
+		r.f.items = [];
+		r.f.traps = [
+			{ ...at(0, -1, { x: r.p.x, y: r.p.y }), kind: "bear", found: true },
+		];
+		set("trap");
+		r.act({ c: "move", dir: 0 });
+		ok(
+			r.f.traps[0].x === r.p.x && r.f.traps[0].y === r.p.y,
+			"harness: not on the trap",
+		);
+		ok(!r.f.anka, "stepping on a trap did not clear the trap anka");
+		r.f.traps = [];
+		r.p.status.trapped = 0;
+		// レベル：1段で 神安価
+		set("level");
+		r.p.exp = EXP_AT[r.p.lv] - 1;
+		const lv = r.p.lv;
+		r.gainExp(1);
+		ok(r.p.lv === lv + 1, "harness: no level up");
+		ok(!r.f.anka, "leveling up did not clear the level anka");
+		// 足踏み：10回目で 神安価（ほかの 行動は 数えない）
+		set("rest", 10);
+		r.act({ c: "turn", dir: 2 });
+		for (let i = 1; i <= 10; i++) {
+			r.act({ c: "wait" });
+			ok(!!r.f.anka === i < 10, `the rest anka was wrong after ${i} waits`);
+		}
+		ok(
+			ankaText({ kind: "rest", need: 10, done: 0, due: 0 }).includes("10"),
+			"the rest anka does not say 10",
+		);
+		// 落とし穴：落ちた 先で 神安価になり、道具は 落ちた 先の 足元に
+		const pit = Run.create("anka-pit", "main");
+		const depth = pit.s.depth;
+		for (let i = 0; i < 20 && pit.s.depth === depth; i++) {
+			pit.f.anka = { kind: "trap", need: 1, done: 0, due: pit.f.res + 500 };
+			triggerTrap(pit, { x: pit.p.x, y: pit.p.y, kind: "pit", found: false });
+		}
+		ok(pit.s.depth === depth + 1, "harness: the pit never fired");
+		ok(!pit.f.anka, "the trap anka survived the fall");
+		ok(
+			pit.f.items.filter((fi) => samePos(fi, pit.p)).length > 0,
+			"the gifts were not at the feet after the fall",
+		);
+		// 来る 条件：持ち物・罠・経験値しだい。足踏みは いつでも
+		const kinds = (x: Run): Set<string> => {
+			const seen = new Set<string>();
+			for (let i = 0; i < 200; i++) {
+				x.f.anka = null;
+				x.f.ankaAt = x.f.res;
+				tickAnka(x);
+				const a = x.f.anka as { kind: string } | null;
+				if (a) seen.add(a.kind);
+			}
+			return seen;
+		};
+		const d = arena("anka-more-doable");
+		d.p.items = [];
+		d.p.weapon = null;
+		d.p.shield = null;
+		d.p.ring = null;
+		d.p.lv = 5;
+		d.p.exp = EXP_AT[4];
+		let got = kinds(d);
+		for (const k of ["staff", "drop", "equip", "trap", "level"])
+			ok(!got.has(k), `undoable ${k} anka came`);
+		ok(got.has("rest"), "rest never came");
+		give(d, "w_bolt");
+		give(d, "club");
+		d.f.traps = [{ ...at(3, 3), kind: "bear", found: true }];
+		d.p.exp = EXP_AT[5] - 1;
+		got = kinds(d);
+		for (const k of ["staff", "drop", "equip", "trap", "level"])
+			ok(got.has(k), `${k} anka never came when doable`);
+		// のろわれた 武器を 持っていると、武器の 付けかえは 来ない
+		const e = arena("anka-more-cursed");
+		e.p.items = [];
+		e.p.shield = null;
+		e.p.ring = null;
+		const bad = give(e, "club");
+		e.p.weapon = bad.uid;
+		bad.cursed = true;
+		give(e, "club");
+		got = kinds(e);
+		ok(!got.has("equip"), "equip came under a cursed weapon");
 	},
 );
 

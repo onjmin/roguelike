@@ -364,7 +364,13 @@ export type AnkaKind =
 	| "eat"
 	| "kill"
 	| "sleep"
-	| "hit";
+	| "hit"
+	| "staff"
+	| "drop"
+	| "equip"
+	| "trap"
+	| "level"
+	| "rest";
 
 export type Anka = {
 	kind: AnkaKind;

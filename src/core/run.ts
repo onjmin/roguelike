@@ -781,6 +781,7 @@ export class Run {
 			this.se("levelup");
 			this.emit({ t: "levelup", lv: p.lv, hp: p.hp, maxHp: p.maxHp });
 			this.msg(`レベルが　${p.lv}に　上がった！`, "good");
+			ankaHit(this, "level");
 		}
 	}
 
@@ -1338,6 +1339,8 @@ export class Run {
 			case "attack":
 				return this.doAttack(cmd.dir ?? p.dir);
 			case "wait":
+				// 安価「足踏み」（眠りで 進む ターンは ここを 通らない）
+				ankaHit(this, "rest");
 				return true;
 			case "pickup":
 				return this.doPickup(true);
@@ -1566,6 +1569,7 @@ export class Run {
 		this.emit({ t: "item", uid: it.uid, pos: { x: this.p.x, y: this.p.y } });
 		// 避難所スレは 置くと 効く（その マスは 避難所に なり、もう 拾えない）
 		if (it.kind === "s_ward") this.f.wards.push(ward);
+		ankaHit(this, "drop");
 		return true;
 	}
 
@@ -1642,6 +1646,8 @@ export class Run {
 			this.msg("のろわれていた！", "warn");
 			this.se("curse");
 		}
+		// 安価「装備を　かえる」（矢は 数えない）
+		if (slot !== "arrow") ankaHit(this, "equip");
 		return true;
 	}
 

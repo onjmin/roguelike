@@ -2,17 +2,19 @@
 //
 // - 2階から、階に 入ったとき ANKA_CHANCE で「来る レス数」を 決めておき、そこまで 伸びたら 来る。
 // - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　1つ　飲む」は 来ない）。
-//   むずかしい お題（寝る・攻撃を 受ける）は 来にくい（doable の 重み）。
+//   むずかしい お題（寝る・攻撃を 受ける・罠・レベル など）は 来にくい（doable の 重み）。
 // - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
 // - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く
 //   （ボスが 生きている 階には 湧かない）。
 // - 帰り道には 来ない（帰り道は 補給なし）。ボスの 待つ 階にも 来ない（湧かないので 敵を たおす お題が こなせない）。
 // - 出ている 安価は 階を かわっても 消えない（次スレに 持ちこし。のこりの レス数も そのまま）。
 
+import { EXP_AT, MAX_LV } from "./balance";
 import { randomFloorPos, spawnMonster } from "./floor";
 import {
 	defOf,
 	identifyKind,
+	isKeyItem,
 	isKnownKind,
 	itemHidden,
 	itemTableOf,
@@ -46,10 +48,26 @@ const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
 	sleep: () => "寝る",
 	// 敵の 攻撃が 当たった 回数（なぐる・矢・息。はずれや 罠は 数えない。core/monster.ts）
 	hit: (n) => `攻撃を　${n}回　受ける`,
+	// 杖を 振った（のこりが 0 で 何も 起きなくても 数える。core/effects.ts）
+	staff: () => "杖を　1回　ふる",
+	// 足元に 置いた（投げる・入れかえるは 数えない。Run.doDrop）
+	drop: () => "道具を　1つ　置く",
+	// 武器・板・指輪を べつの 物に かえた（外すだけ・矢は 数えない。Run.doEquip）
+	equip: () => "装備を　かえる",
+	// 罠を 踏んだ（動かなくても 数える。罠よけの指輪なら 踏まない。core/traps.ts）
+	trap: () => "罠を　1つ　踏む",
+	// レベルが 上がった（何段 上がっても 1回。Run.gainExp）
+	level: () => "レベルを　1つ　上げる",
+	// 「足踏み」の コマンド（眠りで 進む ターンは 数えない。Run.doCommand）
+	rest: (n) => `その場で　${n}回　足踏み`,
 };
 
 /** お題ごとの こなす 回数。 */
-const ANKA_NEED: Partial<Record<AnkaKind, number>> = { kill: 2, hit: 3 };
+const ANKA_NEED: Partial<Record<AnkaKind, number>> = {
+	kill: 2,
+	hit: 3,
+	rest: 10,
+};
 
 /** 画面に 出す お題（「草を　1つ　飲む」）。 */
 export const ankaText = (a: Anka): string => ANKA_TEXT[a.kind](a.need);
@@ -108,6 +126,36 @@ const doable = (r: Run): AnkaKind[] => {
 		out.push("sleep");
 	// 攻撃を 受ける：なぐってくる 敵が 階に いるとき（置物だけ なら 出さない）
 	if (r.f.monsters.some((m) => m.hp > 0 && !m.status.dormant)) out.push("hit");
+	// 杖：持っていれば（正体が わからなくても 振れる）
+	if (has("staff")) out.push("staff");
+	// 置く：手放せる 物が あれば（大事な 物・のろわれて 外せない 装備は 置けない）
+	if (
+		r.p.items.some(
+			(it) => !isKeyItem(it.kind) && !(r.isEquipped(it) && it.cursed),
+		)
+	)
+		out.push("drop");
+	// 装備を かえる：はめていない 武器・板・指輪が あって、その 枠の 今の 物が のろわれていない とき
+	const slotOf = { weapon: r.weapon(), shield: r.shield(), ring: r.ring() };
+	if (
+		r.p.items.some((it) => {
+			const cat = defOf(it.kind).cat;
+			if (cat !== "weapon" && cat !== "shield" && cat !== "ring") return false;
+			return !r.isEquipped(it) && !slotOf[cat]?.cursed;
+		})
+	)
+		out.push("equip");
+	// 罠を 踏む：見つかっている 罠が 階に あるとき（罠よけの指輪を はめていたら 踏めない）
+	if (!r.hasRing("r_trap") && r.f.traps.some((t) => t.found)) out.push("trap");
+	// レベル：つぎまで 半分を 切っているとき（深い 階で 間に合わない お題に しない）
+	const p = r.p;
+	if (
+		p.lv < MAX_LV &&
+		EXP_AT[p.lv] - p.exp <= (EXP_AT[p.lv] - EXP_AT[p.lv - 1]) / 2
+	)
+		out.push("level");
+	// 足踏みは いつでも できる
+	out.push("rest");
 	return out;
 };
 

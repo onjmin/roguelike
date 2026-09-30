@@ -76,7 +76,7 @@ export const useItem = (r: Run, uid: number, target?: number): boolean => {
 		case "scroll":
 			return read(r, it, target) && ankaDone(r, "scroll");
 		case "staff":
-			return wave(r, it);
+			return wave(r, it) && ankaDone(r, "staff");
 	}
 };
 

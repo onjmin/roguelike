@@ -1,5 +1,6 @@
 // 罠（踏むと 3/4 の確率で動く。罠よけの指輪なら かからない）。
 
+import { ankaHit } from "./anka";
 import { rollDamage, TRAP_CHANCE } from "./balance";
 import { DIRS8, dist, step } from "./geom";
 import { isKeyItem } from "./item";
@@ -23,6 +24,13 @@ export const trapName = (t: Trap): string => TRAP_NAME[t.kind];
 
 export const triggerTrap = (r: Run, t: Trap): void => {
 	if (r.hasRing("r_trap")) return; // 踏んだことも出ない
+	fireTrap(r, t);
+	// 安価「罠を　1つ　踏む」（動かなくても 数える）。効き目の あとに 数えるので、
+	// 落とし穴なら 落ちた 先に、転移床なら 飛んだ 先に スレ民の 道具が 置かれる
+	ankaHit(r, "trap");
+};
+
+const fireTrap = (r: Run, t: Trap): void => {
 	t.found = true;
 	const p = r.p;
 	r.msg(`${trapName(t)}を　踏んだ！`, "warn");

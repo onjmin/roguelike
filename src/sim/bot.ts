@@ -348,7 +348,29 @@ const decide = (r: Run, opts: BotOpts): Command => {
 										);
 										return h ? { c: "use", item: h.uid } : null;
 									})()
-								: null;
+								: anka.kind === "staff"
+									? (() => {
+											const w = pick("staff");
+											return w ? { c: "use", item: w.uid } : null;
+										})()
+									: anka.kind === "drop" && !r.itemAt(p.x, p.y) && !r.onStairs()
+										? (() => {
+												// いちばん いらない 物（わかっている 悪い 草 → 矢 → 何でも）
+												const d =
+													pick(
+														"herb",
+														(i) => known(i) && BAD_HERBS.has(i.kind),
+													) ??
+													pick("arrow") ??
+													items.find(
+														(i) =>
+															!r.isEquipped(i) && defOf(i.kind).cat !== "goal",
+													);
+												return d ? { c: "drop", item: d.uid } : null;
+											})()
+										: anka.kind === "rest"
+											? { c: "wait" }
+											: null;
 		if (cmd) return cmd;
 	}
 	// 装備の更新
