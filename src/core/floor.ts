@@ -50,10 +50,13 @@ const TRAP_KINDS: { kind: TrapKind; weight: number; from: number }[] = [
 	{ kind: "pit", weight: 2, from: 3 },
 ];
 
-/** 罠の種類を引く。level は 本編の何階ぶんか（Run.levelAt）。 */
+/** 罠の種類を引く。level は 本編の何階ぶんか（Run.levelAt）。上りの 板に 落とし穴は ない（上へ 落ちる 穴は へん）。 */
 export const pickTrapKind = (r: Run, level: number): TrapKind =>
 	r.rng.weighted(
-		TRAP_KINDS.filter((t) => Math.max(3, level) >= t.from),
+		TRAP_KINDS.filter(
+			(t) =>
+				Math.max(3, level) >= t.from && !(t.kind === "pit" && r.dungeon.up),
+		),
 		(t) => t.weight,
 	).kind;
 

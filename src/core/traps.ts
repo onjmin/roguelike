@@ -104,13 +104,19 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			r.warpPlayer();
 			return;
 		case "pit": {
-			// 上りの 板は 吹き上げ（逃げる 音）、下りは 落ちる 音
-			r.se(r.dungeon.up ? "flee" : "fall");
+			// トルネコ1と 同じ：1つ 下の 階へ 落ちて 7〜8の ダメージ（盾で へる）。落ちた 先で ダメージを 言う
+			// （上りの 板には 落とし穴を 置かない。core/floor.ts の pickTrapKind）
+			r.se("fall");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
-			// 上りの 板では 穴から 吹き上げられる
-			r.msg(r.dungeon.up ? "吹き上げの　穴だ！" : "落とし穴に　落ちた！");
-			if (r.hurtPlayer(dmg, "落とし穴で　たおれた")) return;
+			r.msg("落とし穴に　落ちた！");
+			if (r.s.depth >= r.dungeon.floors) {
+				r.fallDown();
+				return;
+			}
 			r.fallDown();
+			r.se("damage");
+			r.msg(`${dmg}の　ダメージを　受けた`);
+			r.hurtPlayer(dmg, "落とし穴で　たおれた");
 			return;
 		}
 	}

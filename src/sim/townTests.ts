@@ -3,6 +3,7 @@
 import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
 import { ITEM_LIST } from "../core/data/items";
 import { LAST_RES } from "../core/data/lastRes";
+import { pickTrapKind } from "../core/floor";
 import { isKnownKind } from "../core/item";
 import { parseReplay } from "../core/replay";
 import { Run } from "../core/run";
@@ -19,6 +20,7 @@ import {
 	TOWN_STEPS,
 	townStep,
 } from "../core/town";
+import { triggerTrap } from "../core/traps";
 import type { Item } from "../core/types";
 import { SE_LOUDNESS } from "../data/loudness";
 import { sfx } from "../data/sfx";
@@ -372,6 +374,32 @@ test("carrying out takes the chosen items by content, once", () => {
 		ok(loadTown().storage.length === 2, "storage did not shrink by one");
 		ok(takeFromStorage([mk("steel", 2)]).length === 0, "took it twice");
 	});
+});
+
+test("落とし穴：1つ 下へ 落ちて、落ちた 先で ダメージ（トルネコ1）。上りの 板には 置かない", () => {
+	let fell = 0;
+	for (let i = 0; i < 40 && !fell; i++) {
+		const r = Run.create(`pit-${i}`, "main");
+		const hp = r.p.hp;
+		const depth = r.s.depth;
+		const log0 = r.s.log.length;
+		triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "pit", found: false });
+		if (r.s.depth === depth) continue; // 罠が 動かなかった
+		fell++;
+		const log = r.s.log.slice(log0);
+		const i0 = log.indexOf("落とし穴に　落ちた！");
+		const i1 = log.findIndex((l) => l.endsWith("の　ダメージを　受けた"));
+		ok(r.s.depth === depth + 1, `depth ${depth} → ${r.s.depth}`);
+		ok(i0 >= 0 && i1 > i0, `log: ${log.join(" / ")}`);
+		ok(r.p.hp <= hp, "healed by a pit");
+	}
+	ok(fell > 0, "the pit never worked");
+	// 上りの 板（電池板・離島・おんたこ・お祭り）では 引かない
+	for (const d of DUNGEON_IDS.filter((x) => dungeonById(x).up)) {
+		const r = Run.create(`pit-up-${d}`, d);
+		for (let i = 0; i < 300; i++)
+			ok(pickTrapKind(r, 20) !== "pit", `${d}: a pit on a climbing board`);
+	}
 });
 
 test("ぷゆゆの お弁当：持ち物が からっぽなら もらえて、出るときに 持っていく。はじめの 持ち物は どの 板も ぷゆゆパン だけ", () => {
