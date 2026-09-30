@@ -19,7 +19,6 @@
 // - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/villageOpening.ts）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
-import { LAST_RES } from "../core/data/lastRes";
 import { CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
@@ -62,7 +61,6 @@ import {
 	clearRun,
 	depositBag,
 	hasRunSave,
-	loadLastRes,
 	loadProgress,
 	loadRun,
 	loadTown,
@@ -624,43 +622,6 @@ export const buildVillage = (
 	};
 };
 
-/**
- * 拾った「最後の レス」の 一覧（植民地で 拾った、去った 人の 最後の 書きこみ。core/data/lastRes.ts）。
- * まだ 拾っていない ものは 場所だけ（？？？）。選ぶと その レスを 窓で 読む。
- */
-const openLastRes = async (ctx: Ctx, s: Story): Promise<void> => {
-	const have = loadLastRes();
-	let start = 0;
-	for (;;) {
-		const rows: ListItem[] = LAST_RES.map((r) => {
-			const got = have.includes(r.id);
-			return {
-				label: `${DUNGEON_NAMES[r.dungeon].short}　${r.depth}階`,
-				sub: got ? r.why : "",
-				desc: got ? `「${r.text}」` : "？？？",
-				value: r.id,
-				disabled: !got,
-			};
-		});
-		const n = LAST_RES.filter((r) => have.includes(r.id)).length;
-		const v = await listWindow(
-			ctx,
-			`拾った　最後のレス　${n}／${LAST_RES.length}`,
-			rows,
-			{ start },
-		);
-		if (v === null) return;
-		start = rows.findIndex((r) => r.value === v);
-		const r = LAST_RES.find((x) => x.id === v);
-		if (!r) continue;
-		await s.narrate(
-			`${DUNGEON_NAMES[r.dungeon].short}の　${r.depth}階に\n落ちていた　レス。`,
-		);
-		await s.narrate(`「${r.text}」`);
-		await hideMsg(s);
-	}
-};
-
 /** B／☰ の 村の メニュー（仲間の 役目を ぜんぶ ここからも）。とじるまで 何度でも。 */
 export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 	let start = 0;
@@ -670,9 +631,6 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 			{ label: "冒険の記録", value: "records" },
 			{ label: "図鑑", value: "book" },
 			{ label: "売り上げ", value: "sales" },
-			...(loadLastRes().length
-				? [{ label: "拾った　最後のレス", value: "lastres" }]
-				: []),
 			...((STORAGE_CAP[stage] ?? 0) > 0
 				? [
 						{ label: "持ち物", value: "bag" },
@@ -694,7 +652,6 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 			// リプレイを 選んだら 村を出る
 			if (await records(ctx, s)) return;
 		} else if (v === "book") await openBook(ctx);
-		else if (v === "lastres") await openLastRes(ctx, s);
 		else if (v === "storage") await openStorage(ctx);
 		else if (v === "bag") await openBag(ctx);
 		else if (v === "sales") await openSales(ctx);

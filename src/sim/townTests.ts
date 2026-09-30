@@ -2,7 +2,6 @@
 
 import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
 import { ITEM_LIST } from "../core/data/items";
-import { LAST_RES } from "../core/data/lastRes";
 import { pickTrapKind } from "../core/floor";
 import { isKnownKind } from "../core/item";
 import { parseReplay } from "../core/replay";
@@ -542,34 +541,6 @@ test("unlocks last for the session when storage cannot be written", () => {
 			"the main dungeon closed again",
 		);
 	}, false);
-});
-
-test("the last posts lie on real floors of the colonies (not the main board), fit the log, and are picked once per run", () => {
-	const ids = new Set<string>();
-	for (const r of LAST_RES) {
-		ok(!ids.has(r.id), `two last posts share the id ${r.id}`);
-		ids.add(r.id);
-		ok(r.dungeon !== "main", `${r.id}: the main board keeps its parity runs`);
-		const d = dungeonById(r.dungeon);
-		ok(
-			r.depth >= 2 && r.depth < d.floors,
-			`${r.id}: depth ${r.depth} of ${d.floors}`,
-		);
-		ok(
-			[...r.text].length <= 20,
-			`${r.id}: "${r.text}" is too long for one log line`,
-		);
-		// その 階に 着くと 1回だけ 拾う（同じ 冒険で もう一度 着いても ふえない）
-		const run = Run.create(`lastres-${r.id}`, r.dungeon);
-		run.enterFloor(r.depth, false);
-		ok(run.s.lastRes?.includes(r.id), `${r.id}: not picked on B${r.depth}`);
-		ok(
-			run.s.log.some((l) => l.includes(r.text)),
-			`${r.id}: the post is not in the log`,
-		);
-		run.enterFloor(r.depth, false);
-		ok(run.s.lastRes?.length === 1, `${r.id}: picked twice`);
-	}
 });
 
 export const runTownTests = (): TestResult[] =>

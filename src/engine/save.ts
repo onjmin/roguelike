@@ -21,7 +21,6 @@ const RUN_KEY = `${PREFIX}run`;
 const RECORDS_KEY = `${PREFIX}records`;
 const STATS_KEY = `${PREFIX}stats`;
 const BOOK_KEY = `${PREFIX}book`;
-const LAST_RES_KEY = `${PREFIX}lastres`;
 const REPLAYS_KEY = `${PREFIX}replays`;
 const PROGRESS_KEY = `${PREFIX}progress`;
 const TOWN_KEY = `${PREFIX}town`;
@@ -84,8 +83,6 @@ export const saveRun = (s: RunState): void => {
 		// 倒れた回数・図鑑・町の売上が ふえないように）
 		if (!fresh) return;
 		addBookKills(s.kills);
-		// 拾った「最後の レス」も 知識として 残す（倒れても）
-		addLastRes(s.lastRes ?? []);
 		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）。
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
@@ -1005,32 +1002,6 @@ export const markSeenMonster = (kind: string): void => {
 	if (b.seen.includes(kind)) return;
 	b.seen.push(kind);
 	saveBook(b);
-};
-
-// ───────────────────────── 最後の レス ─────────────────────────
-// 植民地で 拾った「最後の レス」（core/data/lastRes.ts の id）。図鑑と 同じく 冒険を またいで 残る。
-
-/** 拾ったことの ある 最後の レスの id（拾った 順）。 */
-export const loadLastRes = (): string[] => {
-	try {
-		const raw = localStorage.getItem(LAST_RES_KEY);
-		const a = raw ? (JSON.parse(raw) as unknown) : [];
-		return Array.isArray(a) ? a.filter((x) => typeof x === "string") : [];
-	} catch {
-		return [];
-	}
-};
-
-/** 冒険が 終わったときに、拾った 最後の レスを 足す。 */
-export const addLastRes = (ids: readonly string[]): void => {
-	const have = loadLastRes();
-	const next = [...have, ...ids.filter((id) => !have.includes(id))];
-	if (next.length === have.length) return;
-	try {
-		localStorage.setItem(LAST_RES_KEY, JSON.stringify(next));
-	} catch {
-		// 残せなくても遊べる
-	}
 };
 
 /** 冒険が終わったときに、倒した数を足す。 */
