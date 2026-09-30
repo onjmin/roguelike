@@ -458,7 +458,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "yashi",
 		houses: null,
 		trapsFrom: 3,
-		unlockAfter: "shallow",
+		unlockAfter: "kinoko",
 		reliefAfter: null,
 		sparse: 0.5,
 		// 島の 山を 上る
@@ -490,7 +490,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "takoyaki",
 		houses: { from: 3, chance: 1 / 16, early: [4, 6] },
 		trapsFrom: 3,
-		unlockAfter: "main",
+		unlockAfter: "tropical",
 		reliefAfter: null,
 		angry: true,
 		// 雑居ビルを 上る
@@ -523,7 +523,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// やぐらを 上る
 		up: true,
 		trapsFrom: 3,
-		unlockAfter: "main",
+		unlockAfter: "konamono",
 		reliefAfter: null,
 	},
 	// 隠し：過去ログの底（保守村の 下の 古井戸。電池板を 持ち帰ると 開く）。99階で、階の 層ごとに 見た目と 曲が 変わる
