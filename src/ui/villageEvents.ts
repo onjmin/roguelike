@@ -48,6 +48,7 @@ import {
 } from "../data/town";
 import { npc, sign } from "../data/village/helpers";
 import {
+	VISITOR_WALK,
 	type VillagePlace,
 	type VillageView,
 	villagePalette,
@@ -605,7 +606,13 @@ export const buildVillage = (
 		tiles: villagePalette(view),
 		rows: villageRows(view),
 		outside: "#1f2a14",
-		events: villagePlaces(view).map((p) => eventFor(ctx, p, view)),
+		events: [
+			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),
+			// 寄り道の 板が 開く ときの 来客（旗 visitor の あいだだけ 村に いる。ui/villageReturn.ts の visitScript）
+			npc("visitor", 1, 1, VISITOR_WALK, async () => {}, {
+				when: (st) => !!st.flags.visitor,
+			}),
+		],
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
 		prepare: (s) => {
 			if (back) lineUp(s, back, view);

@@ -26,7 +26,7 @@ import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { isUpBoard } from "./floorName";
 import { ChoiceWindow } from "./message";
-import { DUNGEON_DESC, lockedHint } from "./villageTalk";
+import { DUNGEON_DESC } from "./villageTalk";
 
 // ───────────────── 色 ─────────────────
 
@@ -567,7 +567,7 @@ export class MapView {
 				(this.carryMax > 0
 					? `<div class="wm-carry${dg.noCarry ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った　道具は　シヨが　預かる）" : `できる（${this.carryMax}つまで）`}</div>`
 					: "")
-			: `<div class="wm-name">？？？</div><div class="wm-desc">${lockedHint(d)}</div>`;
+			: `<div class="wm-name">？？？</div>`;
 	}
 }
 

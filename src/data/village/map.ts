@@ -534,6 +534,9 @@ const friend = (who: Speaker, [x, y]: Cell, wander = false): VillagePlace => ({
 	who,
 });
 
+/** 寄り道の 板から 来る 名無しの 歩行グラ（RPGEN「陽すこ民」。本館の 名無しと 同じ 絵の 1つ。data/village/hall.ts の NANASHI_WALK）。 */
+export const VISITOR_WALK = "sa:C2hS8U";
+
 /** 村に置く イベントの 一覧。 */
 export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	const stage = layoutStage(v);

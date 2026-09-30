@@ -42,6 +42,7 @@ import {
 	playPage,
 	type StoryPage,
 	UNLOCK_LINES,
+	UNLOCK_VISIT,
 	withoutAway,
 } from "../data/story";
 import {
@@ -58,6 +59,7 @@ import {
 } from "../data/town";
 import {
 	exitAt,
+	exitFor,
 	lineupSpots,
 	spotsAround,
 	VILLAGE_EXITS,
@@ -268,6 +270,37 @@ export const sendBack = async (s: Story): Promise<void> => {
 	await s.fadeIn(250);
 };
 
+// ───────────────── 寄り道の 板の 来客 ─────────────────
+
+/**
+ * 寄り道の 板が 開く：その 板の 名無しが 板の 方角の 村の 口から 歩いてきて、キリコの となりで 板の ようすを
+ * 話し、口へ 帰っていく（data/story.ts の UNLOCK_VISIT）。
+ */
+export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
+	const lines = UNLOCK_VISIT[d] ?? [];
+	const gate = exitFor(d).cell;
+	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	s.set("visitor");
+	s.place("visitor", gate[0], gate[1]);
+	await s.look("visitor");
+	if (to) {
+		await s.goto("visitor", to[0], to[1], { speed: 1.4 });
+		s.face("visitor", "player");
+	}
+	await s.look(null);
+	for (const [i, l] of lines.entries()) {
+		// さいごの 地の文（帰っていった）の 前に 口へ 歩いて 帰る
+		if (l.who === null && i === lines.length - 1) {
+			await s.wait(0);
+			await s.goto("visitor", gate[0], gate[1], { speed: 1.4 });
+			s.set("visitor", false);
+		}
+		if (l.who === "visitor") await s.say("nanj", l.text, { name: "名無し" });
+		else await s.narrate(l.text);
+	}
+	s.set("visitor", false);
+};
+
 // ───────────────── ぷゆゆの お弁当 ─────────────────
 
 /**
@@ -354,6 +387,16 @@ export const newsScript = async (s: Story): Promise<void> => {
 				.filter((w) => !away.includes(w)),
 		);
 	for (const n of news) {
+		// 寄り道の 板：その 板の 名無しが 来て 話す（仲間の ひとことの かわり）
+		if (UNLOCK_VISIT[n.dungeon]) {
+			await visitScript(s, n.dungeon);
+			doneProgressNews(n);
+			s.se("chapter");
+			await s.narrate(
+				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,
+			);
+			continue;
+		}
 		const colony = !["main", "deep"].includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
 		const lines = UNLOCK_LINES[

@@ -88,6 +88,7 @@ import {
 	STORY,
 	type StoryPage,
 	UNLOCK_LINES,
+	UNLOCK_VISIT,
 } from "../data/story";
 import {
 	ARRIVE_MSG,
@@ -243,7 +244,6 @@ import {
 	forgetHeardMemo,
 	hasNews,
 	ledgerLine,
-	lockedHint,
 	talkLine,
 } from "../ui/villageTalk";
 import type { TestResult } from "./monsterTests";
@@ -623,6 +623,36 @@ test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひ�
 	});
 });
 
+test("寄り道の 板が 開く：その 板の 名無しが 口から 来て キリコの となりで 話し、口へ 帰る。そのあと「もぐれるように　なった」", async () => {
+	await withStorageAsync(async () => {
+		setProgress(
+			["shallow", "main", "kinoko"],
+			[{ dungeon: "kinoko", reason: "clear" }],
+			["shallow"],
+		);
+		putTown({ stage: 2 });
+		const { s, log } = fakeStory();
+		await newsScript(s);
+		const lines = UNLOCK_VISIT.kinoko ?? [];
+		const gate = exitFor("kinoko").cell.join(",");
+		ok(
+			inOrder(log, [
+				`place visitor ${gate}`,
+				"look visitor",
+				...lines
+					.slice(0, -1)
+					.map((l) => (l.who ? `say nanj: ${l.text}` : `narrate: ${l.text}`)),
+				`goto visitor ${gate}`,
+				`narrate: ${lines[lines.length - 1]?.text}`,
+				"narrate: 「きのこ板」に\nもぐれるように　なった",
+			]),
+			`visit:\n${log.join("\n")}`,
+		);
+		ok(!s.flag("visitor"), "the visitor stays in the village");
+		ok(!loadProgress().news.length, "the news was not cleared");
+	});
+});
+
 test("ロゼ and シヨ work behind closed counters once the stall and storehouse are built", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
@@ -915,7 +945,8 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 			`sign ${d}`,
 			`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}　★\n${DUNGEON_DESC[d]}`,
 		]);
-		texts.push([`hint ${d}`, lockedHint(d).replace("（", "\n（")]);
+		for (const [i, l] of (UNLOCK_VISIT[d] ?? []).entries())
+			texts.push([`UNLOCK_VISIT.${d}[${i}]`, l.text]);
 		pool(`CLEAR.${d}`, CLEAR[d]);
 		pool(`STORY.${d}.ending`, STORY[d].ending);
 		pool(`STORY.${d}.again`, STORY[d].again ?? []);
@@ -1576,7 +1607,7 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 					}
 		}
 		// 開いた 知らせでも 話さない
-		put(all, all, [{ dungeon: "kinoko", reason: "clear" }]);
+		put(all, all, [{ dungeon: "deep", reason: "clear" }]);
 		const news = fakeStory();
 		await newsScript(news.s);
 		ok(

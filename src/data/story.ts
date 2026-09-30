@@ -726,6 +726,67 @@ export const UNLOCK_LINES: Record<
 	],
 };
 
+/**
+ * 寄り道の 植民地が 開く ときの 小さな 出来事：その 板の 名無しが 村の 口から 歩いてきて、キリコに 板の ようすを
+ * 話し、帰っていく（ui/villageReturn.ts の visitScript）。who が "visitor" は その 名無し、null は 地の文。
+ * 名無しは 1人で 来て キリコとだけ 話す（離れた 仲間は 出てこない）。
+ */
+export const UNLOCK_VISIT: Partial<
+	Record<DungeonId, readonly { who: "visitor" | null; text: string }[]>
+> = {
+	kinoko: [
+		{
+			who: null,
+			text: "村の　口から、だれか　来た。\n頭に　きのこが　生えている。",
+		},
+		{
+			who: "visitor",
+			text: "きのこ板から　来たで。\nパン板の、そのまた　植民地や",
+		},
+		{
+			who: "visitor",
+			text: "親玉きのにゃんが　居座っとる。\n……だれか、どかしてくれんか",
+		},
+		{ who: null, text: "名無しは　きのこを　1本　置いて、\n帰っていった。" },
+	],
+	tropical: [
+		{ who: null, text: "村の　口から、だれか　来た。\n潮の　においが　する。" },
+		{ who: "visitor", text: "離島板の　島民や。\n総島民　6人の、うちの　1人" },
+		{
+			who: "visitor",
+			text: "ナツコが　怒って　山に　こもった。\n……小舟、出しとくで",
+		},
+		{ who: null, text: "名無しは　ヤシの　葉を　ふって、\n帰っていった。" },
+	],
+	konamono: [
+		{
+			who: null,
+			text: "村の　口から、だれか　来た。\nソースの　においが　する。",
+		},
+		{
+			who: "visitor",
+			text: "おんたこから　来たで。\n……ちょっと　腹　立っとるけど",
+		},
+		{
+			who: "visitor",
+			text: "たこのみんが　ビルの　上で\n大きなって　もうたんや",
+		},
+		{
+			who: null,
+			text: "名無しは　怒った　顔の　まま、\nていねいに　おじぎして　帰った。",
+		},
+	],
+	festival: [
+		{ who: null, text: "村の　口から、太鼓の　音が\nちかづいてくる。" },
+		{ who: "visitor", text: "祭りや　祭りや！\nお祭り会場から　来たで" },
+		{
+			who: "visitor",
+			text: "マシーの　親分が　やぐらから\n降りてこん。祭りが　終わらんのや",
+		},
+		{ who: null, text: "名無しは　うちわを　あおぎながら、\n帰っていった。" },
+	],
+};
+
 // ───────────────── 起動の札と 村の ひとこと ─────────────────
 /** 持ち帰ったあと（ダンジョンごと）。 */
 export const CLEAR: Record<DungeonId, readonly Line[]> = {

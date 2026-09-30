@@ -2,7 +2,7 @@
 // 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、ゼロの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
-import { DUNGEON_IDS, DUNGEONS, dungeonById } from "../core/data/dungeons";
+import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
 import { STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import {
@@ -37,14 +37,6 @@ import { settings } from "../engine/settings";
 export const DUNGEON_DESC = Object.fromEntries(
 	DUNGEON_IDS.map((d) => [d, DUNGEON_NAMES[d].rules[1]]),
 ) as Record<DungeonId, string>;
-
-/** まだ開いていないダンジョンの 開き方。 */
-export const lockedHint = (d: DungeonId): string => {
-	const after = DUNGEONS[d].unlockAfter;
-	if (!after) return "";
-	const relief = DUNGEONS[d].reliefAfter;
-	return `「${DUNGEON_NAMES[after].name}」を　持ち帰ると　開く${relief ? `（${relief}回　たおれても　開く）` : ""}`;
-};
 
 /** いちばん新しい記録から、ひとことの手がかりを作る。 */
 const quoteContext = (): QuoteContext => {

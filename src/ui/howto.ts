@@ -7,7 +7,6 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { DUNGEON_NAMES } from "../data/story";
 import type { Ctx } from "./ctx";
 import { infoWindow, listWindow } from "./list";
-import { lockedHint } from "./villageTalk";
 
 /** 見出し。 */
 const h = (text: string): string => `<h3>${text}</h3>`;
@@ -170,8 +169,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 					(d) =>
 						h(
 							`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${DUNGEONS[d].floors}階`,
-						) +
-						lines([...DUNGEON_NAMES[d].rules, lockedHint(d)].filter(Boolean)),
+						) + lines([...DUNGEON_NAMES[d].rules]),
 				)
 				.join(""),
 	},
