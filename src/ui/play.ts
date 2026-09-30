@@ -2572,6 +2572,12 @@ export class Play {
 			await this.replayEnd();
 			return;
 		}
+		// 冒険の記録の 札と いっしょに 下も 暗くする（札が 消えるとき ダンジョンが 一瞬 見えないように。
+		// ボスの 帰りは もう その 色で 暗い）
+		if (this.fadeEl.style.opacity !== "1") {
+			this.fadeEl.style.transition = "opacity 0.8s";
+			this.fadeEl.style.opacity = "1";
+		}
 		await showRunEnd(this.ctx, s);
 		this.stop();
 	}
