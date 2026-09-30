@@ -446,7 +446,7 @@ const speak = async (
 	await s.say(who, talkLine(who, o));
 };
 
-/** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。役目は どれも B／☰ の メニューにも ある。 */
+/** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。役目は B／☰ の メニューには 出さない。 */
 const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	switch (who) {
 		case "zero":
@@ -681,22 +681,16 @@ export const buildVillage = (
 	};
 };
 
-/** B／☰ の 村の メニュー（仲間の 役目を ぜんぶ ここからも）。とじるまで 何度でも。 */
-export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
+/**
+ * B／☰ の 村の メニュー。とじるまで 何度でも。
+ * 仲間に 話しかければ 見られる 物（記録・売り上げ＝ゼロ、図鑑・あそびかた＝フェリス、倉庫＝シヨ）は 出さない。
+ */
+export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 	let start = 0;
 	for (;;) {
 		const stage = loadTown().stage;
 		const items: ListItem[] = [
-			{ label: "冒険の記録", value: "records" },
-			{ label: "図鑑", value: "book" },
-			{ label: "売り上げ", value: "sales" },
-			...((STORAGE_CAP[stage] ?? 0) > 0
-				? [
-						{ label: "持ち物", value: "bag" },
-						{ label: "倉庫", value: "storage" },
-					]
-				: []),
-			{ label: "あそびかた", value: "howto" },
+			{ label: "持ち物", value: "bag" },
 			{ label: "せってい", value: "settings" },
 		];
 		const v = await listWindow(
@@ -707,14 +701,7 @@ export const villageMenu = async (ctx: Ctx, s: Story): Promise<void> => {
 		);
 		if (v === null) return;
 		start = items.findIndex((it) => it.value === v);
-		if (v === "records") {
-			// リプレイを 選んだら 村を出る
-			if (await records(ctx, s)) return;
-		} else if (v === "book") await openBook(ctx);
-		else if (v === "storage") await openStorage(ctx);
-		else if (v === "bag") await openBag(ctx);
-		else if (v === "sales") await openSales(ctx);
-		else if (v === "howto") await openHowto(ctx);
+		if (v === "bag") await openBag(ctx);
 		else if (v === "settings") await openSettings(ctx, { wipe: true });
 	}
 };

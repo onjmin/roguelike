@@ -75,7 +75,7 @@ export const chooseStored = async (
 };
 
 /**
- * 倉庫（村の シヨ・メニューから）：えらぶと 引き取って 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
+ * 倉庫（村の シヨから）：えらぶと 引き取って 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
  * 引き取った 物は 村の メニューの「持ち物」で 見て、倉庫へ もどせる（openBag）。
  */
 export const openStorage = async (ctx: Ctx): Promise<void> => {
@@ -121,12 +121,13 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 			? `<br><small>ぷゆゆパン（ぷゆゆの　お弁当）も　持っていく</small>`
 			: "";
 		if (!t.bag.length) {
+			// 倉庫が ひらく 前の 段は 引き取れないので 数も シヨの 小言も 出さない
 			await infoWindow(
 				ctx,
-				`持ち物　0／${max}`,
+				max > 0 ? `持ち物　0／${max}` : "持ち物",
 				t.lunch
 					? `<p>ぷゆゆパン（ぷゆゆの　お弁当）</p>`
-					: `<p class="dim">${escBr(TOWN_MSG.bagEmpty.text)}</p>`,
+					: `<p class="dim">${max > 0 ? escBr(TOWN_MSG.bagEmpty.text) : "なにも　持っていない"}</p>`,
 			);
 			return;
 		}
@@ -148,7 +149,7 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 };
 
 /**
- * ゼロの 帳簿（村の ゼロ・メニューから）：帰りごとの 売り上げの 棒グラフ（新しい 12回。段が 上がった 帰りは 色が ちがう）と、
+ * ゼロの 帳簿（村の ゼロから）：帰りごとの 売り上げの 棒グラフ（新しい 12回。段が 上がった 帰りは 色が ちがう）と、
  * 合計・前回・平均、次の 段までの すすみ。売り上げの 記録は 帰って 精算した ときから（engine/save.ts の Town.sales）。
  */
 export const openSales = async (ctx: Ctx): Promise<void> => {

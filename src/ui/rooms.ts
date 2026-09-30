@@ -1,7 +1,7 @@
 // 村の 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。地図は data/village/rooms.ts、文は data/rooms.ts）。
 // 入る・出るは どの 部屋も 同じ（扉の 音 → 暗転 → 中 → 明転。出口の マットで 外へ）。
 // 喫茶の 中の 人と 注文は ui/cafe.ts。ここは 小屋・常識堂・倉庫の 調べる 物と、部屋の 地図を 組み立てる 入口。
-// 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。村の シヨ・メニューと 同じ 窓）。
+// 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。村の シヨと 同じ 窓）。
 
 import { TOWN_STAGES } from "../core/town";
 import { today } from "../data/calendar";
@@ -215,7 +215,7 @@ const eventFor = (
 		return sign(p.id, p.x, p.y, pianoScript(ctx));
 	return sign(p.id, p.x, p.y, async (s) => {
 		await readAll(s, thingLines(id, kind, v.stage));
-		// あずかった 物の 棚は 倉庫の 一覧（シヨ・メニューと 同じ）
+		// あずかった 物の 棚は 倉庫の 一覧（シヨと 同じ）
 		if (id === "store" && kind === "shelf") {
 			await s.wait(0);
 			await openStorage(ctx);
