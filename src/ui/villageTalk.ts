@@ -3,7 +3,7 @@
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story.ts・data/town.ts・data/quotes.ts）を引く。
 
 import { DUNGEON_IDS, DUNGEONS, dungeonById } from "../core/data/dungeons";
-import { STAGE_POINTS, STORAGE_CAP, TOWN_STAGES } from "../core/town";
+import { STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import {
 	pickQuote,
@@ -234,15 +234,11 @@ export const fill = (
 ): string =>
 	text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
 
-/** ゼロの 帳簿：売り上げの 合計と、次の 段までの のこり。 */
+/** ゼロの 帳簿：売り上げの 合計（次の 段まで いくら かは 言わない）。 */
 export const ledgerLine = (): string => {
 	const t = loadTown();
 	if (t.stage >= TOWN_STAGES - 1)
 		return fill(VILLAGE_MSG.ledgerMax, { points: t.points });
 	if (t.points <= 0) return VILLAGE_MSG.ledgerNone;
-	const rest = (STAGE_POINTS[t.stage + 1] ?? 0) - t.points;
-	// 足りていても 1回の 帰りで 上がるのは 1段まで（core/town.ts の nextStage）
-	return rest > 0
-		? fill(VILLAGE_MSG.ledger, { points: t.points, rest })
-		: fill(VILLAGE_MSG.ledgerSoon, { points: t.points });
+	return fill(VILLAGE_MSG.ledger, { points: t.points });
 };

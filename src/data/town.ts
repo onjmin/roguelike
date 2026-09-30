@@ -325,9 +325,8 @@ export const ESCAPE_ITEM = {
  * 村（ui/villageEvents.ts）で 物を 調べたときの 地の文と、仲間の 役目の 選択肢。
  * phono は 蓄音機の ようす（まだ 何も → パン板 → 風呂板 → 過去ログの底 を 持ち帰った）。
  * 蓄音機は 1作目で やきうが くれた もの（「声を　ためて、また　鳴らせる機械」）。持ち帰った レスを 鳴らす。
- * ledger は ゼロの 帳簿（{points} は 売り上げの 合計、{rest} は 次の段までの のこり）。
- * ledgerNone は まだ 何も 売っていない、ledgerSoon は 売り上げは 足りていて 次に 持ち帰れば 段が 上がる、
- * ledgerMax は いちばん上の 段。
+ * ledger は ゼロの 帳簿（{points} は 売り上げの 合計。次の 段まで いくら かは 言わない：先が わかって いる ように
+ * 見えないように）。ledgerNone は まだ 何も 売っていない、ledgerMax は いちばん上の 段。
  */
 export const VILLAGE_MSG = {
 	board: "まとめ掲示板。\n冒険の　記録が　はってある。",
@@ -353,11 +352,8 @@ export const VILLAGE_MSG = {
 	wellShut: "古い　井戸。のぞきこんでも、\n底は　見えない。",
 	wellOpen: "古い　井戸。底の　ほうで、\n1001の　文字が　ゆれている。",
 	wellDown: "キリコは　縄ばしごを　つたって、\n井戸の　底へ　降りていった。",
-	ledger:
-		"売り上げ、ぜんぶで　{points}レス。\nつぎの　段まで、あと　{rest}レス",
+	ledger: "売り上げ、ぜんぶで　{points}レス。\n……帳簿、ちゃんと　つけてます",
 	ledgerNone: "売り上げは、まだ　ゼロです。\n……ゼロと　同じ　名前ですね",
-	ledgerSoon:
-		"売り上げ、ぜんぶで　{points}レス。\nつぎに　持ち帰れば、段が　あがります",
 	ledgerMax: "売り上げ、ぜんぶで　{points}レス。\n……町は、もう　いっぱいです！",
 	/** 段7 の 野次馬（やきうの 知り合い。名前欄は「野次馬」）。 */
 	yaji: [

@@ -2984,8 +2984,7 @@ body.shake #app {
 	flex-direction: column;
 }
 
-.sales-kpi small,
-.sales-goal small {
+.sales-kpi small {
 	font-size: 11px;
 	color: var(--muted);
 }
@@ -3042,22 +3041,8 @@ body.shake #app {
 	max-width: 100%;
 }
 
-.sales-goal {
-	margin-top: 8px;
-}
 
-.sales-track {
-	height: 8px;
-	border-radius: 4px;
-	background: rgba(255, 255, 255, 0.1);
-	overflow: hidden;
-}
 
-.sales-track i {
-	display: block;
-	height: 100%;
-	background: var(--accent);
-}
 
 .sales-legend {
 	display: block;

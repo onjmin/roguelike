@@ -4,16 +4,10 @@
 // 村の中。ui/villageReturn.ts）。町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
 
 import { defOf } from "../core/item";
-import {
-	CARRY_MAX,
-	priceOf,
-	STAGE_POINTS,
-	STORAGE_CAP,
-	TOWN_STAGES,
-} from "../core/town";
+import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
 import type { Item } from "../core/types";
 import { DUNGEON_NAMES } from "../data/story";
-import { STAGE_NAMES, TOWN_MSG } from "../data/town";
+import { TOWN_MSG } from "../data/town";
 import {
 	depositItem,
 	loadTown,
@@ -164,19 +158,6 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 	const avg = t.sales.length
 		? Math.round(t.sales.reduce((a, s) => a + s.points, 0) / t.sales.length)
 		: 0;
-	// つぎの 建物の 段まで（住人が いつ 来るかは 出さない。先が わかっている ように 見えないように）
-	const top = t.stage >= TOWN_STAGES - 1;
-	const from = STAGE_POINTS[t.stage] ?? 0;
-	const next = STAGE_POINTS[t.stage + 1] ?? from;
-	const pct = top
-		? 100
-		: Math.max(
-				0,
-				Math.min(
-					100,
-					Math.round(((t.points - from) / (next - from || 1)) * 100),
-				),
-			);
 	const kpi = (label: string, v: string) =>
 		`<div class="sales-kpi"><small>${label}</small><b>${v}</b></div>`;
 	const max = Math.max(1, ...recent.map((s) => s.points));
@@ -194,9 +175,7 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 		: `<p class="dim">${escBr(TOWN_MSG.salesEmpty.text)}</p>`;
 	const html =
 		`<div class="sales-kpis">${kpi("合計", `${t.points}`)}${kpi("前回", last ? `${last.points}` : "—")}${kpi("平均", t.sales.length ? `${avg}` : "—")}</div>` +
-		bars +
-		`<div class="sales-goal"><small>${top ? "町は　いちばん　上の　段" : `つぎの　段「${STAGE_NAMES[t.stage + 1] ?? ""}」まで　あと　${Math.max(0, next - t.points)}レス`}</small>` +
-		`<div class="sales-track"><i style="width:${pct}%"></i></div></div>`;
+		bars;
 	await infoWindow(ctx, `売り上げ　（単位：レス）`, html, {
 		cls: "sales-window",
 	});

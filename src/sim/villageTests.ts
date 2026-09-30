@@ -820,20 +820,15 @@ test("the friends react to how the last run ended", () => {
 	});
 });
 
-test("ゼロ reads the ledger: sales so far and the rest to the next stage", () => {
+test("ゼロ reads the ledger: sales so far, never how much to the next stage", () => {
 	withStorage(() => {
 		setTown(0, 0);
 		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "stage 0 with no sales");
 		setTown(2, 500);
 		const rest = STAGE_POINTS[3] - 500;
 		ok(
-			ledgerLine().includes("500レス") && ledgerLine().includes(`${rest}レス`),
+			ledgerLine().includes("500レス") && !ledgerLine().includes(`${rest}レス`),
 			`stage 2: ${ledgerLine()}`,
-		);
-		setTown(2, STAGE_POINTS[4]);
-		ok(
-			ledgerLine().includes("つぎに　持ち帰れば"),
-			`enough sales but one stage per return: ${ledgerLine()}`,
 		);
 		setTown(TOWN_STAGES - 1, 99999);
 		ok(ledgerLine().includes("いっぱい"), `the top stage: ${ledgerLine()}`);
