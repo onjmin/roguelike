@@ -1780,6 +1780,35 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 			]),
 			`the first stall is out of order:\n${first.log.join("\n")}`,
 		);
+		// 話す 人は カメラが 見る 建った所の そばに いる。越してきた 仲間は 口から 歩いてくる
+		const [gx, gy] = VILLAGE_SPOTS.growth(1);
+		const said = first.log.findIndex((l) =>
+			l.startsWith(`say ${STAGE_UP[1][0]?.who}: ${STAGE_UP[1][0]?.text}`),
+		);
+		for (const w of new Set(STAGE_UP[1].map((l) => l.who))) {
+			const last = first.log
+				.slice(0, said)
+				.filter(
+					(l) => l.startsWith(`place ${w} `) || l.startsWith(`goto ${w} `),
+				)
+				.at(-1);
+			const [x, y] = (last ?? "").split(" ")[2]?.split(",").map(Number) ?? [];
+			ok(
+				!!last && Math.max(Math.abs(x - gx), Math.abs(y - gy)) <= 4,
+				`${w} talks away from the new stall: ${last}`,
+			);
+		}
+		for (const w of ["roze", "zero"])
+			ok(
+				inOrder(first.log, [
+					`hide ${w}`,
+					"se levelup",
+					`show ${w}`,
+					`look ${w}`,
+					`narrate: ${fill(ARRIVE_MSG, { names: "ロゼと　ゼロ" })}`,
+				]),
+				`${w} does not walk in:\n${first.log.join("\n")}`,
+			);
 		ok(
 			!first.log.some((l) => l.startsWith("narrate: 倉庫から")),
 			"a carry hint before the storehouse",

@@ -742,27 +742,10 @@ export class Village {
 	 * 見る先を かえたら dt ごとに なめらかに 寄せる（キリコに もどりきったら また ぴったり ついていく）。
 	 */
 	private updateCamera(dt = 0): void {
-		const field = this.field;
-		if (!field) return;
+		const c = this.camTarget();
+		if (!c) return;
+		const { tx, ty } = c;
 		const sc = this.screen;
-		const cssPerSrc = sc.tileCss / TILE;
-		const bottomCss = document.documentElement.classList.contains(
-			"short-landscape",
-		)
-			? 40
-			: 200;
-		const w = sc.width;
-		// ボタンより 上に 見えている 高さ（ソース画素）
-		const hv = Math.max(TILE * 4, sc.height - bottomCss / cssPerSrc);
-		const mw = field.w * TILE;
-		const mh = field.h * TILE;
-		// いちばん上の段（崖）も タップできるよう、上に 半マス あける
-		const topPad = TILE / 2;
-		const f = this.focus();
-		const cx = f.fx * TILE + TILE / 2 - w / 2;
-		const cy = f.fy * TILE + TILE / 2 - hv / 2;
-		const tx = mw <= w ? (mw - w) / 2 : clamp(cx, 0, mw - w);
-		const ty = mh + topPad <= hv ? -(hv - mh) / 2 : clamp(cy, -topPad, mh - hv);
 		if (!this.easing) {
 			this.camFX = tx;
 			this.camFY = ty;
@@ -778,6 +761,60 @@ export class Village {
 		}
 		this.camX = sc.snap(this.camFX);
 		this.camY = sc.snap(this.camFY);
+	}
+
+	/**
+	 * カメラの 行き先（左上・ソース画素）と、ボタンより 上に 見えている 幅・高さ。
+	 * focus を わたすと その 見る先で（話す 人が 画面に 入るかを はかる）。
+	 */
+	private camTarget(
+		f = this.focus(),
+	): { tx: number; ty: number; w: number; hv: number } | null {
+		const field = this.field;
+		if (!field) return null;
+		const sc = this.screen;
+		const cssPerSrc = sc.tileCss / TILE;
+		const bottomCss = document.documentElement.classList.contains(
+			"short-landscape",
+		)
+			? 40
+			: 200;
+		const w = sc.width;
+		// ボタンより 上に 見えている 高さ（ソース画素）
+		const hv = Math.max(TILE * 4, sc.height - bottomCss / cssPerSrc);
+		const mw = field.w * TILE;
+		const mh = field.h * TILE;
+		// いちばん上の段（崖）も タップできるよう、上に 半マス あける
+		const topPad = TILE / 2;
+		const cx = f.fx * TILE + TILE / 2 - w / 2;
+		const cy = f.fy * TILE + TILE / 2 - hv / 2;
+		const tx = mw <= w ? (mw - w) / 2 : clamp(cx, 0, mw - w);
+		const ty = mh + topPad <= hv ? -(hv - mh) / 2 : clamp(cy, -topPad, mh - hv);
+		return { tx, ty, w, hv };
+	}
+
+	/**
+	 * 話す 人が 画面（カメラの 行き先）の 外なら、その 人に カメラを 向けてから 話す
+	 * （場面で 見る先と 話す 人が ずれて、見えない 人の 声だけが 飛んでくるのを ふせぐ 網）。
+	 */
+	private async showSpeaker(id: string): Promise<void> {
+		const a = this.actorFor(id);
+		const c = this.camTarget();
+		if (!a?.visible || !c) return;
+		const x = a.fx * TILE;
+		const y = a.fy * TILE;
+		const inside =
+			x >= c.tx + TILE / 2 &&
+			x + TILE <= c.tx + c.w - TILE / 2 &&
+			y >= c.ty &&
+			y + TILE <= c.ty + c.hv;
+		if (inside) return;
+		console.warn(
+			`[say] ${id} が 画面の 外で 話そうと したので カメラを 向けます`,
+		);
+		this.lookAt = id;
+		this.easing = true;
+		await sleep(450);
 	}
 
 	private render(): void {
@@ -1012,7 +1049,11 @@ export class Village {
 			get state(): VState {
 				return v.state;
 			},
-			say: (who, text, opt) => this.say(who, text, opt),
+			say: async (who, text, opt) => {
+				// 名前を かえた 声（住人・来客）は 声の 持ち主が 話す 人では ないので 見ない
+				if (who && !opt?.name) await this.showSpeaker(who);
+				return this.say(who, text, opt);
+			},
 			narrate: (text) => this.say(null, text),
 			kiriko: (text, mode) => this.sayKiriko(text, mode),
 			choose: (options, opt) =>

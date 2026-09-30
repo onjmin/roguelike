@@ -239,23 +239,29 @@ const called = new WeakSet<Story>();
  * 村の 場面で 話す 仲間を キリコの そばへ（離れた 人の 声が 飛んでこないように）。遠い 人だけ、暗転の あいだに
  * キリコの まわりへ 置いて こちらを 向かせる。dark なら もう 暗い（明けるのは 呼ぶ側）。
  * もどすのは sendBack（場面の 終わりに 建て直す）。
+ * at を わたすと キリコでは なく その マスの まわりへ（カメラが 建物を 見ている 場面。みんな 置きなおす）。
  */
 export const gather = async (
 	s: Story,
 	who: readonly (Speaker | null)[],
-	opt: { dark?: boolean } = {},
+	opt: { dark?: boolean; at?: readonly [number, number] } = {},
 ): Promise<void> => {
 	const far = [...new Set(who.filter((w): w is Speaker => !!w))].filter(
-		(w) => !s.near(w, TALK_NEAR),
+		(w) => !!opt.at || !s.near(w, TALK_NEAR),
 	);
 	if (!far.length) return;
 	if (!opt.dark) await s.fadeOut(250);
-	const spots = spotsAround(villageView(), far.length, [s.state.x, s.state.y]);
+	const at = opt.at ?? [s.state.x, s.state.y];
+	const spots = spotsAround(villageView(), far.length, [
+		Math.round(at[0]),
+		Math.round(at[1]),
+	]);
 	far.forEach((w, i) => {
 		const c = spots[i];
 		if (!c) return;
 		s.place(w, c[0], c[1]);
-		s.face(w, "player");
+		if (opt.at) s.face(w, c[1] > at[1] ? "up" : "down");
+		else s.face(w, "player");
 	});
 	called.add(s);
 	if (!opt.dark) await s.fadeIn(250);
@@ -411,6 +417,10 @@ export const newsScript = async (s: Story): Promise<void> => {
 			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
 		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）
 		await s.look(VILLAGE_SPOTS.exit);
+		// たおれて 蓄音機の 前に いるとき（relief）など、出口が キリコから 遠ければ 見せてから キリコに もどして 話す
+		const [ex, ey] = VILLAGE_SPOTS.exit;
+		if (Math.max(Math.abs(s.state.x - ex), Math.abs(s.state.y - ey)) > 3)
+			await s.look(null);
 		for (const l of lines) await s.say(l.who, l.text);
 		doneProgressNews(n);
 		s.se("chapter");
@@ -506,8 +516,9 @@ export const settleScript = async (
 			);
 		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
 	}
-	if (r.to > r.from) await stageUp(s, r.from, r.to);
-	await movedIn(s, stepFrom, townStep(r.to, loadTown().points), r.to > r.from);
+	const stepTo = townStep(r.to, loadTown().points);
+	if (r.to > r.from) await stageUp(s, r.from, r.to, movingIn(stepFrom, stepTo));
+	await movedIn(s, stepFrom, stepTo, r.to > r.from);
 };
 
 /**
@@ -521,40 +532,23 @@ const movedIn = async (
 	to: number,
 	rebuilt: boolean,
 ): Promise<void> => {
-	const ids = MOB_IDS.filter(
-		(id) => MOBS[id].from > from && MOBS[id].from <= to,
-	);
+	const ids = movingIn(from, to);
 	if (!ids.length) return;
 	// 越してきた 子は 村の 口（持ち場に いちばん 近い 出口）から 歩いてきて、持ち場に 着いてから 知らせる
-	const gate = (id: MobId): readonly [number, number] => {
-		const [hx, hy] = MOBS[id].spot;
-		const near = [...VILLAGE_EXITS].sort(
-			(a, b) =>
-				Math.max(Math.abs(a.cell[0] - hx), Math.abs(a.cell[1] - hy)) -
-				Math.max(Math.abs(b.cell[0] - hx), Math.abs(b.cell[1] - hy)),
-		)[0];
-		return near?.cell ?? [hx, hy];
-	};
 	if (!rebuilt) {
 		await s.fadeOut(300);
 		await s.rebuild();
 	} else await s.fadeOut(200);
 	for (const id of ids) s.hide(`mob_${id}`);
-	await s.look(gate(ids[0]), { instant: true });
+	await s.look(gateNear(MOBS[ids[0]].spot), { instant: true });
 	await s.fadeIn(300);
 	if (!rebuilt) {
 		s.se("jingle");
 		s.toast(TOWN_GREW_MSG);
 	}
 	for (const id of ids) {
-		const ev = `mob_${id}`;
-		const [gx, gy] = gate(id);
-		const [hx, hy] = MOBS[id].spot;
-		s.place(ev, gx, gy);
-		s.show(ev);
-		await s.look(ev);
-		await s.goto(ev, hx, hy, { speed: 1.3 });
-		s.face(ev, MOBS[id].dir);
+		await walkIn(s, `mob_${id}`, MOBS[id].spot);
+		s.face(`mob_${id}`, MOBS[id].dir);
 	}
 	await s.narrate(
 		fill(ARRIVE_MSG, { names: ids.map((id) => MOBS[id].name).join("と　") }),
@@ -562,11 +556,44 @@ const movedIn = async (
 	await s.look(null);
 };
 
+/** 小段 from → to で 越してくる 住人。 */
+const movingIn = (from: number, to: number): MobId[] =>
+	MOB_IDS.filter((id) => MOBS[id].from > from && MOBS[id].from <= to);
+
+/** (x, y) に いちばん 近い 村の 口。 */
+const gateNear = ([x, y]: readonly [number, number]): readonly [
+	number,
+	number,
+] =>
+	[...VILLAGE_EXITS].sort(
+		(a, b) =>
+			Math.max(Math.abs(a.cell[0] - x), Math.abs(a.cell[1] - y)) -
+			Math.max(Math.abs(b.cell[0] - x), Math.abs(b.cell[1] - y)),
+	)[0]?.cell ?? [x, y];
+
+/** 越してきた 人（イベント ID）が 行き先に いちばん 近い 村の 口から 歩いてくる（カメラが ついていく）。 */
+const walkIn = async (
+	s: Story,
+	ev: string,
+	to: readonly [number, number],
+): Promise<void> => {
+	const [gx, gy] = gateNear(to);
+	s.place(ev, gx, gy);
+	s.show(ev);
+	await s.look(ev);
+	await s.goto(ev, to[0], to[1], { speed: 1.3 });
+};
+
 /**
  * 町が 育った：暗転して 建て直し、建った所を 見せて 知らせる。仲間の ひとことと 持ちこみの 数。
  * おんJ 本館の 形が かわったら（段3・6。段を とばしても）本館を 見て ひとこと。
  */
-const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
+const stageUp = async (
+	s: Story,
+	from: number,
+	to: number,
+	arriving: readonly MobId[] = [],
+): Promise<void> => {
 	// 話すのは 村に いる 人だけ（まだ 来ていない・出ていった 仲間の 行は 出さない）
 	const away = awayFriends(loadProgress().cleared, to);
 	const lines = (STAGE_UP[to] ?? []).filter(
@@ -579,27 +606,48 @@ const stageUp = async (s: Story, from: number, to: number): Promise<void> => {
 	const moved = (Object.keys(FRIEND_FROM) as Speaker[]).filter(
 		(w) => FRIEND_FROM[w] > from && FRIEND_FROM[w] <= to && !away.includes(w),
 	);
+	const at = VILLAGE_SPOTS.growth(to);
 	await s.fadeOut(400);
 	await s.rebuild();
-	// 建て直すと 持ち場に もどるので、話す 仲間を もう一度 そばへ（暗い うちに）
-	await gather(
-		s,
-		[...moved, ...lines.map((l) => l.who), hallLine?.who ?? null],
-		{ dark: true },
-	);
-	await s.look(VILLAGE_SPOTS.growth(to), { instant: true });
+	// 話す 仲間は カメラが 見る 建った所の まわりへ（暗い うちに）。越してきた 仲間は あとから 歩いてくるので
+	// その 場所だけ とっておいて 隠す。このあと 越してくる 住人（movedIn）も まだ 見せない
+	const talkers = [...new Set([...lines.map((l) => l.who), ...moved])];
+	await gather(s, talkers, { dark: true, at });
+	const spots = spotsAround(villageView(), talkers.length, [
+		Math.round(at[0]),
+		Math.round(at[1]),
+	]);
+	for (const w of moved) s.hide(w);
+	for (const id of arriving) s.hide(`mob_${id}`);
+	await s.look(at, { instant: true });
 	await s.fadeIn(400);
 	s.se("levelup");
 	s.toast(`町が　「${STAGE_NAMES[to] ?? ""}」に　なった`);
-	if (moved.length)
+	if (moved.length) {
+		for (const w of moved) {
+			const c = spots[talkers.indexOf(w)];
+			if (!c) continue;
+			await walkIn(s, w, c);
+			s.face(w, c[1] > at[1] ? "up" : "down");
+		}
 		await s.narrate(
 			fill(ARRIVE_MSG, {
 				names: moved.map((w) => SPEAKERS[w].name).join("と　"),
 			}),
 		);
+		await s.look(at);
+	}
 	for (const l of lines) await s.say(l.who, l.text);
 	if (hallLine) {
+		// 本館を 見せてから、話す 人が 本館の 前まで 歩いていって 言う（カメラが ついていく）
 		await s.look(VILLAGE_SPOTS.hallLook);
+		const [door] = VILLAGE_SPOTS.hallDoors;
+		const [front] = spotsAround(villageView(), 1, [door[0], door[1] + 1]);
+		if (front) {
+			await s.look(hallLine.who);
+			await s.goto(hallLine.who, front[0], front[1], { speed: 1.4 });
+			s.face(hallLine.who, "up");
+		}
 		await s.say(hallLine.who, hallLine.text);
 	}
 	const carry = CARRY_MAX[to] ?? 0;
