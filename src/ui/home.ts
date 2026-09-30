@@ -7,9 +7,9 @@ import { defOf } from "../core/item";
 import {
 	CARRY_MAX,
 	priceOf,
+	STAGE_POINTS,
 	STORAGE_CAP,
-	TOWN_STEPS,
-	townStep,
+	TOWN_STAGES,
 } from "../core/town";
 import type { Item } from "../core/types";
 import { DUNGEON_NAMES } from "../data/story";
@@ -164,13 +164,10 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 	const avg = t.sales.length
 		? Math.round(t.sales.reduce((a, s) => a + s.points, 0) / t.sales.length)
 		: 0;
-	// つぎの 小段（住人が 来る か、建物の 段）まで（core/town.ts の TOWN_STEPS）
-	const step = townStep(t.stage, t.points);
-	const nextStep = TOWN_STEPS[step + 1];
-	const top = !nextStep;
-	const from = TOWN_STEPS[step]?.points ?? 0;
-	const next = nextStep?.points ?? from;
-	const building = !!nextStep && nextStep.stage > t.stage;
+	// つぎの 建物の 段まで（住人が いつ 来るかは 出さない。先が わかっている ように 見えないように）
+	const top = t.stage >= TOWN_STAGES - 1;
+	const from = STAGE_POINTS[t.stage] ?? 0;
+	const next = STAGE_POINTS[t.stage + 1] ?? from;
 	const pct = top
 		? 100
 		: Math.max(
@@ -198,7 +195,7 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 	const html =
 		`<div class="sales-kpis">${kpi("合計", `${t.points}`)}${kpi("前回", last ? `${last.points}` : "—")}${kpi("平均", t.sales.length ? `${avg}` : "—")}</div>` +
 		bars +
-		`<div class="sales-goal"><small>${top ? "町は　いちばん　上の　段" : `${building ? `つぎの　段「${STAGE_NAMES[nextStep.stage] ?? ""}」まで` : "つぎに　人が　来るまで"}　あと　${Math.max(0, next - t.points)}レス`}</small>` +
+		`<div class="sales-goal"><small>${top ? "町は　いちばん　上の　段" : `つぎの　段「${STAGE_NAMES[t.stage + 1] ?? ""}」まで　あと　${Math.max(0, next - t.points)}レス`}</small>` +
 		`<div class="sales-track"><i style="width:${pct}%"></i></div></div>`;
 	await infoWindow(ctx, `売り上げ　（単位：レス）`, html, {
 		cls: "sales-window",
