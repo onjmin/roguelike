@@ -309,7 +309,7 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
  */
 export const lunchScript = async (s: Story): Promise<void> => {
 	if (!giveLunch()) return;
-	// ぷゆゆが キリコの となりまで かけてきて 渡し、広場の 下へ もどる
+	// ぷゆゆが キリコの となりまで かけてきて 渡す（そのまま そばに いる）
 	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
 	if (to) {
 		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });
@@ -323,9 +323,6 @@ export const lunchScript = async (s: Story): Promise<void> => {
 	);
 	s.se("item");
 	await s.narrate(DEPART.puyu);
-	await s.wait(0);
-	const [hx, hy] = MOBS.puyu.spot;
-	await s.goto("mob_puyu", hx, hy);
 };
 
 /** from から to を 向く 向き（たて・よこの 大きい方）。 */

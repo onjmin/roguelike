@@ -596,7 +596,7 @@ test("どの 段でも、まだ 越してきていない 仲間は 帰りの 語
 		});
 });
 
-test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひとこと、持たせて、広場の 下へ もどる（持ち物が あれば 来ない）", async () => {
+test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひとこと、持たせて、そのまま そばに いる（持ち物が あれば 来ない）", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
 		putTown({ stage: 1 });
@@ -611,11 +611,8 @@ test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひ�
 		);
 		ok(
 			PUYU_LUNCH.some((t) => log.includes(`say nanj: ${t}`)) &&
-				inOrder(log, [
-					come ?? "",
-					`narrate: ${DEPART.puyu}`,
-					`goto mob_puyu ${MOBS.puyu.spot.join(",")}`,
-				]),
+				inOrder(log, [come ?? "", `narrate: ${DEPART.puyu}`]) &&
+				log.filter((l) => l.startsWith("goto mob_puyu ")).length === 1,
 			`lunch scene:\n${log.join("\n")}`,
 		);
 		ok(loadTown().lunch, "no lunch given");
