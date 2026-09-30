@@ -1013,3 +1013,38 @@ export const addBookKills = (kills: Record<string, number>): void => {
 	}
 	saveBook(b);
 };
+
+// ───────────────────────── 掲示板の 切れはし ─────────────────────────
+// まとめ掲示板に 貼られた「古い スレの 切れはし」（data/scraps.ts）。読んだ id と、最後に 読んだ 帰り（記録の 時刻）。
+
+const SCRAPS_KEY = `${PREFIX}scraps`;
+
+export type ScrapMemo = { read: string[]; at: number };
+
+export const loadScraps = (): ScrapMemo => {
+	try {
+		const o = JSON.parse(
+			localStorage.getItem(SCRAPS_KEY) ?? "null",
+		) as Partial<ScrapMemo> | null;
+		return {
+			read: Array.isArray(o?.read)
+				? o.read.filter((x): x is string => typeof x === "string")
+				: [],
+			at: typeof o?.at === "number" ? o.at : 0,
+		};
+	} catch {
+		return { read: [], at: 0 };
+	}
+};
+
+/** 切れはしを 読んだ（at は その 帰り。1回の 帰りに 1枚まで）。 */
+export const readScrap = (id: string, at: number): void => {
+	const m = loadScraps();
+	if (!m.read.includes(id)) m.read.push(id);
+	m.at = at;
+	try {
+		localStorage.setItem(SCRAPS_KEY, JSON.stringify(m));
+	} catch {
+		// 残せなくても 遊べる
+	}
+};

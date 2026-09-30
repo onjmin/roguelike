@@ -30,6 +30,7 @@ import {
 } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { SHOP_MENU, STORE_MENU } from "../data/rooms";
+import { SCRAP_MSG, SCRAPS, type Scrap } from "../data/scraps";
 import {
 	awayFriends,
 	DEPART,
@@ -63,9 +64,11 @@ import {
 	hasRunSave,
 	loadProgress,
 	loadRun,
+	loadScraps,
 	loadTown,
 	notePicked,
 	noteRunEnd,
+	readScrap,
 	recordFromRun,
 } from "../engine/save";
 import { openBook } from "./bookView";
@@ -97,7 +100,15 @@ import {
 	settleScript,
 	TALK_NEAR,
 } from "./villageReturn";
-import { DUNGEON_DESC, hasNews, ledgerLine, talkLine } from "./villageTalk";
+import {
+	DUNGEON_DESC,
+	fill,
+	hasNews,
+	ledgerLine,
+	pinnedScrap,
+	scrapReturnAt,
+	talkLine,
+} from "./villageTalk";
 import { openWorldMap, pickColony, travelTo } from "./worldMap";
 
 /** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
@@ -359,6 +370,59 @@ const mouthScript =
 		);
 	};
 
+/** 切れはしを 読む（見出し・名無しの 書きこみ・それきり）。 */
+const readScrapScript = async (s: Story, x: Scrap): Promise<void> => {
+	await s.narrate(fill(SCRAP_MSG.head, { board: DUNGEON_NAMES[x.board].name }));
+	await s.say("nanj", x.text, { name: "名無しさん@おんJ" });
+	await s.narrate(SCRAP_MSG.after);
+};
+
+/**
+ * まとめ掲示板：新しい 切れはしが 貼られて いれば まず それを 読む。ふだんは 冒険の 記録・読んだ 切れはし・
+ * 総選挙の はり紙（出て いれば）から えらぶ。
+ */
+const boardScript =
+	(ctx: Ctx): Script =>
+	async (s) => {
+		const pin = pinnedScrap();
+		if (pin) {
+			await s.narrate(SCRAP_MSG.pinned);
+			await readScrapScript(s, pin);
+			readScrap(pin.id, scrapReturnAt());
+			return;
+		}
+		await s.narrate(VILLAGE_MSG.board);
+		const read = SCRAPS.filter((x) => loadScraps().read.includes(x.id));
+		const opts = [
+			"冒険の記録",
+			...(read.length ? ["古い　切れはし"] : []),
+			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
+			"やめる",
+		];
+		if (opts.length === 2) {
+			await records(ctx, s);
+			return;
+		}
+		const n = await s.choose(opts, { cancel: opts.length - 1 });
+		const v = opts[n];
+		if (v === "冒険の記録") await records(ctx, s);
+		else if (v === BOARD_MENU[1]) await senkyoScript(s);
+		else if (v === "古い　切れはし") {
+			await hideMsg(s);
+			const id = await listWindow(
+				ctx,
+				`古い　切れはし　${read.length}／${SCRAPS.length}`,
+				read.map((x) => ({
+					label: `「${x.text}」`,
+					sub: `${DUNGEON_NAMES[x.board].short}・${x.why}`,
+					value: x.id,
+				})),
+			);
+			const x = read.find((r) => r.id === id);
+			if (x) await readScrapScript(s, x);
+		}
+	};
+
 /** 口の 立て札。 */
 const exitSignScript: Script = async (s) => {
 	const p = loadProgress();
@@ -482,16 +546,11 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		};
 	}
 	if (p.id.startsWith("board_"))
-		return sign(p.id, p.x, p.y, async (s) => {
-			await s.narrate(VILLAGE_MSG.board);
-			// 総選挙の はり紙が 出たら どちらを 読むか きく
-			if (senkyoOpen()) {
-				const n = await s.choose([...BOARD_MENU], { cancel: 2 });
-				if (n === 1) await senkyoScript(s);
-				if (n !== 0) return;
-			}
-			await records(ctx, s);
-		});
+		return {
+			...sign(p.id, p.x, p.y, boardScript(ctx)),
+			// 新しい 切れはしが 貼られて いたら 右の 板に「！」
+			notice: p.id === "board_1" ? () => !!pinnedScrap() : undefined,
+		};
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);

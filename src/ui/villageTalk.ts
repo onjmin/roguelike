@@ -12,6 +12,7 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../data/quotes";
+import { SCRAPS, type Scrap } from "../data/scraps";
 import {
 	awayFriends,
 	CLEAR,
@@ -27,7 +28,13 @@ import {
 	VILLAGE_MSG,
 	ZERO_VOICELESS,
 } from "../data/town";
-import { loadProgress, loadRecords, loadTown, runStats } from "../engine/save";
+import {
+	loadProgress,
+	loadRecords,
+	loadScraps,
+	loadTown,
+	runStats,
+} from "../engine/save";
 import { settings } from "../engine/settings";
 
 /**
@@ -233,4 +240,20 @@ export const ledgerLine = (): string => {
 		return fill(VILLAGE_MSG.ledgerMax, { points: t.points });
 	if (t.points <= 0) return VILLAGE_MSG.ledgerNone;
 	return fill(VILLAGE_MSG.ledger, { points: t.points });
+};
+
+/** 記録の 時刻（帰りごとに かわる。切れはしは 1回の 帰りに 1枚まで）。 */
+export const scrapReturnAt = (): number => loadRecords()[0]?.at ?? 0;
+
+/**
+ * いま 貼られて いる 切れはし（その 板を 持ち帰った ことが あり、まだ 読んで いない ものの うち 1枚目。
+ * この 帰りに もう 1枚 読んで いれば 次の 帰りまで 貼られない）。data/scraps.ts。
+ */
+export const pinnedScrap = (): Scrap | undefined => {
+	const m = loadScraps();
+	if (m.at && m.at === scrapReturnAt()) return undefined;
+	const cleared = loadProgress().cleared;
+	return SCRAPS.find(
+		(x) => cleared.includes(x.board) && !m.read.includes(x.id),
+	);
 };

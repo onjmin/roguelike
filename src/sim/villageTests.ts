@@ -75,6 +75,7 @@ import {
 	ROOM_DOOR,
 	ROOM_MSG,
 } from "../data/rooms";
+import { SCRAP_MSG, SCRAPS } from "../data/scraps";
 import {
 	awayFriends,
 	BOSS_HOME,
@@ -163,6 +164,7 @@ import {
 	type Progress,
 	type ProgressNews,
 	type RunRecord,
+	readScrap,
 	replayMatches,
 	type SavedReplay,
 	type Town,
@@ -244,6 +246,7 @@ import {
 	forgetHeardMemo,
 	hasNews,
 	ledgerLine,
+	pinnedScrap,
 	talkLine,
 } from "../ui/villageTalk";
 import type { TestResult } from "./monsterTests";
@@ -650,6 +653,40 @@ test("寄り道の 板が 開く：その 板の 名無しが 口から 来て �
 		);
 		ok(!s.flag("visitor"), "the visitor stays in the village");
 		ok(!loadProgress().news.length, "the news was not cleared");
+	});
+});
+
+test("掲示板の 切れはし：その 板を 持ち帰ると 貼られ、1回の 帰りに 1枚。読んだら 次の 帰りに 次の 1枚", () => {
+	fitsWindow([
+		...SCRAPS.map((x): [string, string] => [`SCRAPS.${x.id}`, x.text]),
+		...Object.entries(SCRAP_MSG).map(([k, t]): [string, string] => [
+			`SCRAP_MSG.${k}`,
+			fill(t, { board: "離島・沖縄板" }),
+		]),
+	]);
+	ok(
+		new Set(SCRAPS.map((x) => x.id)).size === SCRAPS.length,
+		"two scraps share an id",
+	);
+	withStorage(() => {
+		// まだ どの 板も 持ち帰って いない：貼られない
+		setProgress(["shallow"], [], []);
+		ok(!pinnedScrap(), "a scrap before any board was carried home");
+		// パン板を 持ち帰った：パン板の 1枚目
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		pushRecord({});
+		const first = pinnedScrap();
+		ok(first?.board === "shallow", `pinned: ${first?.id}`);
+		// 読んだ：この 帰りは もう 貼られない
+		readScrap(first?.id ?? "", loadRecords()[0]?.at ?? 0);
+		ok(!pinnedScrap(), "two scraps in one return");
+		// 次の 帰り：パン板の 2枚目
+		pushRecord({ at: (loadRecords()[0]?.at ?? 0) + 1000 });
+		const second = pinnedScrap();
+		ok(
+			second?.board === "shallow" && second.id !== first?.id,
+			`next return: ${second?.id}`,
+		);
 	});
 });
 
