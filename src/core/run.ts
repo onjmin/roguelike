@@ -684,7 +684,29 @@ export class Run {
 		return false;
 	}
 
-	/** 落とし穴・dat落ちで 次の階へ（下りの 板は 下、上りの 板は 上）。 */
+	/**
+	 * 落とし穴で 1つ 下の 階へ 落ちる（下りの 板は 次の 階、上りの 板は 1つ 前の 階）。落ちたら true。
+	 * 下が なければ（下りの 板の いちばん底・上りの 板の 1階）落ちない。
+	 */
+	pitFall(): boolean {
+		if (!this.dungeon.up) {
+			if (this.s.depth >= this.dungeon.floors) {
+				this.msg("しかし　これより　下は　なかった");
+				return false;
+			}
+			this.enterFloor(this.s.depth + 1, true);
+			return true;
+		}
+		if (this.s.depth <= 1) {
+			this.msg("しかし　これより　下は　なかった");
+			return false;
+		}
+		this.enterFloor(this.s.depth - 1, false);
+		this.msg("下の階に　落ちた");
+		return true;
+	}
+
+	/** dat落ちで 次の階へ（下りの 板は 下、上りの 板は 上）。 */
 	fallDown(): void {
 		if (this.s.depth >= this.dungeon.floors) {
 			this.msg(

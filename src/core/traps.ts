@@ -104,16 +104,12 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			r.warpPlayer();
 			return;
 		case "pit": {
-			// トルネコ1と 同じ：1つ 下の 階へ 落ちて 7〜8の ダメージ（盾で へる）。落ちた 先で ダメージを 言う
-			// （上りの 板には 落とし穴を 置かない。core/floor.ts の pickTrapKind）
+			// トルネコ1と 同じ：1つ 下の 階へ 落ちて 7〜8の ダメージ（盾で へる）。落ちた 先で ダメージを 言う。
+			// 上りの 板（塔・やぐら・山）では 1つ 前の 階へ 落ちる（のぼった ぶんが もどる。1階なら 下は ない）
 			r.se("fall");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			r.msg("落とし穴に　落ちた！");
-			if (r.s.depth >= r.dungeon.floors) {
-				r.fallDown();
-				return;
-			}
-			r.fallDown();
+			if (!r.pitFall()) return;
 			r.se("damage");
 			r.msg(`${dmg}の　ダメージを　受けた`);
 			r.hurtPlayer(dmg, "落とし穴で　たおれた");

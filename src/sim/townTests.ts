@@ -376,7 +376,7 @@ test("carrying out takes the chosen items by content, once", () => {
 	});
 });
 
-test("落とし穴：1つ 下へ 落ちて、落ちた 先で ダメージ（トルネコ1）。上りの 板には 置かない", () => {
+test("落とし穴：1つ 下へ 落ちて、落ちた 先で ダメージ（トルネコ1）。上りの 板は 1つ 前の 階へ", () => {
 	let fell = 0;
 	for (let i = 0; i < 40 && !fell; i++) {
 		const r = Run.create(`pit-${i}`, "main");
@@ -394,12 +394,23 @@ test("落とし穴：1つ 下へ 落ちて、落ちた 先で ダメージ（ト
 		ok(r.p.hp <= hp, "healed by a pit");
 	}
 	ok(fell > 0, "the pit never worked");
-	// 上りの 板（電池板・離島・おんたこ・お祭り）では 引かない
-	for (const d of DUNGEON_IDS.filter((x) => dungeonById(x).up)) {
-		const r = Run.create(`pit-up-${d}`, d);
-		for (let i = 0; i < 300; i++)
-			ok(pickTrapKind(r, 20) !== "pit", `${d}: a pit on a climbing board`);
+	// 上りの 板：1つ 前の 階へ 落ちる。1階では 落ちない
+	let upFell = 0;
+	for (let i = 0; i < 40 && !upFell; i++) {
+		const r = Run.create(`pit-up-${i}`, "tropical");
+		ok(r.pitFall() === false && r.s.depth === 1, "fell below floor 1");
+		r.enterFloor(4, false);
+		triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "pit", found: false });
+		if (r.s.depth === 4) continue;
+		upFell++;
+		ok(r.s.depth === 3, `climbing board: 4 → ${r.s.depth}`);
 	}
+	ok(upFell > 0, "the pit never worked on a climbing board");
+	// 上りの 板でも 落とし穴は 出る
+	const r = Run.create("pit-up-kinds", "festival");
+	let pits = 0;
+	for (let i = 0; i < 300; i++) if (pickTrapKind(r, 20) === "pit") pits++;
+	ok(pits > 0, "no pits on a climbing board");
 });
 
 test("ぷゆゆの お弁当：持ち物が からっぽなら もらえて、出るときに 持っていく。はじめの 持ち物は どの 板も ぷゆゆパン だけ", () => {
