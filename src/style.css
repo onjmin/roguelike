@@ -2630,22 +2630,9 @@ body.shake #app {
 	color: var(--accent);
 }
 
-/* 地図の 置き場。背の 低い 画面では ここが 縮んで（地図が 小さくなって）、下の 札と 選択肢は 縮めない */
-.wm-fit {
-	flex: 0 1 auto;
-	min-height: 0;
-	width: 100%;
-	height: min(calc(var(--app-w) - 24px), 58vh, 560px);
-	container-type: size;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
 .wm-canvas {
-	width: min(100cqw, 100cqh);
+	width: min(calc(var(--app-w) - 24px), 58vh, 560px);
 	aspect-ratio: 1;
-	box-sizing: border-box;
 	image-rendering: pixelated;
 	border: 3px solid var(--win-border);
 	border-radius: 8px;
@@ -2811,14 +2798,43 @@ body.shake #app {
 	color: #ff9a8a;
 }
 
-/* 行き先の 選択肢（2列。カーソルに 地図が ついていく） */
+/* 行き先の 選択肢（2列。カーソルに 地図が ついていく）。メッセージ窓と 同じく 札ごと 下に 浮かせて 地図に 重ねる。
+   地図は 札の 上の あきの まんなかへ（--wm-list-h・--wm-panel-h は ui/worldMap.ts が 高さを 入れる。
+   あきが 足りなければ 下へ はみ出して 札と 一覧の 下に もぐる。地図は 縮めない） */
+.worldmap.wm-listing {
+	justify-content: flex-start;
+	padding-bottom: calc(
+		20px +
+		var(--safe-b) +
+		var(--wm-list-h, 0px) +
+		var(--wm-panel-h, 0px)
+	);
+}
+
+.worldmap.wm-listing > .wm-title {
+	margin-top: auto;
+}
+
+.worldmap.wm-listing > .wm-stage {
+	margin-bottom: auto;
+}
+
+.worldmap.wm-listing > .wm-panel {
+	position: absolute;
+	left: 50%;
+	bottom: calc(20px + var(--safe-b) + var(--wm-list-h, 0px));
+	transform: translateX(-50%);
+	z-index: 1;
+}
+
 .choice.wm-choice {
-	position: static;
+	left: 50%;
+	right: auto;
+	bottom: calc(12px + var(--safe-b));
+	transform: translateX(-50%);
 	width: min(calc(var(--app-w) - 24px), 560px);
 	max-width: none;
-	min-height: 0;
-	/* 縮めると 1行しか 見えなくなる（スマホ）。縮むのは 地図の ほう（.wm-fit） */
-	flex: 0 0 auto;
+	max-height: calc(100% - 24px - var(--safe-t) - var(--safe-b));
 	overflow-y: auto;
 	display: grid;
 	grid-template-columns: 1fr 1fr;

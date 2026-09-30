@@ -385,9 +385,7 @@ export class MapView {
 		this.title = el("div", { class: "wm-title", text: title });
 		this.box = el("div", { class: "worldmap" }, [
 			this.title,
-			el("div", { class: "wm-fit" }, [
-				el("div", { class: "wm-stage" }, [this.canvas, this.bubble]),
-			]),
+			el("div", { class: "wm-stage" }, [this.canvas, this.bubble]),
 			this.panel,
 		]);
 		ctx.ui.appendChild(this.box);
@@ -679,7 +677,17 @@ export const pickColony = async (
 	v.canvas.addEventListener("pointerup", onTap);
 	if (!o.view) void v.show();
 	const choice = new ChoiceWindow(ctx.ui, ctx.input, () => ctx.audio.seHeld);
-	const i = await choice.choose(
+	// 一覧は 札ごと 下に 浮かせる（style.css の .wm-listing）。地図を 上の あきへ 寄せるので 高さを 渡す
+	const listed = new ResizeObserver((es) => {
+		for (const e of es) {
+			const t = e.target as HTMLElement;
+			v.box.style.setProperty(
+				t === v.panel ? "--wm-panel-h" : "--wm-list-h",
+				`${t.offsetHeight}px`,
+			);
+		}
+	});
+	const picking = choice.choose(
 		labels,
 		cancel,
 		(name) => ctx.se(name),
@@ -697,6 +705,13 @@ export const pickColony = async (
 			repeatMs: 320,
 		},
 	);
+	const list = v.box.querySelector<HTMLElement>(".wm-choice");
+	if (list) listed.observe(list);
+	listed.observe(v.panel);
+	v.box.classList.add("wm-listing");
+	const i = await picking;
+	listed.disconnect();
+	v.box.classList.remove("wm-listing");
 	v.canvas.removeEventListener("pointerup", onTap);
 	if (!o.view) await v.close();
 	return spots[i] ?? null;
