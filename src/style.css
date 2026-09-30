@@ -1003,7 +1003,8 @@ body.shake #app {
 	background: rgba(255, 255, 255, 0.06);
 	border: 1px solid rgba(255, 255, 255, 0.25);
 	border-radius: 4px;
-	font: 12px / 1.4 monospace;
+	/* 16px より 小さいと iOS は タップで 拡大して、ピンチを 止めているので 戻せなくなる */
+	font: 16px / 1.4 monospace;
 	word-break: break-all;
 	user-select: text;
 	-webkit-user-select: text;
