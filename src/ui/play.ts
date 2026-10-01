@@ -289,10 +289,12 @@ export class Play {
 	 */
 	private preWarp: Floor | null = null;
 	/**
-	 * 食べる・飲む・読む 演出の あいだ 描く、使う 前の 写し（効き目が 演出より 先に 見えないように）。
-	 * 地図が わかる スレ（reveal）は その 出来事まで、ほかは 演出が おわるまで。使わないときは null。
+	 * 食べる・飲む・読む・振る・投げる 演出の あいだ 描く、使う 前の 写し
+	 * （効き目が 演出より 先に 見えないように）。地図が わかる スレ（reveal）は その 出来事まで、
+	 * 弾や 投げた 物が 飛ぶ ときは それが 着くまで、ほかは 使う 演出が おわるまで。使わないときは null。
 	 */
 	private preUse: Run | null = null;
+	private preUseUntil: "reveal" | "bolt" | null = null;
 	/**
 	 * 出来事を 流して、その ログが ぜんぶ 出るまで ステータスに 出す 値（act の 前の 値。
 	 * HP は 傷ついた・回復した 出来事で、レベルは その 行で 追いつく。のこりは ログに 追いついたら 今の 値に）。
@@ -1516,8 +1518,12 @@ export class Play {
 		const floor0 = run.s.floor;
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
+		const usingCat = using && defOf(using.kind).cat;
 		const pre =
-			using && USE_STYLE[defOf(using.kind).cat]
+			cmd.c === "throw" ||
+			cmd.c === "shoot" ||
+			(usingCat &&
+				(USE_STYLE[usingCat] || usingCat === "staff" || usingCat === "arrow"))
 				? new Run(structuredClone(run.s))
 				: null;
 		// ステータスと 床の 道具は、出来事と ログが 追いつくまで act の 前の まま 見せる
@@ -1547,10 +1553,15 @@ export class Play {
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
-			if (using && run.s.turn !== turn0) {
+			if (pre && run.s.turn !== turn0) {
+				this.preUseUntil = ev.some((e) => e.t === "reveal")
+					? "reveal"
+					: ev.some((e) => e.t === "bolt")
+						? "bolt"
+						: null;
 				this.preUse = pre;
-				await this.useAnim(using.kind);
-				if (!ev.some((e) => e.t === "reveal")) this.preUse = null;
+				if (using) await this.useAnim(using.kind);
+				if (!this.preUseUntil) this.preUse = null;
 			}
 			await this.playEvents(ev, fast);
 			if (this.stopped) return ev;
@@ -1620,7 +1631,7 @@ export class Play {
 		} finally {
 			this.shownFloor = null;
 			this.preWarp = null;
-			this.preUse = null;
+			this.preUse = this.preUseUntil = null;
 			this.busy = false;
 			// ログに 追いついたら 今の 値に（あとの act が あれば そちらに まかせる）
 			this.afterLog(() => {
@@ -2231,6 +2242,9 @@ export class Play {
 				}
 				case "bolt":
 					await this.flyBolt(e, speed);
+					// 振った 弾・投げた 物が 着いてから 効き目を 見せる
+					if (this.preUseUntil === "bolt")
+						this.preUse = this.preUseUntil = null;
 					break;
 				case "fx":
 					// 爆発（地雷・炎上案件）は その場に 火の玉も 出す（見えている ときだけ）。
@@ -2283,7 +2297,7 @@ export class Play {
 						);
 					break;
 				case "reveal":
-					this.preUse = null;
+					this.preUse = this.preUseUntil = null;
 					// わかった所は 地図に 載る。地図を 閉じていれば ひとこと（記録の ログには 残さない）
 					if (!this.mapOn) {
 						this.logQueue.push({ text: "地図を　開いて　みよう", fast });
