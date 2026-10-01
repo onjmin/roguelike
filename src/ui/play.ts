@@ -1512,6 +1512,11 @@ export class Play {
 		this.hudHold ??= this.liveHud();
 		const gen = ++this.holdGen;
 		const items0 = new Map(run.f.items.map((fi) => [fi.item.uid, fi]));
+		// 足もとに 残して 描いていた 道具は もう 拾い済み。拾った 行が 出る 前に 歩きだすと
+		// 元の マスに 残像が 見えるので、次の 行動の 前に 消す
+		this.ghostItems = this.ghostItems.filter(
+			(g) => g.x !== run.p.x || g.y !== run.p.y,
+		);
 		// この act で ボスが たおれたら 勝ちの 音（たおれると 階から 消えるので 先に 覚える）
 		this.bossUid = run.f.boss ?? null;
 		try {
