@@ -286,6 +286,7 @@ export class Play {
 	 * キリコが ワープする ターンで、ワープの 出来事を 流すまで 見せる 階（踏破の 印が ワープ前の 写し）。
 	 * それまでは 見える範囲も キリコの 見えている 位置から 決める（飲む・踏む 演出の あいだに
 	 * ワープ先の 部屋が 先に 明るく なったり 地図に 載ったり しないように）。ワープしないときは null。
+	 * 聖地巡礼スレ・ヲチスレ・発掘スレも 同じ：読む 演出の あいだは 読む 前の 写しで、reveal で 外す。
 	 */
 	private preWarp: Floor | null = null;
 	/**
@@ -558,7 +559,10 @@ export class Play {
 			const pre = this.preWarp && pd ? this.preWarp : null;
 			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : this.run.p;
 			const vis = this.run.f.monsters.filter(
-				(m) => this.run.monsterVisible(m, eye) && !m.disguise && !posing(m),
+				(m) =>
+					this.run.monsterVisible(m, eye, (pre ?? this.run.f).senseMonsters) &&
+					!m.disguise &&
+					!posing(m),
 			);
 			const s: RunState =
 				pre && pd
@@ -677,7 +681,7 @@ export class Play {
 				if (seen) fakeItems.push({ x: m.x, y: m.y, kind: m.disguise });
 				continue;
 			}
-			if (!run.monsterVisible(m, eye)) {
+			if (!run.monsterVisible(m, eye, (warping ?? run.f).senseMonsters)) {
 				this.lastLook.set(d.id, null);
 				continue;
 			}
@@ -1509,6 +1513,13 @@ export class Play {
 		const floor0 = run.s.floor;
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
+		// 地図が わかる スレも、reveal までは 読む 前の 写しで 見せる
+		const sense0 = {
+			mapped: run.f.mapped,
+			senseItems: run.f.senseItems,
+			senseMonsters: run.f.senseMonsters,
+			traps: run.f.traps.map((t) => ({ ...t })),
+		};
 		// ステータスと 床の 道具は、出来事と ログが 追いつくまで act の 前の まま 見せる
 		this.hudHold ??= this.liveHud();
 		const gen = ++this.holdGen;
@@ -1533,6 +1544,8 @@ export class Play {
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			else if (ev.some((e) => e.t === "warp" && e.id === PLAYER_ID))
 				this.preWarp = { ...floor0, seen: seen0 };
+			else if (ev.some((e) => e.t === "reveal"))
+				this.preWarp = { ...floor0, seen: seen0, ...sense0 };
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
@@ -2267,6 +2280,7 @@ export class Play {
 						);
 					break;
 				case "reveal":
+					this.preWarp = null;
 					// わかった所は 地図に 載る。地図を 閉じていれば ひとこと（記録の ログには 残さない）
 					if (!this.mapOn) {
 						this.logQueue.push({ text: "地図を　開いて　みよう", fast });

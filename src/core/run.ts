@@ -483,8 +483,13 @@ export class Run {
 	/**
 	 * そのモンスターがプレイヤーに見えているか（見えない敵・化けた敵は別）。
 	 * from は 見る 位置（画面の 演出で、ワープ前の 位置から 見るとき）。
+	 * sense は ヲチスレの 効き目（画面の 演出で、読む 前の 見え方に するとき）。
 	 */
-	monsterVisible(m: Monster, from: Pos = this.p): boolean {
+	monsterVisible(
+		m: Monster,
+		from: Pos = this.p,
+		sense = this.f.senseMonsters,
+	): boolean {
 		if (m.hp <= 0) return false;
 		// 目が見えないときは となりの敵も 見えない（トルネコ1と おなじ。なぐることは できる）
 		if (this.p.status.blind > 0) return false;
@@ -492,7 +497,7 @@ export class Run {
 		if (d.abilities.some((a) => a.k === "invisible") && !m.status.sealed) {
 			if (!this.f.sight) return false;
 		}
-		if (this.f.senseMonsters) return true;
+		if (sense) return true;
 		return this.playerSees(m, from);
 	}
 
