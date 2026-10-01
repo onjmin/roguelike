@@ -20,6 +20,7 @@ import { drawEquip, type EquipLook } from "./equip";
 import { isUpBoard } from "./floorName";
 import {
 	type Ambient,
+	ANKA_PRESSED,
 	type Theme,
 	TRAP_ICON,
 	themeFor,
@@ -281,6 +282,16 @@ export class FloorView {
 				ctx.closePath();
 				ctx.fill();
 			}
+		}
+		// 踏んだ あとの 安価の罠（罠の 下に。同じ マスに あとから 罠が ふえても 罠が 見える）
+		for (const i of f.pressed ?? []) {
+			if (!f.seen[i]) continue;
+			drawRefInCell(
+				ctx,
+				ANKA_PRESSED,
+				(i % l.w) * TILE - ox,
+				Math.floor(i / l.w) * TILE - oy,
+			);
 		}
 		// 見つけた罠
 		for (const t of opts.traps ?? f.traps) {

@@ -259,5 +259,8 @@ export const TRAP_ICON: Record<TrapKind, string> = {
 	dart: cut(3, 187), // 矢の罠の 色ちがい
 	warp: cut(7, 13),
 	pit: cut(2, 190),
-	anka: cut(4, 187), // 木の 札
+	anka: "pub:sprites/anka_trap.png#0,0,16,16", // >> の 踏み板（scripts/make-anka-trap.mjs）
 };
+
+/** 踏んだ あとの 安価の罠（沈んで >> が 赤く 光る。Floor.pressed）。 */
+export const ANKA_PRESSED = "pub:sprites/anka_trap.png#16,0,16,16";

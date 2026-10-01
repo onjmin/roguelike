@@ -36,6 +36,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 			return;
 		}
 		r.f.traps = r.f.traps.filter((x) => x !== t);
+		r.f.pressed = [...(r.f.pressed ?? []), t.y * r.f.layout.w + t.x];
 		startAnka(r);
 		return;
 	}
