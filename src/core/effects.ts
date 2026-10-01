@@ -340,9 +340,9 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		r.msg("見えないので　読めない");
 		return false;
 	}
-	// アク禁中は スレが 見えない（ターンも スレも 減らない）
+	// アク禁中は スレに 書きこめない（ターンも スレも 減らない）
 	if (p.status.blind > 0) {
-		r.msg("アク禁中で　スレが　見えない");
+		r.msg("アク禁中は　スレに　書きこめない！", "warn");
 		return false;
 	}
 	const need = needsTarget(it);

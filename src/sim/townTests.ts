@@ -179,7 +179,7 @@ test("帰還スレ asks first, then ends the run as a return with the items", ()
 	);
 });
 
-test("スレ can't be read while アク禁 (blind)", () => {
+test("スレ can't be used while アク禁 (blind)", () => {
 	const run = Run.create("town-blind-read");
 	run.s.player.status.blind = 10;
 	const scroll = run.newItem("s_escape");
