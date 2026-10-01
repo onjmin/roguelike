@@ -270,10 +270,11 @@ const M: MonsterDef[] = [
 		flavor: "見つけた　ときの　興奮と、逃げられた　ときの　絶望が　セット",
 	},
 	{
-		// 前の名前は 雪だるま。絵は 氷に とじこめられた 初期アイコン（scripts/make-enemies.mjs）
+		// 前の名前は 雪だるま → 凍結アカ。集団で 荒らしに 来る VIP の 住人（祭り・突撃）。
+		// 絵は RPGEN の「やる夫」（VIP 生まれの AA。前は 氷に とじこめられた 初期アイコン）
 		id: "yuki",
-		name: "凍結アカ",
-		sprite: "pub:sprites/touketsu.png",
+		name: "VIPPER",
+		sprite: "sa:yQuruG",
 		hp: 60,
 		atk: 11,
 		def: 3,
@@ -282,8 +283,8 @@ const M: MonsterDef[] = [
 		weight: 9,
 		abilities: [{ k: "pack" }, { k: "fastMove" }],
 		sleep: "deep",
-		desc: "4体で　凍って　眠っている。1体が　起きると　みんな　起きる",
-		flavor: "1体　起きれば　みんな　起きる。通報の　連鎖と　同じ",
+		desc: "4体で　たむろして　眠っている。1体が　起きると　みんな　起きて　突撃してくる",
+		flavor: "「VIPから　来ました」。祭りの　会場は　ここでは　ない",
 	},
 	{
 		// 前の名前は 石像。絵は そのまま
@@ -320,10 +321,11 @@ const M: MonsterDef[] = [
 	},
 	// ───────── 深い階 ─────────
 	{
-		// 前の名前は ゴーレム。絵は RPGEN の「ゴリラ」（前は ゴーレムの sa:arntMO）
+		// 前の名前は ゴーレム → ゴリラ（ゴーレムの 絵に 合わせた だけで 元ネタが なかった）。
+		// 「はい論破」の 論破厨。絵は RPGEN の J民の「メガネ」（前は ゴリラ sa:6rFg1q）
 		id: "golem",
-		name: "ゴリラ",
-		sprite: "sa:6rFg1q",
+		name: "論破厨",
+		sprite: "sa:V7UXpN",
 		hp: 52,
 		atk: 32,
 		def: 27,
@@ -331,8 +333,8 @@ const M: MonsterDef[] = [
 		floors: [16, 24],
 		weight: 27,
 		abilities: [{ k: "knockback", rate: 1 / 3 }],
-		desc: "なぐった　相手を　投げとばす。壁に　ぶつかると　痛い",
-		flavor: "話し合いの　余地は　ない。握力で　決める",
+		desc: "なぐった　相手を　論破して　吹きとばす。壁に　ぶつかると　痛い",
+		flavor: "「はい　論破」。相手が　あきれて　去るのを、勝ちと　呼ぶ",
 	},
 	{
 		id: "ninpo",

@@ -1,15 +1,14 @@
-// 名前に 絵が 合っていなかった 敵 5体の 歩行グラ（32x64・16x16 が 2コマ×4方向。行は 上・右・下・左）を書き出す
+// 名前に 絵が 合っていなかった 敵 4体の 歩行グラ（32x64・16x16 が 2コマ×4方向。行は 上・右・下・左）を書き出す
 // （node scripts/make-enemies.mjs）。
 //
 //   釣り（tsuri.png）         … 顔の ある 赤白の 浮きと、下に 釣り針。2コマ目は 1ドット 沈む（アタリ）
 //   粘着アンチ（nenchaku.png） … むらさきの ねばねば。怒り眉。2コマ目は つぶれて、しずくが のびる
 //   連投荒らし（rento.png）   … 怒った 顔の ふきだし。うしろに うすい 残像。2コマ目は 残像が ずれる
-//   凍結アカ（touketsu.png）   … 氷の かたまりに とじこめられた、初期アイコンの 人がた。2コマ目は 光が 動く
 //   炎上案件（enjo.png）       … 怒った 顔の スマホから 炎が 立つ。2コマ目は 炎が ゆれる。背中は カメラの レンズ
 //
 // 右・左は 顔を その向きへ 1ドット 寄せる。上（背中）は 顔なし。乱数は 使わない（毎回 同じ 絵）。
 //
-//   node scripts/make-enemies.mjs                          … public/sprites/ に 5枚
+//   node scripts/make-enemies.mjs                          … public/sprites/ に 4枚
 //   node scripts/make-enemies.mjs --out dir --preview dir2 … 別の 場所へ（プレビューは 8倍）
 //
 // 依存なし（zlib だけ）。
@@ -266,50 +265,6 @@ const rento = () => {
 	return img;
 };
 
-// ───────────────── 凍結アカ：氷に とじこめられた 初期アイコン ─────────────────
-
-const ICE = hex("#bfe8f5", 235);
-const ICE_TOP = hex("#e6f7fc");
-const ICE_SIDE = hex("#95cfe3", 235);
-const SIL = hex("#7f8ea6");
-const GLINT = hex("#ffffff");
-
-const touketsu = () => {
-	const img = sheet();
-	DIRS.forEach((dir, row) => {
-		for (const col of [0, 1]) {
-			const put = img.put;
-			shape(
-				put,
-				col,
-				row,
-				(x, y) => x >= 2 && x <= 13 && y >= 3 && y <= 15,
-				(x, y) => (y <= 5 ? ICE_TOP : x >= 12 ? ICE_SIDE : ICE),
-			);
-			// 初期アイコンの 人がた（顔は ない）。右・左は 頭を 寄せる
-			const head = ellipse(8 + shiftOf(dir) * 0.6, 8.5, 2.2, 2.2);
-			const shoulders = ellipse(8, 15, 4.4, 3.4);
-			for (let y = 6; y <= 14; y++)
-				for (let x = 3; x <= 12; x++) if (head(x, y) || shoulders(x, y)) put(col, row, x, y, SIL);
-			// 光（2コマ目は 下へ）
-			const g = col
-				? [
-						[4, 9],
-						[4, 10],
-						[5, 8],
-					]
-				: [
-						[4, 6],
-						[4, 7],
-						[5, 5],
-					];
-			for (const [x, y] of g) put(col, row, x, y, GLINT);
-			put(col, row, 11, col ? 12 : 13, GLINT);
-		}
-	});
-	return img;
-};
-
 // ───────────────── 炎上案件：燃えている スマホ ─────────────────
 
 const FIRE_RED = hex("#e03800");
@@ -402,7 +357,6 @@ for (const [name, img] of [
 	["tsuri", tsuri()],
 	["nenchaku", nenchaku()],
 	["rento", rento()],
-	["touketsu", touketsu()],
 	["enjo", enjo()],
 ]) {
 	save(join(outDir, `${name}.png`), img);

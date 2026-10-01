@@ -37,7 +37,7 @@
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
 | まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |
 | コピペ（敵） | `sprites/copipe.png` | Claude が 描いた もの。2枚 かさなった 紙（コピーの アイコン）に 顔（`scripts/make-copipe.mjs`） |
-| 釣り・粘着アンチ・連投荒らし・凍結アカ（敵） | `sprites/tsuri.png` `nenchaku.png` `rento.png` `touketsu.png` | Claude が 描いた もの（`scripts/make-enemies.mjs`）。浮きと 釣り針・むらさきの ねばねば・怒った ふきだしと 残像・氷に とじこめられた 初期アイコン |
+| 釣り・粘着アンチ・連投荒らし（敵） | `sprites/tsuri.png` `nenchaku.png` `rento.png` | Claude が 描いた もの（`scripts/make-enemies.mjs`）。浮きと 釣り針・むらさきの ねばねば・怒った ふきだしと 残像 |
 | 炎上案件（敵） | `sprites/enjo.png` | Claude が 描いた もの。怒った 顔の 画面の スマホから 炎（`scripts/make-enemies.mjs`） |
 | 植民地（板）だけの 敵 7体 | `sprites/panhei.png` `kinonyan.png` `ofurou.png` `denchan.png` `natsuko.png` `takonomin.png` `mashii.png` | Claude が 描いた 仮（`scripts/make-colony-enemies.mjs`）。板の マスコットの 顔文字から：パン兵 `|｀°Ο°´|`（食パンの 兵隊・かぶと）・きのにゃん `[ｷ・Д・ﾉ]`（赤い かさの きのこ）・おふ郎くん `[o'ω'f]`（手ぬぐいと 湯気）・でんちゃん `{+'w'-]`（乾電池・漏電の 火花）・ナツコ `~｀i,/ ﾟヮﾟﾉヽi´~`（ヤシの木の 精）・たこのみん `∬*ﾟ ヮﾟル`（たこ焼き）・マシー `(o M c)`（丸い 顔）。描きなおして ほしい 本命 |
 

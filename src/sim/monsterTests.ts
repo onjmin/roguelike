@@ -1068,7 +1068,7 @@ test(
 	},
 );
 
-// ───────────────── 凍結アカ（pack） ─────────────────
+// ───────────────── VIPPER（pack） ─────────────────
 
 test("yuki", "pack: hitting one wakes the others within 3", () => {
 	const r = arena("yuki");
@@ -1244,7 +1244,7 @@ test(
 	},
 );
 
-// ───────────────── ゴリラ（knockback） ─────────────────
+// ───────────────── 論破厨（knockback） ─────────────────
 
 test("golem", "knockback: pushes the player 2 tiles away", () => {
 	const r = arena("golem");

@@ -509,7 +509,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "祭りの親分マシーを　たおした",
 		},
-		// 野次馬（コピペ）・群れ（凍結アカ）・炎上
+		// 野次馬（コピペ）・群れ（VIPPER）・炎上
 		foes: { copipe: 2, yuki: 2, bomb: 2 },
 		floors: 13,
 		items: MAIN_ITEMS,
