@@ -31,6 +31,7 @@ import {
 	type Command,
 	type Floor,
 	type GameEvent,
+	type Monster,
 	PLAYER_ID,
 	type RescueKind,
 	type RunState,
@@ -303,6 +304,12 @@ export class Play {
 	 * キリコの 見た目（アク禁・装備）は、それを 伝える 行（look）まで act の 前の まま
 	 * （削除人に なぐられる 前の 1歩で 画面が 暗く なったり 武器が 消えたり しないように）。
 	 */
+	/**
+	 * 敵の 寝ている・置物の 見た目は、その 敵が 動く・なぐる まで、だれかが 傷を 受ける まで act の 前の まま
+	 * （群れの 1体を なぐると、なぐる 前に 仲間の Z が 消えたり しないように）。uid → 前の 見た目。
+	 */
+	private monHold: Map<number, { asleep: boolean; posing: boolean }> | null =
+		null;
 	private lookHold: {
 		blind: boolean;
 		weapon: string | null;
@@ -721,16 +728,17 @@ export class Play {
 				this.lastLook.set(d.id, null);
 				continue;
 			}
+			const was = this.monHold?.get(m.uid);
 			const look = {
 				// 動きだす 前の 置物は、ただの 置物と 同じ 絵（歩かず 前向き）
 				sprite: dazed
 					? KIRIKO_WALK
-					: posing(m)
+					: (was?.posing ?? posing(m))
 						? (mdef(m).still ?? d.sprite)
 						: d.sprite,
 				// まどわされていると みんな 同じ 大きさの キリコに 見える
 				scale: dazed ? undefined : d.scale,
-				asleep: m.status.sleep > 0 || m.status.paralyze > 0,
+				asleep: was?.asleep ?? (m.status.sleep > 0 || m.status.paralyze > 0),
 			};
 			this.lastLook.set(d.id, look);
 			figs.push({ ...d, ...look });
@@ -1553,6 +1561,11 @@ export class Play {
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
 		const traps0 = run.f.traps.map((t) => ({ ...t }));
+		const monLook = (m: Monster) => ({
+			asleep: m.status.sleep > 0 || m.status.paralyze > 0,
+			posing: posing(m),
+		});
+		const mons0 = new Map(run.f.monsters.map((m) => [m.uid, monLook(m)]));
 		const look0 = {
 			blind: run.p.status.blind > 0,
 			weapon: run.weapon()?.kind ?? null,
@@ -1601,6 +1614,16 @@ export class Play {
 				this.trapHold = traps0;
 			// 前の act の 見た目を まだ 待って いれば そのまま（行が 来たら 外れる）
 			if (ev.some((e) => e.t === "look")) this.lookHold ??= look0;
+			if (run.s.floor === floor0) {
+				const held = new Map<number, { asleep: boolean; posing: boolean }>();
+				for (const m of run.f.monsters) {
+					const a = mons0.get(m.uid);
+					const b = monLook(m);
+					if (a && (a.asleep !== b.asleep || a.posing !== b.posing))
+						held.set(m.uid, a);
+				}
+				if (held.size) this.monHold = held;
+			}
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
@@ -1684,6 +1707,7 @@ export class Play {
 			this.preWarp = null;
 			this.preUse = this.preUseUntil = null;
 			this.trapHold = null;
+			this.monHold = null;
 			this.busy = false;
 			// ログに 追いついたら 今の 値に（あとの act が あれば そちらに まかせる）
 			this.afterLog(() => {
@@ -2116,6 +2140,7 @@ export class Play {
 					if (m.t !== "move" && m.t !== "turn") break;
 					const d = this.disp.get(m.id);
 					if (d) d.dir = m.dir;
+					this.monHold?.delete(m.id);
 					if (m.t === "move") {
 						const path = paths.get(m.id) ?? [];
 						path.push(m.to);
@@ -2188,6 +2213,7 @@ export class Play {
 					break;
 				}
 				case "attack": {
+					this.monHold?.delete(e.id);
 					const d = this.disp.get(e.id);
 					if (d) {
 						d.dir = e.dir;
@@ -2198,6 +2224,8 @@ export class Play {
 					break;
 				}
 				case "hurt": {
+					// 敵が 傷を 受けたら（群れの 仲間も 起きる）ここから 今の 見た目
+					if (e.id !== PLAYER_ID) this.monHold = null;
 					if (e.id === PLAYER_ID && e.hp !== undefined && this.hudHold)
 						this.hudHold.hp = e.hp;
 					// ボスの ゲージは 傷の たびに 減らす（ゲージは act の 前の 値から）
@@ -2220,6 +2248,7 @@ export class Play {
 					break;
 				}
 				case "miss":
+					if (e.id !== PLAYER_ID) this.monHold = null;
 					if (this.isShown(e.id, e.pos)) this.pop(e.pos, "ミス", "miss");
 					combat = true;
 					await wait(60 * speed);
