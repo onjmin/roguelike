@@ -401,6 +401,9 @@ export const mobScript =
 		await sayAs(s, id, idleOf(def));
 	};
 
+/** 小ネタが 出るかの さいころ（試しでは 出ないように 差しかえる）。 */
+export const tipDice = { roll: (): number => Math.random() };
+
 /** いつもの ひとことの かわりに、まれに 小ネタ（まだ 聞いていない もの。1回の 帰りに 1つまで）。 */
 const tip = async (s: Story, def: MobDef, at: number): Promise<boolean> => {
 	const v = load();
@@ -410,7 +413,7 @@ const tip = async (s: Story, def: MobDef, at: number): Promise<boolean> => {
 	const left = TIPS.filter(
 		(t) => !v.tips.includes(t.key) && (!t.when || t.when(x, unlocked)),
 	);
-	if (!left.length || Math.random() >= TIP_CHANCE) return false;
+	if (!left.length || tipDice.roll() >= TIP_CHANCE) return false;
 	const t = left[Math.floor(Math.random() * left.length)];
 	if (!t) return false;
 	v.tips.push(t.key);

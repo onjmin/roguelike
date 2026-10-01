@@ -227,6 +227,7 @@ import {
 	reactionOf,
 	senkyoOpen,
 	senkyoScript,
+	tipDice,
 } from "../ui/villageMobs";
 import {
 	forgetOpeningMemo,
@@ -2223,18 +2224,25 @@ test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick 
 
 export const runVillageTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];
-	for (const c of CASES) {
-		try {
-			await c.run();
-			out.push({ id: "village", name: c.name, ok: true });
-		} catch (e) {
-			out.push({
-				id: "village",
-				name: c.name,
-				ok: false,
-				reason: e instanceof Error ? e.message : String(e),
-			});
+	// 小ネタは 運しだいで いつもの ひとことを 置きかえるので、試しでは 出さない
+	const roll = tipDice.roll;
+	tipDice.roll = () => 1;
+	try {
+		for (const c of CASES) {
+			try {
+				await c.run();
+				out.push({ id: "village", name: c.name, ok: true });
+			} catch (e) {
+				out.push({
+					id: "village",
+					name: c.name,
+					ok: false,
+					reason: e instanceof Error ? e.message : String(e),
+				});
+			}
 		}
+	} finally {
+		tipDice.roll = roll;
 	}
 	return out;
 };
