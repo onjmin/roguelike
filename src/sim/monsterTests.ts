@@ -2174,6 +2174,24 @@ test("staff", "w_rebut: found with 0 charges, then kills in one shot", () => {
 	ok(it.charges === 0, "no charge was used");
 });
 
+test("scroll", "s_recharge: a staff gains charges, a scroll is copied", () => {
+	const r = arena("recharge");
+	const staff = give(r, "w_bolt");
+	const c0 = staff.charges;
+	turn(r, { c: "use", item: give(r, "s_recharge").uid, target: staff.uid });
+	ok(staff.charges > c0, "the staff gained no charges");
+	const blast = give(r, "s_blast");
+	const n0 = r.p.items.length;
+	turn(r, { c: "use", item: give(r, "s_recharge").uid, target: blast.uid });
+	const copies = r.p.items.filter((i) => i.kind === "s_blast");
+	ok(copies.length === 2, `s_blast count ${copies.length}`);
+	ok(r.p.items.length === n0 + 1, "the read 次スレ was not used up");
+	ok(new Set(r.p.items.map((i) => i.uid)).size === r.p.items.length, "uid");
+	const herb = give(r, "h_heal");
+	turn(r, { c: "use", item: give(r, "s_recharge").uid, target: herb.uid });
+	ok(r.p.items.filter((i) => i.kind === "h_heal").length === 1, "herb copied");
+});
+
 test("scroll", "s_gacha: every one of the 8 outcomes can happen", () => {
 	const marks: [string, (r: Run, depth0: number) => boolean][] = [
 		["全快", (r) => r.s.log.some((l) => l.includes("満タンに"))],

@@ -11,6 +11,7 @@
 
 import { ANKA_DUE, ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
+import { canTarget } from "../core/effects";
 import {
 	DIRS8,
 	type Dir8,
@@ -1552,17 +1553,13 @@ export class Play {
 			this.syncDisp();
 			if (!this.rp && !run.s.end) await this.faceAttacker(ev);
 			// スレの「どれに？」（メニューを通さずに来たとき）
-			const pick = ev.find((e) => e.t === "fx" && e.kind.startsWith("pick:"));
+			const pick = ev.some((e) => e.t === "fx" && e.kind === "pick");
 			// （リプレイでは 次のコマンドに えらんだ相手が入っている）
-			if (pick && pick.t === "fx" && cmd.c === "use" && !this.rp) {
+			const scroll = cmd.c === "use" ? run.findItem(cmd.item) : undefined;
+			if (pick && scroll && cmd.c === "use" && !this.rp) {
 				this.busy = false;
-				const staffOnly = pick.kind === "pick:staff";
-				const uid = await pickItem(
-					this.ctx,
-					run,
-					"どれに　つかう？",
-					(it) =>
-						it.uid !== cmd.item && (!staffOnly || it.kind.startsWith("w_")),
+				const uid = await pickItem(this.ctx, run, "どれに　つかう？", (it) =>
+					canTarget(scroll, it),
 				);
 				if (uid !== null)
 					return this.exec({ c: "use", item: cmd.item, target: uid });

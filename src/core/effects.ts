@@ -1,7 +1,7 @@
 // 道具を使う・投げる。
 //
 // - 草・スレは使うと正体がわかる。杖は弾が敵に当たって効き目が見えたらわかる。
-// - 相手を選ぶスレ（鑑定・充填・飯テロ）は target が要る。無いときは時間を進めずに
+// - 相手を選ぶスレ（鑑定・次スレ・飯テロ）は target が要る。無いときは時間を進めずに
 //   「えらんで」と知らせる（needsTarget）。キャンセルすれば減らない。
 
 import { ankaHit } from "./anka";
@@ -44,15 +44,17 @@ import {
 import type { Run } from "./run";
 import { type AnkaKind, HOLD, type Item, type Monster } from "./types";
 
-/** 使うときに相手の道具を選ぶ種類。 */
-export const TARGET_KINDS: Record<string, "any" | "staff"> = {
-	s_appraise: "any",
-	s_recharge: "staff",
-	s_bread: "any",
-};
+/**
+ * 使うときに相手の道具を選ぶ種類。どれも 同じ 一覧から 選ぶ（一覧で 正体が ばれないように。
+ * 合わない 相手に 使えば、読んだうえで 何も 起きない）。
+ */
+const TARGET_KINDS = new Set(["s_appraise", "s_recharge", "s_bread"]);
 
-export const needsTarget = (it: Item): "any" | "staff" | null =>
-	TARGET_KINDS[it.kind] ?? null;
+export const needsTarget = (it: Item): boolean => TARGET_KINDS.has(it.kind);
+
+/** 「どれに　つかう？」の 一覧に 出す 道具（使う スレ自身と 目的の品は 出さない）。 */
+export const canTarget = (it: Item, x: Item): boolean =>
+	x.uid !== it.uid && !isKeyItem(x.kind);
 
 /** 使う（食べる・飲む・読む・振る・装備する）。時間が進んだら true。 */
 export const useItem = (r: Run, uid: number, target?: number): boolean => {
@@ -348,7 +350,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 	const need = needsTarget(it);
 	if (need && target === undefined) {
 		// どれを？ と聞かれる（キャンセルすれば減らない）
-		r.emit({ t: "fx", kind: `pick:${need}`, pos: { x: p.x, y: p.y } });
+		r.emit({ t: "fx", kind: "pick", pos: { x: p.x, y: p.y } });
 		return false;
 	}
 	const tgt = target !== undefined ? r.findItem(target) : undefined;
@@ -511,12 +513,16 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			r.msg("何も　起きなかった");
 			break;
 		case "s_recharge": {
-			if (!tgt || defOf(tgt.kind).cat !== "staff") {
-				r.msg("何も　起きなかった");
-				break;
-			}
-			tgt.charges = Math.min(99, tgt.charges + r.rng.range(1, 5));
-			r.msg(`${r.name(tgt)}の　回数が　ふえた`, "good");
+			// 杖なら 回数が ふえ、スレなら 同じ スレが もう1つ 立つ（次スレ）。ほかは 何も 起きない
+			const cat = tgt && defOf(tgt.kind).cat;
+			if (tgt && cat === "staff") {
+				tgt.charges = Math.min(99, tgt.charges + r.rng.range(1, 5));
+				r.msg(`${r.name(tgt)}の　回数が　ふえた`, "good");
+			} else if (tgt && cat === "scroll") {
+				// 読んだ 次スレの ぶん 1つ 空いているので かならず 入る
+				r.addItem({ ...tgt, uid: r.s.nextUid++ });
+				r.msg(`${r.name(tgt)}の　次スレが　立った`, "good");
+			} else r.msg("何も　起きなかった");
 			break;
 		}
 		case "s_bread": {

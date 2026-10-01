@@ -407,7 +407,8 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			if (need) {
 				const target =
 					scroll.kind === "s_recharge"
-						? items.find((i) => defOf(i.kind).cat === "staff")
+						? (items.find((i) => defOf(i.kind).cat === "staff") ??
+							items.find((i) => i !== scroll && defOf(i.kind).cat === "scroll"))
 						: scroll.kind === "s_bread"
 							? (items.find((i) => i.kind === "h_poison" && known(i)) ??
 								items.find((i) => i !== scroll && !r.isEquipped(i)))

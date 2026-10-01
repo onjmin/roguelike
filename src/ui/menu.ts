@@ -8,7 +8,7 @@
 
 import { HUNGER_UNIT, INVENTORY_MAX } from "../core/balance";
 import { MONSTERS } from "../core/data/monsters";
-import { needsTarget } from "../core/effects";
+import { canTarget, needsTarget } from "../core/effects";
 import {
 	defOf,
 	isKeyItem,
@@ -387,20 +387,11 @@ const itemActions = async (
 			case "unequip":
 				return command({ c: "unequip", item: it.uid });
 			case "use": {
-				// 相手を選ぶスレ（鑑定・充填・飯テロ）。聞かれること自体で種類がしぼれるのはトルネコと同じ
-				const need = needsTarget(it);
-				if (!need) return command({ c: "use", item: it.uid });
-				// 正体のわからないうちは、どのスレでも同じ一覧（杖だけ出すと 充填だと ばれるので）。
-				// 杖でない物に 充填を使えば、読んだうえで何も起きない
-				const staffOnly = need === "staff" && isKnownKind(run.s, it.kind);
-				const target = await pickItem(
-					ctx,
-					run,
-					"どれに　つかう？",
-					(x) =>
-						x.uid !== it.uid &&
-						!isKeyItem(x.kind) &&
-						(!staffOnly || defOf(x.kind).cat === "staff"),
+				// 相手を選ぶスレ（鑑定・次スレ・飯テロ）。聞かれること自体で種類がしぼれるのはトルネコと同じ。
+				// 一覧は どのスレでも 同じ（しぼると 正体が ばれるので）
+				if (!needsTarget(it)) return command({ c: "use", item: it.uid });
+				const target = await pickItem(ctx, run, "どれに　つかう？", (x) =>
+					canTarget(it, x),
 				);
 				// キャンセルなら読まずに もどる（スレは減らない）
 				if (target !== null) return command({ c: "use", item: it.uid, target });
