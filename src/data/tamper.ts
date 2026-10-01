@@ -77,8 +77,8 @@ export const TAMPER_TALK: Record<Speaker, readonly string[]> = {
 
 /** ゼロの 帳簿（{points} は 帳簿の 数）。 */
 export const TAMPER_LEDGER: readonly string[] = [
-	"帳簿には　{points}レス、と　あります。\n……でも、合わないんです",
-	"帳簿は　{points}レス。\n……ほんとうの　数は、わかりません",
+	"帳簿には　{points}円、と　あります。\n……でも、合わないんです",
+	"帳簿は　{points}円。\n……ほんとうの　数は、わかりません",
 	"……帳簿は、閉じました",
 ];
 

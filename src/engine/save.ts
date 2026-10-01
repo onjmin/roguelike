@@ -621,7 +621,7 @@ const RETURNED_KEEP = 50;
 
 /** 1回の 帰りの 売り上げ。 */
 export type Sale = {
-	/** 売れた レス。 */
+	/** 売れた 額（円）。 */
 	points: number;
 	dungeon: DungeonId;
 	kind: "clear" | "escape";

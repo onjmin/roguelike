@@ -1,4 +1,4 @@
-// 1回の 冒険で 平均 何レス 売れるかを ボットで 数える（node scripts/sales-sim.mjs）。
+// 1回の 冒険で 平均 何円 売れるかを ボットで 数える（node scripts/sales-sim.mjs）。
 // 町の 段・小段の 刻み（core/town.ts の STAGE_POINTS・TOWN_STEPS）を 決める ための 目安。
 //
 //   node scripts/sales-sim.mjs            … 本筋 4板と 寄り道 4板を 各 200回

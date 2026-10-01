@@ -177,7 +177,7 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 	const html =
 		`<div class="sales-kpis">${kpi("合計", `${t.points}`)}${kpi("前回", last ? `${last.points}` : "—")}${kpi("平均", t.sales.length ? `${avg}` : "—")}</div>` +
 		bars;
-	await infoWindow(ctx, `売り上げ　（単位：レス）`, html, {
+	await infoWindow(ctx, `売り上げ　（単位：円）`, html, {
 		cls: "sales-window",
 	});
 };
