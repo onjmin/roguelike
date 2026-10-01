@@ -25,7 +25,7 @@ import { defOf, itemHidden } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
 import { mdef, monsterName, posing } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
-import type { Run } from "../core/run";
+import { Run } from "../core/run";
 import {
 	type Anka,
 	type Command,
@@ -286,9 +286,13 @@ export class Play {
 	 * キリコが ワープする ターンで、ワープの 出来事を 流すまで 見せる 階（踏破の 印が ワープ前の 写し）。
 	 * それまでは 見える範囲も キリコの 見えている 位置から 決める（飲む・踏む 演出の あいだに
 	 * ワープ先の 部屋が 先に 明るく なったり 地図に 載ったり しないように）。ワープしないときは null。
-	 * 聖地巡礼スレ・ヲチスレ・発掘スレも 同じ：読む 演出の あいだは 読む 前の 写しで、reveal で 外す。
 	 */
 	private preWarp: Floor | null = null;
+	/**
+	 * 食べる・飲む・読む 演出の あいだ 描く、使う 前の 写し（効き目が 演出より 先に 見えないように）。
+	 * 地図が わかる スレ（reveal）は その 出来事まで、ほかは 演出が おわるまで。使わないときは null。
+	 */
+	private preUse: Run | null = null;
 	/**
 	 * 出来事を 流して、その ログが ぜんぶ 出るまで ステータスに 出す 値（act の 前の 値。
 	 * HP は 傷ついた・回復した 出来事で、レベルは その 行で 追いつく。のこりは ログに 追いついたら 今の 値に）。
@@ -554,24 +558,22 @@ export class Play {
 		this.updateCamera();
 		this.updateStatus();
 		if (this.mapOn) {
-			// ワープの 出来事までは ワープ前の 見え方で（draw と 同じ）
+			// ワープの 出来事までは ワープ前の 見え方で（draw と 同じ）。使う 演出の あいだは 使う 前
+			const run = this.preUse ?? this.run;
 			const pd = this.disp.get(PLAYER_ID);
-			const pre = this.preWarp && pd ? this.preWarp : null;
-			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : this.run.p;
-			const vis = this.run.f.monsters.filter(
-				(m) =>
-					this.run.monsterVisible(m, eye, (pre ?? this.run.f).senseMonsters) &&
-					!m.disguise &&
-					!posing(m),
+			const pre = !this.preUse && this.preWarp && pd ? this.preWarp : null;
+			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : run.p;
+			const vis = run.f.monsters.filter(
+				(m) => run.monsterVisible(m, eye) && !m.disguise && !posing(m),
 			);
 			const s: RunState =
 				pre && pd
 					? {
-							...this.run.s,
+							...run.s,
 							floor: pre,
-							player: { ...this.run.s.player, ...eye },
+							player: { ...run.s.player, ...eye },
 						}
-					: this.run.s;
+					: run.s;
 			drawMap(this.mapEl, s, {
 				hideItems: this.hiddenItems,
 				visibleMonsters: vis,
@@ -619,11 +621,12 @@ export class Play {
 	}
 
 	private draw(t: number): void {
-		const run = this.run;
+		const run = this.preUse ?? this.run;
 		// 落ちている途中は、階の札まで 前の階を キリコの見えている位置から映す（敵は もう いない）
 		const shown = this.shownFloor;
 		const pd = this.disp.get(PLAYER_ID);
-		const warping = !shown && this.preWarp && pd ? this.preWarp : null;
+		const warping =
+			!shown && !this.preUse && this.preWarp && pd ? this.preWarp : null;
 		const s: RunState =
 			shown && pd
 				? {
@@ -681,7 +684,7 @@ export class Play {
 				if (seen) fakeItems.push({ x: m.x, y: m.y, kind: m.disguise });
 				continue;
 			}
-			if (!run.monsterVisible(m, eye, (warping ?? run.f).senseMonsters)) {
+			if (!run.monsterVisible(m, eye)) {
 				this.lastLook.set(d.id, null);
 				continue;
 			}
@@ -1513,13 +1516,10 @@ export class Play {
 		const floor0 = run.s.floor;
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
-		// 地図が わかる スレも、reveal までは 読む 前の 写しで 見せる
-		const sense0 = {
-			mapped: run.f.mapped,
-			senseItems: run.f.senseItems,
-			senseMonsters: run.f.senseMonsters,
-			traps: run.f.traps.map((t) => ({ ...t })),
-		};
+		const pre =
+			using && USE_STYLE[defOf(using.kind).cat]
+				? new Run(structuredClone(run.s))
+				: null;
 		// ステータスと 床の 道具は、出来事と ログが 追いつくまで act の 前の まま 見せる
 		this.hudHold ??= this.liveHud();
 		const gen = ++this.holdGen;
@@ -1544,12 +1544,14 @@ export class Play {
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			else if (ev.some((e) => e.t === "warp" && e.id === PLAYER_ID))
 				this.preWarp = { ...floor0, seen: seen0 };
-			else if (ev.some((e) => e.t === "reveal"))
-				this.preWarp = { ...floor0, seen: seen0, ...sense0 };
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
-			if (using && run.s.turn !== turn0) await this.useAnim(using.kind);
+			if (using && run.s.turn !== turn0) {
+				this.preUse = pre;
+				await this.useAnim(using.kind);
+				if (!ev.some((e) => e.t === "reveal")) this.preUse = null;
+			}
 			await this.playEvents(ev, fast);
 			if (this.stopped) return ev;
 			// 倒したら、演出中に 押しておいた 次の 攻撃は 捨てる（相手の いない 空振りに ならないように）
@@ -1618,6 +1620,7 @@ export class Play {
 		} finally {
 			this.shownFloor = null;
 			this.preWarp = null;
+			this.preUse = null;
 			this.busy = false;
 			// ログに 追いついたら 今の 値に（あとの act が あれば そちらに まかせる）
 			this.afterLog(() => {
@@ -2280,7 +2283,7 @@ export class Play {
 						);
 					break;
 				case "reveal":
-					this.preWarp = null;
+					this.preUse = null;
 					// わかった所は 地図に 載る。地図を 閉じていれば ひとこと（記録の ログには 残さない）
 					if (!this.mapOn) {
 						this.logQueue.push({ text: "地図を　開いて　みよう", fast });
