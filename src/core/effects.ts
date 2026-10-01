@@ -516,10 +516,17 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			// 杖なら 回数が ふえ、スレなら 同じ スレが もう1つ 立つ（次スレ）。ほかは 何も 起きない
 			const cat = tgt && defOf(tgt.kind).cat;
 			if (tgt && cat === "staff") {
-				// 名前は ふやす 前の 回数で（「[3]の 回数が ふえた」。ふえた あとの 数を 言わない）
+				// 回数が 見えて いれば 元 → 今（「論破の杖の　回数が　ふえた　［3］→［7］」）
 				const before = r.name(tgt);
+				const from = tgt.charges;
 				tgt.charges = Math.min(99, tgt.charges + r.rng.range(1, 5));
-				r.msg(`${before}の　回数が　ふえた`, "good");
+				const shown = before !== r.name(tgt);
+				r.msg(
+					shown
+						? `${before.replace(/［\d+］$/, "")}の　回数が　ふえた　［${from}］→［${tgt.charges}］`
+						: `${before}の　回数が　ふえた`,
+					"good",
+				);
 			} else if (tgt && cat === "scroll") {
 				// 読んだ 次スレの ぶん 1つ 空いているので かならず 入る
 				r.addItem({ ...tgt, uid: r.s.nextUid++ });
