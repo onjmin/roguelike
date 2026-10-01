@@ -172,7 +172,7 @@ const M: MonsterDef[] = [
 		floors: [7, 15],
 		weight: 37,
 		abilities: [{ k: "pickup" }],
-		desc: "床の　道具を　拾って　持ち歩く。たおせば　落とす",
+		desc: "床の　道具を　回収して　持ち歩く。たおせば　落とす",
 		flavor: "拾った　ものは　自分の　もの。出典は　書かない",
 	},
 	{

@@ -451,14 +451,17 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		return;
 	}
 
-	// 床の道具をさらう
+	// 床の道具を回収する
 	if (has(m, "pickup") && !m.carry) {
 		const here = r.itemAt(m.x, m.y);
 		if (here && !isKeyItem(here.item.kind) && !r.isWardItem(here)) {
 			r.f.items = r.f.items.filter((i) => i !== here);
 			m.carry = here.item;
 			if (r.playerSees(m))
-				r.msg(`${seenName(r, m)}は　${r.name(here.item)}を　さらった`, "warn");
+				r.msg(
+					`${seenName(r, m)}は　${r.name(here.item)}を　回収した！`,
+					"warn",
+				);
 			return;
 		}
 		if (adjacentDir() === null) {

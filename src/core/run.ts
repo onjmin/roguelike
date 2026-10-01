@@ -994,7 +994,12 @@ export class Run {
 		if (m.carry) {
 			const it = m.carry;
 			m.carry = null;
-			if (!burnt) this.placeItem(it, m);
+			if (!burnt) {
+				// 回収した 道具は 返ってきたと わかるように 言う
+				if (d.abilities.some((a) => a.k === "pickup"))
+					this.msg(`${monsterName(this, m)}は　${this.name(it)}を　落とした`);
+				this.placeItem(it, m);
+			}
 		}
 		// 必ず落とす道具（メタルぷゆゆ → 成長の実）。何を落とすかは 知られているので 正体もわかる
 		if (d.drop && !burnt) {
