@@ -28,9 +28,11 @@ import {
 	depositItem,
 	forgetProgressMemo,
 	giveLunch,
+	hasRunSave,
 	loadProgress,
 	loadRecords,
 	loadReplays,
+	loadRun,
 	loadTown,
 	noteRunEnd,
 	replayMatches,
@@ -554,6 +556,50 @@ test("unlocks last for the session when storage cannot be written", () => {
 			"the main dungeon closed again",
 		);
 	}, false);
+});
+
+test("hand-edited saves (run, town) are not read; old unsigned saves are, once", () => {
+	withStorage(() => {
+		const TOWN = "kiriko-roguelike/town";
+		const RUN = "kiriko-roguelike/run";
+		// この 版より 前の 署名の 無い 町は 読む
+		localStorage.setItem(TOWN, JSON.stringify({ points: 77, stage: 2 }));
+		ok(loadTown().points === 77, "the old unsigned town was not read");
+		saveTown({ ...loadTown(), points: 5 });
+		ok(loadTown().points === 5, "the signed town was not read");
+		// 中身を 書きかえる → 読まない
+		localStorage.setItem(
+			TOWN,
+			(localStorage.getItem(TOWN) ?? "").replace(
+				'"points":5',
+				'"points":99999',
+			),
+		);
+		ok(loadTown().points === 0, "the edited town was read");
+		// 署名を はがして 古い セーブの ふり → 読まない
+		localStorage.setItem(TOWN, JSON.stringify({ points: 99999, stage: 7 }));
+		ok(loadTown().points === 0, "the unsigned town was read after signing");
+		// 中断セーブの HP を 書きかえる → 続きから 遊べない
+		const run = Run.create("seal-hp", "main");
+		saveRun(run.s);
+		ok(hasRunSave() && !!loadRun(), "the signed run was not read");
+		const raw = localStorage.getItem(RUN) ?? "";
+		const hp = `"hp":${run.s.player.hp},`;
+		ok(raw.includes(hp), "no hp in the run save");
+		localStorage.setItem(RUN, raw.replace(hp, '"hp":999,'));
+		ok(!hasRunSave() && !loadRun(), "the edited run was read");
+		// 別の 場所の 署名つき 中身を 写しても 合わない
+		saveTown({ ...loadTown(), points: 3 });
+		localStorage.setItem(
+			"kiriko-roguelike/progress",
+			localStorage.getItem(TOWN) ?? "",
+		);
+		forgetProgressMemo();
+		ok(
+			!loadProgress().unlocked.includes("deep"),
+			"the copied save was read as progress",
+		);
+	});
 });
 
 export const runTownTests = (): TestResult[] =>

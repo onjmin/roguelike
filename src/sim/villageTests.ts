@@ -170,6 +170,7 @@ import {
 	type Town,
 	toReplay,
 } from "../engine/save";
+import { writeSealed } from "../engine/seal";
 import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
 import {
@@ -826,7 +827,7 @@ const pushRecord = (r: Partial<RunRecord>): void => {
 
 /** 町（段と 売り上げ）を 置く。 */
 const setTown = (stage: number, points: number): void =>
-	localStorage.setItem(
+	writeSealed(
 		"kiriko-roguelike/town",
 		JSON.stringify({ points, stage, storage: [], pending: null, returned: [] }),
 	);
@@ -1210,7 +1211,7 @@ const setProgress = (
 	news: ProgressNews[] = [],
 	cleared: DungeonId[] = [],
 ): void =>
-	localStorage.setItem(
+	writeSealed(
 		PROGRESS_KEY,
 		JSON.stringify({ unlocked, cleared, fails: {}, intro: [], news }),
 	);
@@ -1228,7 +1229,7 @@ const item = (uid: number, kind: string, extra: Partial<Item> = {}): Item => ({
 
 /** 町を まるごと 置く。 */
 const putTown = (t: Partial<Town>): void =>
-	localStorage.setItem(
+	writeSealed(
 		TOWN_KEY,
 		JSON.stringify({
 			points: 0,
@@ -1567,7 +1568,7 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 		endings: DungeonId[],
 		news: ProgressNews[] = [],
 	) =>
-		localStorage.setItem(
+		writeSealed(
 			PROGRESS_KEY,
 			JSON.stringify({
 				unlocked: all,
@@ -1855,7 +1856,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 		const a = fakeStory();
 		await settleScript(
 			a.s,
-			chooser([1], () => localStorage.setItem(TOWN_KEY, JSON.stringify(other))),
+			chooser([1], () => writeSealed(TOWN_KEY, JSON.stringify(other))),
 		);
 		ok(
 			JSON.stringify(loadTown()) === JSON.stringify(other),
@@ -3591,7 +3592,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		ok(!hasHallNews(v), "「！」 with no event");
 		const texts: [string, string][] = [];
 		for (const e of EVENTS) {
-			localStorage.setItem(
+			writeSealed(
 				PROGRESS_KEY,
 				JSON.stringify(
 					prog({
@@ -3623,7 +3624,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		ok(!hasHallNews(v), "「！」 after reading the notice");
 		forgetHallMemo();
 		ok(!hasHallNews(v), "the read notice was forgotten");
-		localStorage.setItem(
+		writeSealed(
 			PROGRESS_KEY,
 			JSON.stringify(
 				prog({
@@ -3637,7 +3638,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		await noticeScript(fakeStory().s);
 		ok(!hasHallNews(v), "「！」 after reading that event");
 		// 同じ イベントが また 起きたら（始まった 出撃が かわる）また「！」。読みなおしても 同じ
-		localStorage.setItem(
+		writeSealed(
 			PROGRESS_KEY,
 			JSON.stringify(
 				prog({
@@ -3669,7 +3670,7 @@ test("期間限定の 告知: the same event starting again after it ended (adva
 			});
 			p = r.progress;
 			if (!r.started) continue;
-			localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+			writeSealed(PROGRESS_KEY, JSON.stringify(p));
 			forgetProgressMemo();
 			if (starts.length && r.started.id === starts[0]) {
 				starts.push(r.started.id);

@@ -15,6 +15,7 @@ import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
+import { readSealed, writeSealed } from "./seal";
 
 const PREFIX = "kiriko-roguelike/";
 const RUN_KEY = `${PREFIX}run`;
@@ -49,7 +50,7 @@ export const REPLAYS_KEEP = 20;
 
 export const hasRunSave = (): boolean => {
 	try {
-		return !!localStorage.getItem(RUN_KEY);
+		return !!readSealed(RUN_KEY);
 	} catch {
 		return false;
 	}
@@ -91,7 +92,7 @@ export const saveRun = (s: RunState): void => {
 	}
 	const text = serializeRun(s);
 	try {
-		localStorage.setItem(RUN_KEY, text);
+		writeSealed(RUN_KEY, text);
 	} catch {
 		// 容量不足のときは、古い中断セーブを消してから もう一度（古いのが残ると、
 		// 読み直したときに 何階も前へ 巻きもどってしまう）
@@ -104,7 +105,7 @@ export const saveRun = (s: RunState): void => {
 		const replays = loadReplays();
 		for (;;) {
 			try {
-				localStorage.setItem(RUN_KEY, text);
+				writeSealed(RUN_KEY, text);
 				return;
 			} catch {
 				if (!replays.length) return; // プライベートモードなど。中断はできないが遊べる
@@ -129,7 +130,7 @@ export const saveRun = (s: RunState): void => {
 /** 中断セーブを読む。無い・壊れている・版がちがう・終わっている なら null。 */
 export const loadRun = (): RunState | null => {
 	try {
-		const raw = localStorage.getItem(RUN_KEY);
+		const raw = readSealed(RUN_KEY);
 		if (!raw) return null;
 		const s = migrateRun(deserializeRun(raw));
 		if (!s?.player || !s.floor || s.end) return null;
@@ -379,7 +380,7 @@ const isActiveEvent = (x: unknown): x is ActiveEvent => {
 /** どこまで開いたか。まだ無ければ、これまでの記録から決める（ダンジョンが1つだったころに遊んだ人は 本編も開いている）。 */
 export const loadProgress = (): Progress => {
 	try {
-		const raw = localStorage.getItem(PROGRESS_KEY);
+		const raw = readSealed(PROGRESS_KEY);
 		if (raw) {
 			const o = JSON.parse(raw) as Partial<Progress>;
 			const list = (a: unknown) =>
@@ -470,7 +471,7 @@ export const forgetProgressMemo = (): void => {
 export const saveProgress = (p: Progress): void => {
 	progressMemo = JSON.parse(JSON.stringify(p)) as Progress;
 	try {
-		localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+		writeSealed(PROGRESS_KEY, JSON.stringify(p));
 	} catch {
 		// 保存できなくても遊べる（この回は 写しで続ける。次に開いたとき 記録から決めなおす）
 	}
@@ -621,7 +622,7 @@ const isItem = (x: unknown): x is Item =>
 
 export const loadTown = (): Town => {
 	try {
-		const raw = localStorage.getItem(TOWN_KEY);
+		const raw = readSealed(TOWN_KEY);
 		if (raw) {
 			const o = JSON.parse(raw) as Partial<Town>;
 			const pend = o.pending;
@@ -664,7 +665,7 @@ export const loadTown = (): Town => {
 
 export const saveTown = (t: Town): void => {
 	try {
-		localStorage.setItem(TOWN_KEY, JSON.stringify(t));
+		writeSealed(TOWN_KEY, JSON.stringify(t));
 	} catch {
 		// 保存できなくても遊べる
 	}
