@@ -62,8 +62,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		steal: "rpgen:cAauAI", // 何かが逃げる
 		fire: "rpgen:HyTVhK",
 		shock: "rpgen:usF2l8",
-		/** トラばさみに はさまれた（トルネコ1と おなじく 金属の 音）。 */
-		bearTrap: "rpgen:mL4xt3", // サイクロップス/謎の金属音
+		/** トラばさみに はさまれた（ネ申マイクの 当たる 音とは 別に。同じだと 抜けた あとも 鳴って 聞こえる）。 */
+		bearTrap: "rpgen:Q1CAWo", // 噛みつく音
 		// ── キリコに かかる 悪い 状態（トルネコ1のように 音でも わかるように）
 		/** 眠った（眠りガスの罠・眠り草・眠りの呪文）。 */
 		sleep: "rpgen:Adwsg4", // [ツクール]催眠
