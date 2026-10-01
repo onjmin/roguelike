@@ -340,6 +340,11 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		r.msg("見えないので　読めない");
 		return false;
 	}
+	// アク禁中は スレが 見えない（ターンも スレも 減らない）
+	if (p.status.blind > 0) {
+		r.msg("アク禁中で　スレが　見えない");
+		return false;
+	}
 	const need = needsTarget(it);
 	if (need && target === undefined) {
 		// どれを？ と聞かれる（キャンセルすれば減らない）

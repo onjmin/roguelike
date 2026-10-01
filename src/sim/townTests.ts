@@ -179,6 +179,19 @@ test("帰還スレ asks first, then ends the run as a return with the items", ()
 	);
 });
 
+test("スレ can't be read while アク禁 (blind)", () => {
+	const run = Run.create("town-blind-read");
+	run.s.player.status.blind = 10;
+	const scroll = run.newItem("s_escape");
+	run.s.player.items.push(scroll);
+	const turn = run.s.turn;
+	const ev = run.act({ c: "use", item: scroll.uid });
+	ok(!ev.some((e) => e.t === "fx"), "asked to read while blind");
+	ok(run.s.turn === turn, "trying to read used a turn");
+	ok(run.findItem(scroll.uid), "the scroll was used up");
+	ok(!isKnownKind(run.s, "s_escape"), "the scroll was revealed");
+});
+
 test("帰還スレ does nothing on the walk back with the goal item", () => {
 	const run = Run.create("town-escape-back");
 	run.s.returning = true;
