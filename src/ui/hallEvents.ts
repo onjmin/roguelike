@@ -15,6 +15,7 @@ import { defOf } from "../core/item";
 import type { DungeonId } from "../core/types";
 import {
 	HALL_MSG,
+	JIKKYO,
 	MONITOR_MENU,
 	ON_PHONO_TEXT,
 	TOBAN_MENU,
@@ -309,7 +310,12 @@ const dendoScript: Script = async (s) => {
 const nanashiScript =
 	(p: HallPlace, lines: readonly string[]): Script =>
 	async (s) => {
-		const name = p.id.startsWith("yaji_") ? "野次馬" : "名無し";
+		const jikkyo = JIKKYO[p.id.slice("jikkyo_".length)];
+		const name = jikkyo
+			? `実況民（${jikkyo.team}）`
+			: p.id.startsWith("yaji_")
+				? "野次馬"
+				: "名無し";
 		for (const l of lines) await s.say("nanj", l, { name });
 		if (p.dir) s.face(p.id, p.dir);
 	};
@@ -317,6 +323,8 @@ const nanashiScript =
 /** 名無し・野次馬の 台詞。 */
 const peopleLines = (id: string): readonly string[] => {
 	if (id === "nanashi_toban") return HALL_MSG.toban_nanashi;
+	if (id.startsWith("jikkyo_"))
+		return JIKKYO[id.slice("jikkyo_".length)]?.lines ?? [];
 	const n = Number(id.split("_")[1]) || 0;
 	if (id.startsWith("yaji_"))
 		return HALL_MSG.yaji[n % HALL_MSG.yaji.length] ?? [];

@@ -39,7 +39,7 @@ import {
 import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
-import { HALL_MSG, ON_PHONO_TEXT, TOBAN_MENU } from "../data/hall";
+import { HALL_MSG, JIKKYO, ON_PHONO_TEXT, TOBAN_MENU } from "../data/hall";
 import {
 	MOB_IDS,
 	MOBS,
@@ -3758,6 +3758,7 @@ test("おんJ 本館: every line fits the village window (22 full-width × 2 lin
 	};
 	for (const [k, v] of Object.entries(HALL_MSG))
 		if (k !== "noticeGoal") add(`HALL_MSG.${k}`, v);
+	for (const [k, j] of Object.entries(JIKKYO)) add(`JIKKYO.${k}`, j.lines);
 	STAGE_UP_HALL.forEach((l, i) => {
 		if (l) texts.push([`STAGE_UP_HALL[${i}]`, l.text]);
 	});
@@ -3766,6 +3767,7 @@ test("おんJ 本館: every line fits the village window (22 full-width × 2 lin
 		HALL_MSG.toban_nanashi,
 		...HALL_MSG.watch,
 		...HALL_MSG.yaji,
+		...Object.values(JIKKYO).map((j) => j.lines),
 	])
 		ok(
 			ls.length >= 1 && ls.length <= 3,
