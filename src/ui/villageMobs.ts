@@ -1,7 +1,7 @@
 // 保守村の おんJマイナーズと ぷゆゆ（data/mobs.ts）に 話しかけたとき と、総選挙の はり紙。
 // 話しかけるたび 次の 順で 1つ（Hades の 帰りごとの 会話に ならう。見た話は くり返さない）：
 //   1. 総選挙で 1票 入れた子の お礼（1回だけ）
-//   2. はじめまして（おんすちゃんは そのあと 書きこむまで 毎回 きく）
+//   2. はじめまして（「！」は 出さない。おんすちゃんは そのあと 書きこむまで 毎回 きく）
 //   3. 新しい話（1回の 帰りに 1本。節目 → 雑談（上から。with・when が 合う もの）。頭の上に「！」）
 //   4. 期間限定（端末の 日付）
 //   5. 前の冒険への 反応（1回の 帰りに 1回。answersRun の 話を 聞いた 帰りは 出さない）
@@ -243,10 +243,13 @@ export const idleOf = (def: MobDef): string =>
 		? def.idle
 		: (def.idle[today().w] ?? def.idle[0] ?? ""));
 
-/** 頭の上に「！」（はじめまして・お礼・まだ見ていない 節目か、仲間なしで この帰りに 合う 雑談が ある）。 */
+/**
+ * 頭の上に「！」（お礼・まだ見ていない 節目か、仲間なしで この帰りに 合う 雑談が ある）。
+ * まだ 会っていない子には 出さない（はじめは 村じゅう「！」だらけに なるので）。
+ */
 export const hasMobNews = (id: MobId): boolean => {
 	const v = load();
-	if (!v.met.includes(id)) return true;
+	if (!v.met.includes(id)) return false;
 	if (v.vote === id && !v.thanked && MOBS[id].thx.length) return true;
 	if (MOBS[id].ask && !v.wrote) return false;
 	if (v.heard[id] === returnAt()) return false;

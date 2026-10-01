@@ -2102,7 +2102,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 		const id = "ngoane";
 		const d = MOBS[id];
 		const plain = (line: string) => `say null: ${seasonalToday(d) ?? line}`;
-		ok(hasMobNews(id), "no 「！」 before meeting");
+		ok(!hasMobNews(id), "「！」 before meeting");
 		const a = fakeStory({ near: ["feris"] });
 		await mobScript(id)(a.s);
 		ok(
@@ -2507,7 +2507,7 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 			place?.x === 17 && place.y === 23 && place.wander === true,
 			`stage 0: ${JSON.stringify(place)}`,
 		);
-		ok(hasMobNews("puyu"), "no 「！」 on the very first visit");
+		ok(!hasMobNews("puyu"), "「！」 on the very first visit");
 		// 段0 には ゼロは まだ 越してきていない：そばに いても ゼロの 口出しは 出ない
 		const a = fakeStory({ near: ["zero"] });
 		await mobScript("puyu")(a.s);
