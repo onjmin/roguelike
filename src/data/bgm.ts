@@ -88,7 +88,7 @@ import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バ�
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
 // うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）。アップテンポなので 序盤ではなく、
-// retro は 本編 B13〜15「鯖の深部」、retro2 は 祭り（モンスターハウス）で 鳴らす
+// retro2 は 祭り（モンスターハウス）で 鳴らす。retro は 電池板で 鳴らしていたが、戦闘曲っぽいので いまは 使っていない
 // 本編の 層を トルネコ1の 刻みに 細かくしたときに 足した 3曲（2026-09。deep と 同じ 手書き譜面。譜面は dtm/tmp/handscore/kiriko-main-<名前>.json）
 import ruins from "./bgm/ruins.mml?raw"; // 本編 B7〜9・ちょっと B7〜9 朽ちたまとめ跡：嬰ヘ短調 94・jazz_night・4beat（ページを めくる 動機）
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」
