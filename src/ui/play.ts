@@ -2159,8 +2159,17 @@ export class Play {
 					continue;
 				}
 			}
-			// 前に 動きの ない 傷（飲んだ・読んだ など）は、前の 行が 出てから
-			if (e.t === "hurt" && !afterMotion(ev, i)) {
+			// 行の あとの 動き（飲んだ・読んだ の あとの 敵の 攻撃・傷・ワープ など）は、前の 行が 出てから。
+			// 道具の 効き目（行と 音）より 先に 敵が 動いて 見えないように。
+			// 動きに 続く 行（攻撃 → ダメージの 行 → 敵の 攻撃）は 待たない（戦いの 手ざわりは そのまま）
+			const prevEv = besideOf(ev, i, -1);
+			if (
+				(e.t === "hurt" ||
+					(MOTION.has(e.t) &&
+						prevEv &&
+						(prevEv.t === "msg" || LEAD.has(prevEv.t)))) &&
+				!afterMotion(ev, i)
+			) {
 				await this.logDrained();
 				if (this.stopped) break;
 			}
