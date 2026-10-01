@@ -104,7 +104,7 @@ const PRICE: Record<string, number> = {
 	// 指輪
 	r_might: 2000,
 	r_sustain: 3000,
-	r_hunger: 200,
+	r_hunger: 500,
 	r_trap: 2000,
 	r_awake: 1000,
 	r_purity: 1000,

@@ -222,7 +222,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "starshield", weight: 1 }, // 防御10。いちばん強い盾は 1枚のまま
 	// 指輪 13（4つに1つは のろい。不食の指輪は 入れない）
 	{ kind: "r_might", weight: 3 }, // もっと で いちばん多い指輪の1つ。のろいなら −3 なので 当たりとは かぎらない
-	{ kind: "r_hunger", weight: 3 }, // マイナス。本編1 → 3（もっと の ハラペコ は 指輪で いちばん多い）。のろわれて外せないと 食べものが半分の価値
+	{ kind: "r_hunger", weight: 3 }, // 本編1 → 3（もっと の ハラペコ は 指輪で いちばん多い）。食べものを HP に 変える（回復も 2倍）。のろわれて外せないと 食べものが半分の価値
 	{ kind: "r_clamor", weight: 2 }, // マイナス（ザメハ）。本編1 → 2
 	{ kind: "r_trap", weight: 1 }, // 罠7〜9の階で 強すぎるので 1つだけ（もっと でも 13/256 と少ない）
 	{ kind: "r_awake", weight: 1 }, // 本編と同じ

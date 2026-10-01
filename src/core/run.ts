@@ -1196,10 +1196,10 @@ export class Run {
 		if (!s.returning) this.tickHunger();
 		if (s.end) return;
 
-		// 自然回復（おなかが空っぽのときは回復しない。風呂板は 湯治で はやい）
+		// 自然回復（おなかが空っぽのときは回復しない。風呂板は 湯治で はやい。大食いは 2倍）
 		if (p.hunger > 0 && p.hp < p.maxHp) {
 			const regenStep = this.dungeon.regenStep ?? REGEN_STEP;
-			p.regenAcc += p.maxHp;
+			p.regenAcc += this.hasRing("r_hunger") ? p.maxHp * 2 : p.maxHp;
 			while (p.regenAcc >= regenStep) {
 				p.regenAcc -= regenStep;
 				if (p.hp < p.maxHp) p.hp++;
