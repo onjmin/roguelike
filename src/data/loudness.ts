@@ -162,12 +162,12 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	hit_star: ["eIw6qU", -12.7, -8.5, -8.3, 0.385, 10, 190, 160], // battle → -21.0
 	hit_mic: ["mL4xt3", -16.8, -6.8, -4.2, 0.617, 0, 510, 280], // battle → -21.0
 	enemyMiss: ["DUvPmQ", -20.8, -16.6, -0.2, 0.977, 10, 240, 190], // battle → -21.0
-	skill_poison: ["X3RbWZ", -13.4, -2.7, -7.6, 0.417, 340, 1920, 1200], // battle → -21.0
+	skill_poison: ["2RJYrq", -8.4, -3.2, -12.6, 0.234, 40, 380, 310], // battle → -21.0
 	skill_drainLv: ["h9iBuH", -9.1, -0.5, -11.9, 0.254, 0, 780, 280], // battle → -21.0
 	skill_drainMax: ["ySSr23", -3.8, 0.7, -17.2, 0.138, 0, 2370, 1200], // battle → -21.0
 	skill_warpPlayer: ["Ye4E4T", -6.6, 1.2, -14.4, 0.191, 60, 1640, 990], // battle → -21.0
 	skill_knockback: ["W7Z0Eh", -16, -4.9, -5, 0.562, 340, 550, 440], // battle → -21.0
-	skill_purge: ["wAsfQs", -20.6, -8.8, -0.4, 0.955, 0, 1660, 1070], // battle → -21.0
+	skill_purge: ["miex8X", -11.6, -3.6, -9.4, 0.339, 0, 2240, 1200], // battle → -21.0
 	skill_curse: ["86GRZP", -4.3, 1.1, -16.7, 0.146, 80, 4190, 1200], // battle → -21.0
 	critical: ["3xdWAT", -12.7, -7.8, -6.3, 0.484, 0, 430, 360], // impact → -19.0
 	explosion: ["HydVaH", -6.6, -0.4, -12.4, 0.24, 120, 1580, 990], // impact → -19.0
