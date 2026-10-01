@@ -402,7 +402,11 @@ export const mobScript =
 const tip = async (s: Story, def: MobDef, at: number): Promise<boolean> => {
 	const v = load();
 	if (!at || v.tipAt === at || mobSulk(def)) return false;
-	const left = TIPS.filter((t) => !v.tips.includes(t.key));
+	const x = ctxOf(v);
+	const unlocked = loadProgress().unlocked;
+	const left = TIPS.filter(
+		(t) => !v.tips.includes(t.key) && (!t.when || t.when(x, unlocked)),
+	);
 	if (!left.length || Math.random() >= TIP_CHANCE) return false;
 	const t = left[Math.floor(Math.random() * left.length)];
 	if (!t) return false;

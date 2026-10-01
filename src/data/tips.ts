@@ -5,7 +5,14 @@
 // （子ごとの 口ぐせに 寄せずに すむよう、書きこみの 引用の 形にする）。
 // 1窓は 全角22字・2行まで。中身は core の しくみと 合わせる（かえたら ここも）。
 
-export type Tip = { key: string; lines: readonly string[] };
+import type { MobCtx } from "./mobs";
+
+export type Tip = {
+	key: string;
+	lines: readonly string[];
+	/** 合う 帰りにだけ（unlocked は 開いた 板）。無ければ いつでも。 */
+	when?: (x: MobCtx, unlocked: readonly string[]) => boolean;
+};
 
 export const TIPS: readonly Tip[] = [
 	{
@@ -57,6 +64,51 @@ export const TIPS: readonly Tip[] = [
 		lines: [
 			"「のろわれて　外せない　装備も、\n飯テロスレで　パンに　すれば　外れる」",
 			"「お祓いスレが　なくても、\nおなかは　ふくれる」",
+		],
+	},
+	// ───── 隠し要素の うわさ（見つける 前に ほのめかす） ─────
+	{
+		// core/data/monsters.ts の metal（ダメージは 1まで・HP3・忍法帖の実を 落とす）
+		key: "metal_rumor",
+		lines: [
+			"「深い　階に　まれに、ぴかぴかの\nぷゆゆが　出るらしい」",
+			"「どんな　一撃も　1しか　通らない。\nでも　HPは　3しか　ない」",
+			"「たおせば　経験値が　どっさり。\n忍法帖の実も　落とす」",
+		],
+	},
+	{
+		// 論破の杖は ボス いがいを 一撃（core/effects.ts の w_rebut）。会った あとの 応用
+		key: "rebut_metal",
+		when: (x) => x.seen.includes("metal"),
+		lines: ["「メタルぷゆゆには、論破の杖。\nかならず　当たって　一撃」"],
+	},
+	{
+		// !skスレは 晒し草を 飲んだ 階でだけ 見える（core/item.ts の invisible）
+		key: "gacha",
+		lines: [
+			"「晒し草を　飲んだ　階では、ふだん\n見えない　スレが　床に　見える　ことも」",
+			"「!skスレ。何が　出るかは\nスレ主しだい」",
+		],
+	},
+	{
+		// 安価の罠の お題を こなすと 正体つきの 道具（core/anka.ts の ankaHit）
+		key: "anka",
+		lines: [
+			"「安価の罠を　踏んだら、お題を　こなす。\nできれば　神安価」",
+			"「スレ民が　正体の　わかった　道具を\n置いていってくれる」",
+		],
+	},
+	{
+		// 敵が 道具を かかえて いる（core/floor.ts の CARRY_CHANCE。たおすと 落とす）
+		key: "carry",
+		lines: ["「敵が　道具を　かかえて　いる　ことが\nある。たおせば　落とす」"],
+	},
+	{
+		// 過去ログの底は 電池板（deep）を クリアすると 開く。開く まで だけ
+		key: "well",
+		when: (_, unlocked) => !unlocked.includes("hidden"),
+		lines: [
+			"「広場の　古井戸、底が　見えないって。\n電池板の　底まで　行けば　わかるとか」",
 		],
 	},
 ];
