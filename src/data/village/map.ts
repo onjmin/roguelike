@@ -151,7 +151,7 @@ export const VILLAGE_SPOTS = {
 	musicDoor: [22, 28] as Cell,
 	/** 保守神社の 賽銭箱（段2 から。お参りすると おみくじ）。 */
 	shrine: [3, 9] as Cell,
-	/** 銭湯の のれん（段4 から。見るだけ）。 */
+	/** 銭湯の のれんの 扉（段4 から。踏むと 中へ。data/village/rooms.ts の bath）。 */
 	bath: [35, 27] as Cell,
 	/** 小屋の扉（段3から。踏むと 中へ）。 */
 	hutDoor: [23, 18] as Cell,
@@ -496,7 +496,7 @@ const SHRINE_BLOCK: readonly string[] = [
 	",,,,,,,",
 ];
 
-/** 銭湯（地図の 31, 24 から。字は BATH）。のれんの 扉（35,27）は 下の 35,28 から 調べる。池の 東の 草地に つながる。 */
+/** 銭湯（地図の 31, 24 から。字は BATH）。のれんの 扉（35,27）を 踏むと 中へ（出ると 35,28）。池の 東の 草地に つながる。 */
 const BATH_BLOCK: readonly string[] = [
 	",,БЦБББ,",
 	",,ДДДДД,",
@@ -708,7 +708,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	}
 	if (stage >= BATH_FROM) {
 		const [x, y] = VILLAGE_SPOTS.bath;
-		out.push({ id: "bath", x, y, trigger: "talk" });
+		out.push({ id: "door_bath", x, y, trigger: "touch" });
 	}
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;

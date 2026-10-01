@@ -25,6 +25,7 @@ import {
 	TOWN_STEPS,
 } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
+import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/bath";
 import {
 	CAFE_DRINKS,
 	CAFE_GREET,
@@ -142,6 +143,9 @@ import {
 	villageRows,
 } from "../data/village/map";
 import {
+	BATH_NOREN_M,
+	BATH_SPOTS,
+	BATH_WALL,
 	CAFE_ALL_SEATS,
 	CAFE_MASTER,
 	CAFE_ORDER,
@@ -178,6 +182,7 @@ import {
 	toReplay,
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
+import { bathLayout } from "../ui/bath";
 import { floorsText } from "../ui/bookView";
 import {
 	cafeLayout,
@@ -4232,4 +4237,61 @@ test("音楽室「ピアノ機能」: open only on weekends (a weekday note step
 		...PIANO_MSG.nanashi.map((t): [string, string] => ["nanashi", t]),
 		...PIANO_MSG.ren.map((t): [string, string] => ["ren", t]),
 	]);
+});
+
+test("銭湯「ゆ」: women soak or change on free cells Kiriko can reach, men sit by the partition, and every line fits", () => {
+	const rows = roomRows("bath");
+	const s = surveyRoom("bath");
+	const free = (x: number, y: number) => s.tile(x, y)?.passable;
+	for (const v of VIEWS)
+		for (const seed of [0, 1, 12345, 987654321]) {
+			const lay = bathLayout(v, seed);
+			const cells = lay.map((p) => `${p.at.x},${p.at.y}`);
+			ok(new Set(cells).size === cells.length, `${label(v)}: two share a spot`);
+			ok(
+				new Set(lay.map((p) => p.who)).size === lay.length,
+				`${label(v)}: someone is in the bath twice`,
+			);
+			for (const p of lay) {
+				const ch = rows[p.at.y][p.at.x];
+				ok(
+					p.at.x > BATH_WALL && (p.place === "soak" ? ch === "~" : ch === ","),
+					`${label(v)}: ${p.who} ${p.place} at (${p.at.x},${p.at.y}) on "${ch}"`,
+				);
+				const near = [
+					[0, 1],
+					[0, -1],
+					[1, 0],
+					[-1, 0],
+				].some(
+					([dx, dy]) =>
+						p.at.x + dx > BATH_WALL &&
+						free(p.at.x + dx, p.at.y + dy) &&
+						!cells.includes(`${p.at.x + dx},${p.at.y + dy}`),
+				);
+				ok(near, `${label(v)}: cannot talk to ${p.who}`);
+			}
+		}
+	// 男湯の 人は 仕切りの となり。女湯がわの 向かいは 湯で、仕切りは 台ごしに 話せる
+	for (const m of BATH_SPOTS.menSoak) {
+		ok(m.x === BATH_WALL - 1, "a man is not by the partition");
+		ok(s.tile(BATH_WALL, m.y)?.counter, "the partition is not talkable");
+		ok(free(BATH_WALL + 1, m.y), "Kiriko cannot stand across the partition");
+	}
+	ok(s.tile(...BATH_NOREN_M)?.passable, "the men's noren is not a doorway");
+	fitsWindow([
+		...Object.entries(BATH_WOMEN).flatMap(([w, t]) =>
+			[...t.soak, ...t.dress].map((l): [string, string] => [w, l]),
+		),
+		...Object.entries(BATH_MEN).flatMap(([w, t]) =>
+			t.map((l): [string, string] => [w, l]),
+		),
+		...BANDAI.welcome.map((l): [string, string] => ["bandai", l]),
+		["bandai", BANDAI.stop],
+		["soak", BATH_SOAK],
+		["door", ROOM_DOOR.bath],
+	]);
+	for (const t of Object.values(BATH_WOMEN))
+		for (const ls of [t.soak, t.dress])
+			ok(ls.length >= 1 && ls.length <= 3, "a bath talk is too long");
 });

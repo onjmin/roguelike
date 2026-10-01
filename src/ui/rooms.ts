@@ -41,6 +41,7 @@ import {
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadTown } from "../engine/save";
+import { bathPeople } from "./bath";
 import type { Ctx } from "./ctx";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
@@ -248,6 +249,7 @@ export const buildRoom = (
 		events: [
 			...roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
 			...(id === "music" ? musicPeople(v) : []),
+			...(id === "bath" ? bathPeople(v) : []),
 		],
 	};
 };

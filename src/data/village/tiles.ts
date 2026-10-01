@@ -435,7 +435,7 @@ export const SHRINE: Record<string, TileDef> = {
 // ───────────────── 銭湯（南東。池の 東の 森を 開いた 所。町の 段4 から） ─────────────────
 // 灰色の 瓦・板の 壁・青い のれんの 扉（見るだけ）・煙突。
 //   Б  屋根（棟）   Д  屋根（軒）   Ж  板壁（上段）   З  板壁（上段）に 窓   И  板壁（下段）
-//   Л  扉に のれん（通れない。前で 調べる）   Ц  煙突（屋根に 重ねる）
+//   Л  扉に のれん（通れる。踏むと 中へ）   Ц  煙突（屋根に 重ねる）
 const C_BATH = "#9a7a52";
 export const BATH: Record<string, TileDef> = {
 	Б: solid("#6a6a72", base(4, 82)),
@@ -443,6 +443,6 @@ export const BATH: Record<string, TileDef> = {
 	Ж: solid(C_BATH, base(1, 73)),
 	З: solid(C_BATH, base(1, 73), basePx(48, 1382)),
 	И: solid(C_BATH, base(1, 74)),
-	Л: solid(C_BATH, base(1, 74), base(7, 73, 1, 2), base(4, 297)),
+	Л: floor(C_BATH, base(1, 74), base(7, 73, 1, 2), base(4, 297)),
 	Ц: solid("#6a6a72", base(4, 82), base(7, 84)),
 };

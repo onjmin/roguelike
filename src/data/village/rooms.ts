@@ -12,6 +12,14 @@
 //   おーぷんの 消えた 機能（kome の 週末限定の ピアノ）を 供養する 部屋。ピアノで 村の 曲を 選んで 鳴らせる。
 //   字：7 8 9 / 1 2 3  赤い ステージ   P p ピアノ   L スピーカー   n 客席の いす（通れる）   m 供養の 札
 //
+// 銭湯「ゆ」（町の 段4 から。南東の 池の そば。人と 会話は ui/bath.ts）
+//   下が 入口（番台）、のれんの 先が 脱衣所、戸の 先が 浴室。左が 男湯・右が 女湯で、まんなかの 仕切りの 上に 番台。
+//   キリコは 女湯へ（男湯の のれんを くぐろうと すると 番台に 止められる）。浴室の 仕切りは 台と 同じで、
+//   壁ごしに 男湯の 人と 話せる。湯（~）に 入ると 体の 下半分が 湯に かくれる（タイルの above）。
+//   字：~ 湯   . 洗い場の タイル   | 浴室の 仕切り（壁ごしに 話せる）   I 脱衣所の 仕切り   Q 富士山の 壁画
+//       k 鏡と 蛇口   o 桶   s 浴室の 戸（通れる）   , 脱衣所の 床   L ロッカー   c 脱衣かご   M 牛乳の 冷蔵庫
+//       N n のれん（男湯・女湯。通れる）   b 番台の 席   B 番台（台ごしに 話す）   : 入口の 土間
+//
 // 喫茶「保守」（町の 段5 から）
 //   左に カウンター（台の うしろに マスター、台の 前に 丸いす）。右に ソファの 席。下に 丸テーブルと ピアノ。
 //   客は 冒険から 帰るたびに 抽選（ui/cafe.ts の cafeLayout）。仲間は 席（CAFE_SLOTS）に すわり、
@@ -27,7 +35,7 @@ import type { Speaker } from "../quotes";
 import type { Cell } from "./map";
 import { base, basePx, floor, INDOOR, solid } from "./tiles";
 
-export type RoomId = "cafe" | "hut" | "shop" | "store" | "music";
+export type RoomId = "cafe" | "hut" | "shop" | "store" | "music" | "bath";
 
 export const ROOM_IDS: readonly RoomId[] = [
 	"cafe",
@@ -35,6 +43,7 @@ export const ROOM_IDS: readonly RoomId[] = [
 	"shop",
 	"store",
 	"music",
+	"bath",
 ];
 
 export const isRoom = (id: string): id is RoomId =>
@@ -111,6 +120,25 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#F..........F#",
 		"######DD######",
 	],
+	// 銭湯「ゆ」：上が 浴室、なかが 脱衣所、下が 入口。左が 男湯・右が 女湯
+	bath: [
+		"#################",
+		"#HHHHHHHHHHHHHHH#",
+		"#hhhQhhhhhhhQhhh#",
+		"#~~~~~~~|~~~~~~~#",
+		"#~~~~~~~|~~~~~~~#",
+		"#.......|.......#",
+		"#ko..ko.|.ok..ok#",
+		"#hhhshhhhhhhshhh#",
+		"#,,,,,,,I,,,,,,,#",
+		"#LLc,,M,I,M,,cLL#",
+		"#,,,,,,,I,,,,,,,#",
+		"#hhhNhhhbhhhnhhh#",
+		"#:::::::B:::::::#",
+		"#:::::::::::::::#",
+		"#F:::::::::::::F#",
+		"#######DD########",
+	],
 	// 倉庫：あずかった 物の 棚・帰ってこない 人の 棚・鍵の 板・帳簿・シヨの 机
 	store: [
 		"############",
@@ -155,6 +183,7 @@ export const ROOM_OUTSIDE: Record<RoomId, Spot> = {
 	shop: { x: 13, y: 19, dir: "up" },
 	store: { x: 27, y: 19, dir: "up" },
 	music: { x: 22, y: 29, dir: "down" },
+	bath: { x: 35, y: 28, dir: "down" },
 };
 
 /** 入れる 町の 段（常識堂は 小さな 店に なってから。屋台には 奥が ない）。 */
@@ -164,16 +193,52 @@ export const ROOM_FROM: Record<RoomId, number> = {
 	shop: 5,
 	store: 2,
 	music: 3,
+	bath: 4,
 };
 
 // ───────────────── パレット ─────────────────
 
 const CEIL = "#1b1410";
+/** 銭湯の 湯（池の 岸の オートタイルの まんなか）と、人の 下半分を かくす 湯の おもて。 */
+const BATH_WATER = "pub:assets/rpg-reze/pond.png#0,64,16,16";
+const BATH_WATER_LOW = "pub:assets/rpg-reze/pond.png#0,72,16,8";
 const PAPER = basePx(32, 1446);
 const WINDOW = basePx(48, 1382);
 const PICTURE = basePx(80, 1446);
 /** 小物（位置微調整用の 行の 絵を 4px 上げて、台の 上に のせる）。 */
 const onTop = (c: number, r: number) => basePx(c * 16, r * 16 + 4);
+
+/** 銭湯の 仕切りの x（これより 左が 男湯）・番台の 席・男湯の のれん。 */
+export const BATH_WALL = 8;
+export const BATH_BANDAI: Cell = [8, 11];
+export const BATH_NOREN_M: Cell = [4, 11];
+
+/** 銭湯で 人の 立つ 所（湯に つかる・脱衣所で 着がえる。左が 男湯）。 */
+export const BATH_SPOTS = {
+	/** 女湯の 湯船。 */
+	soak: [
+		{ x: 10, y: 3, dir: "down" },
+		{ x: 13, y: 3, dir: "down" },
+		{ x: 15, y: 4, dir: "left" },
+		{ x: 11, y: 4, dir: "down" },
+	],
+	/** 女湯の 脱衣所（ロッカー・冷蔵庫の 前）。 */
+	dress: [
+		{ x: 14, y: 10, dir: "up" },
+		{ x: 10, y: 10, dir: "up" },
+		{ x: 15, y: 8, dir: "left" },
+	],
+	/** 男湯の 湯船（仕切りの となり。女湯の 9 から 壁ごしに 話す）。 */
+	menSoak: [
+		{ x: 7, y: 3, dir: "right" },
+		{ x: 7, y: 4, dir: "right" },
+	],
+	/** 男湯の 奥（話せない。にぎやかし）。 */
+	menBack: [
+		{ x: 3, y: 3, dir: "down" },
+		{ x: 5, y: 10, dir: "up" },
+	],
+} as const satisfies Record<string, readonly Spot[]>;
 
 type Look = {
 	floor: string;
@@ -213,6 +278,14 @@ const LOOK: Record<RoomId | "shed" | "bank", Look> = {
 		up: base(1, 67),
 		low: base(1, 68),
 		wallColor: "#8a8a8a",
+	},
+	// 銭湯：白い 石の 壁、入口は 板の 間
+	bath: {
+		floor: base(0, 46),
+		floorColor: "#b8905a",
+		up: base(1, 63),
+		low: base(1, 64),
+		wallColor: "#d8d8d8",
 	},
 	// 音楽室：白い 壁と 濃い 板の 床
 	music: {
@@ -314,6 +387,35 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				p: on(base(4, 120, 1, 2)),
 				L: on(base(4, 540)),
 			};
+		case "bath": {
+			const tile = base(3, 48);
+			const wash = (...refs: string[]) => solid("#e0e8f0", tile, ...refs);
+			return {
+				...common,
+				"~": {
+					layers: [tile, BATH_WATER],
+					above: [BATH_WATER_LOW],
+					color: "#4a8ac8",
+					passable: true,
+				},
+				".": floor("#e0e8f0", tile),
+				"|": { ...low(), counter: true },
+				I: low(),
+				Q: low(base(4, 90)),
+				k: wash(base(0, 110)),
+				o: wash(base(0, 124)),
+				s: floor(l.wallColor, l.low, base(7, 63, 1, 2)),
+				",": floor("#c8a86a", base(0, 46)),
+				L: solid("#c8a86a", base(0, 46), base(0, 104, 1, 2)),
+				c: solid("#c8a86a", base(0, 46), base(4, 125)),
+				M: solid("#c8a86a", base(0, 46), base(0, 393, 1, 2)),
+				N: floor(l.wallColor, l.low, base(4, 297)),
+				n: floor(l.wallColor, l.low, base(3, 297)),
+				b: floor(l.floorColor, l.floor),
+				B: { ...on(base(6, 98)), counter: true },
+				":": floor("#a89878", base(3, 50)),
+			};
+		}
 		case "store":
 			return {
 				...common,
@@ -376,6 +478,16 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		p: "piano",
 		L: "speaker",
 	},
+	bath: {
+		Q: "mural",
+		k: "mirror",
+		o: "oke",
+		"|": "partition",
+		L: "locker",
+		c: "basket",
+		M: "milk",
+		F: "plant",
+	},
 	store: {
 		S: "shelf",
 		s: "shelf",
@@ -409,6 +521,11 @@ export const roomPlaces = (id: RoomId): RoomPlace[] => {
 		[...r].forEach((ch, x) => {
 			const kind = ids[ch];
 			if (!kind) return;
+			// 銭湯の 男湯がわ（キリコは 入らない）の 物は 置かない。仕切りは 男湯に 人の いない 段だけ
+			if (id === "bath") {
+				if (x < BATH_WALL) return;
+				if (ch === "|" && y < 5) return;
+			}
 			// 喫茶の 酒棚は 台の うしろ。台ごしに 読むので 棚の 前の 床に 置く
 			// （空いている 丸いす 1・3・5 の 向かいだけ。2・6 は やきう・ゼロの 席、4 は マスター）
 			if (id === "cafe" && ch === "b") {

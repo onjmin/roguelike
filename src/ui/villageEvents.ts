@@ -326,15 +326,6 @@ const shrineScript: Script = async (s) => {
 	await s.narrate(all[Math.floor(Math.random() * all.length)]);
 };
 
-/** 銭湯の のれん（段4 から。見るだけ。風呂板を 持ち帰ったら 番台に 常連）。 */
-const bathScript: Script = async (s) => {
-	await s.narrate(
-		loadProgress().cleared.includes("main")
-			? VILLAGE_MSG.bathRegular
-			: VILLAGE_MSG.bath,
-	);
-};
-
 /** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
 	(ctx: Ctx, step = "d"): Script =>
@@ -580,11 +571,12 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
-	if (p.id === "bath") return sign(p.id, p.x, p.y, bathScript);
 	// 小屋・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）
 	if (p.id === "door_music")
 		return { ...at, trigger: "touch", through: true, run: enterMusic };
+	if (p.id === "door_bath")
+		return { ...at, trigger: "touch", through: true, run: enterRoom("bath") };
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
 	if (p.id === "door_cafe")
