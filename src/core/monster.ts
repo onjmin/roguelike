@@ -421,7 +421,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		}
 	}
 
-	// 近づくと逃げる（バグ）。追いかけてもこない。追いつめられたら戦う
+	// 近づくと逃げる（ROM専）。追いかけてもこない。追いつめられたら戦う
 	if (has(m, "shy") && sees) {
 		if (dist(m, p) > 2) {
 			wander(r, m);

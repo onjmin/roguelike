@@ -162,7 +162,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					!["neochi", "tensai", "yuki"].includes(m.kind))) &&
 			r.cornerOk(p, dirOf(m.x - p.x, m.y - p.y) as Dir8),
 	);
-	// 逃げる敵（バグ・弱った自演くん）と 動かない敵（かまってちゃん）は向かってこないので数えない
+	// 逃げる敵（ROM専・弱った自演くん）と 動かない敵（かまってちゃん）は向かってこないので数えない
 	// （数えると、通路へ 下がって 待つのを いつまでも くり返す）
 	const threats = visible.filter(
 		(m) =>

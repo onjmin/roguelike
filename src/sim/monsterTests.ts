@@ -415,7 +415,7 @@ test("bat", "sealed: always attacks while adjacent", () => {
 	}
 });
 
-// ───────────────── バグ（shy） ─────────────────
+// ───────────────── ROM専（shy） ─────────────────
 
 test("funamushi", "shy: backs away when the player is within 2", () => {
 	const r = arena("funamushi-shy");

@@ -192,7 +192,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
  */
 export const SHALLOW_LEVEL: readonly number[] = [
 	0, // [0] 使わない
-	1, // B1：ぷゆゆ・dat落ちの霊・深夜テンション・バグ。罠なし
+	1, // B1：ぷゆゆ・dat落ちの霊・深夜テンション・ROM専。罠なし
 	2, // B2：kskボット・寝落ち民（眠りの呪文）が 加わる。罠なし
 	3, // B3：罠が出はじめる（1〜3個。トラバサミ・眠り・転び・矢・ワープ・落とし穴）
 	4, // B4：まんぜう軍・コピペ が 加わる。毒矢の罠も。針を 拾って 帰る
@@ -446,7 +446,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "怒れるナツコを　たおした",
 		},
-		// 風の 島（風吹けば名無し）と 浜の フナムシ（バグ）
+		// 風の 島（風吹けば名無し）と 浜の フナムシ（ROM専）
 		foes: { kaze: 3, funamushi: 2 },
 		floors: 9,
 		items: MAIN_ITEMS,

@@ -53,10 +53,11 @@ const M: MonsterDef[] = [
 		flavor: "書いた　ときは　名文。朝　読むと　黒歴史",
 	},
 	{
-		// 前の名前は フナムシ。絵は そのまま
+		// 前の名前は フナムシ → バグ。見るだけで 書きこまない ROM専。
+		// 絵は RPGEN の「メンダコぼっち」（前は フナムシ sa:9RtFUy）
 		id: "funamushi",
-		name: "バグ",
-		sprite: "sa:9RtFUy",
+		name: "ROM専",
+		sprite: "sa:TGl1LN",
 		hp: 7,
 		atk: 2,
 		def: 4,
@@ -64,8 +65,8 @@ const M: MonsterDef[] = [
 		floors: [1, 6],
 		weight: 64,
 		abilities: [{ k: "shy" }],
-		desc: "見つけようと　近づくと　逃げる。追いつめれば　戦う",
-		flavor: "見つけた　ころには、もう　仕様に　なっている",
+		desc: "見ているだけ。近づくと　逃げる。追いつめれば　戦う",
+		flavor: "10年　見ている。書きこんだ　ことは　1度も　ない",
 	},
 	{
 		id: "ksk",
