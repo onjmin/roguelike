@@ -1,6 +1,8 @@
-// 安価（前の レスで 取られた「>>今の レス番　が　草を　1つ　飲む」。2ch の 安価の 形）。階（スレ）の 途中で ときどき 来る、スレ民からの お題。
+// 安価（前の レスで 取られた「>>今の レス番　が　草を　1つ　飲む」。2ch の 安価の 形）。スレ民からの お題。
 //
-// - 2階から、階に 入ったとき ANKA_CHANCE で「来る レス数」を 決めておき、そこまで 伸びたら 来る。
+// - 2階から、階に 入ったとき 安価の罠を ANKA_TRAPS 個 隠して 置く。踏むと 安価が 来て、罠は 消える
+//   （1回きり。同じ 罠で 何度も 安価を 呼べない）。見つけて よければ 来ない。
+//   釣りスレで ふえる 罠も ANKA_SNARE_CHANCE で 安価の罠に なる。安価が 出ている うちは 踏んでも 動かず 残る。
 // - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　1つ　飲む」は 来ない）。
 //   むずかしい お題（寝る・攻撃を 受ける・罠・レベル など）は 来にくい（doable の 重み）。
 // - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
@@ -10,7 +12,7 @@
 // - 出ている 安価は 階を かわっても 消えない（次スレに 持ちこし。のこりの レス数も そのまま）。
 
 import { EXP_AT, MAX_LV } from "./balance";
-import { randomFloorPos, spawnMonster } from "./floor";
+import { freeRoomTiles, randomFloorPos, spawnMonster } from "./floor";
 import {
 	defOf,
 	identifyKind,
@@ -24,10 +26,11 @@ import { wakeMonster } from "./monster";
 import type { Run } from "./run";
 import type { Anka, AnkaKind, Floor } from "./types";
 
-/** 階に 入ったとき 安価が 来る 確率。 */
-export const ANKA_CHANCE = 2 / 5;
-/** 来る レス数（階に 入ってから）。 */
-export const ANKA_AT: [number, number] = [20, 220];
+/**
+ * 階に 入ったとき 置く 安価の罠の 数。踏むかは 運なので 多めに
+ * （2026-10-01 ボットで 測ると：1つ なら 踏むのは 2割ほど・1〜2個で 安価が 来るのは 2.5割ほどの 階）。
+ */
+export const ANKA_TRAPS: [number, number] = [1, 2];
 /** こなす までの レス数。 */
 export const ANKA_DUE = 100;
 /** 守らなかったときに 伸びる レス。 */
@@ -79,8 +82,8 @@ export const carryAnka = (
 	f?.anka ? { a: f.anka, left: Math.max(1, f.anka.due - f.res) } : null;
 
 /**
- * 階に 入ったとき：この階に 安価が 来るか（来るなら 何レス目か）を 決める。
- * 前の 階から 持ちこした 安価が あれば それが つづき、この階には 新しく 来ない。
+ * 階に 入ったとき：この階に 安価の罠を 置くかを 決める。
+ * 前の 階から 持ちこした 安価が あれば それが つづき、この階には 罠を 置かない。
  */
 export const scheduleAnka = (
 	r: Run,
@@ -88,7 +91,6 @@ export const scheduleAnka = (
 ): void => {
 	const f = r.f;
 	f.anka = null;
-	f.ankaAt = -1;
 	if (carried) {
 		// 同じ 物を 使う（画面は 物が かわったときだけ「安価が　来た」の レスを 出す）
 		f.anka = carried.a;
@@ -100,9 +102,12 @@ export const scheduleAnka = (
 		return;
 	}
 	// ボスの 待つ 階にも 来ない（湧かないので「敵を　2体　たおす」が こなせなく なる。持ちこした 安価は 上で つづく）
-	if (r.s.returning || r.s.depth < 2 || r.boss) return;
-	if (!r.rng.chance(ANKA_CHANCE)) return;
-	f.ankaAt = r.rng.range(ANKA_AT[0], ANKA_AT[1]);
+	if (!ankaTrapOk(r)) return;
+	const n = r.rng.range(ANKA_TRAPS[0], ANKA_TRAPS[1]);
+	for (let i = 0; i < n; i++) {
+		const at = r.rng.pick(freeRoomTiles(r, f, null));
+		if (at) f.traps.push({ x: at.x, y: at.y, kind: "anka", found: false });
+	}
 };
 
 /** 持ち物で いま できる お題。 */
@@ -145,8 +150,13 @@ const doable = (r: Run): AnkaKind[] => {
 		})
 	)
 		out.push("equip");
-	// 罠を 踏む：見つかっている 罠が 階に あるとき（罠よけの指輪を はめていたら 踏めない）
-	if (!r.hasRing("r_trap") && r.f.traps.some((t) => t.found)) out.push("trap");
+	// 罠を 踏む：見つかっている 罠が 階に あるとき（罠よけの指輪を はめていたら 踏めない。
+	// 安価の罠は 安価が 出ている うちは 動かないので 数えない）
+	if (
+		!r.hasRing("r_trap") &&
+		r.f.traps.some((t) => t.found && t.kind !== "anka")
+	)
+		out.push("trap");
 	// レベル：つぎまで 半分を 切っているとき（深い 階で 間に合わない お題に しない）
 	const p = r.p;
 	if (
@@ -159,25 +169,35 @@ const doable = (r: Run): AnkaKind[] => {
 	return out;
 };
 
-/** ターンの 終わり（レスが 伸びたあと）：安価が 来る・期限が 切れる。 */
+/** 安価の罠を 置ける 階か（帰り道・1階・ボスの 待つ 階には 置かない）。 */
+export const ankaTrapOk = (r: Run): boolean =>
+	!r.s.returning && r.s.depth >= 2 && !r.boss;
+
+/** 釣りスレで ふえる 罠が 安価の罠に なる 確率（釣りスレの いい 面）。 */
+export const ANKA_SNARE_CHANCE = 1 / 10;
+
+/** 安価の罠を 踏んだ：お題を 出す（もう 出ていれば 何も しない）。 */
+export const startAnka = (r: Run): boolean => {
+	const f = r.f;
+	if (f.anka) return false;
+	const kind = r.rng.pick(doable(r));
+	const a: Anka = {
+		kind,
+		need: ANKA_NEED[kind] ?? 1,
+		done: 0,
+		due: f.res + ANKA_DUE,
+	};
+	f.anka = a;
+	r.se("encounter");
+	r.emit({ t: "anka" });
+	r.msg(`安価が　来た：${ankaText(a)}`, "warn");
+	r.msg(`（${ANKA_DUE}レス　以内に。安価は　絶対）`);
+	return true;
+};
+
+/** ターンの 終わり（レスが 伸びたあと）：安価の 期限が 切れる。 */
 export const tickAnka = (r: Run): void => {
 	const f = r.f;
-	if ((f.ankaAt ?? -1) >= 0 && f.res >= (f.ankaAt ?? 0) && !f.anka) {
-		f.ankaAt = -1;
-		const kind = r.rng.pick(doable(r));
-		const a: Anka = {
-			kind,
-			need: ANKA_NEED[kind] ?? 1,
-			done: 0,
-			due: f.res + ANKA_DUE,
-		};
-		f.anka = a;
-		r.se("encounter");
-		r.emit({ t: "anka" });
-		r.msg(`安価が　来た：${ankaText(a)}`, "warn");
-		r.msg(`（${ANKA_DUE}レス　以内に。安価は　絶対）`);
-		return;
-	}
 	const a = f.anka;
 	if (!a || f.res < a.due) return;
 	f.anka = null;

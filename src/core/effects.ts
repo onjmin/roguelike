@@ -4,7 +4,7 @@
 // - 相手を選ぶスレ（鑑定・次スレ・飯テロ）は target が要る。無いときは時間を進めずに
 //   「えらんで」と知らせる（needsTarget）。キャンセルすれば減らない。
 
-import { ankaHit } from "./anka";
+import { ANKA_SNARE_CHANCE, ankaHit, ankaTrapOk } from "./anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -560,11 +560,15 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 						(t.x !== p.x || t.y !== p.y),
 				);
 			r.rng.shuffle(spots);
+			const anka = ankaTrapOk(r);
 			for (const t of spots.slice(0, 30))
 				f.traps.push({
 					x: t.x,
 					y: t.y,
-					kind: pickTrapKind(r, r.levelAt(f.depth)),
+					kind:
+						anka && r.rng.chance(ANKA_SNARE_CHANCE)
+							? "anka"
+							: pickTrapKind(r, r.levelAt(f.depth)),
 					// 聖地巡礼スレを 読んだ 階なら、ふえた 罠も 地図に のる
 					found: !!f.mapped,
 				});

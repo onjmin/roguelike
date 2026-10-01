@@ -6,7 +6,7 @@
 //   シードが決まっているので、結果は毎回同じ。
 // - 湧きと地震は止める（毎ターン f.turns を 0 に戻す）。
 
-import { ankaText, tickAnka } from "../core/anka";
+import { ankaText, startAnka } from "../core/anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -169,7 +169,6 @@ const arena = (
 	f.turns = 0;
 	f.res = 0;
 	f.anka = null;
-	f.ankaAt = -1;
 	f.senseMonsters = false;
 	f.senseItems = false;
 	f.sight = false;
@@ -2276,16 +2275,34 @@ test(
 
 test(
 	"floor",
-	"anka: comes at its res; doing it gives 2 known items, ignoring it adds res, wakes the floor and 3 trolls",
+	"anka: its trap brings it once and vanishes; doing it gives 2 known items, ignoring it adds res, wakes the floor and 3 trolls",
 	() => {
 		const r = arena("anka");
 		const herb = give(r, "h_heal");
-		// 来る：決めた レス数まで 伸びたら（お題は 持ち物で できる ものから）
-		r.f.ankaAt = 30;
-		r.f.res = 29;
-		r.act({ c: "wait" });
-		ok(r.f.anka, "no anka at its res");
-		ok(r.f.ankaAt === -1, "the anka was left scheduled");
+		// 来る：安価の罠を 踏んだら（お題は 持ち物で できる ものから）。罠は 消える
+		const trap = {
+			x: r.p.x + 1,
+			y: r.p.y,
+			kind: "anka" as const,
+			found: false,
+		};
+		r.f.traps.push(trap);
+		r.act({ c: "move", dir: 2 });
+		ok(r.p.x === trap.x, "harness: did not step on the anka trap");
+		ok(r.f.anka, "no anka from its trap");
+		ok(!r.f.traps.includes(trap), "the anka trap was left");
+		// 安価が 出ている うちは、ほかの 安価の罠は 動かず 残る（釣りスレで ふえた ぶん。こなした あとで 踏める）
+		const first = r.f.anka;
+		const second = { x: r.p.x, y: r.p.y, kind: "anka" as const, found: true };
+		r.f.traps.push(second);
+		triggerTrap(r, second);
+		ok(r.f.anka === first, "a second anka trap replaced the anka");
+		ok(
+			r.f.traps.includes(second),
+			"a second anka trap was used up for nothing",
+		);
+		r.f.traps = r.f.traps.filter((t) => t !== second);
+		r.act({ c: "move", dir: 6 });
 		// こなす：草を 飲めば 足元に 正体つきの 道具が 2つ
 		r.f.anka = { kind: "herb", need: 1, done: 0, due: r.f.res + 100 };
 		r.f.res = 500;
@@ -2379,8 +2396,7 @@ test(
 			const seen = new Set<string>();
 			for (let i = 0; i < 80; i++) {
 				x.f.anka = null;
-				x.f.ankaAt = x.f.res;
-				tickAnka(x);
+				startAnka(x);
 				// （TS は 上で null を 入れたので null と 思いこむ）
 				const a = x.f.anka as { kind: string } | null;
 				if (a) seen.add(a.kind);
@@ -2490,8 +2506,7 @@ test(
 			const seen = new Set<string>();
 			for (let i = 0; i < 200; i++) {
 				x.f.anka = null;
-				x.f.ankaAt = x.f.res;
-				tickAnka(x);
+				startAnka(x);
 				const a = x.f.anka as { kind: string } | null;
 				if (a) seen.add(a.kind);
 			}
@@ -2639,7 +2654,10 @@ test(
 			r.f.anka.due - r.f.res === 30,
 			`the carried anka has ${r.f.anka.due - r.f.res} res left, not 30`,
 		);
-		ok(r.f.ankaAt === -1, "a new anka was scheduled on top of the carried one");
+		ok(
+			!r.f.traps.some((t) => t.kind === "anka"),
+			"an anka trap was placed on top of the carried anka",
+		);
 	},
 );
 
@@ -3254,12 +3272,12 @@ test(
 			boss.enterFloor(boss.dungeon.floors, false);
 			ok(boss.boss, `harness ${i}: no boss`);
 			ok(
-				(boss.f.ankaAt ?? -1) < 0 && !boss.f.anka,
+				!boss.f.traps.some((t) => t.kind === "anka") && !boss.f.anka,
 				`${i}: an anka is due on the boss floor`,
 			);
 			const fetch = Run.create(`anka-boss-${i}`, "kinoko");
 			fetch.enterFloor(fetch.dungeon.floors, false);
-			if ((fetch.f.ankaAt ?? -1) >= 0) fetchAnka++;
+			if (fetch.f.traps.some((t) => t.kind === "anka")) fetchAnka++;
 		}
 		ok(fetchAnka > 0, "harness: no anka on any fetch bottom floor");
 		// 持ちこした 安価は つづく

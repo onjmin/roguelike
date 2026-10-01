@@ -58,7 +58,11 @@ export const pickTrapKind = (r: Run, level: number): TrapKind =>
 	).kind;
 
 /** 部屋の中の、空いている床（階段・道具・罠・キャラのいない所）。 */
-const freeRoomTiles = (r: Run, f: Floor, roomId: number | null): Pos[] => {
+export const freeRoomTiles = (
+	r: Run,
+	f: Floor,
+	roomId: number | null,
+): Pos[] => {
 	const rooms = roomId === null ? f.layout.rooms : [f.layout.rooms[roomId]];
 	const out: Pos[] = [];
 	for (const room of rooms)

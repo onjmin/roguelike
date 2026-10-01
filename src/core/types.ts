@@ -269,7 +269,8 @@ export type TrapKind =
 	| "arrow" // 矢
 	| "dart" // 毒矢
 	| "warp" // 転移床
-	| "pit"; // 落とし穴
+	| "pit" // 落とし穴
+	| "anka"; // 安価の罠（1回 踏むと 消える。core/anka.ts）
 
 export type Trap = { x: number; y: number; kind: TrapKind; found: boolean };
 
@@ -337,8 +338,6 @@ export type Floor = {
 	res: number;
 	/** 出した レスの 知らせの 段（0：まだ・1：950・2：980・3：1000）。 */
 	resWarned: number;
-	/** 安価が 来る レス数（来ない・もう来た なら -1。core/anka.ts）。 */
-	ankaAt?: number;
 	/** いま 出ている 安価。 */
 	anka?: Anka | null;
 	/** 気配スレ：敵の位置がわかる。 */

@@ -259,4 +259,5 @@ export const TRAP_ICON: Record<TrapKind, string> = {
 	dart: cut(3, 187), // 矢の罠の 色ちがい
 	warp: cut(7, 13),
 	pit: cut(2, 190),
+	anka: cut(4, 187), // 木の 札
 };

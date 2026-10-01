@@ -1,6 +1,6 @@
 // 罠（踏むと 3/4 の確率で動く。罠よけの指輪なら かからない）。
 
-import { ankaHit } from "./anka";
+import { ankaHit, startAnka } from "./anka";
 import { rollDamage, TRAP_CHANCE } from "./balance";
 import { DIRS8, type Dir8, dist, type Pos, step } from "./geom";
 import { isKeyItem } from "./item";
@@ -19,12 +19,26 @@ const TRAP_NAME: Record<string, string> = {
 	dart: "毒矢の罠",
 	warp: "転移床",
 	pit: "落とし穴",
+	anka: "安価の罠",
 };
 
 export const trapName = (t: Trap): string => TRAP_NAME[t.kind];
 
 export const triggerTrap = (r: Run, t: Trap): void => {
 	if (r.hasRing("r_trap")) return; // 踏んだことも出ない
+	if (t.kind === "anka") {
+		// かならず 動いて、消える（1回きり。「罠を　踏む」の お題にも 数えない。来た お題が その場で こなせて しまう）。
+		// 安価が もう 出ていれば 動かず 残る（釣りスレで ふえた ぶんを、こなした あとで 踏める）
+		t.found = true;
+		r.msg(`${trapName(t)}を　踏んだ！`, "warn");
+		if (r.f.anka) {
+			r.msg("しかし　安価は　もう　出ている");
+			return;
+		}
+		r.f.traps = r.f.traps.filter((x) => x !== t);
+		startAnka(r);
+		return;
+	}
 	fireTrap(r, t);
 	// 安価「罠を　1つ　踏む」（動かなくても 数える）。効き目の あとに 数えるので、
 	// 落とし穴なら 落ちた 先に、転移床なら 飛んだ 先に スレ民の 道具が 置かれる
