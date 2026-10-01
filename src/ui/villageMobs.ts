@@ -5,7 +5,7 @@
 //   3. 新しい話（1回の 帰りに 1本。節目 → 雑談（上から。with・when が 合う もの）。頭の上に「！」）
 //   4. 期間限定（端末の 日付）
 //   5. 前の冒険への 反応（1回の 帰りに 1回。answersRun の 話を 聞いた 帰りは 出さない）
-//   6. いつもの ひとこと（曜日で かわる子も）
+//   6. いつもの ひとこと（曜日で かわる子も）。まれに かわりに 小ネタ（data/tips.ts。村ぜんぶで 1回の 帰りに 1つまで）
 // 会った・見た・聞いた 帰り・1票は 村の 印として 別の 保存場所に 残す（中断セーブ・記録・町には ふれない。
 // 保存できなくても この回は 覚えている）。ダンジョンの 中には 一切 かかわらない。
 
@@ -28,6 +28,7 @@ import {
 import type { Speaker } from "../data/quotes";
 import { awayFriends, mentionsAway } from "../data/story";
 import { TAMPER_MOB } from "../data/tamper";
+import { TIP_CHANCE, TIP_LEAD, TIPS } from "../data/tips";
 import type { Script, Story } from "../engine/defs";
 import {
 	loadBook,
@@ -56,6 +57,10 @@ type MobMemo = {
 	wrote: boolean;
 	vote?: MobId;
 	thanked: boolean;
+	/** 聞いた 小ネタ（data/tips.ts の key）。 */
+	tips: string[];
+	/** 小ネタを 聞いた 帰り（村ぜんぶで 1つ）。 */
+	tipAt?: number;
 };
 
 const empty = (): MobMemo => ({
@@ -65,6 +70,7 @@ const empty = (): MobMemo => ({
 	reacted: {},
 	wrote: false,
 	thanked: false,
+	tips: [],
 });
 
 let memo: MobMemo = empty();
@@ -95,6 +101,10 @@ const load = (): MobMemo => {
 				wrote: o.wrote === true,
 				vote: isMob(o.vote) ? o.vote : undefined,
 				thanked: o.thanked === true,
+				tips: Array.isArray(o.tips)
+					? o.tips.filter((x): x is string => typeof x === "string")
+					: [],
+				tipAt: typeof o.tipAt === "number" ? o.tipAt : undefined,
 			};
 		}
 	} catch {
@@ -384,8 +394,25 @@ export const mobScript =
 				return;
 			}
 		}
+		if (await tip(s, def, at)) return;
 		await sayAs(s, id, idleOf(def));
 	};
+
+/** いつもの ひとことの かわりに、まれに 小ネタ（まだ 聞いていない もの。1回の 帰りに 1つまで）。 */
+const tip = async (s: Story, def: MobDef, at: number): Promise<boolean> => {
+	const v = load();
+	if (!at || v.tipAt === at || mobSulk(def)) return false;
+	const left = TIPS.filter((t) => !v.tips.includes(t.key));
+	if (!left.length || Math.random() >= TIP_CHANCE) return false;
+	const t = left[Math.floor(Math.random() * left.length)];
+	if (!t) return false;
+	v.tips.push(t.key);
+	v.tipAt = at;
+	save(v);
+	await s.narrate(fill(TIP_LEAD, { name: def.name }));
+	for (const l of t.lines) await s.narrate(l);
+	return true;
+};
 
 // ───────────────── 総選挙 ─────────────────
 
