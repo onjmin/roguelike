@@ -74,6 +74,7 @@ import {
 	doneEventNews,
 	doneProgressNews,
 	giveLunch,
+	growForStorage,
 	loadProgress,
 	loadRecords,
 	loadTown,
@@ -485,6 +486,14 @@ export const settleScript = async (
 	const t = loadTown();
 	const pend = t.pending;
 	if (!pend) return;
+	// ぜんぶ 売れば 倉庫が 広がる 帰りは、先に 町が 育って から あずける 物を きく（売ってから 建つと 悲しい）
+	const stepBefore = townStep(t.stage, t.points);
+	const grown = growForStorage(t);
+	if (grown.to > grown.from) {
+		const stepMid = townStep(t.stage, t.points);
+		await stageUp(s, grown.from, grown.to, movingIn(stepBefore, stepMid));
+		await movedIn(s, stepBefore, stepMid, true);
+	}
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	// 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずかる 物を きく
 	const canStore = cap > 0;
@@ -530,7 +539,8 @@ export const settleScript = async (
 	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
 	// 売る 前の 小段（売れて 小段が 上がると 住人が 越してくる）
 	const stepFrom = townStep(cur.stage, cur.points);
-	const r = settleReturn(cur, chosen);
+	const stageFrom = cur.stage;
+	const r = settleReturn(cur, chosen, grown.from);
 	if (chosen.length) await say(TOWN_MSG.storeDone);
 	if (r.sold > 0) {
 		// ゼロが まだ いなければ 地の文で
@@ -542,8 +552,9 @@ export const settleScript = async (
 		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
 	}
 	const stepTo = townStep(r.to, loadTown().points);
-	if (r.to > r.from) await stageUp(s, r.from, r.to, movingIn(stepFrom, stepTo));
-	await movedIn(s, stepFrom, stepTo, r.to > r.from);
+	if (r.to > stageFrom)
+		await stageUp(s, stageFrom, r.to, movingIn(stepFrom, stepTo));
+	await movedIn(s, stepFrom, stepTo, r.to > stageFrom);
 };
 
 /**

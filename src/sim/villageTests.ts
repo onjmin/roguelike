@@ -1847,25 +1847,38 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 			!first.log.some((l) => l.startsWith("narrate: 倉庫から")),
 			"a carry hint before the storehouse",
 		);
-		// 倉庫が 建つ（段4）：持ちこみの 数を 知らせる
+		// 倉庫が 建つ（段4）：売る 前に 建って、持ちこみの 数を 知らせてから あずける 物を きく
+		const sword = item(3, "starsword");
+		const herb2 = item(4, "h_heal");
 		putTown({
 			stage: 3,
 			points: STAGE_POINTS[4] - 10,
-			pending: pending("escape", [item(3, "starsword")]),
+			pending: pending("escape", [sword, herb2]),
 		});
 		const store = fakeStory();
-		await settleScript(store.s, chooser([]));
-		ok(loadTown().stage === 4, `stage ${loadTown().stage}`);
+		await settleScript(store.s, chooser([3]));
+		const built = loadTown();
+		ok(built.stage === 4, `stage ${built.stage}`);
 		ok(
-			store.log.includes(`say roze: ${TOWN_MSG.noStorage.text}`),
-			"ロゼ does not say there is no storehouse yet",
+			built.storage.length === 1 && built.storage[0].kind === "starsword",
+			"the sword was sold before the storehouse was built",
+		);
+		ok(built.points === STAGE_POINTS[4] - 10 + priceOf(herb2), "points");
+		ok(built.sales.at(-1)?.up === true, "the sales do not record the growth");
+		ok(
+			!store.log.includes(`say roze: ${TOWN_MSG.noStorage.text}`),
+			"ロゼ says there is no storehouse after it was built",
 		);
 		ok(
-			store.log.includes(
+			inOrder(store.log, [
+				`toast 町が　「${STAGE_NAMES[4]}」に　なった`,
 				`narrate: 倉庫から　引き取って\n${CARRY_MAX[4]}つまで　持っていける`,
-			),
-			`no carry hint:\n${store.log.join("\n")}`,
+				`say shiyo: ${TOWN_MSG.storePrompt.text}`,
+				`say shiyo: ${TOWN_MSG.storeDone.text}`,
+			]),
+			`the storehouse is not built before storing:\n${store.log.join("\n")}`,
 		);
+		ok(store.log.filter((l) => l === "rebuild").length === 1, "rebuilt twice");
 	});
 });
 

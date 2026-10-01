@@ -715,6 +715,31 @@ const addPendingReturn = (s: RunState): void => {
 	saveTown(t);
 };
 
+const clearedOf = (pend: PendingReturn) => {
+	const cleared = pend.kind === "clear";
+	return {
+		shallowCleared: cleared && pend.dungeon === "shallow",
+		topCleared: cleared && pend.dungeon === "deep",
+	};
+};
+
+/**
+ * 持ち帰った物を ぜんぶ 売れば 倉庫が 広がる 帰りなら、あずける 前に 段を 上げる（保存する）。
+ * 先に 売られてから 倉庫が 建つと、あずけたかった 物が 売れてしまうので。返り値は 段の前後（上げなければ 同じ）。
+ */
+export const growForStorage = (t: Town): { from: number; to: number } => {
+	const from = t.stage;
+	const pend = t.pending;
+	if (!pend?.items.length) return { from, to: from };
+	const all = pend.items.reduce((n, it) => n + priceOf(it), 0);
+	const to = nextStage(from, t.points + all, clearedOf(pend));
+	if ((STORAGE_CAP[to] ?? 0) <= (STORAGE_CAP[from] ?? 0))
+		return { from, to: from };
+	t.stage = to;
+	saveTown(t);
+	return { from, to };
+};
+
 /**
  * おあずかりを 決める：stored（uid）を倉庫へ、残りを売って 売上に。段を上げる。
  * 倉庫に入れた道具は 正体がわかる（町で 見てもらう）。返り値は 売上と 段の前後。
@@ -722,10 +747,11 @@ const addPendingReturn = (s: RunState): void => {
 export const settleReturn = (
 	t: Town,
 	stored: readonly number[],
+	// growForStorage で 先に 上げた ときの 上がる 前の 段（売上の 記録の 「上がった」に 使う）
+	from = t.stage,
 ): { sold: number; from: number; to: number } => {
 	const pend = t.pending;
-	const from = t.stage;
-	if (!pend) return { sold: 0, from, to: from };
+	if (!pend) return { sold: 0, from, to: t.stage };
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	let sold = 0;
 	for (const it of pend.items) {
@@ -735,11 +761,7 @@ export const settleReturn = (
 		else sold += priceOf(it);
 	}
 	t.points += sold;
-	const cleared = pend.kind === "clear";
-	t.stage = nextStage(t.stage, t.points, {
-		shallowCleared: cleared && pend.dungeon === "shallow",
-		topCleared: cleared && pend.dungeon === "deep",
-	});
+	t.stage = nextStage(t.stage, t.points, clearedOf(pend));
 	t.pending = null;
 	t.sales = [
 		...t.sales,
