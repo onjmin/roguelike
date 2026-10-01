@@ -174,6 +174,7 @@ const LEAD = new Set<GameEvent["t"]>([
 	"anka",
 	"boss",
 	"rescue",
+	"look",
 ]);
 
 /** ev[i] から 続く 知らせ（LEAD）の 先が 行なら true。 */
@@ -298,6 +299,15 @@ export class Play {
 	private preUseUntil: "reveal" | "bolt" | null = null;
 	/** 踏んだ 罠は、キリコの 1歩（ワープ）が 着くまで 踏む 前の 見え方（見つかる・消える が 先に 見えないように）。 */
 	private trapHold: Trap[] | null = null;
+	/**
+	 * キリコの 見た目（アク禁・装備）は、それを 伝える 行（look）まで act の 前の まま
+	 * （削除人に なぐられる 前の 1歩で 画面が 暗く なったり 武器が 消えたり しないように）。
+	 */
+	private lookHold: {
+		blind: boolean;
+		weapon: string | null;
+		shield: string | null;
+	} | null = null;
 	/**
 	 * 出来事を 流して、その ログが ぜんぶ 出るまで ステータスに 出す 値（act の 前の 値。
 	 * HP は 傷ついた・回復した 出来事で、レベルは その 行で 追いつく。のこりは ログに 追いついたら 今の 値に）。
@@ -568,8 +578,9 @@ export class Play {
 			const pd = this.disp.get(PLAYER_ID);
 			const pre = !this.preUse && this.preWarp && pd ? this.preWarp : null;
 			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : run.p;
+			const blind = this.lookHold?.blind;
 			const vis = run.f.monsters.filter(
-				(m) => run.monsterVisible(m, eye) && !m.disguise && !posing(m),
+				(m) => run.monsterVisible(m, eye, blind) && !m.disguise && !posing(m),
 			);
 			const s: RunState =
 				pre && pd
@@ -633,7 +644,7 @@ export class Play {
 		const pd = this.disp.get(PLAYER_ID);
 		const warping =
 			!shown && !this.preUse && this.preWarp && pd ? this.preWarp : null;
-		const s: RunState =
+		const s0: RunState =
 			shown && pd
 				? {
 						...run.s,
@@ -648,6 +659,19 @@ export class Play {
 							player: { ...run.s.player, x: pd.tx, y: pd.ty },
 						}
 					: run.s;
+		const live = s0 === run.s;
+		const hold = this.lookHold;
+		const blind = hold?.blind;
+		const s: RunState =
+			hold && blind !== s0.player.status.blind > 0
+				? {
+						...s0,
+						player: {
+							...s0.player,
+							status: { ...s0.player.status, blind: blind ? 1 : 0 },
+						},
+					}
+				: s0;
 		const figs: Figure[] = [];
 		const fakeItems: { x: number; y: number; kind: string }[] = [];
 		// まどわされているときは 敵が みんな キリコの姿に、床の道具が お花に 見える
@@ -660,10 +684,12 @@ export class Play {
 					...d,
 					// 演出の あいだは 眠った 出来事で（罠・呪文の 前の 1歩で Z が 出ないように）
 					asleep: this.sleepShown || (!this.busy && run.p.status.sleep > 0),
-					equip: {
-						weapon: run.weapon()?.kind ?? null,
-						shield: run.shield()?.kind ?? null,
-					},
+					equip: hold
+						? { weapon: hold.weapon, shield: hold.shield }
+						: {
+								weapon: run.weapon()?.kind ?? null,
+								shield: run.shield()?.kind ?? null,
+							},
 					swing: k >= 0 && k < 1 ? k : -1,
 				});
 				continue;
@@ -672,7 +698,7 @@ export class Play {
 				figs.push(d);
 				continue;
 			}
-			if (s !== run.s && !warping) continue;
+			if (!live && !warping) continue;
 			const m = run.f.monsters.find((x) => x.uid === d.id);
 			if (!m) {
 				// もう たおれたが たおれる 演出の 前：直前の 見え方の まま 描く
@@ -686,12 +712,12 @@ export class Play {
 			// ワープの 前は、ワープ前の 位置から 見える 敵だけ
 			const eye = warping ? s.player : run.p;
 			if (m.disguise) {
-				const seen = run.playerSees(m, eye);
+				const seen = run.playerSees(m, eye, blind);
 				this.lastLook.set(d.id, seen ? { item: m.disguise } : null);
 				if (seen) fakeItems.push({ x: m.x, y: m.y, kind: m.disguise });
 				continue;
 			}
-			if (!run.monsterVisible(m, eye)) {
+			if (!run.monsterVisible(m, eye, blind)) {
 				this.lastLook.set(d.id, null);
 				continue;
 			}
@@ -710,9 +736,10 @@ export class Play {
 			figs.push({ ...d, ...look });
 		}
 		// なくなった 道具は ログに 追いつくまで 残して 描く（拾った 行より 先に 消えないように）
-		if (s === run.s)
+		if (live)
 			for (const g of this.ghostItems)
-				if (!itemHidden(s, g.kind) && run.playerSees(g)) fakeItems.push(g);
+				if (!itemHidden(s, g.kind) && run.playerSees(g, run.p, blind))
+					fakeItems.push(g);
 		this.view.draw(
 			this.screen,
 			s,
@@ -849,6 +876,7 @@ export class Play {
 	/** 出来事と ログを 待たずに、今の 状態を そのまま 見せる（やめた・とばした）。 */
 	private resetShown(): void {
 		this.hudHold = null;
+		this.lookHold = null;
 		this.hiddenItems.clear();
 		this.ghostItems = [];
 		const ws = this.drainWaiters;
@@ -1525,6 +1553,11 @@ export class Play {
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
 		const traps0 = run.f.traps.map((t) => ({ ...t }));
+		const look0 = {
+			blind: run.p.status.blind > 0,
+			weapon: run.weapon()?.kind ?? null,
+			shield: run.shield()?.kind ?? null,
+		};
 		const usingCat = using && defOf(using.kind).cat;
 		const pre =
 			cmd.c === "throw" ||
@@ -1566,6 +1599,8 @@ export class Play {
 					traps0.some((t, i) => t.found !== run.f.traps[i].found))
 			)
 				this.trapHold = traps0;
+			// 前の act の 見た目を まだ 待って いれば そのまま（行が 来たら 外れる）
+			if (ev.some((e) => e.t === "look")) this.lookHold ??= look0;
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
@@ -1654,6 +1689,7 @@ export class Play {
 			this.afterLog(() => {
 				if (gen !== this.holdGen) return;
 				this.hudHold = null;
+				this.lookHold = null;
 				this.hiddenItems.clear();
 				this.ghostItems = [];
 			});
@@ -2353,6 +2389,9 @@ export class Play {
 					this.hudHold.hp = e.hp;
 				this.pop(e.pos, `+${e.amount}`, "heal");
 				return;
+			case "look":
+				this.lookHold = null;
+				return;
 			case "levelup":
 				if (this.hudHold) {
 					this.hudHold.lv = e.lv;
@@ -2548,6 +2587,7 @@ export class Play {
 		this.shownFloor = null;
 		// 新しい 階の ステータスに（前の 階の 床の 道具の 写しは 捨てる）
 		if (this.hudHold) this.hudHold = this.liveHud();
+		this.lookHold = null;
 		this.hiddenItems.clear();
 		this.ghostItems = [];
 		this.lastTravel = null;

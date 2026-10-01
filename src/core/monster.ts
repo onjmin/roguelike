@@ -853,6 +853,7 @@ const purgePlayer = (r: Run, m: Monster): void => {
 		can.push(() => {
 			const it = r.rng.pick(gear);
 			r.removeItem(it);
+			r.emit({ t: "look" });
 			r.msg(`${r.name(it)}を　はがされた！`, "warn");
 			// キリコの 向こう側（削除人から 遠い 方）へ
 			const d = dirOf(p.x - m.x, p.y - m.y);
@@ -877,6 +878,7 @@ const purgePlayer = (r: Run, m: Monster): void => {
 	});
 	can.push(() => {
 		p.status.blind = Math.max(p.status.blind, 10);
+		r.emit({ t: "look" });
 		r.msg("アク禁された！　何も　見えない！", "warn");
 	});
 	r.msg(`${nm}「${PURGE_LINES[r.s.turn % PURGE_LINES.length]}」`);

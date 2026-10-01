@@ -474,26 +474,37 @@ export class Run {
 		);
 	}
 
-	/** プレイヤーから見えるか（目が見えないときは となりだけ）。 */
-	playerSees(pos: Pos, from: Pos = this.p): boolean {
-		if (this.p.status.blind > 0) return dist(from, pos) <= 1;
+	/**
+	 * プレイヤーから見えるか（目が見えないときは となりだけ）。
+	 * blind は 目が 見えないか（画面の 演出で、アク禁の 行の 前の 見え方に するとき）。
+	 */
+	playerSees(
+		pos: Pos,
+		from: Pos = this.p,
+		blind = this.p.status.blind > 0,
+	): boolean {
+		if (blind) return dist(from, pos) <= 1;
 		return canSee(this.f.layout, from, pos);
 	}
 
 	/**
 	 * そのモンスターがプレイヤーに見えているか（見えない敵・化けた敵は別）。
-	 * from は 見る 位置（画面の 演出で、ワープ前の 位置から 見るとき）。
+	 * from は 見る 位置（画面の 演出で、ワープ前の 位置から 見るとき）。blind は playerSees と 同じ。
 	 */
-	monsterVisible(m: Monster, from: Pos = this.p): boolean {
+	monsterVisible(
+		m: Monster,
+		from: Pos = this.p,
+		blind = this.p.status.blind > 0,
+	): boolean {
 		if (m.hp <= 0) return false;
 		// 目が見えないときは となりの敵も 見えない（トルネコ1と おなじ。なぐることは できる）
-		if (this.p.status.blind > 0) return false;
+		if (blind) return false;
 		const d = mdef(m);
 		if (d.abilities.some((a) => a.k === "invisible") && !m.status.sealed) {
 			if (!this.f.sight) return false;
 		}
 		if (this.f.senseMonsters) return true;
-		return this.playerSees(m, from);
+		return this.playerSees(m, from, blind);
 	}
 
 	/** その階の階段の上にいるか。 */
@@ -1285,6 +1296,7 @@ export class Run {
 		}
 		if (st.confuse > 0 && --st.confuse === 0) this.msg("混乱が　とけた");
 		if (st.blind > 0 && --st.blind === 0) {
+			this.emit({ t: "look" });
 			this.msg("アク禁が　とけた");
 			this.updateVision();
 		}
