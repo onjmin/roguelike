@@ -117,7 +117,6 @@ export const VILLAGE_SPOTS = {
 	cafeDoor: [4, 18] as Cell,
 	/**
 	 * おんJ 本館の 扉（2マス。踏むと 中へ。data/village/hall.ts）。出てくると 入った 扉の 1つ下（崖の 下の 道）。
-	 * 「！」は 右の 扉に 出す。
 	 */
 	hallDoors: [
 		[19, 10],

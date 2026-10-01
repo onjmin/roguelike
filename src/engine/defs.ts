@@ -64,8 +64,6 @@ export type EventDef = {
 	when?: (s: VState) => boolean;
 	/** 1回だけ実行する（実行後 `done:<map>:<id>` が立ち、以後は消える）。 */
 	once?: boolean;
-	/** まだ 聞いていない 新しい話が ある（頭の上に「！」。スクリプトの あとに 見なおす）。 */
-	notice?: () => boolean;
 	run?: Script;
 };
 

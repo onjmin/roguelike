@@ -5,13 +5,13 @@
 //   はじめてなら 語り → 村を出る。やめたら 1歩 もどる。板ごとの 目的（持ち帰り・ボス。期間限定の
 //   イベントも。data/objectives.ts）は 行き先を 選ぶ 前に 1回だけ 決めて、地図と 冒険に 同じ 値を 渡す。
 // - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
-// - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと（頭の上に「！」）。聞いたら 町の様子の
+// - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと。聞いたら 町の様子の
 //   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（ゼロ＝冒険の記録と 売り上げの 帳簿、
 //   フェリス＝図鑑・あそびかた、シヨ＝倉庫、やきう＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   どの役目も B／☰ の メニューにも ある（人を さがさなくても 使える）。
 // - 板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
 // - 喫茶・小屋の 扉は 踏むと 中へ（ui/cafe.ts・ui/rooms.ts）。常識堂の 奥・倉庫は ロゼ・シヨが 入れてくれる。
-// - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/hallEvents.ts）。右の 扉に 新しい 告知・棚の「！」。
+// - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/hallEvents.ts）。
 // - おんJマイナーズ（町が 育つと 越してくる）と ぷゆゆ（はじめから いる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
 // - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
@@ -73,9 +73,9 @@ import {
 } from "../engine/save";
 import { openBook } from "./bookView";
 import { runSaveLabel } from "./boot";
-import { enterCafe, hasCafeNews } from "./cafe";
+import { enterCafe } from "./cafe";
 import type { Ctx } from "./ctx";
-import { enterHall, hasHallNews } from "./hallEvents";
+import { enterHall } from "./hallEvents";
 import { chooseStored, openBag, openSales, openStorage } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
@@ -84,7 +84,7 @@ import { escBr, openRecords, showStory } from "./records";
 import { enterMusic, enterRoom, keeperLets } from "./rooms";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
-import { hasMobNews, mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
+import { mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
 import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
@@ -104,7 +104,6 @@ import {
 import {
 	DUNGEON_DESC,
 	fill,
-	hasNews,
 	ledgerLine,
 	pinnedScrap,
 	scrapReturnAt,
@@ -520,14 +519,11 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
 	if (p.who) {
 		const who = p.who;
-		return {
-			...npc(p.id, p.x, p.y, CAST[who].walk, friendScript(ctx, who), {
-				who,
-				dir: p.dir,
-				wander: p.wander,
-			}),
-			notice: () => hasNews(who),
-		};
+		return npc(p.id, p.x, p.y, CAST[who].walk, friendScript(ctx, who), {
+			who,
+			dir: p.dir,
+			wander: p.wander,
+		});
 	}
 	if (p.exit && p.trigger === "touch")
 		return {
@@ -538,21 +534,12 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		};
 	if (p.exit) return sign(p.id, p.x, p.y, exitSignScript);
 	if (p.mob) {
-		const id = p.mob;
-		return {
-			...npc(p.id, p.x, p.y, p.sprite ?? "", mobScript(id), {
-				dir: p.dir,
-				wander: p.wander,
-			}),
-			notice: () => hasMobNews(id),
-		};
+		return npc(p.id, p.x, p.y, p.sprite ?? "", mobScript(p.mob), {
+			dir: p.dir,
+			wander: p.wander,
+		});
 	}
-	if (p.id.startsWith("board_"))
-		return {
-			...sign(p.id, p.x, p.y, boardScript(ctx)),
-			// 新しい 切れはしが 貼られて いたら 右の 板に「！」
-			notice: p.id === "board_1" ? () => !!pinnedScrap() : undefined,
-		};
+	if (p.id.startsWith("board_")) return sign(p.id, p.x, p.y, boardScript(ctx));
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
@@ -568,7 +555,6 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			trigger: "touch",
 			through: true,
 			run: enterCafe,
-			notice: hasCafeNews,
 		};
 	if (p.id.startsWith("door_hall_")) {
 		const i = Number(p.id.slice("door_hall_".length));
@@ -577,7 +563,6 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			trigger: "touch",
 			through: true,
 			run: enterHall(i, v),
-			notice: i === 1 ? () => hasHallNews(v) : undefined,
 		};
 	}
 	if (p.id.startsWith("yaji_") && p.sprite) {

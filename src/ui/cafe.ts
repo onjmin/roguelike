@@ -165,7 +165,7 @@ export const talksWith = (
 	st: CafeState = load(),
 ): CafeTalk[] => cafeTalks(stage, st).filter((t) => t.cast.includes(who));
 
-/** まだ 聞いていない 話が あるか（扉の 上の「！」）。 */
+/** まだ 聞いていない 話が あるか。 */
 export const hasCafeNews = (): boolean => {
 	const st = load();
 	return cafeTalks(stageNow(), st).some((t) => !st.heard.includes(t.id));
@@ -865,13 +865,6 @@ const patronScript =
 		s.face(actorId(id), spot.dir);
 	};
 
-/** 住人の 頭の 上の「！」（まだ 聞いていない 店の 話が あって、この 帰りは まだ）。 */
-const hasMobCafeNews = (v: Visit, id: MobId): boolean => {
-	const st = load();
-	if (st.mobHeard?.[id] === returnAt()) return false;
-	return nextMobTalk(id, st, (w) => v.present.has(w)) !== null;
-};
-
 // ───────────────── 名無しの 席 ─────────────────
 
 /** 名無し（名前欄は やきうの 色で「名無し」）。 */
@@ -1093,20 +1086,12 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 		const dir = f.partner ? dirTo(seat.at, seat.kiriko) : seat.dir;
 		home(f.who, seat.at, dir);
 		const run = companionScript(ctx, v, f);
-		events.push({
-			...npc(f.who, seat.at[0], seat.at[1], CAST[f.who].walk, run, {
+		events.push(
+			npc(f.who, seat.at[0], seat.at[1], CAST[f.who].walk, run, {
 				who: f.who,
 				dir,
 			}),
-			notice: () => {
-				const s2 = load();
-				if (f.partner)
-					return (MOB_IDS as string[]).includes(f.partner)
-						? !(s2.mobSeen ?? []).includes(`${f.partner}:${f.talk}`)
-						: !!f.talk && !s2.heard.includes(f.talk);
-				return talksHere(v, f.who, s2).some((t) => !s2.heard.includes(t.id));
-			},
-		});
+		);
 		const partner = f.partner;
 		if (!partner) continue;
 		const pid = actorId(partner);
@@ -1126,8 +1111,8 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 		if (!spot) continue;
 		const me = actorId(p.id);
 		home(me, spot.at, spot.dir);
-		events.push({
-			...npc(
+		events.push(
+			npc(
 				me,
 				spot.at[0],
 				spot.at[1],
@@ -1135,8 +1120,7 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 				patronScript(ctx, v, p.id, spot),
 				{ dir: spot.dir },
 			),
-			notice: () => hasMobCafeNews(v, p.id),
-		});
+		);
 	}
 	layout.nanashi.forEach((seat, i) => {
 		const spot = CAFE_PATRON_SPOTS[seat.spot];

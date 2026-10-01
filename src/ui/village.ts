@@ -7,13 +7,12 @@
 //   画面を 押さえつづけると 指の方へ 歩きつづける。
 // - A で 目の前の 人・物を 調べる（カウンター越しも）。目の前が 踏む 所（扉・出口）なら 1歩 踏みこむ。
 //   B・☰ で 村の メニュー（ui/villageEvents.ts）。
-// - まだ 聞いていない 新しい話が ある人の 頭の上に「！」（EventDef.notice。スクリプトの あとに 見なおす）。
 // - 窓（会話・選択肢・メニュー）が 開いている間は 歩かない（input.busy）。
 // - 地図は 村（village）と おんJ 本館の 中（hall。ui/hallEvents.ts）と 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。
 //   ui/cafe.ts・ui/rooms.ts）。扉・出口の マットで Story.warp（暗転の 中で
 //   地図を かえる。rpg の Game.loadMap と 同じ）。warp では 入る ときの 場面（prepare・onEnter）は 走らせない。
 // - 入るたびに onEnter（帰ってきた場面・開いた知らせ・持ち帰った物。ui/villageReturn.ts）。その間は 歩かない・
-//   うろうろ しない・「！」を 出さない（scene）。場面では カメラを 人や 建物に 向ける（look）。
+//   うろうろ しない（scene）。場面では カメラを 人や 建物に 向ける（look）。
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
@@ -107,7 +106,7 @@ export class Village {
 	private lookAt: string | readonly [number, number] | null = null;
 	/** カメラを なめらかに 動かしている（見る先を かえてから キリコに もどりきるまで）。 */
 	private easing = false;
-	/** 入ったときの 場面の 最中（歩かない・うろうろ しない・「！」を 出さない）。 */
+	/** 入ったときの 場面の 最中（歩かない・うろうろ しない）。 */
 	private scene = false;
 	private running = false;
 	private rafId = 0;
@@ -118,8 +117,6 @@ export class Village {
 	private resolveStart: ((c: VillageExit) => void) | null = null;
 	/** 最後に 立っていた マス（リプレイを 見て もどったとき）。 */
 	private lastSpot: Spot | null = null;
-	/** 頭の上に「！」を出す人（まだ 聞いていない 新しい話が ある。スクリプトの あとに 見なおす）。 */
-	private noticed = new Set<string>();
 
 	constructor(ctx: Ctx, screen: Screen, hud: Hud) {
 		this.ctx = ctx;
@@ -343,9 +340,6 @@ export class Village {
 			);
 		}
 		field.actors = keep;
-		this.noticed = new Set(
-			keep.filter((a) => a.def?.notice?.()).map((a) => a.id),
-		);
 	}
 
 	private syncState(): void {
@@ -641,8 +635,6 @@ export class Village {
 			return;
 		if (!target.def.fixedDir && !target.still)
 			target.dir = OPPOSITE[this.player.dir];
-		// 話しはじめたら「！」は 消す（話し終わったら 見なおす）
-		if (this.idle) this.noticed.delete(target.id);
 		void this.runEvent(target.def);
 	}
 
@@ -850,28 +842,6 @@ export class Village {
 			this.time,
 		);
 		field.def.decor?.(g, ox, oy, this.time);
-		if (!this.scene)
-			for (const a of field.actors)
-				if (a.visible && this.noticed.has(a.id)) this.drawNotice(g, a, ox, oy);
-	}
-
-	/** 頭の上の「！」（白い ふきだしに 赤い！。ゆっくり 上下に ゆれる）。 */
-	private drawNotice(
-		g: CanvasRenderingContext2D,
-		a: Actor,
-		ox: number,
-		oy: number,
-	): void {
-		const bob = Math.sin(this.time / 240) > 0 ? 0 : 1;
-		const x = Math.round(a.fx * TILE - ox) + 5;
-		const y = Math.round(a.fy * TILE - oy) - 12 + bob;
-		g.fillStyle = "#000";
-		g.fillRect(x - 1, y - 1, 8, 12);
-		g.fillStyle = "#fff";
-		g.fillRect(x, y, 6, 10);
-		g.fillStyle = "#e0303a";
-		g.fillRect(x + 2, y + 1, 2, 5);
-		g.fillRect(x + 2, y + 7, 2, 2);
 	}
 
 	// ───────────────── スクリプト ─────────────────

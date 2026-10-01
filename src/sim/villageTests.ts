@@ -194,10 +194,8 @@ import {
 	canWriteHoshu,
 	enterHall,
 	forgetHallMemo,
-	hasHallNews,
 	hoshuCount,
 	leaveHall,
-	markShelfSeen,
 	noticeScript,
 	noticeTexts,
 	shelfLine,
@@ -3633,15 +3631,13 @@ test("保守の 当番表: one 「保守」 per return, counted in its own save,
 	});
 });
 
-test("期間限定の 告知: nothing, or the event's name, news and goal; the door shows 「！」 until it is read in the hall", async () => {
+test("期間限定の 告知: nothing, or the event's name, news and goal", async () => {
 	await withStorageAsync(async () => {
-		const v: VillageView = { stage: 0, unlocked: ["shallow"], cleared: [] };
 		setProgress(["shallow"]);
 		ok(
 			noticeTexts().join() === HALL_MSG.noticeNone,
 			`no event: ${noticeTexts()}`,
 		);
-		ok(!hasHallNews(v), "「！」 with no event");
 		const texts: [string, string][] = [];
 		for (const e of EVENTS) {
 			localStorage.setItem(
@@ -3665,95 +3661,21 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 			});
 		}
 		fitsWindow(texts);
-		// 読むまで「！」。読んだら 消える。べつの イベントが 起きたら また
-		ok(hasHallNews(v), "no 「！」 for a new event");
 		const { s, log } = fakeStory();
 		await noticeScript(s);
 		ok(
 			log.length === 3 && log.every((l) => l.startsWith("narrate: ")),
 			`notice:\n${log.join("\n")}`,
 		);
-		ok(!hasHallNews(v), "「！」 after reading the notice");
-		forgetHallMemo();
-		ok(!hasHallNews(v), "the read notice was forgotten");
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify(
-				prog({
-					unlocked: [...DUNGEON_IDS],
-					event: { id: EVENTS[0].id, since: 0, clearsSince: 0 },
-				}),
-			),
-		);
-		forgetProgressMemo();
-		ok(hasHallNews(v), "no 「！」 for another event");
-		await noticeScript(fakeStory().s);
-		ok(!hasHallNews(v), "「！」 after reading that event");
-		// 同じ イベントが また 起きたら（始まった 出撃が かわる）また「！」。読みなおしても 同じ
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify(
-				prog({
-					unlocked: [...DUNGEON_IDS],
-					outings: 5,
-					event: { id: EVENTS[0].id, since: 5, clearsSince: 0 },
-				}),
-			),
-		);
-		forgetProgressMemo();
-		forgetHallMemo();
-		ok(hasHallNews(v), "no 「！」 when the same event starts again");
-		await noticeScript(fakeStory().s);
-		ok(!hasHallNews(v), "「！」 after reading the new run of the event");
 	});
 });
 
-test("期間限定の 告知: the same event starting again after it ended (advanceEvents) brings the door 「！」 back", async () => {
-	await withStorageAsync(async () => {
-		const v: VillageView = { stage: 0, unlocked: ["shallow"], cleared: [] };
-		// パン板を クリアしつづけて、同じ イベントが 2回 始まる まで 回す（読むのは 1回目だけ）
-		let p = prog({ unlocked: [...DUNGEON_IDS], cleared: ["shallow"] });
-		const starts: string[] = [];
-		for (let i = 0; i < 400 && starts.length < 2; i++) {
-			const r = advanceEvents(p, {
-				kind: "clear",
-				dungeon: "shallow",
-				seed: `again-${i}`,
-			});
-			p = r.progress;
-			if (!r.started) continue;
-			localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
-			forgetProgressMemo();
-			if (starts.length && r.started.id === starts[0]) {
-				starts.push(r.started.id);
-				break;
-			}
-			if (starts.length) continue;
-			starts.push(r.started.id);
-			ok(hasHallNews(v), `${r.started.id}: no 「！」 when it starts`);
-			await noticeScript(fakeStory().s);
-			ok(!hasHallNews(v), `${r.started.id}: 「！」 after reading it`);
-		}
-		ok(starts.length === 2, `the event did not start again: ${starts}`);
-		ok(hasHallNews(v), `${starts[0]}: no 「！」 when it started again`);
-	});
-});
-
-test("おんJ 本館の 下見（?stage=・?event=）: reading, 「保守」 and the shelf are kept for this visit only, the hall save is not written", async () => {
+test("おんJ 本館の 下見（?stage=・?event=）: 「保守」 is kept for this visit only, the hall save is not written", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow"], [], ["shallow", "kinoko"]);
-		const v: VillageView = {
-			stage: 3,
-			unlocked: ["shallow"],
-			cleared: ["shallow", "kinoko"],
-		};
 		const restore = swapLocation(`?debug&stage=3&event=${EVENTS[0].id}`);
 		try {
-			ok(hasHallNews(v), "no 「！」 in the preview");
-			await noticeScript(fakeStory().s);
 			await tobanScript(1)(fakeStory({ pick: 0 }).s);
-			markShelfSeen(v.cleared);
-			ok(!hasHallNews(v), "「！」 after reading and looking in the preview");
 			ok(hoshuCount() === 1, `preview count ${hoshuCount()}`);
 			ok(
 				localStorage.getItem(HALL_KEY) === null,
@@ -3764,11 +3686,10 @@ test("おんJ 本館の 下見（?stage=・?event=）: reading, 「保守」 and
 		}
 		forgetHallMemo();
 		ok(hoshuCount() === 0, `count after the preview: ${hoshuCount()}`);
-		ok(hasHallNews(v), "the preview's look at the shelf was saved");
 	});
 });
 
-test("飾り棚: the goal items of the cleared boards (植民地化宣言 and 長湯スレ play on the gramophone), and 「！」 when one is added", () => {
+test("飾り棚: the goal items of the cleared boards (植民地化宣言 and 長湯スレ play on the gramophone)", () => {
 	const rows = shelfRows(["kinoko", "shallow", "main"]);
 	ok(
 		rows.map((r) => r.d).join() === "shallow,main,kinoko",
@@ -3791,33 +3712,6 @@ test("飾り棚: the goal items of the cleared boards (植民地化宣言 and �
 			"kinoko,hidden",
 		`trophies: ${trophies(["shallow", "main", "hidden", "kinoko"])}`,
 	);
-	withStorage(() => {
-		setProgress(["shallow"]);
-		const at = (stage: number, cleared: DungeonId[]): VillageView => ({
-			stage,
-			unlocked: ["shallow"],
-			cleared,
-		});
-		// 蓄音機で 鳴らす 2枚だけでは 棚は ふえない。集会所には 棚が ない
-		ok(
-			!hasHallNews(at(3, ["shallow", "main"])),
-			"「！」 for the gramophone's items",
-		);
-		ok(
-			!hasHallNews(at(2, ["shallow", "kinoko"])),
-			"「！」 for a shelf the 集会所 does not have",
-		);
-		ok(hasHallNews(at(3, ["shallow", "kinoko"])), "no 「！」 for a new trophy");
-		markShelfSeen(["shallow", "kinoko"]);
-		ok(
-			!hasHallNews(at(3, ["shallow", "kinoko"])),
-			"「！」 after looking at the shelf",
-		);
-		ok(
-			hasHallNews(at(6, ["shallow", "kinoko", "tropical"])),
-			"no 「！」 for another trophy",
-		);
-	});
 });
 
 test("飾り棚: what is said matches what is drawn (only the records on the gramophone → the shelf is empty), and its pictures are loaded before the hall fades in", () => {

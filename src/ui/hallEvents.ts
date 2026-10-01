@@ -7,9 +7,7 @@
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
 //   - 飾り棚：持ち帰った 品を 絵で 並べる（植民地化宣言・長湯スレは 蓄音機で 鳴らしているので 一覧だけ）。
-// 扉の「！」：告知が まだ 本館で 読んでいない イベントか、飾り棚に 品が ふえた（喫茶の hasCafeNews と 同じ）。
-//   同じ イベントも また 起きるので、読んだ 告知は 回（始まった 出撃）ごとに 覚える。
-// 書いた 数・読んだ 告知・見た 棚は 別の 保存場所（kiriko-roguelike/hall）に 残す（保存 できなくても この回は 覚えている）。
+// 書いた 数は 別の 保存場所（kiriko-roguelike/hall）に 残す（保存 できなくても この回は 覚えている）。
 // 開発用の 下見（?stage=・?event=）の あいだは 保存を 書きかえない（村の 下見と 同じ。この回だけ 覚えている）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
@@ -75,13 +73,9 @@ type HallMemo = {
 	hoshu: number;
 	/** 最後に 書いた 帰り（記録の 時刻。まだ 書いていなければ -1）。 */
 	hoshuAt: number;
-	/** 本館で 読んだ 告知（イベントの 回「id@始まった 出撃」。読んでいなければ 空）。 */
-	event: string;
-	/** 飾り棚で 見た 板。 */
-	shelf: DungeonId[];
 };
 
-const EMPTY: HallMemo = { hoshu: 0, hoshuAt: -1, event: "", shelf: [] };
+const EMPTY: HallMemo = { hoshu: 0, hoshuAt: -1 };
 
 let memo: HallMemo | null = null;
 
@@ -93,17 +87,11 @@ const load = (): HallMemo => {
 			return {
 				hoshu: Number.isFinite(raw.hoshu) ? Math.max(0, raw.hoshu) : 0,
 				hoshuAt: Number.isFinite(raw.hoshuAt) ? raw.hoshuAt : -1,
-				event: typeof raw.event === "string" ? raw.event : "",
-				shelf: Array.isArray(raw.shelf)
-					? raw.shelf.filter((d: unknown) =>
-							DUNGEON_IDS.includes(d as DungeonId),
-						)
-					: [],
 			};
 	} catch {
 		// 読めなければ はじめから
 	}
-	return { ...EMPTY, shelf: [] };
+	return { ...EMPTY };
 };
 
 /** 開発用の 下見（?stage=・?event=）の あいだ（保存は 書きかえない）。 */
@@ -167,26 +155,6 @@ export const noticeTexts = (): string[] => {
 /** 飾り棚に 並べる 板（持ち帰った 順では なく 板の 順）。 */
 export const trophies = (cleared: readonly DungeonId[]): DungeonId[] =>
 	shelfBoards(cleared, DUNGEON_IDS);
-
-/**
- * 扉の「！」：まだ 本館で 読んでいない 告知が ある か、飾り棚（レンガ館から）に 品が ふえた。
- * v は 描いている 村（?stage= の 下見でも 絵と 合う）。
- */
-export const hasHallNews = (v: VillageView): boolean => {
-	const m = load();
-	const cur = currentEvent();
-	if (cur && m.event !== cur.key) return true;
-	return (
-		hallTierOf(v) >= 1 && trophies(v.cleared).some((d) => !m.shelf.includes(d))
-	);
-};
-
-/** 飾り棚を 見た（持ち帰った 品が ふえた「！」を 消す）。 */
-export const markShelfSeen = (cleared: readonly DungeonId[]): void => {
-	const m = load();
-	m.shelf = [...new Set([...m.shelf, ...trophies(cleared)])];
-	save(m);
-};
 
 // ───────────────── 入る・出る ─────────────────
 
@@ -253,15 +221,9 @@ export const tobanScript =
 		await s.narrate(fill(HALL_MSG.tobanDone, { n: m.hoshu }));
 	};
 
-/** 期間限定の 告知（読んだら 扉の「！」は 消える）。 */
+/** 期間限定の 告知。 */
 export const noticeScript: Script = async (s) => {
 	for (const t of noticeTexts()) await s.narrate(t);
-	const cur = currentEvent();
-	if (cur) {
-		const m = load();
-		m.event = cur.key;
-		save(m);
-	}
 };
 
 /** 品の 絵（一覧の 行の 左。16px を 2倍）。 */
@@ -309,13 +271,12 @@ export const shelfLine = (cleared: readonly DungeonId[]): string => {
 	return trophies(cleared).length ? HALL_MSG.shelf : HALL_MSG.shelfPhono;
 };
 
-/** 飾り棚：持ち帰った 品の 一覧（名前・板・品の ひとこと）。見たら 扉の「！」は 消える。 */
+/** 飾り棚：持ち帰った 品の 一覧（名前・板・品の ひとこと）。 */
 const shelfScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
 		const cleared = loadProgress().cleared;
 		const rows = shelfRows(cleared);
-		markShelfSeen(cleared);
 		await s.narrate(shelfLine(cleared));
 		if (!rows.length) return;
 		await hideMsg(s);
