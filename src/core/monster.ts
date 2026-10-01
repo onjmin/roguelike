@@ -91,6 +91,7 @@ const has = (m: Monster, k: string): boolean =>
 
 /**
  * 起こす。byAttack なら深い眠り・金縛りも解ける。
+ * 杖や草で 眠らせた 数ターン（sleep < DOZE）は 殴っても 起きない（切れるまで 寝たまま）。
  * rouse=false なら 群れの仲間は 起こさない（ダメージの ない 杖。トルネコ1の イエティと 同じ）。
  */
 export const wakeMonster = (
@@ -100,12 +101,13 @@ export const wakeMonster = (
 	rouse = true,
 ): void => {
 	const st = m.status;
-	if (st.sleep > 0 && (byAttack || st.sleep < DEEP)) {
+	if (byAttack ? st.sleep >= DOZE : st.sleep > 0 && st.sleep < DEEP) {
 		st.sleep = 0;
-		// 群れはみんな起きる
+		// 群れはみんな起きる（眠らされている 仲間は そのまま）
 		if (rouse && mdef(m).abilities.some((a) => a.k === "pack"))
 			for (const o of r.f.monsters)
-				if (o.kind === m.kind && dist(o, m) <= 3) o.status.sleep = 0;
+				if (o.kind === m.kind && dist(o, m) <= 3 && o.status.sleep >= DOZE)
+					o.status.sleep = 0;
 	}
 	if (byAttack && st.paralyze >= HOLD) st.paralyze = 0;
 	if (byAttack && st.dormant) st.dormant = false;

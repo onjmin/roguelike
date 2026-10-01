@@ -614,6 +614,20 @@ test(
 	},
 );
 
+test("neochi", "staff sleep: hits don't wake it, it wears off", () => {
+	const r = arena("staff-sleep");
+	const m = put(r, "neochi", at(1, 0), { awake: true });
+	staffEffect(r, "w_sleep", m);
+	const n = m.status.sleep;
+	ok(n > 0 && n < DOZE, `not put to sleep (${n})`);
+	turn(r, { c: "attack", dir: 2 });
+	ok(now(m).hp <= 0 || now(m).status.sleep > 0, "woke up when hit");
+	if (now(m).hp > 0) {
+		waitTurns(r, n + 2, () => false);
+		ok(now(m).status.sleep === 0, `still asleep (${now(m).status.sleep})`);
+	}
+});
+
 // ───────────────── ピッチャー（ranged） ─────────────────
 
 test(
@@ -1084,8 +1098,13 @@ test(
 		const r = arena("yuki-bolt");
 		const a = put(r, "yuki", at(1, 0), { sleep: DEEP });
 		const b = put(r, "yuki", at(2, 0), { sleep: DEEP });
-		staffEffect(r, "w_sleep", a);
-		ok(b.status.sleep === DEEP, "w_sleep woke a pack mate");
+		staffEffect(r, "w_sleep", b);
+		ok(a.status.sleep === DEEP, "w_sleep woke a pack mate");
+		staffEffect(r, "w_bolt", a);
+		// 眠らされた 仲間は 起きない
+		ok(now(b).status.sleep > 0, "w_bolt woke a pack mate put to sleep");
+		now(a).status.sleep = DEEP;
+		now(b).status.sleep = DEEP;
 		staffEffect(r, "w_bolt", a);
 		ok(
 			now(a).status.sleep === 0 && now(b).status.sleep === 0,
