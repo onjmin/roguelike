@@ -35,7 +35,7 @@ import { sayAs } from "./villageMobs";
 const SOAKED = "bathSoaked";
 
 const FRIENDS = ["roze", "shiyo", "feris", "zero"] as const;
-const MOB_WOMEN = ["ngoane", "onsu", "proto", "ren"] as const;
+const MOB_WOMEN = ["ngoane", "onsu", "proto", "ren", "hinary"] as const;
 
 const isFriend = (w: BathWoman): w is (typeof FRIENDS)[number] =>
 	(FRIENDS as readonly string[]).includes(w);
