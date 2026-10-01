@@ -4,6 +4,7 @@
 import { DUNGEON_IDS, dungeonById } from "./core/data/dungeons";
 import "./style.css";
 import { EXP_AT } from "./core/balance";
+import { callHunter } from "./core/floor";
 import { Run } from "./core/run";
 import { bgm } from "./data/bgm";
 import { devEvent } from "./data/objectives";
@@ -200,7 +201,13 @@ const runFor = (
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };
 	}
-	return { run: new Run(choice.state), replay: undefined };
+	const run = new Run(choice.state);
+	// 書きかえた 中断セーブ（engine/tamper.ts）：この 階にも 削除人を。act の 外で 乱数を 使ったので 状態を 入れなおす
+	if (callHunter(run)) {
+		run.msg("どこかで　削除人の　足音が　する……", "warn");
+		run.s.rng = run.rng.state();
+	}
+	return { run, replay: undefined };
 };
 
 /**

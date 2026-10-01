@@ -45,6 +45,7 @@ import {
 	UNLOCK_VISIT,
 	withoutAway,
 } from "../data/story";
+import { TAMPER_NARRATION, TAMPER_SCENE, tamperTier } from "../data/tamper";
 import {
 	ARRIVE_MSG,
 	BARE_TOWN_MSG,
@@ -82,6 +83,7 @@ import {
 	settleReturn,
 	type Town,
 } from "../engine/save";
+import { doneTamperNews, loadTamper } from "../engine/tamper";
 import type { Dir } from "../engine/types";
 import { sayAs } from "./villageMobs";
 import { deathQuote, fill } from "./villageTalk";
@@ -305,6 +307,29 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 		else await s.narrate(l.text);
 	}
 	s.set("visitor", false);
+};
+
+// ───────────────── セーブの 書きかえ ─────────────────
+
+/**
+ * セーブを 書きかえたのが 見つかって 帰ってきた（engine/tamper.ts）：ゼロが 帳簿で 気づき、そばの 仲間が
+ * ひとこと（村に いる 人から 3人まで）。見せおえてから 消す（途中で 閉じたら 次も 見せる）。
+ */
+export const tamperScript = async (s: Story): Promise<void> => {
+	const t = loadTamper();
+	if (!t.news) return;
+	const tier = tamperTier(t.n);
+	const away = awayFriends(loadProgress().cleared, loadTown().stage);
+	const lines = (TAMPER_SCENE[tier] ?? [])
+		.filter((l) => !away.includes(l.who))
+		.slice(0, 3);
+	await gather(
+		s,
+		lines.map((l) => l.who),
+	);
+	for (const l of lines) await s.say(l.who, l.text);
+	await s.narrate(TAMPER_NARRATION[tier] ?? "");
+	doneTamperNews();
 };
 
 // ───────────────── ぷゆゆの お弁当 ─────────────────

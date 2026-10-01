@@ -20,7 +20,7 @@ import {
 	townStep,
 } from "../core/town";
 import { triggerTrap } from "../core/traps";
-import type { Item } from "../core/types";
+import type { Item, RunState } from "../core/types";
 import { SE_LOUDNESS } from "../data/loudness";
 import { sfx } from "../data/sfx";
 import {
@@ -28,7 +28,6 @@ import {
 	depositItem,
 	forgetProgressMemo,
 	giveLunch,
-	hasRunSave,
 	loadProgress,
 	loadRecords,
 	loadReplays,
@@ -36,6 +35,7 @@ import {
 	loadTown,
 	noteRunEnd,
 	replayMatches,
+	runStats,
 	saveRun,
 	saveTown,
 	settleReturn,
@@ -45,6 +45,13 @@ import {
 	toReplay,
 	withdrawItem,
 } from "../engine/save";
+import {
+	disappointed,
+	doneTamperNews,
+	forgetTamperMemo,
+	LINGER,
+	loadTamper,
+} from "../engine/tamper";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 
@@ -558,47 +565,54 @@ test("unlocks last for the session when storage cannot be written", () => {
 	}, false);
 });
 
-test("hand-edited saves (run, town) are not read; old unsigned saves are, once", () => {
+test("tampered saves still load; only values the game never makes are noted, once per edit", () => {
 	withStorage(() => {
-		const TOWN = "kiriko-roguelike/town";
+		forgetTamperMemo();
 		const RUN = "kiriko-roguelike/run";
-		// この 版より 前の 署名の 無い 町は 読む
-		localStorage.setItem(TOWN, JSON.stringify({ points: 77, stage: 2 }));
-		ok(loadTown().points === 77, "the old unsigned town was not read");
-		saveTown({ ...loadTown(), points: 5 });
-		ok(loadTown().points === 5, "the signed town was not read");
-		// 中身を 書きかえる → 読まない
-		localStorage.setItem(
-			TOWN,
-			(localStorage.getItem(TOWN) ?? "").replace(
-				'"points":5',
-				'"points":99999',
-			),
-		);
-		ok(loadTown().points === 0, "the edited town was read");
-		// 署名を はがして 古い セーブの ふり → 読まない
-		localStorage.setItem(TOWN, JSON.stringify({ points: 99999, stage: 7 }));
-		ok(loadTown().points === 0, "the unsigned town was read after signing");
-		// 中断セーブの HP を 書きかえる → 続きから 遊べない
-		const run = Run.create("seal-hp", "main");
+		const TOWN = "kiriko-roguelike/town";
+		loadProgress();
+		// ふつうに 遊んだ 中断セーブ・町は 見つけない（前の 版の 署名つき セーブも 読める）
+		const run = Run.create("tamper-plain", "main");
+		run.enterFloor(3, false);
 		saveRun(run.s);
-		ok(hasRunSave() && !!loadRun(), "the signed run was not read");
-		const raw = localStorage.getItem(RUN) ?? "";
-		const hp = `"hp":${run.s.player.hp},`;
-		ok(raw.includes(hp), "no hp in the run save");
-		localStorage.setItem(RUN, raw.replace(hp, '"hp":999,'));
-		ok(!hasRunSave() && !loadRun(), "the edited run was read");
-		// 別の 場所の 署名つき 中身を 写しても 合わない
-		saveTown({ ...loadTown(), points: 3 });
-		localStorage.setItem(
-			"kiriko-roguelike/progress",
-			localStorage.getItem(TOWN) ?? "",
-		);
-		forgetProgressMemo();
-		ok(
-			!loadProgress().unlocked.includes("deep"),
-			"the copied save was read as progress",
-		);
+		ok(!loadRun()?.cheat, "a plain run save was noted");
+		const plain = localStorage.getItem(RUN) ?? "";
+		localStorage.setItem(RUN, `$1:abc:${plain}`);
+		ok(loadRun()?.seed === run.s.seed, "a signed run save was not read");
+		ok(!loadRun()?.cheat, "a signed run save was noted");
+		// 前の 版の 中断セーブ（あとから ふえた 欄が 無い）
+		const old = JSON.parse(plain);
+		delete old.player.arrow;
+		for (const it of old.player.items) delete it.rustproof;
+		localStorage.setItem(RUN, JSON.stringify(old));
+		ok(!!loadRun() && !loadRun()?.cheat, "an old run save was noted");
+		saveTown({ ...loadTown(), points: 120, stage: 2 });
+		loadTown();
+		ok(loadTamper().n === 0, `noted ${loadTamper().n} times without editing`);
+		ok(disappointed(runStats().runs) === 0, "the friends sulk for nothing");
+		// HP を 最大より 多く 書きかえる → 読めて、この 冒険は 削除人に 追われる
+		localStorage.setItem(RUN, plain.replace(/"hp":\d+,/, '"hp":999,'));
+		const s = loadRun();
+		ok(s?.player.hp === 999, "the edited run was not read as is");
+		ok(s?.cheat === true, "the edited run is not marked");
+		ok(loadTamper().n === 1 && loadTamper().news, "the edit was not noted");
+		loadRun();
+		ok(loadTamper().n === 1, "the same edit was counted twice");
+		// 続けて 終わった 冒険：記録に 印、リプレイは 残さない
+		const r2 = new Run(s as RunState);
+		r2.finish("dead", "試験");
+		saveRun(r2.s);
+		ok(loadRecords()[0]?.cheat === true, "the record is not marked");
+		ok(!loadReplays().some((p) => p.seed === r2.s.seed), "a replay was kept");
+		// 町：マイナスの 売上は ありえない
+		localStorage.setItem(TOWN, JSON.stringify({ points: -5, stage: 1 }));
+		loadTown();
+		ok(loadTamper().n === 2, `town edit noted ${loadTamper().n}`);
+		// がっかりは 気づく 場面を 見せて、LINGER 回 もぐるまで
+		doneTamperNews();
+		const runs = loadTamper().runs;
+		ok(disappointed(runs) === 2, "the friends do not sulk");
+		ok(disappointed(runs + LINGER) === 0, "the friends sulk forever");
 	});
 });
 

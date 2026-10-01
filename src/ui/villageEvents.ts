@@ -99,6 +99,7 @@ import {
 	sendBack,
 	settleScript,
 	TALK_NEAR,
+	tamperScript,
 } from "./villageReturn";
 import {
 	DUNGEON_DESC,
@@ -640,6 +641,8 @@ const arrivalScript =
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
+		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
+		await tamperScript(s);
 		await settleScript(s, storeChooser(ctx));
 		await sendBack(s);
 		// 持ち物が からっぽなら ぷゆゆが お弁当を 持たせに くる

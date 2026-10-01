@@ -17,7 +17,7 @@ import {
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTER_LIST, MONSTERS, monstersFor } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
-import { spawnMonster } from "../core/floor";
+import { callHunter, HUNTER, spawnMonster } from "../core/floor";
 import { canSee } from "../core/fov";
 import {
 	type Dir8,
@@ -3642,11 +3642,72 @@ test(
 	},
 );
 
+// ───────────────── 削除人（書きかえた 冒険の 追っ手。engine/tamper.ts） ─────────────────
+
+test(
+	"sakujonin",
+	"never on a floor table, never made by a staff of change, shrugs it off, attacks twice",
+	() => {
+		for (const d of DUNGEON_IDS)
+			for (let depth = 1; depth <= 99; depth++)
+				ok(
+					!monstersFor(depth, d).some((m) => m.id === HUNTER),
+					`${d} B${depth}: on the table`,
+				);
+		const r = arena("sakujonin-change");
+		const m = put(r, "tousuko", at(3, 3));
+		for (let i = 0; i < 60; i++) {
+			transformMonster(r, m);
+			ok(m.kind !== HUNTER, "a staff of change made a 削除人");
+		}
+		// 変えた 敵は どける（眠らせる 敵などに なると 数えが ずれる）
+		r.f.monsters = r.f.monsters.filter((x) => x !== m);
+		const h = put(r, HUNTER, at(1, 0));
+		staffEffect(r, "w_change", h);
+		ok(h.kind === HUNTER, `became ${h.kind}`);
+		ok(logHas(r, "効かなかった"), "no 効かなかった line");
+		for (let i = 1; i <= 5; i++) {
+			const n = count(turn(r), "attack", h.uid);
+			ok(n === 2, `turn ${i}: ${n} attacks (expected 2)`);
+		}
+	},
+);
+
+test(
+	"sakujonin",
+	"one on every floor of a tampered run, none otherwise",
+	() => {
+		const hunters = (r: Run) =>
+			r.f.monsters.filter((m) => m.kind === HUNTER).length;
+		const plain = Run.create("hunter-plain", "main");
+		for (let d = 2; d <= 6; d++) {
+			plain.enterFloor(d, false);
+			ok(hunters(plain) === 0, `B${d}: a 削除人 in a plain run`);
+		}
+		ok(!callHunter(plain), "called one in a plain run");
+		const cheat = Run.create("hunter-cheat", "main");
+		cheat.s.cheat = true;
+		for (let d = 2; d <= 6; d++) {
+			cheat.enterFloor(d, false);
+			ok(hunters(cheat) === 1, `B${d}: ${hunters(cheat)} 削除人`);
+			const h = cheat.f.monsters.find((m) => m.kind === HUNTER);
+			ok(h && h.status.sleep === 0, `B${d}: the 削除人 sleeps`);
+		}
+		// 続けた ときの 階：いなければ 1体、いれば 出さない
+		ok(!callHunter(cheat), "called a second one");
+		cheat.f.monsters = cheat.f.monsters.filter((m) => m.kind !== HUNTER);
+		ok(
+			callHunter(cheat) && hunters(cheat) === 1,
+			"no 削除人 on the continued floor",
+		);
+	},
+);
+
 test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",
 	() => {
-		ok(MONSTER_LIST.length === 44, `${MONSTER_LIST.length} monsters`);
+		ok(MONSTER_LIST.length === 45, `${MONSTER_LIST.length} monsters`);
 		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
 		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(

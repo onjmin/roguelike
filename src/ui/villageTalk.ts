@@ -21,6 +21,7 @@ import {
 	mentionsAway,
 	SHALLOW_DEATH,
 } from "../data/story";
+import { TAMPER_LEDGER, TAMPER_TALK, tamperTier } from "../data/tamper";
 import {
 	ESCAPE_QUOTES,
 	TITLE_TOWN_QUOTES,
@@ -36,6 +37,25 @@ import {
 	runStats,
 } from "../engine/save";
 import { settings } from "../engine/settings";
+import { disappointed } from "../engine/tamper";
+
+/**
+ * セーブを 書きかえた あと、仲間が がっかり している 段（data/tamper.ts。していなければ null）。
+ * そのあいだ 話しかけた ときの ひとこと・起動の札・たおれた ときの ひとこと・帳簿が かわる。
+ */
+export const sulkTier = (): number | null => {
+	const n = disappointed(runStats().runs);
+	return n ? tamperTier(n) : null;
+};
+
+/** がっかり している 仲間の ひとこと（村に いる 人から seed で 1人）。 */
+const sulkQuote = (tier: number, seed: number): Quote | null => {
+	const here = (Object.keys(TAMPER_TALK) as Speaker[]).filter(
+		(w) => !away_().includes(w),
+	);
+	const who = here[seed % Math.max(1, here.length)];
+	return who ? { who, text: TAMPER_TALK[who][tier] ?? "" } : null;
+};
 
 /**
  * ダンジョンの ひとことの説明（口・立て札の 2行目。階の数は 1行目の 名前の 横に 出す）。
@@ -74,6 +94,8 @@ const quoteContext = (): QuoteContext => {
 export const deathQuote = (seed: number): Quote | null => {
 	const last = loadRecords()[0];
 	if (last?.kind !== "dead") return null;
+	const sulk = sulkTier();
+	if (sulk !== null) return sulkQuote(sulk, seed);
 	const away = away_();
 	const here = SHALLOW_DEATH.filter(
 		(x) => !away.includes(x.who) && !mentionsAway(x.text, away),
@@ -92,6 +114,8 @@ const away_ = (): Speaker[] =>
  * 無ければ 本編の たまり（data/quotes.ts の pickQuote）。
  */
 export const titleQuote = (seed: number): Quote | null => {
+	const sulk = sulkTier();
+	if (sulk !== null) return sulkQuote(sulk, seed);
 	const last = loadRecords()[0];
 	const away = away_();
 	const pick = (all: readonly Quote[], salt: number) => {
@@ -208,13 +232,18 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
 
 /** まだ 聞いていない 新しい ひとことが あるか（頭の上の「！」）。 */
 export const hasNews = (who: Speaker): boolean =>
-	loadHeard()[who] !== returnAt() && reaction(who) !== null;
+	sulkTier() === null &&
+	loadHeard()[who] !== returnAt() &&
+	reaction(who) !== null;
 
 /**
  * 話しかけたときの ひとこと。新しい話が あれば それ（聞いたと 覚える）、無ければ 決まった ひとこと。
  * gate は やきうが 本編の口の前で 見張っているとき。
  */
 export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string => {
+	// がっかり している あいだは 新しい話も しない（聞いたことにも しない。あとで 聞ける）
+	const sulk = sulkTier();
+	if (sulk !== null) return TAMPER_TALK[who][sulk] ?? VILLAGE_IDLE[who];
 	const at = returnAt();
 	const heard = loadHeard();
 	if (heard[who] !== at) {
@@ -236,6 +265,9 @@ export const fill = (
 /** ゼロの 帳簿：売り上げの 合計（次の 段まで いくら かは 言わない）。 */
 export const ledgerLine = (): string => {
 	const t = loadTown();
+	const sulk = sulkTier();
+	if (sulk !== null)
+		return fill(TAMPER_LEDGER[sulk] ?? "", { points: t.points });
 	if (t.stage >= TOWN_STAGES - 1)
 		return fill(VILLAGE_MSG.ledgerMax, { points: t.points });
 	if (t.points <= 0) return VILLAGE_MSG.ledgerNone;

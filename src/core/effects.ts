@@ -604,7 +604,8 @@ const wave = (r: Run, it: Item): boolean => {
  * 効かなければ ひとこと 言って true。
  */
 const bossShrugs = (r: Run, m: Monster, nm: string): boolean => {
-	if (!isBoss(m)) return false;
+	// 削除人（書きかえた 冒険の 追っ手）にも 杖の いたずらは 効かない
+	if (!isBoss(m) && !mdef(m).hunter) return false;
 	r.msg(`${nm}には　効かなかった`);
 	return true;
 };

@@ -896,6 +896,7 @@ export const transformMonster = (r: Run, m: Monster, to?: string): void => {
 	const cands = Object.values(MONSTERS).filter(
 		(d) =>
 			!d.boss &&
+			!d.hunter &&
 			d.id !== m.kind &&
 			d.floors[0] <= r.levelAt(r.f.depth) + 4 &&
 			(!d.board || d.board === r.s.dungeon),

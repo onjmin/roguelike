@@ -92,6 +92,13 @@ import {
 	UNLOCK_VISIT,
 } from "../data/story";
 import {
+	TAMPER_LEDGER,
+	TAMPER_MOB,
+	TAMPER_NARRATION,
+	TAMPER_SCENE,
+	TAMPER_TALK,
+} from "../data/tamper";
+import {
 	ARRIVE_MSG,
 	ESCAPE_QUOTES,
 	OPENING,
@@ -170,7 +177,6 @@ import {
 	type Town,
 	toReplay,
 } from "../engine/save";
-import { writeSealed } from "../engine/seal";
 import { isWalkRef } from "../engine/sprite";
 import { floorsText } from "../ui/bookView";
 import {
@@ -827,7 +833,7 @@ const pushRecord = (r: Partial<RunRecord>): void => {
 
 /** 町（段と 売り上げ）を 置く。 */
 const setTown = (stage: number, points: number): void =>
-	writeSealed(
+	localStorage.setItem(
 		"kiriko-roguelike/town",
 		JSON.stringify({ points, stage, storage: [], pending: null, returned: [] }),
 	);
@@ -951,6 +957,33 @@ const fitsWindow = (texts: readonly [string, string][]): void => {
 			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
 	}
 };
+
+test("セーブの 書きかえ: every line fits the village window, every friend has a line for each tier", () => {
+	const texts: [string, string][] = [];
+	TAMPER_SCENE.forEach((ls, t) => {
+		ls.forEach((l, i) => {
+			texts.push([`TAMPER_SCENE[${t}][${i}]`, l.text]);
+		});
+	});
+	TAMPER_NARRATION.forEach((v, i) => {
+		texts.push([`TAMPER_NARRATION[${i}]`, v]);
+	});
+	for (const [w, ls] of Object.entries(TAMPER_TALK)) {
+		ok(ls.length === TAMPER_SCENE.length, `${w}: ${ls.length} tiers`);
+		ls.forEach((v, i) => {
+			texts.push([`TAMPER_TALK.${w}[${i}]`, v]);
+		});
+	}
+	TAMPER_LEDGER.forEach((v, i) => {
+		texts.push([`TAMPER_LEDGER[${i}]`, v.replace("{points}", "9999999")]);
+	});
+	TAMPER_MOB.forEach((v, i) => {
+		texts.push([`TAMPER_MOB[${i}]`, v]);
+	});
+	fitsWindow(texts);
+	for (const w of Object.keys(SPEAKERS))
+		ok(w in TAMPER_TALK, `${w} has no tamper lines`);
+});
 
 test("new village lines fit the message window (22 full-width × 2 lines)", () => {
 	const texts: [string, string][] = [];
@@ -1211,7 +1244,7 @@ const setProgress = (
 	news: ProgressNews[] = [],
 	cleared: DungeonId[] = [],
 ): void =>
-	writeSealed(
+	localStorage.setItem(
 		PROGRESS_KEY,
 		JSON.stringify({ unlocked, cleared, fails: {}, intro: [], news }),
 	);
@@ -1229,7 +1262,7 @@ const item = (uid: number, kind: string, extra: Partial<Item> = {}): Item => ({
 
 /** 町を まるごと 置く。 */
 const putTown = (t: Partial<Town>): void =>
-	writeSealed(
+	localStorage.setItem(
 		TOWN_KEY,
 		JSON.stringify({
 			points: 0,
@@ -1568,7 +1601,7 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 		endings: DungeonId[],
 		news: ProgressNews[] = [],
 	) =>
-		writeSealed(
+		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify({
 				unlocked: all,
@@ -1856,7 +1889,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 		const a = fakeStory();
 		await settleScript(
 			a.s,
-			chooser([1], () => writeSealed(TOWN_KEY, JSON.stringify(other))),
+			chooser([1], () => localStorage.setItem(TOWN_KEY, JSON.stringify(other))),
 		);
 		ok(
 			JSON.stringify(loadTown()) === JSON.stringify(other),
@@ -3597,7 +3630,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		ok(!hasHallNews(v), "「！」 with no event");
 		const texts: [string, string][] = [];
 		for (const e of EVENTS) {
-			writeSealed(
+			localStorage.setItem(
 				PROGRESS_KEY,
 				JSON.stringify(
 					prog({
@@ -3629,7 +3662,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		ok(!hasHallNews(v), "「！」 after reading the notice");
 		forgetHallMemo();
 		ok(!hasHallNews(v), "the read notice was forgotten");
-		writeSealed(
+		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify(
 				prog({
@@ -3643,7 +3676,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal; the d
 		await noticeScript(fakeStory().s);
 		ok(!hasHallNews(v), "「！」 after reading that event");
 		// 同じ イベントが また 起きたら（始まった 出撃が かわる）また「！」。読みなおしても 同じ
-		writeSealed(
+		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify(
 				prog({
@@ -3675,7 +3708,7 @@ test("期間限定の 告知: the same event starting again after it ended (adva
 			});
 			p = r.progress;
 			if (!r.started) continue;
-			writeSealed(PROGRESS_KEY, JSON.stringify(p));
+			localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
 			forgetProgressMemo();
 			if (starts.length && r.started.id === starts[0]) {
 				starts.push(r.started.id);

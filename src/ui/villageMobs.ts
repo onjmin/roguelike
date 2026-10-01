@@ -27,6 +27,7 @@ import {
 } from "../data/mobs";
 import type { Speaker } from "../data/quotes";
 import { awayFriends, mentionsAway } from "../data/story";
+import { TAMPER_MOB } from "../data/tamper";
 import type { Script, Story } from "../engine/defs";
 import {
 	loadBook,
@@ -35,7 +36,7 @@ import {
 	loadTown,
 	runStats,
 } from "../engine/save";
-import { fill } from "./villageTalk";
+import { fill, sulkTier } from "./villageTalk";
 
 /** 仲間が「近くに いる」と みなす 距離（マス。たて・よこ・ななめ の 大きい方）。 */
 export const NEAR = 2;
@@ -202,8 +203,17 @@ const nextChat = (
 	return null;
 };
 
+/** セーブを 書きかえた あと（仲間が がっかり している あいだ）の ひそひそ話（住人ごとに 1つ。data/tamper.ts）。 */
+const mobSulk = (def: MobDef): string | null => {
+	if (sulkTier() === null) return null;
+	const h = [...def.name].reduce((a, c) => a + c.charCodeAt(0), 0);
+	return TAMPER_MOB[h % TAMPER_MOB.length] ?? null;
+};
+
 /** 前の冒険への 反応（まだ 一度も もぐっていなければ null）。たおれたら by → おなかが → 深さ。 */
 export const reactionOf = (def: MobDef): string | null => {
+	const sulk = mobSulk(def);
+	if (sulk) return sulk;
 	const x = ctxOf(load());
 	const last = x.last;
 	if (!last) return null;
@@ -218,9 +228,10 @@ export const reactionOf = (def: MobDef): string | null => {
 
 /** いつもの ひとこと（7つなら 曜日で）。 */
 export const idleOf = (def: MobDef): string =>
-	typeof def.idle === "string"
+	mobSulk(def) ??
+	(typeof def.idle === "string"
 		? def.idle
-		: (def.idle[today().w] ?? def.idle[0] ?? "");
+		: (def.idle[today().w] ?? def.idle[0] ?? ""));
 
 /** 頭の上に「！」（はじめまして・お礼・まだ見ていない 節目か、仲間なしで この帰りに 合う 雑談が ある）。 */
 export const hasMobNews = (id: MobId): boolean => {

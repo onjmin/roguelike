@@ -28,12 +28,14 @@ const TAG_NAME: Record<MonsterTag, string> = {
  * ほかは floors（板だけの 敵は その板の 名前を 添える）。
  */
 export const floorsText = (d: MonsterDef): string =>
-	d.boss && d.board
-		? `${floorShort(d.board, dungeonById(d.board).floors)}（${DUNGEON_NAMES[d.board].name}の　ボス）`
-		: (d.floors[0] === d.floors[1]
-				? `B${d.floors[0]}`
-				: `B${d.floors[0]}〜B${d.floors[1]}`) +
-			(d.board ? `（${DUNGEON_NAMES[d.board].name}だけ）` : "");
+	d.hunter
+		? "書きかえた　冒険の　各階"
+		: d.boss && d.board
+			? `${floorShort(d.board, dungeonById(d.board).floors)}（${DUNGEON_NAMES[d.board].name}の　ボス）`
+			: (d.floors[0] === d.floors[1]
+					? `B${d.floors[0]}`
+					: `B${d.floors[0]}〜B${d.floors[1]}`) +
+				(d.board ? `（${DUNGEON_NAMES[d.board].name}だけ）` : "");
 
 /** 一覧の 絵の 大きさ（2倍）。 */
 const ROW_PX = 32;
@@ -59,10 +61,12 @@ export const openBook = async (ctx: Ctx): Promise<void> => {
 	for (;;) {
 		const book = loadBook();
 		const seen = new Set(book.seen);
-		const arts = MONSTER_LIST.map((d) =>
+		// 削除人（書きかえた 冒険だけ）は 会うまで 載せない（図鑑を うめるのに チートは いらない）
+		const list = MONSTER_LIST.filter((d) => !d.hunter || seen.has(d.id));
+		const arts = list.map((d) =>
 			monsterArt(d, { px: ROW_PX, shadow: !seen.has(d.id) }),
 		);
-		const rows = MONSTER_LIST.map((d, i) =>
+		const rows = list.map((d, i) =>
 			seen.has(d.id)
 				? {
 						label: esc(d.name),
@@ -83,7 +87,7 @@ export const openBook = async (ctx: Ctx): Promise<void> => {
 		const stopRows = animateArts(arts);
 		const v = await listWindow(
 			ctx,
-			`モンスター図鑑　${seen.size}/${MONSTER_LIST.length}`,
+			`モンスター図鑑　${list.filter((d) => seen.has(d.id)).length}/${list.length}`,
 			rows,
 			{ start },
 		);
@@ -93,7 +97,7 @@ export const openBook = async (ctx: Ctx): Promise<void> => {
 			0,
 			rows.findIndex((r) => r.value === v),
 		);
-		const d = MONSTER_LIST.find((m) => m.id === v);
+		const d = list.find((m) => m.id === v);
 		if (!d) continue;
 		// 窓の 上に 大きな 絵と 名前（ドラクエの 図鑑のように）
 		const art = monsterArt(d, { px: detailPx(d) });

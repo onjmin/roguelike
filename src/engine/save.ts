@@ -15,7 +15,7 @@ import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
-import { readSealed, writeSealed } from "./seal";
+import { noteTamper, oddRun, oddTown } from "./tamper";
 
 const PREFIX = "kiriko-roguelike/";
 const RUN_KEY = `${PREFIX}run`;
@@ -26,6 +26,17 @@ const REPLAYS_KEY = `${PREFIX}replays`;
 const PROGRESS_KEY = `${PREFIX}progress`;
 const TOWN_KEY = `${PREFIX}town`;
 const RECORDS_MAX = 50;
+
+/**
+ * 中断セーブ・進み具合・町を 読む。少しの あいだ 署名（`$1:<署名>:`）を 付けて 書いていた 版が あったので、
+ * 付いていれば はがす（書きかえは とめない。見つけるのは engine/tamper.ts）。
+ */
+const readSave = (key: string): string | null => {
+	const raw = localStorage.getItem(key);
+	if (!raw?.startsWith("$1:")) return raw;
+	const at = raw.indexOf(":", 3);
+	return at < 0 ? raw : raw.slice(at + 1);
+};
 
 /**
  * セーブデータを ぜんぶ 消す（はじめから やりなおす）。この ゲームの 記録は ぜんぶ PREFIX の 下に あるので、
@@ -50,7 +61,7 @@ export const REPLAYS_KEEP = 20;
 
 export const hasRunSave = (): boolean => {
 	try {
-		return !!readSealed(RUN_KEY);
+		return !!localStorage.getItem(RUN_KEY);
 	} catch {
 		return false;
 	}
@@ -92,7 +103,7 @@ export const saveRun = (s: RunState): void => {
 	}
 	const text = serializeRun(s);
 	try {
-		writeSealed(RUN_KEY, text);
+		localStorage.setItem(RUN_KEY, text);
 	} catch {
 		// 容量不足のときは、古い中断セーブを消してから もう一度（古いのが残ると、
 		// 読み直したときに 何階も前へ 巻きもどってしまう）
@@ -105,7 +116,7 @@ export const saveRun = (s: RunState): void => {
 		const replays = loadReplays();
 		for (;;) {
 			try {
-				writeSealed(RUN_KEY, text);
+				localStorage.setItem(RUN_KEY, text);
 				return;
 			} catch {
 				if (!replays.length) return; // プライベートモードなど。中断はできないが遊べる
@@ -130,7 +141,7 @@ export const saveRun = (s: RunState): void => {
 /** 中断セーブを読む。無い・壊れている・版がちがう・終わっている なら null。 */
 export const loadRun = (): RunState | null => {
 	try {
-		const raw = readSealed(RUN_KEY);
+		const raw = readSave(RUN_KEY);
 		if (!raw) return null;
 		const s = migrateRun(deserializeRun(raw));
 		if (!s?.player || !s.floor || s.end) return null;
@@ -156,6 +167,12 @@ export const loadRun = (): RunState | null => {
 					break;
 				}
 			}
+		}
+		// 書きかえた 中断セーブ（ありえない 値）も そのまま 遊べる。かわりに 仲間が がっかりし、
+		// この 冒険では 各階に 削除人が 出る（engine/tamper.ts）
+		if (!s.cheat && oddRun(s)) {
+			noteTamper(`run:${s.seed}`, runStats().runs);
+			s.cheat = true;
 		}
 		return s;
 	} catch {
@@ -185,6 +202,8 @@ export type RunRecord = {
 	dungeon?: DungeonId;
 	/** 目的（ボスの ときだけ 書く。無ければ 持ち帰り）。 */
 	objective?: Objective;
+	/** 中断セーブを 書きかえた 冒険（engine/tamper.ts）。 */
+	cheat?: true;
 };
 
 type Stats = { runs: number; clears: number; best: number };
@@ -210,6 +229,7 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		seed: s.seed,
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
+		...(s.cheat ? { cheat: true as const } : {}),
 	};
 };
 
@@ -384,7 +404,7 @@ const isActiveEvent = (x: unknown): x is ActiveEvent => {
 /** どこまで開いたか。まだ無ければ、これまでの記録から決める（ダンジョンが1つだったころに遊んだ人は 本編も開いている）。 */
 export const loadProgress = (): Progress => {
 	try {
-		const raw = readSealed(PROGRESS_KEY);
+		const raw = readSave(PROGRESS_KEY);
 		if (raw) {
 			const o = JSON.parse(raw) as Partial<Progress>;
 			const list = (a: unknown) =>
@@ -475,7 +495,7 @@ export const forgetProgressMemo = (): void => {
 export const saveProgress = (p: Progress): void => {
 	progressMemo = JSON.parse(JSON.stringify(p)) as Progress;
 	try {
-		writeSealed(PROGRESS_KEY, JSON.stringify(p));
+		localStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
 	} catch {
 		// 保存できなくても遊べる（この回は 写しで続ける。次に開いたとき 記録から決めなおす）
 	}
@@ -626,9 +646,11 @@ const isItem = (x: unknown): x is Item =>
 
 export const loadTown = (): Town => {
 	try {
-		const raw = readSealed(TOWN_KEY);
+		const raw = readSave(TOWN_KEY);
 		if (raw) {
 			const o = JSON.parse(raw) as Partial<Town>;
+			if (oddTown(o))
+				noteTamper(`town:${o.points}:${o.stage}`, runStats().runs);
 			const pend = o.pending;
 			return {
 				points: typeof o.points === "number" ? o.points : 0,
@@ -669,7 +691,7 @@ export const loadTown = (): Town => {
 
 export const saveTown = (t: Town): void => {
 	try {
-		writeSealed(TOWN_KEY, JSON.stringify(t));
+		localStorage.setItem(TOWN_KEY, JSON.stringify(t));
 	} catch {
 		// 保存できなくても遊べる
 	}
@@ -936,6 +958,8 @@ export const replayMatches = (p: SavedReplay, r: RunRecord): boolean =>
 /** 終わった冒険のリプレイを残す（記録していない冒険・開発用の冒険は残さない）。 */
 const addReplay = (s: RunState): void => {
 	if (s.seed.startsWith(DEBUG_SEED) || !s.end) return;
+	// 書きかえた 冒険は 同じ シードと 手順から 同じ 終わりに ならない
+	if (s.cheat) return;
 	if (typeof s.replay !== "string" || !s.replayN) return;
 	// 同じ冒険の 同じ終わりだけ入れかえる（別のタブで続けた終わりは 別に残す）
 	const end = s.end;

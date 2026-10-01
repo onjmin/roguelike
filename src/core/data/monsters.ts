@@ -742,6 +742,23 @@ const M: MonsterDef[] = [
 		desc: "源泉を　守る　湯守。まっすぐ　ならぶと　熱い　湯を　かけ、となりでは　眠らせる",
 		flavor: "混浴でしてよ。……湯あたりには　お気をつけあそばせ",
 	},
+	{
+		// 書きかえた 中断セーブで もぐると 各階に 1体（ポケダンの カクレオン。core/floor.ts の HUNTER）。表には 出ない
+		id: "sakujonin",
+		name: "削除人",
+		sprite: "sa:pMxknZ",
+		hunter: true,
+		hp: 999,
+		atk: 60,
+		def: 50,
+		exp: 0,
+		floors: [1, 99],
+		weight: 0,
+		abilities: [{ k: "fastAct" }],
+		sleep: "never",
+		desc: "書きかえた　セーブを　かぎつけて　各階に　あらわれる。1ターンに　2回　なぐる",
+		flavor: "削除依頼は　受けつけて　おりません。……対象は、あなたです",
+	},
 ];
 
 export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
@@ -754,6 +771,7 @@ export const monstersFor = (depth: number, dungeon?: DungeonId): MonsterDef[] =>
 	M.filter(
 		(m) =>
 			!m.boss &&
+			!m.hunter &&
 			depth >= m.floors[0] &&
 			depth <= m.floors[1] &&
 			(!m.board || m.board === dungeon),

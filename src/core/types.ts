@@ -190,6 +190,8 @@ export type MonsterDef = {
 	boss?: true;
 	/** 絵の 倍率（ボスは 大きく 描く。無ければ 1）。 */
 	scale?: number;
+	/** 書きかえた 冒険だけに 出る（core/floor.ts の HUNTER。表には 出ず、図鑑も 会うまで 数に 入れない）。 */
+	hunter?: true;
 	/** 図鑑の一言。 */
 	desc: string;
 	/** ひとこと（皮肉の きいた 1文。図鑑の「せつめい」に 出す）。 */
@@ -411,6 +413,11 @@ export type RunState = {
 	 * 前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
 	 */
 	objective?: Objective;
+	/**
+	 * 中断セーブを 書きかえて 続けている（engine/tamper.ts が 見つける）。各階に 削除人が 1体 出る（core/floor.ts）。
+	 * ふつうの 冒険では 書かない（前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
+	 */
+	cheat?: true;
 	rng: RngState;
 	depth: number;
 	turn: number;

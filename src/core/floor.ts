@@ -248,8 +248,26 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			at && spawnMonster(r, spec.monster, at, { sleep: DEEP, single: true });
 		if (m) f.boss = m.uid;
 	}
+	// 書きかえた 冒険：キリコの いない 部屋に 削除人が 1体（ふつうの 冒険では 乱数を 引かない）
+	if (r.s.cheat) {
+		const at = place(null);
+		if (at) spawnMonster(r, HUNTER, at, { awake: true, single: true });
+	}
 	r.s.floor = prevFloor;
 	return f;
+};
+
+/** 書きかえた 冒険を 追う 敵（ポケダンの カクレオン。data/monsters.ts）。 */
+export const HUNTER = "sakujonin";
+
+/**
+ * 書きかえた 中断セーブを 続けた とき：いまの 階に 削除人が いなければ、キリコから 見えない 所に 出す
+ * （次の 階からは buildFloor が 出す）。乱数を 引くので、呼んだら RunState.rng を 入れなおす。
+ */
+export const callHunter = (r: Run): boolean => {
+	if (!r.s.cheat || r.f.monsters.some((m) => m.kind === HUNTER)) return false;
+	const at = randomFloorPos(r, true);
+	return !!at && !!spawnMonster(r, HUNTER, at, { awake: true, single: true });
 };
 
 /** ただの 置物の 数（置物の 敵が 出る 階だけ）。 */
