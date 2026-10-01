@@ -41,6 +41,24 @@ export const PIANO_MSG = {
 export const SHOP_MENU = ["店の　奥へ", "やめる"] as const;
 export const STORE_MENU = ["倉庫を　見る", "中に　入る", "やめる"] as const;
 
+/** 倉庫が 銀行に なってから（段7。BANK_FROM）の 札・扉・選択肢・調べる 物（ROOM_MSG.store を 上書き）。 */
+export const BANK_FROM = 7;
+export const BANK = {
+	name: "保守銀行　貸金庫",
+	door: "シヨが　金の　扉を　あけてくれた。\n……貸金庫の　中へ。",
+	menu: ["貸金庫を　見る", "中に　入る", "やめる"],
+	msg: {
+		shelf: [
+			"貸金庫の　引き出し。\n札に　シヨの　字。鍵は　シヨが　持っている。",
+		],
+		lost: [
+			"いちばん　奥の　引き出し。\n札の　名前は、どれも　知らない　人。",
+			"……契約は　まだ　切れていない。\nだれかが　毎月　はらっている。",
+		],
+		sacks: ["金庫。\n中身は　ぜんぶ　レス。……重い。"],
+	},
+} as const;
+
 /** 店番の ひとこと（奥へ 入れてくれる とき）。 */
 export const KEEPER_LINE = {
 	roze: "奥は　まかないの　台所アル。\n見るだけなら　常識の　範囲アル",

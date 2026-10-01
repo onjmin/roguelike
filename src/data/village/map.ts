@@ -19,7 +19,7 @@
 //   店   0 空き地（ロゼと 麻婆豆腐の鍋）  1 屋台（台と品物・本の看板）  2〜4 日よけ・ランプ・木箱
 //        5〜6 小さな店（常識堂。白い壁・赤い屋根）  7 2階建ての 大きな店（窓の花・ちょうちん）
 //   小屋 3〜 わら屋根・煙突（6〜 窓の下に 花の箱）
-//   倉庫 4〜5 板張りの 物置  6〜 石造りの 倉庫。シヨが 台の うしろに 立つ（それまでは 崖の そば）
+//   倉庫 2〜3 小さな 物置  4〜5 板張りの 倉庫  6 石造りの 倉庫  7 銀行（貸金庫）。シヨが 台の うしろに 立つ
 //   道   0〜4 土  5〜 石だたみ（広場も 石畳に。井戸）。6〜 花。7 桜と 野次馬
 //
 // 段7 の 町の 区画の 形（ほかの段は 区画を 差しかえる。@ は 人と 蓄音機。字は data/village/tiles.ts）
@@ -53,6 +53,7 @@ import type { Speaker } from "../quotes";
 import { awayFriends, FRIEND_FROM } from "../story";
 import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
+	BANK,
 	base,
 	C_DIRT,
 	C_GRASS,
@@ -70,6 +71,7 @@ import {
 	OUTSKIRTS,
 	PLAZA,
 	SHED,
+	SHED_SMALL,
 	SHOP,
 	STALL,
 	STONE,
@@ -138,7 +140,7 @@ export const VILLAGE_SPOTS = {
 	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
 	roze: (stage: number): Cell => (stage === 0 ? [13, 18] : [13, 17]),
 	/** シヨ（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
-	shiyo: (stage: number): Cell => (stage >= 4 ? [27, 17] : [26, 12]),
+	shiyo: (stage: number): Cell => (stage >= 2 ? [27, 17] : [26, 12]),
 	/** やきう（小屋の前で 大工）。 */
 	nanj: (_v: VillageView): Cell => [21, 18],
 	/** 音楽室「ピアノ機能」の 扉（段3 から。週末だけ 踏むと 中へ）。 */
@@ -271,9 +273,11 @@ const hutBlock = (stage: number): readonly string[] => {
 	return [" Cz ", " ZZ ", " J[ ", low];
 };
 
-/** 倉庫の区画（x=16〜20, y=5〜11）。段4から。 */
+/** 倉庫の区画（x=16〜20, y=5〜11）。段2から（物置 → 倉庫 → 石造り → 銀行）。 */
 const storeBlock = (stage: number): readonly string[] => {
-	if (stage < 4) return [];
+	if (stage < 2) return [];
+	// 小屋ていどの 物置（屋根と 扉だけ）
+	if (stage <= 3) return ["", "", "", " rrr ", " }7} ", "x,,,x", "x<->x"];
 	if (stage <= 5)
 		return ["", " rrr ", " RRR ", " {{g ", " 78} ", "x,,,x", "x<->x"];
 	return ["", "rrrrr", "RRRRR", "{{{g{", "}78}}", "x,,,x", "x<->x"];
@@ -490,7 +494,13 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...STALL,
 		...SHOP,
 		...HUT,
-		...(stage >= 6 ? STOREHOUSE : SHED),
+		...(stage >= 7
+			? BANK
+			: stage >= 6
+				? STOREHOUSE
+				: stage >= 4
+					? SHED
+					: SHED_SMALL),
 		...hallTiles(stage),
 		...CAFE,
 		...MUSIC,

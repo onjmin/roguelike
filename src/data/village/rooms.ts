@@ -162,7 +162,7 @@ export const ROOM_FROM: Record<RoomId, number> = {
 	cafe: 5,
 	hut: 3,
 	shop: 5,
-	store: 4,
+	store: 2,
 	music: 3,
 };
 
@@ -183,7 +183,7 @@ type Look = {
 	wallColor: string;
 };
 
-const LOOK: Record<RoomId | "shed", Look> = {
+const LOOK: Record<RoomId | "shed" | "bank", Look> = {
 	// 喫茶：しま模様の 壁紙と 腰板、こげ茶の 寄せ木
 	cafe: {
 		floor: base(0, 49),
@@ -222,7 +222,15 @@ const LOOK: Record<RoomId | "shed", Look> = {
 		low: base(1, 78),
 		wallColor: "#e8e4dc",
 	},
-	// 板張りの 物置（段4・5）
+	// 銀行の 貸金庫（段7）：白い 石の 壁と 石の 床
+	bank: {
+		floor: base(3, 46),
+		floorColor: "#b8b4a8",
+		up: base(1, 63),
+		low: base(1, 64),
+		wallColor: "#d8d4c8",
+	},
+	// 板張りの 物置・倉庫（段2〜5）
 	shed: {
 		floor: base(0, 46),
 		floorColor: "#b8905a",
@@ -234,7 +242,10 @@ const LOOK: Record<RoomId | "shed", Look> = {
 
 /** 部屋の パレット（rpg の 屋内 INDOOR が 下地。stage は 倉庫の 見た目だけ かえる）。 */
 export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
-	const l = LOOK[id === "store" && stage < 6 ? "shed" : id];
+	const l =
+		LOOK[
+			id !== "store" ? id : stage >= 7 ? "bank" : stage >= 6 ? "store" : "shed"
+		];
 	const on = (...refs: string[]) => solid(l.floorColor, l.floor, ...refs);
 	const up = (...refs: string[]) => solid(l.wallColor, l.up, ...refs);
 	const low = (...refs: string[]) => solid(l.wallColor, l.low, ...refs);
@@ -313,6 +324,14 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				q: on(base(1, 108, 1, 2)),
 				T: on(base(2, 108), onTop(6, 154)),
 				g: on(base(0, 125)),
+				// 銀行（段7）：棚は 貸金庫の 引き出し、袋は 金庫
+				...(stage >= 7 && {
+					S: on(base(0, 104, 1, 2)),
+					s: on(base(0, 104, 1, 2)),
+					Q: on(base(0, 104, 1, 2)),
+					q: on(base(0, 104, 1, 2)),
+					g: on(base(6, 123)),
+				}),
 			};
 	}
 };

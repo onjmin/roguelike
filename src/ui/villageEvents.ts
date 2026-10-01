@@ -29,7 +29,7 @@ import {
 	withDevEvent,
 } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
-import { SHOP_MENU, STORE_MENU } from "../data/rooms";
+import { BANK, BANK_FROM, SHOP_MENU, STORE_MENU } from "../data/rooms";
 import { SCRAP_MSG, SCRAPS, type Scrap } from "../data/scraps";
 import {
 	awayFriends,
@@ -481,7 +481,8 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 				await speak(s, who);
 				if ((STORAGE_CAP[loadTown().stage] ?? 0) <= 0) return;
 				// 倉庫が 建ったら 中にも 入れる（台の うしろの 扉から。ui/rooms.ts）
-				const n = await s.choose([...STORE_MENU], { cancel: 2 });
+				const menu = loadTown().stage >= BANK_FROM ? BANK.menu : STORE_MENU;
+				const n = await s.choose([...menu], { cancel: 2 });
 				if (n === 1) await keeperLets(s, who, "store");
 				if (n !== 0) return;
 				await hideMsg(s);

@@ -197,9 +197,9 @@ export const HUT: Record<string, TileDef> = {
 	E: solid(C_PLANK, PLANK_LOW, base(3, 362)),
 };
 
-// ───────────────── 倉庫（段4から） ─────────────────
-// 段4・5 は 板張りの 物置（だいだいの屋根）、段6 から 石造りの 倉庫（灰色の 高い屋根）。
-// 字は 同じで、map.ts が 段で どちらかを えらぶ。
+// ───────────────── 倉庫（段2から） ─────────────────
+// 段2〜5 は 板張りの 物置・倉庫（だいだいの屋根）、段6 は 石造りの 倉庫（灰色の 高い屋根）、
+// 段7 は 銀行（白い 石の 壁・金の 扉・金貨の 看板。中に 貸金庫）。字は 同じで、map.ts が 段で えらぶ。
 //   r R  屋根（棟・軒）   { }  壁（上段・下段）   g  袋の 看板   7 8  両開きの 扉（左・右。見るだけ）
 const storeTiles = (
 	roofCol: number,
@@ -215,7 +215,19 @@ const storeTiles = (
 	"8": solid(color, base(1, wallRow + 1), base(1, 92, 1, 2)),
 });
 export const SHED = storeTiles(1, 73, "#9a7a4a");
+/** 段2・3 の 小さな 物置（7 は 片開きの 扉）。 */
+export const SHED_SMALL: Record<string, TileDef> = {
+	...SHED,
+	"7": solid("#9a7a4a", base(1, 74), base(7, 73, 1, 2)),
+};
 export const STOREHOUSE = storeTiles(4, 67, "#8a8a8a");
+const BANK_COLOR = "#d8d4c8";
+export const BANK: Record<string, TileDef> = {
+	...storeTiles(2, 63, BANK_COLOR),
+	g: solid(BANK_COLOR, base(1, 63), base(4, 96)),
+	"7": solid(BANK_COLOR, base(1, 64), base(4, 92, 1, 2)),
+	"8": solid(BANK_COLOR, base(1, 64), base(5, 92, 1, 2)),
+};
 
 // ───────────────── おんJ 本館（崖の 前の まんなか。町の 段で 育つ） ─────────────────
 //   #  屋根の 棟   +  屋根の 軒   0  壁（上段）   $  壁（上段）に ちょうちん   6  壁（下段）

@@ -161,8 +161,13 @@ test("town stage rules: one step per return, the deep (電池板) clear jumps to
 	);
 	ok(nextStage(5, 0, none) === 5, "the town shrank");
 	ok(
-		STORAGE_CAP[3] === 0 && STORAGE_CAP[4] > 0 && CARRY_MAX[4] === 1,
-		"storage opens at stage 4 with carry 1",
+		STORAGE_CAP[1] === 0 && STORAGE_CAP[2] > 0 && CARRY_MAX[2] === 1,
+		"storage opens at stage 2 with carry 1",
+	);
+	ok(
+		STORAGE_CAP.every((c, i) => i === 0 || c >= STORAGE_CAP[i - 1]) &&
+			STORAGE_CAP.slice(3).every((c, i) => c > STORAGE_CAP[i + 2]),
+		"the storehouse does not grow with the town",
 	);
 	ok(CARRY_MAX[TOWN_STAGES - 1] === 4, "carry max is not 4 at the top");
 });

@@ -14,6 +14,8 @@ import {
 	PIANO_MENU,
 } from "../data/piano";
 import {
+	BANK,
+	BANK_FROM,
 	KEEPER_LINE,
 	MUSIC_CLOSED,
 	PIANO_MSG,
@@ -38,6 +40,7 @@ import {
 	type Spot,
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
+import { loadTown } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
@@ -51,7 +54,11 @@ export const enterRoom =
 		const seen = `roomDoor:${id}`;
 		if (!s.flag(seen)) {
 			s.set(seen);
-			await s.narrate(ROOM_DOOR[id]);
+			await s.narrate(
+				id === "store" && loadTown().stage >= BANK_FROM
+					? BANK.door
+					: ROOM_DOOR[id],
+			);
 		}
 		s.se("door");
 		await s.fadeOut(250);
@@ -191,6 +198,9 @@ export const thingLines = (
 	stage: number,
 ): readonly string[] => {
 	if (id === "hut" && kind === "plan") return planLines(stage);
+	// 銀行に なった 倉庫は 一部の 物が 貸金庫の 文に
+	if (id === "store" && stage >= BANK_FROM && kind in BANK.msg)
+		return BANK.msg[kind as keyof typeof BANK.msg];
 	const table = ROOM_MSG[id] as Record<string, readonly string[]>;
 	return table[kind] ?? [];
 };
@@ -231,7 +241,7 @@ export const buildRoom = (
 ): MapDef => {
 	return {
 		id,
-		name: ROOM_NAMES[id],
+		name: id === "store" && v.stage >= BANK_FROM ? BANK.name : ROOM_NAMES[id],
 		tiles: roomPalette(id, v.stage),
 		rows: roomRows(id),
 		outside: "#000",

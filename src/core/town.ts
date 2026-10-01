@@ -3,7 +3,8 @@
 // - 段は 0〜7。1回の帰りで 上がるのは 1段まで（トルネコ1と同じ）。段1（屋台）は ちょっと を持ち帰ると開く。
 // - 段の あいだは 小段（TOWN_STEPS）で 刻む。小段ごとに 住人が 1人 越してくる（data/mobs.ts の from）。
 // - 電池板 を持ち帰ると いちばん上の段へ（トルネコ1の しあわせの箱 と同じ。STORY.md §5 の 転）。
-// - 段4 で倉庫が開き、倉庫の道具を 過去ログの底 へ 1〜4個 持ちこめる（ちょっと・もっと には持ちこめない）。
+// - 段2 で倉庫（小さな 物置）が開き、段で 広がる（段7 は 銀行の 貸金庫）。倉庫の道具を 1〜4個 持ちこめる
+//   （ちょっと・もっと には持ちこめない）。
 // - 倒れたら 持ち物は ぜんぶ なくなる（持ちこんだ道具も）。町は 見た目と会話と 倉庫・持ちこみだけ。
 // 状態（売上・段・倉庫）は engine/save.ts が持つ。ここは 決まりだけ（DOM に触らない。テストできる）。
 
@@ -75,12 +76,12 @@ export const lastStepOf = (stage: number): number => {
 };
 
 /** 段 → 倉庫に あずけられる数。 */
-export const STORAGE_CAP: readonly number[] = [0, 0, 0, 0, 10, 20, 40, 60];
+export const STORAGE_CAP: readonly number[] = [0, 0, 3, 5, 10, 20, 40, 60];
 
 /**
  * 段 → 倉庫から 引き取って 1回の冒険に 持ちこめる数。持ちこめない 板は core/data/dungeons.ts の noCarry。
  */
-export const CARRY_MAX: readonly number[] = [0, 0, 0, 0, 1, 2, 3, 4];
+export const CARRY_MAX: readonly number[] = [0, 0, 1, 1, 1, 2, 3, 4];
 
 /** 道具の値段（売ったときに 町の売上になる。トルネコ1の売値に寄せた目安）。 */
 const PRICE: Record<string, number> = {

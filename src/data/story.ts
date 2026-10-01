@@ -37,14 +37,14 @@ export const playPage = (
 /**
  * 仲間が 村に 来る 町の 段（STORY.md §5「伸びた スレには 人が 来る」）。はじめの 保守村には やきうだけ
  * （と、前から いる ぷゆゆ）。建物と いっしょに 越してくる：屋台で 売る ロゼと 帳簿の ゼロ、屋根つき屋台の
- * 看板と 客よせの フェリス、倉庫番の シヨ。越してくる 場面は 町が 育つ とき（ui/villageReturn.ts の stageUp）。
+ * 看板と 客よせの フェリスと 物置（倉庫）番の シヨ。越してくる 場面は 町が 育つ とき（ui/villageReturn.ts の stageUp）。
  */
 export const FRIEND_FROM: Record<Speaker, number> = {
 	nanj: 0,
 	roze: 1,
 	zero: 1,
 	feris: 2,
-	shiyo: 4,
+	shiyo: 2,
 };
 
 /**
