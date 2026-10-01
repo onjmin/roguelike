@@ -152,7 +152,8 @@ export type Ability =
 	| { k: "armor" } // なぐる攻撃のダメージが半分
 	| { k: "knockback"; rate: number } // なぐった相手を吹きとばす
 	| { k: "berserk" } // HP が半分を切ると怒って倍速になる
-	| { k: "curse"; rate: number }; // なぐった相手の装備をのろう
+	| { k: "curse"; rate: number } // なぐった相手の装備をのろう
+	| { k: "purge"; rate: number }; // 削除人：なぐると 装備を はがす・ちから・レベル・最大HP を 下げる・混乱・目つぶし の どれか（指輪でも 防げない）
 
 export type MonsterTag = "dragon" | "undead" | "plant" | "doll" | "metal";
 

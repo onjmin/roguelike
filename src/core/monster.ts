@@ -75,6 +75,15 @@ const SNEERS: readonly string[] = [
 	"てやんでいｗ",
 ];
 
+/** 削除人（purge）の ひとこと（乱数は 使わない：ターンで 選ぶ）。 */
+const PURGE_LINES: readonly string[] = [
+	"規約違反を　確認しました",
+	"削除依頼が　出ています",
+	"該当レスを　削除します",
+	"ログは　保存されています",
+	"異議は　受けつけません",
+];
+
 /**
  * 風呂キャンセル界隈（rust）の ひとこと。風呂に 入らない 報告で、ふれた 板を 汚して 錆びさせる。
  * 語録は 作らず、実際に 出回っている 言い回しだけ（X の 投稿・用語の 解説に 出てくる 例文）。
@@ -811,6 +820,9 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 			case "knockback":
 				knockPlayer(r, m, 2);
 				return;
+			case "purge":
+				purgePlayer(r, m);
+				break;
 			case "curse": {
 				const eq = [r.weapon(), r.shield(), r.ring()].filter(
 					(x): x is NonNullable<typeof x> => !!x && !x.cursed,
@@ -824,6 +836,52 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 			}
 		}
 	}
+};
+
+/**
+ * 削除人に なぐられた：できる ものから 1つ（装備を はがして 足もとの 先へ・ちから−1・レベル−1・最大HP−5・混乱・目つぶし）。
+ * 書きかえた 冒険の 追っ手なので、指輪・盾・のろいでも 防げない（はがした 装備は 拾えば もどる）。
+ */
+const purgePlayer = (r: Run, m: Monster): void => {
+	const p = r.p;
+	const nm = seenName(r, m);
+	const gear = [r.weapon(), r.shield(), r.ring()].filter(
+		(x): x is NonNullable<typeof x> => !!x,
+	);
+	const can: (() => void)[] = [];
+	if (gear.length)
+		can.push(() => {
+			const it = r.rng.pick(gear);
+			r.removeItem(it);
+			r.msg(`${r.name(it)}を　はがされた！`, "warn");
+			// キリコの 向こう側（削除人から 遠い 方）へ
+			const d = dirOf(p.x - m.x, p.y - m.y);
+			const to = d === null ? p : step(step(p, d), d);
+			r.placeItem(it, r.isFree(to.x, to.y) ? to : p);
+		});
+	if (p.str > 1)
+		can.push(() => {
+			p.str--;
+			r.msg("ちからが　1　下がった", "warn");
+		});
+	if (p.lv > 1) can.push(() => r.drainLevel());
+	if (p.maxHp > 5)
+		can.push(() => {
+			p.maxHp -= 5;
+			p.hp = Math.min(p.hp, p.maxHp);
+			r.msg("最大HPが　5　下がった", "warn");
+		});
+	can.push(() => {
+		p.status.confuse = Math.max(p.status.confuse, 5);
+		r.msg("キリコは　混乱した", "warn");
+	});
+	can.push(() => {
+		p.status.blind = Math.max(p.status.blind, 10);
+		r.msg("アク禁された！　何も　見えない！", "warn");
+	});
+	r.msg(`${nm}「${PURGE_LINES[r.s.turn % PURGE_LINES.length]}」`);
+	r.se("debuff");
+	r.rng.pick(can)();
 };
 
 /** キリコを m から遠ざかる向きへ n マス吹きとばす。壁や敵にぶつかると 5 ダメージ。 */

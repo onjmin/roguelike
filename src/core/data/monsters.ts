@@ -754,9 +754,9 @@ const M: MonsterDef[] = [
 		exp: 0,
 		floors: [1, 99],
 		weight: 0,
-		abilities: [{ k: "fastAct" }],
+		abilities: [{ k: "fastAct" }, { k: "purge", rate: 1 / 2 }],
 		sleep: "never",
-		desc: "書きかえた　セーブを　かぎつけて　各階に　あらわれる。1ターンに　2回　なぐる",
+		desc: "書きかえた　セーブを　かぎつけて　各階に　あらわれる。1ターンに　2回　なぐり、装備を　はがす・ちからや　レベルを　下げる・混乱や　目つぶし",
 		flavor: "削除依頼は　受けつけて　おりません。……対象は、あなたです",
 	},
 ];

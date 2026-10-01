@@ -3675,6 +3675,45 @@ test(
 
 test(
 	"sakujonin",
+	"purge: strips gear and drains str / level / max HP or confuses / blinds, rings do not help",
+	() => {
+		const r = arena("sakujonin-purge");
+		r.gainExp(EXP_AT[9]);
+		r.p.str = r.p.maxStr = 20;
+		const gear = [equip(r, "club"), equip(r, "bronze"), equip(r, "r_ward")];
+		gear[0].cursed = true;
+		const lv = r.p.lv;
+		const maxHp = r.p.maxHp;
+		const h = put(r, HUNTER, at(1, 0));
+		let confused = false;
+		let blind = false;
+		for (let i = 0; i < 80; i++) {
+			turn(r);
+			confused ||= r.p.status.confuse > 0;
+			blind ||= r.p.status.blind > 0;
+			r.p.status.confuse = 0;
+			r.p.status.blind = 0;
+			r.p.hp = r.p.maxHp;
+			r.f.monsters = r.f.monsters.filter((m) => m === h);
+			h.x = r.p.x + 1;
+			h.y = r.p.y;
+		}
+		const stripped = gear.filter((g) => !r.p.items.includes(g));
+		ok(stripped.length > 0, "no gear was stripped");
+		ok(
+			stripped.every((g) => r.f.items.some((fi) => fi.item === g)),
+			"stripped gear was not dropped on the floor",
+		);
+		ok(r.p.str < 20, "strength never went down");
+		ok(r.p.lv < lv, "the level never went down (through the ward ring)");
+		ok(r.p.maxHp < maxHp, "max HP never went down");
+		ok(confused && blind, `confused ${confused}, blind ${blind}`);
+		ok(logHas(r, "規約違反") || logHas(r, "削除"), "the 削除人 said nothing");
+	},
+);
+
+test(
+	"sakujonin",
 	"one on every floor of a tampered run, none otherwise",
 	() => {
 		const hunters = (r: Run) =>
