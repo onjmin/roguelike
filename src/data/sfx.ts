@@ -94,7 +94,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** 忍法帖エラー（レベル−1）。 */
 		skill_drainLv: "rpgen:h9iBuH", // XP致命的なエラー
 		/** 文字化け（最大HP／最大ちから−）。 */
-		skill_drainMax: "rpgen:ySSr23", // ノイズ
+		skill_drainMax: "rpgen:2QAYI6", // ホラー電子音
 		/** 風吹けば名無し（ワープさせる）。 */
 		skill_warpPlayer: "rpgen:Ye4E4T", // [ツクール]風系
 		/** 論破厨・パン兵長・祭りの親分マシー（2マス 吹きとばす）。 */

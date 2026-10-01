@@ -164,7 +164,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	enemyMiss: ["DUvPmQ", -20.8, -16.6, -0.2, 0.977, 10, 240, 190], // battle → -21.0
 	skill_poison: ["2RJYrq", -8.4, -3.2, -12.6, 0.234, 40, 380, 310], // battle → -21.0
 	skill_drainLv: ["h9iBuH", -9.1, -0.5, -11.9, 0.254, 0, 780, 280], // battle → -21.0
-	skill_drainMax: ["ySSr23", -3.8, 0.7, -17.2, 0.138, 0, 2370, 1200], // battle → -21.0
+	skill_drainMax: ["2QAYI6", -7.1, -0.7, -13.9, 0.202, 0, 1290, 1200], // battle → -21.0
 	skill_warpPlayer: ["Ye4E4T", -6.6, 1.2, -14.4, 0.191, 60, 1640, 990], // battle → -21.0
 	skill_knockback: ["W7Z0Eh", -16, -4.9, -5, 0.562, 340, 550, 440], // battle → -21.0
 	skill_purge: ["miex8X", -11.6, -3.6, -9.4, 0.339, 0, 2240, 1200], // battle → -21.0
