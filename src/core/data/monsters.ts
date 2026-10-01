@@ -398,10 +398,10 @@ const M: MonsterDef[] = [
 		flavor: "見えないのに、いると　わかる。NGにしても　気配は　消えない",
 	},
 	{
-		// 前の名前は 赤鬼。絵は そのまま
+		// 前の名前は 赤鬼。絵は RPGEN の「発狂J民」（前は 赤鬼 sa:m9nxuZ）
 		id: "oni",
 		name: "顔真っ赤",
-		sprite: "sa:m9nxuZ",
+		sprite: "sa:UT7LXB",
 		hp: 51,
 		atk: 51,
 		def: 27,
