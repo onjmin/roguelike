@@ -41,6 +41,12 @@ export const isBoss = (m: Monster): boolean => !!MONSTERS[m.kind]?.boss;
 export const posing = (m: Monster): boolean =>
 	m.status.dormant && !!MONSTERS[m.kind]?.still;
 
+/** 画面に 出る 敵の 様子（寝ている＝Z・置物の 絵）。変わったら {t:"stir"} で 知らせる。 */
+export const restLook = (m: Monster): { asleep: boolean; posing: boolean } => ({
+	asleep: m.status.sleep > 0 || m.status.paralyze > 0,
+	posing: posing(m),
+});
+
 /** まどわされているときの 敵の呼び名（みんな キリコの姿に 見えて 見分けが つかない）。 */
 const DAZED_NAME = "なにか";
 

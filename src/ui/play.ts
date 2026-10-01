@@ -23,7 +23,7 @@ import {
 } from "../core/geom";
 import { defOf, itemHidden } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
-import { mdef, monsterName, posing } from "../core/monster";
+import { mdef, monsterName, posing, restLook } from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import { Run } from "../core/run";
 import {
@@ -31,7 +31,6 @@ import {
 	type Command,
 	type Floor,
 	type GameEvent,
-	type Monster,
 	PLAYER_ID,
 	type RescueKind,
 	type RunState,
@@ -178,12 +177,23 @@ const LEAD = new Set<GameEvent["t"]>([
 	"look",
 ]);
 
+/** ev[i] の となり（step = -1 前・1 後ろ）の 出来事。敵の 様子（stir）は とばす。 */
+const besideOf = (
+	ev: GameEvent[],
+	i: number,
+	step: -1 | 1,
+): GameEvent | undefined => {
+	let j = i + step;
+	while (ev[j]?.t === "stir") j += step;
+	return ev[j];
+};
+
 /** ev[i] から 続く 知らせ（LEAD）の 先が 行なら true。 */
 const leadsToLine = (ev: GameEvent[], i: number): boolean => {
 	for (let j = i; j < ev.length; j++) {
 		const t = ev[j].t;
 		if (t === "msg") return true;
-		if (!LEAD.has(t)) return false;
+		if (!LEAD.has(t) && t !== "stir") return false;
 	}
 	return false;
 };
@@ -192,7 +202,7 @@ const leadsToLine = (ev: GameEvent[], i: number): boolean => {
 const afterMotion = (ev: GameEvent[], i: number): boolean => {
 	for (let j = i - 1; j >= 0; j--) {
 		const t = ev[j].t;
-		if (t !== "msg" && t !== "se") return MOTION.has(t);
+		if (t !== "msg" && t !== "se" && t !== "stir") return MOTION.has(t);
 	}
 	return false;
 };
@@ -305,8 +315,8 @@ export class Play {
 	 * （削除人に なぐられる 前の 1歩で 画面が 暗く なったり 武器が 消えたり しないように）。
 	 */
 	/**
-	 * 敵の 寝ている・置物の 見た目は、その 敵が 動く・なぐる まで、だれかが 傷を 受ける まで act の 前の まま
-	 * （群れの 1体を なぐると、なぐる 前に 仲間の Z が 消えたり しないように）。uid → 前の 見た目。
+	 * 敵の 寝ている・置物の 見た目は、その 様子が 変わった 出来事（stir）まで act の 前の まま
+	 * （群れの 1体を なぐると、なぐる 前に 仲間の Z が 消えたり しないように）。uid → 見せている 見た目。
 	 */
 	private monHold: Map<number, { asleep: boolean; posing: boolean }> | null =
 		null;
@@ -1561,11 +1571,7 @@ export class Play {
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
 		const traps0 = run.f.traps.map((t) => ({ ...t }));
-		const monLook = (m: Monster) => ({
-			asleep: m.status.sleep > 0 || m.status.paralyze > 0,
-			posing: posing(m),
-		});
-		const mons0 = new Map(run.f.monsters.map((m) => [m.uid, monLook(m)]));
+		const mons0 = new Map(run.f.monsters.map((m) => [m.uid, restLook(m)]));
 		const look0 = {
 			blind: run.p.status.blind > 0,
 			weapon: run.weapon()?.kind ?? null,
@@ -1615,11 +1621,20 @@ export class Play {
 			// 前の act の 見た目を まだ 待って いれば そのまま（行が 来たら 外れる）
 			if (ev.some((e) => e.t === "look")) this.lookHold ??= look0;
 			if (run.s.floor === floor0) {
+				// 途中で 変わった 敵（{t:"stir"}）は、その 出来事まで 前の 見た目
+				const stirred = new Set(
+					ev.flatMap((e) => (e.t === "stir" ? [e.id] : [])),
+				);
 				const held = new Map<number, { asleep: boolean; posing: boolean }>();
 				for (const m of run.f.monsters) {
 					const a = mons0.get(m.uid);
-					const b = monLook(m);
-					if (a && (a.asleep !== b.asleep || a.posing !== b.posing))
+					const b = restLook(m);
+					if (
+						a &&
+						(stirred.has(m.uid) ||
+							a.asleep !== b.asleep ||
+							a.posing !== b.posing)
+					)
 						held.set(m.uid, a);
 				}
 				if (held.size) this.monHold = held;
@@ -2102,11 +2117,21 @@ export class Play {
 				i++;
 				continue;
 			}
+			// 敵が 起きた・眠った（Z・置物の 絵）。行が 続けば その 行と いっしょに、続かなければ すぐ
+			// （杖で 起こした 敵は「足が おそくなった」と いっしょに 起き、炎を 吐く ときには もう 起きている）
+			if (e.t === "stir") {
+				const look = { asleep: e.asleep, posing: e.posing };
+				const apply = () => this.monHold?.set(e.id, look);
+				if (leadsToLine(ev, i)) onLine.push(apply);
+				else apply();
+				i++;
+				continue;
+			}
 			// 知らせ（動きでは ない もの）は、それを 伝える 行と いっしょに・前の 行が 出てから 出す。
 			// 行より 先に ごほうびが 見えたり 音が 鳴ったり しないように（動きと 戦いは 今までどおり すぐ）
 			if (e.t === "se" || LEAD.has(e.t) || e.t === "item") {
-				const prev = ev[i - 1];
-				const next = ev[i + 1];
+				const prev = besideOf(ev, i, -1);
+				const next = besideOf(ev, i, 1);
 				const motionSound =
 					e.t === "se" &&
 					((prev && MOTION.has(prev.t)) ||
@@ -2140,7 +2165,6 @@ export class Play {
 					if (m.t !== "move" && m.t !== "turn") break;
 					const d = this.disp.get(m.id);
 					if (d) d.dir = m.dir;
-					this.monHold?.delete(m.id);
 					if (m.t === "move") {
 						const path = paths.get(m.id) ?? [];
 						path.push(m.to);
@@ -2213,7 +2237,6 @@ export class Play {
 					break;
 				}
 				case "attack": {
-					this.monHold?.delete(e.id);
 					const d = this.disp.get(e.id);
 					if (d) {
 						d.dir = e.dir;
@@ -2224,8 +2247,6 @@ export class Play {
 					break;
 				}
 				case "hurt": {
-					// 敵が 傷を 受けたら（群れの 仲間も 起きる）ここから 今の 見た目
-					if (e.id !== PLAYER_ID) this.monHold = null;
 					if (e.id === PLAYER_ID && e.hp !== undefined && this.hudHold)
 						this.hudHold.hp = e.hp;
 					// ボスの ゲージは 傷の たびに 減らす（ゲージは act の 前の 値から）
@@ -2248,7 +2269,6 @@ export class Play {
 					break;
 				}
 				case "miss":
-					if (e.id !== PLAYER_ID) this.monHold = null;
 					if (this.isShown(e.id, e.pos)) this.pop(e.pos, "ミス", "miss");
 					combat = true;
 					await wait(60 * speed);

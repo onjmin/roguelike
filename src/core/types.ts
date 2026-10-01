@@ -519,6 +519,11 @@ export type GameEvent =
 	| { t: "sleep"; id: number; on: boolean }
 	/** 眠っている あいだの 1ターンの 始まり（画面は ここで 区切って 1ターンずつ 見せる）。 */
 	| { t: "doze" }
+	/**
+	 * 敵の 寝ている・置物の 様子が 変わった（起きた・眠った・固まった・動きだした）。
+	 * 変わった あとの 最初の 出来事の 前に 出る。画面の Z・置物の 絵は ここで 追いつく。
+	 */
+	| { t: "stir"; id: number; asleep: boolean; posing: boolean }
 	| { t: "quake"; level: number }
 	/** 地図に 載る ことが わかった（聖地巡礼スレ・ヲチスレ・発掘スレ。地図を 閉じていれば 画面が ひとこと 添える）。 */
 	| { t: "reveal" }

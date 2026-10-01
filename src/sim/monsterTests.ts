@@ -1574,6 +1574,30 @@ test("wyvern", "fireward halves breath damage", () => {
 	);
 });
 
+test(
+	"wyvern",
+	"woken by a thrown w_slow: the wake (stir) comes before its breath",
+	() => {
+		let seen = false;
+		for (let k = 0; k < 40 && !seen; k++) {
+			const r = arena(`wyvern-stir-${k}`);
+			const m = put(r, "wyvern", at(4, 0), { sleep: DEEP });
+			const it = give(r, "w_slow");
+			const ev = turn(r, { c: "throw", item: it.uid, dir: 2 });
+			if (m.status.sleep > 0) continue; // 当たらなかった
+			const woke = ev.findIndex(
+				(e) => e.t === "stir" && e.id === m.uid && !e.asleep,
+			);
+			ok(woke >= 0, "no stir event when the staff woke it");
+			const fire = ev.findIndex((e) => e.t === "bolt" && e.kind === "fire");
+			if (fire < 0) continue;
+			seen = true;
+			ok(woke < fire, `stir at ${woke} after the breath at ${fire}`);
+		}
+		ok(seen, "never breathed in the same turn it was woken");
+	},
+);
+
 test("wyvern", "not in a straight line: no breath", () => {
 	const r = arena("wyvern-offline");
 	const home = at(-3, -2);

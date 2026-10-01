@@ -63,6 +63,7 @@ import {
 	monsterAct,
 	monsterName,
 	noticeAdjacent,
+	restLook,
 	wakeMonster,
 } from "./monster";
 import { recordCmd } from "./replay";
@@ -124,6 +125,8 @@ export class Run {
 	s: RunState;
 	rng: Rng;
 	ev: GameEvent[] = [];
+	/** 最後に 知らせた 敵の 様子（uid → asleep|posing の ビット）。変わったら {t:"stir"}。 */
+	private rest = new Map<number, number>();
 
 	constructor(s: RunState) {
 		this.s = s;
@@ -247,17 +250,35 @@ export class Run {
 	// ───────────────── 出来事 ─────────────────
 
 	msg(text: string, tone?: "warn" | "good"): void {
+		this.stir();
 		this.ev.push({ t: "msg", text, tone });
 		this.s.log.push(text);
 		if (this.s.log.length > 300) this.s.log.splice(0, this.s.log.length - 300);
 	}
 
 	se(name: string): void {
+		this.stir();
 		this.ev.push({ t: "se", name });
 	}
 
 	emit(e: GameEvent): void {
+		this.stir();
 		this.ev.push(e);
+	}
+
+	/**
+	 * 敵の 寝ている・置物の 様子が 変わっていたら、次の 出来事の 前に 知らせる
+	 * （杖で 起きた ワイバーンが 炎を 吐く 前に Z が 消えるように）。
+	 */
+	private stir(): void {
+		for (const m of this.f.monsters) {
+			const l = restLook(m);
+			const bits = (l.asleep ? 1 : 0) | (l.posing ? 2 : 0);
+			const was = this.rest.get(m.uid);
+			this.rest.set(m.uid, bits);
+			if (was !== undefined && was !== bits)
+				this.ev.push({ t: "stir", id: m.uid, ...l });
+		}
 	}
 
 	get p(): Player {
@@ -1142,6 +1163,9 @@ export class Run {
 	act(cmd: Command): GameEvent[] {
 		this.ev = [];
 		if (this.s.end) return this.ev;
+		// act の 前の 様子から 見る（あいだに 変わった ぶんは、変わった ところで 知らせる）
+		this.rest.clear();
+		this.stir();
 		const before = this.nearMap();
 		const used = this.doCommand(cmd);
 		if (used && !this.s.end) this.endTurn(before);
