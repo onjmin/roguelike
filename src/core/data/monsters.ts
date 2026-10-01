@@ -38,10 +38,10 @@ const M: MonsterDef[] = [
 		flavor: "落ちた　スレは　もどらない。未練だけが　まだ　ageている",
 	},
 	{
-		// 前の名前は 迷いコウモリ。絵は そのまま
+		// 前の名前は 迷いコウモリ。絵は RPGEN の「扇子で踊る男A」（前は こうもり sa:rfpCZH）
 		id: "bat",
 		name: "深夜テンション",
-		sprite: "sa:rfpCZH",
+		sprite: "sa:oHldpr",
 		hp: 7,
 		atk: 3,
 		def: 1,
@@ -49,7 +49,7 @@ const M: MonsterDef[] = [
 		floors: [1, 6],
 		weight: 64,
 		abilities: [{ k: "random" }],
-		desc: "夜ふかしで、どこへ　飛ぶか　自分でも　わからない",
+		desc: "夜ふかしで　おどりだす。どこへ　ステップを　ふむか　自分でも　わからない",
 		flavor: "書いた　ときは　名文。朝　読むと　黒歴史",
 	},
 	{
@@ -320,10 +320,10 @@ const M: MonsterDef[] = [
 	},
 	// ───────── 深い階 ─────────
 	{
-		// 前の名前は ゴーレム。絵は そのまま
+		// 前の名前は ゴーレム。絵は RPGEN の「ゴリラ」（前は ゴーレムの sa:arntMO）
 		id: "golem",
 		name: "ゴリラ",
-		sprite: "sa:arntMO",
+		sprite: "sa:6rFg1q",
 		hp: 52,
 		atk: 32,
 		def: 27,
