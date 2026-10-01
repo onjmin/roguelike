@@ -196,8 +196,8 @@ const afterMotion = (ev: GameEvent[], i: number): boolean => {
 
 /** 祭り（モンスターハウス）の曲。名無し155さんの アップテンポな曲（オクターブを直した版）。 */
 const HOUSE_BGM = "retro2";
-/** ボスの 曲（見つけてから たおすまで）。 */
-const BOSS_BGM = "boss";
+/** ボスの 曲（見つけてから たおすまで）。名無し155さんの 曲（もとは 電池板で 鳴らしていた 戦闘曲っぽい 方）。 */
+const BOSS_BGM = "retro";
 
 /**
  * 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。
