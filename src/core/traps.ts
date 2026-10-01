@@ -2,8 +2,9 @@
 
 import { ankaHit } from "./anka";
 import { rollDamage, TRAP_CHANCE } from "./balance";
-import { DIRS8, dist, step } from "./geom";
+import { DIRS8, type Dir8, dist, type Pos, step } from "./geom";
 import { isKeyItem } from "./item";
+import { isFloor } from "./mapgen";
 import { isBoss } from "./monster";
 import type { Run } from "./run";
 import type { Trap } from "./types";
@@ -97,6 +98,13 @@ const fireTrap = (r: Run, t: Trap): void => {
 		}
 		case "arrow":
 		case "dart": {
+			// 矢が 飛んでくる 絵（どこから 来るかは 乱数を 使わずに 決める。リプレイ・digest が 変わらない）
+			r.emit({
+				t: "bolt",
+				from: arrowFrom(r, t),
+				to: { x: p.x, y: p.y },
+				kind: "arrow",
+			});
 			r.se("damage");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			r.msg(`矢が　飛んできた！　${dmg}の　ダメージ`);
@@ -124,6 +132,30 @@ const fireTrap = (r: Run, t: Trap): void => {
 			return;
 		}
 	}
+};
+
+/**
+ * 罠の 矢が 飛んでくる 元：上下左右で いちばん 長く 床が つづく 方の 先（4マスまで）。
+ * 同じ 長さなら 罠の 場所で 向きを ずらす（いつも 同じ 方から 来ないように）。
+ */
+const arrowFrom = (r: Run, t: Trap): Pos => {
+	const p = r.p;
+	let best: Pos = p;
+	let bestN = 0;
+	for (let i = 0; i < 4; i++) {
+		const d = (((t.x + t.y + i) % 4) * 2) as Dir8;
+		let n = 0;
+		while (n < 4) {
+			const q = step(p, d, n + 1);
+			if (!isFloor(r.f.layout, q.x, q.y)) break;
+			n++;
+		}
+		if (n > bestN) {
+			bestN = n;
+			best = step(p, d, n);
+		}
+	}
+	return best;
 };
 
 /** 罠を置ける向き（未使用の小道具）。 */
