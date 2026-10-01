@@ -384,7 +384,7 @@ test("hitodama", "sealed: closes only 1 tile per turn", () => {
 	ok(dist(m, r.p) === 9, `distance ${dist(m, r.p)} after 1 turn (expected 9)`);
 });
 
-// ───────────────── 深夜テンション（random） ─────────────────
+// ───────────────── 夏休みキッズ（random） ─────────────────
 
 test("bat", "random: sometimes flutters away instead of attacking", () => {
 	const r = arena("bat");
