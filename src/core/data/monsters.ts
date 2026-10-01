@@ -128,7 +128,7 @@ const M: MonsterDef[] = [
 		weight: 32,
 		abilities: [{ k: "poison", rate: 1 / 3 }],
 		tags: ["plant"],
-		desc: "なぐると　ときどき　冷笑して、ちからを　下げてくる",
+		desc: "ときどき　なぐる　代わりに　冷笑して、ちからを　下げてくる",
 		flavor: "冷笑は　いちばん　安い　武器。弾は　いくらでも　ある",
 	},
 	{
@@ -188,7 +188,7 @@ const M: MonsterDef[] = [
 		floors: [7, 18],
 		weight: 37,
 		abilities: [{ k: "warpPlayer", rate: 1 / 3 }],
-		desc: "なぐった　相手を　どこかへ　吹きとばす",
+		desc: "ときどき　なぐる　代わりに　風を　吹かせて、どこかへ　吹きとばす",
 		flavor: "議論を　吹きとばして、本人は　どこにも　いない",
 	},
 	{
@@ -335,7 +335,7 @@ const M: MonsterDef[] = [
 		floors: [16, 24],
 		weight: 27,
 		abilities: [{ k: "knockback", rate: 1 / 3 }],
-		desc: "なぐった　相手を　論破して　吹きとばす。壁に　ぶつかると　痛い",
+		desc: "ときどき　なぐる　代わりに　論破して　吹きとばす。壁に　ぶつかると　痛い",
 		flavor: "「はい　論破」。相手が　あきれて　去るのを、勝ちと　呼ぶ",
 	},
 	{
@@ -350,7 +350,7 @@ const M: MonsterDef[] = [
 		weight: 27,
 		abilities: [{ k: "drainLv", rate: 1 / 4 }],
 		tags: ["doll"],
-		desc: "レベルを　1つ　うばっていく",
+		desc: "ときどき　なぐる　代わりに　レベルを　1つ　うばっていく",
 		flavor: "何年　積んだ　レベルも、エラー　ひとつで　初心者",
 	},
 	{
@@ -443,7 +443,7 @@ const M: MonsterDef[] = [
 		weight: 25,
 		abilities: [{ k: "drainMax", rate: 1 / 2 }],
 		tags: ["doll"],
-		desc: "ふれると　最大HPか　最大ちからが　欠ける",
+		desc: "ときどき　なぐる　代わりに　まとわりついて、最大HPか　最大ちからを　欠けさせる",
 		flavor: "縺ｧ縺ｯ……何を　言っているかは、本人にも　わからない",
 	},
 	{
@@ -473,7 +473,7 @@ const M: MonsterDef[] = [
 		floors: [24, 30],
 		weight: 21,
 		abilities: [{ k: "curse", rate: 1 / 4 }],
-		desc: "なぐった　相手の　装備に　粘着して　のろう",
+		desc: "ときどき　なぐる　代わりに　装備に　粘着して　のろう",
 		flavor: "嫌いな　はずなのに、いちばん　くわしい",
 	},
 	{
@@ -642,7 +642,7 @@ const M: MonsterDef[] = [
 		weight: 0,
 		abilities: [{ k: "knockback", rate: 1 / 4 }],
 		board: "shallow",
-		desc: "パン兵を　たばねる　兵長。なぐった　相手を　吹きとばす",
+		desc: "パン兵を　たばねる　兵長。ときどき　なぐる　代わりに　吹きとばす",
 		flavor: "窯の　前から　一歩も　動かない。……寝ている　だけ　とも　いう",
 	},
 	{
@@ -756,7 +756,7 @@ const M: MonsterDef[] = [
 		weight: 0,
 		abilities: [{ k: "fastAct" }, { k: "purge", rate: 1 / 2 }],
 		sleep: "never",
-		desc: "書きかえた　セーブを　かぎつけて　各階に　あらわれる。1ターンに　2回　なぐり、装備を　はがす・ちからや　レベルを　下げる・混乱や　目つぶし",
+		desc: "書きかえた　セーブを　かぎつけて　各階に　あらわれる。1ターンに　2回　動き、なぐる　代わりに　装備を　はがす・ちからや　レベルを　下げる・混乱や　目つぶし",
 		flavor: "削除依頼は　受けつけて　おりません。……対象は、あなたです",
 	},
 ];

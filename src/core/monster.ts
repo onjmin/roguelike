@@ -1,4 +1,4 @@
-// モンスターの動き（1回の行動）と、特技・なぐったときの効果。
+// モンスターの動き（1回の行動）と、特技（なぐる 代わりに 出す ものも）。
 //
 // - キリコが見えていれば追いかける（見えなくなったら最後に見た所へ）。見えなければ部屋から部屋へさまよう。
 // - 道のりは地形だけの幅優先探索（BFS）で出し、ほかのキャラのいるマスは避ける。
@@ -24,6 +24,7 @@ import { defOf, isKeyItem } from "./item";
 import { isFloor, roomAt, roomExits, roomTiles } from "./mapgen";
 import type { Run } from "./run";
 import {
+	type Ability,
 	DEEP,
 	DOZE,
 	HOLD,
@@ -765,6 +766,13 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 		r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
 		return;
 	}
+	// 特技：なぐる 代わりに（はずれない）。音と 演出の あとで 効き目
+	if (!m.status.sealed)
+		for (const a of d.abilities)
+			if (isSkill(a) && r.rng.chance(a.rate)) {
+				useSkill(r, m, a);
+				return;
+			}
 	if (!r.rng.chance(HIT_RATE)) {
 		// 敵の はずれは キリコの はずれ（振った音）とは 別の音
 		r.se("enemyMiss");
@@ -778,79 +786,128 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	if (r.hurtPlayer(dmg, `${d.name}に　たおされた`)) return;
 	// 安価「攻撃を　n回　受ける」（当たった ものだけ）
 	ankaHit(r, "hit");
-	// なぐったときの特技
-	if (m.status.sealed) return;
-	for (const a of d.abilities) {
-		if (!("rate" in a) || !r.rng.chance(a.rate)) continue;
-		switch (a.k) {
-			case "poison": {
-				// 冷笑の ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
-				r.msg(`${nm}「${SNEERS[r.s.turn % SNEERS.length]}」`);
-				if (r.hasRing("r_purity") || r.shield()?.kind === "scale") {
-					r.msg("しかし　キリコは　スルーした");
-					break;
-				}
-				if (p.str > 1) {
-					p.str--;
-					r.se("debuff");
-					r.msg("ちからが　1　下がった", "warn");
-				}
-				break;
-			}
-			case "drainLv":
-				if (r.hasRing("r_ward")) r.msg("しかし　トリップが　守ってくれた");
-				else r.drainLevel();
-				break;
-			case "drainMax": {
-				if (r.hasRing("r_ward")) {
-					r.msg("しかし　トリップが　守ってくれた");
-					break;
-				}
-				if (r.rng.chance(1 / 2)) {
-					p.maxHp = Math.max(1, p.maxHp - 5);
-					p.hp = Math.min(p.hp, p.maxHp);
-					r.se("debuff");
-					r.msg("最大HPが　5　下がった", "warn");
-				} else if (!r.hasRing("r_purity")) {
-					p.maxStr = Math.max(1, p.maxStr - 1);
-					p.str = Math.min(p.str, p.maxStr);
-					r.se("debuff");
-					r.msg("最大ちからが　1　下がった", "warn");
-				}
-				break;
-			}
-			case "warpPlayer":
-				r.msg(`${nm}に　吹きとばされた！`, "warn");
-				r.warpPlayer();
+};
+
+/** なぐる 代わりに 出す 特技。 */
+type Skill = Extract<
+	Ability,
+	{
+		k:
+			| "poison"
+			| "drainLv"
+			| "drainMax"
+			| "warpPlayer"
+			| "knockback"
+			| "purge"
+			| "curse";
+	}
+>;
+const SKILLS = new Set<Ability["k"]>([
+	"poison",
+	"drainLv",
+	"drainMax",
+	"warpPlayer",
+	"knockback",
+	"purge",
+	"curse",
+]);
+const isSkill = (a: Ability): a is Skill => SKILLS.has(a.k);
+
+/** 特技を 使う：ひとこと → 特技の 音と 演出（fx skill:〜。画面は 音の 区切りまで 待つ）→ 効き目。 */
+const useSkill = (r: Run, m: Monster, a: Skill): void => {
+	const p = r.p;
+	const nm = seenName(r, m);
+	const show = (): void => {
+		r.se(`skill_${a.k}`);
+		r.emit({ t: "fx", kind: `skill:${a.k}`, pos: { x: m.x, y: m.y } });
+	};
+	// ひとことは 乱数を 使わない：ターンで 選ぶ（記録の 再生が ずれないように）
+	switch (a.k) {
+		case "poison":
+			r.msg(`${nm}「${SNEERS[r.s.turn % SNEERS.length]}」`);
+			show();
+			if (r.hasRing("r_purity") || r.shield()?.kind === "scale") {
+				r.msg("しかし　キリコは　スルーした");
 				return;
-			case "knockback":
-				knockPlayer(r, m, 2);
-				return;
-			case "purge":
-				purgePlayer(r, m);
-				break;
-			case "curse": {
-				const eq = [r.weapon(), r.shield(), r.ring()].filter(
-					(x): x is NonNullable<typeof x> => !!x && !x.cursed,
-				);
-				if (!eq.length) break;
-				const it = r.rng.pick(eq);
-				it.cursed = true;
-				it.known = true;
-				r.msg(`${r.name(it)}が　のろわれた！`, "warn");
-				break;
 			}
+			if (p.str <= 1) {
+				r.msg("しかし　ちからは　もう　下がらない");
+				return;
+			}
+			p.str--;
+			r.se("debuff");
+			r.msg("ちからが　1　下がった", "warn");
+			return;
+		case "drainLv":
+			r.msg(`${nm}の　エラーが　キリコを　巻きこんだ！`);
+			show();
+			if (r.hasRing("r_ward")) r.msg("しかし　トリップが　守ってくれた");
+			else if (p.lv <= 1) r.msg("しかし　レベルは　もう　下がらない");
+			else r.drainLevel();
+			return;
+		case "drainMax":
+			r.msg(`${nm}が　まとわりついた！　縺ｧ縺ｯ……`);
+			show();
+			if (r.hasRing("r_ward")) {
+				r.msg("しかし　トリップが　守ってくれた");
+				return;
+			}
+			if (r.rng.chance(1 / 2)) {
+				p.maxHp = Math.max(1, p.maxHp - 5);
+				p.hp = Math.min(p.hp, p.maxHp);
+				r.se("debuff");
+				r.msg("最大HPが　5　下がった", "warn");
+			} else if (r.hasRing("r_purity"))
+				r.msg("しかし　キリコは　スルーした");
+			else {
+				p.maxStr = Math.max(1, p.maxStr - 1);
+				p.str = Math.min(p.str, p.maxStr);
+				r.se("debuff");
+				r.msg("最大ちからが　1　下がった", "warn");
+			}
+			return;
+		case "warpPlayer":
+			r.msg(`${nm}が　風を　吹かせた！`);
+			show();
+			r.msg(`${nm}に　吹きとばされた！`, "warn");
+			r.warpPlayer();
+			return;
+		case "knockback":
+			r.msg(`${nm}の　体当たり！`);
+			show();
+			knockPlayer(r, m, 2);
+			return;
+		case "purge":
+			r.msg(`${nm}「${PURGE_LINES[r.s.turn % PURGE_LINES.length]}」`);
+			show();
+			purgePlayer(r, m);
+			return;
+		case "curse": {
+			r.msg(`${nm}が　粘着してきた！`);
+			show();
+			const eq = [r.weapon(), r.shield(), r.ring()].filter(
+				(x): x is NonNullable<typeof x> => !!x && !x.cursed,
+			);
+			if (!eq.length) {
+				r.msg("しかし　のろう　装備が　なかった");
+				return;
+			}
+			const it = r.rng.pick(eq);
+			it.cursed = true;
+			it.known = true;
+			r.se("curse");
+			r.msg(`${r.name(it)}が　のろわれた！`, "warn");
+			return;
 		}
 	}
 };
 
 /**
- * 削除人に なぐられた：できる ものから 1つ（装備を はがして 足もとの 先へ・ちから−1・レベル−1・最大HP−5・混乱・目つぶし）。
+ * 削除人の 特技（なぐる 代わりに）：できる ものから 1つ（装備を はがして 足もとの 先へ・ちから−1・レベル−1・最大HP−5・混乱・目つぶし）。
  * 書きかえた 冒険の 追っ手なので、指輪・盾・のろいでも 防げない（はがした 装備は 拾えば もどる）。
  */
 const purgePlayer = (r: Run, m: Monster): void => {
 	const p = r.p;
-	const nm = seenName(r, m);
 	const gear = [r.weapon(), r.shield(), r.ring()].filter(
 		(x): x is NonNullable<typeof x> => !!x,
 	);
@@ -887,7 +944,6 @@ const purgePlayer = (r: Run, m: Monster): void => {
 		r.emit({ t: "look" });
 		r.msg("アク禁された！　何も　見えない！", "warn");
 	});
-	r.msg(`${nm}「${PURGE_LINES[r.s.turn % PURGE_LINES.length]}」`);
 	r.se("debuff");
 	r.rng.pick(can)();
 };

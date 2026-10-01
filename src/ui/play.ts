@@ -89,6 +89,16 @@ const SWING_MS = 180;
 const REST_GAP_MS = 100;
 /** 敵が ふえるとき、もとの マスから 分かれ出る 時間（ms）。 */
 const SPLIT_MS = 260;
+/** 敵の 特技（なぐる 代わりに 出す もの）の 画面の 色と、敵の 上に 出す ひとこと。 */
+const SKILL_LOOK: Record<string, [string, string]> = {
+	poison: ["rgba(150,90,200,0.35)", "冷笑"],
+	drainLv: ["rgba(90,110,255,0.4)", "ERROR"],
+	drainMax: ["rgba(120,255,140,0.3)", "縺ｧ縺ｯ"],
+	warpPlayer: ["rgba(200,240,255,0.35)", "ﾋｭｰ"],
+	knockback: ["rgba(255,200,90,0.35)", "ドン"],
+	purge: ["rgba(255,60,60,0.4)", "削除"],
+	curse: ["rgba(110,40,140,0.45)", "粘着"],
+};
 /**
  * ログの1行ごとの 最短の間（ms）。1ターンに いくつも起きたとき、行が 一度に 流れて 読めないように
  * （トルネコ1の メッセージ窓のように 1行ずつ 送る。そのあいだ 出来事の再生も 待つ）。
@@ -2368,6 +2378,22 @@ export class Play {
 					// 蓄音機の 再生：画面が 一瞬 セピアに
 					else if (e.kind === "voice")
 						await this.flash("rgba(200,160,90,0.35)", fast ? 80 : 260);
+					// 敵の 特技：使った 敵が 光り、画面に その色。音の 区切りまで 待ってから 効き目の 行へ
+					else if (e.kind.startsWith("skill:")) {
+						const [color, label] = SKILL_LOOK[e.kind.slice(6)] ?? [
+							"rgba(255,255,255,0.3)",
+							"",
+						];
+						const shown = this.run.playerSees(e.pos);
+						const d = [...this.disp.values()].find(
+							(x) => x.id !== PLAYER_ID && x.tx === e.pos.x && x.ty === e.pos.y,
+						);
+						if (d && shown) d.flashUntil = performance.now() + 420 * speed;
+						if (shown && label) this.pop(e.pos, label, "skill");
+						await this.flash(color, fast ? 80 : 300);
+						combat = true;
+						if (!fast) await this.ctx.audio.seSettled();
+					}
 					break;
 				case "floor":
 					await this.floorCard(false);

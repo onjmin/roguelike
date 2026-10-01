@@ -1459,6 +1459,11 @@ body.shake #app {
 	font-size: 13px;
 }
 
+.pop.skill {
+	color: #e9b8ff;
+	font-size: 13px;
+}
+
 .pop.miss {
 	color: var(--muted);
 	font-size: 12px;

@@ -88,6 +88,21 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		hit_mic: "rpgen:mL4xt3", // サイクロップス/謎の金属音
 		// ── 敵の攻撃。当たったら damage、はずれたら enemyMiss（キリコの はずれ・空振りとは 別の音）
 		enemyMiss: "rpgen:DUvPmQ", // ミス
+		// ── 敵の 特技（なぐる 代わりに 出す。core/monster.ts の useSkill。鳴り終わってから 効き目）
+		/** まんぜう軍の 冷笑（ちから−1）。 */
+		skill_poison: "rpgen:X3RbWZ", // ち～ん(笑)2
+		/** 忍法帖エラー（レベル−1）。 */
+		skill_drainLv: "rpgen:h9iBuH", // XP致命的なエラー
+		/** 文字化け（最大HP／最大ちから−）。 */
+		skill_drainMax: "rpgen:ySSr23", // ノイズ
+		/** 風吹けば名無し（ワープさせる）。 */
+		skill_warpPlayer: "rpgen:Ye4E4T", // [ツクール]風系
+		/** 論破厨・パン兵長・祭りの親分マシー（2マス 吹きとばす）。 */
+		skill_knockback: "rpgen:W7Z0Eh", // 倒れる/ぶつかる音
+		/** 削除人（装備を はがす ほか）。 */
+		skill_purge: "rpgen:wAsfQs", // 君を削除する
+		/** 粘着アンチ（装備を のろう）。 */
+		skill_curse: "rpgen:86GRZP", // 桃/呪い
 	},
 	/** いちばん目立たせる音。 */
 	impact: {
