@@ -125,8 +125,8 @@ export class Run {
 	s: RunState;
 	rng: Rng;
 	ev: GameEvent[] = [];
-	/** 最後に 知らせた 敵の 様子（uid → asleep|posing の ビット）。変わったら {t:"stir"}。 */
-	private rest = new Map<number, number>();
+	/** 最後に 知らせた 敵の 様子（uid → asleep|posing の ビットと 姿）。変わったら {t:"stir"}。 */
+	private rest = new Map<number, string>();
 
 	constructor(s: RunState) {
 		this.s = s;
@@ -268,16 +268,17 @@ export class Run {
 
 	/**
 	 * 敵の 寝ている・置物の 様子が 変わっていたら、次の 出来事の 前に 知らせる
-	 * （杖で 起きた ワイバーンが 炎を 吐く 前に Z が 消えるように）。
+	 * （杖で 起きた ワイバーンが 炎を 吐く 前に Z が 消えるように。改変の杖で 変わった 敵が
+	 * 前の 姿の まま 殴って こないように）。
 	 */
 	private stir(): void {
 		for (const m of this.f.monsters) {
 			const l = restLook(m);
-			const bits = (l.asleep ? 1 : 0) | (l.posing ? 2 : 0);
+			const bits = `${(l.asleep ? 1 : 0) | (l.posing ? 2 : 0)}:${m.kind}`;
 			const was = this.rest.get(m.uid);
 			this.rest.set(m.uid, bits);
 			if (was !== undefined && was !== bits)
-				this.ev.push({ t: "stir", id: m.uid, ...l });
+				this.ev.push({ t: "stir", id: m.uid, ...l, kind: m.kind });
 		}
 	}
 

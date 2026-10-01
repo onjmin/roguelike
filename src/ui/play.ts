@@ -11,6 +11,7 @@
 
 import { ANKA_DUE, ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
+import { MONSTERS } from "../core/data/monsters";
 import { canTarget } from "../core/effects";
 import {
 	DIRS8,
@@ -208,13 +209,19 @@ const leadsToLine = (ev: GameEvent[], i: number): boolean => {
 	return false;
 };
 
-/** ev[i] より 前で いちばん 近い、行・音 では ない 出来事が 動きか。 */
-const afterMotion = (ev: GameEvent[], i: number): boolean => {
+/** ev[i] より 前で いちばん 近い、行・音 では ない 出来事（無ければ undefined）。 */
+const deedBefore = (ev: GameEvent[], i: number): GameEvent["t"] | undefined => {
 	for (let j = i - 1; j >= 0; j--) {
 		const t = ev[j].t;
-		if (t !== "msg" && t !== "se" && t !== "stir") return MOTION.has(t);
+		if (t !== "msg" && t !== "se" && t !== "stir") return t;
 	}
-	return false;
+	return undefined;
+};
+
+/** ev[i] より 前で いちばん 近い、行・音 では ない 出来事が 動きか。 */
+const afterMotion = (ev: GameEvent[], i: number): boolean => {
+	const t = deedBefore(ev, i);
+	return !!t && MOTION.has(t);
 };
 
 /** 祭り（モンスターハウス）の曲。名無し155さんの アップテンポな曲（オクターブを直した版）。 */
@@ -2131,7 +2138,16 @@ export class Play {
 			// （杖で 起こした 敵は「足が おそくなった」と いっしょに 起き、炎を 吐く ときには もう 起きている）
 			if (e.t === "stir") {
 				const look = { asleep: e.asleep, posing: e.posing };
-				const apply = () => this.monHold?.set(e.id, look);
+				const apply = () => {
+					this.monHold?.set(e.id, look);
+					// 姿（改変の杖など）。変わった 行と いっしょに 絵を 変える
+					const d = this.disp.get(e.id);
+					const def = MONSTERS[e.kind];
+					if (d && def) {
+						d.sprite = def.sprite;
+						d.scale = def.scale;
+					}
+				};
 				if (leadsToLine(ev, i)) onLine.push(apply);
 				else apply();
 				i++;
@@ -2161,14 +2177,16 @@ export class Play {
 			}
 			// 行の あとの 動き（飲んだ・読んだ の あとの 敵の 攻撃・傷・ワープ など）は、前の 行が 出てから。
 			// 道具の 効き目（行と 音）より 先に 敵が 動いて 見えないように。
-			// 動きに 続く 行（攻撃 → ダメージの 行 → 敵の 攻撃）は 待たない（戦いの 手ざわりは そのまま）
+			// 動きに 続く 行（攻撃 → ダメージの 行 → 敵の 攻撃）は 待たない（戦いの 手ざわりは そのまま）。
+			// ただし 杖の 弾の あとの 行（「〜に　変わった！」など）は 弾の 効き目なので 待つ
 			const prevEv = besideOf(ev, i, -1);
+			const lineAfter =
+				MOTION.has(e.t) &&
+				!!prevEv &&
+				(prevEv.t === "msg" || LEAD.has(prevEv.t));
 			if (
-				(e.t === "hurt" ||
-					(MOTION.has(e.t) &&
-						prevEv &&
-						(prevEv.t === "msg" || LEAD.has(prevEv.t)))) &&
-				!afterMotion(ev, i)
+				(e.t === "hurt" || lineAfter) &&
+				(!afterMotion(ev, i) || (lineAfter && deedBefore(ev, i) === "bolt"))
 			) {
 				await this.logDrained();
 				if (this.stopped) break;
