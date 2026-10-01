@@ -11,7 +11,7 @@ import { forEachVisible } from "../core/fov";
 import { type Dir8, spriteDir } from "../core/geom";
 import { itemHidden } from "../core/item";
 import { T_WALL, tileAt } from "../core/mapgen";
-import type { Floor, RunState } from "../core/types";
+import type { Floor, RunState, Trap } from "../core/types";
 import { drawRefInCell, getImage, onImageLoaded } from "../engine/assets";
 import type { Screen } from "../engine/screen";
 import { drawWalk, isWalkRef, stepFrame } from "../engine/sprite";
@@ -36,6 +36,8 @@ export const GRAVE = "sp:07DETe3";
 export type DrawOpts = {
 	/** まだ 描かない 床の 道具（uid。置かれた 出来事・ログに 画面が 追いつくまで）。 */
 	hideItems?: ReadonlySet<number>;
+	/** 階の 罠の かわりに 描く 罠（踏んだ 罠は、キリコが 着くまで 踏む 前の 見え方）。 */
+	traps?: readonly Trap[];
 	/** 向きを変えるあいだ（向きの印を強く出す）。 */
 	strong?: boolean;
 	/** 倒れた所の墓。drop は 落ちてくる進み（0〜1、1 で着地）。 */
@@ -281,7 +283,7 @@ export class FloorView {
 			}
 		}
 		// 見つけた罠
-		for (const t of f.traps) {
+		for (const t of opts.traps ?? f.traps) {
 			if (!t.found || !f.seen[t.y * l.w + t.x]) continue;
 			drawRefInCell(ctx, TRAP_ICON[t.kind], t.x * TILE - ox, t.y * TILE - oy);
 		}
@@ -806,6 +808,8 @@ export const drawMap = (
 		resume?: { x: number; y: number } | null;
 		/** まだ 描かない 床の 道具（uid。DrawOpts.hideItems と 同じ）。 */
 		hideItems?: ReadonlySet<number>;
+		/** DrawOpts.traps と 同じ。 */
+		traps?: readonly Trap[];
 	},
 ): void => {
 	const f = s.floor;
@@ -846,7 +850,7 @@ export const drawMap = (
 		(f.depth < dungeonById(s.dungeon).floors || s.returning)
 	)
 		dot(f.stairs.x, f.stairs.y, "#ffffff");
-	for (const t of f.traps)
+	for (const t of opt.traps ?? f.traps)
 		if (t.found) dot(t.x, t.y, "#ff6ad5", Math.floor(cell / 4));
 	const seenItem = new Set(s.seen);
 	for (const fi of f.items)

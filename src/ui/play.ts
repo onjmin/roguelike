@@ -34,6 +34,7 @@ import {
 	PLAYER_ID,
 	type RescueKind,
 	type RunState,
+	type Trap,
 } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
 import { loadImage } from "../engine/assets";
@@ -295,6 +296,8 @@ export class Play {
 	 */
 	private preUse: Run | null = null;
 	private preUseUntil: "reveal" | "bolt" | null = null;
+	/** 踏んだ 罠は、キリコの 1歩（ワープ）が 着くまで 踏む 前の 見え方（見つかる・消える が 先に 見えないように）。 */
+	private trapHold: Trap[] | null = null;
 	/**
 	 * 出来事を 流して、その ログが ぜんぶ 出るまで ステータスに 出す 値（act の 前の 値。
 	 * HP は 傷ついた・回復した 出来事で、レベルは その 行で 追いつく。のこりは ログに 追いついたら 今の 値に）。
@@ -578,6 +581,7 @@ export class Play {
 					: run.s;
 			drawMap(this.mapEl, s, {
 				hideItems: this.hiddenItems,
+				traps: this.trapHold ?? undefined,
 				visibleMonsters: vis,
 				mark: this.mapMark,
 				resume: this.lastTravel,
@@ -654,7 +658,8 @@ export class Play {
 				const k = (t - d.lungeT0) / SWING_MS;
 				figs.push({
 					...d,
-					asleep: this.sleepShown || run.p.status.sleep > 0,
+					// 演出の あいだは 眠った 出来事で（罠・呪文の 前の 1歩で Z が 出ないように）
+					asleep: this.sleepShown || (!this.busy && run.p.status.sleep > 0),
 					equip: {
 						weapon: run.weapon()?.kind ?? null,
 						shield: run.shield()?.kind ?? null,
@@ -721,6 +726,7 @@ export class Play {
 			fakeItems,
 			{
 				hideItems: this.hiddenItems,
+				traps: this.trapHold ?? undefined,
 				strong: this.ctx.input.mods().turn,
 				travel: this.travel,
 				aim: this.ctx.input.mods().turn ? this.aimLine() : null,
@@ -1518,6 +1524,7 @@ export class Play {
 		const floor0 = run.s.floor;
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
+		const traps0 = run.f.traps.map((t) => ({ ...t }));
 		const usingCat = using && defOf(using.kind).cat;
 		const pre =
 			cmd.c === "throw" ||
@@ -1550,6 +1557,15 @@ export class Play {
 			if (run.s.floor !== floor0) this.shownFloor = floor0;
 			else if (ev.some((e) => e.t === "warp" && e.id === PLAYER_ID))
 				this.preWarp = { ...floor0, seen: seen0 };
+			if (
+				run.s.floor === floor0 &&
+				ev.some(
+					(e) => (e.t === "move" || e.t === "warp") && e.id === PLAYER_ID,
+				) &&
+				(traps0.length !== run.f.traps.length ||
+					traps0.some((t, i) => t.found !== run.f.traps[i].found))
+			)
+				this.trapHold = traps0;
 			// 倒れた（持ち帰った）その場で中断セーブを片づける（演出の途中で閉じても やり直せないように）
 			if (run.s.end) this.saveEnd();
 			// 使えたら（時間が進んだら）、効き目を出す前に 食べる・飲む・読む
@@ -1632,6 +1648,7 @@ export class Play {
 			this.shownFloor = null;
 			this.preWarp = null;
 			this.preUse = this.preUseUntil = null;
+			this.trapHold = null;
 			this.busy = false;
 			// ログに 追いついたら 今の 値に（あとの act が あれば そちらに まかせる）
 			this.afterLog(() => {
@@ -2099,6 +2116,7 @@ export class Play {
 				}
 				// 見えない所の動きは待たない。見える動きも 1コマぶん早めに次へ進める（次の1歩が 続きから動けるように）
 				if (shown) await wait(end - performance.now() - FRAME_MS);
+				if (paths.has(PLAYER_ID)) this.trapHold = null;
 				i = j;
 				continue;
 			}
@@ -2236,7 +2254,7 @@ export class Play {
 						d.keys = [{ x: e.to.x, y: e.to.y, t: 0 }];
 					}
 					// キリコが 着いたので、ここから ワープ先の 見え方に
-					if (e.id === PLAYER_ID) this.preWarp = null;
+					if (e.id === PLAYER_ID) this.preWarp = this.trapHold = null;
 					await wait(80 * speed);
 					break;
 				}
