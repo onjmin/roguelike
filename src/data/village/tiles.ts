@@ -375,6 +375,74 @@ export const OUTSKIRTS: Record<string, TileDef> = {
 	_: big(C_GRASS, TURF, base(6, 10, 2, 1)),
 	"~": { ...solid(C_WATER, TURF), auto: POND },
 	G: solid(C_DIRT, base(1, 27)),
-	S: big(C_GRASS, TURF, base(3, 26)),
-	W: solid(C_GRASS, TURF, base(4, 27)),
+	// かかし（16x23。足もとを マスの 下に そろえる）
+	S: big(C_GRASS, TURF, basePx(48, 416, 16, 24)),
+	W: solid(C_GRASS, TURF, basePx(80, 422, 16, 16)),
+};
+
+// ───────────────── 東の 畑（町の 段で 育つ。data/village/map.ts の farmRows） ─────────────────
+// 畝の 区画は Base.png の 畑（0〜2, 26〜28）の 3×3 を 角・へり・まんなか（G）に 分けて 使う。作物は まんなかの 畝に だけ 植える。
+//   η θ ι  畝の 上（左・まんなか・右）   κ λ  左・右   μ ν ξ  下（左・まんなか・右）
+//   ο  芽   π  若い葉   ρ  キャベツ   σ  トマト   τ  実った 麦（畝の 上）
+//   υ  干し草の 山   φ  麻袋の 山   χ  トマトの かご   ψ  菜っぱの かご   ω  空の かご
+//   Ω  りんごの 木   Ψ  実の なった りんごの 木   Ξ  花の 鉢
+const SOIL = base(1, 27);
+const onSoil = (img: string): TileDef => solid(C_DIRT, SOIL, img);
+export const FARM: Record<string, TileDef> = {
+	η: solid(C_GRASS, TURF, base(0, 26)),
+	θ: solid(C_GRASS, TURF, base(1, 26)),
+	ι: solid(C_GRASS, TURF, base(2, 26)),
+	κ: solid(C_GRASS, TURF, base(0, 27)),
+	λ: solid(C_GRASS, TURF, base(2, 27)),
+	μ: solid(C_GRASS, TURF, base(0, 28)),
+	ν: solid(C_GRASS, TURF, base(1, 28)),
+	ξ: solid(C_GRASS, TURF, base(2, 28)),
+	ο: onSoil(base(6, 26)),
+	π: onSoil(base(6, 28)),
+	ρ: onSoil(base(7, 27)),
+	σ: onSoil(base(7, 28)),
+	τ: onSoil(basePx(80, 438, 16, 16)),
+	υ: big(C_GRASS, TURF, base(0, 126, 2, 3)),
+	φ: big(C_GRASS, TURF, base(2, 126, 2, 3)),
+	χ: solid(C_GRASS, TURF, base(5, 125)),
+	ψ: solid(C_GRASS, TURF, base(6, 125)),
+	ω: solid(C_GRASS, TURF, base(4, 125)),
+	Ω: big(C_GRASS, TURF, base(0, 375, 2, 2)),
+	Ψ: big(C_GRASS, TURF, base(0, 377, 2, 2)),
+	Ξ: solid(C_GRASS, TURF, base(1, 361)),
+};
+
+// ───────────────── 保守神社（北西の 森の 奥。町の 段2 から） ─────────────────
+// 赤い 瓦の 拝殿・しめ縄・灯籠・賽銭箱・鳥居。鳥居は まんなかを くぐれる（柱の マスだけ 通れない）。
+//   Γ  屋根（棟）   Δ  屋根（軒）   Θ  拝殿の 壁（まんなかの マスに 3×3 の 赤い 枠の 絵）   Π  灯籠   Σ  賽銭箱
+//   Φ  鳥居（まんなかの マスに 3×3 の 絵。通れる）   Λ  拝殿・鳥居の 柱の 下（草。通れない）
+const C_SHRINE = "#a82020";
+export const SHRINE: Record<string, TileDef> = {
+	Γ: solid(C_SHRINE, base(3, 82)),
+	Δ: solid(C_SHRINE, base(3, 84)),
+	Θ: big(C_SHRINE, TURF, base(0, 294, 3, 3)),
+	Π: solid(C_GRASS, TURF, basePx(112, 4816, 16, 16)),
+	Σ: solid(C_GRASS, TURF, base(3, 303)),
+	Φ: {
+		layers: [TURF],
+		above: [base(3, 299, 3, 3)],
+		color: C_GRASS,
+		passable: true,
+	},
+	Λ: solid(C_GRASS, TURF),
+};
+
+// ───────────────── 銭湯（南東。池の 東の 森を 開いた 所。町の 段4 から） ─────────────────
+// 灰色の 瓦・板の 壁・青い のれんの 扉（見るだけ）・煙突。
+//   Б  屋根（棟）   Д  屋根（軒）   Ж  板壁（上段）   З  板壁（上段）に 窓   И  板壁（下段）
+//   Л  扉に のれん（通れない。前で 調べる）   Ц  煙突（屋根に 重ねる）
+const C_BATH = "#9a7a52";
+export const BATH: Record<string, TileDef> = {
+	Б: solid("#6a6a72", base(4, 82)),
+	Д: solid("#7a7a82", base(4, 84)),
+	Ж: solid(C_BATH, base(1, 73)),
+	З: solid(C_BATH, base(1, 73), basePx(48, 1382)),
+	И: solid(C_BATH, base(1, 74)),
+	Л: solid(C_BATH, base(1, 74), base(7, 73, 1, 2), base(4, 297)),
+	Ц: solid("#6a6a72", base(4, 82), base(7, 84)),
 };

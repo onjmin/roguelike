@@ -13,6 +13,8 @@
 //   売り場は「囲い（y=10。売る人が立つ）＋ 台（y=11）」。キリコは 通り（y=12）から 台ごしに 話しかける。
 // - やきうは 小屋の前（12,11）で 大工。人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人。
 // - おんJマイナーズ（data/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
+// - 町の まわりも 段で かわる：東の 畑は 荒れ地から 豊作へ（farmRows）、段2 で 北西の 森に 保守神社（おみくじ）、
+//   段3 で 池の そばに 音楽室、段4 で 南東に 銭湯、段5 で 西の 空き地に 喫茶。
 // - 帰ってきたとき 仲間が 出口の前に 並ぶ マス（lineupSpots）と、町が 育ったとき カメラを 向ける 所（VILLAGE_SPOTS.growth）。
 //
 // 段ごとの 区画（前の段の物は 形を かえて 残る）
@@ -54,6 +56,7 @@ import { awayFriends, FRIEND_FROM } from "../story";
 import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
 	BANK,
+	BATH,
 	base,
 	C_DIRT,
 	C_GRASS,
@@ -62,6 +65,7 @@ import {
 	CAFE,
 	CLIFF,
 	DIRT,
+	FARM,
 	floor,
 	GROUND,
 	HUT,
@@ -73,6 +77,7 @@ import {
 	SHED,
 	SHED_SMALL,
 	SHOP,
+	SHRINE,
 	STALL,
 	STONE,
 	STOREHOUSE,
@@ -144,6 +149,10 @@ export const VILLAGE_SPOTS = {
 	nanj: (_v: VillageView): Cell => [21, 18],
 	/** 音楽室「ピアノ機能」の 扉（段3 から。週末だけ 踏むと 中へ）。 */
 	musicDoor: [22, 28] as Cell,
+	/** 保守神社の 賽銭箱（段2 から。お参りすると おみくじ）。 */
+	shrine: [3, 9] as Cell,
+	/** 銭湯の のれん（段4 から。見るだけ）。 */
+	bath: [35, 27] as Cell,
 	/** 小屋の扉（段3から。踏むと 中へ）。 */
 	hutDoor: [23, 18] as Cell,
 	/** 段7 の 野次馬（うろうろ する）。 */
@@ -331,18 +340,8 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
 	[1, 21, ",*,,,,,,"],
 	[2, 22, ",,B,,;"],
 	[3, 23, ",,,,"],
-	// 東の 畑
-	[31, 11, ",,,,b"],
-	[31, 12, ",,,,,,,b"],
-	[31, 13, ",GGGG,S,"],
-	[31, 14, ",GGGG,,,"],
-	[31, 15, ",WWWW,;,"],
-	[31, 16, ",,,,,,,,"],
-	[31, 17, ",GGG,,*,"],
-	[31, 18, ",WWW,,,,"],
+	// 東の 畑（町の 段で 育つ。farmRows）。y=19 は 東の 出口への 道
 	[31, 19, "........."],
-	[31, 20, ",,;,,,,b"],
-	[31, 21, "*,,,,,bb"],
 	[32, 22, ",,,bb"],
 	// 南の 池
 	[10, 25, ",,%,,,,,,,.,,,;,,,*,,"],
@@ -353,6 +352,79 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
 	[11, 30, ",,,,,,,,,.,,,,,,,"],
 	[20, 31, "."],
 ];
+
+/**
+ * 東の 畑（地図の x=31〜38, y=11〜22。y=19 の 道は OUTSKIRTS_ROWS）。町の 段で 育つ：
+ * 0 雑草だらけの 荒れ地 → 1 畝 1つに 芽 → 2 畝 2つ・かかし → 3〜4 キャベツと 麦（4 で 干し草）→
+ * 5〜6 トマト・りんごの 木・収穫の かご → 7 豊作（実った 麦・実の なった 木・麻袋）。字は data/village/tiles.ts の FARM。
+ * x=31 の 列は いつも 草（町の へりの 切れ目から 歩ける）。
+ */
+const FARM_X = 31;
+const farmRows = (stage: number): readonly [number, string][] => {
+	const foot: [number, string][] = [
+		[20, stage >= 5 ? ",,Ξ,,,,b" : ",,;,v,,b"],
+		[21, "*,,,,,bb"],
+	];
+	if (stage === 0)
+		return [
+			[11, ",v,,b"],
+			[12, ",,v,;,,b"],
+			[13, ",v,,,%v,"],
+			[14, ";,,=,,,,"],
+			[15, ",,v,,;v,"],
+			[16, ",%,,v,,,"],
+			[17, ",,;,,,v,"],
+			[18, ",v,,,%,,"],
+			...foot,
+		];
+	if (stage <= 2)
+		return [
+			[11, ",,,,b"],
+			[12, ",,v,,,,b"],
+			[13, stage >= 2 ? ",ηθθι,S," : ",ηθθι,v,"],
+			[14, stage >= 2 ? ",κπολ,,," : ",κοολ,,,"],
+			[15, ",μννξ,;,"],
+			[16, ",,,v,,,,"],
+			[17, stage >= 2 ? ",ηθθθι,," : ",%,,,,v,"],
+			[18, stage >= 2 ? ",μνννξ,," : ",,,;,,,,"],
+			...foot,
+		];
+	if (stage <= 4)
+		return [
+			[11, ",,,,b"],
+			[12, ",,,,,,,b"],
+			[13, ",ηθθθιS,"],
+			[14, ",κρρρλ,,"],
+			[15, ",μνννξ,;"],
+			[16, ",,,,,,,,"],
+			[17, ",WWWW,,,"],
+			[18, stage >= 4 ? ",WWWW,υ," : ",WWWW,,,"],
+			...foot,
+		];
+	if (stage <= 6)
+		return [
+			[11, ",,,,b"],
+			[12, stage >= 6 ? ",Ω,,Ω,,b" : ",Ω,,,,,b"],
+			[13, ",ηθθθθι,"],
+			[14, ",κρρσσλ,"],
+			[15, ",μννννξS"],
+			[16, ",,,,,,χ,"],
+			[17, ",WWWWW,,"],
+			[18, ",WWWWWυ,"],
+			...foot,
+		];
+	return [
+		[11, ",,,,b"],
+		[12, ",Ψ,,Ψ,φ,"],
+		[13, ",ηθθθθι,"],
+		[14, ",κρσρσλ,"],
+		[15, ",μννννξS"],
+		[16, ",ψ,χ,,ω,"],
+		[17, ",τττττ,,"],
+		[18, ",τττττυ,"],
+		...foot,
+	];
+};
 
 /**
  * 町の 区画の へりを 開ける・木を 植える（地図の 座標）。四角く 見えないように、生け垣を ところどころ
@@ -399,6 +471,40 @@ const MUSIC_BLOCK: readonly string[] = ["ααα", "βββ", "δγδ", "εζε"];
 
 /** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 踏む）。 */
 const CAFE_BLOCK: readonly string[] = ["99999", "/////", "@|`|@", "''?''"];
+
+/** 保守神社が 建つ 町の 段（北西の 森の 奥。お参りすると おみくじ）。 */
+export const SHRINE_FROM = 2;
+
+/** 銭湯が 建つ 町の 段（南東。池の 東の 森を 開いた 所）。 */
+export const BATH_FROM = 4;
+
+/**
+ * 保守神社（地図の 1, 4 から。字は data/village/tiles.ts の SHRINE）。拝殿の 前に 賽銭箱（3,9。下の 3,10 から 調べる）、
+ * 鳥居（3,13。絵は 11〜13 に かかる）を くぐって 下の 空き地（x=7 の 草）へ 抜ける。
+ */
+const SHRINE_BLOCK: readonly string[] = [
+	",ΓΓΓ,b,",
+	",ΔΔΔ,,,",
+	"ΠΛΛΛΠ,,",
+	",ΛΛΛ,;,",
+	",ΛΘΛ,,,",
+	"*,Σ,,,b",
+	",,,,,,,",
+	",,,,,,,",
+	",,,,,,,",
+	",ΛΦΛ,,,",
+	",,,,,,,",
+];
+
+/** 銭湯（地図の 31, 24 から。字は BATH）。のれんの 扉（35,27）は 下の 35,28 から 調べる。池の 東の 草地に つながる。 */
+const BATH_BLOCK: readonly string[] = [
+	",,БЦБББ,",
+	",,ДДДДД,",
+	",,ЖЗЖЗЖ,",
+	",,ИИЛИИ,",
+	",,,,,,,b",
+	",,,,,,,b",
+];
 
 /** 村の 出口（地図の 四方の はし。踏むと 全体マップ）。inward は 村へ もどる 向き。 */
 export type VillageExit = {
@@ -470,8 +576,12 @@ export const villageRows = (v: VillageView): string[] => {
 		rows.push(r);
 	}
 	for (const [x0, y, line] of OUTSKIRTS_ROWS) stamp(rows, x0, y, [line]);
+	for (const [y, line] of farmRows(layoutStage(v)))
+		stamp(rows, FARM_X, y, [line]);
 	// 喫茶「保守」（段5 から。西の 空き地の 奥。扉は 下の 道から）
 	if (layoutStage(v) >= CAFE_FROM) stamp(rows, 2, 15, CAFE_BLOCK);
+	if (layoutStage(v) >= SHRINE_FROM) stamp(rows, 1, 4, SHRINE_BLOCK);
+	if (layoutStage(v) >= BATH_FROM) stamp(rows, 31, 24, BATH_BLOCK);
 	// 音楽室「ピアノ機能」（段3 から。南の 池の そば）
 	if (layoutStage(v) >= MUSIC_FROM) stamp(rows, 21, 25, MUSIC_BLOCK);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
@@ -489,6 +599,9 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 	return {
 		...GROUND,
 		...OUTSKIRTS,
+		...FARM,
+		...SHRINE,
+		...BATH,
 		...CLIFF,
 		...STALL,
 		...SHOP,
@@ -588,6 +701,14 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	if (stage >= MUSIC_FROM) {
 		const [mx, my] = VILLAGE_SPOTS.musicDoor;
 		out.push({ id: "door_music", x: mx, y: my, trigger: "touch" });
+	}
+	if (stage >= SHRINE_FROM) {
+		const [x, y] = VILLAGE_SPOTS.shrine;
+		out.push({ id: "shrine", x, y, trigger: "talk" });
+	}
+	if (stage >= BATH_FROM) {
+		const [x, y] = VILLAGE_SPOTS.bath;
+		out.push({ id: "bath", x, y, trigger: "talk" });
 	}
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;

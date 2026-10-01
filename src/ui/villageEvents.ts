@@ -63,6 +63,7 @@ import {
 	depositBag,
 	hasRunSave,
 	loadProgress,
+	loadRecords,
 	loadRun,
 	loadScraps,
 	loadTown,
@@ -298,6 +299,41 @@ const wellScript =
 			await s.narrate(VILLAGE_MSG.wellDown);
 		});
 	};
+
+/** おみくじを 引いた 帰り（記録の 終わった 時刻。1回の 帰りに 1回）。 */
+const OMIKUJI_KEY = "kiriko-roguelike/omikuji";
+
+/** 保守神社の 賽銭箱（段2 から）。お参りすると おみくじ（地の文だけ。冒険には 効かない）。 */
+const shrineScript: Script = async (s) => {
+	await s.narrate(VILLAGE_MSG.shrine);
+	if ((await s.choose([...VILLAGE_MSG.shrineMenu], { cancel: 1 })) !== 0)
+		return;
+	const at = String(loadRecords()[0]?.at ?? 0);
+	let last: string | null = null;
+	try {
+		last = localStorage.getItem(OMIKUJI_KEY);
+	} catch {}
+	if (last === at) {
+		await s.narrate(VILLAGE_MSG.omikujiAgain);
+		return;
+	}
+	try {
+		localStorage.setItem(OMIKUJI_KEY, at);
+	} catch {}
+	s.se("coin");
+	await s.narrate(VILLAGE_MSG.shrinePray);
+	const all = VILLAGE_MSG.omikuji;
+	await s.narrate(all[Math.floor(Math.random() * all.length)]);
+};
+
+/** 銭湯の のれん（段4 から。見るだけ。風呂板を 持ち帰ったら 番台に 常連）。 */
+const bathScript: Script = async (s) => {
+	await s.narrate(
+		loadProgress().cleared.includes("main")
+			? VILLAGE_MSG.bathRegular
+			: VILLAGE_MSG.bath,
+	);
+};
 
 /** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
@@ -543,6 +579,8 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
+	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
+	if (p.id === "bath") return sign(p.id, p.x, p.y, bathScript);
 	// 小屋・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）
 	if (p.id === "door_music")
