@@ -726,6 +726,27 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 		r.msg(`${nm}は　ようすを　うかがっている`);
 		return;
 	}
+	// 錆びさせる：なぐらない。ときどき 板を 汚して 錆びさせるだけ（風呂キャンセル界隈）
+	if (has(m, "rust")) {
+		const rate = (d.abilities.find((a) => a.k === "rust") as { rate: number })
+			.rate;
+		const sh = r.shield();
+		if (!sh || !r.rng.chance(rate)) {
+			r.msg(`${nm}から　におう…`);
+			return;
+		}
+		// 風呂キャンセルの ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
+		r.msg(`${nm}「${FUROCAN[r.s.turn % FUROCAN.length]}」`);
+		if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
+			r.msg("しかし　板は　錆びなかった");
+			return;
+		}
+		sh.plus -= 1;
+		sh.known = true;
+		r.se("debuff");
+		r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
+		return;
+	}
 	if (!r.rng.chance(HIT_RATE)) {
 		// 敵の はずれは キリコの はずれ（振った音）とは 別の音
 		r.se("enemyMiss");
@@ -744,21 +765,6 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	for (const a of d.abilities) {
 		if (!("rate" in a) || !r.rng.chance(a.rate)) continue;
 		switch (a.k) {
-			case "rust": {
-				const sh = r.shield();
-				if (!sh) break;
-				// 風呂キャンセルの ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
-				r.msg(`${nm}「${FUROCAN[r.s.turn % FUROCAN.length]}」`);
-				if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
-					r.msg("しかし　板は　錆びなかった");
-					break;
-				}
-				sh.plus -= 1;
-				sh.known = true;
-				r.se("debuff");
-				r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
-				break;
-			}
 			case "poison": {
 				// 冷笑の ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
 				r.msg(`${nm}「${SNEERS[r.s.turn % SNEERS.length]}」`);

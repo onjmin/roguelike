@@ -982,6 +982,15 @@ test("sabi", "rust: lowers the shield's plus", () => {
 	ok(sh.plus < 0, `shield stayed +${sh.plus} for 60 turns`);
 });
 
+test("sabi", "never hits: only rusts", () => {
+	const r = arena("sabi-nohit");
+	equip(r, "bronze");
+	put(r, "sabi", at(1, 0));
+	const hp = r.p.hp;
+	waitTurns(r, 60, () => false);
+	ok(r.p.hp >= hp, `hp went ${hp} -> ${r.p.hp}`);
+});
+
 for (const kind of ["leather", "mirror", "rustproof"]) {
 	test("sabi", `${kind} shield never rusts`, () => {
 		const r = arena(`sabi-${kind}`);

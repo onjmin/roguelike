@@ -235,7 +235,7 @@ const M: MonsterDef[] = [
 		flavor: "効いていない　ことを、3レス　かけて　説明してくる",
 	},
 	{
-		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。ふれた 板を 汚して 錆びさせる
+		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。なぐらず、ふれた 板を 汚して 錆びさせるだけ
 		// （ひとことは core/monster.ts の FUROCAN）。絵は とうすこ民（泥版）を くすませた もの（scripts/make-furocan.mjs）。
 		// 投げた 草の 効き目（undead）は 前の 役の まま
 		id: "sabi",
@@ -247,9 +247,9 @@ const M: MonsterDef[] = [
 		exp: 25,
 		floors: [10, 20],
 		weight: 28,
-		abilities: [{ k: "rust", rate: 1 / 2 }],
+		abilities: [{ k: "rust", rate: 1 / 3 }],
 		tags: ["undead"],
-		desc: "風呂に　入っていない。ふれた　板を　汚して　錆びさせる",
+		desc: "風呂に　入っていない。なぐっては　こないが、ふれた　板を　汚して　錆びさせる",
 		flavor: "キャンセル　したのは　風呂か、人づきあいか",
 	},
 	{

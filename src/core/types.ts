@@ -118,7 +118,7 @@ export type Ability =
 	| { k: "steal"; rate: number } // 持ち物を盗んでワープする（倒せば取り返せる）
 	| { k: "swap"; rate: number } // はじめから パンを 持ち、なぐる かわりに 持ち物と 取りかえて 逃げる（1体 1回だけ。倒せば 持っている 物を 落とす）
 	| { k: "pickup" } // 床の道具を拾って持ち歩く
-	| { k: "rust"; rate: number } // 盾の修正値を下げる
+	| { k: "rust"; rate: number } // なぐらない。かわりに ときどき 盾の修正値を下げる
 	| { k: "poison"; rate: number } // ちからを下げる
 	| { k: "drainLv"; rate: number } // レベルを下げる
 	| { k: "drainMax"; rate: number } // 最大HP か 最大ちからを下げる
