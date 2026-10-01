@@ -332,6 +332,14 @@ const gacha = (r: Run): void => {
 	}
 };
 
+/** 腹筋スレ・耐久スレの 行。強さが 見えて いれば 元 → 今（「ヒノキの棒が　強くなった　+2→+3」）。 */
+const raised = (r: Run, it: Item, known: boolean): string => {
+	const t = (n: number) => (n > 0 ? `+${n}` : `${n}`);
+	return known
+		? `${r.kindName(it.kind)}が　強くなった　${t(it.plus - 1)}→${t(it.plus)}`
+		: `${r.name(it)}に　なった`;
+};
+
 // ───────────────── 読む ─────────────────
 
 const read = (r: Run, it: Item, target?: number): boolean => {
@@ -405,10 +413,11 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else if (w.plus <= -30 || w.plus >= 99)
 				r.msg("しかし　何も　起きなかった");
 			else {
+				const known = w.known;
 				w.plus++;
 				w.cursed = false;
 				w.known = true;
-				r.msg(`${r.name(w)}に　なった`, "good");
+				r.msg(raised(r, w, known), "good");
 			}
 			break;
 		}
@@ -418,10 +427,11 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else if (sh.plus <= -30 || sh.plus >= 99)
 				r.msg("しかし　何も　起きなかった");
 			else {
+				const known = sh.known;
 				sh.plus++;
 				sh.cursed = false;
 				sh.known = true;
-				r.msg(`${r.name(sh)}に　なった`, "good");
+				r.msg(raised(r, sh, known), "good");
 			}
 			break;
 		}
