@@ -1113,7 +1113,7 @@ test("喫茶「保守」: every talk fits the village window, and the door appea
 		setProgress(
 			all,
 			[],
-			all.filter((d) => d !== "hidden"),
+			all.filter((d) => d !== "deep"),
 		);
 		ok(hasCafeNews(), "やきう's unheard talks give no 「！」 while he is here");
 		ok(
@@ -1600,7 +1600,7 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 	});
 });
 
-test("やきう leaves: the 過去ログの底 ending plays once with him, then no return, boss page or news has him", async () => {
+test("やきう leaves: the 電池板 ending plays once with him, then no return, boss page or news has him", async () => {
 	const all = [...DUNGEON_IDS];
 	const his = (pages: readonly StoryPage[]) =>
 		pages.filter((p) => p.who === "nanj" || p.about === "nanj");
@@ -1625,23 +1625,23 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 		// はじめて 持ち帰った：やきうは まだ 村に いて、口の 前で 待ち、結末を 語る
 		put(
 			all,
-			all.filter((d) => d !== "hidden"),
+			all.filter((d) => d !== "deep"),
 		);
-		const a: ReturnArrival = { kind: "clear", dungeon: "hidden" };
+		const a: ReturnArrival = { kind: "clear", dungeon: "deep" };
 		ok(
-			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.hidden.ending),
-			"the 過去ログの底 ending is cut the first time",
+			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.deep.ending),
+			"the 電池板 ending is cut the first time",
 		);
 		const v = villageView();
 		ok(
 			!villagePlaces(v).some((p) => p.id === "nanj"),
-			"やきう stands in the village after 過去ログの底 is cleared",
+			"やきう stands in the village after 電池板 is cleared",
 		);
 		ok(
 			villagePlaces(sceneView(v, a)).some((p) => p.id === "nanj"),
 			"やきう is not in the village for his own departure",
 		);
-		const { s, log } = fakeStory({ at: exitFor("hidden").cell });
+		const { s, log } = fakeStory({ at: exitFor("deep").cell });
 		lineUp(s, a, sceneView(v, a));
 		ok(
 			log.some((l) => l.startsWith("place nanj ")),
@@ -1649,13 +1649,13 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 		);
 		await returnScene(s, a);
 		ok(
-			his(STORY.hidden.ending).every(
+			his(STORY.deep.ending).every(
 				(p) => p.who !== "nanj" || log.includes(`say nanj: ${p.text}`),
 			),
 			`やきう's departure is not played:\n${log.join("\n")}`,
 		);
 		ok(
-			!!loadProgress().endings?.includes("hidden"),
+			!!loadProgress().endings?.includes("deep"),
 			"the departure is not remembered",
 		);
 		// 見おえたら（暗転で 建て直すと）もう いない。2回目からは 短い 語り
@@ -1664,11 +1664,11 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 			"やきう comes back after his departure",
 		);
 		ok(
-			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.hidden.again),
+			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.deep.again),
 			"the departure plays again",
 		);
 		// どの 板・帰り方でも やきうの 頁は 出ない（見た 語りでも、はじめての 語りでも）。着いた 語りから 始まる
-		for (const seen of [all, ["hidden"] as DungeonId[]]) {
+		for (const seen of [all, ["deep"] as DungeonId[]]) {
 			put(all, seen);
 			for (const d of all)
 				for (const kind of ["clear", "escape"] as const)
@@ -1683,7 +1683,7 @@ test("やきう leaves: the 過去ログの底 ending plays once with him, then 
 					}
 		}
 		// 開いた 知らせでも 話さない
-		put(all, all, [{ dungeon: "deep", reason: "clear" }]);
+		put(all, all, [{ dungeon: "hidden", reason: "clear" }]);
 		const news = fakeStory();
 		await newsScript(news.s);
 		ok(

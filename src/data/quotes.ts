@@ -382,7 +382,7 @@ export const ENDING: StoryPage[] = [
 	{ who: "nanj", text: "……ええ　スレや。\nこれ　貼ったら、人、来るで" },
 	{
 		who: "zero",
-		text: "スレ、また　伸びました。\n……知らない　IDが、書きこんでます",
+		text: "スレ、500を　こえました！\n……知らない　人が、書きこんでます",
 	},
 	{ who: null, text: "……知らない　人ンゴ", kiriko: "think" },
 ];

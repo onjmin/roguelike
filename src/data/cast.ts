@@ -76,7 +76,7 @@ export const MOB_VOICE: Partial<Record<MobId, VoiceDef>> = {
 
 /**
  * キリコ（名前・色・立ち絵は rpg の cast.ts と 同じ）。村の 窓に 出るのは 独白（（　）つき・声なし）と、
- * 過去ログの底の 結末の 声（rpg と 同じ uc）だけ（ui/village.ts の sayKiriko）。
+ * 声の 場面（rpg と 同じ uc）だけ（ui/village.ts の sayKiriko）。
  */
 export const KIRIKO: {
 	name: string;

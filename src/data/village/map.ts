@@ -719,7 +719,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
 	if (here("shiyo")) out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
 	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
-	// やきうは 過去ログの底の 結末で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story.ts）
+	// やきうは 電池板の 山場で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story.ts）
 	if (awayFriends(v.cleared).includes("nanj")) {
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
 		out.push({ id: "hoshu_sign", x: nx, y: ny, trigger: "talk" });

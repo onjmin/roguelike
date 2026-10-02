@@ -137,7 +137,7 @@ const firstEnding = (a: ReturnArrival, p: Progress): boolean =>
 
 /**
  * 場面で 村に いない 仲間。はじめての 持ち帰りの 語りは その 板を 持ち帰る 前の 村で 語る
- * （過去ログの底の 結末は やきうが 出ていく 場面なので、やきうは まだ いる）。
+ * （電池板の 山場は やきうが 出ていく 場面なので、やきうは まだ いる）。
  */
 const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] =>
 	awayFriends(
