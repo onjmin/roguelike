@@ -113,8 +113,8 @@ export type MobDef = {
 	 * 人の 子（リノ・アル）だけ。マスコット（ぷゆゆ・おんJwiki の 顔文字の マイナーズ）は やきうと 同じく 立ち絵なし。
 	 */
 	portrait?: string;
-	/** 立ち絵の 上から 何割を 見せるか（既定 0.58。頭身の 高い 絵は 小さく して 上半身だけに）。 */
-	portraitCrop?: number;
+	/** 名前欄に 出す 名前（無ければ name。解音ゼロの サブ機は 型番つき）。 */
+	label?: string;
 	/** 名前欄の 色を かりる 仲間（立ち絵は かりない）。ぷゆゆは やきう（rpg と 同じ）。 */
 	voice?: Speaker;
 	/** 名前欄の 色（その子 だけの 色。voice より 先）。読み上げの 声は data/cast.ts の MOB_VOICE。 */
@@ -2050,8 +2050,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	aru: {
 		name: "アル",
 		portrait: "portraits/aru.png",
-		// 177cm の 縦長の 全身絵なので、既定では 太ももまで 見える。胸から 上だけに
-		portraitCrop: 0.4,
 		sprite: "pub:sprites/aru.png",
 		from: 20,
 		spot: [12, 20],
@@ -2209,9 +2207,8 @@ export const MOBS: Record<MobId, MobDef> = {
 	// マイナーズでは ないので 総選挙には 出ない
 	proto: {
 		name: "プロト",
+		label: "プロト　HeBc-0",
 		portrait: "portraits/zero_proto.png",
-		// 頭身の 高い 絵なので 胸から 上だけに（アルと 同じ）
-		portraitCrop: 0.42,
 		sprite: "sa:KxS5YZ",
 		from: 4,
 		spot: [13, 22],
@@ -2404,8 +2401,8 @@ export const MOBS: Record<MobId, MobDef> = {
 	// マイナーズでは ないので 総選挙には 出ない
 	ren: {
 		name: "レン",
+		label: "レン　XQxS-0",
 		portrait: "portraits/zero_ren.png",
-		portraitCrop: 0.42,
 		sprite: "pub:sprites/zero_ren.png",
 		from: 17,
 		spot: [25, 20],
@@ -2593,8 +2590,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	hinary: {
 		name: "ヒナリー",
 		portrait: "portraits/hinary.png",
-		// 全身絵なので 胸から 上だけ
-		portraitCrop: 0.42,
 		sprite: "sa:mV6xaq",
 		from: 9,
 		spot: [26, 23],

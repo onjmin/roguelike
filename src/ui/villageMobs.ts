@@ -271,7 +271,7 @@ export const hasMobNews = (id: MobId): boolean => {
 export const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
 	const def = MOBS[id];
 	return s.say(def.voice ?? null, text, {
-		name: def.name,
+		name: def.label ?? def.name,
 		...(def.color ? { color: def.color } : {}),
 		...(MOB_VOICE[id] ? { tts: MOB_VOICE[id] } : {}),
 		...(def.portrait
@@ -279,7 +279,6 @@ export const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
 					portrait: {
 						id: `mob:${def.name}`,
 						src: def.portrait,
-						crop: def.portraitCrop,
 					},
 				}
 			: { noPortrait: true }),

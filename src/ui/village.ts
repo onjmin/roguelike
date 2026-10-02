@@ -957,7 +957,7 @@ export class Village {
 		// 声の ある 人（data/cast.ts の voice・MOB_VOICE）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
 		const voice = opt.tts ?? c?.voice;
 		return this.msg.show({
-			name: opt.name ?? c?.name,
+			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
 			text,
 			onShow:
@@ -973,7 +973,6 @@ export class Village {
 							color: opt.portrait.color ?? opt.color ?? c?.color ?? "#b8b8c8",
 							src: opt.portrait.src,
 							side: "right",
-							crop: opt.portrait.crop,
 						}
 					: who
 						? this.portraitOf(who)

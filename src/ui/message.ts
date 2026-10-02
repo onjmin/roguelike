@@ -6,9 +6,11 @@
 //
 // 描く人の手間を減らすため、次の3つは自動で調整する。
 // - 向き: 絵の向き（facing。既定は右向き）と立つ側が合わないときは左右反転して、中央を向かせる。
-// - 大きさ・位置: 透明な余白を切り詰め、頭のてっぺんから足もとまでの高さがどのキャラも同じになる大きさで出す。
-//   頭の横の中心を測って枠の中央に合わせ、てっぺんの高さもそろえる。キャンバスの大きさ・余白・ポーズは自由
-//   （横に広がる髪・腕は、外側は画面の端まで出し、内側は左右の枠のあいだの真ん中でぼかして消す）。
+// - 大きさ・位置: 頭（てっぺん〜あご）の大きさがどのキャラも同じになる大きさで出し、てっぺんの高さをそろえ、
+//   顔の横の真ん中を枠の中央に合わせる。顔の位置は data/portraits.ts に手で書く（耳・アホ毛・帽子や、
+//   頭身・ポーズの違いで、自動で測ると ずれるので）。書いていない絵は 透明な余白から 自動で測る。
+//   キャンバスの大きさ・余白・ポーズは自由（横に広がる髪・腕は、外側は画面の端まで出し、
+//   内側は左右の枠のあいだの真ん中でぼかして消す。下はメッセージ窓の裏でぼかして消す）。
 // - 立ち位置: いつもの側がほかの話し手でふさがっていたら、空いている側（無ければ長く話していない側）へ回す。
 //
 // 読み上げ（村の 会話だけ。rpg の 2daccb2 まで）があるときは、名前と立ち絵はすぐ出し、文字送りは
@@ -23,6 +25,7 @@
 // 読み上げが OFF のとき・声の無い人（GameAudio.speak が started を返さないとき）は待たずにすぐ出し始める。
 // rpg の 重い文（pace: "slow"）と 文字送りの 速さの 設定は このゲームに 無いので 移していない。
 
+import { PORTRAIT_HEAD } from "../data/portraits";
 import { publicUrl } from "../engine/assets";
 import type { SpeechStart } from "../engine/audio";
 import type { Input } from "../engine/input";
@@ -44,18 +47,12 @@ export type PortraitSpec = {
 	invert?: boolean;
 	/** 絵の中のキャラが向いている向き（既定 "right" = 画面の右側を見ている）。 */
 	facing?: Side;
-	/** 全身絵の上から何割を見せるか（既定 0.58 ＝頭〜腰。1 で全身）。 */
-	crop?: number;
-	/** 自動でそろえたあとの大きさの倍率（既定 1）。 */
-	scale?: number;
-	/** 描いた絵の右へずらす（全身の高さに対する割合。反転したときは逆へ）。 */
-	offsetX?: number;
-	/** 下へずらす（全身の高さに対する割合）。 */
-	offsetY?: number;
 };
 
-/** 全身絵のうち、会話で見せる上半身の割合の既定値。 */
-const DEFAULT_CROP = 0.58;
+/** 顔の位置を書いていない絵で、全身の高さのうち頭（てっぺん〜あご）とみなす割合。 */
+const AUTO_HEAD = 0.2;
+/** 頭の てっぺんから 何頭ぶん 下まで 見せるか（その 下は ぼかして 消す）。 */
+const SHOW_HEADS = 3;
 
 /**
  * この文字を出したあとの間（1文字ぶんの何倍か）。句読点で少し止め、「……」は出しきったところで
@@ -89,6 +86,9 @@ const SILENT_LEAD = /^[…‥・.．、。\s]+/u;
 type Art = {
 	/** 透明な余白を切り詰めた全身絵。 */
 	canvas: HTMLCanvasElement;
+	/** 切り詰めた左・上の幅（元の絵の px。data/portraits.ts の値を canvas の位置に直すのに使う）。 */
+	ox: number;
+	oy: number;
 	/** 頭のてっぺん（canvas の上からの px。アホ毛・耳の先などの細いはみ出しは除く）。 */
 	top: number;
 	/** てっぺんから足もとまでの高さ（px）。どのキャラもこれが同じ大きさになるように出す。 */
@@ -124,7 +124,7 @@ const measure = (
 	y0: number,
 	w: number,
 	h: number,
-): Omit<Art, "canvas"> => {
+): Omit<Art, "canvas" | "ox" | "oy"> => {
 	const upper = [
 		...rows.subarray(y0, y0 + Math.max(1, Math.round(h / 4))),
 	].sort((a, b) => a - b);
@@ -228,6 +228,8 @@ const loadTrimmed = (src: string): Promise<Art | null> => {
 				);
 			resolve({
 				canvas: out,
+				ox: left,
+				oy: top,
 				...(data
 					? measure(data, w, rows, left, top, out.width, out.height)
 					: { top: 0, body: out.height, headX: 0.5 }),
@@ -298,32 +300,47 @@ class PortraitSlot {
 				dummy();
 				return;
 			}
-			// 全身絵の上の方（てっぺん〜全身の crop 割）だけを切り出して大きく見せる。
-			// 切り口はメッセージ窓の裏に隠れ、下端は CSS でぼかす。
-			// 大きさと位置は CSS で決める（全身の高さをそろえ、頭の中心を枠の中央に、切り口を枠の下端に）。
-			const { canvas, top, body } = art;
-			const crop = Math.min(1, Math.max(0.2, p.crop ?? DEFAULT_CROP));
-			const cut = Math.max(1, Math.round(top + body * crop));
+			// 頭の大きさ・てっぺんの高さ・顔の真ん中を CSS でそろえる（値は canvas の高さ・幅に対する割合）。
+			// 下の方はメッセージ窓の裏に隠れ、.portrait-art の下端でぼかして消す。
+			const { canvas } = art;
+			const known = p.src ? PORTRAIT_HEAD[p.src] : undefined;
+			const head = known
+				? {
+						x: known.x - art.ox,
+						top: known.top - art.oy,
+						h: known.chin - known.top,
+					}
+				: {
+						x: art.headX * canvas.width,
+						top: art.top,
+						h: art.body * AUTO_HEAD,
+					};
 			const view = el("canvas", { class: "portrait-img" });
 			view.width = canvas.width;
-			view.height = cut;
+			view.height = canvas.height;
 			view.getContext("2d")?.drawImage(canvas, 0, 0);
-			view.classList.toggle("cropped", crop < 1);
 			// 立つ側から見て中央を向くように（左の枠は右向き、右の枠は左向き）
 			const want: Side = this.side === "left" ? "right" : "left";
 			const flip = (p.facing ?? "right") !== want;
 			view.classList.toggle("flip", flip);
 			view.classList.toggle("invert", !!p.invert);
-			// 枠の中央に来る点（頭の中心）。反転するときは鏡に映した位置
-			const hx = art.headX - ((p.offsetX ?? 0) * body) / canvas.width;
+			// 枠の中央に来る点（顔の真ん中）。反転するときは鏡に映した位置
+			const hx = head.x / canvas.width;
 			const s = view.style;
-			s.setProperty("--crop", String(crop));
-			s.setProperty("--cut", String(cut / body));
 			s.setProperty("--hx", String(flip ? 1 - hx : hx));
-			// ぼかしは見せる上半身の下 18%
-			s.setProperty("--fade-at", `${(1 - (0.18 * body * crop) / cut) * 100}%`);
-			s.setProperty("--scale", String(p.scale ?? 1));
-			s.setProperty("--dy", String(p.offsetY ?? 0));
+			s.setProperty("--ih", String(canvas.height / head.h));
+			s.setProperty("--it", String(head.top / head.h));
+			// 見せるのは てっぺんから SHOW_HEADS 頭ぶん（腰ほど）まで。細い画面で 頭が 小さくなっても 全身は 出さない
+			const fadeTo = Math.min(
+				1,
+				(head.top + head.h * SHOW_HEADS) / canvas.height,
+			);
+			const fadeFrom = Math.min(
+				1,
+				(head.top + head.h * (SHOW_HEADS - 0.5)) / canvas.height,
+			);
+			s.setProperty("--fade-from", `${fadeFrom * 100}%`);
+			s.setProperty("--fade-to", `${fadeTo * 100}%`);
 			// 枠より広い絵は、出してよい範囲（.portrait-art）の内側の端でぼかして消す
 			this.root.replaceChildren(el("div", { class: "portrait-art" }, [view]));
 		};

@@ -16,7 +16,9 @@ export type CastDef = {
 	color: string;
 	/** 歩行グラ（`sa:<id>`）。 */
 	walk: string;
-	portrait?: { src: string; side: "left" | "right"; scale?: number };
+	/** 名前欄に 出す 名前（無ければ name。ゼロは 型番つき）。 */
+	label?: string;
+	portrait?: { src: string; side: "left" | "right" };
 	/** 読み上げの 声（dtm の koe 音源）。無ければ 声なし。 */
 	voice?: VoiceDef;
 };
@@ -33,8 +35,12 @@ const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
 	roze: { src: "portraits/roze.png", side: "right" },
 	shiyo: { src: "portraits/shiyo.png", side: "right" },
 	zero: { src: "portraits/zero.png", side: "right" },
-	// 頭の大きい絵なので 少し小さく（rpg と同じ）
-	feris: { src: "portraits/feris.png", side: "right", scale: 0.9 },
+	feris: { src: "portraits/feris.png", side: "right" },
+};
+
+/** 名前欄の 名前。解音ゼロは 3体 いるので 型番も 出す（公式サイトの 書き方）。サブ機は data/mobs.ts の label。 */
+const LABEL: Partial<Record<Speaker, string>> = {
+	zero: "ゼロ　VHz8-0",
 };
 
 /**
@@ -54,6 +60,7 @@ export const CAST: Record<Speaker, CastDef> = Object.fromEntries(
 			walk: WALK[id],
 			portrait: PORTRAIT[id],
 			voice: VOICE[id],
+			...(LABEL[id] ? { label: LABEL[id] } : {}),
 		},
 	]),
 ) as Record<Speaker, CastDef>;

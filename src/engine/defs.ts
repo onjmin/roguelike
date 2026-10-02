@@ -131,8 +131,8 @@ export type SayOptions = {
 	name?: string;
 	/** 立ち絵を出さない。 */
 	noPortrait?: boolean;
-	/** 仲間でない人の 立ち絵（public/ からの パス。無ければ 「立ち絵（仮）」の ダミー）。crop は 見せる 上からの 割合（ui/message.ts の PortraitSpec）。 */
-	portrait?: { id: string; src: string; color?: string; crop?: number };
+	/** 仲間でない人の 立ち絵（public/ からの パス。無ければ 「立ち絵（仮）」の ダミー）。 */
+	portrait?: { id: string; src: string; color?: string };
 	/** 名前欄の 色（仲間でない人。無ければ who の 色）。 */
 	color?: string;
 	/** 読み上げの 声（仲間でない人。無ければ who の 声）。 */
