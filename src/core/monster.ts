@@ -857,8 +857,7 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 				p.hp = Math.min(p.hp, p.maxHp);
 				r.se("debuff");
 				r.msg("最大HPが　5　下がった", "warn");
-			} else if (r.hasRing("r_purity"))
-				r.msg("しかし　キリコは　スルーした");
+			} else if (r.hasRing("r_purity")) r.msg("しかし　キリコは　スルーした");
 			else {
 				p.maxStr = Math.max(1, p.maxStr - 1);
 				p.str = Math.min(p.str, p.maxStr);

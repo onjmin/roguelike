@@ -2084,7 +2084,9 @@ test("住人の 声: 音源の ある子（春音リノ・響化アル）だけ 
 				await say(who, text, opt);
 			};
 			await mobScript(id)(t.s);
-			const own = said.filter((o) => o?.name === MOBS[id].name);
+			const own = said.filter(
+				(o) => o?.name === (MOBS[id].label ?? MOBS[id].name),
+			);
 			ok(own.length > 0, `${id}: never spoke`);
 			for (const o of own) {
 				ok(
