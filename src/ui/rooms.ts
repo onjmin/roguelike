@@ -234,7 +234,7 @@ const eventFor = (
 	});
 };
 
-/** 部屋の 地図（喫茶は ui/cafe.ts の buildCafe）。曲は 村の まま。 */
+/** 部屋の 地図（喫茶は ui/cafe.ts の buildCafe）。曲は 村の まま（銭湯だけ ゆったりした 曲。出ると 村の 曲に もどる）。 */
 export const buildRoom = (
 	id: Exclude<RoomId, "cafe">,
 	v: VillageView,
@@ -246,6 +246,7 @@ export const buildRoom = (
 		tiles: roomPalette(id, v.stage),
 		rows: roomRows(id),
 		outside: "#000",
+		...(id === "bath" ? { bgm: "speder2" } : {}),
 		events: [
 			...roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
 			...(id === "music" ? musicPeople(v) : []),

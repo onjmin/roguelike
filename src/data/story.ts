@@ -405,10 +405,10 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	kinoko: { theme: "moss", bgm: "deq_strata", ambient: "spores" },
 	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく（曲は 水底に さす 光）
 	tropical: { theme: "beach", bgm: "deq_sea", ambient: "glitter" },
-	// 鉄板の 焦げ（曲は 活火山の 底）
-	konamono: { theme: "lava", bgm: "deq_volcano", ambient: "embers" },
-	// 提灯の 赤。都節の 曲
-	festival: { theme: "lattice", bgm: "deep_kisei", ambient: "glitter" },
+	// 鉄板の 焦げ。どの 敵も 怒りっぽい 板なので 張りつめた 曲（ヘ短調の バイオリンと 矩形波の 分散和音。もとは 活火山の 底）
+	konamono: { theme: "lava", bgm: "fukyowa", ambient: "embers" },
+	// 提灯の 赤。祭りが よく 出る 板なので 速い ダンスの 曲（もとは 隠しの 規制の檻と 同じ 都節の 曲）
+	festival: { theme: "lattice", bgm: "kouseki", ambient: "glitter" },
 	// 隠し：層ごとに かわる（theme・bgm は 層が 無い ときの 予備）
 	hidden: {
 		theme: "earth",

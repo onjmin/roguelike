@@ -55,6 +55,13 @@
 // | deq_laundry  | -32.1（20）    | 20 → 53 | -23.7    |
 // | deq_ice      | -34.9（20）    | 20 → 73 | -23.7    |
 // （deq_* は 元の 譜面が #volume=80。20 に して 測り、直した 値で 測り直した）
+// | kumori       | -21.4（23）    | 23 → 18 | -23.5    |
+// | fukyowa      | -25.7（15）    | 15 → 19 | -23.5    |
+// | kouseki      | -22.8（20）    | 50 → 18 | -23.7    |
+// | speder2      | -19.7（20）    | 50 → 13 | -23.4    |
+// （2026-10。kouseki・speder2 は 元の 譜面が #volume=50 なので 20 に して 測った）
+// dtm 2.1.29 から studio.play でも #reverb= などの 全体の 残響と #drumfont= が 鳴る（それまでは 無視されていた）。
+// 上げた ときに 全曲 測り直したが、どれも 目標から ±0.8 以内（boss +0.8・lastboss +0.6・ending +0.5、ほかは ±0.5）なので 直していない。
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
@@ -84,6 +91,11 @@ import dungeon from "./bgm/dungeon.mml?raw"; // 5c8b9ca2c4514e10
 import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G♭) デュエット」
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
+// post/1318（AI作曲スレ）の 名無し2rt さんの 4曲（2026-10。title・town などと 同じ 人）。
+// 本館＝kumori、銭湯＝speder2、おんたこ＝fukyowa（もとは deq_volcano）、お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
+import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音
+import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
+import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
@@ -93,6 +105,7 @@ import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修�
 import ruins from "./bgm/ruins.mml?raw"; // 本編 B7〜9・ちょっと B7〜9 朽ちたまとめ跡：嬰ヘ短調 94・jazz_night・4beat（ページを めくる 動機）
 import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイナー）」
 import shallow3 from "./bgm/shallow3.mml?raw"; // ちょっと B10 過去ログ倉庫：ホ短調 112・fantasy_rpg（ハープの雪、打楽器なし）
+import speder2 from "./bgm/speder2.mml?raw"; // 6375「Speder2リスペクト」：嬰ハ短調 110・retro_game・dance（ビブラフォン・エレピ・オルゴール）
 import stone from "./bgm/stone.mml?raw"; // 本編 B3〜4・ちょっと B3〜4 dat の石室：イ短調 104・acoustic・shuffle（足音の 動機）
 import tense from "./bgm/tense.mml?raw"; // 1d9e7eed2db44ce7「荒ぶるメロディライン」
 import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽っぽい何か」
@@ -133,4 +146,8 @@ export const bgm: Record<string, string> = {
 	deq_strata,
 	deq_laundry,
 	deq_ice,
+	kumori,
+	fukyowa,
+	kouseki,
+	speder2,
 };
