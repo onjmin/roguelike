@@ -313,10 +313,17 @@ export const play = async (
 		// 村に いない 仲間の 行（はじめましての 口出し・節目で 名前を 呼ぶ 行など）は 出さない
 		if (absentIn(l, away)) continue;
 		if (l.need && !nearCast(s, l.need)) continue;
-		if (l.who !== null && l.who !== "mob" && !nearCast(s, l.who)) continue;
+		if (
+			l.who !== null &&
+			l.who !== "mob" &&
+			l.who !== "kiriko" &&
+			!nearCast(s, l.who)
+		)
+			continue;
 		if (l.beat) await runBeat(s, id, l.beat);
 		if (l.who === null) await s.narrate(l.text);
 		else if (l.who === "mob") await sayAs(s, id, l.text);
+		else if (l.who === "kiriko") await s.kiriko(l.text, "voice");
 		else if (isMob(l.who)) await sayAs(s, l.who, l.text);
 		else await s.say(l.who, l.text);
 	}

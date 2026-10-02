@@ -982,7 +982,7 @@ export class Village {
 
 	/**
 	 * キリコの ことば。独白は （　）で かこみ、声なし（村の だれにも 聞こえない）。
-	 * 声（voice。いまは 使っていない）は （　）が 外れ、rpg と 同じ uc で 読み上げる。立ち絵は 左（rpg と 同じ）。
+	 * 声（voice。村の 雑談だけ）は （　）が 外れ、rpg と 同じ uc で 読み上げる。立ち絵は 左（rpg と 同じ）。
 	 */
 	private sayKiriko(text: string, mode: KirikoMode): Promise<void> {
 		const voice = mode === "voice" ? KIRIKO.voice : undefined;

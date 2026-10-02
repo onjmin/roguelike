@@ -1974,9 +1974,10 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 	const texts: [string, string][] = [];
 	const talk = (where: string, ls: readonly MobLine[]) => {
 		ok(ls.length >= 1 && ls.length <= 4, `${where}: ${ls.length} windows`);
-		// 本人と 地の文で 3窓まで（4窓目は 仲間・ほかの子の 口出しの ときだけ）
+		// 本人・地の文・キリコで 3窓まで（4窓目は 仲間・ほかの子の 口出しの ときだけ）
 		ok(
-			ls.filter((l) => l.who === "mob" || l.who === null).length <= 3,
+			ls.filter((l) => l.who === "mob" || l.who === null || l.who === "kiriko")
+				.length <= 3,
 			`${where}: more than 3 windows without a chime-in`,
 		);
 		ls.forEach((l, i) => {
@@ -2321,6 +2322,7 @@ const BARE: MobCtx = {
 /** fakeStory の 記録で その窓が どう 見えるか（ぷゆゆの 声は やきうの 色、ほかの子は 色なし）。 */
 const logOf = (id: MobId, l: MobLine): string => {
 	if (l.who === null) return `narrate: ${l.text}`;
+	if (l.who === "kiriko") return `kiriko voice: ${l.text}`;
 	const mob: MobId | null =
 		l.who === "mob" ? id : l.who in MOBS ? (l.who as MobId) : null;
 	if (mob === null) return `say ${l.who}: ${l.text}`;
@@ -2461,7 +2463,32 @@ test("ぷゆゆ: rpg voice rules (🥺🤪✋ only, one 🥺 at a line end, rare
 	ok(ikite <= 2, `生きてこそだ ${ikite} times (2 at most)`);
 });
 
-test("ぷゆゆ・マイナーズ: small moves are few, come before the mob's own or narration window, and stay near home", () => {
+test("ぷゆゆ・マイナーズ: Kiriko speaks only in chats and never says 保守", () => {
+	let n = 0;
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		const outside: MobLine[] = [
+			...d.meet,
+			...Object.values(d.milestones).flatMap((v) => v ?? []),
+			...(d.ask ? [...d.ask.lines, ...d.ask.yes, ...d.ask.no] : []),
+			...d.thx,
+		];
+		ok(
+			outside.every((l) => l.who !== "kiriko"),
+			`${id}: Kiriko speaks outside chats`,
+		);
+		for (const c of d.chats)
+			for (const l of c.lines) {
+				if (l.who !== "kiriko") continue;
+				n++;
+				ok(!l.text.includes("保守"), `${id}.${c.key}: Kiriko says 保守`);
+				ok(l.text.includes("ンゴ"), `${id}.${c.key}: Kiriko without ンゴ`);
+			}
+	}
+	ok(n > 0, "Kiriko never speaks in chats");
+});
+
+test("ぷゆゆ・マイナーズ: small moves are few,come before the mob's own or narration window, and stay near home", () => {
 	let n = 0;
 	for (const id of MOB_IDS) {
 		const d = MOBS[id];

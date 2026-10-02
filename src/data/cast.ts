@@ -4,7 +4,7 @@
 // メインさんの 歩行グラは RPGEN に 無いので、プロト（sa:KxS5YZ）を 塗りかえて 作った（scripts/make-zero.mjs）。
 // 歩行グラは RPGEN 形式（16x16・2コマ×4方向）。立ち絵は public/portraits/ の透過 PNG（右向きに描いた絵。
 // 右に立つときは ui/message.ts が左右反転する）。やきうは 立ち絵が無いので 出さない（ダミーも出さない）。
-// キリコは 仲間の 一覧（Speaker）には 入れない（声が 出ないので。独白と 最後の 声は KIRIKO・Story.kiriko）。
+// キリコは 仲間の 一覧（Speaker）には 入れない（主人公なので。独白と 雑談の 声は KIRIKO・Story.kiriko）。
 // 声（voice）は 村の 会話の 読み上げ（設定の ボイス。engine/audio.ts）。無い人は 読み上げない。
 
 import type { VoiceDef } from "../engine/defs";
@@ -76,7 +76,7 @@ export const MOB_VOICE: Partial<Record<MobId, VoiceDef>> = {
 
 /**
  * キリコ（名前・色・立ち絵は rpg の cast.ts と 同じ）。村の 窓に 出るのは 独白（（　）つき・声なし）と、
- * 声の 場面（rpg と 同じ uc）だけ（ui/village.ts の sayKiriko）。
+ * 雑談の 声（rpg と 同じ uc）だけ（ui/village.ts の sayKiriko）。
  */
 export const KIRIKO: {
 	name: string;
