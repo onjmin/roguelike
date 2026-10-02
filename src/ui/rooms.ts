@@ -46,6 +46,7 @@ import type { Ctx } from "./ctx";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
 import { openPiano } from "./piano";
+import { villageSong } from "./villageMusic";
 import { fill } from "./villageTalk";
 
 /** 部屋に 入る（扉の 文は 村に いるあいだ 部屋ごとに 1回。店番の「奥へ」は いつも 店番が 言う）。 */
@@ -134,7 +135,7 @@ const pianoScript =
 		s.bgm(null);
 		await ctx.audio.preparePiano();
 		const r = await openPiano(ctx, { title, guide });
-		s.bgm("town");
+		s.bgm(villageSong());
 		if (r.finished) await s.narrate(PIANO_DONE);
 	};
 
@@ -234,7 +235,7 @@ const eventFor = (
 	});
 };
 
-/** 部屋の 地図（喫茶は ui/cafe.ts の buildCafe）。曲は 村の まま（銭湯だけ ゆったりした 曲。出ると 村の 曲に もどる）。 */
+/** 部屋の 地図（喫茶は ui/cafe.ts の buildCafe）。曲は 村の まま。 */
 export const buildRoom = (
 	id: Exclude<RoomId, "cafe">,
 	v: VillageView,
@@ -246,7 +247,6 @@ export const buildRoom = (
 		tiles: roomPalette(id, v.stage),
 		rows: roomRows(id),
 		outside: "#000",
-		...(id === "bath" ? { bgm: "speder2" } : {}),
 		events: [
 			...roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
 			...(id === "music" ? musicPeople(v) : []),

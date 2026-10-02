@@ -38,6 +38,7 @@ import {
 	type Trap,
 } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
+import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../data/music";
 import { loadImage } from "../engine/assets";
 import {
 	DEBUG_SEED,
@@ -224,11 +225,6 @@ const afterMotion = (ev: GameEvent[], i: number): boolean => {
 	return !!t && MOTION.has(t);
 };
 
-/** 祭り（モンスターハウス）の曲。名無し155さんの アップテンポな曲（オクターブを直した版）。 */
-const HOUSE_BGM = "retro2";
-/** ボスの 曲（見つけてから たおすまで）。名無し155さんの 曲（もとは 電池板で 鳴らしていた 戦闘曲っぽい 方）。 */
-const BOSS_BGM = "retro";
-
 /**
  * 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。
  * bossShown：ボスを 見つけた 知らせを もう 見せた（その あいだ 生きていれば ボスの 曲）。
@@ -236,7 +232,7 @@ const BOSS_BGM = "retro";
 const floorBgm = (run: Run, bossShown = false): string => {
 	if (run.f.houseAwake) return HOUSE_BGM;
 	if (bossShown && run.boss) return BOSS_BGM;
-	if (run.s.returning) return "title";
+	if (run.s.returning) return RETURN_BGM;
 	return zoneFor(run.s.dungeon, run.s.depth).bgm;
 };
 

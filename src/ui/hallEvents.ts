@@ -493,8 +493,6 @@ export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 		tiles: hallPalette(tier),
 		rows,
 		outside: "#000",
-		// 本館は 明るい 曲（出ると 村の 曲に もどる）
-		bgm: "kumori",
 		// 飾り棚の 品の 絵（棚に 描く 品と 一覧だけの 植民地化宣言・長湯スレ）も 入る 前に 読んでおく
 		images: shelfSlots(tier).length ? shelfRefs(v.cleared) : undefined,
 		events: hallPlaces(v).map((p) => eventFor(ctx, p, tier)),

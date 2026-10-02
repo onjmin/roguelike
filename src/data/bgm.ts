@@ -92,7 +92,8 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 // post/1318（AI作曲スレ）の 名無し2rt さんの 4曲（2026-10。title・town などと 同じ 人）。
-// 本館＝kumori、銭湯＝speder2、おんたこ＝fukyowa（もとは deq_volcano）、お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
+// 保守村（段5 から。data/music.ts）＝kumori、電池板＝speder2（もとは deq_laundry）、おんたこ＝fukyowa（もとは deq_volcano）、
+// お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
 import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）

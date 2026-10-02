@@ -86,6 +86,7 @@ import { enterMusic, enterRoom, keeperLets } from "./rooms";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
 import { mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
+import { chooseRecord, villageSong } from "./villageMusic";
 import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
@@ -528,18 +529,21 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	}
 };
 
-/** 蓄音機（まだ 何も → パン板 → 風呂板 → 過去ログの底 の レスを 鳴らす）。 */
-const phonoScript: Script = async (s) => {
-	const p = loadProgress();
-	const i = p.cleared.includes("hidden")
-		? 3
-		: p.cleared.includes("main")
-			? 2
-			: p.cleared.includes("shallow")
-				? 1
-				: 0;
-	await s.narrate(VILLAGE_MSG.phono[i]);
-};
+/** 蓄音機（まだ 何も → パン板 → 風呂板 → 過去ログの底 の レスを 鳴らす）。そのあと 村の 曲を えらべる（ui/villageMusic.ts）。 */
+const phonoScript =
+	(ctx: Ctx): Script =>
+	async (s) => {
+		const p = loadProgress();
+		const i = p.cleared.includes("hidden")
+			? 3
+			: p.cleared.includes("main")
+				? 2
+				: p.cleared.includes("shallow")
+					? 1
+					: 0;
+		await s.narrate(VILLAGE_MSG.phono[i]);
+		await chooseRecord(ctx, s);
+	};
 
 /** 置き場所に スクリプトを付けて イベントにする（v は 描いている 村。本館の 段を 絵と 合わせる）。 */
 const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
@@ -567,7 +571,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		});
 	}
 	if (p.id.startsWith("board_")) return sign(p.id, p.x, p.y, boardScript(ctx));
-	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript, p.sprite);
+	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
@@ -651,7 +655,7 @@ const arrivalScript =
 		if (arrival?.kind === "dead" && previewStage() === null)
 			await deathScene(s);
 		// 持ち帰りの 曲（ending）のまま 入ったときも ここからは 村の曲
-		s.bgm("town");
+		s.bgm(villageSong());
 		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）
 		if (previewStage() !== null) return;
 		// はじめての 村：前口上と、どこへ 行けば いいか
@@ -678,7 +682,7 @@ export const buildVillage = (
 	return {
 		id: "village",
 		name: `${TOWN_NAME}　${STAGE_NAMES[v.stage] ?? ""}`,
-		bgm: "town",
+		bgm: villageSong(),
 		tiles: villagePalette(view),
 		rows: villageRows(view),
 		outside: "#1f2a14",

@@ -5,6 +5,7 @@
 import { dungeonById } from "../core/data/dungeons";
 import { defOf, itemName } from "../core/item";
 import type { DungeonId, RunState } from "../core/types";
+import { ENDING_BGM } from "../data/music";
 import { BOSS_HOME, DUNGEON_NAMES } from "../data/story";
 import {
 	addRecord,
@@ -29,6 +30,7 @@ import {
 	OLD_REPLAY_WARN,
 	shareWindow,
 } from "./share";
+import { villageSong } from "./villageMusic";
 
 /** HTML に埋めこむ文字の逃がし。 */
 export const esc = (s: string): string =>
@@ -201,7 +203,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	const escaped = rec.kind === "escape";
 	addRecord(rec);
 	clearRun();
-	ctx.audio.bgm(clear ? "ending" : escaped ? "town" : "sad");
+	ctx.audio.bgm(clear ? ENDING_BGM : escaped ? villageSong() : "sad");
 	const nth = runStats().runs;
 
 	const p = s.player;

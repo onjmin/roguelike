@@ -87,6 +87,7 @@ import {
 import { doneTamperNews, loadTamper } from "../engine/tamper";
 import type { Dir } from "../engine/types";
 import { sayAs } from "./villageMobs";
+import { villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
 
 /**
@@ -226,7 +227,7 @@ export const returnScene = async (
 		s.fadeOut(300),
 	]);
 	await s.rebuild();
-	s.bgm("town");
+	s.bgm(villageSong());
 	await s.fadeIn(300);
 };
 

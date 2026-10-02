@@ -26,6 +26,7 @@ import {
 } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/bath";
+import { bgm } from "../data/bgm";
 import {
 	CAFE_DRINKS,
 	CAFE_GREET,
@@ -50,6 +51,7 @@ import {
 	PUYU_LUNCH,
 	SENKYO,
 } from "../data/mobs";
+import { records, stageBgm, villageBgm } from "../data/music";
 import {
 	advanceEvents,
 	bossName,
@@ -79,6 +81,7 @@ import {
 import { SCRAP_MSG, SCRAPS } from "../data/scraps";
 import {
 	awayFriends,
+	BOARD_LOOKS,
 	BOSS_HOME,
 	BOSS_RETURN,
 	CLEAR,
@@ -229,6 +232,7 @@ import {
 	senkyoScript,
 	tipDice,
 } from "../ui/villageMobs";
+import { villageSong } from "../ui/villageMusic";
 import {
 	forgetOpeningMemo,
 	needsOpening,
@@ -1475,7 +1479,7 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 					),
 					"fadeOut",
 					"rebuild",
-					"bgm town",
+					`bgm ${villageSong()}`,
 					"fadeIn",
 				]),
 				`${a.kind}: the scene is out of order:\n${log.join("\n")}`,
@@ -3301,7 +3305,7 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 					p.who ? `say ${p.who}: ${p.text}` : `narrate: ${p.text}`,
 				),
 				"fadeOut",
-				"bgm town",
+				`bgm ${villageSong()}`,
 			]),
 			`the boss return is out of order:\n${log.join("\n")}`,
 		);
@@ -3700,6 +3704,40 @@ test("おんJ 本館の 下見（?stage=・?event=）: 「保守」 is kept for 
 		forgetHallMemo();
 		ok(hoshuCount() === 0, `count after the preview: ${hoshuCount()}`);
 	});
+});
+
+test("村の 曲: the stage picks it, the gramophone offers only songs heard on cleared boards, and a pick not on it falls back", () => {
+	ok(
+		stageBgm(0) === "town" && stageBgm(4) === "town",
+		"early village is not town",
+	);
+	ok(
+		stageBgm(5) === "kumori" && stageBgm(7) === "kumori",
+		"the shop village is not kumori",
+	);
+	ok(
+		records(0, [])
+			.map((r) => r.bgm)
+			.join() === "town",
+		"a new village offers more than its own song",
+	);
+	const all = records(7, DUNGEON_IDS);
+	for (const r of all) ok(r.bgm in bgm, `${r.label}: no song ${r.bgm}`);
+	ok(
+		new Set(all.map((r) => r.bgm)).size === all.length,
+		"the gramophone lists a song twice",
+	);
+	ok(
+		records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.shallow.bgm) &&
+			!records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.deep.bgm),
+		"a board's song is offered before it is cleared",
+	);
+	ok(villageBgm(5, [], "deq_ice") === "kumori", "an unheard pick plays");
+	ok(
+		villageBgm(5, [], "town") === "town",
+		"the old village song cannot be picked",
+	);
+	ok(villageBgm(5, [], null) === "kumori", "no pick does not follow the stage");
 });
 
 test("飾り棚: the goal items of the cleared boards (植民地化宣言 and 長湯スレ play on the gramophone)", () => {

@@ -19,6 +19,8 @@ export type Settings = {
 	speed: "normal" | "fast";
 	/** 十字キーを左手側に置く（右利き向けの既定は左）。 */
 	padSide: "left" | "right";
+	/** 村で 鳴らす 曲（広場の 蓄音機で えらぶ。null は 村の 育ちに あわせる。data/music.ts）。 */
+	villageBgm: string | null;
 };
 
 const DEFAULTS: Settings = {
@@ -31,6 +33,7 @@ const DEFAULTS: Settings = {
 	pad: true,
 	speed: "normal",
 	padSide: "left",
+	villageBgm: null,
 };
 
 const VERSION = 1;
