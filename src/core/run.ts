@@ -1390,13 +1390,19 @@ export class Run {
 			case "pickup":
 				return this.doPickup(true);
 			case "use":
-				return useItem(this, cmd.item, cmd.target);
+				return this.fromFoot(cmd.item, () =>
+					useItem(this, cmd.item, cmd.target),
+				);
 			case "throw":
-				return throwItem(this, cmd.item, cmd.dir ?? p.dir);
+				return this.fromFoot(cmd.item, () =>
+					throwItem(this, cmd.item, cmd.dir ?? p.dir),
+				);
 			case "drop":
 				return this.doDrop(cmd.item);
 			case "equip":
-				return this.doEquip(cmd.item);
+				return this.findItem(cmd.item)
+					? this.doEquip(cmd.item)
+					: this.equipFromFoot(cmd.item);
 			case "unequip":
 				return this.doUnequip(cmd.item);
 			case "swap":
@@ -1572,6 +1578,59 @@ export class Run {
 		this.se("item");
 		this.msg(`${this.name(fi.item)}を　拾った`);
 		this.onAcquire(fi.item);
+		return true;
+	}
+
+	/** 足元の 道具（uid が 足元の 物で、床に はりついていない・持ち帰る 品でない）。 */
+	private footItem(uid: number): FloorItem | null {
+		const fi = this.itemAt(this.p.x, this.p.y);
+		return fi &&
+			fi.item.uid === uid &&
+			!this.isWardItem(fi) &&
+			!isKeyItem(fi.item.kind)
+			? fi
+			: null;
+	}
+
+	/**
+	 * 足元の 道具を 拾わずに 使う・投げる（トルネコ1の 足元と 同じ。1ターン）。
+	 * 持ち物に いったん 入れて（いっぱいでも）ふつうに 使い、残った 物（杖・矢の 残り・やめた とき）は 床の 同じ 所へ もどす。
+	 * uid が 持ち物の 物なら そのまま。
+	 */
+	private fromFoot(uid: number, act: () => boolean): boolean {
+		if (this.findItem(uid)) return act();
+		const fi = this.footItem(uid);
+		if (!fi) return false;
+		const floor = this.f;
+		const it = fi.item;
+		floor.items = floor.items.filter((i) => i !== fi);
+		this.p.items.push(it);
+		if (!this.s.seen.includes(it.uid)) this.s.seen.push(it.uid);
+		const done = act();
+		if (this.p.items.includes(it) && !this.isEquipped(it)) {
+			this.p.items = this.p.items.filter((i) => i !== it);
+			if (this.f === floor && !this.itemAt(fi.x, fi.y))
+				floor.items.push({ x: fi.x, y: fi.y, item: it });
+			else this.placeItem(it, { x: this.p.x, y: this.p.y });
+		}
+		return done;
+	}
+
+	/** 足元の 武器・板・指輪・矢を 装備する（拾ってから 装備する。持ち物が いっぱいなら できない）。 */
+	private equipFromFoot(uid: number): boolean {
+		const fi = this.footItem(uid);
+		if (!fi) return false;
+		const kind = fi.item.kind;
+		const merges =
+			defOf(kind).cat === "arrow" && this.p.items.some((i) => i.kind === kind);
+		if (this.p.items.length >= INVENTORY_MAX && !merges) {
+			this.msg(`持ち物が　いっぱいで　${this.name(fi.item)}を　拾えない`);
+			return false;
+		}
+		this.doPickup(true);
+		// 矢は 同じ 種類の 束に まとまる（uid が かわる）
+		const it = this.findItem(uid) ?? this.p.items.find((i) => i.kind === kind);
+		if (it) this.doEquip(it.uid);
 		return true;
 	}
 

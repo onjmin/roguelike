@@ -11,6 +11,7 @@ import {
 	attackPower,
 	EXP_AT,
 	HUNGER_MAX,
+	INVENTORY_MAX,
 	rollDamage,
 	SPAWN_EVERY,
 } from "../core/balance";
@@ -2183,6 +2184,79 @@ test("scroll", "s_blast from a room's entrance hits the whole room", () => {
 	ok(
 		!r.f.monsters.includes(far) || far.hp < hp0,
 		"a monster inside the room was not hit",
+	);
+});
+
+// ───────────────── 足元の 道具（拾わずに 使う） ─────────────────
+
+/** 足元に 道具を 置く（正体つき）。 */
+const atFoot = (r: Run, kind: string): Item => {
+	const it = r.newItem(kind);
+	it.cursed = false;
+	r.f.items.push({ x: r.p.x, y: r.p.y, item: it });
+	return it;
+};
+
+test("herb", "foot: a herb underfoot is drunk without picking it up", () => {
+	const r = arena("foot-herb");
+	const it = atFoot(r, "h_heal");
+	const n = r.p.items.length;
+	turn(r, { c: "use", item: it.uid });
+	ok(!r.itemAt(r.p.x, r.p.y), "the herb is still on the floor");
+	ok(r.p.items.length === n, "the inventory changed");
+	ok(r.s.turn === 1, `time did not pass (turn ${r.s.turn})`);
+});
+
+test("staff", "foot: a waved staff goes back to the same tile", () => {
+	const r = arena("foot-staff");
+	const it = atFoot(r, "w_bolt");
+	const c0 = it.charges;
+	put(r, "tousuko", at(0, 3));
+	turn(r, { c: "use", item: it.uid });
+	ok(r.itemAt(r.p.x, r.p.y)?.item === it, "the staff did not come back");
+	ok(!r.findItem(it.uid), "the staff stayed in the inventory");
+	ok(it.charges === c0 - 1, `charges ${it.charges} (was ${c0})`);
+});
+
+test("staff", "foot: works even with a full inventory", () => {
+	const r = arena("foot-full");
+	while (r.p.items.length < INVENTORY_MAX) give(r, "f_bread");
+	const it = atFoot(r, "h_heal");
+	turn(r, { c: "use", item: it.uid });
+	ok(!r.itemAt(r.p.x, r.p.y), "the herb is still on the floor");
+	ok(r.p.items.length === INVENTORY_MAX, `items ${r.p.items.length}`);
+});
+
+test("staff", "foot: a thrown arrow leaves the rest of the bundle", () => {
+	const r = arena("foot-arrow");
+	const it = atFoot(r, "a_wood");
+	it.count = 5;
+	turn(r, { c: "throw", item: it.uid });
+	ok(r.itemAt(r.p.x, r.p.y)?.item === it, "the bundle left the tile");
+	ok(it.count === 4, `count ${it.count}`);
+});
+
+test("staff", "foot: equipping picks the weapon up", () => {
+	const r = arena("foot-equip");
+	const it = atFoot(r, "bat");
+	turn(r, { c: "equip", item: it.uid });
+	ok(r.weapon() === it, "the bat is not equipped");
+	ok(!r.itemAt(r.p.x, r.p.y), "the bat is still on the floor");
+});
+
+test("staff", "foot: the genban and other tiles are not usable", () => {
+	const r = arena("foot-genban");
+	const g = atFoot(r, "genban");
+	r.act({ c: "throw", item: g.uid });
+	ok(r.s.turn === 0, "threw the genban");
+	ok(r.itemAt(r.p.x, r.p.y)?.item === g, "the genban moved");
+	const far = r.newItem("h_heal");
+	r.f.items.push({ ...at(2, 0), item: far });
+	r.act({ c: "use", item: far.uid });
+	ok(r.s.turn === 0, "used an item that is not underfoot");
+	ok(
+		r.f.items.some((fi) => fi.item === far),
+		"the far herb vanished",
 	);
 });
 

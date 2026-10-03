@@ -514,7 +514,6 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 		const stairs = run.onStairs();
 		const rows: ListItem[] = [];
 		if (fi) {
-			// 床の道具は、持ち物に入れてからでないと使えない（core がそうしている）
 			const ok = canPickUp(run, fi.item);
 			rows.push({
 				label: "ひろう",
@@ -522,12 +521,46 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				value: "pickup",
 				disabled: !ok,
 			});
+			// 拾わずに 使う・投げる（トルネコ1と 同じ。装備は 拾ってから。持ち帰る 品・はりついた 物は できない）
+			const cat = defOf(fi.item.kind).cat;
+			const stuck = run.isWardItem(fi);
+			const held = cat === "goal" || stuck;
+			const why = stuck ? "床に　はりついている" : undefined;
+			if (cat !== "goal") {
+				const wear =
+					cat === "weapon" ||
+					cat === "shield" ||
+					cat === "ring" ||
+					cat === "arrow";
+				rows.push(
+					wear
+						? {
+								label: "装備する",
+								value: "equip",
+								disabled: held || !ok,
+								desc: why ?? (ok ? undefined : "持ち物が　いっぱい"),
+							}
+						: {
+								label: USE_VERB[cat],
+								value: "use",
+								disabled: held,
+								desc: why,
+							},
+				);
+			}
+			rows.push({ label: "せつめい", value: "info" });
+			if (cat !== "goal")
+				rows.push({
+					label: cat === "arrow" ? "撃つ" : "投げる",
+					value: "throw",
+					disabled: held,
+					desc: why,
+				});
 			rows.push({
 				label: "持ち物と　交換",
 				value: "swap",
 				disabled: !p.items.some((x) => !isKeyItem(x.kind)),
 			});
-			rows.push({ label: "せつめい", value: "info" });
 		}
 		if (stairs) {
 			const deepest = run.atBottom;
@@ -564,6 +597,23 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 		switch (v) {
 			case "pickup":
 				return command({ c: "pickup" });
+			case "equip":
+				if (fi) return command({ c: "equip", item: fi.item.uid });
+				break;
+			case "throw":
+				if (fi) return command({ c: "throw", item: fi.item.uid });
+				break;
+			case "use": {
+				if (!fi) break;
+				const it = fi.item;
+				if (!needsTarget(it)) return command({ c: "use", item: it.uid });
+				// 相手を 選ぶ スレ（持ち物から 選ぶ）。キャンセルなら 読まずに もどる
+				const target = await pickItem(ctx, run, "どれに　つかう？", (x) =>
+					canTarget(it, x),
+				);
+				if (target !== null) return command({ c: "use", item: it.uid, target });
+				break;
+			}
 			case "stairs":
 				return command({ c: "stairs" });
 			case "swap": {

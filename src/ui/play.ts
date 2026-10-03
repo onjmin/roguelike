@@ -1752,7 +1752,12 @@ export class Play {
 			// スレの「どれに？」（メニューを通さずに来たとき）
 			const pick = ev.some((e) => e.t === "fx" && e.kind === "pick");
 			// （リプレイでは 次のコマンドに えらんだ相手が入っている）
-			const scroll = cmd.c === "use" ? run.findItem(cmd.item) : undefined;
+			// 足元の スレは 読んだ あと 床に もどっている（core の fromFoot）
+			const scroll =
+				cmd.c === "use"
+					? (run.findItem(cmd.item) ??
+						run.f.items.find((fi) => fi.item.uid === cmd.item)?.item)
+					: undefined;
 			if (pick && scroll && cmd.c === "use" && !this.rp) {
 				this.busy = false;
 				const uid = await pickItem(this.ctx, run, "どれに　つかう？", (it) =>
