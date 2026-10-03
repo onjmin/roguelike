@@ -69,9 +69,8 @@ export const openingScript = async (s: Story): Promise<void> => {
 		"u".repeat(sy - by0) + (bx0 < sx ? "l" : "r").repeat(Math.abs(sx - bx0)),
 	);
 	s.face("player", "up");
-	const [first, second, place] = OPENING.premise;
+	const [first, place] = OPENING.premise;
 	await s.narrate(first);
-	await s.narrate(second);
 	// 広場に 蓄音機を 置く（ここが キリコの 起きる 所に なる）
 	s.show("phono");
 	s.se("item");

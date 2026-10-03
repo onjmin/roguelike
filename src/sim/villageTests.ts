@@ -2280,10 +2280,9 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 		ok(
 			inOrder(a.log, [
 				`narrate: ${OPENING.arrive[0]}`,
-				`narrate: ${OPENING.arrive[1]}`,
 				`narrate: ${OPENING.premise[0]}`,
 				"show phono",
-				`narrate: ${OPENING.premise[2]}`,
+				`narrate: ${OPENING.premise[1]}`,
 				"look nanj",
 				`say nanj: ${OPENING.nanjCall[0]}`,
 				`look ${VILLAGE_SPOTS.exit.join(",")}`,
