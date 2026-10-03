@@ -158,8 +158,24 @@ const candLabel = (kind: string): string => {
 	return h ? `${defOf(kind).name}（${h}）` : defOf(kind).name;
 };
 
-/** 候補を 1ページに いくつまで 並べるか（スマホの 縦持ちでも メッセージ窓の 3行に 収まるように。ひとこと つきなので 少なめ）。 */
-const CANDS_PER_PAGE = 4;
+/** メッセージ窓の 1行の 字数（全角）。候補は 見出しの 下に 2行まで（窓は 3行）。 */
+const CAND_LINE = 22;
+const CAND_LINES = 2;
+
+/** 候補を 1行 22字に 詰めて 行に わけ、2行ずつの ページに する（名前の 途中で 折り返さない）。 */
+const candPages = (cands: readonly string[]): string[][] => {
+	const lines: string[] = [];
+	for (const c of cands) {
+		const last = lines.length - 1;
+		if (last >= 0 && lines[last].length + 1 + c.length <= CAND_LINE)
+			lines[last] += `・${c}`;
+		else lines.push(c);
+	}
+	const pages: string[][] = [];
+	for (let i = 0; i < lines.length; i += CAND_LINES)
+		pages.push(lines.slice(i, i + CAND_LINES));
+	return pages;
+};
 
 /**
  * 「せつめい」の文。メッセージ窓に 1ページずつ 送って 出す（トルネコ1と同じ。一度に 全部 並べない）。
@@ -214,10 +230,9 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 		const cands = itemTableOf(s)
 			.filter((e) => defOf(e.kind).cat === d.cat && !isKnownKind(s, e.kind))
 			.map((e) => candLabel(e.kind));
-		for (let i = 0; i < cands.length; i += CANDS_PER_PAGE)
-			pages.push(
-				`${i === 0 ? "この　どれか" : "……または"}\n${cands.slice(i, i + CANDS_PER_PAGE).join("・")}`,
-			);
+		candPages(cands).forEach((ls, i) => {
+			pages.push(`${i === 0 ? "この　どれか" : "……または"}\n${ls.join("\n")}`);
+		});
 	}
 	return pages;
 };
