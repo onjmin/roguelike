@@ -1,10 +1,11 @@
-// 入力（キーボード・画面上の十字キー/ボタン・タップ）をまとめる。rpg の input.ts を8方向にしたもの。
+// 入力（キーボード・ゲームパッド・画面上の十字キー/ボタン・タップ）をまとめる。rpg の input.ts を8方向にしたもの。
 //
 // - 方向は「押しっぱなし」を持つ（フィールドの移動はポーリングで読む）。
 //   キーボードは押している方向キーを足し合わせるので、↑と→を同時に押せば右上になる。
 // - A/B などの「押した瞬間」は、ハンドラのスタック最上段に配る。
 //   メッセージ窓・選択肢・メニューがハンドラを積み、閉じたら外す。
 //   スタックが空のときはフィールド用キューに入る。
+// - ゲームパッドは ボタンを キーボードの キーに 読みかえて 同じ 道を 通す（GAMEPAD_CODES）。
 
 import type { Dir8 } from "../core/geom";
 import type { Dir } from "./types";
@@ -21,6 +22,7 @@ export type Key =
 	| "shoot"
 	| "voice"
 	| "menu"
+	| "items"
 	| "stairs"
 	| "sort";
 type Handler = (key: Key, repeat: boolean) => void;
@@ -64,6 +66,15 @@ const DIR_KEYS: Record<string, Dir8> = {
 	PageDown: 3,
 	End: 5,
 	Home: 7,
+	// ゲームパッドの 十字キー・左スティック（GAMEPAD_CODES・stickCodes）
+	GpUp: 0,
+	GpRight: 2,
+	GpDown: 4,
+	GpLeft: 6,
+	GsUp: 0,
+	GsRight: 2,
+	GsDown: 4,
+	GsLeft: 6,
 };
 
 const OTHER_KEYS: Record<string, Key> = {
@@ -72,11 +83,11 @@ const OTHER_KEYS: Record<string, Key> = {
 	NumpadEnter: "a",
 	Space: "a",
 	KeyX: "b",
-	// Esc・Tab はメニュー（窓が開いていれば とじる）。X・I・B は フィールドでは もちもの
+	// Esc・Tab はメニュー（窓が開いていれば とじる）。X・Backspace も フィールドでは メニュー（B）。I は もちものを じかに
 	Escape: "menu",
 	Tab: "menu",
 	Backspace: "b",
-	KeyI: "b",
+	KeyI: "items",
 	// 足踏み（X＋Z でも。E は 見つけやすい 英字。. と テンキーの5 は ローグライクの ならい）
 	KeyE: "wait",
 	Period: "wait",
@@ -92,7 +103,41 @@ const OTHER_KEYS: Record<string, Key> = {
 	KeyV: "stairs",
 	// 持ち物の 整理（もちもの の X の となり。O は 数字の 0 と まちがえやすい。フィールドでも もちものの窓でも）
 	KeyC: "sort",
+	GpA: "a",
+	GpB: "b",
+	GpX: "foot",
+	GpRB: "shoot",
+	GpStart: "menu",
+	GpBack: "map",
 };
+
+/**
+ * ゲームパッド（標準の 並び）の ボタン番号 → 読みかえる キー。トルネコ・シレンの 並びに あわせる：
+ * A＝こうげき・決定、B＝メニュー・とじる（押しながら 方向で ダッシュ、押しながら A で 足踏み）、
+ * Y＝押しながら 方向で 向きだけ（窓の中では 整理）、X＝足元、LB＝斜め固定、RB＝矢、START＝メニュー、BACK＝地図。
+ */
+const GAMEPAD_CODES: Record<number, string> = {
+	0: "GpA",
+	1: "GpB",
+	2: "GpX",
+	3: "GpY",
+	4: "GpLB",
+	5: "GpRB",
+	8: "GpBack",
+	9: "GpStart",
+	12: "GpUp",
+	13: "GpDown",
+	14: "GpLeft",
+	15: "GpRight",
+};
+/** スティックを これより 倒したら 向きにする。 */
+const STICK_DEAD = 0.5;
+/** ゲームパッドの 方向を 押さえつづけたときの くりかえし（窓の カーソル送り。キーボードの リピートの 代わり）。 */
+const GP_REPEAT_DELAY = 350;
+const GP_REPEAT_MS = 90;
+
+/** フィールドで 押さえて ダッシュ・足踏みに 使い、軽く 押して 離せば B（キーボードの X・ゲームパッドの B）。 */
+const B_CODES = new Set(["KeyX", "GpB"]);
 
 /**
  * キーの場所の名前（KeyboardEvent.code）。code を付けない環境（一部の自動操作・古いブラウザ）では
@@ -119,6 +164,8 @@ const MOD_KEYS: Record<string, keyof Mods> = {
 	KeyR: "diag",
 	KeyF: "turn",
 	ControlLeft: "turn",
+	GpY: "turn",
+	GpLB: "diag",
 };
 
 export type Mods = {
@@ -175,6 +222,19 @@ const DIR4_TRY: readonly (readonly Dir[])[] = [
  */
 export const dir4Candidates = (d: Dir8): readonly Dir[] => DIR4_TRY[d];
 
+/** 左スティックの 倒しかた → 押している 向きの キー（斜めは 2つ。8方向に 丸める）。 */
+const stickCodes = (x: number, y: number): string[] => {
+	if (Math.hypot(x, y) < STICK_DEAD) return [];
+	const d = ((Math.round(Math.atan2(x, -y) / (Math.PI / 4)) + 8) % 8) as Dir8;
+	const [vx, vy] = VEC[d];
+	const out: string[] = [];
+	if (vy < 0) out.push("GsUp");
+	if (vy > 0) out.push("GsDown");
+	if (vx > 0) out.push("GsRight");
+	if (vx < 0) out.push("GsLeft");
+	return out;
+};
+
 /** 画面を これより長く押さえたら「押しっぱなしで歩く」、短ければタップ。 */
 const FIELD_HOLD_MS = 220;
 /** 十字キーの まん中を これより長く押さえたら 足踏み（トルネコの A＋B 押しっぱなし）。 */
@@ -214,6 +274,14 @@ export class Input {
 	private bKey: { since: number; used: boolean } | null = null;
 	/** X を 押しながら Z（A＋B）で 足踏みしている。 */
 	private restChord = false;
+	/** ゲームパッドで 押さえている ボタン（code → 押した 時刻。くりかえしの 時刻に 進める）。 */
+	private gpDown = new Map<string, number>();
+	private gpPolling = false;
+	/**
+	 * いまの 向きは キーボード・ゲームパッドで 入れた（同時押しを 待つ）。画面の 十字キーは 指 1本で
+	 * 斜めまで 決まるので 待たない（待つと 押してから 動くまでが 遅く 感じる）。
+	 */
+	private dirFromKeys = false;
 	/** 最後に方向を押し始めた時刻（同時押しの待ち合わせ用）。 */
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
@@ -261,17 +329,43 @@ export class Input {
 		window.addEventListener("keydown", (ev) => {
 			const t = ev.target as HTMLElement | null;
 			if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
-			const e = {
+			this.keyDown({
 				code: codeOf(ev),
 				repeat: ev.repeat,
 				preventDefault: () => ev.preventDefault(),
-			};
+			});
+		});
+		window.addEventListener("keyup", (ev) => this.keyUp(codeOf(ev)));
+		window.addEventListener("blur", () => {
+			this.keysHeld.clear();
+			this.padDir = null;
+			this.padCenterSince = 0;
+			this.restKeySince = 0;
+			this.bKey = null;
+			this.restChord = false;
+			this.keyMods = { dash: false, diag: false, turn: false };
+			this.gpDown.clear();
+		});
+		window.addEventListener("gamepadconnected", () => this.pollGamepads());
+	}
+
+	/** キーを 押した（キーボード・ゲームパッド）。 */
+	private keyDown(e: {
+		code: string;
+		repeat: boolean;
+		preventDefault: () => void;
+	}): void {
+		{
 			const mod = MOD_KEYS[e.code];
 			if (mod) {
 				this.keyMods[mod] = true;
 				e.preventDefault();
-				// 窓の中の F は 並び替え（シレンの「方向切り替え、道具並び替え」と 同じ キー）
-				if (e.code === "KeyF" && !e.repeat && this.handlers.length)
+				// 窓の中の F・Y は 並び替え（シレンの「方向切り替え、道具並び替え」と 同じ キー）
+				if (
+					(e.code === "KeyF" || e.code === "GpY") &&
+					!e.repeat &&
+					this.handlers.length
+				)
 					this.press("sort");
 				return;
 			}
@@ -280,6 +374,7 @@ export class Input {
 				e.preventDefault();
 				if (!this.keysHeld.size && this.padDir === null)
 					this.dirSince = performance.now();
+				this.dirFromKeys = true;
 				this.keysHeld.set(e.code, d);
 				if (this.bKey) this.bKey.used = true;
 				// メニューが開いているあいだの向きは、閉じたあとの1歩にしない
@@ -291,8 +386,8 @@ export class Input {
 			const key = OTHER_KEYS[e.code];
 			if (!key) return;
 			e.preventDefault();
-			// フィールドの X は 離したときに もちもの（押さえているあいだは ダッシュ・足踏みの 組み合わせ）
-			if (e.code === "KeyX" && !this.handlers.length) {
+			// フィールドの X（B）は 離したときに メニュー（押さえているあいだは ダッシュ・足踏みの 組み合わせ）
+			if (B_CODES.has(e.code) && !this.handlers.length) {
 				if (!e.repeat) this.bKey = { since: performance.now(), used: false };
 				return;
 			}
@@ -309,21 +404,24 @@ export class Input {
 			if (key === "wait" && !e.repeat && !this.handlers.length)
 				this.startRestKey();
 			this.press(key, e.repeat);
-		});
-		window.addEventListener("keyup", (ev) => {
-			const code = codeOf(ev);
+		}
+	}
+
+	/** キーを 離した（キーボード・ゲームパッド）。 */
+	private keyUp(code: string): void {
+		{
 			const mod = MOD_KEYS[code];
 			if (mod) this.keyMods[mod] = false;
 			const key = OTHER_KEYS[code];
 			if (key === "wait") this.stopRestKey();
-			if (this.restChord && (code === "KeyX" || key === "a")) {
+			if (this.restChord && (B_CODES.has(code) || key === "a")) {
 				this.restChord = false;
 				this.stopRestKey();
 			}
-			if (code === "KeyX" && this.bKey) {
+			if (B_CODES.has(code) && this.bKey) {
 				const b = this.bKey;
 				this.bKey = null;
-				// 軽く押して 離した：もちもの（長く 押さえただけなら 何もしない）
+				// 軽く押して 離した：メニュー（長く 押さえただけなら 何もしない）
 				if (
 					!b.used &&
 					!this.handlers.length &&
@@ -337,16 +435,54 @@ export class Input {
 			// 残った向きへ1歩ずれないように）
 			if (before !== null && before % 2 === 1 && this.keysHeld.size)
 				this.releasedAt = performance.now();
-		});
-		window.addEventListener("blur", () => {
-			this.keysHeld.clear();
-			this.padDir = null;
-			this.padCenterSince = 0;
-			this.restKeySince = 0;
-			this.bKey = null;
-			this.restChord = false;
-			this.keyMods = { dash: false, diag: false, turn: false };
-		});
+		}
+	}
+
+	/**
+	 * ゲームパッドを 毎コマ 読み、押した・離した ボタンを keyDown・keyUp に 渡す。
+	 * つながっている あいだだけ 回す（ブラウザは ボタンを 押すまで パッドを 見せないことが ある）。
+	 */
+	private pollGamepads(): void {
+		if (this.gpPolling) return;
+		this.gpPolling = true;
+		const tick = () => {
+			const pads = navigator.getGamepads?.() ?? [];
+			const now = new Set<string>();
+			let any = false;
+			for (const gp of pads) {
+				if (!gp?.connected) continue;
+				any = true;
+				gp.buttons.forEach((b, i) => {
+					const code = GAMEPAD_CODES[i];
+					if (code && (b.pressed || b.value > 0.5)) now.add(code);
+				});
+				for (const c of stickCodes(gp.axes[0] ?? 0, gp.axes[1] ?? 0))
+					now.add(c);
+			}
+			const t = performance.now();
+			for (const code of now) {
+				const since = this.gpDown.get(code);
+				if (since === undefined) {
+					this.gpDown.set(code, t);
+					this.keyDown({ code, repeat: false, preventDefault: () => {} });
+				} else if (
+					DIR_KEYS[code] !== undefined &&
+					t - since >= GP_REPEAT_DELAY
+				) {
+					// 窓の カーソル送りの くりかえし（キーボードの リピートと 同じく repeat で 配る）
+					this.gpDown.set(code, t - GP_REPEAT_DELAY + GP_REPEAT_MS);
+					this.keyDown({ code, repeat: true, preventDefault: () => {} });
+				}
+			}
+			for (const code of [...this.gpDown.keys()])
+				if (!now.has(code)) {
+					this.gpDown.delete(code);
+					this.keyUp(code);
+				}
+			if (any) requestAnimationFrame(tick);
+			else this.gpPolling = false;
+		};
+		requestAnimationFrame(tick);
 	}
 
 	/** 押した瞬間のキーを配る。 */
@@ -417,6 +553,7 @@ export class Input {
 	 * 斜めの片方を離した直後も、少しのあいだ「押し始め」とみなす。
 	 */
 	heldFor(): number {
+		if (!this.dirFromKeys) return Number.POSITIVE_INFINITY;
 		const now = performance.now();
 		return Math.min(now - this.dirSince, now - this.releasedAt + 45 - 70);
 	}
@@ -501,6 +638,7 @@ export class Input {
 			if (dir !== this.padDir) {
 				if (this.padDir === null && dir !== null)
 					this.dirSince = performance.now();
+				if (dir !== null) this.dirFromKeys = false;
 				this.padDir = dir;
 				if (dir !== null) {
 					if (!this.handlers.length) this.pendingDir = dir;

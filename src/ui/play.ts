@@ -1137,6 +1137,29 @@ export class Play {
 		return open.length === 1 ? open[0] : dir;
 	}
 
+	/**
+	 * A で なぐる 向き。正面に 見えている敵が いれば 正面。いなくて、なぐれる となりの 敵が 1匹だけなら そちら
+	 * （2匹 以上なら どれか 決められないので 正面のまま）。
+	 */
+	private attackDir(): Dir8 {
+		const run = this.run;
+		const p = run.p;
+		const foe = (d: Dir8): boolean => {
+			const to = step(p, d);
+			const m = run.monsterAt(to.x, to.y);
+			return (
+				!!m &&
+				run.monsterVisible(m) &&
+				!m.disguise &&
+				!posing(m) &&
+				run.cornerOk(p, d)
+			);
+		};
+		if (foe(p.dir)) return p.dir;
+		const near = ([0, 1, 2, 3, 4, 5, 6, 7] as Dir8[]).filter(foe);
+		return near.length === 1 ? near[0] : p.dir;
+	}
+
 	/** 自動で歩くのを止めた入力を 捨てる（十字キーは 一度はなすまで 歩かない）。 */
 	private swallowInput(): void {
 		const input = this.ctx.input;
@@ -1242,10 +1265,15 @@ export class Play {
 		const run = this.run;
 		switch (key) {
 			case "a":
-				await this.exec({ c: "attack" });
+				// 正面に 敵が いなくて、となりの 敵が 1匹だけなら そちらを 向いて なぐる（向きボタンを 使わずに すむように）
+				await this.exec({ c: "attack", dir: this.attackDir() });
 				return;
 			case "b":
-				// 道具は ワンタップで もちものへ（メニューを はさまない）
+				// 前作（rpg）と 同じく B は メニュー（1段目が もちもの）。ボタンを 減らすため ☰ と まとめた
+				await this.menu(openMainMenu(this.ctx, run));
+				return;
+			case "items":
+				// PC の I キー：もちものを じかに
 				await this.menu(openInventory(this.ctx, run));
 				return;
 			case "menu":

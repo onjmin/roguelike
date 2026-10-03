@@ -1079,8 +1079,18 @@ body.shake #app {
 	transition: opacity 0.15s;
 }
 
-/* 階段の上では 足元ボタンが「階段」になって光る */
+/*
+ * 小さいボタンは せっていで 出したときだけ（ボタンが 多いと 操作しにくい）。
+ * 階段の上では 足元ボタンだけ「階段」になって 出て、光る
+ */
+.hud:not(.show-minis) .mini {
+	display: none;
+}
+.hud:not(.show-minis) .minis {
+	grid-template-columns: 52px;
+}
 .hud.on-stairs .mini-foot {
+	display: block;
 	color: var(--accent);
 	border-color: var(--accent);
 	box-shadow: 0 0 8px rgba(255, 207, 74, 0.6);
@@ -1124,7 +1134,7 @@ body.shake #app {
 }
 
 /* 「メニュー」を 1行に 収める（丸い B の中で 2行に 折れないように） */
-.hud.village .btn-b {
+.hud .btn-b {
 	padding: 0;
 	font-size: 12px;
 	letter-spacing: -0.04em;

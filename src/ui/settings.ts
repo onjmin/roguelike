@@ -78,6 +78,7 @@ const KEYS = [
 	"voiceVolume",
 	"pad",
 	"padSide",
+	"minis",
 	"speed",
 	"wipe",
 ] as const;
@@ -167,6 +168,11 @@ export const openSettings = async (
 					value: "padSide",
 				},
 				{
+					label: "小さいボタン",
+					sub: settings.minis ? "表示（向き・足元・地図）" : "かくす",
+					value: "minis",
+				},
+				{
 					label: "敵の動き",
 					sub: settings.speed === "fast" ? "はやい" : "ふつう",
 					value: "speed",
@@ -206,6 +212,7 @@ export const openSettings = async (
 		} else if (v === "pad") saveSettings({ pad: !settings.pad });
 		else if (v === "padSide")
 			saveSettings({ padSide: settings.padSide === "left" ? "right" : "left" });
+		else if (v === "minis") saveSettings({ minis: !settings.minis });
 		else if (v === "speed")
 			saveSettings({ speed: settings.speed === "fast" ? "normal" : "fast" });
 		else if (v === "wipe") await askWipe(ctx);
