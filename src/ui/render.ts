@@ -32,6 +32,8 @@ const STATUE_STILL = Object.values(MONSTERS).find((d) => d.still)?.still ?? "";
 
 /** 倒れた所に立つ墓（RPGEN の単体スプライト）。 */
 export const GRAVE = "sp:07DETe3";
+/** 見えている 壁に かける 影（床を 浮かせて 歩ける 所を 見やすく）。 */
+const VISIBLE_WALL_SHADE = "rgba(0, 0, 0, 0.3)";
 
 /** 描くときの ついでの指定。 */
 export type DrawOpts = {
@@ -543,7 +545,14 @@ export class FloorView {
 				const px = x * TILE - ox;
 				if (px > screen.width) break;
 				const i = y * l.w + x;
-				if (visible[i]) continue;
+				if (visible[i]) {
+					// 見えている 壁も 少し 暗く（床と 岩の 絵が 似た 板でも、通路の 続く 向きが 読めるように）
+					if (l.tiles[i] === T_WALL) {
+						ctx.fillStyle = VISIBLE_WALL_SHADE;
+						ctx.fillRect(px, py, TILE, TILE);
+					}
+					continue;
+				}
 				if (!f.seen[i]) {
 					ctx.fillStyle = "#000";
 					ctx.fillRect(px, py, TILE, TILE);
