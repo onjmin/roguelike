@@ -95,8 +95,71 @@ const HOW_TO_ID: Partial<Record<ItemCat, string>> = {
 	ring: "装備して　わかる　ものも　ある。有識者スレなら　かならず　わかる",
 };
 
-/** 候補の名前を 1ページに いくつまで 並べるか（スマホの 縦持ちでも メッセージ窓の 3行に 収まるように）。 */
-const CANDS_PER_PAGE = 10;
+/**
+ * 候補に 添える 効き目の ひとこと。名前は 2ch の ことばで、知らない 人には 効き目が 浮かばないので、
+ * 「あかい草は この どれか」から 当たりを つけられるように 短く 添える。
+ */
+const CAND_HINT: Record<string, string> = {
+	r_might: "力＋3",
+	r_sustain: "腹へらず",
+	r_hunger: "大食い",
+	r_trap: "罠よけ",
+	r_awake: "眠らない",
+	r_purity: "力まもり",
+	r_stealth: "忍び足",
+	r_clamor: "敵が起きる",
+	r_ward: "レベルまもり",
+	h_heal: "回復",
+	h_greater: "大回復",
+	h_poison: "毒",
+	h_might: "力＋1",
+	h_growth: "レベル＋1",
+	h_swift: "倍速",
+	h_blind: "目つぶし",
+	h_blink: "ワープ",
+	h_reel: "混乱",
+	h_daze: "まぼろし",
+	h_sleep: "眠り",
+	h_antidote: "力もどし",
+	h_fire: "炎",
+	h_sight: "見透し",
+	s_appraise: "識別",
+	s_whet: "武器＋1",
+	s_temper: "板＋1",
+	s_uncurse: "のろい解き",
+	s_rustproof: "錆びない",
+	s_map: "地図",
+	s_sense: "敵の位置",
+	s_treasure: "道具の位置",
+	s_hold: "敵を止める",
+	s_blast: "部屋に攻撃",
+	s_ward: "聖域",
+	s_recharge: "ふやす",
+	s_bread: "パンに変える",
+	s_snare: "罠ふえる",
+	s_escape: "地上へ",
+	s_gacha: "ガチャ",
+	w_bolt: "攻撃",
+	w_reel: "混乱",
+	w_sleep: "眠り",
+	w_seal: "封印",
+	w_change: "変身",
+	w_send: "ワープ",
+	w_slow: "鈍足",
+	w_edge: "道連れ",
+	w_split: "分裂",
+	w_haste: "敵が倍速",
+	w_rebut: "一撃",
+};
+
+/** 候補の 1つ（名前と 効き目の ひとこと）。 */
+const candLabel = (kind: string): string => {
+	const h = CAND_HINT[kind];
+	return h ? `${defOf(kind).name}（${h}）` : defOf(kind).name;
+};
+
+/** 候補を 1ページに いくつまで 並べるか（スマホの 縦持ちでも メッセージ窓の 3行に 収まるように。ひとこと つきなので 少なめ）。 */
+const CANDS_PER_PAGE = 4;
 
 /**
  * 「せつめい」の文。メッセージ窓に 1ページずつ 送って 出す（トルネコ1と同じ。一度に 全部 並べない）。
@@ -150,7 +213,7 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 		// 候補（このダンジョンで出る、まだ正体のわからない 同じカテゴリの種類）
 		const cands = itemTableOf(s)
 			.filter((e) => defOf(e.kind).cat === d.cat && !isKnownKind(s, e.kind))
-			.map((e) => defOf(e.kind).name);
+			.map((e) => candLabel(e.kind));
 		for (let i = 0; i < cands.length; i += CANDS_PER_PAGE)
 			pages.push(
 				`${i === 0 ? "この　どれか" : "……または"}\n${cands.slice(i, i + CANDS_PER_PAGE).join("・")}`,
