@@ -106,6 +106,13 @@ const SKILL_LOOK: Record<string, [string, string]> = {
  * （トルネコ1の メッセージ窓のように 1行ずつ 送る。そのあいだ 出来事の再生も 待つ）。
  */
 const LOG_GAP_MS = { normal: 350, fast: 180, replay: 40 } as const;
+/**
+ * 演出の 途中で 次の 入力が 来たら（先行入力）、残りの 間を これだけに つめる。
+ * 入力から 動くまでが 遅く 感じないように（シレン・トルネコも 押せば 敵の 番を 早く 流す）。
+ */
+const HURRY = 0.3;
+/** 先行入力が あるときの ログの 間（読めないほど 速くは しない）。 */
+const HURRY_LOG_GAP_MS = 120;
 /** 祭り（モンスターハウス）に 入ったとき 止めて 見せる 間（ms）。 */
 const HOUSE_PAUSE_MS = 900;
 
@@ -365,6 +372,8 @@ export class Play {
 	private spottedOn: Floor | null = null;
 	/** 自動で歩きだしたときの 入力の番号（そのあと 何かに さわったら 止める）。 */
 	private autoSerial = -1;
+	/** exec を 始めたときの 入力の番号（そのあと 何かを 押したら 演出を つめる。hurried）。 */
+	private execSerial = -1;
 	/** 地図で タップして選んだ 行き先（閉じる前に 一瞬 光らせる）。 */
 	private mapMark: Pos | null = null;
 	/** 途中で止まった 自動の歩きの 行き先（地図に 印を出し、そこを タップすれば 続きを 歩く）。 */
@@ -927,12 +936,13 @@ export class Play {
 			const q = this.logQueue[0];
 			if (q.text !== undefined) {
 				const lines = this.logQueue.filter((x) => x.text !== undefined).length;
-				const gap =
+				const base =
 					q.fast || lines > 3
 						? LOG_GAP_MS.replay
 						: settings.speed === "fast"
 							? LOG_GAP_MS.fast
 							: LOG_GAP_MS.normal;
+				const gap = this.hurried() ? Math.min(base, HURRY_LOG_GAP_MS) : base;
 				const since = performance.now() - this.lastLogAt;
 				if (since < gap) {
 					this.logTimer = window.setTimeout(() => this.pumpLog(), gap - since);
@@ -955,6 +965,30 @@ export class Play {
 	private afterLog(fn: () => void): void {
 		if (!this.logQueue.length) fn();
 		else this.logQueue.push({ fast: false, with: [fn] });
+	}
+
+	/** 演出の 途中で 次の 入力が 来た（exec を 始めてから 何かを 押した）。リプレイでは 使わない。 */
+	private hurried(): boolean {
+		return this.busy && !this.rp && this.ctx.input.serial !== this.execSerial;
+	}
+
+	/**
+	 * 演出の 間（ms）。途中で 次の 入力が 来たら 残りを HURRY 倍に つめる（待っている 途中でも 効く）。
+	 * ログの 待ちも 縮むよう、つめはじめたら ログを 送りなおす。
+	 */
+	private async beat(ms: number): Promise<void> {
+		const t0 = performance.now();
+		let pumped = false;
+		for (;;) {
+			const h = this.hurried();
+			if (h && !pumped) {
+				pumped = true;
+				this.pumpLog();
+			}
+			const left = ms * (h ? HURRY : 1) - (performance.now() - t0);
+			if (left <= 0 || this.stopped) return;
+			await wait(Math.min(left, FRAME_MS));
+		}
 	}
 
 	/** まだ 出していない ログが ぜんぶ 出るまで 待つ（出来事の 再生を 行に 追いつかせる）。 */
@@ -1597,6 +1631,8 @@ export class Play {
 	async exec(cmd: Command, fast = false): Promise<GameEvent[]> {
 		if (this.busy || this.stopped) return [];
 		this.busy = true;
+		// ここから 後に 押したら 先行入力（演出を つめる）
+		this.execSerial = this.ctx.input.serial;
 		const run = this.run;
 		const wasOnStairs = run.onStairs();
 		const before = { x: run.p.x, y: run.p.y };
@@ -2235,6 +2271,8 @@ export class Play {
 					j++;
 				}
 				let end = now;
+				// 先行入力が あれば 1歩も 短く（動いて 見えるぶんは 残す）
+				const sm = this.hurried() ? Math.min(stepMs, 40) : stepMs;
 				for (const [id, path] of paths) {
 					const d = this.disp.get(id);
 					if (!d) continue;
@@ -2252,16 +2290,16 @@ export class Play {
 						keys.push({
 							x: q.x,
 							y: q.y,
-							t: t0 + (stepMs * (i + 1)) / path.length,
+							t: t0 + (sm * (i + 1)) / path.length,
 						});
 					});
 					d.keys = keys;
 					d.tx = path[path.length - 1].x;
 					d.ty = path[path.length - 1].y;
-					if (this.moveShown(id)) end = Math.max(end, t0 + stepMs);
+					if (this.moveShown(id)) end = Math.max(end, t0 + sm);
 				}
 				// 見えない所の動きは待たない。見える動きも 1コマぶん早めに次へ進める（次の1歩が 続きから動けるように）
-				if (shown) await wait(end - performance.now() - FRAME_MS);
+				if (shown) await this.beat(end - performance.now() - FRAME_MS);
 				if (paths.has(PLAYER_ID)) this.trapHold = null;
 				i = j;
 				continue;
@@ -2304,7 +2342,7 @@ export class Play {
 						d.lungeT0 = performance.now();
 					}
 					combat = true;
-					await wait(90 * speed);
+					await this.beat(90 * speed);
 					break;
 				}
 				case "hurt": {
@@ -2326,13 +2364,13 @@ export class Play {
 							e.id === PLAYER_ID ? "hurt-player" : "",
 						);
 					combat = true;
-					await wait(70 * speed);
+					await this.beat(70 * speed);
 					break;
 				}
 				case "miss":
 					if (this.isShown(e.id, e.pos)) this.pop(e.pos, "ミス", "miss");
 					combat = true;
-					await wait(60 * speed);
+					await this.beat(60 * speed);
 					break;
 				case "die": {
 					const d = this.disp.get(e.id);
@@ -2349,7 +2387,7 @@ export class Play {
 							this.hudHold = { ...this.hudHold, boss: { ...hb, hp: 0 } };
 						onLine.push(() => this.bossDown());
 					}
-					await wait(120 * speed);
+					await this.beat(120 * speed);
 					break;
 				}
 				case "appear": {
@@ -2387,7 +2425,7 @@ export class Play {
 							);
 							if (orig) orig.flashUntil = now + SPLIT_MS + 260;
 							this.pop(from, "コピペ", "dup");
-							await wait(SPLIT_MS + 60);
+							await this.beat(SPLIT_MS + 60);
 						}
 					}
 					break;
@@ -2401,11 +2439,11 @@ export class Play {
 					}
 					// キリコが 着いたので、ここから ワープ先の 見え方に
 					if (e.id === PLAYER_ID) this.preWarp = this.trapHold = null;
-					await wait(80 * speed);
+					await this.beat(80 * speed);
 					break;
 				}
 				case "bolt":
-					await this.flyBolt(e, speed);
+					await this.flyBolt(e, this.hurried() ? speed * 0.4 : speed);
 					// 振った 弾・投げた 物が 着いてから 効き目を 見せる
 					if (this.preUseUntil === "bolt")
 						this.preUse = this.preUseUntil = null;
@@ -2441,9 +2479,10 @@ export class Play {
 						);
 						if (d && shown) d.flashUntil = performance.now() + 420 * speed;
 						if (shown && label) this.pop(e.pos, label, "skill");
-						await this.flash(color, fast ? 80 : 300);
+						const hurry = fast || this.hurried();
+						await this.flash(color, hurry ? 80 : 300);
 						combat = true;
-						if (!fast) await this.ctx.audio.seSettled();
+						if (!hurry) await this.ctx.audio.seSettled();
 					}
 					break;
 				case "floor":
@@ -2464,7 +2503,7 @@ export class Play {
 					break;
 				case "doze":
 					// 眠っている 1ターンごとに 区切る（敵の 動きが 1ターンずつ 見えるように）
-					if (!fast) await wait(260 * speed);
+					if (!fast) await this.beat(260 * speed);
 					break;
 				case "quake":
 					document.body.classList.add("shake");
