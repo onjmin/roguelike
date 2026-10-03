@@ -685,7 +685,7 @@ export class Run {
 				this.dungeon.up ? "上の階へ　押し上げられた" : "下の階に　落ちた",
 			);
 		this.updateVision();
-		if (!carried && ankaOnArrival(this)) startAnka(this);
+		if (!carried && ankaOnArrival(this)) startAnka(this, true);
 	}
 
 	/** 階段を使う。 */
@@ -988,11 +988,15 @@ export class Run {
 
 	// ───────────────── 蓄音機 ─────────────────
 
-	/** たおした 敵の 声を 蓄音機に 録る（1つだけ。前の 声は 上書き）。 */
+	/**
+	 * たおした 敵の 声を 蓄音機に 録る（1つだけ。前の 声は 上書き）。
+	 * 記録に 出すのは 蓄音機が 空の ときだけ（毎回 出すと 読みとばされる。いま 何が 入っているかは メニューの 蓄音機に 出る）。
+	 */
 	private recordVoice(m: Monster): void {
 		if (this.s.voice === m.kind) return;
+		const was = this.s.voice;
 		this.s.voice = m.kind;
-		this.msg(`${mdef(m).name}の　声を　録った`);
+		if (!was) this.msg(`${mdef(m).name}の　声を　録った`);
 	}
 
 	/**
@@ -1521,7 +1525,7 @@ export class Run {
 			return true;
 		}
 		if (!this.canStepTerrain(p, d)) {
-			this.emit({ t: "turn", id: PLAYER_ID, dir: d });
+			this.emit({ t: "turn", id: PLAYER_ID, dir: d, bump: true });
 			return st.confuse > 0; // 混乱で壁に向かったときは時間が進む
 		}
 		const from = { x: p.x, y: p.y };

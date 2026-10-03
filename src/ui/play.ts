@@ -127,6 +127,8 @@ type Disp = Figure & {
 	 */
 	keys: { x: number; y: number; t: number }[];
 	lungeT0: number;
+	/** 壁に つっかえた 時刻（向いた 方へ 少しだけ 出て もどる。行き止まりと わかるように）。 */
+	bumpT0?: number;
 	fadeT0: number;
 	dying: boolean;
 };
@@ -603,6 +605,9 @@ export class Play {
 			d.fy = at.y;
 			const lk = (t - d.lungeT0) / 150;
 			d.lunge = lk >= 0 && lk < 1 ? Math.sin(lk * Math.PI) : 0;
+			const bk = (t - (d.bumpT0 ?? -1e9)) / 120;
+			if (bk >= 0 && bk < 1)
+				d.lunge = Math.max(d.lunge, Math.sin(bk * Math.PI) * 0.4);
 			if (d.dying) {
 				d.fade = Math.min(1, (t - d.fadeT0) / 320);
 				if (d.fade >= 1) this.disp.delete(d.id);
@@ -2332,7 +2337,10 @@ export class Play {
 					break;
 				case "turn": {
 					const d = this.disp.get(e.id);
-					if (d) d.dir = e.dir;
+					if (d) {
+						d.dir = e.dir;
+						if (e.bump) d.bumpT0 = performance.now();
+					}
 					break;
 				}
 				case "attack": {

@@ -372,10 +372,11 @@ const mouthScript =
 				return;
 			}
 			d = picked;
-			await s.narrate(`「${DUNGEON_NAMES[d].name}」へ　行く？`);
-			const ok = await s.choose(["行く", "えらびなおす", "やめる"], {
-				cancel: 1,
-			});
+			// 問いの 窓は 出さず、選ぶ 窓だけ（行き先は 地図の 札に 出ている。押す 回数を 1つ へらす）
+			const ok = await s.choose(
+				[`${DUNGEON_NAMES[d].name}へ　行く`, "えらびなおす", "やめる"],
+				{ cancel: 1 },
+			);
 			if (ok === 0) break;
 			if (ok === 2) {
 				await quit();

@@ -34,6 +34,7 @@ import type {
 } from "../engine/defs";
 import { Actor, Field } from "../engine/field";
 import { dir4Candidates } from "../engine/input";
+import { loadProgress } from "../engine/save";
 import type { Screen } from "../engine/screen";
 import { settings } from "../engine/settings";
 import {
@@ -94,6 +95,8 @@ export class Village {
 	private path: Dir[] = [];
 	private pathTalk: Actor | null = null;
 	private marker: { x: number; y: number; t: number } | null = null;
+	/** まだ 1度も もぐっていない（村の 出口に 矢印を 出す。はじめての 人が 出口を さがさないように）。 */
+	private guideExit = false;
 	private time = 0;
 	private last = 0;
 	/** 描くときの カメラ（画面の 画素に 丸めた）。 */
@@ -160,6 +163,7 @@ export class Village {
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
 		this.mapId = "village";
+		this.guideExit = loadProgress().intro.length === 0;
 		await this.build(this.spotFor(o.arrival));
 		// 幕が 上がる前に 並べる（帰ってきた場面：口の前で 待つ 仲間）
 		this.field?.def.prepare?.(this.story);
@@ -842,6 +846,49 @@ export class Village {
 			this.time,
 		);
 		field.def.decor?.(g, ox, oy, this.time);
+		if (this.guideExit && this.mapId === "village" && !this.scene)
+			this.drawExitGuide(g, ox, oy);
+	}
+
+	/**
+	 * 村の 出口（北の 崖の 切れ目の 先）を さす 矢印。画面の 外なら 画面の はしに 寄せて、出口の 方を 向ける。
+	 */
+	private drawExitGuide(
+		g: CanvasRenderingContext2D,
+		ox: number,
+		oy: number,
+	): void {
+		const c = this.camTarget();
+		if (!c) return;
+		const [ex, ey] = VILLAGE_SPOTS.exit;
+		const tx = ex * TILE + TILE / 2 - ox;
+		const ty = ey * TILE + TILE / 2 - oy;
+		// 上の はしは 右上の 音の ボタンに かからないよう 2マス あける
+		const m = TILE * 0.9;
+		const x = clamp(tx, m, c.w - m);
+		const y = clamp(ty, TILE * 2.2, c.hv - m);
+		const ang =
+			x === tx && y === ty ? -Math.PI / 2 : Math.atan2(ty - y, tx - x);
+		const bob = Math.sin(this.time / 160) * 2;
+		g.save();
+		g.translate(x + Math.cos(ang) * bob, y + Math.sin(ang) * bob);
+		g.rotate(ang);
+		g.scale(1.4, 1.4);
+		g.beginPath();
+		g.moveTo(6, 0);
+		g.lineTo(-3, -5);
+		g.lineTo(-3, -2);
+		g.lineTo(-7, -2);
+		g.lineTo(-7, 2);
+		g.lineTo(-3, 2);
+		g.lineTo(-3, 5);
+		g.closePath();
+		g.fillStyle = "#ffd75e";
+		g.strokeStyle = "#3a2600";
+		g.lineWidth = 1;
+		g.fill();
+		g.stroke();
+		g.restore();
 	}
 
 	// ───────────────── スクリプト ─────────────────

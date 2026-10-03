@@ -200,7 +200,7 @@ const M: MonsterDef[] = [
 		atk: 22,
 		def: 16,
 		exp: 25,
-		floors: [8, 15],
+		floors: [10, 15],
 		weight: 32,
 		abilities: [{ k: "retreat" }],
 		desc: "弱ると　逃げて　傷を　なおし、IDを　変えて　もどってくる",

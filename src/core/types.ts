@@ -486,7 +486,8 @@ export type GameEvent =
 	| { t: "msg"; text: string; tone?: "warn" | "good" }
 	| { t: "se"; name: string }
 	| { t: "move"; id: number; from: Pos; to: Pos; dir: Dir8 }
-	| { t: "turn"; id: number; dir: Dir8 }
+	/** bump：壁に 向かって 進めなかった（画面で 少し つっかえて 見せる）。 */
+	| { t: "turn"; id: number; dir: Dir8; bump?: true }
 	| { t: "attack"; id: number; dir: Dir8 }
 	| { t: "hurt"; id: number; pos: Pos; amount: number; hp?: number }
 	| { t: "heal"; id: number; pos: Pos; amount: number; hp?: number }

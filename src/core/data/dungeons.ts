@@ -336,8 +336,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "パン兵長を　たおした",
 		},
-		// パン松は やきうが きらい（ピッチャーは 追い出した）。まんじゅう（まんぜう軍）は パンの なかま
-		foes: { pumpkin: 2, pitcher: 0 },
+		// パン松は やきうが きらい（ピッチャーは 追い出した）。まんじゅう（まんぜう軍）は パンの なかま。
+		// 寝落ち民は 入門の 板では 少なめ（2026-10-03 ボットで パン板の 死因の 6割・B2 に 固まった）
+		foes: { pumpkin: 2, pitcher: 0, neochi: 0.4 },
 		floors: 4,
 		items: SHALLOW_ITEMS,
 		perFloor: [5, 9],

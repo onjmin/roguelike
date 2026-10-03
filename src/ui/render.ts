@@ -772,23 +772,53 @@ const drawAmbient = (
 
 /** 全体の地図（見たことのある所だけ）。画面の上に半透明で重ねる。 */
 /** 地図の升目（デバイス画素）：1マスの大きさと 左上の位置。描くのも タップを マスに直すのも これで。 */
+/** 階の 使っている 範囲（壁でない マスを かこむ 四角）。地図は ここに 合わせて 大きく 描く。 */
+const usedBounds = new WeakMap<
+	object,
+	{ x0: number; y0: number; bw: number; bh: number }
+>();
+const boundsOf = (l: { w: number; h: number; tiles: ArrayLike<number> }) => {
+	const hit = usedBounds.get(l);
+	if (hit) return hit;
+	let x0 = l.w;
+	let y0 = l.h;
+	let x1 = -1;
+	let y1 = -1;
+	for (let y = 0; y < l.h; y++)
+		for (let x = 0; x < l.w; x++)
+			if (l.tiles[y * l.w + x] !== T_WALL) {
+				x0 = Math.min(x0, x);
+				y0 = Math.min(y0, y);
+				x1 = Math.max(x1, x);
+				y1 = Math.max(y1, y);
+			}
+	const b =
+		x1 < 0
+			? { x0: 0, y0: 0, bw: l.w, bh: l.h }
+			: { x0, y0, bw: x1 - x0 + 1, bh: y1 - y0 + 1 };
+	usedBounds.set(l, b);
+	return b;
+};
+
 const mapGeometry = (
 	canvas: HTMLCanvasElement,
-	l: { w: number; h: number },
+	l: { w: number; h: number; tiles: ArrayLike<number> },
 ) => {
 	const rect = canvas.getBoundingClientRect();
 	const dpr = window.devicePixelRatio || 1;
 	const w = Math.round(rect.width * dpr);
 	const h = Math.round(rect.height * dpr);
-	const cell = Math.max(2, Math.floor(Math.min(w / (l.w + 2), h / (l.h + 8))));
+	// 階の まわりの 使っていない 壁の ぶんは 切って、そのぶん 大きく（縦長の スマホでは 横幅で 決まる）
+	const { x0, y0, bw, bh } = boundsOf(l);
+	const cell = Math.max(2, Math.floor(Math.min(w / (bw + 2), h / (bh + 8))));
 	return {
 		rect,
 		dpr,
 		w,
 		h,
 		cell,
-		mx: Math.floor((w - cell * l.w) / 2),
-		my: Math.floor((h - cell * l.h) / 2),
+		mx: Math.floor((w - cell * bw) / 2) - x0 * cell,
+		my: Math.floor((h - cell * bh) / 2) - y0 * cell,
 	};
 };
 

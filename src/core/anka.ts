@@ -182,11 +182,27 @@ export const ankaOnArrival = (r: Run): boolean =>
 /** 釣りスレで ふえる 罠が 安価の罠に なる 確率（釣りスレの いい 面）。 */
 export const ANKA_SNARE_CHANCE = 1 / 10;
 
-/** 安価の罠を 踏んだ：お題を 出す（もう 出ていれば 何も しない）。 */
-export const startAnka = (r: Run): boolean => {
+/**
+ * 着いた とたんに 来る 安価（パン板の 2階）で 出す お題。はじめての 安価で 荒れて 倒れないよう、
+ * 敵しだいの お題（たおす・受ける・レベル）と 運まかせの お題（寝る・罠）は 出さない
+ * （2026-10-03 ボットで パン板 2階で 倒れるのが 安価なし 9・ありで 17 / 200回）。
+ */
+const GENTLE: readonly AnkaKind[] = [
+	"herb",
+	"scroll",
+	"eat",
+	"throw",
+	"drop",
+	"rest",
+];
+
+/** 安価の罠を 踏んだ：お題を 出す（もう 出ていれば 何も しない）。gentle は 着いた とたんに 来る 安価。 */
+export const startAnka = (r: Run, gentle = false): boolean => {
 	const f = r.f;
 	if (f.anka) return false;
-	const kind = r.rng.pick(doable(r));
+	const all = doable(r);
+	const easy = all.filter((k) => GENTLE.includes(k));
+	const kind = r.rng.pick(gentle && easy.length ? easy : all);
 	const a: Anka = {
 		kind,
 		need: ANKA_NEED[kind] ?? 1,
