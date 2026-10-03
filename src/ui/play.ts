@@ -320,6 +320,13 @@ export class Play {
 	private resolveEnd: (() => void) | null = null;
 	/** タップ移動の行き先。 */
 	private travel: Pos | null = null;
+	/** タップで 走っている（dash）あいだ。 */
+	private dashing = false;
+	/**
+	 * 自動で歩いている・走っている途中の 1歩の あいだに タップした所（canvas の CSS 画素）。
+	 * 止まったあと そこへ 行きなおす（止めるための タップが 捨てられて、もう一度 タップしなおすことに なっていた）。
+	 */
+	private pendingTap: { x: number; y: number } | null = null;
 	/**
 	 * 出来事を流しているあいだ、まだ映している前の階（落とし穴・地震で 下の階へ 移っても、
 	 * 階の札が出るまでは 前の階のまま見せる）。落ちなかったときは null。
@@ -1046,7 +1053,11 @@ export class Play {
 
 	private control(t: number): void {
 		const input = this.ctx.input;
-		if (input.busy) return;
+		if (input.busy) {
+			// 窓が 開いたら（階段の 問いなど）、歩いている途中の タップは 忘れる
+			this.pendingTap = null;
+			return;
+		}
 		if (!input.restHeld()) this.restHalt = false;
 		// 自動で歩いている（タップ・地図のタップ）あいだに 何かに さわったら 止める。
 		// さわった入力は 捨てる（止めるつもりの 十字キーで 1歩・A で 空振り、に ならないように）
@@ -1055,6 +1066,18 @@ export class Play {
 			this.travel = null;
 			this.swallowInput();
 			return;
+		}
+		// 自動で歩いている 途中に タップした所へ 行きなおす。キリコの上なら 止まるだけ（足元の窓は 開かない）
+		const tap = this.pendingTap;
+		if (tap) {
+			this.pendingTap = null;
+			const k = this.screen.tileCss / TILE;
+			const cx = (tap.x - this.camX) * k;
+			const cy = (tap.y - this.camY) * k;
+			if (this.dirFromScreen(cx, cy) !== null) {
+				this.onTap(cx, cy);
+				return;
+			}
 		}
 		const key = input.takeField();
 		if (key) {
@@ -1544,7 +1567,15 @@ export class Play {
 	}
 
 	private onTap(cssX: number, cssY: number): void {
-		if (this.busy) return;
+		if (this.busy) {
+			// 自動で歩いている 途中の タップは、止まってから そこへ 行きなおす
+			// （そのあいだに カメラが 動くので、地図の上の 点で 覚えておく）
+			if (this.travel || this.dashing) {
+				const k = this.screen.tileCss / TILE;
+				this.pendingTap = { x: cssX / k + this.camX, y: cssY / k + this.camY };
+			}
+			return;
+		}
 		if (this.mapOn) {
 			this.mapTap(cssX, cssY);
 			return;
@@ -1570,6 +1601,11 @@ export class Play {
 			const m = run.monsterAt(x, y);
 			// となりの敵をタップ：まず そちらを向く。向いていれば なぐる
 			if (m && run.monsterVisible(m) && !m.disguise && !posing(m)) {
+				// 壁の 角ごしの 斜めは なぐれない（空ぶりで 1手 むだに なる）。なぐれる マスへ 回りこむ
+				if (!run.cornerOk(p, d)) {
+					this.startTravel({ x, y });
+					return;
+				}
 				void this.exec(
 					p.dir === d ? { c: "attack", dir: d } : { c: "turn", dir: d },
 				);
@@ -2998,7 +3034,12 @@ export class Play {
 	/** d の向きに、何かあるまで走る。階段に乗って止まったら 聞く。tapped は タップで 走りだした（敵が 見えても 止まらない）。 */
 	private async dash(d: Dir8, tapped = false): Promise<void> {
 		const wasOnStairs = this.onUsableStairs();
-		await this.dashSteps(d, tapped);
+		this.dashing = true;
+		try {
+			await this.dashSteps(d, tapped);
+		} finally {
+			this.dashing = false;
+		}
 		if (
 			!wasOnStairs &&
 			this.onUsableStairs() &&
