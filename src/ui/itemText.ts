@@ -36,7 +36,27 @@ export const itemDesc = (run: Run, it: Item): string => {
 	if (run.isEquipped(it)) h += '<b class="tag equip">装備中</b>';
 	if (it.known && it.cursed) h += '<b class="tag curse">のろい</b>';
 	if (itemHidden(run.s, it.kind)) return h + esc(HIDDEN_DESC);
-	return h + esc(known ? d.desc : "まだ　正体が　わからない");
+	if (known) return h + esc(d.desc);
+	// 未識別でも 当たりを つけられるように、候補の 数（3つまでなら 中身も）を 出す
+	const cands = candKinds(run, it);
+	if (!cands.length) return h + esc("まだ　正体が　わからない");
+	return (
+		h +
+		esc(
+			cands.length <= 3
+				? `正体は　${cands.map((k) => CAND_HINT[k] ?? defOf(k).name).join("・")}　の　どれか`
+				: `正体は　${cands.length}種の　どれか（せつめいで　候補）`,
+		)
+	);
+};
+
+/** 未識別の 道具の 候補（このダンジョンで 出る、まだ 正体の わからない 同じ 分類の 種類）。 */
+const candKinds = (run: Run, it: Item): string[] => {
+	const cat = defOf(it.kind).cat;
+	if (!isUnidentifiedCat(it.kind) || isKnownKind(run.s, it.kind)) return [];
+	return itemTableOf(run.s)
+		.filter((e) => defOf(e.kind).cat === cat && !isKnownKind(run.s, e.kind))
+		.map((e) => e.kind);
 };
 
 /** 武器・盾で、修正値と のろいが まだ わからない（有識者スレか、装備すると わかる）。 */
@@ -227,9 +247,7 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 		pages.push("投げたり　置いたり　できない");
 	} else if (isUnidentifiedCat(it.kind) && !known) {
 		// 候補（このダンジョンで出る、まだ正体のわからない 同じカテゴリの種類）
-		const cands = itemTableOf(s)
-			.filter((e) => defOf(e.kind).cat === d.cat && !isKnownKind(s, e.kind))
-			.map((e) => candLabel(e.kind));
+		const cands = candKinds(run, it).map(candLabel);
 		candPages(cands).forEach((ls, i) => {
 			pages.push(`${i === 0 ? "この　どれか" : "……または"}\n${ls.join("\n")}`);
 		});
