@@ -5,7 +5,7 @@
 //   with は その人・その子が 店に いる とき だけ（仲間 5人は いつも 店に いる。住人は その帰りに 来ている とき）。
 // - treat：一杯 おごられた ときの ひとこと（{drink} は 一杯の 名前）。
 // 決まりは 村の 住人の 話と 同じ（data/mobs.ts の 先頭）：1行は 全角22字・2行まで、1本は 1〜3窓（口出し こみで 4窓まで）、
-// キリコは しゃべらない（地の文で うなずく・首を ふる）。who の "mob" は その子、null は 地の文、仲間・ほかの子は その人。
+// キリコは 口数が 少ない（しぐさは 地の文、短い 返事は k。吾輩・ンゴ。「保守」とは 言わない）。who の "mob" は その子、null は 地の文、仲間・ほかの子は その人。
 // 店の 小物（data/rooms.ts）：鳴らない 鍵盤が ひとつの ピアノ・0時で 止まった 柱時計・棚の 奥の『Part1』の 瓶・
 // にぎやかだった ころの おんJの スレの 絵。マスター（白ひげ。「〜ですぞ」）は 地の文の 中だけで 出る。
 
@@ -28,6 +28,7 @@ export type CafeMob = {
 const m = (text: string): MobLine => ({ who: "mob", text });
 const n = (text: string): MobLine => ({ who: null, text });
 const c = (who: Cast, text: string): MobLine => ({ who, text });
+const k = (text: string): MobLine => ({ who: "kiriko", text });
 
 export const CAFE_MOBS: Record<MobId, CafeMob> = {
 	// 解音ゼロの サブ機 HeBc-0（プロト）。語尾は「〜ゼロ」、冷徹・論理的、味噌汁・哲学・芸術。オリジナルの うわさ
@@ -162,7 +163,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "id",
 				lines: [
 					m("型番の　HeBc-0、\nなんの　文字か　わかるゼロ？"),
-					n("キリコは　首を　かしげた。"),
+					k("……わからないンゴ"),
 					m("ゼロの　スレを　立てた　>>1の\nIDゼロ。……出生届ゼロ"),
 				],
 			},
@@ -216,7 +217,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "e",
 				lines: [
 					m("あの　絵、にぎやかだね！\nレン、どこに　いる？"),
-					n("キリコは　首を　ふった。"),
+					k("……いないンゴ"),
 					m("……まだ　いないか。\n次の　Part　には　入るからね！"),
 				],
 			},
@@ -232,7 +233,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "hakase",
 				lines: [
 					m("博士って、kskエスプレッソ\n何杯で　動くと　思う？"),
-					n("キリコは　ゆびを　3本　立てた。"),
+					k("……3杯ンゴ？"),
 					m("ぶー！　12杯！\n……だから　更新も　はやいの！"),
 				],
 			},
@@ -790,7 +791,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("あの　絵の　スレ、\nレス数　すごいですね……"),
 					m("ぼくの　動画も、いつか\nあんな　ふうに……！"),
-					n("キリコは　うなずいた。\nアルは　ストローを　かみしめた。"),
+					k("……なれるンゴ"),
 				],
 			},
 			{
@@ -818,7 +819,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "mikansei",
 				lines: [
 					m("先輩、ぼくの　声、完成しました！\n……未完成　ですけど！"),
-					n("キリコは　首を　かしげた。"),
+					k("……どっちンゴ？"),
 					m("未完成なのに　完成……。\n科学的には、矛盾してますね"),
 				],
 			},
@@ -829,7 +830,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					m("ぼく、荒らしに　見つからない\nように、裏で　作られたんです"),
 					m("出てきたら「そんな　スレ\nあったか？」って　言われました"),
 					m("……先輩は、知ってて\nくれましたよね？"),
-					n("キリコは　うなずいた。"),
+					k("……知ってたンゴ"),
 				],
 			},
 			{
@@ -837,7 +838,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "koe",
 				lines: [
 					m("あー、あー。……先輩、\nいまの　声、どうでした？"),
-					n("キリコは　うなずいた。"),
+					k("……いい　声ンゴ"),
 					m("作った　人の　声　そのまま\nなんです。マイクも　新しく　して"),
 					m("……そのぶん、いい　声で\n歌わないと　ですね"),
 				],
@@ -864,7 +865,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				// 重音テトや 蓄音キリコに 影響されて 作った。初動画「サイエンス」も キリコの 一同と いっしょに
 				key: "senpai",
 				lines: [
-					n("キリコは　自分を　指さして、\n首を　かしげた。"),
+					k("……吾輩、先輩ンゴ？"),
 					m("先輩は、先輩です！　ぼくを\n作った　人の、あこがれ　なので"),
 					m("重音テトさんと、先輩。\n「サイエンス」も、先輩の　チームと　です"),
 				],

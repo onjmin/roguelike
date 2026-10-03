@@ -2486,6 +2486,26 @@ test("ぷゆゆ・マイナーズ: Kiriko speaks only in chats and never says �
 			}
 	}
 	ok(n > 0, "Kiriko never speaks in chats");
+	// 喫茶でも 同じ（仲間の 話は kiriko: "voice"、住人の 話は who: "kiriko"）
+	const cafe: [string, string][] = [
+		...[...CAFE_TALKS, ...TREAT_TALKS].flatMap((t) =>
+			t.lines
+				.filter((l) => l.kiriko === "voice")
+				.map((l): [string, string] => [t.id, l.text]),
+		),
+		...MOB_IDS.flatMap((id) =>
+			CAFE_MOBS[id].talks.flatMap((t) =>
+				t.lines
+					.filter((l) => l.who === "kiriko")
+					.map((l): [string, string] => [`${id}:${t.key}`, l.text]),
+			),
+		),
+	];
+	ok(cafe.length > 0, "Kiriko never speaks in the cafe");
+	for (const [where, text] of cafe) {
+		ok(!text.includes("保守"), `cafe ${where}: Kiriko says 保守`);
+		ok(text.includes("ンゴ"), `cafe ${where}: Kiriko without ンゴ`);
+	}
 });
 
 test("ぷゆゆ・マイナーズ: small moves are few,come before the mob's own or narration window, and stay near home", () => {

@@ -1,6 +1,6 @@
 // 喫茶「保守」（村の 西の 空き地。町の 段5 から）で 聞ける 話。ui/cafe.ts が 仲間の となりの 席で 一覧に して 見せる。
 // 仲間ひとりの 話と、ふたり・みんなの 掛け合い。どれも 寄り道で、何も くれない（聞いた 印だけ 残る）。
-// 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは 口数が 少なく、ここでは しゃべらない（ナレーションで 動作だけ。しゃべるのは 村の 雑談だけ）。
+// 1行は 全角22字・2行まで。説明せず、行間を 読ませる。キリコは 口数が 少ない。しぐさは ナレーションで、短い 返事は v（吾輩・ンゴ。「保守」とは 言わない）。
 
 import type { KirikoMode, Speaker } from "./quotes";
 
@@ -26,8 +26,8 @@ export type CafeTalk = {
 
 const s = (who: Speaker, text: string): CafeLine => ({ who, text });
 const n = (text: string): CafeLine => ({ who: null, text });
-/** キリコの 独白（（　）で 出る。仲間には 聞こえない）。 */
-const k = (text: string): CafeLine => ({ who: null, text, kiriko: "think" });
+/** キリコの 声（短い 返事。仲間に 聞こえる）。 */
+const v = (text: string): CafeLine => ({ who: null, text, kiriko: "voice" });
 
 export const CAFE_TALKS: readonly CafeTalk[] = [
 	{
@@ -36,7 +36,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["roze"],
 		lines: [
 			s("roze", "麻婆豆腐の　ひみつ、\n知りたいアル？"),
-			n("キリコは　うなずいた。"),
+			v("……知りたいンゴ"),
 			s("roze", "……ひみつは、ないアル。\n毎日　同じに　作るだけアル"),
 			s(
 				"roze",
@@ -138,7 +138,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["zero"],
 		lines: [
 			s("zero", "スレが　落ちる　とき、\n音が　するの、知っていますか？"),
-			n("キリコは　首を　かしげた。"),
+			v("……知らないンゴ"),
 			s(
 				"zero",
 				"……しません。ほんとうは。\nでも、ゼロには　聞こえる　気が　します",
@@ -191,7 +191,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["shiyo", "feris"],
 		lines: [
 			s("shiyo", "キリコって、あんまり\nしゃべらないわよね"),
-			k("……しゃべってる、\nつもりンゴ"),
+			v("……しゃべってる、\nつもりンゴ"),
 			s("feris", "しゃべってるよ〜。\n蓄音機で〜"),
 			s("shiyo", "……あれは　しゃべってるって\n言うの？"),
 			s("feris", "言うよ〜。\nざらざら　って　言ってるもん〜"),
@@ -255,7 +255,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["roze"],
 		lines: [
 			s("roze", "……初号機の　話は、\nあんまり　したくないアル"),
-			n("キリコは　身を　乗りだした。"),
+			v("……聞きたいンゴ"),
 			s("roze", "名前が　雲地アル。\n……そういう　ことアル"),
 			s("roze", "でも、わたしより　先に\nいた　子アル。……えらい　子アル"),
 		],

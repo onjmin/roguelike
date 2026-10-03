@@ -145,7 +145,7 @@ export type Story = {
 	say(who: Speaker | null, text: string, opt?: SayOptions): Promise<void>;
 	/**
 	 * キリコの ことば。think は 独白（（　）で かこむ・声なし・村の だれにも 聞こえない）、
-	 * voice は 声（村の 雑談だけ。uc で 読み上げる）。data/quotes.ts の KirikoMode。
+	 * voice は 声（村の 雑談と 喫茶だけ。uc で 読み上げる）。data/quotes.ts の KirikoMode。
 	 */
 	kiriko(text: string, mode: KirikoMode): Promise<void>;
 	/** 地の文。 */
