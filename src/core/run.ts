@@ -157,7 +157,7 @@ export class Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
 		const rng = Rng.fromSeed(seed);
-		// モンスターハウス（祭り）の階（本編は 3階から 1/16 ずつ。B6 までに無ければ B4〜6 のどこかに1つ）。
+		// モンスターハウス（祭り）の階（本編は 5階から 1/16 ずつ。B8 までに無ければ B6〜8 のどこかに1つ）。
 		const houses: number[] = [];
 		if (dg.houses) {
 			const h = dg.houses;

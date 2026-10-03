@@ -119,13 +119,13 @@ const identity = (n: number): number[] =>
  * 出だしは 本編と 同じ 1階に 1 ずつ、後ろほど 急に（着いた ころには 経験値も 多い）。
  */
 const RAMP_CURVE = 1.5;
-const ramp = (n: number, top: number): number[] =>
+const ramp = (n: number, top: number, curve = RAMP_CURVE): number[] =>
 	Array.from({ length: n + 1 }, (_, i) =>
 		i === 0
 			? 0
 			: n === 1
 				? top
-				: Math.round(1 + (top - 1) * ((i - 1) / (n - 1)) ** RAMP_CURVE),
+				: Math.round(1 + (top - 1) * ((i - 1) / (n - 1)) ** curve),
 	);
 
 const ALL_UNIDENTIFIED: readonly ItemCat[] = [
@@ -369,12 +369,14 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 20,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(20, 27),
+		// 序盤を ゆるく：曲がりを 2乗に（底の 強さは 27 の まま。中ほどまで 1〜4階ぶん 弱い）。
+		// 祭りも B5 から、はじめの 1つは B6〜8 に（2026-10-03 ボットで B1〜7 で 倒れるのが 91 → 20 / 200回）
+		level: ramp(20, 27, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "genban",
-		houses: { from: 3, chance: 1 / 16, early: [4, 6] },
+		houses: { from: 5, chance: 1 / 16, early: [6, 8] },
 		trapsFrom: 3,
 		// パン板（4階）から いきなり 20階に ならないよう、きのこ板（6階）を はさむ
 		unlockAfter: "kinoko",
