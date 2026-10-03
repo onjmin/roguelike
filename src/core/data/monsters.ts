@@ -640,7 +640,7 @@ const M: MonsterDef[] = [
 		atk: 6,
 		def: 6,
 		exp: 25,
-		floors: [4, 4],
+		floors: [5, 5],
 		weight: 0,
 		abilities: [{ k: "knockback", rate: 1 / 4 }],
 		board: "shallow",
