@@ -80,6 +80,8 @@ export type Dungeon = {
 	} | null;
 	/** この階より浅い階には罠を置かない。 */
 	trapsFrom: number;
+	/** 1階に 武器を 1本は 置く（入門の 板。core/floor.ts）。 */
+	firstWeapon?: boolean;
 	/** このダンジョンを持ち帰ると開く（null ははじめから開いている）。 */
 	unlockAfter: DungeonId | null;
 	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く。 */
@@ -350,6 +352,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "needle",
 		houses: null,
 		trapsFrom: 3,
+		firstWeapon: true,
 		unlockAfter: null,
 		reliefAfter: null,
 	},

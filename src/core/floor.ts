@@ -12,6 +12,7 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
+import { ITEMS } from "./data/items";
 import { MONSTERS, monstersFor, SWAP_BREADS } from "./data/monsters";
 import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
@@ -155,16 +156,26 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		nItems = rng.range(r.dungeon.perFloor[0], r.dungeon.perFloor[1]);
 		if (f.house >= 0) nItems += rng.range(HOUSE_ITEMS[0], HOUSE_ITEMS[1]);
 	}
-	const items: Item[] = rollKinds(rng, itemTableOf(r.s), nItems).map((k) =>
-		r.newItem(k),
-	);
+	const table = itemTableOf(r.s);
+	const kinds = rollKinds(rng, table, nItems);
+	// 入門の 板は 1階に 武器を 1本は 置く（引いた 中に 無ければ 1つ目を 武器に。敵にも 持たせない）。
+	// 素手のまま 2〜3階で 倒れる 回を なくす（2026-10-03 はじめての 人の 目線の 見直し）
+	let sure = -1;
+	if (r.dungeon.firstWeapon && depth === 1 && kinds.length) {
+		const weapons = table.filter((e) => ITEMS[e.kind]?.cat === "weapon");
+		if (!kinds.some((k) => ITEMS[k]?.cat === "weapon") && weapons.length) {
+			kinds[0] = rng.weighted(weapons, (e) => e.weight).kind;
+			sure = 0;
+		}
+	}
+	const items: Item[] = kinds.map((k) => r.newItem(k));
 	const toCarry: Item[] = [];
-	for (const it of items) {
+	for (const [i, it] of items.entries()) {
 		const inHouse = f.house >= 0 && rng.chance(0.6);
 		const spots = freeRoomTiles(r, f, inHouse ? f.house : null).filter(
 			(t) => t.x !== start.x || t.y !== start.y,
 		);
-		if (!inHouse && rng.chance(CARRY_CHANCE)) {
+		if (!inHouse && i !== sure && rng.chance(CARRY_CHANCE)) {
 			toCarry.push(it);
 			continue;
 		}
