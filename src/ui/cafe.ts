@@ -1,7 +1,7 @@
 // 喫茶「保守」の 中（西の 空き地。町の 段5 から。地図は data/village/rooms.ts、文は data/cafe.ts・data/cafeMobs.ts）。
 // 店を 経営する 所では なく、仲間や 住人と となりに すわって 話す 場所。どれも 寄り道で、強さには 何も 効かない。
-// - 扉を 踏むと 中へ。はじめに ときどき「あちらの　お客様からです」：まだ 話していない 話の ある 仲間が
-//   キリコに 一杯 送ってきて、となりに すわって その 話が 始まる（1回の 帰りに 1回まで）。
+// - 扉を 踏むと 中へ。だれかと 話し終えた あと ときどき「あちらの　お客様からです」：まだ 話していない 話の
+//   ある 仲間が キリコに 一杯 送ってきて、となりに すわって その 話が 始まる（1回の 帰りに 1回まで）。
 // - 客は 冒険から 帰るたびに 抽選（cafeLayout。帰りの 時刻から 決まるので、同じ 帰りの あいだは 同じ）。
 //   仲間は 2〜4人（ときどき 5人 ぜんぶ）が 席に すわっている。となりが 空いていれば 話しかけて
 //   となりに すわり、話の 一覧（まだ 聞いていない 話に「！」）と「一杯　おごる」。
@@ -767,6 +767,7 @@ const chatScript =
 		save(st);
 		goHome(s, v, f.who);
 		goHome(s, v, partner);
+		await incoming(s, f.who, partner);
 	};
 
 /** あいさつ（帰りごとに どれか 1つ。人ごとに ずらす）。 */
@@ -792,6 +793,7 @@ const companionScript =
 		await sitDown(s, f);
 		await seatMenu(ctx, s, v, f);
 		await standUp(s, v, CAFE_SLOTS[f.slot].stand, f.who);
+		await incoming(s, f.who);
 	};
 
 // ───────────────── 住人 ─────────────────
@@ -863,6 +865,7 @@ const patronScript =
 		if (n === 0) await mobTalk(s, v, id, spot);
 		else if (n === 1) await treatMob(ctx, s, v, id, spot);
 		s.face(actorId(id), spot.dir);
+		if (n !== 2) await incoming(s);
 	};
 
 // ───────────────── 名無しの 席 ─────────────────
@@ -980,6 +983,7 @@ const masterScript =
 		if (n === 0) await orderScript(ctx, s, v, back);
 		else if (n === 1) await menuScript(ctx, s);
 		s.face("master", "down");
+		if (n === 0) await incoming(s);
 	};
 
 // ───────────────── 入る ─────────────────
@@ -988,16 +992,19 @@ const masterScript =
 let visit: Visit | null = null;
 
 /**
- * 入った ときの「あちらの　お客様から」（まだ 聞いていない 話の ある、となりが 空いた 仲間から。
- * 相手も 店に いる 話だけ。1回の 帰りに 1回）。
+ * 「あちらの　お客様から」：だれかと 話し終えた あとに 届く（入った とたんでは なく）。
+ * まだ 聞いていない 話の ある、となりが 空いた 仲間から（いま 話していた 相手は のぞく）。
+ * 相手も 店に いる 話だけ。1回の 帰りに 1回。
  */
-export const incoming = async (s: Story): Promise<void> => {
+const incoming = async (s: Story, ...except: Cast[]): Promise<void> => {
 	const v = visit;
 	if (!v) return;
 	const st = load();
 	const at = returnAt();
 	if (st.sentAt === at) return;
-	const free = v.layout.friends.filter((f) => !f.partner);
+	const free = v.layout.friends.filter(
+		(f) => !f.partner && !except.includes(f.who),
+	);
 	const talk = cafeTalks(stageNow(), st).find(
 		(t) =>
 			!st.heard.includes(t.id) &&
@@ -1018,11 +1025,8 @@ export const incoming = async (s: Story): Promise<void> => {
 	await standUp(s, v, back, f.who);
 };
 
-/** 扉を 踏んだ：中へ → 「あちらの　お客様から」。 */
-export const enterCafe: Script = async (s) => {
-	await enterRoom("cafe")(s);
-	await incoming(s);
-};
+/** 扉を 踏んだ：中へ。 */
+export const enterCafe: Script = enterRoom("cafe");
 
 /** 2人で 話せる 話（この 帰りの 抽選 用。まだ 聞いていない 話を 先に）。 */
 const pairTalkOf =
