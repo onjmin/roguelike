@@ -158,7 +158,9 @@ const drink = (r: Run, it: Item): boolean => {
 					r.msg(`ちからが　${before - p.str}　下がった`, "warn");
 				}
 			}
-			r.hurtPlayer(5, "荒らし草を　飲んで　たおれた");
+			// 飲んだだけでは たおれない（HP 1 で 耐える）。正体の わからない 草を
+			// 飲んで 即死すると、知らない 人には 理不尽に 見える（きのこ板の 死因の 1位だった）
+			if (p.hp > 1) r.hurtPlayer(Math.min(5, p.hp - 1), "荒らし草を　飲んだ");
 			break;
 		case "h_might":
 			r.se("heal");
