@@ -921,7 +921,10 @@ export class Play {
 				.join(" "),
 			res,
 			anka,
-			ankaLine: anka ? `安価：${ankaText(anka)}（あと${ankaLeft}レス）` : "",
+			// お題と のこりを 別の かたまりに（せまい 画面では のこりが 次の 行へ 回る。切れて 見えなく ならないように）
+			ankaLine: anka
+				? `<span>安価：${ankaText(anka)}</span><span>（あと${ankaLeft}レス）</span>`
+				: "",
 			ankaLeft,
 		};
 	}
