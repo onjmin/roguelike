@@ -544,8 +544,21 @@ export class FloorView {
 				if (px > screen.width) break;
 				const i = y * l.w + x;
 				if (visible[i]) continue;
-				ctx.fillStyle = f.seen[i] ? theme.fog : "#000";
+				if (!f.seen[i]) {
+					ctx.fillStyle = "#000";
+					ctx.fillRect(px, py, TILE, TILE);
+					continue;
+				}
+				// 覚えている 所：床は 霧を うすく、壁は もっと 暗く（歩ける 所が 一目で わかるように）
+				const wall = l.tiles[i] === T_WALL;
+				ctx.fillStyle = theme.fog;
+				ctx.globalAlpha = wall ? 1 : 0.7;
 				ctx.fillRect(px, py, TILE, TILE);
+				ctx.globalAlpha = 1;
+				if (wall) {
+					ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+					ctx.fillRect(px, py, TILE, TILE);
+				}
 			}
 		}
 
