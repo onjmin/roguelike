@@ -563,6 +563,7 @@ test("unlocks last for the session when storage cannot be written", () => {
 	withStorage(() => {
 		ok(loadProgress().unlocked.join() === "shallow", "a new player has more");
 		noteRunEnd("shallow", "clear");
+		noteRunEnd("kinoko", "clear");
 		ok(
 			loadProgress().unlocked.includes("main"),
 			"the main dungeon closed again",

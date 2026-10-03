@@ -460,8 +460,8 @@ export const loadProgress = (): Progress => {
 	const unlocked: DungeonId[] = ["shallow"];
 	if (
 		legacy ||
-		cleared.includes("shallow") ||
-		recs.some((r) => dg(r) !== "shallow")
+		cleared.includes(DUNGEONS.main.unlockAfter ?? "shallow") ||
+		recs.some((r) => dg(r) === "main" || dg(r) === "deep")
 	)
 		unlocked.push("main");
 	if (cleared.includes("main")) unlocked.push("deep");

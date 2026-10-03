@@ -376,8 +376,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "genban",
 		houses: { from: 3, chance: 1 / 16, early: [4, 6] },
 		trapsFrom: 3,
-		unlockAfter: "shallow",
-		reliefAfter: 10,
+		// パン板（4階）から いきなり 20階に ならないよう、きのこ板（6階）を はさむ
+		unlockAfter: "kinoko",
+		reliefAfter: 5,
 		// 湯治：150 → 100（1.5倍）
 		regenStep: 100,
 	},
