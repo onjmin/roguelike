@@ -58,6 +58,8 @@ import { villageView } from "./villageReturn";
 
 /** 1マス歩く ms（rpg と同じ）。うろうろする人は この 1.6倍。 */
 const WALK_MS = 170;
+/** ダッシュで 歩く 速さ（WALK_MS の 何倍か）。 */
+const DASH_SPEED = 2.5;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
 
@@ -588,7 +590,9 @@ export class Village {
 			return;
 		// 着いたときの判定は update() が行う（stepPending）
 		this.stepPending = true;
-		await this.player.walk(d, WALK_MS);
+		// ダッシュ（X・Shift を 押しながら・画面の ボタン）は 速く 歩く
+		const ms = this.ctx.input.mods().dash ? WALK_MS / DASH_SPEED : WALK_MS;
+		await this.player.walk(d, ms);
 	}
 
 	/** そのマスの 踏むイベント（ダンジョンの口）。 */
