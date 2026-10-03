@@ -372,6 +372,8 @@ const mouthScript =
 				return;
 			}
 			d = picked;
+			// 開いた 板が 1つだけなら 押しまちがいは 起きない（選んだ＝行く。はじめての 人の 押す 回数を へらす）
+			if (open.length === 1) break;
 			// 問いの 窓は 出さず、選ぶ 窓だけ（行き先は 地図の 札に 出ている。押す 回数を 1つ へらす）
 			const ok = await s.choose(
 				[`${DUNGEON_NAMES[d].name}へ　行く`, "えらびなおす", "やめる"],

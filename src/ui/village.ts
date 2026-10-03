@@ -60,6 +60,8 @@ import { villageView } from "./villageReturn";
 const WALK_MS = 170;
 /** ダッシュで 歩く 速さ（WALK_MS の 何倍か）。 */
 const DASH_SPEED = 2.5;
+/** つっかえて 横へ ずれるとき、その先を 何マス まで 見くらべるか。 */
+const SLIDE_LOOK = 8;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
 
@@ -517,6 +519,40 @@ export class Village {
 			) {
 				void this.tryStep(d);
 				return;
+			}
+		}
+		// まっすぐ 押して 1マスの 物（立て札・岩・角）に つっかえたら、横へ 1歩 ずれて 回りこむ
+		// （出口の 矢印へ 上を 押しつづけて 立て札で 止まらないように）。両側とも 回りこめるなら、
+		// その先へ まっすぐ 長く 進めるほう（同じなら ずれない）。人の 前では ずれない（話しかけたい）
+		if (tries.length === 1) {
+			const d = tries[0];
+			const v = DIR_VEC[d];
+			const { x, y } = this.player;
+			const person = field.blockerAt(x + v.dx, y + v.dy, this.player);
+			if (!person?.sprite) {
+				const run = (s: Dir): number => {
+					const w = DIR_VEC[s];
+					if (!field.canEnter(x + w.dx, y + w.dy, this.player)) return 0;
+					let n = 0;
+					while (
+						n < SLIDE_LOOK &&
+						field.canEnter(
+							x + w.dx + v.dx * (n + 1),
+							y + w.dy + v.dy * (n + 1),
+							this.player,
+						)
+					)
+						n++;
+					return n;
+				};
+				const [a, b] =
+					v.dx === 0 ? (["left", "right"] as Dir[]) : (["up", "down"] as Dir[]);
+				const ra = run(a);
+				const rb = run(b);
+				if (ra !== rb) {
+					void this.tryStep(ra > rb ? a : b);
+					return;
+				}
 			}
 		}
 		this.player.dir = tries[0];
