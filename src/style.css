@@ -1791,10 +1791,6 @@ body.shake #app {
 	color: var(--accent);
 }
 
-.menu-title small.warn {
-	color: var(--danger);
-}
-
 /* ───────── 倒れたとき ───────── */
 
 .death {

@@ -24,12 +24,7 @@ import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
 import { floorShort } from "./floorName";
 import { infoWindow, listWindow } from "./list";
-import {
-	importWindow,
-	isOldReplay,
-	OLD_REPLAY_WARN,
-	shareWindow,
-} from "./share";
+import { importWindow, shareWindow } from "./share";
 import { villageSong } from "./villageMusic";
 
 /** HTML に埋めこむ文字の逃がし。 */
@@ -354,14 +349,10 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 			continue;
 		}
 		for (;;) {
-			const pick = await listWindow(
-				ctx,
-				`${head}${isOldReplay(rp) ? `<br>${OLD_REPLAY_WARN}` : ""}`,
-				[
-					{ label: "リプレイを　見る", value: "play" },
-					{ label: "リプレイを　わたす", value: "share" },
-				],
-			);
+			const pick = await listWindow(ctx, head, [
+				{ label: "リプレイを　見る", value: "play" },
+				{ label: "リプレイを　わたす", value: "share" },
+			]);
 			if (pick === "play") return rp;
 			if (pick !== "share") break;
 			await shareWindow(ctx, rp);

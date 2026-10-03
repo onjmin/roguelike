@@ -1,7 +1,7 @@
 // リプレイを 人に わたす 窓（共有コードの 作り方・読み方は engine/share.ts）。
 // - 共有：リンクを 見せて、コピー／ファイルに 保存。
 // - 読み込む：貼りつけるか ファイルを 選ぶ。
-// - もらった リプレイを 見るか 聞く（版が ちがえば 知らせる）。
+// - もらった リプレイを 見るか 聞く。
 
 import { DUNGEON_NAMES } from "../data/story";
 import type { SavedReplay } from "../engine/save";
@@ -36,12 +36,6 @@ export const sharedHead = (rp: SavedReplay): string => {
 	return `${esc(where)}　${how}<br><small>${home}${rp.turn}ターン</small>`;
 };
 
-/** 前の版で 遊んだ リプレイか（今の版だけで 遊んだ ものでなければ ずれうる）。 */
-export const isOldReplay = (rp: SavedReplay): boolean =>
-	rp.builds.some((b) => b !== __CORE_VERSION__);
-
-export const OLD_REPLAY_WARN = `<small class="warn">前の版で　遊んだ冒険です。途中から　ずれて、最後まで　見られない　ことが　あります</small>`;
-
 /** もらった リプレイを 見るか 聞く。 */
 export const confirmShared = async (
 	ctx: Ctx,
@@ -49,7 +43,7 @@ export const confirmShared = async (
 ): Promise<boolean> => {
 	const pick = await listWindow(
 		ctx,
-		`もらった　リプレイ<br>${sharedHead(rp)}${isOldReplay(rp) ? `<br>${OLD_REPLAY_WARN}` : ""}`,
+		`もらった　リプレイ<br>${sharedHead(rp)}`,
 		[{ label: "リプレイを　見る", value: "play" }],
 	);
 	return pick === "play";
