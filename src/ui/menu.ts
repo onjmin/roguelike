@@ -419,18 +419,32 @@ const itemActions = async (
 /** 前に もちもので 選んだ道具（次に開いたとき そこから。ページも そこになる）。 */
 let lastItemUid: number | null = null;
 
+/**
+ * 一覧に 出す 順：同じ 種類は 最初の 1つの 所に まとめて 並べる（パン・草が 散らばらないように）。
+ * 持ち物の 並び（コマンドと リプレイが 使う）は かえない。行は uid で 選ぶので 見せる 順だけ。
+ */
+const grouped = (items: readonly Item[]): Item[] => {
+	const byKind = new Map<string, Item[]>();
+	for (const it of items) {
+		const same = byKind.get(it.kind);
+		if (same) same.push(it);
+		else byKind.set(it.kind, [it]);
+	}
+	return [...byKind.values()].flat();
+};
+
 export const openInventory = async (
 	ctx: Ctx,
 	run: Run,
 ): Promise<MenuAction> => {
 	let start = Math.max(
 		0,
-		run.p.items.findIndex((it) => it.uid === lastItemUid),
+		grouped(run.p.items).findIndex((it) => it.uid === lastItemUid),
 	);
 	/** うしろの一覧で ほかの道具を タップした（一覧を出さずに その道具の メニューへ）。 */
 	let jump: string | null = null;
 	for (;;) {
-		const items = run.p.items;
+		const items = grouped(run.p.items);
 		const title = `もちもの　${items.length}/${INVENTORY_MAX}`;
 		const rows = items.length
 			? items.map((it) => itemRow(run, it))
@@ -472,7 +486,7 @@ export const pickItem = async (
 	title: string,
 	filter: (it: Item) => boolean,
 ): Promise<number | null> => {
-	const list = run.p.items.filter(filter);
+	const list = grouped(run.p.items).filter(filter);
 	const rows = list.length
 		? list.map((it) => itemRow(run, it))
 		: [emptyRow("えらべる　ものが　ない")];
