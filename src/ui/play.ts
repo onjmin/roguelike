@@ -129,6 +129,8 @@ type Disp = Figure & {
 	lungeT0: number;
 	/** 壁に つっかえた 時刻（向いた 方へ 少しだけ 出て もどる。行き止まりと わかるように）。 */
 	bumpT0?: number;
+	/** 最後に 壁に 向かった 時刻（長押しで 続けて ぶつかる あいだは 出なおさない）。 */
+	bumpLast?: number;
 	fadeT0: number;
 	dying: boolean;
 };
@@ -2344,7 +2346,12 @@ export class Play {
 					const d = this.disp.get(e.id);
 					if (d) {
 						d.dir = e.dir;
-						if (e.bump) d.bumpT0 = performance.now();
+						// 長押しで 壁に 押しつづける あいだは 最初の 1回だけ（くり返すと 虚空を 突いて 見える）
+						if (e.bump) {
+							const now = performance.now();
+							if (now - (d.bumpLast ?? -1e9) > 300) d.bumpT0 = now;
+							d.bumpLast = now;
+						}
 					}
 					break;
 				}
