@@ -37,7 +37,7 @@
 | ムッジェ（村の 住人） | `sprites/minors_mujje.png` | Claude が 描いた もの（`scripts/make-minors.mjs`。rpg の `mujje.png` と 同じ 絵）。おんJwiki の お絵かきスレ（2014）の 元絵に 合わせて：首の ない 赤い 柱の 体に ムックの ような まばらな 毛・柄の 先の 目玉 2つ・横に つき出た 口・小さな 白い 手袋 |
 | メタルぷゆゆ（敵） | `sprites/metal_puyu.png` | RPGEN「PIEN」を 銀色に ぬった もの（`scripts/make-metal-puyu.mjs`） |
 | 風呂キャンセル界隈（敵） | `sprites/furocan.png` | RPGEN「とうすこ民（泥版）」を くすませて、しみと におい線を 足した もの（`scripts/make-furocan.mjs`） |
-| まんぜう軍（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |
+| にょっす牛（敵） | `sprites/reisho_ushi.png` | RPGEN の 1枚絵「不良牛」（正面だけ）から 組んだ もの（`scripts/make-reisho-ushi.mjs`）。背中・横向きは 無い |
 | コピペ（敵） | `sprites/copipe.png` | Claude が 描いた もの。2枚 かさなった 紙（コピーの アイコン）に 顔（`scripts/make-copipe.mjs`） |
 | 釣り・粘着アンチ・連投荒らし（敵） | `sprites/tsuri.png` `nenchaku.png` `rento.png` | Claude が 描いた もの（`scripts/make-enemies.mjs`）。浮きと 釣り針・むらさきの ねばねば・怒った ふきだしと 残像 |
 | 炎上案件（敵） | `sprites/enjo.png` | Claude が 描いた もの。怒った 顔の 画面の スマホから 炎（`scripts/make-enemies.mjs`） |

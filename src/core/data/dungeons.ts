@@ -149,7 +149,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	// 盾 7（ちょっと：青銅・うろこ・鋼鉄）
 	{ kind: "leather", weight: 1 }, // 防御2。おなかが へりにくい。ちょっと には無いが、もっと深い迷宮で要る知恵を ここで見せる
 	{ kind: "bronze", weight: 3 }, // 防御3。ありふれた盾（ちょっと の盾の 67%）
-	{ kind: "scale", weight: 2 }, // 防御4。まんぜう軍（レベル4〜）・毒矢の罠（レベル4〜）の ちから下げを防ぐ、を教える
+	{ kind: "scale", weight: 2 }, // 防御4。にょっす牛（レベル4〜）・毒矢の罠（レベル4〜）の ちから下げを防ぐ、を教える
 	{ kind: "steelsh", weight: 1 }, // 防御6。鋼鉄の盾の位置。いちばん強い盾で 1枚だけ
 	// 矢 5（ちょっと は 矢が多め：7.8%）
 	{ kind: "a_wood", weight: 3 }, // 寝落ち民・ゾンJ民を 離れて削る
@@ -166,7 +166,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	// 草 21（識別ずみ。ちょっと：弟切草・薬草・毒けし草×2・ちからの種・ルーラ草・火炎草・まどわし草）
 	{ kind: "h_heal", weight: 7 }, // 草の 1/3。始めの1つと合わせて 4階で 3〜4つ
 	{ kind: "h_greater", weight: 3 }, // 弟切草。ちょっと では 薬草と同じだけ出たが、ここは 強いので少なめ
-	{ kind: "h_antidote", weight: 4 }, // ちょっと では 草の中で倍の率。まんぜう軍・毒矢の罠・チギュリパンの あと始末
+	{ kind: "h_antidote", weight: 4 }, // ちょっと では 草の中で倍の率。にょっす牛・毒矢の罠・チギュリパンの あと始末
 	{ kind: "h_might", weight: 2 }, // ちからの種
 	{ kind: "h_blink", weight: 2 }, // 左遷草。逃げ道
 	{ kind: "h_fire", weight: 2 }, // 火炎草。飲めば 65〜75 で 風吹けば名無し（HP23）も一撃
@@ -197,7 +197,7 @@ export const SHALLOW_LEVEL: readonly number[] = [
 	1, // B1：ぷゆゆ・dat落ちの霊・夏休みキッズ・ROM専。罠なし
 	2, // B2：kskボット・寝落ち民（眠りの呪文）が 加わる。罠なし
 	3, // B3：罠が出はじめる（1〜3個。トラバサミ・眠り・転び・矢・ワープ・落とし穴）
-	5, // B4：まんぜう軍・コピペ が 加わる。毒矢の罠も。針を 拾って 帰る。
+	5, // B4：にょっす牛・コピペ が 加わる。毒矢の罠も。針を 拾って 帰る。
 	//     1つ 先の 強さで ゾンJ民（草を 投げて とどめ）も 出る：最後の 階で 1度は 道具を 考えさせる（ボット 93→84%）
 ];
 
@@ -244,7 +244,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "h_reel", weight: 3 }, // 飲めば マイナス。本編と同じ3
 	{ kind: "h_daze", weight: 2 }, // まどわし草。飲めば マイナス、投げれば 敵が逃げる
 	{ kind: "h_sleep", weight: 5 }, // 飲めば マイナス。本編3 → 5
-	{ kind: "h_antidote", weight: 6 }, // 毒草8・チギュリパン5・まんぜう軍・毒矢の罠 が 多いので 本編3 → 6
+	{ kind: "h_antidote", weight: 6 }, // 毒草8・チギュリパン5・にょっす牛・毒矢の罠 が 多いので 本編3 → 6
 	{ kind: "h_fire", weight: 2 }, // もっと では 消えた 火炎草。1つ減らして 本編より まれに
 	{ kind: "h_sight", weight: 3 }, // 罠7〜9 と 透明あぼーん（見えない。レベル15〜）に。本編2 → 3
 	// スレ 58（未識別）
@@ -339,7 +339,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "パン兵長を　たおした",
 		},
-		// パン松は やきうが きらい（ピッチャーは 追い出した）。まんじゅう（まんぜう軍）は パンの なかま。
+		// パン松は やきうが きらい（ピッチャーは 追い出した）。にょっす牛（前の名前 まんぜう軍＝まんじゅう）は パンの なかま。
 		// 寝落ち民は 入門の 板では 少なめ（2026-10-03 ボットで パン板の 死因の 6割・B2 に 固まった）
 		foes: { pumpkin: 2, pitcher: 0, neochi: 0.4 },
 		floors: 4,
@@ -425,7 +425,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "親玉きのにゃんを　たおした",
 		},
-		// 胞子で 眠くなり（寝落ち民）、毒きのこ（まんぜう軍）が 多い
+		// 胞子で 眠くなり（寝落ち民）、毒きのこ（にょっす牛）が 多い
 		foes: { neochi: 2, pumpkin: 2, pitcher: 0 },
 		floors: 6,
 		items: KINOKO_ITEMS,

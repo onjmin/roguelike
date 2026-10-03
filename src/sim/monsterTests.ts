@@ -676,7 +676,7 @@ test("pitcher", "not in a straight line: never throws", () => {
 	}
 });
 
-// ───────────────── まんぜう軍（poison。前の名前は 毒カボチャ） ─────────────────
+// ───────────────── にょっす牛（poison。前の名前は 毒カボチャ → まんぜう軍） ─────────────────
 
 test("pumpkin", "poison: lowers str", () => {
 	const r = arena("pumpkin");

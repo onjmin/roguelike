@@ -113,12 +113,12 @@ const M: MonsterDef[] = [
 		flavor: "投げるのは　ボールより、試合の　ほうが　多い",
 	},
 	{
-		// 前の名前は 毒カボチャ。まんぜう軍（🐮 の ネタ）の 冷笑系（真剣な人を 上から 茶化す）の 牛。
+		// 前の名前は 毒カボチャ → まんぜう軍。にょっす牛（🐮 の ネタ）は 冷笑系（真剣な人を 上から 茶化す）の 牛。
 		// 冷笑で ちからを 下げる（セリフは core/monster.ts の SNEERS）。
 		// 絵は RPGEN の「不良牛」sp:AXTDsXV から 組んだ 歩行グラ（scripts/make-reisho-ushi.mjs）。
 		// 水分補給草を 投げると 50（トルネコ1の どくけしそう → おばけキノコ と 同じ 役）なので plant の まま
 		id: "pumpkin",
-		name: "まんぜう軍",
+		name: "にょっす牛",
 		sprite: "pub:sprites/reisho_ushi.png",
 		hp: 17,
 		atk: 6,
