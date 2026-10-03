@@ -523,13 +523,14 @@ export class Village {
 		}
 		// まっすぐ 押して 1マスの 物（立て札・岩・角）に つっかえたら、横へ 1歩 ずれて 回りこむ
 		// （出口の 矢印へ 上を 押しつづけて 立て札で 止まらないように）。両側とも 回りこめるなら、
-		// その先へ まっすぐ 長く 進めるほう（同じなら ずれない）。人の 前では ずれない（話しかけたい）
+		// その先へ まっすぐ 長く 進めるほう（同じなら 村の 出口の 側）。人の 前では ずれない（話しかけたい）
 		if (tries.length === 1) {
 			const d = tries[0];
 			const v = DIR_VEC[d];
 			const { x, y } = this.player;
 			const person = field.blockerAt(x + v.dx, y + v.dy, this.player);
-			if (!person?.sprite) {
+			// 置物（蓄音機など 向きの ない 絵）は 人では ないので ずれる
+			if (!person?.sprite || person.still) {
 				const run = (s: Dir): number => {
 					const w = DIR_VEC[s];
 					if (!field.canEnter(x + w.dx, y + w.dy, this.player)) return 0;
@@ -552,6 +553,16 @@ export class Village {
 				if (ra !== rb) {
 					void this.tryStep(ra > rb ? a : b);
 					return;
+				}
+				// 同じなら、村では 出口（北の 崖の 切れ目）の ある 側へ ずれる
+				// （起きる 所の 真北に 蓄音機が あり、出口の 矢印へ 上を 押すと ここで 止まっていた）
+				if (ra > 0 && this.mapId === "village") {
+					const [ex, ey] = VILLAGE_SPOTS.exit;
+					const toward = Math.sign(v.dx === 0 ? ex - x : ey - y);
+					if (toward !== 0) {
+						void this.tryStep(toward < 0 ? a : b);
+						return;
+					}
 				}
 			}
 		}

@@ -23,7 +23,7 @@ import {
 	step,
 } from "../core/geom";
 import { defOf, itemHidden } from "../core/item";
-import { isFloor, roomAt } from "../core/mapgen";
+import { isFloor, roomAt, T_CORR } from "../core/mapgen";
 import {
 	mdef,
 	monsterName,
@@ -1287,7 +1287,11 @@ export class Play {
 		if (run.p.hp < hp) this.walkHalt = true;
 	}
 
-	/** いま 見えている敵のうち、この階で はじめて 見えた敵が いたか（見たと 覚える）。 */
+	/**
+	 * いま 見えている敵のうち、この階で はじめて 見えた敵が いたか（見たと 覚える）。
+	 * 逃げる敵（ROM専・ナツコ）は 数えない（寄ってこないので、見えるたびに 足踏みが 止まると 休めない。
+	 * 追いつめて なぐられたら 傷ついた ほうで 止まる）。
+	 */
 	private spotNew(): boolean {
 		const run = this.run;
 		if (this.spottedOn !== run.s.floor) {
@@ -1298,7 +1302,7 @@ export class Play {
 		for (const m of run.f.monsters)
 			if (run.monsterVisible(m) && !this.spotted.has(m.uid)) {
 				this.spotted.add(m.uid);
-				fresh = true;
+				if (!mdef(m).abilities.some((a) => a.k === "shy")) fresh = true;
 			}
 		return fresh;
 	}
@@ -1608,6 +1612,15 @@ export class Play {
 		if (target) {
 			const td = dirOf(target.x - p.x, target.y - p.y);
 			if (dist(p, target) === 1 && td !== null) {
+				// となりの 通路を タップ：敵が 見えて いなければ 通路に そって 走る
+				// （通路は 1マス先しか 見えないので、1歩ずつ タップしなおす ことに なっていた。敵が 出たら 止まる）
+				if (
+					lay.tiles[target.y * lay.w + target.x] === T_CORR &&
+					this.snapshot().monsters === 0
+				) {
+					void this.dash(td);
+					return;
+				}
 				void this.exec({ c: "move", dir: td });
 				return;
 			}
