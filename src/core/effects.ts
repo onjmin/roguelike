@@ -814,6 +814,8 @@ const onThrownHit = (r: Run, it: Item, m: Monster): void => {
 			return;
 		case "herb":
 			identifyKind(r.s, it.kind);
+			// 草を 生やされた 顔真っ赤は 必ず キレる（目つぶし草・毒消し草なら すぐ 封じられて 落ちつく）
+			r.snap(m);
 			herbOnMonster(r, it.kind, m, undead ?? false, small);
 			return;
 		default:

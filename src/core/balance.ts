@@ -58,6 +58,9 @@ export const rollDamage = (atk: number, def: number, n: number): number => {
 /** 命中率（通常攻撃・矢・投擲。敵味方とも）。 */
 export const HIT_RATE = 7 / 8;
 
+/** キレた 顔真っ赤の 命中率（冷静さを 失って、倍速の かわりに 当たりにくい）。 */
+export const RAGE_HIT_RATE = 1 / 2;
+
 /** 自然回復：毎ターン 最大HP を足し、この値ごとに 1 回復。 */
 export const REGEN_STEP = 150;
 

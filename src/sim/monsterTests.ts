@@ -45,6 +45,7 @@ import {
 import {
 	mdef,
 	monsterName,
+	monsterSprite,
 	noticeAdjacent,
 	posing,
 	transformMonster,
@@ -1409,35 +1410,89 @@ test("kage", "気配スレ (senseMonsters) alone does not show it", () => {
 	ok(r.monsterVisible(m), "not visible with sight + sense");
 });
 
-// ───────────────── 顔真っ赤（berserk） ─────────────────
+// ───────────────── 顔真っ赤（touchy） ─────────────────
 
-test("oni", "berserk: at <= half HP becomes fast=999, only once", () => {
-	const r = arena("oni");
+const snaps = (r: Run): number =>
+	r.s.log.filter((t) => t.includes("顔真っ赤に　なった")).length;
+
+test("oni", "touchy: looks like an おんJ民 until it snaps", () => {
+	const r = arena("oni-look");
 	const m = put(r, "oni", at(-12, 0));
-	const half = m.maxHp / 2;
-	r.damageMonster(m, m.hp - Math.floor(half) - 1, "hit");
-	ok(!m.enraged && m.status.fast === 0, `enraged at ${m.hp}/${m.maxHp}`);
-	r.damageMonster(m, 1, "hit");
-	ok(m.hp <= half, "harness: not at half");
-	ok(
-		now(m).enraged === true && now(m).status.fast === 999,
-		`not enraged at ${m.hp}`,
-	);
-	const moves = count(turn(r), "move", m.uid);
-	ok(moves === 2, `moved ${moves} times in a turn after enraging`);
-	staffEffect(r, "w_slow", m);
-	r.damageMonster(m, 1, "hit");
-	ok(now(m).status.fast === 0, "enraged again after w_slow");
-	const angers = r.s.log.filter((t) => t.includes("怒りだした")).length;
-	ok(angers === 1, `enraged ${angers} times`);
+	ok(monsterName(r, m) === "おんJ民", `named ${monsterName(r, m)}`);
+	ok(monsterSprite(m) === MONSTERS.oni.calm?.sprite, "not the calm sprite");
+	// HP が 半分を 切るだけでは キレない（拍子が いる）
+	r.damageMonster(m, m.hp - 1, "none");
+	ok(!m.enraged && m.status.fast === 0, "snapped at half HP alone");
+	r.snap(m);
+	ok(now(m).enraged && now(m).status.fast === 999, "did not snap");
+	ok(monsterName(r, m) === "顔真っ赤", `named ${monsterName(r, m)} after`);
+	ok(monsterSprite(m) === MONSTERS.oni.sprite, "kept the calm sprite");
 });
 
-test("oni", "sealed: never berserks", () => {
+test("oni", "touchy: a hit sometimes snaps it, only once", () => {
+	const r = arena("oni-hit");
+	const m = put(r, "oni", at(-12, 0));
+	m.maxHp = m.hp = 9999;
+	let hits = 0;
+	while (!m.enraged && hits < 200) {
+		r.damageMonster(m, 1, "hit");
+		hits++;
+	}
+	ok(m.enraged, "200 hits never snapped it");
+	const moves = count(turn(r), "move", m.uid);
+	ok(moves === 2, `moved ${moves} times in a turn after snapping`);
+	for (let i = 0; i < 50; i++) r.damageMonster(m, 1, "hit");
+	ok(snaps(r) === 1, `snapped ${snaps(r)} times`);
+	staffEffect(r, "w_slow", m);
+	for (let i = 0; i < 50; i++) r.damageMonster(m, 1, "hit");
+	ok(now(m).status.fast === 0, "sped up again after w_slow");
+});
+
+test("oni", "touchy: a thrown herb always snaps it", () => {
+	const r = arena("oni-herb");
+	const m = put(r, "oni", at(1, 0));
+	for (let i = 0; i < 20 && !m.enraged; i++) {
+		const it = give(r, "h_heal");
+		turn(r, { c: "throw", item: it.uid, dir: 2 });
+	}
+	ok(m.enraged, "a thrown herb did not snap it");
+	ok(
+		r.s.log.some((t) => t.includes("顔真っ赤の　HPが　回復した")),
+		"the herb did not land after the snap",
+	);
+	ok(snaps(r) === 1, `snapped ${snaps(r)} times`);
+});
+
+test("oni", "touchy: misses more once snapped", () => {
+	const r = arena("oni-aim");
+	const m = put(r, "oni", at(1, 0));
+	r.snap(m);
+	let hit = 0;
+	let miss = 0;
+	for (let i = 0; i < 150; i++) {
+		r.p.hp = r.p.maxHp;
+		for (const e of evs(turn(r), "msg")) {
+			if (e.text.startsWith("顔真っ赤の　攻撃。")) hit++;
+			if (e.text.startsWith("顔真っ赤の　攻撃は　はずれた")) miss++;
+		}
+	}
+	const rate = hit / (hit + miss);
+	ok(hit + miss > 200, `only ${hit + miss} attacks`);
+	ok(rate > 0.35 && rate < 0.65, `hit rate ${rate.toFixed(2)}`);
+});
+
+test("oni", "sealed: never snaps, and a snapped one calms down", () => {
 	const r = arena("oni-sealed");
 	const m = put(r, "oni", at(-12, 0));
 	m.status.sealed = true;
-	r.damageMonster(m, m.hp - 1, "hit");
-	ok(!m.enraged && m.status.fast === 0, "sealed oni enraged");
+	r.snap(m);
+	for (let i = 0; i < 50; i++) r.damageMonster(m, 0, "hit");
+	ok(!m.enraged && m.status.fast === 0, "sealed oni snapped");
+	const m2 = put(r, "oni", at(-12, 2));
+	r.snap(m2);
+	staffEffect(r, "w_seal", m2);
+	ok(!now(m2).enraged && now(m2).status.fast === 0, "stayed red after seal");
+	ok(monsterName(r, m2) === "おんJ民", "kept the 顔真っ赤 look after seal");
 });
 
 // ───────────────── 特定班（gaze） ─────────────────
@@ -2064,7 +2119,7 @@ test("pursuit", "transformed: loses berserk/accel speed and the chase", () => {
 	const r = arena("pursuit-change-oni");
 	const oni = put(r, "oni", at(-3, 0));
 	turn(r);
-	r.damageMonster(oni, oni.hp - Math.floor(oni.maxHp / 2), "hit");
+	r.snap(oni);
 	ok(oni.enraged && oni.status.fast === 999, "harness: not enraged");
 	ok(remembers(oni, r.p), "harness: did not see the player");
 	transformMonster(r, oni);
@@ -2110,7 +2165,7 @@ test("pursuit", "sealed: berserk/accel speed goes, a w_haste stays", () => {
 	const r = arena("pursuit-seal-oni");
 	const oni = put(r, "oni", at(-3, 0));
 	turn(r);
-	r.damageMonster(oni, oni.hp - Math.floor(oni.maxHp / 2), "hit");
+	r.snap(oni);
 	ok(oni.enraged && oni.status.fast === 999, "harness: not enraged");
 	staffEffect(r, "w_seal", oni);
 	ok(

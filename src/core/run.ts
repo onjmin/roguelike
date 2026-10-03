@@ -69,6 +69,7 @@ import {
 	mdef,
 	monsterAct,
 	monsterName,
+	monsterSprite,
 	noticeAdjacent,
 	restLook,
 	wakeMonster,
@@ -281,11 +282,12 @@ export class Run {
 	private stir(): void {
 		for (const m of this.f.monsters) {
 			const l = restLook(m);
-			const bits = `${(l.asleep ? 1 : 0) | (l.posing ? 2 : 0)}:${m.kind}`;
+			const sprite = monsterSprite(m);
+			const bits = `${(l.asleep ? 1 : 0) | (l.posing ? 2 : 0)}:${m.kind}:${sprite}`;
 			const was = this.rest.get(m.uid);
 			this.rest.set(m.uid, bits);
 			if (was !== undefined && was !== bits)
-				this.ev.push({ t: "stir", id: m.uid, ...l, kind: m.kind });
+				this.ev.push({ t: "stir", id: m.uid, ...l, kind: m.kind, sprite });
 		}
 	}
 
@@ -882,6 +884,22 @@ export class Run {
 		this.damageMonster(m, dmg, "hit");
 	}
 
+	/** 怒って 倍速に なる（顔真っ赤・😡の 板・弱った 親分）。 */
+	private enrage(m: Monster): void {
+		m.enraged = true;
+		m.status.fast = 999;
+		m.status.slow = 0;
+	}
+
+	/** キレやすい 敵（顔真っ赤）が キレる。「おんJ民」の 姿から 顔真っ赤に 変わる。 */
+	snap(m: Monster): void {
+		if (m.status.sealed || m.enraged) return;
+		if (!mdef(m).abilities.some((a) => a.k === "touchy")) return;
+		const nm = monsterName(this, m);
+		this.enrage(m);
+		this.msg(`${nm}は　顔真っ赤に　なった！`, "warn");
+	}
+
 	/**
 	 * モンスターにダメージ。倒したら true。
 	 * by: "hit"（なぐった）・"throw"・"magic"・"blast"（経験値あり）・"none"（経験値なし）
@@ -934,14 +952,18 @@ export class Run {
 			m.hp <= m.maxHp / 2 &&
 			(this.dungeon.angry || d.abilities.some((a) => a.k === "berserk"))
 		) {
-			m.enraged = true;
-			m.status.fast = 999;
-			m.status.slow = 0;
+			this.enrage(m);
 			this.msg(
 				`${nm}は　怒りだした！${this.dungeon.angry ? "😡" : ""}`,
 				"warn",
 			);
 		}
+		// キレやすい（顔真っ赤）：なぐられた 拍子に キレる
+		if (
+			(by === "hit" || by === "throw" || by === "magic") &&
+			d.abilities.some((a) => a.k === "touchy" && this.rng.chance(a.rate))
+		)
+			this.snap(m);
 		// なぐられたときの反応
 		if (by === "hit" || by === "throw" || by === "magic") {
 			for (const a of d.abilities) {

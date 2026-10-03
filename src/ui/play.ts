@@ -24,7 +24,13 @@ import {
 } from "../core/geom";
 import { defOf, itemHidden } from "../core/item";
 import { isFloor, roomAt } from "../core/mapgen";
-import { mdef, monsterName, posing, restLook } from "../core/monster";
+import {
+	mdef,
+	monsterName,
+	monsterSprite,
+	posing,
+	restLook,
+} from "../core/monster";
 import { digest, parseReplay, type ReplayStep } from "../core/replay";
 import { Run } from "../core/run";
 import {
@@ -582,7 +588,7 @@ export class Play {
 		};
 		put(PLAYER_ID, KIRIKO_WALK, run.p.x, run.p.y, run.p.dir);
 		for (const m of run.f.monsters) {
-			put(m.uid, mdef(m).sprite, m.x, m.y, m.dir);
+			put(m.uid, monsterSprite(m), m.x, m.y, m.dir);
 			// ボスは 大きく 描く
 			const d = this.disp.get(m.uid);
 			if (d) d.scale = mdef(m).scale;
@@ -2216,7 +2222,7 @@ export class Play {
 					const d = this.disp.get(e.id);
 					const def = MONSTERS[e.kind];
 					if (d && def) {
-						d.sprite = def.sprite;
+						d.sprite = e.sprite;
 						d.scale = def.scale;
 					}
 				};
@@ -2419,7 +2425,7 @@ export class Play {
 						const now = performance.now();
 						this.disp.set(e.id, {
 							id: e.id,
-							sprite: mdef(m).sprite,
+							sprite: monsterSprite(m),
 							scale: mdef(m).scale,
 							fx: from?.x ?? e.pos.x,
 							fy: from?.y ?? e.pos.y,

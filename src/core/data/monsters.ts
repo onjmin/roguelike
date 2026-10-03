@@ -406,14 +406,16 @@ const M: MonsterDef[] = [
 		id: "oni",
 		name: "顔真っ赤",
 		sprite: "sa:UT7LXB",
+		// キレる までは やきうの 絵（data/cast.ts の nanj）の「おんJ民」に 見える
+		calm: { name: "おんJ民", sprite: "sa:4rSOzo" },
 		hp: 51,
 		atk: 51,
 		def: 27,
 		exp: 380,
 		floors: [20, 27],
 		weight: 27,
-		abilities: [{ k: "berserk" }],
-		desc: "HPが　半分を　切ると　顔真っ赤に　なって　倍速になる",
+		abilities: [{ k: "touchy", rate: 1 / 5 }],
+		desc: "ふだんは　ふつうの　おんJ民に　見える。なぐられた　拍子や　草を　生やされると　顔真っ赤に　なって　倍速になる。そのかわり　当たりにくい",
 		flavor: "「顔真っ赤で　草」と　言われて、さらに　赤くなる",
 	},
 	{

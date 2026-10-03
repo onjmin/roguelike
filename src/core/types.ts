@@ -152,6 +152,7 @@ export type Ability =
 	| { k: "armor" } // なぐる攻撃のダメージが半分
 	| { k: "knockback"; rate: number } // なぐった相手を吹きとばす
 	| { k: "berserk" } // HP が半分を切ると怒って倍速になる
+	| { k: "touchy"; rate: number } // キレやすい：なぐられると rate で、草を 投げつけられると 必ず キレて 倍速（そのかわり 当たりにくい）
 	| { k: "curse"; rate: number } // なぐった相手の装備をのろう
 	| { k: "purge"; rate: number }; // 削除人：なぐると 装備を はがす・ちから・レベル・最大HP を 下げる・混乱・目つぶし の どれか（指輪でも 防げない）
 
@@ -167,6 +168,11 @@ export type MonsterDef = {
 	 * あれば、動きだす まで 階に 置く ただの 置物（Floor.statues）と 同じ 見た目に なる。
 	 */
 	still?: string;
+	/**
+	 * キレる 前の 呼び名と 絵（顔真っ赤は ふだん やきうの 絵の「おんJ民」に 見える。キレると name・sprite に なる）。
+	 * 図鑑には はじめから name で 載る。
+	 */
+	calm?: { name: string; sprite: string };
 	hp: number;
 	atk: number;
 	def: number;
@@ -524,7 +530,15 @@ export type GameEvent =
 	 * 敵の 寝ている・置物の 様子・姿（kind）が 変わった（起きた・眠った・固まった・動きだした・改変された）。
 	 * 変わった あとの 最初の 出来事の 前に 出る。画面の Z・置物の 絵・敵の 絵は ここで 追いつく。
 	 */
-	| { t: "stir"; id: number; asleep: boolean; posing: boolean; kind: string }
+	| {
+			t: "stir";
+			id: number;
+			asleep: boolean;
+			posing: boolean;
+			kind: string;
+			/** いまの 絵（キレた 顔真っ赤は 姿が 変わる）。 */
+			sprite: string;
+	  }
 	| { t: "quake"; level: number }
 	/** 地図に 載る ことが わかった（聖地巡礼スレ・ヲチスレ・発掘スレ。地図を 閉じていれば 画面が ひとこと 添える）。 */
 	| { t: "reveal" }

@@ -5,7 +5,7 @@
 // - 特技は「見えている・まっすぐ並んでいる」などの条件がそろったとき、決まった確率で使う。
 
 import { ankaHit } from "./anka";
-import { HIT_RATE, rollDamage } from "./balance";
+import { HIT_RATE, RAGE_HIT_RATE, rollDamage } from "./balance";
 import { MONSTERS } from "./data/monsters";
 import { canSee } from "./fov";
 import {
@@ -53,7 +53,16 @@ const DAZED_NAME = "なにか";
 
 /** 記録に出す 敵の名前（まどわされているときは 伏せる）。 */
 export const seenName = (r: Run, m: Monster): string =>
-	r.p.status.daze > 0 ? DAZED_NAME : mdef(m).name;
+	r.p.status.daze > 0 ? DAZED_NAME : looks(m).name;
+
+/** いまの 見た目（呼び名と 絵）。キレる 前の 顔真っ赤は やきうの 絵の「おんJ民」。 */
+const looks = (m: Monster): { name: string; sprite: string } => {
+	const d = mdef(m);
+	return d.calm && !m.enraged ? d.calm : d;
+};
+
+/** いまの 絵。 */
+export const monsterSprite = (m: Monster): string => looks(m).sprite;
 
 /** 呼び名（化けているときは道具の名前。まどわされているときは 伏せる）。 */
 export const monsterName = (r: Run, m: Monster): string =>
@@ -773,7 +782,9 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				useSkill(r, m, a);
 				return;
 			}
-	if (!r.rng.chance(HIT_RATE)) {
+	// キレた 顔真っ赤は 当たりにくい（封印すると 落ちつく）
+	const rage = m.enraged && d.abilities.some((a) => a.k === "touchy");
+	if (!r.rng.chance(rage ? RAGE_HIT_RATE : HIT_RATE)) {
 		// 敵の はずれは キリコの はずれ（振った音）とは 別の音
 		r.se("enemyMiss");
 		r.emit({ t: "miss", id: PLAYER_ID, pos: { x: p.x, y: p.y } });
