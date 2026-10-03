@@ -5,7 +5,14 @@
 // - 倍速・鈍足は「行動できる時刻」（半ターン単位）で並べる。ふつうは 2 ずつ進む。
 // - 乱数はすべて this.rng（状態は中断セーブに入る）。
 
-import { ankaHit, carryAnka, scheduleAnka, tickAnka } from "./anka";
+import {
+	ankaHit,
+	ankaOnArrival,
+	carryAnka,
+	scheduleAnka,
+	startAnka,
+	tickAnka,
+} from "./anka";
 import {
 	attackPower,
 	EXP_AT,
@@ -678,6 +685,7 @@ export class Run {
 				this.dungeon.up ? "上の階へ　押し上げられた" : "下の階に　落ちた",
 			);
 		this.updateVision();
+		if (!carried && ankaOnArrival(this)) startAnka(this);
 	}
 
 	/** 階段を使う。 */

@@ -103,6 +103,8 @@ export const scheduleAnka = (
 	}
 	// ボスの 待つ 階にも 来ない（湧かないので「敵を　2体　たおす」が こなせなく なる。持ちこした 安価は 上で つづく）
 	if (!ankaTrapOk(r)) return;
+	// パン板の 2階は 着いた ときに かならず 来る（はじめての 冒険で 安価を 1度は 味わう。罠は 置かない）
+	if (ankaOnArrival(r)) return;
 	const n = r.rng.range(ANKA_TRAPS[0], ANKA_TRAPS[1]);
 	for (let i = 0; i < n; i++) {
 		const at = r.rng.pick(freeRoomTiles(r, f, null));
@@ -172,6 +174,10 @@ const doable = (r: Run): AnkaKind[] => {
 /** 安価の罠を 置ける 階か（帰り道・1階・ボスの 待つ 階には 置かない）。 */
 export const ankaTrapOk = (r: Run): boolean =>
 	!r.s.returning && r.s.depth >= 2 && !r.boss;
+
+/** 階に 着いた とたんに 安価が 来る 階か（パン板の 2階。入門の 板で 安価を 1度は 見せる）。 */
+export const ankaOnArrival = (r: Run): boolean =>
+	r.dungeon.id === "shallow" && r.s.depth === 2 && ankaTrapOk(r);
 
 /** 釣りスレで ふえる 罠が 安価の罠に なる 確率（釣りスレの いい 面）。 */
 export const ANKA_SNARE_CHANCE = 1 / 10;
