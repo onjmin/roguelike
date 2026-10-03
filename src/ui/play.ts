@@ -1203,7 +1203,13 @@ export class Play {
 			);
 		};
 		if (foe(p.dir)) return p.dir;
-		const near = ([0, 1, 2, 3, 4, 5, 6, 7] as Dir8[]).filter(foe);
+		// 眠っている 敵へは 自動で 向かない（となりを 倒したあと A を 連打して、寝ている 強い 敵を 起こさないように。
+		// 起こしたいときは 向いてから なぐる）
+		const near = ([0, 1, 2, 3, 4, 5, 6, 7] as Dir8[]).filter((d) => {
+			if (!foe(d)) return false;
+			const to = step(p, d);
+			return !(run.monsterAt(to.x, to.y)?.status.sleep ?? 0);
+		});
 		return near.length === 1 ? near[0] : p.dir;
 	}
 
@@ -1312,7 +1318,7 @@ export class Play {
 		const run = this.run;
 		switch (key) {
 			case "a":
-				// 正面に 敵が いなくて、となりの 敵が 1匹だけなら そちらを 向いて なぐる（向きボタンを 使わずに すむように）
+				// 正面に 敵が いなくて、となりの 起きている 敵が 1匹だけなら そちらを 向いて なぐる（向きボタンを 使わずに すむように）
 				await this.exec({ c: "attack", dir: this.attackDir() });
 				return;
 			case "b":
