@@ -677,7 +677,7 @@ const M: MonsterDef[] = [
 		atk: 10,
 		def: 12,
 		exp: 50,
-		floors: [15, 15],
+		floors: [12, 12],
 		weight: 0,
 		abilities: [
 			{ k: "ranged", rate: 1 / 3, atk: 14, verb: "ヤシの実を　投げた" },

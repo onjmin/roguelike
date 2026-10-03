@@ -459,7 +459,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 9,
 		items: MAIN_ITEMS,
 		perFloor: [4, 6],
-		level: ramp(9, 15),
+		// きのこ板（底で 本編5階ぶん）の つぎ。過疎で 経験値が 少ないので 底を 12 に、曲がりを 2乗に
+		// （2026-10-03 ボットで クリア 6% → 25%・底まで 12.5% → 51.5%。ramp(9, 15) では きのこ板との 段が 大きすぎた）
+		level: ramp(9, 12, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
