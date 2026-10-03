@@ -1576,8 +1576,9 @@ export class Play {
 				return;
 			}
 		}
-		// 離れた敵をタップしたら 歩かない。まっすぐ 並んでいれば そちらを向く
-		// （時間は進まない。矢・杖・投げるの ねらいに。敵の 解説は 出さない。図鑑で 見られる）
+		// 離れた敵をタップ：まっすぐ 並んでいて そちらを 向いていなければ、まず 向く
+		// （時間は進まない。矢・杖・投げるの ねらいに）。それ以外は 敵の となりまで 歩く
+		// （となりに 来たら 止まる。敵の 解説は 出さない。図鑑で 見られる）
 		const far = run.monsterAt(x, y);
 		if (
 			far &&
@@ -1590,8 +1591,12 @@ export class Play {
 			const dy = far.y - p.y;
 			if (dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)) {
 				const fd = dirOf(Math.sign(dx), Math.sign(dy));
-				if (fd !== null && fd !== p.dir) void this.exec({ c: "turn", dir: fd });
+				if (fd !== null && fd !== p.dir) {
+					void this.exec({ c: "turn", dir: fd });
+					return;
+				}
 			}
+			this.startTravel({ x: far.x, y: far.y });
 			return;
 		}
 		// まだ見ていない所（暗い通路の先など）を 2マス以上 先にタップしたら、その方へ 何かあるまで走る
@@ -3115,8 +3120,9 @@ export class Play {
 				if (prev[ni] !== -2 || !f.seen[ni]) continue;
 				if (!run.cornerOk({ x, y }, d)) continue;
 				if (traps.has(ni) && ni !== goal) continue;
+				// 行き先の 敵（離れた敵を タップした）は 通れる ことにする。となりに 来たら 止まる
 				const m = run.monsterAt(n.x, n.y);
-				if (m && run.monsterVisible(m)) continue;
+				if (m && run.monsterVisible(m) && ni !== goal) continue;
 				prev[ni] = i;
 				q.push(ni);
 			}
