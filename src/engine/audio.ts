@@ -70,6 +70,10 @@ const seLeadMs = (name: string): number =>
 
 /** 1半音の ピッチ（dtm の units は 1/372オクターブ。12平均律の 1半音 = 31）。 */
 const PIANO_UNITS_PER_SEMITONE = 31;
+/** 音楽室の ピアノの 音色（GM の 名前）。 */
+const PIANO_INSTRUMENT = "Acoustic Grand Piano";
+/** ピアノの 音量（効果音の 音量 0〜100 に かける。dtm の playNote の volume は 0〜100）。 */
+const PIANO_VOLUME = 0.3;
 
 /** dtm studio の出口の音量（createDtmStudio の masterVolume）。 */
 const STUDIO_MASTER_VOLUME = 100;
@@ -609,20 +613,21 @@ export class GameAudio {
 	// ───────────────── ピアノ（音楽室。ui/piano.ts） ─────────────────
 
 	/**
-	 * ピアノの 音色を 用意する（音楽室の 鍵盤を 開く とき）。dtm の studio の トラック 0 に SoundFont の
-	 * グランドピアノを 読みこむ（音の ない 1小節を 鳴らして 楽器を 読ませる）。studio.playNote は
-	 * 楽器を 読まずに すぐ 返って 鳴らないので、読みこんだ トラックへ playNoteEvent で 鳴らす（遅れ なし）。
+	 * ピアノの 音色を 用意する（音楽室の 鍵盤を 開く とき）。dtm の studio に SoundFont の グランドピアノを
+	 * 読みこむ（音量 0 の 1音を 鳴らして 読み終わりを 待つ）。playNoteEvent は MML の #t0inst を 見ず
+	 * 既定の プリセット（retro_game）の 音色で 鳴るので、楽器を 名ざしできる playNote で 鳴らす。
 	 */
 	async preparePiano(): Promise<void> {
 		if (!this.ctx) return;
 		try {
 			const studio = await this.studio();
 			this.unduck(studio, true);
-			const pb = studio.play(
-				"#inst=piano#t0inst=Acoustic Grand Piano;@0t120v0r4;#end;",
-			);
-			await sleep(400);
-			this.dispose(pb);
+			await studio.playNote({
+				pitchUnits: (60 * PIANO_UNITS_PER_SEMITONE) as unknown as Units,
+				volume: 0,
+				duration: 0.01,
+				instrument: PIANO_INSTRUMENT,
+			});
 			this.pianoStudio = studio;
 		} catch (e) {
 			console.warn("[audio] ピアノを 用意できませんでした", e);
@@ -636,13 +641,12 @@ export class GameAudio {
 	pianoNote(midi: number, sec = 0.9): void {
 		const studio = this.pianoStudio;
 		if (!studio || !this.seAudible()) return;
-		studio.playNoteEvent({
-			trackId: "0",
+		// 読みこみ済みなので すぐ 鳴る。volume は 0〜100（村の 曲の 1音ほどに 抑える）
+		void studio.playNote({
 			pitchUnits: (midi * PIANO_UNITS_PER_SEMITONE) as unknown as Units,
-			velocity: 100,
-			volume: Math.min(1, (settings.seVolume / 100) * 0.6),
-			when: 0,
+			volume: settings.seVolume * PIANO_VOLUME,
 			duration: sec,
+			instrument: PIANO_INSTRUMENT,
 		});
 	}
 
