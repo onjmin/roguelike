@@ -2,6 +2,7 @@
 // 読める ことばは 町の 段で ふえる（集会所の 本棚 → 本屋 → 図書館。TIER_FROM）。
 
 import { GLOSSARY, TIER_FROM, type Word } from "../data/glossary";
+import type { Story } from "../engine/defs";
 import { loadProgress, loadTown, loadWords, markWord } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { esc } from "./itemText";
@@ -31,6 +32,75 @@ const TITLES = [
 	"ことばの　辞典（本屋）",
 	"ことばの　辞典（図書館）",
 ];
+
+/** 会話の 窓の 1行の 字数（全角）。 */
+const LINE = 22;
+
+/**
+ * 説明を 会話の 窓（1行 22字・2行まで）に 分ける。説明の 1行ごとに 窓を 改め、語の 切れ目
+ * （全角の 空き・、。」））で 折る。
+ */
+export const descWindows = (desc: string): string[] => {
+	const out: string[] = [];
+	for (const para of desc.split("\n")) {
+		const lines: string[] = [];
+		let cur = "";
+		const tokens = para.match(/[^　、。」）]*[　、。」）]*/g) ?? [];
+		for (const t of tokens.filter(Boolean)) {
+			if (cur && (cur + t).replace(/　+$/, "").length > LINE) {
+				lines.push(cur.replace(/　+$/, ""));
+				cur = "";
+			}
+			cur += t;
+			while (cur.replace(/　+$/, "").length > LINE) {
+				lines.push(cur.slice(0, LINE));
+				cur = cur.slice(LINE);
+			}
+		}
+		if (cur.replace(/　+$/, "")) lines.push(cur.replace(/　+$/, ""));
+		for (let i = 0; i < lines.length; i += 2)
+			out.push(lines.slice(i, i + 2).join("\n"));
+	}
+	return out;
+};
+
+/** 本屋・図書館の i 番目の 本棚（n 本の うち）の ことば（読める 段までを 辞典の 順に 分ける）。 */
+export const shelfWords = (i: number, n: number): Word[] => {
+	const words = GLOSSARY.filter((w) => w.tier <= glossaryTier());
+	return words.slice(
+		Math.floor((i * words.length) / n),
+		Math.floor(((i + 1) * words.length) / n),
+	);
+};
+
+/**
+ * 本棚の 本を 読む（やめるまで）。選んだ ことばの 説明は 会話の 窓で。板の ことばは その 板が
+ * 開くまで ？？？。
+ */
+export const readShelf = async (
+	s: Story,
+	i: number,
+	n: number,
+): Promise<void> => {
+	const open = new Set(loadProgress().unlocked);
+	const known = (w: Word) => !w.board || open.has(w.board);
+	const words = shelfWords(i, n);
+	let start = 0;
+	for (;;) {
+		const k = await s.choose(
+			[...words.map((w) => (known(w) ? w.word : "？？？")), "やめる"],
+			{ cancel: words.length, start },
+		);
+		if (k >= words.length) return;
+		start = k;
+		const w = words[k];
+		if (!known(w)) {
+			await s.narrate("まだ　行けない　板の　本だ。\n……ひらいても　読めない。");
+			continue;
+		}
+		for (const t of descWindows(w.desc)) await s.narrate(t);
+	}
+};
 
 /**
  * 辞典を 開く（閉じるまで）。町の 段までの ことばを 並べ、板の ことばは その 板が 開くまで ？？？。

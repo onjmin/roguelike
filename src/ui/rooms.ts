@@ -18,6 +18,7 @@ import {
 	BANK_FROM,
 	BOOKS_KEEPER_LINES,
 	KEEPER_LINE,
+	LIBRARY_HINARY,
 	MUSIC_CLOSED,
 	PIANO_MSG,
 	ROOM_DOOR,
@@ -45,10 +46,11 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadTown } from "../engine/save";
 import { bathPeople } from "./bath";
 import type { Ctx } from "./ctx";
-import { openGlossary } from "./glossary";
+import { readShelf } from "./glossary";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
 import { openPiano } from "./piano";
+import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
 import { fill } from "./villageTalk";
 
@@ -180,10 +182,33 @@ const musicPeople = (v: VillageView): EventDef[] => {
 	return out;
 };
 
-/** 本屋の 店番・図書館の 司書（名無し。机の となり）。 */
-const booksPeople = (id: "bookstore" | "library"): EventDef[] => {
+/** 図書館の 読書の 机の ヒナリーの 所（右の いす）。 */
+const HINARY_AT = { x: 12, y: 7, dir: "left" } as const;
+
+/** 本屋の 店番・図書館の 司書（名無し。机の となり）。図書館には 監修の ヒナリーも（越してきてから）。 */
+const booksPeople = (
+	id: "bookstore" | "library",
+	v: VillageView,
+): EventDef[] => {
 	const at = BOOKS_KEEPER[id];
+	const hinary =
+		id === "library" && stepOf(v) >= MOBS.hinary.from
+			? [
+					npc(
+						"lib_hinary",
+						HINARY_AT.x,
+						HINARY_AT.y,
+						MOBS.hinary.sprite,
+						async (s) => {
+							for (const l of LIBRARY_HINARY) await sayAs(s, "hinary", l);
+							s.face("lib_hinary", HINARY_AT.dir);
+						},
+						{ dir: HINARY_AT.dir },
+					),
+				]
+			: [];
 	return [
+		...hinary,
 		npc(
 			"nanashi",
 			at.x,
@@ -256,10 +281,10 @@ const eventFor = (
 			await s.wait(0);
 			await openStorage(ctx);
 		}
-		// 本屋・図書館の 本棚は ことばの 辞典（町の 段で 読める ことばが ふえる）
+		// 本屋・図書館の 本棚は 棚ごとに ちがう ことばの 本（町の 段で 読める ことばが ふえる）
 		if ((id === "bookstore" || id === "library") && kind === "shelf") {
-			await s.wait(0);
-			await openGlossary(ctx);
+			const n = roomPlaces(id).filter((q) => q.id.startsWith("shelf_")).length;
+			await readShelf(s, Number(p.id.replace("shelf_", "")), n);
 		}
 	});
 };
@@ -280,7 +305,7 @@ export const buildRoom = (
 			...roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
 			...(id === "music" ? musicPeople(v) : []),
 			...(id === "bath" ? bathPeople(v) : []),
-			...(id === "bookstore" || id === "library" ? booksPeople(id) : []),
+			...(id === "bookstore" || id === "library" ? booksPeople(id, v) : []),
 		],
 	};
 };
