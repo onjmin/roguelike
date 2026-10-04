@@ -60,8 +60,6 @@ import { villageView } from "./villageReturn";
 const WALK_MS = 170;
 /** ダッシュで 歩く 速さ（WALK_MS の 何倍か）。 */
 const DASH_SPEED = 2.5;
-/** つっかえて 横へ ずれるとき、その先を 何マス まで 見くらべるか。 */
-const SLIDE_LOOK = 8;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
 
@@ -541,47 +539,7 @@ export class Village {
 				return;
 			}
 		}
-		// まっすぐ 押して 1マスの 地形（岩・角）に つっかえたら、横へ 1歩 ずれて 回りこむ。両側とも
-		// 回りこめるなら、その先へ まっすぐ 長く 進めるほう（同じなら ずれない）。人・立て札・置物
-		// （蓄音機・ピアノ）・調べられる 地形（本棚など）の 前では ずれない（そちらを 向いて 話しかけたい・調べたい）
-		if (tries.length === 1) {
-			const d = tries[0];
-			const v = DIR_VEC[d];
-			const { x, y } = this.player;
-			const fx = x + v.dx;
-			const fy = y + v.dy;
-			if (
-				!field.blockerAt(fx, fy, this.player) &&
-				!field.actors.some(
-					(a) => a.x === fx && a.y === fy && a.def?.trigger === "talk",
-				)
-			) {
-				const run = (s: Dir): number => {
-					const w = DIR_VEC[s];
-					if (!field.canEnter(x + w.dx, y + w.dy, this.player)) return 0;
-					let n = 0;
-					while (
-						n < SLIDE_LOOK &&
-						field.canEnter(
-							x + w.dx + v.dx * (n + 1),
-							y + w.dy + v.dy * (n + 1),
-							this.player,
-						)
-					)
-						n++;
-					// 物の 横に 並ぶ だけで その先が 壁なら、回りこめないので ずれない
-					return n >= 2 ? n : 0;
-				};
-				const [a, b] =
-					v.dx === 0 ? (["left", "right"] as Dir[]) : (["up", "down"] as Dir[]);
-				const ra = run(a);
-				const rb = run(b);
-				if (ra !== rb) {
-					void this.tryStep(ra > rb ? a : b);
-					return;
-				}
-			}
-		}
+		// つっかえたら 向くだけ（横へ ずれて 回りこまない。物の 前で そちらを 向いて 調べたい）
 		this.player.dir = tries[0];
 	}
 
