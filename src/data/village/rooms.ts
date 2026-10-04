@@ -28,14 +28,29 @@
 //   字：b 酒棚（壁の 下段。瓶は ui/cafe.ts の decor が 描く）  A 杯の 看板  m 品書き  k 柱時計  Q 絵
 //       [ = ]  カウンター（台ごしに マスターと 話す）  U 樽  s S ソファ  t 低い 机  n 丸いす（通れる）
 //       O 白い 丸テーブル  P p ピアノ  F 観葉植物
+//
+// 本屋（町の 段3〜5。広場の 西）→ 図書館（段6 から。同じ 所に 建てかえ）
+//   ことばの 辞典（data/glossary.ts）を 立ち読みする 店（売り場では ない。お金を 使う 所は 作らない）。
+//   本棚（B）を 調べると 辞典。本屋で 板の ことば、図書館で 深い ネタが ふえる。壁の はり紙（m）は 監修の ヒナリー。
+//   中の 人は 名無しの 店番・司書（ヒナリーは 村で 話す。ui/rooms.ts の booksPeople）。
+//   字：B 本棚   T 机   t 読書の 机   n いす（通れる）
 
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
 import type { Speaker } from "../quotes";
 import type { Cell } from "./map";
 import { base, basePx, floor, INDOOR, solid } from "./tiles";
 
-export type RoomId = "cafe" | "hut" | "shop" | "store" | "music" | "bath";
+export type RoomId =
+	| "cafe"
+	| "hut"
+	| "shop"
+	| "store"
+	| "music"
+	| "bath"
+	| "bookstore"
+	| "library";
 
 export const ROOM_IDS: readonly RoomId[] = [
 	"cafe",
@@ -44,6 +59,8 @@ export const ROOM_IDS: readonly RoomId[] = [
 	"store",
 	"music",
 	"bath",
+	"bookstore",
+	"library",
 ];
 
 export const isRoom = (id: string): id is RoomId =>
@@ -139,6 +156,31 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#F:::::::::::::F#",
 		"#######DD########",
 	],
+	// 本屋：壁ぞいと まんなかに 本棚、店番の 机。壁に 監修の はり紙
+	bookstore: [
+		"##########",
+		"#HHWHHWHH#",
+		"#hhhhmhhh#",
+		"#BBB..BBB#",
+		"#........#",
+		"#.BB..T..#",
+		"#........#",
+		"#F......F#",
+		"####DD####",
+	],
+	// 図書館：本棚の 列と 読書の 机。司書の 机。壁に 監修の はり紙
+	library: [
+		"##############",
+		"#HHWHHHHHHWHH#",
+		"#hhhhhmhhhhhh#",
+		"#BBBB....BBBB#",
+		"#............#",
+		"#.BB.BB..T...#",
+		"#............#",
+		"#.BB.BB.ntttn#",
+		"#F..........F#",
+		"######DD######",
+	],
 	// 倉庫：あずかった 物の 棚・帰ってこない 人の 棚・鍵の 板・帳簿・シヨの 机
 	store: [
 		"############",
@@ -184,6 +226,8 @@ export const ROOM_OUTSIDE: Record<RoomId, Spot> = {
 	store: { x: 27, y: 19, dir: "up" },
 	music: { x: 22, y: 29, dir: "down" },
 	bath: { x: 35, y: 28, dir: "down" },
+	bookstore: { x: 4, y: 23, dir: "down" },
+	library: { x: 4, y: 23, dir: "down" },
 };
 
 /** 入れる 町の 段（常識堂は 小さな 店に なってから。屋台には 奥が ない）。 */
@@ -194,6 +238,14 @@ export const ROOM_FROM: Record<RoomId, number> = {
 	store: 2,
 	music: 3,
 	bath: 4,
+	bookstore: BOOKSTORE_FROM,
+	library: LIBRARY_FROM,
+};
+
+/** 本屋・図書館の 店番・司書の 立つ 所（机の となり）。 */
+export const BOOKS_KEEPER: Record<"bookstore" | "library", Spot> = {
+	bookstore: { x: 7, y: 5, dir: "left" },
+	library: { x: 10, y: 5, dir: "down" },
 };
 
 // ───────────────── パレット ─────────────────
@@ -303,6 +355,22 @@ const LOOK: Record<RoomId | "shed" | "bank", Look> = {
 		low: base(1, 64),
 		wallColor: "#d8d4c8",
 	},
+	// 本屋：板の 壁と 木の 床
+	bookstore: {
+		floor: base(0, 46),
+		floorColor: "#b8905a",
+		up: base(1, 55),
+		low: base(1, 56),
+		wallColor: "#6a4a2a",
+	},
+	// 図書館：石の 壁と 濃い 板の 床
+	library: {
+		floor: base(0, 47),
+		floorColor: "#5a4030",
+		up: base(1, 67),
+		low: base(1, 68),
+		wallColor: "#8a8a8a",
+	},
 	// 板張りの 物置・倉庫（段2〜5）
 	shed: {
 		floor: base(0, 46),
@@ -378,6 +446,13 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				K: on(base(1, 110, 1, 2)),
 				S: on(base(2, 110, 1, 2)),
 				u: on(base(7, 141)),
+				T: on(base(2, 108), onTop(2, 152)),
+			};
+		case "bookstore":
+		case "library":
+			return {
+				...common,
+				B: on(base(3, 104, 1, 2)),
 				T: on(base(2, 108), onTop(2, 152)),
 			};
 		case "music":
@@ -471,6 +546,17 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		x: "stock",
 		U: "barrel",
 		m: "rules",
+	},
+	bookstore: {
+		B: "shelf",
+		m: "notice",
+		T: "desk",
+	},
+	library: {
+		B: "shelf",
+		m: "notice",
+		T: "desk",
+		t: "table",
 	},
 	music: {
 		m: "plaque",

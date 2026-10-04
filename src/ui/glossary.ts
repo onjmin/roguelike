@@ -1,7 +1,8 @@
 // ことばの 辞典（data/glossary.ts）を 見る 窓と、ログに はじめて 出た ことばの 1行の 説明。
+// 読める ことばは 町の 段で ふえる（集会所の 本棚 → 本屋 → 図書館。TIER_FROM）。
 
-import { GLOSSARY } from "../data/glossary";
-import { loadWords, markWord } from "../engine/save";
+import { GLOSSARY, TIER_FROM, type Word } from "../data/glossary";
+import { loadProgress, loadTown, loadWords, markWord } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { esc } from "./itemText";
 import { infoWindow, listWindow } from "./list";
@@ -20,26 +21,54 @@ export const glossFor = (text: string): string | null => {
 	return w.gloss;
 };
 
-/** 辞典を 開く（閉じるまで）。ことばを 選ぶと 説明。 */
+/** 町の 段で 読める ことばの 段（0〜2）。 */
+export const glossaryTier = (stage = loadTown().stage): number =>
+	TIER_FROM.filter((from) => stage >= from).length - 1;
+
+/** 辞典の 題（置き場で かわる）。 */
+const TITLES = [
+	"ことばの　辞典",
+	"ことばの　辞典（本屋）",
+	"ことばの　辞典（図書館）",
+];
+
+/**
+ * 辞典を 開く（閉じるまで）。町の 段までの ことばを 並べ、板の ことばは その 板が 開くまで ？？？。
+ * 選ぶと 説明。
+ */
 export const openGlossary = async (ctx: Ctx): Promise<void> => {
+	const tier = glossaryTier();
+	const open = new Set(loadProgress().unlocked);
+	const known = (w: Word) => !w.board || open.has(w.board);
+	const words = GLOSSARY.filter((w) => w.tier <= tier);
 	let start = 0;
 	for (;;) {
 		const v = await listWindow(
 			ctx,
-			"ことばの　辞典",
-			GLOSSARY.map((g) => ({
-				label: esc(g.word),
-				desc: esc(g.desc.split("\n")[0]),
-				value: g.id,
-			})),
+			TITLES[tier] ?? TITLES[0],
+			words.map((w) =>
+				known(w)
+					? {
+							label: esc(w.word),
+							desc: esc(w.desc.split("\n")[0]),
+							value: w.id,
+						}
+					: {
+							label: "？？？",
+							// 板の 名前は 出さない（全体マップでも 開くまでは ？？？）
+							desc: "まだ　行けない　板の　ことば",
+							value: w.id,
+							disabled: true,
+						},
+			),
 			{ start },
 		);
 		if (v === null) return;
 		start = Math.max(
 			0,
-			GLOSSARY.findIndex((g) => g.id === v),
+			words.findIndex((w) => w.id === v),
 		);
-		const w = GLOSSARY[start];
+		const w = words[start];
 		await infoWindow(
 			ctx,
 			esc(w.word),

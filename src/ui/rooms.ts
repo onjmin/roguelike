@@ -16,6 +16,7 @@ import {
 import {
 	BANK,
 	BANK_FROM,
+	BOOKS_KEEPER_LINES,
 	KEEPER_LINE,
 	MUSIC_CLOSED,
 	PIANO_MSG,
@@ -28,6 +29,7 @@ import { NANASHI_WALK } from "../data/village/hall";
 import { npc, sign } from "../data/village/helpers";
 import { stepOf, type VillageView } from "../data/village/map";
 import {
+	BOOKS_KEEPER,
 	MUSIC_SEAT,
 	MUSIC_STAGE,
 	ROOM_OUTSIDE,
@@ -43,6 +45,7 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadTown } from "../engine/save";
 import { bathPeople } from "./bath";
 import type { Ctx } from "./ctx";
+import { openGlossary } from "./glossary";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
 import { openPiano } from "./piano";
@@ -177,6 +180,27 @@ const musicPeople = (v: VillageView): EventDef[] => {
 	return out;
 };
 
+/** 本屋の 店番・図書館の 司書（名無し。机の となり）。 */
+const booksPeople = (id: "bookstore" | "library"): EventDef[] => {
+	const at = BOOKS_KEEPER[id];
+	return [
+		npc(
+			"nanashi",
+			at.x,
+			at.y,
+			NANASHI_WALK[id === "bookstore" ? 1 : 3],
+			async (s) => {
+				for (const l of BOOKS_KEEPER_LINES[id])
+					await s.say("nanj", l, {
+						name: id === "bookstore" ? "店番" : "司書",
+					});
+				s.face("nanashi", at.dir);
+			},
+			{ dir: at.dir },
+		),
+	];
+};
+
 /** 部屋から 出たときに 立つ 村の 所（リプレイで 出た ときも）。 */
 export const roomOutside = (id: RoomId): Spot => ROOM_OUTSIDE[id];
 
@@ -232,6 +256,11 @@ const eventFor = (
 			await s.wait(0);
 			await openStorage(ctx);
 		}
+		// 本屋・図書館の 本棚は ことばの 辞典（町の 段で 読める ことばが ふえる）
+		if ((id === "bookstore" || id === "library") && kind === "shelf") {
+			await s.wait(0);
+			await openGlossary(ctx);
+		}
 	});
 };
 
@@ -251,6 +280,7 @@ export const buildRoom = (
 			...roomPlaces(id).map((p) => eventFor(ctx, id, p, v)),
 			...(id === "music" ? musicPeople(v) : []),
 			...(id === "bath" ? bathPeople(v) : []),
+			...(id === "bookstore" || id === "library" ? booksPeople(id) : []),
 		],
 	};
 };

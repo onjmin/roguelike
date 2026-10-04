@@ -4063,6 +4063,7 @@ test("建物の 扉: the cafe and hut doors are stepped on from their stage, and
 			["cafe", "door_cafe"],
 			["hut", "door_hut"],
 			["music", "door_music"],
+			["bookstore", "door_books"],
 		] as const) {
 			const p = s.places.find((q) => q.id === door);
 			ok(

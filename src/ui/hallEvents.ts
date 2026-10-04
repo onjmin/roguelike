@@ -13,6 +13,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { defOf } from "../core/item";
 import type { DungeonId } from "../core/types";
+import { BOOKSTORE_FROM } from "../data/glossary";
 import {
 	BOOK_MENU,
 	HALL_MSG,
@@ -28,6 +29,7 @@ import {
 	objectiveFor,
 	withDevEvent,
 } from "../data/objectives";
+import { BOOKS_KEEPER_LINES } from "../data/rooms";
 import { DUNGEON_NAMES, FRIEND_FROM } from "../data/story";
 import { VILLAGE_MSG } from "../data/town";
 import {
@@ -361,6 +363,13 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 			return sign(p.id, p.x, p.y, noticeScript);
 		case "book":
 			return sign(p.id, p.x, p.y, async (s) => {
+				// 本屋が 建ったら 辞典は そちらへ（はり紙を 残して、図鑑だけ）
+				if (loadTown().stage >= BOOKSTORE_FROM) {
+					await s.narrate(BOOKS_KEEPER_LINES.hallMoved);
+					await hideMsg(s);
+					await openBook(ctx);
+					return;
+				}
 				await s.narrate(HALL_MSG.book);
 				const n = await s.choose([...BOOK_MENU], { cancel: 2 });
 				if (n === 2) return;

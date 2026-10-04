@@ -359,6 +359,25 @@ export const MUSIC: Record<string, TileDef> = {
 	ζ: floor(C_MUSIC, base(1, 64), base(7, 63, 1, 2)),
 };
 
+// ───────────────── 本屋（町の 段3〜5）・図書館（段6 から。同じ 所に 建てかえ） ─────────────────
+// 広場の 西の 草地（data/village/map.ts の BOOKS_BLOCK・LIBRARY_BLOCK）。字は カタカナ（ほかで 使いきったので）。
+//   本屋    ア 屋根の 軒   イ 板壁（上段）に 窓   ウ 板壁（上段）   エ 板壁（下段）   オ 扉（通れる。踏むと 中へ）
+//   図書館  カ 屋根の 軒   キ 石の 壁（上段）に 窓   ク 石の 壁（上段）   ケ 石の 壁（下段）   コ 扉
+const C_BOOKS = "#8a6a44";
+const C_LIBRARY = "#9a9a9a";
+export const BOOKS: Record<string, TileDef> = {
+	ア: solid("#3a7a4a", base(3, 84)),
+	イ: solid(C_BOOKS, base(1, 57), basePx(48, 1382)),
+	ウ: solid(C_BOOKS, base(1, 57)),
+	エ: solid(C_BOOKS, base(1, 58)),
+	オ: floor(C_BOOKS, base(1, 58), base(7, 57, 1, 2)),
+	カ: solid("#5a3a6a", base(0, 84)),
+	キ: solid(C_LIBRARY, base(1, 67), basePx(48, 1382)),
+	ク: solid(C_LIBRARY, base(1, 67)),
+	ケ: solid(C_LIBRARY, base(1, 68)),
+	コ: floor(C_LIBRARY, base(1, 68), base(7, 63, 1, 2)),
+};
+
 // ───────────────── 村の まわり（森・西の 空き地・東の 畑・南の 池） ─────────────────
 //   ^  紅葉の 木（2マス幅）   ;  草むら（通れる）   %  小石   B  大岩   =  切り株   _  丸太（2マス幅）
 //   ~  池の 水（芝に 岸の オートタイル。まわりに 合わせて 角が 丸く なる）   G  畑の 畝   S  かかし   W  麦

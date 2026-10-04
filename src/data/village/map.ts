@@ -50,6 +50,7 @@ import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../cast";
+import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
 import { MOB_IDS, MOBS, type MobId } from "../mobs";
 import type { Speaker } from "../quotes";
 import { awayFriends, FRIEND_FROM } from "../story";
@@ -57,6 +58,7 @@ import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
 	BANK,
 	BATH,
+	BOOKS,
 	base,
 	C_DIRT,
 	C_GRASS,
@@ -149,6 +151,8 @@ export const VILLAGE_SPOTS = {
 	nanj: (_v: VillageView): Cell => [21, 18],
 	/** 音楽室「ピアノ機能」の 扉（段3 から。週末だけ 踏むと 中へ）。 */
 	musicDoor: [22, 28] as Cell,
+	/** 本屋（段3〜5）・図書館（段6 から。同じ 所に 建てかえ）の 扉。下の 草地 y=23 から 踏む。 */
+	booksDoor: [4, 22] as Cell,
 	/** 保守神社の 賽銭箱（段2 から。お参りすると おみくじ）。 */
 	shrine: [3, 9] as Cell,
 	/** 銭湯の のれんの 扉（段4 から。踏むと 中へ。data/village/rooms.ts の bath）。 */
@@ -469,6 +473,14 @@ export const MUSIC_FROM = 3;
 /** 音楽室（地図の 21, 25 から。池の そばの 道の 東。扉 22,28 は 下の 草地 y=29 から 踏む）。 */
 const MUSIC_BLOCK: readonly string[] = ["ααα", "βββ", "δγδ", "εζε"];
 
+/**
+ * 本屋（地図の 3, 20 から。町の 段3〜5）と 図書館（2, 20 から。段6 から 建てかえて 1マス 広い）。
+ * 広場の 西の 草地。屋根は 軒だけの 低い 建物（上の 道に かからないように）。扉 4,22 は 下の 草地 y=23 から 踏む。
+ * 字は data/village/tiles.ts の BOOKS。ことばの 辞典は data/glossary.ts（本屋で 板の ことば、図書館で 深い ネタが ふえる）。
+ */
+const BOOKS_BLOCK: readonly string[] = ["アアア", "イウイ", "エオエ"];
+const LIBRARY_BLOCK: readonly string[] = ["カカカカ", "キククキ", "ケケコケ"];
+
 /** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 踏む）。 */
 const CAFE_BLOCK: readonly string[] = ["99999", "/////", "@|`|@", "''?''"];
 
@@ -584,6 +596,9 @@ export const villageRows = (v: VillageView): string[] => {
 	if (layoutStage(v) >= BATH_FROM) stamp(rows, 31, 24, BATH_BLOCK);
 	// 音楽室「ピアノ機能」（段3 から。南の 池の そば）
 	if (layoutStage(v) >= MUSIC_FROM) stamp(rows, 21, 25, MUSIC_BLOCK);
+	// 本屋（段3〜5）→ 図書館（段6 から）。広場の 西
+	if (layoutStage(v) >= LIBRARY_FROM) stamp(rows, 2, 20, LIBRARY_BLOCK);
+	else if (layoutStage(v) >= BOOKSTORE_FROM) stamp(rows, 3, 20, BOOKS_BLOCK);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
 	return rows;
 };
@@ -616,6 +631,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...hallTiles(stage),
 		...CAFE,
 		...MUSIC,
+		...BOOKS,
 		".": paved ? floor(C_STONE, STONE) : floor(C_DIRT, DIRT),
 		":": floor(C_PLAZA, PLAZA),
 		U: solid(C_PLAZA, PLAZA, base(2, 37)),
@@ -701,6 +717,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	if (stage >= MUSIC_FROM) {
 		const [mx, my] = VILLAGE_SPOTS.musicDoor;
 		out.push({ id: "door_music", x: mx, y: my, trigger: "touch" });
+	}
+	if (stage >= BOOKSTORE_FROM) {
+		const [bx, by] = VILLAGE_SPOTS.booksDoor;
+		out.push({ id: "door_books", x: bx, y: by, trigger: "touch" });
 	}
 	if (stage >= SHRINE_FROM) {
 		const [x, y] = VILLAGE_SPOTS.shrine;

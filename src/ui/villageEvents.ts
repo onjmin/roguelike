@@ -22,6 +22,7 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
+import { LIBRARY_FROM } from "../data/glossary";
 import { BOARD_MENU } from "../data/mobs";
 import {
 	type ObjectiveInfo,
@@ -586,6 +587,14 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		return { ...at, trigger: "touch", through: true, run: enterRoom("bath") };
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
+	// 本屋（段3〜5）→ 図書館（段6 から。同じ 扉）
+	if (p.id === "door_books")
+		return {
+			...at,
+			trigger: "touch",
+			through: true,
+			run: enterRoom(v.stage >= LIBRARY_FROM ? "library" : "bookstore"),
+		};
 	if (p.id === "door_cafe")
 		return {
 			...at,
