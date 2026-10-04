@@ -3,9 +3,11 @@
 // 喫茶の 中の 人と 注文は ui/cafe.ts。ここは 小屋・常識堂・倉庫の 調べる 物と、部屋の 地図を 組み立てる 入口。
 // 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。村の シヨと 同じ 窓）。
 
+import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
 import { today } from "../data/calendar";
-import { MOBS } from "../data/mobs";
+import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
+import { MOBS, type MobId } from "../data/mobs";
 import {
 	guideKeys,
 	PIANO_BASE,
@@ -28,10 +30,11 @@ import {
 import { STAGE_NAMES } from "../data/town";
 import { NANASHI_WALK } from "../data/village/hall";
 import { npc, sign } from "../data/village/helpers";
-import { stepOf, type VillageView } from "../data/village/map";
+import type { VillageView } from "../data/village/map";
 import {
+	BOOKS_BROWSE,
 	BOOKS_KEEPER,
-	MUSIC_SEAT,
+	MUSIC_SEATS,
 	MUSIC_STAGE,
 	ROOM_OUTSIDE,
 	type RoomId,
@@ -47,6 +50,7 @@ import { loadTown } from "../engine/save";
 import { bathPeople, bathSteam } from "./bath";
 import type { Ctx } from "./ctx";
 import { readShelf } from "./glossary";
+import { guestsOf, returnAt } from "./guests";
 import { openStorage } from "./home";
 import { type ListItem, listWindow } from "./list";
 import { openPiano } from "./piano";
@@ -144,66 +148,88 @@ const pianoScript =
 		if (r.finished) await s.narrate(PIANO_DONE);
 	};
 
-/** 音楽室の 人（客席の 名無しと、段6 から ステージの レン）。 */
+/** 施設に 来ている 住人（話して もとの 向きへ）。 */
+const guest = (
+	id: MobId,
+	at: Spot,
+	lines: readonly string[],
+	eid = `guest_${id}`,
+): EventDef =>
+	npc(
+		eid,
+		at.x,
+		at.y,
+		MOBS[id].sprite,
+		async (s) => {
+			for (const l of lines) await sayAs(s, id, l);
+			s.face(eid, at.dir);
+		},
+		{ dir: at.dir },
+	);
+
+/** 音楽室の 人（帰りごとに かわる。ステージで 歌う 子・客席の 住人と 名無し。ui/guests.ts）。 */
 const musicPeople = (v: VillageView): EventDef[] => {
-	const out: EventDef[] = [
-		npc(
-			"nanashi",
-			MUSIC_SEAT[0],
-			MUSIC_SEAT[1],
-			NANASHI_WALK[2],
-			async (s) => {
-				for (const l of PIANO_MSG.nanashi)
-					await s.say("nanj", l, { name: "名無し" });
-				s.face("nanashi", "up");
-			},
-			{ dir: "up" },
-		),
-	];
-	if (stepOf(v) >= MOBS.ren.from)
+	const at = returnAt();
+	const g = guestsOf(v, at);
+	const seats = Rng.fromSeed(`music:${at}`).shuffle([...MUSIC_SEATS]);
+	const out: EventDef[] = [];
+	if (g.stage) {
+		const [x, y] = MUSIC_STAGE;
 		out.push(
-			npc(
-				"mob_ren",
-				MUSIC_STAGE[0],
-				MUSIC_STAGE[1],
-				MOBS.ren.sprite,
-				async (s) => {
-					for (const l of PIANO_MSG.ren) await sayAs(s, "ren", l);
-					s.face("mob_ren", "down");
-				},
-				{ dir: "down" },
+			guest(
+				g.stage,
+				{ x, y, dir: "down" },
+				g.stage === "ren" ? PIANO_MSG.ren : STAGE_LINES[g.stage],
 			),
 		);
+	}
+	g.music.forEach((id, i) => {
+		out.push(guest(id, seats[i], MUSIC_GUESTS[id] ?? []));
+	});
+	for (let i = 0; i < g.nanashi.music; i++) {
+		const seat = seats[g.music.length + i];
+		const id = `nanashi_${i}`;
+		out.push(
+			npc(
+				id,
+				seat.x,
+				seat.y,
+				NANASHI_WALK[(2 + i) % NANASHI_WALK.length],
+				async (s) => {
+					for (const l of PIANO_MSG.nanashi)
+						await s.say("nanj", l, { name: "名無し" });
+					s.face(id, seat.dir);
+				},
+				{ dir: seat.dir },
+			),
+		);
+	}
 	return out;
 };
 
 /** 図書館の 読書の 机の ヒナリーの 所（左の いす。右の いすは 下の 植木鉢の 葉に かくれる）。 */
-const HINARY_AT = { x: 8, y: 7, dir: "right" } as const;
+const HINARY_AT: Spot = { x: 8, y: 7, dir: "right" };
 
-/** 本屋の 店番・図書館の 司書（名無し。机の となり）。図書館には 監修の ヒナリーも（越してきてから）。 */
+/**
+ * 本屋の 店番・図書館の 司書（名無し。机の となり）と、帰りごとに 立ち読みに 来ている 住人（ui/guests.ts）。
+ * ヒナリーは 図書館なら 読書の 机で 監修の 話。
+ */
 const booksPeople = (
 	id: "bookstore" | "library",
 	v: VillageView,
 ): EventDef[] => {
 	const at = BOOKS_KEEPER[id];
-	const hinary =
-		id === "library" && stepOf(v) >= MOBS.hinary.from
-			? [
-					npc(
-						"lib_hinary",
-						HINARY_AT.x,
-						HINARY_AT.y,
-						MOBS.hinary.sprite,
-						async (s) => {
-							for (const l of LIBRARY_HINARY) await sayAs(s, "hinary", l);
-							s.face("lib_hinary", HINARY_AT.dir);
-						},
-						{ dir: HINARY_AT.dir },
-					),
-				]
-			: [];
-	return [
-		...hinary,
+	const ret = returnAt();
+	const spots = Rng.fromSeed(`books:${ret}`).shuffle([...BOOKS_BROWSE[id]]);
+	const out: EventDef[] = [];
+	let k = 0;
+	for (const who of guestsOf(v, ret).books) {
+		if (who === "hinary" && id === "library")
+			out.push(guest(who, HINARY_AT, LIBRARY_HINARY, "lib_hinary"));
+		else if (k < spots.length)
+			out.push(guest(who, spots[k++], BOOKS_GUESTS[who] ?? []));
+	}
+	out.push(
 		npc(
 			"nanashi",
 			at.x,
@@ -218,7 +244,8 @@ const booksPeople = (
 			},
 			{ dir: at.dir },
 		),
-	];
+	);
+	return out;
 };
 
 /** 部屋から 出たときに 立つ 村の 所（リプレイで 出た ときも）。 */

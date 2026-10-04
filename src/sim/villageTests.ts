@@ -42,6 +42,7 @@ import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
 import { GLOSSARY } from "../data/glossary";
+import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
 import {
 	HALL_MSG,
 	JIKKYO,
@@ -156,11 +157,13 @@ import {
 	BATH_NOREN_M,
 	BATH_SPOTS,
 	BATH_WALL,
+	BOOKS_BROWSE,
 	CAFE_ALL_SEATS,
 	CAFE_MASTER,
 	CAFE_ORDER,
 	CAFE_PATRON_SPOTS,
 	CAFE_SLOTS,
+	MUSIC_SEATS,
 	ROOM_FROM,
 	ROOM_IDS,
 	ROOM_OUTSIDE,
@@ -205,6 +208,7 @@ import {
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
 import { descWindows } from "../ui/glossary";
+import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/guests";
 import {
 	buildHall,
 	canWriteHoshu,
@@ -4398,6 +4402,70 @@ test("銭湯「ゆ」: women soak or change on free cells Kiriko can reach, men 
 	for (const t of Object.values(BATH_WOMEN))
 		for (const ls of [t.soak, t.dress])
 			ok(ls.length >= 1 && ls.length <= 3, "a bath talk is too long");
+});
+
+test("施設の 客: residents visit one facility per return, the same return keeps the same lineup, and lineups change between returns", () => {
+	const music = surveyRoom("music");
+	for (const v of VIEWS) {
+		const seen = new Set<string>();
+		for (let at = 0; at < 40; at++) {
+			const g = guestsOf(v, at * 7919);
+			ok(
+				JSON.stringify(g) === JSON.stringify(guestsOf(v, at * 7919)),
+				`${label(v)}: the same return changed`,
+			);
+			const all = [
+				...g.music,
+				...g.books,
+				...g.bath,
+				...(g.stage ? [g.stage] : []),
+			];
+			ok(
+				new Set(all).size === all.length,
+				`${label(v)}: someone is in two places`,
+			);
+			ok(
+				g.music.length + g.nanashi.music <= MUSIC_SEATS.length,
+				`${label(v)}: more guests than seats`,
+			);
+			const room = booksRoom(v);
+			if (room)
+				ok(
+					g.books.length <= BOOKS_BROWSE[room].length,
+					`${label(v)}: more readers than spots`,
+				);
+			else ok(!g.books.length, `${label(v)}: readers before the bookstore`);
+			for (const id of g.music) ok(!!MUSIC_GUESTS[id], `${id}: no music lines`);
+			for (const id of g.books) ok(!!BOOKS_GUESTS[id], `${id}: no book lines`);
+			for (const id of g.bath)
+				ok(BATH_GUESTS.includes(id), `${id}: in the bath`);
+			seen.add(JSON.stringify(g));
+		}
+		if (v.stage >= ROOM_FROM.music)
+			ok(
+				seen.size >= 10,
+				`${label(v)}: only ${seen.size} lineups in 40 returns`,
+			);
+	}
+	for (const at of MUSIC_SEATS)
+		ok(music.tile(at.x, at.y)?.passable, `music seat (${at.x},${at.y})`);
+	for (const id of ["bookstore", "library"] as const) {
+		const s = surveyRoom(id);
+		// 本棚の 絵は 2マスの 高さ（本棚の 1つ上に 立つと かくれる）
+		const rows = roomRows(id);
+		for (const at of BOOKS_BROWSE[id])
+			ok(
+				s.tile(at.x, at.y)?.passable && rows[at.y + 1][at.x] !== "B",
+				`${id} spot (${at.x},${at.y})`,
+			);
+	}
+	fitsWindow(
+		[MUSIC_GUESTS, BOOKS_GUESTS, STAGE_LINES].flatMap((t) =>
+			Object.entries(t).flatMap(([id, ls]) =>
+				(ls ?? []).map((l): [string, string] => [id, l]),
+			),
+		),
+	);
 });
 
 test("ことばの 辞典: every explanation is written as village windows (22 full-width × 2 lines, 1〜4 windows)", () => {

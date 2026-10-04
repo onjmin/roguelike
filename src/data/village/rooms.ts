@@ -68,10 +68,36 @@ export const isRoom = (id: string): id is RoomId =>
 
 /** 音楽室の 人（ステージの 上・客席）。 */
 export const MUSIC_STAGE: Cell = [4, 3];
-export const MUSIC_SEAT: Cell = [3, 6];
 
 /** 立つ 所と 向き。 */
 export type Spot = { x: number; y: number; dir: Dir };
+
+/** 音楽室の 客席（帰りごとに 名無しと 住人が すわる。ui/guests.ts）。 */
+export const MUSIC_SEATS: readonly Spot[] = [
+	{ x: 2, y: 6, dir: "up" },
+	{ x: 3, y: 6, dir: "up" },
+	{ x: 4, y: 6, dir: "up" },
+	{ x: 8, y: 6, dir: "up" },
+	{ x: 9, y: 6, dir: "up" },
+	{ x: 10, y: 6, dir: "up" },
+];
+
+/**
+ * 本屋・図書館で 立ち読み している 住人の 所（本棚の 前。帰りごとに ui/guests.ts が 決める）。
+ * 本棚の 絵は 2マスの 高さなので、本棚の 1つ上の マスに 立つと 絵に かくれる。そこは 使わない。
+ */
+export const BOOKS_BROWSE: Record<"bookstore" | "library", readonly Spot[]> = {
+	bookstore: [
+		{ x: 1, y: 4, dir: "up" },
+		{ x: 7, y: 4, dir: "up" },
+		{ x: 3, y: 6, dir: "up" },
+	],
+	library: [
+		{ x: 1, y: 4, dir: "up" },
+		{ x: 10, y: 4, dir: "up" },
+		{ x: 12, y: 4, dir: "up" },
+	],
+};
 
 /** 部屋に 置く イベント（壁の 物・家具・出口）。人は 部屋ごとの ui が 置く。 */
 export type RoomPlace = {

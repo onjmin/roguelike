@@ -18,7 +18,7 @@ import type { Speaker } from "../data/quotes";
 import { awayFriends, FRIEND_FROM } from "../data/story";
 import { NANASHI_WALK } from "../data/village/hall";
 import { npc } from "../data/village/helpers";
-import { stepOf, type VillageView } from "../data/village/map";
+import type { VillageView } from "../data/village/map";
 import {
 	BATH_BANDAI,
 	BATH_NOREN_M,
@@ -28,15 +28,14 @@ import {
 	type Spot,
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadRecords } from "../engine/save";
 import { TILE } from "../engine/types";
+import { guestsOf, returnAt } from "./guests";
 import { sayAs } from "./villageMobs";
 
 /** キリコが 湯に つかった 印（銭湯に いるあいだ）。 */
 const SOAKED = "bathSoaked";
 
 const FRIENDS = ["roze", "shiyo", "feris", "zero"] as const;
-const MOB_WOMEN = ["ngoane", "onsu", "proto", "ren", "hinary"] as const;
 
 const isFriend = (w: BathWoman): w is (typeof FRIENDS)[number] =>
 	(FRIENDS as readonly string[]).includes(w);
@@ -53,12 +52,12 @@ const shuffled = <T>(list: readonly T[], seed: number): T[] => {
 	return out;
 };
 
-/** いま 村に いる 女湯の 人。 */
-export const bathWomen = (v: VillageView): BathWoman[] => {
+/** この 帰りの 女湯の 人（仲間は 村に いれば みんな、住人は この 帰りに 来ている 子。ui/guests.ts）。 */
+export const bathWomen = (v: VillageView, seed: number): BathWoman[] => {
 	const away = awayFriends(v.cleared, v.stage);
 	return [
 		...FRIENDS.filter((w) => v.stage >= FRIEND_FROM[w] && !away.includes(w)),
-		...MOB_WOMEN.filter((id) => stepOf(v) >= MOBS[id].from),
+		...(guestsOf(v, seed).bath.filter((id) => id in BATH_WOMEN) as BathWoman[]),
 	];
 };
 
@@ -70,7 +69,7 @@ export const bathLayout = (
 	const out: { who: BathWoman; at: Spot; place: "soak" | "dress" }[] = [];
 	let soak = 0;
 	let dress = 0;
-	shuffled(bathWomen(v), seed).forEach((who, i) => {
+	shuffled(bathWomen(v, seed), seed).forEach((who, i) => {
 		if (i % 2 === 0 && soak < BATH_SPOTS.soak.length)
 			out.push({ who, at: BATH_SPOTS.soak[soak++], place: "soak" });
 		else if (dress < BATH_SPOTS.dress.length)
@@ -218,7 +217,8 @@ export const chimneySteam = (rows: readonly string[]): MapDef["decor"] => {
 
 /** 銭湯の 人と しかけ（ui/rooms.ts の buildRoom が 足す）。 */
 export const bathPeople = (v: VillageView): EventDef[] => {
-	const seed = loadRecords()[0]?.at ?? 0;
+	const seed = returnAt();
+	const guests = guestsOf(v, seed);
 	const out: EventDef[] = [];
 	// 番台（台ごしに 話す）
 	const [bx, by] = BATH_BANDAI;
@@ -275,7 +275,7 @@ export const bathPeople = (v: VillageView): EventDef[] => {
 					{ dir: a.dir },
 				),
 	);
-	if (stepOf(v) >= MOBS.jtleman.from)
+	if (guests.bath.includes("jtleman"))
 		out.push(
 			npc(
 				"bath_jtleman",
@@ -288,7 +288,7 @@ export const bathPeople = (v: VillageView): EventDef[] => {
 				{ dir: b.dir },
 			),
 		);
-	BATH_SPOTS.menBack.forEach((at, i) => {
+	BATH_SPOTS.menBack.slice(0, guests.nanashi.bath).forEach((at, i) => {
 		const id = `bath_back_${i}`;
 		out.push(
 			npc(
