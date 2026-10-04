@@ -2340,7 +2340,7 @@ test("ぷゆゆ・マイナーズ: every conditional talk and reaction can happe
 				["メタルぷゆゆに　たおされた", 12, false],
 				["おなかが　すいて　たおれた", 9, false],
 				["コピペに　たおされた", 15, true],
-				["dat落ちの霊に　たおされた", 2, false],
+				["忘れスレの霊に　たおされた", 2, false],
 			] as const)
 				rich.push({
 					last: { kind: "dead", cause, depth, returning },
@@ -2584,7 +2584,7 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 		ok(!senkyoOpen(), "ぷゆゆ counts as a 総選挙 candidate");
 		// 1回目の 帰り：B1 で たおれた → 早すぎる 帰りの 話。反応を かねるので 次は いつもの ひとこと
 		setBook(["tousuko"]);
-		pushRecord({ kind: "dead", cause: "dat落ちの霊に　たおされた", depth: 1 });
+		pushRecord({ kind: "dead", cause: "忘れスレの霊に　たおされた", depth: 1 });
 		ok(hasMobNews("puyu"), "no 「！」 after an early fall");
 		const b = fakeStory();
 		await mobScript("puyu")(b.s);
@@ -2620,7 +2620,7 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 			["メタルとうすこに　たおされた", 12, 0],
 			["ぷゆゆに　たおされた", 1, 1],
 			["とうすこに　たおされた", 2, 1],
-			["dat落ちの霊に　たおされた", 2, 3],
+			["忘れスレの霊に　たおされた", 2, 3],
 		] as const) {
 			pushRecord({ kind: "dead", cause, depth });
 			ok(
@@ -2771,7 +2771,8 @@ test("old records and replays that say とうすこ read as ぷゆゆ and still 
 test("old records with the renamed monsters read with the new names", () => {
 	withStorage(() => {
 		for (const [old, now] of [
-			["ひとだまに　たおされた", "dat落ちの霊に　たおされた"],
+			["ひとだまに　たおされた", "忘れスレの霊に　たおされた"],
+			["dat落ちの霊に　たおされた", "忘れスレの霊に　たおされた"],
 			["ばくだんの　爆発に　巻きこまれた", "炎上案件の　爆発に　巻きこまれた"],
 			["ゴーレムに　吹きとばされた", "論破厨に　吹きとばされた"],
 			["ゴリラに　吹きとばされた", "論破厨に　吹きとばされた"],

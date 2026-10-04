@@ -2732,7 +2732,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			{
 				key: "hinanj",
 				lines: [
-					m("避難Jは、本スレが　落ちると\nみんなが　にげこむ　板です"),
+					m("避難Jは、なんJが　使えないと\nみんなが　にげこむ　板です"),
 					m("……いまは、だれも　来ない\n模様です"),
 					m("研究は、つづけます"),
 				],

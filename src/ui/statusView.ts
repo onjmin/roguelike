@@ -62,7 +62,7 @@ const statusHtml = (run: Run): string => {
 		'<tr><th colspan="2">冒険</th></tr>',
 		row("目的", esc(goalText(s.dungeon, run.objective))),
 		row("階", `${s.depth}階${s.returning ? "（帰り道）" : ""}`),
-		row("スレ", `${Math.min(RES_LIMIT, run.f.res)}レス（1000で　dat落ち）`),
+		row("スレ", `${Math.min(RES_LIMIT, run.f.res)}レス（1000で　下の階へ）`),
 		row("ターン", String(s.turn)),
 	];
 	const out = [`<table>${rows.join("")}</table>`];

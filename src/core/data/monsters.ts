@@ -18,13 +18,13 @@ const M: MonsterDef[] = [
 		floors: [1, 3],
 		weight: 64,
 		abilities: [{ k: "slow" }],
-		desc: "落ちた　レスの　すみの　子。よちよち　あるく。2ターンに　1回しか　動かない",
+		desc: "沈んだ　レスの　すみの　子。よちよち　あるく。2ターンに　1回しか　動かない",
 		flavor: "のろいのは　足だけ。愛され　ぶりは　だれより　速い",
 	},
 	{
 		// 前の名前は ひとだま。絵は そのまま
 		id: "hitodama",
-		name: "dat落ちの霊",
+		name: "忘れスレの霊",
 		sprite: "sa:xBroMV",
 		hp: 5,
 		atk: 3,
@@ -34,8 +34,8 @@ const M: MonsterDef[] = [
 		weight: 64,
 		abilities: [{ k: "fastMove" }],
 		tags: ["undead"],
-		desc: "落ちた　スレの　霊。すばやく　ただよう。なぐるのは　1回",
-		flavor: "落ちた　スレは　もどらない。未練だけが　まだ　ageている",
+		desc: "忘れられた　スレの　霊。すばやく　ただよう。なぐるのは　1回",
+		flavor: "沈んだ　スレは　だれも　上げない。未練だけが　まだ　ageている",
 	},
 	{
 		// 前の名前は 迷いコウモリ → 深夜テンション。夏に 板へ 湧く 夏休みキッズ（夏厨）。
