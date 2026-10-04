@@ -1046,7 +1046,7 @@ export class Play {
 		p.style.left = `${x}px`;
 		p.style.top = `${y}px`;
 		this.popsEl.appendChild(p);
-		setTimeout(() => p.remove(), 850);
+		setTimeout(() => p.remove(), cls === "lvup" ? 1500 : 850);
 	}
 
 	// ───────────────── 入力 ─────────────────
@@ -2659,13 +2659,17 @@ export class Play {
 			case "look":
 				this.lookHold = null;
 				return;
-			case "levelup":
+			case "levelup": {
 				if (this.hudHold) {
 					this.hudHold.lv = e.lv;
 					this.hudHold.hp = e.hp;
 					this.hudHold.maxHp = e.maxHp;
 				}
+				// キリコの 頭の 上に 大きく（ログの 1行と 音だけだと、音を 消して 遊ぶ スマホでは 気づかなかった）
+				const pd = this.disp.get(PLAYER_ID);
+				if (pd) this.pop({ x: pd.fx, y: pd.fy }, "レベルアップ！", "lvup");
 				return;
+			}
 			case "goal":
 				this.ctx.audio.bgm(floorBgm(this.run, this.bossShown));
 				if (this.hudHold) this.hudHold.returning = true;

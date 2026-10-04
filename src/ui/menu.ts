@@ -233,7 +233,7 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				await openStatus(ctx, run);
 				break;
 			case "book":
-				await openBook(ctx);
+				await openBook(ctx, run.s.kills);
 				break;
 			case "log":
 				await openLog(ctx, run);

@@ -283,6 +283,17 @@ export class FloorView {
 				ctx.lineTo(sx + 3, sy + 9);
 				ctx.closePath();
 				ctx.fill();
+			} else {
+				// 下りも 小さな ▼ で 目立たせる（暗い 枠の 絵だけだと 床に 沈んで、近くを 通っても 気づかなかった）
+				ctx.fillStyle = "rgba(255, 214, 120, 0.22)";
+				ctx.fillRect(sx, sy, TILE, TILE);
+				ctx.fillStyle = "#fff1c8";
+				ctx.beginPath();
+				ctx.moveTo(sx + 3, sy + 3);
+				ctx.lineTo(sx + 13, sy + 3);
+				ctx.lineTo(sx + 8, sy + 9);
+				ctx.closePath();
+				ctx.fill();
 			}
 		}
 		// 踏んだ あとの 安価の罠（罠の 下に。同じ マスに あとから 罠が ふえても 罠が 見える）

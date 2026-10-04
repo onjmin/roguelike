@@ -567,7 +567,21 @@ export class MapView {
 				(this.carryMax > 0
 					? `<div class="wm-carry${dg.noCarry ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った　道具は　シヨが　預かる）" : `できる（${this.carryMax}つまで）`}</div>`
 					: "")
-			: `<div class="wm-name">？？？</div>`;
+			: `<div class="wm-name">？？？</div><div class="wm-desc">${this.howToOpen(d)}</div>`;
+	}
+
+	/** まだ 開いていない 植民地の 開き方（開く もとの 板が まだ 行けなければ その名も ？？？）。 */
+	private howToOpen(d: DungeonId): string {
+		const dg = DUNGEONS[d];
+		const after = dg.unlockAfter;
+		if (!after) return "まだ　行けない";
+		const known = this.open.includes(after);
+		const name = known ? DUNGEON_NAMES[after].name : "？？？";
+		const relief =
+			known && dg.reliefAfter
+				? `<br>（${name}で　${dg.reliefAfter}回　たおれても　開く）`
+				: "";
+		return `${name}を　持ち帰ると　開く${relief}`;
 	}
 }
 

@@ -1770,7 +1770,7 @@ test("小段が 上がると 住人が 越してくる：暗転・建て直し�
 			inOrder(log, [
 				"rebuild",
 				"hide mob_nichie",
-				"se jingle",
+				"se served",
 				`toast ${TOWN_GREW_MSG}`,
 				"show mob_nichie",
 				"look mob_nichie",

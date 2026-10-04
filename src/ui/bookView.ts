@@ -24,6 +24,15 @@ const TAG_NAME: Record<MonsterTag, string> = {
 };
 
 /**
+ * 見た目と 種族が 合わない 敵は、種族の かわりに 効きめを 書く。にょっす牛は 牛だが、水分補給草が
+ * よく 効く 役（トルネコ1の おばけキノコ）なので plant の まま（【植物】と 出ると ただの まちがいに 見えた）。
+ */
+const TAG_LABEL: Partial<Record<string, Partial<Record<MonsterTag, string>>>> =
+	{
+		pumpkin: { plant: "水分補給草が　よく　効く" },
+	};
+
+/**
  * 出る階。ボスは その板の いちばん奥の 1つの 階（上りの 板は「20F」。floors は 強さなので 使わない）。
  * ほかは floors（板だけの 敵は その板の 名前を 添える）。
  */
@@ -42,21 +51,30 @@ const ROW_PX = 32;
 /** 「せつめい」の 絵の 大きさ（3倍。ボスは 階と 同じく scale 倍して 整数倍に まるめる）。 */
 const detailPx = (d: MonsterDef): number => 16 * Math.round(3 * (d.scale ?? 1));
 
-/** 「せつめい」の文（メッセージ窓に 1ページずつ）。とくちょう → ひとこと → 強さ → たおした数。 */
-const detail = (d: MonsterDef, kills: number): string[] => {
-	const tags = (d.tags ?? []).map((t) => `【${TAG_NAME[t]}】`).join("");
+/**
+ * 「せつめい」の文（メッセージ窓に 1ページずつ）。とくちょう → ひとこと → 強さ → たおした数。
+ * now は いまの 冒険で たおした 数（図鑑に 足すのは 冒険が 終わったとき。いま たおした 敵が「まだ　1匹も」に ならないように）。
+ */
+const detail = (d: MonsterDef, kills: number, now = 0): string[] => {
+	const tags = (d.tags ?? [])
+		.map((t) => `【${TAG_LABEL[d.id]?.[t] ?? TAG_NAME[t]}】`)
+		.join("");
+	const total = kills + now;
 	return [
 		`${tags}${d.desc}`,
 		d.flavor,
 		`出る階　${floorsText(d)}　経験値　${d.exp}\nHP　${d.hp}　攻撃　${d.atk}　守り　${d.def}`,
-		kills > 0
-			? `これまでに　${kills}匹　たおした`
+		total > 0
+			? `これまでに　${total}匹　たおした${now > 0 ? `（この　冒険で　${now}匹）` : ""}`
 			: "まだ　1匹も　たおしていない",
 	];
 };
 
-/** 図鑑を開く（閉じるまで）。 */
-export const openBook = async (ctx: Ctx): Promise<void> => {
+/** 図鑑を開く（閉じるまで）。runKills は いまの 冒険で たおした 数（ダンジョンの メニューから）。 */
+export const openBook = async (
+	ctx: Ctx,
+	runKills: Record<string, number> = {},
+): Promise<void> => {
 	let start = 0;
 	for (;;) {
 		const book = loadBook();
@@ -106,7 +124,9 @@ export const openBook = async (ctx: Ctx): Promise<void> => {
 			el("div", { class: "book-card-name", text: d.name }),
 		]);
 		const stop = animateArts([art]);
-		await explain(ctx, detail(d, book.kills[d.id] ?? 0), { art: card });
+		await explain(ctx, detail(d, book.kills[d.id] ?? 0, runKills[d.id] ?? 0), {
+			art: card,
+		});
 		stop();
 	}
 };

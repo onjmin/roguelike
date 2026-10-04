@@ -1810,6 +1810,9 @@ export class Run {
 		// 空ぶり：前のマスの罠を見つける
 		this.emit({ t: "attack", id: PLAYER_ID, dir: d });
 		this.se(this.weaponSound().swing);
+		// 見えている 敵が ななめの 壁の かどの 向こう：何も 言わずに ターンだけ 過ぎると、なぜ 当たらないのか わからない
+		if (m && this.monsterVisible(m))
+			this.msg("壁の　かどが　じゃまで　とどかない");
 		const trap = this.f.traps.find((t) => t.x === to.x && t.y === to.y);
 		if (trap && !trap.found) {
 			trap.found = true;

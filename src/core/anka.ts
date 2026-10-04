@@ -214,6 +214,9 @@ export const startAnka = (r: Run, gentle = false): boolean => {
 	r.emit({ t: "anka" });
 	r.msg(`安価が　来た：${ankaText(a)}`, "warn");
 	r.msg(`（${ANKA_DUE}レス　以内に。安価は　絶対）`);
+	// はじめて 見る 安価（パン板の 2階で かならず 来る やさしい お題）には、ごほうびと 罰も 1行で
+	// （「絶対」と 言うだけでは、知らない 人には 何が 起きるのか わからなかった）
+	if (gentle) r.msg("（こなせば　スレ民が　道具を　くれる。やぶると　スレが　荒れる）");
 	return true;
 };
 

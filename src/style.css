@@ -1499,6 +1499,14 @@ body.shake #app {
 	font-size: 12px;
 }
 
+/* レベルアップ：大きく 長めに（ui/play.ts の levelup） */
+.pop.lvup {
+	color: #ffe066;
+	font-size: 18px;
+	font-weight: bold;
+	animation-duration: 1.4s;
+}
+
 @keyframes pop-up {
 	0% {
 		opacity: 0;
