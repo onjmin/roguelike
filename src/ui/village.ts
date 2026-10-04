@@ -714,6 +714,15 @@ export class Village {
 				talk = guard;
 			}
 		}
+		// 背の 高い 物（立て札・掲示板）の 頭（上の マス）を タップしても その 物に。
+		// 頭の マスへ 歩いて 裏に 回り、裏からは 読めないので 何も 起きなかった
+		if (!talk) {
+			const below = talkAt(tx, ty + 1);
+			if (below && field.hasBack(below)) {
+				ty += 1;
+				talk = below;
+			}
+		}
 		// となりの人・物を タップしたら、そちらを向いて 話す（掲示板などの 裏からなら 表へ 回りこむ）
 		if (
 			talk &&

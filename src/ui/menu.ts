@@ -19,12 +19,14 @@ import {
 import type { Run } from "../core/run";
 import { trapName } from "../core/traps";
 import type { Command, Item, ItemCat, TrapKind } from "../core/types";
+import { drawRefInCell, onImageLoaded } from "../engine/assets";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { explain } from "./explain";
 import { backVerb, goVerb, isUpBoard } from "./floorName";
 import { openHowto } from "./howto";
+import { itemIcon } from "./icons";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
 	infoWindow,
@@ -56,11 +58,31 @@ const emptyRow = (label: string): ListItem => ({
 });
 
 /** 持ち物の1行（もちもの・選ぶ窓で同じ見た目）。 */
+/**
+ * 一覧の 行の 左に 出す 道具の 絵（床に 落ちているときと 同じ 絵。16px を CSS で 2倍）。
+ * 文字と 札だけの 一覧では、拾った 物を ながめる 楽しさが なかった。絵が まだ 読めていなければ 読めてから 描く
+ */
+const itemArt = (kind: string): HTMLElement => {
+	const c = document.createElement("canvas");
+	c.width = 16;
+	c.height = 16;
+	c.className = "mon-art item-art";
+	const g = c.getContext("2d");
+	const ref = itemIcon(kind);
+	if (g && !drawRefInCell(g, ref, 0, 0)) {
+		const off = onImageLoaded(() => {
+			if (drawRefInCell(g, ref, 0, 0)) off();
+		});
+	}
+	return c;
+};
+
 const itemRow = (run: Run, it: Item): ListItem => ({
 	label: itemLabel(run, it),
 	sub: itemSub(it),
 	desc: itemDesc(run, it),
 	value: String(it.uid),
+	icon: itemArt(it.kind),
 });
 
 /**

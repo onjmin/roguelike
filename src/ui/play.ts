@@ -312,6 +312,8 @@ export class Play {
 	private drainWaiters: (() => void)[] = [];
 	private logTimer = 0;
 	private popsEl: HTMLElement;
+	/** jolt の ゆれを 止める タイマー。 */
+	private joltTimer: ReturnType<typeof setTimeout> | undefined;
 	private mapEl: HTMLCanvasElement;
 	private mapOn = false;
 	private fadeEl: HTMLElement;
@@ -1035,6 +1037,16 @@ export class Play {
 			l.classList.add("old");
 		setTimeout(() => line.classList.add("gone"), 4200);
 		setTimeout(() => line.remove(), 5000);
+	}
+
+	/** 画面を 1回 小さく ゆらす（style.css の body.jolt）。続けて 呼んでも 頭から ゆらしなおす。 */
+	private jolt(): void {
+		const b = document.body;
+		b.classList.remove("jolt");
+		void b.offsetWidth;
+		b.classList.add("jolt");
+		clearTimeout(this.joltTimer);
+		this.joltTimer = setTimeout(() => b.classList.remove("jolt"), 200);
 	}
 
 	private pop(pos: Pos, text: string, cls: string): void {
@@ -2465,6 +2477,13 @@ export class Play {
 							String(e.amount),
 							e.id === PLAYER_ID ? "hurt-player" : "",
 						);
+					// 最大HPの 2割 以上 削られたら 画面を 1回 小さく ゆらす（点滅と 数字だけだと、音を 消した
+					// スマホでは 痛手が 伝わりにくい。小さな 傷では ゆらさない）
+					if (
+						e.id === PLAYER_ID &&
+						e.amount >= Math.max(3, this.run.p.maxHp * 0.2)
+					)
+						this.jolt();
 					combat = true;
 					await this.beat(70 * speed);
 					break;

@@ -135,6 +135,24 @@ body.shake #app {
 	animation: shake 0.1s linear infinite;
 }
 
+/* キリコが 大きく 削られた ときの 1回だけの 小さな ゆれ（ui/play.ts の hurt。地震の shake より 軽く 短く） */
+body.jolt #app {
+	animation: jolt 0.18s ease-out 1;
+}
+
+@keyframes jolt {
+	0%,
+	100% {
+		transform: translate(0, 0);
+	}
+	30% {
+		transform: translate(-2px, 1px);
+	}
+	65% {
+		transform: translate(2px, -1px);
+	}
+}
+
 @keyframes shake {
 	0% {
 		transform: translate(0, 0);
@@ -759,6 +777,12 @@ body.shake #app {
 .menu-item .mon-art {
 	background: rgba(255, 255, 255, 0.08);
 	border-radius: 4px;
+}
+
+/* もちものの 道具の 絵（ui/menu.ts の itemArt） */
+.menu-item .item-art {
+	width: 32px;
+	height: 32px;
 }
 
 /* 図鑑の「せつめい」：窓の 上に 大きな 絵と 名前（ドラクエの 図鑑のように。足もとに 影） */
@@ -2146,7 +2170,8 @@ body.shake #app {
 
 @media (prefers-reduced-motion: reduce) {
 	.title-disc-spin,
-	.title-logo-deep {
+	.title-logo-deep,
+	body.jolt #app {
 		animation: none;
 	}
 }
