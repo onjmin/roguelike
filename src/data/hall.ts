@@ -21,7 +21,7 @@ export const HALL_MSG = {
 	notice: "期間限定の　告知。\n『{name}』",
 	/** {goal} は 目的の ひとこと、{ends} は 終わるまでの 残り。 */
 	noticeGoal: "目的：{goal}\n（{ends}）",
-	book: "本棚。\nモンスター図鑑が　ならんでいる。",
+	book: "本棚。\nことばの　辞典と、図鑑が　ならんでいる。",
 	shelfEmpty: "飾り棚。\nまだ、なにも　のっていない。",
 	shelf: "飾り棚。\n持ち帰った　品が　ならんでいる。",
 	/** 持ち帰ったのが 植民地化宣言・長湯スレだけ（どちらも 蓄音機で 鳴らしていて 棚には 無い）。 */
@@ -120,6 +120,12 @@ export const MONITOR_MENU = ["リプレイ　上映", "やめる"] as const;
 
 /** 当番表の 選択肢。 */
 export const TOBAN_MENU = ["「保守」と　書く", "やめる"] as const;
+/** 本棚（ことばの 辞典は 集会所の ころから。2ch の ことばを 知らない 人の ために）。 */
+export const BOOK_MENU = [
+	"ことばの　辞典",
+	"モンスター図鑑",
+	"やめる",
+] as const;
 
 /** 飾り棚の 一覧で 蓄音機で 鳴らしている 品（植民地化宣言・長湯スレ）の 説明。 */
 export const ON_PHONO_TEXT = "蓄音機で　鳴らしている";

@@ -484,6 +484,13 @@ body.jolt #app {
 	overflow-wrap: anywhere;
 }
 
+/* はじめて 出た ことばの 説明（ui/glossary.ts の glossFor） */
+.log-line.gloss {
+	color: #bfe6ff;
+	border-left-color: #6fb8e8;
+	font-size: 0.9em;
+}
+
 /* HP が 半分を 切ると 字が 黄色 → 赤（ui/hpInk.ts。--ink は ui/play.ts が 入れる） */
 .log {
 	color: var(--ink, inherit);

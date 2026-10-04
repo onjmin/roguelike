@@ -14,6 +14,7 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { defOf } from "../core/item";
 import type { DungeonId } from "../core/types";
 import {
+	BOOK_MENU,
 	HALL_MSG,
 	JIKKYO,
 	MONITOR_MENU,
@@ -57,6 +58,7 @@ import { TILE } from "../engine/types";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { openGlossary } from "./glossary";
 import { openHowto } from "./howto";
 import { itemIcon } from "./icons";
 import { type ListItem, listWindow } from "./list";
@@ -360,8 +362,10 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "book":
 			return sign(p.id, p.x, p.y, async (s) => {
 				await s.narrate(HALL_MSG.book);
+				const n = await s.choose([...BOOK_MENU], { cancel: 2 });
+				if (n === 2) return;
 				await hideMsg(s);
-				await openBook(ctx);
+				await (n === 0 ? openGlossary(ctx) : openBook(ctx));
 			});
 		case "shelf":
 			return sign(p.id, p.x, p.y, shelfScript(ctx));

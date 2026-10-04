@@ -6,6 +6,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { DUNGEON_NAMES } from "../data/story";
 import type { Ctx } from "./ctx";
+import { openGlossary } from "./glossary";
 import { infoWindow, listWindow } from "./list";
 
 /** 見出し。 */
@@ -276,10 +277,19 @@ export const openHowto = async (ctx: Ctx): Promise<void> => {
 		const v = await listWindow(
 			ctx,
 			"あそびかた",
-			PAGES.map((p) => ({ label: p.label, sub: p.sub, value: p.value })),
+			[
+				...PAGES.map((p) => ({ label: p.label, sub: p.sub, value: p.value })),
+				// 2ch の ことば（ダンジョンの 中からも 引けるように。村では 集会所の 本棚にも ある）
+				{ label: "ことば", sub: "2ch・おんJの　ことば", value: "words" },
+			],
 			{ start },
 		);
 		if (v === null) return;
+		if (v === "words") {
+			start = PAGES.length;
+			await openGlossary(ctx);
+			continue;
+		}
 		const i = PAGES.findIndex((p) => p.value === v);
 		const page = PAGES[i];
 		if (!page) return;

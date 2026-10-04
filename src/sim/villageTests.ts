@@ -3489,8 +3489,8 @@ test("おんJ 本館の 中: it grows by tier and keeps what the smaller hall ha
 			),
 	);
 	const want = [
-		["mat", "board", "toban", "template", "notice"],
-		["book", "shelf", "ledger", "nanashi_toban"],
+		["mat", "board", "toban", "template", "notice", "book"],
+		["shelf", "ledger", "nanashi_toban"],
 		["monitor", "dendo", "chair", "nanashi"],
 		["yaji"],
 	];

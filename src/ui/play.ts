@@ -65,6 +65,7 @@ import {
 	goVerb,
 	isUpBoard,
 } from "./floorName";
+import { glossFor } from "./glossary";
 import { hpInk } from "./hpInk";
 import type { Hud } from "./hud";
 import { FLOWER_ICON, itemIcon } from "./icons";
@@ -977,6 +978,9 @@ export class Play {
 			this.logQueue.shift();
 			if (q.text !== undefined) {
 				this.addLog(q.text, q.tone);
+				// はじめて 出た 2ch の ことばには 1度だけ 説明の 1行（リプレイでは 出さない・覚えない）
+				const gloss = this.rp ? null : glossFor(q.text);
+				if (gloss) this.addLog(gloss, "gloss");
 				this.lastLogAt = performance.now();
 			}
 			for (const fn of q.with ?? []) fn();
@@ -1022,7 +1026,7 @@ export class Play {
 		return new Promise((ok) => this.drainWaiters.push(ok));
 	}
 
-	private addLog(text: string, tone?: "warn" | "good"): void {
+	private addLog(text: string, tone?: "warn" | "good" | "gloss"): void {
 		const line = el("div", {
 			class: `log-line${tone ? ` ${tone}` : ""}`,
 			text,

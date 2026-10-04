@@ -1048,6 +1048,33 @@ const saveBook = (b: Book): void => {
 	}
 };
 
+// ───────────────── ことばの 辞典 ─────────────────
+
+const WORDS_KEY = `${PREFIX}words`;
+
+/** ログに 1度 説明を 添えた ことば（data/glossary.ts の id）。 */
+export const loadWords = (): string[] => {
+	try {
+		const raw = localStorage.getItem(WORDS_KEY);
+		const a: unknown = raw ? JSON.parse(raw) : [];
+		return Array.isArray(a) ? a.filter((x) => typeof x === "string") : [];
+	} catch {
+		return [];
+	}
+};
+
+/** ことばに 説明を 添えた（もう 添えていれば 何もしない）。 */
+export const markWord = (id: string): void => {
+	const w = loadWords();
+	if (w.includes(id)) return;
+	w.push(id);
+	try {
+		localStorage.setItem(WORDS_KEY, JSON.stringify(w));
+	} catch {
+		// 残せなくても遊べる（つぎも 説明が 出るだけ）
+	}
+};
+
 /** はじめて会った敵を図鑑に載せる（もう載っていれば何もしない）。 */
 export const markSeenMonster = (kind: string): void => {
 	const b = loadBook();
