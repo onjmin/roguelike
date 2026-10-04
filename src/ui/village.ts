@@ -902,7 +902,9 @@ export class Village {
 	}
 
 	/**
-	 * 村の 出口（北の 崖の 切れ目の 先）を さす 矢印。画面の 外なら 画面の はしに 寄せて、出口の 方を 向ける。
+	 * 村の 出口（北の 崖の 切れ目の 先）を さす 矢印。画面の 外なら キリコの そばで、出口の 方を 向ける
+	 * （画面の はしに 寄せると、起きる 所からは 右上の 🔊 の 真下で そちらを さし、
+	 * タイトルの「音は　右上の　🔊」と あわせて 音の ボタンを さして 見えた）。
 	 */
 	private drawExitGuide(
 		g: CanvasRenderingContext2D,
@@ -914,12 +916,21 @@ export class Village {
 		const [ex, ey] = VILLAGE_SPOTS.exit;
 		const tx = ex * TILE + TILE / 2 - ox;
 		const ty = ey * TILE + TILE / 2 - oy;
-		// 上の はしは 右上の 音の ボタンに かからないよう 2マス あける
+		// 上の はしの 2マスは 右上の 音の ボタンと かさなるので 外あつかい
 		const m = TILE * 0.9;
-		const x = clamp(tx, m, c.w - m);
-		const y = clamp(ty, TILE * 2.2, c.hv - m);
-		const ang =
-			x === tx && y === ty ? -Math.PI / 2 : Math.atan2(ty - y, tx - x);
+		const inView =
+			tx >= m && tx <= c.w - m && ty >= TILE * 2.2 && ty <= c.hv - m;
+		let x = tx;
+		let y = ty;
+		let ang = -Math.PI / 2;
+		if (!inView) {
+			const p = this.player;
+			const px = p.fx * TILE + TILE / 2 - ox;
+			const py = p.fy * TILE + TILE / 2 - oy;
+			ang = Math.atan2(ty - py, tx - px);
+			x = px + Math.cos(ang) * TILE * 1.2;
+			y = py + Math.sin(ang) * TILE * 1.2;
+		}
 		const bob = Math.sin(this.time / 160) * 2;
 		g.save();
 		g.translate(x + Math.cos(ang) * bob, y + Math.sin(ang) * bob);
