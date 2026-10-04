@@ -24,6 +24,7 @@ import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { explain } from "./explain";
 import { backVerb, goVerb, isUpBoard } from "./floorName";
+import { openHowto } from "./howto";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
 	infoWindow,
@@ -201,6 +202,8 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "ログ", value: "log" },
 			{ label: "地図", value: "map" },
 			{ label: "せってい", value: "settings" },
+			// ダンジョンの 中で 操作や 決まりを しらべられる 所（村は 集会所の テンプレと フェリス）
+			{ label: "あそびかた", value: "howto" },
 			{ label: "中断する", value: "suspend" },
 		];
 		// トルネコ1のように 2列（縦に長いと スマホで 画面を ふさぐ）。つよさは 窓の上に
@@ -234,6 +237,9 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				break;
 			case "log":
 				await openLog(ctx, run);
+				break;
+			case "howto":
+				await openHowto(ctx);
 				break;
 			case "map":
 				return { kind: "map" };

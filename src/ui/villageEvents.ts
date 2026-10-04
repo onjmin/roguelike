@@ -321,7 +321,7 @@ const shrineScript: Script = async (s) => {
 	try {
 		localStorage.setItem(OMIKUJI_KEY, at);
 	} catch {}
-	s.se("coin");
+	s.se("glass");
 	await s.narrate(VILLAGE_MSG.shrinePray);
 	const all = VILLAGE_MSG.omikuji;
 	await s.narrate(all[Math.floor(Math.random() * all.length)]);

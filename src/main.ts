@@ -51,6 +51,9 @@ input.onAnyInput = () => {
 			"cancel",
 			"attack",
 			"miss",
+			// 素手の キリコの 音（はじめの 戦いは 素手。回線が 遅いと 初めの 数発が 鳴らない）
+			"swing_fist",
+			"hit_fist",
 			"damage",
 			"enemyDown",
 			"item",
@@ -61,6 +64,8 @@ input.onAnyInput = () => {
 			"read",
 			"throw",
 			"spell",
+			"levelup",
+			"chapter",
 		]);
 };
 

@@ -252,7 +252,7 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 	a.done++;
 	if (a.done < a.need) return;
 	r.f.anka = null;
-	r.se("jingle");
+	r.se("victory");
 	r.emit({ t: "anka" });
 	r.msg("神安価！　スレ民が　いろいろ　置いていった", "good");
 	// 道具（正体つき。見分ける 手間も ごほうび）

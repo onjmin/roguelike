@@ -580,7 +580,7 @@ const movedIn = async (
 	await s.look(gateNear(MOBS[ids[0]].spot), { instant: true });
 	await s.fadeIn(300);
 	if (!rebuilt) {
-		s.se("jingle");
+		s.se("served");
 		s.toast(TOWN_GREW_MSG);
 	}
 	for (const id of ids) {

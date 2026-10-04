@@ -623,6 +623,8 @@ export class Input {
 	bindPad(el: HTMLElement): void {
 		this.padEl = el;
 		let active: number | null = null;
+		/** この 押しで 向きを 入れたか（まん中へ もどして 離しても 足踏みに しない）。 */
+		let usedDir = false;
 		const update = (e: PointerEvent) => {
 			const r = el.getBoundingClientRect();
 			const dx = e.clientX - (r.left + r.width / 2);
@@ -641,6 +643,7 @@ export class Input {
 				if (dir !== null) this.dirFromKeys = false;
 				this.padDir = dir;
 				if (dir !== null) {
+					usedDir = true;
 					if (!this.handlers.length) this.pendingDir = dir;
 					this.press(toDir4(dir));
 				}
@@ -660,6 +663,7 @@ export class Input {
 			this.onAnyInput?.();
 			this.serial++;
 			active = e.pointerId;
+			usedDir = false;
 			capture(el, e.pointerId);
 			update(e);
 		});
@@ -669,6 +673,17 @@ export class Input {
 		const end = (e: PointerEvent) => {
 			if (e.pointerId !== active) return;
 			active = null;
+			// まん中を 短く 押して 離したら 1回だけ 足踏み（足踏みの キーと 同じ。長押しは restHeld で 続ける）。
+			// 「足踏み」と 書いてあるのに タップで 何も 起きないと、こわれていると 思われる
+			const since = this.padCenterSince;
+			if (
+				e.type === "pointerup" &&
+				!usedDir &&
+				since > 0 &&
+				performance.now() - since < PAD_REST_MS &&
+				!this.handlers.length
+			)
+				this.press("wait");
 			this.padDir = null;
 			this.padCenterSince = 0;
 			el.dataset.dir = "";
