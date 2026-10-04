@@ -2895,7 +2895,10 @@ export class Play {
 			}),
 		]);
 		this.ctx.ui.appendChild(card);
-		if (!first) await this.ctx.audio.fadeBgm(300);
+		// 次の 階も 同じ 曲なら 止めずに 流しつづける（板の 曲は 全部の 階で 同じ。階段の たびに 頭から
+		// 鳴らしなおすと、20〜30階の 板で 同じ 出だしを 何十回も 聞くことに なった）
+		if (!first && this.ctx.audio.currentBgm !== floorBgm(run, this.bossShown))
+			await this.ctx.audio.fadeBgm(300);
 		await wait(first ? 900 : 1100);
 		if (this.stopped) {
 			card.remove();

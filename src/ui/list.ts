@@ -231,11 +231,14 @@ export const listWindow = (
 				pages.findIndex((pg) => pg.includes(i)),
 			);
 		let shownPage = -1;
+		/** ページごとの 行の 高さ（いちばん 高い ページに そろえて ◀▶ を 同じ 所に 置く）。 */
+		let pageH: number[] = [];
 		const render = () => {
 			const p = pageOf(cur);
 			if (pages.length > 1 && p !== shownPage) {
 				showPage(buttons, pages, p, pager);
 				shownPage = p;
+				pager.style.marginTop = `${Math.max(...pageH) - (pageH[p] ?? 0)}px`;
 			}
 			buttons.forEach((b, i) => {
 				b.classList.toggle("cur", i === cur);
@@ -262,6 +265,34 @@ export const listWindow = (
 		ctx.ui.appendChild(box);
 		markOpened(box);
 		pages = paginate(box, buttons, pager);
+		// 行の すくない ページで 窓が 縮むと、◀▶ と とじるが ページごとに 動いて、同じ 所を 続けて 押せなかった
+		// （paginate の 直後は 全部の 行が 出ているので、ここで はかる）
+		pageH = pages.map((pg) => {
+			const a = buttons[pg[0]];
+			const b = buttons[pg[pg.length - 1]];
+			return a && b ? b.offsetTop + b.offsetHeight - a.offsetTop : 0;
+		});
+		// 横に なぞって ページを めくる（スマホの 人は まず なぞる。行の タップは 指が 動くと 決まらない）
+		let swipe: { id: number; x: number; y: number } | null = null;
+		box.addEventListener(
+			"pointerdown",
+			(e) => {
+				swipe = { id: e.pointerId, x: e.clientX, y: e.clientY };
+			},
+			{ capture: true },
+		);
+		box.addEventListener(
+			"pointerup",
+			(e) => {
+				if (!swipe || swipe.id !== e.pointerId) return;
+				const dx = e.clientX - swipe.x;
+				const dy = e.clientY - swipe.y;
+				swipe = null;
+				if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5)
+					flip(dx < 0 ? 1 : -1);
+			},
+			{ capture: true },
+		);
 		render();
 		const openedAt = performance.now();
 		// 開いてから 押しなおした キーが あったか（開く 前からの 押しっぱなしで 行が 動かないように。message.ts の OPEN_WAIT_MS）
