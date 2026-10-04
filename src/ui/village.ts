@@ -541,16 +541,14 @@ export class Village {
 				return;
 			}
 		}
-		// まっすぐ 押して 1マスの 物（立て札・岩・角）に つっかえたら、横へ 1歩 ずれて 回りこむ
-		// （出口の 矢印へ 上を 押しつづけて 立て札で 止まらないように）。両側とも 回りこめるなら、
-		// その先へ まっすぐ 長く 進めるほう（同じなら 村の 出口の 側）。人の 前では ずれない（話しかけたい）
+		// まっすぐ 押して 1マスの 地形（岩・角）に つっかえたら、横へ 1歩 ずれて 回りこむ。両側とも
+		// 回りこめるなら、その先へ まっすぐ 長く 進めるほう（同じなら ずれない）。人・立て札・置物
+		// （蓄音機・ピアノ）の 前では ずれない（そちらを 向いて 話しかけたい・調べたい）
 		if (tries.length === 1) {
 			const d = tries[0];
 			const v = DIR_VEC[d];
 			const { x, y } = this.player;
-			const person = field.blockerAt(x + v.dx, y + v.dy, this.player);
-			// 置物（蓄音機など 向きの ない 絵）は 人では ないので ずれる
-			if (!person?.sprite || person.still) {
+			if (!field.blockerAt(x + v.dx, y + v.dy, this.player)) {
 				const run = (s: Dir): number => {
 					const w = DIR_VEC[s];
 					if (!field.canEnter(x + w.dx, y + w.dy, this.player)) return 0;
@@ -565,7 +563,6 @@ export class Village {
 					)
 						n++;
 					// 物の 横に 並ぶ だけで その先が 壁なら、回りこめないので ずれない
-					// （ピアノの 前で 上を 押すと、鍵盤に 向かずに 横の 壁ぎわへ ずれていた）
 					return n >= 2 ? n : 0;
 				};
 				const [a, b] =
@@ -575,16 +572,6 @@ export class Village {
 				if (ra !== rb) {
 					void this.tryStep(ra > rb ? a : b);
 					return;
-				}
-				// 同じなら、村では 出口（北の 崖の 切れ目）の ある 側へ ずれる
-				// （起きる 所の 真北に 蓄音機が あり、出口の 矢印へ 上を 押すと ここで 止まっていた）
-				if (ra > 0 && this.mapId === "village") {
-					const [ex, ey] = VILLAGE_SPOTS.exit;
-					const toward = Math.sign(v.dx === 0 ? ex - x : ey - y);
-					if (toward !== 0) {
-						void this.tryStep(toward < 0 ? a : b);
-						return;
-					}
 				}
 			}
 		}
