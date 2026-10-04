@@ -3188,12 +3188,21 @@ export class Play {
 		const traps = new Set(
 			f.traps.filter((t) => t.found).map((t) => t.y * w + t.x),
 		);
+		// 同じ 手数の 道なら、行き先の 向きに 近い 1歩を 先に 調べる（上・右上…の 決まった 順だと、
+		// 2マス 右へ「右上→右下」と 遠回りに 見える 道を 選んでいた）
+		const ga = Math.atan2(to.y - run.p.y, to.x - run.p.x);
+		const off = (d: Dir8): number => {
+			const v = step({ x: 0, y: 0 }, d);
+			const t = Math.abs(Math.atan2(v.y, v.x) - ga) % (2 * Math.PI);
+			return Math.min(t, 2 * Math.PI - t);
+		};
+		const dirs = [...DIRS8].sort((a, b) => off(a) - off(b));
 		for (let h = 0; h < q.length; h++) {
 			const i = q[h];
 			if (i === goal) break;
 			const x = i % w;
 			const y = (i - x) / w;
-			for (const d of DIRS8) {
+			for (const d of dirs) {
 				const n = step({ x, y }, d);
 				if (!isFloor(l, n.x, n.y)) continue;
 				const ni = n.y * w + n.x;

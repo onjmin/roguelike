@@ -98,6 +98,8 @@ export class Village {
 	private stepPending = false;
 	private path: Dir[] = [];
 	private pathTalk: Actor | null = null;
+	/** タップで 話しに 行って、着いたら 相手が ずれていたので もう 1度 近づいた（2度目は あきらめて その場で 話す）。 */
+	private talkRetried = false;
 	private marker: { x: number; y: number; t: number } | null = null;
 	/** まだ 1度も もぐっていない（村の 出口に 矢印を 出す。はじめての 人が 出口を さがさないように）。 */
 	private guideExit = false;
@@ -496,6 +498,24 @@ export class Village {
 			const target = this.pathTalk;
 			this.pathTalk = null;
 			this.marker = null;
+			// タップした ときに 1歩 歩いていた 人は、着いたら となりに いない ことが ある：1度だけ 近づきなおす
+			// （となりで 止まって 何も 言わず、「タップで 話せる」と 習ったのに 話せなかった）
+			const dx = target.x - this.player.x;
+			const dy = target.y - this.player.y;
+			const dist = Math.abs(dx) + Math.abs(dy);
+			// カウンターの 向こうの 人とは 2マス 離れて 話す
+			const acrossCounter =
+				dist === 2 &&
+				(dx === 0 || dy === 0) &&
+				!!this.field?.tileAt(
+					this.player.x + Math.sign(dx),
+					this.player.y + Math.sign(dy),
+				).counter;
+			if (dist !== 1 && !acrossCounter && !this.talkRetried) {
+				this.talkRetried = true;
+				this.walkTo(target.x, target.y, target);
+				return;
+			}
 			this.faceTo(this.player, target.x, target.y);
 			this.talkFront();
 		}
@@ -697,6 +717,7 @@ export class Village {
 	private onTap(x: number, y: number): void {
 		const field = this.field;
 		if (!field || !this.idle) return;
+		this.talkRetried = false;
 		const p = this.screen.cssToSource(x, y);
 		const tx = Math.floor((p.x + this.camX) / TILE);
 		let ty = Math.floor((p.y + this.camY) / TILE);
