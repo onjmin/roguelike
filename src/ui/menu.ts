@@ -415,7 +415,7 @@ const itemActions = async (
 				break;
 			}
 			case "info":
-				await explain(ctx, itemInfo(run, it));
+				await explain(ctx, itemInfo(run, it), { top: true });
 				break;
 		}
 	}

@@ -387,6 +387,8 @@ export class MessageWindow {
 	private showToken = 0;
 	/** 窓の 上に 添えている 絵（図鑑の モンスター）。 */
 	private artEl: HTMLElement | null = null;
+	/** 送りを 待っている 文の 数（0 なら 窓を タップしても 送らない）。 */
+	private waits = 0;
 
 	constructor(
 		root: HTMLElement,
@@ -414,7 +416,9 @@ export class MessageWindow {
 		this.win.addEventListener("pointerdown", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			input.press("a");
+			// この 窓が 送りを 待っている ときだけ A に する。選択肢が 出ている あいだに 送りの つもりで
+			// 押すと、光っている 1番目の 項目に 決まって しまっていた
+			if (this.waits > 0) input.press("a");
 		});
 		root.appendChild(this.win);
 	}
@@ -577,6 +581,7 @@ export class MessageWindow {
 					);
 				});
 			}
+			this.waits++;
 			const pop = this.input.push((key, repeat) => {
 				if (repeat || (key !== "a" && key !== "b")) return;
 				if (!done) {
@@ -585,6 +590,7 @@ export class MessageWindow {
 				}
 				if (!ready) return; // 区切りまでは押しても送らない
 				pop();
+				this.waits--;
 				stop?.();
 				resolve();
 			});
@@ -601,6 +607,11 @@ export class MessageWindow {
 		if (!node) return;
 		node.classList.add("msg-art");
 		this.win.appendChild(node);
+	}
+
+	/** 窓を 画面の 上に 出す（道具の 小さい メニューから の せつめい。下の 行を 送りの タップで 押さないように）。 */
+	setTop(on: boolean): void {
+		this.win.classList.toggle("top", on);
 	}
 
 	/** 窓と立ち絵を片付ける（スクリプト終了時）。 */

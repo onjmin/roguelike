@@ -1460,7 +1460,9 @@ export class Play {
 			this.mapPoint(at.x, at.y, Math.max(1, Math.ceil(20 / at.cellCss))) ??
 			this.nearKnownFloor(at.x, at.y, 2);
 		if (!target) {
-			this.ctx.se("cancel");
+			// 地図の 帯の 中でも 行き先が なければ 閉じる（地図の 外を 押したときと 同じ）。
+			// 地図は 半透明で 気づきにくく、床を 押しても 何度も 音だけ 鳴って 動けなく なっていた
+			this.toggleMap();
 			return;
 		}
 		// 選んだ所を 一瞬 光らせてから 閉じて 歩きだす
@@ -1640,9 +1642,12 @@ export class Play {
 		const lay = run.f.layout;
 		const seenTap =
 			x >= 0 && y >= 0 && x < lay.w && y < lay.h && !!run.f.seen[y * lay.w + x];
+		// 走りだす 向きの ずれ：通路では 曲がり角に そって 90° まで、部屋では 45° まで
+		// （部屋の はしで 1段 ずれた 通路を タップすると、壁を よけて 真下へ 走って いた）
+		const spread = lay.tiles[p.y * lay.w + p.x] === T_CORR ? 2 : 1;
 		if (!seenTap && dist(p, { x, y }) >= 2) {
 			const toward = this.dirFromScreen(cssX, cssY);
-			const first = toward === null ? null : this.passableNear(toward, 2);
+			const first = toward === null ? null : this.passableNear(toward, spread);
 			if (first !== null) {
 				void this.dash(first, true);
 				return;
@@ -1668,9 +1673,17 @@ export class Play {
 			this.startTravel(target);
 			return;
 		}
+		// 見ていない 所の 少し 手前に 知っている 床（部屋の はしから 1段 ずれた 通路の 入口 など）が あれば、そこまで 歩く
+		if (!seenTap) {
+			const near = this.nearKnownFloor(x, y, 2);
+			if (near) {
+				this.startTravel(near);
+				return;
+			}
+		}
 		// 見ていない所（通路の先など）をタップしたら、その方へ 何かあるまで走る（通路の角はついていく）
 		const toward = this.dirFromScreen(cssX, cssY);
-		const first = toward === null ? null : this.passableNear(toward, 2);
+		const first = toward === null ? null : this.passableNear(toward, spread);
 		if (first !== null) void this.dash(first, true);
 	}
 

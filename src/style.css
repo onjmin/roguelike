@@ -214,9 +214,14 @@ body.shake #app {
 	text-shadow: 0 0 6px rgba(0, 0, 0, 0.8);
 }
 
+/*
+ * 文は 全角スペースで 語を 区切って いるので、折り返しも 区切りで（break-all だと「ゆれてい／る」の ように
+ * 語の 途中で 1文字だけ 次の 行に 落ちていた）。区切りの ない 長い 語だけ どこでも 折る
+ */
 .msg-text {
 	white-space: pre-wrap;
-	word-break: break-all;
+	word-break: keep-all;
+	overflow-wrap: anywhere;
 }
 
 .msg-next {
@@ -239,6 +244,12 @@ body.shake #app {
 /* ダンジョンの「せつめい」：開いている メニュー（30・31）の 上に 重ねる */
 .msg.over-menu {
 	z-index: 32;
+}
+
+/* 道具の 小さい メニュー（右下）から 読む せつめいは 上に（送りの タップが 開きなおした「置く」に 当たらないように） */
+.msg.over-menu.top {
+	top: calc(60px + var(--safe-t));
+	bottom: auto;
 }
 
 /* ───────── 立ち絵 ───────── */
@@ -450,7 +461,9 @@ body.shake #app {
 	border-left: 3px solid rgba(255, 255, 255, 0.5);
 	border-radius: 3px;
 	text-shadow: 0 1px 0 #000;
-	word-break: break-all;
+	/* 語の 区切り（全角スペース）で 折る（.msg-text と 同じ） */
+	word-break: keep-all;
+	overflow-wrap: anywhere;
 }
 
 /* HP が 半分を 切ると 字が 黄色 → 赤（ui/hpInk.ts。--ink は ui/play.ts が 入れる） */
@@ -1024,6 +1037,9 @@ body.shake #app {
 	padding: 4px 8px;
 	font-size: 14px;
 	line-height: 1.6;
+	/* 語の 区切り（全角スペース）で 折る（.msg-text と 同じ） */
+	word-break: keep-all;
+	overflow-wrap: anywhere;
 }
 
 .info-body p {
@@ -1177,6 +1193,16 @@ body.shake #app {
 	background: rgba(0, 0, 0, 0.3);
 	border: 2px solid rgba(255, 255, 255, 0.35);
 	touch-action: none;
+}
+
+/*
+ * 当たりは 円の 外の 四すみまで（見た目は 円のまま）。すみを 押すと 下の 画面の タップに なって、
+ * 親指が ずれただけで キリコが 歩きだしていた。すみは 斜めの 向きに なる（向きは 中心からの 角度）
+ */
+.pad::before {
+	content: "";
+	position: absolute;
+	inset: -2px;
 }
 
 .hud.no-pad .pad {
