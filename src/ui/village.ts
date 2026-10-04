@@ -564,7 +564,9 @@ export class Village {
 						)
 					)
 						n++;
-					return n;
+					// 物の 横に 並ぶ だけで その先が 壁なら、回りこめないので ずれない
+					// （ピアノの 前で 上を 押すと、鍵盤に 向かずに 横の 壁ぎわへ ずれていた）
+					return n >= 2 ? n : 0;
 				};
 				const [a, b] =
 					v.dx === 0 ? (["left", "right"] as Dir[]) : (["up", "down"] as Dir[]);
