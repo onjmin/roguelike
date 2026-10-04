@@ -182,8 +182,8 @@ const musicPeople = (v: VillageView): EventDef[] => {
 	return out;
 };
 
-/** 図書館の 読書の 机の ヒナリーの 所（右の いす）。 */
-const HINARY_AT = { x: 12, y: 7, dir: "left" } as const;
+/** 図書館の 読書の 机の ヒナリーの 所（左の いす。右の いすは 下の 植木鉢の 葉に かくれる）。 */
+const HINARY_AT = { x: 8, y: 7, dir: "right" } as const;
 
 /** 本屋の 店番・図書館の 司書（名無し。机の となり）。図書館には 監修の ヒナリーも（越してきてから）。 */
 const booksPeople = (
