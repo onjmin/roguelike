@@ -168,12 +168,7 @@ const musicPeople = (v: VillageView): EventDef[] => {
 				MUSIC_STAGE[1],
 				MOBS.ren.sprite,
 				async (s) => {
-					for (const l of PIANO_MSG.ren)
-						await s.say(null, l, {
-							name: MOBS.ren.name,
-							color: MOBS.ren.color,
-							noPortrait: true,
-						});
+					for (const l of PIANO_MSG.ren) await sayAs(s, "ren", l);
 					s.face("mob_ren", "down");
 				},
 				{ dir: "down" },
