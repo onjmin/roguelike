@@ -33,36 +33,11 @@ const TITLES = [
 	"ことばの　辞典（図書館）",
 ];
 
-/** 会話の 窓の 1行の 字数（全角）。 */
-const LINE = 22;
+/** 説明の 会話の 窓（data/glossary.ts の desc は 窓ごとに 空行で 区切って 書く）。 */
+export const descWindows = (desc: string): string[] => desc.split("\n\n");
 
-/**
- * 説明を 会話の 窓（1行 22字・2行まで）に 分ける。説明の 1行ごとに 窓を 改め、語の 切れ目
- * （全角の 空き・、。」））で 折る。
- */
-export const descWindows = (desc: string): string[] => {
-	const out: string[] = [];
-	for (const para of desc.split("\n")) {
-		const lines: string[] = [];
-		let cur = "";
-		const tokens = para.match(/[^　、。」）]*[　、。」）]*/g) ?? [];
-		for (const t of tokens.filter(Boolean)) {
-			if (cur && (cur + t).replace(/　+$/, "").length > LINE) {
-				lines.push(cur.replace(/　+$/, ""));
-				cur = "";
-			}
-			cur += t;
-			while (cur.replace(/　+$/, "").length > LINE) {
-				lines.push(cur.slice(0, LINE));
-				cur = cur.slice(LINE);
-			}
-		}
-		if (cur.replace(/　+$/, "")) lines.push(cur.replace(/　+$/, ""));
-		for (let i = 0; i < lines.length; i += 2)
-			out.push(lines.slice(i, i + 2).join("\n"));
-	}
-	return out;
-};
+/** 窓の 中の 改行を つないだ 1段落（一覧の 窓で 読む とき）。 */
+const joined = (win: string): string => win.replace(/\n/g, "");
 
 /** 本屋・図書館の i 番目の 本棚（n 本の うち）の ことば（読める 段までを 辞典の 順に 分ける）。 */
 export const shelfWords = (i: number, n: number): Word[] => {
@@ -120,7 +95,7 @@ export const openGlossary = async (ctx: Ctx): Promise<void> => {
 				known(w)
 					? {
 							label: esc(w.word),
-							desc: esc(w.desc.split("\n")[0]),
+							desc: esc(joined(descWindows(w.desc)[0])),
 							value: w.id,
 						}
 					: {
@@ -142,9 +117,8 @@ export const openGlossary = async (ctx: Ctx): Promise<void> => {
 		await infoWindow(
 			ctx,
 			esc(w.word),
-			w.desc
-				.split("\n")
-				.map((l) => `<p>${esc(l)}</p>`)
+			descWindows(w.desc)
+				.map((l) => `<p>${esc(joined(l))}</p>`)
 				.join(""),
 		);
 	}

@@ -41,6 +41,7 @@ import {
 import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
+import { GLOSSARY } from "../data/glossary";
 import { HALL_MSG, JIKKYO, ON_PHONO_TEXT, TOBAN_MENU } from "../data/hall";
 import {
 	MOB_IDS,
@@ -197,6 +198,7 @@ import {
 } from "../ui/cafe";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
+import { descWindows } from "../ui/glossary";
 import {
 	buildHall,
 	canWriteHoshu,
@@ -4390,4 +4392,12 @@ test("銭湯「ゆ」: women soak or change on free cells Kiriko can reach, men 
 	for (const t of Object.values(BATH_WOMEN))
 		for (const ls of [t.soak, t.dress])
 			ok(ls.length >= 1 && ls.length <= 3, "a bath talk is too long");
+});
+
+test("ことばの 辞典: every explanation is written as village windows (22 full-width × 2 lines, 1〜4 windows)", () => {
+	for (const w of GLOSSARY) {
+		const wins = descWindows(w.desc);
+		ok(wins.length >= 1 && wins.length <= 4, `${w.id}: ${wins.length} windows`);
+		fitsWindow(wins.map((t, i): [string, string] => [`${w.id} ${i}`, t]));
+	}
 });
