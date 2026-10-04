@@ -543,12 +543,19 @@ export class Village {
 		}
 		// まっすぐ 押して 1マスの 地形（岩・角）に つっかえたら、横へ 1歩 ずれて 回りこむ。両側とも
 		// 回りこめるなら、その先へ まっすぐ 長く 進めるほう（同じなら ずれない）。人・立て札・置物
-		// （蓄音機・ピアノ）の 前では ずれない（そちらを 向いて 話しかけたい・調べたい）
+		// （蓄音機・ピアノ）・調べられる 地形（本棚など）の 前では ずれない（そちらを 向いて 話しかけたい・調べたい）
 		if (tries.length === 1) {
 			const d = tries[0];
 			const v = DIR_VEC[d];
 			const { x, y } = this.player;
-			if (!field.blockerAt(x + v.dx, y + v.dy, this.player)) {
+			const fx = x + v.dx;
+			const fy = y + v.dy;
+			if (
+				!field.blockerAt(fx, fy, this.player) &&
+				!field.actors.some(
+					(a) => a.x === fx && a.y === fy && a.def?.trigger === "talk",
+				)
+			) {
 				const run = (s: Dir): number => {
 					const w = DIR_VEC[s];
 					if (!field.canEnter(x + w.dx, y + w.dy, this.player)) return 0;
