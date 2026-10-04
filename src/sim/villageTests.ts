@@ -42,7 +42,13 @@ import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
 import { GLOSSARY } from "../data/glossary";
-import { HALL_MSG, JIKKYO, ON_PHONO_TEXT, TOBAN_MENU } from "../data/hall";
+import {
+	HALL_MSG,
+	JIKKYO,
+	ON_PHONO_TEXT,
+	TOBAN_MENU,
+	YAKYU_SHELF,
+} from "../data/hall";
 import {
 	MOB_IDS,
 	MOBS,
@@ -4019,7 +4025,7 @@ test("建物の 中: every room is closed, draws only bundled art, and from the 
 			const lines =
 				id === "cafe"
 					? ((ROOM_MSG.cafe as Record<string, readonly string[]>)[kind] ?? [])
-					: thingLines(id, kind, 5);
+					: thingLines(id, p.id, 5);
 			ok(lines.length > 0, `${id}: ${p.id} has nothing to say`);
 		}
 	}
@@ -4399,5 +4405,13 @@ test("ことばの 辞典: every explanation is written as village windows (22 f
 		const wins = descWindows(w.desc);
 		ok(wins.length >= 1 && wins.length <= 4, `${w.id}: ${wins.length} windows`);
 		fitsWindow(wins.map((t, i): [string, string] => [`${w.id} ${i}`, t]));
+	}
+});
+
+test("本館の 野球の 本棚: every line fits the village window, each book is 1〜2 windows", () => {
+	fitsWindow([["yakyu", YAKYU_SHELF.line]]);
+	for (const b of YAKYU_SHELF.books) {
+		ok(b.text.length >= 1 && b.text.length <= 2, `${b.title}: too long`);
+		fitsWindow(b.text.map((t): [string, string] => [b.title, t]));
 	}
 });

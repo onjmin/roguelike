@@ -245,15 +245,17 @@ export const planLines = (stage: number): readonly string[] =>
 /** 調べる 物の 文（部屋と 物の 種類）。 */
 export const thingLines = (
 	id: Exclude<RoomId, "cafe">,
-	kind: string,
+	place: string,
 	stage: number,
 ): readonly string[] => {
+	// 同じ 物が 並ぶなら、その 1つだけの 文（books_1 など）が あれば それ
+	const kind = place.replace(/_\d+$/, "");
 	if (id === "hut" && kind === "plan") return planLines(stage);
 	// 銀行に なった 倉庫は 一部の 物が 貸金庫の 文に
 	if (id === "store" && stage >= BANK_FROM && kind in BANK.msg)
 		return BANK.msg[kind as keyof typeof BANK.msg];
 	const table = ROOM_MSG[id] as Record<string, readonly string[]>;
-	return table[kind] ?? [];
+	return table[place] ?? table[kind] ?? [];
 };
 
 const eventFor = (
@@ -275,7 +277,7 @@ const eventFor = (
 	if (id === "music" && kind === "piano")
 		return sign(p.id, p.x, p.y, pianoScript(ctx));
 	return sign(p.id, p.x, p.y, async (s) => {
-		await readAll(s, thingLines(id, kind, v.stage));
+		await readAll(s, thingLines(id, p.id, v.stage));
 		// あずかった 物の 棚は 倉庫の 一覧（シヨと 同じ）
 		if (id === "store" && kind === "shelf") {
 			await s.wait(0);

@@ -21,6 +21,7 @@ import {
 	MONITOR_MENU,
 	ON_PHONO_TEXT,
 	TOBAN_MENU,
+	YAKYU_SHELF,
 } from "../data/hall";
 import {
 	devEvent,
@@ -324,6 +325,22 @@ const nanashiScript =
 		if (p.dir) s.face(p.id, p.dir);
 	};
 
+/** 本館の 下の 本棚：野球の 本を 選んで 読む（やめるまで）。 */
+const yakyuShelf: Script = async (s) => {
+	await s.narrate(YAKYU_SHELF.line);
+	const books = YAKYU_SHELF.books;
+	let start = 0;
+	for (;;) {
+		const k = await s.choose([...books.map((b) => b.title), "やめる"], {
+			cancel: books.length,
+			start,
+		});
+		if (k >= books.length) return;
+		start = k;
+		for (const t of books[k].text) await s.narrate(t);
+	}
+};
+
 /** 名無し・野次馬の 台詞。 */
 const peopleLines = (id: string): readonly string[] => {
 	if (id === "nanashi_toban") return HALL_MSG.toban_nanashi;
@@ -362,6 +379,8 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "notice":
 			return sign(p.id, p.x, p.y, noticeScript);
 		case "book":
+			// 本館の 2つ目の 本棚は 野球の 本
+			if (p.id !== "book_0") return sign(p.id, p.x, p.y, yakyuShelf);
 			return sign(p.id, p.x, p.y, async (s) => {
 				// 本屋が 建ったら 辞典は そちらへ（はり紙を 残して、図鑑だけ）
 				if (loadTown().stage >= BOOKSTORE_FROM) {
