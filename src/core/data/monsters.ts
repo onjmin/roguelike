@@ -207,6 +207,9 @@ const M: MonsterDef[] = [
 		flavor: "IDは　変えられても、文体は　変えられない",
 	},
 	{
+		// 出る階は 8 から（トルネコ1の 10 より 2つ 前）。強さ10で 自演くん・鋼メンタル・転載ガモ・風呂キャンセル界隈が
+		// 一度に 加わり、風呂板 B12 に 入った 冒険の 4割が 倒れた（2026-10-04 ボット）。なぐって こない 2体を 先に 出して ほぐす
+		// （鋼メンタルも 1つ あと。B12 で 倒れる 率 40% → 22%）
 		id: "tensai",
 		name: "転載ガモ",
 		sprite: "sa:MrCnUI",
@@ -214,7 +217,7 @@ const M: MonsterDef[] = [
 		atk: 0,
 		def: 17,
 		exp: 20,
-		floors: [10, 18],
+		floors: [8, 18],
 		weight: 28,
 		abilities: [{ k: "steal", rate: 1 / 2 }],
 		sleep: "deep",
@@ -223,6 +226,7 @@ const M: MonsterDef[] = [
 	},
 	{
 		// 前の名前は さまよう騎士。絵は そのまま
+		// 出る階は 11 から（トルネコ1の 10 より 1つ あと。自演くんと 同じ 階に 出ないように。転載ガモの ところ）
 		id: "knight",
 		name: "鋼メンタル",
 		sprite: "sa:j8Lwkw",
@@ -230,7 +234,7 @@ const M: MonsterDef[] = [
 		atk: 15,
 		def: 26,
 		exp: 40,
-		floors: [10, 18],
+		floors: [11, 18],
 		weight: 28,
 		abilities: [{ k: "armor" }],
 		desc: "なにを　言われても　効かない。なぐる　攻撃は　半分しか　通らない",
@@ -239,7 +243,8 @@ const M: MonsterDef[] = [
 	{
 		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。なぐらず、ふれた 板を 汚して 錆びさせるだけ
 		// （ひとことは core/monster.ts の FUROCAN）。絵は とうすこ民（泥版）を くすませた もの（scripts/make-furocan.mjs）。
-		// 投げた 草の 効き目（undead）は 前の 役の まま
+		// 投げた 草の 効き目（undead）は 前の 役の まま。
+		// 出る階は 8 から（なぐって こないので 転載ガモと いっしょに 強さ10の 壁より 先に。転載ガモの ところ）
 		id: "sabi",
 		name: "風呂キャンセル界隈",
 		sprite: "pub:sprites/furocan.png",
@@ -247,7 +252,7 @@ const M: MonsterDef[] = [
 		atk: 8,
 		def: 19,
 		exp: 25,
-		floors: [10, 20],
+		floors: [8, 20],
 		weight: 28,
 		abilities: [{ k: "rust", rate: 1 / 3 }],
 		tags: ["undead"],

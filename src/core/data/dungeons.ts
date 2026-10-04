@@ -112,9 +112,6 @@ export type Dungeon = {
 	up?: boolean;
 };
 
-const identity = (n: number): number[] =>
-	Array.from({ length: n + 1 }, (_, i) => i);
-
 /**
  * 階 → 本編の 何階ぶんか：1階は 1、いちばん底（n階）は top。あいだは 1.5乗の 曲がりで 上げる（四捨五入）。
  * まっすぐ だと 3階で もう レベル4〜5 に なり、Lv2〜3 の ころに 倒れる 冒険が 固まった（pnpm sim）。
@@ -398,12 +395,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 30,
 		items: DEEP_ITEMS,
 		perFloor: [5, 8],
-		level: identity(30),
+		// 風呂板と 同じく 序盤を ゆるく：曲がりを 1.3 に（底の 強さは 30 の まま。B9 で 6・B20 で 18）。
+		// 祭りも B5 から、はじめの 1つは B6〜8 に。前は 1階に 1 ずつ（本編と 同じ）で 祭りが B4〜6 に 必ず あり、
+		// 倒れた 冒険の 7割が B1〜9 だった → 4割（2026-10-04 ボット。祭りを 遅らせる だけでは 7割の まま。1.5 だと 飢え死にが 3割）
+		level: ramp(30, 30, 1.3),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "tsuzuki",
-		houses: { from: 3, chance: 1 / 10, early: [4, 6] },
+		houses: { from: 5, chance: 1 / 10, early: [6, 8] },
 		trapsFrom: 3,
 		unlockAfter: "main",
 		reliefAfter: null,
@@ -488,8 +488,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "大たこのみんを　たおした",
 		},
-		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ
-		foes: { oni: 3, ninja: 1.5, fallen: 1.5 },
+		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ。怒りの レスで スレが あがりつづけるので、dat落ちの霊は 出ない
+		// （1階から 怒るので、素手の Lv1 で 3発 かかる 霊が 怒って 2回ずつ なぐり、1階で 倒れる 冒険が 19% あった → 5%。2026-10-04 ボット）
+		foes: { oni: 3, ninja: 1.5, fallen: 1.5, hitodama: 0 },
 		floors: 13,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
