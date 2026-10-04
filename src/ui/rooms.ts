@@ -44,7 +44,7 @@ import {
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadTown } from "../engine/save";
-import { bathPeople } from "./bath";
+import { bathPeople, bathSteam } from "./bath";
 import type { Ctx } from "./ctx";
 import { readShelf } from "./glossary";
 import { openStorage } from "./home";
@@ -304,5 +304,6 @@ export const buildRoom = (
 			...(id === "bath" ? bathPeople(v) : []),
 			...(id === "bookstore" || id === "library" ? booksPeople(id, v) : []),
 		],
+		decor: id === "bath" ? bathSteam() : undefined,
 	};
 };

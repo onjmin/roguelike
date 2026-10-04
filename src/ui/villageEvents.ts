@@ -73,6 +73,7 @@ import {
 	readScrap,
 	recordFromRun,
 } from "../engine/save";
+import { chimneySteam } from "./bath";
 import { openBook } from "./bookView";
 import { runSaveLabel } from "./boot";
 import { enterCafe } from "./cafe";
@@ -691,12 +692,15 @@ export const buildVillage = (
 	// はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村（やきうが 出ていく 語りでも 村に いる）
 	const back = returnOf(arrival);
 	const view = back ? sceneView(v, back) : v;
+	const rows = villageRows(view);
 	return {
 		id: "village",
 		name: `${TOWN_NAME}　${STAGE_NAMES[v.stage] ?? ""}`,
 		bgm: villageSong(),
 		tiles: villagePalette(view),
-		rows: villageRows(view),
+		rows,
+		// 銭湯の 煙突から 湯気
+		decor: chimneySteam(rows),
 		outside: "#1f2a14",
 		events: [
 			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),

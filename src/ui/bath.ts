@@ -27,8 +27,9 @@ import {
 	roomRows,
 	type Spot,
 } from "../data/village/rooms";
-import type { EventDef, Script, Story } from "../engine/defs";
+import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadRecords } from "../engine/save";
+import { TILE } from "../engine/types";
 import { sayAs } from "./villageMobs";
 
 /** キリコが 湯に つかった 印（銭湯に いるあいだ）。 */
@@ -121,6 +122,98 @@ const woman = (who: BathWoman, at: Spot, place: "soak" | "dress"): EventDef => {
 		}),
 		{ dir: at.dir },
 	);
+};
+
+/**
+ * 湯気（ui/rooms.ts の buildRoom が 銭湯の decor に する）。湯の マスごとに 白い もやが ゆらゆら
+ * 立ちのぼって 消える。マスごとに 出る 時刻と 速さを ずらす。浴室の 上の ほうは うすく くもらせる。
+ */
+export const bathSteam = (): MapDef["decor"] => {
+	const rows = roomRows("bath");
+	const puffs: { x: number; y: number; phase: number; period: number }[] = [];
+	let top = rows.length;
+	let bottom = 0;
+	rows.forEach((r, y) => {
+		[...r].forEach((ch, x) => {
+			if (ch !== "~") return;
+			top = Math.min(top, y);
+			bottom = Math.max(bottom, y);
+			const h = (Math.imul(x * 31 + y * 17, 2654435761) >>> 0) / 2 ** 32;
+			// 1マスに 2つ（半周 ずらす）
+			for (const k of [0, 0.5])
+				puffs.push({
+					x: x * TILE + 3 + Math.floor(h * 10),
+					y: y * TILE + 8,
+					phase: h + k,
+					period: 2600 + Math.floor(h * 1400),
+				});
+		});
+	});
+	const width = rows[0].length * TILE;
+	return (g, ox, oy, t) => {
+		g.save();
+		// 浴室の くもり（ゆっくり 濃く うすく）
+		const haze = 0.07 + 0.03 * Math.sin(t / 1700);
+		const hy = TILE - oy;
+		const hh = (bottom + 1) * TILE - TILE;
+		const grad = g.createLinearGradient(0, hy, 0, hy + hh);
+		grad.addColorStop(0, `rgba(255,255,255,${haze * 1.6})`);
+		grad.addColorStop(1, `rgba(255,255,255,${haze * 0.4})`);
+		g.fillStyle = grad;
+		g.fillRect(TILE - ox, hy, width - TILE * 2, hh);
+		// 立ちのぼる もや
+		for (const p of puffs)
+			puff(g, p.x - ox, p.y - oy, (t / p.period + p.phase) % 1, p.phase, {
+				rise: TILE * 1.8,
+				size: 6,
+				alpha: 0.45,
+			});
+		g.restore();
+	};
+};
+
+/** もや 1つ（a は 0→1 の 進み。立ちのぼりながら ふくらんで、ゆれて、消える）。 */
+const puff = (
+	g: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	a: number,
+	phase: number,
+	o: { rise: number; size: number; alpha: number },
+): void => {
+	const cx = x + Math.sin(a * Math.PI * 2 + phase * 6) * 2.5 * a;
+	const cy = y - a * o.rise;
+	const r = 3 + a * o.size;
+	// ふちを ぼかす（泡に 見えない ように）
+	const grad = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+	const al = Math.sin(a * Math.PI) * o.alpha;
+	grad.addColorStop(0, `rgba(255,255,255,${al})`);
+	grad.addColorStop(0.5, `rgba(255,255,255,${al * 0.6})`);
+	grad.addColorStop(1, "rgba(255,255,255,0)");
+	g.fillStyle = grad;
+	g.fillRect(cx - r, cy - r, r * 2, r * 2);
+};
+
+/** 村の 地図の 銭湯の 煙突（Ц）から 立つ 湯気（ui/villageEvents.ts の decor）。煙突が なければ 無い。 */
+export const chimneySteam = (rows: readonly string[]): MapDef["decor"] => {
+	const tops: [number, number][] = [];
+	rows.forEach((r, y) => {
+		[...r].forEach((ch, x) => {
+			if (ch === "Ц") tops.push([x * TILE + TILE / 2, y * TILE + 3]);
+		});
+	});
+	if (!tops.length) return undefined;
+	return (g, ox, oy, t) => {
+		g.save();
+		for (const [x, y] of tops)
+			for (let i = 0; i < 4; i++)
+				puff(g, x - ox, y - oy, (t / 3200 + i / 4) % 1, i * 0.37, {
+					rise: TILE * 2.2,
+					size: 7,
+					alpha: 0.75,
+				});
+		g.restore();
+	};
 };
 
 /** 銭湯の 人と しかけ（ui/rooms.ts の buildRoom が 足す）。 */
