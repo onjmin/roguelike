@@ -32,6 +32,7 @@ import {
 	CAFE_GREET,
 	CAFE_TALKS,
 	CHAT_MSG,
+	GLASS_CHOICES,
 	MASTER_MSG,
 	NANASHI_CAFE,
 	SEAT_MSG,
@@ -164,6 +165,7 @@ import {
 	CAFE_PATRON_SPOTS,
 	CAFE_SLOTS,
 	MUSIC_SEATS,
+	onCafeCounter,
 	ROOM_FROM,
 	ROOM_IDS,
 	ROOM_OUTSIDE,
@@ -198,6 +200,7 @@ import { isWalkRef } from "../engine/sprite";
 import { bathLayout } from "../ui/bath";
 import { floorsText } from "../ui/bookView";
 import {
+	buildCafe,
 	cafeLayout,
 	cafeTalks,
 	forgetCafeMemo,
@@ -4402,6 +4405,64 @@ test("銭湯「ゆ」: women soak or change on free cells Kiriko can reach, men 
 	for (const t of Object.values(BATH_WOMEN))
 		for (const ls of [t.soak, t.dress])
 			ok(ls.length >= 1 && ls.length <= 3, "a bath talk is too long");
+});
+
+test("喫茶の「あちらの　お客様から」: only at the counter, from a friend at the counter; Kiriko may refuse, and after the talk she is back on her stool", async () => {
+	const view = VIEWS.find((v) => v.stage >= 6) as VillageView;
+	// カウンターの 2つの 席の うち、左は 話しこんでいて（そばで 聞く）、右は となりが 空いた 帰りを さがす
+	const play = async (at: number, picks: number[]) => {
+		let out: { log: string[]; x: number; y: number } | null = null;
+		await withStorageAsync(async () => {
+			setProgress(["shallow", "main"], [], ["shallow"]);
+			forgetCafeMemo();
+			putTown({ stage: view.stage });
+			pushRecord({ at });
+			const ev = buildCafe(view, {} as Ctx).events ?? [];
+			const who = (x: number, y: number) =>
+				ev.find((e) => e.x === x && e.y === y && e.trigger === "talk");
+			const left = who(2, 5);
+			if (!left || !who(3, 5) || !who(6, 5) || who(5, 5)) return;
+			const f = fakeStory({ at: [2, 6] });
+			let k = 0;
+			f.s.choose = async (options) => {
+				f.log.push(`choose ${options.join("/")}`);
+				return picks[k++] ?? 0;
+			};
+			await left.run?.(f.s);
+			out = { log: f.log, x: f.s.state.x, y: f.s.state.y };
+			forgetCafeMemo();
+		});
+		return out as { log: string[]; x: number; y: number } | null;
+	};
+	let tried = 0;
+	for (let at = 1; at < 4000 && tried < 3; at++) {
+		const yes = await play(at, [0, 0]);
+		if (!yes?.log.some((l) => l.includes("あちらの　お客様からです"))) continue;
+		tried++;
+		ok(
+			yes.log.some((l) => l === `choose ${GLASS_CHOICES.join("/")}`),
+			"no choice to take the glass",
+		);
+		ok(
+			onCafeCounter(yes.x, yes.y) && yes.x === 1 && yes.y === 5,
+			`Kiriko ended at (${yes.x},${yes.y}), not on her stool`,
+		);
+		const no = await play(at, [0, 1]);
+		const after = no?.log.slice(
+			no.log.findIndex((l) => l.startsWith("choose 受け取る")),
+		);
+		ok(
+			!!after?.some((l) => l.includes("首を　ふった")) &&
+				!after.some((l) => l.includes("となりに　すわった")),
+			`refusing still sat down:\n${no?.log.join("\n")}`,
+		);
+		ok(no?.x === 1 && no.y === 5, "refusing moved Kiriko");
+	}
+	ok(tried > 0, "no return with a glass from the counter");
+	// カウンターでは ない 席・住人の 席からは 届かない
+	ok(!onCafeCounter(...CAFE_SLOTS[2].at), "a sofa is the counter");
+	for (const p of CAFE_PATRON_SPOTS)
+		ok(!onCafeCounter(...p.kiriko), "a patron sits at the counter");
 });
 
 test("施設の 客: residents visit one facility per return, the same return keeps the same lineup, and lineups change between returns", () => {

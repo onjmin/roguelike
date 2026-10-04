@@ -738,6 +738,9 @@ export const NANASHI_CAFE = {
 } as const;
 
 /** 席の 窓の とじる 字と、となりに すわる 地の文（{name}）。 */
+/** 「あちらの　お客様から」の 一杯を 受け取るか。 */
+export const GLASS_CHOICES = ["受け取る", "ことわる"] as const;
+
 export const SEAT_MSG = {
 	sit: "キリコは　{name}の　となりに　すわった。",
 	leave: "席を　立つ",
@@ -745,6 +748,8 @@ export const SEAT_MSG = {
 	join: "{name}が　やってきた。",
 	/** みんなの 話（カウンターに 集まる）。 */
 	all: "みんなが　カウンターに　集まってきた。",
+	/** ことわった（{name}）。 */
+	decline: "キリコは　そっと　首を　ふった。\n{name}は　グラスを　ひっこめた。",
 	/** 話が ふえた（{name}）。 */
 	more: "{name}と　話せる　ことが　ふえた。",
 	/** 品書きの ひとこと（好みを 知らない 一杯）。 */

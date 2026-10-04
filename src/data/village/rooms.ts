@@ -224,6 +224,10 @@ const ROWS: Record<RoomId, readonly string[]> = {
 /** 部屋の 行。 */
 export const roomRows = (id: RoomId): string[] => [...ROWS[id]];
 
+/** 喫茶の カウンターの 丸いす（台の 前の n）か。「あちらの　お客様から」は ここだけ（ui/cafe.ts）。 */
+export const onCafeCounter = (x: number, y: number): boolean =>
+	ROWS.cafe[y]?.[x] === "n" && "[=]".includes(ROWS.cafe[y - 1]?.[x] || "#");
+
 /** 出口の マット（2マス）。 */
 export const roomMats = (id: RoomId): readonly Cell[] => {
 	const rows = ROWS[id];
