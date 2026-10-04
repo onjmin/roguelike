@@ -151,27 +151,39 @@ export const bathSteam = (): MapDef["decor"] => {
 	const width = rows[0].length * TILE;
 	return (g, ox, oy, t) => {
 		g.save();
-		// 浴室の くもり（ゆっくり 濃く うすく）
-		const haze = 0.07 + 0.03 * Math.sin(t / 1700);
+		t = frameOf(t);
+		// 浴室の くもり（上ほど 濃い 4段の 帯。ゆっくり 濃く うすく）
+		const haze = 0.06 + 0.03 * (Math.sin(t / 1700) > 0 ? 1 : 0);
 		const hy = TILE - oy;
 		const hh = (bottom + 1) * TILE - TILE;
-		const grad = g.createLinearGradient(0, hy, 0, hy + hh);
-		grad.addColorStop(0, `rgba(255,255,255,${haze * 1.6})`);
-		grad.addColorStop(1, `rgba(255,255,255,${haze * 0.4})`);
-		g.fillStyle = grad;
-		g.fillRect(TILE - ox, hy, width - TILE * 2, hh);
+		const band = Math.ceil(hh / 4);
+		for (let i = 0; i < 4; i++) {
+			g.fillStyle = `rgba(255,255,255,${haze * (1.6 - i * 0.4)})`;
+			g.fillRect(TILE - ox, hy + band * i, width - TILE * 2, band);
+		}
 		// 立ちのぼる もや
 		for (const p of puffs)
 			puff(g, p.x - ox, p.y - oy, (t / p.period + p.phase) % 1, p.phase, {
 				rise: TILE * 1.8,
-				size: 6,
-				alpha: 0.45,
+				size: 3,
+				alpha: 0.5,
 			});
 		g.restore();
 	};
 };
 
-/** もや 1つ（a は 0→1 の 進み。立ちのぼりながら ふくらんで、ゆれて、消える）。 */
+/** もやの 濃さ（ドット絵らしく 3段だけ）。 */
+const STEAM_LEVELS = [0.18, 0.32, 0.5] as const;
+
+/** 湯気の コマ（ミリ秒。なめらかに 動かさず、ドットアニメの ように 1コマずつ 送る）。 */
+const STEAM_FRAME = 160;
+const frameOf = (t: number): number =>
+	Math.floor(t / STEAM_FRAME) * STEAM_FRAME;
+
+/**
+ * もや 1つ（a は 0→1 の 進み。立ちのぼりながら ふくらんで、ゆれて、消える）。
+ * ドット絵の もやに する：1画素の 四角で まるく 埋め、ふちは 市松に 間引く。濃さは 3段。
+ */
 const puff = (
 	g: CanvasRenderingContext2D,
 	x: number,
@@ -180,17 +192,23 @@ const puff = (
 	phase: number,
 	o: { rise: number; size: number; alpha: number },
 ): void => {
-	const cx = x + Math.sin(a * Math.PI * 2 + phase * 6) * 2.5 * a;
-	const cy = y - a * o.rise;
-	const r = 3 + a * o.size;
-	// ふちを ぼかす（泡に 見えない ように）
-	const grad = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+	const cx = Math.round(x + Math.sin(a * Math.PI * 2 + phase * 6) * 2 * a);
+	const cy = Math.round(y - a * o.rise);
+	const r = 1 + Math.round(a * o.size);
 	const al = Math.sin(a * Math.PI) * o.alpha;
-	grad.addColorStop(0, `rgba(255,255,255,${al})`);
-	grad.addColorStop(0.5, `rgba(255,255,255,${al * 0.6})`);
-	grad.addColorStop(1, "rgba(255,255,255,0)");
-	g.fillStyle = grad;
-	g.fillRect(cx - r, cy - r, r * 2, r * 2);
+	const level = [...STEAM_LEVELS].reverse().find((l) => l <= al);
+	if (!level) return;
+	g.fillStyle = `rgba(255,255,255,${level})`;
+	for (let dy = -r; dy <= r; dy++)
+		for (let dx = -r; dx <= r; dx++) {
+			const d = dx * dx + dy * dy;
+			if (d > r * r + r * 0.6) continue;
+			// ふちの 輪は 1つおき（消えぎわは 中も 間引く）
+			const edge = d > (r - 1) * (r - 1);
+			if ((edge || level === STEAM_LEVELS[0]) && (cx + dx + cy + dy) & 1)
+				continue;
+			g.fillRect(cx + dx, cy + dy, 1, 1);
+		}
 };
 
 /** 村の 地図の 銭湯の 煙突（Ц）から 立つ 湯気（ui/villageEvents.ts の decor）。煙突が なければ 無い。 */
@@ -203,13 +221,14 @@ export const chimneySteam = (rows: readonly string[]): MapDef["decor"] => {
 	});
 	if (!tops.length) return undefined;
 	return (g, ox, oy, t) => {
+		t = frameOf(t);
 		g.save();
 		for (const [x, y] of tops)
 			for (let i = 0; i < 4; i++)
 				puff(g, x - ox, y - oy, (t / 3200 + i / 4) % 1, i * 0.37, {
 					rise: TILE * 2.2,
-					size: 7,
-					alpha: 0.75,
+					size: 4,
+					alpha: 0.8,
 				});
 		g.restore();
 	};
