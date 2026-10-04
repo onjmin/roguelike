@@ -85,6 +85,18 @@ const itemRow = (run: Run, it: Item): ListItem => ({
 	icon: itemArt(it.kind),
 });
 
+/** 行の 絵の 写し（もとの canvas は 一覧の 行で 使いまわすので、下じきには 写しを 置く）。 */
+const copyArt = (src: HTMLElement): HTMLElement => {
+	if (!(src instanceof HTMLCanvasElement))
+		return src.cloneNode(true) as HTMLElement;
+	const c = document.createElement("canvas");
+	c.width = src.width;
+	c.height = src.height;
+	c.className = src.className;
+	c.getContext("2d")?.drawImage(src, 0, 0);
+	return c;
+};
+
 /**
  * 下じきの一覧。小さいメニュー（つかう・なげる…）を開いているあいだ、さっきの一覧を
  * 後ろに見せておく（何を選んだかわかるように）。タップしたら窓の外と同じく「とじる」。
@@ -101,10 +113,14 @@ const ghostList = (
 	const box = el("div", { class: "menu window ghost" });
 	if (title) box.appendChild(el("div", { class: "menu-title", html: title }));
 	const els = rows.map((it, i) => {
-		const b = el("div", {
-			class: "menu-item",
-			html: `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}${it.desc ? `<span class="desc">${it.desc}</span>` : ""}`,
-		});
+		const html = `<span>${it.label}</span>${it.sub ? `<small>${it.sub}</small>` : ""}${it.desc ? `<span class="desc">${it.desc}</span>` : ""}`;
+		// 絵も 出す（つかう ときに 一覧の 絵が 消えると、さっきの 一覧に 見えない）
+		const b = it.icon
+			? el("div", { class: "menu-item has-icon" }, [
+					copyArt(it.icon),
+					el("span", { class: "menu-item-body", html }),
+				])
+			: el("div", { class: "menu-item", html });
 		if (it.desc) b.classList.add("has-desc");
 		if (it.disabled) b.classList.add("disabled");
 		if (i === cur) b.classList.add("cur");
