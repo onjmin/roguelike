@@ -250,15 +250,15 @@ export const themeFor = (dungeon: DungeonId, depth: number): Theme =>
 
 /** 罠の見た目（見つけたものだけ描く）。罠の種類が ふえたら ここも（型で 抜けを見つける）。 */
 export const TRAP_ICON: Record<TrapKind, string> = {
-	bear: cut(5, 13), // とげの輪
-	acid: cut(3, 189), // 緑の あわ
+	bear: "pub:sprites/traps.png#0,0,16,16", // 口を 開けた 鉄の あご（scripts/make-traps.mjs）
+	acid: "pub:sprites/traps.png#16,0,16,16", // 緑の 酸の 水たまり（scripts/make-traps.mjs）
 	sleep: cut(6, 13),
 	trip: cut(0, 13), // 小石
-	mine: cut(0, 250),
+	mine: "sp:eqO76tJ", // RPGEN「ロビー地雷(埋設)」
 	arrow: cut(2, 187),
 	dart: cut(3, 187), // 矢の罠の 色ちがい
 	warp: cut(7, 13),
-	pit: cut(2, 190),
+	pit: "sp:87bRbg", // RPGEN「落とし穴」
 	anka: "pub:sprites/anka_trap.png#0,0,16,16", // >> の 踏み板（scripts/make-anka-trap.mjs）
 };
 
