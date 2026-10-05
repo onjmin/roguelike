@@ -28,7 +28,7 @@
 		"pnpm": "10.17.1"
 	},
 	"dependencies": {
-		"@onjmin/dtm": "2.1.29"
+		"@onjmin/dtm": "2.1.32"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.14",

@@ -404,8 +404,9 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	deep: { theme: "cyber", bgm: "speder2", ambient: "data" },
 	// 苔と 胞子。地下の 菌床（曲は ずれる 地層）
 	kinoko: { theme: "moss", bgm: "deq_strata", ambient: "spores" },
-	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく（曲は 水底に さす 光）
-	tropical: { theme: "beach", bgm: "deq_sea", ambient: "glitter" },
+	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく
+	// （曲は ニ長調 131 の ビブラフォン・チェレスタの 明るい サビ。もとは 水底に さす 光＝deq_sea）
+	tropical: { theme: "beach", bgm: "island", ambient: "glitter" },
 	// 鉄板の 焦げ。どの 敵も 怒りっぽい 板なので 張りつめた 曲（ヘ短調の バイオリンと 矩形波の 分散和音。もとは 活火山の 底）
 	konamono: { theme: "lava", bgm: "fukyowa", ambient: "embers" },
 	// 提灯の 赤。祭りが よく 出る 板なので 速い ダンスの 曲（もとは 隠しの 規制の檻と 同じ 都節の 曲）

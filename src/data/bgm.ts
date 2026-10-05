@@ -59,7 +59,8 @@
 // | fukyowa      | -25.7（15）    | 15 → 19 | -23.5    |
 // | kouseki      | -22.8（20）    | 50 → 18 | -23.7    |
 // | speder2      | -19.7（20）    | 50 → 13 | -23.4    |
-// （2026-10。kouseki・speder2 は 元の 譜面が #volume=50 なので 20 に して 測った）
+// | island       | -27.7（10）    | 10 → 16 | -23.6    |
+// （2026-10。kouseki・speder2 は 元の 譜面が #volume=50 なので 20 に して 測った。island は dtm 2.1.32 で 測った）
 // dtm 2.1.29 から studio.play でも #reverb= などの 全体の 残響と #drumfont= が 鳴る（それまでは 無視されていた）。
 // 上げた ときに 全曲 測り直したが、どれも 目標から ±0.8 以内（boss +0.8・lastboss +0.6・ending +0.5、ほかは ±0.5）なので 直していない。
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
@@ -94,7 +95,9 @@ import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 // post/1318（AI作曲スレ）の 名無し2rt さんの 4曲（2026-10。title・town などと 同じ 人）。
 // 保守村（段5 から。data/music.ts）＝kumori、電池板＝speder2（もとは deq_laundry）、おんたこ＝fukyowa（もとは deq_volcano）、
 // お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
+// 離島板＝island（もとは deq_sea。2026-10-05 の 5曲目。dtm 2.1.32 の 音色 ep_celesta を 使うので dtm を 上げた）
 import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音
+import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたらテンション上がりそうなサビ」：ニ長調 131・ビブラフォン・チェレスタ・エレピ（前奏 12 小節）
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
@@ -151,4 +154,5 @@ export const bgm: Record<string, string> = {
 	fukyowa,
 	kouseki,
 	speder2,
+	island,
 };
