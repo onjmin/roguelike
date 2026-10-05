@@ -3,7 +3,7 @@
 // - hello：話しかけた ときの ひとこと（1窓）。
 // - talks：「話す」で 上から 順に 1本ずつ（見た 話は くり返さない。1回の 帰りに 1人 1本）。ぜんぶ 見たら idle。
 //   with は その人・その子が 店に いる とき だけ（仲間 5人は いつも 店に いる。住人は その帰りに 来ている とき）。
-// - treat：一杯 おごられた ときの ひとこと（{drink} は 一杯の 名前）。
+// - treat：一杯 おごられた ときの ひとこと（{drink} は 一杯の 名前）。sip：ひとくち 飲んだ あとの 感想。
 // 決まりは 村の 住人の 話と 同じ（data/mobs.ts の 先頭）：1行は 全角22字・2行まで、1本は 1〜3窓（口出し こみで 4窓まで）、
 // キリコは 口数が 少ない（しぐさは 地の文、短い 返事は k。吾輩・ンゴ。「保守」とは 言わない）。who の "mob" は その子、null は 地の文、仲間・ほかの子は その人。
 // 店の 小物（data/rooms.ts）：鳴らない 鍵盤が ひとつの ピアノ・0時で 止まった 柱時計・棚の 奥の『Part1』の 瓶・
@@ -23,6 +23,8 @@ export type CafeMob = {
 	talks: CafeMobTalk[];
 	idle: string;
 	treat: string;
+	/** ひとくち 飲んだ あとの 感想。 */
+	sip: string;
 };
 
 const m = (text: string): MobLine => ({ who: "mob", text });
@@ -191,6 +193,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "グラスの　湯気を　観測中ゼロ。\n……芸術ゼロ",
 		treat: "{drink}……。\n感謝、という　感情を　記録したゼロ",
+		sip: "……味噌汁ゼロ。\n……おいしい、と　判定するゼロ",
 	},
 	// 解音ゼロの サブ機 XQxS-0（レン）。マッドな 博士に しょっちゅう 更新される。明るくて 目立ちたがり、マイク
 	ren: {
@@ -347,6 +350,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "レンの　特等席、\nあったまって　きた！",
 		treat: "{drink}！？　やった！\n……博士には　ないしょね！",
+		sip: "んー！　おいしい！\nレンの　センサー、満点！",
 	},
 	// ぷゆゆの 行は mobs.ts と 同じ 決まり（🥺は 1窓に 1つ・行の 終わりだけ・絵文字の 行は 21字まで）
 	puyu: {
@@ -390,6 +394,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "おいしいの　まってるゆ🥺",
 		treat: "{drink}、ぼくちんに？🥺\n……ぺろって　なめたゆ",
+		sip: "おいちいゆ……\nほっぺ　おちゆ🥺",
 	},
 	nichie: {
 		hello: "……喫茶は、日曜日の\nにおいが　するニィ",
@@ -422,6 +427,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "日曜日まで、\nここで　待つニィ",
 		treat: "{drink}ニィ？\n……今日は　日曜日に　するニィ",
+		sip: "……日曜日の　朝の\n味が　するニィ",
 	},
 	panmatsu: {
 		hello: "喫茶か。\n……パンの　ない　店だ",
@@ -462,7 +468,8 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			},
 		],
 		idle: "パンを　持ちこめないか、\n交渉中だ",
-		treat: "{drink}か。\n……パンに　あう　味だ",
+		treat: "{drink}か。\n……パンが　ほしく　なる",
+		sip: "……うまい。\nパンに　あう　味だ",
 	},
 	ngoane: {
 		hello: "しーっ……フェリスちゃんの\n寝息が　聞こえるンゴねぇ……",
@@ -497,6 +504,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "フェリスちゃんの　席まで、\nあと　ふたつンゴねぇ……",
 		treat: "{drink}……！\nフェリスちゃんと　半分こンゴねぇ",
+		sip: "……おいしいンゴねぇ……\nフェリスちゃんの　ぶん、残すンゴねぇ",
 	},
 	onsu: {
 		hello: "あら……ここは\nお客が　いるのねぇ",
@@ -539,6 +547,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "……べつに、待ち合わせ\nなんか　じゃ　ないわぁ",
 		treat: "{drink}……？\nふ、ふん。いただくわぁ",
+		sip: "……お紅茶には　負けるけど、\nわるく　ないわぁ",
 	},
 	onchan: {
 		hello: "キリコちゃん、\nいらっしゃいだおん",
@@ -580,7 +589,8 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			},
 		],
 		idle: "まるい　席は、\n落ちつくおん",
-		treat: "{drink}、もらうおん。\n……一軍の　味だおん",
+		treat: "{drink}、もらうおん。\nグラスも　まるいおん",
+		sip: "……一軍の　味だおん。\nまるい　味だおん",
 	},
 	yayapoji: {
 		hello: "……となり、半分なら\n空いてるんだ",
@@ -613,6 +623,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "半分　飲んだんだ。\n……ここからが　いいんだ",
 		treat: "{drink}……。\nおごりは、ちょっと　多いんだ",
+		sip: "……半分　飲んだんだ。\nおいしいのも　半分　残ってるんだ",
 	},
 	mujje: {
 		hello: "ホゲェ",
@@ -636,6 +647,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "ホゲェ",
 		treat: "ホゲェ！　ホゲェ！\n（{drink}を　だきしめている）",
+		sip: "ホゲェ……\n（しあわせそうだ）",
 	},
 	asakonro: {
 		hello: "となり、あったかいもん！\n座って　いいもん",
@@ -657,7 +669,8 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			},
 		],
 		idle: "ココア、ぬるいもん。\n……温めなおすもん",
-		treat: "{drink}！？　うちに？\n……あったかいもん",
+		treat: "{drink}！？　うちに？\nうれしいもん！",
+		sip: "ほっ……。\nおなかの　中から　あったかいもん",
 	},
 	jtleman: {
 		hello: "ここは　私の　新しい　席だ。\n……となりは　空いているよ",
@@ -680,6 +693,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "コーヒーは　ブラックだ。\n……砂糖は　2つだ",
 		treat: "{drink}か。\n……紳士として、ありがたく",
+		sip: "……結構な　お味だ。\nマスターに　よろしく",
 	},
 	miaumiau: {
 		hello: "この　席は　侵略　済みぷ。\n……となりなら　いいぷ",
@@ -702,6 +716,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "侵略は、\nのんびり　するぷ",
 		treat: "{drink}ぷ！？\n……ぷゆゆ🥺",
+		sip: "……おいしいぷ。\n地球の　飲み物も　わるくないぷ",
 	},
 	rino: {
 		hello: "……座れ。\n話は　しない",
@@ -774,6 +789,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "……ここは、静かで　いい",
 		treat: "……{drink}か。\nおまえから　金は　取らない",
+		sip: "……悪くない。\n……ハムスターには　やらない",
 	},
 	aru: {
 		hello: "先輩！　ここ、実験に\nぴったりの　席です！",
@@ -882,6 +898,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "ここで　見ると、再生数が\nふえてる　気が　します",
 		treat: "{drink}！？　先輩の\nおごり……！　記録　します！",
+		sip: "おいしい……！\n科学的にも、おいしいです！",
 	},
 	hinary: {
 		hello: "研究の　休けい中です。\n……どうぞ",
@@ -924,5 +941,6 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		],
 		idle: "……ここは、レスが　少なくて\n落ちつきます",
 		treat: "{drink}……いただきます。\n研究に　役立てます",
+		sip: "……おいしい　模様です",
 	},
 };

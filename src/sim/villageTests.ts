@@ -37,6 +37,7 @@ import {
 	NANASHI_CAFE,
 	SEAT_MSG,
 	TREAT_REACTIONS,
+	TREAT_SIPS,
 	TREAT_TALKS,
 } from "../data/cafe";
 import { CAFE_MOBS } from "../data/cafeMobs";
@@ -1084,7 +1085,16 @@ test("喫茶「保守」: every talk fits the village window, and the door appea
 				ls.map((l): [string, string] => [`treat ${w}[${i}]`, fill(l.text)]),
 			),
 		),
+		...Object.entries(TREAT_SIPS).flatMap(([w, ls]) =>
+			ls.map((l, i): [string, string] => [`sip ${w}[${i}]`, l.text]),
+		),
 	]);
+	// 好みで ない 一杯の 感想は 仲間 ごとに ある
+	for (const w of Object.keys(TREAT_REACTIONS))
+		ok(
+			(TREAT_SIPS[w as keyof typeof TREAT_SIPS]?.length ?? 0) > 0,
+			`${w}: no sip lines`,
+		);
 	// おごった 回数で 話が ふえる（3杯・6杯）
 	const base = cafeTalks(CAFE_FROM, {
 		heard: [],
@@ -4285,10 +4295,11 @@ test("建物の 中の 文: every line fits the village window, talks are 1〜4 
 	for (const id of MOB_IDS) {
 		const c = CAFE_MOBS[id];
 		ok(
-			c.hello && c.idle && c.treat.includes("{drink}"),
+			c.hello && c.idle && c.sip && c.treat.includes("{drink}"),
 			`${id}: cafe lines missing`,
 		);
 		texts.push([`${id} hello`, c.hello], [`${id} idle`, c.idle]);
+		texts.push([`${id} sip`, c.sip]);
 		texts.push([`${id} treat`, fill(c.treat, { drink: longest })]);
 		ok(c.talks.length > 0, `${id}: no cafe talks`);
 		ok(

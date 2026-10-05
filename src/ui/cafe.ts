@@ -36,6 +36,7 @@ import {
 	NANASHI_CAFE,
 	SEAT_MSG,
 	TREAT_REACTIONS,
+	TREAT_SIPS,
 	TREAT_TALKS,
 } from "../data/cafe";
 import { CAFE_MOBS, type CafeMobTalk } from "../data/cafeMobs";
@@ -453,6 +454,63 @@ const mixDecor = (g: CanvasRenderingContext2D, ox: number, oy: number) => {
 	if (Math.floor(dt / 350) % 2 === 0) star(gx + 9, gy, "#fff6a0");
 };
 
+// ───────────────── 送った 一杯（テーブルの 上の グラス） ─────────────────
+// 送った 一杯は、飲んだ 人の 前の テーブル（カウンター・ソファの 机・丸テーブル）に 置かれて、店を 出るまで のこる。
+// テーブルの ない 所（ピアノの 前・窓ぎわ・通路）では 手に 持つ。1人 1杯（また 送れば 入れかわる）。
+
+type Glass = { owner: string; table: Cell; from: Cell; color: string };
+let glasses: Glass[] = [];
+
+/** グラスを 置ける 物（カウンター・ソファの 机・丸テーブル）。 */
+const TABLE_CHARS = "[=]tO";
+
+const STEP: Record<Dir, Cell> = {
+	up: [0, -1],
+	down: [0, 1],
+	left: [-1, 0],
+	right: [1, 0],
+};
+
+/** その 人の 前の テーブル（向いている 方を 先に。無ければ その人の マス＝手に 持つ）。 */
+const tableNear = (at: Cell, dir: Dir): Cell => {
+	const rows = roomRows("cafe");
+	const dirs: Dir[] = [dir, "up", "down", "left", "right"];
+	for (const d of dirs) {
+		const [dx, dy] = STEP[d];
+		const c: Cell = [at[0] + dx, at[1] + dy];
+		if (TABLE_CHARS.includes(rows[c[1]]?.[c[0]] ?? "#")) return c;
+	}
+	return at;
+};
+
+/** 一杯を その人の 前に 置く（id は イベント id。いつもの 所の 前）。 */
+const serveGlass = (v: Visit, id: string, color: string): void => {
+	const h = v.homes.get(id);
+	if (!h) return;
+	const from: Cell = [h.x, h.y];
+	glasses = [
+		...glasses.filter((g) => g.owner !== id),
+		{ owner: id, table: tableNear(from, h.dir), from, color },
+	];
+};
+
+/** テーブルの 上の グラス（飲む 人の がわに 寄せる。手に 持つ ときは 体の 右下）。 */
+const glassDecor = (g: CanvasRenderingContext2D, ox: number, oy: number) => {
+	for (const gl of glasses) {
+		const [tx, ty] = gl.table;
+		const [fx, fy] = gl.from;
+		const held = tx === fx && ty === fy;
+		const x = tx * TILE - ox + (held ? 10 : fx < tx ? 2 : fx > tx ? 9 : 5);
+		const y = ty * TILE - oy + (held ? 7 : fy < ty ? 2 : 5);
+		g.fillStyle = "#ffffff";
+		g.fillRect(x, y, 5, 7);
+		g.fillStyle = gl.color;
+		g.fillRect(x + 1, y + 2, 3, 4);
+		g.fillStyle = "rgba(255,255,255,0.8)";
+		g.fillRect(x + 1, y + 1, 1, 2);
+	}
+};
+
 // ───────────────── 話す ─────────────────
 
 const sayMaster = (s: Story, text: string): Promise<void> =>
@@ -631,9 +689,22 @@ const pickHerb = async (ctx: Ctx, s: Story): Promise<Item | null> => {
 	return herb;
 };
 
-/** 仲間が 一杯を 受け取る（すわって いる 前提）。回数・好み を 残す。 */
+/** 一杯を 受け取った 人と キリコが 顔を 見あわせる（席の 向きは 呼んだ 側が もどす）。 */
+const faceTreated = (s: Story, v: Visit, id: string): void => {
+	const h = v.homes.get(id);
+	if (!h) return;
+	s.face(id, "player");
+	if (h.x !== s.state.x || h.y !== s.state.y)
+		s.face("player", dirTo([s.state.x, s.state.y], [h.x, h.y]));
+};
+
+/**
+ * 仲間が 一杯を 受け取る（すわって いる 前提）。グラスを 前に 置いて、こっちを 向く。
+ * 好みの 一杯なら その 反応（味の 話も こみ）、ほかは いつもの 反応 → ひとくち → 好みを ほのめかす 感想。回数・好み を 残す。
+ */
 const reactTreat = async (
 	s: Story,
+	v: Visit,
 	who: Speaker,
 	herb: Item,
 	drink: CafeDrink,
@@ -646,27 +717,40 @@ const reactTreat = async (
 	if (fav && !(st.found ?? []).includes(herb.kind))
 		st.found = [...(st.found ?? []), herb.kind];
 	save(st);
-	s.se("drink");
-	const reactions = TREAT_REACTIONS[who];
-	await playLines(
-		s,
-		fav ? drink.lines : reactions[(n - 1) % reactions.length],
-		drink.name,
-	);
+	serveGlass(v, who, drink.color);
+	faceTreated(s, v, who);
+	if (fav) {
+		s.se("drink");
+		await playLines(s, drink.lines, drink.name);
+	} else {
+		const reactions = TREAT_REACTIONS[who];
+		await playLines(s, reactions[(n - 1) % reactions.length], drink.name);
+		s.se("drink");
+		await s.narrate(
+			fill(MASTER_MSG.sip, { name: SPEAKERS[who].name, drink: drink.name }),
+		);
+		const sips = TREAT_SIPS[who];
+		await playLines(s, [sips[(n - 1) % sips.length]]);
+	}
 	if (cafeTalks(stageNow()).length > before)
 		await s.narrate(fill(SEAT_MSG.more, { name: SPEAKERS[who].name }));
 };
 
-/** となりに すわって いる 仲間に 一杯（草を 選ぶ → まぜる → はこぶ → 反応）。 */
-const treatSeated = async (ctx: Ctx, s: Story, who: Speaker): Promise<void> => {
+/** となりに すわって いる 仲間に 一杯（草を 選ぶ → まぜる → はこぶ → 反応 → 席の 向きに もどる）。 */
+const treatSeated = async (
+	ctx: Ctx,
+	s: Story,
+	v: Visit,
+	f: CafeFriend,
+): Promise<void> => {
 	const herb = await pickHerb(ctx, s);
 	const drink = herb && CAFE_DRINKS[herb.kind];
 	if (!herb || !drink) return;
 	await mixScene(s, herb, drink);
-	await s.narrate(
-		`マスターが　${SPEAKERS[who].name}の　前に　置いた。\n「あちらの　お客様からです」`,
-	);
-	await reactTreat(s, who, herb, drink);
+	// 相席なので「あちらの　お客様から」とは 言わない。キリコが じぶんで わたす
+	await s.narrate(fill(MASTER_MSG.beside, { name: SPEAKERS[f.who].name }));
+	await reactTreat(s, v, f.who, herb, drink);
+	sitAt(s, f);
 };
 
 /** その 仲間と 聞ける 話（相手が みんな 店に いる もの）。 */
@@ -721,7 +805,7 @@ const seatMenu = async (
 		);
 		await s.wait(0);
 		if (pick === "__treat") {
-			await treatSeated(ctx, s, f.who);
+			await treatSeated(ctx, s, v, f);
 			continue;
 		}
 		const talk = talks.find((t) => t.id === pick);
@@ -864,9 +948,17 @@ const treatMob = async (
 		s.place("player", spot.kiriko[0], spot.kiriko[1], spot.kdir);
 		s.face(actorId(id), spot.dir);
 	});
-	s.se("drink");
+	const me = actorId(id);
+	serveGlass(v, me, drink.color);
+	faceTreated(s, v, me);
 	await sayAs(s, id, fill(CAFE_MOBS[id].treat, { drink: drink.name }));
+	s.se("drink");
+	await s.narrate(
+		fill(MASTER_MSG.sip, { name: MOBS[id].name, drink: drink.name }),
+	);
+	await sayAs(s, id, CAFE_MOBS[id].sip);
 	await standUp(s, v, spot.stand);
+	s.face(me, spot.dir);
 };
 
 const patronScript =
@@ -967,6 +1059,10 @@ const orderScript = async (
 	if (!herb || !drink) return;
 	await mixScene(s, herb, drink);
 	if (pick === "__self") {
+		// キリコの 前の カウンターに 置く
+		const me: Spot = { x: s.state.x, y: s.state.y, dir: s.state.dir };
+		v.homes.set("player", me);
+		serveGlass(v, "player", drink.color);
 		s.se("drink");
 		await s.narrate(fill(MASTER_MSG.self, { drink: drink.name }));
 		await s.narrate(drink.taste);
@@ -976,15 +1072,14 @@ const orderScript = async (
 	const f = v.layout.friends.find((x) => x.who === who && !x.partner);
 	if (!f) {
 		// 話しこんでいる ところへ はこぶ だけ
-		await s.narrate(
-			`マスターが　${SPEAKERS[who].name}の　前に　置いた。\n「あちらの　お客様からです」`,
-		);
-		await reactTreat(s, who, herb, drink);
+		await s.narrate(fill(MASTER_MSG.far, { name: SPEAKERS[who].name }));
+		await reactTreat(s, v, who, herb, drink);
+		goHome(s, v, who);
 		return;
 	}
 	await s.narrate(fill(MASTER_MSG.carry, { name: SPEAKERS[who].name }));
 	await blink(s, () => sitAt(s, f));
-	await reactTreat(s, who, herb, drink);
+	await reactTreat(s, v, who, herb, drink);
 	await standUp(s, v, back, who);
 };
 
@@ -1086,6 +1181,8 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 	});
 	const v: Visit = { layout, present: presentOf(layout), homes: new Map() };
 	visit = v;
+	// 入りなおしたら グラスは マスターが 片づけている
+	glasses = [];
 	const home = (id: string, at: readonly [number, number], dir: Dir) =>
 		v.homes.set(id, { x: at[0], y: at[1], dir });
 	const events: EventDef[] = roomPlaces("cafe").map((p) => {
@@ -1185,6 +1282,7 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 		events,
 		decor: (g, ox, oy) => {
 			shelf(g, ox, oy);
+			glassDecor(g, ox, oy);
 			mixDecor(g, ox, oy);
 		},
 	};
