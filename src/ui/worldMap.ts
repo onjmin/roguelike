@@ -565,10 +565,11 @@ export class MapView {
 				g.fillStyle = this.cleared.includes(d)
 					? "rgba(255,240,180,0.9)"
 					: "rgba(255,160,160,0.85)";
+				// 2つ目の 小島は となりの 小島と 名前が かさなるので 上に
 				g.fillText(
 					this.cleared.includes(d) ? nm.original : nm.hijacked,
 					x,
-					y + 8,
+					d === "isle2" ? y - 16 : y + 8,
 				);
 				g.font = "8px 'DotGothic16', monospace";
 				g.fillStyle = "#fff";
