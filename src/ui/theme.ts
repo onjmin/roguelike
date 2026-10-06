@@ -252,7 +252,7 @@ export const themeFor = (dungeon: DungeonId, depth: number): Theme =>
 export const TRAP_ICON: Record<TrapKind, string> = {
 	bear: "pub:sprites/traps.png#0,0,16,16", // 口を 開けた 鉄の あご（scripts/make-traps.mjs）
 	acid: "pub:sprites/traps.png#16,0,16,16", // 緑の 酸の 水たまり（scripts/make-traps.mjs）
-	sleep: cut(6, 13),
+	sleep: "pub:sprites/traps.png#32,0,16,16", // 噴き出し口と 紫の 眠りガス（scripts/make-traps.mjs）
 	trip: cut(0, 13), // 小石
 	mine: "sp:eqO76tJ", // RPGEN「ロビー地雷(埋設)」
 	arrow: cut(2, 187),

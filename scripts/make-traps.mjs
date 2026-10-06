@@ -1,8 +1,9 @@
 // 罠の 絵を 書き出す（node scripts/make-traps.mjs → public/sprites/traps.png）。
 //
-// RPGEN にも Base.png にも 合う 絵が ない 罠だけ ここで 描く。32x16 に 16x16 が 2コマ：
+// RPGEN にも Base.png にも 合う 絵が ない 罠だけ ここで 描く。48x16 に 16x16 が 3コマ：
 //   左：トラバサミ（口を 開けた 鉄の あご・まんなかの 踏み板・横の ばね）
-//   右：酸の罠（床に 広がった 緑の 酸の 水たまり・あわ）
+//   中：酸の罠（床に 広がった 緑の 酸の 水たまり・あわ）
+//   右：眠りガスの罠（床の 噴き出し口から 立ちのぼる 紫の ガスと Z）
 // 地雷・落とし穴は RPGEN の 絵（src/ui/theme.ts の TRAP_ICON）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-anka-trap.mjs と 同じ。
@@ -114,9 +115,41 @@ const ACID = [
 	".....xxxxxxxx...",
 ];
 
+const SLEEP_PALETTE = {
+	o: [30, 30, 36, 255], // 噴き出し口の ふち
+	m: [110, 114, 126, 255], // 鉄の 皿
+	h: [176, 180, 192, 255], // 照り
+	n: [24, 20, 34, 255], // 穴の 奥
+	g: [150, 112, 210, 255], // 眠りガス
+	l: [214, 190, 246, 255], // ガスの 明るい ところ
+	d: [104, 72, 160, 255], // ガスの 影
+	z: [72, 40, 120, 255], // Z
+	x: [0, 0, 0, 90], // 床に 落ちる 影
+};
+
+const SLEEP = [
+	"..........zzzz..",
+	"............z...",
+	"...........z....",
+	"..llll....zzzz..",
+	".lggggl.........",
+	".gggggd..llll...",
+	"..dddd..lggggl..",
+	"....lllggggggd..",
+	"...lgggggggdd...",
+	"...gggggggdd....",
+	"....ddddddd.....",
+	"...oooooooooo...",
+	"..ohhhhhhhhhmo..",
+	".ohmnnmnnmnnmmo.",
+	"..ommmmmmmmmmox.",
+	"...oooooooooox..",
+];
+
 const frames = [
 	[BEAR, BEAR_PALETTE],
 	[ACID, ACID_PALETTE],
+	[SLEEP, SLEEP_PALETTE],
 ];
 const W = 16 * frames.length;
 const H = 16;
