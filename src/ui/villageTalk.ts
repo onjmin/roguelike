@@ -285,7 +285,9 @@ export const pinnedScrap = (): Scrap | undefined => {
 	const m = loadScraps();
 	if (m.at && m.at === scrapReturnAt()) return undefined;
 	const cleared = loadProgress().cleared;
-	return SCRAPS.find(
+	const fresh = SCRAPS.filter(
 		(x) => cleared.includes(x.board) && !m.read.includes(x.id),
 	);
+	// 乗っ取り屋の 置き手紙（灯台の 手がかり）は ほかの 切れはしより 先に 貼る
+	return fresh.find((x) => x.kind === "memo") ?? fresh[0];
 };

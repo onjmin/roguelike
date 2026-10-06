@@ -16,6 +16,8 @@ export type Scrap = {
 	why: string;
 	/** 3作目の 対の レコード（walksim の data/records.ts）。 */
 	record?: string;
+	/** 乗っ取り屋の 置き手紙（裏シナリオ。去った 人の レスでは なく、灯台の パスワードの 手がかり）。 */
+	kind?: "memo";
 };
 
 export const SCRAPS: readonly Scrap[] = [
@@ -62,12 +64,36 @@ export const SCRAPS: readonly Scrap[] = [
 		why: "ネットを辞めた",
 		record: "rec_q",
 	},
-	// 裏ルート（おーぷぬ）：自分の 板を 立てて 出ていった 人（3作目の 対は まだ 無い。STORY.md §4.5）
+	// 裏シナリオ（おーぷぬ）：自分の 板を 立てて 出ていった 人（3作目の 対は walksim の street.ts の mado。STORY.md §4.5）。
+	// 小島1 を 持ち帰ると 貼られる（風呂板の 前に「板を 立てた 人」が 出る：起の 伏線）
 	{
 		id: "jibun",
-		board: "opunu",
+		board: "isle1",
 		text: "板　立てたわ。おんJより　のんびり　やる",
 		why: "自分の板",
+	},
+	// 乗っ取り屋の 置き手紙（小島 3つの 底の 品。3枚で 灯台の 扉の パスワード 12345 が わかる：
+	// 板主のは いちばん 弱い 1234、新しいのは それより 1つ 多い、長くは しない）
+	{
+		id: "memo1",
+		board: "isle1",
+		text: "新しい　パスワードは、\n板主のより　1つ　多い",
+		why: "置き手紙①",
+		kind: "memo",
+	},
+	{
+		id: "memo2",
+		board: "isle2",
+		text: "板主のは、いちばん　弱い\nやつだった。……1234",
+		why: "置き手紙②",
+		kind: "memo",
+	},
+	{
+		id: "memo3",
+		board: "isle3",
+		text: "おれも　のんびり　してるんで、\n長くは　しない",
+		why: "置き手紙③",
+		kind: "memo",
 	},
 ];
 
@@ -79,4 +105,12 @@ export const SCRAP_MSG = {
 	head: "「{board}」の　過去ログの　切れはし。",
 	/** 読んだ あと。 */
 	after: "……それきり、書きこみは　ない。",
+	/** 置き手紙が 貼ってある（裏シナリオ）。 */
+	pinnedMemo: "掲示板の　まんなかに、\n紙きれが　貼ってある。",
+	/** 置き手紙の 見出し。 */
+	headMemo: "「{board}」で　拾った、\n乗っ取り屋の　置き手紙。",
+	/** 置き手紙を 読んだ あと。 */
+	afterMemo: "……すみに、小さく「草」。",
+	/** 読み返す 一覧の 題（置き手紙）。 */
+	listMemo: "乗っ取り屋の　置き手紙",
 } as const;

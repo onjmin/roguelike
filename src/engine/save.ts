@@ -554,6 +554,18 @@ export const noteRunEnd = (
 	saveProgress(p);
 };
 
+/** 裏シナリオの 旗（Progress.flags）が 立っているか。 */
+export const hasFlag = (flag: string): boolean =>
+	(loadProgress().flags ?? []).includes(flag);
+
+/** 裏シナリオの 旗を 立てる（灯台の 扉の パスワードを 当てた、など）。 */
+export const addFlag = (flag: string): void => {
+	const p = loadProgress();
+	if ((p.flags ?? []).includes(flag)) return;
+	p.flags = [...(p.flags ?? []), flag];
+	saveProgress(p);
+};
+
 /** 持ち帰りの 語りを 見おえた（ui/villageReturn.ts の returnScene）。 */
 export const noteEnding = (d: DungeonId): void => {
 	const p = loadProgress();
@@ -886,6 +898,8 @@ export type SavedReplay = {
 	dungeon?: DungeonId;
 	/** 目的（ボスの ときだけ 書く。無ければ 持ち帰り。今の 板の 既定からは 決めない）。 */
 	objective?: Objective;
+	/** 裏シナリオの 結を 見た あとの 冒険（ROM専が 戦わない。同じに 始めるため）。 */
+	rom?: boolean;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -963,10 +977,12 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	)
 		return null;
 	if (r.noLunch !== undefined && typeof r.noLunch !== "boolean") return null;
+	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
 	return renamed({
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.noLunch ? { noLunch: true } : {}),
+		...(r.rom ? { rom: true } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
 		...(r.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: r.at,
@@ -1007,6 +1023,7 @@ const addReplay = (s: RunState): void => {
 		seed: s.seed,
 		carry: s.carriedIn,
 		...(s.noLunch ? { noLunch: true } : {}),
+		...(s.rom ? { rom: true } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

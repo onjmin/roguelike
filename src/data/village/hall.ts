@@ -21,7 +21,7 @@
 //   $  帳簿の 貼り紙（金貨の 札）   C c  飾り棚（上段・下段。棚と 持ち帰った 品は ui/hallEvents.ts の decor が 描く）
 //   M m  実況モニター（左右）   G g  殿堂の 旗（左右）
 //   z  座布団   ( )  長机（左右）   x  みかん箱   B  本棚   F  鉢植え   T  机   n  いす   r  空いた いす（殿堂の となり）
-//   P  石の 柱
+//   P  石の 柱   Q  いちばん 古い スレの 札（原住民の「ここが野球chだ」。裏シナリオ：跡地へ 降りる 床下の 入口）
 
 import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
@@ -54,7 +54,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 		"#HHWWHH#",
 		"#Kk[]tN#",
 		"#......#",
-		"#.z()z.#",
+		"#.z()zQ#",
 		"#.....B#",
 		"###DD###",
 	],
@@ -65,7 +65,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 		"#KktN[]$ccc#",
 		"#..........#",
 		"#..........#",
-		"#B.........#",
+		"#B........Q#",
 		"#.nTn......#",
 		"#F........F#",
 		"#####DD#####",
@@ -79,7 +79,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 		"#......--......#",
 		"#B.P...--...P..#",
 		"#......--......#",
-		"#B.....--......#",
+		"#B.....--.....Q#",
 		"#..P...--...P..#",
 		"#F.....--.....F#",
 		"#######DD#######",
@@ -193,6 +193,8 @@ export const hallPalette = (tier: HallTier): Record<string, TileDef> => {
 		n: on(base(2, 109)),
 		r: on(base(3, 109)),
 		P: on(base(3, 352, 1, 2)),
+		// 集会所は すみの 1マスに 置くので 背の 低い 札（うしろの マスから 読める）。広い 館では 立て札
+		Q: on(tier === 0 ? base(5, 38) : base(5, 37, 1, 2)),
 	};
 };
 
@@ -233,6 +235,7 @@ const WALL_IDS: Record<string, string> = {
 	G: "dendo",
 	B: "book",
 	r: "chair",
+	Q: "oldest",
 };
 
 /** 名無し・野次馬の 立つ マス（段ごと。上を 向いて モニターを 見る 人は dir: up）。 */

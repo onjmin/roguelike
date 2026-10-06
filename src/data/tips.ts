@@ -104,6 +104,16 @@ export const TIPS: readonly Tip[] = [
 		lines: ["「敵が　道具を　かかえて　いる　ことが\nある。たおせば　落とす」"],
 	},
 	{
+		// 裏シナリオの 転：蓄音機の 声は 持ち帰っても 消えない（原住民の 頼み。跡地が 開くまで）
+		key: "rom_voice",
+		when: (_, unlocked) =>
+			unlocked.includes("opunu") && !unlocked.includes("ato"),
+		lines: [
+			"「蓄音機に　入れた　声は、持ち帰っても\n消えない。地上で　鳴らせる」",
+			"「ROM専の　声を　録って　帰った　人が\nいるらしい。……何に　使うんや」",
+		],
+	},
+	{
 		// 裏ルートの おーぷぬ（乗っ取り屋は 持ち物を 乗っ取る。忍法帖の実が 床に 落ちている）。開いてから だけ
 		key: "opunu",
 		when: (_, unlocked) => unlocked.includes("opunu"),

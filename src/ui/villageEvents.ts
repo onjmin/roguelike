@@ -19,6 +19,7 @@
 // - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/villageOpening.ts）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { MONSTERS } from "../core/data/monsters";
 import { CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
@@ -37,6 +38,8 @@ import {
 	DEPART,
 	DUNGEON_NAMES,
 	HOSHU_SIGN,
+	LIGHTHOUSE_DOOR,
+	ROM_COUNT,
 	STORY,
 } from "../data/story";
 import {
@@ -59,9 +62,11 @@ import {
 import { ROOM_FROM } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
+	addFlag,
 	addRecord,
 	clearRun,
 	depositBag,
+	hasFlag,
 	hasRunSave,
 	loadProgress,
 	loadRecords,
@@ -82,6 +87,7 @@ import { enterHall } from "./hallEvents";
 import { chooseStored, openBag, openSales, openStorage } from "./home";
 import { openHowto } from "./howto";
 import { type ListItem, listWindow } from "./list";
+import { playGetter } from "./minigames";
 import { makeQuiz } from "./quiz";
 import { escBr, openRecords, showStory } from "./records";
 import { enterMusic, enterRoom, keeperLets } from "./rooms";
@@ -98,6 +104,7 @@ import {
 	newsScript,
 	previewStage,
 	type ReturnArrival,
+	ROMS,
 	returnScene,
 	type StoreChooser,
 	sceneView,
@@ -178,7 +185,7 @@ const discardQuiz = async (s: Parameters<Script>[0]): Promise<boolean> => {
  * 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）。村の 出口と 井戸で 同じ。
  * 続きへ 出た・やめた なら false（呼ぶ側は そこで 終わる。やめたときは back 済み）。
  */
-const suspendedFirst = async (
+export const suspendedFirst = async (
 	s: Parameters<Script>[0],
 	back: () => Promise<void>,
 ): Promise<boolean> => {
@@ -228,7 +235,7 @@ const suspendedFirst = async (
  * 板ごとの 目的（期間限定の イベントも）は 出る 前に 1回だけ 決める。地図に 出す 目的と
  * Run.create に 渡す 目的を 同じに する（歩いている あいだに イベントが かわっても ずれない）。
  */
-const goalsNow = (): Record<DungeonId, ObjectiveInfo> => {
+export const goalsNow = (): Record<DungeonId, ObjectiveInfo> => {
 	const prog = withDevEvent(loadProgress());
 	return Object.fromEntries(
 		DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
@@ -239,7 +246,7 @@ const goalsNow = (): Record<DungeonId, ObjectiveInfo> => {
  * 行き先が 決まってから 出るまで（村の 出口と 井戸で 同じ）：持ち物・出発の 一言・向かう（travel）・
  * はじめての 板の 語り。
  */
-const departTo = async (
+export const departTo = async (
 	ctx: Ctx,
 	s: Parameters<Script>[0],
 	d: DungeonId,
@@ -382,11 +389,15 @@ const mouthScript =
 				[`${DUNGEON_NAMES[d].name}へ　行く`, "えらびなおす", "やめる"],
 				{ cancel: 1 },
 			);
-			if (ok === 0) break;
 			if (ok === 2) {
 				await quit();
 				return;
 			}
+			if (ok !== 0) continue;
+			// 灯台の 扉は パスワード（乗っ取り屋の 置き手紙 3枚が 手がかり。当てるまで 入れない。STORY.md §5.98）
+			if (d === "opunu" && !hasFlag("pass") && !(await passwordScript(s)))
+				continue;
+			break;
 		}
 		// 前に 行ったことが あれば 速く 歩く（語りを 見た＝行った）
 		const been = loadProgress().intro.includes(d);
@@ -404,11 +415,39 @@ const mouthScript =
 		);
 	};
 
-/** 切れはしを 読む（見出し・名無しの 書きこみ・それきり）。 */
+/**
+ * 灯台の 扉の パスワード（4択。答えは 置き手紙の とおり 12345）。当てれば 旗 pass が 立って 二度と きかれない。
+ * 外しても 笑われる だけで、また 当てられる（地図に もどる）。
+ */
+const passwordScript = async (s: Story): Promise<boolean> => {
+	await s.narrate(LIGHTHOUSE_DOOR.ask);
+	const n = await s.choose([...LIGHTHOUSE_DOOR.options, "やめる"], {
+		cancel: LIGHTHOUSE_DOOR.options.length,
+	});
+	if (n >= LIGHTHOUSE_DOOR.options.length) return false;
+	if (LIGHTHOUSE_DOOR.options[n] !== LIGHTHOUSE_DOOR.answer) {
+		s.se("cancel");
+		await s.narrate(LIGHTHOUSE_DOOR.wrong);
+		return false;
+	}
+	s.se("decide");
+	addFlag("pass");
+	await s.narrate(LIGHTHOUSE_DOOR.open);
+	return true;
+};
+
+/** 切れはしを 読む（見出し・名無しの 書きこみ・それきり）。乗っ取り屋の 置き手紙は 見出しと 結びが ちがう。 */
 const readScrapScript = async (s: Story, x: Scrap): Promise<void> => {
-	await s.narrate(fill(SCRAP_MSG.head, { board: DUNGEON_NAMES[x.board].name }));
-	await s.say("nanj", x.text, { name: "名無しさん@おんJ" });
-	await s.narrate(SCRAP_MSG.after);
+	const memo = x.kind === "memo";
+	await s.narrate(
+		fill(memo ? SCRAP_MSG.headMemo : SCRAP_MSG.head, {
+			board: DUNGEON_NAMES[x.board].name,
+		}),
+	);
+	await s.say("nanj", x.text, {
+		name: memo ? "乗っ取り屋" : "名無しさん@おんJ",
+	});
+	await s.narrate(memo ? SCRAP_MSG.afterMemo : SCRAP_MSG.after);
 };
 
 /**
@@ -420,16 +459,21 @@ const boardScript =
 	async (s) => {
 		const pin = pinnedScrap();
 		if (pin) {
-			await s.narrate(SCRAP_MSG.pinned);
+			await s.narrate(
+				pin.kind === "memo" ? SCRAP_MSG.pinnedMemo : SCRAP_MSG.pinned,
+			);
 			await readScrapScript(s, pin);
 			readScrap(pin.id, scrapReturnAt());
 			return;
 		}
 		await s.narrate(VILLAGE_MSG.board);
-		const read = SCRAPS.filter((x) => loadScraps().read.includes(x.id));
+		const readAll = SCRAPS.filter((x) => loadScraps().read.includes(x.id));
+		const read = readAll.filter((x) => x.kind !== "memo");
+		const memos = readAll.filter((x) => x.kind === "memo");
 		const opts = [
 			"冒険の記録",
 			...(read.length ? ["古い　切れはし"] : []),
+			...(memos.length ? [SCRAP_MSG.listMemo] : []),
 			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
 			"やめる",
 		];
@@ -441,18 +485,21 @@ const boardScript =
 		const v = opts[n];
 		if (v === "冒険の記録") await records(ctx, s);
 		else if (v === BOARD_MENU[1]) await senkyoScript(s);
-		else if (v === "古い　切れはし") {
+		else if (v === "古い　切れはし" || v === SCRAP_MSG.listMemo) {
+			const memo = v === SCRAP_MSG.listMemo;
+			const list = memo ? memos : read;
+			const all = SCRAPS.filter((x) => (x.kind === "memo") === memo).length;
 			await hideMsg(s);
 			const id = await listWindow(
 				ctx,
-				`古い　切れはし　${read.length}／${SCRAPS.length}`,
-				read.map((x) => ({
-					label: `「${x.text}」`,
+				`${v}　${list.length}／${all}`,
+				list.map((x) => ({
+					label: `「${x.text.replace("\n", "")}」`,
 					sub: `${DUNGEON_NAMES[x.board].short}・${x.why}`,
 					value: x.id,
 				})),
 			);
-			const x = read.find((r) => r.id === id);
+			const x = list.find((r) => r.id === id);
 			if (x) await readScrapScript(s, x);
 		}
 	};
@@ -668,7 +715,13 @@ const arrivalScript =
 	async (s) => {
 		if (arrival?.kind === "replay") return;
 		const back = returnOf(arrival);
-		if (back) await returnScene(s, back);
+		if (back)
+			await returnScene(s, back, {
+				getter: async () => {
+					await hideMsg(s);
+					return playGetter(ctx);
+				},
+			});
 		// たおれて もどった：蓄音機の 前で 目を さまし、仲間が 歩いてくる
 		if (arrival?.kind === "dead" && previewStage() === null)
 			await deathScene(s);
@@ -722,6 +775,12 @@ export const buildVillage = (
 				MOBS[newcomerFor(back?.dungeon)].sprite,
 				async () => {},
 				{ when: (st) => !!st.flags[NEWCOMER] },
+			),
+			// 跡地の 結：口から 来て はじめて 書きこむ ROM専 18体（旗 ROMS の あいだだけ。ui/villageReturn.ts の cue roms）
+			...Array.from({ length: ROM_COUNT }, (_, i) =>
+				npc(`${ROMS}_${i}`, 1, 1, MONSTERS.funamushi.sprite, async () => {}, {
+					when: (st) => !!st.flags[ROMS],
+				}),
 			),
 		],
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく

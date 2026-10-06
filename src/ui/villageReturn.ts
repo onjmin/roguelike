@@ -27,19 +27,29 @@ import {
 	townStep,
 } from "../core/town";
 import type { DungeonId, Objective } from "../core/types";
-import { MOB_IDS, MOBS, type MobId, PUYU_LUNCH } from "../data/mobs";
+import {
+	MOB_IDS,
+	MOBS,
+	type MobId,
+	movedIn as mobsMovedIn,
+	PUYU_LUNCH,
+} from "../data/mobs";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
 import { SPEAKERS } from "../data/quotes";
 import {
+	ATO_NEWS,
 	awayFriends,
 	BOSS_RETURN,
 	DEPART,
 	DUNGEON_NAMES,
 	endingFor,
 	FRIEND_FROM,
+	GETTER_RETRY,
+	HINAN_NEWS,
 	mentionsAway,
 	playPage,
+	ROM_COUNT,
 	type StoryPage,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
@@ -198,6 +208,15 @@ const mobsHere = (pages: readonly StoryPage[], v: VillageView): MobId[] =>
 /** 語りの 中で 越してくる 住人の 旗（この 旗が 立っている あいだだけ 村に いる 人の イベント ID）。 */
 export const NEWCOMER = "newcomer";
 
+/** 跡地の 結で 口から 来る ROM専 18体の 旗と イベント ID の 頭（`roms_0`〜。ui/villageEvents.ts の buildVillage）。 */
+export const ROMS = "roms";
+
+/** 帰りの 場面の 外の 手（別ゲー。試験では 渡さない：合図は とばす）。 */
+export type ReturnHooks = {
+	/** 1000取り（避難Jの 結）。勝てば true。負けたら 次スレで もう一度 きく。 */
+	getter?: () => Promise<boolean>;
+};
+
 /** キリコが 立っている 村の 出口（帰ってきたところ。出口で なければ undefined）。 */
 const inMouth = (s: Story, _d: DungeonId): VillageExit | undefined =>
 	exitAt(s.state.x, s.state.y);
@@ -247,10 +266,61 @@ const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
 	await s.look(null);
 };
 
+/**
+ * 跡地の 結：ROM専 18体が 板の 方角の 口から 歩いてきて、キリコの まわりに 立つ（旗 ROMS の 人を 動かす。
+ * まわりの 空いた マスに 入りきらない 分は 口の そばに 残る）。
+ */
+const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
+	const gate = exitFor(d).cell;
+	const spots = spotsAround(villageView(), ROM_COUNT, [s.state.x, s.state.y]);
+	s.set(ROMS);
+	for (let i = 0; i < ROM_COUNT; i++) s.place(`${ROMS}_${i}`, gate[0], gate[1]);
+	await s.look(`${ROMS}_0`);
+	await Promise.all(
+		spots.map((to, i) =>
+			s.goto(`${ROMS}_${i}`, to[0], to[1], { speed: 1.4 + (i % 3) * 0.2 }),
+		),
+	);
+	for (let i = 0; i < ROM_COUNT; i++) s.face(`${ROMS}_${i}`, "player");
+	await s.look(null);
+};
+
+/** ROM専たちが 口へ 帰っていく（また 見る 側へ）。 */
+const walkOutRoms = async (s: Story, d: DungeonId): Promise<void> => {
+	const gate = exitFor(d).cell;
+	await Promise.all(
+		Array.from({ length: ROM_COUNT }, (_, i) =>
+			s.goto(`${ROMS}_${i}`, gate[0], gate[1], { speed: 1.4 + (i % 3) * 0.2 }),
+		),
+	);
+	s.set(ROMS, false);
+};
+
+/**
+ * 語りの 合図（data/quotes.ts の StoryPage.cue）を 起こす。roms・romsLeave は ROM専の 歩き、getter は 1000取り
+ * （勝つまで 次スレで くり返す。手が 無ければ とばす）。
+ */
+const playCue = async (
+	s: Story,
+	a: ReturnArrival,
+	c: NonNullable<StoryPage["cue"]>,
+	hooks: ReturnHooks,
+): Promise<void> => {
+	if (c === "roms") await walkInRoms(s, a.dungeon);
+	else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
+	else if (c === "getter" && hooks.getter) {
+		for (let tries = 0; ; tries++) {
+			if (await hooks.getter()) break;
+			await s.narrate(GETTER_RETRY[Math.min(tries, GETTER_RETRY.length - 1)]);
+		}
+	}
+};
+
 /** 口から 出てきて、並んだ 仲間が 語りを 話す。暗転の あいだに みんな 持ち場へ もどる。 */
 export const returnScene = async (
 	s: Story,
 	a: ReturnArrival,
+	hooks: ReturnHooks = {},
 ): Promise<void> => {
 	const exit = inMouth(s, a.dungeon);
 	if (!exit) return;
@@ -264,6 +334,7 @@ export const returnScene = async (
 	for (const id of here) s.face(`mob_${id}`, "player");
 	let newcomer = false;
 	for (const p of pages) {
+		if (p.cue) await playCue(s, a, p.cue, hooks);
 		if (p.mob) {
 			// まだ 村に いない 住人は、はじめて 口を ひらく 前に 口から 歩いてくる
 			if (!here.includes(p.mob) && !newcomer) {
@@ -281,6 +352,7 @@ export const returnScene = async (
 		s.fadeOut(300),
 	]);
 	s.set(NEWCOMER, false);
+	s.set(ROMS, false);
 	await s.rebuild();
 	s.bgm(villageSong());
 	await s.fadeIn(300);
@@ -455,6 +527,38 @@ export const deathScene = async (s: Story): Promise<void> => {
 // ───────────────── 開いた知らせ ─────────────────
 
 /**
+ * 住人が 話す 開いた 知らせ（裏シナリオ）。跡地：原住民が キリコの そばへ 来て、持ち帰った ROM専の 声を 聞く。
+ * 避難J：ヒナリーが 来て 20人目の 手がかりを 発表する。その子が 村に いなければ（下見など）地の文だけ。
+ */
+const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
+	const id: MobId = d === "ato" ? "shobon" : "hinary";
+	const ev = `mob_${id}`;
+	const here = mobsMovedIn(
+		townStep(loadTown().stage, loadTown().points),
+		loadProgress().cleared,
+	).includes(id);
+	if (here) {
+		const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+		if (to) {
+			await s.look(ev);
+			await s.goto(ev, to[0], to[1], { speed: 1.4 });
+			s.face(ev, "player");
+			s.face("player", faceTo(s.state, to));
+			await s.look(null);
+		}
+	}
+	if (d === "ato") {
+		s.se("spell");
+		await s.narrate(ATO_NEWS.play);
+		if (here) for (const l of ATO_NEWS.lines) await sayAs(s, id, l);
+		await s.narrate(ATO_NEWS.after);
+	} else {
+		if (here) for (const l of HINAN_NEWS.lines) await sayAs(s, id, l);
+		await s.narrate(HINAN_NEWS.after);
+	}
+};
+
+/**
  * 次のダンジョンが 開いた 知らせ（持ち帰った・何度も たおれた）。開く口を 見て 仲間が 話し、
  * 村の 出口を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
  */
@@ -472,6 +576,16 @@ export const newsScript = async (s: Story): Promise<void> => {
 				.filter((w) => !away.includes(w)),
 		);
 	for (const n of news) {
+		// 裏シナリオ：跡地（原住民が ROM専の 声を 聞く）・避難J（ヒナリーの 発表）は 住人が 話す
+		if (n.dungeon === "ato" || n.dungeon === "hinan") {
+			await mobNewsScript(s, n.dungeon);
+			doneProgressNews(n);
+			s.se("chapter");
+			await s.narrate(
+				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,
+			);
+			continue;
+		}
 		// 寄り道の 板：その 板の 名無しが 来て 話す（仲間の ひとことの かわり）
 		if (UNLOCK_VISIT[n.dungeon]) {
 			await visitScript(s, n.dungeon);

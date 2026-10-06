@@ -158,6 +158,9 @@ const devRun = (): Run | null => {
 	return run;
 };
 
+/** 裏シナリオの 結（野球chの 跡地の 参拝）を 見た あとか（ROM専は 戦わない。STORY.md §5.98）。 */
+const romNow = (): boolean => !!loadProgress().endings?.includes("ato");
+
 /** 村を出て 冒険を 作る（村の 持ち物から 取り出すのは ここ）。 */
 const runFor = (
 	choice: VillageExit,
@@ -173,6 +176,7 @@ const runFor = (
 				replay.carry ?? [],
 				replay.objective ?? "fetch",
 				!replay.noLunch,
+				!!replay.rom,
 			),
 			replay,
 		};
@@ -188,6 +192,7 @@ const runFor = (
 				choice.carry,
 				choice.objective,
 				choice.lunch,
+				romNow(),
 			);
 			return { run, replay: undefined };
 		}
@@ -202,6 +207,7 @@ const runFor = (
 			carry,
 			choice.objective,
 			lunch,
+			romNow(),
 		);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };

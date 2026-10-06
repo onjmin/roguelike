@@ -132,7 +132,14 @@ const returnAt = (): number => loadRecords()[0]?.at ?? 0;
 
 // ───────────────── 選ぶ ─────────────────
 
-const MILESTONES: readonly Milestone[] = ["shallow", "main", "deep", "runs10"];
+const MILESTONES: readonly Milestone[] = [
+	"shallow",
+	"main",
+	"deep",
+	"opunu",
+	"ato",
+	"runs10",
+];
 
 const reached = (ms: Milestone): boolean =>
 	ms === "runs10" ? runStats().runs >= 10 : loadProgress().cleared.includes(ms);

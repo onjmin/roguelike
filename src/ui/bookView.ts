@@ -6,7 +6,7 @@ import { dungeonById } from "../core/data/dungeons";
 import { MONSTER_LIST } from "../core/data/monsters";
 import type { DungeonId, MonsterDef, MonsterTag } from "../core/types";
 import { DUNGEON_NAMES } from "../data/story";
-import { loadBook } from "../engine/save";
+import { loadBook, loadProgress } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { explain } from "./explain";
@@ -55,6 +55,21 @@ export const floorsText = (d: MonsterDef): string => {
 	);
 };
 
+/**
+ * 図鑑の 一言と ひとこと（裏シナリオの 結（跡地の 参拝）の あと、ROM専は 全滅して いなかった 原住民だと わかるので
+ * 文が かわる。STORY.md §5.98）。
+ */
+export const bookText = (
+	d: MonsterDef,
+	done = !!loadProgress().endings?.includes("ato"),
+): { desc: string; flavor: string } =>
+	done && d.id === "funamushi"
+		? {
+				desc: "見ているだけ。近づくと　逃げる。もう　戦わない。手を　振れば　手を　振り返す",
+				flavor: "書きこんだのは　1度だけ。「見てた」",
+			}
+		: { desc: d.desc, flavor: bookText(d).flavor };
+
 /** 一覧の 絵の 大きさ（2倍）。 */
 const ROW_PX = 32;
 /** 「せつめい」の 絵の 大きさ（3倍。ボスは 階と 同じく scale 倍して 整数倍に まるめる）。 */
@@ -70,8 +85,8 @@ const detail = (d: MonsterDef, kills: number, now = 0): string[] => {
 		.join("");
 	const total = kills + now;
 	return [
-		`${tags}${d.desc}`,
-		d.flavor,
+		`${tags}${bookText(d).desc}`,
+		bookText(d).flavor,
 		`出る階　${floorsText(d)}　経験値　${d.exp}\nHP　${d.hp}　攻撃　${d.atk}　守り　${d.def}`,
 		total > 0
 			? `これまでに　${total}匹　たおした${now > 0 ? `（この　冒険で　${now}匹）` : ""}`
@@ -98,7 +113,7 @@ export const openBook = async (
 				? {
 						label: esc(d.name),
 						sub: floorsText(d),
-						desc: esc(d.desc),
+						desc: esc(bookText(d).desc),
 						value: d.id,
 						icon: arts[i].canvas,
 					}

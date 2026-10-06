@@ -15,11 +15,14 @@ import { defOf } from "../core/item";
 import type { DungeonId } from "../core/types";
 import { BOOKSTORE_FROM } from "../data/glossary";
 import {
+	BAT_AGAIN_MENU,
+	BAT_MENU,
 	BOOK_MENU,
 	HALL_MSG,
 	IN_STORE_TEXT,
 	JIKKYO,
 	MONITOR_MENU,
+	OLDEST_MENU,
 	ON_BOARD_TEXT,
 	ON_PHONO_TEXT,
 	TOBAN_MENU,
@@ -60,7 +63,13 @@ import {
 } from "../data/village/map";
 import { drawRefInCell, getImage, loadImage } from "../engine/assets";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadProgress, loadRecords, loadTown } from "../engine/save";
+import {
+	addFlag,
+	hasFlag,
+	loadProgress,
+	loadRecords,
+	loadTown,
+} from "../engine/save";
 import { TILE } from "../engine/types";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
@@ -69,8 +78,12 @@ import { openGlossary } from "./glossary";
 import { openHowto } from "./howto";
 import { itemIcon } from "./icons";
 import { type ListItem, listWindow } from "./list";
+import { playBatting } from "./minigames";
 import { openRecords } from "./records";
-import { senkyoOpen, senkyoScript } from "./villageMobs";
+// 村の 口と 同じ 出かた（降りる 前の 確認・持ちこみ・語り）。ui/villageEvents.ts とは 互いに 読みあうが、
+// どちらも 呼ぶ ときに 使うだけ（読みこみの 途中では 使わない）
+import { departTo, goalsNow, suspendedFirst } from "./villageEvents";
+import { sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
 import { previewStage } from "./villageReturn";
 import { fill, ledgerLine } from "./villageTalk";
 
@@ -322,6 +335,59 @@ const monitorScript =
 		if (n === 0) await records(ctx, s);
 	};
 
+/**
+ * いちばん 古い スレの 札（裏シナリオ。STORY.md §5.98）：原住民 20人の スレ。跡地が 開く（灯台を 持ち帰り、ROM専の 声を
+ * 持ち帰った）と 床下へ 降りられる。はじめの 1回は 原住民の 1打席（別ゲー）に 勝ってから。2回目からは 打たなくても よい。
+ * 降りる 流れは 村の 口と 同じ（中断した 冒険の 確認 → 持ちこみ → 語り → 出る：ui/villageEvents.ts の departTo）。
+ */
+const oldestScript =
+	(ctx: Ctx): Script =>
+	async (s) => {
+		const p = loadProgress();
+		const done = !!p.endings?.includes("ato");
+		await s.narrate(done ? HALL_MSG.oldestDone : HALL_MSG.oldest);
+		await s.narrate(done ? HALL_MSG.oldestDoneMore : HALL_MSG.oldestMore);
+		if (!p.unlocked.includes("ato")) {
+			if (p.cleared.includes("opunu")) await s.narrate(HALL_MSG.oldestShut);
+			return;
+		}
+		await s.narrate(HALL_MSG.oldestOpen);
+		if ((await s.choose([...OLDEST_MENU], { cancel: 1, start: 1 })) !== 0)
+			return;
+		if (!(await suspendedFirst(s, async () => {}))) return;
+		// 1打席（はじめは かならず。あとは 任意）
+		const batted = hasFlag("bat");
+		let play = !batted;
+		if (batted) {
+			const n = await s.choose([...BAT_AGAIN_MENU], { cancel: 2 });
+			if (n === 2) return;
+			play = n === 1;
+		} else {
+			await s.narrate(HALL_MSG.batIntro);
+			await sayAs(s, "shobon", HALL_MSG.batAsk);
+		}
+		while (play) {
+			await hideMsg(s);
+			const won = await playBatting(ctx);
+			if (won) {
+				addFlag("bat");
+				await s.narrate(HALL_MSG.batHit);
+				break;
+			}
+			await sayAs(s, "shobon", HALL_MSG.batOut);
+			const n = await s.choose([...BAT_MENU], { cancel: 1 });
+			if (n !== 0) {
+				if (!batted) return;
+				await sayAs(s, "shobon", HALL_MSG.batSkip);
+				break;
+			}
+		}
+		await departTo(ctx, s, "ato", goalsNow().ato, async () => {
+			s.se("stairs");
+			await s.narrate(HALL_MSG.oldestDown);
+		});
+	};
+
 /** 殿堂の 壁（総選挙の はり紙が 出ていれば それも）。 */
 const dendoScript: Script = async (s) => {
 	if (senkyoOpen()) await senkyoScript(s);
@@ -430,6 +496,8 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 			return sign(p.id, p.x, p.y, dendoScript);
 		case "chair":
 			return sign(p.id, p.x, p.y, HALL_MSG.chair);
+		case "oldest":
+			return sign(p.id, p.x, p.y, oldestScript(ctx));
 		default:
 			return { ...at, trigger: p.trigger };
 	}

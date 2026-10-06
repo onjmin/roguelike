@@ -129,6 +129,50 @@ export const DEPART = {
 export const HOSHU_SIGN =
 	"小屋の　前の　札。\nキリコの　字で「保守」と　書いてある。";
 
+/**
+ * 灯台の 扉の パスワード（裏シナリオの 承。ui/villageEvents.ts）。答えは 置き手紙 3枚から：板主のは いちばん 弱い 1234、
+ * 新しいのは それより 1つ 多い、長くは しない → 12345。
+ */
+export const LIGHTHOUSE_DOOR = {
+	ask: "灯台の　扉。パスワードを　きかれた。\n……乗っ取り屋の　置き手紙を　思い出す。",
+	options: ["1234", "12345", "123456", "0000"],
+	answer: "12345",
+	wrong: "「パスワード、弱すぎ」\n……扉の　むこうで、だれかが　笑った。",
+	open: "カチ、と　音が　した。\n灯台の　扉が　あいた。",
+} as const;
+
+/** 跡地の 結で 口から 来る ROM専の 数（原住民 20人 − 原住民 − 20人目）。 */
+export const ROM_COUNT = 18;
+
+/** 1000取りに 負けた あと（次スレで もう一度。何度でも。回を 重ねると 短く）。 */
+export const GETTER_RETRY: readonly string[] = [
+	"1000ゲッターに　1000を　取られた。\n……次スレ。もう　一度。",
+	"また　取られた。……ゼロが　次スレを\n立ててくれた。もう　一度。",
+	"……次スレ。",
+];
+
+/**
+ * 跡地が 開いた とき（ROM専の 声を 持ち帰った 帰り）：原住民が 声を 聞いて 言う（ui/villageReturn.ts の newsScript）。
+ * 本館の 奥の 札の 下が 開く
+ */
+export const ATO_NEWS = {
+	play: "キリコは　蓄音機を　かけた。\n……ROM専の　声。",
+	lines: [
+		"……この　声、知ってる",
+		"本館の　奥の　古い　スレの　札、\n床下が　あいてるはずだよ。見てきて",
+	],
+	after: "本館の　ほうから、かすかに\n床板の　はずれる　音が　した。",
+} as const;
+
+/** 避難Jが 開いた とき：ヒナリーが 20人目の 手がかりを 言う（第三ルート）。 */
+export const HINAN_NEWS = {
+	lines: [
+		"研究の　結果を　発表します。\n20人目の　書きこみは、避難Jに　あります",
+		"2012年6月18日。……全滅の　日です。\nこれで　発表を　終わりたいと　思います",
+	],
+	after: "北東の　沖の　小島に、\n避難所の　テントの　明かりが　ついた。",
+} as const;
+
 const q = (who: Speaker, text: string): Line => ({ who, text });
 const n = (text: string): StoryPage => ({ who: null, text });
 const s = (who: Speaker, text: string): StoryPage => ({ who, text });
