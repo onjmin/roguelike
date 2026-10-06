@@ -5,6 +5,8 @@
 // 名前・色は rpg の cast.ts と同じ（シヨ・ゼロは rpg に いないので ここで 決めた 色）。
 
 import { DUNGEONS } from "../core/data/dungeons";
+import type { DungeonId } from "../core/types";
+import type { MobId } from "./mobs";
 
 export type Speaker = "roze" | "shiyo" | "feris" | "zero" | "nanj";
 
@@ -40,6 +42,13 @@ export type StoryPage = {
 	/** 地の文に 出てくる 仲間。 */
 	about?: Speaker;
 	instead?: StoryPage;
+	/**
+	 * 話すのが 住人（data/mobs.ts）の とき（who は null に しておく。ui/villageReturn.ts が sayAs で 出す）。
+	 * 原住民が 電池板の 山場に 口を はさむ 頁など。
+	 */
+	mob?: MobId;
+	/** この 板を 持ち帰って いる ときだけ 出る 頁（裏ルートの 住人が 来ている ときの 1枚。data/story.ts の endingFor）。 */
+	needCleared?: DungeonId;
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */

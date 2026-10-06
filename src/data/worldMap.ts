@@ -54,6 +54,18 @@ export const ISLANDS: readonly Island[] = [
 			[190, 176, 12],
 		],
 	},
+	// おーぷぬ（だれでも 板を 立てられた。open.open2ch.net）。南西の 海に ちらばる 小島＝乗っ取り事件で
+	// 「〜〜諸島」に 名前を 変えられた 板たち。裏ルートの 灯台は いちばん 大きい 島に（STORY.md §5.98）
+	{
+		name: "open",
+		label: [52, 216],
+		blobs: [
+			[54, 190, 11],
+			[38, 202, 7],
+			[70, 204, 6],
+			[30, 184, 5],
+		],
+	},
 ];
 
 /** 保守村（おんJ）の 位置。道は ここから 出る。 */
@@ -69,7 +81,8 @@ export type BuildingKind =
 	| "island"
 	| "building"
 	| "yagura"
-	| "well";
+	| "well"
+	| "lighthouse";
 
 export type ColonySpot = {
 	/** 置かれている サーバー。 */
@@ -154,6 +167,18 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 		route: [
 			[106, 138],
 			[98, 144],
+		],
+	},
+	// 裏ルート：おーぷぬの 諸島の 灯台（風呂板を 持ち帰ると 電池板と いっしょに 開く）
+	opunu: {
+		server: "open",
+		place: "諸島の　灯台",
+		building: "lighthouse",
+		route: [
+			[104, 140],
+			[90, 158],
+			[74, 174],
+			[58, 184],
 		],
 	},
 	main: {

@@ -13,7 +13,7 @@ import {
 	STAGE_SINGERS,
 	type StageSinger,
 } from "../data/guests";
-import { MOB_IDS, MOBS, type MobId } from "../data/mobs";
+import { type MobId, movedIn } from "../data/mobs";
 import { stepOf, type VillageView } from "../data/village/map";
 import {
 	BATH_SPOTS,
@@ -62,7 +62,7 @@ export const guestsOf = (v: VillageView, at: number = returnAt()): Guests => {
 	const bath = v.stage >= ROOM_FROM.bath;
 	const books = booksRoom(v);
 	const step = stepOf(v);
-	const moved = rng.shuffle(MOB_IDS.filter((id) => step >= MOBS[id].from));
+	const moved = rng.shuffle(movedIn(step, v.cleared));
 	const out: Guests = {
 		stage: null,
 		music: [],

@@ -41,7 +41,7 @@ import {
 } from "../data/cafe";
 import { CAFE_MOBS, type CafeMobTalk } from "../data/cafeMobs";
 import { CAST } from "../data/cast";
-import { type Cast, MOB_IDS, MOBS, type MobId } from "../data/mobs";
+import { type Cast, MOB_IDS, MOBS, type MobId, movedIn } from "../data/mobs";
 import { SPEAKERS, type Speaker } from "../data/quotes";
 import { ROOM_MSG, ROOM_NAMES } from "../data/rooms";
 import { awayFriends, playPage } from "../data/story";
@@ -278,7 +278,7 @@ export const cafeLayout = (
 		friends.push({ who: mate, slot: slots[friends.length] });
 	}
 	const step = o.step ?? lastStepOf(stage);
-	const moved = shuffle(MOB_IDS.filter((id) => step >= MOBS[id].from));
+	const moved = shuffle(movedIn(step, loadProgress().cleared));
 	const busy = new Set<MobId>();
 	for (const f of friends) {
 		const free = friends.filter((x) => !x.partner).length;

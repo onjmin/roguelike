@@ -314,6 +314,29 @@ export const drawBuilding = (
 			r(-1, -12, 2, 3, "#9a7a4a");
 			break;
 		}
+		case "lighthouse": {
+			// 諸島の 灯台（白と 赤の しま。てっぺんの 明かりが 回る）
+			r(-6, -2, 12, 2, "#7a7a88");
+			for (let i = 0; i < 18; i++) {
+				const w = 5 - Math.floor(i / 6);
+				r(-w, -3 - i, w * 2, 1, Math.floor(i / 3) % 2 ? "#d8382a" : "#f4f2ea");
+			}
+			r(-4, -22, 8, 1, "#3a4a6a");
+			r(-3, -26, 6, 4, "#2a3040");
+			r(-3, -27, 6, 1, "#3a4a6a");
+			r(-1, -29, 2, 2, "#8a3a2a");
+			{
+				const turn = Math.floor(t / 300) % 4;
+				const lamp = "#ffe060";
+				r(-2, -25, 4, 2, lamp);
+				// 回る 光（4方向）
+				if (turn === 0) r(3, -26, 5, 1, "rgba(255,224,96,0.6)");
+				else if (turn === 2) r(-8, -26, 5, 1, "rgba(255,224,96,0.6)");
+				else if (turn === 1) r(-1, -33, 1, 6, "rgba(255,224,96,0.45)");
+			}
+			r(-1, -6, 2, 4, "#2a2020");
+			break;
+		}
 		case "yagura": {
 			// 祭りの やぐら（提灯が ゆれる）
 			r(-6, -14, 1, 14, "#8a5a2a");

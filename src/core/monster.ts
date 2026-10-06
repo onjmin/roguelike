@@ -729,8 +729,12 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 	}
 	// 盗む：なぐる代わりに
 	if (has(m, "steal") && !m.carry) {
-		const rate = (d.abilities.find((a) => a.k === "steal") as { rate: number })
-			.rate;
+		const st = d.abilities.find((a) => a.k === "steal") as {
+			rate: number;
+			verb?: string;
+			quip?: string;
+		};
+		const rate = st.rate;
 		if (r.rng.chance(rate)) {
 			const cands = p.items.filter(
 				(i) => !r.isEquipped(i) && !isKeyItem(i.kind),
@@ -741,7 +745,8 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				m.carry = it;
 				m.fleeing = true;
 				r.se("steal");
-				r.msg(`${nm}は　${r.name(it)}を　盗んだ！`, "warn");
+				r.msg(`${nm}は　${r.name(it)}を　${st.verb ?? "盗んだ"}！`, "warn");
+				if (st.quip) r.msg(st.quip);
 				const to = randomAway(r, m);
 				if (to) {
 					r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });

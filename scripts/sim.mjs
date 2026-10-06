@@ -4,7 +4,7 @@
 //   pnpm sim -- --n 1000     … 回数
 //   pnpm sim -- --seed abc   … 1回だけ（ログつき）
 //   pnpm sim -- --quiet      … 表だけ
-//   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep / kinoko / tropical / konamono / festival / hidden。既定は main）
+//   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep / kinoko / tropical / konamono / festival / hidden / opunu。既定は main）
 //   pnpm sim -- --objective boss  … 目的（fetch / boss。既定は そのダンジョンの 既定。boss の ない 板は fetch）
 //   pnpm sim -- --reach           … 目的に たどりつくまで 倒れない（底の つり合いを 見る。下の REACH）
 //   pnpm sim -- --reach --lag 3   … --reach で 足す レベルを「その階の 強さ − 3」までに（既定は 下の LAG）

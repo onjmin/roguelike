@@ -317,6 +317,16 @@ const HIDDEN_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
 		: e,
 );
 
+/**
+ * おーぷぬの 諸島（裏ルート。灯台 24階）の 道具の出かた：風呂板の 表から 帰還スレ（風呂板だけの 決まり）を 抜き、
+ * 忍法帖の実を 足す（板を 立てるには 忍法帖の レベルが 要る。ほかの 板では メタルぷゆゆの 落とし物だけ。
+ * はじめから 正体が わかる）。2026-10-06 ボット 100回：倒れた 階の 山は 風呂板と 同じ B11〜13（電池板の B6〜8 より 奥）。
+ */
+const OPUNU_ITEMS: readonly ItemWeight[] = [
+	...MAIN_ITEMS.filter((e) => e.kind !== "h_growth" && e.kind !== "s_escape"),
+	{ kind: "h_growth", weight: 3 },
+];
+
 /** 隠しの 99階：本編の 30階ぶんまで 少しずつ 強くなり、61階から 先は ずっと 30階ぶん。 */
 const HIDDEN_LEVEL: readonly number[] = Array.from({ length: 100 }, (_, i) =>
 	i === 0 ? 0 : Math.min(30, 1 + Math.floor(((i - 1) * 29) / 60)),
@@ -558,6 +568,30 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		escapeWithGoal: true,
 		secret: true,
 	},
+	// 裏ルート：おーぷぬの 諸島（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。風呂板を 持ち帰ると
+	// 電池板と いっしょに 開く（二択）。乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる
+	// （data/story.ts の BOARD_LOOKS の zones）。灯台を 上る 24階。底の 強さは 風呂板と 同じ 27（二択の 片方なので
+	// 電池板（30階・底 30・ぜんぶ 未識別・持ちこみ なし）より すこし やさしく、倉庫の 道具も 持ちこめる）
+	opunu: {
+		id: "opunu",
+		objective: "fetch",
+		// のんびりした 板：ROM専と ぷゆゆが 多め。乗っ取り屋は 板だけの 敵（data/monsters.ts の board）
+		foes: { funamushi: 2, tousuko: 1.5, tensai: 0 },
+		floors: 24,
+		items: OPUNU_ITEMS,
+		perFloor: [5, 7],
+		level: ramp(24, 27, 1.5),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "aisatsu",
+		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
+		trapsFrom: 3,
+		unlockAfter: "main",
+		reliefAfter: null,
+		// 灯台を 上る
+		up: true,
+	},
 };
 
 export const DUNGEON_IDS: readonly DungeonId[] = [
@@ -569,6 +603,7 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"konamono",
 	"festival",
 	"hidden",
+	"opunu",
 ];
 
 /** 知らない id（壊れた記録など）は本編として読む。 */

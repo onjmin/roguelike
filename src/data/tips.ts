@@ -104,6 +104,15 @@ export const TIPS: readonly Tip[] = [
 		lines: ["「敵が　道具を　かかえて　いる　ことが\nある。たおせば　落とす」"],
 	},
 	{
+		// 裏ルートの おーぷぬ（乗っ取り屋は 持ち物を 乗っ取る。忍法帖の実が 床に 落ちている）。開いてから だけ
+		key: "opunu",
+		when: (_, unlocked) => unlocked.includes("opunu"),
+		lines: [
+			"「諸島の　乗っ取り屋は、持ち物を\n乗っ取って　逃げる。たおせば　もどる」",
+			"「あの　板では　忍法帖の実が　床に\n落ちてる　ことも。レベルが　上がる」",
+		],
+	},
+	{
 		// 過去ログの底は 電池板（deep）を クリアすると 開く。開く まで だけ
 		key: "well",
 		when: (_, unlocked) => !unlocked.includes("hidden"),

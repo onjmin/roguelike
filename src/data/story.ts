@@ -8,6 +8,7 @@
 
 import type { DungeonId } from "../core/types";
 import type { Story } from "../engine/defs";
+import type { MobId } from "./mobs";
 import {
 	ENDING,
 	INTRO,
@@ -90,16 +91,23 @@ export const withoutAway = (
 		: pages;
 
 /**
- * 持ち帰りの 語り。一度きりの 出来事（電池板・過去ログの底）は 見おえたら again に かわる。
- * 出来事に 出てくる 人が もう 村に いなければ、はじめから again。
+ * 持ち帰りの 語り。一度きりの 出来事（電池板・過去ログの底・おーぷぬ）は 見おえたら again に かわる。
+ * 出来事に 出てくる 人が もう 村に いなければ（かわりの 頁も 無ければ）、はじめから again。
  */
 export const endingFor = (
 	d: DungeonId,
 	seen: boolean,
 	away: readonly Speaker[],
+	cleared: readonly DungeonId[] = [],
 ): readonly StoryPage[] => {
 	const { ending, again } = STORY[d];
-	return again && (seen || ending.some((p) => gone(p, away))) ? again : ending;
+	// 持ち帰って いない 板の 住人の 頁（裏ルート）は 出さない
+	const here = (pages: readonly StoryPage[]) =>
+		pages.filter((p) => !p.needCleared || cleared.includes(p.needCleared));
+	const main = here(ending);
+	return again && (seen || main.some((p) => gone(p, away) && !p.instead))
+		? here(again)
+		: main;
 };
 
 /** 潜る ときの 一言（口で 行き先を 決めた あと）。やきうが 出ていった あとは キリコの 独白。 */
@@ -131,6 +139,13 @@ const sOr = (p: StoryPage, instead: StoryPage): StoryPage => ({
 });
 /** キリコの 独白（（　）で 出る。だれにも 聞こえない）。 */
 const k = (text: string): StoryPage => ({ who: null, text, kiriko: "think" });
+/** 住人（data/mobs.ts）の 1窓。needCleared を つけると、その 板を 持ち帰って いる ときだけ 出る。 */
+const mob = (id: MobId, text: string, needCleared?: DungeonId): StoryPage => ({
+	who: null,
+	text,
+	mob: id,
+	...(needCleared ? { needCleared } : {}),
+});
 
 // ───────────────── 名前 ─────────────────
 /**
@@ -236,6 +251,19 @@ export const DUNGEON_NAMES: Record<
 			"保守村の　下の　古井戸。99階",
 			"層ごとに　景色と　曲が　かわる",
 			"底の　品を　持ったまま　帰還スレで　帰れる",
+		],
+	},
+	// 裏ルート（風呂板を 持ち帰ると 電池板と いっしょに 開く）。おーぷぬ＝だれでも 板を 立てられた 機能。
+	// 立てたら 消せない。乗っ取られて 名前が「〜〜諸島」に 変えられた（STORY.md §5.98）
+	opunu: {
+		name: "のんびり諸島",
+		short: "諸島",
+		nick: "おーぷぬ",
+		mascot: "原住民　(´・ω・｀)",
+		rules: [
+			"だれでも　立てられた、消せない　板。24階",
+			"乗っ取り：層ごとに　景色と　曲が　かわる",
+			"ぜんぶ　未識別。忍法帖の実が　落ちている",
 		],
 	},
 };
@@ -394,6 +422,45 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	},
 ];
 
+/**
+ * おーぷぬの 諸島（灯台 24階）の 層。板主の 立てた ころの 浜 → 乗っ取られて 背景が 消え、名前を 変えられ、
+ * 鯖代で 消えかけた 階 → いちばん 上の 板主の 部屋だけ 元の 色。札の 1行は その 層に 残った レス（説明は しない）。
+ */
+const OPUNU_ZONES: readonly ZoneSpec[] = [
+	{
+		last: 8,
+		name: "のんびり板の浜",
+		note: "「のんびり　いこうよ」",
+		theme: "beach",
+		bgm: "deq_sea",
+		ambient: "glitter",
+	},
+	{
+		last: 16,
+		name: "背景の消えた階",
+		note: "「板の　名前、変わってない？」",
+		theme: "white",
+		bgm: "deq_laundry",
+		ambient: "snow",
+	},
+	{
+		last: 23,
+		name: "〇〇諸島",
+		note: "「鯖代、払い忘れた」",
+		theme: "lattice",
+		bgm: "tense",
+		ambient: "data",
+	},
+	{
+		last: 24,
+		name: "板主の部屋",
+		note: "「(´・ω・｀)」",
+		theme: "beach",
+		bgm: "deq_sea",
+		ambient: "glitter",
+	},
+];
+
 export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// 焼き色の 土。はじめの 曲
 	shallow: { theme: "earth", bgm: "dungeon", ambient: "dust" },
@@ -418,12 +485,19 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 		ambient: "dust",
 		zones: HIDDEN_ZONES,
 	},
+	// 裏ルート：乗っ取られて 色を いじられた 板なので 層ごとに かわる（theme・bgm は 予備）
+	opunu: {
+		theme: "beach",
+		bgm: "deq_sea",
+		ambient: "glitter",
+		zones: OPUNU_ZONES,
+	},
 };
 
 // ───────────────── 目的の品 ─────────────────
 /** 本編の「長湯スレ」は core/data/items.ts にある（desc は同じ書き方）。 */
 export const GOAL_ITEMS: Record<
-	"shallow" | "deep",
+	"shallow" | "deep" | "opunu",
 	{ id: string; name: string; desc: string }
 > = {
 	shallow: {
@@ -435,6 +509,11 @@ export const GOAL_ITEMS: Record<
 		id: "tsuzuki",
 		name: "鉄塔の保守スレ",
 		desc: "送電鉄塔の　てっぺんで、だれかが　保守しつづけた　スレ。持ち帰って　貼ろう",
+	},
+	opunu: {
+		id: "aisatsu",
+		name: "板主の　あいさつスレ",
+		desc: "のんびり板の　板主が　いちばん　はじめに　立てた　スレ。灯台の　てっぺんに　あった。持ち帰って　貼ろう",
 	},
 };
 
@@ -501,6 +580,8 @@ export const STORY: Record<
 			s("zero", "999！　……つぎ、1000です！"),
 			n("広場じゅうが、いっせいに　書きこんだ。\n「1000なら　保守村　復活」"),
 			n("……「1000　名前：名無しさん」\n知らない　人だった。"),
+			// 裏ルートで 原住民が 先に 来て いれば（STORY.md §5.98）。1000 を 取ったのは 知らない 人の まま
+			mob("shobon", "……おれじゃ　ないよ", "opunu"),
 			s("zero", "完走、です。……ゼロ、\nちゃんと　数えました"),
 			s("nanj", "……草。知らん　やつに　取られたわ"),
 			s(
@@ -524,6 +605,12 @@ export const STORY: Record<
 			s(
 				"shiyo",
 				"……小屋は、あたすが　あずかるわ。\nいつでも　取りに　来なさいよ",
+			),
+			// 一度 出ていって 帰ってきた 人が 言う（やきうの 返事は 書かない）
+			mob(
+				"shobon",
+				"いってら。……おれも　一回\n出てったけど、戻れたよ",
+				"opunu",
 			),
 			n("山吹色の　背中が、\n小さく　なっていった。"),
 			n("キリコは　小屋の　前の　札に　書いた。\n「保守」"),
@@ -642,6 +729,57 @@ export const STORY: Record<
 			k("……保守ンゴ"),
 		],
 	},
+	// 裏ルート（STORY.md §5.98）：おんJ民が 遊びで 立てて 飽きて 捨てた、消せない 板。板主は おんJ民より 前から
+	// おんJに いた 原住民。貼ると スレが 上がり、気づいた 原住民が 村へ 帰ってくる（西の 空き地に 住みつく。data/mobs.ts）
+	opunu: {
+		intro: [
+			"おーぷぬの　諸島。だれでも　板を　立てられ、\n立てたら　消せない。",
+			"「のんびり板」と　いう　名前だった。\nいまは「のんびり諸島」。だれかが　変えた。",
+			"灯台の　てっぺんに、板主の　いちばん\nはじめの　スレが　あると　いう。",
+			"キリコは　蓄音機を　かかえた。\n……だれかが、鍵を　ためしている。",
+		],
+		ending: [
+			nAbout(
+				"村に　帰りつくと、\n山吹色が　ふり返った。",
+				"nanj",
+				"村に　帰りつくと、\nロゼが　鍋から　顔を　上げた。",
+			),
+			sOr(
+				s("nanj", "のんびり板……？　ああ。\nあの　ショボンの　板か"),
+				s("roze", "のんびり板……。古い　板アル。\n……だれの　板アル？"),
+			),
+			n(
+				"キリコは　拾った　スレを　蓄音機に　かけた。\n「のんびり　いこうよ　(´・ω・｀)」",
+			),
+			s("zero", "スレ、上がりました！\n……あれ。だれか、来ます"),
+			n("村の　口から、だれか　来た。\n(´・ω・｀)の　顔。……原住民だ。"),
+			mob(
+				"shobon",
+				"……上がってたから、来てみた。\nここ、昔　おれの　板だったんだよね",
+			),
+			mob(
+				"shobon",
+				"おんJが　できた　日に　いた　20人。\nおんJ民が　来る　前に、みんな　出てった",
+			),
+			// 反転の 鏡（侵略した 側が、あとから 住みついた 側でも あった）。やきうが いなければ 入れかわり
+			sOr(
+				s("nanj", "……草。侵略されたんは、\nワイらの　ほうやったんか"),
+				mob("shobon", "やきう民、いないんだ。……そっか。\nじゃ、入れかわりだね"),
+			),
+			mob("shobon", "べつに。飽きて　出てっただけだよ。\n……板、消せないしね"),
+			s("feris", "おかえり〜。……はじめましてで、\nおかえりって、へんかな〜"),
+			mob("shobon", "……ただいま。\n西の　空き地、あいてる？"),
+			n(
+				"原住民は　西の　空き地へ　歩いていった。\n草の　上に　すわって、のんびり　している。",
+			),
+			k("……のんびりンゴ"),
+		],
+		again: [
+			n("村に　帰りつくと、\n西の　空き地から　手が　ふられた。"),
+			mob("shobon", "また　上げてくれたんだ。\n……のんびり　いこうよ"),
+			k("……のんびりンゴ"),
+		],
+	},
 };
 
 // ───────────────── ボスを たおして 帰ったとき ─────────────────
@@ -711,7 +849,7 @@ export const BOSS_HOME: Partial<Record<DungeonId, string>> = {
  * relief は きのこ板 で5回 倒れて 本編が開いたとき（きのこ板の ネタは シヨが 貼っておく）。
  */
 export const UNLOCK_LINES: Record<
-	"main" | "deep" | "relief" | "colony" | "hidden",
+	"main" | "deep" | "relief" | "colony" | "hidden" | "opunu",
 	readonly Line[]
 > = {
 	main: [
@@ -726,6 +864,21 @@ export const UNLOCK_LINES: Record<
 		// 山場（鉄塔の 保守スレは やきうの 書きこみ）への 伏線
 		q("nanj", "電池板な、人　おらんのに\nスレが　上がっとるらしいで"),
 		q("nanj", "……だれが　保守しとんのやろな。\nほな、延長戦や"),
+	],
+	// 裏ルート（電池板と いっしょに 開く。STORY.md §5.98 の 起）
+	opunu: [
+		q(
+			"nanj",
+			"おーぷぬ、知っとるか。だれでも\n板を　立てられたんや。……ワイらも　立てた",
+		),
+		q(
+			"nanj",
+			"立てたら　消せんのや。\n……ワイらの　板も、まだ　どっかに　あるで",
+		),
+		q(
+			"zero",
+			"南の　海の　諸島に、灯台の　明かりが\nつきました。……地図の　はしっこ、です",
+		),
 	],
 	relief: [
 		q(
@@ -858,6 +1011,13 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	festival: [
 		q("shiyo", "うちわ、あたすが　あずかってるわ。\n……使っては　ないわよ"),
 		q("nanj", "祭りのあとの　うちわや。\n……ええ　祭りやった"),
+	],
+	opunu: [
+		q("nanj", "ショボン、西に　おるで。\n……ツッコミが　うるさいわ"),
+		q("roze", "原住民は　麻婆豆腐、辛口アル。\n……意外アル"),
+		q("feris", "(´・ω・｀)、まねして　みた〜。\n……むずかしい〜"),
+		q("shiyo", "西の　空き地、にぎやかに　なったわ。\n……べ、べつに　いいけど"),
+		q("zero", "のんびり板の　スレ、上がってます。\n……のんびり、伸びてます"),
 	],
 	hidden: [
 		q("roze", "古い　スレは、読みごたえ　あるアル。\n……常識アル"),

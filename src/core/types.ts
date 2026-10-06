@@ -16,7 +16,8 @@ export type DungeonId =
 	| "tropical"
 	| "konamono"
 	| "festival"
-	| "hidden";
+	| "hidden"
+	| "opunu";
 
 /**
  * 冒険の 目的。fetch：いちばん底の 品を 拾って 入口まで 持ち帰る。
@@ -115,7 +116,7 @@ export type Item = {
 
 /** モンスターの特技（トルネコ1の役割。資源を奪うものが中心）。 */
 export type Ability =
-	| { k: "steal"; rate: number } // 持ち物を盗んでワープする（倒せば取り返せる）
+	| { k: "steal"; rate: number; verb?: string; quip?: string } // 持ち物を盗んでワープする（倒せば取り返せる）。verb は「盗んだ」の 言いかえ、quip は そのあとの ひとこと（乗っ取り屋）
 	| { k: "swap"; rate: number } // はじめから パンを 持ち、なぐる かわりに 持ち物と 取りかえて 逃げる（1体 1回だけ。倒せば 持っている 物を 落とす）
 	| { k: "pickup" } // 床の道具を拾って持ち歩く
 	| { k: "rust"; rate: number } // なぐらない。かわりに ときどき 盾の修正値を下げる

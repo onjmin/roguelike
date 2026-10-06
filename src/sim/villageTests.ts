@@ -262,6 +262,7 @@ import {
 	gather,
 	lineUp,
 	lunchScript,
+	NEWCOMER,
 	newsScript,
 	pagesFor,
 	type ReturnArrival,
@@ -1722,13 +1723,140 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 		const deep: ReturnArrival = { kind: "clear", dungeon: "deep" };
 		put(["shallow", "main", "deep"], ["shallow", "main"]);
 		ok(
-			JSON.stringify(pagesFor(deep)) === JSON.stringify(STORY.deep.ending),
+			JSON.stringify(pagesFor(deep)) ===
+				JSON.stringify(STORY.deep.ending.filter((p) => !p.needCleared)),
 			"the 電池板 ending is cut the first time",
 		);
 		put(["shallow", "main", "deep"], ["shallow", "main", "deep"]);
 		ok(
 			JSON.stringify(pagesFor(deep)) === JSON.stringify(STORY.deep.again),
 			"the 電池板 ending plays again",
+		);
+	});
+});
+
+test("裏ルート: おーぷぬ opens with 電池板, the 原住民 walks in with the first ending and then lives in the village", async () => {
+	const all = [...DUNGEON_IDS];
+	const put = (cleared: DungeonId[], endings: DungeonId[]) =>
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared,
+				fails: {},
+				intro: all,
+				news: [],
+				endings,
+			}),
+		);
+	// 風呂板を 持ち帰ると 電池板と いっしょに 開く（二択）
+	ok(
+		DUNGEONS.opunu.unlockAfter === "main" &&
+			DUNGEONS.deep.unlockAfter === "main",
+		"not a fork after 風呂板",
+	);
+	ok(
+		MOBS.shobon.after === "opunu" && MONSTERS.hijacker.board === "opunu",
+		"the 原住民 or the 乗っ取り屋 is not tied to おーぷぬ",
+	);
+	await withStorageAsync(async () => {
+		putTown({ stage: 4 });
+		// はじめての 持ち帰り：まだ 原住民は 村に いない。語りの 中で 口から 歩いてきて、本人の 窓で 話す
+		put(["shallow", "kinoko", "main", "opunu"], ["shallow", "kinoko", "main"]);
+		const a: ReturnArrival = { kind: "clear", dungeon: "opunu" };
+		const v = villageView();
+		ok(
+			villagePlaces(v).some((p) => p.mob === "shobon") &&
+				!villagePlaces(sceneView(v, a)).some((p) => p.mob === "shobon"),
+			"the 原住民 is placed wrong around his own arrival",
+		);
+		const { s, log } = fakeStory({ at: exitFor("opunu").cell });
+		lineUp(s, a, sceneView(v, a));
+		ok(
+			!log.some((l) => l.startsWith("place mob_shobon ")),
+			"the 原住民 waits at the mouth before he has arrived",
+		);
+		await returnScene(s, a);
+		const gate = exitFor("opunu").cell.join(",");
+		const walk = log.findIndex((l) => l === `place newcomer ${gate}`);
+		const talk = log.findIndex((l) =>
+			l.startsWith("say null: ……上がってたから"),
+		);
+		ok(
+			walk >= 0 && talk > walk,
+			`he does not walk in before talking:\n${log.join("\n")}`,
+		);
+		ok(
+			log.includes(
+				"say nanj: ……草。侵略されたんは、\nワイらの　ほうやったんか",
+			),
+			"やきう's mirror line is missing",
+		);
+		ok(!s.flag(NEWCOMER), "the newcomer flag stays up after the scene");
+		ok(
+			!!loadProgress().endings?.includes("opunu"),
+			"the arrival is not remembered",
+		);
+		// 2回目からは 短い 語りで、本人が 口の 前に 並ぶ
+		const again = pagesFor(a);
+		ok(
+			JSON.stringify(again) === JSON.stringify(STORY.opunu.again) &&
+				again.some((p) => p.mob === "shobon"),
+			"the second visit does not use the short ending",
+		);
+		const second = fakeStory({ at: exitFor("opunu").cell });
+		lineUp(second.s, a, villageView());
+		ok(
+			second.log.some((l) => l.startsWith("place mob_shobon ")),
+			"the 原住民 does not line up once he lives here",
+		);
+		// 電池板の 山場：原住民が 来ていれば 2枚 口を はさみ、来ていなければ 出ない
+		put(
+			["shallow", "kinoko", "main", "opunu", "deep"],
+			["shallow", "kinoko", "main", "opunu"],
+		);
+		const deep: ReturnArrival = { kind: "clear", dungeon: "deep" };
+		ok(
+			pagesFor(deep).filter((p) => p.mob === "shobon").length === 2,
+			"the 原住民 does not speak at the 1000",
+		);
+		put(["shallow", "kinoko", "main", "deep"], ["shallow", "kinoko", "main"]);
+		ok(
+			pagesFor(deep).every((p) => p.mob !== "shobon"),
+			"the 原住民 speaks at the 1000 before he has arrived",
+		);
+		// やきうが 出ていった あとに はじめて 持ち帰っても、語りは 省かれず、かわりの 頁で 入れかわりを 言う
+		put(
+			["shallow", "kinoko", "main", "deep", "opunu"],
+			["shallow", "kinoko", "main", "deep"],
+		);
+		putTown({ stage: TOWN_STAGES - 1 });
+		const late = pagesFor(a);
+		ok(
+			late.length > (STORY.opunu.again?.length ?? 0) &&
+				late.some((p) => p.text.includes("入れかわりだね")) &&
+				late.every((p) => p.who !== "nanj"),
+			`the late arrival is wrong:\n${late.map((p) => p.text).join("\n")}`,
+		);
+		// 開いた 知らせは おーぷぬの 行（やきうの おーぷぬの 話と ゼロの 灯台）
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared: ["shallow", "kinoko", "main"],
+				fails: {},
+				intro: all,
+				news: [{ dungeon: "opunu", reason: "clear" }],
+				endings: [],
+			}),
+		);
+		const news = fakeStory();
+		await newsScript(news.s);
+		ok(
+			news.log.some((l) => l.includes("おーぷぬ、知っとるか")) &&
+				news.log.some((l) => l.includes("灯台")) &&
+				news.log.some((l) => l.includes("「のんびり諸島」に")),
+			`the おーぷぬ news is wrong:\n${news.log.join("\n")}`,
 		);
 	});
 });
@@ -2064,9 +2192,15 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 });
 
 test("おんJマイナーズ move in one by one as the town grows", () => {
+	// 板を 持ち帰ると 来る 子（裏ルートの 原住民）は 町の 段では 数えない
+	const byStep = MOB_IDS.filter((id) => !MOBS[id].after);
+	const byBoard = MOB_IDS.filter((id) => MOBS[id].after);
 	for (const v of VIEWS) {
 		const here = villagePlaces(v).filter((p) => p.mob);
-		const want = MOB_IDS.filter((id) => MOBS[id].from <= lastStepOf(v.stage));
+		const want = [
+			...byStep.filter((id) => MOBS[id].from <= lastStepOf(v.stage)),
+			...byBoard.filter((id) => v.cleared.includes(MOBS[id].after ?? "main")),
+		];
 		ok(
 			here.length === want.length,
 			`${label(v)}: ${here.map((p) => p.id).join()}`,
@@ -2074,11 +2208,14 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 		// 小段の 途中：その 小段までに 越してきた 子だけ
 		for (let step = 0; step <= lastStepOf(v.stage); step++) {
 			const at = villagePlaces({ ...v, step }).filter((p) => p.mob).length;
-			const n = MOB_IDS.filter((id) => MOBS[id].from <= step).length;
+			const n =
+				byStep.filter((id) => MOBS[id].from <= step).length +
+				byBoard.filter((id) => v.cleared.includes(MOBS[id].after ?? "main"))
+					.length;
 			ok(at === n, `${label(v)} step ${step}: ${at} residents (want ${n})`);
 		}
 	}
-	const froms = MOB_IDS.map((id) => MOBS[id].from);
+	const froms = byStep.map((id) => MOBS[id].from);
 	ok(
 		froms.every((f) => f >= 0 && f < TOWN_STEPS.length),
 		`move-in steps: ${froms}`,
@@ -2087,8 +2224,18 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 	ok(new Set(froms).size === froms.length, `two move in at once: ${froms}`);
 	// はじめから いるのは ぷゆゆ だけ（マイナーズは 町が 育ってから）
 	ok(
-		MOB_IDS.filter((id) => MOBS[id].from === 0).join() === "puyu",
+		byStep.filter((id) => MOBS[id].from === 0).join() === "puyu",
 		"only ぷゆゆ is there from the start",
+	);
+	// 板で 来る 子は その 板を 持ち帰った 村に だけ 立つ
+	ok(byBoard.join() === "shobon", `moves in with a board: ${byBoard.join()}`);
+	const top = VIEWS[VIEWS.length - 1];
+	ok(
+		!villagePlaces({ ...top, cleared: [] }).some((p) => p.mob === "shobon") &&
+			villagePlaces({ ...top, cleared: ["opunu"] }).some(
+				(p) => p.mob === "shobon",
+			),
+		"原住民 does not follow the おーぷぬ clear",
 	);
 });
 
@@ -2371,7 +2518,7 @@ test("ぷゆゆ・マイナーズ: every conditional talk and reaction can happe
 			] as const)
 				rich.push({
 					last: { kind: "dead", cause, depth, returning },
-					seen: ["tousuko", "metal"],
+					seen: ["tousuko", "metal", "hijacker"],
 					met: [...MOB_IDS],
 					talked: every,
 					today: { m, d: 25, w },

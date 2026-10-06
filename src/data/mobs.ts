@@ -20,6 +20,7 @@
 // - 期間限定・曜日は 遊んでいる 端末の 日付（data/calendar.ts）。
 // ロジックは ui/villageMobs.ts、置き場所は data/village/map.ts。
 
+import type { DungeonId } from "../core/types";
 import type { Dir } from "../engine/types";
 import type { Season, Today } from "./calendar";
 import { PUYU_WALK } from "./cast";
@@ -41,7 +42,8 @@ export type MobId =
 	| "aru"
 	| "proto"
 	| "ren"
-	| "hinary";
+	| "hinary"
+	| "shobon";
 
 /** 村で 口を きく だれか（仲間か、ほかの子）。 */
 export type Cast = Speaker | MobId;
@@ -72,8 +74,8 @@ export type MobLine = {
 	gone?: true;
 };
 
-/** 節目（持ち帰った ダンジョン・もぐった回数）。shallow は 段0から いる ぷゆゆ だけ。 */
-export type Milestone = "shallow" | "main" | "deep" | "runs10";
+/** 節目（持ち帰った ダンジョン・もぐった回数）。shallow は 段0から いる ぷゆゆ だけ。opunu は 裏ルート（原住民が 来た）。 */
+export type Milestone = "shallow" | "main" | "deep" | "opunu" | "runs10";
 
 /** 話を えらぶ 手がかり（ui/villageMobs.ts が 保存と 端末の 日付から 作る。data は 保存を 読まない）。 */
 export type MobCtx = {
@@ -113,6 +115,11 @@ export type MobDef = {
 	sprite: string;
 	/** 越してくる 町の 小段（core/town.ts の TOWN_STEPS。0 は はじめから いる）。小段ごとに 1人ずつ。 */
 	from: number;
+	/**
+	 * 町の 段では なく、この 板を 持ち帰ると 越してくる（裏ルートの 原住民。持ち帰りの 語りの 中で 歩いてくる。
+	 * ui/villageReturn.ts）。from は 見ない（0 に しておく）。
+	 */
+	after?: DungeonId;
 	spot: readonly [number, number];
 	dir: Dir;
 	/** 家の まわり 2マスを うろうろ する。 */
@@ -1859,6 +1866,11 @@ export const MOBS: Record<MobId, MobDef> = {
 			m("……ぷゆゆ🥺"),
 		],
 		milestones: {
+			// 裏ルート：侵略しに 来た 新入りが、侵略された 側の 人に はじめて 会う（STORY.md §5.98）
+			opunu: [
+				m("西に　いる　(´・ω・｀)、\n侵略された　側の　人　なんだって"),
+				m("……ぜんぜん　怒ってない。\n侵略、むずかしいにゃ"),
+			],
 			main: [m("長湯スレ、侵略　しそこねたぷ。\n……のぼせたぷ")],
 			// 侵略しに 来た 新入り（植民地化宣言の 反転）
 			deep: [
@@ -2835,9 +2847,125 @@ export const MOBS: Record<MobId, MobDef> = {
 		idle: "……避難Jを研究している\nヒナリーです",
 		thx: [],
 	},
+	// 原住民 (´・ω・｀)（おんJwiki「原住民」）。やきう民が なんJに 来る 前から いた 非野球民で、やきう民の ボケに
+	// ツッコむ 役。おんJでは 開設日（2012/6/7）に 20人 いて、1か月で だれも いなくなった。この 子は その ひとりで、
+	// 2020年に おーぷぬで「のんびり板」を 立てて、飽きて 出た（創作。STORY.md §5.98）。板主の あいさつスレを 持ち帰って
+	// 貼ると、上がった スレに 気づいて 村へ 帰ってきて、西の 空き地に 住みつく（after。町の 段では 来ない）。
+	// 役は「前から いた 人」（去った・残った・新しく 来た、の どれでも ない）。絵は 仮（scripts/make-opunu.mjs。ART_TODO.md）。
+	// マイナーズでは ないので 総選挙には 出ない。声なし
+	shobon: {
+		name: "原住民",
+		sprite: "pub:sprites/shobon.png",
+		from: 0,
+		after: "opunu",
+		// 西の 空き地（本屋の 東どなり。西の 口への 道の そば）。のんびり すわっているので うろうろ しない
+		spot: [7, 21],
+		dir: "down",
+		color: "#b8c8d8",
+		noVote: true,
+		meet: [
+			n("キリコは　ちいさく　おじぎした。"),
+			m("ああ、板主の　スレ　上げてくれた　子か。\n……どうも。原住民です"),
+			c("nanj", "ショボン、って　呼んだら　ええで"),
+			m("……それ、なんJの　呼び方だから"),
+		],
+		milestones: {
+			// 電池板の 山場：ツッコむ 相手（やきう）が 出ていった。それでも ここに いる
+			deep: [
+				m("やきう民、出てったんだ。"),
+				m("ツッコむ　相手が　いないと、\nツッコミは　ただの　文句だね"),
+				m("……まあ、いいけど。\nここに　いるよ"),
+			],
+			runs10: [
+				m("もう　10回も　もぐってるんだ。\n……おれは　10回　寝た"),
+				n("原住民は　草の　上で\nのびを　した。"),
+			],
+		},
+		chats: [
+			// ── 前の冒険に こたえる ──
+			{
+				key: "kagi",
+				when: (x) => x.seen.includes("hijacker"),
+				lines: [
+					m("乗っ取り屋、いた？\nパスワード、1234に　してたから"),
+					m("……おれが　悪いね。\nのんびり　しすぎた"),
+				],
+			},
+			// ── 暦 ──
+			// 先住民 ( 'ｊ' )「あ！今日土曜日ど！」（おんJwiki「先住民」。原住民より 前から いた 住民）
+			{
+				key: "doyoubi",
+				when: (x) => x.today.w === 6,
+				lines: [
+					m("あ！　今日　土曜日ど！"),
+					m("……って　言う　人が、\nおれたちより　前から　いたんだよ"),
+					k("……先住民ンゴ？　知ってるンゴ"),
+				],
+			},
+			// ── いつでも（知りあって いく 順） ──
+			{
+				key: "ita",
+				lines: [
+					m("おれの　板、まだ　あるんだよね。\n消せないから"),
+					m("名前は　変えられたけど。\n……のんびり諸島って　なに"),
+					k("……のんびりンゴ"),
+				],
+			},
+			{
+				key: "nonbiri",
+				lines: [
+					m("「のんびり　いこうよ」って、\n板の　あいさつにしてたんだ"),
+					m("20人で　のんびり　してたら、\nみんな　どっか　行った"),
+					m("……おれも　行ったけど"),
+				],
+			},
+			{
+				key: "tsukkomi",
+				lines: [
+					m("やきう民の　ボケに　ツッコむのが\nおれの　仕事なんだけど"),
+					m("ここの　やきう民、\n大工　やってるんだね"),
+					c("nanj", "……聞こえとるで"),
+					m("ほら、こう　なる"),
+				],
+			},
+			{
+				key: "shinryaku",
+				lines: [
+					m("侵略された、って　言うけど。\n住む　人が　いて　よかったよ"),
+					m("だれも　いない　板は、\n……しずかすぎるから"),
+					n("キリコは　うなずいた。"),
+				],
+			},
+		],
+		season: {
+			newyear: "あけおめ。(´・ω・｀)\n……のんびり　いこうよ",
+			april: "板の　名前、もどってた。\n……うそ",
+			halloween: "仮装？　この　顔が　もう\n仮装みたいな　ものだよ",
+			xmas: "メリクリ。\nおれは　のんびり　してる",
+		},
+		react: {
+			dead: "たおれたんだ。\n……のんびり　いこうよ",
+			deep: "深くまで　行ったんだ。\n……無理しないでね",
+			clear: "持ち帰ったんだ。\nあとで　上げといて",
+			escape: "帰ってきたんだ。\n……スレで　帰るの、かしこいね",
+			starve: "おなか　すいて　たおれたの。\n……(´；ω；｀)",
+		},
+		idle: "(´・ω・｀)　のんびり　いこうよ",
+		thx: [],
+	},
 };
 
 export const MOB_IDS = Object.keys(MOBS) as MobId[];
+
+/**
+ * 村に 越してきている 住人（町の 小段 step までに 来た 子と、after の 板を 持ち帰って 来た 子。
+ * data/village/map.ts・ui/cafe.ts・ui/guests.ts が 同じ 決まりで 数える）。
+ */
+export const movedIn = (step: number, cleared: readonly DungeonId[]): MobId[] =>
+	MOB_IDS.filter((id) => {
+		const d = MOBS[id];
+		return d.after ? cleared.includes(d.after) : step >= d.from;
+	});
 
 /**
  * ぷゆゆが お弁当の ぷゆゆパンを 持たせる ときの ひとこと（ui/villageReturn.ts の lunchScript。帰りごとに 1つ）。

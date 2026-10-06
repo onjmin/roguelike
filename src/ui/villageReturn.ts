@@ -64,6 +64,7 @@ import {
 	exitFor,
 	lineupSpots,
 	spotsAround,
+	stepOf,
 	VILLAGE_EXITS,
 	VILLAGE_SPOTS,
 	type VillageExit,
@@ -166,7 +167,7 @@ export const pagesFor = (
 ): readonly StoryPage[] => {
 	const away = sceneAway(a, p);
 	if (a.kind !== "clear") return withoutAway(RETURN_PAGES, away);
-	const ending = endingFor(a.dungeon, !firstEnding(a, p), away);
+	const ending = endingFor(a.dungeon, !firstEnding(a, p), away, p.cleared);
 	const boss = a.objective === "boss" ? (BOSS_RETURN[a.dungeon] ?? []) : [];
 	return withoutAway(
 		boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending,
@@ -178,6 +179,24 @@ export const pagesFor = (
 const castOf = (pages: readonly StoryPage[]): Speaker[] => [
 	...new Set(pages.flatMap((p) => (p.who ? [p.who] : []))),
 ];
+
+/** 語りで 口を はさむ 住人（data/mobs.ts。出てくる順）。 */
+const mobsOf = (pages: readonly StoryPage[]): MobId[] => [
+	...new Set(pages.flatMap((p) => (p.mob ? [p.mob] : []))),
+];
+
+/**
+ * 語りで 話す 住人の うち、いま 村に 立っている 子（after の 板を 持ち帰った あと）。まだ いない 子は、
+ * 語りの 中で 村の 口から 歩いてくる（NEWCOMER の 旗の 人。ui/villageEvents.ts の buildVillage）。
+ */
+const mobsHere = (pages: readonly StoryPage[], v: VillageView): MobId[] =>
+	mobsOf(pages).filter((id) => {
+		const d = MOBS[id];
+		return d.after ? v.cleared.includes(d.after) : stepOf(v) >= d.from;
+	});
+
+/** 語りの 中で 越してくる 住人の 旗（この 旗が 立っている あいだだけ 村に いる 人の イベント ID）。 */
+export const NEWCOMER = "newcomer";
 
 /** キリコが 立っている 村の 出口（帰ってきたところ。出口で なければ undefined）。 */
 const inMouth = (s: Story, _d: DungeonId): VillageExit | undefined =>
@@ -198,13 +217,34 @@ const toward: Record<Dir, Dir> = {
 export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 	const exit = inMouth(s, a.dungeon);
 	if (!exit) return;
-	const cast = castOf(pagesFor(a));
-	const spots = lineupSpots(v, cast.length, exit);
+	const pages = pagesFor(a);
+	const cast = castOf(pages);
+	// 口を はさむ 住人が 村に いれば、仲間の あとに 並ぶ（遠くから 声だけ 飛ばさない）
+	const mobs = mobsHere(pages, v).map((id) => `mob_${id}`);
+	const spots = lineupSpots(v, cast.length + mobs.length, exit);
 	s.hide("player");
-	cast.forEach((who, i) => {
+	[...cast, ...mobs].forEach((who, i) => {
 		const c = spots[i];
 		if (c) s.place(who, c[0], c[1], toward[exit.inward]);
 	});
+};
+
+/**
+ * 語りの 中で 越してくる 住人（after の 板を はじめて 持ち帰った とき）：その 板の 方角の 村の 口から 歩いてきて、
+ * キリコの そばに 立つ。旗 NEWCOMER の 人を 動かす（絵は その子の 歩行グラ）。語りの あとの 建て直しで 本人に かわる。
+ */
+const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
+	const gate = exitFor(d).cell;
+	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	s.set(NEWCOMER);
+	s.place(NEWCOMER, gate[0], gate[1]);
+	await s.look(NEWCOMER);
+	if (to) {
+		await s.goto(NEWCOMER, to[0], to[1], { speed: 1.2 });
+		s.face(NEWCOMER, "player");
+		s.face("player", faceTo(s.state, to));
+	}
+	await s.look(null);
 };
 
 /** 口から 出てきて、並んだ 仲間が 語りを 話す。暗転の あいだに みんな 持ち場へ もどる。 */
@@ -215,11 +255,24 @@ export const returnScene = async (
 	const exit = inMouth(s, a.dungeon);
 	if (!exit) return;
 	const pages = pagesFor(a);
+	// はじめての 持ち帰りの 語りの あいだは、その 板で 来る 子は まだ いない（sceneView）
+	const here = mobsHere(pages, sceneView(villageView(), a));
 	s.se("stairs");
 	s.show("player");
 	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
-	for (const p of pages) await playPage(s, p);
+	for (const id of here) s.face(`mob_${id}`, "player");
+	let newcomer = false;
+	for (const p of pages) {
+		if (p.mob) {
+			// まだ 村に いない 住人は、はじめて 口を ひらく 前に 口から 歩いてくる
+			if (!here.includes(p.mob) && !newcomer) {
+				newcomer = true;
+				await walkInMob(s, a.dungeon);
+			}
+			await sayAs(s, p.mob, p.text);
+		} else await playPage(s, p);
+	}
 	// 見おえた（一度きりの 語りは 次から 短く。やきうが 出ていく 語りなら、建て直すと 村に いない）
 	if (a.kind === "clear") noteEnding(a.dungeon);
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲
@@ -227,6 +280,7 @@ export const returnScene = async (
 		a.kind === "clear" ? s.fadeBgm(300) : Promise.resolve(),
 		s.fadeOut(300),
 	]);
+	s.set(NEWCOMER, false);
 	await s.rebuild();
 	s.bgm(villageSong());
 	await s.fadeIn(300);
@@ -428,18 +482,20 @@ export const newsScript = async (s: Story): Promise<void> => {
 			);
 			continue;
 		}
-		const colony = !["main", "deep"].includes(n.dungeon);
+		const colony = !["main", "deep", "opunu"].includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
 		const lines = UNLOCK_LINES[
 			n.dungeon === "hidden"
 				? "hidden"
-				: colony
-					? "colony"
-					: n.reason === "relief"
-						? "relief"
-						: n.dungeon === "deep"
-							? "deep"
-							: "main"
+				: n.dungeon === "opunu"
+					? "opunu"
+					: colony
+						? "colony"
+						: n.reason === "relief"
+							? "relief"
+							: n.dungeon === "deep"
+								? "deep"
+								: "main"
 		]
 			.filter((l) => !away.includes(l.who) && !mentionsAway(l.text, away))
 			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
@@ -594,9 +650,11 @@ const movedIn = async (
 	await s.look(null);
 };
 
-/** 小段 from → to で 越してくる 住人。 */
+/** 小段 from → to で 越してくる 住人（板を 持ち帰ると 来る 子は 語りの 中で 来る）。 */
 const movingIn = (from: number, to: number): MobId[] =>
-	MOB_IDS.filter((id) => MOBS[id].from > from && MOBS[id].from <= to);
+	MOB_IDS.filter(
+		(id) => !MOBS[id].after && MOBS[id].from > from && MOBS[id].from <= to,
+	);
 
 /** (x, y) に いちばん 近い 村の 口。 */
 const gateNear = ([x, y]: readonly [number, number]): readonly [

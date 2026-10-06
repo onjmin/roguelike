@@ -62,6 +62,13 @@ export const SCRAPS: readonly Scrap[] = [
 		why: "ネットを辞めた",
 		record: "rec_q",
 	},
+	// 裏ルート（おーぷぬ）：自分の 板を 立てて 出ていった 人（3作目の 対は まだ 無い。STORY.md §4.5）
+	{
+		id: "jibun",
+		board: "opunu",
+		text: "板　立てたわ。おんJより　のんびり　やる",
+		why: "自分の板",
+	},
 ];
 
 /** 掲示板の 文（{board} は 板の 名前）。 */

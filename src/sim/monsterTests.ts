@@ -937,6 +937,48 @@ test(
 	},
 );
 
+// ───────────────── 乗っ取り屋（steal・fastMove。おーぷぬの 諸島だけ） ─────────────────
+
+test(
+	"hijacker",
+	"steal: takes over a loose item with its own verb and quip, warps; kill drops it",
+	() => {
+		const r = arena("hijacker", hideoutLayout(), HIDE_AT);
+		r.s.dungeon = "opunu";
+		r.p.items = [];
+		const club = equip(r, "club");
+		const goal = give(r, "aisatsu");
+		const herb = give(r, "h_heal");
+		const m = put(r, "hijacker", at(1, 0, HIDE_AT));
+		let warped = false;
+		let quip = false;
+		waitTurns(r, 30, (ev) => {
+			if (count(ev, "warp", m.uid) > 0) warped = true;
+			if (saw(ev, "乗っ取った") && saw(ev, "パスワード、弱すぎ")) quip = true;
+			return m.carry !== null;
+		});
+		ok(
+			m.carry === herb,
+			`took ${m.carry?.kind ?? "nothing"} (expected h_heal)`,
+		);
+		ok(quip, "did not say 乗っ取った／パスワード、弱すぎ");
+		ok(
+			r.p.items.includes(goal) && r.p.items.includes(club),
+			"lost the goal item or the equipped weapon",
+		);
+		ok(warped, "did not warp after stealing");
+		ok(
+			MONSTERS.hijacker.abilities.some((a) => a.k === "fastMove"),
+			"not fast",
+		);
+		r.damageMonster(m, 9999, "hit");
+		ok(
+			r.f.items.some((fi) => fi.item === herb),
+			"the taken item was not dropped on death",
+		);
+	},
+);
+
 test("tensai", "never steals the genban or equipped items", () => {
 	const r = arena("tensai-genban", hideoutLayout(), HIDE_AT);
 	r.p.items = [];
@@ -2973,6 +3015,7 @@ const COLONY_FOES: readonly [string, DungeonId][] = [
 	["natsuko", "tropical"],
 	["takonomin", "konamono"],
 	["mashii", "festival"],
+	["hijacker", "opunu"],
 ];
 
 for (const [id, board] of COLONY_FOES)
@@ -3917,7 +3960,7 @@ test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",
 	() => {
-		ok(MONSTER_LIST.length === 45, `${MONSTER_LIST.length} monsters`);
+		ok(MONSTER_LIST.length === 46, `${MONSTER_LIST.length} monsters`);
 		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
 		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(

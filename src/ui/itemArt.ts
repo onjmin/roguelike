@@ -335,6 +335,8 @@ export const ITEM_ART: Record<
 	tsuzuki: RECORD("#f0f0ea"),
 	// 1001の原盤：赤い ラベル（dat落ちの 1001）
 	g1001: RECORD("#d03838"),
+	// 板主の あいさつスレ（おーぷぬの 諸島）：のんびり板の 空色の ラベル
+	aisatsu: RECORD("#9ac8e8"),
 	// 蓄音機の針：ななめの 鋼の 針と 金の 針止め
 	needle: {
 		palette: {

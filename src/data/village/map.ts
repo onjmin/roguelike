@@ -51,7 +51,7 @@ import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../cast";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
-import { MOB_IDS, MOBS, type MobId } from "../mobs";
+import { MOBS, type MobId, movedIn } from "../mobs";
 import type { Speaker } from "../quotes";
 import { awayFriends, FRIEND_FROM } from "../story";
 import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
@@ -746,9 +746,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	} else out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
 	if (here("feris")) out.push(friend("feris", VILLAGE_SPOTS.feris, true));
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
-	for (const id of MOB_IDS) {
+	for (const id of movedIn(stepOf(v), v.cleared)) {
 		const d = MOBS[id];
-		if (stepOf(v) < d.from) continue;
 		out.push({
 			id: `mob_${id}`,
 			x: d.spot[0],

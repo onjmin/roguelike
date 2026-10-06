@@ -23,7 +23,7 @@ import { CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
 import { LIBRARY_FROM } from "../data/glossary";
-import { BOARD_MENU } from "../data/mobs";
+import { BOARD_MENU, MOB_IDS, MOBS, type MobId } from "../data/mobs";
 import {
 	type ObjectiveInfo,
 	objectiveFor,
@@ -94,6 +94,7 @@ import {
 	deathScene,
 	lineUp,
 	lunchScript,
+	NEWCOMER,
 	newsScript,
 	previewStage,
 	type ReturnArrival,
@@ -648,6 +649,10 @@ const storeChooser =
 			},
 		});
 
+/** その 板を 持ち帰ると 越してくる 住人（data/mobs.ts の after。いなければ 原住民の 絵を 予備に）。 */
+const newcomerFor = (d: DungeonId | undefined): MobId =>
+	MOB_IDS.find((id) => d && MOBS[id].after === d) ?? "shobon";
+
 /** 場面の ある 帰り方（持ち帰った・帰還スレ）なら その形。 */
 const returnOf = (a: Arrival): ReturnArrival | null =>
 	a && (a.kind === "clear" || a.kind === "escape")
@@ -708,6 +713,16 @@ export const buildVillage = (
 			npc("visitor", 1, 1, VISITOR_WALK, async () => {}, {
 				when: (st) => !!st.flags.visitor,
 			}),
+			// 持ち帰りの 語りの 中で 越してくる 住人（旗 NEWCOMER の あいだだけ。絵は その 板で 来る 子の 歩行グラ。
+			// ui/villageReturn.ts の walkInMob）
+			npc(
+				NEWCOMER,
+				1,
+				1,
+				MOBS[newcomerFor(back?.dungeon)].sprite,
+				async () => {},
+				{ when: (st) => !!st.flags[NEWCOMER] },
+			),
 		],
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
 		prepare: (s) => {

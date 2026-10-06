@@ -611,6 +611,34 @@ const M: MonsterDef[] = [
 		desc: "祭りの　仲間と　4人で　やってくる",
 		flavor: "外で　名乗るときは　屯田兵。祭りの　あとは　だれも　いない",
 	},
+	{
+		// おーぷぬの 諸島（裏ルート）だけの 敵。2020年9月29日の 乗っ取り事件（弱い パスワードの 板を 当てて 名前を
+		// 「〜〜諸島」に 変えた）から。なぐらずに 持ち物を 1つ 乗っ取って 逃げる（転載ガモと 同じ steal。すばやい）。
+		// 絵は 仮（scripts/make-opunu.mjs。ART_TODO.md）
+		id: "hijacker",
+		name: "乗っ取り屋",
+		sprite: "pub:sprites/hijacker.png",
+		hp: 26,
+		atk: 0,
+		def: 10,
+		exp: 22,
+		floors: [6, 20],
+		weight: 30,
+		abilities: [
+			{
+				k: "steal",
+				rate: 1 / 2,
+				verb: "乗っ取った",
+				quip: "「パスワード、弱すぎ」",
+			},
+			{ k: "fastMove" },
+		],
+		sleep: "deep",
+		board: "opunu",
+		desc: "パスワードを　当てて、持ち物を　1つ　乗っ取って　逃げる。すばやい。たおせば　取り返せる",
+		flavor:
+			"板の　名前を「〇〇諸島」に　変えて　回った。弱い　パスワードが　好き",
+	},
 	// ───────── ボス（目的が boss の 板の いちばん底に 1体だけ。data/dungeons.ts の boss） ─────────
 	// 絵は その板の 敵の 絵を 1.5倍（同じ 階に 同じ 種類の 雑魚が いても 見分けが つく）。
 	// floors は その板の いちばん底の 強さ（level）。ふつうの 階の 表には 出ない（monstersFor）。
