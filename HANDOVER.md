@@ -1,27 +1,35 @@
-# 引き継ぎメモ（2026-10-06 裏ルート「おーぷぬの 消せない板」）
+# 引き継ぎメモ（2026-10-07 裏シナリオ「全滅の うそ」）
 
-次に 作業する 人（Claude Code を ふくむ）への メモ。物語の 正本は [STORY.md](./STORY.md)（裏ルートは §5.98）、遊びの 決まりは [README.md](./README.md)、絵の 仮置きは [ART_TODO.md](./ART_TODO.md)。
+次に 作業する 人（Claude Code を ふくむ）への メモ。物語の 正本は [STORY.md](./STORY.md)（裏シナリオは §5.98）、遊びの 決まりは [README.md](./README.md)、絵の 仮置きは [ART_TODO.md](./ART_TODO.md)。
 
 ## 入れた もの
 
-- **ルート分岐**：風呂板（main）を 持ち帰ると、電池板（deep）と「のんびり諸島」（`opunu`）が いっしょに 開く（`unlockAfter: "main"` が 2つ）。どちらを 先に 行っても よい。
-- **新ダンジョン `opunu`**（`src/core/data/dungeons.ts`）：灯台を 上る 24階・fetch・底の 強さ 27・ぜんぶ 未識別・持ちこみ 可・帰還スレ なし・忍法帖の実が 床に 出る（`OPUNU_ITEMS`）。層は `src/data/story.ts` の `OPUNU_ZONES`（4層。曲は 既存の deq_sea・deq_laundry・tense）。全体マップは 南西の 島「open」の 灯台（`src/data/worldMap.ts`・`ui/worldMap.ts` の `lighthouse`）。
-- **板だけの 敵「乗っ取り屋」**（`hijacker`）：steal に `verb`／`quip` を 足した（`core/types.ts`・`core/monster.ts`）。「乗っ取った！」「パスワード、弱すぎ」。
-- **新キャラ「原住民」**（`src/data/mobs.ts` の `shobon`）：町の 段では なく 板を 持ち帰ると 来る 住人（`MobDef.after`。`movedIn()` で 数える）。はじめての 持ち帰りの 語りの 中で 村の 口から 歩いてくる（`ui/villageReturn.ts` の `walkInMob`・旗 `NEWCOMER`）。家は 西の 空き地 (7,21)。喫茶の 話は `cafeMobs.ts`。
-- **語りの 仕組み**：`StoryPage.mob`（住人が 話す 頁）と `StoryPage.needCleared`（その 板を 持ち帰って いる ときだけ 出る 頁）。電池板の 山場に 原住民の 2枚を この 形で 足した。`endingFor` は かわりの 頁（instead）の ある 人が いなくても 短い 語りに 落とさない ように 変えた。
-- 辞典（おーぷぬ・原住民）、切れはし（「板　立てたわ」）、小ネタ、本館の 飾り棚を 7枠に、テスト（`monsterTests` の hijacker・`villageTests` の 裏ルート）。
+- **分岐は パン板の あと**：小島1（`isle1`）が きのこ板と 並んで 開く。小島は `isle1 → isle2 → isle3` と つづき、3つ そろうと 灯台（`opunu`。`unlockAfterAll`）。跡地（`ato`。`unlockAfterAll: ["opunu"]` ＋ `unlockFlag: "romVoice"`）、避難J（`hinan`。`unlockAfterAll: ["deep", "ato"]`）。開く 条件は `core/data/dungeons.ts` の `openable`（`engine/save.ts` の `noteRunEnd`・`loadProgress` が 使う）。
+- **ROM専の 声**：`noteRunEnd(dungeon, kind, seed, voice)` に 蓄音機の 中身（`RunState.voice`）が 渡る。持ち帰りで `funamushi` なら `Progress.flags` に `romVoice`。
+- **灯台の 扉の パスワード**：村の 口で 灯台を 選ぶと 4択（`ui/villageEvents.ts` の `passwordScript`。文と 答えは `data/story.ts` の `LIGHTHOUSE_DOOR`。当てると `Progress.flags` の `pass`）。
+- **置き手紙**：小島の 底の 品（`memo1〜3`）。持ち帰ると まとめ掲示板に 貼られる（`data/scraps.ts` の `kind: "memo"`。ほかの 切れはしより 先に 貼る：`ui/villageTalk.ts` の `pinnedScrap`）。読み返す 一覧は「乗っ取り屋の 置き手紙」。
+- **灯台の 層の 復元**：`data/story.ts` の `opunuZones(取り返した 数)`（`ui/theme.ts` の `zoneFor` が 灯台だけ これで 引く）。全体マップの 小島の 下の 名前は `ISLE_NAMES`（取り返すと 元の 板名。`ui/worldMap.ts`）。
+- **本館の 古い スレの 札**：`data/village/hall.ts` の `Q`（全 tier。集会所は すみの 1マスなので 背の 低い 札）。スクリプトは `ui/hallEvents.ts` の `oldestScript`：跡地が 開くと 降りられる。はじめは 原住民の **1打席**（`ui/minigames.ts` の `playBatting`）に 勝ってから、2回目からは 任意。降りる 流れは 村の 口と 同じ（`ui/villageEvents.ts` から `departTo`・`goalsNow`・`suspendedFirst` を 読む。互いに 読みあうが 呼ぶ ときだけ）。
+- **跡地の 結**：`STORY.ato.ending`。`StoryPage.cue`（`roms`＝ROM専 18体が 口から 来る、`romsLeave`＝帰る）と `StoryPage.nanashi`（名無しの 1窓）を 足した。ROM専 18体は `ui/villageEvents.ts` の `buildVillage` に 旗 `ROMS` の人として 置き、`ui/villageReturn.ts` の `walkInRoms`／`walkOutRoms` が 動かす。数は `ROM_COUNT`。
+- **結の あとの 変化**：`Run.create(..., rom)` → `RunState.rom`（`main.ts` の `romNow()`：`endings` に `ato`）。ROM専は 追いつめても 戦わない（`core/monster.ts`）、蓄音機の 声で 固まらず 手を 振る（`core/run.ts` の `playVoice`）、図鑑の 文が かわる（`ui/bookView.ts` の `bookText`）。リプレイにも `rom` を 残す（`SavedReplay.rom`）。本館の 札は「1000　(´・ω・｀)　見てた」。
+- **開いた 知らせ**：跡地（原住民が 声を 聞く）・避難J（ヒナリーの 発表）は 住人が 話す（`ui/villageReturn.ts` の `mobNewsScript`。文は `ATO_NEWS`・`HINAN_NEWS`）。小島 1〜3・灯台は `UNLOCK_LINES`（板ごとの 行。`newsScript` は 板名の 鍵が あれば それ）。
+- **第三ルート**：避難J（`hinan`）。板だけの 敵 `getter`（新しい 特技 `spam`：なぐる かわりに `addRes` で スレを 伸ばす。`core/monster.ts`）。結の **1000取り**は `playGetter`（`cue: "getter"`。`returnScene(s, a, { getter })` の 手で 遊び、負けたら `GETTER_RETRY` を 出して くり返す。試験では 手を 渡さず とばす）。
+- **住人**：原住民の 節目 `opunu`（頼み）・`ato`（18 → あと ひとり）、雑談 `shima`・`rom`、喫茶の 小話「狼煙」（`noroshi`・`noroshi2`・`noroshi3`）。ヒナリーの 節目 `ato`。`Milestone` に `ato`、`ui/villageMobs.ts` の `MILESTONES` に `opunu`・`ato`。
+- **敵が いくつかの 板に 出る**：`MonsterDef.board` が 並びも 取れる（`onBoard`）。乗っ取り屋は 小島 3つと 灯台。
+- 小ネタ（`rom_voice`）、持ちこみ 不可の 文（`CARRY_REFUSE.ato`）、飾り棚は 置き手紙と >>1・20人目を 置かない（`ON_BOARD`・`ON_PHONO`）。
+- テスト：`monsterTests`（getter・板の 並び）、`villageTests` の「裏シナリオ」5本（分岐の 形・パスワードと 層・開く 条件・跡地の 結・避難Jの 結と 1000取り・札と 節目）。
 
 ## まだ できていない こと（優先順）
 
-1. **`pnpm lint`**：作業した 環境に biome が 入らなかった。prettier（tab・80桁・trailing comma。既存ファイルで biome と 差分ゼロを 確認）で 整形しただけ。必ず 一度 走らせる。
-2. **実機で 一度 通す**：`pnpm dev` で 風呂板クリア → 二択の 知らせ（やきうの おーぷぬの 話・ゼロの 灯台）→ 灯台 → 持ち帰りの 語りで 原住民が 歩いてくる → 西の 空き地に 立つ、まで。灯台の 絵と 原住民の スプライトは ヘッドレスで 描けるのを 確かめた だけ。
-3. **新曲（うんｊレゼ post/1318 の MML）**：取れなかったので 未使用。`src/data/bgm/` に 置き、`OPUNU_ZONES` の どれかの `bgm` に 当てる。`#volume=` は `/dev/bgm.html`（`dev/bgm-measure.ts`）で 1周 鳴らして 測り、`data/bgm.ts` の 表に 行を 足す（目標 I = -23 LUFS）。
-4. **絵**：原住民は rpgen の「原住民（きうりアーマー）」（`sa:nabqyI`）、乗っ取り屋は 0Chiaki（`sa:iYWD4w`）に 差しかえ済み。ショボン本人の 歩行グラは 見つからなかった。目的の 品 `items/aisatsu.png` は RECORD の 空色（`ui/itemArt.ts`）。
-5. **3作目（walksim）の 対**：済み。窓の 場面（`street.ts` の `mado`）に 板主の「ゆっくり 打つ 音」を 足した。
-6. **ボットの 調整**：100回で 倒れる 階の 山は 風呂板と 同じ B11〜13（`pnpm sim -- --dungeon opunu`）。電池板より やさしい つもり。気に なれば `ramp(24, 27, 1.5)` と `houses` を いじる。
+1. **実機で 一度 通す**：`pnpm dev` → `?stage=` と localStorage の `kiriko-roguelike/progress` を 書きかえて、(a) 全体マップの 小島と 名前、(b) 灯台の パスワードの 4択、(c) 本館の 札 → 1打席 → 跡地へ、(d) 跡地の 持ち帰りで ROM専 18体が 歩いてくる、(e) 避難Jの 持ち帰りで 1000取り。別ゲーの 板（`.mini`）は スマホの 幅でも 見る。
+2. **ボットの 調整**：`pnpm sim -- --dungeon isle1|isle2|isle3|opunu|ato|hinan --n 100`。目安：小島1 は きのこ板 なみ、小島2 は 離島板 なみ、小島3 は おんたこ なみ、灯台は 風呂板 なみ、跡地は 電池板 なみ、避難J は その あいだ。
+3. **絵**：1000ゲッターは 乗っ取り屋と 同じ 仮の 絵（ART_TODO.md）。置き手紙・>>1・20人目の レスの 絵は `ui/itemArt.ts`（`scripts/make-items.mjs memo,ichi,nijuu`）。全体マップの 小島の 旗（`islet`）と 避難所の テント（`tent`）は `ui/worldMap.ts` の 矩形の ドット絵。
+4. **曲**：小島 1〜3・跡地・避難J は 既存の 曲を 当てている（`BOARD_LOOKS`・`ATO_ZONES`）。新曲を 足すなら `#volume` を 測ってから。
+5. **辞典**：「参拝」「原住民の 全滅」「1000ゲッター」の 項は まだ（`data/glossary.ts`）。
 
 ## 作業の 進め方で 気づいた こと
 
 - `Record<DungeonId, …>` の 抜けは `pnpm check`（tsc）が ぜんぶ 教えてくれる。板を 足す ときは `DungeonId` → tsc → `villageTests`（語りの 幅・住人の 数・本館の 棚）の 順。
-- 住人を 板で 来させる ときは `from: 0` ＋ `after`。`villageTests` の 「move in one by one」は `after` の 子を 別に 数える。
-- `vite` が 無い 環境では、`src/sim/*.ts` を bun で 直接 読んで テストを 回せる（`?raw` は onResolve/onLoad の 小さな プラグインで 読む）。
+- 語りの 文に 出ていった 人の 名前（「やきう」）が 入ると、その 頁は 村に いない あいだ 落ちる（`mentionsAway`）。「やきう民」の ような 集団の 名は `keep()` で 自分を かわりに 置く。
+- 本館の 中に 物を 足す とき、背の 高い 絵（16×32）は うしろ（北）から 読めない（`hasBack`）。すみに 置くなら 背の 低い 絵。通り道を ふさがないか `villageTests` の「closed room」で わかる。
+- Claude Code の Bash の ヒアドキュメントは 文字列の `\n` を 改行に、`\\n` を `\n` に 変えてしまう。`\n` の 入る TS の 文を 書きかえる ときは、パッチの スクリプトを Write ツールで 置いてから `python` で 走らせる（`python -` に 流しこむと 日本語も 化ける）。

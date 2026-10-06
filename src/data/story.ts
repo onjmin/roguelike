@@ -203,6 +203,11 @@ const nanashi = (name: string, text: string): StoryPage => ({
 	text,
 	nanashi: name,
 });
+/**
+ * 出ていった 人の 名前を ふくんでも 出す 頁（「やきう民」は 人では なく 集団の 名）。village に いない 人の 頁は
+ * かわりの 頁に かわるので、自分 自身を かわりに 置く。
+ */
+const keep = (p: StoryPage): StoryPage => ({ ...p, instead: { ...p } });
 /** 村の 場面の 合図つきの 地の文（ui/villageReturn.ts が 合図を 先に 起こす）。 */
 const cue = (c: NonNullable<StoryPage["cue"]>, text: string): StoryPage => ({
 	who: null,
@@ -1169,7 +1174,11 @@ export const STORY: Record<
 			n("村に　帰りつくと、\n原住民と　ヒナリーが　待っていた。"),
 			mob("hinary", "20人目の　レスを\n調べたいと　思います"),
 			n("キリコは　レスを　蓄音機に　かけた。"),
-			n("「ワイも　やきう民に　なるわ」\n「(´・ω・｀)ノシ　……2012年6月18日」"),
+			keep(
+				n(
+					"「ワイも　やきう民に　なるわ」\n「(´・ω・｀)ノシ　……2012年6月18日」",
+				),
+			),
 			mob("shobon", "……は？"),
 			mob("shobon", "あいつ、ボケる　側に　行ったんだ。\n……2012年の　6月に"),
 			mob(

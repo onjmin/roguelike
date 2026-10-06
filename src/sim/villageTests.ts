@@ -13,7 +13,7 @@
 // - おんJ 本館（data/village/hall.ts・ui/hallEvents.ts）：外観の 幅・扉、中の 形と 歩ける道（段ごと）、
 //   扉で 入って 出たら 入った 扉の 前、保守の 当番表の 数、期間限定の 告知、飾り棚の 中身、段の 上がる 場面
 
-import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
 import {
@@ -100,6 +100,10 @@ import {
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
 	FRIEND_FROM,
+	GETTER_RETRY,
+	LIGHTHOUSE_DOOR,
+	opunuZones,
+	ROM_COUNT,
 	SHALLOW_DEATH,
 	STORY,
 	type StoryPage,
@@ -266,6 +270,7 @@ import {
 	newsScript,
 	pagesFor,
 	type ReturnArrival,
+	ROMS,
 	returnScene,
 	type StoreChooser,
 	sceneView,
@@ -2458,6 +2463,261 @@ test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick 
 		await mobScript("nichie")(t2.s);
 		ok(!t2.log.includes(thx), "thanked twice");
 	});
+});
+
+// ───────────────── 裏シナリオ「全滅の うそ」（STORY.md §5.98） ─────────────────
+
+test("裏シナリオ: the lighthouse password follows from the three memos, and the isles restore the lighthouse floors one by one", () => {
+	const memos = SCRAPS.filter((x) => x.kind === "memo");
+	ok(
+		memos.map((x) => x.board).join() === "isle1,isle2,isle3",
+		`memos are on ${memos.map((x) => x.board).join()}`,
+	);
+	// 手紙：板主のは 1234、新しいのは 1つ 多い → 12345
+	ok(
+		memos.some((x) => x.text.includes("1234")) &&
+			memos.some((x) => x.text.includes("1つ　多い")) &&
+			LIGHTHOUSE_DOOR.answer === "12345" &&
+			LIGHTHOUSE_DOOR.options.includes(LIGHTHOUSE_DOOR.answer),
+		"the password cannot be worked out from the memos",
+	);
+	ok(
+		new Set(LIGHTHOUSE_DOOR.options).size === LIGHTHOUSE_DOOR.options.length,
+		"duplicate password options",
+	);
+	// 置き手紙は 読み返す 一覧でも 1行に おさまる
+	for (const m of memos)
+		ok(
+			m.text.split("\n").every((l) => width(l) <= 22),
+			`memo ${m.id} is too wide`,
+		);
+	// 灯台の 層：取り返した 数だけ 浜に もどる
+	const hijacked = (n: number) =>
+		opunuZones(n).filter((z) => z.theme !== "beach").length;
+	ok(
+		hijacked(0) === 2 &&
+			hijacked(1) === 1 &&
+			hijacked(2) === 0 &&
+			hijacked(3) === 0,
+		`hijacked floors by isles: ${[0, 1, 2, 3].map(hijacked).join()}`,
+	);
+	ok(
+		opunuZones(0).length === opunuZones(3).length &&
+			opunuZones(3)[opunuZones(3).length - 1].last === DUNGEONS.opunu.floors,
+		"the restored zones do not cover the lighthouse",
+	);
+	ok(
+		opunuZones(1)[1].name !== opunuZones(0)[1].name,
+		"restoring an isle does not rename the floor",
+	);
+});
+
+test("裏シナリオ: 跡地 opens only when the lighthouse is cleared and a ROM専 voice came home (noteRunEnd), and 避難J after both climaxes", async () => {
+	ok(
+		!openable("ato", ["opunu"]) && openable("ato", ["opunu"], ["romVoice"]),
+		"openable ignores the flag",
+	);
+	ok(
+		!openable("hinan", ["deep"]) && openable("hinan", ["deep", "ato"]),
+		"避難J opens without both",
+	);
+	ok(
+		openable("opunu", ["isle1", "isle2", "isle3"]) &&
+			!openable("opunu", ["isle1", "isle2"]),
+		"the lighthouse opens without the three isles",
+	);
+	await withStorageAsync(async () => {
+		const all = [...DUNGEON_IDS];
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all.filter((d) => d !== "ato" && d !== "hinan"),
+				cleared: ["shallow", "kinoko", "isle1", "isle2", "isle3", "opunu"],
+				fails: {},
+				intro: all,
+				news: [],
+				endings: [],
+			}),
+		);
+		// ぷゆゆの 声では 開かない
+		noteRunEnd("isle1", "clear", "s1", "tousuko");
+		ok(
+			!loadProgress().unlocked.includes("ato"),
+			"a non-ROM voice opened the 跡地",
+		);
+		// ROM専の 声を 持ち帰ると 旗が 立って 開く（どの 板でも）
+		noteRunEnd("isle1", "clear", "s2", "funamushi");
+		const p = loadProgress();
+		ok(
+			(p.flags ?? []).includes("romVoice") &&
+				p.unlocked.includes("ato") &&
+				p.news.some((n) => n.dungeon === "ato"),
+			"the ROM voice did not open the 跡地",
+		);
+		// 跡地を 持ち帰っても 本筋の 山場（電池板）の 前は 避難J は 開かない
+		noteRunEnd("ato", "clear", "s3", null);
+		ok(
+			!loadProgress().unlocked.includes("hinan"),
+			"避難J opened before 電池板",
+		);
+		noteRunEnd("deep", "clear", "s4", null);
+		ok(loadProgress().unlocked.includes("hinan"), "避難J did not open");
+	});
+});
+
+test("裏シナリオ: the 跡地 ending brings 18 ROM専 in from the mouth, they post, and leave; the 原住民 counts 「あと ひとり」", async () => {
+	const pages = STORY.ato.ending;
+	const cues = pages.flatMap((p) => (p.cue ? [p.cue] : []));
+	ok(
+		cues.join() === "roms,romsLeave",
+		`cues are ${cues.join()} (expected roms then romsLeave)`,
+	);
+	const roms = pages.findIndex((p) => p.cue === "roms");
+	const posts = pages.filter((p) => p.nanashi);
+	ok(
+		posts.length >= 2 && pages.indexOf(posts[0]) > roms,
+		"the ROM専 post before they arrive",
+	);
+	ok(
+		pages.some((p) => p.text.includes(`${ROM_COUNT}体`)) &&
+			pages.some((p) => p.mob === "shobon" && p.text.includes("あと、ひとり")),
+		"the count or the loose thread is missing",
+	);
+	await withStorageAsync(async () => {
+		const all = [...DUNGEON_IDS];
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared: [
+					"shallow",
+					"kinoko",
+					"main",
+					"isle1",
+					"isle2",
+					"isle3",
+					"opunu",
+					"ato",
+				],
+				fails: {},
+				intro: all,
+				news: [],
+				endings: ["shallow", "kinoko", "main", "opunu"],
+			}),
+		);
+		putTown({ stage: 5 });
+		const a: ReturnArrival = { kind: "clear", dungeon: "ato" };
+		const { s, log } = fakeStory({ at: exitFor("ato").cell });
+		lineUp(s, a, sceneView(villageView(), a));
+		await returnScene(s, a);
+		const gate = exitFor("ato").cell.join(",");
+		const arrive = log.findIndex((l) => l === `place ${ROMS}_0 ${gate}`);
+		const post = log.findIndex((l) => l.startsWith("say nanj: 見てた"));
+		const leave = log.findIndex(
+			(l) => l === `goto ${ROMS}_${ROM_COUNT - 1} ${gate}`,
+		);
+		ok(
+			arrive >= 0 && post > arrive && leave > post,
+			`the ROM専 scene is out of order:\n${log.filter((l) => l.includes(ROMS) || l.startsWith("say nanj")).join("\n")}`,
+		);
+		ok(
+			log.filter((l) => l.startsWith(`place ${ROMS}_`)).length === ROM_COUNT,
+			"not every ROM専 is placed at the mouth",
+		);
+		ok(!s.flag(ROMS), "the ROM専 flag stays up after the scene");
+		ok(!!loadProgress().endings?.includes("ato"), "the 参拝 is not remembered");
+		// 2回目からは 短い 語り（ROM専は 来ない）
+		ok(
+			pagesFor(a).every((p) => !p.cue),
+			"the ROM専 come again on the second visit",
+		);
+	});
+});
+
+test("裏シナリオ: the 避難J ending plays the 1000取り until it is won (skipped without a hook), and never has やきう", async () => {
+	const pages = STORY.hinan.ending;
+	ok(
+		pages.filter((p) => p.cue === "getter").length === 1,
+		"the 1000取り cue is missing or doubled",
+	);
+	ok(
+		pages.every((p) => p.who !== "nanj" && !p.text.includes("やきう民、")),
+		"やきう speaks in the 避難J ending",
+	);
+	await withStorageAsync(async () => {
+		const all = [...DUNGEON_IDS];
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared: all,
+				fails: {},
+				intro: all,
+				news: [],
+				endings: all.filter((d) => d !== "hinan"),
+			}),
+		);
+		putTown({ stage: TOWN_STAGES - 1 });
+		const a: ReturnArrival = { kind: "clear", dungeon: "hinan" };
+		// 手が 無ければ 別ゲーは とばす
+		const plain = fakeStory({ at: exitFor("hinan").cell });
+		await returnScene(plain.s, a);
+		ok(
+			plain.log.some((l) => l.includes("知ってる　名無しンゴ")),
+			"the ending did not reach its last line",
+		);
+		ok(
+			!plain.log.some((l) => l.includes(GETTER_RETRY[0])),
+			"a retry line appeared without the minigame",
+		);
+		// 1回 負けて 1回 勝つ：次スレの 1行が 1回だけ
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared: all,
+				fails: {},
+				intro: all,
+				news: [],
+				endings: all.filter((d) => d !== "hinan"),
+			}),
+		);
+		let calls = 0;
+		const played = fakeStory({ at: exitFor("hinan").cell });
+		await returnScene(played.s, a, {
+			getter: async () => ++calls >= 2,
+		});
+		ok(calls === 2, `the minigame was played ${calls} times`);
+		ok(
+			played.log.filter((l) => l.includes(GETTER_RETRY[0])).length === 1,
+			"the retry line did not appear once",
+		);
+	});
+});
+
+test("裏シナリオ: the hall has the oldest-thread sign on every tier, and the 原住民・ヒナリー have the new milestones", () => {
+	for (let stage = 0; stage < TOWN_STAGES; stage++) {
+		const places = hallPlaces({ stage, unlocked: ["shallow"], cleared: [] });
+		ok(
+			places.filter((p) => p.id === "oldest_0").length === 1,
+			`stage ${stage}: the oldest-thread sign is missing or doubled`,
+		);
+	}
+	ok(
+		!!MOBS.shobon.milestones.opunu?.some((l) => l.text.includes("録って")) &&
+			!!MOBS.shobon.milestones.ato?.some((l) =>
+				l.text.includes("あと　ひとり"),
+			),
+		"the 原住民 is missing the request or the count",
+	);
+	ok(
+		!!MOBS.hinary.milestones.ato?.some((l) => l.text.includes("避難J")),
+		"ヒナリー does not point to 避難J",
+	);
+	ok(
+		CAFE_MOBS.shobon.talks.some((t) => t.key === "noroshi"),
+		"the 狼煙 cafe talk is missing",
+	);
 });
 
 export const runVillageTests = async (): Promise<TestResult[]> => {
