@@ -47,6 +47,7 @@ import { GLOSSARY } from "../data/glossary";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
 import {
 	HALL_MSG,
+	IN_STORE_TEXT,
 	JIKKYO,
 	ON_PHONO_TEXT,
 	TOBAN_MENU,
@@ -138,6 +139,7 @@ import {
 	hallPlaces,
 	hallRows,
 	hallTierOf,
+	IN_STORE,
 	NANASHI_WALK,
 	ON_PHONO,
 	shelfSlots,
@@ -3674,8 +3676,22 @@ test("おんJ 本館の 扉: the door text once per tier, a door sound and a fad
 
 test("保守の 当番表: one 「保守」 per return, counted in its own save, nothing else changes", async () => {
 	await withStorageAsync(async () => {
+		// やきうが 出ていく 前は 読むだけ（キリコは まだ「保守」と 書かない）
 		setProgress(["shallow"]);
 		putTown({ stage: 0, points: 10 });
+		const early = fakeStory({ pick: 0 });
+		await tobanScript(0)(early.s);
+		ok(hoshuCount() === 0, "wrote 「保守」 before やきう left");
+		ok(
+			early.log.join("\n") ===
+				[
+					`narrate: ${HALL_MSG.toban[0]}`,
+					`narrate: ${HALL_MSG.tobanNotYet}`,
+				].join("\n"),
+			`before やきう left:\n${early.log.join("\n")}`,
+		);
+		// 出ていった あとは 書ける
+		setProgress(["shallow", "main", "deep"], [], ["shallow", "main", "deep"]);
 		const town = localStorage.getItem(TOWN_KEY);
 		const progress = localStorage.getItem(PROGRESS_KEY);
 		const no = fakeStory({ pick: 1 });
@@ -3763,7 +3779,7 @@ test("期間限定の 告知: nothing, or the event's name, news and goal", asyn
 
 test("おんJ 本館の 下見（?stage=・?event=）: 「保守」 is kept for this visit only, the hall save is not written", async () => {
 	await withStorageAsync(async () => {
-		setProgress(["shallow"], [], ["shallow", "kinoko"]);
+		setProgress(["shallow"], [], ["shallow", "main", "deep", "kinoko"]);
 		const restore = swapLocation(`?debug&stage=3&event=${EVENTS[0].id}`);
 		try {
 			await tobanScript(1)(fakeStory({ pick: 0 }).s);
@@ -3827,7 +3843,12 @@ test("飾り棚: the goal items of the cleared boards (植民地化宣言 and �
 			`${r.d}: ${r.name} / ${r.board}`,
 		);
 		ok(
-			r.desc === (ON_PHONO.includes(r.d) ? ON_PHONO_TEXT : item.flavor),
+			r.desc ===
+				(ON_PHONO.includes(r.d)
+					? ON_PHONO_TEXT
+					: IN_STORE.includes(r.d)
+						? IN_STORE_TEXT
+						: item.flavor),
 			`${r.d}: ${r.desc}`,
 		);
 	}

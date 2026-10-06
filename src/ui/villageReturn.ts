@@ -54,6 +54,7 @@ import {
 	STAGE_NAMES,
 	STAGE_UP,
 	STAGE_UP_HALL,
+	STAGE_UP_HALL_INSTEAD,
 	TOWN_GREW_MSG,
 	TOWN_MSG,
 	WAKE_PAGES,
@@ -636,9 +637,19 @@ const stageUp = async (
 	const lines = (STAGE_UP[to] ?? []).filter(
 		(l) => !away.includes(l.who) && !mentionsAway(l.text, away),
 	);
+	// 本館の ひとことは やきう。出ていった あとなら かわりの 人（STAGE_UP_HALL_INSTEAD）
 	const hall =
 		hallTier(to) > hallTier(from) ? STAGE_UP_HALL[hallTier(to)] : null;
-	const hallLine = hall && !away.includes(hall.who) ? hall : null;
+	const hallInstead =
+		hall && away.includes(hall.who)
+			? STAGE_UP_HALL_INSTEAD[hallTier(to)]
+			: null;
+	const hallLine =
+		hall && !away.includes(hall.who)
+			? hall
+			: hallInstead && !away.includes(hallInstead.who)
+				? hallInstead
+				: null;
 	// この 段で 越してきた 仲間（data/story.ts の FRIEND_FROM）
 	const moved = (Object.keys(FRIEND_FROM) as Speaker[]).filter(
 		(w) => FRIEND_FROM[w] > from && FRIEND_FROM[w] <= to && !away.includes(w),

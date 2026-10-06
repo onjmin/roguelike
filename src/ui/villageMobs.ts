@@ -167,11 +167,14 @@ const nearCast = (s: Story, w: Cast): boolean => s.near(eventOf(w), NEAR);
 const absent = (): Speaker[] =>
 	awayFriends(loadProgress().cleared, loadTown().stage);
 
-/** その 行に 村に いない 仲間が 出てくるか（話す・名前を 呼ばれる）。 */
+/**
+ * その 行に 村に いない 仲間が 出てくるか（話す・名前を 呼ばれる）。
+ * gone の 行（出ていった 人の 話。deep の 節目）は 名前を 呼んでも 出す。
+ */
 const absentIn = (l: MobLine, away: readonly Speaker[]): boolean =>
 	(!!l.who && l.who !== "mob" && away.includes(l.who as Speaker)) ||
 	(!!l.need && away.includes(l.need as Speaker)) ||
-	mentionsAway(l.text, away);
+	(!l.gone && mentionsAway(l.text, away));
 
 /** when が 無いか 合う。村に いない 仲間の 話（相手・名前）は まだ 選ばない。 */
 const opens =

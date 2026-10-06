@@ -17,6 +17,7 @@ import { BOOKSTORE_FROM } from "../data/glossary";
 import {
 	BOOK_MENU,
 	HALL_MSG,
+	IN_STORE_TEXT,
 	JIKKYO,
 	MONITOR_MENU,
 	ON_PHONO_TEXT,
@@ -31,7 +32,7 @@ import {
 	withDevEvent,
 } from "../data/objectives";
 import { BOOKS_KEEPER_LINES } from "../data/rooms";
-import { DUNGEON_NAMES, FRIEND_FROM } from "../data/story";
+import { awayFriends, DUNGEON_NAMES, FRIEND_FROM } from "../data/story";
 import { VILLAGE_MSG } from "../data/town";
 import {
 	HALL_NAMES,
@@ -44,6 +45,7 @@ import {
 	hallPlaces,
 	hallRows,
 	hallTierOf,
+	IN_STORE,
 	ON_PHONO,
 	shelfBoards,
 	shelfSlots,
@@ -208,11 +210,18 @@ const records = async (ctx: Ctx, s: Story): Promise<boolean> => {
 	return true;
 };
 
-/** 保守の 当番表：この 帰りに まだなら「保守」と 書ける。 */
+/**
+ * 保守の 当番表：この 帰りに まだなら「保守」と 書ける。やきうが 出ていく 前は 読むだけ
+ * （キリコが はじめて 書く「保守」は 山場の 札。STORY.md §5.9）。
+ */
 export const tobanScript =
 	(tier: HallTier): Script =>
 	async (s) => {
 		await s.narrate(HALL_MSG.toban[tier]);
+		if (!awayFriends(loadProgress().cleared).includes("nanj")) {
+			await s.narrate(HALL_MSG.tobanNotYet);
+			return;
+		}
 		if (!canWriteHoshu()) {
 			await s.narrate(fill(HALL_MSG.tobanAgain, { n: hoshuCount() }));
 			return;
@@ -260,7 +269,11 @@ export const shelfRows = (
 			d,
 			name: item.name,
 			board: DUNGEON_NAMES[d].name,
-			desc: ON_PHONO.includes(d) ? ON_PHONO_TEXT : item.flavor,
+			desc: ON_PHONO.includes(d)
+				? ON_PHONO_TEXT
+				: IN_STORE.includes(d)
+					? IN_STORE_TEXT
+					: item.flavor,
 		};
 	});
 

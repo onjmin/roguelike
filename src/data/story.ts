@@ -427,7 +427,7 @@ export const GOAL_ITEMS: Record<
 	{ id: string; name: string; desc: string }
 > = {
 	shallow: {
-		id: "hari",
+		id: "needle",
 		name: "植民地化宣言",
 		desc: "パン板に　おんJ民が　乗りこんだ　日の　レス。持ち帰って　貼ろう",
 	},

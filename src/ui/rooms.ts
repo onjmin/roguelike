@@ -27,6 +27,7 @@ import {
 	ROOM_MSG,
 	ROOM_NAMES,
 } from "../data/rooms";
+import { awayFriends } from "../data/story";
 import { STAGE_NAMES } from "../data/town";
 import { NANASHI_WALK } from "../data/village/hall";
 import { npc, sign } from "../data/village/helpers";
@@ -46,7 +47,7 @@ import {
 	type Spot,
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadTown } from "../engine/save";
+import { loadProgress, loadTown } from "../engine/save";
 import { bathPeople, bathSteam } from "./bath";
 import type { Ctx } from "./ctx";
 import { readShelf } from "./glossary";
@@ -68,7 +69,9 @@ export const enterRoom =
 			await s.narrate(
 				id === "store" && loadTown().stage >= BANK_FROM
 					? BANK.door
-					: ROOM_DOOR[id],
+					: id === "hut" && nanjGone()
+						? ROOM_DOOR.hutGone
+						: ROOM_DOOR[id],
 			);
 		}
 		s.se("door");
@@ -256,6 +259,10 @@ const readAll = async (s: Story, lines: readonly string[]): Promise<void> => {
 	for (const t of lines) await s.narrate(t);
 };
 
+/** やきうが 出ていった あとか（電池板の 山場。data/story.ts の awayFriends）。 */
+const nanjGone = (): boolean =>
+	awayFriends(loadProgress().cleared).includes("nanj");
+
 /** 小屋の 設計図（次の 段の 名前。いちばん 上なら 完成）。 */
 export const planLines = (stage: number): readonly string[] =>
 	stage + 1 < TOWN_STAGES
@@ -273,6 +280,9 @@ export const thingLines = (
 	// 同じ 物が 並ぶなら、その 1つだけの 文（books_1 など）が あれば それ
 	const kind = place.replace(/_\d+$/, "");
 	if (id === "hut" && kind === "plan") return planLines(stage);
+	// やきうが 出ていった あとの 小屋（ナイターは 鳴らず、火は 落ちている）
+	if (id === "hut" && nanjGone() && kind in ROOM_MSG.hutGone)
+		return ROOM_MSG.hutGone[kind as keyof typeof ROOM_MSG.hutGone];
 	// 銀行に なった 倉庫は 一部の 物が 貸金庫の 文に
 	if (id === "store" && stage >= BANK_FROM && kind in BANK.msg)
 		return BANK.msg[kind as keyof typeof BANK.msg];

@@ -534,12 +534,12 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	}
 };
 
-/** 蓄音機（まだ 何も → パン板 → 風呂板 → 過去ログの底 の レスを 鳴らす）。そのあと 村の 曲を えらべる（ui/villageMusic.ts）。 */
+/** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。そのあと 村の 曲を えらべる（ui/villageMusic.ts）。 */
 const phonoScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
 		const p = loadProgress();
-		const i = p.cleared.includes("hidden")
+		const i = p.cleared.includes("deep")
 			? 3
 			: p.cleared.includes("main")
 				? 2
