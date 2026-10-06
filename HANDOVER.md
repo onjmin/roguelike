@@ -16,8 +16,8 @@
 1. **`pnpm lint`**：作業した 環境に biome が 入らなかった。prettier（tab・80桁・trailing comma。既存ファイルで biome と 差分ゼロを 確認）で 整形しただけ。必ず 一度 走らせる。
 2. **実機で 一度 通す**：`pnpm dev` で 風呂板クリア → 二択の 知らせ（やきうの おーぷぬの 話・ゼロの 灯台）→ 灯台 → 持ち帰りの 語りで 原住民が 歩いてくる → 西の 空き地に 立つ、まで。灯台の 絵と 原住民の スプライトは ヘッドレスで 描けるのを 確かめた だけ。
 3. **新曲（うんｊレゼ post/1318 の MML）**：取れなかったので 未使用。`src/data/bgm/` に 置き、`OPUNU_ZONES` の どれかの `bgm` に 当てる。`#volume=` は `/dev/bgm.html`（`dev/bgm-measure.ts`）で 1周 鳴らして 測り、`data/bgm.ts` の 表に 行を 足す（目標 I = -23 LUFS）。
-4. **絵**：原住民（`public/sprites/shobon.png`）・乗っ取り屋（`hijacker.png`）は `scripts/make-opunu.mjs` の 仮。rpgen-search で ショボンの 歩行グラ（`sa:`）が 見つかれば `mobs.ts` の `sprite` を 差しかえる。目的の 品 `items/aisatsu.png` は RECORD の 空色（`ui/itemArt.ts`。`node scripts/make-items.mjs aisatsu` で 書き出し なおせる）。
-5. **3作目（walksim）の 対**：切れはし「板　立てたわ。おんJより　のんびり　やる」（去り方「自分の 板」）の 続きの レコードは まだ 無い。STORY.md §4.5 の 表に 置き場の 案だけ 書いた。
+4. **絵**：原住民は rpgen の「原住民（きうりアーマー）」（`sa:nabqyI`）、乗っ取り屋は 0Chiaki（`sa:iYWD4w`）に 差しかえ済み。ショボン本人の 歩行グラは 見つからなかった。目的の 品 `items/aisatsu.png` は RECORD の 空色（`ui/itemArt.ts`）。
+5. **3作目（walksim）の 対**：済み。窓の 場面（`street.ts` の `mado`）に 板主の「ゆっくり 打つ 音」を 足した。
 6. **ボットの 調整**：100回で 倒れる 階の 山は 風呂板と 同じ B11〜13（`pnpm sim -- --dungeon opunu`）。電池板より やさしい つもり。気に なれば `ramp(24, 27, 1.5)` と `houses` を いじる。
 
 ## 作業の 進め方で 気づいた こと
