@@ -1,9 +1,13 @@
 // 罠の 絵を 書き出す（node scripts/make-traps.mjs → public/sprites/traps.png）。
 //
-// RPGEN にも Base.png にも 合う 絵が ない 罠だけ ここで 描く。48x16 に 16x16 が 3コマ：
-//   左：トラバサミ（口を 開けた 鉄の あご・まんなかの 踏み板・横の ばね）
-//   中：酸の罠（床に 広がった 緑の 酸の 水たまり・あわ）
-//   右：眠りガスの罠（床の 噴き出し口から 立ちのぼる 紫の ガスと Z）
+// RPGEN にも Base.png にも 合う 絵が ない 罠だけ ここで 描く。112x16 に 16x16 が 7コマ（左から）：
+//   0 トラバサミ（口を 開けた 鉄の あご・まんなかの 踏み板・横の ばね）
+//   1 酸の罠（床に 広がった 緑の 酸の 水たまり・あわ）
+//   2 眠りガスの罠（床の 噴き出し口から 立ちのぼる 紫の ガスと Z）
+//   3 転び石（床から 突き出た 石）
+//   4 矢の罠（石の 踏み板に 上を 向いた 矢）
+//   5 毒矢の罠（4 の 矢じりが 毒の 緑・紫の しずく）
+//   6 転移床（青く 光る 輪）
 // 地雷・落とし穴は RPGEN の 絵（src/ui/theme.ts の TRAP_ICON）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-anka-trap.mjs と 同じ。
@@ -146,10 +150,144 @@ const SLEEP = [
 	"...oooooooooox..",
 ];
 
+const TRIP_PALETTE = {
+	o: [52, 46, 40, 255], // ふち
+	h: [214, 206, 190, 255], // 照り
+	m: [160, 150, 132, 255], // 石
+	d: [104, 96, 84, 255], // 影の 側
+	x: [0, 0, 0, 90], // 床に 落ちる 影
+};
+
+const TRIP = [
+	"................",
+	"................",
+	"................",
+	"................",
+	"......oooo......",
+	".....ohhmmo.....",
+	"....ohhmmmmo....",
+	"....ohmmmmmdo...",
+	"...ohmmmmmmddo..",
+	"...ommmmmmdddo..",
+	"..oommmmmddddoo.",
+	".ohmoddddddddoho",
+	".oddoooooooooodo",
+	"..ooxxxxxxxxx.o.",
+	"................",
+	"................",
+];
+
+// 矢の罠・毒矢の罠：石の 踏み板（PLATE）に 上を 向いた 矢を 重ねる。矢じりの 色だけ ちがう
+const PLATE_PALETTE = {
+	o: [36, 36, 42, 255], // ふち
+	h: [168, 164, 156, 255], // 踏み板の 照り
+	p: [128, 124, 116, 255], // 踏み板
+	d: [88, 84, 78, 255], // 踏み板の 影
+	x: [0, 0, 0, 90], // 床に 落ちる 影
+	s: [156, 102, 50, 255], // 矢柄
+	i: [222, 226, 234, 255], // 鉄の 矢じり
+	f: [214, 58, 48, 255], // 矢羽
+	g: [120, 220, 60, 255], // 毒の 矢じり
+	v: [150, 70, 190, 255], // 毒の しずく
+};
+
+const PLATE = [
+	"................",
+	".oooooooooooooo.",
+	".ohhhhhhhhhhhho.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".ohppppppppppdo.",
+	".odddddddddddddo",
+	".oooooooooooooox",
+	"..xxxxxxxxxxxxx.",
+];
+
+const ARROW_ON = [
+	"................",
+	".......oo.......",
+	"......oiio......",
+	".....oiiiio.....",
+	"....oiiiiiio....",
+	".......so.......",
+	".......so.......",
+	".......so.......",
+	".......so.......",
+	".......so.......",
+	"......fsof......",
+	".....ffsoff.....",
+	".....f.so.f.....",
+	"................",
+	"................",
+	"................",
+];
+
+const DART_ON = [
+	"................",
+	".......oo.......",
+	"......oggo......",
+	".....oggggo.....",
+	"....oggggggo....",
+	".......so.......",
+	".......so..v....",
+	".......so.......",
+	".......so.......",
+	"..v....so.......",
+	"......fsof......",
+	".....ffsoff.....",
+	".....f.so.f.....",
+	"................",
+	"................",
+	"................",
+];
+
+/** 下の 絵に 上の 絵を 重ねる（上の . は 透明）。 */
+const over = (base, top) =>
+	base.map((row, y) =>
+		[...row].map((ch, x) => (top[y][x] === "." ? ch : top[y][x])).join(""),
+	);
+
+const WARP_PALETTE = {
+	b: [36, 70, 168, 255], // 外の 輪
+	l: [112, 204, 255, 255], // 光る 輪
+	c: [70, 140, 232, 220], // 内の 輪
+	w: [232, 250, 255, 230], // まんなかの 光
+};
+
+const WARP = [
+	"................",
+	"......bbbb......",
+	"....bbllllbb....",
+	"...bllbbbbllb...",
+	"..blb.cccc.blb..",
+	"..lb.c....c.bl..",
+	".blb.c.ww.c.blb.",
+	".lb.c.wwww.c.bl.",
+	".lb.c.wwww.c.bl.",
+	".blb.c.ww.c.blb.",
+	"..lb.c....c.bl..",
+	"..blb.cccc.blb..",
+	"...bllbbbbllb...",
+	"....bbllllbb....",
+	"......bbbb......",
+	"................",
+];
+
 const frames = [
 	[BEAR, BEAR_PALETTE],
 	[ACID, ACID_PALETTE],
 	[SLEEP, SLEEP_PALETTE],
+	[TRIP, TRIP_PALETTE],
+	[over(PLATE, ARROW_ON), PLATE_PALETTE],
+	[over(PLATE, DART_ON), PLATE_PALETTE],
+	[WARP, WARP_PALETTE],
 ];
 const W = 16 * frames.length;
 const H = 16;

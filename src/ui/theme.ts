@@ -253,11 +253,11 @@ export const TRAP_ICON: Record<TrapKind, string> = {
 	bear: "pub:sprites/traps.png#0,0,16,16", // 口を 開けた 鉄の あご（scripts/make-traps.mjs）
 	acid: "pub:sprites/traps.png#16,0,16,16", // 緑の 酸の 水たまり（scripts/make-traps.mjs）
 	sleep: "pub:sprites/traps.png#32,0,16,16", // 噴き出し口と 紫の 眠りガス（scripts/make-traps.mjs）
-	trip: cut(0, 13), // 小石
+	trip: "pub:sprites/traps.png#48,0,16,16", // 床から 突き出た 石（scripts/make-traps.mjs）
 	mine: "sp:eqO76tJ", // RPGEN「ロビー地雷(埋設)」
-	arrow: cut(2, 187),
-	dart: cut(3, 187), // 矢の罠の 色ちがい
-	warp: cut(7, 13),
+	arrow: "pub:sprites/traps.png#64,0,16,16", // 石の 踏み板と 矢（scripts/make-traps.mjs）
+	dart: "pub:sprites/traps.png#80,0,16,16", // 矢の罠の 毒の 矢じり版（scripts/make-traps.mjs）
+	warp: "pub:sprites/traps.png#96,0,16,16", // 青く 光る 輪（scripts/make-traps.mjs）
 	pit: "sp:87bRbg", // RPGEN「落とし穴」
 	anka: "pub:sprites/anka_trap.png#0,0,16,16", // >> の 踏み板（scripts/make-anka-trap.mjs）
 };
