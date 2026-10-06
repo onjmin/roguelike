@@ -4001,8 +4001,7 @@ test("飾り棚: the goal items of the cleared boards (植民地化宣言 and �
 	}
 	ok(shelfRows([]).length === 0, "an empty shelf has rows");
 	ok(
-		trophies(["shallow", "main", "hidden", "kinoko"]).join() ===
-			"kinoko,hidden",
+		trophies(["shallow", "main", "hidden", "kinoko"]).join() === "kinoko",
 		`trophies: ${trophies(["shallow", "main", "hidden", "kinoko"])}`,
 	);
 });

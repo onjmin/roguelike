@@ -614,10 +614,10 @@ const M: MonsterDef[] = [
 	{
 		// おーぷぬの 諸島（裏ルート）だけの 敵。2020年9月29日の 乗っ取り事件（弱い パスワードの 板を 当てて 名前を
 		// 「〜〜諸島」に 変えた）から。なぐらずに 持ち物を 1つ 乗っ取って 逃げる（転載ガモと 同じ steal。すばやい）。
-		// 絵は 仮（scripts/make-opunu.mjs。ART_TODO.md）
+		// 絵は rpgen の 0Chiaki（一般ハッカー少年。sa:iYWD4w）
 		id: "hijacker",
 		name: "乗っ取り屋",
-		sprite: "pub:sprites/hijacker.png",
+		sprite: "sa:iYWD4w",
 		hp: 26,
 		atk: 0,
 		def: 10,

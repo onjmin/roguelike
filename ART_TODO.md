@@ -41,8 +41,6 @@
 | コピペ（敵） | `sprites/copipe.png` | Claude が 描いた もの。2枚 かさなった 紙（コピーの アイコン）に 顔（`scripts/make-copipe.mjs`） |
 | 釣り・粘着アンチ・連投荒らし（敵） | `sprites/tsuri.png` `nenchaku.png` `rento.png` | Claude が 描いた もの（`scripts/make-enemies.mjs`）。浮きと 釣り針・むらさきの ねばねば・怒った ふきだしと 残像 |
 | 炎上案件（敵） | `sprites/enjo.png` | Claude が 描いた もの。怒った 顔の 画面の スマホから 炎（`scripts/make-enemies.mjs`） |
-| 原住民（村の 住人。裏ルートで 越してくる） | `sprites/shobon.png` | Claude が 描いた 仮（`scripts/make-opunu.mjs`）。(´・ω・｀) の 大きな まるい 顔（さがった 眉・点の 目・ω の 口）に 灰色の 上着。rpgen-search で ショボンの 歩行グラ（`sa:`）が 見つかれば `src/data/mobs.ts` の `sprite` を 差しかえるだけで よい |
-| 乗っ取り屋（おーぷぬの 諸島だけの 敵） | `sprites/hijacker.png` | Claude が 描いた 仮（`scripts/make-opunu.mjs`）。黒ずきんの 名無しに 赤い バンダナ（板を「〇〇諸島」に したので 海賊ふう）・手に 金の 鍵。2コマ目は 鍵が ゆれる |
 | 植民地（板）だけの 敵 7体 | `sprites/panhei.png` `kinonyan.png` `ofurou.png` `denchan.png` `natsuko.png` `takonomin.png` `mashii.png` | Claude が 描いた 仮（`scripts/make-colony-enemies.mjs`）。板の マスコットの 顔文字から：パン兵 `|｀°Ο°´|`（食パンの 兵隊・かぶと）・きのにゃん `[ｷ・Д・ﾉ]`（赤い かさの きのこ）・おふ郎くん `[o'ω'f]`（手ぬぐいと 湯気）・でんちゃん `{+'w'-]`（乾電池・漏電の 火花）・ナツコ `~｀i,/ ﾟヮﾟﾉヽi´~`（ヤシの木の 精）・たこのみん `∬*ﾟ ヮﾟル`（たこ焼き）・マシー `(o M c)`（丸い 顔）。描きなおして ほしい 本命 |
 
 - 手で 描いた ファイルに 差し替えたら、上の スクリプトを 流すと 上書きされるので 流さないこと（または スクリプトから その子を 消す）。
