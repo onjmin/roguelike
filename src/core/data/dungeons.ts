@@ -84,6 +84,10 @@ export type Dungeon = {
 	firstWeapon?: boolean;
 	/** このダンジョンを持ち帰ると開く（null ははじめから開いている）。 */
 	unlockAfter: DungeonId | null;
+	/** これらを ぜんぶ 持ち帰ると 開く（unlockAfter と 両方 あれば どちらでも）。裏シナリオの 灯台・跡地・避難J。 */
+	unlockAfterAll?: readonly DungeonId[];
+	/** 開くには この 旗（Progress.flags）も 要る（跡地：ROM専の 声を 録ったまま 持ち帰った）。 */
+	unlockFlag?: string;
 	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く。 */
 	reliefAfter: number | null;
 	/** 自然回復の 刻み（balance.ts の REGEN_STEP の 代わり。小さいほど はやい）。 */
@@ -318,14 +322,30 @@ const HIDDEN_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
 );
 
 /**
- * おーぷぬの 諸島（裏ルート。灯台 24階）の 道具の出かた：風呂板の 表から 帰還スレ（風呂板だけの 決まり）を 抜き、
+ * おーぷぬの 諸島（裏シナリオ。灯台 20階）の 道具の出かた：風呂板の 表から 帰還スレ（風呂板だけの 決まり）を 抜き、
  * 忍法帖の実を 足す（板を 立てるには 忍法帖の レベルが 要る。ほかの 板では メタルぷゆゆの 落とし物だけ。
- * はじめから 正体が わかる）。2026-10-06 ボット 100回：倒れた 階の 山は 風呂板と 同じ B11〜13（電池板の B6〜8 より 奥）。
+ * はじめから 正体が わかる）。2026-10-06 ボット 100回（24階の ころ）：倒れた 階の 山は 風呂板と 同じ B11〜13。
  */
 const OPUNU_ITEMS: readonly ItemWeight[] = [
 	...MAIN_ITEMS.filter((e) => e.kind !== "h_growth" && e.kind !== "s_escape"),
 	{ kind: "h_growth", weight: 3 },
 ];
+
+/**
+ * 乗っ取られた 小島（裏シナリオの 承。ひまわり板 6階）の 道具の出かた：きのこ板と 同じ ころに 開くので、
+ * パン板の 表を 下地に 草と 杖を すこし 足す（草と 杖が 未識別）。
+ */
+const ISLE1_ITEMS: readonly ItemWeight[] = [
+	...SHALLOW_ITEMS,
+	{ kind: "h_blink", weight: 2 },
+	{ kind: "h_daze", weight: 2 },
+	{ kind: "w_slow", weight: 1 },
+];
+
+/** 小島の 2つ目・3つ目と 避難J：風呂板の 表から 帰還スレを 抜いた もの。 */
+const ISLE_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.filter(
+	(e) => e.kind !== "s_escape",
+);
 
 /** 隠しの 99階：本編の 30階ぶんまで 少しずつ 強くなり、61階から 先は ずっと 30階ぶん。 */
 const HIDDEN_LEVEL: readonly number[] = Array.from({ length: 100 }, (_, i) =>
@@ -577,20 +597,130 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		objective: "fetch",
 		// のんびりした 板：ROM専と ぷゆゆが 多め。乗っ取り屋は 板だけの 敵（data/monsters.ts の board）
 		foes: { funamushi: 2, tousuko: 1.5, tensai: 0 },
-		floors: 24,
+		floors: 20,
 		items: OPUNU_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(24, 27, 1.5),
+		level: ramp(20, 27, 1.5),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "aisatsu",
 		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
 		trapsFrom: 3,
-		unlockAfter: "main",
+		// 小島を 3つ 取り返すと 開く（扉の パスワードは 村の 口で：ui/villageEvents.ts）
+		unlockAfter: null,
+		unlockAfterAll: ["isle1", "isle2", "isle3"],
 		reliefAfter: null,
 		// 灯台を 上る
 		up: true,
+	},
+	// ── 裏シナリオの 承：乗っ取られた 小島 3つ（STORY.md §5.98）。おんJ民が おーぷぬで 立てて 飽きて 捨て、
+	// 本物の 乗っ取り屋に 名前を「〇〇諸島」に 変えられた 板。底の 品は 乗っ取り屋の 置き手紙（灯台の パスワードの 手がかり）。
+	// 階は 本筋と 同じ 1.5倍ずつ：6 → 9 → 13 → 灯台 20 → 跡地 30
+	isle1: {
+		id: "isle1",
+		objective: "fetch",
+		// 夏に 立てた 板：夏休みキッズ 多め。乗っ取り屋は 1階から
+		foes: { bat: 2, pitcher: 0 },
+		floors: 6,
+		items: ISLE1_ITEMS,
+		perFloor: [5, 8],
+		level: ramp(6, 5),
+		unidentified: ["herb", "staff"],
+		curses: false,
+		start: ["f_large"],
+		goal: "memo1",
+		houses: null,
+		trapsFrom: 3,
+		// パン板の あと（きのこ板と 並んで 開く。裏の 分岐は 序盤）
+		unlockAfter: "shallow",
+		reliefAfter: null,
+		// 島の 丘を 上る
+		up: true,
+	},
+	isle2: {
+		id: "isle2",
+		objective: "fetch",
+		// 夜中に 立てた 板：寝落ち民が 多く、敵も 眠りがち。すこし 過疎
+		foes: { neochi: 2.5, bat: 0 },
+		floors: 9,
+		items: ISLE_ITEMS,
+		perFloor: [5, 7],
+		level: ramp(9, 12, 2),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "memo2",
+		houses: null,
+		trapsFrom: 3,
+		unlockAfter: "isle1",
+		reliefAfter: null,
+		sparse: 0.7,
+	},
+	isle3: {
+		id: "isle3",
+		objective: "fetch",
+		// 鯖代が 切れかけた 板：道具が 少ない。乗っ取り屋が 多い
+		foes: { hijacker: 2 },
+		floors: 13,
+		items: ISLE_ITEMS,
+		perFloor: [3, 5],
+		level: ramp(13, 19),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "memo3",
+		houses: { from: 4, chance: 1 / 12, early: null },
+		trapsFrom: 3,
+		unlockAfter: "isle2",
+		reliefAfter: null,
+		// 岩山を 上る
+		up: true,
+	},
+	// ── 裏シナリオの 結：野球chの 跡地（おんJが できた 日の 板。原住民 20人の スレが 沈んでいる）。
+	// 入口は 本館の 奥の 古い スレの 札だけ（全体マップには 出ない）。開くのは 灯台を 持ち帰り、
+	// ROM専の 声を 蓄音機に 入れたまま 持ち帰った あと（Progress.flags の romVoice）。ROM専だらけの 過疎
+	ato: {
+		id: "ato",
+		noCarry: true,
+		objective: "fetch",
+		foes: { funamushi: 4, hitodama: 1.5, pitcher: 0, bat: 0 },
+		floors: 30,
+		items: DEEP_ITEMS,
+		perFloor: [5, 8],
+		level: ramp(30, 30, 1.3),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "ichi",
+		houses: { from: 6, chance: 1 / 12, early: [7, 9] },
+		trapsFrom: 3,
+		unlockAfter: null,
+		unlockAfterAll: ["opunu"],
+		unlockFlag: "romVoice",
+		reliefAfter: null,
+		sparse: 0.7,
+		secret: true,
+	},
+	// ── 第三ルート：避難J（おんJが 落ちた ときの 避難先。1 の 裏の 板）。本筋の 山場と 裏の 結の あとに 開く。
+	// 板だけの 敵は 1000ゲッター（連投で スレを 伸ばして 1000 へ 押し出す）
+	hinan: {
+		id: "hinan",
+		objective: "fetch",
+		foes: { funamushi: 1.5, ksk: 2 },
+		floors: 25,
+		items: ISLE_ITEMS,
+		perFloor: [5, 7],
+		level: ramp(25, 28, 1.5),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "nijuu",
+		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
+		trapsFrom: 3,
+		unlockAfter: null,
+		unlockAfterAll: ["deep", "ato"],
+		reliefAfter: null,
 	},
 };
 
@@ -604,7 +734,32 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"festival",
 	"hidden",
 	"opunu",
+	"isle1",
+	"isle2",
+	"isle3",
+	"ato",
+	"hinan",
 ];
+
+/** 裏シナリオの 承の 小島（乗っ取られた 板。開く 順）。 */
+export const ISLES: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
+
+/**
+ * その 板が 開く 条件を 満たしたか（持ち帰った 板と 旗から。開いているかは 見ない）。
+ * unlockAfter か unlockAfterAll の どちらかを 満たし、unlockFlag が あれば その 旗も。
+ */
+export const openable = (
+	d: DungeonId,
+	cleared: readonly DungeonId[],
+	flags: readonly string[] = [],
+): boolean => {
+	const dg = DUNGEONS[d];
+	const by =
+		(dg.unlockAfter !== null && cleared.includes(dg.unlockAfter)) ||
+		(!!dg.unlockAfterAll &&
+			dg.unlockAfterAll.every((x) => cleared.includes(x)));
+	return by && (!dg.unlockFlag || flags.includes(dg.unlockFlag));
+};
 
 /** 知らない id（壊れた記録など）は本編として読む。 */
 export const dungeonById = (id: string | undefined): Dungeon =>

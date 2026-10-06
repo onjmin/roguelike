@@ -337,6 +337,38 @@ export const ITEM_ART: Record<
 	g1001: RECORD("#d03838"),
 	// 板主の あいさつスレ（おーぷぬの 諸島）：のんびり板の 空色の ラベル
 	aisatsu: RECORD("#9ac8e8"),
+	// >>1「ここが野球chだ」（野球chの 跡地）：2012年の 古い 盤。灰色の ラベル
+	ichi: RECORD("#b8b8b0"),
+	// 20人目の 最後の レス（避難J）：やきうの 山吹色の ラベル
+	nijuu: RECORD("#f5d142"),
+	// 乗っ取り屋の 置き手紙（小島 3つ）：折り目の ついた 紙きれに 2行の 字と、すみに「草」
+	memo: {
+		palette: {
+			p: "#f4efe0",
+			s: "#d8d0b8",
+			k: "#3a3a44",
+			g: "#4aa84a",
+			o: "#8a7a5a",
+		},
+		rows: [
+			"................",
+			"....ooooooooo...",
+			"...opppppppppo..",
+			"...oppkkkkkppo..",
+			"...opppppppppo..",
+			"...oppkkkkkkpo..",
+			"...opppppppppo..",
+			"...oppkkkkpppo..",
+			"...opppppppppo..",
+			"...oppppppppgo..",
+			"...opsppppppgo..",
+			"...opsspppppgo..",
+			"...opssspppppo..",
+			"....ooooooooo...",
+			"................",
+			"................",
+		],
+	},
 	// 蓄音機の針：ななめの 鋼の 針と 金の 針止め
 	needle: {
 		palette: {

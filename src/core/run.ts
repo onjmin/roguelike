@@ -47,6 +47,7 @@ import {
 	type Dir8,
 	DX,
 	DY,
+	dirOf,
 	dist,
 	isDiagonal,
 	type Pos,
@@ -154,6 +155,8 @@ export class Run {
 		objective: Objective = "fetch",
 		/** ぷゆゆの お弁当（始めの持ち物）を 持って 出るか（村で 引き取った 道具が あると もらえない）。 */
 		lunch = true,
+		/** 裏シナリオの 結を 見た あと（ROM専は 戦わない。RunState.rom）。 */
+		rom = false,
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
@@ -242,6 +245,7 @@ export class Run {
 		// 始めの持ち物：ぷゆゆが 持たせる お弁当（ぷゆゆパン）。もらって いなければ 持たない（リプレイの ため 覚える）
 		if (lunch) for (const k of dg.start) player.items.push(run.newItem(k));
 		else s.noLunch = true;
+		if (rom) s.rom = true;
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
 			s.carriedIn = carry.map((it) => ({ ...it }));
@@ -1037,13 +1041,25 @@ export class Run {
 		this.emit({ t: "fx", kind: "voice", pos: { x: this.p.x, y: this.p.y } });
 		this.msg(`蓄音機から　${name}の　声が　流れた`);
 		let n = 0;
+		// 裏シナリオの 結の あと、ROM専は 自分の 声を 聞いても 固まらない。こちらを 向いて 手を 振る（STORY.md §5.98）
+		const wave =
+			!!this.s.rom && MONSTERS[kind]?.abilities.some((a) => a.k === "shy");
 		for (const m of this.f.monsters) {
 			if (m.kind !== kind || !this.monsterVisible(m)) continue;
 			if (m.disguise) m.disguise = null;
+			if (wave) {
+				m.dir =
+					dirOf(Math.sign(this.p.x - m.x), Math.sign(this.p.y - m.y)) ?? m.dir;
+				n++;
+				continue;
+			}
 			m.status.paralyze = Math.max(m.status.paralyze, VOICE_FREEZE);
 			n++;
 		}
-		if (n) this.msg(`${name}は　自分の　声を　聞かされて　固まった！`, "good");
+		if (n && wave)
+			this.msg(`${name}は　こちらを　向いて　手を　振った`, "good");
+		else if (n)
+			this.msg(`${name}は　自分の　声を　聞かされて　固まった！`, "good");
 		else this.msg("しかし　聞かせる　相手が　いなかった");
 		return true;
 	}

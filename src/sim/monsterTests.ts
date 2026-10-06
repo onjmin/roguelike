@@ -979,6 +979,35 @@ test(
 	},
 );
 
+// ───────────────── 1000ゲッター（spam・fastMove。避難J だけ） ─────────────────
+
+test(
+	"getter",
+	"spam: next to Kiriko it posts instead of hitting, pushing the thread (res) up by 40",
+	() => {
+		const r = arena("getter", hideoutLayout(), HIDE_AT);
+		r.s.dungeon = "hinan";
+		const m = put(r, "getter", at(1, 0, HIDE_AT));
+		const before = r.f.res;
+		let spammed = false;
+		waitTurns(r, 40, (ev) => {
+			if (saw(ev, "れんとう")) spammed = true;
+			return spammed;
+		});
+		ok(spammed, "never spammed in 40 turns");
+		ok(
+			r.f.res >= before + 40,
+			`res went ${before} → ${r.f.res} (expected +40 or more)`,
+		);
+		ok(
+			MONSTERS.getter.abilities.some((a) => a.k === "fastMove"),
+			"not fast",
+		);
+		ok(MONSTERS.getter.sleep === "never", "a bot should not sleep");
+		ok(m.hp > 0, "died while being tested");
+	},
+);
+
 test("tensai", "never steals the genban or equipped items", () => {
 	const r = arena("tensai-genban", hideoutLayout(), HIDE_AT);
 	r.p.items = [];
@@ -3007,26 +3036,29 @@ test("pursuit", "fastMove: looks again before the second step", () => {
 
 // ───────────────── 植民地（板）だけの 敵 ─────────────────
 
-const COLONY_FOES: readonly [string, DungeonId][] = [
-	["panhei", "shallow"],
-	["kinonyan", "kinoko"],
-	["ofurou", "main"],
-	["denchan", "deep"],
-	["natsuko", "tropical"],
-	["takonomin", "konamono"],
-	["mashii", "festival"],
-	["hijacker", "opunu"],
+const COLONY_FOES: readonly [string, readonly DungeonId[]][] = [
+	["panhei", ["shallow"]],
+	["kinonyan", ["kinoko"]],
+	["ofurou", ["main"]],
+	["denchan", ["deep"]],
+	["natsuko", ["tropical"]],
+	["takonomin", ["konamono"]],
+	["mashii", ["festival"]],
+	// 乗っ取り屋は 乗っ取られた 小島 3つと 灯台（裏シナリオ）
+	["hijacker", ["isle1", "isle2", "isle3", "opunu"]],
+	["getter", ["hinan"]],
 ];
 
-for (const [id, board] of COLONY_FOES)
-	test(id, `only appears on its own board (${board})`, () => {
+for (const [id, boards] of COLONY_FOES)
+	test(id, `only appears on its own board (${boards.join("・")})`, () => {
 		const lv = MONSTERS[id].floors[0];
-		ok(
-			monstersFor(lv, board).some((m) => m.id === id),
-			`not in the ${board} pool`,
-		);
+		for (const board of boards)
+			ok(
+				monstersFor(lv, board).some((m) => m.id === id),
+				`not in the ${board} pool`,
+			);
 		for (const other of DUNGEON_IDS)
-			if (other !== board)
+			if (!boards.includes(other))
 				ok(
 					!monstersFor(lv, other).some((m) => m.id === id),
 					`appears on ${other}`,
@@ -3960,7 +3992,7 @@ test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",
 	() => {
-		ok(MONSTER_LIST.length === 46, `${MONSTER_LIST.length} monsters`);
+		ok(MONSTER_LIST.length === 47, `${MONSTER_LIST.length} monsters`);
 		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
 		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(

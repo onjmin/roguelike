@@ -49,6 +49,13 @@ export type StoryPage = {
 	mob?: MobId;
 	/** この 板を 持ち帰って いる ときだけ 出る 頁（裏ルートの 住人が 来ている ときの 1枚。data/story.ts の endingFor）。 */
 	needCleared?: DungeonId;
+	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色。裏シナリオの ROM専の 書きこみ）。 */
+	nanashi?: string;
+	/**
+	 * 村の 場面の 合図（ui/villageReturn.ts）：roms＝ROM専 18体が 口から 歩いてくる、romsLeave＝口へ 帰る、
+	 * getter＝1000取り（別ゲー。ui/minigames.ts）。地の文の 前に 起きる。
+	 */
+	cue?: "roms" | "romsLeave" | "getter";
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */

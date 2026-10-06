@@ -20,6 +20,7 @@ import {
 	IN_STORE_TEXT,
 	JIKKYO,
 	MONITOR_MENU,
+	ON_BOARD_TEXT,
 	ON_PHONO_TEXT,
 	TOBAN_MENU,
 	YAKYU_SHELF,
@@ -46,6 +47,7 @@ import {
 	hallRows,
 	hallTierOf,
 	IN_STORE,
+	ON_BOARD,
 	ON_PHONO,
 	shelfBoards,
 	shelfSlots,
@@ -273,7 +275,9 @@ export const shelfRows = (
 				? ON_PHONO_TEXT
 				: IN_STORE.includes(d)
 					? IN_STORE_TEXT
-					: item.flavor,
+					: ON_BOARD.includes(d)
+						? ON_BOARD_TEXT
+						: item.flavor,
 		};
 	});
 

@@ -622,7 +622,7 @@ const M: MonsterDef[] = [
 		atk: 0,
 		def: 10,
 		exp: 22,
-		floors: [6, 20],
+		floors: [1, 20],
 		weight: 30,
 		abilities: [
 			{
@@ -634,10 +634,31 @@ const M: MonsterDef[] = [
 			{ k: "fastMove" },
 		],
 		sleep: "deep",
-		board: "opunu",
+		// 乗っ取られた 小島 3つと 灯台（裏シナリオの 承。STORY.md §5.98）
+		board: ["isle1", "isle2", "isle3", "opunu"],
 		desc: "パスワードを　当てて、持ち物を　1つ　乗っ取って　逃げる。すばやい。たおせば　取り返せる",
 		flavor:
 			"板の　名前を「〇〇諸島」に　変えて　回った。弱い　パスワードが　好き",
+	},
+	{
+		// 避難J（第三ルート）だけの 敵。1 の 裏シナリオの 中ボス「1000ゲッター」（完走まぎわの スレに わいて 1000 を
+		// 横取りする bot）から。なぐる かわりに 連投して スレ（階の レス）を 伸ばし、1000 で 次の 階へ 押し出す。
+		// すばやく、眠らない（bot）。絵は 仮に 乗っ取り屋と 同じ 系統の rpgen の 少年（差しかえ：ART_TODO.md）
+		id: "getter",
+		name: "1000ゲッター",
+		sprite: "sa:iYWD4w",
+		hp: 32,
+		atk: 5,
+		def: 9,
+		exp: 34,
+		floors: [3, 25],
+		weight: 28,
+		abilities: [{ k: "spam", rate: 1 / 2, amount: 40 }, { k: "fastMove" }],
+		sleep: "never",
+		board: "hinan",
+		desc: "となりで　連投して、スレを　40　伸ばす。1000を　こえると　次の　階へ　押し出される。すばやい",
+		flavor:
+			"「1000なら　ワイの　勝ち」。999で　止まった　スレを、1000日　待っている",
 	},
 	// ───────── ボス（目的が boss の 板の いちばん底に 1体だけ。data/dungeons.ts の boss） ─────────
 	// 絵は その板の 敵の 絵を 1.5倍（同じ 階に 同じ 種類の 雑魚が いても 見分けが つく）。
@@ -801,6 +822,13 @@ export const MONSTERS: Record<string, MonsterDef> = Object.fromEntries(
 );
 export const MONSTER_LIST: readonly MonsterDef[] = M;
 
+/** 板だけの 敵が その 板に 出るか（board は 1つか 並び。無ければ どの 板にも）。 */
+export const onBoard = (m: MonsterDef, dungeon?: DungeonId): boolean =>
+	!m.board ||
+	(typeof m.board === "string"
+		? m.board === dungeon
+		: !!dungeon && m.board.includes(dungeon));
+
 /** その階に出るモンスター（板だけの 敵は その板でだけ。ボスは 出ない）。 */
 export const monstersFor = (depth: number, dungeon?: DungeonId): MonsterDef[] =>
 	M.filter(
@@ -809,7 +837,7 @@ export const monstersFor = (depth: number, dungeon?: DungeonId): MonsterDef[] =>
 			!m.hunter &&
 			depth >= m.floors[0] &&
 			depth <= m.floors[1] &&
-			(!m.board || m.board === dungeon),
+			onBoard(m, dungeon),
 	);
 
 /** パン兵が はじめから 持っている パン（片親パン 3・ぷゆゆパン 1・チギュリパン 1 の 重みで 引く）。 */

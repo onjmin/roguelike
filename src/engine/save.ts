@@ -5,7 +5,7 @@
 //   （50回より古い記録が押し出されても、通算は減らない）。
 // - プライベートモード等で保存できなくても遊べるように、読み書きはすべて try/catch。
 
-import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
 import { FAKE_NAMES, OLD_FAKE_NAMES } from "../core/data/names";
@@ -98,7 +98,7 @@ export const saveRun = (s: RunState): void => {
 		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）。
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
-		noteRunEnd(s.dungeon, s.end.kind, s.seed);
+		noteRunEnd(s.dungeon, s.end.kind, s.seed, s.voice);
 		return;
 	}
 	const text = serializeRun(s);
@@ -388,6 +388,11 @@ export type Progress = {
 	eventNews?: EventNews[];
 	/** 持ち帰りの 語り（data/story.ts の STORY[d].ending）を 見おえた 板。一度きりの 語りは 二度 出さない。 */
 	endings?: DungeonId[];
+	/**
+	 * 裏シナリオの 旗（STORY.md §5.98）：romVoice＝ROM専の 声を 蓄音機に 入れたまま 持ち帰った（跡地が 開く）、
+	 * pass＝灯台の 扉の パスワードを 当てた。
+	 */
+	flags?: string[];
 };
 
 const isDungeon = (x: unknown): x is DungeonId =>
@@ -430,6 +435,11 @@ export const loadProgress = (): Progress => {
 				...(typeof o.outings === "number" ? { outings: o.outings } : {}),
 				...(isActiveEvent(o.event) ? { event: o.event } : {}),
 				...(Array.isArray(o.endings) ? { endings: list(o.endings) } : {}),
+				...(Array.isArray(o.flags)
+					? {
+							flags: o.flags.filter((x): x is string => typeof x === "string"),
+						}
+					: {}),
 				...(Array.isArray(o.eventNews)
 					? {
 							eventNews: o.eventNews.filter(
@@ -468,12 +478,9 @@ export const loadProgress = (): Progress => {
 	)
 		unlocked.push("main");
 	if (cleared.includes("main")) unlocked.push("deep");
-	// 口の ない 植民地：開く もとの 植民地を 持ち帰っていれば
-	for (const d of DUNGEON_IDS) {
-		const after = DUNGEONS[d].unlockAfter;
-		if (!unlocked.includes(d) && after && cleared.includes(after))
-			unlocked.push(d);
-	}
+	// 口の ない 植民地：開く もとの 植民地を 持ち帰っていれば（旗の 要る 板は 記録からは 開かない）
+	for (const d of DUNGEON_IDS)
+		if (!unlocked.includes(d) && openable(d, cleared)) unlocked.push(d);
 	const fresh: Progress = {
 		unlocked,
 		cleared,
@@ -512,6 +519,8 @@ export const noteRunEnd = (
 	dungeon: DungeonId,
 	kind: "dead" | "clear" | "escape",
 	seed?: string,
+	/** 持ち帰った ときの 蓄音機の 中身（敵の 種類。ROM専なら 跡地が 開く：裏シナリオ）。 */
+	voice?: string | null,
 ): void => {
 	if (seed?.startsWith(DEBUG_SEED)) return;
 	let p = loadProgress();
@@ -522,8 +531,11 @@ export const noteRunEnd = (
 	};
 	if (kind === "clear") {
 		if (!p.cleared.includes(dungeon)) p.cleared.push(dungeon);
+		// ROM専の 声を 録ったまま 持ち帰った（どの 板でも よい。原住民の 頼み：STORY.md §5.98 の 転）
+		if (voice === "funamushi" && !(p.flags ?? []).includes("romVoice"))
+			p.flags = [...(p.flags ?? []), "romVoice"];
 		for (const d of DUNGEON_IDS)
-			if (DUNGEONS[d].unlockAfter === dungeon) unlock(d, "clear");
+			if (openable(d, p.cleared, p.flags ?? [])) unlock(d, "clear");
 	} else if (kind === "dead") {
 		const n = (p.fails[dungeon] ?? 0) + 1;
 		p.fails[dungeon] = n;

@@ -1735,7 +1735,7 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 	});
 });
 
-test("裏ルート: おーぷぬ opens with 電池板, the 原住民 walks in with the first ending and then lives in the village", async () => {
+test("裏シナリオ: the branch opens after パン板 (small isles → lighthouse → 跡地 → 避難J), the 原住民 walks in with the lighthouse ending and then lives in the village", async () => {
 	const all = [...DUNGEON_IDS];
 	const put = (cleared: DungeonId[], endings: DungeonId[]) =>
 		localStorage.setItem(
@@ -1749,14 +1749,52 @@ test("裏ルート: おーぷぬ opens with 電池板, the 原住民 walks in wi
 				endings,
 			}),
 		);
-	// 風呂板を 持ち帰ると 電池板と いっしょに 開く（二択）
+	// 分岐は パン板の あと：小島1 が きのこ板と 並んで 開き、小島 2・3 と つづき、3つ そろうと 灯台。
+	// 跡地は 灯台と ROM専の 声の 旗、避難J は 本筋の 山場と 裏の 結の 両方の あと（STORY.md §5.98）
 	ok(
-		DUNGEONS.opunu.unlockAfter === "main" &&
-			DUNGEONS.deep.unlockAfter === "main",
-		"not a fork after 風呂板",
+		DUNGEONS.isle1.unlockAfter === "shallow" &&
+			DUNGEONS.kinoko.unlockAfter === "shallow",
+		"the branch is not after パン板",
 	);
 	ok(
-		MOBS.shobon.after === "opunu" && MONSTERS.hijacker.board === "opunu",
+		DUNGEONS.isle2.unlockAfter === "isle1" &&
+			DUNGEONS.isle3.unlockAfter === "isle2",
+		"the isles do not chain",
+	);
+	ok(
+		DUNGEONS.opunu.unlockAfter === null &&
+			JSON.stringify(DUNGEONS.opunu.unlockAfterAll) ===
+				JSON.stringify(["isle1", "isle2", "isle3"]),
+		"the lighthouse does not need the three isles",
+	);
+	ok(
+		DUNGEONS.ato.secret === true &&
+			JSON.stringify(DUNGEONS.ato.unlockAfterAll) ===
+				JSON.stringify(["opunu"]) &&
+			DUNGEONS.ato.unlockFlag === "romVoice",
+		"the 跡地 does not need the lighthouse and the ROM専 voice",
+	);
+	ok(
+		JSON.stringify(DUNGEONS.hinan.unlockAfterAll) ===
+			JSON.stringify(["deep", "ato"]),
+		"避難J does not need both climaxes",
+	);
+	ok(
+		[6, 9, 13, 20, 30, 25].join() ===
+			[
+				DUNGEONS.isle1.floors,
+				DUNGEONS.isle2.floors,
+				DUNGEONS.isle3.floors,
+				DUNGEONS.opunu.floors,
+				DUNGEONS.ato.floors,
+				DUNGEONS.hinan.floors,
+			].join(),
+		"the hidden route's floor counts drifted",
+	);
+	ok(
+		MOBS.shobon.after === "opunu" &&
+			Array.isArray(MONSTERS.hijacker.board) &&
+			MONSTERS.hijacker.board.includes("opunu"),
 		"the 原住民 or the 乗っ取り屋 is not tied to おーぷぬ",
 	);
 	await withStorageAsync(async () => {
@@ -1838,15 +1876,15 @@ test("裏ルート: おーぷぬ opens with 電池板, the 原住民 walks in wi
 				late.every((p) => p.who !== "nanj"),
 			`the late arrival is wrong:\n${late.map((p) => p.text).join("\n")}`,
 		);
-		// 開いた 知らせは おーぷぬの 行（やきうの おーぷぬの 話と ゼロの 灯台）
+		// 開いた 知らせ：小島1（起。やきうの おーぷぬの 話と 本館の 奥の 古い スレ）と 灯台（扉の 鍵）
 		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify({
 				unlocked: all,
-				cleared: ["shallow", "kinoko", "main"],
+				cleared: ["shallow"],
 				fails: {},
 				intro: all,
-				news: [{ dungeon: "opunu", reason: "clear" }],
+				news: [{ dungeon: "isle1", reason: "clear" }],
 				endings: [],
 			}),
 		);
@@ -1854,9 +1892,28 @@ test("裏ルート: おーぷぬ opens with 電池板, the 原住民 walks in wi
 		await newsScript(news.s);
 		ok(
 			news.log.some((l) => l.includes("おーぷぬ、知っとるか")) &&
-				news.log.some((l) => l.includes("灯台")) &&
-				news.log.some((l) => l.includes("「のんびり諸島」に")),
-			`the おーぷぬ news is wrong:\n${news.log.join("\n")}`,
+				news.log.some((l) => l.includes("古い　スレ")) &&
+				news.log.some((l) => l.includes("「ひまわり諸島」に")),
+			`the isle1 news is wrong:\n${news.log.join("\n")}`,
+		);
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: all,
+				cleared: ["shallow", "kinoko", "main", "isle1", "isle2", "isle3"],
+				fails: {},
+				intro: all,
+				news: [{ dungeon: "opunu", reason: "clear" }],
+				endings: [],
+			}),
+		);
+		const news2 = fakeStory();
+		await newsScript(news2.s);
+		ok(
+			news2.log.some((l) => l.includes("灯台")) &&
+				news2.log.some((l) => l.includes("鍵")) &&
+				news2.log.some((l) => l.includes("「のんびり諸島」に")),
+			`the lighthouse news is wrong:\n${news2.log.join("\n")}`,
 		);
 	});
 });

@@ -482,21 +482,16 @@ export const newsScript = async (s: Story): Promise<void> => {
 			);
 			continue;
 		}
-		const colony = !["main", "deep", "opunu"].includes(n.dungeon);
 		const name = DUNGEON_NAMES[n.dungeon].name;
-		const lines = UNLOCK_LINES[
-			n.dungeon === "hidden"
-				? "hidden"
-				: n.dungeon === "opunu"
-					? "opunu"
-					: colony
-						? "colony"
-						: n.reason === "relief"
-							? "relief"
-							: n.dungeon === "deep"
-								? "deep"
-								: "main"
-		]
+		// 板ごとの 行が あれば それ（本編・電池板・過去ログの底・裏シナリオの 小島と 灯台）。救いで 開いた 本編は relief。
+		// ほかの 寄り道は 口の ない 植民地の 行
+		const key: keyof typeof UNLOCK_LINES =
+			n.reason === "relief"
+				? "relief"
+				: n.dungeon in UNLOCK_LINES
+					? (n.dungeon as keyof typeof UNLOCK_LINES)
+					: "colony";
+		const lines = UNLOCK_LINES[key]
 			.filter((l) => !away.includes(l.who) && !mentionsAway(l.text, away))
 			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
 		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）

@@ -9,7 +9,7 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import type { DungeonId } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
 import { eventText, goalText, type ObjectiveInfo } from "../data/objectives";
-import { DUNGEON_NAMES } from "../data/story";
+import { DUNGEON_NAMES, ISLE_NAMES } from "../data/story";
 import {
 	type BuildingKind,
 	COLONY_SPOTS,
@@ -337,6 +337,26 @@ export const drawBuilding = (
 			r(-1, -6, 2, 4, "#2a2020");
 			break;
 		}
+		case "islet": {
+			// 乗っ取られた 小島：小さな 岩と、乗っ取り屋の 立てた 旗（開いて いなければ 影）
+			for (let i = 0; i < 6; i++)
+				r(-7 + i, -i - 1, 14 - i * 2, 1, i < 2 ? "#7a6440" : "#9a8252");
+			r(-1, -7, 1, 1, "#c8b890");
+			r(2, -14, 1, 8, "#5a4a3a");
+			r(3, -14, 5, 3, blink ? "#d8382a" : "#b82a1e");
+			r(3, -11, 3, 1, "#b82a1e");
+			break;
+		}
+		case "tent": {
+			// 避難所の テント（三角の 幕と ランプ。だれも いない）
+			for (let i = 0; i < 9; i++)
+				r(-i - 1, -i - 1, i * 2 + 2, 1, i % 2 ? "#e8e4d8" : "#c8c0b0");
+			r(-10, -1, 20, 1, "#7a7a66");
+			r(-1, -4, 2, 4, "#2a2630");
+			r(5, -12, 1, 6, "#5a4a3a");
+			r(4, -13, 3, 2, blink ? "#ffe060" : "#d8b840");
+			break;
+		}
 		case "yagura": {
 			// 祭りの やぐら（提灯が ゆれる）
 			r(-6, -14, 1, 14, "#8a5a2a");
@@ -538,6 +558,21 @@ export class MapView {
 				g.fillText("？", x, y - 5);
 			}
 			if (this.cleared.includes(d)) drawStar(g, x + 8, y - 16);
+			// 乗っ取られた 小島の 名前：取り返すと 元の 板の 名前に もどる（裏シナリオ。data/story.ts の ISLE_NAMES）
+			if (open && d in ISLE_NAMES) {
+				const nm = ISLE_NAMES[d as keyof typeof ISLE_NAMES];
+				g.font = "7px 'DotGothic16', monospace";
+				g.fillStyle = this.cleared.includes(d)
+					? "rgba(255,240,180,0.9)"
+					: "rgba(255,160,160,0.85)";
+				g.fillText(
+					this.cleared.includes(d) ? nm.original : nm.hijacked,
+					x,
+					y + 8,
+				);
+				g.font = "8px 'DotGothic16', monospace";
+				g.fillStyle = "#fff";
+			}
 		}
 		// えらんでいる 植民地の 目印（▼ が はねる。えらび直すと すべって いく。上の はしでは 下に ▲）
 		if (this.mode.k === "pick") {
@@ -596,10 +631,15 @@ export class MapView {
 	/** まだ 開いていない 植民地の 開き方（開く もとの 板が まだ 行けなければ その名も ？？？）。 */
 	private howToOpen(d: DungeonId): string {
 		const dg = DUNGEONS[d];
+		const nameOf = (x: DungeonId) =>
+			this.open.includes(x) ? DUNGEON_NAMES[x].name : "？？？";
+		// いくつかの 板を ぜんぶ 持ち帰ると 開く（裏シナリオの 灯台・避難J）
+		if (dg.unlockAfterAll)
+			return `${dg.unlockAfterAll.map(nameOf).join("・")}を　ぜんぶ　持ち帰ると　開く`;
 		const after = dg.unlockAfter;
 		if (!after) return "まだ　行けない";
 		const known = this.open.includes(after);
-		const name = known ? DUNGEON_NAMES[after].name : "？？？";
+		const name = nameOf(after);
 		const relief =
 			known && dg.reliefAfter
 				? `<br>（${name}で　${dg.reliefAfter}回　たおれても　開く）`

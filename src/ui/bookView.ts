@@ -4,7 +4,7 @@
 
 import { dungeonById } from "../core/data/dungeons";
 import { MONSTER_LIST } from "../core/data/monsters";
-import type { MonsterDef, MonsterTag } from "../core/types";
+import type { DungeonId, MonsterDef, MonsterTag } from "../core/types";
 import { DUNGEON_NAMES } from "../data/story";
 import { loadBook } from "../engine/save";
 import type { Ctx } from "./ctx";
@@ -36,15 +36,24 @@ const TAG_LABEL: Partial<Record<string, Partial<Record<MonsterTag, string>>>> =
  * 出る階。ボスは その板の いちばん奥の 1つの 階（上りの 板は「20F」。floors は 強さなので 使わない）。
  * ほかは floors（板だけの 敵は その板の 名前を 添える）。
  */
-export const floorsText = (d: MonsterDef): string =>
-	d.hunter
-		? "書きかえた　冒険の　各階"
-		: d.boss && d.board
-			? `${floorShort(d.board, dungeonById(d.board).floors)}（${DUNGEON_NAMES[d.board].name}の　ボス）`
-			: (d.floors[0] === d.floors[1]
-					? `B${d.floors[0]}`
-					: `B${d.floors[0]}〜B${d.floors[1]}`) +
-				(d.board ? `（${DUNGEON_NAMES[d.board].name}だけ）` : "");
+export const floorsText = (d: MonsterDef): string => {
+	if (d.hunter) return "書きかえた　冒険の　各階";
+	const boards: readonly DungeonId[] = !d.board
+		? []
+		: typeof d.board === "string"
+			? [d.board]
+			: d.board;
+	if (d.boss && boards.length === 1)
+		return `${floorShort(boards[0], dungeonById(boards[0]).floors)}（${DUNGEON_NAMES[boards[0]].name}の　ボス）`;
+	const where = boards.length
+		? `（${boards.map((b) => DUNGEON_NAMES[b].name).join("・")}だけ）`
+		: "";
+	return (
+		(d.floors[0] === d.floors[1]
+			? `B${d.floors[0]}`
+			: `B${d.floors[0]}〜B${d.floors[1]}`) + where
+	);
+};
 
 /** 一覧の 絵の 大きさ（2倍）。 */
 const ROW_PX = 32;

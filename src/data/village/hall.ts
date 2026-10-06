@@ -310,11 +310,23 @@ export const hallPlaces = (v: VillageView): HallPlace[] => {
 
 // ───────────────── 飾り棚 ─────────────────
 
-/** 蓄音機で 鳴らしている 品の 板（植民地化宣言・長湯スレ・鉄塔の保守スレ。棚には 置かない）。 */
-export const ON_PHONO: readonly DungeonId[] = ["shallow", "main", "deep"];
+/**
+ * 蓄音機で 鳴らしている 品の 板（植民地化宣言・長湯スレ・鉄塔の保守スレ。裏シナリオの >>1 と 20人目の レスも。
+ * 棚には 置かない）。
+ */
+export const ON_PHONO: readonly DungeonId[] = [
+	"shallow",
+	"main",
+	"deep",
+	"ato",
+	"hinan",
+];
 
 /** シヨが 倉庫で あずかっている 品の 板（過去ログの底の 1作目の スレ。STORY.md §5.8。棚には 置かない）。 */
 export const IN_STORE: readonly DungeonId[] = ["hidden"];
+
+/** まとめ掲示板に 貼ってある 品の 板（乗っ取り屋の 置き手紙。data/scraps.ts。棚には 置かない）。 */
+export const ON_BOARD: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
 
 /** 飾り棚の 段（上の 段から 左 → 右。絵を 描く マス）。棚が 無い 段は 空。 */
 export const shelfSlots = (tier: HallTier): Cell[] => {
@@ -335,5 +347,8 @@ export const shelfBoards = (
 ): DungeonId[] =>
 	order.filter(
 		(d) =>
-			cleared.includes(d) && !ON_PHONO.includes(d) && !IN_STORE.includes(d),
+			cleared.includes(d) &&
+			!ON_PHONO.includes(d) &&
+			!IN_STORE.includes(d) &&
+			!ON_BOARD.includes(d),
 	);

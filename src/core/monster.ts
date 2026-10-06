@@ -6,7 +6,7 @@
 
 import { ankaHit } from "./anka";
 import { HIT_RATE, RAGE_HIT_RATE, rollDamage } from "./balance";
-import { MONSTERS } from "./data/monsters";
+import { MONSTERS, onBoard } from "./data/monsters";
 import { canSee } from "./fov";
 import {
 	DIRS8,
@@ -447,6 +447,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	}
 
 	// 近づくと逃げる（ROM専）。追いかけてもこない。追いつめられたら戦う
+	// （裏シナリオの 結の あと（RunState.rom）は 戦わない：こちらを 見ている だけ。STORY.md §5.98）
 	if (has(m, "shy") && sees) {
 		if (dist(m, p) > 2) {
 			wander(r, m);
@@ -456,6 +457,10 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		const dir = adjacentDir();
 		if (dir !== null) {
 			m.dir = dir;
+			if (r.s.rom) {
+				r.msg(`${mdef(m).name}は　こちらを　見ている`);
+				return;
+			}
 			meleePlayer(r, m);
 			return;
 		}
@@ -759,6 +764,22 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 		r.msg(`${nm}は　ようすを　うかがっている`);
 		return;
 	}
+	// 連投：なぐる かわりに、ときどき スレ（階の レス）を 伸ばす（1000ゲッター。1000 で 次の 階へ 押し出される）
+	if (has(m, "spam")) {
+		const sp = d.abilities.find((a) => a.k === "spam") as {
+			rate: number;
+			amount: number;
+		};
+		if (!r.rng.chance(sp.rate)) {
+			r.msg(`${nm}は　リロードしている`);
+			return;
+		}
+		r.se("debuff");
+		r.msg(`${nm}「1000なら　ワイの　勝ち」　れんとう！`, "warn");
+		r.addRes(sp.amount);
+		r.msg(`スレが　${sp.amount}　伸びた！（${r.f.res}）`, "warn");
+		return;
+	}
 	// 錆びさせる：なぐらない。ときどき 板を 汚して 錆びさせるだけ（風呂キャンセル界隈）
 	if (has(m, "rust")) {
 		const rate = (d.abilities.find((a) => a.k === "rust") as { rate: number })
@@ -1036,7 +1057,7 @@ export const transformMonster = (r: Run, m: Monster, to?: string): void => {
 			!d.hunter &&
 			d.id !== m.kind &&
 			d.floors[0] <= r.levelAt(r.f.depth) + 4 &&
-			(!d.board || d.board === r.s.dungeon),
+			onBoard(d, r.s.dungeon),
 	);
 	const d = to ? MONSTERS[to] : r.rng.pick(cands);
 	const ratio = m.hp / m.maxHp;

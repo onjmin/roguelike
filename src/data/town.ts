@@ -230,7 +230,15 @@ export const ARRIVE_MSG = "{names}が、村に　越してきた。";
 
 export const CARRY_CHASE = "シヨが　追いかけてきた。";
 
-export const CARRY_REFUSE: Record<"deep" | "tropical" | "hidden", Line> = {
+export const CARRY_REFUSE: Record<
+	"deep" | "tropical" | "hidden" | "ato",
+	Line
+> = {
+	// 野球chの 跡地（本館の 床下。裏シナリオ）
+	ato: q(
+		"shiyo",
+		"本館の　床下よ？　2012年の　ほこりで\n道具が　だめに　なるわ。あたすが　預かる",
+	),
 	deep: q(
 		"shiyo",
 		"電池板は　回線が　あやしいの。\n持ち物が　化けるわよ。あたすが　預かる",
