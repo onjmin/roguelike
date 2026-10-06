@@ -193,8 +193,8 @@ export const hallPalette = (tier: HallTier): Record<string, TileDef> => {
 		n: on(base(2, 109)),
 		r: on(base(3, 109)),
 		P: on(base(3, 352, 1, 2)),
-		// 集会所は すみの 1マスに 置くので 背の 低い 札（うしろの マスから 読める）。広い 館では 立て札
-		Q: on(tier === 0 ? base(5, 38) : base(5, 37, 1, 2)),
+		// 集会所は すみの 1マスに 置くので 背の 低い 札（立て札の まんなか 16px。うしろの マスから 読める）。広い 館では 立て札
+		Q: on(tier === 0 ? basePx(80, 600) : base(5, 37, 1, 2)),
 	};
 };
 

@@ -664,8 +664,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		foes: { hijacker: 2 },
 		floors: 13,
 		items: ISLE_ITEMS,
-		perFloor: [3, 5],
-		level: ramp(13, 19),
+		// 道具は 少なめ（鯖代切れ）だが、[3, 5] だと ボットの 2割が 飢え死にした（2026-10-07）。底も おんたこ（19）より 低く
+		perFloor: [4, 6],
+		level: ramp(13, 17),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],

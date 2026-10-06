@@ -7,7 +7,7 @@
 //   （1000 は あけておく：1 の 裏の「1000は　ひとりで　取るもんやない」）。早ければ 1000ゲッターに 1000 を 取られ、
 //   1000 を 過ぎても 取られる。負けたら 次スレで やりなおせる（呼ぶ側が きく）。
 //
-// 文字は 1行 全角22字まで。色は style.css の .mini。
+// 文字は 1行 全角22字まで。色は style.css の .mgame（.mini は HUD の 小さな ボタンなので 使わない）。
 
 import { el } from "./dom";
 import type { UiCtx } from "./list";
@@ -24,15 +24,15 @@ const board = (
 	note: HTMLElement;
 	close: () => void;
 } => {
-	const canvas = el("canvas", { class: "mini-canvas" });
+	const canvas = el("canvas", { class: "mgame-canvas" });
 	canvas.width = 240;
 	canvas.height = 150;
-	const note = el("div", { class: "mini-note", text: "" });
-	const root = el("div", { class: "mini window" }, [
-		el("div", { class: "mini-title", text: title }),
+	const note = el("div", { class: "mgame-note", text: "" });
+	const root = el("div", { class: "mgame window" }, [
+		el("div", { class: "mgame-title", text: title }),
 		canvas,
 		note,
-		el("div", { class: "mini-hint", text: hint }),
+		el("div", { class: "mgame-hint", text: hint }),
 	]);
 	ctx.ui.appendChild(root);
 	const g = canvas.getContext("2d");
@@ -296,16 +296,17 @@ const drawThread = (
 	g.fillStyle = "#ff6a4a";
 	g.fillRect(W - 6 - Math.round(60 * bot), 144, Math.round(60 * bot), 2);
 	if (flash) {
+		// 大きな レス番の 上に 1行（スレの 行と かぶらない 高さ。22字まで）
 		g.textAlign = "center";
-		g.font = "12px 'DotGothic16', monospace";
+		g.font = "9px 'DotGothic16', monospace";
 		g.fillStyle = "#ffe060";
-		g.fillText(flash, W / 2, 100);
+		g.fillText(flash, W / 2, 98);
 	}
 };
 
 /**
  * 1000取り。>>999 を 取れば true（1000 は あけたまま）。早すぎ・遅すぎは 1000ゲッターが 1000 を 取って false。
- * レス番は 960 から 進み、だんだん 速くなる（はじめ 0.26秒 → 999 の 手前で 0.1秒）。
+ * レス番は 960 から 進み、だんだん 速くなる（はじめ 0.26秒 → 990 から 0.11秒）。999 だけ 0.42秒 止まる（ここで 押す）。
  */
 export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 	const b = board(
@@ -328,7 +329,9 @@ export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 		let result: "win" | "early" | "late" | "quit" | null = null;
 		for (;;) {
 			const t = await tick();
-			const interval = 260 - ((n - 960) / 39) * 160;
+			// 990 までは だんだん 速く、990 から 999 の 手前は 速いまま、999 は すこし 長く 止まる（ここで 押す）
+			const interval =
+				n < 990 ? 260 - ((n - 960) / 30) * 150 : n < 999 ? 110 : 420;
 			if (t - last >= interval) {
 				last = t;
 				n++;
@@ -352,7 +355,7 @@ export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 		if (result === "quit") return false;
 		if (result === "win") {
 			ctx.se("decide");
-			drawThread(b.g, 999, 0.9, "999　名前：蓄音キリコ　「保守」");
+			drawThread(b.g, 999, 0.9, "999　名前：蓄音キリコ");
 			say("……>>999。1000は、あけておいた");
 			await sleep(1400);
 			drawThread(b.g, 999, 0, "1000　……まだ　だれも　書かない");
@@ -360,12 +363,7 @@ export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 			return true;
 		}
 		ctx.se("cancel");
-		drawThread(
-			b.g,
-			Math.max(n, 1000),
-			1,
-			`1000　名前：1000ゲッター　「1000なら　ワイの　勝ち」`,
-		);
+		drawThread(b.g, Math.max(n, 1000), 1, "1000　名前：1000ゲッター");
 		say(result === "early" ? "早すぎた！　……取られた" : "……取られた");
 		await sleep(1500);
 		return false;

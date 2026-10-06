@@ -252,10 +252,22 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
  * 語りの 中で 越してくる 住人（after の 板を はじめて 持ち帰った とき）：その 板の 方角の 村の 口から 歩いてきて、
  * キリコの そばに 立つ。旗 NEWCOMER の 人を 動かす（絵は その子の 歩行グラ）。語りの あとの 建て直しで 本人に かわる。
  */
+/**
+ * キリコが 口の 前（出てきた マス）に 立っていると、口から 入る 道を ふさいでしまう（goto は キリコの マスを よける）。
+ * 口から 歩いてくる 人の 前に、キリコを となりの 空いた マスへ 1歩 どかす。
+ */
+const stepAside = async (s: Story): Promise<void> => {
+	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	if (to) await s.goto("player", to[0], to[1], { speed: 1.2 });
+};
+
 const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
+	await stepAside(s);
 	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	// 旗を 立てただけでは 人は 生まれない（when は 見なおされない）。show で 生まれさせてから 置く
 	s.set(NEWCOMER);
+	s.show(NEWCOMER);
 	s.place(NEWCOMER, gate[0], gate[1]);
 	await s.look(NEWCOMER);
 	if (to) {
@@ -272,9 +284,14 @@ const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
  */
 const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
+	await stepAside(s);
 	const spots = spotsAround(villageView(), ROM_COUNT, [s.state.x, s.state.y]);
 	s.set(ROMS);
-	for (let i = 0; i < ROM_COUNT; i++) s.place(`${ROMS}_${i}`, gate[0], gate[1]);
+	for (let i = 0; i < ROM_COUNT; i++) {
+		// 旗を 立てただけでは 生まれない：show で 生まれさせてから 口に 置く
+		s.show(`${ROMS}_${i}`);
+		s.place(`${ROMS}_${i}`, gate[0], gate[1]);
+	}
 	await s.look(`${ROMS}_0`);
 	await Promise.all(
 		spots.map((to, i) =>
@@ -294,6 +311,7 @@ const walkOutRoms = async (s: Story, d: DungeonId): Promise<void> => {
 		),
 	);
 	s.set(ROMS, false);
+	for (let i = 0; i < ROM_COUNT; i++) s.hide(`${ROMS}_${i}`);
 };
 
 /**

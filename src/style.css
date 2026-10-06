@@ -3152,7 +3152,7 @@ body.jolt #app {
 
 /* ───────── 裏シナリオの 別ゲー（ui/minigames.ts）：1打席・1000取り ───────── */
 
-.mini {
+.mgame {
 	position: absolute;
 	left: 50%;
 	top: 50%;
@@ -3168,27 +3168,27 @@ body.jolt #app {
 	touch-action: none;
 }
 
-.mini-title {
+.mgame-title {
 	font-size: 14px;
 	text-align: center;
 	color: var(--win-fg, #f4f2ea);
 }
 
-.mini-canvas {
+.mgame-canvas {
 	width: 100%;
 	image-rendering: pixelated;
 	border: 2px solid #000;
 	background: #10241a;
 }
 
-.mini-note {
+.mgame-note {
 	min-height: 1.6em;
 	font-size: 14px;
 	text-align: center;
 	color: #ffe060;
 }
 
-.mini-hint {
+.mgame-hint {
 	font-size: 11px;
 	text-align: center;
 	opacity: 0.7;
