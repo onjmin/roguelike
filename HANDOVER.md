@@ -21,7 +21,8 @@
 
 ## まだ できていない こと（優先順）
 
-1. **実機で 一度 通す**：`pnpm dev` → `?stage=` と localStorage の `kiriko-roguelike/progress` を 書きかえて、(a) 全体マップの 小島と 名前、(b) 灯台の パスワードの 4択、(c) 本館の 札 → 1打席 → 跡地へ、(d) 跡地の 持ち帰りで ROM専 18体が 歩いてくる、(e) 避難Jの 持ち帰りで 1000取り。別ゲーの 板（`.mini`）は スマホの 幅でも 見る。
+1. **実機で 通した もの（2026-10-07。ブラウザの ペインで）**：全体マップの 小島と 名前・灯台の パスワードの 4択（当てると 旗 `pass`）・本館の 札 → 1打席の 板 → 三振・跡地の 持ち帰りで ROM専 18体が 口から 歩いてきて 帰る・灯台の 持ち帰りで 原住民が 歩いてくる・避難Jの 持ち帰りで 1000取り（負け → 次スレ → 999 で 勝ち）・結の あとの 札「1000　見てた」。**まだ**：小島・跡地・避難Jの 中を 自分で もぐる（ボットだけ）、別ゲーの 板（`.mgame`）を スマホの 幅で 見る、1打席で 本当に 打つ（ボットでは 打てない。ゾーンの 幅 `ZONE` は 手で 遊んで 決める）。
+   進み具合を 作る ときは `localStorage["kiriko-roguelike/progress"]` に `unlocked / cleared / intro / endings / flags` を 書いて 読みなおす。帰りの 場面は `window.__village.start({ boot: false, arrival: { kind: "clear", dungeon: "ato" } })` で 村から 直接 呼べる（dev だけ）。
 2. **ボットの 調整**：`pnpm sim -- --dungeon isle1|isle2|isle3|opunu|ato|hinan --n 100`。目安：小島1 は きのこ板 なみ、小島2 は 離島板 なみ、小島3 は おんたこ なみ、灯台は 風呂板 なみ、跡地は 電池板 なみ、避難J は その あいだ。
 3. **絵**：1000ゲッターは 乗っ取り屋と 同じ 仮の 絵（ART_TODO.md）。置き手紙・>>1・20人目の レスの 絵は `ui/itemArt.ts`（`scripts/make-items.mjs memo,ichi,nijuu`）。全体マップの 小島の 旗（`islet`）と 避難所の テント（`tent`）は `ui/worldMap.ts` の 矩形の ドット絵。
 4. **曲**：小島 1〜3・跡地・避難J は 既存の 曲を 当てている（`BOARD_LOOKS`・`ATO_ZONES`）。新曲を 足すなら `#volume` を 測ってから。
