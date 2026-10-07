@@ -595,10 +595,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		escapeWithGoal: true,
 		secret: true,
 	},
-	// 裏ルート：おーぷぬの 諸島（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。風呂板を 持ち帰ると
-	// 電池板と いっしょに 開く（二択）。乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる
-	// （data/story.ts の BOARD_LOOKS の zones）。灯台を 上る 24階。底の 強さは 風呂板と 同じ 27（二択の 片方なので
-	// 電池板（30階・底 30・ぜんぶ 未識別・持ちこみ なし）より すこし やさしく、倉庫の 道具も 持ちこめる）
+	// 裏ルート：おーぷぬの 灯台（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。小島を 3つ 取り返すと 開く。
+	// 乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる（data/story.ts の BOARD_LOOKS の zones）。
+	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底 30 ＞ 風呂板 27・持ちこみ 不可）
 	opunu: {
 		id: "opunu",
 		objective: "fetch",
@@ -639,12 +638,13 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 6,
 		items: ISLE1_ITEMS,
 		perFloor: [4, 7],
-		level: ramp(6, 7),
+		// 底 7・祭り 4階から では ボットの 最下層まで が きのこ板と ほぼ 同じ（65% と 71%）だった（2026-10-07）
+		level: ramp(6, 9),
 		unidentified: ["herb", "staff"],
 		curses: true,
 		start: ["f_large"],
 		goal: "memo1",
-		houses: { from: 4, chance: 1 / 6, early: null },
+		houses: { from: 3, chance: 1 / 5, early: null },
 		trapsFrom: 3,
 		// パン板の あと（きのこ板と 並んで 開く。裏の 分岐は 序盤）
 		unlockAfter: "shallow",
@@ -682,14 +682,17 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		foes: { hijacker: 2 },
 		floors: 13,
 		items: ISLE_ITEMS,
-		// 道具は 少なめ（鯖代切れ）だが、[3, 5] だと ボットの 2割が 飢え死にした（2026-10-07）。底も おんたこ（19）より 低く
+		// 道具は 少なめ（鯖代切れ）だが、[3, 5] だと ボットの 2割が 飢え死にした（2026-10-07）
 		perFloor: [4, 5],
-		level: ramp(13, 19),
+		// 底 19（おんたこと 同じ）では ボットが おんたこ（B4〜6 で 倒れる）より 深く B9〜10 まで 行けた。
+		// おんたこの 😡 の かわりに 底を 上げ、祭りを ふやし、自然回復を おそく（鯖が 重い）
+		level: ramp(13, 23),
+		regenStep: 200,
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "memo3",
-		houses: { from: 4, chance: 1 / 12, early: null },
+		houses: { from: 3, chance: 1 / 8, early: [4, 6] },
 		trapsFrom: 3,
 		unlockAfter: "isle2",
 		reliefAfter: null,
@@ -733,7 +736,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 25,
 		items: ISLE_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(25, 30, 1.5),
+		// 裏の さいごの 板：電池板（30）より 上に（底 30 では ボットが 電池板と 同じ B12〜14 まで 行けた）
+		level: ramp(25, 35, 1.1),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
