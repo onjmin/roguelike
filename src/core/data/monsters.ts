@@ -614,10 +614,10 @@ const M: MonsterDef[] = [
 	{
 		// おーぷぬの 諸島（裏ルート）だけの 敵。2020年9月29日の 乗っ取り事件（弱い パスワードの 板を 当てて 名前を
 		// 「〜〜諸島」に 変えた）から。なぐらずに 持ち物を 1つ 乗っ取って 逃げる（転載ガモと 同じ steal。すばやい）。
-		// 絵は rpgen の 0Chiaki（一般ハッカー少年。sa:iYWD4w）
+		// 絵は rpgen の「FF3 シーフ」（sa:kAeK4w。持ち物を 盗む 敵なので 盗賊）
 		id: "hijacker",
 		name: "乗っ取り屋",
-		sprite: "sa:iYWD4w",
+		sprite: "sa:kAeK4w",
 		hp: 26,
 		atk: 0,
 		def: 10,
@@ -643,10 +643,10 @@ const M: MonsterDef[] = [
 	{
 		// 避難J（第三ルート）だけの 敵。1 の 裏シナリオの 中ボス「1000ゲッター」（完走まぎわの スレに わいて 1000 を
 		// 横取りする bot）から。なぐる かわりに 連投して スレ（階の レス）を 伸ばし、1000 で 次の 階へ 押し出す。
-		// すばやく、眠らない（bot）。絵は 仮に 乗っ取り屋と 同じ 系統の rpgen の 少年（差しかえ：ART_TODO.md）
+		// すばやく、眠らない（bot）。絵は rpgen の「クソアホロボット」（sa:gmLHHM。kskボットの テレビとは 別の bot）
 		id: "getter",
 		name: "1000ゲッター",
-		sprite: "sa:iYWD4w",
+		sprite: "sa:gmLHHM",
 		hp: 32,
 		atk: 5,
 		def: 9,

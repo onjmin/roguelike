@@ -41,7 +41,6 @@
 | コピペ（敵） | `sprites/copipe.png` | Claude が 描いた もの。2枚 かさなった 紙（コピーの アイコン）に 顔（`scripts/make-copipe.mjs`） |
 | 釣り・粘着アンチ・連投荒らし（敵） | `sprites/tsuri.png` `nenchaku.png` `rento.png` | Claude が 描いた もの（`scripts/make-enemies.mjs`）。浮きと 釣り針・むらさきの ねばねば・怒った ふきだしと 残像 |
 | 炎上案件（敵） | `sprites/enjo.png` | Claude が 描いた もの。怒った 顔の 画面の スマホから 炎（`scripts/make-enemies.mjs`） |
-| 1000ゲッター（避難J の 敵） | （`sa:iYWD4w` を 仮に 使用） | 乗っ取り屋と 同じ rpgen の 少年（0Chiaki）。bot らしい 絵（F5 キー・リロードの 矢印）に 差しかえたい。`src/core/data/monsters.ts` の `getter` の sprite を かえる |
 | 植民地（板）だけの 敵 7体 | `sprites/panhei.png` `kinonyan.png` `ofurou.png` `denchan.png` `natsuko.png` `takonomin.png` `mashii.png` | Claude が 描いた 仮（`scripts/make-colony-enemies.mjs`）。板の マスコットの 顔文字から：パン兵 `|｀°Ο°´|`（食パンの 兵隊・かぶと）・きのにゃん `[ｷ・Д・ﾉ]`（赤い かさの きのこ）・おふ郎くん `[o'ω'f]`（手ぬぐいと 湯気）・でんちゃん `{+'w'-]`（乾電池・漏電の 火花）・ナツコ `~｀i,/ ﾟヮﾟﾉヽi´~`（ヤシの木の 精）・たこのみん `∬*ﾟ ヮﾟル`（たこ焼き）・マシー `(o M c)`（丸い 顔）。描きなおして ほしい 本命 |
 
 - 手で 描いた ファイルに 差し替えたら、上の スクリプトを 流すと 上書きされるので 流さないこと（または スクリプトから その子を 消す）。
