@@ -2817,9 +2817,10 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 				`narrate: ${OPENING.premise[1]}`,
 				"look nanj",
 				`say nanj: ${OPENING.nanjCall[0]}`,
+				`say nanj: ${OPENING.nanjMouth[2]}`,
 				`look ${VILLAGE_SPOTS.exit.join(",")}`,
-				"look kiriko",
 				`narrate: ${OPENING.goal[0]}`,
+				"look kiriko",
 			]),
 			`opening:\n${a.log.join("\n")}`,
 		);

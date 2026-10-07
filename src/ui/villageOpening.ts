@@ -2,7 +2,7 @@
 // それまでは 前口上が ダンジョンの口を 踏んでから だったので、村に 置かれた 時点では
 // だれで・なにを して・どこへ 行けば いいのかが わからなかった。
 // ここで 1作目の スレの あと 南の 道から 歩いて 来る → 前口上（人が 散って 保守村に なった）→ 広場に 蓄音機を 置く →
-// キリコの 独白（スレが 伸びない）→ やきうが 声を かけて 歩いてきて 目的と 口を 教える（カメラで 見せる）→ 目的を 1行。
+// キリコの 独白（スレが 伸びない）→ やきうが 声を かけて 歩いてきて 目的を 教える → 小屋へ もどる あいだに カメラで 北の 出口を 見せて 目的を 1行。
 // 見終わってから 覚える（途中で 閉じたら 次も 見せる）。一度でも もぐった人には 出さない。
 // 文は data/town.ts の OPENING。
 
@@ -81,15 +81,20 @@ export const openingScript = async (s: Story): Promise<void> => {
 	for (const t of OPENING.nanjCall) await s.say("nanj", t);
 	// 呼んでから キリコの そばまで 歩いてくる（離れたまま 話しこまない）
 	const [bx, by] = [s.state.x, s.state.y];
+	await s.wait(0);
 	await s.goto("nanj", bx + 1, by, { speed: 1.6 });
 	s.face("nanj", "player");
 	await s.look(null);
-	await s.look(VILLAGE_SPOTS.exit);
 	for (const t of OPENING.nanjMouth) await s.say("nanj", t);
-	await s.look(null);
-	// 話しおえたら 小屋の 前へ もどる
+	// 話しおえたら 小屋の 前へ もどる。そのあいだに カメラで 北の 出口を 見せて、行き先を 1行
+	// （やきうが 話しながら 出口を 見せると、話す 人を 映す 網で すぐ やきうに もどって 出口が 一瞬しか 映らなかった）
 	const [nx, ny] = VILLAGE_SPOTS.nanj(villageView());
-	await s.goto("nanj", nx, ny);
+	// 立ち絵が 出口と 歩く やきうを 隠さないように 窓を しまう
+	await s.wait(0);
+	const back = s.goto("nanj", nx, ny);
+	await s.look(VILLAGE_SPOTS.exit);
 	for (const t of OPENING.goal) await s.narrate(t);
+	await s.look(null);
+	await back;
 	markSeen();
 };

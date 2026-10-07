@@ -16,7 +16,7 @@
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
-import type { Dir8 } from "../core/geom";
+import { type Dir8, DX, DY, isDiagonal } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
 import { CAST, KIRIKO, KIRIKO_WALK } from "../data/cast";
 import type { KirikoMode, Speaker } from "../data/quotes";
@@ -62,6 +62,42 @@ const WALK_MS = 170;
 const DASH_SPEED = 2.5;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
+
+/** 出口への 道を 何歩 先まで たどって 矢印の 向きに するか（曲がり角の 手前で 斜めに なる）。 */
+const GUIDE_AHEAD = 5;
+/** 出口を さす 矢印の ドット絵（上向き・11×11。# ふち、o 地、h 光）。 */
+const GUIDE_ARROW_UP = [
+	".....#.....",
+	"....#h#....",
+	"...#hoo#...",
+	"..#hoooo#..",
+	".#hoooooo#.",
+	"#hoooooooo#",
+	"####hoo####",
+	"...#hoo#...",
+	"...#hoo#...",
+	"...#hoo#...",
+	"...#####...",
+] as const;
+/** 右上向き（GUIDE_ARROW_UP と 同じ 大きさ・同じ 書き方）。 */
+const GUIDE_ARROW_UR = [
+	"...........",
+	"....######.",
+	"...#hooooo#",
+	"....#hoooo#",
+	".....#hooo#",
+	"....#hoooo#",
+	"...#hoo#ho#",
+	"..#hoo#.#h#",
+	".#hoo#...#.",
+	".#ho#......",
+	"..##.......",
+] as const;
+const GUIDE_COLORS: Record<string, string | undefined> = {
+	"#": "#3a2600",
+	o: "#ffd75e",
+	h: "#fff3b8",
+};
 
 /** 冒険から どう もどってきたか（村での 立ち位置と、入ったときの 場面を 決める）。 */
 export type Arrival =
@@ -111,8 +147,12 @@ export class Village {
 	private camFY = 0;
 	/** カメラが 見る先（人の ID か マス。null なら キリコ）。 */
 	private lookAt: string | readonly [number, number] | null = null;
-	/** カメラを なめらかに 動かしている（見る先を かえてから キリコに もどりきるまで）。 */
-	private easing = false;
+	/**
+	 * カメラを 見る先へ 動かしている 途中（出だしの 位置・たった 時間・かかる 時間）。null なら 見る先に ぴったり つく。
+	 * 遠くても 近くても 同じ 速さで 寄せると、遠い 所へは 一瞬で 飛んで どこを 見たのか わからないので、
+	 * 長さは 道のりで きめ、出だしと 着く ところを ゆるめる。
+	 */
+	private pan: { x: number; y: number; t: number; ms: number } | null = null;
 	/** 入ったときの 場面の 最中（歩かない・うろうろ しない）。 */
 	private scene = false;
 	private running = false;
@@ -163,7 +203,7 @@ export class Village {
 		// 起動の札の うしろでは 村が 動いている（うろうろ する。場面は 札を 閉じてから）
 		this.scene = !o.boot;
 		this.lookAt = null;
-		this.easing = false;
+		this.pan = null;
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
 		this.mapId = "village";
@@ -274,7 +314,7 @@ export class Village {
 		this.mapId = map === "hall" || isRoom(map) ? map : "village";
 		// 前の 地図の 人・マスを 見ていた カメラは キリコに もどす
 		this.lookAt = null;
-		this.easing = false;
+		this.pan = null;
 		await this.build(spot);
 		const def = this.field?.def;
 		if (def?.bgm !== undefined) this.ctx.audio.bgm(def.bgm);
@@ -770,28 +810,45 @@ export class Village {
 	/**
 	 * カメラ。キリコ（場面では 見る先）を 下の ボタン（十字キー・A/B）より 上の まんなかに 置き、地図の はしで 止める。
 	 * 地図が 画面に 収まる向きは まんなかに 置く（高さは ボタンより 上の 部分で）。
-	 * 見る先を かえたら dt ごとに なめらかに 寄せる（キリコに もどりきったら また ぴったり ついていく）。
+	 * 見る先を かえたら panTo で なめらかに 寄せる（着いたら また ぴったり ついていく）。
 	 */
 	private updateCamera(dt = 0): void {
 		const c = this.camTarget();
 		if (!c) return;
 		const { tx, ty } = c;
 		const sc = this.screen;
-		if (!this.easing) {
+		const pan = this.pan;
+		if (!pan) {
 			this.camFX = tx;
 			this.camFY = ty;
-		} else if (dt > 0) {
-			const k = 1 - Math.exp(-dt / 110);
-			this.camFX += (tx - this.camFX) * k;
-			this.camFY += (ty - this.camFY) * k;
-			if (Math.abs(tx - this.camFX) < 0.5 && Math.abs(ty - this.camFY) < 0.5) {
-				this.camFX = tx;
-				this.camFY = ty;
-				if (this.lookAt === null) this.easing = false;
-			}
+		} else {
+			pan.t += dt;
+			const p = Math.min(1, pan.t / pan.ms);
+			const e = p < 0.5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2;
+			// 見る先が 歩いても 行き先に あわせて 寄せる
+			this.camFX = pan.x + (tx - pan.x) * e;
+			this.camFY = pan.y + (ty - pan.y) * e;
+			if (p >= 1) this.pan = null;
 		}
 		this.camX = sc.snap(this.camFX);
 		this.camY = sc.snap(this.camFY);
+	}
+
+	/**
+	 * カメラの 見る先を かえて、今の 位置から 寄せはじめる（null で キリコ）。着くまでの ミリ秒を かえす。
+	 * 長さは 道のりの 平方根（となりの 人なら 0.4秒、村の はしから はしでも 1.2秒まで）。
+	 */
+	private panTo(target: string | readonly [number, number] | null): number {
+		this.lookAt = target;
+		const c = this.camTarget();
+		const d = c ? Math.hypot(c.tx - this.camFX, c.ty - this.camFY) : 0;
+		if (d < 0.5) {
+			this.pan = null;
+			return 0;
+		}
+		const ms = Math.min(1200, 250 + 42 * Math.sqrt(d));
+		this.pan = { x: this.camFX, y: this.camFY, t: 0, ms };
+		return ms;
 	}
 
 	/**
@@ -843,9 +900,7 @@ export class Village {
 		console.warn(
 			`[say] ${id} が 画面の 外で 話そうと したので カメラを 向けます`,
 		);
-		this.lookAt = id;
-		this.easing = true;
-		await sleep(450);
+		await sleep(this.panTo(id) + 80);
 	}
 
 	private render(): void {
@@ -881,19 +936,52 @@ export class Village {
 			this.time,
 		);
 		field.def.decor?.(g, ox, oy, this.time);
-		if (this.guideExit && this.mapId === "village" && !this.scene)
-			this.drawExitGuide(g, ox, oy);
+		if (this.guideExit && this.mapId === "village")
+			this.drawExitGuide(g, ox, oy, this.scene);
+	}
+
+	/** 出口への 道の 先（キリコの マスごとに 覚える）。 */
+	private guideMemo: { key: string; dx: number; dy: number } | null = null;
+
+	/**
+	 * 出口へ 歩く 向き（マス）。出口の 方角では なく、歩ける 道を GUIDE_AHEAD 歩 先まで たどった 向き
+	 * （出口は 右上でも、本館の 前の 道では 右へ 回る。方角だけだと 本館の 扉を さした）。
+	 * 道が 曲がる 手前では 斜めに なる。
+	 * 道が なければ 出口の 方角。
+	 */
+	private guideHeading(ex: number, ey: number): [number, number] {
+		const p = this.player;
+		const key = `${this.mapId}:${p.x},${p.y}`;
+		if (this.guideMemo?.key !== key) {
+			const route = this.routeTo(p, ex, ey) ?? [];
+			let dx = ex - p.x;
+			let dy = ey - p.y;
+			if (route.length) {
+				dx = 0;
+				dy = 0;
+				for (const d of route.slice(0, GUIDE_AHEAD)) {
+					dx += DIR_VEC[d].dx;
+					dy += DIR_VEC[d].dy;
+				}
+			}
+			this.guideMemo = { key, dx, dy };
+		}
+		return [this.guideMemo.dx, this.guideMemo.dy];
 	}
 
 	/**
-	 * 村の 出口（北の 崖の 切れ目の 先）を さす 矢印。画面の 外なら キリコの そばで、出口の 方を 向ける
-	 * （画面の はしに 寄せると、起きる 所からは 右上の 🔊 の 真下で そちらを さし、
+	 * 村の 出口（北の 崖の 切れ目の 先）を さす 矢印。画面に 出口が あれば その 1マス半 下で 上を さし（出口は 地図の いちばん上なので 1マス下だと 🔊 よけの 余白に 入る）、
+	 * 外なら キリコの そばで 出口へ 歩く 向きを 8方向で さす（
+	 * 画面の はしに 寄せると、起きる 所からは 右上の 🔊 の 真下で そちらを さし、
 	 * タイトルの「音は　右上の　🔊」と あわせて 音の ボタンを さして 見えた）。
+	 * 場面の 中では 出口が 映った ときだけ（カメラで 出口を 見せる ところ）。
+	 * まわりの 絵に あわせて ドットで 描く（なめらかな 線だと 1つだけ 浮く）。
 	 */
 	private drawExitGuide(
 		g: CanvasRenderingContext2D,
 		ox: number,
 		oy: number,
+		inViewOnly: boolean,
 	): void {
 		const c = this.camTarget();
 		if (!c) return;
@@ -902,39 +990,57 @@ export class Village {
 		const ty = ey * TILE + TILE / 2 - oy;
 		// 上の はしの 2マスは 右上の 音の ボタンと かさなるので 外あつかい
 		const m = TILE * 0.9;
+		const below = ty + TILE * 1.5;
 		const inView =
-			tx >= m && tx <= c.w - m && ty >= TILE * 2.2 && ty <= c.hv - m;
+			tx >= m && tx <= c.w - m && below >= TILE * 2.2 && below <= c.hv - m;
+		if (!inView && inViewOnly) return;
 		let x = tx;
-		let y = ty;
-		let ang = -Math.PI / 2;
+		let y = below;
+		let dir: Dir8 = 0;
 		if (!inView) {
 			const p = this.player;
 			const px = p.fx * TILE + TILE / 2 - ox;
 			const py = p.fy * TILE + TILE / 2 - oy;
-			ang = Math.atan2(ty - py, tx - px);
-			x = px + Math.cos(ang) * TILE * 1.2;
-			y = py + Math.sin(ang) * TILE * 1.2;
+			const [hx, hy] = this.guideHeading(ex, ey);
+			dir = ((Math.round(Math.atan2(hx, -hy) / (Math.PI / 4)) + 8) % 8) as Dir8;
+			const [ux, uy] = [DX[dir], DY[dir]];
+			// 斜めは 1マスの 角の 外（たて・よこと 同じくらい 離す）
+			const r = isDiagonal(dir) ? TILE * 0.95 : TILE * 1.2;
+			x = px + ux * r;
+			y = py + uy * r;
+			// たて・よこの 矢印の 下が 地形か 置物（起きる 所では 蓄音機）なら、出口の 側へ 1マス ずらす
+			// （真上に 重なると「蓄音機を 調べろ」に 見える）
+			const f = this.field;
+			const blocked = (cx: number, cy: number): boolean =>
+				!f?.tileAt(cx, cy).passable || !!f.blockerAt(cx, cy, p)?.still;
+			if (!isDiagonal(dir) && blocked(p.x + ux, p.y + uy)) {
+				const sx = ux === 0 ? Math.sign(ex - p.x) || 1 : 0;
+				const sy = uy === 0 ? Math.sign(ey - p.y) || 1 : 0;
+				if (!blocked(p.x + ux + sx, p.y + uy + sy)) {
+					x += sx * TILE;
+					y += sy * TILE;
+				}
+			}
 		}
-		const bob = Math.sin(this.time / 160) * 2;
-		g.save();
-		g.translate(x + Math.cos(ang) * bob, y + Math.sin(ang) * bob);
-		g.rotate(ang);
-		g.scale(1.4, 1.4);
-		g.beginPath();
-		g.moveTo(6, 0);
-		g.lineTo(-3, -5);
-		g.lineTo(-3, -2);
-		g.lineTo(-7, -2);
-		g.lineTo(-7, 2);
-		g.lineTo(-3, 2);
-		g.lineTo(-3, 5);
-		g.closePath();
-		g.fillStyle = "#ffd75e";
-		g.strokeStyle = "#3a2600";
-		g.lineWidth = 1;
-		g.fill();
-		g.stroke();
-		g.restore();
+		// 1画素ずつ 前後に はねる（0→1→2→1）
+		const bob = [0, 1, 2, 1][Math.floor(this.time / 140) % 4];
+		const cx = Math.round(x + DX[dir] * bob);
+		const cy = Math.round(y + DY[dir] * bob);
+		// 上向き・右上向きの 絵を 90度ずつ まわす（まんなかが 0）
+		const art = isDiagonal(dir) ? GUIDE_ARROW_UR : GUIDE_ARROW_UP;
+		const turns = Math.floor(dir / 2);
+		for (let r = 0; r < art.length; r++) {
+			const row = art[r];
+			for (let i = 0; i < row.length; i++) {
+				const col = GUIDE_COLORS[row[i]];
+				if (!col) continue;
+				let u = i - 5;
+				let v = r - 5;
+				for (let k = 0; k < turns; k++) [u, v] = [-v, u];
+				g.fillStyle = col;
+				g.fillRect(cx + u, cy + v, 1, 1);
+			}
+		}
 	}
 
 	// ───────────────── スクリプト ─────────────────
@@ -993,10 +1099,7 @@ export class Village {
 		if (this.scriptDepth > 0 || !this.running) return;
 		this.msg.close();
 		// カメラを 人や 建物に 向けたままなら キリコへ もどす
-		if (this.lookAt !== null) {
-			this.lookAt = null;
-			this.easing = true;
-		}
+		if (this.lookAt !== null) this.panTo(null);
 		if (this.exitChoice) {
 			await this.leave(this.exitChoice);
 			return;
@@ -1190,15 +1293,14 @@ export class Village {
 				if (a === this.player) this.syncState();
 			},
 			look: async (target, opt) => {
-				this.lookAt = target;
 				if (opt?.instant) {
-					this.easing = false;
+					this.lookAt = target;
+					this.pan = null;
 					this.updateCamera();
-					this.easing = target !== null;
 					return;
 				}
-				this.easing = true;
-				await sleep(450);
+				// 着いてから 少し 止めて 見せる（近くても 前と 同じ 0.45秒は 待つ）
+				await sleep(Math.max(450, this.panTo(target) + 150));
 			},
 			face: (target, dir) => {
 				const a = this.actorFor(target);
