@@ -68,7 +68,7 @@ export const bookText = (
 				desc: "見ているだけ。近づくと　逃げる。もう　戦わない。手を　振れば　手を　振り返す",
 				flavor: "書きこんだのは　1度だけ。「見てた」",
 			}
-		: { desc: d.desc, flavor: bookText(d).flavor };
+		: { desc: d.desc, flavor: d.flavor };
 
 /** 一覧の 絵の 大きさ（2倍）。 */
 const ROW_PX = 32;
