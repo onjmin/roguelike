@@ -88,6 +88,13 @@ export type Dungeon = {
 	unlockAfterAll?: readonly DungeonId[];
 	/** 開くには この 旗（Progress.flags）も 要る（跡地：ROM専の 声を 録ったまま 持ち帰った）。 */
 	unlockFlag?: string;
+	/** 開くまで 全体マップにも 一覧にも 出さない（？？？ の 影も 出さない。裏シナリオの 小島 2・3・灯台・避難J）。 */
+	hidden?: true;
+	/**
+	 * 開いても 知らせない。全体マップでは 建物の かわりに 小舟が つくだけで、行って はじめて 板だと わかる
+	 * （裏シナリオの 入口の 小島1：「あの 小島、何だろう」で 見つける）。
+	 */
+	quiet?: true;
 	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く。 */
 	reliefAfter: number | null;
 	/** 自然回復の 刻み（balance.ts の REGEN_STEP の 代わり。小さいほど はやい）。 */
@@ -595,12 +602,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	opunu: {
 		id: "opunu",
 		objective: "fetch",
+		hidden: true,
+		noCarry: true,
 		// のんびりした 板：ROM専と ぷゆゆが 多め。乗っ取り屋は 板だけの 敵（data/monsters.ts の board）
 		foes: { funamushi: 2, tousuko: 1.5, tensai: 0 },
 		floors: 20,
 		items: OPUNU_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(20, 27, 1.5),
+		// 裏は 本筋（風呂板 27）より むずかしく
+		level: ramp(20, 30, 1.5),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -620,17 +630,21 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	isle1: {
 		id: "isle1",
 		objective: "fetch",
+		// 入口：パン板を 持ち帰ると 開くが 知らせない。地図の 南西の 小島に 小舟が つく（ui/worldMap.ts）
+		quiet: true,
+		// 裏は 本筋より むずかしい：小舟で わたる（倉庫の 道具は 持ちこめない）・底が 高い・のろいも 祭りも ある
+		noCarry: true,
 		// 夏に 立てた 板：夏休みキッズ 多め。乗っ取り屋は 1階から
 		foes: { bat: 2, pitcher: 0 },
 		floors: 6,
 		items: ISLE1_ITEMS,
-		perFloor: [5, 8],
-		level: ramp(6, 5),
+		perFloor: [4, 7],
+		level: ramp(6, 7),
 		unidentified: ["herb", "staff"],
-		curses: false,
+		curses: true,
 		start: ["f_large"],
 		goal: "memo1",
-		houses: null,
+		houses: { from: 4, chance: 1 / 6, early: null },
 		trapsFrom: 3,
 		// パン板の あと（きのこ板と 並んで 開く。裏の 分岐は 序盤）
 		unlockAfter: "shallow",
@@ -641,12 +655,14 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	isle2: {
 		id: "isle2",
 		objective: "fetch",
+		hidden: true,
+		noCarry: true,
 		// 夜中に 立てた 板：寝落ち民が 多く、敵も 眠りがち。すこし 過疎
 		foes: { neochi: 2.5, bat: 0 },
 		floors: 9,
 		items: ISLE_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(9, 12, 2),
+		level: ramp(9, 14, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -660,13 +676,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	isle3: {
 		id: "isle3",
 		objective: "fetch",
+		hidden: true,
+		noCarry: true,
 		// 鯖代が 切れかけた 板：道具が 少ない。乗っ取り屋が 多い
 		foes: { hijacker: 2 },
 		floors: 13,
 		items: ISLE_ITEMS,
 		// 道具は 少なめ（鯖代切れ）だが、[3, 5] だと ボットの 2割が 飢え死にした（2026-10-07）。底も おんたこ（19）より 低く
-		perFloor: [4, 6],
-		level: ramp(13, 17),
+		perFloor: [4, 5],
+		level: ramp(13, 19),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -689,7 +707,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 30,
 		items: DEEP_ITEMS,
 		perFloor: [5, 8],
-		level: ramp(30, 30, 1.3),
+		// 裏は 本筋（電池板 30）より むずかしく
+		level: ramp(30, 33, 1.3),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -708,11 +727,13 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	hinan: {
 		id: "hinan",
 		objective: "fetch",
+		hidden: true,
+		noCarry: true,
 		foes: { funamushi: 1.5, ksk: 2 },
 		floors: 25,
 		items: ISLE_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(25, 28, 1.5),
+		level: ramp(25, 30, 1.5),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],

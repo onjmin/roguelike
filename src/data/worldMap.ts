@@ -87,7 +87,8 @@ export type BuildingKind =
 	| "well"
 	| "lighthouse"
 	| "islet"
-	| "tent";
+	| "tent"
+	| "boat";
 
 export type ColonySpot = {
 	/** 置かれている サーバー。 */

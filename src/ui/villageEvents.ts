@@ -39,6 +39,7 @@ import {
 	DUNGEON_NAMES,
 	HOSHU_SIGN,
 	LIGHTHOUSE_DOOR,
+	QUIET_SPOT,
 	ROM_COUNT,
 	STORY,
 } from "../data/story";
@@ -385,8 +386,14 @@ const mouthScript =
 			// 開いた 板が 1つだけなら 押しまちがいは 起きない（選んだ＝行く。はじめての 人の 押す 回数を へらす）
 			if (open.length === 1) break;
 			// 問いの 窓は 出さず、選ぶ 窓だけ（行き先は 地図の 札に 出ている。押す 回数を 1つ へらす）
+			// 静かな 板（裏シナリオの 入口の 小島）は 行くまで 名前を 出さない（QUIET_SPOT）
+			const quiet = DUNGEONS[d].quiet && !loadProgress().intro.includes(d);
 			const ok = await s.choose(
-				[`${DUNGEON_NAMES[d].name}へ　行く`, "えらびなおす", "やめる"],
+				[
+					quiet ? QUIET_SPOT.go : `${DUNGEON_NAMES[d].name}へ　行く`,
+					"えらびなおす",
+					"やめる",
+				],
 				{ cancel: 1 },
 			);
 			if (ok === 2) {

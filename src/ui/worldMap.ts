@@ -9,7 +9,7 @@ import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import type { DungeonId } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
 import { eventText, goalText, type ObjectiveInfo } from "../data/objectives";
-import { DUNGEON_NAMES, ISLE_NAMES } from "../data/story";
+import { DUNGEON_NAMES, ISLE_NAMES, QUIET_SPOT } from "../data/story";
 import {
 	type BuildingKind,
 	COLONY_SPOTS,
@@ -20,6 +20,7 @@ import {
 	VILLAGE_PT,
 } from "../data/worldMap";
 import { loadImage } from "../engine/assets";
+import { loadProgress } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import type { Dir } from "../engine/types";
 import type { Ctx } from "./ctx";
@@ -347,6 +348,15 @@ export const drawBuilding = (
 			r(3, -11, 3, 1, "#b82a1e");
 			break;
 		}
+		case "boat": {
+			// 小舟（裏シナリオの 入口の 目印。だれも 乗っていない。波で 上下する）
+			const bob = Math.floor(t / 500) % 2;
+			r(-5, -3 - bob, 10, 2, "#8a5a2a");
+			r(-4, -1 - bob, 8, 1, "#6a4020");
+			r(-3, -4 - bob, 6, 1, "#b08050");
+			r(2, -8 - bob, 1, 6, "#d8c8a0");
+			break;
+		}
 		case "tent": {
 			// 避難所の テント（三角の 幕と ランプ。だれも いない）
 			for (let i = 0; i < 9; i++)
@@ -490,9 +500,21 @@ export class MapView {
 		];
 	}
 
+	/** 行った ことの ある 板（はじめの 語りを 見た）。静かな 板は 行くまで 小舟の まま。 */
+	visited(): readonly DungeonId[] {
+		return loadProgress().intro;
+	}
+
 	/** フキダシの 中身（名前と 階・向き・ボス・期間限定。まだ 開いていなければ ？？？）。 */
 	say(d: DungeonId): void {
 		const open = this.open.includes(d);
+		if (DUNGEONS[d].quiet && open && !this.visited().includes(d)) {
+			this.bubble.innerHTML = `<b>？</b><small>${QUIET_SPOT.bubble}</small>`;
+			this.bubble.classList.remove("locked", "pop");
+			void this.bubble.offsetWidth;
+			this.bubble.classList.add("pop");
+			return;
+		}
 		const n = DUNGEON_NAMES[d];
 		const g = this.goals[d];
 		const boss = g?.objective === "boss" ? "・ボス" : "";
@@ -538,8 +560,10 @@ export class MapView {
 			for (let x = (y * 7 + shift) % 13; x < MAP_W; x += 13)
 				if (!onLand(x, y) && !onLand(x + 2, y) && hash(x - shift, y) < 0.5)
 					g.fillRect(x, y, 3, 1);
-		// 開いた 植民地への 道
-		for (const d of this.open) drawRoad(g, pathOf(d));
+		// 開いた 植民地への 道（静かな 板は 行って はじめて 道が つく）
+		for (const d of this.open)
+			if (!(DUNGEONS[d].quiet && !this.visited().includes(d)))
+				drawRoad(g, pathOf(d));
 		// 建物（まだ 開いていない 植民地は 影だけ）
 		const [vx, vy] = VILLAGE_PT;
 		// 村の 絵は 道の 出口（キリコの 立つ 所）の 左上に
@@ -551,7 +575,14 @@ export class MapView {
 		for (const d of DUNGEON_IDS) {
 			const [x, y] = spotOf(d);
 			const open = this.open.includes(d);
-			if (DUNGEONS[d].secret) continue;
+			const dg = DUNGEONS[d];
+			// 隠しの 板と、開くまで 出さない 板（裏シナリオ）は 影も ？ も 出さない
+			if (dg.secret || (dg.hidden && !open) || (dg.quiet && !open)) continue;
+			// 静かな 板（入口の 小島）：行くまでは 建物の かわりに 小舟が ついている だけ
+			if (dg.quiet && !this.visited().includes(d)) {
+				drawBuilding(g, "boat", x + 9, y + 3, 1, t);
+				continue;
+			}
 			drawBuilding(g, COLONY_SPOTS[d].building, x, y, 1, t, !open);
 			if (!open) {
 				g.fillStyle = "rgba(255,255,255,0.7)";
@@ -611,6 +642,15 @@ export class MapView {
 		const n = DUNGEON_NAMES[d];
 		const open = this.open.includes(d);
 		const dg = DUNGEONS[d];
+		if (dg.quiet && open && !this.visited().includes(d)) {
+			this.panel.innerHTML =
+				`<div class="wm-name">${QUIET_SPOT.name}</div>` +
+				`<div class="wm-desc">${QUIET_SPOT.desc}</div>` +
+				(this.carryMax > 0
+					? `<div class="wm-carry no">持ちこみ：できない（小舟に　荷物は　のらない）</div>`
+					: "");
+			return;
+		}
 		const star = this.cleared.includes(d) ? "　★" : "";
 		const g = this.goals[d];
 		this.panel.innerHTML = open
@@ -709,12 +749,19 @@ export const pickColony = async (
 	}
 	// 地図に 出る 植民地（隠しの 板は 出さない。過去ログの底は 村の 井戸から）と、さいごに やめる。
 	// 目的を 1度でも はたした 板には 地図・札と 同じく ★
-	const spots = DUNGEON_IDS.filter((d) => !DUNGEONS[d].secret);
+	// 開くまで 出さない 板（裏シナリオ）は 一覧にも 出さない。静かな 板は 行くまで「南西の 小島」
+	const spots = DUNGEON_IDS.filter((d) => {
+		const dg = DUNGEONS[d];
+		const open = o.open.includes(d);
+		return !dg.secret && !(dg.hidden && !open) && !(dg.quiet && !open);
+	});
 	const labels = [
 		...spots.map((d) =>
-			o.open.includes(d)
-				? `${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`
-				: "？？？",
+			!o.open.includes(d)
+				? "？？？"
+				: DUNGEONS[d].quiet && !v.visited().includes(d)
+					? QUIET_SPOT.label
+					: `${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`,
 		),
 		"やめる",
 	];
@@ -917,8 +964,13 @@ export const travelTo = async (
 		beforeClose?: () => Promise<void>;
 	},
 ): Promise<void> => {
-	const v = o.view ?? new MapView(ctx, DUNGEON_NAMES[d].name);
-	v.setTitle(DUNGEON_NAMES[d].name);
+	// 静かな 板へ はじめて 向かう ときは 名前を 出さない（着いた 札で わかる）
+	const title =
+		DUNGEONS[d].quiet && !loadProgress().intro.includes(d)
+			? QUIET_SPOT.title
+			: DUNGEON_NAMES[d].name;
+	const v = o.view ?? new MapView(ctx, title);
+	v.setTitle(title);
 	v.bubble.innerHTML = "";
 	v.open = o.open;
 	v.cleared = o.cleared;

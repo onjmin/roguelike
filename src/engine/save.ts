@@ -527,7 +527,8 @@ export const noteRunEnd = (
 	const unlock = (id: DungeonId, reason: ProgressNews["reason"]) => {
 		if (p.unlocked.includes(id)) return;
 		p.unlocked.push(id);
-		p.news.push({ dungeon: id, reason });
+		// 静かな 板（裏シナリオの 入口）は 知らせない：地図の 小舟に 気づいて 行く
+		if (!DUNGEONS[id].quiet) p.news.push({ dungeon: id, reason });
 	};
 	if (kind === "clear") {
 		if (!p.cleared.includes(dungeon)) p.cleared.push(dungeon);

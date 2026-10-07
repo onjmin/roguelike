@@ -1881,25 +1881,66 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 				late.every((p) => p.who !== "nanj"),
 			`the late arrival is wrong:\n${late.map((p) => p.text).join("\n")}`,
 		);
-		// 開いた 知らせ：小島1（起。やきうの おーぷぬの 話と 本館の 奥の 古い スレ）と 灯台（扉の 鍵）
+		// 入口は 知らせない：パン板を 持ち帰ると 小島1 は 開くが 知らせは 無く（地図の 小舟で 見つける）、
+		// きのこ板の 知らせだけ。やきうの おーぷぬの 話は 小島1 の 持ち帰りの 語りで
 		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify({
-				unlocked: all,
-				cleared: ["shallow"],
+				unlocked: ["shallow"],
+				cleared: [],
 				fails: {},
-				intro: all,
-				news: [{ dungeon: "isle1", reason: "clear" }],
+				intro: ["shallow"],
+				news: [],
 				endings: [],
 			}),
 		);
-		const news = fakeStory();
-		await newsScript(news.s);
+		noteRunEnd("shallow", "clear", "quiet-1", null);
+		const after = loadProgress();
 		ok(
-			news.log.some((l) => l.includes("おーぷぬ、知っとるか")) &&
-				news.log.some((l) => l.includes("古い　スレ")) &&
-				news.log.some((l) => l.includes("「ひまわり諸島」に")),
-			`the isle1 news is wrong:\n${news.log.join("\n")}`,
+			after.unlocked.includes("isle1") &&
+				after.unlocked.includes("kinoko") &&
+				!after.news.some((n) => n.dungeon === "isle1") &&
+				after.news.some((n) => n.dungeon === "kinoko"),
+			`the entry isle is announced or closed: ${JSON.stringify(after.news)} ${after.unlocked.join()}`,
+		);
+		ok(
+			DUNGEONS.isle1.quiet === true &&
+				!DUNGEONS.isle1.hidden &&
+				!!DUNGEONS.isle2.hidden &&
+				!!DUNGEONS.isle3.hidden &&
+				!!DUNGEONS.opunu.hidden &&
+				!!DUNGEONS.hinan.hidden,
+			"the hidden route shows up on the map before it is found",
+		);
+		ok(
+			STORY.isle1.intro.some((p) => p.includes("小舟")) &&
+				STORY.isle1.ending.some((p) =>
+					p.text.includes("おーぷぬ、知っとるか"),
+				) &&
+				STORY.isle1.ending.some((p) => p.text.includes("古い　スレ")),
+			"the entry isle does not explain itself on arrival / return",
+		);
+		// 裏は 本筋より むずかしい：どの 板も 倉庫の 道具を 持ちこめない。底の 強さも 本筋の 対より 上
+		ok(
+			(["isle1", "isle2", "isle3", "opunu", "ato", "hinan"] as const).every(
+				(d) => DUNGEONS[d].noCarry === true,
+			),
+			"a hidden-route board lets storage items in",
+		);
+		const top = (d: DungeonId) => DUNGEONS[d].level[DUNGEONS[d].floors];
+		ok(
+			top("isle1") > top("kinoko") &&
+				top("isle2") > top("tropical") &&
+				top("isle3") >= top("konamono") &&
+				top("opunu") > top("main") &&
+				top("ato") > top("deep"),
+			`the hidden route is not harder: ${["isle1", "kinoko", "isle2", "tropical", "isle3", "konamono", "opunu", "main", "ato", "deep"].map((d) => `${d}=${top(d as DungeonId)}`).join(" ")}`,
+		);
+		// 小舟の 視線誘導：パン板の あとの ひとことに 小舟が 出る。切れはし「板 立てたわ」も パン板の あと
+		ok(
+			CLEAR.shallow.some((l) => l.text.includes("小舟")) &&
+				SCRAPS.some((x) => x.id === "jibun" && x.board === "shallow"),
+			"no nudge toward the boat after パン板",
 		);
 		localStorage.setItem(
 			PROGRESS_KEY,

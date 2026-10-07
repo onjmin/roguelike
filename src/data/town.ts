@@ -231,9 +231,38 @@ export const ARRIVE_MSG = "{names}が、村に　越してきた。";
 export const CARRY_CHASE = "シヨが　追いかけてきた。";
 
 export const CARRY_REFUSE: Record<
-	"deep" | "tropical" | "hidden" | "ato",
+	| "deep"
+	| "tropical"
+	| "hidden"
+	| "ato"
+	| "isle1"
+	| "isle2"
+	| "isle3"
+	| "opunu"
+	| "hinan",
 	Line
 > = {
+	// 裏シナリオの 板へは 小舟で わたる（荷物は のらない：裏は 本筋より むずかしく）
+	isle1: q(
+		"shiyo",
+		"小島へは　小舟でしょ。荷物は　のらない。\n……あたすが　預かるわ",
+	),
+	isle2: q(
+		"shiyo",
+		"また　小舟？　荷物は　のらないって\n言ったでしょ。あたすが　預かる",
+	),
+	isle3: q(
+		"shiyo",
+		"小舟に　荷物は　のらないの。\n……三度目よ。あたすが　預かる",
+	),
+	opunu: q(
+		"shiyo",
+		"灯台へも　小舟なのね。\n荷物は　のらない。……気を　つけなさいよ",
+	),
+	hinan: q(
+		"shiyo",
+		"避難Jへは　沖まで　小舟よ。\n荷物は　のらない。あたすが　預かるわ",
+	),
 	// 野球chの 跡地（本館の 床下。裏シナリオ）
 	ato: q(
 		"shiyo",

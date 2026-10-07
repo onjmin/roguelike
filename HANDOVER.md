@@ -4,6 +4,8 @@
 
 ## 入れた もの
 
+- **入口は 見つける（2026-10-07 作りなおし）**：小島1（`isle1`）は パン板を 持ち帰ると 開くが `quiet`（知らせない。`noteRunEnd` が news を 積まない）。全体マップでは 行くまで 建物の かわりに 小舟（`drawBuilding` の `boat`）が つき、一覧の 名前・札・フキダシ・口の 確認・向かう 題は `QUIET_SPOT`（`data/story.ts`）。行った かどうかは `Progress.intro`。小島 2・3・灯台・避難J は `hidden`（開くまで 地図にも 一覧にも 出ない）。視線誘導は `CLEAR.shallow` の 小舟の ひとこと 2つと、切れはし「板　立てたわ」（パン板）。やきうの おーぷぬの 説明は 小島1 の 持ち帰りの 語りへ 移した。
+- **難しさ**：裏の 板は ぜんぶ `noCarry`（`CARRY_REFUSE` に 小舟の 文）、底の 強さは 本筋の 対より 上（`villageTests` の「裏シナリオ」で 見張る）。
 - **分岐は パン板の あと**：小島1（`isle1`）が きのこ板と 並んで 開く。小島は `isle1 → isle2 → isle3` と つづき、3つ そろうと 灯台（`opunu`。`unlockAfterAll`）。跡地（`ato`。`unlockAfterAll: ["opunu"]` ＋ `unlockFlag: "romVoice"`）、避難J（`hinan`。`unlockAfterAll: ["deep", "ato"]`）。開く 条件は `core/data/dungeons.ts` の `openable`（`engine/save.ts` の `noteRunEnd`・`loadProgress` が 使う）。
 - **ROM専の 声**：`noteRunEnd(dungeon, kind, seed, voice)` に 蓄音機の 中身（`RunState.voice`）が 渡る。持ち帰りで `funamushi` なら `Progress.flags` に `romVoice`。
 - **灯台の 扉の パスワード**：村の 口で 灯台を 選ぶと 4択（`ui/villageEvents.ts` の `passwordScript`。文と 答えは `data/story.ts` の `LIGHTHOUSE_DOOR`。当てると `Progress.flags` の `pass`）。
