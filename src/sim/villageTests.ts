@@ -676,6 +676,8 @@ test("寄り道の 板が 開く：その 板の 名無しが 口から 来て �
 		const gate = exitFor("kinoko").cell.join(",");
 		ok(
 			inOrder(log, [
+				// show で 生まれさせてから 口に 置く（旗だけでは 場面の 中で 生まれない）
+				"show visitor",
 				`place visitor ${gate}`,
 				"look visitor",
 				...lines
@@ -1588,8 +1590,11 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 			"the news was lost when the tab closed",
 		);
 		// 開きなおして 最後まで（出口を 見て 話す。村の 見た目は 変わらない。話す 仲間は そばに いる）
+		// 北の 出口から 出てきた ところ（出口が 近い）：出口を 見てから 話す
+		const [ex0, ey0] = VILLAGE_SPOTS.exit;
 		const { s, log } = fakeStory({
 			near: ["roze", "shiyo", "feris", "zero", "nanj"],
+			at: [ex0, ey0 + 1],
 		});
 		await newsScript(s);
 		const exit = `look ${VILLAGE_SPOTS.exit.join(",")}`;
@@ -1612,12 +1617,13 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 			[{ dungeon: "deep", reason: "clear" }],
 			["shallow", "main"],
 		);
+		// 蓄音機の 前（出口が 遠い）：そばで 話しおえてから 出口を 見せて「もぐれる」
 		const deep = fakeStory();
 		await newsScript(deep.s);
 		ok(
 			inOrder(deep.log, [
-				exit,
 				...UNLOCK_LINES.deep.map((l) => `say ${l.who}: ${l.text}`),
+				exit,
 				"narrate: 「電池板」に\nもぐれるように　なった",
 			]),
 			`the 電池板 news is out of order:\n${deep.log.join("\n")}`,
@@ -2037,6 +2043,15 @@ test("小段が 上がると 住人が 越してくる：暗転・建て直し�
 				"look kiriko",
 			]),
 			`nichie did not move in:\n${log.join("\n")}`,
+		);
+		// show の あとで 口に 置く（先に 置くと show が 持ち場に 生まれさせて、歩いて こなかった）
+		const shown = log.lastIndexOf("show mob_nichie");
+		const placed = log
+			.map((l) => l.startsWith("place mob_nichie "))
+			.lastIndexOf(true);
+		ok(
+			shown >= 0 && placed > shown,
+			`nichie is placed at the gate before she is shown:\n${log.join("\n")}`,
 		);
 		// 小段が かわらなければ 何も しない
 		putTown({

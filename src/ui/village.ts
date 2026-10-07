@@ -1299,8 +1299,10 @@ export class Village {
 					this.updateCamera();
 					return;
 				}
-				// 着いてから 少し 止めて 見せる（近くても 前と 同じ 0.45秒は 待つ）
-				await sleep(Math.max(450, this.panTo(target) + 150));
+				// 着いてから 少し 止めて 見せる（近くても 前と 同じ 0.45秒は 待つ）。所（建った 所・出口）は
+				// 見て わかるまで 長めに、人は すぐ 歩きだす ことが 多いので 短く
+				const hold = Array.isArray(target) ? 450 : 150;
+				await sleep(Math.max(450, this.panTo(target) + hold));
 			},
 			face: (target, dir) => {
 				const a = this.actorFor(target);

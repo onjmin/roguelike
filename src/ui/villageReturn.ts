@@ -435,7 +435,10 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 	const lines = UNLOCK_VISIT[d] ?? [];
 	const gate = exitFor(d).cell;
 	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	// 旗を 立てただけでは 生まれない（when は 見なおされない）。show で 生まれさせてから 口に 置く
+	// （旗だけだと 来客が 出ず、カメラも 見る 先が なかった）
 	s.set("visitor");
+	s.show("visitor");
 	s.place("visitor", gate[0], gate[1]);
 	await s.look("visitor");
 	if (to) {
@@ -449,6 +452,7 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 			await s.wait(0);
 			await s.goto("visitor", gate[0], gate[1], { speed: 1.4 });
 			s.set("visitor", false);
+			s.hide("visitor");
 		}
 		if (l.who === "visitor") await s.say("nanj", l.text, { name: "名無し" });
 		else await s.narrate(l.text);
@@ -626,13 +630,19 @@ export const newsScript = async (s: Story): Promise<void> => {
 		const lines = UNLOCK_LINES[key]
 			.filter((l) => !away.includes(l.who) && !mentionsAway(l.text, away))
 			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
-		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）
-		await s.look(VILLAGE_SPOTS.exit);
-		// たおれて 蓄音機の 前に いるとき（relief）など、出口が キリコから 遠ければ 見せてから キリコに もどして 話す
+		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）。出口が キリコから 遠ければ
+		// （たおれて 蓄音機の 前に いる relief など）そばの 仲間が 話しおえてから 出口を 見せて「もぐれる」の 1行
+		// （見せてから すぐ もどって 話すと、出口が 一瞬しか 映らなかった）
 		const [ex, ey] = VILLAGE_SPOTS.exit;
-		if (Math.max(Math.abs(s.state.x - ex), Math.abs(s.state.y - ey)) > 3)
-			await s.look(null);
+		const far =
+			Math.max(Math.abs(s.state.x - ex), Math.abs(s.state.y - ey)) > 3;
+		if (!far) await s.look(VILLAGE_SPOTS.exit);
 		for (const l of lines) await s.say(l.who, l.text);
+		if (far) {
+			// 立ち絵が 出口を 隠さないように 窓を しまってから
+			await s.wait(0);
+			await s.look(VILLAGE_SPOTS.exit);
+		}
 		doneProgressNews(n);
 		s.se("chapter");
 		await s.narrate(
@@ -801,8 +811,9 @@ const walkIn = async (
 	to: readonly [number, number],
 ): Promise<void> => {
 	const [gx, gy] = gateNear(to);
-	s.place(ev, gx, gy);
+	// show で 生まれさせてから 口に 置く（先に 置くと show が 持ち場に 生まれさせて、歩いて こなかった）
 	s.show(ev);
+	s.place(ev, gx, gy);
 	await s.look(ev);
 	await s.goto(ev, to[0], to[1], { speed: 1.3 });
 };
@@ -872,12 +883,13 @@ const stageUp = async (
 	}
 	for (const l of lines) await s.say(l.who, l.text);
 	if (hallLine) {
-		// 本館を 見せてから、話す 人が 本館の 前まで 歩いていって 言う（カメラが ついていく）
+		// 本館を 見せて、話す 人が 本館の 前まで 歩いてきて 言う（カメラは 本館に 置いたまま、人が 画面に 入ってくる。
+		// 人に カメラを つけると 本館が 一瞬しか 映らず、建った 本館を 背に 行ったり 来たり した）
+		await s.wait(0);
 		await s.look(VILLAGE_SPOTS.hallLook);
 		const [door] = VILLAGE_SPOTS.hallDoors;
 		const [front] = spotsAround(villageView(), 1, [door[0], door[1] + 1]);
 		if (front) {
-			await s.look(hallLine.who);
 			await s.goto(hallLine.who, front[0], front[1], { speed: 1.4 });
 			s.face(hallLine.who, "up");
 		}
