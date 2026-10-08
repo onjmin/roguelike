@@ -403,7 +403,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "zukan",
 				when: (x) => x.seen.includes("tousuko"),
 				lines: [
-					m("フェリスちゃんの　ずかんに、\nぼくちん　のってたゆ🥺"),
+					m("本館の　ずかんに、\nぼくちん　のってたゆ🥺"),
 					m("「よちよち　あるく」って。\n……よちよち　ちてないゆ🥺"),
 					b(
 						{ k: "walk", to: [17, 23] },
@@ -1053,11 +1053,11 @@ export const MOBS: Record<MobId, MobDef> = {
 				],
 			},
 			{
-				// ぷゆゆと フェリスの 図鑑の 話（puyu:zukan）を 聞いたあと。ぷゆゆは ここまで 来ない
+				// ぷゆゆの 図鑑の 話（puyu:zukan）を 聞いたあと。ぷゆゆは ここまで 来ない
 				key: "puyu",
 				when: (x) => x.talked.includes("puyu:zukan"),
 				lines: [
-					m("フェリスちゃんの　図鑑に\nのってる　子が　いるンゴねぇ……"),
+					m("本館の　図鑑に\nのってる　子が　いるンゴねぇ……"),
 					n("ンゴ姉は　じぶんの　ほっぺを\nそっと　ふくらませてみた。"),
 				],
 			},
