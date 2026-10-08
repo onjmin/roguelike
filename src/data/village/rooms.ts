@@ -4,6 +4,8 @@
 //
 // 部屋の 形は 本館と 同じ（上に 天井 # と 壁 2段 H h、下の 壁に 出口の マット D が 2マス）。
 // 壁に かけた 物は 壁の 下段に 見えない イベントを 置き、1つ下の 床から 上を 向いて 調べる。
+// 2マスの 高さの 物（本棚・植木鉢・トルソー など）は 上の マスに はみ出して 手前に 描くので、
+// その 真上の マスには 物を 置かない（はみ出しに かくれる。src/sim/villageTests.ts で 調べる）。
 // 入り方：
 //   喫茶・小屋  村の 扉を 踏む（前で A でも）。出ると 扉の 1つ下（下を 向く）。
 //   常識堂・倉庫  店番（ロゼ・シヨ）に 話しかけて「奥へ」。扉は 台の うしろなので、出ると 台の 前の 通り（上を 向く）。
@@ -11,6 +13,7 @@
 // 音楽室「ピアノ機能」（町の 段3 から。南の 池の そば。開くのは 週末だけ）
 //   おーぷんの 消えた 機能（kome の 週末限定の ピアノ）を 供養する 部屋。ピアノで 村の 曲を 選んで 鳴らせる。
 //   字：7 8 9 / 1 2 3  赤い ステージ   P p ピアノ   L スピーカー   n 客席の いす（通れる）   m 供養の 札
+//       e 拍手の はり紙   d 楽屋の 扉   f スタンド花   B 楽譜の 棚   t 物販の 机
 //
 // 銭湯「ゆ」（町の 段4 から。南東の 池の そば。人と 会話は ui/bath.ts）
 //   下が 入口（番台）、のれんの 先が 脱衣所、戸の 先が 浴室。左が 男湯・右が 女湯で、まんなかの 仕切りの 上に 番台。
@@ -19,6 +22,8 @@
 //   字：~ 湯   . 洗い場の タイル   | 浴室の 仕切り（壁ごしに 話せる）   I 脱衣所の 仕切り   Q 富士山の 壁画
 //       k 鏡と 蛇口   o 桶   s 浴室の 戸（通れる）   , 脱衣所の 床   L ロッカー   c 脱衣かご   M 牛乳の 冷蔵庫
 //       N n のれん（男湯・女湯。通れる）   b 番台の 席   B 番台（台ごしに 話す）   : 入口の 土間
+//       m 浴室の はり紙   P 料金表   C マッサージ椅子   G 下駄箱   e 消火器   ( ) 長いす（左・右）
+//   入口（番台より 下）は 男女 いっしょなので、左がわの 物も 調べられる。
 //
 // 喫茶「保守」（町の 段5 から）
 //   左に カウンター（台の うしろに マスター、台の 前に 丸いす）。右に ソファの 席。下に 丸テーブルと ピアノ。
@@ -27,7 +32,8 @@
 //   住人（おんJマイナーズ）は 越してきた 子の なかから 帰りごとに 何人か 来ている（CAFE_PATRON_SPOTS）。
 //   字：b 酒棚（壁の 下段。瓶は ui/cafe.ts の decor が 描く）  A 杯の 看板  m 品書き  k 柱時計  Q 絵
 //       [ = ]  カウンター（台ごしに マスターと 話す）  U 樽  s S ソファ  t 低い 机  n 丸いす（通れる）
-//       O 白い 丸テーブル  P p ピアノ  F 観葉植物
+//       O 白い 丸テーブル  P p ピアノ  F 観葉植物  r 開店の 日の 写真  e サイン色紙  B 漫画の 棚
+//       R 入口の そばの レジ（席・グラスの 置き場とは 重ならない 空きマスだけ）
 //
 // 本屋（町の 段3〜5。広場の 西）→ 図書館（段6 から。同じ 所に 建てかえ）
 //   ことばの 辞典（data/glossary.ts）を 立ち読みする 店（売り場では ない。お金を 使う 所は 作らない）。
@@ -115,71 +121,76 @@ const ROWS: Record<RoomId, readonly string[]> = {
 	cafe: [
 		"####################",
 		"#HHWHHAHHHWHHHQHHWH#",
-		"#bbbbbbhmhhhkhhhhhh#",
+		"#bbbbbbhmrhhkhhehhh#",
 		"#......U..sS.F..sS.#",
 		"#[=====]..tt....tt.#",
 		"#nnnnnnn...........#",
 		"#..................#",
 		"#..................#",
-		"#Pp...nOn..nOn.sS..#",
+		"#Pp...nOn..nOn.sS.B#",
 		"#..............tt..#",
-		"#F................F#",
+		"#F.........R......F#",
 		"#########DD#########",
 	],
-	// やきうの 小屋：寝床・道具掛け・ラジオ・ストーブ・作業台・釘の 樽。壁に 設計図
+	// やきうの 小屋：寝床・道具掛け・ラジオ・ストーブ・作業台・釘の 樽・薪割り台・薪・水桶・ボールかご。
+	// 壁に ペナント・日めくり・設計図・かえの ユニフォーム
 	hut: [
-		"###########",
-		"#HHWHHHWHH#",
-		"#hhhhmhhhh#",
-		"#Z.R..L.xK#",
-		"#z........#",
-		"#...tt..U.#",
-		"#.........#",
-		"#F.......F#",
-		"####DD#####",
+		"#############",
+		"#HHWHHHHHWHH#",
+		"#hPhhcmhyhhh#",
+		"#Z.R...L..xK#",
+		"#z..........#",
+		"#....tt...U.#",
+		"#...........#",
+		"#.Aw.....go.#",
+		"#F.........F#",
+		"#####DD######",
 	],
-	// 常識堂の 奥：本棚・かまど・流し・麻婆豆腐の 鍋・まかないの 机・仕入れの 箱
+	// 常識堂の 奥：本棚（4つめは 物理）・白衣・かまど・流し・麻婆豆腐の 鍋・調味料の 棚・まかないの 机・
+	// 実験の 机・仕入れの 箱。壁に 式で うまった 黒板と 常識 十か条
 	shop: [
-		"############",
-		"#HHWHHAHWHH#",
-		"#hhhhmhhhhh#",
-		"#BBB..KSu..#",
-		"#..........#",
-		"#.nTTn..xx.#",
-		"#..........#",
-		"#F.......UF#",
-		"####DD######",
+		"###############",
+		"#HWHAH456HHHHW#",
+		"#hhhhh123hhhmh#",
+		"#BBBBw...KSu.y#",
+		"#.............#",
+		"#.nTTn...kk...#",
+		"#.............#",
+		"#.........xxU.#",
+		"#F...........F#",
+		"#####DD########",
 	],
-	// 音楽室「ピアノ機能」：ステージ・ピアノ・スピーカー・客席。壁に 供養の 札
+	// 音楽室「ピアノ機能」：ステージ・スタンド花・楽譜の 棚・ピアノ・スピーカー・客席・物販の 机。
+	// 壁に 拍手の はり紙・供養の 札・楽屋の 扉
 	music: [
 		"##############",
 		"#HHWHHHHHHWHH#",
-		"#hhhhhmhhhhhh#",
-		"#L.789...Pp.L#",
+		"#hehhhmhhhhdh#",
+		"#L.789.fBPp.L#",
 		"#..123.......#",
 		"#............#",
 		"#.nnn...nnn..#",
 		"#............#",
-		"#F..........F#",
+		"#F.......tt.F#",
 		"######DD######",
 	],
 	// 銭湯「ゆ」：上が 浴室、なかが 脱衣所、下が 入口。左が 男湯・右が 女湯
 	bath: [
 		"#################",
 		"#HHHHHHHHHHHHHHH#",
-		"#hhhQhhhhhhhQhhh#",
+		"#hhhQhhhhhhhQhmh#",
 		"#~~~~~~~|~~~~~~~#",
 		"#~~~~~~~|~~~~~~~#",
 		"#.......|.......#",
 		"#ko..ko.|.ok..ok#",
 		"#hhhshhhhhhhshhh#",
-		"#,,,,,,,I,,,,,,,#",
+		"#,,,,,,,IC,,,,,,#",
 		"#LLc,,M,I,M,,cLL#",
 		"#,,,,,,,I,,,,,,,#",
-		"#hhhNhhhbhhhnhhh#",
-		"#:::::::B:::::::#",
+		"#hhhNhhhbhPhnhhh#",
+		"#GG:::::B::::eGG#",
 		"#:::::::::::::::#",
-		"#F:::::::::::::F#",
+		"#F:::::::::()::F#",
 		"#######DD########",
 	],
 	// 本屋：壁ぞいと まんなかに 本棚、平台（新刊）・雑誌の 棚・店番の 机。壁に 監修の はり紙と ポスター、上に 本の 看板
@@ -211,17 +222,19 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#F.....X........F#",
 		"########DD########",
 	],
-	// 倉庫：あずかった 物の 棚・帰ってこない 人の 棚・鍵の 板・帳簿・シヨの 机
+	// 倉庫：あずかった 物の 棚・帰ってこない 人の 棚・替えの メイド服・シヨの 机と いす・壺・袋・掃除機・木箱・樽。
+	// 壁に 鍵の 板・『生きてこそだ』の 額・奥の 扉（段で 金庫の 扉）・あずかり帳・伝言板
 	store: [
-		"############",
-		"#HHHWHHHWHH#",
-		"#hhhhkhhhhm#",
-		"#SsQq.xxUU.#",
-		"#..........#",
-		"#.uu..T.gg.#",
-		"#..........#",
-		"#F........x#",
-		"####DD######",
+		"##############",
+		"#HWHHH()HHH[]#",
+		"#hhhhkhhhvmhh#",
+		"#SsQq...d....#",
+		"#............#",
+		"#.uu..Tn.gg..#",
+		"#...........c#",
+		"#........xxUU#",
+		"#F...........#",
+		"####DD########",
 	],
 };
 
@@ -291,8 +304,11 @@ const BATH_WATER_LOW = "pub:assets/rpg-reze/pond.png#0,72,16,8";
 const PAPER = basePx(32, 1446);
 const WINDOW = basePx(48, 1382);
 const PICTURE = basePx(80, 1446);
-/** 小物（位置微調整用の 行の 絵を 4px 上げて、台の 上に のせる）。 */
-const onTop = (c: number, r: number) => basePx(c * 16, r * 16 + 4);
+/**
+ * 小物（位置微調整用の 行 149〜160 の 絵を、台の 上に のせる）。その 行の 絵は 下はしが r 行の 上から 4〜6px に
+ * あるので、r 行の 8px 上から 切ると 下はしが マスの 下から 2〜4px 上に くる。
+ */
+const onTop = (c: number, r: number) => basePx(c * 16, r * 16 - 8);
 
 /** 銭湯の 仕切りの x（これより 左が 男湯）・番台の 席・男湯の のれん。 */
 export const BATH_WALL = 8;
@@ -460,6 +476,11 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				O: on(base(3, 108)),
 				P: on(base(3, 120, 1, 2)),
 				p: on(base(4, 120, 1, 2)),
+				// 開店の 日の 写真・サイン色紙（壁の 下段）、漫画の 棚、入口の そばの レジ（台の 上）
+				r: low(base(0, 527)),
+				e: low(base(0, 529)),
+				B: on(base(1, 318, 1, 2)),
+				R: on(base(2, 108), basePx(48, 394 * 16 + 2)),
 			};
 		}
 		case "hut":
@@ -470,7 +491,17 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				R: on(base(3, 146, 1, 2)),
 				L: on(base(4, 540)),
 				K: on(base(1, 110, 1, 2)),
-				t: on(base(2, 108), onTop(0, 154)),
+				// 作業台（作りかけの 看板と 小刀）
+				t: on(base(2, 108), onTop(7, 158)),
+				// ペナント・日めくり・かえの ユニフォーム（壁の 下段）
+				P: low(base(4, 118, 1, 2)),
+				c: low(base(5, 313)),
+				y: low(base(1, 349)),
+				// 薪割り台・薪の 山・水桶・ボールかご
+				A: on(base(3, 124)),
+				w: on(base(2, 124)),
+				o: on(base(0, 124)),
+				g: on(base(4, 125)),
 			};
 		case "shop":
 			return {
@@ -480,7 +511,19 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				K: on(base(1, 110, 1, 2)),
 				S: on(base(2, 110, 1, 2)),
 				u: on(base(7, 141)),
-				T: on(base(2, 108), onTop(2, 152)),
+				// まかないの 机（赤い 皿。麻婆豆腐）
+				T: on(base(2, 108), onTop(7, 152)),
+				// 黒板（3マス。壁の 上段 4 5 6・下段 1 2 3 に またがる。テンキーの 並び）
+				"4": up(base(0, 320)),
+				"5": up(base(1, 320)),
+				"6": up(base(2, 320)),
+				"1": low(base(0, 321)),
+				"2": low(base(1, 321)),
+				"3": low(base(2, 321)),
+				// 白衣（トルソー）・調味料の 棚・実験の 机（試験管立て）
+				w: on(base(2, 349, 1, 2)),
+				y: on(base(0, 337, 1, 2)),
+				k: on(base(2, 108), basePx(48, 340 * 16 + 4)),
 			};
 		case "bookstore":
 			return {
@@ -488,9 +531,10 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				A: up(base(6, 96)),
 				k: low(base(5, 90)),
 				B: on(base(3, 104, 1, 2)),
-				T: on(base(2, 108), onTop(2, 152)),
+				// 店番の 机（羽ペンと インク）
+				T: on(base(2, 108), onTop(3, 156)),
 				// 平台（新刊の 山）・雑誌の 棚
-				s: on(base(2, 108), onTop(1, 186)),
+				s: on(base(2, 108), onTop(2, 150)),
 				M: on(base(2, 104, 1, 2)),
 			};
 		case "library":
@@ -499,8 +543,9 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				Q: up(PICTURE),
 				k: low(base(2, 116, 1, 2)),
 				B: on(base(3, 104, 1, 2)),
-				T: on(base(2, 108), onTop(2, 152)),
-				t: on(base(2, 108), onTop(1, 186)),
+				// 司書の 机（まっしろな 貸し出しの 帳面）・読書の 机（読みかけの 本）
+				T: on(base(2, 108), onTop(5, 150)),
+				t: on(base(2, 108), onTop(1, 150)),
 				// 新聞の 棚・目録の 引き出し・返却ポスト
 				R: on(base(2, 104, 1, 2)),
 				C: on(base(0, 104, 1, 2)),
@@ -512,6 +557,12 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				P: on(base(3, 120, 1, 2)),
 				p: on(base(4, 120, 1, 2)),
 				L: on(base(4, 540)),
+				// 拍手の はり紙・楽屋の 扉（壁の 下段）、スタンド花・楽譜の 棚・物販の 机（CD）
+				e: low(base(5, 313)),
+				d: low(base(4, 507, 1, 2)),
+				f: on(base(7, 133)),
+				B: on(base(3, 104, 1, 2)),
+				t: on(base(2, 108), onTop(4, 150)),
 			};
 		case "bath": {
 			const tile = base(3, 48);
@@ -540,25 +591,44 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				b: floor(l.floorColor, l.floor),
 				B: { ...on(base(6, 98)), counter: true },
 				":": floor("#a89878", base(3, 50)),
+				// 料金表（入口の 壁）・マッサージ椅子（脱衣所）
+				P: low(PAPER),
+				C: solid("#c8a86a", base(0, 46), base(4, 116, 1, 2)),
+				// 入口の 下駄箱・消火器・長いす（左・右）
+				G: solid("#a89878", base(3, 50), base(1, 316, 1, 2)),
+				e: solid("#a89878", base(3, 50), base(6, 393)),
+				"(": solid("#a89878", base(3, 50), base(0, 121)),
+				")": solid("#a89878", base(3, 50), base(2, 121)),
 			};
 		}
 		case "store":
 			return {
 				...common,
-				k: low(base(6, 358)),
+				k: low(base(6, 373), base(2, 372)),
 				S: on(base(0, 108, 1, 2)),
 				s: on(base(1, 108, 1, 2)),
 				Q: on(base(0, 108, 1, 2)),
 				q: on(base(1, 108, 1, 2)),
 				T: on(base(2, 108), onTop(6, 154)),
 				g: on(base(0, 125)),
-				// 銀行（段7）：棚は 貸金庫の 引き出し、袋は 金庫
+				// 『生きてこそだ』の 額（壁の 上段 2マス）・伝言板（同じく 2マス）
+				"(": up(base(3, 313)),
+				")": up(base(4, 313)),
+				"[": up(base(5, 509)),
+				"]": up(base(7, 509)),
+				// 替えの メイド服（トルソー）・掃除機
+				d: on(base(4, 349, 1, 2)),
+				c: on(base(5, 393, 1, 2)),
+				// 奥の 扉（物置は 板戸、石の 倉庫は 鉄の 扉）
+				v: low(base(7, stage >= 6 ? 67 : 73, 1, 2)),
+				// 銀行（段7）：棚は 貸金庫の 引き出し、袋は 金庫、奥の 扉は 金庫の 扉
 				...(stage >= 7 && {
 					S: on(base(0, 104, 1, 2)),
 					s: on(base(0, 104, 1, 2)),
 					Q: on(base(0, 104, 1, 2)),
 					q: on(base(0, 104, 1, 2)),
 					g: on(base(6, 123)),
+					v: low(base(2, 92, 1, 2)),
 				}),
 			};
 	}
@@ -576,6 +646,10 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		// ピアノは 右半分から（左の 前は ピアノを 弾く 住人）
 		p: "piano",
 		U: "barrel",
+		r: "photo",
+		e: "autograph",
+		B: "manga",
+		R: "register",
 	},
 	hut: {
 		Z: "bed",
@@ -587,6 +661,13 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		U: "nails",
 		x: "chips",
 		m: "plan",
+		P: "pennant",
+		c: "calendar",
+		y: "uniform",
+		A: "axe",
+		w: "firewood",
+		o: "bucket",
+		g: "balls",
 	},
 	shop: {
 		B: "books",
@@ -597,6 +678,12 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		x: "stock",
 		U: "barrel",
 		m: "rules",
+		"1": "board",
+		"2": "board",
+		"3": "board",
+		w: "coat",
+		y: "spices",
+		k: "lab",
 	},
 	bookstore: {
 		B: "shelf",
@@ -625,6 +712,11 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		P: "piano",
 		p: "piano",
 		L: "speaker",
+		e: "clap",
+		d: "greenroom",
+		f: "flowers",
+		B: "scores",
+		t: "merch",
 	},
 	bath: {
 		Q: "mural",
@@ -635,6 +727,13 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		c: "basket",
 		M: "milk",
 		F: "plant",
+		m: "notice",
+		P: "price",
+		C: "massage",
+		G: "shoes",
+		e: "extinguisher",
+		"(": "bench",
+		")": "bench",
 	},
 	store: {
 		S: "shelf",
@@ -648,6 +747,13 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		U: "barrel",
 		x: "crate",
 		u: "pots",
+		"(": "motto",
+		")": "motto",
+		"[": "board",
+		"]": "board",
+		d: "dress",
+		c: "cleaner",
+		v: "door",
 	},
 };
 
@@ -669,9 +775,10 @@ export const roomPlaces = (id: RoomId): RoomPlace[] => {
 		[...r].forEach((ch, x) => {
 			const kind = ids[ch];
 			if (!kind) return;
-			// 銭湯の 男湯がわ（キリコは 入らない）の 物は 置かない。仕切りは 男湯に 人の いない 段だけ
+			// 銭湯の 男湯がわ（キリコは 入らない）の 物は 置かない（番台より 下の 入口は 男女 いっしょ）。
+			// 仕切りは 男湯に 人の いない 段だけ
 			if (id === "bath") {
-				if (x < BATH_WALL) return;
+				if (x < BATH_WALL && y < BATH_BANDAI[1]) return;
 				if (ch === "|" && y < 5) return;
 			}
 			// 喫茶の 酒棚は 台の うしろ。台ごしに 読むので 棚の 前の 床に 置く

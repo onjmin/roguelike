@@ -84,6 +84,8 @@ import {
 	type Speaker,
 } from "../data/quotes";
 import {
+	BANK,
+	BANK_FROM,
 	KEEPER_LINE,
 	MUSIC_CLOSED,
 	PIANO_MSG,
@@ -5505,6 +5507,22 @@ test("建物の 中: every room is closed, draws only bundled art, and from the 
 			for (const t of Object.values(roomPalette(id, stage)))
 				for (const ref of [...t.layers, ...(t.above ?? [])])
 					ok(ref.startsWith("pub:"), `${id}: draws ${ref}`);
+		// 2マスの 高さの 物の 真上の マスは 床か 壁だけ（はみ出しが 手前に 描かれて、そこの 物が かくれる）
+		for (const stage of id === "store" ? [4, 6, 7] : [7]) {
+			const pal = roomPalette(id, stage);
+			const tall = (ch: string) =>
+				(pal[ch]?.layers ?? []).some((ref) => Number(ref.split(",")[3]) > 16);
+			rows.forEach((r, y) => {
+				[...r].forEach((ch, x) => {
+					const up = rows[y - 1]?.[x];
+					if (!up || !tall(ch)) return;
+					ok(
+						(pal[up]?.layers.length ?? 0) <= 1,
+						`${id}@${stage}: "${up}" at (${x},${y - 1}) is hidden by the top of "${ch}"`,
+					);
+				});
+			});
+		}
 		const people = id === "cafe" ? cafePeople() : [];
 		const places = roomPlaces(id);
 		const ids = places.map((p) => p.id);
@@ -5527,17 +5545,26 @@ test("建物の 中: every room is closed, draws only bundled art, and from the 
 			if (p.trigger === "touch") continue;
 			ok(s.talkable(p, hasBack(s, p)), `${id}: cannot reach ${p.id}`);
 		}
-		// 調べる 物には 文が ある
+		// 調べる 物には 文が ある（倉庫は 銀行の 段でも）
 		for (const p of places) {
 			if (p.trigger === "touch") continue;
 			const kind = p.id.replace(/_\d+$/, "");
-			const lines =
-				id === "cafe"
-					? ((ROOM_MSG.cafe as Record<string, readonly string[]>)[kind] ?? [])
-					: thingLines(id, p.id, 5);
-			ok(lines.length > 0, `${id}: ${p.id} has nothing to say`);
+			for (const stage of id === "store" ? [5, BANK_FROM] : [5]) {
+				const lines =
+					id === "cafe"
+						? ((ROOM_MSG.cafe as Record<string, readonly string[]>)[kind] ?? [])
+						: thingLines(id, p.id, stage);
+				ok(lines.length > 0, `${id}: ${p.id} has nothing to say`);
+			}
 		}
 	}
+	// やきうの 出ていった あとの 小屋・銀行の 文は、部屋に ある 物だけ
+	const kinds = (id: RoomId) =>
+		new Set(roomPlaces(id).map((p) => p.id.replace(/_\d+$/, "")));
+	for (const k of Object.keys(ROOM_MSG.hutGone))
+		ok(kinds("hut").has(k), `hutGone.${k} is not in the hut`);
+	for (const k of Object.keys(BANK.msg))
+		ok(kinds("store").has(k), `BANK.msg.${k} is not in the store`);
 });
 
 test("喫茶の 席: Kiriko's seat is next to each friend, guests and stand spots are free floor, and the order stool faces the master", () => {
@@ -5988,6 +6015,9 @@ test("建物の 中の 文: every line fits the village window, talks are 1〜4 
 			for (const t of v)
 				texts.push([`ROOM_MSG.${room}.${k}`, fill(t, { next: "倉庫Part2" })]);
 	for (const t of planLines(0)) texts.push(["plan", t]);
+	for (const [k, v] of Object.entries(BANK.msg))
+		for (const t of v) texts.push([`BANK.msg.${k}`, t]);
+	texts.push(["bank door", BANK.door]);
 	for (const [k, t] of Object.entries(ROOM_DOOR)) texts.push([`door ${k}`, t]);
 	for (const [k, t] of Object.entries(KEEPER_LINE))
 		texts.push([`keeper ${k}`, t]);
