@@ -255,13 +255,16 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 
 /**
  * キリコが 口の 前（出てきた マス）に 立っていると、口から 入る 道を ふさいでしまう（goto は キリコの マスを よける）。
- * 口から 歩いてくる 人の 前に、キリコを となりの 空いた マスへ 1歩 どかす（口から 広場への 道を ふさがない
- * マス。細道なら 横の 行き止まりへ。data/village/map.ts の asideSpot）。
+ * 東・西・北の 口は 1歩 入った マスしか 道が ないので、来る 人が みな キリコを とびこえて 来た（帰りも）。
+ * 口から 人が 歩いてくる 場面（来客・越してくる 仲間や 住人・ROM専）の 前に、キリコが その 口の 前に いれば
+ * となりの 空いた マスへ 1歩 どかす（口から 広場への 道を ふさがない マス。細道なら 横の 行き止まりへ。
+ * data/village/map.ts の asideSpot）。口から はなれて いれば 動かない。
  */
 const stepAside = async (
 	s: Story,
 	gate: readonly [number, number],
 ): Promise<void> => {
+	if (Math.abs(s.state.x - gate[0]) + Math.abs(s.state.y - gate[1]) > 1) return;
 	const to = asideSpot(villageView(), [s.state.x, s.state.y], gate);
 	if (to) await s.goto("player", to[0], to[1], { speed: 1.2 });
 };
@@ -460,11 +463,12 @@ const lookHome = async (s: Story): Promise<void> => {
 
 /**
  * 寄り道の 板が 開く：その 板の 名無しが 板の 方角の 村の 口から 歩いてきて、キリコの となりで 板の ようすを
- * 話し、口へ 帰っていく（data/story.ts の UNLOCK_VISIT）。
+ * 話し、口へ 帰っていく（data/story.ts の UNLOCK_VISIT）。キリコが その 口の 前に いれば 先に どく（stepAside）。
  */
 export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 	const lines = UNLOCK_VISIT[d] ?? [];
 	const gate = exitFor(d).cell;
+	await stepAside(s, gate);
 	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
 	// 旗を 立てただけでは 生まれない（when は 見なおされない）。show で 生まれさせてから 口に 置く
 	// （旗だけだと 来客が 出ず、カメラも 見る 先が なかった）
@@ -475,6 +479,7 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 	if (to) {
 		await s.goto("visitor", to[0], to[1], { speed: 1.4 });
 		s.face("visitor", "player");
+		s.face("player", faceTo(s.state, to));
 	}
 	await s.look(null);
 	for (const [i, l] of lines.entries()) {
@@ -873,13 +878,17 @@ const gateNear = ([x, y]: readonly [number, number]): readonly [
 			Math.max(Math.abs(b.cell[0] - x), Math.abs(b.cell[1] - y)),
 	)[0]?.cell ?? [x, y];
 
-/** 越してきた 人（イベント ID）が 行き先に いちばん 近い 村の 口から 歩いてくる（カメラが ついていく）。 */
+/**
+ * 越してきた 人（イベント ID）が 行き先に いちばん 近い 村の 口から 歩いてくる（カメラが ついていく。
+ * その 口の 前に キリコが いれば 先に どく。stepAside）。
+ */
 const walkIn = async (
 	s: Story,
 	ev: string,
 	to: readonly [number, number],
 ): Promise<void> => {
 	const [gx, gy] = gateNear(to);
+	await stepAside(s, [gx, gy]);
 	// show で 生まれさせてから 口に 置く（先に 置くと show が 持ち場に 生まれさせて、歩いて こなかった）
 	s.show(ev);
 	s.place(ev, gx, gy);
@@ -945,6 +954,7 @@ const stageUp = async (
 			const c = spots[talkers.indexOf(w)];
 			return c ? [{ w, c }] : [];
 		});
+		await stepAside(s, gate);
 		for (const { w } of walkers) {
 			// show で 生まれさせてから 口に 置く（walkIn と 同じ）
 			s.show(w);

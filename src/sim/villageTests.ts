@@ -1211,6 +1211,70 @@ test("寄り道の 板が 開く：その 板の 名無しが 口から 来て �
 	});
 });
 
+test("口から 人が 歩いてくる 場面：キリコが その 口の 前に いれば 先に どく（来客・越してくる 住人。とびこえて 来ない）。はなれて いれば 動かない", async () => {
+	await withStorageAsync(async () => {
+		// 寄り道の 板の 来客（きのこ板の 口から）
+		const visit = async (at?: Cell) => {
+			setProgress(
+				["shallow", "main", "kinoko"],
+				[{ dungeon: "kinoko", reason: "clear" }],
+				["shallow"],
+			);
+			putTown({ stage: 2 });
+			const f = fakeStory(at ? { at } : {});
+			await newsScript(f.s);
+			return f.log;
+		};
+		const e = exitFor("kinoko");
+		const ki = inwardOf(e);
+		const near = await visit(ki);
+		const aside = asideSpot(villageView(), ki, e.cell);
+		const step = near.indexOf(`goto player ${aside?.join(",")}`);
+		ok(
+			!!aside &&
+				step >= 0 &&
+				step < near.indexOf(`place visitor ${e.cell.join(",")}`),
+			`Kiriko does not step aside before the visitor:\n${near.join("\n")}`,
+		);
+		const far = await visit();
+		ok(
+			!far.some((l) => l.startsWith("goto player ")),
+			`Kiriko steps aside far from the mouth:\n${far.join("\n")}`,
+		);
+		// 町が 育って 越してくる 住人（プロト。持ち場に いちばん 近い 口から）
+		const grow = async (at?: Cell) => {
+			setProgress(["shallow", "main"], [], ["shallow"]);
+			putTown({
+				stage: 1,
+				points: TOWN_STEPS[4].points + 50,
+				pending: pending("escape", [item(1, "starsword")]),
+			});
+			const f = fakeStory(at ? { at } : {});
+			await settleScript(f.s, chooser([]));
+			return f.log;
+		};
+		const first = await grow();
+		const placed = first.find((l) => l.startsWith("place mob_proto "));
+		const mouth = VILLAGE_EXITS.find(
+			(x) => placed === `place mob_proto ${x.cell.join(",")}`,
+		);
+		ok(!!mouth, `proto does not walk in from a mouth:\n${first.join("\n")}`);
+		if (!mouth) return;
+		const pk = inwardOf(mouth);
+		const moved = await grow(pk);
+		const by = asideSpot(villageView(), pk, mouth.cell);
+		const side = moved.indexOf(`goto player ${by?.join(",")}`);
+		ok(
+			!!by && side >= 0 && side < moved.indexOf(placed ?? ""),
+			`Kiriko does not step aside before proto:\n${moved.join("\n")}`,
+		);
+		ok(
+			!first.some((l) => l.startsWith("goto player ")),
+			`Kiriko steps aside far from the mouth:\n${first.join("\n")}`,
+		);
+	});
+});
+
 test("掲示板の 切れはし：その 板を 持ち帰ると 貼られ、1回の 帰りに 1枚。読んだら 次の 帰りに 次の 1枚", () => {
 	fitsWindow([
 		...SCRAPS.map((x): [string, string] => [`SCRAPS.${x.id}`, x.text]),
