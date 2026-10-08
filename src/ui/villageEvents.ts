@@ -6,9 +6,9 @@
 //   イベントも。data/objectives.ts）は 行き先を 選ぶ 前に 1回だけ 決めて、地図と 冒険に 同じ 値を 渡す。
 // - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
 // - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと。聞いたら 町の様子の
-//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（ゼロ＝売り上げの 帳簿、
-//   フェリス＝図鑑・あそびかた、シヨ＝倉庫、やきう＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
-//   役目は 本館や 建物の 中の 物からも 開ける（人を さがさなくても 使える）。B／☰ の メニューは 持ち物・あらすじ・せってい だけ。
+//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（シヨ＝倉庫、ロゼ＝店の 奥）。
+//   ほかの 機能は 人に 結びつけず 物に 置く（冒険の記録＝掲示板、図鑑・あそびかた・売り上げ・リプレイ＝本館の 中の 物）。
+//   B／☰ の メニューは 持ち物・あらすじ・せってい だけ。
 // - 板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
 // - 喫茶・小屋の 扉は 踏むと 中へ（ui/cafe.ts・ui/rooms.ts）。常識堂の 奥・倉庫は ロゼ・シヨが 入れてくれる。
 // - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/hallEvents.ts）。
@@ -81,13 +81,11 @@ import {
 	recordFromRun,
 } from "../engine/save";
 import { chimneySteam } from "./bath";
-import { openBook } from "./bookView";
 import { runSaveLabel } from "./boot";
 import { enterCafe } from "./cafe";
 import type { Ctx } from "./ctx";
 import { enterHall } from "./hallEvents";
-import { chooseStored, openBag, openSales, openStorage } from "./home";
-import { openHowto } from "./howto";
+import { chooseStored, openBag, openStorage } from "./home";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { playGetter } from "./minigames";
 import { makeQuiz } from "./quiz";
@@ -120,7 +118,6 @@ import {
 import {
 	DUNGEON_DESC,
 	fill,
-	ledgerLine,
 	pinnedScrap,
 	scrapReturnAt,
 	talkLine,
@@ -537,27 +534,6 @@ const speak = async (
 /** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。役目は B／☰ の メニューには 出さない。 */
 const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	switch (who) {
-		case "zero":
-			// 帳簿の係：売り上げ（冒険の記録は 掲示板・本館の 壁の スレ）
-			return async (s) => {
-				await speak(s, who);
-				if ((await s.choose(["売り上げ", "やめる"], { cancel: 1 })) !== 0)
-					return;
-				await s.say(who, ledgerLine());
-				await hideMsg(s);
-				await openSales(ctx);
-			};
-		case "feris":
-			// 看板の係：図鑑（目が いいから）・あそびかた
-			return async (s) => {
-				await speak(s, who);
-				const n = await s.choose(["図鑑", "あそびかた", "やめる"], {
-					cancel: 2,
-				});
-				if (n === 2) return;
-				await hideMsg(s);
-				await (n === 0 ? openBook(ctx) : openHowto(ctx));
-			};
 		case "shiyo":
 			// 倉庫番（倉庫が 建ってから）
 			return async (s) => {
@@ -571,8 +547,10 @@ const friendScript = (ctx: Ctx, who: Speaker): Script => {
 				await hideMsg(s);
 				await openStorage(ctx);
 			};
+		case "zero":
+		case "feris":
 		case "nanj":
-			// 小屋の前で 大工
+			// 話すだけ（帳簿・図鑑・あそびかたは 本館の 物。やきうは 小屋の前で 大工）
 			return (s) => speak(s, who);
 		default:
 			// ロゼ（屋台・店）。小さな 店に なったら 奥へ 入れてくれる（ui/rooms.ts）
@@ -808,7 +786,7 @@ export const buildVillage = (
 
 /**
  * B／☰ の 村の メニュー。とじるまで 何度でも。
- * 仲間に 話しかければ 見られる 物（記録・売り上げ＝ゼロ、図鑑・あそびかた＝フェリス、倉庫＝シヨ）は 出さない。
+ * 村の 物や 仲間から 見られる 物（冒険の記録・図鑑・あそびかた・売り上げ・倉庫）は 出さない。
  */
 export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 	let start = 0;

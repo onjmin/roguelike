@@ -2,7 +2,7 @@
 // 村の 扉を 踏むと（前で A でも）入り、出口の マットを 踏むと 入った 扉の 前へ 出る（Story.warp。暗転の 中で）。
 // 中の 物は どれも 村の ほかの 入口（掲示板・仲間・B／☰ の メニュー）と 同じ 窓を 開く もう 1つの 入口：
 //   壁の スレ＝冒険の記録・>>1 テンプレ＝あそびかた・本棚＝図鑑・
-//   帳簿の 貼り紙＝ゼロの 売り上げ・殿堂の 壁＝総選挙の はり紙。
+//   帳簿の 貼り紙（集会所では 長机）＝売り上げ・殿堂の 壁＝総選挙の はり紙。
 // リプレイは 本館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。実況モニターは 見るだけ。
 // 本館 だけの もの：
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
@@ -326,6 +326,25 @@ const shelfScript =
 		await listWindow(ctx, "飾り棚", items, { closeLabel: "とじる" });
 	};
 
+/**
+ * 売り上げの 帳簿（棒グラフ：ui/home.ts）。段1〜 は 帳簿の 貼り紙、集会所では 長机に ひろげてある。
+ * ゼロが 越してくる 前は 何も 書いていない（data/story.ts の FRIEND_FROM）。
+ */
+const ledgerScript =
+	(ctx: Ctx, at: "ledger" | "desk"): Script =>
+	async (s) => {
+		if (loadTown().stage < FRIEND_FROM.zero) {
+			await s.narrate(
+				at === "desk" ? HALL_MSG.deskEmpty : HALL_MSG.ledgerEmpty,
+			);
+			return;
+		}
+		await s.narrate(at === "desk" ? HALL_MSG.desk : HALL_MSG.ledger);
+		await s.narrate(ledgerLine());
+		await hideMsg(s);
+		await openSales(ctx);
+	};
+
 /** 実況モニター：ナイターと 実況スレ（見るだけ。リプレイは 映写機）。 */
 const monitorScript: Script = async (s) => {
 	for (const t of HALL_MSG.monitor) await s.narrate(t);
@@ -502,18 +521,9 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "shelf":
 			return sign(p.id, p.x, p.y, shelfScript(ctx));
 		case "ledger":
-			return sign(p.id, p.x, p.y, async (s) => {
-				// ゼロが 越してくる 前は 何も 書いていない（data/story.ts の FRIEND_FROM）
-				if (loadTown().stage < FRIEND_FROM.zero) {
-					await s.narrate(HALL_MSG.ledgerEmpty);
-					return;
-				}
-				await s.narrate(HALL_MSG.ledger);
-				await s.narrate(ledgerLine());
-				// ゼロと 同じ 売り上げの 帳簿（棒グラフ：ui/home.ts）
-				await hideMsg(s);
-				await openSales(ctx);
-			});
+			return sign(p.id, p.x, p.y, ledgerScript(ctx, "ledger"));
+		case "desk":
+			return sign(p.id, p.x, p.y, ledgerScript(ctx, "desk"));
 		case "monitor":
 			return sign(p.id, p.x, p.y, monitorScript);
 		case "dendo":

@@ -241,7 +241,7 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "ログ", value: "log" },
 			{ label: "地図", value: "map" },
 			{ label: "せってい", value: "settings" },
-			// ダンジョンの 中で 操作や 決まりを しらべられる 所（村は 集会所の テンプレと フェリス）
+			// ダンジョンの 中で 操作や 決まりを しらべられる 所（村は 本館の >>1 テンプレ）
 			{ label: "あそびかた", value: "howto" },
 			{ label: "中断する", value: "suspend" },
 		];
