@@ -633,6 +633,37 @@ const CROSSING_SIGNS: readonly Cell[] = [
 	[77, 30],
 	[80, 35],
 ];
+/** 信号機（交差点の 歩道の 角。向かいあう 2つ）。 */
+const SIGNALS: readonly Cell[] = [
+	[52, 8],
+	[46, 13],
+	[69, 8],
+	[63, 13],
+	[52, 19],
+	[46, 24],
+	[69, 19],
+	[63, 24],
+	[52, 30],
+	[46, 35],
+	[69, 30],
+	[63, 35],
+];
+/** 止まっている 車（左の マス。赤は 上の 車線、白は 下の 車線）。 */
+const CARS: readonly (readonly [number, number, "red" | "white"])[] = [
+	[58, 9, "red"],
+	[56, 20, "red"],
+	[73, 23, "white"],
+	[42, 34, "white"],
+];
+/** 公園の 木（新市街の 空いた 区画。地図の 左上から 右へ）。 */
+const PARK: readonly [number, number, string][] = [
+	[80, 4, "T,b,T,"],
+	[80, 6, ",T,,bT"],
+	[76, 4, "b,"],
+	[76, 6, ",b"],
+	[80, 26, "b,T,,T"],
+	[80, 28, "T,,b,b"],
+];
 const eastDistrict = (stage: number): [number, number, string][] => {
 	if (stage < 4) return [];
 	const paved = stage >= 6;
@@ -687,6 +718,9 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	for (const [x, y] of POLES) out.push([x, y, "ょ"]);
 	for (const [x, y] of LAMPS) out.push([x, y, "ゃ"]);
 	for (const [x, y] of CROSSING_SIGNS) out.push([x, y, "ゅ"]);
+	for (const [x, y] of SIGNALS) out.push([x, y, "ゔ"]);
+	for (const [x, y, c] of CARS) out.push([x, y, c === "red" ? "ゕゖ" : "ゝゞ"]);
+	out.push(...PARK);
 	return out;
 };
 
