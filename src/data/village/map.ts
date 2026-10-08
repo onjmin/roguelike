@@ -11,6 +11,7 @@
 // - 崖の下に 道（区画 y=4）。そこから 町の 通り（y=12）まで 道（x=10〜11）が のびる。
 // - 西に 店の区画（x=1〜8）、まんなかに 小屋（x=12〜15）、東に 倉庫の区画（x=16〜20）。その下が 広場（掲示板・蓄音機）。
 //   売り場は「囲い（y=10。売る人が立つ）＋ 台（y=11）」。キリコは 通り（y=12）から 台ごしに 話しかける。
+//   常識堂の 奥・倉庫の 扉は 台の 横の 細道の 奥（常識堂は 右・倉庫は 左）。踏むと 中へ（data/village/rooms.ts）。
 // - やきうは 小屋の前（12,11）で 大工。人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人。
 // - おんJマイナーズ（data/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
 // - 町の まわりも 段で かわる：東の 畑は 荒れ地から 実りへ（farmRows）、住宅街で 市民農園・都市で 公園
@@ -35,10 +36,10 @@
 //  5 h,nnnnnn,,..,,,,,,,,,h  店の 屋根                  （倉庫が 建つまで シヨ 17,5）
 //  6 H,NNNNNN,,..,,,,rrrrrH                               倉庫の 屋根
 //  7 h,ffOfff,,..,,,,RRRRRh  2階（窓の花・本の看板）
-//  8 H,l((w(l,,..,Cz,{{{g{H  1階（ちょうちん）  小屋（煙突）  倉庫の 壁（袋の看板）
-//  9 h,)d)aa),,..,ZZ,}78}}h  扉・日よけ                   扉（7 8）
-// 10 H,X,@,Lx,,..*J[,x,@,xH  ロゼ 4,10                    シヨ 18,10
-// 11 h,XqQ>ux,,..@Ee&x<->xh  台           やきう 12,11・小屋の扉 14,11
+//  8 H,l((wl(,,..,Cz,{{{g{H  1階（ちょうちん）  小屋（煙突）  倉庫の 壁（袋の看板）
+//  9 h,)))aad,,..,ZZ,7}}}}h  日よけ・勝手口 7,9            倉庫の 扉 16,9
+// 10 H,X,@,L,,,..*J[,,x@,xH  ロゼ 4,10                    シヨ 18,10
+// 11 h,XqQ>u,,,..@Ee&,<->xh  台           やきう 12,11・小屋の扉 14,11
 // 12 H....................H  町の通り
 // 13 h,,,::::::..::::::@,,h  広場（野次馬）
 // 14 H,Y,::Kk@:@::::U::,Y,H  まとめ掲示板 6..7・ゼロ 8・蓄音機 10・井戸 15
@@ -64,6 +65,7 @@ import {
 	outdoorId,
 	stampFacilities,
 } from "./facilities";
+import { ROOM_FROM } from "./rooms";
 import {
 	ASPHALT,
 	BANK,
@@ -90,7 +92,6 @@ import {
 	PLAZA,
 	ROADS,
 	SHED,
-	SHED_SMALL,
 	SHOP,
 	SHRINE,
 	STALL,
@@ -173,6 +174,10 @@ export const VILLAGE_SPOTS = {
 	bath: [35, 27] as Cell,
 	/** 小屋の扉（段3から。踏むと 中へ）。 */
 	hutDoor: [23, 18] as Cell,
+	/** 倉庫の 扉（段2 から。台の 左の 細道の 奥。踏むと 中へ。出ると 1つ下）。 */
+	storeDoor: [25, 16] as Cell,
+	/** 常識堂の 勝手口（段5 から。台の 右の 細道の 奥。踏むと 奥へ。出ると 1つ下）。 */
+	shopDoor: [16, 16] as Cell,
 	/** 段7 の 野次馬（うろうろ する）。 */
 	yaji: [
 		[14, 22],
@@ -270,25 +275,25 @@ const shopBlock = (stage: number): readonly string[] => {
 		// 日よけ（柱つき）・その上に 本の看板・ランプ・木箱
 		return ["", "", "", "  ,o,   ", "  ccc   ", " bp,PL, ", " bqQ>ux "];
 	if (stage <= 6)
-		// 小さな店（常識堂）。扉は 囲いの中、日よけは ロゼの 上
+		// 小さな店（常識堂）。勝手口は 右はし（台の 右の 細道から 踏む。囲いは ランプと 鍋で とじる）
 		return [
 			"",
 			" nnnnnn ",
 			" NNNNNN ",
 			" ((O(w( ",
-			" )d)aa) ",
-			" X,,,Lx ",
-			" XqQ>ux ",
+			" )))aad ",
+			" X,,,L, ",
+			" XqQ>u, ",
 		];
-	// 2階建ての 大きな店
+	// 2階建ての 大きな店（右の ちょうちんは 勝手口の 絵に かからないよう 1つ 左）
 	return [
 		" nnnnnn ",
 		" NNNNNN ",
 		" ffOfff ",
-		" l((w(l ",
-		" )d)aa) ",
-		" X,,,Lx ",
-		" XqQ>ux ",
+		" l((wl( ",
+		" )))aad ",
+		" X,,,L, ",
+		" XqQ>u, ",
 	];
 };
 
@@ -302,11 +307,12 @@ const hutBlock = (stage: number): readonly string[] => {
 /** 倉庫の区画（x=16〜20, y=5〜11）。段2から（物置 → 倉庫 → 石造り → 銀行）。 */
 const storeBlock = (stage: number): readonly string[] => {
 	if (stage < 2) return [];
+	// 扉は 左はし（台の 左の 細道から 踏む）。囲いは 木箱で とじる（シヨの 左右へは 入れない）
+	const stall = [",x,,x", ",<->x"];
 	// 小屋ていどの 物置（屋根と 扉だけ）
-	if (stage <= 3) return ["", "", "", " rrr ", " }7} ", "x,,,x", "x<->x"];
-	if (stage <= 5)
-		return ["", " rrr ", " RRR ", " {{g ", " 78} ", "x,,,x", "x<->x"];
-	return ["", "rrrrr", "RRRRR", "{{{g{", "}78}}", "x,,,x", "x<->x"];
+	if (stage <= 3) return ["", "", "", "rrrr ", "7}}} ", ...stall];
+	if (stage <= 5) return ["", "rrrr ", "RRRR ", "{{{g ", "7}}} ", ...stall];
+	return ["", "rrrrr", "RRRRR", "{{{g{", "7}}}}", ...stall];
 };
 
 /** そのマスの文字を 差しかえる。 */
@@ -887,13 +893,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...STALL,
 		...SHOP,
 		...HUT,
-		...(stage >= 7
-			? BANK
-			: stage >= 6
-				? STOREHOUSE
-				: stage >= 4
-					? SHED
-					: SHED_SMALL),
+		...(stage >= 7 ? BANK : stage >= 6 ? STOREHOUSE : SHED),
 		...hallTiles(stage),
 		...CAFE,
 		...MUSIC,
@@ -1005,6 +1005,15 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	if (stage >= 3) {
 		const [hx, hy] = VILLAGE_SPOTS.hutDoor;
 		out.push({ id: "door_hut", x: hx, y: hy, trigger: "touch" });
+	}
+	// 倉庫・常識堂の 奥の 扉（台の 横の 細道の 奥。店番に たのまなくても 踏むと 中へ）
+	if (stage >= ROOM_FROM.store) {
+		const [x, y] = VILLAGE_SPOTS.storeDoor;
+		out.push({ id: "door_store", x, y, trigger: "touch" });
+	}
+	if (stage >= ROOM_FROM.shop) {
+		const [x, y] = VILLAGE_SPOTS.shopDoor;
+		out.push({ id: "door_shop", x, y, trigger: "touch" });
 	}
 	// 仲間は 越してきてから（data/story.ts の FRIEND_FROM。はじめの 保守村には やきうだけ）
 	const here = (w: Speaker) => stage >= FRIEND_FROM[w];

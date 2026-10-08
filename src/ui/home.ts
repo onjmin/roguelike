@@ -75,7 +75,7 @@ export const chooseStored = async (
 };
 
 /**
- * 倉庫（村の シヨから）：えらぶと 引き取って 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
+ * 倉庫（倉庫の 中の 棚から。ui/rooms.ts）：えらぶと 引き取って 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
  * 引き取った 物は 村の メニューの「持ち物」で 見て、倉庫へ もどせる（openBag）。
  */
 export const openStorage = async (ctx: Ctx): Promise<void> => {

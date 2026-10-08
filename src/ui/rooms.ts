@@ -1,7 +1,7 @@
 // 村の 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。地図は data/village/rooms.ts、文は data/rooms.ts）。
 // 入る・出るは どの 部屋も 同じ（扉の 音 → 暗転 → 中 → 明転。出口の マットで 外へ）。
 // 喫茶の 中の 人と 注文は ui/cafe.ts。ここは 小屋・常識堂・倉庫の 調べる 物と、部屋の 地図を 組み立てる 入口。
-// 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。村の シヨと 同じ 窓）。
+// 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。引き取るのは ここ）。
 
 import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
@@ -19,7 +19,6 @@ import {
 	BANK,
 	BANK_FROM,
 	BOOKS_KEEPER_LINES,
-	KEEPER_LINE,
 	LIBRARY_HINARY,
 	MUSIC_CLOSED,
 	PIANO_MSG,
@@ -59,7 +58,7 @@ import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
 import { fill } from "./villageTalk";
 
-/** 部屋に 入る（扉の 文は 村に いるあいだ 部屋ごとに 1回。店番の「奥へ」は いつも 店番が 言う）。 */
+/** 部屋に 入る（扉の 文は 村に いるあいだ 部屋ごとに 1回。銀行・やきうの いない 小屋は 文が かわる）。 */
 export const enterRoom =
 	(id: RoomId): Script =>
 	async (s) => {
@@ -91,16 +90,6 @@ export const leaveRoom =
 		await s.warp("village", o.x, o.y, o.dir);
 		await s.fadeIn(250);
 	};
-
-/** 店番（ロゼ・シヨ）が 奥へ 入れてくれる。 */
-export const keeperLets = async (
-	s: Story,
-	who: "roze" | "shiyo",
-	id: RoomId,
-): Promise<void> => {
-	await s.say(who, KEEPER_LINE[who]);
-	await enterRoom(id)(s);
-};
 
 /** 週末（土・日。端末の 曜日。開発中は &wday= で 決め打ち）。音楽室が 開く。 */
 export const isWeekend = (): boolean => {
@@ -310,7 +299,7 @@ const eventFor = (
 		return sign(p.id, p.x, p.y, pianoScript(ctx));
 	return sign(p.id, p.x, p.y, async (s) => {
 		await readAll(s, thingLines(id, p.id, v.stage));
-		// あずかった 物の 棚は 倉庫の 一覧（シヨと 同じ）
+		// あずかった 物の 棚は 倉庫の 一覧（引き取る。ui/home.ts）
 		if (id === "store" && kind === "shelf") {
 			await s.wait(0);
 			await openStorage(ctx);

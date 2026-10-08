@@ -6,11 +6,12 @@
 //   イベントも。data/objectives.ts）は 行き先を 選ぶ 前に 1回だけ 決めて、地図と 冒険に 同じ 値を 渡す。
 // - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
 // - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと。聞いたら 町の様子の
-//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（シヨ＝倉庫、ロゼ＝店の 奥）。
-//   ほかの 機能は 人に 結びつけず 物に 置く（冒険の記録＝掲示板、図鑑・あそびかた・売り上げ・リプレイ＝本館の 中の 物）。
-//   B／☰ の メニューは 持ち物・あらすじ・せってい だけ。
+//   決まった ひとこと（ui/villageTalk.ts）。話すだけ（店番の ロゼ・シヨも）。
+//   機能は 人に 結びつけず 物に 置く（冒険の記録＝掲示板、図鑑・あそびかた・売り上げ・リプレイ＝本館の 中の 物、
+//   倉庫＝倉庫の 中の 棚）。B／☰ の メニューは 持ち物・あらすじ・せってい だけ。
 // - 板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
-// - 喫茶・小屋の 扉は 踏むと 中へ（ui/cafe.ts・ui/rooms.ts）。常識堂の 奥・倉庫は ロゼ・シヨが 入れてくれる。
+// - 喫茶・小屋・銭湯・音楽室・本屋・倉庫・常識堂の 勝手口の 扉は 踏むと 中へ（ui/cafe.ts・ui/rooms.ts）。
+//   倉庫・常識堂の 扉は 台の 横の 細道の 奥（店番に たのまなくても 入れる）。
 // - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/hallEvents.ts）。
 // - おんJマイナーズ（町が 育つと 越してくる）と ぷゆゆ（はじめから いる）は ui/villageMobs.ts。2人に 会うと 掲示板に 総選挙の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/villageReturn.ts の previewStage）。
@@ -20,7 +21,7 @@
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
-import { CARRY_MAX, STORAGE_CAP } from "../core/town";
+import { CARRY_MAX } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
 import { LIBRARY_FROM } from "../data/glossary";
@@ -31,7 +32,6 @@ import {
 	withDevEvent,
 } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
-import { BANK, BANK_FROM, SHOP_MENU, STORE_MENU } from "../data/rooms";
 import { SCRAP_MSG, SCRAPS, type Scrap } from "../data/scraps";
 import {
 	awayFriends,
@@ -66,7 +66,6 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
-import { ROOM_FROM } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
 	addFlag,
@@ -91,12 +90,12 @@ import { enterCafe } from "./cafe";
 import type { Ctx } from "./ctx";
 import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
 import { enterHall } from "./hallEvents";
-import { chooseStored, openBag, openStorage } from "./home";
+import { chooseStored, openBag } from "./home";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { playGetter } from "./minigames";
 import { makeQuiz } from "./quiz";
 import { escBr, openRecords, showStory } from "./records";
-import { enterMusic, enterRoom, keeperLets } from "./rooms";
+import { enterMusic, enterRoom } from "./rooms";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
 import { mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
@@ -550,37 +549,14 @@ const speak = async (
 	await s.say(who, talkLine(who, o));
 };
 
-/** 仲間ごとの 話しかけ（ひとこと ＋ 役目）。役目は B／☰ の メニューには 出さない。 */
-const friendScript = (ctx: Ctx, who: Speaker): Script => {
-	switch (who) {
-		case "shiyo":
-			// 倉庫番（倉庫が 建ってから）
-			return async (s) => {
-				await speak(s, who);
-				if ((STORAGE_CAP[loadTown().stage] ?? 0) <= 0) return;
-				// 倉庫が 建ったら 中にも 入れる（台の うしろの 扉から。ui/rooms.ts）
-				const menu = loadTown().stage >= BANK_FROM ? BANK.menu : STORE_MENU;
-				const n = await s.choose([...menu], { cancel: 2 });
-				if (n === 1) await keeperLets(s, who, "store");
-				if (n !== 0) return;
-				await hideMsg(s);
-				await openStorage(ctx);
-			};
-		case "zero":
-		case "feris":
-		case "nanj":
-			// 話すだけ（帳簿・図鑑・あそびかたは 本館の 物。やきうは 小屋の前で 大工）
-			return (s) => speak(s, who);
-		default:
-			// ロゼ（屋台・店）。小さな 店に なったら 奥へ 入れてくれる（ui/rooms.ts）
-			return async (s) => {
-				await speak(s, who);
-				if (loadTown().stage < ROOM_FROM.shop) return;
-				const n = await s.choose([...SHOP_MENU], { cancel: 1 });
-				if (n === 0) await keeperLets(s, "roze", "shop");
-			};
-	}
-};
+/**
+ * 仲間の 話しかけ（ひとこと だけ）。役目は 人に 結びつけず 物に 置く：倉庫の 一覧は 倉庫の 中の 棚、
+ * 常識堂の 奥・倉庫へは 台の 横の 扉から（店番の ロゼ・シヨは 話すだけ）。帳簿・図鑑・あそびかたは 本館の 物。
+ */
+const friendScript =
+	(who: Speaker): Script =>
+	(s) =>
+		speak(s, who);
 
 /** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。そのあと 村の 曲を えらべる（ui/villageMusic.ts）。 */
 const phonoScript =
@@ -603,7 +579,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
 	if (p.who) {
 		const who = p.who;
-		return npc(p.id, p.x, p.y, CAST[who].walk, friendScript(ctx, who), {
+		return npc(p.id, p.x, p.y, CAST[who].walk, friendScript(who), {
 			who,
 			dir: p.dir,
 			wander: p.wander,
@@ -628,7 +604,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
-	// 小屋・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
+	// 小屋・銭湯・倉庫・常識堂の 勝手口・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）
 	if (p.id === "door_music")
 		return { ...at, trigger: "touch", through: true, run: enterMusic };
@@ -636,6 +612,10 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		return { ...at, trigger: "touch", through: true, run: enterRoom("bath") };
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
+	if (p.id === "door_store")
+		return { ...at, trigger: "touch", through: true, run: enterRoom("store") };
+	if (p.id === "door_shop")
+		return { ...at, trigger: "touch", through: true, run: enterRoom("shop") };
 	// 本屋（段3〜5）→ 図書館（段6 から。同じ 扉）
 	if (p.id === "door_books")
 		return {

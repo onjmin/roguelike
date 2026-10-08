@@ -155,7 +155,8 @@ export const STALL: Record<string, TileDef> = {
 // ───────────────── 店（常識堂。段5から） ─────────────────
 // 白い壁・赤い屋根。屋根は 棟（82）と 軒（84）の 2段、壁は 上段・下段。
 //   n N  屋根（棟・軒）   ( )  白壁（上段・下段）   w  窓   f  窓と 花の箱（2階）
-//   O  本の 看板（壁に 付ける）   l  ちょうちん   d  扉（見るだけ。通れない）   a  下段に 日よけ
+//   O  本の 看板（壁に 付ける）   l  ちょうちん   a  下段に 日よけ
+//   d  勝手口の 扉（通れる。踏むと 奥へ。台の 右の 細道から）
 const WIN_WHITE = basePx(48, 1382); // 木枠の窓（壁装飾 3,86 を 半マス上げて切り出し）
 /** 窓の下の 花の箱（下の すき間を 切って、窓の 下はしに そろえる）。 */
 const flowerBox = (c: number) => basePx(c * 16, 362 * 16 + 2, 16, 10);
@@ -173,7 +174,7 @@ export const SHOP: Record<string, TileDef> = {
 	f: solid(C_WHITE, WHITE_UP, WIN_WHITE, flowerBox(2)),
 	O: solid(C_WHITE, WHITE_UP, BOOK_SIGN),
 	l: solid(C_WHITE, WHITE_UP, CHOCHIN),
-	d: solid(C_WHITE, WHITE_LOW, base(7, 59, 1, 2)),
+	d: floor(C_WHITE, WHITE_LOW, base(7, 59, 1, 2)),
 	a: solid(C_WHITE, WHITE_LOW, AWNING),
 };
 
@@ -200,7 +201,8 @@ export const HUT: Record<string, TileDef> = {
 // ───────────────── 倉庫（段2から） ─────────────────
 // 段2〜5 は 板張りの 物置・倉庫（だいだいの屋根）、段6 は 石造りの 倉庫（灰色の 高い屋根）、
 // 段7 は 銀行（白い 石の 壁・金の 扉・金貨の 看板。中に 貸金庫）。字は 同じで、map.ts が 段で えらぶ。
-//   r R  屋根（棟・軒）   { }  壁（上段・下段）   g  袋の 看板   7 8  両開きの 扉（左・右。見るだけ）
+//   r R  屋根（棟・軒）   { }  壁（上段・下段）   g  袋の 看板
+//   7  扉（片開き。壁に 合う 絵。通れる。踏むと 中へ。台の 左の 細道から）
 const storeTiles = (
 	roofCol: number,
 	wallRow: number,
@@ -211,22 +213,18 @@ const storeTiles = (
 	"{": solid(color, base(1, wallRow)),
 	"}": solid(color, base(1, wallRow + 1)),
 	g: solid(color, base(1, wallRow), base(2, 95)),
-	"7": solid(color, base(1, wallRow + 1), base(0, 92, 1, 2)),
-	"8": solid(color, base(1, wallRow + 1), base(1, 92, 1, 2)),
+	"7": floor(color, base(1, wallRow + 1), base(7, wallRow, 1, 2)),
 });
+/** 段2〜5 の 板張りの 物置・倉庫（扉は 板戸）。 */
 export const SHED = storeTiles(1, 73, "#9a7a4a");
-/** 段2・3 の 小さな 物置（7 は 片開きの 扉）。 */
-export const SHED_SMALL: Record<string, TileDef> = {
-	...SHED,
-	"7": solid("#9a7a4a", base(1, 74), base(7, 73, 1, 2)),
-};
+/** 段6 の 石造りの 倉庫（扉は 鉄の 戸）。 */
 export const STOREHOUSE = storeTiles(4, 67, "#8a8a8a");
 const BANK_COLOR = "#d8d4c8";
+/** 段7 の 銀行（扉は 金の 両開きの 片がわ）。 */
 export const BANK: Record<string, TileDef> = {
 	...storeTiles(2, 63, BANK_COLOR),
 	g: solid(BANK_COLOR, base(1, 63), base(4, 96)),
-	"7": solid(BANK_COLOR, base(1, 64), base(4, 92, 1, 2)),
-	"8": solid(BANK_COLOR, base(1, 64), base(5, 92, 1, 2)),
+	"7": floor(BANK_COLOR, base(1, 64), base(4, 92, 1, 2)),
 };
 
 // ───────────────── おんJ 本館（崖の 前の まんなか。町の 段で 育つ） ─────────────────

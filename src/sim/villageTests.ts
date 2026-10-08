@@ -86,7 +86,6 @@ import {
 import {
 	BANK,
 	BANK_FROM,
-	KEEPER_LINE,
 	MUSIC_CLOSED,
 	PIANO_MSG,
 	ROOM_DOOR,
@@ -289,6 +288,7 @@ import {
 	thingLines,
 } from "../ui/rooms";
 import { sharedHead } from "../ui/share";
+import { buildVillage } from "../ui/villageEvents";
 import {
 	forgetMobMemo,
 	hasMobNews,
@@ -1473,7 +1473,8 @@ test("ロゼ and シヨ work behind closed counters once the stall and storehous
 				);
 		};
 		seller("roze", 1, 2);
-		seller("shiyo", 4, 4);
+		// 倉庫の 扉への 細道（台の 左）が できても、シヨの 囲いは 木箱で とじている
+		seller("shiyo", 2, 2);
 		// 小屋の扉は 3段から（見るだけ）
 		ok(
 			s.places.some((p) => p.id === "door_hut") === v.stage >= 3,
@@ -5824,7 +5825,7 @@ test("施設の 文: every line fits the village window", () => {
 	fitsWindow(texts);
 });
 
-test("建物の 扉: the cafe and hut doors are stepped on from their stage, and every room lets Kiriko out onto the road", () => {
+test("建物の 扉: every building door is stepped on from its stage, and every room lets Kiriko out onto the road below its door", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		for (const [id, door] of [
@@ -5832,17 +5833,26 @@ test("建物の 扉: the cafe and hut doors are stepped on from their stage, and
 			["hut", "door_hut"],
 			["music", "door_music"],
 			["bookstore", "door_books"],
+			["bath", "door_bath"],
+			["store", "door_store"],
+			["shop", "door_shop"],
 		] as const) {
 			const p = s.places.find((q) => q.id === door);
 			ok(
 				!!p === v.stage >= ROOM_FROM[id],
 				`${label(v)}: ${door} does not match the stage`,
 			);
-			if (p)
-				ok(
-					p.trigger === "touch" && s.reachable(p.x, p.y),
-					`${label(v)}: cannot step on ${door}`,
-				);
+			if (!p) continue;
+			ok(
+				p.trigger === "touch" && s.reachable(p.x, p.y),
+				`${label(v)}: cannot step on ${door}`,
+			);
+			// 出ると 扉の 1つ下で 下を 向く（どの 部屋も 同じ。ROOM_OUTSIDE は 扉の 所を 書き写している）
+			const o = ROOM_OUTSIDE[id];
+			ok(
+				o.x === p.x && o.y === p.y + 1 && o.dir === "down",
+				`${label(v)}: out of ${id} at (${o.x},${o.y}) ${o.dir}, not below ${door} (${p.x},${p.y})`,
+			);
 		}
 		for (const id of ROOM_IDS) {
 			if (v.stage < ROOM_FROM[id]) continue;
@@ -5886,6 +5896,82 @@ test("建物に 入る・出る: door text once, a door sound and a fade, then o
 			`${id}: the way out:\n${log.join("\n")}`,
 		);
 	}
+});
+
+test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番の シヨ・ロゼは 話すだけ）", async () => {
+	const DOORS = [
+		["store", "door_store", VILLAGE_SPOTS.storeDoor],
+		["shop", "door_shop", VILLAGE_SPOTS.shopDoor],
+	] as const;
+	// 地図：建った 段から 扉が あり、上は 壁。扉と その 1つ下（出てくる マス）へ 通りから 歩いて 行ける
+	for (const v of VIEWS) {
+		const s = survey(v);
+		for (const [id, door, [x, y]] of DOORS) {
+			const p = s.places.find((q) => q.id === door);
+			ok(
+				!!p === v.stage >= ROOM_FROM[id],
+				`${label(v)}: ${door} does not match the stage`,
+			);
+			if (!p) continue;
+			ok(
+				p.x === x && p.y === y && p.trigger === "touch",
+				`${label(v)}: ${door} is at (${p.x},${p.y}), not on its spot`,
+			);
+			ok(
+				s.tile(x, y)?.passable && !s.tile(x, y - 1)?.passable,
+				`${label(v)}: ${door} is not a door in a wall`,
+			);
+			ok(
+				s.reachable(x, y) && s.reachable(x, y + 1),
+				`${label(v)}: cannot walk up to ${door}`,
+			);
+		}
+	}
+	// 入る：扉の 文（銀行の 段は 貸金庫の 文）→ 扉の 音 → 中へ。店番は 話すだけ（選ぶ 窓も 中への 移動も ない）
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		for (const stage of [2, 4, 5, 6, BANK_FROM]) {
+			putTown({ stage });
+			const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
+			const events = buildVillage(v, {} as Ctx).events ?? [];
+			for (const [id, door] of DOORS) {
+				const ev = events.find((e) => e.id === door);
+				ok(
+					!!ev === stage >= ROOM_FROM[id],
+					`stage ${stage}: the ${door} event does not match the stage`,
+				);
+				if (!ev) continue;
+				ok(
+					ev.trigger === "touch" && ev.through && ev.run,
+					`stage ${stage}: ${door} is not stepped on`,
+				);
+				const { s, log } = fakeStory({ at: [ev.x, ev.y] });
+				await ev.run?.(s);
+				const e = roomEntry(id);
+				const text =
+					id === "store" && stage >= BANK_FROM ? BANK.door : ROOM_DOOR[id];
+				ok(
+					inOrder(log, [
+						`narrate: ${text}`,
+						"se door",
+						`warp ${id} ${e.x},${e.y} up`,
+					]),
+					`stage ${stage} ${door}:\n${log.join("\n")}`,
+				);
+			}
+			for (const who of ["shiyo", "roze"] as const) {
+				const ev = events.find((e) => e.id === who);
+				ok(!!ev?.run, `stage ${stage}: ${who} is not there`);
+				const { s, log } = fakeStory();
+				await ev?.run?.(s);
+				ok(
+					log.some((l) => l.startsWith(`say ${who}: `)) &&
+						!log.some((l) => l.startsWith("choose") || l.startsWith("warp")),
+					`stage ${stage} ${who}:\n${log.join("\n")}`,
+				);
+			}
+		}
+	});
 });
 
 test("一杯を まぜる: hand the herb, the master spins with a drum roll, it bubbles, flashes and the jingle plays", async () => {
@@ -6019,8 +6105,6 @@ test("建物の 中の 文: every line fits the village window, talks are 1〜4 
 		for (const t of v) texts.push([`BANK.msg.${k}`, t]);
 	texts.push(["bank door", BANK.door]);
 	for (const [k, t] of Object.entries(ROOM_DOOR)) texts.push([`door ${k}`, t]);
-	for (const [k, t] of Object.entries(KEEPER_LINE))
-		texts.push([`keeper ${k}`, t]);
 	for (const [k, t] of Object.entries(MASTER_MSG))
 		texts.push([
 			`master ${k}`,
