@@ -66,9 +66,11 @@ import {
 import {
 	BANK,
 	BATH,
+	ASPHALT,
 	BEACH,
 	BOOKS,
 	base,
+	C_ASPHALT,
 	C_DIRT,
 	C_GRASS,
 	C_PLAZA,
@@ -85,6 +87,7 @@ import {
 	MUSIC,
 	OUTSKIRTS,
 	PLAZA,
+	ROADS,
 	SHED,
 	SHED_SMALL,
 	SHOP,
@@ -507,6 +510,42 @@ const EDGE_CELLS: readonly [number, number, string][] = [
 	[27, 24, "b"],
 ];
 
+/**
+ * 東の 新市街（地図の x=40〜62。STORY.md §5.75）。街（段4）で 森が 開けて 草地と 通りが できる：
+ * 北の 通り（y=11。崖下の 道の 続き）・大通り（y=19。町の 通りの 続き）・南の 通り（y=25）・浜への 道（y=30）、
+ * 縦の 通り（x=46・56）。区画に 建つ 物は data/village/facilities.ts。住宅街（段6）から 中央線と 横断歩道。
+ */
+const EAST_X = 40;
+const EAST_W = 23;
+const STREET_X = [46, 56] as const;
+const eastDistrict = (stage: number): [number, number, string][] => {
+	if (stage < 4) return [];
+	const out: [number, number, string][] = [];
+	for (let y = 6; y <= 31; y++) out.push([EAST_X, y, ",".repeat(EAST_W)]);
+	out.push([31, 11, ".".repeat(32)]);
+	for (const y of [19, 25, 30]) out.push([EAST_X, y, ".".repeat(EAST_W)]);
+	for (let y = 11; y <= 31; y++) for (const x of STREET_X) out.push([x, y, "."]);
+	if (stage < 6) return out;
+	// 中央線（交差点は あけて）と 横断歩道（交差点の となり）
+	for (const y of [11, 19, 25]) {
+		const x0 = y === 11 ? 31 : EAST_X;
+		const line = [...".".repeat(EAST_X + EAST_W - x0)].map((_, i) => {
+			const x = x0 + i;
+			if ((STREET_X as readonly number[]).includes(x)) return ".";
+			if (STREET_X.some((sx) => Math.abs(sx - x) === 1)) return "わ";
+			return "ろ";
+		});
+		out.push([x0, y, line.join("")]);
+	}
+	for (const x of STREET_X)
+		for (let y = 12; y <= 29; y++) {
+			if (y === 19 || y === 25) continue;
+			const near = [11, 19, 25].some((r) => Math.abs(r - y) === 1);
+			out.push([x, y, near ? "を" : "ゐ"]);
+		}
+	return out;
+};
+
 /** 喫茶「保守」が 建つ 町の 段。 */
 export const CAFE_FROM = 5;
 
@@ -646,6 +685,9 @@ export const villageRows = (v: VillageView): string[] => {
 	// 本屋（段3〜5）→ 図書館（段6 から）。広場の 西
 	if (layoutStage(v) >= LIBRARY_FROM) stamp(rows, 2, 20, LIBRARY_BLOCK);
 	else if (layoutStage(v) >= BOOKSTORE_FROM) stamp(rows, 3, 20, BOOKS_BLOCK);
+	// 東の 新市街の 草地と 通り（畑の 上の はしの 北の 通りも）
+	for (const [x0, y, line] of eastDistrict(layoutStage(v)))
+		stamp(rows, x0, y, [line]);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
 	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
 	stampFacilities(rows, layoutStage(v), put);
@@ -664,6 +706,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...GROUND,
 		...OUTSKIRTS,
 		...BEACH,
+		...ROADS,
 		...facilityTiles(),
 		...FARM,
 		...SHRINE,
@@ -683,7 +726,13 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...CAFE,
 		...MUSIC,
 		...BOOKS,
-		".": paved ? floor(C_STONE, STONE) : floor(C_DIRT, DIRT),
+		// 道：土 → 石だたみ（段5）→ アスファルト（住宅街＝段6 から）
+		".":
+			stage >= 6
+				? floor(C_ASPHALT, ASPHALT)
+				: paved
+					? floor(C_STONE, STONE)
+					: floor(C_DIRT, DIRT),
 		":": floor(C_PLAZA, PLAZA),
 		U: solid(C_PLAZA, PLAZA, base(2, 37)),
 		K: solid(boardGround[0], boardGround[1], base(6, 37, 1, 2)),

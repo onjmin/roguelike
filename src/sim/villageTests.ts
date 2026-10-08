@@ -582,14 +582,18 @@ test("each town stage builds on the last, with the same art as the town strip", 
 				`stage ${stage}: the well place is wrong`,
 			);
 		}
-		// 道は 5段から 石だたみ
-		const stone = villagePalette(view(7))["."]?.layers.join();
+		// 道は 土 → 5段から 石だたみ → 6段（住宅街）から アスファルト
+		const dirt = villagePalette(view(0))["."]?.layers.join();
+		const stone = villagePalette(view(5))["."]?.layers.join();
+		const asphalt = villagePalette(view(7))["."]?.layers.join();
+		ok(
+			new Set([dirt, stone, asphalt]).size === 3,
+			"dirt, stone and asphalt roads are not all different",
+		);
 		for (let stage = 0; stage < TOWN_STAGES; stage++) {
 			const road = villagePalette(view(stage))["."]?.layers.join();
-			ok(
-				(road === stone) === stage >= 5,
-				`stage ${stage}: the road is ${road === stone ? "stone" : "dirt"}`,
-			);
+			const want = stage >= 6 ? asphalt : stage >= 5 ? stone : dirt;
+			ok(road === want, `stage ${stage}: the road is the wrong kind`);
 		}
 	}
 	// 段の 外の 数（古い保存・下見）は 丸める

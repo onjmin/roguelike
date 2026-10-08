@@ -416,6 +416,21 @@ export const BEACH: Record<string, TileDef> = {
 	か: big(C_SAND, SAND, base(5, 297, 2, 2)),
 };
 
+// ───────────────── 道路（住宅街＝町の 段6 から。絵は scripts/make-road.mjs） ─────────────────
+//   ろ  横の 道の 中央線   ゐ  縦の 道の 中央線   わ  横の 道の 横断歩道   を  縦の 道の 横断歩道   ゆ  歩道
+// 道（.）は 段6 から アスファルト（data/village/map.ts の villagePalette）。
+const ROAD_IMG = "pub:sprites/road.png";
+const road = (i: number) => `${ROAD_IMG}#${i * 16},0,16,16`;
+export const C_ASPHALT = "#4a4a50";
+export const ASPHALT = road(0);
+export const ROADS: Record<string, TileDef> = {
+	ろ: floor(C_ASPHALT, road(1)),
+	ゐ: floor(C_ASPHALT, road(2)),
+	わ: floor(C_ASPHALT, road(3)),
+	を: floor(C_ASPHALT, road(4)),
+	ゆ: floor("#b8b4ac", road(5)),
+};
+
 // ───────────────── 東の 畑（町の 段で 育つ。data/village/map.ts の farmRows） ─────────────────
 // 畝の 区画は Base.png の 畑（0〜2, 26〜28）の 3×3 を 角・へり・まんなか（G）に 分けて 使う。作物は まんなかの 畝に だけ 植える。
 //   η θ ι  畝の 上（左・まんなか・右）   κ λ  左・右   μ ν ξ  下（左・まんなか・右）
