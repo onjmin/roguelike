@@ -417,6 +417,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else {
 				const known = w.known;
 				w.plus++;
+				if (w.cursed) r.se("uncurse");
 				w.cursed = false;
 				w.known = true;
 				r.msg(raised(r, w, known), "good");
@@ -431,6 +432,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else {
 				const known = sh.known;
 				sh.plus++;
+				if (sh.cursed) r.se("uncurse");
 				sh.cursed = false;
 				sh.known = true;
 				r.msg(raised(r, sh, known), "good");
@@ -444,6 +446,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					x.cursed = false;
 					n++;
 				}
+			if (n) r.se("uncurse");
 			r.msg(n ? "のろいが　とけた" : "何も　起きなかった");
 			break;
 		}
@@ -452,6 +455,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			if (!sh) r.msg("しかし　板を　持っていなかった");
 			else {
 				sh.rustproof = true;
+				if (sh.cursed) r.se("uncurse");
 				sh.cursed = false;
 				r.msg("板が　錆びなくなった", "good");
 			}

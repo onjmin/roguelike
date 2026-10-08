@@ -69,6 +69,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		sleep: "rpgen:Adwsg4", // [ツクール]催眠
 		/** のろわれた装備を 身につけた・外せない。 */
 		curse: "rpgen:WiZ0AR", // [ツクール]デバフ
+		/** のろいが とけた（のろい解きスレ・ほかの スレで のろいが 消えた）。 */
+		uncurse: "rpgen:FMcGao", // [ツクール]聖2
 		/** 目つぶし・混乱・ちから／最大HP・レベルが 下がった・板が 錆びた。 */
 		debuff: "rpgen:NQtzgI", // [ツクール]麻痺
 		/** アイテムを投げる。 */
