@@ -1,8 +1,10 @@
 // 道路の 絵を 書き出す（node scripts/make-road.mjs → public/sprites/road.png）。
 //
-// 住宅街（町の 段6）から 村の 道が アスファルトに なる（STORY.md §5.75）。96x16 に 16x16 が 6コマ：
+// 住宅街（町の 段6）から 村の 道が アスファルトに なる（STORY.md §5.75）。160x16 に 16x16 が 10コマ：
 //   0 アスファルト   1 横の 道の 中央線（白の 点線）   2 縦の 道の 中央線   3 横の 道の 横断歩道（縞は 横）
 //   4 縦の 道の 横断歩道（縞は 縦）   5 歩道（灰色の タイル）
+//   6〜9 2車線の 道の 半分（中央線が 内がわの はし、白の 実線が 外がわの はし）：
+//        6 横の 上の 車線・7 横の 下の 車線・8 縦の 左の 車線・9 縦の 右の 車線
 // アスファルトの ざらつきは 決まった 乱数（毎回 同じ 絵）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-statue.mjs と 同じ。
@@ -54,7 +56,7 @@ const encodePng = (w, h, rgba) => {
 
 // ───────────────── 絵 ─────────────────
 
-const W = 96;
+const W = 160;
 const H = 16;
 const rgba = Buffer.alloc(W * H * 4);
 let seed = 12345;
@@ -91,5 +93,23 @@ for (let y = 0; y < 16; y++)
 		const v = line ? 150 : 184 + n;
 		set(80 + x, y, [v, v - 2, v - 6]);
 	}
+// 2車線の 半分（中央線は 2マスの さかい目に：上の 車線は 下の はし、下の 車線は 上の はし）
+for (let f = 6; f < 10; f++)
+	for (let y = 0; y < 16; y++)
+		for (let x = 0; x < 16; x++) {
+			let c = asphalt();
+			const dashX = x % 8 >= 2 && x % 8 <= 5;
+			const dashY = y % 8 >= 2 && y % 8 <= 5;
+			if (f === 6 && y === 15 && dashX) c = WHITE;
+			if (f === 7 && y === 0 && dashX) c = WHITE;
+			if (f === 8 && x === 15 && dashY) c = WHITE;
+			if (f === 9 && x === 0 && dashY) c = WHITE;
+			// 外がわの はしは 白の 実線（歩道との さかい）
+			if (f === 6 && y === 1) c = WHITE;
+			if (f === 7 && y === 14) c = WHITE;
+			if (f === 8 && x === 1) c = WHITE;
+			if (f === 9 && x === 14) c = WHITE;
+			set(f * 16 + x, y, c);
+		}
 writeFileSync(OUT, encodePng(W, H, rgba));
 console.log(`wrote ${OUT}`);

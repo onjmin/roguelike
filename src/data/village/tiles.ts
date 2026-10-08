@@ -418,9 +418,14 @@ export const BEACH: Record<string, TileDef> = {
 
 // ───────────────── 道路（住宅街＝町の 段6 から。絵は scripts/make-road.mjs） ─────────────────
 //   ろ  横の 道の 中央線   ゐ  縦の 道の 中央線   わ  横の 道の 横断歩道   を  縦の 道の 横断歩道   ゆ  歩道
+//   ら り  2車線の 横の 道（上・下の 車線）   る れ  2車線の 縦の 道（左・右の 車線）
+//   ぃ  線路（縦）   ぅ  踏切の 道   ょ  電柱   ゃ  街灯   ゅ  踏切の 警報機（どれも 歩道に 立つ）
 // 道（.）は 段6 から アスファルト（data/village/map.ts の villagePalette）。
 const ROAD_IMG = "pub:sprites/road.png";
 const road = (i: number) => `${ROAD_IMG}#${i * 16},0,16,16`;
+const STREET_IMG = "pub:sprites/street.png";
+const street = (x: number, y: number, h = 16) =>
+	`${STREET_IMG}#${x},${y},16,${h}`;
 export const C_ASPHALT = "#4a4a50";
 export const ASPHALT = road(0);
 export const ROADS: Record<string, TileDef> = {
@@ -429,6 +434,16 @@ export const ROADS: Record<string, TileDef> = {
 	わ: floor(C_ASPHALT, road(3)),
 	を: floor(C_ASPHALT, road(4)),
 	ゆ: floor("#b8b4ac", road(5)),
+	// 線路（縦。柵が あって 通れない）・踏切の 道・電柱・街灯・踏切の 警報機（scripts/make-street.mjs）
+	ぃ: solid("#807a70", street(16, 0)),
+	ぅ: floor(C_ASPHALT, street(32, 0)),
+	ょ: solid("#b8b4ac", road(5), street(64, 0, 32)),
+	ゃ: solid("#b8b4ac", road(5), street(80, 0, 32)),
+	ゅ: solid("#b8b4ac", road(5), street(96, 0, 32)),
+	ら: floor(C_ASPHALT, road(6)),
+	り: floor(C_ASPHALT, road(7)),
+	る: floor(C_ASPHALT, road(8)),
+	れ: floor(C_ASPHALT, road(9)),
 };
 
 // ───────────────── 東の 畑（町の 段で 育つ。data/village/map.ts の farmRows） ─────────────────

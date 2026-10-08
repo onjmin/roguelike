@@ -37,6 +37,8 @@ export type BuildingLook = {
 	sign?: string;
 	/** 上段に 窓を あける（省くと あける。71 ビルは もとから 窓）。 */
 	windows?: boolean;
+	/** 扉は しまって いて 入れない（家・海上レストラン。扉の マスを 調べると 外の 物の 文）。 */
+	closed?: boolean;
 };
 
 /** 字を 並べた 外観（グラウンド・桟橋など）。door は 区画の 中の 扉の マス（中が ある ときだけ）。 */
@@ -88,8 +90,8 @@ export type OutdoorThing = {
 	id: string;
 	at: Cell;
 	lines: readonly string[];
-	/** 遊べる 物（釣り・1打席）。 */
-	play?: "fishing" | "batting";
+	/** 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる）。 */
+	play?: "fishing" | "batting" | "bus";
 };
 
 export type Facility = {
@@ -101,7 +103,8 @@ export type Facility = {
 	/** 外観の 左上（地図の 座標）。 */
 	at: Cell;
 	look: BuildingLook | BlockLook;
-	clear?: readonly [number, number, string][];
+	/** 地面（x, y, 字の 並び, この 段から 敷かない）。 */
+	clear?: readonly (readonly [number, number, string, number?])[];
 	/** 扉を 踏んで 入る ときの 1窓（村に いる あいだ 1回）。 */
 	door?: string;
 	room?: FacilityRoom;
@@ -172,6 +175,28 @@ const C_PIER = "#a8804c";
 const C_FIELD = "#b08a5a";
 const C_GRASS = "#97bc25";
 const TURF = base(0, 4);
+
+/** 住宅街の 家（入れない。扉の マスに 表札。until の 段で 都市の 建物に 建てかわる）。 */
+const house = (
+	id: string,
+	at: Cell,
+	w: number,
+	roof: number,
+	wall: number,
+	plate: readonly string[],
+	until?: number,
+): Facility => {
+	const door = Math.floor(w / 2);
+	return {
+		id,
+		name: "家",
+		from: 6,
+		until,
+		at,
+		look: { kind: "building", w, roof, wall, door, closed: true },
+		outdoor: [{ id: "plate", at: [at[0] + door, at[1] + 3], lines: plate }],
+	};
+};
 
 export const FACILITIES: readonly Facility[] = [
 	// ── 釣り場（はじめから。桟橋の 西の 突堤。キリコの 趣味は 釣り：公式の プロフィール）
@@ -357,7 +382,8 @@ export const FACILITIES: readonly Facility[] = [
 		name: "グラウンド",
 		from: 3,
 		at: [31, 2],
-		clear: [[31, 10, ",,,.,,,,"]],
+		// 新市街が できる（段4）までは 森を 開いた 道。そのあとは 北の 通りの 車線
+		clear: [[31, 10, ",,,.,,,,", 4]],
 		look: {
 			kind: "block",
 			rows: [
@@ -404,7 +430,7 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守村　交番",
 		from: 4,
 		until: 7,
-		at: [40, 15],
+		at: [40, 14],
 		look: {
 			kind: "building",
 			w: 5,
@@ -467,7 +493,7 @@ export const FACILITIES: readonly Facility[] = [
 		name: "消防団の　詰所",
 		from: 4,
 		until: 7,
-		at: [57, 15],
+		at: [64, 14],
 		look: { kind: "building", w: 5, roof: 3, wall: 55, door: 2 },
 		door: "消防団の　詰所。\n法被が　かけてある。",
 		room: {
@@ -514,7 +540,7 @@ export const FACILITIES: readonly Facility[] = [
 		id: "konbini",
 		name: "おんJマート",
 		from: 4,
-		at: [40, 21],
+		at: [40, 23],
 		look: {
 			kind: "building",
 			w: 5,
@@ -578,7 +604,7 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守村　診療所",
 		from: 5,
 		until: 7,
-		at: [49, 15],
+		at: [52, 14],
 		look: {
 			kind: "building",
 			w: 5,
@@ -640,7 +666,7 @@ export const FACILITIES: readonly Facility[] = [
 		id: "dojo",
 		name: "保守道場",
 		from: 5,
-		at: [47, 21],
+		at: [50, 23],
 		look: {
 			kind: "building",
 			w: 5,
@@ -698,7 +724,7 @@ export const FACILITIES: readonly Facility[] = [
 		id: "pawn",
 		name: "質屋「流れ」",
 		from: 5,
-		at: [52, 21],
+		at: [55, 23],
 		look: {
 			kind: "building",
 			w: 4,
@@ -755,6 +781,392 @@ export const FACILITIES: readonly Facility[] = [
 				},
 			],
 		},
+	},
+	// ── 住宅街（段6）：新市街の 空いた 区画に 家が 並ぶ。都市（段7）で 役所や 盛り場に 建てかわる
+	house(
+		"house_a",
+		[50, 5],
+		4,
+		1,
+		59,
+		["表札「名無し」。\n……留守のようだ。"],
+		7,
+	),
+	house(
+		"house_b",
+		[55, 5],
+		4,
+		3,
+		73,
+		["表札「ななしのごんべえ」。\n窓から　テレビの　音。"],
+		7,
+	),
+	house(
+		"house_c",
+		[50, 32],
+		4,
+		2,
+		77,
+		["表札「やきう民」。\n中から　ナイター中継の　音。"],
+		7,
+	),
+	house(
+		"house_d",
+		[55, 32],
+		4,
+		0,
+		55,
+		["表札「ROM」。\n……カーテンが　すこし　ゆれた。"],
+		7,
+	),
+	house(
+		"house_e",
+		[64, 32],
+		6,
+		4,
+		63,
+		["表札「VIP」。\n……ポストに　チラシが　たまっている。"],
+		7,
+	),
+	// ── リサイクルショップ「おさがり」（住宅街。北の 通りの 西）
+	{
+		id: "recycle",
+		name: "リサイクルショップ「おさがり」",
+		from: 6,
+		at: [40, 5],
+		look: {
+			kind: "building",
+			w: 6,
+			roof: 1,
+			wall: 73,
+			door: 2,
+			sign: base(5, 96),
+		},
+		door: "リサイクルショップ「おさがり」。\nほこりと、古い　紙の　におい。",
+		room: {
+			look: LOOKS.wood,
+			rows: [
+				"############",
+				"#HHWHHHHHWH#",
+				"#hhhmhhhhhh#",
+				"#SSS..VV.uu#",
+				"#..........#",
+				"#.xx..UU...#",
+				"#..........#",
+				"#[=]......F#",
+				"#..........#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				S: k.on(base(3, 104, 1, 2)),
+				u: k.on(base(0, 123)),
+			}),
+			things: {
+				S: "shelf",
+				V: "tv",
+				u: "pot",
+				x: "box",
+				U: "records",
+				m: "notice",
+				"[": "register",
+				"=": "register",
+			},
+			lines: {
+				shelf: ["棚。\n古い　ゲーム機と、だれかの　卒業アルバム。"],
+				tv: ["ブラウン管の　テレビ。\n「動作未確認　100円」"],
+				pot: ["つぼ。\n……中に　ビー玉が　ぎっしり。"],
+				box: ["木箱。\n「おさがり　ご自由に」"],
+				records: [
+					"樽に　レコードが　つめこんである。\n……どれも　針の　あとが　深い。",
+				],
+				notice: ["はり紙。\n「買取　強化中：思い出の　品」"],
+				register: ["レジ。\n値札の　シールが　山積み。"],
+			},
+			people: [
+				{
+					id: "recycle_clerk",
+					walk: NANASHI[1],
+					at: [2, 6],
+					dir: "down",
+					name: "店主",
+					lines: [
+						"いらっしゃい。\n……捨てる　神あれば、拾う　神や",
+						"このテレビ？　映るで。\n……たぶん、昭和の　なにかが",
+					],
+				},
+			],
+		},
+	},
+	// ── ガレージ（住宅街。北の 通りの 東。都市で 自動車整備工場に 建てかえ）
+	{
+		id: "garage",
+		name: "ガレージ",
+		from: 6,
+		until: 7,
+		at: [64, 5],
+		look: { kind: "building", w: 6, roof: 5, wall: 69, door: 2 },
+		door: "ガレージ。\nオイルの　におい。",
+		room: {
+			look: LOOKS.stone,
+			rows: [
+				"############",
+				"#HHHHHHHHWH#",
+				"#hhkhhhhmhh#",
+				"#UU......xx#",
+				"#..........#",
+				"#..cc......#",
+				"#..cc......#",
+				"#F.........#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				k: k.low(base(6, 358)),
+				c: k.on(base(5, 48)),
+			}),
+			things: { k: "tools", m: "notice", U: "drum", x: "tires", c: "car" },
+			lines: {
+				tools: ["工具の　板。\nスパナが　大きい　順に　ならんでいる。"],
+				notice: ["はり紙。\n「洗車　1回　500円」"],
+				drum: ["ドラム缶。\n……オイルが　にじんでいる。"],
+				tires: ["タイヤの　山。\nすりへった　溝に、浜の　砂。"],
+				car: ["シートを　かぶった　車。\n……ナンバーは「1000」。"],
+			},
+			people: [
+				{
+					id: "garage_mech",
+					walk: NANASHI[0],
+					at: [6, 4],
+					dir: "down",
+					name: "整備士",
+					lines: ["車？　村の　中は　歩けば　ええ。\n……でも、夢は　あるやろ"],
+				},
+			],
+		},
+	},
+	// ── ゲームセンター「連コ」（住宅街。南の 通りの 東）
+	{
+		id: "arcade",
+		name: "ゲームセンター「連コ」",
+		from: 6,
+		at: [64, 23],
+		look: {
+			kind: "building",
+			w: 6,
+			roof: 5,
+			wall: 69,
+			door: 2,
+			sign: base(5, 95),
+		},
+		door: "ゲームセンター「連コ」。\n電子音と、レバーを　たたく　音。",
+		room: {
+			look: LOOKS.stone,
+			rows: [
+				"############",
+				"#HHHHAHHHHH#",
+				"#hhhhhhhhmh#",
+				"#G.G..G.G..#",
+				"#..........#",
+				"#.G.G...G..#",
+				"#..........#",
+				"#.........F#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				A: k.up(base(5, 95)),
+				G: k.on(base(1, 485)),
+			}),
+			things: { G: "cabinet", m: "notice" },
+			lines: {
+				cabinet: ["古い　アーケード台。\n画面に「INSERT COIN」。"],
+				notice: ["はり紙。\n「1プレイ　100円。連コイン　禁止」"],
+			},
+			people: [
+				{
+					id: "arcade_a",
+					walk: NANASHI[3],
+					at: [1, 4],
+					dir: "up",
+					name: "名無し",
+					lines: ["格ゲーの　対戦台や。\n……乱入、待っとるで"],
+				},
+				{
+					id: "arcade_b",
+					walk: NANASHI[2],
+					at: [8, 6],
+					dir: "up",
+					name: "名無し",
+					lines: ["メダル、ぜんぶ　すった。\n……来月まで　ROM　やわ"],
+				},
+			],
+		},
+	},
+	// ── ageジム（住宅街。浜への 道の 西）
+	{
+		id: "gym",
+		name: "ageジム",
+		from: 6,
+		at: [40, 32],
+		look: { kind: "building", w: 6, roof: 4, wall: 69, door: 2 },
+		door: "ageジム。\n「ふんっ……！」と　声が　する。",
+		room: {
+			look: LOOKS.stone,
+			rows: [
+				"############",
+				"#HHWHHHHWHH#",
+				"#hkkhhhhmhh#",
+				"#..........#",
+				"#.bb...bb..#",
+				"#..........#",
+				"#.bb...uu..#",
+				"#F........F#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				k: k.low(base(0, 110)),
+				b: k.on(base(2, 108)),
+				u: k.on(base(0, 123)),
+			}),
+			things: { k: "mirror", b: "bench", u: "weight", m: "notice" },
+			lines: {
+				mirror: ["大きな　鏡。\nキリコが　映っている。……細い。"],
+				bench: ["ベンチプレスの　台。\nバーが　汗で　光っている。"],
+				weight: ["ダンベルの　山。\n「1000kg」と　書いた　うそ札。"],
+				notice: ["はり紙。\n「1日　1000回　スクワット」"],
+			},
+			people: [
+				{
+					id: "gym_trainer",
+					walk: NANASHI[0],
+					at: [5, 3],
+					dir: "down",
+					name: "トレーナー",
+					lines: ["筋肉は　うらぎらない。\n……スレの　勢いは　うらぎるけどな"],
+				},
+			],
+		},
+	},
+	// ── バー「次スレ」（住宅街。浜の 東。海を 見ながら 飲む）
+	{
+		id: "bar",
+		name: "バー「次スレ」",
+		from: 6,
+		at: [33, 32],
+		look: {
+			kind: "building",
+			w: 5,
+			roof: 7,
+			wall: 61,
+			door: 2,
+			sign: base(4, 95),
+		},
+		door: "バー「次スレ」。\n低い　ジャズと、波の　音。",
+		room: {
+			look: LOOKS.dojo,
+			rows: [
+				"############",
+				"#HHWHHAHHWH#",
+				"#bbbbbbhmhh#",
+				"#......U...#",
+				"#[=====]...#",
+				"#nnnnnnn...#",
+				"#........O.#",
+				"#F.........#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				A: k.up(base(4, 95)),
+				b: k.low(base(5, 204)),
+				"[": { ...k.on(base(5, 98)), counter: true },
+				"=": { ...k.on(base(6, 98)), counter: true },
+				"]": { ...k.on(base(7, 98)), counter: true },
+				n: k.floor(base(3, 109)),
+				O: k.on(base(3, 108)),
+			}),
+			// 酒棚は 台の うしろ（台ごしに 読む）
+			things: {
+				"[": "bottles",
+				"=": "bottles",
+				m: "menu",
+				U: "barrel",
+				O: "table",
+			},
+			lines: {
+				bottles: ["酒棚。\nラベルに「次スレ」と　書かれた　瓶。"],
+				menu: ["品書き。\n「完走」「次スレ」「保守（ノンアル）」"],
+				barrel: ["樽。\n……海の　においが　しみている。"],
+				table: ["丸テーブル。\n窓から　夜の　海が　見える。"],
+			},
+			people: [
+				{
+					id: "bar_master",
+					walk: NANASHI[3],
+					at: [4, 3],
+					dir: "down",
+					name: "マスター",
+					lines: [
+						"いらっしゃい。\n……キリコちゃんは　ミルクやな",
+						"スレが　1000で　終わったら、\nみんな　ここで　次スレを　待つんや",
+					],
+				},
+			],
+		},
+	},
+	// ── 海上レストラン「1000」（住宅街。桟橋の 東の 海の 上。見るだけ：予約で いっぱい）
+	{
+		id: "restaurant",
+		name: "海上レストラン「1000」",
+		from: 6,
+		at: [23, 37],
+		clear: [
+			[22, 37, "はははははははははは"],
+			[22, 38, "はははははははははは"],
+			[22, 39, "はははははははははは"],
+			[22, 40, "はははははははははは"],
+			[22, 41, "はははははははははは"],
+			[22, 42, "はははははははははは"],
+		],
+		look: {
+			kind: "building",
+			w: 7,
+			roof: 3,
+			wall: 77,
+			door: 3,
+			sign: base(3, 95),
+			closed: true,
+		},
+		outdoor: [
+			{
+				id: "door",
+				at: [26, 40],
+				lines: [
+					"海上レストラン「1000」。\n窓ぎわの　席から、海が　見える。",
+					"今日は　予約で　いっぱいだ。\n……おすすめの　看板だけ　読める。",
+					"「本日の　おすすめ：\n麻婆豆腐（ロゼ監修）」",
+				],
+			},
+		],
+	},
+	// ── バス停（住宅街。広場の 東の はし。ここからも どの 板へも 出かけられる：出口を 遠く しない）
+	{
+		id: "bus",
+		name: "バス停",
+		from: 6,
+		at: [31, 20],
+		look: {
+			kind: "block",
+			rows: ["ば"],
+			tiles: { ば: solid("#97bc25", base(0, 4), base(5, 37, 1, 2)) },
+		},
+		outdoor: [
+			{
+				id: "stop",
+				at: [31, 20],
+				lines: [
+					"バス停「保守村　広場前」。\n全体マップの　どの　板へも　行ける。",
+				],
+				play: "bus",
+			},
+		],
 	},
 ];
 
@@ -851,7 +1263,10 @@ export const facilityTiles = (): Record<string, TileDef> => {
 		out[ch("upWin")] = solid(wallColor, up, WINDOW);
 		out[ch("upSign")] = solid(wallColor, up, b.sign ?? "");
 		out[ch("low")] = solid(wallColor, low);
-		out[ch("door")] = floor(wallColor, low, base(b.doorCol ?? 7, b.wall, 1, 2));
+		const doorArt = base(b.doorCol ?? 7, b.wall, 1, 2);
+		out[ch("door")] = b.closed
+			? solid(wallColor, low, doorArt)
+			: floor(wallColor, low, doorArt);
 		out[ch("lowDeco")] = solid(wallColor, low, base(3, 362));
 	});
 	return out;
@@ -864,10 +1279,12 @@ export const stampFacilities = (
 	put: (rows: string[], c: Cell, ch: string) => void,
 ): void => {
 	for (const f of facilitiesAt(stage)) {
-		for (const [x0, y, line] of f.clear ?? [])
+		for (const [x0, y, line, until] of f.clear ?? []) {
+			if (until !== undefined && stage >= until) continue;
 			[...line].forEach((ch, dx) => {
 				put(rows, [x0 + dx, y], ch);
 			});
+		}
 		facilityBlock(f).forEach((line, dy) => {
 			[...line].forEach((ch, dx) => {
 				if (ch !== " ") put(rows, [f.at[0] + dx, f.at[1] + dy], ch);

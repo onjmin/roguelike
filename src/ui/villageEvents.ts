@@ -343,7 +343,7 @@ const shrineScript: Script = async (s) => {
 
 /** 村の 出口。踏むと 全体マップで 行き先を 選んで もぐるか きく（やめたら 1歩 もどる）。 */
 const mouthScript =
-	(ctx: Ctx, step = "d"): Script =>
+	(ctx: Ctx, step: string | null = "d"): Script =>
 	async (s) => {
 		// 行き先（はじめは 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
 		// 過去ログの底は 井戸から なので 地図には 出さない）
@@ -352,7 +352,10 @@ const mouthScript =
 			last && !DUNGEONS[last].secret && loadProgress().unlocked.includes(last)
 				? last
 				: "shallow";
-		const back = () => s.move("player", step);
+		// やめたら 1歩 もどる（バス停は 踏まずに 調べるので もどらない）
+		const back = async () => {
+			if (step) await s.move("player", step);
+		};
 		if (!(await suspendedFirst(s, back))) return;
 		// 行き先の 植民地（全体マップで 選ぶ。ui/worldMap.ts）
 		const open = DUNGEON_IDS.filter((x) => loadProgress().unlocked.includes(x));
@@ -640,6 +643,12 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id.startsWith("fthing_")) {
 		const f = FACILITIES.find((x) => p.id.startsWith(`fthing_${x.id}_`));
 		const t = f?.outdoor?.find((o) => p.id === outdoorId(f, o));
+		// バス停：ここからも 出かけられる（村の 口と 同じ 流れ。出口を 遠く しない）
+		if (t?.play === "bus")
+			return sign(p.id, p.x, p.y, async (s) => {
+				for (const l of t.lines) await s.narrate(l);
+				await mouthScript(ctx, null)(s);
+			});
 		if (t) return sign(p.id, p.x, p.y, outdoorScript(ctx, t));
 	}
 	if (p.id === "door_cafe")

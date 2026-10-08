@@ -99,7 +99,7 @@ import {
 	TURF,
 } from "./tiles";
 
-export const VILLAGE_W = 64;
+export const VILLAGE_W = 80;
 export const VILLAGE_H = 44;
 
 /**
@@ -358,14 +358,14 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
 	[2, 22, ",,B,,;"],
 	[3, 23, ",,,,"],
 	// 東の 畑（町の 段で 育つ。farmRows）。y=19 は 東の 出口への 道
-	[31, 19, ".".repeat(33)],
+	[31, 19, ".".repeat(49)],
 	// 東の 口の 前の 草地（帰ってきた ときに 仲間が 並ぶ。新市街が 育つまでは 森の 中の 空き地）
-	[58, 16, ",,,,,"],
-	[56, 17, ",,;,,,,"],
-	[55, 18, ",,,,,,*,"],
-	[55, 20, ",*,,,,,,"],
-	[56, 21, ",,,,;,,"],
-	[58, 22, ",,,,,"],
+	[74, 16, ",,,,,"],
+	[72, 17, ",,;,,,,"],
+	[71, 18, ",,,,,,*,"],
+	[71, 20, ",*,,,,,,"],
+	[72, 21, ",,,,;,,"],
+	[74, 22, ",,,,,"],
 	[32, 22, ",,,bb"],
 	// 南の 池
 	[10, 25, ",,%,,,,,,,.,,,;,,,*,,"],
@@ -383,18 +383,18 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
  * （おーぷぬ諸島・灯台へは 船で わたる）。先の 3×3 は 船着き場（帰ってきた ときに 仲間が 並べる 広さ）。
  */
 const SHORE_ROWS: readonly string[] = [
-	"TbささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささbT",
-	"bささやさささなささささささなささささささささささささなさささやささささなささささささささなささささささやさささささなささささb",
-	"ささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささ",
-	"ささなさささささささささささささささささささささささなささささささささささささささささささささささなささささささささささささささ",
-	"ささいさささささささささささささささささささささささささささささささささささいさささささささささささささささささささささいさささ",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
-	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"TbささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささbT",
+	"bささやさささなささささささなささささささささささささなさささやささささなささささささささなささささささやさささささなさささささささやささささささなさささささb",
+	"ささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささ",
+	"ささなさささささささささささささささささささささささなささささささささささささささささささささささなささささささささささささささささささささなさささささささささ",
+	"ささいさささささささささささささささささささささささささささささささささささいさささささささささささささささささささささいささささささささささささささささいささ",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
 ];
 const SHORE_Y = 32;
 /** 桟橋（x=20 を 砂浜の へり y=36 から 港 y=43 まで。先の 3×3 は 船着き場）。 */
@@ -511,39 +511,112 @@ const EDGE_CELLS: readonly [number, number, string][] = [
 ];
 
 /**
- * 東の 新市街（地図の x=40〜62。STORY.md §5.75）。街（段4）で 森が 開けて 草地と 通りが できる：
- * 北の 通り（y=11。崖下の 道の 続き）・大通り（y=19。町の 通りの 続き）・南の 通り（y=25）・浜への 道（y=30）、
- * 縦の 通り（x=46・56）。区画に 建つ 物は data/village/facilities.ts。住宅街（段6）から 中央線と 横断歩道。
+ * 東の 新市街（地図の x=40〜78。STORY.md §5.75）。街（段4）で 森が 開けて 草地と 通りが できる。
+ * 通りは 2車線で、両がわに 歩道（横：北の 通り y=9〜12・大通り y=18〜21・南の 通り y=27〜30、
+ * 縦：x=46〜49・60〜63。歩道・車線・車線・歩道）。北の 通りの 西の はし（x=31〜39）は 車線だけで 崖下の 道に つながる。
+ * 浜ぞい（y=36）は 遊歩道、その 上は 区画。住宅街（段6）から アスファルト（中央線・はしの 白線・横断歩道）と、
+ * 線路（x=72〜73。踏切は 通りと 交わる 所）・電柱・街灯・踏切の 警報機。区画に 建つ 物は data/village/facilities.ts。
  */
 const EAST_X = 40;
-const EAST_W = 23;
-const STREET_X = [46, 56] as const;
+const EAST_R = 78;
+type Street = {
+	side0: number;
+	lanes: readonly [number, number];
+	side1: number;
+};
+const H_STREETS: readonly (Street & { x0: number })[] = [
+	{ side0: 9, lanes: [10, 11], side1: 12, x0: 31 },
+	{ side0: 18, lanes: [19, 20], side1: 21, x0: 40 },
+	{ side0: 27, lanes: [28, 29], side1: 30, x0: 40 },
+];
+const V_STREETS: readonly Street[] = [
+	{ side0: 46, lanes: [47, 48], side1: 49 },
+	{ side0: 60, lanes: [61, 62], side1: 63 },
+];
+const RAIL_X = [72, 73] as const;
+/** 電柱（歩道の 上。扉の 前は よける）・街灯（大通りの 歩道）・踏切の 警報機。 */
+const POLES: readonly Cell[] = [
+	[45, 9],
+	[59, 9],
+	[70, 9],
+	[44, 12],
+	[58, 12],
+	[70, 12],
+	[45, 27],
+	[54, 27],
+	[59, 27],
+	[70, 27],
+];
+const LAMPS: readonly Cell[] = [
+	[44, 18],
+	[51, 18],
+	[58, 18],
+	[70, 18],
+	[44, 21],
+	[52, 21],
+	[58, 21],
+	[68, 21],
+	[77, 21],
+];
+const CROSSING_SIGNS: readonly Cell[] = [
+	[71, 9],
+	[74, 12],
+	[71, 18],
+	[74, 21],
+	[71, 27],
+	[74, 30],
+];
 const eastDistrict = (stage: number): [number, number, string][] => {
 	if (stage < 4) return [];
+	const paved = stage >= 6;
+	const side = paved ? "ゆ" : ".";
+	const w = EAST_R - EAST_X + 1;
 	const out: [number, number, string][] = [];
-	for (let y = 6; y <= 31; y++) out.push([EAST_X, y, ",".repeat(EAST_W)]);
-	out.push([31, 11, ".".repeat(32)]);
-	for (const y of [19, 25, 30]) out.push([EAST_X, y, ".".repeat(EAST_W)]);
-	for (let y = 11; y <= 31; y++)
-		for (const x of STREET_X) out.push([x, y, "."]);
-	if (stage < 6) return out;
-	// 中央線（交差点は あけて）と 横断歩道（交差点の となり）
-	for (const y of [11, 19, 25]) {
-		const x0 = y === 11 ? 31 : EAST_X;
-		const line = [...".".repeat(EAST_X + EAST_W - x0)].map((_, i) => {
-			const x = x0 + i;
-			if ((STREET_X as readonly number[]).includes(x)) return ".";
-			if (STREET_X.some((sx) => Math.abs(sx - x) === 1)) return "わ";
-			return "ろ";
+	for (let y = 4; y <= 35; y++) out.push([EAST_X, y, ",".repeat(w)]);
+	out.push([EAST_X, 36, (paved ? "ゆ" : "さ").repeat(w)]);
+	const inV = (x: number) =>
+		V_STREETS.find((v) => x >= v.side0 && x <= v.side1);
+	const inH = (y: number) =>
+		H_STREETS.find((h) => y >= h.side0 && y <= h.side1);
+	// 横の 通り
+	for (const h of H_STREETS) {
+		for (const y of [h.side0, h.side1]) out.push([EAST_X, y, side.repeat(w)]);
+		h.lanes.forEach((y, k) => {
+			const line = Array.from({ length: EAST_R - h.x0 + 1 }, (_, i) => {
+				const x = h.x0 + i;
+				if (!paved) return ".";
+				const v = inV(x);
+				if (v && (v.lanes as readonly number[]).includes(x)) return ".";
+				if (v) return "わ";
+				return k === 0 ? "ら" : "り";
+			});
+			out.push([h.x0, y, line.join("")]);
 		});
-		out.push([x0, y, line.join("")]);
 	}
-	for (const x of STREET_X)
-		for (let y = 12; y <= 29; y++) {
-			if (y === 19 || y === 25) continue;
-			const near = [11, 19, 25].some((r) => Math.abs(r - y) === 1);
-			out.push([x, y, near ? "を" : "ゐ"]);
+	// 縦の 通り（北の 通りの 歩道から 浜の 遊歩道まで）。横の 通りの 車線を よこぎる 歩道は 横断歩道の まま
+	for (const v of V_STREETS)
+		for (let y = 9; y <= 36; y++) {
+			const h = inH(y);
+			const lane = !!h && (h.lanes as readonly number[]).includes(y);
+			const xs = [v.side0, v.lanes[0], v.lanes[1], v.side1];
+			xs.forEach((x, k) => {
+				const walk = k === 0 || k === 3;
+				if (walk) {
+					if (!lane) out.push([x, y, side]);
+					return;
+				}
+				if (y === 36) out.push([x, y, side]);
+				else if (!paved || lane) out.push([x, y, "."]);
+				else out.push([x, y, h ? "を" : k === 1 ? "る" : "れ"]);
+			});
 		}
+	if (!paved) return out;
+	// 線路（住宅街から。通りと 交わる 所は 踏切）
+	for (let y = 0; y <= 35; y++)
+		for (const x of RAIL_X) out.push([x, y, inH(y) ? "ぅ" : "ぃ"]);
+	for (const [x, y] of POLES) out.push([x, y, "ょ"]);
+	for (const [x, y] of LAMPS) out.push([x, y, "ゃ"]);
+	for (const [x, y] of CROSSING_SIGNS) out.push([x, y, "ゅ"]);
 	return out;
 };
 
@@ -614,7 +687,7 @@ export const VILLAGE_EXITS: readonly VillageExit[] = [
 	{ side: "n", cell: [27, 0], inward: "down", step: "d" },
 	{ side: "w", cell: [0, 19], inward: "right", step: "r" },
 	// 東は 新市街の はし（町の 通りを のばした 大通りの 先。STORY.md §5.75）
-	{ side: "e", cell: [63, 19], inward: "left", step: "l" },
+	{ side: "e", cell: [79, 19], inward: "left", step: "l" },
 	// 南は 桟橋の 先の 港（船で 海の 向こうの 島へ）
 	{ side: "s", cell: [20, 43], inward: "up", step: "u" },
 ];
