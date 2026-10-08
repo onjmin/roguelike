@@ -284,7 +284,7 @@ const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
 
 /**
  * 跡地の 結：ROM専 18体が 板の 方角の 口から 歩いてきて、キリコの まわりに 立つ（旗 ROMS の 人を 動かす。
- * まわりの 空いた マスに 入りきらない 分は 口の そばに 残る）。
+ * まわりの 空いた マスに 入りきらない 分は 口の そばに 残る）。行列は とばさず ぜんぶ 歩いて 見せる（noWarp）。
  */
 const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
@@ -297,9 +297,13 @@ const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
 		s.place(`${ROMS}_${i}`, gate[0], gate[1]);
 	}
 	await s.look(`${ROMS}_0`);
+	// 18体の 行列は 長い 道でも とばさない（ぞろぞろ 歩いてくるのを 見せる 場面）
 	await Promise.all(
 		spots.map((to, i) =>
-			s.goto(`${ROMS}_${i}`, to[0], to[1], { speed: 1.4 + (i % 3) * 0.2 }),
+			s.goto(`${ROMS}_${i}`, to[0], to[1], {
+				speed: 1.4 + (i % 3) * 0.2,
+				noWarp: true,
+			}),
 		),
 	);
 	for (let i = 0; i < ROM_COUNT; i++) s.face(`${ROMS}_${i}`, "player");
@@ -309,9 +313,13 @@ const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
 /** ROM専たちが 口へ 帰っていく（また 見る 側へ）。 */
 const walkOutRoms = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
+	// 帰りの 行列も とばさない
 	await Promise.all(
 		Array.from({ length: ROM_COUNT }, (_, i) =>
-			s.goto(`${ROMS}_${i}`, gate[0], gate[1], { speed: 1.4 + (i % 3) * 0.2 }),
+			s.goto(`${ROMS}_${i}`, gate[0], gate[1], {
+				speed: 1.4 + (i % 3) * 0.2,
+				noWarp: true,
+			}),
 		),
 	);
 	s.set(ROMS, false);

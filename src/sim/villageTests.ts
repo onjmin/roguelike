@@ -210,6 +210,16 @@ import { hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
 import {
+	type Cell,
+	FOLLOW_CUT,
+	LONG_WALK,
+	mayWarp,
+	routeCells,
+	type Seen,
+	WALK_TAIL,
+	walkRoute,
+} from "../engine/longWalk";
+import {
 	forgetProgressMemo,
 	hasFlag,
 	loadProgress,
@@ -229,6 +239,7 @@ import {
 	toReplay,
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
+import { DIR_VEC, type Dir } from "../engine/types";
 import { bathLayout } from "../ui/bath";
 import { floorsText } from "../ui/bookView";
 import {
@@ -691,6 +702,262 @@ test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひ�
 		await lunchScript(again.s);
 		ok(!again.log.length, `came twice: ${again.log.join(" / ")}`);
 	});
+});
+
+/** 場面の 道（ui/village.ts の routeTo と 同じ 幅優先。上・右・下・左の 順に 地形だけを 見て、キリコの マスは よける）。 */
+const sceneRoute = (
+	v: VillageView,
+	from: Cell,
+	to: Cell,
+	kiriko: Cell,
+): Dir[] | null => {
+	const rows = villageRows(v).map((r) => [...r]);
+	const tiles = villagePalette(v);
+	const open = (x: number, y: number): boolean =>
+		!(x === kiriko[0] && y === kiriko[1]) &&
+		!!tiles[rows[y]?.[x] ?? ""]?.passable;
+	const key = (x: number, y: number) => `${x},${y}`;
+	const prev = new Map<string, { k: string; d: Dir } | null>([
+		[key(from[0], from[1]), null],
+	]);
+	const queue: Cell[] = [from];
+	for (let head = 0; head < queue.length; head++) {
+		const [x, y] = queue[head];
+		if (x === to[0] && y === to[1]) {
+			const route: Dir[] = [];
+			for (let cur = prev.get(key(x, y)); cur; cur = prev.get(cur.k))
+				route.push(cur.d);
+			return route.reverse();
+		}
+		for (const d of ["up", "right", "down", "left"] as Dir[]) {
+			const nx = x + DIR_VEC[d].dx;
+			const ny = y + DIR_VEC[d].dy;
+			if (prev.has(key(nx, ny)) || !open(nx, ny)) continue;
+			prev.set(key(nx, ny), { k: key(x, y), d });
+			queue.push([nx, ny]);
+		}
+	}
+	return null;
+};
+
+/** スマホくらいの 画面（よこ 11・たて 22 マス。地図の はしで 止まる）に 映る マス（はしの 外 2マスまで）。 */
+const phoneView = ([cx, cy]: Cell): NonNullable<Seen> => {
+	const [w, h] = [11, 22];
+	const x0 = Math.max(0, Math.min(VILLAGE_W - w, cx - Math.floor(w / 2)));
+	const y0 = Math.max(0, Math.min(VILLAGE_H - h, cy - Math.floor(h / 2)));
+	return (x, y) =>
+		x >= x0 - 2 && x < x0 + w + 2 && y >= y0 - 2 && y < y0 + h + 2;
+};
+
+/** 右へ n 歩の 道。 */
+const straight = (n: number): Dir[] => Array.from({ length: n }, () => "right");
+
+/** walkRoute を 記録だけで 走らせる（place・cut・step を 1行ずつ。いる マスも 追う）。 */
+const recordWalk = async (
+	from: Cell,
+	route: readonly Dir[],
+	o: {
+		warp: boolean;
+		seen: Seen;
+		follow?: boolean;
+		mayCut?: boolean;
+		free?: (x: number, y: number) => boolean;
+	},
+): Promise<{ log: string[]; at: Cell }> => {
+	const log: string[] = [];
+	let at: Cell = from;
+	await walkRoute(from, route, {
+		warp: o.warp,
+		follow: () => !!o.follow,
+		mayCut: () => o.mayCut ?? true,
+		seen: () => o.seen,
+		free: o.free ?? (() => true),
+		place: (c) => {
+			log.push(`place ${c.join(",")}`);
+			at = c;
+		},
+		cut: async (c) => {
+			log.push(`cut ${c.join(",")}`);
+			at = c;
+		},
+		step: async (d) => {
+			log.push(`step ${d}`);
+			at = [at[0] + DIR_VEC[d].dx, at[1] + DIR_VEC[d].dy];
+		},
+	});
+	return { log, at };
+};
+
+const onlySteps = (log: readonly string[], n: number): boolean =>
+	log.length === n && log.every((l) => l.startsWith("step "));
+
+test("場面で 遠くから 歩く 人は 映らない ところを とばす：東の 口に いる キリコへ ぷゆゆパン（画面の はしの 外から 歩いて 入る）", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 1 });
+		const east = VILLAGE_EXITS.find((e) => e.side === "e");
+		ok(!!east, "no east exit");
+		if (!east) return;
+		// 東の 板から 帰ると、口から 1歩 村へ 入った ところに 立つ
+		const v = DIR_VEC[east.inward];
+		const at: Cell = [east.cell[0] + v.dx, east.cell[1] + v.dy];
+		const { s, walks } = fakeStory({ at });
+		await lunchScript(s);
+		const come = walks.find((w) => w.target === "mob_puyu");
+		ok(!!come && !come.noWarp, `ぷゆゆ does not come: ${JSON.stringify(come)}`);
+		if (!come) return;
+		const home = MOBS.puyu.spot;
+		const to: Cell = [come.x, come.y];
+		const route = sceneRoute(villageView(), home, to, at);
+		ok(
+			!!route && route.length > LONG_WALK,
+			`ぷゆゆ's walk from the east exit is short: ${route?.length}`,
+		);
+		if (!route) return;
+		const n = route.length;
+		ok(mayWarp("mob_puyu", n), `a ${n}-step walk by ぷゆゆ is not shortened`);
+		const arrived = (c: Cell) => c[0] === to[0] && c[1] === to[1];
+		// スマホの 画面：はじめに 1度だけ 映らない マスへ 置きなおして、はしの 外から 歩いて 入る
+		const seen = phoneView(at);
+		const phone = await recordWalk(home, route, { warp: true, seen });
+		const places = phone.log.filter((l) => l.startsWith("place "));
+		const [px, py] = places[0]?.split(" ")[1]?.split(",").map(Number) ?? [];
+		const steps = phone.log.filter((l) => l.startsWith("step ")).length;
+		ok(
+			phone.log[0]?.startsWith("place ") &&
+				places.length === 1 &&
+				!seen(px, py),
+			`ぷゆゆ is not moved off-screen before walking:\n${phone.log.join("\n")}`,
+		);
+		ok(
+			steps >= WALK_TAIL && steps <= 20 && arrived(phone.at),
+			`ぷゆゆ walks ${steps} of ${n} steps and ends at ${phone.at}`,
+		);
+		// 画面の 大きさが わからなければ、行き先の WALK_TAIL 歩 手前へ 置いてから 歩く
+		const blind = await recordWalk(home, route, { warp: true, seen: null });
+		ok(
+			blind.log[0] ===
+				`place ${routeCells(home, route)[n - WALK_TAIL].join(",")}` &&
+				onlySteps(blind.log.slice(1), WALK_TAIL) &&
+				arrived(blind.at),
+			`unknown screen:\n${blind.log.join("\n")}`,
+		);
+		// キリコの 歩き・noWarp は 長くても ぜんぶ 歩く
+		for (const [who, opt] of [
+			["player", undefined],
+			["mob_puyu", { noWarp: true }],
+		] as const) {
+			const full = await recordWalk(home, route, {
+				warp: mayWarp(who, n, opt),
+				seen,
+			});
+			ok(
+				onlySteps(full.log, n) && arrived(full.at),
+				`${who}${opt ? " (noWarp)" : ""} skips part of the walk`,
+			);
+		}
+	});
+});
+
+test("場面の 歩きを とばさない とき：近い 道・キリコ・noWarp・映っている 人。出ていく 人は 映らなく なってから 行き先へ。カメラが ついていく 人は 長い 道だけ 暗転", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 1 });
+		// 蓄音機の 前なら ぷゆゆの 持ち場から 近い：ふつうに 歩いてくる
+		const at = VILLAGE_SPOTS.boot;
+		const { s, walks } = fakeStory();
+		await lunchScript(s);
+		const come = walks.find((w) => w.target === "mob_puyu");
+		const route =
+			come && sceneRoute(villageView(), MOBS.puyu.spot, [come.x, come.y], at);
+		ok(
+			!!route && !mayWarp("mob_puyu", route.length),
+			`ぷゆゆ's walk to the phonograph is long: ${route?.length}`,
+		);
+		if (!route) return;
+		const near = await recordWalk(MOBS.puyu.spot, route, {
+			warp: mayWarp("mob_puyu", route.length),
+			seen: phoneView(at),
+		});
+		ok(onlySteps(near.log, route.length), `near:\n${near.log.join("\n")}`);
+	});
+	// 何歩から とばすか・とばさない 人
+	ok(
+		!mayWarp("mob_puyu", LONG_WALK) && mayWarp("mob_puyu", LONG_WALK + 1),
+		`the threshold is not ${LONG_WALK} steps`,
+	);
+	ok(!mayWarp("player", 100), "Kiriko's own walk may be shortened");
+	ok(!mayWarp("mob_puyu", 100, { noWarp: true }), "noWarp is ignored");
+	const far = straight(40);
+	ok(
+		onlySteps(
+			(
+				await recordWalk([0, 0], far, {
+					warp: mayWarp("player", 40),
+					seen: (x) => x >= 25,
+					follow: true,
+				})
+			).log,
+			40,
+		),
+		"Kiriko is moved",
+	);
+	// 映っている 人は 消さない
+	const shown = await recordWalk([0, 0], far, { warp: true, seen: () => true });
+	ok(onlySteps(shown.log, 40), `a visible walker vanished:\n${shown.log}`);
+	// 出ていく 人（来客が 口へ 帰る）：映らなく なったら そのまま 行き先へ
+	const away = await recordWalk([0, 0], far, {
+		warp: true,
+		seen: (x) => x <= 5,
+	});
+	ok(
+		onlySteps(away.log.slice(0, 6), 6) &&
+			away.log[6] === "place 40,0" &&
+			away.log.length === 7,
+		`walking away:\n${away.log.join("\n")}`,
+	);
+	// 入ってくる 人：画面の はしの すぐ 外へ 置いて 歩く（空いて いなければ 1つ 手前）
+	const enter = await recordWalk([0, 0], far, {
+		warp: true,
+		seen: (x) => x >= 25,
+	});
+	ok(
+		enter.log[0] === "place 24,0" && onlySteps(enter.log.slice(1), 16),
+		`walking in:\n${enter.log.join("\n")}`,
+	);
+	const blocked = await recordWalk([0, 0], far, {
+		warp: true,
+		seen: (x) => x >= 25,
+		free: (x) => x !== 24,
+	});
+	ok(
+		blocked.log[0] === "place 23,0" && onlySteps(blocked.log.slice(1), 17),
+		`walking in past someone standing:\n${blocked.log.join("\n")}`,
+	);
+	// カメラが ついていく 人：長い 道だけ 暗転で 行き先の WALK_TAIL 歩 手前へ。窓が キー待ちなら 歩く
+	const cut = await recordWalk([0, 0], far, {
+		warp: true,
+		seen: () => true,
+		follow: true,
+	});
+	ok(
+		cut.log[0] === `cut ${40 - WALK_TAIL},0` &&
+			onlySteps(cut.log.slice(1), WALK_TAIL),
+		`follow cut:\n${cut.log.join("\n")}`,
+	);
+	const short = await recordWalk([0, 0], straight(FOLLOW_CUT), {
+		warp: true,
+		seen: () => true,
+		follow: true,
+	});
+	ok(onlySteps(short.log, FOLLOW_CUT), `short follow:\n${short.log}`);
+	const waiting = await recordWalk([0, 0], far, {
+		warp: true,
+		seen: () => true,
+		follow: true,
+		mayCut: false,
+	});
+	ok(onlySteps(waiting.log, 40), `cut over a waiting window:\n${waiting.log}`);
 });
 
 test("寄り道の 板が 開く：その 板の 名無しが 口から 来て キリコの となりで 話し、口へ 帰る。そのあと「もぐれるように　なった」", async () => {
@@ -1377,6 +1644,8 @@ const fakeStory = (
 	} = {},
 ) => {
 	const log: string[] = [];
+	/** goto の 行き先と noWarp（log の 行は かえない）。 */
+	const walks: { target: string; x: number; y: number; noWarp: boolean }[] = [];
 	const state: VState = {
 		x: o.at?.[0] ?? VILLAGE_SPOTS.boot[0],
 		y: o.at?.[1] ?? VILLAGE_SPOTS.boot[1],
@@ -1428,8 +1697,9 @@ const fakeStory = (
 					if (ch === "r") state.x++;
 				}
 		},
-		goto: async (target, x, y) => {
+		goto: async (target, x, y, opt) => {
 			log.push(`goto ${target} ${x},${y}`);
+			walks.push({ target, x, y, noWarp: !!opt?.noWarp });
 		},
 		face: () => {},
 		near: (id) => o.near?.includes(id) ?? false,
@@ -1465,7 +1735,7 @@ const fakeStory = (
 		},
 		exit: () => {},
 	};
-	return { s, log };
+	return { s, log, walks };
 };
 
 test("村の 場面で 話す 仲間は そばへ 呼ぶ：遠い 人だけ 暗転中に キリコの まわりへ 置き、終わりに 建て直す", async () => {
@@ -2766,9 +3036,15 @@ test("裏シナリオ: the 跡地 ending brings 18 ROM専 in from the mouth, the
 		);
 		putTown({ stage: 5 });
 		const a: ReturnArrival = { kind: "clear", dungeon: "ato" };
-		const { s, log } = fakeStory({ at: exitFor("ato").cell });
+		const { s, log, walks } = fakeStory({ at: exitFor("ato").cell });
 		lineUp(s, a, sceneView(villageView(), a));
 		await returnScene(s, a);
+		// 行列は 長い 道でも とばさない（noWarp）
+		const roms = walks.filter((w) => w.target.startsWith(`${ROMS}_`));
+		ok(
+			roms.length > 0 && roms.every((w) => w.noWarp),
+			"the ROM専 parade may be shortened",
+		);
 		const gate = exitFor("ato").cell.join(",");
 		const arrive = log.findIndex((l) => l === `place ${ROMS}_0 ${gate}`);
 		const post = log.findIndex((l) => l.startsWith("say nanj: 見てた"));

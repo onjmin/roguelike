@@ -180,13 +180,16 @@ export type Story = {
 	/**
 	 * (x, y) まで 歩かせる（道は 地形だけで 決める。ほかの人は すりぬけ、キリコの マスは よける）。
 	 * avoid なら ほかの人・置物も よける（村の 子の 小さな しぐさ。data/mobs.ts の Beat）。
-	 * 行けなければ 何もしない。
+	 * 行けなければ 何もしない。着いたら 解決する。
+	 * 道が 長い（engine/longWalk.ts の LONG_WALK 歩より 先）と、キリコ 以外は 画面に 映らない ところを とばす
+	 * （映らない マスへ 置きなおしてから 歩く。カメラが ついていく 人は 短い 暗転で 道の 先へ）。
+	 * noWarp なら とばさず ぜんぶ 歩いて 見せる（ROM専の 行列）。
 	 */
 	goto(
 		target: string,
 		x: number,
 		y: number,
-		opt?: { speed?: number; avoid?: boolean },
+		opt?: { speed?: number; avoid?: boolean; noWarp?: boolean },
 	): Promise<void>;
 	face(target: string, dir: Dir | "player"): void;
 	/** 人（イベント ID）が 見えていて、キリコから r マス以内（たて・よこ・ななめの 大きい方）に いるか。 */

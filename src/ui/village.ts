@@ -13,6 +13,10 @@
 //   地図を かえる。rpg の Game.loadMap と 同じ）。warp では 入る ときの 場面（prepare・onEnter）は 走らせない。
 // - 入るたびに onEnter（帰ってきた場面・開いた知らせ・持ち帰った物。ui/villageReturn.ts）。その間は 歩かない・
 //   うろうろ しない（scene）。場面では カメラを 人や 建物に 向ける（look）。
+// - 場面で 歩かせる 道（Story.goto）が 長いと、キリコ 以外は 画面に 映らない ところを とばす（engine/longWalk.ts。
+//   地図が 87×52 に 広がって、遠くの 人が 来るまで 長く 待った）。映らない マスへ 置きなおして 画面の はしの
+//   すぐ 外から 歩いて 入る・画面の 外へ 出ていったら 行き先へ。カメラが ついていく 人は 短い 暗転で 道の 先へ。
+//   noWarp なら ぜんぶ 歩く（ROM専の 行列）。
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
@@ -39,6 +43,7 @@ import type {
 } from "../engine/defs";
 import { Actor, Field } from "../engine/field";
 import { dir4Candidates } from "../engine/input";
+import { mayWarp, type Seen, walkRoute } from "../engine/longWalk";
 import { loadProgress } from "../engine/save";
 import type { Screen } from "../engine/screen";
 import { settings } from "../engine/settings";
@@ -68,6 +73,10 @@ const WALK_MS = 170;
 const DASH_SPEED = 2.5;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
+/** 場面で 人を とばす とき、画面の はしから これだけ（マス）外までは 映る ことに する（歩く 絵は マスより 大きい）。 */
+const SEEN_MARGIN = 2;
+/** カメラが ついていく 人を 道の 先へ とばす 暗転の ms（片道）。 */
+const CUT_FADE_MS = 200;
 
 /** 出口への 道を 何歩 先まで たどって 矢印の 向きに するか（曲がり角の 手前で 斜めに なる）。 */
 const GUIDE_AHEAD = 5;
@@ -644,6 +653,49 @@ export class Village {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * いま 画面に 映る マス（場面の 長い 道を とばす ときに 見る。engine/longWalk.ts）。いまの カメラと、
+	 * 寄せている 途中なら 行き先の どちらかで 映れば 映る。ボタンの 下にも 地図は 描くので 高さは 画面 ぜんぶ。
+	 * 画面の 大きさが わからなければ null。
+	 */
+	private seenCells(): Seen {
+		const c = this.camTarget();
+		const w = this.screen.width;
+		const h = this.screen.height;
+		if (!c || !w || !h) return null;
+		const m = SEEN_MARGIN * TILE;
+		const views = [
+			[this.camX, this.camY],
+			[c.tx, c.ty],
+		];
+		return (x, y) =>
+			views.some(
+				([ox, oy]) =>
+					(x + 1) * TILE > ox - m &&
+					x * TILE < ox + w + m &&
+					(y + 1) * TILE > oy - m &&
+					y * TILE < oy + h + m,
+			);
+	}
+
+	/** 場面で 歩く 人を 置きなおして よい マスか（人・置物・キリコの いない マス）。 */
+	private freeFor(a: Actor, x: number, y: number): boolean {
+		return (
+			!!this.field?.canEnter(x, y, a) &&
+			!(x === this.player.x && y === this.player.y)
+		);
+	}
+
+	/** カメラが ついていく 人を 短い 暗転で (x, y) へ（もう 暗ければ 暗いまま 置く）。 */
+	private async cutWalk(a: Actor, x: number, y: number): Promise<void> {
+		const dark = this.fadeEl.style.opacity === "1";
+		if (!dark) await this.fadeOut(CUT_FADE_MS);
+		a.setPos(x, y);
+		this.pan = null;
+		this.updateCamera();
+		if (!dark) await this.fadeIn(CUT_FADE_MS);
 	}
 
 	private faceTo(a: Actor, x: number, y: number): void {
@@ -1310,7 +1362,18 @@ export class Village {
 					return;
 				}
 				const ms = WALK_MS / (opt?.speed ?? 1);
-				for (const d of route) await a.walk(d, ms);
+				// 長い 道は 映らない ところを とばす（キリコ・noWarp は ぜんぶ 歩く。engine/longWalk.ts）
+				await walkRoute([a.x, a.y], route, {
+					warp: mayWarp(target, route.length, opt),
+					follow: () => this.lookAt === target,
+					// 窓が キー待ちなら 暗転しない（暗転は 窓を 閉じるので 読みかけの 文が 消える）
+					mayCut: () => !this.ctx.input.busy,
+					seen: () => this.seenCells(),
+					free: (cx, cy) => this.freeFor(a, cx, cy),
+					place: ([cx, cy]) => a.setPos(cx, cy),
+					cut: ([cx, cy]) => this.cutWalk(a, cx, cy),
+					step: (d) => a.walk(d, ms),
+				});
 				if (a === this.player) this.syncState();
 			},
 			look: async (target, opt) => {
