@@ -5334,6 +5334,28 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 					`${d} ${r.at}: shobon before opunu`,
 				);
 	}
+	// 村に 人が 来るのは 風呂板の あと：パン板・風呂板の 途中に 名無しの レスは 来ない
+	for (const d of ["shallow", "main"] as const)
+		ok(
+			!DIVE_RES[d]?.some((r) => r.who === "res"),
+			`${d}: res before people come`,
+		);
+	// やきうの レスは 電池板の 山場で 出ていった あとは 出ない
+	ok(
+		diveResAt("main", 8, ["shallow"])?.who === "nanj",
+		"yakiu writes while he is here",
+	);
+	ok(
+		diveResAt("main", 8, ["shallow", "deep"]) === null,
+		"yakiu is gone after deep",
+	);
+	const mainOnly = synopsisHtml(["shallow"], [], ["shallow", "kinoko"]) ?? "";
+	ok(
+		mainOnly.includes("パン板") &&
+			mainOnly.includes("きのこ板") &&
+			!mainOnly.includes("<h3>"),
+		mainOnly,
+	);
 	for (const [d, why] of Object.entries(GOAL_WHY))
 		ok(width(why ?? "") <= 22, `${d}: ${why}`);
 	ok(goalWhy("isle1", ["isle1"]) === null, "why stays after clearing");
@@ -5349,7 +5371,10 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 		synopsisHtml(
 			[
 				"shallow",
+				"kinoko",
+				"main",
 				"deep",
+				"hidden",
 				"isle1",
 				"isle2",
 				"isle3",

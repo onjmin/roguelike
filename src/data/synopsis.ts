@@ -1,5 +1,5 @@
-// 裏シナリオ（STORY.md §5.98）を 追いやすく する 文。1回の 冒険が 20〜30階と 長く、語りが 入口と 出口に しか
-// ないので、潜っている あいだに 筋を 忘れやすい。そこで 3つ 足す：
+// 本筋（STORY.md §5）と 裏シナリオ（§5.98）を 追いやすく する 文。1回の 冒険が 20〜30階と 長く、語りが 入口と
+// 出口に しか ないので、潜っている あいだに 筋を 忘れやすい。そこで 3つ 足す：
 //   GOAL_WHY：何のために 行くか（全体マップの 札・つよさ・潜った ときの ログ。持ち帰る 前だけ）
 //   DIVE_RES：潜っている 途中に 流れる 1行（村の スレの レス・地の文。下りの とき・持ち帰る 前だけ）
 //   synopsis：これまでの あらすじと 次の 行き先（冒険の 記録・ダンジョンの メニュー）
@@ -10,6 +10,12 @@ import { loadProgress } from "../engine/save";
 
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
+	// 本筋（目標は はじめから「村の スレを 1000まで」）
+	shallow: "沈みかけた　村の　スレを　伸ばす",
+	main: "よく　伸びた　スレを　貼って、人を　呼ぶ",
+	deep: "村の　スレを、1000まで　つれていく",
+	hidden: "キリコの　生まれた　スレが　しまわれた　底",
+	// 裏
 	isle1: "丘の　上に、知らない　字の　紙きれ",
 	isle2: "置き手紙を　そろえて、灯台の　扉を　あける",
 	isle3: "さいごの　置き手紙。灯台の　鍵に　なる",
@@ -21,16 +27,45 @@ export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 
 /**
  * 潜っている 途中に 流れる 1行。at 階に 着いた とき（下り・その 板を まだ 持ち帰って いない ときだけ）。
- * who が "res" なら 村の スレへの 名無しの レス、"shobon" なら 原住民の レス（灯台の あとにしか 村に いない）、
- * null なら 地の文。層の 札（data/story.ts の zones の note）と 同じ 階には 置かない。
+ * who が "res" なら 村の スレへの 名無しの レス（村に 人が 来る 風呂板の あとだけ）、"shobon" なら 原住民の
+ * レス（灯台の あとにしか 村に いない）、"nanj" なら やきうの レス（電池板の 山場で 出ていくまで）、null なら 地の文。層の 札（data/story.ts の zones の note）と 同じ 階には 置かない。
  */
 export type DiveRes = {
 	at: number;
-	who: "res" | "shobon" | null;
+	who: "res" | "shobon" | "nanj" | null;
 	text: string;
 };
 
 export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
+	// ── 本筋。村に 人が 来るのは 風呂板の あと（それまでの 村の スレは やきうだけ）
+	shallow: [{ at: 3, who: "nanj", text: "保守しとるで。ゆっくり　来い" }],
+	main: [
+		{ at: 4, who: null, text: "湯気の　むこうに、古い　レスが　浮いている。" },
+		{ at: 8, who: "nanj", text: "長湯スレ、あったか？" },
+		{ at: 12, who: null, text: "だれも　読まない　スレが、まだ　ぬくい。" },
+		{ at: 16, who: "nanj", text: "上の　スレは　保守しとるで" },
+		{ at: 19, who: null, text: "源泉の　底が、近い。" },
+	],
+	deep: [
+		{ at: 4, who: null, text: "人の　いない　板。なのに、スレが　上がる。" },
+		{ at: 9, who: "res", text: "1000まで　あと　どんくらいや" },
+		{ at: 14, who: "nanj", text: "鉄塔の　保守、だれやろな" },
+		{ at: 19, who: null, text: "上から、「保守」の　レスが　ふってくる。" },
+		{ at: 24, who: "res", text: "1000、もう　すぐ　ちゃうか" },
+		{ at: 29, who: null, text: "てっぺんに、いちばん　長い　保守スレ。" },
+	],
+	// 過去ログの底（99階。やきうは もう 外）。層の 札の 階は よける
+	hidden: [
+		{ at: 3, who: null, text: "完走した　スレは、ここに　しまわれる。" },
+		{ at: 13, who: "res", text: "キリコ、井戸に　降りたんか" },
+		{ at: 25, who: null, text: "やきうは、外で　見とると　言った。" },
+		{ at: 35, who: "res", text: "村の　スレ、今日も　保守しといたで" },
+		{ at: 45, who: null, text: "どの　スレも、最後は　同じ　レスで　終わる。" },
+		{ at: 66, who: "res", text: "井戸、どこまで　深いんや" },
+		{ at: 85, who: null, text: "下の　ほうで、金色が　光った。" },
+		{ at: 95, who: null, text: "底に、キリコの　生まれた　スレが　ある。" },
+	],
+	// ── 裏
 	isle1: [
 		{ at: 3, who: null, text: "丘の　上で、紙きれが　はためいている。" },
 		{ at: 5, who: "res", text: "南の　小島、だれか　行っとる？" },
@@ -90,11 +125,15 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 };
 
-/** ログに 出す 形（名無しの レスは 頭に「村の　スレ」、原住民は「原住民の　レス」）。 */
+/** ログに 出す 形（名無しの レスは 頭に「村の　スレ」、ほかは「〜の　レス」）。 */
 export const diveResLine = (r: DiveRes): string =>
-	r.who === null
-		? r.text
-		: `${r.who === "shobon" ? "原住民の　レス" : "村の　スレ"}「${r.text}」`;
+	r.who === null ? r.text : `${RES_HEAD[r.who]}「${r.text}」`;
+
+const RES_HEAD = {
+	res: "村の　スレ",
+	shobon: "原住民の　レス",
+	nanj: "やきうの　レス",
+} as const;
 
 /** その 階に 流す 1行（無ければ null）。 */
 export const diveResAt = (
@@ -107,6 +146,8 @@ export const diveResAt = (
 	if (!r) return null;
 	// 原住民は 灯台を 持ち帰るまで 村に いない
 	if (r.who === "shobon" && !cleared.includes("opunu")) return null;
+	// やきうは 電池板を 持ち帰ると 外へ 出ていく（寄り道の 板を あとから 行く ときも）
+	if (r.who === "nanj" && cleared.includes("deep")) return null;
 	return r;
 };
 
@@ -122,7 +163,45 @@ type Chapter = {
 	text: string;
 };
 
-/** あらすじの 章（起きた 順）。done を 満たした 章だけ 見せる。 */
+/** 本筋の 章（起きた 順）。done を 満たした 章だけ 見せる。 */
+const MAIN_CHAPTERS: readonly Chapter[] = [
+	{
+		done: (c) => c.includes("shallow"),
+		title: "パン板",
+		text: "人が　散って、沈みかけた　保守村の　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　スレを　1000まで。",
+	},
+	{
+		done: (c) => c.includes("main"),
+		title: "風呂板",
+		text: "長湯スレを　貼ると、スレは　500を　こえた。知らない　人が　書きこみはじめた。電池板は、人が　いないのに　スレが　上がるらしい。",
+	},
+	{
+		done: (c) => c.includes("deep"),
+		title: "電池板",
+		text: "鉄塔の　保守スレは、やきうの　書きこみだった。村の　スレは　1000に　届き、1000は　知らない　名無し。やきうは　次スレを　キリコに　まかせて、外へ　出ていった。キリコは　小屋の　前の　札に「保守」と　書いた。",
+	},
+	{
+		done: (c) => c.includes("hidden"),
+		title: "過去ログの底",
+		text: "古井戸の　底で、キリコの　生まれた　スレを　拾った。あちこちに　名無しの「保守」と、「次スレ　立てといたで」。",
+	},
+];
+
+/** 本筋の 次の 行き先。 */
+const mainNext = (
+	c: readonly DungeonId[],
+	open: readonly DungeonId[],
+): string | null => {
+	if (!c.includes("main"))
+		return open.includes("main")
+			? "風呂板へ。源泉の　底の　長湯スレ"
+			: "きのこ板の　親玉を　たおすと、風呂板へ　行ける";
+	if (!c.includes("deep")) return "電池板へ。鉄塔の　てっぺん";
+	if (!c.includes("hidden")) return "広場の　古井戸から、過去ログの底へ";
+	return null;
+};
+
+/** 裏の 章（起きた 順）。 */
 const CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("isle1"),
@@ -191,22 +270,31 @@ const nextStep = (
 	return null;
 };
 
-/** あらすじの 中身（裏に まだ 入って いなければ null）。 */
+/** 章の 並びと 次の 行き先（章が 1つも なければ 空）。 */
+const section = (chapters: readonly Chapter[], next: string | null): string =>
+	chapters.map((ch) => `<p><b>${ch.title}</b><br>${ch.text}</p>`).join("") +
+	(chapters.length && next ? `<p class="hint">つぎ：${next}</p>` : "");
+
+/**
+ * あらすじの 中身（本筋と、入っていれば 裏。パン板を 持ち帰る 前は null）。
+ * open は 開いている 板（風呂板は きのこ板で 5回 倒れても 開く）。
+ */
 export const synopsisHtml = (
 	cleared: readonly DungeonId[],
 	flags: readonly string[],
+	open: readonly DungeonId[] = cleared,
 ): string | null => {
-	const done = CHAPTERS.filter((ch) => ch.done(cleared, flags));
-	if (!done.length) return null;
-	const next = nextStep(cleared, flags);
-	return (
-		done.map((ch) => `<p><b>${ch.title}</b><br>${ch.text}</p>`).join("") +
-		(next ? `<p class="hint">つぎ：${next}</p>` : "")
-	);
+	const main = MAIN_CHAPTERS.filter((ch) => ch.done(cleared, flags));
+	const ura = CHAPTERS.filter((ch) => ch.done(cleared, flags));
+	if (!main.length && !ura.length) return null;
+	const mainHtml = section(main, mainNext(cleared, open));
+	const uraHtml = section(ura, nextStep(cleared, flags));
+	// 裏に 入って いなければ 見出しは 要らない
+	return uraHtml ? `<h3>本筋</h3>${mainHtml}<h3>裏</h3>${uraHtml}` : mainHtml;
 };
 
-/** いまの 進みの あらすじ（裏に まだ 入って いなければ null）。 */
+/** いまの 進みの あらすじ（パン板を 持ち帰る 前は null）。 */
 export const synopsisNow = (): string | null => {
 	const p = loadProgress();
-	return synopsisHtml(p.cleared, p.flags ?? []);
+	return synopsisHtml(p.cleared, p.flags ?? [], p.unlocked);
 };
