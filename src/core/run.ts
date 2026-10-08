@@ -1022,7 +1022,11 @@ export class Run {
 		if (this.s.voice === m.kind) return;
 		const was = this.s.voice;
 		this.s.voice = m.kind;
-		if (!was) this.msg(`${mdef(m).name}の　声を　録った`);
+		if (!was) {
+			this.msg(`${mdef(m).name}の　声を　録った`);
+			// 1901年の スレ（裏の 2段目）：鳴らしているのは 昔の ログ。どの 声にも 聞きおぼえが ある（記録だけ。乱数に 触れない）
+			if (this.s.dungeon === "y1901") this.msg("……知ってる　声だ");
+		}
 	}
 
 	/**

@@ -341,6 +341,8 @@ export const ITEM_ART: Record<
 	ichi: RECORD("#b8b8b0"),
 	// 20人目の 最後の レス（避難J）：やきうの 山吹色の ラベル
 	nijuu: RECORD("#f5d142"),
+	// 続きの レス（1901年の スレ）：時報之の 灰色の ラベル
+	zokures: RECORD("#b0b8c0"),
 	// 乗っ取り屋の 置き手紙（小島 3つ）：折り目の ついた 紙きれに 2行の 字と、すみに「草」
 	memo: {
 		palette: {

@@ -98,9 +98,11 @@ import {
 	CLEAR,
 	DEPART,
 	DUNGEON_NAMES,
+	endingFor,
 	FIRST_SHALLOW,
 	FRIEND_FROM,
 	GETTER_RETRY,
+	KUSA_NEWS,
 	LIGHTHOUSE_DOOR,
 	opunuZones,
 	ROM_COUNT,
@@ -109,6 +111,7 @@ import {
 	type StoryPage,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
+	WRAP_NEWS,
 } from "../data/story";
 import {
 	TAMPER_LEDGER,
@@ -188,11 +191,13 @@ import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
 import {
 	forgetProgressMemo,
+	hasFlag,
 	loadProgress,
 	loadRecords,
 	loadReplays,
 	loadTown,
 	noteRunEnd,
+	noteWrap,
 	type PendingReturn,
 	type Progress,
 	type ProgressNews,
@@ -217,7 +222,7 @@ import {
 } from "../ui/cafe";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/floorName";
-import { descWindows } from "../ui/glossary";
+import { descWindows, shelfWords } from "../ui/glossary";
 import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/guests";
 import {
 	buildHall,
@@ -264,6 +269,7 @@ import {
 import {
 	deathScene,
 	gather,
+	kusaScript,
 	lineUp,
 	lunchScript,
 	NEWCOMER,
@@ -278,6 +284,7 @@ import {
 	settleScript,
 	TALK_NEAR,
 	villageView,
+	wrapScript,
 } from "../ui/villageReturn";
 import {
 	DUNGEON_DESC,
@@ -1074,6 +1081,14 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	});
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
+	// 裏の 2段目の 転と 結の あと（ui/villageReturn.ts の wrapScript・kusaScript）
+	pool("WRAP_NEWS.pages", WRAP_NEWS.pages);
+	pool("WRAP_NEWS.hinaryAbsent", [WRAP_NEWS.hinaryAbsent]);
+	pool("KUSA_NEWS.lines", KUSA_NEWS.lines);
+	texts.push(["WRAP_NEWS.hinary", WRAP_NEWS.hinary]);
+	texts.push(["WRAP_NEWS.after", WRAP_NEWS.after]);
+	texts.push(["WRAP_NEWS.open", WRAP_NEWS.open]);
+	texts.push(["KUSA_NEWS.after", KUSA_NEWS.after]);
 	fitsWindow(texts);
 });
 
@@ -1928,9 +1943,9 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 		);
 		// 裏は 本筋より むずかしい：どの 板も 倉庫の 道具を 持ちこめない。底の 強さも 本筋の 対より 上
 		ok(
-			(["isle1", "isle2", "isle3", "opunu", "ato", "hinan"] as const).every(
-				(d) => DUNGEONS[d].noCarry === true,
-			),
+			(
+				["isle1", "isle2", "isle3", "opunu", "ato", "hinan", "y1901"] as const
+			).every((d) => DUNGEONS[d].noCarry === true),
 			"a hidden-route board lets storage items in",
 		);
 		const top = (d: DungeonId) => DUNGEONS[d].level[DUNGEONS[d].floors];
@@ -1939,7 +1954,8 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 				top("isle2") > top("tropical") &&
 				top("isle3") >= top("konamono") &&
 				top("opunu") > top("main") &&
-				top("ato") > top("deep"),
+				top("ato") > top("deep") &&
+				top("y1901") > top("hinan"),
 			`the hidden route is not harder: ${["isle1", "kinoko", "isle2", "tropical", "isle3", "konamono", "opunu", "main", "ato", "deep"].map((d) => `${d}=${top(d as DungeonId)}`).join(" ")}`,
 		);
 		// 小舟の 視線誘導：パン板の あとの ひとことに 小舟が 出る。切れはし「板 立てたわ」も パン板の あと
@@ -2748,6 +2764,132 @@ test("裏シナリオ: the 避難J ending plays the 1000取り until it is won (
 			played.log.filter((l) => l.includes(GETTER_RETRY[0])).length === 1,
 			"the retry line did not appear once",
 		);
+	});
+});
+
+test("裏の 2段目: the 転 opens 1901年の スレ (flag wrap, no news), its ending keeps やきう nameless and freezes Kiriko once, and the 「草」 starts the clock", async () => {
+	// 開き方：避難J と 旗 wrap の 両方
+	ok(
+		!openable("y1901", ["hinan"]) &&
+			openable("y1901", ["hinan"], ["wrap"]) &&
+			!openable("y1901", [], ["wrap"]),
+		"1901年の スレ opens without both 避難J and the 転",
+	);
+	// 結：やきうは 名無しの 書きこみ だけ。キリコが 自分の 声で 固まるのは 1回。独白は さいごの 1枚だけ
+	const pages = STORY.y1901.ending;
+	ok(
+		pages.every((p) => p.who !== "nanj"),
+		"やきう speaks by name in the 1901 ending",
+	);
+	ok(
+		pages.filter((p) => p.cue === "selfVoice").length === 1 &&
+			pages.some((p) =>
+				p.text.includes("自分の　声を\n聞かされて　固まった！"),
+			),
+		"Kiriko does not freeze at her own voice exactly once",
+	);
+	ok(
+		pages.findIndex((p) => p.kiriko) === pages.length - 1,
+		"Kiriko thinks before the last page of the 1901 ending",
+	);
+	// やきうの 名前を ふくむ 頁が keep で 包まれていないと、出ていった あとに ending ごと again に かわる
+	ok(
+		endingFor("y1901", false, ["nanj"]).length === pages.length,
+		"the 1901 ending turns into again after やきう left",
+	);
+	// 事実は はっきり 1回：人は もう いない・さとるの 残した プログラム・999回・13万6千年
+	for (const fact of [
+		"人は、もう　おらん",
+		"さとるの　残した　プログラム",
+		"999回",
+		"13万6千年",
+	])
+		ok(
+			pages.some((p) => p.text.includes(fact)),
+			`the 1901 ending never says ${fact}`,
+		);
+	await withStorageAsync(async () => {
+		const all = [...DUNGEON_IDS];
+		const before = {
+			unlocked: all.filter((d) => d !== "y1901"),
+			cleared: all.filter((d) => d !== "y1901"),
+			fails: {},
+			intro: all,
+			news: [],
+			endings: all.filter((d) => d !== "y1901"),
+		};
+		localStorage.setItem(PROGRESS_KEY, JSON.stringify(before));
+		putTown({ stage: TOWN_STAGES - 1 });
+		// 避難J を 持ち帰っても 旗が なければ 開かない
+		noteRunEnd("hinan", "clear", "s1", null);
+		ok(
+			!loadProgress().unlocked.includes("y1901"),
+			"1901年の スレ opened before the 転",
+		);
+		// 転：時計が もどり、旗 wrap が 立って 開く（知らせは 積まない）
+		const turn = fakeStory();
+		await wrapScript(turn.s);
+		const p = loadProgress();
+		ok(
+			(p.flags ?? []).includes("wrap") &&
+				p.unlocked.includes("y1901") &&
+				!p.news.some((n) => n.dungeon === "y1901"),
+			"the 転 did not open 1901年の スレ quietly",
+		);
+		ok(
+			turn.log.some((l) => l.includes("お前だけや。")) &&
+				turn.log.some((l) => l.includes(WRAP_NEWS.open)),
+			"the 転 did not play through",
+		);
+		// 結：さいごの 独白まで
+		const end = fakeStory({ at: exitFor("y1901").cell });
+		await returnScene(end.s, { kind: "clear", dungeon: "y1901" });
+		ok(
+			end.log.some((l) => l.includes("……やきうンゴ")),
+			"the 1901 ending did not reach its last line",
+		);
+		// 結の あと：「草」で 柱時計が 動く
+		ok(!hasFlag("kusa"), "the clock moved before the 「草」");
+		await kusaScript(fakeStory().s);
+		ok(hasFlag("kusa"), "the 「草」 did not set its flag");
+		// noteWrap は 2回 呼んでも 旗は 1つ
+		noteWrap();
+		ok(
+			(loadProgress().flags ?? []).filter((f) => f === "wrap").length === 1,
+			"noteWrap doubled the flag",
+		);
+	});
+	// 図書館：1901年の スレが 開くまでは ？？？ の 枠も 出さない（本筋だけ 遊ぶ 人に 見せない）
+	withStorage(() => {
+		putTown({ stage: TOWN_STAGES - 1 });
+		const words = () => shelfWords(0, 1).map((w) => w.id);
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: ["shallow"],
+				cleared: [],
+				fails: {},
+				intro: [],
+				news: [],
+			}),
+		);
+		forgetProgressMemo();
+		ok(
+			!words().includes("y2038"),
+			"the 2038 word shows before the board opens",
+		);
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: ["shallow", "y1901"],
+				cleared: [],
+				fails: {},
+				intro: [],
+				news: [],
+			}),
+		);
+		forgetProgressMemo();
+		ok(words().includes("y2038"), "the 2038 word is missing after it opens");
 	});
 });
 

@@ -51,11 +51,14 @@ export type StoryPage = {
 	needCleared?: DungeonId;
 	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色。裏シナリオの ROM専の 書きこみ）。 */
 	nanashi?: string;
+	/** nanashi の 名前欄の 色（無ければ やきうの 黄色。時報之は 灰色）。 */
+	nameColor?: string;
 	/**
 	 * 村の 場面の 合図（ui/villageReturn.ts）：roms＝ROM専 18体が 口から 歩いてくる、romsLeave＝口へ 帰る、
-	 * getter＝1000取り（別ゲー。ui/minigames.ts）。地の文の 前に 起きる。
+	 * getter＝1000取り（別ゲー。ui/minigames.ts）、selfVoice＝蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結）。
+	 * 地の文の 前に 起きる。
 	 */
-	cue?: "roms" | "romsLeave" | "getter";
+	cue?: "roms" | "romsLeave" | "getter" | "selfVoice";
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */

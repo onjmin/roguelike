@@ -736,7 +736,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 25,
 		items: ISLE_ITEMS,
 		perFloor: [5, 7],
-		// 裏の さいごの 板：電池板（30）より 上に（底 30 では ボットが 電池板と 同じ B12〜14 まで 行けた）
+		// 電池板（30）より 上に（底 30 では ボットが 電池板と 同じ B12〜14 まで 行けた）
 		level: ramp(25, 35, 1.1),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
@@ -747,6 +747,31 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockAfter: null,
 		unlockAfterAll: ["deep", "ato"],
 		reliefAfter: null,
+	},
+	// ── 裏の 2段目：1901年の スレ（STORY.md §5.98）。時計が 2038年から 1901年に もどった 日に 立ち、日付の 順で
+	// いちばん 古い スレより 下に 沈んだ。入口は 本館の 古い 札の さらに 下だけ（全体マップには 出ない）。
+	// 開くのは 転（避難J を 持ち帰った 次の 帰り）が 旗 wrap を 立てた とき（ui/villageReturn.ts の wrapScript）。
+	// 裏の さいごの 板なので 避難J より むずかしく。敵は 結で やきうが 「鳴らしとった」と 言う 夏休みキッズと ピッチャー
+	y1901: {
+		id: "y1901",
+		objective: "fetch",
+		noCarry: true,
+		foes: { bat: 2, pitcher: 2, copipe: 1.5 },
+		floors: 30,
+		items: DEEP_ITEMS,
+		perFloor: [5, 8],
+		level: ramp(30, 38, 1.1),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "zokures",
+		houses: { from: 6, chance: 1 / 12, early: [7, 9] },
+		trapsFrom: 3,
+		unlockAfter: null,
+		unlockAfterAll: ["hinan"],
+		unlockFlag: "wrap",
+		reliefAfter: null,
+		secret: true,
 	},
 };
 
@@ -765,6 +790,7 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"isle3",
 	"ato",
 	"hinan",
+	"y1901",
 ];
 
 /** 裏シナリオの 承の 小島（乗っ取られた 板。開く 順）。 */

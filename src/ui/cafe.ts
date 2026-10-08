@@ -68,6 +68,7 @@ import {
 } from "../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
+	hasFlag,
 	loadProgress,
 	loadRecords,
 	loadTown,
@@ -338,8 +339,13 @@ const nextMobTalk = (
 	CAFE_MOBS[id].talks.find(
 		(t) =>
 			!(st.mobSeen ?? []).includes(`${id}:${t.key}`) &&
-			(!t.with || here(t.with)),
+			(!t.with || here(t.with)) &&
+			flagOk(t),
 	) ?? null;
+
+/** 裏シナリオの 旗で 出る・出ない 話（止まっていた 柱時計の 話は 結の あとの kusa まで、動いた 話は kusa から）。 */
+const flagOk = (t: CafeMobTalk): boolean =>
+	(!t.until || !hasFlag(t.until)) && (!t.since || hasFlag(t.since));
 
 // ───────────────── 演出（一杯を まぜる）と 酒棚 ─────────────────
 
@@ -964,7 +970,12 @@ const treatMob = async (
 const patronScript =
 	(ctx: Ctx, v: Visit, id: MobId, spot: PatronSpot): Script =>
 	async (s) => {
-		await sayAs(s, id, CAFE_MOBS[id].hello);
+		const { hello, helloAfter } = CAFE_MOBS[id];
+		await sayAs(
+			s,
+			id,
+			helloAfter && hasFlag(helloAfter.flag) ? helloAfter.text : hello,
+		);
 		const n = await s.choose(["話す", "一杯　おごる", "やめる"], {
 			cancel: 2,
 		});
@@ -1163,7 +1174,9 @@ const pairTalkOf =
 const mobTalkOf =
 	(st: CafeState) =>
 	(id: MobId, who: Speaker): string | undefined => {
-		const withIt = CAFE_MOBS[id].talks.filter((t) => t.with === who);
+		const withIt = CAFE_MOBS[id].talks.filter(
+			(t) => t.with === who && flagOk(t),
+		);
 		return (
 			withIt.find((t) => !(st.mobSeen ?? []).includes(`${id}:${t.key}`)) ??
 			withIt[0]
@@ -1290,4 +1303,7 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 
 /** 喫茶の 調べる 物の 文。 */
 const cafeThing = (kind: string): readonly string[] =>
-	(ROOM_MSG.cafe as Record<string, readonly string[]>)[kind] ?? [];
+	// 裏の 2段目の 結の あとは、0時で 止まっていた 柱時計が 動いている
+	kind === "clock" && hasFlag("kusa")
+		? ROOM_MSG.cafe.clockMoving
+		: ((ROOM_MSG.cafe as Record<string, readonly string[]>)[kind] ?? []);

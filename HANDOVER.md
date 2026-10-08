@@ -1,8 +1,14 @@
-# 引き継ぎメモ（2026-10-07 裏シナリオ「全滅の うそ」）
+# 引き継ぎメモ（2026-10-08 裏シナリオ「さとると　ワイと　お前だけ」）
 
 次に 作業する 人（Claude Code を ふくむ）への メモ。物語の 正本は [STORY.md](./STORY.md)（裏シナリオは §5.98）、遊びの 決まりは [README.md](./README.md)、絵の 仮置きは [ART_TODO.md](./ART_TODO.md)。
 
 ## 入れた もの
+
+- **2段目（2026-10-08）**：新しい 板 `y1901`「1901年の　スレ」（`core/data/dungeons.ts`。`secret`・`noCarry`・30階・`unlockAfterAll: ["hinan"]`＋`unlockFlag: "wrap"`。層は `Y1901_ZONES`、品は `zokures`「続きの　レス」＝シヨが あずかる `IN_STORE`）。入口は 本館の 古い 札の さらに 下（`ui/hallEvents.ts` の `oldestScript`。`OLDEST_DEEP_MENU`。1打席は 跡地へ 降りる ときだけ）。
+- **転と「草」**：`ui/villageReturn.ts` の `wrapScript`（`WRAP_NEWS`）と `kusaScript`（`KUSA_NEWS`）。どちらも「結を 見た 次の 帰り」に 1回だけ：`ui/villageEvents.ts` の `arrivalScript` が returnScene（`noteEnding`）より 前に `endings` を 読んで 決める（たおれて 帰っても 出る。起動したて は 出ない）。見おえてから 旗（`wrap` は `engine/save.ts` の `noteWrap` で 板も 開く。知らせは 積まない／`kusa` は `addFlag`）。
+- **時報之**：`data/story.ts` の `jihou()`（`StoryPage.nameColor` で 名前欄を 灰色に。`playPage` が `SayOptions.color` を わたす）。起動画面の ログ（`ui/boot.ts` の `uraLevel`・`uraLog`）。ゲームの 中の おしらせは 出さない（作者）。断りは README の クレジット。
+- **結の あと**：喫茶の 柱時計（`ROOM_MSG.cafe.clockMoving`。`ui/cafe.ts` の `cafeThing`）。0時の 話は `CafeMobTalk.until: "kusa"` で 出なく なり、ヒナリーの `tokei2`（`since`）と 原住民の `helloAfter` に かわる。図書館の 3項は `Word.secret`（板が 開くまで 枠も 出さない：`ui/glossary.ts` の `listed`）。
+- **試験**：`villageTests` の「裏の 2段目」（開き方・結の 形と 事実・転と「草」の 旗・図書館の 枠）。幅は「everything the village window reads out fits it」に `WRAP_NEWS`・`KUSA_NEWS` を 足した。
 
 - **入口は 見つける（2026-10-07 作りなおし）**：小島1（`isle1`）は パン板を 持ち帰ると 開くが `quiet`（知らせない。`noteRunEnd` が news を 積まない）。全体マップでは 行くまで 建物の かわりに 小舟（`drawBuilding` の `boat`）が つき、一覧の 名前・札・フキダシ・口の 確認・向かう 題は `QUIET_SPOT`（`data/story.ts`）。行った かどうかは `Progress.intro`。小島 2・3・灯台・避難J は `hidden`（開くまで 地図にも 一覧にも 出ない）。視線誘導は `CLEAR.shallow` の 小舟の ひとこと 2つと、切れはし「板　立てたわ」（パン板）。やきうの おーぷぬの 説明は 小島1 の 持ち帰りの 語りへ 移した。
 - **難しさ**：裏の 板は ぜんぶ `noCarry`（`CARRY_REFUSE` に 小舟の 文）、底の 強さは 本筋の 対より 上（`villageTests` の「裏シナリオ」で 見張る）。
@@ -23,9 +29,9 @@
 
 ## まだ できていない こと（優先順）
 
-1. **実機で 通した もの（2026-10-07。ブラウザの ペインで）**：全体マップの 小島と 名前・灯台の パスワードの 4択（当てると 旗 `pass`）・本館の 札 → 1打席の 板 → 三振・跡地の 持ち帰りで ROM専 18体が 口から 歩いてきて 帰る・灯台の 持ち帰りで 原住民が 歩いてくる・避難Jの 持ち帰りで 1000取り（負け → 次スレ → 999 で 勝ち）・結の あとの 札「1000　見てた」。**まだ**：小島・跡地・避難Jの 中を 自分で もぐる（ボットだけ）、別ゲーの 板（`.mgame`）を スマホの 幅で 見る、1打席で 本当に 打つ（ボットでは 打てない。ゾーンの 幅 `ZONE` は 手で 遊んで 決める）。
+1. **実機で 通した もの（2026-10-07。ブラウザの ペインで）**：全体マップの 小島と 名前・灯台の パスワードの 4択（当てると 旗 `pass`）・本館の 札 → 1打席の 板 → 三振・跡地の 持ち帰りで ROM専 18体が 口から 歩いてきて 帰る・灯台の 持ち帰りで 原住民が 歩いてくる・避難Jの 持ち帰りで 1000取り（負け → 次スレ → 999 で 勝ち）・結の あとの 札「1000　見てた」。**まだ**：転・1901年の スレ・結・「草」を ブラウザで 通す（試験だけ。`window.__village.start({ boot: false, arrival: { kind: "clear", dungeon: "y1901" } })`）、小島・跡地・避難Jの 中を 自分で もぐる（ボットだけ）、別ゲーの 板（`.mgame`）を スマホの 幅で 見る、1打席で 本当に 打つ（ボットでは 打てない。ゾーンの 幅 `ZONE` は 手で 遊んで 決める）。
    進み具合を 作る ときは `localStorage["kiriko-roguelike/progress"]` に `unlocked / cleared / intro / endings / flags` を 書いて 読みなおす。帰りの 場面は `window.__village.start({ boot: false, arrival: { kind: "clear", dungeon: "ato" } })` で 村から 直接 呼べる（dev だけ）。
-2. **ボットの 試走（2026-10-07、クリアまで 本筋より 重く した あと。100回）**：小島1 クリア 25%（きのこ板 45%）・小島2 9%（離島板 28%）・小島3 0%（山 B4 と B8。おんたこ B4〜6）・灯台 0%（山 B10〜11。風呂板 B12〜13）・跡地 0%（山 B7〜9。電池板 B13〜14）・避難J 0%（山 B6〜9／25階）。**ボットの 調整**：`pnpm sim -- --dungeon isle1|isle2|isle3|opunu|ato|hinan --n 100`。目安：小島1 は きのこ板 なみ、小島2 は 離島板 なみ、小島3 は おんたこ なみ、灯台は 風呂板 なみ、跡地は 電池板 なみ、避難J は その あいだ。
+2. **ボットの 試走（2026-10-07、クリアまで 本筋より 重く した あと。100回。1901年の スレは 10-08）**：1901年の スレ 0%（山 B5 と B8〜9／30階。止まった 4 は 電池板と 同じ「見えないので 読めない」の ボットの くせ）・小島1 クリア 25%（きのこ板 45%）・小島2 9%（離島板 28%）・小島3 0%（山 B4 と B8。おんたこ B4〜6）・灯台 0%（山 B10〜11。風呂板 B12〜13）・跡地 0%（山 B7〜9。電池板 B13〜14）・避難J 0%（山 B6〜9／25階）。**ボットの 調整**：`pnpm sim -- --dungeon isle1|isle2|isle3|opunu|ato|hinan --n 100`。目安：小島1 は きのこ板 なみ、小島2 は 離島板 なみ、小島3 は おんたこ なみ、灯台は 風呂板 なみ、跡地は 電池板 なみ、避難J は その あいだ。
 3. **絵**：乗っ取り屋は rpgen の FF3 シーフ（`sa:kAeK4w`）、1000ゲッターは クソアホロボット（`sa:gmLHHM`）に した（2026-10-07）。置き手紙・>>1・20人目の レスの 絵は `ui/itemArt.ts`（`scripts/make-items.mjs memo,ichi,nijuu`）。全体マップの 小島の 旗（`islet`）と 避難所の テント（`tent`）は `ui/worldMap.ts` の 矩形の ドット絵。
 4. **曲**：小島 1〜3・跡地・避難J は 既存の 曲を 当てている（`BOARD_LOOKS`・`ATO_ZONES`）。新曲を 足すなら `#volume` を 測ってから。
 5. **辞典**：「参拝」「原住民の 全滅」「1000ゲッター」の 項は まだ（`data/glossary.ts`）。

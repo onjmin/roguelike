@@ -239,7 +239,8 @@ export const CARRY_REFUSE: Record<
 	| "isle2"
 	| "isle3"
 	| "opunu"
-	| "hinan",
+	| "hinan"
+	| "y1901",
 	Line
 > = {
 	// 裏シナリオの 板へは 小舟で わたる（荷物は のらない：裏は 本筋より むずかしく）
@@ -262,6 +263,11 @@ export const CARRY_REFUSE: Record<
 	hinan: q(
 		"shiyo",
 		"避難Jへは　沖まで　小舟よ。\n荷物は　のらない。あたすが　預かるわ",
+	),
+	// 1901年の スレ（本館の 床下の さらに 下。裏の 2段目）
+	y1901: q(
+		"shiyo",
+		"1901年？　……知らない　時代よ。\n荷物は　預かるわ。帰って　きなさいよ",
 	),
 	// 野球chの 跡地（本館の 床下。裏シナリオ）
 	ato: q(

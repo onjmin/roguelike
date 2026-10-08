@@ -390,7 +390,8 @@ export type Progress = {
 	endings?: DungeonId[];
 	/**
 	 * 裏シナリオの 旗（STORY.md §5.98）：romVoice＝ROM専の 声を 蓄音機に 入れたまま 持ち帰った（跡地が 開く）、
-	 * pass＝灯台の 扉の パスワードを 当てた。
+	 * pass＝灯台の 扉の パスワードを 当てた、wrap＝転を 見おえた（時計が 1901年に もどった。1901年の スレが 開く）、
+	 * kusa＝結の あとの「草」の 知らせを 見おえた（喫茶の 柱時計が 動く）。
 	 */
 	flags?: string[];
 };
@@ -564,6 +565,19 @@ export const addFlag = (flag: string): void => {
 	const p = loadProgress();
 	if ((p.flags ?? []).includes(flag)) return;
 	p.flags = [...(p.flags ?? []), flag];
+	saveProgress(p);
+};
+
+/**
+ * 転を 見おえた（ui/villageReturn.ts の wrapScript）：旗 wrap を 立て、開く 条件を 満たした 板（1901年の スレ）を 開く。
+ * 知らせ（news）は 積まない：転の 場面が 自分で 言う（積むと newsScript が「新しい 植民地」を かさねて 出す）。
+ */
+export const noteWrap = (): void => {
+	const p = loadProgress();
+	if (!(p.flags ?? []).includes("wrap")) p.flags = [...(p.flags ?? []), "wrap"];
+	for (const d of DUNGEON_IDS)
+		if (!p.unlocked.includes(d) && openable(d, p.cleared, p.flags ?? []))
+			p.unlocked.push(d);
 	saveProgress(p);
 };
 

@@ -99,6 +99,7 @@ import { chooseRecord, villageSong } from "./villageMusic";
 import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
+	kusaScript,
 	lineUp,
 	lunchScript,
 	NEWCOMER,
@@ -113,6 +114,7 @@ import {
 	settleScript,
 	TALK_NEAR,
 	tamperScript,
+	wrapScript,
 } from "./villageReturn";
 import {
 	DUNGEON_DESC,
@@ -722,6 +724,12 @@ const arrivalScript =
 	async (s) => {
 		if (arrival?.kind === "replay") return;
 		const back = returnOf(arrival);
+		// 裏の 2段目（STORY.md §5.98）：避難J・1901年の スレの 結を 見た「次の 帰り」に 1回だけ の 場面。
+		// この 帰りの 語りで はじめて 結を 見た ときは 数えないので、returnScene（noteEnding）より 前に 決める
+		const seen = loadProgress().endings ?? [];
+		const dove = !!back || arrival?.kind === "dead";
+		const wrapDue = dove && seen.includes("hinan") && !hasFlag("wrap");
+		const kusaDue = dove && seen.includes("y1901") && !hasFlag("kusa");
 		if (back)
 			await returnScene(s, back, {
 				getter: async () => {
@@ -739,6 +747,9 @@ const arrivalScript =
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
+		// 転（時計が もどる）と 結の あとの「草」
+		if (wrapDue) await wrapScript(s);
+		if (kusaDue) await kusaScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
 		await settleScript(s, storeChooser(ctx));

@@ -104,6 +104,8 @@ export const ROOM_MSG = {
 		],
 		menu: ["品書き。\n『草を　持ちこめば　なんでも　まぜます』"],
 		clock: ["柱時計。\n針は　ずっと　0時を　さしている。"],
+		// 裏の 2段目の 結の あと（旗 kusa。ui/cafe.ts の cafeThing）
+		clockMoving: ["柱時計。\n0時で　止まっていた　針が、動いている。"],
 		picture: ["絵。\nにぎやかだった　ころの　おんJの　スレ。"],
 		piano: ["古い　ピアノ。\n鍵盤が　ひとつ　鳴らない。"],
 		barrel: ["樽。\n『kskエスプレッソ用　豆』と　ある。"],

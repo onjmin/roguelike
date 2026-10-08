@@ -22,6 +22,7 @@ import {
 	IN_STORE_TEXT,
 	JIKKYO,
 	MONITOR_MENU,
+	OLDEST_DEEP_MENU,
 	OLDEST_MENU,
 	ON_BOARD_TEXT,
 	ON_PHONO_TEXT,
@@ -352,7 +353,24 @@ const oldestScript =
 			return;
 		}
 		await s.narrate(HALL_MSG.oldestOpen);
-		if ((await s.choose([...OLDEST_MENU], { cancel: 1, start: 1 })) !== 0)
+		// 裏の 2段目：転の あとは 床板の さらに 下に 1901年の スレ（1打席は 跡地へ 降りる ときだけ）
+		if (p.unlocked.includes("y1901")) {
+			await s.narrate(HALL_MSG.oldestDeeper);
+			if (p.endings?.includes("y1901"))
+				await s.narrate(HALL_MSG.oldestDeepDone);
+			const n = await s.choose([...OLDEST_DEEP_MENU], { cancel: 2, start: 2 });
+			if (n === 2) return;
+			if (n === 1) {
+				if (!(await suspendedFirst(s, async () => {}))) return;
+				await departTo(ctx, s, "y1901", goalsNow().y1901, async () => {
+					s.se("stairs");
+					await s.narrate(HALL_MSG.oldestDeepDown);
+				});
+				return;
+			}
+		} else if (
+			(await s.choose([...OLDEST_MENU], { cancel: 1, start: 1 })) !== 0
+		)
 			return;
 		if (!(await suspendedFirst(s, async () => {}))) return;
 		// 1打席（はじめは かならず。あとは 任意）

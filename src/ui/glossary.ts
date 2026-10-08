@@ -1,6 +1,7 @@
 // ことばの 辞典（data/glossary.ts）を 見る 窓と、ログに はじめて 出た ことばの 1行の 説明。
 // 読める ことばは 町の 段で ふえる（集会所の 本棚 → 本屋 → 図書館。TIER_FROM）。
 
+import type { DungeonId } from "../core/types";
 import { GLOSSARY, TIER_FROM, type Word } from "../data/glossary";
 import type { Story } from "../engine/defs";
 import { loadProgress, loadTown, loadWords, markWord } from "../engine/save";
@@ -40,8 +41,15 @@ export const descWindows = (desc: string): string[] => desc.split("\n\n");
 const joined = (win: string): string => win.replace(/\n/g, "");
 
 /** 本屋・図書館の i 番目の 本棚（n 本の うち）の ことば（読める 段までを 辞典の 順に 分ける）。 */
+/** 枠を 出す ことば（secret な 板の ことばは その 板が 開くまで 枠も 出さない）。 */
+const listed = (w: Word, open: ReadonlySet<DungeonId>): boolean =>
+	!w.secret || (!!w.board && open.has(w.board));
+
 export const shelfWords = (i: number, n: number): Word[] => {
-	const words = GLOSSARY.filter((w) => w.tier <= glossaryTier());
+	const open = new Set(loadProgress().unlocked);
+	const words = GLOSSARY.filter(
+		(w) => w.tier <= glossaryTier() && listed(w, open),
+	);
 	return words.slice(
 		Math.floor((i * words.length) / n),
 		Math.floor(((i + 1) * words.length) / n),
@@ -85,7 +93,7 @@ export const openGlossary = async (ctx: Ctx): Promise<void> => {
 	const tier = glossaryTier();
 	const open = new Set(loadProgress().unlocked);
 	const known = (w: Word) => !w.board || open.has(w.board);
-	const words = GLOSSARY.filter((w) => w.tier <= tier);
+	const words = GLOSSARY.filter((w) => w.tier <= tier && listed(w, open));
 	let start = 0;
 	for (;;) {
 		const v = await listWindow(

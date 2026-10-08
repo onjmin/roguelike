@@ -236,6 +236,16 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[110, 110],
 		],
 	},
+	// 裏の 2段目：1901年の スレ（本館の 古い 札の さらに 下。全体マップには 出ない）
+	y1901: {
+		server: "hayabusa",
+		place: "本館の　床下の　さらに　下",
+		building: "well",
+		route: [
+			[110, 118],
+			[110, 110],
+		],
+	},
 	// 第三ルート：避難J（北東の 沖の 過疎板の 列）
 	hinan: {
 		server: "",

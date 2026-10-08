@@ -47,12 +47,14 @@ import {
 	FRIEND_FROM,
 	GETTER_RETRY,
 	HINAN_NEWS,
+	KUSA_NEWS,
 	mentionsAway,
 	playPage,
 	ROM_COUNT,
 	type StoryPage,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
+	WRAP_NEWS,
 	withoutAway,
 } from "../data/story";
 import { TAMPER_NARRATION, TAMPER_SCENE, tamperTier } from "../data/tamper";
@@ -83,6 +85,7 @@ import {
 import { hallTier } from "../data/village/tiles";
 import type { Story } from "../engine/defs";
 import {
+	addFlag,
 	doneEventNews,
 	doneProgressNews,
 	giveLunch,
@@ -91,6 +94,7 @@ import {
 	loadRecords,
 	loadTown,
 	noteEnding,
+	noteWrap,
 	type PendingReturn,
 	type Progress,
 	settleReturn,
@@ -326,6 +330,8 @@ const playCue = async (
 ): Promise<void> => {
 	if (c === "roms") await walkInRoms(s, a.dungeon);
 	else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
+	// 蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結。ダンジョンで 声を 鳴らす ときと 同じ 音）
+	else if (c === "selfVoice") s.se("spell");
 	else if (c === "getter" && hooks.getter) {
 		for (let tries = 0; ; tries++) {
 			if (await hooks.getter()) break;
@@ -548,12 +554,8 @@ export const deathScene = async (s: Story): Promise<void> => {
 
 // ───────────────── 開いた知らせ ─────────────────
 
-/**
- * 住人が 話す 開いた 知らせ（裏シナリオ）。跡地：原住民が キリコの そばへ 来て、持ち帰った ROM専の 声を 聞く。
- * 避難J：ヒナリーが 来て 20人目の 手がかりを 発表する。その子が 村に いなければ（下見など）地の文だけ。
- */
-const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
-	const id: MobId = d === "ato" ? "shobon" : "hinary";
+/** 住人が 村に 住んでいれば キリコの そばへ 歩いてくる（住んでいるか を 返す。いなければ 何もしない）。 */
+const mobWalkOver = async (s: Story, id: MobId): Promise<boolean> => {
 	const ev = `mob_${id}`;
 	const here = mobsMovedIn(
 		townStep(loadTown().stage, loadTown().points),
@@ -569,6 +571,41 @@ const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
 			await s.look(null);
 		}
 	}
+	return here;
+};
+
+/**
+ * 転（裏の 2段目。STORY.md §5.98）：避難J の 結を 見た 次の 帰りに 1回だけ（ui/villageEvents.ts の arrivalScript）。
+ * 外から コピペの 1レス目が 届き、時計が 1901年に もどる。ヒナリーが 1窓で わけを 言う（いなければ ゼロ）。
+ * 見おえてから 旗 wrap を 立てて 1901年の スレを 開く（途中で 閉じたら 次の 帰りに もう一度）。
+ */
+export const wrapScript = async (s: Story): Promise<void> => {
+	await gather(s, ["feris", "zero"]);
+	for (const p of WRAP_NEWS.pages) await playPage(s, p);
+	if (await mobWalkOver(s, "hinary"))
+		await sayAs(s, "hinary", WRAP_NEWS.hinary);
+	else await playPage(s, WRAP_NEWS.hinaryAbsent);
+	await s.narrate(WRAP_NEWS.after);
+	noteWrap();
+	s.se("chapter");
+	await s.narrate(WRAP_NEWS.open);
+};
+
+/** 結の あと（STORY.md §5.98）：次の 帰りに 1回だけ、鉄塔の 次スレに 外から「草」。喫茶の 柱時計が 動きだす。 */
+export const kusaScript = async (s: Story): Promise<void> => {
+	await gather(s, ["zero"]);
+	for (const p of KUSA_NEWS.lines) await playPage(s, p);
+	await s.narrate(KUSA_NEWS.after);
+	addFlag("kusa");
+};
+
+/**
+ * 住人が 話す 開いた 知らせ（裏シナリオ）。跡地：原住民が キリコの そばへ 来て、持ち帰った ROM専の 声を 聞く。
+ * 避難J：ヒナリーが 来て 20人目の 手がかりを 発表する。その子が 村に いなければ（下見など）地の文だけ。
+ */
+const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
+	const id: MobId = d === "ato" ? "shobon" : "hinary";
+	const here = await mobWalkOver(s, id);
 	if (d === "ato") {
 		s.se("spell");
 		await s.narrate(ATO_NEWS.play);

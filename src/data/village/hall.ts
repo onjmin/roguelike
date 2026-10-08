@@ -325,8 +325,11 @@ export const ON_PHONO: readonly DungeonId[] = [
 	"hinan",
 ];
 
-/** シヨが 倉庫で あずかっている 品の 板（過去ログの底の 1作目の スレ。STORY.md §5.8。棚には 置かない）。 */
-export const IN_STORE: readonly DungeonId[] = ["hidden"];
+/**
+ * シヨが 倉庫で あずかっている 品の 板（過去ログの底の 1作目の スレ。STORY.md §5.8。裏の 2段目の 続きの レスも
+ * ：data/story.ts の CLEAR.y1901。棚には 置かない）。
+ */
+export const IN_STORE: readonly DungeonId[] = ["hidden", "y1901"];
 
 /** まとめ掲示板に 貼ってある 品の 板（乗っ取り屋の 置き手紙。data/scraps.ts。棚には 置かない）。 */
 export const ON_BOARD: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
