@@ -1407,12 +1407,14 @@ export class Run {
 		const before = p.hunger;
 		p.hunger = Math.max(0, p.hunger - dec);
 		const pct = (h: number) => Math.ceil(h / HUNGER_UNIT);
-		if (pct(before) > 20 && pct(p.hunger) <= 20)
-			this.msg("おなかが　へってきた", "warn");
-		if (pct(before) > 10 && pct(p.hunger) <= 10)
-			this.msg("おなかが　ぺこぺこだ……", "warn");
-		if (before > 0 && p.hunger === 0)
-			this.msg("はらぺこで　目が　まわる！", "warn");
+		// 知らせは おなかの 鳴る 音と いっしょに（ログを 見ていなくても 気づくように）
+		const warn = (text: string) => {
+			this.se("hungry");
+			this.msg(text, "warn");
+		};
+		if (pct(before) > 20 && pct(p.hunger) <= 20) warn("おなかが　へってきた");
+		if (pct(before) > 10 && pct(p.hunger) <= 10) warn("おなかが　ぺこぺこだ……");
+		if (before > 0 && p.hunger === 0) warn("はらぺこで　目が　まわる！");
 		if (p.hunger === 0) this.hurtPlayer(1, "おなかが　すいて　たおれた");
 	}
 

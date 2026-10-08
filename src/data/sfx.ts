@@ -30,6 +30,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		heal: "rpgen:n0UqyV", // ﾄﾞﾗｸｴ5回復
 		/** 食べる（3口ぶん続けて鳴らす）。 */
 		eat: "rpgen:DjrP3h", // 食べる音
+		/** おなかが へってきた・ぺこぺこ・目が まわる の 知らせ。 */
+		hungry: "rpgen:v9OmBl", // お腹の鳴る音
 		/** 草を飲む。 */
 		drink: "rpgen:QMyArQ", // 飲み音
 		/** スレを読む。 */
