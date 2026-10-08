@@ -262,7 +262,8 @@ const nextStep = (
 	if (!f.includes("romVoice"))
 		return "どこかの　板で　ROM専の　声を　蓄音機に　録り、そのまま　持ち帰る";
 	if (!c.includes("ato")) return "本館の　奥の　古い　札から、跡地へ";
-	if (!c.includes("deep")) return "電池板を　持ち帰ると、話が　動く";
+	// 電池板が まだなら、行き先は 電池板の「つぎ：」 1つで よい
+	if (!c.includes("deep")) return null;
 	if (!c.includes("hinan")) return "北東の　沖の　避難Jへ";
 	if (!f.includes("wrap")) return "もう　一度　もぐって、村へ　帰る";
 	if (!c.includes("y1901"))
@@ -271,12 +272,28 @@ const nextStep = (
 };
 
 /** 章の 並びと 次の 行き先（章が 1つも なければ 空）。 */
-const section = (chapters: readonly Chapter[], next: string | null): string =>
-	chapters.map((ch) => `<p><b>${ch.title}</b><br>${ch.text}</p>`).join("") +
-	(chapters.length && next ? `<p class="hint">つぎ：${next}</p>` : "");
+/**
+ * 見せる 並び（題で）。本筋と 裏を 分けて 見せると 裏が あると わかって しまうので、1本の 話として まぜる。
+ * 遊ぶ 順は 人に よって ちがうが、だいたい 起きる 順に。
+ */
+const ORDER: readonly string[] = [
+	"パン板",
+	"ひまわり諸島",
+	"よふかし諸島",
+	"だらだら諸島",
+	"風呂板",
+	"灯台",
+	"ROM専の　声",
+	"電池板",
+	"野球chの　跡地",
+	"過去ログの底",
+	"避難J",
+	"時計",
+	"1901年の　スレ",
+];
 
 /**
- * あらすじの 中身（本筋と、入っていれば 裏。パン板を 持ち帰る 前は null）。
+ * あらすじの 中身（パン板を 持ち帰る 前は null）。章を 1本に まぜ、最後に「つぎ：」の 行き先。
  * open は 開いている 板（風呂板は きのこ板で 5回 倒れても 開く）。
  */
 export const synopsisHtml = (
@@ -284,13 +301,20 @@ export const synopsisHtml = (
 	flags: readonly string[],
 	open: readonly DungeonId[] = cleared,
 ): string | null => {
-	const main = MAIN_CHAPTERS.filter((ch) => ch.done(cleared, flags));
-	const ura = CHAPTERS.filter((ch) => ch.done(cleared, flags));
-	if (!main.length && !ura.length) return null;
-	const mainHtml = section(main, mainNext(cleared, open));
-	const uraHtml = section(ura, nextStep(cleared, flags));
-	// 裏に 入って いなければ 見出しは 要らない
-	return uraHtml ? `<h3>本筋</h3>${mainHtml}<h3>裏</h3>${uraHtml}` : mainHtml;
+	const done = [...MAIN_CHAPTERS, ...CHAPTERS]
+		.filter((ch) => ch.done(cleared, flags))
+		.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title));
+	if (!done.length) return null;
+	// 裏の 行き先は 裏に 入って いる ときだけ（入る 前に 出すと 入口を 教えて しまう）
+	const inUra = CHAPTERS.some((ch) => ch.done(cleared, flags));
+	const next = [
+		mainNext(cleared, open),
+		inUra ? nextStep(cleared, flags) : null,
+	].filter((x): x is string => !!x);
+	return (
+		done.map((ch) => `<p><b>${ch.title}</b><br>${ch.text}</p>`).join("") +
+		next.map((x) => `<p class="hint">つぎ：${x}</p>`).join("")
+	);
 };
 
 /** いまの 進みの あらすじ（パン板を 持ち帰る 前は null）。 */
