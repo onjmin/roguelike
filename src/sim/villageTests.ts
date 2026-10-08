@@ -2045,6 +2045,8 @@ test("小段が 上がると 住人が 越してくる：暗転・建て直し�
 		});
 		const { s, log } = fakeStory();
 		await settleScript(s, chooser([]));
+		// 呼んだ 仲間を もどす 暗転で カメラも キリコへ
+		await sendBack(s);
 		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
 		ok(
 			inOrder(log, [
@@ -2056,7 +2058,9 @@ test("小段が 上がると 住人が 越してくる：暗転・建て直し�
 				"look mob_nichie",
 				`goto mob_nichie ${MOBS.nichie.spot.join(",")}`,
 				`narrate: ${fill(ARRIVE_MSG, { names: MOBS.nichie.name })}`,
+				"fadeOut",
 				"look kiriko",
+				"fadeIn",
 			]),
 			`nichie did not move in:\n${log.join("\n")}`,
 		);
@@ -2095,6 +2099,7 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 			first.s,
 			chooser([], () => ok(false, "a clear asked to store")),
 		);
+		await sendBack(first.s);
 		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
 		ok(
 			inOrder(first.log, [
@@ -2107,9 +2112,19 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 				`toast 町が　「${STAGE_NAMES[1]}」に　なった`,
 				`narrate: ${fill(ARRIVE_MSG, { names: "ロゼと　ゼロ" })}`,
 				...STAGE_UP[1].map((l) => `say ${l.who}: ${l.text}`),
+				"fadeOut",
 				"look kiriko",
+				"fadeIn",
 			]),
 			`the first stall is out of order:\n${first.log.join("\n")}`,
+		);
+		// 建った所を 見たまま 呼ぶ側の 暗転へ（キリコへ 寄せた とたんに 暗くならない）
+		const said1 = first.log.lastIndexOf(
+			`say ${STAGE_UP[1].at(-1)?.who}: ${STAGE_UP[1].at(-1)?.text}`,
+		);
+		ok(
+			first.log[said1 + 1] === "fadeOut",
+			`the camera pans home just before the fade:\n${first.log.join("\n")}`,
 		);
 		// 話す 人は カメラが 見る 建った所の そばに いる。越してきた 仲間は 口から 歩いてくる
 		const [gx, gy] = VILLAGE_SPOTS.growth(1);
@@ -2129,17 +2144,33 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 				`${w} talks away from the new stall: ${last}`,
 			);
 		}
+		// 2人は 同じ 口から 連れだって 来る（カメラは 先頭の ロゼに ついていく。1人ずつ べつの 口から 来ると
+		// カメラが 村の はしから はしへ 往復した）
+		const gate = (w: string) =>
+			first.log
+				.slice(first.log.indexOf(`show ${w}`))
+				.find((l) => l.startsWith(`place ${w} `))
+				?.split(" ")[2];
 		for (const w of ["roze", "zero"])
 			ok(
 				inOrder(first.log, [
 					`hide ${w}`,
 					"se levelup",
 					`show ${w}`,
-					`look ${w}`,
+					"look roze",
+					first.log.find((l) => l.startsWith(`goto ${w} `)) ?? `goto ${w}`,
 					`narrate: ${fill(ARRIVE_MSG, { names: "ロゼと　ゼロ" })}`,
 				]),
 				`${w} does not walk in:\n${first.log.join("\n")}`,
 			);
+		ok(
+			!first.log.includes("look zero"),
+			`the camera jumps to the second friend:\n${first.log.join("\n")}`,
+		);
+		ok(
+			!!gate("roze") && gate("roze") === gate("zero"),
+			`the friends come from different gates: ${gate("roze")} / ${gate("zero")}`,
+		);
 		ok(
 			!first.log.some((l) => l.startsWith("narrate: 倉庫から")),
 			"a carry hint before the storehouse",
@@ -2177,6 +2208,38 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 			`the storehouse is not built before storing:\n${store.log.join("\n")}`,
 		);
 		ok(store.log.filter((l) => l === "rebuild").length === 1, "rebuilt twice");
+	});
+});
+
+test("the camera after the town grows: from the new building straight to the gate of a newcomer, then home in one fade", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		// 屋台（段1）から 物置（段2）へ、同じ 帰りで 小段 4（プロト）も
+		putTown({
+			stage: 1,
+			points: TOWN_STEPS[4].points + 50,
+			pending: pending("escape", [item(1, "starsword")]),
+		});
+		const { s, log } = fakeStory();
+		await settleScript(s, chooser([]));
+		await sendBack(s);
+		const grew = log.findIndex((l) => l.startsWith("toast 町が"));
+		const came = log.indexOf("look mob_proto");
+		ok(grew >= 0 && came > grew, `proto does not walk in:\n${log.join("\n")}`);
+		// 建った所から 口へは 暗転せずに 寄せる（キリコへ もどって 暗転して 口へ とんでいた）
+		const between = log.slice(grew, came);
+		ok(
+			!between.includes("fadeOut") && !between.includes("look kiriko"),
+			`the camera goes home before the newcomer:\n${log.join("\n")}`,
+		);
+		// 越してきた あとは 1回の 暗転で キリコへ（寄せてから すぐ 暗転しない）
+		const arrived = log.indexOf(
+			`narrate: ${fill(ARRIVE_MSG, { names: MOBS.proto.name })}`,
+		);
+		ok(
+			log[arrived + 1] === "fadeOut" && log[arrived + 2] === "look kiriko",
+			`the way home after the newcomer:\n${log.join("\n")}`,
+		);
 	});
 });
 
@@ -4608,6 +4671,7 @@ test("the town grows into a new hall: after the friends, the camera looks at the
 			putTown({ stage, points, pending: pend });
 			const { s, log } = fakeStory();
 			await settleScript(s, chooser([]));
+			await sendBack(s);
 			const to = loadTown().stage;
 			ok(to > stage, `stage ${stage} did not grow`);
 			const hall = tier === null ? null : STAGE_UP_HALL[tier];

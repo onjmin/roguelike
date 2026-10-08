@@ -422,13 +422,25 @@ export const gather = async (
 	if (!opt.dark) await s.fadeIn(250);
 };
 
-/** gather で 呼んだ 仲間を 持ち場へ もどす（暗転して 建て直す）。呼んでいなければ 何もしない。 */
+/**
+ * gather で 呼んだ 仲間を 持ち場へ もどす（暗転して 建て直す）。呼んでいなければ 何もしない。
+ * カメラも 暗い うちに キリコへ もどす（町が 育った 場面は 建った所を 見たまま ここへ 来る。lookHome）。
+ */
 export const sendBack = async (s: Story): Promise<void> => {
 	if (!called.has(s)) return;
 	called.delete(s);
 	await s.fadeOut(250);
 	await s.rebuild();
+	await s.look(null, { instant: true });
 	await s.fadeIn(250);
+};
+
+/**
+ * 場面の 終わりに カメラを キリコへ。仲間を 呼んでいれば すぐ sendBack の 暗転が 来るので、そこで もどす
+ * （キリコまで 寄せた とたんに 暗くなって、むだに 行き来して 見えた）。
+ */
+const lookHome = async (s: Story): Promise<void> => {
+	if (!called.has(s)) await s.look(null);
 };
 
 // ───────────────── 寄り道の 板の 来客 ─────────────────
@@ -721,10 +733,14 @@ export const settleScript = async (
 	// ぜんぶ 売れば 倉庫が 広がる 帰りは、先に 町が 育って から あずける 物を きく（売ってから 建つと 悲しい）
 	const stepBefore = townStep(t.stage, t.points);
 	const grown = growForStorage(t);
-	if (grown.to > grown.from) {
+	const dark = grown.to > grown.from;
+	if (dark) {
 		const stepMid = townStep(t.stage, t.points);
 		await stageUp(s, grown.from, grown.to, movingIn(stepBefore, stepMid));
 		await movedIn(s, stepBefore, stepMid, true);
+		// 建った所から キリコへは 暗転で もどる（あずける 物を きく 仲間を そばへ 呼ぶのも この 暗転の 中で）
+		await s.fadeOut(250);
+		await s.look(null, { instant: true });
 	}
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	// 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずかる 物を きく
@@ -754,7 +770,9 @@ export const settleScript = async (
 				? l.who
 				: (BARE_TOWN_MSG.find((b) => b.of === l)?.line.who ?? null),
 		),
+		{ dark },
 	);
+	if (dark) await s.fadeIn(250);
 	let chosen: number[] = [];
 	if (!pend.items.length)
 		await say(canStore ? TOWN_MSG.nothingToStore : TOWN_MSG.soldNothing);
@@ -786,31 +804,32 @@ export const settleScript = async (
 	const stepTo = townStep(r.to, loadTown().points);
 	if (r.to > stageFrom)
 		await stageUp(s, stageFrom, r.to, movingIn(stepFrom, stepTo));
-	await movedIn(s, stepFrom, stepTo, r.to > stageFrom);
+	const arrived = await movedIn(s, stepFrom, stepTo, r.to > stageFrom);
+	if (r.to > stageFrom || arrived) await lookHome(s);
 };
 
 /**
  * 小段が 上がって 住人が 越してきた（data/mobs.ts の from）。越してきた 子を 見せて「〜が、村に　越してきた。」。
- * 建物の 段が 上がった ときは stageUp で もう 建て直して いるので、見せて 知らせる だけ。
+ * 建物の 段が 上がった ときは stageUp で もう 建て直して（その子は 隠して）いるので、建った所を 見ていた
+ * カメラを そのまま 口へ 寄せる（キリコへ もどって 暗転して 口へ とぶと、行ったり 来たり して 見えた）。
  * 小段だけの ときは 暗転して 建て直し、町に 人が ふえた 知らせ。1回の 帰りで 何人でも（まとめて 1回）。
+ * カメラは 越してきた 子に 置いたまま（もどすのは 呼ぶ側。lookHome）。だれか 来たかを かえす。
  */
 const movedIn = async (
 	s: Story,
 	from: number,
 	to: number,
 	rebuilt: boolean,
-): Promise<void> => {
+): Promise<boolean> => {
 	const ids = movingIn(from, to);
-	if (!ids.length) return;
+	if (!ids.length) return false;
 	// 越してきた 子は 村の 口（持ち場に いちばん 近い 出口）から 歩いてきて、持ち場に 着いてから 知らせる
 	if (!rebuilt) {
 		await s.fadeOut(300);
 		await s.rebuild();
-	} else await s.fadeOut(200);
-	for (const id of ids) s.hide(`mob_${id}`);
-	await s.look(gateNear(MOBS[ids[0]].spot), { instant: true });
-	await s.fadeIn(300);
-	if (!rebuilt) {
+		for (const id of ids) s.hide(`mob_${id}`);
+		await s.look(gateNear(MOBS[ids[0]].spot), { instant: true });
+		await s.fadeIn(300);
 		s.se("served");
 		s.toast(TOWN_GREW_MSG);
 	}
@@ -821,7 +840,7 @@ const movedIn = async (
 	await s.narrate(
 		fill(ARRIVE_MSG, { names: ids.map((id) => MOBS[id].name).join("と　") }),
 	);
-	await s.look(null);
+	return true;
 };
 
 /** 小段 from → to で 越してくる 住人（板を 持ち帰ると 来る 子は 語りの 中で 来る）。 */
@@ -858,6 +877,7 @@ const walkIn = async (
 /**
  * 町が 育った：暗転して 建て直し、建った所を 見せて 知らせる。仲間の ひとことと 持ちこみの 数。
  * おんJ 本館の 形が かわったら（段3・6。段を とばしても）本館を 見て ひとこと。
+ * 話す 仲間を 建った所へ 呼ぶ（gather）ので、終わりは 呼ぶ側の 暗転（sendBack か settleScript）で キリコへ もどる。
  */
 const stageUp = async (
 	s: Story,
@@ -905,12 +925,27 @@ const stageUp = async (
 	s.se("levelup");
 	s.toast(`町が　「${STAGE_NAMES[to] ?? ""}」に　なった`);
 	if (moved.length) {
-		for (const w of moved) {
+		// いっしょに 越してきた 仲間は 建った所に いちばん 近い 口から 連れだって 歩いてくる
+		// （1人ずつ べつの 口から 来ると、カメラが 村の はしから はしへ 2度 往復した）
+		const gate = gateNear(at);
+		const walkers = moved.flatMap((w) => {
 			const c = spots[talkers.indexOf(w)];
-			if (!c) continue;
-			await walkIn(s, w, c);
-			s.face(w, c[1] > at[1] ? "up" : "down");
+			return c ? [{ w, c }] : [];
+		});
+		for (const { w } of walkers) {
+			// show で 生まれさせてから 口に 置く（walkIn と 同じ）
+			s.show(w);
+			s.place(w, gate[0], gate[1]);
 		}
+		if (walkers[0]) await s.look(walkers[0].w);
+		// カメラは 先頭に ついていく。うしろの 人は 少し 遅れて（口の マスで 重ならないように）
+		await Promise.all(
+			walkers.map(async ({ w, c }, i) => {
+				if (i) await s.wait(300 * i);
+				await s.goto(w, c[0], c[1], { speed: 1.3 });
+				s.face(w, c[1] > at[1] ? "up" : "down");
+			}),
+		);
 		await s.narrate(
 			fill(ARRIVE_MSG, {
 				names: moved.map((w) => SPEAKERS[w].name).join("と　"),
@@ -935,5 +970,5 @@ const stageUp = async (
 	const carry = CARRY_MAX[to] ?? 0;
 	if (carry > (CARRY_MAX[from] ?? 0))
 		await s.narrate(`倉庫から　引き取って\n${carry}つまで　持っていける`);
-	await s.look(null);
+	// カメラは 建った所に 置いたまま（越してくる 住人が いれば そのまま 口へ。もどすのは 呼ぶ側）
 };
