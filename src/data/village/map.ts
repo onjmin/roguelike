@@ -1,7 +1,7 @@
 // 村（保守村）の地図。DOM も保存も使わない 組み立てだけ（src/sim/villageTests.ts で 形と 歩ける道を 調べる）。
 // スクリプトは ui/villageEvents.ts が id ごとに 付ける。
 //
-// 地図は 40×32 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
+// 地図は 87×52 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
 // まわりの 森は 四角く ならないよう 木と しげみで 囲み、西の 空き地（切り株・丸太）・東の 畑（かかし・畝・麦）・
 // 南の 池へ 抜けられる（OUTSKIRTS_ROWS・EDGE_CELLS）。下の 図と 区画の 関数は 町の 区画の 座標で、
 // VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 9, 7）。
@@ -1117,34 +1117,41 @@ const spotTools = (v: VillageView) => {
 /** マスの 番号（spotTools の reach の 中に あるか 見る）。 */
 const cellKey = ([x, y]: Cell): number => y * VILLAGE_W + x;
 
+/** c が taken（場面で 置いた 人の マス）に あるか。 */
+const isTaken = (taken: readonly Cell[], [x, y]: Cell): boolean =>
+	taken.some(([tx, ty]) => tx === x && ty === y);
+
 /**
  * (x, y) の まわりの 空いた マス（近い 順に n こ）。村の 場面で 話す 仲間を キリコの そばに 呼ぶ ときに 使う
  * （ui/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
  * 広場（蓄音機の 前）から (x, y) を 通らずに 歩いて 来られる マスだけ（店の 台の うしろ・キリコが 立つと
  * ふさがる 細道の 先には 呼ばない。前は そこへ 呼ばれた 人が 歩いて 来られず、遠くから 話していた）。
+ * taken は 場面で もう 人を 置いた マス（口の 前に 並んだ 仲間・呼んだ 仲間。地図の 人では ないので ここで 外す）。
  */
 export const spotsAround = (
 	v: VillageView,
 	n: number,
 	at: readonly [number, number],
+	taken: readonly Cell[] = [],
 ): Cell[] => {
 	const t = spotTools(v);
 	const open = t.reach(t.hub(at), at);
 	return t
 		.ring(at)
-		.filter((c) => t.vacant(c) && open.has(cellKey(c)))
+		.filter((c) => t.vacant(c) && open.has(cellKey(c)) && !isTaken(taken, c))
 		.slice(0, n);
 };
 
 /**
  * 口の 前に 立つ キリコが どく マス（となりから 近い 順の 空いた マス。ui/villageReturn.ts の stepAside）。
  * そこに 立っても 口から 広場まで 歩いて 行ける マスだけ（口から 歩いてくる 人の 道を ふさがない。
- * 細道なら 横の 行き止まりへ よける）。なければ undefined。
+ * 細道なら 横の 行き止まりへ よける）。taken（場面で 人を 置いた マス）にも 立たない。なければ undefined。
  */
 export const asideSpot = (
 	v: VillageView,
 	at: Cell,
 	gate: Cell,
+	taken: readonly Cell[] = [],
 ): Cell | undefined => {
 	const t = spotTools(v);
 	const mine = t.reach(at);
@@ -1153,6 +1160,7 @@ export const asideSpot = (
 		.find(
 			(c) =>
 				t.vacant(c) &&
+				!isTaken(taken, c) &&
 				mine.has(cellKey(c)) &&
 				t.reach(gate, c).has(cellKey(t.hub(c))),
 		);

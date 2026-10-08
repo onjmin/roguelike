@@ -19,7 +19,10 @@ const HIDDEN_RATIO = 0.9;
 /** 隠れぐあいを測る画用紙（マスの左右1マス・上2マスまで入る）。 */
 const PROBE_W = 3 * TILE;
 const PROBE_H = 3 * TILE;
-/** 場面で 台などを とびこえる ときの 弧の 高さ（px。Actor.jump）。 */
+/**
+ * 場面で 台などを とびこえる ときの 弧の 高さ（px。Actor.jump）。下へ とぶ ときは 下りる ぶん 高く する
+ * （台ごしに 2マス 下りると、弧が 低くては 上がって 見えず、台を すべり 落ちる ように 見えた）。
+ */
 const JUMP_LIFT = TILE / 2;
 
 export class Actor {
@@ -113,7 +116,7 @@ export class Actor {
 				t: 0,
 				dur: ms,
 				resolve,
-				lift: JUMP_LIFT,
+				lift: JUMP_LIFT + Math.max(0, dy) * (TILE / 2),
 			};
 			this.x = x;
 			this.y = y;

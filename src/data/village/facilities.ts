@@ -265,6 +265,16 @@ const vending = (
 const NAME_BOARD: TileDef = solid(C_GRASS, TURF, base(3, 38));
 /** 市民農園の 区画（丸い 土の 畝に 作物）。 */
 const plot = (crop: string): TileDef => solid(C_GRASS, TURF, base(3, 28), crop);
+/** 公園の 噴水（3×3 の まわりの 道の どこから 調べても 同じ）。 */
+const FOUNTAIN: readonly string[] = [
+	"噴水。\n底に　小銭が　たくさん　沈んでいる。",
+	"……10円玉に、油性ペンで「age」。",
+];
+/** 公園の ベンチ（2マス幅。どちらの 半分を 調べても 同じ）。 */
+const BENCH: readonly string[] = [
+	"ベンチ。\n座ると、噴水の　しぶきが　すこし　かかる。",
+	"背もたれに「>>1乙」と　彫ってある。",
+];
 
 export const FACILITIES: readonly Facility[] = [
 	// ── 釣り場（はじめから。桟橋の 西の 突堤。キリコの 趣味は 釣り：公式の プロフィール）
@@ -1908,22 +1918,20 @@ export const FACILITIES: readonly Facility[] = [
 					"……下に　小さく「ROMるのは　可」。",
 				],
 			},
-			{
-				id: "fountain",
-				at: [35, 16],
-				lines: [
-					"噴水。\n底に　小銭が　たくさん　沈んでいる。",
-					"……10円玉に、油性ペンで「age」。",
-				],
-			},
-			{
-				id: "bench",
-				at: [33, 12],
-				lines: [
-					"ベンチ。\n座ると、噴水の　しぶきが　すこし　かかる。",
-					"背もたれに「>>1乙」と　彫ってある。",
-				],
-			},
+			// 噴水は 下の まんなか（絵の ある マス）の ほかに、道に 面した 7マスでも 調べられる（まんなかは 道に 面さない）
+			{ id: "fountain", at: [35, 16], lines: FOUNTAIN },
+			{ id: "fountain_nw", at: [34, 14], lines: FOUNTAIN },
+			{ id: "fountain_n", at: [35, 14], lines: FOUNTAIN },
+			{ id: "fountain_ne", at: [36, 14], lines: FOUNTAIN },
+			{ id: "fountain_w", at: [34, 15], lines: FOUNTAIN },
+			{ id: "fountain_e", at: [36, 15], lines: FOUNTAIN },
+			{ id: "fountain_sw", at: [34, 16], lines: FOUNTAIN },
+			{ id: "fountain_se", at: [36, 16], lines: FOUNTAIN },
+			// 北の ベンチ 2つ（西・東。どちらも 左右の 半分）
+			{ id: "bench", at: [33, 12], lines: BENCH },
+			{ id: "bench_r", at: [34, 12], lines: BENCH },
+			{ id: "bench_e", at: [36, 12], lines: BENCH },
+			{ id: "bench_e_r", at: [37, 12], lines: BENCH },
 			{
 				id: "sandbox",
 				at: [32, 14],

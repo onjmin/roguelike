@@ -1273,6 +1273,143 @@ test("口から 人が 歩いてくる 場面：キリコが その 口の 前�
 			!first.some((l) => l.startsWith("goto player ")),
 			`Kiriko steps aside far from the mouth:\n${first.join("\n")}`,
 		);
+		// 建物の 段は そのまま、売れて 小段だけ 上がって プロトが 越してくる（movedIn が 建て直して walkIn だけで どく）
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		putTown({
+			stage: 2,
+			points: TOWN_STEPS[4].points - 100,
+			pending: pending("escape", [item(1, "starsword")]),
+		});
+		const west = VILLAGE_EXITS.find((x) => x.side === "w");
+		ok(!!west, "no west mouth");
+		if (!west) return;
+		const wk = inwardOf(west);
+		const only = fakeStory({ at: wk });
+		await settleScript(only.s, chooser([]));
+		const wby = asideSpot(villageView(), wk, west.cell);
+		const wside = only.log.indexOf(`goto player ${wby?.join(",")}`);
+		const wplace = only.log.indexOf(`place mob_proto ${west.cell.join(",")}`);
+		ok(
+			!only.log.some((l) => l.startsWith("toast 町が")) &&
+				!!wby &&
+				wside >= 0 &&
+				wplace > wside,
+			`Kiriko does not step aside before proto (no new building):\n${only.log.join("\n")}`,
+		);
+		ok(
+			only.s.state.x === wby?.[0] && only.s.state.y === wby?.[1],
+			`Kiriko is not on the aside cell: ${only.s.state.x},${only.s.state.y}`,
+		);
+	});
+});
+
+test("場面で 置いた 人の マスに 重ならない：口の 前に 並んだ・呼んだ 仲間の マスへ キリコも 口から 来る 人も 立たない", async () => {
+	await withStorageAsync(async () => {
+		const all = [...DUNGEON_IDS];
+		const progress = (cleared: DungeonId[], endings: DungeonId[]) =>
+			localStorage.setItem(
+				PROGRESS_KEY,
+				JSON.stringify({
+					unlocked: all,
+					cleared,
+					fails: {},
+					intro: all,
+					news: [],
+					endings,
+				}),
+			);
+		const clashes: string[] = [];
+		// 跡地の 結（北の 口。仲間と 原住民が 並び、キリコが どいて、ROM専 18体が まわりに 立つ）
+		for (const stage of [2, 5, 7]) {
+			progress(
+				[
+					"shallow",
+					"kinoko",
+					"main",
+					"isle1",
+					"isle2",
+					"isle3",
+					"opunu",
+					"ato",
+				],
+				["shallow", "kinoko", "main", "opunu"],
+			);
+			putTown({ stage });
+			const a: ReturnArrival = { kind: "clear", dungeon: "ato" };
+			const f = fakeStory({ at: exitFor("ato").cell });
+			lineUp(f.s, a, sceneView(villageView(), a));
+			await returnScene(f.s, a);
+			ok(
+				f.log.some((l) => l.startsWith("goto player ")) &&
+					f.log.some((l) => l.startsWith(`goto ${ROMS}_0 `)),
+				`stage ${stage}: the 跡地 ending has no step aside or no ROM専:\n${f.log.join("\n")}`,
+			);
+			clashes.push(...f.clashes.map((c) => `ato stage ${stage}: ${c}`));
+		}
+		// どの 板の 帰りでも（はじめての 持ち帰り・帰還スレ。語りの 中で 口から 来る 住人も）
+		for (const d of all)
+			for (const stage of [1, 2, 4, 7])
+				for (const kind of ["clear", "escape"] as const) {
+					progress(
+						all.filter((x) => x !== d),
+						[],
+					);
+					putTown({ stage });
+					const a: ReturnArrival = { kind, dungeon: d };
+					const f = fakeStory({ at: exitFor(d).cell });
+					lineUp(f.s, a, sceneView(villageView(), a));
+					await returnScene(f.s, a);
+					clashes.push(
+						...f.clashes.map((c) => `${d} ${kind} stage ${stage}: ${c}`),
+					);
+				}
+		// 来客の 前に 知らせを 話す 仲間を 呼んだ ときも（本編の 知らせ → きのこ板の 来客。キリコは きのこ板の 口の 前）
+		const e = exitFor("kinoko");
+		setProgress(
+			["shallow", "main", "kinoko"],
+			[
+				{ dungeon: "main", reason: "clear" },
+				{ dungeon: "kinoko", reason: "clear" },
+			],
+			["shallow"],
+		);
+		putTown({ stage: 2 });
+		const both = fakeStory({ at: inwardOf(e) });
+		await newsScript(both.s);
+		ok(
+			both.log.some((l) => l.startsWith("place nanj ")) &&
+				both.log.some((l) => l.startsWith("goto player ")) &&
+				both.log.some((l) => l.startsWith("goto visitor ")),
+			`no friends gathered before the visitor:\n${both.log.join("\n")}`,
+		);
+		clashes.push(...both.clashes.map((c) => `news main+kinoko: ${c}`));
+		// 来客だけの 知らせでは 仲間を 呼ばない（名無しは 1人で 来て キリコとだけ 話す）
+		setProgress(
+			["shallow", "main", "kinoko"],
+			[{ dungeon: "kinoko", reason: "clear" }],
+			["shallow"],
+		);
+		const lone = fakeStory({ at: inwardOf(e) });
+		await newsScript(lone.s);
+		ok(
+			!lone.log.some((l) => /^place (nanj|zero|shiyo|roze|feris) /.test(l)),
+			`friends are gathered for the visitor's news:\n${lone.log.join("\n")}`,
+		);
+		clashes.push(...lone.clashes.map((c) => `news kinoko: ${c}`));
+		// 転：呼んだ フェリス・ゼロの マスへ ヒナリーが 来ない
+		progress(
+			all.filter((d) => d !== "y1901"),
+			all.filter((d) => d !== "y1901"),
+		);
+		putTown({ stage: TOWN_STAGES - 1 });
+		const turn = fakeStory();
+		await wrapScript(turn.s);
+		ok(
+			turn.log.some((l) => l.startsWith("goto mob_hinary ")),
+			`ヒナリー does not walk over:\n${turn.log.join("\n")}`,
+		);
+		clashes.push(...turn.clashes.map((c) => `wrap: ${c}`));
+		ok(!clashes.length, `two people on one cell:\n${clashes.join("\n")}`);
 	});
 });
 
@@ -1917,6 +2054,8 @@ const pending = (
 /**
  * 仮の Story：した事を 1行ずつ 記録する（say は「say 話し手: 文」）。
  * at は キリコの 立つ マス。onSay は セリフの たびに 呼ぶ（投げると そこで タブを 閉じた ことに なる）。
+ * goto・move・place で キリコの マス（state）も 動く。場面で 置いた・歩かせた 人の マスを おぼえて、
+ * ほかの 人が 立つ マスへ 着いたら clashes に 書く（口の マスは 人が 出入りするので 数えない。建て直すと 忘れる）。
  */
 const fakeStory = (
 	o: {
@@ -1937,6 +2076,24 @@ const fakeStory = (
 		flags: {},
 	};
 	let says = 0;
+	/** 場面で 置いた・歩かせた 人（キリコの ほか。見えている 人だけ）の マス。 */
+	const pos = new Map<string, Cell>();
+	let shown = true;
+	/** 人が ほかの 人の マスに 着いた 行。 */
+	const clashes: string[] = [];
+	const land = (id: string, x: number, y: number, line: string): void => {
+		if (id === "player") {
+			state.x = x;
+			state.y = y;
+		} else pos.set(id, [x, y]);
+		if (VILLAGE_EXITS.some((e) => e.cell[0] === x && e.cell[1] === y)) return;
+		const here: [string, Cell][] = [
+			...pos,
+			...(shown ? [["player", [state.x, state.y]] as [string, Cell]] : []),
+		];
+		const on = here.find(([k, [px, py]]) => k !== id && px === x && py === y);
+		if (on) clashes.push(`${line} (on ${on[0]})`);
+	};
 	const s: Story = {
 		state,
 		say: async (who, text) => {
@@ -1973,17 +2130,20 @@ const fakeStory = (
 		},
 		move: async (target, route) => {
 			log.push(`move ${target} ${route}`);
-			if (target === "player")
+			if (target === "player") {
 				for (const ch of route) {
 					if (ch === "d") state.y++;
 					if (ch === "u") state.y--;
 					if (ch === "l") state.x--;
 					if (ch === "r") state.x++;
 				}
+				land("player", state.x, state.y, `move player ${route}`);
+			}
 		},
 		goto: async (target, x, y, opt) => {
 			log.push(`goto ${target} ${x},${y}`);
 			walks.push({ target, x, y, noWarp: !!opt?.noWarp });
+			land(target, x, y, `goto ${target} ${x},${y}`);
 		},
 		face: () => {},
 		near: (id) => o.near?.includes(id) ?? false,
@@ -1994,22 +2154,23 @@ const fakeStory = (
 		},
 		show: (id) => {
 			log.push(`show ${id}`);
+			if (id === "player") shown = true;
 		},
 		hide: (id) => {
 			log.push(`hide ${id}`);
+			if (id === "player") shown = false;
+			else pos.delete(id);
 		},
 		place: (id, x, y) => {
 			log.push(`place ${id} ${x},${y}`);
-			if (id === "player") {
-				state.x = x;
-				state.y = y;
-			}
+			land(id, x, y, `place ${id} ${x},${y}`);
 		},
 		toast: (text) => {
 			log.push(`toast ${text}`);
 		},
 		rebuild: async () => {
 			log.push("rebuild");
+			pos.clear();
 		},
 		warp: async (map, x, y, dir) => {
 			log.push(`warp ${map} ${x},${y}${dir ? ` ${dir}` : ""}`);
@@ -2019,7 +2180,7 @@ const fakeStory = (
 		},
 		exit: () => {},
 	};
-	return { s, log, walks };
+	return { s, log, walks, clashes };
 };
 
 test("村の 場面で 話す 仲間は そばへ 呼ぶ：遠い 人だけ 暗転中に キリコの まわりへ 置き、終わりに 建て直す", async () => {
@@ -5537,7 +5698,27 @@ test("東の 畑の あと: 段ごとに 形が かわり（段6 市民農園・
 	}
 	const things: [number, string, readonly string[]][] = [
 		[6, "garden", ["sign", "plot", "bucket"]],
-		[7, "park", ["sign", "rules", "fountain", "bench", "sandbox"]],
+		[
+			7,
+			"park",
+			[
+				"sign",
+				"rules",
+				"fountain",
+				"fountain_nw",
+				"fountain_n",
+				"fountain_ne",
+				"fountain_w",
+				"fountain_e",
+				"fountain_sw",
+				"fountain_se",
+				"bench",
+				"bench_r",
+				"bench_e",
+				"bench_e_r",
+				"sandbox",
+			],
+		],
 	];
 	for (const [stage, id, ids] of things) {
 		const f = facilityById(id);

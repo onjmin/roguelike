@@ -73,6 +73,7 @@ import {
 } from "../data/town";
 import {
 	asideSpot,
+	type Cell,
 	exitAt,
 	exitFor,
 	lineupSpots,
@@ -235,6 +236,32 @@ const toward: Record<Dir, Dir> = {
 };
 
 /**
+ * 場面で 置いた 人が 立っている マス（lineUp で 口の 前に 並んだ 仲間・gather で 呼んだ 仲間・口から 来た 住人）。
+ * spotsAround・asideSpot は 地図の 人と 物しか 見ないので、キリコが どく マス・人を 呼ぶ マスから これを 外す
+ * （外さないと キリコや 来客が 並んだ 仲間の マスへ 重なって 立った）。建て直すと みんな 持ち場へ もどるので 消す
+ * （歩いてきた 住人だけで 建て直さずに 終わると 残るが、次の 場面で そこを よけるだけ）。
+ */
+const placed = new WeakMap<Story, Cell[]>();
+
+/** 場面で 人を 置いた マス。 */
+const takenBy = (s: Story): readonly Cell[] => placed.get(s) ?? [];
+
+/** 人を 置いた マスを おぼえる。 */
+const take = (s: Story, cells: readonly Cell[]): void => {
+	placed.set(s, [...takenBy(s), ...cells]);
+};
+
+/** 村を 建て直す（場面で 置いた 人は 持ち場へ もどるので、おぼえた マスも 消す）。 */
+const rebuild = async (s: Story): Promise<void> => {
+	placed.delete(s);
+	await s.rebuild();
+};
+
+/** at（省けば キリコ）の まわりの 空いた マス（場面で 人を 置いた マスは さける。近い 順に n こ）。 */
+const freeAround = (s: Story, n: number, at?: Cell): Cell[] =>
+	spotsAround(villageView(), n, at ?? [s.state.x, s.state.y], takenBy(s));
+
+/**
  * 幕が 上がる前に：キリコは 口の奥（まだ 見えない）、話す 仲間は 口の前に 並んで 口を 見ている。
  * v は いま 描いている 村（並ぶ マスを 決める）。
  */
@@ -251,6 +278,8 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 		const c = spots[i];
 		if (c) s.place(who, c[0], c[1], toward[exit.inward]);
 	});
+	// 新しい 場面：並んだ マスだけ おぼえる（キリコが どく マス・口から 来る 人の 行き先から 外す）
+	placed.set(s, spots.slice(0, cast.length + mobs.length));
 };
 
 /**
@@ -258,14 +287,15 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
  * 東・西・北の 口は 1歩 入った マスしか 道が ないので、来る 人が みな キリコを とびこえて 来た（帰りも）。
  * 口から 人が 歩いてくる 場面（来客・越してくる 仲間や 住人・ROM専）の 前に、キリコが その 口の 前に いれば
  * となりの 空いた マスへ 1歩 どかす（口から 広場への 道を ふさがない マス。細道なら 横の 行き止まりへ。
- * data/village/map.ts の asideSpot）。口から はなれて いれば 動かない。
+ * data/village/map.ts の asideSpot）。口から はなれて いれば 動かない。場面で 人を 置いた マス（並んだ・呼んだ 仲間）には
+ * どかない（前は 口の 前に 並んだ 仲間の マスへ キリコが 重なって 立った）。
  */
 const stepAside = async (
 	s: Story,
 	gate: readonly [number, number],
 ): Promise<void> => {
 	if (Math.abs(s.state.x - gate[0]) + Math.abs(s.state.y - gate[1]) > 1) return;
-	const to = asideSpot(villageView(), [s.state.x, s.state.y], gate);
+	const to = asideSpot(villageView(), [s.state.x, s.state.y], gate, takenBy(s));
 	if (to) await s.goto("player", to[0], to[1], { speed: 1.2 });
 };
 
@@ -276,7 +306,8 @@ const stepAside = async (
 const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
 	await stepAside(s, gate);
-	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	const [to] = freeAround(s, 1);
+	if (to) take(s, [to]);
 	// 旗を 立てただけでは 人は 生まれない（when は 見なおされない）。show で 生まれさせてから 置く
 	s.set(NEWCOMER);
 	s.show(NEWCOMER);
@@ -297,7 +328,8 @@ const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
 const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
 	await stepAside(s, gate);
-	const spots = spotsAround(villageView(), ROM_COUNT, [s.state.x, s.state.y]);
+	const spots = freeAround(s, ROM_COUNT);
+	take(s, spots);
 	s.set(ROMS);
 	for (let i = 0; i < ROM_COUNT; i++) {
 		// 旗を 立てただけでは 生まれない：show で 生まれさせてから 口に 置く
@@ -393,7 +425,7 @@ export const returnScene = async (
 	]);
 	s.set(NEWCOMER, false);
 	s.set(ROMS, false);
-	await s.rebuild();
+	await rebuild(s);
 	s.bgm(villageSong());
 	await s.fadeIn(300);
 };
@@ -411,19 +443,21 @@ const called = new WeakSet<Story>();
  * キリコの まわりへ 置いて こちらを 向かせる。dark なら もう 暗い（明けるのは 呼ぶ側）。
  * もどすのは sendBack（場面の 終わりに 建て直す）。
  * at を わたすと キリコでは なく その マスの まわりへ（カメラが 建物を 見ている 場面。みんな 置きなおす）。
+ * 場面で もう 人を 置いた マスには 置かない。置いた 人と マスを かえす。
  */
 export const gather = async (
 	s: Story,
 	who: readonly (Speaker | null)[],
 	opt: { dark?: boolean; at?: readonly [number, number] } = {},
-): Promise<void> => {
+): Promise<ReadonlyMap<Speaker, Cell>> => {
+	const out = new Map<Speaker, Cell>();
 	const far = [...new Set(who.filter((w): w is Speaker => !!w))].filter(
 		(w) => !!opt.at || !s.near(w, TALK_NEAR),
 	);
-	if (!far.length) return;
+	if (!far.length) return out;
 	if (!opt.dark) await s.fadeOut(250);
 	const at = opt.at ?? [s.state.x, s.state.y];
-	const spots = spotsAround(villageView(), far.length, [
+	const spots = freeAround(s, far.length, [
 		Math.round(at[0]),
 		Math.round(at[1]),
 	]);
@@ -433,9 +467,12 @@ export const gather = async (
 		s.place(w, c[0], c[1]);
 		if (opt.at) s.face(w, c[1] > at[1] ? "up" : "down");
 		else s.face(w, "player");
+		out.set(w, c);
 	});
+	take(s, [...out.values()]);
 	called.add(s);
 	if (!opt.dark) await s.fadeIn(250);
+	return out;
 };
 
 /**
@@ -446,7 +483,7 @@ export const sendBack = async (s: Story): Promise<void> => {
 	if (!called.has(s)) return;
 	called.delete(s);
 	await s.fadeOut(250);
-	await s.rebuild();
+	await rebuild(s);
 	await s.look(null, { instant: true });
 	await s.fadeIn(250);
 };
@@ -469,7 +506,7 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 	const lines = UNLOCK_VISIT[d] ?? [];
 	const gate = exitFor(d).cell;
 	await stepAside(s, gate);
-	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	const [to] = freeAround(s, 1);
 	// 旗を 立てただけでは 生まれない（when は 見なおされない）。show で 生まれさせてから 口に 置く
 	// （旗だけだと 来客が 出ず、カメラも 見る 先が なかった）
 	s.set("visitor");
@@ -528,7 +565,7 @@ export const tamperScript = async (s: Story): Promise<void> => {
 export const lunchScript = async (s: Story): Promise<void> => {
 	if (!giveLunch()) return;
 	// ぷゆゆが キリコの となりまで かけてきて 渡す（そのまま そばに いる）
-	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+	const [to] = freeAround(s, 1);
 	if (to) {
 		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });
 		s.face("mob_puyu", "player");
@@ -578,7 +615,7 @@ export const deathScene = async (s: Story): Promise<void> => {
 	s.face("player", "right");
 	await s.say(q.who, q.text);
 	await s.fadeOut(300);
-	await s.rebuild();
+	await rebuild(s);
 	await s.fadeIn(300);
 };
 
@@ -592,8 +629,9 @@ const mobWalkOver = async (s: Story, id: MobId): Promise<boolean> => {
 		loadProgress().cleared,
 	).includes(id);
 	if (here) {
-		const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+		const [to] = freeAround(s, 1);
 		if (to) {
+			take(s, [to]);
 			await s.look(ev);
 			await s.goto(ev, to[0], to[1], { speed: 1.4 });
 			s.face(ev, "player");
@@ -654,16 +692,7 @@ const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
 export const newsScript = async (s: Story): Promise<void> => {
 	// 出ていった 仲間は 知らせでも 話さない
 	const away = awayFriends(loadProgress().cleared, loadTown().stage);
-	// 知らせを 話す 仲間を そばへ
 	const news = loadProgress().news;
-	if (news.length)
-		await gather(
-			s,
-			Object.values(UNLOCK_LINES)
-				.flat()
-				.map((l) => l.who)
-				.filter((w) => !away.includes(w)),
-		);
 	for (const n of news) {
 		// 裏シナリオ：跡地（原住民が ROM専の 声を 聞く）・避難J（ヒナリーの 発表）は 住人が 話す
 		if (n.dungeon === "ato" || n.dungeon === "hinan") {
@@ -697,6 +726,11 @@ export const newsScript = async (s: Story): Promise<void> => {
 		const lines = UNLOCK_LINES[key]
 			.filter((l) => !away.includes(l.who) && !mentionsAway(l.text, away))
 			.map((l) => ({ ...l, text: l.text.replace("{name}", name) }));
+		// 話す 仲間だけ そばへ（来客・住人が 話す 知らせでは 呼ばない。名無しは キリコとだけ 話す）
+		await gather(
+			s,
+			lines.map((l) => l.who),
+		);
 		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）。出口が キリコから 遠ければ
 		// （たおれて 蓄音機の 前に いる relief など）そばの 仲間が 話しおえてから 出口を 見せて「もぐれる」の 1行
 		// （見せてから すぐ もどって 話すと、出口が 一瞬しか 映らなかった）
@@ -844,7 +878,7 @@ const movedIn = async (
 	// 越してきた 子は 村の 口（持ち場に いちばん 近い 出口）から 歩いてきて、持ち場に 着いてから 知らせる
 	if (!rebuilt) {
 		await s.fadeOut(300);
-		await s.rebuild();
+		await rebuild(s);
 		for (const id of ids) s.hide(`mob_${id}`);
 		await s.look(gateNear(MOBS[ids[0]].spot), { instant: true });
 		await s.fadeIn(300);
@@ -931,15 +965,11 @@ const stageUp = async (
 	);
 	const at = VILLAGE_SPOTS.growth(to);
 	await s.fadeOut(400);
-	await s.rebuild();
+	await rebuild(s);
 	// 話す 仲間は カメラが 見る 建った所の まわりへ（暗い うちに）。越してきた 仲間は あとから 歩いてくるので
 	// その 場所だけ とっておいて 隠す。このあと 越してくる 住人（movedIn）も まだ 見せない
 	const talkers = [...new Set([...lines.map((l) => l.who), ...moved])];
-	await gather(s, talkers, { dark: true, at });
-	const spots = spotsAround(villageView(), talkers.length, [
-		Math.round(at[0]),
-		Math.round(at[1]),
-	]);
+	const spots = await gather(s, talkers, { dark: true, at });
 	for (const w of moved) s.hide(w);
 	for (const id of arriving) s.hide(`mob_${id}`);
 	await s.look(at, { instant: true });
@@ -951,7 +981,7 @@ const stageUp = async (
 		// （1人ずつ べつの 口から 来ると、カメラが 村の はしから はしへ 2度 往復した）
 		const gate = gateNear(at);
 		const walkers = moved.flatMap((w) => {
-			const c = spots[talkers.indexOf(w)];
+			const c = spots.get(w);
 			return c ? [{ w, c }] : [];
 		});
 		await stepAside(s, gate);
@@ -983,7 +1013,7 @@ const stageUp = async (
 		await s.wait(0);
 		await s.look(VILLAGE_SPOTS.hallLook);
 		const [door] = VILLAGE_SPOTS.hallDoors;
-		const [front] = spotsAround(villageView(), 1, [door[0], door[1] + 1]);
+		const [front] = freeAround(s, 1, [door[0], door[1] + 1]);
 		if (front) {
 			await s.goto(hallLine.who, front[0], front[1], { speed: 1.4 });
 			s.face(hallLine.who, "up");
