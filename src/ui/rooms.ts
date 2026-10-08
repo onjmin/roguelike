@@ -240,9 +240,6 @@ const booksPeople = (
 	return out;
 };
 
-/** 部屋から 出たときに 立つ 村の 所（リプレイで 出た ときも）。 */
-export const roomOutside = (id: RoomId): Spot => ROOM_OUTSIDE[id];
-
 /** 調べる 物の 窓（窓ごと）。 */
 const readAll = async (s: Story, lines: readonly string[]): Promise<void> => {
 	for (const t of lines) await s.narrate(t);

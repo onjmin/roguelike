@@ -26,12 +26,7 @@ import { type Dir8, DX, DY, isDiagonal } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
 import { CAST, KIRIKO, KIRIKO_WALK } from "../data/cast";
 import type { KirikoMode, Speaker } from "../data/quotes";
-import {
-	type Facility,
-	facilityOfMap,
-	facilityOutside,
-} from "../data/village/facilities";
-import { HALL_OUT_DIR, hallOutside } from "../data/village/hall";
+import { type Facility, facilityOfMap } from "../data/village/facilities";
 import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
 import { isRoom, type RoomId } from "../data/village/rooms";
 import { preloadImages } from "../engine/assets";
@@ -73,7 +68,7 @@ import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
-import { buildRoom, roomOutside } from "./rooms";
+import { buildRoom } from "./rooms";
 import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
 import { villageView } from "./villageReturn";
 
@@ -141,6 +136,8 @@ export type Arrival =
 	| null;
 
 type Spot = { x: number; y: number; dir: Dir };
+/** 地図（村・本館・建物の 中・施設の 中 `f_<id>`）。 */
+type MapId = "village" | "hall" | RoomId | `f_${string}`;
 
 export class Village {
 	private readonly ctx: Ctx;
@@ -151,9 +148,8 @@ export class Village {
 	private readonly fadeEl: HTMLDivElement;
 	private readonly toastEl: HTMLDivElement;
 	private field: Field | null = null;
-	/** いま 描いている 地図（村 village・本館の 中 hall・建物の 中 RoomId）。村に 入る たびに village から。 */
-	/** いまの 地図（村・本館・建物の 中・施設の 中 `f_<id>`）。 */
-	private mapId: "village" | "hall" | RoomId | `f_${string}` = "village";
+	/** いま 描いている 地図。村に 入る たびに village から（リプレイから もどった ときは 見る 前の 地図）。 */
+	private mapId: MapId = "village";
 	private player = new Actor("player", 0, 0, "down", KIRIKO_WALK, null);
 	/** キリコの位置と その場かぎりの印（村を 出ても 残す。ページを 閉じれば 消える）。 */
 	private state: VState = { x: 0, y: 0, dir: "down", flags: {} };
@@ -192,8 +188,8 @@ export class Village {
 	private exitChoice: VillageExit | null = null;
 	private leaving = false;
 	private resolveStart: ((c: VillageExit) => void) | null = null;
-	/** 最後に 立っていた マス（リプレイを 見て もどったとき）。 */
-	private lastSpot: Spot | null = null;
+	/** 最後に いた 地図と マス（リプレイを 見て もどったとき。本館の 映写機の 前）。 */
+	private lastSpot: (Spot & { map: MapId }) | null = null;
 
 	constructor(ctx: Ctx, screen: Screen, hud: Hud) {
 		this.ctx = ctx;
@@ -236,9 +232,11 @@ export class Village {
 		this.pan = null;
 		this.fadeEl.style.transition = "none";
 		this.fadeEl.style.opacity = "1";
-		this.mapId = "village";
+		// リプレイを 見おえたら、見る 前に いた 地図の 同じ マスへ（本館の 中なら 中のまま）
+		const back = o.arrival?.kind === "replay" ? this.lastSpot : null;
+		this.mapId = back?.map ?? "village";
 		this.guideExit = loadProgress().intro.length === 0;
-		await this.build(this.spotFor(o.arrival));
+		await this.build(back ?? this.spotFor(o.arrival));
 		// 幕が 上がる前に 並べる（帰ってきた場面：口の前で 待つ 仲間）
 		this.field?.def.prepare?.(this.story);
 		const input = this.ctx.input;
@@ -284,7 +282,6 @@ export class Village {
 			const e = exitFor(a.dungeon);
 			return { x: e.cell[0], y: e.cell[1], dir: e.inward };
 		}
-		if (a.kind === "replay") return this.lastSpot ?? boot;
 		return boot;
 	}
 
@@ -384,16 +381,12 @@ export class Village {
 		// 読み上げは 村の 会話だけ（ダンジョンへ 持ちこまない）
 		this.ctx.audio.stopSpeech();
 		this.toastEl.classList.remove("shown");
-		// 本館・建物の 中から 出た（リプレイ）なら、もどる のは 入った 扉の 前（外）
-		const out = hallOutside(this.state.flags.hallFrom);
-		this.lastSpot =
-			this.mapId === "hall"
-				? { x: out[0], y: out[1], dir: HALL_OUT_DIR }
-				: isRoom(this.mapId)
-					? roomOutside(this.mapId)
-					: facilityOfMap(this.mapId)
-						? facilityOutside(facilityOfMap(this.mapId) as Facility)
-						: { x: this.player.x, y: this.player.y, dir: this.player.dir };
+		this.lastSpot = {
+			map: this.mapId,
+			x: this.player.x,
+			y: this.player.y,
+			dir: this.player.dir,
+		};
 		this.field?.dispose();
 		this.field = null;
 		// 冒険の画面に 村が 一瞬 見えないよう、黒く ぬってから 幕を あげる（冒険は 自分の 幕を 持っている）
