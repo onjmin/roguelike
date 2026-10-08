@@ -14,7 +14,7 @@
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import type { Cell } from "./map";
-import { base, basePx, big, floor, INDOOR, solid } from "./tiles";
+import { base, basePx, big, floor, INDOOR, onTop, solid } from "./tiles";
 
 /** 立つ 所と 向き。 */
 export type FacilitySpot = { x: number; y: number; dir: Dir };
@@ -181,8 +181,6 @@ const LOOKS = {
 
 const PAPER = basePx(32, 1446);
 const WINDOW = basePx(48, 1382);
-/** 小物（位置微調整用の 行の 絵を 4px 上げて、台の 上に のせる）。 */
-const onTop = (c: number, r: number) => basePx(c * 16, r * 16 + 4);
 
 // ───────────────── 施設 ─────────────────
 
@@ -334,7 +332,8 @@ export const FACILITIES: readonly Facility[] = [
 				A: k.up(base(3, 95)),
 				k: k.low(base(7, 297)),
 				"[": { ...k.on(base(1, 98)), counter: true },
-				"=": { ...k.on(base(2, 98), onTop(1, 160)), counter: true },
+				// 鉄板の 台（焼きそばの 皿）
+				"=": { ...k.on(base(2, 98), onTop(2, 152)), counter: true },
 				"]": { ...k.on(base(3, 98)), counter: true },
 				O: k.on(base(3, 108)),
 				u: k.on(base(4, 123)),
@@ -826,7 +825,8 @@ export const FACILITIES: readonly Facility[] = [
 				"####DD####",
 			],
 			tiles: (k) => ({
-				g: k.on(base(3, 108), onTop(4, 190)),
+				// ガラスの ケース（銀の 細い 物が ならぶ。レコードの 針）
+				g: k.on(base(3, 108), onTop(0, 154)),
 				K: k.on(base(6, 123)),
 				u: k.on(base(0, 123)),
 			}),

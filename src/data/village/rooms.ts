@@ -45,7 +45,7 @@ import type { Dir } from "../../engine/types";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
 import type { Speaker } from "../quotes";
 import type { Cell } from "./map";
-import { base, basePx, floor, INDOOR, solid } from "./tiles";
+import { base, basePx, floor, INDOOR, onTop, solid } from "./tiles";
 
 export type RoomId =
 	| "cafe"
@@ -304,11 +304,6 @@ const BATH_WATER_LOW = "pub:assets/rpg-reze/pond.png#0,72,16,8";
 const PAPER = basePx(32, 1446);
 const WINDOW = basePx(48, 1382);
 const PICTURE = basePx(80, 1446);
-/**
- * 小物（位置微調整用の 行 149〜160 の 絵を、台の 上に のせる）。その 行の 絵は 下はしが r 行の 上から 4〜6px に
- * あるので、r 行の 8px 上から 切ると 下はしが マスの 下から 2〜4px 上に くる。
- */
-const onTop = (c: number, r: number) => basePx(c * 16, r * 16 - 8);
 
 /** 銭湯の 仕切りの x（これより 左が 男湯）・番台の 席・男湯の のれん。 */
 export const BATH_WALL = 8;

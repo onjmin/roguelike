@@ -23,6 +23,12 @@ export const base = (c: number, r: number, w = 1, h = 1): string =>
 /** Base.png をピクセル単位で切り出す（半マスずれて描かれている窓・ランプなどの小物用）。 */
 export const basePx = (x: number, y: number, w = 16, h = 16): string =>
 	`${BASE}#${x},${y},${w},${h}`;
+/**
+ * 台の 上に のせる 小物（Base.png の 位置微調整用の 行 149〜160 の 絵。部屋・施設の 中で 使う）。その 行の 絵は
+ * 下はしが r 行の 上から 4〜6px に あるので、r 行の 8px 上から 切ると 下はしが マスの 下から 2〜4px 上に くる。
+ */
+export const onTop = (c: number, r: number): string =>
+	basePx(c * 16, r * 16 - 8);
 
 /** 通れる地形。layers は下から順に重ねる。 */
 export const floor = (color: string, ...layers: string[]): TileDef => ({
