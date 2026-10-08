@@ -1,12 +1,14 @@
 // 道路の 絵を 書き出す（node scripts/make-road.mjs → public/sprites/road.png）。
 //
-// 住宅街（町の 段6）から 村の 道が アスファルトに なる（STORY.md §5.75）。160x16 に 16x16 が 10コマ：
+// 住宅街（町の 段6）から 村の 道が アスファルトに なる（STORY.md §5.75）。272x16 に 16x16 が 17コマ：
 //   0 アスファルト   1 横の 道の 中央線（白の 点線）   2 縦の 道の 中央線   3 横の 道の 横断歩道（縞は 横）
 //   4 縦の 道の 横断歩道（縞は 縦）   5 歩道（灰色の タイル）
 //   6〜9 2車線の 道の 半分（中央線が 内がわの はし、白の 実線が 外がわの はし）：
 //        6 横の 上の 車線・7 横の 下の 車線・8 縦の 左の 車線・9 縦の 右の 車線
 //   10・11 4車線の 横の 道の 内がわの 車線（まんなかの 黄色い 実線が 下の はし・上の はし）
 //   12 5マスの 縦の 道の まんなか（黄色い 実線が 縦に）
+//   13 1マスの 横の 道（町の 中心の 通り。上下の はしに 白の 実線＝路側帯）
+//   14 駅前広場の レンガ舗装   15 点字ブロック（点状）   16 レンガに 鉄の 格子（広場の 木の 根元）
 // アスファルトの ざらつきは 決まった 乱数（毎回 同じ 絵）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-statue.mjs と 同じ。
@@ -58,7 +60,7 @@ const encodePng = (w, h, rgba) => {
 
 // ───────────────── 絵 ─────────────────
 
-const W = 208;
+const W = 272;
 const H = 16;
 const rgba = Buffer.alloc(W * H * 4);
 let seed = 12345;
@@ -127,6 +129,57 @@ for (let y = 0; y < 16; y++)
 	for (let x = 0; x < 16; x++) {
 		const c = x === 7 || x === 8 ? YELLOW : asphalt();
 		set(12 * 16 + x, y, c);
+	}
+// 13 1マスの 横の 道（町の 中心。上下の はしに 白の 実線＝路側帯。センターラインは ない）
+for (let y = 0; y < 16; y++)
+	for (let x = 0; x < 16; x++) {
+		let c = asphalt();
+		if (y === 1 || y === 14) c = WHITE;
+		set(13 * 16 + x, y, c);
+	}
+// 14 駅前広場の レンガ舗装（8x4 の 走り目地。行ごとに 4px ずらす。レンガごとに 色を すこし ずらす）
+const brickShade = (row, col) => {
+	let h = (row * 374761393 + col * 668265263) ^ 0x5bd1e995;
+	h = Math.imul(h ^ (h >>> 13), 1274126177);
+	return Math.floor((((h ^ (h >>> 16)) >>> 0) / 0xffffffff) * 18) - 9;
+};
+const BRICK = [190, 168, 150];
+const BRICK_J = [142, 126, 114];
+for (let y = 0; y < 16; y++)
+	for (let x = 0; x < 16; x++) {
+		const row = Math.floor(y / 4);
+		const off = row % 2 ? 4 : 0;
+		const col = Math.floor(((x + off) % 16) / 8);
+		const joint = y % 4 === 3 || (x + off) % 8 === 7;
+		const n = brickShade(row, col) + Math.floor(rnd() * 4) - 2;
+		set(14 * 16 + x, y, joint ? BRICK_J : BRICK.map((v) => v + n));
+	}
+// 15 点字ブロック（点状。横断歩道の 前の 歩道。黄色に 3x3 の 点）
+const TACT = [214, 176, 52];
+const TACT_D = [170, 136, 34];
+const TACT_L = [238, 208, 112];
+for (let y = 0; y < 16; y++)
+	for (let x = 0; x < 16; x++) {
+		let c = TACT;
+		if (x === 0 || y === 0 || x === 15 || y === 15) c = TACT_D;
+		for (const dx of [3, 7, 11])
+			for (const dy of [3, 7, 11]) {
+				if (x === dx && y === dy) c = TACT_L;
+				if (x === dx + 1 && y === dy + 1) c = TACT_D;
+			}
+		set(15 * 16 + x, y, c);
+	}
+// 16 広場の 木の 根元（14 の レンガの まんなかに 鉄の 格子と 土）
+for (let y = 0; y < 16; y++)
+	for (let x = 0; x < 16; x++) {
+		const o = (y * W + 14 * 16 + x) * 4;
+		let c = [rgba[o], rgba[o + 1], rgba[o + 2]];
+		if (x >= 2 && x <= 13 && y >= 2 && y <= 13) {
+			c = (x + y) % 3 === 0 ? [60, 60, 66] : [96, 96, 104];
+			if (x === 2 || x === 13 || y === 2 || y === 13) c = [70, 70, 78];
+			if (x >= 6 && x <= 9 && y >= 6 && y <= 9) c = [84, 64, 44];
+		}
+		set(16 * 16 + x, y, c);
 	}
 writeFileSync(OUT, encodePng(W, H, rgba));
 console.log(`wrote ${OUT}`);

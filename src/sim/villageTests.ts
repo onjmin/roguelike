@@ -176,6 +176,7 @@ import {
 import {
 	asideSpot,
 	CAFE_FROM,
+	coreShadows,
 	exitFor,
 	lineupSpots,
 	spotsAround,
@@ -210,7 +211,7 @@ import {
 	roomPlaces,
 	roomRows,
 } from "../data/village/rooms";
-import { hallTier } from "../data/village/tiles";
+import { CITY, hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
 import {
@@ -620,6 +621,115 @@ test("each town stage builds on the last, with the same art as the town strip", 
 	for (const stage of [-3, 99, Number.NaN]) {
 		const rows = villageRows({ stage, unlocked: ["shallow"], cleared: [] });
 		ok(rows.length === VILLAGE_H, `stage ${stage}: ${rows.length} rows`);
+	}
+});
+
+test("町の 中心（段6〜7）：住宅街は 路側帯・電柱・マンホール、都市は 歩道・レンガ・横断歩道・擁壁。段5までは かわらない", () => {
+	const city = new Set(Object.keys(CITY));
+	const view = (stage: number): VillageView => ({
+		stage,
+		unlocked: ["shallow", "main", "deep"],
+		cleared: ["shallow", "main"],
+	});
+	const at = (rows: readonly string[], x: number, y: number) => [...rows[y]][x];
+	// 段5 までは 町の 中心の 字も 影も ない
+	for (const v of VIEWS) {
+		if (v.stage > 5) continue;
+		for (const ch of villageRows(v).join(""))
+			ok(!city.has(ch), `${label(v)}: city tile "${ch}" before stage 6`);
+		ok(!coreShadows(v.stage).length, `${label(v)}: core shadows`);
+	}
+	// 住宅街：崖下の 道・町の 通りに 路側帯（交わる 所は そのまま）、本館への 道は 2車線、生け垣
+	const r6 = villageRows(view(6));
+	const lined = (x: number, y: number, open: readonly number[]) => {
+		const ch = at(r6, x, y);
+		return open.includes(x) ? ch === "." : ch === "ゑ" || ch === "ヴ";
+	};
+	for (let x = 10; x <= 29; x++)
+		ok(lined(x, 11, [19, 20, 27]), `stage 6: (${x},11) is ${at(r6, x, 11)}`);
+	for (let x = 0; x <= 39; x++)
+		ok(lined(x, 19, [19, 20]), `stage 6: (${x},19) is ${at(r6, x, 19)}`);
+	for (let y = 12; y <= 18; y++)
+		ok(
+			at(r6, 19, y) === "る" && at(r6, 20, y) === "れ",
+			`stage 6: the hall road at y=${y} is not 2 lanes`,
+		);
+	ok(r6[24].includes("マ"), "stage 6: no trimmed hedge south of the plaza");
+	// 都市：横断歩道と 点字ブロック・へりに 森の 木や 雑草が 残らない・池は 柵で 囲う・崖と 広場の 絵が かわる
+	const r7 = villageRows(view(7));
+	for (const [x, y] of [
+		[19, 11],
+		[20, 11],
+		[27, 11],
+		[19, 19],
+		[20, 19],
+	])
+		ok(at(r7, x, y) === "わ", `stage 7: no crosswalk at (${x},${y})`);
+	for (const [x, y] of [
+		[19, 12],
+		[20, 12],
+		[19, 18],
+		[20, 18],
+		[19, 20],
+		[20, 20],
+	])
+		ok(at(r7, x, y) === "ぴ", `stage 7: no tactile paving at (${x},${y})`);
+	for (let y = 11; y <= 24; y++)
+		for (let x = 9; x <= 30; x++)
+			ok(
+				!"HhbT^%v;".includes(at(r7, x, y)),
+				`stage 7: village "${at(r7, x, y)}" left at (${x},${y})`,
+			);
+	for (let y = 25; y <= 29; y++)
+		for (let x = 0; x < VILLAGE_W; x++) {
+			if (at(r7, x, y) !== "~") continue;
+			for (const [dx, dy] of [
+				[0, -1],
+				[1, 0],
+				[0, 1],
+				[-1, 0],
+			])
+				ok(
+					"~ヤユヨロメモ".includes(at(r7, x + dx, y + dy)),
+					`stage 7: the pond at (${x},${y}) is not fenced`,
+				);
+		}
+	const p6 = villagePalette(view(6));
+	const p7 = villagePalette(view(7));
+	for (const ch of ["2", ":"])
+		ok(
+			p6[ch]?.layers.join() !== p7[ch]?.layers.join(),
+			`stage 7: "${ch}" looks the same as stage 6`,
+		);
+	// 抜け道（東の 広場の すみ・神社・図書館と 碁会所・バス停・出口の 立て札を 調べる 所）は ふさがない
+	for (const stage of [6, 7]) {
+		const rows = villageRows(view(stage));
+		const tiles = villagePalette(view(stage));
+		for (const [x, y] of [
+			[27, 12],
+			[24, 12],
+			[17, 11],
+			[30, 20],
+			[7, 15],
+			[7, 16],
+			[7, 17],
+			[7, 18],
+			[6, 22],
+			[6, 23],
+			[4, 23],
+			[16, 17],
+			[25, 17],
+			[26, 20],
+			[29, 20],
+			[9, 19],
+			[33, 21],
+			[19, 11],
+			[20, 11],
+		])
+			ok(
+				tiles[at(rows, x, y)]?.passable,
+				`stage ${stage}: (${x},${y}) is blocked`,
+			);
 	}
 });
 

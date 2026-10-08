@@ -10,7 +10,7 @@
 // その物が覆うマスは すべて通れないようにしておく。
 //
 // 文字 → タイルの対応表（パレット）を 組み合わせて使う（data/village/map.ts の villagePalette）。
-// 町の段で 絵の かわる字（道・倉庫の壁と屋根）は map.ts が 段で えらぶ。
+// 町の段で 絵の かわる字（道・倉庫の壁と屋根。都市＝段7 の 崖・小屋・広場は CITY_CLIFF・HUT_CITY・CITY7）は map.ts が 段で えらぶ。
 // どのパレットでも " " は外側の黒。
 
 import type { TileDef } from "../../engine/defs";
@@ -530,4 +530,136 @@ export const BATH: Record<string, TileDef> = {
 	И: solid(C_BATH, base(1, 74)),
 	Л: floor(C_BATH, base(1, 74), base(7, 73, 1, 2), base(4, 297)),
 	Ц: solid("#6a6a72", base(4, 82), base(7, 84)),
+};
+
+// ───────────────── 町の 中心の 都市（本館・広場・商店街。住宅街＝段6・都市＝段7。data/village/map.ts の coreCity） ─────────────────
+// 住宅街は 通りに 路側帯・電柱・マンホール・刈りこんだ 生け垣。都市は 電柱を 抜いて 歩道・レンガの 広場・
+// 横断歩道・点字ブロック・信号機・街灯、崖は コンクリートの 擁壁（上は 歩道）。絵は scripts/make-road.mjs・make-street.mjs。
+//   ゑ  1マスの 横の 道（上下に 白の 実線）   ヴ  その 道に マンホール   ぴ  点字ブロック
+//   ぢ  電柱（草地）   ギ  街灯（レンガ）   ゲ  街灯（草地）
+//   マ ミ ム  刈りこんだ 生け垣（草地。左・まんなか・右）   べ ぺ ぽ  同じ 生け垣（レンガ）
+//   ザ ジ ズ  縦の 刈りこんだ 生け垣（歩道。上・まんなか・下）
+//   ぷ ゼ ゾ  鉄の 格子に 植えた 木（桜・緑・紅葉。2マス幅）   ぶ ぼ  花の 鉢（歩道・レンガ）
+//   ダ ヂ  ベンチ（レンガ。左・右）   ヘ ホ  ベンチ（草地）   パ  のぼり（歩道）   デ ド  自転車（赤・青）
+//   ガ グ  擁壁の 上の 柵の はし（本館の 左・右）
+//   ヤ ユ ヨ ロ  池の 柵の 角（左上・右上・左下・右下）   メ  柵（横）   モ  柵（縦）
+/** 歩道（灰色の タイル）・レンガ・木の 根元の 格子。 */
+export const SIDEWALK = road(5);
+export const BRICK = road(14);
+export const GRATE = road(16);
+export const C_WALK = "#b8b4ac";
+export const C_BRICK = "#bca896";
+const C_WALL = "#aca9a3";
+const onWalk = (...l: string[]) => solid(C_WALK, SIDEWALK, ...l);
+const onBrick = (...l: string[]) => solid(C_BRICK, BRICK, ...l);
+const onGrass = (...l: string[]) => solid(C_GRASS, TURF, ...l);
+/** 刈りこんだ 生け垣（横の 左・まんなか・右と 縦の 上・まんなか・下）。 */
+const HEDGE = (c: number) => base(c, 598);
+const HEDGE_V = (r: number) => base(7, r);
+/** 柵（Base.png の 鉄の 柵。角・横・縦）。 */
+const FENCE = {
+	nw: base(2, 32),
+	ne: base(3, 32),
+	sw: base(2, 33),
+	se: base(3, 33),
+	h: base(0, 33),
+	v: base(0, 32),
+	/** 柵の はし（杭が 右・左）。 */
+	endR: base(4, 32),
+	endL: base(4, 33),
+};
+const POLE_ART = street(64, 0, 32);
+const LAMP_ART = street(80, 0, 32);
+/** 擁壁（笠木の 段・上段・下段。中・左はし・右はし）。 */
+const COPING = { m: street(432, 0), l: street(448, 0), r: street(464, 0) };
+const WALL_UP = { m: street(480, 0), l: street(496, 0), r: street(512, 0) };
+const WALL_LOW = { m: street(528, 0), l: street(544, 0), r: street(560, 0) };
+
+export const CITY: Record<string, TileDef> = {
+	ゑ: floor(C_ASPHALT, road(13)),
+	ヴ: floor(C_ASPHALT, road(13), street(272, 0)),
+	ぴ: floor("#d6b034", road(15)),
+	ぢ: onGrass(POLE_ART),
+	ギ: onBrick(LAMP_ART),
+	ゲ: onGrass(LAMP_ART),
+	マ: onGrass(HEDGE(4)),
+	ミ: onGrass(HEDGE(5)),
+	ム: onGrass(HEDGE(6)),
+	べ: onBrick(HEDGE(4)),
+	ぺ: onBrick(HEDGE(5)),
+	ぽ: onBrick(HEDGE(6)),
+	ザ: onWalk(HEDGE_V(591)),
+	ジ: onWalk(HEDGE_V(592)),
+	ズ: onWalk(HEDGE_V(593)),
+	ぷ: big(C_BRICK, GRATE, base(0, 292, 2, 2)),
+	ゼ: big(C_BRICK, GRATE, base(0, 6, 2, 2)),
+	ゾ: big(C_BRICK, GRATE, base(4, 6, 2, 2)),
+	ぶ: onWalk(base(1, 361)),
+	ぼ: onBrick(base(0, 361)),
+	ダ: onBrick(base(0, 121)),
+	ヂ: onBrick(base(2, 121)),
+	ヘ: onGrass(base(0, 121)),
+	ホ: onGrass(base(2, 121)),
+	パ: onWalk(street(352, 0, 32)),
+	デ: onWalk(street(320, 0)),
+	ド: onWalk(street(320, 16)),
+	ガ: solid(C_WALK, COPING.m, FENCE.endR),
+	グ: solid(C_WALK, COPING.m, FENCE.endL),
+	ヤ: onGrass(FENCE.nw),
+	ユ: onGrass(FENCE.ne),
+	ヨ: onGrass(FENCE.sw),
+	ロ: onGrass(FENCE.se),
+	メ: onGrass(FENCE.h),
+	モ: onGrass(FENCE.v),
+};
+
+/**
+ * 都市（段7）の 北の 崖：コンクリートの 擁壁（字は CLIFF と 同じ。上の 段は 歩道、ふちに 柵）。
+ * 切れ目の 両がわ（A D F I・V j s t）と 町の 区画の 両はし（地図の x=9・30）は 擁壁の はし。
+ */
+export const CITY_CLIFF: Record<string, TileDef> = {
+	"1": solid(C_WALK, SIDEWALK),
+	"2": solid(C_WALK, COPING.m, FENCE.h),
+	"3": solid(C_WALL, WALL_UP.m),
+	"4": solid(C_WALL, WALL_LOW.m),
+	A: solid(C_WALK, SIDEWALK),
+	D: solid(C_WALK, COPING.r, FENCE.endR),
+	F: solid(C_WALL, WALL_UP.r),
+	I: solid(C_WALL, WALL_LOW.r),
+	V: solid(C_WALK, SIDEWALK),
+	j: solid(C_WALK, COPING.l, FENCE.endL),
+	s: solid(C_WALL, WALL_UP.l),
+	t: solid(C_WALL, WALL_LOW.l),
+	// 擁壁の ふちの 桜
+	y: {
+		layers: [COPING.m, FENCE.h],
+		above: [base(0, 292, 2, 2)],
+		color: C_WALK,
+		passable: false,
+	},
+};
+
+/** 都市（段7）の 小屋：わら屋根を 灰色の 瓦に、板壁を 黄色い 板に（銭湯と 同じ 見た目。中と 文は かわらない）。 */
+export const HUT_CITY: Record<string, TileDef> = {
+	C: solid("#6a6a72", base(4, 82), base(7, 84)),
+	z: solid("#6a6a72", base(4, 82)),
+	Z: solid("#7a7a82", base(4, 84)),
+	"[": solid(C_BATH, base(1, 73)),
+	"]": solid(C_BATH, base(1, 74)),
+	J: solid(C_BATH, base(1, 73), WIN_WHITE),
+	e: floor(C_BATH, base(1, 74), base(7, 73, 1, 2)),
+	E: solid(C_BATH, base(1, 74), base(3, 362)),
+};
+
+/** 都市（段7）で 足もとが かわる 字：広場は レンガ、井戸・掲示板も レンガの 上、店先の たる・木箱・鍋・ランプは 歩道の 上。 */
+export const CITY7: Record<string, TileDef> = {
+	":": floor(C_BRICK, BRICK),
+	U: onBrick(base(2, 37)),
+	K: onBrick(base(6, 37, 1, 2)),
+	k: onBrick(base(7, 37, 1, 2)),
+	i: onWalk(base(5, 37, 1, 2)),
+	X: onWalk(base(3, 125)),
+	x: onWalk(base(4, 123)),
+	u: onWalk(base(0, 123)),
+	L: onWalk(basePx(96, 2250)),
 };

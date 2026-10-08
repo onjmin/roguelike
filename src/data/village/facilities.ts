@@ -14,7 +14,21 @@
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import type { Cell } from "./map";
-import { base, basePx, big, floor, INDOOR, onTop, solid } from "./tiles";
+import {
+	ASPHALT,
+	BRICK,
+	base,
+	basePx,
+	big,
+	C_ASPHALT,
+	C_BRICK,
+	C_WALK,
+	floor,
+	INDOOR,
+	onTop,
+	SIDEWALK,
+	solid,
+} from "./tiles";
 
 /** 立つ 所と 向き。 */
 export type FacilitySpot = { x: number; y: number; dir: Dir };
@@ -258,6 +272,34 @@ const vending = (
 		],
 	};
 };
+
+/**
+ * 町の 中心の 道ばたの 調べる 物（1マス。郵便ポスト・広場の 時計・電話ボックス。絵は scripts/make-street.mjs）。
+ * 足もとの 地面は 施設の 絵に 入れるので、地面が かわる 段で 別の 施設に 分ける（郵便ポストは 草地 → 歩道）。
+ */
+const fixture = (
+	id: string,
+	name: string,
+	at: Cell,
+	from: number,
+	ch: string,
+	tile: TileDef,
+	lines: readonly string[],
+	until?: number,
+): Facility => ({
+	id,
+	name,
+	from,
+	until,
+	at,
+	look: { kind: "block", rows: [ch], tiles: { [ch]: tile } },
+	outdoor: [{ id: "it", at, lines }],
+});
+const POST_ART = `${STREET_IMG}#288,0,16,32`;
+const POST_LINES = [
+	"郵便ポスト。\n取り集めは　1日　2回。",
+	"はがきが　1枚　はみ出している。\n宛名は「>>1さんへ」。",
+];
 
 /** 畑の あとの 立て札（市民農園と 公園で 同じ 板）。 */
 const NAME_BOARD: TileDef = solid(C_GRASS, TURF, base(3, 38));
@@ -1947,6 +1989,98 @@ export const FACILITIES: readonly Facility[] = [
 	vending("vend_konbini", [45, 29], 1, 4, "grass"),
 	vending("vend_bus", [32, 20], 2, 6, "grass"),
 	vending("vend_arcade", [76, 28], 0, 6, "grass"),
+	// ── 町の 中心の 道ばた（住宅街・都市。data/village/map.ts の coreCity）。ここより 前に 足すと ふつうの 家の 字が ずれる
+	fixture(
+		"post",
+		"郵便ポスト",
+		[9, 18],
+		6,
+		"ヅ",
+		solid(C_GRASS, TURF, POST_ART),
+		POST_LINES,
+		7,
+	),
+	fixture(
+		"post_city",
+		"郵便ポスト",
+		[9, 18],
+		7,
+		"ゴ",
+		solid(C_WALK, SIDEWALK, POST_ART),
+		POST_LINES,
+	),
+	fixture(
+		"clock",
+		"広場の 時計",
+		[23, 22],
+		7,
+		"バ",
+		solid(C_BRICK, BRICK, `${STREET_IMG}#304,0,16,48`),
+		[
+			"広場の　時計。\n待ち合わせは　だいたい　ここ。",
+			"柱に　小さく\n「1000年　保守」と　彫ってある。",
+		],
+	),
+	fixture(
+		"phone",
+		"電話ボックス",
+		[30, 18],
+		7,
+		"ビ",
+		solid(C_WALK, SIDEWALK, `${STREET_IMG}#336,0,16,32`),
+		[
+			"公衆電話。\n返却口に　10円玉が　1枚。",
+			"……テレホーダイの　時間は\n23時から。",
+		],
+	),
+	// ── タクシー乗り場（都市。バス停の 東。草地の 花の 鉢を 標識に、道ばたに タクシー）
+	{
+		id: "taxi",
+		name: "タクシー乗り場",
+		from: 7,
+		at: [33, 20],
+		look: {
+			kind: "block",
+			rows: ["プペポ"],
+			tiles: {
+				プ: solid(C_GRASS, TURF, `${STREET_IMG}#416,0,16,32`),
+				ペ: solid(C_ASPHALT, ASPHALT, `${STREET_IMG}#384,0,16,16`),
+				ポ: solid(C_ASPHALT, ASPHALT, `${STREET_IMG}#400,0,16,16`),
+			},
+		},
+		outdoor: [
+			{
+				id: "sign",
+				at: [33, 20],
+				lines: ["タクシー乗り場。\n運転手は　スマホで　スレを　見ている。"],
+			},
+		],
+	},
+	// ── 擁壁の 上の ビル（都市。崖の 上の 森を 開いた 所。入れない）
+	{
+		id: "hills",
+		name: "保守ヒルズ",
+		from: 7,
+		at: [9, 1],
+		look: { kind: "building", w: 5, roof: 5, wall: 63, tall: 3, closed: true },
+	},
+	{
+		id: "zakkyo",
+		name: "雑居ビル",
+		from: 7,
+		at: [15, 0],
+		look: { kind: "building", w: 5, roof: 5, wall: 69, tall: 4, closed: true },
+		outdoor: [
+			{
+				id: "sign",
+				at: [19, 4],
+				lines: [
+					"雑居ビルの　横の　看板。\n「2F　スレ立て代行　3F　空き」",
+					"4Fは　ずっと「準備中」。\n……もう　3年も　たつらしい。",
+				],
+			},
+		],
+	},
 ];
 
 /** その 段に 立っている 施設。 */

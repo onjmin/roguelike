@@ -17,7 +17,7 @@ import {
 	type OutdoorThing,
 } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
-import type { VillageView } from "../data/village/map";
+import { coreShadows, type VillageView } from "../data/village/map";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
@@ -99,9 +99,10 @@ export const outdoorScript =
 
 /**
  * 建物の 影（村の 地図の 飾り。右がわの 地面に 斜めの 影。キャラの 上にも 重なるので、影に 入ると 少し 暗く 見える）。
+ * 施設の 家と、住宅街からは 町の 中心の 建物（data/village/map.ts の coreShadows）。
  */
 export const shadowDecor = (stage: number): MapDef["decor"] => {
-	const list = facilityShadows(stage);
+	const list = [...facilityShadows(stage), ...coreShadows(stage)];
 	if (!list.length) return undefined;
 	const T = TILE;
 	return (g, ox, oy) => {

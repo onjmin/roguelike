@@ -25,6 +25,8 @@
 //   小屋 3〜 わら屋根・煙突（6〜 窓の下に 花の箱）
 //   倉庫 2〜3 小さな 物置  4〜5 板張りの 倉庫  6 石造りの 倉庫  7 銀行（貸金庫）。シヨが 台の うしろに 立つ
 //   道   0〜4 土  5〜 石だたみ（広場も 石畳に。井戸）。6〜 花。7 桜と 野次馬
+//   中心 6 住宅街（通りに 路側帯・マンホール・電柱、本館への 道は 2車線、広場の 南に 刈りこんだ 生け垣）
+//        7 都市（歩道・レンガの 広場・遊歩道・横断歩道・信号機・街灯、崖は 擁壁、池は 柵。区画の あと coreCity が 書きかえる）
 //
 // 段7 の 町の 区画の 形（ほかの段は 区画を 差しかえる。@ は 人と 蓄音機。字は data/village/tiles.ts）
 //    0123456789012345678901
@@ -79,12 +81,16 @@ import {
 	C_PLAZA,
 	C_STONE,
 	CAFE,
+	CITY,
+	CITY_CLIFF,
+	CITY7,
 	CLIFF,
 	DIRT,
 	FARM,
 	floor,
 	GROUND,
 	HUT,
+	HUT_CITY,
 	hallTier,
 	hallTiles,
 	MUSIC,
@@ -518,6 +524,172 @@ const EDGE_CELLS: readonly [number, number, string][] = [
 	[27, 24, "b"],
 ];
 
+/** 通りの マンホール。 */
+const MANHOLES: readonly Cell[] = [
+	[13, 11],
+	[25, 11],
+	[6, 19],
+	[14, 19],
+	[25, 19],
+	[35, 19],
+];
+/** 住宅街（段6）の 電柱（通りの わきの 草地）。 */
+const CORE_POLES: readonly Cell[] = [
+	[12, 12],
+	[17, 12],
+	[22, 12],
+	[26, 12],
+	[21, 15],
+	[8, 18],
+	[18, 18],
+	[30, 18],
+	[36, 20],
+];
+/** 住宅街（段6）の 広場の 南の 刈りこんだ 生け垣（y=24。" " は そのまま）。 */
+const CORE_HEDGE6 = "  マム マミム    マム マミミミム";
+/** 都市（段7）の 池（柵で 囲った 四角い 池。岩・切り株は 片づける）。地図の x, y から 右へ。 */
+const CITY_PONDS: readonly (readonly [number, number, string])[] = [
+	[10, 25, "ヤメメメメメメユ"],
+	[24, 25, "ヤメメメメユ"],
+	[10, 26, "モ~~~~~~モ"],
+	[24, 26, "モ~~~~モ"],
+	[10, 27, "モ~~~~~~モ,,"],
+	[24, 27, "モ~~~~モ"],
+	[10, 28, "モ~~~~~~モ"],
+	[24, 28, "ヨメメメメロ"],
+	[10, 29, "ヨメメメメメメロ"],
+	[23, 29, ","],
+	[13, 30, "ヘホ"],
+];
+/** 縦に 並べる（x, 上の y, 上から 字）。 */
+const down = (x: number, y0: number, s: string): [number, number, string][] =>
+	[...s].map((ch, i) => [x, y0 + i, ch]);
+/** 都市（段7）に 置く 物（地図の x, y から 右へ 字。" " は そのまま）。 */
+const CITY_CELLS: readonly (readonly [number, number, string])[] = [
+	// 擁壁の はし（町の 区画の 両はし）・本館の 両わきの 柵の はし
+	...down(9, 7, "Vjst"),
+	...down(30, 7, "ADFI"),
+	[14, 8, "ガ"],
+	[25, 8, "グ"],
+	// 区画の へりの 刈りこんだ 生け垣（縦）
+	...down(9, 11, "ザジジジジジズ"),
+	...down(9, 22, "ザジズ"),
+	...down(30, 14, "ザジズ"),
+	...down(30, 21, "ザジジズ"),
+	// 広場の 南の 植えこみ（両はしに 街灯、まんなかは 池への 道）
+	[10, 24, "ギべぺぽゾべぽぼ::ゆ:ぼべぽゼべぺぽギ"],
+	// 広場の 桜は 根元に 格子・角は レンガ・店先に 花の 鉢
+	[11, 21, "ぷ"],
+	[28, 21, "ぷ"],
+	[10, 23, ":"],
+	[29, 23, ":"],
+	[21, 17, "ぶ"],
+	[24, 18, "ぶ"],
+	// 横断歩道と その 前の 点字ブロック（本館の 扉・出口の 立て札・広場へ わたる 所）
+	[19, 11, "わわ"],
+	[27, 11, "わ"],
+	[19, 19, "わわ"],
+	[19, 12, "ぴぴ"],
+	[19, 18, "ぴぴ"],
+	[19, 20, "ぴぴ"],
+	// 信号機・街灯（歩道と 広場）・池の まわりの 道の 街灯（草地）
+	[18, 12, "ゔ"],
+	[21, 12, "ゔ"],
+	[18, 18, "ゔ"],
+	[21, 20, "ゔ"],
+	[10, 12, "ゃ"],
+	[23, 12, "ゃ"],
+	[26, 12, "ゃ"],
+	[18, 14, "ゃ"],
+	[21, 14, "ゃ"],
+	[11, 20, "ゃ"],
+	[28, 20, "ゃ"],
+	[8, 18, "ゃ"],
+	[19, 27, "ゲ"],
+	[21, 30, "ゲ"],
+	// ベンチ・のぼり・自転車
+	[11, 23, "ダヂ"],
+	[27, 23, "ダヂ"],
+	[17, 17, "パ"],
+	[10, 13, "デ"],
+	[10, 14, "ド"],
+	// 西の 空き地の 石・草を 片づける
+	[6, 20, ","],
+	[7, 17, ","],
+	[7, 22, ","],
+];
+
+/**
+ * 町の 中心（本館・広場・商店街と すぐ まわり）の 都市化（地図の 座標。STORY.md §5.75）。段5 までは 何も しない。
+ * 字と 絵は data/village/tiles.ts の CITY（CITY_CLIFF・HUT_CITY・CITY7 は 段7 の パレットで 上書き）。
+ * - 住宅街（段6）：崖下の 道と 町の 通りに 路側帯（ゑ）と マンホール（ヴ）、本館への 道は 2車線（る れ）、
+ *   通りの わきに 電柱、広場の 南は 刈りこんだ 生け垣。
+ * - 都市（段7）：電柱を 抜いて（無電柱化）歩道・レンガの 駅前広場、本館への 道は 点字ブロックの ある 遊歩道、
+ *   横断歩道・信号機・街灯・ベンチ・植えこみ・自転車・のぼり。崖は 擁壁（上は 歩道）、池は 柵で 囲う。
+ * 段の 区画を 敷いた あと・施設の 前に 置く（施設は 自分の マスを 上書きする。郵便ポスト・時計などは facilities.ts）。
+ * 歩ける 道は 残す：東の 広場の すみへは (26,20)・(29,20)、神社へは x=7 の y=15〜18、図書館・碁会所へは (6,22)・(6,23)、
+ * バス停は (30,20)、出口の 立て札は (27,12) から 調べる。ここに 物を 置かない。
+ */
+const coreCity = (rows: string[], stage: number): void => {
+	if (stage < 6) return;
+	const at = (x: number, y: number) => [...rows[y]][x];
+	// 崖下の 道（y=11）と 町の 通り（y=19）に 路側帯。本館への 道・出口への 道と 交わる 所は そのまま
+	for (let x = 10; x <= 29; x++)
+		if (at(x, 11) === "." && ![19, 20, 27].includes(x))
+			put(rows, [x, 11], "ゑ");
+	put(rows, [30, 11], "り");
+	for (let x = 0; x <= 39; x++)
+		if (at(x, 19) === "." && ![19, 20].includes(x)) put(rows, [x, 19], "ゑ");
+	for (const c of MANHOLES) put(rows, c, "ヴ");
+	if (stage < 7) {
+		// 本館への 道は 2車線・電柱・生け垣
+		for (let y = 12; y <= 18; y++) {
+			put(rows, [19, y], "る");
+			put(rows, [20, y], "れ");
+		}
+		for (const c of CORE_POLES) put(rows, c, "ぢ");
+		stamp(rows, 10, 24, [CORE_HEDGE6]);
+		return;
+	}
+	// 歩道（店の 前の 草地・西の 空き地の 入り口・広場の 北の へり）
+	for (let y = 12; y <= 18; y++)
+		for (let x = 9; x <= 30; x++) if (at(x, y) === ",") put(rows, [x, y], "ゆ");
+	put(rows, [7, 18], "ゆ");
+	put(rows, [8, 18], "ゆ");
+	stamp(rows, 7, 20, ["ゆ".repeat(24)]);
+	// 広場は 草も 道も レンガ
+	for (let y = 21; y <= 23; y++)
+		for (let x = 9; x <= 29; x++)
+			if ([",", ".", ":"].includes(at(x, y))) put(rows, [x, y], ":");
+	// 本館への 道は レンガの 遊歩道。北の 丘の 道・南の 池への 道は 歩道
+	for (let y = 13; y <= 17; y++) stamp(rows, 19, y, ["::"]);
+	for (let y = 0; y <= 10; y++) put(rows, [27, y], "ゆ");
+	for (let y = 24; y <= 31; y++) put(rows, [20, y], "ゆ");
+	// 池（物を 置く 前に。池の 行が 街灯を 消さないよう）
+	for (const [x0, y, line] of CITY_PONDS) stamp(rows, x0, y, [line]);
+	for (const [x0, y, line] of CITY_CELLS) stamp(rows, x0, y, [line]);
+};
+
+/**
+ * 町の 中心の 建物の 影（住宅街から。facilities.ts の facilityShadows と 同じ 形。ui/facilities.ts の shadowDecor が 描く）。
+ * 本館・商店街の 店・小屋・倉庫（銀行）・喫茶・図書館・音楽室・銭湯の 右がわ。
+ */
+export const coreShadows = (
+	stage: number,
+): { x: number; top: number; bottom: number }[] => {
+	if (stage < 6) return [];
+	return [
+		{ x: 25, top: 8, bottom: 11 },
+		{ x: 17, top: stage >= 7 ? 13 : 14, bottom: 17 },
+		{ x: 24, top: 16, bottom: 19 },
+		{ x: 30, top: 14, bottom: 17 },
+		{ x: 7, top: 16, bottom: 19 },
+		{ x: 6, top: 21, bottom: 23 },
+		{ x: 24, top: 26, bottom: 29 },
+		{ x: 38, top: 25, bottom: 28 },
+	];
+};
+
 /**
  * 東の 新市街（地図の x=40〜85。STORY.md §5.75）。街（段4）で 森が 開けて 草地と 通りが できる。
  * 道路は 横が 4マス（片側 2車線：y 方向）、縦が 5マス（片側 2車線と まんなか：x 方向）。見おろしの 絵で 立体感が 出る
@@ -867,6 +1039,8 @@ export const villageRows = (v: VillageView): string[] => {
 	for (const [x0, y, line] of eastDistrict(layoutStage(v)))
 		stamp(rows, x0, y, [line]);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
+	// 町の 中心の 都市化（住宅街・都市。へりの 木を 植えた あと、施設の 前）
+	coreCity(rows, layoutStage(v));
 	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
 	stampFacilities(rows, layoutStage(v), put);
 	return rows;
@@ -885,6 +1059,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...OUTSKIRTS,
 		...BEACH,
 		...ROADS,
+		...CITY,
 		...facilityTiles(),
 		...FARM,
 		...SHRINE,
@@ -909,6 +1084,8 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		U: solid(C_PLAZA, PLAZA, base(2, 37)),
 		K: solid(boardGround[0], boardGround[1], base(6, 37, 1, 2)),
 		k: solid(boardGround[0], boardGround[1], base(7, 37, 1, 2)),
+		// 都市（段7）：崖は 擁壁・小屋は 瓦屋根・広場は レンガ（道「.」は 上の アスファルトの まま）
+		...(stage >= 7 ? { ...CITY_CLIFF, ...HUT_CITY, ...CITY7 } : {}),
 	};
 };
 
