@@ -114,6 +114,14 @@ import {
 	WRAP_NEWS,
 } from "../data/story";
 import {
+	DIVE_RES,
+	diveResAt,
+	diveResLine,
+	GOAL_WHY,
+	goalWhy,
+	synopsisHtml,
+} from "../data/synopsis";
+import {
 	TAMPER_LEDGER,
 	TAMPER_MOB,
 	TAMPER_NARRATION,
@@ -5301,4 +5309,56 @@ test("本館の 野球の 本棚: every line fits the village window, each book 
 		ok(b.text.length >= 1 && b.text.length <= 2, `${b.title}: too long`);
 		fitsWindow(b.text.map((t): [string, string] => [b.title, t]));
 	}
+});
+
+// ───────────────── 裏の 筋を 追う 行（data/synopsis.ts） ─────────────────
+
+test("story helpers for the hidden route fit the log and the map card, and follow the story order", () => {
+	for (const [d, list] of Object.entries(DIVE_RES)) {
+		const dg = DUNGEONS[d as DungeonId];
+		const zones = BOARD_LOOKS[d as DungeonId].zones ?? [];
+		const zoneStarts = zones.map((_, i) => (i ? zones[i - 1].last + 1 : 1));
+		for (const r of list ?? []) {
+			// ログは スマホで 全角24字くらい。2行に 折れない ように
+			ok(width(diveResLine(r)) <= 24, `${d} ${r.at}: ${diveResLine(r)}`);
+			// 底より 浅く、潜りはじめ（目的と わけ）・層の 札とは ちがう 階に
+			ok(r.at > 1 && r.at <= dg.floors, `${d} ${r.at}: outside the board`);
+			ok(!zoneStarts.includes(r.at), `${d} ${r.at}: same floor as a zone sign`);
+		}
+		// 原住民の 行は 灯台を 持ち帰るまで 出ない
+		for (const r of list ?? [])
+			if (r.who === "shobon")
+				ok(
+					diveResAt(d as DungeonId, r.at, []) === null &&
+						diveResAt(d as DungeonId, r.at, ["opunu"]) === r,
+					`${d} ${r.at}: shobon before opunu`,
+				);
+	}
+	for (const [d, why] of Object.entries(GOAL_WHY))
+		ok(width(why ?? "") <= 22, `${d}: ${why}`);
+	ok(goalWhy("isle1", ["isle1"]) === null, "why stays after clearing");
+	ok(synopsisHtml([], []) === null, "synopsis before the hidden route");
+	const first = synopsisHtml(["shallow", "isle1"], []) ?? "";
+	ok(first.includes("ひまわり諸島") && first.includes("つぎ：となりの"), first);
+	// ROM専の 声は 灯台の あとの 章（先に 録って いても 灯台の 前には 出ない）
+	ok(
+		!(synopsisHtml(["isle1"], ["romVoice"]) ?? "").includes("ROM専の　声"),
+		"rom before opunu",
+	);
+	const end =
+		synopsisHtml(
+			[
+				"shallow",
+				"deep",
+				"isle1",
+				"isle2",
+				"isle3",
+				"opunu",
+				"ato",
+				"hinan",
+				"y1901",
+			],
+			["romVoice", "wrap"],
+		) ?? "";
+	ok(end.includes("1901年の　スレ") && !end.includes("つぎ："), end);
 });

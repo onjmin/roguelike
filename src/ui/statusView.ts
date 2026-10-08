@@ -14,6 +14,8 @@ import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
 import type { Item } from "../core/types";
 import { goalText } from "../data/objectives";
+import { goalWhy } from "../data/synopsis";
+import { loadProgress } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { isUpBoard } from "./floorName";
 import { esc } from "./itemText";
@@ -66,6 +68,9 @@ const statusHtml = (run: Run): string => {
 		row("ターン", String(s.turn)),
 	];
 	const out = [`<table>${rows.join("")}</table>`];
+	// 何のために 来たか（裏シナリオ。持ち帰る 前だけ：data/synopsis.ts）
+	const why = goalWhy(s.dungeon, loadProgress().cleared);
+	if (why && !s.returning) out.push(`<p class="hint">${esc(why)}</p>`);
 	if (floor.length)
 		out.push(`<p class="hint">この階では　${floor.join("・")}が　わかる</p>`);
 	if (s.returning)

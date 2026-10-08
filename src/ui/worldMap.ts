@@ -10,6 +10,7 @@ import type { DungeonId } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
 import { eventText, goalText, type ObjectiveInfo } from "../data/objectives";
 import { DUNGEON_NAMES, ISLE_NAMES, QUIET_SPOT } from "../data/story";
+import { goalWhy } from "../data/synopsis";
 import {
 	type BuildingKind,
 	COLONY_SPOTS,
@@ -658,7 +659,11 @@ export class MapView {
 				`<div class="wm-sub">${dg.floors}階・${isUpBoard(d) ? "上り" : "下り"}　${COLONY_SPOTS[d].place}</div>` +
 				(g
 					? `<div class="wm-goal${g.objective === "boss" ? " boss" : ""}">目的：${goalText(d, g.objective)}</div>` +
-						(g.event ? `<div class="wm-limited">${eventText(g)}</div>` : "")
+						(g.event ? `<div class="wm-limited">${eventText(g)}</div>` : "") +
+						// 何のために 行くか（裏シナリオ。持ち帰る 前だけ：data/synopsis.ts）
+						(goalWhy(d, this.cleared)
+							? `<div class="wm-desc">${goalWhy(d, this.cleared)}</div>`
+							: "")
 					: "") +
 				`<div class="wm-desc">${DUNGEON_DESC[d]}</div>` +
 				// 決まり（未識別など）と 倉庫の 道具の 持ちこみ（倉庫が 建ってから）

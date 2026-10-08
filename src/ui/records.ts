@@ -7,6 +7,7 @@ import { defOf, itemName } from "../core/item";
 import type { DungeonId, RunState } from "../core/types";
 import { ENDING_BGM } from "../data/music";
 import { BOSS_HOME, DUNGEON_NAMES } from "../data/story";
+import { synopsisNow } from "../data/synopsis";
 import {
 	addRecord,
 	clearRun,
@@ -292,7 +293,12 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 		.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
 		.join("")}</div>`;
 	// もらった リプレイを 読み込む（ui/share.ts）。記録が 無くても できる
-	const importAction = [{ label: "読み込む", value: "import" }];
+	const syn = synopsisNow();
+	const importAction = [
+		{ label: "読み込む", value: "import" },
+		// 裏シナリオの あらすじ（入っていれば：data/synopsis.ts）
+		...(syn ? [{ label: "あらすじ", value: "synopsis" }] : []),
+	];
 	if (!list.length) {
 		for (;;) {
 			const v = await listWindow(
@@ -301,6 +307,10 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 				[],
 				{ cls: "records", actions: importAction },
 			);
+			if (v === "synopsis" && syn) {
+				await infoWindow(ctx, "あらすじ", syn);
+				continue;
+			}
 			if (v !== "import") return null;
 			const got = await importWindow(ctx);
 			if (got) return got;
@@ -331,6 +341,10 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 			actions: importAction,
 		});
 		if (v === null) return null;
+		if (v === "synopsis" && syn) {
+			await infoWindow(ctx, "あらすじ", syn);
+			continue;
+		}
 		if (v === "import") {
 			const got = await importWindow(ctx);
 			if (got) return got;

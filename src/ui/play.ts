@@ -45,10 +45,13 @@ import {
 } from "../core/types";
 import { KIRIKO_WALK } from "../data/cast";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../data/music";
+import { goalText } from "../data/objectives";
+import { diveResAt, diveResLine, goalWhy } from "../data/synopsis";
 import { loadImage } from "../engine/assets";
 import {
 	DEBUG_SEED,
 	loadBook,
+	loadProgress,
 	markSeenMonster,
 	type SavedReplay,
 	saveRun,
@@ -2940,6 +2943,24 @@ export class Play {
 		await wait(360);
 		card.remove();
 		this.save(true);
+		this.storyLog(first);
+	}
+
+	/**
+	 * 裏シナリオの 筋を 忘れないための 行（data/synopsis.ts）。潜りはじめ・続きからは 目的と わけ、
+	 * 途中の 決まった 階では 村の スレの レスか 地の文。持ち帰る 前の 下りだけ（リプレイでは 出さない）。
+	 */
+	private storyLog(first: boolean): void {
+		const s = this.run.s;
+		if (this.rp || s.returning) return;
+		const cleared = loadProgress().cleared;
+		const why = goalWhy(s.dungeon, cleared);
+		if (first && why) {
+			this.addLog(`目的：${goalText(s.dungeon, this.run.objective)}`);
+			this.addLog(why, "gloss");
+		}
+		const r = diveResAt(s.dungeon, s.depth, cleared);
+		if (r) this.addLog(diveResLine(r), "gloss");
 	}
 
 	private async ending(): Promise<void> {

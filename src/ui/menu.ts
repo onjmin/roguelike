@@ -19,6 +19,7 @@ import {
 import type { Run } from "../core/run";
 import { trapName } from "../core/traps";
 import type { Command, Item, ItemCat, TrapKind } from "../core/types";
+import { synopsisNow } from "../data/synopsis";
 import { drawRefInCell, onImageLoaded } from "../engine/assets";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
@@ -244,6 +245,10 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "あそびかた", value: "howto" },
 			{ label: "中断する", value: "suspend" },
 		];
+		// 裏シナリオに 入っていれば、潜っている あいだも あらすじを 読み返せる（data/synopsis.ts）
+		const syn = synopsisNow();
+		if (syn)
+			rows.splice(rows.length - 1, 0, { label: "あらすじ", value: "synopsis" });
 		// トルネコ1のように 2列（縦に長いと スマホで 画面を ふさぐ）。つよさは 窓の上に
 		const v = await listWindow(ctx, "", rows, {
 			cls: "main-menu",
@@ -278,6 +283,9 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				break;
 			case "howto":
 				await openHowto(ctx);
+				break;
+			case "synopsis":
+				if (syn) await infoWindow(ctx, "あらすじ", syn);
 				break;
 			case "map":
 				return { kind: "map" };
