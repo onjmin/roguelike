@@ -457,6 +457,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				sh.rustproof = true;
 				if (sh.cursed) r.se("uncurse");
 				sh.cursed = false;
+				r.se("rustproof");
 				r.msg("板が　錆びなくなった", "good");
 			}
 			break;
