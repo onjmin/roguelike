@@ -20,6 +20,11 @@ import { type Dir8, DX, DY, isDiagonal } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
 import { CAST, KIRIKO, KIRIKO_WALK } from "../data/cast";
 import type { KirikoMode, Speaker } from "../data/quotes";
+import {
+	type Facility,
+	facilityOfMap,
+	facilityOutside,
+} from "../data/village/facilities";
 import { HALL_OUT_DIR, hallOutside } from "../data/village/hall";
 import { exitFor, VILLAGE_SPOTS } from "../data/village/map";
 import { isRoom, type RoomId } from "../data/village/rooms";
@@ -49,6 +54,7 @@ import { showBootTitle } from "./boot";
 import { buildCafe } from "./cafe";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
+import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
@@ -123,7 +129,8 @@ export class Village {
 	private readonly toastEl: HTMLDivElement;
 	private field: Field | null = null;
 	/** いま 描いている 地図（村 village・本館の 中 hall・建物の 中 RoomId）。村に 入る たびに village から。 */
-	private mapId: "village" | "hall" | RoomId = "village";
+	/** いまの 地図（村・本館・建物の 中・施設の 中 `f_<id>`）。 */
+	private mapId: "village" | "hall" | RoomId | `f_${string}` = "village";
 	private player = new Actor("player", 0, 0, "down", KIRIKO_WALK, null);
 	/** キリコの位置と その場かぎりの印（村を 出ても 残す。ページを 閉じれば 消える）。 */
 	private state: VState = { x: 0, y: 0, dir: "down", flags: {} };
@@ -268,7 +275,13 @@ export class Village {
 					? buildCafe(v, this.ctx)
 					: isRoom(this.mapId)
 						? buildRoom(this.mapId, v, this.ctx)
-						: buildVillage(v, this.ctx, { arrival: this.arrival });
+						: facilityOfMap(this.mapId)
+							? buildFacility(
+									facilityOfMap(this.mapId) as Facility,
+									v,
+									this.ctx,
+								)
+							: buildVillage(v, this.ctx, { arrival: this.arrival });
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
@@ -311,7 +324,12 @@ export class Village {
 	 * 曲は 地図に 決まって いれば かえる（同じ 曲なら 続ける）。地名の 札を 出す。
 	 */
 	private async warp(map: string, spot: Spot): Promise<void> {
-		this.mapId = map === "hall" || isRoom(map) ? map : "village";
+		this.mapId =
+			map === "hall" || isRoom(map)
+				? map
+				: facilityOfMap(map)
+					? (map as `f_${string}`)
+					: "village";
 		// 前の 地図の 人・マスを 見ていた カメラは キリコに もどす
 		this.lookAt = null;
 		this.pan = null;
@@ -349,7 +367,9 @@ export class Village {
 				? { x: out[0], y: out[1], dir: HALL_OUT_DIR }
 				: isRoom(this.mapId)
 					? roomOutside(this.mapId)
-					: { x: this.player.x, y: this.player.y, dir: this.player.dir };
+					: facilityOfMap(this.mapId)
+						? facilityOutside(facilityOfMap(this.mapId) as Facility)
+						: { x: this.player.x, y: this.player.y, dir: this.player.dir };
 		this.field?.dispose();
 		this.field = null;
 		// 冒険の画面に 村が 一瞬 見えないよう、黒く ぬってから 幕を あげる（冒険は 自分の 幕を 持っている）

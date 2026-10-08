@@ -56,6 +56,14 @@ import type { Speaker } from "../quotes";
 import { awayFriends, FRIEND_FROM } from "../story";
 import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
+	doorId,
+	facilitiesAt,
+	facilityDoor,
+	facilityTiles,
+	outdoorId,
+	stampFacilities,
+} from "./facilities";
+import {
 	BANK,
 	BATH,
 	BEACH,
@@ -143,7 +151,8 @@ export const VILLAGE_SPOTS = {
 	zero: [17, 21] as Cell,
 	/** 広場の 井戸（段5 から）。過去ログの底へは ここから 降りる。 */
 	well: [24, 21] as Cell,
-	feris: [25, 22] as Cell,
+	/** フェリス（海の家の 看板娘。店の 前の 砂浜）。 */
+	feris: [12, 35] as Cell,
 	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
 	roze: (stage: number): Cell => (stage === 0 ? [13, 18] : [13, 17]),
 	/** シヨ（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
@@ -638,6 +647,8 @@ export const villageRows = (v: VillageView): string[] => {
 	if (layoutStage(v) >= LIBRARY_FROM) stamp(rows, 2, 20, LIBRARY_BLOCK);
 	else if (layoutStage(v) >= BOOKSTORE_FROM) stamp(rows, 3, 20, BOOKS_BLOCK);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
+	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
+	stampFacilities(rows, layoutStage(v), put);
 	return rows;
 };
 
@@ -653,6 +664,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...GROUND,
 		...OUTSKIRTS,
 		...BEACH,
+		...facilityTiles(),
 		...FARM,
 		...SHRINE,
 		...BATH,
@@ -783,7 +795,20 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
 		out.push({ id: "hoshu_sign", x: nx, y: ny, trigger: "talk" });
 	} else out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
+	// フェリスは 海の家の 看板娘（おんJの マスコット。海の家は フェリスと 同じ 段に 建つ）
 	if (here("feris")) out.push(friend("feris", VILLAGE_SPOTS.feris, true));
+	// 施設の 扉（中が ある 施設）と 外に 置く 物（釣り場の 竿・グラウンドの マウンドなど）
+	for (const f of facilitiesAt(stage)) {
+		const d = facilityDoor(f);
+		if (d) out.push({ id: doorId(f), x: d[0], y: d[1], trigger: "touch" });
+		for (const t of f.outdoor ?? [])
+			out.push({
+				id: outdoorId(f, t),
+				x: t.at[0],
+				y: t.at[1],
+				trigger: "talk",
+			});
+	}
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of movedIn(stepOf(v), v.cleared)) {
 		const d = MOBS[id];

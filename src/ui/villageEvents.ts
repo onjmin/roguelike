@@ -52,6 +52,11 @@ import {
 	TOWN_NAME,
 	VILLAGE_MSG,
 } from "../data/town";
+import {
+	FACILITIES,
+	facilityById,
+	outdoorId,
+} from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import {
 	VISITOR_WALK,
@@ -84,6 +89,7 @@ import { chimneySteam } from "./bath";
 import { runSaveLabel } from "./boot";
 import { enterCafe } from "./cafe";
 import type { Ctx } from "./ctx";
+import { enterFacility, outdoorScript } from "./facilities";
 import { enterHall } from "./hallEvents";
 import { chooseStored, openBag, openStorage } from "./home";
 import { infoWindow, type ListItem, listWindow } from "./list";
@@ -625,6 +631,17 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			through: true,
 			run: enterRoom(v.stage >= LIBRARY_FROM ? "library" : "bookstore"),
 		};
+	// 町が 育つと 建つ 施設の 扉と 外の 物（data/village/facilities.ts・ui/facilities.ts）
+	if (p.id.startsWith("door_f_")) {
+		const f = facilityById(p.id.slice("door_f_".length));
+		if (f)
+			return { ...at, trigger: "touch", through: true, run: enterFacility(f) };
+	}
+	if (p.id.startsWith("fthing_")) {
+		const f = FACILITIES.find((x) => p.id.startsWith(`fthing_${x.id}_`));
+		const t = f?.outdoor?.find((o) => p.id === outdoorId(f, o));
+		if (t) return sign(p.id, p.x, p.y, outdoorScript(ctx, t));
+	}
 	if (p.id === "door_cafe")
 		return {
 			...at,

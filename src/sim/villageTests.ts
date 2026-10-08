@@ -43,6 +43,7 @@ import {
 import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
+import { FISHING, GROUND_BAT } from "../data/facilities";
 import { GLOSSARY } from "../data/glossary";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
 import {
@@ -145,6 +146,17 @@ import {
 	WAKE_PAGES,
 	ZERO_VOICELESS,
 } from "../data/town";
+import {
+	doorId,
+	FACILITIES,
+	facilityEntry,
+	facilityMats,
+	facilityOutside,
+	facilityRoomPalette,
+	facilityRoomPlaces,
+	facilityRoomRows,
+	outdoorId,
+} from "../data/village/facilities";
 import {
 	HALL_NAMES,
 	hallEntry,
@@ -4835,6 +4847,113 @@ test("喫茶の 席: Kiriko's seat is next to each friend, guests and stand spot
 			s.reachable(CAFE_ORDER.x, CAFE_ORDER.y),
 		"the order stool does not face the master over the counter",
 	);
+});
+
+test("施設の 中: every facility room is closed, draws only bundled art, and from the entrance Kiriko reaches the mats, every thing and everyone", () => {
+	for (const f of FACILITIES) {
+		if (!f.room) continue;
+		const rows = facilityRoomRows(f);
+		const tiles = facilityRoomPalette(f);
+		const w = [...rows[0]].length;
+		rows.forEach((r, y) => {
+			ok([...r].length === w, `${f.id}: row ${y} is ${[...r].length} wide`);
+			[...r].forEach((ch, x) => {
+				ok(tiles[ch], `${f.id}: "${ch}" at (${x},${y}) has no tile`);
+				const edge = x === 0 || y === 0 || x === w - 1 || y === rows.length - 1;
+				if (edge && ch !== "D")
+					ok(!tiles[ch]?.passable, `${f.id}: leaks at (${x},${y})`);
+			});
+		});
+		for (const t of Object.values(tiles))
+			for (const ref of [...t.layers, ...(t.above ?? [])])
+				ok(ref.startsWith("pub:"), `${f.id}: draws ${ref}`);
+		const places = facilityRoomPlaces(f);
+		const people: Place[] = (f.room.people ?? []).map((p) => ({
+			id: p.id,
+			x: p.at[0],
+			y: p.at[1],
+			trigger: "talk",
+			sprite: p.walk,
+		}));
+		const all = [...places, ...people];
+		ok(
+			new Set(all.map((p) => `${p.x},${p.y}`)).size === all.length,
+			`${f.id}: two things share a cell`,
+		);
+		const e = facilityEntry(f);
+		const s = surveyMap(rows, tiles, all, [e.x, e.y]);
+		ok(s.canEnter(e.x, e.y), `${f.id}: the entrance is blocked`);
+		for (const [mx, my] of facilityMats(f))
+			ok(
+				s.reachable(mx, my),
+				`${f.id}: the mat (${mx},${my}) does not lead out`,
+			);
+		for (const p of all) {
+			if (p.trigger === "touch") continue;
+			ok(s.talkable(p, hasBack(s, p)), `${f.id}: cannot reach ${p.id}`);
+		}
+		for (const p of places) {
+			if (p.trigger === "touch") continue;
+			const kind = p.id.replace(/_\d+$/, "");
+			ok(
+				(f.room.lines[kind] ?? []).length > 0,
+				`${f.id}: ${p.id} has nothing to say`,
+			);
+		}
+	}
+});
+
+test("施設の 外: doors and outdoor things stand from their stage, Kiriko reaches them, and she comes out onto a cell she can stand on", () => {
+	for (const v of VIEWS) {
+		const s = survey(v);
+		for (const f of FACILITIES) {
+			const up =
+				v.stage >= f.from && (f.until === undefined || v.stage < f.until);
+			const door = s.places.find((q) => q.id === doorId(f));
+			ok(
+				!!door === (up && !!f.room),
+				`${label(v)}: ${doorId(f)} does not match the stage`,
+			);
+			if (door)
+				ok(
+					door.trigger === "touch" && s.reachable(door.x, door.y),
+					`${label(v)}: cannot step on ${doorId(f)}`,
+				);
+			if (up && f.room) {
+				const o = facilityOutside(f);
+				ok(
+					s.reachable(o.x, o.y),
+					`${label(v)}: out of ${f.id} onto (${o.x},${o.y})`,
+				);
+			}
+			for (const t of f.outdoor ?? []) {
+				const p = s.places.find((q) => q.id === outdoorId(f, t));
+				ok(
+					!!p === up,
+					`${label(v)}: ${outdoorId(f, t)} does not match the stage`,
+				);
+				if (p)
+					ok(s.talkable(p), `${label(v)}: cannot reach ${outdoorId(f, t)}`);
+			}
+		}
+	}
+});
+
+test("施設の 文: every line fits the village window", () => {
+	const texts: [string, string][] = [];
+	for (const f of FACILITIES) {
+		if (f.door) texts.push([`${f.id} door`, f.door]);
+		for (const [k, ls] of Object.entries(f.room?.lines ?? {}))
+			for (const t of ls) texts.push([`${f.id}.${k}`, t]);
+		for (const p of f.room?.people ?? [])
+			for (const t of p.lines) texts.push([`${f.id}.${p.id}`, t]);
+		for (const t of f.outdoor ?? [])
+			for (const l of t.lines) texts.push([`${f.id}.${t.id}`, l]);
+	}
+	for (const t of [FISHING.cast, ...FISHING.catches])
+		texts.push(["fishing", t]);
+	for (const t of [GROUND_BAT.hit, GROUND_BAT.out]) texts.push(["bat", t]);
+	fitsWindow(texts);
 });
 
 test("建物の 扉: the cafe and hut doors are stepped on from their stage, and every room lets Kiriko out onto the road", () => {

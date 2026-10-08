@@ -167,16 +167,20 @@ const drawField = (
 /**
  * 1打席。ヒットで true（1本で よい）。三振で false。B で やめても false。
  * 球の 速さは 1球ごとに ばらつく（0.8〜1.3秒。3球目は 遅い 球も）。
+ * opt は 村の グラウンドで 打つ ときの 題と 投げる 人（ふだんは 跡地の 関所：原住民）。
  */
-export const playBatting = async (ctx: UiCtx): Promise<boolean> => {
-	const b = board(ctx, "野球ch　1打席", "A／タップで　スイング");
+export const playBatting = async (
+	ctx: UiCtx,
+	opt: { title?: string; pitcher?: string } = {},
+): Promise<boolean> => {
+	const b = board(ctx, opt.title ?? "野球ch　1打席", "A／タップで　スイング");
 	const p = presses(ctx, b.root);
 	const say = (t: string) => {
 		b.note.textContent = t;
 	};
 	try {
 		let strikes = 0;
-		say("原住民が　ふりかぶった……");
+		say(`${opt.pitcher ?? "原住民"}が　ふりかぶった……`);
 		drawField(b.g, null, 0, strikes, null);
 		await sleep(700);
 		p.take();
