@@ -52,11 +52,7 @@ import {
 	TOWN_NAME,
 	VILLAGE_MSG,
 } from "../data/town";
-import {
-	FACILITIES,
-	facilityById,
-	outdoorId,
-} from "../data/village/facilities";
+import { facilityById, outdoorThingOf } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import {
 	VISITOR_WALK,
@@ -631,8 +627,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			return { ...at, trigger: "touch", through: true, run: enterFacility(f) };
 	}
 	if (p.id.startsWith("fthing_")) {
-		const f = FACILITIES.find((x) => p.id.startsWith(`fthing_${x.id}_`));
-		const t = f?.outdoor?.find((o) => p.id === outdoorId(f, o));
+		const t = outdoorThingOf(p.id)?.t;
 		// バス停：ここからも 出かけられる（村の 口と 同じ 流れ。出口を 遠く しない）
 		if (t?.play === "bus")
 			return sign(p.id, p.x, p.y, async (s) => {

@@ -158,6 +158,7 @@ import {
 	facilityRoomPlaces,
 	facilityRoomRows,
 	outdoorId,
+	outdoorThingOf,
 } from "../data/village/facilities";
 import {
 	HALL_NAMES,
@@ -5800,6 +5801,15 @@ test("施設の 外: doors and outdoor things stand from their stage, Kiriko rea
 			}
 		}
 	}
+	// 調べた ときの 文は その 物の もの（id の 頭が 同じ 施設＝post と post_city に 取られない）
+	for (const f of FACILITIES)
+		for (const t of f.outdoor ?? []) {
+			const got = outdoorThingOf(outdoorId(f, t));
+			ok(
+				got?.f === f && got.t === t,
+				`${outdoorId(f, t)} finds ${got ? outdoorId(got.f, got.t) : "nothing"}`,
+			);
+		}
 });
 
 test("東の 畑の あと: 段ごとに 形が かわり（段6 市民農園・段7 公園）、x=31 の 列と 北の 通りは 歩けて、区画・噴水・ベンチ・砂場・立て札・バス停に 届く", () => {

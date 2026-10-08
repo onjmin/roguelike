@@ -2064,18 +2064,29 @@ export const FACILITIES: readonly Facility[] = [
 		at: [9, 1],
 		look: { kind: "building", w: 5, roof: 5, wall: 63, tall: 3, closed: true },
 	},
+	// 足もとは 本館の 屋根なので 正面に 扉は 描かない（扉の 列を 灰色の 壁に）。看板は 右はしの 下の 段（東の 草地から 読む）
 	{
 		id: "zakkyo",
 		name: "雑居ビル",
 		from: 7,
 		at: [15, 0],
-		look: { kind: "building", w: 5, roof: 5, wall: 69, tall: 4, closed: true },
+		look: {
+			kind: "building",
+			w: 5,
+			roof: 5,
+			wall: 69,
+			tall: 4,
+			door: 3,
+			doorCol: 1,
+			sign: base(7, 96),
+			closed: true,
+		},
 		outdoor: [
 			{
 				id: "sign",
-				at: [19, 4],
+				at: [19, 5],
 				lines: [
-					"雑居ビルの　横の　看板。\n「2F　スレ立て代行　3F　空き」",
+					"雑居ビルの　看板。\n「2F　スレ立て代行　3F　空き」",
 					"4Fは　ずっと「準備中」。\n……もう　3年も　たつらしい。",
 				],
 			},
@@ -2308,6 +2319,19 @@ export const facilityRoomPlaces = (
 /** 外に 置く 物の イベントの id（施設の id と 物の id）。 */
 export const outdoorId = (f: Facility, t: OutdoorThing): string =>
 	`fthing_${f.id}_${t.id}`;
+
+/**
+ * イベントの id から 外に 置く 物と その 施設。id は ぴったり 合わせる
+ * （「post」と「post_city」の ように 頭が 同じ 施設が あるので、頭だけ 見ると 前の 施設に 取られる）。
+ */
+export const outdoorThingOf = (
+	id: string,
+): { f: Facility; t: OutdoorThing } | undefined => {
+	for (const f of FACILITIES)
+		for (const t of f.outdoor ?? [])
+			if (outdoorId(f, t) === id) return { f, t };
+	return undefined;
+};
 
 /** 扉の イベントの id。 */
 export const doorId = (f: Facility): string => `door_f_${f.id}`;
