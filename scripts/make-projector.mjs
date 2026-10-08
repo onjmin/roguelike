@@ -1,7 +1,7 @@
 // 映写機の 絵を 書き出す（node scripts/make-projector.mjs → public/sprites/projector.png）。
 //
 // 本館の 床に 置く 置物（16x16）。上に リール 2つ・胴・右に レンズ（光が もれる）・木の 台。
-// ここで これまでの あらすじを 上映する（ui/hallEvents.ts）。
+// ここで 冒険の リプレイを 上映する（ui/hallEvents.ts）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-statue.mjs と 同じ。
 

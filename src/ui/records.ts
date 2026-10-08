@@ -277,11 +277,17 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 };
 
 /**
- * 「冒険の記録」（村の まとめ掲示板・ゼロから）：通算と、これまでの冒険（新しい順）。
- * 冒険を選ぶと、残っていれば「リプレイを見る」「リプレイを わたす」。見るなら そのリプレイを返す。
- * 「読み込む」で 人から もらった リプレイも 見られる。
+ * 「冒険の記録」（村の まとめ掲示板・ゼロ・本館の 壁の スレから）：通算と、これまでの冒険（新しい順）。
+ * replay（本館の 映写機・実況モニターの「リプレイ上映」）の ときだけ、冒険を選ぶと 残っていれば「リプレイを見る」
+ * 「リプレイを わたす」。見るなら そのリプレイを返す。「読み込む」で 人から もらった リプレイも 見られる。
+ * 記録だけの ときは 選んでも 見出しだけ（リプレイは 本館で）。
  */
-export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
+export const openRecords = async (
+	ctx: Ctx,
+	opt: { replay?: boolean } = {},
+): Promise<SavedReplay | null> => {
+	const title = opt.replay ? "リプレイ上映" : "冒険の記録";
+	const cls = opt.replay ? "records film" : "records";
 	const list = loadRecords();
 	const st = runStats();
 	const total = `<div class="rec-total">${[
@@ -292,14 +298,16 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 		.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`)
 		.join("")}</div>`;
 	// もらった リプレイを 読み込む（ui/share.ts）。記録が 無くても できる
-	const importAction = [{ label: "読み込む", value: "import" }];
+	const importAction = opt.replay
+		? [{ label: "読み込む", value: "import" }]
+		: [];
 	if (!list.length) {
 		for (;;) {
 			const v = await listWindow(
 				ctx,
-				`冒険の記録${total}<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`,
+				`${title}${total}<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`,
 				[],
-				{ cls: "records", actions: importAction },
+				{ cls, actions: importAction },
 			);
 			if (v !== "import") return null;
 			const got = await importWindow(ctx);
@@ -321,12 +329,12 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	for (;;) {
 		const rows = list.map((r, i) => ({
 			label: `<b class="rec-kind ${r.kind}">${KIND_LABEL[r.kind]}</b>　${esc(endLine(r))}`,
-			sub: replayOf(r) ? "▶" : "",
+			sub: opt.replay && replayOf(r) ? "▶" : "",
 			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}`,
 			value: String(i),
 		}));
-		const v = await listWindow(ctx, `冒険の記録${total}${note}`, rows, {
-			cls: "records",
+		const v = await listWindow(ctx, `${title}${total}${note}`, rows, {
+			cls,
 			start,
 			actions: importAction,
 		});
@@ -340,6 +348,14 @@ export const openRecords = async (ctx: Ctx): Promise<SavedReplay | null> => {
 		const r = list[start];
 		const rp = replayOf(r);
 		const head = recordHead(r);
+		if (!opt.replay) {
+			await infoWindow(
+				ctx,
+				"",
+				`<p>${head}</p>${rp ? `<p class="dim">リプレイは　本館の　映写機で　見られる</p>` : ""}`,
+			);
+			continue;
+		}
 		if (!rp) {
 			await infoWindow(
 				ctx,

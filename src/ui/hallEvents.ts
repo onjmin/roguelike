@@ -1,9 +1,9 @@
 // おんJ 本館の 中の スクリプト（地図と 置き場所は data/village/hall.ts、文は data/hall.ts）。
 // 村の 扉を 踏むと（前で A でも）入り、出口の マットを 踏むと 入った 扉の 前へ 出る（Story.warp。暗転の 中で）。
 // 中の 物は どれも 村の ほかの 入口（掲示板・仲間・B／☰ の メニュー）と 同じ 窓を 開く もう 1つの 入口：
-//   壁の スレ＝冒険の記録（リプレイを 選んだら 村から 出る）・>>1 テンプレ＝あそびかた・本棚＝図鑑・
-//   帳簿の 貼り紙＝ゼロの 売り上げ・実況モニター＝リプレイ 上映・殿堂の 壁＝総選挙の はり紙。
-//   映写機＝これまでの あらすじ（ダンジョンの メニューと 同じ 文。村では ここだけで 見る）。
+//   壁の スレ＝冒険の記録・>>1 テンプレ＝あそびかた・本棚＝図鑑・
+//   帳簿の 貼り紙＝ゼロの 売り上げ・殿堂の 壁＝総選挙の はり紙。
+// リプレイは 本館の 中だけで 見る：映写機（どの 段にも）と 実況モニター。選んだら 村から 出る。
 // 本館 だけの もの：
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
@@ -39,7 +39,6 @@ import {
 } from "../data/objectives";
 import { BOOKS_KEEPER_LINES } from "../data/rooms";
 import { awayFriends, DUNGEON_NAMES, FRIEND_FROM } from "../data/story";
-import { synopsisNow } from "../data/synopsis";
 import { VILLAGE_MSG } from "../data/town";
 import {
 	HALL_NAMES,
@@ -80,7 +79,7 @@ import { el } from "./dom";
 import { openGlossary } from "./glossary";
 import { openHowto } from "./howto";
 import { itemIcon } from "./icons";
-import { infoWindow, type ListItem, listWindow } from "./list";
+import { type ListItem, listWindow } from "./list";
 import { playBatting } from "./minigames";
 import { openRecords } from "./records";
 // 村の 口と 同じ 出かた（降りる 前の 確認・持ちこみ・語り）。ui/villageEvents.ts とは 互いに 読みあうが、
@@ -219,13 +218,11 @@ export const leaveHall: Script = async (s) => {
 /** メッセージ窓を 隠す（一覧の 窓を 出す 前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
 
-/** 冒険の記録。リプレイを 選んだら 村を 出る（出るなら true）。 */
-const records = async (ctx: Ctx, s: Story): Promise<boolean> => {
+/** 冒険の記録（replay なら リプレイ上映。リプレイを 選んだら 村を 出る）。 */
+const records = async (ctx: Ctx, s: Story, replay = false): Promise<void> => {
 	await hideMsg(s);
-	const replay = await openRecords(ctx);
-	if (!replay) return false;
-	s.exit({ kind: "replay", replay });
-	return true;
+	const rp = await openRecords(ctx, { replay });
+	if (rp) s.exit({ kind: "replay", replay: rp });
 };
 
 /**
@@ -335,21 +332,15 @@ const monitorScript =
 	async (s) => {
 		for (const t of HALL_MSG.monitor) await s.narrate(t);
 		const n = await s.choose([...MONITOR_MENU], { cancel: 1 });
-		if (n === 0) await records(ctx, s);
+		if (n === 0) await records(ctx, s, true);
 	};
 
-/** 映写機：これまでの あらすじを 上映する（data/synopsis.ts。暗い 幕に 映す）。 */
+/** 映写機：冒険の リプレイを 上映する（暗い 幕に 映す）。 */
 const projectorScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
-		const syn = synopsisNow();
-		if (!syn) {
-			await s.narrate(HALL_MSG.projectorEmpty);
-			return;
-		}
 		await s.narrate(HALL_MSG.projector);
-		await hideMsg(s);
-		await infoWindow(ctx, "これまでの　あらすじ", syn, { cls: "film" });
+		await records(ctx, s, true);
 	};
 
 /**

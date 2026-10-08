@@ -43,6 +43,7 @@ import {
 	ROM_COUNT,
 	STORY,
 } from "../data/story";
+import { synopsisNow } from "../data/synopsis";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
@@ -87,7 +88,7 @@ import type { Ctx } from "./ctx";
 import { enterHall } from "./hallEvents";
 import { chooseStored, openBag, openSales, openStorage } from "./home";
 import { openHowto } from "./howto";
-import { type ListItem, listWindow } from "./list";
+import { infoWindow, type ListItem, listWindow } from "./list";
 import { playGetter } from "./minigames";
 import { makeQuiz } from "./quiz";
 import { escBr, openRecords, showStory } from "./records";
@@ -142,13 +143,10 @@ const signMore = (d: DungeonId): string[] => {
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
 
-/** 冒険の記録を見る。リプレイを選んだら 村を出る（出るなら true）。 */
-const records = async (ctx: Ctx, s: Story): Promise<boolean> => {
+/** 冒険の記録を見る（記録だけ。リプレイは 本館の 映写機で：ui/hallEvents.ts）。 */
+const records = async (ctx: Ctx, s: Story): Promise<void> => {
 	await hideMsg(s);
-	const replay = await openRecords(ctx);
-	if (!replay) return false;
-	s.exit({ kind: "replay", replay });
-	return true;
+	await openRecords(ctx);
 };
 
 /** 中断した冒険を すてる（やめた、として 記録に残す）。 */
@@ -540,7 +538,7 @@ const speak = async (
 const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	switch (who) {
 		case "zero":
-			// 帳簿の係：冒険の記録（リプレイも）と 売り上げ
+			// 帳簿の係：冒険の記録と 売り上げ
 			return async (s) => {
 				await speak(s, who);
 				const n = await s.choose(["冒険の記録", "売り上げ", "やめる"], {
@@ -822,6 +820,8 @@ export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 		const stage = loadTown().stage;
 		const items: ListItem[] = [
 			{ label: "持ち物", value: "bag" },
+			// これまでの あらすじ（パン板を 持ち帰ってから。ダンジョンの メニューと 同じ：data/synopsis.ts）
+			...(synopsisNow() ? [{ label: "あらすじ", value: "synopsis" }] : []),
 			{ label: "せってい", value: "settings" },
 		];
 		const v = await listWindow(
@@ -833,6 +833,9 @@ export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 		if (v === null) return;
 		start = items.findIndex((it) => it.value === v);
 		if (v === "bag") await openBag(ctx);
-		else if (v === "settings") await openSettings(ctx, { wipe: true });
+		else if (v === "synopsis") {
+			const syn = synopsisNow();
+			if (syn) await infoWindow(ctx, "あらすじ", syn);
+		} else if (v === "settings") await openSettings(ctx, { wipe: true });
 	}
 };
