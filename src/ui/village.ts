@@ -59,7 +59,7 @@ import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
 import { buildRoom, roomOutside } from "./rooms";
-import { buildVillage, villageMenu } from "./villageEvents";
+import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
 import { villageView } from "./villageReturn";
 
 /** 1マス歩く ms（rpg と同じ）。うろうろする人は この 1.6倍。 */
@@ -280,6 +280,7 @@ export class Village {
 									facilityOfMap(this.mapId) as Facility,
 									v,
 									this.ctx,
+									departAnywhere(this.ctx),
 								)
 							: buildVillage(v, this.ctx, { arrival: this.arrival });
 		this.field?.dispose();

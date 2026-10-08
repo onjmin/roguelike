@@ -89,7 +89,7 @@ import { chimneySteam } from "./bath";
 import { runSaveLabel } from "./boot";
 import { enterCafe } from "./cafe";
 import type { Ctx } from "./ctx";
-import { enterFacility, outdoorScript } from "./facilities";
+import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
 import { enterHall } from "./hallEvents";
 import { chooseStored, openBag, openStorage } from "./home";
 import { infoWindow, type ListItem, listWindow } from "./list";
@@ -151,6 +151,16 @@ const records = async (ctx: Ctx, s: Story): Promise<void> => {
 	await hideMsg(s);
 	await openRecords(ctx);
 };
+
+/** 飾りを 重ねる（影 → 湯気の 順）。 */
+const joinDecor =
+	(...ds: MapDef["decor"][]): MapDef["decor"] =>
+	(g, ox, oy, t) => {
+		for (const d of ds) d?.(g, ox, oy, t);
+	};
+
+/** バス停・駅の 改札から 出かける（踏まずに 調べるので、やめても 1歩 もどらない）。 */
+export const departAnywhere = (ctx: Ctx): Script => mouthScript(ctx, null);
 
 /** 中断した冒険を すてる（やめた、として 記録に残す）。 */
 const abandonRun = (): void => {
@@ -773,8 +783,8 @@ export const buildVillage = (
 		bgm: villageSong(),
 		tiles: villagePalette(view),
 		rows,
-		// 銭湯の 煙突から 湯気
-		decor: chimneySteam(rows),
+		// 銭湯の 煙突から 湯気・施設の 建物の 影（ui/facilities.ts）
+		decor: joinDecor(shadowDecor(view.stage), chimneySteam(rows)),
 		outside: "#1f2a14",
 		events: [
 			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),

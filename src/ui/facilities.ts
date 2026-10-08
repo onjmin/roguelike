@@ -13,12 +13,14 @@ import {
 	facilityRoomPalette,
 	facilityRoomPlaces,
 	facilityRoomRows,
+	facilityShadows,
 	type OutdoorThing,
 } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import type { VillageView } from "../data/village/map";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
+import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { playBatting } from "./minigames";
 
@@ -84,11 +86,39 @@ export const outdoorScript =
 		else if (t.play === "batting") await bat(ctx, s);
 	};
 
+/**
+ * 建物の 影（村の 地図の 飾り。右がわの 地面に 斜めの 影。キャラの 上にも 重なるので、影に 入ると 少し 暗く 見える）。
+ */
+export const shadowDecor = (stage: number): MapDef["decor"] => {
+	const list = facilityShadows(stage);
+	if (!list.length) return undefined;
+	const T = TILE;
+	return (g, ox, oy) => {
+		g.save();
+		g.fillStyle = "rgba(10, 16, 30, 0.22)";
+		for (const s of list) {
+			const x = s.x * T - ox;
+			const top = s.top * T - oy;
+			const bottom = s.bottom * T - oy;
+			g.beginPath();
+			g.moveTo(x, top);
+			g.lineTo(x + 10, top + 10);
+			g.lineTo(x + 10, bottom + 4);
+			g.lineTo(x, bottom);
+			g.closePath();
+			g.fill();
+		}
+		g.restore();
+	};
+};
+
 /** 施設の 中の 地図。曲は 村の まま。 */
 export const buildFacility = (
 	f: Facility,
 	_v: VillageView,
 	_ctx: Ctx,
+	/** 駅の 改札などから 出かける（村の 口と 同じ 流れ。ui/villageEvents.ts の departAnywhere）。 */
+	depart?: Script,
 ): MapDef => {
 	const room = f.room;
 	const events: EventDef[] = facilityRoomPlaces(f).map((p) => {
@@ -102,7 +132,10 @@ export const buildFacility = (
 				run: leaveFacility(f),
 			};
 		const kind = p.id.replace(/_\d+$/, "");
-		return sign(p.id, p.x, p.y, (s) => readAll(s, room?.lines[kind] ?? []));
+		return sign(p.id, p.x, p.y, async (s) => {
+			await readAll(s, room?.lines[kind] ?? []);
+			if (room?.plays?.[kind] === "depart" && depart) await depart(s);
+		});
 	});
 	for (const who of room?.people ?? [])
 		events.push(

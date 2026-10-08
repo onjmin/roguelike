@@ -5,6 +5,8 @@
 //   4 縦の 道の 横断歩道（縞は 縦）   5 歩道（灰色の タイル）
 //   6〜9 2車線の 道の 半分（中央線が 内がわの はし、白の 実線が 外がわの はし）：
 //        6 横の 上の 車線・7 横の 下の 車線・8 縦の 左の 車線・9 縦の 右の 車線
+//   10・11 4車線の 横の 道の 内がわの 車線（まんなかの 黄色い 実線が 下の はし・上の はし）
+//   12 5マスの 縦の 道の まんなか（黄色い 実線が 縦に）
 // アスファルトの ざらつきは 決まった 乱数（毎回 同じ 絵）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-statue.mjs と 同じ。
@@ -56,7 +58,7 @@ const encodePng = (w, h, rgba) => {
 
 // ───────────────── 絵 ─────────────────
 
-const W = 160;
+const W = 208;
 const H = 16;
 const rgba = Buffer.alloc(W * H * 4);
 let seed = 12345;
@@ -111,5 +113,20 @@ for (let f = 6; f < 10; f++)
 			if (f === 9 && x === 14) c = WHITE;
 			set(f * 16 + x, y, c);
 		}
+// 4車線の 内がわ（まんなかは 黄色の 実線）
+const YELLOW = [236, 196, 48];
+for (const f of [10, 11])
+	for (let y = 0; y < 16; y++)
+		for (let x = 0; x < 16; x++) {
+			let c = asphalt();
+			if (f === 10 && y === 15) c = YELLOW;
+			if (f === 11 && y === 0) c = YELLOW;
+			set(f * 16 + x, y, c);
+		}
+for (let y = 0; y < 16; y++)
+	for (let x = 0; x < 16; x++) {
+		const c = x === 7 || x === 8 ? YELLOW : asphalt();
+		set(12 * 16 + x, y, c);
+	}
 writeFileSync(OUT, encodePng(W, H, rgba));
 console.log(`wrote ${OUT}`);

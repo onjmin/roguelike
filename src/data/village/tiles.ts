@@ -419,7 +419,9 @@ export const BEACH: Record<string, TileDef> = {
 // ───────────────── 道路（住宅街＝町の 段6 から。絵は scripts/make-road.mjs） ─────────────────
 //   ろ  横の 道の 中央線   ゐ  縦の 道の 中央線   わ  横の 道の 横断歩道   を  縦の 道の 横断歩道   ゆ  歩道
 //   ら り  2車線の 横の 道（上・下の 車線）   る れ  2車線の 縦の 道（左・右の 車線）
+//   ヰ ヱ  4車線の 横の 道の 内がわの 車線（まんなかの 黄色い 線）   ヲ  5マスの 縦の 道の まんなか
 //   ぃ  線路（縦）   ぅ  踏切の 道   ょ  電柱   ゃ  街灯   ゅ  踏切の 警報機（どれも 歩道に 立つ）
+//   こ  岸壁   ぎ ぐ げ  コンテナ（赤・青・緑）   ご  クレーン
 // 道（.）は 段6 から アスファルト（data/village/map.ts の villagePalette）。
 const ROAD_IMG = "pub:sprites/road.png";
 const road = (i: number) => `${ROAD_IMG}#${i * 16},0,16,16`;
@@ -440,8 +442,17 @@ export const ROADS: Record<string, TileDef> = {
 	ょ: solid("#b8b4ac", road(5), street(64, 0, 32)),
 	ゃ: solid("#b8b4ac", road(5), street(80, 0, 32)),
 	ゅ: solid("#b8b4ac", road(5), street(96, 0, 32)),
+	// 港（都市）：岸壁の コンクリート・コンテナ（赤・青・緑）・クレーン（16x48。足もとの 1マスだけ 通れない）
+	こ: floor("#a8a8a4", street(112, 16)),
+	ぎ: solid("#a8a8a4", street(112, 16), street(112, 0)),
+	ぐ: solid("#a8a8a4", street(112, 16), street(128, 0)),
+	げ: solid("#a8a8a4", street(112, 16), street(144, 0)),
+	ご: solid("#a8a8a4", street(112, 16), street(160, 0, 48)),
 	ら: floor(C_ASPHALT, road(6)),
 	り: floor(C_ASPHALT, road(7)),
+	ヰ: floor(C_ASPHALT, road(10)),
+	ヱ: floor(C_ASPHALT, road(11)),
+	ヲ: floor(C_ASPHALT, road(12)),
 	る: floor(C_ASPHALT, road(8)),
 	れ: floor(C_ASPHALT, road(9)),
 };

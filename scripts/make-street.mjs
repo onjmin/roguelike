@@ -1,8 +1,9 @@
 // 街の 小物の 絵を 書き出す（node scripts/make-street.mjs → public/sprites/street.png）。
 //
-// 住宅街・都市（町の 段6〜7）の 道ばたと 線路（STORY.md §5.75）。112x32。上の 段は 16x16、縦長の 物は 16x32：
+// 住宅街・都市（町の 段6〜7）の 道ばたと 線路・港（STORY.md §5.75）。176x48。上の 段は 16x16、縦長の 物は 16x32〜48：
 //   (0,0) 線路（横）   (16,0) 線路（縦）   (32,0) 踏切の 道（アスファルトに 縦の レール）   (48,0) 踏切の 道（横の レール）
 //   (64,0) 電柱（16x32）   (80,0) 街灯（16x32）   (96,0) 踏切の 警報機（16x32）
+//   (112,0) (128,0) (144,0) コンテナ（赤・青・緑）   (112,16) 岸壁の コンクリート   (160,0) クレーン（16x48）
 // 線路は 砂利に 枕木と 2本の レール。電柱には 横木と 電線（左右の マスへ つながって 見える）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-statue.mjs と 同じ。
@@ -54,8 +55,8 @@ const encodePng = (w, h, rgba) => {
 
 // ───────────────── 絵 ─────────────────
 
-const W = 112;
-const H = 32;
+const W = 176;
+const H = 48;
 const rgba = Buffer.alloc(W * H * 4);
 let seed = 4242;
 const rnd = () => {
@@ -157,5 +158,44 @@ for (let x = 3; x < 13; x++) set(96 + x, 14, [60, 60, 60]);
 for (const cx of [4, 11])
 	for (let dy = -1; dy <= 1; dy++)
 		for (let dx = -1; dx <= 1; dx++) set(96 + cx + dx, 14 + dy, [220, 40, 30]);
+// コンテナ（波板の 縦じま。上と 下に 影）
+const COLORS = [
+	[178, 52, 40],
+	[44, 84, 160],
+	[52, 132, 72],
+];
+COLORS.forEach(([r, g, b], i) => {
+	for (let y = 1; y < 15; y++)
+		for (let x = 0; x < 16; x++) {
+			const k = x % 3 === 0 ? 0.8 : 1;
+			const e = y === 1 || y === 14 ? 0.7 : 1;
+			set(112 + i * 16 + x, y, [r * k * e, g * k * e, b * k * e].map(Math.round));
+		}
+});
+// 岸壁の コンクリート
+for (let y = 16; y < 32; y++)
+	for (let x = 0; x < 16; x++) {
+		const n = Math.floor(rnd() * 10) - 5;
+		const line = x === 0 || y === 16;
+		const v = line ? 140 : 168 + n;
+		set(112 + x, y, [v, v, v - 4]);
+	}
+// クレーン（16x48。黄色い 脚と 梁）
+const CRANE = [232, 176, 32];
+const CRANE_D = [176, 128, 20];
+for (let y = 6; y < 47; y++) {
+	set(160 + 2, y, CRANE);
+	set(160 + 3, y, CRANE_D);
+	set(160 + 12, y, CRANE);
+	set(160 + 13, y, CRANE_D);
+}
+for (let x = 0; x < 16; x++) {
+	set(160 + x, 4, CRANE);
+	set(160 + x, 5, CRANE_D);
+	set(160 + x, 20, CRANE);
+}
+for (let y = 6; y < 20; y++) set(160 + 2 + Math.floor((y - 6) * 0.7), y, CRANE_D);
+for (let y = 6; y < 14; y++) set(160 + 8, y, [60, 60, 60]);
+for (let x = 6; x < 11; x++) for (let y = 14; y < 18; y++) set(160 + x, y, [200, 60, 40]);
 writeFileSync(OUT, encodePng(W, H, rgba));
 console.log(`wrote ${OUT}`);
