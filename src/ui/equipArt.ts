@@ -6,9 +6,11 @@
 // make-equip.mjs の対象から外す）。
 //
 // 描き方：
-// - 武器は「にぎり → つば → 刃（柄）→ 先」を、にぎる手から ある向きへ1ドットずつ並べて描く。
-//   向き（まっすぐ上・ななめ・横）を変えても同じ武器に見え、振る動きも作れる。
+// - 武器は「まっすぐ上を向いた絵」と「右ななめ上を向いた絵」の2枚をドットで描き、90度ずつ回して
+//   8方向にする（回してもドットが崩れない）。まわりに暗いふちを自動でつけて、床の上でも形が立つようにする。
+// - 振るときは、刃の先が通った跡に 白い弧（振りの跡）を残す。
 // - 盾（板）は左手で かかげて持つ。正面・横・うら の3つの見え方を、ドットの型と色から組み立てる。
+//   板ごとに 面のまん中の 3×3 に しるし（星・水・十字の帯など）を入れて見分ける。
 // - にぎる手の位置は、向き（4方向）と足踏みのコマ（2つ）ごとに決めてある（腕のふりに合わせて動く）。
 // - キリコの向きで、体の前に出る（over）か うしろに隠れる（under）かが変わる。
 //   正面：両手とも前。うしろ向き：両手とも体の向こう。横向き：手前の手は前、奥の手はうしろ。
@@ -17,200 +19,525 @@ import type { SpriteDir } from "../core/geom";
 
 // ───────────────── 武器の見た目 ─────────────────
 
+/** 1枚の絵。rows の1文字が1ドット（'.' は透明、ほかは pal の色）。(ax, ay) は にぎる手のドット。 */
+type WeaponPic = { rows: string[]; ax: number; ay: number };
+
 type WeaponLook = {
-	/** 刃（柄）の長さ（にぎりから先まで。つばは含まない）。 */
-	len: number;
-	/** にぎり（柄）の長さ。 */
-	grip: number;
-	gripColor: string;
-	/** つば（無ければ null）。刃に直角に3ドット。 */
-	guard: string | null;
-	/** 刃の芯・ふち（光）・影。 */
-	core: string;
-	edge: string;
-	shade: string;
-	/** 先の色（無ければ刃の芯と同じ）。 */
-	tip?: string;
-	/** 先を太くする（こん棒・バット）。 */
-	head?: number;
-	/** マイクスタンドのマイク。 */
-	mic?: boolean;
-	/** 刃に光る点（星鉄）。 */
-	spark?: string;
-	/** 竜断ち：つばの宝石。 */
-	gem?: string;
+	pal: Record<string, string>;
+	/** まわりのふち。 */
+	ink: string;
+	/** ふちをつけない文字（刃のまわりに浮かぶ光）。 */
+	glow?: string;
+	/** まっすぐ上を向いた絵。 */
+	up: WeaponPic;
+	/** 右ななめ上を向いた絵。 */
+	diag: WeaponPic;
+	/** 振りの跡の色（外・内）。 */
+	trail: [string, string];
 };
 
+// 文字の意味（だいたい共通）：t 刃の先 / h 刃の光の側 / c 芯 / s 刃の影の側 / q つば / Q つばの光 /
+// g にぎり / G にぎりの光 / p 柄頭 / e 宝石 / + 浮かぶ光
 const WEAPONS: Record<string, WeaponLook> = {
+	// ぬるぽ棒：先の太い 木の こん棒。こぶ（k）つき
 	club: {
-		len: 6,
-		grip: 2,
-		gripColor: "#5a3a1c",
-		guard: null,
-		core: "#9a6a38",
-		edge: "#c8955a",
-		shade: "#6b4523",
-		head: 2,
+		pal: {
+			h: "#e6b47a",
+			c: "#b07a40",
+			s: "#74481f",
+			k: "#4e2e12",
+			g: "#5e3c1e",
+			G: "#9c7048",
+		},
+		ink: "#24140a",
+		up: {
+			rows: [
+				".h.",
+				"hcs",
+				"hks",
+				"hcs",
+				"hcs",
+				".cs",
+				".c.",
+				".c.",
+				".g.",
+				".G.",
+				".g.",
+			],
+			ax: 1,
+			ay: 8,
+		},
+		diag: {
+			rows: [
+				"........hc",
+				".......hcs",
+				"......hks.",
+				".....hcs..",
+				"....hcs...",
+				"....cs....",
+				"...c......",
+				"..g.......",
+				".G........",
+				"g.........",
+			],
+			ax: 2,
+			ay: 7,
+		},
+		trail: ["#fff4dc", "#d8b888"],
 	},
+	// 名無しの剣：ありふれた 鉄の剣。茶色の にぎりに 真鍮の つば
 	copper: {
-		len: 6,
-		grip: 2,
-		gripColor: "#4a2c18",
-		guard: "#8a5a2a",
-		core: "#d0803e",
-		edge: "#f4b27a",
-		shade: "#9a5424",
-		tip: "#f4b27a",
+		pal: {
+			t: "#ffffff",
+			h: "#e4e8ee",
+			s: "#8a929e",
+			q: "#9a6e2e",
+			Q: "#d8b060",
+			g: "#5a3a20",
+			G: "#8a6038",
+			p: "#b08840",
+		},
+		ink: "#1a1c24",
+		up: {
+			rows: [
+				".t..",
+				".hs.",
+				".hs.",
+				".hs.",
+				".hs.",
+				".hs.",
+				".hs.",
+				"qQQq",
+				".gG.",
+				".gG.",
+				".pp.",
+			],
+			ax: 1,
+			ay: 8,
+		},
+		diag: {
+			rows: [
+				".........t",
+				"........hs",
+				".......hs.",
+				"......hs..",
+				".....hs...",
+				"...qhs....",
+				"...QQ.....",
+				"..g..q....",
+				".G........",
+				"p.........",
+			],
+			ax: 2,
+			ay: 7,
+		},
+		trail: ["#ffffff", "#c8d0dc"],
 	},
+	// ガッのバット：銀の 金属バット。青い帯・黒い テープ・こぶ（グリップエンド）
 	bat: {
-		len: 7,
-		grip: 2,
-		gripColor: "#222228",
-		guard: null,
-		core: "#b8c0cc",
-		edge: "#f2f6fa",
-		shade: "#7d8594",
-		head: 1,
+		pal: {
+			h: "#ffffff",
+			c: "#c8d0dc",
+			s: "#808a9a",
+			b: "#3a6ad0",
+			g: "#1e1e24",
+			G: "#4a4a56",
+			p: "#2a2a30",
+		},
+		ink: "#10141c",
+		up: {
+			rows: [
+				".h.",
+				"hcs",
+				"hcs",
+				"hcs",
+				"bbb",
+				"hcs",
+				".c.",
+				".c.",
+				".c.",
+				".g.",
+				".G.",
+				".g.",
+				"ppp",
+			],
+			ax: 1,
+			ay: 9,
+		},
+		diag: {
+			rows: [
+				".........hc",
+				"........hcs",
+				".......hcs.",
+				"......bbb..",
+				".....hcs...",
+				".....cs....",
+				"....c......",
+				"...c.......",
+				"..g........",
+				"pG.........",
+				"pp.........",
+			],
+			ax: 2,
+			ay: 8,
+		},
+		trail: ["#ffffff", "#b8ccf0"],
 	},
+	// ワイ断ちの剣：竜（ワイバーン）を断つ 幅広の剣。翼の形の 金の つばに 赤い 宝石
 	wyrmbane: {
-		len: 7,
-		grip: 2,
-		gripColor: "#3a2418",
-		guard: "#c8a040",
-		core: "#9fc0d8",
-		edge: "#e8f6ff",
-		shade: "#5d7c94",
-		tip: "#e8f6ff",
-		gem: "#e0303a",
+		pal: {
+			t: "#ffffff",
+			h: "#e8f6ff",
+			c: "#a8c4d8",
+			s: "#5a7890",
+			q: "#a07820",
+			Q: "#e8c860",
+			e: "#e0303a",
+			g: "#5a1a1a",
+			G: "#8a3030",
+			p: "#e8c860",
+		},
+		ink: "#141018",
+		up: {
+			rows: [
+				"...t...",
+				"..hcs..",
+				"..hcs..",
+				"..hcs..",
+				"..hcs..",
+				"..hcs..",
+				"..hcs..",
+				"..hcs..",
+				"qQQeQQq",
+				"q..g..q",
+				"...g...",
+				"...G...",
+				"...p...",
+			],
+			ax: 3,
+			ay: 10,
+		},
+		diag: {
+			rows: [
+				"..........t.",
+				".........hcs",
+				"........hcs.",
+				".......hcs..",
+				"......hcs...",
+				".....hcs....",
+				"..q.hcs.....",
+				"...QQ.......",
+				"...ge.......",
+				"..g..Q......",
+				".G....q.....",
+				"p...........",
+			],
+			ax: 2,
+			ay: 9,
+		},
+		trail: ["#ffffff", "#ffb0b0"],
 	},
+	// コテハンの剣：名無しより一段上の 長剣。先の反った 金の つば・青い にぎり
 	steel: {
-		len: 7,
-		grip: 2,
-		gripColor: "#2c2c34",
-		guard: "#d8b048",
-		core: "#c4ccd6",
-		edge: "#ffffff",
-		shade: "#808a98",
-		tip: "#ffffff",
+		pal: {
+			t: "#ffffff",
+			h: "#f4f8fc",
+			s: "#8a94a4",
+			q: "#b07c10",
+			Q: "#ffd860",
+			g: "#2a3a78",
+			G: "#5070c0",
+			p: "#ffd860",
+		},
+		ink: "#141824",
+		up: {
+			rows: [
+				"..t...",
+				"..hs..",
+				"..hs..",
+				"..hs..",
+				"..hs..",
+				"..hs..",
+				"..hs..",
+				"..hs..",
+				"Q.hs.Q",
+				"qQQQQq",
+				"..gG..",
+				"..gG..",
+				"..pp..",
+			],
+			ax: 2,
+			ay: 10,
+		},
+		diag: {
+			rows: [
+				"..........t",
+				".........hs",
+				"........hs.",
+				".......hs..",
+				"......hs...",
+				".....hs....",
+				"..Qqhs.....",
+				"...QQ......",
+				"..g.Qq.....",
+				".G...Q.....",
+				"p..........",
+			],
+			ax: 2,
+			ay: 8,
+		},
+		trail: ["#ffffff", "#c8d8ff"],
 	},
+	// 降臨の剣：空から 降臨した 剣。光る 刃・星の 宝石・まわりに 浮かぶ 光
 	starsword: {
-		len: 8,
-		grip: 2,
-		gripColor: "#20183a",
-		guard: "#b0a0f0",
-		core: "#6a5cd8",
-		edge: "#c8c0ff",
-		shade: "#3a2e8a",
-		tip: "#ffffff",
-		spark: "#fff6a0",
+		pal: {
+			t: "#ffffff",
+			h: "#f4f0ff",
+			s: "#8a78f0",
+			"*": "#fff6a0",
+			q: "#b08ae0",
+			Q: "#e8dcff",
+			e: "#ffe040",
+			g: "#2a2050",
+			G: "#5a48a0",
+			p: "#ffe040",
+			"+": "#fff6a0",
+		},
+		ink: "#140e30",
+		glow: "+",
+		up: {
+			rows: [
+				"..t...",
+				"..hs.+",
+				"+.hs..",
+				"..h*..",
+				"..hs..",
+				"..hs..",
+				"..hs.+",
+				"..hs..",
+				"Q.hs.Q",
+				"qQeeQq",
+				"..gG..",
+				"..gG..",
+				"..pp..",
+			],
+			ax: 2,
+			ay: 10,
+		},
+		diag: {
+			rows: [
+				"......+...t",
+				".........hs",
+				"........hs.",
+				".......h*..",
+				"......hs..+",
+				"..+..hs....",
+				"..Qqhs.....",
+				"...Qe......",
+				"..g.Qq.....",
+				".G...Q.....",
+				"p..........",
+			],
+			ax: 2,
+			ay: 8,
+		},
+		trail: ["#fff6c0", "#c0b0ff"],
 	},
+	// ネ申マイク：スタンドごと 振る マイク。黒い 網の 頭・銀の 帯・三脚の 足
 	mic: {
-		len: 9,
-		grip: 1,
-		gripColor: "#303038",
-		guard: null,
-		core: "#9aa2ae",
-		edge: "#dde2ea",
-		shade: "#5c6470",
-		mic: true,
+		pal: {
+			M: "#b4bcc8",
+			m: "#5a6272",
+			w: "#ffffff",
+			r: "#c8ccd4",
+			h: "#d4dae4",
+			k: "#2e2e36",
+		},
+		ink: "#0e0e14",
+		up: {
+			rows: [
+				".M.",
+				"wmM",
+				"MmM",
+				"MmM",
+				".M.",
+				".r.",
+				".h.",
+				".h.",
+				".h.",
+				".h.",
+				".h.",
+				".h.",
+				".k.",
+				"k.k",
+			],
+			ax: 1,
+			ay: 10,
+		},
+		diag: {
+			rows: [
+				"..........wM",
+				".........MmM",
+				".........mM.",
+				"........r...",
+				".......h....",
+				"......h.....",
+				".....h......",
+				"....h.......",
+				"...h........",
+				"..h.........",
+				".h..........",
+				"k.k.........",
+			],
+			ax: 3,
+			ay: 8,
+		},
+		trail: ["#ffffff", "#b8b8c8"],
 	},
 };
 
 // ───────────────── 盾（板）の見た目 ─────────────────
 //
 // 盾は「板」（2ch の板＝掲示板の木の板）。縦長の板を 看板のように かかげて持つ。
-// 形は7種とも同じ（上の角だけ丸い長方形・四隅に釘・上のほうに小さな名札）で、色味だけ変える。
+// 形は7種とも同じ（角の丸い長方形・四隅に釘・上に名札・まん中に しるし）で、色と しるしを変える。
 
 type ShieldLook = {
-	/** ふち（1ドットの輪郭）。釘が目立つよう、釘より明るくする。 */
+	/** ふち（板の輪郭）。 */
 	rim: string;
-	/** 板の面。 */
+	/** 面の 光の側（左）・面・影の側（右と下）。 */
+	light: string;
 	face: string;
+	shade: string;
 	/** 縦の木目（鉄板は筋）。 */
 	grain: string;
 	/** 四隅の釘（鉄板は明るいリベット）。 */
 	nail: string;
-	/** 名札。 */
+	/** 名札と、名札の字。 */
 	plate: string;
-	/** うら。 */
+	text: string;
+	/** うら・うらの横木（取っ手）。 */
 	back: string;
-	/** うらの横木（取っ手）。 */
 	batten: string;
-	/** 左上の光る点（銀・金の板だけ）。 */
+	/**
+	 * 面のまん中の しるし（3×3）。'.' 面 / g 木目 / E しるし / e しるしの光 / * 光る点。
+	 * 無ければ木目。
+	 */
+	mark?: [string, string, string];
+	emblem?: string;
+	emblem2?: string;
+	/** 光る点（銀・金・鉄の板）。 */
 	glint?: string;
 };
 
+const GRAIN: [string, string, string] = ["g.g", "g.g", "..g"];
+
 const SHIELDS: Record<string, ShieldLook> = {
-	// ダイエット板：うすくて白っぽい木
+	// ダイエット板：うすくて白っぽい木。しるしは 巻き尺の 目盛り
 	leather: {
-		rim: "#8a6a40",
+		rim: "#6a4c2a",
+		light: "#f8ecc8",
 		face: "#e2cc9c",
-		grain: "#c4a870",
-		nail: "#2e1c10",
+		shade: "#bc9e6c",
+		grain: "#c8ae7a",
+		nail: "#3a2414",
 		plate: "#fffaf0",
+		text: "#9a8a70",
 		back: "#c8ac7c",
 		batten: "#7a5c38",
+		mark: ["EEE", "E.e", "E.."],
+		emblem: "#e8a040",
+		emblem2: "#5a3a1c",
 	},
 	// 雑談板：ふつうの木の板
 	bronze: {
-		rim: "#7a4e24",
+		rim: "#56341a",
+		light: "#e6b47a",
 		face: "#c8955a",
+		shade: "#9a6834",
 		grain: "#a8742e",
 		nail: "#1e100a",
 		plate: "#f4e6c0",
+		text: "#7a5a38",
 		back: "#a0703c",
 		batten: "#5a3a1c",
 	},
-	// スルー板：うすい灰緑
+	// スルー板：うすい灰緑。しるしは ✕（スルー）
 	scale: {
-		rim: "#5a6c5c",
+		rim: "#36463a",
+		light: "#d4e6d0",
 		face: "#a8bca4",
+		shade: "#7a9276",
 		grain: "#8ca488",
 		nail: "#1c2620",
-		plate: "#f4e6c0",
+		plate: "#f4f0e0",
+		text: "#6a7a6a",
 		back: "#8aa088",
 		batten: "#46564a",
+		mark: ["E.E", ".E.", "E.E"],
+		emblem: "#4a5e4c",
 	},
-	// 永久保存板：銀
+	// 永久保存板：銀。面を ななめに 光が 走る
 	mirror: {
-		rim: "#6c7484",
+		rim: "#4e5666",
+		light: "#ffffff",
 		face: "#cdd4de",
-		grain: "#a8b2c0",
+		shade: "#98a2b2",
+		grain: "#b4bcc8",
 		nail: "#22262e",
 		plate: "#f4e6c0",
+		text: "#8a7a5a",
 		back: "#9aa2b0",
 		batten: "#5c6474",
+		mark: ["*..", ".*.", "..*"],
 		glint: "#ffffff",
 	},
-	// 鉄板：灰の鉄板に 明るいリベット
+	// 鉄板：灰の鉄板。十字の帯に 明るいリベット
 	steelsh: {
-		rim: "#2e3238",
+		rim: "#22262c",
+		light: "#b4bcc6",
 		face: "#848c96",
+		shade: "#5c646e",
 		grain: "#6c747e",
-		nail: "#dde2ea",
-		plate: "#f4e6c0",
+		nail: "#e8ecf2",
+		plate: "#d8dce2",
+		text: "#4a525c",
 		back: "#6a727c",
 		batten: "#2e3238",
+		mark: [".E.", "E*E", ".E."],
+		emblem: "#5c646e",
+		glint: "#f4f8fc",
 	},
-	// 火消し板：赤茶
+	// 火消し板：赤茶。しるしは 水の しずく
 	fireward: {
-		rim: "#642414",
+		rim: "#4a140a",
+		light: "#d8704e",
 		face: "#a8482c",
-		grain: "#88361e",
+		shade: "#7a2c18",
+		grain: "#8c3820",
 		nail: "#1a0804",
 		plate: "#f4e6c0",
+		text: "#8a3a22",
 		back: "#8a3a22",
 		batten: "#4a1a10",
+		mark: [".E.", "EeE", ".E."],
+		emblem: "#6ac4ff",
+		emblem2: "#e8f8ff",
 	},
-	// ネ申板：金
+	// ネ申板：金。しるしは 星
 	starshield: {
-		rim: "#8a6010",
+		rim: "#6a4808",
+		light: "#fff0a0",
 		face: "#e8b834",
+		shade: "#b08018",
 		grain: "#c8901c",
-		nail: "#2e1c02",
+		nail: "#3a2402",
 		plate: "#fff8e0",
+		text: "#a07818",
 		back: "#c89a28",
 		batten: "#6a4a10",
+		mark: [".e.", "EEE", "E.E"],
+		emblem: "#fff4c0",
+		emblem2: "#ffffff",
 		glint: "#ffffff",
 	},
 };
@@ -289,19 +616,7 @@ const SWING_HOLD: Record<SpriteDir, Hold> = {
 	left: { x: 4, y: 11, layer: "over" },
 };
 
-/** 8方向のベクトル（0=上 から時計回り）。 */
-const V: readonly [number, number][] = [
-	[0, -1],
-	[1, -1],
-	[1, 0],
-	[1, 1],
-	[0, 1],
-	[-1, 1],
-	[-1, 0],
-	[-1, -1],
-];
-
-/** 向きごとの「前」（8方向の番号）。 */
+/** 向きごとの「前」（8方向の番号。0=上 から時計回り）。 */
 const FORWARD: Record<SpriteDir, number> = {
 	up: 0,
 	right: 2,
@@ -334,6 +649,28 @@ const weaponAngle = (dir: SpriteDir, swing: number): number => {
 
 export type Put = (x: number, y: number, c: string) => void;
 
+/** 向き a（8方向の番号）の武器の絵のドットを、にぎる手からの相対位置で返す。 */
+const weaponCells = (
+	w: WeaponLook,
+	a: number,
+): { dx: number; dy: number; ch: string }[] => {
+	const pic = a % 2 ? w.diag : w.up;
+	const turns = Math.floor(a / 2);
+	const out: { dx: number; dy: number; ch: string }[] = [];
+	pic.rows.forEach((row, y) => {
+		for (let x = 0; x < row.length; x++) {
+			const ch = row[x];
+			if (ch === ".") continue;
+			let dx = x - pic.ax;
+			let dy = y - pic.ay;
+			// 右へ90度ずつ回す
+			for (let i = 0; i < turns; i++) [dx, dy] = [-dy, dx];
+			out.push({ dx, dy, ch });
+		}
+	});
+	return out;
+};
+
 const drawWeapon = (
 	put: Put,
 	w: WeaponLook,
@@ -341,74 +678,68 @@ const drawWeapon = (
 	hy: number,
 	a: number,
 ): void => {
-	const [vx, vy] = V[a];
-	const diag = vx !== 0 && vy !== 0;
-	// つばの向き（刃に直角）
-	const px = -vy;
-	const py = vx;
-	// 刃の「光の側」（左上から光が当たる）と「影の側」のとなり。
-	// ななめの刃は 直角のとなり（ななめ）に置くと 市松模様になるので、横か縦のとなりに置いて
-	// 2ドット幅の帯にする
-	let lx: number;
-	let ly: number;
-	if (diag) {
-		const a1: [number, number] = [-vx, 0];
-		const a2: [number, number] = [0, -vy];
-		[lx, ly] = a1[0] + a1[1] <= a2[0] + a2[1] ? a1 : a2;
-	} else {
-		const side = px + py < 0 || (px + py === 0 && px < 0) ? 1 : -1;
-		lx = px * side;
-		ly = py * side;
-	}
-	// 影は光の反対（ななめは もう一方のとなり）
-	const sx = diag ? (lx === 0 ? vx : 0) : -lx;
-	const sy = diag ? (ly === 0 ? vy : 0) : -ly;
-	// ななめは1ドットで √2 進むので、刃も にぎりも 1/√2 にして、まっすぐのときと同じ長さに見せる
-	const len = diag ? Math.max(3, Math.round(w.len / Math.SQRT2)) : w.len;
-	const grip = diag ? Math.max(1, Math.round(w.grip / Math.SQRT2)) : w.grip;
-	// にぎり（まっすぐのときは 手より1ドットうしろから。ななめは手から）
-	for (let i = diag ? 0 : -1; i < grip; i++)
-		put(hx + vx * i, hy + vy * i, w.gripColor);
-	let cx = hx + vx * grip;
-	let cy = hy + vy * grip;
-	// つば（刃に直角に3ドット）
-	if (w.guard) {
-		put(cx, cy, w.gem ?? w.guard);
-		put(cx + px, cy + py, w.guard);
-		put(cx - px, cy - py, w.guard);
-		cx += vx;
-		cy += vy;
-	}
-	// 刃（柄）
-	for (let i = 0; i < len; i++) {
-		const x = cx + vx * i;
-		const y = cy + vy * i;
-		const last = i === len - 1;
-		if (w.mic) {
-			put(x, y, i % 3 === 0 ? w.edge : w.core);
-			continue;
-		}
-		// 太い先（こん棒・バット）
-		const thick = w.head !== undefined && i >= len - (w.head + 2);
-		put(x, y, last && w.tip ? w.tip : w.core);
-		if (!last || thick) {
-			put(x + lx, y + ly, w.edge);
-			if (thick) put(x + sx, y + sy, w.shade);
-		}
-		if (w.spark && i === Math.floor(len / 2)) put(x, y, w.spark);
-	}
-	// マイクスタンドの先：マイク（黒い玉）
-	if (w.mic) {
-		const mx = cx + vx * len;
-		const my = cy + vy * len;
-		for (const [dx, dy] of [
-			[0, 0],
+	const cells = weaponCells(w, a);
+	const solid = new Set(
+		cells.filter((c) => c.ch !== w.glow).map((c) => `${c.dx},${c.dy}`),
+	);
+	// ふち：絵のドットの上下左右で、空いている所
+	const ink = new Set<string>();
+	for (const k of solid) {
+		const [x, y] = k.split(",").map(Number);
+		for (const [ox, oy] of [
 			[1, 0],
+			[-1, 0],
 			[0, 1],
-			[1, 1],
-		])
-			put(mx + dx - (vx < 0 ? 1 : 0), my + dy - (vy < 0 ? 1 : 0), "#1c1c22");
-		put(mx - (vx < 0 ? 1 : 0), my - (vy < 0 ? 1 : 0), "#8a8a96");
+			[0, -1],
+		]) {
+			const n = `${x + ox},${y + oy}`;
+			if (!solid.has(n)) ink.add(n);
+		}
+	}
+	for (const k of ink) {
+		const [x, y] = k.split(",").map(Number);
+		put(hx + x, hy + y, w.ink);
+	}
+	for (const c of cells) put(hx + c.dx, hy + c.dy, w.pal[c.ch]);
+};
+
+/**
+ * 振りの跡：刃の先が 向き a0 から a1 へ通った弧を、白く残す（外の1列と、内の1列）。
+ * 刃のドットや ふちには 重ねない（武器の前に描くので、あとから上書きされる）。
+ */
+const drawTrail = (
+	put: Put,
+	w: WeaponLook,
+	hx: number,
+	hy: number,
+	a0: number,
+	a1: number,
+): void => {
+	if (a0 === a1) return;
+	// 遠回りしないよう、差を −4〜4 に
+	let d = a1 - a0;
+	if (d > 4) d -= 8;
+	if (d < -4) d += 8;
+	const r = w.up.ay;
+	const seen = new Set<string>();
+	const steps = 24;
+	// 弧の終わり（いまの刃）の手前で止める
+	for (let i = 0; i <= steps * 0.85; i++) {
+		const t = ((a0 + (d * i) / steps) * Math.PI) / 4;
+		for (const [rr, col] of [
+			[r, w.trail[0]],
+			[r - 1, w.trail[1]],
+			[r - 2, w.trail[1]],
+		] as [number, string][]) {
+			// 跡は 先のほうだけ（根もとは細く消える）
+			if (rr === r - 2 && i < steps * 0.4) continue;
+			const x = Math.round(Math.sin(t) * rr);
+			const y = Math.round(-Math.cos(t) * rr);
+			const k = `${x},${y}`;
+			if (seen.has(k)) continue;
+			seen.add(k);
+			put(hx + x, hy + y, col);
+		}
 	}
 };
 
@@ -416,72 +747,86 @@ type ShieldView = "front" | "side" | "back";
 
 /**
  * 板の形（見え方ごと）。rows の1文字が1ドット：
- * . なし / o ふち（名札の下の影にも使う）/ w 面 / g 木目 / n 釘 /
- * * 光る点（銀・金だけ。ほかは面）/ p 名札 / b うら / k うらの横木。
+ * . なし / o ふち / l 面の光 / w 面 / d 面の影 / n 釘 / p 名札 / P 名札の字 /
+ * 1〜9 しるし（左上から 1,2,3 / 4,5,6 / 7,8,9）/ b うら / k うらの横木。
  * (hx, hy) は にぎる手が来るドット。板は顔にかからないよう、手から体の外側へ のばす。
  */
 const BOARDS: Record<ShieldView, { rows: string[]; hx: number; hy: number }> = {
-	// 正面：6×8。手は左から2列目（体の側）、板は体の外（見て右）へ
+	// 正面：7×9。手は左から2列目（体の側）、板は体の外（見て右）へ
 	front: {
 		rows: [
-			".oooo.",
-			"onwwno",
-			"owppwo",
-			"o*oogo",
-			"owgwgo",
-			"owgwwo",
-			"onwwno",
-			"oooooo",
+			".ooooo.",
+			"onlwwno",
+			"olpPpdo",
+			"olwwwdo",
+			"ol123do",
+			"ol456do",
+			"ol789do",
+			"ondddno",
+			".ooooo.",
 		],
 		hx: 1,
 		hy: 3,
 	},
-	// 横：5×8。面を ななめに見て、少し細く（右向きの形。左向きは左右を返す）。手は体の側から2列目
+	// 横：5×9。面を ななめに見て、細く（右向きの形。左向きは左右を返す）。手は体の側から2列目
 	side: {
 		rows: [
 			".ooo.",
-			"onwno",
-			"owpwo",
-			"o*owo",
-			"owgwo",
-			"owgwo",
-			"onwno",
-			"ooooo",
+			"onlno",
+			"olPdo",
+			"olwdo",
+			"ol2do",
+			"ol5do",
+			"ol8do",
+			"ondno",
+			".ooo.",
 		],
 		hx: 1,
 		hy: 3,
 	},
-	// うら：6×8。手は横木をにぎる。板は体の外（見て左）へ
+	// うら：7×9。手は横木をにぎる。板は体の外（見て左）へ
 	back: {
 		rows: [
-			".oooo.",
-			"onbbno",
-			"obbbbo",
-			"okkkko",
-			"obbbbo",
-			"obbbbo",
-			"onbbno",
-			"oooooo",
+			".ooooo.",
+			"onbbbno",
+			"obbbbbo",
+			"okkkkko",
+			"obbbbbo",
+			"obbbbbo",
+			"okkkkko",
+			"onbbbno",
+			".ooooo.",
 		],
-		hx: 4,
+		hx: 5,
 		hy: 3,
 	},
 };
 
 const boardColor = (s: ShieldLook, c: string): string | null => {
+	if (c >= "1" && c <= "9") {
+		const i = Number(c) - 1;
+		const m = (s.mark ?? GRAIN)[Math.floor(i / 3)][i % 3];
+		if (m === "g") return s.grain;
+		if (m === "E") return s.emblem ?? s.grain;
+		if (m === "e") return s.emblem2 ?? s.emblem ?? s.grain;
+		if (m === "*") return s.glint ?? s.face;
+		return s.face;
+	}
 	switch (c) {
 		case "o":
 			return s.rim;
+		case "l":
+			return s.light;
 		case "w":
 			return s.face;
-		case "g":
-			return s.grain;
+		case "d":
+			return s.shade;
 		case "n":
 			return s.nail;
-		case "*":
-			return s.glint ?? s.face;
 		case "p":
 			return s.plate;
+		case "P":
+			return s.text;
 		case "b":
 			return s.back;
 		case "k":
@@ -528,14 +873,24 @@ export const paintEquip = (
 ): void => {
 	if (!look.weapon && !look.shield) return;
 	const hands = HANDS[dir][frame % 2];
-	// 攻撃中は、武器の手を ふる向きへ1ドット寄せる
+	// 盾を先に、武器をその上に（同じ側に重なるとき、武器が前）
+	const s = look.shield ? SHIELDS[look.shield] : undefined;
+	if (s && hands.shield.layer === layer) {
+		const view: ShieldView =
+			dir === "down" ? "front" : dir === "up" ? "back" : "side";
+		drawShield(put, s, hands.shield.x, hands.shield.y, view, dir === "left");
+	}
 	const w = look.weapon ? WEAPONS[look.weapon] : undefined;
 	if (w) {
 		let hold = hands.weapon;
 		// 振るときは、にぎる手を体の前へ出す（顔の前を刃が横切らないように）
 		if (swing >= 0) hold = SWING_HOLD[dir];
 		if (hold.layer === layer) {
-			drawWeapon(put, w, hold.x, hold.y, weaponAngle(dir, swing));
+			const a = weaponAngle(dir, swing);
+			// 振りの跡（1つ前の形の向きから いまの向きへ）
+			if (swing >= 0.34)
+				drawTrail(put, w, hold.x, hold.y, weaponAngle(dir, swing - 0.33), a);
+			drawWeapon(put, w, hold.x, hold.y, a);
 			// 体の前で持つときは、にぎりの上に手を描く（にぎっているように見せる。
 			// うしろ側は キリコの絵の手が上に重なる）
 			if (layer === "over") {
@@ -543,12 +898,6 @@ export const paintEquip = (
 				put(hold.x, hold.y + 1, "#926855");
 			}
 		}
-	}
-	const s = look.shield ? SHIELDS[look.shield] : undefined;
-	if (s && hands.shield.layer === layer) {
-		const view: ShieldView =
-			dir === "down" ? "front" : dir === "up" ? "back" : "side";
-		drawShield(put, s, hands.shield.x, hands.shield.y, view, dir === "left");
 	}
 };
 
