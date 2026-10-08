@@ -2673,6 +2673,11 @@ export class Play {
 				// 祭りの 始まりの 音は「house」で 曲と 合わせて 鳴らした
 				if (e.name === "encounter") return;
 				this.ctx.audio.se(e.name);
+				// 持ち帰って 最後の 階段を 上った：音と いっしょに キリコを 消す（地上へ 帰っていく）
+				if (e.name === "stairs" && this.run.s.end?.kind === "clear") {
+					const pd = this.disp.get(PLAYER_ID);
+					if (pd) pd.fade = 1;
+				}
 				return;
 			case "heal":
 				if (e.id === PLAYER_ID && e.hp !== undefined && this.hudHold)
