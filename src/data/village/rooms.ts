@@ -226,7 +226,7 @@ const ROWS: Record<RoomId, readonly string[]> = {
 	store: [
 		"##############",
 		"#HWHHH()HHH[]#",
-		"#hhhhkhhhvmhh#",
+		"#hhhhkhhhvm{}#",
 		"#SsQq...d....#",
 		"#............#",
 		"#.uu..Tn.gg..#",
@@ -476,9 +476,10 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				O: on(base(3, 108)),
 				P: on(base(3, 120, 1, 2)),
 				p: on(base(4, 120, 1, 2)),
-				// 開店の 日の 写真・サイン色紙（壁の 下段）、漫画の 棚、入口の そばの レジ（台の 上）
-				r: low(base(0, 527)),
-				e: low(base(0, 529)),
+				// 開店の 日の 写真・サイン色紙（壁の 下段）、漫画の 棚、入口の そばの レジ（台の 上）。
+				// 額は 行の 6px 下から 14px なので、5px 下げて 切ると 下の ふちまで 入る
+				r: low(basePx(0, 527 * 16 + 5)),
+				e: low(basePx(0, 529 * 16 + 5)),
 				B: on(base(1, 318, 1, 2)),
 				R: on(base(2, 108), basePx(48, 394 * 16 + 2)),
 			};
@@ -528,7 +529,7 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 		case "bookstore":
 			return {
 				...common,
-				A: up(base(6, 96)),
+				A: up(base(3, 96)),
 				k: low(base(5, 90)),
 				B: on(base(3, 104, 1, 2)),
 				// 店番の 机（羽ペンと インク）
@@ -604,18 +605,22 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 		case "store":
 			return {
 				...common,
-				k: low(base(6, 373), base(2, 372)),
+				// 鍵の 板（板と、つるした 3本の 鍵。どちらも 行の とちゅうから 描かれているので ずらして 切る）
+				k: low(basePx(96, 373 * 16 + 2), basePx(32, 371 * 16 + 8)),
 				S: on(base(0, 108, 1, 2)),
 				s: on(base(1, 108, 1, 2)),
 				Q: on(base(0, 108, 1, 2)),
 				q: on(base(1, 108, 1, 2)),
 				T: on(base(2, 108), onTop(6, 154)),
 				g: on(base(0, 125)),
-				// 『生きてこそだ』の 額（壁の 上段 2マス）・伝言板（同じく 2マス）
+				// 『生きてこそだ』の 額（壁の 上段 2マス）・伝言板（2マス。黒板と 同じく 上段 [ ] と
+				// 下段 { } に またがる。下の ふちと 受け皿が 下段の 上に はみ出す）
 				"(": up(base(3, 313)),
 				")": up(base(4, 313)),
 				"[": up(base(5, 509)),
 				"]": up(base(7, 509)),
+				"{": low(base(5, 510)),
+				"}": low(base(7, 510)),
 				// 替えの メイド服（トルソー）・掃除機
 				d: on(base(4, 349, 1, 2)),
 				c: on(base(5, 393, 1, 2)),
@@ -749,8 +754,8 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		u: "pots",
 		"(": "motto",
 		")": "motto",
-		"[": "board",
-		"]": "board",
+		"{": "board",
+		"}": "board",
 		d: "dress",
 		c: "cleaner",
 		v: "door",

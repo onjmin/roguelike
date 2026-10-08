@@ -494,6 +494,7 @@ export class Field {
 	 * (sx,sy) から (tx,ty) への最短経路（幅優先）。
 	 * 目的地そのものに入れないとき（人・カウンター等）は、隣まで行く経路を返す。
 	 * noBack なら北どなり（背の高い物の裏）には着かない。
+	 * avoid の マス（踏むと 起きる 扉・出口など）は、目的地の ほかは 通らない。
 	 */
 	findPath(
 		sx: number,
@@ -502,6 +503,7 @@ export class Field {
 		ty: number,
 		self: Actor,
 		noBack = false,
+		avoid?: (x: number, y: number) => boolean,
 		maxNodes = 4000,
 	): Dir[] | null {
 		if (!this.inBounds(tx, ty)) return null;
@@ -529,6 +531,7 @@ export class Field {
 				const k = key(nx, ny);
 				if (prev.has(k) || !this.inBounds(nx, ny)) continue;
 				if (!this.canEnter(nx, ny, self)) continue;
+				if (avoid?.(nx, ny) && !(nx === tx && ny === ty)) continue;
 				prev.set(k, { k: key(x, y), d });
 				queue.push([nx, ny]);
 			}

@@ -876,10 +876,27 @@ export class Village {
 	 * 人・物が 相手なら、その となり（カウンターの 向こうの人なら カウンターの 手前）の うち
 	 * いちばん近い マスまで。踏むと もぐる 口には 立たない（口の となりの 立て札を 読みに行って、
 	 * もぐるか きかれないように）。掲示板などの 裏（北どなり）にも 立たない。
+	 * 行き先で ない 扉・出口・口は 踏まずに 回りこむ（遠くを タップして、通りすがりに 倉庫や
+	 * 常識堂の 奥へ 入って しまった）。よけて 行けない ときだけ 踏む（銭湯の 湯の 中など）。
 	 */
 	private walkTo(tx: number, ty: number, talk: Actor | null): void {
+		const avoid = (x: number, y: number) => !!this.touchAt(x, y);
+		const path = this.route(tx, ty, talk, avoid) ?? this.route(tx, ty, talk);
+		if (!path) return;
+		this.path = path;
+		this.pathTalk = talk;
+		this.marker = path.length ? { x: tx, y: ty, t: this.time } : null;
+	}
+
+	/** walkTo の 道（avoid の マスは 行き先の ほかは 通らない）。 */
+	private route(
+		tx: number,
+		ty: number,
+		talk: Actor | null,
+		avoid?: (x: number, y: number) => boolean,
+	): Dir[] | null {
 		const field = this.field;
-		if (!field) return;
+		if (!field) return null;
 		const me = this.player;
 		const noBack = !!talk && field.hasBack(talk);
 		let path: Dir[] | null = null;
@@ -895,16 +912,14 @@ export class Village {
 				const here = sx === me.x && sy === me.y;
 				if (!here && (!field.canEnter(sx, sy, me) || this.touchAt(sx, sy)))
 					continue;
-				const p = here ? [] : field.findPath(me.x, me.y, sx, sy, me);
+				const p = here
+					? []
+					: field.findPath(me.x, me.y, sx, sy, me, false, avoid);
 				if (p && (!path || p.length < path.length)) path = p;
 			}
 		}
 		// 立てる マスが 無ければ、相手の となりの どこかまで
-		path ??= field.findPath(me.x, me.y, tx, ty, me, noBack);
-		if (!path) return;
-		this.path = path;
-		this.pathTalk = talk;
-		this.marker = path.length ? { x: tx, y: ty, t: this.time } : null;
+		return path ?? field.findPath(me.x, me.y, tx, ty, me, noBack, avoid);
 	}
 
 	/** 画面の点（canvas の CSS 画素）が、キリコから見て どの向きか（8方向）。キリコの上なら null。 */

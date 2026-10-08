@@ -5974,6 +5974,55 @@ test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番�
 	});
 });
 
+test("タップで 歩く 道は、行き先で ない 扉・出口を 踏まない（通りすがりに 倉庫や 常識堂の 奥へ 入らない）", () => {
+	for (const v of VIEWS) {
+		const s = survey(v);
+		const touch = (x: number, y: number) =>
+			s.places.some((p) => p.trigger === "touch" && p.x === x && p.y === y);
+		// engine/field.ts の Field.findPath を 村の データで 呼ぶ（ui/village.ts の walkTo と 同じく 踏む 所を よける）
+		const field: Field = Object.assign(Object.create(Field.prototype), {
+			w: VILLAGE_W,
+			h: VILLAGE_H,
+			canEnter: (x: number, y: number) => s.canEnter(x, y),
+		});
+		// 扉の 下の 通り・出てくる 所・起きる 所から、北の 出口・本館の 扉・出口の 立て札・崖の 下の 道へ
+		const starts: (readonly [number, number])[] = [
+			[25, 19],
+			[16, 19],
+			[23, 19],
+			VILLAGE_SPOTS.boot,
+			...Object.values(ROOM_OUTSIDE).map((o) => [o.x, o.y] as const),
+		];
+		const goals: (readonly [number, number])[] = [
+			VILLAGE_SPOTS.exit,
+			...VILLAGE_SPOTS.hallDoors,
+			VILLAGE_SPOTS.exitSign,
+			[24, 12],
+			[17, 11],
+		];
+		for (const [sx, sy] of starts) {
+			if (!s.reachable(sx, sy) || touch(sx, sy)) continue;
+			for (const [gx, gy] of goals) {
+				const path =
+					field.findPath(sx, sy, gx, gy, {} as Actor, false, touch) ?? [];
+				ok(
+					path.length,
+					`${label(v)}: no way from (${sx},${sy}) to (${gx},${gy}) around the doors`,
+				);
+				let [x, y] = [sx, sy];
+				for (const d of path.slice(0, -1)) {
+					x += DIR_VEC[d].dx;
+					y += DIR_VEC[d].dy;
+					ok(
+						!touch(x, y),
+						`${label(v)}: (${sx},${sy}) → (${gx},${gy}) steps on (${x},${y})`,
+					);
+				}
+			}
+		}
+	}
+});
+
 test("一杯を まぜる: hand the herb, the master spins with a drum roll, it bubbles, flashes and the jingle plays", async () => {
 	await withStorageAsync(async () => {
 		forgetCafeMemo();
