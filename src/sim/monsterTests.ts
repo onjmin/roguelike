@@ -3988,6 +3988,17 @@ test(
 	},
 );
 
+test("inventory", "a picked-up item joins its kind's group", () => {
+	const r = arena("inventory-group");
+	r.p.items = [];
+	const a = r.newItem("h_heal");
+	const b = r.newItem("f_bread");
+	const c = r.newItem("h_heal");
+	for (const it of [a, b, c]) ok(r.addItem(it), "could not add");
+	const order = r.p.items.map((i) => i.uid).join();
+	ok(order === [a, c, b].map((i) => i.uid).join(), `order ${order}`);
+});
+
 test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",

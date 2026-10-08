@@ -712,7 +712,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				const it = r.rng.pick(cands);
 				const bread = m.carry;
 				r.removeItem(it);
-				p.items.push(bread);
+				r.insertItem(bread);
 				m.carry = it;
 				m.swapped = true;
 				m.fleeing = true;

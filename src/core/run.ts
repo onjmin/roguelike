@@ -424,8 +424,19 @@ export class Run {
 			}
 		}
 		if (p.items.length >= INVENTORY_MAX) return false;
-		p.items.push(it);
+		this.insertItem(it);
 		return true;
+	}
+
+	/**
+	 * 持ち物の 並びに 入れる（いっぱいかは 見ない）。同じ 種類が あれば その最後の すぐ うしろ、
+	 * 無ければ 末尾。並びで まとめておくので、片方を 使っても 残りの 位置は 動かない。
+	 */
+	insertItem(it: Item): void {
+		const items = this.p.items;
+		let at = items.length;
+		while (at > 0 && items[at - 1].kind !== it.kind) at--;
+		items.splice(at > 0 ? at : items.length, 0, it);
 	}
 
 	itemAt(x: number, y: number): FloorItem | undefined {
@@ -1646,7 +1657,7 @@ export class Run {
 		const floor = this.f;
 		const it = fi.item;
 		floor.items = floor.items.filter((i) => i !== fi);
-		this.p.items.push(it);
+		this.insertItem(it);
 		if (!this.s.seen.includes(it.uid)) this.s.seen.push(it.uid);
 		const done = act();
 		if (this.p.items.includes(it) && !this.isEquipped(it)) {
