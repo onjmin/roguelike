@@ -64,9 +64,9 @@ import {
 	stampFacilities,
 } from "./facilities";
 import {
+	ASPHALT,
 	BANK,
 	BATH,
-	ASPHALT,
 	BEACH,
 	BOOKS,
 	base,
@@ -524,7 +524,8 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	for (let y = 6; y <= 31; y++) out.push([EAST_X, y, ",".repeat(EAST_W)]);
 	out.push([31, 11, ".".repeat(32)]);
 	for (const y of [19, 25, 30]) out.push([EAST_X, y, ".".repeat(EAST_W)]);
-	for (let y = 11; y <= 31; y++) for (const x of STREET_X) out.push([x, y, "."]);
+	for (let y = 11; y <= 31; y++)
+		for (const x of STREET_X) out.push([x, y, "."]);
 	if (stage < 6) return out;
 	// 中央線（交差点は あけて）と 横断歩道（交差点の となり）
 	for (const y of [11, 19, 25]) {
