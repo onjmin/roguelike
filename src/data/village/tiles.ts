@@ -464,12 +464,12 @@ export const ROADS: Record<string, TileDef> = {
 	れ: floor(C_ASPHALT, road(9)),
 };
 
-// ───────────────── 東の 畑（町の 段で 育つ。data/village/map.ts の farmRows） ─────────────────
+// ───────────────── 東の 畑（町の 段で 育つ。data/village/map.ts の farmRows。段6〜 は 市民農園・公園：data/village/facilities.ts） ─────────────────
 // 畝の 区画は Base.png の 畑（0〜2, 26〜28）の 3×3 を 角・へり・まんなか（G）に 分けて 使う。作物は まんなかの 畝に だけ 植える。
 //   η θ ι  畝の 上（左・まんなか・右）   κ λ  左・右   μ ν ξ  下（左・まんなか・右）
-//   ο  芽   π  若い葉   ρ  キャベツ   σ  トマト   τ  実った 麦（畝の 上）
-//   υ  干し草の 山   φ  麻袋の 山   χ  トマトの かご   ψ  菜っぱの かご   ω  空の かご
-//   Ω  りんごの 木   Ψ  実の なった りんごの 木   Ξ  花の 鉢
+//   ο  芽   π  若い葉   ρ  キャベツ   σ  トマト
+//   υ  干し草の 山   χ  トマトの かご   ψ  菜っぱの かご   ω  空の かご
+//   Ω  りんごの 木   Ξ  花の 鉢
 const SOIL = base(1, 27);
 const onSoil = (img: string): TileDef => solid(C_DIRT, SOIL, img);
 export const FARM: Record<string, TileDef> = {
@@ -485,14 +485,11 @@ export const FARM: Record<string, TileDef> = {
 	π: onSoil(base(6, 28)),
 	ρ: onSoil(base(7, 27)),
 	σ: onSoil(base(7, 28)),
-	τ: onSoil(basePx(80, 438, 16, 16)),
 	υ: big(C_GRASS, TURF, base(0, 126, 2, 3)),
-	φ: big(C_GRASS, TURF, base(2, 126, 2, 3)),
 	χ: solid(C_GRASS, TURF, base(5, 125)),
 	ψ: solid(C_GRASS, TURF, base(6, 125)),
 	ω: solid(C_GRASS, TURF, base(4, 125)),
 	Ω: big(C_GRASS, TURF, base(0, 375, 2, 2)),
-	Ψ: big(C_GRASS, TURF, base(0, 377, 2, 2)),
 	Ξ: solid(C_GRASS, TURF, base(1, 361)),
 };
 

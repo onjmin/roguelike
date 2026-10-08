@@ -149,6 +149,7 @@ import {
 import {
 	doorId,
 	FACILITIES,
+	facilityById,
 	facilityEntry,
 	facilityMats,
 	facilityOutside,
@@ -5499,6 +5500,99 @@ test("施設の 外: doors and outdoor things stand from their stage, Kiriko rea
 					ok(s.talkable(p), `${label(v)}: cannot reach ${outdoorId(f, t)}`);
 			}
 		}
+	}
+});
+
+test("東の 畑の あと: 段ごとに 形が かわり（段6 市民農園・段7 公園）、x=31 の 列と 北の 通りは 歩けて、区画・噴水・ベンチ・砂場・立て札・バス停に 届く", () => {
+	const view = (stage: number): VillageView => ({
+		stage,
+		unlocked: ["shallow"],
+		cleared: [],
+	});
+	// 畑の 区画（地図の x=31〜38, y=12〜18）
+	const farm = (stage: number) =>
+		villageRows(view(stage))
+			.slice(12, 19)
+			.map((r) => [...r].slice(31, 39).join(""))
+			.join("|");
+	for (let stage = 1; stage < TOWN_STAGES; stage++)
+		ok(
+			farm(stage) !== farm(stage - 1),
+			`stage ${stage}: the east farm looks the same as stage ${stage - 1}`,
+		);
+	for (const v of VIEWS) {
+		const s = survey(v);
+		for (let y = 12; y <= 18; y++)
+			ok(
+				s.reachable(31, y),
+				`${label(v)}: (31,${y}) on the farm's west edge cannot be walked`,
+			);
+		if (v.stage >= 4)
+			for (let x = 31; x <= 39; x++)
+				for (const y of [10, 11])
+					ok(
+						s.reachable(x, y),
+						`${label(v)}: the north street lane (${x},${y}) is blocked`,
+					);
+	}
+	const things: [number, string, readonly string[]][] = [
+		[6, "garden", ["sign", "plot", "bucket"]],
+		[7, "park", ["sign", "rules", "fountain", "bench", "sandbox"]],
+	];
+	for (const [stage, id, ids] of things) {
+		const f = facilityById(id);
+		ok(f, `${id}: no facility`);
+		if (!f) continue;
+		const s = survey(view(stage));
+		for (const tid of ids) {
+			const t = f.outdoor?.find((o) => o.id === tid);
+			const p = t && s.places.find((q) => q.id === outdoorId(f, t));
+			ok(
+				p && s.talkable(p, hasBack(s, p)),
+				`stage ${stage}: cannot reach the ${id} ${tid}`,
+			);
+		}
+		// バス停・自販機は 道の 下の 同じ マスの まま
+		for (const [pid, x, y] of [
+			["fthing_bus_stop", 31, 20],
+			["fthing_vend_bus_vend", 32, 20],
+		] as const) {
+			const p = s.places.find((q) => q.id === pid);
+			ok(
+				p && p.x === x && p.y === y && s.talkable(p, hasBack(s, p)),
+				`stage ${stage}: ${pid} moved or cannot be reached`,
+			);
+		}
+	}
+	// 公園の 噴水は 3×3（通れない）。まわりの 道を 一周 できる
+	const s7 = survey(view(7));
+	for (let y = 14; y <= 16; y++)
+		for (let x = 34; x <= 36; x++)
+			ok(
+				!s7.tile(x, y)?.passable,
+				`the fountain cell (${x},${y}) can be walked through`,
+			);
+	for (let i = 0; i <= 4; i++)
+		for (const [x, y] of [
+			[33 + i, 13],
+			[33 + i, 17],
+			[33, 13 + i],
+			[37, 13 + i],
+		])
+			ok(
+				s7.reachable(x, y),
+				`the path around the fountain is cut at (${x},${y})`,
+			);
+	// 施設の 字は ほかの パレットに 上書き されない（字が かぶると 絵が すりかわる）
+	for (let stage = 0; stage < TOWN_STAGES; stage++) {
+		const pal = villagePalette(view(stage));
+		for (const f of FACILITIES)
+			if (f.look.kind === "block")
+				for (const [ch, t] of Object.entries(f.look.tiles))
+					ok(
+						JSON.stringify(pal[ch]) === JSON.stringify(t),
+						`stage ${stage}: "${ch}" of ${f.id} is drawn as another tile`,
+					);
 	}
 });
 

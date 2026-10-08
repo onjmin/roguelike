@@ -14,7 +14,7 @@
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import type { Cell } from "./map";
-import { base, basePx, floor, INDOOR, solid } from "./tiles";
+import { base, basePx, big, floor, INDOOR, solid } from "./tiles";
 
 /** 立つ 所と 向き。 */
 export type FacilitySpot = { x: number; y: number; dir: Dir };
@@ -260,6 +260,11 @@ const vending = (
 		],
 	};
 };
+
+/** 畑の あとの 立て札（市民農園と 公園で 同じ 板）。 */
+const NAME_BOARD: TileDef = solid(C_GRASS, TURF, base(3, 38));
+/** 市民農園の 区画（丸い 土の 畝に 作物）。 */
+const plot = (crop: string): TileDef => solid(C_GRASS, TURF, base(3, 28), crop);
 
 export const FACILITIES: readonly Facility[] = [
 	// ── 釣り場（はじめから。桟橋の 西の 突堤。キリコの 趣味は 釣り：公式の プロフィール）
@@ -1231,6 +1236,59 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
+	// ── 市民農園（住宅街。東の 畑を 小さな 区画に 分けて 住人に 貸す。まんなかに 歩道。都市で 公園に。
+	//    段5 までの 畑は data/village/map.ts の farmRows）
+	{
+		id: "garden",
+		name: "保守村　市民農園",
+		from: 6,
+		until: 7,
+		at: [31, 12],
+		look: {
+			kind: "block",
+			rows: [
+				",Ω,,ゆ,,b",
+				",,,,ゆ,,,",
+				",サスシゆセサス",
+				",,,,ゆ,,,",
+				",シセサゆスシセ",
+				",,,,ゆ,,,",
+				",ψ,ソゆ,タω",
+			],
+			tiles: {
+				// 区画（丸い 畝に 芽・若い葉・キャベツ・トマト）・立て札・水を くんだ バケツ
+				サ: plot(base(6, 26)),
+				シ: plot(base(6, 28)),
+				ス: plot(base(7, 27)),
+				セ: plot(base(7, 28)),
+				ソ: NAME_BOARD,
+				タ: solid(C_GRASS, TURF, base(0, 124)),
+			},
+		},
+		outdoor: [
+			{
+				id: "sign",
+				at: [34, 18],
+				lines: [
+					"立て札「保守村　市民農園」。\n畑を　区画に　分けて、住人に　貸している。",
+					"区画の　番号は　レス番。\n……>>1から　順に　埋まっている。",
+				],
+			},
+			{
+				id: "plot",
+				at: [36, 14],
+				lines: [
+					"区画の　札「>>1」。\n……トマトに　支柱が　立ててある。",
+					"となりの　札は「>>2」。\n……「2げと」の　旗が　立っている。",
+				],
+			},
+			{
+				id: "bucket",
+				at: [37, 18],
+				lines: ["水を　くんだ　バケツ。\n「水やり　当番：今日は　>>3」"],
+			},
+		],
+	},
 	// ── 都市（段7）：交番 → 警察署・診療所 → 総合病院・消防団 → 消防署、家 → 裁判所・映画館・劇場・カジノ
 	{
 		id: "police",
@@ -1796,6 +1854,83 @@ export const FACILITIES: readonly Facility[] = [
 				id: "door",
 				at: [83, 40],
 				lines: ["発電所。\n村の　灯りは　ここから。……保守の　電気。"],
+			},
+		],
+	},
+	// ── 保守中央公園（都市。市民農園の あと。噴水を 道が 一周し、北に ベンチ、西に 砂場、南の 入口に 立て札と きまりの 板）
+	{
+		id: "park",
+		name: "保守中央公園",
+		from: 7,
+		at: [31, 12],
+		look: {
+			kind: "block",
+			rows: [
+				",,テトゆテトb",
+				"ささゆゆゆゆゆニ",
+				"さヒゆツツツゆ,",
+				"ゆゆゆツツツゆノ",
+				",ハゆツチツゆ,",
+				",,ゆゆゆゆゆヌ",
+				",ノナソゆフネ,",
+			],
+			tiles: {
+				ソ: NAME_BOARD,
+				// 噴水（3×3。下の まんなかに 絵、ほかの 8マスは 通れない 草）
+				チ: big(C_GRASS, TURF, base(0, 132, 3, 3)),
+				ツ: solid(C_GRASS, TURF),
+				// ベンチ（左・右）
+				テ: solid(C_GRASS, TURF, base(0, 121)),
+				ト: solid(C_GRASS, TURF, base(2, 121)),
+				// 花壇（黄・桃・白・青）
+				ナ: solid(C_GRASS, TURF, base(2, 362)),
+				ニ: solid(C_GRASS, TURF, base(3, 362)),
+				ヌ: solid(C_GRASS, TURF, base(4, 362)),
+				ネ: solid(C_GRASS, TURF, base(5, 362)),
+				// 白い 花の 木（2マス幅）・草地の 街灯・砂場の バケツ・きまりの 板
+				ノ: big(C_GRASS, TURF, base(4, 375, 2, 2)),
+				ハ: solid(C_GRASS, TURF, `${STREET_IMG}#80,0,16,32`),
+				ヒ: solid("#ecd9a0", base(4, 4), base(1, 124)),
+				フ: solid(C_GRASS, TURF, base(4, 38)),
+			},
+		},
+		outdoor: [
+			{
+				id: "sign",
+				at: [34, 18],
+				lines: ["立て札「保守中央公園」。\n畑の　あとに　できた　公園。"],
+			},
+			{
+				id: "rules",
+				at: [36, 18],
+				lines: [
+					"公園の　きまり。\n「ボール遊び　禁止。スレ立て　禁止」",
+					"……下に　小さく「ROMるのは　可」。",
+				],
+			},
+			{
+				id: "fountain",
+				at: [35, 16],
+				lines: [
+					"噴水。\n底に　小銭が　たくさん　沈んでいる。",
+					"……10円玉に、油性ペンで「age」。",
+				],
+			},
+			{
+				id: "bench",
+				at: [33, 12],
+				lines: [
+					"ベンチ。\n座ると、噴水の　しぶきが　すこし　かかる。",
+					"背もたれに「>>1乙」と　彫ってある。",
+				],
+			},
+			{
+				id: "sandbox",
+				at: [32, 14],
+				lines: [
+					"砂場。\nだれかの　作りかけの　お城が　ある。",
+					"てっぺんに　つまようじの　旗。\n「完成まで　保守　よろ」",
+				],
 			},
 		],
 	},
