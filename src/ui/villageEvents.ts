@@ -6,7 +6,7 @@
 //   イベントも。data/objectives.ts）は 行き先を 選ぶ 前に 1回だけ 決めて、地図と 冒険に 同じ 値を 渡す。
 // - 立て札：ダンジョンの 名前・階の数・持ち帰ったら ★・説明（開いていなければ 開き方）。口でも 同じ 札を 読む。
 // - 仲間：1回の 帰りに 1人 1つ、前の冒険への 新しい ひとこと。聞いたら 町の様子の
-//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（ゼロ＝冒険の記録と 売り上げの 帳簿、
+//   決まった ひとこと（ui/villageTalk.ts）。そのあと 役目（ゼロ＝売り上げの 帳簿、
 //   フェリス＝図鑑・あそびかた、シヨ＝倉庫、やきう＝本編が 開くまで 口の 見張り、ロゼ＝屋台・店）。
 //   役目は 本館や 建物の 中の 物からも 開ける（人を さがさなくても 使える）。B／☰ の メニューは 持ち物・あらすじ・せってい だけ。
 // - 板で ふさいだ口・掲示板・蓄音機は 調べると 地の文。段7 は 野次馬も 話す。
@@ -538,18 +538,14 @@ const speak = async (
 const friendScript = (ctx: Ctx, who: Speaker): Script => {
 	switch (who) {
 		case "zero":
-			// 帳簿の係：冒険の記録と 売り上げ
+			// 帳簿の係：売り上げ（冒険の記録は 掲示板・本館の 壁の スレ）
 			return async (s) => {
 				await speak(s, who);
-				const n = await s.choose(["冒険の記録", "売り上げ", "やめる"], {
-					cancel: 2,
-				});
-				if (n === 0) await records(ctx, s);
-				else if (n === 1) {
-					await s.say(who, ledgerLine());
-					await hideMsg(s);
-					await openSales(ctx);
-				}
+				if ((await s.choose(["売り上げ", "やめる"], { cancel: 1 })) !== 0)
+					return;
+				await s.say(who, ledgerLine());
+				await hideMsg(s);
+				await openSales(ctx);
 			};
 		case "feris":
 			// 看板の係：図鑑（目が いいから）・あそびかた
