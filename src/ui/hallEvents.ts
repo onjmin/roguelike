@@ -3,6 +3,7 @@
 // 中の 物は どれも 村の ほかの 入口（掲示板・仲間・B／☰ の メニュー）と 同じ 窓を 開く もう 1つの 入口：
 //   壁の スレ＝冒険の記録（リプレイを 選んだら 村から 出る）・>>1 テンプレ＝あそびかた・本棚＝図鑑・
 //   帳簿の 貼り紙＝ゼロの 売り上げ・実況モニター＝リプレイ 上映・殿堂の 壁＝総選挙の はり紙。
+//   映写機＝これまでの あらすじ（ダンジョンの メニューと 同じ 文。村では ここだけで 見る）。
 // 本館 だけの もの：
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
@@ -38,6 +39,7 @@ import {
 } from "../data/objectives";
 import { BOOKS_KEEPER_LINES } from "../data/rooms";
 import { awayFriends, DUNGEON_NAMES, FRIEND_FROM } from "../data/story";
+import { synopsisNow } from "../data/synopsis";
 import { VILLAGE_MSG } from "../data/town";
 import {
 	HALL_NAMES,
@@ -78,7 +80,7 @@ import { el } from "./dom";
 import { openGlossary } from "./glossary";
 import { openHowto } from "./howto";
 import { itemIcon } from "./icons";
-import { type ListItem, listWindow } from "./list";
+import { infoWindow, type ListItem, listWindow } from "./list";
 import { playBatting } from "./minigames";
 import { openRecords } from "./records";
 // 村の 口と 同じ 出かた（降りる 前の 確認・持ちこみ・語り）。ui/villageEvents.ts とは 互いに 読みあうが、
@@ -336,6 +338,20 @@ const monitorScript =
 		if (n === 0) await records(ctx, s);
 	};
 
+/** 映写機：これまでの あらすじを 上映する（data/synopsis.ts。暗い 幕に 映す）。 */
+const projectorScript =
+	(ctx: Ctx): Script =>
+	async (s) => {
+		const syn = synopsisNow();
+		if (!syn) {
+			await s.narrate(HALL_MSG.projectorEmpty);
+			return;
+		}
+		await s.narrate(HALL_MSG.projector);
+		await hideMsg(s);
+		await infoWindow(ctx, "これまでの　あらすじ", syn, { cls: "film" });
+	};
+
 /**
  * いちばん 古い スレの 札（裏シナリオ。STORY.md §5.98）：原住民 20人の スレ。跡地が 開く（灯台を 持ち帰り、ROM専の 声を
  * 持ち帰った）と 床下へ 降りられる。はじめの 1回は 原住民の 1打席（別ゲー）に 勝ってから。2回目からは 打たなくても よい。
@@ -516,6 +532,8 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 			return sign(p.id, p.x, p.y, HALL_MSG.chair);
 		case "oldest":
 			return sign(p.id, p.x, p.y, oldestScript(ctx));
+		case "projector":
+			return sign(p.id, p.x, p.y, projectorScript(ctx));
 		default:
 			return { ...at, trigger: p.trigger };
 	}

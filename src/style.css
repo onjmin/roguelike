@@ -1116,6 +1116,36 @@ body.jolt #app {
 	font-size: 12px;
 }
 
+/* 本館の 映写機で 上映する あらすじ（ui/hallEvents.ts）。暗い 幕と、上下に フィルムの 穴 */
+.window.film {
+	--film-holes: repeating-linear-gradient(
+		90deg,
+		transparent 0 5px,
+		#cfc6ae 5px 11px,
+		transparent 11px 16px
+	);
+	background:
+		var(--film-holes) left 0 top 4px / 100% 6px no-repeat,
+		var(--film-holes) left 0 bottom 4px / 100% 6px no-repeat,
+		#0c0a08;
+	border-color: #2a2420;
+	padding: 14px 0;
+}
+
+.window.film .menu-title {
+	color: #f0e2b0;
+	text-align: center;
+}
+
+.window.film .info-body {
+	color: #e6dcc2;
+	text-shadow: 0 0 6px rgba(250, 232, 150, 0.25);
+}
+
+.window.film .info-body b {
+	color: #fae896;
+}
+
 /* ───────── HUD ───────── */
 
 .hud {
