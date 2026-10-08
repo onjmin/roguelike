@@ -72,6 +72,7 @@ import {
 	WAKE_PAGES,
 } from "../data/town";
 import {
+	asideSpot,
 	exitAt,
 	exitFor,
 	lineupSpots,
@@ -253,21 +254,25 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 };
 
 /**
- * 語りの 中で 越してくる 住人（after の 板を はじめて 持ち帰った とき）：その 板の 方角の 村の 口から 歩いてきて、
- * キリコの そばに 立つ。旗 NEWCOMER の 人を 動かす（絵は その子の 歩行グラ）。語りの あとの 建て直しで 本人に かわる。
- */
-/**
  * キリコが 口の 前（出てきた マス）に 立っていると、口から 入る 道を ふさいでしまう（goto は キリコの マスを よける）。
- * 口から 歩いてくる 人の 前に、キリコを となりの 空いた マスへ 1歩 どかす。
+ * 口から 歩いてくる 人の 前に、キリコを となりの 空いた マスへ 1歩 どかす（口から 広場への 道を ふさがない
+ * マス。細道なら 横の 行き止まりへ。data/village/map.ts の asideSpot）。
  */
-const stepAside = async (s: Story): Promise<void> => {
-	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
+const stepAside = async (
+	s: Story,
+	gate: readonly [number, number],
+): Promise<void> => {
+	const to = asideSpot(villageView(), [s.state.x, s.state.y], gate);
 	if (to) await s.goto("player", to[0], to[1], { speed: 1.2 });
 };
 
+/**
+ * 語りの 中で 越してくる 住人（after の 板を はじめて 持ち帰った とき）：その 板の 方角の 村の 口から 歩いてきて、
+ * キリコの そばに 立つ。旗 NEWCOMER の 人を 動かす（絵は その子の 歩行グラ）。語りの あとの 建て直しで 本人に かわる。
+ */
 const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
-	await stepAside(s);
+	await stepAside(s, gate);
 	const [to] = spotsAround(villageView(), 1, [s.state.x, s.state.y]);
 	// 旗を 立てただけでは 人は 生まれない（when は 見なおされない）。show で 生まれさせてから 置く
 	s.set(NEWCOMER);
@@ -288,7 +293,7 @@ const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
  */
 const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
 	const gate = exitFor(d).cell;
-	await stepAside(s);
+	await stepAside(s, gate);
 	const spots = spotsAround(villageView(), ROM_COUNT, [s.state.x, s.state.y]);
 	s.set(ROMS);
 	for (let i = 0; i < ROM_COUNT; i++) {

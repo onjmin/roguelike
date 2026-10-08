@@ -17,6 +17,8 @@
 //   地図が 87×52 に 広がって、遠くの 人が 来るまで 長く 待った）。映らない マスへ 置きなおして 画面の はしの
 //   すぐ 外から 歩いて 入る・画面の 外へ 出ていったら 行き先へ。カメラが ついていく 人は 短い 暗転で 道の 先へ。
 //   noWarp なら ぜんぶ 歩く（ROM専の 行列）。
+//   道が なければ（台の うしろの ロゼ・シヨ、キリコが ふさぐ 細道の 先）、キリコ 以外は いちばん せまい すきまを
+//   とびこえる（近ければ 弧を えがいて とぶ。遠ければ 映らない うちに 置きなおす。engine/longWalk.ts の hopRoute）。
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
@@ -43,7 +45,15 @@ import type {
 } from "../engine/defs";
 import { Actor, Field } from "../engine/field";
 import { dir4Candidates } from "../engine/input";
-import { mayWarp, type Seen, walkRoute } from "../engine/longWalk";
+import {
+	findRoute,
+	hopRoute,
+	mayWarp,
+	type Open,
+	type Seen,
+	type WalkStep,
+	walkRoute,
+} from "../engine/longWalk";
 import { loadProgress } from "../engine/save";
 import type { Screen } from "../engine/screen";
 import { settings } from "../engine/settings";
@@ -77,6 +87,10 @@ const TEXT_MS = 28;
 const SEEN_MARGIN = 2;
 /** カメラが ついていく 人を 道の 先へ とばす 暗転の ms（片道）。 */
 const CUT_FADE_MS = 200;
+/** 道の ない すきまを 弧を えがいて とびこえるのは これだけ（マス）まで（台・キリコの 1マス ごし）。 */
+const HOP_JUMP = 2;
+/** とびこえる のに かける ms（これより 短くは しない。歩く 速さで 1マス ぶんずつ）。 */
+const JUMP_MS = 320;
 
 /** 出口への 道を 何歩 先まで たどって 矢印の 向きに するか（曲がり角の 手前で 斜めに なる）。 */
 const GUIDE_AHEAD = 5;
@@ -614,9 +628,20 @@ export class Village {
 	}
 
 	/**
-	 * 場面で 人を 歩かせる 道（幅優先）。地形だけを 見て、ほかの人は すりぬける（場面の 人どうしが
+	 * 場面で 人が 道に して よい マス。地形だけを 見て、ほかの人は すりぬける（場面の 人どうしが
 	 * ふさぎあわないように）。avoid なら ほかの人・置物も よける。キリコの マスは よける。
 	 */
+	private openFor(a: Actor, avoid: boolean): Open {
+		const field = this.field;
+		const me = this.player;
+		return (x, y) =>
+			!!field &&
+			field.tileAt(x, y).passable &&
+			(!avoid || field.canEnter(x, y, a)) &&
+			(a === me || x !== me.x || y !== me.y);
+	}
+
+	/** 場面で 人を 歩かせる 道（幅優先。openFor の マスだけ。engine/longWalk.ts の findRoute）。 */
 	private routeTo(
 		a: Actor,
 		tx: number,
@@ -625,34 +650,55 @@ export class Village {
 	): Dir[] | null {
 		const field = this.field;
 		if (!field?.inBounds(tx, ty)) return null;
-		const me = this.player;
-		const key = (x: number, y: number) => y * field.w + x;
-		const prev = new Map<number, { k: number; d: Dir } | null>();
-		prev.set(key(a.x, a.y), null);
-		const queue: [number, number][] = [[a.x, a.y]];
-		for (let head = 0; head < queue.length; head++) {
-			const [x, y] = queue[head];
-			if (x === tx && y === ty) {
-				const route: Dir[] = [];
-				let cur = prev.get(key(x, y));
-				while (cur) {
-					route.push(cur.d);
-					cur = prev.get(cur.k) ?? null;
-				}
-				return route.reverse();
-			}
-			for (const d of ["up", "right", "down", "left"] as Dir[]) {
-				const nx = x + DIR_VEC[d].dx;
-				const ny = y + DIR_VEC[d].dy;
-				const k = key(nx, ny);
-				if (prev.has(k) || !field.tileAt(nx, ny).passable) continue;
-				if (avoid && !field.canEnter(nx, ny, a)) continue;
-				if (a !== me && nx === me.x && ny === me.y) continue;
-				prev.set(k, { k: key(x, y), d });
-				queue.push([nx, ny]);
-			}
-		}
-		return null;
+		return findRoute(
+			field.w,
+			field.h,
+			this.openFor(a, avoid),
+			[a.x, a.y],
+			[tx, ty],
+		);
+	}
+
+	/**
+	 * 場面（Story.goto）で 歩かせる 道。道が なければ（台の うしろ・キリコが ふさぐ 細道の 先）、キリコ 以外は
+	 * いちばん せまい すきまを とびこえる 道に する（engine/longWalk.ts の hopRoute。前は 動かず 遠くから 話した）。
+	 * キリコ と avoid（村の 子の 小さな しぐさ）は 歩ける 道だけ。
+	 */
+	private sceneRoute(
+		a: Actor,
+		tx: number,
+		ty: number,
+		avoid = false,
+	): WalkStep[] | null {
+		const route = this.routeTo(a, tx, ty, avoid);
+		const field = this.field;
+		if (route || avoid || a === this.player || !field) return route;
+		return hopRoute(
+			field.w,
+			field.h,
+			this.openFor(a, false),
+			[a.x, a.y],
+			[tx, ty],
+		);
+	}
+
+	/**
+	 * 道の ない すきまを こえて (x, y) へ（hopRoute の とびこえる マス）。映らなければ その場で 置きなおす。
+	 * 映っていて 近ければ 弧を えがいて とぶ（台を とびこえる）。遠ければ 短い 暗転で（窓が キー待ちなら そのまま）。
+	 */
+	private async hopOver(
+		a: Actor,
+		x: number,
+		y: number,
+		ms: number,
+	): Promise<void> {
+		const gap = Math.abs(x - a.x) + Math.abs(y - a.y);
+		const seen = this.seenCells();
+		const shown = !!seen && (seen(a.x, a.y) || seen(x, y));
+		if (shown && gap <= HOP_JUMP)
+			await a.jump(x, y, Math.max(JUMP_MS, ms * gap));
+		else if (shown && !this.ctx.input.busy) await this.cutWalk(a, x, y);
+		else a.setPos(x, y);
 	}
 
 	/**
@@ -1356,7 +1402,8 @@ export class Village {
 			},
 			goto: async (target, x, y, opt) => {
 				const a = this.actorFor(target);
-				const route = a ? this.routeTo(a, x, y, opt?.avoid) : null;
+				// 道が なければ すきまを とびこえる 道（キリコ・avoid は 歩ける 道だけ。sceneRoute）
+				const route = a ? this.sceneRoute(a, x, y, opt?.avoid) : null;
 				if (!a || !route) {
 					console.warn(`[goto] ${target} は (${x},${y}) へ 行けません`);
 					return;
@@ -1373,6 +1420,7 @@ export class Village {
 					place: ([cx, cy]) => a.setPos(cx, cy),
 					cut: ([cx, cy]) => this.cutWalk(a, cx, cy),
 					step: (d) => a.walk(d, ms),
+					hop: ([cx, cy]) => this.hopOver(a, cx, cy, ms),
 				});
 				if (a === this.player) this.syncState();
 			},

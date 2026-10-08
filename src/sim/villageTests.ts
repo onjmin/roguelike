@@ -172,9 +172,11 @@ import {
 	shelfSlots,
 } from "../data/village/hall";
 import {
+	asideSpot,
 	CAFE_FROM,
 	exitFor,
 	lineupSpots,
+	spotsAround,
 	VILLAGE_EXITS,
 	VILLAGE_H,
 	VILLAGE_SPOTS,
@@ -212,11 +214,15 @@ import { type Actor, Field } from "../engine/field";
 import {
 	type Cell,
 	FOLLOW_CUT,
+	findRoute,
+	hopRoute,
 	LONG_WALK,
 	mayWarp,
+	type Open,
 	routeCells,
 	type Seen,
 	WALK_TAIL,
+	type WalkStep,
 	walkRoute,
 } from "../engine/longWalk";
 import {
@@ -752,10 +758,10 @@ const phoneView = ([cx, cy]: Cell): NonNullable<Seen> => {
 /** 右へ n 歩の 道。 */
 const straight = (n: number): Dir[] => Array.from({ length: n }, () => "right");
 
-/** walkRoute を 記録だけで 走らせる（place・cut・step を 1行ずつ。いる マスも 追う）。 */
+/** walkRoute を 記録だけで 走らせる（place・cut・step・hop を 1行ずつ。いる マスも 追う）。 */
 const recordWalk = async (
 	from: Cell,
-	route: readonly Dir[],
+	route: readonly WalkStep[],
 	o: {
 		warp: boolean;
 		seen: Seen;
@@ -783,6 +789,10 @@ const recordWalk = async (
 		step: async (d) => {
 			log.push(`step ${d}`);
 			at = [at[0] + DIR_VEC[d].dx, at[1] + DIR_VEC[d].dy];
+		},
+		hop: async (c) => {
+			log.push(`hop ${c.join(",")}`);
+			at = c;
 		},
 	});
 	return { log, at };
@@ -958,6 +968,215 @@ test("場面の 歩きを とばさない とき：近い 道・キリコ・noWa
 		mayCut: false,
 	});
 	ok(onlySteps(waiting.log, 40), `cut over a waiting window:\n${waiting.log}`);
+});
+
+/** 開き方 ごとの 村の 通れる マス（villageRows は 重いので 1度だけ 引く）。 */
+const passMemo = new Map<VillageView, (x: number, y: number) => boolean>();
+
+/** 場面の 人が 道に して よい マス（ui/village.ts の openFor と 同じ：地形だけ。キリコの マスは よける）。 */
+const sceneOpen = (v: VillageView, kiriko: Cell): Open => {
+	let pass = passMemo.get(v);
+	if (!pass) {
+		const rows = villageRows(v).map((r) => [...r]);
+		const tiles = villagePalette(v);
+		pass = (x, y) => !!tiles[rows[y]?.[x] ?? ""]?.passable;
+		passMemo.set(v, pass);
+	}
+	const p = pass;
+	return (x, y) => !(x === kiriko[0] && y === kiriko[1]) && p(x, y);
+};
+
+/** 道を たどる（着く マス・とびこえた すきまの 歩数・open で ない マスを 踏んだか）。 */
+const traceRoute = (from: Cell, route: readonly WalkStep[], open: Open) => {
+	let at: Cell = from;
+	const gaps: number[] = [];
+	let stray = false;
+	for (const st of route) {
+		const to: Cell =
+			typeof st === "string"
+				? [at[0] + DIR_VEC[st].dx, at[1] + DIR_VEC[st].dy]
+				: st;
+		if (typeof st !== "string")
+			gaps.push(Math.abs(to[0] - at[0]) + Math.abs(to[1] - at[1]));
+		if (!open(to[0], to[1])) stray = true;
+		at = to;
+	}
+	return { at, gaps, stray };
+};
+
+/** 口から 1歩 村へ 入った マス（その 口から 帰った キリコが 立つ）。 */
+const inwardOf = (e: (typeof VILLAGE_EXITS)[number]): Cell => [
+	e.cell[0] + DIR_VEC[e.inward].dx,
+	e.cell[1] + DIR_VEC[e.inward].dy,
+];
+
+/** 段 ごとに 開き方 1つ（場面の 道を 総当たりで 引く 試験は 重いので）。 */
+const STAGE_VIEWS = VIEWS.filter((v) => v.unlocked.length === 2);
+
+test("場面の 道が ない とき：歩ける ところまで 歩いて、いちばん せまい すきまを とびこえる（engine/longWalk.ts の hopRoute）", async () => {
+	// 壁の 列で 分かれた 5×3：壁の 手前まで 歩き、壁を とびこえて、残りを 歩く
+	const wall: Open = (x) => x !== 2;
+	ok(!findRoute(5, 3, wall, [0, 1], [4, 1]), "a route through the wall");
+	const hop = hopRoute(5, 3, wall, [0, 1], [4, 1]);
+	ok(
+		JSON.stringify(hop) === JSON.stringify(["right", [3, 1], "right"]),
+		`hop over the wall: ${JSON.stringify(hop)}`,
+	);
+	// 行き先に 入れなければ（壁・地図の 外）何もしない。歩いて 行ければ とびこえない
+	ok(
+		!hopRoute(5, 3, wall, [0, 1], [2, 1]) &&
+			!hopRoute(5, 3, wall, [0, 1], [5, 1]),
+		"a hop onto the wall or off the map",
+	);
+	ok(
+		JSON.stringify(hopRoute(5, 3, () => true, [0, 1], [2, 1])) ===
+			JSON.stringify(["right", "right"]),
+		"a hop where it can walk",
+	);
+	// 歩く 人は とびこえる ところも 1つの 歩みとして たどる
+	const walk = await recordWalk([0, 1], hop ?? [], { warp: false, seen: null });
+	ok(
+		walk.log.join(" / ") === "step right / hop 3,1 / step right" &&
+			walk.at.join(",") === "4,1",
+		`walk with a hop:\n${walk.log.join("\n")}`,
+	);
+	// 長い 道で 映っていなければ、とびこえる ところも 置きなおしで とばす
+	const unseen = await recordWalk(
+		[0, 1],
+		[...straight(LONG_WALK), [LONG_WALK + 2, 1], ...straight(4)],
+		{ warp: true, seen: () => false },
+	);
+	ok(
+		unseen.log.join(" / ") === `place ${LONG_WALK + 6},1`,
+		`an unseen hop:\n${unseen.log.join("\n")}`,
+	);
+	// 村の 道は 前の routeTo と 同じ 幅優先（東の 口の キリコへ ぷゆゆ）
+	const v = STAGE_VIEWS[1];
+	const east = VILLAGE_EXITS.find((e) => e.side === "e");
+	if (east) {
+		const ki = inwardOf(east);
+		const [to] = spotsAround(v, 1, ki);
+		ok(
+			!!to &&
+				JSON.stringify(
+					findRoute(VILLAGE_W, VILLAGE_H, sceneOpen(v, ki), MOBS.puyu.spot, to),
+				) === JSON.stringify(sceneRoute(v, MOBS.puyu.spot, to, ki)),
+			"findRoute walks another way than the scene route",
+		);
+	}
+});
+
+test("台の うしろの ロゼ・シヨは 台を とびこえて 出てきて、蓄音機の 前の キリコの となりまで 歩く（たおれて もどったとき）", () => {
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	const to: Cell = [bx + 1, by];
+	let hopped = 0;
+	for (const v of STAGE_VIEWS)
+		for (const [who, from] of [
+			["ロゼ", VILLAGE_SPOTS.roze(v.stage)],
+			["シヨ", VILLAGE_SPOTS.shiyo(v.stage)],
+		] as const) {
+			const open = sceneOpen(v, [bx, by]);
+			if (findRoute(VILLAGE_W, VILLAGE_H, open, from, to)) continue;
+			const route = hopRoute(VILLAGE_W, VILLAGE_H, open, from, to);
+			const t = route && traceRoute(from, route, open);
+			ok(
+				!!route &&
+					!!t &&
+					typeof route[0] !== "string" &&
+					t.gaps.length === 1 &&
+					t.gaps[0] <= 2 &&
+					!t.stray &&
+					t.at[0] === to[0] &&
+					t.at[1] === to[1],
+				`${label(v)} ${who}: ${JSON.stringify(route)}`,
+			);
+			hopped++;
+		}
+	// 屋台が 出てからは ロゼは 台の うしろ（段2〜）
+	ok(
+		hopped >= STAGE_VIEWS.filter((v) => v.stage >= 2).length,
+		`only ${hopped} counter hops`,
+	);
+});
+
+test("場面で 人を 呼ぶ：だれが どこから 来ても、キリコの となりの 通れる マスへ 着く（道が なければ すきまを 1つ とびこえる）", () => {
+	for (const v of STAGE_VIEWS) {
+		const people = villagePlaces(v)
+			.filter((p) => p.sprite && isWalkRef(p.sprite))
+			.map((p): Cell => [p.x, p.y]);
+		const froms: Cell[] = [...people, ...VILLAGE_EXITS.map((e) => e.cell)];
+		for (const ki of [VILLAGE_SPOTS.boot, ...VILLAGE_EXITS.map(inwardOf)]) {
+			const open = sceneOpen(v, ki);
+			for (const d of ["up", "right", "down", "left"] as const) {
+				const to: Cell = [ki[0] + DIR_VEC[d].dx, ki[1] + DIR_VEC[d].dy];
+				if (!open(to[0], to[1])) continue;
+				for (const from of froms) {
+					const route =
+						findRoute(VILLAGE_W, VILLAGE_H, open, from, to) ??
+						hopRoute(VILLAGE_W, VILLAGE_H, open, from, to);
+					const t = route && traceRoute(from, route, open);
+					ok(
+						!!t &&
+							t.at[0] === to[0] &&
+							t.at[1] === to[1] &&
+							!t.stray &&
+							t.gaps.length <= 1,
+						`${label(v)}: from ${from} to ${to} beside Kiriko at ${ki}: ${JSON.stringify(route)}`,
+					);
+				}
+			}
+		}
+	}
+});
+
+test("村の 場面で 人を 呼ぶ マスは 広場から 歩いて 来られる（店の 台の うしろ・キリコの 先の 行き止まりには 呼ばない）", () => {
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	for (const v of STAGE_VIEWS) {
+		const [gx, gy] = VILLAGE_SPOTS.growth(v.stage);
+		const [hx, hy] = VILLAGE_SPOTS.hallDoors[0];
+		const centers: Cell[] = [
+			VILLAGE_SPOTS.boot,
+			...VILLAGE_EXITS.map(inwardOf),
+			[Math.round(gx), Math.round(gy)],
+			[hx, hy + 1],
+		];
+		for (const c of centers) {
+			const open = sceneOpen(v, c);
+			const hub: Cell = c[0] === bx && c[1] === by ? [bx + 1, by] : [bx, by];
+			const spots = spotsAround(v, 8, c);
+			ok(spots.length, `${label(v)}: no spot around ${c}`);
+			for (const s of spots)
+				ok(
+					!!findRoute(VILLAGE_W, VILLAGE_H, open, hub, s),
+					`${label(v)}: around ${c} the spot ${s} cannot be walked to`,
+				);
+		}
+	}
+});
+
+test("口から 人が 歩いてくる 前に キリコが どく マス：口からの 道を ふさがず、来る 人は とびこえずに キリコの となりまで 歩く", () => {
+	for (const v of STAGE_VIEWS)
+		for (const e of VILLAGE_EXITS) {
+			const ki = inwardOf(e);
+			const aside = asideSpot(v, ki, e.cell);
+			ok(
+				!!aside,
+				`${label(v)}: Kiriko cannot step aside at the ${e.side} exit`,
+			);
+			if (!aside) continue;
+			// キリコが 歩いて どける（キリコは ほかの人を すりぬけない が、口の 前には だれも いない）
+			ok(
+				Math.max(Math.abs(aside[0] - ki[0]), Math.abs(aside[1] - ki[1])) <= 1 &&
+					!!findRoute(VILLAGE_W, VILLAGE_H, sceneOpen(v, [-1, -1]), ki, aside),
+				`${label(v)}: ${e.side} exit, Kiriko steps from ${ki} to ${aside}`,
+			);
+			const [to] = spotsAround(v, 1, aside);
+			ok(
+				!!to &&
+					!!findRoute(VILLAGE_W, VILLAGE_H, sceneOpen(v, aside), e.cell, to),
+				`${label(v)}: ${e.side} exit, the newcomer cannot walk from the gate to ${to} beside Kiriko at ${aside}`,
+			);
+		}
 });
 
 test("寄り道の 板が 開く：その 板の 名無しが 口から 来て キリコの となりで 話し、口へ 帰る。そのあと「もぐれるように　なった」", async () => {

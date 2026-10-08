@@ -1066,41 +1066,109 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	return out;
 };
 
+/** 村の 場面で 人を 呼ぶ・どかす マスを 引く 道具（spotsAround・asideSpot）。 */
+const spotTools = (v: VillageView) => {
+	const rows = villageRows(v).map((r) => [...r]);
+	const tiles = villagePalette(v);
+	const places = villagePlaces(v);
+	const pass = (x: number, y: number): boolean =>
+		!!tiles[rows[y]?.[x] ?? ""]?.passable;
+	/** 人や 看板の いない、踏んでも 動かない 通れる マス。 */
+	const vacant = ([x, y]: Cell): boolean =>
+		pass(x, y) &&
+		!places.some(
+			(p) => p.x === x && p.y === y && (p.sprite || p.trigger === "touch"),
+		) &&
+		!exitAt(x, y);
+	/** start から block を 通らずに 歩いて 行ける マス（y * VILLAGE_W + x。場面の 人は ほかの人を すりぬけるので 地形だけ）。 */
+	const reach = (start: Cell, block?: Cell): Set<number> => {
+		const seen = new Set([start[1] * VILLAGE_W + start[0]]);
+		const queue: Cell[] = [start];
+		for (let head = 0; head < queue.length; head++) {
+			const [x, y] = queue[head];
+			for (const [nx, ny] of [
+				[x, y - 1],
+				[x + 1, y],
+				[x, y + 1],
+				[x - 1, y],
+			] as const) {
+				const k = ny * VILLAGE_W + nx;
+				if (nx < 0 || ny < 0 || nx >= VILLAGE_W || ny >= VILLAGE_H) continue;
+				if (seen.has(k) || !pass(nx, ny)) continue;
+				if (block && nx === block[0] && ny === block[1]) continue;
+				seen.add(k);
+				queue.push([nx, ny]);
+			}
+		}
+		return seen;
+	};
+	/** 広場（蓄音機の 前。そこに 立つ 人が いれば となり）。 */
+	const hub = ([x, y]: Cell): Cell => {
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		return x === bx && y === by ? [bx + 1, by] : [bx, by];
+	};
+	/** (px, py) の まわりの マス（1〜4 マス。近い 順）。 */
+	const ring = ([px, py]: Cell): Cell[] => {
+		const out: Cell[] = [];
+		for (let r = 1; r <= 4; r++)
+			for (let dy = -r; dy <= r; dy++)
+				for (let dx = -r; dx <= r; dx++)
+					if (Math.max(Math.abs(dx), Math.abs(dy)) === r)
+						out.push([px + dx, py + dy]);
+		return out;
+	};
+	return { vacant, reach, hub, ring };
+};
+
+/** マスの 番号（spotTools の reach の 中に あるか 見る）。 */
+const cellKey = ([x, y]: Cell): number => y * VILLAGE_W + x;
+
+/**
+ * (x, y) の まわりの 空いた マス（近い 順に n こ）。村の 場面で 話す 仲間を キリコの そばに 呼ぶ ときに 使う
+ * （ui/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
+ * 広場（蓄音機の 前）から (x, y) を 通らずに 歩いて 来られる マスだけ（店の 台の うしろ・キリコが 立つと
+ * ふさがる 細道の 先には 呼ばない。前は そこへ 呼ばれた 人が 歩いて 来られず、遠くから 話していた）。
+ */
+export const spotsAround = (
+	v: VillageView,
+	n: number,
+	at: readonly [number, number],
+): Cell[] => {
+	const t = spotTools(v);
+	const open = t.reach(t.hub(at), at);
+	return t
+		.ring(at)
+		.filter((c) => t.vacant(c) && open.has(cellKey(c)))
+		.slice(0, n);
+};
+
+/**
+ * 口の 前に 立つ キリコが どく マス（となりから 近い 順の 空いた マス。ui/villageReturn.ts の stepAside）。
+ * そこに 立っても 口から 広場まで 歩いて 行ける マスだけ（口から 歩いてくる 人の 道を ふさがない。
+ * 細道なら 横の 行き止まりへ よける）。なければ undefined。
+ */
+export const asideSpot = (
+	v: VillageView,
+	at: Cell,
+	gate: Cell,
+): Cell | undefined => {
+	const t = spotTools(v);
+	const mine = t.reach(at);
+	return t
+		.ring(at)
+		.find(
+			(c) =>
+				t.vacant(c) &&
+				mine.has(cellKey(c)) &&
+				t.reach(gate, c).has(cellKey(t.hub(c))),
+		);
+};
+
 /**
  * 帰ってきたとき 口の前に 仲間が 並んで 待つ マス（n 人ぶん）。
  * 出口の 1つ下（キリコが 出てくる マス）の 左右に 近い順で、崖の下の道に 並ぶ（たりなければ その下の段）。
  * 通れない マス・人や 置物の いる マス・踏むと もぐる 口は とばす。
  */
-/**
- * (x, y) の まわりの 空いた マス（近い 順に n こ）。村の 場面で 話す 仲間を キリコの そばに 呼ぶ ときに 使う
- * （ui/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
- */
-export const spotsAround = (
-	v: VillageView,
-	n: number,
-	[px, py]: readonly [number, number],
-): Cell[] => {
-	const rows = villageRows(v).map((r) => [...r]);
-	const tiles = villagePalette(v);
-	const places = villagePlaces(v);
-	const free = (x: number, y: number): boolean =>
-		!(x === px && y === py) &&
-		!!tiles[rows[y]?.[x] ?? ""]?.passable &&
-		!places.some(
-			(p) => p.x === x && p.y === y && (p.sprite || p.trigger === "touch"),
-		) &&
-		!exitAt(x, y);
-	const out: Cell[] = [];
-	for (let r = 1; r <= 4 && out.length < n; r++)
-		for (let dy = -r; dy <= r; dy++)
-			for (let dx = -r; dx <= r; dx++) {
-				if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
-				if (out.length < n && free(px + dx, py + dy))
-					out.push([px + dx, py + dy]);
-			}
-	return out;
-};
-
 export const lineupSpots = (
 	v: VillageView,
 	n: number,

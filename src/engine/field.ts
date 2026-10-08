@@ -19,6 +19,8 @@ const HIDDEN_RATIO = 0.9;
 /** 隠れぐあいを測る画用紙（マスの左右1マス・上2マスまで入る）。 */
 const PROBE_W = 3 * TILE;
 const PROBE_H = 3 * TILE;
+/** 場面で 台などを とびこえる ときの 弧の 高さ（px。Actor.jump）。 */
+const JUMP_LIFT = TILE / 2;
 
 export class Actor {
 	id: string;
@@ -41,7 +43,11 @@ export class Actor {
 		t: number;
 		dur: number;
 		resolve: () => void;
+		/** とぶ 弧の 高さ（px。歩くなら 0）。 */
+		lift: number;
 	} | null = null;
+	/** いま 浮いている 高さ（px。jump の あいだだけ）。 */
+	private lift = 0;
 	wanderWait = 1000 + Math.random() * 2000;
 
 	constructor(
@@ -77,9 +83,40 @@ export class Actor {
 				t: 0,
 				dur: msPerTile,
 				resolve,
+				lift: 0,
 			};
 			this.x += v.dx;
 			this.y += v.dy;
+		});
+	}
+
+	/**
+	 * (x, y) へ 弧を えがいて とぶ（場面で 台などを とびこえる。engine/longWalk.ts の hopRoute。通行判定は 呼ぶ側）。
+	 * 着いたら 解決する。
+	 */
+	jump(x: number, y: number, ms: number): Promise<void> {
+		const dx = x - this.x;
+		const dy = y - this.y;
+		if (dx || dy)
+			this.dir =
+				Math.abs(dx) > Math.abs(dy)
+					? dx > 0
+						? "right"
+						: "left"
+					: dy > 0
+						? "down"
+						: "up";
+		return new Promise((resolve) => {
+			this.tween = {
+				fromX: this.x,
+				fromY: this.y,
+				t: 0,
+				dur: ms,
+				resolve,
+				lift: JUMP_LIFT,
+			};
+			this.x = x;
+			this.y = y;
 		});
 	}
 
@@ -87,6 +124,7 @@ export class Actor {
 	setPos(x: number, y: number): void {
 		this.x = this.fx = x;
 		this.y = this.fy = y;
+		this.lift = 0;
 		const tw = this.tween;
 		this.tween = null;
 		tw?.resolve();
@@ -99,8 +137,10 @@ export class Actor {
 		const k = Math.min(1, tw.t / tw.dur);
 		this.fx = tw.fromX + (this.x - tw.fromX) * k;
 		this.fy = tw.fromY + (this.y - tw.fromY) * k;
+		this.lift = tw.lift * Math.sin(Math.PI * k);
 		if (k >= 1) {
 			this.tween = null;
+			this.lift = 0;
 			tw.resolve();
 		}
 	}
@@ -113,7 +153,7 @@ export class Actor {
 	): void {
 		if (!this.visible || !this.sprite) return;
 		const px = Math.round(this.fx * TILE - ox);
-		const py = Math.round(this.fy * TILE - oy);
+		const py = Math.round(this.fy * TILE - oy - this.lift);
 		if (this.still) {
 			drawRefInCell(ctx, this.sprite, px, py);
 			return;
