@@ -399,6 +399,23 @@ export const OUTSKIRTS: Record<string, TileDef> = {
 	W: solid(C_GRASS, TURF, basePx(80, 422, 16, 16)),
 };
 
+// ───────────────── 南の 浜（hayabusa 島の 南の 岸。data/village/map.ts の SHORE_ROWS） ─────────────────
+//   さ  砂浜   な  砂浜（浜の 草）   う  海（砂に 池と 同じ 岸の オートタイル）   は  桟橋の 板（海の 上を 歩ける）
+//   や  ヤシの 木（3マス幅。足もとの 1マスだけ 通れない）   い  岩   か  赤い 日がさ（2マス幅）
+const SAND = base(4, 4);
+const C_SAND = "#ecd9a0";
+const C_PIER = "#a8804c";
+
+export const BEACH: Record<string, TileDef> = {
+	さ: floor(C_SAND, SAND),
+	な: floor(C_SAND, SAND, base(3, 11)),
+	う: { ...solid(C_WATER, SAND), auto: POND },
+	は: floor(C_PIER, base(0, 46)),
+	や: big(C_SAND, SAND, base(0, 601, 3, 3)),
+	い: solid(C_SAND, SAND, base(0, 604, 1, 2)),
+	か: big(C_SAND, SAND, base(5, 297, 2, 2)),
+};
+
 // ───────────────── 東の 畑（町の 段で 育つ。data/village/map.ts の farmRows） ─────────────────
 // 畝の 区画は Base.png の 畑（0〜2, 26〜28）の 3×3 を 角・へり・まんなか（G）に 分けて 使う。作物は まんなかの 畝に だけ 植える。
 //   η θ ι  畝の 上（左・まんなか・右）   κ λ  左・右   μ ν ξ  下（左・まんなか・右）

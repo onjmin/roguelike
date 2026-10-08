@@ -58,6 +58,7 @@ import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
 import {
 	BANK,
 	BATH,
+	BEACH,
 	BOOKS,
 	base,
 	C_DIRT,
@@ -88,7 +89,7 @@ import {
 } from "./tiles";
 
 export const VILLAGE_W = 40;
-export const VILLAGE_H = 32;
+export const VILLAGE_H = 44;
 
 /**
  * 町（22×18 の 区画。下の 図の 座標）を 地図の どこに 置くか。まわりは 森で、西の 空き地・東の 畑・
@@ -354,7 +355,33 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
 	[10, 28, ",~~~~~~,,,.,,,,,~~~,,"],
 	[10, 29, ",,~~~,,B,,.,,=,,,,,,,"],
 	[11, 30, ",,,,,,,,,.,,,,,,,"],
-	[20, 31, "."],
+	[10, 31, ",,,,,,,,,,.,,,,,,,,,"],
+];
+
+/**
+ * 南の 浜（地図の y=32〜43。hayabusa 島の 南の 岸。STORY.md §5.7）。字は data/village/tiles.ts の BEACH。
+ * 池の 下の 道が 砂浜へ 抜け、まんなかの 桟橋（x=20）が 海へ のびる。桟橋の 先（20,43）が 南の 出口＝港
+ * （おーぷぬ諸島・灯台へは 船で わたる）。先の 3×3 は 船着き場（帰ってきた ときに 仲間が 並べる 広さ）。
+ */
+const SHORE_ROWS: readonly string[] = [
+	"Tbささささささささささささささささささささささささささささささささささささbb",
+	"bささやさささなささささささなささささささささささささなさささやささささなささb",
+	"ささささささささささささささささささささささささささささささささささささささささ",
+	"ささなさささささささささささささささささささささささなさささささささささささささ",
+	"ささいさささささささささささささささささささささささささささささささささささいさ",
+	"うううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううう",
+	"うううううううううううううううううううううううううううううううううううううううう",
+];
+const SHORE_Y = 32;
+/** 桟橋（x=20 を 砂浜の へり y=36 から 港 y=43 まで。先の 3×3 は 船着き場）。 */
+const PIER_CELLS: readonly Cell[] = [
+	...[36, 37, 38, 39, 40].map((y): Cell => [20, y]),
+	...[41, 42, 43].flatMap((y) => [19, 20, 21].map((x): Cell => [x, y])),
 ];
 
 /**
@@ -531,7 +558,8 @@ export const VILLAGE_EXITS: readonly VillageExit[] = [
 	{ side: "n", cell: [27, 0], inward: "down", step: "d" },
 	{ side: "w", cell: [0, 19], inward: "right", step: "r" },
 	{ side: "e", cell: [39, 19], inward: "left", step: "l" },
-	{ side: "s", cell: [20, 31], inward: "up", step: "u" },
+	// 南は 桟橋の 先の 港（船で 海の 向こうの 島へ）
+	{ side: "s", cell: [20, 43], inward: "up", step: "u" },
 ];
 
 /** その 植民地から 帰ってくる 出口（全体マップで 村から 見た 植民地の 方角）。 */
@@ -571,7 +599,7 @@ const townRows = (v: VillageView): string[] => {
 	return rows;
 };
 
-/** 村の地図（32行 × 40文字）。森の 中に 町の 区画を 置き、まわりへ 抜ける 道を 開ける。 */
+/** 村の地図（44行 × 40文字）。森の 中に 町の 区画を 置き、まわりへ 抜ける 道を 開ける。南は 浜と 海。 */
 export const villageRows = (v: VillageView): string[] => {
 	const town = townRows(v);
 	const rows: string[] = [];
@@ -588,6 +616,8 @@ export const villageRows = (v: VillageView): string[] => {
 		rows.push(r);
 	}
 	for (const [x0, y, line] of OUTSKIRTS_ROWS) stamp(rows, x0, y, [line]);
+	stamp(rows, 0, SHORE_Y, SHORE_ROWS);
+	for (const c of PIER_CELLS) put(rows, c, "は");
 	for (const [y, line] of farmRows(layoutStage(v)))
 		stamp(rows, FARM_X, y, [line]);
 	// 喫茶「保守」（段5 から。西の 空き地の 奥。扉は 下の 道から）
@@ -614,6 +644,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 	return {
 		...GROUND,
 		...OUTSKIRTS,
+		...BEACH,
 		...FARM,
 		...SHRINE,
 		...BATH,
