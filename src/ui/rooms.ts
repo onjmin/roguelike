@@ -211,7 +211,7 @@ const musicPeople = (v: VillageView): EventDef[] => {
 };
 
 /** 図書館の 読書の 机の ヒナリーの 所（左の いす。右の いすは 下の 植木鉢の 葉に かくれる）。 */
-const HINARY_AT: Spot = { x: 8, y: 7, dir: "right" };
+const HINARY_AT: Spot = { x: 12, y: 7, dir: "up" };
 
 /**
  * 本屋の 店番・図書館の 司書（名無し。机の となり）と、帰りごとに 立ち読みに 来ている 住人（ui/guests.ts）。

@@ -89,13 +89,13 @@ export const MUSIC_SEATS: readonly Spot[] = [
 export const BOOKS_BROWSE: Record<"bookstore" | "library", readonly Spot[]> = {
 	bookstore: [
 		{ x: 1, y: 4, dir: "up" },
-		{ x: 7, y: 4, dir: "up" },
-		{ x: 3, y: 6, dir: "up" },
+		{ x: 8, y: 4, dir: "up" },
+		{ x: 12, y: 4, dir: "up" },
 	],
 	library: [
 		{ x: 1, y: 4, dir: "up" },
-		{ x: 10, y: 4, dir: "up" },
-		{ x: 12, y: 4, dir: "up" },
+		{ x: 8, y: 4, dir: "up" },
+		{ x: 13, y: 4, dir: "up" },
 	],
 };
 
@@ -182,30 +182,34 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#F:::::::::::::F#",
 		"#######DD########",
 	],
-	// 本屋：壁ぞいと まんなかに 本棚、店番の 机。壁に 監修の はり紙
+	// 本屋：壁ぞいと まんなかに 本棚、平台（新刊）・雑誌の 棚・店番の 机。壁に 監修の はり紙と ポスター、上に 本の 看板
 	bookstore: [
-		"##########",
-		"#HHWHHWHH#",
-		"#hhhhmhhh#",
-		"#BBB..BBB#",
-		"#........#",
-		"#.BB..T..#",
-		"#........#",
-		"#F......F#",
-		"####DD####",
-	],
-	// 図書館：本棚の 列と 読書の 机。司書の 机。壁に 監修の はり紙
-	library: [
 		"##############",
-		"#HHWHHHHHHWHH#",
-		"#hhhhhmhhhhhh#",
-		"#BBBB....BBBB#",
+		"#HHWHHAHHHWHH#",
+		"#hhhhmkhhhhhh#",
+		"#BBBB..BBBBBB#",
 		"#............#",
-		"#.BB.BB..T...#",
+		"#.BB.ss..T...#",
 		"#............#",
-		"#.BB.BB.ntttn#",
+		"#.BB.ss..MM..#",
 		"#F..........F#",
 		"######DD######",
+	],
+	// 図書館：壁の 本棚と 本棚の 列、金の じゅうたんの 読書の 机、地球儀・新聞・目録・司書の 机・返却ポスト、
+	// 2階（過去ログ書庫）への 階段。壁に 監修の はり紙・時計・初代館長の 肖像
+	library: [
+		"##################",
+		"#HHWHHWHHHQHWHHWH#",
+		"#hhhhmhhhhhhhhkhh#",
+		"#BBBB.BBBB.BBB.<{#",
+		"#...............Y#",
+		"#.BB.BB..----....#",
+		"#.......-tttt-.R.#",
+		"#.BB.BB.-nnnn-...#",
+		"#.......------.C.#",
+		"#.BB.BB.......T..#",
+		"#F.....X........F#",
+		"########DD########",
 	],
 	// 倉庫：あずかった 物の 棚・帰ってこない 人の 棚・鍵の 板・帳簿・シヨの 机
 	store: [
@@ -274,8 +278,8 @@ export const ROOM_FROM: Record<RoomId, number> = {
 
 /** 本屋・図書館の 店番・司書の 立つ 所（机の となり）。 */
 export const BOOKS_KEEPER: Record<"bookstore" | "library", Spot> = {
-	bookstore: { x: 7, y: 5, dir: "left" },
-	library: { x: 10, y: 5, dir: "down" },
+	bookstore: { x: 10, y: 5, dir: "left" },
+	library: { x: 15, y: 9, dir: "left" },
 };
 
 // ───────────────── パレット ─────────────────
@@ -479,11 +483,28 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				T: on(base(2, 108), onTop(2, 152)),
 			};
 		case "bookstore":
+			return {
+				...common,
+				A: up(base(6, 96)),
+				k: low(base(5, 90)),
+				B: on(base(3, 104, 1, 2)),
+				T: on(base(2, 108), onTop(2, 152)),
+				// 平台（新刊の 山）・雑誌の 棚
+				s: on(base(2, 108), onTop(1, 186)),
+				M: on(base(2, 104, 1, 2)),
+			};
 		case "library":
 			return {
 				...common,
+				Q: up(PICTURE),
+				k: low(base(2, 116, 1, 2)),
 				B: on(base(3, 104, 1, 2)),
 				T: on(base(2, 108), onTop(2, 152)),
+				t: on(base(2, 108), onTop(1, 186)),
+				// 新聞の 棚・目録の 引き出し・返却ポスト
+				R: on(base(2, 104, 1, 2)),
+				C: on(base(0, 104, 1, 2)),
+				X: on(base(4, 123)),
 			};
 		case "music":
 			return {
@@ -581,12 +602,23 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		B: "shelf",
 		m: "notice",
 		T: "desk",
+		k: "poster",
+		s: "new",
+		M: "magazine",
 	},
 	library: {
 		B: "shelf",
 		m: "notice",
 		T: "desk",
 		t: "table",
+		Q: "portrait",
+		k: "clock",
+		"<": "stairs",
+		"{": "stairs",
+		Y: "globe",
+		R: "news",
+		C: "catalog",
+		X: "returns",
 	},
 	music: {
 		m: "plaque",
