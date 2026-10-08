@@ -2067,8 +2067,12 @@ export class Play {
 			return;
 		}
 		const fast = rp.speed >= 4;
-		void this.exec(cmd, fast).then(() => {
-			rp.nextAt = performance.now() + REPLAY_GAP / rp.speed;
+		void this.exec(cmd, fast).then((ev) => {
+			// 歩いた（向いた）だけの 手は 間を あけない（手で 歩きつづけるのと 同じ 速さ）
+			const quiet =
+				(cmd.c === "move" || cmd.c === "turn") &&
+				ev.every((e) => e.t === "move" || e.t === "turn");
+			rp.nextAt = performance.now() + (quiet ? 0 : REPLAY_GAP / rp.speed);
 			this.updateReplayBar();
 		});
 	}
