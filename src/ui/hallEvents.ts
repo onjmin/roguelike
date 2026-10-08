@@ -3,7 +3,7 @@
 // 中の 物は どれも 村の ほかの 入口（掲示板・仲間・B／☰ の メニュー）と 同じ 窓を 開く もう 1つの 入口：
 //   壁の スレ＝冒険の記録・>>1 テンプレ＝あそびかた・本棚＝図鑑・
 //   帳簿の 貼り紙＝ゼロの 売り上げ・殿堂の 壁＝総選挙の はり紙。
-// リプレイは 本館の 中だけで 見る：映写機（どの 段にも）と 実況モニター。選んだら 村から 出る。
+// リプレイは 本館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。実況モニターは 見るだけ。
 // 本館 だけの もの：
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
@@ -22,7 +22,6 @@ import {
 	HALL_MSG,
 	IN_STORE_TEXT,
 	JIKKYO,
-	MONITOR_MENU,
 	OLDEST_DEEP_MENU,
 	OLDEST_MENU,
 	ON_BOARD_TEXT,
@@ -77,6 +76,7 @@ import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { openGlossary } from "./glossary";
+import { openSales } from "./home";
 import { openHowto } from "./howto";
 import { itemIcon } from "./icons";
 import { type ListItem, listWindow } from "./list";
@@ -218,7 +218,7 @@ export const leaveHall: Script = async (s) => {
 /** メッセージ窓を 隠す（一覧の 窓を 出す 前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
 
-/** 冒険の記録（replay なら リプレイ上映。リプレイを 選んだら 村を 出る）。 */
+/** 冒険の記録（replay なら 映写機の リプレイ上映。リプレイを 選んだら 村を 出る）。 */
 const records = async (ctx: Ctx, s: Story, replay = false): Promise<void> => {
 	await hideMsg(s);
 	const rp = await openRecords(ctx, { replay });
@@ -326,14 +326,10 @@ const shelfScript =
 		await listWindow(ctx, "飾り棚", items, { closeLabel: "とじる" });
 	};
 
-/** 実況モニター：ナイターと 実況スレ。リプレイ 上映（冒険の記録と 同じ 窓）。 */
-const monitorScript =
-	(ctx: Ctx): Script =>
-	async (s) => {
-		for (const t of HALL_MSG.monitor) await s.narrate(t);
-		const n = await s.choose([...MONITOR_MENU], { cancel: 1 });
-		if (n === 0) await records(ctx, s, true);
-	};
+/** 実況モニター：ナイターと 実況スレ（見るだけ。リプレイは 映写機）。 */
+const monitorScript: Script = async (s) => {
+	for (const t of HALL_MSG.monitor) await s.narrate(t);
+};
 
 /** 映写機：冒険の リプレイを 上映する（暗い 幕に 映す）。 */
 const projectorScript =
@@ -514,9 +510,12 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 				}
 				await s.narrate(HALL_MSG.ledger);
 				await s.narrate(ledgerLine());
+				// ゼロと 同じ 売り上げの 帳簿（棒グラフ：ui/home.ts）
+				await hideMsg(s);
+				await openSales(ctx);
 			});
 		case "monitor":
-			return sign(p.id, p.x, p.y, monitorScript(ctx));
+			return sign(p.id, p.x, p.y, monitorScript);
 		case "dendo":
 			return sign(p.id, p.x, p.y, dendoScript);
 		case "chair":
