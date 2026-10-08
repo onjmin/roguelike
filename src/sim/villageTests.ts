@@ -43,7 +43,7 @@ import {
 import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
-import { FISHING, GROUND_BAT } from "../data/facilities";
+import { FISHING, GROUND_BAT, VENDING } from "../data/facilities";
 import { GLOSSARY } from "../data/glossary";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
 import {
@@ -4957,6 +4957,9 @@ test("施設の 文: every line fits the village window", () => {
 	for (const t of [FISHING.cast, ...FISHING.catches])
 		texts.push(["fishing", t]);
 	for (const t of [GROUND_BAT.hit, GROUND_BAT.out]) texts.push(["bat", t]);
+	for (const drink of VENDING.drinks)
+		texts.push(["vending", fill(VENDING.got, { drink })]);
+	texts.push(["vending", VENDING.drank]);
 	fitsWindow(texts);
 });
 

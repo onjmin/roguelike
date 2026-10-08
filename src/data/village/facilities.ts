@@ -93,7 +93,7 @@ export type OutdoorThing = {
 	at: Cell;
 	lines: readonly string[];
 	/** 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる）。 */
-	play?: "fishing" | "batting" | "bus";
+	play?: "fishing" | "batting" | "bus" | "vend";
 };
 
 export type Facility = {
@@ -213,6 +213,51 @@ const house = (
 		at,
 		look: { kind: "building", w, roof, wall, door, closed: true },
 		outdoor: [{ id: "plate", at: [at[0] + door, at[1] + 3], lines: plate }],
+	};
+};
+
+const STREET_IMG = "pub:sprites/street.png";
+/** 自販機の 字（施設ごとに 1字。地面の 上に 立てる）。 */
+const VENDING_CHARS: Record<string, string> = {
+	vend_beach: "じ",
+	vend_konbini: "ず",
+	vend_bus: "ぜ",
+	vend_arcade: "ぞ",
+};
+
+/** 自販機（16x32。色は 0 赤・1 青・2 白。scripts/make-street.mjs）。 */
+const vending = (
+	id: string,
+	at: Cell,
+	color: 0 | 1 | 2,
+	from: number,
+	ground: "sand" | "grass",
+): Facility => {
+	const ch = VENDING_CHARS[id] ?? "じ";
+	const img = `${STREET_IMG}#${176 + color * 16},0,16,32`;
+	return {
+		id,
+		name: "自販機",
+		from,
+		at,
+		look: {
+			kind: "block",
+			rows: [ch],
+			tiles: {
+				[ch]:
+					ground === "sand"
+						? solid("#ecd9a0", base(4, 4), img)
+						: solid(C_GRASS, TURF, img),
+			},
+		},
+		outdoor: [
+			{
+				id: "vend",
+				at,
+				lines: ["自販機。\n……ちょうど、のどが　かわいていた。"],
+				play: "vend",
+			},
+		],
 	};
 };
 
@@ -1754,6 +1799,11 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
+	// ── 自販機（浜の 海の家の 横・コンビニの 横・バス停の 横・ゲームセンターの 横。調べると 飲み物が 出る）
+	vending("vend_beach", [11, 35], 0, 2, "sand"),
+	vending("vend_konbini", [45, 29], 1, 4, "grass"),
+	vending("vend_bus", [32, 20], 2, 6, "grass"),
+	vending("vend_arcade", [76, 28], 0, 6, "grass"),
 ];
 
 /** その 段に 立っている 施設。 */

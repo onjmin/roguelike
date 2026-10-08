@@ -3,7 +3,7 @@
 // 外の 物（釣り場の 竿・グラウンドの マウンド）は 調べると 文、遊べる 物は そのあと 遊ぶか 聞く。
 // どれも 寄り道で、強さにも 冒険にも 何も 残さない（釣れた 物は すぐ 海に かえす）。
 
-import { FISHING, GROUND_BAT } from "../data/facilities";
+import { FISHING, GROUND_BAT, VENDING } from "../data/facilities";
 import { awayFriends } from "../data/story";
 import {
 	type Facility,
@@ -23,6 +23,7 @@ import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { playBatting } from "./minigames";
+import { fill } from "./villageTalk";
 
 /** 調べる 物の 窓（窓ごと）。 */
 const readAll = async (s: Story, lines: readonly string[]): Promise<void> => {
@@ -77,6 +78,15 @@ const bat = async (ctx: Ctx, s: Story): Promise<void> => {
 	await s.narrate(hit ? GROUND_BAT.hit : GROUND_BAT.out);
 };
 
+/** 自販機（飲み物が 出る。見た目の 乱数なので Math.random）。 */
+const vend = async (s: Story): Promise<void> => {
+	if ((await s.choose([...VENDING.menu], { cancel: 1 })) !== 0) return;
+	const drink =
+		VENDING.drinks[Math.floor(Math.random() * VENDING.drinks.length)];
+	await s.narrate(fill(VENDING.got, { drink }));
+	await s.narrate(VENDING.drank);
+};
+
 /** 外に 置く 物（地図の マス。調べると 文、遊べる 物は 遊ぶか 聞く）。 */
 export const outdoorScript =
 	(ctx: Ctx, t: OutdoorThing): Script =>
@@ -84,6 +94,7 @@ export const outdoorScript =
 		await readAll(s, t.lines);
 		if (t.play === "fishing") await fish(s);
 		else if (t.play === "batting") await bat(ctx, s);
+		else if (t.play === "vend") await vend(s);
 	};
 
 /**
