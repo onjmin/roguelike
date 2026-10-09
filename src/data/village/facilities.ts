@@ -143,9 +143,10 @@ export type FacilityRoom = {
 	people?: readonly FacilityPerson[];
 	/**
 	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
-	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts）。
+	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts・
+	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts）。
 	 */
-	plays?: Record<string, "depart" | "drinkbar" | "eat">;
+	plays?: Record<string, "depart" | "drinkbar" | "eat" | "jikkyo">;
 };
 
 export type OutdoorThing = {
@@ -3044,6 +3045,8 @@ export const FACILITIES: readonly Facility[] = [
 				poster: ["上映中「スレ立て　ヒーロー」\n「さらば　過去ログ」"],
 				trash: ["ゴミ箱。\nポップコーンの　カップが　あふれている。"],
 			},
+			// スクリーンと 客席で 実況上映（金曜は 金曜ロード保守の 本放送、ほかの 日は 再上映）
+			plays: { screen: "jikkyo", seat: "jikkyo" },
 			people: [
 				{
 					id: "cinema_staff",

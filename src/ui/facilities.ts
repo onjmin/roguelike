@@ -5,6 +5,7 @@
 
 import { today } from "../data/calendar";
 import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
+import { isVenue } from "../data/jikkyo/schedule";
 import { staffLines, venueLines } from "../data/jikkyo/text";
 import { awayFriends } from "../data/story";
 import {
@@ -27,6 +28,7 @@ import { TILE } from "../engine/types";
 import { facilityDecor } from "./cinemaDecor";
 import type { Ctx } from "./ctx";
 import { eatAt, keeperTalk } from "./eat";
+import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
 import { fill } from "./villageTalk";
 
@@ -182,7 +184,7 @@ export const shadowDecor = (stage: number): MapDef["decor"] => {
 /** 施設の 中の 地図。曲は 村の まま。 */
 export const buildFacility = (
 	f: Facility,
-	_v: VillageView,
+	v: VillageView,
 	ctx: Ctx,
 	/** 駅の 改札などから 出かける（村の 口と 同じ 流れ。ui/villageEvents.ts の departAnywhere）。 */
 	depart?: Script,
@@ -209,6 +211,9 @@ export const buildFacility = (
 			if (play === "depart" && depart) await depart(s);
 			else if (play === "drinkbar") await drinkBar(s);
 			else if (play === "eat") await eatAt(ctx, s, f.id);
+			// 実況の 番組（映画館の 実況上映。ui/jikkyoWatch.ts）
+			else if (play === "jikkyo" && isVenue(f.id))
+				await watchProgram(ctx, s, f.id, v.stage);
 		});
 	});
 	for (const who of room?.people ?? [])
@@ -219,7 +224,11 @@ export const buildFacility = (
 				who.at[1],
 				who.walk,
 				async (s) => {
-					const lines = staffLines(f.id, who.id, today()) ?? who.lines;
+					// 番組の あとに 1回だけ 言う 1行（映画館の 係員：神エイム・再上映で のびた ★）
+					const once = staffOnceLine(f.id, who.id);
+					const lines = once
+						? [once]
+						: (staffLines(f.id, who.id, today()) ?? who.lines);
 					// 店番：セリフを 1つ → 品書き（ui/eat.ts）
 					if (who.play === "eat")
 						await keeperTalk(ctx, s, f.id, who.name, lines);

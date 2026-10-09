@@ -3528,3 +3528,147 @@ body.jolt #app {
 .mgame.jk.done .mgame-hint {
 	visibility: hidden;
 }
+
+/* ───────── 映画館の 実況上映（ui/jikkyoWatch.ts）：番組の 板（.mgame.jk に 足す） ───────── */
+
+/* 上に 止める 1行（目立つ 書きこみ・950 の 当番・1001） */
+.jk-pinbar {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	z-index: 2;
+	display: none;
+	padding: 3px 6px;
+	font-size: 12px;
+	line-height: 16px;
+	white-space: pre-line;
+	color: #ffe8a0;
+	background: rgba(40, 34, 60, 0.97);
+	border-bottom: 1px solid #5a5070;
+}
+
+.jk-pinbar.on {
+	display: block;
+}
+
+.jk-pinbar.over {
+	color: #ff6a4a;
+}
+
+.jk-pinline {
+	color: #ffe8a0;
+}
+
+.jk-sys {
+	color: #ff9a7a;
+}
+
+/* 1000 の あとの 切れ目（数が のびない） */
+.jk-board.gap .jk-thread {
+	opacity: 0.6;
+}
+
+/* 山場の 洪水（ぼかした 帯が 流れる） */
+.jk-flood {
+	position: absolute;
+	inset: 0;
+	display: none;
+	pointer-events: none;
+	background: repeating-linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0) 0,
+		rgba(255, 255, 255, 0.07) 6px,
+		rgba(255, 255, 255, 0) 12px
+	);
+	filter: blur(1px);
+	animation: jk-flood 0.5s linear infinite;
+}
+
+.jk-board.flood .jk-flood {
+	display: block;
+}
+
+@keyframes jk-flood {
+	from {
+		background-position: 0 0;
+	}
+	to {
+		background-position: 0 -24px;
+	}
+}
+
+/* 鯖が　重い */
+.jk-stall {
+	position: absolute;
+	left: 50%;
+	top: 40%;
+	z-index: 3;
+	display: none;
+	transform: translate(-50%, -50%);
+	padding: 4px 10px;
+	border: 1px solid #5a5070;
+	border-radius: 4px;
+	font-size: 13px;
+	color: #c8c0e0;
+	background: rgba(0, 0, 0, 0.75);
+}
+
+.jk-board.stall .jk-stall {
+	display: block;
+}
+
+/* 950 の 当番と 山場の 1語 */
+.jk-picks.duty {
+	border-top: 2px solid #ffb040;
+}
+
+.jk-picks.cue .jk-pick {
+	min-height: 52px;
+	padding: 0 8px;
+	font-size: 22px;
+	text-align: center;
+}
+
+.jk-cuedots {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+	padding-top: 2px;
+}
+
+.jk-cuedots i {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: #3a4a7a;
+}
+
+.jk-cuedots i.on {
+	background: #ffe060;
+	box-shadow: 0 0 6px #ffe060;
+}
+
+.jk-cuedots i.exact {
+	background: #ffffff;
+	box-shadow: 0 0 8px #ffffff;
+}
+
+/* 目標への バー：★ の 区切り */
+.jk-bar .jk-star {
+	position: absolute;
+	top: -2px;
+	bottom: 0;
+	width: 1px;
+	background: rgba(255, 255, 255, 0.55);
+}
+
+.mgame.jk.still .jk-flood {
+	animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.jk-flood {
+		animation: none;
+	}
+}

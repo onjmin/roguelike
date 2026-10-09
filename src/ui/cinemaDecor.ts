@@ -23,7 +23,7 @@ const cellsOf = (rows: readonly string[], chars: string): Cell[] =>
 	);
 
 /** マスの 決め打ちの 乱数（0〜1。席えらびと 灯りの 明滅）。 */
-const hash = (x: number, y: number, k = 0): number => {
+export const hash = (x: number, y: number, k = 0): number => {
 	let h =
 		Math.imul(x, 374761393) +
 		Math.imul(y, 668265263) +
@@ -33,7 +33,7 @@ const hash = (x: number, y: number, k = 0): number => {
 };
 
 /** 字の 絵を 塗る（字 → 色。色の ない 字は 塗らない）。 */
-const blit = (
+export const blit = (
 	g: G,
 	art: readonly string[],
 	x: number,
@@ -97,7 +97,7 @@ const CLOUDS = [
 ] as const;
 
 /** 鯖（さばの 形の サーバー）の 影。右を 向いて 泳ぐ。= は 背中の 波の 模様、- は 腹、o は 目。 */
-const SABA = [
+export const SABA = [
 	"...........#.#..........",
 	"#.......#==##==##=#.....",
 	"##...#==##==##==#####...",
@@ -107,7 +107,7 @@ const SABA = [
 	"#.......-------------...",
 	"...........#.#..........",
 ];
-const SABA_INK = {
+export const SABA_INK = {
 	"#": "#253a5e",
 	"=": "#3a5a88",
 	"-": "#3d5478",
@@ -115,7 +115,7 @@ const SABA_INK = {
 };
 const SABA_W = SABA[0].length;
 /** うろこの ラックの 灯り（鯖の 中の マス）。 */
-const RACK: readonly Cell[] = [
+export const RACK: readonly Cell[] = [
 	[8, 2],
 	[11, 3],
 	[14, 2],
@@ -125,7 +125,7 @@ const RACK: readonly Cell[] = [
 	[16, 4],
 	[9, 5],
 ];
-const RACK_INK = ["#7dffa0", "#ffd25a"];
+export const RACK_INK = ["#7dffa0", "#ffd25a"];
 
 const drawCloud = (
 	g: G,

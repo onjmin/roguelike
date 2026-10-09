@@ -22,7 +22,9 @@ import {
 } from "../core/jikkyo";
 import type { JkGame, JkTeamId } from "../core/jikkyoYakyu";
 import { Rng } from "../core/rng";
+import { today } from "../data/calendar";
 import { HALL_MSG, JIKKYO } from "../data/hall";
+import { programSlot } from "../data/jikkyo/schedule";
 import {
 	JIKKYO_AFTER,
 	JIKKYO_MENU,
@@ -41,6 +43,7 @@ import {
 } from "../data/jikkyo/yakyu";
 import { devEvent } from "../data/objectives";
 import type { Script, Story } from "../engine/defs";
+import { loadTown } from "../engine/save";
 import { el } from "./dom";
 import { yakyuTv } from "./jikkyoYakyuTv";
 import { markOpened, onTap, type UiCtx } from "./list";
@@ -76,7 +79,10 @@ export type JikkyoMemo = {
 	last: JikkyoLast | null;
 	/** 試合後の 1窓を もう 言った 本館の 人。 */
 	heard: string[];
-	/** 番組ごとの 記録（映画館・劇場。あとの 手順で 使う）。 */
+	/**
+	 * 番組ごとの 記録（映画館・劇場。ui/jikkyoWatch.ts）。best は 届いた ★、rerun は 再上映で 届いた ★、
+	 * said は 係員が もう 言った 1行の 鍵。
+	 */
 	prog?: Partial<
 		Record<
 			"sora" | "kohaku",
@@ -87,6 +93,7 @@ export type JikkyoMemo = {
 				plays: number;
 				howto: boolean;
 				said: string[];
+				rerun?: number;
 			}
 		>
 	>;
@@ -613,6 +620,13 @@ export const hallMonitor =
 	(ctx: UiCtx): Script =>
 	async (s) => {
 		await s.narrate(HALL_MSG.monitor[0]);
+		// 番組表（data/jikkyo/schedule.ts）で 本館の 枠を 引く。ナイターの ほかは まだ ない
+		const stage = previewStage() ?? loadTown().stage;
+		const slot = programSlot("hall", today(), stage, new Date().getFullYear());
+		if (slot?.main.program !== "yakyu") {
+			await s.narrate(HALL_MSG.monitor[1]);
+			return;
+		}
 		let game = newYakyuGame();
 		for (;;) {
 			const [a, h] = game.pre.score;
