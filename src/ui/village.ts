@@ -79,6 +79,15 @@ import { villageView } from "./villageReturn";
 const WALK_MS = 170;
 /** ダッシュで 歩く 速さ（WALK_MS の 何倍か）。 */
 const DASH_SPEED = 2.5;
+/**
+ * 歩きつづけると 走りだす（作者の 指示「通行しやすく」。地図が 87×52 に 広がった）。押しっぱなし・指で 押さえつづけて
+ * これだけ 続けて 歩いたら、ダッシュの 速さに なる。止まれば もどる。
+ */
+const RUN_AFTER = 6;
+/** タップした 道が これより 長ければ 走る（着く 2歩 手前で 歩きに もどる）。 */
+const RUN_PATH = 8;
+/** 1歩 着いてから 次の 1歩までが これより 短ければ「続けて 歩いた」（ms）。 */
+const STREAK_GAP = 90;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
 /** 場面で 人を とばす とき、画面の はしから これだけ（マス）外までは 映る ことに する（歩く 絵は マスより 大きい）。 */
@@ -165,6 +174,11 @@ export class Village {
 	private pathTalk: Actor | null = null;
 	/** タップで 話しに 行って、着いたら 相手が ずれていたので もう 1度 近づいた（2度目は あきらめて その場で 話す）。 */
 	private talkRetried = false;
+	/** タップした 道が 長い（走る）。 */
+	private pathRun = false;
+	/** 続けて 歩いた 歩数と、最後に 1歩 着いた 時刻（歩きつづけると 走りだす）。 */
+	private streak = 0;
+	private arrivedAt = -1e9;
 	private marker: { x: number; y: number; t: number } | null = null;
 	/** まだ 1度も もぐっていない（村の 出口に 矢印を 出す。はじめての 人が 出口を さがさないように）。 */
 	private guideExit = false;
@@ -497,6 +511,7 @@ export class Village {
 		this.player.update(dt);
 		// 操作で歩いて1マス着いたら、次の1歩を 始める前に ここで 踏むイベントを 調べる
 		// （歩きの Promise の続きは 次のマイクロタスクなので、押しっぱなしだと 先に 次のマスへ 進んでしまう）
+		if (wasMoving && !this.player.moving) this.arrivedAt = this.time;
 		if (wasMoving && !this.player.moving && this.stepPending) {
 			this.stepPending = false;
 			this.syncState();
@@ -603,7 +618,8 @@ export class Village {
 				return;
 			}
 			// 話しかけるのは 最後の 1歩が 着いてから（下）。途中で 口などを 踏んだら afterStep が 道を 消す
-			void this.tryStep(d);
+			// 長い 道は 走る（着く 2歩 手前で 歩きに もどる）
+			void this.tryStep(d, this.pathRun && this.path.length >= 2);
 			return;
 		}
 		if (this.pathTalk) {
@@ -655,6 +671,49 @@ export class Village {
 		}
 		// つっかえたら 向くだけ（横へ ずれて 回りこまない。物の 前で そちらを 向いて 調べたい）
 		this.player.dir = tries[0];
+		// うろうろ している 人に ぶつかったら、その 人が 横へ よける（細道で 立ちふさがらない）
+		const v = DIR_VEC[tries[0]];
+		const b = field.blockerAt(
+			this.player.x + v.dx,
+			this.player.y + v.dy,
+			this.player,
+		);
+		if (b) this.giveWay(b);
+	}
+
+	/**
+	 * うろうろ する 人（def.wander）が キリコに 道を あける：となりの あいている マスへ 1歩
+	 * （家の まわり 2マスの 中を 先に。だめなら どこでも）。動けなければ false。
+	 */
+	private giveWay(a: Actor): boolean {
+		const field = this.field;
+		const home = a.def;
+		if (!field || !home?.wander || a.moving || a === this.pathTalk)
+			return false;
+		const me = this.player;
+		const free = (d: Dir) => {
+			const x = a.x + DIR_VEC[d].dx;
+			const y = a.y + DIR_VEC[d].dy;
+			return (
+				field.canEnter(x, y, a) &&
+				!(x === me.x && y === me.y) &&
+				!this.touchAt(x, y)
+			);
+		};
+		const near = (d: Dir) =>
+			Math.abs(a.x + DIR_VEC[d].dx - home.x) <= 2 &&
+			Math.abs(a.y + DIR_VEC[d].dy - home.y) <= 2;
+		// キリコの 進む 向きと 直角を 先に（前へ 押すと また ふさぐ）
+		const push = me.dir;
+		const side: Dir[] =
+			push === "up" || push === "down" ? ["left", "right"] : ["up", "down"];
+		const order = [...side, push];
+		const d =
+			order.find((x) => free(x) && near(x)) ?? order.find((x) => free(x));
+		if (!d) return false;
+		a.wanderWait = 1200 + Math.random() * 2500;
+		void a.walk(d, WALK_MS);
+		return true;
 	}
 
 	/**
@@ -788,8 +847,11 @@ export class Village {
 					: "up";
 	}
 
-	/** キリコを 1歩 進める（通れなければ 向きだけ 変える）。 */
-	private async tryStep(d: Dir): Promise<void> {
+	/**
+	 * キリコを 1歩 進める（通れなければ 向きだけ 変える）。ダッシュ（X・Shift・画面の ボタン）は 走る。
+	 * run は タップした 道（長い 道は 走る）。わたさなければ 操作の 1歩で、続けて RUN_AFTER 歩 歩いたら 走る。
+	 */
+	private async tryStep(d: Dir, run?: boolean): Promise<void> {
 		const field = this.field;
 		if (!field) return;
 		const v = DIR_VEC[d];
@@ -800,8 +862,10 @@ export class Village {
 			return;
 		// 着いたときの判定は update() が行う（stepPending）
 		this.stepPending = true;
-		// ダッシュ（X・Shift を 押しながら・画面の ボタン）は 速く 歩く
-		const ms = this.ctx.input.mods().dash ? WALK_MS / DASH_SPEED : WALK_MS;
+		this.streak =
+			this.time - this.arrivedAt <= STREAK_GAP ? this.streak + 1 : 1;
+		const fast = this.ctx.input.mods().dash || (run ?? this.streak > RUN_AFTER);
+		const ms = fast ? WALK_MS / DASH_SPEED : WALK_MS;
 		await this.player.walk(d, ms);
 	}
 
@@ -914,6 +978,7 @@ export class Village {
 		const path = this.route(tx, ty, talk, avoid) ?? this.route(tx, ty, talk);
 		if (!path) return;
 		this.path = path;
+		this.pathRun = path.length >= RUN_PATH;
 		this.pathTalk = talk;
 		this.marker = path.length ? { x: tx, y: ty, t: this.time } : null;
 	}

@@ -504,7 +504,7 @@ export class Field {
 		self: Actor,
 		noBack = false,
 		avoid?: (x: number, y: number) => boolean,
-		maxNodes = 4000,
+		maxNodes = this.w * this.h,
 	): Dir[] | null {
 		if (!this.inBounds(tx, ty)) return null;
 		const goalEnterable = this.canEnter(tx, ty, self);
