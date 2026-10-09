@@ -29,6 +29,7 @@ import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { YAJI_WALK } from "../cast";
+import { FOLK_WALK } from "./folk";
 import type { Cell, VillageView } from "./map";
 import { VILLAGE_SPOTS } from "./map";
 import { base, basePx, floor, hallTier, INDOOR, solid } from "./tiles";
@@ -251,6 +252,8 @@ const PEOPLE: readonly (readonly {
 	at: Cell;
 	dir: Dir;
 	from?: number;
+	/** 名無しの 絵の かわり（本館の すみの バルス失敗ニキ。data/village/folk.ts）。 */
+	sprite?: string;
 }[])[] = [
 	[],
 	[
@@ -258,6 +261,8 @@ const PEOPLE: readonly (readonly {
 		// 野球の 実況民（data/hall.ts の JIKKYO）。机を かこんで スマホで 実況しながら 言いあう
 		{ id: "jikkyo_tora", at: [3, 5], dir: "down" },
 		{ id: "jikkyo_g", at: [6, 6], dir: "left" },
+		// 右下の すみで「!バルス」と 書いては 失敗している 名無し（ui/folk.ts の balusScript）
+		{ id: "balus", at: [9, 7], dir: "left", sprite: FOLK_WALK.balus },
 	],
 	[
 		{ id: "nanashi_toban", at: [2, 4], dir: "down" },
@@ -275,6 +280,7 @@ const PEOPLE: readonly (readonly {
 		// 祭り（段7）：野次馬も 見に 来ている
 		{ id: "yaji_0", at: [6, 6], dir: "up", from: 7 },
 		{ id: "yaji_1", at: [10, 6], dir: "up", from: 7 },
+		{ id: "balus", at: [14, 5], dir: "left", sprite: FOLK_WALK.balus },
 	],
 ];
 
@@ -303,9 +309,11 @@ export const hallPlaces = (v: VillageView): HallPlace[] => {
 	for (const p of PEOPLE[tier]) {
 		if (p.from !== undefined && stage < p.from) continue;
 		const yaji = p.id.startsWith("yaji_");
-		const sprite = yaji
-			? YAJI_WALK[Number(p.id.slice(5)) % YAJI_WALK.length]
-			: NANASHI_WALK[nanashi++ % NANASHI_WALK.length];
+		const sprite =
+			p.sprite ??
+			(yaji
+				? YAJI_WALK[Number(p.id.slice(5)) % YAJI_WALK.length]
+				: NANASHI_WALK[nanashi++ % NANASHI_WALK.length]);
 		out.push({
 			id: p.id,
 			x: p.at[0],

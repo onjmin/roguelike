@@ -77,6 +77,7 @@ import { openBook } from "./bookView";
 import { yoriaiEvents, yoriaiMovedLine } from "./civic";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { balusScript } from "./folk";
 import { openGlossary } from "./glossary";
 import { openSales } from "./home";
 import { openHowto } from "./howto";
@@ -487,6 +488,11 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 	const kind = p.id.replace(/_\d+$/, "");
 	if (p.trigger === "touch")
 		return { ...at, trigger: "touch", through: true, run: leaveHall };
+	// すみで「!バルス」と 書いては 失敗している 名無し（ui/folk.ts）
+	if (p.id === "balus" && p.sprite)
+		return npc(p.id, p.x, p.y, p.sprite, balusScript(p.id, p.dir ?? "left"), {
+			dir: p.dir,
+		});
 	if (p.sprite)
 		return npc(p.id, p.x, p.y, p.sprite, nanashiScript(p, peopleLines(p.id)), {
 			dir: p.dir,
