@@ -54,6 +54,7 @@ import { FACILITIES, facilityById } from "../data/village/facilities";
 import {
 	BOCHI_FROM,
 	FOLK_ART,
+	FOLK_FROM,
 	FOLK_SPOTS,
 	FOLK_WALK,
 	GRAVES,
@@ -580,7 +581,7 @@ test("F5 人工無能ニキ・墓・温泉卵・博物館: 10個で 構想10年�
 
 // ───────────────── 置き場所 ─────────────────
 
-test("F6 村: 名無したちは 段0 から、墓場は 段2 から。どの 段でも 通れる マスに 立ち、話せて、道を ふさがず、遠回りも させない", () => {
+test("F6 村: 名無したちは 段1 から（段0 は ぷゆゆと やきうだけ）、墓場は 段2 から。どの 段でも 通れる マスに 立ち、話せて、道を ふさがず、遠回りも させない", () => {
 	const RESERVED = [
 		[27, 12],
 		[24, 12],
@@ -608,6 +609,10 @@ test("F6 村: 名無したちは 段0 から、墓場は 段2 から。どの �
 		const places = villagePlaces(v);
 		const folk = places.filter((p) => p.id.startsWith("folk_"));
 		const graves = folk.filter((p) => p.id.startsWith("folk_grave_"));
+		ok(
+			v.stage >= FOLK_FROM || folk.length === 0,
+			`stage ${v.stage}: ${folk.length} folk`,
+		);
 		ok(
 			graves.length === (v.stage >= BOCHI_FROM ? GRAVES.length : 0),
 			`stage ${v.stage}: ${graves.length} graves`,
