@@ -18,6 +18,7 @@ import {
 	boshuLine,
 	fillText,
 	MUKASHI,
+	madeWindow,
 	nisshiWindows,
 	OE_TOPICS,
 	type OeKind,
@@ -28,6 +29,8 @@ import {
 	oeRound,
 	oeSession,
 	type Rand,
+	rosterNames,
+	rosterWindows,
 	textWidth,
 	WW_BUCHO,
 	WW_IDS,
@@ -393,6 +396,8 @@ const WIDE = {
 	s: "99.9",
 	d: "99.9",
 };
+const widest = (xs: readonly string[]) =>
+	xs.reduce((a, b) => (textWidth(b) > textWidth(a) ? b : a), "");
 
 test(
 	"B6",
@@ -416,9 +421,15 @@ test(
 			ok(l.length >= 1 && l.length <= 3, `thing ${k}: ${l.length} windows`);
 		// 窓の 文（埋めて から）
 		const titles = BS_MSG.nt.titles;
+		const V = BS_MSG.vm;
+		const made = {
+			name: widest(V.names),
+			look: widest(V.looks),
+			tic: widest(V.tics),
+		};
 		for (const [w, t] of leaves(BS_MSG, "msg")) {
 			ng(w, t);
-			if (/\.menu\[/.test(w)) {
+			if (/\.(menu|names|looks|tics)\[|\.stop$/.test(w)) {
 				ok(textWidth(t) <= 10, `${w}: label "${t}" ${textWidth(t)}`);
 				continue;
 			}
@@ -427,7 +438,7 @@ test(
 				for (const title of titles) fitsWindow(w, fillText(t, { title }));
 				continue;
 			}
-			fitsWindow(w, fillText(t, WIDE));
+			fitsWindow(w, fillText(t, { ...WIDE, ...made }));
 		}
 		for (const c of BS_CLUBS)
 			fitsWindow(
@@ -486,6 +497,21 @@ test(
 		for (const id of WW_IDS)
 			ok(id.length === 4 && !BS_BAD_NUMBER.test(id), `id ${id}`);
 		// 作る 文
+		const all6 = rosterNames(99, 19, 20);
+		ok(all6.join("/") === BS_MSG.vc.official.join("/"), `roster ${all6}`);
+		const rw = rosterWindows(all6);
+		ok(rw.length === 1, `roster windows ${rw.length}`);
+		for (const t of rw) fitsWindow("roster", t);
+		const longest = [...V.names]
+			.sort((a, b) => textWidth(b) - textWidth(a))
+			.slice(0, 5)
+			.map((name) => ({ name }));
+		for (let k = 0; k <= 5; k++)
+			for (const eta of [0, 1, 999]) {
+				const t = madeWindow(longest.slice(0, k), eta);
+				ok((t === null) === (k === 0 && eta === 0), `made ${k} ${eta}`);
+				if (t) fitsWindow(`made ${k} ${eta}`, t);
+			}
 		for (let heard = 1; heard <= 20; heard++)
 			for (const t of nisshiWindows(heard)) fitsWindow(`nisshi ${heard}`, t);
 		ok(nisshiWindows(20).length <= 2, "nisshi windows");
@@ -727,8 +753,12 @@ const saved = (store: Map<string, string>) =>
 	JSON.parse(store.get(KEY) ?? "null");
 
 /** 部屋の 物を 調べる（静かな 文 → 遊び）。 */
-const examine = async (thing: string, picks: number[] = [], stage = 4) => {
-	const ev = (buildFacility(must(), view(stage), {} as Ctx).events ?? []).find(
+const examine = async (
+	thing: string,
+	picks: number[] = [],
+	v: VillageView = view(4),
+) => {
+	const ev = (buildFacility(must(), v, {} as Ctx).events ?? []).find(
 		(e) => e.id === `${thing}_0`,
 	);
 	ok(ev?.run, `no ${thing}_0`);
@@ -927,6 +957,102 @@ test(
 			setBushitsuEnv({ h: () => 1, w: () => 1, returnAt: () => 200 });
 			r = await examine("onair");
 			ok(r.at(-1) === narr(M.lampOn), `late night ${r}`);
+		}),
+);
+
+test(
+	"B13",
+	"ボカロ一覧：村に いる 子だけ（リノ・アルは 越してきてから）。安価キャラメイクは 帰りに 1回、原音設定か エター。作った 子は 一覧に のる",
+	() =>
+		sandbox(async (store) => {
+			const C = BS_MSG.vc;
+			const V = BS_MSG.vm;
+			// 一覧に 載せるのは この 村に いる 子だけ（ほかの 名無しの ボカロは 載せない）
+			ok(
+				C.official.join("/") ===
+					"束音ロゼ/解音ゼロ/革命シヨ/春音リノ/蓄音キリコ/響化アル",
+				`official ${C.official}`,
+			);
+			for (const n of [
+				"優音アイ",
+				"葵音ゲイザー",
+				"君野うしろ",
+				"七草ハレ",
+				"単音メフ",
+			])
+				ok(
+					!leaves(BS_MSG, "").some(([, t]) => t.includes(n)),
+					`${n} is listed`,
+				);
+			setBushitsuEnv({ returnAt: () => 50, rand: () => 0.1 });
+			let r = await examine("roster", [], view(4, 18));
+			const early = rosterWindows(rosterNames(18, 19, 20));
+			ok(
+				r.join("\n") ===
+					[...thingLines("roster"), ...early.map(narr), narr(C.kiriko)].join(
+						"\n",
+					),
+				`first roster:\n${r.join("\n")}`,
+			);
+			ok(!r.some((l) => /春音リノ|響化アル/.test(l)), "rino/aru too early");
+			r = await examine("roster", [], view(7, 20));
+			ok(
+				r.some((l) => l.includes("春音リノ")) &&
+					r.some((l) => l.includes("響化アル")),
+				`late roster ${r}`,
+			);
+			ok(!r.includes(narr(C.kiriko)), "kiriko line twice");
+			ok(r.length === 2, `no made window yet: ${r}`);
+			// 原音設定（rand 0.1）
+			const menu = `choose: ${V.menu.join("/")}`;
+			r = await examine("pc", [0, 0, 0, 0]);
+			const want = [
+				...thingLines("pc"),
+				menu,
+				narr(V.q[0]),
+				`choose: 乙音サンイチ/草音ワラ/鯖音ラグ/${V.stop}`,
+				narr(V.q[1]),
+				`choose: ネコミミ/メガネ/ジャージ/${V.stop}`,
+				narr(V.q[2]),
+				`choose: 〜ンゴ/〜やで/〜ですわ/${V.stop}`,
+				narr(V.wait),
+				"se mix",
+				narr(V.ok[0]),
+				narr("「乙音サンイチ」　ネコミミ　〜ンゴ"),
+				narr(V.ok[1]),
+			];
+			ok(r.join("\n") === want.join("\n"), `make:\n${r.join("\n")}`);
+			let m = saved(store);
+			ok(
+				m.vc.made.length === 1 &&
+					m.vc.made[0].name === "乙音サンイチ" &&
+					m.vc.madeAt === 50,
+				`memo ${JSON.stringify(m.vc)}`,
+			);
+			r = await examine("pc", [0]);
+			ok(r.at(-1) === narr(V.done), `same return ${r}`);
+			// エター（rand 0.9。作った 子の 名前は もう 出ない）
+			setBushitsuEnv({ returnAt: () => 60, rand: () => 0.9 });
+			r = await examine("pc", [0, 0, 0, 0]);
+			ok(!r.some((l) => l.startsWith("choose: 乙音サンイチ")), "name again");
+			ok(
+				r.slice(-2).join("\n") === V.eta.map(narr).join("\n"),
+				`eta:\n${r.join("\n")}`,
+			);
+			m = saved(store);
+			ok(m.vc.eta === 1 && m.vc.made.length === 1, `eta memo ${m.vc}`);
+			// 途中で やめると 何も 書かない
+			setBushitsuEnv({ returnAt: () => 70, rand: () => 0.5 });
+			r = await examine("pc", [0, 0, 3]);
+			ok(r.at(-1)?.startsWith("choose: "), `stop ${r}`);
+			ok(saved(store).vc.madeAt === 60, "a stopped make was saved");
+			// 一覧に 作った 子と エター
+			r = await examine("roster");
+			ok(
+				r.length === 3 &&
+					r.at(-1) === narr("（安価）乙音サンイチ\nすみに「エター　1人」"),
+				`roster with made:\n${r.join("\n")}`,
+			);
 		}),
 );
 

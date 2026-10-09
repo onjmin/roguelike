@@ -4,6 +4,7 @@
 // - うろ覚えお糸会かき大会（お糸会かき部）：お題を くずした 絵 3枚から いちばん 似てる 1枚（oeRound）。
 // - ぬとらじ（放送部）：毎晩 20〜2時と 土日。土日は おんJ年表の 昔話を 帰りに 1つ（MUKASHI）。
 // - 部員募集の はり紙：来るたびに 部が かわり、番号が ふえる（boshuLine）。
+// - おんｊボカロ一覧（ボカロ部）：村に いる 子と、安価キャラメイク（帰りに 1回。名前・見た目・口ぐせ）で 足した 子。
 // 部室の 人の 歩行グラ（BS_STAFF の walk）は ここにだけ 書く（ほかで 使わない。bushitsuTests B5）。
 
 /** 乱数（0 以上 1 未満）。見た目だけなので 遊ぶ ときは Math.random。 */
@@ -171,6 +172,66 @@ export const BS_MSG = {
 		again: "……さっきの　話の　続きは\nまた　こんど　な",
 		nisshiNone: "……まだ　白紙。",
 		nisshiHead: "昔話の　回：{n}回　ぶん",
+	},
+	vc: {
+		/**
+		 * おんｊボカロ一覧に ある 名前の うち、この 村に いる 子だけ（一覧の 順。春音リノ・響化アルは 越してきてから。
+		 * ほかは 安価キャラメイクで 足した 子）。
+		 */
+		official: [
+			"束音ロゼ",
+			"解音ゼロ",
+			"革命シヨ",
+			"春音リノ",
+			"蓄音キリコ",
+			"響化アル",
+		],
+		kiriko: "……キリコの　名前も　ある。",
+		madeName: "（安価）{name}",
+		rest: "ほか　{n}人",
+		eta: "すみに「エター　{n}人」",
+	},
+	vm: {
+		menu: ["安価で　作る", "やめる"],
+		done: "……今日の　安価は　もう　しめきった。",
+		q: ["まず　名前　>>5", "見た目　>>8", "口ぐせ　>>12"],
+		stop: "やめる",
+		names: [
+			"乙音サンイチ",
+			"草音ワラ",
+			"鯖音ラグ",
+			"芋音キヌ",
+			"灯音アゲ",
+			"凪音ロム",
+			"鍵音コテ",
+			"札音キリバン",
+			"粥音ホカ",
+		],
+		looks: [
+			"ネコミミ",
+			"メガネ",
+			"ジャージ",
+			"ツインテール",
+			"白衣",
+			"学ラン",
+			"着物",
+			"ヘッドホン",
+			"マント",
+		],
+		tics: [
+			"〜ンゴ",
+			"〜やで",
+			"〜ですわ",
+			"〜ナリ",
+			"〜っす",
+			"〜じゃけえ",
+			"〜でござる",
+			"〜ぞい",
+		],
+		wait: "……絵師を　待つ。",
+		ok: ["原音設定　完了。", "名簿に　1行　ふえた。"],
+		made: "「{name}」　{look}　{tic}",
+		eta: ["……絵師が　来ない。\nスレは　沈んだ。", "名簿の　すみに「エター」。"],
 	},
 	boshu: {
 		part: "「{club}　部員募集　part{n}」\n……名前の　らんに　1人　だけ。",
@@ -365,6 +426,53 @@ export const boshuLine = (visits: number): string => {
 		: fillText(BS_MSG.boshu.part, { club: c.name, n });
 };
 
+// ───────────────── おんｊボカロ一覧 ─────────────────
+
+/** 安価で 作った 子。 */
+export type VocaMade = { name: string; look: string; tic: string };
+
+/** 一覧の 名前（春音リノ・響化アルは 越してきてから）。 */
+export const rosterNames = (
+	step: number,
+	rinoFrom: number,
+	aruFrom: number,
+): string[] =>
+	BS_MSG.vc.official.filter(
+		(n) =>
+			!(n === "春音リノ" && step < rinoFrom) &&
+			!(n === "響化アル" && step < aruFrom),
+	);
+
+/** 一覧の 窓（名前を「　」で つないで 2行ずつ）。 */
+export const rosterWindows = (names: readonly string[]): string[] =>
+	pairWindows(packLines(names));
+
+/** 安価で 作った 子（新しい 2人まで）と エター の 数の 1窓（どちらも 無ければ null）。 */
+export const madeWindow = (
+	made: readonly { name: string }[],
+	eta: number,
+): string | null => {
+	const latest = [...made]
+		.reverse()
+		.map((m) => fillText(BS_MSG.vc.madeName, { name: m.name }));
+	let l1 = latest[0] ?? "";
+	let shown = latest.length ? 1 : 0;
+	if (latest[1] && textWidth(`${l1}　${latest[1]}`) <= 22) {
+		l1 = `${l1}　${latest[1]}`;
+		shown = 2;
+	}
+	const tail = [
+		made.length > shown
+			? fillText(BS_MSG.vc.rest, { n: made.length - shown })
+			: "",
+		eta > 0 ? fillText(BS_MSG.vc.eta, { n: eta }) : "",
+	]
+		.filter(Boolean)
+		.join("　");
+	if (!l1 && !tail) return null;
+	return [l1, tail].filter(Boolean).join("\n");
+};
+
 // ───────────────── 乱数の 道具 ─────────────────
 
 /** まぜた 写し（Fisher–Yates）。 */
@@ -385,6 +493,13 @@ const pickN = <T>(pool: readonly T[], n: number, rand: Rand): T[] => {
 		out.push(p.splice(Math.floor(rand() * p.length), 1)[0]);
 	return out;
 };
+
+/** 安価の 3択（ちがう 3つ。pool が 3つ に 足りなければ all から）。 */
+export const pick3 = <T>(
+	pool: readonly T[],
+	all: readonly T[],
+	rand: Rand,
+): T[] => pickN(pool.length >= 3 ? pool : all, 3, rand);
 
 // ───────────────── ワードウルフ（人狼部「おんｊ村」） ─────────────────
 

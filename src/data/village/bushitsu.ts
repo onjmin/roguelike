@@ -199,6 +199,8 @@ export const BUSHITSU: Facility = {
 			onair: "bushitsu",
 			radio: "bushitsu",
 			nisshi: "bushitsu",
+			roster: "bushitsu",
+			pc: "bushitsu",
 			boshu: "bushitsu",
 		},
 		people: [

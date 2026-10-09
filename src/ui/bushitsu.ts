@@ -4,6 +4,7 @@
 // - イーゼル（お糸会かき部）：うろ覚えお糸会かき大会の 板。
 // - ON AIR の ランプ・ラジカセ・放送日誌（放送部）：ぬとらじ。土日は 昔話を 帰りに 1つ ずつ。
 // - 部員募集の はり紙：遊べる 物を 使った 帰りの 数で 部と 番号が かわる。
+// - おんｊボカロ一覧の 額と ボカロ部の パソコン：村に いる 子の 名前と、安価キャラメイク（帰りに 1回）で 足した 子。
 // 「帰り」は いちばん 新しい 記録の 時刻（保守神社の おみくじ・保守当番と 同じ）。
 // 保存は kiriko-roguelike/bushitsu だけ（開発用の 下見 ?stage=・?event= の あいだは 書かない）。
 
@@ -13,15 +14,20 @@ import {
 	boshuLine,
 	fillText,
 	MUKASHI,
+	madeWindow,
 	nisshiWindows,
 	nutoMukashiDay,
 	nutoOnAir,
+	pick3,
+	rosterNames,
+	rosterWindows,
 	WW_BUCHO,
 } from "../data/bushitsu";
 import { nowHour, today } from "../data/calendar";
+import { MOBS } from "../data/mobs";
 import { devEvent } from "../data/objectives";
 import type { Facility } from "../data/village/facilities";
-import type { VillageView } from "../data/village/map";
+import { stepOf, type VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadRecords } from "../engine/save";
 import {
@@ -342,13 +348,70 @@ const radioScript = async (s: Story): Promise<void> => {
 	saveBushitsu(m);
 };
 
+/** おんｊボカロ一覧の 額：村に いる 子の 名前 → はじめて なら キリコの ひとこと、あとは 安価で 足した 子。 */
+const rosterScript = async (s: Story, v: VillageView): Promise<void> => {
+	const names = rosterNames(stepOf(v), MOBS.rino.from, MOBS.aru.from);
+	for (const t of rosterWindows(names)) await s.narrate(t);
+	const m = loadBushitsu();
+	if (!m.vc.kiriko) {
+		await s.narrate(BS_MSG.vc.kiriko);
+		m.vc.kiriko = true;
+		saveBushitsu(m);
+		return;
+	}
+	const made = madeWindow(m.vc.made, m.vc.eta);
+	if (made) await s.narrate(made);
+};
+
+/** ボカロ部の パソコン：安価キャラメイク（帰りに 1回。名前・見た目・口ぐせの 3択 → 6割で 原音設定、のこりは エター）。 */
+const vocaMakeScript = async (s: Story): Promise<void> => {
+	const M = BS_MSG.vm;
+	if ((await s.choose([...M.menu], { cancel: 1 })) !== 0) return;
+	const m = loadBushitsu();
+	const at = env.returnAt();
+	if (m.vc.madeAt === at) {
+		await s.narrate(M.done);
+		return;
+	}
+	const taken = new Set(m.vc.made.map((x) => x.name));
+	const pools: [readonly string[], readonly string[]][] = [
+		[M.names.filter((n) => !taken.has(n)), M.names],
+		[M.looks, M.looks],
+		[M.tics, M.tics],
+	];
+	const got: string[] = [];
+	for (const [i, [pool, all]] of pools.entries()) {
+		await s.narrate(M.q[i]);
+		const opts = pick3(pool, all, env.rand);
+		const k = await s.choose([...opts, M.stop], { cancel: opts.length });
+		if (k >= opts.length) return;
+		got.push(opts[k]);
+	}
+	const [name, look, tic] = got;
+	await s.narrate(M.wait);
+	s.se("mix");
+	const ok = env.rand() < 0.6;
+	m.vc.madeAt = at;
+	if (ok) {
+		m.vc.made = [...m.vc.made, { name, look, tic }].slice(-MADE_MAX);
+		saveBushitsu(m);
+		await s.narrate(M.ok[0]);
+		await s.narrate(fillText(M.made, { name, look, tic }));
+		await s.narrate(M.ok[1]);
+		return;
+	}
+	m.vc.eta++;
+	saveBushitsu(m);
+	for (const t of M.eta) await s.narrate(t);
+};
+
 /** room.plays の "bushitsu"（buildFacility が 物の 文を 読んだ あと。物の id で 分ける）。 */
 export const bushitsuThing = async (
 	ctx: Ctx,
 	s: Story,
 	_f: Facility,
 	kind: string,
-	_v: VillageView,
+	v: VillageView,
 ): Promise<void> => {
 	touchVisit();
 	if (kind === "table") await wordWolfScript(ctx, s);
@@ -360,6 +423,8 @@ export const bushitsuThing = async (
 	else if (kind === "radio") await radioScript(s);
 	else if (kind === "nisshi")
 		for (const t of nisshiWindows(loadBushitsu().nt.heard)) await s.narrate(t);
+	else if (kind === "roster") await rosterScript(s, v);
+	else if (kind === "pc") await vocaMakeScript(s);
 	else if (kind === "boshu") await s.narrate(boshuLine(loadBushitsu().visits));
 };
 
