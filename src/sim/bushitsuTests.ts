@@ -1,5 +1,5 @@
 // 部室棟の 試験（pnpm test で いっしょに 動く。spec-bushitsu §9）。形は civicTests と 同じ（Fail・ok・{ id, name, ok, reason }）。
-// B1〜B5：置き場所・部屋・絵・人の 歩行グラ。B6：文の 幅と 使わない 語。B7・B8：ワードウルフ・うろ覚えの 決まり。
+// B1〜B5：置き場所・部屋・絵・人の 歩行グラ。B6：文の 幅と 使わない 語。B7〜B9：ワードウルフ・うろ覚え・校歌の 決まり。
 // B10〜：村の 入口（ui/bushitsu.ts。板は 差しかえ）と 保存（kiriko-roguelike/bushitsu）。
 
 import { readdirSync, readFileSync } from "node:fs";
@@ -17,6 +17,16 @@ import {
 	BS_THING_LINES,
 	boshuLine,
 	fillText,
+	type KoukaSt,
+	koukaBubble,
+	koukaCut,
+	koukaFace,
+	koukaMargin,
+	koukaPress,
+	koukaRatio,
+	koukaStart,
+	koukaTenths,
+	koukaTick,
 	MUKASHI,
 	madeWindow,
 	nisshiWindows,
@@ -65,8 +75,10 @@ import {
 	setBushitsuBoards,
 	setBushitsuEnv,
 } from "../ui/bushitsu";
+import type { KoukaResult } from "../ui/bushitsuBoards";
 import type { Ctx } from "../ui/ctx";
 import { buildFacility } from "../ui/facilities";
+import { villageSong } from "../ui/villageMusic";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -689,6 +701,80 @@ test(
 	},
 );
 
+// ───────────────── B9 校歌 ─────────────────
+
+/** 歌いだして、顔色が stage に なってから react ms で しめる（16ms ごと）。stage 3 は しめない。 */
+const koukaPolicy = (rand: Rand, stage: number, react: number): KoukaSt => {
+	const st = koukaStart(rand);
+	koukaPress(st);
+	let seen: number | null = null;
+	while (st.state === "hold") {
+		koukaTick(st, 16);
+		if (st.state !== "hold") break;
+		if (seen === null && koukaFace(st) >= stage) seen = st.t;
+		if (seen !== null && st.t - seen >= react) koukaCut(st);
+	}
+	return st;
+};
+
+test(
+	"B9",
+	"校歌：息は 8〜22秒・顔色の さかい・しめないと 息が 切れる・もっと 青く なって すぐ しめれば 切れずに 8割5分 以上",
+	() => {
+		const rand = lcg(99);
+		for (let i = 0; i < 2000; i++) {
+			const st = koukaStart(rand);
+			ok(
+				st.cap >= 8000 && st.cap < 22000 && st.state === "ready",
+				`cap ${st.cap}`,
+			);
+		}
+		const face = (t: number) => koukaFace({ cap: 10000, t, state: "hold" });
+		ok(
+			face(5999) === 0 &&
+				face(6000) === 1 &&
+				face(8499) === 1 &&
+				face(8500) === 2,
+			"face thresholds",
+		);
+		const runs = (stage: number, react: number) => {
+			const r = lcg(99);
+			const out = Array.from({ length: 2000 }, () =>
+				koukaPolicy(r, stage, react),
+			);
+			const cut = out.filter((s) => s.state === "cut");
+			return {
+				fell: out.length - cut.length,
+				mean:
+					cut.reduce((n, s) => n + s.t / s.cap, 0) / Math.max(1, cut.length),
+				out,
+			};
+		};
+		const never = runs(3, 0);
+		ok(never.fell === 2000, `never cut: ${never.fell} fell`);
+		for (const s of never.out)
+			ok(koukaTenths(s) === 0 && koukaRatio(s) === 0, "fell scores");
+		const blue = runs(2, 300);
+		ok(blue.fell === 0 && blue.mean >= 0.85, `blue: ${blue.fell} ${blue.mean}`);
+		for (const s of blue.out) {
+			ok(koukaRatio(s) < 1000 && koukaRatio(s) > 0, `ratio ${koukaRatio(s)}`);
+			ok(koukaTenths(s) === Math.floor(s.t / 100), "tenths");
+		}
+		const pale = runs(1, 300);
+		ok(pale.mean >= 0.55 && pale.mean <= 0.7, `pale: ${pale.mean}`);
+		const st = koukaStart(() => 0.5);
+		koukaCut(st);
+		ok(st.state === "ready", "cut before press");
+		koukaPress(st);
+		for (let t = 0; t < 30000; t += 100) {
+			koukaTick(st, 100);
+			ok([...koukaBubble(st)].length <= 12, `bubble ${koukaBubble(st)}`);
+		}
+		ok(st.state === "fell" && st.t === st.cap, "fell at cap");
+		ok(koukaMargin(st) === 0, "margin after fell");
+	},
+);
+
 // ───────────────── B10〜 村の 入口と 保存 ─────────────────
 
 /** 地の文・セリフ・選ぶ・待つ・音・曲を 記録する 台本の 相手（選ぶ ときは picks を 順に 返す）。 */
@@ -1058,11 +1144,86 @@ test(
 
 test(
 	"B14",
-	"部員募集：遊べる 物を 使った 帰りの 数で 部と 番号が かわる（はじめは 人狼部 part31、次は お糸会かき部 38羽目）",
+	"譜面台・筐体・部員募集：校歌は 曲を 止めて 板（投げても もどす）→ 秒と 部長。テストプレイは エター。部員募集は 帰りの 数で かわる",
 	() =>
 		sandbox(async (store) => {
+			const K = BS_MSG.kk;
+			setBushitsuEnv({ returnAt: () => 5 });
+			let kk: KoukaResult = { tenths: 123, fell: false, t: 12300, cap: 14000 };
+			setBushitsuBoards({ kouka: async () => kk });
+			const song = villageSong();
+			let r = await examine("fumendai", [0]);
+			ok(
+				r.join("\n") ===
+					[
+						...thingLines("fumendai"),
+						`choose: ${K.menu.join("/")}`,
+						...K.howto.map(narr),
+						"wait",
+						"bgm null",
+						`bgm ${song}`,
+						narr("……12.3秒。いちばん　ぎりぎり。"),
+						sayOf("gassho", K.byeGood),
+					].join("\n"),
+				`best:\n${r.join("\n")}`,
+			);
+			ok(saved(store).kk.best === 878, `best ${saved(store).kk.best}`);
+			kk = { tenths: 100, fell: false, t: 10000, cap: 20000 };
+			r = await examine("fumendai", [0]);
+			ok(!r.some((l) => K.howto.some((h) => l.includes(h))), "howto twice");
+			ok(
+				r.slice(-2).join("\n") ===
+					[narr("……10.0秒　伸ばした。"), sayOf("gassho", K.byeShort)].join(
+						"\n",
+					),
+				`short:\n${r.join("\n")}`,
+			);
+			ok(saved(store).kk.best === 878, "best overwritten");
+			kk = { tenths: 0, fell: true, t: 9000, cap: 9000 };
+			r = await examine("fumendai", [0]);
+			ok(
+				r.slice(-2).join("\n") ===
+					[narr(K.fall), sayOf("gassho", K.byeFall)].join("\n"),
+				`fell:\n${r.join("\n")}`,
+			);
+			ok(saved(store).kk.falls === 1 && saved(store).kk.plays === 3, "falls");
+			// 板が 投げても 曲は もどる
+			setBushitsuBoards({
+				kouka: async () => {
+					throw new Error("board");
+				},
+			});
+			const t = recorder([0]);
+			const ev = (buildFacility(must(), view(4), {} as Ctx).events ?? []).find(
+				(e) => e.id === "fumendai_0",
+			);
+			let threw = false;
+			try {
+				await ev?.run?.(t.s);
+			} catch {
+				threw = true;
+			}
+			ok(threw && t.log.at(-1) === `bgm ${song}`, `throw:\n${t.log}`);
+			// やめる
+			r = await examine("fumendai", [1]);
+			ok(!r.includes("bgm null"), "quit played");
+			// テストプレイ
+			let played = 0;
+			setBushitsuBoards({
+				testplay: async () => {
+					played++;
+				},
+			});
+			r = await examine("cabinet", [0]);
+			ok(played === 1 && r.at(-1) === narr(BS_MSG.tp.after), `testplay ${r}`);
+			r = await examine("cabinet", [1]);
+			ok(played === 1 && !r.includes(narr(BS_MSG.tp.after)), "testplay quit");
+			// 部員募集（帰りが かわるたびに 次の 部）
+			setBushitsuBoards(null);
+			forgetBushitsuMemo();
+			store.delete(KEY);
 			setBushitsuEnv({ returnAt: () => 10 });
-			let r = await examine("boshu");
+			r = await examine("boshu");
 			ok(
 				r.join("\n") ===
 					[...thingLines("boshu"), narr(boshuLine(1))].join("\n") &&

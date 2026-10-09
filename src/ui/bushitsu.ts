@@ -5,6 +5,7 @@
 // - ON AIR の ランプ・ラジカセ・放送日誌（放送部）：ぬとらじ。土日は 昔話を 帰りに 1つ ずつ。
 // - 部員募集の はり紙：遊べる 物を 使った 帰りの 数で 部と 番号が かわる。
 // - おんｊボカロ一覧の 額と ボカロ部の パソコン：村に いる 子の 名前と、安価キャラメイク（帰りに 1回）で 足した 子。
+// - 筐体（ゲーム制作部）：テストプレイ。廊下の 譜面台（合唱部）：校歌　斉唱（村の 曲を 止めて 板）。
 // 「帰り」は いちばん 新しい 記録の 時刻（保守神社の おみくじ・保守当番と 同じ）。
 // 保存は kiriko-roguelike/bushitsu だけ（開発用の 下見 ?stage=・?event= の あいだは 書かない）。
 
@@ -13,6 +14,7 @@ import {
 	BS_STAFF,
 	boshuLine,
 	fillText,
+	KK,
 	MUKASHI,
 	madeWindow,
 	nisshiWindows,
@@ -31,13 +33,17 @@ import { stepOf, type VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadRecords } from "../engine/save";
 import {
+	type KoukaResult,
 	type OeResult,
+	playKouka,
 	playOekaki,
+	playTestPlay,
 	playWordWolf,
 	type WwResult,
 } from "./bushitsuBoards";
 import type { Ctx } from "./ctx";
 import type { UiCtx } from "./list";
+import { villageSong } from "./villageMusic";
 import { previewStage } from "./villageReturn";
 
 // ───────────────── 試験の 差しかえ ─────────────────
@@ -46,6 +52,8 @@ import { previewStage } from "./villageReturn";
 export type BushitsuBoards = {
 	wordwolf?: () => Promise<WwResult | null>;
 	oekaki?: () => Promise<OeResult | null>;
+	kouka?: () => Promise<KoukaResult | null>;
+	testplay?: () => Promise<void>;
 };
 let boards: BushitsuBoards = {};
 export const setBushitsuBoards = (b: BushitsuBoards | null): void => {
@@ -405,6 +413,52 @@ const vocaMakeScript = async (s: Story): Promise<void> => {
 	for (const t of M.eta) await s.narrate(t);
 };
 
+/** ゲーム制作部の 筐体：テストプレイ（99% で 止まる）→ エター。 */
+const testPlayScript = async (ctx: Ctx, s: Story): Promise<void> => {
+	if ((await s.choose([...BS_MSG.tp.menu], { cancel: 1 })) !== 0) return;
+	await s.wait(0);
+	await (boards.testplay ?? (() => playTestPlay(ctx)))();
+	await s.narrate(BS_MSG.tp.after);
+};
+
+/** 廊下の 譜面台：校歌　斉唱（村の 曲を 止めて 板。おわったら 曲を もどす）。 */
+const koukaScript = async (ctx: Ctx, s: Story): Promise<void> => {
+	const M = BS_MSG.kk;
+	if ((await s.choose([...M.menu], { cancel: 1 })) !== 0) return;
+	const first = loadBushitsu();
+	if (!first.kk.howto) {
+		for (const t of M.howto) await s.narrate(t);
+		first.kk.howto = true;
+		saveBushitsu(first);
+	}
+	await s.wait(0);
+	s.bgm(null);
+	let r: KoukaResult | null;
+	try {
+		r = await (boards.kouka ?? (() => playKouka(ctx)))();
+	} finally {
+		s.bgm(villageSong());
+	}
+	if (!r) return;
+	const m = loadBushitsu();
+	m.kk.plays++;
+	if (r.fell) {
+		m.kk.falls++;
+		saveBushitsu(m);
+		await s.narrate(M.fall);
+		await say(s, "gassho", M.byeFall);
+		return;
+	}
+	const ratio = Math.floor((1000 * r.t) / r.cap);
+	const isBest = ratio > m.kk.best;
+	if (isBest) m.kk.best = ratio;
+	saveBushitsu(m);
+	await s.narrate(
+		fillText(isBest ? M.best : M.cut, { s: (r.tenths / 10).toFixed(1) }),
+	);
+	await say(s, "gassho", r.t >= r.cap * KK.blue ? M.byeGood : M.byeShort);
+};
+
 /** room.plays の "bushitsu"（buildFacility が 物の 文を 読んだ あと。物の id で 分ける）。 */
 export const bushitsuThing = async (
 	ctx: Ctx,
@@ -425,6 +479,8 @@ export const bushitsuThing = async (
 		for (const t of nisshiWindows(loadBushitsu().nt.heard)) await s.narrate(t);
 	else if (kind === "roster") await rosterScript(s, v);
 	else if (kind === "pc") await vocaMakeScript(s);
+	else if (kind === "cabinet") await testPlayScript(ctx, s);
+	else if (kind === "fumendai") await koukaScript(ctx, s);
 	else if (kind === "boshu") await s.narrate(boshuLine(loadBushitsu().visits));
 };
 
@@ -441,10 +497,14 @@ if (import.meta.env.DEV && typeof window !== "undefined") {
 			__bushitsu: {
 				ww: () => Promise<WwResult | null>;
 				oe: () => Promise<OeResult | null>;
+				kk: () => Promise<KoukaResult | null>;
+				tp: () => Promise<void>;
 			};
 		}
 	).__bushitsu = {
 		ww: () => playWordWolf(ctxOf()),
 		oe: () => playOekaki(ctxOf()),
+		kk: () => playKouka(ctxOf()),
+		tp: () => playTestPlay(ctxOf()),
 	};
 }

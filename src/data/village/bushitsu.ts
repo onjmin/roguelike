@@ -201,6 +201,8 @@ export const BUSHITSU: Facility = {
 			nisshi: "bushitsu",
 			roster: "bushitsu",
 			pc: "bushitsu",
+			cabinet: "bushitsu",
+			fumendai: "bushitsu",
 			boshu: "bushitsu",
 		},
 		people: [

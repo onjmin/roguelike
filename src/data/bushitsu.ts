@@ -5,6 +5,8 @@
 // - ぬとらじ（放送部）：毎晩 20〜2時と 土日。土日は おんJ年表の 昔話を 帰りに 1つ（MUKASHI）。
 // - 部員募集の はり紙：来るたびに 部が かわり、番号が ふえる（boshuLine）。
 // - おんｊボカロ一覧（ボカロ部）：村に いる 子と、安価キャラメイク（帰りに 1回。名前・見た目・口ぐせ）で 足した 子。
+// - 校歌　斉唱（合唱部）：さいごの「あ」を 伸ばせるだけ 伸ばす。キリコが 息の 切れる 前に しめる（KK・kouka〜）。
+// - テストプレイ（ゲーム制作部）：99% から 進まない（板だけ。決まりは 無い）。
 // 部室の 人の 歩行グラ（BS_STAFF の walk）は ここにだけ 書く（ほかで 使わない。bushitsuTests B5）。
 
 /** 乱数（0 以上 1 未満）。見た目だけなので 遊ぶ ときは Math.random。 */
@@ -237,6 +239,20 @@ export const BS_MSG = {
 		part: "「{club}　部員募集　part{n}」\n……名前の　らんに　1人　だけ。",
 		hane: "「お糸会かき部　部員募集　{n}羽目」\n……名前の　らんに　1人　だけ。",
 	},
+	kk: {
+		menu: ["指揮を　する", "やめる"],
+		howto: [
+			"Aで　合唱部の　部長が\n「あ」を　伸ばしはじめる。",
+			"もう一度　Aで　しめる。\n息が　切れる　前に　しめる。",
+		],
+		cut: "……{s}秒　伸ばした。",
+		best: "……{s}秒。いちばん　ぎりぎり。",
+		fall: "……声が　かすれて　消えた。",
+		byeGood: "……2番、はじまらんかったな",
+		byeShort: "息、まだ　のこっとるやろ",
+		byeFall: "……ひゅう。",
+	},
+	tp: { menu: ["遊ぶ", "やめる"], after: "……エター。" },
 } as const;
 
 /**
@@ -286,6 +302,32 @@ export const BS_BOARD = {
 		stretch: "そんな　顔　長かったんか",
 		stretchThing: "そんな　長かったんか",
 		answerLabel: "正解",
+	},
+	kk: {
+		title: "校歌　斉唱",
+		hint: "A／タップ　はじめる・しめる　B／外で　やめる",
+		ready: "さん、はい",
+		/** 歌っている あいだ（その 秒を 過ぎたら）。 */
+		marks: [
+			[6000, "まだ　伸ばすんか"],
+			[12000, "2番　まだ？"],
+			[18000, "前奏が　はじまらない"],
+		],
+		fell: "息が　切れた",
+		/** しめた ときの 1行（koukaGrade の 番号）。 */
+		cut: [
+			"{s}秒　まだ　いけた",
+			"{s}秒　ええ　のびや",
+			"{s}秒　伝統を　守った",
+		],
+		/** そのあと 息の のこりを 見せる。 */
+		margin: "あと　{d}秒　いけた",
+	},
+	tp: {
+		title: "テストプレイ",
+		hint: "A／B／タップで　とじる",
+		loading: "NOW LOADING",
+		stall: "99%　から　進まない",
 	},
 } as const;
 
@@ -1133,3 +1175,73 @@ export const oeReaction = (
 	if (k === "color") return B.color;
 	return B.drop;
 };
+
+// ───────────────── 校歌　斉唱（合唱部） ─────────────────
+
+/**
+ * 校歌の さいごの「あ」。息の 長さ（cap。8〜22秒）は 見せず、顔色で 知らせる（青ざめる・もっと 青い）。
+ * A で 歌いだし、もう一度 A で しめる。息が 切れる 前に しめれば 長いほど よい（伸ばせるだけ 伸ばす 伝統）。
+ */
+export const KK = {
+	capMin: 8000,
+	capMax: 22000,
+	pale: 0.6,
+	blue: 0.85,
+	cueMs: 1200,
+	stepMs: 500,
+} as const;
+
+export type KoukaSt = {
+	cap: number;
+	t: number;
+	state: "ready" | "hold" | "cut" | "fell";
+};
+
+export const koukaStart = (rand: Rand): KoukaSt => ({
+	cap: KK.capMin + Math.floor(rand() * (KK.capMax - KK.capMin)),
+	t: 0,
+	state: "ready",
+});
+
+/** 歌いだす。 */
+export const koukaPress = (st: KoukaSt): void => {
+	if (st.state === "ready") st.state = "hold";
+};
+
+/** dt ms 伸ばす（息が 切れたら fell）。 */
+export const koukaTick = (st: KoukaSt, dt: number): void => {
+	if (st.state !== "hold") return;
+	st.t += dt;
+	if (st.t >= st.cap) {
+		st.t = st.cap;
+		st.state = "fell";
+	}
+};
+
+/** しめる（指揮の しめ）。 */
+export const koukaCut = (st: KoukaSt): void => {
+	if (st.state === "hold") st.state = "cut";
+};
+
+/** 顔色（0 ふつう・1 青ざめ・2 もっと 青い）。息の 残りは 見せず、顔で 知らせる。 */
+export const koukaFace = (st: KoukaSt): 0 | 1 | 2 =>
+	st.t < st.cap * KK.pale ? 0 : st.t < st.cap * KK.blue ? 1 : 2;
+
+/** のばした 長さ（0.1秒。息が 切れたら 0）。 */
+export const koukaTenths = (st: KoukaSt): number =>
+	st.state === "cut" ? Math.floor(st.t / 100) : 0;
+
+/** 息の つかいかた（千分率。しめた ときだけ）。 */
+export const koukaRatio = (st: KoukaSt): number =>
+	st.state === "cut" ? Math.floor((1000 * st.t) / st.cap) : 0;
+
+/** のこりの 息（0.1秒）。 */
+export const koukaMargin = (st: KoukaSt): number =>
+	Math.max(0, Math.floor((st.cap - st.t) / 100));
+
+/** 吹き出しの「あ〜〜」（500ms ごとに 〜 が 1つ。見せるのは うしろ 12字）。 */
+export const koukaBubble = (st: KoukaSt): string =>
+	`あ${"〜".repeat(Math.floor(st.t / KK.stepMs))}`.slice(-12);
+
+/** しめた ときの 1行（BS_BOARD.kk.cut の 番号）。 */
+export const koukaGrade = (st: KoukaSt): 0 | 1 | 2 => koukaFace(st);

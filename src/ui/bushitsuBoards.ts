@@ -1,14 +1,27 @@
 // 部室棟の 板（ui/minigameBoard.ts の board() の 上に 描く。村の 窓の 上に 1枚）。決まりは data/bushitsu.ts。
 // - ワードウルフ（playWordWolf）：人狼部の 机。名無し 4人と 部長が お題に ついて ひとことずつ。ちがう お題の 1人に 投票。
 // - うろ覚えお糸会かき大会（playOekaki）：名無し 3人が うろ覚えで 描いた 絵から いちばん 似てる 1枚を 3問。
+// - 校歌　斉唱（playKouka）：A で 合唱部の 部長が さいごの「あ」を 伸ばしはじめ、もう一度 A で キリコが しめる。
+// - テストプレイ（playTestPlay）：NOW LOADING が 99% で 止まる。
 // どれも 240x150 を 2倍の 下地に 描く（字が にじまない）。字は DotGothic16 の 8px。
 // 入力：↑↓←→・A・B と キャンバスの タップ（cursorInput）。板を 出して いる あいだ スマホの 十字キーと A・B は
 // 隠れる（.hud.modal）ので、板の 外の タップは B（ctx.input.push の tap: "b"）。B を 1.5秒 以内に 2回で やめる（null）。
+// 校歌は 板の タップが A・板の 外の タップが B（pressesOut）。テストプレイは どこを タップしても とじる（presses）。
 // 見た目の 乱数なので Math.random（冒険の 乱数・記録には 触らない）。
 
 import {
 	BS_BOARD,
 	fillText,
+	KK,
+	koukaBubble,
+	koukaCut,
+	koukaFace,
+	koukaGrade,
+	koukaMargin,
+	koukaPress,
+	koukaStart,
+	koukaTenths,
+	koukaTick,
 	type OeDrawing,
 	type OePart,
 	oeReaction,
@@ -26,10 +39,17 @@ import {
 import { BS_CELLS, BS_IMG, type BsName } from "../data/bushitsuSheet";
 import { loadImage } from "../engine/assets";
 import type { UiCtx } from "./list";
-import { board, tick } from "./minigameBoard";
+import { board, presses, tick } from "./minigameBoard";
 
 export type WwResult = { verdict: WwVerdict; pairId: string; wolfSeat: number };
 export type OeResult = { hits: number };
+/** 校歌：のばした 長さ（0.1秒。息が 切れたら 0）・息が 切れたか・しめた 時の 長さと 息の 長さ（ms）。 */
+export type KoukaResult = {
+	tenths: number;
+	fell: boolean;
+	t: number;
+	cap: number;
+};
 
 type Board = ReturnType<typeof board>;
 type G = CanvasRenderingContext2D;
@@ -715,6 +735,239 @@ export const playOekaki = async (ctx: UiCtx): Promise<OeResult | null> => {
 		throw e;
 	} finally {
 		inp.stop();
+		b.close();
+	}
+};
+
+// ───────────────── 校歌　斉唱 ─────────────────
+
+/**
+ * A か 板の タップで 押されるのを 待つ（take で 取る）。minigameBoard の presses と 同じで、板の 外の タップだけ B
+ * （スマホで 歌いだす 前に やめる 手）。
+ */
+const pressesOut = (ctx: UiCtx, root: HTMLElement) => {
+	let pressed: "a" | "b" | null = null;
+	const pop = ctx.input.push(
+		(k, repeat) => {
+			if (repeat) return;
+			if (k === "a" || k === "b") pressed = k;
+		},
+		{ tap: "b" },
+	);
+	const onDown = (e: PointerEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		pressed = "a";
+	};
+	root.addEventListener("pointerdown", onDown);
+	return {
+		take: (): "a" | "b" | null => {
+			const p = pressed;
+			pressed = null;
+			return p;
+		},
+		stop: () => {
+			pop();
+			root.removeEventListener("pointerdown", onDown);
+		},
+	};
+};
+
+/** 吹き出しの 字の 色（顔色 0・1・2）。 */
+const KK_INK = ["#202020", "#404050", "#707088"] as const;
+/** 息が 切れた あと「……」が 消えるまで（ms）。 */
+const KK_FADE_MS = 600;
+
+/**
+ * 校歌　斉唱。A で 合唱部の 部長が さいごの「あ」を 伸ばしはじめ、もう一度 A（B・タップでも）で しめる。
+ * 息の 長さは 見せない（顔が 青ざめて いく）。歌いだす 前の B は やめる（null）。
+ */
+export const playKouka = async (ctx: UiCtx): Promise<KoukaResult | null> => {
+	const b = board(ctx, BS_BOARD.kk.title, BS_BOARD.kk.hint);
+	const g = crisp(b);
+	const p = pressesOut(ctx, b.root);
+	const say = (t: string) => {
+		if (b.note.textContent !== t) b.note.textContent = t;
+	};
+	try {
+		const img = await prepare();
+		const st = koukaStart(Math.random);
+		let baton: "rest" | "up" | "flick" = "rest";
+		let fellAt = 0;
+		const draw = () => {
+			const now = performance.now();
+			g.fillStyle = "#1c2430";
+			g.fillRect(0, 0, W, H);
+			g.fillStyle = "#2a3440";
+			g.fillRect(0, 120, W, 30);
+			// 合唱部の 部長（顔色だけ かわる。体は ゆれない）と キリコ（後ろ姿）
+			const face = koukaFace(st);
+			drawCell(g, img, `gassho${face}` as BsName, 104, 46, 2);
+			drawCell(g, img, "kirikoBack", 104, 96, 2);
+			// 指揮棒
+			g.strokeStyle = "#ffffff";
+			g.lineWidth = 1.5;
+			g.lineCap = "round";
+			g.beginPath();
+			g.moveTo(130, 104);
+			if (baton === "flick") g.quadraticCurveTo(152, 98, 136, 114);
+			else if (baton === "up") g.lineTo(142, 88);
+			else g.lineTo(136, 112);
+			g.stroke();
+			// 吹き出し（歌いだしてから）
+			if (st.state !== "ready") {
+				const alpha =
+					st.state === "fell"
+						? Math.max(0, 1 - (now - fellAt) / KK_FADE_MS)
+						: 1;
+				g.fillStyle = "#ffffff";
+				roundRect(g, 56, 14, 128, 22, 4);
+				g.fill();
+				g.beginPath();
+				g.moveTo(115, 36);
+				g.lineTo(125, 36);
+				g.lineTo(120, 41);
+				g.closePath();
+				g.fill();
+				const jx = face === 2 ? Math.round(Math.random() * 2 - 1) : 0;
+				const jy = face === 2 ? Math.round(Math.random() * 2 - 1) : 0;
+				g.globalAlpha = alpha;
+				text(
+					g,
+					st.state === "fell" ? "……" : koukaBubble(st),
+					120 + jx,
+					28 + jy,
+					KK_INK[face],
+					"center",
+				);
+				g.globalAlpha = 1;
+			}
+			// のばした 秒
+			text(g, (st.t / 1000).toFixed(1), 234, 144, "#ffe060", "right", 16);
+		};
+		/** ms だけ 描きつづける。 */
+		const hold = async (ms: number) => {
+			const end = performance.now() + ms;
+			while (performance.now() < end) {
+				draw();
+				await tick();
+			}
+		};
+		// 1. 前奏（窓から 持ちこした 押しは 捨てる）
+		await hold(KK.cueMs);
+		p.take();
+		say(BS_BOARD.kk.ready);
+		// 2. 歌いだし（その 前の B は やめる）
+		for (;;) {
+			const k = p.take();
+			if (k === "b") return null;
+			if (k === "a") break;
+			draw();
+			await tick();
+		}
+		koukaPress(st);
+		baton = "up";
+		// 3. 伸ばす（A・B・タップで しめる）
+		let last = performance.now();
+		while (st.state === "hold") {
+			await tick();
+			const now = performance.now();
+			const dt = document.hidden ? 0 : Math.min(100, now - last);
+			last = now;
+			koukaTick(st, dt);
+			if (p.take() && st.state === "hold") koukaCut(st);
+			if (st.state === "hold") {
+				const mark = [...BS_BOARD.kk.marks]
+					.reverse()
+					.find(([ms]) => st.t >= ms);
+				say(mark ? mark[1] : BS_BOARD.kk.ready);
+			}
+			draw();
+		}
+		// 4. しめ・息切れ
+		if (st.state === "fell") {
+			fellAt = performance.now();
+			baton = "rest";
+			say(BS_BOARD.kk.fell);
+			ctx.se("miss");
+			await hold(1200);
+		} else {
+			baton = "flick";
+			draw();
+			await tick();
+			baton = "rest";
+			const grade = koukaGrade(st);
+			say(
+				fillText(BS_BOARD.kk.cut[grade], {
+					s: (koukaTenths(st) / 10).toFixed(1),
+				}),
+			);
+			ctx.se(grade === 2 ? "victory" : "decide");
+			await hold(1200);
+			say(
+				fillText(BS_BOARD.kk.margin, {
+					d: (koukaMargin(st) / 10).toFixed(1),
+				}),
+			);
+			await hold(1400);
+		}
+		// 5. とじる（A・B・タップ）
+		say(BS_BOARD.end);
+		p.take();
+		while (!p.take()) {
+			draw();
+			await tick();
+		}
+		return {
+			tenths: koukaTenths(st),
+			fell: st.state === "fell",
+			t: st.t,
+			cap: st.cap,
+		};
+	} finally {
+		p.stop();
+		b.close();
+	}
+};
+
+// ───────────────── テストプレイ ─────────────────
+
+/** 読みこみが 99% に なるまで（ms）・99% で 止まってから 1行 出すまで・とじられる までの 間。 */
+const TP_LOAD_MS = 2500;
+const TP_STALL_MS = 1500;
+const TP_CLOSE_MS = 600;
+
+/** テストプレイ。NOW LOADING が 99% で 止まる（A・B・タップで とじる）。 */
+export const playTestPlay = async (ctx: UiCtx): Promise<void> => {
+	const b = board(ctx, BS_BOARD.tp.title, BS_BOARD.tp.hint);
+	const g = crisp(b);
+	const p = presses(ctx, b.root);
+	try {
+		await prepare();
+		const t0 = performance.now();
+		let at99: number | null = null;
+		for (;;) {
+			const now = performance.now();
+			const e = Math.min(TP_LOAD_MS, now - t0) / TP_LOAD_MS;
+			const pct = Math.min(99, Math.floor(99 * (1 - (1 - e) ** 2)));
+			if (pct >= 99 && at99 === null) at99 = now;
+			if (at99 !== null && now - at99 >= TP_STALL_MS)
+				b.note.textContent = BS_BOARD.tp.stall;
+			g.fillStyle = "#000000";
+			g.fillRect(0, 0, W, H);
+			text(g, BS_BOARD.tp.loading, W / 2, 66, "#ffffff", "center");
+			g.fillStyle = "#40e060";
+			g.fillRect(41, 77, Math.round((158 * pct) / 99), 6);
+			g.strokeStyle = "#808080";
+			g.lineWidth = 1;
+			g.strokeRect(40.5, 76.5, 159, 7);
+			text(g, `${pct}%`, W / 2, 98, "#ffffff", "center");
+			// 開いて すぐの 押しは 数えない（窓の 送りの 続き）
+			if (p.take() && now - t0 >= TP_CLOSE_MS) break;
+			await tick();
+		}
+	} finally {
+		p.stop();
 		b.close();
 	}
 };
