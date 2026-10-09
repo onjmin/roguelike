@@ -52,7 +52,7 @@ import {
 	TOWN_NAME,
 	VILLAGE_MSG,
 } from "../data/town";
-import { facilityById, outdoorThingOf } from "../data/village/facilities";
+import { facilityOfDoor, outdoorThingOf } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import {
 	VISITOR_WALK,
@@ -622,7 +622,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		};
 	// 町が 育つと 建つ 施設の 扉と 外の 物（data/village/facilities.ts・ui/facilities.ts）
 	if (p.id.startsWith("door_f_")) {
-		const f = facilityById(p.id.slice("door_f_".length));
+		const f = facilityOfDoor(p.id);
 		if (f)
 			return { ...at, trigger: "touch", through: true, run: enterFacility(f) };
 	}

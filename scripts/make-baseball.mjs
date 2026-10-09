@@ -806,12 +806,17 @@ const fieldTop = (img, ox, oy, th) => {
 			const X = (x - HOME[0]) / K;
 			const Z = (HOME[1] - y) / K;
 			if (Math.hypot(X, Z) < FENCE + 6 || Z < -8) continue;
+			// 木（右下に 2px の 影 → 濃い 緑の 葉・ふち・左上の 明るい 所。葉を 地面より はっきり 濃く して、輪に 見えない ように）
+			const put = (px, py, c) => {
+				if (px >= 0 && px < FW && py >= 0 && py < FH) img.set(ox + px, oy + py, c);
+			};
+			for (let j = -6; j <= 6; j++)
+				for (let k = -6; k <= 6; k++) if (j * j + k * k <= 38) put(x + k + 2, y + j + 2, hex("#2f6a34"));
 			for (let j = -6; j <= 6; j++)
 				for (let k = -6; k <= 6; k++) {
 					const d = j * j + k * k;
 					if (d > 38) continue;
-					if (x + k < 0 || x + k >= FW || y + j < 0 || y + j >= FH) continue;
-					img.set(ox + x + k, oy + y + j, d > 22 || k + j > 3 ? hex("#2f6a34") : hex("#4a8c3e"));
+					put(x + k, y + j, hex(d > 26 ? "#2a5e2f" : d <= 12 && k + j < 0 ? "#62a84e" : "#3a7a34"));
 				}
 		}
 	}

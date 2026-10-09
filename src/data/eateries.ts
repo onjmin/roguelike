@@ -5,8 +5,13 @@
 // 1回目は 店番が「お代は　ええ」（町が 育ったのは キリコの おかげ）。
 import { food } from "./village/rpgenArt";
 
-/** 品（選択肢の 名前・出てきた 一品の 絵・食べる 窓）。 */
-export type Dish = { name: string; art?: string; eat: readonly string[] };
+/** 品（選択肢の 名前・出てきた 一品の 絵・食べる 窓。cold は 冷たい 品＝湯気を 出さない）。 */
+export type Dish = {
+	name: string;
+	art?: string;
+	cold?: boolean;
+	eat: readonly string[];
+};
 
 /** 店の 品書き（話すのは 店番。名前欄は keeper）。 */
 export type EatMenu = {
@@ -46,6 +51,7 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "焼きそば",
+				art: food("yakisoba"),
 				eat: [
 					"ソースの　こげた　ところが　うまい。\n……海の家のと、どっちが　うまいか。",
 				],
@@ -53,6 +59,7 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			{
 				name: "ラムネ",
 				art: food("ramune"),
+				cold: true,
 				eat: ["ビー玉を　押しこむ。しゅわっ。\n……のどの　奥が　ぱちぱちする。"],
 			},
 		],
@@ -203,7 +210,8 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "オレンジジュース",
-				art: food("orange"),
+				art: food("juice"),
+				cold: true,
 				eat: ["ストローで　すする。\n……となりの　J民が　乾杯を　求めてきた。"],
 			},
 		],
@@ -219,25 +227,31 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			{
 				name: "しめ鯖",
 				art: food("saba"),
+				cold: true,
 				eat: ["ほどよい　酢と　脂。\n……鯖、という　名に　はじない　味。"],
 			},
 			{
 				name: "ikura",
 				art: food("ikura"),
+				cold: true,
 				eat: ["いくら。\n……口の　中で、ぷちぷち　はじける。"],
 			},
 			{
 				name: "uni",
 				art: food("uni"),
+				cold: true,
 				eat: ["うに。\n……とろっと　甘い。海の　味が　広がる。"],
 			},
 			{
 				name: "awabi",
+				art: food("awabi"),
+				cold: true,
 				eat: ["あわび。\n……こりっ、こりっ。かむほど　うまい。"],
 			},
 			{
 				name: "特上「hayabusa」",
 				art: food("maguro"),
+				cold: true,
 				eat: [
 					"おまかせの　盛り合わせ。\n……この　島の　名前を　もらった　握りだ。",
 					"hayabusa……鳥の　名前だ。\n……魚は、ちゃんと　入っていた。",

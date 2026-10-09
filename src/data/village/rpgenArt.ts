@@ -1,6 +1,6 @@
 // scripts/pack-rpgen.mjs が 書き出す（手で 書きかえない。部品を かえる ときは pack-rpgen.mjs の GROUPS・ROOM_PIECES・FOOD）。
 // 絵は RPGEN（https://rpgen.us/）の スプライトセットから 選んで まとめた もの
-// （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字・たこ焼きの 3つだけ 手描き。
+// （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字・ダンベルの 札・たこ焼き（と ジュースの ストロー・焼きそばの 青のり）だけ 手描き。
 // 部屋の 絵の 少し（台の 上の 家電・ダンベル）と 外観の のれん・日よけの 色がえは 同梱の Base.png から 切って 詰めた もの。
 
 /** まとめた 絵（public/sprites/rpgen-modern.png。256x304）。施設の 外観・街の 物。 */
@@ -86,6 +86,7 @@ export const RPGEN_CELLS = {
 	wagonE: [8, 17, 4, 2],
 	redLamp: [15, 14, 1, 1],
 	redCross: [14, 15, 1, 1],
+	dumbbellSign: [15, 15, 1, 1],
 } as const;
 
 export type RpgenName = keyof typeof RPGEN_CELLS;
@@ -236,7 +237,7 @@ export const ROOM_CELLS = {
 	plateStack: [12, 12, 1, 1],
 	shelfBottles: [13, 12, 2, 1],
 	bookshelf: [0, 13, 2, 1],
-	tvGame: [2, 13, 2, 1],
+	tvGame: [2, 13, 2, 2],
 	stoolOrange: [15, 12, 1, 1],
 	stoolSmall: [4, 13, 1, 1],
 	chairRed: [5, 13, 1, 1],
@@ -250,14 +251,14 @@ export const ROOM_CELLS = {
 	tanuki: [15, 13, 1, 1],
 	kitsune: [0, 14, 1, 1],
 	korokke: [1, 14, 1, 1],
-	gyudon: [2, 14, 1, 1],
-	motsu: [3, 14, 1, 1],
-	beerMug: [4, 14, 1, 1],
-	maguro: [5, 14, 1, 1],
-	edamame: [6, 14, 1, 1],
-	ebichili: [7, 14, 1, 1],
-	mabo: [8, 14, 1, 1],
-	chahan: [9, 14, 1, 1],
+	gyudon: [4, 14, 1, 1],
+	motsu: [5, 14, 1, 1],
+	beerMug: [6, 14, 1, 1],
+	maguro: [7, 14, 1, 1],
+	edamame: [8, 14, 1, 1],
+	ebichili: [9, 14, 1, 1],
+	mabo: [10, 14, 1, 1],
+	chahan: [11, 14, 1, 1],
 } as const;
 
 export type RoomArtName = keyof typeof ROOM_CELLS;
@@ -298,15 +299,17 @@ export const FOOD_CELLS = {
 	yakitori: [12, 0, 1, 1],
 	edamame: [13, 0, 1, 1],
 	fried: [14, 0, 1, 1],
-	orange: [15, 0, 1, 1],
-	saba: [0, 1, 1, 1],
-	ikura: [1, 1, 1, 1],
-	uni: [2, 1, 1, 1],
-	maguro: [3, 1, 1, 1],
-	mabo: [4, 1, 1, 1],
-	chahan: [5, 1, 1, 1],
-	ebichili: [6, 1, 1, 1],
-	tenshin: [7, 1, 1, 1],
+	juice: [15, 0, 1, 1],
+	yakisoba: [0, 1, 1, 1],
+	saba: [1, 1, 1, 1],
+	awabi: [2, 1, 1, 1],
+	ikura: [3, 1, 1, 1],
+	uni: [4, 1, 1, 1],
+	maguro: [5, 1, 1, 1],
+	mabo: [6, 1, 1, 1],
+	chahan: [7, 1, 1, 1],
+	ebichili: [8, 1, 1, 1],
+	tenshin: [9, 1, 1, 1],
 } as const;
 
 export type FoodName = keyof typeof FOOD_CELLS;

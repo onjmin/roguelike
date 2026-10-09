@@ -9,7 +9,8 @@
 //   いちばん 近い 野手が「！」で 追う。関所の 原住民は 抜けていく 球に 飛びつく。キリコは 一塁へ 走る。
 // - ホームラン競争：ストライク だけ 10球、芯の 数を 数える。自己ベストは localStorage（kiriko-roguelike/derby）。
 // 絵は public/sprites/baseball.png（scripts/make-baseball.mjs。上から 見た 人・効果・花火は RPGEN の 素材）。
-// 読めない ときは 四角だけの 絵で 同じ ように 遊べる（関所で 止まらない）。B で いつでも やめられる。
+// 読めない ときは 四角だけの 絵で 同じ ように 遊べる（関所で 止まらない）。B で いつでも やめられる
+// （打席の 結果が 決まった あとの B は のこりの 場面を とばすだけ：結果は そのまま）。
 // 決まり（球の 道・当たり・カウント・打球・カメラ）は 純粋な 関数で、試験（sim/villageTests.ts）が 数を 確かめる。
 // 冒険の 乱数・記録には 触らない（球と 見た目の 乱数は Math.random）。モジュールの 上では DOM・画像・localStorage に 触らない。
 
@@ -844,6 +845,15 @@ const drawA = (G: Game): void => {
 /** やめた（B）。どこからでも 投げて、外で 受ける。 */
 class Quit extends Error {}
 
+/** 結果が 決まった あとの 場面（上から 見た 球場・おわりの 1枚）。B は のこりを とばすだけで、結果は 捨てない。 */
+const skippable = async (run: () => Promise<unknown>): Promise<void> => {
+	try {
+		await run();
+	} catch (e) {
+		if (!(e instanceof Quit)) throw e;
+	}
+};
+
 /** 毎コマ frame を 呼ぶ（true で おわり）。B で やめる。A は frame に わたす（使わなければ 捨てる）。 */
 const loop = async (
 	G: Game,
@@ -1315,8 +1325,9 @@ const drawB = (G: Game, v: BView): void => {
 		g.fillStyle = "#2f6e35";
 		g.fillRect(0, 0, 240, 150);
 	}
-	// 人（奥から）
-	const people = [...v.men, v.runner].sort((a, b) => b.Z - a.Z);
+	// 人（奥から。キリコは 3m 手前 あつかい：ホームの そばで キャッチャーに かくれない ように）
+	const depth = (m: Man) => (m === v.runner ? m.Z - 3 : m.Z);
+	const people = [...v.men, v.runner].sort((a, b) => depth(b) - depth(a));
 	for (const m of people) {
 		const { x, y } = scr(m.X, m.Z);
 		if (!img) {
@@ -1644,17 +1655,25 @@ const playAtBat = async (
 		const next = applyOutcome(st, r.call);
 		st = next.st;
 		A.count = st;
-		if (r.bb) {
-			const ban = await fieldScene(G, r.bb, false);
+		// 打席が おわった（前に とんだ・フォアボール・三振）あとは、B で 場面を とばしても 結果は そのまま
+		const bb = r.bb;
+		if (bb) {
 			const end = next.end ?? "hit";
-			await card(G, end, ban);
+			await skippable(async () => {
+				const ban = await fieldScene(G, bb, false);
+				await card(G, end, ban);
+			});
+			return end;
+		}
+		const end = next.end;
+		if (end) {
+			await skippable(async () => {
+				await callOut(G, r, p);
+				await card(G, end, null);
+			});
 			return end;
 		}
 		await callOut(G, r, p);
-		if (next.end) {
-			await card(G, next.end, null);
-			return next.end;
-		}
 	}
 };
 
@@ -1737,7 +1756,8 @@ const runDerby = async (
 	});
 	G.say(newBest ? BATTING.derbyBest : "");
 	if (newBest) G.se("served");
-	await hold(G, 1500);
+	// 記録は もう 保存した。B は この 1枚を とばすだけ
+	await skippable(() => hold(G, 1500));
 	return { hr, best: Math.max(prev, hr), newBest, far };
 };
 

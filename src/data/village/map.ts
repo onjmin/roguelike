@@ -63,6 +63,7 @@ import {
 	doorId,
 	facilitiesAt,
 	facilityDoor,
+	facilityDoor2,
 	facilityTiles,
 	outdoorId,
 	stampFacilities,
@@ -889,7 +890,8 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 			for (const [x, ch] of v.lanes) {
 				if (y >= 41) out.push([x, y, walk]);
 				else if (!paved || lane) out.push([x, y, "."]);
-				else out.push([x, y, crossV(y) ? "を" : ch]);
+				// T字の 突きあたり（北の 通りの 歩道の 行）は 歩道の まま：その 先に 道は ない
+				else out.push([x, y, y === V_Y0 ? walk : crossV(y) ? "を" : ch]);
 			}
 		}
 	if (!paved) return out;
@@ -1216,6 +1218,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	for (const f of facilitiesAt(stage)) {
 		const d = facilityDoor(f);
 		if (d) out.push({ id: doorId(f), x: d[0], y: d[1], trigger: "touch" });
+		// 両開きの もう 1枚（どちらを 踏んでも 入れる）
+		const d2 = facilityDoor2(f);
+		if (d2)
+			out.push({ id: doorId(f, true), x: d2[0], y: d2[1], trigger: "touch" });
 		for (const t of f.outdoor ?? [])
 			out.push({
 				id: outdoorId(f, t),

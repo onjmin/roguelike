@@ -2,7 +2,8 @@
 // - 店番（中の 人 play:"eat"・屋台の 見える 外の 人）に 話すと、セリフを 1つ（話す たびに 次の セリフ。
 //   最後の 1つは「なんに　する？」の たぐい）→ 品書き。食べた あとに また 話すと、セリフの かわりに again。
 // - 券売機（部屋の plays:"eat"）は 調べた 文の あと すぐ 品書き（受けるのは 店番）。
-// - 選ぶ → 店番の ひとこと → チーン → 出てきた 一品（板に 大きく。湯気が のぼる。1.2秒か A／タップ）→ 食べる 音 →
+// - 選ぶ → 店番の ひとこと → チーン → 出てきた 一品（板に 大きく。湯気が のぼる・冷たい 品は のぼらない。
+//   1.2秒か A／タップ）→ 食べる 音 →
 //   地の文 1〜2窓。村に いる あいだの 1回目だけ、食べた あとに 店番の「お代は　ええ」（お金の しくみは ない）。
 // どれも 寄り道で、何も 持ちこまない（満腹度・道具・強さ・記録には ふれない。乱数も 使わない）。
 // 板の 見た目は 別ゲーの 板（ui/minigames.ts）と 同じ クラス（.mgame）。
@@ -35,13 +36,15 @@ const SCALE = 6;
 const SHOW_MS = 1200;
 
 /**
- * 出てきた 一品（村の 窓の 上に 板を 1枚。白木の 台に 一品、湯気が のぼる）。
+ * 出てきた 一品（村の 窓の 上に 板を 1枚。白木の 台に 一品、湯気が のぼる。冷たい 品は 湯気なし）。
  * 1.2秒か A／タップで 閉じる。画像が 読めなければ 何も 出さない。
+ * 品の 絵は 見える 画素の 下はしが マスの 下に そろえて ある（scripts/pack-rpgen.mjs の seat）。
  */
 export const showDish = async (
 	ctx: Ctx,
 	art: string,
 	title: string,
+	cold = false,
 ): Promise<void> => {
 	// 試験（node）には 画像も 画面も ない
 	if (typeof Image === "undefined" || typeof document === "undefined") return;
@@ -100,12 +103,13 @@ export const showDish = async (
 				sw * SCALE,
 				sh * SCALE,
 			);
-			// 湯気（3すじ。のぼって 消える）
-			for (let i = 0; i < 3; i++) {
-				const ph = (k * 1.6 + i / 3) % 1;
-				g.fillStyle = `rgba(255,255,255,${(0.4 * (1 - ph)).toFixed(2)})`;
-				g.fillRect(100 + i * 18, 34 - ph * 26, 4, 10);
-			}
+			// 湯気（3すじ。のぼって 消える。冷たい 品は なし）
+			if (!cold)
+				for (let i = 0; i < 3; i++) {
+					const ph = (k * 1.6 + i / 3) % 1;
+					g.fillStyle = `rgba(255,255,255,${(0.4 * (1 - ph)).toFixed(2)})`;
+					g.fillRect(100 + i * 18, 34 - ph * 26, 4, 10);
+				}
 			if (k >= 1 || pressed) break;
 		}
 	} finally {
@@ -132,7 +136,7 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	// チーン（できあがりの 呼び鈴）
 	s.se("glass");
 	await s.wait(0);
-	if (d.art) await showDish(ctx, d.art, d.name);
+	if (d.art) await showDish(ctx, d.art, d.name, d.cold);
 	s.se("eat");
 	for (const t of d.eat) await s.narrate(t);
 	const ate = `eat:${id}`;

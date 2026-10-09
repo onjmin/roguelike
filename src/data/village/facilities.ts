@@ -88,6 +88,11 @@ export type GridLook = {
 	 * 中の ない 店）は 通れない 扉の 絵で、そこに 外の 物（表札・品書き）を 置く。
 	 */
 	door?: string;
+	/**
+	 * 両開きの もう 1枚の 扉の キー（rows に 1つだけ。door と 同じく 中が ある ときだけ 通れて、踏むと 入る。
+	 * 出る ときは door の 前に 立つ）。
+	 */
+	door2?: string;
 	/** 通れる キー（並べた 字。屋台の 台の うしろ＝店番の 立つ 所）。 */
 	floor?: string;
 	/** 台の キー（並べた 字。向こうの 人・物に 台ごしに 話しかけられる。屋台の 台）。 */
@@ -247,15 +252,17 @@ const C_FIELD = "#b08a5a";
 const C_GRASS = "#97bc25";
 const TURF = base(0, 4);
 
-/** 絵を 並べた 外観の 扉の マス（外観の 左上から。扉の キーが 無ければ null）。 */
-const gridDoor = (g: GridLook): Cell | null => {
-	if (!g.door) return null;
+/** 絵を 並べた 外観で その キーの マス（外観の 左上から。無ければ null）。 */
+const gridKeyCell = (g: GridLook, key: string | undefined): Cell | null => {
+	if (!key) return null;
 	for (const [y, r] of g.rows.entries()) {
-		const x = [...r].indexOf(g.door);
+		const x = [...r].indexOf(key);
 		if (x >= 0) return [x, y];
 	}
 	return null;
 };
+/** 絵を 並べた 外観の 扉の マス（外観の 左上から。扉の キーが 無ければ null）。 */
+const gridDoor = (g: GridLook): Cell | null => gridKeyCell(g, g.door);
 
 /** 住宅街の 家（入れない。扉の マスに 表札。until の 段で 都市の 建物に 建てかわる）。 */
 const house = (
@@ -1833,22 +1840,33 @@ export const FACILITIES: readonly Facility[] = [
 		name: "ageジム",
 		from: 6,
 		at: [40, 37],
-		// 紫の 帯・灰色の ガラス
+		// 紫の 帯に ダンベルの 札 2枚・灰色の ガラス（右の ガラスに 会員募集の はり紙）
 		look: {
 			kind: "grid",
-			rows: ["(~--~)", "[====]", "sSSSSt", "iIDIIj"],
+			rows: ["(~--~)", "[====]", "sGSSGt", "iIDIPj"],
 			door: "D",
 			keys: {
 				...ROOF_FLAT,
 				s: [art("white", 1, 1), art("band", 0, 2)],
 				S: [art("white", 1, 1), art("band", 1, 2)],
+				G: [art("white", 1, 1), art("band", 1, 2), art("dumbbellSign")],
 				t: [art("white", 1, 1), art("band", 2, 2)],
 				i: [art("gray", 0, 1), art("glass", 2)],
 				I: [art("gray", 1, 1), art("glass", 2)],
+				P: [art("gray", 1, 1), art("glass", 2), ri("posterB")],
 				j: [art("gray", 2, 1), art("glass", 2)],
 				D: [art("gray", 1, 1), art("autoDoor", 0, 1)],
 			},
 		},
+		outdoor: [
+			{
+				id: "poster",
+				at: [44, 40],
+				lines: [
+					"はり紙。「ageジム　会員募集中」\n……下に　小さく「sage　進行　お断り」。",
+				],
+			},
+		],
 		door: "ageジム。\n「ふんっ……！」と　声が　する。",
 		// 中：黒い ゴムの 床と 白い 石の 壁、奥の 壁は 鏡。ベンチ 2台・ダンベル・ロッカー・体重計・
 		// プロテインの 冷蔵庫・ストレッチの マット
@@ -2278,6 +2296,35 @@ export const FACILITIES: readonly Facility[] = [
 						"家より　ここの　ほうが　スレが　はかどる。\n……電源も　あるしな",
 					],
 				},
+				// 満席（ほかの ボックス席にも 1人ずつ。料理の 横の ソファ）
+				{
+					id: "famires_b",
+					walk: NANASHI[3],
+					at: [7, 3],
+					dir: "left",
+					name: "名無し",
+					lines: ["ハンバーグ　来たで。\n……うpしてから　食うんや"],
+				},
+				{
+					id: "famires_c",
+					walk: NANASHI[0],
+					at: [1, 5],
+					dir: "right",
+					name: "名無し",
+					lines: [
+						"オムライスに　>>1って　書いたった。\n……スレ立て　乙の　気持ちや",
+					],
+				},
+				{
+					id: "famires_d",
+					walk: "sa:dID4NE",
+					at: [5, 5],
+					dir: "right",
+					name: "名無し",
+					lines: [
+						"いちごは　最後まで　残す　派や。\n……>>1000まで　見届けるんや",
+					],
+				},
 			],
 		},
 	},
@@ -2369,11 +2416,12 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守警察署",
 		from: 7,
 		at: [40, 14],
-		// 3階建ての 白い ビル・青い 窓・赤い 灯り・鉄の 両開き（右が 扉）・自転車・給水タンク
+		// 3階建ての 白い ビル・青い 窓・赤い 灯り・鉄の 両開き（どちらからも 入れる）・自転車・給水タンク
 		look: {
 			kind: "grid",
 			rows: ["(-*-~)", "[==&=]", "awbRwc", "pqrrqs", "YyLDtu"],
 			door: "D",
+			door2: "L",
 			keys: {
 				...ROOF_FLAT,
 				a: [art("white"), art("win108", 2)],
@@ -2490,17 +2538,19 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守村　総合病院",
 		from: 7,
 		at: [53, 14],
-		// 横に 長い 白い ビル・赤十字・自動ドア（左は 開かない 扉）・非常口・植えこみ・給水タンク・天窓
+		// 横に 長い 白い ビル・赤十字・自動ドア（2枚とも 開く）・その 左上の 壁に 非常口の 札・植えこみ・
+		// 給水タンク・天窓
 		look: {
 			kind: "grid",
 			rows: [
 				"(-*--~--*)",
 				"[==%==%==]",
 				"awwwbXwwwc",
-				"lqqqTUqqqe",
-				"789xEDg789",
+				"lqqxTUqqqe",
+				"789gEDg789",
 			],
 			door: "D",
+			door2: "E",
 			keys: {
 				...ROOF_FLAT,
 				a: [art("white")],
@@ -2517,7 +2567,7 @@ export const FACILITIES: readonly Facility[] = [
 				"8": [art("white", 1, 2), art("planter", 1)],
 				"9": [art("white", 2, 2), art("planter", 2)],
 				g: [art("white", 1, 2), art("glass", 1), art("shopGlass", 1)],
-				x: [art("white", 1, 2), art("glass", 1), art("sign92")],
+				x: [art("white", 1, 1), art("sign92")],
 				E: [art("white", 1, 2), art("autoDoor", 0, 1)],
 				D: [art("white", 1, 2), art("autoDoor", 1, 1)],
 			},
@@ -2713,7 +2763,7 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守地方裁判所",
 		from: 7,
 		at: [53, 3],
-		// 灰色の 石・白い 柱 4本・アーチの 窓・鉄の 両開き（右が 扉）
+		// 灰色の 石・白い 柱 4本・アーチの 窓・鉄の 両開き（どちらからも 入れる）
 		look: {
 			kind: "grid",
 			rows: [
@@ -2724,6 +2774,7 @@ export const FACILITIES: readonly Facility[] = [
 				"sRsRLDRsRs",
 			],
 			door: "D",
+			door2: "L",
 			keys: {
 				...ROOF_FLAT,
 				s: [art("wallTex", 2)],
@@ -3092,11 +3143,12 @@ export const FACILITIES: readonly Facility[] = [
 		name: "カジノ「ガチャ」",
 		from: 7,
 		at: [70, 36],
-		// 金の 帯・赤レンガ・電光の 看板・赤い じゅうたんに 金の 両開き（右が 扉）・ロープの 柱
+		// 金の 帯・赤レンガ・電光の 看板・赤い じゅうたんに 金の 両開き（どちらからも 入れる）・ロープの 柱
 		look: {
 			kind: "grid",
 			rows: ["(~-*-~)", "[=====]", "yYYYYYz", "g1234sg", "grLDRrg"],
 			door: "D",
+			door2: "L",
 			keys: {
 				...ROOF_FLAT,
 				y: [art("band", 0, 3)],
@@ -3108,7 +3160,7 @@ export const FACILITIES: readonly Facility[] = [
 				"4": [art("wallTex"), art("led", 3)],
 				s: [art("wallTex"), base(4, 96)],
 				g: [art("wallTex"), art("win108", 3)],
-				L: [art("wallTex"), base(4, 92, 1, 2)],
+				L: [art("redCarpet"), base(4, 92, 1, 2)],
 				D: [art("redCarpet"), base(5, 92, 1, 2)],
 				r: [art("wallTex"), art("rope")],
 				R: [art("wallTex"), art("rope", 1)],
@@ -3199,22 +3251,23 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守村駅",
 		from: 7,
 		at: [80, 14],
-		// 時計・発車の 板・青い ひさし・ガラスの 正面に 自動ドア（左は 開かない 扉）・非常口
+		// 時計・発車の 板・右上の 壁に 非常口の 札・青い ひさし・ガラスの 正面に 自動ドア（2枚とも 開く）
 		look: {
 			kind: "grid",
-			rows: ["(-~--)", "[====]", "lpPqQr", "nNNNNn", "xITDIj"],
+			rows: ["(-~--)", "[====]", "lpPqQx", "nNNNNn", "iITDIj"],
 			door: "D",
+			door2: "T",
 			keys: {
 				...ROOF_FLAT,
 				l: [art("white", 0, 1), art("sign25", 2)],
-				r: [art("white", 2, 1)],
 				p: [art("white", 1, 1), art("depart")],
 				P: [art("white", 1, 1), art("depart", 1)],
 				q: [art("white", 1, 1), art("depart", 2)],
 				Q: [art("white", 1, 1), art("depart", 3)],
 				n: [art("glass", 1), art("eave", 1)],
 				N: [art("glass", 1), art("eave", 1, 1)],
-				x: [art("gray", 0, 1), art("glass", 1), art("sign92")],
+				x: [art("white", 2, 1), art("sign92")],
+				i: [art("gray", 0, 1), art("glass", 1), art("shopGlass")],
 				I: [art("gray", 1, 1), art("glass", 1), art("shopGlass", 1)],
 				j: [art("gray", 2, 1), art("glass", 1), art("shopGlass", 2)],
 				T: [art("gray", 1, 1), art("autoDoor", 0, 1)],
@@ -3685,8 +3738,9 @@ export const FACILITIES: readonly Facility[] = [
 				G: [art("gray", 1), art("win108", 2)],
 				h: [art("gray", 2), art("win108", 2)],
 				o: [art("gray", 1)],
+				// 電光の 看板（横 4マスの 板の 左はしと 右はし：両がわに ふちが ある）
 				"1": [art("gray", 1), art("ledGray")],
-				"2": [art("gray", 1), art("ledGray", 1)],
+				"2": [art("gray", 1), art("ledGray", 3)],
 				u: [art("gray", 1), base(3, 394)],
 				"3": [art("gray", 1), art("sign25")],
 				"4": [art("gray", 2), art("sign25", 1)],
@@ -3812,6 +3866,13 @@ export const facilityDoor = (f: Facility): Cell | null => {
 	];
 };
 
+/** 両開きの もう 1枚の 扉の マス（地図の 座標。中が ない 施設・1枚扉は null）。 */
+export const facilityDoor2 = (f: Facility): Cell | null => {
+	if (!f.room || f.look.kind !== "grid") return null;
+	const d = gridKeyCell(f.look, f.look.door2);
+	return d ? [f.at[0] + d[0], f.at[1] + d[1]] : null;
+};
+
 /** 出たときに 立つ 所（扉の 1つ下。下を 向く）。 */
 export const facilityOutside = (f: Facility): FacilitySpot => {
 	const d = facilityDoor(f) ?? f.at;
@@ -3831,9 +3892,9 @@ export const facilityTiles = (): Record<string, TileDef> => {
 			const [color, ground] = GRID_GROUND[g.ground ?? "grass"];
 			for (const [k, n] of gridKeyIndex(g)) {
 				const layers = [...(ground ? [ground] : []), ...g.keys[k]];
-				// 扉は 中が ある ときだけ 通れる（踏むと 入る）。屋台の 台の うしろも 通れる
+				// 扉（両開きは 2枚とも）は 中が ある ときだけ 通れる（踏むと 入る）。屋台の 台の うしろも 通れる
 				out[gridChar(i, n)] =
-					(k === g.door && f.room) || g.floor?.includes(k)
+					((k === g.door || k === g.door2) && f.room) || g.floor?.includes(k)
 						? floor(color, ...layers)
 						: g.counter?.includes(k)
 							? counter(color, ...layers)
@@ -4016,8 +4077,15 @@ export const outdoorThingOf = (
 	return undefined;
 };
 
-/** 扉の イベントの id。 */
-export const doorId = (f: Facility): string => `door_f_${f.id}`;
+/** 扉の イベントの id（両開きの もう 1枚は 末尾に「~2」）。 */
+export const doorId = (f: Facility, second = false): string =>
+	`door_f_${f.id}${second ? "~2" : ""}`;
+
+/** 扉の イベントの id から 施設（両開きの もう 1枚の 扉も。扉で なければ undefined）。 */
+export const facilityOfDoor = (id: string): Facility | undefined =>
+	id.startsWith("door_f_")
+		? facilityById(id.slice("door_f_".length).replace(/~2$/, ""))
+		: undefined;
 
 /** 地図の id（村の 地図と 部屋を 切りかえる 名前）。 */
 export const facilityMapId = (f: Facility): string => `f_${f.id}`;

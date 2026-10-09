@@ -4,13 +4,13 @@
 // 絵は RPGEN（https://rpgen.us/）の スプライトセット「現代 外装」「現代 建物」「和風の建物」「窓/ドア」「看板,貼り紙」
 // 「標識」「駅」「夏祭り素材集」「金銀屋根」「食べ物/飲み物」「鉢植」「近代柵」「絨毯」から 選んだ 16x16 の 部品
 // （検索: https://rpgen-search.pages.dev/）。施設の 外観・自販機・止まっている 車・バス停に 使う
-// （data/village/facilities.ts の GridLook）。赤い 灯りと 赤十字の 2つだけ ここで 手描き（drawn）。
+// （data/village/facilities.ts の GridLook）。赤い 灯り・赤十字・ダンベルの 札の 3つだけ ここで 手描き（drawn）。
 // 群は Base.png の マスを 切って 加工する ことも できる（base: [列, 行]。のれん・日よけの 色がえ）。
 // 施設の 部屋の 家具・小物（ROOM_PIECES）は べつの 1枚 rpgen-interior.png に まとめる（facilities.ts の ri・riCell）。
 // こちらは「テーブル・椅子」「家具」「空室改造セット」「テレビ」「音楽関係」「箱・壺・樽」「囲碁・将棋」「屋内床・タイル」
 // 「夏祭り素材集」などから 選び、台の 上の 家電など 少しは 同梱の Base.png から 切って 詰める。
-// 飲食店で 出てきた 一品の 絵（FOOD）は「食べ物/飲み物」「食べ物２」「夏祭り素材集」から rpgen-food.png に
-// （data/eateries.ts・ui/eat.ts。たこ焼きだけ 手描き）。
+// 飲食店で 出てきた 一品の 絵（FOOD）は「食べ物/飲み物」「食べ物２」「夏祭り素材集」「おかし」から rpgen-food.png に
+// （data/eateries.ts・ui/eat.ts。たこ焼きと、ジュースの ストロー・焼きそばの 青のりだけ 手描き）。
 //
 // ゲームは CDN を 見ない（村の 絵は 同梱の 画像だけ）。部品は 作る ときに CDN から 取る：
 //   https://rpgen-search.pages.dev/data/images/sprites/<id>.png（認証 なし）
@@ -20,7 +20,10 @@
 // 群（GROUPS）は 部品の 並び（行ごと）。アトラス（幅 16 マス）の 中でも 群は くっつけて 置く（群の 順に、
 // 上から 最初に 入る 所へ）ので、自販機 2x2・車 4x2 などは 1枚の 絵として 切り出せる。
 // 加工（op）: flip（群ごと 左右反転。並びも 逆に なる）・hue:<度>（彩度 0.15 以上の 画素の 色相を 回す。
-// 灰色は そのまま）・tint:<rrggbb>（明るさ × 1.35 × 色）・gray:<度>-<度>（その 色相の 色だけ 灰に）。
+// 灰色は そのまま）・tint:<rrggbb>（明るさ × 1.35 × 色）・gray:<度>-<度>（その 色相の 色だけ 灰に）・
+// recolor:<度>-<度>:<rrggbb>[:<底上げ>]（その 色相で 彩度 0.3 以上の 色だけ「色 ×（底上げ＋明るさ）」に。
+// 度は 大きい 方から 小さい 方へ 書くと 0度を またぐ。暗い 緑を 明るい だいだいに する とき 用）・
+// blank:<x>,<y>,<w>,<h>（その 四角の 画素を 行ごとに 左右の となりの 色で うめる。板の 字を 消す）。
 // + で つなぐと 順に かける（flip+hue:200）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-street.mjs と 同じ。
@@ -39,6 +42,12 @@ const BASE_PNG = join(HERE, "../public/assets/rpg-reze/Base.png");
 const CDN = "https://rpgen-search.pages.dev/data/images/sprites/";
 
 // ───────────────── 部品の 一覧（コメントは 出どころ：セットの 番号と その 中の 番号） ─────────────────
+
+/**
+ * 駅の 発車の 板（98: 0〜3 の 横 4マス）の 左の 白い 字（実在の 路線の 名前）を 消す 加工。
+ * 字は x 9〜23・y 7〜12 に あり、板の 地は 上から 下へ 明るく なる ので、行ごとに 左右の 地の 色で うめる。
+ */
+const DEPART_BLANK = "blank:9,7,15,6";
 
 const GROUPS = {
 	// 屋上（set 24 現代 建物）。平らな 屋根の 上の ふち 3・下の ふち 3、コンクリート、天窓、給水タンク
@@ -181,12 +190,12 @@ const GROUPS = {
 	pillar: { ids: [["Tdv01c9"], ["xiBvotF"], ["6V18gY0"]] }, // 25: 19 / 39 / 59
 	// 看板（set 92 看板,貼り紙・98 駅・25・109 夏祭り・102 標識・35 食べ物）
 	led: { ids: [["Ef1Phcw", "ZWE6Mjj", "IletvXx", "7aUWdA3"]] }, // 92: 91〜94
-	ledGray: { ids: [["8HiIRTh", "SoR5If5", "pAStk7E", "fLJd9UK"]] }, // 92: 81〜84
+	ledGray: { ids: [["8HiIRTh", "SoR5If5", "pAStk7E", "fLJd9UK"]], op: DEPART_BLANK }, // 92: 81〜84
 	banner: { ids: [["YB18E4t", "SmeBIhr"]] }, // 92: 48 49（心技体）
 	// 非常口・青い 掲示板・額の 絵 3
 	sign92: { ids: [["o1YlXX", "p5Slkwn", "p5SCkbm", "uE0U213", "Wef0N9"]] }, // 92: 43 8 45 47 80
-	// 駅の 発車の 板
-	depart: { ids: [["8HiIRTh", "SoR5If5", "pAStk7E", "fLJd9UK"]] }, // 98: 0〜3
+	// 駅の 発車の 板（ledGray と 同じ 部品。字を 消す）
+	depart: { ids: [["8HiIRTh", "SoR5If5", "pAStk7E", "fLJd9UK"]], op: DEPART_BLANK }, // 98: 0〜3
 	// SHOP・青い 札・丸い 時計
 	sign25: { ids: [["mlgsxhH", "gXc3Hum", "ySUsrWo"]] }, // 25: 60 42 104
 	kooriFlag: { ids: [["Nh9czgx"]] }, // 109: 24
@@ -286,11 +295,13 @@ const GROUPS = {
 	// 手描き（下の drawn）
 	redLamp: { drawn: "redLamp" },
 	redCross: { drawn: "redCross" },
+	dumbbellSign: { drawn: "dumbbellSign" },
 };
 
 // ───────────────── 施設の 部屋の 部品（public/sprites/rpgen-interior.png。facilities.ts の ri・riCell） ─────────────────
 // 1つの 物は 1つの 群（2x2 の 棚・4x2 の 車も 1つ）。並べ方は 外観と 同じ（群の 順に、上から 最初に 入る 所へ）。
 //   ids    部品の 並び（行ごと）
+//   op     加工（外観の 群と 同じ。ids の ときだけ）
 //   lift   台の 上に のせる 小物は 何px 上へ ずらして 詰める（下の すき間を 台の 天板に 合わせる。上に 出た 分は 切れる）
 //   base   同梱の Base.png の [列, 行, 幅, 高さ] を 切って 詰める（台の 上の 家電など。lift と 組む）
 //   parts  部品を 重ねて 1マスに（[id か Base.png の [列, 行], 右へ dx, 下から 上へ dy, 倍率]。倍率は 最近傍で 縮める）
@@ -340,8 +351,11 @@ const ROOM_PIECES = {
 	payphone: { ids: [["j93ywdO"], ["HboEVhr"]] },
 	// 92: 85 86 87 / 95 96 97。掲示板（3x2・壁）
 	corkBoard: { ids: [["U5dkLYT", "ZWPnM1S", "dtjK46I"], ["6bvegYf", "NY6Dzu4", "yvGJr8l"]] },
-	// 98: 0 1 2 3 / 8 9 10 11。発車標（4x2・壁）
-	departures: { ids: [["8HiIRTh", "SoR5If5", "pAStk7E", "fLJd9UK"], ["Ef1Phcw", "ZWE6Mjj", "IletvXx", "7aUWdA3"]] },
+	// 98: 0 1 2 3 / 8 9 10 11。発車標（4x2・壁。上の 段の 路線の 名前は 消す）
+	departures: {
+		ids: [["8HiIRTh", "SoR5If5", "pAStk7E", "fLJd9UK"], ["Ef1Phcw", "ZWE6Mjj", "IletvXx", "7aUWdA3"]],
+		op: DEPART_BLANK,
+	},
 	// 98: 4 5 / 12 13。コインロッカー（2x2）
 	lockers: { ids: [["1JGL7Ze", "LQCvpy8"], ["JCKsaK2", "M0h9nSK"]] },
 	// 98: 19。点字ブロック（床）
@@ -560,8 +574,8 @@ const ROOM_PIECES = {
 	shelfBottles: { ids: [["iNhnDvV", "hwp7BpN"]] },
 	// 106: 59 / 64。本棚 2
 	bookshelf: { ids: [["YFbES4", "2hq6YeP"]] },
-	// 96: 9 10。台に のった 大きな テレビ（2x1）
-	tvGame: { ids: [["fLWY9Jb", "TOYZ1S2"]] },
+	// 96: 2 3 / 9 10。台に のった 大きな テレビ（2x2。上の 段が 画面の 上、下の 段が 画面の 下と 黄色い 台）
+	tvGame: { ids: [["fLWE9id", "9p0BFuc"], ["fLWY9Jb", "TOYZ1S2"]] },
 	// 105: 90
 	stoolOrange: { ids: [["JrUaKI"]] },
 	// 105: 52
@@ -607,7 +621,9 @@ const ROOM_PIECES = {
 };
 
 // ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/eateries.ts の 出てきた 一品の 絵） ─────────────────
-// 台に のせない ので ずらさない（ui/eat.ts が 大きく 描く）。たこ焼きは RPGEN に ないので 手描き（drawn）。
+// ui/eat.ts が 6倍で 台の 上に 描くので、どの 品も 見える 画素の 下はしを マスの いちばん 下（行 15）に、
+// 左右の まんなかを x=8 に 寄せて 詰める（seat。部品ごとの 下の すき間で 浮いて 見えない ように）。
+// たこ焼きは RPGEN に ないので 手描き（drawn）。over は 加工の あとに 重ねる 手描き（ストロー・青のり など）。
 const FOOD = {
 	takoyaki: { drawn: "takoyaki" },
 	ramune: { ids: [["uwU62aV"]] }, // 109: 59
@@ -624,8 +640,13 @@ const FOOD = {
 	yakitori: { ids: [["86IqRgq"]] }, // 35: 16
 	edamame: { ids: [["5stVQbQ"]] }, // 35: 26
 	fried: { ids: [["ZqDbMHE"]] }, // 35: 6
-	orange: { ids: [["dJkd4GE"]] }, // 35: 110
+	// 35: 120（緑の グラスを オレンジジュースに。赤い ストローを 足す）
+	juice: { ids: [["VZYYXqZ"]], op: "recolor:90-170:ffa028", over: "straw" },
+	// 196: 127（皿に 盛った 柿の種を ソースの 色に して、青のり・紅しょうが・キャベツを 足す）
+	yakisoba: { ids: [["n4UTqu9"]], op: "recolor:0-60:a8642c:0.25", over: "yakisobaTop" },
 	saba: { ids: [["ZqNmM14"]], op: "hue:190" }, // 35: 60（中トロを 青い 鯖色に）
+	// 35: 60（中トロの 赤い 身だけ クリーム色に。台の 木と 脚は そのまま）
+	awabi: { ids: [["ZqNmM14"]], op: "recolor:340-20:f0e0c0:0.3" },
 	ikura: { ids: [["z2VAcup"]] }, // 35: 59
 	uni: { ids: [["cYXAuu1"]] }, // 35: 58
 	maguro: { ids: [["voQfmH7"]] }, // 35: 57
@@ -903,6 +924,36 @@ const gray = (img, from, to) =>
 		const v = Math.min(255, Math.trunc(l * 255 * 1.25));
 		return [v, v, Math.min(255, v + 4)];
 	});
+/**
+ * 色相が from〜to 度（from > to なら 0度を またぐ）で 彩度 0.3 以上の 色だけ「hex ×（lift ＋ 明るさ）」に。
+ * 暗い 色も 底上げ されるので、濃い 緑の グラスが 明るい だいだいに なる（色相を 回すだけだと 茶色に なる）。
+ */
+const recolor = (img, from, to, hex, lift) => {
+	const c = rgb(hex);
+	return eachPixel(img, (r, g, b) => {
+		const [h, , s] = rgbToHls(r / 255, g / 255, b / 255);
+		const d = h * 360;
+		const inside = from <= to ? d >= from && d <= to : d >= from || d <= to;
+		if (s < 0.3 || !inside) return null;
+		const l = Math.min(1, lift + (r * 0.3 + g * 0.59 + b * 0.11) / 255);
+		return c.map((v) => Math.trunc(v * l));
+	});
+};
+/** x0, y0, w, h の 画素を 行ごとに 左右の となり（x0-1 と x0+w）の 色で なめらかに うめる。 */
+const blankRect = (img, x0, y0, w, h) => {
+	const out = blank(img.w, img.h);
+	img.rgba.copy(out.rgba);
+	for (let y = y0; y < y0 + h; y++) {
+		const L = (y * img.w + x0 - 1) * 4;
+		const R = (y * img.w + x0 + w) * 4;
+		for (let x = x0; x < x0 + w; x++) {
+			const k = (x - x0 + 1) / (w + 1);
+			const o = (y * img.w + x) * 4;
+			for (let i = 0; i < 4; i++) out.rgba[o + i] = Math.round(img.rgba[L + i] * (1 - k) + img.rgba[R + i] * k);
+		}
+	}
+	return out;
+};
 /** 加工（「flip+hue:30」の ように + で つなぐと 順に かける）。 */
 const applyOp = (img, op) => {
 	if (!op) return img;
@@ -913,6 +964,15 @@ const applyOp = (img, op) => {
 		if (o.startsWith("gray:")) {
 			const [from, to] = o.slice(5).split("-").map(Number);
 			return gray(im, from, to);
+		}
+		if (o.startsWith("recolor:")) {
+			const [range, hex, lift = "0.4"] = o.slice(8).split(":");
+			const [from, to] = range.split("-").map(Number);
+			return recolor(im, from, to, hex, Number(lift));
+		}
+		if (o.startsWith("blank:")) {
+			const [x, y, w, h] = o.slice(6).split(",").map(Number);
+			return blankRect(im, x, y, w, h);
 		}
 		throw new Error(`知らない 加工: ${o}`);
 	}, img);
@@ -965,6 +1025,57 @@ const DRAWN = {
 		for (let y = 6; y <= 9; y++) for (let x = 4; x <= 11; x++) dot(img, x, y, "d42424");
 		for (let x = 6; x <= 9; x++) dot(img, x, 11, "a01616");
 		for (const x of [4, 5, 10, 11]) dot(img, x, 9, "a01616");
+		return img;
+	},
+	/** ダンベルの 札（ジム。赤十字と 同じ 白い 板に 黒い ダンベル）。 */
+	dumbbellSign: () => {
+		const img = blank(CELL, CELL);
+		for (let y = 2; y <= 13; y++)
+			for (let x = 2; x <= 13; x++)
+				dot(img, x, y, x === 2 || x === 13 || y === 2 || y === 13 ? "96969e" : "f6f6f6");
+		// 外の おもり（背が 高い）・内の おもり・にぎり
+		for (const x of [4, 11]) for (let y = 5; y <= 10; y++) dot(img, x, y, "2e2e3a");
+		for (const x of [5, 10]) for (let y = 6; y <= 9; y++) dot(img, x, y, "4a4a58");
+		for (let x = 6; x <= 9; x++) {
+			dot(img, x, 7, "c8c8d0");
+			dot(img, x, 8, "8a8a96");
+		}
+		dot(img, 4, 5, "5c5c6c");
+		dot(img, 11, 5, "5c5c6c");
+		return img;
+	},
+	/** ストロー（グラスの 口から 右上へ。juice に 重ねる）。 */
+	straw: () => {
+		const img = blank(CELL, CELL);
+		for (const [x, y] of [
+			[8, 3],
+			[9, 2],
+			[9, 1],
+			[10, 0],
+		])
+			dot(img, x, y, "e63228");
+		dot(img, 11, 0, "961414");
+		return img;
+	},
+	/** 焼きそばの 上の 青のり・紅しょうが・キャベツ（yakisoba に 重ねる）。 */
+	yakisobaTop: () => {
+		const img = blank(CELL, CELL);
+		for (const [x, y] of [
+			[4, 4],
+			[9, 3],
+			[12, 5],
+		])
+			dot(img, x, y, "489c34");
+		for (const [x, y] of [
+			[7, 5],
+			[11, 3],
+		])
+			dot(img, x, y, "e04858");
+		for (const [x, y] of [
+			[3, 5],
+			[10, 6],
+		])
+			dot(img, x, y, "d8e8a8");
 		return img;
 	},
 	/** たこ焼き（舟皿に 6こ。ソース・マヨ・青のり）。 */
@@ -1101,11 +1212,29 @@ const groupSize = (g) =>
 	g.ids ? [Math.max(...g.ids.map((r) => r.length)), g.ids.length] : [1, 1];
 const drawGroup = (g, w, h) => {
 	if (g.drawn) return DRAWN[g.drawn]();
-	if (g.base) return applyOp(baseCut(...g.base), g.op);
-	return applyOp(drawIds(g.ids, w, h), g.op);
+	const img = applyOp(g.base ? baseCut(...g.base) : drawIds(g.ids, w, h), g.op);
+	if (g.over) paste(img, DRAWN[g.over](), 0, 0);
+	return img;
+};
+/** 見える 画素の 下はしを 下の 行に、左右の まんなかを 絵の まんなかに 寄せる（品を 台に すえる）。 */
+const seat = (img) => {
+	let x0 = img.w;
+	let x1 = -1;
+	let y1 = -1;
+	for (let y = 0; y < img.h; y++)
+		for (let x = 0; x < img.w; x++)
+			if (img.rgba[(y * img.w + x) * 4 + 3]) {
+				x0 = Math.min(x0, x);
+				x1 = Math.max(x1, x);
+				y1 = Math.max(y1, y);
+			}
+	if (y1 < 0) return img;
+	const out = blank(img.w, img.h);
+	paste(out, img, Math.round(img.w / 2 - (x0 + x1 + 1) / 2), img.h - 1 - y1);
+	return out;
 };
 const modern = packAtlas(GROUPS, groupSize, drawGroup);
-const food = packAtlas(FOOD, groupSize, drawGroup);
+const food = packAtlas(FOOD, groupSize, (g, w, h) => seat(drawGroup(g, w, h)));
 const room = packAtlas(
 	ROOM_PIECES,
 	(p) => {
@@ -1114,7 +1243,7 @@ const room = packAtlas(
 		return [Math.max(...p.ids.map((r) => r.length)), p.ids.length];
 	},
 	(p, w, h) => {
-		if (p.ids) return drawIds(p.ids, w, h, p.lift);
+		if (p.ids) return applyOp(drawIds(p.ids, w, h, p.lift), p.op);
 		const img = blank(w * CELL, h * CELL);
 		if (p.base) {
 			paste(img, baseCut(...p.base), 0, -(p.lift ?? 0));
@@ -1142,7 +1271,7 @@ const cellList = (cells) =>
 		.join("\n");
 const ts = `// scripts/pack-rpgen.mjs が 書き出す（手で 書きかえない。部品を かえる ときは pack-rpgen.mjs の GROUPS・ROOM_PIECES・FOOD）。
 // 絵は RPGEN（https://rpgen.us/）の スプライトセットから 選んで まとめた もの
-// （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字・たこ焼きの 3つだけ 手描き。
+// （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字・ダンベルの 札・たこ焼き（と ジュースの ストロー・焼きそばの 青のり）だけ 手描き。
 // 部屋の 絵の 少し（台の 上の 家電・ダンベル）と 外観の のれん・日よけの 色がえは 同梱の Base.png から 切って 詰めた もの。
 
 /** まとめた 絵（public/sprites/rpgen-modern.png。${modern.atlas.w}x${modern.atlas.h}）。施設の 外観・街の 物。 */

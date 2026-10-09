@@ -120,7 +120,7 @@ const SOBA_ROOM: FacilityRoom = {
 			dir: "up",
 			name: "名無し",
 			lines: [
-				"たぬきと　きつねの　ちがい？\n……そのスレは　荒れるから　やめとけ",
+				"たぬきと　きつねの　ちがい？\n……その　スレは　荒れるから　やめとけ",
 			],
 		},
 	],
@@ -223,7 +223,7 @@ const IZAKAYA_ROOM: FacilityRoom = {
 	rows: [
 		"############",
 		"#HlHHlHHTtH#",
-		"#hhhhhhhhhm#",
+		"#hhhhhhhVvm#",
 		"#BbSsKj.ZZZ#",
 		"#.......ZzZ#",
 		"#.[===].ZZZ#",
@@ -234,8 +234,11 @@ const IZAKAYA_ROOM: FacilityRoom = {
 	],
 	tiles: (k) => ({
 		l: k.up(LANTERN),
+		// ナイターの テレビ（上の 段が 画面の 上、下の 段が 画面の 下と 台）
 		T: k.up(riCell("tvGame", 0, 0)),
 		t: k.up(riCell("tvGame", 1, 0)),
+		V: k.low(riCell("tvGame", 0, 1)),
+		v: k.low(riCell("tvGame", 1, 1)),
 		B: k.on(riCell("shelfBottles", 0, 0)),
 		b: k.on(riCell("shelfBottles", 1, 0)),
 		S: k.on(riCell("stoveBlack", 0, 0), ri("potFire")),
@@ -254,6 +257,8 @@ const IZAKAYA_ROOM: FacilityRoom = {
 	things: {
 		T: "tv",
 		t: "tv",
+		V: "tv",
+		v: "tv",
 		m: "notice",
 		B: "bottles",
 		b: "bottles",
