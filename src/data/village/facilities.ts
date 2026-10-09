@@ -12,10 +12,13 @@
 //   家具・小物は RPGEN の 部品（rpgenArt.ts の ri・riCell。rpgen-interior.png）と Base.png。幅の ある 物（台・車）は
 //   riCell で マスごとに、背の 高い 物（冷蔵ケース・ロッカー）は ri で 下から 1本に 切って 上の マスへ はみ出させる。
 // - 外の 物（outdoor）は 地図の マスに 見えない イベントを 置き、そこの 絵を 調べる。fishing・batting は 遊べる 物。
+//   sprite が あれば 見える 人（屋台の 店番）。
+// - 飲食店は data/village/eateries.ts（FACILITIES の うしろに 足す）。店番・券売機の eat で 品書き（ui/eat.ts）。
 // どれも 寄り道で、強さには 何も 効かない（冒険に 力を 持ちこまない）。
 
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import { EATERIES } from "./eateries";
 import type { Cell } from "./map";
 import { art, ri, riCell } from "./rpgenArt";
 import {
@@ -27,6 +30,7 @@ import {
 	C_ASPHALT,
 	C_BRICK,
 	C_WALK,
+	counter,
 	floor,
 	INDOOR,
 	onTop,
@@ -84,6 +88,10 @@ export type GridLook = {
 	 * 中の ない 店）は 通れない 扉の 絵で、そこに 外の 物（表札・品書き）を 置く。
 	 */
 	door?: string;
+	/** 通れる キー（並べた 字。屋台の 台の うしろ＝店番の 立つ 所）。 */
+	floor?: string;
+	/** 台の キー（並べた 字。向こうの 人・物に 台ごしに 話しかけられる。屋台の 台）。 */
+	counter?: string;
 	/** 影を 落とすか（省くと 落とす。車・バス停は false）。 */
 	shadow?: boolean;
 };
@@ -112,6 +120,11 @@ export type FacilityPerson = {
 	/** 名前欄（名無しの 店番なら「店主」など）。 */
 	name: string;
 	lines: readonly string[];
+	/**
+	 * 話すと 品書きが 出る 店番（eat。data/eateries.ts の EAT_MENUS[施設の id]。話す たびに lines を 1つ
+	 * 出して から 品書き。ui/eat.ts）。
+	 */
+	play?: "eat";
 };
 
 export type FacilityRoom = {
@@ -125,17 +138,22 @@ export type FacilityRoom = {
 	people?: readonly FacilityPerson[];
 	/**
 	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
-	 * ドリンクバー＝1杯 注いで その場で 飲む）。
+	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts）。
 	 */
-	plays?: Record<string, "depart" | "drinkbar">;
+	plays?: Record<string, "depart" | "drinkbar" | "eat">;
 };
 
 export type OutdoorThing = {
 	id: string;
 	at: Cell;
 	lines: readonly string[];
-	/** 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる）。 */
-	play?: "fishing" | "batting" | "bus" | "vend";
+	/** 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる・eat＝その 施設の 品書き）。 */
+	play?: "fishing" | "batting" | "bus" | "vend" | "eat";
+	/** 見える 人（屋台の 店番の 歩行グラ）。あれば 地図に 立って 通れない。lines は その 人の セリフ。 */
+	sprite?: string;
+	dir?: Dir;
+	/** 見える 人の 名前欄。 */
+	name?: string;
 };
 
 export type Facility = {
@@ -2034,11 +2052,11 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
-	// ── 麺屋「乙」（住宅街。線路の 東の 南の 区画。台の 前の 丸いすで 食べる 店）
+	// ── 麺屋「乙」（街から。線路の 東の 南の 区画。台の 前の 丸いすで 食べる 店。店主か 券売機で 品書き：ui/eat.ts）
 	{
 		id: "ramen",
 		name: "麺屋「乙」",
-		from: 6,
+		from: 4,
 		at: [80, 26],
 		// 灰色の 瓦・赤い 日よけ・赤い 提灯・障子・のれん・どんぶりの 看板
 		look: {
@@ -2111,6 +2129,7 @@ export const FACILITIES: readonly Facility[] = [
 				ticket: ["券売機。\n「ラーメン」「替え玉」「保守（大盛）」"],
 				water: ["お冷やの　サーバー。\n「セルフで　どうぞ」"],
 			},
+			plays: { ticket: "eat" },
 			people: [
 				{
 					id: "ramen_master",
@@ -2118,9 +2137,11 @@ export const FACILITIES: readonly Facility[] = [
 					at: [4, 4],
 					dir: "down",
 					name: "店主",
+					play: "eat",
 					lines: [
-						"らっしゃい！\n食券、先に　買うてな",
+						"らっしゃい！\n食券でも　口でも　ええで",
 						"替え玉は　何回でも　ええで。\n……スレと　ちがって　無限や",
+						"スープは　鶏ガラ　しょうゆ　一本や。\n……なんに　する？",
 					],
 				},
 			],
@@ -3685,6 +3706,8 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
+	// ── 飲食店（data/village/eateries.ts。たこ焼き屋台・立ち食いそば・牛丼・居酒屋・寿司・中華）
+	...EATERIES,
 ];
 
 /** その 段に 立っている 施設。 */
@@ -3808,11 +3831,13 @@ export const facilityTiles = (): Record<string, TileDef> => {
 			const [color, ground] = GRID_GROUND[g.ground ?? "grass"];
 			for (const [k, n] of gridKeyIndex(g)) {
 				const layers = [...(ground ? [ground] : []), ...g.keys[k]];
-				// 扉は 中が ある ときだけ 通れる（踏むと 入る）
+				// 扉は 中が ある ときだけ 通れる（踏むと 入る）。屋台の 台の うしろも 通れる
 				out[gridChar(i, n)] =
-					k === g.door && f.room
+					(k === g.door && f.room) || g.floor?.includes(k)
 						? floor(color, ...layers)
-						: solid(color, ...layers);
+						: g.counter?.includes(k)
+							? counter(color, ...layers)
+							: solid(color, ...layers);
 			}
 			return;
 		}

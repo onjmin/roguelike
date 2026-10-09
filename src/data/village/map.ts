@@ -1222,6 +1222,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				x: t.at[0],
 				y: t.at[1],
 				trigger: "talk",
+				// 屋台の 店番など 見える 人
+				...(t.sprite ? { sprite: t.sprite, dir: t.dir } : {}),
 			});
 	}
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）

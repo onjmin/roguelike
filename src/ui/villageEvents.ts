@@ -627,14 +627,20 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			return { ...at, trigger: "touch", through: true, run: enterFacility(f) };
 	}
 	if (p.id.startsWith("fthing_")) {
-		const t = outdoorThingOf(p.id)?.t;
+		const got = outdoorThingOf(p.id);
+		const t = got?.t;
 		// バス停：ここからも 出かけられる（村の 口と 同じ 流れ。出口を 遠く しない）
 		if (t?.play === "bus")
 			return sign(p.id, p.x, p.y, async (s) => {
 				for (const l of t.lines) await s.narrate(l);
 				await mouthScript(ctx, null)(s);
 			});
-		if (t) return sign(p.id, p.x, p.y, outdoorScript(ctx, t));
+		// 屋台の 店番：見える 人（話すと こちらを 向く。台ごしに 話す）
+		if (got && t?.sprite)
+			return npc(p.id, p.x, p.y, t.sprite, outdoorScript(ctx, got.f, t), {
+				dir: t.dir,
+			});
+		if (got && t) return sign(p.id, p.x, p.y, outdoorScript(ctx, got.f, t));
 	}
 	if (p.id === "door_cafe")
 		return {

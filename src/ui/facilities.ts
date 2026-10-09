@@ -15,6 +15,7 @@ import {
 	facilityRoomRows,
 	facilityShadows,
 	type OutdoorThing,
+	outdoorId,
 } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import { coreShadows, type VillageView } from "../data/village/map";
@@ -22,6 +23,7 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
+import { eatAt, keeperTalk } from "./eat";
 import { playBatting } from "./minigames";
 import { fill } from "./villageTalk";
 
@@ -96,14 +98,26 @@ const drinkBar = async (s: Story): Promise<void> => {
 	await s.narrate(DRINK_BAR.drank);
 };
 
-/** 外に 置く 物（地図の マス。調べると 文、遊べる 物は 遊ぶか 聞く）。 */
+/**
+ * 外に 置く 物（地図の マス。調べると 文、遊べる 物は 遊ぶか 聞く）。見える 人（屋台の 店番）は 名前欄つきの
+ * セリフで、eat なら セリフを 1つ → 品書き（ui/eat.ts）。
+ */
 export const outdoorScript =
-	(ctx: Ctx, t: OutdoorThing): Script =>
+	(ctx: Ctx, f: Facility, t: OutdoorThing): Script =>
 	async (s) => {
-		await readAll(s, t.lines);
-		if (t.play === "fishing") await fish(s);
-		else if (t.play === "batting") await bat(ctx, s);
-		else if (t.play === "vend") await vend(s);
+		if (t.play === "eat" && t.name)
+			await keeperTalk(ctx, s, f.id, t.name, t.lines);
+		else {
+			if (t.name)
+				for (const l of t.lines) await s.say("nanj", l, { name: t.name });
+			else await readAll(s, t.lines);
+			if (t.play === "fishing") await fish(s);
+			else if (t.play === "batting") await bat(ctx, s);
+			else if (t.play === "vend") await vend(s);
+			else if (t.play === "eat") await eatAt(ctx, s, f.id);
+		}
+		// 見える 人は 話しおえたら もとの 向きに
+		if (t.sprite) s.face(outdoorId(f, t), t.dir ?? "down");
 	};
 
 /**
@@ -137,7 +151,7 @@ export const shadowDecor = (stage: number): MapDef["decor"] => {
 export const buildFacility = (
 	f: Facility,
 	_v: VillageView,
-	_ctx: Ctx,
+	ctx: Ctx,
 	/** 駅の 改札などから 出かける（村の 口と 同じ 流れ。ui/villageEvents.ts の departAnywhere）。 */
 	depart?: Script,
 ): MapDef => {
@@ -158,6 +172,7 @@ export const buildFacility = (
 			const play = room?.plays?.[kind];
 			if (play === "depart" && depart) await depart(s);
 			else if (play === "drinkbar") await drinkBar(s);
+			else if (play === "eat") await eatAt(ctx, s, f.id);
 		});
 	});
 	for (const who of room?.people ?? [])
@@ -168,7 +183,12 @@ export const buildFacility = (
 				who.at[1],
 				who.walk,
 				async (s) => {
-					for (const l of who.lines) await s.say("nanj", l, { name: who.name });
+					// 店番：セリフを 1つ → 品書き（ui/eat.ts）
+					if (who.play === "eat")
+						await keeperTalk(ctx, s, f.id, who.name, who.lines);
+					else
+						for (const l of who.lines)
+							await s.say("nanj", l, { name: who.name });
 					s.face(who.id, who.dir);
 				},
 				{ dir: who.dir },

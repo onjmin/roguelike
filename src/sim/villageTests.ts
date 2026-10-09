@@ -43,6 +43,7 @@ import {
 import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
+import { EAT_MENUS } from "../data/eateries";
 import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
 import { GLOSSARY } from "../data/glossary";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
@@ -213,7 +214,13 @@ import {
 	roomPlaces,
 	roomRows,
 } from "../data/village/rooms";
-import { RPGEN_CELLS, RPGEN_IMG, RPGEN_SIZE } from "../data/village/rpgenArt";
+import {
+	FOOD_IMG,
+	FOOD_SIZE,
+	RPGEN_CELLS,
+	RPGEN_IMG,
+	RPGEN_SIZE,
+} from "../data/village/rpgenArt";
 import { CITY, hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
@@ -264,6 +271,7 @@ import {
 	talksWith,
 } from "../ui/cafe";
 import type { Ctx } from "../ui/ctx";
+import { buildFacility } from "../ui/facilities";
 import { floorShort } from "../ui/floorName";
 import { descWindows, shelfWords } from "../ui/glossary";
 import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/guests";
@@ -6716,4 +6724,127 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 			at("避難J") < at("1901年の　スレ"),
 		"chapters in story order",
 	);
+});
+
+test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓に 収まる・絵は まとめた 品の 絵・品書きの ある 店には 店番が いて、店番の いる 店には 品書きが ある", () => {
+	const texts: [string, string][] = [];
+	for (const [id, m] of Object.entries(EAT_MENUS)) {
+		ok(facilityById(id), `${id}: a menu without a facility`);
+		for (const k of ["again", "free", "no"] as const)
+			texts.push([`${id}.${k}`, m[k]]);
+		ok(
+			m.dishes.length >= 3 && m.dishes.length <= 6,
+			`${id}: ${m.dishes.length} dishes`,
+		);
+		for (const d of m.dishes) {
+			ok(width(d.name) <= 9, `${id}: "${d.name}" is too long for a choice`);
+			ok(
+				d.eat.length >= 1 && d.eat.length <= 2,
+				`${id}.${d.name}: ${d.eat.length} windows`,
+			);
+			if (d.art) {
+				ok(d.art.startsWith(`${FOOD_IMG}#`), `${id}.${d.name}: ${d.art}`);
+				const [x, y, w, h] = d.art.split("#")[1].split(",").map(Number);
+				ok(
+					w === 16 &&
+						h === 16 &&
+						x + w <= FOOD_SIZE[0] &&
+						y + h <= FOOD_SIZE[1],
+					`${id}.${d.name}: cuts ${d.art} outside the art`,
+				);
+			}
+			texts.push([`${id}.order(${d.name})`, fill(m.order, { dish: d.name })]);
+			for (const t of d.eat) texts.push([`${id}.eat(${d.name})`, t]);
+		}
+	}
+	fitsWindow(texts);
+	for (const f of FACILITIES) {
+		const keeper =
+			(f.room?.people ?? []).some((p) => p.play === "eat") ||
+			(f.outdoor ?? []).some((t) => t.play === "eat" && t.sprite);
+		const eats =
+			keeper ||
+			Object.values(f.room?.plays ?? {}).includes("eat") ||
+			(f.outdoor ?? []).some((t) => t.play === "eat");
+		ok(eats === !!EAT_MENUS[f.id], `${f.id}: eat plays and menu disagree`);
+		ok(!eats || keeper, `${f.id}: a menu but nobody to take the order`);
+		// 見える 外の 人（屋台の 店番）は 歩行グラと 名前欄つき
+		for (const t of f.outdoor ?? [])
+			if (t.sprite)
+				ok(
+					isWalkRef(t.sprite) && !!t.name,
+					`${f.id}.${t.id}: a visible keeper needs a walk sprite and a name`,
+				);
+	}
+});
+
+test("飲食店で 食べる: 店番は セリフ 1つ → 品書き → 注文 → チーン → 食べる 音と 地の文 → 1回目だけ お代は ええ、食べた あとは again・やめたら no、券売機は 文の あと 品書き", async () => {
+	const view: VillageView = {
+		stage: TOWN_STAGES - 1,
+		unlocked: ["shallow"],
+		cleared: [],
+	};
+	const village = buildVillage(view, {} as Ctx).events ?? [];
+	for (const [id, m] of Object.entries(EAT_MENUS)) {
+		const f = facilityById(id);
+		if (!f) continue;
+		const room = f.room ? (buildFacility(f, view, {} as Ctx).events ?? []) : [];
+		const person = f.room?.people?.find((p) => p.play === "eat");
+		const stall = f.outdoor?.find((t) => t.play === "eat" && t.sprite);
+		const who = person ?? stall;
+		const ev = person
+			? room.find((e) => e.id === person.id)
+			: stall && village.find((e) => e.id === outdoorId(f, stall));
+		ok(who && ev?.run, `${id}: no keeper to talk to`);
+		if (!who || !ev?.run) continue;
+		const menu = `choose ${[...m.dishes.map((d) => d.name), "やめる"].join("/")}`;
+		const d = m.dishes[0];
+		const { s, log } = fakeStory({ pick: 0 });
+		await ev.run(s);
+		ok(
+			inOrder(log, [
+				`say nanj: ${who.lines[0]}`,
+				menu,
+				`say nanj: ${fill(m.order, { dish: d.name })}`,
+				"se glass",
+				"se eat",
+				...d.eat.map((t) => `narrate: ${t}`),
+				`say nanj: ${m.free}`,
+			]),
+			`${id}: the first meal:\n${log.join("\n")}`,
+		);
+		// 2回目は again（お代の 話は もう しない）
+		log.length = 0;
+		await ev.run(s);
+		ok(
+			inOrder(log, [`say nanj: ${m.again}`, menu]) &&
+				!log.includes(`say nanj: ${m.free}`),
+			`${id}: talking again:\n${log.join("\n")}`,
+		);
+		// やめる
+		const quit = fakeStory({ pick: m.dishes.length });
+		await ev.run(quit.s);
+		ok(
+			inOrder(quit.log, [menu, `say nanj: ${m.no}`]) &&
+				!quit.log.includes("se eat"),
+			`${id}: leaving without eating:\n${quit.log.join("\n")}`,
+		);
+		// 券売機（部屋の plays）は 調べた 文の あと すぐ 品書き
+		for (const [kind, play] of Object.entries(f.room?.plays ?? {})) {
+			if (play !== "eat") continue;
+			const t = room.find((e) => e.id === `${kind}_0`);
+			ok(t?.run, `${id}: no ${kind} to read`);
+			if (!t?.run) continue;
+			const r = fakeStory({ pick: 0 });
+			await t.run(r.s);
+			ok(
+				inOrder(r.log, [
+					...(f.room?.lines[kind] ?? []).map((l) => `narrate: ${l}`),
+					menu,
+					"se eat",
+				]),
+				`${id}: the ${kind}:\n${r.log.join("\n")}`,
+			);
+		}
+	}
 });

@@ -1,13 +1,16 @@
 // RPGEN の 部品を まとめる（node scripts/pack-rpgen.mjs → public/sprites/rpgen-modern.png・
-// public/sprites/rpgen-interior.png と src/data/village/rpgenArt.ts）。
+// public/sprites/rpgen-interior.png・public/sprites/rpgen-food.png と src/data/village/rpgenArt.ts）。
 //
 // 絵は RPGEN（https://rpgen.us/）の スプライトセット「現代 外装」「現代 建物」「和風の建物」「窓/ドア」「看板,貼り紙」
 // 「標識」「駅」「夏祭り素材集」「金銀屋根」「食べ物/飲み物」「鉢植」「近代柵」「絨毯」から 選んだ 16x16 の 部品
 // （検索: https://rpgen-search.pages.dev/）。施設の 外観・自販機・止まっている 車・バス停に 使う
 // （data/village/facilities.ts の GridLook）。赤い 灯りと 赤十字の 2つだけ ここで 手描き（drawn）。
+// 群は Base.png の マスを 切って 加工する ことも できる（base: [列, 行]。のれん・日よけの 色がえ）。
 // 施設の 部屋の 家具・小物（ROOM_PIECES）は べつの 1枚 rpgen-interior.png に まとめる（facilities.ts の ri・riCell）。
 // こちらは「テーブル・椅子」「家具」「空室改造セット」「テレビ」「音楽関係」「箱・壺・樽」「囲碁・将棋」「屋内床・タイル」
 // 「夏祭り素材集」などから 選び、台の 上の 家電など 少しは 同梱の Base.png から 切って 詰める。
+// 飲食店で 出てきた 一品の 絵（FOOD）は「食べ物/飲み物」「食べ物２」「夏祭り素材集」から rpgen-food.png に
+// （data/eateries.ts・ui/eat.ts。たこ焼きだけ 手描き）。
 //
 // ゲームは CDN を 見ない（村の 絵は 同梱の 画像だけ）。部品は 作る ときに CDN から 取る：
 //   https://rpgen-search.pages.dev/data/images/sprites/<id>.png（認証 なし）
@@ -30,6 +33,7 @@ import { deflateSync, inflateSync } from "node:zlib";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT_PNG = join(HERE, "../public/sprites/rpgen-modern.png");
 const OUT_ROOM_PNG = join(HERE, "../public/sprites/rpgen-interior.png");
+const OUT_FOOD_PNG = join(HERE, "../public/sprites/rpgen-food.png");
 const OUT_TS = join(HERE, "../src/data/village/rpgenArt.ts");
 const BASE_PNG = join(HERE, "../public/assets/rpg-reze/Base.png");
 const CDN = "https://rpgen-search.pages.dev/data/images/sprites/";
@@ -196,6 +200,28 @@ const GROUPS = {
 		],
 	}, // 109: 12 13 14 / 15 16 17
 	ramenBowl: { ids: [["rIp9Cjm"]] }, // 35: 62
+	// ── 飲食店（data/village/eateries.ts）
+	// 屋台の 柱（左に ラムネの 氷水・右に 鉄板）と 台（109 夏祭り素材集）
+	stallPole: { ids: [["ClNrSo9", "Y9pjEj"]] }, // 109: 26 28
+	stallCounter: { ids: [["eZWT6o", "V37dXCq", "hGKKBMq"]] }, // 109: 40 41 42
+	// 脚つきの 品書き・黄色い 看板（だいだい・赤は 色相を 回す）・木の 立て札 2（set 92）
+	menuStand: { ids: [["KAmb5FK"]] }, // 92: 9
+	signYellow: { ids: [["arntMO"]] }, // 92: 0
+	signOrange: { ids: [["arntMO"]], op: "hue:-15" }, // 92: 0
+	signRed: { ids: [["arntMO"]], op: "hue:-35" }, // 92: 0
+	boardWood: { ids: [["GKnVU3N", "XqI9bTq"]] }, // 92: 14 15
+	// 格子と 障子（上段 4・下段 4。set 108・21）
+	lattice: {
+		ids: [
+			["p58EkbE", "arvntSG", "TdaR1Sr", "rIoMCK1"],
+			["Smi0IO1", "XMWpb4x", "07JATni", "q0dk3y0"],
+		],
+	}, // 108: 48 / 21: 42 43 / 108: 51 // 108: 67 68 69 70
+	yellowWindow: { ids: [["5sDJQCG"]] }, // 108: 73
+	// のれん（同梱の Base.png の 紺の のれんの 色相を 回す：赤・茶）と だいだいの 日よけ（Base.png の 紅白の 日よけ）
+	norenRed: { base: [4, 297], op: "hue:160" },
+	norenBrown: { base: [4, 297], op: "hue:200" },
+	awningOrange: { base: [1, 366], op: "hue:25" },
 	// 街の 小物（set 25）。自販機（赤。青は 色相を 回す）・バス停・郵便受けほか
 	vend: {
 		ids: [
@@ -515,6 +541,98 @@ const ROOM_PIECES = {
 	melonSoda: { ids: [["VZYYXqZ"]], lift: 4 },
 	// 209: 7。明るい 板の 床
 	flWoodLight: { ids: [["uFsw2GE"]] },
+	// ── 飲食店（data/village/eateries.ts。立ち食いそば・牛丼・居酒屋・寿司・中華）
+	// 173: 137 138。黒い ガスコンロ（2x1）
+	stoveBlack: { ids: [["Pcb7NwJ", "yS5Hr8E"]] },
+	// 173: 148 149。広い 流し（2x1）
+	sink2: { ids: [["ml6oxp9", "86o8RE7"]] },
+	// 173: 157 158 159。紺の 戸棚（引き出し）
+	cabNavyB: { ids: [["SmsgIbM", "p5rvkv1", "Tdf91TW"]] },
+	// 173: 162 163 164。赤い 戸棚
+	cabRed: { ids: [["eHiR6wk", "OtLdJAC", "2h3zYAz"]] },
+	// 106: 98
+	fridgeWhite: { ids: [["4ykuOVt"]] },
+	// 106: 115
+	fridgeSilver: { ids: [["JCfazN"]] },
+	// 106: 10。重ねた 皿（台の 上）
+	plateStack: { ids: [["oD4clAM"]], lift: 3 },
+	// 106: 51 52。酒瓶の 棚（2x1）
+	shelfBottles: { ids: [["iNhnDvV", "hwp7BpN"]] },
+	// 106: 59 / 64。本棚 2
+	bookshelf: { ids: [["YFbES4", "2hq6YeP"]] },
+	// 96: 9 10。台に のった 大きな テレビ（2x1）
+	tvGame: { ids: [["fLWY9Jb", "TOYZ1S2"]] },
+	// 105: 90
+	stoolOrange: { ids: [["JrUaKI"]] },
+	// 105: 52
+	stoolSmall: { ids: [["TdDf1T2"]] },
+	// 105: 73
+	chairRed: { ids: [["eH1a6Rm"]] },
+	// 92: 36。字の 書いた 紙（壁）
+	paperNote: { ids: [["Dz6gPb0"]] },
+	// 109: 46 47 48。生け簀（3x1）
+	fishTank: { ids: [["V31gXkC", "ocEvlvo", "drv044t"]] },
+	// 165: 70
+	barrel: { ids: [["wFI4fnh"]] },
+	// 165: 28。ビールケース（床）
+	bottleCrate: { ids: [["p5Orkv8"]] },
+	// 209: 0。濃い 板の 床
+	flDarkWood: { ids: [["lPgqiKQ"]] },
+	// 209: 2。白い 格子の タイル
+	flBeige: { ids: [["z2rncZX"]] },
+	// 209: 11。畳（小上がり）
+	flTatami: { ids: [["OyaJmV"]] },
+	// 130: 26。たぬきそば（台の 上）
+	tanuki: { ids: [["l2VXiKn"]], lift: 4 },
+	// 130: 25。きつねそば（台の 上）
+	kitsune: { ids: [["rlAACtA"]], lift: 4 },
+	// 130: 22。コロッケ（台の 上）
+	korokke: { ids: [["1yFw7V3"]], lift: 3 },
+	// 35: 63。牛丼（台の 上）
+	gyudon: { ids: [["SmKUI2f"]], lift: 4 },
+	// 130: 24。みその 鉢（台の 上）
+	motsu: { ids: [["0afwTul"]], lift: 4 },
+	// 35: 118。ジョッキ（台の 上）
+	beerMug: { ids: [["wlpfnP"]], lift: 3 },
+	// 35: 57。握り（台の 上）
+	maguro: { ids: [["voQfmH7"]], lift: 4 },
+	// 35: 26。枝豆（台の 上）
+	edamame: { ids: [["5stVQbQ"]], lift: 4 },
+	// 35: 7。エビチリ（台の 上）
+	ebichili: { ids: [["14E17GG"]], lift: 3 },
+	// 130: 28。麻婆豆腐（台の 上）
+	mabo: { ids: [["VWcYXYR"]], lift: 4 },
+	// 35: 11。チャーハン（台の 上）
+	chahan: { ids: [["ySUvrWF"]], lift: 4 },
+};
+
+// ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/eateries.ts の 出てきた 一品の 絵） ─────────────────
+// 台に のせない ので ずらさない（ui/eat.ts が 大きく 描く）。たこ焼きは RPGEN に ないので 手描き（drawn）。
+const FOOD = {
+	takoyaki: { drawn: "takoyaki" },
+	ramune: { ids: [["uwU62aV"]] }, // 109: 59
+	kake: { ids: [["ndhYqrs"]] }, // 130: 23
+	kitsune: { ids: [["rlAACtA"]] }, // 130: 25
+	tanuki: { ids: [["l2VXiKn"]] }, // 130: 26
+	tsukimi: { ids: [["zjnVcAU"]] }, // 130: 20
+	korokke: { ids: [["1yFw7V3"]] }, // 130: 22
+	ramen: { ids: [["rIp9Cjm"]] }, // 35: 62
+	ramenRed: { ids: [["KYA5zE"]] }, // 35: 4
+	gyoza: { ids: [["14BJ78G"]] }, // 35: 44
+	gyudon: { ids: [["SmKUI2f"]] }, // 35: 63
+	motsu: { ids: [["0afwTul"]] }, // 130: 24
+	yakitori: { ids: [["86IqRgq"]] }, // 35: 16
+	edamame: { ids: [["5stVQbQ"]] }, // 35: 26
+	fried: { ids: [["ZqDbMHE"]] }, // 35: 6
+	orange: { ids: [["dJkd4GE"]] }, // 35: 110
+	saba: { ids: [["ZqNmM14"]], op: "hue:190" }, // 35: 60（中トロを 青い 鯖色に）
+	ikura: { ids: [["z2VAcup"]] }, // 35: 59
+	uni: { ids: [["cYXAuu1"]] }, // 35: 58
+	maguro: { ids: [["voQfmH7"]] }, // 35: 57
+	mabo: { ids: [["VWcYXYR"]] }, // 130: 28
+	chahan: { ids: [["ySUvrWF"]] }, // 35: 11
+	ebichili: { ids: [["14E17GG"]] }, // 35: 7
+	tenshin: { ids: [["FQaCGmc"]] }, // 130: 29
 };
 
 // ───────────────── 最小 PNG（書き: RGBA 8bit。読み: 非インターレースの 灰・RGB・パレット・灰＋α・RGBA） ─────────────────
@@ -849,6 +967,42 @@ const DRAWN = {
 		for (const x of [4, 5, 10, 11]) dot(img, x, 9, "a01616");
 		return img;
 	},
+	/** たこ焼き（舟皿に 6こ。ソース・マヨ・青のり）。 */
+	takoyaki: () => {
+		const img = blank(CELL, CELL);
+		const pal = {
+			k: "402412",
+			b: "e2be80",
+			B: "b88e56",
+			o: "cc782c",
+			O: "f4b860",
+			s: "602e14",
+			m: "fcf6e6",
+			g: "489c34",
+		};
+		const rows = [
+			"",
+			"",
+			"",
+			".kkk..kkk..kkk..",
+			"kOsmkkOsmkkOsmk.",
+			"kssskkssskksssk.",
+			"kokkkkokkkkokkk.",
+			".kOsmkkOsmkkOsmk",
+			".kssskkssskksssk",
+			".kogokkogokkogok",
+			"..kkk..kkk..kkk.",
+			"kbbbbbbbbbbbbbbk",
+			"kBBBBBBBBBBBBBBk",
+			".kkkkkkkkkkkkkk.",
+		];
+		rows.forEach((r, y) => {
+			[...r].forEach((c, x) => {
+				if (pal[c]) dot(img, x, y, pal[c]);
+			});
+		});
+		return img;
+	},
 };
 
 // ───────────────── 取りこみ ─────────────────
@@ -879,6 +1033,7 @@ const ids = [
 	...new Set([
 		...Object.values(GROUPS).flatMap((g) => (g.ids ? g.ids.flat() : [])),
 		...Object.values(ROOM_PIECES).flatMap(roomIds),
+		...Object.values(FOOD).flatMap((g) => (g.ids ? g.ids.flat() : [])),
 	]),
 ];
 const pieces = new Map();
@@ -941,11 +1096,16 @@ const drawIds = (rows, w, h, lift = 0) => {
 	return img;
 };
 
-const modern = packAtlas(
-	GROUPS,
-	(g) => (g.ids ? [Math.max(...g.ids.map((r) => r.length)), g.ids.length] : [1, 1]),
-	(g, w, h) => (g.drawn ? DRAWN[g.drawn]() : applyOp(drawIds(g.ids, w, h), g.op)),
-);
+/** 外観・品の 群の 絵（手描き・Base.png から 切る・部品の 並び。どれも 加工 op を かけられる）。 */
+const groupSize = (g) =>
+	g.ids ? [Math.max(...g.ids.map((r) => r.length)), g.ids.length] : [1, 1];
+const drawGroup = (g, w, h) => {
+	if (g.drawn) return DRAWN[g.drawn]();
+	if (g.base) return applyOp(baseCut(...g.base), g.op);
+	return applyOp(drawIds(g.ids, w, h), g.op);
+};
+const modern = packAtlas(GROUPS, groupSize, drawGroup);
+const food = packAtlas(FOOD, groupSize, drawGroup);
 const room = packAtlas(
 	ROOM_PIECES,
 	(p) => {
@@ -972,6 +1132,7 @@ const room = packAtlas(
 mkdirSync(dirname(OUT_PNG), { recursive: true });
 writeFileSync(OUT_PNG, encodePng(modern.atlas.w, modern.atlas.h, modern.atlas.rgba));
 writeFileSync(OUT_ROOM_PNG, encodePng(room.atlas.w, room.atlas.h, room.atlas.rgba));
+writeFileSync(OUT_FOOD_PNG, encodePng(food.atlas.w, food.atlas.h, food.atlas.rgba));
 
 // ───────────────── 索引（TS） ─────────────────
 
@@ -979,10 +1140,10 @@ const cellList = (cells) =>
 	Object.entries(cells)
 		.map(([n, v]) => `\t${n}: [${v.join(", ")}],`)
 		.join("\n");
-const ts = `// scripts/pack-rpgen.mjs が 書き出す（手で 書きかえない。部品を かえる ときは pack-rpgen.mjs の GROUPS・ROOM_PIECES）。
+const ts = `// scripts/pack-rpgen.mjs が 書き出す（手で 書きかえない。部品を かえる ときは pack-rpgen.mjs の GROUPS・ROOM_PIECES・FOOD）。
 // 絵は RPGEN（https://rpgen.us/）の スプライトセットから 選んで まとめた もの
-// （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字の 2つだけ 手描き。
-// 部屋の 絵の 少しは 同梱の Base.png から 切って 詰めた もの（台の 上の 家電・ダンベル）。
+// （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字・たこ焼きの 3つだけ 手描き。
+// 部屋の 絵の 少し（台の 上の 家電・ダンベル）と 外観の のれん・日よけの 色がえは 同梱の Base.png から 切って 詰めた もの。
 
 /** まとめた 絵（public/sprites/rpgen-modern.png。${modern.atlas.w}x${modern.atlas.h}）。施設の 外観・街の 物。 */
 export const RPGEN_IMG = "pub:sprites/rpgen-modern.png";
@@ -1029,6 +1190,23 @@ export const riCell = (name: RoomArtName, col: number, row: number): string => {
 \tconst [c, r] = ROOM_CELLS[name];
 \treturn \`\${ROOM_IMG}#\${(c + col) * 16},\${(r + row) * 16},16,16\`;
 };
+
+/** 飲食店の 品（public/sprites/rpgen-food.png。${food.atlas.w}x${food.atlas.h}）。出てきた 一品の 絵（ui/eat.ts）。たこ焼きは 手描き。 */
+export const FOOD_IMG = "pub:sprites/rpgen-food.png";
+export const FOOD_SIZE = [${food.atlas.w}, ${food.atlas.h}] as const;
+
+/** 品の 名前 → [列, 行, 幅, 高さ]（アトラスの マス）。 */
+export const FOOD_CELLS = {
+${cellList(food.cells)}
+} as const;
+
+export type FoodName = keyof typeof FOOD_CELLS;
+
+/** 品の 絵（16x16）。 */
+export const food = (name: FoodName): string => {
+\tconst [c, r] = FOOD_CELLS[name];
+\treturn \`\${FOOD_IMG}#\${c * 16},\${r * 16},16,16\`;
+};
 `;
 writeFileSync(OUT_TS, ts);
 console.log(
@@ -1036,6 +1214,9 @@ console.log(
 );
 console.log(
 	`${OUT_ROOM_PNG}（${room.atlas.w}x${room.atlas.h}・物 ${Object.keys(room.cells).length}）`,
+);
+console.log(
+	`${OUT_FOOD_PNG}（${food.atlas.w}x${food.atlas.h}・品 ${Object.keys(food.cells).length}）`,
 );
 console.log(`部品 ${ids.length}`);
 console.log(OUT_TS);
