@@ -147,7 +147,8 @@ export const outdoorScript =
 		else {
 			if (t.name)
 				for (const l of t.lines) await s.say("nanj", l, { name: t.name });
-			else await readAll(s, t.lines);
+			// 日で かわる 会場の 文（公園の 15日の 月食 など。data/jikkyo/text.ts）が あれば そちら
+			else await readAll(s, venueLines(f.id, t.id, today()) ?? t.lines);
 			if (t.play === "fishing") await fish(s);
 			else if (t.play === "batting") await bat(ctx, s);
 			else if (t.play === "vend") await vend(s);
