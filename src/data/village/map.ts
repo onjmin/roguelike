@@ -107,6 +107,7 @@ import {
 	solid,
 	TURF,
 } from "./tiles";
+import { TROLLEY_SPRITE, trolleyStops } from "./trolley";
 
 export const VILLAGE_W = 87;
 export const VILLAGE_H = 52;
@@ -1250,6 +1251,15 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				...(t.sprite ? { sprite: t.sprite, dir: t.dir } : {}),
 			});
 	}
+	// 保守トロッコの 乗り場（data/village/trolley.ts。調べると 行き先を えらんで 走る）
+	for (const t of trolleyStops(stage))
+		out.push({
+			id: `trolley_${t.id}`,
+			x: t.at[0],
+			y: t.at[1],
+			trigger: "talk",
+			sprite: TROLLEY_SPRITE,
+		});
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of movedIn(stepOf(v), v.cleared)) {
 		const d = MOBS[id];

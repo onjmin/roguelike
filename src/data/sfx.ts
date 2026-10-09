@@ -21,6 +21,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		door: "rpgen:8gPREU", // ﾄﾞﾗｸｴ扉
 		/** ワープの罠・場所がえ。 */
 		warp: "rpgen:vfCmoe",
+		/** 村の 保守トロッコが 動きだす（data/village/trolley.ts）。 */
+		trolley: "rpgen:YnXEbT", // ガタっと動かす音
 		stairs: "rpgen:gO9HUJ", // 階段
 		/** 落とし穴に 落ちる。 */
 		fall: "rpgen:7DJdSZ", // 落ちる

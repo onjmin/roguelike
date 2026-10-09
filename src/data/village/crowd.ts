@@ -677,6 +677,7 @@ export const PERSONAS: readonly Persona[] = [
 			"散歩や。\n……保守は　健康にも　ええで",
 			"この村、むかしは\nだれも　おらんかったんやて",
 			"特売、まにあうかな",
+			"遠くへ　行くなら\nトロッコが　早いで",
 		],
 		bandLines: {
 			night: ["夜風が　気持ちええなあ"],
@@ -767,6 +768,7 @@ export const PERSONAS: readonly Persona[] = [
 			"保守。\n……言うてみた　だけや",
 			"なんか　ここ、\n居心地　ええな",
 			"ワイも　この村に\n住もうかな",
+			"トロッコ　乗ったか？\n速すぎて　草",
 		],
 		bandLines: {
 			night: ["実況は　夜が\n本番やで"],

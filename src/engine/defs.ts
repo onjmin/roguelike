@@ -222,6 +222,11 @@ export type Story = {
 	 * dir を 向いて 立つ（省けば 今の 向き）。暗転の 中で 呼ぶ。移った 先の 入る ときの 場面（prepare・onEnter）は 走らせない。
 	 */
 	warp(map: string, x: number, y: number, dir?: Dir): Promise<void>;
+	/**
+	 * 保守トロッコ（data/village/trolley.ts）：キリコが トロッコに 乗って (x, y) まで 道なりに 速く 走る
+	 * （人は すりぬけ、扉・口は 踏まない）。カメラは ついていく。道が なければ 暗転して 置きなおす。着いたら 解決する。
+	 */
+	ride(x: number, y: number): Promise<void>;
 	/** 村を出る（いちばん外のスクリプトが終わってから 暗転して 出る）。 */
 	exit(choice: VillageExit): void;
 };

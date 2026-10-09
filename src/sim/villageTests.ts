@@ -2329,6 +2329,11 @@ const fakeStory = (
 			state.y = y;
 			if (dir) state.dir = dir;
 		},
+		ride: async (x, y) => {
+			log.push(`ride ${x},${y}`);
+			state.x = x;
+			state.y = y;
+		},
 		exit: () => {},
 	};
 	return { s, log, walks, clashes };

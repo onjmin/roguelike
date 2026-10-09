@@ -39,6 +39,8 @@ export class Actor {
 	still: boolean;
 	visible = true;
 	through: boolean;
+	/** 乗り物（キリコの 保守トロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
+	vehicle: string | null = null;
 	def: EventDef | null;
 	private tween: {
 		fromX: number;
@@ -162,11 +164,13 @@ export class Actor {
 			return;
 		}
 		const frame = stepFrame(time + ((this.id.length * 97) % 400), this.moving);
-		if (!drawWalk(ctx, this.sprite, this.dir, frame, px, py)) {
+		const seat = this.vehicle ? 3 : 0;
+		if (!drawWalk(ctx, this.sprite, this.dir, frame, px, py - seat)) {
 			// 読み込み中は小さな影だけ
 			ctx.fillStyle = "rgba(0,0,0,0.3)";
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
+		if (this.vehicle) drawRefInCell(ctx, this.vehicle, px, py);
 	}
 }
 

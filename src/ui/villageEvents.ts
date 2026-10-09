@@ -64,6 +64,11 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
+import {
+	TROLLEY_MSG,
+	trolleyStand,
+	trolleyStops,
+} from "../data/village/trolley";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
 	addFlag,
@@ -143,6 +148,37 @@ const signMore = (d: DungeonId): string[] => {
 
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
+
+/** 保守トロッコの 乗り場を はじめて 調べた（村に いる あいだ。data/village/trolley.ts）。 */
+const TROLLEY_SEEN = "trolley_seen";
+
+/**
+ * 保守トロッコの 乗り場（data/village/trolley.ts）：行き先を えらぶと、トロッコに 乗って 道なりに 走る
+ * （Story.ride）。着いたら 行き先の 名前を 知らせる。
+ */
+const trolleyScript =
+	(id: string, v: VillageView): Script =>
+	async (s) => {
+		const stops = trolleyStops(layoutStage(v));
+		const here = stops.find((t) => `trolley_${t.id}` === id);
+		if (!here) return;
+		if (!s.flag(TROLLEY_SEEN)) {
+			s.set(TROLLEY_SEEN);
+			await s.narrate(TROLLEY_MSG.first);
+		}
+		const to = stops.filter((t) => t !== here);
+		await s.narrate(TROLLEY_MSG.ask(here.name));
+		const i = await s.choose([...to.map((t) => t.name), TROLLEY_MSG.cancel], {
+			cancel: to.length,
+		});
+		await hideMsg(s);
+		const dest = to[i];
+		if (!dest) return;
+		s.se("trolley");
+		const [x, y] = trolleyStand(dest);
+		await s.ride(x, y);
+		s.toast(TROLLEY_MSG.arrive(dest.name));
+	};
 
 /** 冒険の記録を見る（記録だけ。リプレイは 本館の 映写機で：ui/hallEvents.ts）。 */
 const records = async (ctx: Ctx, s: Story): Promise<void> => {
@@ -608,6 +644,8 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
+	if (p.id.startsWith("trolley_"))
+		return sign(p.id, p.x, p.y, trolleyScript(p.id, v), p.sprite);
 	// 小屋・銭湯・倉庫・常識堂の 勝手口・喫茶の 扉（踏むと 中へ。前で A でも。ui/rooms.ts・ui/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/rooms.ts）
 	if (p.id === "door_music")
