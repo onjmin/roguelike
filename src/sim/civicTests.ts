@@ -57,6 +57,7 @@ import {
 	type Topic,
 	VERDICT,
 } from "../data/debate";
+import { GLOSSARY } from "../data/glossary";
 import {
 	GIKAI_CLOSE,
 	GIKAI_EPISODES,
@@ -1453,6 +1454,43 @@ test(
 		ok(
 			monitors.sort().join() === "cityhall.monitor,townhall.monitor",
 			`gikai monitors ${monitors}`,
+		);
+	},
+);
+
+/** レスバの ことば（2ch語辞典。本屋の 段3〜）。 */
+const RESBA_WORDS = [
+	"resuba",
+	"wara",
+	"zurashi",
+	"goal",
+	"jinkaku",
+	"omaiu",
+	"shugo",
+	"kiritori",
+	"jien",
+	"idmakka",
+	"tanpatsu",
+	"through",
+	"shori",
+	"tatenige",
+	"nao",
+];
+
+test(
+	"W6",
+	"2ch語辞典：レスバの ことば 15語が 本屋（段3〜）に あり、使わない 語なし",
+	() => {
+		for (const id of RESBA_WORDS) {
+			const w = GLOSSARY.find((x) => x.id === id);
+			ok(w, `no glossary word ${id}`);
+			if (!w) continue;
+			ok(w.tier === 1 && !w.board && !w.secret, `${id}: tier ${w.tier}`);
+			ngCheck(`glossary ${id}`, `${w.word}\n${w.desc}`);
+		}
+		ok(
+			new Set(GLOSSARY.map((w) => w.id)).size === GLOSSARY.length,
+			"glossary ids repeat",
 		);
 	},
 );
