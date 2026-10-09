@@ -223,7 +223,7 @@ const textsOf = (p: JkPack) => {
 	const titles = [1, 2, 5, 12].flatMap((n) =>
 		slots.flatMap((slot) => [
 			S.title(n, slot),
-			...(S.label ? [S.label(n)] : []),
+			...(S.label ? [S.label(n, slot)] : []),
 			...tls.flatMap((x) =>
 				x.segments.flatMap((s) =>
 					[s.title?.now, s.title?.next, s.title?.later].flatMap((f) =>

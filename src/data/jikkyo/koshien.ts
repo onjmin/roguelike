@@ -310,12 +310,6 @@ const GOAL = { live: 4, rerun: 2 } as const;
 export const koshienSono = (n: number, live: boolean): number =>
 	100 - (live ? GOAL.live : GOAL.rerun) - 1 + n;
 
-/**
- * ヘッダーの 左が 見る 枠。label には slot が わたらない（compileScript の roll.label）ので、
- * 時間割を 作った ときの 枠を 覚えて おく（板は 1度に 1つの 番組だけ）。
- */
-let labelLive = true;
-
 const sonoText = (s: string, n: number, live: boolean): string => {
 	const N = koshienSono(n, live);
 	return `${s.replace("{N}", String(N))}${N === 100 ? KOSHIEN_THREAD.taidai : ""}`;
@@ -345,7 +339,6 @@ export const KOSHIEN_WORD = "打った！";
 
 /** 台本（148秒。pick 13 ＋ Cue）。 */
 const koshienTimeline: JkScript["timeline"] = (rand, slot) => {
-	labelLive = slot.live;
 	const live = slot.live;
 	const home = Math.floor(rand() * KOSHIEN_SCHOOLS.length);
 	const away =
@@ -652,8 +645,8 @@ export const KOSHIEN: JkScript = {
 	goal: GOAL,
 	pools: KOSHIEN_POOLS,
 	title: titleOf,
-	label: (n) =>
-		KOSHIEN_THREAD.label.replace("{N}", String(koshienSono(n, labelLive))),
+	label: (n, slot) =>
+		KOSHIEN_THREAD.label.replace("{N}", String(koshienSono(n, slot.live))),
 	at1000: () => KOSHIEN_THREAD.get1000,
 	open: "open",
 	gapPool: "gap",

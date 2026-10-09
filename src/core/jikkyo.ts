@@ -2086,7 +2086,7 @@ export type JkScript = {
 	readonly pools: JkPools;
 	readonly title: JkTitleFn;
 	/** ヘッダーの 左（省くと『★n』）。 */
-	readonly label?: (n: number) => string;
+	readonly label?: (n: number, slot: JkSlot) => string;
 	/** 1000 の 行（「1000なら　来週も　鯖」）。 */
 	readonly at1000: (n: number, slot: JkSlot) => string;
 	/** 立った スレの 頭の 波・切れ目の 群衆の pool。 */
@@ -2248,7 +2248,7 @@ export const compileScript = (
 	].sort((a, b) => a.at - b.at);
 	const P = overlays.reduce((s, o) => s + o.win.weight, 0);
 	const goal = scriptGoal(p, slot);
-	const label = p.label ?? ((n: number) => `★${n}`);
+	const label = (n: number) => p.label?.(n, slot) ?? `★${n}`;
 	const rules: JkRules = {
 		goal,
 		idle: D.idle,
