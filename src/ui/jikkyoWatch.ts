@@ -1,4 +1,6 @@
-// 台本の 番組の 板と 入口（映画館の 実況上映：金曜ロード保守『空飛ぶ鯖』・保守劇場の 紅白スレ合戦）。
+// 台本の 番組の 板と 入口（映画館の 実況上映：金曜ロード保守『空飛ぶ鯖』・保守劇場の 紅白スレ合戦・
+// 束の 番組＝銭湯の 大相撲・カジノの 競馬 ほか 14本。data/jikkyo/packs.ts、TV は ui/jikkyoTvs.ts の 一覧）。
+// 会場に 番組が 2つ 以上 あれば（映画館の 夜の部と 昼の部 など）、入口で 番組を 選ぶ。
 // エンジンは core/jikkyo.ts（overlay の 窓・Cue・950 の 当番・切れ目・黙る 窓・名前欄）、台本は data/jikkyo/sora.ts・kohaku.ts、
 // 番組表は data/jikkyo/schedule.ts、TV は ui/jikkyoScenes.ts（映画館）・ui/jikkyoKohakuTv.ts（劇場）、
 // 選ぶ 部品は ui/minigamePicker.ts。板の 形と 色は 野球と 同じ .mgame.jk（style.css）に 少し 足す。
