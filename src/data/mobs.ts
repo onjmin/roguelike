@@ -2873,8 +2873,9 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "sa:nabqyI",
 		from: 0,
 		after: "opunu",
-		// 西の 空き地（本屋の 東どなり。西の 口への 道の そば）。のんびり すわっているので うろうろ しない
-		spot: [7, 21],
+		// 西の 空き地の 東の はし（西の 口への 道の そば）。のんびり すわっているので うろうろ しない。
+		// (7,21) は 空き地 → 西口の 乗り場・図書館・碁会所の 近道を ふさぐ（段3〜 で +34 歩）ので 1つ 東
+		spot: [8, 21],
 		dir: "down",
 		color: "#b8c8d8",
 		noVote: true,
