@@ -1116,36 +1116,6 @@ body.jolt #app {
 	font-size: 12px;
 }
 
-/* 本館の 映写機で 上映する あらすじ（ui/hallEvents.ts）。暗い 幕と、上下に フィルムの 穴 */
-.window.film {
-	--film-holes: repeating-linear-gradient(
-		90deg,
-		transparent 0 5px,
-		#cfc6ae 5px 11px,
-		transparent 11px 16px
-	);
-	background:
-		var(--film-holes) left 0 top 4px / 100% 6px no-repeat,
-		var(--film-holes) left 0 bottom 4px / 100% 6px no-repeat,
-		#0c0a08;
-	border-color: #2a2420;
-	padding: 14px 0;
-}
-
-.window.film .menu-title {
-	color: #f0e2b0;
-	text-align: center;
-}
-
-.window.film .info-body {
-	color: #e6dcc2;
-	text-shadow: 0 0 6px rgba(250, 232, 150, 0.25);
-}
-
-.window.film .info-body b {
-	color: #fae896;
-}
-
 /* ───────── HUD ───────── */
 
 .hud {
@@ -2597,30 +2567,29 @@ body.jolt #app {
 
 /* ───────── 冒険の記録（村から見る一覧） ───────── */
 
-.records .rec-total {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 6px;
-	margin-bottom: 10px;
-	text-align: center;
+/* 通算は メニューの つよさと 同じく 字だけ（枠で かこまない。帳簿の 合計・前回・平均も 同じ） */
+.records .rec-total,
+.sales-kpis {
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 1em;
+	padding: 0 2px 6px;
+	margin-bottom: 8px;
+	font-size: 13px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.records .rec-total div {
-	padding: 6px 2px;
-	border: 1px solid rgba(255, 255, 255, 0.18);
-	border-radius: 6px;
-}
-
-.records .rec-total span {
-	display: block;
-	font-size: 11px;
+.records .rec-total span,
+.sales-kpi small {
+	margin-right: 0.4em;
+	font-size: inherit;
 	color: var(--muted);
 }
 
-.records .rec-total b {
+.records .rec-total b,
+.sales-kpi b {
 	font-weight: normal;
-	font-size: 16px;
-	color: var(--accent);
+	font-variant-numeric: tabular-nums;
 }
 
 .records .rec {
@@ -3100,34 +3069,7 @@ body.jolt #app {
 	z-index: 59;
 }
 
-/* ゼロの 帳簿：売り上げの グラフ（ui/home.ts の openSales） */
-.sales-kpis {
-	display: flex;
-	gap: 6px;
-	margin-bottom: 8px;
-}
-
-.sales-kpi {
-	flex: 1;
-	padding: 4px 6px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	border-radius: 6px;
-	display: flex;
-	flex-direction: column;
-}
-
-.sales-kpi small {
-	font-size: 11px;
-	color: var(--muted);
-}
-
-.sales-kpi b {
-	font-size: 17px;
-	font-weight: normal;
-	color: var(--accent);
-	font-variant-numeric: tabular-nums;
-}
-
+/* ゼロの 帳簿：売り上げの グラフ（ui/home.ts の openSales）。合計・前回・平均は 冒険の記録の 通算と 同じ 形 */
 .sales-chart {
 	display: flex;
 	align-items: flex-end;

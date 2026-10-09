@@ -287,7 +287,7 @@ export const openRecords = async (
 	opt: { replay?: boolean } = {},
 ): Promise<SavedReplay | null> => {
 	const title = opt.replay ? "リプレイ上映" : "冒険の記録";
-	const cls = opt.replay ? "records film" : "records";
+	const cls = "records";
 	const list = loadRecords();
 	const st = runStats();
 	const total = `<div class="rec-total">${[
