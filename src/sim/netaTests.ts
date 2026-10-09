@@ -18,6 +18,7 @@ import {
 	isNearZoro,
 	isZoro,
 	wallClock,
+	zeroClock,
 	zeroDeny,
 	zeroJudge,
 	zeroOpen,
@@ -93,6 +94,7 @@ import {
 	saveNeta,
 	setNetaHooks,
 } from "../ui/neta";
+import { twoB } from "../ui/netaBoard";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -382,6 +384,7 @@ test("文: 窓は 22×2、板は 1行 22、ボタン 9、スレの 本文 12、!
 		YAKYU.menu,
 		OTHELLO.menu,
 		FUKKIN.menu,
+		FUKKIN.menuResume,
 		FUKKIN.menu2,
 		COMMA.menu,
 		COMMA.menuNight,
@@ -415,6 +418,7 @@ test("文: 窓は 22×2、板は 1行 22、ボタン 9、スレの 本文 12、!
 		OTHELLO.passYou,
 		OTHELLO.passThem,
 		OTHELLO.quit1,
+		OTHELLO.tapAgain,
 		fill(OTHELLO.win, { b: 64, w: 64 }),
 		fill(OTHELLO.lose, { b: 64, w: 64 }),
 		fill(OTHELLO.draw, { b: 32, w: 32 }),
@@ -769,12 +773,16 @@ test("コンマ: ミリ秒・ゾロ目・惜しい・出さない 数／0時ち�
 	];
 	for (const [d, j] of want) ok(zeroJudge(d) === j, `${d} → ${zeroJudge(d)}`);
 	ok(zeroOpen(23) && zeroOpen(0) && !zeroOpen(22) && !zeroOpen(1), "hours");
-	// 0時ちょうども 淫夢の ミリ秒は 出さない（0時より 前も 後も）、判定は かわらない
-	for (let d = -3000; d <= 3000; d++) {
-		const t = zeroText(zeroDeny(d));
+	// 0時ちょうども 淫夢の ミリ秒は 出さない（0時より 前も 後も。板の 回る 時計も 書きこみも zeroClock）、
+	// 判定は かわらない
+	for (let d = -5000; d <= 3000; d++) {
+		const t = zeroClock(d);
+		ok(t === zeroText(zeroDeny(d)), `zeroClock ${d}`);
 		ok(!COMMA_DENY.has(Number(t.slice(-3))), `zero ${d} → ${t}`);
 		ok(zeroJudge(zeroDeny(d)) === zeroJudge(d), `judge ${d}`);
 	}
+	for (const d of [-4190.5, -2636.2, 514.9, 810.4, 931.99])
+		ok(!COMMA_DENY.has(Number(zeroClock(d).slice(-3))), `zero ${d}`);
 	ok(
 		zeroText(zeroDeny(810)) === "00:00:00.811" &&
 			zeroText(zeroDeny(-190)) === "23:59:59.811" &&
@@ -811,6 +819,17 @@ test("!sk: 文・縦の 列・目の 回り", () => {
 			skReelAt(0, 110 * 5, 8, 3) === 0,
 		"reel",
 	);
+});
+
+test("板の 入力: B を 1.5秒 以内に 2回で やめる、過ぎたら 1度だけ「もどす」合図（次の B は また 1回目）", () => {
+	const q = twoB(1500);
+	ok(!q.lapsed(0), "nothing pressed");
+	ok(!q.press(1000) && q.press(2400), "two within 1.5 s");
+	ok(!q.lapsed(9000), "no lapse after a quit");
+	ok(!q.press(10_000), "first again");
+	ok(!q.lapsed(11_500) && q.lapsed(11_501), "lapse after 1.5 s");
+	ok(!q.lapsed(12_000), "lapse only once");
+	ok(!q.press(12_100) && !q.lapsed(13_000) && q.press(13_100), "re-armed");
 });
 
 test("絵: neta.png 64x64・neta_kabe.png 32x128、切り出しは 絵の 中で 重ならない", () => {
@@ -1110,7 +1129,7 @@ test("ageジム: 腹筋台（1窓）→ 書きこむ（はじめだけ 決まり
 			r.log,
 			[
 				...line.map((l) => `narrate: ${l}`),
-				`choose: ${FUKKIN.menu.join("/")}`,
+				`choose: ${FUKKIN.menuResume.join("/")}`,
 				`narrate: ${fill(FUKKIN.postedLeft, { id, n: reps, left: reps - half })}`,
 				`choose: ${FUKKIN.menu2.join("/")}`,
 				`narrate: ${fill(FUKKIN.finish, { n: reps, total: reps })}`,
@@ -1172,6 +1191,22 @@ test("ageジム: 腹筋台（1窓）→ 書きこむ（はじめだけ 決まり
 			"sottoji",
 		);
 		ok(boards === 0, "そっ閉じ → no board");
+		// つづきは「つづける」で、トレーナーの 1窓は くり返さない
+		setNetaHooks({ fukkin: async (o) => ({ done: o.done + 5 }) });
+		r = recorder([0, 0]);
+		await fukkinScript(CTX, r.s, bigAt);
+		r = recorder([0, 0]);
+		await fukkinScript(CTX, r.s, bigAt);
+		same(
+			r.log,
+			[
+				`choose: ${FUKKIN.menuResume.join("/")}`,
+				`narrate: ${fill(FUKKIN.postedLeft, { id: kirikoId(bigAt), n: big, left: big - 5 })}`,
+				`choose: ${FUKKIN.menu2.join("/")}`,
+				`narrate: ${fill(FUKKIN.stopped, { done: 10, total: reps + 10 })}`,
+			],
+			"resume big",
+		);
 	});
 });
 
@@ -1186,6 +1221,12 @@ test("ゲームセンター: コンマの 台 → 昼は コンマだけ・夜�
 				r.log[1] === `choose: ${COMMA.menuNight.join("/")}`,
 			r.log.join("\n"),
 		);
+		// はじめに 0時ちょうどを 選んでも ゾロ目の 決まりは 出ない。B で やめたら 窓なし
+		setNetaHooks({ zero: async () => null });
+		r = recorder([1]);
+		await commaScript(CTX, r.s, 23);
+		same(r.log, [`choose: ${COMMA.menuNight.join("/")}`], "zero quit");
+		ok(!loadNeta().comma.tutored, "no rule for 0時");
 		setNetaHooks({ comma: async () => ({ stamps: [111, 234] }) });
 		r = recorder([0]);
 		await commaScript(CTX, r.s, 12);
@@ -1208,8 +1249,21 @@ test("ゲームセンター: コンマの 台 → 昼は コンマだけ・夜�
 			[`choose: ${COMMA.menu.join("/")}`, `narrate: ${COMMA.noZoro}`],
 			"no zoro",
 		);
-		let diff: number | null = 40;
+		// はじめての 1回は いちばんの 窓なし（いちばんに 決まって いる）、前の いちばんを 超えたら 出る
+		let diff: number | null = 200;
 		setNetaHooks({ zero: async () => ({ diff }) });
+		r = recorder([1]);
+		await commaScript(CTX, r.s, 0);
+		same(
+			r.log,
+			[
+				`choose: ${COMMA.menuNight.join("/")}`,
+				`narrate: ${fill(COMMA.zeroAfter, { time: "00:00:00.200", judge: COMMA.judge.close })}`,
+			],
+			"zero first",
+		);
+		ok(loadNeta().comma.best0 === 200, "first best0");
+		diff = 40;
 		r = recorder([1]);
 		await commaScript(CTX, r.s, 0);
 		same(

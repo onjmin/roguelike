@@ -762,7 +762,7 @@ export const FACILITIES: readonly Facility[] = [
 				"ふほほまほほほふ",
 				"ふふほほほほふふ",
 				"ふふふほほふふふ",
-				"みふふふふふふみ",
+				"みふふふふふふむ",
 			],
 			tiles: {
 				// バックネット（通れない）・外野の 芝・内野の 土・マウンド・ベンチ
@@ -771,6 +771,8 @@ export const FACILITIES: readonly Facility[] = [
 				ほ: floor(C_FIELD, base(5, 4)),
 				ま: solid(C_FIELD, base(5, 4), basePx(7 * 16, 13 * 16 + 4, 16, 12)),
 				み: solid(C_GRASS, TURF, base(0, 121)),
+				// 三塁側の ベンチ（「!random」の 札が さがる。ランダム野球。scripts/make-neta.mjs）
+				む: solid(C_GRASS, TURF, base(0, 121), netaArt("fuda")),
 			},
 		},
 		outdoor: [

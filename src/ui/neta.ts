@@ -187,7 +187,7 @@ export type NetaHooks = {
 		done: number;
 	}) => Promise<FukkinResult>;
 	comma?: () => Promise<CommaResult | null>;
-	zero?: () => Promise<ZeroResult>;
+	zero?: () => Promise<ZeroResult | null>;
 	sk?: () => Promise<SkResult | null>;
 };
 let hooks: NetaHooks | null = null;
@@ -229,7 +229,7 @@ export const yakyuScript = async (ctx: UiCtx, s: Story): Promise<void> => {
 
 /**
  * 5割の壁（物の 文「……」の あと）。5割の ときだけ。しゃべった 帰りが かわるたびに 次の 1つ（順に。最後の
- * 「……1つ　勝ったら、また　だまる。」の あとは はじめから）。同じ 帰りは 何度 調べても 同じ 1つ。
+ * 「……1つ　動いたら、また　だまる。」の あとは はじめから）。同じ 帰りは 何度 調べても 同じ 1つ。
  */
 export const kabeScript = async (s: Story, at = returnNow()): Promise<void> => {
 	const m = loadNeta();
@@ -304,7 +304,9 @@ export const fukkinScript = async (
 		await s.narrate(FUKKIN.doneToday);
 		return;
 	}
-	if ((await s.choose([...FUKKIN.menu], { cancel: 1 })) !== 0) return;
+	// その 帰りに そっ閉じした あとは「つづける」（ID は 1日 1つ。書きこみは もう ある）
+	const menu = done > 0 ? FUKKIN.menuResume : FUKKIN.menu;
+	if ((await s.choose([...menu], { cancel: 1 })) !== 0) return;
 	if (!m.fukkin.tutored) {
 		await s.narrate(FUKKIN.rule);
 		m.fukkin.tutored = true;
@@ -324,7 +326,7 @@ export const fukkinScript = async (
 			? fill(FUKKIN.postedLeft, { id, n: reps, left: reps - done })
 			: fill(FUKKIN.posted, { id, n: reps }),
 	);
-	if (reps >= FUKKIN_SOTTOJI) await s.narrate(FUKKIN.sottoji);
+	if (reps >= FUKKIN_SOTTOJI && done === 0) await s.narrate(FUKKIN.sottoji);
 	if ((await s.choose([...FUKKIN.menu2], { cancel: 1 })) !== 0) return;
 	await s.wait(0);
 	const o = { id, reps, done };
@@ -358,7 +360,8 @@ export const commaScript = async (
 	const menu = zeroOpen(hour) ? COMMA.menuNight : COMMA.menu;
 	const n = await s.choose([...menu], { cancel: menu.length - 1 });
 	if (n === menu.length - 1) return;
-	if (!m.comma.tutored) {
+	// ゾロ目の 決まりは コンマの とき だけ（0時ちょうどは 板の 字で わかる）
+	if (n === 0 && !m.comma.tutored) {
 		await s.narrate(COMMA.rule);
 		m.comma.tutored = true;
 		saveNeta(m);
@@ -379,6 +382,8 @@ export const commaScript = async (
 		return;
 	}
 	const r = hooks?.zero ? await hooks.zero() : await playZero(ctx, o);
+	// B で やめた（窓は 出さない）
+	if (!r) return;
 	if (r.diff === null) {
 		await s.narrate(COMMA.zeroNone);
 		return;
@@ -386,6 +391,7 @@ export const commaScript = async (
 	// 板でも ずらして いるが、ここでも（見える ミリ秒に 淫夢の 数を 出さない）
 	const diff = zeroDeny(r.diff);
 	const ms = Math.floor(diff);
+	const had = m.comma.best0 !== null;
 	const best = ms >= 0 && (m.comma.best0 === null || ms < m.comma.best0);
 	if (best) m.comma.best0 = ms;
 	saveNeta(m);
@@ -395,7 +401,9 @@ export const commaScript = async (
 			judge: COMMA.judge[zeroJudge(diff)],
 		}),
 	);
-	if (best) await s.narrate(fill(COMMA.zeroBest, { best: zeroText(ms) }));
+	// いちばんの 窓は 前の いちばんを 超えた とき だけ（はじめての 1回は いちばんに 決まって いる）
+	if (best && had)
+		await s.narrate(fill(COMMA.zeroBest, { best: zeroText(ms) }));
 };
 
 /** 物を 調べた あとの 遊び（ui/facilities.ts の outdoorScript・buildFacility から）。 */

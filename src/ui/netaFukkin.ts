@@ -1,7 +1,8 @@
 // ID腹筋の 板（ageジムの 腹筋台。ID と 回数は data/neta/id.ts、文は data/neta/text.ts の FUKKIN）。
 // 240x150（2倍の 下地）：左に ID と 回数・マットの 上で 腹筋する 子（neta.png の koDown/koUp を 3倍）・あと 何回、
 // 右に スレ（>>1 の 題、名無しの「ほい」「てす」…）。A／タップの 連打 1回で 1回（mash が 数える）。
-// 回数に 届いたら 完走（乙）。B（板の 外の タップ）で そっ閉じ（そこまでの 回数は 残る）。おわった 回数を 返す（その 帰りの 合計）。
+// 回数に 届いたら 完走（乙）。B（板の 外の タップ）で そっ閉じ（そこまでの 回数は 残る。連打の 直後 0.3秒の B は
+// 指の はみ出しと 見て 捨てる。netaBoard の mash）。おわった 回数を 返す（その 帰りの 合計）。
 
 import { kirikoName } from "../data/neta/id";
 import { FUKKIN } from "../data/neta/text";

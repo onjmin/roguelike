@@ -6,7 +6,8 @@
 //   B（板の 外の タップ）で やめる（それまでの 書きこみは 数える）。
 // - 0時ちょうど：23:59:55.000 から 進む 時計（その 場で 始まる 5秒の 時計。端末の 分・秒は 見ない）。A で 1回だけ 書きこむ。
 //   書きこみは 鯖の 重さで 8〜24ms おくれる。00:00:03 を 過ぎたら 書きこめず おわり。名無しの 返しは 判定で 1つ。
-//   どこを タップしても A（時刻あての 遊びなので、板の 外の タップで やめさせない）。
+//   回る 時計も 書きこみも zeroClock（淫夢の ミリ秒は 出さない）。B（板の 外の タップ）で やめる（null。スマホでも
+//   やめられる ように）。
 
 import {
 	COMMA_GAP_MS,
@@ -19,14 +20,14 @@ import {
 	ZERO_LAG_SPAN,
 	ZERO_LEAD_MS,
 	ZERO_TAIL_MS,
+	zeroClock,
 	zeroDeny,
 	zeroJudge,
-	zeroText,
 } from "../data/neta/comma";
 import { kirikoName } from "../data/neta/id";
 import { COMMA } from "../data/neta/text";
 import type { UiCtx } from "./list";
-import { board, presses, sleep, tick } from "./minigameBoard";
+import { board, sleep, tick } from "./minigameBoard";
 import {
 	crisp,
 	drawPosts,
@@ -126,21 +127,21 @@ export const playComma = async (
 	}
 };
 
-/** 0時ちょうど（書きこめなければ diff: null）。 */
+/** 0時ちょうど（書きこめなければ diff: null、B で やめたら null）。 */
 export const playZero = async (
 	ctx: UiCtx,
 	o: { id: string; title: boolean },
-): Promise<ZeroResult> => {
+): Promise<ZeroResult | null> => {
 	const b = board(ctx, COMMA.zeroTitle, COMMA.zeroHint);
 	const g = crisp(b);
-	const p = presses(ctx, b.root);
+	const p = pressesB(ctx, b.root);
 	const say = (t: string) => {
 		b.note.textContent = t;
 	};
 	const posts: Post[] = [{ name: "1", body: COMMA.zeroTitle, ink: "#8ab48a" }];
 	try {
 		say(COMMA.zeroNote);
-		draw(g, posts, zeroText(-ZERO_LEAD_MS), "");
+		draw(g, posts, zeroClock(-ZERO_LEAD_MS), "");
 		await sleep(600);
 		p.take();
 		const t0 = performance.now();
@@ -148,7 +149,7 @@ export const playZero = async (
 			await tick();
 			const k = p.take();
 			const diffNow = performance.now() - t0 - ZERO_LEAD_MS;
-			if (k === "b") return { diff: null };
+			if (k === "b") return null;
 			if (k === "a") {
 				const diff = zeroDeny(
 					p.at() -
@@ -160,18 +161,18 @@ export const playZero = async (
 				const j = zeroJudge(diff);
 				posts.push({
 					name: "2",
-					body: `${kirikoName(o.title)}　ID:${o.id}　${zeroText(diff)}`,
+					body: `${kirikoName(o.title)}　ID:${o.id}　${zeroClock(diff)}`,
 					ink: "#ffe060",
 				});
 				posts.push({ name: "3", body: COMMA.posts.zero[j] });
 				say(COMMA.judge[j]);
 				ctx.se(j === "god" || j === "exact" ? "levelup" : "decide");
-				draw(g, posts, zeroText(diff), "");
+				draw(g, posts, zeroClock(diff), "");
 				await sleep(1400);
 				return { diff };
 			}
 			if (diffNow > ZERO_TAIL_MS) return { diff: null };
-			draw(g, posts, zeroText(diffNow), "");
+			draw(g, posts, zeroClock(diffNow), "");
 		}
 	} finally {
 		p.stop();

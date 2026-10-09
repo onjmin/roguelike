@@ -1,6 +1,7 @@
 // ネタスレの 遊びの 絵を 書き出す（node scripts/make-neta.mjs）。
 //
-//   public/sprites/neta.png      … 64x64。部屋の 物（リバーシ盤・コンマの 台・腹筋台・文机）と 板の 絵（サイコロ・筆・腹筋の 子 2コマ）
+//   public/sprites/neta.png      … 64x64。部屋の 物（リバーシ盤・コンマの 台・腹筋台・文机）、グラウンドの 三塁側の
+//                                  ベンチに 重ねる「!random」の 札、板の 絵（サイコロ・筆・腹筋の 子 2コマ）
 //   public/sprites/neta_kabe.png … 32x128。グラウンドの「5割の壁」の 歩行グラ（16x32 が 2コマ×4方向。行は 後・右・前・左）
 //
 // 絵の 出どころ:
@@ -320,7 +321,10 @@ const COMMA_PAL = {
 	d: "#1c2860",
 };
 
-/** 腹筋台（16x16。坂に なった 黒い 台・足を かける ローラー・はり紙）。 */
+/**
+ * 腹筋台（16x16。坂に なった 青い ビニールの 台・銀の 脚・足を かける ローラー、台の 横から さがった はり紙＝
+ * 字の 行が 2本）。台が 黒いと マットの 上で 寝た 生き物に 見えたので、青く 明るく した。
+ */
 const FUKKIN = [
 	"................",
 	"................",
@@ -329,43 +333,46 @@ const FUKKIN = [
 	".kkkkk..........",
 	".kPPPkkkk.......",
 	".kpppPPPPkkk....",
-	".kkppwwwppPPkk..",
-	"..kkkwrwpppppPk.",
-	"..mk.wwwkkkpppk.",
-	"..m.......kkkkk.",
-	"..m...........m.",
-	"..m...........m.",
-	".kMk.........kMk",
+	".kkppppppPPPkk..",
+	"..mkkwwwwkppPPk.",
+	"..m..wggwkkkpPk.",
+	"..m..wwwwm.kkkk.",
+	"..m..wggwm....m.",
+	"..m..wwwwm....m.",
+	".kMk.....M...kMk",
 	"................",
 	"................",
 ];
 const FUKKIN_PAL = {
 	k: "#1a1a1a",
-	p: "#3a3a48",
-	P: "#5a5a72",
-	m: "#b8b8c0",
-	M: "#787880",
+	p: "#3a5a8c",
+	P: "#6a8cc4",
+	m: "#c8c8d0",
+	M: "#808088",
 	w: "#f4f2ea",
-	r: "#c03030",
+	g: "#8a8a92",
 };
 
-/** 文机（16x16。半紙・すずり・筆）。 */
+/**
+ * 文机（16x16。低く 横に 長い 板の 机を 上から。半紙＝縦書きの 筆の 線が 2列、黒い すずり、筆）。
+ * 半紙に 点を 散らすと サイコロに、背の 高い 箱だと テレビに 見えたので、低い 板と 縦の 線に した。
+ */
 const DESK = [
 	"................",
 	"................",
 	"................",
-	".kkkkkkkkkkkkkk.",
-	".kDDDDDDDDDDDDk.",
-	".kDwwwwwwDssDDk.",
-	".kDwiwiwwDsisDk.",
-	".kDwwiwwwDssDDk.",
-	".kDwiwwiwDDbDDk.",
-	".kDWWWWWWDDDBDk.",
-	".kddddddddddddk.",
-	".kkkkkkkkkkkkkk.",
-	"..kd........dk..",
-	"..kk........kk..",
 	"................",
+	"................",
+	"kkkkkkkkkkkkkkkk",
+	"kDwwwwwwwDDDDDDk",
+	"kDwiwiwiwDDSSDDk",
+	"kDwiwiwiwDDssDDk",
+	"kDwwwiwiwDDssDDk",
+	"kDwwwwwiwDDssDDk",
+	"kDwwwwwwwDbbbbBk",
+	"kddddddddddddddk",
+	"kkdkkkkkkkkkkdkk",
+	".kk..........kk.",
 	"................",
 ];
 const DESK_PAL = {
@@ -373,11 +380,41 @@ const DESK_PAL = {
 	d: "#8a5a34",
 	D: "#b07a48",
 	w: "#f6f4ee",
-	W: "#d8d4c8",
 	i: "#101010",
-	s: "#2a2a30",
+	s: "#5a5a64",
+	S: "#08080c",
 	b: "#c8a060",
 	B: "#101010",
+};
+
+/**
+ * グラウンドの 三塁側の ベンチ（Base.png の ベンチ）に 重ねる 札（16x16。ひもで さがった 白い 札に「!」と 字の 行）。
+ * ランダム野球の ベンチを 左の ベンチと 見わける。
+ */
+const FUDA = [
+	"................",
+	"................",
+	"................",
+	"...........k....",
+	".........wwwww..",
+	".........wiwwws.",
+	".........wiwggs.",
+	".........wiwwws.",
+	".........wwwggs.",
+	".........wiwwws.",
+	".........wwwwws.",
+	"..........sssss.",
+	"................",
+	"................",
+	"................",
+	"................",
+];
+const FUDA_PAL = {
+	k: "#2a1a10",
+	w: "#f6f4ee",
+	i: "#202020",
+	g: "#8a8a92",
+	s: "#4a1410",
 };
 
 // ───────────────── 板の 絵：腹筋の 子（24x24・寝た／起きた） ─────────────────
@@ -570,6 +607,7 @@ const main = async () => {
 	paint(sheet, 16, 0, COMMA, COMMA_PAL); // (16,0) 16x32 コンマの 台
 	paint(sheet, 32, 0, FUKKIN, FUKKIN_PAL); // (32,0) 腹筋台
 	paint(sheet, 48, 0, DESK, DESK_PAL); // (48,0) 文机
+	paint(sheet, 0, 16, FUDA, FUDA_PAL); // (0,16) ベンチの 札
 	sheet.blit(await rpgen("83nRXJ"), 32, 16); // (32,16) サイコロ
 	sheet.blit(await rpgen("sZH68xr"), 48, 16); // (48,16) 筆
 	paint(sheet, 0, 32, FUKKIN_DOWN, KO_PAL); // (0,32) 24x24 寝た

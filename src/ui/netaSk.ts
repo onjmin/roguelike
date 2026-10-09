@@ -1,13 +1,21 @@
 // !sk 習字の 板（保守道場の 文机。文と 目は data/neta/sk.ts・text.ts の SK）。
 // 240x150（2倍の 下地）：まんなかに 半紙（縦書き 3列。右から「だれが」「どこで」「どうした。」）、左に サイコロ、右に 筆。
 // 右の 列から 目が 0.11秒ごとに 回り、A／タップで 止める（3回）。止めた 字は 太く（1px ずらして 2度 書く）。
-// 3つ 止めたら 左下に 朱の 落款「蓄」→ 文を ノートに 出して おわる。B で やめる（null）。
+// 3つ 止めたら 左下に 朱の 落款「蓄」→ 文を ノートに 出して おわる。B（板の 外の タップ）で やめる（null。前に
+// 書いた 半紙は その まま。スマホでも やめられる ように）。
 
 import { skColumns, skReelAt, skSentence } from "../data/neta/sk";
 import { SK } from "../data/neta/text";
 import type { UiCtx } from "./list";
-import { board, presses, sleep, tick } from "./minigameBoard";
-import { crisp, drawNeta, type G, loadNetaImg, txt } from "./netaBoard";
+import { board, sleep, tick } from "./minigameBoard";
+import {
+	crisp,
+	drawNeta,
+	type G,
+	loadNetaImg,
+	pressesB,
+	txt,
+} from "./netaBoard";
 
 export type SkResult = { a: number; b: number; c: number };
 
@@ -76,7 +84,7 @@ const draw = (
 export const playSk = async (ctx: UiCtx): Promise<SkResult | null> => {
 	const b = board(ctx, SK.title, SK.hint);
 	const g = crisp(b);
-	const p = presses(ctx, b.root);
+	const p = pressesB(ctx, b.root);
 	const img = await loadNetaImg();
 	const say = (t: string) => {
 		b.note.textContent = t;
@@ -111,7 +119,8 @@ export const playSk = async (ctx: UiCtx): Promise<SkResult | null> => {
 		say(skSentence(a, bb, c));
 		const t1 = performance.now();
 		while (performance.now() - t1 < 1600) {
-			if (p.take() === "a") break;
+			// 書けた あとは A でも B でも 閉じる（半紙は もう 書けて いる）
+			if (p.take() !== null) break;
 			await tick();
 		}
 		return { a, b: bb, c };

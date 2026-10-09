@@ -168,7 +168,10 @@ export const playYakyu = async (
 	const g = crisp(b);
 	const p = pressesB(ctx, b.root);
 	const quit = twoB();
+	/** 「もう　1回で　やめる」の 前の 字（1回目の B から 1.5秒 たったら もどす）。 */
+	let shown = "";
 	const say = (t: string) => {
+		shown = t;
 		b.note.textContent = t;
 	};
 	const sheet = await Promise.race([
@@ -184,10 +187,12 @@ export const playYakyu = async (
 			const k = p.take();
 			if (k === "a") return "a";
 			if (k === "b") {
-				if (quit(p.at())) return "quit";
-				say(YAKYU.quit1);
+				if (quit.press(p.at())) return "quit";
+				b.note.textContent = YAKYU.quit1;
 			}
-			if (performance.now() - t0 >= ms) return "time";
+			const now = performance.now();
+			if (quit.lapsed(now)) b.note.textContent = shown;
+			if (now - t0 >= ms) return "time";
 			await tick();
 		}
 	};
@@ -261,7 +266,13 @@ export const playYakyu = async (
 			if (r.kind === "tp") posts.push({ name: "名無し", body: YAKYU.cheer.tp });
 			if (r.kind === "fine")
 				posts.push({ name: "名無し", body: YAKYU.cheer.fine });
-			if (r.runs > 0 && !st.over && Math.random() < ADD_RUN_P)
+			// 追加点は もう 点を 取って いる がわだけ（その 試合の はじめての 点は 先制点）
+			if (
+				r.runs > 0 &&
+				st.score[side] > r.runs &&
+				!st.over &&
+				Math.random() < ADD_RUN_P
+			)
 				posts.push({ name: "名無し", body: YAKYU.addRun });
 			pa = yakyuBatted(pa, r);
 			if (pa === YAKYU_ROUND && r.kind !== "wp")
@@ -303,7 +314,9 @@ export const playYakyu = async (
 		);
 		ctx.se(res.winner === "home" ? "victory" : "cancel");
 		draw(g, st, card, posts, null, sheet);
-		await waitA(1800);
+		// 試合の あとは A でも B でも 閉じる（結果は もう 決まって いる。B で 字を「もう　1回で」に しない）
+		const t1 = performance.now();
+		while (performance.now() - t1 < 1800 && p.take() === null) await tick();
 		return res;
 	} finally {
 		p.stop();

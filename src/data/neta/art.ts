@@ -1,5 +1,6 @@
 // ネタスレの 遊びの 絵（scripts/make-neta.mjs が 作る public/sprites/neta.png・neta_kabe.png）。
-// 部屋の 物は facilities.ts の 部屋の 絵（k.on）に、板の 絵は ui/neta*.ts で 使う。ゲームは CDN を 見ない。
+// 部屋の 物は facilities.ts の 部屋の 絵（k.on）に、ベンチの 札は グラウンドの 外観の 字に、板の 絵は ui/neta*.ts で
+// 使う。ゲームは CDN を 見ない。
 
 export const NETA_IMG = "pub:sprites/neta.png";
 export const NETA_SIZE = [64, 64] as const;
@@ -14,6 +15,8 @@ export const NETA_CELLS = {
 	fukkin: [32, 0, 16, 16],
 	/** 文机（保守道場の 部屋の 物） */
 	desk: [48, 0, 16, 16],
+	/** 「!random」の 札（グラウンドの 三塁側の ベンチの 絵に 重ねる） */
+	fuda: [0, 16, 16, 16],
 	/** サイコロ（!sk 習字の 板） */
 	dice: [32, 16, 16, 16],
 	/** 筆（!sk 習字の 板） */

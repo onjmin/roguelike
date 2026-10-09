@@ -1,7 +1,8 @@
 // リバーシの 板（碁会所の リバーシ盤。決まりは data/neta/othello.ts、文は data/neta/text.ts の OTHELLO。画面には 一般名の リバーシ）。
 // 240x150（2倍の 下地）：左に 盤（16px の マス × 8、左上 (8,11)）、右に 石の 数・番・常連の 書きこみ。
-// キリコは 黒で 先手：十字キーで カーソル、A で 打つ（打てない 所は「そこには　打てない」）、盤を タップすると その マスに 打つ。
-// 打てる マスに 小さな 点。常連は 0.45〜0.75秒 考えて 打つ。返る 石は 40ms ずつ 裏がえる。B（板の 外の タップ）を 2回で 投了（null）。
+// キリコは 黒で 先手：十字キーで カーソル、A で 打つ（打てない 所は「そこには　打てない」）、盤を マウスで 押すと その マスに
+// 打つ。指の タップは 1回目で カーソルを 動かし、同じ マスを もう 1回で 打つ（マスが 小さく、打ち まちがえると もどせない）。
+// 打てる マスに 点。常連は 0.45〜0.75秒 考えて 打つ。返る 石は 40ms ずつ 裏がえる。B（板の 外の タップ）を 2回で 投了（null）。
 // 常連が 打つ あいだに たまった A・タップは 捨てる（キリコの 次の 手を 勝手に 打たない）。
 
 import {
@@ -79,8 +80,9 @@ const draw = (
 			g.strokeStyle = b[i] === BLACK ? "#000000" : "#a8a8a0";
 			g.stroke();
 		} else if (hints.includes(i)) {
-			g.fillStyle = "rgba(255,224,96,0.7)";
-			g.fillRect(cx - 1, cy - 1, 2, 2);
+			// 打てる マス（星の 3x3 より 大きく、見落とさない）
+			g.fillStyle = "rgba(255,224,96,0.85)";
+			g.fillRect(cx - 2, cy - 2, 4, 4);
 		}
 		if (i === last) {
 			g.fillStyle = "#e03a2a";
@@ -124,8 +126,20 @@ export const playOthello = async (
 	const g = crisp(bd);
 	const input = pad(ctx, bd.canvas);
 	const quit = twoB();
+	/** 「もう　1回で　投了」の 前の 字（1回目の B から 1.5秒 たったら もどす）。 */
+	let shown = "";
 	const say = (t: string) => {
+		shown = t;
 		bd.note.textContent = t;
+	};
+	/** B を 1回 押した（2回目なら true＝投了）。 */
+	const pressB = (at: number): boolean => {
+		if (quit.press(at)) return true;
+		bd.note.textContent = OTHELLO.quit1;
+		return false;
+	};
+	const lapse = () => {
+		if (quit.lapsed(performance.now())) bd.note.textContent = shown;
 	};
 	let b: Disc[] = othelloStart();
 	let cur = 19;
@@ -172,10 +186,8 @@ export const playOthello = async (
 				const until = performance.now() + 450 + Math.random() * 300;
 				while (performance.now() < until) {
 					for (const e of input.take())
-						if ("k" in e && e.k === "b") {
-							if (quit(e.at)) return null;
-							say(OTHELLO.quit1);
-						}
+						if ("k" in e && e.k === "b" && pressB(e.at)) return null;
+					lapse();
 					await tick();
 				}
 				const m = othelloAi(b, WHITE, Math.random);
@@ -184,9 +196,9 @@ export const playOthello = async (
 				continue;
 			}
 			// キリコの 番（常連の 番に たまった 押しは 捨てる。B だけは 投了の 2回に 数える）
-			for (const e of input.take())
-				if ("k" in e && e.k === "b" && quit(e.at)) return null;
 			say(OTHELLO.you);
+			for (const e of input.take())
+				if ("k" in e && e.k === "b" && pressB(e.at)) return null;
 			if (!moves.includes(cur)) cur = moves[0];
 			let chosen = -1;
 			while (chosen < 0) {
@@ -196,15 +208,20 @@ export const playOthello = async (
 						const x = Math.floor((e.tap[0] - OX) / CELL);
 						const y = Math.floor((e.tap[1] - OY) / CELL);
 						if (x < 0 || x > 7 || y < 0 || y > 7) continue;
-						cur = y * 8 + x;
-						if (moves.includes(cur)) chosen = cur;
-						else {
+						const at = y * 8 + x;
+						// 指は 1回目で カーソルだけ（となりの マスに 打ち まちがえない）。マウスは すぐ 打つ
+						const again = at === cur || !e.touch;
+						cur = at;
+						if (!moves.includes(cur)) {
 							ctx.se("miss");
 							say(OTHELLO.bad);
+						} else if (again) chosen = cur;
+						else {
+							ctx.se("cursor");
+							say(OTHELLO.tapAgain);
 						}
 					} else if (e.k === "b") {
-						if (quit(e.at)) return null;
-						say(OTHELLO.quit1);
+						if (pressB(e.at)) return null;
 					} else if (e.k === "a") {
 						if (moves.includes(cur)) chosen = cur;
 						else {
@@ -221,7 +238,10 @@ export const playOthello = async (
 					}
 					if (chosen >= 0) break;
 				}
-				if (chosen < 0) await tick();
+				if (chosen < 0) {
+					lapse();
+					await tick();
+				}
 			}
 			await place(chosen, BLACK);
 			turn = WHITE;
@@ -246,7 +266,9 @@ export const playOthello = async (
 		draw(g, b, -1, [], last, BLACK, posts);
 		const t0 = performance.now();
 		while (performance.now() - t0 < 2000) {
-			if (input.take().some((e) => "tap" in e || e.k === "a")) break;
+			// おわった あとは A・B・タップで 閉じる（結果は もう 決まって いる）
+			if (input.take().some((e) => "tap" in e || e.k === "a" || e.k === "b"))
+				break;
 			await tick();
 		}
 		return { black: c.black, white: c.white };
