@@ -4,6 +4,7 @@
 
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import type { KirikoMode, Speaker } from "../data/quotes";
+import type { CrowdNode, PedCost } from "../data/village/crowd";
 import type { SavedReplay } from "./save";
 import type { Dir } from "./types";
 
@@ -87,6 +88,8 @@ export type MapDef = {
 	onEnter?: Script;
 	/** マップの外側の色。 */
 	outside?: string;
+	/** 街の 人通り（村の 地図だけ。data/village/crowd.ts・ui/villageCrowd.ts）。 */
+	crowd?: { stage: number; nodes: readonly CrowdNode[]; cost: PedCost };
 	/** タイルの ほかに 使う 画像（decor で 描く 絵など。入る 前に 先読みする）。 */
 	images?: string[];
 	/** キャラの上に重ねて描く動く飾り（灯り・煙など）。ox・oy はカメラの位置（ソース画素）、t はミリ秒。 */

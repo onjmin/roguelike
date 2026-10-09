@@ -38,6 +38,9 @@ try {
 	const { runCivicTests } = await server.ssrLoadModule(
 		"/src/sim/civicTests.ts",
 	);
+	const { runCrowdTests } = await server.ssrLoadModule(
+		"/src/sim/crowdTests.ts",
+	);
 	const results = [
 		...runMonsterTests(),
 		...runReplayTests(),
@@ -46,6 +49,7 @@ try {
 		...(await runJikkyoTests()),
 		...(await runJikkyoProgTests()),
 		...(await runCivicTests()),
+		...runCrowdTests(),
 	];
 	for (const t of results)
 		console.log(

@@ -52,9 +52,11 @@ import {
 	TOWN_NAME,
 	VILLAGE_MSG,
 } from "../data/town";
+import { crowdNodes, villagePedCost } from "../data/village/crowd";
 import { facilityOfDoor, outdoorThingOf } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import {
+	layoutStage,
 	VISITOR_WALK,
 	type VillagePlace,
 	type VillageView,
@@ -773,6 +775,12 @@ export const buildVillage = (
 		// 銭湯の 煙突から 湯気・施設の 建物の 影（ui/facilities.ts）
 		decor: joinDecor(shadowDecor(view.stage), chimneySteam(rows)),
 		outside: "#1f2a14",
+		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/villageCrowd.ts）
+		crowd: {
+			stage: layoutStage(view),
+			nodes: crowdNodes(view),
+			cost: villagePedCost(view),
+		},
 		events: [
 			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),
 			// 寄り道の 板が 開く ときの 来客（旗 visitor の あいだだけ 村に いる。ui/villageReturn.ts の visitScript）

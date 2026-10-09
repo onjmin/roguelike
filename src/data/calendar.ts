@@ -1,5 +1,6 @@
 // 遊んでいる端末の日付・曜日（0=日〜6=土）。rpg の data/weekday.ts から。
-// 村の おんJマイナーズ（data/mobs.ts）の ひとことだけが 見る（ダンジョンの中の 遊びには 一切 かかわらない）。
+// 村の おんJマイナーズ（data/mobs.ts）の ひとことと 街の 人通り（data/village/crowd.ts）だけが 見る
+// （ダンジョンの中の 遊びには 一切 かかわらない）。
 // 開発中（pnpm dev か ?debug）は URL の &date=MMDD・&wday=0〜6 で 決め打ちできる。
 
 /** 端末の 月（1〜12）・日・曜日（0=日〜6=土）。 */
@@ -19,6 +20,19 @@ export const today = (): Today => {
 	const w = q.get("wday");
 	if (w !== null && /^[0-6]$/.test(w)) n.w = Number(w);
 	return n;
+};
+
+/**
+ * 端末の 時刻（0〜23 時）。村の 人通りの 流れ（data/village/crowd.ts）だけが 見る。
+ * 開発中（pnpm dev か ?debug）は URL の &hour=0〜23 で 決め打ちできる。
+ */
+export const nowHour = (): number => {
+	const h = new Date().getHours();
+	if (typeof location === "undefined") return h;
+	const q = new URLSearchParams(location.search);
+	if (!import.meta.env.DEV && !q.has("debug")) return h;
+	const v = q.get("hour");
+	return v !== null && /^\d{1,2}$/.test(v) && Number(v) < 24 ? Number(v) : h;
 };
 
 /** 期間限定の日。 */

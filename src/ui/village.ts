@@ -19,11 +19,13 @@
 //   noWarp なら ぜんぶ 歩く（ROM専の 行列）。
 //   道が なければ（台の うしろの ロゼ・シヨ、キリコが ふさぐ 細道の 先）、キリコ 以外は いちばん せまい すきまを
 //   とびこえる（近ければ 弧を えがいて とぶ。遠ければ 映らない うちに 置きなおす。engine/longWalk.ts の hopRoute）。
+// - 村の 地図には 街の 人通り（ui/villageCrowd.ts。町の 段と 時刻で 流れが かわる）。通行人は すりぬけられる。
 // - start() は 村を出ると（もぐる・冒険に　もどる・リプレイ）VillageExit で 解決する。
 //   冒険（Play）と 同じ canvas・入力を使うので、出る前に rAF を止めて タップの受け口を外す。
 
 import { type Dir8, DX, DY, isDiagonal } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
+import { nowHour, today } from "../data/calendar";
 import { CAST, KIRIKO, KIRIKO_WALK } from "../data/cast";
 import type { KirikoMode, Speaker } from "../data/quotes";
 import { type Facility, facilityOfMap } from "../data/village/facilities";
@@ -69,6 +71,7 @@ import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "./message";
 import { buildRoom } from "./rooms";
+import { Crowd } from "./villageCrowd";
 import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
 import { villageView } from "./villageReturn";
 
@@ -148,6 +151,8 @@ export class Village {
 	private readonly fadeEl: HTMLDivElement;
 	private readonly toastEl: HTMLDivElement;
 	private field: Field | null = null;
+	/** 街の 人通り（村の 地図だけ。ui/villageCrowd.ts）。 */
+	private crowd: Crowd | null = null;
 	/** いま 描いている 地図。村に 入る たびに village から（リプレイから もどった ときは 見る 前の 地図）。 */
 	private mapId: MapId = "village";
 	private player = new Actor("player", 0, 0, "down", KIRIKO_WALK, null);
@@ -316,7 +321,9 @@ export class Village {
 		);
 		this.player.through = false;
 		this.syncState();
+		this.crowd = null;
 		this.refreshActors();
+		this.crowd = def.crowd ? this.makeCrowd(field, def.crowd) : null;
 		this.stepPending = false;
 		this.path = [];
 		this.pathTalk = null;
@@ -324,6 +331,7 @@ export class Village {
 		const refs = [
 			...field.imageRefs(),
 			...field.actors.map((a) => a.sprite),
+			...(this.crowd ? Crowd.sprites() : []),
 			this.player.sprite,
 		];
 		await Promise.race([preloadImages(refs.filter(Boolean)), sleep(2500)]);
@@ -389,6 +397,7 @@ export class Village {
 		};
 		this.field?.dispose();
 		this.field = null;
+		this.crowd = null;
 		// 冒険の画面に 村が 一瞬 見えないよう、黒く ぬってから 幕を あげる（冒険は 自分の 幕を 持っている）
 		const g = this.screen.begin();
 		g.fillStyle = "#000";
@@ -424,7 +433,34 @@ export class Village {
 					new Actor(e.id, e.x, e.y, e.dir ?? "down", e.sprite ?? "", e),
 			);
 		}
+		// 街の 通行人は 地図の イベントでは ないので そのまま 残す
+		const crowd = this.crowd;
+		if (crowd) keep.push(...field.actors.filter((a) => crowd.owns(a)));
 		field.actors = keep;
+	}
+
+	/** 街の 人通り（data/village/crowd.ts の 流れで 人を 歩かせる。ui/villageCrowd.ts）。 */
+	private makeCrowd(
+		field: Field,
+		plan: NonNullable<Field["def"]["crowd"]>,
+	): Crowd {
+		return new Crowd({
+			field,
+			nodes: plan.nodes,
+			cost: plan.cost,
+			stage: plan.stage,
+			player: this.player,
+			clock: () => {
+				const w = today().w;
+				return { hour: nowHour(), weekend: w === 0 || w === 6 };
+			},
+			// 窓が 開いている あいだ（会話・選択肢）は 歩きださない
+			paused: () => this.ctx.input.busy || this.leaving,
+			target: () => this.pathTalk,
+			talk: (persona, line) => async (s) => {
+				await s.say("nanj", line, { name: persona.label });
+			},
+		});
 	}
 
 	private syncState(): void {
@@ -499,6 +535,7 @@ export class Village {
 				}
 			}
 		}
+		this.crowd?.update(dt);
 		if (this.idle && !this.player.moving) this.control();
 		this.updateCamera(dt);
 	}

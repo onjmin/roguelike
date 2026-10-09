@@ -206,7 +206,7 @@ export const VILLAGE_SPOTS = {
 } as const;
 
 /** 地図の形に使う 町の段（0〜7 に 丸める）。 */
-const layoutStage = (v: VillageView): number =>
+export const layoutStage = (v: VillageView): number =>
 	Math.max(0, Math.min(TOWN_STAGES - 1, Math.floor(v.stage) || 0));
 
 // ───────────────── 行 ─────────────────
@@ -904,6 +904,18 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	for (const [x, y] of SIGNALS) out.push([x, y, "ゔ"]);
 	out.push(...PARK);
 	return out;
+};
+
+/**
+ * 新市街の 車道の マスか（アスファルトの 住宅街から。横断歩道と 縦の 通りの 突きあたりは 歩道 あつかい）。
+ * 通行人は 車道を 歩かない（data/village/crowd.ts）。キリコは 歩ける。
+ */
+export const carLane = (stage: number, x: number, y: number): boolean => {
+	if (stage < 6 || x < EAST_X || x > EAST_R) return false;
+	const h = H_STREETS.find((s) => s.lanes.some(([ly]) => ly === y));
+	if (h) return x >= h.x0 && !crossH(x);
+	const v = V_STREETS.find((s) => s.lanes.some(([lx]) => lx === x));
+	return !!v && y > V_Y0 && y <= 40 && !crossV(y);
 };
 
 /** 喫茶「保守」が 建つ 町の 段。 */
