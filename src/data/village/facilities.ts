@@ -191,6 +191,8 @@ export type Facility = {
 	clear?: readonly (readonly [number, number, string, number?])[];
 	/** 扉を 踏んで 入る ときの 1窓（村に いる あいだ 1回）。 */
 	door?: string;
+	/** 出入りの 音（data/sfx.ts。なければ 木の 扉）。 */
+	doorSe?: "doorSteel" | "autoDoor" | "slideDoor";
 	room?: FacilityRoom;
 	outdoor?: readonly OutdoorThing[];
 };
@@ -611,6 +613,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "碁会所「本因坊」。\n石を　打つ　音が、ぱちり。",
+		doorSe: "slideDoor",
 		// 中：畳に 碁盤 2面と 将棋盤（座布団に すわって 打つ）、奥に 額「本因坊」・柱時計・掛け軸・盆栽、
 		// すみに 碁笥の かご・お茶の 台。左の 壁は 松の ふすま
 		room: {
@@ -772,6 +775,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "交番。\n赤い　灯りが　ともっている。",
+		doorSe: "doorSteel",
 		// 中：奥に 掲示板と 休憩室の 扉、左に ロッカー、まんなかの 机（台ごしに 巡査）、
 		// 入口の そばに 落とし物の 箱・電気ポット・「パトロール中」の 札
 		room: {
@@ -967,6 +971,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "おんJマート。\n入店の　チャイムが　鳴った。",
+		doorSe: "autoDoor",
 		// 中：奥の 壁に 飲み物の 冷蔵ケース、まんなかに 棚 2列、入口の 左に レジ（店員は 台の うしろ）、
 		// 右の 奥に コピー機・ATM・お手洗い、右に アイスの ケース、入口の そばに 分別の ゴミ箱と 雑誌
 		room: {
@@ -1110,6 +1115,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "診療所。\n消毒の　におい。",
+		doorSe: "autoDoor",
 		// 中：奥に ベッドと 心電図、先生の 机、薬の 棚、体重計。壁に 視力検査の 表・時計・はり紙。
 		// 手前は 待合（長いす・受付の 呼び鈴・テレビ・観葉植物）
 		room: {
@@ -1224,6 +1230,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "保守道場。\n「押忍！」と　声が　ひびく。",
+		doorSe: "slideDoor",
 		// 中：板の 間。奥に 額「保守」と 横断幕「心技体」、竹刀掛け・木刀掛け、すみに 太鼓と 水の 樽。格子の 窓
 		room: {
 			look: LOOKS.dojo,
@@ -1318,6 +1325,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "質屋「流れ」。\n鈴が　ちりん、と　鳴った。",
+		doorSe: "slideDoor",
 		// 中：濃い 板の 床と しっくいの 壁。奥に 箪笥・柱時計・金庫、まんなかに 帳場（台の うしろに 店主）、
 		// 左に ガラスの ケース 2つ、右に つぼ・ギター・レコードの 箱（流れ品）
 		room: {
@@ -1675,6 +1683,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "ガレージ。\nオイルの　におい。",
+		doorSe: "doorSteel",
 		// 中：灰色の 壁と コンクリートの 床、奥に シャッター。赤い セダン（横向き 4x2）、作業台と 工具箱、
 		// ドラム缶・ポリタンク・タイヤの 山
 		room: {
@@ -1766,6 +1775,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "ゲームセンター「連コ」。\n電子音と、レバーを　たたく　音。",
+		doorSe: "autoDoor",
 		// 中：赤い 柄の じゅうたん。奥に 筐体 5台（色ちがい）と 音ゲー・プリクラ、
 		// まんなかに 筐体 3台・レトロゲームの 台・自販機、入口の そばに 両替機。筐体の 前に 丸いす
 		room: {
@@ -1904,6 +1914,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 		door: "ageジム。\n「ふんっ……！」と　声が　する。",
+		doorSe: "autoDoor",
 		// 中：黒い ゴムの 床と 白い 石の 壁、奥の 壁は 鏡。ベンチ 2台・ダンベル・ロッカー・体重計・
 		// プロテインの 冷蔵庫・ストレッチの マット
 		room: {
@@ -2131,6 +2142,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "麺屋「乙」。\nのれんの　奥から、しょうゆの　におい。",
+		doorSe: "slideDoor",
 		// 中：奥に 冷蔵庫と 戸棚、台の うしろに 寸胴の コンロ・流し・店主（どれも 台ごしに 読む）、台に どんぶり・餃子・
 		// 調味料、丸いす 7つ。入口の そばに 券売機と お冷や。壁に 品書きと テレビ
 		room: {
@@ -2226,6 +2238,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "ファミレス「ドリンクバー」。\n窓ぎわで、だれかが　ずっと　粘っている。",
+		doorSe: "autoDoor",
 		// 中：窓ぎわに ボックス席 2つ（ソファに はさまれた 机）、手前にも 2つ。右の 奥に ドリンクバー（グラス・コーヒー・
 		// メロンソーダ・冷蔵ケース。調べると 1杯 飲める）、手前に レジ（台の うしろに 店員）と 食品サンプルの ケース、
 		// 入口の そばに 順番待ちの 紙。窓ぎわの 席に 粘る 名無し
@@ -2478,6 +2491,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "保守警察署。\n電話の　音が　鳴りやまない。",
+		doorSe: "doorSteel",
 		// 中：灰色の タイルと 白い 壁。奥に 手配書・事件の 板・時計・取調室の 扉、書類の 棚、
 		// 机 2つ（パソコン・電話）、手前を 横切る 台（左が 受付＝台の うしろに 警察官、右が 落とし物の 窓口）、
 		// 入口の そばに 待合の 長いすと 観葉植物
@@ -2609,6 +2623,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "総合病院。\n白い　廊下が、まっすぐ　のびている。",
+		doorSe: "autoDoor",
 		// 中：水色の タイル。奥は 病室（ベッド 3台に 心電図）と 検査の 機械・公衆電話、
 		// 右に 受付（台の うしろに 看護師）、手前は 待合（長いす 2つ・自販機・観葉植物）
 		room: {
@@ -2723,6 +2738,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "保守消防署。\n赤い　車が、出動を　待っている。",
+		doorSe: "doorSteel",
 		// 中：レンガの 壁と コンクリートの 床。奥に 警報の ベル・当番表・車庫の シャッター（消防車は 向こう）、
 		// 防火服の ロッカー、すべり棒、待機の ソファ、台所、入口の そばに 消火器
 		room: {
@@ -2824,6 +2840,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "保守地方裁判所。\nしんと　静まりかえっている。",
+		doorSe: "doorSteel",
 		// 中：木の 壁と 濃い 板の 床。奥に 額、裁判官の 席（台の うしろに 裁判官）、左右に 検察と 弁護の 机、
 		// まんなかに 証言台、木の 柵の 手前は 傍聴席（まんなかに 赤い じゅうたんの 通路）
 		room: {
@@ -2937,6 +2954,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "自動車整備工場。\nエンジンの　音と、オイルの　におい。",
+		doorSe: "doorSteel",
 		// 中：ガレージの 3倍。奥に シャッター 2枚分と 工具の キャビネット・事務の 机、
 		// 赤い セダンと 黄色い ワゴン、手前に ドラム缶と タイヤの 山
 		room: {
@@ -3055,6 +3073,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "映画館「スクリーン1000」。\nポップコーンの　におい。",
+		doorSe: "autoDoor",
 		// 中：黒い 幕の 壁と 赤い じゅうたん。奥に スクリーン（両わきに 赤い 幕）、客席 3列（背中から 見た いす）、
 		// 手前に 上映中の 札と ゴミ箱
 		room: {
@@ -3222,6 +3241,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "カジノ「ガチャ」。\nコインの　音が　鳴りひびく。",
+		doorSe: "doorSteel",
 		// 中：赤い 幕の 壁と 金の ふちの じゅうたん。奥に スロット 10台（色ちがい）と 丸いす、
 		// まんなかに ルーレット（盤と 賭けの 台）と カードの 台（横に ディーラー）、手前に チップの 窓口
 		room: {
@@ -3337,6 +3357,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "保守村駅。\n発車ベルが、遠くで　鳴っている。",
+		doorSe: "autoDoor",
 		// 中：白い 石の 壁と 灰色の タイル。奥が ホーム（発車標・時計・路線図・ベンチ・ゴミ箱、黄色い 点字ブロック）、
 		// まんなかに 改札 4台と 柵、右に 駅員室の 窓口（台の うしろに 駅員）、手前が コンコース
 		// （券売機・コインロッカー・売店・観葉植物）。改札を 調べると 電車で 出かけられる
@@ -3497,6 +3518,7 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "港湾事務所。\n無線の　声が　流れている。",
+		doorSe: "doorSteel",
 		// 中：灰色の タイルと 白い 壁。海の 見える 窓、入港予定の 掲示板、浮き輪、書類の 棚、無線機、
 		// 机 2つ（右の 机の うしろに 職員）、すみに 段ボールと 観葉植物
 		room: {

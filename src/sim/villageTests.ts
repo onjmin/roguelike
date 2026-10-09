@@ -94,6 +94,7 @@ import {
 	MUSIC_CLOSED,
 	PIANO_MSG,
 	ROOM_DOOR,
+	ROOM_DOOR_SE,
 	ROOM_MSG,
 } from "../data/rooms";
 import { SCRAP_MSG, SCRAPS } from "../data/scraps";
@@ -6536,7 +6537,7 @@ test("建物に 入る・出る: door text once, a door sound and a fade, then o
 		ok(
 			inOrder(log, [
 				`narrate: ${ROOM_DOOR[id]}`,
-				"se door",
+				`se ${ROOM_DOOR_SE[id]}`,
 				"fadeOut",
 				`warp ${id} ${e.x},${e.y} up`,
 				"fadeIn",
@@ -6551,7 +6552,7 @@ test("建物に 入る・出る: door text once, a door sound and a fade, then o
 		const o = ROOM_OUTSIDE[id];
 		ok(
 			inOrder(log, [
-				"se door",
+				`se ${ROOM_DOOR_SE[id]}`,
 				"fadeOut",
 				`warp village ${o.x},${o.y} ${o.dir}`,
 				"fadeIn",
@@ -6616,7 +6617,7 @@ test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番�
 				ok(
 					inOrder(log, [
 						`narrate: ${text}`,
-						"se door",
+						`se ${id === "store" && stage >= BANK_FROM ? "doorSteel" : ROOM_DOOR_SE[id]}`,
 						`warp ${id} ${e.x},${e.y} up`,
 					]),
 					`stage ${stage} ${door}:\n${log.join("\n")}`,

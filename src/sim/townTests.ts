@@ -22,7 +22,9 @@ import {
 import { triggerTrap } from "../core/traps";
 import type { Item, RunState } from "../core/types";
 import { SE_LOUDNESS } from "../data/loudness";
+import { ROOM_DOOR_SE } from "../data/rooms";
 import { sfx } from "../data/sfx";
+import { FACILITIES } from "../data/village/facilities";
 import {
 	depositBag,
 	depositItem,
@@ -111,6 +113,20 @@ test("every weapon has its own hit sound, and every attack sound is measured", (
 		(d) => d.sound?.hit,
 	);
 	ok(new Set(hits).size === hits.length, "two weapons share a hit sound");
+});
+
+test("建物の 出入りの 音：どれも 素材が あって 測ってあり、入口の 作りで 何種類かに 分かれる", () => {
+	const names = [
+		"door",
+		"doorSteel",
+		...Object.values(ROOM_DOOR_SE),
+		...FACILITIES.filter((f) => f.room).map((f) => f.doorSe ?? "doorWood"),
+	];
+	for (const n of names) {
+		ok(sfx[n], `no sound file for ${n}`);
+		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
+	}
+	ok(new Set(names).size >= 4, "every building sounds the same");
 });
 
 test("町の 小段：建物の 段の あいだを 約1.1倍ずつ 刻む。段を こえた 小段は 済み、いまの 段の 小段は 売上しだい", () => {

@@ -1,5 +1,5 @@
 // 村の 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。地図は data/village/rooms.ts、文は data/rooms.ts）。
-// 入る・出るは どの 部屋も 同じ（扉の 音 → 暗転 → 中 → 明転。出口の マットで 外へ）。
+// 入る・出るは どの 部屋も 同じ（入口の 音（ROOM_DOOR_SE）→ 暗転 → 中 → 明転。出口の マットで 外へ）。
 // 喫茶の 中の 人と 注文は ui/cafe.ts。ここは 小屋・常識堂・倉庫の 調べる 物と、部屋の 地図を 組み立てる 入口。
 // 中の 物は どれも 寄り道で、何も くれない（倉庫の 棚だけ 倉庫の 一覧を 開く。引き取るのは ここ）。
 
@@ -24,6 +24,7 @@ import {
 	MUSIC_CLOSED,
 	PIANO_MSG,
 	ROOM_DOOR,
+	ROOM_DOOR_SE,
 	ROOM_MSG,
 	ROOM_NAMES,
 } from "../data/rooms";
@@ -60,6 +61,12 @@ import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
 import { fill } from "./villageTalk";
 
+/** 部屋の 出入りの 音（銀行の 貸金庫は 重い 金庫の 扉）。 */
+const roomDoorSe = (id: RoomId): string =>
+	id === "store" && loadTown().stage >= BANK_FROM
+		? "doorSteel"
+		: ROOM_DOOR_SE[id];
+
 /** 部屋に 入る（扉の 文は 村に いるあいだ 部屋ごとに 1回。銀行・やきうの いない 小屋は 文が かわる）。 */
 export const enterRoom =
 	(id: RoomId): Script =>
@@ -75,7 +82,7 @@ export const enterRoom =
 						: ROOM_DOOR[id],
 			);
 		}
-		s.se("door");
+		s.se(roomDoorSe(id));
 		await s.fadeOut(250);
 		const e = roomEntry(id);
 		await s.warp(id, e.x, e.y, e.dir);
@@ -86,7 +93,7 @@ export const enterRoom =
 export const leaveRoom =
 	(id: RoomId): Script =>
 	async (s) => {
-		s.se("door");
+		s.se(roomDoorSe(id));
 		await s.fadeOut(250);
 		const o = ROOM_OUTSIDE[id];
 		await s.warp("village", o.x, o.y, o.dir);

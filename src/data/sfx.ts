@@ -17,8 +17,17 @@ const byKind: Record<SeKind, Record<string, string>> = {
 	},
 	/** 移動・拾う・回復。 */
 	field: {
-		/** 扉を あける（村の おんJ 本館に 入る・出る。rpg と 同じ 素材）。 */
+		// ── 建物の 出入り（入口の 作りで 音を かえる。建物ごとの 割りあては data/village/facilities.ts の doorSe・data/rooms.ts の ROOM_DOOR_SE）
+		/** おんJ 本館の 扉（rpg と 同じ 素材）。 */
 		door: "rpgen:8gPREU", // ﾄﾞﾗｸｴ扉
+		/** 木の 扉（小屋・喫茶・バー・海の家 など）。 */
+		doorWood: "rpgen:wUHfmk", // RPGEN 扉を開ける音1（木）
+		/** 重い 金属の 扉（交番・警察・裁判所・役場・金庫 など）。 */
+		doorSteel: "rpgen:HMyV1k", // RPGEN 扉を開ける音2（鉄）
+		/** 自動ドア（コンビニ・病院・駅・映画館 など）。 */
+		autoDoor: "rpgen:FVgGfX", // 自動ドア
+		/** 引き戸（のれんの 店・銭湯・碁会所・道場）。 */
+		slideDoor: "rpgen:xGCo1O", // [チョコレート☆]ガラララッ
 		/** ワープの罠・場所がえ。 */
 		warp: "rpgen:vfCmoe",
 		/** 村の 保守トロッコが 動きだす（data/village/trolley.ts）。 */

@@ -1,5 +1,5 @@
 // 町が 育つと 建つ 施設の スクリプト（形と 文は data/village/facilities.ts）。
-// 入る・出るは ほかの 建物と 同じ（扉の 文は 村に いる あいだ 1回 → 扉の 音 → 暗転 → 中 → 明転。出口の マットで 外へ）。
+// 入る・出るは ほかの 建物と 同じ（扉の 文は 村に いる あいだ 1回 → 入口の 音（doorSe）→ 暗転 → 中 → 明転。出口の マットで 外へ）。
 // 外の 物（釣り場の 竿・グラウンドの マウンド）は 調べると 文、遊べる 物は そのあと 遊ぶか 聞く。
 // どれも 寄り道で、強さにも 冒険にも 何も 残さない（釣れた 物は すぐ 海に かえす）。
 
@@ -49,7 +49,7 @@ export const enterFacility =
 			s.set(seen);
 			await s.narrate(f.door);
 		}
-		s.se("door");
+		s.se(f.doorSe ?? "doorWood");
 		await s.fadeOut(250);
 		const e = facilityEntry(f);
 		await s.warp(facilityMapId(f), e.x, e.y, e.dir);
@@ -60,7 +60,7 @@ export const enterFacility =
 const leaveFacility =
 	(f: Facility): Script =>
 	async (s) => {
-		s.se("door");
+		s.se(f.doorSe ?? "doorWood");
 		await s.fadeOut(250);
 		const o = facilityOutside(f);
 		await s.warp("village", o.x, o.y, o.dir);

@@ -30,6 +30,18 @@ export const ROOM_DOOR = {
 	library: "おんJ　図書館。\nしずかに。……sage　進行で。",
 } as const;
 
+/** 部屋に 出入りする 音（data/sfx.ts）。銀行に なった 倉庫は 金庫の 扉（ui/rooms.ts）。 */
+export const ROOM_DOOR_SE = {
+	cafe: "doorWood",
+	hut: "doorWood",
+	shop: "doorWood",
+	store: "doorWood",
+	music: "doorWood",
+	bath: "slideDoor",
+	bookstore: "doorWood",
+	library: "doorWood",
+} as const;
+
 /** 本屋の 店番・図書館の 司書（名無し）の ひとこと。 */
 export const BOOKS_KEEPER_LINES = {
 	bookstore: [

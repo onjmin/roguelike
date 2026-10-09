@@ -606,6 +606,7 @@ export const EATERIES: readonly Facility[] = [
 			},
 		},
 		door: "立ち食いそば「2げと」。\nだしの　におい。……出かける　前に　一杯。",
+		doorSe: "slideDoor",
 		room: SOBA_ROOM,
 		outdoor: [
 			{
@@ -644,6 +645,7 @@ export const EATERIES: readonly Facility[] = [
 			},
 		},
 		door: "牛丼「つゆだく」。\n……いらっしゃいませー、と　ひとりの　声。",
+		doorSe: "autoDoor",
 		room: GYUDON_ROOM,
 		outdoor: [
 			{
@@ -688,6 +690,7 @@ export const EATERIES: readonly Facility[] = [
 			},
 		},
 		door: "居酒屋「草」。\n……ナイター中継と、笑い声。",
+		doorSe: "slideDoor",
 		room: IZAKAYA_ROOM,
 		outdoor: [
 			{
@@ -739,6 +742,7 @@ export const EATERIES: readonly Facility[] = [
 			},
 		},
 		door: "寿司「鯖」。\n……ひのきの　香り。しずかな　店。",
+		doorSe: "slideDoor",
 		room: SUSHI_ROOM,
 		outdoor: [
 			{
