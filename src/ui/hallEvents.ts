@@ -656,7 +656,7 @@ export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 		images: shelfSlots(tier).length ? shelfRefs(v.cleared) : undefined,
 		events: [
 			...hallPlaces(v).map((p) => eventFor(ctx, p, tier)),
-			// 寄り合いの 日（段2〜3）に 来た 住人（ui/civic.ts）
+			// 寄り合いの 日（段3）に 来た 住人（ui/civic.ts）
 			...yoriaiEvents(v, tier),
 		],
 		decor: decor.length

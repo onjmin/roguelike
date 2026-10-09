@@ -81,7 +81,7 @@ import {
 	facilityRoomPlaces,
 	facilityRoomRows,
 } from "../data/village/facilities";
-import { hallPlaces, hallRows } from "../data/village/hall";
+import { hallPalette, hallPlaces, hallRows } from "../data/village/hall";
 import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
@@ -1204,7 +1204,9 @@ test(
 					`${id}: people on a day off`,
 				);
 			}
-		// 寄り合いの 立つ 所（集会所・レンガ館）は 床で、本館の 人と 重ならない
+		// 寄り合いの 立つ 所（レンガ館。集会所は なし）は 床で、本館の 人と 重ならず、
+		// 2人 来ても 壁の 物・本棚・名無し・出口に 届く
+		ok(YORIAI_SPOTS[0].length === 0, "people in the small meeting hall");
 		for (const tier of [0, 1] as const) {
 			const rows = hallRows(tier);
 			const stage = tier === 0 ? 2 : 3;
@@ -1219,6 +1221,16 @@ test(
 					`hall ${tier}: (${sp.x},${sp.y}) is taken`,
 				);
 			}
+			const people = [...places.filter((p) => p.sprite), ...YORIAI_SPOTS[tier]];
+			const mats = places.filter((p) => p.trigger === "touch");
+			const start = { x: mats[0]?.x ?? 0, y: (mats[0]?.y ?? 1) - 1 };
+			const s = survey(rows, hallPalette(tier), people, start);
+			for (const m of mats) ok(s.reach(m.x, m.y), `hall ${tier}: mat ${m.id}`);
+			for (const p of places)
+				if (p.trigger === "talk")
+					ok(s.talk(p.x, p.y), `hall ${tier}: cannot reach ${p.id}`);
+			for (const sp of YORIAI_SPOTS[tier])
+				ok(s.talk(sp.x, sp.y), `hall ${tier}: cannot talk at ${sp.x},${sp.y}`);
 		}
 	},
 );
@@ -1279,8 +1291,17 @@ test(
 				);
 			}
 		ok(checked > 30, `golden checked ${checked}`);
+		// 段2 の 寄り合いは はり紙だけ（集会所に 人は 来ない）
+		ok(
+			!assemblyToday(
+				{ stage: 2, unlocked: ["shallow"], cleared: ["shallow"] },
+				5,
+				day(1),
+			).session,
+			"people at the stage 2 yoriai",
+		);
 		// 議会の 日：二重に いない・原住民なし・議長は おんちゃんか 名無し・席の 数まで
-		for (const stage of [2, 3, 4, 5, 6, 7])
+		for (const stage of [3, 4, 5, 6, 7])
 			for (let at = 1; at <= 400; at++) {
 				const v: VillageView = {
 					stage,

@@ -6,7 +6,8 @@
 //   議会の ない 日の 顔ぶれは かえない。選ばれた 子は 音楽室・本屋・銭湯から 外す（二重に いない）。
 //   候補＝越してきた 住人 − 舞台で 歌う 子 − 原住民（肩書きが 議会に 合わない）− deep の 節目を まだ 見て いない 子。
 //   役（おんちゃん 議長・プロト 書記・アル 中継）は 段7 の 市役所の 議場だけ p=0.7、ほかは p=0.35、席の 数まで。
-// - 段2〜3 は 寄り合い：同じ 乱数で 1〜2人が 集会所・レンガ館に 来る。
+// - 段2〜3 は 寄り合い（まとめ掲示板の はり紙）。段3 は 議会の 日に 同じ 乱数で 1〜2人が レンガ館に 来る
+//   （段2 の 集会所は せまく、人が 立つと 奥の 壁へ 行けない ので 来ない）。
 // - 議題と 派閥は ぜんぶ 架空の 村の 話。保守神社は 出さない。どちらの 派にも 立たない。
 
 import { Rng } from "../core/rng";
@@ -22,8 +23,13 @@ export const SESSION_P = 0.3;
 export const inSession = (t: Today, at: number): boolean =>
 	t.w === SESSION_WDAY || Rng.fromSeed(`session:${at}`).chance(SESSION_P);
 
-/** 寄り合いの 段（建物なし。まとめ掲示板の はり紙と、集会所・レンガ館に 来る 人）。 */
+/** 寄り合いの 段（建物なし。まとめ掲示板の はり紙）。 */
 export const YORIAI_FROM = 2;
+/**
+ * 寄り合いの 日に 住人が 来る 段（本館の レンガ館。集会所は せまく、奥の 壁へ 行く 道が 左の 1列だけなので、
+ * 人が 立つと 掲示板・当番表・告知に 届かなく なる）。
+ */
+export const YORIAI_PEOPLE_FROM = 3;
 /** 町役場が 建つ 段（議会だより・町役場の 議席）。 */
 export const TOWNHALL_FROM = 4;
 /** 市役所（議場つき）が 建つ 段。 */
@@ -62,12 +68,9 @@ export const ROLES: readonly {
 	{ role: "camera", mob: "aru", at: { x: 13, y: 3 } },
 ];
 
-/** 寄り合いで 住人が 立つ 所（本館の 段 0 集会所・1 レンガ館）。 */
+/** 寄り合いで 住人が 立つ 所（本館の 段 0 集会所＝なし・1 レンガ館）。 */
 export const YORIAI_SPOTS: readonly (readonly Spot[])[] = [
-	[
-		{ x: 1, y: 4 },
-		{ x: 1, y: 5 },
-	],
+	[],
 	[
 		{ x: 2, y: 4 },
 		{ x: 9, y: 4 },
@@ -96,7 +99,7 @@ const NONE: Assembly = {
 	seats: [],
 };
 
-/** その 段で 議会が 開く 場所（段2〜3 は 寄り合い）。 */
+/** その 段で 住人が 議会に 来る 場所（段3 は 寄り合いで レンガ館）。 */
 export const assemblyRoom = (
 	stage: number,
 ): "yoriai" | "townhall" | "cityhall" | null =>
@@ -104,7 +107,7 @@ export const assemblyRoom = (
 		? "cityhall"
 		: stage >= TOWNHALL_FROM
 			? "townhall"
-			: stage >= YORIAI_FROM
+			: stage >= YORIAI_PEOPLE_FROM
 				? "yoriai"
 				: null;
 
