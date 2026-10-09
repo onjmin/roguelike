@@ -22,10 +22,15 @@ import {
 	type FaithSide,
 	fillDebate,
 	KIBEN,
+	KIBEN_TITLE,
+	MINUTES,
 	NANASHI_LINES,
 	OUTSIDE_TEXT,
 	type Outcome,
+	PAGE,
+	PAGES,
 	type PolicySide,
+	pagesOf,
 	postText,
 	type Rand,
 	roundAnswer,
@@ -55,12 +60,14 @@ export type CivicMemo = {
 		/** はじめての 1回（議会事務局の 前置き）を 見た。 */
 		tutored: boolean;
 		plays: number;
+		/** 議事録の 書かれた 号（`お題:決着`。data/debate.ts の PAGES）。 */
+		pages: string[];
 	};
 };
 
 const EMPTY = (): CivicMemo => ({
 	v: 1,
-	debate: { tutored: false, plays: 0 },
+	debate: { tutored: false, plays: 0, pages: [] },
 });
 
 let memo: CivicMemo | null = null;
@@ -84,6 +91,12 @@ export const loadCivic = (): CivicMemo => {
 						typeof d.plays === "number" && Number.isFinite(d.plays)
 							? Math.max(0, d.plays)
 							: 0,
+					pages: Array.isArray(d.pages)
+						? d.pages.filter(
+								(x: unknown): x is string =>
+									typeof x === "string" && PAGES.some((p) => p.key === x),
+							)
+						: [],
 				},
 			};
 		}
@@ -630,9 +643,57 @@ export const debateScript = async (
 	const m2 = loadCivic();
 	m2.debate.tutored = true;
 	m2.debate.plays += 1;
+	for (const k of pagesOf(topic, res.outcome, res.jien))
+		if (!m2.debate.pages.includes(k)) m2.debate.pages.push(k);
 	saveCivic(m2);
 	await outsideLine(s, topic, us, v, res.outcome);
 	return res;
+};
+
+/** 議事録の 号の 1ページ（窓の 文。まだの 号は 白紙）。 */
+export const pageText = (n: number, pages: readonly string[]): string => {
+	const p = PAGES.find((x) => x.n === n);
+	const t = p && TOPICS.find((x) => x.id === p.topic);
+	if (!p || !t || !pages.includes(p.key))
+		return fillDebate(MINUTES.blank, { n: String(n) });
+	return fillDebate(MINUTES.page, {
+		n: String(n),
+		title: t.title,
+		kind: PAGE[p.kind],
+	});
+};
+
+/**
+ * 議事録（町役場・市役所の 議事録、裁判所の 判例集）。模擬議会の 号の 一覧（お題 × 決着の 30ページ。まだの 号は
+ * 白紙）から 選んで 1窓。やめるまで。
+ */
+export const minutesScript = async (ctx: UiCtx, s: Story): Promise<void> => {
+	const pages = loadCivic().debate.pages;
+	let start = 0;
+	for (;;) {
+		await s.wait(0);
+		const id = await listWindow(
+			ctx,
+			fillDebate(MINUTES.title, {
+				n: String(pages.length),
+				all: String(PAGES.length),
+			}),
+			PAGES.map((p) => {
+				const t = TOPICS.find((x) => x.id === p.topic);
+				const done = pages.includes(p.key);
+				return {
+					label: fillDebate(MINUTES.label, { n: String(p.n) }),
+					sub: done ? `${t?.title ?? ""}・${PAGE[p.kind]}` : MINUTES.none,
+					value: String(p.n),
+				};
+			}),
+			{ start },
+		);
+		if (id === null) return;
+		const n = Number(id);
+		start = Math.max(0, n - 1);
+		await s.narrate(pageText(n, pages));
+	}
 };
 
 /** はり紙『ずるい　理屈の　見分け方』（選んで 1窓。やめるまで）。 */
@@ -642,7 +703,7 @@ export const kibenScript = async (ctx: UiCtx, s: Story): Promise<void> => {
 		await s.wait(0);
 		const id = await listWindow(
 			ctx,
-			"ずるい　理屈の　見分け方",
+			KIBEN_TITLE,
 			KIBEN.map((k, i) => ({ label: k.label, value: String(i) })),
 			{ start },
 		);

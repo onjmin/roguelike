@@ -25,14 +25,17 @@ import {
 	isName,
 	judge,
 	KIBEN,
+	MINUTES,
 	NANASHI_LINES,
 	type Nameless,
 	OUTSIDE_TEXT,
 	type Outcome,
 	PAGE,
+	PAGES,
 	POSTS,
 	type PolicySide,
 	type PostKind,
+	pagesOf,
 	playDebateSim,
 	type Rand,
 	TOPICS,
@@ -55,6 +58,8 @@ import {
 	type DebateResult,
 	forgetCivicMemo,
 	loadCivic,
+	pageText,
+	saveCivic,
 	setDebateHook,
 } from "../ui/debate";
 import { buildFacility } from "../ui/facilities";
@@ -277,56 +282,66 @@ const cellsOf = (f: Facility): Set<string> => {
 
 test(
 	"C1",
-	"三権の 並び：段4〜6 の 町役場は ほかの 施設と 重ならず、扉は 東の 大通りの 北の 突きあたり (66,7)、裁判所と となり あう",
+	"三権の 並び：段4〜6 の 町役場・段7 の 市役所（議場つき）は ほかの 施設と 重ならず、扉は 東の 大通りの 北の 突きあたり (66,7)、裁判所と となり あう",
 	() => {
 		const th = must("townhall");
+		const ch = must("cityhall");
 		ok(
-			th.from === 4 && th.until === 7,
-			`townhall stages ${th.from}〜${th.until}`,
+			th.from === 4 &&
+				th.until === 7 &&
+				ch.from === 7 &&
+				ch.until === undefined,
+			`stages townhall ${th.from}〜${th.until} cityhall ${ch.from}〜${ch.until}`,
 		);
-		const d = facilityDoor(th);
-		ok(d?.[0] === 66 && d[1] === 7, `townhall door ${d}`);
-		const o = facilityOutside(th);
-		ok(o.x === 66 && o.y === 8, `townhall outside ${o.x},${o.y}`);
-		for (let stage = 0; stage < TOWN_STAGES; stage++) {
-			const up = facilitiesAt(stage);
-			ok(
-				up.includes(th) === (stage >= 4 && stage < 7),
-				`stage ${stage}: townhall up ${up.includes(th)}`,
-			);
-			if (!up.includes(th)) continue;
-			const mine = cellsOf(th);
-			for (const f of up) {
-				if (f === th) continue;
-				for (const c of cellsOf(f))
-					ok(
-						!mine.has(c),
-						`stage ${stage}: ${f.id} overlaps the townhall at ${c}`,
-					);
-				for (const [x0, y, line, until] of f.clear ?? []) {
-					if (until !== undefined && stage >= until) continue;
-					for (let dx = 0; dx < [...line].length; dx++)
-						ok(
-							!mine.has(`${x0 + dx},${y}`),
-							`stage ${stage}: ${f.id} clears ground under the townhall`,
-						);
-				}
-			}
-		}
-		// 裁判所（段7、x53〜62）の すぐ 東
 		const court = must("court");
 		const courtRight = Math.max(
 			...[...cellsOf(court)].map((c) => Number(c.split(",")[0])),
 		);
-		ok(
-			courtRight + 1 === th.at[0],
-			`court ends at ${courtRight}, townhall at ${th.at[0]}`,
-		);
-		// 施設は FACILITIES の いちばん うしろ（外観の 字を ずらさない）
-		ok(
-			FACILITIES.indexOf(th) > FACILITIES.findIndex((f) => f.id === "chuka"),
-			"townhall is not after the eateries",
-		);
+		for (const hall of [th, ch]) {
+			const d = facilityDoor(hall);
+			ok(d?.[0] === 66 && d[1] === 7, `${hall.id} door ${d}`);
+			const o = facilityOutside(hall);
+			ok(o.x === 66 && o.y === 8, `${hall.id} outside ${o.x},${o.y}`);
+			// 裁判所（段7、x53〜62）の すぐ 東
+			ok(
+				courtRight + 1 === hall.at[0],
+				`court ends at ${courtRight}, ${hall.id} at ${hall.at[0]}`,
+			);
+			// 施設は FACILITIES の いちばん うしろ（外観の 字を ずらさない）
+			ok(
+				FACILITIES.indexOf(hall) >
+					FACILITIES.findIndex((f) => f.id === "chuka"),
+				`${hall.id} is not after the eateries`,
+			);
+		}
+		for (let stage = 0; stage < TOWN_STAGES; stage++) {
+			const up = facilitiesAt(stage);
+			ok(
+				up.includes(th) === (stage >= 4 && stage < 7) &&
+					up.includes(ch) === stage >= 7,
+				`stage ${stage}: halls up ${up.includes(th)} ${up.includes(ch)}`,
+			);
+			for (const hall of [th, ch]) {
+				if (!up.includes(hall)) continue;
+				const mine = cellsOf(hall);
+				for (const f of up) {
+					if (f === hall) continue;
+					for (const c of cellsOf(f))
+						ok(
+							!mine.has(c),
+							`stage ${stage}: ${f.id} overlaps ${hall.id} at ${c}`,
+						);
+					for (const [x0, y, line, until] of f.clear ?? []) {
+						if (until !== undefined && stage >= until) continue;
+						for (let dx = 0; dx < [...line].length; dx++)
+							ok(
+								!mine.has(`${x0 + dx},${y}`),
+								`stage ${stage}: ${f.id} clears ground under ${hall.id}`,
+							);
+					}
+				}
+			}
+		}
 	},
 );
 
@@ -797,7 +812,9 @@ test(
 	"W3",
 	"町の 役所の 文：村の 窓（22字 × 2行）に 収まり、使わない 語なし",
 	() => {
-		for (const f of FACILITIES.filter((x) => ["townhall"].includes(x.id))) {
+		for (const f of FACILITIES.filter((x) =>
+			["townhall", "cityhall", "court"].includes(x.id),
+		)) {
 			const texts: [string, string][] = [];
 			if (f.door) texts.push([`${f.id} door`, f.door]);
 			for (const [k, ls] of Object.entries(f.room?.lines ?? {}))
@@ -949,6 +966,79 @@ test(
 			forgetCivicMemo();
 			restore();
 		}
+	},
+);
+
+test(
+	"V2",
+	"議事録：お題 × 決着の 30ページ（中身 7・良スレ 3）、試合で 号が 書かれ（自演は 中身の お題だけ）、まだの 号は 白紙。町役場・市役所・裁判所で 読める",
+	async () => {
+		ok(PAGES.length === 30, `pages ${PAGES.length}`);
+		ok(
+			new Set(PAGES.map((p) => p.key)).size === 30 &&
+				PAGES.every((p, i) => p.n === i + 1),
+			"page keys or numbers",
+		);
+		for (const t of TOPICS)
+			ok(
+				PAGES.filter((p) => p.topic === t.id).length ===
+					(t.mode === "policy" ? 7 : 3),
+				`${t.id}: pages`,
+			);
+		const yuon = TOPICS.find((t) => t.id === "yuon");
+		const rom = TOPICS.find((t) => t.id === "rom");
+		if (!yuon || !rom) throw new Fail("no topics");
+		ok(
+			pagesOf(yuon, "ko", true).join() === "yuon:ko,yuon:jien",
+			`${pagesOf(yuon, "ko", true)}`,
+		);
+		ok(pagesOf(rom, "arete", true).join() === "rom:arete", "faith jien");
+		ok(pagesOf(rom, "towel", false).length === 0, "faith towel is a page");
+		// 1ページの 窓（白紙と 書かれた 号）
+		for (const p of PAGES) {
+			const blank = pageText(p.n, []);
+			const done = pageText(p.n, [p.key]);
+			box(`page ${p.n} blank`, blank, 22);
+			box(`page ${p.n}`, done, 22);
+			ngCheck(`page ${p.n}`, done);
+			ok(blank.includes("白紙") && !done.includes("白紙"), `page ${p.n}`);
+		}
+		box(
+			"minutes title",
+			fillDebate(MINUTES.title, { n: "30", all: "30" }),
+			22,
+			1,
+		);
+		// 演壇の 試合で 号が 書かれる
+		const { restore } = swapStorage();
+		forgetCivicMemo();
+		setDebateHook(async () => ({ outcome: "ko", jien: true }));
+		try {
+			const m = loadCivic();
+			m.debate.tutored = true;
+			saveCivic(m, false);
+			const ch = must("cityhall");
+			const events = buildFacility(ch, view(7), {} as Ctx).events ?? [];
+			const r = recorder([1, 0]);
+			await events.find((e) => e.id === "podium_0")?.run?.(r.s);
+			ok(
+				loadCivic().debate.pages.sort().join() === "yuon:jien,yuon:ko",
+				`pages ${loadCivic().debate.pages}`,
+			);
+		} finally {
+			setDebateHook(null);
+			forgetCivicMemo();
+			restore();
+		}
+		// 議事録を 読める 所
+		const reads: string[] = [];
+		for (const f of FACILITIES)
+			for (const [k, v] of Object.entries(f.room?.plays ?? {}))
+				if (v === "minutes") reads.push(`${f.id}.${k}`);
+		ok(
+			reads.sort().join() === "cityhall.minutes,court.cases,townhall.minutes",
+			`minutes ${reads}`,
+		);
 	},
 );
 

@@ -27,7 +27,7 @@ import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
 import { facilityDecor } from "./cinemaDecor";
 import type { Ctx } from "./ctx";
-import { debateScript, kibenScript } from "./debate";
+import { debateScript, kibenScript, minutesScript } from "./debate";
 import { eatAt, keeperTalk } from "./eat";
 import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
@@ -218,6 +218,7 @@ export const buildFacility = (
 			// 町の 役所の 演壇（討論会）と 見分け方の はり紙（ui/debate.ts）
 			else if (play === "debate") await debateScript(ctx, s, v);
 			else if (play === "kiben") await kibenScript(ctx, s);
+			else if (play === "minutes") await minutesScript(ctx, s);
 		});
 	});
 	for (const who of room?.people ?? [])

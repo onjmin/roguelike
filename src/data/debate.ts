@@ -744,6 +744,18 @@ export const PAGES: readonly {
 	key: `${t.id}:${kind}`,
 }));
 
+/** 議事録の 一覧と 1ページ（窓 22字×2行）。 */
+export const MINUTES = {
+	title: "模擬議会の　議事録　{n}／{all}",
+	label: "第{n}号",
+	none: "……白紙",
+	page: "第{n}号『{title}』。\n{kind}",
+	blank: "第{n}号。\n……白紙。",
+} as const;
+
+/** 見分け方の はり紙の 一覧の 題。 */
+export const KIBEN_TITLE = "ずるい　理屈の　見分け方";
+
 /** 1試合で 残る 議事録の ページ（決着と、中身の お題で 自演が あれば 自演 発覚）。 */
 export const pagesOf = (
 	topic: Topic,

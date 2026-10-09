@@ -146,11 +146,11 @@ export type FacilityRoom = {
 	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
 	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts・
 	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts・
-	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙。ui/debate.ts）。
+	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/debate.ts）。
 	 */
 	plays?: Record<
 		string,
-		"depart" | "drinkbar" | "eat" | "jikkyo" | "debate" | "kiben"
+		"depart" | "drinkbar" | "eat" | "jikkyo" | "debate" | "kiben" | "minutes"
 	>;
 };
 
@@ -2801,7 +2801,7 @@ export const FACILITIES: readonly Facility[] = [
 			rows: [
 				"##############",
 				"#HHHHHabHHHHH#",
-				"#hhhhhhhhhhmh#",
+				"#hLhhhhhhhhmh#",
 				"#.....n......#",
 				"#....[=].....#",
 				"#.TU......VW.#",
@@ -2826,8 +2826,11 @@ export const FACILITIES: readonly Facility[] = [
 				f: k.on(base(1, 44)),
 				B: k.on(base(0, 121)),
 				"~": k.floor(ri("runner")),
+				// 判例集（模擬議会の 議事録も とじてある。ui/debate.ts）
+				L: k.low(riCell("bookshelf", 0, 0)),
 			}),
 			things: {
+				L: "cases",
 				m: "rule",
 				"[": "bench",
 				"]": "bench",
@@ -2847,7 +2850,11 @@ export const FACILITIES: readonly Facility[] = [
 				stand: ["証言台。\n「スクショは　あります」と　書いた　メモ。"],
 				rail: ["木の　柵。\n……ここから　先は　入れない。"],
 				gallery: ["傍聴席。\n……ほとんど　ROM専の　席。"],
+				cases: [
+					"判例集。……模擬議会の　議事録が\nとじこんで　ある。どの　号を　読む？",
+				],
 			},
+			plays: { cases: "minutes" },
 			people: [
 				{
 					id: "court_judge",
@@ -2855,7 +2862,10 @@ export const FACILITIES: readonly Facility[] = [
 					at: [6, 3],
 					dir: "down",
 					name: "裁判官",
-					lines: ["被告人、ガイドライン違反。\n……判決、規制　3日"],
+					lines: [
+						"被告人、ガイドライン違反。\n……判決、規制　3日",
+						"ここは　レスバ　禁止。\n……口頭弁論なら　ええ",
+					],
 				},
 				{
 					id: "court_watcher",
