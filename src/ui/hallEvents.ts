@@ -3,7 +3,8 @@
 // 中の 物は どれも 村の ほかの 入口（掲示板・仲間・B／☰ の メニュー）と 同じ 窓を 開く もう 1つの 入口：
 //   壁の スレ＝冒険の記録・>>1 テンプレ＝あそびかた・本棚＝図鑑・
 //   帳簿の 貼り紙（集会所では 長机）＝売り上げ・殿堂の 壁＝総選挙の はり紙。
-// リプレイは 本館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。実況モニターは 見るだけ。
+// リプレイは 本館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。
+// 実況モニターは ナイター実況（別ゲー。ui/jikkyo.ts）。試合の あと 実況民は 1窓だけ 結果に ふれる。
 // 本館 だけの もの：
 //   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/objectives.ts。?event= の 下見も）を いつでも 読める。
@@ -79,6 +80,7 @@ import { openGlossary } from "./glossary";
 import { openSales } from "./home";
 import { openHowto } from "./howto";
 import { itemIcon } from "./icons";
+import { hallMonitor, jikkyoAfterLine, markJikkyoHeard } from "./jikkyo";
 import { type ListItem, listWindow } from "./list";
 import { playBatting } from "./minigames";
 import { openRecords } from "./records";
@@ -345,11 +347,6 @@ const ledgerScript =
 		await openSales(ctx);
 	};
 
-/** 実況モニター：ナイターと 実況スレ（見るだけ。リプレイは 映写機）。 */
-const monitorScript: Script = async (s) => {
-	for (const t of HALL_MSG.monitor) await s.narrate(t);
-};
-
 /** 映写機：冒険の リプレイを 上映する（暗い 幕に 映す）。 */
 const projectorScript =
 	(ctx: Ctx): Script =>
@@ -444,7 +441,12 @@ const nanashiScript =
 			: p.id.startsWith("yaji_")
 				? "野次馬"
 				: "名無し";
-		for (const l of lines) await s.say("nanj", l, { name });
+		// ナイター実況の あと（まだ 聞いて いなければ）は その 試合の 1窓（ui/jikkyo.ts）
+		const after = jikkyoAfterLine(p.id);
+		if (after) {
+			await s.say("nanj", after, { name });
+			markJikkyoHeard(p.id);
+		} else for (const l of lines) await s.say("nanj", l, { name });
 		if (p.dir) s.face(p.id, p.dir);
 	};
 
@@ -525,7 +527,7 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "desk":
 			return sign(p.id, p.x, p.y, ledgerScript(ctx, "desk"));
 		case "monitor":
-			return sign(p.id, p.x, p.y, monitorScript);
+			return sign(p.id, p.x, p.y, hallMonitor(ctx));
 		case "dendo":
 			return sign(p.id, p.x, p.y, dendoScript);
 		case "chair":

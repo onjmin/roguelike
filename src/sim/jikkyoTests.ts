@@ -86,6 +86,13 @@ import type { Story } from "../engine/defs";
 import { facilityDecor } from "../ui/cinemaDecor";
 import type { Ctx } from "../ui/ctx";
 import { buildFacility } from "../ui/facilities";
+import {
+	forgetJikkyoMemo,
+	jikkyoAfterLine,
+	loadJikkyo,
+	markJikkyoHeard,
+	recordJikkyo,
+} from "../ui/jikkyo";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -1596,6 +1603,173 @@ test(
 			),
 			"unfilled telop",
 		);
+	},
+);
+
+/** 試験の あいだだけ localStorage を かえる（Map で 持つ）。もどす 手を 返す。 */
+const swapStorage = (): { store: Map<string, string>; restore: () => void } => {
+	const store = new Map<string, string>();
+	const prev = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+	Object.defineProperty(globalThis, "localStorage", {
+		value: {
+			getItem: (k: string) => store.get(k) ?? null,
+			setItem: (k: string, v: string) => {
+				store.set(k, v);
+			},
+			removeItem: (k: string) => {
+				store.delete(k);
+			},
+		},
+		configurable: true,
+		writable: true,
+	});
+	return {
+		store,
+		restore: () => {
+			if (prev) Object.defineProperty(globalThis, "localStorage", prev);
+			else delete (globalThis as { localStorage?: unknown }).localStorage;
+		},
+	};
+};
+
+const JK_KEY_SAVE = "kiriko-roguelike/jikkyo";
+
+/** 決め打ちの 結果。 */
+const resultFor = (res: number, opt: Partial<JkResult> = {}): JkResult => ({
+	res,
+	part0: 12,
+	part: 12 + Math.floor(res / 1000),
+	kanso: res >= 1000,
+	comboMax: 5,
+	ikioiMax: 1234567,
+	counts: { best: 5, ok: 2, miss: 1, none: 1 },
+	cue: null,
+	watch: false,
+	...opt,
+});
+
+test(
+	"Y10",
+	"保存：壊れた JSON は 初期値・noSave で 書かない・best は 大きい ときだけ・heard は 1試合 1回・見るだけは best を かえない・古い 形も 読める",
+	() => {
+		const { store, restore } = swapStorage();
+		const loc = swapLocation("");
+		try {
+			// 壊れた JSON
+			store.set(JK_KEY_SAVE, "{broken");
+			forgetJikkyoMemo();
+			const e = loadJikkyo();
+			ok(
+				e.v === 1 &&
+					e.plays === 0 &&
+					e.best.res === 0 &&
+					!e.tutored &&
+					e.last === null,
+				"broken JSON",
+			);
+			// noSave（下見）では 書かない
+			store.clear();
+			forgetJikkyoMemo();
+			const g1 = gameOf(1);
+			recordJikkyo(g1, resultFor(900), { noSave: true });
+			ok(!store.has(JK_KEY_SAVE), "noSave wrote");
+			ok(loadJikkyo().plays === 1, "noSave did not remember this time");
+			// best は 大きい ときだけ。新しい 自己ベストは 前の ベストが ある とき
+			store.clear();
+			forgetJikkyoMemo();
+			ok(!recordJikkyo(g1, resultFor(900)), "first record is NEW");
+			ok(!recordJikkyo(g1, resultFor(800)), "lower is NEW");
+			ok(loadJikkyo().best.res === 900, `best ${loadJikkyo().best.res}`);
+			ok(recordJikkyo(g1, resultFor(1200)), "higher is not NEW");
+			const m1 = JSON.parse(store.get(JK_KEY_SAVE) ?? "{}");
+			ok(
+				m1.best.res === 1200 && m1.plays === 3 && m1.kanso === 1 && m1.tutored,
+				`saved ${JSON.stringify(m1)}`,
+			);
+			// 見るだけは best・plays・kanso に 数えない。last は 残す
+			const g2 = gameOf(2);
+			recordJikkyo(g2, resultFor(601, { watch: true, kanso: false }));
+			const m2 = loadJikkyo();
+			ok(
+				m2.best.res === 1200 && m2.plays === 3 && m2.kanso === 1,
+				"watch changed the records",
+			);
+			ok(m2.last?.id === g2.seed, "watch did not keep last");
+			// heard：1試合に 1回、last.id が かわれば 空
+			const npc = "jikkyo_tora";
+			const line = jikkyoAfterLine(npc);
+			ok(line, `${npc}: no after line`);
+			if (line) fitsWindow(`${npc} after`, line);
+			markJikkyoHeard(npc, false);
+			ok(jikkyoAfterLine(npc) === null, "said twice");
+			ok(jikkyoAfterLine("nanashi_0") !== null, "nanashi_0 has nothing to say");
+			recordJikkyo(gameOf(3), resultFor(1100));
+			ok(loadJikkyo().heard.length === 0, "heard not cleared for a new game");
+			const kanso = jikkyoAfterLine("nanashi_0");
+			ok(kanso?.includes("Part13"), `nanashi_0 kanso: ${kanso}`);
+			ok(
+				jikkyoAfterLine("nanashi_1") === null,
+				"nanashi_1 talks about the game",
+			);
+			// 勝ち・負け・ほかの 試合
+			for (let i = 0; i < 40; i++) {
+				const g = gameOf(100 + i);
+				recordJikkyo(g, resultFor(700));
+				for (const id of [
+					"tora",
+					"tora2",
+					"g",
+					"ryu",
+					"koi",
+					"taka",
+					"hoshi",
+				]) {
+					const t = jikkyoAfterLine(`jikkyo_${id}`);
+					ok(t && !/[{}]/.test(t), `jikkyo_${id}: ${t}`);
+					if (t) fitsWindow(`jikkyo_${id}`, t);
+					const team = id === "tora2" ? "tora" : id;
+					const played = team === g.home || team === g.away;
+					const kind =
+						!played || !g.winner ? "other" : g.winner === team ? "win" : "lose";
+					const want = JIKKYO_AFTER[id][kind].split("{star}")[0];
+					ok(t?.startsWith(want), `jikkyo_${id} ${kind}: ${t}`);
+				}
+			}
+			// prog・gikai の ない 古い 形も 読め、ある ときは 残す
+			const old = {
+				v: 1,
+				best: { res: 5, combo: 1, ikioi: 2 },
+				plays: 1,
+				kanso: 0,
+				tutored: true,
+				last: null,
+				heard: [],
+			};
+			store.set(JK_KEY_SAVE, JSON.stringify(old));
+			forgetJikkyoMemo();
+			ok(
+				loadJikkyo().best.res === 5 && loadJikkyo().prog === undefined,
+				"old shape",
+			);
+			store.set(
+				JK_KEY_SAVE,
+				JSON.stringify({
+					...old,
+					prog: { sora: { best: 3 } },
+					gikai: { seen: ["a"], at: 1 },
+				}),
+			);
+			forgetJikkyoMemo();
+			ok(
+				loadJikkyo().prog?.sora?.best === 3 &&
+					loadJikkyo().gikai?.seen[0] === "a",
+				"prog/gikai lost",
+			);
+		} finally {
+			forgetJikkyoMemo();
+			loc();
+			restore();
+		}
 	},
 );
 
