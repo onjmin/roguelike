@@ -68,6 +68,7 @@ import {
 	outdoorId,
 	stampFacilities,
 } from "./facilities";
+import { folkPlaces } from "./folk";
 import { ROOM_FROM } from "./rooms";
 import {
 	ASPHALT,
@@ -1287,6 +1288,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				wander: true,
 			});
 		});
+	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts。話し方は ui/folk.ts）
+	out.push(...folkPlaces(stage));
 	return out;
 };
 

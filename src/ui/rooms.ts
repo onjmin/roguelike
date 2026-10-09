@@ -51,6 +51,7 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress, loadTown } from "../engine/save";
 import { bathPeople, bathSteam } from "./bath";
 import type { Ctx } from "./ctx";
+import { eggScript, ideaNpc, museumScript } from "./folk";
 import { readShelf } from "./glossary";
 import { guestsOf, returnAt } from "./guests";
 import { openStorage } from "./home";
@@ -246,6 +247,8 @@ const booksPeople = (
 			{ dir: at.dir },
 		),
 	);
+	// 図書館の 読書の 机に 人工無能ニキ（アイディアを ください。ui/folk.ts）
+	if (id === "library") out.push(ideaNpc());
 	return out;
 };
 
@@ -311,6 +314,9 @@ const eventFor = (
 		);
 		// テレビ：その 部屋の 実況の 番組（銭湯の 大相撲・図書館の 過去ログの世紀。ui/jikkyoWatch.ts）
 		if (kind === "tv") await watchProgram(ctx, s, id, v.stage);
+		// 銭湯の 七不思議の メモ・図書館の 1レス博物館（ui/folk.ts）
+		if (id === "bath" && kind === "egg") await eggScript(s);
+		if (id === "library" && kind === "museum") await museumScript(p.id)(s);
 		// あずかった 物の 棚は 倉庫の 一覧（引き取る。ui/home.ts）
 		if (id === "store" && kind === "shelf") {
 			await s.wait(0);

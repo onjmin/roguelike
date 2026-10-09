@@ -44,8 +44,9 @@ import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
 import type { Speaker } from "../quotes";
+import { FOLK_ART } from "./folk";
 import type { Cell } from "./map";
-import { ri } from "./rpgenArt";
+import { ri, riCell } from "./rpgenArt";
 import { base, basePx, floor, INDOOR, onTop, solid } from "./tiles";
 
 export type RoomId =
@@ -187,7 +188,7 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#,,,,,,,IC,,,,,,#",
 		"#LLc,,M,I,M,,cLL#",
 		"#,,,,,,,I,,,,,,,#",
-		"#hhhNhhhbhPhnhhh#",
+		"#hhhNhhybhPhnhhh#",
 		"#GG:::::B::::eGG#",
 		"#:::::::::::::::#",
 		"#F:::::::::()::F#",
@@ -218,7 +219,7 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#.......-tttt-.R.#",
 		"#.BB.BB.-nnnn-...#",
 		"#.......------.C.#",
-		"#.BB.BB.......T..#",
+		"#.BB.BB..abcd.T..#",
 		"#F.....X........F#",
 		"########DD########",
 	],
@@ -551,6 +552,11 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				X: on(base(4, 123)),
 				// 視聴覚コーナーの テレビ（過去ログの世紀）
 				"@": on(ri("tvCrt")),
+				// 1レス博物館の ガラスケース 2つ（左・右。ui/folk.ts の museumScript）
+				a: on(riCell("glassCase", 0, 0)),
+				b: on(riCell("glassCase", 1, 0)),
+				c: on(riCell("glassCase", 0, 0)),
+				d: on(riCell("glassCase", 1, 0)),
 			};
 		case "music":
 			return {
@@ -595,6 +601,8 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				// 料金表（入口の 壁）・マッサージ椅子（脱衣所）・脱衣所の テレビ（大相撲）
 				P: low(PAPER),
 				"@": low(ri("tvSmall")),
+				// 番台の 左の 壁の メモ（七不思議 その1『温泉卵的な？』。ui/folk.ts の eggScript）
+				y: low(FOLK_ART.memo),
 				C: solid("#c8a86a", base(0, 46), base(4, 116, 1, 2)),
 				// 入口の 下駄箱・消火器・長いす（左・右）
 				G: solid("#a89878", base(3, 50), base(1, 316, 1, 2)),
@@ -714,6 +722,10 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		R: "news",
 		C: "catalog",
 		X: "returns",
+		a: "museum",
+		b: "museum",
+		c: "museum",
+		d: "museum",
 	},
 	music: {
 		m: "plaque",
@@ -743,6 +755,7 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		e: "extinguisher",
 		"(": "bench",
 		")": "bench",
+		y: "egg",
 	},
 	store: {
 		S: "shelf",

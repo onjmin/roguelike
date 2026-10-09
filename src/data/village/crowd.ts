@@ -505,7 +505,8 @@ export type PersonaId =
 	| "local"
 	| "elder"
 	| "nanashi"
-	| "nurse";
+	| "nurse"
+	| "dajare";
 
 type Flow = readonly [from: CrowdKind, to: CrowdKind, w: number];
 
@@ -806,6 +807,52 @@ export const PERSONAS: readonly Persona[] = [
 		],
 		bandLines: {
 			morning: ["夜勤明けなの。\n……おやすみなさい"],
+		},
+	},
+	{
+		// ダジャレニキ（おんJwiki pages/59 の 型「そうそう〇〇……って それは ××やないかーい！ｗｗ」。だじゃれは 新しく 書いた）。
+		// たまに しか 歩いていない（data/folk.ts の 名物の ひとり）
+		id: "dajare",
+		label: "ダジャレニキ",
+		// RPGEN「父」（ほかの 人・敵・店番と かぶらない。src/sim/folkTests.ts の F10）
+		sprites: ["sa:2GAYAx"],
+		ms: [200, 240],
+		share: { late: 0.1, morning: 0.2, day: 0.5, evening: 0.4, night: 0.3 },
+		weekend: 1.2,
+		flows: {
+			morning: [
+				["edge", "hall", 1],
+				["home", "rest", 1],
+			],
+			day: [
+				["home", "rest", 2],
+				["edge", "hall", 1],
+				["hall", "food", 1],
+				["food", "home", 1],
+			],
+			evening: [
+				["hall", "food", 1],
+				["edge", "rest", 1],
+				["fun", "home", 1],
+			],
+			night: [
+				["hall", "fun", 1],
+				["food", "home", 1],
+				["edge", "hall", 1],
+			],
+			late: [["hall", "edge", 1]],
+		},
+		lines: [
+			"そうそう　安価……\nって　それは　あんかけやないかーい！ｗｗ",
+			"そうそう　トロッコの　乗り場……\nって　トロと　海苔巻きやないかーい！ｗｗ",
+			"そうそう　まとめ掲示板……\nって　それは　まとめ買いやないかーい！ｗｗ",
+			"そうそう　キリ番　ゲット……\nって　キリンの　ゲップやないかーい！ｗｗ",
+			"そうそう　海の家の　かき氷……\nって　それは　牡蠣ごおりやないかーい！ｗｗ",
+		],
+		bandLines: {
+			night: [
+				"そうそう　夜ふかし……\nって　それは　ふかしいもやないかーい！ｗｗ",
+			],
 		},
 	},
 ];
