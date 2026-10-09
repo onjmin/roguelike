@@ -146,11 +146,19 @@ export type FacilityRoom = {
 	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
 	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts・
 	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts・
-	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/debate.ts）。
+	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/debate.ts・
+	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyoGikai.ts））。
 	 */
 	plays?: Record<
 		string,
-		"depart" | "drinkbar" | "eat" | "jikkyo" | "debate" | "kiben" | "minutes"
+		| "depart"
+		| "drinkbar"
+		| "eat"
+		| "jikkyo"
+		| "debate"
+		| "kiben"
+		| "minutes"
+		| "gikai"
 	>;
 };
 

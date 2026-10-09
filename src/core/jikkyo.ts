@@ -12,8 +12,9 @@
 //   台本の 番組は compileScript() で 時間割に する（区切り・窓・Cue・目立つ 書きこみ・鯖が 重い・スレタイの かえ）。
 //   劇場の 紅白は 答えない ことが 正解の 窓（timeoutFit：除夜の 鐘で 黙る）と、キリコの 名前欄
 //   （0時までは 番組の 時計「新年まで＠…」、山場の あとは Cue の names＝おみくじ）を 使う。
-//   interactive:false（議会中継）と blocking の 窓の timeoutFit は 型だけ 置き、使えば jkStart が 投げる
-//   （それを 使う 番組の 手順で 試験と いっしょに 入れる）。
+//   interactive:false（議会中継）は 見るだけの 番組：窓も 当番も 持たず、目立つ 書きこみ（議長・住人の 2行）を
+//   時刻どおりに 出して ヤジを まぜる。B 1回で 閉じる。早送りは UI が dt を のばす。
+//   blocking の 窓の timeoutFit は 型だけ 置き、使えば jkStart が 投げる。
 //
 // 点の 式（どの 番組も 同じ。定数は 番組ごと）：
 //   G = goal × 1000、区切りの 予算 = idle·G·w ÷ Σw、
@@ -231,7 +232,7 @@ export type JkRules = {
 	/** 見るだけで 窓の かわりに 置く 間。 */
 	readonly watchHold: number;
 	readonly windowMode: "blocking" | "overlay";
-	/** false＝窓を 出さない（議会中継。まだ 使えない）。 */
+	/** false＝見るだけの 番組（議会中継。窓・当番なし、B 1回で 閉じる）。 */
 	readonly interactive: boolean;
 	/** ここで ふつうの 行を 止める（998）。 */
 	readonly hold: number;
@@ -662,7 +663,12 @@ const guard = (tl: JkTimeline, rules: JkRules): void => {
 	};
 	const overlay = rules.windowMode === "overlay";
 	if (tl.overlays.length && !overlay) no("overlay windows in blocking mode");
-	if (!rules.interactive) no("interactive:false");
+	// 見るだけの 番組（議会中継）は 窓も 当番も 持たない
+	if (
+		!rules.interactive &&
+		(tl.overlays.length || tl.segs.some((s) => s.win) || rules.duty)
+	)
+		no("windows in a view-only program");
 	if (!overlay && rules.duty) no("the 950 duty in blocking mode");
 	if (!overlay && Object.values(rules.roll.gap).some((g) => g > 0))
 		no("thread gaps in blocking mode");
@@ -1869,7 +1875,12 @@ export const jkStep = (st: JkSt, dt: number, input?: JkInput): JkEv[] => {
 		enterSeg(st, 0, evs);
 	}
 	if (input && "quit" in input) {
-		if (st.opt.watch || st.wall - st.quitAt <= QUIT_MS) {
+		// 見るだけ・見るだけの 番組（議会中継）は B 1回で 閉じる
+		if (
+			st.opt.watch ||
+			!st.rules.interactive ||
+			st.wall - st.quitAt <= QUIT_MS
+		) {
 			finish(st, evs, null);
 			return evs;
 		}

@@ -152,8 +152,14 @@ const TOWNHALL: Facility = {
 			bench: ["待合の　長いす。\n傍聴も　ここから。……ほぼ　ROM専。"],
 			seat: ["議員の　机。\n名札の　ひとつに『ホゲェ』。"],
 		},
-		// 演壇で 討論会（模擬議会。いつでも 何度でも）、はり紙で 見分け方（ui/debate.ts）
-		plays: { podium: "debate", kiben: "kiben", minutes: "minutes" },
+		// 演壇で 討論会（模擬議会。いつでも 何度でも）、はり紙で 見分け方・議事録（ui/debate.ts）、
+		// 中継モニターで 議会の 日の 議会中継（ui/jikkyoGikai.ts）
+		plays: {
+			podium: "debate",
+			kiben: "kiben",
+			minutes: "minutes",
+			monitor: "gikai",
+		},
 		people: [
 			{
 				id: "townhall_clerk",
@@ -334,8 +340,13 @@ const CITYHALL: Facility = {
 				"市長室の　札。\n『市長　募集中。……当番は　みんなで』",
 			],
 		},
-		// 演壇で 討論会、議事録、見分け方の はり紙（ui/debate.ts）
-		plays: { podium: "debate", kiben: "kiben", minutes: "minutes" },
+		// 演壇で 討論会、議事録、見分け方の はり紙（ui/debate.ts）、中継モニターで 議会中継（ui/jikkyoGikai.ts）
+		plays: {
+			podium: "debate",
+			kiben: "kiben",
+			minutes: "minutes",
+			monitor: "gikai",
+		},
 		people: [
 			{
 				id: "cityhall_staff",

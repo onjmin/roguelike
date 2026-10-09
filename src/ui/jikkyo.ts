@@ -24,6 +24,7 @@ import type { JkGame, JkTeamId } from "../core/jikkyoYakyu";
 import { Rng } from "../core/rng";
 import { today } from "../data/calendar";
 import { HALL_MSG, JIKKYO } from "../data/hall";
+import { GIKAI_TEXT } from "../data/jikkyo/gikai";
 import { programSlot } from "../data/jikkyo/schedule";
 import {
 	JIKKYO_AFTER,
@@ -45,11 +46,12 @@ import { devEvent } from "../data/objectives";
 import type { Script, Story } from "../engine/defs";
 import { loadTown } from "../engine/save";
 import { el } from "./dom";
+import { hallGikai } from "./jikkyoGikai";
 import { yakyuTv } from "./jikkyoYakyuTv";
 import { markOpened, onTap, type UiCtx } from "./list";
 import { tick } from "./minigameBoard";
 import { picker } from "./minigamePicker";
-import { previewStage } from "./villageReturn";
+import { previewStage, villageView } from "./villageReturn";
 
 // ───────────────── 保存（kiriko-roguelike/jikkyo） ─────────────────
 
@@ -97,8 +99,8 @@ export type JikkyoMemo = {
 			}
 		>
 	>;
-	/** 議会中継の 見た 話（あとの 手順で 使う）。 */
-	gikai?: { seen: string[]; at: number };
+	/** 議会中継の 見た 話・いちばん 新しく 見た 帰りと その 話（再放送か）。ui/jikkyoGikai.ts。 */
+	gikai?: { seen: string[]; at: number; ep?: string; rerun?: boolean };
 };
 
 const EMPTY = (): JikkyoMemo => ({
@@ -619,13 +621,20 @@ export const newYakyuGame = (seed = newSeed()): JkGame => {
 export const hallMonitor =
 	(ctx: UiCtx): Script =>
 	async (s) => {
-		await s.narrate(HALL_MSG.monitor[0]);
-		// 番組表（data/jikkyo/schedule.ts）で 本館の 枠を 引く。ナイターの ほかは まだ ない
+		// 番組表（data/jikkyo/schedule.ts）で 本館の 枠を 引く。月曜は 議会中継が はじめの チャンネル
+		// （ui/jikkyoGikai.ts。チャンネルを かえると ナイターの 録画）
 		const stage = previewStage() ?? loadTown().stage;
 		const slot = programSlot("hall", today(), stage, new Date().getFullYear());
-		if (slot?.main.program !== "yakyu") {
-			await s.narrate(HALL_MSG.monitor[1]);
-			return;
+		if (slot?.main.program === "gikai") {
+			const r = await hallGikai(ctx, s, villageView());
+			if (r !== "channel") return;
+			await s.narrate(GIKAI_TEXT.record);
+		} else {
+			await s.narrate(HALL_MSG.monitor[0]);
+			if (slot?.main.program !== "yakyu") {
+				await s.narrate(HALL_MSG.monitor[1]);
+				return;
+			}
 		}
 		let game = newYakyuGame();
 		for (;;) {

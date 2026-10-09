@@ -30,6 +30,7 @@ import { assemblyEvents } from "./civic";
 import type { Ctx } from "./ctx";
 import { debateScript, kibenScript, minutesScript } from "./debate";
 import { eatAt, keeperTalk } from "./eat";
+import { watchGikai } from "./jikkyoGikai";
 import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
 import { fill } from "./villageTalk";
@@ -204,12 +205,17 @@ export const buildFacility = (
 			};
 		const kind = p.id.replace(/_\d+$/, "");
 		return sign(p.id, p.x, p.y, async (s) => {
+			const play = room?.plays?.[kind];
+			// 町役場・市役所の 中継モニター：議会の 日は 議会中継（ui/jikkyoGikai.ts）、ほかの 日は 部屋の 文
+			if (play === "gikai" && (f.id === "townhall" || f.id === "cityhall")) {
+				await watchGikai(ctx, s, f.id, v, room?.lines[kind] ?? []);
+				return;
+			}
 			// 曜日で かわる 会場の 文（映画館の 金曜は 実況上映。data/jikkyo/text.ts）が あれば そちら
 			await readAll(
 				s,
 				venueLines(f.id, kind, today()) ?? room?.lines[kind] ?? [],
 			);
-			const play = room?.plays?.[kind];
 			if (play === "depart" && depart) await depart(s);
 			else if (play === "drinkbar") await drinkBar(s);
 			else if (play === "eat") await eatAt(ctx, s, f.id);

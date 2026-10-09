@@ -3812,3 +3812,13 @@ body.jolt #app {
 .short-landscape .mgame.db > .db-cards {
 	grid-row: 1 / 4;
 }
+
+/* ───────── 議会中継（ui/jikkyoGikai.ts）：見るだけの 番組。議長・住人の 発言は 2行 ───────── */
+
+.jk-res.jk-two {
+	white-space: pre-line;
+}
+
+.mgame.jk.jk-gikai .jk-thread {
+	line-height: 15px;
+}

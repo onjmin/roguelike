@@ -40,6 +40,20 @@ import {
 import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
 import type { Today } from "../data/calendar";
+import {
+	GIKAI_CLOSE,
+	GIKAI_EPISODES,
+	GIKAI_OPEN,
+	GIKAI_RERUN,
+	GIKAI_TEXT,
+	GIKAI_YAJI,
+	type GikaiEpisode,
+	type GikaiMemo,
+	gikaiAvailable,
+	gikaiEpisodeFor,
+	gikaiProgram,
+	gikaiWatched,
+} from "../data/jikkyo/gikai";
 import { PROGRAMS } from "../data/jikkyo/index";
 import {
 	KOHAKU,
@@ -120,6 +134,7 @@ import {
 	yakyuTimeline,
 } from "../data/jikkyo/yakyu";
 import { JK_TEAMS } from "../data/jikkyo/yakyuRoster";
+import type { MobId } from "../data/mobs";
 import {
 	FACILITIES,
 	type Facility,
@@ -2853,9 +2868,11 @@ test(
 				programSlot("cinema", day(w), 6, 2026) === null,
 				`wday ${w}: cinema at stage 6`,
 			);
+			// 本館は 月曜だけ 議会中継（D3）、ほかの 日は ナイター
 			for (const st of [6, 7])
 				ok(
-					programSlot("hall", day(w), st, 2026)?.main.program === "yakyu",
+					programSlot("hall", day(w), st, 2026)?.main.program ===
+						(w === 1 ? "gikai" : "yakyu"),
 					`hall ${st}`,
 				);
 			ok(programSlot("hall", day(w), 5, 2026) === null, "hall at stage 5");
@@ -3797,6 +3814,231 @@ test(
 			programSlot("hall", date(12, 31), 7, 2026)?.main.program === "yakyu",
 			"hall on 12/31",
 		);
+	},
+);
+
+// ───────────────── G 議会中継（見るだけ） ─────────────────
+
+/** 1話を 最後まで（入力なし）か、quitAt ms で B 1回。 */
+const runGikai = (
+	ep: GikaiEpisode,
+	o: { onchan: boolean; rerun: boolean },
+	seed: number,
+	quitAt?: number,
+) => {
+	const { tl, rules, pools } = gikaiProgram(ep, { ...o, place: "cityhall" });
+	const r = Rng.fromSeed(`gikai:${seed}`);
+	const st = jkStart(tl, rules, pools, { rand: () => r.float() });
+	const evs: JkEv[] = [];
+	let t = 0;
+	for (let k = 0; k < 4000 && !st.ended; k++) {
+		const input: JkInput | undefined =
+			quitAt !== undefined && t >= quitAt ? { quit: true } : undefined;
+		evs.push(...jkStep(st, 100, input));
+		t += 100;
+	}
+	return { st, evs };
+};
+
+test(
+	"G1",
+	"議会中継：窓を 出さず（open なし）、議長・住人・名無しの 発言が 台本の 順に 2行で 流れ、ヤジは 1回ずつ、最後まで 流れて 終わる。B 1回で 閉じる",
+	() => {
+		for (const ep of GIKAI_EPISODES)
+			for (const onchan of [true, false])
+				for (const rerun of [false, true]) {
+					const { st, evs } = runGikai(ep, { onchan, rerun }, ep.id.length);
+					ok(st.ended && jkResult(st) !== null, `${ep.id}: did not finish`);
+					ok(!evs.some((e) => e.t === "open"), `${ep.id}: a window opened`);
+					const lines = evs.flatMap((e) =>
+						e.t === "line" || e.t === "pin" ? [e.line] : [],
+					);
+					const want = [
+						...GIKAI_OPEN,
+						...(rerun ? [{ who: "res" as const, text: GIKAI_RERUN }] : []),
+						...ep.lines,
+						...GIKAI_CLOSE,
+					].map((l) =>
+						l.who === "chair" && !onchan ? (l.plain ?? l.text) : l.text,
+					);
+					// 台本の 発言は ぜんぶ 順に 出る（あいだに ヤジ）
+					let k = 0;
+					for (const l of lines) if (l.text === want[k]) k++;
+					ok(
+						k === want.length,
+						`${ep.id} onchan ${onchan}: posted ${k}/${want.length}`,
+					);
+					// 議長は 名無しなら 口ぐせの「おん」なし
+					if (!onchan)
+						ok(
+							!lines.some(
+								(l) => l.who === "chair" && /おん$|だおん/.test(l.text),
+							),
+							`${ep.id}: the nanashi chair talks like onchan`,
+						);
+					// ヤジは 1回ずつ・ほかの 話し手は 台本の 住人と 議長
+					const yaji = lines.filter((l) => GIKAI_YAJI.includes(l.text));
+					ok(
+						new Set(yaji.map((l) => l.text)).size === yaji.length,
+						`${ep.id}: a heckle twice`,
+					);
+					for (const l of lines)
+						ok(
+							["nanashi", "chair", "sys"].includes(l.who) ||
+								(l.who.startsWith("cast:") &&
+									[...ep.cast, "roze"].includes(l.who.slice(5))),
+							`${ep.id}: ${l.who} speaks`,
+						);
+					// 数は 1000 に 届かない（見た目だけ）
+					ok(st.part === st.part0 && jkView(st).no < 999, `${ep.id}: rolled`);
+				}
+		// B 1回で 閉じる（ノートなし）
+		const { st, evs } = runGikai(
+			GIKAI_EPISODES[0],
+			{ onchan: true, rerun: false },
+			3,
+			5000,
+		);
+		ok(st.ended && jkResult(st) === null, "B did not close");
+		ok(!evs.some((e) => e.t === "note"), "B asked twice");
+		// 窓の ある 見るだけの 番組は 作れない
+		const bad = gikaiProgram(GIKAI_EPISODES[0], {
+			onchan: true,
+			rerun: false,
+			place: "hall",
+		});
+		let threw = false;
+		try {
+			jkStart(
+				{
+					...bad.tl,
+					overlays: [
+						{
+							at: 1000,
+							win: {
+								type: "pick",
+								id: "x",
+								opts: [{ text: "a", fit: "best" }],
+								open: 4000,
+								weight: 1,
+							},
+						},
+					],
+				},
+				bad.rules,
+				bad.pools,
+				{ rand: () => 0.5 },
+			);
+		} catch {
+			threw = true;
+		}
+		ok(threw, "a view-only program with a window started");
+	},
+);
+
+test(
+	"G2",
+	"議会中継の 話：1回の 帰りに 新しい 話 1つ（同じ 帰りなら 同じ）、全部 見たら 再放送、出る 住人が そろって いる 話だけ。書きこみは 18字 × 2行、やきうは 出ない",
+	() => {
+		const all = [...new Set(GIKAI_EPISODES.flatMap((e) => e.cast))];
+		let memo: GikaiMemo = { seen: [], at: -1 };
+		const order: string[] = [];
+		for (let at = 1; at <= GIKAI_EPISODES.length; at++) {
+			const got = gikaiEpisodeFor(memo, at, all);
+			ok(got && !got.rerun, `return ${at}: ${JSON.stringify(got)}`);
+			if (!got) continue;
+			order.push(got.ep.id);
+			memo = gikaiWatched(memo, at, got.ep, got.rerun);
+			const again = gikaiEpisodeFor(memo, at, all);
+			ok(
+				again?.ep.id === got.ep.id,
+				`return ${at}: changed in the same return`,
+			);
+		}
+		ok(new Set(order).size === GIKAI_EPISODES.length, `episodes ${order}`);
+		const re = gikaiEpisodeFor(memo, 99, all);
+		ok(re?.rerun === true, "no rerun after all");
+		// 段4 の 住人だけ（おんちゃん・ジェイトルマン・レン・アル・ミャウミャウ・ヤヤポジ は まだ）
+		const early: MobId[] = [
+			"nichie",
+			"panmatsu",
+			"ngoane",
+			"mujje",
+			"proto",
+			"hinary",
+			"onsu",
+			"asakonro",
+		];
+		const ok4 = GIKAI_EPISODES.filter((e) => gikaiAvailable(e, early)).map(
+			(e) => e.id,
+		);
+		ok(ok4.join() === "toban,mabo,rom", `stage 4 episodes ${ok4}`);
+		ok(
+			gikaiEpisodeFor({ seen: [], at: -1 }, 1, []) === null,
+			"an episode with nobody",
+		);
+		// 書きこみの 幅・やきうは 出ない
+		const texts = [
+			...GIKAI_OPEN,
+			...GIKAI_CLOSE,
+			...GIKAI_EPISODES.flatMap((e) => e.lines),
+		].flatMap((l) => [l.text, ...(l.plain ? [l.plain] : [])]);
+		for (const t of [...texts, GIKAI_RERUN, ...GIKAI_YAJI]) {
+			const ls = t.split("\n");
+			ok(ls.length <= 2, `"${t}": ${ls.length} lines`);
+			for (const l of ls) ok(width(l) <= 18, `"${l}" is ${width(l)} wide`);
+			ok(!t.includes("やきう"), `"${t}" has やきう`);
+		}
+		for (const e of GIKAI_EPISODES) {
+			ok(
+				!e.cast.some((c) => (c as string) === "nanj"),
+				`${e.id}: やきう in the cast`,
+			);
+			fitsWindow(`${e.id} pitch`, e.pitch);
+			fitsWindow(`${e.id} on`, GIKAI_TEXT.on.replace("{title}", e.title));
+			fitsWindow(
+				`${e.id} rerun`,
+				GIKAI_TEXT.onRerun.replace("{title}", e.title),
+			);
+			for (const l of e.lines)
+				if (l.who !== "chair" && l.who !== "res" && l.who !== "roze")
+					ok(e.cast.includes(l.who), `${e.id}: ${l.who} is not in the cast`);
+		}
+		for (const t of [GIKAI_TEXT.hallOn, GIKAI_TEXT.record, GIKAI_TEXT.closed])
+			fitsWindow("gikai", t);
+		for (const p of ["townhall", "cityhall", "hall"] as const)
+			ok(width(GIKAI_TEXT.title[p]) <= 22, `title ${p}`);
+	},
+);
+
+test(
+	"D3",
+	"番組表：本館は 段6〜 の 月曜だけ 議会中継（チャンネルを かえると ナイター）、町役場（段4〜6）・市役所（段7）は 議会の 日だけ",
+	() => {
+		for (const w of WEEK) {
+			const h = programSlot("hall", day(w), 7, 2026);
+			if (w === 1)
+				ok(
+					h?.main.program === "gikai" && h.alt?.program === "yakyu",
+					`Monday hall ${JSON.stringify(h)}`,
+				);
+			else ok(h?.main.program === "yakyu" && !h.alt, `wday ${w} hall`);
+		}
+		for (let stage = 0; stage < TOWN_STAGES; stage++)
+			for (const session of [true, false]) {
+				const th = programSlot("townhall", day(3), stage, 2026, { session });
+				const ch = programSlot("cityhall", day(3), stage, 2026, { session });
+				ok(
+					(th?.main.program === "gikai") ===
+						(session && stage >= 4 && stage < 7),
+					`townhall ${stage} ${session}`,
+				);
+				ok(
+					(ch?.main.program === "gikai") === (session && stage >= 7),
+					`cityhall ${stage} ${session}`,
+				);
+			}
+		ok(isVenue("townhall") && isVenue("cityhall"), "civic venues");
 	},
 );
 

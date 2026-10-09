@@ -57,6 +57,14 @@ import {
 	type Topic,
 	VERDICT,
 } from "../data/debate";
+import {
+	GIKAI_CLOSE,
+	GIKAI_EPISODES,
+	GIKAI_OPEN,
+	GIKAI_RERUN,
+	GIKAI_TEXT,
+	GIKAI_YAJI,
+} from "../data/jikkyo/gikai";
 import { MOB_IDS, type MobId } from "../data/mobs";
 import {
 	FACILITIES,
@@ -1401,6 +1409,51 @@ test(
 		ok(!("shobon" in ASSEMBLY_LINES), "shobon has an assembly line");
 		for (const m of [CIVIC_BOARD.yoriaiMenu, CIVIC_BOARD.dayoriMenu])
 			ok(width(m) <= 10, `menu ${m}`);
+	},
+);
+
+test(
+	"W5",
+	"議会中継の 文：使わない 語なし（「保守」は 保守町・保守市だけ）、町役場・市役所の 中継モニターは 議会中継、どの 話も 決着で どちらかが 正しいとは 言わない",
+	() => {
+		const texts: [string, string][] = [
+			...[
+				...GIKAI_OPEN,
+				...GIKAI_CLOSE,
+				...GIKAI_EPISODES.flatMap((e) => e.lines),
+			].flatMap((l, i): [string, string][] => [
+				[`gikai ${i}`, l.text],
+				...(l.plain ? [[`gikai ${i} plain`, l.plain] as [string, string]] : []),
+			]),
+			...GIKAI_EPISODES.flatMap((e): [string, string][] => [
+				[`${e.id} pitch`, e.pitch],
+				[`${e.id} title`, e.title],
+			]),
+			...GIKAI_YAJI.map((t): [string, string] => ["yaji", t]),
+			["rerun", GIKAI_RERUN],
+			...Object.entries(GIKAI_TEXT).flatMap(([k, t]): [string, string][] =>
+				typeof t === "string"
+					? [[`text.${k}`, t]]
+					: Array.isArray(t)
+						? t.map((x): [string, string] => [`text.${k}`, x])
+						: Object.values(t).map((x): [string, string] => [`text.${k}`, x]),
+			),
+		];
+		for (const [w, t] of texts) ngCheck(w, t);
+		for (const e of GIKAI_EPISODES)
+			for (const l of e.lines)
+				ok(
+					!l.text.includes("正しい"),
+					`${e.id}: "${l.text}" says who is right`,
+				);
+		const monitors: string[] = [];
+		for (const f of FACILITIES)
+			for (const [k, v] of Object.entries(f.room?.plays ?? {}))
+				if (v === "gikai") monitors.push(`${f.id}.${k}`);
+		ok(
+			monitors.sort().join() === "cityhall.monitor,townhall.monitor",
+			`gikai monitors ${monitors}`,
+		);
 	},
 );
 
