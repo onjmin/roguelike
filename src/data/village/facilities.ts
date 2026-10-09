@@ -18,6 +18,7 @@
 
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import { CIVIC_FACILITIES } from "./civicHalls";
 import { EATERIES } from "./eateries";
 import type { Cell } from "./map";
 import { art, ri, riCell } from "./rpgenArt";
@@ -144,9 +145,13 @@ export type FacilityRoom = {
 	/**
 	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
 	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts・
-	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts）。
+	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts・
+	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙。ui/debate.ts）。
 	 */
-	plays?: Record<string, "depart" | "drinkbar" | "eat" | "jikkyo">;
+	plays?: Record<
+		string,
+		"depart" | "drinkbar" | "eat" | "jikkyo" | "debate" | "kiben"
+	>;
 };
 
 export type OutdoorThing = {
@@ -3767,6 +3772,8 @@ export const FACILITIES: readonly Facility[] = [
 	},
 	// ── 飲食店（data/village/eateries.ts。たこ焼き屋台・立ち食いそば・牛丼・居酒屋・寿司・中華）
 	...EATERIES,
+	// ── 町の 役所（data/village/civicHalls.ts。保守町役場）
+	...CIVIC_FACILITIES,
 ];
 
 /** その 段に 立っている 施設。 */

@@ -3689,3 +3689,126 @@ body.jolt #app {
 	color: #6ad46a;
 	font-variant-numeric: tabular-nums;
 }
+
+/* ───────── 町の 役所の 討論会（ui/debate.ts）：模擬議会の カンペ係 ───────── */
+
+.mgame.db {
+	width: min(92vw, 400px);
+	max-height: calc(var(--app-h) - 12px);
+	overflow-y: auto;
+	gap: 4px;
+	cursor: default;
+}
+
+.db-post {
+	flex: none;
+	min-height: 52px;
+	padding: 4px 6px;
+	border-radius: 4px;
+	background: #14121c;
+	border-left: 3px solid #3a3850;
+}
+
+.db-post.ally {
+	border-left-color: #ffd060;
+}
+
+.db-post.opp {
+	border-left-color: #7fb0ff;
+}
+
+.db-name {
+	font-size: 11px;
+	color: #8a8aa0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.db-no {
+	font-weight: normal;
+	color: #8a8aa0;
+}
+
+.db-id {
+	color: #e8e6f0;
+}
+
+.db-nushi {
+	color: #ff5a4a;
+}
+
+.db-text {
+	font-size: 14px;
+	line-height: 18px;
+	white-space: pre-line;
+	color: #f4f2ea;
+}
+
+/* カンペ 6枚（いつも 開いて いる 縦の 札。時計の 帯は 使わない） */
+.mgame.db .db-cards {
+	position: static;
+	transform: none;
+	box-shadow: none;
+	background: none;
+	padding: 0;
+	gap: 3px;
+	--left: 0%;
+}
+
+.mgame.db .db-cards .jk-pick {
+	min-height: 32px;
+	font-size: 14px;
+}
+
+.mgame.db .db-note {
+	min-height: 1.4em;
+	font-size: 14px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.mgame.db .db-close {
+	flex: none;
+}
+
+.mgame.db.done .mgame-hint {
+	visibility: hidden;
+}
+
+.mgame.db.still .jk-pick.cur::before {
+	animation: none;
+}
+
+.narrow .mgame.db .db-cards .jk-pick {
+	min-height: 30px;
+	font-size: 13px;
+}
+
+/* 横持ちの 低い 画面：左に 板の 絵と 書きこみ、右に カンペ */
+.short-landscape .mgame.db {
+	width: min(96vw, 760px);
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	column-gap: 8px;
+	row-gap: 4px;
+	align-content: start;
+}
+
+.short-landscape .mgame.db > .mgame-title,
+.short-landscape .mgame.db > .db-canvas,
+.short-landscape .mgame.db > .db-post {
+	grid-column: 1;
+}
+
+.short-landscape .mgame.db > .db-cards,
+.short-landscape .mgame.db > .db-note,
+.short-landscape .mgame.db > .mgame-hint,
+.short-landscape .mgame.db > .db-close {
+	grid-column: 2;
+}
+
+.short-landscape .mgame.db > .db-cards {
+	grid-row: 1 / 4;
+}

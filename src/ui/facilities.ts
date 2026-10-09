@@ -27,6 +27,7 @@ import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
 import { facilityDecor } from "./cinemaDecor";
 import type { Ctx } from "./ctx";
+import { debateScript, kibenScript } from "./debate";
 import { eatAt, keeperTalk } from "./eat";
 import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
@@ -214,6 +215,9 @@ export const buildFacility = (
 			// 実況の 番組（映画館の 実況上映。ui/jikkyoWatch.ts）
 			else if (play === "jikkyo" && isVenue(f.id))
 				await watchProgram(ctx, s, f.id, v.stage);
+			// 町の 役所の 演壇（討論会）と 見分け方の はり紙（ui/debate.ts）
+			else if (play === "debate") await debateScript(ctx, s, v);
+			else if (play === "kiben") await kibenScript(ctx, s);
 		});
 	});
 	for (const who of room?.people ?? [])
