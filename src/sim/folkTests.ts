@@ -201,7 +201,7 @@ const survey = (
 			if (dx === 0 && dy === 1 && tall(p.x, p.y)) return false;
 			return standable(cx, cy);
 		});
-	return { tile, canEnter, reach, talkable };
+	return { tile, canEnter, reach, talkable, tall };
 };
 
 const villageSurvey = (v: VillageView) =>
@@ -629,10 +629,15 @@ test("F6 村: 名無したちは 段0 から、墓場は 段2 から。どの �
 			ok(!nodes.has(k), `stage ${v.stage}: ${p.id} on a crowd stop`);
 			ok(!near.has(k), `stage ${v.stage}: ${p.id} next to a door/exit/trolley`);
 			ok(p.y < 49, `${p.id} on the lineup rows`);
-			// すぐ 下の 木の 葉（above）に 体が かくれない（engine/field.ts の drawHidden で 薄く なる）
+			// すぐ 下の 木の 葉（above）や 背の 高い 物（街灯。絵が 上の マスへ はみ出す）に 体が かくれない
+			// （engine/field.ts の drawHidden で 薄く なる）
 			ok(
 				!s.tile(p.x, p.y + 1)?.above?.length,
 				`stage ${v.stage}: ${p.id} hides under the tree at ${p.x},${p.y + 1}`,
+			);
+			ok(
+				!s.tall(p.x, p.y + 1),
+				`stage ${v.stage}: ${p.id} hides behind the tall thing at ${p.x},${p.y + 1}`,
 			);
 		}
 		// 人が いても いなくても 歩ける マスは かわらない（人の マスの ほかは）

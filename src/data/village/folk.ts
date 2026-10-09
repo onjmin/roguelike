@@ -2,8 +2,10 @@
 // 文と 決まりは data/folk.ts、話し方は ui/folk.ts（村の イベントは ui/villageEvents.ts の eventFor から folkEvent）。
 // ここからは map.ts・facilities.ts の 値を 読まない（どちらも ここを 読むので、まわりこむと 読みこみの 順で こわれる）。
 //
-//   ひらがなニキ   (8,17)  西の 空き地（段5 からは 喫茶の 東）。x=7 の 道の となりの くぼみ。段0 から
-//   なぞなぞ仮面   (29,23) 広場の 南東の すみ（x=29 の 細道の 行き止まり）。段0 から
+//   ひらがなニキ   (8,17)  西の 空き地（段5 からは 喫茶の 東）。x=7 の 道の となりの くぼみ。段0 から。
+//                  段6 からは すぐ 下に 街灯が 立つので、図書館の 入口の 西の すみ (3,23) へ（FOLK_MOVES）
+//   なぞなぞ仮面   (29,23) 広場の 南東の すみ（x=29 の 細道の 行き止まり）。段0 から。
+//                  段7 は すぐ 下の 植えこみに 街灯が 立つので、柵の かど (30,25) へ（FOLK_MOVES）
 //   モフちゃん     (1,16)  西の 空き地の 北西の すみの くぼみ（段5 からは 喫茶の 裏の 路地の 行き止まり）。段0 から。
 //                  絵は 段ごとに 少し かわる。(7,22) は 西口の 乗り場・図書館・碁会所への 近道なので 置かない（map.ts の 片づけ）。
 //                  (1,21) は すぐ 下の 木の 葉に かくれて 白い 体が 見えない
@@ -11,8 +13,9 @@
 //   機能の 墓場    神社の 上の 森（x1〜7, y1〜3）。神社の 東の わき道（5,4）（7,4）から 入る。段2 から（神社と 同じ）
 //     y1  墓 ×7（タグ機能・ロリード・草ボタン・GPS・バルス・弾幕・イイ！ボタン）  y2  玉砂利の 道
 //     y3  森・森・森・供養碑・道・新しい 墓（!okpic）・道
-// どの 人も 道を ふさがない・遠回りに しない・木の 葉に かくれない（くぼみ・行き止まり・原っぱ。src/sim/folkTests.ts の F6）。
+// どの 人も 道を ふさがない・遠回りに しない・木の 葉や 街灯に かくれない（くぼみ・行き止まり・原っぱ。src/sim/folkTests.ts の F6）。
 
+import type { Dir } from "../../engine/types";
 import type { Facility } from "./facilities";
 import type { Cell, VillagePlace } from "./map";
 import { base } from "./tiles";
@@ -53,6 +56,30 @@ export const FOLK_SPOTS = {
 	mofu: [1, 16] as Cell,
 	odoru: [16, 30] as Cell,
 } as const;
+
+type FolkWho = keyof typeof FOLK_SPOTS;
+
+/**
+ * 段 from から 立つ マスを かえる 人（すぐ 下の マスに 新市街の 街灯が 立ち、頭が 街灯の 上に かくれるので）。
+ * ひらがなニキは 図書館の 入口の 西の すみ、なぞなぞ仮面は 広場の 南東の 柵の かど。
+ */
+export const FOLK_MOVES: Partial<
+	Record<FolkWho, { from: number; at: Cell; dir: Dir }>
+> = {
+	hira: { from: 6, at: [3, 23], dir: "right" },
+	nazo: { from: 7, at: [30, 25], dir: "right" },
+};
+
+/** その 段で 立つ マスと 向き。 */
+export const folkSpot = (
+	who: FolkWho,
+	stage: number,
+	dir: Dir,
+): { x: number; y: number; dir: Dir } => {
+	const m = FOLK_MOVES[who];
+	if (m && stage >= m.from) return { x: m.at[0], y: m.at[1], dir: m.dir };
+	return { x: FOLK_SPOTS[who][0], y: FOLK_SPOTS[who][1], dir };
+};
 
 /** 墓場の 立つ 段（神社と 同じ）。 */
 export const BOCHI_FROM = 2;
@@ -103,19 +130,15 @@ export const folkPlaces = (stage: number): VillagePlace[] => {
 	const out: VillagePlace[] = [
 		{
 			id: "folk_hira",
-			x: FOLK_SPOTS.hira[0],
-			y: FOLK_SPOTS.hira[1],
+			...folkSpot("hira", stage, "left"),
 			trigger: "talk",
 			sprite: FOLK_WALK.hira,
-			dir: "left",
 		},
 		{
 			id: "folk_nazo",
-			x: FOLK_SPOTS.nazo[0],
-			y: FOLK_SPOTS.nazo[1],
+			...folkSpot("nazo", stage, "up"),
 			trigger: "talk",
 			sprite: FOLK_WALK.nazo,
-			dir: "up",
 		},
 		{
 			id: "folk_mofu",
