@@ -13,6 +13,8 @@
 // - おんJ 本館（data/village/hall.ts・ui/hallEvents.ts）：外観の 幅・扉、中の 形と 歩ける道（段ごと）、
 //   扉で 入って 出たら 入った 扉の 前、保守の 当番表の 数、期間限定の 告知、飾り棚の 中身、段の 上がる 場面
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
@@ -25,7 +27,9 @@ import {
 	TOWN_STEPS,
 } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
+import { BB_FX, BB_POSE, BB_SHEET, BB_SPR } from "../data/baseballSheet";
 import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/bath";
+import { BATTING } from "../data/batting";
 import { bgm } from "../data/bgm";
 import {
 	CAFE_DRINKS,
@@ -260,6 +264,29 @@ import {
 import { isWalkRef } from "../engine/sprite";
 import { DIR_VEC, type Dir } from "../engine/types";
 import { bathLayout } from "../ui/bath";
+import {
+	applyOutcome,
+	type BallKind,
+	ballAt,
+	battedBall,
+	type Call,
+	contactOf,
+	DERBY_WIN,
+	fieldCam,
+	inZone,
+	LAG_MS,
+	outcomeOf,
+	PITCHER_DEFS,
+	type Pitch,
+	type PitcherDef,
+	type PitchKind,
+	pickPitch,
+	proj,
+	takeOutcome,
+	timingOf,
+	toField,
+	walkDir,
+} from "../ui/batting";
 import { floorsText } from "../ui/bookView";
 import {
 	buildCafe,
@@ -6024,7 +6051,41 @@ test("施設の 文: every line fits the village window", () => {
 	}
 	for (const t of [FISHING.cast, ...FISHING.catches])
 		texts.push(["fishing", t]);
-	for (const t of [GROUND_BAT.hit, GROUND_BAT.out]) texts.push(["bat", t]);
+	for (const t of [
+		GROUND_BAT.hr,
+		GROUND_BAT.hit,
+		GROUND_BAT.walk,
+		GROUND_BAT.out,
+		GROUND_BAT.popout,
+		GROUND_BAT.derbyRule,
+		fill(GROUND_BAT.derbyEnd, { n: 10, best: 10 }),
+		fill(GROUND_BAT.derbyBest, { n: 10, best: 10 }),
+	])
+		texts.push(["bat", t]);
+	// 1打席の 板の 下の 1行（1行だけ・22字まで）と 帯（13字まで）
+	const vars = { p: "原住民", kind: "ストレート……？", kmh: 151, m: 135 };
+	const notes: [string, string][] = [];
+	const collect = (where: string, v: unknown): void => {
+		if (typeof v === "string") notes.push([where, v]);
+		else if (Array.isArray(v))
+			v.forEach((x, i) => {
+				collect(`${where}[${i}]`, x);
+			});
+		else if (v && typeof v === "object")
+			for (const [k, x] of Object.entries(v))
+				if (k !== "banner") collect(`${where}.${k}`, x);
+	};
+	collect("BATTING", BATTING);
+	ok(notes.length >= 30, `only ${notes.length} batting notes`);
+	for (const [where, n] of notes) {
+		const t = fill(n, vars);
+		ok(!t.includes("\n"), `${where}: more than 1 line`);
+		ok(width(t) <= 22, `${where}: "${t}" is ${width(t)} wide`);
+	}
+	for (const [k, b] of Object.entries(BATTING.banner)) {
+		const t = fill(b, { n: 10 });
+		ok(width(t) <= 13, `BATTING.banner.${k}: "${t}" is ${width(t)} wide`);
+	}
 	for (const drink of VENDING.drinks)
 		texts.push(["vending", fill(VENDING.got, { drink })]);
 	texts.push(["vending", VENDING.drank]);
@@ -6032,6 +6093,394 @@ test("施設の 文: every line fits the village window", () => {
 		texts.push(["drink bar", fill(DRINK_BAR.got, { drink })]);
 	texts.push(["drink bar", DRINK_BAR.drank]);
 	fitsWindow(texts);
+});
+
+// ───────── 1打席（ui/batting.ts。板は 画面が 要るので、決まりの 純粋な 関数と 絵の 置き場を 調べる） ─────────
+
+const PITCH_KINDS: readonly PitchKind[] = ["straight", "fast", "curve", "fork"];
+const BALL_KINDS: readonly (BallKind | null)[] = [
+	null,
+	"wide",
+	"high",
+	"bounce",
+];
+const pitchOf = (
+	kind: PitchKind,
+	ball: BallKind | null,
+	side: -1 | 1 = 1,
+): Pitch => ({ kind, ball, side, flight: 800, kmh: 120 });
+
+test("1打席: timing windows, outcomes and the count", () => {
+	const w = { perfect: 20, good: 60, edge: 100 };
+	ok(timingOf(1000, 1000) === -LAG_MS, "timingOf does not subtract the lag");
+	ok(timingOf(1100, 1000) === 100 - LAG_MS, "late is not positive");
+	for (const [d, c] of [
+		[0, "perfect"],
+		[20, "perfect"],
+		[-20, "perfect"],
+		[21, "good"],
+		[-60, "good"],
+		[61, "edge"],
+		[-100, "edge"],
+		[101, "miss"],
+		[-101, "miss"],
+	] as const)
+		ok(contactOf(d, w) === c, `contactOf(${d}) is ${contactOf(d, w)}`);
+	const s = pitchOf("straight", null);
+	for (const [c, d, p, o] of [
+		["perfect", 0, s, "hr"],
+		["perfect", 0, pitchOf("straight", "bounce"), "whiff"],
+		["good", 30, pitchOf("curve", "bounce"), "whiff"],
+		["good", 30, pitchOf("straight", "wide"), "popout"],
+		["perfect", -5, pitchOf("fork", "high"), "popout"],
+		["edge", 80, s, "foul"],
+		["edge", -80, pitchOf("straight", "wide"), "foul"],
+		["miss", 300, s, "whiff"],
+		// よい 当たりの 帯：芯に 近い ほうから ツーベース・ヒット・ゴロ
+		["good", 34, s, "double"],
+		["good", -35, s, "single"],
+		["good", 48, s, "single"],
+		["good", -49, s, "grounder"],
+		["good", 60, s, "grounder"],
+	] as const)
+		ok(
+			outcomeOf(c, d, p, w) === o,
+			`${c} ${d} ${p.kind}/${p.ball}: ${outcomeOf(c, d, p, w)}, not ${o}`,
+		);
+	ok(takeOutcome(s) === "strike", "a strike taken is not a strike");
+	ok(
+		takeOutcome(pitchOf("fast", "high")) === "ball",
+		"a high ball taken is not a ball",
+	);
+	const after = (b: number, st: number, o: Call) =>
+		applyOutcome({ b, s: st }, o);
+	const foul2 = after(1, 2, "foul");
+	ok(
+		foul2.st.s === 2 && foul2.end === null,
+		"a foul at 2 strikes does not stay at 2 strikes",
+	);
+	ok(after(0, 0, "foul").st.s === 1, "a foul at 0 strikes is not a strike");
+	ok(after(3, 2, "whiff").end === "k", "a whiff at 2 strikes is not a K");
+	ok(after(0, 2, "strike").end === "k", "a called third strike is not a K");
+	ok(
+		after(0, 1, "strike").end === null && after(0, 1, "strike").st.s === 2,
+		"the second strike",
+	);
+	ok(after(3, 0, "ball").end === "walk", "ball four is not a walk");
+	ok(after(2, 2, "ball").end === null, "ball three ends the at-bat");
+	ok(after(0, 0, "hr").end === "hr", "a home run");
+	for (const o of ["double", "single", "grounder"] as const)
+		ok(after(1, 1, o).end === "hit", `${o} is not a hit`);
+	ok(after(0, 0, "popout").end === "out", "a popout is not an out");
+});
+
+test("1打席: every pitch reaches the plate on time; strikes cross the zone and balls miss it; batted balls land where they should", () => {
+	ok(Math.abs(proj(0, 0, 0).y - 124) < 0.5, "the plate is not at y 124");
+	const zt = proj(-0.25, 0, 1.05);
+	const zb = proj(0.25, 0, 0.45);
+	ok(
+		Math.round(zt.x) === 114 &&
+			Math.round(zb.x) === 126 &&
+			Math.abs(zt.y - 99.5) < 1 &&
+			Math.abs(zb.y - 113.5) < 1,
+		`the zone box is (${zt.x},${zt.y})-(${zb.x},${zb.y})`,
+	);
+	for (const [who, def] of Object.entries(PITCHER_DEFS) as [
+		string,
+		PitcherDef,
+	][])
+		for (const kind of PITCH_KINDS)
+			for (const ball of BALL_KINDS)
+				for (const side of [-1, 1] as const) {
+					const p: Pitch = {
+						kind,
+						ball,
+						side,
+						flight: def.flight[kind] ?? def.flight.straight,
+						kmh: def.kmh[kind] ?? def.kmh.straight,
+					};
+					const at = `${who} ${kind}/${ball}/${side}`;
+					const e = ballAt(p, 1);
+					ok(Math.abs(e.Z) < 1e-9, `${at}: Z ${e.Z} at the plate`);
+					let prev = Number.POSITIVE_INFINITY;
+					for (let i = 0; i <= 60; i++) {
+						const b = ballAt(p, i / 50);
+						ok(b.Z <= prev + 1e-9, `${at}: the ball goes back at u ${i / 50}`);
+						prev = b.Z;
+					}
+					ok(
+						inZone(e) === (ball === null),
+						`${at}: ends at X ${e.X.toFixed(2)} h ${e.h.toFixed(2)}`,
+					);
+					if (ball === "bounce") ok(e.h < 0.45, `${at}: bounces too high`);
+				}
+	// 球の 選び方：関所の 1球目は まっすぐの ストライク、ボールは その 人の 球だけ、競争は ストライクだけ
+	let seed = 99;
+	const rnd = () => {
+		seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+		return seed / 0x7fffffff;
+	};
+	for (let i = 0; i < 50; i++) {
+		const p = pickPitch(PITCHER_DEFS.shobon, 0, rnd);
+		ok(p.kind === "straight" && p.ball === null, "the gate's first pitch");
+	}
+	for (const [who, def] of Object.entries(PITCHER_DEFS) as [
+		string,
+		PitcherDef,
+	][])
+		for (let n = 0; n < 400; n++) {
+			const p = pickPitch(def, n, rnd);
+			ok(
+				def.mix.some(([k]) => k === p.kind),
+				`${who} throws ${p.kind}`,
+			);
+			ok(
+				p.ball === null || def.ballKinds.includes(p.ball),
+				`${who} throws a ${p.ball} ball`,
+			);
+			ok(p.flight === def.flight[p.kind], `${who} ${p.kind} flight`);
+			const q = pickPitch(def, n, rnd, true);
+			ok(q.ball === null, `${who}: a ball in the derby`);
+		}
+	// 打球：どれも フェアの 中、ホームランは フェンスの 外、凡打は 内野、ヒットは 外野の 手前まで
+	for (const w of [...Object.values(PITCHER_DEFS).map((d) => d.win), DERBY_WIN])
+		for (const kmh of [71, 98, 132, 151])
+			for (let i = 0; i < 40; i++) {
+				const r = i / 39;
+				const dHr = (r * 2 - 1) * w.perfect;
+				const dGood =
+					(r < 0.5 ? -1 : 1) * (w.perfect + 1 + r * (w.good - w.perfect));
+				for (const [o, d] of [
+					["hr", dHr],
+					["double", dGood],
+					["single", dGood],
+					["grounder", dGood],
+					["popout", dGood],
+				] as const) {
+					const bb = battedBall(o, d, w, kmh, rnd);
+					ok(Math.abs(bb.theta) <= 45, `${o}: θ ${bb.theta}`);
+					if (o === "hr") ok(bb.dist > 95, `hr: ${bb.dist} m`);
+					else if (o === "popout") ok(bb.dist <= 35, `popout: ${bb.dist} m`);
+					else if (o === "grounder")
+						ok(bb.dist >= 55, `grounder: ${bb.dist} m`);
+					else ok(bb.dist >= 45, `${o}: ${bb.dist} m`);
+				}
+			}
+});
+
+test("1打席: the 跡地 gate stays winnable, やきう is not a sure thing, the derby gives a few home runs", () => {
+	// 人の まね（押す 時の ずれ：平均と ばらつき ms。球が 本塁に 来た 時から はかる）。数は 決まった 種で 毎回 同じ
+	let seed = 7;
+	const rnd = () => {
+		seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+		return seed / 0x7fffffff;
+	};
+	const gauss = () => {
+		let u = 0;
+		let v = 0;
+		while (!u) u = rnd();
+		while (!v) v = rnd();
+		return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+	};
+	type Model = {
+		err: Record<PitchKind, readonly [number, number]>;
+		swingBall: Record<BallKind, number>;
+	};
+	// はじめて スマホで 打つ 人（遅れぎみ・ばらつき 大）と、ふつうに キーで 打つ 人
+	const phone: Model = {
+		err: {
+			straight: [60, 80],
+			fast: [80, 90],
+			curve: [40, 95],
+			fork: [0, 105],
+		},
+		swingBall: { bounce: 0.5, wide: 0.6, high: 0.6 },
+	};
+	const casual: Model = {
+		err: {
+			straight: [20, 60],
+			fast: [35, 70],
+			curve: [0, 75],
+			fork: [-45, 85],
+		},
+		swingBall: { bounce: 0.35, wide: 0.45, high: 0.45 },
+	};
+	const swingAt = (m: Model, kind: PitchKind) => {
+		const [mu, sd] = m.err[kind];
+		return timingOf(1000 + mu + gauss() * sd, 1000);
+	};
+	const atBatSim = (def: PitcherDef, m: Model) => {
+		let st = { b: 0, s: 0 };
+		for (let n = 0; n < 60; n++) {
+			const p = pickPitch(def, n, rnd);
+			const swing = p.ball ? rnd() < m.swingBall[p.ball] : rnd() < 0.95;
+			let call: Call = takeOutcome(p);
+			if (swing) {
+				const d = swingAt(m, p.kind);
+				call = outcomeOf(contactOf(d, def.win), d, p, def.win);
+			}
+			const r = applyOutcome(st, call);
+			st = r.st;
+			if (r.end) return r.end;
+		}
+		return "k";
+	};
+	const N = 3000;
+	const winRate = (def: PitcherDef, m: Model) => {
+		let win = 0;
+		for (let i = 0; i < N; i++) {
+			const r = atBatSim(def, m);
+			if (r === "hr" || r === "hit" || r === "walk") win++;
+		}
+		return win / N;
+	};
+	const gatePhone = winRate(PITCHER_DEFS.shobon, phone);
+	ok(gatePhone >= 0.75, `the gate, first time on a phone: ${gatePhone}`);
+	ok(
+		1 - (1 - gatePhone) ** 3 >= 0.97,
+		`the gate within 3 tries: ${1 - (1 - gatePhone) ** 3}`,
+	);
+	const gateCasual = winRate(PITCHER_DEFS.shobon, casual);
+	ok(gateCasual >= 0.9, `the gate, casual: ${gateCasual}`);
+	const yakiu = winRate(PITCHER_DEFS.yakiu, casual);
+	ok(yakiu >= 0.55 && yakiu <= 0.95, `やきう, casual: ${yakiu}`);
+	const nanashi = winRate(PITCHER_DEFS.nanashi, casual);
+	ok(nanashi >= yakiu, `名無し (${nanashi}) is harder than やきう (${yakiu})`);
+	// ホームラン競争（10球。芯だけ 数える）
+	let hrs = 0;
+	for (let i = 0; i < N; i++)
+		for (let n = 0; n < 10; n++) {
+			const p = pickPitch(PITCHER_DEFS.yakiu, n, rnd, true);
+			const d = swingAt(casual, p.kind);
+			if (outcomeOf(contactOf(d, DERBY_WIN), d, p, DERBY_WIN) === "hr") hrs++;
+		}
+	const avg = hrs / N;
+	ok(avg >= 1.5 && avg <= 4, `the derby, casual: ${avg} home runs per 10`);
+});
+
+test("1打席: the field view maps metres to the sheet, the camera stays on it, sprites face the way they move", () => {
+	const h = toField(0, 0);
+	ok(h.x === 180 && h.y === 252, `home is at (${h.x},${h.y})`);
+	ok(toField(0, 95).y === 62, `the centre fence is at y ${toField(0, 95).y}`);
+	ok(toField(10, 0).x === 200, "1m is not 2px");
+	let seed = 3;
+	const rnd = () => {
+		seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+		return seed / 0x7fffffff;
+	};
+	let cam = { x: 60, y: 130 };
+	for (let i = 0; i < 500; i++) {
+		const target = { x: rnd() * 600 - 200, y: rnd() * 600 - 200 };
+		cam = fieldCam(cam, target, rnd() * 200);
+		ok(
+			cam.x >= 0 && cam.x <= 120 && cam.y >= 0 && cam.y <= 130,
+			`the camera left the field: (${cam.x},${cam.y})`,
+		);
+	}
+	const goal = { x: 50, y: 70 };
+	let c = { x: 0, y: 0 };
+	for (let i = 0; i < 60; i++) c = fieldCam(c, goal, 16);
+	ok(
+		Math.abs(c.x - goal.x) < 0.5 && Math.abs(c.y - goal.y) < 0.5,
+		`the camera does not reach its target: (${c.x},${c.y})`,
+	);
+	const jump = fieldCam({ x: 0, y: 0 }, goal, 140);
+	ok(
+		jump.x === 50 && jump.y === 70,
+		"a long frame does not land on the target",
+	);
+	const edge = fieldCam({ x: 60, y: 60 }, { x: -50, y: 999 }, 500);
+	ok(
+		edge.x === 0 && edge.y === 130,
+		`an outside target: (${edge.x},${edge.y})`,
+	);
+	for (const [vx, vz, dir] of [
+		[1, 0, "right"],
+		[-1, 0, "left"],
+		[0, 1, "up"],
+		[0, -1, "down"],
+		[2, 1, "right"],
+		[-2, -1, "left"],
+		[1, 2, "up"],
+		[-1, -2, "down"],
+		[1, 1, "up"],
+		[-1, -1, "down"],
+		[0, 0, "down"],
+	] as const)
+		ok(walkDir(vx, vz) === dir, `walkDir(${vx},${vz}) is ${walkDir(vx, vz)}`);
+});
+
+test("グラウンドの マウンド: 調べると 文 → 1打席・ホームラン競争・やめる、やめるなら 板を 出さずに おわる", async () => {
+	const view: VillageView = {
+		stage: TOWN_STAGES - 1,
+		unlocked: ["shallow"],
+		cleared: [],
+	};
+	const f = FACILITIES.find((x) =>
+		x.outdoor?.some((t) => t.play === "batting"),
+	);
+	const mound = f?.outdoor?.find((t) => t.play === "batting");
+	ok(f && mound, "no mound to bat at");
+	if (!f || !mound) return;
+	const ev = (buildVillage(view, {} as Ctx).events ?? []).find(
+		(e) => e.id === outdoorId(f, mound),
+	);
+	ok(ev?.run, "the mound cannot be examined");
+	if (!ev?.run) return;
+	const { s, log } = fakeStory({ pick: GROUND_BAT.menu.length - 1 });
+	await ev.run(s);
+	ok(
+		JSON.stringify(log) ===
+			JSON.stringify([
+				...mound.lines.map((l) => `narrate: ${l}`),
+				`choose ${GROUND_BAT.menu.join("/")}`,
+			]),
+		`the mound:\n${log.join("\n")}`,
+	);
+});
+
+test("1打席: the sprite sheet is 1024x432, every cell fits on it and none overlap", () => {
+	ok(BB_SHEET.startsWith("pub:"), `${BB_SHEET} is not bundled`);
+	const png = readFileSync(join(process.cwd(), "public", BB_SHEET.slice(4)));
+	ok(png.toString("ascii", 12, 16) === "IHDR", "not a PNG");
+	const W = png.readUInt32BE(16);
+	const H = png.readUInt32BE(20);
+	ok(W === 1024 && H === 432, `the sheet is ${W}x${H}`);
+	const cells = Object.entries(BB_SPR).map(([k, c]) => ({
+		k,
+		x0: c.x,
+		y0: c.y,
+		x1: c.x + c.w * c.n,
+		y1: c.y + c.h,
+	}));
+	for (const c of cells)
+		ok(
+			c.x0 >= 0 && c.y0 >= 0 && c.x1 <= W && c.y1 <= H,
+			`${c.k} runs off the sheet`,
+		);
+	for (let i = 0; i < cells.length; i++)
+		for (let j = i + 1; j < cells.length; j++) {
+			const a = cells[i];
+			const b = cells[j];
+			ok(
+				a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0,
+				`${a.k} overlaps ${b.k}`,
+			);
+		}
+	for (const k of [
+		"walkKiriko",
+		"walkGen",
+		"walkYakiu",
+		"walkNanashi",
+	] as const)
+		ok(
+			BB_SPR[k].w === 32 && BB_SPR[k].h === 64,
+			`${k} is not a 32x64 walk sheet`,
+		);
+	for (const [k, i] of Object.entries(BB_POSE))
+		ok(i < BB_SPR.pose.n, `pose ${k} is past the poses`);
+	for (const [k, i] of Object.entries(BB_FX))
+		ok(i < BB_SPR.fx.n, `fx ${k} is past the effects`);
 });
 
 test("建物の 扉: every building door is stepped on from its stage, and every room lets Kiriko out onto the road below its door", () => {

@@ -24,7 +24,7 @@ import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { eatAt, keeperTalk } from "./eat";
-import { playBatting } from "./minigames";
+import { atBat, playDerby } from "./minigames";
 import { fill } from "./villageTalk";
 
 /** 調べる 物の 窓（窓ごと）。 */
@@ -68,16 +68,45 @@ const fish = async (s: Story): Promise<void> => {
 	await s.narrate(pick);
 };
 
-/** グラウンドの 1打席（投げるのは やきう。出ていった あとは 名無し）。 */
+/** 1打席の おわり → 板を 閉じた あとの 窓（GROUND_BAT の どれか）。 */
+const BAT_AFTER = {
+	hr: "hr",
+	hit: "hit",
+	walk: "walk",
+	k: "out",
+	out: "popout",
+} as const;
+
+/**
+ * グラウンドの 1打席か ホームラン競争（投げるのは やきう。出ていった あとは 名無し。板は ui/batting.ts）。
+ * B で 板を 閉じたら 何も 言わない。
+ */
 const bat = async (ctx: Ctx, s: Story): Promise<void> => {
-	if ((await s.choose([...GROUND_BAT.menu], { cancel: 1 })) !== 0) return;
+	const n = await s.choose([...GROUND_BAT.menu], { cancel: 2 });
+	if (n === 2) return;
 	await s.wait(0);
 	const gone = awayFriends(loadProgress().cleared).includes("nanj");
-	const hit = await playBatting(ctx, {
-		title: GROUND_BAT.title,
-		pitcher: gone ? GROUND_BAT.pitcherGone : GROUND_BAT.pitcher,
+	const who = gone ? "nanashi" : "yakiu";
+	const pitcher = gone ? GROUND_BAT.pitcherGone : GROUND_BAT.pitcher;
+	if (n === 0) {
+		const r = await atBat(ctx, { title: GROUND_BAT.title, pitcher, who });
+		if (r !== "quit") await s.narrate(GROUND_BAT[BAT_AFTER[r]]);
+		return;
+	}
+	await s.narrate(GROUND_BAT.derbyRule);
+	await s.wait(0);
+	const d = await playDerby(ctx, {
+		title: GROUND_BAT.derbyTitle,
+		pitcher,
+		who,
 	});
-	await s.narrate(hit ? GROUND_BAT.hit : GROUND_BAT.out);
+	if (!d) return;
+	await s.narrate(
+		fill(d.newBest ? GROUND_BAT.derbyBest : GROUND_BAT.derbyEnd, {
+			n: d.hr,
+			best: d.best,
+		}),
+	);
 };
 
 /** 自販機（飲み物が 出る。見た目の 乱数なので Math.random）。 */
