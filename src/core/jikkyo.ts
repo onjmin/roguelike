@@ -10,7 +10,9 @@
 //   overlay（時計を 止めない。台本の 番組。映画館の『空飛ぶ鯖』）。
 //   overlay には 山場の 1語（Cue：合図 3回、4拍目が ちょうど）と 950 の 当番（次スレの 切れ目の 長さを 決める）が つく。
 //   台本の 番組は compileScript() で 時間割に する（区切り・窓・Cue・目立つ 書きこみ・鯖が 重い・スレタイの かえ）。
-//   timeoutFit（紅白の 鐘）・Cue の 名前欄・interactive:false（議会中継）は 型だけ 置き、使えば jkStart が 投げる
+//   劇場の 紅白は 答えない ことが 正解の 窓（timeoutFit：除夜の 鐘で 黙る）と、キリコの 名前欄
+//   （0時までは 番組の 時計「新年まで＠…」、山場の あとは Cue の names＝おみくじ）を 使う。
+//   interactive:false（議会中継）と blocking の 窓の timeoutFit は 型だけ 置き、使えば jkStart が 投げる
 //   （それを 使う 番組の 手順で 試験と いっしょに 入れる）。
 //
 // 点の 式（どの 番組も 同じ。定数は 番組ごと）：
@@ -26,7 +28,12 @@ export type JkRand = () => number;
 /** 話し手の 鍵（"me"・"nanashi"・"sys"・"fan:tora" など）。見た目（札の 字・色）は 番組が 決める。 */
 export type JkWho = string;
 
-export type JkOpt = { readonly text: string; readonly fit: JkFit };
+export type JkOpt = {
+	readonly text: string;
+	readonly fit: JkFit;
+	/** この 文を えらんで 外した ときの 群衆の pool（釣り札への 返し。無ければ 窓の boo）。 */
+	readonly boo?: string;
+};
 
 /** 行の 頼み。pool から 書き手が 引く（fill で {nick}・{team}・{n} を 埋める）。text は 決め打ち。 */
 export type JkReq = {
@@ -72,7 +79,10 @@ export type JkPick = {
 	readonly weight: number;
 	/** 練習の 点（野球の スレ立て＝10）。ある ときは P に 数えない。 */
 	readonly practice?: number;
-	/** 答えない ときの 判定（紅白の 鐘。まだ 使えない）。 */
+	/**
+	 * 答えない ときの 判定（紅白の 除夜の 鐘で 黙る＝◎）。時間切れで その 合い・速さ 1.0・コンボ +1。
+	 * overlay の 窓だけ（blocking の 窓では まだ 使えない）。
+	 */
 	readonly timeoutFit?: JkFit;
 	readonly after?: JkAfter;
 	/** 窓の あいだに すぐ 出す 反応（2行まで）。 */
@@ -101,7 +111,7 @@ export type JkCue = {
 	readonly praise?: string;
 	/** 山場が スレの 切れ目に かかった とき：切れ目の 群衆の 1行と、新しい スレで 打てた ときの 1行。 */
 	readonly cross?: { readonly gap: string; readonly fresh: string };
-	/** あとの 名前欄（紅白の おみくじ。まだ 使えない）。 */
+	/** 判定の あとの キリコの 名前欄（紅白の おみくじ「あけおめ＠大吉」。見てただけは 窓が 閉じた とき）。 */
 	readonly names?: Readonly<Record<JkCueGrade, string>>;
 };
 export type JkWin = JkPick | JkCue;
@@ -136,11 +146,12 @@ export type JkSeg = {
 	readonly bgm?: string | null;
 	/**
 	 * スレタイを かえる（n は スレ番）。now は いまの スレを すぐ かえ、この あとの スレも その 名前。
-	 * next は 次の 1本だけ（null で 取り消す）。
+	 * next は 次の 1本だけ（null で 取り消す）。later は 次の スレから ずっと（紅白の 年越し→初日の出）。
 	 */
 	readonly title?: {
 		readonly now?: (n: number) => string;
 		readonly next?: ((n: number) => string) | null;
+		readonly later?: (n: number) => string;
 	};
 	/** 鯖が　重い（行を 止める ms。数は 進む）。 */
 	readonly stall?: number;
@@ -226,6 +237,11 @@ export type JkRules = {
 	readonly hold: number;
 	readonly roll: JkRoll;
 	readonly duty?: JkDuty;
+	/**
+	 * キリコの 名前欄（名目の 時刻 → 文。null は 名無し）。紅白の 0時までの「新年まで＠00:12:34」。
+	 * Cue の names で 決まった 名前（おみくじ）が あれば そちらが 勝つ。
+	 */
+	readonly myName?: (t: number) => string | null;
 	readonly display: {
 		readonly perRes: number;
 		readonly min: number;
@@ -273,6 +289,8 @@ export type JkLine = {
 	readonly who: JkWho;
 	readonly text: string;
 	readonly cls?: "me" | "anc" | "sys" | "over" | "title" | "pin";
+	/** 名前欄（キリコの レスだけ。紅白の 時計・おみくじ）。 */
+	readonly name?: string;
 };
 
 export type JkEv =
@@ -337,6 +355,8 @@ export type JkView = {
 	readonly flood: boolean;
 	/** G（goal × 1000）。 */
 	readonly G: number;
+	/** いまの キリコの 名前欄（紅白の 時計・おみくじ。無ければ null）。 */
+	readonly name: string | null;
 };
 
 export type JkResult = {
@@ -623,6 +643,10 @@ export type JkSt = {
 	title: string;
 	titleFn: ((n: number) => string) | null;
 	nextTitle: ((n: number) => string) | null;
+	/** 次の スレから ずっと 使う 作り方（roll で titleFn に うつす）。 */
+	laterTitle: ((n: number) => string) | null;
+	/** Cue の names で 決まった キリコの 名前欄（おみくじ）。 */
+	myName: string | null;
 };
 
 const BIN_MS = 100;
@@ -644,11 +668,8 @@ const guard = (tl: JkTimeline, rules: JkRules): void => {
 		no("thread gaps in blocking mode");
 	for (const s of tl.segs) {
 		if (overlay && s.win) no("blocking windows in overlay mode");
-		if (s.win?.timeoutFit) no("timeoutFit");
-	}
-	for (const o of tl.overlays) {
-		if (o.win.type === "pick" && o.win.timeoutFit) no("timeoutFit");
-		if (o.win.type === "cue" && o.win.names) no("cue names");
+		// 答えない ことが 正解の 窓は overlay（紅白の 鐘）だけ
+		if (s.win?.timeoutFit) no("timeoutFit in blocking windows");
 	}
 };
 
@@ -732,6 +753,8 @@ export const jkStart = (
 		title: rules.roll.title(part),
 		titleFn: null,
 		nextTitle: null,
+		laterTitle: null,
+		myName: null,
 	};
 };
 
@@ -802,6 +825,7 @@ const enterSeg = (st: JkSt, i: number, evs: JkEv[]): void => {
 		evs.push({ t: "retitle", title: st.title });
 	}
 	if (seg.title && "next" in seg.title) st.nextTitle = seg.title.next ?? null;
+	if (seg.title?.later) st.laterTitle = seg.title.later;
 	if (seg.win && !st.opt.watch) {
 		const untimed = seg.win.practice !== undefined && st.opt.tutored === false;
 		st.win = {
@@ -856,12 +880,21 @@ const flushRest = (st: JkSt, extra: number): void => {
 	wave(st, left * multOf(st) + extra, st.rules.reveal);
 };
 
-const closeSeq = (st: JkSt, pick: JkPick, fit: JkFit | null): QItem[] => {
+/**
+ * 窓が 閉じた あとの 並び。chosen は キリコが 書いた 文（見送り・黙って 当てた ときは null。
+ * その ときは アンカー返信を 出さない）。外した 文に boo が あれば 窓の boo より 先に。
+ */
+const closeSeq = (
+	st: JkSt,
+	pick: JkPick,
+	fit: JkFit | null,
+	chosen: JkOpt | null = null,
+): QItem[] => {
 	const seq: QItem[] = [];
 	const r = st.rand;
 	const between = ([a, b]: readonly [number, number]) =>
 		a + Math.floor(r() * (b - a + 1));
-	const rep = fit ? pick.after?.replies?.[fit] : undefined;
+	const rep = fit && chosen ? pick.after?.replies?.[fit] : undefined;
 	if (rep)
 		for (let k = between(rep.n); k > 0; k--)
 			seq.push({
@@ -885,10 +918,16 @@ const closeSeq = (st: JkSt, pick: JkPick, fit: JkFit | null): QItem[] => {
 			});
 	}
 	const crowd =
-		fit === "best" || fit === "ok" ? pick.after?.cheer : pick.after?.boo;
+		fit === "best" || fit === "ok"
+			? pick.after?.cheer
+			: (chosen?.boo ?? pick.after?.boo);
 	if (crowd) seq.push({ req: { who: "nanashi", pool: crowd } });
 	return seq;
 };
+
+/** キリコの いまの 名前欄（おみくじが 決まって いれば それ、なければ 番組の 時計）。 */
+const nameOf = (st: JkSt): string | null =>
+	st.myName ?? st.rules.myName?.(st.t) ?? null;
 
 /** キリコの レス（すぐ 出す）。999 まで。999 が もう ある スレでは 次の スレの >>1 の あとに 回す。 */
 const postMine = (st: JkSt, text: string, evs: JkEv[]): void => {
@@ -906,9 +945,17 @@ const postMine = (st: JkSt, text: string, evs: JkEv[]): void => {
 	st.lastNo = n;
 	st.meNo = n;
 	noteText(st.writer, "me", text);
+	const name = nameOf(st);
 	evs.push({
 		t: "line",
-		line: { no: n, part: st.part, who: "me", text, cls: "me" },
+		line: {
+			no: n,
+			part: st.part,
+			who: "me",
+			text,
+			cls: "me",
+			...(name ? { name } : {}),
+		},
 	});
 };
 
@@ -940,7 +987,7 @@ const answer = (st: JkSt, i: number, ago: number, evs: JkEv[]): void => {
 	});
 	evs.push({ t: "combo", combo: st.combo });
 	postMine(st, opt.text, evs);
-	st.q.unshift(...closeSeq(st, w.pick, opt.fit));
+	st.q.unshift(...closeSeq(st, w.pick, opt.fit, opt));
 	w.phase = "reveal";
 	w.revealLeft = r.reveal;
 	w.t0 = Math.min(w.elapsed, w.pick.open);
@@ -1064,7 +1111,7 @@ const answerOv = (st: JkSt, i: number, ago: number, evs: JkEv[]): void => {
 	});
 	evs.push({ t: "combo", combo: st.combo });
 	postMine(st, opt.text, evs);
-	st.q.unshift(...closeSeq(st, pick, opt.fit));
+	st.q.unshift(...closeSeq(st, pick, opt.fit, opt));
 	if (ov.duty) {
 		st.dutyFit = opt.fit;
 		st.dutyAt = st.wall;
@@ -1075,6 +1122,20 @@ const answerOv = (st: JkSt, i: number, ago: number, evs: JkEv[]): void => {
 const timeoutOv = (st: JkSt, evs: JkEv[]): void => {
 	const ov = st.ov;
 	if (ov?.phase !== "open" || ov.win.type !== "pick") return;
+	const tf = ov.duty ? undefined : ov.win.timeoutFit;
+	if (tf) {
+		// 黙って いる ことが 答え（紅白の 除夜の 鐘）：その 合い・速さ 1.0・コンボ +1。キリコは 書かない
+		const gain = gainOf(st, ov.win.weight, tf, 1);
+		st.combo = tf === "miss" ? 0 : st.combo + 1;
+		st.comboMax = Math.max(st.comboMax, st.combo);
+		st.counts[tf]++;
+		wave(st, gain, st.rules.wave);
+		evs.push({ t: "reveal", chosen: null, fit: tf, gain, fast: false });
+		evs.push({ t: "combo", combo: st.combo });
+		st.q.unshift(...closeSeq(st, ov.win, tf));
+		toReveal(st, ov);
+		return;
+	}
 	st.combo = Math.floor(st.combo / 2);
 	st.counts.none++;
 	evs.push({ t: "reveal", chosen: null, fit: null, gain: 0, fast: false });
@@ -1095,6 +1156,8 @@ const gradeOv = (
 	evs: JkEv[],
 ): void => {
 	st.cueGrade = grade;
+	// 紅白の おみくじ：この あとの キリコの 名前欄（山場の 1語の 書きこみにも つく）
+	if (cue.names) st.myName = cue.names[grade];
 	if (grade === "none") {
 		st.combo = Math.floor(st.combo / 2);
 		st.counts.none++;
@@ -1507,6 +1570,10 @@ const startGapFlow = (st: JkSt): void => {
 			st.me999 = false;
 			st.dutyShown = false;
 			st.dutyFit = null;
+			if (st.laterTitle) {
+				st.titleFn = st.laterTitle;
+				st.laterTitle = null;
+			}
 			const fn = st.nextTitle ?? st.titleFn ?? r.title;
 			st.nextTitle = null;
 			st.title = fn(st.part);
@@ -1895,6 +1962,7 @@ export const jkView = (st: JkSt): JkView => {
 		gap: st.gapOn,
 		flood: st.floodOn,
 		G: st.G,
+		name: nameOf(st),
 	};
 };
 
@@ -1931,6 +1999,7 @@ export type JkScriptSeg = {
 	readonly title?: {
 		readonly now?: JkTitleFn;
 		readonly next?: JkTitleFn | null;
+		readonly later?: JkTitleFn;
 	};
 	/** 区切りの 頭で スレの 上に 止める 書きこみ。 */
 	readonly pin?: string;
@@ -2000,6 +2069,8 @@ export type JkScript = {
 		readonly when: (slot: JkSlot) => boolean;
 	}[];
 	readonly quitNote: string;
+	/** キリコの 名前欄（名目の 時刻 → 文。紅白の 0時までの 時計）。 */
+	readonly name?: (t: number, slot: JkSlot) => string | null;
 	/** 帯を 外れた ときだけ 動かす（post・boost・comboMin）。 */
 	readonly tune?: Partial<Pick<JkRules, "post" | "boost" | "comboMin">>;
 	readonly bands: JkBands;
@@ -2070,6 +2141,7 @@ export const compileScript = (
 		];
 		const now = s.title?.now;
 		const next = s.title?.next;
+		const later = s.title?.later;
 		return {
 			start: s.at,
 			dur,
@@ -2089,6 +2161,7 @@ export const compileScript = (
 							...(next !== undefined
 								? { next: next ? (n: number) => next(n, slot) : null }
 								: {}),
+							...(later ? { later: (n: number) => later(n, slot) } : {}),
 						},
 					}
 				: {}),
@@ -2171,6 +2244,7 @@ export const compileScript = (
 			open: D.open,
 			...(p.replies ? { after: { replies: p.replies } } : {}),
 		},
+		...(p.name ? { myName: (t: number) => p.name?.(t, slot) ?? null } : {}),
 		display: D.display,
 		writer: {
 			recent: D.recent,

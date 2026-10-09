@@ -7,6 +7,7 @@
 // - 絵は 同梱の 物（sprites/projector.png・copipe.png・enjo.png）と 塗り（ui/cinemaDecor.ts の 鯖の 絵）。絵に 出す 文は SORA_ART。
 // - 場面の 進みは 名目の 時計（JkView.t。見えない あいだ 止まる・開発の 速さにも 合う）、点滅は 実際の 時計。
 // - 動きを へらす 設定：稲光・点滅・崩壊の 飛びちりを 止める（止まった 絵で 見せる）。読めない 絵は 四角で 描く（止まらない）。
+// 字・数字・小さな 人の 道具（text・num・person）と 判定の 色は 劇場の TV（ui/jikkyoKohakuTv.ts）も 使う。
 
 import type { JkCueGrade, JkEv, JkView } from "../core/jikkyo";
 import { SORA_ART, type SoraData } from "../data/jikkyo/sora";
@@ -45,16 +46,23 @@ const DIGIT: Readonly<Record<string, readonly string[]>> = {
 	"9": ["###", "#.#", "###", "..#", "###"],
 };
 
-const numW = (s: string, k: number) => (s.length * 4 - 1) * k;
+export const numW = (s: string, k: number) => (s.length * 4 - 1) * k;
 
-const num = (g: G, s: string, x: number, y: number, k: number, ink: string) =>
+export const num = (
+	g: G,
+	s: string,
+	x: number,
+	y: number,
+	k: number,
+	ink: string,
+) =>
 	[...s].forEach((ch, i) => {
 		const art = DIGIT[ch];
 		if (art) blit(g, art, x + i * 4 * k, y, { "#": ink }, k);
 	});
 
 /** 字（outline が あれば 4方向に ふちどり）。 */
-const text = (
+export const text = (
 	g: G,
 	s: string,
 	x: number,
@@ -89,7 +97,7 @@ const bands = (g: G, cols: readonly string[], y0: number, h: number) => {
 	});
 };
 
-const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+export const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
 
 type Imgs = {
 	projector: HTMLImageElement | null;
@@ -129,7 +137,13 @@ const walker = (
 };
 
 /** 小さな 人（塗り。体の 色・頭）。 */
-const person = (g: G, x: number, y: number, body: string, hair: string) => {
+export const person = (
+	g: G,
+	x: number,
+	y: number,
+	body: string,
+	hair: string,
+) => {
 	g.fillStyle = hair;
 	g.fillRect(x + 1, y, 4, 2);
 	g.fillStyle = "#f2c8a0";
@@ -810,7 +824,7 @@ const drawFrame = (
 	});
 };
 
-const GRADE_INK: Readonly<Record<JkCueGrade, string>> = {
+export const GRADE_INK: Readonly<Record<JkCueGrade, string>> = {
 	kami: "#ffe060",
 	oshii: "#9ad0ff",
 	late: "#9ad0ff",

@@ -1,6 +1,8 @@
 // 実況の 番組の 試験（pnpm test で いっしょに 動く）。
-// A 節：映画館の 演出（曜日で かわる 会場の 文・スクリーンと 客席の 飾り。data/jikkyo/text.ts・ui/cinemaDecor.ts）。
+// A 節：映画館の 演出（曜日で かわる 会場の 文・スクリーンと 客席の 飾り。data/jikkyo/text.ts・ui/cinemaDecor.ts）と
+// 劇場の 12月・1月の 文。
 // E 節：実況の エンジン（core/jikkyo.ts）を ボットで 1歩ずつ 回す。Y 節：ナイター実況（core/jikkyoYakyu.ts・data/jikkyo/yakyu.ts）。
+// S 節：映画館の『空飛ぶ鯖』（data/jikkyo/sora.ts）。K 節：劇場の 紅白スレ合戦（data/jikkyo/kohaku.ts）。D 節：番組表。
 // 形は townTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は 節の 字。
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -8,6 +10,7 @@ import { join } from "node:path";
 import {
 	compileScript,
 	gradeCue,
+	type JkCueGrade,
 	type JkEv,
 	type JkInput,
 	type JkLine,
@@ -38,6 +41,24 @@ import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
 import type { Today } from "../data/calendar";
 import { PROGRAMS } from "../data/jikkyo/index";
+import {
+	KOHAKU,
+	KOHAKU_ART,
+	KOHAKU_CARDS,
+	KOHAKU_CUE,
+	KOHAKU_EXACT,
+	KOHAKU_NAMES,
+	KOHAKU_POOLS,
+	KOHAKU_SAY,
+	KOHAKU_SCENES,
+	KOHAKU_THREAD,
+	type KohakuData,
+	kohakuCards,
+	kohakuClock,
+	kohakuKai,
+	kohakuLeft,
+	kohakuName,
+} from "../data/jikkyo/kohaku";
 import { isVenue, programSlot } from "../data/jikkyo/schedule";
 import {
 	SORA,
@@ -52,9 +73,12 @@ import {
 	type DayLines,
 	isRoadshowNight,
 	JK_PROG_MSG,
+	JK_PROG_MSGS,
 	JK_PROG_RESULT,
 	JK_PROG_TV,
+	kohakuMode,
 	ONJ_PHRASES,
+	progMsg,
 	STAFF_LINES,
 	STAFF_ONCE,
 	staffLines,
@@ -159,7 +183,7 @@ const WEEK = [0, 1, 2, 3, 4, 5, 6];
 const FRI = day(5);
 const TUE = day(2);
 
-/** 会場の 文の 表（物と 人）を 平らに。 */
+/** 会場の 文の 表（物と 人）を 平らに（{kai} は いちばん 長い 回 40 で 埋める）。 */
 const tableLines = (): { where: string; fid: string; text: string }[] =>
 	(
 		[
@@ -173,7 +197,7 @@ const tableLines = (): { where: string; fid: string; text: string }[] =>
 					r.lines.map((text) => ({
 						where: `${tag}.${fid}.${key}[${i}]`,
 						fid,
-						text,
+						text: text.replaceAll("{kai}", "40"),
 					})),
 				),
 			),
@@ -266,23 +290,27 @@ test(
 	},
 );
 
-test("A3", "映画館の ほかの 施設は 文の 上書きも 飾りも ない", () => {
-	for (const f of FACILITIES) {
-		const rows = facilityRoomRows(f);
-		const isCinema = f.id === "cinema";
-		for (const t of [FRI, TUE]) {
-			ok(
-				(typeof facilityDecor(f, rows, t) === "function") === isCinema,
-				`${f.id}: decor ${typeof facilityDecor(f, rows, t)}`,
-			);
-			if (isCinema) continue;
-			for (const k of kindsOf(f))
-				ok(venueLines(f.id, k, t) === null, `${f.id}.${k}: overridden`);
-			for (const p of peopleOf(f))
-				ok(staffLines(f.id, p, t) === null, `${f.id}.${p}: overridden`);
+test(
+	"A3",
+	"10月は 映画館の ほかの 施設に 文の 上書きが なく、飾りは 映画館 だけ",
+	() => {
+		for (const f of FACILITIES) {
+			const rows = facilityRoomRows(f);
+			const isCinema = f.id === "cinema";
+			for (const t of [FRI, TUE]) {
+				ok(
+					(typeof facilityDecor(f, rows, t) === "function") === isCinema,
+					`${f.id}: decor ${typeof facilityDecor(f, rows, t)}`,
+				);
+				if (isCinema) continue;
+				for (const k of kindsOf(f))
+					ok(venueLines(f.id, k, t) === null, `${f.id}.${k}: overridden`);
+				for (const p of peopleOf(f))
+					ok(staffLines(f.id, p, t) === null, `${f.id}.${p}: overridden`);
+			}
 		}
-	}
-});
+	},
+);
 
 /** 描いた 命令を 記録する だけの canvas（色・透明度・文字も 記録）。 */
 const stubCanvas = () => {
@@ -540,6 +568,63 @@ test(
 			forgetJikkyoMemo();
 			unstore();
 		}
+	},
+);
+
+/** 月日（曜日は 決め打ち）。 */
+const date = (m: number, d: number): Today => ({ m, d, w: 3 });
+/** 劇場の 日付の 見本（本番・公開リハ・録画・番組なし）。 */
+const THEATER_DAYS: readonly [Today, "live" | "reha" | "rec" | null][] = [
+	[date(12, 31), "live"],
+	[date(12, 1), "reha"],
+	[date(12, 15), "reha"],
+	[date(12, 30), "reha"],
+	[date(1, 1), "rec"],
+	[date(1, 3), "rec"],
+	[date(1, 7), "rec"],
+	[date(1, 8), null],
+	[date(6, 15), null],
+	[date(11, 30), null],
+];
+
+test(
+	"A7",
+	"劇場の 文：12/31 は 第{回}回 の 本番、12月は 公開リハ、1/1〜7 は 録画、ほかの 日は いつもの 文（どれも 22字 × 2行）",
+	() => {
+		for (const [t, mode] of THEATER_DAYS) {
+			const at = `${t.m}/${t.d}`;
+			ok(kohakuMode(t) === mode, `${at}: mode ${kohakuMode(t)}`);
+			const stage = venueLines("theater", "stage", t, 2026);
+			const actor = staffLines("theater", "theater_actor", t, 2026);
+			const bill = venueLines("theater", "playbill", t, 2026);
+			if (mode === null) {
+				ok(stage === null && actor === null && bill === null, `${at}: lines`);
+				continue;
+			}
+			ok(stage?.length && actor?.length && bill?.length, `${at}: no lines`);
+			const s = stage?.join() ?? "";
+			ok(
+				mode === "live"
+					? s.includes("第15回")
+					: mode === "reha"
+						? s.includes("公開リハ")
+						: s.includes("録画"),
+				`${at}: stage ${s}`,
+			);
+			for (const l of [...(stage ?? []), ...(actor ?? []), ...(bill ?? [])])
+				fitsWindow(`${at} theater`, l);
+		}
+		// 回は 年で 決まる（2051年で 第40回）
+		const far =
+			venueLines("theater", "stage", date(12, 31), 2051)?.join() ?? "";
+		ok(far.includes("第40回"), `2051: ${far}`);
+		fitsWindow("2051 stage", far);
+		// 12月の 役者の 1行（公開リハの あいだ）
+		ok(
+			staffLines("theater", "theater_actor", date(12, 15), 2026)?.join() ===
+				"大みそかの　夜は、\n『紅白スレ合戦』の　本番やで",
+			"the December actor line",
+		);
 	},
 );
 
@@ -1892,6 +1977,7 @@ type Shown = Played & { tl: JkTimeline; G: number };
 /**
  * 台本を ボットで 最後まで 回す（overlay の 窓・当番・山場）。窓ごとに ボットが 決めた ms に 答え、
  * 山場は ちょうど ＋ ずれ で 押す（ago は 押してから その 歩の 終わりまで）。2択に その 合いが なければ もう一方。
+ * 答えない ことが ボットの 合いと 同じ 窓（timeoutFit）では 何も 押さない。
  */
 const playShow = (
 	slot: JkSlot,
@@ -1948,14 +2034,17 @@ const playShow = (
 				const el = w.open - w.left;
 				const a = plan.a;
 				if (a && !plan.done && el >= a.ms) {
-					const opts = w.w.opts;
-					let i = opts.findIndex((o) => o.fit === a.fit);
-					if (i < 0)
-						i = opts.findIndex(
-							(o) => o.fit === (a.fit === "miss" ? "ok" : "miss"),
-						);
-					input = { pick: i, ago: el - a.ms };
 					plan.done = true;
+					// 黙る ことが その 合いの 窓（紅白の 鐘）では 書かない
+					if (a.fit !== w.w.timeoutFit) {
+						const opts = w.w.opts;
+						let i = opts.findIndex((o) => o.fit === a.fit);
+						if (i < 0)
+							i = opts.findIndex(
+								(o) => o.fit === (a.fit === "miss" ? "ok" : "miss"),
+							);
+						input = { pick: i, ago: el - a.ms };
+					}
 				}
 			}
 		}
@@ -2243,90 +2332,118 @@ test("S4", "2つの 種で pick の 文が ちがう（pick の 1/3 以上）", 
 	}
 });
 
+/** 台本の 番組の ボットの 上映の 組（S 節と K 節で 同じ 試験を 回す）。 */
+type ShowSet = {
+	readonly script: JkScript;
+	readonly slots: readonly JkSlot[];
+	readonly list: () => Shown[];
+	readonly get1000: string;
+	readonly flood: readonly string[];
+	/** 見るだけの 上映の 種。 */
+	readonly miruSeed: (slot: JkSlot) => string;
+};
+
+const SORA_SET: ShowSet = {
+	script: SORA,
+	slots: SLOTS,
+	list: () => shows(),
+	get1000: SORA_THREAD.get1000,
+	flood: SORA_POOLS.flood,
+	miruSeed: (slot) => `s5:${slot.live}`,
+};
+
+/** 950 の 当番と 切れ目（上映ごとに 2回まで・山場と 次の 窓の 前は 出ない・切れ目の 長さ・見るだけでも 出る）。 */
+const checkDuty = (set: ShowSet): void => {
+	const cues = compileScript(
+		set.script,
+		set.slots[0],
+		seeded("x"),
+	).tl.overlays.filter((o) => o.win.type === "cue");
+	const seen = new Set<number>();
+	for (const p of set.list()) {
+		const opens = p.log.filter(
+			(r) => r.ev.t === "open" && r.ev.win.id.startsWith("duty"),
+		);
+		ok(opens.length <= 2, `${opens.length} duties`);
+		for (const r of opens) {
+			const t = r.t ?? 0;
+			for (const c of cues)
+				if (c.win.type === "cue")
+					ok(
+						t < c.at - 6000 ||
+							t > c.at + (c.win.pulses + 1.5) * c.win.beat + 6000,
+						`a duty near the cue at ${t}`,
+					);
+			const next = p.tl.overlays.find(
+				(o) => o.win.type === "pick" && o.at >= t,
+			);
+			ok(
+				!next || next.at - t >= 4500,
+				`a duty ${next && next.at - t}ms before a pick`,
+			);
+		}
+		// 切れ目の 長さ（スレごとに 当番の 答えから）
+		let shown = false;
+		let fit: string | null = null;
+		let ans = 0;
+		let gapOn: number | null = null;
+		let inDuty = false;
+		for (const r of p.log) {
+			const ev = r.ev;
+			if (ev.t === "open") inDuty = ev.win.id.startsWith("duty");
+			if (ev.t === "open" && inDuty) {
+				shown = true;
+				fit = null;
+			}
+			if (ev.t === "reveal" && inDuty) {
+				fit = ev.fit ?? "none";
+				ans = r.wall;
+			}
+			if (ev.t === "gap" && ev.on) gapOn = r.wall;
+			if (ev.t === "gap" && !ev.on && gapOn !== null) {
+				const len = r.wall - gapOn;
+				const G = { best: 300, ok: 1500, miss: 2500, none: 2500 };
+				const want = !shown
+					? 800
+					: fit === null
+						? 2500
+						: Math.min(
+								2500,
+								Math.max(0, ans - gapOn) + G[fit as keyof typeof G],
+							);
+				ok(
+					// 答えは 歩の はじめに 数えるので 1歩（100ms）早く なる ことが ある
+					len >= want - 101 && len <= Math.max(want, 250) + 101,
+					`gap ${len}ms, want ${want} (duty ${shown} ${fit})`,
+				);
+				seen.add(
+					want === 800 ? 800 : fit === null ? 2500 : G[fit as keyof typeof G],
+				);
+				shown = false;
+				fit = null;
+				gapOn = null;
+			}
+		}
+	}
+	for (const w of [300, 800, 2500])
+		ok(seen.has(w), `no ${w}ms gap in the runs (${[...seen]})`);
+	// 見るだけ（群衆だけ）でも 当番が 1回は 出る
+	for (const slot of set.slots) {
+		const m = playShow(slot, "miru", set.miruSeed(slot), {
+			keep: true,
+			script: set.script,
+		});
+		ok(
+			m.log.some((r) => r.ev.t === "open" && r.ev.win.id.startsWith("duty")),
+			`miru ${JSON.stringify(slot)}: no duty`,
+		);
+	}
+};
+
 test(
 	"S5",
 	"950 の 当番：上映ごとに 2回まで・山場の 前後 6秒と 次の 窓の 4.5秒 以内に 出ない・切れ目は ◎ 0.3／○ 1.5／× と 見送り 2.5秒（出さない スレは 0.8秒）・見るだけでも 1回は 出る",
-	() => {
-		const cues = compileScript(SORA, LIVE, seeded("x")).tl.overlays.filter(
-			(o) => o.win.type === "cue",
-		);
-		const seen = new Set<number>();
-		for (const p of shows()) {
-			const opens = p.log.filter(
-				(r) => r.ev.t === "open" && r.ev.win.id.startsWith("duty"),
-			);
-			ok(opens.length <= 2, `${opens.length} duties`);
-			for (const r of opens) {
-				const t = r.t ?? 0;
-				for (const c of cues)
-					if (c.win.type === "cue")
-						ok(
-							t < c.at - 6000 ||
-								t > c.at + (c.win.pulses + 1.5) * c.win.beat + 6000,
-							`a duty near the cue at ${t}`,
-						);
-				const next = p.tl.overlays.find(
-					(o) => o.win.type === "pick" && o.at >= t,
-				);
-				ok(
-					!next || next.at - t >= 4500,
-					`a duty ${next && next.at - t}ms before a pick`,
-				);
-			}
-			// 切れ目の 長さ（スレごとに 当番の 答えから）
-			let shown = false;
-			let fit: string | null = null;
-			let ans = 0;
-			let gapOn: number | null = null;
-			let inDuty = false;
-			for (const r of p.log) {
-				const ev = r.ev;
-				if (ev.t === "open") inDuty = ev.win.id.startsWith("duty");
-				if (ev.t === "open" && inDuty) {
-					shown = true;
-					fit = null;
-				}
-				if (ev.t === "reveal" && inDuty) {
-					fit = ev.fit ?? "none";
-					ans = r.wall;
-				}
-				if (ev.t === "gap" && ev.on) gapOn = r.wall;
-				if (ev.t === "gap" && !ev.on && gapOn !== null) {
-					const len = r.wall - gapOn;
-					const G = { best: 300, ok: 1500, miss: 2500, none: 2500 };
-					const want = !shown
-						? 800
-						: fit === null
-							? 2500
-							: Math.min(
-									2500,
-									Math.max(0, ans - gapOn) + G[fit as keyof typeof G],
-								);
-					ok(
-						// 答えは 歩の はじめに 数えるので 1歩（100ms）早く なる ことが ある
-						len >= want - 101 && len <= Math.max(want, 250) + 101,
-						`gap ${len}ms, want ${want} (duty ${shown} ${fit})`,
-					);
-					seen.add(
-						want === 800 ? 800 : fit === null ? 2500 : G[fit as keyof typeof G],
-					);
-					shown = false;
-					fit = null;
-					gapOn = null;
-				}
-			}
-		}
-		for (const w of [300, 800, 2500])
-			ok(seen.has(w), `no ${w}ms gap in the runs (${[...seen]})`);
-		// 見るだけ（群衆だけ）でも 当番が 1回は 出る
-		for (const slot of SLOTS) {
-			const m = playShow(slot, "miru", `s5:${slot.live}`, { keep: true });
-			ok(
-				m.log.some((r) => r.ev.t === "open" && r.ev.win.id.startsWith("duty")),
-				`miru ${slot.live}: no duty`,
-			);
-		}
-	},
+	() => checkDuty(SORA_SET),
 );
 
 test(
@@ -2389,88 +2506,94 @@ test(
 	},
 );
 
+/** 番号（1000・1001 の ほかに 1000 以上なし・キリコは 999 まで・999 は 1つ・roll の あとは >>1 から）。 */
+const checkNumbers = (set: ShowSet): void => {
+	for (const p of set.list()) {
+		let part = -1;
+		let last = 0;
+		let rolled = false;
+		const n999 = new Map<number, number>();
+		for (const rec of p.log) {
+			if (rec.ev.t === "roll") {
+				ok(rec.ev.part === part + 1, `roll to ${rec.ev.part} from ${part}`);
+				rolled = true;
+				continue;
+			}
+			if (rec.ev.t !== "line" && rec.ev.t !== "pin") continue;
+			const l = rec.ev.line;
+			if (part < 0) part = l.part;
+			if (rolled) {
+				ok(
+					l.part === part + 1 && l.no === 1 && l.cls === "title",
+					`after roll: ${l.part} ${l.no}`,
+				);
+				part = l.part;
+				last = 0;
+				rolled = false;
+			}
+			ok(l.part === part, `line part ${l.part} in ${part}`);
+			if (l.no === null) continue;
+			if (l.no >= 1000)
+				ok(
+					(l.no === 1000 && l.text === set.get1000) ||
+						(l.no === 1001 && l.cls === "over" && l.text === OVER_TEXT),
+					`no ${l.no}: ${l.text}`,
+				);
+			if (l.who === "me") ok(l.no <= 999, `kiriko at ${l.no}`);
+			ok(l.no > last, `numbers go back: ${last} → ${l.no} (${l.text})`);
+			last = l.no;
+			if (l.no === 999) n999.set(l.part, (n999.get(l.part) ?? 0) + 1);
+		}
+		for (const [pt, n] of n999) ok(n === 1, `part ${pt}: ${n} lines at 999`);
+		const r = p.result;
+		if (r)
+			ok(
+				r.part === r.part0 + Math.floor(r.res / 1000),
+				`part ${r.part} res ${r.res}`,
+			);
+	}
+};
+
 test(
 	"S7",
 	"番号：1000・1001 の ほかに 1000 以上は なく、キリコは 999 まで、1つの スレに 999 は 1つ、roll の あとは 次の ★ の >>1 から",
-	() => {
-		for (const p of shows()) {
-			let part = -1;
-			let last = 0;
-			let rolled = false;
-			const n999 = new Map<number, number>();
-			for (const rec of p.log) {
-				if (rec.ev.t === "roll") {
-					ok(rec.ev.part === part + 1, `roll to ${rec.ev.part} from ${part}`);
-					rolled = true;
-					continue;
-				}
-				if (rec.ev.t !== "line" && rec.ev.t !== "pin") continue;
-				const l = rec.ev.line;
-				if (part < 0) part = l.part;
-				if (rolled) {
-					ok(
-						l.part === part + 1 && l.no === 1 && l.cls === "title",
-						`after roll: ${l.part} ${l.no}`,
-					);
-					part = l.part;
-					last = 0;
-					rolled = false;
-				}
-				ok(l.part === part, `line part ${l.part} in ${part}`);
-				if (l.no === null) continue;
-				if (l.no >= 1000)
-					ok(
-						(l.no === 1000 && l.text === SORA_THREAD.get1000) ||
-							(l.no === 1001 && l.cls === "over" && l.text === OVER_TEXT),
-						`no ${l.no}: ${l.text}`,
-					);
-				if (l.who === "me") ok(l.no <= 999, `kiriko at ${l.no}`);
-				ok(l.no > last, `numbers go back: ${last} → ${l.no} (${l.text})`);
-				last = l.no;
-				if (l.no === 999) n999.set(l.part, (n999.get(l.part) ?? 0) + 1);
-			}
-			for (const [pt, n] of n999) ok(n === 1, `part ${pt}: ${n} lines at 999`);
-			const r = p.result;
-			if (r)
-				ok(
-					r.part === r.part0 + Math.floor(r.res / 1000),
-					`part ${r.part} res ${r.res}`,
-				);
-		}
-	},
+	() => checkNumbers(SORA_SET),
 );
+
+/** 窓の 候補は 群衆に 出ず、直近 4行に 同じ 文が ない（選んだ ◎ を かさねる 行・洪水を のぞく）。 */
+const checkRepeats = (set: ShowSet): void => {
+	const flood = new Set<string>(set.flood);
+	for (const p of set.list()) {
+		let lastBest: string | null = null;
+		const recent: string[] = [];
+		for (const rec of p.log) {
+			const ev = rec.ev;
+			if (ev.t === "open" && ev.win.type === "pick")
+				lastBest = ev.win.opts.find((o) => o.fit === "best")?.text ?? null;
+			if (ev.t !== "line" && ev.t !== "pin") continue;
+			const l = ev.line;
+			const w = rec.open;
+			if (w && l.who !== "me")
+				ok(!w.opts.some((o) => o.text === l.text), `"${l.text}" while open`);
+			// 書き手が 覚える 行（題・1001・洪水の ほか ぜんぶ。キリコの 行も）と 同じ 窓で 見る
+			if (
+				l.cls === "title" ||
+				l.cls === "over" ||
+				(l.who !== "me" && flood.has(l.text))
+			)
+				continue;
+			if (l.who !== "me" && l.text !== lastBest)
+				ok(!recent.includes(l.text), `"${l.text}" again within 4 lines`);
+			recent.push(l.text);
+			if (recent.length > 4) recent.shift();
+		}
+	}
+};
 
 test(
 	"S8",
 	"窓が 開いて いる あいだ その 候補の 文は 群衆に 出ず、直近 4行に 同じ 文が ない（選んだ ◎ を かさねる 行・洪水を のぞく）",
-	() => {
-		const flood = new Set<string>(SORA_POOLS.flood);
-		for (const p of shows()) {
-			let lastBest: string | null = null;
-			const recent: string[] = [];
-			for (const rec of p.log) {
-				const ev = rec.ev;
-				if (ev.t === "open" && ev.win.type === "pick")
-					lastBest = ev.win.opts.find((o) => o.fit === "best")?.text ?? null;
-				if (ev.t !== "line" && ev.t !== "pin") continue;
-				const l = ev.line;
-				const w = rec.open;
-				if (w && l.who !== "me")
-					ok(!w.opts.some((o) => o.text === l.text), `"${l.text}" while open`);
-				// 書き手が 覚える 行（題・1001・洪水の ほか ぜんぶ。キリコの 行も）と 同じ 窓で 見る
-				if (
-					l.cls === "title" ||
-					l.cls === "over" ||
-					(l.who !== "me" && flood.has(l.text))
-				)
-					continue;
-				if (l.who !== "me" && l.text !== lastBest)
-					ok(!recent.includes(l.text), `"${l.text}" again within 4 lines`);
-				recent.push(l.text);
-				if (recent.length > 4) recent.shift();
-			}
-		}
-	},
+	() => checkRepeats(SORA_SET),
 );
 
 test("S9", "B：1回で ノート、1.5秒 以内の 2回目で 出る（null）", () => {
@@ -2740,20 +2863,940 @@ test(
 		ok(
 			isVenue("cinema") &&
 				isVenue("hall") &&
-				!isVenue("theater") &&
+				isVenue("theater") &&
 				!isVenue("bar"),
 			"isVenue",
 		);
-		// 映画館の スクリーンと 客席だけが 番組（ほかの 施設に jikkyo は ない）
+		// 映画館の スクリーンと 客席・劇場の 舞台だけが 番組（ほかの 施設に jikkyo は ない）
+		const plays: string[] = [];
 		for (const f of FACILITIES)
 			for (const [k, v] of Object.entries(f.room?.plays ?? {}))
-				if (v === "jikkyo")
-					ok(
-						f.id === "cinema" && ["screen", "seat"].includes(k),
-						`${f.id}.${k}`,
-					);
+				if (v === "jikkyo") plays.push(`${f.id}.${k}`);
+		ok(
+			plays.sort().join() === "cinema.screen,cinema.seat,theater.stage",
+			`jikkyo plays ${plays}`,
+		);
 		ok(PROGRAMS.sora === SORA, "sora is not in PROGRAMS");
 		ok(scriptGoal(SORA, LIVE) === 4 && scriptGoal(SORA, RERUN) === 2, "goals");
+	},
+);
+
+// ───────────────── E12 答えない ことが 正解の 窓 ─────────────────
+
+test(
+	"E12",
+	"timeoutFit：答えないと その 合い（速さ 1.0）で コンボ +1、キリコは 書かない。blocking の 窓では まだ 使えない",
+	() => {
+		const o = (text: string, fit: "best" | "ok" | "miss") => ({ text, fit });
+		// ★1 の 小さな 番組（950 にも 1000 にも 届かない）
+		const script: JkScript = {
+			...KOHAKU,
+			length: 30000,
+			goal: { live: 1, rerun: 1 },
+			timeline: () => ({
+				segments: [{ at: 0, scene: "wait", pool: "wait", rate: 1 }],
+				picks: [
+					{
+						at: 2000,
+						sets: [[o("31", "best"), o("はよ", "ok"), o("乙", "miss")]],
+					},
+					{
+						at: 10000,
+						open: 5000,
+						timeoutFit: "best",
+						cheer: "bellOk",
+						sets: [[o("うおおお", "miss"), o("ゴーン", "ok")]],
+					},
+				],
+				cues: [],
+			}),
+		};
+		const { tl, rules, pools } = compileScript(script, K_LIVE, seeded("e12"));
+		const st = jkStart(tl, rules, pools, { rand: seeded("e12:eng") });
+		const log: JkEv[] = [];
+		let answered = false;
+		for (let k = 0; k < 1000 && !st.ended; k++) {
+			const v = jkView(st);
+			let input: JkInput | undefined;
+			if (
+				!answered &&
+				v.win &&
+				!v.win.reveal &&
+				v.win.open - v.win.left >= 900
+			) {
+				input = {
+					pick:
+						v.win.w.type === "pick"
+							? v.win.w.opts.findIndex((x) => x.fit === "best")
+							: 0,
+					ago: 0,
+				};
+				answered = true;
+			}
+			log.push(...jkStep(st, 100, input));
+		}
+		const reveals = log.filter((e) => e.t === "reveal");
+		ok(reveals.length === 2, `${reveals.length} reveals`);
+		const r2 = reveals[1];
+		const want = Math.round(((rules.post * st.G) / tl.P) * rules.fit.best);
+		ok(
+			r2?.t === "reveal" &&
+				r2.chosen === null &&
+				r2.fit === "best" &&
+				r2.gain === want,
+			`silent reveal ${JSON.stringify(r2)} want gain ${want}`,
+		);
+		const combos = log.flatMap((e) => (e.t === "combo" ? [e.combo] : []));
+		ok(combos.join() === "1,2", `combos ${combos}`);
+		const k2 = log.indexOf(r2 as JkEv);
+		const mine = log
+			.slice(k2)
+			.filter((e) => e.t === "line" && e.line.who === "me");
+		ok(!mine.length, "Kiriko wrote at the silent window");
+		const after = log
+			.slice(k2)
+			.flatMap((e) => (e.t === "line" ? [e.line.text] : []))
+			.slice(0, 6);
+		ok(
+			after.some((t) => (KOHAKU_POOLS.bellOk as readonly string[]).includes(t)),
+			`no cheer after the silence: ${after}`,
+		);
+		const res = jkResult(st);
+		ok(
+			res?.counts.best === 2 && res.counts.none === 0,
+			`counts ${JSON.stringify(res?.counts)}`,
+		);
+		// blocking の 窓の timeoutFit は まだ 投げる
+		const g = gameOf(1);
+		const tl2 = tinyTl(4, 2);
+		const bad = {
+			...tl2,
+			segs: tl2.segs.map((s) =>
+				s.win ? { ...s, win: { ...s.win, timeoutFit: "best" as const } } : s,
+			),
+		};
+		let threw = false;
+		try {
+			jkStart(bad, yakyuRules(g), YAKYU_POOLS, { rand: seeded("e12:b") });
+		} catch {
+			threw = true;
+		}
+		ok(threw, "a blocking timeoutFit did not throw");
+	},
+);
+
+// ───────────────── K 紅白スレ合戦 → 年越し ─────────────────
+
+const K_LIVE: JkSlot = { program: "kohaku", live: true, y: 2026 };
+const K_REHA: JkSlot = {
+	program: "kohaku",
+	live: false,
+	mode: "reha",
+	y: 2026,
+};
+const K_REC: JkSlot = { program: "kohaku", live: false, mode: "rec", y: 2025 };
+const K_SLOTS = [K_LIVE, K_REHA, K_REC] as const;
+const kTag = (s: JkSlot) =>
+	s.live ? "LIVE" : s.mode === "rec" ? "REC" : "REHA";
+
+const kohakuTl = (slot: JkSlot, seed: string) =>
+	KOHAKU.timeline(seeded(seed), slot);
+
+/** 審査の 窓（言いきりの 組を 持つ pick）。 */
+const isShinsa = (p: { sets: readonly (readonly { text: string }[])[] }) =>
+	p.sets.some((s) =>
+		s.some((o) => o.text === KOHAKU_SAY.aka || o.text === KOHAKU_SAY.shiro),
+	);
+
+test(
+	"K1",
+	"時間割：区切りが 並び 160秒 以内、組は ◎ 1つの 3択（審査は 1組、鐘は ◎ なしの 2択で 黙れば ◎）、窓と 山場が 重ならず、場面は 絵の 鍵、釣り札 2つまで、× の 半分 以上は 別の 時の ◎",
+	() => {
+		ok(KOHAKU.length <= 160000, `length ${KOHAKU.length}`);
+		const words = new Set<string>();
+		const bests = new Set<string>();
+		const misses: string[] = [];
+		let traps = 0;
+		for (const slot of K_SLOTS)
+			for (const seed of ["k1:a", "k1:b", "k1:c", "k1:d"]) {
+				const x = kohakuTl(slot, seed);
+				const at = x.segments.map((s) => s.at);
+				ok(at[0] === 0, "the first segment is not at 0");
+				ok(
+					at.every((a, i) => i === 0 || a > at[i - 1]),
+					`segments out of order: ${at}`,
+				);
+				ok(
+					at.every((a) => a < KOHAKU.length),
+					"a segment past the end",
+				);
+				for (const s of x.segments)
+					ok(
+						(KOHAKU_SCENES as readonly string[]).includes(s.scene),
+						`scene ${s.scene} has no picture`,
+					);
+				const wins: [number, number][] = [];
+				let bells = 0;
+				for (const p of x.picks) {
+					ok(p.sets.length >= 1 && p.sets.length <= 3, `${p.at}: sets`);
+					if (!isShinsa(p))
+						ok(p.sets.length >= 2, `${p.at}: only ${p.sets.length} set`);
+					else ok(p.sets.length === 1, `${p.at}: the judging has sets`);
+					if (p.timeoutFit) {
+						bells++;
+						ok(p.timeoutFit === "best", `${p.at}: timeoutFit ${p.timeoutFit}`);
+						ok((p.open ?? 4000) === 5000, `${p.at}: the bell is not 5s`);
+					}
+					for (const set of p.sets) {
+						const n = (f: string) => set.filter((o) => o.fit === f).length;
+						if (p.timeoutFit)
+							ok(
+								set.length === 2 &&
+									n("best") === 0 &&
+									n("ok") === 1 &&
+									n("miss") === 1,
+								`${p.at}: the bell set ${set.map((o) => o.text)}`,
+							);
+						else {
+							ok(set.length === 3, `${p.at}: ${set.length} options`);
+							ok(n("best") === 1 && n("ok") === 1, `${p.at}: not ◎○×`);
+						}
+						ok(
+							new Set(set.map((o) => o.text)).size === set.length,
+							`${p.at}: same text twice`,
+						);
+						if (set.some((o) => TRAPS.some((t) => t.test(o.text)))) traps++;
+						for (const o of set) {
+							if (o.fit === "best") bests.add(o.text);
+							if (o.fit === "miss") misses.push(o.text);
+						}
+					}
+					wins.push([p.at, p.at + (p.open ?? 4000) + 800]);
+				}
+				ok(bells === 1, `${bells} bells`);
+				for (const c of x.cues) {
+					words.add(c.word);
+					wins.push([c.at, c.at + (c.pulses + 1.5) * c.beat]);
+				}
+				wins.sort((a, b) => a[0] - b[0]);
+				for (let i = 1; i < wins.length; i++)
+					ok(wins[i][0] >= wins[i - 1][1], `windows overlap at ${wins[i][0]}`);
+				const { tl } = compileScript(KOHAKU, slot, seeded(seed));
+				ok(tl.P === x.picks.length + 2, `P ${tl.P}`);
+				ok(tl.total === KOHAKU.length, "total");
+			}
+		ok(traps / (K_SLOTS.length * 4) <= 2, `traps ${traps}`);
+		// 審査の 勝ち組は 種で かわる（どちらの 言いきりも ◎ に なる）
+		for (let i = 0; i < 20; i++)
+			for (const p of kohakuTl(K_LIVE, `k1:w${i}`).picks.filter(isShinsa))
+				for (const o of p.sets[0]) if (o.fit === "best") bests.add(o.text);
+		ok(
+			bests.has(KOHAKU_SAY.aka) && bests.has(KOHAKU_SAY.shiro),
+			"the judging never varies",
+		);
+		const elsewhere = misses.filter((t) => bests.has(t) || words.has(t));
+		ok(
+			elsewhere.length * 2 >= misses.length,
+			`× that are ◎ elsewhere: ${elsewhere.length}/${misses.length}`,
+		);
+	},
+);
+
+/** 紅白の 文（種類ごと）。 */
+const kohakuTexts = () => {
+	const fillN = (s: string) =>
+		s
+			.replaceAll("{n}", "999")
+			.replaceAll("{m}", "13")
+			.replaceAll("{kai}", "40")
+			.replaceAll("{c}", "04:45:00");
+	const tls = K_SLOTS.flatMap((slot) =>
+		["kw:a", "kw:b", "kw:c"].map((seed) => ({ slot, x: kohakuTl(slot, seed) })),
+	);
+	const opts = [
+		...tls.flatMap(({ x }) =>
+			x.picks.flatMap((p) => p.sets.flatMap((s) => s.map((o) => o.text))),
+		),
+		...KOHAKU.duty.first.map((o) => o.text),
+		...KOHAKU.duty.variants.flatMap((v) => v.opts.map((o) => o.text)),
+		...tls.flatMap(({ x }) => x.cues.map((c) => c.word)),
+		...Object.values(KOHAKU_SAY),
+	];
+	const crowd = Object.values(KOHAKU_POOLS).flatMap((l) => l.map(fillN));
+	const titles = [
+		...[1, 2, 5, 12].flatMap((n) =>
+			[2026, 2051].flatMap((y) =>
+				K_SLOTS.map((s) => KOHAKU.title(n, { ...s, y })),
+			),
+		),
+		...tls.flatMap(({ slot, x }) =>
+			x.segments.flatMap((s) =>
+				s.title?.later
+					? [1, 12].map((n) => s.title?.later?.(n, slot) ?? "")
+					: [],
+			),
+		),
+	];
+	const short = [
+		...tls.flatMap(({ x }) =>
+			x.segments.flatMap((s) => [
+				...(s.caption ? [s.caption] : []),
+				...(s.pin ? [s.pin] : []),
+				...(s.posts ?? []).map((p) => p.text),
+				...(s.react ?? []).flatMap((r) => (r.text ? [r.text] : [])),
+			]),
+		),
+		...[KOHAKU.duty.pin, ...KOHAKU.duty.variants.map((v) => v.pin)].map(fillN),
+		...Object.values(KOHAKU_THREAD).map(fillN),
+		KOHAKU_ART.soon,
+		KOHAKU_ART.aka,
+		KOHAKU_ART.shiro,
+		KOHAKU_ART.baton,
+		KOHAKU_ART.board,
+		...Object.values(KOHAKU_ART.win),
+		KOHAKU_ART.bell,
+		KOHAKU_ART.newYear,
+		KOHAKU_ART.akeome,
+		KOHAKU_ART.kari,
+		KOHAKU_ART.end,
+		KOHAKU.at1000(1, K_LIVE),
+	];
+	const names = [
+		...Object.values(KOHAKU_NAMES),
+		...K_SLOTS.flatMap((s) =>
+			[0, 50000, KOHAKU_EXACT].map((t) => kohakuName(t, s) ?? ""),
+		),
+	];
+	return { opts: [...new Set(opts)], crowd, titles, short, names };
+};
+
+test(
+	"K2",
+	"文：レス 12・候補 10・スレタイ（回 15〜51・★1〜12）・字幕・pin 22・名前欄 12、分かち書き、実在の 名前なし、キリコの 候補に「保守」なし、バルスなし、劇場の 窓は 22字 × 2行",
+	() => {
+		const { opts, crowd, titles, short, names } = kohakuTexts();
+		for (const t of crowd) ok(width(t) <= 12, `res "${t}" is ${width(t)} wide`);
+		for (const t of opts) ok(width(t) <= 10, `option "${t}" is ${width(t)}`);
+		for (const t of [...titles, ...short])
+			ok(width(t) <= 22, `"${t}" is ${width(t)} wide`);
+		for (const t of names)
+			ok(t && width(t) <= 12, `name "${t}" is ${width(t)}`);
+		ok(new Set(Object.values(KOHAKU_NAMES)).size === 5, "omikuji names repeat");
+		for (const t of [...crowd, ...opts]) {
+			const run = longRun(t);
+			ok(run === null, `"${t}": write "${run}" with a full-width space`);
+		}
+		for (const t of [...opts, ...crowd, ...titles, ...short, ...names]) {
+			for (const ng of NG_NAMES) ok(!t.includes(ng), `"${ng}" in ${t}`);
+			ok(!/[{}]/.test(t), `an unfilled {…} in ${t}`);
+			const bare = HOSHU_NAMES.reduce((s, n) => s.replaceAll(n, ""), t);
+			ok(!bare.includes("保守"), `a bare 保守 in ${t}`);
+			ok(!t.includes("バルス"), `バルス in ${t}`);
+		}
+		for (const t of opts)
+			for (const w of ["保守", "立てといた", "立てたる", "立てたで"])
+				ok(!t.includes(w), `Kiriko can write "${w}": ${t}`);
+		// 劇場の 村の 窓（番組ごとの 上書き）と 役者の 1回だけの 1行
+		for (const [id, m] of Object.entries(JK_PROG_MSGS))
+			for (const t of Object.values(m)) {
+				fitsWindow(`${id} window`, t.replace("{n}", "12"));
+				for (const ng of NG_NAMES) ok(!t.includes(ng), `"${ng}" in ${t}`);
+			}
+		const km = progMsg("kohaku");
+		ok(km.menu.join() === JK_PROG_MSG.menu.join(), "kohaku menu");
+		ok(
+			km.over !== JK_PROG_MSG.over && km.howto === JK_PROG_MSG.howto,
+			"kohaku messages",
+		);
+		for (const t of Object.values(STAFF_ONCE.theater?.theater_actor ?? {})) {
+			fitsWindow("theater once", t);
+			ok(!t.includes("バルス"), "バルス in the theater");
+		}
+		ok(width(JK_PROG_TV.silent.replace("{g}", "999")) <= 22, "silent note");
+	},
+);
+
+test(
+	"K3",
+	"帯（400 の 種）：見るだけ 中央 0.52〜0.60G・上手 完走 65〜80%・初心者 25〜45%・random 10% 未満・神 中央 1.08G 以上（本番・公開リハ・録画）",
+	() => {
+		const N: Partial<Record<BotName, number>> = {
+			kami: 40,
+			jouzu: 400,
+			shoshin: 400,
+			random: 200,
+			miru: 20,
+		};
+		for (const slot of K_SLOTS)
+			for (const [bot, n] of Object.entries(N) as [BotName, number][]) {
+				const rs: number[] = [];
+				let done = 0;
+				for (let i = 0; i < n; i++) {
+					const p = playShow(slot, bot, `k3:${kTag(slot)}:${bot}:${i}`, {
+						script: KOHAKU,
+					});
+					rs.push((p.result?.res ?? 0) / p.G);
+					if (p.result?.kanso) done++;
+				}
+				rs.sort((a, b) => a - b);
+				const p50 = rs[Math.floor(rs.length / 2)];
+				const k = done / n;
+				const kb = KOHAKU.bands.kanso?.[bot];
+				const pb = KOHAKU.bands.p50?.[bot];
+				const tag = `${kTag(slot)} ${bot} ${(k * 100).toFixed(1)}% ${p50.toFixed(3)}`;
+				if (kb) ok(k >= kb[0] && k <= kb[1], `${tag} kanso out of ${kb}`);
+				if (pb) ok(p50 >= pb[0] && p50 <= pb[1], `${tag} p50 out of ${pb}`);
+			}
+	},
+);
+
+/** 鐘の 窓まで 回す（choose は 鐘で えらぶ 合い。null は 黙る）。 */
+const bellRun = (seed: string, choose: "ok" | "miss" | null) => {
+	const { tl, rules, pools } = compileScript(
+		KOHAKU,
+		K_LIVE,
+		seeded(`tl:${seed}`),
+	);
+	const st = jkStart(tl, rules, pools, { rand: seeded(`eng:${seed}`) });
+	const log: { ev: JkEv; t: number }[] = [];
+	for (let k = 0; k < 2000 && st.t < 93000; k++) {
+		const v = jkView(st);
+		let input: JkInput | undefined;
+		const w = v.win;
+		if (
+			choose &&
+			w &&
+			!w.reveal &&
+			w.w.type === "pick" &&
+			w.w.timeoutFit &&
+			w.open - w.left >= 1000
+		)
+			input = { pick: w.w.opts.findIndex((o) => o.fit === choose), ago: 0 };
+		for (const ev of jkStep(st, 100, input)) log.push({ ev, t: st.t });
+	}
+	const open = log.findIndex(
+		(r) =>
+			r.ev.t === "open" && r.ev.win.type === "pick" && !!r.ev.win.timeoutFit,
+	);
+	const rest = log.slice(open);
+	const reveal = rest.find((r) => r.ev.t === "reveal")?.ev;
+	const combo = rest.find((r) => r.ev.t === "combo")?.ev;
+	const before = log
+		.slice(0, open)
+		.reverse()
+		.find((r) => r.ev.t === "combo")?.ev;
+	const mine = rest.filter((r) => r.ev.t === "line" && r.ev.line.who === "me");
+	return { open, reveal, combo, before, mine, rest };
+};
+
+test(
+	"K4",
+	"除夜の 鐘：黙れば ◎（コンボ +1・キリコは 書かない・群衆が 静かに）、「ゴーン」は ○、さわぐと ×（コンボ 0）。上に「静かに　見よ」",
+	() => {
+		for (const seed of ["k4:a", "k4:b", "k4:c"]) {
+			const quiet = bellRun(seed, null);
+			ok(quiet.open >= 0, `${seed}: no bell`);
+			const r = quiet.reveal;
+			ok(
+				r?.t === "reveal" &&
+					r.chosen === null &&
+					r.fit === "best" &&
+					r.gain > 0,
+				`${seed}: silent ${JSON.stringify(r)}`,
+			);
+			const c0 = quiet.before?.t === "combo" ? quiet.before.combo : 0;
+			ok(
+				quiet.combo?.t === "combo" && quiet.combo.combo === c0 + 1,
+				`${seed}: combo ${JSON.stringify(quiet.combo)} from ${c0}`,
+			);
+			ok(!quiet.mine.length, `${seed}: Kiriko wrote in the bell`);
+			const calm = quiet.rest
+				.flatMap((x) => (x.ev.t === "line" ? [x.ev.line.text] : []))
+				.slice(0, 8);
+			ok(
+				calm.some((t) =>
+					(KOHAKU_POOLS.bellOk as readonly string[]).includes(t),
+				),
+				`${seed}: the crowd is not calm: ${calm}`,
+			);
+			const ok2 = bellRun(seed, "ok");
+			ok(
+				ok2.reveal?.t === "reveal" &&
+					ok2.reveal.fit === "ok" &&
+					ok2.reveal.chosen !== null,
+				`${seed}: ゴーン`,
+			);
+			ok(ok2.mine.length === 1, `${seed}: ゴーン lines ${ok2.mine.length}`);
+			const bad = bellRun(seed, "miss");
+			ok(
+				bad.reveal?.t === "reveal" && bad.reveal.fit === "miss",
+				`${seed}: うおおお`,
+			);
+			ok(
+				bad.combo?.t === "combo" && bad.combo.combo === 0,
+				`${seed}: うおおお combo`,
+			);
+			const said = bad.mine[0]?.ev;
+			ok(
+				said?.t === "line" &&
+					["うおおお", "あけおめ", "くるぞ…"].includes(said.line.text),
+				`${seed}: said ${said?.t === "line" ? said.line.text : ""}`,
+			);
+		}
+		// 鐘の 区切りの 頭で「静かに　見よ」を 上に 止める
+		const p = playShow(K_LIVE, "kami", "k4:pin", {
+			script: KOHAKU,
+			keep: true,
+		});
+		const pin = p.log.find(
+			(r) => r.ev.t === "pin" && r.ev.line.text === KOHAKU_THREAD.quiet,
+		);
+		ok(
+			pin && (pin.t ?? 0) >= 80000 && (pin.t ?? 0) < 84000,
+			`pin at ${pin?.t}`,
+		);
+		ok(pin?.ev.t === "pin" && pin.ev.ms >= 5000, "the pin is short");
+	},
+);
+
+test(
+	"K5",
+	"時計：04:45:00 から だんだん へり、0時の 10秒 前から 1秒＝1秒（合図で 00:00:03・02・01、ちょうどで 00:00:00）、0時の あとは 出さない。名前欄は「新年まで＠」（公開リハは「仮の0時まで＠」）",
+	() => {
+		const E = KOHAKU_EXACT;
+		ok(kohakuClock(0) === "04:45:00", `start ${kohakuClock(0)}`);
+		let prev = Number.POSITIVE_INFINITY;
+		for (let t = 0; t <= E; t += 250) {
+			const s = kohakuLeft(t);
+			ok(s !== null && s <= prev, `${t}: ${s} after ${prev}`);
+			prev = s ?? prev;
+			if (t >= E - 10000)
+				ok(s === Math.ceil((E - t) / 1000 - 1e-9), `${t}: real time ${s}`);
+			else ok((s ?? 0) >= 10, `${t}: ${s} before the last 10s`);
+		}
+		ok(
+			kohakuLeft(E - 10001) !== null && (kohakuLeft(E - 10001) ?? 0) >= 10,
+			"10s edge",
+		);
+		const pulses = [0, 1, 2].map((i) =>
+			kohakuClock(KOHAKU_CUE.at + i * KOHAKU_CUE.beat),
+		);
+		ok(pulses.join() === "00:00:03,00:00:02,00:00:01", `pulses ${pulses}`);
+		ok(kohakuClock(E) === "00:00:00", `exact ${kohakuClock(E)}`);
+		ok(
+			kohakuClock(E + 1) === null && kohakuLeft(E + 500) === null,
+			"after 0時",
+		);
+		ok(
+			kohakuName(0, K_LIVE) === "新年まで＠04:45:00",
+			`${kohakuName(0, K_LIVE)}`,
+		);
+		ok(kohakuName(E - 3000, K_REC) === "新年まで＠00:00:03", "rec name");
+		ok(kohakuName(E - 1000, K_REHA) === "仮の0時まで＠00:00:01", "reha name");
+		ok(kohakuName(E + 100, K_LIVE) === null, "a name after 0時");
+	},
+);
+
+test(
+	"K6",
+	"おみくじの 名前欄：0時までの キリコの レスは 時計、山場の 判定の あとは 神エイム＝大吉・おしい＝吉・おくれた＝小吉・フライング＝まだ　去年や・見てただけ＝末吉",
+	() => {
+		const cases: [number | null, JkCueGrade][] = [
+			[0, "kami"],
+			[-320, "oshii"],
+			[700, "late"],
+			[-600, "flying"],
+			[null, "none"],
+		];
+		for (const [off, want] of cases) {
+			const p = playShow(K_LIVE, "kami", `k6:${off}`, {
+				script: KOHAKU,
+				keep: true,
+				cue: () => off,
+			});
+			ok(p.result?.cue === want, `offset ${off}: ${p.result?.cue}`);
+			const kg = p.log.findIndex((r) => r.ev.t === "grade");
+			ok(kg > 0, `offset ${off}: no grade`);
+			const mine = (from: number, to: number) =>
+				p.log
+					.slice(from, to)
+					.flatMap((r) =>
+						r.ev.t === "line" && r.ev.line.who === "me" ? [r.ev.line] : [],
+					);
+			const before = mine(0, kg);
+			ok(
+				before.length >= 5,
+				`offset ${off}: ${before.length} lines before 0時`,
+			);
+			for (const l of before)
+				ok(
+					/^新年まで＠\d\d:\d\d:\d\d$/.test(l.name ?? ""),
+					`offset ${off}: before "${l.name}"`,
+				);
+			const after = mine(kg, p.log.length);
+			ok(after.length >= 2, `offset ${off}: ${after.length} lines after`);
+			for (const l of after)
+				ok(
+					l.name === KOHAKU_NAMES[want],
+					`offset ${off}: after "${l.name}" (${l.text})`,
+				);
+			const word = after.find((l) => l.text === KOHAKU_ART.akeome);
+			ok(!!word === (off !== null), `offset ${off}: the word ${word?.text}`);
+		}
+	},
+);
+
+test(
+	"K7",
+	"審査：勝ち組は 乱数（9枚の うち 5〜6）、7割は はじめの 3枚が 勝ち組に 2対1、窓の ◎ は 勝ち組の 言いきり・× は 負け組、窓が 開いて 2秒で 5枚、閉じる 前に 9枚",
+	() => {
+		let lean = 0;
+		const wins = { aka: 0, shiro: 0 };
+		const N = 1000;
+		for (let i = 0; i < N; i++) {
+			const { winner, cards } = kohakuCards(seeded(`k7:${i}`));
+			ok(cards.length === KOHAKU_CARDS, `${i}: ${cards.length} cards`);
+			const w = cards.filter((c) => c === winner).length;
+			ok(w === 5 || w === 6, `${i}: the winner has ${w}`);
+			const f = cards.slice(0, 3).filter((c) => c === winner).length;
+			ok(f === 2 || f === 1, `${i}: first three ${f}`);
+			if (f === 2) lean++;
+			wins[winner]++;
+		}
+		ok(lean / N >= 0.65 && lean / N <= 0.75, `lean ${lean / N}`);
+		ok(
+			wins.aka > N * 0.4 && wins.shiro > N * 0.4,
+			`winners ${JSON.stringify(wins)}`,
+		);
+		for (const seed of ["k7:a", "k7:b", "k7:c", "k7:d", "k7:e"]) {
+			const x = kohakuTl(K_LIVE, seed);
+			const seg = x.segments.find((s) => s.scene === "shinsa");
+			const d = seg?.data as KohakuData | undefined;
+			const pick = x.picks.find(isShinsa);
+			ok(d?.winner && d.cards && pick, `${seed}: no judging`);
+			if (!d?.winner || !d.cards || !pick || d.countAt === undefined || !d.step)
+				continue;
+			const loser = d.winner === "aka" ? "shiro" : "aka";
+			const set = pick.sets[0];
+			ok(
+				set.find((o) => o.fit === "best")?.text === KOHAKU_SAY[d.winner] &&
+					set.find((o) => o.fit === "miss")?.text === KOHAKU_SAY[loser],
+				`${seed}: ${set.map((o) => `${o.text}${o.fit}`)}`,
+			);
+			const { countAt, step } = d;
+			const shownAt = (t: number) =>
+				t < countAt
+					? 0
+					: Math.min(KOHAKU_CARDS, Math.floor((t - countAt) / step) + 1);
+			ok(shownAt(pick.at) === 0, `${seed}: cards before the window`);
+			ok(
+				shownAt(pick.at + 2000) === 5,
+				`${seed}: ${shownAt(pick.at + 2000)} at 2s`,
+			);
+			ok(
+				shownAt(pick.at + (pick.open ?? 4000) - 1) === KOHAKU_CARDS,
+				`${seed}: not all cards by the close`,
+			);
+		}
+	},
+);
+
+test(
+	"K8",
+	"2つの 種で pick の 文が ちがう（pick の 1/3 以上）、◎ の 位置も まざる",
+	() => {
+		for (const slot of K_SLOTS) {
+			const a = compileScript(KOHAKU, slot, seeded("k8:a")).tl.overlays;
+			const b = compileScript(KOHAKU, slot, seeded("k8:b")).tl.overlays;
+			const key = (w: (typeof a)[number]["win"]) =>
+				w.type === "pick"
+					? w.opts
+							.map((o) => o.text)
+							.sort()
+							.join("|")
+					: w.id;
+			const diff = a.filter((o, i) => key(o.win) !== key(b[i].win)).length;
+			const picks = a.filter((o) => o.win.type === "pick").length;
+			ok(diff * 3 >= picks, `only ${diff}/${picks} picks differ`);
+			const pos = new Set(
+				a.flatMap((o) =>
+					o.win.type === "pick"
+						? [o.win.opts.findIndex((x) => x.fit === "best")]
+						: [],
+				),
+			);
+			ok(pos.size >= 2, "◎ is always at the same place");
+		}
+	},
+);
+
+test(
+	"K9",
+	"スレタイ：本番は スレごとに 回を 1つ 足し（第15回 → 第16回）、ことよろの 区切りの あとは 年越し→初日の出 ★n が ずっと。公開リハ・録画は その 名前。名前の すぐ かえは ない",
+	() => {
+		for (const slot of K_SLOTS) {
+			const p = playShow(slot, "kami", `k9:${kTag(slot)}`, {
+				script: KOHAKU,
+				keep: true,
+			});
+			const first = p.log.find(
+				(r) => r.ev.t === "line" && r.ev.line.cls === "title",
+			);
+			ok(
+				first?.ev.t === "line" && first.ev.line.text === KOHAKU.title(1, slot),
+				`${kTag(slot)}: first title ${first?.ev.t === "line" ? first.ev.line.text : ""}`,
+			);
+			ok(!p.log.some((r) => r.ev.t === "retitle"), `${kTag(slot)}: retitle`);
+			const rolls = p.log.flatMap((r) =>
+				r.ev.t === "roll"
+					? [{ part: r.ev.part, title: r.ev.title, t: r.t ?? 0 }]
+					: [],
+			);
+			ok(rolls.length >= 2, `${kTag(slot)}: ${rolls.length} rolls`);
+			if (slot.live)
+				ok(
+					rolls.some((r) => r.t >= 109000),
+					`${kTag(slot)}: no roll after the new year`,
+				);
+			for (const r of rolls) {
+				const want =
+					r.t >= 109000
+						? (s: number) =>
+								KOHAKU_THREAD[
+									slot.live
+										? "liveNew"
+										: slot.mode === "rec"
+											? "recNew"
+											: "rehaNew"
+								].replace("{n}", String(s))
+						: (s: number) => KOHAKU.title(s, slot);
+				ok(
+					r.title === want(r.part),
+					`${kTag(slot)}: roll ${r.part} at ${r.t}: ${r.title}`,
+				);
+			}
+			if (slot.live) {
+				const kai = kohakuKai(slot.y);
+				ok(KOHAKU.title(1, slot).includes(`第${kai}回`), "kai 15");
+				const early = rolls.find((r) => r.t < 107000);
+				ok(
+					early?.title.includes(`第${kai + early.part - 1}回`),
+					`kai of ${early?.title}`,
+				);
+			}
+		}
+	},
+);
+
+test(
+	"K10",
+	"劇場の 舞台：12/31 は 本番（★5）・12/15 は 公開リハ（★3）・1/3 は 去年の 録画（★2）を 見るか 聞き、結果は 幕の 窓。6/15 は いつもの 文だけ。役者は 12月の 1行と 0時の 神エイムの あと 1回だけ",
+	async () => {
+		const f = facilityById("theater");
+		if (!f?.room) throw new Fail("no theater");
+		const actor = f.room.people?.find((p) => p.id === "theater_actor");
+		if (!actor) throw new Fail("no theater_actor");
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: [],
+		};
+		const { store, restore } = swapStorage();
+		let slot: JkSlot | null = null;
+		let fake: JkResult | null = null;
+		setWatchHook(async (_s, sl) => {
+			slot = sl;
+			return fake;
+		});
+		const year = new Date().getFullYear();
+		const M = progMsg("kohaku");
+		try {
+			const days: [string, Today, JkSlot | null, number][] = [
+				["1231", date(12, 31), { program: "kohaku", live: true, y: year }, 5],
+				[
+					"1215",
+					date(12, 15),
+					{ program: "kohaku", live: false, mode: "reha", y: year },
+					3,
+				],
+				[
+					"0103",
+					date(1, 3),
+					{ program: "kohaku", live: false, mode: "rec", y: year - 1 },
+					2,
+				],
+				["0615", date(6, 15), null, 0],
+			];
+			for (const [q, t, want, goal] of days) {
+				const loc = swapLocation(`?debug&date=${q}`);
+				try {
+					store.clear();
+					forgetJikkyoMemo();
+					slot = null;
+					const events = buildFacility(f, view, {} as Ctx).events ?? [];
+					const run = async (id: string, pick = 0) => {
+						const r = recorder(pick);
+						await events.find((e) => e.id === id)?.run?.(r.s);
+						return r.log;
+					};
+					const stage = (
+						venueLines("theater", "stage", t) ?? f.room.lines.stage
+					).map((l) => `narrate: ${l}`);
+					fake = resultFor(5600, {
+						part: 6,
+						part0: 1,
+						kanso: true,
+						cue: "kami",
+					});
+					const a = await run("stage_0");
+					if (!want) {
+						ok(a.join("\n") === stage.join("\n"), `${q}: ${a.join("|")}`);
+						ok(slot === null, `${q}: a show`);
+						continue;
+					}
+					const wantLog = [
+						...stage,
+						"choose",
+						`narrate: ${M.howto.replace("{n}", String(goal))}`,
+						`narrate: ${M.seat}`,
+						`narrate: ${M.over.replace("{n}", "6")}`,
+						`narrate: ${M.kanso}`,
+						`narrate: ${M.kami}`,
+					];
+					ok(a.join("\n") === wantLog.join("\n"), `${q}:\n${a.join("\n")}`);
+					ok(
+						JSON.stringify(slot) === JSON.stringify(want),
+						`${q}: slot ${JSON.stringify(slot)}`,
+					);
+					const sl = slot as JkSlot | null;
+					ok(sl && scriptGoal(KOHAKU, sl) === goal, `${q}: goal`);
+					// とちゅうで 出たら 幕の 窓
+					fake = null;
+					const b = await run("stage_0");
+					ok(b.at(-1) === `narrate: ${M.left}`, `${q}: left ${b.at(-1)}`);
+				} finally {
+					loc();
+				}
+			}
+			// 役者：12月の 1行 → 神エイムの あと 1回だけ → また 12月の 1行
+			const loc = swapLocation("?debug&date=1215");
+			try {
+				forgetJikkyoMemo();
+				const talk = async () => {
+					const r = recorder();
+					await buildFacility(f, view, {} as Ctx)
+						.events?.find((e) => e.id === actor.id)
+						?.run?.(r.s);
+					return r.log.join("\n");
+				};
+				const dec = (staffLines("theater", actor.id, date(12, 15)) ?? [])
+					.map((l) => `say: ${l}`)
+					.join("\n");
+				ok((await talk()) === dec, "no December line");
+				recordProgram(
+					"kohaku",
+					resultFor(5100, { part: 6, kanso: true, cue: "kami" }),
+					K_LIVE,
+				);
+				ok(
+					(await talk()) === `say: ${STAFF_ONCE.theater?.theater_actor?.kami}`,
+					"no kami line",
+				);
+				ok((await talk()) === dec, "the kami line twice");
+			} finally {
+				loc();
+			}
+		} finally {
+			setWatchHook(null);
+			forgetJikkyoMemo();
+			restore();
+		}
+	},
+);
+
+/** kami・jouzu・shoshin・random の 上映（本番・公開リハ・録画 × 3 の 種。出来事を 残す）。 */
+let kShowsCache: Shown[] | null = null;
+const kShows = (): Shown[] => {
+	kShowsCache ??= K_SLOTS.flatMap((slot) =>
+		(["kami", "jouzu", "shoshin", "random"] as const).flatMap((b) =>
+			Array.from({ length: 3 }, (_, i) =>
+				playShow(slot, b, `kshow:${kTag(slot)}:${b}:${i}`, {
+					keep: true,
+					script: KOHAKU,
+				}),
+			),
+		),
+	);
+	return kShowsCache;
+};
+
+const KOHAKU_SET: ShowSet = {
+	script: KOHAKU,
+	slots: K_SLOTS,
+	list: kShows,
+	get1000: KOHAKU_THREAD.get1000,
+	flood: KOHAKU_POOLS.flood,
+	miruSeed: (slot) => `k11:${kTag(slot)}`,
+};
+
+test(
+	"K11",
+	"950 の 当番（紅白）：上映ごとに 2回まで・0時の 山場の 前後 6秒と 次の 窓の 4.5秒 以内に 出ない・切れ目の 長さ・見るだけでも 1回は 出る",
+	() => checkDuty(KOHAKU_SET),
+);
+
+test(
+	"K12",
+	"番号（紅白）：1000・1001 の ほかに 1000 以上は なく、キリコは 999 まで、999 は 1つ、roll の あとは >>1 から",
+	() => checkNumbers(KOHAKU_SET),
+);
+
+test(
+	"K13",
+	"窓が 開いて いる あいだ その 候補の 文は 群衆に 出ず、直近 4行に 同じ 文が ない（紅白）",
+	() => checkRepeats(KOHAKU_SET),
+);
+
+test(
+	"D2",
+	"番組表：劇場は 段7 から、12/31 本番・12/1〜30 公開リハ・1/1〜7 録画（去年）、ほかの 日は 番組なし",
+	() => {
+		for (const [t, mode] of THEATER_DAYS) {
+			const at = `${t.m}/${t.d}`;
+			const s = programSlot("theater", t, 7, 2026);
+			ok(
+				programSlot("theater", t, 6, 2026) === null,
+				`${at}: theater at stage 6`,
+			);
+			if (mode === null) {
+				ok(s === null, `${at}: ${JSON.stringify(s)}`);
+				continue;
+			}
+			const want: JkSlot =
+				mode === "live"
+					? { program: "kohaku", live: true, y: 2026 }
+					: mode === "reha"
+						? { program: "kohaku", live: false, mode: "reha", y: 2026 }
+						: { program: "kohaku", live: false, mode: "rec", y: 2025 };
+			ok(
+				JSON.stringify(s?.main) === JSON.stringify(want),
+				`${at}: ${JSON.stringify(s)}`,
+			);
+			ok(
+				scriptGoal(KOHAKU, want) === { live: 5, reha: 3, rec: 2 }[mode],
+				`${at}: goal`,
+			);
+		}
+		ok(PROGRAMS.kohaku === KOHAKU, "kohaku is not in PROGRAMS");
+		// 映画館と 本館は 12月も かわらない
+		ok(
+			programSlot("cinema", date(12, 31), 7, 2026)?.main.program === "sora",
+			"cinema on 12/31",
+		);
+		ok(
+			programSlot("hall", date(12, 31), 7, 2026)?.main.program === "yakyu",
+			"hall on 12/31",
+		);
 	},
 );
 

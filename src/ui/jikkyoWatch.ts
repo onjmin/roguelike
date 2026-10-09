@@ -1,6 +1,9 @@
-// 台本の 番組の 板と 入口（映画館の 実況上映：金曜ロード保守『空飛ぶ鯖』）。
-// エンジンは core/jikkyo.ts（overlay の 窓・Cue・950 の 当番・切れ目）、台本は data/jikkyo/sora.ts、番組表は data/jikkyo/schedule.ts、
-// TV は ui/jikkyoScenes.ts、選ぶ 部品は ui/minigamePicker.ts。板の 形と 色は 野球と 同じ .mgame.jk（style.css）に 少し 足す。
+// 台本の 番組の 板と 入口（映画館の 実況上映：金曜ロード保守『空飛ぶ鯖』・保守劇場の 紅白スレ合戦）。
+// エンジンは core/jikkyo.ts（overlay の 窓・Cue・950 の 当番・切れ目・黙る 窓・名前欄）、台本は data/jikkyo/sora.ts・kohaku.ts、
+// 番組表は data/jikkyo/schedule.ts、TV は ui/jikkyoScenes.ts（映画館）・ui/jikkyoKohakuTv.ts（劇場）、
+// 選ぶ 部品は ui/minigamePicker.ts。板の 形と 色は 野球と 同じ .mgame.jk（style.css）に 少し 足す。
+// - 紅白：ヘッダーの 右は 勢いの かわりに キリコの 名前欄（0時までは「新年まで＠HH:MM:SS」、0時の あとは おみくじ）。
+//   キリコの レスにも 名前欄を 小さく つける。除夜の 鐘で 黙って いれば「◎　だまって　聞いた」。
 // - 入口 watchProgram：番組表で 枠を 引く → 「見る／やめる」→ はじめての 1回だけ 遊び方 → 席に つく 地の文 →
 //   曲を 止めて 板（区切りの 曲）→ 村の 曲に もどす → 結果の 窓（のびた ★・完走・神エイム）。
 // - 板：題（いまの スレタイ）・TV・ヘッダー（★・レス・勢い・目標への バー）・スレ（上に 止める 1行・切れ目・洪水・鯖が 重い）・
@@ -29,16 +32,17 @@ import { today } from "../data/calendar";
 import { PROGRAMS } from "../data/jikkyo/index";
 import { programSlot, type VenueId } from "../data/jikkyo/schedule";
 import {
-	JK_PROG_MSG,
 	JK_PROG_RESULT,
 	JK_PROG_TV,
+	progMsg,
 	STAFF_ONCE,
 } from "../data/jikkyo/text";
 import { devEvent } from "../data/objectives";
 import type { Story } from "../engine/defs";
 import { el } from "./dom";
 import { type JikkyoMemo, loadJikkyo, saveJikkyo } from "./jikkyo";
-import { soraTv } from "./jikkyoScenes";
+import { kohakuTv } from "./jikkyoKohakuTv";
+import { type SceneTv, soraTv } from "./jikkyoScenes";
 import { markOpened, onTap, type UiCtx } from "./list";
 import { tick } from "./minigameBoard";
 import { picker } from "./minigamePicker";
@@ -114,7 +118,21 @@ const markHowto = (id: ProgId, noSave: boolean): void => {
 };
 
 /** 施設の 人 → 番組の id（1回だけの 1行を 持つ 人）。 */
-const ONCE_PROG: Readonly<Record<string, ProgId>> = { cinema: "sora" };
+const ONCE_PROG: Readonly<Record<string, ProgId>> = {
+	cinema: "sora",
+	theater: "kohaku",
+};
+
+/** 番組の TV（会場の 枠と 場面）。 */
+const TVS: Readonly<
+	Record<
+		ProgId,
+		(
+			canvas: HTMLCanvasElement,
+			opt: { reduced: boolean; live: boolean },
+		) => SceneTv
+	>
+> = { sora: soraTv, kohaku: kohakuTv };
 
 /**
  * 会場の 人が 1回だけ 言う 1行（無ければ null）。言ったら 覚える（下見の あいだは 書かない）。
@@ -249,7 +267,7 @@ export const playProgram = async (
 		return { pick: q.i, ago };
 	};
 
-	const tv = soraTv(tvCanvas, { reduced, live: slot.live });
+	const tv = (TVS[id] ?? soraTv)(tvCanvas, { reduced, live: slot.live });
 	let noteTimer = 0;
 	let pinTimer = 0;
 	const say = (t: string, ms = 1400) => {
@@ -278,6 +296,8 @@ export const playProgram = async (
 			tag.style.setProperty("--c", "#ffe060");
 			tag.style.setProperty("--fg", "#111");
 			row.append(tag);
+			// 名前欄（紅白の 時計・おみくじ）
+			if (l.name) row.append(el("i", { class: "jk-name", text: l.name }));
 		}
 		row.append(document.createTextNode(l.text));
 		thread.append(row);
@@ -304,7 +324,10 @@ export const playProgram = async (
 		headTitle.textContent = v.title;
 		part.textContent = v.label;
 		resEl.textContent = fill(JK_PROG_TV.res, { no: Math.min(v.no, 1000) });
-		ikioiEl.textContent = fill(JK_PROG_TV.ikioi, { ikioi: comma(v.ikioi) });
+		// 紅白は 名前欄（新年までの 時計・おみくじ）。無ければ 勢い
+		ikioiEl.textContent =
+			v.name ?? fill(JK_PROG_TV.ikioi, { ikioi: comma(v.ikioi) });
+		ikioiEl.classList.toggle("jk-clock", v.name !== null);
 		const G = Math.max(1, v.G);
 		const left = Math.max(0, (v.total - v.t) / 1000);
 		fillEl.style.width = `${Math.min(100, (v.res / G) * 100)}%`;
@@ -420,6 +443,12 @@ export const playProgram = async (
 					if (ev.fit === null) {
 						ctx.se("cancel");
 						say(JK_PROG_TV.late);
+						break;
+					}
+					// 黙って いる ことが 答えの 窓（紅白の 除夜の 鐘）
+					if (ev.chosen === null) {
+						ctx.se(ev.fit === "miss" ? "miss" : "critical");
+						say(fill(JK_PROG_TV.silent, { g: ev.gain }));
 						break;
 					}
 					ctx.se("decide");
@@ -576,15 +605,16 @@ export const watchProgram = async (
 	const slot = slots?.main;
 	const script = slot ? PROGRAMS[slot.program] : undefined;
 	if (!slot || !script) return;
-	const n = await s.choose([...JK_PROG_MSG.menu], { cancel: 1 });
+	const M = progMsg(script.id);
+	const n = await s.choose([...M.menu], { cancel: 1 });
 	if (n !== 0) return;
 	const id = script.id as ProgId;
 	const noSave = previewing();
 	if (!progOf(loadJikkyo(), id).howto) {
-		await s.narrate(fill(JK_PROG_MSG.howto, { n: scriptGoal(script, slot) }));
+		await s.narrate(fill(M.howto, { n: scriptGoal(script, slot) }));
 		markHowto(id, noSave);
 	}
-	await s.narrate(JK_PROG_MSG.seat);
+	await s.narrate(M.seat);
 	await s.wait(0);
 	s.bgm(null);
 	let r: JkResult | null = null;
@@ -597,12 +627,12 @@ export const watchProgram = async (
 		s.bgm(villageSong());
 	}
 	if (!r) {
-		await s.narrate(JK_PROG_MSG.left);
+		await s.narrate(M.left);
 		return;
 	}
-	await s.narrate(fill(JK_PROG_MSG.over, { n: r.part }));
-	if (r.kanso) await s.narrate(JK_PROG_MSG.kanso);
-	if (r.cue === "kami") await s.narrate(JK_PROG_MSG.kami);
+	await s.narrate(fill(M.over, { n: r.part }));
+	if (r.kanso) await s.narrate(M.kanso);
+	if (r.cue === "kami") await s.narrate(M.kami);
 };
 
 // ───────────────── 開発用 ─────────────────
@@ -612,7 +642,12 @@ if (import.meta.env.DEV && typeof window !== "undefined")
 		window as unknown as {
 			__jikkyoShow: (
 				id?: string,
-				o?: { live?: boolean; speed?: number; auto?: boolean },
+				o?: {
+					live?: boolean;
+					mode?: "reha" | "rec";
+					speed?: number;
+					auto?: boolean;
+				},
 			) => Promise<JkResult | null>;
 		}
 	).__jikkyoShow = async (id = "sora", o = {}) => {
@@ -620,10 +655,18 @@ if (import.meta.env.DEV && typeof window !== "undefined")
 		const ctx = v?.ctx;
 		const script = PROGRAMS[id];
 		if (!ctx || !script) throw new Error("__jikkyoShow: no village or program");
-		return playProgram(
-			ctx,
-			script,
-			{ program: id, live: o.live ?? true, y: new Date().getFullYear() },
-			{ noSave: true, speed: o.speed, auto: o.auto },
-		);
+		const y = new Date().getFullYear();
+		const slot: JkSlot = o.mode
+			? {
+					program: id,
+					live: false,
+					mode: o.mode,
+					y: o.mode === "rec" ? y - 1 : y,
+				}
+			: { program: id, live: o.live ?? true, y };
+		return playProgram(ctx, script, slot, {
+			noSave: true,
+			speed: o.speed,
+			auto: o.auto,
+		});
 	};

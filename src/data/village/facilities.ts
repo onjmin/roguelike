@@ -3129,6 +3129,8 @@ export const FACILITIES: readonly Facility[] = [
 				piano: ["ピアノ。\n伴奏の　楽譜が　ひらいたまま。"],
 				plant: ["スタンド花。\n「祝　初日　名無し一同」"],
 			},
+			// 舞台で 紅白スレ合戦の 実況（12/31 本番・12月は 公開リハ・1/1〜7 は 録画。ほかの 月は 文だけ）
+			plays: { stage: "jikkyo" },
 			people: [
 				{
 					id: "theater_actor",

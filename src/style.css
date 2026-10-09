@@ -3672,3 +3672,20 @@ body.jolt #app {
 		animation: none;
 	}
 }
+
+/* ───────── 劇場の 紅白スレ合戦（ui/jikkyoWatch.ts）：キリコの 名前欄 ───────── */
+
+/* レスの 名前欄（0時までは 新年までの 時計、0時の あとは おみくじ） */
+.jk-name {
+	display: inline-block;
+	margin-right: 4px;
+	font-size: 10px;
+	font-style: normal;
+	color: #6ad46a;
+}
+
+/* ヘッダーの 右（勢いの かわりの 名前欄） */
+.jk-ikioi.jk-clock {
+	color: #6ad46a;
+	font-variant-numeric: tabular-nums;
+}
