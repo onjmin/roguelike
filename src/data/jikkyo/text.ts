@@ -1,7 +1,8 @@
 // 実況の 番組の 会場の 文（調べる 物と 人の 文の 上書き）。曜日・日付で かわる 文だけを 持つ。
 // 合う 文が なければ null を 返し、呼ぶ 側（ui/facilities.ts）は いつもの 文
 // （data/village/facilities.ts の room.lines・people の lines）を 読む。
-// - 映画館「スクリーン1000」：金曜の 夜は 金曜ロード保守の 実況上映（スマホ OK の 上映）、ほかの 日は 再上映と 予告。
+// - 映画館「スクリーン1000」：金曜の 夜は 金曜ロード保守の 実況上映（スマホ OK の 上映）。ほかの 日の 文は 昼の部
+//   （午後の B級映画。data/jikkyo/gogo.ts の 束）が 出す。
 //   絵は ui/cinemaDecor.ts。
 // - 保守劇場：12月は 紅白スレ合戦（12/31 本番・12/1〜30 公開リハ）、1/1〜7 は 去年の 回の 録画。ほかの 月は いつもの 文。
 //   {kai} は 回（年 − 2011）で 埋める。
@@ -34,8 +35,6 @@ export type DayLines = readonly {
 	lines: readonly string[];
 }[];
 
-const anyDay = (): boolean => true;
-
 /** 会場の 物の 文（施設の id → 物の id → 日ごとの 文）。 */
 export const VENUE_LINES: Readonly<
 	Record<string, Readonly<Record<string, DayLines>>>
@@ -46,16 +45,11 @@ export const VENUE_LINES: Readonly<
 				when: isRoadshowNight,
 				lines: ["スクリーン。\n今夜は『空飛ぶ鯖』の　実況上映。"],
 			},
-			{ when: anyDay, lines: ["スクリーン。\n今日は『空飛ぶ鯖』の　再上映。"] },
 		],
 		poster: [
 			{
 				when: isRoadshowNight,
 				lines: ["今夜　実況上映『空飛ぶ鯖』\nスマホ　OK、音は　消してな"],
-			},
-			{
-				when: anyDay,
-				lines: ["金曜の　夜は　実況上映\n近日『1000レスの　夏』"],
 			},
 		],
 		seat: [

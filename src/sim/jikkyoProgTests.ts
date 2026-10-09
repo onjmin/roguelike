@@ -302,9 +302,10 @@ each(
 			...venue,
 			p.menu,
 		]) {
-			for (const ng of deny) ok(!t.includes(ng), `"${ng}" in ${t}`);
 			ok(!/[{}]/.test(t), `an unfilled {…} in ${t}`);
-			const bare = names.reduce((s, n) => s.replaceAll(n, ""), t);
+			// 番組の 固有名詞（保守名人戦 など）を のぞいた 文で 見る（deny に「名人戦」を 入れても「保守名人戦」は 通る）
+			const bare = names.reduce((s, n) => s.replaceAll(n, "　"), t);
+			for (const ng of deny) ok(!bare.includes(ng), `"${ng}" in ${t}`);
 			ok(!bare.includes("保守"), `a bare 保守 in ${t}`);
 			ok(!t.includes("バルス"), `バルス in ${t}`);
 		}

@@ -587,10 +587,13 @@ export const GOGO_PACK: JkPack = {
 	scenes: GOGO_SCENES,
 	venueLines: {
 		screen: [
-			{ when: monThu, lines: ["スクリーン。\n昼の部は『メガ荒らしザメ』。"] },
+			{
+				when: monThu,
+				lines: ["スクリーン。\n昼は『メガ荒らしザメ』、夜は　再上映。"],
+			},
 			{
 				when: weekend,
-				lines: ["スクリーン。\n昼の部は『メガ荒らしザメ』の　再上映。"],
+				lines: ["スクリーン。\n今日は　昼も　夜も　再上映。"],
 			},
 		],
 		poster: [

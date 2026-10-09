@@ -55,6 +55,7 @@ import {
 	gikaiProgram,
 	gikaiWatched,
 } from "../data/jikkyo/gikai";
+import { GOGO_PACK } from "../data/jikkyo/gogo";
 import { PROGRAMS } from "../data/jikkyo/index";
 import {
 	KOHAKU,
@@ -74,6 +75,7 @@ import {
 	kohakuLeft,
 	kohakuName,
 } from "../data/jikkyo/kohaku";
+import { PACKS } from "../data/jikkyo/packs";
 import { isVenue, programSlot } from "../data/jikkyo/schedule";
 import {
 	SORA,
@@ -284,32 +286,43 @@ test(
 				said(staffLines("cinema", "cinema_staff", TUE)),
 			"cinema_staff: the same on Friday and Tuesday",
 		);
-		ok(venueLines("cinema", "seat", TUE) === null, "Tuesday seat is not null");
-		ok(
-			staffLines("cinema", "cinema_staff", TUE) === null,
-			"Tuesday cinema_staff is not null",
-		);
-		// 金曜の ほかは どの 日も 同じ
-		for (const w of WEEK.filter((w) => w !== 5)) {
-			for (const kind of kindsOf(cinema()))
-				ok(
-					said(venueLines("cinema", kind, day(w))) ===
-						said(venueLines("cinema", kind, TUE)),
-					`wday ${w} ${kind}: not the same as Tuesday`,
-				);
+		// 金曜の ほかは 昼の部（午後の B級映画。data/jikkyo/gogo.ts の 束）の 文：月〜木は 火曜と 同じ、土日は 土日で 同じ
+		for (const kind of ["screen", "seat"])
 			ok(
-				said(staffLines("cinema", "cinema_staff", day(w))) ===
-					said(staffLines("cinema", "cinema_staff", TUE)),
-				`wday ${w} cinema_staff: not the same as Tuesday`,
+				said(venueLines("cinema", kind, TUE)) ===
+					said(pickDay(GOGO_PACK.venueLines?.[kind], TUE)),
+				`Tuesday ${kind} is not the 昼の部 line`,
 			);
-		}
+		for (const [ws, base] of [
+			[[1, 3, 4], TUE],
+			[[0], day(6)],
+		] as const)
+			for (const w of ws) {
+				for (const kind of kindsOf(cinema()))
+					ok(
+						said(venueLines("cinema", kind, day(w))) ===
+							said(venueLines("cinema", kind, base)),
+						`wday ${w} ${kind}: not the same as wday ${base.w}`,
+					);
+				ok(
+					said(staffLines("cinema", "cinema_staff", day(w))) ===
+						said(staffLines("cinema", "cinema_staff", base)),
+					`wday ${w} cinema_staff: not the same as wday ${base.w}`,
+				);
+			}
 	},
 );
 
+/** 日ごとの 文の その 日の 行（無ければ null）。 */
+const pickDay = (d: DayLines | undefined, t: Today): readonly string[] | null =>
+	d?.find((r) => r.when(t))?.lines ?? null;
+
 test(
 	"A3",
-	"10月は 映画館の ほかの 施設に 文の 上書きが なく、飾りは 映画館 だけ",
+	"10月は 映画館と 束の 番組の 会場の ほかの 施設に 文の 上書きが なく、飾りは 映画館 だけ",
 	() => {
+		// 束の 番組の 会場（カジノ・碁会所 など）の 文は src/sim/jikkyoProgTests.ts の P3
+		const packVenues = new Set(PACKS.map((p) => p.venue));
 		for (const f of FACILITIES) {
 			const rows = facilityRoomRows(f);
 			const isCinema = f.id === "cinema";
@@ -318,7 +331,7 @@ test(
 					(typeof facilityDecor(f, rows, t) === "function") === isCinema,
 					`${f.id}: decor ${typeof facilityDecor(f, rows, t)}`,
 				);
-				if (isCinema) continue;
+				if (isCinema || packVenues.has(f.id)) continue;
 				for (const k of kindsOf(f))
 					ok(venueLines(f.id, k, t) === null, `${f.id}.${k}: overridden`);
 				for (const p of peopleOf(f))
@@ -543,7 +556,8 @@ test(
 					const run = async (id: string, play: boolean): Promise<string[]> => {
 						const ev = events.find((e) => e.id === id);
 						ok(ev?.run, `wday ${t.w}: no ${id}`);
-						const r = recorder(1);
+						// 映画館は 夜の部と 昼の部の 2つ：選ぶ 窓の いちばん 下（2）が やめる
+						const r = recorder(2);
 						await ev?.run?.(r.s);
 						ok(
 							r.log.includes("choose") === play,
@@ -569,11 +583,14 @@ test(
 						got.join("\n") === want.join("\n"),
 						`wday ${t.w} staff:\n${got.join("\n")}`,
 					);
-					// 火曜の 客席と 係員は いつもの 文
+					// 火曜の 係員は 昼の部の 文
 					if (t.w === 2)
 						ok(
-							got.join() === staff.lines.map((l) => `say: ${l}`).join(),
-							"Tuesday staff is not the usual line",
+							got.join() ===
+								(pickDay(GOGO_PACK.staffLines?.cinema_staff, t) ?? [])
+									.map((l) => `say: ${l}`)
+									.join(),
+							"Tuesday staff is not the 昼の部 line",
 						);
 				} finally {
 					restore();
@@ -2596,7 +2613,12 @@ export const checkRepeats = (set: ShowSet): void => {
 		const recent: string[] = [];
 		for (const rec of p.log) {
 			const ev = rec.ev;
-			if (ev.t === "open" && ev.win.type === "pick")
+			// 950 の 当番は ◎ を かさねる 行が 出きる 前に 開く ことが ある（その 前の 窓の ◎ を のこす）
+			if (
+				ev.t === "open" &&
+				ev.win.type === "pick" &&
+				!ev.win.id.startsWith("duty")
+			)
 				lastBest = ev.win.opts.find((o) => o.fit === "best")?.text ?? null;
 			if (ev.t !== "line" && ev.t !== "pin") continue;
 			const l = ev.line;
@@ -2812,7 +2834,8 @@ test(
 					);
 					ok(b.at(-1) === `narrate: ${JK_PROG_MSG.left}`, `left: ${b.at(-1)}`);
 					// やめる
-					const c = await run("screen_0", 1);
+					// 夜の部・昼の部・やめる の いちばん 下
+					const c = await run("screen_0", 2);
 					ok(c.at(-1) === "choose", `quit: ${c.join("|")}`);
 				} finally {
 					loc();
@@ -2829,7 +2852,10 @@ test(
 						?.run?.(r.s);
 					return r.log.join("\n");
 				};
-				const usual = staff.lines.map((l) => `say: ${l}`).join("\n");
+				// 火曜の 係員は 昼の部（午後の B級映画）の 文
+				const usual = (staffLines("cinema", staff.id, TUE) ?? staff.lines)
+					.map((l) => `say: ${l}`)
+					.join("\n");
 				ok((await talk()) === usual, "a once line before any show");
 				recordProgram(
 					"sora",
