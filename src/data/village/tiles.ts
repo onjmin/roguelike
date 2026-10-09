@@ -426,10 +426,11 @@ export const BEACH: Record<string, TileDef> = {
 //   ヰ ヱ  4車線の 横の 道の 内がわの 車線（まんなかの 黄色い 線）   ヲ  5マスの 縦の 道の まんなか
 //   ぃ  線路（縦）   ぅ  踏切の 道   ょ  電柱   ゃ  街灯   ゅ  踏切の 警報機（どれも 歩道に 立つ）
 //   こ  岸壁   ぎ ぐ げ  コンテナ（赤・青・緑）   ご  クレーン
-//   ゔ  信号機   ゕ ゖ  赤い 車（左・右）   ゝ ゞ  白い 車（左・右）
+//   ゔ  信号機（止まっている 車は data/village/facilities.ts の 車。RPGEN の 絵）
 // 道（.）は 段6 から アスファルト（data/village/map.ts の villagePalette）。
 const ROAD_IMG = "pub:sprites/road.png";
-const road = (i: number) => `${ROAD_IMG}#${i * 16},0,16,16`;
+/** 道の 絵（i 番目の 16x16。施設の 車の 下に 車線を 敷くのにも 使う）。 */
+export const road = (i: number) => `${ROAD_IMG}#${i * 16},0,16,16`;
 const STREET_IMG = "pub:sprites/street.png";
 const street = (x: number, y: number, h = 16) =>
 	`${STREET_IMG}#${x},${y},16,${h}`;
@@ -453,12 +454,8 @@ export const ROADS: Record<string, TileDef> = {
 	ぐ: solid("#a8a8a4", street(112, 16), street(128, 0)),
 	げ: solid("#a8a8a4", street(112, 16), street(144, 0)),
 	ご: solid("#a8a8a4", street(112, 16), street(160, 0, 48)),
-	// 信号機（歩道の 角）・止まっている 車（2マス。赤は 上の 車線、白は 下の 車線）
+	// 信号機（歩道の 角）
 	ゔ: solid("#b8b4ac", road(5), street(224, 0, 32)),
-	ゕ: solid(C_ASPHALT, road(6), street(240, 0)),
-	ゖ: solid(C_ASPHALT, road(6), street(256, 0)),
-	ゝ: solid(C_ASPHALT, road(7), street(240, 16)),
-	ゞ: solid(C_ASPHALT, road(7), street(256, 16)),
 	ら: floor(C_ASPHALT, road(6)),
 	り: floor(C_ASPHALT, road(7)),
 	ヰ: floor(C_ASPHALT, road(10)),

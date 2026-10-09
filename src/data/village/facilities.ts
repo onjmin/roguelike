@@ -3,7 +3,8 @@
 // （スクリプトは ui/facilities.ts、試験は src/sim/villageTests.ts）。
 //
 // - 建つ 段（from）から、建てかえの 段（until）の 前まで 立つ（交番 → 警察署 のように 同じ 所で 建てかわる）。
-// - 外観は 2つの 書き方：
+// - 外観は 3つの 書き方：
+//     grid      絵を マスごとに 並べる（店・役所・家・車。RPGEN の 部品＝rpgenArt.ts の art() と Base.png）。字は 自動で 割りふる。
 //     building  ふつうの 家（屋根の 棟・軒、壁の 上段・下段。扉は 下段。Base.png の 家・壁・屋根）。字は 自動で 割りふる。
 //     block     自分で 字を 並べる（グラウンド・桟橋など。字と 絵は tiles に）。
 // - clear は 外観の 前に 敷く 地面（森を 開いた 草地・道。地図の 座標で 左上から 右へ）。
@@ -14,6 +15,7 @@
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import type { Cell } from "./map";
+import { art } from "./rpgenArt";
 import {
 	ASPHALT,
 	BRICK,
@@ -26,6 +28,7 @@ import {
 	floor,
 	INDOOR,
 	onTop,
+	road,
 	SIDEWALK,
 	solid,
 } from "./tiles";
@@ -61,6 +64,26 @@ export type BlockLook = {
 	rows: readonly string[];
 	tiles: Record<string, TileDef>;
 	door?: Cell;
+};
+
+/**
+ * 絵を 並べた 外観（RPGEN の 部品と Base.png を マスごとに 重ねる）。rows の 字は この 施設の 中だけの キーで、
+ * " " は 地図の まま（L 字の 建物の すき間など）。字は 施設ごとに 自動で 割りふる（facilityBlock）。
+ */
+export type GridLook = {
+	kind: "grid";
+	rows: readonly string[];
+	/** キー → 下から 重ねる 絵（art() / base() / basePx()）。地面は 自動で いちばん 下に 敷く。 */
+	keys: Record<string, readonly string[]>;
+	/** 透けた 部品の 下の 地面（省くと 芝。none は 敷かない＝車の キーに 車線の 絵を 自分で 入れる）。 */
+	ground?: "grass" | "sand" | "pier" | "quay" | "none";
+	/**
+	 * 扉の キー（rows に 1つだけ）。中（room）が ある 施設だけ 通れて、踏むと 入る。中が ない 施設（家・海上レストラン・
+	 * 中の ない 店）は 通れない 扉の 絵で、そこに 外の 物（表札・品書き）を 置く。
+	 */
+	door?: string;
+	/** 影を 落とすか（省くと 落とす。車・バス停は false）。 */
+	shadow?: boolean;
 };
 
 export type RoomLook = {
@@ -118,7 +141,7 @@ export type Facility = {
 	until?: number;
 	/** 外観の 左上（地図の 座標）。 */
 	at: Cell;
-	look: BuildingLook | BlockLook;
+	look: BuildingLook | BlockLook | GridLook;
 	/** 地面（x, y, 字の 並び, この 段から 敷かない）。 */
 	clear?: readonly (readonly [number, number, string, number?])[];
 	/** 扉を 踏んで 入る ときの 1窓（村に いる あいだ 1回）。 */
@@ -206,35 +229,93 @@ const C_FIELD = "#b08a5a";
 const C_GRASS = "#97bc25";
 const TURF = base(0, 4);
 
+/** 絵を 並べた 外観の 扉の マス（外観の 左上から。扉の キーが 無ければ null）。 */
+const gridDoor = (g: GridLook): Cell | null => {
+	if (!g.door) return null;
+	for (const [y, r] of g.rows.entries()) {
+		const x = [...r].indexOf(g.door);
+		if (x >= 0) return [x, y];
+	}
+	return null;
+};
+
 /** 住宅街の 家（入れない。扉の マスに 表札。until の 段で 都市の 建物に 建てかわる）。 */
 const house = (
 	id: string,
 	at: Cell,
-	w: number,
-	roof: number,
-	wall: number,
+	look: GridLook,
 	plate: readonly string[],
 	until?: number,
 ): Facility => {
-	const door = Math.floor(w / 2);
+	const [dx, dy] = gridDoor(look) ?? [0, look.rows.length - 1];
 	return {
 		id,
 		name: "家",
 		from: 6,
 		until,
 		at,
-		look: { kind: "building", w, roof, wall, door, closed: true },
-		outdoor: [{ id: "plate", at: [at[0] + door, at[1] + 3], lines: plate }],
+		look,
+		outdoor: [{ id: "plate", at: [at[0] + dx, at[1] + dy], lines: plate }],
 	};
 };
 
+// ───────────────── 外観の 部品（RPGEN。scripts/pack-rpgen.mjs） ─────────────────
+
+/**
+ * 平らな 屋根の 2段（上の ふち ( - )・下の ふち [ = ]。* 給水タンク・~ 室外機・% 天窓・& 下の ふちに 室外機）。
+ * ROOF_FLAT は 白い ふちの 屋上（店・役所）、ROOF_SLAB は 灰色の 板の 屋上（工場・倉庫・ビル）。
+ * 施設の キーと かぶらない よう、この 字は 屋根だけに 使う。
+ */
+const roofKeys = (
+	under: readonly string[],
+	name: "roofFlat" | "roofSlab",
+): Record<string, readonly string[]> => ({
+	"(": [...under, art(name)],
+	"-": [...under, art(name, 1)],
+	")": [...under, art(name, 2)],
+	"[": [...under, art(name, 0, 1)],
+	"=": [...under, art(name, 1, 1)],
+	"]": [...under, art(name, 2, 1)],
+	"*": [...under, art(name, 1), art("waterTank")],
+	"~": [...under, art(name, 1), base(3, 394)],
+	"%": [...under, art(name, 1, 1), art("skylight")],
+	"&": [...under, art(name, 1, 1), base(3, 394)],
+});
+const ROOF_FLAT = roofKeys([art("concrete")], "roofFlat");
+const ROOF_SLAB = roofKeys([], "roofSlab");
+/** 赤い 提灯（Base.png。半マス ずれて いるので 画素で 切る）。 */
+const LANTERN = basePx(35, 4754, 10, 13);
+
+/** 止まっている 車（4×2 マス。上の 段と 下の 段の 車線の 絵の 上に 車。どの マスも 通れない）。 */
+const car = (
+	id: string,
+	at: Cell,
+	name: "sedanE" | "sedanBlueW" | "wagonE" | "wagonWhiteW",
+	lanes: readonly [number, number],
+): Facility => ({
+	id,
+	name: "車",
+	from: 6,
+	at,
+	look: {
+		kind: "grid",
+		ground: "none",
+		shadow: false,
+		rows: ["0123", "4567"],
+		keys: Object.fromEntries(
+			Array.from({ length: 8 }, (_, i) => [
+				String(i),
+				[road(lanes[i >> 2]), art(name, i % 4, i >> 2)],
+			]),
+		),
+	},
+});
+
 const STREET_IMG = "pub:sprites/street.png";
-/** 自販機の 字（施設ごとに 1字。地面の 上に 立てる）。 */
+/** 自販機の 字（施設ごとに 1字。地面の 上に 立てる）。コンビニと ゲームセンターの 自販機は 外観の 中（2マス幅）。 */
 const VENDING_CHARS: Record<string, string> = {
 	vend_beach: "じ",
-	vend_konbini: "ず",
 	vend_bus: "ぜ",
-	vend_arcade: "ぞ",
 };
 
 /** 自販機（16x32。色は 0 赤・1 青・2 白。scripts/make-street.mjs）。 */
@@ -347,13 +428,24 @@ export const FACILITIES: readonly Facility[] = [
 		name: "海の家「age」",
 		from: 2,
 		at: [5, 32],
+		// わら屋根・青い 日よけ・氷の 旗・よしず
 		look: {
-			kind: "building",
-			w: 6,
-			roof: 2,
-			wall: 73,
-			door: 3,
-			sign: base(3, 95),
+			kind: "grid",
+			ground: "sand",
+			rows: ["aaaaaa", "dddddd", "kLMRSk", "rwwDwr"],
+			door: "D",
+			keys: {
+				a: [base(6, 82)],
+				d: [base(6, 84)],
+				L: [art("plank"), art("canopy")],
+				M: [art("plank"), art("canopy", 1)],
+				R: [art("plank"), art("canopy", 2)],
+				k: [art("plank"), art("kooriFlag")],
+				S: [art("plank"), base(3, 95)],
+				r: [art("reed")],
+				D: [art("plank", 0, 1), base(7, 55, 1, 2)],
+				w: [art("reed"), art("small25", 3)],
+			},
 		},
 		door: "海の家「age」。\n鉄板の　音と、ソースの　におい。",
 		room: {
@@ -434,13 +526,25 @@ export const FACILITIES: readonly Facility[] = [
 			[1, 29, ",,,,,,;"],
 			[2, 30, ",,,,,"],
 		],
+		// 灰色の 瓦・和の 店先
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 4,
-			wall: 57,
-			door: 2,
-			windows: false,
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "01234", "fFDGg"],
+			door: "D",
+			keys: {
+				a: [base(4, 82)],
+				d: [base(4, 84)],
+				"0": [art("jpLow")],
+				"1": [art("jpLow", 1)],
+				"2": [art("jpLow", 2)],
+				"3": [art("jpLow", 3)],
+				"4": [art("jpLow", 4)],
+				f: [art("jpFront")],
+				F: [art("jpFront", 1)],
+				D: [art("jpFront", 2)],
+				G: [art("jpFront", 3)],
+				g: [art("jpFront", 4)],
+			},
 		},
 		door: "碁会所「本因坊」。\n石を　打つ　音が、ぱちり。",
 		room: {
@@ -550,13 +654,23 @@ export const FACILITIES: readonly Facility[] = [
 		from: 4,
 		until: 7,
 		at: [40, 15],
+		// 灰色の 箱・赤い 灯り・鉄の 扉・掲示板・自転車
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 4,
-			wall: 63,
-			door: 2,
-			sign: base(7, 95),
+			kind: "grid",
+			rows: ["(-~-)", "[===]", "gwRwh", "iPDBb"],
+			door: "D",
+			keys: {
+				...ROOF_SLAB,
+				g: [art("gray")],
+				h: [art("gray", 2)],
+				R: [art("gray", 1), art("redLamp")],
+				w: [art("gray", 1), art("win108", 2)],
+				i: [art("gray", 0, 1), art("pot", 2)],
+				P: [art("gray", 1, 1), art("sign92", 1)],
+				D: [art("gray", 1, 1), art("door108")],
+				B: [art("gray", 1, 1), art("bike")],
+				b: [art("gray", 2, 1), art("bike", 1)],
+			},
 		},
 		door: "交番。\n赤い　灯りが　ともっている。",
 		room: {
@@ -613,7 +727,24 @@ export const FACILITIES: readonly Facility[] = [
 		from: 4,
 		until: 7,
 		at: [70, 15],
-		look: { kind: "building", w: 5, roof: 3, wall: 55, door: 2 },
+		// 赤い 軒・板壁・半鐘・赤い シャッター・防火用水の 樽
+		look: {
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "BggLM", "igDlm"],
+			door: "D",
+			keys: {
+				a: [art("eave")],
+				d: [art("eave", 0, 1)],
+				B: [base(1, 55), base(4, 88)],
+				g: [base(1, 55)],
+				L: [base(1, 55), art("shutterRed")],
+				M: [base(1, 55), art("shutterRed", 1)],
+				i: [base(1, 56), base(3, 125)],
+				D: [base(1, 56), base(7, 55, 1, 2)],
+				l: [base(1, 56), art("shutterRed")],
+				m: [base(1, 56), art("shutterRed", 1)],
+			},
+		},
 		door: "消防団の　詰所。\n法被が　かけてある。",
 		room: {
 			look: LOOKS.wood,
@@ -660,13 +791,23 @@ export const FACILITIES: readonly Facility[] = [
 		name: "おんJマート",
 		from: 4,
 		at: [40, 26],
+		// 白い 箱・青い 帯に SHOP・ガラスの 店先・自動ドア・屋上の 室外機。右の 角に 赤い 自販機（2マス幅）
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 5,
-			wall: 59,
-			door: 2,
-			sign: base(2, 96),
+			kind: "grid",
+			rows: ["(-~-) ", "[=&=] ", "gSGGh ", "iIDIVW"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				g: [art("white", 0, 1), art("band")],
+				G: [art("white", 1, 1), art("band", 1)],
+				h: [art("white", 2, 1), art("band", 2)],
+				S: [art("white", 1, 1), art("band", 1), art("sign25")],
+				i: [art("white", 0, 2), art("glass", 1), art("shopGlass")],
+				I: [art("white", 1, 2), art("glass", 1), art("shopGlass", 1)],
+				D: [art("white", 1, 2), art("autoDoor", 0, 1)],
+				V: [art("white", 2, 2), art("vend", 0, 0, 1, 2)],
+				W: [art("vend", 1, 0, 1, 2)],
+			},
 		},
 		door: "おんJマート。\n入店の　チャイムが　鳴った。",
 		room: {
@@ -716,6 +857,15 @@ export const FACILITIES: readonly Facility[] = [
 				},
 			],
 		},
+		// 店の 右の 角の 自販機（右の 半分の 前から 調べる）
+		outdoor: [
+			{
+				id: "vend",
+				at: [45, 29],
+				lines: ["自販機。\n……ちょうど、のどが　かわいていた。"],
+				play: "vend",
+			},
+		],
 	},
 	// ── 診療所（街。大通りの 北の まんなか。都市で 総合病院に 建てかえ）
 	{
@@ -724,13 +874,23 @@ export const FACILITIES: readonly Facility[] = [
 		from: 5,
 		until: 7,
 		at: [55, 15],
+		// 青い 軒・白い 壁・緑の 十字の 看板・ガラスの 扉・植えこみ
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 2,
-			wall: 77,
-			door: 2,
-			sign: base(1, 96),
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "gGTGX", "iIDIj"],
+			door: "D",
+			keys: {
+				a: [art("eave", 1)],
+				d: [art("eave", 1, 1)],
+				g: [art("white", 0, 1), art("win24")],
+				G: [art("white", 1, 1), art("win24")],
+				X: [art("white", 2, 1), base(1, 96)],
+				T: [art("white", 1, 1), art("autoDoor")],
+				i: [art("white", 0, 2), art("planter")],
+				I: [art("white", 1, 2), art("planter", 2)],
+				j: [art("white", 2, 2), art("pot", 2)],
+				D: [art("white", 1, 2), art("autoDoor", 0, 1)],
+			},
 		},
 		door: "診療所。\n消毒の　におい。",
 		room: {
@@ -786,13 +946,33 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守道場",
 		from: 5,
 		at: [53, 26],
+		// 和の 大屋根・心技体の 額・暗い 入口
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 7,
-			wall: 57,
-			door: 2,
-			windows: false,
+			kind: "grid",
+			rows: ["01234", "56789", "pqBCs", "wlDrW"],
+			door: "D",
+			keys: {
+				"0": [art("jpRoof")],
+				"1": [art("jpRoof", 1)],
+				"2": [art("jpRoof", 2)],
+				"3": [art("jpRoof", 3)],
+				"4": [art("jpRoof", 4)],
+				"5": [art("jpRoof", 0, 1)],
+				"6": [art("jpRoof", 1, 1)],
+				"7": [art("jpRoof", 2, 1)],
+				"8": [art("jpRoof", 3, 1)],
+				"9": [art("jpRoof", 4, 1)],
+				p: [art("jpLow")],
+				q: [art("jpLow", 1)],
+				B: [art("jpLow", 2), art("banner")],
+				C: [art("jpLow", 2), art("banner", 1)],
+				s: [art("jpLow", 4)],
+				l: [art("jpEnt")],
+				D: [art("jpEnt", 1)],
+				r: [art("jpEnt", 2)],
+				w: [art("jpWood")],
+				W: [art("jpWood", 1)],
+			},
 		},
 		door: "保守道場。\n「押忍！」と　声が　ひびく。",
 		room: {
@@ -844,13 +1024,23 @@ export const FACILITIES: readonly Facility[] = [
 		name: "質屋「流れ」",
 		from: 5,
 		at: [58, 26],
+		// 蔵の 形（白い 漆喰・木の 腰・格子窓）・小判の 看板・のれん
 		look: {
-			kind: "building",
-			w: 4,
-			roof: 0,
-			wall: 67,
-			door: 2,
-			sign: base(4, 96),
+			kind: "grid",
+			rows: ["aaaa", "dddd", "gGSh", "iIDj"],
+			door: "D",
+			keys: {
+				a: [base(4, 82)],
+				d: [base(4, 84)],
+				g: [art("white"), art("win108", 4)],
+				G: [art("white", 1)],
+				S: [art("white", 1), base(4, 96)],
+				h: [art("white", 2), art("win108", 4)],
+				i: [art("shin", 0, 1)],
+				I: [art("shin", 1, 1)],
+				j: [art("shin", 2, 1), art("pot", 4)],
+				D: [art("shin", 1, 1), art("jpEnt", 1), base(4, 297)],
+			},
 		},
 		door: "質屋「流れ」。\n鈴が　ちりん、と　鳴った。",
 		room: {
@@ -903,48 +1093,131 @@ export const FACILITIES: readonly Facility[] = [
 		},
 	},
 	// ── 住宅街（段6）：新市街の 空いた 区画に 家が 並ぶ。都市（段7）で 役所や 盛り場に 建てかわる
+	// 赤い 寄棟・桃色の カーテンの 窓・郵便受け
 	house(
 		"house_a",
 		[53, 4],
-		5,
-		1,
-		59,
+		{
+			kind: "grid",
+			rows: ["abbbc", "deeef", "12wwW", "34Dmp"],
+			door: "D",
+			keys: {
+				a: [art("hipRed")],
+				b: [art("hipRed", 1)],
+				c: [art("hipRed", 2)],
+				d: [art("hipRed", 0, 1)],
+				e: [art("hipRed", 1, 1)],
+				f: [art("hipRed", 2, 1)],
+				"1": [art("white", 0, 1), art("winPink")],
+				"2": [art("white", 1, 1), art("winPink", 1)],
+				w: [art("white", 1, 1)],
+				W: [art("white", 2, 1), art("win24", 2)],
+				"3": [art("white", 0, 2), art("winPink", 0, 1)],
+				"4": [art("white", 1, 2), art("winPink", 1, 1)],
+				D: [art("white", 1, 2), base(4, 507, 1, 2)],
+				m: [art("white", 1, 2), art("small25")],
+				p: [art("white", 2, 2), art("pot", 1)],
+			},
+		},
 		["表札「名無し」。\n……留守のようだ。"],
 		7,
 	),
+	// 青い 軒・ベージュの 壁・花の 箱
 	house(
 		"house_b",
 		[58, 4],
-		5,
-		3,
-		73,
+		{
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "gGGGh", "iIDpj"],
+			door: "D",
+			keys: {
+				a: [art("eave", 1)],
+				d: [art("eave", 1, 1)],
+				g: [art("beige"), art("win24", 2)],
+				G: [art("beige", 1)],
+				h: [art("beige", 2), art("win24", 2)],
+				i: [art("beige", 0, 1), art("flowerBox")],
+				I: [art("beige", 1, 1)],
+				p: [art("beige", 1, 1), art("pot", 2)],
+				j: [art("beige", 2, 1)],
+				D: [art("beige", 1, 1), base(7, 75, 1, 2)],
+			},
+		},
 		["表札「ななしのごんべえ」。\n窓から　テレビの　音。"],
 		7,
 	),
+	// 和の 切妻・格子・石灯籠
 	house(
 		"house_c",
 		[53, 37],
-		5,
-		2,
-		77,
+		{
+			kind: "grid",
+			rows: ["x012x", "y345y", "suSut", "vVDVz"],
+			door: "D",
+			keys: {
+				"0": [art("jpGable")],
+				"1": [art("jpGable", 1)],
+				"2": [art("jpGable", 2)],
+				"3": [art("jpGable", 0, 1)],
+				"4": [art("jpGable", 1, 1)],
+				"5": [art("jpGable", 2, 1)],
+				x: [base(4, 82)],
+				y: [base(4, 84)],
+				s: [art("shin")],
+				S: [art("shin", 1)],
+				t: [art("shin", 2)],
+				u: [art("shin", 1), art("win108", 6)],
+				v: [art("shin", 0, 1), art("lanternStone")],
+				V: [art("shin", 1, 1)],
+				z: [art("shin", 2, 1)],
+				D: [art("shin", 1, 1), art("jpEnt", 1)],
+			},
+		},
 		["表札「やきう民」。\n中から　ナイター中継の　音。"],
 		7,
 	),
+	// 木の 家（板壁・木の 窓）
 	house(
 		"house_d",
 		[58, 37],
-		5,
-		0,
-		55,
+		{
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "gGGGg", "ipDii"],
+			door: "D",
+			keys: {
+				a: [base(0, 82)],
+				d: [base(0, 84)],
+				g: [base(1, 55), art("win24", 3)],
+				G: [base(1, 55)],
+				D: [base(1, 56), base(7, 55, 1, 2)],
+				i: [base(1, 56)],
+				p: [base(1, 56), art("pot")],
+			},
+		},
 		["表札「ROM」。\n……カーテンが　すこし　ゆれた。"],
 		7,
 	),
+	// 平らな 屋根の 今風の 家（室外機・自転車）
 	house(
 		"house_e",
 		[70, 37],
-		6,
-		4,
-		63,
+		{
+			kind: "grid",
+			rows: ["(-*--)", "[====]", "gWGGWh", "iIIDBb"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				g: [art("gray"), art("win24")],
+				G: [art("gray", 1)],
+				h: [art("gray", 2), art("win24")],
+				W: [art("gray", 1), art("win24")],
+				i: [art("gray", 0, 1), base(3, 394)],
+				I: [art("gray", 1, 1)],
+				B: [art("gray", 1, 1), art("bike")],
+				b: [art("gray", 2, 1), art("bike", 1)],
+				D: [art("gray", 1, 1), base(5, 507, 1, 2)],
+			},
+		},
 		["表札「VIP」。\n……ポストに　チラシが　たまっている。"],
 		7,
 	),
@@ -954,13 +1227,26 @@ export const FACILITIES: readonly Facility[] = [
 		name: "リサイクルショップ「おさがり」",
 		from: 6,
 		at: [40, 4],
+		// 鉄の 屋根・開いた 搬入口・SHOP の 札・段ボール
 		look: {
-			kind: "building",
-			w: 6,
-			roof: 1,
-			wall: 73,
-			door: 2,
-			sign: base(5, 96),
+			kind: "grid",
+			rows: ["aaaaaa", "dddddd", "gGGLMS", "ikDxXj"],
+			door: "D",
+			keys: {
+				a: [base(5, 82)],
+				d: [base(5, 84)],
+				g: [art("gray"), art("win108", 1)],
+				G: [art("gray", 1)],
+				S: [art("gray", 1), art("sign25")],
+				L: [art("gray", 1), art("shutter")],
+				M: [art("gray", 1), art("shutter", 1)],
+				i: [art("gray", 0, 1), art("box")],
+				k: [art("gray", 1, 1), art("box", 1)],
+				D: [art("gray", 1, 1), base(4, 507, 1, 2)],
+				x: [art("gray", 1, 1), art("bay")],
+				X: [art("gray", 1, 1), art("bay", 1)],
+				j: [art("gray", 2, 1)],
+			},
 		},
 		door: "リサイクルショップ「おさがり」。\nほこりと、古い　紙の　におい。",
 		room: {
@@ -1024,7 +1310,27 @@ export const FACILITIES: readonly Facility[] = [
 		from: 6,
 		until: 7,
 		at: [70, 4],
-		look: { kind: "building", w: 6, roof: 5, wall: 69, door: 2 },
+		// シャッター 2つ・タイヤ
+		look: {
+			kind: "grid",
+			rows: ["aaaaaa", "dddddd", "gGGLMh", "tIDlmj"],
+			door: "D",
+			keys: {
+				a: [base(5, 82)],
+				d: [base(5, 84)],
+				g: [art("gray")],
+				G: [art("gray", 1)],
+				h: [art("gray", 2)],
+				L: [art("gray", 1), art("shutter")],
+				M: [art("gray", 1), art("shutter", 1)],
+				t: [art("gray", 0, 1), base(1, 490)],
+				I: [art("gray", 1, 1)],
+				D: [art("gray", 1, 1), base(5, 507, 1, 2)],
+				l: [art("gray", 1, 1), art("shutter")],
+				m: [art("gray", 1, 1), art("shutter", 1)],
+				j: [art("gray", 2, 1), base(3, 125)],
+			},
+		},
 		door: "ガレージ。\nオイルの　におい。",
 		room: {
 			look: LOOKS.stone,
@@ -1069,13 +1375,22 @@ export const FACILITIES: readonly Facility[] = [
 		name: "ゲームセンター「連コ」",
 		from: 6,
 		at: [70, 26],
+		// 黒レンガ・桃色の ネオンの 帯・紫の ガラス・額の ポスター。右の 角に 青い 自販機（2マス幅）
 		look: {
-			kind: "building",
-			w: 6,
-			roof: 5,
-			wall: 69,
-			door: 2,
-			sign: base(5, 95),
+			kind: "grid",
+			rows: ["(-~--)", "[====]", "mMMMMn", "gPDgVW"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				m: [art("wallTex", 1), art("band", 0, 4)],
+				M: [art("wallTex", 1), art("band", 1, 4)],
+				n: [art("wallTex", 1), art("band", 2, 4)],
+				g: [art("wallTex", 1), art("glass"), base(4, 367)],
+				D: [art("wallTex", 1), art("autoDoor", 0, 1)],
+				P: [art("wallTex", 1), art("sign92", 2)],
+				V: [art("wallTex", 1), art("vendBlue", 0, 0, 1, 2)],
+				W: [art("wallTex", 1), art("vendBlue", 1, 0, 1, 2)],
+			},
 		},
 		door: "ゲームセンター「連コ」。\n電子音と、レバーを　たたく　音。",
 		room: {
@@ -1119,6 +1434,15 @@ export const FACILITIES: readonly Facility[] = [
 				},
 			],
 		},
+		// 店の 右の 角の 自販機（右の 半分の 前から 調べる）
+		outdoor: [
+			{
+				id: "vend",
+				at: [75, 29],
+				lines: ["自販機。\n……ちょうど、のどが　かわいていた。"],
+				play: "vend",
+			},
+		],
 	},
 	// ── ageジム（住宅街。浜への 道の 西）
 	{
@@ -1126,7 +1450,22 @@ export const FACILITIES: readonly Facility[] = [
 		name: "ageジム",
 		from: 6,
 		at: [40, 37],
-		look: { kind: "building", w: 6, roof: 4, wall: 69, door: 2 },
+		// 紫の 帯・灰色の ガラス
+		look: {
+			kind: "grid",
+			rows: ["(~--~)", "[====]", "sSSSSt", "iIDIIj"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				s: [art("white", 1, 1), art("band", 0, 2)],
+				S: [art("white", 1, 1), art("band", 1, 2)],
+				t: [art("white", 1, 1), art("band", 2, 2)],
+				i: [art("gray", 0, 1), art("glass", 2)],
+				I: [art("gray", 1, 1), art("glass", 2)],
+				j: [art("gray", 2, 1), art("glass", 2)],
+				D: [art("gray", 1, 1), art("autoDoor", 0, 1)],
+			},
+		},
 		door: "ageジム。\n「ふんっ……！」と　声が　する。",
 		room: {
 			look: LOOKS.stone,
@@ -1171,13 +1510,22 @@ export const FACILITIES: readonly Facility[] = [
 		name: "バー「次スレ」",
 		from: 6,
 		at: [33, 32],
+		// 木の 屋根・黒レンガ・灯りの 窓・ジョッキの 看板・赤い 扉
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 7,
-			wall: 61,
-			door: 2,
-			sign: base(4, 95),
+			kind: "grid",
+			ground: "sand",
+			rows: ["aaaaa", "ddddd", "gGGSg", "iIDIi"],
+			door: "D",
+			keys: {
+				a: [base(0, 82)],
+				d: [base(0, 84)],
+				g: [art("wallTex", 1), art("win108", 3)],
+				G: [art("wallTex", 1)],
+				S: [art("wallTex", 1), base(4, 95)],
+				i: [art("wallTex", 1), art("pot", 3)],
+				I: [art("wallTex", 1), art("win108", 3)],
+				D: [art("wallTex", 1), art("door108", 1)],
+			},
 		},
 		door: "バー「次スレ」。\n低い　ジャズと、波の　音。",
 		room: {
@@ -1245,14 +1593,28 @@ export const FACILITIES: readonly Facility[] = [
 			[21, 41, "ははははははははははは"],
 			[21, 42, "ははははははははははは"],
 		],
+		// 青い 寄棟・赤い カーテンの 大きな 窓（扉は しまっている）
 		look: {
-			kind: "building",
-			w: 7,
-			roof: 3,
-			wall: 77,
-			door: 3,
-			sign: base(3, 95),
-			closed: true,
+			kind: "grid",
+			ground: "pier",
+			rows: ["abbbbbc", "deeeeef", "123S123", "456D456"],
+			door: "D",
+			keys: {
+				a: [art("hipBlue")],
+				b: [art("hipBlue", 1)],
+				c: [art("hipBlue", 2)],
+				d: [art("hipBlue", 0, 1)],
+				e: [art("hipBlue", 1, 1)],
+				f: [art("hipBlue", 2, 1)],
+				"1": [art("white", 1, 1), art("curtainBig")],
+				"2": [art("white", 1, 1), art("curtainBig", 1)],
+				"3": [art("white", 1, 1), art("curtainBig", 2)],
+				"4": [art("white", 1, 2), art("curtainBig", 0, 1)],
+				"5": [art("white", 1, 2), art("curtainBig", 1, 1)],
+				"6": [art("white", 1, 2), art("curtainBig", 2, 1)],
+				S: [art("white", 1, 1), base(3, 95)],
+				D: [art("white", 1, 2), art("door108", 2)],
+			},
 		},
 		outdoor: [
 			{
@@ -1266,16 +1628,93 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
+	// ── 麺屋「乙」（住宅街。線路の 東の 南の 区画。中は まだ 無い：のれんの 前で 品書きを 読む）
+	{
+		id: "ramen",
+		name: "麺屋「乙」",
+		from: 6,
+		at: [80, 26],
+		// 灰色の 瓦・赤い 日よけ・赤い 提灯・障子・のれん・どんぶりの 看板
+		look: {
+			kind: "grid",
+			rows: ["aaaaaa", "dddddd", "LMMMMR", "csDsbk"],
+			door: "D",
+			keys: {
+				a: [base(4, 82)],
+				d: [base(4, 84)],
+				L: [art("jpWood"), art("canopy", 0, 1)],
+				M: [art("jpWood"), art("canopy", 1, 1)],
+				R: [art("jpWood"), art("canopy", 2, 1)],
+				c: [art("jpWood"), LANTERN],
+				s: [art("jpWood"), art("win108", 6)],
+				b: [art("jpWood"), art("ramenBowl")],
+				D: [art("jpEnt", 1), base(4, 297)],
+				k: [art("jpWood", 1), LANTERN],
+			},
+		},
+		outdoor: [
+			{
+				id: "door",
+				at: [82, 29],
+				lines: [
+					"麺屋「乙」。\nのれんの　奥から、しょうゆの　におい。",
+					"「本日の　スープ、売り切れ」の　札。\n……店の　名前は、おつかれの「乙」。",
+				],
+			},
+		],
+	},
+	// ── ファミレス「ドリンクバー」（住宅街。線路の 東の 北の 区画。中は まだ 無い：満席）
+	{
+		id: "famires",
+		name: "ファミレス「ドリンクバー」",
+		from: 6,
+		at: [80, 4],
+		// 赤い 軒・だいだいの 帯に ナイフと フォークの 看板・黄色い 枠の 窓・自動ドア
+		look: {
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "oOOSp", "WwDwP"],
+			door: "D",
+			keys: {
+				a: [art("eave")],
+				d: [art("eave", 0, 1)],
+				o: [art("white", 0, 1), art("band", 0, 1)],
+				O: [art("white", 1, 1), art("band", 1, 1)],
+				p: [art("white", 2, 1), art("band", 2, 1)],
+				S: [art("white", 1, 1), art("band", 1, 1), base(3, 95)],
+				w: [art("white", 1, 2), art("win24", 1)],
+				W: [art("white", 0, 2), art("win24", 1)],
+				D: [art("white", 1, 2), art("autoDoor", 0, 1)],
+				P: [art("white", 2, 2), art("win24", 1)],
+			},
+		},
+		outdoor: [
+			{
+				id: "door",
+				at: [82, 7],
+				lines: [
+					"ファミレス「ドリンクバー」。\n窓ぎわで、だれかが　ずっと　粘っている。",
+					"ただいま　満席。\n待ちの　紙に「名無し」が　ずらり。",
+				],
+			},
+		],
+	},
+	// ── 止まっている 車（住宅街から。東の 通りの 車線。左を 走るので 東向きは 上の 2車線・西向きは 下の 2車線）
+	car("car_a", [56, 9], "sedanE", [6, 10]),
+	car("car_b", [55, 20], "wagonE", [6, 10]),
+	car("car_c", [72, 22], "sedanBlueW", [11, 7]),
+	car("car_d", [57, 33], "wagonWhiteW", [11, 7]),
 	// ── バス停（住宅街。広場の 東の はし。ここからも どの 板へも 出かけられる：出口を 遠く しない）
 	{
 		id: "bus",
 		name: "バス停",
 		from: 6,
 		at: [31, 20],
+		// だいだいの 丸い 札の バス停（16x32）
 		look: {
-			kind: "block",
-			rows: ["ば"],
-			tiles: { ば: solid("#97bc25", base(0, 4), base(5, 37, 1, 2)) },
+			kind: "grid",
+			shadow: false,
+			rows: ["b"],
+			keys: { b: [art("busStop", 0, 0, 1, 2)] },
 		},
 		outdoor: [
 			{
@@ -1347,13 +1786,29 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守警察署",
 		from: 7,
 		at: [40, 14],
+		// 3階建ての 白い ビル・青い 窓・赤い 灯り・鉄の 両開き（右が 扉）・自転車・給水タンク
 		look: {
-			kind: "building",
-			w: 6,
-			roof: 5,
-			wall: 71,
-			tall: 2,
-			sign: base(7, 95),
+			kind: "grid",
+			rows: ["(-*-~)", "[==&=]", "awbRwc", "pqrrqs", "YyLDtu"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				a: [art("white"), art("win108", 2)],
+				w: [art("white", 1), art("win108", 2)],
+				b: [art("white", 1)],
+				R: [art("white", 1), art("redLamp")],
+				c: [art("white", 2), art("win108", 2)],
+				p: [art("white", 0, 1), art("win108")],
+				q: [art("white", 1, 1), art("win108")],
+				r: [art("white", 1, 1)],
+				s: [art("white", 2, 1), art("win108")],
+				Y: [art("gray", 0, 1), art("bike")],
+				y: [art("gray", 1, 1), art("bike", 1)],
+				L: [art("gray", 1, 1), base(2, 92, 1, 2)],
+				D: [art("gray", 1, 1), base(3, 92, 1, 2)],
+				t: [art("gray", 1, 1), art("pot", 2)],
+				u: [art("gray", 2, 1), art("win108", 2)],
+			},
 		},
 		door: "保守警察署。\n電話の　音が　鳴りやまない。",
 		room: {
@@ -1408,13 +1863,37 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守村　総合病院",
 		from: 7,
 		at: [53, 14],
+		// 横に 長い 白い ビル・赤十字・自動ドア（左は 開かない 扉）・非常口・植えこみ・給水タンク・天窓
 		look: {
-			kind: "building",
-			w: 10,
-			roof: 2,
-			wall: 63,
-			tall: 2,
-			sign: base(1, 96),
+			kind: "grid",
+			rows: [
+				"(-*--~--*)",
+				"[==%==%==]",
+				"awwwbXwwwc",
+				"lqqqTUqqqe",
+				"789xEDg789",
+			],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				a: [art("white")],
+				w: [art("white", 1), art("win24")],
+				b: [art("white", 1)],
+				X: [art("white", 1), art("redCross")],
+				c: [art("white", 2)],
+				l: [art("white", 0, 1)],
+				q: [art("white", 1, 1), art("win24")],
+				e: [art("white", 2, 1)],
+				T: [art("white", 1, 1), art("autoDoor")],
+				U: [art("white", 1, 1), art("autoDoor", 1)],
+				"7": [art("white", 0, 2), art("planter")],
+				"8": [art("white", 1, 2), art("planter", 1)],
+				"9": [art("white", 2, 2), art("planter", 2)],
+				g: [art("white", 1, 2), art("glass", 1), art("shopGlass", 1)],
+				x: [art("white", 1, 2), art("glass", 1), art("sign92")],
+				E: [art("white", 1, 2), art("autoDoor", 0, 1)],
+				D: [art("white", 1, 2), art("autoDoor", 1, 1)],
+			},
 		},
 		door: "総合病院。\n白い　廊下が、まっすぐ　のびている。",
 		room: {
@@ -1473,7 +1952,29 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守消防署",
 		from: 7,
 		at: [70, 14],
-		look: { kind: "building", w: 7, roof: 3, wall: 61, tall: 2 },
+		// 白い 壁・赤い シャッターの 車庫 2つ・赤い 灯り・消火器
+		look: {
+			kind: "grid",
+			rows: ["(-~--*)", "[=====]", "awwRwwc", "lLMtLMr", "4NODNO6"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				a: [art("white")],
+				w: [art("white", 1), art("win108", 2)],
+				R: [art("white", 1), art("redLamp")],
+				c: [art("white", 2)],
+				l: [art("white", 0, 1)],
+				L: [art("white", 1, 1), art("shutterRed")],
+				M: [art("white", 1, 1), art("shutterRed", 1)],
+				r: [art("white", 2, 1)],
+				t: [art("white", 1, 1)],
+				"4": [art("white", 0, 2), art("small25", 1)],
+				N: [art("white", 1, 2), art("shutterRed")],
+				O: [art("white", 1, 2), art("shutterRed", 1)],
+				"6": [art("white", 2, 2)],
+				D: [art("white", 1, 2), base(5, 507, 1, 2)],
+			},
+		},
 		door: "保守消防署。\n赤い　車が、出動を　待っている。",
 		room: {
 			look: LOOKS.brick,
@@ -1519,7 +2020,29 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守地方裁判所",
 		from: 7,
 		at: [53, 3],
-		look: { kind: "building", w: 10, roof: 4, wall: 67, tall: 2 },
+		// 灰色の 石・白い 柱 4本・アーチの 窓・鉄の 両開き（右が 扉）
+		look: {
+			kind: "grid",
+			rows: [
+				"(--------)",
+				"[==%==%==]",
+				"sPwPssPwPs",
+				"sQWQssQWQs",
+				"sRsRLDRsRs",
+			],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				s: [art("wallTex", 2)],
+				P: [art("wallTex", 2), art("pillar")],
+				Q: [art("wallTex", 2), art("pillar", 0, 1)],
+				R: [art("wallTex", 2), art("pillar", 0, 2)],
+				w: [art("wallTex", 2), art("archTall")],
+				W: [art("wallTex", 2), art("archTall", 0, 1)],
+				L: [art("wallTex", 2), base(2, 92, 1, 2)],
+				D: [art("wallTex", 2), base(3, 92, 1, 2)],
+			},
+		},
 		door: "保守地方裁判所。\nしんと　静まりかえっている。",
 		room: {
 			look: LOOKS.office,
@@ -1574,7 +2097,29 @@ export const FACILITIES: readonly Facility[] = [
 		name: "自動車整備工場",
 		from: 7,
 		at: [70, 4],
-		look: { kind: "building", w: 7, roof: 5, wall: 69 },
+		// 開いた 車庫に 正面を 向いた 黒い 車・シャッター・タイヤ
+		look: {
+			kind: "grid",
+			rows: ["(-~---)", "[=&===]", "ABwgLMh", "CEtDlmj"],
+			door: "D",
+			keys: {
+				...ROOF_SLAB,
+				A: [art("gray"), art("bay"), art("carFront")],
+				B: [art("gray", 1), art("bay", 1), art("carFront", 1)],
+				C: [art("gray", 0, 1), art("carFront", 0, 1)],
+				E: [art("gray", 1, 1), art("carFront", 1, 1)],
+				g: [art("gray", 1)],
+				w: [art("gray", 1), art("win108", 1)],
+				h: [art("gray", 2)],
+				L: [art("gray", 1), art("shutter")],
+				M: [art("gray", 1), art("shutter", 1)],
+				l: [art("gray", 1, 1), art("shutter")],
+				m: [art("gray", 1, 1), art("shutter", 1)],
+				D: [art("gray", 1, 1), base(5, 507, 1, 2)],
+				t: [art("gray", 1, 1), base(1, 490)],
+				j: [art("gray", 2, 1)],
+			},
+		},
 		door: "自動車整備工場。\nエンジンの　音と、オイルの　におい。",
 		room: {
 			look: LOOKS.stone,
@@ -1618,7 +2163,27 @@ export const FACILITIES: readonly Facility[] = [
 		name: "映画館「スクリーン1000」",
 		from: 7,
 		at: [53, 36],
-		look: { kind: "building", w: 5, roof: 3, wall: 75, tall: 2 },
+		// 電光の 看板・額の ポスター・赤い ロープの 柱
+		look: {
+			kind: "grid",
+			rows: ["(-~-)", "[===]", "1234l", "pqTqP", "rRDRr"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				l: [art("wallTex", 1)],
+				"1": [art("wallTex", 1), art("led")],
+				"2": [art("wallTex", 1), art("led", 1)],
+				"3": [art("wallTex", 1), art("led", 2)],
+				"4": [art("wallTex", 1), art("led", 3)],
+				p: [art("wallTex", 1), art("sign92", 2)],
+				P: [art("wallTex", 1), art("sign92", 4)],
+				q: [art("wallTex", 1), art("sign92", 3)],
+				T: [art("wallTex", 1), art("autoDoor")],
+				D: [art("wallTex", 1), art("autoDoor", 0, 1)],
+				r: [art("wallTex", 1), art("rope")],
+				R: [art("wallTex", 1), art("rope", 1)],
+			},
+		},
 		door: "映画館「スクリーン1000」。\nポップコーンの　におい。",
 		room: {
 			look: LOOKS.dojo,
@@ -1660,7 +2225,27 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守劇場",
 		from: 7,
 		at: [58, 36],
-		look: { kind: "building", w: 5, roof: 3, wall: 63, tall: 2 },
+		// 赤い 軒・赤レンガ・柱・赤い 幕の 大きな 窓
+		look: {
+			kind: "grid",
+			rows: ["aaaaa", "ddddd", "P123P", "Q456Q", "RbDbR"],
+			door: "D",
+			keys: {
+				a: [art("eave")],
+				d: [art("eave", 0, 1)],
+				"1": [art("wallTex"), art("curtainBig")],
+				"2": [art("wallTex"), art("curtainBig", 1)],
+				"3": [art("wallTex"), art("curtainBig", 2)],
+				"4": [art("wallTex"), art("curtainBig", 0, 1)],
+				"5": [art("wallTex"), art("curtainBig", 1, 1)],
+				"6": [art("wallTex"), art("curtainBig", 2, 1)],
+				P: [art("wallTex"), art("pillar")],
+				Q: [art("wallTex"), art("pillar", 0, 1)],
+				R: [art("wallTex"), art("pillar", 0, 2)],
+				b: [art("wallTex")],
+				D: [art("wallTex"), art("door108", 1)],
+			},
+		},
 		door: "保守劇場。\n開演の　ブザーが　鳴っている。",
 		room: {
 			look: LOOKS.brick,
@@ -1705,13 +2290,27 @@ export const FACILITIES: readonly Facility[] = [
 		name: "カジノ「ガチャ」",
 		from: 7,
 		at: [70, 36],
+		// 金の 帯・赤レンガ・電光の 看板・赤い じゅうたんに 金の 両開き（右が 扉）・ロープの 柱
 		look: {
-			kind: "building",
-			w: 7,
-			roof: 7,
-			wall: 61,
-			tall: 2,
-			sign: base(4, 96),
+			kind: "grid",
+			rows: ["(~-*-~)", "[=====]", "yYYYYYz", "g1234sg", "grLDRrg"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				y: [art("band", 0, 3)],
+				Y: [art("band", 1, 3)],
+				z: [art("band", 2, 3)],
+				"1": [art("wallTex"), art("led")],
+				"2": [art("wallTex"), art("led", 1)],
+				"3": [art("wallTex"), art("led", 2)],
+				"4": [art("wallTex"), art("led", 3)],
+				s: [art("wallTex"), base(4, 96)],
+				g: [art("wallTex"), art("win108", 3)],
+				L: [art("wallTex"), base(4, 92, 1, 2)],
+				D: [art("redCarpet"), base(5, 92, 1, 2)],
+				r: [art("wallTex"), art("rope")],
+				R: [art("wallTex"), art("rope", 1)],
+			},
 		},
 		door: "カジノ「ガチャ」。\nコインの　音が　鳴りひびく。",
 		room: {
@@ -1760,7 +2359,28 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守村駅",
 		from: 7,
 		at: [80, 14],
-		look: { kind: "building", w: 6, roof: 5, wall: 69, tall: 2 },
+		// 時計・発車の 板・青い ひさし・ガラスの 正面に 自動ドア（左は 開かない 扉）・非常口
+		look: {
+			kind: "grid",
+			rows: ["(-~--)", "[====]", "lpPqQr", "nNNNNn", "xITDIj"],
+			door: "D",
+			keys: {
+				...ROOF_FLAT,
+				l: [art("white", 0, 1), art("sign25", 2)],
+				r: [art("white", 2, 1)],
+				p: [art("white", 1, 1), art("depart")],
+				P: [art("white", 1, 1), art("depart", 1)],
+				q: [art("white", 1, 1), art("depart", 2)],
+				Q: [art("white", 1, 1), art("depart", 3)],
+				n: [art("glass", 1), art("eave", 1)],
+				N: [art("glass", 1), art("eave", 1, 1)],
+				x: [art("gray", 0, 1), art("glass", 1), art("sign92")],
+				I: [art("gray", 1, 1), art("glass", 1), art("shopGlass", 1)],
+				j: [art("gray", 2, 1), art("glass", 1), art("shopGlass", 2)],
+				T: [art("gray", 1, 1), art("autoDoor", 0, 1)],
+				D: [art("gray", 1, 1), art("autoDoor", 1, 1)],
+			},
+		},
 		door: "保守村駅。\n発車ベルが、遠くで　鳴っている。",
 		room: {
 			look: LOOKS.office,
@@ -1848,7 +2468,25 @@ export const FACILITIES: readonly Facility[] = [
 		name: "港湾事務所",
 		from: 7,
 		at: [46, 44],
-		look: { kind: "building", w: 5, roof: 5, wall: 69 },
+		// 青い 軒・白い 壁・掲示板・消火器・木箱
+		look: {
+			kind: "grid",
+			ground: "quay",
+			rows: ["aaaaa", "ddddd", "gGSGh", "iIDIj"],
+			door: "D",
+			keys: {
+				a: [art("eave", 1)],
+				d: [art("eave", 1, 1)],
+				g: [art("white", 0, 1), art("win24")],
+				G: [art("white", 1, 1), art("win24")],
+				h: [art("white", 2, 1), art("win24")],
+				S: [art("white", 1, 1), art("sign92", 1)],
+				i: [art("white", 0, 2), art("small25", 1)],
+				I: [art("white", 1, 2)],
+				j: [art("white", 2, 2), art("box")],
+				D: [art("white", 1, 2), base(5, 507, 1, 2)],
+			},
+		},
 		door: "港湾事務所。\n無線の　声が　流れている。",
 		room: {
 			look: LOOKS.office,
@@ -1886,7 +2524,21 @@ export const FACILITIES: readonly Facility[] = [
 		name: "工場",
 		from: 7,
 		at: [62, 44],
-		look: { kind: "building", w: 8, roof: 5, wall: 69, closed: true },
+		// 鉄板の 壁・シャッター・注意の 札（入れない）
+		look: {
+			kind: "grid",
+			ground: "quay",
+			rows: ["(-~--~-)", "[======]", "mwmwmwmw", "cLMmDLMc"],
+			keys: {
+				...ROOF_SLAB,
+				m: [art("wallTex", 4)],
+				w: [art("wallTex", 4), art("win108", 5)],
+				L: [art("wallTex", 4), art("shutter")],
+				M: [art("wallTex", 4), art("shutter", 1)],
+				c: [art("wallTex", 4), art("caution")],
+				D: [art("wallTex", 4), art("door108")],
+			},
+		},
 		outdoor: [
 			{
 				id: "door",
@@ -1900,7 +2552,22 @@ export const FACILITIES: readonly Facility[] = [
 		name: "発電所",
 		from: 7,
 		at: [80, 36],
-		look: { kind: "building", w: 6, roof: 7, wall: 71, tall: 2, closed: true },
+		// 黄と 黒の しま・格子・金網の 柵・注意の 札（入れない）
+		look: {
+			kind: "grid",
+			rows: ["(-~~-)", "[====]", "hhhhhh", "mgmgmg", "FGcDGH"],
+			keys: {
+				...ROOF_SLAB,
+				m: [art("wallTex", 4)],
+				h: [art("wallTex", 4), base(7, 480)],
+				g: [art("wallTex", 4), art("wallTex", 5)],
+				F: [art("fence")],
+				G: [art("fence", 1)],
+				H: [art("fence", 2)],
+				c: [art("fence", 1), art("caution")],
+				D: [art("wallTex", 4), art("door108")],
+			},
+		},
 		outdoor: [
 			{
 				id: "door",
@@ -1984,11 +2651,9 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
-	// ── 自販機（浜の 海の家の 横・コンビニの 横・バス停の 横・ゲームセンターの 横。調べると 飲み物が 出る）
+	// ── 自販機（浜の 海の家の 横・バス停の 横。調べると 飲み物が 出る。コンビニと ゲームセンターの 自販機は 外観の 中）
 	vending("vend_beach", [11, 35], 0, 2, "sand"),
-	vending("vend_konbini", [45, 29], 1, 4, "grass"),
 	vending("vend_bus", [32, 20], 2, 6, "grass"),
-	vending("vend_arcade", [76, 28], 0, 6, "grass"),
 	// ── 町の 中心の 道ばた（住宅街・都市。data/village/map.ts の coreCity）。ここより 前に 足すと ふつうの 家の 字が ずれる
 	fixture(
 		"post",
@@ -2062,7 +2727,18 @@ export const FACILITIES: readonly Facility[] = [
 		name: "保守ヒルズ",
 		from: 7,
 		at: [9, 1],
-		look: { kind: "building", w: 5, roof: 5, wall: 63, tall: 3, closed: true },
+		// ガラスの 塔（入れない）
+		look: {
+			kind: "grid",
+			rows: ["(-*-)", "[===]", "GgGgG", "GgGgG", "GgGgG", "iiDii"],
+			keys: {
+				...ROOF_SLAB,
+				g: [art("wallTex", 3)],
+				G: [art("glass", 1)],
+				D: [art("gray", 1, 1), art("door108")],
+				i: [art("gray", 1, 1)],
+			},
+		},
 	},
 	// 足もとは 本館の 屋根なので 正面に 扉は 描かない（扉の 列を 灰色の 壁に）。看板は 右はしの 下の 段（東の 草地から 読む）
 	{
@@ -2070,16 +2746,25 @@ export const FACILITIES: readonly Facility[] = [
 		name: "雑居ビル",
 		from: 7,
 		at: [15, 0],
+		// 灰色の ビル・電光の 看板・室外機。右はしの 下の 段に 青い 看板（19,5）
 		look: {
-			kind: "building",
-			w: 5,
-			roof: 5,
-			wall: 69,
-			tall: 4,
-			door: 3,
-			doorCol: 1,
-			sign: base(7, 96),
-			closed: true,
+			kind: "grid",
+			rows: ["(-~-)", "[===]", "gGuGh", "g12Gh", "gGuGh", "g3Go4", "iIIIj"],
+			keys: {
+				...ROOF_SLAB,
+				g: [art("gray"), art("win108", 2)],
+				G: [art("gray", 1), art("win108", 2)],
+				h: [art("gray", 2), art("win108", 2)],
+				o: [art("gray", 1)],
+				"1": [art("gray", 1), art("ledGray")],
+				"2": [art("gray", 1), art("ledGray", 1)],
+				u: [art("gray", 1), base(3, 394)],
+				"3": [art("gray", 1), art("sign25")],
+				"4": [art("gray", 2), art("sign25", 1)],
+				i: [art("gray", 0, 1)],
+				I: [art("gray", 1, 1)],
+				j: [art("gray", 2, 1)],
+			},
 		},
 		outdoor: [
 			{
@@ -2119,9 +2804,39 @@ const PARTS = [
 const partChar = (i: number, part: (typeof PARTS)[number]): string =>
 	String.fromCodePoint(0x3400 + i * PARTS.length + PARTS.indexOf(part));
 
+/**
+ * 絵を 並べた 外観の 字（施設ごとに 96字。CJK 統合漢字の 頭 U+4E00 から。村の ほかの パレットは この 範囲を
+ * 使わない）。k は キーの 番号（keys の 並び）。
+ */
+const GRID_SPAN = 96;
+const gridChar = (i: number, k: number): string =>
+	String.fromCodePoint(0x4e00 + i * GRID_SPAN + k);
+const gridKeyIndex = (g: GridLook): Map<string, number> =>
+	new Map(Object.keys(g.keys).map((k, n) => [k, n]));
+/** 透けた 部品の 下に 敷く 地面（色と 絵）。 */
+const GRID_GROUND: Record<
+	NonNullable<GridLook["ground"]>,
+	readonly [string, string?]
+> = {
+	grass: [C_GRASS, TURF],
+	sand: ["#ecd9a0", base(4, 4)],
+	pier: [C_PIER, base(0, 46)],
+	quay: ["#a8a8a4", `${STREET_IMG}#112,16,16,16`],
+	none: [C_ASPHALT],
+};
+
 /** 外観の 行（施設の 左上から）。 */
 export const facilityBlock = (f: Facility): readonly string[] => {
 	if (f.look.kind === "block") return f.look.rows;
+	if (f.look.kind === "grid") {
+		const i = FACILITIES.indexOf(f);
+		const idx = gridKeyIndex(f.look);
+		return f.look.rows.map((r) =>
+			[...r]
+				.map((k) => (k === " " ? " " : gridChar(i, idx.get(k) ?? 0)))
+				.join(""),
+		);
+	}
 	const b = f.look;
 	const i = FACILITIES.indexOf(f);
 	const ch = (p: (typeof PARTS)[number]) => partChar(i, p);
@@ -2155,6 +2870,10 @@ export const facilityDoor = (f: Facility): Cell | null => {
 		const d = f.look.door;
 		return d ? [f.at[0] + d[0], f.at[1] + d[1]] : null;
 	}
+	if (f.look.kind === "grid") {
+		const d = gridDoor(f.look);
+		return d ? [f.at[0] + d[0], f.at[1] + d[1]] : null;
+	}
 	const rows = facilityBlock(f);
 	return [
 		f.at[0] + (f.look.door ?? Math.floor(f.look.w / 2)),
@@ -2168,12 +2887,25 @@ export const facilityOutside = (f: Facility): FacilitySpot => {
 	return { x: d[0], y: d[1] + 1, dir: "down" };
 };
 
-/** 外観の 絵（ふつうの 家の 字と、block の 字）。村の パレットに まぜる。 */
+/** 外観の 絵（絵を 並べた 外観・ふつうの 家の 字と、block の 字）。村の パレットに まぜる。 */
 export const facilityTiles = (): Record<string, TileDef> => {
 	const out: Record<string, TileDef> = {};
 	FACILITIES.forEach((f, i) => {
 		if (f.look.kind === "block") {
 			Object.assign(out, f.look.tiles);
+			return;
+		}
+		if (f.look.kind === "grid") {
+			const g = f.look;
+			const [color, ground] = GRID_GROUND[g.ground ?? "grass"];
+			for (const [k, n] of gridKeyIndex(g)) {
+				const layers = [...(ground ? [ground] : []), ...g.keys[k]];
+				// 扉は 中が ある ときだけ 通れる（踏むと 入る）
+				out[gridChar(i, n)] =
+					k === g.door && f.room
+						? floor(color, ...layers)
+						: solid(color, ...layers);
+			}
 			return;
 		}
 		const b = f.look;
@@ -2197,19 +2929,37 @@ export const facilityTiles = (): Record<string, TileDef> => {
 };
 
 /**
- * 建物の 影（マス単位。光は 左上から：建物の 右がわの 地面に、軒から 足もとまで）。ふつうの 家の 外観だけ
- * （block の 外観＝グラウンド・港などは 影なし）。ui/facilities.ts の shadowDecor が 描く。
+ * 建物の 影（マス単位。光は 左上から：建物の 右がわの 地面に、軒から 足もとまで）。ふつうの 家と 絵を 並べた
+ * 外観（車・バス停は 落とさない。block の 外観＝グラウンド・港なども 影なし）。ui/facilities.ts の shadowDecor が 描く。
+ * 絵を 並べた 外観は 右はしの 同じ 行を まとめて 1本ずつ（コンビニの 自販機のような 出っぱりにも 影）。
  */
 export const facilityShadows = (
 	stage: number,
 ): { x: number; top: number; bottom: number }[] =>
-	facilitiesAt(stage)
-		.filter((f) => f.look.kind === "building")
-		.map((f) => {
+	facilitiesAt(stage).flatMap((f) => {
+		const look = f.look;
+		if (look.kind === "building") {
 			const rows = facilityBlock(f).length;
-			const w = f.look.kind === "building" ? f.look.w : 0;
-			return { x: f.at[0] + w, top: f.at[1] + 1, bottom: f.at[1] + rows };
+			return [
+				{ x: f.at[0] + look.w, top: f.at[1] + 1, bottom: f.at[1] + rows },
+			];
+		}
+		if (look.kind !== "grid" || look.shadow === false) return [];
+		const out: { x: number; top: number; bottom: number }[] = [];
+		look.rows.forEach((r, y) => {
+			const x = f.at[0] + [...r.trimEnd()].length;
+			const last = out[out.length - 1];
+			if (last && last.x === x && last.bottom === f.at[1] + y)
+				last.bottom = f.at[1] + y + 1;
+			else
+				out.push({
+					x,
+					top: f.at[1] + Math.max(y, 1),
+					bottom: f.at[1] + y + 1,
+				});
 		});
+		return out;
+	});
 
 /** 地図に 施設を 置く（地面 → 外観。村の 行を 書きかえる）。 */
 export const stampFacilities = (

@@ -763,7 +763,7 @@ const V_Y0 = 8;
 const V_Y1 = 42;
 const RAIL_X = [78, 79] as const;
 const RAIL_Y1 = 40;
-/** 電柱（歩道の 上。扉の 前は よける）・街灯（大通りと 遊歩道）・踏切の 警報機。 */
+/** 電柱（歩道の 上。扉と 自販機の 前は よける）・街灯（大通りと 遊歩道。消防署の 車庫の 前は よける）・踏切の 警報機。 */
 const POLES: readonly Cell[] = [
 	[45, 8],
 	[62, 8],
@@ -773,7 +773,7 @@ const POLES: readonly Cell[] = [
 	[56, 13],
 	[72, 13],
 	[83, 13],
-	[44, 30],
+	[43, 30],
 	[57, 30],
 	[62, 30],
 	[76, 30],
@@ -786,7 +786,6 @@ const LAMPS: readonly Cell[] = [
 	[45, 19],
 	[54, 19],
 	[61, 19],
-	[71, 19],
 	[76, 19],
 	[44, 24],
 	[54, 24],
@@ -823,21 +822,13 @@ const SIGNALS: readonly Cell[] = [
 	[69, 30],
 	[63, 35],
 ];
-/** 止まっている 車（左の マス。赤は 上の 車線、白は 下の 車線）。 */
-const CARS: readonly (readonly [number, number, "red" | "white"])[] = [
-	[58, 9, "red"],
-	[56, 20, "red"],
-	[73, 23, "white"],
-	[42, 34, "white"],
-];
-/** 公園の 木（新市街の 空いた 区画。地図の 左上から 右へ）。 */
+/**
+ * 公園の 木（新市街の 空いた 区画。地図の 左上から 右へ）。止まっている 車と 線路の 東の 店
+ * （ファミレス・ラーメン屋）は data/village/facilities.ts。
+ */
 const PARK: readonly [number, number, string][] = [
-	[80, 4, "T,b,T,"],
-	[80, 6, ",T,,bT"],
 	[76, 4, "b,"],
-	[76, 6, ",b"],
-	[80, 26, "b,T,,T"],
-	[80, 28, "T,,b,b"],
+	[76, 6, "b,"],
 ];
 /**
  * 横断歩道の 幅（作者の 指示：見おろしで 立体感が 出る 形）。横の 道を わたる 横断歩道は 横に 3マス
@@ -909,7 +900,6 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	for (const [x, y] of LAMPS) out.push([x, y, "ゃ"]);
 	for (const [x, y] of CROSSING_SIGNS) out.push([x, y, "ゅ"]);
 	for (const [x, y] of SIGNALS) out.push([x, y, "ゔ"]);
-	for (const [x, y, c] of CARS) out.push([x, y, c === "red" ? "ゕゖ" : "ゝゞ"]);
 	out.push(...PARK);
 	return out;
 };

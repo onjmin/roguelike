@@ -157,6 +157,7 @@ import {
 	facilityRoomPalette,
 	facilityRoomPlaces,
 	facilityRoomRows,
+	facilityTiles,
 	outdoorId,
 	outdoorThingOf,
 } from "../data/village/facilities";
@@ -212,6 +213,7 @@ import {
 	roomPlaces,
 	roomRows,
 } from "../data/village/rooms";
+import { RPGEN_CELLS, RPGEN_IMG, RPGEN_SIZE } from "../data/village/rpgenArt";
 import { CITY, hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
@@ -5810,6 +5812,60 @@ test("施設の 外: doors and outdoor things stand from their stage, Kiriko rea
 				`${outdoorId(f, t)} finds ${got ? outdoorId(got.f, got.t) : "nothing"}`,
 			);
 		}
+});
+
+test("施設の 外観（絵を 並べた 形）: 字は キーだけ・扉は 1つ・RPGEN の 絵は まとめた 絵の 群の 中・字は ほかの パレットに 上書き されない", () => {
+	// まとめた 絵（rpgen-modern.png）の どの マスが どの 群か
+	const owner = new Map<string, string>();
+	for (const [name, [c, r, w, h]] of Object.entries(RPGEN_CELLS))
+		for (let y = r; y < r + h; y++)
+			for (let x = c; x < c + w; x++) owner.set(`${x},${y}`, name);
+	for (const f of FACILITIES) {
+		const g = f.look;
+		if (g.kind !== "grid") continue;
+		const keys = Object.keys(g.keys);
+		ok(keys.length <= 96, `${f.id}: ${keys.length} keys`);
+		for (const [y, r] of g.rows.entries())
+			for (const k of r)
+				ok(k === " " || k in g.keys, `${f.id}: row ${y} has "${k}"`);
+		if (g.door) {
+			const n = g.rows.join("").split(g.door).length - 1;
+			ok(n === 1, `${f.id}: the door key "${g.door}" is on ${n} cells`);
+		}
+		for (const [k, layers] of Object.entries(g.keys)) {
+			ok(layers.length > 0, `${f.id}: "${k}" draws nothing`);
+			for (const ref of layers) {
+				if (!ref.startsWith(`${RPGEN_IMG}#`)) continue;
+				const [x, y, w, h] = ref.split("#")[1].split(",").map(Number);
+				ok(
+					x % 16 === 0 && y % 16 === 0 && w % 16 === 0 && h % 16 === 0,
+					`${f.id}: "${k}" cuts ${ref} off the grid`,
+				);
+				ok(
+					x + w <= RPGEN_SIZE[0] && y + h <= RPGEN_SIZE[1],
+					`${f.id}: "${k}" cuts ${ref} outside the art`,
+				);
+				// 切る マスは みな 1つの 群の 中（となりの 群に はみ出さない）
+				const groups = new Set<string | undefined>();
+				for (let cy = y / 16; cy < (y + h) / 16; cy++)
+					for (let cx = x / 16; cx < (x + w) / 16; cx++)
+						groups.add(owner.get(`${cx},${cy}`));
+				ok(
+					groups.size === 1 && !groups.has(undefined),
+					`${f.id}: "${k}" cuts ${ref} across ${[...groups].join("/")}`,
+				);
+			}
+		}
+	}
+	const tiles = facilityTiles();
+	for (let stage = 0; stage < TOWN_STAGES; stage++) {
+		const pal = villagePalette({ stage, unlocked: ["shallow"], cleared: [] });
+		for (const [ch, t] of Object.entries(tiles))
+			ok(
+				JSON.stringify(pal[ch]) === JSON.stringify(t),
+				`stage ${stage}: facility "${ch}" is drawn as another tile`,
+			);
+	}
 });
 
 test("東の 畑の あと: 段ごとに 形が かわり（段6 市民農園・段7 公園）、x=31 の 列と 北の 通りは 歩けて、区画・噴水・ベンチ・砂場・立て札・バス停に 届く", () => {
