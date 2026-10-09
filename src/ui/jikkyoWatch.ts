@@ -30,8 +30,10 @@ import {
 } from "../core/jikkyo";
 import { today } from "../data/calendar";
 import { PROGRAMS } from "../data/jikkyo/index";
-import { programSlot, type VenueId } from "../data/jikkyo/schedule";
+import { PACKS } from "../data/jikkyo/packs";
+import { programMenuName, programSlots } from "../data/jikkyo/schedule";
 import {
+	JK_PROG_MSG,
 	JK_PROG_RESULT,
 	JK_PROG_TV,
 	progMsg,
@@ -41,8 +43,8 @@ import { devEvent } from "../data/objectives";
 import type { Story } from "../engine/defs";
 import { el } from "./dom";
 import { type JikkyoMemo, loadJikkyo, saveJikkyo } from "./jikkyo";
-import { kohakuTv } from "./jikkyoKohakuTv";
-import { type SceneTv, soraTv } from "./jikkyoScenes";
+import { soraTv } from "./jikkyoScenes";
+import { PROGRAM_TVS } from "./jikkyoTvs";
 import { markOpened, onTap, type UiCtx } from "./list";
 import { tick } from "./minigameBoard";
 import { picker } from "./minigamePicker";
@@ -60,7 +62,8 @@ const comma = (n: number) => Math.round(n).toLocaleString("en-US");
 
 // ───────────────── 保存（番組ごと） ─────────────────
 
-type ProgId = "sora" | "kohaku";
+/** 番組の id（sora・kohaku と 束の 番組。data/jikkyo/index.ts の PROGRAMS の 鍵）。 */
+type ProgId = string;
 type ProgMemo = NonNullable<NonNullable<JikkyoMemo["prog"]>[ProgId]>;
 
 const progOf = (m: JikkyoMemo, id: ProgId): ProgMemo => {
@@ -117,22 +120,34 @@ const markHowto = (id: ProgId, noSave: boolean): void => {
 	saveProg(id, p, noSave);
 };
 
-/** 施設の 人 → 番組の id（1回だけの 1行を 持つ 人）。 */
+/** 施設の 人 → 番組の id（1回だけの 1行を 持つ 人。束の 番組は 束の staffOnce）。 */
 const ONCE_PROG: Readonly<Record<string, ProgId>> = {
 	cinema: "sora",
 	theater: "kohaku",
 };
 
-/** 番組の TV（会場の 枠と 場面）。 */
-const TVS: Readonly<
-	Record<
-		ProgId,
-		(
-			canvas: HTMLCanvasElement,
-			opt: { reduced: boolean; live: boolean },
-		) => SceneTv
-	>
-> = { sora: soraTv, kohaku: kohakuTv };
+/** その 会場の 人が 1回だけ 言う 1行の 候補（前からの 表 → 束の 番組の 順）。 */
+const onceOf = (
+	fid: string,
+	who: string,
+): {
+	id: ProgId;
+	lines: Readonly<Partial<Record<"kami" | "rerun", string>>>;
+}[] => {
+	const out: {
+		id: ProgId;
+		lines: Readonly<Partial<Record<"kami" | "rerun", string>>>;
+	}[] = [];
+	const legacy = ONCE_PROG[fid];
+	const ll = STAFF_ONCE[fid]?.[who];
+	if (legacy && ll) out.push({ id: legacy, lines: ll });
+	for (const p of PACKS) {
+		const lines = p.staffOnce?.[who];
+		if (!p.draft && p.venue === fid && lines)
+			out.push({ id: p.script.id, lines });
+	}
+	return out;
+};
 
 /**
  * 会場の 人が 1回だけ 言う 1行（無ければ null）。言ったら 覚える（下見の あいだは 書かない）。
@@ -143,23 +158,23 @@ export const staffOnceLine = (
 	who: string,
 	noSave = previewing(),
 ): string | null => {
-	const id = ONCE_PROG[fid];
-	const lines = STAFF_ONCE[fid]?.[who];
-	if (!id || !lines) return null;
-	const p = progOf(loadJikkyo(), id);
-	let key: string | null = null;
-	let text: string | null = null;
-	if (p.kami && lines.kami && !p.said.includes("kami")) {
-		key = "kami";
-		text = lines.kami;
-	} else if (p.rerun && lines.rerun && !p.said.includes("rerun")) {
-		key = "rerun";
-		text = fill(lines.rerun, { n: p.rerun });
+	for (const { id, lines } of onceOf(fid, who)) {
+		const p = progOf(loadJikkyo(), id);
+		let key: string | null = null;
+		let text: string | null = null;
+		if (p.kami && lines.kami && !p.said.includes("kami")) {
+			key = "kami";
+			text = lines.kami;
+		} else if (p.rerun && lines.rerun && !p.said.includes("rerun")) {
+			key = "rerun";
+			text = fill(lines.rerun, { n: p.rerun });
+		}
+		if (!key || !text) continue;
+		p.said.push(key);
+		saveProg(id, p, noSave);
+		return text;
 	}
-	if (!key || !text) return null;
-	p.said.push(key);
-	saveProg(id, p, noSave);
-	return text;
+	return null;
 };
 
 // ───────────────── 板 ─────────────────
@@ -267,7 +282,10 @@ export const playProgram = async (
 		return { pick: q.i, ago };
 	};
 
-	const tv = (TVS[id] ?? soraTv)(tvCanvas, { reduced, live: slot.live });
+	const tv = (PROGRAM_TVS[id] ?? soraTv)(tvCanvas, {
+		reduced,
+		live: slot.live,
+	});
 	let noteTimer = 0;
 	let pinTimer = 0;
 	const say = (t: string, ms = 1400) => {
@@ -598,16 +616,33 @@ export const setWatchHook = (h: typeof watchHook): void => {
 export const watchProgram = async (
 	ctx: UiCtx,
 	s: Story,
-	venue: VenueId,
+	venue: string,
 	stage: number,
 ): Promise<void> => {
-	const slots = programSlot(venue, today(), stage, new Date().getFullYear());
-	const slot = slots?.main;
-	const script = slot ? PROGRAMS[slot.program] : undefined;
-	if (!slot || !script) return;
+	const slots = programSlots(
+		venue,
+		today(),
+		stage,
+		new Date().getFullYear(),
+	).filter((x) => PROGRAMS[x.program]);
+	if (!slots.length) return;
+	// 番組が 2つ 以上 ある 会場（映画館の 夜の部と 昼の部 など）は 番組を 選ぶ
+	let slot = slots[0];
+	if (slots.length > 1) {
+		const names = slots.map((x) => programMenuName(x.program));
+		const k = await s.choose([...names, JK_PROG_MSG.menu[1]], {
+			cancel: names.length,
+		});
+		if (k < 0 || k >= names.length) return;
+		slot = slots[k];
+	}
+	const script = PROGRAMS[slot.program];
+	if (!script) return;
 	const M = progMsg(script.id);
-	const n = await s.choose([...M.menu], { cancel: 1 });
-	if (n !== 0) return;
+	if (slots.length === 1) {
+		const n = await s.choose([...M.menu], { cancel: 1 });
+		if (n !== 0) return;
+	}
 	const id = script.id as ProgId;
 	const noSave = previewing();
 	if (!progOf(loadJikkyo(), id).howto) {

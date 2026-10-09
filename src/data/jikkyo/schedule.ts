@@ -8,10 +8,13 @@
 //   1/1〜7 は 去年の 回の 録画（★2。y − 1）。ほかの 月は 番組なし（舞台は ふだんの「やきう　物語」）。
 //   年は 呼ぶ 側が わたす（村は 端末の 年。calendar.ts は かえない）。開発は &date=1231・&date=1215・&date=0103。
 // 曜日と 季節の リズム：月曜は 議会、金曜は 映画館、土日は 音楽室（ui/rooms.ts）、12月は 劇場、本館は 野球。
+// あとから 足した 番組（銭湯の 大相撲・カジノの 競馬 ほか）は 束（data/jikkyo/packs.ts）が 日を 決める（programSlots）。
 
 import type { JkSlot } from "../../core/jikkyo";
 import type { Today } from "../calendar";
 import { CITYHALL_FROM, TOWNHALL_FROM } from "../civic";
+import type { JkPack } from "./pack";
+import { PACKS, packOf } from "./packs";
 import { isRoadshowNight, kohakuMode } from "./text";
 
 export type VenueId = "hall" | "cinema" | "theater" | "townhall" | "cityhall";
@@ -81,4 +84,47 @@ export const programSlot = (
 			return null;
 		}
 	}
+};
+
+/** 束の 番組（data/jikkyo/packs.ts）が その 段で 見られるか（作りかけは 出さない）。 */
+export const packOpen = (p: JkPack, stage: number): boolean =>
+	!p.draft && stage >= p.from && (p.until === undefined || stage < p.until);
+
+/**
+ * その 場所・日に 見られる 番組（前からの 番組 → 束の 番組の 順。会場で 調べた ときに 2つ 以上 なら 選ぶ）。
+ * 本館の 実況モニターは ui/hallEvents.ts の 入口（programSlot の main と alt）なので ここには 入れない。
+ */
+export const programSlots = (
+	venue: string,
+	t: Today,
+	stage: number,
+	y: number,
+	opt: { session?: boolean } = {},
+): JkSlot[] => {
+	const out: JkSlot[] = [];
+	if (isVenue(venue) && venue !== "hall") {
+		const main = programSlot(venue, t, stage, y, opt)?.main;
+		if (main) out.push(main);
+	}
+	for (const p of PACKS) {
+		if (p.venue !== venue || !packOpen(p, stage)) continue;
+		const s = p.slot(t);
+		if (s) out.push({ program: p.script.id, y, ...s });
+	}
+	return out;
+};
+
+/** 番組が ある 会場の id（前からの 会場と 束の 会場）。 */
+export const JK_VENUES: readonly string[] = [
+	...VENUES,
+	...new Set(PACKS.map((p) => p.venue)),
+];
+
+/** 会場で 選ぶ ときの 番組の 名前（全角 10字まで）。 */
+export const programMenuName = (id: string): string =>
+	LEGACY_MENU[id] ?? packOf(id)?.menu ?? id;
+
+const LEGACY_MENU: Readonly<Record<string, string>> = {
+	sora: "金曜ロード保守",
+	kohaku: "紅白スレ合戦",
 };

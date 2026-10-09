@@ -40,7 +40,9 @@ import {
 	TREAT_TALKS,
 } from "../data/cafe";
 import { CAFE_MOBS, type CafeMobTalk } from "../data/cafeMobs";
+import { today } from "../data/calendar";
 import { CAST } from "../data/cast";
+import { venueLines } from "../data/jikkyo/text";
 import { type Cast, MOB_IDS, MOBS, type MobId, movedIn } from "../data/mobs";
 import { SPEAKERS, type Speaker } from "../data/quotes";
 import { ROOM_MSG, ROOM_NAMES } from "../data/rooms";
@@ -77,6 +79,7 @@ import {
 import type { Dir } from "../engine/types";
 import { TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
+import { watchProgram } from "./jikkyoWatch";
 import { type ListItem, listWindow } from "./list";
 import { enterRoom, leaveRoom } from "./rooms";
 import { play as playMob, sayAs } from "./villageMobs";
@@ -1210,8 +1213,11 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 			};
 		const kind = p.id.replace(/_\d+$/, "");
 		return sign(p.id, p.x, p.y, async (s) => {
-			for (const t of cafeThing(kind)) await s.narrate(t);
+			for (const t of venueLines("cafe", kind, today()) ?? cafeThing(kind))
+				await s.narrate(t);
 			if (kind === "menu") await menuScript(ctx, s);
+			// 壁の テレビ：朝の スレ小説（ui/jikkyoWatch.ts）
+			if (kind === "tv") await watchProgram(ctx, s, "cafe", view.stage);
 		});
 	});
 	const [mx, my] = CAFE_MASTER;

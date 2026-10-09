@@ -166,8 +166,11 @@ export type OutdoorThing = {
 	id: string;
 	at: Cell;
 	lines: readonly string[];
-	/** 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる・eat＝その 施設の 品書き）。 */
-	play?: "fishing" | "batting" | "bus" | "vend" | "eat";
+	/**
+	 * 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる・eat＝その 施設の 品書き・
+	 * jikkyo＝その 施設の 実況の 番組を スマホで 見る。data/jikkyo/packs.ts）。
+	 */
+	play?: "fishing" | "batting" | "bus" | "vend" | "eat" | "jikkyo";
 	/** 見える 人（屋台の 店番の 歩行グラ）。あれば 地図に 立って 通れない。lines は その 人の セリフ。 */
 	sprite?: string;
 	dir?: Dir;
@@ -493,7 +496,7 @@ export const FACILITIES: readonly Facility[] = [
 			look: LOOKS.beach,
 			rows: [
 				"############",
-				"#HiHHAHHWHH#",
+				"#HiHHAH@WHH#",
 				"#hhhhmhkhhh#",
 				"#...R...tu.#",
 				"#[=].......#",
@@ -504,6 +507,7 @@ export const FACILITIES: readonly Facility[] = [
 				"####DD######",
 			],
 			tiles: (k) => ({
+				"@": k.up(ri("tvSmall")),
 				i: k.up(ri("iceFlag")),
 				A: k.up(base(3, 95)),
 				k: k.low(base(7, 297)),
@@ -519,6 +523,7 @@ export const FACILITIES: readonly Facility[] = [
 				P: k.on(base(6, 362, 1, 2)),
 			}),
 			things: {
+				"@": "tv",
 				m: "menu",
 				k: "ukiwa",
 				R: "drinks",
@@ -530,6 +535,7 @@ export const FACILITIES: readonly Facility[] = [
 				P: "plant",
 			},
 			lines: {
+				tv: ["小さな　テレビ。\n野球の　中継が　流れている。"],
 				menu: [
 					"品書き。\n焼きそば・かき氷・ラムネ・イカ焼き。",
 					"すみに　小さく「age　て　いこ〜」。\n……フェリスの　字だ。",
@@ -550,6 +556,8 @@ export const FACILITIES: readonly Facility[] = [
 				],
 				plant: ["ヤシの　鉢植え。\n葉の　先が　すこし　こげている。"],
 			},
+			// 壁の テレビで 夏の 保守園（高校野球）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			plays: { tv: "jikkyo" },
 			people: [
 				{
 					id: "umi_master",
@@ -607,7 +615,7 @@ export const FACILITIES: readonly Facility[] = [
 			look: LOOKS.tatami,
 			rows: [
 				"############",
-				"#qQHHabHHHH#",
+				"#qQ@HabHHHH#",
 				"#vVhmhhhkhs#",
 				"#........B.#",
 				"#.zgz..zgz.#",
@@ -617,6 +625,7 @@ export const FACILITIES: readonly Facility[] = [
 				"####DD######",
 			],
 			tiles: (k) => ({
+				"@": k.up(ri("tvSmall")),
 				q: k.up(base(2, 437)),
 				Q: k.up(base(3, 437)),
 				v: k.low(base(2, 438)),
@@ -633,6 +642,7 @@ export const FACILITIES: readonly Facility[] = [
 				T: k.on(base(5, 312), ri("kettleBase")),
 			}),
 			things: {
+				"@": "tv",
 				a: "plaque",
 				b: "plaque",
 				m: "rules",
@@ -645,6 +655,7 @@ export const FACILITIES: readonly Facility[] = [
 				T: "tea",
 			},
 			lines: {
+				tv: ["テレビ。\n対局の　中継を　流している。"],
 				plaque: [
 					"額に「本因坊」の　三文字。\n……字が　ちょっと　ゆがんでいる。",
 				],
@@ -660,6 +671,8 @@ export const FACILITIES: readonly Facility[] = [
 				stones: ["碁笥（ごけ）の　かご。\n白い　石が　1つ　たりない。"],
 				tea: ["お茶の　台。\n急須の　お茶が　すっかり　ぬるい。"],
 			},
+			// 壁の テレビで 保守名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			plays: { tv: "jikkyo" },
 			people: [
 				{
 					id: "go_a",
@@ -1757,7 +1770,7 @@ export const FACILITIES: readonly Facility[] = [
 			look: LOOKS.arcade,
 			rows: [
 				"##############",
-				"#HHpHHHHHpHHH#",
+				"#HHpHH@&HpHHH#",
 				"#hhhhhhhhhhmh#",
 				"#AbCKE..vV..P#",
 				"#nnnnn..nn...#",
@@ -1768,6 +1781,8 @@ export const FACILITIES: readonly Facility[] = [
 				"#####DD#######",
 			],
 			tiles: (k) => ({
+				"@": k.up(riCell("tvBig", 0, 0)),
+				"&": k.up(riCell("tvBig", 1, 0)),
 				p: k.up(ri("posterB")),
 				A: k.on(base(0, 519, 1, 2)),
 				b: k.on(base(1, 519, 1, 2)),
@@ -1790,6 +1805,8 @@ export const FACILITIES: readonly Facility[] = [
 				a: k.on(ri("atm")),
 			}),
 			things: {
+				"@": "tv",
+				"&": "tv",
 				m: "notice",
 				A: "cabinet",
 				C: "cabinet",
@@ -1810,6 +1827,7 @@ export const FACILITIES: readonly Facility[] = [
 				F: "plant",
 			},
 			lines: {
+				tv: ["壁の　大画面。\n配信の　画面が　映っている。"],
 				notice: ["はり紙。\n「1プレイ　100円。連コイン　禁止」"],
 				cabinet: ["古い　アーケード台。\n画面に「INSERT COIN」。"],
 				rhythm: ["音ゲーの　台。\nランキングの　1位は「>>1」。"],
@@ -1819,6 +1837,8 @@ export const FACILITIES: readonly Facility[] = [
 				change: ["両替機。\n千円札が　100円玉に　なる。"],
 				plant: ["観葉植物。\n……鉢に　メダルが　1枚　埋まっている。"],
 			},
+			// 壁の 大画面で 新作発表会・保守リーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			plays: { tv: "jikkyo" },
 			people: [
 				{
 					id: "arcade_a",
@@ -2921,7 +2941,7 @@ export const FACILITIES: readonly Facility[] = [
 			look: LOOKS.garage,
 			rows: [
 				"##############",
-				"#HHHHHHHHHHWH#",
+				"#HHH@HHHHHHWH#",
 				"#hhhhSTSThmhh#",
 				"#NNN.......dk#",
 				"#............#",
@@ -2932,6 +2952,7 @@ export const FACILITIES: readonly Facility[] = [
 				"#####DD#######",
 			],
 			tiles: (k) => ({
+				"@": k.up(ri("tvSmall")),
 				S: k.low(riCell("shutter", 0, 0)),
 				T: k.low(riCell("shutter", 1, 0)),
 				N: k.on(riCell("cabNavy", 1, 0)),
@@ -2958,6 +2979,7 @@ export const FACILITIES: readonly Facility[] = [
 				z: k.on(ri("jerrycan")),
 			}),
 			things: {
+				"@": "tv",
 				S: "shutter",
 				T: "shutter",
 				m: "notice",
@@ -2977,6 +2999,7 @@ export const FACILITIES: readonly Facility[] = [
 				z: "tank",
 			},
 			lines: {
+				tv: ["事務所の　テレビ。\nエンジンの　音が　聞こえる。"],
 				shutter: ["シャッター。\n奥に　もう　1台、順番を　待つ　車。"],
 				notice: ["はり紙。\n「車検　受付中」"],
 				tools: [
@@ -2989,6 +3012,8 @@ export const FACILITIES: readonly Facility[] = [
 				wagon: ["黄色い　ワゴン。\nうしろの　席に　バットが　3本。"],
 				tank: ["ポリタンク。\n「ガソリン　入れるな」の　札。"],
 			},
+			// 事務所の テレビで 保守グランプリ（F1）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			plays: { tv: "jikkyo" },
 			people: [
 				{
 					id: "repair_mech",
@@ -3201,7 +3226,7 @@ export const FACILITIES: readonly Facility[] = [
 			look: LOOKS.casino,
 			rows: [
 				"##############",
-				"#HHHHHHHHHHHH#",
+				"#HHHHH@&HHHHH#",
 				"#hhhhhhmhhhhh#",
 				"#ABCKE..EKCBA#",
 				"#nnnnn..nnnnn#",
@@ -3212,6 +3237,8 @@ export const FACILITIES: readonly Facility[] = [
 				"######DD######",
 			],
 			tiles: (k) => ({
+				"@": k.up(riCell("tvBig", 0, 0)),
+				"&": k.up(riCell("tvBig", 1, 0)),
 				A: k.on(base(0, 519, 1, 2)),
 				B: k.on(base(1, 519, 1, 2)),
 				C: k.on(base(2, 519, 1, 2)),
@@ -3232,6 +3259,8 @@ export const FACILITIES: readonly Facility[] = [
 				"]": ctr(k.on(riCell("counterDark", 2, 0))),
 			}),
 			things: {
+				"@": "tv",
+				"&": "tv",
 				m: "rule",
 				A: "slot",
 				B: "slot",
@@ -3252,6 +3281,7 @@ export const FACILITIES: readonly Facility[] = [
 				F: "plant",
 			},
 			lines: {
+				tv: ["大画面。\nレースの　中継が　映る。"],
 				rule: ["はり紙。\n「チップの　販売は　ありません」"],
 				slot: ["スロット台。\n……777は、出そうで　出ない。"],
 				cards: ["カードの　台。\nディーラーが　じっと　見ている。"],
@@ -3259,6 +3289,8 @@ export const FACILITIES: readonly Facility[] = [
 				cashier: ["チップの　窓口。\n「本日の　両替は　終了しました」"],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
+			// 奥の 壁の 大画面で 保守記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			plays: { tv: "jikkyo" },
 			people: [
 				{
 					id: "casino_dealer",
@@ -3310,7 +3342,7 @@ export const FACILITIES: readonly Facility[] = [
 			look: LOOKS.station,
 			rows: [
 				"##############",
-				"#HwHHHHHabcdH#",
+				"#HwHH@&HabcdH#",
 				"#hhhQhhm1234h#",
 				"#.eE........v#",
 				"#~~~~~~~~~~~~#",
@@ -3321,6 +3353,8 @@ export const FACILITIES: readonly Facility[] = [
 				"#####DD#######",
 			],
 			tiles: (k) => ({
+				"@": k.up(riCell("tvBig", 0, 0)),
+				"&": k.up(riCell("tvBig", 1, 0)),
 				w: k.up(ri("winModern")),
 				a: k.up(riCell("departures", 0, 0)),
 				b: k.up(riCell("departures", 1, 0)),
@@ -3348,6 +3382,8 @@ export const FACILITIES: readonly Facility[] = [
 				E: k.on(riCell("bench", 1, 0)),
 			}),
 			things: {
+				"@": "tv",
+				"&": "tv",
 				"1": "board",
 				"2": "board",
 				"3": "board",
@@ -3369,6 +3405,7 @@ export const FACILITIES: readonly Facility[] = [
 				F: "plant",
 			},
 			lines: {
+				tv: ["待合の　テレビ。\n駅伝の　中継を　流している。"],
 				board: [
 					"発車標。\n「各駅停車　全体マップ　どこでも」",
 					"……どの　板へも、すぐ　出る。",
@@ -3384,7 +3421,7 @@ export const FACILITIES: readonly Facility[] = [
 				bench: ["ホームの　ベンチ。\n……潮の　におい。"],
 				plant: ["観葉植物。\n……潮の　においが　ここまで　届く。"],
 			},
-			plays: { gate: "depart" },
+			plays: { tv: "jikkyo", gate: "depart" },
 			people: [
 				{
 					id: "station_staff",
@@ -3646,11 +3683,11 @@ export const FACILITIES: readonly Facility[] = [
 			{ id: "fountain_e", at: [36, 15], lines: FOUNTAIN },
 			{ id: "fountain_sw", at: [34, 16], lines: FOUNTAIN },
 			{ id: "fountain_se", at: [36, 16], lines: FOUNTAIN },
-			// 北の ベンチ 2つ（西・東。どちらも 左右の 半分）
-			{ id: "bench", at: [33, 12], lines: BENCH },
-			{ id: "bench_r", at: [34, 12], lines: BENCH },
-			{ id: "bench_e", at: [36, 12], lines: BENCH },
-			{ id: "bench_e_r", at: [37, 12], lines: BENCH },
+			// 北の ベンチ 2つ（西・東。どちらも 左右の 半分）。すわって 空を 見上げる 実況（皆既月食 観察部）
+			{ id: "bench", at: [33, 12], lines: BENCH, play: "jikkyo" },
+			{ id: "bench_r", at: [34, 12], lines: BENCH, play: "jikkyo" },
+			{ id: "bench_e", at: [36, 12], lines: BENCH, play: "jikkyo" },
+			{ id: "bench_e_r", at: [37, 12], lines: BENCH, play: "jikkyo" },
 			{
 				id: "sandbox",
 				at: [32, 14],

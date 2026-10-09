@@ -5,7 +5,6 @@
 
 import { today } from "../data/calendar";
 import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
-import { isVenue } from "../data/jikkyo/schedule";
 import { staffLines, venueLines } from "../data/jikkyo/text";
 import { awayFriends } from "../data/story";
 import {
@@ -23,7 +22,7 @@ import {
 import { npc, sign } from "../data/village/helpers";
 import { coreShadows, type VillageView } from "../data/village/map";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
-import { loadProgress } from "../engine/save";
+import { loadProgress, loadTown } from "../engine/save";
 import { TILE } from "../engine/types";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
@@ -33,6 +32,7 @@ import { eatAt, keeperTalk } from "./eat";
 import { watchGikai } from "./jikkyoGikai";
 import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
+import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
 /** 調べる 物の 窓（窓ごと）。 */
@@ -152,6 +152,9 @@ export const outdoorScript =
 			else if (t.play === "batting") await bat(ctx, s);
 			else if (t.play === "vend") await vend(s);
 			else if (t.play === "eat") await eatAt(ctx, s, f.id);
+			// 外で スマホの 実況（桟橋の 人力機・公園の 月食。ui/jikkyoWatch.ts）
+			else if (t.play === "jikkyo")
+				await watchProgram(ctx, s, f.id, previewStage() ?? loadTown().stage);
 		}
 		// 見える 人は 話しおえたら もとの 向きに
 		if (t.sprite) s.face(outdoorId(f, t), t.dir ?? "down");
@@ -219,9 +222,8 @@ export const buildFacility = (
 			if (play === "depart" && depart) await depart(s);
 			else if (play === "drinkbar") await drinkBar(s);
 			else if (play === "eat") await eatAt(ctx, s, f.id);
-			// 実況の 番組（映画館の 実況上映。ui/jikkyoWatch.ts）
-			else if (play === "jikkyo" && isVenue(f.id))
-				await watchProgram(ctx, s, f.id, v.stage);
+			// 実況の 番組（映画館の 実況上映・カジノの 競馬 ほか。番組表は data/jikkyo/schedule.ts、板は ui/jikkyoWatch.ts）
+			else if (play === "jikkyo") await watchProgram(ctx, s, f.id, v.stage);
 			// 町の 役所の 演壇（討論会）と 見分け方の はり紙（ui/debate.ts）
 			else if (play === "debate") await debateScript(ctx, s, v);
 			else if (play === "kiben") await kibenScript(ctx, s);

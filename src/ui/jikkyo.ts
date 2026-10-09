@@ -87,7 +87,7 @@ export type JikkyoMemo = {
 	 */
 	prog?: Partial<
 		Record<
-			"sora" | "kohaku",
+			string,
 			{
 				best: number;
 				kanso: number;

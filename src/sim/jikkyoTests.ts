@@ -168,11 +168,11 @@ const test = (id: string, name: string, run: () => void | Promise<void>) =>
 	CASES.push({ id, name, run });
 
 /** 全角=1・半角=0.5 で 数えた 幅（villageTests と 同じ）。 */
-const width = (line: string): number =>
+export const width = (line: string): number =>
 	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
 
 /** 村の 窓（全角 22字 × 2行）に 収まるか。 */
-const fitsWindow = (where: string, text: string): void => {
+export const fitsWindow = (where: string, text: string): void => {
 	const lines = text.split("\n");
 	ok(lines.length <= 2, `${where}: ${lines.length} lines`);
 	for (const l of lines)
@@ -180,7 +180,7 @@ const fitsWindow = (where: string, text: string): void => {
 };
 
 /** 試験の あいだだけ location.search を かえる（villageTests と 同じ）。もどす 手を 返す。 */
-const swapLocation = (search: string): (() => void) => {
+export const swapLocation = (search: string): (() => void) => {
 	const prev = Object.getOwnPropertyDescriptor(globalThis, "location");
 	Object.defineProperty(globalThis, "location", {
 		value: { search },
@@ -329,7 +329,7 @@ test(
 );
 
 /** 描いた 命令を 記録する だけの canvas（色・透明度・文字も 記録）。 */
-const stubCanvas = () => {
+export const stubCanvas = () => {
 	const calls: string[] = [];
 	const styles: string[] = [];
 	const alphas: number[] = [];
@@ -421,7 +421,7 @@ test(
 );
 
 /** 会場の 文に 出さない 名前（実在の 番組・局・映画・ゲーム・競馬・ドラマ）。ここ だけに 置く。 */
-const NG_NAMES = [
+export const NG_NAMES = [
 	"金曜ロードショー",
 	"ロードショー",
 	"金ロー",
@@ -459,7 +459,7 @@ const NG_NAMES = [
 	"豊臣",
 ];
 /** 「保守」を 入れて よい 固有名詞（キリコが 書く 文には どれも 入れない）。 */
-const HOSHU_NAMES = [
+export const HOSHU_NAMES = [
 	"金曜ロード保守",
 	"金保守",
 	"保守劇場",
@@ -493,7 +493,7 @@ test(
 );
 
 /** 地の文・セリフ・選ぶ だけを 記録する 台本の 相手（選ぶ ときは pick を 返す）。 */
-const recorder = (pick = 0) => {
+export const recorder = (pick = 0) => {
 	const log: string[] = [];
 	const s = new Proxy({} as Story, {
 		get: (_t, k) => {
@@ -646,7 +646,13 @@ test(
 
 // ───────────────── E・Y の 道具：ボットで 回す ─────────────────
 
-type BotName = "kami" | "jouzu" | "shoshin" | "futsuu" | "random" | "miru";
+export type BotName =
+	| "kami"
+	| "jouzu"
+	| "shoshin"
+	| "futsuu"
+	| "random"
+	| "miru";
 type BotAns = { fit: "best" | "ok" | "miss"; ms: number } | null;
 
 const pickFit = (r: () => number, pb: number, po: number) => {
@@ -654,7 +660,7 @@ const pickFit = (r: () => number, pb: number, po: number) => {
 	return x < pb ? "best" : x < pb + po ? "ok" : "miss";
 };
 /** ボット（tune2.mjs と 同じ ふるまい）。 */
-const BOTS: Record<BotName, (r: () => number) => BotAns> = {
+export const BOTS: Record<BotName, (r: () => number) => BotAns> = {
 	kami: () => ({ fit: "best", ms: 800 }),
 	jouzu: (r) => ({ fit: pickFit(r, 0.75, 0.2), ms: 1200 + r() * 1000 }),
 	shoshin: (r) => ({ fit: pickFit(r, 0.55, 0.3), ms: 1500 + r() * 1500 }),
@@ -669,13 +675,13 @@ const BOTS: Record<BotName, (r: () => number) => BotAns> = {
 	miru: () => null,
 };
 
-const seeded = (s: string) => {
+export const seeded = (s: string) => {
 	const g = Rng.fromSeed(s);
 	return () => g.float();
 };
 
 /** 記録した 出来事（実際の 時刻と、1000 の 行の ときの 点）。番組は 名目の 時刻と res も。 */
-type Rec = {
+export type Rec = {
 	ev: JkEv;
 	wall: number;
 	score?: readonly [number, number];
@@ -684,7 +690,7 @@ type Rec = {
 	res?: number;
 };
 
-type Played = {
+export type Played = {
 	result: JkResult | null;
 	log: Rec[];
 	wall: number;
@@ -1745,7 +1751,10 @@ test(
 );
 
 /** 試験の あいだだけ localStorage を かえる（Map で 持つ）。もどす 手を 返す。 */
-const swapStorage = (): { store: Map<string, string>; restore: () => void } => {
+export const swapStorage = (): {
+	store: Map<string, string>;
+	restore: () => void;
+} => {
 	const store = new Map<string, string>();
 	const prev = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 	Object.defineProperty(globalThis, "localStorage", {
@@ -1773,7 +1782,10 @@ const swapStorage = (): { store: Map<string, string>; restore: () => void } => {
 const JK_KEY_SAVE = "kiriko-roguelike/jikkyo";
 
 /** 決め打ちの 結果。 */
-const resultFor = (res: number, opt: Partial<JkResult> = {}): JkResult => ({
+export const resultFor = (
+	res: number,
+	opt: Partial<JkResult> = {},
+): JkResult => ({
 	res,
 	part0: 12,
 	part: 12 + Math.floor(res / 1000),
@@ -1988,14 +2000,14 @@ const CUE_BOT: Record<BotName, (r: () => number) => number | null> = {
 	miru: () => null,
 };
 
-type Shown = Played & { tl: JkTimeline; G: number };
+export type Shown = Played & { tl: JkTimeline; G: number };
 
 /**
  * 台本を ボットで 最後まで 回す（overlay の 窓・当番・山場）。窓ごとに ボットが 決めた ms に 答え、
  * 山場は ちょうど ＋ ずれ で 押す（ago は 押してから その 歩の 終わりまで）。2択に その 合いが なければ もう一方。
  * 答えない ことが ボットの 合いと 同じ 窓（timeoutFit）では 何も 押さない。
  */
-const playShow = (
+export const playShow = (
 	slot: JkSlot,
 	bot: BotName,
 	seed: string,
@@ -2077,7 +2089,7 @@ const playShow = (
 };
 
 /** スレの 行（ふつうの 行と 上に 止めた 行）。 */
-const showLines = (p: Played): { line: JkLine; rec: Rec }[] =>
+export const showLines = (p: Played): { line: JkLine; rec: Rec }[] =>
 	p.log.flatMap((rec) =>
 		rec.ev.t === "line" || rec.ev.t === "pin"
 			? [{ line: rec.ev.line, rec }]
@@ -2178,7 +2190,7 @@ test(
 );
 
 /** かな・漢字が 6字 以上 つづく ところ（おんJの 決まり文句を のぞく）。 */
-const longRun = (s: string): string | null => {
+export const longRun = (s: string): string | null => {
 	const bare = ONJ_PHRASES.reduce((t, p) => t.replaceAll(p, "　"), s);
 	return /[ぁ-んァ-ヶー一-龠々]{6,}/.exec(bare)?.[0] ?? null;
 };
@@ -2349,7 +2361,7 @@ test("S4", "2つの 種で pick の 文が ちがう（pick の 1/3 以上）", 
 });
 
 /** 台本の 番組の ボットの 上映の 組（S 節と K 節で 同じ 試験を 回す）。 */
-type ShowSet = {
+export type ShowSet = {
 	readonly script: JkScript;
 	readonly slots: readonly JkSlot[];
 	readonly list: () => Shown[];
@@ -2369,7 +2381,7 @@ const SORA_SET: ShowSet = {
 };
 
 /** 950 の 当番と 切れ目（上映ごとに 2回まで・山場と 次の 窓の 前は 出ない・切れ目の 長さ・見るだけでも 出る）。 */
-const checkDuty = (set: ShowSet): void => {
+export const checkDuty = (set: ShowSet): void => {
 	const cues = compileScript(
 		set.script,
 		set.slots[0],
@@ -2523,7 +2535,7 @@ test(
 );
 
 /** 番号（1000・1001 の ほかに 1000 以上なし・キリコは 999 まで・999 は 1つ・roll の あとは >>1 から）。 */
-const checkNumbers = (set: ShowSet): void => {
+export const checkNumbers = (set: ShowSet): void => {
 	for (const p of set.list()) {
 		let part = -1;
 		let last = 0;
@@ -2577,7 +2589,7 @@ test(
 );
 
 /** 窓の 候補は 群衆に 出ず、直近 4行に 同じ 文が ない（選んだ ◎ を かさねる 行・洪水を のぞく）。 */
-const checkRepeats = (set: ShowSet): void => {
+export const checkRepeats = (set: ShowSet): void => {
 	const flood = new Set<string>(set.flood);
 	for (const p of set.list()) {
 		let lastBest: string | null = null;
@@ -2885,13 +2897,14 @@ test(
 				!isVenue("bar"),
 			"isVenue",
 		);
-		// 映画館の スクリーンと 客席・劇場の 舞台だけが 番組（ほかの 施設に jikkyo は ない）
+		// 映画館の スクリーンと 客席・劇場の 舞台と、束の 番組の 会場の テレビだけが 番組（ほかの 施設に jikkyo は ない）
 		const plays: string[] = [];
 		for (const f of FACILITIES)
 			for (const [k, v] of Object.entries(f.room?.plays ?? {}))
 				if (v === "jikkyo") plays.push(`${f.id}.${k}`);
 		ok(
-			plays.sort().join() === "cinema.screen,cinema.seat,theater.stage",
+			plays.sort().join() ===
+				"arcade.tv,casino.tv,cinema.screen,cinema.seat,go.tv,repair.tv,station.tv,theater.stage,umi.tv",
 			`jikkyo plays ${plays}`,
 		);
 		ok(PROGRAMS.sora === SORA, "sora is not in PROGRAMS");

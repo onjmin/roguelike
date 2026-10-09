@@ -32,6 +32,9 @@ try {
 	const { runJikkyoTests } = await server.ssrLoadModule(
 		"/src/sim/jikkyoTests.ts",
 	);
+	const { runJikkyoProgTests } = await server.ssrLoadModule(
+		"/src/sim/jikkyoProgTests.ts",
+	);
 	const { runCivicTests } = await server.ssrLoadModule(
 		"/src/sim/civicTests.ts",
 	);
@@ -41,6 +44,7 @@ try {
 		...runTownTests(),
 		...(await runVillageTests()),
 		...(await runJikkyoTests()),
+		...(await runJikkyoProgTests()),
 		...(await runCivicTests()),
 	];
 	for (const t of results)

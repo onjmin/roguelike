@@ -12,6 +12,7 @@
 
 import type { Today } from "../calendar";
 import { kohakuKai } from "./kohaku";
+import { PACKS } from "./packs";
 
 /** 金曜ロード保守の 夜（金曜）。映画館は 実況上映。 */
 export const isRoadshowNight = (t: Today): boolean => t.w === 5;
@@ -129,13 +130,31 @@ const pick = (
 	return ls ? fillKai(ls, y) : null;
 };
 
+/** 束の 番組（data/jikkyo/packs.ts）の 会場の 文（作りかけは 読まない。前からの 表の あと）。 */
+const packLines = (
+	fid: string,
+	key: string,
+	t: Today,
+	y: number,
+	of: "venueLines" | "staffLines",
+): readonly string[] | null => {
+	for (const p of PACKS) {
+		if (p.draft || p.venue !== fid) continue;
+		const ls = pick(p[of]?.[key], t, y);
+		if (ls) return ls;
+	}
+	return null;
+};
+
 /** 会場の 物の 文の 上書き（無ければ null。いつもの room.lines を 読む）。y は 年（紅白の 回）。 */
 export const venueLines = (
 	fid: string,
 	kind: string,
 	t: Today,
 	y = new Date().getFullYear(),
-): readonly string[] | null => pick(VENUE_LINES[fid]?.[kind], t, y);
+): readonly string[] | null =>
+	pick(VENUE_LINES[fid]?.[kind], t, y) ??
+	packLines(fid, kind, t, y, "venueLines");
 
 /** 会場の 人の 文の 上書き（無ければ null。いつもの lines を 読む）。 */
 export const staffLines = (
@@ -143,7 +162,9 @@ export const staffLines = (
 	who: string,
 	t: Today,
 	y = new Date().getFullYear(),
-): readonly string[] | null => pick(STAFF_LINES[fid]?.[who], t, y);
+): readonly string[] | null =>
+	pick(STAFF_LINES[fid]?.[who], t, y) ??
+	packLines(fid, who, t, y, "staffLines");
 
 /**
  * 会場の 人が 1回だけ 言う 1行（番組の 記録から。施設の id → 人の id → 鍵 → 文）。
@@ -203,7 +224,7 @@ export const JK_PROG_MSG = {
 	left: "……上映の　とちゅうで、\nそっと　席を　立った。",
 } as const;
 
-type ProgMsgKey = Exclude<keyof typeof JK_PROG_MSG, "menu">;
+export type ProgMsgKey = Exclude<keyof typeof JK_PROG_MSG, "menu">;
 
 /** 番組ごとに かえる 村の 窓（無い 鍵は JK_PROG_MSG）。 */
 export const JK_PROG_MSGS: Readonly<
@@ -217,12 +238,13 @@ export const JK_PROG_MSGS: Readonly<
 	},
 };
 
-/** その 番組の 村の 窓。 */
+/** その 番組の 村の 窓（束の 番組は 束の msgs）。 */
 export const progMsg = (
 	id: string,
 ): { readonly menu: readonly string[] } & Record<ProgMsgKey, string> => ({
 	...JK_PROG_MSG,
 	...JK_PROG_MSGS[id],
+	...PACKS.find((p) => p.script.id === id)?.msgs,
 });
 
 /** 番組の 板と TV の 小さな 字（全角 22字まで）。 */

@@ -7,6 +7,7 @@ import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
 import { today } from "../data/calendar";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
+import { venueLines } from "../data/jikkyo/text";
 import { MOBS, type MobId } from "../data/mobs";
 import {
 	guideKeys,
@@ -52,6 +53,7 @@ import type { Ctx } from "./ctx";
 import { readShelf } from "./glossary";
 import { guestsOf, returnAt } from "./guests";
 import { openStorage } from "./home";
+import { watchProgram } from "./jikkyoWatch";
 import { type ListItem, listWindow } from "./list";
 import { openPiano } from "./piano";
 import { sayAs } from "./villageMobs";
@@ -295,7 +297,13 @@ const eventFor = (
 	if (id === "music" && kind === "piano")
 		return sign(p.id, p.x, p.y, pianoScript(ctx));
 	return sign(p.id, p.x, p.y, async (s) => {
-		await readAll(s, thingLines(id, p.id, v.stage));
+		// 曜日で かわる 会場の 文（銭湯の 本場所の 日 など。data/jikkyo/text.ts）が あれば そちら
+		await readAll(
+			s,
+			venueLines(id, kind, today()) ?? thingLines(id, p.id, v.stage),
+		);
+		// テレビ：その 部屋の 実況の 番組（銭湯の 大相撲・図書館の 過去ログの世紀。ui/jikkyoWatch.ts）
+		if (kind === "tv") await watchProgram(ctx, s, id, v.stage);
 		// あずかった 物の 棚は 倉庫の 一覧（引き取る。ui/home.ts）
 		if (id === "store" && kind === "shelf") {
 			await s.wait(0);

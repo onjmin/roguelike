@@ -45,6 +45,7 @@ import type { Dir } from "../../engine/types";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
 import type { Speaker } from "../quotes";
 import type { Cell } from "./map";
+import { ri } from "./rpgenArt";
 import { base, basePx, floor, INDOOR, onTop, solid } from "./tiles";
 
 export type RoomId =
@@ -119,7 +120,7 @@ export type RoomPlace = {
 const ROWS: Record<RoomId, readonly string[]> = {
 	cafe: [
 		"####################",
-		"#HHWHHAHHHWHHHQHHWH#",
+		"#HHWHHAHHHWHHHQHHW@#",
 		"#bbbbbbhmrhhkhhehhh#",
 		"#......U..sS.F..sS.#",
 		"#[=====]..tt....tt.#",
@@ -182,7 +183,7 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#~~~~~~~|~~~~~~~#",
 		"#.......|.......#",
 		"#ko..ko.|.ok..ok#",
-		"#hhhshhhhhhhshhh#",
+		"#hhhshhhhhh@shhh#",
 		"#,,,,,,,IC,,,,,,#",
 		"#LLc,,M,I,M,,cLL#",
 		"#,,,,,,,I,,,,,,,#",
@@ -213,7 +214,7 @@ const ROWS: Record<RoomId, readonly string[]> = {
 		"#hhhhmhhhhhhhhkhh#",
 		"#BBBB.BBBB.BBB.<{#",
 		"#...............Y#",
-		"#.BB.BB..----....#",
+		"#.BB.BB..----...@#",
 		"#.......-tttt-.R.#",
 		"#.BB.BB.-nnnn-...#",
 		"#.......------.C.#",
@@ -458,6 +459,8 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				...common,
 				A: up(base(5, 95)),
 				Q: up(PICTURE),
+				// 壁の テレビ（朝の スレ小説）
+				"@": up(ri("tvSmall")),
 				b: low(),
 				k: low(base(2, 116, 1, 2)),
 				"[": { ...solid(bar, l.floor, base(5, 98)), counter: true },
@@ -546,6 +549,8 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				R: on(base(2, 104, 1, 2)),
 				C: on(base(0, 104, 1, 2)),
 				X: on(base(4, 123)),
+				// 視聴覚コーナーの テレビ（過去ログの世紀）
+				"@": on(ri("tvCrt")),
 			};
 		case "music":
 			return {
@@ -587,8 +592,9 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				b: floor(l.floorColor, l.floor),
 				B: { ...on(base(6, 98)), counter: true },
 				":": floor("#a89878", base(3, 50)),
-				// 料金表（入口の 壁）・マッサージ椅子（脱衣所）
+				// 料金表（入口の 壁）・マッサージ椅子（脱衣所）・脱衣所の テレビ（大相撲）
 				P: low(PAPER),
+				"@": low(ri("tvSmall")),
 				C: solid("#c8a86a", base(0, 46), base(4, 116, 1, 2)),
 				// 入口の 下駄箱・消火器・長いす（左・右）
 				G: solid("#a89878", base(3, 50), base(1, 316, 1, 2)),
@@ -639,6 +645,7 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 /** 字 → 調べる 物の id（部屋ごと。同じ 物が 何マスでも 1つの 話）。 */
 const THING_IDS: Record<RoomId, Record<string, string>> = {
 	cafe: {
+		"@": "tv",
 		b: "bottles",
 		m: "menu",
 		k: "clock",
@@ -694,6 +701,7 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		M: "magazine",
 	},
 	library: {
+		"@": "tv",
 		B: "shelf",
 		m: "notice",
 		T: "desk",
@@ -719,6 +727,7 @@ const THING_IDS: Record<RoomId, Record<string, string>> = {
 		t: "merch",
 	},
 	bath: {
+		"@": "tv",
 		Q: "mural",
 		k: "mirror",
 		o: "oke",
