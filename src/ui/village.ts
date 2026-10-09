@@ -82,14 +82,10 @@ const WALK_MS = 170;
 /** ダッシュで 歩く 速さ（WALK_MS の 何倍か）。 */
 const DASH_SPEED = 2.5;
 /**
- * 歩きつづけると 走りだす（作者の 指示「通行しやすく」。地図が 87×52 に 広がった）。押しっぱなし・指で 押さえつづけて
- * これだけ 続けて 歩いたら、ダッシュの 速さに なる。止まれば もどる。
+ * タップした 道が これより 長ければ 走る（着く 2歩 手前で 歩きに もどる）。
+ * 押しっぱなしで ひとりでに 走りだすのは やめた（作者「キモい」）。走るのは ダッシュを 押しながら。
  */
-const RUN_AFTER = 6;
-/** タップした 道が これより 長ければ 走る（着く 2歩 手前で 歩きに もどる）。 */
 const RUN_PATH = 8;
-/** 1歩 着いてから 次の 1歩までが これより 短ければ「続けて 歩いた」（ms）。 */
-const STREAK_GAP = 90;
 /** 1文字あたりの ms（rpg の既定と同じ）。 */
 const TEXT_MS = 28;
 /** 場面で 人を とばす とき、画面の はしから これだけ（マス）外までは 映る ことに する（歩く 絵は マスより 大きい）。 */
@@ -187,9 +183,6 @@ export class Village {
 	private talkRetried = false;
 	/** タップした 道が 長い（走る）。 */
 	private pathRun = false;
-	/** 続けて 歩いた 歩数と、最後に 1歩 着いた 時刻（歩きつづけると 走りだす）。 */
-	private streak = 0;
-	private arrivedAt = -1e9;
 	private marker: { x: number; y: number; t: number } | null = null;
 	/** まだ 1度も もぐっていない（村の 出口に 矢印を 出す。はじめての 人が 出口を さがさないように）。 */
 	private guideExit = false;
@@ -522,7 +515,6 @@ export class Village {
 		this.player.update(dt);
 		// 操作で歩いて1マス着いたら、次の1歩を 始める前に ここで 踏むイベントを 調べる
 		// （歩きの Promise の続きは 次のマイクロタスクなので、押しっぱなしだと 先に 次のマスへ 進んでしまう）
-		if (wasMoving && !this.player.moving) this.arrivedAt = this.time;
 		if (wasMoving && !this.player.moving && this.stepPending) {
 			this.stepPending = false;
 			this.syncState();
@@ -860,9 +852,9 @@ export class Village {
 
 	/**
 	 * キリコを 1歩 進める（通れなければ 向きだけ 変える）。ダッシュ（X・Shift・画面の ボタン）は 走る。
-	 * run は タップした 道（長い 道は 走る）。わたさなければ 操作の 1歩で、続けて RUN_AFTER 歩 歩いたら 走る。
+	 * run は タップした 道（長い 道は 走る）。
 	 */
-	private async tryStep(d: Dir, run?: boolean): Promise<void> {
+	private async tryStep(d: Dir, run = false): Promise<void> {
 		const field = this.field;
 		if (!field) return;
 		const v = DIR_VEC[d];
@@ -873,9 +865,7 @@ export class Village {
 			return;
 		// 着いたときの判定は update() が行う（stepPending）
 		this.stepPending = true;
-		this.streak =
-			this.time - this.arrivedAt <= STREAK_GAP ? this.streak + 1 : 1;
-		const fast = this.ctx.input.mods().dash || (run ?? this.streak > RUN_AFTER);
+		const fast = this.ctx.input.mods().dash || run;
 		const ms = fast ? WALK_MS / DASH_SPEED : WALK_MS;
 		await this.player.walk(d, ms);
 	}
