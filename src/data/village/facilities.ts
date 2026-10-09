@@ -18,6 +18,7 @@
 
 import type { EventDef, TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import { NETA_KABE_WALK, netaArt } from "../neta/art";
 import type { NetaPlay } from "../neta/types";
 import { BUSHITSU_FACILITIES } from "./bushitsu";
 import { CIVIC_FACILITIES } from "./civicHalls";
@@ -653,7 +654,7 @@ export const FACILITIES: readonly Facility[] = [
 				"#........B.#",
 				"#.zgz..zgz.#",
 				"#..........#",
-				"#.zgz..zSz.#",
+				"#.zOz..zSz.#",
 				"#u.......T.#",
 				"####DD######",
 			],
@@ -673,6 +674,8 @@ export const FACILITIES: readonly Facility[] = [
 				S: k.on(ri("shogiban")),
 				u: k.on(base(1, 124)),
 				T: k.on(base(5, 312), ri("kettleBase")),
+				// リバーシ盤（scripts/make-neta.mjs。RPGEN の 碁盤 sp:AeSsDg を 緑に）
+				O: k.on(netaArt("othello")),
 			}),
 			things: {
 				"@": "tv",
@@ -686,6 +689,7 @@ export const FACILITIES: readonly Facility[] = [
 				S: "shogi",
 				u: "stones",
 				T: "tea",
+				O: "othello",
 			},
 			lines: {
 				tv: ["テレビ。\n対局の　中継を　流している。"],
@@ -703,9 +707,11 @@ export const FACILITIES: readonly Facility[] = [
 				bonsai: ["盆栽。\n……だれも　手入れの　しかたを　知らない。"],
 				stones: ["碁笥（ごけ）の　かご。\n白い　石が　1つ　たりない。"],
 				tea: ["お茶の　台。\n急須の　お茶が　すっかり　ぬるい。"],
+				othello: ["リバーシ盤。\n「リバーシの　時間です」と　札が　ある。"],
 			},
-			// 壁の テレビで 保守名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
-			plays: { tv: "jikkyo" },
+			// 壁の テレビで 保守名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
+			// リバーシ盤で 常連と 対局（スレ「オセロの時間です」の 盤の 遊び。ui/netaOthello.ts）
+			plays: { tv: "jikkyo", othello: "othello" },
 			people: [
 				{
 					id: "go_a",
@@ -725,6 +731,15 @@ export const FACILITIES: readonly Facility[] = [
 					dir: "left",
 					name: "名無し",
 					lines: ["ワイ、投了するわ。\n……いや、まだや。まだ　打てる"],
+				},
+				// リバーシの 常連（スレ「【オセロ】敗北を知りたい」）
+				{
+					id: "go_c",
+					walk: NANASHI[0],
+					at: [2, 6],
+					dir: "right",
+					name: "名無し",
+					lines: ["……敗北を　知りたいんや。\nだれか　打って　くれへんか"],
 				},
 			],
 		},
@@ -774,6 +789,26 @@ export const FACILITIES: readonly Facility[] = [
 				id: "net",
 				at: [34, 2],
 				lines: ["バックネット。\nボールの　あとで、あちこち　へこんでいる。"],
+			},
+			// 三塁側の ベンチ：ランダム野球（!random の ルールA。おんJwiki pages/334。ui/netaYakyu.ts）
+			{
+				id: "bench_r",
+				at: [38, 9],
+				lines: [
+					"三塁側の　ベンチ。\n「!random」と　書いた　札が　さがっている。",
+				],
+				play: "yakyu",
+			},
+			// 外野の へいの「5割の壁」（順位スレの 5割の 線。おんJwiki pages/21。絵は scripts/make-neta.mjs）。
+			// ランダム野球の 通算が ちょうど 5割の ときだけ しゃべる（ui/neta.ts の kabeScript）
+			{
+				id: "kabe",
+				at: [35, 9],
+				sprite: NETA_KABE_WALK,
+				dir: "down",
+				name: "5割の壁",
+				lines: ["……"],
+				play: "kabe",
 			},
 		],
 	},
@@ -1268,7 +1303,7 @@ export const FACILITIES: readonly Facility[] = [
 				"#hhhhhsShmh#",
 				"#RR....~~~U#",
 				"#......~~~~#",
-				"#z.....~~~~#",
+				"#zK....~~~~#",
 				"#z.....~~~~#",
 				"#TOo..d....#",
 				"####DD######",
@@ -1285,6 +1320,8 @@ export const FACILITIES: readonly Facility[] = [
 				z: k.floor(base(3, 311)),
 				o: k.on(base(3, 349, 1, 2)),
 				O: k.on(base(3, 349, 1, 2)),
+				// 文机（半紙・すずり・筆。scripts/make-neta.mjs）
+				K: k.on(netaArt("desk")),
 			}),
 			things: {
 				a: "plaque",
@@ -1297,6 +1334,7 @@ export const FACILITIES: readonly Facility[] = [
 				T: "taiko",
 				d: "bokken",
 				o: "bogu",
+				K: "shuji",
 			},
 			lines: {
 				plaque: ["額に「保守」の　二文字。\n師範が　書いたらしい。"],
@@ -1307,7 +1345,12 @@ export const FACILITIES: readonly Facility[] = [
 				taiko: ["太鼓。\n稽古の　はじめに　1回　たたく。"],
 				bokken: ["木刀掛け。\n「素振り　1000本」の　札。"],
 				bogu: ["防具。\n胴に「保守」と　白い　字。"],
+				shuji: [
+					"文机。半紙と　筆が　ある。\n……すずりに「!sk」と　彫ってある。",
+				],
 			},
+			// 文机で !sk 習字（おーぷんの サイコロ機能。ui/netaSk.ts）
+			plays: { shuji: "sk" },
 			people: [
 				{
 					id: "dojo_master",
@@ -1830,7 +1873,8 @@ export const FACILITIES: readonly Facility[] = [
 				K: k.on(base(3, 519, 1, 2)),
 				E: k.on(base(4, 519, 1, 2)),
 				G: k.on(base(3, 519, 1, 2)),
-				J: k.on(base(4, 519, 1, 2)),
+				// コンマの 台（16x32。scripts/make-neta.mjs）
+				J: k.on(netaArt("comma")),
 				I: k.on(base(0, 519, 1, 2)),
 				v: k.on(riCell("tvBig", 0, 0)),
 				V: k.on(riCell("tvBig", 1, 0)),
@@ -1853,7 +1897,7 @@ export const FACILITIES: readonly Facility[] = [
 				K: "cabinet",
 				E: "cabinet",
 				G: "cabinet",
-				J: "cabinet",
+				J: "comma",
 				I: "cabinet",
 				v: "rhythm",
 				V: "rhythm",
@@ -1876,9 +1920,11 @@ export const FACILITIES: readonly Facility[] = [
 				vend: ["自販機。\nエナドリの　ボタンだけ「売切」。"],
 				change: ["両替機。\n千円札が　100円玉に　なる。"],
 				plant: ["観葉植物。\n……鉢に　メダルが　1枚　埋まっている。"],
+				comma: ["コンマの　台。画面の　時計が、\nミリ秒まで　回っている。"],
 			},
-			// 壁の 大画面で 新作発表会・保守リーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
-			plays: { tv: "jikkyo" },
+			// 壁の 大画面で 新作発表会・保守リーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
+			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/netaComma.ts）
+			plays: { tv: "jikkyo", comma: "comma" },
 			people: [
 				{
 					id: "arcade_a",
@@ -1895,6 +1941,15 @@ export const FACILITIES: readonly Facility[] = [
 					dir: "up",
 					name: "名無し",
 					lines: ["メダル、ぜんぶ　すった。\n……来月まで　ROM　やわ"],
+				},
+				// コンマの 台の 見物（スレ「コンマゾロ目出たやつを崇め称えるスレ」の 崇める がわ）
+				{
+					id: "arcade_c",
+					walk: NANASHI[1],
+					at: [4, 7],
+					dir: "up",
+					name: "名無し",
+					lines: ["ゾロ目、まだ　見たこと　ないんや。\n……出たら　崇めたるで"],
 				},
 			],
 		},
@@ -1954,7 +2009,7 @@ export const FACILITIES: readonly Facility[] = [
 				"#.......FLJ#",
 				"#.bB..bB.lj#",
 				"#..........#",
-				"#.dd.yyyy.S#",
+				"#.dd.yyyY.S#",
 				"#R...yyyy..#",
 				"####DD######",
 			],
@@ -1970,6 +2025,8 @@ export const FACILITIES: readonly Facility[] = [
 				y: k.floor(base(1, 50)),
 				S: k.on(ri("scale")),
 				R: k.on(ri("drinkCase")),
+				// 腹筋台（マットの 上。scripts/make-neta.mjs）
+				Y: k.on(base(1, 50), netaArt("fukkin")),
 			}),
 			things: {
 				M: "mirror",
@@ -1982,6 +2039,7 @@ export const FACILITIES: readonly Facility[] = [
 				S: "scale",
 				R: "fridge",
 				F: "plant",
+				Y: "fukkin",
 			},
 			lines: {
 				mirror: ["大きな　鏡。\nキリコが　映っている。……細い。"],
@@ -1992,7 +2050,10 @@ export const FACILITIES: readonly Facility[] = [
 				scale: ["体重計。\n針が「計測不能」で　止まっている。"],
 				fridge: ["冷蔵庫。\nプロテインの　ボトルが　ぎっしり。"],
 				plant: ["観葉植物。\n……いちばん　鍛えて　なさそう。"],
+				fukkin: ["腹筋台。はり紙：\n「ようこそID腹筋スレへ！」"],
 			},
+			// 腹筋台で ID腹筋（「ようこそID腹筋スレへ！」。外の はり紙「sage　進行　お断り」と 同じ 店。ui/netaFukkin.ts）
+			plays: { fukkin: "fukkin" },
 			people: [
 				{
 					id: "gym_trainer",
