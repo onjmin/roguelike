@@ -225,7 +225,7 @@ pnpm dev
 - フェリス・やきう: なんJ・おんJ のみんな
 - 原案・ディレクター・キャラクターイラスト・音楽: このゲームの作者
 - シナリオ・ゲームデザイン・プログラム・デバッグ: Claude Code（Claude Opus 5.5）
-- 素材提供（歩行グラ・マップチップ・墓・効果音・建物と 街の 部品）: RPGEN（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
+- 素材提供（歩行グラ・マップチップ・墓・効果音・建物と 街の 部品・施設の 家具）: RPGEN（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
 - 音楽・音声合成: [@onjmin/dtm](https://github.com/onjmin/dtm)・koe UtauTTS
 - フォント: DotGothic16（SIL Open Font License）
 - ローグライクの基本（満腹度・未識別・モンスターハウスなど）は『トルネコの大冒険 不思議のダンジョン』（チュンソフト）ほかの ローグライクを参考にしています。名前や絵は使っていません。

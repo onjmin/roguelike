@@ -43,7 +43,7 @@ import {
 import { CAFE_MOBS } from "../data/cafeMobs";
 import { SEASONS, season } from "../data/calendar";
 import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
-import { FISHING, GROUND_BAT, VENDING } from "../data/facilities";
+import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
 import { GLOSSARY } from "../data/glossary";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
 import {
@@ -5749,15 +5749,37 @@ test("施設の 中: every facility room is closed, draws only bundled art, and 
 		const e = facilityEntry(f);
 		const s = surveyMap(rows, tiles, all, [e.x, e.y]);
 		ok(s.canEnter(e.x, e.y), `${f.id}: the entrance is blocked`);
-		for (const [mx, my] of facilityMats(f))
+		for (const [mx, my] of facilityMats(f)) {
 			ok(
 				s.reachable(mx, my),
 				`${f.id}: the mat (${mx},${my}) does not lead out`,
 			);
+			// 扉の 2マスとも 中へ ひらく（マットの 真上に 物を 置かない）
+			ok(
+				s.canEnter(mx, my - 1),
+				`${f.id}: something stands on (${mx},${my - 1}) in front of the door`,
+			);
+		}
 		for (const p of all) {
 			if (p.trigger === "touch") continue;
 			ok(s.talkable(p, hasBack(s, p)), `${f.id}: cannot reach ${p.id}`);
 		}
+		// 人の となりの 台には 調べる 物を 置かない（台の マスに 物が あると、台ごしに 話しかけても
+		// その 物が 先に 出て 向こうの 人に 届かない。ui/village.ts）
+		const thingCounter = (x: number, y: number) =>
+			!!tiles[[...(rows[y] ?? "")][x]]?.counter &&
+			places.some((q) => q.trigger === "talk" && q.x === x && q.y === y);
+		for (const p of people)
+			for (const [dx, dy] of [
+				[0, -1],
+				[1, 0],
+				[0, 1],
+				[-1, 0],
+			])
+				ok(
+					!thingCounter(p.x + dx, p.y + dy),
+					`${f.id}: the counter at (${p.x + dx},${p.y + dy}) reads its own thing instead of ${p.id}`,
+				);
 		for (const p of places) {
 			if (p.trigger === "touch") continue;
 			const kind = p.id.replace(/_\d+$/, "");
@@ -5998,6 +6020,9 @@ test("施設の 文: every line fits the village window", () => {
 	for (const drink of VENDING.drinks)
 		texts.push(["vending", fill(VENDING.got, { drink })]);
 	texts.push(["vending", VENDING.drank]);
+	for (const drink of DRINK_BAR.drinks)
+		texts.push(["drink bar", fill(DRINK_BAR.got, { drink })]);
+	texts.push(["drink bar", DRINK_BAR.drank]);
 	fitsWindow(texts);
 });
 

@@ -1,8 +1,9 @@
-// scripts/pack-rpgen.mjs が 書き出す（手で 書きかえない。部品を かえる ときは pack-rpgen.mjs の GROUPS）。
-// 絵は RPGEN（https://rpgen.us/）の スプライトセットから 選んで 1枚に まとめた もの
+// scripts/pack-rpgen.mjs が 書き出す（手で 書きかえない。部品を かえる ときは pack-rpgen.mjs の GROUPS・ROOM_PIECES）。
+// 絵は RPGEN（https://rpgen.us/）の スプライトセットから 選んで まとめた もの
 // （検索: https://rpgen-search.pages.dev/）。赤い 灯り・赤十字の 2つだけ 手描き。
+// 部屋の 絵の 少しは 同梱の Base.png から 切って 詰めた もの（台の 上の 家電・ダンベル）。
 
-/** まとめた 絵（public/sprites/rpgen-modern.png。256x288）。 */
+/** まとめた 絵（public/sprites/rpgen-modern.png。256x288）。施設の 外観・街の 物。 */
 export const RPGEN_IMG = "pub:sprites/rpgen-modern.png";
 export const RPGEN_SIZE = [256, 288] as const;
 
@@ -84,4 +85,151 @@ export type RpgenName = keyof typeof RPGEN_CELLS;
 export const art = (name: RpgenName, x = 0, y = 0, w = 1, h = 1): string => {
 	const [c, r] = RPGEN_CELLS[name];
 	return `${RPGEN_IMG}#${(c + x) * 16},${(r + y) * 16},${w * 16},${h * 16}`;
+};
+
+/** 部屋の 家具・小物を まとめた 絵（public/sprites/rpgen-interior.png。256x192）。施設の 中。 */
+export const ROOM_IMG = "pub:sprites/rpgen-interior.png";
+export const ROOM_SIZE = [256, 192] as const;
+
+/** 物の 名前 → [列, 行, 幅, 高さ]（アトラスの マス）。 */
+export const ROOM_CELLS = {
+	shelfGoods: [0, 0, 2, 2],
+	drinkCase: [2, 0, 1, 2],
+	iceChest: [3, 0, 2, 1],
+	whiteCounter: [5, 0, 2, 1],
+	yellowCounter: [7, 0, 2, 1],
+	lowShelf: [9, 0, 2, 1],
+	lowShelfB: [11, 0, 2, 1],
+	glassCase: [13, 0, 2, 1],
+	safe: [15, 0, 1, 1],
+	atm: [3, 1, 1, 1],
+	register: [4, 1, 1, 1],
+	boxes: [5, 1, 1, 2],
+	boxesB: [6, 1, 1, 2],
+	crate: [7, 1, 1, 1],
+	crateB: [8, 1, 1, 1],
+	binCans: [9, 1, 1, 1],
+	binPet: [10, 1, 1, 1],
+	binBurn: [11, 1, 1, 1],
+	trash: [12, 1, 1, 1],
+	extinguisher: [13, 1, 1, 1],
+	payphone: [14, 1, 1, 2],
+	corkBoard: [0, 2, 3, 2],
+	departures: [7, 2, 4, 2],
+	lockers: [3, 2, 2, 2],
+	braille: [15, 1, 1, 1],
+	memo: [11, 2, 1, 1],
+	notice: [12, 2, 1, 1],
+	poster: [13, 2, 1, 1],
+	posterB: [15, 2, 1, 1],
+	banner: [5, 3, 2, 1],
+	scroll: [11, 3, 1, 1],
+	scale: [12, 3, 1, 2],
+	signRestroom: [13, 3, 1, 1],
+	tvSmall: [14, 3, 1, 1],
+	tvBig: [0, 4, 2, 1],
+	tvCrt: [15, 3, 1, 1],
+	tvCrtB: [2, 4, 1, 1],
+	console: [3, 4, 1, 1],
+	guitar: [4, 4, 1, 1],
+	guitarB: [5, 4, 1, 1],
+	records: [6, 4, 1, 1],
+	ecg: [7, 4, 1, 1],
+	medPanel: [8, 4, 1, 1],
+	medPanelB: [9, 4, 1, 1],
+	stoolWhite: [10, 4, 1, 1],
+	cooler: [11, 4, 1, 1],
+	bucket: [13, 4, 1, 1],
+	cabinetGreyB: [14, 4, 1, 1],
+	bench: [0, 5, 2, 1],
+	counterLong: [2, 5, 3, 1],
+	tableLong: [5, 5, 3, 1],
+	deskDark: [8, 5, 3, 1],
+	counterDark: [11, 5, 3, 1],
+	roundTable: [15, 4, 1, 1],
+	stoolRed: [14, 5, 1, 1],
+	stoolBrown: [15, 5, 1, 1],
+	chairDarkDown: [0, 6, 1, 1],
+	chairDarkUp: [1, 6, 1, 1],
+	sofaWhite: [2, 6, 2, 1],
+	seatBack: [4, 6, 1, 1],
+	bonsai: [5, 6, 1, 1],
+	fenceIron: [6, 6, 1, 1],
+	runner: [7, 6, 1, 1],
+	stove: [8, 6, 2, 1],
+	sink: [10, 6, 2, 1],
+	cabNavy: [12, 6, 3, 1],
+	cabWood: [0, 7, 3, 1],
+	winBlue: [3, 7, 2, 2],
+	flWhite: [15, 6, 1, 1],
+	flBlue: [5, 7, 1, 1],
+	flGrey: [6, 7, 1, 1],
+	flRed: [7, 7, 1, 1],
+	flCarpet: [8, 7, 1, 1],
+	ramen: [9, 7, 1, 1],
+	potFire: [10, 7, 1, 1],
+	gyoza: [11, 7, 1, 1],
+	yakitori: [12, 7, 1, 1],
+	sakeSet: [13, 7, 1, 1],
+	sakeBottle: [14, 7, 1, 1],
+	condiments: [15, 7, 1, 1],
+	yakisoba: [0, 8, 1, 1],
+	beer: [1, 8, 1, 1],
+	wine: [2, 8, 1, 1],
+	ramune: [5, 8, 1, 1],
+	ramuneTub: [6, 8, 1, 1],
+	iceFlag: [7, 8, 1, 1],
+	kakigoriMachine: [8, 8, 1, 1],
+	winModern: [9, 8, 1, 1],
+	mirror: [10, 8, 1, 1],
+	standSign: [11, 8, 1, 1],
+	sedan: [12, 8, 4, 2],
+	wagon: [0, 9, 4, 2],
+	bike: [4, 9, 2, 1],
+	vend: [6, 9, 2, 2],
+	jerrycan: [8, 9, 1, 1],
+	kettle: [9, 9, 1, 1],
+	bell: [10, 9, 1, 1],
+	taiko: [11, 9, 1, 1],
+	shutter: [4, 10, 2, 1],
+	toolboxTop: [8, 10, 1, 1],
+	pcTop: [9, 10, 1, 1],
+	turntableTop: [10, 10, 1, 1],
+	radioTop: [11, 10, 1, 1],
+	podium: [12, 10, 1, 1],
+	pole: [13, 10, 1, 2],
+	goban: [14, 10, 1, 1],
+	dumbbells: [15, 10, 1, 1],
+	shogiban: [0, 11, 1, 1],
+	laptop: [1, 11, 1, 1],
+	kettleBase: [2, 11, 1, 1],
+	phone: [3, 11, 1, 1],
+	riceCooker: [4, 11, 1, 1],
+	coffeeMaker: [5, 11, 1, 1],
+	boothR: [6, 11, 1, 1],
+	boothL: [7, 11, 1, 1],
+	tableBeige: [8, 11, 1, 1],
+	hamburg: [9, 11, 1, 1],
+	omurice: [10, 11, 1, 1],
+	glasses: [11, 11, 1, 1],
+	cake: [12, 11, 1, 1],
+	melonSoda: [14, 11, 1, 1],
+	flWoodLight: [15, 11, 1, 1],
+} as const;
+
+export type RoomArtName = keyof typeof ROOM_CELLS;
+
+/**
+ * 物の col 列目を 下まで 1本（16 × 物の 高さ）。背の 高い 物（冷蔵ケース・ロッカー）は 下端そろえで
+ * 上の マスへ はみ出して 描かれる（壁ぎわに 置くと 壁の 上段に 立つ）。
+ */
+export const ri = (name: RoomArtName, col = 0): string => {
+	const [c, r, , h] = ROOM_CELLS[name];
+	return `${ROOM_IMG}#${(c + col) * 16},${r * 16},16,${h * 16}`;
+};
+
+/** 物の (col, row) の 1マス（16x16）。幅の ある 物（台・車）は マスごとに 置く（となりへ はみ出さない）。 */
+export const riCell = (name: RoomArtName, col: number, row: number): string => {
+	const [c, r] = ROOM_CELLS[name];
+	return `${ROOM_IMG}#${(c + col) * 16},${(r + row) * 16},16,16`;
 };

@@ -3,7 +3,7 @@
 // 外の 物（釣り場の 竿・グラウンドの マウンド）は 調べると 文、遊べる 物は そのあと 遊ぶか 聞く。
 // どれも 寄り道で、強さにも 冒険にも 何も 残さない（釣れた 物は すぐ 海に かえす）。
 
-import { FISHING, GROUND_BAT, VENDING } from "../data/facilities";
+import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
 import { awayFriends } from "../data/story";
 import {
 	type Facility,
@@ -87,6 +87,15 @@ const vend = async (s: Story): Promise<void> => {
 	await s.narrate(VENDING.drank);
 };
 
+/** ファミレスの ドリンクバー（1杯 注いで その場で 飲む。見た目の 乱数なので Math.random）。 */
+const drinkBar = async (s: Story): Promise<void> => {
+	if ((await s.choose([...DRINK_BAR.menu], { cancel: 1 })) !== 0) return;
+	const drink =
+		DRINK_BAR.drinks[Math.floor(Math.random() * DRINK_BAR.drinks.length)];
+	await s.narrate(fill(DRINK_BAR.got, { drink }));
+	await s.narrate(DRINK_BAR.drank);
+};
+
 /** 外に 置く 物（地図の マス。調べると 文、遊べる 物は 遊ぶか 聞く）。 */
 export const outdoorScript =
 	(ctx: Ctx, t: OutdoorThing): Script =>
@@ -146,7 +155,9 @@ export const buildFacility = (
 		const kind = p.id.replace(/_\d+$/, "");
 		return sign(p.id, p.x, p.y, async (s) => {
 			await readAll(s, room?.lines[kind] ?? []);
-			if (room?.plays?.[kind] === "depart" && depart) await depart(s);
+			const play = room?.plays?.[kind];
+			if (play === "depart" && depart) await depart(s);
+			else if (play === "drinkbar") await drinkBar(s);
 		});
 	});
 	for (const who of room?.people ?? [])
