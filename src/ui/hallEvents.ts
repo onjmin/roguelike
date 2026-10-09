@@ -74,6 +74,7 @@ import {
 } from "../engine/save";
 import { TILE } from "../engine/types";
 import { openBook } from "./bookView";
+import { yoriaiEvents, yoriaiMovedLine } from "./civic";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { openGlossary } from "./glossary";
@@ -256,6 +257,9 @@ export const tobanScript =
 /** 期間限定の 告知。 */
 export const noticeScript: Script = async (s) => {
 	for (const t of noticeTexts()) await s.narrate(t);
+	// 段4〜5 の レンガ館：寄り合いは 町役場へ（ui/civic.ts）
+	const moved = yoriaiMovedLine(previewStage() ?? loadTown().stage);
+	if (moved) await s.narrate(moved);
 };
 
 /** 品の 絵（一覧の 行の 左。16px を 2倍）。 */
@@ -650,7 +654,11 @@ export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 		outside: "#000",
 		// 飾り棚の 品の 絵（棚に 描く 品と 一覧だけの 植民地化宣言・長湯スレ）も 入る 前に 読んでおく
 		images: shelfSlots(tier).length ? shelfRefs(v.cleared) : undefined,
-		events: hallPlaces(v).map((p) => eventFor(ctx, p, tier)),
+		events: [
+			...hallPlaces(v).map((p) => eventFor(ctx, p, tier)),
+			// 寄り合いの 日（段2〜3）に 来た 住人（ui/civic.ts）
+			...yoriaiEvents(v, tier),
+		],
 		decor: decor.length
 			? (g, ox, oy, t) => {
 					for (const d of decor) d(g, ox, oy, t);

@@ -26,6 +26,7 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
 import { facilityDecor } from "./cinemaDecor";
+import { assemblyEvents } from "./civic";
 import type { Ctx } from "./ctx";
 import { debateScript, kibenScript, minutesScript } from "./debate";
 import { eatAt, keeperTalk } from "./eat";
@@ -244,6 +245,8 @@ export const buildFacility = (
 				{ dir: who.dir },
 			),
 		);
+	// 議会の 日の 議席・役の 住人（町役場・市役所。ui/civic.ts）
+	events.push(...assemblyEvents(f, v));
 	return {
 		id: facilityMapId(f),
 		name: f.name,

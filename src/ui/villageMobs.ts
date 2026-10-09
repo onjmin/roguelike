@@ -254,6 +254,15 @@ export const idleOf = (def: MobDef): string =>
 		: (def.idle[today().w] ?? def.idle[0] ?? ""));
 
 /**
+ * deep の 節目（電池板を 持ち帰った あとの 話）を まだ 見て いない 子か。その 子は 家に いる
+ * （議会の 議席・寄り合いには 来ない。ui/guests.ts の assemblyToday）。
+ */
+export const deepPending = (id: MobId): boolean =>
+	!!MOBS[id].milestones.deep &&
+	reached("deep") &&
+	!load().seen.includes(`${id}:@deep`);
+
+/**
  * 会ったことの ある子に 新しい話が あるか（お礼・まだ見ていない 節目か、仲間なしで この帰りに 合う 雑談）。
  * 村では「！」の 印を 出さない（はじめは 村じゅう「！」だらけで、話しかける 用事に なるので）。
  */

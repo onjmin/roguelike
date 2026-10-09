@@ -5,6 +5,21 @@
 
 import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
+import type { Today } from "../data/calendar";
+import {
+	AGENDA,
+	ASSEMBLY_LINES,
+	type Assembly,
+	agendaOf,
+	assemblyMembers,
+	CIVIC_BOARD,
+	DAYORI,
+	inSession,
+	NANASHI_CHAIR,
+	NOT_IN_ASSEMBLY,
+	SEATS,
+	YORIAI_SPOTS,
+} from "../data/civic";
 import {
 	ACTS,
 	BOARD,
@@ -42,6 +57,7 @@ import {
 	type Topic,
 	VERDICT,
 } from "../data/debate";
+import { MOB_IDS, type MobId } from "../data/mobs";
 import {
 	FACILITIES,
 	type Facility,
@@ -49,10 +65,23 @@ import {
 	facilityBlock,
 	facilityById,
 	facilityDoor,
+	facilityEntry,
+	facilityMats,
 	facilityOutside,
+	facilityRoomPalette,
+	facilityRoomPlaces,
+	facilityRoomRows,
 } from "../data/village/facilities";
+import { hallPlaces, hallRows } from "../data/village/hall";
 import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
+import { loadProgress } from "../engine/save";
+import {
+	assemblyEvents,
+	civicBoardMenu,
+	civicBoardScript,
+	yoriaiMovedLine,
+} from "../ui/civic";
 import type { Ctx } from "../ui/ctx";
 import {
 	type DebateResult,
@@ -63,6 +92,8 @@ import {
 	setDebateHook,
 } from "../ui/debate";
 import { buildFacility } from "../ui/facilities";
+import { assemblyToday, guestsOf } from "../ui/guests";
+import { fill } from "../ui/villageTalk";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -892,6 +923,9 @@ test(
 		const th = must("townhall");
 		const { store, restore } = swapStorage();
 		forgetCivicMemo();
+		// 進みの 保存は はじめて 読んだ ときに 形を 決めて 書かれる（engine/save.ts）。討論の 前の 写しと くらべる
+		loadProgress();
+		const before = new Map(store);
 		const seen: {
 			v: { topic: string; us: number; ally: string; opp: string } | null;
 		} = { v: null };
@@ -953,11 +987,11 @@ test(
 			seen.v = null;
 			await podium?.run?.(c.s);
 			ok(seen.v === null, "played after quitting");
-			// 書いた 保存は civic だけ
-			ok(
-				[...store.keys()].join() === "kiriko-roguelike/civic",
-				`saves ${[...store.keys()]}`,
+			// 書いた 保存は civic だけ（ほかの 鍵は 討論の 前の まま）
+			const changed = [...store.keys()].filter(
+				(k) => before.get(k) !== store.get(k),
 			);
+			ok(changed.join() === "kiriko-roguelike/civic", `saves ${changed}`);
 			// はり紙：見分け方（一覧は DOM なので 文だけ）
 			const kiben = events.find((e) => e.id === "kiben_0");
 			ok(kiben, "no kiben");
@@ -1039,6 +1073,334 @@ test(
 			reads.sort().join() === "cityhall.minutes,court.cases,townhall.minutes",
 			`minutes ${reads}`,
 		);
+	},
+);
+
+// ───────────────── 議会の 日と 人の 出入り ─────────────────
+
+/** 部屋の 歩ける マス（人の いる マスは 通れない）と 話せるか。 */
+const survey = (
+	rows: readonly string[],
+	tiles: Record<string, { passable?: boolean; counter?: boolean }>,
+	people: readonly { x: number; y: number }[],
+	start: { x: number; y: number },
+) => {
+	const tile = (x: number, y: number) => tiles[[...(rows[y] ?? "")][x] ?? ""];
+	const occ = new Set(people.map((p) => `${p.x},${p.y}`));
+	const seen = new Set<string>([`${start.x},${start.y}`]);
+	const q: [number, number][] = [[start.x, start.y]];
+	const D = [
+		[0, -1],
+		[1, 0],
+		[0, 1],
+		[-1, 0],
+	] as const;
+	while (q.length) {
+		const [x, y] = q.shift() as [number, number];
+		for (const [dx, dy] of D) {
+			const k = `${x + dx},${y + dy}`;
+			if (seen.has(k) || occ.has(k) || !tile(x + dx, y + dy)?.passable)
+				continue;
+			seen.add(k);
+			q.push([x + dx, y + dy]);
+		}
+	}
+	const reach = (x: number, y: number) => seen.has(`${x},${y}`);
+	const talk = (x: number, y: number) =>
+		D.some(
+			([dx, dy]) =>
+				reach(x + dx, y + dy) ||
+				(!!tile(x + dx, y + dy)?.counter && reach(x + 2 * dx, y + 2 * dy)),
+		);
+	return { reach, talk };
+};
+
+/** 議席と 役を ぜんぶ 埋めた 顔ぶれ（越してきた 子の 中から。足りなければ ある だけ）。 */
+const fullAssembly = (
+	room: "townhall" | "cityhall",
+	chair: boolean,
+): Assembly => {
+	const others = MOB_IDS.filter(
+		(id) =>
+			!NOT_IN_ASSEMBLY.includes(id) && !["onchan", "proto", "aru"].includes(id),
+	);
+	return {
+		session: true,
+		chair: room === "cityhall" && chair ? "onchan" : null,
+		clerk: room === "cityhall" ? "proto" : null,
+		camera: room === "cityhall" ? "aru" : null,
+		seats: others.slice(0, SEATS[room].length),
+	};
+};
+
+test(
+	"C2",
+	"満席：町役場（議席 3）・市役所（議席 8・役 3、名無しの 議長も）を 埋めても 物・人・演壇・窓口・出口に 届く",
+	() => {
+		for (const [id, stage] of [
+			["townhall", 4],
+			["cityhall", 7],
+		] as const)
+			for (const chair of [true, false]) {
+				const f = must(id);
+				const a = fullAssembly(id, chair);
+				const evs = assemblyEvents(f, view(stage), a);
+				ok(
+					evs.length >= SEATS[id].length,
+					`${id}: ${evs.length} assembly people`,
+				);
+				const rows = facilityRoomRows(f);
+				const tiles = facilityRoomPalette(f);
+				const staff = (f.room?.people ?? []).map((p) => ({
+					id: p.id,
+					x: p.at[0],
+					y: p.at[1],
+				}));
+				const people = [
+					...staff,
+					...evs.map((e) => ({ id: e.id, x: e.x, y: e.y })),
+				];
+				ok(
+					new Set(people.map((p) => `${p.x},${p.y}`)).size === people.length,
+					`${id}: two people share a cell`,
+				);
+				for (const p of people)
+					ok(
+						tiles[[...rows[p.y]][p.x]]?.passable,
+						`${id}: ${p.id} stands on a wall`,
+					);
+				const s = survey(rows, tiles, people, facilityEntry(f));
+				for (const [mx, my] of facilityMats(f))
+					ok(s.reach(mx, my), `${id}: the mat (${mx},${my})`);
+				for (const p of facilityRoomPlaces(f))
+					if (p.trigger === "talk")
+						ok(
+							s.talk(p.x, p.y),
+							`${id} (chair ${chair}): cannot reach ${p.id}`,
+						);
+				for (const p of people)
+					ok(
+						s.talk(p.x, p.y),
+						`${id} (chair ${chair}): cannot talk to ${p.id}`,
+					);
+				// 名無しの 議長は おんちゃんが 来ない 市役所の 議会の 日だけ
+				ok(
+					evs.some((e) => e.id === "asm_chair") ===
+						(id === "cityhall" && !chair),
+					`${id}: nanashi chair ${chair}`,
+				);
+				// 議会の ない 日は だれも いない
+				ok(
+					assemblyEvents(f, view(stage), { ...a, session: false }).length === 0,
+					`${id}: people on a day off`,
+				);
+			}
+		// 寄り合いの 立つ 所（集会所・レンガ館）は 床で、本館の 人と 重ならない
+		for (const tier of [0, 1] as const) {
+			const rows = hallRows(tier);
+			const stage = tier === 0 ? 2 : 3;
+			const places = hallPlaces(view(stage));
+			for (const sp of YORIAI_SPOTS[tier]) {
+				ok(
+					[...rows[sp.y]][sp.x] === ".",
+					`hall ${tier}: (${sp.x},${sp.y}) is not floor`,
+				);
+				ok(
+					!places.some((p) => p.x === sp.x && p.y === sp.y),
+					`hall ${tier}: (${sp.x},${sp.y}) is taken`,
+				);
+			}
+		}
+	},
+);
+
+/** 帰りの 時刻の 見本（golden の 並びと 同じ）。 */
+const GOLDEN_AT = (stage: number, k: number) => k * 7919 + stage * 104729;
+/**
+ * 議会を 足す 前の guestsOf の 写し（段2〜7 × 帰り 12。FNV-1a の 36進）。議会の ない 日は この まま
+ * （CIVIC.md §4：議会の ない 日の 顔ぶれを かえない）。
+ */
+const GOLDEN =
+	"2bgqvi x6hzau 1g2h8jv 2bgqvi 1ray4d9 1n2bi7n 1ray4d9 1g2h8jv 1ray4d9 1ray4d9 wfwvxx 1ray4d9 1d5bhtk 1cy9ry0 bikjdx 7n4hgt ts7e8t 1ehc9pq 29lb5x 11f4x1c 1g2h8jv 1g7l9f2 10p37i5 1mul367 1bilb46 1m78g58 10ifemn s751vv av24c4 1j6pxje 2fres6 vw9sz9 ffqx95 oqf7k2 u5bwvf 4srw84 11p1c0s bxxamb 1u24i0k 1ecshjo 1j1gpkw owvufi 1tk2sr wyh5n1 fwnifh 1z10hsd 4for6h 1w5lb7i 3387x2 qjvxot 18wcw2z vnk7xg 14uci9j ojgaid 1butdqi 18omgx8 fwizji 1q5r2lt 19nry0t 1btbveu 1da8dyr j0hwd2 15bj0v3 jtk5ha 1prg5dy 1fqqj8d e8xwkc gp0vqm nycw9k 9m421p qyvd1z 14upkub".split(
+		" ",
+	);
+const fnv = (s: string): string => {
+	let h = 0x811c9dc5;
+	for (const ch of s) {
+		h ^= ch.charCodeAt(0);
+		h = Math.imul(h, 0x01000193) >>> 0;
+	}
+	return h.toString(36);
+};
+
+test(
+	"C3",
+	"議会の 日：月曜は かならず・ほかは 帰りの 種で 約3割、同じ 帰りなら 同じ。議会の ない 日の 顔ぶれは もとの まま、議席と 施設に 二重に いない、原住民は 来ない、議長は おんちゃんか 名無し",
+	() => {
+		const day = (w: number): Today => ({ m: 10, d: 9, w });
+		let n = 0;
+		let on = 0;
+		for (let at = 1; at <= 3000; at++) {
+			ok(inSession(day(1), at * 977), `Monday ${at} is not a session`);
+			// 同じ 帰りなら 同じ（曜日が ちがっても 月曜 以外は 帰りの 種だけ）
+			ok(
+				inSession(day(3), at * 977) === inSession(day(5), at * 977),
+				"not stable",
+			);
+			n++;
+			if (inSession(day(3), at * 977)) on++;
+		}
+		ok(on / n > 0.25 && on / n < 0.35, `other days ${(on / n).toFixed(3)}`);
+		// 議会の ない 日の 顔ぶれ（golden）
+		const v6 = (stage: number): VillageView => ({
+			stage,
+			unlocked: ["shallow"],
+			cleared: ["shallow", "main"],
+		});
+		let i = 0;
+		let checked = 0;
+		for (const stage of [2, 3, 4, 5, 6, 7])
+			for (let k = 1; k <= 12; k++, i++) {
+				const at = GOLDEN_AT(stage, k);
+				if (inSession(day(3), at)) continue;
+				checked++;
+				ok(
+					fnv(JSON.stringify(guestsOf(v6(stage), at, day(3)))) === GOLDEN[i],
+					`stage ${stage} at ${at}: the lineup changed on a day off`,
+				);
+			}
+		ok(checked > 30, `golden checked ${checked}`);
+		// 議会の 日：二重に いない・原住民なし・議長は おんちゃんか 名無し・席の 数まで
+		for (const stage of [2, 3, 4, 5, 6, 7])
+			for (let at = 1; at <= 400; at++) {
+				const v: VillageView = {
+					stage,
+					unlocked: ["shallow"],
+					cleared: ["shallow", "main", "deep", "opunu"],
+				};
+				const a = assemblyToday(v, at * 131, day(1));
+				const room =
+					stage >= 7 ? "cityhall" : stage >= 4 ? "townhall" : "yoriai";
+				ok(a.session, `stage ${stage}: Monday without a session`);
+				const members = assemblyMembers(a);
+				ok(
+					!members.includes("shobon"),
+					`stage ${stage}: shobon in the assembly`,
+				);
+				ok(new Set(members).size === members.length, "a member twice");
+				ok(a.chair === null || a.chair === "onchan", `chair ${a.chair}`);
+				if (room === "yoriai")
+					ok(
+						a.seats.length >= 1 && a.seats.length <= 2 && !a.chair,
+						`yoriai ${a.seats}`,
+					);
+				else
+					ok(
+						a.seats.length <= SEATS[room].length,
+						`${room}: ${a.seats.length} seats`,
+					);
+				if (room !== "cityhall")
+					ok(!a.chair && !a.clerk && !a.camera, `${room}: roles`);
+				const g = guestsOf(v, at * 131, day(1));
+				for (const id of members)
+					ok(
+						!g.music.includes(id) &&
+							!g.books.includes(id) &&
+							!g.bath.includes(id),
+						`stage ${stage}: ${id} is also in a room`,
+					);
+				ok(
+					!members.includes(g.stage as MobId),
+					"the singer is in the assembly",
+				);
+			}
+		// 段1 は 議会なし
+		ok(!assemblyToday(view(1), 5, day(1)).session, "a session at stage 1");
+	},
+);
+
+test(
+	"V3",
+	"まとめ掲示板：段2〜3 は 寄り合いの はり紙（はじめてだけ 前置き → 議題 → 結果）、段4 から 議会だより。段4〜5 の 告知に 町役場へ うつった はり紙",
+	async () => {
+		ok(civicBoardMenu(1) === null, "stage 1 menu");
+		ok(civicBoardMenu(2) === CIVIC_BOARD.yoriaiMenu, "stage 2 menu");
+		ok(civicBoardMenu(3) === CIVIC_BOARD.yoriaiMenu, "stage 3 menu");
+		ok(civicBoardMenu(4) === CIVIC_BOARD.dayoriMenu, "stage 4 menu");
+		ok(civicBoardMenu(7) === CIVIC_BOARD.dayoriMenu, "stage 7 menu");
+		const { store, restore } = swapStorage();
+		forgetCivicMemo();
+		try {
+			const a = recorder();
+			await civicBoardScript(a.s, 2, 1234);
+			const ag = agendaOf(2, 1234);
+			ok(
+				a.log.join("\n") ===
+					[CIVIC_BOARD.soukai, ag.notice, ag.result]
+						.map((t) => `narrate: ${t}`)
+						.join("\n"),
+				`first:\n${a.log.join("\n")}`,
+			);
+			const b = recorder();
+			await civicBoardScript(b.s, 3, 1234);
+			ok(b.log.length === 2, `second: ${b.log}`);
+			const c = recorder();
+			await civicBoardScript(c.s, 5, 99);
+			ok(
+				c.log.length === 1 && c.log[0].startsWith("narrate: 議会だより。"),
+				`dayori ${c.log}`,
+			);
+			ok([...store.keys()].join() === "kiriko-roguelike/civic", "saves");
+			// 議題は 段3 から 屋根の 色も
+			const seen2 = new Set<string>();
+			const seen3 = new Set<string>();
+			for (let at = 0; at < 200; at++) {
+				seen2.add(agendaOf(2, at).id);
+				seen3.add(agendaOf(3, at).id);
+			}
+			ok([...seen2].sort().join() === "isu,karaage", `stage 2 ${[...seen2]}`);
+			ok([...seen3].length === 3, `stage 3 ${[...seen3]}`);
+		} finally {
+			forgetCivicMemo();
+			restore();
+		}
+		ok(yoriaiMovedLine(3) === null && yoriaiMovedLine(6) === null, "moved");
+		ok(
+			yoriaiMovedLine(4) === CIVIC_BOARD.moved &&
+				yoriaiMovedLine(5) === CIVIC_BOARD.moved,
+			"moved 4-5",
+		);
+	},
+);
+
+test(
+	"W4",
+	"議会の 日・寄り合い・議会だよりの 文：村の 窓（22字 × 2行）に 収まり、使わない 語なし",
+	() => {
+		const texts: [string, string][] = [
+			...Object.entries(ASSEMBLY_LINES).map(([k, t]): [string, string] => [
+				`assembly.${k}`,
+				t ?? "",
+			]),
+			["nanashi chair", NANASHI_CHAIR.line],
+			...AGENDA.flatMap((a): [string, string][] => [
+				[`agenda.${a.id}`, a.notice],
+				[`agenda.${a.id} result`, a.result],
+			]),
+			...DAYORI.map((d): [string, string] => [
+				`dayori ${d.title}`,
+				fill(CIVIC_BOARD.dayori, { ...d }),
+			]),
+			["soukai", CIVIC_BOARD.soukai],
+			["moved", CIVIC_BOARD.moved],
+		];
+		for (const [w, t] of texts) {
+			box(w, t, 22);
+			ngCheck(w, t);
+		}
+		ok(!("shobon" in ASSEMBLY_LINES), "shobon has an assembly line");
+		for (const m of [CIVIC_BOARD.yoriaiMenu, CIVIC_BOARD.dayoriMenu])
+			ok(width(m) <= 10, `menu ${m}`);
 	},
 );
 

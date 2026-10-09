@@ -3,9 +3,12 @@
 //   歌う 子（レン・リノ・アル）は ときどき 音楽室の ステージに 立つ。
 // - 名無しの 客（音楽室の 客席・男湯の 奥）の 数も 帰りごとに かわる。
 // - 同じ 帰りなら 同じ（記録の 終わった 時刻から 決める）。村の 外の 家の まわりには いつも いる（喫茶と 同じ）。
+// - 議会の 日（data/civic.ts）は 議席・寄り合いの 住人を 施設から 外す（議会の ない 日の 顔ぶれは かえない）。
 // 文は data/guests.ts（銭湯は data/bath.ts）。
 
 import { Rng } from "../core/rng";
+import { type Today, today } from "../data/calendar";
+import { type Assembly, assemblyMembers, assemblyOf } from "../data/civic";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../data/glossary";
 import {
 	BOOKS_GUESTS,
@@ -22,6 +25,7 @@ import {
 	ROOM_FROM,
 } from "../data/village/rooms";
 import { loadRecords } from "../engine/save";
+import { deepPending } from "./villageMobs";
 
 /** 銭湯に 来る 住人（女湯の 子と、男湯の ジェイトルマン）。 */
 export const BATH_GUESTS: readonly MobId[] = [
@@ -55,8 +59,52 @@ export const booksRoom = (v: VillageView): "bookstore" | "library" | null =>
 			? "bookstore"
 			: null;
 
-/** この 帰りの 施設の 人を 決める（at は 帰りの 時刻）。 */
-export const guestsOf = (v: VillageView, at: number = returnAt()): Guests => {
+/**
+ * この 帰りの 施設の 人を 決める（at は 帰りの 時刻、t は 今日）。議会の 日は 議席・寄り合いの 住人を
+ * 音楽室・本屋・銭湯から 外す（二重に いない）。議会の ない 日の 顔ぶれは もとの まま。
+ */
+export const guestsOf = (
+	v: VillageView,
+	at: number = returnAt(),
+	t: Today = today(),
+): Guests => {
+	const g = baseGuests(v, at);
+	const away = assemblyMembers(assemblyFrom(v, at, t, g.stage));
+	if (!away.length) return g;
+	const keep = (list: MobId[]) => list.filter((id) => !away.includes(id));
+	return {
+		...g,
+		music: keep(g.music),
+		books: keep(g.books),
+		bath: keep(g.bath),
+	};
+};
+
+/** 議会の 顔ぶれ（候補は 越してきた 住人 − 舞台で 歌う 子 − deep の 節目を まだ 見て いない 子）。 */
+const assemblyFrom = (
+	v: VillageView,
+	at: number,
+	t: Today,
+	singer: MobId | null,
+): Assembly =>
+	assemblyOf(
+		v.stage,
+		at,
+		t,
+		movedIn(stepOf(v), v.cleared).filter(
+			(id) => id !== singer && !deepPending(id),
+		),
+	);
+
+/** この 帰りの 議会の 顔ぶれ（議会の ない 日は だれも いない。data/civic.ts）。 */
+export const assemblyToday = (
+	v: VillageView,
+	at: number = returnAt(),
+	t: Today = today(),
+): Assembly => assemblyFrom(v, at, t, baseGuests(v, at).stage);
+
+/** 議会を 入れない 帰りの 施設の 人（帰りの 種だけで 決める）。 */
+const baseGuests = (v: VillageView, at: number): Guests => {
 	const rng = Rng.fromSeed(`guests:${at}`);
 	const music = v.stage >= ROOM_FROM.music;
 	const bath = v.stage >= ROOM_FROM.bath;

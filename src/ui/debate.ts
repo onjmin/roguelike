@@ -6,7 +6,9 @@
 // - 村の 入口：はじめての 1回は 議会事務局の 3窓 → 唐揚げ → 派 → 味方の ひとこと → うなずく → 板。
 //   2回目からは お題 → 派 → 板 → 板の 外は 1窓だけ（仲直りか、負けた 味方の ひとこと）。
 // - 見分け方の はり紙（選んで 1窓）。
-// - 保存は kiriko-roguelike/civic だけ（はじめての 印・回数）。開発用の 下見（?stage=・?event=）の あいだは 書かない。
+// - 議事録（町役場・市役所の 議事録・裁判所の 判例集）：お題 × 決着の 30ページ。まだの 号は 白紙。
+// - 保存は kiriko-roguelike/civic だけ（はじめての 印・回数・議事録の 号・寄り合いの 前置きの 印）。
+//   開発用の 下見（?stage=・?event=）の あいだは 書かない。
 //   強さ・冒険の 乱数・記録・リプレイには 何も 効かない。見た目の 乱数なので Math.random。
 
 import {
@@ -63,11 +65,14 @@ export type CivicMemo = {
 		/** 議事録の 書かれた 号（`お題:決着`。data/debate.ts の PAGES）。 */
 		pages: string[];
 	};
+	/** 寄り合いの 前置き（村の『総会』）を 読んだ（ui/civic.ts）。 */
+	soukai: boolean;
 };
 
 const EMPTY = (): CivicMemo => ({
 	v: 1,
 	debate: { tutored: false, plays: 0, pages: [] },
+	soukai: false,
 });
 
 let memo: CivicMemo | null = null;
@@ -98,6 +103,7 @@ export const loadCivic = (): CivicMemo => {
 							)
 						: [],
 				},
+				soukai: raw.soukai === true,
 			};
 		}
 	} catch {

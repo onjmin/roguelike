@@ -83,6 +83,7 @@ import {
 import { chimneySteam } from "./bath";
 import { runSaveLabel } from "./boot";
 import { enterCafe } from "./cafe";
+import { civicBoardMenu, civicBoardScript } from "./civic";
 import type { Ctx } from "./ctx";
 import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
 import { enterHall } from "./hallEvents";
@@ -488,11 +489,15 @@ const boardScript =
 		const readAll = SCRAPS.filter((x) => loadScraps().read.includes(x.id));
 		const read = readAll.filter((x) => x.kind !== "memo");
 		const memos = readAll.filter((x) => x.kind === "memo");
+		// 寄り合いの はり紙（段2〜3）・議会だより（段4〜）。ui/civic.ts
+		const stage = previewStage() ?? loadTown().stage;
+		const civic = civicBoardMenu(stage);
 		const opts = [
 			"冒険の記録",
 			...(read.length ? ["古い　切れはし"] : []),
 			...(memos.length ? [SCRAP_MSG.listMemo] : []),
 			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
+			...(civic ? [civic] : []),
 			"やめる",
 		];
 		if (opts.length === 2) {
@@ -503,6 +508,7 @@ const boardScript =
 		const v = opts[n];
 		if (v === "冒険の記録") await records(ctx, s);
 		else if (v === BOARD_MENU[1]) await senkyoScript(s);
+		else if (civic && v === civic) await civicBoardScript(s, stage);
 		else if (v === "古い　切れはし" || v === SCRAP_MSG.listMemo) {
 			const memo = v === SCRAP_MSG.listMemo;
 			const list = memo ? memos : read;
