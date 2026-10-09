@@ -93,13 +93,21 @@ import { enterCafe } from "./cafe";
 import { civicBoardMenu, civicBoardScript } from "./civic";
 import type { Ctx } from "./ctx";
 import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
+import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
 import { chooseStored, openBag } from "./home";
+import {
+	imoniArrive,
+	imoniBoardMenu,
+	imoniBoardScript,
+	imoniDecor,
+} from "./imoni";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { playGetter } from "./minigames";
 import { makeQuiz } from "./quiz";
 import { escBr, openRecords, showStory } from "./records";
 import { enterMusic, enterRoom } from "./rooms";
+import { sabaEvents } from "./saba";
 import { openSettings } from "./settings";
 import type { Arrival } from "./village";
 import { mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
@@ -530,12 +538,15 @@ const boardScript =
 		// 寄り合いの はり紙（段2〜3）・議会だより（段4〜）。ui/civic.ts
 		const stage = previewStage() ?? loadTown().stage;
 		const civic = civicBoardMenu(stage);
+		// おんJ芋煮会の はり紙（10月だけ。ui/imoni.ts）
+		const imoni = imoniBoardMenu();
 		const opts = [
 			"冒険の記録",
 			...(read.length ? ["古い　切れはし"] : []),
 			...(memos.length ? [SCRAP_MSG.listMemo] : []),
 			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
 			...(civic ? [civic] : []),
+			...(imoni ? [imoni] : []),
 			"やめる",
 		];
 		if (opts.length === 2) {
@@ -547,6 +558,7 @@ const boardScript =
 		if (v === "冒険の記録") await records(ctx, s);
 		else if (v === BOARD_MENU[1]) await senkyoScript(s);
 		else if (civic && v === civic) await civicBoardScript(s, stage);
+		else if (imoni && v === imoni) await imoniBoardScript(s);
 		else if (v === "古い　切れはし" || v === SCRAP_MSG.listMemo) {
 			const memo = v === SCRAP_MSG.listMemo;
 			const list = memo ? memos : read;
@@ -681,10 +693,11 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 				for (const l of t.lines) await s.narrate(l);
 				await mouthScript(ctx, null)(s);
 			});
-		// 屋台の 店番：見える 人（話すと こちらを 向く。台ごしに 話す）
+		// 屋台の 店番：見える 人（話すと こちらを 向く。台ごしに 話す）。when が あれば その 日だけ（おんJ芋煮会の 人）
 		if (got && t?.sprite)
 			return npc(p.id, p.x, p.y, t.sprite, outdoorScript(ctx, got.f, t), {
 				dir: t.dir,
+				when: t.when,
 			});
 		if (got && t) return sign(p.id, p.x, p.y, outdoorScript(ctx, got.f, t));
 	}
@@ -719,6 +732,8 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			{ dir: p.dir, wander: p.wander },
 		);
 	}
+	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts・ui/folk.ts）
+	if (p.id.startsWith("folk_")) return folkEvent(p, v);
 	return { ...at, sprite: p.sprite, trigger: p.trigger };
 };
 
@@ -810,8 +825,13 @@ export const buildVillage = (
 		bgm: villageSong(),
 		tiles: villagePalette(view),
 		rows,
-		// 銭湯の 煙突から 湯気・施設の 建物の 影（ui/facilities.ts）
-		decor: joinDecor(shadowDecor(view.stage), chimneySteam(rows)),
+		// 銭湯の 煙突から 湯気・施設の 建物の 影（ui/facilities.ts）・
+		// 強行開催の 日の 芋煮の 火と 湯気（ui/imoni.ts。10月の 帰りも ここで 数える）
+		decor: joinDecor(
+			shadowDecor(view.stage),
+			chimneySteam(rows),
+			imoniDecor(imoniArrive()),
+		),
 		outside: "#1f2a14",
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/villageCrowd.ts）
 		crowd: {
@@ -821,6 +841,8 @@ export const buildVillage = (
 		},
 		events: [
 			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),
+			// ホシュクラの 豚と 夜の 匠（ui/saba.ts）
+			...sabaEvents(view),
 			// 寄り道の 板が 開く ときの 来客（旗 visitor の あいだだけ 村に いる。ui/villageReturn.ts の visitScript）
 			npc("visitor", 1, 1, VISITOR_WALK, async () => {}, {
 				when: (st) => !!st.flags.visitor,

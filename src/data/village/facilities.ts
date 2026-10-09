@@ -16,12 +16,17 @@
 // - 飲食店は data/village/eateries.ts（FACILITIES の うしろに 足す）。店番・券売機の eat で 品書き（ui/eat.ts）。
 // どれも 寄り道で、強さには 何も 効かない（冒険に 力を 持ちこまない）。
 
-import type { TileDef } from "../../engine/defs";
+import type { EventDef, TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import type { NetaPlay } from "../neta/types";
+import { BUSHITSU_FACILITIES } from "./bushitsu";
 import { CIVIC_FACILITIES } from "./civicHalls";
 import { EATERIES } from "./eateries";
+import { FOLK_FACILITIES } from "./folk";
 import type { Cell } from "./map";
 import { art, ri, riCell } from "./rpgenArt";
+import { SABA_FACILITIES } from "./saba";
+import { SEASON_FACILITIES } from "./season";
 import {
 	ASPHALT,
 	BRICK,
@@ -147,7 +152,10 @@ export type FacilityRoom = {
 	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts・
 	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts・
 	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/debate.ts・
-	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyoGikai.ts））。
+	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyoGikai.ts）・
+	 * bushitsu＝部室棟の 遊び（ui/bushitsu.ts）・saba＝ホシュクラの 部屋の 物（ui/saba.ts）・
+	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/dosukoi.ts）・
+	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta.ts））。
 	 */
 	plays?: Record<
 		string,
@@ -159,6 +167,10 @@ export type FacilityRoom = {
 		| "kiben"
 		| "minutes"
 		| "gikai"
+		| "bushitsu"
+		| "saba"
+		| "dosukoi"
+		| NetaPlay
 	>;
 };
 
@@ -168,14 +180,30 @@ export type OutdoorThing = {
 	lines: readonly string[];
 	/**
 	 * 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる・eat＝その 施設の 品書き・
-	 * jikkyo＝その 施設の 実況の 番組を スマホで 見る。data/jikkyo/packs.ts）。
+	 * jikkyo＝その 施設の 実況の 番組を スマホで 見る。data/jikkyo/packs.ts・
+	 * saba＝ホシュクラの 島の 物（ui/saba.ts）・imoni＝おんJ芋煮会の 大鍋と 人（ui/imoni.ts）・
+	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta.ts））。
 	 */
-	play?: "fishing" | "batting" | "bus" | "vend" | "eat" | "jikkyo";
+	play?:
+		| "fishing"
+		| "batting"
+		| "bus"
+		| "vend"
+		| "eat"
+		| "jikkyo"
+		| "saba"
+		| "imoni"
+		| NetaPlay;
 	/** 見える 人（屋台の 店番の 歩行グラ）。あれば 地図に 立って 通れない。lines は その 人の セリフ。 */
 	sprite?: string;
 	dir?: Dir;
 	/** 見える 人の 名前欄。 */
 	name?: string;
+	/**
+	 * 見える 人（sprite あり）が 出る 日だけ（村の 地図の イベントの when。見えない 物には きかない。
+	 * 試験の 置き場所は いつも 出して 調べる。おんJ芋煮会の 人）。
+	 */
+	when?: EventDef["when"];
 };
 
 export type Facility = {
@@ -3853,6 +3881,14 @@ export const FACILITIES: readonly Facility[] = [
 	...EATERIES,
 	// ── 町の 役所（data/village/civicHalls.ts。保守町役場）
 	...CIVIC_FACILITIES,
+	// ── ホシュクラ（data/village/saba.ts。南西の 海の 島。段2〜）
+	...SABA_FACILITIES,
+	// ── 部室棟（data/village/bushitsu.ts。新市街の 北の はし。段4〜）
+	...BUSHITSU_FACILITIES,
+	// ── 機能の 墓場（data/village/folk.ts。神社の 上の 森。段2〜）
+	...FOLK_FACILITIES,
+	// ── 季節の 行事（data/village/season.ts。浜の すみの 芋煮の かまど）
+	...SEASON_FACILITIES,
 ];
 
 /** その 段に 立っている 施設。 */

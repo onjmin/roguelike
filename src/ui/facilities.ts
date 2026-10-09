@@ -24,14 +24,19 @@ import { coreShadows, type VillageView } from "../data/village/map";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress, loadTown } from "../engine/save";
 import { TILE } from "../engine/types";
+import { bushitsuThing } from "./bushitsu";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
 import type { Ctx } from "./ctx";
 import { debateScript, kibenScript, minutesScript } from "./debate";
+import { dosukoiWindow } from "./dosukoi";
 import { eatAt, keeperTalk } from "./eat";
+import { imoniPlay } from "./imoni";
 import { watchGikai } from "./jikkyoGikai";
 import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
+import { isNetaPlay, netaPlay } from "./neta";
+import { sabaPlay } from "./saba";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -156,6 +161,12 @@ export const outdoorScript =
 			// 外で スマホの 実況（桟橋の 人力機・公園の 月食。ui/jikkyoWatch.ts）
 			else if (t.play === "jikkyo")
 				await watchProgram(ctx, s, f.id, previewStage() ?? loadTown().stage);
+			// ホシュクラの 島の 物（ui/saba.ts）
+			else if (t.play === "saba") await sabaPlay(ctx, s, f, t.id, true);
+			// ネタスレの 遊び（グラウンドの ランダム野球・5割の壁。ui/neta.ts）
+			else if (isNetaPlay(t.play)) await netaPlay(ctx, s, t.play);
+			// おんJ芋煮会の 大鍋と 人（ui/imoni.ts）
+			else if (t.play === "imoni") await imoniPlay(ctx, s, t);
 		}
 		// 見える 人は 話しおえたら もとの 向きに
 		if (t.sprite) s.face(outdoorId(f, t), t.dir ?? "down");
@@ -229,6 +240,14 @@ export const buildFacility = (
 			else if (play === "debate") await debateScript(ctx, s, v);
 			else if (play === "kiben") await kibenScript(ctx, s);
 			else if (play === "minutes") await minutesScript(ctx, s);
+			// 部室棟の 遊べる 物（ui/bushitsu.ts）
+			else if (play === "bushitsu") await bushitsuThing(ctx, s, f, kind, v);
+			// ホシュクラの 部屋の 物（ui/saba.ts）
+			else if (play === "saba") await sabaPlay(ctx, s, f, kind, false);
+			// ネタスレの 遊び（リバーシ・!sk 習字・ID腹筋・コンマ。ui/neta.ts）
+			else if (isNetaPlay(play)) await netaPlay(ctx, s, play);
+			// どすこいポイントの 照会（町役場の 1番窓口・市役所の 住民課。ui/dosukoi.ts）
+			else if (play === "dosukoi") await dosukoiWindow(s, f.id);
 		});
 	});
 	for (const who of room?.people ?? [])
