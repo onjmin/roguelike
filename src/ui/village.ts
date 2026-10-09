@@ -673,50 +673,8 @@ export class Village {
 			}
 		}
 		// つっかえたら 向くだけ（横へ ずれて 回りこまない。物の 前で そちらを 向いて 調べたい）
+		// 人に ぶつかっても その 人は よけない（作者「逃げるのは やめて」）
 		this.player.dir = tries[0];
-		// うろうろ している 人に ぶつかったら、その 人が 横へ よける（細道で 立ちふさがらない）
-		const v = DIR_VEC[tries[0]];
-		const b = field.blockerAt(
-			this.player.x + v.dx,
-			this.player.y + v.dy,
-			this.player,
-		);
-		if (b) this.giveWay(b);
-	}
-
-	/**
-	 * うろうろ する 人（def.wander）が キリコに 道を あける：となりの あいている マスへ 1歩
-	 * （家の まわり 2マスの 中を 先に。だめなら どこでも）。動けなければ false。
-	 */
-	private giveWay(a: Actor): boolean {
-		const field = this.field;
-		const home = a.def;
-		if (!field || !home?.wander || a.moving || a === this.pathTalk)
-			return false;
-		const me = this.player;
-		const free = (d: Dir) => {
-			const x = a.x + DIR_VEC[d].dx;
-			const y = a.y + DIR_VEC[d].dy;
-			return (
-				field.canEnter(x, y, a) &&
-				!(x === me.x && y === me.y) &&
-				!this.touchAt(x, y)
-			);
-		};
-		const near = (d: Dir) =>
-			Math.abs(a.x + DIR_VEC[d].dx - home.x) <= 2 &&
-			Math.abs(a.y + DIR_VEC[d].dy - home.y) <= 2;
-		// キリコの 進む 向きと 直角を 先に（前へ 押すと また ふさぐ）
-		const push = me.dir;
-		const side: Dir[] =
-			push === "up" || push === "down" ? ["left", "right"] : ["up", "down"];
-		const order = [...side, push];
-		const d =
-			order.find((x) => free(x) && near(x)) ?? order.find((x) => free(x));
-		if (!d) return false;
-		a.wanderWait = 1200 + Math.random() * 2500;
-		void a.walk(d, WALK_MS);
-		return true;
 	}
 
 	/**
