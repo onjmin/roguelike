@@ -839,6 +839,22 @@ const PARK: readonly [number, number, string][] = [
 	[80, 26, "b,T,,T"],
 	[80, 28, "T,,b,b"],
 ];
+/**
+ * 横断歩道の 幅（作者の 指示：見おろしで 立体感が 出る 形）。横の 道を わたる 横断歩道は 横に 3マス
+ * （交差点の となりの 歩道の 列と その 外の 2マス）、縦の 道を わたる 横断歩道は 縦に 2マス（歩道の 行と その 外の 1マス）。
+ */
+const crossH = (x: number): boolean =>
+	V_STREETS.some(
+		(v) =>
+			(x >= v.walks[0] - 2 && x <= v.walks[0]) ||
+			(x >= v.walks[1] && x <= v.walks[1] + 2),
+	);
+const crossV = (y: number): boolean =>
+	H_STREETS.some(
+		(h) =>
+			(y >= h.walks[0] - 1 && y <= h.walks[0]) ||
+			(y >= h.walks[1] && y <= h.walks[1] + 1),
+	);
 const eastDistrict = (stage: number): [number, number, string][] => {
 	if (stage < 4) return [];
 	const paved = stage >= 6;
@@ -866,24 +882,23 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 				const x = h.x0 + i;
 				if (!paved) return ".";
 				const v = vAt(x);
-				if (!v) return ch;
-				// 縦の 通りの 歩道の 列は 横断歩道、車線の 列は 交差点
-				return v.walks.includes(x) ? "わ" : ".";
+				// 縦の 通りの 車線の 列は 交差点。交差点の 左右 3マス（歩道の 列と その 外の 2マス）は 横断歩道
+				if (v?.lanes.some(([lx]) => lx === x)) return ".";
+				return crossH(x) ? "わ" : ch;
 			});
 			out.push([h.x0, y, line.join("")]);
 		}
 	}
-	// 縦の 通り（横の 通りの 車線を よこぎる 歩道は 横断歩道の まま）
+	// 縦の 通り（横の 通りの 車線を よこぎる 歩道は 横断歩道の まま）。交差点の 上下 2マス（歩道の 行と その 外の 1マス）は 横断歩道
 	for (const v of V_STREETS)
 		for (let y = V_Y0; y <= V_Y1; y++) {
 			const h = hAt(y);
 			const lane = !!h && h.lanes.some(([ly]) => ly === y);
-			const onWalk = !!h && h.walks.includes(y);
 			for (const x of v.walks) if (!lane) out.push([x, y, walk]);
 			for (const [x, ch] of v.lanes) {
 				if (y >= 41) out.push([x, y, walk]);
 				else if (!paved || lane) out.push([x, y, "."]);
-				else out.push([x, y, onWalk ? "を" : ch]);
+				else out.push([x, y, crossV(y) ? "を" : ch]);
 			}
 		}
 	if (!paved) return out;
