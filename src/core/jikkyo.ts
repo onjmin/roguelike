@@ -965,13 +965,30 @@ const postMine = (st: JkSt, text: string, evs: JkEv[]): void => {
 	});
 };
 
-const answer = (st: JkSt, i: number, ago: number, evs: JkEv[]): void => {
+/**
+ * 押した 時（窓の 中の ms）。入力は 時計を 進める 前に 受けるので、この 歩の 終わり（elapsed ＋ d）から ago を
+ * 引く。締め切りの まぎわに 押して 歩を またいだ ぶんは 締め切りに 丸める。
+ */
+const pressedAt = (
+	elapsed: number,
+	d: number,
+	ago: number,
+	open: number,
+): number => Math.min(open, Math.max(0, elapsed + d - Math.max(0, ago)));
+
+const answer = (
+	st: JkSt,
+	i: number,
+	ago: number,
+	d: number,
+	evs: JkEv[],
+): void => {
 	const w = st.win;
 	if (w?.phase !== "open") return;
 	const opt = w.pick.opts[i];
 	if (!opt) return;
 	const r = st.rules;
-	const ms = Math.max(0, w.elapsed - Math.max(0, ago));
+	const ms = pressedAt(w.elapsed, d, ago, w.pick.open);
 	const sp = w.untimed ? 1 : speedOf(r, ms);
 	const fw = r.fit[opt.fit];
 	const practice = w.pick.practice !== undefined;
@@ -1095,14 +1112,20 @@ const toReveal = (st: JkSt, ov: OvSt): void => {
 	st.burstUntil = st.wall + BURST_MS;
 };
 
-const answerOv = (st: JkSt, i: number, ago: number, evs: JkEv[]): void => {
+const answerOv = (
+	st: JkSt,
+	i: number,
+	ago: number,
+	d: number,
+	evs: JkEv[],
+): void => {
 	const ov = st.ov;
 	if (ov?.phase !== "open" || ov.win.type !== "pick") return;
 	const pick = ov.win;
 	const opt = pick.opts[i];
 	if (!opt) return;
 	const r = st.rules;
-	const ms = Math.max(0, ov.elapsed - Math.max(0, ago));
+	const ms = pressedAt(ov.elapsed, d, ago, pick.open);
 	const gain = gainOf(st, pick.weight, opt.fit, speedOf(r, ms));
 	st.combo = opt.fit === "miss" ? 0 : st.combo + 1;
 	st.comboMax = Math.max(st.comboMax, st.combo);
@@ -1874,6 +1897,7 @@ export const jkStep = (st: JkSt, dt: number, input?: JkInput): JkEv[] => {
 			});
 		enterSeg(st, 0, evs);
 	}
+	const d = Math.max(0, dt);
 	if (input && "quit" in input) {
 		// 見るだけ・見るだけの 番組（議会中継）は B 1回で 閉じる
 		if (
@@ -1887,15 +1911,15 @@ export const jkStep = (st: JkSt, dt: number, input?: JkInput): JkEv[] => {
 		st.quitAt = st.wall;
 		evs.push({ t: "note", text: st.rules.quitNote });
 	} else if (input && "pick" in input) {
-		if (overlay) answerOv(st, input.pick, input.ago, evs);
-		else answer(st, input.pick, input.ago, evs);
+		// 答えは 時計を 進める 前に 受ける（締め切りの まぎわでも 間に合う）。速さは 押した 時で（pressedAt）
+		if (overlay) answerOv(st, input.pick, input.ago, d, evs);
+		else answer(st, input.pick, input.ago, d, evs);
 	} else if (input && "press" in input) {
 		// Cue は 時計を 進めて から 判定する（押した 時 ＝ 進めた あとの 時 − ago）
 		const ov = st.ov;
 		if (ov?.win.type === "cue" && ov.phase === "open" && !ov.pressed)
 			st.press = input.ago;
 	}
-	const d = Math.max(0, dt);
 	st.wall += d;
 	rotateBins(st);
 	runWaves(st, d);

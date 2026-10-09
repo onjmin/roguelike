@@ -4,6 +4,7 @@
 // - 名無しの 客（音楽室の 客席・男湯の 奥）の 数も 帰りごとに かわる。
 // - 同じ 帰りなら 同じ（記録の 終わった 時刻から 決める）。村の 外の 家の まわりには いつも いる（喫茶と 同じ）。
 // - 議会の 日（data/civic.ts）は 議席・寄り合いの 住人を 施設から 外す（議会の ない 日の 顔ぶれは かえない）。
+//   deep の 節目を まだ 見て いない 子は 帰りごとに 1回 決めて とめる（帰りの とちゅうで 聞いても 顔ぶれは かえない）。
 // 文は data/guests.ts（銭湯は data/bath.ts）。
 
 import { Rng } from "../core/rng";
@@ -16,7 +17,7 @@ import {
 	STAGE_SINGERS,
 	type StageSinger,
 } from "../data/guests";
-import { type MobId, movedIn } from "../data/mobs";
+import { MOB_IDS, type MobId, movedIn } from "../data/mobs";
 import { stepOf, type VillageView } from "../data/village/map";
 import {
 	BATH_SPOTS,
@@ -80,21 +81,73 @@ export const guestsOf = (
 	};
 };
 
+/** deep の 節目を まだ 見て いない 子（帰りの 時刻ごとに とめた もの）。 */
+let pendingMemo: { at: number; ids: readonly MobId[] } | null = null;
+/** 読みこみ なおしても 同じ 帰りなら 同じに なるよう、タブの あいだ 写して おく 鍵（sessionStorage。記録では ない）。 */
+const PENDING_KEY = "kiriko-roguelike/assembly-pending";
+
+const readPending = (at: number): MobId[] | null => {
+	try {
+		const raw = sessionStorage.getItem(PENDING_KEY);
+		if (!raw) return null;
+		const o = JSON.parse(raw) as { at?: unknown; ids?: unknown };
+		if (o.at !== at || !Array.isArray(o.ids)) return null;
+		return o.ids.filter((x): x is MobId =>
+			(MOB_IDS as readonly unknown[]).includes(x),
+		);
+	} catch {
+		return null;
+	}
+};
+
+const writePending = (memo: { at: number; ids: readonly MobId[] }): void => {
+	try {
+		sessionStorage.setItem(PENDING_KEY, JSON.stringify(memo));
+	} catch {
+		// 使えない ときは この 回の 写しだけ
+	}
+};
+
+/**
+ * deep の 節目を まだ 見て いない 子（その 子は 家に いて、議席・寄り合いには 来ない）。帰りごとに はじめて
+ * 聞かれた ときの まま とめる：帰りの とちゅうで 節目を 聞いても、ほかの 子の 顔ぶれまで 引きなおさない
+ * （聞いた 子は 次の 帰りから 来る）。
+ */
+const pendingAt = (at: number): readonly MobId[] => {
+	if (pendingMemo?.at === at) return pendingMemo.ids;
+	const ids = readPending(at) ?? MOB_IDS.filter(deepPending);
+	pendingMemo = { at, ids };
+	writePending(pendingMemo);
+	return ids;
+};
+
+/** 試験用：とめた deep の 節目を 忘れる（保存の 場所を 入れかえた とき）。 */
+export const forgetGuestsMemo = (): void => {
+	pendingMemo = null;
+	try {
+		sessionStorage.removeItem(PENDING_KEY);
+	} catch {
+		// 使えない ときは 何もしない
+	}
+};
+
 /** 議会の 顔ぶれ（候補は 越してきた 住人 − 舞台で 歌う 子 − deep の 節目を まだ 見て いない 子）。 */
 const assemblyFrom = (
 	v: VillageView,
 	at: number,
 	t: Today,
 	singer: MobId | null,
-): Assembly =>
-	assemblyOf(
+): Assembly => {
+	const pending = pendingAt(at);
+	return assemblyOf(
 		v.stage,
 		at,
 		t,
 		movedIn(stepOf(v), v.cleared).filter(
-			(id) => id !== singer && !deepPending(id),
+			(id) => id !== singer && !pending.includes(id),
 		),
 	);
+};
 
 /** この 帰りの 議会の 顔ぶれ（議会の ない 日は だれも いない。data/civic.ts）。 */
 export const assemblyToday = (

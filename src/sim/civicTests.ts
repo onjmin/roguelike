@@ -66,7 +66,7 @@ import {
 	GIKAI_TEXT,
 	GIKAI_YAJI,
 } from "../data/jikkyo/gikai";
-import { MOB_IDS, type MobId } from "../data/mobs";
+import { MOB_IDS, MOBS, type MobId, movedIn } from "../data/mobs";
 import {
 	FACILITIES,
 	type Facility,
@@ -82,7 +82,7 @@ import {
 	facilityRoomRows,
 } from "../data/village/facilities";
 import { hallPalette, hallPlaces, hallRows } from "../data/village/hall";
-import type { VillageView } from "../data/village/map";
+import { stepOf, type VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
 import {
@@ -101,7 +101,7 @@ import {
 	setDebateHook,
 } from "../ui/debate";
 import { buildFacility } from "../ui/facilities";
-import { assemblyToday, guestsOf } from "../ui/guests";
+import { assemblyToday, forgetGuestsMemo, guestsOf } from "../ui/guests";
 import { fill } from "../ui/villageTalk";
 import type { TestResult } from "./monsterTests";
 
@@ -150,8 +150,8 @@ const must = (id: string): Facility => {
 
 /**
  * 出荷する 文に 出さない 語：実在の 政党・政治家・政治の 決まり文句・争点・実在の 宗教と 習わし（神社は
- * 背景だけで、議会・討論・番組には 出さない）・婚姻・戸籍・本籍・植民の 図・集団を 消す 言い回し・色の 派・
- * 差別語ほか（CIVIC.md §6.6）。
+ * 背景だけで、議会・討論・議会中継には 出さない）・婚姻・戸籍・本籍・植民の 図・集団を 消す 言い回し・色の 派・
+ * 差別語ほか（CIVIC.md §6.6）。スレが「落ちる」も 書かない（おんJには dat落ちが ない。スレは 沈むだけ。STORY.md）。
  */
 const NG = [
 	"自民",
@@ -294,6 +294,9 @@ const NG = [
 	"アメカス",
 	"さとる",
 	"矢野",
+	"落ちた",
+	"落ちる",
+	"落ちない",
 ];
 
 /** 使わない 語・「保守」の 使い方（後ろが 町・市・村・地方 の とき だけ）・「アカ」（アカウントを 除く）。 */
@@ -1346,6 +1349,69 @@ test(
 			}
 		// 段1 は 議会なし
 		ok(!assemblyToday(view(1), 5, day(1)).session, "a session at stage 1");
+	},
+);
+
+test(
+	"C4",
+	"同じ 帰りなら 同じ：帰りの とちゅうで deep の 節目を 聞いても、議会の 顔ぶれと 施設の 人は かわらない（聞いた 子は 次の 帰りから）",
+	() => {
+		const { store, restore } = swapStorage();
+		forgetGuestsMemo();
+		try {
+			const monday: Today = { m: 10, d: 12, w: 1 };
+			const v: VillageView = {
+				stage: 7,
+				unlocked: ["shallow", "main", "deep"],
+				cleared: ["shallow", "main", "deep", "opunu"],
+			};
+			store.set(
+				"kiriko-roguelike/progress",
+				JSON.stringify({ unlocked: v.unlocked, cleared: v.cleared }),
+			);
+			// deep の 節目の ある 住人の うち 1人（d）だけ まだ 見て いない
+			const deepers = movedIn(stepOf(v), v.cleared).filter(
+				(id) => !!MOBS[id].milestones.deep && !NOT_IN_ASSEMBLY.includes(id),
+			);
+			const d = deepers[0];
+			if (!d) throw new Fail("no resident with a deep talk");
+			const mobs = (heardD: boolean): string =>
+				JSON.stringify({
+					met: MOB_IDS,
+					seen: MOB_IDS.filter((id) => heardD || id !== d).map(
+						(id) => `${id}:@deep`,
+					),
+				});
+			let fresh = 0;
+			for (let k = 1; k <= 30; k++) {
+				const at = 7000000 + k * 7919;
+				store.set("kiriko-roguelike/mobs", mobs(false));
+				const a1 = JSON.stringify(assemblyToday(v, at, monday));
+				const g1 = JSON.stringify(guestsOf(v, at, monday));
+				ok(
+					!assemblyMembers(assemblyToday(v, at, monday)).includes(d),
+					`at ${at}: ${d} is in the assembly before the talk`,
+				);
+				// 帰りの とちゅうで d の 節目を 聞いた
+				store.set("kiriko-roguelike/mobs", mobs(true));
+				ok(
+					JSON.stringify(assemblyToday(v, at, monday)) === a1,
+					`at ${at}: the assembly changed mid-return`,
+				);
+				ok(
+					JSON.stringify(guestsOf(v, at, monday)) === g1,
+					`at ${at}: the rooms changed mid-return`,
+				);
+				// とめた 写しが なければ（次の 帰りと 同じ）d も 候補に 入り、顔ぶれが 引きなおされる
+				forgetGuestsMemo();
+				if (JSON.stringify(assemblyToday(v, at, monday)) !== a1) fresh++;
+				forgetGuestsMemo();
+			}
+			ok(fresh > 0, "hearing the deep talk never changed a fresh lineup");
+		} finally {
+			forgetGuestsMemo();
+			restore();
+		}
 	},
 );
 

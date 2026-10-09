@@ -280,15 +280,17 @@ export const GIKAI_YAJI: readonly string[] = [
 	"定期",
 ];
 
-/** 中継の 場所（題の 議会の 名前）。本館の 月曜は 市議会の 中継。 */
-export type GikaiPlace = "townhall" | "cityhall" | "hall";
+/**
+ * 中継する 議会（題の 議会の 名前）。本館の 月曜は その 段の 議会（段6 は 町議会、段7 から 市議会。
+ * ui/jikkyoGikai.ts の hallGikai）。
+ */
+export type GikaiPlace = "townhall" | "cityhall";
 
 /** 番組の 字（スレタイ・ヘッダー・ヒント・村の 窓）。 */
 export const GIKAI_TEXT = {
 	title: {
 		townhall: "【議会中継】保守町議会　定例会",
 		cityhall: "【議会中継】保守市議会　定例会",
-		hall: "【議会中継】保守市議会　定例会",
 	},
 	label: "中継",
 	chair: "議長",

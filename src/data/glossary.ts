@@ -371,7 +371,7 @@ export const GLOSSARY: readonly Word[] = [
 	{
 		id: "idmakka",
 		word: "ID真っ赤",
-		desc: "同じ　IDで　何回も　書きこむ　こと。\n書きこみの　多い　IDは　赤く　なる。\n\nむきに　なって　いる　しるし。\n『顔真っ赤』とも　言う。",
+		desc: "同じ　IDで　何回も　書きこむ　こと。\n書きこみの　多い　IDは　赤く　なる。\n\nむきに　なって　いる　しるし。\n怒る『顔真っ赤』と　よく　並べて　使う。",
 		tier: 1,
 	},
 	{

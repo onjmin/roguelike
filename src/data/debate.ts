@@ -454,7 +454,7 @@ export const TOPICS: readonly Topic[] = [
 	},
 	{
 		id: "yane",
-		title: "本館の　屋根の　色",
+		title: "おんJの　屋根の　色",
 		mode: "policy",
 		nao: "なお　屋根は　灰色の\nまま　の　模様",
 		sides: [
@@ -531,12 +531,12 @@ export const TOPICS: readonly Topic[] = [
 				belief: [
 					"sageて　静かに　続く\nスレは、よく　手入れした　庭だ",
 					"急がずに　sageで\n長く　続けるのが　好きだ",
-					"落ちない　ていどに　sage。\n……それが　私の　流儀だ",
+					"沈んでも　かまわず　sage。\n……それが　私の　流儀だ",
 				],
 				plain: [
 					"sageて　静かに　続く\nスレが　好きや",
 					"急がずに　sageで\n長く　続けるのが　ええ",
-					"落ちない　ていどに　sage。\n……それが　ワイの　流儀や",
+					"沈んでも　かまわず　sage。\n……それが　ワイの　流儀や",
 				],
 				defend: "荒らしは　よしたまえ。\nsage派にも　sage派の　庭が　ある",
 				good: "良い　スレだった。\n……庭に　寄って　いきたまえ",
@@ -651,7 +651,7 @@ export const NANASHI_LINES = {
 export const OUTSIDE_TEXT = {
 	draw: "ふたりは　握手した。\n……ROMが　拍手して　いる。",
 	towel: "タオルが　投げこまれた。\n……討論は　ここまで。",
-	futsu: "スレは　静かに　落ちた。\n……ふつうの　スレだった。",
+	futsu: "スレは　静かに　沈んだ。\n……ふつうの　スレだった。",
 	arete: "スレは　荒れた。\n……ROMが　そっと　閉じた。",
 } as const;
 

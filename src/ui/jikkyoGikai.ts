@@ -15,7 +15,7 @@ import {
 	jkView,
 } from "../core/jikkyo";
 import { today } from "../data/calendar";
-import { inSession } from "../data/civic";
+import { CITYHALL_FROM, inSession } from "../data/civic";
 import {
 	GIKAI_EPISODES,
 	GIKAI_TEXT,
@@ -418,7 +418,14 @@ export const hallGikai = async (
 	);
 	if (n === 1) return "channel";
 	if (n !== 0) return "quit";
-	await watchOnce(ctx, s, got, "hall", at);
+	// 本館が 映すのは その 段の 議会（段6 は まだ 町役場なので 町議会）
+	await watchOnce(
+		ctx,
+		s,
+		got,
+		v.stage >= CITYHALL_FROM ? "cityhall" : "townhall",
+		at,
+	);
 	return "watched";
 };
 

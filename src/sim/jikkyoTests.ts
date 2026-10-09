@@ -21,6 +21,7 @@ import {
 	type JkRules,
 	type JkScript,
 	type JkSlot,
+	type JkSt,
 	type JkTimeline,
 	jkResult,
 	jkStart,
@@ -691,7 +692,7 @@ type Played = {
 
 /**
  * 時間割を ボット（または ms と fit を 決め打ちの 答え）で 最後まで 回す。窓が 開いたら ボットが 決めた ms に
- * 答える（ago は 押してから その 歩までの ずれ）。keep なら 出来事を ぜんぶ 残す。
+ * 答える（ago は 押してから その 歩の 終わりまで）。keep なら 出来事を ぜんぶ 残す。
  */
 const playTl = (
 	tl: JkTimeline,
@@ -723,7 +724,7 @@ const playTl = (
 				const opts = v.seg.win.opts;
 				let i = opts.findIndex((o) => o.fit === a.fit);
 				if (i < 0) i = opts.findIndex((o) => o.fit === "miss");
-				input = { pick: i, ago: el - a.ms };
+				input = { pick: i, ago: el + dt - a.ms };
 				plan.done = true;
 			}
 		} else if (!v.win) plan = null;
@@ -2058,7 +2059,7 @@ const playShow = (
 							i = opts.findIndex(
 								(o) => o.fit === (a.fit === "miss" ? "ok" : "miss"),
 							);
-						input = { pick: i, ago: el - a.ms };
+						input = { pick: i, ago: el + dt - a.ms };
 					}
 				}
 			}
@@ -2946,7 +2947,8 @@ test(
 						v.win.w.type === "pick"
 							? v.win.w.opts.findIndex((x) => x.fit === "best")
 							: 0,
-					ago: 0,
+					// 押したのは この 歩の はじめ（ago は 歩の 長さ ぶん）
+					ago: 100,
 				};
 				answered = true;
 			}
@@ -2999,6 +3001,82 @@ test(
 			threw = true;
 		}
 		ok(threw, "a blocking timeoutFit did not throw");
+	},
+);
+
+// ───────────────── E13 答えの 速さは 押した 時で ─────────────────
+
+test(
+	"E13",
+	"答えの 速さは 押した 時（その 歩の 終わり − ago）で 測る：歩の 終わりに 押せば 1歩 ぶん 遅く、神速の 境を こえる（overlay・blocking の どちらも）",
+	() => {
+		const o = (text: string, fit: "best" | "ok" | "miss") => ({ text, fit });
+		const script: JkScript = {
+			...KOHAKU,
+			length: 30000,
+			goal: { live: 1, rerun: 1 },
+			timeline: () => ({
+				segments: [{ at: 0, scene: "wait", pool: "wait", rate: 1 }],
+				picks: [
+					{
+						at: 2000,
+						sets: [[o("31", "best"), o("はよ", "ok"), o("乙", "miss")]],
+					},
+				],
+				cues: [],
+			}),
+		};
+		const g = gameOf(1);
+		const starts: [string, () => JkSt][] = [
+			[
+				"overlay",
+				() => {
+					const c = compileScript(script, K_LIVE, seeded("e13"));
+					return jkStart(c.tl, c.rules, c.pools, { rand: seeded("e13:eng") });
+				},
+			],
+			[
+				"blocking",
+				() =>
+					jkStart(tinyTl(4, 2), yakyuRules(g), YAKYU_POOLS, {
+						rand: seeded("e13:b"),
+						tutored: true,
+					}),
+			],
+		];
+		const dt = 100;
+		for (const [mode, start] of starts)
+			for (const ago of [0, dt]) {
+				const st = start();
+				const lim = st.rules.speed[0]?.[0] ?? 0;
+				let el = -1;
+				let rev: JkEv | undefined;
+				for (let k = 0; k < 2000 && !st.ended && !rev; k++) {
+					const v = jkView(st);
+					let input: JkInput | undefined;
+					// 窓の 中の 時が 境の 手前で、この 歩の 終わりには 境を こえる 歩に 押す
+					if (el < 0 && v.win && !v.win.reveal) {
+						const now = v.win.open - v.win.left;
+						if (now + dt > lim && v.win.w.type === "pick") {
+							el = now;
+							input = {
+								pick: v.win.w.opts.findIndex((x) => x.fit === "best"),
+								ago,
+							};
+						}
+					}
+					rev = jkStep(st, dt, input).find((e) => e.t === "reveal");
+				}
+				ok(
+					rev?.t === "reveal" && el >= 0 && el <= lim,
+					`${mode} ago ${ago}: no reveal (at ${el})`,
+				);
+				// ago 0 は 歩の 終わり（el ＋ dt ＞ 境）で 遅い、ago dt は 歩の はじめ（el ≦ 境）で 神速
+				ok(
+					rev?.t === "reveal" && rev.fast === (ago === dt),
+					`${mode} ago ${ago}: fast ${rev?.t === "reveal" && rev.fast} at ${el}`,
+				);
+			}
 	},
 );
 
@@ -3288,7 +3366,8 @@ const bellRun = (seed: string, choose: "ok" | "miss" | null) => {
 			w.w.timeoutFit &&
 			w.open - w.left >= 1000
 		)
-			input = { pick: w.w.opts.findIndex((o) => o.fit === choose), ago: 0 };
+			// 押したのは この 歩の はじめ（ago は 歩の 長さ ぶん）
+			input = { pick: w.w.opts.findIndex((o) => o.fit === choose), ago: 100 };
 		for (const ev of jkStep(st, 100, input)) log.push({ ev, t: st.t });
 	}
 	const open = log.findIndex(
@@ -3905,7 +3984,7 @@ test(
 		const bad = gikaiProgram(GIKAI_EPISODES[0], {
 			onchan: true,
 			rerun: false,
-			place: "hall",
+			place: "cityhall",
 		});
 		let threw = false;
 		try {
@@ -4006,7 +4085,7 @@ test(
 		}
 		for (const t of [GIKAI_TEXT.hallOn, GIKAI_TEXT.record, GIKAI_TEXT.closed])
 			fitsWindow("gikai", t);
-		for (const p of ["townhall", "cityhall", "hall"] as const)
+		for (const p of ["townhall", "cityhall"] as const)
 			ok(width(GIKAI_TEXT.title[p]) <= 22, `title ${p}`);
 	},
 );
