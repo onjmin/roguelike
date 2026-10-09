@@ -29,11 +29,15 @@ try {
 	const { runVillageTests } = await server.ssrLoadModule(
 		"/src/sim/villageTests.ts",
 	);
+	const { runJikkyoTests } = await server.ssrLoadModule(
+		"/src/sim/jikkyoTests.ts",
+	);
 	const results = [
 		...runMonsterTests(),
 		...runReplayTests(),
 		...runTownTests(),
 		...(await runVillageTests()),
+		...(await runJikkyoTests()),
 	];
 	for (const t of results)
 		console.log(

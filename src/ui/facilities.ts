@@ -3,7 +3,9 @@
 // 外の 物（釣り場の 竿・グラウンドの マウンド）は 調べると 文、遊べる 物は そのあと 遊ぶか 聞く。
 // どれも 寄り道で、強さにも 冒険にも 何も 残さない（釣れた 物は すぐ 海に かえす）。
 
+import { today } from "../data/calendar";
 import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
+import { staffLines, venueLines } from "../data/jikkyo/text";
 import { awayFriends } from "../data/story";
 import {
 	type Facility,
@@ -22,6 +24,7 @@ import { coreShadows, type VillageView } from "../data/village/map";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
 import { TILE } from "../engine/types";
+import { facilityDecor } from "./cinemaDecor";
 import type { Ctx } from "./ctx";
 import { eatAt, keeperTalk } from "./eat";
 import { atBat, playDerby } from "./minigames";
@@ -197,7 +200,11 @@ export const buildFacility = (
 			};
 		const kind = p.id.replace(/_\d+$/, "");
 		return sign(p.id, p.x, p.y, async (s) => {
-			await readAll(s, room?.lines[kind] ?? []);
+			// 曜日で かわる 会場の 文（映画館の 金曜は 実況上映。data/jikkyo/text.ts）が あれば そちら
+			await readAll(
+				s,
+				venueLines(f.id, kind, today()) ?? room?.lines[kind] ?? [],
+			);
 			const play = room?.plays?.[kind];
 			if (play === "depart" && depart) await depart(s);
 			else if (play === "drinkbar") await drinkBar(s);
@@ -212,12 +219,12 @@ export const buildFacility = (
 				who.at[1],
 				who.walk,
 				async (s) => {
+					const lines = staffLines(f.id, who.id, today()) ?? who.lines;
 					// 店番：セリフを 1つ → 品書き（ui/eat.ts）
 					if (who.play === "eat")
-						await keeperTalk(ctx, s, f.id, who.name, who.lines);
+						await keeperTalk(ctx, s, f.id, who.name, lines);
 					else
-						for (const l of who.lines)
-							await s.say("nanj", l, { name: who.name });
+						for (const l of lines) await s.say("nanj", l, { name: who.name });
 					s.face(who.id, who.dir);
 				},
 				{ dir: who.dir },
@@ -230,5 +237,7 @@ export const buildFacility = (
 		rows: facilityRoomRows(f),
 		outside: "#000",
 		events,
+		// 映画館の スクリーンと 客席の スマホの 光（ui/cinemaDecor.ts。ほかの 施設は 無し）
+		decor: facilityDecor(f, facilityRoomRows(f)),
 	};
 };
