@@ -25,6 +25,7 @@ import {
 	type MobLine,
 	SENKYO,
 } from "../data/mobs";
+import { rawModes } from "../data/openModes";
 import type { Speaker } from "../data/quotes";
 import { awayFriends, mentionsAway } from "../data/story";
 import { TAMPER_MOB } from "../data/tamper";
@@ -383,7 +384,8 @@ export const mobScript =
 			v.met.push(id);
 			v.heard[id] = at;
 			save(v);
-			await play(s, id, def.meet);
+			// はじめましては おーぷんの 日替わりを かけない（data/openModes.ts の rawModes）
+			await rawModes(() => play(s, id, def.meet));
 			await ask(s, id, def);
 			return;
 		}
@@ -403,7 +405,10 @@ export const mobScript =
 			}
 			save(v);
 			if (news) {
-				await play(s, id, news.lines);
+				// 節目（key に「:@」）は おーぷんの 日替わりを かけない（data/openModes.ts の rawModes）
+				await (news.key.includes(":@")
+					? rawModes(() => play(s, id, news.lines))
+					: play(s, id, news.lines));
 				return;
 			}
 		}

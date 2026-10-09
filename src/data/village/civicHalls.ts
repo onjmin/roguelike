@@ -154,12 +154,14 @@ const TOWNHALL: Facility = {
 			seat: ["議員の　机。\n名札の　ひとつに『ホゲェ』。"],
 		},
 		// 演壇で 討論会（模擬議会。いつでも 何度でも）、はり紙で 見分け方・議事録（ui/debate.ts）、
-		// 中継モニターで 議会の 日の 議会中継（ui/jikkyoGikai.ts）
+		// 中継モニターで 議会の 日の 議会中継（ui/jikkyoGikai.ts）、
+		// 1番窓口で どすこいポイントの 照会（ui/dosukoi.ts）
 		plays: {
 			podium: "debate",
 			kiben: "kiben",
 			minutes: "minutes",
 			monitor: "gikai",
+			window: "dosukoi",
 		},
 		people: [
 			{
@@ -342,12 +344,14 @@ const CITYHALL: Facility = {
 				"市長室の　札。\n『市長　募集中。……当番は　みんなで』",
 			],
 		},
-		// 演壇で 討論会、議事録、見分け方の はり紙（ui/debate.ts）、中継モニターで 議会中継（ui/jikkyoGikai.ts）
+		// 演壇で 討論会、議事録、見分け方の はり紙（ui/debate.ts）、中継モニターで 議会中継（ui/jikkyoGikai.ts）、
+		// 1番 住民課で どすこいポイントの 照会（ui/dosukoi.ts）
 		plays: {
 			podium: "debate",
 			kiben: "kiben",
 			minutes: "minutes",
 			monitor: "gikai",
+			jumin: "dosukoi",
 		},
 		people: [
 			{

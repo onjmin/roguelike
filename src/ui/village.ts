@@ -25,8 +25,9 @@
 
 import { type Dir8, DX, DY, isDiagonal } from "../core/geom";
 import type { DungeonId, Objective } from "../core/types";
-import { nowHour, today } from "../data/calendar";
+import { nowHour, openMode, today } from "../data/calendar";
 import { CAST, KIRIKO, KIRIKO_WALK } from "../data/cast";
+import { modesHeld, modeText } from "../data/openModes";
 import type { KirikoMode, Speaker } from "../data/quotes";
 import { pedRoute } from "../data/village/crowd";
 import { type Facility, facilityOfMap } from "../data/village/facilities";
@@ -68,6 +69,7 @@ import { showBootTitle } from "./boot";
 import { buildCafe } from "./cafe";
 import type { Ctx } from "./ctx";
 import { el, nextFrame } from "./dom";
+import { dosukoiEnter } from "./dosukoi";
 import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
 import type { Hud } from "./hud";
@@ -384,6 +386,12 @@ export class Village {
 		const def = this.field?.def;
 		if (def?.bgm !== undefined) this.ctx.audio.bgm(def.bgm);
 		if (def) this.toast(def.name);
+		// どすこいポイント（その 帰りに はじめて 建物に 入ったら、地名の 札の あとに。ui/dosukoi.ts）
+		if (this.mapId !== "village")
+			dosukoiEnter(
+				(t) => this.toast(t),
+				() => (this.running ? this.mapId : null),
+			);
 	}
 
 	/** 暗転して 村を出る。 */
@@ -1411,15 +1419,22 @@ export class Village {
 		opt: SayOptions = {},
 	): Promise<void> {
 		const c = who ? CAST[who] : undefined;
+		// おーぷんの 日替わり（2/22 猫の日・4/1 強制博多弁・10/31 トリック。data/openModes.ts）。話す 人の 窓だけ：
+		// 地の文・キリコ（sayKiriko）・入った ときの 場面（スレタイと >>1。2017年の 博多弁と 同じ）・
+		// 住人の はじめましてと 節目（rawModes。ui/villageMobs.ts）には かけない。名前欄は かえない
+		const mode =
+			!this.scene && (who || opt.name) && !modesHeld() ? openMode() : null;
+		const shown = mode ? modeText(text, mode) : text;
 		// 声の ある 人（data/cast.ts の voice・MOB_VOICE）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
+		// 絵文字は 読み上げの 側で 落とす（engine/audio.ts）
 		const voice = opt.tts ?? c?.voice;
 		return this.msg.show({
 			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
-			text,
+			text: shown,
 			onShow:
 				voice && settings.voice
-					? (leadMs) => this.ctx.audio.speak(text, voice, leadMs)
+					? (leadMs) => this.ctx.audio.speak(shown, voice, leadMs)
 					: undefined,
 			portrait: opt.noPortrait
 				? null
