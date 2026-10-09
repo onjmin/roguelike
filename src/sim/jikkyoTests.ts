@@ -3725,7 +3725,7 @@ test(
 
 test(
 	"K10",
-	"劇場の 舞台：12/31 は 本番（★5）・12/15 は 公開リハ（★3）・1/3 は 去年の 録画（★2）を 見るか 聞き、結果は 幕の 窓。6/15 は いつもの 文だけ。役者は 12月の 1行と 0時の 神エイムの あと 1回だけ",
+	"劇場の 舞台：12/31 は 本番（★5）・12/15 は 公開リハ（★3）・1/3 は 去年の 録画（★2）を 見るか 聞き、結果は 幕の 窓。6/15 は 漫才スレ王の 録画。役者は 12月の 1行と 0時の 神エイムの あと 1回だけ",
 	async () => {
 		const f = facilityById("theater");
 		if (!f?.room) throw new Fail("no theater");
@@ -3784,9 +3784,17 @@ test(
 						cue: "kami",
 					});
 					const a = await run("stage_0");
+					// 紅白の ない 月の 舞台は 漫才スレ王の 録画（data/jikkyo/manzai.ts。番組の 試験は jikkyoProgTests の P 節）
 					if (!want) {
-						ok(a.join("\n") === stage.join("\n"), `${q}: ${a.join("|")}`);
-						ok(slot === null, `${q}: a show`);
+						ok(
+							a.slice(0, stage.length).join("\n") === stage.join("\n"),
+							`${q}: ${a.join("|")}`,
+						);
+						const sl = slot as JkSlot | null;
+						ok(
+							sl?.program === "manzai" && !sl.live,
+							`${q}: slot ${JSON.stringify(sl)}`,
+						);
 						continue;
 					}
 					const wantLog = [
