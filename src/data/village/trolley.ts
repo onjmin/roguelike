@@ -2,7 +2,7 @@
 //
 // 村の あちこちに 乗り場（黄色い 札と とまった トロッコ）。調べると 行き先を えらび、キリコが トロッコに 乗って
 // 道なりに 速く 走って 着く（ui/village.ts の ride。人は すりぬけ、扉・口は 踏まない）。
-// 乗り場は はじめから 5つ（広場・浜・西口・北の 峠・東口）、新市街（段4〜）と 港（段7）で ふえる。
+// 乗り場は 町が 中盤（段4。TROLLEY_FROM）に なってから 6つ（広場・浜・西口・北の 峠・東口・新市街）、港（段7）で ふえる。
 // 町割りが かわる 所（東口・新市街）は 段で 乗り場が 移る。どれも 寄り道で、強さには 効かない。
 // 乗り場の 絵は scripts/make-trolley.mjs。
 
@@ -55,12 +55,17 @@ const STOPS: readonly StopDef[] = [
 	{ id: "port", name: "港", at: [[7, [56, 48]]] },
 ];
 
+/** トロッコが 走りはじめる 町の 段（中盤。それまでは 乗り場が ない）。 */
+export const TROLLEY_FROM = 4;
+
 /** その 段の 乗り場（決まった 並び：えらぶ 窓も この 順）。 */
 export const trolleyStops = (stage: number): TrolleyStop[] =>
-	STOPS.flatMap((s) => {
-		const hit = [...s.at].reverse().find(([from]) => stage >= from);
-		return hit ? [{ id: s.id, name: s.name, at: hit[1] }] : [];
-	});
+	stage < TROLLEY_FROM
+		? []
+		: STOPS.flatMap((s) => {
+				const hit = [...s.at].reverse().find(([from]) => stage >= from);
+				return hit ? [{ id: s.id, name: s.name, at: hit[1] }] : [];
+			});
 
 /** 乗り場の 名前（どの 段でも）。 */
 export const TROLLEY_NAMES: readonly string[] = STOPS.map((s) => s.name);

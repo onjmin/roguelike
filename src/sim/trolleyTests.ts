@@ -67,8 +67,8 @@ const reachFrom = (v: VillageView): Set<string> => {
 	return seen;
 };
 
-test("乗り場：はじめから 5つ、新市街（段4〜）と 港（段7）で ふえる。どれも 村の 地図に 札と トロッコが 立つ", () => {
-	const want = [5, 5, 5, 5, 6, 6, 6, 7];
+test("乗り場：中盤（段4〜）から 6つ、港（段7）で ふえる。どれも 村の 地図に 札と トロッコが 立つ", () => {
+	const want = [0, 0, 0, 0, 6, 6, 6, 7];
 	for (let stage = 0; stage < TOWN_STAGES; stage++) {
 		const stops = trolleyStops(stage);
 		ok(stops.length === want[stage], `stage ${stage}: ${stops.length} stops`);
