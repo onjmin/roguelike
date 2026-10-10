@@ -1737,6 +1737,7 @@ export class Run {
 		}
 		this.removeItem(it);
 		this.f.items.push({ x: this.p.x, y: this.p.y, item: it });
+		this.se("put");
 		this.msg(`${this.name(it)}を　置いた`);
 		this.emit({ t: "item", uid: it.uid, pos: { x: this.p.x, y: this.p.y } });
 		// 避難所スレは 置くと 効く（その マスは 避難所に なり、もう 拾えない）
@@ -1817,7 +1818,7 @@ export class Run {
 			it.known = true;
 			this.msg("のろわれていた！", "warn");
 			this.se("curse");
-		}
+		} else this.se("equip");
 		// 安価「装備を　かえる」（矢は 数えない）
 		if (slot !== "arrow") ankaHit(this, "equip");
 		return true;
@@ -1839,6 +1840,7 @@ export class Run {
 		if (this.p.weapon === it.uid) this.p.weapon = null;
 		if (this.p.shield === it.uid) this.p.shield = null;
 		if (this.p.arrow === it.uid) this.p.arrow = null;
+		this.se("equip");
 		this.msg(`${this.name(it)}を　外した`);
 		return true;
 	}

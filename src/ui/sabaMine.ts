@@ -66,7 +66,7 @@ const SE: Partial<Record<MineEvent, string>> = {
 	takumiSpawn: "skill_warpPlayer",
 	takumiGone: "steal",
 	takumiBoom: "explosion",
-	broke: "miss",
+	broke: "breakTool",
 };
 const NOTE: Partial<Record<MineEvent, string>> = {
 	coal: MINE_TEXT_BOARD.coal,

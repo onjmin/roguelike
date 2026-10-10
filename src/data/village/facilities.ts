@@ -18,6 +18,7 @@
 
 import type { EventDef, TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
+import { ARCADE_TEXT } from "../arcade/text";
 import { NETA_KABE_WALK, netaArt } from "../neta/art";
 import type { NetaPlay } from "../neta/types";
 import { BUSHITSU_FACILITIES } from "./bushitsu";
@@ -156,6 +157,7 @@ export type FacilityRoom = {
 	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyoGikai.ts）・
 	 * bushitsu＝部室棟の 遊び（ui/bushitsu.ts）・saba＝ホシュクラの 部屋の 物（ui/saba.ts）・
 	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/dosukoi.ts）・
+	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade.ts）・
 	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta.ts））。
 	 */
 	plays?: Record<
@@ -171,6 +173,7 @@ export type FacilityRoom = {
 		| "bushitsu"
 		| "saba"
 		| "dosukoi"
+		| "arcade"
 		| NetaPlay
 	>;
 };
@@ -1894,13 +1897,15 @@ export const FACILITIES: readonly Facility[] = [
 				"@": "tv",
 				"&": "tv",
 				m: "notice",
-				A: "cabinet",
-				C: "cabinet",
-				K: "cabinet",
-				E: "cabinet",
-				G: "cabinet",
+				// 筐体は 1台に 1つずつ 別の ゲーム（data/arcade/types.ts。物の 名前が ゲームの 名前）
+				A: "shooter",
+				b: "drive",
+				C: "breakout",
+				K: "mole",
+				E: "fighter",
+				G: "slot",
 				J: "comma",
-				I: "cabinet",
+				I: "runner",
 				v: "rhythm",
 				V: "rhythm",
 				P: "booth",
@@ -1915,8 +1920,14 @@ export const FACILITIES: readonly Facility[] = [
 			lines: {
 				tv: ["壁の　大画面。\n配信の　画面が　映っている。"],
 				notice: ["はり紙。\n「1プレイ　100円。連コイン　禁止」"],
-				cabinet: ["古い　アーケード台。\n画面に「INSERT COIN」。"],
-				rhythm: ["音ゲーの　台。\nランキングの　1位は「>>1」。"],
+				shooter: [ARCADE_TEXT.shooter.line],
+				drive: [ARCADE_TEXT.drive.line],
+				breakout: [ARCADE_TEXT.breakout.line],
+				mole: [ARCADE_TEXT.mole.line],
+				fighter: [ARCADE_TEXT.fighter.line],
+				slot: [ARCADE_TEXT.slot.line],
+				runner: [ARCADE_TEXT.runner.line],
+				rhythm: [ARCADE_TEXT.rhythm.line],
 				booth: ["プリクラの　機械。\nカーテンに「盛れる」の　文字。"],
 				retro: ["レトロゲームの　台。\n「1プレイ　無料。2Pは　あなた」"],
 				vend: ["自販機。\nエナドリの　ボタンだけ「売切」。"],
@@ -1925,14 +1936,27 @@ export const FACILITIES: readonly Facility[] = [
 				comma: ["コンマの　台。画面の　時計が、\nミリ秒まで　回っている。"],
 			},
 			// 壁の 大画面で 新作発表会・保守リーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
-			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/netaComma.ts）
-			plays: { tv: "jikkyo", comma: "comma" },
+			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/netaComma.ts）、
+			// 筐体 7台と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade.ts）
+			plays: {
+				tv: "jikkyo",
+				comma: "comma",
+				shooter: "arcade",
+				drive: "arcade",
+				breakout: "arcade",
+				mole: "arcade",
+				fighter: "arcade",
+				slot: "arcade",
+				runner: "arcade",
+				rhythm: "arcade",
+			},
 			people: [
 				{
+					// 格ゲーの 対戦台（奥の 右はし）の ななめ前で 乱入を 待つ（台の 前と 壁の 大画面の 前は あけて おく）
 					id: "arcade_a",
 					walk: NANASHI[3],
-					at: [2, 4],
-					dir: "up",
+					at: [6, 4],
+					dir: "left",
 					name: "名無し",
 					lines: ["格ゲーの　対戦台や。\n……乱入、待っとるで"],
 				},

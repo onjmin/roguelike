@@ -47,6 +47,9 @@ try {
 	// 2026-10 の 5つの 寄り道（ホシュクラ・ネタスレ・部室棟・村の 名物・季節の 行事）
 	const { runSabaTests } = await server.ssrLoadModule("/src/sim/sabaTests.ts");
 	const { runNetaTests } = await server.ssrLoadModule("/src/sim/netaTests.ts");
+	const { runArcadeTests } = await server.ssrLoadModule(
+		"/src/sim/arcadeTests.ts",
+	);
 	const { runBushitsuTests } = await server.ssrLoadModule(
 		"/src/sim/bushitsuTests.ts",
 	);
@@ -66,6 +69,7 @@ try {
 		...runTrolleyTests(),
 		...(await runSabaTests()),
 		...(await runNetaTests()),
+		...(await runArcadeTests()),
 		...(await runBushitsuTests()),
 		...(await runFolkTests()),
 		...(await runSeasonTests()),
