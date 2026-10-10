@@ -1,9 +1,10 @@
 // 仲間が 冒険に 加わる ときの 演出（束音ロゼ・解音ゼロ。ui/villageEvents.ts の heroQuestScript から）。
-// 落ちついた 式典ふう：紺の 地に 金の 細い 罫と 枠、白い 線画の 立ち絵、静かに 昇る 光の 粒。
-// 立ち絵・字は ドットの 網目（4x4 の ディザ）で 浮かびあがる。揺れ・紙ふぶき・集中線は 使わない。
+// 落ちついた 式典ふう：紺の 地に 金の 細い 罫と 枠、立ち絵の シルエット（その人の 色の ふちと 光の 帯）、
+// 静かに 昇る 光の 粒。シルエットは 右から 残像を 引いて 流れる ように すべりこむ。字は ドットの 網目
+// （4x4 の ディザ）で 浮かびあがる。揺れ・紙ふぶき・集中線は 使わない。
 //   0.0s  暗い 中から 金の 罫が まんなかで 横へ のびる
 //   0.7s  罫が 上下に わかれて 枠に なり、四すみの 金具が 出る
-//   1.0s  右に 立ち絵（白い 線画）。ゼロは メインさんの あと、うしろに プロト・レンが うすく
+//   1.0s  右へ シルエットが すべりこむ。ゼロは メインさんに つづいて、うしろに プロト・レンが うすく
 //   1.8s  左に「NEW MEMBER」・名前・読み・罫・ひとこと・歩行グラ を 順に
 //   7.0s  暗く なって おわる。1.5秒 たてば A・タップで とばせる
 // 画面は 240x160 の 座標を 2倍の 下地で 描く（ぼかさず 引きのばす）。見た目の 乱数は Math.random。
@@ -117,54 +118,85 @@ const reveal = (
 };
 
 /**
- * 立ち絵（白地に 黒い 線の 線画）から 線だけを 取りだして 白く し、うしろに 色の 光を 敷く
- * （下地の 画素 size 四方）。暗い ほど 濃い 線に する（白地は 消える）。
+ * 立ち絵の シルエット（下地の 画素 size 四方）。立ち絵は 白く ぬった 姿に 黒い 線なので、透けて いない
+ * 所が そのまま 姿の 形に なる。中は 夜より 暗い 色、ふちは その人の 色で 光らせる。
  */
-const lineArt = (
+const silhouette = (
 	img: HTMLImageElement | null,
 	size: number,
-	glow: string,
+	rim: string,
 ): HTMLCanvasElement => {
 	const out = layer(size, size);
 	const g = out.getContext("2d");
 	if (!g || !img) return out;
-	const lines = layer(size, size);
-	const lg = lines.getContext("2d", { willReadFrequently: true });
-	if (!lg) return out;
-	lg.drawImage(img, 0, 0, size, size);
-	try {
-		const d = lg.getImageData(0, 0, size, size);
-		const px = d.data;
-		for (let i = 0; i < px.length; i += 4) {
-			const lum =
-				0.299 * (px[i] ?? 255) +
-				0.587 * (px[i + 1] ?? 255) +
-				0.114 * (px[i + 2] ?? 255);
-			const ink = (1 - lum / 255) * ((px[i + 3] ?? 0) / 255);
-			px[i] = 244;
-			px[i + 1] = 240;
-			px[i + 2] = 230;
-			px[i + 3] = ink < 0.2 ? 0 : Math.min(255, Math.round(ink * 320));
-		}
-		lg.putImageData(d, 0, 0);
-	} catch {
-		// 読めない 画像（別の 場所から）なら そのまま
-	}
-	// 光（ぼかした 色の 写し）
-	const halo = layer(size, size);
-	const hg = halo.getContext("2d");
-	if (hg) {
-		hg.drawImage(lines, 0, 0);
-		hg.globalCompositeOperation = "source-in";
-		hg.fillStyle = glow;
-		hg.fillRect(0, 0, size, size);
-		g.filter = "blur(4px)";
-		g.drawImage(halo, 0, 0);
-		g.drawImage(halo, 0, 0);
-		g.filter = "none";
-	}
-	g.drawImage(lines, 0, 0);
+	const tint = (c: string): HTMLCanvasElement => {
+		const t = layer(size, size);
+		const tg = t.getContext("2d");
+		if (!tg) return t;
+		tg.drawImage(img, 0, 0, size, size);
+		tg.globalCompositeOperation = "source-in";
+		tg.fillStyle = c;
+		tg.fillRect(0, 0, size, size);
+		return t;
+	};
+	const glow = tint(rim);
+	// ふちの 光（ぼかした 色）と、くっきりした 1画素の ふち
+	g.filter = "blur(5px)";
+	g.drawImage(glow, 0, 0);
+	g.filter = "none";
+	for (const [dx, dy] of [
+		[-S, 0],
+		[S, 0],
+		[0, -S],
+		[0, S],
+	] as const)
+		g.drawImage(glow, dx, dy);
+	g.drawImage(tint("#07070f"), 0, 0);
 	return out;
+};
+
+/**
+ * シルエットを 右から 流れる ように すべりこませる（k は 0〜1。動いて いる あいだは 残像を 引く）。
+ * x, y は 止まる 所（下地の 画素）。
+ */
+const slideIn = (
+	g: CanvasRenderingContext2D,
+	src: HTMLCanvasElement,
+	x: number,
+	y: number,
+	k: number,
+	alpha = 1,
+): void => {
+	if (k <= 0) return;
+	const e = ease(k);
+	const off = (1 - e) * 170 * S;
+	if (off > S)
+		for (let i = 4; i >= 1; i--) {
+			g.globalAlpha = alpha * 0.12 * (5 - i) * (1 - e);
+			g.drawImage(src, Math.round(x + off + off * 0.22 * i), y);
+		}
+	g.globalAlpha = alpha * clamp01(k * 4);
+	g.drawImage(src, Math.round(x + off), y);
+	g.globalAlpha = 1;
+};
+
+/** シルエットの うしろの 光の 帯（その人の 色。縦に やわらかく）。 */
+const lightBand = (
+	g: CanvasRenderingContext2D,
+	cx: number,
+	w: number,
+	color: string,
+	k: number,
+): void => {
+	if (k <= 0) return;
+	const grad = g.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+	grad.addColorStop(0, "rgba(0,0,0,0)");
+	grad.addColorStop(0.5, color);
+	grad.addColorStop(1, "rgba(0,0,0,0)");
+	g.globalAlpha = 0.28 * ease(k);
+	g.fillStyle = grad;
+	g.fillRect(cx - w / 2, 0, w, H * S);
+	g.globalAlpha = 1;
 };
 
 /** 字の 札（下地の 画素）。 */
@@ -224,7 +256,7 @@ export const heroJoinScene = async (
 	const mainSize = mainLogical * S;
 	const subSize = 100 * S;
 	const portraits = imgs.map((img, i) =>
-		lineArt(img, i === 0 ? mainSize : subSize, j.glow),
+		silhouette(img, i === 0 ? mainSize : subSize, j.glow),
 	);
 	// 字の 札
 	const tag = label("NEW MEMBER", 7, GOLD, 2);
@@ -324,28 +356,29 @@ export const heroJoinScene = async (
 		const pBase = 1000;
 		const mainX = (multi ? 118 : 110) * S;
 		const mainY = ((H - mainLogical) / 2 + (multi ? 6 : 2)) * S;
+		// うしろの 光の 帯（主役の まんなか）
+		lightBand(g, mainX + mainSize / 2, 90 * S, j.glow, (ms - pBase) / 900);
+		// サブ機（うしろに うすく。主役より 少し あとに）→ 主役
 		if (portraits.length > 1) {
-			reveal(
+			slideIn(
 				g,
 				portraits[1] as HTMLCanvasElement,
 				76 * S,
 				44 * S,
-				(ms - pBase - 500) / 900,
-				"left",
-				0.45,
+				(ms - pBase - 350) / 900,
+				0.6,
 			);
-			reveal(
+			slideIn(
 				g,
 				portraits[2] as HTMLCanvasElement,
 				166 * S,
 				44 * S,
-				(ms - pBase - 800) / 900,
-				"left",
-				0.45,
+				(ms - pBase - 600) / 900,
+				0.6,
 			);
 		}
 		if (portraits[0])
-			reveal(g, portraits[0], mainX, mainY, (ms - pBase) / 1100, "left");
+			slideIn(g, portraits[0], mainX, mainY, (ms - pBase) / 900);
 		g.restore();
 		// 左の 字（順に 浮かぶ）
 		const tx = 16 * S;
