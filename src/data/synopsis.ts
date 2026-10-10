@@ -6,7 +6,9 @@
 // どれも 起きた ことを なぞる だけで、先の どんでん返しは 言わない。
 
 import type { DungeonId } from "../core/types";
+import { QUEST_HEROES, questStage } from "../engine/heroes";
 import { loadProgress } from "../engine/save";
+import { HERO_QUESTS } from "./heroQuests";
 
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
@@ -305,6 +307,14 @@ export const synopsisHtml = (
 		.filter((ch) => ch.done(cleared, flags))
 		.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title));
 	if (!done.length) return null;
+	// 仲間の 依頼（束音ロゼ・解音ゼロ。悩みを かかえて から。data/heroQuests.ts）
+	const quests = QUEST_HEROES.flatMap((h) => {
+		const st = questStage(h, flags);
+		return st === "none" ? [] : [HERO_QUESTS[h].synopsis[st]];
+	});
+	const questHtml = quests.length
+		? `<p><b>仲間の　依頼</b><br>${quests.join("<br>")}</p>`
+		: "";
 	// 裏の 行き先は 裏に 入って いる ときだけ（入る 前に 出すと 入口を 教えて しまう）
 	const inUra = CHAPTERS.some((ch) => ch.done(cleared, flags));
 	const next = [
@@ -313,6 +323,7 @@ export const synopsisHtml = (
 	].filter((x): x is string => !!x);
 	return (
 		done.map((ch) => `<p><b>${ch.title}</b><br>${ch.text}</p>`).join("") +
+		questHtml +
 		next.map((x) => `<p class="hint">つぎ：${x}</p>`).join("")
 	);
 };

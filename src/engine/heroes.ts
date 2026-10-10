@@ -28,7 +28,7 @@ export const questFlag = {
 /** 依頼の 進み具合。 */
 export const questStage = (
 	h: QuestHero,
-	flags = loadProgress().flags ?? [],
+	flags: readonly string[] = loadProgress().flags ?? [],
 ): QuestStage =>
 	flags.includes(questFlag.unlocked(h))
 		? "unlocked"
