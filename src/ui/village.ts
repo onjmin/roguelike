@@ -545,11 +545,14 @@ export class Village {
 					const d = dirs[Math.floor(Math.random() * 4)];
 					const nx = a.x + DIR_VEC[d].dx;
 					const ny = a.y + DIR_VEC[d].dy;
-					// 元の位置から 2マスより 離れない。キリコの 行き先にも 入らない
+					// 元の位置から 2マスより 離れない（場面で 遠くへ 来た 人は 近づく 向きに だけ 歩き、
+					// うろうろ しながら もどる。お弁当の ぷゆゆが 扉の 前に 立ちっぱなしに ならない）。
+					// キリコの 行き先にも 入らない
 					const home = a.def;
+					const far = (x: number, y: number) =>
+						Math.max(Math.abs(x - home.x), Math.abs(y - home.y));
 					if (
-						Math.abs(nx - home.x) <= 2 &&
-						Math.abs(ny - home.y) <= 2 &&
+						(far(nx, ny) <= 2 || far(nx, ny) < far(a.x, a.y)) &&
 						field.canEnter(nx, ny, a) &&
 						!(nx === this.player.x && ny === this.player.y) &&
 						!this.onPath(nx, ny)

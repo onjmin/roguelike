@@ -564,7 +564,7 @@ export const tamperScript = async (s: Story): Promise<void> => {
  */
 export const lunchScript = async (s: Story): Promise<void> => {
 	if (!giveLunch()) return;
-	// ぷゆゆが キリコの となりまで かけてきて 渡す（そのまま そばに いる）
+	// ぷゆゆが キリコの となりまで かけてきて 渡す（そのあとは うろうろ しながら 広場の 下へ もどる。ui/village.ts）
 	const [to] = freeAround(s, 1);
 	if (to) {
 		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });
