@@ -3087,9 +3087,10 @@ export class Play {
 			)
 		)
 			return true;
-		// ダッシュは部屋の出入りで止まる（行き先を決めたタップ移動は止まらない）
+		// ダッシュは 部屋に 入ったら 止まる（行き先を決めたタップ移動は止まらない）。
+		// 部屋から 通路へは 入口の 手前で 止まる（dashSteps）ので、通路に 出た ところでは 止まらない
 		const room = roomAt(run.f.layout, p.x, p.y);
-		if (dash && room !== before.room) return true;
+		if (dash && room >= 0 && room !== before.room) return true;
 		if (p.hp <= p.maxHp / 3) return true;
 		return false;
 	}
@@ -3131,6 +3132,8 @@ export class Play {
 		}
 		let dir = d;
 		const serial = this.ctx.input.serial;
+		// 走りだす 前から 階段の となりなら、その 階段では 止まらない
+		let nearStairs = this.besideStairs();
 		for (let n = 0; n < 60; n++) {
 			if (this.stopped) return;
 			// 走っているあいだに 何かに さわったら 止まる（さわった入力は 捨てる）
@@ -3155,8 +3158,15 @@ export class Play {
 				if (ways.length !== 1) return;
 				dir = ways[0];
 			}
+			const from = { x: run.p.x, y: run.p.y };
 			const ev = await this.exec({ c: "move", dir }, true);
 			if (!ev.length || this.shouldStop(snap, ev, true, tapped)) break;
+			// 階段の となりに 来たら 止まる（通りすぎて 見のがさない）
+			const near = this.besideStairs();
+			if (near && !nearStairs) break;
+			nearStairs = near;
+			// 部屋の中で、通路の 入口の 前に 来たら 止まる（来た 方の 通路は のぞく）
+			if (this.atCorridorMouth(from)) break;
 			// 通路の分かれ道で止まる
 			if (roomAt(run.f.layout, run.p.x, run.p.y) < 0) {
 				const ways = DIRS8.filter(
@@ -3165,6 +3175,28 @@ export class Play {
 				if (ways > 2) break;
 			}
 		}
+	}
+
+	/** 使える 階段が となり（ななめも）に 見えている。乗っている ときは 別（乗れば shouldStop で 止まる）。 */
+	private besideStairs(): boolean {
+		const run = this.run;
+		const st = run.f.stairs;
+		if (run.atBottom || run.onStairs()) return false;
+		if (!run.f.seen[st.y * run.f.layout.w + st.x]) return false;
+		return dist(run.p, st) === 1;
+	}
+
+	/** 部屋の 中で、上下左右の となりに 通路の 入口が ある（from から 来た 通路は 数えない）。 */
+	private atCorridorMouth(from: Pos): boolean {
+		const run = this.run;
+		const l = run.f.layout;
+		if (roomAt(l, run.p.x, run.p.y) < 0) return false;
+		return DIRS8.some((x) => {
+			if (isDiagonal(x)) return false;
+			const n = step(run.p, x);
+			if (n.x === from.x && n.y === from.y) return false;
+			return isFloor(l, n.x, n.y) && roomAt(l, n.x, n.y) < 0;
+		});
 	}
 
 	/** タップした所へ1歩進む（知っている床だけを通る）。 */
