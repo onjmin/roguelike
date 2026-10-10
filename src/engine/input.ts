@@ -116,6 +116,7 @@ const OTHER_KEYS: Record<string, Key> = {
  * A＝こうげき・決定、B＝メニュー・とじる（押しながら 方向で ダッシュ、押しながら A で 足踏み）、
  * Y＝押しながら 方向で 向きだけ（窓の中では 整理）、X＝足元、LB＝斜め固定、RB＝矢、START＝メニュー、BACK＝地図。
  * 名前は スーファミ・任天堂の 並び（右＝A・下＝B・上＝X・左＝Y）。標準の 番号は 下 0・右 1・左 2・上 3。
+ * Xbox の パッドは 刻印どおり（XBOX_CODES）。
  */
 const GAMEPAD_CODES: Record<number, string> = {
 	0: "GpB",
@@ -131,6 +132,18 @@ const GAMEPAD_CODES: Record<number, string> = {
 	14: "GpLeft",
 	15: "GpRight",
 };
+/**
+ * Xbox の パッドは 刻印が 逆（下＝A・右＝B・左＝X・上＝Y）なので、刻印どおりに 読む。
+ * 見分けは gp.id（「Xbox」「XInput」や マイクロソフトの ベンダー 045e）。ほかは 任天堂の 並び。
+ */
+const XBOX_CODES: Record<number, string> = {
+	...GAMEPAD_CODES,
+	0: "GpA",
+	1: "GpB",
+	2: "GpX",
+	3: "GpY",
+};
+export const isXboxPad = (id: string): boolean => /xbox|xinput|045e/i.test(id);
 /** スティックを これより 倒したら 向きにする。 */
 const STICK_DEAD = 0.5;
 /** ゲームパッドの 方向を 押さえつづけたときの くりかえし（窓の カーソル送り。キーボードの リピートの 代わり）。 */
@@ -453,8 +466,9 @@ export class Input {
 			for (const gp of pads) {
 				if (!gp?.connected) continue;
 				any = true;
+				const codes = isXboxPad(gp.id) ? XBOX_CODES : GAMEPAD_CODES;
 				gp.buttons.forEach((b, i) => {
-					const code = GAMEPAD_CODES[i];
+					const code = codes[i];
 					if (code && (b.pressed || b.value > 0.5)) now.add(code);
 				});
 				for (const c of stickCodes(gp.axes[0] ?? 0, gp.axes[1] ?? 0))

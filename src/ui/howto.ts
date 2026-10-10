@@ -101,7 +101,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 		label: "ゲームパッド",
 		sub: "パッド",
 		html:
-			h("ボタン（トルネコ・シレンと　同じ　並び。右が　A・下が　B）") +
+			h("ボタン（ボタンに　書いてある　字の　とおり）") +
 			keys([
 				["十字キー・左スティック", "歩く（窓では　カーソル）"],
 				["A", "こうげき・決定"],
