@@ -658,13 +658,13 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		up: true,
 	},
 	// ボカロ作り避難所：束音ロゼの 依頼（engine/heroes.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
-	// 逃げこんだ 避難所。底に ロゼの 忘れ物（原音設定）が 残って いる。依頼を 引き受けると 開く（知らせない：
-	// ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：文字化けが 多い
+	// 逃げこんだ 避難所。底に ロゼの 忘れ物（原音設定）が 残って いる。依頼を 引き受けると 開く（知らせは
+	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う。quiet は 裏の 小島の
+	// 「南西の 小島・小舟」の 見せ方なので 付けない）。荒らしが 追いかけて きて いる：文字化けが 多い
 	vocalo: {
 		id: "vocalo",
 		objective: "fetch",
 		hidden: true,
-		quiet: true,
 		foes: { mojibake: 2 },
 		floors: 6,
 		items: ISLE1_ITEMS,

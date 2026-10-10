@@ -71,11 +71,11 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		menu: ["取ってくる", "そっとしておく"],
 		accept: [
 			think("（……行ってくるンゴ）"),
-			say("roze", "……きのこ板の　先アル。\nテントが　見えたら、そこアル"),
+			say("roze", "……北東の　島アル。\nテントが　見えたら、そこアル"),
 			say("roze", "文字化けが　うろついてるアル。\n……気を　つけるアル"),
 		],
 		decline: [say("roze", "……常識アル。\nだれだって、そうするアル")],
-		waiting: [say("roze", "……テント、まだ　あったアル？")],
+		waiting: [say("roze", "……北東の　島の　テント、\nまだ　あったアル？")],
 		offer: [
 			say("roze", "……あ。\nあー。あ、あ"),
 			say("roze", "ずれてないアル。……ふふ"),
@@ -87,7 +87,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		synopsis: {
 			asked: "ロゼが　古い　スレを　読んで、ため息を　ついている。",
 			accepted:
-				"ロゼの　忘れ物を　取りに　いく。きのこ板の　先の　テント、ボカロ作り避難所の　いちばん　奥。",
+				"ロゼの　忘れ物を　取りに　いく。北東の　島の　テント、ボカロ作り避難所の　いちばん　奥。",
 			done: "原音設定を　とどけた。ロゼが　なにか　言いたそうに　している。",
 			unlocked:
 				"ロゼが　冒険に　加わった。行き先を　決める　ときに　切りかえられる。",
