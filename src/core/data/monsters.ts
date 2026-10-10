@@ -172,7 +172,7 @@ const M: MonsterDef[] = [
 		name: "拾い画UFO",
 		sprite: "sa:HcYVTc",
 		hp: 20,
-		atk: 0,
+		atk: 10,
 		def: 16,
 		exp: 10,
 		floors: [7, 15],
