@@ -146,5 +146,11 @@ vite.config.ts.timestamp-*
 build/
 
 # Claude Code のローカル設定
-.claude/
 .agents/
+
+# .claude ディレクトリ自体は無視しない
+!.claude/
+# .claude ディレクトリ配下のすべてを無視する
+.claude/*
+# ただし settings.json だけは無視しない（追跡する）
+!.claude/settings.json
