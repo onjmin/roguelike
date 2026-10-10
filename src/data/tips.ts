@@ -47,10 +47,10 @@ export const TIPS: readonly Tip[] = [
 		],
 	},
 	{
-		// 重複の杖は ボス いがいなら メタルぷゆゆも ふえる（core/run.ts の splitMonster）
+		// コピペの杖は ボス いがいなら メタルぷゆゆも ふえる（core/run.ts の splitMonster）
 		key: "split_metal",
 		lines: [
-			"「重複の杖を　メタルぷゆゆに　振ると、\n経験値の　かたまりが　2匹に　なる」",
+			"「コピペの杖を　メタルぷゆゆに　振ると、\n経験値の　かたまりが　2匹に　なる」",
 		],
 	},
 	{
