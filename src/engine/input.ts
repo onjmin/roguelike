@@ -24,7 +24,8 @@ export type Key =
 	| "menu"
 	| "items"
 	| "stairs"
-	| "sort";
+	| "sort"
+	| "phase";
 type Handler = (key: Key, repeat: boolean) => void;
 /**
  * ハンドラを積むときの設定。
@@ -103,6 +104,8 @@ const OTHER_KEYS: Record<string, Key> = {
 	KeyV: "stairs",
 	// 持ち物の 整理（もちもの の X の となり。O は 数字の 0 と まちがえやすい。フィールドでも もちものの窓でも）
 	KeyC: "sort",
+	// 束音ロゼの すり抜けの ON／OFF
+	KeyO: "phase",
 	GpA: "a",
 	GpB: "b",
 	GpX: "foot",

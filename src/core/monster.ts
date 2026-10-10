@@ -1003,8 +1003,8 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 	let moved = 0;
 	for (let i = 0; i < n; i++) {
 		const to = step(p, d);
-		// 束音ロゼは 壁の 中まで 飛ぶ（いちばん 外の 壁と 敵には ぶつかる）
-		const free = r.wallWalker
+		// 束音ロゼは すり抜けが ON なら 壁の 中まで 飛ぶ（いちばん 外の 壁と 敵には ぶつかる）
+		const free = r.phasing
 			? r.playerCanStep(p, d) && !r.monsterAt(to.x, to.y)
 			: r.cornerOk(p, d) && r.isFree(to.x, to.y);
 		if (!free) {

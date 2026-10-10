@@ -757,6 +757,8 @@ export class Play {
 								shield: run.shield()?.kind ?? null,
 							},
 					swing: k >= 0 && k < 1 ? k : -1,
+					// 束音ロゼの すり抜けが ON：半透明（ゆっくり ゆらぐ）
+					...(run.phasing ? { ghost: 0.5 + 0.08 * Math.sin(t / 260) } : {}),
 				});
 				continue;
 			}
@@ -844,6 +846,12 @@ export class Play {
 		const hasArrow = !!arrows && !this.rp;
 		if (this.hud.root.classList.contains("has-arrow") !== hasArrow)
 			this.hud.root.classList.toggle("has-arrow", hasArrow);
+		// 束音ロゼの すり抜けボタン（ON で 光る）
+		const canPhase = run.wallWalker && !this.rp;
+		if (this.hud.root.classList.contains("has-phase") !== canPhase)
+			this.hud.root.classList.toggle("has-phase", canPhase);
+		if (this.hud.root.classList.contains("phase-on") !== run.phasing)
+			this.hud.root.classList.toggle("phase-on", run.phasing);
 		const count = this.hud.root.querySelector(".btn-shoot small");
 		const n = arrows ? String(arrows.count) : "";
 		if (count && count.textContent !== n) count.textContent = n;
@@ -1403,6 +1411,10 @@ export class Play {
 			case "voice":
 				// 蓄音機の 再生（録っていなければ ひとこと だけ）
 				await this.exec({ c: "play" });
+				return;
+			case "phase":
+				// 束音ロゼの すり抜けの ON／OFF（時間は 進まない）
+				if (run.wallWalker) await this.exec({ c: "phase" });
 				return;
 			case "shoot":
 				// 装備した矢を 向いている方へ 1本

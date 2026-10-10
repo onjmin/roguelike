@@ -520,9 +520,28 @@ export class Run {
 		return HERO_NAME[this.hero];
 	}
 
-	/** 壁抜け（束音ロゼ）。 */
+	/** 壁抜けが できる（束音ロゼ）。 */
 	get wallWalker(): boolean {
 		return this.hero === "roze";
+	}
+
+	/** すり抜けが ON（束音ロゼ。切りかえ式：誤って 壁に 入らないように）。 */
+	get phasing(): boolean {
+		return this.wallWalker && !!this.s.phase;
+	}
+
+	/** すり抜けを 切りかえる（時間は 進まない）。壁の 中では OFF に できない。 */
+	private togglePhase(): void {
+		if (!this.wallWalker) return;
+		if (this.s.phase && this.playerInWall()) {
+			this.msg("壁の　中では　もどれない");
+			return;
+		}
+		if (this.s.phase) delete this.s.phase;
+		else this.s.phase = true;
+		this.se("decide");
+		this.emit({ t: "look" });
+		this.msg(this.s.phase ? "すり抜け：ON" : "すり抜け：OFF");
 	}
 
 	/** いま 壁の 中に いる（束音ロゼだけ）。 */
@@ -536,14 +555,14 @@ export class Run {
 	playerCanEnter(x: number, y: number): boolean {
 		const l = this.f.layout;
 		if (isFloor(l, x, y)) return true;
-		if (!this.wallWalker) return false;
+		if (!this.phasing) return false;
 		if (x < 1 || y < 1 || x > l.w - 2 || y > l.h - 2) return false;
 		return !(this.f.statues ?? []).includes(y * l.w + x);
 	}
 
-	/** 主人公の 角ぬけ（ロゼは いつでも）。 */
+	/** 主人公の 角ぬけ（ロゼは すり抜けが ON の とき）。 */
 	playerCornerOk(from: Pos, d: Dir8): boolean {
-		return this.wallWalker || this.cornerOk(from, d);
+		return this.phasing || this.cornerOk(from, d);
 	}
 
 	/** 主人公が from から d へ 1歩 動けるか（地形だけ）。 */
@@ -1594,6 +1613,9 @@ export class Run {
 				return false;
 			case "play":
 				return this.playVoice();
+			case "phase":
+				this.togglePhase();
+				return false;
 			case "shoot": {
 				// 装備した矢を 1本、向いている方へ（トルネコ1の 矢の装備と同じ）
 				const a = this.arrows();

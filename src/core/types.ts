@@ -489,6 +489,8 @@ export type RunState = {
 	hero?: "roze" | "zero";
 	/** 解音ゼロの いまの 機体（ZERO_BODIES の 番。0 の ときは 書かない）。 */
 	body?: number;
+	/** 束音ロゼの すり抜けが ON（切りかえ式。OFF の ときは 書かない）。 */
+	phase?: true;
 };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────
@@ -509,6 +511,8 @@ export type Command =
 	| { c: "sort" }
 	| { c: "shoot" }
 	| { c: "play" }
+	/** 束音ロゼの すり抜けの ON／OFF（時間は 進まない）。 */
+	| { c: "phase" }
 	| { c: "name"; kind: string; text: string };
 
 /** 表示側（UI）に知らせる出来事。UI はこれを順に演出し、最後の状態を描く。 */

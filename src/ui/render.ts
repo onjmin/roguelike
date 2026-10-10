@@ -93,6 +93,8 @@ export type Figure = {
 	swing?: number;
 	/** 絵の 倍率（ボス。足もとを マスの 下の まんなかに そろえて 大きく 描く。無ければ 1）。 */
 	scale?: number;
+	/** 半透明（束音ロゼの すり抜けが ON の あいだ。見えぐあい 0〜1。無ければ 1）。 */
+	ghost?: number;
 };
 
 /** 飛んでいるもの（投げた道具・杖の光）。 */
@@ -354,7 +356,7 @@ export class FloorView {
 			const dy = [-1, -1, 0, 1, 1, 1, 0, -1][g.dir] * lx;
 			const x = Math.round(g.fx * TILE - ox + dx);
 			const y = Math.round(g.fy * TILE - oy + dy);
-			ctx.globalAlpha = 1 - g.fade;
+			ctx.globalAlpha = (1 - g.fade) * (g.ghost ?? 1);
 			const frame = g.asleep ? 0 : stepFrame(time + ((g.id * 97) % 400), false);
 			const sd = spriteDir(g.dir);
 			// 装備：体のうしろに隠れる側 → 体 → 体の前に出る側
