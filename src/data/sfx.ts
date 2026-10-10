@@ -35,6 +35,12 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		stairs: "rpgen:gO9HUJ", // 階段
 		/** 落とし穴に 落ちる。 */
 		fall: "rpgen:7DJdSZ", // 落ちる
+		/** 武器・盾・指輪・矢を 装備した・外した（のろわれていたら curse だけ）。 */
+		equip: "rpgen:s4Y8HY", // [ツクール]装備
+		/** 道具を 足もとに 置いた。 */
+		put: "rpgen:kRaKfN", // [ポケ]着地
+		/** 道具が こわれた（鯖の 鉱山の つるはし）。 */
+		breakTool: "rpgen:0yyTSP", // 魔界村-鎧壊れる
 		/** アイテム・ゴールドを拾った。 */
 		item: "rpgen:gbcHf7", // ﾄﾞﾗｸｴ宝箱
 		/** HP の回復・満腹度の回復。 */
