@@ -43,6 +43,13 @@ export type HeroQuestText = {
 	offer: readonly QuestLine[];
 	/** 出られる ように なった 知らせ。 */
 	unlocked: string;
+	/** あらすじの 1行（data/synopsis.ts。進み具合ごと。悩む 前は 出さない）。 */
+	synopsis: {
+		asked: string;
+		accepted: string;
+		done: string;
+		unlocked: string;
+	};
 };
 
 export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
@@ -77,6 +84,14 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			say("roze", "今度　下へ　行くとき、\nわたしも　連れていくアル"),
 		],
 		unlocked: "ロゼと　冒険に　出られる　ように　なった。",
+		synopsis: {
+			asked: "ロゼが　古い　スレを　読んで、ため息を　ついている。",
+			accepted:
+				"ロゼの　忘れ物を　取りに　いく。きのこ板の　先の　テント、ボカロ作り避難所の　いちばん　奥。",
+			done: "原音設定を　とどけた。ロゼが　なにか　言いたそうに　している。",
+			unlocked:
+				"ロゼが　冒険に　加わった。行き先を　決める　ときに　切りかえられる。",
+		},
 	},
 	zero: {
 		hint: "ゼロが　広場で　口を　ぱくぱく　させている。\n……声は　出ていない。",
@@ -116,5 +131,13 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			),
 		],
 		unlocked: "ゼロと　冒険に　出られる　ように　なった。",
+		synopsis: {
+			asked: "ゼロが　広場で、声の　出ない　歌を　練習している。",
+			accepted:
+				"ゼロの　ために、深い　階の　声を　聞きに　いく。どの　板でも、8階まで　行って　帰る。",
+			done: "深い　階の　声を　録って　帰った。ゼロに　聞かせよう。",
+			unlocked:
+				"ゼロが　冒険に　加わった。たおれても　プロト・レンが　つづける。",
+		},
 	},
 };

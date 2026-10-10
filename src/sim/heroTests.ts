@@ -10,6 +10,7 @@ import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import type { RunState } from "../core/types";
 import { HERO_QUESTS } from "../data/heroQuests";
+import { synopsisHtml } from "../data/synopsis";
 import type { Story } from "../engine/defs";
 import {
 	acceptQuest,
@@ -398,6 +399,27 @@ test(`依頼: ゼロは どの 板でも ${ZERO_QUEST_DEPTH}階まで 行って 
 		ok(questStage("zero") === "unlocked", "unlocked");
 		ok(unlockedHeroes().includes("zero"), "zero");
 	});
+});
+
+test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合ごとの 1行）", () => {
+	const cl = ["shallow", "kinoko"] as RunState["dungeon"][];
+	ok(!(synopsisHtml(cl, []) ?? "").includes("仲間の"), "before worry");
+	for (const [flag, st] of [
+		["q_roze_ask", "asked"],
+		["q_roze", "accepted"],
+		["q_roze_ok", "done"],
+		["hero_roze", "unlocked"],
+	] as const) {
+		const html = synopsisHtml(cl, [flag]) ?? "";
+		ok(html.includes("仲間の　依頼"), `${st} section`);
+		ok(html.includes(HERO_QUESTS.roze.synopsis[st]), `${st} line`);
+	}
+	const both = synopsisHtml(cl, ["hero_roze", "q_zero"]) ?? "";
+	ok(
+		both.includes(HERO_QUESTS.roze.synopsis.unlocked) &&
+			both.includes(HERO_QUESTS.zero.synopsis.accepted),
+		"both",
+	);
 });
 
 test("文: 依頼の 窓は 22×2、ボタンは 9字", () => {
