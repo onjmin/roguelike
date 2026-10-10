@@ -74,8 +74,8 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
 	acceptQuest,
 	type QuestHero,
-	questOpen,
 	questStage,
+	takeWorryNews,
 	unlockHero,
 } from "../engine/heroes";
 import {
@@ -103,6 +103,7 @@ import type { Ctx } from "./ctx";
 import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
 import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
+import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag } from "./home";
 import {
 	imoniArrive,
@@ -614,9 +615,12 @@ const speak = async (
  * 常識堂の 奥・倉庫へは 台の 横の 扉から（店番の ロゼ・シヨは 話すだけ）。帳簿・図鑑・あそびかたは 本館の 物。
  */
 const friendScript =
-	(who: Speaker): Script =>
+	(who: Speaker, ctx: Ctx): Script =>
 	async (s) => {
-		if ((who === "roze" || who === "zero") && (await heroQuestScript(s, who)))
+		if (
+			(who === "roze" || who === "zero") &&
+			(await heroQuestScript(s, who, (h) => heroJoinScene(ctx, h)))
+		)
 			return;
 		await speak(s, who);
 	};
@@ -638,6 +642,8 @@ const playQuestLines = async (
 export const heroQuestScript = async (
 	s: Story,
 	who: QuestHero,
+	/** 仲間が 加わる 演出（ui/heroJoin.ts。試験では わたさない）。 */
+	join?: (h: QuestHero) => Promise<void>,
 ): Promise<boolean> => {
 	const q = HERO_QUESTS[who];
 	const stage = questStage(who);
@@ -645,7 +651,11 @@ export const heroQuestScript = async (
 	if (stage === "done") {
 		await playQuestLines(s, q.offer);
 		unlockHero(who);
-		s.se("levelup");
+		// 加わる 演出（画面いっぱいの ドット絵）。窓を しまってから
+		if (join) {
+			await hideMsg(s);
+			await join(who);
+		} else s.se("levelup");
 		await s.narrate(q.unlocked);
 		return true;
 	}
@@ -653,7 +663,8 @@ export const heroQuestScript = async (
 		await playQuestLines(s, q.waiting);
 		return true;
 	}
-	if (!questOpen()) return false;
+	// 悩みを かかえて いなければ ふだんの ひとこと（帰る たびに 引く。engine/heroes.ts の rollHeroWorries）
+	if (stage !== "asked") return false;
 	await playQuestLines(s, q.worry);
 	if ((await s.choose([...q.menu], { cancel: 1 })) !== 0) {
 		await playQuestLines(s, q.decline);
@@ -685,7 +696,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
 	if (p.who) {
 		const who = p.who;
-		return npc(p.id, p.x, p.y, CAST[who].walk, friendScript(who), {
+		return npc(p.id, p.x, p.y, CAST[who].walk, friendScript(who, ctx), {
 			who,
 			dir: p.dir,
 			wander: p.wander,
@@ -851,6 +862,9 @@ const arrivalScript =
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
+		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
+		const worry = takeWorryNews();
+		if (worry) await s.narrate(HERO_QUESTS[worry].hint);
 		// 転（時計が もどる）と 結の あとの「草」
 		if (wrapDue) await wrapScript(s);
 		if (kusaDue) await kusaScript(s);
