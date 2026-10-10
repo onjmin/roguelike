@@ -41,8 +41,41 @@ import {
 	slStart,
 	slStep,
 } from "../data/arcade/logic";
+import {
+	GC,
+	GC_PAY,
+	GC_SYMS,
+	GS,
+	gcPayout,
+	gcRoll,
+	gcStart,
+	gcStep,
+	gsPoints,
+	gsStart,
+	gsStep,
+	gsStopX,
+	HL,
+	hlJudge,
+	hlScore,
+	hlStart,
+	hlStep,
+	RL_PAY,
+	RL_RED,
+	RL_WHEEL,
+	rlColorOf,
+	rlNumber,
+	rlStart,
+	rlStep,
+	SK_H,
+	SK_W,
+	SW,
+	swDistance,
+	swStart,
+	swStep,
+	swTruth,
+} from "../data/arcade/parlor";
 import { ARCADE, ARCADE_BOARD, ARCADE_TEXT } from "../data/arcade/text";
-import { ARCADE_GAMES, isArcadeGame } from "../data/arcade/types";
+import { ARCADE_GAMES, ARCADE_HOME, isArcadeGame } from "../data/arcade/types";
 import { sfx } from "../data/sfx";
 import {
 	type Facility,
@@ -180,21 +213,46 @@ test("置き場所: 筐体 7台と 音ゲーの 台は それぞれ 別の ゲ�
 	ok(byChar.v === "rhythm" && byChar.V === "rhythm", "the rhythm machine");
 	ok(
 		JSON.stringify([...new Set(Object.values(byChar))].sort()) ===
-			JSON.stringify([...ARCADE_GAMES].sort()),
+			JSON.stringify(
+				ARCADE_GAMES.filter((g) => ARCADE_HOME[g] === "arcade").sort(),
+			),
 		"every game has a machine",
 	);
-	// どの 台も plays が arcade、文が ある、部屋に 調べる 所が ある
-	const places = facilityRoomPlaces(fac("arcade"));
+	// 古い「cabinet」の 文は もう ない
+	ok(!room.lines.cabinet, "no generic cabinet line");
+});
+
+test("置き場所: どの ゲームも 決まった 施設の 物に あり（plays は arcade・文・調べる 所）、ほかの 施設には ない", () => {
 	for (const g of ARCADE_GAMES) {
+		const f = fac(ARCADE_HOME[g]);
+		const room = f.room;
+		if (!room) throw new Fail(`${f.id} has no room`);
+		ok(Object.values(room.things).includes(g), `${g} is a thing in ${f.id}`);
 		ok(room.plays?.[g] === "arcade", `${g} plays arcade`);
 		ok(room.lines[g]?.[0] === ARCADE_TEXT[g].line, `${g} line`);
 		ok(
-			places.some((p) => p.id === `${g}_0` && p.trigger === "talk"),
+			facilityRoomPlaces(f).some(
+				(p) => p.id === `${g}_0` && p.trigger === "talk",
+			),
 			`${g} place`,
 		);
 	}
-	// 古い「cabinet」の 文は もう ない
-	ok(!room.lines.cabinet, "no generic cabinet line");
+	for (const id of ["arcade", "casino", "umi", "bar", "go", "gym", "cinema"]) {
+		const room = fac(id).room;
+		for (const [kind, play] of Object.entries(room?.plays ?? {}))
+			if (play === "arcade")
+				ok(isArcadeGame(kind) && ARCADE_HOME[kind] === id, `${id}.${kind}`);
+	}
+	// カジノの 台は どれも 遊べる（文だけの 台は ない）。チップは 遊びの チップ
+	const casino = fac("casino").room;
+	for (const k of ["slot", "cards", "cooler"])
+		ok(!casino?.lines[k], `no old ${k} line`);
+	ok(
+		casino?.people
+			?.find((p) => p.id === "casino_dealer")
+			?.lines[0]?.includes("遊びの　チップ"),
+		"dealer",
+	);
 });
 
 test("置き場所: 筐体の 前に 人が 立たない（乱入待ちの 名無しは 格ゲーの 台の 横）", () => {
@@ -219,8 +277,8 @@ test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/facilities
 			unlocked: ["shallow"],
 			cleared: [],
 		};
-		const events = buildFacility(fac("arcade"), view, CTX).events ?? [];
 		for (const g of ARCADE_GAMES) {
+			const events = buildFacility(fac(ARCADE_HOME[g]), view, CTX).events ?? [];
 			const ev = events.find((e) => e.id === `${g}_0`);
 			ok(ev?.run, `event ${g}`);
 			if (!ev?.run) continue;
@@ -255,6 +313,15 @@ test("文: 窓は 22×2、板の 題と 押し方は 1行 22、ボタン 9", () 
 		if (typeof v === "string")
 			fits(`ARCADE_BOARD.${k}`, fill(v, { n: 999, name: "レスバ常勝" }), 22, 1);
 	for (const f of FT_FOES) ok(width(f.name) <= 6, `foe name ${f.name}`);
+	// スイカ割りの 声（名前 ＋ 本文が 板の 右の 欄＝7px の 字で 96px に 入る：13字まで）
+	for (const n of ARCADE_BOARD.swNear)
+		for (const d of Object.values(ARCADE_BOARD.swDirs))
+			for (const who of [ARCADE_BOARD.swNanashi, ARCADE_BOARD.swTroll]) {
+				const t = fill(n, { dir: d });
+				fits("swNear", t, 22, 1);
+				ok(width(who) + width(t) <= 12.5, `swNear "${who} ${t}"`);
+			}
+	for (const t of ARCADE_TEXT.gacha.rule.split("\n")) ok(width(t) <= 22, t);
 });
 
 test("音: 板と 窓で 鳴らす 効果音は どれも data/sfx.ts に ある", () => {
@@ -265,6 +332,7 @@ test("音: 板と 窓で 鳴らす 効果音は どれも data/sfx.ts に ある
 		"arcadeKit.ts",
 		"arcadeAction.ts",
 		"arcadeTiming.ts",
+		"arcadeParlor.ts",
 	]) {
 		const src = readFileSync(join(root, file), "utf8");
 		for (const m of src.matchAll(/se\("([A-Za-z_]+)"\)/g))
@@ -479,6 +547,175 @@ test("音ゲー: 譜面は 毎回 同じ・ぜんぶ ちょうどで 押すと F
 	if (!first) throw new Fail("no notes");
 	rhStep(s, 0, [{ lane: (first.lane + 1) % RH.lanes, at: first.at }]);
 	ok(first.judged === null, "wrong lane");
+});
+
+test("ガチャスロット: 1枚で 引き、3つ そろうと 表の 払いだし・左 2つで 1枚、なくなったら おわり、リーチは SR 以上", () => {
+	ok(gcPayout(["UR", "UR", "UR"]) === GC_PAY.UR, "UR");
+	ok(gcPayout(["N", "N", "R"]) === GC.pair, "pair");
+	ok(gcPayout(["N", "R", "R"]) === 0, "right pair pays nothing");
+	const rnd = seeded(12);
+	const seen = new Set(Array.from({ length: 2000 }, () => gcRoll(rnd)));
+	ok(
+		GC_SYMS.every((x) => seen.has(x)),
+		"every symbol shows up",
+	);
+	let s = gcStart();
+	let reach = 0;
+	let wins = 0;
+	for (let i = 0; i < 200000 && !s.over; i++) {
+		const ev = gcStep(s, 1 / 30, true, rnd);
+		if (ev.includes("reach")) {
+			reach++;
+			ok(
+				s.reels[0] === s.reels[1] &&
+					["UR", "SSR", "SR"].includes(s.reels[0] ?? ""),
+				"reach",
+			);
+		}
+		if (ev.includes("win")) wins++;
+		if (ev.includes("pull")) ok(s.chips >= 0, "never below 0");
+	}
+	ok(s.over && s.chips === 0 && s.best >= GC.start, `bust after ${s.pulls}`);
+	ok(
+		s.pulls > GC.start && wins > 0,
+		`pulls ${s.pulls} wins ${wins} reach ${reach}`,
+	);
+	// リールは 左から 止まる
+	s = gcStart();
+	gcStep(s, 0, true, rnd);
+	const stops: number[] = [];
+	for (let t = 0; t < 3 && s.phase === "spin"; t += 0.05)
+		if (gcStep(s, 0.05, false, rnd).includes("stop")) stops.push(s.stopped);
+	ok(JSON.stringify(stops) === "[1,2,3]", `stops ${stops}`);
+});
+
+test("ハイ＆ロー: 当たれば 倍・同じ 数は そのまま・はずれは なくなる、降りると 手もとへ、10連勝で 自動で 降りる", () => {
+	ok(
+		hlJudge(5, 9, "high") === "win" && hlJudge(5, 2, "high") === "lose",
+		"high",
+	);
+	ok(hlJudge(5, 2, "low") === "win" && hlJudge(5, 5, "low") === "push", "low");
+	const rnd = seeded(13);
+	let s = hlStart(rnd);
+	// いつも 有利な ほう（7より 上なら ロー）を 言い、3連勝で 降りる
+	let takes = 0;
+	for (let i = 0; i < 20000 && !s.over; i++) {
+		let c: "high" | "low" | "take" | null = null;
+		if (s.phase === "guess")
+			c = s.streak >= 3 ? "take" : s.card >= 7 ? "low" : "high";
+		const ev = hlStep(s, 1 / 30, c, rnd);
+		if (ev.includes("take")) takes++;
+		ok(s.chips >= 0 && s.pot >= 0, "never negative");
+	}
+	ok(takes > 3, `takes ${takes}`);
+	ok(hlScore(s) >= HL.start, "score");
+	// 賭けが 倍に なる
+	s = hlStart(() => 0.5);
+	s.card = 2;
+	hlStep(s, 0, "high", () => 0.99);
+	ok(s.chips === HL.start - 1 && s.pot === 2 && s.streak === 1, "double");
+	ok(hlScore(s) === HL.start + 1, "score counts the pot");
+	hlStep(s, 1, null, rnd);
+	hlStep(s, 0, "take", rnd);
+	ok(s.chips === HL.start + 1 && s.pot === 0, "take");
+	// 10連勝で 自動
+	s = hlStart(rnd);
+	s.card = 1;
+	for (let i = 0; i < HL.maxStreak; i++) {
+		s.card = 1;
+		hlStep(s, 0, "high", () => 0.99);
+		hlStep(s, 1, null, rnd);
+	}
+	ok(
+		s.pot === 0 && s.chips === HL.start - 1 + 2 ** HL.maxStreak,
+		`auto take ${s.chips}`,
+	);
+});
+
+test("ルーレット: 37の ポケット・赤 18・黒 18・緑 1、止まった 数で 払いもどし、なくなったら おわり", () => {
+	ok(RL_WHEEL.length === 37 && new Set(RL_WHEEL).size === 37, "wheel");
+	ok(RL_RED.size === 18 && rlColorOf(0) === "green", "colors");
+	ok(RL_WHEEL.filter((n) => rlColorOf(n) === "black").length === 18, "black");
+	const rnd = seeded(14);
+	let s = rlStart();
+	let spins = 0;
+	for (let i = 0; i < 200000 && !s.over; i++) {
+		const before = s.chips;
+		const ev = rlStep(s, 1 / 30, { color: "red", amount: 5, spin: true }, rnd);
+		if (ev.includes("spin")) {
+			spins++;
+			ok(s.chips === before - s.amount, "bet");
+		}
+		if (ev.includes("win") || ev.includes("lose")) {
+			const n = rlNumber(s);
+			ok(n === RL_WHEEL[s.result], "the wheel stops on the result");
+			ok(ev.includes("win") === (rlColorOf(n) === "red"), `pay ${n}`);
+			if (ev.includes("win")) ok(s.lastWin === s.amount * RL_PAY.red, "x2");
+		}
+	}
+	ok(s.over && s.chips === 0 && spins > 5, `spins ${spins}`);
+	// 緑は 14倍
+	s = rlStart();
+	rlStep(s, 0, { color: "green", amount: 10, spin: true }, () => 0);
+	for (let i = 0; i < 200 && s.phase === "spin"; i++)
+		rlStep(s, 0.05, { spin: false }, rnd);
+	ok(rlNumber(s) === 0 && s.chips === 20 + 140, `green ${s.chips}`);
+});
+
+test("スイカ割り: 声は ほんとうの 方（荒らしは 逆）、真上で ふると 当たり、となりは かすり、25秒で おわる", () => {
+	const rnd = seeded(15);
+	let s = swStart(rnd);
+	ok(swDistance(s) >= 4, "the watermelon is away");
+	ok(s.sx >= 0 && s.sx < SK_W && s.sy >= 0 && s.sy < SK_H, "on the beach");
+	// 声の とおりに 歩く（荒らしは 無視）と たどりつく
+	let lies = 0;
+	for (let i = 0; i < 25 * 30 && !s.over; i++) {
+		const h = s.hints[s.hints.length - 1];
+		const truth = swTruth(s);
+		let move: "up" | "down" | "left" | "right" | undefined;
+		if (h && h.who === "troll") {
+			lies++;
+			ok(h.dir !== truth.dir, "a troll lies");
+		}
+		if (i % 10 === 0 && truth.dir) move = truth.dir;
+		const swing = truth.dir === null;
+		swStep(s, 1 / 30, { move, swing }, rnd);
+	}
+	ok(s.result === "hit" && s.score > SW.hit, `hit ${s.result} ${s.score}`);
+	// となり → かすり、遠い → 空ぶり、何もしない → 時間ぎれ
+	s = swStart(rnd);
+	s.x = s.sx === 0 ? 1 : s.sx - 1;
+	s.y = s.sy;
+	swStep(s, 0, { swing: true }, rnd);
+	ok(s.result === "near" && s.score === SW.near, "near");
+	s = swStart(rnd);
+	for (let i = 0; i < 30 * 30 && !s.over; i++)
+		swStep(s, 1 / 30, { swing: false }, rnd);
+	ok(s.over && s.result === "miss" && s.score === 0, "time up");
+	ok(lies >= 0, "lies counted");
+});
+
+test("グラス滑らせ: 力で 止まる 所が きまり、ぴったりで 100点、はしを 越えると 割れて 0点、5杯で おわる", () => {
+	ok(gsStopX(0) > GS.startX && gsStopX(1) > GS.endX, "range");
+	ok(gsPoints(150, 150) === 100 && gsPoints(153, 150) === 100, "exact");
+	ok(gsPoints(160, 150) < 100 && gsPoints(200, 150) === 0, "far");
+	// ちょうどの 力で 押す
+	const rnd = seeded(16);
+	let s = gsStart(rnd);
+	for (let i = 0; i < 60 * 60 && !s.over; i++) {
+		const press =
+			s.phase === "aim" && Math.abs(gsStopX(s.power) - s.target) < 5;
+		gsStep(s, 1 / 120, press, rnd);
+	}
+	ok(s.over && s.round === GS.rounds && s.score >= 400, `good ${s.score}`);
+	// いちばん 強く → 割れる
+	s = gsStart(rnd);
+	let broke = 0;
+	for (let i = 0; i < 60 * 60 && !s.over; i++) {
+		const press = s.phase === "aim" && s.power > 0.98;
+		if (gsStep(s, 1 / 120, press, rnd).includes("break")) broke++;
+	}
+	ok(broke === GS.rounds && s.score === 0, `broke ${broke}`);
 });
 
 // ───────────────── 窓の 流れ・記録 ─────────────────

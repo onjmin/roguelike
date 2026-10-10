@@ -1,7 +1,7 @@
-// ゲームセンター「連コ」の 筐体の 遊び（1台に 1つずつ 別の ゲーム。data/arcade/types.ts）の 窓の がわ。
+// 施設の 台の 遊び（ゲームセンター「連コ」の 筐体・カジノ「ガチャ」の 台・海の家・バー。1台に 1つずつ 別の ゲーム。data/arcade/types.ts）の 窓の がわ。
 // 部屋の 物（data/village/facilities.ts の plays が "arcade"）を 調べると ui/facilities.ts が arcadePlay を 呼ぶ：
 // 物の 文 → ハイスコア（あれば）→「遊ぶ／やめる」→ はじめての 台は 決まり → 板（ui/arcadeAction.ts・ui/arcadeTiming.ts）
-// → スコア（ハイスコアを こえたら ひとこと）。B で やめたら「途中で　席を　立った」だけ（記録しない）。
+// → スコア（ハイスコアを こえたら ひとこと）。板は ui/arcadeParlor.ts も（カジノ・海の家・バー）。B で やめたら「途中で　席を　立った」だけ（記録しない）。
 // どれも 寄り道で、強さ・道具・売上・町の 段には 何も 効かない。見た目の 乱数は Math.random。
 // 記録は localStorage の kiriko-roguelike/arcade だけ（?stage= ・?event= の ときは 書かない。memo には 残る）。
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
@@ -21,6 +21,13 @@ import {
 	playShooter,
 } from "./arcadeAction";
 import type { ArcadeResult } from "./arcadeKit";
+import {
+	playGacha,
+	playGlassSlide,
+	playHighLow,
+	playRoulette,
+	playSuika,
+} from "./arcadeParlor";
 import { playFighter, playMole, playRhythm, playSlot } from "./arcadeTiming";
 import type { UiCtx } from "./list";
 import { previewStage } from "./villageReturn";
@@ -132,6 +139,11 @@ const BOARDS: Record<ArcadeGame, (ctx: UiCtx) => Promise<ArcadeResult | null>> =
 		slot: playSlot,
 		runner: playRunner,
 		rhythm: playRhythm,
+		gacha: playGacha,
+		highlow: playHighLow,
+		roulette: playRoulette,
+		suika: playSuika,
+		glassSlide: playGlassSlide,
 	};
 
 /** 筐体を 調べた あと（物の 文は ui/facilities.ts が 先に 読む）。 */
