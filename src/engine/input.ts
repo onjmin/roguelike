@@ -475,7 +475,11 @@ export class Input {
 					now.add(c);
 			}
 			const t = performance.now();
-			for (const code of now) {
+			// 同じ コマで B と A が 入ったら B を 先に（B＋A の 足踏みが こうげきに ならない。
+			// Xbox の 並びでは A の 番号が B より 前なので）
+			for (const code of [...now].sort(
+				(x, y) => Number(B_CODES.has(y)) - Number(B_CODES.has(x)),
+			)) {
 				const since = this.gpDown.get(code);
 				if (since === undefined) {
 					this.gpDown.set(code, t);
