@@ -1,81 +1,202 @@
 // 仲間が 冒険に 加わる ときの 演出（束音ロゼ・解音ゼロ。ui/villageEvents.ts の heroQuestScript から）。
-// 画面いっぱいの ドット絵（240x160 の 小さな キャンバスを 2倍の 下地で 描いて、CSS で 引きのばす。ぼかさない）。
-//   0.0s  白く 光る → 夜空
-//   0.3s  集中線が 回り、光の 柱が 降りる、きらきら
-//   1.3s  主人公が 上から 落ちてくる → 着地で 地ひびき（画面が ゆれる）・衝撃の 輪・紙ふぶき
-//         ゼロは つづけて プロト（左）・レン（右）も 降りてくる
-//   2.4s  くるくる 回って 前を 向き、名前の 帯が 左右から 入る（「〇〇が　なかまに　なった！」）
-//   6.5s  暗く なって おわる。1.5秒 たてば A・タップで とばせる
-// 見た目の 乱数は Math.random（冒険の 乱数に さわらない）。
+// 落ちついた 式典ふう：紺の 地に 金の 細い 罫と 枠、白い 線画の 立ち絵、静かに 昇る 光の 粒。
+// 立ち絵・字は ドットの 網目（4x4 の ディザ）で 浮かびあがる。揺れ・紙ふぶき・集中線は 使わない。
+//   0.0s  暗い 中から 金の 罫が まんなかで 横へ のびる
+//   0.7s  罫が 上下に わかれて 枠に なり、四すみの 金具が 出る
+//   1.0s  右に 立ち絵（白い 線画）。ゼロは メインさんの あと、うしろに プロト・レンが うすく
+//   1.8s  左に「NEW MEMBER」・名前・読み・罫・ひとこと・歩行グラ を 順に
+//   7.0s  暗く なって おわる。1.5秒 たてば A・タップで とばせる
+// 画面は 240x160 の 座標を 2倍の 下地で 描く（ぼかさず 引きのばす）。見た目の 乱数は Math.random。
 
 import type { HeroId } from "../core/data/heroes";
 import { heroWalk, ZERO_BODY_WALKS } from "../data/cast";
 import { loadImage } from "../engine/assets";
 import { drawWalk } from "../engine/sprite";
-import type { Dir } from "../engine/types";
 import { el } from "./dom";
 import type { UiCtx } from "./list";
 import { sleep, tick } from "./minigameBoard";
 
 const W = 240;
 const H = 160;
-const GROUND = 118;
-const END_MS = 6500;
+/** 下地の 倍率。 */
+const S = 2;
+const END_MS = 7000;
 const SKIP_MS = 1500;
-const FADE_MS = 400;
+const FADE_MS = 500;
+const GOLD = "#d8b968";
+const GOLD_DIM = "#8a7440";
+const FONT = "'DotGothic16', monospace";
 
 type Joiner = {
-	/** 名前の 帯（大きい 字）。 */
 	name: string;
-	/** 帯の 下の 小さい 字。 */
-	sub: string;
-	/** 帯と 光の 色。 */
-	ink: string;
+	/** 読み（ローマ字。名前の 下）。 */
+	reading: string;
+	/** 罫の 下の 2行。 */
+	lines: readonly [string, string];
+	/** 立ち絵の 光の 色。 */
 	glow: string;
-	/** 降りてくる 絵（左から 順に。1つ目が まんなか）。 */
-	walks: readonly string[];
+	/** 立ち絵（1つ目が 主役。ゼロは サブ機も）。 */
+	portraits: readonly string[];
+	walk: string;
 };
 
 const JOINERS: Record<Exclude<HeroId, "kiriko">, Joiner> = {
 	roze: {
 		name: "束音ロゼ",
-		sub: "が　なかまに　なった！",
-		ink: "#ff6f91",
-		glow: "#ffd0dc",
-		walks: [heroWalk({ hero: "roze" })],
+		reading: "TABANE  ROZE",
+		lines: ["壁の　中を　歩く。", "……常識アル。"],
+		glow: "#ff6f91",
+		portraits: ["portraits/roze.png"],
+		walk: heroWalk({ hero: "roze" }),
 	},
 	zero: {
 		name: "解音ゼロ",
-		sub: "が　なかまに　なった！",
-		ink: "#5cc8f0",
-		glow: "#d0f0ff",
-		walks: ZERO_BODY_WALKS,
+		reading: "TOKINE  ZERO",
+		lines: ["VHz8-0・HeBc-0・XQxS-0", "3体で　ひとり。"],
+		glow: "#5cc8f0",
+		portraits: [
+			"portraits/zero.png",
+			"portraits/zero_proto.png",
+			"portraits/zero_ren.png",
+		],
+		walk: ZERO_BODY_WALKS[0] ?? heroWalk({ hero: "zero" }),
 	},
 };
 
-/** 降りてくる 1体（x は まんなか、t は 落ちはじめる 時刻 ms、scale は 大きさ）。 */
-type Drop = { walk: string; x: number; t: number; scale: number };
+/** 4x4 の ディザの 順（0〜15）。 */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+/** ディザの 1目（下地の 画素）。 */
+const CELL = 2;
 
-type Bit = {
-	x: number;
-	y: number;
-	vx: number;
-	vy: number;
-	c: string;
-	life: number;
-	size: number;
+const clamp01 = (k: number): number => Math.max(0, Math.min(1, k));
+const ease = (k: number): number => 1 - (1 - clamp01(k)) ** 3;
+
+/** 下地の 大きさの キャンバス。 */
+const layer = (w: number, h: number): HTMLCanvasElement => {
+	const c = document.createElement("canvas");
+	c.width = w;
+	c.height = h;
+	return c;
 };
 
-const CONFETTI = [
-	"#ff6f91",
-	"#ffe060",
-	"#5cc8f0",
-	"#7be0a0",
-	"#ffffff",
-	"#c070f0",
-];
+/**
+ * src を k（0〜1）だけ ディザで 見せて 描く（dx, dy は 下地の 画素）。from は 浮かぶ 向き：
+ * "dither" は 一面に、"left" は 左から。
+ */
+const reveal = (
+	g: CanvasRenderingContext2D,
+	src: HTMLCanvasElement,
+	dx: number,
+	dy: number,
+	k: number,
+	from: "dither" | "left" = "dither",
+	alpha = 1,
+): void => {
+	if (k <= 0) return;
+	if (k >= 1) {
+		g.globalAlpha = alpha;
+		g.drawImage(src, dx, dy);
+		g.globalAlpha = 1;
+		return;
+	}
+	const t = layer(src.width, src.height);
+	const tg = t.getContext("2d");
+	if (!tg) return;
+	tg.drawImage(src, 0, 0);
+	const cols = Math.ceil(src.width / CELL);
+	const rows = Math.ceil(src.height / CELL);
+	for (let y = 0; y < rows; y++)
+		for (let x = 0; x < cols; x++) {
+			const b = (BAYER[(y % 4) * 4 + (x % 4)] ?? 0) / 16;
+			const edge = from === "left" ? k * 1.4 - (x / cols) * 0.8 : k;
+			if (b >= edge) tg.clearRect(x * CELL, y * CELL, CELL, CELL);
+		}
+	g.globalAlpha = alpha;
+	g.drawImage(t, dx, dy);
+	g.globalAlpha = 1;
+};
 
-const ease = (k: number): number => 1 - (1 - Math.min(1, Math.max(0, k))) ** 3;
+/**
+ * 立ち絵（白地に 黒い 線の 線画）から 線だけを 取りだして 白く し、うしろに 色の 光を 敷く
+ * （下地の 画素 size 四方）。暗い ほど 濃い 線に する（白地は 消える）。
+ */
+const lineArt = (
+	img: HTMLImageElement | null,
+	size: number,
+	glow: string,
+): HTMLCanvasElement => {
+	const out = layer(size, size);
+	const g = out.getContext("2d");
+	if (!g || !img) return out;
+	const lines = layer(size, size);
+	const lg = lines.getContext("2d", { willReadFrequently: true });
+	if (!lg) return out;
+	lg.drawImage(img, 0, 0, size, size);
+	try {
+		const d = lg.getImageData(0, 0, size, size);
+		const px = d.data;
+		for (let i = 0; i < px.length; i += 4) {
+			const lum =
+				0.299 * (px[i] ?? 255) +
+				0.587 * (px[i + 1] ?? 255) +
+				0.114 * (px[i + 2] ?? 255);
+			const ink = (1 - lum / 255) * ((px[i + 3] ?? 0) / 255);
+			px[i] = 244;
+			px[i + 1] = 240;
+			px[i + 2] = 230;
+			px[i + 3] = ink < 0.2 ? 0 : Math.min(255, Math.round(ink * 320));
+		}
+		lg.putImageData(d, 0, 0);
+	} catch {
+		// 読めない 画像（別の 場所から）なら そのまま
+	}
+	// 光（ぼかした 色の 写し）
+	const halo = layer(size, size);
+	const hg = halo.getContext("2d");
+	if (hg) {
+		hg.drawImage(lines, 0, 0);
+		hg.globalCompositeOperation = "source-in";
+		hg.fillStyle = glow;
+		hg.fillRect(0, 0, size, size);
+		g.filter = "blur(4px)";
+		g.drawImage(halo, 0, 0);
+		g.drawImage(halo, 0, 0);
+		g.filter = "none";
+	}
+	g.drawImage(lines, 0, 0);
+	return out;
+};
+
+/** 字の 札（下地の 画素）。 */
+const label = (
+	text: string,
+	px: number,
+	ink: string,
+	spacing = 0,
+): HTMLCanvasElement => {
+	const probe = layer(1, 1).getContext("2d");
+	const f = `${px * S}px ${FONT}`;
+	let w = px * S * text.length;
+	if (probe) {
+		probe.font = f;
+		w =
+			Math.ceil(probe.measureText(text).width + spacing * S * text.length) + 4;
+	}
+	const c = layer(Math.max(4, w), px * S + 6);
+	const g = c.getContext("2d");
+	if (!g) return c;
+	g.font = f;
+	g.textBaseline = "top";
+	g.fillStyle = ink;
+	if (spacing) {
+		let x = 0;
+		for (const ch of text) {
+			g.fillText(ch, x, 2);
+			x += g.measureText(ch).width + spacing * S;
+		}
+	} else g.fillText(text, 0, 2);
+	return c;
+};
 
 /** 仲間が 加わる 演出（とばすか おわるまで 待つ）。 */
 export const heroJoinScene = async (
@@ -83,10 +204,11 @@ export const heroJoinScene = async (
 	hero: Exclude<HeroId, "kiriko">,
 ): Promise<void> => {
 	const j = JOINERS[hero];
-	await Promise.all(j.walks.map((w) => loadImage(w)));
+	const imgs = await Promise.all(j.portraits.map((p) => loadImage(p)));
+	await loadImage(j.walk);
 	const canvas = el("canvas", { class: "hero-join-canvas" });
-	canvas.width = W * 2;
-	canvas.height = H * 2;
+	canvas.width = W * S;
+	canvas.height = H * S;
 	const root = el("div", { class: "hero-join" }, [canvas]);
 	ctx.ui.appendChild(root);
 	const g = canvas.getContext("2d");
@@ -94,45 +216,30 @@ export const heroJoinScene = async (
 		root.remove();
 		return;
 	}
-	g.setTransform(2, 0, 0, 2, 0, 0);
 	g.imageSmoothingEnabled = false;
 
-	const drops: Drop[] =
-		j.walks.length > 1
-			? [
-					{ walk: j.walks[0] ?? "", x: W / 2, t: 1300, scale: 4 },
-					{ walk: j.walks[1] ?? "", x: W / 2 - 64, t: 1750, scale: 3 },
-					{ walk: j.walks[2] ?? "", x: W / 2 + 64, t: 2050, scale: 3 },
-				]
-			: [{ walk: j.walks[0] ?? "", x: W / 2, t: 1300, scale: 4 }];
-	const FALL_MS = 380;
-	const landed = new Set<number>();
-	const bits: Bit[] = [];
-	const rings: { x: number; t: number; big: boolean }[] = [];
-	let shakeUntil = 0;
-	const stars = Array.from({ length: 40 }, () => ({
-		x: Math.floor(Math.random() * W),
-		y: Math.floor(Math.random() * (GROUND - 10)),
+	// 立ち絵（主役は 大きく 右に、サブ機は 小さく うしろに）
+	const multi = j.portraits.length > 1;
+	const mainLogical = multi ? 128 : 150;
+	const mainSize = mainLogical * S;
+	const subSize = 100 * S;
+	const portraits = imgs.map((img, i) =>
+		lineArt(img, i === 0 ? mainSize : subSize, j.glow),
+	);
+	// 字の 札
+	const tag = label("NEW MEMBER", 7, GOLD, 2);
+	const name = label(j.name, 20, "#f4f0e6");
+	const reading = label(j.reading, 6, "#9a96b0", 1);
+	const line1 = label(j.lines[0], 8, "#d8d4e6");
+	const line2 = label(j.lines[1], 8, "#d8d4e6");
+	// 光の 粒（ゆっくり 昇る）
+	const motes = Array.from({ length: 26 }, () => ({
+		x: Math.random() * W,
+		y: Math.random() * H,
+		v: 3 + Math.random() * 6,
 		p: Math.random() * 6,
 	}));
 
-	const burst = (x: number, y: number, n: number) => {
-		for (let i = 0; i < n; i++) {
-			const a = Math.random() * Math.PI * 2;
-			const v = 40 + Math.random() * 110;
-			bits.push({
-				x,
-				y,
-				vx: Math.cos(a) * v,
-				vy: Math.sin(a) * v - 60,
-				c: CONFETTI[i % CONFETTI.length] ?? "#fff",
-				life: 1.4 + Math.random() * 1.2,
-				size: Math.random() < 0.3 ? 2 : 1,
-			});
-		}
-	};
-
-	// とばす（1.5秒 たってから）
 	let skip = false;
 	let t0 = performance.now();
 	const press = () => {
@@ -146,203 +253,144 @@ export const heroJoinScene = async (
 	);
 	root.addEventListener("pointerdown", press);
 
+	const px = (v: number) => Math.round(v) * S;
+	const rect = (x: number, y: number, w: number, h: number, c: string) => {
+		g.fillStyle = c;
+		g.fillRect(
+			px(x),
+			px(y),
+			Math.max(S, Math.round(w) * S),
+			Math.max(S, Math.round(h) * S),
+		);
+	};
+	/** 罫の 端の ひし形。 */
+	const diamond = (x: number, y: number, c: string) => {
+		rect(x, y - 1, 1, 3, c);
+		rect(x - 1, y, 3, 1, c);
+	};
+
+	const TOP = 18;
+	const BOTTOM = 142;
 	const draw = (ms: number, dt: number) => {
-		// ゆれ
-		const shake = ms < shakeUntil ? Math.round((Math.random() - 0.5) * 6) : 0;
+		// 地：紺の 帯（上下が 暗い）
+		for (let y = 0; y < H; y += 4) {
+			const k = 1 - Math.abs(y - H / 2) / (H / 2);
+			const c = Math.round(10 + 10 * k);
+			g.fillStyle = `rgb(${c},${c + 2},${Math.round(c * 2 + 6)})`;
+			g.fillRect(0, y * S, W * S, 4 * S);
+		}
+		// 光の 粒
+		for (const m of motes) {
+			m.y -= m.v * dt;
+			if (m.y < 0) {
+				m.y = H;
+				m.x = Math.random() * W;
+			}
+			const tw = Math.sin(ms / 400 + m.p);
+			if (tw > -0.2) rect(m.x, m.y, 1, 1, tw > 0.6 ? GOLD : GOLD_DIM);
+		}
+		// 罫：まんなかで のびる → 上下へ わかれる
+		const grow = ease(ms / 700);
+		const split = ease((ms - 700) / 700);
+		const half = (W / 2 - 10) * grow;
+		const yTop = H / 2 + (TOP - H / 2) * split;
+		const yBot = H / 2 + (BOTTOM - H / 2) * split;
+		for (const y of split > 0 ? [yTop, yBot] : [H / 2]) {
+			rect(W / 2 - half, y, half * 2, 1, GOLD);
+			if (grow >= 1) {
+				diamond(W / 2 - half - 3, y, GOLD);
+				diamond(W / 2 + half + 3, y, GOLD);
+			}
+		}
+		// 四すみの 金具
+		const corner = clamp01((ms - 1200) / 400);
+		if (corner > 0) {
+			const c = corner >= 1 ? GOLD : GOLD_DIM;
+			for (const [x, y, sx, sy] of [
+				[6, TOP + 4, 1, 1],
+				[W - 7, TOP + 4, -1, 1],
+				[6, BOTTOM - 4, 1, -1],
+				[W - 7, BOTTOM - 4, -1, -1],
+			] as const) {
+				rect(Math.min(x, x + sx * 8), y, 9, 1, c);
+				rect(x, Math.min(y, y + sy * 8), 1, 9, c);
+			}
+		}
+		// 立ち絵（サブ機は うしろに うすく、主役の あと）。枠の 内に 切りとる
 		g.save();
-		g.translate(shake, shake ? Math.round((Math.random() - 0.5) * 4) : 0);
-		// 夜空（下へ いくほど 明るい 帯）
-		for (let y = 0; y < H; y += 8) {
-			const k = y / H;
-			g.fillStyle = `rgb(${Math.round(10 + 30 * k)},${Math.round(8 + 14 * k)},${Math.round(30 + 40 * k)})`;
-			g.fillRect(-4, y, W + 8, 8);
-		}
-		// 星（またたく）
-		for (const s of stars) {
-			const on = Math.sin(ms / 220 + s.p) > 0.3;
-			g.fillStyle = on ? "#ffffff" : "#6a6a9a";
-			g.fillRect(s.x, s.y, 1, 1);
-		}
-		// 集中線（回る）
-		if (ms > 300) {
-			const k = Math.min(1, (ms - 300) / 600);
-			g.save();
-			g.translate(W / 2, GROUND - 30);
-			g.rotate(ms / 1800);
-			g.fillStyle = j.glow;
-			g.globalAlpha = 0.18 * k;
-			for (let i = 0; i < 16; i++) {
-				g.rotate((Math.PI * 2) / 16);
-				g.beginPath();
-				g.moveTo(0, 0);
-				g.lineTo(220, -6);
-				g.lineTo(220, 6);
-				g.fill();
-			}
-			g.restore();
-			g.globalAlpha = 1;
-		}
-		// 光の 柱（上から 降りてくる）
-		if (ms > 300) {
-			const k = ease((ms - 300) / 700);
-			const w = 22 + Math.sin(ms / 90) * 2;
-			g.globalAlpha = 0.55;
-			g.fillStyle = j.glow;
-			g.fillRect(
-				Math.round(W / 2 - w / 2),
-				0,
-				Math.round(w),
-				Math.round(GROUND * k),
-			);
-			g.globalAlpha = 0.9;
-			g.fillStyle = "#ffffff";
-			g.fillRect(W / 2 - 3, 0, 6, Math.round(GROUND * k));
-			g.globalAlpha = 1;
-		}
-		// 地面
-		g.fillStyle = "#2a1c3a";
-		g.fillRect(-4, GROUND, W + 8, H - GROUND + 4);
-		g.fillStyle = j.ink;
-		g.fillRect(-4, GROUND, W + 8, 1);
-		// 衝撃の 輪（ドットの だ円）
-		for (const r of rings) {
-			const k = (ms - r.t) / 600;
-			if (k < 0 || k > 1) continue;
-			const rx = (r.big ? 90 : 50) * ease(k);
-			g.fillStyle = k < 0.5 ? "#ffffff" : j.ink;
-			for (let a = 0; a < Math.PI * 2; a += 0.12) {
-				const x = Math.round(r.x + Math.cos(a) * rx);
-				const y = Math.round(GROUND + Math.sin(a) * rx * 0.22);
-				g.fillRect(x, y, 2, 1);
-			}
-		}
-		// 降りてくる 主人公
-		const DIRS: Dir[] = ["down", "left", "up", "right"];
-		drops.forEach((d, i) => {
-			if (ms < d.t) return;
-			const k = Math.min(1, (ms - d.t) / FALL_MS);
-			const tile = 16 * d.scale;
-			const y = -tile + (GROUND - 14 * d.scale + tile) * (k * k);
-			if (k >= 1 && !landed.has(i)) {
-				landed.add(i);
-				rings.push({ x: d.x, t: ms, big: i === 0 });
-				burst(d.x, GROUND - 4, i === 0 ? 70 : 30);
-				shakeUntil = ms + (i === 0 ? 450 : 220);
-				ctx.se(i === 0 ? "critical" : "decide");
-			}
-			// 着いたら くるくる 回って 前を 向く（足ぶみ）
-			const since = ms - d.t - FALL_MS;
-			const spin = since > 0 && since < 900;
-			const dir: Dir = spin
-				? (DIRS[Math.floor(since / 110) % 4] ?? "down")
-				: "down";
-			const frame = Math.floor(ms / 220) % 2;
-			// 足もとの 影
-			if (k >= 1) {
-				g.fillStyle = "rgba(0,0,0,0.35)";
-				g.fillRect(Math.round(d.x - 5 * d.scale), GROUND - 1, 10 * d.scale, 2);
-			}
-			drawWalk(
+		g.beginPath();
+		g.rect(0, (TOP + 1) * S, W * S, (BOTTOM - TOP - 1) * S);
+		g.clip();
+		const pBase = 1000;
+		const mainX = (multi ? 118 : 110) * S;
+		const mainY = ((H - mainLogical) / 2 + (multi ? 6 : 2)) * S;
+		if (portraits.length > 1) {
+			reveal(
 				g,
-				d.walk,
-				dir,
-				frame,
-				Math.round(d.x - tile / 2),
-				Math.round(
-					k < 1
-						? y
-						: GROUND -
-								tile -
-								(since < 160 && since > 0
-									? Math.round(6 * Math.sin((since / 160) * Math.PI))
-									: 0),
-				),
-				d.scale,
+				portraits[1] as HTMLCanvasElement,
+				76 * S,
+				44 * S,
+				(ms - pBase - 500) / 900,
+				"left",
+				0.45,
 			);
-		});
-		// 紙ふぶき
-		for (const b of bits) {
-			b.vy += 140 * dt;
-			b.vx *= 0.99;
-			b.x += b.vx * dt;
-			b.y += b.vy * dt;
-			b.life -= dt;
-			if (b.life <= 0) continue;
-			g.fillStyle = b.c;
-			g.fillRect(
-				Math.round(b.x),
-				Math.round(b.y),
-				b.size,
-				b.size + (Math.floor(ms / 80 + b.x) % 2),
+			reveal(
+				g,
+				portraits[2] as HTMLCanvasElement,
+				166 * S,
+				44 * S,
+				(ms - pBase - 800) / 900,
+				"left",
+				0.45,
 			);
 		}
-		// 名前の 帯（左右から 入る）
-		const last = drops[drops.length - 1];
-		const bannerAt = (last?.t ?? 1300) + FALL_MS + 500;
-		if (ms > bannerAt) {
-			const k = ease((ms - bannerAt) / 350);
-			const y = 14;
-			g.fillStyle = "rgba(0,0,0,0.6)";
-			g.fillRect(Math.round(-W + W * k), y, W, 34);
-			g.fillStyle = j.ink;
-			g.fillRect(Math.round(-W + W * k), y, W, 2);
-			g.fillRect(Math.round(W - W * k), y + 32, W, 2);
-			g.font = "20px 'DotGothic16', monospace";
-			g.textAlign = "center";
-			g.textBaseline = "top";
-			// ふちどり
-			const nx = Math.round(W / 2 + W * (1 - k));
-			g.fillStyle = "#000000";
-			for (const [ox, oy] of [
-				[-1, 0],
-				[1, 0],
-				[0, -1],
-				[0, 1],
-			] as const)
-				g.fillText(j.name, nx + ox, y + 3 + oy);
-			const flick = Math.floor(ms / 120) % 6 === 0;
-			g.fillStyle = flick ? "#ffffff" : j.ink;
-			g.fillText(j.name, nx, y + 3);
-			g.font = "8px 'DotGothic16', monospace";
-			g.fillStyle = "#ffffff";
-			g.fillText(j.sub, Math.round(W / 2 - W * (1 - k)), y + 24);
-			// ときどき 紙ふぶきを 足す
-			if (Math.random() < 0.25) burst(Math.random() * W, -4, 2);
-		}
+		if (portraits[0])
+			reveal(g, portraits[0], mainX, mainY, (ms - pBase) / 1100, "left");
 		g.restore();
-		// はじめの 白い 光
-		if (ms < 300) {
-			g.fillStyle = `rgba(255,255,255,${1 - ms / 300})`;
-			g.fillRect(0, 0, W, H);
+		// 左の 字（順に 浮かぶ）
+		const tx = 16 * S;
+		const tBase = 1800;
+		reveal(g, tag, tx, 34 * S, (ms - tBase) / 400);
+		reveal(g, name, tx, 46 * S, (ms - tBase - 250) / 600);
+		reveal(g, reading, tx, 72 * S, (ms - tBase - 650) / 400);
+		const rule = ease((ms - tBase - 850) / 500);
+		if (rule > 0) rect(16, 84, 92 * rule, 1, GOLD_DIM);
+		reveal(g, line1, tx, 90 * S, (ms - tBase - 1100) / 400);
+		reveal(g, line2, tx, 102 * S, (ms - tBase - 1350) / 400);
+		// 歩行グラ（足ぶみ。ドットの まま）
+		const walkK = clamp01((ms - tBase - 1600) / 400);
+		if (walkK > 0) {
+			g.globalAlpha = walkK >= 1 ? 1 : Math.floor(walkK * 4) / 4;
+			drawWalk(g, j.walk, "down", Math.floor(ms / 400) % 2, tx, 112 * S, S);
+			g.globalAlpha = 1;
 		}
 	};
 
 	try {
-		ctx.se("spell");
+		ctx.se("chapter");
 		t0 = performance.now();
 		let last = t0;
-		let jingle = false;
+		let fanfare = false;
 		for (;;) {
 			const now = await tick();
 			const ms = now - t0;
 			const dt = Math.min(0.05, (now - last) / 1000);
 			last = now;
-			const lastDrop = drops[drops.length - 1];
-			if (!jingle && ms > (lastDrop?.t ?? 1300) + FALL_MS + 500) {
-				jingle = true;
-				ctx.se("victory");
+			// 名前が 浮かぶ ところで ファンファーレ
+			if (!fanfare && ms > 2100) {
+				fanfare = true;
+				ctx.se("levelup");
 			}
 			draw(ms, dt);
 			if (skip || ms >= END_MS) break;
 		}
-		// 暗く して おわる
 		const f0 = performance.now();
 		for (;;) {
 			const now = await tick();
 			const k = (now - f0) / FADE_MS;
 			draw(now - t0, 0.016);
 			g.fillStyle = `rgba(0,0,0,${Math.min(1, k)})`;
-			g.fillRect(0, 0, W, H);
+			g.fillRect(0, 0, W * S, H * S);
 			if (k >= 1) break;
 		}
 		await sleep(100);
