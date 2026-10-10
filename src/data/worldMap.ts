@@ -165,7 +165,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[160, 78],
 		],
 	},
-	// 束音ロゼの 依頼：ボカロ作り避難所（引き受けると 開く。きのこ板の 先の テント）
+	// 束音ロゼの 依頼：ボカロ作り避難所（引き受けると 開く。北東の 島、きのこ板の 右下の テント）
 	vocalo: {
 		server: "uni",
 		place: "避難所の　テント",

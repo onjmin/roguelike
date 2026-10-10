@@ -357,6 +357,9 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 		ok(questStage("roze") === "accepted", "accepted");
 		ok(loadProgress().unlocked.includes("vocalo"), "vocalo opens");
 		ok(DUNGEONS.vocalo.goal === "oto_ini", "the goal is roze's setting");
+		// 名前を 伏せる「南西の 小島・小舟」（裏の 小島の 見せ方）には しない
+		ok(!DUNGEONS.vocalo.quiet && DUNGEONS.vocalo.hidden, "not a quiet islet");
+		ok(!loadProgress().news.some((n) => n.dungeon === "vocalo"), "no news");
 		// ほかの 板・倒れたら まだ
 		noteHeroQuests(ended("shallow", "clear", 4));
 		noteHeroQuests(ended("vocalo", "dead", 6));
