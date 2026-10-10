@@ -146,7 +146,7 @@ const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 ];
 
 /**
- * パン板の 道具の出かた（重みの合計 72。パンが 多め）。重みは 割合で、4階で 出るのは 30ほど
+ * パン板の 道具の出かた（重みの合計 66）。重みは 割合で、4階で 出るのは 30ほど
  * （10階だった ころに 決めた 割合の まま）。指輪は無し・杖は4種（ここだけ未識別）。
  */
 export const SHALLOW_ITEMS: readonly ItemWeight[] = [
@@ -162,9 +162,10 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	// 矢 5（ちょっと は 矢が多め：7.8%）
 	{ kind: "a_wood", weight: 3 }, // 寝落ち民・ゾンJ民を 離れて削る
 	{ kind: "a_iron", weight: 2 }, // 本編の 3束に 対して 2束の 割合（ちょっと は 鉄・銀の矢のほうが 木より多かった）
-	// 食べもの 6（ちょっと：片親パン・ぷゆゆパン・チギュリパン が 1:1:1、全体の 9.4%）
-	{ kind: "f_bread", weight: 7 }, // +50%。パン板なので パンが よく出る（パン松の 縄張り）
-	{ kind: "f_large", weight: 3 }, // +100%。始めの1つとは別
+	// 食べもの 5（ちょっと：片親パン・ぷゆゆパン・チギュリパン が 1:1:1、全体の 9.4%）。
+	// 2026-10-10 に 11 → 5：4階（1250ターンほど）は 始めの 大きな パンと ぷゆゆの お弁当で 足り、パンが たまる だけだった
+	{ kind: "f_bread", weight: 3 }, // +50%
+	{ kind: "f_large", weight: 1 }, // +100%。始めの1つとは別
 	{ kind: "f_moldy", weight: 1 }, // +100% だが ちから−1・HP−5。「食べものにも 外れがある」を1回だけ
 	// 杖 5（ちょっと の4種：いかずち・バシルーラ・変化・メダパニ。ここだけ未識別。振って見分ける）
 	{ kind: "w_bolt", weight: 2 }, // いかずち。20前後のダメージで いちばん見分けやすい。2本目で「わかった杖を また拾う」を味わう
@@ -288,7 +289,8 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "a_wood", weight: 6 }, // 本編4 × 1.5
 	{ kind: "a_iron", weight: 3 }, // 本編2 × 1.5
 	// 食べもの 17（ぷゆゆパンは 入れない。もっと の 片親パン:チギュリパン ≒ 2:1）
-	{ kind: "f_bread", weight: 14 }, // +50%。出る数が ばらつくので、山札のころの 12 より多め
+	// 2026-10-10 に 片親パン 14 → 10（パンが たまる だけだった。noCarry で お弁当も ないので ほかの 板より 控えめに）
+	{ kind: "f_bread", weight: 10 }, // +50%
 	{ kind: "f_moldy", weight: 5 }, // +100%（ちから−1・HP−5）
 ];
 
@@ -300,9 +302,9 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 	...SHALLOW_ITEMS.filter(
 		(e) => ITEMS[e.kind]?.cat !== "herb" && ITEMS[e.kind]?.cat !== "food",
 	),
-	// 食べもの（パン板より 多め）
-	{ kind: "f_bread", weight: 9 },
-	{ kind: "f_large", weight: 4 },
+	// 食べもの（パン板より 少し 多め。6階。2026-10-10 に 14 → 7：パンが たまる だけだった）
+	{ kind: "f_bread", weight: 4 },
+	{ kind: "f_large", weight: 2 },
 	{ kind: "f_moldy", weight: 1 },
 	{ kind: "h_heal", weight: 9 },
 	{ kind: "h_greater", weight: 3 },

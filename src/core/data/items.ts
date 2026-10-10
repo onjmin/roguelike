@@ -791,9 +791,9 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	// 矢 9
 	{ kind: "a_wood", weight: 6 },
 	{ kind: "a_iron", weight: 3 },
-	// 食べもの 15
-	{ kind: "f_bread", weight: 11 }, // 出る数が ばらつくので、山札のころの 9 より多め
-	{ kind: "f_large", weight: 4 }, // 出る数が ばらつくので、山札のころの 3 より多め
+	// 食べもの 10（2026-10-10 に 15 → 10：パンが たまる だけだった）
+	{ kind: "f_bread", weight: 7 },
+	{ kind: "f_large", weight: 3 },
 	{ kind: "f_moldy", weight: 3 },
 ];
 
