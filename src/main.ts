@@ -12,7 +12,7 @@ import { devEvent } from "./data/objectives";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
-import { chosenHero, noteHeroQuests } from "./engine/heroes";
+import { chosenHero, noteHeroQuests, rollHeroWorries } from "./engine/heroes";
 import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
@@ -287,8 +287,11 @@ const loop = async () => {
 						}
 					: null;
 		// 依頼（束音ロゼ・解音ゼロの 解放。engine/heroes.ts）の 条件を 満たして 帰ったか
-		if (!replay && run.s.end && !run.s.seed.startsWith(DEBUG_SEED))
+		if (!replay && run.s.end && !run.s.seed.startsWith(DEBUG_SEED)) {
 			noteHeroQuests(run.s);
+			// 帰る たびに、仲間が 悩みを かかえるか（村に 着いたら ひとこと）
+			rollHeroWorries();
+		}
 		// 画面を消してから村へ
 		const c = screen.begin();
 		c.fillStyle = "#000";

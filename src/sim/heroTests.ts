@@ -18,7 +18,10 @@ import {
 	forgetHeroMemo,
 	noteHeroQuests,
 	questStage,
+	rollHeroWorries,
+	takeWorryNews,
 	unlockedHeroes,
+	WORRY_SURE,
 	ZERO_QUEST_DEPTH,
 } from "../engine/heroes";
 import { forgetProgressMemo, loadProgress, saveProgress } from "../engine/save";
@@ -310,18 +313,42 @@ const ended = (
 	return r.s;
 };
 
-test("依頼: パン板の あと、悩み → 引き受ける → 避難所が 開く → 持ち帰る → 申し出 → ロゼを 選べる", async () => {
+test("悩み: パン板の あと もう 少し 先から、帰る たびに 1/3（4回目には 必ず）、1人ずつ、村で ひとこと", async () => {
 	await withStore(async () => {
-		// パン板の 前は 依頼を 出さない（ふだんの ひとこと）
-		let r = recorder();
-		ok(!(await heroQuestScript(r.s, "roze")), "too early");
+		const never = () => 0.99;
+		const always = () => 0;
+		// パン板だけでは まだ（ロゼは 2つ、ゼロは 3つ）
 		const p = loadProgress();
 		p.cleared = ["shallow"];
 		saveProgress(p);
-		// 断る
-		r = recorder([1]);
+		ok(rollHeroWorries(always) === null, "too early");
+		ok(!(await heroQuestScript(recorder().s, "roze")), "normal talk");
+		p.cleared = ["shallow", "kinoko"];
+		saveProgress(p);
+		// はずれ 3回 → 4回目は 必ず
+		for (let i = 0; i < WORRY_SURE - 1; i++)
+			ok(rollHeroWorries(never) === null, `miss ${i}`);
+		ok(rollHeroWorries(never) === "roze", "sure");
+		ok(questStage("roze") === "asked", "asked");
+		ok(takeWorryNews() === "roze" && takeWorryNews() === null, "news once");
+		// 1人ずつ：ロゼが 片づくまで ゼロは 悩まない（3つ 持ち帰っていても）
+		p.cleared = ["shallow", "kinoko", "isle1"];
+		saveProgress({ ...loadProgress(), cleared: p.cleared });
+		ok(rollHeroWorries(always) === null, "one at a time");
+		ok(questStage("zero") === "none", "zero waits");
+	});
+});
+
+test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰る → 申し出 → ロゼを 選べる", async () => {
+	await withStore(async () => {
+		const p = loadProgress();
+		p.cleared = ["shallow", "kinoko"];
+		saveProgress(p);
+		rollHeroWorries(() => 0);
+		// そっとしておく（悩みは そのまま）
+		let r = recorder([1]);
 		ok(await heroQuestScript(r.s, "roze"), "worry");
-		ok(questStage("roze") === "none", "declined");
+		ok(questStage("roze") === "asked", "declined");
 		ok(!loadProgress().unlocked.includes("vocalo"), "not yet open");
 		// 引き受ける → ボカロ作り避難所が 開く
 		r = recorder([0]);
@@ -346,13 +373,19 @@ test("依頼: パン板の あと、悩み → 引き受ける → 避難所が 
 		ok(chosenHero() === "roze", "remembered choice");
 		// そのあとは ふだんの ひとこと
 		ok(!(await heroQuestScript(recorder().s, "roze")), "normal talk");
+		// ロゼが 片づいたので、3つ 持ち帰って いれば ゼロが 悩む
+		saveProgress({
+			...loadProgress(),
+			cleared: ["shallow", "kinoko", "isle1"],
+		});
+		ok(rollHeroWorries(() => 0) === "zero", "zero next");
 	});
 });
 
 test(`依頼: ゼロは どの 板でも ${ZERO_QUEST_DEPTH}階まで 行って 生きて 帰ると 申し出`, async () => {
 	await withStore(async () => {
 		const p = loadProgress();
-		p.cleared = ["shallow"];
+		p.cleared = ["shallow", "kinoko", "isle1"];
 		saveProgress(p);
 		acceptQuest("zero");
 		noteHeroQuests(ended("main", "dead", 12));
@@ -372,6 +405,7 @@ test("文: 依頼の 窓は 22×2、ボタンは 9字", () => {
 		for (const k of ["worry", "accept", "decline", "waiting", "offer"] as const)
 			for (const l of q[k]) fits(`${h}.${k}`, l.text);
 		fits(`${h}.unlocked`, q.unlocked);
+		fits(`${h}.hint`, q.hint);
 		for (const m of q.menu) ok(width(m) <= 9, `${h} menu ${m}`);
 	}
 });

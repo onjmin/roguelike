@@ -74,8 +74,8 @@ import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import {
 	acceptQuest,
 	type QuestHero,
-	questOpen,
 	questStage,
+	takeWorryNews,
 	unlockHero,
 } from "../engine/heroes";
 import {
@@ -653,7 +653,8 @@ export const heroQuestScript = async (
 		await playQuestLines(s, q.waiting);
 		return true;
 	}
-	if (!questOpen()) return false;
+	// 悩みを かかえて いなければ ふだんの ひとこと（帰る たびに 引く。engine/heroes.ts の rollHeroWorries）
+	if (stage !== "asked") return false;
 	await playQuestLines(s, q.worry);
 	if ((await s.choose([...q.menu], { cancel: 1 })) !== 0) {
 		await playQuestLines(s, q.decline);
@@ -851,6 +852,9 @@ const arrivalScript =
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
+		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
+		const worry = takeWorryNews();
+		if (worry) await s.narrate(HERO_QUESTS[worry].hint);
 		// 転（時計が もどる）と 結の あとの「草」
 		if (wrapDue) await wrapScript(s);
 		if (kusaDue) await kusaScript(s);
