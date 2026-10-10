@@ -915,6 +915,8 @@ export type SavedReplay = {
 	objective?: Objective;
 	/** 裏シナリオの 結を 見た あとの 冒険（ROM専が 戦わない。同じに 始めるため）。 */
 	rom?: boolean;
+	/** 冒険に 出た 主人公（キリコなら 書かない。core/data/heroes.ts）。 */
+	hero?: "roze" | "zero";
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -993,11 +995,14 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		return null;
 	if (r.noLunch !== undefined && typeof r.noLunch !== "boolean") return null;
 	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
+	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
+		return null;
 	return renamed({
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.noLunch ? { noLunch: true } : {}),
 		...(r.rom ? { rom: true } : {}),
+		...(r.hero ? { hero: r.hero } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
 		...(r.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: r.at,
@@ -1039,6 +1044,7 @@ const addReplay = (s: RunState): void => {
 		carry: s.carriedIn,
 		...(s.noLunch ? { noLunch: true } : {}),
 		...(s.rom ? { rom: true } : {}),
+		...(s.hero ? { hero: s.hero } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

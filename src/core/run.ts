@@ -32,12 +32,17 @@ import {
 	RES_WARN,
 	rollDamage,
 	SPAWN_EVERY,
-	START_HP,
-	START_STR,
 	VOICE_FREEZE,
 	WAKE_CHANCE,
 } from "./balance";
 import { type BossSpec, type Dungeon, dungeonById } from "./data/dungeons";
+import {
+	HERO_NAME,
+	type HeroId,
+	heroStart,
+	WALL_HUNGER,
+	ZERO_BODIES,
+} from "./data/heroes";
 import { ITEM_LIST } from "./data/items";
 import { MONSTERS } from "./data/monsters";
 import { FAKE_NAMES } from "./data/names";
@@ -159,6 +164,8 @@ export class Run {
 		lunch = true,
 		/** 裏シナリオの 結を 見た あと（ROM専は 戦わない。RunState.rom）。 */
 		rom = false,
+		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
+		hero: HeroId = "kiriko",
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
@@ -191,14 +198,15 @@ export class Run {
 		for (const d of ITEM_LIST)
 			if (UNIDENTIFIED_CATS.includes(d.cat) && !dg.unidentified.includes(d.cat))
 				known[d.id] = true;
+		const start = heroStart(hero);
 		const player: Player = {
 			x: 0,
 			y: 0,
 			dir: 4,
-			hp: START_HP,
-			maxHp: START_HP,
-			str: START_STR,
-			maxStr: START_STR,
+			hp: start.hp,
+			maxHp: start.hp,
+			str: start.str,
+			maxStr: start.str,
 			lv: 1,
 			exp: 0,
 			hunger: HUNGER_MAX,
@@ -241,6 +249,8 @@ export class Run {
 			returning: false,
 			end: null,
 			stats: { maxDepth: 0, itemsUsed: 0 },
+			// キリコは 書かない（前の 版と 同じ 形の まま）
+			...(hero !== "kiriko" ? { hero } : {}),
 		};
 		const run = new Run(s);
 		run.rng = rng;
@@ -495,6 +505,51 @@ export class Run {
 
 	isPlayerAt(x: number, y: number): boolean {
 		return this.p.x === x && this.p.y === y;
+	}
+
+	// ───────────────── 主人公（core/data/heroes.ts） ─────────────────
+
+	get hero(): HeroId {
+		return this.s.hero ?? "kiriko";
+	}
+
+	/** ログに 出す 主人公の 名前（ゼロは いまの 機体の 通称）。 */
+	get heroName(): string {
+		if (this.hero === "zero")
+			return ZERO_BODIES[this.s.body ?? 0]?.name ?? HERO_NAME.zero;
+		return HERO_NAME[this.hero];
+	}
+
+	/** 壁抜け（束音ロゼ）。 */
+	get wallWalker(): boolean {
+		return this.hero === "roze";
+	}
+
+	/** いま 壁の 中に いる（束音ロゼだけ）。 */
+	playerInWall(): boolean {
+		return (
+			this.wallWalker && tileAt(this.f.layout, this.p.x, this.p.y) === T_WALL
+		);
+	}
+
+	/** 主人公が (x, y) に 入れる 地形か（ロゼは いちばん 外を のぞく 壁も。置物は だめ）。 */
+	playerCanEnter(x: number, y: number): boolean {
+		const l = this.f.layout;
+		if (isFloor(l, x, y)) return true;
+		if (!this.wallWalker) return false;
+		if (x < 1 || y < 1 || x > l.w - 2 || y > l.h - 2) return false;
+		return !(this.f.statues ?? []).includes(y * l.w + x);
+	}
+
+	/** 主人公の 角ぬけ（ロゼは いつでも）。 */
+	playerCornerOk(from: Pos, d: Dir8): boolean {
+		return this.wallWalker || this.cornerOk(from, d);
+	}
+
+	/** 主人公が from から d へ 1歩 動けるか（地形だけ）。 */
+	playerCanStep(from: Pos, d: Dir8): boolean {
+		const to = step(from, d);
+		return this.playerCanEnter(to.x, to.y) && this.playerCornerOk(from, d);
 	}
 
 	/** 斜めの角ぬけ（壁の角をかすめる移動・攻撃）ができるか。 */
@@ -791,11 +846,60 @@ export class Run {
 			hp: p.hp,
 		});
 		if (p.hp <= 0) {
-			this.msg("キリコは　たおれた……", "warn");
+			this.msg(`${this.heroName}は　たおれた……`, "warn");
+			// 解音ゼロ：次の 機体が 残って いれば バトンタッチ（冒険は つづく）
+			if (this.batonTouch()) return false;
 			this.finish("dead", cause);
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	 * 解音ゼロの バトンタッチ（たおれた とき。次の 機体が なければ false）。装備・持ち物・レベル・経験値は
+	 * そのまま。最大HP・最大ちからは 機体ごとの はじめの 値に、それまでに のびた 分を 足す（減った ちからも もどる）。
+	 * HP・おなかは 満タン、状態異常は もどる。乱数は 引かない。
+	 */
+	private batonTouch(): boolean {
+		if (this.hero !== "zero") return false;
+		const s = this.s;
+		const now = s.body ?? 0;
+		const old = ZERO_BODIES[now];
+		const next = ZERO_BODIES[now + 1];
+		if (!old || !next) return false;
+		const p = this.p;
+		p.maxHp = Math.max(1, next.hp + (p.maxHp - old.hp));
+		p.hp = p.maxHp;
+		p.maxStr = Math.max(1, next.str + (p.maxStr - old.str));
+		p.str = p.maxStr;
+		p.hunger = HUNGER_MAX;
+		p.regenAcc = 0;
+		const wasBlind = p.status.blind > 0;
+		p.status = {
+			sleep: 0,
+			confuse: 0,
+			blind: 0,
+			daze: 0,
+			fast: 0,
+			trapped: 0,
+			heldBy: null,
+		};
+		s.body = now + 1;
+		this.se("levelup");
+		this.emit({ t: "baton", body: now + 1, pos: { x: p.x, y: p.y } });
+		this.msg(`${next.name}（${next.model}）に　バトンタッチ！`, "good");
+		this.emit({
+			t: "heal",
+			id: PLAYER_ID,
+			pos: { x: p.x, y: p.y },
+			amount: p.maxHp,
+			hp: p.hp,
+		});
+		if (wasBlind) {
+			this.emit({ t: "look" });
+			this.updateVision();
+		}
+		return true;
 	}
 
 	healPlayer(amount: number): number {
@@ -890,7 +994,7 @@ export class Run {
 			// はずれは 振った音だけ（トルネコ1と同じ）
 			this.se(this.weaponSound().swing);
 			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
-			this.msg("キリコの　攻撃は　はずれた");
+			this.msg(`${this.heroName}の　攻撃は　はずれた`);
 			return;
 		}
 		const atk = attackPower(this.p.lv, this.meleePower());
@@ -1137,10 +1241,11 @@ export class Run {
 		if (!this.addItem(it)) this.p.items.push(it);
 		const goal = defOf(it.kind).name;
 		this.msg(`${monsterName(this, m)}は　${goal}を　落とした`);
-		this.msg(`キリコは　${goal}を　手に入れた！`, "good");
+		this.msg(`${this.heroName}は　${goal}を　手に入れた！`, "good");
 		// 帰り方（画面の 演出は この 出来事から。文は 板ごとに 決まっている）
 		this.emit({ t: "rescue", kind: spec.rescue });
-		for (const line of spec.lines) this.msg(line);
+		for (const line of spec.lines)
+			this.msg(line.replaceAll("キリコ", this.heroName));
 		this.finish("clear", spec.cause);
 	}
 
@@ -1242,7 +1347,7 @@ export class Run {
 		let guard = 0;
 		while (!this.s.end && this.p.status.sleep > 0 && guard++ < 50) {
 			this.emit({ t: "doze" });
-			this.msg("キリコは　眠っている");
+			this.msg(`${this.heroName}は　眠っている`);
 			this.endTurn(this.nearMap());
 		}
 		this.s.rng = this.rng.state();
@@ -1261,8 +1366,8 @@ export class Run {
 		this.updateVision();
 		this.checkWake(before);
 
-		// 満腹度（帰り道は減らない）
-		if (!s.returning) this.tickHunger();
+		// 満腹度（帰り道は減らない。壁の 中の ロゼは 帰り道でも 5% 減る）
+		if (!s.returning || this.playerInWall()) this.tickHunger();
 		if (s.end) return;
 
 		// ◆巡回（トルネコの ルーラの指輪）：ときどき 階の どこかへ 飛ぶ（階に 着いて すぐは 飛ばない）
@@ -1395,7 +1500,7 @@ export class Run {
 		const st = this.p.status;
 		if (st.sleep > 0 && --st.sleep === 0) {
 			this.emit({ t: "sleep", id: PLAYER_ID, on: false });
-			this.msg("キリコは　目を　さました");
+			this.msg(`${this.heroName}は　目を　さました`);
 		}
 		if (st.confuse > 0 && --st.confuse === 0) this.msg("混乱が　とけた");
 		if (st.blind > 0 && --st.blind === 0) {
@@ -1411,11 +1516,14 @@ export class Run {
 
 	private tickHunger(): void {
 		const p = this.p;
-		if (this.hasRing("r_sustain")) return;
+		// 壁の 中の ロゼは 指輪・盾に かかわらず 5%（壁抜けの 代わり）
+		const wall = this.playerInWall();
+		if (!wall && this.hasRing("r_sustain")) return;
 		let dec = 2;
 		const leather = this.shield()?.kind === "leather";
 		const glutton = this.hasRing("r_hunger");
-		if (leather && !glutton) dec = 1;
+		if (wall) dec = WALL_HUNGER;
+		else if (leather && !glutton) dec = 1;
 		else if (glutton && !leather) dec = 4;
 		const before = p.hunger;
 		p.hunger = Math.max(0, p.hunger - dec);
@@ -1551,7 +1659,7 @@ export class Run {
 				target &&
 				!target.disguise &&
 				this.monsterVisible(target) &&
-				this.cornerOk(p, d0)
+				this.playerCornerOk(p, d0)
 			) {
 				p.dir = d0;
 				this.emit({ t: "turn", id: PLAYER_ID, dir: d0 });
@@ -1581,7 +1689,7 @@ export class Run {
 		p.dir = d;
 		const to = step(p, d);
 		const m = this.monsterAt(to.x, to.y);
-		if (m && this.cornerOk(p, d)) {
+		if (m && this.playerCornerOk(p, d)) {
 			this.emit({ t: "turn", id: PLAYER_ID, dir: d });
 			if (m.disguise) {
 				m.disguise = null;
@@ -1598,7 +1706,7 @@ export class Run {
 			this.msg("なにかに　ぶつかった");
 			return true;
 		}
-		if (!this.canStepTerrain(p, d)) {
+		if (!this.playerCanStep(p, d)) {
 			this.emit({ t: "turn", id: PLAYER_ID, dir: d, bump: true });
 			return st.confuse > 0; // 混乱で壁に向かったときは時間が進む
 		}
@@ -1726,7 +1834,11 @@ export class Run {
 			this.se("curse");
 			return false;
 		}
-		if (this.itemAt(this.p.x, this.p.y) || this.onStairs()) {
+		if (
+			this.itemAt(this.p.x, this.p.y) ||
+			this.onStairs() ||
+			this.playerInWall()
+		) {
 			this.msg("ここには　置けない");
 			return false;
 		}
@@ -1851,7 +1963,7 @@ export class Run {
 		p.dir = d;
 		const to = step(p, d);
 		const m = this.monsterAt(to.x, to.y);
-		if (m && this.cornerOk(p, d)) {
+		if (m && this.playerCornerOk(p, d)) {
 			this.playerAttack(m);
 			return true;
 		}

@@ -632,6 +632,14 @@ add({
 	flavor: "「新しい　パスワードは、板主のより　1つ　多い」",
 });
 add({
+	id: "oto_ini",
+	cat: "goal",
+	icon: art("memo"),
+	name: "ロゼの　原音設定",
+	desc: "ボカロ作り避難所の　いちばん　奥に　残されていた、ロゼの　声の　設定。持ち帰って　わたそう",
+	flavor: "「常識は（アル！）　モラルは（ナイ！）」",
+});
+add({
 	id: "memo2",
 	cat: "goal",
 	icon: art("memo"),

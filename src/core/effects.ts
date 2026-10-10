@@ -197,13 +197,13 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_daze":
 			p.status.daze = 50;
 			r.se("debuff");
-			r.msg("キリコは　まどわされた！　あたり一面　お花畑……", "warn");
+			r.msg(`${r.heroName}は　まどわされた！　あたり一面　お花畑……`, "warn");
 			break;
 		case "h_sleep":
 			if (r.hasRing("r_awake")) r.msg("しかし　眠くならなかった");
 			else {
 				r.sleepPlayer(5);
-				r.msg("キリコは　眠ってしまった", "warn");
+				r.msg(`${r.heroName}は　眠ってしまった`, "warn");
 			}
 			break;
 		case "h_antidote":
@@ -217,7 +217,7 @@ const drink = (r: Run, it: Item): boolean => {
 			// 炎が とどくのは 目の前の 1マスだけ（そこの 道具も 燃える）
 			const { hit, last } = firstInLine(r, p, p.dir, 1);
 			r.emit({ t: "bolt", from: { x: p.x, y: p.y }, to: last, kind: "fire" });
-			r.msg("キリコは　炎を　吐いた！");
+			r.msg(`${r.heroName}は　炎を　吐いた！`);
 			const under =
 				last.x !== p.x || last.y !== p.y ? r.itemAt(last.x, last.y) : undefined;
 			if (under && !isKeyItem(under.item.kind)) {
@@ -383,15 +383,15 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			// 持ち帰る品を持っていると 効かない（帰り道は 歩いて のぼる。トルネコ1のリレミトと同じ）
 			if (r.s.returning && r.dungeon.escapeWithGoal) {
 				// 過去ログの底（99階）だけは 品ごと 帰れる
-				r.msg("キリコは　品を　かかえて　地上へ　もどった", "good");
+				r.msg(`${r.heroName}は　品を　かかえて　地上へ　もどった`, "good");
 				r.finish("clear", `${defOf(r.dungeon.goal).name}を　持ち帰った`);
 				break;
 			}
 			if (r.s.returning) {
-				r.msg("しかし、持ち帰る品が　キリコを　ひきとめた");
+				r.msg(`しかし、持ち帰る品が　${r.heroName}を　ひきとめた`);
 				break;
 			}
-			r.msg("キリコは　地上へ　もどった", "good");
+			r.msg(`${r.heroName}は　地上へ　もどった`, "good");
 			r.finish("escape", "帰還スレで　地上へ　もどった");
 			break;
 		case "s_appraise": {

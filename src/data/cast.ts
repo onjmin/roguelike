@@ -103,6 +103,22 @@ export const VOICE_MODELS: readonly string[] = [
 export const KIRIKO_WALK = "sa:vHsmy5";
 
 /**
+ * 冒険に 出ている 主人公の 歩行グラ（core/data/heroes.ts。村では いつも キリコ）。
+ * 解音ゼロは いまの 機体：メインさん（data/cast.ts の zero）→ プロト → レン（data/mobs.ts と 同じ 絵）。
+ */
+export const ZERO_BODY_WALKS: readonly string[] = [
+	"pub:sprites/zero_main.png",
+	"sa:KxS5YZ",
+	"pub:sprites/zero_ren.png",
+];
+export const heroWalk = (s: { hero?: string; body?: number }): string =>
+	s.hero === "roze"
+		? WALK.roze
+		: s.hero === "zero"
+			? (ZERO_BODY_WALKS[s.body ?? 0] ?? WALK.zero)
+			: KIRIKO_WALK;
+
+/**
  * ぷゆゆ（ぴえんの 顔。rpg の SPR.puyu と 同じ）。村では 広場の 下を うろうろ している（data/mobs.ts）。
  * 下の 敵の ぷゆゆ（core/data/monsters.ts。core は data を 読まないので 同じ id を じかに 書く）も 同じ絵。
  */

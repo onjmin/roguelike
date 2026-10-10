@@ -25,6 +25,7 @@ import { CARRY_MAX } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
 import { LIBRARY_FROM } from "../data/glossary";
+import { HERO_QUESTS, type QuestLine } from "../data/heroQuests";
 import { BOARD_MENU, MOB_IDS, MOBS, type MobId } from "../data/mobs";
 import {
 	type ObjectiveInfo,
@@ -70,6 +71,13 @@ import {
 	trolleyStops,
 } from "../data/village/trolley";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
+import {
+	acceptQuest,
+	type QuestHero,
+	questOpen,
+	questStage,
+	unlockHero,
+} from "../engine/heroes";
 import {
 	addFlag,
 	addRecord,
@@ -607,8 +615,54 @@ const speak = async (
  */
 const friendScript =
 	(who: Speaker): Script =>
-	(s) =>
-		speak(s, who);
+	async (s) => {
+		if ((who === "roze" || who === "zero") && (await heroQuestScript(s, who)))
+			return;
+		await speak(s, who);
+	};
+
+const playQuestLines = async (
+	s: Story,
+	lines: readonly QuestLine[],
+): Promise<void> => {
+	for (const l of lines)
+		if (l.who === null) await s.narrate(l.text);
+		else if (l.who === "kiriko") await s.kiriko(l.text, "think");
+		else await s.say(l.who, l.text);
+};
+
+/**
+ * 束音ロゼ・解音ゼロの 依頼（data/heroQuests.ts・engine/heroes.ts）。話しかけた ときに 進める。
+ * 出す ものが あれば true（ふだんの ひとことは 出さない）。解放した あとと、まだ 依頼の ころで ない ときは false。
+ */
+export const heroQuestScript = async (
+	s: Story,
+	who: QuestHero,
+): Promise<boolean> => {
+	const q = HERO_QUESTS[who];
+	const stage = questStage(who);
+	if (stage === "unlocked") return false;
+	if (stage === "done") {
+		await playQuestLines(s, q.offer);
+		unlockHero(who);
+		s.se("levelup");
+		await s.narrate(q.unlocked);
+		return true;
+	}
+	if (stage === "accepted") {
+		await playQuestLines(s, q.waiting);
+		return true;
+	}
+	if (!questOpen()) return false;
+	await playQuestLines(s, q.worry);
+	if ((await s.choose([...q.menu], { cancel: 1 })) !== 0) {
+		await playQuestLines(s, q.decline);
+		return true;
+	}
+	acceptQuest(who);
+	await playQuestLines(s, q.accept);
+	return true;
+};
 
 /** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。そのあと 村の 曲を えらべる（ui/villageMusic.ts）。 */
 const phonoScript =

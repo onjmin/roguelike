@@ -82,10 +82,10 @@ const fireTrap = (r: Run, t: Trap): void => {
 				return;
 			}
 			r.sleepPlayer(5);
-			r.msg("キリコは　眠ってしまった", "warn");
+			r.msg(`${r.heroName}は　眠ってしまった`, "warn");
 			return;
 		case "trip": {
-			r.msg("キリコは　転んでしまった！", "warn");
+			r.msg(`${r.heroName}は　転んでしまった！`, "warn");
 			const cands = p.items.filter(
 				(i) => !r.isEquipped(i) && !isKeyItem(i.kind),
 			);
