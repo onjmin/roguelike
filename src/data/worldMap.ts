@@ -165,6 +165,18 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[160, 78],
 		],
 	},
+	// 束音ロゼの 依頼：ボカロ作り避難所（引き受けると 開く。きのこ板の 先の テント）
+	vocalo: {
+		server: "uni",
+		place: "避難所の　テント",
+		building: "tent",
+		route: [
+			[126, 108],
+			[148, 88],
+			[160, 78],
+			[176, 84],
+		],
+	},
 	// 隠し：保守村の 下の 古井戸（開くまで 地図に 出ない）
 	hidden: {
 		server: "hayabusa",

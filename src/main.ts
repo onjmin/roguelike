@@ -4,6 +4,7 @@
 import { DUNGEON_IDS, dungeonById } from "./core/data/dungeons";
 import "./style.css";
 import { EXP_AT } from "./core/balance";
+import { type HeroId, isHeroId } from "./core/data/heroes";
 import { callHunter } from "./core/floor";
 import { Run } from "./core/run";
 import { bgm } from "./data/bgm";
@@ -11,6 +12,7 @@ import { devEvent } from "./data/objectives";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
+import { chosenHero, noteHeroQuests } from "./engine/heroes";
 import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
@@ -133,7 +135,8 @@ const newSeed = (): string =>
 
 /**
  * 開発用：URL で好きな階から始める（pnpm dev か ?debug のときだけ）。
- * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ほかの 板も。`&objective=boss` で いちばん底に ボス）
+ * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ほかの 板も。`&objective=boss` で いちばん底に ボス。
+ * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ）
  */
 const devRun = (): Run | null => {
 	const q = new URLSearchParams(location.search);
@@ -148,6 +151,9 @@ const devRun = (): Run | null => {
 		dungeonById(d ?? undefined).id,
 		[],
 		q.get("objective") === "boss" ? "boss" : "fetch",
+		true,
+		false,
+		isHeroId(q.get("hero")) ? (q.get("hero") as HeroId) : "kiriko",
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
@@ -177,6 +183,7 @@ const runFor = (
 				replay.objective ?? "fetch",
 				!replay.noLunch,
 				!!replay.rom,
+				replay.hero ?? "kiriko",
 			),
 			replay,
 		};
@@ -193,6 +200,7 @@ const runFor = (
 				choice.objective,
 				choice.lunch,
 				romNow(),
+				chosenHero(),
 			);
 			return { run, replay: undefined };
 		}
@@ -208,6 +216,7 @@ const runFor = (
 			choice.objective,
 			lunch,
 			romNow(),
+			chosenHero(),
 		);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };
@@ -277,6 +286,9 @@ const loop = async () => {
 							objective: run.objective,
 						}
 					: null;
+		// 依頼（束音ロゼ・解音ゼロの 解放。engine/heroes.ts）の 条件を 満たして 帰ったか
+		if (!replay && run.s.end && !run.s.seed.startsWith(DEBUG_SEED))
+			noteHeroQuests(run.s);
 		// 画面を消してから村へ
 		const c = screen.begin();
 		c.fillStyle = "#000";

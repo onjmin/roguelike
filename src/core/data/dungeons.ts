@@ -657,6 +657,29 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 島の 丘を 上る
 		up: true,
 	},
+	// ボカロ作り避難所：束音ロゼの 依頼（engine/heroes.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
+	// 逃げこんだ 避難所。底に ロゼの 忘れ物（原音設定）が 残って いる。依頼を 引き受けると 開く（知らせない：
+	// ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：文字化けが 多い
+	vocalo: {
+		id: "vocalo",
+		objective: "fetch",
+		hidden: true,
+		quiet: true,
+		foes: { mojibake: 2 },
+		floors: 6,
+		items: ISLE1_ITEMS,
+		perFloor: [4, 6],
+		level: ramp(5, 8),
+		unidentified: ["herb", "staff"],
+		curses: false,
+		start: ["f_large"],
+		goal: "oto_ini",
+		houses: null,
+		trapsFrom: 3,
+		unlockAfter: "shallow",
+		unlockFlag: "q_roze",
+		reliefAfter: null,
+	},
 	isle2: {
 		id: "isle2",
 		objective: "fetch",
@@ -796,6 +819,7 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"ato",
 	"hinan",
 	"y1901",
+	"vocalo",
 ];
 
 /** 裏シナリオの 承の 小島（乗っ取られた 板。開く 順）。 */

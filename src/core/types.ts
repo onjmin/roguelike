@@ -25,7 +25,9 @@ export type DungeonId =
 	| "isle3"
 	| "ato"
 	| "hinan"
-	| "y1901";
+	| "y1901"
+	// 束音ロゼの 依頼：ボカロ作り避難所（engine/heroes.ts）
+	| "vocalo";
 
 /**
  * 冒険の 目的。fetch：いちばん底の 品を 拾って 入口まで 持ち帰る。
@@ -480,6 +482,13 @@ export type RunState = {
 	 * （STORY.md §5.98）。リプレイで 同じに なるよう 冒険に 焼きつける。ふつうは 書かない。
 	 */
 	rom?: true;
+	/**
+	 * 冒険に 出た 主人公（core/data/heroes.ts）。キリコの ときは 書かない（前の 版の 中断セーブ・リプレイ・
+	 * parity の 基準が そのまま 通るように）。
+	 */
+	hero?: "roze" | "zero";
+	/** 解音ゼロの いまの 機体（ZERO_BODIES の 番。0 の ときは 書かない）。 */
+	body?: number;
 };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────
@@ -564,6 +573,8 @@ export type GameEvent =
 	| { t: "boss"; id: number }
 	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
 	| { t: "rescue"; kind: RescueKind }
+	/** 解音ゼロが たおれて 次の 機体に バトンタッチした（body は 次の 機体の 番。画面は 絵を かえる）。 */
+	| { t: "baton"; body: number; pos: Pos }
 	| { t: "end" };
 
 /** プレイヤーの id（イベントの id）。モンスターは uid（1 以上）。 */

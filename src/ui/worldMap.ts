@@ -6,8 +6,9 @@
 // 島の 形は はじめに 1回だけ 描いて しまっておく。建物は ここの drawBuilding が 矩形で 描く ドット絵。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { HERO_NAME, type HeroId } from "../core/data/heroes";
 import type { DungeonId } from "../core/types";
-import { KIRIKO_WALK } from "../data/cast";
+import { heroWalk } from "../data/cast";
 import { eventText, goalText, type ObjectiveInfo } from "../data/objectives";
 import { DUNGEON_NAMES, ISLE_NAMES, QUIET_SPOT } from "../data/story";
 import { goalWhy } from "../data/synopsis";
@@ -21,6 +22,7 @@ import {
 	VILLAGE_PT,
 } from "../data/worldMap";
 import { loadImage } from "../engine/assets";
+import { chooseHero, chosenHero, unlockedHeroes } from "../engine/heroes";
 import { loadProgress } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
 import type { Dir } from "../engine/types";
@@ -46,6 +48,17 @@ const hash = (x: number, y: number): number => {
 	let h = (x * 374761393 + y * 668265263) >>> 0;
 	h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
 	return (h ^ (h >>> 16)) / 4294967296;
+};
+
+/** 地図を 歩く 主人公の 絵（行き先を 決める ときに 選んだ 主人公。村では いつも キリコ）。 */
+const heroWalkOf = (h: HeroId): string =>
+	heroWalk(h === "kiriko" ? {} : { hero: h });
+
+/** 主人公の ひとこと（行き先の 一覧で 切りかえる ときの 札）。 */
+const HERO_DESC: Record<HeroId, string> = {
+	kiriko: "蓄音キリコ。いつもの　冒険。",
+	roze: "束音ロゼ。壁の　中を　歩ける。壁の　中では　1歩ごとに　おなかが　5%　減る。壁の　中に　いれば、爆発　いがいは　当たらない。",
+	zero: "解音ゼロ。残機　3。たおれると　プロト・レンに　バトンタッチ（持ち物と　装備は　そのまま）。HP・ちからは　キリコより　すこし　低い。",
 };
 
 // ───────────────── 島（はじめに 1回だけ） ─────────────────
@@ -443,7 +456,7 @@ export class MapView {
 			this.panel,
 		]);
 		ctx.ui.appendChild(this.box);
-		void loadImage(KIRIKO_WALK);
+		for (const h of unlockedHeroes()) void loadImage(heroWalkOf(h));
 		const loop = (t: number) => {
 			if (!this.alive) return;
 			this.draw(t);
@@ -630,7 +643,7 @@ export class MapView {
 			: { at: VILLAGE_PT, dir: "down" as Dir };
 		drawWalk(
 			g,
-			KIRIKO_WALK,
+			heroWalkOf(chosenHero()),
 			dir,
 			stepFrame(t, !!walk),
 			Math.round(at[0] - 8),
@@ -760,6 +773,10 @@ export const pickColony = async (
 		const open = o.open.includes(d);
 		return !dg.secret && !(dg.hidden && !open) && !(dg.quiet && !open);
 	});
+	// 主人公の 切りかえ（ロゼ・ゼロを 解放してから。engine/heroes.ts）：やめるの 前の 1行。選ぶと 次の 主人公に
+	const heroes = unlockedHeroes();
+	const heroRow = heroes.length > 1 ? spots.length : -1;
+	const heroLabel = () => `主人公：${HERO_NAME[chosenHero()]}`;
 	const labels = [
 		...spots.map((d) =>
 			!o.open.includes(d)
@@ -768,12 +785,20 @@ export const pickColony = async (
 					? QUIET_SPOT.label
 					: `${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`,
 		),
+		...(heroRow >= 0 ? [heroLabel()] : []),
 		"やめる",
 	];
-	const cancel = spots.length;
+	const cancel = labels.length - 1;
 	const first = o.open.includes(o.start) ? o.start : o.open[0];
 	const onMove = (i: number) => {
-		const d = spots[i];
+		const d = i < spots.length ? spots[i] : undefined;
+		if (i === heroRow) {
+			v.mode = { k: "idle" };
+			v.bubble.innerHTML = "";
+			const h = chosenHero();
+			v.panel.innerHTML = `<div class="wm-name">${heroLabel()}</div><div class="wm-desc">${HERO_DESC[h]}<br><small>A で　切りかえ</small></div>`;
+			return;
+		}
 		if (!d) {
 			// やめる：▼ と フキダシを しまう
 			v.mode = { k: "idle" };
@@ -817,34 +842,40 @@ export const pickColony = async (
 			);
 		}
 	});
-	const picking = choice.choose(
-		labels,
-		cancel,
-		(name) => ctx.se(name),
-		Math.max(0, spots.indexOf(first)),
-		{
+	let at = Math.max(0, spots.indexOf(first));
+	let i = cancel;
+	for (;;) {
+		const picking = choice.choose(labels, cancel, (name) => ctx.se(name), at, {
 			parent: v.box,
 			className: "wm-choice",
 			cols: 2,
 			onMove,
-			disabled: (i) => i < cancel && !o.open.includes(spots[i]),
+			disabled: (i) =>
+				i < spots.length && !o.open.includes(spots[i] as DungeonId),
 			ctl,
 			// 歩いて 口に 入った 押しっぱなしで すぐに カーソルが 動かないように 長めに 待つ
 			waitMs: 400,
 			// 押しっぱなしで 行き先が 走りまわらないように ゆっくり
 			repeatMs: 320,
-		},
-	);
-	const list = v.box.querySelector<HTMLElement>(".wm-choice");
-	if (list) listed.observe(list);
-	listed.observe(v.panel);
-	v.box.classList.add("wm-listing");
-	const i = await picking;
+		});
+		const list = v.box.querySelector<HTMLElement>(".wm-choice");
+		if (list) listed.observe(list);
+		listed.observe(v.panel);
+		v.box.classList.add("wm-listing");
+		i = await picking;
+		if (i !== heroRow) break;
+		// 次の 主人公へ（選んだ 主人公は 覚えて おく）
+		const next =
+			heroes[(heroes.indexOf(chosenHero()) + 1) % heroes.length] ?? "kiriko";
+		chooseHero(next);
+		labels[heroRow] = heroLabel();
+		at = heroRow;
+	}
 	listed.disconnect();
 	v.box.classList.remove("wm-listing");
 	v.canvas.removeEventListener("pointerup", onTap);
 	if (!o.view) await v.close();
-	return spots[i] ?? null;
+	return (i < spots.length ? spots[i] : undefined) ?? null;
 };
 
 // ───────────────── 向かう・もどる ─────────────────

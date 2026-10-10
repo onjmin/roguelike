@@ -43,7 +43,7 @@ import {
 	type RunState,
 	type Trap,
 } from "../core/types";
-import { KIRIKO_WALK } from "../data/cast";
+import { heroWalk, KIRIKO_WALK } from "../data/cast";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../data/music";
 import { goalText } from "../data/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../data/synopsis";
@@ -203,6 +203,7 @@ const LEAD = new Set<GameEvent["t"]>([
 	"se",
 	"heal",
 	"levelup",
+	"baton",
 	"goal",
 	"anka",
 	"boss",
@@ -599,7 +600,7 @@ export class Play {
 				d.fy = y;
 			}
 		};
-		put(PLAYER_ID, KIRIKO_WALK, run.p.x, run.p.y, run.p.dir);
+		put(PLAYER_ID, heroWalk(run.s), run.p.x, run.p.y, run.p.dir);
 		for (const m of run.f.monsters) {
 			put(m.uid, monsterSprite(m), m.x, m.y, m.dir);
 			// ボスは 大きく 描く
@@ -2721,6 +2722,15 @@ export class Play {
 			case "rescue":
 				this.rescueFx = this.rescueScene(e.kind);
 				return;
+			case "baton": {
+				// 解音ゼロの バトンタッチ：次の 機体が 光って 立つ（絵は 状態から。core/run.ts の batonTouch）
+				const pd = this.disp.get(PLAYER_ID);
+				if (pd) {
+					pd.flashUntil = performance.now() + 600;
+					this.pop({ x: pd.fx, y: pd.fy }, "バトンタッチ！", "lvup");
+				}
+				return;
+			}
 			case "anka":
 				if (this.hudHold) {
 					const { anka, ankaLine, ankaLeft } = this.liveHud();
@@ -3027,7 +3037,10 @@ export class Play {
 		this.ctx.audio.se("wipeout");
 		this.screen.canvas.classList.add("dead");
 		const scene = el("div", { class: "death" }, [
-			el("div", { class: "death-title", text: "キリコは　たおれた" }),
+			el("div", {
+				class: "death-title",
+				text: `${this.run.heroName}は　たおれた`,
+			}),
 			el("div", {
 				class: "death-cause",
 				text: `${end.depth === 0 ? "" : `${run.s.returning ? "帰り道の　" : ""}${floorLong(run.s.dungeon, end.depth).replace("　", "")}で　`}${end.cause}`,

@@ -352,6 +352,14 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		return;
 	}
 	if (m.disguise) return; // 化けているあいだは じっとしている
+	// 壁の 中の 束音ロゼには 手が 出せない（なぐる・撃つ・息・呪文・特技 ぜんぶ。範囲の 技＝爆発は 別）。
+	// 見失って さまよう（置物は 動きださない）
+	if (r.playerInWall()) {
+		if (st.dormant) return;
+		forget(m);
+		wander(r, m);
+		return;
+	}
 	if (st.dormant) {
 		// 置物：となりに来たら 目を覚まして すぐなぐる
 		if (dist(m, p) <= 1) {
@@ -562,10 +570,11 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				m.dir = adjacentDir() ?? m.dir;
 				r.se("spell");
 				r.msg(`${seenName(r, m)}は　眠りの　呪文を　となえた`);
-				if (r.hasRing("r_awake")) r.msg("しかし　キリコは　眠らなかった");
+				if (r.hasRing("r_awake"))
+					r.msg(`しかし　${r.heroName}は　眠らなかった`);
 				else {
 					r.sleepPlayer(5);
-					r.msg("キリコは　眠ってしまった", "warn");
+					r.msg(`${r.heroName}は　眠ってしまった`, "warn");
 				}
 				return;
 			}
@@ -580,7 +589,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				r.msg(`${seenName(r, m)}と　目が　合った`);
 				p.status.confuse = Math.max(p.status.confuse, 5);
 				r.se("debuff");
-				r.msg("キリコは　混乱した", "warn");
+				r.msg(`${r.heroName}は　混乱した`, "warn");
 				return;
 			}
 		}
@@ -864,7 +873,7 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			r.msg(`${nm}「${SNEERS[r.s.turn % SNEERS.length]}」`);
 			show();
 			if (r.hasRing("r_purity") || r.shield()?.kind === "scale") {
-				r.msg("しかし　キリコは　スルーした");
+				r.msg(`しかし　${r.heroName}は　スルーした`);
 				return;
 			}
 			if (p.str <= 1) {
@@ -876,7 +885,7 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			r.msg("ちからが　1　下がった", "warn");
 			return;
 		case "drainLv":
-			r.msg(`${nm}の　エラーが　キリコを　巻きこんだ！`);
+			r.msg(`${nm}の　エラーが　${r.heroName}を　巻きこんだ！`);
 			show();
 			if (r.hasRing("r_ward")) r.msg("しかし　トリップが　守ってくれた");
 			else if (p.lv <= 1) r.msg("しかし　レベルは　もう　下がらない");
@@ -894,7 +903,8 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 				p.hp = Math.min(p.hp, p.maxHp);
 				r.se("debuff");
 				r.msg("最大HPが　5　下がった", "warn");
-			} else if (r.hasRing("r_purity")) r.msg("しかし　キリコは　スルーした");
+			} else if (r.hasRing("r_purity"))
+				r.msg(`しかし　${r.heroName}は　スルーした`);
 			else {
 				p.maxStr = Math.max(1, p.maxStr - 1);
 				p.str = Math.min(p.str, p.maxStr);
@@ -973,7 +983,7 @@ const purgePlayer = (r: Run, m: Monster): void => {
 		});
 	can.push(() => {
 		p.status.confuse = Math.max(p.status.confuse, 5);
-		r.msg("キリコは　混乱した", "warn");
+		r.msg(`${r.heroName}は　混乱した`, "warn");
 	});
 	can.push(() => {
 		p.status.blind = Math.max(p.status.blind, 10);
@@ -993,7 +1003,11 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 	let moved = 0;
 	for (let i = 0; i < n; i++) {
 		const to = step(p, d);
-		if (!r.cornerOk(p, d) || !r.isFree(to.x, to.y)) {
+		// 束音ロゼは 壁の 中まで 飛ぶ（いちばん 外の 壁と 敵には ぶつかる）
+		const free = r.wallWalker
+			? r.playerCanStep(p, d) && !r.monsterAt(to.x, to.y)
+			: r.cornerOk(p, d) && r.isFree(to.x, to.y);
+		if (!free) {
 			r.msg(`${seenName(r, m)}に　吹きとばされて　ぶつかった！`, "warn");
 			r.hurtPlayer(5, `${mdef(m).name}に　吹きとばされた`);
 			break;
