@@ -233,7 +233,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "steelsh", weight: 2 }, // 防御6。本編1 × 1.5 を切り上げ
 	{ kind: "fireward", weight: 1 }, // ワイバーンの炎が半分。深い階で強いので 1枚のまま
 	{ kind: "starshield", weight: 1 }, // 防御10。いちばん強い盾は 1枚のまま
-	// 指輪 13（4つに1つは のろい。不食の指輪は 入れない）
+	// 指輪 14（4つに1つは のろい。不食の指輪は 入れない）
 	{ kind: "r_might", weight: 3 }, // もっと で いちばん多い指輪の1つ。のろいなら −3 なので 当たりとは かぎらない
 	{ kind: "r_hunger", weight: 3 }, // 本編1 → 3（もっと の ハラペコ は 指輪で いちばん多い）。食べものを HP に 変える（回復も 2倍）。のろわれて外せないと 食べものが半分の価値
 	{ kind: "r_clamor", weight: 2 }, // マイナス（ザメハ）。本編1 → 2
@@ -242,6 +242,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "r_purity", weight: 1 }, // 本編と同じ（解毒草・うろこの盾が ほかにある）
 	{ kind: "r_stealth", weight: 1 }, // 祭りが多い迷宮で 強い（もっと の とうぞく 11/256）。1つだけ
 	{ kind: "r_ward", weight: 1 }, // 文字化け（レベル17〜）が B17-30 に出るので 強い（人形よけ）。1つだけ
+	{ kind: "r_patrol", weight: 1 }, // 巡回（ときどき 飛ぶ）。逃げ道にも 迷子にも なる
 	// 草 71（未識別。飲めば +5% なので、見分けるために飲むのも 食べものになる）
 	{ kind: "h_heal", weight: 15 }, // 本編10 × 1.5
 	{ kind: "h_greater", weight: 6 }, // 本編4 × 1.5

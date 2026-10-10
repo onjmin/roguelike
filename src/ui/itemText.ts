@@ -132,6 +132,7 @@ const CAND_HINT: Record<string, string> = {
 	r_stealth: "忍び足",
 	r_clamor: "敵が起きる",
 	r_ward: "レベルまもり",
+	r_patrol: "ときどき飛ぶ",
 	h_heal: "回復",
 	h_greater: "大回復",
 	h_poison: "毒",

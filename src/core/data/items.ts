@@ -200,6 +200,14 @@ add({
 	desc: "レベルや　最大HPを　下げられない",
 	flavor: "保守しか　書かれない　スレでも、沈むよりは　まし",
 });
+add({
+	// トルネコの ルーラの指輪（元は ローグの テレポートの指輪）。スレを 巡回するように、ときどき 階の どこかへ 飛ぶ
+	id: "r_patrol",
+	cat: "ring",
+	name: "◆巡回",
+	desc: "ときどき　この階の　どこかへ　飛ばされる",
+	flavor: "巡回先は　選べない。気づけば　知らない　スレに　いる",
+});
 
 // ───────── 草・実（未識別） ─────────
 add({
@@ -735,7 +743,7 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	{ kind: "steelsh", weight: 2 },
 	{ kind: "fireward", weight: 1 },
 	{ kind: "starshield", weight: 1 },
-	// 指輪 10
+	// 指輪 11
 	{ kind: "r_might", weight: 2 },
 	{ kind: "r_sustain", weight: 1 },
 	{ kind: "r_hunger", weight: 1 },
@@ -745,6 +753,7 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	{ kind: "r_stealth", weight: 1 },
 	{ kind: "r_clamor", weight: 1 },
 	{ kind: "r_ward", weight: 1 },
+	{ kind: "r_patrol", weight: 1 },
 	// 草・実 51
 	{ kind: "h_heal", weight: 11 },
 	{ kind: "h_greater", weight: 5 },

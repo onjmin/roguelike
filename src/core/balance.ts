@@ -64,6 +64,10 @@ export const RAGE_HIT_RATE = 1 / 2;
 /** 自然回復：毎ターン 最大HP を足し、この値ごとに 1 回復。 */
 export const REGEN_STEP = 150;
 
+/** ◆巡回（ルーラの指輪）が 飛ばす 確率（1ターンごと）と、階に 着いて しばらく 飛ばない ターン数。 */
+export const PATROL_CHANCE = 1 / 40;
+export const PATROL_GRACE = 5;
+
 /** 投げて届く距離。 */
 export const THROW_RANGE = 10;
 

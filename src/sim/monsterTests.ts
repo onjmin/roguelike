@@ -12,6 +12,8 @@ import {
 	EXP_AT,
 	HUNGER_MAX,
 	INVENTORY_MAX,
+	PATROL_CHANCE,
+	PATROL_GRACE,
 	rollDamage,
 	SPAWN_EVERY,
 } from "../core/balance";
@@ -1062,6 +1064,32 @@ test("sabi", "never hits: only rusts", () => {
 	waitTurns(r, 60, () => false);
 	ok(r.p.hp >= hp, `hp went ${hp} -> ${r.p.hp}`);
 });
+
+test(
+	"ring",
+	"r_patrol: warps now and then (never in the first turns of a floor); no ring, no warp",
+	() => {
+		// turn() は 階の ターンを 0 に もどすので、ここは act を じかに（着いて すぐは 飛ばない を 見る）
+		const warpsIn = (r: Run): number[] => {
+			const at: number[] = [];
+			for (let i = 0; i < 400; i++) {
+				r.p.hunger = HUNGER_MAX;
+				r.f.res = 0;
+				const ev = r.act({ c: "wait" });
+				if (ev.some((e) => e.t === "warp" && e.id === PLAYER_ID))
+					at.push(r.f.turns);
+			}
+			return at;
+		};
+		const r = arena("patrol");
+		equip(r, "r_patrol");
+		const at = warpsIn(r);
+		ok(at.length >= 3, `warped ${at.length} times in 400 turns`);
+		ok(at[0] > PATROL_GRACE, `warped at turn ${at[0]}`);
+		ok(warpsIn(arena("patrol-none")).length === 0, "warped without the ring");
+		ok(PATROL_CHANCE > 0 && PATROL_CHANCE < 1 / 10, "chance");
+	},
+);
 
 for (const kind of ["leather", "mirror", "rustproof"]) {
 	test("sabi", `${kind} shield never rusts`, () => {

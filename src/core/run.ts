@@ -24,6 +24,8 @@ import {
 	MAX_HP_CAP,
 	MAX_LV,
 	MONSTER_CAP,
+	PATROL_CHANCE,
+	PATROL_GRACE,
 	REGEN_STEP,
 	RES_LIMIT,
 	RES_RUSH_CROWD,
@@ -1261,6 +1263,16 @@ export class Run {
 		// 満腹度（帰り道は減らない）
 		if (!s.returning) this.tickHunger();
 		if (s.end) return;
+
+		// ◆巡回（トルネコの ルーラの指輪）：ときどき 階の どこかへ 飛ぶ（階に 着いて すぐは 飛ばない）
+		if (
+			f.turns > PATROL_GRACE &&
+			this.hasRing("r_patrol") &&
+			this.rng.chance(PATROL_CHANCE)
+		) {
+			this.msg("◆巡回が　光った！");
+			this.warpPlayer();
+		}
 
 		// 自然回復（おなかが空っぽのときは回復しない。風呂板は 湯治で はやい。大食いは 2倍）
 		if (p.hunger > 0 && p.hp < p.maxHp) {

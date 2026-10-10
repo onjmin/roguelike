@@ -111,6 +111,7 @@ const PRICE: Record<string, number> = {
 	r_stealth: 2000,
 	r_clamor: 200,
 	r_ward: 2500,
+	r_patrol: 500,
 	// 草
 	h_heal: 50,
 	h_greater: 150,
