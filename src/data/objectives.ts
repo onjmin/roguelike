@@ -41,7 +41,10 @@ export type EventDef = {
 	news: string;
 };
 
-/** 期間限定の イベント（上から 順に 判定して、最初に 当たった 1つが 始まる）。 */
+/**
+ * 期間限定の イベント（上から 順に 判定して、最初に 当たった 1つが 始まる）。
+ * 2026-10-10 に どれも 起きる 確率を 半分に した（多すぎて ふだんの 目的が かすんでいた）。
+ */
 export const EVENTS: readonly EventDef[] = [
 	{
 		id: "pan-march",
@@ -49,7 +52,7 @@ export const EVENTS: readonly EventDef[] = [
 		dungeon: "shallow",
 		objective: "boss",
 		need: { cleared: ["shallow"] },
-		start: { on: "clear", chance: 1 / 3 },
+		start: { on: "clear", chance: 1 / 6 },
 		end: { clears: 1, outings: 4 },
 		news: "パン板の　底で　パン兵長が\n兵を　集めている　らしい",
 	},
@@ -60,7 +63,7 @@ export const EVENTS: readonly EventDef[] = [
 		objective: "boss",
 		need: { cleared: ["main"] },
 		// たおれて もどった あとの 気分転換に
-		start: { on: "dead", chance: 1 / 4 },
+		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 5 },
 		news: "風呂板の　源泉に、\n湯守が　居すわった　らしい",
 	},
@@ -70,11 +73,11 @@ export const EVENTS: readonly EventDef[] = [
 		dungeon: "kinoko",
 		objective: "fetch",
 		need: { unlocked: ["kinoko"] },
-		// 結果は 問わない（出撃が 5の 倍数に なったら 1/2）。3回 もぐると 終わる。
+		// 結果は 問わない（出撃が 10の 倍数に なったら 1/2。前は 5の 倍数）。3回 もぐると 終わる。
 		// 終わった 出撃では また 始まらないので、周期 P ごとに 必ず 始まると 3/P（P=3 だと 3/6）が
 		// 持ち帰りに なる。ボスの 板が ふだんは ボスで あるように、1/2 で 引いて およそ 3/10 に おさえる
 		// （ほかの イベントと 重なる ふつうの 遊び方なら もっと 少ない）
-		start: { on: "any", everyOutings: 5, chance: 1 / 2 },
+		start: { on: "any", everyOutings: 10, chance: 1 / 2 },
 		end: { outings: 3 },
 		news: "きのこ板の　親玉が　昼寝中。\n底の　AAを　拾ってくる　だけで　いい",
 	},
@@ -84,7 +87,7 @@ export const EVENTS: readonly EventDef[] = [
 		dungeon: "festival",
 		objective: "fetch",
 		need: { unlocked: ["festival"] },
-		start: { on: "dead", chance: 1 / 4 },
+		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 4 },
 		news: "雨で　親分マシーは　来ない。\nやぐらに　うちわだけ　落ちている",
 	},

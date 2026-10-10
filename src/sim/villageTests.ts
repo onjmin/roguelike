@@ -4685,7 +4685,7 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 
 test("events start from how a run ended, a need, and a fixed value of the seed (no Math.random), one at a time", () => {
 	noRandom(() => {
-		// パン板の 大行進：パン板を クリアずみで、クリアの あと 1/3
+		// パン板の 大行進：パン板を クリアずみで、クリアの あと 1/6
 		const base = prog({ unlocked: ["shallow", "main"], cleared: ["shallow"] });
 		const clear = { dungeon: "main" as DungeonId, kind: "clear" as const };
 		const hits = SEEDS.filter(
@@ -4693,7 +4693,7 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 				advanceEvents(base, { ...clear, seed }).started?.id === "pan-march",
 		);
 		const rate = hits.length / SEEDS.length;
-		ok(rate > 0.25 && rate < 0.42, `the march started ${rate} of the time`);
+		ok(rate > 0.11 && rate < 0.23, `the march started ${rate} of the time`);
 		for (const seed of SEEDS.slice(0, 50)) {
 			const a = advanceEvents(base, { ...clear, seed });
 			const b = advanceEvents(base, { ...clear, seed });
@@ -4723,8 +4723,8 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 			}).started,
 			"the march started before パン板 was cleared",
 		);
-		// きのこ狩り：きのこ板に 行けて、出撃が 5の 倍数に なったら 1/2（終わりかたは 問わない）
-		const kin = prog({ unlocked: ["shallow", "kinoko"], outings: 4 });
+		// きのこ狩り：きのこ板に 行けて、出撃が 10の 倍数に なったら 1/2（終わりかたは 問わない）
+		const kin = prog({ unlocked: ["shallow", "kinoko"], outings: 9 });
 		const huntHits = SEEDS.filter(
 			(seed) =>
 				advanceEvents(kin, { dungeon: "shallow", kind: "dead", seed }).started
@@ -4744,17 +4744,17 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 			);
 		ok(
 			!advanceEvents(
-				{ ...kin, outings: 5 },
+				{ ...kin, outings: 10 },
 				{
 					dungeon: "shallow",
 					kind: "dead",
 					seed: huntHit,
 				},
 			).started,
-			"the hunt started on the 6th outing",
+			"the hunt started on the 11th outing",
 		);
 		ok(
-			!advanceEvents(prog({ outings: 4 }), {
+			!advanceEvents(prog({ outings: 9 }), {
 				dungeon: "shallow",
 				kind: "dead",
 				seed: huntHit,
@@ -4819,9 +4819,9 @@ test("events end after their outings or a clear of their own board, and do not s
 			seed: "x",
 		});
 		ok(four.ended?.id === "pan-march", "the march outlived 4 outings");
-		// 終わったら 同じ 知らせの あとで ほかの イベントが 始まる ことは ある（きのこ狩り：出撃 5回目）
+		// 終わったら 同じ 知らせの あとで ほかの イベントが 始まる ことは ある（きのこ狩り：出撃 10回目）
 		const withKinoko: Progress = {
-			...march(4),
+			...march(9),
 			unlocked: ["shallow", "main", "kinoko"],
 		};
 		const swapSeed = SEEDS.find(
@@ -4876,18 +4876,18 @@ test("a run end counts the outing and leaves event news; the village reads it on
 		setProgress(["shallow", "kinoko"]);
 		ok(loadProgress().outings === undefined, "old progress got outings");
 		ok(!loadProgress().event, "old progress got an event");
-		for (let i = 1; i <= 4; i++) {
+		for (let i = 1; i <= 9; i++) {
 			noteRunEnd("shallow", "dead", `run-${i}`);
 			ok(loadProgress().outings === i, `outings ${loadProgress().outings}`);
 		}
 		ok(!loadProgress().eventNews, "news before any event");
 		// 開発用の 冒険は 数えない
 		noteRunEnd("shallow", "dead", "debug:x");
-		ok(loadProgress().outings === 4, "a debug run was counted");
-		// 5回目で 始まる（1/2 に 当たる シード）
+		ok(loadProgress().outings === 9, "a debug run was counted");
+		// 10回目で 始まる（1/2 に 当たる シード）
 		const huntSeed = SEEDS.find(
 			(seed) =>
-				advanceEvents(prog({ unlocked: ["shallow", "kinoko"], outings: 4 }), {
+				advanceEvents(prog({ unlocked: ["shallow", "kinoko"], outings: 9 }), {
 					dungeon: "kinoko",
 					kind: "clear",
 					seed,
