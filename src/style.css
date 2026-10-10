@@ -3833,3 +3833,22 @@ body.jolt #app {
 .mgame.jk.jk-gikai .jk-thread {
 	line-height: 15px;
 }
+
+/* ───────── 仲間が 加わる 演出（ui/heroJoin.ts）。画面いっぱい・ドットを ぼかさない ───────── */
+.hero-join {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #000;
+	touch-action: none;
+}
+
+.hero-join-canvas {
+	width: min(100vw, calc(100vh * 1.5));
+	height: auto;
+	aspect-ratio: 3 / 2;
+	image-rendering: pixelated;
+}
