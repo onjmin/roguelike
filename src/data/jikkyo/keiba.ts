@@ -724,7 +724,7 @@ export const KEIBA_PACK: JkPack = {
 		casino_dealer: [
 			{
 				when: isSunday,
-				lines: ["今日は　保守記念の　中継や。\n……ここは　見るだけの　店やで"],
+				lines: ["今日は　保守記念の　中継や。\n……レースは　見るだけやで"],
 			},
 		],
 	},

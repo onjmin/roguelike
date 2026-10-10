@@ -561,7 +561,7 @@ export const FACILITIES: readonly Facility[] = [
 				m: "menu",
 				k: "ukiwa",
 				R: "drinks",
-				u: "cooler",
+				u: "suika",
 				t: "ramune",
 				"[": "grill",
 				"]": "kakigori",
@@ -577,7 +577,7 @@ export const FACILITIES: readonly Facility[] = [
 				ukiwa: ["浮き輪が　つるしてある。\n「貸し出し　無料。返してや」"],
 				drinks: ["冷蔵ケース。\nラムネと　麦茶が　冷えている。"],
 				kakigori: ["かき氷機。\nシロップは　いちご・メロン・ブルーハワイ。"],
-				cooler: ["クーラーボックス。\nスイカが　まるごと　冷やしてある。"],
+				suika: [ARCADE_TEXT.suika.line],
 				ramune: [
 					"たらいの　氷水に　ラムネ。\n「1本　100円。ビー玉は　返してや」",
 				],
@@ -590,8 +590,8 @@ export const FACILITIES: readonly Facility[] = [
 				],
 				plant: ["ヤシの　鉢植え。\n葉の　先が　すこし　こげている。"],
 			},
-			// 壁の テレビで 夏の 保守園（高校野球）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
-			plays: { tv: "jikkyo" },
+			// 壁の テレビで 夏の 保守園（高校野球）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、クーラーボックスの スイカで スイカ割り（ui/arcade.ts）
+			plays: { tv: "jikkyo", suika: "arcade" },
 			people: [
 				{
 					id: "umi_master",
@@ -2152,8 +2152,9 @@ export const FACILITIES: readonly Facility[] = [
 				V: "window",
 				m: "menu",
 				U: "barrel",
-				"[": "glass",
-				"]": "glass",
+				// カウンターの グラス：グラス滑らせ（data/arcade/types.ts）
+				"[": "glassSlide",
+				"]": "glassSlide",
 				O: "table",
 				P: "record",
 				F: "plant",
@@ -2163,11 +2164,12 @@ export const FACILITIES: readonly Facility[] = [
 				window: ["窓。\n夜の　海に、桟橋の　灯りが　ゆれる。"],
 				menu: ["品書き。\n「完走」「次スレ」「保守（ノンアル）」"],
 				barrel: ["樽。\n……海の　においが　しみている。"],
-				glass: ["台の　上の　グラス。\n……だれかの　飲みかけ。"],
+				glassSlide: [ARCADE_TEXT.glassSlide.line],
 				table: ["丸テーブル。\nコースターに「>>1000」の　落書き。"],
 				record: ["レコードプレーヤー。\n古い　ジャズが　回っている。"],
 				plant: ["観葉植物。\n……葉に　コースターが　はさまっている。"],
 			},
+			plays: { glassSlide: "arcade" },
 			people: [
 				{
 					id: "bar_master",
@@ -3399,17 +3401,18 @@ export const FACILITIES: readonly Facility[] = [
 				"@": "tv",
 				"&": "tv",
 				m: "rule",
-				A: "slot",
-				B: "slot",
-				C: "slot",
-				K: "slot",
-				E: "slot",
-				T: "cards",
-				U: "cards",
-				V: "cards",
-				t: "cards",
-				u: "cards",
-				v: "cards",
+				// 台は 遊べる（data/arcade/types.ts。物の 名前が ゲームの 名前）
+				A: "gacha",
+				B: "gacha",
+				C: "gacha",
+				K: "gacha",
+				E: "gacha",
+				T: "highlow",
+				U: "highlow",
+				V: "highlow",
+				t: "highlow",
+				u: "highlow",
+				v: "highlow",
 				R: "roulette",
 				r: "roulette",
 				L: "roulette",
@@ -3419,15 +3422,24 @@ export const FACILITIES: readonly Facility[] = [
 			},
 			lines: {
 				tv: ["大画面。\nレースの　中継が　映る。"],
-				rule: ["はり紙。\n「チップの　販売は　ありません」"],
-				slot: ["スロット台。\n……777は、出そうで　出ない。"],
-				cards: ["カードの　台。\nディーラーが　じっと　見ている。"],
-				roulette: ["ルーレット。\n赤か　黒か。……緑も　ある。"],
+				rule: [
+					"はり紙。\n「チップの　販売は　ありません」",
+					"小さく「遊びの　チップは　お貸しします。\nお帰りの　さいに　ご返却を」",
+				],
+				gacha: [ARCADE_TEXT.gacha.line],
+				highlow: [ARCADE_TEXT.highlow.line],
+				roulette: [ARCADE_TEXT.roulette.line],
 				cashier: ["チップの　窓口。\n「本日の　両替は　終了しました」"],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
-			// 奥の 壁の 大画面で 保守記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
-			plays: { tv: "jikkyo" },
+			// 奥の 壁の 大画面で 保守記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
+			// スロット・カードの 台・ルーレットは 遊びの チップで 遊ぶ（お金は 賭けない。ui/arcade.ts）
+			plays: {
+				tv: "jikkyo",
+				gacha: "arcade",
+				highlow: "arcade",
+				roulette: "arcade",
+			},
 			people: [
 				{
 					id: "casino_dealer",
@@ -3435,9 +3447,7 @@ export const FACILITIES: readonly Facility[] = [
 					at: [10, 6],
 					dir: "left",
 					name: "ディーラー",
-					lines: [
-						"ここは　見るだけの　カジノや。\n……賭けるなら、冒険に　賭けえ",
-					],
+					lines: ["チップは　遊びの　チップや。\n……賭けるなら、冒険に　賭けえ"],
 				},
 			],
 		},

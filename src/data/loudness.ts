@@ -146,6 +146,8 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	arcShot: ["95bF44", -9.9, -4.3, -13.1, 0.221, 0, 270, 230], // field → -23.0
 	arcBlock: ["wsdfpV", -4.5, 3.9, -18.5, 0.119, 0, 700, 450], // field → -23.0
 	arcJump: ["RJwe7P", -12, -4.2, -11, 0.282, 40, 350, 280], // field → -23.0
+	cardFlip: ["h50BUS", -2.3, 0.7, -20.7, 0.092, 0, 480, 330], // field → -23.0
+	glassBreak: ["h5RBbR", -7.4, -0.6, -15.6, 0.166, 70, 860, 390], // field → -23.0
 	encounter: ["qm03Mw", -19.2, -9.2, -1.8, 0.813, 360, 2390, 1200], // battle → -21.0
 	attackStart: ["n0fqek", -10.3, -3.6, -10.7, 0.292, 40, 290, 240], // battle → -21.0
 	attack: ["7JKd21", -5.9, -0.7, -15.1, 0.176, 20, 210, 180], // battle → -21.0

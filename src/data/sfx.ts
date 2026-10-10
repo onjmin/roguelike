@@ -68,6 +68,10 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		arcBlock: "rpgen:wsdfpV", // マリオ3-ブロック
 		/** 跳ぶ（なんJラン）。 */
 		arcJump: "rpgen:RJwe7P", // [ツクール]ジャンプ
+		/** カードを めくる（カジノの ハイ＆ロー）。 */
+		cardFlip: "rpgen:h50BUS", // マリオ3-カード
+		/** グラスが 割れた（バーの グラス滑らせ）。 */
+		glassBreak: "rpgen:h5RBbR", // 皿が割れる音
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {
