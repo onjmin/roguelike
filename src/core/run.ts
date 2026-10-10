@@ -1193,7 +1193,8 @@ export class Run {
 			if (!this.s.end && this.f.monsters.includes(o)) this.explode(o);
 	}
 
-	splitMonster(m: Monster): void {
+	/** quiet：音を 鳴らさない（コピペの杖は 振った ときに もう 同じ 呪文の 音が 鳴っているので）。 */
+	splitMonster(m: Monster, quiet = false): void {
 		// ボスは ふえない（2体目の ボスは 出さない）
 		if (isBoss(m) || this.f.monsters.length >= MONSTER_CAP) return;
 		const spots = this.rng
@@ -1205,7 +1206,7 @@ export class Run {
 		const c = spawnMonster(this, mdef(m).id, at, { awake: true });
 		if (c) {
 			// 分かれる 音と 絵（ui/play.ts の appear）を 先に、それから ログ
-			this.se("spell");
+			if (!quiet) this.se("spell");
 			this.emit({ t: "appear", id: c.uid, pos: at, from: { x: m.x, y: m.y } });
 			this.msg(`${monsterName(this, m)}が　ふえた！`, "warn");
 		}

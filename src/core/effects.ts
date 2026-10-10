@@ -710,7 +710,8 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 		}
 		case "w_split":
 			if (bossShrugs(r, m, nm)) return;
-			r.splitMonster(m);
+			// 振った（wave）・投げた ときの 音で 足りる。ふえる 音を 重ねない
+			r.splitMonster(m, true);
 			return;
 		case "w_rebut":
 			if (bossShrugs(r, m, nm)) return;
@@ -817,6 +818,8 @@ const onThrownHit = (r: Run, it: Item, m: Monster): void => {
 			r.damageMonster(m, r.rng.range(1, 2), "throw");
 			return;
 		case "staff":
+			// 振った ときと 同じく 呪文の 音（コピペの杖は この 音だけ。ふえる 音を 重ねない）
+			r.se("spell");
 			staffEffect(r, it.kind, m);
 			return;
 		case "herb":
