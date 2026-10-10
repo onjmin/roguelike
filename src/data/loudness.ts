@@ -142,6 +142,10 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	mix: ["M7lnrK", -14.4, -5.1, -8.6, 0.372, 0, 1830, 1200], // field → -23.0
 	bubble: ["RSetbN", -9.5, -4.7, -13.5, 0.211, 0, 490, 230], // field → -23.0
 	glass: ["IQXvTI", -10.8, -2, -12.2, 0.245, 30, 1640, 780], // field → -23.0
+	arcCoin: ["alktAh", -9.8, 0.2, -13.2, 0.219, 10, 740, 360], // field → -23.0
+	arcShot: ["95bF44", -9.9, -4.3, -13.1, 0.221, 0, 270, 230], // field → -23.0
+	arcBlock: ["wsdfpV", -4.5, 3.9, -18.5, 0.119, 0, 700, 450], // field → -23.0
+	arcJump: ["RJwe7P", -12, -4.2, -11, 0.282, 40, 350, 280], // field → -23.0
 	encounter: ["qm03Mw", -19.2, -9.2, -1.8, 0.813, 360, 2390, 1200], // battle → -21.0
 	attackStart: ["n0fqek", -10.3, -3.6, -10.7, 0.292, 40, 290, 240], // battle → -21.0
 	attack: ["7JKd21", -5.9, -0.7, -15.1, 0.176, 20, 210, 180], // battle → -21.0
@@ -180,6 +184,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	skill_knockback: ["W7Z0Eh", -16, -4.9, -5, 0.562, 340, 550, 440], // battle → -21.0
 	skill_purge: ["miex8X", -11.6, -3.6, -9.4, 0.339, 0, 2240, 1200], // battle → -21.0
 	skill_curse: ["86GRZP", -4.3, 1.1, -16.7, 0.146, 80, 4190, 1200], // battle → -21.0
+	arcCrash: ["YHEG4T", -12.6, -6.7, -8.4, 0.38, 0, 1360, 630], // battle → -21.0
 	critical: ["3xdWAT", -12.7, -7.8, -6.3, 0.484, 0, 430, 360], // impact → -19.0
 	explosion: ["HydVaH", -6.6, -0.4, -12.4, 0.24, 120, 1580, 990], // impact → -19.0
 	victory: ["tSHy6V", -13.7, -7.8, -8.3, 0.385, 20, 1540, 970], // jingle → -22.0
@@ -188,5 +193,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	save: ["jVOw87", -10.4, -0.3, -11.6, 0.263, 90, 3730, 1100], // jingle → -22.0
 	chapter: ["thHyyN", -7.7, -2, -14.3, 0.193, 50, 1220, 410], // jingle → -22.0
 	served: ["wMSfsJ", -11.7, -2.9, -10.3, 0.305, 60, 1810, 1410], // jingle → -22.0
+	arcStart: ["2GAYAx", -5, -0.1, -17, 0.141, 0, 560, 470], // jingle → -22.0
+	arcBest: ["VvhXOb", -7.2, -2.2, -14.8, 0.182, 30, 830, 710], // jingle → -22.0
 };
 // </loudness:se>

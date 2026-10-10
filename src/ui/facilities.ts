@@ -24,6 +24,7 @@ import { coreShadows, type VillageView } from "../data/village/map";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress, loadTown } from "../engine/save";
 import { TILE } from "../engine/types";
+import { arcadePlay } from "./arcade";
 import { bushitsuThing } from "./bushitsu";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
@@ -248,6 +249,8 @@ export const buildFacility = (
 			else if (isNetaPlay(play)) await netaPlay(ctx, s, play);
 			// どすこいポイントの 照会（町役場の 1番窓口・市役所の 住民課。ui/dosukoi.ts）
 			else if (play === "dosukoi") await dosukoiWindow(s, f.id);
+			// ゲームセンターの 筐体（物の 名前が ゲームの 名前。ui/arcade.ts）
+			else if (play === "arcade") await arcadePlay(ctx, s, kind);
 		});
 	});
 	for (const who of room?.people ?? [])

@@ -59,6 +59,15 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		bubble: "rpgen:RSetbN", // 泡の音1
 		/** グラスを 置く。 */
 		glass: "rpgen:IQXvTI", // チーン
+		// ── ゲームセンターの 筐体（ui/arcade*.ts）
+		/** メダル・コインを 入れる（どの 台も はじめに。スロットは 回す たび）。 */
+		arcCoin: "rpgen:alktAh", // スロットのコイン投入音
+		/** 弾を 撃つ（シューティング）。 */
+		arcShot: "rpgen:95bF44", // [マリオRPG]ファイアボール
+		/** 荒らし・スレの 札を くずす（シューティング・ブロックくずし）。 */
+		arcBlock: "rpgen:wsdfpV", // マリオ3-ブロック
+		/** 跳ぶ（なんJラン）。 */
+		arcJump: "rpgen:RJwe7P", // [ツクール]ジャンプ
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {
@@ -126,6 +135,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		skill_purge: "rpgen:miex8X", // ﾄﾞﾗｸｴ冒険の書が消えた
 		/** 粘着アンチ（装備を のろう）。 */
 		skill_curse: "rpgen:86GRZP", // 桃/呪い
+		/** 筐体の 自機が やられた・ぶつかった（シューティング・ドライブ・なんJラン）。 */
+		arcCrash: "rpgen:YHEG4T", // 自機爆発音1
 	},
 	/** いちばん目立たせる音。 */
 	impact: {
@@ -146,6 +157,10 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		chapter: "rpgen:thHyyN", // [ツクール]チャイム2
 		/** 喫茶の 一杯が できあがった。 */
 		served: "rpgen:wMSfsJ", // [ポケダン]レベルアップ
+		/** 筐体の ゲームが はじまる（READY の あと）。 */
+		arcStart: "rpgen:2GAYAx", // 魔界村-スタート
+		/** 筐体の ハイスコアを こえた。 */
+		arcBest: "rpgen:VvhXOb", // [マリオ]1UP
 	},
 };
 
