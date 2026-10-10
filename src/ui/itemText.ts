@@ -35,6 +35,7 @@ export const itemDesc = (run: Run, it: Item): string => {
 	let h = `<b class="tag">${esc(CAT_NAME[d.cat])}</b>`;
 	if (run.isEquipped(it)) h += '<b class="tag equip">装備中</b>';
 	if (it.known && it.cursed) h += '<b class="tag curse">のろい</b>';
+	if (it.rustproof) h += '<b class="tag rust">メッキ</b>';
 	if (itemHidden(run.s, it.kind)) return h + esc(HIDDEN_DESC);
 	if (known) return h + esc(d.desc);
 	// 未識別でも 当たりを つけられるように、候補の 数（3つまでなら 中身も）を 出す
@@ -66,7 +67,7 @@ const plusUnknown = (it: Item): boolean => {
 };
 
 /**
- * 一覧の名前（HTML）。装備中なら頭に E。
+ * 一覧の名前（HTML）。装備中なら頭に E、メッキ ずみなら うしろに メ。
  * 修正値の わからない 武器・盾は 名前を黄色に（トルネコ1と同じ。装備するか 鑑定すると 白に もどり、+1 などが つく）。
  * 名前を つけた 未識別の 道具は 水色に（仮の 名前と 見わける。正体が わかると 白に もどる）。
  */
@@ -77,7 +78,9 @@ export const itemLabel = (run: Run, it: Item): string => {
 		: isNamedKind(run, it.kind)
 			? "named"
 			: "";
-	return `${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${cls ? `<span class="${cls}">${name}</span>` : name}`;
+	// メッキ（防錆スレを 読んだ 板。錆びない）は 名前の うしろに 銀色の「メ」
+	const rust = it.rustproof ? '<b class="tag rust">メ</b>' : "";
+	return `${run.isEquipped(it) ? '<b class="tag equip">E</b>' : ""}${cls ? `<span class="${cls}">${name}</span>` : name}${rust}`;
 };
 
 /** 名前を つけた まま、まだ 正体の わからない 種類。 */

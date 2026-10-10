@@ -842,6 +842,11 @@ body.jolt #app {
 	color: var(--accent);
 }
 
+/* メッキ ずみ（防錆スレ。錆びない 板） */
+.tag.rust {
+	color: #c8d4e0;
+}
+
 /* 修正値の わからない 武器・盾の名前（トルネコ1と同じく 黄色。わかると 白に もどる） */
 .unk {
 	color: #f5d76e;
@@ -2333,6 +2338,12 @@ body.jolt #app {
 .menu-item > span:first-child > .tag.equip {
 	font-weight: normal;
 	margin-right: 0.35em;
+}
+
+/* 名前の うしろの メ（メッキ ずみ） */
+.menu-item > span:first-child > .tag.rust {
+	font-weight: normal;
+	margin-left: 0.35em;
 }
 
 /* もちもの一覧の下じき（小さいメニューを開いているあいだ、選んだ行がわかるように残す） */
