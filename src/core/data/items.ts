@@ -801,10 +801,10 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	// 矢 9
 	{ kind: "a_wood", weight: 6 },
 	{ kind: "a_iron", weight: 3 },
-	// 食べもの 10（2026-10-10 に 15 → 10：パンが たまる だけだった）
-	{ kind: "f_bread", weight: 7 },
+	// 食べもの 8（2026-10-10 に 15 → 10 → 8。7 では ボットの 飢え死にが 3割）（2026-10-10 の 2回め：床の パンだけで 1階 40% ほど 出て、始めの 200% と お弁当・パン兵の ぶんが まるまる 余っていた。長い 板は 1階 25% ほど、短い 板は 10% ほどに）
+	{ kind: "f_bread", weight: 5 },
 	{ kind: "f_large", weight: 3 },
-	{ kind: "f_moldy", weight: 3 },
+	{ kind: "f_moldy", weight: 2 },
 ];
 
 /** カテゴリの表示名（図鑑の見出し）。 */
