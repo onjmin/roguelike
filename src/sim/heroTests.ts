@@ -2,7 +2,11 @@
 
 import { HUNGER_MAX, START_HP, START_STR } from "../core/balance";
 import { DUNGEONS } from "../core/data/dungeons";
-import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
+import {
+	WALL_HUNGER,
+	ZERO_BODIES,
+	ZERO_GROWTH_CARRY,
+} from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
 import { T_WALL, tileAt } from "../core/mapgen";
@@ -208,7 +212,7 @@ test("ロゼ: すり抜けの 切りかえは リプレイに 残る（キリコ
 
 // ───────────────── 解音ゼロ ─────────────────
 
-test("ゼロ: 3機とも キリコより やや 低い、たおれると 次の 機体に バトンタッチ（持ち物・レベルは そのまま）", () => {
+test("ゼロ: 3機とも キリコより はっきり 低い、たおれると 次の 機体に バトンタッチ（持ち物・レベルは そのまま、のびた ぶんは 半分、おなかは 満タン）", () => {
 	ok(ZERO_BODIES.length === 3, "3 bodies");
 	ok(
 		ZERO_BODIES.map((b) => b.model).join() === "VHz8-0,HeBc-0,XQxS-0",
@@ -216,10 +220,8 @@ test("ゼロ: 3機とも キリコより やや 低い、たおれると 次の 
 	);
 	for (const b of ZERO_BODIES)
 		ok(
-			b.hp <= START_HP &&
-				b.str <= START_STR &&
-				b.hp + b.str < START_HP + START_STR,
-			`${b.model} is a bit weaker`,
+			b.hp <= START_HP - 4 && b.str <= START_STR - 2,
+			`${b.model} is clearly weaker`,
 		);
 	const r = quiet(
 		Run.create("hero-z", "shallow", [], "fetch", true, false, "zero"),
@@ -238,11 +240,13 @@ test("ゼロ: 3機とも キリコより やや 低い、たおれると 次の 
 	ok(!r.hurtPlayer(999, "test"), "not dead");
 	ok(!r.s.end && r.s.body === 1 && r.heroName === "プロト", "proto");
 	ok(
-		r.p.hp === r.p.maxHp && r.p.maxHp === (ZERO_BODIES[1]?.hp ?? 0) + grown,
-		"hp",
+		r.p.hp === r.p.maxHp &&
+			r.p.maxHp ===
+				(ZERO_BODIES[1]?.hp ?? 0) + Math.floor(grown * ZERO_GROWTH_CARRY),
+		`hp: half of the growth (${grown}) → ${r.p.maxHp}`,
 	);
 	ok(r.p.str === r.p.maxStr && r.p.status.confuse === 0, "reset");
-	ok(r.p.hunger === HUNGER_MAX, "fed");
+	ok(r.p.hunger === HUNGER_MAX, "fed: a different body");
 	ok(r.p.lv === lv && r.p.items.map((i) => i.uid).join() === items, "kept");
 	ok(
 		r.ev.some((e) => e.t === "baton" && e.body === 1),
