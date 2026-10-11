@@ -26,7 +26,7 @@ export const townItemName = (it: Item): string => {
 	let s = d.name;
 	if ((d.cat === "weapon" || d.cat === "shield") && it.plus)
 		s += it.plus > 0 ? `+${it.plus}` : `${it.plus}`;
-	if (d.cat === "arrow") s += `（${it.count}本）`;
+	if (d.cat === "arrow") s += `（${it.count}球）`;
 	if (d.cat === "staff") s += `［${it.charges}］`;
 	if (it.cursed) s += "（のろい）";
 	return s;
