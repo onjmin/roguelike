@@ -623,6 +623,8 @@ export class Village {
 			if (
 				!field.canEnter(this.player.x + v.dx, this.player.y + v.dy, this.player)
 			) {
+				// うろうろ 歩いている 人なら 入れかわって 道の まま 進む
+				if (this.swapPast(d)) return;
 				// 人が 前に 来た：その場で 道を 引き直す（だめなら あきらめる）
 				const goal = this.marker;
 				const talk = this.pathTalk;
@@ -683,9 +685,35 @@ export class Village {
 				return;
 			}
 		}
+		// うろうろ 歩いている 人（お弁当の ぷゆゆ など）が ふさいで いれば 入れかわって 通る
+		const first = tries[0];
+		if (first && this.swapPast(first)) return;
 		// つっかえたら 向くだけ（横へ ずれて 回りこまない。物の 前で そちらを 向いて 調べたい）
-		// 人に ぶつかっても その 人は よけない（作者「逃げるのは やめて」）
+		// 持ち場に 立つ 人に ぶつかっても その 人は よけない（作者「逃げるのは やめて」）
 		this.player.dir = tries[0];
+	}
+
+	/**
+	 * d の 先に うろうろ 歩いている 人（def.wander。お弁当を 持ってきた ぷゆゆ など）が 立っていて
+	 * 道を ふさいで いれば、押しのけて 入れかわる（その 人は キリコの いた マスへ）。入れかわったら true。
+	 * 持ち場に 立つ 人・場面の 途中・歩いている 途中の 人は 入れかわらない。
+	 */
+	private swapPast(d: Dir): boolean {
+		const field = this.field;
+		if (!field || this.scriptDepth > 0 || this.scene) return false;
+		const v = DIR_VEC[d];
+		const tx = this.player.x + v.dx;
+		const ty = this.player.y + v.dy;
+		if (!field.tileAt(tx, ty).passable) return false;
+		const a = field.blockerAt(tx, ty, this.player);
+		if (!a?.def?.wander || a.moving || a.x !== tx || a.y !== ty) return false;
+		// 入れかわった あと しばらくは その場で 待つ（すぐ また 前に 出てこないように）
+		a.wanderWait = 2500 + Math.random() * 1500;
+		void a.walk(OPPOSITE[d], WALK_MS);
+		this.player.dir = d;
+		this.stepPending = true;
+		void this.player.walk(d, WALK_MS);
+		return true;
 	}
 
 	/**
