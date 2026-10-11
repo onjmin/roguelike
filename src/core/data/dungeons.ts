@@ -127,6 +127,10 @@ export type Dungeon = {
  * 階 → 本編の 何階ぶんか：1階は 1、いちばん底（n階）は top。あいだは 1.5乗の 曲がりで 上げる（四捨五入）。
  * まっすぐ だと 3階で もう レベル4〜5 に なり、Lv2〜3 の ころに 倒れる 冒険が 固まった（pnpm sim）。
  * 出だしは 本編と 同じ 1階に 1 ずつ、後ろほど 急に（着いた ころには 経験値も 多い）。
+ * 2026-10-11：短い 板（6〜13階）・のんびり諸島・避難J は 序盤から 強い 敵が 出すぎた（13階の 板の 7階で 本編の
+ * 10階ぶん。作者の 指示）。底を 下げ、曲がりを 2乗（避難J は 1.6）に して、前半は 本編と 同じ くらいに した
+ * （おんたこ 19 → 15・お祭り会場 20 → 16・だらだら 23 → 18・沖縄 12 → 10・よふかし 14 → 11・ひまわり 9 → 7・
+ * ボカロ避難所 8 → 7・のんびり 30 → 28・避難J は 底 35 の まま 曲がりだけ。ボットで 倒れる 階が 2〜3階 深く なった）。
  */
 const RAMP_CURVE = 1.5;
 const ramp = (n: number, top: number, curve = RAMP_CURVE): number[] =>
@@ -503,7 +507,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		perFloor: [4, 6],
 		// きのこ板（底で 本編5階ぶん）の つぎ。過疎で 経験値が 少ないので 底を 12 に、曲がりを 2乗に
 		// （2026-10-03 ボットで クリア 6% → 25%・底まで 12.5% → 51.5%。ramp(9, 15) では きのこ板との 段が 大きすぎた）
-		level: ramp(9, 12, 2),
+		level: ramp(9, 10, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -536,7 +540,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 13,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(13, 19),
+		level: ramp(13, 15, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -567,7 +571,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 13,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(13, 20),
+		level: ramp(13, 16, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -614,7 +618,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		items: OPUNU_ITEMS,
 		perFloor: [5, 7],
 		// 裏は 本筋（風呂板 27）より むずかしく
-		level: ramp(20, 30, 1.5),
+		level: ramp(20, 28, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -644,7 +648,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		items: ISLE1_ITEMS,
 		perFloor: [4, 7],
 		// 底 7・祭り 4階から では ボットの 最下層まで が きのこ板と ほぼ 同じ（65% と 71%）だった（2026-10-07）
-		level: ramp(6, 9),
+		level: ramp(6, 7, 2),
 		unidentified: ["herb", "staff"],
 		curses: true,
 		start: ["f_large"],
@@ -669,7 +673,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 6,
 		items: ISLE1_ITEMS,
 		perFloor: [4, 6],
-		level: ramp(5, 8),
+		level: ramp(6, 7, 2),
 		unidentified: ["herb", "staff"],
 		curses: false,
 		start: ["f_large"],
@@ -690,7 +694,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		floors: 9,
 		items: ISLE_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(9, 14, 2),
+		level: ramp(9, 11, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -714,7 +718,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		perFloor: [4, 5],
 		// 底 19（おんたこと 同じ）では ボットが おんたこ（B4〜6 で 倒れる）より 深く B9〜10 まで 行けた。
 		// おんたこの 😡 の かわりに 底を 上げ、祭りを ふやし、自然回復を おそく（鯖が 重い）
-		level: ramp(13, 23),
+		level: ramp(13, 18, 2),
 		regenStep: 200,
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
@@ -765,7 +769,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		items: ISLE_ITEMS,
 		perFloor: [5, 7],
 		// 電池板（30）より 上に（底 30 では ボットが 電池板と 同じ B12〜14 まで 行けた）
-		level: ramp(25, 35, 1.1),
+		level: ramp(25, 35, 1.6),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],

@@ -3191,8 +3191,8 @@ test("takonomin", "breath: throws hot takoyaki, not fire", () => {
 test("mashii", "pack: comes in a group of four", () => {
 	const r = arena("mashii");
 	r.s.dungeon = "festival";
-	r.s.depth = 5;
-	r.f.depth = 5;
+	r.s.depth = 7;
+	r.f.depth = 7;
 	const m = spawnMonster(r, null, at(5, 0), {});
 	// 表から 引くと ほかの 敵も 出るので、マシーが 出るまで 引きなおす
 	let tries = 0;
