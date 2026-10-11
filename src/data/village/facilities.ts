@@ -2223,17 +2223,76 @@ export const FACILITIES: readonly Facility[] = [
 				D: [art("white", 1, 2), art("door108", 2)],
 			},
 		},
-		outdoor: [
-			{
-				id: "door",
-				at: [26, 40],
-				lines: [
-					"海上レストラン「1000」。\n窓ぎわの　席から、海が　見える。",
-					"今日は　予約で　いっぱいだ。\n……おすすめの　看板だけ　読める。",
-					"「本日の　おすすめ：\n麻婆豆腐（ロゼ監修）」",
-				],
+		door: "海上レストラン「1000」。\n窓ぎわの　席から、海が　見える。",
+		// 中：海に 面した 窓、白い クロスの 丸い 卓（予約の 客）、奥に 厨房の 台と ワインの 棚。
+		// 入れるが 食べられない（予約で いっぱい。給仕が 断る）
+		room: {
+			look: LOOKS.bar,
+			rows: [
+				"##############",
+				"#HWHHWHHWHHWH#",
+				"#hhhhhhhmhhhh#",
+				"#o..o..o..KKK#",
+				"#............#",
+				"#..o..o...w..#",
+				"#............#",
+				"#F..........F#",
+				"#####DD#######",
+			],
+			tiles: (k) => ({
+				m: k.low(ri("scroll")),
+				o: k.on(ri("roundTable"), ri("wine")),
+				K: k.on(riCell("counterLong", 1, 0), ri("plateStack")),
+				w: k.on(ri("cooler")),
+				F: k.on(ri("bonsai")),
+			}),
+			things: {
+				m: "menu",
+				o: "table",
+				K: "kitchen",
+				w: "cooler",
+				F: "plant",
 			},
-		],
+			lines: {
+				menu: [
+					"本日の　おすすめ。\n「麻婆豆腐（ロゼ監修）」",
+					"となりに「海の　幸の　コース\n……要予約」",
+				],
+				table: ["白い　クロスの　卓。\n「ご予約席」の　札。"],
+				kitchen: ["厨房の　台。\n中華鍋の　音が　聞こえる。"],
+				cooler: ["ワインクーラー。\n……ラベルに「1000年もの」。"],
+				plant: ["観葉植物。\n海風で　すこし　ゆれている。"],
+			},
+			people: [
+				{
+					id: "rest_waiter",
+					walk: NANASHI[2],
+					at: [9, 6],
+					dir: "down",
+					name: "給仕",
+					lines: [
+						"いらっしゃいませ。ご予約の……\nあ、本日は　満席で　ございます",
+						"また　ぜひ。\n……予約は　1000日　待ちです",
+					],
+				},
+				{
+					id: "rest_guest_a",
+					walk: NANASHI[0],
+					at: [2, 4],
+					dir: "up",
+					name: "客",
+					lines: ["この　麻婆、からいけど　うまい。\n……スレに　書かな"],
+				},
+				{
+					id: "rest_guest_b",
+					walk: NANASHI[3],
+					at: [6, 6],
+					dir: "up",
+					name: "客",
+					lines: ["予約　取れたの、3年ぶりや。\n……記念に　1枚　うpや"],
+				},
+			],
+		},
 	},
 	// ── 麺屋「乙」（街から。線路の 東の 南の 区画。台の 前の 丸いすで 食べる 店。店主か 券売機で 品書き：ui/eat.ts）
 	{
@@ -2877,7 +2936,7 @@ export const FACILITIES: readonly Facility[] = [
 				"#####DD#####",
 			],
 			tiles: (k) => ({
-				e: k.up(base(4, 507, 1, 2)),
+				e: k.up(),
 				E: k.low(base(4, 507, 1, 2)),
 				k: k.low(CLOCK),
 				F: k.on(ri("bonsai")),
@@ -4060,6 +4119,130 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
+	// ── 保守テレビ（都市。港の 岸壁。電光の 看板・自動ドア。中は スタジオ：ニュースの 机・カメラ・副調整室の 卓）
+	{
+		id: "tvstudio",
+		name: "保守テレビ　第1スタジオ",
+		from: 7,
+		at: [52, 47],
+		look: {
+			kind: "grid",
+			ground: "quay",
+			rows: ["(-*-~-*-)", "[===&===]", "w1234wtuw", "pgggggDEp"],
+			door: "D",
+			door2: "E",
+			keys: {
+				...ROOF_FLAT,
+				w: [art("wallTex", 2), art("win24", 1)],
+				g: [art("wallTex", 2)],
+				"1": [art("wallTex", 2), art("led")],
+				"2": [art("wallTex", 2), art("led", 1)],
+				"3": [art("wallTex", 2), art("led", 2)],
+				"4": [art("wallTex", 2), art("led", 3)],
+				t: [art("wallTex", 2), art("autoDoor")],
+				u: [art("wallTex", 2), art("autoDoor", 1)],
+				p: [art("wallTex", 2), art("planter", 1)],
+				D: [art("wallTex", 2), art("autoDoor", 0, 1)],
+				E: [art("wallTex", 2), art("autoDoor", 1, 1)],
+			},
+		},
+		door: "保守テレビ。\n受付で　見学の　札を　もらった。",
+		doorSe: "autoDoor",
+		// 中：奥の 壁に ON AIR の ランプと 台本、ニュースの 机（台ごしに アナウンサー）と モニター、
+		// カメラ 2台・照明、右に 副調整室の 卓（ディレクター）、手前に 機材の 箱と 控えの ソファ
+		room: {
+			look: LOOKS.gym,
+			rows: [
+				"##############",
+				"#HHoaHHHHHHWH#",
+				"#hhhhhhhhmhhh#",
+				"#p.........MN#",
+				"#...[=]......#",
+				"#............#",
+				"#..c...c.....#",
+				"#........LLL.#",
+				"#.sS........x#",
+				"#####DD#######",
+			],
+			tiles: (k) => ({
+				o: k.up(art("led")),
+				a: k.up(art("led", 3)),
+				m: k.low(ri("paperNote")),
+				p: k.on(ri("pole")),
+				M: k.on(riCell("tvBig", 0, 0)),
+				N: k.on(riCell("tvBig", 1, 0)),
+				"[": ctr(k.on(riCell("deskDark", 0, 0), ri("laptop"))),
+				"=": ctr(k.on(riCell("deskDark", 1, 0))),
+				"]": ctr(k.on(riCell("deskDark", 2, 0), ri("phone"))),
+				c: k.on(ri("pcTop")),
+				L: k.on(riCell("counterDark", 1, 0), ri("medPanel")),
+				x: k.on(ri("boxesB")),
+				s: k.on(riCell("sofaWhite", 0, 0)),
+				S: k.on(riCell("sofaWhite", 1, 0)),
+			}),
+			things: {
+				o: "onair",
+				a: "onair",
+				m: "script",
+				p: "light",
+				M: "monitor",
+				N: "monitor",
+				c: "camera",
+				L: "console",
+				x: "box",
+				s: "sofa",
+				S: "sofa",
+			},
+			lines: {
+				onair: ["「ON AIR」の　ランプ。\n……いまは　消えている。"],
+				script: ["台本。\n「保守ニュース　第1000回」"],
+				light: ["照明。\n……まぶしい。"],
+				monitor: ["モニター。\n村の　広場が　映っている。"],
+				camera: ["テレビカメラ。\n「保守テレビ」の　ロゴ。"],
+				console: [
+					"副調整室の　卓。\nボタンが　びっしり。",
+					"すみに　付せん。\n「実況スレの　勢い　見ながら」",
+				],
+				box: ["機材の　箱。\n「ケーブル　取扱注意」"],
+				sofa: ["控えの　ソファ。\n出演者の　名札が　置いてある。"],
+			},
+			people: [
+				{
+					id: "tv_caster",
+					walk: NANASHI[0],
+					at: [5, 3],
+					dir: "down",
+					name: "アナウンサー",
+					lines: [
+						"こんばんは、保守ニュースです。\n……あ、いまは　リハーサルです",
+						"本日の　トップは\n「キリコさん、また　帰還」",
+					],
+				},
+				{
+					id: "tv_ad",
+					walk: NANASHI[1],
+					at: [9, 5],
+					dir: "left",
+					name: "AD",
+					lines: [
+						"あっ、そこ　カメラの　前です！\n……映っちゃいますよ",
+						"視聴率？　スレの　勢いで\n測ってます",
+					],
+				},
+				{
+					id: "tv_director",
+					walk: NANASHI[3],
+					at: [12, 7],
+					dir: "left",
+					name: "ディレクター",
+					lines: [
+						"いちばんの　視聴者は\nおんJの　実況民や",
+						"次の　特番は　保守村　特集や。\n……あんたも　出てみる？",
+					],
+				},
+			],
+		},
+	},
 	{
 		id: "harbor",
 		name: "港湾事務所",
@@ -4167,6 +4350,7 @@ export const FACILITIES: readonly Facility[] = [
 			kind: "grid",
 			ground: "quay",
 			rows: ["(-~--~-)", "[======]", "mwmwmwmw", "cLMmDLMc"],
+			door: "D",
 			keys: {
 				...ROOF_SLAB,
 				m: [art("wallTex", 4)],
@@ -4177,13 +4361,69 @@ export const FACILITIES: readonly Facility[] = [
 				D: [art("wallTex", 4), art("door108")],
 			},
 		},
-		outdoor: [
-			{
-				id: "door",
-				at: [66, 47],
-				lines: ["工場。\n「保守用　スレ　製造中。立入禁止」"],
+		door: "工場。\n「保守用　スレ　製造中。見学は　こちら」",
+		doorSe: "doorSteel",
+		// 中：ロッカー・安全第一の はり紙、奥に 機械（紺の 箱）、まんなかに 流れ作業の 台（できた スレの 箱）、
+		// 手前に 出荷の 木箱。工場長が 台の むこうで 見まわる
+		room: {
+			look: LOOKS.garage,
+			rows: [
+				"############",
+				"#HHWHHHHWHH#",
+				"#hhmhhhhhhh#",
+				"#LJ...ccc..#",
+				"#lj........#",
+				"#...[=]....#",
+				"#..........#",
+				"#.....x.y.x#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				m: k.low(ri("poster")),
+				L: k.on(riCell("lockers", 0, 0)),
+				J: k.on(riCell("lockers", 1, 0)),
+				l: k.on(riCell("lockers", 0, 1)),
+				j: k.on(riCell("lockers", 1, 1)),
+				c: k.on(riCell("cabNavy", 1, 0), ri("medPanelB")),
+				"[": ctr(k.on(riCell("counterLong", 0, 0), ri("boxesB"))),
+				"=": ctr(k.on(riCell("counterLong", 1, 0))),
+				"]": ctr(k.on(riCell("counterLong", 2, 0), ri("boxesB"))),
+				x: k.on(ri("boxes")),
+				y: k.on(ri("toolboxTop")),
+			}),
+			things: {
+				m: "poster",
+				J: "locker",
+				l: "locker",
+				j: "locker",
+				c: "machine",
+				x: "crate",
+				y: "tools",
 			},
-		],
+			lines: {
+				poster: ["はり紙。\n「安全第一　保守第一」"],
+				locker: ["ロッカー。\nヘルメットが　ならんでいる。"],
+				machine: [
+					"機械。\nがしゃん、がしゃん。",
+					"「ほ」「し」「ゅ」の　判子が\n交代で　押されていく。",
+				],
+				crate: ["出荷の　木箱。\n「保守用　スレ　1000本入り」"],
+				tools: ["工具箱。\nスパナの　柄に「age」。"],
+			},
+			people: [
+				{
+					id: "factory_chief",
+					walk: NANASHI[2],
+					at: [5, 4],
+					dir: "down",
+					name: "工場長",
+					lines: [
+						"うちの　スレは　落ちへんで。\n……1本ずつ　手で　保守しとる",
+						"見学？　ヘルメット　かぶってな。\n……冗談や",
+					],
+				},
+			],
+		},
 	},
 	{
 		id: "power",
@@ -4194,6 +4434,7 @@ export const FACILITIES: readonly Facility[] = [
 		look: {
 			kind: "grid",
 			rows: ["(-~~-)", "[====]", "hhhhhh", "mgmgmg", "FGcDGH"],
+			door: "D",
 			keys: {
 				...ROOF_SLAB,
 				m: [art("wallTex", 4)],
@@ -4206,13 +4447,67 @@ export const FACILITIES: readonly Facility[] = [
 				D: [art("wallTex", 4), art("door108")],
 			},
 		},
-		outdoor: [
-			{
-				id: "door",
-				at: [83, 40],
-				lines: ["発電所。\n村の　灯りは　ここから。……保守の　電気。"],
+		door: "発電所。\n村の　灯りは　ここから。……保守の　電気。",
+		doorSe: "doorSteel",
+		// 中：中央制御室。奥に 計器の 盤（紺と 赤）、壁に 時計と はり紙、まんなかに 運転員の 机（台ごし）、
+		// 手前に 消火器と 工具箱
+		room: {
+			look: LOOKS.office,
+			rows: [
+				"############",
+				"#HHWHHHHWHH#",
+				"#hhhmhkhhhh#",
+				"#PPP...QQQ.#",
+				"#..........#",
+				"#...[=]....#",
+				"#..........#",
+				"#e.......y.#",
+				"####DD######",
+			],
+			tiles: (k) => ({
+				m: k.low(ri("notice")),
+				k: k.low(CLOCK),
+				P: k.on(riCell("cabNavy", 1, 0), ri("medPanel")),
+				Q: k.on(riCell("cabRed", 1, 0), ri("medPanelB")),
+				"[": ctr(k.on(riCell("deskDark", 0, 0), ri("pcTop"))),
+				"=": ctr(k.on(riCell("deskDark", 1, 0))),
+				"]": ctr(k.on(riCell("deskDark", 2, 0), ri("phone"))),
+				e: k.on(ri("extinguisher")),
+				y: k.on(ri("toolboxTop")),
+			}),
+			things: {
+				m: "notice",
+				k: "clock",
+				P: "meter",
+				Q: "alarm",
+				e: "extinguisher",
+				y: "tools",
 			},
-		],
+			lines: {
+				notice: ["はり紙。\n「節電：スレの　自動更新は　30秒」"],
+				clock: ["制御室の　時計。\n秒まで　ぴったり。"],
+				meter: ["計器の　盤。\n針は「保守　100%」で　止まっている。"],
+				alarm: [
+					"警報の　盤。\n赤い　ランプは　ぜんぶ　消えている。",
+					"「1000　に　なったら　鳴る」と\n手書きの　札。",
+				],
+				extinguisher: ["消火器。\n「炎上　用」と　書いてある。"],
+				tools: ["工具箱。\nヒューズの　予備が　ぎっしり。"],
+			},
+			people: [
+				{
+					id: "power_operator",
+					walk: NANASHI[1],
+					at: [5, 4],
+					dir: "down",
+					name: "運転員",
+					lines: [
+						"今日も　安定運転や。\n……鯖が　落ちへん　かぎりはな",
+						"夜は　実況で　電気が　跳ねるんや。\n……ナイターの　9回とか",
+					],
+				},
+			],
+		},
 	},
 	// ── 保守中央公園（都市。市民農園の あと。噴水を 道が 一周し、北に ベンチ、西に 砂場、南の 入口に 立て札と きまりの 板）
 	{

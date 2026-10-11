@@ -1930,7 +1930,10 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 	for (let x = 1; x <= 10; x++) wall.push({ id: "table", x, y: 6 });
 	ok(!layoutOk(wall), "a wall of furniture cuts the room");
 	ok(layoutOk(wall.slice(0, 9)), "a gap at the end keeps the room open");
-	ok(!canPlace(wall.slice(0, 9), { id: "table", x: 10, y: 6 }), "closing the gap");
+	ok(
+		!canPlace(wall.slice(0, 9), { id: "table", x: 10, y: 6 }),
+		"closing the gap",
+	);
 	// 目の前に 置く：向こうへ のびる（上を 向いて ベッドなら 上へ）
 	const bed = placeInFront([], "bed", [4, 7], [4, 6]);
 	ok(bed?.x === 4 && bed.y === 5, `bed in front: ${JSON.stringify(bed)}`);
