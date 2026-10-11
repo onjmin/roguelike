@@ -110,6 +110,8 @@ const OTHER_KEYS: Record<string, Key> = {
 	GpB: "b",
 	GpX: "foot",
 	GpRB: "shoot",
+	// 束音ロゼの すり抜けの ON／OFF（RT。ほかの 主人公では 何も しない）
+	GpRT: "phase",
 	GpStart: "menu",
 	GpBack: "map",
 };
@@ -117,7 +119,8 @@ const OTHER_KEYS: Record<string, Key> = {
 /**
  * ゲームパッド（標準の 並び）の ボタン番号 → 読みかえる キー。トルネコ・シレンの 並びに あわせる：
  * A＝こうげき・決定、B＝メニュー・とじる（押しながら 方向で ダッシュ、押しながら A で 足踏み）、
- * Y＝押しながら 方向で 向きだけ（窓の中では 整理）、X＝足元、LB＝斜め固定、RB＝矢、START＝メニュー、BACK＝地図。
+ * Y＝押しながら 方向で 向きだけ（窓の中では 整理）、X＝足元、LB＝斜め固定、RB＝矢、RT＝束音ロゼの すり抜け、
+ * START＝メニュー、BACK＝地図。
  * 名前は スーファミ・任天堂の 並び（右＝A・下＝B・上＝X・左＝Y）。標準の 番号は 下 0・右 1・左 2・上 3。
  * Xbox の パッドは 刻印どおり（XBOX_CODES）。
  */
@@ -128,6 +131,7 @@ const GAMEPAD_CODES: Record<number, string> = {
 	3: "GpX",
 	4: "GpLB",
 	5: "GpRB",
+	7: "GpRT",
 	8: "GpBack",
 	9: "GpStart",
 	12: "GpUp",
