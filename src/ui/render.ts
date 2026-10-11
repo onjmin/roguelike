@@ -611,7 +611,7 @@ const drawBall = (
 	cy: number,
 	time: number,
 ): void => {
-	const r = 3.5;
+	const r = 3;
 	const spin = time / 45;
 	ctx.save();
 	ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
