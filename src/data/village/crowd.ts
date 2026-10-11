@@ -126,6 +126,10 @@ const FACILITY_KIND: Record<string, CrowdKind> = {
 	chuka: "food",
 	townhall: "work",
 	cityhall: "work",
+	corpo: "home",
+	mansion: "home",
+	danchi: "home",
+	tower: "home",
 };
 
 /** 町の まんなかの 扉（小屋・倉庫・常識堂の 奥は 住人の 所なので 入らない）。 */
