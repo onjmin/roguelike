@@ -976,6 +976,13 @@ export class Village {
 			ty += v.dy;
 			target = talkAt(tx, ty);
 		}
+		// 何も ない マス（キリコの 家の 床に 家具を 置く。ui/myhome.ts）
+		if (!target && !field.actors.some((a) => a.x === tx && a.y === ty)) {
+			const empty = field.def.onTalkEmpty?.(tx, ty);
+			if (empty && this.scriptDepth === 0 && !this.leaving)
+				void this.runScript(empty);
+			return;
+		}
 		if (!target?.def?.run) return;
 		// 掲示板や 立て札は、裏（北どなりから 下を向いて）からは 調べられない
 		if (
@@ -1002,6 +1009,12 @@ export class Village {
 			field.actors.find(
 				(a) => a.x === x && a.y === y && a.def?.trigger === "talk" && a.visible,
 			) ?? null;
+		// キリコを タップ：目の前の 何も ない マスで A と 同じ（キリコの 家で 家具を 置く。ui/myhome.ts）
+		if (tx === this.player.x && ty === this.player.y && field.def.onTalkEmpty) {
+			this.clearPath();
+			this.talkFront();
+			return;
+		}
 		let talk = talkAt(tx, ty);
 		// 前に 人が 立って ふさいでいる 口（本編が 開くまでの やきう）を タップしたら、その人に 話しかける
 		if (!talk && this.touchAt(tx, ty)) {
