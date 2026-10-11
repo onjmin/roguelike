@@ -797,7 +797,7 @@ export const pickColony = async (
 	// 主人公の 切りかえ（ロゼ・ゼロを 解放してから。engine/heroes.ts）：やめるの 前の 1行。選ぶと 次の 主人公に
 	const heroes = unlockedHeroes();
 	const heroRow = heroes.length > 1 ? spots.length : -1;
-	const heroLabel = () => `主人公：${HERO_NAME[chosenHero()]}`;
+	const heroLabel = () => `探索者：${HERO_NAME[chosenHero()]}`;
 	const labels = [
 		...spots.map((d) =>
 			!o.open.includes(d)
