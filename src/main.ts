@@ -12,6 +12,7 @@ import { devEvent } from "./data/objectives";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
+import { loadGrowth } from "./engine/growth";
 import { chosenHero, noteHeroQuests, rollHeroWorries } from "./engine/heroes";
 import { Input } from "./engine/input";
 import {
@@ -184,6 +185,7 @@ const runFor = (
 				!replay.noLunch,
 				!!replay.rom,
 				replay.hero ?? "kiriko",
+				replay.grown,
 			),
 			replay,
 		};
@@ -201,6 +203,7 @@ const runFor = (
 				choice.lunch,
 				romNow(),
 				chosenHero(),
+				loadGrowth(chosenHero()),
 			);
 			return { run, replay: undefined };
 		}
@@ -217,6 +220,8 @@ const runFor = (
 			lunch,
 			romNow(),
 			chosenHero(),
+			// 主人公の レベル・経験値（レベルを もどす 板では Run.create が 使わない。engine/growth.ts）
+			loadGrowth(chosenHero()),
 		);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };
