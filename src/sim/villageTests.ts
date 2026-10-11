@@ -4095,6 +4095,13 @@ test("裏シナリオ: the hall has the oldest-thread sign on every tier, and th
 			),
 		"the 原住民 is missing the request or the count",
 	);
+	// 灯台の 持ち帰りの 場面で 原住民が 頼む（話しかけなくても 次の 一歩が わかる）
+	ok(
+		STORY.opunu.ending.some(
+			(l) => l.text.includes("ROM専") && l.text.includes("いるでしょ"),
+		) && STORY.opunu.ending.some((l) => l.text.includes("録って")),
+		"the lighthouse ending does not ask for the ROM専 voice",
+	);
 	ok(
 		!!MOBS.hinary.milestones.ato?.some((l) => l.text.includes("避難J")),
 		"ヒナリー does not point to 避難J",

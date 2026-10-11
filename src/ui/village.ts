@@ -81,6 +81,9 @@ import { villageView } from "./villageReturn";
 
 /** 1マス歩く ms（rpg と同じ）。うろうろする人は この 1.6倍。 */
 const WALK_MS = 170;
+/** うろうろ 歩く 人を 押しのける：2回 続けて 押す 間（ms）と、押しつづける 長さ（ms）。 */
+const SWAP_DOUBLE_MS = 400;
+const SWAP_HOLD_MS = 450;
 /** ダッシュで 歩く 速さ（WALK_MS の 何倍か）。 */
 const DASH_SPEED = 2.5;
 /**
@@ -183,6 +186,18 @@ export class Village {
 	private pathTalk: Actor | null = null;
 	/** タップで 話しに 行って、着いたら 相手が ずれていたので もう 1度 近づいた（2度目は あきらめて その場で 話す）。 */
 	private talkRetried = false;
+	/**
+	 * うろうろ 歩く 人（ぷゆゆ・フェリス など）に つっかえた とき（押しのけるのは 2回 続けて 押すか 長押し。
+	 * 1回 押しただけでは 向かい合う：向き合って 話したい ときも あるので。作者の 指示）。
+	 */
+	private bump: {
+		who: Actor;
+		dir: Dir;
+		/** 押しつづけ はじめた 時刻。 */
+		since: number;
+		/** 最後に 押した 時刻。 */
+		last: number;
+	} | null = null;
 	/** タップした 道が 長い（走る）。 */
 	private pathRun = false;
 	private marker: { x: number; y: number; t: number } | null = null;
@@ -606,7 +621,7 @@ export class Village {
 		const dir = held ?? pressed;
 		if (dir !== null) {
 			this.clearPath();
-			this.stepToward(dir);
+			this.stepToward(dir, pressed !== null);
 			return;
 		}
 		// 画面を 押さえつづけたら、指の方へ 歩きつづける
@@ -614,7 +629,7 @@ export class Village {
 		if (hold) {
 			this.clearPath();
 			const d = input.fieldHoldDir((x, y) => this.dirFromScreen(x, y));
-			if (d !== null) this.stepToward(d);
+			if (d !== null) this.stepToward(d, false);
 			return;
 		}
 		if (this.path.length) {
@@ -671,8 +686,11 @@ export class Village {
 		this.marker = null;
 	}
 
-	/** 8方向の入力で 1歩（4方向。斜めは 縦 → 横の順に 試す。どちらも だめなら 向くだけ）。 */
-	private stepToward(d8: Dir8): void {
+	/**
+	 * 8方向の入力で 1歩（4方向。斜めは 縦 → 横の順に 試す。どちらも だめなら 向くだけ）。
+	 * press は この コマで 新しく 押した（押しっぱなしの 続きでは ない）。
+	 */
+	private stepToward(d8: Dir8, press: boolean): void {
 		const field = this.field;
 		if (!field) return;
 		const tries = dir4Candidates(d8);
@@ -681,16 +699,55 @@ export class Village {
 			if (
 				field.canEnter(this.player.x + v.dx, this.player.y + v.dy, this.player)
 			) {
+				this.bump = null;
 				void this.tryStep(d);
 				return;
 			}
 		}
-		// うろうろ 歩いている 人（お弁当の ぷゆゆ など）が ふさいで いれば 入れかわって 通る
+		// うろうろ 歩いている 人（お弁当の ぷゆゆ・フェリス など）が ふさいで いれば、2回 続けて 押すか
+		// 長押しで 入れかわって 通る。1回 押した だけなら 向かい合う（そのまま A で 話せる）
 		const first = tries[0];
-		if (first && this.swapPast(first)) return;
+		if (first && this.bumpInto(first, press)) return;
 		// つっかえたら 向くだけ（横へ ずれて 回りこまない。物の 前で そちらを 向いて 調べたい）
 		// 持ち場に 立つ 人に ぶつかっても その 人は よけない（作者「逃げるのは やめて」）
 		this.player.dir = tries[0];
+	}
+
+	/**
+	 * 十字キー・長押しで うろうろ 歩く 人に つっかえた。押しのけて 入れかわったら true
+	 * （2回目の 押しが SWAP_DOUBLE_MS 以内か、押しつづけて SWAP_HOLD_MS たった とき）。
+	 */
+	private bumpInto(d: Dir, press: boolean): boolean {
+		const field = this.field;
+		if (!field) return false;
+		const v = DIR_VEC[d];
+		const a = field.blockerAt(
+			this.player.x + v.dx,
+			this.player.y + v.dy,
+			this.player,
+		);
+		if (!a?.def?.wander) {
+			this.bump = null;
+			return false;
+		}
+		const now = performance.now();
+		const b = this.bump;
+		if (!b || b.who !== a || b.dir !== d) {
+			this.bump = { who: a, dir: d, since: now, last: press ? now : -1e9 };
+			return false;
+		}
+		if (press) {
+			const double = now - b.last < SWAP_DOUBLE_MS;
+			b.last = now;
+			// はなして から 押しなおした（2回目では ない）：長押しの 数えも はじめから
+			if (!double) {
+				b.since = now;
+				return false;
+			}
+		} else if (now - b.since < SWAP_HOLD_MS) return false;
+		if (!this.swapPast(d)) return false;
+		this.bump = null;
+		return true;
 	}
 
 	/**

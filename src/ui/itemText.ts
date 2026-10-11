@@ -230,7 +230,7 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 			}　修正値　${it.known ? signed(it.plus) : "？"}`,
 		);
 	}
-	if (d.cat === "arrow") rows.push(`強さ　${d.atk ?? 0}　${it.count}本`);
+	if (d.cat === "arrow") rows.push(`強さ　${d.atk ?? 0}　${it.count}球`);
 	if (d.cat === "staff")
 		rows.push(`残り回数　${it.known && known ? `${it.charges}回` : "？"}`);
 	if (d.cat === "weapon" || d.cat === "shield" || d.cat === "ring") {
