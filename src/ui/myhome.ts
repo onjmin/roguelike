@@ -165,8 +165,9 @@ export const homeFacility = (f: Facility): Facility => {
 	const m = loadHome();
 	const layout: HomeLayout = { placed: m.placed, wall: m.wall, floor: m.floor };
 	const { rows, art, things } = homeRows(layout);
-	const wall = WALLPAPERS[m.wall];
-	const fl = FLOORINGS[m.floor];
+	// 一覧で えらんで いる あいだは その 壁紙・床で（下見。保存は しない）
+	const wall = WALLPAPERS[trying?.wall ?? m.wall];
+	const fl = FLOORINGS[trying?.floor ?? m.floor];
 	const room = f.room;
 	if (!room) return f;
 	return {
@@ -191,6 +192,19 @@ export const homeFacility = (f: Facility): Facility => {
 			things,
 		},
 	};
+};
+
+/** 模様替えの 一覧で カーソルが のって いる 壁紙・床（部屋を その 形で 組んで 見せる。決めるか やめると 消す）。 */
+let trying: { wall?: number; floor?: number } | null = null;
+
+/** 下見の 組みなおし（つづけて 動かしても 1つずつ）。 */
+let tryChain: Promise<void> = Promise.resolve();
+const showTry = (s: Story, next: typeof trying): Promise<void> => {
+	tryChain = tryChain.then(async () => {
+		trying = next;
+		await s.rebuild();
+	});
+	return tryChain;
 };
 
 /** 持っている（動かして いる）家具。家の 外へ 出ても 収納に 入っている（ここは 次に 置く 物の 印）。 */
@@ -443,14 +457,24 @@ const closet = async (ctx: Ctx, s: Story): Promise<void> => {
 				sub: i === (n === 1 ? m.wall : m.floor) ? "いま" : undefined,
 				icon: n === 1 ? wallIcon(w as Wallpaper) : floorIcon(w as Flooring),
 			})),
-			{ closeLabel: "やめる", start: n === 1 ? m.wall : m.floor },
+			{
+				closeLabel: "やめる",
+				start: n === 1 ? m.wall : m.floor,
+				// カーソルを 動かすと 部屋が その 壁紙・床に かわる（下見）
+				onCursor: (c) => {
+					void showTry(s, n === 1 ? { wall: Number(c) } : { floor: Number(c) });
+				},
+			},
 		);
-		if (v === null) return;
-		if (n === 1) m.wall = Number(v);
-		else m.floor = Number(v);
-		saveHome(m);
-		await rebuildSoft(s);
-		await s.narrate(fill(HOME_MSG.changed, { name: list[Number(v)].name }));
+		if (v !== null) {
+			if (n === 1) m.wall = Number(v);
+			else m.floor = Number(v);
+			saveHome(m);
+		}
+		// やめたら もとの 形に もどす
+		await showTry(s, null);
+		if (v !== null)
+			await s.narrate(fill(HOME_MSG.changed, { name: list[Number(v)].name }));
 	}
 };
 

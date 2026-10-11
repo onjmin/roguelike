@@ -166,6 +166,8 @@ export const listWindow = (
 		actions?: { label: string; value: string; key?: Key; keyHint?: string }[];
 		header?: string;
 		cols?: number;
+		/** カーソルが のった 行（開いた ときも 1回。模様替えの 下見：ui/myhome.ts）。 */
+		onCursor?: (value: string) => void;
 	} = {},
 ): Promise<string | null> =>
 	new Promise((resolve) => {
@@ -233,7 +235,12 @@ export const listWindow = (
 		let shownPage = -1;
 		/** ページごとの 行の 高さ（いちばん 高い ページに そろえて ◀▶ を 同じ 所に 置く）。 */
 		let pageH: number[] = [];
+		let told = -1;
 		const render = () => {
+			if (opt.onCursor && cur !== told && items[cur]) {
+				told = cur;
+				opt.onCursor(items[cur].value);
+			}
 			const p = pageOf(cur);
 			if (pages.length > 1 && p !== shownPage) {
 				showPage(buttons, pages, p, pager);

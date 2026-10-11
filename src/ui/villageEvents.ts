@@ -113,6 +113,7 @@ import {
 } from "./imoni";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { playGetter } from "./minigames";
+import { pinPad } from "./pinPad";
 import { makeQuiz } from "./quiz";
 import { escBr, openRecords, showStory } from "./records";
 import { enterMusic, enterRoom } from "./rooms";
@@ -469,7 +470,7 @@ const mouthScript =
 			}
 			if (ok !== 0) continue;
 			// 灯台の 扉は パスワード（乗っ取り屋の 置き手紙 3枚が 手がかり。当てるまで 入れない。STORY.md §5.98）
-			if (d === "opunu" && !hasFlag("pass") && !(await passwordScript(s)))
+			if (d === "opunu" && !hasFlag("pass") && !(await passwordScript(ctx, s)))
 				continue;
 			break;
 		}
@@ -490,16 +491,17 @@ const mouthScript =
 	};
 
 /**
- * 灯台の 扉の パスワード（4択。答えは 置き手紙の とおり 12345）。当てれば 旗 pass が 立って 二度と きかれない。
- * 外しても 笑われる だけで、また 当てられる（地図に もどる）。
+ * 灯台の 扉の パスワード（数字を 1桁ずつ 入れる。ui/pinPad.ts。答えは 置き手紙の とおり 12345）。
+ * 当てれば 旗 pass が 立って 二度と きかれない。外しても 笑われる だけで、また 当てられる（地図に もどる）。
  */
-const passwordScript = async (s: Story): Promise<boolean> => {
+const passwordScript = async (ctx: Ctx, s: Story): Promise<boolean> => {
 	await s.narrate(LIGHTHOUSE_DOOR.ask);
-	const n = await s.choose([...LIGHTHOUSE_DOOR.options, "やめる"], {
-		cancel: LIGHTHOUSE_DOOR.options.length,
+	await s.wait(0);
+	const code = await pinPad(ctx, LIGHTHOUSE_DOOR.title, {
+		max: LIGHTHOUSE_DOOR.max,
 	});
-	if (n >= LIGHTHOUSE_DOOR.options.length) return false;
-	if (LIGHTHOUSE_DOOR.options[n] !== LIGHTHOUSE_DOOR.answer) {
+	if (code === null) return false;
+	if (code !== LIGHTHOUSE_DOOR.answer) {
 		s.se("cancel");
 		await s.narrate(LIGHTHOUSE_DOOR.wrong);
 		return false;
