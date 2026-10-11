@@ -42,6 +42,7 @@ import {
 	heroStart,
 	WALL_HUNGER,
 	ZERO_BODIES,
+	ZERO_GROWTH_CARRY,
 } from "./data/heroes";
 import { ITEM_LIST } from "./data/items";
 import { MONSTERS } from "./data/monsters";
@@ -876,8 +877,9 @@ export class Run {
 
 	/**
 	 * 解音ゼロの バトンタッチ（たおれた とき。次の 機体が なければ false）。装備・持ち物・レベル・経験値は
-	 * そのまま。最大HP・最大ちからは 機体ごとの はじめの 値に、それまでに のびた 分を 足す（減った ちからも もどる）。
-	 * HP・おなかは 満タン、状態異常は もどる。乱数は 引かない。
+	 * そのまま。最大HP・最大ちからは 機体ごとの はじめの 値に、それまでに のびた 分の 半分
+	 * （ZERO_GROWTH_CARRY）を 足す（減った 分は そのまま 引きつぐ）。別の 機体なので HP・おなかは 満タン、
+	 * 状態異常は もどる。乱数は 引かない。
 	 */
 	private batonTouch(): boolean {
 		if (this.hero !== "zero") return false;
@@ -887,9 +889,12 @@ export class Run {
 		const next = ZERO_BODIES[now + 1];
 		if (!old || !next) return false;
 		const p = this.p;
-		p.maxHp = Math.max(1, next.hp + (p.maxHp - old.hp));
+		// のびた ぶんは 半分だけ（減って いれば そのまま 引きつぐ）。別の 機体なので おなかは 満タン
+		const carry = (grown: number) =>
+			grown > 0 ? Math.floor(grown * ZERO_GROWTH_CARRY) : grown;
+		p.maxHp = Math.max(1, next.hp + carry(p.maxHp - old.hp));
 		p.hp = p.maxHp;
-		p.maxStr = Math.max(1, next.str + (p.maxStr - old.str));
+		p.maxStr = Math.max(1, next.str + carry(p.maxStr - old.str));
 		p.str = p.maxStr;
 		p.hunger = HUNGER_MAX;
 		p.regenAcc = 0;
