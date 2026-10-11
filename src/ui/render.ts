@@ -107,6 +107,8 @@ export type Projectile = {
 	flame?: { x: number; y: number; alpha: number };
 	/** 爆発（地雷・炎上案件）：(x, y) の マスを 中心に まわり r マスまで ふくらむ 火の玉。k は 0〜1 の 進み。 */
 	blast?: { r: number; k: number };
+	/** 野球の ボール（装備して 投げる ボール・ボールを 投げる 敵・ピッチングマシン）。回りながら 飛ぶ。 */
+	ball?: boolean;
 };
 
 /** 眠りの Z（ドット。文字だと 小さく にじんで 見えないので 画素で 描く）。小 4×4・大 5×5。 */
@@ -590,6 +592,7 @@ export class FloorView {
 			const y = Math.round(p.y * TILE - oy);
 			if (p.blast) drawBlast(ctx, p, p.blast, ox, oy);
 			else if (p.flame) drawFlame(ctx, p.flame, p, ox, oy, time);
+			else if (p.ball) drawBall(ctx, x + 8, y + 8, time);
 			else if (p.icon && getImage(p.icon)) drawRefInCell(ctx, p.icon, x, y);
 			else {
 				ctx.fillStyle = p.color;
@@ -600,6 +603,42 @@ export class FloorView {
 		}
 	}
 }
+
+/** 飛んでいる 野球の ボール（白い 革・ふち・左右の 赤い 縫い目。縫い目が 回って 見える）。 */
+const drawBall = (
+	ctx: CanvasRenderingContext2D,
+	cx: number,
+	cy: number,
+	time: number,
+): void => {
+	const r = 3.5;
+	const spin = time / 45;
+	ctx.save();
+	ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+	ctx.beginPath();
+	ctx.ellipse(cx, cy + 5, 3, 1.2, 0, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.fillStyle = "#f6f4ee";
+	ctx.strokeStyle = "#5a5a64";
+	ctx.lineWidth = 1;
+	ctx.beginPath();
+	ctx.arc(cx, cy, r, 0, Math.PI * 2);
+	ctx.fill();
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.arc(cx, cy, r - 0.5, 0, Math.PI * 2);
+	ctx.clip();
+	ctx.strokeStyle = "#d83a3a";
+	for (const side of [-1, 1]) {
+		const a = spin + (side < 0 ? 0 : Math.PI);
+		const sx = cx + Math.cos(a) * r * 1.25;
+		const sy = cy + Math.sin(a) * r * 1.25;
+		ctx.beginPath();
+		ctx.arc(sx, sy, r * 0.9, 0, Math.PI * 2);
+		ctx.stroke();
+	}
+	ctx.restore();
+};
 
 /**
  * 炎の 帯（from の マスの ふちから to まで）。先ほど 大きく、ちらちら ゆれる。

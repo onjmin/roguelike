@@ -21,7 +21,7 @@
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
-import { CARRY_MAX } from "../core/town";
+import { CARRY_MAX, STORAGE_CAP } from "../core/town";
 import type { DungeonId, Item } from "../core/types";
 import { CAST } from "../data/cast";
 import { LIBRARY_FROM } from "../data/glossary";
@@ -48,6 +48,7 @@ import { synopsisNow } from "../data/synopsis";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
+	SHIYO_DESK,
 	STAGE_NAMES,
 	TOWN_MSG,
 	TOWN_NAME,
@@ -104,7 +105,7 @@ import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
 import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
-import { chooseStored, openBag } from "./home";
+import { chooseStored, openBag, openStorage } from "./home";
 import {
 	imoniArrive,
 	imoniBoardMenu,
@@ -613,8 +614,9 @@ const speak = async (
 };
 
 /**
- * 仲間の 話しかけ（ひとこと だけ）。役目は 人に 結びつけず 物に 置く：倉庫の 一覧は 倉庫の 中の 棚、
- * 常識堂の 奥・倉庫へは 台の 横の 扉から（店番の ロゼ・シヨは 話すだけ）。帳簿・図鑑・あそびかたは 本館の 物。
+ * 仲間の 話しかけ（ひとこと）。帳簿・図鑑・あそびかたは 本館の 物。
+ * 倉庫番の シヨは 倉庫が 建ってから（STORAGE_CAP）、話しかけると 倉庫から 引き取る・持ち物を もどす も
+ * えらべる（倉庫の 中の 棚と 同じ 一覧。前は 棚だけで、シヨに 話しても ひとことしか 出なかった）。
  */
 const friendScript =
 	(who: Speaker, ctx: Ctx): Script =>
@@ -624,8 +626,33 @@ const friendScript =
 			(await heroQuestScript(s, who, (h) => heroJoinScene(ctx, h)))
 		)
 			return;
+		if (who === "shiyo" && (STORAGE_CAP[loadTown().stage] ?? 0) > 0) {
+			await shiyoDesk(ctx, s);
+			return;
+		}
 		await speak(s, who);
 	};
+
+/** シヨの 窓口：倉庫から 引き取る・持ち物を もどす・話す（ui/home.ts の 一覧）。 */
+const shiyoDesk = async (ctx: Ctx, s: Story): Promise<void> => {
+	await s.say("shiyo", SHIYO_DESK.ask);
+	const bag = loadTown().bag.length > 0;
+	const menu = [
+		SHIYO_DESK.withdraw,
+		...(bag ? [SHIYO_DESK.bag] : []),
+		SHIYO_DESK.talk,
+		SHIYO_DESK.quit,
+	];
+	const n = await s.choose(menu, { cancel: menu.length - 1 });
+	const pick = menu[n];
+	if (pick === SHIYO_DESK.withdraw) {
+		await s.wait(0);
+		await openStorage(ctx);
+	} else if (pick === SHIYO_DESK.bag) {
+		await s.wait(0);
+		await openBag(ctx);
+	} else if (pick === SHIYO_DESK.talk) await speak(s, "shiyo");
+};
 
 const playQuestLines = async (
 	s: Story,

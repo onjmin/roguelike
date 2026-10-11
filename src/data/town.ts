@@ -470,3 +470,12 @@ export const ZERO_VOICELESS: readonly string[] = [
 	"ロゼさんの　声、いいなあ。\nゼロの　音源も、いつか　きっと",
 	"声を　かして　くれる　人、\nまだ　さがして　います！",
 ];
+
+/** シヨの 窓口（倉庫が 建ってから 話しかけると。ui/villageEvents.ts の shiyoDesk）。 */
+export const SHIYO_DESK = {
+	ask: "倉庫の　用？\n……出すなら　さっさと　言って",
+	withdraw: "倉庫から　引き取る",
+	bag: "持ち物を　もどす",
+	talk: "話す",
+	quit: "やめる",
+} as const;

@@ -2914,7 +2914,7 @@ export class Play {
 	): Promise<void> {
 		const n = Math.max(1, dist(e.from, e.to));
 		const fire = e.kind === "fire";
-		// 炎は 帯なので となりでも 見える 長さに（矢・杖は 今までどおり）
+		// 炎は 帯なので となりでも 見える 長さに（ボール・杖は 今までどおり）
 		const ms =
 			(fire ? Math.min(480, 220 + n * 40) : Math.min(420, n * 38)) * speed;
 		const proj: Projectile = {
@@ -2928,6 +2928,8 @@ export class Play {
 						? "#a8e0ff"
 						: "#f4f1ff",
 			flame: fire ? { x: e.from.x, y: e.from.y, alpha: 1 } : undefined,
+			// 野球の ボール（装備して 投げる ボール・ボールを 投げる 敵・ピッチングマシン）
+			ball: e.kind === "ball",
 		};
 		this.projectiles.push(proj);
 		const t0 = performance.now();

@@ -1622,10 +1622,10 @@ export class Run {
 				this.togglePhase();
 				return false;
 			case "shoot": {
-				// 装備した矢を 1本、向いている方へ（トルネコ1の 矢の装備と同じ）
+				// 装備した ボールを 1球、向いている方へ（トルネコ1の 矢の装備と同じ）
 				const a = this.arrows();
 				if (!a) {
-					this.msg("矢を　装備していない");
+					this.msg("ボールを　装備していない");
 					return false;
 				}
 				return throwItem(this, a.uid, p.dir);

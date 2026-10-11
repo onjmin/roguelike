@@ -474,7 +474,7 @@ const BENCH: readonly string[] = [
 	"背もたれに「>>1乙」と　彫ってある。",
 ];
 
-export const FACILITIES: readonly Facility[] = [
+const BASE_FACILITIES: readonly Facility[] = [
 	// ── 釣り場（はじめから。桟橋の 西の 突堤。キリコの 趣味は 釣り：公式の プロフィール）
 	{
 		id: "pier",
@@ -4127,15 +4127,14 @@ export const FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
-	// ── 保守テレビ（都市。港の 岸壁。電光の 看板・自動ドア。中は スタジオ：ニュースの 机・カメラ・副調整室の 卓）
+	// ── 保守テレビ（都市。新市街の 北の 中庭。扉は 下の 芝 y=13。電光の 看板・自動ドア。中は スタジオ：ニュースの 机・カメラ・副調整室の 卓）
 	{
 		id: "tvstudio",
 		name: "保守テレビ　第1スタジオ",
 		from: 7,
-		at: [52, 47],
+		at: [53, 9],
 		look: {
 			kind: "grid",
-			ground: "quay",
 			rows: ["(-*-~-*-)", "[===&===]", "w1234wtuw", "pgggggDEp"],
 			door: "D",
 			door2: "E",
@@ -4733,6 +4732,162 @@ export const FACILITIES: readonly Facility[] = [
 	...FOLK_FACILITIES,
 	// ── 季節の 行事（data/village/season.ts。浜の すみの 芋煮の かまど）
 	...SEASON_FACILITIES,
+];
+
+/**
+ * 同じ 形の 建物の 色ちがい（中の 部屋は 同じ 間取りで、住む 人と ひとことが ちがう）。
+ * swap は 外観の 絵の 置きかえ（壁・屋根の 色）。people は 部屋の 人の 名前・ひとこと（頭から）。
+ */
+const variant = (
+	baseId: string,
+	v: {
+		id: string;
+		name: string;
+		at: Cell;
+		from?: number;
+		door?: string;
+		swap?: readonly (readonly [string, string])[];
+		people: readonly { name?: string; lines: readonly string[] }[];
+	},
+): Facility => {
+	const b = BASE_FACILITIES.find((f) => f.id === baseId);
+	if (!b) throw new Error(`no facility ${baseId}`);
+	const swap = new Map(v.swap ?? []);
+	const look =
+		b.look.kind === "grid"
+			? {
+					...b.look,
+					keys: Object.fromEntries(
+						Object.entries(b.look.keys).map(([k, refs]) => [
+							k,
+							refs.map((r) => swap.get(r) ?? r),
+						]),
+					),
+				}
+			: b.look;
+	return {
+		...b,
+		id: v.id,
+		name: v.name,
+		at: v.at,
+		from: v.from ?? b.from,
+		door: v.door ?? b.door,
+		look,
+		room: b.room && {
+			...b.room,
+			people: b.room.people?.map((p, i) => ({
+				...p,
+				id: `${v.id}_${i}`,
+				name: v.people[i]?.name ?? p.name,
+				lines: v.people[i]?.lines ?? p.lines,
+			})),
+		},
+	};
+};
+
+/**
+ * 都市（段7）で ふえる 集合住宅（縦の 通りを 1本に した あとの 空き地。北の 中庭 y=9〜12 の 扉は 下の 芝 y=13、
+ * 緑道 x=63〜69 の タワマンは 大通りの 歩道、マンションは 南の 中庭へ 出る）。中は もとの 建物と 同じ 間取り。
+ */
+const MORE_HOUSING: readonly Facility[] = [
+	variant("corpo", {
+		id: "sharehouse",
+		name: "シェアハウス「スレ立て荘」",
+		at: [40, 9],
+		from: 7,
+		door: "シェアハウス「スレ立て荘」。\n玄関に　くつが　10足　ならんでいる。",
+		swap: [
+			[base(5, 82), base(2, 82)],
+			[base(5, 84), base(2, 84)],
+		],
+		people: [
+			{
+				lines: [
+					"共用の　冷蔵庫は　名前　書いとかんと\n……プリンが　消えるんや",
+					"夜は　リビングで　みんなで　実況や。\n……テレビの　取りあいに　なる",
+				],
+			},
+		],
+	}),
+	variant("corpo", {
+		id: "heights",
+		name: "ハイツほしゅ",
+		at: [80, 9],
+		from: 7,
+		door: "ハイツほしゅ。\n郵便受けに「保守」の　シール。",
+		swap: [
+			[base(5, 82), base(1, 82)],
+			[base(5, 84), base(1, 84)],
+		],
+		people: [
+			{
+				lines: [
+					"駅に　近いのが　取り柄や。\n……電車の　音は　子守唄",
+					"大家さんが　保守　好きでな。\n家賃の　振込名も「ホシュ」や",
+				],
+			},
+		],
+	}),
+	variant("mansion", {
+		id: "grandmaison",
+		name: "グランメゾン保守",
+		at: [70, 9],
+		from: 7,
+		door: "グランメゾン保守。\nエントランスに　大きな　鉢植え。",
+		swap: [[art("wallTex", 2), art("wallTex", 0)]],
+		people: [
+			{
+				lines: [
+					"角部屋は　日当たり　ええで。\n……洗濯物が　よう　乾く",
+					"管理組合の　理事に　なってもうた。\n……議題は　ずっと　ゴミ置き場や",
+				],
+			},
+		],
+	}),
+	variant("mansion", {
+		id: "mansion2",
+		name: "メゾン・ド・保守　II",
+		at: [63, 26],
+		from: 7,
+		door: "メゾン・ド・保守　II。\n「1階　テナント　募集中」の　はり紙。",
+		swap: [[art("wallTex", 2), art("wallTex", 1)]],
+		people: [
+			{
+				lines: [
+					"となりの　タワマンの　影でな、\n……昼でも　ちょっと　暗いんや",
+					"1階は　テナント　募集中や。\n……ラーメン屋　来てほしい",
+				],
+			},
+		],
+	}),
+	variant("tower", {
+		id: "tower2",
+		name: "保守タワー　サウス",
+		at: [64, 14],
+		from: 7,
+		door: "保守タワー　サウス。\n入口の　警備員が　こちらを　見ている。",
+		swap: [[art("wallTex", 4), art("wallTex", 1)]],
+		people: [
+			{
+				lines: [
+					"いらっしゃいませ。\n……居住者様の　ご招待は　お持ちですか？",
+					"サウスの　ほうが　眺めは　よいと\nおっしゃる　方が　多いです",
+				],
+			},
+			{
+				lines: [
+					"……ご用件は。",
+					"サウス棟も　居住者様　専用です。\n……カメラは　4台です",
+				],
+			},
+		],
+	}),
+];
+
+/** 町が 育つと 建つ 施設（色ちがいの 集合住宅は うしろ）。 */
+export const FACILITIES: readonly Facility[] = [
+	...BASE_FACILITIES,
+	...MORE_HOUSING,
 ];
 
 /** その 段に 立っている 施設。 */

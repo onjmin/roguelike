@@ -34,7 +34,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	// 装備した矢を撃つ（矢を装備しているときだけ出る。トルネコ1の 矢の装備と同じ）
 	const shoot = el("button", {
 		class: "btn btn-shoot",
-		html: "矢<small></small>",
+		html: "球<small></small>",
 	});
 	// 束音ロゼの すり抜け（切りかえ。ロゼの ときだけ 出る。ON で 光る）
 	const phase = el("button", { class: "btn btn-phase", html: "すり<br>抜け" });

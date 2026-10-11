@@ -141,6 +141,7 @@ import {
 	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
+	SHIYO_DESK,
 	SOLD_BARE,
 	STAGE_NAMES,
 	STAGE_UP,
@@ -6783,7 +6784,7 @@ test("建物に 入る・出る: door text once, a door sound and a fade, then o
 	}
 });
 
-test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番の シヨ・ロゼは 話すだけ）", async () => {
+test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番の ロゼは 話すだけ、シヨは 倉庫の 窓口）", async () => {
 	const DOORS = [
 		["store", "door_store", VILLAGE_SPOTS.storeDoor],
 		["shop", "door_shop", VILLAGE_SPOTS.shopDoor],
@@ -6844,14 +6845,22 @@ test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番�
 					`stage ${stage} ${door}:\n${log.join("\n")}`,
 				);
 			}
+			// ロゼは 話すだけ。シヨは 倉庫の 窓口（引き取る・話す・やめる。持ち物が なければ もどすは 出ない）。
+			// 「話す」を えらぶと ひとこと。どちらも 中へは 移らない
 			for (const who of ["shiyo", "roze"] as const) {
 				const ev = events.find((e) => e.id === who);
 				ok(!!ev?.run, `stage ${stage}: ${who} is not there`);
-				const { s, log } = fakeStory();
+				const { s, log } = fakeStory({ pick: 1 });
 				await ev?.run?.(s);
+				const says = log.filter((l) => l.startsWith(`say ${who}: `));
+				const chose = log.some((l) => l.startsWith("choose"));
 				ok(
-					log.some((l) => l.startsWith(`say ${who}: `)) &&
-						!log.some((l) => l.startsWith("choose") || l.startsWith("warp")),
+					(who === "shiyo"
+						? says[0] === `say shiyo: ${SHIYO_DESK.ask}` &&
+							says.length === 2 &&
+							chose
+						: says.length > 0 && !chose) &&
+						!log.some((l) => l.startsWith("warp")),
 					`stage ${stage} ${who}:\n${log.join("\n")}`,
 				);
 			}

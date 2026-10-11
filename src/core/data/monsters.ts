@@ -111,7 +111,15 @@ const M: MonsterDef[] = [
 		exp: 5,
 		floors: [4, 9],
 		weight: 32,
-		abilities: [{ k: "ranged", rate: 3 / 4, atk: 6, verb: "ボールを　投げた" }],
+		abilities: [
+			{
+				k: "ranged",
+				rate: 3 / 4,
+				atk: 6,
+				verb: "ボールを　投げた",
+				ball: true,
+			},
+		],
 		desc: "まっすぐ　ならぶと　ボールを　投げてくる",
 		flavor: "投げるのは　ボールより、試合の　ほうが　多い",
 	},

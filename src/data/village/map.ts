@@ -783,12 +783,12 @@ const SIGNALS: readonly Cell[] = [
 	[46, 24],
 ];
 /** 緑道（もと 縦の 通りの x=63〜69。両はしの 列に 木。まんなかの 芝を 歩く。大通り・中庭の 行は あける）。 */
-const GREENWAY: readonly Cell[] = [
-	9, 11, 15, 17, 26, 28, 32, 34, 37, 39,
-].flatMap((y): Cell[] => [
-	[63, y],
-	[69, y],
-]);
+const GREENWAY: readonly Cell[] = [9, 11, 15, 17, 32, 34, 37, 39].flatMap(
+	(y): Cell[] => [
+		[63, y],
+		[69, y],
+	],
+);
 /**
  * 公園の 木（新市街の 空いた 区画。地図の 左上から 右へ）。止まっている 車と 線路の 東の 店
  * （ファミレス・ラーメン屋）は data/village/facilities.ts。

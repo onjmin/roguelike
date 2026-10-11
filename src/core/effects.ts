@@ -764,7 +764,7 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 		t: "bolt",
 		from: { x: p.x, y: p.y },
 		to: last,
-		kind: d.cat === "arrow" ? "arrow" : "item",
+		kind: d.cat === "arrow" ? "ball" : "item",
 		icon: it.kind,
 	});
 	if (d.cat !== "arrow") {
