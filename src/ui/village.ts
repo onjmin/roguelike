@@ -1114,7 +1114,16 @@ export class Village {
 	 */
 	private walkTo(tx: number, ty: number, talk: Actor | null): void {
 		const avoid = (x: number, y: number) => !!this.touchAt(x, y);
-		const path = this.route(tx, ty, talk, avoid) ?? this.route(tx, ty, talk);
+		// うろうろ 歩く 人（ぷゆゆ・フェリス）で ふさがって 道が 無ければ、その 人を 押しのけて 通る 道
+		// （スマホの タップでは 2回 押し・長押しが しにくい。歩く 途中で swapPast が 入れかわる）
+		const wander = (x: number, y: number) =>
+			!!this.field?.tileAt(x, y).passable &&
+			!!this.field.blockerAt(x, y, this.player)?.def?.wander;
+		const path =
+			this.route(tx, ty, talk, avoid) ??
+			this.route(tx, ty, talk) ??
+			this.route(tx, ty, talk, avoid, wander) ??
+			this.route(tx, ty, talk, undefined, wander);
 		if (!path) return;
 		this.path = path;
 		this.pathRun = path.length >= RUN_PATH;
@@ -1128,6 +1137,7 @@ export class Village {
 		ty: number,
 		talk: Actor | null,
 		avoid?: (x: number, y: number) => boolean,
+		pass?: (x: number, y: number) => boolean,
 	): Dir[] | null {
 		const field = this.field;
 		if (!field) return null;
@@ -1148,12 +1158,25 @@ export class Village {
 					continue;
 				const p = here
 					? []
-					: field.findPath(me.x, me.y, sx, sy, me, false, avoid);
+					: field.findPath(
+							me.x,
+							me.y,
+							sx,
+							sy,
+							me,
+							false,
+							avoid,
+							undefined,
+							pass,
+						);
 				if (p && (!path || p.length < path.length)) path = p;
 			}
 		}
 		// 立てる マスが 無ければ、相手の となりの どこかまで
-		return path ?? field.findPath(me.x, me.y, tx, ty, me, noBack, avoid);
+		return (
+			path ??
+			field.findPath(me.x, me.y, tx, ty, me, noBack, avoid, undefined, pass)
+		);
 	}
 
 	/** 画面の点（canvas の CSS 画素）が、キリコから見て どの向きか（8方向）。キリコの上なら null。 */

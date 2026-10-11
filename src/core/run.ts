@@ -1157,13 +1157,15 @@ export class Run {
 
 	/**
 	 * たおした 敵の 声を 蓄音機に 録る（1つだけ。前の 声は 上書き）。
-	 * 記録に 出すのは 蓄音機が 空の ときだけ（毎回 出すと 読みとばされる。いま 何が 入っているかは メニューの 蓄音機に 出る）。
+	 * 記録に 出すのは 蓄音機が 空の ときと ROM専の ときだけ（毎回 出すと 読みとばされる。いま 何が 入っているかは メニューの 蓄音機に 出る）。
 	 */
 	private recordVoice(m: Monster): void {
 		if (this.s.voice === m.kind) return;
 		const was = this.s.voice;
 		this.s.voice = m.kind;
-		if (!was) {
+		// ROM専の 声は 上書きでも 出す（持ち帰ると 裏シナリオが 進む。録れたか わからないと 困る）
+		const rom = m.kind === "funamushi";
+		if (!was || rom) {
 			this.msg(`${mdef(m).name}の　声を　録った`);
 			// 1901年の スレ（裏の 2段目）：鳴らしているのは 昔の ログ。どの 声にも 聞きおぼえが ある（記録だけ。乱数に 触れない）
 			if (this.s.dungeon === "y1901") this.msg("……知ってる　声だ");
@@ -1241,7 +1243,9 @@ export class Run {
 		}
 		if (giveExp) {
 			ankaHit(this, "kill");
-			this.recordVoice(m);
+			// ボスの 声は 録らない（たおすと その場で 帰るので 使い道が なく、録って いた 声を 上書きすると
+			// ROM専の 声を 持ち帰る 裏シナリオが ボスの 板で 進まなく なる）
+			if (!d.boss) this.recordVoice(m);
 		}
 		if (giveExp && d.exp > 0) {
 			this.msg(`${d.exp}ポイントの　経験値を　かせいだ`);

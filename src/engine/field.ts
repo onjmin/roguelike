@@ -499,6 +499,7 @@ export class Field {
 	 * 目的地そのものに入れないとき（人・カウンター等）は、隣まで行く経路を返す。
 	 * noBack なら北どなり（背の高い物の裏）には着かない。
 	 * avoid の マス（踏むと 起きる 扉・出口など）は、目的地の ほかは 通らない。
+	 * pass の マスは 入れなくても 通る（うろうろ 歩く 人を 押しのけて 通る 道。ui/village.ts）。
 	 */
 	findPath(
 		sx: number,
@@ -509,6 +510,7 @@ export class Field {
 		noBack = false,
 		avoid?: (x: number, y: number) => boolean,
 		maxNodes = this.w * this.h,
+		pass?: (x: number, y: number) => boolean,
 	): Dir[] | null {
 		if (!this.inBounds(tx, ty)) return null;
 		const goalEnterable = this.canEnter(tx, ty, self);
@@ -534,7 +536,7 @@ export class Field {
 				const ny = y + DIR_VEC[d].dy;
 				const k = key(nx, ny);
 				if (prev.has(k) || !this.inBounds(nx, ny)) continue;
-				if (!this.canEnter(nx, ny, self)) continue;
+				if (!this.canEnter(nx, ny, self) && !pass?.(nx, ny)) continue;
 				if (avoid?.(nx, ny) && !(nx === tx && ny === ty)) continue;
 				prev.set(k, { k: key(x, y), d });
 				queue.push([nx, ny]);

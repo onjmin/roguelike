@@ -417,6 +417,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else {
 				const known = w.known;
 				w.plus++;
+				r.se("whet");
 				if (w.cursed) r.se("uncurse");
 				w.cursed = false;
 				w.known = true;
@@ -432,6 +433,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else {
 				const known = sh.known;
 				sh.plus++;
+				r.se("temper");
 				if (sh.cursed) r.se("uncurse");
 				sh.cursed = false;
 				sh.known = true;
@@ -545,9 +547,14 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					"good",
 				);
 			} else if (tgt && cat === "scroll") {
-				// 読んだ 次スレの ぶん 1つ 空いているので かならず 入る
-				r.addItem({ ...tgt, uid: r.s.nextUid++ });
+				// 持ち物から 読めば その ぶん 1つ 空くが、床の 次スレを 読んだ ときは 空かない。
+				// 持ち物が いっぱいなら 足もとに 置く（前は 消えていた）
+				const copy = { ...tgt, uid: r.s.nextUid++ };
 				r.msg(`${r.name(tgt)}の　次スレが　立った`, "good");
+				if (!r.addItem(copy) && r.placeItem(copy, { x: p.x, y: p.y }))
+					r.msg(
+						`持ち物が　いっぱいなので、${r.name(copy)}は　足もとに　置いた`,
+					);
 			} else r.msg("何も　起きなかった");
 			break;
 		}

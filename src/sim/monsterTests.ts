@@ -2381,6 +2381,24 @@ test("staff", "foot: works even with a full inventory", () => {
 	ok(r.p.items.length === INVENTORY_MAX, `items ${r.p.items.length}`);
 });
 
+test(
+	"staff",
+	"foot: 次スレ read off the floor with a full bag drops the copy at her feet",
+	() => {
+		const r = arena("foot-recharge");
+		while (r.p.items.length < INVENTORY_MAX - 1) give(r, "f_bread");
+		const src = give(r, "s_whet");
+		const it = atFoot(r, "s_recharge");
+		turn(r, { c: "use", item: it.uid, target: src.uid });
+		ok(r.p.items.length === INVENTORY_MAX, `items ${r.p.items.length}`);
+		const copy = r.itemAt(r.p.x, r.p.y)?.item;
+		ok(
+			copy?.kind === "s_whet" && copy.uid !== src.uid,
+			`the copy is not at her feet: ${copy?.kind}`,
+		);
+	},
+);
+
 test("staff", "foot: a thrown arrow leaves the rest of the bundle", () => {
 	const r = arena("foot-arrow");
 	const it = atFoot(r, "a_wood");
@@ -3191,8 +3209,8 @@ test("takonomin", "breath: throws hot takoyaki, not fire", () => {
 test("mashii", "pack: comes in a group of four", () => {
 	const r = arena("mashii");
 	r.s.dungeon = "festival";
-	r.s.depth = 5;
-	r.f.depth = 5;
+	r.s.depth = 7;
+	r.f.depth = 7;
 	const m = spawnMonster(r, null, at(5, 0), {});
 	// 表から 引くと ほかの 敵も 出るので、マシーが 出るまで 引きなおす
 	let tries = 0;
@@ -3709,6 +3727,45 @@ test(
 		ok(r.f.monsters.includes(b), "the blast blew the boss away");
 		ok(b.hp === b.maxHp - 2 * q, `blast: hp ${b.hp}/${b.maxHp}`);
 		ok(!r.s.end, "the run ended");
+	},
+);
+
+test(
+	"boss",
+	"felling it keeps the voice in the gramophone (ROM専 taken home from a boss board: STORY.md §5.98)",
+	() => {
+		for (const d of BOSS_BOARDS) {
+			const { r, b } = bossArena(`boss-voice-${d}`, d, { pos: at(1, 0) });
+			r.s.voice = "funamushi";
+			b.hp = 1;
+			const dir = dirOf(1, 0) as Dir8;
+			for (let i = 0; i < 20 && !r.s.end; i++) {
+				b.x = r.p.x + 1;
+				b.y = r.p.y;
+				r.act({ c: "attack", dir });
+			}
+			ok(r.s.end?.kind === "clear", `${d}: ended as ${r.s.end?.kind}`);
+			ok(r.s.voice === "funamushi", `${d}: the voice became ${r.s.voice}`);
+		}
+	},
+);
+
+test(
+	"floor",
+	"gramophone: ROM専 is logged even when it overwrites another voice",
+	() => {
+		const r = arena("voice-rom");
+		r.s.voice = "tousuko";
+		const m = put(r, "funamushi", { x: CENTER.x, y: CENTER.y - 1 });
+		m.hp = 1;
+		for (let k = 0; k < 20 && m.hp > 0; k++) {
+			m.x = CENTER.x;
+			m.y = CENTER.y - 1;
+			turn(r, { c: "attack", dir: 0 });
+		}
+		ok(m.hp <= 0, "harness: could not kill ROM専");
+		ok(r.s.voice === "funamushi", `the voice is ${r.s.voice}`);
+		ok(logHas(r, "ROM専の　声を　録った"), "no log line for ROM専");
 	},
 );
 

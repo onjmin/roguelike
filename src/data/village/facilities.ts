@@ -25,6 +25,7 @@ import { BUSHITSU_FACILITIES } from "./bushitsu";
 import { CIVIC_FACILITIES } from "./civicHalls";
 import { EATERIES } from "./eateries";
 import { FOLK_FACILITIES } from "./folk";
+import { CORPO_ROOM, DANCHI_ROOM, MANSION_ROOM, TOWER_ROOM } from "./housing";
 import type { Cell } from "./map";
 import { HOME_MSG, HOME_ROWS, MYHOME_FROM } from "./myhome";
 import { art, ri, riCell } from "./rpgenArt";
@@ -2584,70 +2585,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 		},
 		door: "コーポ「ほしゅ荘」。\n階段が　ぎしっと　鳴った。",
-		// 中：1K の 和室。奥に 窓と 布団、ちゃぶ台・ブラウン管・本棚、右に 流しと コンロ。入口の そばに ゴミ袋
-		room: {
-			look: LOOKS.tatami,
-			rows: [
-				"##########",
-				"#HHWHHHWH#",
-				"#hhhmhhhh#",
-				"#Bbc.TSsK#",
-				"#z.......#",
-				"#...o...f#",
-				"#........#",
-				"#g.......#",
-				"####DD####",
-			],
-			tiles: (k) => ({
-				m: k.low(ri("poster")),
-				B: k.on(base(0, 112)),
-				z: k.on(base(0, 113)),
-				b: k.on(riCell("bookshelf", 0, 0)),
-				c: k.on(riCell("bookshelf", 1, 0)),
-				T: k.on(ri("tvCrt")),
-				S: k.on(riCell("sink", 0, 0)),
-				s: k.on(riCell("sink", 1, 0)),
-				K: k.on(riCell("stove", 0, 0)),
-				o: k.on(ri("roundTable")),
-				f: k.on(ri("fridgeWhite")),
-				g: k.on(ri("binBurn")),
-			}),
-			things: {
-				m: "poster",
-				z: "futon",
-				b: "shelf",
-				c: "shelf",
-				T: "tv",
-				S: "sink",
-				s: "sink",
-				K: "stove",
-				f: "fridge",
-				g: "trash",
-			},
-			lines: {
-				poster: ["壁の　ポスター。\n「目指せ　1000レス」"],
-				futon: ["せんべい布団。\n……昼すぎまで　しかれた　まま。"],
-				shelf: ["本棚。\n赤本と、まんがの　1巻だけ　ずらり。"],
-				tv: ["ブラウン管の　テレビ。\nたたくと　映る。"],
-				sink: ["流し。\nカップ麺の　ふたが　3つ　重なっている。"],
-				stove: ["ひと口の　コンロ。\n……やかんしか　のっていない。"],
-				fridge: ["小さな　冷蔵庫。\n中は　麦茶と、からしの　小袋。"],
-				trash: ["ゴミ袋。\n「燃えるゴミは　月・木」"],
-			},
-			people: [
-				{
-					id: "corpo_tenant",
-					walk: NANASHI[1],
-					at: [6, 5],
-					dir: "down",
-					name: "住人",
-					lines: [
-						"家賃　3万。\n……壁は　うすいけど、スレは　熱いで",
-						"となりから　実況の　声が　するんや。\n……同じ　スレ　見とるわ",
-					],
-				},
-			],
-		},
+		// 中：玄関・廊下・各部屋（data/village/housing.ts）
+		room: CORPO_ROOM,
 	},
 	// 白い タイルの マンション（平らな 屋根・ベランダの 窓・植えこみ・自動ドア）
 	{
@@ -2674,93 +2613,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 		},
 		door: "マンション「メゾン・ド・保守」。\n郵便受けに　チラシが　はさまっている。",
 		doorSe: "autoDoor",
-		// 中：1LDK の 洋間。奥に 大きな テレビと ソファ、右に ベッド、左に 台所（冷蔵庫・コンロ・流し）、
-		// まんなかに 机と ノートPC、入口の そばに 観葉植物と 段ボール（通販）
-		room: {
-			look: look(
-				ri("flWoodLight"),
-				"#d8b888",
-				MODERN_UP,
-				MODERN_LOW,
-				"#e8e8e4",
-			),
-			rows: [
-				"############",
-				"#HWHHkHHHWH#",
-				"#hhhhhh「」hh#",
-				"#fKvSs.TY.Z#",
-				"#.........z#",
-				"#....LMl...#",
-				"#..........#",
-				"#....aA....#",
-				"#F......xx.#",
-				"####DD######",
-			],
-			tiles: (k) => ({
-				k: k.up(CLOCK),
-				f: k.on(ri("fridgeSilver")),
-				K: k.on(riCell("stoveBlack", 0, 0)),
-				v: k.on(riCell("stoveBlack", 1, 0)),
-				S: k.on(riCell("sink", 0, 0)),
-				s: k.on(riCell("sink", 1, 0)),
-				T: k.on(riCell("tvGame", 0, 1)),
-				"「": k.low(riCell("tvGame", 0, 0)),
-				Y: k.on(riCell("tvGame", 1, 1)),
-				"」": k.low(riCell("tvGame", 1, 0)),
-				Z: k.on(base(2, 112)),
-				z: k.on(base(2, 113)),
-				L: k.on(riCell("tableLong", 0, 0), ri("laptop")),
-				M: k.on(riCell("tableLong", 1, 0)),
-				l: k.on(riCell("tableLong", 2, 0), ri("coffeeMaker")),
-				a: k.on(riCell("sofaWhite", 0, 0)),
-				A: k.on(riCell("sofaWhite", 1, 0)),
-				F: k.on(ri("bonsai")),
-				x: k.on(ri("boxesB")),
-			}),
-			things: {
-				f: "fridge",
-				K: "stove",
-				v: "stove",
-				S: "sink",
-				s: "sink",
-				T: "tv",
-				Y: "tv",
-				Z: "bed",
-				z: "bed",
-				L: "pc",
-				M: "pc",
-				l: "coffee",
-				a: "sofa",
-				A: "sofa",
-				F: "plant",
-				x: "box",
-			},
-			lines: {
-				fridge: ["冷蔵庫。\n作りおきの　タッパーに「月」「火」「水」。"],
-				stove: ["IH の　コンロ。\n……ピカピカ。使った　あとが　ない。"],
-				sink: ["流し。\n食洗機つき。「自炊は　来月から」の　メモ。"],
-				tv: ["大きな　テレビ。\n実況スレを　見ながら　ナイター中継。"],
-				bed: ["ベッド。\n枕もとに　スマホの　充電器が　3本。"],
-				pc: ["ノートPC。\n会議の　画面の　裏で、スレが　開いている。"],
-				coffee: ["コーヒーメーカー。\n「在宅勤務の　おとも」"],
-				sofa: ["白い　ソファ。\nクッションが　ひとつ　へこんでいる。"],
-				plant: ["観葉植物。\n……水やりの　当番表は　ひとりぶん。"],
-				box: ["通販の　段ボール。\n「ポチった　覚えが　ない」"],
-			},
-			people: [
-				{
-					id: "mansion_tenant",
-					walk: NANASHI[2],
-					at: [8, 5],
-					dir: "down",
-					name: "住人",
-					lines: [
-						"在宅勤務や。\n……会議中も、スレは　保守しとる",
-						"管理費が　上がるらしいで。\n……ローン　あと　30年や",
-					],
-				},
-			],
-		},
+		// 中：玄関・廊下・各部屋（data/village/housing.ts）
+		room: MANSION_ROOM,
 	},
 	// 分譲住宅「保守ヶ丘」＝キリコの 家（住宅街。35年ローンで 買う：演出だけ。中は 家具と 模様替え。
 	//    data/village/myhome.ts・ui/myhome.ts。部屋の 形は 保存から 組みなおす。ここの room は 何も 置かない 形）
@@ -2821,84 +2675,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 		},
 		door: "保守ヶ丘団地　3号棟。\n階段に、夕飯の　におい。",
 		doorSe: "doorSteel",
-		// 中：2DK の 1部屋。奥に 和室（仏壇・布団・掛け軸）、手前に 台所と 食卓。壁に カレンダー、
-		// 窓ぎわに 盆栽、入口の そばに 傘立てと 回覧板
-		room: {
-			look: LOOKS.wood,
-			rows: [
-				"############",
-				"#HHWHHcHHWH#",
-				"#hhhhhhhhhh#",
-				"#SsKf..Bb.P#",
-				"#.......z..#",
-				"#..[=]...F.#",
-				"#...n......#",
-				"#R.......T.#",
-				"####DD######",
-			],
-			tiles: (k) => ({
-				c: k.up(ri("paperNote")),
-				S: k.on(riCell("sink", 0, 0)),
-				s: k.on(riCell("sink", 1, 0)),
-				K: k.on(riCell("stove", 0, 0)),
-				f: k.on(ri("fridgeWhite")),
-				B: k.on(riCell("cabWood", 0, 0)),
-				b: k.on(riCell("cabWood", 1, 0), ri("tvSmall")),
-				z: k.floor(base(3, 311)),
-				P: k.on(base(0, 309, 1, 2)),
-				"[": k.on(riCell("tableLong", 0, 0)),
-				"=": k.on(riCell("tableLong", 1, 0), ri("riceCooker")),
-				"]": k.on(riCell("tableLong", 2, 0)),
-				n: k.floor(ri("chairDarkUp")),
-				F: k.on(ri("bonsai")),
-				R: k.on(ri("memo")),
-				T: k.on(ri("trash")),
-			}),
-			things: {
-				c: "calendar",
-				S: "sink",
-				s: "sink",
-				K: "stove",
-				f: "fridge",
-				B: "cabinet",
-				b: "tv",
-				P: "tansu",
-				"[": "table",
-				"=": "table",
-				"]": "table",
-				F: "bonsai",
-				R: "kairan",
-				T: "trash",
-			},
-			lines: {
-				calendar: ["カレンダー。\n「ゴミ当番」「自治会」「孫」の　丸。"],
-				sink: ["流し。\nたわしと、洗った　湯のみが　ふたつ。"],
-				stove: ["コンロ。\n肉じゃがの　鍋が　ことこと　いっている。"],
-				fridge: ["冷蔵庫。\n扉に「保守ヶ丘　夏祭り」の　うちわ。"],
-				cabinet: [
-					"茶だんすの　上に　小さな　テレビ。\nのど自慢が　流れている。",
-				],
-				tv: ["小さな　テレビ。\n……音量が　大きい。"],
-				tansu: ["箪笥。\n上に　家族の　写真が　ならんでいる。"],
-				table: ["食卓。\n炊飯器と、たくあんの　小皿。"],
-				bonsai: ["盆栽。\n「30年もの」の　札。"],
-				kairan: ["回覧板。\n「団地まつり　焼きそば係　募集」"],
-				trash: ["ゴミ箱。\n分別の　表が　ふたに　貼ってある。"],
-			},
-			people: [
-				{
-					id: "danchi_granny",
-					walk: NANASHI[3],
-					at: [5, 4],
-					dir: "down",
-					name: "名無しの　ばあちゃん",
-					lines: [
-						"あら、いらっしゃい。\n……肉じゃが、食べていくかい？",
-						"この　団地も　古く　なったねえ。\n……でも、エレベーター　なしでも　平気や",
-					],
-				},
-			],
-		},
+		// 中：玄関・廊下・各部屋（data/village/housing.ts）
+		room: DANCHI_ROOM,
 	},
 	// タワーマンション（都市。ガラスの 壁が 屋上まで。玄関は オートロックの 風除室：住人の ほかは ロビーへ 入れない）
 	{
@@ -2924,86 +2702,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 		},
 		door: "入口の　警備員が　会釈した。\n……目は　笑っていない。",
 		doorSe: "autoDoor",
-		// 中：風除室だけ（オートロックの 操作盤・宅配ボックス・警備員）。ガラスの 仕切りの 向こうに
-		// ホテルの ような ロビー（コンシェルジュの 受付・ソファ・エレベーター）。受付の 台ごしに 話せるが、奥へは 入れない
-		room: {
-			look: look(ri("flGrey"), "#b0b0b0", MODERN_UP, MODERN_LOW, "#e8e8e4"),
-			rows: [
-				"############",
-				"#HHeHHHHeHH#",
-				"#hhEhhkhhEh#",
-				"#F...aA...F#",
-				"#..........#",
-				"#..........#",
-				"#gGGg[=]ggg#",
-				"#P.........#",
-				"#.........L#",
-				"#####DD#####",
-			],
-			tiles: (k) => ({
-				e: k.up(),
-				E: k.low(base(4, 507, 1, 2)),
-				k: k.low(CLOCK),
-				F: k.on(ri("bonsai")),
-				a: k.on(riCell("sofaWhite", 0, 0)),
-				A: k.on(riCell("sofaWhite", 1, 0)),
-				g: k.on(art("glass", 1)),
-				G: k.on(art("glass", 1)),
-				"[": ctr(k.on(riCell("counterDark", 0, 0), ri("bell"))),
-				"=": ctr(k.on(riCell("counterDark", 1, 0))),
-				"]": ctr(k.on(riCell("counterDark", 2, 0), ri("phone"))),
-				P: k.on(ri("atm")),
-				L: k.on(riCell("lockers", 0, 1)),
-			}),
-			// ロビーの 物（エレベーター・時計・ソファ・観葉植物）は ガラスの 向こう：調べられない
-			things: {
-				G: "glass",
-				"[": "desk",
-				"]": "desk",
-				P: "panel",
-				L: "box",
-			},
-			lines: {
-				glass: [
-					"ガラスの　仕切り。\nオートロックで　開かない。",
-					"向こうは　ホテルの　ような　ロビー。\nエレベーターは　カードキーで　呼ぶ。",
-					"住人が　カードを　かざすと　開いて、\nすぐに　閉まった。",
-					"……ついて　入る　すきは　ない。",
-				],
-				desk: ["コンシェルジュの　受付。\n来客の　名簿と、呼び鈴。"],
-				panel: [
-					"オートロックの　操作盤。\n部屋番号を　押して、呼び出す。",
-					"……「5001」。応答なし。\n「3501」。応答なし。",
-					"画面に「居住者様の　ご案内が　ない　方は\nお入り　いただけません」。",
-				],
-				box: ["宅配ボックス。\n暗証番号と、顔の　認証つき。"],
-			},
-			people: [
-				{
-					id: "tower_concierge",
-					walk: NANASHI[0],
-					at: [6, 5],
-					dir: "down",
-					name: "コンシェルジュ",
-					lines: [
-						"いらっしゃいませ。\n……居住者様の　ご招待は　お持ちですか？",
-						"申し訳ございません。\nご招待の　ない　方は、ロビーより　先へは……",
-						"最上階の　方ですか？\n……お名前は　申し上げられません",
-					],
-				},
-				{
-					id: "tower_guard",
-					walk: NANASHI[2],
-					at: [8, 7],
-					dir: "left",
-					name: "警備員",
-					lines: [
-						"……ご用件は。",
-						"ここから　先は　居住者様　専用です。\n……カメラ　3台で　見ています",
-					],
-				},
-			],
-		},
+		// 中：玄関・廊下・各部屋（data/village/housing.ts）
+		room: TOWER_ROOM,
 	},
 	// ── バス停（住宅街。広場の 東の はし。ここからも どの 板へも 出かけられる：出口を 遠く しない）
 	{

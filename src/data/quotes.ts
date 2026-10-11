@@ -335,6 +335,8 @@ export const pickQuote = (
 	who?: Speaker,
 	/** 村に いない 仲間（出ていった やきう。data/story.ts の awayFriends）。その人の セリフは 引かない。 */
 	away: readonly Speaker[] = [],
+	/** しゃべらせない 仲間（冒険から 帰って きた 本人。自分を ねぎらわない）。名前が 出てくる セリフは 引く。 */
+	mute: readonly Speaker[] = [],
 ): Quote | null => {
 	const pick = (pool: readonly Quote[], salt: number) =>
 		at(
@@ -342,6 +344,7 @@ export const pickQuote = (
 				(x) =>
 					(!who || x.who === who) &&
 					!away.includes(x.who) &&
+					!mute.includes(x.who) &&
 					!away.some((w) => x.text.includes(SPEAKERS[w].name)),
 			),
 			seed,
