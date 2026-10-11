@@ -417,6 +417,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else {
 				const known = w.known;
 				w.plus++;
+				r.se("whet");
 				if (w.cursed) r.se("uncurse");
 				w.cursed = false;
 				w.known = true;
@@ -432,6 +433,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			else {
 				const known = sh.known;
 				sh.plus++;
+				r.se("temper");
 				if (sh.cursed) r.se("uncurse");
 				sh.cursed = false;
 				sh.known = true;
