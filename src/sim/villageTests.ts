@@ -3728,13 +3728,14 @@ test("裏シナリオ: the lighthouse password follows from the three memos, and
 	ok(
 		memos.some((x) => x.text.includes("1234")) &&
 			memos.some((x) => x.text.includes("1つ　多い")) &&
-			LIGHTHOUSE_DOOR.answer === "12345" &&
-			LIGHTHOUSE_DOOR.options.includes(LIGHTHOUSE_DOOR.answer),
+			LIGHTHOUSE_DOOR.answer === "12345",
 		"the password cannot be worked out from the memos",
 	);
+	// 1桁ずつ 入れる 窓：答えは 数字だけで、入れられる 桁に おさまる
 	ok(
-		new Set(LIGHTHOUSE_DOOR.options).size === LIGHTHOUSE_DOOR.options.length,
-		"duplicate password options",
+		/^\d+$/.test(LIGHTHOUSE_DOOR.answer) &&
+			LIGHTHOUSE_DOOR.answer.length <= LIGHTHOUSE_DOOR.max,
+		"the password does not fit the pin pad",
 	);
 	// 置き手紙は 読み返す 一覧でも 1行に おさまる
 	for (const m of memos)
