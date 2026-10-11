@@ -1247,12 +1247,13 @@ export class Play {
 		if (!isDiagonal(dir) || run.p.status.confuse > 0) return dir;
 		const ahead = step(run.p, dir);
 		const m = run.monsterAt(ahead.x, ahead.y);
-		if (run.canStepTerrain(run.p, dir) || (m && run.monsterVisible(m)))
+		// 主人公の 地形（ロゼの すり抜けが ON なら 角も 壁も ぬける：すべらせない）
+		if (run.playerCanStep(run.p, dir) || (m && run.monsterVisible(m)))
 			return dir;
 		const open = [((dir + 7) % 8) as Dir8, ((dir + 1) % 8) as Dir8].filter(
 			(c) => {
 				const n = step(run.p, c);
-				return run.canStepTerrain(run.p, c) && !run.monsterAt(n.x, n.y);
+				return run.playerCanStep(run.p, c) && !run.monsterAt(n.x, n.y);
 			},
 		);
 		return open.length === 1 ? open[0] : dir;
@@ -1273,7 +1274,7 @@ export class Play {
 				run.monsterVisible(m) &&
 				!m.disguise &&
 				!posing(m) &&
-				run.cornerOk(p, d)
+				run.playerCornerOk(p, d)
 			);
 		};
 		if (foe(p.dir)) return p.dir;
@@ -1656,7 +1657,7 @@ export class Play {
 			// となりの敵をタップ：まず そちらを向く。向いていれば なぐる
 			if (m && run.monsterVisible(m) && !m.disguise && !posing(m)) {
 				// 壁の 角ごしの 斜めは なぐれない（空ぶりで 1手 むだに なる）。なぐれる マスへ 回りこむ
-				if (!run.cornerOk(p, d)) {
+				if (!run.playerCornerOk(p, d)) {
 					this.startTravel({ x, y });
 					return;
 				}
@@ -1761,7 +1762,8 @@ export class Play {
 		const order = spread === 2 ? [0, 1, -1, 2, -2] : [0, 1, -1];
 		for (const o of order) {
 			const c = ((((d + o) % 8) + 8) % 8) as Dir8;
-			if (run.canStepTerrain(run.p, c)) return c;
+			// ロゼの すり抜けが ON なら 角ごしの 斜めも そのまま（たて・よこに ずらさない）
+			if (run.playerCanStep(run.p, c)) return c;
 		}
 		return null;
 	}
