@@ -197,6 +197,20 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
+import {
+	canPlace,
+	FURNITURE,
+	type FurnitureId,
+	HOME_GIFTS,
+	HOME_MAX,
+	HOME_MSG,
+	homeRows,
+	layoutOk,
+	MOVE_IN_GIFT,
+	type Placed,
+	placeInFront,
+	RESIDENT_GIFTS,
+} from "../data/village/myhome";
 import { newsPages, townNews } from "../data/village/news";
 import {
 	BATH_NOREN_M,
@@ -1863,6 +1877,97 @@ const fitsWindow = (texts: readonly [string, string][]): void => {
 			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
 	}
 };
+
+test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通れなく ならない・入口と 予定表の 前は ふさがない", () => {
+	const texts: [string, string][] = [];
+	for (const [k, v] of Object.entries(HOME_MSG))
+		for (const t of Array.isArray(v) ? v : [v])
+			texts.push([`HOME_MSG.${k}`, t]);
+	for (const [id, f] of Object.entries(FURNITURE))
+		texts.push([`furniture ${id}`, f.line]);
+	for (const g of [MOVE_IN_GIFT, ...HOME_GIFTS, ...RESIDENT_GIFTS]) {
+		texts.push([`gift ${g.id}`, g.note]);
+		texts.push([
+			`gift ${g.id} from`,
+			HOME_MSG.from
+				.replace("{from}", g.from)
+				.replace("{name}", FURNITURE[g.id].name),
+		]);
+		texts.push([
+			`gift ${g.id} picked`,
+			HOME_MSG.picked.replace("{name}", FURNITURE[g.id].name),
+		]);
+	}
+	texts.push([
+		"loan",
+		HOME_MSG.loan[0].replace("{y}", "34").replace("{m}", "11"),
+	]);
+	fitsWindow(texts);
+	// どの 家具も もらえる（宅配便・住人・入居の どれか 1つだけ）
+	const sources = [MOVE_IN_GIFT, ...HOME_GIFTS, ...RESIDENT_GIFTS].map(
+		(g) => g.id,
+	);
+	for (const id of Object.keys(FURNITURE))
+		ok(
+			sources.filter((x) => x === id).length === 1,
+			`${id}: ${sources.filter((x) => x === id).length} sources`,
+		);
+	// 住人の 家具は その 施設の 人が くれる
+	for (const g of RESIDENT_GIFTS) {
+		const f = facilityById(g.facility);
+		ok(
+			f?.room?.people?.some((p) => p.id === g.person),
+			`${g.facility}.${g.person} is not there`,
+		);
+	}
+	// 置く：入口の 前・予定表の 前・立っている マスには 置かない。壁の 上にも 置かない
+	ok(!canPlace([], { id: "table", x: 5, y: 8 }), "table on the mat front");
+	ok(!canPlace([], { id: "table", x: 3, y: 3 }), "table under the loan");
+	ok(!canPlace([], { id: "table", x: 0, y: 4 }), "table in the wall");
+	ok(canPlace([], { id: "table", x: 2, y: 5 }), "table on the floor");
+	// 1列に ならべて 部屋を 区切ると 通れなく なる
+	const wall: Placed[] = [];
+	for (let x = 1; x <= 10; x++) wall.push({ id: "table", x, y: 6 });
+	ok(!layoutOk(wall), "a wall of furniture cuts the room");
+	ok(layoutOk(wall.slice(0, 9)), "a gap at the end keeps the room open");
+	ok(!canPlace(wall.slice(0, 9), { id: "table", x: 10, y: 6 }), "closing the gap");
+	// 目の前に 置く：向こうへ のびる（上を 向いて ベッドなら 上へ）
+	const bed = placeInFront([], "bed", [4, 7], [4, 6]);
+	ok(bed?.x === 4 && bed.y === 5, `bed in front: ${JSON.stringify(bed)}`);
+	const sofa = placeInFront([], "sofa", [4, 6], [3, 6]);
+	ok(
+		sofa?.x === 2 && sofa.y === 6,
+		`sofa to the left: ${JSON.stringify(sofa)}`,
+	);
+	// ぜんぶの 家具を 順に 置いても（置けた 分は）歩けて、字は かぶらない
+	const placed: Placed[] = [];
+	for (const id of Object.keys(FURNITURE) as FurnitureId[])
+		for (let y = 3; y <= 8; y++)
+			for (let x = 1; x <= 10; x++)
+				if (!placed.some((p) => p.id === id) && canPlace(placed, { id, x, y }))
+					placed.push({ id, x, y });
+	ok(
+		placed.length === Object.keys(FURNITURE).length,
+		`only ${placed.length} placed`,
+	);
+	ok(layoutOk(placed), "full room is not walkable");
+	const built = homeRows({ placed, wall: 0, floor: 0 });
+	ok(
+		built.rows.every((r) => [...r].length === 12),
+		"home rows width",
+	);
+	const cells = placed.reduce(
+		(n, p) => n + FURNITURE[p.id].cells.flat().length,
+		0,
+	);
+	ok(
+		Object.keys(built.art).length === cells,
+		`${Object.keys(built.art).length} chars for ${cells} cells`,
+	);
+	for (const ch of Object.keys(built.art))
+		ok(!"#HhWmK.D".includes(ch), `furniture char ${ch} is a room char`);
+	ok(placed.length <= HOME_MAX, "more than HOME_MAX");
+});
 
 test("町の お知らせ: 段が 上がると 新市街・浜・町の まわりに 建った 物を 地区ごとに 知らせ、窓に 収まる", () => {
 	for (let from = 0; from < TOWN_STAGES - 1; from++)

@@ -36,6 +36,13 @@ import { imoniPlay } from "./imoni";
 import { watchGikai } from "./jikkyoGikai";
 import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
+import {
+	enterHome,
+	homeEmpty,
+	homeFacility,
+	homeThing,
+	residentGift,
+} from "./myhome";
 import { isNetaPlay, netaPlay } from "./neta";
 import { sabaPlay } from "./saba";
 import { previewStage } from "./villageReturn";
@@ -47,7 +54,11 @@ const readAll = async (s: Story, lines: readonly string[]): Promise<void> => {
 };
 
 /** 施設に 入る（扉の 文は 村に いる あいだ 1回）。 */
-export const enterFacility =
+export const enterFacility = (f: Facility): Script =>
+	// キリコの 家：買う 前は 不動産屋、買った あとは 入って 宅配便を 開ける（ui/myhome.ts）
+	f.id === "myhome" ? enterHome(enterPlain(f)) : enterPlain(f);
+
+const enterPlain =
 	(f: Facility): Script =>
 	async (s) => {
 		const seen = `roomDoor:${facilityMapId(f)}`;
@@ -202,12 +213,15 @@ export const shadowDecor = (stage: number): MapDef["decor"] => {
 
 /** 施設の 中の 地図。曲は 村の まま。 */
 export const buildFacility = (
-	f: Facility,
+	plain: Facility,
 	v: VillageView,
 	ctx: Ctx,
 	/** 駅の 改札などから 出かける（村の 口と 同じ 流れ。ui/villageEvents.ts の departAnywhere）。 */
 	depart?: Script,
 ): MapDef => {
+	// キリコの 家は 保存の 家具・壁紙・床で 組みなおす（ui/myhome.ts）
+	const home = plain.id === "myhome";
+	const f = home ? homeFacility(plain) : plain;
 	const room = f.room;
 	const events: EventDef[] = facilityRoomPlaces(f).map((p) => {
 		if (p.trigger === "touch")
@@ -220,6 +234,7 @@ export const buildFacility = (
 				run: leaveFacility(f),
 			};
 		const kind = p.id.replace(/_\d+$/, "");
+		if (home) return sign(p.id, p.x, p.y, homeThing(ctx, kind));
 		return sign(p.id, p.x, p.y, async (s) => {
 			const play = room?.plays?.[kind];
 			// 町役場・市役所の 中継モニター：議会の 日は 議会中継（ui/jikkyoGikai.ts）、ほかの 日は 部屋の 文
@@ -271,6 +286,8 @@ export const buildFacility = (
 						await keeperTalk(ctx, s, f.id, who.name, lines);
 					else
 						for (const l of lines) await s.say("nanj", l, { name: who.name });
+					// キリコの 家を 買った あとなら、1度だけ 家具を くれる 住人（ui/myhome.ts）
+					await residentGift(s, f.id, who.id, who.name);
 					s.face(who.id, who.dir);
 				},
 				{ dir: who.dir },
@@ -285,6 +302,7 @@ export const buildFacility = (
 		rows: facilityRoomRows(f),
 		outside: "#000",
 		events,
+		onTalkEmpty: home ? homeEmpty(ctx) : undefined,
 		// 映画館の スクリーンと 客席の スマホの 光（ui/cinemaDecor.ts。ほかの 施設は 無し）
 		decor: facilityDecor(f, facilityRoomRows(f)),
 	};

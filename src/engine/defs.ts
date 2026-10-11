@@ -86,6 +86,11 @@ export type MapDef = {
 	prepare?: (s: Story) => void;
 	/** マップに入るたびに走るスクリプト（幕が 上がってから）。 */
 	onEnter?: Script;
+	/**
+	 * 目の前に 何も ない マスで A（スマホは キリコを タップ）。スクリプトを かえせば 走らせる
+	 * （キリコの 家で 家具を 置く。ui/myhome.ts）。null なら 何も しない。
+	 */
+	onTalkEmpty?: (x: number, y: number) => Script | null;
 	/** マップの外側の色。 */
 	outside?: string;
 	/** 街の 人通り（村の 地図だけ。data/village/crowd.ts・ui/villageCrowd.ts）。 */

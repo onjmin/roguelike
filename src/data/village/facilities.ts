@@ -26,6 +26,7 @@ import { CIVIC_FACILITIES } from "./civicHalls";
 import { EATERIES } from "./eateries";
 import { FOLK_FACILITIES } from "./folk";
 import type { Cell } from "./map";
+import { HOME_MSG, HOME_ROWS, MYHOME_FROM } from "./myhome";
 import { art, ri, riCell } from "./rpgenArt";
 import { SABA_FACILITIES } from "./saba";
 import { SEASON_FACILITIES } from "./season";
@@ -2695,6 +2696,39 @@ export const FACILITIES: readonly Facility[] = [
 					],
 				},
 			],
+		},
+	},
+	// 分譲住宅「保守ヶ丘」＝キリコの 家（住宅街。35年ローンで 買う：演出だけ。中は 家具と 模様替え。
+	//    data/village/myhome.ts・ui/myhome.ts。部屋の 形は 保存から 組みなおす。ここの room は 何も 置かない 形）
+	{
+		id: "myhome",
+		name: "分譲住宅「保守ヶ丘」",
+		from: MYHOME_FROM,
+		at: [53, 31],
+		look: {
+			kind: "grid",
+			rows: ["abc", "def", "wWw", "pDq"],
+			door: "D",
+			keys: {
+				a: [art("hipBlue")],
+				b: [art("hipBlue", 1)],
+				c: [art("hipBlue", 2)],
+				d: [art("hipBlue", 0, 1)],
+				e: [art("hipBlue", 1, 1)],
+				f: [art("hipBlue", 2, 1)],
+				w: [art("white", 0, 1), art("win24", 1)],
+				W: [art("white", 1, 1), art("winPink")],
+				p: [art("white", 0, 2), art("pot", 2)],
+				q: [art("white", 2, 2), art("small25")],
+				D: [art("white", 1, 2), base(4, 507, 1, 2)],
+			},
+		},
+		room: {
+			look: LOOKS.wood,
+			rows: HOME_ROWS,
+			tiles: (k) => ({ K: k.on(ri("boxesB")) }),
+			things: { m: "loan", K: "closet" },
+			lines: { loan: HOME_MSG.loanDone, closet: [HOME_MSG.closet] },
 		},
 	},
 	// 灰色の 団地（板の 屋上・並んだ 窓・郵便受け・自転車）
