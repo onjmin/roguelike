@@ -15,8 +15,8 @@ const TRAP_NAME: Record<string, string> = {
 	sleep: "眠りガスの罠",
 	trip: "転び石",
 	mine: "地雷",
-	arrow: "矢の罠",
-	dart: "毒矢の罠",
+	arrow: "ピッチングマシン",
+	dart: "危険球マシン",
 	warp: "転移床",
 	pit: "落とし穴",
 	anka: "安価の罠",
@@ -113,16 +113,18 @@ const fireTrap = (r: Run, t: Trap): void => {
 		}
 		case "arrow":
 		case "dart": {
-			// 矢が 飛んでくる 絵（どこから 来るかは 乱数を 使わずに 決める。リプレイ・digest が 変わらない）
+			// ボールが 飛んでくる 絵（床の ピッチングマシン。どこから 来るかは 乱数を 使わずに 決める。リプレイ・digest が 変わらない）
 			r.emit({
 				t: "bolt",
 				from: arrowFrom(r, t),
 				to: { x: p.x, y: p.y },
-				kind: "arrow",
+				kind: "ball",
 			});
 			r.se("damage");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
-			r.msg(`矢が　飛んできた！　${dmg}の　ダメージ`);
+			r.msg(
+				`${t.kind === "dart" ? "危険球" : "ボール"}が　飛んできた！　${dmg}の　ダメージ`,
+			);
 			if (r.hurtPlayer(dmg, `${trapName(t)}で　たおれた`)) return;
 			if (t.kind === "dart" && !r.hasRing("r_purity") && p.str > 1) {
 				p.str--;

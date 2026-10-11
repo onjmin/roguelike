@@ -522,7 +522,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 						t: "bolt",
 						from: { x: m.x, y: m.y },
 						to: { x: p.x, y: p.y },
-						kind: "arrow",
+						kind: a.ball ? "ball" : "arrow",
 					});
 					r.se("throw");
 					if (!r.rng.chance(HIT_RATE)) {

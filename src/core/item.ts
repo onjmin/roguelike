@@ -115,7 +115,7 @@ export const itemName = (s: RunState, it: Item): string => {
 		name += signed(it.plus);
 	if (d.cat === "staff" && it.known && isKnownKind(s, it.kind))
 		name += `［${it.charges}］`;
-	if (d.cat === "arrow") name += ` ${it.count}本`;
+	if (d.cat === "arrow") name += ` ${it.count}球`;
 	return name;
 };
 

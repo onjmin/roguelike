@@ -135,7 +135,7 @@ export type Ability =
 	| { k: "drainMax"; rate: number } // 最大HP か 最大ちからを下げる
 	| { k: "sleepSpell"; rate: number } // 眠らせる呪文
 	| { k: "gaze"; rate: number } // にらんで混乱させる
-	| { k: "ranged"; rate: number; atk: number; verb: string } // まっすぐ撃つ
+	| { k: "ranged"; rate: number; atk: number; verb: string; ball?: boolean } // まっすぐ撃つ（ball：野球の ボールの 絵）
 	| {
 			k: "breath";
 			rate: number;
@@ -533,7 +533,8 @@ export type GameEvent =
 			t: "bolt";
 			from: Pos;
 			to: Pos;
-			kind: "item" | "staff" | "arrow" | "fire";
+			/** ball＝野球の ボール（装備して 投げる ボール・ボールを 投げる 敵・ピッチングマシン）。arrow＝ほかの 飛び道具。 */
+			kind: "item" | "staff" | "arrow" | "fire" | "ball";
 			icon?: string;
 	  }
 	| { t: "warp"; id: number; from: Pos; to: Pos }

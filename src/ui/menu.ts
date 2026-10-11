@@ -334,7 +334,7 @@ const USE_VERB: Record<ItemCat, string> = {
 	herb: "飲む",
 	scroll: "読む",
 	staff: "振る",
-	arrow: "撃つ",
+	arrow: "投げる",
 	food: "食べる",
 	goal: "",
 };
@@ -344,7 +344,7 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	const cat = defOf(it.kind).cat;
 	if (cat === "goal") return [{ label: "せつめい", value: "info" }];
 	const rows: ListItem[] = [];
-	// 矢も 装備できる（装備すると A の横の「矢」ボタン・Q キーで 1本ずつ撃てる。トルネコ1と同じ）
+	// ボール（前の 版の 矢）も 装備できる（装備すると A の横の「球」ボタン・Q キーで 1球ずつ 投げる。トルネコ1の 矢と 同じ）
 	if (cat === "weapon" || cat === "shield" || cat === "ring" || cat === "arrow")
 		rows.push(
 			run.isEquipped(it)
@@ -355,7 +355,7 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	// 並びは いつも同じ（使う → せつめい → 投げる → 置く …）。せつめいを はさんで、よく使う 1行目の すぐ下に
 	// 取り返しのつかない「投げる」が 来ないように（シレンのスマホ版の「壺投げ」の 反省）
 	rows.push({ label: "せつめい", value: "info" });
-	rows.push({ label: cat === "arrow" ? "撃つ" : "投げる", value: "throw" });
+	rows.push({ label: "投げる", value: "throw" });
 	const p = run.p;
 	const under = run.itemAt(p.x, p.y);
 	// 置けない所では先に知らせる（選んでから「置けない」と言われるより親切）
@@ -556,8 +556,8 @@ const TRAP_DESC: Record<TrapKind, string> = {
 	sleep: "眠ってしまう",
 	trip: "転んで　持ち物を　1つ　落とす",
 	mine: "爆発して　HPが　半分になる。まわりの　道具も　燃える",
-	arrow: "矢が　飛んでくる",
-	dart: "毒矢が　飛んでくる。ちからが　下がる",
+	arrow: "ボールが　飛んでくる",
+	dart: "危険球が　飛んでくる。ちからが　下がる",
 	warp: "この階の　どこかへ　飛ばされる",
 	pit: "次の　階へ　落ちる（上りの　板では　吹き上げられる）",
 	anka: "安価が　来る。1回　踏むと　沈んで　もう　動かない",
@@ -617,7 +617,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			rows.push({ label: "せつめい", value: "info" });
 			if (cat !== "goal")
 				rows.push({
-					label: cat === "arrow" ? "撃つ" : "投げる",
+					label: "投げる",
 					value: "throw",
 					disabled: held,
 					desc: why,

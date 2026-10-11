@@ -651,7 +651,7 @@ test(
 				m.x = home.x;
 				m.y = home.y;
 				const ev = turn(r);
-				const thrown = evs(ev, "bolt").some((b) => b.kind === "arrow");
+				const thrown = evs(ev, "bolt").some((b) => b.kind === "ball");
 				if (thrown) throws++;
 				const h = hurts(ev, PLAYER_ID).length;
 				ok(h === 0 || thrown, "the player was hurt without a throw");
