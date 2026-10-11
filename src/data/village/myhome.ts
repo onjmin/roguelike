@@ -469,7 +469,7 @@ export const HOME_MSG = {
 	],
 	loanDone: ["返済予定表。\n「完済」の　はんこ。"],
 	closet: "収納。\n片づけた　家具と、模様替えの　道具。",
-	closetMenu: ["家具を　見る", "壁紙を　かえる", "床を　かえる", "やめる"],
+	closetMenu: ["家具を　出す", "壁紙を　かえる", "床を　かえる", "やめる"],
 	stored: "片づけた　家具",
 	none: "片づけた　家具は　ない。",
 	placeHint:
@@ -479,9 +479,13 @@ export const HOME_MSG = {
 	changed: "{name}に　した。",
 	/** 家具を 調べた あと。 */
 	thingMenu: ["動かす", "片づける", "そのまま"],
-	picked: "{name}を　持ちあげた。\n置きたい　所の　前で　A。",
+	picked: "{name}を　持った。\nうすい　絵の　所に、A　で　置く。",
+	/** 持っている あいだの 知らせ（画面の 上）。 */
+	carryHint: "{name}：うすい　絵の　所に　A　で　置く",
+	/** 持った まま 収納を 調べた。 */
+	returned: "{name}を　収納に　もどした。",
 	putAway: "{name}を　収納に　しまった。",
-	emptyTitle: "ここに　置く",
+	emptyTitle: "どれを　置く？",
 	cannot: "そこには　置けない。\n（通れなく　なるか、すきまが　ない）",
 	full: "これ　いじょう　置けない。",
 	carrying: "{name}を　持っている。",

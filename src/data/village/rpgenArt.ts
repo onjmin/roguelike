@@ -100,9 +100,9 @@ export const art = (name: RpgenName, x = 0, y = 0, w = 1, h = 1): string => {
 	return `${RPGEN_IMG}#${(c + x) * 16},${(r + y) * 16},${w * 16},${h * 16}`;
 };
 
-/** 部屋の 家具・小物を まとめた 絵（public/sprites/rpgen-interior.png。256x240）。施設の 中。 */
+/** 部屋の 家具・小物を まとめた 絵（public/sprites/rpgen-interior.png。256x256）。施設の 中。 */
 export const ROOM_IMG = "pub:sprites/rpgen-interior.png";
-export const ROOM_SIZE = [256, 240] as const;
+export const ROOM_SIZE = [256, 256] as const;
 
 /** 物の 名前 → [列, 行, 幅, 高さ]（アトラスの マス）。 */
 export const ROOM_CELLS = {
@@ -259,6 +259,9 @@ export const ROOM_CELLS = {
 	ebichili: [9, 14, 1, 1],
 	mabo: [10, 14, 1, 1],
 	chahan: [11, 14, 1, 1],
+	tatamiH: [12, 14, 2, 1],
+	tatamiV: [14, 14, 1, 2],
+	tatamiHalf: [15, 14, 1, 1],
 } as const;
 
 export type RoomArtName = keyof typeof ROOM_CELLS;

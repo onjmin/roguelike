@@ -2,17 +2,21 @@
 // - 買う 前の 扉：不動産屋が 35年ローンを すすめる。契約すると 鍵と ベッド（お金は 払わない。演出だけ）。
 // - 帰るたびに 返済予定表が 1か月 進み、宅配便が 1つ 届く（家に 入った ときに 開ける）。
 // - 町の 住人（リサイクルショップ・コーポ・団地・マンション）に 話すと 1度だけ 家具を くれる。
-// - 中：目の前の 床で A（スマホは キリコを タップ）→ 片づけた 家具を 置く。家具を 調べて 動かす・片づける。
+// - 中：目の前の 床で A（スマホは キリコを タップ）→ 片づけた 家具を 絵つきの 一覧から 選んで 持つ。持っている
+//   あいだは 目の前に 置く 所を うすい 絵で 見せ（置けなければ 赤い 印）、もう 1度 A で 置く。家具を 調べて 動かす・片づける。
 //   収納で 家具の 一覧・壁紙・床を かえる。
 // 保存は kiriko-roguelike/myhome だけ（段の 下見 ?stage=・?event= の あいだは 書かない）。強さ・道具・段には ふれない。
 
 import { devEvent } from "../data/objectives";
 import type { Facility } from "../data/village/facilities";
+import type { Cell } from "../data/village/map";
 import {
 	FLOORINGS,
+	type Flooring,
 	FURNITURE,
 	type FurnitureId,
 	furnitureAt,
+	furnitureSize,
 	type Gift,
 	HOME_GIFTS,
 	HOME_MAX,
@@ -26,9 +30,13 @@ import {
 	placeInFront,
 	RESIDENT_GIFTS,
 	WALLPAPERS,
+	type Wallpaper,
 } from "../data/village/myhome";
+import { tatamiSample } from "../data/village/tatami";
+import { drawRefInCell, loadImage } from "../engine/assets";
 import type { Script, Story } from "../engine/defs";
 import { loadRecords } from "../engine/save";
+import { DIR_VEC, type Dir, TILE } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { listWindow } from "./list";
 import { previewStage } from "./villageReturn";
@@ -226,7 +234,58 @@ const placeHere = async (
 	return true;
 };
 
-/** 片づけた 家具の 一覧から 1つ 選ぶ（なければ null）。 */
+// ───────────────── 絵（一覧の 絵・持っている 家具の 下見） ─────────────────
+
+/** 一覧の 行の 絵の 高さ（CSS 画素）。 */
+const ICON_H = 32;
+
+/**
+ * 一覧の 行の 絵（マスごとの 絵を 並べた キャンバス。bg は 透けた 所の 色）。絵は 読めしだい 描く。
+ */
+const artIcon = (
+	cells: readonly (readonly string[])[],
+	bg?: string,
+): HTMLCanvasElement => {
+	const w = Math.max(...cells.map((r) => r.length));
+	const h = cells.length;
+	const c = document.createElement("canvas");
+	c.width = w * TILE;
+	c.height = h * TILE;
+	const k = ICON_H / (h * TILE);
+	c.className = "mon-art";
+	c.style.width = `${w * TILE * k}px`;
+	c.style.height = `${ICON_H}px`;
+	const g = c.getContext("2d");
+	if (!g) return c;
+	const refs = cells.flat();
+	void Promise.all(refs.map((r) => loadImage(r))).then(() => {
+		g.imageSmoothingEnabled = false;
+		g.clearRect(0, 0, c.width, c.height);
+		if (bg) {
+			g.fillStyle = bg;
+			g.fillRect(0, 0, c.width, c.height);
+		}
+		cells.forEach((row, y) => {
+			row.forEach((ref, x) => {
+				drawRefInCell(g, ref, x * TILE, y * TILE, TILE, "cell");
+			});
+		});
+	});
+	return c;
+};
+
+const furnIcon = (id: FurnitureId) => artIcon(FURNITURE[id].cells);
+const wallIcon = (w: Wallpaper) => artIcon([[w.up], [w.low]], w.color);
+const floorIcon = (f: Flooring) =>
+	artIcon(tatamiSample(f.floor) ?? [[f.floor, f.floor]], f.color);
+
+/** 家具の 大きさ（一覧の 小さな 字）。 */
+const sizeLabel = (id: FurnitureId) => {
+	const { w, h } = furnitureSize(id);
+	return w * h > 1 ? `${w}×${h}` : undefined;
+};
+
+/** 片づけた 家具の 一覧から 1つ 選ぶ（絵つき。なければ null）。 */
 const chooseStored = async (
 	ctx: Ctx,
 	s: Story,
@@ -241,11 +300,94 @@ const chooseStored = async (
 	const v = await listWindow(
 		ctx,
 		title,
-		m.stored.map((id) => ({ label: furnName(id), value: id })),
+		m.stored.map((id) => ({
+			label: furnName(id),
+			sub: sizeLabel(id),
+			value: id,
+			icon: furnIcon(id),
+		})),
 		{ closeLabel: "やめる" },
 	);
 	return v && isFurn(v) ? v : null;
 };
+
+/** 持つ（目の前に うすい 絵で 置く 所を 見せる。A で 置く）。 */
+const carry = (s: Story, id: FurnitureId): void => {
+	carrying = id;
+	s.toast(fill(HOME_MSG.carryHint, { name: furnName(id) }));
+};
+
+/** 目の前の マス。 */
+const frontOf = (me: { x: number; y: number; dir: Dir }): Cell => [
+	me.x + DIR_VEC[me.dir].dx,
+	me.y + DIR_VEC[me.dir].dy,
+];
+
+/** 持っている 家具を 目の前に 置く 所（置けなければ null）。 */
+const ghostAt = (
+	m: HomeMemo,
+	id: FurnitureId,
+	me: { x: number; y: number; dir: Dir },
+): Placed | null => {
+	const [fx, fy] = frontOf(me);
+	if ([...(HOME_ROWS[fy] ?? "")][fx] !== "." || furnitureAt(m.placed, fx, fy))
+		return null;
+	return placeInFront(m.placed, id, [me.x, me.y], [fx, fy]);
+};
+
+/**
+ * キリコの 家の 飾り：持っている 家具を 目の前に うすく 描く（置ける 所。置けなければ 赤い 印）。
+ */
+export const homeDecor =
+	() =>
+	(
+		g: CanvasRenderingContext2D,
+		ox: number,
+		oy: number,
+		t: number,
+		me?: { x: number; y: number; dir: Dir },
+	): void => {
+		if (!carrying || !me) return;
+		const m = loadHome();
+		if (!m.stored.includes(carrying)) return;
+		const p = ghostAt(m, carrying, me);
+		const [fx, fy] = frontOf(me);
+		g.save();
+		if (p) {
+			g.globalAlpha = 0.5 + 0.15 * Math.sin(t / 220);
+			FURNITURE[carrying].cells.forEach((row, dy) => {
+				row.forEach((ref, dx) => {
+					const x = (p.x + dx) * TILE - ox;
+					const y = (p.y + dy) * TILE - oy;
+					drawRefInCell(g, ref, x, y, TILE, "cell");
+				});
+			});
+			const { w, h } = furnitureSize(carrying);
+			g.globalAlpha = 1;
+			g.strokeStyle = "rgba(255,255,255,0.85)";
+			g.strokeRect(
+				p.x * TILE - ox + 0.5,
+				p.y * TILE - oy + 0.5,
+				w * TILE - 1,
+				h * TILE - 1,
+			);
+		} else if (fy >= 0 && fy < HOME_ROWS.length) {
+			g.fillStyle = "rgba(230,40,40,0.35)";
+			g.fillRect(fx * TILE - ox, fy * TILE - oy, TILE, TILE);
+			g.strokeStyle = "rgba(230,40,40,0.9)";
+			g.strokeRect(
+				fx * TILE - ox + 0.5,
+				fy * TILE - oy + 0.5,
+				TILE - 1,
+				TILE - 1,
+			);
+		}
+		g.restore();
+	};
+
+/** キリコの 家で 先に 読む 絵（下見の 家具）。 */
+export const homeImages = (): string[] =>
+	Object.values(FURNITURE).flatMap((f) => f.cells.flat());
 
 /**
  * 目の前が 家具の ない 床で A（ui/village.ts の onTalkEmpty）：持っている 家具か、片づけた 家具から 選んで 置く。
@@ -264,19 +406,27 @@ export const homeEmpty =
 				await placeHere(s, carrying, [x, y]);
 				return;
 			}
+			// 選んだら 持つ（目の前に うすい 絵。もう 1度 A で 置く）
 			const id = await chooseStored(ctx, s, HOME_MSG.emptyTitle);
-			if (id) await placeHere(s, id, [x, y]);
+			if (id) carry(s, id);
 		};
 	};
 
 /** 収納：家具の 一覧（選ぶと 持つ）・壁紙・床。 */
 const closet = async (ctx: Ctx, s: Story): Promise<void> => {
+	// 持った まま 調べたら、持っている 家具を もどす
+	if (carrying) {
+		const name = furnName(carrying);
+		carrying = null;
+		await s.narrate(fill(HOME_MSG.returned, { name }));
+		return;
+	}
 	await s.narrate(HOME_MSG.closet);
 	const n = await s.choose([...HOME_MSG.closetMenu], { cancel: 3 });
 	if (n === 0) {
 		const id = await chooseStored(ctx, s, HOME_MSG.stored);
 		if (!id) return;
-		carrying = id;
+		carry(s, id);
 		await s.narrate(fill(HOME_MSG.picked, { name: furnName(id) }));
 		return;
 	}
@@ -291,6 +441,7 @@ const closet = async (ctx: Ctx, s: Story): Promise<void> => {
 				label: w.name,
 				value: String(i),
 				sub: i === (n === 1 ? m.wall : m.floor) ? "いま" : undefined,
+				icon: n === 1 ? wallIcon(w as Wallpaper) : floorIcon(w as Flooring),
 			})),
 			{ closeLabel: "やめる", start: n === 1 ? m.wall : m.floor },
 		);
@@ -328,7 +479,7 @@ export const homeThing =
 		m.placed = m.placed.filter((p) => p.id !== kind);
 		if (!m.stored.includes(kind)) m.stored = [...m.stored, kind];
 		saveHome(m);
-		if (n === 0) carrying = kind;
+		if (n === 0) carry(s, kind);
 		await rebuildSoft(s);
 		await s.narrate(
 			fill(n === 0 ? HOME_MSG.picked : HOME_MSG.putAway, {

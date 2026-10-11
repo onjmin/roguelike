@@ -618,6 +618,11 @@ const ROOM_PIECES = {
 	mabo: { ids: [["VWcYXYR"]], lift: 4 },
 	// 35: 11。チャーハン（台の 上）
 	chahan: { ids: [["ySUvrWF"]], lift: 4 },
+	// 209: 11〜15。畳の 敷きかた（横の 1畳＝左右 2マス・縦の 1畳＝上下 2マス・半畳）。flTatami は 横の 左はし だけ
+	// （1マスずつ 敷くと ふちが 四角く ならんで 畳に 見えない。data/village/tatami.ts が 敷く）
+	tatamiH: { ids: [["OyaJmV", "kAQKH7"]] },
+	tatamiV: { ids: [["FppGtX"], ["kAsKVf"]] },
+	tatamiHalf: { ids: [["31dWf1"]] },
 };
 
 // ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/eateries.ts の 出てきた 一品の 絵） ─────────────────

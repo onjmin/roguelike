@@ -21,6 +21,7 @@ import {
 } from "../data/village/facilities";
 import { npc, sign } from "../data/village/helpers";
 import { coreShadows, type VillageView } from "../data/village/map";
+import { layRoomTatami } from "../data/village/tatami";
 import type { EventDef, MapDef, Script, Story } from "../engine/defs";
 import { loadProgress, loadTown } from "../engine/save";
 import { TILE } from "../engine/types";
@@ -38,8 +39,10 @@ import { staffOnceLine, watchProgram } from "./jikkyoWatch";
 import { atBat, playDerby } from "./minigames";
 import {
 	enterHome,
+	homeDecor,
 	homeEmpty,
 	homeFacility,
+	homeImages,
 	homeThing,
 	residentGift,
 } from "./myhome";
@@ -295,15 +298,18 @@ export const buildFacility = (
 		);
 	// 議会の 日の 議席・役の 住人（町役場・市役所。ui/civic.ts）
 	events.push(...assemblyEvents(f, v));
+	// 畳の 床は 1枚ずつ 敷く（横・縦の 1畳と 半畳。data/village/tatami.ts）
+	const laid = layRoomTatami(facilityRoomRows(f), facilityRoomPalette(f));
 	return {
 		id: facilityMapId(f),
 		name: f.name,
-		tiles: facilityRoomPalette(f),
-		rows: facilityRoomRows(f),
+		tiles: laid.tiles,
+		rows: laid.rows,
 		outside: "#000",
 		events,
 		onTalkEmpty: home ? homeEmpty(ctx) : undefined,
-		// 映画館の スクリーンと 客席の スマホの 光（ui/cinemaDecor.ts。ほかの 施設は 無し）
-		decor: facilityDecor(f, facilityRoomRows(f)),
+		// 映画館の スクリーンと 客席の スマホの 光（ui/cinemaDecor.ts）・キリコの 家の 持っている 家具の 下見（ui/myhome.ts）
+		decor: home ? homeDecor() : facilityDecor(f, facilityRoomRows(f)),
+		images: home ? homeImages() : undefined,
 	};
 };

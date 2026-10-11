@@ -97,12 +97,16 @@ export type MapDef = {
 	crowd?: { stage: number; nodes: readonly CrowdNode[]; cost: PedCost };
 	/** タイルの ほかに 使う 画像（decor で 描く 絵など。入る 前に 先読みする）。 */
 	images?: string[];
-	/** キャラの上に重ねて描く動く飾り（灯り・煙など）。ox・oy はカメラの位置（ソース画素）、t はミリ秒。 */
+	/**
+	 * キャラの上に重ねて描く動く飾り（灯り・煙など）。ox・oy はカメラの位置（ソース画素）、t はミリ秒。
+	 * me は キリコの マスと 向き（キリコの 家で 持っている 家具の 下見を 目の前に 描く）。
+	 */
 	decor?: (
 		g: CanvasRenderingContext2D,
 		ox: number,
 		oy: number,
 		t: number,
+		me?: { x: number; y: number; dir: Dir },
 	) => void;
 };
 

@@ -1246,7 +1246,11 @@ export class Village {
 			oy,
 			this.time,
 		);
-		field.def.decor?.(g, ox, oy, this.time);
+		field.def.decor?.(g, ox, oy, this.time, {
+			x: this.player.x,
+			y: this.player.y,
+			dir: this.player.dir,
+		});
 		if (this.player.vehicle && this.player.moving)
 			this.drawSpeedLines(g, ox, oy);
 		if (this.guideExit && this.mapId === "village")
