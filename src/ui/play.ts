@@ -11,6 +11,7 @@
 
 import { ANKA_DUE, ankaText } from "../core/anka";
 import { HUNGER_UNIT, RES_LIMIT, RES_WARN } from "../core/balance";
+import { ZERO_BODIES } from "../core/data/heroes";
 import { MONSTERS } from "../core/data/monsters";
 import { canTarget } from "../core/effects";
 import {
@@ -43,7 +44,7 @@ import {
 	type RunState,
 	type Trap,
 } from "../core/types";
-import { heroWalk, KIRIKO_WALK } from "../data/cast";
+import { heroWalk, KIRIKO_WALK, ZERO_BODY_WALKS } from "../data/cast";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../data/music";
 import { goalText } from "../data/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../data/synopsis";
@@ -303,6 +304,16 @@ export class Play {
 	private rescueFx: Promise<void> | null = null;
 	/** カメラを 止める（帰り方の 演出で キリコだけ 動かす あいだ）。 */
 	private camFreeze = false;
+	/**
+	 * 解音ゼロの バトンタッチの あいだの キリコ（＝ゼロ）の 見え方（たおれた 機体の 絵・見えぐあい・沈み。
+	 * 状態は もう 次の 機体なので、演出が 終わるまで 前の 機体を 描く。batonScene）。
+	 */
+	private batonLook: {
+		sprite: string;
+		alpha: number;
+		sink: number;
+		jitter: number;
+	} | null = null;
 	private raf = 0;
 	private stopped = false;
 	private logEl: HTMLElement;
@@ -759,6 +770,15 @@ export class Play {
 					swing: k >= 0 && k < 1 ? k : -1,
 					// 束音ロゼの すり抜けが ON：半透明（ゆっくり ゆらぐ）
 					...(run.phasing ? { ghost: 0.5 + 0.08 * Math.sin(t / 260) } : {}),
+					// 解音ゼロの バトンタッチ：前の 機体が 止まって 沈む → 次の 機体が 起動（batonScene）
+					...(this.batonLook
+						? {
+								sprite: this.batonLook.sprite,
+								ghost: this.batonLook.alpha,
+								fx: d.fx + this.batonLook.jitter,
+								fy: d.fy + this.batonLook.sink,
+							}
+						: {}),
 				});
 				continue;
 			}
@@ -2246,6 +2266,124 @@ export class Play {
 	}
 
 	/**
+	 * 解音ゼロの バトンタッチ（表示だけ：冒険の 状態・乱数には 触らない。状態は もう 次の 機体）。
+	 * 1. 機能停止：たおれた 機体が 赤く ちらつき、ノイズで 揺れて、沈みながら 消える（停止の 音）。
+	 * 2. 転送：空から 光の 柱が 降りる。
+	 * 3. 起動：柱の 中に 次の 機体が 白く 光って 立つ（起動の 音）。
+	 * 4. カットイン：画面を 横切る 帯に「BATON TOUCH」と 機体名・型番・残機。
+	 * レベルアップの 音・札は 使わない（成長では なく 交代なので）。
+	 */
+	private async batonScene(body: number): Promise<void> {
+		const pd = this.disp.get(PLAYER_ID);
+		const prev = ZERO_BODY_WALKS[body - 1];
+		const next = ZERO_BODY_WALKS[body];
+		const spec = ZERO_BODIES[body];
+		if (!pd || !prev || !next || !spec) return;
+		const fast = settings.speed === "fast" || !!(this.rp && this.rp.speed >= 4);
+		const k = fast ? 0.6 : 1;
+		this.travel = null;
+		const at = { x: pd.tx, y: pd.ty };
+		const look = { sprite: prev, alpha: 1, sink: 0, jitter: 0 };
+		this.batonLook = look;
+		try {
+			// 1. 機能停止（ノイズで 左右に ぶれて から、沈みながら 消える。点滅は させない：止まる 機体を 見せる）
+			this.ctx.audio.se("batonDown");
+			this.pop(at, "機能停止……", "baton-down");
+			document.body.classList.add("shake");
+			void this.flash("rgba(200, 30, 40, 0.4)", 160 * k);
+			const t0 = performance.now();
+			const glitch = 420 * k;
+			const down = 700 * k;
+			for (;;) {
+				const e = performance.now() - t0;
+				if (e < glitch) {
+					look.jitter = (Math.floor(e / 45) % 2 ? 1 : -1) * 0.09;
+					look.alpha = Math.floor(e / 90) % 3 === 2 ? 0.55 : 1;
+				} else {
+					document.body.classList.remove("shake");
+					const q = Math.min(1, (e - glitch) / down);
+					look.jitter = 0;
+					look.alpha = 1 - q;
+					look.sink = q * 0.35;
+					if (q >= 1) break;
+				}
+				if (this.stopped) break;
+				await nextFrameP();
+			}
+			if (this.stopped) return;
+			// 2. 転送：光の 柱
+			const beam = this.batonBeam(at);
+			await wait(380 * k);
+			// 3. 起動
+			look.sprite = next;
+			look.sink = 0;
+			this.ctx.audio.se("batonUp");
+			pd.flashUntil = performance.now() + 500 * k;
+			const t1 = performance.now();
+			const up = 420 * k;
+			for (;;) {
+				const q = Math.min(1, (performance.now() - t1) / up);
+				look.alpha = q;
+				if (q >= 1 || this.stopped) break;
+				await nextFrameP();
+			}
+			void this.flash("rgba(220, 245, 255, 0.55)", 140 * k);
+			beam.classList.add("out");
+			setTimeout(() => beam.remove(), 500);
+			// 4. カットイン
+			await this.batonCutIn(body, spec.name, spec.model, k);
+		} finally {
+			this.batonLook = null;
+			document.body.classList.remove("shake");
+		}
+	}
+
+	/** バトンタッチの 光の 柱（キリコの マスに 空から 降りる。CSS の アニメーション）。 */
+	private batonBeam(at: Pos): HTMLElement {
+		const sc = this.screen;
+		const cssPerSrc = sc.tileCss / TILE;
+		const x = (at.x * TILE + TILE / 2 - this.camX) * cssPerSrc;
+		const y = ((at.y + 1) * TILE - this.camY) * cssPerSrc;
+		const b = el("div", { class: "baton-beam" });
+		b.style.left = `${x}px`;
+		b.style.top = `${y}px`;
+		b.style.width = `${sc.tileCss * 1.1}px`;
+		this.popsEl.appendChild(b);
+		return b;
+	}
+
+	/** バトンタッチの カットイン（帯・機体名・型番・残機。残機は 今の 機体を 入れた 数：選ぶ 画面の「残機　3」と 同じ）。 */
+	private async batonCutIn(
+		body: number,
+		name: string,
+		model: string,
+		k: number,
+	): Promise<void> {
+		const left = ZERO_BODIES.length - body;
+		const lives = ZERO_BODIES.map((_, i) =>
+			el("span", { class: i < body ? "lost" : "", text: "◆" }),
+		);
+		const band = el("div", { class: "baton-cut" }, [
+			el("div", { class: "baton-cut-head", text: "BATON TOUCH" }),
+			el("div", { class: "baton-cut-name" }, [
+				el("b", { text: name }),
+				el("small", { text: model }),
+			]),
+			el("div", { class: "baton-cut-lives" }, [
+				el("span", {
+					class: "label",
+					text: left > 1 ? `残機　${left}` : "最後の　機体",
+				}),
+				...lives,
+			]),
+		]);
+		band.style.animationDuration = `${1500 * k}ms`;
+		this.ctx.ui.appendChild(band);
+		await wait(1500 * k);
+		band.remove();
+	}
+
+	/**
 	 * 帰り方の 演出（帰り方の 最初の 行と いっしょに。表示だけ：冒険の 状態・乱数には 触らない）。
 	 * sprout・geyser・eruption：揺れて 光り、キリコが 押し上げられて 上へ 飛んでいく（カメラは 止める）。
 	 * escort：「わっしょい」と かつがれて はずむ。暗転は 冒険の記録の 前（ending）。
@@ -2340,6 +2478,15 @@ export class Play {
 				};
 				if (leadsToLine(ev, i)) onLine.push(apply);
 				else apply();
+				i++;
+				continue;
+			}
+			// 解音ゼロの バトンタッチ：「たおれた……」の 行が 出てから 場面を 流し、終わってから 次の 行
+			// （「〜に　バトンタッチ！」・回復）。場面の あいだは 次の 1歩も 待つ
+			if (e.t === "baton") {
+				await this.logDrained();
+				if (this.stopped) break;
+				await this.batonScene(e.body);
 				i++;
 				continue;
 			}
@@ -2734,15 +2881,9 @@ export class Play {
 			case "rescue":
 				this.rescueFx = this.rescueScene(e.kind);
 				return;
-			case "baton": {
-				// 解音ゼロの バトンタッチ：次の 機体が 光って 立つ（絵は 状態から。core/run.ts の batonTouch）
-				const pd = this.disp.get(PLAYER_ID);
-				if (pd) {
-					pd.flashUntil = performance.now() + 600;
-					this.pop({ x: pd.fx, y: pd.fy }, "バトンタッチ！", "lvup");
-				}
+			case "baton":
+				// 解音ゼロの バトンタッチ：場面は playEvents が 待って 流す（batonScene）
 				return;
-			}
 			case "anka":
 				if (this.hudHold) {
 					const { anka, ankaLine, ankaLeft } = this.liveHud();

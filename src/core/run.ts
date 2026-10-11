@@ -909,7 +909,7 @@ export class Run {
 			heldBy: null,
 		};
 		s.body = now + 1;
-		this.se("levelup");
+		// 音は 場面が 鳴らす（停止 → 起動。ui/play.ts の batonScene。レベルアップの 音は 使わない）
 		this.emit({ t: "baton", body: now + 1, pos: { x: p.x, y: p.y } });
 		this.msg(`${next.name}（${next.model}）に　バトンタッチ！`, "good");
 		this.emit({
