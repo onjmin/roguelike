@@ -122,7 +122,7 @@ export class Crowd {
 			// 立ちどまる 所に 立っている 人
 			if (stays.length && this.rng() < START_STAYING) {
 				const at = stays[Math.floor(this.rng() * stays.length)];
-				if (this.busy(at.at[0], at.at[1])) continue;
+				if (this.busy(at.at[0], at.at[1]) || this.taken(at)) continue;
 				const p = this.add(trip.persona, at.at, at, []);
 				p.actor.dir = at.face ?? "down";
 				p.stay = between(this.rng, at.stay ?? [4000, 9000]);
@@ -136,7 +136,7 @@ export class Crowd {
 				x += DIR_VEC[d].dx;
 				y += DIR_VEC[d].dy;
 			}
-			if (k === 0 || this.busy(x, y)) continue;
+			if (k === 0 || this.busy(x, y) || this.taken(trip.to)) continue;
 			const p = this.add(trip.persona, [x, y], trip.to, route.slice(k));
 			p.actor.dir = route[k - 1];
 			i++;
@@ -257,7 +257,7 @@ export class Crowd {
 		const trip = pickTrip(this.rng, this.h.nodes, this.band, this.weekend);
 		if (!trip) return;
 		const [x, y] = trip.from.at;
-		if (this.busy(x, y)) return;
+		if (this.busy(x, y) || this.taken(trip.to)) return;
 		const route = this.route(trip.from.at, trip.to.at);
 		if (!route?.length) return;
 		this.add(trip.persona, trip.from.at, trip.to, route);
@@ -288,6 +288,11 @@ export class Crowd {
 		p.blocked = 0;
 		p.rerouted = false;
 		void a.walk(d, p.ms);
+	}
+
+	/** 立ちどまる 所に もう だれか 立っているか・向かっているか（1つの 所に 1人：重ならない）。 */
+	private taken(n: CrowdNode): boolean {
+		return !n.enter && this.peds.some((p) => p.to.id === n.id);
 	}
 
 	/** 行き先に 着いた：扉・家・出口なら 入って 消える、立ちどまる 所なら 立つ。 */
