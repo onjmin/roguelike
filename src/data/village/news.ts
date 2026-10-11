@@ -113,7 +113,7 @@ export const newsLine = (n: TownNews): string =>
 export const NEWS_HEAD = "{area}に　新しい　建物：";
 
 /** 1つの 地区で 名前を 出す 数（1段で 建つ 数の いちばん 多い 段に 合わせる。段を とばした ときに 窓が 続きすぎない）。あふれた 分は NEWS_MORE。 */
-export const NEWS_MAX = 12;
+export const NEWS_MAX = 20;
 export const NEWS_MORE = "……ほかにも　{n}軒。";
 
 /** 知らせの 窓（1つずつ カメラを 向ける 所と 文）。地区ごとに 見出し＋名前、あとは 名前 2つずつ。 */
