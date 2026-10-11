@@ -13,8 +13,10 @@ import { T_WALL, tileAt } from "../core/mapgen";
 import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
+import { townStep } from "../core/town";
 import type { RunState } from "../core/types";
 import { HERO_QUESTS } from "../data/heroQuests";
+import { MOBS } from "../data/mobs";
 import { synopsisHtml } from "../data/synopsis";
 import type { Story } from "../engine/defs";
 import {
@@ -29,8 +31,15 @@ import {
 	unlockedHeroes,
 	WORRY_SURE,
 	ZERO_QUEST_DEPTH,
+	ZERO_SUBS_STEP,
 } from "../engine/heroes";
-import { forgetProgressMemo, loadProgress, saveProgress } from "../engine/save";
+import {
+	forgetProgressMemo,
+	loadProgress,
+	loadTown,
+	saveProgress,
+	saveTown,
+} from "../engine/save";
 import { heroQuestScript } from "../ui/villageEvents";
 import type { TestResult } from "./monsterTests";
 
@@ -408,11 +417,23 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 		ok(chosenHero() === "roze", "remembered choice");
 		// そのあとは ふだんの ひとこと
 		ok(!(await heroQuestScript(recorder().s, "roze")), "normal talk");
-		// ロゼが 片づいたので、3つ 持ち帰って いれば ゼロが 悩む
+		// ロゼが 片づいたので、3つ 持ち帰って いれば ゼロが 悩む。ただし サブ機の プロト・レンが 村に 来てから
 		saveProgress({
 			...loadProgress(),
 			cleared: ["shallow", "kinoko", "isle1"],
 		});
+		saveTown({ ...loadTown(), stage: 2, points: 0 });
+		ok(
+			townStep(2, 0) < ZERO_SUBS_STEP && rollHeroWorries(() => 0) === null,
+			"zero waits for proto and ren",
+		);
+		saveTown({ ...loadTown(), stage: 3, points: 0 });
+		ok(
+			townStep(3, 0) >= ZERO_SUBS_STEP &&
+				townStep(3, 0) >= MOBS.proto.from &&
+				townStep(3, 0) >= MOBS.ren.from,
+			"proto and ren are in by stage 3",
+		);
 		ok(rollHeroWorries(() => 0) === "zero", "zero next");
 	});
 });

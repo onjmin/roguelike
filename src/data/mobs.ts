@@ -2296,14 +2296,15 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 解音ゼロの サブ機 HeBc-0（通称 プロト。公式の「AI生成された プロトタイプ」）。メインさん（data/cast.ts の zero）と 同じ 顔。
 	// 感情は まだ うすいが 学習中。語尾は「〜ゼロ」、冷徹で 論理的、好物は 味噌汁、哲学が 趣味、決め台詞は
 	//「感情に 振り回される ことは ない。」。オリジナルが いる・悪いやつに 作られた、という うわさ（真相は 不明）。
-	// 歩行グラは RPGEN「解音ゼロ - HeBc-0（通称: プロト）」。長屋（段2）の ころ、掲示板の 左に 越してくる。
+	// 歩行グラは RPGEN「解音ゼロ - HeBc-0（通称: プロト）」。屋根つき屋台（段2）の ころ、掲示板の 左に 越してくる
+	// （ゼロの 依頼は プロト・レンが そろってから：engine/heroes.ts の questOpen。前は 小段4）。
 	// マイナーズでは ないので 総選挙には 出ない
 	proto: {
 		name: "プロト",
 		label: "プロト　HeBc-0",
 		portrait: "portraits/zero_proto.png",
 		sprite: "sa:KxS5YZ",
-		from: 4,
+		from: 3,
 		spot: [13, 22],
 		dir: "right",
 		color: "#9ab8d8",
@@ -2491,14 +2492,15 @@ export const MOBS: Record<MobId, MobDef> = {
 	},
 	// 解音ゼロの サブ機 XQxS-0（通称 レン。公式の「マッドサイエンティストに 作られた・度々 アップデートされている」）。
 	// 絵は ステージの 子（先が 青い 金髪・金の 角・黒い 手袋と 脚の よろい・マイク）。明るくて 目立ちたがり、一人称は レン。
-	// 歩行グラは プロトの 絵を 塗りかえた もの（scripts/make-zero.mjs）。段6 の ころ、広場の 東に 越してくる。
+	// 歩行グラは プロトの 絵を 塗りかえた もの（scripts/make-zero.mjs）。屋根つき屋台（段2）の ころ、プロトの すぐ あとに
+	// 広場の 東に 越してくる（前は 段6。ゼロの 依頼より 前に サブ機が そろう ように 早めた：作者の 指示）。
 	// マイナーズでは ないので 総選挙には 出ない
 	ren: {
 		name: "レン",
 		label: "レン　XQxS-0",
 		portrait: "portraits/zero_ren.png",
 		sprite: "pub:sprites/zero_ren.png",
-		from: 17,
+		from: 4,
 		spot: [25, 20],
 		dir: "down",
 		color: "#e0b040",

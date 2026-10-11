@@ -3714,6 +3714,45 @@ test(
 
 test(
 	"boss",
+	"felling it keeps the voice in the gramophone (ROM専 taken home from a boss board: STORY.md §5.98)",
+	() => {
+		for (const d of BOSS_BOARDS) {
+			const { r, b } = bossArena(`boss-voice-${d}`, d, { pos: at(1, 0) });
+			r.s.voice = "funamushi";
+			b.hp = 1;
+			const dir = dirOf(1, 0) as Dir8;
+			for (let i = 0; i < 20 && !r.s.end; i++) {
+				b.x = r.p.x + 1;
+				b.y = r.p.y;
+				r.act({ c: "attack", dir });
+			}
+			ok(r.s.end?.kind === "clear", `${d}: ended as ${r.s.end?.kind}`);
+			ok(r.s.voice === "funamushi", `${d}: the voice became ${r.s.voice}`);
+		}
+	},
+);
+
+test(
+	"floor",
+	"gramophone: ROM専 is logged even when it overwrites another voice",
+	() => {
+		const r = arena("voice-rom");
+		r.s.voice = "tousuko";
+		const m = put(r, "funamushi", { x: CENTER.x, y: CENTER.y - 1 });
+		m.hp = 1;
+		for (let k = 0; k < 20 && m.hp > 0; k++) {
+			m.x = CENTER.x;
+			m.y = CENTER.y - 1;
+			turn(r, { c: "attack", dir: 0 });
+		}
+		ok(m.hp <= 0, "harness: could not kill ROM専");
+		ok(r.s.voice === "funamushi", `the voice is ${r.s.voice}`);
+		ok(logHas(r, "ROM専の　声を　録った"), "no log line for ROM専");
+	},
+);
+
+test(
+	"boss",
 	"felling it ends the run on the spot: the goal goes into the bag and she is sent home",
 	() => {
 		for (const d of BOSS_BOARDS) {

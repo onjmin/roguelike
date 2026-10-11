@@ -204,6 +204,8 @@ export type RunRecord = {
 	objective?: Objective;
 	/** 中断セーブを 書きかえた 冒険（engine/tamper.ts）。 */
 	cheat?: true;
+	/** 冒険に 出た 主人公（キリコなら 書かない。帰りの ひとことで 本人に ねぎらわせない。ui/villageTalk.ts）。 */
+	hero?: "roze" | "zero";
 };
 
 type Stats = { runs: number; clears: number; best: number };
@@ -230,6 +232,7 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		...(s.cheat ? { cheat: true as const } : {}),
+		...(s.hero === "roze" || s.hero === "zero" ? { hero: s.hero } : {}),
 	};
 };
 

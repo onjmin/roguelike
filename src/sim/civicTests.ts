@@ -1243,9 +1243,10 @@ const GOLDEN_AT = (stage: number, k: number) => k * 7919 + stage * 104729;
 /**
  * 議会を 足す 前の guestsOf の 写し（段2〜7 × 帰り 12。FNV-1a の 36進）。議会の ない 日は この まま
  * （CIVIC.md §4：議会の ない 日の 顔ぶれを かえない）。
+ * 2026-10-11：プロト・レンの 越してくる 小段を 早めた（プロト 4 → 3・レン 17 → 4）ので、段2〜4 の 議会の ない 日だけ 作りなおした。
  */
 const GOLDEN =
-	"2bgqvi x6hzau 1g2h8jv 2bgqvi 1ray4d9 1n2bi7n 1ray4d9 1g2h8jv 1ray4d9 1ray4d9 wfwvxx 1ray4d9 1d5bhtk 1cy9ry0 bikjdx 7n4hgt ts7e8t 1ehc9pq 29lb5x 11f4x1c 1g2h8jv 1g7l9f2 10p37i5 1mul367 1bilb46 1m78g58 10ifemn s751vv av24c4 1j6pxje 2fres6 vw9sz9 ffqx95 oqf7k2 u5bwvf 4srw84 11p1c0s bxxamb 1u24i0k 1ecshjo 1j1gpkw owvufi 1tk2sr wyh5n1 fwnifh 1z10hsd 4for6h 1w5lb7i 3387x2 qjvxot 18wcw2z vnk7xg 14uci9j ojgaid 1butdqi 18omgx8 fwizji 1q5r2lt 19nry0t 1btbveu 1da8dyr j0hwd2 15bj0v3 jtk5ha 1prg5dy 1fqqj8d e8xwkc gp0vqm nycw9k 9m421p qyvd1z 14upkub".split(
+	"1n2bi7n 1g2h8jv symsqs 1n2bi7n 1n2bi7n 1n2bi7n 1ray4d9 1ray4d9 wfwvxx wfwvxx symsqs 1yzjith uza0zi 1cy9ry0 k077k4 175y05o ts7e8t 1ehc9pq e94u2g dzlcxc 1g2h8jv 1g7l9f2 10p37i5 jenjdw hamq5b 1ktsdn2 eyoe83 qqzz5g av24c4 1j6pxje 2fres6 1g138b6 1smkrfw irnbeo u5bwvf 4srw84 11p1c0s bxxamb 1oqyav3 1ecshjo 1n2v9bi owvufi 1tk2sr zx6m60 k6kkjl aavgfl 4for6h 91vo5u 3387x2 qjvxot 18wcw2z vnk7xg 14uci9j ojgaid 1butdqi 18omgx8 fwizji 1q5r2lt 19nry0t 1btbveu 1da8dyr j0hwd2 15bj0v3 jtk5ha 1prg5dy 1fqqj8d e8xwkc gp0vqm nycw9k 9m421p qyvd1z 14upkub".split(
 		" ",
 	);
 const fnv = (s: string): string => {

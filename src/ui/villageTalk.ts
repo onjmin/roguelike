@@ -97,17 +97,30 @@ export const deathQuote = (seed: number): Quote | null => {
 	const sulk = sulkTier();
 	if (sulk !== null) return sulkQuote(sulk, seed);
 	const away = away_();
+	const mute = adventurer();
 	const here = SHALLOW_DEATH.filter(
-		(x) => !away.includes(x.who) && !mentionsAway(x.text, away),
+		(x) =>
+			!away.includes(x.who) &&
+			!mute.includes(x.who) &&
+			!mentionsAway(x.text, away),
 	);
 	if ((last.dungeon ?? "main") === "shallow" && seed % 2 === 0 && here.length)
 		return here[seed % here.length] ?? null;
-	return pickQuote(quoteContext(), seed, undefined, away);
+	return pickQuote(quoteContext(), seed, undefined, away, mute);
 };
 
 /** 村に いない 仲間（まだ 来ていない・出ていった やきう）。 */
 const away_ = (): Speaker[] =>
 	awayFriends(loadProgress().cleared, loadTown().stage);
+
+/**
+ * 前の 冒険に 出た 仲間（ロゼ・ゼロ。キリコなら 空）。帰って きた 本人が 自分に「おかえり」・
+ * ねぎらいを 言うのは おかしいので、前の 冒険への ひとことを しゃべらせない（作者の 指示）。
+ */
+const adventurer = (): Speaker[] => {
+	const h = loadRecords()[0]?.hero;
+	return h ? [h] : [];
+};
 
 /**
  * 起動の札の ひとこと。ちょっと・もっと の たまり（data/story.ts）を先に見て、
@@ -118,9 +131,13 @@ export const titleQuote = (seed: number): Quote | null => {
 	if (sulk !== null) return sulkQuote(sulk, seed);
 	const last = loadRecords()[0];
 	const away = away_();
+	const mute = adventurer();
 	const pick = (all: readonly Quote[], salt: number) => {
 		const pool = all.filter(
-			(x) => !away.includes(x.who) && !mentionsAway(x.text, away),
+			(x) =>
+				!away.includes(x.who) &&
+				!mute.includes(x.who) &&
+				!mentionsAway(x.text, away),
 		);
 		return pool.length ? pool[(seed * 31 + salt) % pool.length] : null;
 	};
@@ -134,7 +151,7 @@ export const titleQuote = (seed: number): Quote | null => {
 	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
 	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
 		return pick(SHALLOW_DEATH, 3);
-	return pickQuote(quoteContext(), seed, undefined, away);
+	return pickQuote(quoteContext(), seed, undefined, away, mute);
 };
 
 // ───────────────── 村で 話しかけたとき ─────────────────
@@ -200,6 +217,7 @@ const returnAt = (): number => loadRecords()[0]?.at ?? 0;
  * （data/quotes.ts。死因・深さ）。
  */
 const reaction = (who: Speaker): Quote | null => {
+	if (adventurer().includes(who)) return null;
 	const last = loadRecords()[0];
 	const seed = (last?.at ?? 0) % 9973;
 	const mine = (pool: readonly Quote[]) => {

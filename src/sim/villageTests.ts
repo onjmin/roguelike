@@ -1441,28 +1441,36 @@ test("口から 人が 歩いてくる 場面：キリコが その 口の 前�
 			!first.some((l) => l.startsWith("goto player ")),
 			`Kiriko steps aside far from the mouth:\n${first.join("\n")}`,
 		);
-		// 建物の 段は そのまま、売れて 小段だけ 上がって プロトが 越してくる（movedIn が 建て直して walkIn だけで どく）
-		setProgress(["shallow", "main"], [], ["shallow"]);
-		putTown({
-			stage: 2,
-			points: TOWN_STEPS[4].points - 100,
-			pending: pending("escape", [item(1, "starsword")]),
-		});
-		const west = VILLAGE_EXITS.find((x) => x.side === "w");
-		ok(!!west, "no west mouth");
+		// 建物の 段は そのまま、売れて 小段だけ 上がって レンが 越してくる（movedIn が 建て直して walkIn だけで どく）
+		const sub = async (at?: Cell) => {
+			setProgress(["shallow", "main"], [], ["shallow"]);
+			putTown({
+				stage: 2,
+				points: TOWN_STEPS[4].points - 100,
+				pending: pending("escape", [item(1, "starsword")]),
+			});
+			const f = fakeStory(at ? { at } : {});
+			await settleScript(f.s, chooser([]));
+			return f;
+		};
+		// レンが 来る 口（持ち場に いちばん 近い 口）を 先に 見て、その 口の 前に 立って もう 一度
+		const dry = (await sub()).log.find((l) => l.startsWith("place mob_ren "));
+		const west = VILLAGE_EXITS.find(
+			(x) => dry === `place mob_ren ${x.cell.join(",")}`,
+		);
+		ok(!!west, `ren does not walk in from a mouth: ${dry}`);
 		if (!west) return;
 		const wk = inwardOf(west);
-		const only = fakeStory({ at: wk });
-		await settleScript(only.s, chooser([]));
+		const only = await sub(wk);
 		const wby = asideSpot(villageView(), wk, west.cell);
 		const wside = only.log.indexOf(`goto player ${wby?.join(",")}`);
-		const wplace = only.log.indexOf(`place mob_proto ${west.cell.join(",")}`);
+		const wplace = only.log.indexOf(`place mob_ren ${west.cell.join(",")}`);
 		ok(
 			!only.log.some((l) => l.startsWith("toast 町が")) &&
 				!!wby &&
 				wside >= 0 &&
 				wplace > wside,
-			`Kiriko does not step aside before proto (no new building):\n${only.log.join("\n")}`,
+			`Kiriko does not step aside before ren (no new building):\n${only.log.join("\n")}`,
 		);
 		ok(
 			only.s.state.x === wby?.[0] && only.s.state.y === wby?.[1],
@@ -3331,7 +3339,7 @@ test("the town grows in the village: fade, rebuild, show the new building, then 
 test("the camera after the town grows: from the new building straight to the gate of a newcomer, then home in one fade", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow", "main"], [], ["shallow"]);
-		// 屋台（段1）から 物置（段2）へ、同じ 帰りで 小段 4（プロト）も
+		// 屋台（段1）から 物置（段2）へ、同じ 帰りで 小段 3・4（プロト・レン）も
 		putTown({
 			stage: 1,
 			points: TOWN_STEPS[4].points + 50,
@@ -3351,7 +3359,7 @@ test("the camera after the town grows: from the new building straight to the gat
 		);
 		// 越してきた あとは 1回の 暗転で キリコへ（寄せてから すぐ 暗転しない）
 		const arrived = log.indexOf(
-			`narrate: ${fill(ARRIVE_MSG, { names: MOBS.proto.name })}`,
+			`narrate: ${fill(ARRIVE_MSG, { names: `${MOBS.proto.name}と　${MOBS.ren.name}` })}`,
 		);
 		ok(
 			log[arrived + 1] === "fadeOut" && log[arrived + 2] === "look kiriko",
