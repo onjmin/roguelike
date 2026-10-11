@@ -241,6 +241,7 @@ import {
 	RPGEN_IMG,
 	RPGEN_SIZE,
 } from "../data/village/rpgenArt";
+import { layRoomTatami, layTatami } from "../data/village/tatami";
 import { CITY, hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
 import { type Actor, Field } from "../engine/field";
@@ -1877,6 +1878,72 @@ const fitsWindow = (texts: readonly [string, string][]): void => {
 			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
 	}
 };
+
+test("畳: 横・縦の 1畳と 半畳で 敷き、4枚の 角は 1点に 集まらない（部屋の 畳も）", () => {
+	const check = (where: string, laid: (string | null)[][]) => {
+		const id: number[][] = laid.map((r) => r.map(() => 0));
+		let n = 0;
+		laid.forEach((r, y) => {
+			r.forEach((p, x) => {
+				if (!p) return;
+				if (p === "hl") {
+					ok(laid[y][x + 1] === "hr", `${where}: hl at ${x},${y} has no hr`);
+					n++;
+					id[y][x] = n;
+					id[y][x + 1] = n;
+				} else if (p === "vt") {
+					ok(laid[y + 1]?.[x] === "vb", `${where}: vt at ${x},${y} has no vb`);
+					n++;
+					id[y][x] = n;
+					id[y + 1][x] = n;
+				} else if (p === "half") id[y][x] = ++n;
+				else ok(id[y][x] > 0, `${where}: ${p} at ${x},${y} has no pair`);
+			});
+		});
+		for (let y = 1; y < laid.length; y++)
+			for (let x = 1; x < laid[y].length; x++) {
+				const q = [id[y - 1][x - 1], id[y - 1][x], id[y][x - 1], id[y][x]];
+				if (q.every((v) => v > 0))
+					ok(new Set(q).size < 4, `${where}: four mats meet at ${x},${y}`);
+			}
+	};
+	for (const [w, h] of [
+		[10, 6],
+		[8, 6],
+		[4, 3],
+		[6, 4],
+		[12, 5],
+		[3, 3],
+		[1, 4],
+	])
+		check(
+			`${w}x${h}`,
+			layTatami(Array.from({ length: h }, () => Array(w).fill(true))),
+		);
+	// 部屋の 畳（碁会所・コーポ・畳の 床の キリコの 家）
+	let rooms = 0;
+	for (const f of FACILITIES) {
+		if (!f.room) continue;
+		const rows = facilityRoomRows(f);
+		const tiles = facilityRoomPalette(f);
+		const laid = layRoomTatami(rows, tiles);
+		if (laid.rows.join() === rows.join()) continue;
+		rooms++;
+		ok(
+			laid.rows.every((r, y) => [...r].length === [...rows[y]].length),
+			`${f.id}: width`,
+		);
+		for (const [y, r] of laid.rows.entries())
+			for (const [x, ch] of [...r].entries()) {
+				const was = tiles[[...rows[y]][x]];
+				const now = laid.tiles[ch];
+				ok(now, `${f.id}: no tile at ${x},${y}`);
+				ok(now.passable === was.passable, `${f.id}: passable at ${x},${y}`);
+				ok(!!now.counter === !!was.counter, `${f.id}: counter at ${x},${y}`);
+			}
+	}
+	ok(rooms >= 3, `only ${rooms} rooms with tatami`);
+});
 
 test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通れなく ならない・入口と 予定表の 前は ふさがない", () => {
 	const texts: [string, string][] = [];
