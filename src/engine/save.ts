@@ -13,8 +13,15 @@ import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
-import type { DungeonId, Item, Objective, RunState } from "../core/types";
+import type {
+	DungeonId,
+	Growth,
+	Item,
+	Objective,
+	RunState,
+} from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
+import { noteGrowth } from "./growth";
 import { noteTamper, oddRun, oddTown } from "./tamper";
 
 const PREFIX = "kiriko-roguelike/";
@@ -99,6 +106,8 @@ export const saveRun = (s: RunState): void => {
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
 		noteRunEnd(s.dungeon, s.end.kind, s.seed, s.voice);
+		// 主人公の レベル・経験値を 残す（次の 冒険は その レベルから。engine/growth.ts）
+		noteGrowth(s);
 		return;
 	}
 	const text = serializeRun(s);
@@ -920,6 +929,8 @@ export type SavedReplay = {
 	rom?: boolean;
 	/** 冒険に 出た 主人公（キリコなら 書かない。core/data/heroes.ts）。 */
 	hero?: "roze" | "zero";
+	/** 村から 持ってきた 成長（レベル1 なら 書かない。同じに 始めるため。engine/growth.ts）。 */
+	grown?: Growth;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -1000,8 +1011,19 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
+	if (
+		r.grown !== undefined &&
+		!(
+			r.grown &&
+			Number.isInteger(r.grown.lv) &&
+			Number.isInteger(r.grown.exp) &&
+			Number.isInteger(r.grown.hp)
+		)
+	)
+		return null;
 	return renamed({
 		seed: r.seed,
+		...(r.grown ? { grown: r.grown } : {}),
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.noLunch ? { noLunch: true } : {}),
 		...(r.rom ? { rom: true } : {}),
@@ -1048,6 +1070,7 @@ const addReplay = (s: RunState): void => {
 		...(s.noLunch ? { noLunch: true } : {}),
 		...(s.rom ? { rom: true } : {}),
 		...(s.hero ? { hero: s.hero } : {}),
+		...(s.grown ? { grown: s.grown } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

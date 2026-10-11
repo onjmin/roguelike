@@ -117,6 +117,11 @@ export type Dungeon = {
 	/** 倉庫の 道具を 持ちこめない（出るときに シヨが 預かる）。 */
 	noCarry?: boolean;
 	/**
+	 * 主人公の レベルを 1から 始める（村で 上げた レベルを 持ちこまない。この 板で 上げた ぶんも 持ち帰らない）。
+	 * 99階の 井戸の 底と 裏シナリオの 板（作者の 指示）。行き先の 札にも 出す（ui/worldMap.ts）。
+	 */
+	resetLevel?: true;
+	/**
 	 * 上りの 植民地（塔・やぐら・山）。階は 上へ 数え、帰り道は 降りる。中の 動きは 下りと 同じで、
 	 * 文と 見せかただけ 逆（depth が 大きいほど 高い）。
 	 */
@@ -587,6 +592,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// （data/story.ts の BOARD_LOOKS の zones）。いちばん底の「蓄音キリコのうた」を 持ったまま 帰還スレで 帰れる
 	hidden: {
 		id: "hidden",
+		resetLevel: true,
 		noCarry: true,
 		objective: "fetch",
 		floors: 99,
@@ -609,6 +615,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底 30 ＞ 風呂板 27・持ちこみ 不可）
 	opunu: {
 		id: "opunu",
+		resetLevel: true,
 		objective: "fetch",
 		hidden: true,
 		noCarry: true,
@@ -637,6 +644,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 階は 本筋と 同じ 1.5倍ずつ：6 → 9 → 13 → 灯台 20 → 跡地 30
 	isle1: {
 		id: "isle1",
+		resetLevel: true,
 		objective: "fetch",
 		// 入口：パン板を 持ち帰ると 開くが 知らせない。地図の 南西の 小島に 小舟が つく（ui/worldMap.ts）
 		quiet: true,
@@ -686,6 +694,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	isle2: {
 		id: "isle2",
+		resetLevel: true,
 		objective: "fetch",
 		hidden: true,
 		noCarry: true,
@@ -707,6 +716,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	isle3: {
 		id: "isle3",
+		resetLevel: true,
 		objective: "fetch",
 		hidden: true,
 		noCarry: true,
@@ -736,6 +746,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// ROM専の 声を 蓄音機に 入れたまま 持ち帰った あと（Progress.flags の romVoice）。ROM専だらけの 過疎
 	ato: {
 		id: "ato",
+		resetLevel: true,
 		noCarry: true,
 		objective: "fetch",
 		foes: { funamushi: 4, hitodama: 1.5, pitcher: 0, bat: 0 },
@@ -761,6 +772,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 板だけの 敵は 1000ゲッター（連投で スレを 伸ばして 1000 へ 押し出す）
 	hinan: {
 		id: "hinan",
+		resetLevel: true,
 		objective: "fetch",
 		hidden: true,
 		noCarry: true,
@@ -786,6 +798,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 裏の さいごの 板なので 避難J より むずかしく。敵は 結で やきうが 「鳴らしとった」と 言う 夏休みキッズと ピッチャー
 	y1901: {
 		id: "y1901",
+		resetLevel: true,
 		objective: "fetch",
 		noCarry: true,
 		foes: { bat: 2, pitcher: 2, copipe: 1.5 },

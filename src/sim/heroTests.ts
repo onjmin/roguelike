@@ -1,6 +1,6 @@
 // 冒険に 出る 主人公（束音ロゼ・解音ゼロ。core/data/heroes.ts・engine/heroes.ts・data/heroQuests.ts）の 試験（pnpm test）。
 
-import { HUNGER_MAX, START_HP, START_STR } from "../core/balance";
+import { EXP_AT, HUNGER_MAX, START_HP, START_STR } from "../core/balance";
 import { DUNGEONS } from "../core/data/dungeons";
 import {
 	WALL_HUNGER,
@@ -19,6 +19,7 @@ import { HERO_QUESTS } from "../data/heroQuests";
 import { MOBS } from "../data/mobs";
 import { synopsisHtml } from "../data/synopsis";
 import type { Story } from "../engine/defs";
+import { forgetGrowthMemo, loadGrowth } from "../engine/growth";
 import {
 	acceptQuest,
 	chooseHero,
@@ -38,6 +39,7 @@ import {
 	loadProgress,
 	loadTown,
 	saveProgress,
+	saveRun,
 	saveTown,
 } from "../engine/save";
 import { heroQuestScript } from "../ui/villageEvents";
@@ -305,11 +307,13 @@ const withStore = async (run: () => Promise<void> | void): Promise<void> => {
 	});
 	forgetProgressMemo();
 	forgetHeroMemo();
+	forgetGrowthMemo();
 	try {
 		await run();
 	} finally {
 		forgetProgressMemo();
 		forgetHeroMemo();
+		forgetGrowthMemo();
 		if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 		else delete (globalThis as { localStorage?: unknown }).localStorage;
 	}
@@ -353,6 +357,97 @@ const ended = (
 	r.s.stats.maxDepth = maxDepth;
 	return r.s;
 };
+
+test("成長: キリコ・ロゼ・ゼロの レベル・経験値・のびた 最大HP は 冒険を まいて のこり、井戸の 底と 裏シナリオの 板では 1から", async () => {
+	await withStore(() => {
+		const ended = (r: Run, kind: "dead" | "clear" | "escape") => {
+			r.s.end = { kind, cause: "", depth: r.s.depth, turn: r.s.turn };
+			saveRun(r.s);
+		};
+		// キリコで レベルを 上げて 倒れる → のこる
+		const a = Run.create("grow-a", "main");
+		a.gainExp(EXP_AT[5]);
+		const lv = a.p.lv;
+		const gained = a.p.lvHp ?? 0;
+		ok(lv === 6 && gained > 0, `harness: lv ${lv}, lvHp ${gained}`);
+		ended(a, "dead");
+		const g = loadGrowth("kiriko");
+		ok(
+			g.lv === lv && g.exp === a.p.exp && g.hp === gained,
+			`kiriko kept ${JSON.stringify(g)}`,
+		);
+		ok(loadGrowth("roze").lv === 1, "roze grew with kiriko");
+		// 次の 冒険は その レベルから（最大HP も のびた ぶん）。リプレイの ために 冒険に 焼きつける
+		const b = Run.create(
+			"grow-b",
+			"main",
+			[],
+			"fetch",
+			true,
+			false,
+			"kiriko",
+			g,
+		);
+		ok(
+			b.p.lv === lv && b.p.exp === g.exp && b.p.maxHp === START_HP + gained,
+			`starts at lv ${b.p.lv} hp ${b.p.maxHp}`,
+		);
+		ok(b.s.grown?.lv === lv, "the growth is not on the run");
+		// 井戸の 底・裏シナリオの 板は レベル1 から。上げても 持ち帰らない
+		for (const d of [
+			"hidden",
+			"opunu",
+			"isle1",
+			"isle2",
+			"isle3",
+			"ato",
+			"hinan",
+			"y1901",
+		] as const) {
+			ok(DUNGEONS[d].resetLevel, `${d} keeps the level`);
+			const c = Run.create(
+				`grow-${d}`,
+				d,
+				[],
+				"fetch",
+				true,
+				false,
+				"kiriko",
+				g,
+			);
+			ok(
+				c.p.lv === 1 && c.p.maxHp === START_HP && !c.s.grown,
+				`${d}: lv ${c.p.lv}`,
+			);
+			c.gainExp(EXP_AT[10]);
+			ended(c, "clear");
+			ok(loadGrowth("kiriko").lv === lv, `${d}: carried its level home`);
+		}
+		// ほかの 板は 引きつぐ（ボカロ作り避難所は ロゼの 依頼で 裏シナリオでは ない）
+		for (const d of ["shallow", "kinoko", "deep", "vocalo"] as const)
+			ok(!DUNGEONS[d].resetLevel, `${d} resets the level`);
+		// ゼロは ゼロの ぶん（機体の はじめの HP に のびた ぶん）
+		const z = Run.create("grow-z", "main", [], "fetch", true, false, "zero");
+		z.gainExp(EXP_AT[3]);
+		ended(z, "escape");
+		const gz = loadGrowth("zero");
+		ok(gz.lv === 4 && loadGrowth("kiriko").lv === lv, `zero ${gz.lv}`);
+		const z2 = Run.create(
+			"grow-z2",
+			"main",
+			[],
+			"fetch",
+			true,
+			false,
+			"zero",
+			gz,
+		);
+		ok(
+			z2.p.lv === 4 && z2.p.maxHp === (ZERO_BODIES[0]?.hp ?? 0) + gz.hp,
+			`zero starts at lv ${z2.p.lv} hp ${z2.p.maxHp}`,
+		);
+	});
+});
 
 test("悩み: パン板の あと もう 少し 先から、帰る たびに 1/3（4回目には 必ず）、1人ずつ、村で ひとこと", async () => {
 	await withStore(async () => {
