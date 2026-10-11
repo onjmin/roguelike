@@ -2381,6 +2381,24 @@ test("staff", "foot: works even with a full inventory", () => {
 	ok(r.p.items.length === INVENTORY_MAX, `items ${r.p.items.length}`);
 });
 
+test(
+	"staff",
+	"foot: 次スレ read off the floor with a full bag drops the copy at her feet",
+	() => {
+		const r = arena("foot-recharge");
+		while (r.p.items.length < INVENTORY_MAX - 1) give(r, "f_bread");
+		const src = give(r, "s_whet");
+		const it = atFoot(r, "s_recharge");
+		turn(r, { c: "use", item: it.uid, target: src.uid });
+		ok(r.p.items.length === INVENTORY_MAX, `items ${r.p.items.length}`);
+		const copy = r.itemAt(r.p.x, r.p.y)?.item;
+		ok(
+			copy?.kind === "s_whet" && copy.uid !== src.uid,
+			`the copy is not at her feet: ${copy?.kind}`,
+		);
+	},
+);
+
 test("staff", "foot: a thrown arrow leaves the rest of the bundle", () => {
 	const r = arena("foot-arrow");
 	const it = atFoot(r, "a_wood");
