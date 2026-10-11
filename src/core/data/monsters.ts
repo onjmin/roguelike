@@ -172,8 +172,7 @@ const M: MonsterDef[] = [
 		name: "拾い画UFO",
 		sprite: "sa:HcYVTc",
 		hp: 20,
-		// 道具を 拾うのが 役目なので 弱めに（同じ 階の 風吹けば名無しが 8）
-		atk: 5,
+		atk: 0,
 		def: 16,
 		exp: 10,
 		floors: [7, 15],
