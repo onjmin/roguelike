@@ -84,6 +84,7 @@ import {
 	type VillageExit,
 	type VillageView,
 } from "../data/village/map";
+import { newsPages, townNews } from "../data/village/news";
 import { hallTier } from "../data/village/tiles";
 import type { Story } from "../engine/defs";
 import {
@@ -1020,6 +1021,13 @@ const stageUp = async (
 		}
 		await s.say(hallLine.who, hallLine.text);
 	}
+	// 町の まわり・浜・新市街・港に 建った 物（仲間は 町の まんなかしか 語らないので、カメラで 回って 知らせる）
+	const news = newsPages(townNews(from, to));
+	for (const p of news) {
+		await s.look(p.at);
+		await s.narrate(p.text);
+	}
+	if (news.length) await s.look(at);
 	const carry = CARRY_MAX[to] ?? 0;
 	if (carry > (CARRY_MAX[from] ?? 0))
 		await s.narrate(`倉庫から　引き取って\n${carry}つまで　持っていける`);

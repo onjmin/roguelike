@@ -197,6 +197,7 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
+import { newsPages, townNews } from "../data/village/news";
 import {
 	BATH_NOREN_M,
 	BATH_SPOTS,
@@ -1862,6 +1863,50 @@ const fitsWindow = (texts: readonly [string, string][]): void => {
 			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
 	}
 };
+
+test("町の お知らせ: 段が 上がると 新市街・浜・町の まわりに 建った 物を 地区ごとに 知らせ、窓に 収まる", () => {
+	for (let from = 0; from < TOWN_STAGES - 1; from++)
+		for (let to = from + 1; to < TOWN_STAGES; to++) {
+			const news = townNews(from, to);
+			const pages = newsPages(news);
+			fitsWindow(pages.map((p, i) => [`news ${from}→${to}[${i}]`, p.text]));
+			for (const p of pages)
+				ok(
+					p.at[0] >= 0 &&
+						p.at[0] < VILLAGE_W &&
+						p.at[1] >= 0 &&
+						p.at[1] < VILLAGE_H,
+					`news ${from}→${to}: camera at ${p.at}`,
+				);
+			// 1段ずつ 上がる ときは 建った 物を みんな 名前で 出す
+			if (to === from + 1)
+				for (const n of news)
+					ok(
+						pages.some((p) => p.text.includes(n.name)),
+						`news ${from}→${to}: ${n.name} is not shown`,
+					);
+		}
+	const names = (from: number, to: number) =>
+		townNews(from, to).map((n) => n.name);
+	ok(names(4, 5).includes("コーポ「ほしゅ荘」"), "corpo is not news at 5");
+	ok(
+		names(6, 7).includes("ザ・保守タワー　レジデンス"),
+		"tower is not news at 7",
+	);
+	ok(
+		townNews(6, 7).some(
+			(n) => n.was === "保守村　交番" && n.name === "保守警察署",
+		),
+		"koban → police is not a rebuild",
+	);
+	// 段を とばしたら、あいだで 建って なくなった 物（交番）は 出さず、建てかえでも ない
+	ok(!names(3, 7).includes("保守村　交番"), "koban shows after skipping");
+	ok(
+		!townNews(3, 7).some((n) => n.was === "保守村　交番"),
+		"police is a rebuild after skipping",
+	);
+	ok(townNews(0, 1).length === 0, "news at the stall");
+});
 
 test("セーブの 書きかえ: every line fits the village window, every friend has a line for each tier", () => {
 	const texts: [string, string][] = [];
