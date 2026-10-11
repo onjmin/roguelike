@@ -703,7 +703,7 @@ export const coreShadows = (
  * （作者の 指示）。両がわに 歩道 1マス。横の 通りは 大通り（歩道 19・車線 20〜23・歩道 24）だけ。
  * 北と 南は 通りを 通さない 深い 街区（歩道が 5〜6行ごとに 並ぶと 道ばかりに 見える：作者の 指示）で、
  * まんなかは 芝の 中庭（北 y=8〜13：崖下の 道から 芝の 小道 x=31〜39・y=10〜11 で つながる。
- * 南 y=30〜35：集合住宅。facilities.ts）。縦の 通り：x=46〜52・63〜69（歩道・車線 5・歩道。北は 中庭で 行きどまり）。
+ * 南 y=30〜35：集合住宅。facilities.ts）。縦の 通り：x=46〜52 の 1本（歩道・車線 5・歩道。北は 中庭で 行きどまり）。x=63〜69 は 木の 並ぶ 緑道。
  * 線路の 東へは 中庭の 行（y=8・30）に 歩行者の 踏切。浜ぞい（y=41〜42）は 遊歩道、その 下は 海（都市で 港）。
  * 住宅街（段6）から アスファルト（中央線・はしの 白線・横断歩道）と、線路（x=78〜79。踏切は 通りと 交わる 所）・
  * 街灯・踏切の 警報機。区画に 建つ 物は data/village/facilities.ts。
@@ -743,7 +743,11 @@ const vStreet = (x: number): VStreet => ({
 		[x + 5, "れ"],
 	],
 });
-const V_STREETS: readonly VStreet[] = [vStreet(46), vStreet(63)];
+/**
+ * 縦の 通りは 1本（x=46〜52）。2本 あると 大通りの 交差点が 2つ ならび、横断歩道が 10マスの うち 6マスを
+ * しめて 歩道と 横断歩道ばかりに 見えた（作者の 指示）。もう 1本の あと（x=63〜69）は 木の 並ぶ 緑道（GREENWAY）。
+ */
+const V_STREETS: readonly VStreet[] = [vStreet(46)];
 /** 縦の 通りが 走る 行（北の 通りの 歩道から 浜の 遊歩道まで）。 */
 const V_Y0 = 8;
 const V_Y1 = 42;
@@ -777,9 +781,14 @@ const CROSSING_SIGNS: readonly Cell[] = [
 const SIGNALS: readonly Cell[] = [
 	[52, 19],
 	[46, 24],
-	[69, 19],
-	[63, 24],
 ];
+/** 緑道（もと 縦の 通りの x=63〜69。両はしの 列に 木。まんなかの 芝を 歩く。大通り・中庭の 行は あける）。 */
+const GREENWAY: readonly Cell[] = [
+	9, 11, 15, 17, 26, 28, 32, 34, 37, 39,
+].flatMap((y): Cell[] => [
+	[63, y],
+	[69, y],
+]);
 /**
  * 公園の 木（新市街の 空いた 区画。地図の 左上から 右へ）。止まっている 車と 線路の 東の 店
  * （ファミレス・ラーメン屋）は data/village/facilities.ts。
@@ -858,6 +867,7 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	for (const [x, y] of CROSSING_SIGNS) out.push([x, y, "ゅ"]);
 	for (const [x, y] of SIGNALS) out.push([x, y, "ゔ"]);
 	out.push(...PARK);
+	for (const [x, y] of GREENWAY) out.push([x, y, "b"]);
 	return out;
 };
 
