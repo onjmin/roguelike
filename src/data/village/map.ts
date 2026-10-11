@@ -603,8 +603,8 @@ const CITY_CELLS: readonly (readonly [number, number, string])[] = [
 	[10, 12, "ゃ"],
 	[23, 12, "ゃ"],
 	[26, 12, "ゃ"],
-	[18, 14, "ゃ"],
-	[21, 14, "ゃ"],
+	[18, 14, "ゲ"],
+	[21, 14, "ゲ"],
 	[13, 20, "ゃ"],
 	[24, 20, "ゃ"],
 	[8, 18, "ゃ"],
@@ -657,8 +657,9 @@ const coreCity = (rows: string[], stage: number): void => {
 		stamp(rows, 10, 24, [CORE_HEDGE6]);
 		return;
 	}
-	// 歩道（店の 前の 草地・西の 空き地の 入り口・広場の 北の へり）
-	for (let y = 12; y <= 18; y++)
+	// 歩道（通りに 面した 草地だけ：崖下の 道の 下 y=12・町の 通りの 上 y=18。あいだの 芝は 残す。
+	// みんな 歩道に すると 歩道ばかりに 見えた：作者の 指示）・西の 空き地の 入り口・広場の 北の へり
+	for (const y of [12, 18])
 		for (let x = 9; x <= 30; x++) if (at(x, y) === ",") put(rows, [x, y], "ゆ");
 	put(rows, [7, 18], "ゆ");
 	put(rows, [8, 18], "ゆ");
@@ -699,12 +700,13 @@ export const coreShadows = (
 /**
  * 東の 新市街（地図の x=40〜85。STORY.md §5.75）。街（段4）で 森が 開けて 草地と 通りが できる。
  * 道路は 横が 4マス（片側 2車線：y 方向）、縦が 5マス（片側 2車線と まんなか：x 方向）。見おろしの 絵で 立体感が 出る
- * （作者の 指示）。両がわに 歩道 1マス。横の 通り：北（歩道 8・車線 9〜12・歩道 13）・大通り（19・20〜23・24）。
- * 大通りから 浜までは 通りを 通さない 深い 街区（y=25〜40。歩道が 5〜6行ごとに 並ぶと 道ばかりに 見える：作者の 指示）で、
- * まんなか（y=30〜35）は 芝の 中庭と 集合住宅（facilities.ts）。縦の 通り：x=46〜52・63〜69（歩道・車線 5・歩道）。北の 通りの 西の はし（x=31〜39）は
- * 2車線（y=10〜11）で 崖下の 道に つながる。浜ぞい（y=41〜42）は 遊歩道、その 下は 海（都市で 港）。
+ * （作者の 指示）。両がわに 歩道 1マス。横の 通りは 大通り（歩道 19・車線 20〜23・歩道 24）だけ。
+ * 北と 南は 通りを 通さない 深い 街区（歩道が 5〜6行ごとに 並ぶと 道ばかりに 見える：作者の 指示）で、
+ * まんなかは 芝の 中庭（北 y=8〜13：崖下の 道から 芝の 小道 x=31〜39・y=10〜11 で つながる。
+ * 南 y=30〜35：集合住宅。facilities.ts）。縦の 通り：x=46〜52・63〜69（歩道・車線 5・歩道。北は 中庭で 行きどまり）。
+ * 線路の 東へは 中庭の 行（y=8・30）に 歩行者の 踏切。浜ぞい（y=41〜42）は 遊歩道、その 下は 海（都市で 港）。
  * 住宅街（段6）から アスファルト（中央線・はしの 白線・横断歩道）と、線路（x=78〜79。踏切は 通りと 交わる 所）・
- * 電柱・街灯・踏切の 警報機。区画に 建つ 物は data/village/facilities.ts。
+ * 街灯・踏切の 警報機。区画に 建つ 物は data/village/facilities.ts。
  */
 const EAST_X = 40;
 const EAST_R = 85;
@@ -715,16 +717,6 @@ type HStreet = {
 	x0: number;
 };
 const H_STREETS: readonly HStreet[] = [
-	{
-		walks: [8, 13],
-		lanes: [
-			[9, "ら"],
-			[10, "ヰ"],
-			[11, "ヱ"],
-			[12, "り"],
-		],
-		x0: 40,
-	},
 	{
 		walks: [19, 24],
 		lanes: [
@@ -757,19 +749,9 @@ const V_Y0 = 8;
 const V_Y1 = 42;
 const RAIL_X = [78, 79] as const;
 const RAIL_Y1 = 40;
-/** 深い 街区の 中庭を 線路の 東（コーポ・ラーメン屋）へ わたる 歩行者の 踏切の 行。 */
-const RAIL_WALK = 30;
-/** 電柱（歩道の 上。扉と 自販機の 前は よける）・街灯（大通りと 遊歩道。消防署の 車庫の 前は よける）・踏切の 警報機。 */
-const POLES: readonly Cell[] = [
-	[45, 8],
-	[62, 8],
-	[76, 8],
-	[84, 8],
-	[44, 13],
-	[56, 13],
-	[72, 13],
-	[83, 13],
-];
+/** 深い 街区の 中庭を 線路の 東（北：ファミレス、南：コーポ・ラーメン屋）へ わたる 歩行者の 踏切の 行。 */
+const RAIL_WALK = [8, 30];
+/** 街灯（大通りと 遊歩道。消防署の 車庫の 前は よける）・踏切の 警報機。 */
 const LAMPS: readonly Cell[] = [
 	[45, 19],
 	[54, 19],
@@ -788,17 +770,11 @@ const LAMPS: readonly Cell[] = [
 	[84, 42],
 ];
 const CROSSING_SIGNS: readonly Cell[] = [
-	[77, 8],
-	[80, 13],
 	[77, 19],
 	[80, 24],
 ];
 /** 信号機（交差点の 歩道の 角。向かいあう 2つ）。 */
 const SIGNALS: readonly Cell[] = [
-	[52, 8],
-	[46, 13],
-	[69, 8],
-	[63, 13],
 	[52, 19],
 	[46, 24],
 	[69, 19],
@@ -843,12 +819,8 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 		V_STREETS.find((v) => x >= v.walks[0] && x <= v.walks[1]);
 	const hAt = (y: number) =>
 		H_STREETS.find((h) => y >= h.walks[0] && y <= h.walks[1]);
-	// 北の 通りの 西の はし（崖下の 道に つながる 2車線）
-	for (const [y, ch] of [
-		[10, "ら"],
-		[11, "り"],
-	] as const)
-		out.push([31, y, (paved ? ch : ".").repeat(EAST_X - 31)]);
+	// 崖下の 道から 北の 中庭へ 抜ける 芝の 小道（前は 北の 通りの 2車線）
+	for (const y of [10, 11]) out.push([31, y, ",".repeat(EAST_X - 31)]);
 	// 横の 通り
 	for (const h of H_STREETS) {
 		for (const y of h.walks) out.push([EAST_X, y, walk.repeat(w)]);
@@ -881,8 +853,7 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	// 線路（住宅街から。通りと 交わる 所は 踏切）
 	for (let y = 0; y <= RAIL_Y1; y++)
 		for (const x of RAIL_X)
-			out.push([x, y, hAt(y) || y === RAIL_WALK ? "ぅ" : "ぃ"]);
-	for (const [x, y] of POLES) out.push([x, y, "ょ"]);
+			out.push([x, y, hAt(y) || RAIL_WALK.includes(y) ? "ぅ" : "ぃ"]);
 	for (const [x, y] of LAMPS) out.push([x, y, "ゃ"]);
 	for (const [x, y] of CROSSING_SIGNS) out.push([x, y, "ゅ"]);
 	for (const [x, y] of SIGNALS) out.push([x, y, "ゔ"]);
