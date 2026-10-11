@@ -84,7 +84,7 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 	},
 	tv: {
 		name: "大きな　テレビ",
-		cells: [row("tvBig", 2)],
+		cells: [row("tvGame", 2, 0), row("tvGame", 2, 1)],
 		line: "大きな　テレビ。\nナイター中継が　よく　映る。",
 	},
 	tank: {
@@ -108,9 +108,9 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 		line: "レコードの　箱。\n蓄音機で　聞いた　曲も　ある。",
 	},
 	game: {
-		name: "ゲーム機と　テレビ",
-		cells: [row("tvGame", 2, 0), row("tvGame", 2, 1)],
-		line: "ゲーム機と　テレビ。\nコントローラーが　2つ。",
+		name: "ゲーム機",
+		cells: [[ri("console")]],
+		line: "ゲーム機。\nコントローラーが　2つ。",
 	},
 	tansu: {
 		name: "たんす",
