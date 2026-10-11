@@ -106,7 +106,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** 延命スレで 板が 錆びなくなった。 */
 		rustproof: "rpgen:jVuw6M", // [ツクール]バフ
 		/** 腹筋スレで 武器が ＋1（武器が きたえられた。作者の 指示：専用の 音）。 */
-		whet: "rpgen:mYWx64", // エネルギー球(チャージ)
+		whet: "rpgen:pMekYY", // [Minecraft]金床修繕
 		/** 耐久スレで 板が ＋1（板が かたく なった）。 */
 		temper: "rpgen:VocXum", // FF 盾ガード
 		/** 目つぶし・混乱・ちから／最大HP・レベルが 下がった・板が 錆びた。 */
