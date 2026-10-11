@@ -6,6 +6,7 @@ import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
 import { T_WALL, tileAt } from "../core/mapgen";
+import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import type { RunState } from "../core/types";
@@ -100,8 +101,24 @@ test("ロゼ: 壁に 入れる（キリコは 入れない）、いちばん 外
 	ok(r.s.hero === "roze" && r.heroName === "ロゼ", "hero");
 	const v = wallBeside(r);
 	place(r, v.from);
+	// すり抜けが OFF（はじめ）なら 壁に ぶつかる
+	ok(!r.phasing, "starts off");
+	r.act({ c: "move", dir: v.d });
+	ok(r.p.x === v.from.x && r.p.y === v.from.y, "off: bumps");
+	// ON に して 動くと 入る（切りかえは 時間が 進まない）
+	const turn = r.s.turn;
+	r.act({ c: "phase" });
+	ok(r.phasing && r.s.turn === turn, "toggle is free");
 	r.act({ c: "move", dir: v.d });
 	ok(r.p.x === v.to.x && r.p.y === v.to.y && r.playerInWall(), "roze walks in");
+	// 壁の 中では OFF に できない
+	r.act({ c: "phase" });
+	ok(r.phasing, "cannot turn off in a wall");
+	// 床に もどって OFF
+	r.act({ c: "move", dir: ((v.d + 4) % 8) as Dir8 });
+	r.act({ c: "phase" });
+	ok(!r.phasing && !("phase" in r.s), "off again");
+	r.s.phase = true;
 	const l = r.f.layout;
 	ok(!r.playerCanEnter(0, 1) && !r.playerCanEnter(l.w - 1, 2), "outer wall");
 	ok(!r.playerCanEnter(1, 0), "outer row");
@@ -111,6 +128,7 @@ test("ロゼ: 壁の 中では 1ターンごとに おなかが 5% 減る（床�
 	const r = quiet(
 		Run.create("hero-b", "shallow", [], "fetch", true, false, "roze"),
 	);
+	r.s.phase = true;
 	const v = wallBeside(r);
 	place(r, v.to);
 	r.p.hunger = HUNGER_MAX;
@@ -137,6 +155,7 @@ test("ロゼ: 壁の 中の ロゼを 敵は なぐれない（床に 出ると 
 	const r = quiet(
 		Run.create("hero-c", "shallow", [], "fetch", true, false, "roze"),
 	);
+	r.s.phase = true;
 	const v = wallBeside(r);
 	place(r, v.to);
 	const m = spawnMonster(r, "bat", v.from, { awake: true });
@@ -177,6 +196,14 @@ test("ロゼ: 壁の 中の ロゼを 敵は なぐれない（床に 出ると 
 		}
 		ok(hurt, "attacked on the floor");
 	}
+});
+
+test("ロゼ: すり抜けの 切りかえは リプレイに 残る（キリコでは 何も しない）", () => {
+	ok(encodeCmd({ c: "phase" }) === "P", "encode");
+	ok(decodeCmd("P")?.c === "phase", "decode");
+	const k = Run.create("hero-k2", "shallow");
+	k.act({ c: "phase" });
+	ok(!k.s.phase && !k.phasing, "kiriko");
 });
 
 // ───────────────── 解音ゼロ ─────────────────

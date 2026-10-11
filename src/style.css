@@ -3852,3 +3852,33 @@ body.jolt #app {
 	aspect-ratio: 3 / 2;
 	image-rendering: pixelated;
 }
+
+/* 束音ロゼの すり抜け（A の 下。ロゼの ときだけ。ON で 桃色に 光る） */
+.btn-phase {
+	display: none;
+	right: 4px;
+	bottom: -6px;
+	top: auto;
+	width: 48px;
+	height: 48px;
+	font-size: 10px;
+	line-height: 1.1;
+	letter-spacing: -0.04em;
+}
+
+.hud.has-phase .btn-phase {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hud.has-phase.phase-on .btn-phase {
+	background: #ff6f91;
+	color: #1a0a12;
+	box-shadow: 0 0 10px #ff6f91;
+}
+
+.hud.village .btn-phase,
+.hud.replay .btn-phase {
+	display: none;
+}
