@@ -7,21 +7,23 @@ import { EXP_AT } from "./core/balance";
 import { type HeroId, isHeroId } from "./core/data/heroes";
 import { callHunter } from "./core/floor";
 import { Run } from "./core/run";
+import type { Item } from "./core/types";
 import { bgm } from "./data/bgm";
 import { devEvent } from "./data/objectives";
 import { sfx } from "./data/sfx";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
-import { loadGrowth } from "./engine/growth";
 import { chosenHero, noteHeroQuests, rollHeroWorries } from "./engine/heroes";
 import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
 	loadProgress,
+	RELIEF_KIND,
 	type SavedReplay,
 	saveRun,
 	takeFromBag,
 	takeLunch,
+	takeRelief,
 } from "./engine/save";
 import { Screen } from "./engine/screen";
 import { decodeShare, takeSharedHash } from "./engine/share";
@@ -185,7 +187,6 @@ const runFor = (
 				!replay.noLunch,
 				!!replay.rom,
 				replay.hero ?? "kiriko",
-				replay.grown,
 			),
 			replay,
 		};
@@ -203,7 +204,6 @@ const runFor = (
 				choice.lunch,
 				romNow(),
 				chosenHero(),
-				loadGrowth(chosenHero()),
 			);
 			return { run, replay: undefined };
 		}
@@ -212,18 +212,31 @@ const runFor = (
 		const carry = choice.carry.length ? takeFromBag(choice.carry) : [];
 		// ぷゆゆの お弁当（別の タブで 持っていかれて いたら 持たない）
 		const lunch = choice.lunch && takeLunch();
+		// たおれた あとの 支給品（ぷゆゆソード。持ちこめない 板でも 持っていく。倉庫から 持ちこんだ 道具と 同じく
+		// 冒険に 焼きつけて リプレイでも 同じに 始まる）
+		const relief: Item[] = takeRelief()
+			? [
+					{
+						uid: 0,
+						kind: RELIEF_KIND,
+						plus: 0,
+						cursed: false,
+						charges: 0,
+						known: true,
+						count: 1,
+					},
+				]
+			: [];
 		const run = Run.create(
 			newSeed(),
 			choice.dungeon,
-			carry,
+			[...carry, ...relief],
 			choice.objective,
 			lunch,
 			romNow(),
 			chosenHero(),
-			// 主人公の レベル・経験値（レベルを もどす 板では Run.create が 使わない。engine/growth.ts）
-			loadGrowth(chosenHero()),
 		);
-		if (carry.length) saveRun(run.s);
+		if (carry.length || relief.length) saveRun(run.s);
 		return { run, replay: undefined };
 	}
 	const run = new Run(choice.state);

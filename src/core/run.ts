@@ -95,7 +95,6 @@ import {
 	type Floor,
 	type FloorItem,
 	type GameEvent,
-	type Growth,
 	HOLD,
 	type Item,
 	type ItemCat,
@@ -168,8 +167,6 @@ export class Run {
 		rom = false,
 		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
 		hero: HeroId = "kiriko",
-		/** 村から 持ってきた 成長（engine/growth.ts。レベルを もどす 板では 使わない。乱数は 引かない）。 */
-		growth?: Growth,
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
@@ -203,20 +200,16 @@ export class Run {
 			if (UNIDENTIFIED_CATS.includes(d.cat) && !dg.unidentified.includes(d.cat))
 				known[d.id] = true;
 		const start = heroStart(hero);
-		// 成長を 引きつぐ（レベル・経験値・レベルアップで のびた 最大HP。レベルを もどす 板では 1から）
-		const grown =
-			growth && growth.lv > 1 && !dg.resetLevel ? { ...growth } : undefined;
 		const player: Player = {
 			x: 0,
 			y: 0,
 			dir: 4,
-			hp: Math.min(MAX_HP_CAP, start.hp + (grown?.hp ?? 0)),
-			maxHp: Math.min(MAX_HP_CAP, start.hp + (grown?.hp ?? 0)),
+			hp: start.hp,
+			maxHp: start.hp,
 			str: start.str,
 			maxStr: start.str,
-			lv: grown?.lv ?? 1,
-			exp: grown?.exp ?? 0,
-			...(grown ? { lvHp: grown.hp } : {}),
+			lv: 1,
+			exp: 0,
 			hunger: HUNGER_MAX,
 			regenAcc: 0,
 			weapon: null,
@@ -259,7 +252,6 @@ export class Run {
 			stats: { maxDepth: 0, itemsUsed: 0 },
 			// キリコは 書かない（前の 版と 同じ 形の まま）
 			...(hero !== "kiriko" ? { hero } : {}),
-			...(grown ? { grown } : {}),
 		};
 		const run = new Run(s);
 		run.rng = rng;
@@ -962,7 +954,6 @@ export class Run {
 			const g = this.rng.pick(HP_GAIN);
 			p.maxHp = Math.min(MAX_HP_CAP, p.maxHp + g);
 			p.hp = Math.min(p.maxHp, p.hp + g);
-			p.lvHp = (p.lvHp ?? 0) + g;
 		}
 		if (up > 0) {
 			// 何段上がっても音は1回（続けて鳴るとうるさい）
@@ -982,7 +973,6 @@ export class Run {
 		const g = this.rng.pick(HP_GAIN);
 		p.maxHp = Math.max(1, p.maxHp - g);
 		p.hp = Math.min(p.hp, p.maxHp);
-		p.lvHp = Math.max(0, (p.lvHp ?? 0) - g);
 		this.se("debuff");
 		this.msg(`レベルが　${p.lv}に　下がった`, "warn");
 	}
@@ -1031,12 +1021,35 @@ export class Run {
 			this.msg(`${this.heroName}の　攻撃は　はずれた`);
 			return;
 		}
+		const w = this.weapon();
+		const relief = !!w && !!defOf(w.kind).relief;
+		// 支給品（ぷゆゆソード）は ボスには 効かない（当たっても すり減らない）
+		if (relief && w && isBoss(m)) {
+			this.se(this.weaponSound().swing);
+			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
+			this.msg(
+				`${this.name(w)}は　${monsterName(this, m)}には　効かない！`,
+				"warn",
+			);
+			return;
+		}
 		const atk = attackPower(this.p.lv, this.meleePower());
 		let dmg = rollDamage(atk, d.def, this.dmgRoll());
-		if (d.tags?.includes("dragon") && this.weapon()?.kind === "wyrmbane")
-			dmg *= 2;
+		if (d.tags?.includes("dragon") && w?.kind === "wyrmbane") dmg *= 2;
 		this.se(this.weaponSound().hit);
 		this.damageMonster(m, dmg, "hit");
+		if (relief && w) this.wearRelief(w);
+	}
+
+	/** 支給品の 武器が すり減る（修正値 −1。強さが 0 に なったら 折れて なくなる）。乱数は 引かない。 */
+	private wearRelief(w: Item): void {
+		w.plus--;
+		w.known = true;
+		if ((defOf(w.kind).atk ?? 0) + w.plus > 0) return;
+		const name = this.name(w);
+		this.removeItem(w);
+		this.se("debuff");
+		this.msg(`${name}は　折れてしまった`, "warn");
 	}
 
 	/** 怒って 倍速に なる（顔真っ赤・😡の 板・弱った 親分）。 */

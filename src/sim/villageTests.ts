@@ -66,6 +66,8 @@ import {
 	type MobId,
 	type MobLine,
 	PUYU_LUNCH,
+	PUYU_RELIEF,
+	RELIEF_NOTE,
 	SENKYO,
 } from "../data/mobs";
 import { records, stageBgm, villageBgm } from "../data/music";
@@ -261,7 +263,9 @@ import {
 	walkRoute,
 } from "../engine/longWalk";
 import {
+	addRecord,
 	forgetProgressMemo,
+	giveRelief,
 	hasFlag,
 	loadProgress,
 	loadRecords,
@@ -272,11 +276,15 @@ import {
 	type PendingReturn,
 	type Progress,
 	type ProgressNews,
+	QUIT_CAUSE,
+	RELIEF_KIND,
 	type RunRecord,
 	readScrap,
 	replayMatches,
 	type SavedReplay,
+	saveTown,
 	type Town,
+	takeRelief,
 	toReplay,
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
@@ -374,6 +382,7 @@ import {
 	pagesFor,
 	type ReturnArrival,
 	ROMS,
+	reliefScript,
 	returnScene,
 	type StoreChooser,
 	sceneView,
@@ -876,6 +885,68 @@ test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひ�
 		const again = fakeStory();
 		await lunchScript(again.s);
 		ok(!again.log.length, `came twice: ${again.log.join(" / ")}`);
+	});
+});
+
+test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（同じ たおれで 二度・持って 出る 前・倉庫に ある ときは 渡さない。やめた 冒険では 渡さない）", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow"]);
+		putTown({ stage: 1 });
+		const died = (at: number, cause = "寝落ち民に　たおされた") =>
+			addRecord({
+				at,
+				kind: "dead",
+				cause,
+				depth: 2,
+				maxDepth: 2,
+				lv: 1,
+				turn: 10,
+				kills: 0,
+				returning: false,
+				seed: `relief-${at}`,
+				dungeon: "shallow",
+			});
+		died(1000);
+		const first = fakeStory();
+		await reliefScript(first.s);
+		ok(
+			PUYU_RELIEF.some((t) => first.log.includes(`say nanj: ${t}`)) &&
+				first.log.includes(`narrate: ${RELIEF_NOTE}`),
+			`relief scene:\n${first.log.join("\n")}`,
+		);
+		ok(
+			loadTown().relief === true && loadTown().reliefAt === 1000,
+			"not pending",
+		);
+		// 同じ たおれ：もう 来ない
+		const again = fakeStory();
+		await reliefScript(again.s);
+		ok(!again.log.length, `came twice: ${again.log.join(" / ")}`);
+		// 持って 出る 前に また たおれても（別の タブ など）ふえない
+		ok(!giveRelief(2000), "a second sword while one is pending");
+		// 持って 出る（1回だけ）
+		ok(takeRelief() && !takeRelief(), "taken twice");
+		ok(loadTown().relief === undefined, "still pending after taking");
+		// 次の たおれで また もらえる。倉庫に ある ときは もらえない
+		ok(giveRelief(3000) && takeRelief(), "no sword for a new fall");
+		const t = loadTown();
+		t.storage.push({
+			uid: 1,
+			kind: RELIEF_KIND,
+			plus: -3,
+			cursed: false,
+			charges: 0,
+			known: true,
+			count: 1,
+		});
+		saveTown(t);
+		ok(!giveRelief(4000), "a sword while one is in the storehouse");
+		// やめた 冒険では 渡さない
+		saveTown({ ...loadTown(), storage: [] });
+		died(5000, QUIT_CAUSE);
+		const quit = fakeStory();
+		await reliefScript(quit.s);
+		ok(!quit.log.length && !loadTown().relief, "a sword for quitting");
 	});
 });
 

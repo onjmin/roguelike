@@ -3018,6 +3018,19 @@ export const movedIn = (step: number, cleared: readonly DungeonId[]): MobId[] =>
  * ぷゆゆが お弁当の ぷゆゆパンを 持たせる ときの ひとこと（ui/villageReturn.ts の lunchScript。帰りごとに 1つ）。
  * ぷゆゆの 決まり（🥺 は 1窓に 1つ・行の 終わりだけ・絵文字の 行は 21字まで）。
  */
+/**
+ * たおれて 帰った あと、ぷゆゆが ぷゆゆソード（支給品。core/data/items.ts）を 持たせに くる ときの ことば
+ * （ui/villageReturn.ts の reliefScript）。
+ */
+export const PUYU_RELIEF: readonly string[] = [
+	"これ、ぷゆゆソード🥺\nつぎは　いけるゆ",
+	"ぷゆゆが　つくった　けんゆ🥺\nすぐ　すりへるけど　つよいゆ",
+	"まけても　だいじょうぶゆ🥺\nこれ　もってって",
+];
+/** ぷゆゆソードを 渡した 地の文（強さと 欠点。出るときに 持っていく）。 */
+export const RELIEF_NOTE =
+	"ぷゆゆソードを　もらった。\n攻撃35。なぐる　たびに　すり減り、ボスには　効かない。";
+
 export const PUYU_LUNCH: readonly string[] = [
 	"ぷゆゆパン、もってって🥺",
 	"おなか　すいたら、\nたべてゆ🥺",

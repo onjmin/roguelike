@@ -13,15 +13,8 @@ import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
-import type {
-	DungeonId,
-	Growth,
-	Item,
-	Objective,
-	RunState,
-} from "../core/types";
+import type { DungeonId, Item, Objective, RunState } from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
-import { noteGrowth } from "./growth";
 import { noteTamper, oddRun, oddTown } from "./tamper";
 
 const PREFIX = "kiriko-roguelike/";
@@ -106,8 +99,6 @@ export const saveRun = (s: RunState): void => {
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
 		noteRunEnd(s.dungeon, s.end.kind, s.seed, s.voice);
-		// 主人公の レベル・経験値を 残す（次の 冒険は その レベルから。engine/growth.ts）
-		noteGrowth(s);
 		return;
 	}
 	const text = serializeRun(s);
@@ -219,11 +210,14 @@ export type RunRecord = {
 
 type Stats = { runs: number; clears: number; best: number };
 
+/** 終わっていない 冒険を 記録に するときの 死因（たおれた あとの 支給品は 渡さない）。 */
+export const QUIT_CAUSE = "冒険を　やめた";
+
 export const recordFromRun = (s: RunState): RunRecord => {
 	// 終わっていない冒険は渡されないはずだが、渡されても落ちないように
 	const end = s.end ?? {
 		kind: "dead" as const,
-		cause: "冒険を　やめた",
+		cause: QUIT_CAUSE,
 		depth: s.depth,
 		turn: s.turn,
 	};
@@ -663,6 +657,13 @@ export type Town = {
 	 * （ui/villageReturn.ts の lunchScript）。出るときに 持っていく（持ちこめない 板でも。倉庫の 道具とは べつ）。
 	 */
 	lunch: boolean;
+	/**
+	 * たおれた あとの 支給品（ぷゆゆソード）を もらって いて、まだ 持って 出て いない（次の 冒険に 持っていく。
+	 * 持ちこめない 板でも。ui/villageReturn.ts の reliefScript）。無ければ もらって いない。
+	 */
+	relief?: true;
+	/** 支給品を くれた たおれの 記録の 時刻（同じ たおれで 二度 もらわない）。 */
+	reliefAt?: number;
 	/** 帰りごとの 売り上げ（古い順。SALES_KEEP 件まで。ゼロの 帳簿の グラフ：ui/home.ts の openSales）。 */
 	sales: Sale[];
 	/** まだ決めていない 持ち帰り。 */
@@ -712,6 +713,9 @@ export const loadTown = (): Town => {
 				storage: Array.isArray(o.storage) ? o.storage.filter(isItem) : [],
 				bag: Array.isArray(o.bag) ? o.bag.filter(isItem) : [],
 				lunch: o.lunch === true,
+				// 書いて いる ときだけ（無い ときの 形は 前の 版と 同じ）
+				...(o.relief === true ? { relief: true as const } : {}),
+				...(typeof o.reliefAt === "number" ? { reliefAt: o.reliefAt } : {}),
 				sales: Array.isArray(o.sales) ? o.sales.filter(isSale) : [],
 				pending:
 					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
@@ -877,6 +881,33 @@ export const giveLunch = (): boolean => {
 	return true;
 };
 
+/** 支給品（ぷゆゆソード）の 種類。 */
+export const RELIEF_KIND = "puyusword";
+
+/**
+ * たおれた あと（at は その たおれの 記録の 時刻）、ぷゆゆソードを 持たせる。持たせたら true。
+ * 二重に 渡さない：まだ 持って 出て いない・同じ たおれで もう 渡した・倉庫か 村の 持ち物に もう ある なら 渡さない。
+ */
+export const giveRelief = (at: number): boolean => {
+	const t = loadTown();
+	if (t.relief || t.reliefAt === at) return false;
+	if ([...t.storage, ...t.bag].some((it) => it.kind === RELIEF_KIND))
+		return false;
+	t.relief = true;
+	t.reliefAt = at;
+	saveTown(t);
+	return true;
+};
+
+/** 出るときに 支給品を 受け取る（持っていれば 消して true。別の タブで 持っていかれて いれば false）。 */
+export const takeRelief = (): boolean => {
+	const t = loadTown();
+	if (!t.relief) return false;
+	delete t.relief;
+	saveTown(t);
+	return true;
+};
+
 /** 出るときに お弁当を 受け取る（持っていれば 消して true。別の タブで 持っていかれて いれば false）。 */
 export const takeLunch = (): boolean => {
 	const t = loadTown();
@@ -929,8 +960,6 @@ export type SavedReplay = {
 	rom?: boolean;
 	/** 冒険に 出た 主人公（キリコなら 書かない。core/data/heroes.ts）。 */
 	hero?: "roze" | "zero";
-	/** 村から 持ってきた 成長（レベル1 なら 書かない。同じに 始めるため。engine/growth.ts）。 */
-	grown?: Growth;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -1011,19 +1040,8 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
-	if (
-		r.grown !== undefined &&
-		!(
-			r.grown &&
-			Number.isInteger(r.grown.lv) &&
-			Number.isInteger(r.grown.exp) &&
-			Number.isInteger(r.grown.hp)
-		)
-	)
-		return null;
 	return renamed({
 		seed: r.seed,
-		...(r.grown ? { grown: r.grown } : {}),
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.noLunch ? { noLunch: true } : {}),
 		...(r.rom ? { rom: true } : {}),
@@ -1070,7 +1088,6 @@ const addReplay = (s: RunState): void => {
 		...(s.noLunch ? { noLunch: true } : {}),
 		...(s.rom ? { rom: true } : {}),
 		...(s.hero ? { hero: s.hero } : {}),
-		...(s.grown ? { grown: s.grown } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

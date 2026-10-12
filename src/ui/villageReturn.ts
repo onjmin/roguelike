@@ -33,6 +33,8 @@ import {
 	type MobId,
 	movedIn as mobsMovedIn,
 	PUYU_LUNCH,
+	PUYU_RELIEF,
+	RELIEF_NOTE,
 } from "../data/mobs";
 import { eventById, eventNewsText } from "../data/objectives";
 import type { Speaker } from "../data/quotes";
@@ -92,6 +94,7 @@ import {
 	doneEventNews,
 	doneProgressNews,
 	giveLunch,
+	giveRelief,
 	growForStorage,
 	loadProgress,
 	loadRecords,
@@ -100,6 +103,7 @@ import {
 	noteWrap,
 	type PendingReturn,
 	type Progress,
+	QUIT_CAUSE,
 	settleReturn,
 	type Town,
 } from "../engine/save";
@@ -579,6 +583,31 @@ export const lunchScript = async (s: Story): Promise<void> => {
 	);
 	s.se("item");
 	await s.narrate(DEPART.puyu);
+};
+
+// ───────────────── たおれた あとの 支給品 ─────────────────
+
+/**
+ * たおれて 帰った あと、ぷゆゆが かけてきて ぷゆゆソードを 持たせる（易しく する 助け。作者の 指示）。
+ * 次の 冒険に 持っていく（engine/save.ts の giveRelief。二重に 渡さない）。やめた 冒険では 渡さない。
+ */
+export const reliefScript = async (s: Story): Promise<void> => {
+	const last = loadRecords()[0];
+	if (last?.kind !== "dead" || last.cause === QUIT_CAUSE) return;
+	if (!giveRelief(last.at)) return;
+	const [to] = freeAround(s, 1);
+	if (to) {
+		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });
+		s.face("mob_puyu", "player");
+		s.face("player", faceTo(s.state, to));
+	}
+	await sayAs(
+		s,
+		"puyu",
+		PUYU_RELIEF[Math.floor(Math.random() * PUYU_RELIEF.length)] ?? "",
+	);
+	s.se("item");
+	await s.narrate(RELIEF_NOTE);
 };
 
 /** from から to を 向く 向き（たて・よこの 大きい方）。 */

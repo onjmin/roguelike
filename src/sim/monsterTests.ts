@@ -55,6 +55,7 @@ import {
 } from "../core/monster";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
+import { priceOf } from "../core/town";
 import { triggerTrap } from "../core/traps";
 import {
 	type Ability,
@@ -3748,6 +3749,64 @@ test(
 		ok(r.f.monsters.includes(b), "the blast blew the boss away");
 		ok(b.hp === b.maxHp - 2 * q, `blast: hp ${b.hp}/${b.maxHp}`);
 		ok(!r.s.end, "the run ended");
+	},
+);
+
+test(
+	"boss",
+	"ぷゆゆソード: 35 strong, wears 1 per hit and breaks at 0, does nothing to a boss, sells for 0",
+	() => {
+		const r = arena("puyusword");
+		r.p.maxHp = 999;
+		r.p.hp = 999;
+		const w = equip(r, "puyusword");
+		ok(r.meleePower() === 35 + r.p.str, `power ${r.meleePower()}`);
+		ok(priceOf(w) === 0, `sells for ${priceOf(w)}`);
+		// 当たる たびに 修正値 −1（はずれは へらない）
+		let hits = 0;
+		for (let i = 0; i < 40 && hits < 3; i++) {
+			const m = put(r, "knight", at(1, 0));
+			m.hp = 999;
+			const before = w.plus;
+			turn(r, { c: "attack", dir: 2 });
+			if (w.plus < before) {
+				ok(before - w.plus === 1, `wore ${before - w.plus}`);
+				hits++;
+			}
+			r.f.monsters = r.f.monsters.filter((x) => x !== m);
+		}
+		ok(hits === 3 && w.plus === -3, `plus ${w.plus} after ${hits} hits`);
+		// 強さが 0 に なる 1発で 折れて なくなる
+		w.plus = -34;
+		for (let i = 0; i < 40 && r.findItem(w.uid); i++) {
+			const m = put(r, "knight", at(1, 0));
+			m.hp = 999;
+			turn(r, { c: "attack", dir: 2 });
+			r.f.monsters = r.f.monsters.filter((x) => x !== m);
+		}
+		ok(!r.findItem(w.uid) && r.p.weapon === null, "the sword did not break");
+		ok(logHas(r, "折れてしまった"), "no line for the break");
+		// ボスには 効かない（HP も 修正値も そのまま）
+		const { r: rb, b } = bossArena("puyusword-boss", "shallow", {
+			pos: at(1, 0),
+		});
+		rb.p.maxHp = 999;
+		rb.p.hp = 999;
+		const wb = equip(rb, "puyusword");
+		const hp = b.hp;
+		for (let i = 0; i < 5 && !rb.s.end; i++) {
+			b.x = rb.p.x + 1;
+			b.y = rb.p.y;
+			rb.act({ c: "attack", dir: 2 });
+		}
+		ok(b.hp === hp && wb.plus === 0, `boss hp ${b.hp}/${hp}, plus ${wb.plus}`);
+		ok(logHas(rb, "効かない"), "no line for the boss");
+		// どこにも 落ちて いない（支給品だけ）
+		for (const d of DUNGEON_IDS)
+			ok(
+				!DUNGEONS[d].items.some((e) => e.kind === "puyusword"),
+				`${d} drops the sword`,
+			);
 	},
 );
 
