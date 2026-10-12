@@ -165,7 +165,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	curse: ["WiZ0AR", -9, -0.1, -12, 0.251, 20, 1720, 450], // battle → -21.0
 	uncurse: ["FMcGao", -6.5, 0.9, -14.5, 0.188, 50, 1330, 600], // battle → -21.0
 	rustproof: ["jVuw6M", -10.8, -0.6, -10.2, 0.309, 50, 1110, 370], // battle → -21.0
-	whet: ["28KYsN", -6.7, 3.7, -14.3, 0.193, 120, 580, 220], // battle → -21.0
+	whet: ["pMekYY", -7.7, 2.5, -13.3, 0.216, 0, 1140, 820], // battle → -21.0
 	temper: ["VocXum", -16.9, -7.1, -4.1, 0.624, 10, 470, 180], // battle → -21.0
 	debuff: ["NQtzgI", -10.8, -2, -10.2, 0.309, 50, 900, 840], // battle → -21.0
 	throw: ["3JcWxQ", -10.3, -2.3, -10.7, 0.292, 70, 760, 340], // battle → -21.0
