@@ -303,7 +303,7 @@ each(
 			p.menu,
 		]) {
 			ok(!/[{}]/.test(t), `an unfilled {…} in ${t}`);
-			// 番組の 固有名詞（保守名人戦 など）を のぞいた 文で 見る（deny に「名人戦」を 入れても「保守名人戦」は 通る）
+			// 番組の 固有名詞（おんJ名人戦 など）を のぞいた 文で 見る（deny に「名人戦」を 入れても「おんJ名人戦」は 通る）
 			const bare = names.reduce((s, n) => s.replaceAll(n, "　"), t);
 			for (const ng of deny) ok(!bare.includes(ng), `"${ng}" in ${t}`);
 			ok(!bare.includes("保守"), `a bare 保守 in ${t}`);
@@ -313,7 +313,7 @@ each(
 			for (const w of ["保守", "立てといた", "立てたる", "立てたで"])
 				ok(!t.includes(w), `Kiriko can write "${w}": ${t}`);
 		for (const n of p.names ?? [])
-			ok(n.includes("保守"), `name "${n}" has no 保守`);
+			ok(n.includes("おんJ"), `name "${n}" has no おんJ`);
 		// 村の 窓（束の 上書き つき）
 		const M = progMsg(p.script.id);
 		ok(M.menu.join() === JK_PROG_MSG.menu.join(), "menu");

@@ -1,4 +1,4 @@
-// 保守駅伝の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。保守村駅の 待合の 壁の テレビ。
+// おんJ駅伝の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。おんJタウン駅の 待合の 壁の テレビ。
 // 形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標）。
 // - 枠：白い タイルの 壁に 黒い ふちの 薄型テレビ。左の 壁に 時計、右に「待合」の 札、下に ベンチと 客の 頭。
 // - 場面（data/jikkyo/ekiden.ts の EKIDEN_SCENES）：札・スタート（号砲で 走りだす）・道（沿道の 旗と 白バイ・給水）・
@@ -380,7 +380,7 @@ const drawKuriage = (g: G, c: C): void => {
 	const armUp = c.data.phase === "cue" || (since >= 0 && since < 1500);
 	front(g, 142, 60, OFFICIAL, 2, { arm: armUp });
 	if (armUp) fill(g, "#2a2a30", 154, 56, 2, 3);
-	// 来る 保守大（届く 日は はじめから 道の 先に 見える。届かない 日は 号砲の あとに 来る）
+	// 来る おんJ大（届く 日は はじめから 道の 先に 見える。届かない 日は 号砲の あとに 来る）
 	const T0 = arrive ? KURIAGE_AT : exact + 400;
 	const T1 = arrive ? exact : exact + 4900;
 	if (c.t >= T0) {
@@ -396,7 +396,7 @@ const drawKuriage = (g: G, c: C): void => {
 		else
 			front(g, VX - 6, y - 24, HOSHU_UNI.ink, 2, { sash: HOSHU_UNI.sash, f });
 	}
-	// 待つ 次の 走者（号砲で 手前へ 走り出す。届けば 保守大の 襷、届かなければ 白い 襷）
+	// 待つ 次の 走者（号砲で 手前へ 走り出す。届けば おんJ大の 襷、届かなければ 白い 襷）
 	const out = Math.max(0, since) * 0.012;
 	if (out < 40) {
 		const ny = LINE - 22 + Math.round(out);

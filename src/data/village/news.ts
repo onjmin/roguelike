@@ -33,11 +33,11 @@ const AROUND: readonly {
 	at: Cell;
 	was?: string;
 }[] = [
-	{ name: "保守神社", from: SHRINE_FROM, at: [3, 8] },
+	{ name: "おんJ神社", from: SHRINE_FROM, at: [3, 8] },
 	{ name: "音楽室「ピアノ機能」", from: MUSIC_FROM, at: [22, 26] },
 	{ name: "本屋", from: BOOKSTORE_FROM, at: [4, 21] },
 	{ name: "銭湯", from: BATH_FROM, at: [35, 26] },
-	{ name: "喫茶「保守」", from: CAFE_FROM, at: [4, 16] },
+	{ name: "喫茶「おんJ」", from: CAFE_FROM, at: [4, 16] },
 	{ name: "図書館", from: LIBRARY_FROM, at: [4, 21], was: "本屋" },
 ];
 

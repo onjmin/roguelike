@@ -1,4 +1,4 @@
-// 保守トロッコ（data/village/trolley.ts）の 試験（pnpm test で いっしょに 動く）。
+// おんJトロッコ（data/village/trolley.ts）の 試験（pnpm test で いっしょに 動く）。
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

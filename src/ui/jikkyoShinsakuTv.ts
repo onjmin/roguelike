@@ -1,4 +1,4 @@
-// 保守ゲームス　新作発表会の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。台本は data/jikkyo/shinsaku.ts。
+// おんJゲームス　新作発表会の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。台本は data/jikkyo/shinsaku.ts。
 // 形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標）。枠は ゲームセンターの 壁の 大画面（bigFrame）に
 // 本番は 赤い「LIVE」、アーカイブの 日は 灰色の 札。
 // - 場面：待機と おわりの 札・ロゴ・広報（あいさつ・お詫び・もう　1つ）・影（ティザー）・正体・蓄音機の 山場・まとめ。

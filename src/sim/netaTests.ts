@@ -1,4 +1,4 @@
-// ネタスレの 遊び（data/neta/*・ui/neta*.ts・グラウンド／碁会所／保守道場／ageジム／ゲームセンターの 物）の 試験（pnpm test）。
+// ネタスレの 遊び（data/neta/*・ui/neta*.ts・グラウンド／碁会所／おんJ道場／ageジム／ゲームセンターの 物）の 試験（pnpm test）。
 // 板（canvas）は 出さない：ui/neta.ts の setNetaHooks で 結果を わたし、窓の 流れと 記録だけ 見る。
 // 決まり（ランダム野球・オセロ・コンマ・!sk・ID）は 種つきの 乱数で 何度でも 同じ 結果。
 
@@ -1058,7 +1058,7 @@ test("碁会所: リバーシ盤 → 対局（はじめだけ 決まりの 1窓�
 	});
 });
 
-test("保守道場: 文机 → 書く → 半紙を 乾かす（師範たちの 1窓は 順に）、次は 前の 半紙から", async () => {
+test("おんJ道場: 文机 → 書く → 半紙を 乾かす（師範たちの 1窓は 順に）、次は 前の 半紙から", async () => {
 	await withStore(async () => {
 		const run = roomEvent("dojo", "shuji_0");
 		const line = fac("dojo").room?.lines.shuji ?? [];

@@ -1,5 +1,5 @@
 // 全体マップ（おーぷん2ch の 地図）。村の 口に 立つと 開き、行き先の 植民地を 選ぶ。
-// 選んだら キリコが 保守村から 道を たどって 歩いていき、着くと 建物の 札が 出る（travelTo）。
+// 選んだら キリコが おんJタウンから 道を たどって 歩いていき、着くと 建物の 札が 出る（travelTo）。
 // 持ち帰って もどるときは 逆向きに 短く 歩く（travelHome）。島と 道と 建物の 置き場は data/worldMap.ts。
 //
 // 絵は 小さな キャンバス（MAP_W × MAP_H）に 画素で 描いて、CSS で 引きのばす（ぼかさない）。
@@ -136,7 +136,7 @@ const base = (): HTMLCanvasElement => {
 
 // ───────────────── 道 ─────────────────
 
-/** 保守村から その 植民地までの 道（村の 点を 先頭に）。 */
+/** おんJタウンから その 植民地までの 道（村の 点を 先頭に）。 */
 const pathOf = (d: DungeonId): Pt[] => [VILLAGE_PT, ...COLONY_SPOTS[d].route];
 
 const spotOf = (d: DungeonId): Pt => {
@@ -617,7 +617,7 @@ export class MapView {
 		g.font = "8px 'DotGothic16', monospace";
 		g.textAlign = "center";
 		g.fillStyle = "#fff";
-		g.fillText("保守村", vx - 13, vy + 6);
+		g.fillText("おんJタウン", vx - 13, vy + 6);
 		for (const d of DUNGEON_IDS) {
 			const [x, y] = spotOf(d);
 			const open = this.open.includes(d);
@@ -837,7 +837,7 @@ export const pickColony = async (
 			// やめる：▼ と フキダシを しまう
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
-			v.panel.innerHTML = `<div class="wm-name">やめる</div><div class="wm-desc">保守村に　のこる。</div>`;
+			v.panel.innerHTML = `<div class="wm-name">やめる</div><div class="wm-desc">おんJタウンに　のこる。</div>`;
 			return;
 		}
 		v.mode = { k: "pick", cur: d };
@@ -1016,7 +1016,7 @@ const arrivalCard = async (ctx: Ctx, d: DungeonId): Promise<void> => {
 };
 
 /**
- * 行き先へ 向かう（保守村から 道を 歩いて、着いたら 建物の 札）。fast は 前に 行ったことの ある 板（速く 歩く）。
+ * 行き先へ 向かう（おんJタウンから 道を 歩いて、着いたら 建物の 札）。fast は 前に 行ったことの ある 板（速く 歩く）。
  * view を わたすと 開いている 地図の まま 歩く（最後に 閉じる）。
  */
 export const travelTo = async (
@@ -1052,13 +1052,13 @@ export const travelTo = async (
 	await v.close();
 };
 
-/** 植民地から 保守村へ もどる（短く。タップで とばす）。 */
+/** 植民地から おんJタウンへ もどる（短く。タップで とばす）。 */
 export const travelHome = async (
 	ctx: Ctx,
 	d: DungeonId,
 	o: { open: DungeonId[]; cleared: DungeonId[] },
 ): Promise<void> => {
-	const v = new MapView(ctx, "保守村へ");
+	const v = new MapView(ctx, "おんJタウンへ");
 	v.open = o.open;
 	v.cleared = o.cleared;
 	v.panel.remove();

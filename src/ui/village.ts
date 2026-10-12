@@ -1,4 +1,4 @@
-// 歩ける村（保守村）。ダンジョンの外で キリコが 歩きまわる 1枚のマップ。
+// 歩ける村（おんJタウン）。ダンジョンの外で キリコが 歩きまわる 1枚のマップ。
 // rpg の engine/game.ts（Game）から、戦闘・仲間・隊列・セーブを のぞいて 移したもの。
 //
 // - 4方向で 1マスずつ歩く（十字キー・キーボード。斜めは 縦を先に 試して、だめなら 横へ すべる）。
@@ -103,7 +103,7 @@ const HOP_JUMP = 2;
 const JUMP_MS = 320;
 
 /**
- * 保守トロッコ（data/village/trolley.ts）の 速さ：かかる ms は RIDE_BASE_MS ＋ 1マス RIDE_STEP_MS
+ * おんJトロッコ（data/village/trolley.ts）の 速さ：かかる ms は RIDE_BASE_MS ＋ 1マス RIDE_STEP_MS
  * （遠い 乗り場でも 2秒 ほど）。1マスは RIDE_MIN_MS〜RIDE_MAX_MS。
  */
 const RIDE_BASE_MS = 600;
@@ -925,7 +925,7 @@ export class Village {
 	}
 
 	/**
-	 * 保守トロッコ（Story.ride）：トロッコに 乗って (x, y) まで 道なりに 速く 走る。人は すりぬけ、扉・口は 踏まない
+	 * おんJトロッコ（Story.ride）：トロッコに 乗って (x, y) まで 道なりに 速く 走る。人は すりぬけ、扉・口は 踏まない
 	 * （曲がるのが 少ない 道。data/village/crowd.ts の pedRoute）。着く マスに 人が いれば となりの あいている マスへ。
 	 * 道が なければ 短い 暗転で 置きなおす。カメラは キリコに ついていく。
 	 */

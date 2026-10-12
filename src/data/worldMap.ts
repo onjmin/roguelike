@@ -1,6 +1,6 @@
 // 全体マップ（おーぷん2ch の 地図）。島は おーぷんの サーバー（寿司ネタの 名前）で、
 // 植民地は 実際に 置かれている サーバーの 島に 建つ（植民地一覧スレの URL より）。
-// まん中の hayabusa に おんJ（保守村）。座標は 地図の 画素（MAP_W × MAP_H）。ui/worldMap.ts が 描く。
+// まん中の hayabusa に おんJ（おんJタウン）。座標は 地図の 画素（MAP_W × MAP_H）。ui/worldMap.ts が 描く。
 
 import type { DungeonId } from "../core/types";
 
@@ -71,7 +71,7 @@ export const ISLANDS: readonly Island[] = [
 	{ name: "", label: [0, 0], blobs: [[203, 17, 9]] },
 ];
 
-/** 保守村（おんJ）の 位置。道は ここから 出る。 */
+/** おんJタウン（おんJ）の 位置。道は ここから 出る。 */
 export const VILLAGE_PT: Pt = [110, 128];
 
 /** 建物の 絵の 種類（ui/worldMap.ts の drawBuilding）。 */
@@ -97,7 +97,7 @@ export type ColonySpot = {
 	/** 建物・地形（着いたときの 札に 出す）。 */
 	place: string;
 	building: BuildingKind;
-	/** 保守村から 建物までの 道（最後の 点が 建物の 足もと）。 */
+	/** おんJタウンから 建物までの 道（最後の 点が 建物の 足もと）。 */
 	route: readonly Pt[];
 };
 
@@ -178,10 +178,10 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[176, 84],
 		],
 	},
-	// 隠し：保守村の 下の 古井戸（開くまで 地図に 出ない）
+	// 隠し：おんJタウンの 下の 古井戸（開くまで 地図に 出ない）
 	hidden: {
 		server: "hayabusa",
-		place: "保守村の　下の　古井戸",
+		place: "おんJタウンの　下の　古井戸",
 		building: "well",
 		route: [
 			[106, 138],

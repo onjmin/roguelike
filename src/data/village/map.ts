@@ -1,4 +1,4 @@
-// 村（保守村）の地図。DOM も保存も使わない 組み立てだけ（src/sim/villageTests.ts で 形と 歩ける道を 調べる）。
+// 村（おんJタウン）の地図。DOM も保存も使わない 組み立てだけ（src/sim/villageTests.ts で 形と 歩ける道を 調べる）。
 // スクリプトは ui/villageEvents.ts が id ごとに 付ける。
 //
 // 地図は 87×52 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
@@ -15,7 +15,7 @@
 // - やきうは 小屋の前（12,11）で 大工。人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人。
 // - おんJマイナーズ（data/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
 // - 町の まわりも 段で かわる：東の 畑は 荒れ地から 実りへ（farmRows）、住宅街で 市民農園・都市で 公園
-//   （facilities.ts の garden・park）、段2 で 北西の 森に 保守神社（おみくじ）、
+//   （facilities.ts の garden・park）、段2 で 北西の 森に おんJ神社（おみくじ）、
 //   段3 で 池の そばに 音楽室、段4 で 南東に 銭湯、段5 で 西の 空き地に 喫茶。
 // - 帰ってきたとき 仲間が 出口の前に 並ぶ マス（lineupSpots）と、町が 育ったとき カメラを 向ける 所（VILLAGE_SPOTS.growth）。
 //
@@ -143,7 +143,7 @@ export const VILLAGE_SPOTS = {
 	exit: [27, 0] as Cell,
 	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
 	exitSign: [28, 12] as Cell,
-	/** 喫茶「保守」の 扉（段5 から。踏むと 中へ。data/village/rooms.ts）。 */
+	/** 喫茶「おんJ」の 扉（段5 から。踏むと 中へ。data/village/rooms.ts）。 */
 	cafeDoor: [4, 18] as Cell,
 	/**
 	 * おんJ 本館の 扉（2マス。踏むと 中へ。data/village/hall.ts）。出てくると 入った 扉の 1つ下（崖の 下の 道）。
@@ -177,7 +177,7 @@ export const VILLAGE_SPOTS = {
 	musicDoor: [22, 28] as Cell,
 	/** 本屋（段3〜5）・図書館（段6 から。同じ 所に 建てかえ）の 扉。下の 草地 y=23 から 踏む。 */
 	booksDoor: [4, 22] as Cell,
-	/** 保守神社の 賽銭箱（段2 から。お参りすると おみくじ）。 */
+	/** おんJ神社の 賽銭箱（段2 から。お参りすると おみくじ）。 */
 	shrine: [3, 9] as Cell,
 	/** 銭湯の のれんの 扉（段4 から。踏むと 中へ。data/village/rooms.ts の bath）。 */
 	bath: [35, 27] as Cell,
@@ -883,7 +883,7 @@ export const carLane = (stage: number, x: number, y: number): boolean => {
 	return !!v && y > V_Y0 && y <= 40 && !crossV(y);
 };
 
-/** 喫茶「保守」が 建つ 町の 段。 */
+/** 喫茶「おんJ」が 建つ 町の 段。 */
 export const CAFE_FROM = 5;
 
 /** 音楽室「ピアノ機能」が 建つ 町の 段（開くのは 週末だけ。ui/rooms.ts）。 */
@@ -900,17 +900,17 @@ const MUSIC_BLOCK: readonly string[] = ["ααα", "βββ", "δγδ", "εζε"];
 const BOOKS_BLOCK: readonly string[] = ["アアア", "イウイ", "エオエ"];
 const LIBRARY_BLOCK: readonly string[] = ["カカカカ", "キククキ", "ケケコケ"];
 
-/** 喫茶「保守」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 踏む）。 */
+/** 喫茶「おんJ」（地図の 2, 15 から。扉 4,18 は 下の 道 y=19 から 踏む）。 */
 const CAFE_BLOCK: readonly string[] = ["99999", "/////", "@|`|@", "''?''"];
 
-/** 保守神社が 建つ 町の 段（北西の 森の 奥。お参りすると おみくじ）。 */
+/** おんJ神社が 建つ 町の 段（北西の 森の 奥。お参りすると おみくじ）。 */
 export const SHRINE_FROM = 2;
 
 /** 銭湯が 建つ 町の 段（南東。池の 東の 森を 開いた 所）。 */
 export const BATH_FROM = 4;
 
 /**
- * 保守神社（地図の 1, 4 から。字は data/village/tiles.ts の SHRINE）。拝殿の 前に 賽銭箱（3,9。下の 3,10 から 調べる）、
+ * おんJ神社（地図の 1, 4 から。字は data/village/tiles.ts の SHRINE）。拝殿の 前に 賽銭箱（3,9。下の 3,10 から 調べる）、
  * 鳥居（3,13。絵は 11〜13 に かかる）を くぐって 下の 空き地（x=7 の 草）へ 抜ける。
  */
 const SHRINE_BLOCK: readonly string[] = [
@@ -1013,7 +1013,7 @@ export const villageRows = (v: VillageView): string[] => {
 	for (const c of PIER_CELLS) put(rows, c, "は");
 	for (const [y, line] of farmRows(layoutStage(v)))
 		stamp(rows, FARM_X, y, [line]);
-	// 喫茶「保守」（段5 から。西の 空き地の 奥。扉は 下の 道から）
+	// 喫茶「おんJ」（段5 から。西の 空き地の 奥。扉は 下の 道から）
 	if (layoutStage(v) >= CAFE_FROM) stamp(rows, 2, 15, CAFE_BLOCK);
 	if (layoutStage(v) >= SHRINE_FROM) stamp(rows, 1, 4, SHRINE_BLOCK);
 	if (layoutStage(v) >= BATH_FROM) {
@@ -1183,7 +1183,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [x, y] = VILLAGE_SPOTS.shopDoor;
 		out.push({ id: "door_shop", x, y, trigger: "touch" });
 	}
-	// 仲間は 越してきてから（data/story.ts の FRIEND_FROM。はじめの 保守村には やきうだけ）
+	// 仲間は 越してきてから（data/story.ts の FRIEND_FROM。はじめの おんJタウンには やきうだけ）
 	const here = (w: Speaker) => stage >= FRIEND_FROM[w];
 	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
 	if (here("shiyo")) out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
@@ -1213,7 +1213,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				...(t.sprite ? { sprite: t.sprite, dir: t.dir } : {}),
 			});
 	}
-	// 保守トロッコの 乗り場（data/village/trolley.ts。調べると 行き先を えらんで 走る）
+	// おんJトロッコの 乗り場（data/village/trolley.ts。調べると 行き先を えらんで 走る）
 	for (const t of trolleyStops(stage))
 		out.push({
 			id: `trolley_${t.id}`,

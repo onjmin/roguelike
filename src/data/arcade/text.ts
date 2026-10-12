@@ -39,9 +39,9 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 		unit: "点",
 	},
 	drive: {
-		line: "レースゲームの　台。\n画面に「保守ドライブ」の　文字。",
+		line: "レースゲームの　台。\n画面に「おんJドライブ」の　文字。",
 		rule: "コーンと　車を　よけて　走る。\n「保守」の　札は　拾うと　点。",
-		title: "保守ドライブ",
+		title: "おんJドライブ",
 		hint: "←→／左右を　タップで　車線を　かえる",
 		unit: "点",
 	},
@@ -83,7 +83,7 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 	rhythm: {
 		line: "音ゲーの　台。\nランキングの　1位は「>>1」。",
 		rule: "札が　線に　重なったら　たたく。\n←↓↑→　か　道を　タップ。",
-		title: "保守ビート",
+		title: "おんJビート",
 		hint: "←↓↑→／道を　タップで　たたく",
 		unit: "点",
 	},

@@ -1,4 +1,4 @@
-// 保守トロッコの 絵を 書き出す（node scripts/make-trolley.mjs → public/sprites/trolley.png）。
+// おんJトロッコの 絵を 書き出す（node scripts/make-trolley.mjs → public/sprites/trolley.png）。
 //
 // 村の 早道（data/village/trolley.ts）。32x32：
 //   (0,0) 乗り場（16x32）：短い レールに とまった トロッコと、うしろの 柱に 黄色い 札（トロッコの しるし）

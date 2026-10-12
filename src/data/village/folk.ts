@@ -1,4 +1,4 @@
-// 保守村の 小さな 名物（folk）の 置き場所（地図の 座標）と 機能の 墓場の 外観。DOM も 保存も 使わない。
+// おんJタウンの 小さな 名物（folk）の 置き場所（地図の 座標）と 機能の 墓場の 外観。DOM も 保存も 使わない。
 // 文と 決まりは data/folk.ts、話し方は ui/folk.ts（村の イベントは ui/villageEvents.ts の eventFor から folkEvent）。
 // ここからは map.ts・facilities.ts の 値を 読まない（どちらも ここを 読むので、まわりこむと 読みこみの 順で こわれる）。
 //

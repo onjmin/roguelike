@@ -1,4 +1,4 @@
-// ホシュクラ（保守村の 南西の 島。data/village/saba.ts・data/saba.ts・data/sabaMine.ts・ui/saba.ts）の 試験（pnpm test）。
+// ホシュクラ（おんJタウンの 南西の 島。data/village/saba.ts・data/saba.ts・data/sabaMine.ts・ui/saba.ts）の 試験（pnpm test）。
 // 置き場所・絵・文の 幅・命名投票・お知らせ・ブラマイの 決まりと 釣りあい・村での 流れ（板は setMineHook で 差しかえ）・
 // 共有の 振り分け（ui/facilities.ts・ui/villageEvents.ts の 1行が 落ちたら ここで 気づく）。
 

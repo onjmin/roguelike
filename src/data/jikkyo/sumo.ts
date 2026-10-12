@@ -1,4 +1,4 @@
-// 大相撲『保守場所』（銭湯「ゆ」の 脱衣所の テレビ。PROGRAMS §5.4）。実況の 中で いちばん 静かな 番組。
+// 大相撲『おんJ場所』（銭湯「ゆ」の 脱衣所の テレビ。PROGRAMS §5.4）。実況の 中で いちばん 静かな 番組。
 // 取組は 3つ：1番目（速記ニキが 結果を 書き写す）・2番目（長い 相撲 → 物言い → 同体で 取り直し）・
 // 結び（横綱 千レス山 と 平幕 名無ノ里。立ち合いが 山場で、横綱が 負けると 座布団が 舞う）。そのあと 弓取式。
 // - この 番組の 動詞：取組の 見せ場に 合う ひとこと・速記ニキへの「サンキュー速記ニキ」・
@@ -8,7 +8,7 @@
 // - しこ名は 板の 語で 作った 架空の 名前だけ（実在の 力士・親方・協会・会場・局の 名前は deny で 守る）。
 //   懸賞旗は 村の 店の 名前だけ。座布団は「投げないで」の 空気（場内の 字幕）も 出す。
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
-//   群衆・題・字幕の「保守」は 固有名詞（保守場所・保守ノ海）の 中だけ。
+//   群衆・題・字幕の「保守」は 固有名詞（おんJ場所・おんJノ海）の 中だけ。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
 // 絵は ui/jikkyoSumoTv.ts（場面の 鍵は SUMO_SCENES、絵に 出す 文は SUMO_ART）。
 
@@ -95,7 +95,7 @@ export const sumoDayName = (d: number): string =>
 
 /** しこ名（板の 語で 作った 架空の 名前だけ）。 */
 export const SUMO_NAMES = {
-	hoshu: "保守ノ海",
+	hoshu: "おんJノ海",
 	sage: "sage錦",
 	age: "age富士",
 	kanso: "完走山",
@@ -109,7 +109,7 @@ const N = SUMO_NAMES;
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const SUMO_ART = {
 	logo: "大相撲",
-	basho: "保守場所",
+	basho: "おんJ場所",
 	encore: "名勝負　アンコール",
 	soon: "まもなく　中継",
 	soonEncore: "まもなく　名勝負",
@@ -250,8 +250,8 @@ export const SUMO_POOLS = {
 
 /** スレの 決まり文句。 */
 export const SUMO_THREAD = {
-	live: "【中継】大相撲総合スレ　保守場所　Part{n}",
-	rerun: "【再放送】大相撲総合スレ　保守場所　Part{n}",
+	live: "【中継】大相撲総合スレ　おんJ場所　Part{n}",
+	rerun: "【再放送】大相撲総合スレ　おんJ場所　Part{n}",
 	get1000: "1000なら　結びで　座布団",
 	praise: ">>{n}　ええ　立ち合い",
 	crossGap: "次スレで　はっけよい",
@@ -324,7 +324,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "op",
 			rate: 0.8,
 			bgm: "deep_kisei",
-			caption: live ? `大相撲　保守場所　${sub}` : SUMO_ART.encore,
+			caption: live ? `大相撲　おんJ場所　${sub}` : SUMO_ART.encore,
 			data: { sub } satisfies SumoData,
 		},
 		// 1番目：仕切り（懸賞旗 2本）→ 取組 → 勝ち名乗り（速記ニキ）
@@ -676,7 +676,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 const partOf = (n: number, slot: JkSlot): number =>
 	slot.live ? n + 9 + Math.max(1, Math.min(15, slot.day ?? 1)) : n;
 
-/** 大相撲『保守場所』の 台本。 */
+/** 大相撲『おんJ場所』の 台本。 */
 export const SUMO: JkScript = {
 	id: "sumo",
 	venue: "bath",
@@ -729,7 +729,7 @@ export const SUMO: JkScript = {
 const isBasho = (t: Today): boolean => t.m % 2 === 1 && t.d >= 8 && t.d <= 22;
 const isRaku = (t: Today): boolean => isBasho(t) && t.d === 22;
 
-/** 大相撲『保守場所』。 */
+/** 大相撲『おんJ場所』。 */
 export const SUMO_PACK: JkPack = {
 	script: SUMO,
 	venue: "bath",
@@ -741,11 +741,11 @@ export const SUMO_PACK: JkPack = {
 		tv: [
 			{
 				when: isRaku,
-				lines: ["脱衣所の　テレビ。\n今日は　保守場所の　千秋楽。"],
+				lines: ["脱衣所の　テレビ。\n今日は　おんJ場所の　千秋楽。"],
 			},
 			{
 				when: isBasho,
-				lines: ["脱衣所の　テレビ。\n大相撲『保守場所』の　中継が　映る。"],
+				lines: ["脱衣所の　テレビ。\n大相撲『おんJ場所』の　中継が　映る。"],
 			},
 			{
 				when: () => true,
@@ -788,5 +788,5 @@ export const SUMO_PACK: JkPack = {
 		"大相撲中継",
 		"賜杯",
 	],
-	names: ["保守場所", "保守ノ海"],
+	names: ["おんJ場所", "おんJノ海"],
 };

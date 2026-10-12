@@ -30,7 +30,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		slideDoor: "rpgen:xGCo1O", // [チョコレート☆]ガラララッ
 		/** ワープの罠・場所がえ。 */
 		warp: "rpgen:vfCmoe",
-		/** 村の 保守トロッコが 動きだす（data/village/trolley.ts）。 */
+		/** 村の おんJトロッコが 動きだす（data/village/trolley.ts）。 */
 		trolley: "rpgen:YnXEbT", // ガタっと動かす音
 		stairs: "rpgen:gO9HUJ", // 階段
 		/** 落とし穴に 落ちる。 */

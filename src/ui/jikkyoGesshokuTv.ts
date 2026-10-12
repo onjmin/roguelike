@@ -1,4 +1,4 @@
-// 皆既月食　観察部の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。テレビは ない：保守中央公園の 北の ベンチから
+// 皆既月食　観察部の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。テレビは ない：おんJ中央公園の 北の ベンチから
 // 見上げた 夜空（skyFrame。画面 ぜんぶが 空）。形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標）。
 // - 下に 木の 影（左）・街灯（右）・噴水の 影（まんなか）、左下で キリコの スマホが 光る（洪水で 明るく）。その 上に 月。
 // - 月の 形は 名目の 時計（c.t）で かわる（data/jikkyo/gesshoku.ts の GESSHOKU_ECLIPSE と gesshokuCover）：

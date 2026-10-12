@@ -1,4 +1,4 @@
-// 保守記念（G1）（カジノ「ガチャ」の 壁の 大画面。見るだけ。PROGRAMS §5.4）。
+// おんJ記念（G1）（カジノ「ガチャ」の 壁の 大画面。見るだけ。PROGRAMS §5.4）。
 // 日曜の 午後、8頭が 本馬場入場 → ファンファーレ → ゲートイン → スタート → 道中 → 4コーナー → 最後の 直線 →
 // ゴール → 写真判定 → 確定 → 表彰式。おんJ競馬部の 実況スレで 見る。
 // - この 番組の 動詞：レースを 読んで 早く 言いきる。直線で 逃げ馬が 粘るか 差し馬が 届くかを 読んで
@@ -9,7 +9,7 @@
 // - 賭けの 話は 出さない（予想は「どの 馬が 勝つか」まで）。馬は 板の 語から 作った 架空の 名前、勝負服は 単色と 番号、
 //   騎手は 名前を 出さない。レースの 名前・競馬場・曲・局は 架空（ファンファーレは ゲームの 曲）。
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
-//   群衆・題・字幕の「保守」は 固有名詞（保守記念）の 中だけ。馬の 名前は 絵と 字幕と 書きこみだけ（レスに 入れない）。
+//   群衆・題・字幕の「保守」は 固有名詞（おんJ記念）の 中だけ。馬の 名前は 絵と 字幕と 書きこみだけ（レスに 入れない）。
 // - 日曜は 本番（★4）、ほかの 日は 再放送（★2。群衆に「結果　知っとる」が まざる）。
 // - スレタイは「おんJ競馬部　1717R」から（次スレは R を 1つ 足す）。終わりの 区切りで【反省会】に かわる。
 // 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoKeibaTv.ts。
@@ -60,7 +60,7 @@ export const KEIBA_HORSES = [
 
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const KEIBA_ART = {
-	title: "保守記念（G1）",
+	title: "おんJ記念（G1）",
 	course: "芝　2000m",
 	soon: "まもなく　発走",
 	end: "本日の　中継は　おわりました",
@@ -653,7 +653,7 @@ const keibaTimeline: JkScript["timeline"] = (rand) => {
 	};
 };
 
-/** 保守記念（G1）の 台本。 */
+/** おんJ記念（G1）の 台本。 */
 export const KEIBA: JkScript = {
 	id: "keiba",
 	venue: "casino",
@@ -705,26 +705,26 @@ export const KEIBA: JkScript = {
 const isSunday = (t: Today): boolean => t.w === 0;
 
 /**
- * 保守記念（G1）。会場の 文は 日曜だけ 上書き（ほかの 日は いつもの「レースの　中継が　映る」と
+ * おんJ記念（G1）。会場の 文は 日曜だけ 上書き（ほかの 日は いつもの「レースの　中継が　映る」と
  * ディーラーの いつもの 1行。jikkyoTests A3：10月の 金・火は 映画館の ほかに 上書きを 置かない）。
  */
 export const KEIBA_PACK: JkPack = {
 	script: KEIBA,
 	venue: "casino",
 	from: 7,
-	menu: "保守記念",
+	menu: "おんJ記念",
 	slot: liveOr(onWeekdays(0)),
 	scenes: KEIBA_SCENES,
 	venueLines: {
 		tv: [
-			{ when: isSunday, lines: ["大画面。\n今日は『保守記念』の　生中継。"] },
+			{ when: isSunday, lines: ["大画面。\n今日は『おんJ記念』の　生中継。"] },
 		],
 	},
 	staffLines: {
 		casino_dealer: [
 			{
 				when: isSunday,
-				lines: ["今日は　保守記念の　中継や。\n……レースは　見るだけやで"],
+				lines: ["今日は　おんJ記念の　中継や。\n……レースは　見るだけやで"],
 			},
 		],
 	},
@@ -815,5 +815,5 @@ export const KEIBA_PACK: JkPack = {
 		"武豊",
 		"ウマ娘",
 	],
-	names: ["保守記念"],
+	names: ["おんJ記念"],
 };

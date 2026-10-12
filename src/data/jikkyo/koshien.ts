@@ -1,4 +1,4 @@
-// 夏の　保守園（夏の 高校野球。海の家「age」の 壁の テレビ。PROGRAMS §1.6）。
+// 夏の　おんJ園（夏の 高校野球。海の家「age」の 壁の テレビ。PROGRAMS §1.6）。
 // 8月は 本大会の 決勝（本番 ★4）、ほかの 月は 名勝負の 総集編（再放送 ★2）。中身は 同じ 決勝の 流れで、字幕と 題が かわる。
 // - 芯は スレ番：題は「その{N}」で、高い 数から 始まり（本番 その96・総集編 その98）、目標の ★ に 届くと ちょうど
 //   その100（題に【大台】、TV では スタンドの ウェーブと 札）。完走の 窓も「その100に　とどいた」。
@@ -6,7 +6,7 @@
 //   8回表に 2点 取られる → 9回裏 2アウト 満塁 → チャンスの 応援 → 山場（Cue。投手の セット・足・リリースが 合図、
 //   4拍目の 打った 瞬間に「打った！」）→ 走者一掃の 逆転サヨナラ → 負けた 側は 砂を 集める → 勝った 側の 校歌 → 反省会。
 // - 学校は 板の 語で 作った 架空の 名前だけ（KOSHIEN_SCHOOLS。乱数で 2校）。選手の 名前は 出さない。
-//   実在の 大会・球場・新聞社・学校・応援曲の 名前は 出さない（deny）。「保守」は 保守園・保守実業 の 中だけ。
+//   実在の 大会・球場・新聞社・学校・応援曲の 名前は 出さない（deny）。「保守」は おんJ園・おんJ実業 の 中だけ。
 // - キリコが 書ける 文（候補・当番・山場の 1語）には「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
 // TV は ui/jikkyoKoshienTv.ts（場面の 鍵は KOSHIEN_SCENES、絵に 出す 文は KOSHIEN_ART）。
@@ -41,7 +41,7 @@ export const KOSHIEN_SCENES = [
 
 /** 架空の 学校（name は 字幕、short は 得点板）。 */
 export const KOSHIEN_SCHOOLS = [
-	{ name: "保守実業", short: "保実" },
+	{ name: "おんJ実業", short: "J実" },
 	{ name: "sage学園", short: "sage" },
 	{ name: "age商業", short: "age" },
 	{ name: "名無し農業", short: "名農" },
@@ -67,7 +67,7 @@ export type KoshienData = {
 
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const KOSHIEN_ART = {
-	logo: "夏の　保守園",
+	logo: "夏の　おんJ園",
 	soon: "まもなく　決勝",
 	soushu: "名勝負　総集編",
 	end: "夏が　おわった",
@@ -288,11 +288,11 @@ export const KOSHIEN_POOLS = {
 
 /** スレの 決まり文句（{N} は その の 数）。 */
 export const KOSHIEN_THREAD = {
-	live: "【実況】夏の保守園　その{N}",
-	rerun: "【総集編】夏の保守園　その{N}",
-	liveUra: "【実況】夏の保守園　9回裏　その{N}",
-	rerunUra: "【総集編】夏の保守園　9回裏　その{N}",
-	hansei: "【反省会】夏の保守園　その{N}",
+	live: "【実況】夏のおんJ園　その{N}",
+	rerun: "【総集編】夏のおんJ園　その{N}",
+	liveUra: "【実況】夏のおんJ園　9回裏　その{N}",
+	rerunUra: "【総集編】夏のおんJ園　9回裏　その{N}",
+	hansei: "【反省会】夏のおんJ園　その{N}",
 	/** その100 の スレの 題の うしろ。 */
 	taidai: "【大台】",
 	label: "その{N}",
@@ -637,7 +637,7 @@ const koshienTimeline: JkScript["timeline"] = (rand, slot) => {
 	};
 };
 
-/** 夏の　保守園（台本）。 */
+/** 夏の　おんJ園（台本）。 */
 export const KOSHIEN: JkScript = {
 	id: "koshien",
 	venue: "umi",
@@ -691,12 +691,12 @@ const isAug = (t: { m: number }) => t.m === 8;
 /** 8月の 土曜は 同じ テレビで 人力機の 本番も ある（その 日の 文は 人力機の 束に ゆずる）。 */
 const isAugLive = (t: { m: number; w: number }) => t.m === 8 && t.w !== 6;
 
-/** 夏の　保守園（束）。 */
+/** 夏の　おんJ園（束）。 */
 export const KOSHIEN_PACK: JkPack = {
 	script: KOSHIEN,
 	venue: "umi",
 	from: 2,
-	menu: "夏の保守園",
+	menu: "夏のおんJ園",
 	slot: liveOr(isAug),
 	scenes: KOSHIEN_SCENES,
 	// 会場の 文：8月（土曜を のぞく）は 決勝、ほかの 月は 総集編。8月の 土曜は 人力機の 束が 書く
@@ -704,11 +704,11 @@ export const KOSHIEN_PACK: JkPack = {
 		tv: [
 			{
 				when: isAugLive,
-				lines: ["小さな　テレビ。\n夏の　保守園、決勝の　中継。"],
+				lines: ["小さな　テレビ。\n夏の　おんJ園、決勝の　中継。"],
 			},
 			{
 				when: (t) => !isAug(t),
-				lines: ["小さな　テレビ。\n保守園の　名勝負、総集編。"],
+				lines: ["小さな　テレビ。\nおんJ園の　名勝負、総集編。"],
 			},
 		],
 	},
@@ -717,13 +717,13 @@ export const KOSHIEN_PACK: JkPack = {
 			{
 				when: isAugLive,
 				lines: [
-					"8月は　夏の　保守園や。\n……焼きそば　焼きながら　見とる",
+					"8月は　夏の　おんJ園や。\n……焼きそば　焼きながら　見とる",
 					"選手も　客も、水　飲みや。\n……熱中症は　あかんで",
 				],
 			},
 			{
 				when: (t) => !isAug(t),
-				lines: ["テレビは　保守園の　総集編や。\n……夏が　また　来るで"],
+				lines: ["テレビは　おんJ園の　総集編や。\n……夏が　また　来るで"],
 			},
 		],
 	},
@@ -769,5 +769,5 @@ export const KOSHIEN_PACK: JkPack = {
 		"ルパン",
 		"アゲアゲホイホイ",
 	],
-	names: ["保守園", "保守実業"],
+	names: ["おんJ園", "おんJ実業"],
 };

@@ -592,7 +592,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockAfter: "konamono",
 		reliefAfter: null,
 	},
-	// 隠し：過去ログの底（保守村の 下の 古井戸。電池板を 持ち帰ると 開く）。99階で、階の 層ごとに 見た目と 曲が 変わる
+	// 隠し：過去ログの底（おんJタウンの 下の 古井戸。電池板を 持ち帰ると 開く）。99階で、階の 層ごとに 見た目と 曲が 変わる
 	// （data/story.ts の BOARD_LOOKS の zones）。いちばん底の「蓄音キリコのうた」を 持ったまま 帰還スレで 帰れる
 	hidden: {
 		id: "hidden",

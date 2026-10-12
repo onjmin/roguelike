@@ -23,8 +23,8 @@ export const FISHING = {
  */
 export const GROUND_BAT = {
 	menu: ["1打席", "ホームラン競争", "やめる"],
-	title: "保守村　グラウンド",
-	derbyTitle: "保守村　ホームラン競争",
+	title: "おんJタウン　グラウンド",
+	derbyTitle: "おんJタウン　ホームラン競争",
 	pitcher: "やきう",
 	pitcherGone: "名無し",
 	derbyRule:

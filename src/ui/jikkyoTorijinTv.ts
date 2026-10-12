@@ -1,4 +1,4 @@
-// 人力機　保守杯の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。海の家「age」の 壁の 小さな テレビ。
+// 人力機　おんJ杯の TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。海の家「age」の 壁の 小さな テレビ。
 // 形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標。場面は スクリーン 180x104 の 左上が 0,0）。
 // - 枠：部屋の テレビ（crtFrame）＋ 壁に うちわ・すみに 風鈴。
 // - 場面（data/jikkyo/torijin.ts の TORIJIN_SCENES）：札（まもなく・おわり）・オープニング（湖・遠くの 台・桟橋の うちわ・題）・

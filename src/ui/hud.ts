@@ -18,7 +18,7 @@ export type Hud = {
 	root: HTMLElement;
 	/** 上のステータス行。 */
 	status: HTMLElement;
-	/** 村（保守村）と ダンジョンで ボタンを 切りかえる。村では ステータス行・小さいボタン・矢を 隠す。 */
+	/** 村（おんJタウン）と ダンジョンで ボタンを 切りかえる。村では ステータス行・小さいボタン・矢を 隠す。 */
 	setMode(mode: "village" | "dungeon"): void;
 };
 

@@ -1,4 +1,4 @@
-// 保守村の 小さな 名物（folk。data/folk.ts・data/village/folk.ts・ui/folk.ts）の 試験（pnpm test で いっしょに 動く）。
+// おんJタウンの 小さな 名物（folk。data/folk.ts・data/village/folk.ts・ui/folk.ts）の 試験（pnpm test で いっしょに 動く）。
 // 文の 幅・帰りごとに 1つ 進む 決まり・置き場所（どの 段でも 道を ふさがず 遠回りに させず 話せる）・本館／図書館／銭湯の すみ・
 // 歩行グラが ほかと かぶらない こと・下見で 保存を 書かない こと を 見る。
 

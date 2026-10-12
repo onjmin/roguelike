@@ -1,4 +1,4 @@
-// 村（保守村）に立つ人たち。名前・色は quotes.ts の SPEAKERS、歩行グラ・立ち絵は rpg の cast.ts と同じ
+// 村（おんJタウン）に立つ人たち。名前・色は quotes.ts の SPEAKERS、歩行グラ・立ち絵は rpg の cast.ts と同じ
 // （シヨ・ゼロは rpg に いないので、シヨの 歩行グラは RPGEN に 投入された もの）。
 // ゼロは 3体 いる 解音ゼロの メイン機 VHz8-0（通称 メインさん）。サブ機の プロト・レンは 村の 住人（data/mobs.ts）。
 // メインさんの 歩行グラは RPGEN に 無いので、プロト（sa:KxS5YZ）を 塗りかえて 作った（scripts/make-zero.mjs）。

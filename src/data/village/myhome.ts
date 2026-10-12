@@ -173,7 +173,7 @@ export const HOME_GIFTS: readonly Gift[] = [
 	},
 	{
 		id: "fridge",
-		from: "保守ヶ丘　町内会",
+		from: "おんJヶ丘　町内会",
 		note: "添え書き「ゴミの　日は　月・木です」",
 	},
 	{ id: "records", from: "名無し", note: "添え書き「蓄音機の　おとも」" },
@@ -194,7 +194,7 @@ export const HOME_GIFTS: readonly Gift[] = [
 	},
 	{
 		id: "safe",
-		from: "保守村　銀行",
+		from: "おんJタウン　銀行",
 		note: "添え書き「貸金庫の　おまけです」",
 	},
 	{ id: "dumbbell", from: "ageジム", note: "添え書き「入会　お待ちしてます」" },
@@ -445,9 +445,11 @@ export const homeRows = (
 
 export const HOME_MSG = {
 	/** 買う 前の 扉。 */
-	forSale: ["分譲住宅「保守ヶ丘」。\n玄関に「モデルハウス　ご見学　どうぞ」。"],
+	forSale: [
+		"分譲住宅「おんJヶ丘」。\n玄関に「モデルハウス　ご見学　どうぞ」。",
+	],
 	agent: [
-		"いらっしゃいませ！　保守ヶ丘　不動産です。\nこちら、最後の　1区画　なんですよ",
+		"いらっしゃいませ！　おんJヶ丘　不動産です。\nこちら、最後の　1区画　なんですよ",
 		"35年ローンで、頭金は　0円。\n金利は「保守金利」で　ございます",
 	],
 	ask: ["契約する", "やめておく"],
