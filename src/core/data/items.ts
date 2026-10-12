@@ -39,6 +39,8 @@ add({
 	sound: { swing: "swing_blade", hit: "hit_puyusword" },
 	name: "ぷゆゆソード",
 	atk: 35,
+	// 正体が わかって いる 支給品なので 専用の 絵（🥺 の 柄頭。ui/itemArt.ts → scripts/make-items.mjs）
+	icon: "pub:sprites/items/puyusword.png",
 	relief: true,
 	desc: "とても　強いが、なぐる　たびに　修正値が　1　へる（強さが　0に　なると　折れる）。ボスには　効かない。売っても　0",
 	flavor:
