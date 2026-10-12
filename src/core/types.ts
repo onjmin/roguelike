@@ -317,11 +317,6 @@ export type Player = {
 	maxStr: number;
 	lv: number;
 	exp: number;
-	/**
-	 * レベルアップで のびた 最大HP の 合計（村へ 持ち帰る 成長。engine/growth.ts）。成長の実などで のびた ぶんは
-	 * 入れない。前の 版の 中断セーブには 無い（無ければ 0）。
-	 */
-	lvHp?: number;
 	/** 満腹度 ×20（1/20% 単位。トルネコと同じく 1行動で 2 減る）。 */
 	hunger: number;
 	/** 自然回復の端数（最大HP を足して 150 ごとに 1 回復）。 */
@@ -496,15 +491,7 @@ export type RunState = {
 	body?: number;
 	/** 束音ロゼの すり抜けが ON（切りかえ式。OFF の ときは 書かない）。 */
 	phase?: true;
-	/**
-	 * 村から 持ってきた 主人公の 成長（レベル・経験値・のびた 最大HP。engine/growth.ts）。レベル1 の ときと
-	 * レベルを もどす 板（core/data/dungeons.ts の resetLevel）では 書かない。リプレイで 同じに 始めるため。
-	 */
-	grown?: Growth;
 };
-
-/** 主人公の 成長（冒険を まいて 引きつぐ。レベル・経験値・レベルアップで のびた 最大HP）。 */
-export type Growth = { lv: number; exp: number; hp: number };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────
 

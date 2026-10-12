@@ -95,7 +95,6 @@ import {
 	type Floor,
 	type FloorItem,
 	type GameEvent,
-	type Growth,
 	HOLD,
 	type Item,
 	type ItemCat,
@@ -168,8 +167,6 @@ export class Run {
 		rom = false,
 		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
 		hero: HeroId = "kiriko",
-		/** 村から 持ってきた 成長（engine/growth.ts。レベルを もどす 板では 使わない。乱数は 引かない）。 */
-		growth?: Growth,
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
@@ -203,20 +200,16 @@ export class Run {
 			if (UNIDENTIFIED_CATS.includes(d.cat) && !dg.unidentified.includes(d.cat))
 				known[d.id] = true;
 		const start = heroStart(hero);
-		// 成長を 引きつぐ（レベル・経験値・レベルアップで のびた 最大HP。レベルを もどす 板では 1から）
-		const grown =
-			growth && growth.lv > 1 && !dg.resetLevel ? { ...growth } : undefined;
 		const player: Player = {
 			x: 0,
 			y: 0,
 			dir: 4,
-			hp: Math.min(MAX_HP_CAP, start.hp + (grown?.hp ?? 0)),
-			maxHp: Math.min(MAX_HP_CAP, start.hp + (grown?.hp ?? 0)),
+			hp: start.hp,
+			maxHp: start.hp,
 			str: start.str,
 			maxStr: start.str,
-			lv: grown?.lv ?? 1,
-			exp: grown?.exp ?? 0,
-			...(grown ? { lvHp: grown.hp } : {}),
+			lv: 1,
+			exp: 0,
 			hunger: HUNGER_MAX,
 			regenAcc: 0,
 			weapon: null,
@@ -259,7 +252,6 @@ export class Run {
 			stats: { maxDepth: 0, itemsUsed: 0 },
 			// キリコは 書かない（前の 版と 同じ 形の まま）
 			...(hero !== "kiriko" ? { hero } : {}),
-			...(grown ? { grown } : {}),
 		};
 		const run = new Run(s);
 		run.rng = rng;
@@ -962,7 +954,6 @@ export class Run {
 			const g = this.rng.pick(HP_GAIN);
 			p.maxHp = Math.min(MAX_HP_CAP, p.maxHp + g);
 			p.hp = Math.min(p.maxHp, p.hp + g);
-			p.lvHp = (p.lvHp ?? 0) + g;
 		}
 		if (up > 0) {
 			// 何段上がっても音は1回（続けて鳴るとうるさい）
@@ -982,7 +973,6 @@ export class Run {
 		const g = this.rng.pick(HP_GAIN);
 		p.maxHp = Math.max(1, p.maxHp - g);
 		p.hp = Math.min(p.hp, p.maxHp);
-		p.lvHp = Math.max(0, (p.lvHp ?? 0) - g);
 		this.se("debuff");
 		this.msg(`レベルが　${p.lv}に　下がった`, "warn");
 	}

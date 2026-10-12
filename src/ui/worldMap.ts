@@ -22,7 +22,6 @@ import {
 	VILLAGE_PT,
 } from "../data/worldMap";
 import { loadImage } from "../engine/assets";
-import { heroLevel } from "../engine/growth";
 import { chooseHero, chosenHero, unlockedHeroes } from "../engine/heroes";
 import { loadProgress } from "../engine/save";
 import { drawWalk, stepFrame } from "../engine/sprite";
@@ -442,16 +441,6 @@ const GLIDE_MS = 220;
 const cursorBelow = (y: number): boolean => y - 30 < 2;
 
 /** 地図の 画面（キャンバスと 下の 札）。 */
-
-/**
- * 行き先の 札の レベルの 行（engine/growth.ts）。レベルを もどす 板（99階の 井戸の 底・裏シナリオ）は
- * 「1から」、ほかは 選んで いる 主人公の この 板での 前回の レベルから（別の 板の レベルは 持ちこまない）。
- */
-const levelLine = (d: DungeonId): string =>
-	DUNGEONS[d].resetLevel
-		? `<div class="wm-carry no">レベル：いつも　1から（上げた　ぶんも　持ち帰らない）</div>`
-		: `<div class="wm-carry">レベル：この　板の　前回から（${HERO_NAME[chosenHero()]}　Lv${heroLevel(chosenHero(), d)}）</div>`;
-
 export class MapView {
 	readonly box: HTMLElement;
 	private readonly title: HTMLElement;
@@ -694,8 +683,7 @@ export class MapView {
 				`<div class="wm-desc">${QUIET_SPOT.desc}</div>` +
 				(this.carryMax > 0
 					? `<div class="wm-carry no">持ちこみ：できない（小舟に　荷物は　のらない）</div>`
-					: "") +
-				levelLine(d);
+					: "");
 			return;
 		}
 		const star = this.cleared.includes(d) ? "　★" : "";
@@ -716,8 +704,7 @@ export class MapView {
 				`<div class="wm-desc">${n.rules[2] ?? ""}</div>` +
 				(this.carryMax > 0
 					? `<div class="wm-carry${dg.noCarry ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った　道具は　シヨが　預かる）" : `できる（${this.carryMax}つまで）`}</div>`
-					: "") +
-				levelLine(d)
+					: "")
 			: `<div class="wm-name">？？？</div><div class="wm-desc">${this.howToOpen(d)}</div>`;
 	}
 
