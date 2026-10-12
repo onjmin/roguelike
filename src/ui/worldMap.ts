@@ -445,12 +445,12 @@ const cursorBelow = (y: number): boolean => y - 30 < 2;
 
 /**
  * 行き先の 札の レベルの 行（engine/growth.ts）。レベルを もどす 板（99階の 井戸の 底・裏シナリオ）は
- * 「1から」、ほかは 選んで いる 主人公の いまの レベルを 引きつぐ。
+ * 「1から」、ほかは 選んで いる 主人公の この 板での 前回の レベルから（別の 板の レベルは 持ちこまない）。
  */
 const levelLine = (d: DungeonId): string =>
 	DUNGEONS[d].resetLevel
-		? `<div class="wm-carry no">レベル：1から　はじまる（上げた　ぶんも　持ち帰らない）</div>`
-		: `<div class="wm-carry">レベル：引きつぐ（${HERO_NAME[chosenHero()]}　Lv${heroLevel(chosenHero())}）</div>`;
+		? `<div class="wm-carry no">レベル：いつも　1から（上げた　ぶんも　持ち帰らない）</div>`
+		: `<div class="wm-carry">レベル：この　板の　前回から（${HERO_NAME[chosenHero()]}　Lv${heroLevel(chosenHero(), d)}）</div>`;
 
 export class MapView {
 	readonly box: HTMLElement;
@@ -830,7 +830,7 @@ export const pickColony = async (
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
 			const h = chosenHero();
-			v.panel.innerHTML = `<div class="wm-name">${heroLabel()}<small>　Lv${heroLevel(h)}</small></div><div class="wm-desc">${HERO_DESC[h]}<br><small>A で　切りかえ</small></div>`;
+			v.panel.innerHTML = `<div class="wm-name">${heroLabel()}</div><div class="wm-desc">${HERO_DESC[h]}<br><small>A で　切りかえ</small></div>`;
 			return;
 		}
 		if (!d) {

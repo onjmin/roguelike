@@ -1,18 +1,20 @@
-// 主人公ごとの 成長（キリコ・ロゼ・ゼロの レベル・経験値・レベルアップで のびた 最大HP）。
-// 冒険が 終わる たびに（持ち帰った・倒れた・やめた）残し、次の 冒険は その レベルから 始まる（作者の 指示：
-// 入りなおしても 上げた レベルを もどさない）。ただし レベルを もどす 板（core/data/dungeons.ts の resetLevel：
-// 99階の 井戸の 底・裏シナリオの 板）は レベル1 から 始まり、その 中で 上げた ぶんも 持ち帰らない。
+// 主人公ごと・板ごとの 成長（キリコ・ロゼ・ゼロの レベル・経験値・レベルアップで のびた 最大HP）。
+// 冒険が 終わる たびに（持ち帰った・倒れた・やめた）その 板の ぶんを 残し、同じ 板に 入りなおすと その レベルから
+// 始まる（作者の 指示：入りなおしても 上げた レベルを もどさない）。別の 板へは 引きつがない（作者の 指示：
+// 引きつぐと ヌルゲーに なる。2026-10-12）。レベルを もどす 板（core/data/dungeons.ts の resetLevel：
+// 99階の 井戸の 底・裏シナリオの 板）は いつも レベル1 から。
 // 成長の実などで のびた 最大HP・ちからは 持ち帰らない（その 冒険の 中だけ）。
 // localStorage の kiriko-roguelike/growth に 主人公ごとに 持つ。保存できなくても この回は 写しで 覚えている。
 
 import { EXP_AT, MAX_HP_CAP, MAX_LV } from "../core/balance";
-import { dungeonById } from "../core/data/dungeons";
+import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
 import { type HeroId, isHeroId } from "../core/data/heroes";
-import type { Growth, RunState } from "../core/types";
+import type { DungeonId, Growth, RunState } from "../core/types";
 
-const KEY = "kiriko-roguelike/growth";
+/** 板ごとに 分けた 版（前の 版の 主人公ごとの 1つは 読まない：どの 板の ものか わからない）。 */
+const KEY = "kiriko-roguelike/growth2";
 
-type Saved = Partial<Record<HeroId, Growth>>;
+type Saved = Partial<Record<HeroId, Partial<Record<DungeonId, Growth>>>>;
 let memo: Saved | null = null;
 
 const isGrowth = (g: unknown): g is Growth => {
@@ -36,8 +38,14 @@ const load = (): Saved => {
 	try {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
 		if (raw && typeof raw === "object")
-			for (const [k, v] of Object.entries(raw))
-				if (isHeroId(k) && isGrowth(v)) out[k] = v;
+			for (const [h, byBoard] of Object.entries(raw)) {
+				if (!isHeroId(h) || !byBoard || typeof byBoard !== "object") continue;
+				const mine: Partial<Record<DungeonId, Growth>> = {};
+				for (const [d, g] of Object.entries(byBoard))
+					if (DUNGEON_IDS.includes(d as DungeonId) && isGrowth(g))
+						mine[d as DungeonId] = g;
+				out[h] = mine;
+			}
 	} catch {
 		// 読めなければ みんな レベル1
 	}
@@ -50,15 +58,18 @@ export const forgetGrowthMemo = (): void => {
 	memo = null;
 };
 
-/** その 主人公の 成長（まだ 冒険して いなければ レベル1）。 */
-export const loadGrowth = (h: HeroId): Growth =>
-	load()[h] ?? { lv: 1, exp: 0, hp: 0 };
+const LV1: Growth = { lv: 1, exp: 0, hp: 0 };
+
+/** その 主人公の その 板での 成長（まだ 潜って いない・レベルを もどす 板なら レベル1）。 */
+export const loadGrowth = (h: HeroId, d: DungeonId): Growth =>
+	dungeonById(d).resetLevel ? LV1 : (load()[h]?.[d] ?? LV1);
 
 /** いま 何レベルか（行き先の 札に 出す）。 */
-export const heroLevel = (h: HeroId): number => loadGrowth(h).lv;
+export const heroLevel = (h: HeroId, d: DungeonId): number =>
+	loadGrowth(h, d).lv;
 
 /**
- * 冒険が 終わった（engine/save.ts の saveRun。同じ 終わりは 1回だけ）。主人公の 成長を 残す。
+ * 冒険が 終わった（engine/save.ts の saveRun。同じ 終わりは 1回だけ）。主人公の その 板での 成長を 残す。
  * レベルを もどす 板・書きかえた 冒険（engine/tamper.ts）は 残さない。
  */
 export const noteGrowth = (s: RunState): void => {
@@ -72,10 +83,11 @@ export const noteGrowth = (s: RunState): void => {
 		exp: Math.max(lv > 1 ? (EXP_AT[lv - 1] ?? 0) : 0, Math.floor(p.exp)),
 		hp: Math.max(0, Math.min(MAX_HP_CAP, p.lvHp ?? 0)),
 	};
-	const all = { ...load(), [h]: g };
-	memo = all;
+	const all = load();
+	const next: Saved = { ...all, [h]: { ...(all[h] ?? {}), [s.dungeon]: g } };
+	memo = next;
 	try {
-		localStorage.setItem(KEY, JSON.stringify(all));
+		localStorage.setItem(KEY, JSON.stringify(next));
 	} catch {
 		// 保存できなくても この回は 写しで 覚えている
 	}

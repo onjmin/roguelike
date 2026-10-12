@@ -203,7 +203,7 @@ const runFor = (
 				choice.lunch,
 				romNow(),
 				chosenHero(),
-				loadGrowth(chosenHero()),
+				loadGrowth(chosenHero(), choice.dungeon),
 			);
 			return { run, replay: undefined };
 		}
@@ -220,8 +220,8 @@ const runFor = (
 			lunch,
 			romNow(),
 			chosenHero(),
-			// 主人公の レベル・経験値（レベルを もどす 板では Run.create が 使わない。engine/growth.ts）
-			loadGrowth(chosenHero()),
+			// 主人公の その 板での レベル・経験値（別の 板へは 引きつがない。engine/growth.ts）
+			loadGrowth(chosenHero(), choice.dungeon),
 		);
 		if (carry.length) saveRun(run.s);
 		return { run, replay: undefined };

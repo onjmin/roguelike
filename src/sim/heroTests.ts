@@ -358,7 +358,7 @@ const ended = (
 	return r.s;
 };
 
-test("成長: キリコ・ロゼ・ゼロの レベル・経験値・のびた 最大HP は 冒険を まいて のこり、井戸の 底と 裏シナリオの 板では 1から", async () => {
+test("成長: キリコ・ロゼ・ゼロの レベル・経験値・のびた 最大HP は 板ごとに のこり（別の 板へは 引きつがない）、井戸の 底と 裏シナリオの 板では 1から", async () => {
 	await withStore(() => {
 		const ended = (r: Run, kind: "dead" | "clear" | "escape") => {
 			r.s.end = { kind, cause: "", depth: r.s.depth, turn: r.s.turn };
@@ -371,12 +371,15 @@ test("成長: キリコ・ロゼ・ゼロの レベル・経験値・のびた �
 		const gained = a.p.lvHp ?? 0;
 		ok(lv === 6 && gained > 0, `harness: lv ${lv}, lvHp ${gained}`);
 		ended(a, "dead");
-		const g = loadGrowth("kiriko");
+		const g = loadGrowth("kiriko", "main");
 		ok(
 			g.lv === lv && g.exp === a.p.exp && g.hp === gained,
 			`kiriko kept ${JSON.stringify(g)}`,
 		);
-		ok(loadGrowth("roze").lv === 1, "roze grew with kiriko");
+		ok(loadGrowth("roze", "main").lv === 1, "roze grew with kiriko");
+		// 別の 板へは 引きつがない（作者：引きつぐと ヌルゲー）
+		for (const d of ["shallow", "kinoko", "deep", "vocalo"] as const)
+			ok(loadGrowth("kiriko", d).lv === 1, `${d} got main's level`);
 		// 次の 冒険は その レベルから（最大HP も のびた ぶん）。リプレイの ために 冒険に 焼きつける
 		const b = Run.create(
 			"grow-b",
@@ -421,7 +424,11 @@ test("成長: キリコ・ロゼ・ゼロの レベル・経験値・のびた �
 			);
 			c.gainExp(EXP_AT[10]);
 			ended(c, "clear");
-			ok(loadGrowth("kiriko").lv === lv, `${d}: carried its level home`);
+			ok(
+				loadGrowth("kiriko", d).lv === 1 &&
+					loadGrowth("kiriko", "main").lv === lv,
+				`${d}: carried its level home`,
+			);
 		}
 		// ほかの 板は 引きつぐ（ボカロ作り避難所は ロゼの 依頼で 裏シナリオでは ない）
 		for (const d of ["shallow", "kinoko", "deep", "vocalo"] as const)
@@ -430,8 +437,8 @@ test("成長: キリコ・ロゼ・ゼロの レベル・経験値・のびた �
 		const z = Run.create("grow-z", "main", [], "fetch", true, false, "zero");
 		z.gainExp(EXP_AT[3]);
 		ended(z, "escape");
-		const gz = loadGrowth("zero");
-		ok(gz.lv === 4 && loadGrowth("kiriko").lv === lv, `zero ${gz.lv}`);
+		const gz = loadGrowth("zero", "main");
+		ok(gz.lv === 4 && loadGrowth("kiriko", "main").lv === lv, `zero ${gz.lv}`);
 		const z2 = Run.create(
 			"grow-z2",
 			"main",
