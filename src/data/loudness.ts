@@ -176,7 +176,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	hit_fist: ["7rPdXL", -10, -1.4, -11, 0.282, 0, 180, 80], // battle → -21.0
 	hit_club: ["M7xnmE", -11.8, -1.9, -9.2, 0.347, 0, 330, 120], // battle → -21.0
 	hit_copper: ["7JKd21", -5.9, -0.7, -15.1, 0.176, 20, 210, 180], // battle → -21.0
-	hit_puyusword: ["28KYsN", -6.7, 3.7, -14.3, 0.193, 120, 580, 220], // battle → -21.0
+	hit_puyusword: ["KVa5St", -3.8, 1.7, -17.2, 0.138, 0, 910, 700], // battle → -21.0
 	hit_steel: ["mLgxu0", -14.9, -6.8, -6.1, 0.495, 30, 250, 140], // battle → -21.0
 	hit_bat: ["sne8yX", -5.4, -0.2, -15.6, 0.166, 0, 730, 280], // battle → -21.0
 	hit_wyrm: ["mLHxrK", -15.6, -5, -5.4, 0.537, 20, 260, 210], // battle → -21.0

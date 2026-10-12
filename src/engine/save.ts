@@ -13,7 +13,13 @@ import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
-import type { DungeonId, Item, Objective, RunState } from "../core/types";
+import {
+	CAT_ORDER,
+	type DungeonId,
+	type Item,
+	type Objective,
+	type RunState,
+} from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
 import { noteTamper, oddRun, oddTown } from "./tamper";
 
@@ -851,6 +857,32 @@ export const takeFromStorage = (picked: readonly Item[]): Item[] => {
 	return out;
 };
 
+/**
+ * 倉庫を 整理する（持ち物の 整理と 同じ 分類の 順・同じ 分類は 図鑑の 順・同じ 物は 強い 順。同じなら もとの 順）。
+ * 並びが かわったら true。
+ */
+export const sortStorage = (): boolean => {
+	const t = loadTown();
+	const rows = t.storage.map((it, i) => ({
+		it,
+		i,
+		cat: CAT_ORDER.indexOf(defOf(it.kind).cat),
+		order: defOf(it.kind).order,
+	}));
+	rows.sort(
+		(a, b) =>
+			a.cat - b.cat ||
+			a.order - b.order ||
+			b.it.plus - a.it.plus ||
+			b.it.charges - a.it.charges ||
+			a.i - b.i,
+	);
+	if (rows.every((r, k) => r.i === k)) return false;
+	t.storage = rows.map((r) => r.it);
+	saveTown(t);
+	return true;
+};
+
 /** 倉庫の i 番目を 引き取る（持ち物が いっぱいなら 引き取らない）。引き取れたか。 */
 export const withdrawItem = (i: number): boolean => {
 	const t = loadTown();
@@ -895,6 +927,31 @@ export const giveRelief = (at: number): boolean => {
 		return false;
 	t.relief = true;
 	t.reliefAt = at;
+	saveTown(t);
+	return true;
+};
+
+/** 支給品の 道具（強さ ＋0・正体は わかっている。番号は 冒険に 入る ときに つけなおす）。 */
+export const reliefItem = (): Item => ({
+	uid: 0,
+	kind: RELIEF_KIND,
+	plus: 0,
+	cursed: false,
+	charges: 0,
+	known: true,
+	count: 1,
+});
+
+/**
+ * もらった 支給品を 倉庫に あずける（村の 持ち物の 一覧から。倉庫が あって 空きが あるとき）。あずけたら true。
+ * あずけた あとは 倉庫の ほかの 道具と 同じ（引き取って 持っていく。倉庫に あるうちは 次の 支給品は ない）。
+ */
+export const stashRelief = (): boolean => {
+	const t = loadTown();
+	const cap = STORAGE_CAP[t.stage] ?? 0;
+	if (!t.relief || t.storage.length >= cap) return false;
+	delete t.relief;
+	t.storage.push(reliefItem());
 	saveTown(t);
 	return true;
 };
