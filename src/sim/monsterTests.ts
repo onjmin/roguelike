@@ -2957,6 +2957,27 @@ test(
 	},
 );
 
+test(
+	"floor",
+	"chase: the one behind a diagonal pair steps aside and comes around instead of standing still",
+	() => {
+		const r = arena("diag-pair");
+		r.p.maxHp = 999;
+		r.p.hp = 999;
+		const front = put(r, "knight", at(1, 1));
+		const back = put(r, "knight", at(2, 2));
+		const from = { x: back.x, y: back.y };
+		turn(r);
+		ok(
+			front.x === CENTER.x + 1 && front.y === CENTER.y + 1,
+			`harness: the front one moved to ${pp(front)}`,
+		);
+		ok(!samePos(back, from), `the back one stood still at ${pp(back)}`);
+		for (let i = 0; i < 3 && dist(back, r.p) > 1; i++) turn(r);
+		ok(dist(back, r.p) === 1, `the back one never reached her: ${pp(back)}`);
+	},
+);
+
 /**
  * 部屋を抜けている途中の敵：西の小部屋（キリコ）→ 通路 → 部屋（入口は西と北。北の先は行き止まり）。
  * 通路で見失って 部屋に入り、北の出口へ向かっているところで返す。
