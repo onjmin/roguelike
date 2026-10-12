@@ -283,6 +283,7 @@ import {
 	replayMatches,
 	type SavedReplay,
 	saveTown,
+	stashRelief,
 	type Town,
 	takeRelief,
 	toReplay,
@@ -947,6 +948,32 @@ test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（�
 		const quit = fakeStory();
 		await reliefScript(quit.s);
 		ok(!quit.log.length && !loadTown().relief, "a sword for quitting");
+	});
+});
+
+test("ぷゆゆソード：村の 持ち物に 出て、倉庫が あれば あずけられる（あずけると 次の 支給は ない）", () => {
+	withStorage(() => {
+		setProgress(["shallow"]);
+		putTown({ stage: 1 });
+		ok(giveRelief(100), "harness: no sword");
+		// 倉庫が まだ ない 段：あずけられない（持って 出る）
+		ok(
+			!stashRelief() && loadTown().relief === true,
+			"stashed without a storehouse",
+		);
+		saveTown({ ...loadTown(), stage: 2 });
+		ok(stashRelief(), "could not stash the sword");
+		const t = loadTown();
+		ok(
+			t.relief === undefined &&
+				t.storage.length === 1 &&
+				t.storage[0]?.kind === RELIEF_KIND &&
+				t.storage[0]?.known,
+			`storage ${JSON.stringify(t.storage)}`,
+		);
+		ok(!stashRelief(), "stashed twice");
+		ok(!takeRelief(), "took a stashed sword");
+		ok(!giveRelief(200), "a second sword while one is in the storehouse");
 	});
 });
 

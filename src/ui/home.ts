@@ -12,9 +12,12 @@ import {
 	depositItem,
 	loadTown,
 	type PendingReturn,
+	reliefItem,
+	stashRelief,
 	type Town,
 	withdrawItem,
 } from "../engine/save";
+
 import type { Ctx } from "./ctx";
 import { infoWindow, type ListItem, listWindow } from "./list";
 import { esc, escBr } from "./records";
@@ -120,7 +123,18 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 		const lunch = t.lunch
 			? `<br><small>ぷゆゆパン（ぷゆゆの　お弁当）も　持っていく</small>`
 			: "";
-		if (!t.bag.length) {
+		// たおれた あとの 支給品（ぷゆゆソード。数に 入らない。えらぶと 倉庫へ あずける：倉庫が あって 空きが あれば）
+		const cap = STORAGE_CAP[t.stage] ?? 0;
+		const reliefRow: ListItem[] = t.relief
+			? [
+					{
+						label: `${esc(townItemName(reliefItem()))}<small>（ぷゆゆから）</small>`,
+						value: "relief",
+						disabled: t.storage.length >= cap,
+					},
+				]
+			: [];
+		if (!t.bag.length && !reliefRow.length) {
 			// 倉庫が ひらく 前の 段は 引き取れないので 数も シヨの 小言も 出さない
 			await infoWindow(
 				ctx,
@@ -131,17 +145,24 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 			);
 			return;
 		}
-		const rows: ListItem[] = t.bag.map((it, i) => ({
-			label: esc(townItemName(it)),
-			value: String(i),
-		}));
+		const rows: ListItem[] = [
+			...t.bag.map((it, i) => ({
+				label: esc(townItemName(it)),
+				value: String(i),
+			})),
+			...reliefRow,
+		];
 		const v = await listWindow(
 			ctx,
-			`持ち物　${t.bag.length}／${max}<br><small>このまま　出口から　出れば　持っていく。えらぶと　倉庫へ　もどす</small>${lunch}`,
+			`持ち物　${t.bag.length}／${max}<br><small>このまま　出口から　出れば　持っていく。${cap > 0 ? "えらぶと　倉庫へ　もどす" : ""}</small>${lunch}`,
 			rows,
 			{ start },
 		);
 		if (v === null) return;
+		if (v === "relief") {
+			if (stashRelief()) ctx.se("decide");
+			continue;
+		}
 		start = Math.max(0, Math.min(Number(v), t.bag.length - 2));
 		depositItem(Number(v));
 		ctx.se("decide");

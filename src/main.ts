@@ -18,7 +18,7 @@ import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
 	loadProgress,
-	RELIEF_KIND,
+	reliefItem,
 	type SavedReplay,
 	saveRun,
 	takeFromBag,
@@ -214,19 +214,7 @@ const runFor = (
 		const lunch = choice.lunch && takeLunch();
 		// たおれた あとの 支給品（ぷゆゆソード。持ちこめない 板でも 持っていく。倉庫から 持ちこんだ 道具と 同じく
 		// 冒険に 焼きつけて リプレイでも 同じに 始まる）
-		const relief: Item[] = takeRelief()
-			? [
-					{
-						uid: 0,
-						kind: RELIEF_KIND,
-						plus: 0,
-						cursed: false,
-						charges: 0,
-						known: true,
-						count: 1,
-					},
-				]
-			: [];
+		const relief: Item[] = takeRelief() ? [reliefItem()] : [];
 		const run = Run.create(
 			newSeed(),
 			choice.dungeon,

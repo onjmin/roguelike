@@ -899,6 +899,31 @@ export const giveRelief = (at: number): boolean => {
 	return true;
 };
 
+/** 支給品の 道具（強さ ＋0・正体は わかっている。番号は 冒険に 入る ときに つけなおす）。 */
+export const reliefItem = (): Item => ({
+	uid: 0,
+	kind: RELIEF_KIND,
+	plus: 0,
+	cursed: false,
+	charges: 0,
+	known: true,
+	count: 1,
+});
+
+/**
+ * もらった 支給品を 倉庫に あずける（村の 持ち物の 一覧から。倉庫が あって 空きが あるとき）。あずけたら true。
+ * あずけた あとは 倉庫の ほかの 道具と 同じ（引き取って 持っていく。倉庫に あるうちは 次の 支給品は ない）。
+ */
+export const stashRelief = (): boolean => {
+	const t = loadTown();
+	const cap = STORAGE_CAP[t.stage] ?? 0;
+	if (!t.relief || t.storage.length >= cap) return false;
+	delete t.relief;
+	t.storage.push(reliefItem());
+	saveTown(t);
+	return true;
+};
+
 /** 出るときに 支給品を 受け取る（持っていれば 消して true。別の タブで 持っていかれて いれば false）。 */
 export const takeRelief = (): boolean => {
 	const t = loadTown();
