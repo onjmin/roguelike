@@ -634,24 +634,15 @@ const friendScript =
 		await speak(s, who);
 	};
 
-/** シヨの 窓口：倉庫から 引き取る・持ち物を もどす・話す（ui/home.ts の 一覧）。 */
+/** シヨの 窓口：倉庫を つかう（引き出す・預ける。ui/home.ts の openStorage）・話す。 */
 const shiyoDesk = async (ctx: Ctx, s: Story): Promise<void> => {
 	await s.say("shiyo", SHIYO_DESK.ask);
-	const bag = loadTown().bag.length > 0;
-	const menu = [
-		SHIYO_DESK.withdraw,
-		...(bag ? [SHIYO_DESK.bag] : []),
-		SHIYO_DESK.talk,
-		SHIYO_DESK.quit,
-	];
+	const menu = [SHIYO_DESK.withdraw, SHIYO_DESK.talk, SHIYO_DESK.quit];
 	const n = await s.choose(menu, { cancel: menu.length - 1 });
 	const pick = menu[n];
 	if (pick === SHIYO_DESK.withdraw) {
 		await s.wait(0);
 		await openStorage(ctx);
-	} else if (pick === SHIYO_DESK.bag) {
-		await s.wait(0);
-		await openBag(ctx);
 	} else if (pick === SHIYO_DESK.talk) await speak(s, "shiyo");
 };
 

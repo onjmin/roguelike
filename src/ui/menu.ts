@@ -63,7 +63,7 @@ const emptyRow = (label: string): ListItem => ({
  * 一覧の 行の 左に 出す 道具の 絵（床に 落ちているときと 同じ 絵。16px を CSS で 2倍）。
  * 文字と 札だけの 一覧では、拾った 物を ながめる 楽しさが なかった。絵が まだ 読めていなければ 読めてから 描く
  */
-const itemArt = (kind: string): HTMLElement => {
+export const itemArt = (kind: string): HTMLElement => {
 	const c = document.createElement("canvas");
 	c.width = 16;
 	c.height = 16;

@@ -474,8 +474,8 @@ export const ZERO_VOICELESS: readonly string[] = [
 /** シヨの 窓口（倉庫が 建ってから 話しかけると。ui/villageEvents.ts の shiyoDesk）。 */
 export const SHIYO_DESK = {
 	ask: "倉庫の　用？\n……出すなら　さっさと　言って",
-	withdraw: "倉庫から　引き取る",
-	bag: "持ち物を　もどす",
+	/** 倉庫の 一覧（引き出す・預ける を えらぶ。ui/home.ts の openStorage）。 */
+	withdraw: "倉庫を　つかう",
 	talk: "話す",
 	quit: "やめる",
 } as const;
