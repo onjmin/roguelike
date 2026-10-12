@@ -1,4 +1,4 @@
-// 保守グランプリの TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。整備工場の 事務所の テレビ（crtFrame）。
+// おんJグランプリの TV（ui/jikkyoWatch.ts の 板の 上の キャンバス）。整備工場の 事務所の テレビ（crtFrame）。
 // 形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標。スクリーンは 180x104）。
 // - 場面（data/jikkyo/f1.ts の F1_SCENES）：札（まもなく・おわり）・グリッド（上から）・スタート（赤い 灯 5つ。山場）・
 //   レース（横から。周回と 順位の 札・雨・団子から ばらける・審議・前の 2台の 抜きあい）・ピット（雨雲の レーダーと 板）・
@@ -551,7 +551,7 @@ const drawPodium: SceneFn<F1Data> = (g, c) => {
 	}
 };
 
-/** 保守グランプリの TV。 */
+/** おんJグランプリの TV。 */
 export const f1Tv = makeTv<F1Data>({
 	screen: crtFrame.screen,
 	frame: (g, c) => {

@@ -1,6 +1,6 @@
-// 人力機　保守杯（海の家「age」の 壁の テレビ。夏の 湖の 人力飛行機の 大会。PROGRAMS §1.6）。
+// 人力機　おんJ杯（海の家「age」の 壁の テレビ。夏の 湖の 人力飛行機の 大会。PROGRAMS §1.6）。
 // 湖に 突きでた 高い 台から、人が こいで とぶ 飛行機が 1機ずつ 飛びだす。はじめの 3機（4チームから 乱数で 3つ・
-// 順も 乱数）が とんで 着水し、記録が 出る。風待ちの 中断を はさみ、最後の 保守大学　人力機部が 折りかえしで
+// 順も 乱数）が とんで 着水し、記録が 出る。風待ちの 中断を はさみ、最後の おんJ大学　人力機部が 折りかえしで
 // 旋回して 台の 前まで もどり、大会記録。
 // - この 番組の 動詞：1機ごとの スタート（Cue。台の 旗が 3回 上がり、4拍目で 台を けって 飛びだす。1語「とべ！」）・
 //   飛びかたを 見て 言う（すぐ 着水＝チーム次スレ・水面 すれすれ＝sage航空部・高く 上がる＝age工房・のびる＝名無しエアロ）・
@@ -9,7 +9,7 @@
 // - 8月の 土曜は 生中継、ほかの 日は 録画（群衆に「録画　乙」が まざる）。中身は 曜日で 閉じない。
 // - 大会・湖・大学・チームは 架空（板の 語から）。実在の 大会・湖・町・局・会社の 名前は 使わない（deny で 守る）。
 // - キリコが 書ける 文（候補・当番・山場の 1語）には「保守」「立てといた」「立てたる」「立てたで」を 入れない。
-//   群衆・題・字幕・会場の 文の「保守」は 固有名詞（保守杯・保守大学・保守湖）の 中だけ。
+//   群衆・題・字幕・会場の 文の「保守」は 固有名詞（おんJ杯・おんJ大学・おんJ湖）の 中だけ。
 // 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoTorijinTv.ts。
 
 import type {
@@ -75,7 +75,7 @@ export const TORIJIN_TEAMS: Readonly<
 	low: { team: "sage航空部", rec: 386.4, unit: "m" },
 	high: { team: "age工房", rec: 241.7, unit: "m" },
 	mid: { team: "名無しエアロ", rec: 1234.5, unit: "m" },
-	last: { team: "保守大学　人力機部", rec: 40, unit: "km" },
+	last: { team: "おんJ大学　人力機部", rec: 40, unit: "km" },
 };
 
 /** 記録の 字（9.8m・40.0km）。 */
@@ -84,8 +84,8 @@ export const recText = (rec: number, unit: string): string =>
 
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const TORIJIN_ART = {
-	logo: "人力機　保守杯",
-	lake: "夏の　保守湖",
+	logo: "人力機　おんJ杯",
+	lake: "夏の　おんJ湖",
 	soon: "まもなく　はじまります",
 	end: "本日の　中継は　おわりました",
 	live: "生中継",
@@ -138,7 +138,7 @@ export const TORIJIN_POOLS = {
 	],
 	dai2: [
 		"本命や",
-		"保守大学　きた",
+		"おんJ大学　きた",
 		"優勝候補",
 		"がんばれ",
 		"風　ええ　感じ",
@@ -282,7 +282,7 @@ export const TORIJIN_POOLS = {
 		"伝説や",
 		"鳥肌",
 		"おめでとう",
-		"保守大学　すごい",
+		"おんJ大学　すごい",
 		"拍手",
 		"歴史や",
 		"泣いた",
@@ -312,12 +312,12 @@ export const TORIJIN_POOLS = {
 
 /** スレの 決まり文句。 */
 export const TORIJIN_THREAD = {
-	live: "【実況】人力機　保守杯★{n}",
-	rerun: "【録画】人力機　保守杯★{n}",
-	liveLast: "【実況】人力機　保守杯★{n}【最終機】",
-	rerunLast: "【録画】人力機　保守杯★{n}【最終機】",
-	liveHansei: "【実況・反省会】保守杯★{n}",
-	rerunHansei: "【録画・反省会】保守杯★{n}",
+	live: "【実況】人力機　おんJ杯★{n}",
+	rerun: "【録画】人力機　おんJ杯★{n}",
+	liveLast: "【実況】人力機　おんJ杯★{n}【最終機】",
+	rerunLast: "【録画】人力機　おんJ杯★{n}【最終機】",
+	liveHansei: "【実況・反省会】おんJ杯★{n}",
+	rerunHansei: "【録画・反省会】おんJ杯★{n}",
 	get1000: "1000なら　来年も　とぶ",
 	praise: ">>{n}　ナイス　スタート",
 	crossGap: "次スレで　とべ！",
@@ -518,7 +518,7 @@ const lastFlight = (F: number, live: boolean): Part => {
 				pool: "dai2",
 				rate: 1.2,
 				bgm: "field",
-				caption: "最後は　保守大学　人力機部",
+				caption: "最後は　おんJ大学　人力機部",
 				title: { next: (n) => fillN(last, n) },
 				react: [{ who: "nanashi", text: "本命　きた" }],
 				data: { ...base, phase: "intro" } satisfies TorijinData,
@@ -650,7 +650,7 @@ const torijinTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "op",
 			rate: 0.9,
 			bgm: "island",
-			caption: "夏の　保守湖から　おとどけします",
+			caption: "夏の　おんJ湖から　おとどけします",
 		},
 		{
 			at: AT.kaze,
@@ -707,7 +707,7 @@ const torijinTimeline: JkScript["timeline"] = (rand, slot) => {
 	return { segments, picks, cues: parts.flatMap((p) => p.cues) };
 };
 
-/** 人力機　保守杯の 台本。 */
+/** 人力機　おんJ杯の 台本。 */
 export const TORIJIN: JkScript = {
 	id: "torijin",
 	venue: "umi",
@@ -758,20 +758,20 @@ export const TORIJIN: JkScript = {
 /** 生中継の 日（8月の 土曜）。 */
 const isLiveDay = (t: Today): boolean => t.m === 8 && t.w === 6;
 
-/** 人力機　保守杯。 */
+/** 人力機　おんJ杯。 */
 export const TORIJIN_PACK: JkPack = {
 	script: TORIJIN,
 	venue: "umi",
 	from: 2,
-	menu: "人力機　保守杯",
+	menu: "人力機　おんJ杯",
 	slot: liveOr(isLiveDay),
 	scenes: TORIJIN_SCENES,
-	// 同じ テレビで 夏の 保守園も 流れるので、テレビと 店主の 文は 生中継の 日だけ
+	// 同じ テレビで 夏の おんJ園も 流れるので、テレビと 店主の 文は 生中継の 日だけ
 	venueLines: {
 		tv: [
 			{
 				when: isLiveDay,
-				lines: ["小さな　テレビ。\n人力機　保守杯の　生中継。"],
+				lines: ["小さな　テレビ。\n人力機　おんJ杯の　生中継。"],
 			},
 		],
 	},
@@ -813,5 +813,5 @@ export const TORIJIN_PACK: JkPack = {
 		"多景島",
 		"松原",
 	],
-	names: ["保守杯", "保守大学", "保守湖"],
+	names: ["おんJ杯", "おんJ大学", "おんJ湖"],
 };

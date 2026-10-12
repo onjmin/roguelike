@@ -195,20 +195,28 @@ const moveTo = (r: Run, m: Monster, d: Dir8): void => {
 	r.emit({ t: "move", id: m.uid, from, to, dir: d });
 };
 
-/** target へ1歩近づく。動けたら true。 */
+/** まっすぐの 距離の 2乗（同じ 歩数の マスどうしを くらべる）。 */
+const sq = (a: Pos, b: Pos): number => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+
+/**
+ * target へ1歩近づく。動けたら true。
+ * 歩数が へる マスが ふさがって いても、歩数が 同じで まっすぐの 距離が ちぢむ マスへは 動く
+ * （キリコの 斜めに 敵が 2匹 ならぶと、うしろの 敵は 前の 敵の マスしか 歩数が へらず、立ちつくしていた。
+ * 横へ 1歩 ずれて 回りこむ。作者の 指示）。まっすぐの 距離は へる 一方なので 行ったり 来たり しない。
+ */
 const approach = (r: Run, m: Monster, target: Pos): boolean => {
 	const dm = distanceTo(r, target);
 	const w = r.f.layout.w;
 	const here = dm[m.y * w + m.x];
 	let best: Dir8 | null = null;
 	let bestD = here < 0 ? 1e9 : here;
-	let bestC = dist(m, target);
+	let bestC = sq(m, target);
 	for (const d of DIRS8) {
 		if (!canEnter(r, m, d)) continue;
 		const to = step(m, d);
 		const v = dm[to.y * w + to.x];
 		if (v < 0) continue;
-		const c = dist(to, target);
+		const c = sq(to, target);
 		if (v < bestD || (v === bestD && c < bestC)) {
 			best = d;
 			bestD = v;

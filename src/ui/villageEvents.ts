@@ -1,4 +1,4 @@
-// 村（保守村）の イベントの スクリプトと、B／☰ の 村の メニュー。
+// 村（おんJタウン）の イベントの スクリプトと、B／☰ の 村の メニュー。
 // 地図の形と 人・物の 置き場所は data/village/map.ts（DOM を使わない）。ここで id ごとに スクリプトを付ける。
 //
 // - ダンジョンの口：踏むと 中断した冒険の 確認 → もぐる？ → （本編なら）倉庫からの 持ちこみ →
@@ -168,11 +168,11 @@ const signMore = (d: DungeonId): string[] => {
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
 
-/** 保守トロッコの 乗り場を はじめて 調べた（村に いる あいだ。data/village/trolley.ts）。 */
+/** おんJトロッコの 乗り場を はじめて 調べた（村に いる あいだ。data/village/trolley.ts）。 */
 const TROLLEY_SEEN = "trolley_seen";
 
 /**
- * 保守トロッコの 乗り場（data/village/trolley.ts）：行き先を えらぶと、トロッコに 乗って 道なりに 走る
+ * おんJトロッコの 乗り場（data/village/trolley.ts）：行き先を えらぶと、トロッコに 乗って 道なりに 走る
  * （Story.ride）。着いたら 行き先の 名前を 知らせる。
  */
 const trolleyScript =
@@ -358,7 +358,7 @@ export const departTo = async (
 };
 
 /**
- * 広場の 井戸（5段から）。過去ログの底（保守村の 真下）へは ここからだけ 降りる（全体マップには 出さない）。
+ * 広場の 井戸（5段から）。過去ログの底（おんJタウンの 真下）へは ここからだけ 降りる（全体マップには 出さない）。
  * 開くまでは のぞくだけ。
  */
 const wellScript =
@@ -381,7 +381,7 @@ const wellScript =
 /** おみくじを 引いた 帰り（記録の 終わった 時刻。1回の 帰りに 1回）。 */
 const OMIKUJI_KEY = "kiriko-roguelike/omikuji";
 
-/** 保守神社の 賽銭箱（段2 から）。お参りすると おみくじ（地の文だけ。冒険には 効かない）。 */
+/** おんJ神社の 賽銭箱（段2 から）。お参りすると おみくじ（地の文だけ。冒険には 効かない）。 */
 const shrineScript: Script = async (s) => {
 	await s.narrate(VILLAGE_MSG.shrine);
 	if ((await s.choose([...VILLAGE_MSG.shrineMenu], { cancel: 1 })) !== 0)

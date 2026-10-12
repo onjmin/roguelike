@@ -26,7 +26,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 	{
 		value: "village",
 		label: "村",
-		sub: "保守村",
+		sub: "おんJタウン",
 		html:
 			h("歩く・話す") +
 			keys([

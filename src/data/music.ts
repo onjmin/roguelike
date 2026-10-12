@@ -1,7 +1,7 @@
 // 場面ごとの 曲（名前は data/bgm.ts）。階の 曲は data/story.ts の BOARD_LOOKS、ここは それ以外。
 //
 // ■ 村の 曲
-// 保守村の 曲は 村の 育ちで かわる（段は data/town.ts の STAGE_NAMES）。建物の 中も 村の 曲の まま。
+// おんJタウンの 曲は 村の 育ちで かわる（段は data/town.ts の STAGE_NAMES）。建物の 中も 村の 曲の まま。
 // 広場の 蓄音機で 好きな 曲に かえられる（えらんだ 曲は 設定 settings.villageBgm。端末ごと）。
 // かけられるのは 村の 曲と、持ち帰った 板で 聞いた 曲（その 板の 階の 曲。ボス・祭り・持ち帰りの 曲も）。
 
@@ -51,7 +51,7 @@ export const records = (
 	};
 	for (const t of VILLAGE_TIERS)
 		if (stage >= t.from)
-			add(t.bgm, `保守村（${STAGE_NAMES[t.from] ?? ""}の　ころ）`);
+			add(t.bgm, `おんJタウン（${STAGE_NAMES[t.from] ?? ""}の　ころ）`);
 	for (const d of DUNGEON_IDS) {
 		if (!cleared.includes(d)) continue;
 		const look = BOARD_LOOKS[d];

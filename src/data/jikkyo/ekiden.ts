@@ -1,19 +1,19 @@
-// 保守駅伝（保守村駅の 待合の 壁の テレビ。PROGRAMS §1.6 の 正月の 大学駅伝を 架空の 大会に した もの）。
+// おんJ駅伝（おんJタウン駅の 待合の 壁の テレビ。PROGRAMS §1.6 の 正月の 大学駅伝を 架空の 大会に した もの）。
 // 1/2 は 往路、1/3 は 復路の 本番（★4）、ほかの 日は 去年の 復路の 再放送（★2）。2日を 縮めた 形：
 // スタート → 1区（沿道の 旗）→ 給水 → 中継所 → 山（往路は 5区の 山上りと 山の神、復路は 6区の 山下りの VTR）→
 // 繰り上げ → ゴール → 優勝 → 反省会。往路と 復路は 字幕・背景・優勝の 名前が かわる（筋は 同じ）。
 // - 番組の 芯：
-//   - 襷の 繰り上げ（山場の 1語）：地元の 保守大の 襷が 中継所に 届くか。繰り上げの 号砲の 拍で 1語
+//   - 襷の 繰り上げ（山場の 1語）：地元の おんJ大の 襷が 中継所に 届くか。繰り上げの 号砲の 拍で 1語
 //     （届けば「つないだ」、届かなければ「繰り上げ」で 次の 走者は 白い 襷）。届くかは 乱数で、
 //     その 前の 窓で 道の 先を 読む（走者が 見えれば「見えた！」、見えなければ「見えへん」）。
 //   - 名前欄の おみくじ：号砲までは キリコの 名前欄が「繰り上げまで＠0:30」の 時計、号砲の あとは おみくじ
 //     （神エイム＝名無し＠大吉・おしい＝中吉・おくれた＝小吉・見てただけ＝末吉・フライング＝まだ　鳴ってへん）。
-//   - 回で 数える ボケ：スレタイ「【実況】保守駅伝　第{回}回」の 回は 101 から スレごとに 1つ 足す
+//   - 回で 数える ボケ：スレタイ「【実況】おんJ駅伝　第{回}回」の 回は 101 から スレごとに 1つ 足す
 //     （立った スレの 頭の 波に「回　増えすぎ」）。スタートで「実况」の 打ちまちがいと「さんずい　足りんぞ」。
-// - 大学は 架空（板の 語）。選手の 名前は 出さない。1区の 先頭と 優勝は 保守大 以外の 4校から 乱数（ちがう 学校）。
+// - 大学は 架空（板の 語）。選手の 名前は 出さない。1区の 先頭と 優勝は おんJ大 以外の 4校から 乱数（ちがう 学校）。
 //   学校の 名前は かな・漢字 5字まで（候補に 入れても 全角スペースで 区切らずに すむ）。
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない
-//   （保守大を 呼ぶ のは 群衆・字幕だけ）。群衆・題・字幕の「保守」は names の 固有名詞の 中だけ。
+//   （おんJ大を 呼ぶ のは 群衆・字幕だけ）。群衆・題・字幕の「保守」は names の 固有名詞の 中だけ。
 // - けが・転倒・途中棄権は 出さない。繰り上げは「よう　走った」で 送る（人を 笑わない）。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・名前欄・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
 // 絵は ui/jikkyoEkidenTv.ts（場面の 鍵は EKIDEN_SCENES、絵に 出す 文は EKIDEN_ART）。
@@ -60,9 +60,9 @@ export const EKIDEN_UNIS: readonly EkidenUni[] = [
 	{ name: "名無し大", ink: "#8a58c0", sash: "#f0c0f0" },
 ];
 
-/** 地元の 保守大（繰り上げの 山場の 学校。群衆と 字幕だけが 名前を 呼ぶ）。 */
+/** 地元の おんJ大（繰り上げの 山場の 学校。群衆と 字幕だけが 名前を 呼ぶ）。 */
 export const HOSHU_UNI: EkidenUni = {
-	name: "保守大",
+	name: "おんJ大",
 	ink: "#2a9a5a",
 	sash: "#ffd040",
 };
@@ -94,7 +94,7 @@ export type EkidenData = {
 	/** 1区の 先頭・優勝（EKIDEN_UNIS の 番）。 */
 	readonly lead?: number;
 	readonly win?: number;
-	/** 保守大の 襷が 号砲までに 届く。 */
+	/** おんJ大の 襷が 号砲までに 届く。 */
 	readonly arrive?: boolean;
 	/** 号砲の 名目の ms。 */
 	readonly exact?: number;
@@ -104,11 +104,11 @@ export type EkidenData = {
 
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const EKIDEN_ART = {
-	logo: "保守駅伝",
+	logo: "おんJ駅伝",
 	machiai: "待合",
 	soon: "まもなく　スタート",
 	end: "本日の　中継は　おわりました",
-	station: "保守村駅",
+	station: "おんJタウン駅",
 	start: "スタート",
 	goal: "ゴール",
 	kuriage: "繰り上げまで",
@@ -120,13 +120,13 @@ export const EKIDEN_ART = {
 	/** 往路・復路の 優勝の 札。 */
 	yusho: ["往路優勝", "総合優勝"],
 	/** 予告の 札（往路の 日は 復路、復路と 再放送は 来年）。 */
-	preview: ["あすは　復路", "来年も　保守駅伝"],
+	preview: ["あすは　復路", "来年も　おんJ駅伝"],
 } as const;
 
 /** 往路（0）と 復路（1）の 字幕（{u} は 学校）。 */
 const CAP = [
 	{
-		start: "往路　スタート　保守村駅前",
+		start: "往路　スタート　おんJタウン駅前",
 		road: "1区　先頭は　{u}",
 		chukei: "第1中継所",
 		ku: "2区や",
@@ -143,7 +143,7 @@ const CAP = [
 		yama: "6区　山下りを　ふりかえる",
 		kuriage: "第9中継所　繰り上げが　せまる",
 		relay: "第9中継所",
-		goal: "保守村駅前に　ゴール",
+		goal: "おんJタウン駅前に　ゴール",
 	},
 ] as const;
 
@@ -253,7 +253,7 @@ export const EKIDEN_POOLS = {
 		"あと　少し",
 		"頼む",
 		"時計　見ろ",
-		"保守大　いけ！",
+		"おんJ大　いけ！",
 		"地元の　意地や",
 		"祈っとる",
 		"あと　何秒や",
@@ -276,7 +276,7 @@ export const EKIDEN_POOLS = {
 		"つながった",
 		"ようやった",
 		"泣ける",
-		"保守大　ようやった",
+		"おんJ大　ようやった",
 		"ギリギリや",
 		"ええもん　見た",
 		"地元の　意地",
@@ -293,7 +293,7 @@ export const EKIDEN_POOLS = {
 		"また　来年",
 		"胸　張れ",
 		"ええ　走りやった",
-		"保守大　来年や",
+		"おんJ大　来年や",
 		"拍手",
 	],
 	goal: [
@@ -364,10 +364,10 @@ export const EKIDEN_POOLS = {
 
 /** スレの 決まり文句。{kai} は 回（101 から スレごとに 1つ 足す）。 */
 export const EKIDEN_THREAD = {
-	live: "【実況】保守駅伝　第{kai}回",
-	rerun: "【再放送】保守駅伝　第{kai}回",
-	liveHansei: "【実況・反省会】保守駅伝　第{kai}回",
-	rerunHansei: "【再放送・反省会】保守駅伝　第{kai}回",
+	live: "【実況】おんJ駅伝　第{kai}回",
+	rerun: "【再放送】おんJ駅伝　第{kai}回",
+	liveHansei: "【実況・反省会】おんJ駅伝　第{kai}回",
+	rerunHansei: "【再放送・反省会】おんJ駅伝　第{kai}回",
 	get1000: "1000なら　襷　つながる",
 	praise: ">>{n}　神エイム",
 	/** スタートの 打ちまちがい（実況 → 実况）と つっこみ。 */
@@ -521,7 +521,7 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 			caption: `${W}　ごぼう抜き`,
 			data: { phase: "kami", down, win, lead } satisfies EkidenData,
 		},
-		// 繰り上げ：号砲までは 名前欄が 時計、道の 先に 保守大が 見えるか（届くかは 乱数）
+		// 繰り上げ：号砲までは 名前欄が 時計、道の 先に おんJ大が 見えるか（届くかは 乱数）
 		{
 			at: KURIAGE_AT,
 			scene: "chukei",
@@ -557,13 +557,13 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 			bgm: arrive ? "title" : "sad",
 			stall: 1200,
 			caption: arrive
-				? "保守大　襷を　つないだ"
-				: "保守大　白い　襷で　スタート",
+				? "おんJ大　襷を　つないだ"
+				: "おんJ大　白い　襷で　スタート",
 			posts: [
 				{
 					at: 1500,
 					who: "nanashi",
-					text: arrive ? "保守大、間に合った！" : "保守大、繰り上げ……",
+					text: arrive ? "おんJ大、間に合った！" : "おんJ大、繰り上げ……",
 					pin: 2500,
 				},
 			],
@@ -705,7 +705,7 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 					[B(`${W}　来た`), K("山の神や"), X(`${L}　速い`)],
 				],
 			},
-			// 繰り上げの 前：道の 先に 保守大が 見えるか（見えれば 届く）
+			// 繰り上げの 前：道の 先に おんJ大が 見えるか（見えれば 届く）
 			{ at: 78500, boo: "booPre", sets: seen },
 			{ at: 96000, boo: "booLate", sets: after },
 			{
@@ -761,7 +761,7 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 	};
 };
 
-/** 保守駅伝の 台本。 */
+/** おんJ駅伝の 台本。 */
 export const EKIDEN: JkScript = {
 	id: "ekiden",
 	venue: "station",
@@ -808,7 +808,7 @@ export const EKIDEN: JkScript = {
 	timeline: ekidenTimeline,
 };
 
-// ───────────────── 会場（保守村駅の 待合） ─────────────────
+// ───────────────── 会場（おんJタウン駅の 待合） ─────────────────
 
 const isDay = (m: number, d: number) => (t: Today) => t.m === m && t.d === d;
 /** 年の 暮れ（12/26〜1/1）：駅員が 駅伝の 日を 知らせる。 */
@@ -818,39 +818,39 @@ const isEve = (t: Today): boolean =>
 const TV_LINES: DayLines = [
 	{
 		when: isDay(1, 2),
-		lines: ["待合の　テレビ。\n保守駅伝の　往路を　中継している。"],
+		lines: ["待合の　テレビ。\nおんJ駅伝の　往路を　中継している。"],
 	},
 	{
 		when: isDay(1, 3),
-		lines: ["待合の　テレビ。\n保守駅伝の　復路を　中継している。"],
+		lines: ["待合の　テレビ。\nおんJ駅伝の　復路を　中継している。"],
 	},
 	{
 		when: () => true,
-		lines: ["待合の　テレビ。\n保守駅伝の　再放送を　流している。"],
+		lines: ["待合の　テレビ。\nおんJ駅伝の　再放送を　流している。"],
 	},
 ];
 
 const STAFF: DayLines = [
 	{
 		when: isDay(1, 2),
-		lines: ["本日は　保守駅伝の　往路です。\n……駅前は　大変　混み合います"],
+		lines: ["本日は　おんJ駅伝の　往路です。\n……駅前は　大変　混み合います"],
 	},
 	{
 		when: isDay(1, 3),
-		lines: ["本日は　保守駅伝の　復路です。\n……ゴールは　駅前で　ございます"],
+		lines: ["本日は　おんJ駅伝の　復路です。\n……ゴールは　駅前で　ございます"],
 	},
 	{
 		when: isEve,
-		lines: ["1月2日と　3日は　保守駅伝です。\n……駅前を　選手が　走ります"],
+		lines: ["1月2日と　3日は　おんJ駅伝です。\n……駅前を　選手が　走ります"],
 	},
 ];
 
-/** 保守駅伝。 */
+/** おんJ駅伝。 */
 export const EKIDEN_PACK: JkPack = {
 	script: EKIDEN,
 	venue: "station",
 	from: 7,
-	menu: "保守駅伝",
+	menu: "おんJ駅伝",
 	slot: (t) =>
 		t.m === 1 && (t.d === 2 || t.d === 3)
 			? { live: true, day: t.d - 1 }
@@ -878,7 +878,7 @@ export const EKIDEN_PACK: JkPack = {
 		...EKIDEN_UNIS.map((u) => u.name),
 		HOSHU_UNI.name,
 	],
-	names: ["保守駅伝", "保守村駅", "保守大"],
+	names: ["おんJ駅伝", "おんJタウン駅", "おんJ大"],
 	deny: [
 		"箱根",
 		"芦ノ湖",

@@ -1,4 +1,4 @@
-// 保守リーグ（麻雀）の TV（ゲームセンター「連コ」の 壁の 大画面。ui/jikkyoWatch.ts の 板の 上の キャンバス）。
+// おんJリーグ（麻雀）の TV（ゲームセンター「連コ」の 壁の 大画面。ui/jikkyoWatch.ts の 板の 上の キャンバス）。
 // 形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標）。枠は bigFrame（大画面と 客の 頭）。
 // - 場面（data/jikkyo/mahjong.ts の MAHJONG_SCENES）：
 //   card（リーグの 札と 牌の 列）・intro（4人の 札が 右から 入る）・

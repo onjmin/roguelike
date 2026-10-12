@@ -475,10 +475,10 @@ export const NG_NAMES = [
 export const HOSHU_NAMES = [
 	"金曜ロード保守",
 	"金保守",
-	"保守劇場",
-	"保守村",
-	"保守町",
-	"保守市",
+	"おんJ劇場",
+	"おんJタウン",
+	"おんJ町",
+	"おんJ市",
 ];
 
 test(

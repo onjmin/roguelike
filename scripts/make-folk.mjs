@@ -1,4 +1,4 @@
-// 保守村の 小さな 名物（folk）の 絵を 書き出す（node scripts/make-folk.mjs。ネットに つながる ときに 1回）。
+// おんJタウンの 小さな 名物（folk）の 絵を 書き出す（node scripts/make-folk.mjs。ネットに つながる ときに 1回）。
 //
 // - public/sprites/folk.png（96x16。16x16 が 6マス。data/village/folk.ts の FOLK_ART）
 //     0 墓          RPGEN「墓」07DETe3（216: 夜ノ森の館 #70。ダンジョンの 墓の しるしと 同じ 墓石）。

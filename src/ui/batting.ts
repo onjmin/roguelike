@@ -50,7 +50,7 @@ export type BatOpt = { title?: string; pitcher?: string; who?: BatWho };
 export type BatResult = "hr" | "hit" | "walk" | "k" | "out" | "quit";
 
 export type PitcherDef = {
-	/** 夜の 野球ch（関所）か 昼の 保守村（グラウンド）か。 */
+	/** 夜の 野球ch（関所）か 昼の おんJタウン（グラウンド）か。 */
 	night: boolean;
 	/** セットの 長さ（ms。この あいだで ばらつく）。 */
 	setMs: readonly [number, number];

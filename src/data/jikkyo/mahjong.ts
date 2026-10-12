@@ -1,14 +1,14 @@
-// 保守リーグ（麻雀の プロリーグの 中継。ゲームセンター「連コ」の 壁の 大画面。PROGRAMS §1.6「役満・オーラス、長い partスレ」）。
+// おんJリーグ（麻雀の プロリーグの 中継。ゲームセンター「連コ」の 壁の 大画面。PROGRAMS §1.6「役満・オーラス、長い partスレ」）。
 // 4チームの 4人が 1半荘を 打つ。東1局の 先制（リーチか ダマか）→ リーチ合戦 → 北家が 押して 放銃（ロン　親満）→ 南場で
 // ラス目に 沈む → オーラスの トップ争い（2着目の リーチに トップ目が 押すか オリるか）→ ラス目の 親が 四暗刻 単騎を
 // テンパイし、ほかの 3人の 打牌（合図 3回）の あとの 4拍目に「ツモ」（Cue）。16000オールで ラスから トップへ → 最終の 着順と
 // 勝利者インタビュー。
-// - 長い part スレ：スレタイは「【実況】保守リーグ　part{p}」。p は 1月1日から 数えた 本番の 回で 高い 数から はじまる
+// - 長い part スレ：スレタイは「【実況】おんJリーグ　part{p}」。p は 1月1日から 数えた 本番の 回で 高い 数から はじまる
 //   （束の slot が 回を day に 入れる）。オーラスの あいだに 立つ 次スレは【オーラス】つき。
 // - 番組の 動詞：卓を 見て 打ち手の 選び（リーチ／ダマ・押す／オリる）を 言いあてる（乱数で 分かれる）・ツモの 拍で 1語。
 // - お金・賭けの 話は 出さない（点数の 話だけ）。チーム・選手は 架空（板の 語から）。実在の リーグ・チーム・団体の 名前は deny で 守る。
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
-//   群衆・題・字幕・会場の 文の「保守」は 固有名詞（保守リーグ・チーム保守）の 中だけ。
+//   群衆・題・字幕・会場の 文の「保守」は 固有名詞（おんJリーグ・チームおんJ）の 中だけ。
 // - 日：月曜と 木曜は 本番（★4）、ほかの 日は 再放送（★2。群衆に「再放送　乙」が まざる）。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
 // TV は ui/jikkyoMahjongTv.ts（場面の 鍵は MAHJONG_SCENES、絵に 出す 文は MAHJONG_ART）。
@@ -99,12 +99,12 @@ export const MAHJONG_PLAYERS = [
 	{ name: "age山", team: "age烈火", ink: "#e0483a" },
 	{ name: "sage川", team: "sageドルフィンズ", ink: "#3a86e0" },
 	{ name: "名無野", team: "名無しサクラ", ink: "#e888b8" },
-	{ name: "埋田", team: "チーム保守", ink: "#4cc070" },
+	{ name: "埋田", team: "チームおんJ", ink: "#4cc070" },
 ] as const;
 
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const MAHJONG_ART = {
-	logo: "保守リーグ",
+	logo: "おんJリーグ",
 	soon: "まもなく　対局　開始",
 	next: "次の　対局も　お楽しみに",
 	end: "本日の　中継は　おわりました",
@@ -329,12 +329,12 @@ export const MAHJONG_POOLS = {
 
 /** スレの 決まり文句（{p} は part の 数）。 */
 export const MAHJONG_THREAD = {
-	live: "【実況】保守リーグ　part{p}",
-	rerun: "【再放送】保守リーグ　part{p}",
-	liveOoras: "【実況】保守リーグ　part{p}【オーラス】",
-	rerunOoras: "【再放送】保守リーグ　part{p}【オーラス】",
-	liveHansei: "【反省会】保守リーグ　part{p}",
-	rerunHansei: "【再放送・反省会】保守リーグ　part{p}",
+	live: "【実況】おんJリーグ　part{p}",
+	rerun: "【再放送】おんJリーグ　part{p}",
+	liveOoras: "【実況】おんJリーグ　part{p}【オーラス】",
+	rerunOoras: "【再放送】おんJリーグ　part{p}【オーラス】",
+	liveHansei: "【反省会】おんJリーグ　part{p}",
+	rerunHansei: "【再放送・反省会】おんJリーグ　part{p}",
 	get1000: "1000なら　次も　役満",
 	praise: ">>{n}　神ツモ",
 	crossGap: "次スレで　ツモ",
@@ -763,7 +763,7 @@ const mahjongTimeline: JkScript["timeline"] = (rand, slot) => {
 	};
 };
 
-/** 保守リーグ（台本）。 */
+/** おんJリーグ（台本）。 */
 export const MAHJONG: JkScript = {
 	id: "mahjong",
 	venue: "arcade",
@@ -815,21 +815,21 @@ export const MAHJONG: JkScript = {
 
 const liveLine = (lines: readonly string[]) => [{ when: isLive, lines }];
 
-/** 保守リーグ（麻雀）。 */
+/** おんJリーグ（麻雀）。 */
 export const MAHJONG_PACK: JkPack = {
 	script: MAHJONG,
 	venue: "arcade",
 	from: 6,
-	menu: "保守リーグ",
+	menu: "おんJリーグ",
 	slot: (t) => ({ live: isLive(t), day: mahjongRound(t) }),
 	scenes: MAHJONG_SCENES,
 	// 壁の 大画面は 新作発表会（水曜）と 分けあう：本番の 日（月曜・木曜）だけ 書く
 	venueLines: {
-		tv: liveLine(["壁の　大画面。\n今夜は　保守リーグの　中継。"]),
+		tv: liveLine(["壁の　大画面。\n今夜は　おんJリーグの　中継。"]),
 	},
 	staffLines: {
 		arcade_a: liveLine([
-			"今夜は　保守リーグの　中継や。\n……格ゲーは　そのあとや",
+			"今夜は　おんJリーグの　中継や。\n……格ゲーは　そのあとや",
 		]),
 		arcade_b: liveLine(["大画面で　麻雀の　中継や。\n……役満、出えへんかなあ"]),
 	},
@@ -869,5 +869,5 @@ export const MAHJONG_PACK: JkPack = {
 		"雀魂",
 		"天鳳",
 	],
-	names: ["保守リーグ", "チーム保守"],
+	names: ["おんJリーグ", "チームおんJ"],
 };

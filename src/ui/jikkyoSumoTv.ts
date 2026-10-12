@@ -1,4 +1,4 @@
-// 大相撲『保守場所』の TV（銭湯「ゆ」の 脱衣所の テレビ。ui/jikkyoWatch.ts の 板の 上の キャンバス）。
+// 大相撲『おんJ場所』の TV（銭湯「ゆ」の 脱衣所の テレビ。ui/jikkyoWatch.ts の 板の 上の キャンバス）。
 // 形は ui/jikkyoTvKit.ts（480x270 の 2倍の 下地に 240x135 の 座標）。絵は ぜんぶ 塗り（読む 絵は ない）。
 // - 枠：部屋の テレビ（crtFrame）の 両わきを 銭湯の タイルの 壁に、台の 上に コーヒー牛乳。
 // - 場面（data/jikkyo/sumo.ts の SUMO_SCENES）：札・番組の 題（番付の 紙）・土俵（仕切り・取組・勝ち名乗り・懸賞旗・
@@ -616,7 +616,7 @@ const bathFrame = (g: G, c: C) => {
 
 // ───────────────── TV ─────────────────
 
-/** 大相撲『保守場所』の TV（待ったの 時刻は 1台ごと）。 */
+/** 大相撲『おんJ場所』の TV（待ったの 時刻は 1台ごと）。 */
 export const sumoTv: KitTv = Object.assign(
 	(canvas: HTMLCanvasElement, opt: { reduced: boolean; live: boolean }) => {
 		const st = { matta: -1 };

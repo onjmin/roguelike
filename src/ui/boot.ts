@@ -1,4 +1,4 @@
-// 起動の札：村（保守村）の上に 重ねる 小さな タイトル。ロゴ・ひとこと・村へ／冒険に　もどる。
+// 起動の札：村（おんJタウン）の上に 重ねる 小さな タイトル。ロゴ・ひとこと・村へ／冒険に　もどる。
 // トルネコ1の「冒険の書」の 画面に あたる（村の 絵は 後ろで 動いている）。
 // 中断して もどったときも これが 出る（冒険に　もどる が 選ばれた状態で）。
 // ぜんぶ 消して はじめから やりなおすのは、村の せってい の「セーブデータを　消す」。
@@ -79,7 +79,7 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 						class: `title-btn${c === cur ? " cur" : ""}`,
 						html: `<span class="title-btn-no">${i + 1}:</span>${
 							c === "start"
-								? "村へ<small>保守村を　歩く</small>"
+								? "村へ<small>おんJタウンを　歩く</small>"
 								: `冒険に　もどる<small>${esc(runSaveLabel(saved))}</small>`
 						}`,
 					});

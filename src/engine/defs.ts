@@ -1,4 +1,4 @@
-// 歩ける村（保守村）のデータ（マップ・イベント）と、イベントのスクリプトから使う命令（Story）の型。
+// 歩ける村（おんJタウン）のデータ（マップ・イベント）と、イベントのスクリプトから使う命令（Story）の型。
 // rpg の engine/defs.ts から、村で使う物だけを残した（戦闘・仲間・なかよし度・セーブは無い）。
 // 村のデータは src/data/village/、スクリプトは src/ui/villageEvents.ts に書く（おんJ 本館の 中は ui/hallEvents.ts）。
 
@@ -232,7 +232,7 @@ export type Story = {
 	 */
 	warp(map: string, x: number, y: number, dir?: Dir): Promise<void>;
 	/**
-	 * 保守トロッコ（data/village/trolley.ts）：キリコが トロッコに 乗って (x, y) まで 道なりに 速く 走る
+	 * おんJトロッコ（data/village/trolley.ts）：キリコが トロッコに 乗って (x, y) まで 道なりに 速く 走る
 	 * （人は すりぬけ、扉・口は 踏まない）。カメラは ついていく。道が なければ 暗転して 置きなおす。着いたら 解決する。
 	 */
 	ride(x: number, y: number): Promise<void>;

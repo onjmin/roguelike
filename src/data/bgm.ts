@@ -95,7 +95,7 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 // post/1318（AI作曲スレ）の 名無し2rt さんの 4曲（2026-10。title・town などと 同じ 人）。
-// 保守村（段5 から。data/music.ts）＝kumori、電池板＝speder2（もとは deq_laundry）、おんたこ＝fukyowa（もとは deq_volcano）、
+// おんJタウン（段5 から。data/music.ts）＝kumori、電池板＝speder2（もとは deq_laundry）、おんたこ＝fukyowa（もとは deq_volcano）、
 // お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
 // 離島板＝island（もとは deq_sea。2026-10-05 の 5曲目。dtm 2.1.32 の 音色 ep_celesta を 使うので dtm を 上げた）
 import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音

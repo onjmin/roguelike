@@ -219,7 +219,7 @@ export const COMMA = {
 	},
 } as const;
 
-// ── !sk 習字（保守道場の 文机）
+// ── !sk 習字（おんJ道場の 文机）
 export const SK = {
 	menu: ["書く", "やめる"],
 	last: "前に　書いた　半紙：\n「{text}」",

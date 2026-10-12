@@ -170,7 +170,7 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("shallow"),
 		title: "パン板",
-		text: "人が　散って、沈みかけた　保守村の　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　スレを　1000まで。",
+		text: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　スレを　1000まで。",
 	},
 	{
 		done: (c) => c.includes("main"),

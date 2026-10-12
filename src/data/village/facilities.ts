@@ -592,7 +592,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				],
 				plant: ["ヤシの　鉢植え。\n葉の　先が　すこし　こげている。"],
 			},
-			// 壁の テレビで 夏の 保守園（高校野球）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、クーラーボックスの スイカで スイカ割り（ui/arcade.ts）
+			// 壁の テレビで 夏の おんJ園（高校野球）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、クーラーボックスの スイカで スイカ割り（ui/arcade.ts）
 			plays: { tv: "jikkyo", suika: "arcade" },
 			people: [
 				{
@@ -714,7 +714,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				tea: ["お茶の　台。\n急須の　お茶が　すっかり　ぬるい。"],
 				othello: ["リバーシ盤。\n「リバーシの　時間です」と　札が　ある。"],
 			},
-			// 壁の テレビで 保守名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
+			// 壁の テレビで おんJ名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
 			// リバーシ盤で 常連と 対局（スレ「オセロの時間です」の 盤の 遊び。ui/netaOthello.ts）
 			plays: { tv: "jikkyo", othello: "othello" },
 			people: [
@@ -790,7 +790,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			{
 				id: "bench",
 				at: [31, 9],
-				lines: ["ベンチ。\n「保守村　やきう部」と　彫ってある。"],
+				lines: ["ベンチ。\n「おんJタウン　やきう部」と　彫ってある。"],
 			},
 			{
 				id: "net",
@@ -822,7 +822,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 交番（街。新市街の 大通りの 北。都市で 警察署に 建てかえ）
 	{
 		id: "koban",
-		name: "保守村　交番",
+		name: "おんJ交番",
 		from: 4,
 		until: 7,
 		at: [40, 15],
@@ -1109,7 +1109,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			lines: {
 				fridge: [
 					"冷蔵ケース。\nラムネ・麦茶・エナドリが　ならぶ。",
-					"いちばん　下の　段に「保守水」。\n……ラベルが　手書きだ。",
+					"いちばん　下の　段に「おんJ水」。\n……ラベルが　手書きだ。",
 				],
 				clock: ["時計。\n……5分　進めてある。"],
 				notice: ["はり紙。\n「24時間　営業。保守も　24時間」"],
@@ -1162,7 +1162,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 診療所（街。大通りの 北の まんなか。都市で 総合病院に 建てかえ）
 	{
 		id: "clinic",
-		name: "保守村　診療所",
+		name: "おんJ診療所",
 		from: 5,
 		until: 7,
 		at: [55, 15],
@@ -1268,7 +1268,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 道場（街。南の 通りの まんなか）
 	{
 		id: "dojo",
-		name: "保守道場",
+		name: "おんJ道場",
 		from: 5,
 		at: [53, 26],
 		// 和の 大屋根・心技体の 額・暗い 入口
@@ -1299,7 +1299,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				W: [art("jpWood", 1)],
 			},
 		},
-		door: "保守道場。\n「押忍！」と　声が　ひびく。",
+		door: "おんJ道場。\n「押忍！」と　声が　ひびく。",
 		doorSe: "slideDoor",
 		// 中：板の 間。奥に 額「保守」と 横断幕「心技体」、竹刀掛け・木刀掛け、すみに 太鼓と 水の 樽。格子の 窓
 		room: {
@@ -1941,7 +1941,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				plant: ["観葉植物。\n……鉢に　メダルが　1枚　埋まっている。"],
 				comma: ["コンマの　台。画面の　時計が、\nミリ秒まで　回っている。"],
 			},
-			// 壁の 大画面で 新作発表会・保守リーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
+			// 壁の 大画面で 新作発表会・おんJリーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
 			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/netaComma.ts）、
 			// 筐体 7台と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade.ts）
 			plays: {
@@ -2567,7 +2567,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// 木造 2階建ての アパート（板壁・外の 鉄の 階段・洗濯物）
 	{
 		id: "corpo",
-		name: "コーポ「ほしゅ荘」",
+		name: "コーポ「おんJ荘」",
 		from: 5,
 		at: [80, 31],
 		look: {
@@ -2584,14 +2584,14 @@ const BASE_FACILITIES: readonly Facility[] = [
 				D: [base(1, 56), base(7, 55, 1, 2)],
 			},
 		},
-		door: "コーポ「ほしゅ荘」。\n階段が　ぎしっと　鳴った。",
+		door: "コーポ「おんJ荘」。\n階段が　ぎしっと　鳴った。",
 		// 中：玄関・廊下・各部屋（data/village/housing.ts）
 		room: CORPO_ROOM,
 	},
 	// 白い タイルの マンション（平らな 屋根・ベランダの 窓・植えこみ・自動ドア）
 	{
 		id: "mansion",
-		name: "マンション「メゾン・ド・保守」",
+		name: "マンション「メゾン・ド・おんJ」",
 		from: 6,
 		at: [40, 31],
 		look: {
@@ -2611,16 +2611,16 @@ const BASE_FACILITIES: readonly Facility[] = [
 				E: [art("wallTex", 2), art("autoDoor", 1, 1)],
 			},
 		},
-		door: "マンション「メゾン・ド・保守」。\n郵便受けに　チラシが　はさまっている。",
+		door: "マンション「メゾン・ド・おんJ」。\n郵便受けに　チラシが　はさまっている。",
 		doorSe: "autoDoor",
 		// 中：玄関・廊下・各部屋（data/village/housing.ts）
 		room: MANSION_ROOM,
 	},
-	// 分譲住宅「保守ヶ丘」＝キリコの 家（住宅街。35年ローンで 買う：演出だけ。中は 家具と 模様替え。
+	// 分譲住宅「おんJヶ丘」＝キリコの 家（住宅街。35年ローンで 買う：演出だけ。中は 家具と 模様替え。
 	//    data/village/myhome.ts・ui/myhome.ts。部屋の 形は 保存から 組みなおす。ここの room は 何も 置かない 形）
 	{
 		id: "myhome",
-		name: "分譲住宅「保守ヶ丘」",
+		name: "分譲住宅「おんJヶ丘」",
 		from: MYHOME_FROM,
 		at: [53, 31],
 		look: {
@@ -2652,7 +2652,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// 灰色の 団地（板の 屋上・並んだ 窓・郵便受け・自転車）
 	{
 		id: "danchi",
-		name: "保守ヶ丘団地",
+		name: "おんJヶ丘団地",
 		from: 6,
 		at: [70, 31],
 		look: {
@@ -2673,7 +2673,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				D: [art("gray", 1, 1), base(5, 507, 1, 2)],
 			},
 		},
-		door: "保守ヶ丘団地　3号棟。\n階段に、夕飯の　におい。",
+		door: "おんJヶ丘団地　3号棟。\n階段に、夕飯の　におい。",
 		doorSe: "doorSteel",
 		// 中：玄関・廊下・各部屋（data/village/housing.ts）
 		room: DANCHI_ROOM,
@@ -2681,7 +2681,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// タワーマンション（都市。ガラスの 壁が 屋上まで。玄関は オートロックの 風除室：住人の ほかは ロビーへ 入れない）
 	{
 		id: "tower",
-		name: "ザ・保守タワー　レジデンス",
+		name: "ザ・おんJタワー　レジデンス",
 		from: 7,
 		at: [56, 30],
 		look: {
@@ -2723,7 +2723,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				id: "stop",
 				at: [31, 20],
 				lines: [
-					"バス停「保守村　広場前」。\n全体マップの　どの　板へも　行ける。",
+					"バス停「おんJタウン　広場前」。\n全体マップの　どの　板へも　行ける。",
 				],
 				play: "bus",
 			},
@@ -2733,7 +2733,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	//    段5 までの 畑は data/village/map.ts の farmRows）
 	{
 		id: "garden",
-		name: "保守村　市民農園",
+		name: "おんJ市民農園",
 		from: 6,
 		until: 7,
 		at: [31, 12],
@@ -2763,7 +2763,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				id: "sign",
 				at: [34, 18],
 				lines: [
-					"立て札「保守村　市民農園」。\n畑を　区画に　分けて、住人に　貸している。",
+					"立て札「おんJ市民農園」。\n畑を　区画に　分けて、住人に　貸している。",
 					"区画の　番号は　レス番。\n……>>1から　順に　埋まっている。",
 				],
 			},
@@ -2785,7 +2785,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 都市（段7）：交番 → 警察署・診療所 → 総合病院・消防団 → 消防署、家 → 裁判所・映画館・劇場・カジノ
 	{
 		id: "police",
-		name: "保守警察署",
+		name: "おんJ警察署",
 		from: 7,
 		at: [40, 14],
 		// 3階建ての 白い ビル・青い 窓・赤い 灯り・鉄の 両開き（どちらからも 入れる）・自転車・給水タンク
@@ -2813,7 +2813,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				u: [art("gray", 2, 1), art("win108", 2)],
 			},
 		},
-		door: "保守警察署。\n電話の　音が　鳴りやまない。",
+		door: "おんJ警察署。\n電話の　音が　鳴りやまない。",
 		doorSe: "doorSteel",
 		// 中：灰色の タイルと 白い 壁。奥に 手配書・事件の 板・時計・取調室の 扉、書類の 棚、
 		// 机 2つ（パソコン・電話）、手前を 横切る 台（左が 受付＝台の うしろに 警察官、右が 落とし物の 窓口）、
@@ -2908,7 +2908,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	},
 	{
 		id: "hospital",
-		name: "保守村　総合病院",
+		name: "おんJ総合病院",
 		from: 7,
 		at: [53, 14],
 		// 横に 長い 白い ビル・赤十字・自動ドア（2枚とも 開く）・その 左上の 壁に 非常口の 札・植えこみ・
@@ -3034,7 +3034,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	},
 	{
 		id: "firestation",
-		name: "保守消防署",
+		name: "おんJ消防署",
 		from: 7,
 		at: [70, 14],
 		// 白い 壁・赤い シャッターの 車庫 2つ・赤い 灯り・消火器
@@ -3060,7 +3060,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				D: [art("white", 1, 2), base(5, 507, 1, 2)],
 			},
 		},
-		door: "保守消防署。\n赤い　車が、出動を　待っている。",
+		door: "おんJ消防署。\n赤い　車が、出動を　待っている。",
 		doorSe: "doorSteel",
 		// 中：レンガの 壁と コンクリートの 床。奥に 警報の ベル・当番表・車庫の シャッター（消防車は 向こう）、
 		// 防火服の ロッカー、すべり棒、待機の ソファ、台所、入口の そばに 消火器
@@ -3135,7 +3135,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	},
 	{
 		id: "court",
-		name: "保守地方裁判所",
+		name: "おんJ地方裁判所",
 		from: 7,
 		at: [53, 3],
 		// 灰色の 石・白い 柱 4本・アーチの 窓・鉄の 両開き（どちらからも 入れる）
@@ -3162,7 +3162,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				D: [art("wallTex", 2), base(3, 92, 1, 2)],
 			},
 		},
-		door: "保守地方裁判所。\nしんと　静まりかえっている。",
+		door: "おんJ地方裁判所。\nしんと　静まりかえっている。",
 		doorSe: "doorSteel",
 		// 中：木の 壁と 濃い 板の 床。奥に 額、裁判官の 席（台の うしろに 裁判官）、左右に 検察と 弁護の 机、
 		// まんなかに 証言台、木の 柵の 手前は 傍聴席（まんなかに 赤い じゅうたんの 通路）
@@ -3355,7 +3355,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				wagon: ["黄色い　ワゴン。\nうしろの　席に　バットが　3本。"],
 				tank: ["ポリタンク。\n「ガソリン　入れるな」の　札。"],
 			},
-			// 事務所の テレビで 保守グランプリ（F1）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			// 事務所の テレビで おんJグランプリ（F1）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
 			plays: { tv: "jikkyo" },
 			people: [
 				{
@@ -3453,7 +3453,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	},
 	{
 		id: "theater",
-		name: "保守劇場",
+		name: "おんJ劇場",
 		from: 7,
 		at: [58, 36],
 		// 赤い 軒・赤レンガ・柱・赤い 幕の 大きな 窓
@@ -3477,7 +3477,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				D: [art("wallTex"), art("door108", 1)],
 			},
 		},
-		door: "保守劇場。\n開演の　ブザーが　鳴っている。",
+		door: "おんJ劇場。\n開演の　ブザーが　鳴っている。",
 		// 中：レンガの 壁と 濃い 板の 床。奥に 赤い 舞台（上に 赤い 幕の かざり、うしろに 金の ふすまの 背景、
 		// 両わきに 赤い 幕）、客席 1列、すみに ピアノ
 		room: {
@@ -3639,7 +3639,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				cashier: ["チップの　窓口。\n「本日の　両替は　終了しました」"],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
-			// 奥の 壁の 大画面で 保守記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
+			// 奥の 壁の 大画面で おんJ記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
 			// スロット・カードの 台・ルーレットは 遊びの チップで 遊ぶ（お金は 賭けない。ui/arcade.ts）
 			plays: {
 				tv: "jikkyo",
@@ -3662,7 +3662,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 駅（都市。線路の 東。改札から 電車で どの 板へも 出かけられる：出口を 遠く しない）
 	{
 		id: "station",
-		name: "保守村駅",
+		name: "おんJタウン駅",
 		from: 7,
 		at: [80, 14],
 		// 時計・発車の 板・右上の 壁に 非常口の 札・青い ひさし・ガラスの 正面に 自動ドア（2枚とも 開く）
@@ -3688,7 +3688,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				D: [art("gray", 1, 1), art("autoDoor", 1, 1)],
 			},
 		},
-		door: "保守村駅。\n発車ベルが、遠くで　鳴っている。",
+		door: "おんJタウン駅。\n発車ベルが、遠くで　鳴っている。",
 		doorSe: "autoDoor",
 		// 中：白い 石の 壁と 灰色の タイル。奥が ホーム（発車標・時計・路線図・ベンチ・ゴミ箱、黄色い 点字ブロック）、
 		// まんなかに 改札 4台と 柵、右に 駅員室の 窓口（台の うしろに 駅員）、手前が コンコース
@@ -3771,7 +3771,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				map: ["路線図。\n島から　島へ、線が　のびている。"],
 				gate: ["改札。\n電車で、どの　板へも　出かけられる。"],
 				window: ["駅員室の　窓口。\n「忘れ物は　こちら」"],
-				machine: ["券売機。\n「保守村　→　全体マップの　どこでも」"],
+				machine: ["券売機。\n「おんJタウン　→　全体マップの　どこでも」"],
 				locker: ["コインロッカー。\n1つだけ、鍵が　ささったまま。"],
 				kiosk: ["売店。\nスポーツ新聞の　見出しは「やきう」。"],
 				bins: ["分別の　ゴミ箱。\n「新聞・雑誌」の　口が　あふれている。"],
@@ -3796,7 +3796,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 港（都市。東の 海を 埋め立てた 岸壁：コンテナ・クレーン・港湾事務所・工場。岸の 上に 発電所）
 	{
 		id: "port",
-		name: "保守港",
+		name: "おんJ港",
 		from: 7,
 		at: [44, 43],
 		look: {
@@ -3818,7 +3818,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			{
 				id: "container",
 				at: [53, 45],
-				lines: ["コンテナ。\n「おーぷん　→　保守村」と　書いてある。"],
+				lines: ["コンテナ。\n「おーぷん　→　おんJタウン」の　文字。"],
 			},
 			{
 				id: "crane",
@@ -3827,10 +3827,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 		],
 	},
-	// ── 保守テレビ（都市。新市街の 北の 中庭。扉は 下の 芝 y=13。電光の 看板・自動ドア。中は スタジオ：ニュースの 机・カメラ・副調整室の 卓）
+	// ── おんJテレビ（都市。新市街の 北の 中庭。扉は 下の 芝 y=13。電光の 看板・自動ドア。中は スタジオ：ニュースの 机・カメラ・副調整室の 卓）
 	{
 		id: "tvstudio",
-		name: "保守テレビ　第1スタジオ",
+		name: "おんJテレビ　第1スタジオ",
 		from: 7,
 		at: [53, 9],
 		look: {
@@ -3853,7 +3853,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				E: [art("wallTex", 2), art("autoDoor", 1, 1)],
 			},
 		},
-		door: "保守テレビ。\n受付で　見学の　札を　もらった。",
+		door: "おんJテレビ。\n受付で　見学の　札を　もらった。",
 		doorSe: "autoDoor",
 		// 中：奥の 壁に ON AIR の ランプと 台本、ニュースの 机（台ごしに アナウンサー）と モニター、
 		// カメラ 2台・照明、右に 副調整室の 卓（ディレクター）、手前に 機材の 箱と 控えの ソファ
@@ -3904,10 +3904,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 			lines: {
 				onair: ["「ON AIR」の　ランプ。\n……いまは　消えている。"],
-				script: ["台本。\n「保守ニュース　第1000回」"],
+				script: ["台本。\n「おんJニュース　第1000回」"],
 				light: ["照明。\n……まぶしい。"],
 				monitor: ["モニター。\n村の　広場が　映っている。"],
-				camera: ["テレビカメラ。\n「保守テレビ」の　ロゴ。"],
+				camera: ["テレビカメラ。\n「おんJテレビ」の　ロゴ。"],
 				console: [
 					"副調整室の　卓。\nボタンが　びっしり。",
 					"すみに　付せん。\n「実況スレの　勢い　見ながら」",
@@ -3923,7 +3923,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 					dir: "down",
 					name: "アナウンサー",
 					lines: [
-						"こんばんは、保守ニュースです。\n……あ、いまは　リハーサルです",
+						"こんばんは、おんJニュースです。\n……あ、いまは　リハーサルです",
 						"本日の　トップは\n「キリコさん、また　帰還」",
 					],
 				},
@@ -3946,7 +3946,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 					name: "ディレクター",
 					lines: [
 						"いちばんの　視聴者は\nおんJの　実況民や",
-						"次の　特番は　保守村　特集や。\n……あんたも　出てみる？",
+						"次の　特番は　おんJタウン　特集や。\n……あんたも　出てみる？",
 					],
 				},
 			],
@@ -4030,9 +4030,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 			lines: {
 				window: ["窓。\nコンテナ船が　ゆっくり　入ってくる。"],
 				chart: ["入港予定の　表。\n「乗っ取り屋の　船：入港　禁止」"],
-				buoy: ["浮き輪。\n「保守港」と　書いてある。"],
+				buoy: ["浮き輪。\n「おんJ港」と　書いてある。"],
 				cabinet: ["書類の　棚。\n積み荷の　台帳が　ぎっしり。"],
-				radio: ["無線機。\n「こちら　保守港。どうぞ」"],
+				radio: ["無線機。\n「こちら　おんJ港。どうぞ」"],
 				desk: ["机。\n積み荷の　帳面が　山積み。"],
 				boxes: ["段ボール。\n「天地無用」「ネタ　在中」。"],
 				plant: ["観葉植物。\n……塩で　葉が　すこし　白い。"],
@@ -4218,10 +4218,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 			],
 		},
 	},
-	// ── 保守中央公園（都市。市民農園の あと。噴水を 道が 一周し、北に ベンチ、西に 砂場、南の 入口に 立て札と きまりの 板）
+	// ── おんJ中央公園（都市。市民農園の あと。噴水を 道が 一周し、北に ベンチ、西に 砂場、南の 入口に 立て札と きまりの 板）
 	{
 		id: "park",
-		name: "保守中央公園",
+		name: "おんJ中央公園",
 		from: 7,
 		at: [31, 12],
 		look: {
@@ -4259,7 +4259,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			{
 				id: "sign",
 				at: [34, 18],
-				lines: ["立て札「保守中央公園」。\n畑の　あとに　できた　公園。"],
+				lines: ["立て札「おんJ中央公園」。\n畑の　あとに　できた　公園。"],
 			},
 			{
 				id: "rules",
@@ -4366,7 +4366,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	// ── 擁壁の 上の ビル（都市。崖の 上の 森を 開いた 所。入れない）
 	{
 		id: "hills",
-		name: "保守ヒルズ",
+		name: "おんJヒルズ",
 		from: 7,
 		at: [9, 1],
 		// ガラスの 塔（入れない）
@@ -4422,7 +4422,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	},
 	// ── 飲食店（data/village/eateries.ts。たこ焼き屋台・立ち食いそば・牛丼・居酒屋・寿司・中華）
 	...EATERIES,
-	// ── 町の 役所（data/village/civicHalls.ts。保守町役場）
+	// ── 町の 役所（data/village/civicHalls.ts。おんJ町役場）
 	...CIVIC_FACILITIES,
 	// ── ホシュクラ（data/village/saba.ts。南西の 海の 島。段2〜）
 	...SABA_FACILITIES,
@@ -4511,10 +4511,10 @@ const MORE_HOUSING: readonly Facility[] = [
 	}),
 	variant("corpo", {
 		id: "heights",
-		name: "ハイツほしゅ",
+		name: "ハイツおんJ",
 		at: [80, 9],
 		from: 7,
-		door: "ハイツほしゅ。\n郵便受けに「保守」の　シール。",
+		door: "ハイツおんJ。\n郵便受けに「保守」の　シール。",
 		swap: [
 			[base(5, 82), base(1, 82)],
 			[base(5, 84), base(1, 84)],
@@ -4530,10 +4530,10 @@ const MORE_HOUSING: readonly Facility[] = [
 	}),
 	variant("mansion", {
 		id: "grandmaison",
-		name: "グランメゾン保守",
+		name: "グランメゾンおんJ",
 		at: [70, 9],
 		from: 7,
-		door: "グランメゾン保守。\nエントランスに　大きな　鉢植え。",
+		door: "グランメゾンおんJ。\nエントランスに　大きな　鉢植え。",
 		swap: [[art("wallTex", 2), art("wallTex", 0)]],
 		people: [
 			{
@@ -4546,10 +4546,10 @@ const MORE_HOUSING: readonly Facility[] = [
 	}),
 	variant("mansion", {
 		id: "mansion2",
-		name: "メゾン・ド・保守　II",
+		name: "メゾン・ド・おんJ　II",
 		at: [63, 26],
 		from: 7,
-		door: "メゾン・ド・保守　II。\n「1階　テナント　募集中」の　はり紙。",
+		door: "メゾン・ド・おんJ　II。\n「1階　テナント　募集中」の　はり紙。",
 		swap: [[art("wallTex", 2), art("wallTex", 1)]],
 		people: [
 			{
@@ -4562,10 +4562,10 @@ const MORE_HOUSING: readonly Facility[] = [
 	}),
 	variant("tower", {
 		id: "tower2",
-		name: "保守タワー　サウス",
+		name: "おんJタワー　サウス",
 		at: [64, 14],
 		from: 7,
-		door: "保守タワー　サウス。\n入口の　警備員が　こちらを　見ている。",
+		door: "おんJタワー　サウス。\n入口の　警備員が　こちらを　見ている。",
 		swap: [[art("wallTex", 4), art("wallTex", 1)]],
 		people: [
 			{

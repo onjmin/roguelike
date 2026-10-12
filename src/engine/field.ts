@@ -39,7 +39,7 @@ export class Actor {
 	still: boolean;
 	visible = true;
 	through: boolean;
-	/** 乗り物（キリコの 保守トロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
+	/** 乗り物（キリコの おんJトロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
 	vehicle: string | null = null;
 	def: EventDef | null;
 	private tween: {

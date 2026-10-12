@@ -30,7 +30,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		slideDoor: "rpgen:xGCo1O", // [チョコレート☆]ガラララッ
 		/** ワープの罠・場所がえ。 */
 		warp: "rpgen:vfCmoe",
-		/** 村の 保守トロッコが 動きだす（data/village/trolley.ts）。 */
+		/** 村の おんJトロッコが 動きだす（data/village/trolley.ts）。 */
 		trolley: "rpgen:YnXEbT", // ガタっと動かす音
 		stairs: "rpgen:gO9HUJ", // 階段
 		/** 落とし穴に 落ちる。 */
@@ -109,6 +109,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		whet: "rpgen:pMekYY", // [Minecraft]金床修繕
 		/** 耐久スレで 板が ＋1（板が かたく なった）。 */
 		temper: "rpgen:VocXum", // FF 盾ガード
+		/** トリップ（指輪）を 装備した（作者の 指示：専用の 音。外すときは ふつうの 装備の 音）。 */
+		tripOn: "rpgen:3c5WT6", // FF 魔法効果
 		/** 目つぶし・混乱・ちから／最大HP・レベルが 下がった・板が 錆びた。 */
 		debuff: "rpgen:NQtzgI", // [ツクール]麻痺
 		/** アイテムを投げる。 */

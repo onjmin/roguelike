@@ -1,4 +1,4 @@
-// 歩ける村（保守村）の地図の試験（pnpm test で いっしょに動く）。
+// 歩ける村（おんJタウン）の地図の試験（pnpm test で いっしょに動く）。
 // Field（canvas を作る）は使わず、地図の文字・パレット・置き場所（data/village/map.ts）だけで調べる。
 // - 形（22×18）・知らない文字が 無い・イベントが 地図の中で 1マスに 1つ・踏むイベントは 通れるマス
 // - 起きる所（蓄音機の前）から、開いた口の すべてへ 歩いて行けて、人・看板・掲示板の すべてに
@@ -800,7 +800,7 @@ test("the village is drawn only from the bundled Base.png and sprites (no CDN ti
 	}
 });
 
-test("はじめの 保守村には やきう（と ぷゆゆ）だけ。仲間は 町が 育つと 越してきて、来る 前は 語りでも 話さない", async () => {
+test("はじめの おんJタウンには やきう（と ぷゆゆ）だけ。仲間は 町が 育つと 越してきて、来る 前は 語りでも 話さない", async () => {
 	const FRIENDS = ["roze", "shiyo", "zero", "feris", "nanj"] as const;
 	for (let stage = 0; stage < TOWN_STAGES; stage++) {
 		const places = villagePlaces({ stage, unlocked: ["shallow"], cleared: [] });
@@ -2072,21 +2072,21 @@ test("町の お知らせ: 段が 上がると 新市街・浜・町の まわ�
 		}
 	const names = (from: number, to: number) =>
 		townNews(from, to).map((n) => n.name);
-	ok(names(4, 5).includes("コーポ「ほしゅ荘」"), "corpo is not news at 5");
+	ok(names(4, 5).includes("コーポ「おんJ荘」"), "corpo is not news at 5");
 	ok(
-		names(6, 7).includes("ザ・保守タワー　レジデンス"),
+		names(6, 7).includes("ザ・おんJタワー　レジデンス"),
 		"tower is not news at 7",
 	);
 	ok(
 		townNews(6, 7).some(
-			(n) => n.was === "保守村　交番" && n.name === "保守警察署",
+			(n) => n.was === "おんJ交番" && n.name === "おんJ警察署",
 		),
 		"koban → police is not a rebuild",
 	);
 	// 段を とばしたら、あいだで 建って なくなった 物（交番）は 出さず、建てかえでも ない
-	ok(!names(3, 7).includes("保守村　交番"), "koban shows after skipping");
+	ok(!names(3, 7).includes("おんJ交番"), "koban shows after skipping");
 	ok(
-		!townNews(3, 7).some((n) => n.was === "保守村　交番"),
+		!townNews(3, 7).some((n) => n.was === "おんJ交番"),
 		"police is a rebuild after skipping",
 	);
 	ok(townNews(0, 1).length === 0, "news at the stall");
@@ -2185,7 +2185,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	fitsWindow(texts);
 });
 
-test("喫茶「保守」: every talk fits the village window, and the door appears from its stage and can be reached", () => {
+test("喫茶「おんJ」: every talk fits the village window, and the door appears from its stage and can be reached", () => {
 	// {drink} は いちばん 長い 一杯の 名前で 測る
 	const longest = Object.values(CAFE_DRINKS)
 		.map((d) => d.name)
