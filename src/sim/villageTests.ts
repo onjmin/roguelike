@@ -26,7 +26,7 @@ import {
 	TOWN_STAGES,
 	TOWN_STEPS,
 } from "../core/town";
-import type { DungeonId, Item } from "../core/types";
+import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
 import { BB_FX, BB_POSE, BB_SHEET, BB_SPR } from "../data/baseballSheet";
 import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/bath";
 import { BATTING } from "../data/batting";
@@ -283,6 +283,7 @@ import {
 	replayMatches,
 	type SavedReplay,
 	saveTown,
+	sortStorage,
 	stashRelief,
 	type Town,
 	takeRelief,
@@ -974,6 +975,42 @@ test("ぷゆゆソード：村の 持ち物に 出て、倉庫が あれば あ�
 		ok(!stashRelief(), "stashed twice");
 		ok(!takeRelief(), "took a stashed sword");
 		ok(!giveRelief(200), "a second sword while one is in the storehouse");
+	});
+});
+
+test("倉庫の 整理：持ち物の 整理と 同じ 分類の 順・同じ 物は 強い 順に 並べなおし、2回目は かわらない", () => {
+	withStorage(() => {
+		setProgress(["shallow"]);
+		const it = (uid: number, kind: string, plus = 0): Item => ({
+			uid,
+			kind,
+			plus,
+			cursed: false,
+			charges: 0,
+			known: true,
+			count: 1,
+		});
+		putTown({
+			stage: 4,
+			storage: [
+				it(1, "f_bread"),
+				it(2, "h_heal"),
+				it(3, "copper", 1),
+				it(4, "bronze"),
+				it(5, "copper", 3),
+			],
+		});
+		ok(sortStorage(), "nothing moved");
+		const kinds = loadTown().storage.map((x) => `${x.kind}${x.plus}`);
+		const cat = (k: string) => CAT_ORDER.indexOf(defOf(k).cat);
+		const got = loadTown().storage;
+		ok(
+			got.every((x, i) => i === 0 || cat(got[i - 1].kind) <= cat(x.kind)),
+			`not by category: ${kinds}`,
+		);
+		const swords = got.filter((x) => x.kind === "copper").map((x) => x.plus);
+		ok(swords.join() === "3,1", `swords ${swords}`);
+		ok(!sortStorage(), "sorted twice");
 	});
 });
 

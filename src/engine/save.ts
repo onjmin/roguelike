@@ -13,7 +13,13 @@ import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
-import type { DungeonId, Item, Objective, RunState } from "../core/types";
+import {
+	CAT_ORDER,
+	type DungeonId,
+	type Item,
+	type Objective,
+	type RunState,
+} from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/objectives";
 import { noteTamper, oddRun, oddTown } from "./tamper";
 
@@ -849,6 +855,32 @@ export const takeFromStorage = (picked: readonly Item[]): Item[] => {
 	}
 	saveTown(t);
 	return out;
+};
+
+/**
+ * 倉庫を 整理する（持ち物の 整理と 同じ 分類の 順・同じ 分類は 図鑑の 順・同じ 物は 強い 順。同じなら もとの 順）。
+ * 並びが かわったら true。
+ */
+export const sortStorage = (): boolean => {
+	const t = loadTown();
+	const rows = t.storage.map((it, i) => ({
+		it,
+		i,
+		cat: CAT_ORDER.indexOf(defOf(it.kind).cat),
+		order: defOf(it.kind).order,
+	}));
+	rows.sort(
+		(a, b) =>
+			a.cat - b.cat ||
+			a.order - b.order ||
+			b.it.plus - a.it.plus ||
+			b.it.charges - a.it.charges ||
+			a.i - b.i,
+	);
+	if (rows.every((r, k) => r.i === k)) return false;
+	t.storage = rows.map((r) => r.it);
+	saveTown(t);
+	return true;
 };
 
 /** 倉庫の i 番目を 引き取る（持ち物が いっぱいなら 引き取らない）。引き取れたか。 */

@@ -13,6 +13,7 @@ import {
 	loadTown,
 	type PendingReturn,
 	reliefItem,
+	sortStorage,
 	stashRelief,
 	type Town,
 	withdrawItem,
@@ -105,9 +106,21 @@ export const openStorage = async (ctx: Ctx): Promise<void> => {
 			ctx,
 			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　引き取る　持ち物　${t.bag.length}／${max}${full ? `<br>${escBr(fill(TOWN_MSG.bagFull.text, { n: max }))}` : ""}</small>`,
 			rows,
-			{ start },
+			{
+				start,
+				// 整理：持ち物の 整理と 同じ 分類の 順に 並べなおす（engine/save.ts の sortStorage）
+				actions:
+					t.storage.length > 1
+						? [{ label: "整理", value: "sort", key: "sort", keyHint: "C" }]
+						: [],
+			},
 		);
 		if (v === null) return;
+		if (v === "sort") {
+			if (sortStorage()) ctx.se("decide");
+			start = 0;
+			continue;
+		}
 		start = Math.max(0, Math.min(Number(v), t.storage.length - 2));
 		if (withdrawItem(Number(v))) ctx.se("decide");
 	}
