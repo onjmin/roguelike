@@ -580,7 +580,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		curses: true,
 		start: ["f_large"],
 		goal: "uchiwa",
-		houses: { from: 3, chance: 1 / 3, early: [3, 5] },
+		// 祭りの 板なので 祭り（モンスターハウス）を 多めに（2026-10-12：1/3 → 1/2。作者「頻度を 増やしても よい」）
+		houses: { from: 3, chance: 1 / 2, early: [3, 5] },
 		// やぐらを 上る
 		up: true,
 		trapsFrom: 3,
