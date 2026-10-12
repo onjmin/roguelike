@@ -98,6 +98,8 @@ const PRICE: Record<string, number> = {
 	bronze: 200,
 	scale: 500,
 	mirror: 1200,
+	// 支給品（たおれた あとの ぷゆゆソード）は 売っても 0（priceOf）
+	puyusword: 0,
 	steelsh: 1000,
 	fireward: 1500,
 	starshield: 3000,
@@ -168,7 +170,8 @@ const PRICE: Record<string, number> = {
 /** 1つの道具の値段（修正値・残りの回数・本数・のろいも入れる）。目的の品は売らない（0）。 */
 export const priceOf = (it: Item): number => {
 	const d = defOf(it.kind);
-	if (d.cat === "goal") return 0;
+	// 目的の品と 支給品（ぷゆゆソード）は 売れない
+	if (d.cat === "goal" || d.relief) return 0;
 	let v = PRICE[it.kind] ?? 0;
 	if (d.cat === "weapon" || d.cat === "shield") v += it.plus * 200;
 	if (d.cat === "staff") v += it.charges * 50;

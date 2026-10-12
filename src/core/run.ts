@@ -1021,12 +1021,35 @@ export class Run {
 			this.msg(`${this.heroName}の　攻撃は　はずれた`);
 			return;
 		}
+		const w = this.weapon();
+		const relief = !!w && !!defOf(w.kind).relief;
+		// 支給品（ぷゆゆソード）は ボスには 効かない（当たっても すり減らない）
+		if (relief && w && isBoss(m)) {
+			this.se(this.weaponSound().swing);
+			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
+			this.msg(
+				`${this.name(w)}は　${monsterName(this, m)}には　効かない！`,
+				"warn",
+			);
+			return;
+		}
 		const atk = attackPower(this.p.lv, this.meleePower());
 		let dmg = rollDamage(atk, d.def, this.dmgRoll());
-		if (d.tags?.includes("dragon") && this.weapon()?.kind === "wyrmbane")
-			dmg *= 2;
+		if (d.tags?.includes("dragon") && w?.kind === "wyrmbane") dmg *= 2;
 		this.se(this.weaponSound().hit);
 		this.damageMonster(m, dmg, "hit");
+		if (relief && w) this.wearRelief(w);
+	}
+
+	/** 支給品の 武器が すり減る（修正値 −1。強さが 0 に なったら 折れて なくなる）。乱数は 引かない。 */
+	private wearRelief(w: Item): void {
+		w.plus--;
+		w.known = true;
+		if ((defOf(w.kind).atk ?? 0) + w.plus > 0) return;
+		const name = this.name(w);
+		this.removeItem(w);
+		this.se("debuff");
+		this.msg(`${name}は　折れてしまった`, "warn");
 	}
 
 	/** 怒って 倍速に なる（顔真っ赤・😡の 板・弱った 親分）。 */

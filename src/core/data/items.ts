@@ -32,6 +32,19 @@ add({
 	flavor: "だれもが　持っていて、だれも　おぼえていない",
 });
 add({
+	// たおれた あとの 支給品（engine/save.ts の giveRelief。ぷゆゆが 持ってくる）。強いが すぐ すり減る・ボスに 効かない・
+	// 売っても 0（ふつうの 武器を 拾う 意味が なくならないように。作者の 指示。名前も 作者）
+	id: "puyusword",
+	cat: "weapon",
+	sound: { swing: "swing_blade", hit: "hit_puyusword" },
+	name: "ぷゆゆソード",
+	atk: 35,
+	relief: true,
+	desc: "とても　強いが、なぐる　たびに　修正値が　1　へる（強さが　0に　なると　折れる）。ボスには　効かない。売っても　0",
+	flavor:
+		"「つぎは　いけるぷゆ🥺」と　手わたされた。いける　かどうかは　自分しだい",
+});
+add({
 	id: "bat",
 	cat: "weapon",
 	sound: { swing: "swing_blunt", hit: "hit_bat" },

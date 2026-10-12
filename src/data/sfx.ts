@@ -123,6 +123,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		hit_fist: "rpgen:7rPdXL", // [マリオRPG]パンチ
 		hit_club: "rpgen:M7xnmE", // [マリオRPG]ハンマー
 		hit_copper: "rpgen:7JKd21", // ﾄﾞﾗｸｴ攻撃
+		hit_puyusword: "rpgen:28KYsN", // RPGEN 剣・ナイフ（ぷゆゆソード）
 		hit_steel: "rpgen:mLgxu0", // ドルアーガ/攻撃
 		hit_bat: "rpgen:sne8yX", // 金属バット
 		hit_wyrm: "rpgen:mLHxrK", // ドルアーガ/斬る

@@ -134,6 +134,7 @@ import {
 	previewStage,
 	type ReturnArrival,
 	ROMS,
+	reliefScript,
 	returnScene,
 	type StoreChooser,
 	sceneView,
@@ -901,6 +902,8 @@ const arrivalScript =
 		await tamperScript(s);
 		await settleScript(s, storeChooser(ctx));
 		await sendBack(s);
+		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
+		if (arrival?.kind === "dead") await reliefScript(s);
 		// 持ち物が からっぽなら ぷゆゆが お弁当を 持たせに くる
 		await lunchScript(s);
 	};
