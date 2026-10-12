@@ -1971,7 +1971,7 @@ export class Run {
 			it.known = true;
 			this.msg("のろわれていた！", "warn");
 			this.se("curse");
-		} else this.se("equip");
+		} else this.se(slot === "ring" ? "tripOn" : "equip");
 		// 安価「装備を　かえる」（矢は 数えない）
 		if (slot !== "arrow") ankaHit(this, "equip");
 		return true;

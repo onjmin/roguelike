@@ -113,7 +113,7 @@ export type SeLoudness = readonly [
 
 // <loudness:se> ここから下は pnpm loudness（scripts/measure-loudness.mjs）が書き換える。手で直さない。
 /**
- * 効果音ごとの実測と補正（2026-10-11、ffmpeg 6.1.1 の ebur128）。
+ * 効果音ごとの実測と補正（2026-10-12、ffmpeg 6.1.1 の ebur128）。
  * [素材 id, L, true peak, 補正 dB, 倍率, 鳴り始め ms, 鳴り終わり ms, 待つ ms]。
  * 行末は「区分 → 既定の設定での L」。
  */
@@ -167,6 +167,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	rustproof: ["jVuw6M", -10.8, -0.6, -10.2, 0.309, 50, 1110, 370], // battle → -21.0
 	whet: ["pMekYY", -7.7, 2.5, -13.3, 0.216, 0, 1140, 820], // battle → -21.0
 	temper: ["VocXum", -16.9, -7.1, -4.1, 0.624, 10, 470, 180], // battle → -21.0
+	tripOn: ["3c5WT6", -19.4, -9.8, -1.6, 0.832, 80, 1630, 660], // battle → -21.0
 	debuff: ["NQtzgI", -10.8, -2, -10.2, 0.309, 50, 900, 840], // battle → -21.0
 	throw: ["3JcWxQ", -10.3, -2.3, -10.7, 0.292, 70, 760, 340], // battle → -21.0
 	swing_fist: ["BQhjMK", -9, 0, -12, 0.251, 0, 190, 90], // battle → -21.0
