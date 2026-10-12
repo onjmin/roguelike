@@ -154,8 +154,9 @@ const over = (base, top) =>
 		[...row].map((ch, x) => (top[y][x] === "." ? ch : top[y][x])).join(""),
 	);
 
-// ピッチングマシン（前の 版の 矢の罠）・危険球マシン（毒矢の罠）：黄色い 機械の 左右の 黒い ホイールが
-// 回って、まんなかの 口から ボールが 飛びだす（ダンジョンの ボールを 投げる 敵と そろえる）。危険球は 紫の 球と しずく
+// ピッチングマシン（前の 版の 矢の罠）・毒ボールマシン（毒矢の罠）：機械の 左右の 黒い ホイールが
+// 回って、まんなかの 口から ボールが 飛びだす（ダンジョンの ボールを 投げる 敵と そろえる）。
+// ふつうは 黄色い 胴と 白い 球。毒ボールは 紫の 胴・紫の 球と しずく（ひと目で ちがいが わかるように）
 const MACHINE_PALETTE = {
 	o: [40, 36, 30, 255], // ふち
 	m: [232, 190, 48, 255], // 機械の 黄色い 胴
@@ -169,7 +170,8 @@ const MACHINE_PALETTE = {
 };
 const DANGER_PALETTE = {
 	...MACHINE_PALETTE,
-	w: [176, 96, 214, 255], // 危険球（紫）
+	m: [132, 72, 176, 255], // 機械の 紫の 胴（毒）
+	w: [176, 96, 214, 255], // 毒ボール（紫）
 	r: [92, 30, 120, 255],
 	v: [150, 70, 190, 255], // しずく
 };
@@ -253,7 +255,8 @@ const rgba = Buffer.alloc(W * H * 4);
 frames.forEach(([rows, palette], i) => {
 	if (rows.length !== 16) throw new Error(`コマ${i}：${rows.length}行`);
 	rows.forEach((row, y) => {
-		if (row.length !== 16) throw new Error(`コマ${i} ${y}行目：${row.length}字`);
+		if (row.length !== 16)
+			throw new Error(`コマ${i} ${y}行目：${row.length}字`);
 		[...row].forEach((ch, x) => {
 			if (ch === ".") return;
 			const c = palette[ch];

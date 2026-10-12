@@ -16,7 +16,8 @@ const TRAP_NAME: Record<string, string> = {
 	trip: "転び石",
 	mine: "地雷",
 	arrow: "ピッチングマシン",
-	dart: "危険球マシン",
+	// 毒矢の罠（ちからが 1 下がる）。前は 危険球マシン：ふつうの ピッチングマシンとの ちがいが わからなかった（作者）
+	dart: "毒ボールマシン",
 	warp: "転移床",
 	pit: "落とし穴",
 	anka: "安価の罠",
@@ -123,7 +124,7 @@ const fireTrap = (r: Run, t: Trap): void => {
 			r.se("damage");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			r.msg(
-				`${t.kind === "dart" ? "危険球" : "ボール"}が　飛んできた！　${dmg}の　ダメージ`,
+				`${t.kind === "dart" ? "毒ボール" : "ボール"}が　飛んできた！　${dmg}の　ダメージ`,
 			);
 			if (r.hurtPlayer(dmg, `${trapName(t)}で　たおれた`)) return;
 			if (t.kind === "dart" && !r.hasRing("r_purity") && p.str > 1) {
