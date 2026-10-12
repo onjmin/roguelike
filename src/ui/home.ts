@@ -3,6 +3,7 @@
 // トルネコ1で ネネが 持ち帰った道具を売り、店が大きくなるのに あたる（会話・売り・町の 建て直しは
 // 村の中。ui/villageReturn.ts）。町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
 
+import { CAT_NAME } from "../core/data/items";
 import { defOf } from "../core/item";
 import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
 import type { Item } from "../core/types";
@@ -20,7 +21,9 @@ import {
 } from "../engine/save";
 
 import type { Ctx } from "./ctx";
+import { gearPower, itemSub } from "./itemText";
 import { infoWindow, type ListItem, listWindow } from "./list";
+import { itemArt as itemArtEl } from "./menu";
 import { esc, escBr } from "./records";
 import { fill } from "./villageTalk";
 
@@ -79,16 +82,31 @@ export const chooseStored = async (
 };
 
 /**
- * 倉庫（倉庫の 中の 棚から。ui/rooms.ts）：えらぶと 引き取って 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
- * 引き取った 物は 村の メニューの「持ち物」で 見て、倉庫へ もどせる（openBag）。
+ * 倉庫（倉庫の 中の 棚・シヨの 受付から）：「引き出す」「預ける」を えらぶ。
+ * 引き出す＝倉庫から 村の 持ち物へ（次の 冒険に 持っていく。段で CARRY_MAX 個まで）。
+ * 預ける＝村の 持ち物（と もらった ぷゆゆソード）を 倉庫へ。
  */
 export const openStorage = async (ctx: Ctx): Promise<void> => {
 	let start = 0;
 	for (;;) {
 		const t = loadTown();
 		const cap = STORAGE_CAP[t.stage] ?? 0;
-		const max = CARRY_MAX[t.stage] ?? 0;
-		if (!t.storage.length) {
+		const canPut = t.bag.length > 0 || !!t.relief;
+		const rows: ListItem[] = [
+			{
+				label: "引き出す",
+				value: "take",
+				sub: `${t.storage.length}／${cap}`,
+				disabled: !t.storage.length,
+			},
+			{
+				label: "預ける",
+				value: "put",
+				sub: `${t.bag.length + (t.relief ? 1 : 0)}`,
+				disabled: !canPut,
+			},
+		];
+		if (!t.storage.length && !canPut) {
 			await infoWindow(
 				ctx,
 				`倉庫　0／${cap}`,
@@ -96,15 +114,35 @@ export const openStorage = async (ctx: Ctx): Promise<void> => {
 			);
 			return;
 		}
+		const v = await listWindow(ctx, `倉庫　${t.storage.length}／${cap}`, rows, {
+			start,
+		});
+		if (v === null) return;
+		start = rows.findIndex((r) => r.value === v);
+		if (v === "take") await takeFromStorage(ctx);
+		else if (v === "put") await putIntoStorage(ctx);
+	}
+};
+
+/** 倉庫から 引き出す（えらぶと 村の 持ち物へ。「整理」で 並べなおす）。 */
+const takeFromStorage = async (ctx: Ctx): Promise<void> => {
+	let start = 0;
+	for (;;) {
+		const t = loadTown();
+		const cap = STORAGE_CAP[t.stage] ?? 0;
+		const max = CARRY_MAX[t.stage] ?? 0;
+		if (!t.storage.length) return;
 		const full = t.bag.length >= max;
 		const rows: ListItem[] = t.storage.map((it, i) => ({
 			label: esc(townItemName(it)),
 			value: String(i),
+			sub: itemSub(it),
+			icon: itemArtEl(it.kind),
 			disabled: full,
 		}));
 		const v = await listWindow(
 			ctx,
-			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　引き取る　持ち物　${t.bag.length}／${max}${full ? `<br>${escBr(fill(TOWN_MSG.bagFull.text, { n: max }))}` : ""}</small>`,
+			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　引き出す　持ち物　${t.bag.length}／${max}${full ? `<br>${escBr(fill(TOWN_MSG.bagFull.text, { n: max }))}` : ""}</small>`,
 			rows,
 			{
 				start,
@@ -126,48 +164,34 @@ export const openStorage = async (ctx: Ctx): Promise<void> => {
 	}
 };
 
-/** 村の 持ち物（倉庫から 引き取った 物）：えらぶと 倉庫へ もどす。 */
-export const openBag = async (ctx: Ctx): Promise<void> => {
+/** 倉庫へ 預ける（村の 持ち物と、もらった ぷゆゆソード。ぷゆゆソードは 倉庫に 空きが あるとき）。 */
+const putIntoStorage = async (ctx: Ctx): Promise<void> => {
 	let start = 0;
 	for (;;) {
 		const t = loadTown();
-		const max = CARRY_MAX[t.stage] ?? 0;
-		// ぷゆゆの お弁当（倉庫の 道具とは べつ。数に 入らない）
-		const lunch = t.lunch
-			? `<br><small>ぷゆゆパン（ぷゆゆの　お弁当）も　持っていく</small>`
-			: "";
-		// たおれた あとの 支給品（ぷゆゆソード。数に 入らない。えらぶと 倉庫へ あずける：倉庫が あって 空きが あれば）
 		const cap = STORAGE_CAP[t.stage] ?? 0;
-		const reliefRow: ListItem[] = t.relief
-			? [
-					{
-						label: `${esc(townItemName(reliefItem()))}<small>（ぷゆゆから）</small>`,
-						value: "relief",
-						disabled: t.storage.length >= cap,
-					},
-				]
-			: [];
-		if (!t.bag.length && !reliefRow.length) {
-			// 倉庫が ひらく 前の 段は 引き取れないので 数も シヨの 小言も 出さない
-			await infoWindow(
-				ctx,
-				max > 0 ? `持ち物　0／${max}` : "持ち物",
-				t.lunch
-					? `<p>ぷゆゆパン（ぷゆゆの　お弁当）</p>`
-					: `<p class="dim">${max > 0 ? escBr(TOWN_MSG.bagEmpty.text) : "なにも　持っていない"}</p>`,
-			);
-			return;
-		}
 		const rows: ListItem[] = [
 			...t.bag.map((it, i) => ({
 				label: esc(townItemName(it)),
 				value: String(i),
+				sub: itemSub(it),
+				icon: itemArtEl(it.kind),
 			})),
-			...reliefRow,
+			...(t.relief
+				? [
+						{
+							label: `${esc(townItemName(reliefItem()))}<small>（ぷゆゆから）</small>`,
+							value: "relief",
+							icon: itemArtEl(reliefItem().kind),
+							disabled: t.storage.length >= cap,
+						},
+					]
+				: []),
 		];
+		if (!rows.length) return;
 		const v = await listWindow(
 			ctx,
-			`持ち物　${t.bag.length}／${max}<br><small>このまま　出口から　出れば　持っていく。${cap > 0 ? "えらぶと　倉庫へ　もどす" : ""}</small>${lunch}`,
+			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　預ける</small>`,
 			rows,
 			{ start },
 		);
@@ -179,6 +203,68 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 		start = Math.max(0, Math.min(Number(v), t.bag.length - 2));
 		depositItem(Number(v));
 		ctx.se("decide");
+	}
+};
+
+/** 村の 持ち物の 1行（ダンジョンの もちものと 同じ 見た目：絵・名前・強さ・説明）。 */
+const bagRow = (it: Item, value: string, note = ""): ListItem => ({
+	label: `${esc(townItemName(it))}${note}`,
+	sub: itemSub(it),
+	desc: defOf(it.kind).desc,
+	icon: itemArtEl(it.kind),
+	value,
+});
+
+/** 村の 持ち物の「せつめい」（正体は わかって いる。分類・説明・ひとこと・強さ）。 */
+const bagInfo = (it: Item): string => {
+	const d = defOf(it.kind);
+	const lines = [`【${CAT_NAME[d.cat]}】${esc(d.desc)}`, esc(d.flavor)];
+	const g = gearPower(it);
+	if (g)
+		lines.push(
+			`強さ　${g.value}　修正値　${it.plus > 0 ? `+${it.plus}` : it.plus}`,
+		);
+	if (d.cat === "staff") lines.push(`残り回数　${it.charges}回`);
+	if (d.cat === "arrow") lines.push(`強さ　${d.atk ?? 0}　${it.count}球`);
+	if (it.cursed) lines.push("のろわれている");
+	return lines.map((l) => `<p>${l}</p>`).join("");
+};
+
+/**
+ * 村の 持ち物（村の メニュー「持ち物」）：次の 冒険に 持っていく 道具を、ダンジョンの もちものと 似た 一覧で 見る
+ * （倉庫から 引き出した 物・ぷゆゆの お弁当・もらった ぷゆゆソード）。えらぶと せつめい。ここからは 預けない（倉庫で）。
+ */
+export const openBag = async (ctx: Ctx): Promise<void> => {
+	let start = 0;
+	for (;;) {
+		const t = loadTown();
+		const max = CARRY_MAX[t.stage] ?? 0;
+		// ぷゆゆの お弁当（ぷゆゆパン。冒険の はじめの 持ち物と 同じ 種類）
+		const lunch: Item = { ...reliefItem(), kind: "f_large" };
+		const items: { it: Item; note: string }[] = [
+			...t.bag.map((it) => ({ it, note: "" })),
+			...(t.relief
+				? [{ it: reliefItem(), note: "<small>（ぷゆゆから）</small>" }]
+				: []),
+			...(t.lunch
+				? [{ it: lunch, note: "<small>（ぷゆゆの　お弁当）</small>" }]
+				: []),
+		];
+		const title = `持ち物${max > 0 ? `　${t.bag.length}／${max}` : ""}<br><small>このまま　出口から　出れば　持っていく</small>`;
+		if (!items.length) {
+			await infoWindow(
+				ctx,
+				max > 0 ? `持ち物　0／${max}` : "持ち物",
+				`<p class="dim">${max > 0 ? escBr(TOWN_MSG.bagEmpty.text) : "なにも　持っていない"}</p>`,
+			);
+			return;
+		}
+		const rows = items.map((x, i) => bagRow(x.it, String(i), x.note));
+		const v = await listWindow(ctx, title, rows, { start });
+		if (v === null) return;
+		start = Number(v);
+		const got = items[Number(v)];
+		if (got) await infoWindow(ctx, esc(townItemName(got.it)), bagInfo(got.it));
 	}
 };
 
