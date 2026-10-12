@@ -269,7 +269,7 @@ export const TRAP_ICON: Record<TrapKind, string> = {
 	trip: cut(0, 13), // 小石
 	mine: "sp:eqO76tJ", // RPGEN「ロビー地雷(埋設)」
 	arrow: "pub:sprites/traps.png#48,0,16,16", // 床の ピッチングマシン（scripts/make-traps.mjs）
-	dart: "pub:sprites/traps.png#64,0,16,16", // 危険球マシン（紫の 球。scripts/make-traps.mjs）
+	dart: "pub:sprites/traps.png#64,0,16,16", // 毒ボールマシン（紫の 胴と 毒の 球。scripts/make-traps.mjs）
 	warp: "pub:sprites/traps.png#80,0,16,16", // 青く 光る 輪（scripts/make-traps.mjs）
 	pit: "sp:87bRbg", // RPGEN「落とし穴」
 	anka: "pub:sprites/anka_trap.png#0,0,16,16", // >> の 踏み板（scripts/make-anka-trap.mjs）
