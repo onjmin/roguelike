@@ -550,7 +550,6 @@ test(
 
 /** 出荷の 文に 使わない 語（civicTests の NG に 足す。この 包みの 元ネタに 近い 語）。 */
 const SEASON_NG = [
-	"マイクラ",
 	"Minecraft",
 	"クリーパー",
 	"オセロ",

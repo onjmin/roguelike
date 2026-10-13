@@ -223,5 +223,5 @@ export const BUSHITSU: Facility = {
 	],
 };
 
-/** 部室棟（FACILITIES の 町の 役所・ホシュクラの うしろ）。 */
+/** 部室棟（FACILITIES の 町の 役所・マイクラの うしろ）。 */
 export const BUSHITSU_FACILITIES: readonly Facility[] = [BUSHITSU];

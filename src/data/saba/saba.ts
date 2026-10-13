@@ -1,4 +1,4 @@
-// ホシュクラ（data/village/saba.ts の 島）の 決まり：記録の 形・命名投票の 開票・鯖缶の お知らせ・水槽・夜・匠の マス。
+// マイクラ（data/village/saba.ts の 島）の 決まり：記録の 形・命名投票の 開票・鯖缶の お知らせ・水槽・夜・匠の マス。
 // どれも 純粋な 関数（DOM・保存は ui/saba/saba.ts）。村の 記録は kiriko-roguelike/saba だけで、強さ・道具・段には ふれない。
 
 import type { TileDef } from "../../engine/defs";

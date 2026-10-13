@@ -971,7 +971,7 @@ export const buildVillage = (
 		},
 		events: [
 			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),
-			// ホシュクラの 豚と 夜の 匠（ui/saba/saba.ts）
+			// マイクラの 豚と 夜の 匠（ui/saba/saba.ts）
 			...sabaEvents(view),
 			// 寄り道の 板が 開く ときの 来客（旗 visitor の あいだだけ 村に いる。ui/village/villageReturn.ts の visitScript）
 			npc("visitor", 1, 1, VISITOR_WALK, async () => {}, {

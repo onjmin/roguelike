@@ -1,4 +1,4 @@
-// ホシュクラ（おんJタウンの 南西の 島）の 絵を 書き出す（node scripts/make-saba.mjs [--cache <dir>] [--out <dir>] [--ts <file>]）。
+// マイクラ（おんJタウンの 南西の 島）の 絵を 書き出す（node scripts/make-saba.mjs [--cache <dir>] [--out <dir>] [--ts <file>]）。
 //
 // - public/sprites/saba.png        … 島の マス・部屋の 物・ブラマイの 板の 絵（16x16 の 格子。256x64）
 // - public/sprites/saba_takumi.png … 匠の 歩行グラ（32x64・16x16 が 2コマ×4方向。RPGEN 歩行グラ規格。手描き）
@@ -711,7 +711,7 @@ writeFileSync(join(OUT, "saba.png"), encodePng(SW, SH, sheet));
 
 // ───────────────── 表（src/data/saba/sabaSheet.ts） ─────────────────
 const names = Object.keys(CELLS);
-const ts = `// ホシュクラ（おんJタウンの 島）の 絵（public/sprites/saba.png）の どこに 何が あるか。scripts/make-saba.mjs が 書く（手で 直さない）。
+const ts = `// マイクラ（おんJタウンの 島）の 絵（public/sprites/saba.png）の どこに 何が あるか。scripts/make-saba.mjs が 書く（手で 直さない）。
 // マスは 16x16 の [列, 行]。sb(name) は 1マス、sb(name, 2) は 下の マスまで（16x32。ドア）。
 
 export const SABA_IMG = "pub:sprites/saba.png";

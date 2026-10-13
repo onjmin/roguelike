@@ -190,7 +190,7 @@ export const outdoorScript =
 			// 外で スマホの 実況（桟橋の 人力機・公園の 月食。ui/jikkyo/jikkyoWatch.ts）
 			else if (t.play === "jikkyo")
 				await watchProgram(ctx, s, f.id, previewStage() ?? loadTown().stage);
-			// ホシュクラの 島の 物（ui/saba/saba.ts）
+			// マイクラの 島の 物（ui/saba/saba.ts）
 			else if (t.play === "saba") await sabaPlay(ctx, s, f, t.id, true);
 			// ネタスレの 遊び（グラウンドの ランダム野球・5割の壁。ui/neta/neta.ts）
 			else if (isNetaPlay(t.play)) await netaPlay(ctx, s, t.play);
@@ -275,7 +275,7 @@ export const buildFacility = (
 			else if (play === "minutes") await minutesScript(ctx, s);
 			// 部室棟の 遊べる 物（ui/bushitsu/bushitsu.ts）
 			else if (play === "bushitsu") await bushitsuThing(ctx, s, f, kind, v);
-			// ホシュクラの 部屋の 物（ui/saba/saba.ts）
+			// マイクラの 部屋の 物（ui/saba/saba.ts）
 			else if (play === "saba") await sabaPlay(ctx, s, f, kind, false);
 			// ネタスレの 遊び（リバーシ・!sk 習字・ID腹筋・コンマ。ui/neta/neta.ts）
 			else if (isNetaPlay(play)) await netaPlay(ctx, s, play);

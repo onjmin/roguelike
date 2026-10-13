@@ -1,4 +1,4 @@
-// ホシュクラ（data/village/saba.ts の 島）の 遊び。外の 物・部屋の 物は play:"saba" で ここへ 来る
+// マイクラ（data/village/saba.ts の 島）の 遊び。外の 物・部屋の 物は play:"saba" で ここへ 来る
 // （ui/village/facilities.ts の outdoorScript・buildFacility が 文を 読んだ あと sabaPlay を 呼ぶ）。
 // - 鯖缶：日で かわる お知らせ 1窓（土曜の 鯖イベ・夜・朝やで・日曜・帰りごとの お知らせ）
 // - 謎の 上級者：湧き潰しの 小言（帰りに 1回。n回目）

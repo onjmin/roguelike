@@ -1,4 +1,4 @@
-// ブラマイの 板（ホシュクラの ブラマイ場の 縦穴。決まりは data/saba/sabaMine.ts、絵は public/sprites/saba.png）。
+// ブラマイの 板（マイクラの ブラマイ場の 縦穴。決まりは data/saba/sabaMine.ts、絵は public/sprites/saba.png）。
 // 240x150 の 板（ui/minigames/minigameBoard.ts の board）を 2倍の 下地（480x300）で 描く：上の 22px が 札（ダイヤ・松明・
 // つるはし・匠）、下の 128px が 15×8 マスの 地下（キリコに ついて 横に 動く）。十字（長押しも）で 掘る・進む、
 // A で 松明、B を 1.5秒の あいだに 2回で 地上へ。タップは キリコの マスで 松明、ほかは その 方へ 1手。

@@ -1,4 +1,4 @@
-// ホシュクラ（おんJタウンの 島）の 絵（public/sprites/saba.png）の どこに 何が あるか。scripts/make-saba.mjs が 書く（手で 直さない）。
+// マイクラ（おんJタウンの 島）の 絵（public/sprites/saba.png）の どこに 何が あるか。scripts/make-saba.mjs が 書く（手で 直さない）。
 // マスは 16x16 の [列, 行]。sb(name) は 1マス、sb(name, 2) は 下の マスまで（16x32。ドア）。
 
 export const SABA_IMG = "pub:sprites/saba.png";

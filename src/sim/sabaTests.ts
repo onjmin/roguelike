@@ -1,4 +1,4 @@
-// ホシュクラ（おんJタウンの 南西の 島。data/village/saba.ts・data/saba/saba.ts・data/saba/sabaMine.ts・ui/saba/saba.ts）の 試験（pnpm test）。
+// マイクラ（おんJタウンの 南西の 島。data/village/saba.ts・data/saba/saba.ts・data/saba/sabaMine.ts・ui/saba/saba.ts）の 試験（pnpm test）。
 // 置き場所・絵・文の 幅・命名投票・お知らせ・ブラマイの 決まりと 釣りあい・村での 流れ（板は setMineHook で 差しかえ）・
 // 共有の 振り分け（ui/village/facilities.ts・ui/village/villageEvents.ts の 1行が 落ちたら ここで 気づく）。
 
@@ -111,7 +111,7 @@ const isle = (x: number, y: number): boolean => x <= 19 && y >= 41 && y <= 48;
 
 // ───────────────── 置き場所 ─────────────────
 
-test("ホシュクラ：島は 段2 から 段ごとに 1つ（saba2〜saba7）、アパートは 段4 から・市役所より 後ろに まとめて 並ぶ", () => {
+test("マイクラ：島は 段2 から 段ごとに 1つ（saba2〜saba7）、アパートは 段4 から・市役所より 後ろに まとめて 並ぶ", () => {
 	for (let stage = 0; stage < TOWN_STAGES; stage++) {
 		const ids = facilitiesAt(stage)
 			.map((f) => f.id)
@@ -137,7 +137,7 @@ test("ホシュクラ：島は 段2 から 段ごとに 1つ（saba2〜saba7）�
 	ok(SABA.length === SABA_IDS.length, `${SABA.length} saba facilities`);
 });
 
-test("ホシュクラ：島の 行は 20×8（x0〜19・y41〜48）・扉は 豆腐ハウスに 1つ", () => {
+test("マイクラ：島の 行は 20×8（x0〜19・y41〜48）・扉は 豆腐ハウスに 1つ", () => {
 	for (const [st, rows] of Object.entries(ISLE_ROWS)) {
 		ok(rows.length === 8, `stage ${st}: ${rows.length} rows`);
 		for (const r of rows) ok([...r].length === 20, `stage ${st}: "${r}"`);
@@ -154,7 +154,7 @@ test("ホシュクラ：島の 行は 20×8（x0〜19・y41〜48）・扉は 豆
 	}
 });
 
-test("ホシュクラ：島の 下（y48〜51）と 釣り場の 西の 海（y39〜40）に 歩ける マスを 作らない・南の 口で 仲間が 並ぶ／呼ばれて 立つ 所は 島に かからない", () => {
+test("マイクラ：島の 下（y48〜51）と 釣り場の 西の 海（y39〜40）に 歩ける マスを 作らない・南の 口で 仲間が 並ぶ／呼ばれて 立つ 所は 島に かからない", () => {
 	const south = VILLAGE_EXITS.find((e) => e.side === "s");
 	ok(south, "no south exit");
 	for (let stage = 0; stage < TOWN_STAGES; stage++) {
@@ -194,7 +194,7 @@ test("ホシュクラ：島の 下（y48〜51）と 釣り場の 西の 海（y3
 	}
 });
 
-test("ホシュクラ：豚レース場は 柵で 閉じ、柵ごしに 豚に 話せる", () => {
+test("マイクラ：豚レース場は 柵で 閉じ、柵ごしに 豚に 話せる", () => {
 	for (let stage = 3; stage < TOWN_STAGES; stage++) {
 		const v = view(stage);
 		const rows = villageRows(v).map((r) => [...r]);
@@ -231,7 +231,7 @@ test("ホシュクラ：豚レース場は 柵で 閉じ、柵ごしに 豚に �
 	ok(sabaEvents(view(1)).length === 0, "saba events at stage 1");
 });
 
-test("ホシュクラ：夜の 匠は ふだん いない・出る マスは キリコの となりの 島の 通れる 空いた マス", () => {
+test("マイクラ：夜の 匠は ふだん いない・出る マスは キリコの となりの 島の 通れる 空いた マス", () => {
 	const flags: VState = { x: 0, y: 0, dir: "down", flags: {} };
 	const tk = sabaEvents(view(3)).find((e) => e.id === TAKUMI_ID);
 	ok(tk?.when && !tk.when(flags), "the takumi is there without the flag");
@@ -292,7 +292,7 @@ const pngSize = (file: string): [number, number] => {
 	return [b.readUInt32BE(16), b.readUInt32BE(20)];
 };
 
-test("ホシュクラ：絵は まとめた saba.png の 16px の 格子の 中・匠の 歩行グラは 32×64・人の 絵は ほかの 人と かぶらない", () => {
+test("マイクラ：絵は まとめた saba.png の 16px の 格子の 中・匠の 歩行グラは 32×64・人の 絵は ほかの 人と かぶらない", () => {
 	const [w, h] = pngSize("public/sprites/saba.png");
 	ok(w === SABA_SIZE[0] && h === SABA_SIZE[1], `saba.png is ${w}x${h}`);
 	const [tw, th] = pngSize("public/sprites/saba_takumi.png");
@@ -334,7 +334,7 @@ test("ホシュクラ：絵は まとめた saba.png の 16px の 格子の 中�
 
 const BANNED = [
 	/落ち/,
-	/マイクラ|マインクラフト|Minecraft|Mojang/i,
+	/マインクラフト|Minecraft|Mojang/i,
 	/クリーパー|エンダーマン|スティーブ/,
 	/統合版|Java|JAVA|Bedrock/,
 	/保守/,
@@ -367,7 +367,7 @@ const LONG = {
 	event: X.events[5],
 	n: 999,
 	name: "ウーパー跡地",
-	other: "ホシュクラ村",
+	other: "マイクラ村",
 	item: X.chestItems[5],
 	tail: X.mineTail0,
 };
@@ -376,7 +376,7 @@ const filled = (s: string): string =>
 		String(LONG[k as keyof typeof LONG] ?? ""),
 	);
 
-test("ホシュクラ：文は 窓に おさまる（22字×2行）・板の 一言は 1行・選ぶ 字は 9字まで・名前の 候補は 7字まで・使わない 語が ない", () => {
+test("マイクラ：文は 窓に おさまる（22字×2行）・板の 一言は 1行・選ぶ 字は 9字まで・名前の 候補は 7字まで・使わない 語が ない", () => {
 	const {
 		board,
 		cands,
@@ -425,7 +425,7 @@ test("ホシュクラ：文は 窓に おさまる（22字×2行）・板の 一
 
 // ───────────────── 決まり（命名投票・お知らせ・水槽・夜） ─────────────────
 
-test("ホシュクラ：命名投票は キリコの 1票で 0 か 1 に 決まり、ほかは 決選で 0（ネタ）", () => {
+test("マイクラ：命名投票は キリコの 1票で 0 か 1 に 決まり、ほかは 決選で 0（ネタ）", () => {
 	const want: [number, number, boolean][] = [
 		[-1, 0, true],
 		[0, 0, false],
@@ -453,7 +453,7 @@ test("ホシュクラ：命名投票は キリコの 1票で 0 か 1 に 決ま�
 	ok(pendingResult(s, 5, 12) === 4, "stage 4 result pending at stage 5");
 });
 
-test("ホシュクラ：鯖缶の お知らせ（土曜 21時〜 → 夜 → 朝やで → 土曜 → 日曜 → 帰りごと）・水槽・夜の 時刻", () => {
+test("マイクラ：鯖缶の お知らせ（土曜 21時〜 → 夜 → 朝やで → 土曜 → 日曜 → 帰りごと）・水槽・夜の 時刻", () => {
 	const wd = { m: 10, d: 7, w: 3 };
 	const sat = { m: 10, d: 10, w: 6 };
 	ok(
@@ -510,7 +510,7 @@ test("ホシュクラ：鯖缶の お知らせ（土曜 21時〜 → 夜 → 朝
 		ok(isNight(h) === (h >= 20 || h < 5), `hour ${h}`);
 });
 
-test("ホシュクラ：記録を 読む（こわれた 値は はじめの 値・投票は 段3〜7 だけ）", () => {
+test("マイクラ：記録を 読む（こわれた 値は はじめの 値・投票は 段3〜7 だけ）", () => {
 	ok(JSON.stringify(parseSaba(null)) === JSON.stringify(freshSaba()), "null");
 	ok(
 		JSON.stringify(parseSaba({ v: 2 })) === JSON.stringify(freshSaba()),
@@ -1112,7 +1112,7 @@ const DAY = { m: 10, d: 7, w: 3 };
 const now = (o: { stage: number; at: number; hour?: number }) =>
 	setSabaNow(() => ({ hour: 12, day: DAY, ...o }));
 
-test("ホシュクラ：投票箱（入れる → 同じ 帰りは 開票まち → 次の 帰りで 開票）・初期スポの 看板に 決まった 名前", async () => {
+test("マイクラ：投票箱（入れる → 同じ 帰りは 開票まち → 次の 帰りで 開票）・初期スポの 看板に 決まった 名前", async () => {
 	await withStorage(async () => {
 		sabaEvents(view(3));
 		now({ stage: 3, at: 10 });
@@ -1167,7 +1167,7 @@ test("ホシュクラ：投票箱（入れる → 同じ 帰りは 開票まち 
 	});
 });
 
-test("ホシュクラ：ブラマイ場（やめれば 板なし・ダイヤの 記録は いちばん 多い 回だけ 書きかわる）", async () => {
+test("マイクラ：ブラマイ場（やめれば 板なし・ダイヤの 記録は いちばん 多い 回だけ 書きかわる）", async () => {
 	await withStorage(async () => {
 		now({ stage: 3, at: 10 });
 		let calls = 0;
@@ -1207,7 +1207,7 @@ test("ホシュクラ：ブラマイ場（やめれば 板なし・ダイヤの 
 	});
 });
 
-test("ホシュクラ：夜の 島で 帰りごとに 1回だけ 匠（キリコの うしろ・昼・寝た 帰り・>>1 の 看板の あと・部屋では 出ない・次の 帰りは また 出る）", async () => {
+test("マイクラ：夜の 島で 帰りごとに 1回だけ 匠（キリコの うしろ・昼・寝た 帰り・>>1 の 看板の あと・部屋では 出ない・次の 帰りは また 出る）", async () => {
 	await withStorage(async () => {
 		sabaEvents(view(3));
 		now({ stage: 3, at: 10 });
@@ -1266,7 +1266,7 @@ test("ホシュクラ：夜の 島で 帰りごとに 1回だけ 匠（キリコ
 	});
 });
 
-test("ホシュクラ：ベッド（昼は 眠れない・夜は 誰や 寝てないのは → もぐる → 暗転（文なし）→ 朝やで → 鯖缶も 朝・次の 帰りは また 寝られる）", async () => {
+test("マイクラ：ベッド（昼は 眠れない・夜は 誰や 寝てないのは → もぐる → 暗転（文なし）→ 朝やで → 鯖缶も 朝・次の 帰りは また 寝られる）", async () => {
 	await withStorage(async () => {
 		now({ stage: 2, at: 10 });
 		const d = recorder();
@@ -1311,7 +1311,7 @@ test("ホシュクラ：ベッド（昼は 眠れない・夜は 誰や 寝て�
 	});
 });
 
-test("ホシュクラ：帰りごとに 進む（鯖缶の お知らせ・湧き潰しの 小言 （37回目）〜・水槽）", async () => {
+test("マイクラ：帰りごとに 進む（鯖缶の お知らせ・湧き潰しの 小言 （37回目）〜・水槽）", async () => {
 	await withStorage(async () => {
 		now({ stage: 6, at: 10 });
 		const a = recorder();
@@ -1346,7 +1346,7 @@ test("ホシュクラ：帰りごとに 進む（鯖缶の お知らせ・湧き
 	});
 });
 
-test("ホシュクラ：102号室に 表札を 書くと 入居（外の 表札にも）", async () => {
+test("マイクラ：102号室に 表札を 書くと 入居（外の 表札にも）", async () => {
 	await withStorage(async () => {
 		now({ stage: 4, at: 10 });
 		const a = recorder([0]);
@@ -1364,7 +1364,7 @@ test("ホシュクラ：102号室に 表札を 書くと 入居（外の 表札�
 	});
 });
 
-test("ホシュクラ：共有の 振り分けを 通る（村の 地図の 豚と 匠・鯖缶と 看板の 物・豆腐ハウスの ベッド）", async () => {
+test("マイクラ：共有の 振り分けを 通る（村の 地図の 豚と 匠・鯖缶と 看板の 物・豆腐ハウスの ベッド）", async () => {
 	await withStorage(async () => {
 		const v3 = view(3);
 		const village = buildVillage(v3, {} as Ctx).events ?? [];
