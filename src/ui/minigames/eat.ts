@@ -7,7 +7,8 @@
 //   地の文 1〜2窓。村に いる あいだの 店ごとの 1回目だけ、食べた あとに 店番の「お代は　ええ」。
 // - 2回目からは 品の 値段（品書きに「名前　値段」）を 注文の 前に 払う（チャリン）。足りなければ 店番の short で
 //   断られて 何も 出ない（2026-10-14 作者：「他の 有料に して いい」。財布は engine/wallet.ts）。
-// - 居酒屋「草」だけ ツケが きく（作者：「居酒屋は ツケも できる ように」）：足りなければ「ツケに　しとこか？」で
+// - 居酒屋「草」だけ ツケが きく（作者：「居酒屋は ツケも できる ように」「足りても ツケが 選べる ように」）：
+//   払える ときは「払う／ツケ／やめる」、足りなければ「ツケに　しとこか？」で
 //   TAB_CAP 円まで ツケに できる。ツケが あって 払える ときは 品書きの 前に「払ってくか？」（kiriko-roguelike/tab）。
 // どれも 寄り道で、何も 持ちこまない（満腹度・道具・強さ・記録には ふれない。乱数も 使わない）。
 // 板の 見た目は 別ゲーの 板（ui/minigames/minigames.ts）と 同じ クラス（.mgame）。
@@ -192,22 +193,34 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	const d = m.dishes[k];
 	const ate = `eat:${id}`;
 	// 1回目は お代 なし（食べた あとに free）。2回目からは 注文の 前に 払う。
-	// 足りない とき ツケが きく 店（居酒屋）なら ツケに できる（上限 TAB_CAP）
-	if (s.flag(ate) && !pay(s, d.price)) {
+	// ツケが きく 店（居酒屋）は 足りても 足りなくても ツケに できる（上限 TAB_CAP。2026-10-14 作者：「足りても ツケが 選べる ように」）
+	if (s.flag(ate)) {
 		const t = m.tab;
-		const owe = loadTab();
-		if (!t || owe + d.price > TAB_CAP) {
+		const price = yen(d.price);
+		const owe = t ? loadTab() : 0;
+		const canTab = !!t && owe + d.price <= TAB_CAP;
+		const canPay = walletYen() >= d.price;
+		if (t && canTab) {
+			// 払える とき：払う／ツケ／やめる、払えない とき：ツケ／やめる
+			await keeperSay(s, m.keeper, fill(canPay ? t.choice : t.ask, { price }));
+			const opts = canPay
+				? [...t.choiceMenu.map((x) => fill(x, { price }))]
+				: [...t.menu];
+			const c = await s.choose(opts, { cancel: opts.length - 1 });
+			const tab = canPay ? c === 1 : c === 0;
+			if (c === opts.length - 1 || c < 0) {
+				await keeperSay(s, m.keeper, m.no);
+				return;
+			}
+			if (tab) {
+				saveTab(owe + d.price);
+				await keeperSay(s, m.keeper, fill(t.put, { tab: yen(owe + d.price) }));
+			} else pay(s, d.price);
+		} else if (!pay(s, d.price)) {
 			const line = t ? fill(t.full, { tab: yen(owe) }) : m.short;
-			await keeperSay(s, m.keeper, fill(line, { price: yen(d.price) }));
+			await keeperSay(s, m.keeper, fill(line, { price }));
 			return;
 		}
-		await keeperSay(s, m.keeper, fill(t.ask, { price: yen(d.price) }));
-		if ((await s.choose([...t.menu], { cancel: 1 })) !== 0) {
-			await keeperSay(s, m.keeper, m.no);
-			return;
-		}
-		saveTab(owe + d.price);
-		await keeperSay(s, m.keeper, fill(t.put, { tab: yen(owe + d.price) }));
 	}
 	await keeperSay(s, m.keeper, fill(m.order, { dish: d.name }));
 	// チーン（できあがりの 呼び鈴）

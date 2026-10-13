@@ -43,6 +43,9 @@ export type EatTab = {
 	/** 足りない とき「ツケに　する？」。 */
 	ask: string;
 	menu: readonly [string, string];
+	/** 足りる とき「払う？　ツケ？」（{price}）。 */
+	choice: string;
+	choiceMenu: readonly [string, string, string];
 	/** ツケに した。 */
 	put: string;
 	/** 上限まで たまって いて もう ツケに できない。 */
@@ -245,6 +248,8 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		tab: {
 			ask: "{price}や！　……足りんな。\nほな　ツケに　しとこか？",
 			menu: ["ツケで　たのむ", "やめとく"],
+			choice: "{price}や。\n今　払うか、ツケに　しとくか？",
+			choiceMenu: ["払う（{price}）", "ツケで　たのむ", "やめとく"],
 			put: "ツケ　{tab}。\nあるとき　払いで　ええで",
 			full: "ツケが　{tab}　たまっとる。\nまず　それ　払てからや",
 			payAsk: "ツケが　{tab}　あるで。\n払ってくか？",

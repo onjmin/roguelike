@@ -7863,10 +7863,38 @@ test("居酒屋の ツケ（2026-10-14）: 足りなければ ツケに でき�
 			`pay:\n${log.join("\n")}`,
 		);
 		ok(loadTab() === 0, `tab ${loadTab()}`);
-		for (const x of [t.ask, t.put, t.full, t.payAsk, t.paid, t.later])
+		// 足りても 選べる：「今　払うか、ツケに　しとくか？」で 払う（pick 0）
+		ok(
+			inOrder(log, [
+				`say nanj: ${fill(t.choice, { price: yen(d.price) })}`,
+				"se arcCoin",
+				`say nanj: ${fill(m.order, { dish: d.name })}`,
+			]),
+			`choice pay:\n${log.join("\n")}`,
+		);
+		// 足りても ツケに する（pick 1：2品目・ツケで　たのむ）
+		const d1 = m.dishes[1];
+		setTownYen(10_000);
+		const two = fakeStory({ pick: 1 });
+		two.s.set("eat:izakaya");
+		const before = walletYen();
+		await ev.run(two.s);
+		ok(
+			inOrder(two.log, [
+				`say nanj: ${fill(t.choice, { price: yen(d1.price) })}`,
+				`say nanj: ${fill(t.put, { tab: yen(d1.price) })}`,
+				"se eat",
+			]) && walletYen() === before,
+			`tab with money:\n${two.log.join("\n")}`,
+		);
+		ok(loadTab() === d1.price, `tab ${loadTab()}`);
+		for (const x of [t.ask, t.choice, t.put, t.full, t.payAsk, t.paid, t.later])
 			fitsWindow([["tab", fill(x, { price: yen(2500), tab: yen(TAB_CAP) })]]);
-		for (const x of [...t.menu, ...t.payMenu])
-			ok(width(fill(x, { tab: yen(TAB_CAP) })) <= 9, `${x} is too long`);
+		for (const x of [...t.menu, ...t.payMenu, ...t.choiceMenu])
+			ok(
+				width(fill(x, { tab: yen(TAB_CAP), price: yen(2500) })) <= 9,
+				`${x} is too long`,
+			);
 		forgetWalletMemo();
 		forgetTabMemo();
 	});
