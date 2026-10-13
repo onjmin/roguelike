@@ -381,7 +381,9 @@ const ROOM_PIECES = {
 	// 96: 2 3
 	tvBig: { ids: [["fLWE9id", "9p0BFuc"]] },
 	// 96: 7
-	tvCrt: { ids: [["wUWqf0E"]] },
+	tvCrt: { ids: [["dq:226"]] }, // 1マスで すむ テレビ（rpgen.org の 226。前は 2マスの テレビの 上だけ だった）
+	// 台つきの テレビ（1x2。rpgen.org の 209 / 210）
+	tvTall: { ids: [["dq:209"], ["dq:210"]] },
 	// 96: 8
 	tvCrtB: { ids: [["uBb2Ml"]] },
 	// 95: 2
@@ -426,8 +428,9 @@ const ROOM_PIECES = {
 	chairDarkDown: { ids: [["j93jwZ7"]] },
 	// 105: 63
 	chairDarkUp: { ids: [["oDsxlAG"]] },
-	// 105: 66 67
-	sofaWhite: { ids: [["z23VcBZ", "HbuoVav"]] },
+	// 白い ソファ（2x2。上が 背もたれ、下が 座面と ひじかけ。rpgen.org の 5824 5823 / 5822 5821）。
+	// 2026-10-13 まで 座面の 段だけ だった（作者の 指摘）
+	sofaWhite: { ids: [["dq:5824", "dq:5823"], ["dq:5822", "dq:5821"]] },
 	// 105: 68。背中から 見た ひじかけ いす（映画館の 席）
 	seatBack: { ids: [["rIstCjf"]] },
 	// 80: 3
@@ -572,8 +575,10 @@ const ROOM_PIECES = {
 	plateStack: { ids: [["oD4clAM"]], lift: 3 },
 	// 106: 51 52。酒瓶の 棚（2x1）
 	shelfBottles: { ids: [["iNhnDvV", "hwp7BpN"]] },
-	// 106: 59 / 64。本棚 2
-	bookshelf: { ids: [["YFbES4", "2hq6YeP"]] },
+	// 本棚（1x2。上が 冠、下が 棚の 下半分。rpgen.org の 391 / 392 = 明るい 木、5573 / 5572 = 暗い 木）。
+	// 2026-10-13 まで 明るい 本棚の 上と 暗い 本棚の 下を 横に ならべて 1つに していた（作者の 指摘）
+	bookshelf: { ids: [["dq:391"], ["dq:392"]] },
+	bookshelfDark: { ids: [["dq:5573"], ["dq:5572"]] },
 	// 96: 2 3 / 9 10。台に のった 大きな テレビ（2x2。上の 段が 画面の 上、下の 段が 画面の 下と 黄色い 台）
 	tvGame: { ids: [["fLWE9id", "9p0BFuc"], ["fLWY9Jb", "TOYZ1S2"]] },
 	// 105: 90
@@ -1130,10 +1135,16 @@ const arg = (name) => {
 const cacheDir = arg("--cache") ? resolve(arg("--cache")) : undefined;
 if (cacheDir) mkdirSync(cacheDir, { recursive: true });
 
+/** 部品の URL（"dq:<番号>" は rpgen.org の スプライトの 番号。ほかは rpgen-search の id）。 */
+const pieceUrl = (id) =>
+	id.startsWith("dq:")
+		? `https://rpgen.org/dq/sprites/${id.slice(3)}/sprite.png`
+		: `${CDN}${id}.png`;
+
 const fetchPiece = async (id) => {
-	const local = cacheDir && join(cacheDir, `${id}.png`);
+	const local = cacheDir && join(cacheDir, `${id.replace(":", "_")}.png`);
 	if (local && existsSync(local)) return readFileSync(local);
-	const res = await fetch(`${CDN}${id}.png`);
+	const res = await fetch(pieceUrl(id));
 	if (!res.ok) throw new Error(`${id}: ${res.status}`);
 	const buf = Buffer.from(await res.arrayBuffer());
 	if (local) writeFileSync(local, buf);

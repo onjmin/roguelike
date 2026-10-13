@@ -176,6 +176,7 @@ export type FacilityRoom = {
 		| "saba"
 		| "dosukoi"
 		| "arcade"
+		| "furnshop"
 		| NetaPlay
 	>;
 };
@@ -1646,8 +1647,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"#HHWHHHHWHH#",
 				"#hhhhyyyhmh#",
 				"#MNfw.....g#",
-				"#..........#",
-				"#.SZ.vV.bB.#",
+				"#......vV..#",
+				"#.SZ.oO.bB.#",
 				"#.sz.eE....#",
 				"#xX.....[=]#",
 				"#U.........#",
@@ -1665,11 +1666,13 @@ const BASE_FACILITIES: readonly Facility[] = [
 				s: k.on(riCell("shelfGoods", 0, 1)),
 				z: k.on(riCell("shelfGoods", 1, 1)),
 				v: k.on(ri("tvCrt")),
-				V: k.on(ri("tvCrtB")),
+				V: k.on(ri("tvCrt")),
 				b: k.on(riCell("bike", 0, 0)),
 				B: k.on(riCell("bike", 1, 0)),
-				e: k.on(riCell("sofaWhite", 0, 0)),
-				E: k.on(riCell("sofaWhite", 1, 0)),
+				o: k.on(riCell("sofaWhite", 0, 0)),
+				O: k.on(riCell("sofaWhite", 1, 0)),
+				e: k.on(riCell("sofaWhite", 0, 1)),
+				E: k.on(riCell("sofaWhite", 1, 1)),
 				x: k.on(ri("crate")),
 				X: k.on(ri("crateB")),
 				"[": ctr(k.on(riCell("whiteCounter", 0, 0))),
@@ -1694,6 +1697,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				B: "bike",
 				e: "sofa",
 				E: "sofa",
+				o: "sofa",
+				O: "sofa",
 				x: "box",
 				X: "box",
 				"[": "register",
@@ -1717,6 +1722,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"樽に　レコードが　つめこんである。\n……どれも　針の　あとが　深い。",
 				],
 			},
+			// レジで 家具を 買う（キリコの 家。ui/village/myhome.ts の furnitureShop）
+			plays: { register: "furnshop" },
 			people: [
 				{
 					id: "recycle_clerk",
@@ -2644,9 +2651,13 @@ const BASE_FACILITIES: readonly Facility[] = [
 		room: {
 			look: LOOKS.wood,
 			rows: HOME_ROWS,
-			tiles: (k) => ({ K: k.on(ri("boxesB")) }),
-			things: { m: "loan", K: "closet" },
-			lines: { loan: HOME_MSG.loanDone, closet: [HOME_MSG.closet] },
+			tiles: (k) => ({ K: k.on(ri("boxesB")), P: k.on(ri("phone")) }),
+			things: { m: "loan", K: "closet", P: "phone" },
+			lines: {
+				loan: HOME_MSG.loanDone,
+				closet: [HOME_MSG.closet],
+				phone: [HOME_MSG.phone],
+			},
 		},
 	},
 	// 灰色の 団地（板の 屋上・並んだ 窓・郵便受け・自転車）
@@ -3072,7 +3083,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"#hkhmhSTSThhh#",
 				"#.........LJ.#",
 				"#.p.......lj.#",
-				"#............#",
+				"#.ソフ.........#",
 				"#.so....iK...#",
 				"#............#",
 				"#ee.......F..#",
@@ -3088,8 +3099,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				l: k.on(riCell("lockers", 0, 1)),
 				j: k.on(riCell("lockers", 1, 1)),
 				p: k.on(ri("pole")),
-				s: k.on(riCell("sofaWhite", 0, 0)),
-				o: k.on(riCell("sofaWhite", 1, 0)),
+				ソ: k.on(riCell("sofaWhite", 0, 0)),
+				フ: k.on(riCell("sofaWhite", 1, 0)),
+				s: k.on(riCell("sofaWhite", 0, 1)),
+				o: k.on(riCell("sofaWhite", 1, 1)),
 				i: k.on(riCell("stove", 0, 0)),
 				K: k.on(riCell("sink", 0, 0)),
 				e: k.on(ri("extinguisher")),
@@ -3105,6 +3118,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				p: "pole",
 				s: "sofa",
 				o: "sofa",
+				ソ: "sofa",
+				フ: "sofa",
 				i: "kitchen",
 				K: "kitchen",
 				e: "extinguisher",
@@ -3170,7 +3185,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			look: LOOKS.court,
 			rows: [
 				"##############",
-				"#HHHHHabHHHHH#",
+				"#H本HHHabHHHHH#",
 				"#hLhhhhhhhhmh#",
 				"#.....n......#",
 				"#....[=].....#",
@@ -3196,8 +3211,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				f: k.on(base(1, 44)),
 				B: k.on(base(0, 121)),
 				"~": k.floor(ri("runner")),
-				// 判例集（模擬議会の 議事録も とじてある。ui/minigames/debate.ts）
-				L: k.low(riCell("bookshelf", 0, 0)),
+				// 判例集（模擬議会の 議事録も とじてある。ui/minigames/debate.ts）。本棚は 上下 2マス
+				本: k.up(riCell("bookshelf", 0, 0)),
+				L: k.low(riCell("bookshelf", 0, 1)),
 			}),
 			things: {
 				L: "cases",

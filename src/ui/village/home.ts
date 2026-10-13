@@ -20,6 +20,7 @@ import {
 	withdrawItem,
 } from "../../engine/save";
 
+import { walletYen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { explain } from "../explain";
 import { gearPower, itemSub } from "../itemText";
@@ -298,7 +299,7 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 				)}</div><small class="sales-legend">金の　棒は　町の　段が　上がった　帰り</small>`
 		: `<p class="dim">${escBr(TOWN_MSG.salesEmpty.text)}</p>`;
 	const html =
-		`<div class="sales-kpis">${kpi("合計", `${t.points}円`)}${kpi("前回", last ? `${last.points}円` : "—")}${kpi("平均", t.sales.length ? `${avg}円` : "—")}</div>` +
+		`<div class="sales-kpis">${kpi("合計", `${t.points}円`)}${kpi("手もと", `${walletYen()}円`)}${kpi("前回", last ? `${last.points}円` : "—")}${kpi("平均", t.sales.length ? `${avg}円` : "—")}</div>` +
 		bars;
 	await infoWindow(ctx, `売り上げ`, html, {
 		cls: "sales-window",

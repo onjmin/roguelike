@@ -232,7 +232,7 @@ const CITYHALL: Facility = {
 		look: look(ri("flGrey"), "#b0b0b0", base(0, 507), base(0, 508), "#e8e8e4"),
 		rows: [
 			"################",
-			"#HHWHHHHHHHHWHH#",
+			"#HH本HHHHHHHHWHH#",
 			"#hmBhMwhGghkehh#",
 			"#..............#",
 			"#.....qQQR.....#",
@@ -250,7 +250,8 @@ const CITYHALL: Facility = {
 			"#######DD#######",
 		],
 		tiles: (k) => ({
-			B: k.low(riCell("bookshelf", 0, 0)),
+			本: k.up(riCell("bookshelf", 0, 0)),
+			B: k.low(riCell("bookshelf", 0, 1)),
 			M: k.low(MONITOR_L),
 			w: k.low(MONITOR_R),
 			G: k.low(FLAG_L),

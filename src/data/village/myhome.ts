@@ -1,7 +1,9 @@
 // キリコの 家（マイホーム）。住宅街（段6）から 中庭の 分譲住宅（地図の 53,31。data/village/facilities.ts の myhome）を
-// 35年ローンで 買える（演出だけ：ゲームの 中に お金を 払う ところは ない。返済予定表が 帰るたびに 1か月 進む）。
-// 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 買わず、もらう：
-// 帰るたびに 1つ 宅配便で 届く（仲間・町の 人から。HOME_GIFTS）のと、町の 住人に 話すと 1度だけ（RESIDENT_GIFTS）。
+// 35年ローンで 買う。2026-10-13 から 本当に 払う（作者：「稼いだ 金で 何か 買えるように」。財布は engine/wallet.ts）：
+// 契約で 頭金（HOME_DOWN）、帰るたびに 月の 返済（HOME_MONTHLY）。払えない 月は 滞納に なる（追い出されは しない）。
+// 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 3通りで 手に 入る：
+// 帰るたびに 1つ 宅配便で 届く（仲間・町の 人から。HOME_GIFTS）、町の 住人に 話すと 1度だけ（RESIDENT_GIFTS）、
+// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め）。電話で 喫茶で 親しく なった 人を 招ける。
 // ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/village/myhome.ts。
 
 import type { Cell } from "./map";
@@ -11,8 +13,12 @@ import { base } from "./tiles";
 /** 分譲住宅が 建つ 町の 段（住宅街）。 */
 export const MYHOME_FROM = 6;
 
-/** ローンの 月数（35年）。帰るたびに 1か月 返す（演出）。 */
+/** ローンの 月数（35年）。帰るたびに 1か月 返す。 */
 export const LOAN_MONTHS = 35 * 12;
+/** 契約の ときの 頭金（円）。 */
+export const HOME_DOWN = 50000;
+/** 帰るたびの 返済（円。財布から 引き落とし。足りなければ 滞納）。 */
+export const HOME_MONTHLY = 1500;
 
 // ───────────────── 家具 ─────────────────
 
@@ -33,7 +39,9 @@ export type FurnitureId =
 	| "tansu"
 	| "chair"
 	| "safe"
-	| "dumbbell";
+	| "dumbbell"
+	| "shelfDark"
+	| "tvTall";
 
 export type Furniture = {
 	name: string;
@@ -74,13 +82,23 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 	},
 	sofa: {
 		name: "白い　ソファ",
-		cells: [row("sofaWhite", 2)],
+		cells: [row("sofaWhite", 2, 0), row("sofaWhite", 2, 1)],
 		line: "白い　ソファ。\nすわると、ちょうど　いい　沈みかた。",
 	},
 	shelf: {
 		name: "本棚",
-		cells: [row("bookshelf", 2)],
+		cells: [[riCell("bookshelf", 0, 0)], [riCell("bookshelf", 0, 1)]],
 		line: "本棚。\nまだ　半分　あいている。",
+	},
+	shelfDark: {
+		name: "黒い　本棚",
+		cells: [[riCell("bookshelfDark", 0, 0)], [riCell("bookshelfDark", 0, 1)]],
+		line: "黒い　本棚。\n過去ログの　製本が　ぎっしり。",
+	},
+	tvTall: {
+		name: "台つきの　テレビ",
+		cells: [[riCell("tvTall", 0, 0)], [riCell("tvTall", 0, 1)]],
+		line: "台つきの　テレビ。\n下の　段に　ビデオデッキ。",
 	},
 	tv: {
 		name: "大きな　テレビ",
@@ -132,6 +150,32 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 		cells: [[ri("dumbbells")]],
 		line: "ダンベル。\n……持ちあげると、重い。",
 	},
+};
+
+/**
+ * リサイクルショップの レジで 買う ときの 値段（円）。本編に 関係ない 物なので 高め
+ * （1回の 冒険の 売り上げは 数千円。node scripts/sales-sim.mjs）。
+ */
+export const FURNITURE_PRICE: Record<FurnitureId, number> = {
+	bed: 20000,
+	table: 8000,
+	crt: 6000,
+	bonsai: 12000,
+	coffee: 15000,
+	sofa: 40000,
+	shelf: 25000,
+	shelfDark: 30000,
+	tv: 60000,
+	tvTall: 35000,
+	tank: 45000,
+	guitar: 30000,
+	fridge: 30000,
+	records: 18000,
+	game: 50000,
+	tansu: 28000,
+	chair: 10000,
+	safe: 80000,
+	dumbbell: 9000,
 };
 
 export const furnitureSize = (id: FurnitureId): { w: number; h: number } => {
@@ -235,6 +279,47 @@ export const RESIDENT_GIFTS: readonly (Gift & {
 	},
 ];
 
+// ───────────────── 招く ─────────────────
+
+/**
+ * 招いた 人の ひとこと（置いた 家具が 少ない・ふつう・多い の 3つ。1窓ずつ）。
+ * 仲間は 名前で、住人は VISIT_ANY。キーは 仲間・住人の id。
+ */
+export const HOME_VISIT: Partial<Record<string, readonly string[]>> = {
+	roze: [
+		"ひろっ！　なんも　ないやん。\nソファ　置こ、ソファ。スレ　見る　用の",
+		"ええ　感じやん。\n……ここで　ネタ　拾ったら　ウチに　先　見せてな",
+		"もう　店　開けるやん、これ。\nロゼの　出張所に　しとこか",
+	],
+	zero: [
+		"……がらんと　してる。\n帳簿で　いうと、まだ　1ページ目",
+		"収支、ちょっと　黒字に　なってきたね。\n……この　部屋の　話",
+		"これ　ぜんぶ　キリコの　売り上げから？\n……ローン、ちゃんと　返してね",
+	],
+	feris: [
+		"わあ、まっしろ！\nここ、なに　置く　予定ですか？",
+		"いい　お部屋ですね。\n図鑑の　机も　置けそう",
+		"すごい……。\nわたしの　部屋より　にぎやかです",
+	],
+	shiyo: [
+		"……倉庫より　空いてる。\n物、あずけに　来てもいい？",
+		"整理整頓、まあまあ。\n……収納の　中は　見ないで　おく",
+		"物、多い。\n……でも　ちゃんと　使ってるなら、いい",
+	],
+	nanj: [
+		"なんもないやんけ！\nテレビ　置けや、ナイター　見るで",
+		"ええやん。\n……ワイの　小屋より　ずっと　家っぽいわ",
+		"ほんま　ええ　家に　なったな。\n……キリコ、えらいで",
+	],
+};
+
+/** 住人を 招いた とき（家具の 少ない・ふつう・多い）。 */
+export const VISIT_ANY: readonly string[] = [
+	"おじゃまします。\n……ひろい　お部屋ですね",
+	"おじゃまします。\n住みごこち　よさそう",
+	"おじゃまします。\nすごい、家具が　いっぱい",
+];
+
 // ───────────────── 模様替え ─────────────────
 
 export type Wallpaper = {
@@ -275,7 +360,7 @@ export const HOME_ROWS: readonly string[] = [
 	"############",
 	"#HHWHHHHWHH#",
 	"#hhmhhhhhhh#",
-	"#.........K#",
+	"#P........K#",
 	"#..........#",
 	"#..........#",
 	"#..........#",
@@ -284,11 +369,22 @@ export const HOME_ROWS: readonly string[] = [
 	"#####DD#####",
 ];
 
-/** 家具を 置かない マス（入口の マットの 前・返済予定表の 前）。 */
+/** 家具を 置かない マス（入口の マットの 前・返済予定表の 前・電話の 前）。 */
 export const HOME_KEEP: readonly Cell[] = [
 	[5, 8],
 	[6, 8],
 	[3, 3],
+	[1, 4],
+];
+/** 招いた 人が 立つ 所（空いて いる 床から 順に さがす）。 */
+export const GUEST_SPOTS: readonly Cell[] = [
+	[5, 5],
+	[6, 5],
+	[4, 6],
+	[7, 6],
+	[5, 7],
+	[2, 5],
+	[8, 4],
 ];
 /** 入って 立つ 所（左の マットの 1つ上）。 */
 const ENTRY: Cell = [5, 8];
@@ -359,6 +455,7 @@ export const layoutOk = (placed: readonly Placed[]): boolean => {
 	const things: Cell[] = [
 		[10, 3],
 		[3, 2],
+		[1, 3],
 	];
 	for (const p of placed) {
 		const { w, h } = furnitureSize(p.id);
@@ -426,7 +523,11 @@ export const homeRows = (
 } => {
 	const rows = HOME_ROWS.map((r) => [...r]);
 	const art: Record<string, string> = {};
-	const things: Record<string, string> = { m: "loan", K: "closet" };
+	const things: Record<string, string> = {
+		m: "loan",
+		K: "closet",
+		P: "phone",
+	};
 	let n = 0;
 	for (const p of layout.placed.slice(0, HOME_MAX)) {
 		FURNITURE[p.id].cells.forEach((line, dy) => {
@@ -450,15 +551,19 @@ export const HOME_MSG = {
 	],
 	agent: [
 		"いらっしゃいませ！　おんJヶ丘　不動産です。\nこちら、最後の　1区画　なんですよ",
-		"35年ローンで、頭金は　0円。\n金利は「保守金利」で　ございます",
+		"35年ローン、毎月　{monthly}。\n金利は「保守金利」で　ございます",
 	],
-	ask: ["契約する", "やめておく"],
+	ask: ["契約する（頭金を　払う）", "やめておく"],
 	declined: "またの　ご来場を　お待ちしております。",
 	contract: [
 		"書類に　名前を　書いた。\n「キリコ」。……はんこは、ない。",
 		"「拇印で　けっこうです！」",
-		"返済は　毎月、口座から　引き落とし。\n……口座、あったっけ。",
+		"返済は　帰るたびに　引き落とし。\nロゼが　帳簿に　つけてくれる。",
 	],
+	/** 頭金（{price}・{have}）。 */
+	down: "「頭金は　{price}。\nお手元の　ご予算は……」",
+	downShort: "「……{have}。\n頭金が　たりませんね。また　ぜひ」",
+	paid: "頭金　{price}を　払った。",
 	keys: "家の　鍵を　受けとった。",
 	welcome: "「では、ごゆっくり。\n家具は……これから　ですね」",
 	/** 宅配便。 */
@@ -467,11 +572,28 @@ export const HOME_MSG = {
 	/** 返済予定表（{y}年{m}か月）。 */
 	loan: [
 		"返済予定表。\n35年ローン　残り　{y}年{m}か月。",
-		"毎月の　返済額の　ところは、\n……にじんで　読めない。",
+		"毎月の　返済額は　{monthly}。\n手もとの　お金：{have}",
 	],
+	/** 滞納（{n} 回）。 */
+	late: "赤い　字で「滞納　{n}回」。\n……つぎの　帰りに　まとめて　引き落とし。",
+	/** 家に 入ったとき 返済した（{n}か月・{price}）。 */
+	repaid: "ローンを　{n}か月ぶん　返した（{price}）。",
+	/** 払えなかった。 */
+	unpaid: "返済の　お金が　たりなかった。\n予定表に　赤い　字が　ふえた。",
 	loanDone: ["返済予定表。\n「完済」の　はんこ。"],
 	closet: "収納。\n片づけた　家具と、模様替えの　道具。",
-	closetMenu: ["家具を　出す", "壁紙を　かえる", "床を　かえる", "やめる"],
+	closetMenu: [
+		"家具を　出す",
+		"壁紙を　かえる",
+		"床を　かえる",
+		"ぜんぶ　片づける",
+		"やめる",
+	],
+	/** ぜんぶ 片づける。 */
+	clearAsk: "置いた　家具を　ぜんぶ　収納に　しまう？",
+	clearMenu: ["しまう", "やめる"],
+	cleared: "家具を　ぜんぶ　しまった。\n部屋が　広く　なった。",
+	clearNone: "置いた　家具は　ない。",
 	stored: "片づけた　家具",
 	none: "片づけた　家具は　ない。",
 	placeHint:
@@ -492,4 +614,25 @@ export const HOME_MSG = {
 	full: "これ　いじょう　置けない。",
 	carrying: "{name}を　持っている。",
 	gotFrom: "{name}を　もらった。\n家の　収納に　入れておこう。",
+	/** 宅配便で 届いたが もう 持っていた。 */
+	already: "……{name}は　もう　ある。\n気持ちだけ　もらっておこう。",
+	/** リサイクルショップの レジ（{have} は 手もとの お金）。 */
+	shop: "「家具なら　ここで　そろうで。\n配送料は　サービスや」",
+	shopTitle: "家具を　買う",
+	shopNoHome:
+		"「家具？　まず　住む　家が　いるやろ。\nおんJヶ丘の　分譲、まだ　あいとるで」",
+	shopEmpty: "「うちに　ある　家具は、\nもう　ぜんぶ　持っとるやん」",
+	shopAsk: "{name}を　{price}で　買う？",
+	shopMenu: ["買う", "やめる"],
+	shopShort: "「……{price}、たりへんな。\nまた　来てや」",
+	bought: "{name}を　買った。\n家の　収納に　届けてもらった。",
+	/** 電話（招く）。 */
+	phone: "電話。\n喫茶で　仲よく　なった　人の　番号が　ある。",
+	phoneNone:
+		"まだ　かける　相手が　いない。\n（喫茶で　話したり　おごったり　すると）",
+	phoneTitle: "だれを　招く？",
+	phoneCall: "{name}に　電話を　かけた。\n……すぐ　行く、と　言った。",
+	phoneBye: "{name}は　帰っていった。",
+	phoneMenu: ["帰って　もらう", "そのまま"],
+	phoneHere: "{name}が　来ている。",
 } as const;

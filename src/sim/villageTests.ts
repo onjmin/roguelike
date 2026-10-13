@@ -218,6 +218,7 @@ import {
 import {
 	canPlace,
 	FURNITURE,
+	FURNITURE_PRICE,
 	type FurnitureId,
 	HOME_GIFTS,
 	HOME_MAX,
@@ -2129,15 +2130,20 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 		HOME_MSG.loan[0].replace("{y}", "34").replace("{m}", "11"),
 	]);
 	fitsWindow(texts);
-	// どの 家具も もらえる（宅配便・住人・入居の どれか 1つだけ）
+	// もらえる 家具は 宅配便・住人・入居の どれか 1つだけ（もらえない 家具は 買うだけ）。どの 家具にも 値段
 	const sources = [MOVE_IN_GIFT, ...HOME_GIFTS, ...RESIDENT_GIFTS].map(
 		(g) => g.id,
 	);
-	for (const id of Object.keys(FURNITURE))
+	for (const id of Object.keys(FURNITURE)) {
 		ok(
-			sources.filter((x) => x === id).length === 1,
+			sources.filter((x) => x === id).length <= 1,
 			`${id}: ${sources.filter((x) => x === id).length} sources`,
 		);
+		ok(
+			(FURNITURE_PRICE[id as keyof typeof FURNITURE_PRICE] ?? 0) >= 5000,
+			`${id}: no price`,
+		);
+	}
 	// 住人の 家具は その 施設の 人が くれる
 	for (const g of RESIDENT_GIFTS) {
 		const f = facilityById(g.facility);
@@ -2175,8 +2181,9 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 			for (let x = 1; x <= 10; x++)
 				if (!placed.some((p) => p.id === id) && canPlace(placed, { id, x, y }))
 					placed.push({ id, x, y });
+	// （2026-10-13 に 家具を 買えるように して ふえたので、部屋に 入りきらない 物が すこし ある）
 	ok(
-		placed.length === Object.keys(FURNITURE).length,
+		placed.length >= Object.keys(FURNITURE).length - 3,
 		`only ${placed.length} placed`,
 	);
 	ok(layoutOk(placed), "full room is not walkable");

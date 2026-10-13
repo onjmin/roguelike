@@ -148,6 +148,27 @@ const save = (st: CafeState): void => {
 	}
 };
 
+/**
+ * 喫茶で 親しく なった 人（キリコの 家に 招ける。ui/village/myhome.ts）：一杯 おごったか、
+ * 喫茶で 2本 いじょう 話を 聞いた 仲間・住人。
+ */
+export const cafeBonds = (): Cast[] => {
+	const st = load();
+	const talks = new Map<string, number>();
+	for (const t of CAFE_TALKS)
+		if (st.heard.includes(t.id))
+			for (const w of t.cast) talks.set(w, (talks.get(w) ?? 0) + 1);
+	for (const k of st.mobSeen ?? []) {
+		const id = k.split(":")[0];
+		talks.set(id, (talks.get(id) ?? 0) + 1);
+	}
+	const treated = st.treats as Partial<Record<string, number>>;
+	const ids = new Set<string>([...talks.keys(), ...Object.keys(treated)]);
+	return [...ids].filter(
+		(w) => (treated[w] ?? 0) >= 1 || (talks.get(w) ?? 0) >= 2,
+	) as Cast[];
+};
+
 /** 試験用：覚えている 写しを 捨てる。 */
 export const forgetCafeMemo = (): void => {
 	memo = null;

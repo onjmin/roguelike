@@ -1,27 +1,37 @@
 // キリコの 家（マイホーム）の 場面（形と 文は data/village/myhome.ts）。
-// - 買う 前の 扉：不動産屋が 35年ローンを すすめる。契約すると 鍵と ベッド（お金は 払わない。演出だけ）。
-// - 帰るたびに 返済予定表が 1か月 進み、宅配便が 1つ 届く（家に 入った ときに 開ける）。
+// - 買う 前の 扉：不動産屋が 35年ローンを すすめる。契約すると 頭金を 払って 鍵と ベッド（財布は engine/wallet.ts）。
+// - 帰るたびに 月の 返済を 引き落とし（家に 入った ときに。足りなければ 滞納）、宅配便が 1つ 届く。
 // - 町の 住人（リサイクルショップ・コーポ・団地・マンション）に 話すと 1度だけ 家具を くれる。
+// - リサイクルショップの レジで 家具を 買える（furnitureShop）。電話で 喫茶で 親しく なった 人を 招く（次の 帰りまで いる）。
 // - 中：目の前の 床で A（スマホは キリコを タップ）→ 片づけた 家具を 絵つきの 一覧から 選んで 持つ。持っている
 //   あいだは 目の前に 置く 所を うすい 絵で 見せ（置けなければ 赤い 印）、もう 1度 A で 置く。家具を 調べて 動かす・片づける。
 //   収納で 家具の 一覧・壁紙・床を かえる。
 // 保存は kiriko-roguelike/myhome だけ（段の 下見 ?stage=・?event= の あいだは 書かない）。強さ・道具・段には ふれない。
 
+import { CAST } from "../../data/people/cast";
+import { type Cast, MOBS } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
+import type { Speaker } from "../../data/story/quotes";
+import { awayFriends } from "../../data/story/story";
 import type { Facility } from "../../data/village/facilities";
 import type { Cell } from "../../data/village/map";
 import {
 	FLOORINGS,
 	type Flooring,
 	FURNITURE,
+	FURNITURE_PRICE,
 	type FurnitureId,
 	furnitureAt,
 	furnitureSize,
 	type Gift,
+	GUEST_SPOTS,
+	HOME_DOWN,
 	HOME_GIFTS,
 	HOME_MAX,
+	HOME_MONTHLY,
 	HOME_MSG,
 	HOME_ROWS,
+	HOME_VISIT,
 	type HomeLayout,
 	homeRows,
 	LOAN_MONTHS,
@@ -29,16 +39,19 @@ import {
 	type Placed,
 	placeInFront,
 	RESIDENT_GIFTS,
+	VISIT_ANY,
 	WALLPAPERS,
 	type Wallpaper,
 } from "../../data/village/myhome";
 import { tatamiSample } from "../../data/village/tatami";
 import { drawRefInCell, loadImage } from "../../engine/assets";
-import type { Script, Story } from "../../engine/defs";
-import { loadRecords } from "../../engine/save";
+import type { EventDef, Script, Story } from "../../engine/defs";
+import { loadProgress, loadRecords, loadTown } from "../../engine/save";
 import { DIR_VEC, type Dir, TILE } from "../../engine/types";
+import { spendYen, walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
+import { cafeBonds } from "./cafe";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -61,6 +74,12 @@ export type HomeMemo = {
 	placed: Placed[];
 	wall: number;
 	floor: number;
+	/** 返した 月（2026-10-13 より 前の 保存は returns と 同じ）。 */
+	paid: number;
+	/** 払えずに たまった 月。 */
+	late: number;
+	/** 招いた 人（次の 帰りまで いる）。 */
+	guest: Cast | null;
 };
 
 const EMPTY = (): HomeMemo => ({
@@ -74,7 +93,14 @@ const EMPTY = (): HomeMemo => ({
 	placed: [],
 	wall: 0,
 	floor: 0,
+	paid: 0,
+	late: 0,
+	guest: null,
 });
+
+/** 招ける 人か（仲間か 住人の id）。 */
+const isCast = (x: unknown): x is Cast =>
+	typeof x === "string" && (x in CAST || x in MOBS);
 
 let memo: HomeMemo | null = null;
 
@@ -121,6 +147,10 @@ export const loadHome = (): HomeMemo => {
 				placed,
 				wall: pick(raw.wall, WALLPAPERS.length),
 				floor: pick(raw.floor, FLOORINGS.length),
+				paid:
+					typeof raw.paid === "number" ? count(raw.paid) : count(raw.returns),
+				late: count(raw.late),
+				guest: isCast(raw.guest) ? raw.guest : null,
 			};
 		}
 	} catch {
@@ -145,18 +175,30 @@ export const forgetHomeMemo = (): void => {
 	memo = null;
 };
 
-/** 帰りを 数える（契約の あと、前に 数えた 帰りより 新しい 帰りが あれば 1つ）。 */
-const syncReturns = (m: HomeMemo): void => {
-	if (!m.owned) return;
+/**
+ * 帰りを 数える（契約の あと、前に 数えた 帰りより 新しい 帰りが あれば 1つ）。新しい 帰りなら
+ * 月の 返済を 財布から 引き落とし（滞納の ぶんも まとめて。足りる だけ）、招いた 人は 帰る。
+ * 返した 月数（足りずに 返せなかったら -1。新しい 帰りで なければ 0）。
+ */
+const syncReturns = (m: HomeMemo): number => {
+	if (!m.owned) return 0;
 	const at = loadRecords()[0]?.at ?? -1;
-	if (at === m.returnAt) return;
+	if (at === m.returnAt) return 0;
 	m.returns++;
 	m.returnAt = at;
+	m.guest = null;
+	const due = Math.min(m.late + 1, LOAN_MONTHS - m.paid);
+	if (due <= 0) return 0;
+	const n = Math.min(due, Math.floor(walletYen() / HOME_MONTHLY));
+	if (n > 0) spendYen(n * HOME_MONTHLY, previewing());
+	m.paid += n;
+	m.late = due - n;
+	return n > 0 ? n : -1;
 };
 
 /** 返済した 月（35年で 完済）。 */
 export const paidMonths = (m: HomeMemo): number =>
-	Math.min(LOAN_MONTHS, m.returns);
+	Math.min(LOAN_MONTHS, m.paid);
 
 // ───────────────── 部屋 ─────────────────
 
@@ -436,7 +478,24 @@ const closet = async (ctx: Ctx, s: Story): Promise<void> => {
 		return;
 	}
 	await s.narrate(HOME_MSG.closet);
-	const n = await s.choose([...HOME_MSG.closetMenu], { cancel: 3 });
+	const n = await s.choose([...HOME_MSG.closetMenu], { cancel: 4 });
+	if (n === 3) {
+		// ぜんぶ 片づける（置いた 家具を まとめて 収納へ）
+		const m = loadHome();
+		if (!m.placed.length) {
+			await s.narrate(HOME_MSG.clearNone);
+			return;
+		}
+		await s.narrate(HOME_MSG.clearAsk);
+		if ((await s.choose([...HOME_MSG.clearMenu], { cancel: 1 })) !== 0) return;
+		for (const p of m.placed) if (!m.stored.includes(p.id)) m.stored.push(p.id);
+		m.placed = [];
+		saveHome(m);
+		s.se("put");
+		await rebuildSoft(s);
+		await s.narrate(HOME_MSG.cleared);
+		return;
+	}
 	if (n === 0) {
 		const id = await chooseStored(ctx, s, HOME_MSG.stored);
 		if (!id) return;
@@ -487,7 +546,21 @@ export const homeThing =
 			const left = LOAN_MONTHS - paidMonths(m);
 			const lines = m.owned && left > 0 ? HOME_MSG.loan : HOME_MSG.loanDone;
 			for (const l of lines)
-				await s.narrate(fill(l, { y: Math.floor(left / 12), m: left % 12 }));
+				await s.narrate(
+					fill(l, {
+						y: Math.floor(left / 12),
+						m: left % 12,
+						monthly: yen(HOME_MONTHLY),
+						have: yen(walletYen()),
+					}),
+				);
+			if (m.owned && m.late > 0)
+				await s.narrate(fill(HOME_MSG.late, { n: m.late }));
+			return;
+		}
+		if (kind === "phone") {
+			if (m.owned) await phone(ctx, s);
+			else await s.narrate(HOME_MSG.phone);
 			return;
 		}
 		if (kind === "closet") {
@@ -522,17 +595,162 @@ const receive = async (s: Story, g: Gift): Promise<void> => {
 /** 家に 入った ときの 宅配便（契約の あとの 帰りの 数だけ。まとめて 開ける）。 */
 const openParcels = async (s: Story): Promise<void> => {
 	const m = loadHome();
-	syncReturns(m);
+	const repaid = syncReturns(m);
 	const due = Math.min(HOME_GIFTS.length, m.returns);
 	const gifts = HOME_GIFTS.slice(m.parcels, due);
 	m.parcels = Math.max(m.parcels, due);
-	for (const g of gifts) if (!m.stored.includes(g.id)) m.stored.push(g.id);
+	// もう 持っている（買った）家具は 2つめを 置かない
+	const fresh = gifts.filter((g) => !owns(m, g.id));
+	for (const g of fresh) m.stored.push(g.id);
 	saveHome(m);
+	if (repaid > 0)
+		await s.narrate(
+			fill(HOME_MSG.repaid, { n: repaid, price: yen(repaid * HOME_MONTHLY) }),
+		);
+	else if (repaid < 0) await s.narrate(HOME_MSG.unpaid);
 	if (!gifts.length) return;
 	s.se("item");
 	await s.narrate(HOME_MSG.parcel);
-	for (const g of gifts) await receive(s, g);
-	await s.narrate(HOME_MSG.placeHint);
+	for (const g of gifts) {
+		await receive(s, g);
+		if (!fresh.includes(g))
+			await s.narrate(fill(HOME_MSG.already, { name: furnName(g.id) }));
+	}
+	if (fresh.length) await s.narrate(HOME_MSG.placeHint);
+};
+
+/** その 家具を 持っているか（収納か 部屋）。 */
+const owns = (m: HomeMemo, id: FurnitureId): boolean =>
+	m.stored.includes(id) || m.placed.some((p) => p.id === id);
+
+// ───────────────── 買う（リサイクルショップの レジ） ─────────────────
+
+/**
+ * リサイクルショップの レジ（ui/village/facilities.ts の play "furnshop"）：まだ 持って いない 家具を
+ * 絵つきの 一覧から 選んで 買う。家を 買う 前は すすめるだけ。
+ */
+export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
+	const who = { name: "店主" };
+	if (!loadHome().owned) {
+		await s.say("nanj", HOME_MSG.shopNoHome, who);
+		return;
+	}
+	await s.say("nanj", HOME_MSG.shop, who);
+	let start = 0;
+	for (;;) {
+		const m = loadHome();
+		const ids = (Object.keys(FURNITURE) as FurnitureId[]).filter(
+			(id) => !owns(m, id),
+		);
+		if (!ids.length) {
+			await s.say("nanj", HOME_MSG.shopEmpty, who);
+			return;
+		}
+		const have = walletYen();
+		await s.wait(0);
+		const v = await listWindow(
+			ctx,
+			`${HOME_MSG.shopTitle}<br><small>手もと　${yen(have)}</small>`,
+			ids.map((id) => ({
+				label: furnName(id),
+				sub: yen(FURNITURE_PRICE[id]),
+				value: id,
+				icon: furnIcon(id),
+				disabled: FURNITURE_PRICE[id] > have,
+			})),
+			{ closeLabel: "やめる", start },
+		);
+		if (!v || !isFurn(v)) return;
+		start = Math.max(0, ids.indexOf(v));
+		const price = FURNITURE_PRICE[v];
+		await s.narrate(
+			fill(HOME_MSG.shopAsk, { name: furnName(v), price: yen(price) }),
+		);
+		if ((await s.choose([...HOME_MSG.shopMenu], { cancel: 1 })) !== 0) continue;
+		if (!spendYen(price, previewing())) {
+			await s.say("nanj", fill(HOME_MSG.shopShort, { price: yen(price) }), who);
+			continue;
+		}
+		const m2 = loadHome();
+		if (!owns(m2, v)) m2.stored.push(v);
+		saveHome(m2);
+		s.se("item");
+		await s.narrate(fill(HOME_MSG.bought, { name: furnName(v) }));
+	}
+};
+
+// ───────────────── 招く（電話） ─────────────────
+
+/** 招ける 人の 名前。 */
+const castName = (w: Cast): string =>
+	w in CAST ? CAST[w as Speaker].name : MOBS[w as Exclude<Cast, Speaker>].name;
+const castWalk = (w: Cast): string =>
+	w in CAST
+		? CAST[w as Speaker].walk
+		: MOBS[w as Exclude<Cast, Speaker>].sprite;
+
+/** 電話：喫茶で 親しく なった 人を 招く（村に いない 人は 出ない）。来ている 人は 帰って もらえる。 */
+const phone = async (ctx: Ctx, s: Story): Promise<void> => {
+	const m = loadHome();
+	if (m.guest) {
+		const name = castName(m.guest);
+		await s.narrate(fill(HOME_MSG.phoneHere, { name }));
+		if ((await s.choose([...HOME_MSG.phoneMenu], { cancel: 1 })) !== 0) return;
+		m.guest = null;
+		saveHome(m);
+		await rebuildSoft(s);
+		await s.narrate(fill(HOME_MSG.phoneBye, { name }));
+		return;
+	}
+	const away = awayFriends(loadProgress().cleared, loadTown().stage);
+	const list = cafeBonds().filter((w) => !away.includes(w as Speaker));
+	if (!list.length) {
+		await s.narrate(HOME_MSG.phoneNone);
+		return;
+	}
+	await s.narrate(HOME_MSG.phone);
+	await s.wait(0);
+	const v = await listWindow(
+		ctx,
+		HOME_MSG.phoneTitle,
+		list.map((w) => ({ label: castName(w), value: w })),
+		{ closeLabel: "やめる" },
+	);
+	if (!v || !isCast(v)) return;
+	await s.narrate(fill(HOME_MSG.phoneCall, { name: castName(v) }));
+	const m2 = loadHome();
+	m2.guest = v;
+	saveHome(m2);
+	s.se("doorWood");
+	await rebuildSoft(s);
+};
+
+/** 招いた 人（キリコの 家の 中。話すと 家に ついての ひとこと）。 */
+export const guestEvent = (): EventDef | null => {
+	const m = loadHome();
+	const w = m.guest;
+	// 新しい 帰りの あとは もう 帰っている（家に 入った とき syncReturns が 消す）
+	if (!m.owned || !w || m.returnAt !== (loadRecords()[0]?.at ?? -1))
+		return null;
+	const spot = GUEST_SPOTS.find(([x, y]) => !furnitureAt(m.placed, x, y));
+	if (!spot) return null;
+	const name = castName(w);
+	const lines = HOME_VISIT[w] ?? VISIT_ANY;
+	return {
+		id: "home_guest",
+		x: spot[0],
+		y: spot[1],
+		sprite: castWalk(w),
+		dir: "down",
+		trigger: "talk",
+		run: async (s) => {
+			s.face("home_guest", "player");
+			// 置いた 家具の 数で ひとこと（少ない・ふつう・多い）
+			const k = m.placed.length < 3 ? 0 : m.placed.length < 8 ? 1 : 2;
+			const say = w in CAST ? (w as Speaker) : "nanj";
+			await s.say(say, lines[Math.min(k, lines.length - 1)], { name });
+		},
+	};
 };
 
 /**
@@ -563,13 +781,26 @@ export const residentGift = async (
 
 /** 買う：不動産屋の すすめ → 契約 → 鍵と ベッド。買わなければ false。 */
 const buy = async (s: Story): Promise<boolean> => {
+	const agent = { name: "不動産屋" };
 	for (const l of HOME_MSG.forSale) await s.narrate(l);
-	for (const l of HOME_MSG.agent) await s.say("nanj", l, { name: "不動産屋" });
+	for (const l of HOME_MSG.agent)
+		await s.say("nanj", fill(l, { monthly: yen(HOME_MONTHLY) }), agent);
+	await s.say("nanj", fill(HOME_MSG.down, { price: yen(HOME_DOWN) }), agent);
 	const n = await s.choose([...HOME_MSG.ask], { cancel: 1 });
 	if (n !== 0) {
-		await s.say("nanj", HOME_MSG.declined, { name: "不動産屋" });
+		await s.say("nanj", HOME_MSG.declined, agent);
 		return false;
 	}
+	if (!spendYen(HOME_DOWN, previewing())) {
+		await s.say(
+			"nanj",
+			fill(HOME_MSG.downShort, { have: yen(walletYen()) }),
+			agent,
+		);
+		return false;
+	}
+	s.se("arcCoin");
+	await s.narrate(fill(HOME_MSG.paid, { price: yen(HOME_DOWN) }));
 	for (const [i, l] of HOME_MSG.contract.entries())
 		if (i === 1) await s.say("nanj", l, { name: "不動産屋" });
 		else await s.narrate(l);
@@ -580,6 +811,8 @@ const buy = async (s: Story): Promise<boolean> => {
 	m.returns = 0;
 	m.returnAt = loadRecords()[0]?.at ?? -1;
 	m.parcels = 0;
+	m.paid = 0;
+	m.late = 0;
 	if (!m.stored.includes(MOVE_IN_GIFT.id))
 		m.stored = [...m.stored, MOVE_IN_GIFT.id];
 	saveHome(m);

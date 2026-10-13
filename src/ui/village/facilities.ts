@@ -46,6 +46,8 @@ import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
 import {
 	enterHome,
+	furnitureShop,
+	guestEvent,
 	homeDecor,
 	homeEmpty,
 	homeFacility,
@@ -274,6 +276,8 @@ export const buildFacility = (
 			else if (play === "dosukoi") await dosukoiWindow(s, f.id);
 			// ゲームセンターの 筐体（物の 名前が ゲームの 名前。ui/arcade/arcade.ts）
 			else if (play === "arcade") await arcadePlay(ctx, s, kind);
+			// リサイクルショップの レジ：家具を 買う（ui/village/myhome.ts）
+			else if (play === "furnshop") await furnitureShop(ctx, s);
 		});
 	});
 	for (const who of room?.people ?? [])
@@ -303,6 +307,9 @@ export const buildFacility = (
 		);
 	// 議会の 日の 議席・役の 住人（町役場・市役所。ui/village/civic.ts）
 	events.push(...assemblyEvents(f, v));
+	// キリコの 家に 招いた 人（ui/village/myhome.ts）
+	const guest = home ? guestEvent() : null;
+	if (guest) events.push(guest);
 	// 畳の 床は 1枚ずつ 敷く（横・縦の 1畳と 半畳。data/village/tatami.ts）
 	const laid = layRoomTatami(facilityRoomRows(f), facilityRoomPalette(f));
 	return {
