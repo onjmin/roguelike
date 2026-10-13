@@ -4344,9 +4344,11 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 		setProgress(["shallow"]);
 		pushRecord({});
 		ok(!needsOpening(), "the opening plays after a run");
+				`kiriko voice: ${OPENING.mumble[0]}`,
 	});
 });
 
+				`kiriko voice: ${OPENING.reply[0]}`,
 // ───────────────── ぷゆゆ（はじめから いる 子。data/people/mobs.ts の MOBS.puyu） ─────────────────
 
 /** 図鑑を 置く（会った 敵の id と たおした 数）。 */
@@ -4509,27 +4511,29 @@ test("ぷゆゆ: rpg voice rules (🥺🤪✋ only, one 🥺 at a line end, rare
 	ok(ikite <= 2, `生きてこそだ ${ikite} times (2 at most)`);
 });
 
-test("ぷゆゆ・マイナーズ: Kiriko speaks only in chats and never says 保守", () => {
+test("ぷゆゆ・マイナーズ: Kiriko joins the talk with ンゴ and never says 保守", () => {
 	let n = 0;
 	for (const id of MOB_IDS) {
 		const d = MOBS[id];
-		const outside: MobLine[] = [
-			...d.meet,
-			...Object.values(d.milestones).flatMap((v) => v ?? []),
-			...(d.ask ? [...d.ask.lines, ...d.ask.yes, ...d.ask.no] : []),
-			...d.thx,
+		const all: [string, MobLine][] = [
+			...d.meet.map((l): [string, MobLine] => ["meet", l]),
+			...Object.values(d.milestones)
+				.flatMap((v) => v ?? [])
+				.map((l): [string, MobLine] => ["milestone", l]),
+			...(d.ask ? [...d.ask.lines, ...d.ask.yes, ...d.ask.no] : []).map(
+				(l): [string, MobLine] => ["ask", l],
+			),
+			...d.thx.map((l): [string, MobLine] => ["thx", l]),
+			...d.chats.flatMap((c) =>
+				c.lines.map((l): [string, MobLine] => [c.key, l]),
+			),
 		];
-		ok(
-			outside.every((l) => l.who !== "kiriko"),
-			`${id}: Kiriko speaks outside chats`,
-		);
-		for (const c of d.chats)
-			for (const l of c.lines) {
-				if (l.who !== "kiriko") continue;
-				n++;
-				ok(!l.text.includes("保守"), `${id}.${c.key}: Kiriko says 保守`);
-				ok(l.text.includes("ンゴ"), `${id}.${c.key}: Kiriko without ンゴ`);
-			}
+		for (const [key, l] of all) {
+			if (l.who !== "kiriko") continue;
+			n++;
+			ok(!l.text.includes("保守"), `${id}.${key}: Kiriko says 保守`);
+			ok(l.text.includes("ンゴ"), `${id}.${key}: Kiriko without ンゴ`);
+		}
 	}
 	ok(n > 0, "Kiriko never speaks in chats");
 	// 喫茶でも 同じ（仲間の 話は kiriko: "voice"、住人の 話は who: "kiriko"）

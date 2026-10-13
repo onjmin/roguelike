@@ -3,7 +3,7 @@
 //   ボスを たおして 一瞬で 帰ったときの 語り（BOSS_RETURN）、
 //   次のダンジョンが開いたときの ひとこと、起動の札と 村の ひとことの たまり。
 // - 本編（main）の intro / ending は quotes.ts の INTRO / ENDING をそのまま使う。
-// 話すのは 外で待っている仲間だけ（キリコはしゃべらない。ナレーションで動作だけ描く）。
+// キリコも 会話に 加わる（吾輩・ンゴで 短く。「保守」は 電池板の 山場で 札に 書くまで 言わない）。
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
 
 import type { DungeonId } from "../../core/types";
@@ -121,7 +121,7 @@ export const endingFor = (
 		: main;
 };
 
-/** 潜る ときの 一言（口で 行き先を 決めた あと）。やきうが 出ていった あとは キリコの 独白。 */
+/** 潜る ときの 一言（口で 行き先を 決めた あと）。やきうが 出ていった あとは キリコが 言う。 */
 export const DEPART = {
 	nanj: "ほな、上で　保守しとくわ",
 	kiriko: "……保守、しとくンゴ",
@@ -209,8 +209,14 @@ const sOr = (p: StoryPage, instead: StoryPage): StoryPage => ({
 	...p,
 	instead,
 });
-/** キリコの 独白（（　）で 出る。だれにも 聞こえない）。 */
-const k = (text: string): StoryPage => ({ who: null, text, kiriko: "think" });
+/** キリコの 声（みんなに 聞こえる。仲間も 返事を する）。 */
+const k = (text: string): StoryPage => ({ who: null, text, kiriko: "voice" });
+/** キリコの 独白（（　）で 出る。だれも いない 場面だけ）。 */
+const think = (text: string): StoryPage => ({
+	who: null,
+	text,
+	kiriko: "think",
+});
 /** 住人（data/people/mobs.ts）の 1窓。needCleared を つけると、その 板を 持ち帰って いる ときだけ 出る。 */
 const mob = (id: MobId, text: string, needCleared?: DungeonId): StoryPage => ({
 	who: null,
@@ -1069,6 +1075,7 @@ export const STORY: Record<
 				"nanj",
 				"完走した　スレは、古井戸の　底に\nしまわれる。……キリコの　スレもや",
 			),
+			k("……吾輩の　スレも、\n井戸の　底ンゴ？"),
 			n("朝。やきうは　村の　口に　立った。"),
 			s("nanj", "外で、見とるわ"),
 			s(
@@ -1191,6 +1198,7 @@ export const STORY: Record<
 			n("……「1000　名前：蓄音キリコ」"),
 			n("その　下に、ひとつ。\n「次スレ　立てといたで」"),
 			s("zero", "キリコさんは、スレで\n声を　もらったんですね"),
+			k("……名無しの　みんなに、\nもらったンゴ"),
 			s("zero", "……ゼロの　声も、いつか\nだれかが　くれるかな"),
 			s(
 				"zero",
@@ -1201,7 +1209,7 @@ export const STORY: Record<
 		again: [
 			n("村に　帰りつくと、\n井戸の　そばには　だれも　いなかった。"),
 			n("キリコは　古い　スレを　ひらいた。\n「次スレ　立てといたで」"),
-			k("……保守ンゴ"),
+			think("……保守ンゴ"),
 		],
 	},
 	// 裏ルート（STORY.md §5.98）：おんJ民が 遊びで 立てて 飽きて 捨てた、消せない 板。板主は おんJ民より 前から
@@ -1563,14 +1571,14 @@ export const STORY: Record<
 			// 新しい 1周で キリコが はじめて 返事を する 時報（年は 言わない）
 			jihou("嘘を嘘と　見抜けない　6時です。"),
 			n("キリコは、返事を　書いた。\n「おはようンゴ」"),
-			keep(k("……やきうンゴ")),
+			keep(think("……やきうンゴ")),
 		],
 		again: [
 			n("村に　帰りつくと、\n広場は　今日も　にぎやかだった。"),
 			n(
 				"キリコは、続きの　レスを　また　ひらいた。\n「ほな、上で　保守しとくわ」",
 			),
-			k("……保守ンゴ"),
+			think("……保守ンゴ"),
 		],
 	},
 	mercury: {

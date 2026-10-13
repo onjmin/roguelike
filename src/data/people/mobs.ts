@@ -59,7 +59,7 @@ export type Beat =
 	| { k: "walk"; to: readonly [number, number]; face?: Dir };
 
 /**
- * 1窓。who が "mob" なら その子、"kiriko" なら キリコ（雑談だけ）、null なら 地の文、
+ * 1窓。who が "mob" なら その子、"kiriko" なら キリコ、null なら 地の文、
  * 仲間・ほかの子なら 近くに いるときだけ。need も 同じ。
  */
 export type MobLine = {

@@ -1,5 +1,5 @@
 // ゲームセンターの 筐体の 遊びの 文（村の 窓は 22字×2行、板の 1行は 22字まで、選ぶ ボタンは 9字まで。
-// src/sim/arcadeTests.ts が 測る）。キリコは しゃべらない。
+// src/sim/arcadeTests.ts が 測る）。キリコも 話してよい（吾輩・ンゴで 短く）。
 // 置き字：{score} スコア、{best} ハイスコア、{unit} 単位、{n} 数。
 
 import type { ArcadeGame } from "./types";

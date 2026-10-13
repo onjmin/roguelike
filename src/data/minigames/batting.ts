@@ -1,7 +1,7 @@
 // 1打席（ui/minigames/batting.ts）の 板に 出る 文。グラウンドの 窓の 文は data/town/facilities.ts の GROUND_BAT。
 // - 板の 下の 1行（note）は 全角22字まで・1行だけ。{p} 投げる 人・{kind} 球種・{kmh} 球速・{m} 飛距離。
 // - 板の 上の 帯（banner）は 13字まで。
-// キリコは しゃべらない（吹き出しは 絵だけ）。肌の 色の ことは 書かない。
+// キリコも 話してよい（吾輩・ンゴで 短く）。肌の 色の ことは 書かない。
 
 export const BATTING = {
 	hint: "A／タップで　スイング",

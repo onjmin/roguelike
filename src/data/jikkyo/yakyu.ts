@@ -705,7 +705,7 @@ export const JK_TELOP = {
 	kanso: "スレ　完走！",
 } as const;
 
-/** 村の 窓（全角22字 × 2行・1窓。キリコは しゃべらない）。 */
+/** 村の 窓（全角22字 × 2行・1窓。キリコも 話してよい。吾輩・ンゴで 短く）。 */
 export const JIKKYO_MSG = {
 	card: "今日の　カードは　{home}　対　{away}。\n6回まで　{home}{h}-{a}{away}。",
 	channel: "ピッ。……別の　試合に　なった。",

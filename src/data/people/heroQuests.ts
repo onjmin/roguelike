@@ -28,7 +28,7 @@ export type QuestLine =
 
 const say = (who: Speaker, text: string): QuestLine => ({ who, text });
 const nar = (text: string): QuestLine => ({ who: null, text });
-const think = (text: string): QuestLine => ({ who: "kiriko", text });
+const kiriko = (text: string): QuestLine => ({ who: "kiriko", text });
 
 export type HeroQuestText = {
 	/** 悩みを かかえた 帰りに 村で 見える ようす（地の文。話しかけると 打ち明ける）。 */
@@ -78,7 +78,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		],
 		menu: ["取ってくる", "そっとしておく"],
 		accept: [
-			think("（……行ってくるンゴ）"),
+			kiriko("……行ってくるンゴ"),
 			say("roze", "……北東の　島アル。\nおんJボカロ作り避難所アル"),
 			say("roze", "文字化けが　うろついてるアル。\n……気を　つけるアル"),
 		],
@@ -125,7 +125,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		],
 		menu: ["聞いてくる", "そっとしておく"],
 		accept: [
-			think("（……蓄音機、持っていくンゴ）"),
+			kiriko("……蓄音機、持っていくンゴ"),
 			say("zero", "ほんとですか！\n……8階くらいまで、行けば"),
 			say("zero", "おかえりの　練習、して　おきます。\n……声なしで"),
 		],

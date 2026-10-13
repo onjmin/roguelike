@@ -22,11 +22,10 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 export type Quote = { who: Speaker; text: string };
 
 /**
- * キリコの ことば（口数の 少ない 主人公。語りでは しゃべらず、心の 中だけ 出す。物語の 理由は 作らない）。
- * - think … 独白。（　）で かこんで 出す。村の だれにも 聞こえない（仲間は 返事を しない）。声なし。
- * - voice … 声。村の 雑談と 喫茶（data/people/mobs.ts・cafeMobs.ts の k、cafe.ts の v）でだけ 使う。読み上げは rpg と 同じ uc。
- * 決まり（STORY.md）：見た物・聞いた物だけ。気持ちに 名前を つけない。ダンジョンの 中では 出さない。
- * 帰りの 語りで 1回 1行まで、喫茶は 1つの 話に 0〜1行。
+ * キリコの ことば（口数は 少ないが、ふつうに 会話に 加わる。吾輩・ンゴで 短く。2026-10-14 に 喋らない 主人公を やめた）。
+ * - voice … 声。ふだんは これ。仲間も 住人も 聞こえて、返事を してよい。読み上げは rpg と 同じ uc。
+ * - think … 独白。（　）で かこんで 出す。だれも いない 場面だけ（ひとりで 古い スレを 読む ときなど）。声なし。
+ * 決まり（STORY.md）：「保守」は 電池板の 山場で 札に 書くまで 言わない。ダンジョンの 中では 出さない。
  */
 export type KirikoMode = "think" | "voice";
 
@@ -411,7 +410,7 @@ export const ENDING: StoryPage[] = [
 		who: "zero",
 		text: "スレ、500を　こえました！\n……知らない　人が、書きこんでます",
 	},
-	{ who: null, text: "……知らない　人ンゴ", kiriko: "think" },
+	{ who: null, text: "……知らない　人ンゴ", kiriko: "voice" },
 	// やきうの 身の上（電池板の 山場で 出ていく 人を、ここで 見せておく。STORY.md §5.9）
 	{
 		who: null,

@@ -78,7 +78,8 @@ export const openingScript = async (s: Story): Promise<void> => {
 	s.show("phono");
 	s.se("item");
 	await s.narrate(place);
-	for (const t of OPENING.think) await s.kiriko(t, "think");
+	// 声に 出す（やきうが 聞きつけて 声を かける）
+	for (const t of OPENING.mumble) await s.kiriko(t, "voice");
 	// 小屋の前の やきうが 声を かける
 	await s.look("nanj");
 	for (const t of OPENING.nanjCall) await s.say("nanj", t);
@@ -89,6 +90,7 @@ export const openingScript = async (s: Story): Promise<void> => {
 	s.face("nanj", "player");
 	await s.look(null);
 	for (const t of OPENING.nanjMouth) await s.say("nanj", t);
+	for (const t of OPENING.reply) await s.kiriko(t, "voice");
 	// 話しおえたら 小屋の 前へ もどる。そのあいだに カメラで 北の 出口を 見せて、行き先を 1行
 	// （やきうが 話しながら 出口を 見せると、話す 人を 映す 網で すぐ やきうに もどって 出口が 一瞬しか 映らなかった）
 	const [nx, ny] = VILLAGE_SPOTS.nanj(villageView());

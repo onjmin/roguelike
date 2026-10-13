@@ -338,10 +338,10 @@ export const departTo = async (
 		depositBag();
 		carry = [];
 	}
-	// 潜る ときの 一言（やきう。出ていった あとは キリコの 独白。STORY.md §5.9）。
+	// 潜る ときの 一言（やきう。出ていった あとは キリコが 言う。STORY.md §5.9）。
 	// キリコは 1人で 出ていく：やきうが そばに いるときだけ 声を かける
 	if (awayFriends(loadProgress().cleared).includes("nanj"))
-		await s.kiriko(DEPART.kiriko, "think");
+		await s.kiriko(DEPART.kiriko, "voice");
 	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
 	notePicked(d, false);
 	await hideMsg(s);
@@ -682,7 +682,7 @@ const playQuestLines = async (
 ): Promise<void> => {
 	for (const l of lines)
 		if (l.who === null) await s.narrate(l.text);
-		else if (l.who === "kiriko") await s.kiriko(l.text, "think");
+		else if (l.who === "kiriko") await s.kiriko(l.text, "voice");
 		else await s.say(l.who, l.text);
 };
 
