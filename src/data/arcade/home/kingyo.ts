@@ -1,7 +1,9 @@
 // キリコの 家の 遊べる 家具「バケツ」の 金魚すくい（板は ui/arcade/home/kingyo.ts）。
 // 上から 見た たらいに 金魚が 泳ぐ。ポイ（丸）を 動かして すくう と、少し 水に つけてから 丸の 中に 中心が ある 金魚を とる。
 // 紙は すくう たびに 弱り、とった 金魚が 大きいほど 弱る。0 で 破れて おわり。60秒でも おわり。
-// 赤い 金魚・黒い 出目金・まれに でかい 金魚。ポイが 近づくと 少し 逃げる。スコア＝とった 数（匹）。
+// 赤い 金魚・黒い 出目金・まれに でかい 金魚。ポイが 近づくと 少し 逃げる。
+// スコア＝金魚の 点（赤 10・出目金 25・でかい 100。でかいほど 紙を 食う）。1回で 2匹 なら ×2、3匹 なら ×3
+// （群れを 待って まとめて すくうと 大きい）。
 // DOM に 触らない（試験できる）。
 
 import { AH, ATOP, AW, type Rnd } from "../logic";
@@ -29,11 +31,11 @@ export const KG = {
 export type KgKind = "red" | "black" | "big";
 export const KG_KIND: Record<
 	KgKind,
-	{ r: number; speed: number; cost: number }
+	{ r: number; speed: number; cost: number; pts: number }
 > = {
-	red: { r: 3, speed: 22, cost: 9 },
-	black: { r: 4, speed: 18, cost: 14 },
-	big: { r: 7, speed: 14, cost: 34 },
+	red: { r: 3, speed: 22, cost: 9, pts: 10 },
+	black: { r: 4, speed: 18, cost: 14, pts: 25 },
+	big: { r: 7, speed: 14, cost: 34, pts: 100 },
 };
 
 export const KINGYO_TEXT = {
@@ -41,6 +43,10 @@ export const KINGYO_TEXT = {
 	timeUp: "TIME UP",
 	paper: "紙",
 	note: "十字キーで　動く。A か　ポイを　タップで　すくう",
+	/** 1回で 何匹も すくった とき（{n} は 匹）。 */
+	multi: "{n}匹　まとめて！",
+	/** 紙が 薄く なった。 */
+	thin: "紙が　ふやけてきた",
 } as const;
 
 export type KgFish = {
@@ -61,6 +67,10 @@ export type KgState = {
 	dipping: number;
 	fish: KgFish[];
 	caught: number;
+	/** 点。 */
+	pts: number;
+	/** さいごに すくった 所と 点・匹（見た目の 字）。 */
+	lastScoop: { x: number; y: number; pts: number; n: number } | null;
 	/** 種類ごとの とった 数（板の 表示）。 */
 	got: Record<KgKind, number>;
 	torn: boolean;
@@ -103,12 +113,14 @@ export const kgStart = (rnd: Rnd): KgState => ({
 	dipping: 0,
 	fish: Array.from({ length: KG.fish }, () => newFish(rnd, pickKind(rnd))),
 	caught: 0,
+	pts: 0,
+	lastScoop: null,
 	got: { red: 0, black: 0, big: 0 },
 	torn: false,
 	over: false,
 });
 
-export const kgScore = (s: KgState): number => s.caught;
+export const kgScore = (s: KgState): number => s.pts;
 export const kgTimeLeft = (s: KgState): number =>
 	Math.max(0, Math.ceil(KG.time - s.t));
 
@@ -118,6 +130,8 @@ const scoop = (s: KgState, ev: KgEvent[]): void => {
 	const inside = s.fish.filter(
 		(f) => (f.x - s.px) ** 2 + (f.y - s.py) ** 2 <= KG.poiR ** 2,
 	);
+	let n = 0;
+	let base = 0;
 	for (const f of inside) {
 		if (s.paper <= KG_KIND[f.kind].cost) {
 			s.paper = 0;
@@ -127,7 +141,14 @@ const scoop = (s: KgState, ev: KgEvent[]): void => {
 		s.fish = s.fish.filter((x) => x !== f);
 		s.caught++;
 		s.got[f.kind]++;
+		n++;
+		base += KG_KIND[f.kind].pts;
 		ev.push(f.kind === "big" ? "bigCatch" : "catch");
+	}
+	// 破れても その 前に すくえた ぶんは 点に なる
+	if (n > 0) {
+		s.pts += base * n;
+		s.lastScoop = { x: s.px, y: s.py, pts: base * n, n };
 	}
 	if (s.paper <= 0) {
 		s.paper = 0;

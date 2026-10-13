@@ -1,8 +1,10 @@
 // 五目並べの 板（決まりは data/arcade/home/gomoku.ts）。木の 碁盤の 見た目。
 // 十字キーで カーソル、A で 置く。タップは その マスに じかに 置く。名無しは 少し 考えてから 打つ。
+// 勝ち抜き：勝つと 名無しが 強く なって 次の 局（3局。点は 足して いく）。負け・引き分けで おわり。
 
 import {
 	GM,
+	GM_LV,
 	GM_SAY,
 	type GmState,
 	gmBlocks,
@@ -17,7 +19,14 @@ import { ARCADE } from "../../../data/arcade/text";
 import type { UiCtx } from "../../list";
 import type { G } from "../../neta/netaBoard";
 import { txt } from "../../neta/netaBoard";
-import { type ArcadeResult, hud, isKey, isTap, playBoard } from "../arcadeKit";
+import {
+	type ArcadeResult,
+	banner,
+	hud,
+	isKey,
+	isTap,
+	playBoard,
+} from "../arcadeKit";
 
 const rnd = Math.random;
 
@@ -33,7 +42,15 @@ type View = {
 	cpuT: number;
 	/** 勝ちが 決まってからの 秒。 */
 	endT: number;
+	/** これまでに 勝った 局の 点。 */
+	total: number;
 };
+
+/** 次の 局へ 進むまでの 間（秒。勝った 列を 見せてから）。 */
+const NEXT_WAIT = GM.endWait + 0.8;
+
+/** 勝って まだ 次の 局が ある。 */
+const goesOn = (s: GmState): boolean => s.winner === 1 && s.lv < GM.levels - 1;
 
 const stone = (g: G, x: number, y: number, who: 1 | 2): void => {
 	const X = Math.round(x);
@@ -58,13 +75,23 @@ export const playGomoku = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 	playBoard<View>(ctx, "gomoku", {
 		start: () => {
 			const c = (GM.n - 1) / 2;
-			return { s: gmStart(), cx: c, cy: c, cpuT: 0, endT: 0 };
+			return { s: gmStart(), cx: c, cy: c, cpuT: 0, endT: 0, total: 0 };
 		},
 		step: (v, f) => {
 			const s = v.s;
 			// v.s で 見る（s.winner の 絞りこみを 後に 残さない）
 			if (v.s.winner) {
 				v.endT += f.dt;
+				if (goesOn(v.s) && v.endT >= NEXT_WAIT) {
+					// 次の 局（名無しが 1段 強く なる）
+					const lv = v.s.lv;
+					v.total += gmScore(v.s);
+					v.s = gmStart(lv + 1);
+					v.endT = 0;
+					v.cx = v.cy = (GM.n - 1) / 2;
+					f.se("levelup");
+					f.say(GM_SAY.next[lv] ?? "");
+				}
 				return;
 			}
 			if (s.turn === 2) {
@@ -182,10 +209,17 @@ export const playGomoku = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				: s.turn === 1
 					? "キリコの　番"
 					: `名無し　考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
-			hud(g, `黒　${s.moves}手`, right);
+			hud(g, `第${s.lv + 1}局　黒${s.moves}手`, right);
+			txt(g, GM_LV[s.lv], AW - OX / 2, 70, 8, "#f0c040", "center");
+			if (v.total > 0) {
+				txt(g, "勝ち抜き", OX / 2, 96, 8, "#f0c040", "center");
+				txt(g, `${v.total}点`, OX / 2, 106, 8, "#f4f2ea", "center");
+			}
+			if (goesOn(s) && v.endT >= GM.endWait)
+				banner(g, `次は　${GM_LV[s.lv + 1]}　名無し`, "#ffe060");
 		},
-		over: (v) => v.s.winner !== 0 && v.endT >= GM.endWait,
-		score: (v) => gmScore(v.s),
+		over: (v) => v.s.winner !== 0 && !goesOn(v.s) && v.endT >= GM.endWait,
+		score: (v) => v.total + gmScore(v.s),
 		end: (v) =>
 			v.s.winner === 1
 				? ARCADE.clear

@@ -157,7 +157,7 @@ export type FacilityRoom = {
 	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyo/jikkyoWatch.ts・
 	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/minigames/debate.ts・
 	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyo/jikkyoGikai.ts）・
-	 * bushitsu＝部室棟の 遊び（ui/bushitsu/bushitsu.ts）・saba＝ホシュクラの 部屋の 物（ui/saba/saba.ts）・
+	 * bushitsu＝部室棟の 遊び（ui/bushitsu/bushitsu.ts）・saba＝マイクラの 部屋の 物（ui/saba/saba.ts）・
 	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/minigames/dosukoi.ts）・
 	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade/arcade.ts）・
 	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta/neta.ts））。
@@ -177,6 +177,7 @@ export type FacilityRoom = {
 		| "dosukoi"
 		| "arcade"
 		| "furnshop"
+		| "purikura"
 		| NetaPlay
 	>;
 };
@@ -188,7 +189,7 @@ export type OutdoorThing = {
 	/**
 	 * 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる・eat＝その 施設の 品書き・
 	 * jikkyo＝その 施設の 実況の 番組を スマホで 見る。data/jikkyo/packs.ts・
-	 * saba＝ホシュクラの 島の 物（ui/saba/saba.ts）・imoni＝おんJ芋煮会の 大鍋と 人（ui/minigames/imoni.ts）・
+	 * saba＝マイクラの 島の 物（ui/saba/saba.ts）・imoni＝おんJ芋煮会の 大鍋と 人（ui/minigames/imoni.ts）・
 	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta/neta.ts））。
 	 */
 	play?:
@@ -1869,9 +1870,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"##############",
 				"#HHpHH@&HpHHH#",
 				"#hhhhh〔〕「」hmh#",
-				"#AbCKE..vV..P#",
+				"#AbCKE..vVQ.P#",
 				"#nnnnn..nn...#",
-				"#..........wW#",
+				"#.........ZwW#",
 				"#.GJI..tT..xX#",
 				"#.nnn........#",
 				"#a..........F#",
@@ -1897,6 +1898,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				V: k.on(riCell("tvGame", 1, 1)),
 				"」": k.low(riCell("tvGame", 1, 0)),
 				P: k.on(base(0, 358, 1, 3)),
+				// 座って 遊ぶ レースの 台（16x32。public/sprites/arcade-wangan.png）
+				Q: k.on("pub:sprites/arcade-wangan.png#0,0,16,32"),
+				// クレーンゲーム（16x32。public/sprites/arcade-crane.png）
+				Z: k.on("pub:sprites/arcade-crane.png#0,0,16,32"),
 				n: k.floor(ri("stoolBrown")),
 				t: k.on(ri("tvCrt")),
 				T: k.on(ri("console")),
@@ -1921,6 +1926,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				I: "runner",
 				v: "rhythm",
 				V: "rhythm",
+				Q: "wangan",
+				Z: "crane",
 				P: "booth",
 				t: "retro",
 				T: "retro",
@@ -1941,6 +1948,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				slot: [ARCADE_TEXT.slot.line],
 				runner: [ARCADE_TEXT.runner.line],
 				rhythm: [ARCADE_TEXT.rhythm.line],
+				wangan: [ARCADE_TEXT.wangan.line],
+				crane: [ARCADE_TEXT.crane.line],
 				booth: ["プリクラの　機械。\nカーテンに「盛れる」の　文字。"],
 				retro: ["レトロゲームの　台。\n「1プレイ　無料。2Pは　あなた」"],
 				vend: ["自販機。\nエナドリの　ボタンだけ「売切」。"],
@@ -1962,6 +1971,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				slot: "arcade",
 				runner: "arcade",
 				rhythm: "arcade",
+				wangan: "arcade",
+				crane: "arcade",
+				// プリクラ：仲良く なった 人と 撮る（ui/purikura/purikura.ts）
+				booth: "purikura",
 			},
 			people: [
 				{
@@ -3582,21 +3595,22 @@ const BASE_FACILITIES: readonly Facility[] = [
 		},
 		door: "カジノ「ガチャ」。\nコインの　音が　鳴りひびく。",
 		doorSe: "doorSteel",
-		// 中：赤い 幕の 壁と 金の ふちの じゅうたん。奥に スロット 10台（色ちがい）と 丸いす、
-		// まんなかに ルーレット（盤と 賭けの 台）と カードの 台（横に ディーラー）、手前に チップの 窓口
+		// 中：赤い 幕の 壁と 金の ふちの じゅうたん。奥に スロット 8台・ビデオポーカー 2台・パチンコ 2台（色ちがい）と 丸いす、
+		// まんなかに 左から バカラの 緑の 台・ルーレット（盤と 賭けの 台。横に ディーラー）・ハイ＆ローと
+		// ブラックジャックの 半円の 台、手前に チップの 窓口（2026-10-13 に 台を ふやして 幅 16 に）
 		room: {
 			look: LOOKS.casino,
 			rows: [
-				"##############",
-				"#HHHH@&HHHHHH#",
-				"#hhhh〔〕mhhhhh#",
-				"#ABCKE..EKCBA#",
-				"#nnnnn..nnnnn#",
-				"#......TUV...#",
-				"#.RrL..tuv...#",
-				"#............#",
-				"#F......[=].F#",
-				"######DD######",
+				"################",
+				"#HHHHH@&HHHHHHH#",
+				"#hhhhh〔〕mhhhhhh#",
+				"#AABCKE..EKCBAA#",
+				"#nnnnnn..nnnnnn#",
+				"#bcd.....TUVWXY#",
+				"#efg.RrL.tuvwxy#",
+				"#..............#",
+				"#F........[=].F#",
+				"#######DD#######",
 			],
 			tiles: (k) => ({
 				"@": k.up(riCell("tvGame", 0, 0)),
@@ -3618,6 +3632,20 @@ const BASE_FACILITIES: readonly Facility[] = [
 				R: k.on(base(3, 516, 1, 2)),
 				r: k.on(base(4, 516, 1, 2)),
 				L: k.on(base(5, 516, 1, 2)),
+				// 緑の 台（バカラ）：上の ふちと 下の ふちを つなぐ
+				b: k.on(base(0, 514)),
+				c: k.on(base(1, 514)),
+				d: k.on(base(2, 514)),
+				e: k.on(base(0, 517)),
+				f: k.on(base(1, 517)),
+				g: k.on(base(2, 517)),
+				// 半円の カードの 台（ブラックジャック。ハイ＆ローと 同じ 形）
+				W: k.on(base(3, 514)),
+				X: k.on(base(4, 514)),
+				Y: k.on(base(5, 514)),
+				w: k.on(base(3, 515)),
+				x: k.on(base(4, 515)),
+				y: k.on(base(5, 515)),
 				"[": ctr(k.on(riCell("counterDark", 0, 0), ri("bell"))),
 				"=": ctr(k.on(riCell("counterDark", 1, 0))),
 				"]": ctr(k.on(riCell("counterDark", 2, 0))),
@@ -3629,8 +3657,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				A: "gacha",
 				B: "gacha",
 				C: "gacha",
-				K: "gacha",
-				E: "gacha",
+				// 内がわの 4台は ビデオポーカーと パチンコ
+				K: "poker",
+				E: "pachinko",
 				T: "highlow",
 				U: "highlow",
 				V: "highlow",
@@ -3640,6 +3669,18 @@ const BASE_FACILITIES: readonly Facility[] = [
 				R: "roulette",
 				r: "roulette",
 				L: "roulette",
+				b: "baccarat",
+				c: "baccarat",
+				d: "baccarat",
+				e: "baccarat",
+				f: "baccarat",
+				g: "baccarat",
+				W: "blackjack",
+				X: "blackjack",
+				Y: "blackjack",
+				w: "blackjack",
+				x: "blackjack",
+				y: "blackjack",
 				"[": "cashier",
 				"]": "cashier",
 				F: "plant",
@@ -3653,6 +3694,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				gacha: [ARCADE_TEXT.gacha.line],
 				highlow: [ARCADE_TEXT.highlow.line],
 				roulette: [ARCADE_TEXT.roulette.line],
+				poker: [ARCADE_TEXT.poker.line],
+				pachinko: [ARCADE_TEXT.pachinko.line],
+				baccarat: [ARCADE_TEXT.baccarat.line],
+				blackjack: [ARCADE_TEXT.blackjack.line],
 				cashier: ["チップの　窓口。\n「本日の　両替は　終了しました」"],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
@@ -3663,13 +3708,17 @@ const BASE_FACILITIES: readonly Facility[] = [
 				gacha: "arcade",
 				highlow: "arcade",
 				roulette: "arcade",
+				poker: "arcade",
+				pachinko: "arcade",
+				baccarat: "arcade",
+				blackjack: "arcade",
 			},
 			people: [
 				{
 					id: "casino_dealer",
 					walk: NANASHI[3],
-					at: [10, 6],
-					dir: "left",
+					at: [4, 5],
+					dir: "down",
 					name: "ディーラー",
 					lines: ["チップは　遊びの　チップや。\n……賭けるなら、冒険に　賭けえ"],
 				},
@@ -4441,7 +4490,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	...EATERIES,
 	// ── 町の 役所（data/village/civicHalls.ts。おんJ町役場）
 	...CIVIC_FACILITIES,
-	// ── ホシュクラ（data/village/saba.ts。南西の 海の 島。段2〜）
+	// ── マイクラ（data/village/saba.ts。南西の 海の 島。段2〜）
 	...SABA_FACILITIES,
 	// ── 部室棟（data/village/bushitsu.ts。新市街の 北の はし。段4〜）
 	...BUSHITSU_FACILITIES,

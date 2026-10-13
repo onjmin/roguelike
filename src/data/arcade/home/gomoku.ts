@@ -1,7 +1,10 @@
 // キリコの 家の 遊べる 家具「碁盤」の 五目並べ（板は ui/arcade/home/gomoku.ts）。
 // 11×11 の 盤。キリコが 黒で 先手、名無し（CPU）が 白。縦・横・斜めに 5つ 以上 ならべた ほうが 勝ち（禁じ手は なし）。
-// 名無しは 勝てる 手 → 相手の 四・開いた 三を 止める → 線の 伸びしろで マスに 点を つけて 選ぶ。点に ぶれを 足すので 勝てる。
-// スコア：勝ち＝1000＋早く 勝つほど 多い ボーナス、負け・引き分け＝いちばん 長い 列×10。DOM に 触らない（試験できる）。
+// 勝ち抜き：勝つと 名無しが 強く なって 次の 局（よわい → ふつう → つよい の 3局。負けたら おわり）。
+// 名無し よわい：つながった 列だけ 見る（とびとびの 三・四を 見のがす）。点に 3割の ぶれ。
+// 名無し ふつう・つよい：5マスの 窓で 数える（とびとびの 形も 見る）。ぶれは 1割5分・わずか。
+// スコア（1局）：勝ち＝1000×(段＋1)＋早く 勝つほど 多い ボーナス、負け・引き分け＝いちばん 長い 列×10。
+// 板は 勝った 局の 点を 足して いく。DOM に 触らない（試験できる）。
 
 import type { Rnd } from "../logic";
 
@@ -14,7 +17,12 @@ export const GM = {
 	think: 0.4,
 	/** 勝ちが 決まってから おわりの 字までの 間（秒）。 */
 	endWait: 0.9,
+	/** 名無しの 強さの 数（勝ち抜きの 局の 数）。 */
+	levels: 3,
 } as const;
+
+/** 名無しの 強さの 名（帯に 出す）。 */
+export const GM_LV = ["よわい", "ふつう", "つよい"] as const;
 
 /** 0 空き・1 黒（キリコ）・2 白（名無し）。 */
 export type GmStone = 0 | 1 | 2;
@@ -30,6 +38,8 @@ export type GmState = {
 	last: number;
 	/** 勝った 列の マス。 */
 	line: number[];
+	/** 名無しの 強さ（0 よわい・1 ふつう・2 つよい）。 */
+	lv: number;
 };
 
 /** 名無しの ひとこと（板の 下の 行）。 */
@@ -39,6 +49,8 @@ export const GM_SAY = {
 	cpuWin: "ワイの　勝ちやな",
 	meWin: "ファッ！？",
 	draw: "引き分けやん",
+	/** 勝って 次の 局へ（強さで かわる）。 */
+	next: ["やるやん　次は　本気や", "ほな　ワイの　とっておきや"],
 } as const;
 
 const DIRS: readonly (readonly [number, number])[] = [
@@ -51,13 +63,14 @@ const DIRS: readonly (readonly [number, number])[] = [
 const inside = (x: number, y: number): boolean =>
 	x >= 0 && y >= 0 && x < GM.n && y < GM.n;
 
-export const gmStart = (): GmState => ({
+export const gmStart = (lv = 0): GmState => ({
 	cells: Array.from({ length: GM.n * GM.n }, () => 0 as GmStone),
 	turn: 1,
 	moves: 0,
 	winner: 0,
 	last: -1,
 	line: [],
+	lv,
 });
 
 /** その マスを 通る 1方向の 列（同じ 色が つづく マス）。 */
@@ -128,7 +141,37 @@ const cellWorth = (cells: GmStone[], i: number, who: 1 | 2): number => {
 	return sum;
 };
 
-/** 名無しの 手。勝ち → 止める → 伸びしろ。小さな ぶれで 毎回 同じには ならない。 */
+/** 5マスの 窓に 入る 石の 数 → 点（相手の 石が ある 窓は 数えない）。 */
+const WIN_WORTH = [0, 2, 20, 300, 5000, 100000] as const;
+
+/** その 空きマスに who が 打ったときの 点（そこを 通る 5マスの 窓 ぜんぶ。とびとびの 形も 見える）。 */
+const windowWorth = (cells: GmStone[], i: number, who: 1 | 2): number => {
+	const you = who === 1 ? 2 : 1;
+	const x0 = i % GM.n;
+	const y0 = Math.floor(i / GM.n);
+	cells[i] = who;
+	let sum = 0;
+	for (const [dx, dy] of DIRS)
+		for (let s = -4; s <= 0; s++) {
+			let n = 0;
+			let bad = false;
+			for (let k = s; k < s + 5 && !bad; k++) {
+				const x = x0 + dx * k;
+				const y = y0 + dy * k;
+				if (!inside(x, y)) bad = true;
+				else {
+					const c = cells[y * GM.n + x];
+					if (c === you) bad = true;
+					else if (c === who) n++;
+				}
+			}
+			if (!bad) sum += WIN_WORTH[n];
+		}
+	cells[i] = 0;
+	return sum;
+};
+
+/** 名無しの 手。勝ち → 止める → 伸びしろ。強さで 見かたと ぶれが かわる。 */
 export const gmCpu = (s: GmState, rnd: Rnd): number => {
 	const me = s.turn;
 	const you = me === 1 ? 2 : 1;
@@ -147,13 +190,16 @@ export const gmCpu = (s: GmState, rnd: Rnd): number => {
 				if (inside(x + ox, y + oy) && s.cells[(y + oy) * GM.n + x + ox] !== 0)
 					near = true;
 		if (!near) continue;
-		const atk = cellWorth(s.cells, i, me);
-		const def = cellWorth(s.cells, i, you);
+		const wide = s.lv >= 1;
+		const worthOf = wide ? windowWorth : cellWorth;
+		const atk = worthOf(s.cells, i, me);
+		const def = worthOf(s.cells, i, you);
 		const center = 6 - (Math.abs(x - c) + Math.abs(y - c)) * 0.5;
-		// 勝ち・止めなければ 負ける 手は ぶれない。それ以外は 3割まで ぶれる
+		// 勝ち・止めなければ 負ける 手は ぶれない。それ以外は 強さで ぶれる
 		const v = atk * 1.1 + def + center;
-		const sure = atk >= 100000 || def >= 3000;
-		const val = sure ? v : v * (1 + rnd() * 0.3);
+		const sure = atk >= 100000 || def >= (wide ? 5000 : 3000);
+		const shake = s.lv >= 2 ? 0.03 : s.lv >= 1 ? 0.15 : 0.3;
+		const val = sure ? v : v * (1 + rnd() * shake);
 		if (val > bestV) {
 			bestV = val;
 			best = i;
@@ -174,7 +220,9 @@ export const gmLongest = (s: GmState, who: 1 | 2): number => {
 };
 
 export const gmScore = (s: GmState): number =>
-	s.winner === 1 ? 1000 + Math.max(0, 40 - s.moves) * 20 : gmLongest(s, 1) * 10;
+	s.winner === 1
+		? 1000 * (s.lv + 1) + Math.max(0, 40 - s.moves) * 20
+		: gmLongest(s, 1) * 10;
 
 /** その 空きマスが 相手の 四・開いた 三を 止める 手か（名無しの ひとこと用）。 */
 export const gmBlocks = (s: GmState, i: number): boolean =>

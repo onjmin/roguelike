@@ -45,4 +45,33 @@ export const tests: HomeGameTest[] = [
 			ok(s.winner === 2, "5枚で 名無しの 勝ち");
 		},
 	},
+	{
+		name: "はさみ将棋は 隅の 駒を となりの 2マスで ふさぐと 取る",
+		run: () => {
+			const s = hsStart();
+			s.cells.fill(0);
+			s.cells[at(0, 0)] = 2;
+			s.cells[at(1, 0)] = 1;
+			s.cells[at(0, 5)] = 1;
+			s.cells[at(8, 8)] = 2;
+			ok(hsMove(s, at(0, 5), at(0, 1)) === 1, "隅の 取り");
+			ok(s.cells[at(0, 0)] === 0, "隅の 駒が 消える");
+		},
+	},
+	{
+		name: "はさみ将棋は 名無しどうしでも 120手より 前に 決着が つきやすい",
+		run: () => {
+			let early = 0;
+			for (let k = 0; k < 12; k++) {
+				const r = seeded(k + 1);
+				const s = hsStart();
+				while (!s.winner) {
+					const [a, b] = hsCpu(s, r);
+					hsMove(s, a, b);
+				}
+				if (s.took[1] >= HS.goal || s.took[2] >= HS.goal) early++;
+			}
+			ok(early >= 7, `5枚 取りで おわったのが ${early}／12`);
+		},
+	},
 ];

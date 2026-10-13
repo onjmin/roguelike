@@ -14,6 +14,8 @@ export const ARCADE_GAMES = [
 	"slot", // まんなかの 左：メダルゲーム「メダルスロット」（メダルを すった 名無しの 前）
 	"runner", // まんなかの 右：ジャンプアクション「なんJラン」
 	"rhythm", // 音ゲーの 台「おんJビート」
+	"crane", // クレーンゲーム「ぷゆゆキャッチャー」（とれた 景品は ぬいぐるみの 家具に なる ことも）
+	"wangan", // 座って 遊ぶ レースの 台「湾岸ナイトラン」（夜の 湾岸線で ライバルと 走る。2026-10-14）
 	// ── カジノ「ガチャ」
 	"gacha", // 奥の スロット 10台：ガチャスロット（目押し なし。リーチ・確定の 演出）
 	"highlow", // カードの 台：ハイ＆ロー（ディーラーの 横）
@@ -37,6 +39,30 @@ export const ARCADE_GAMES = [
 	"pong", // ブラウン管と ゲーム機：ピンポン（名無しと 打ちあう）
 	"kurohige", // 樽：イッチ危機一髪（剣を 刺して イッチを 飛ばさない）
 	"kingyo", // バケツ：金魚すくい（ポイが 破れる 前に）
+	// ── 2026-10-13 の 2回目（作者：「ぷよぷよとかも」「ほかにも ミニゲームの アイデアを」。名前と 題材は 自前）
+	"puyupuyu", // ゲーム機：ぷゆぷゆ（ぷゆゆを 4つ つなげて 消す 連鎖パズル）
+	"pinball", // ピンボール台：保守ピンボール（バンパーは 保守・age）
+	"danmaku", // 紫の 筐体：弾幕スレ（よけて 撃つ 弾幕シューティング）
+	"mikiri", // 掛け軸：居合い 一閃（「！」で 先に 押した ほうが 勝ち）
+	"mojisagashi", // 文字さがしの 冊子：キリコさがし（盤から 名前を 見つける）
+	"clicker", // ぷゆゆの ぬいぐるみ：ぷゆゆ なでなで（なでて ふやす）
+	"doom", // ゲーミングPC：DOOM（3Dの 迷路で 荒らしを 撃つ。作者：「DOOMも」「名前 借りていい」）
+	// ── 2026-10-14（作者：「面白そうな ものが あれば どんどん 入れて」）
+	"resukui", // 白い 筐体：レス食い（迷路の レスを 食べ、荒らしを よける）
+	"digkiriko", // つるはしと ヘルメット：穴掘りキリコ（掘って 荒らしを ふくらませる）
+	"patapata", // 携帯ゲーム機：ぱたぱたぷゆゆ（はばたいて 柱の すきまを くぐる）
+	"reversi", // リバーシの 盤：リバーシ（名無しと 打つ）
+	"koikoi", // 花札：花札 こいこい（名無しと 打つ）
+	"picross", // 方眼ノート：おんJピクロス（数字から 絵を 塗りだす）
+	"soko", // 木箱：過去ログ倉庫番（箱を 押して 印へ）
+	"nineball", // ビリヤード台：ナインボール（1番から 当てて 9番を 入れる）
+	"darts", // ダーツの 的：ダーツ（301）
+	"tsuribori", // 釣り竿と クーラー：おんJ釣り堀（合わせて 引きあう）
+	// ── カジノ「ガチャ」の 2回目（作者：「ポーカーや その他 カジノっぽい トランプの ミニゲームは」）
+	"poker", // ビデオポーカーの 台
+	"blackjack", // 半円の カードの 台：ブラックジャック
+	"baccarat", // 緑の 台：バカラ
+	"pachinko", // パチンコ台：CRおんJタウン
 ] as const;
 
 export type ArcadeGame = (typeof ARCADE_GAMES)[number];
@@ -51,6 +77,8 @@ export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	slot: "arcade",
 	runner: "arcade",
 	rhythm: "arcade",
+	wangan: "arcade",
+	crane: "arcade",
 	gacha: "casino",
 	highlow: "casino",
 	roulette: "casino",
@@ -70,6 +98,27 @@ export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	pong: "myhome",
 	kurohige: "myhome",
 	kingyo: "myhome",
+	puyupuyu: "myhome",
+	pinball: "myhome",
+	danmaku: "myhome",
+	mikiri: "myhome",
+	mojisagashi: "myhome",
+	clicker: "myhome",
+	doom: "myhome",
+	resukui: "myhome",
+	digkiriko: "myhome",
+	patapata: "myhome",
+	reversi: "myhome",
+	koikoi: "myhome",
+	picross: "myhome",
+	soko: "myhome",
+	nineball: "myhome",
+	darts: "myhome",
+	tsuribori: "myhome",
+	poker: "casino",
+	blackjack: "casino",
+	baccarat: "casino",
+	pachinko: "casino",
 };
 
 export const isArcadeGame = (k: string | undefined): k is ArcadeGame =>

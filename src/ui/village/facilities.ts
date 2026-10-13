@@ -43,6 +43,7 @@ import { imoniPlay } from "../minigames/imoni";
 import { atBat, playDerby } from "../minigames/minigames";
 import { playOrRecord } from "../minigames/playMenu";
 import { isNetaPlay, netaPlay } from "../neta/neta";
+import { purikura } from "../purikura/purikura";
 import { sabaPlay } from "../saba/saba";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
@@ -285,6 +286,8 @@ export const buildFacility = (
 			else if (play === "arcade") await arcadePlay(ctx, s, kind);
 			// リサイクルショップの レジ：家具を 買う（ui/village/myhome.ts）
 			else if (play === "furnshop") await furnitureShop(ctx, s);
+			// ゲームセンターの プリクラ：仲良く なった 人と 撮る（ui/purikura/purikura.ts）
+			else if (play === "purikura") await purikura(ctx, s);
 		});
 	});
 	for (const who of room?.people ?? [])

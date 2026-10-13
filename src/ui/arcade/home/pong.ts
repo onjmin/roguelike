@@ -1,5 +1,6 @@
 // ピンポンの 板（決まりは data/arcade/home/pong.ts）。緑の ブラウン管の 見た目。
 // ↑↓ で ラケットを 動かす（押しっぱなしは くり返しで 届く）。タップは その 高さへ ラケットが 向かう。
+// 動きながら 打つと スマッシュ（画面が 光る）。点が 入ると 名無しが ひとこと。
 
 import {
 	PONG,
@@ -24,6 +25,8 @@ export const playPong = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 	let dy: -1 | 0 | 1 = 0;
 	let held = 0;
 	let target: number | null = null;
+	/** スマッシュの 光の のこり（秒）。 */
+	let flash = 0;
 	return playBoard(ctx, "pong", {
 		start: () => pongStart(rnd),
 		note: PONG_TEXT.note,
@@ -41,11 +44,22 @@ export const playPong = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			// 押しっぱなしは くり返しで 届く。とぎれたら 止まる
 			held -= f.dt;
 			if (held <= 0) dy = 0;
+			flash = Math.max(0, flash - f.dt);
 			for (const e of pongStep(s, f.dt, { dy, target }, rnd)) {
 				if (e === "hit") f.se("arcBlock");
-				else if (e === "wall") f.se("cursor");
-				else if (e === "point") f.se("arcCoin");
-				else if (e === "lost") f.se("miss");
+				else if (e === "smash") {
+					f.se("critical");
+					f.say(PONG_TEXT.smash);
+					flash = 0.25;
+				} else if (e === "wall") f.se("cursor");
+				else if (e === "point") {
+					f.se("arcCoin");
+					f.say(PONG_TEXT.cpuHurt[s.mePts - 1] ?? "");
+				} else if (e === "lost") {
+					f.se("miss");
+					const got = PONG_TEXT.cpuGot;
+					f.say(got[Math.floor(rnd() * got.length)]);
+				}
 			}
 		},
 		draw: (g, s, clock) => {
@@ -71,6 +85,11 @@ export const playPong = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					PONG.ball,
 				);
 			}
+			// スマッシュの 光
+			if (flash > 0) {
+				g.fillStyle = `rgba(96,255,144,${(flash * 1.2).toFixed(2)})`;
+				g.fillRect(0, ATOP, AW, AH - ATOP);
+			}
 			// 走査線（ブラウン管）
 			g.fillStyle = "rgba(0,0,0,0.28)";
 			for (let y = ATOP; y < AH; y += 2) g.fillRect(0, y, AW, 1);
@@ -81,7 +100,7 @@ export const playPong = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			hud(
 				g,
 				`${PONG_TEXT.me} ${s.mePts} - ${s.cpuPts} ${PONG_TEXT.cpu}`,
-				`先に${PONG.goal}点`,
+				s.mePts >= PONG.cpuReadAt ? "名無し　本気" : `先に${PONG.goal}点`,
 			);
 		},
 		over: (s) => s.over,

@@ -27,6 +27,7 @@ export const publicUrl = (path: string) =>
  * - `sp:<id>` … RPGEN スプライト
  * - `sa:<id>` … RPGEN 歩行グラ
  * - `pub:<path>` … public/ 配下（`pub:assets/rpg-reze/Base.png#0,48,16,16` のようにチップシートの1マスも指せる）
+ * - `rt:<名前>` … 実行中に 作った 絵（setRuntimeImage。URL に せず そのまま 返す）
  * - それ以外はそのまま URL とみなす
  */
 export const resolveRef = (ref: string): string => {
@@ -121,9 +122,38 @@ export const onImageLoaded = (fn: () => void): (() => void) => {
 	return () => listeners.delete(fn);
 };
 
+// ───── 実行中に 作る 絵（`rt:<名前>`） ─────
+// 遊びの 中で 描いた 絵（キリコの 家の イーゼルに 飾る 絵：ui/paint/paint.ts）を、ほかの 素材と 同じ
+// 参照の 字で マスに 描けるように する。URL では ないので 読み込みは しない：setRuntimeImage で 置いた
+// キャンバスを そのまま 返す（drawImage は キャンバスも 描ける。大きさは width・height を 見るだけ）。
+// 置く までは getImage が null、loadImage は 置かれるのを 待つ。同じ キャンバスを 描き直したら もう 1回 呼ぶ
+// （onImageLoaded の 聞き手に 知らせて、地図の キャッシュを 描き直させる）。
+
+const runtimeImages = new Map<string, HTMLCanvasElement>();
+const runtimeWaits = new Map<string, ((img: HTMLImageElement) => void)[]>();
+const asImg = (c: HTMLCanvasElement) => c as unknown as HTMLImageElement;
+
+/** `rt:<名前>` に キャンバスを 置く（置き直す）。 */
+export const setRuntimeImage = (
+	key: string,
+	canvas: HTMLCanvasElement,
+): void => {
+	runtimeImages.set(key, canvas);
+	for (const r of runtimeWaits.get(key) ?? []) r(asImg(canvas));
+	runtimeWaits.delete(key);
+	for (const fn of listeners) fn();
+};
+
 /** 画像の読み込みを始める（2回目以降はキャッシュ）。失敗したら null で解決する。 */
 export const loadImage = (ref: string): Promise<HTMLImageElement | null> => {
 	const url = resolveRef(ref);
+	if (url.startsWith("rt:")) {
+		const c = runtimeImages.get(url);
+		if (c) return Promise.resolve(asImg(c));
+		return new Promise((r) => {
+			runtimeWaits.set(url, [...(runtimeWaits.get(url) ?? []), r]);
+		});
+	}
 	const hit = cache.get(url);
 	if (hit) return hit.promise;
 	const img = new Image();
@@ -150,6 +180,10 @@ export const loadImage = (ref: string): Promise<HTMLImageElement | null> => {
 /** 読み込み済みなら画像を返す（未読込なら読み込みを始めて null）。描画ループ用。 */
 export const getImage = (ref: string): HTMLImageElement | null => {
 	const url = resolveRef(ref);
+	if (url.startsWith("rt:")) {
+		const c = runtimeImages.get(url);
+		return c ? asImg(c) : null;
+	}
 	const hit = cache.get(url);
 	if (!hit) {
 		void loadImage(ref);

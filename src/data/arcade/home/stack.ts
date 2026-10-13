@@ -1,7 +1,9 @@
 // キリコの 家の ゲーム「スレ積み」（stack）の 決まり。板は ui/arcade/home/stack.ts、文は data/arcade/text.ts。
 // - 4マスの レスが 上から 降ってくる。←→ で 動かし、回して 積む。横 1列 そろうと 消える。
+// - ↑ で 一気に 置く（ハードドロップ。下りた 段×2点）。下が ふさがっても 少しの 間は 動かせる（置く 猶予）。
 // - 出る ところが ふさがると おわり。
-// - スコア＝消した 列（いちどに 1・2・3・4列 で 100・300・500・800）。10列 ごとに 段が 上がって 速くなる。
+// - スコア＝消した 列（いちどに 1・2・3・4列 で 100・300・500・800）×段。続けて 消すと 連続（50×連続×段）、
+//   4列を 続けて 消すと 1.5倍。10列 ごとに 段が 上がって 速くなる。
 // DOM に 触らない（試験できる）。乱数は 渡された rnd。
 
 import { AH, ATOP, AW, type Rnd } from "../logic";
@@ -19,6 +21,9 @@ export const ST = {
 	/** いちどに 消した 列の 数 → 点。 */
 	lineScore: [0, 100, 300, 500, 800],
 	linesPerLevel: 10,
+	/** 下が ふさがってから 置くまでの 猶予（秒）と、動かして のばせる 回数。 */
+	lockDelay: 0.5,
+	lockResets: 15,
 } as const;
 
 /** 板の 字。 */
@@ -26,6 +31,11 @@ export const ST_TEXT = {
 	next: "NEXT",
 	lines: "列",
 	level: "段",
+	combo: "{n}連続",
+	four: "4列！",
+	b2b: "4列 連発！",
+	levelUp: "LEVEL UP",
+	note: "タップ　左右＝動く　上＝回す　下＝置く",
 } as const;
 
 /** 7つの 形（n×n の 枠の 中の マス）。1〜7 が 色。 */
@@ -105,11 +115,30 @@ export type StState = {
 	/** 7つ ずつ まぜた 袋。 */
 	bag: number[];
 	fallT: number;
+	/** 置く 猶予の のこりと のばした 回数。 */
+	lockT: number;
+	resets: number;
 	lines: number;
 	points: number;
+	/** 続けて 消した 回数（消さずに 置くと -1 に もどる）と、前に 消したのが 4列だったか。 */
+	combo: number;
+	lastFour: boolean;
+	/** さっき 消えた 列（盤の 段）と 光る のこり 秒・出す 字。 */
+	cleared: number[];
+	flashT: number;
+	flashText: string;
+	textT: number;
 	over: boolean;
 };
-export type StEvent = "move" | "rotate" | "lock" | "clear" | "four" | "over";
+export type StEvent =
+	| "move"
+	| "rotate"
+	| "lock"
+	| "drop"
+	| "clear"
+	| "four"
+	| "level"
+	| "over";
 
 /** 形 k（0〜6）を r 回 右へ 回した マス。 */
 export const stCells = (k: number, r: number): [number, number][] => {
@@ -158,8 +187,16 @@ export const stStart = (rnd: Rnd): StState => {
 		next: 0,
 		bag: [],
 		fallT: ST.fall,
+		lockT: ST.lockDelay,
+		resets: 0,
 		lines: 0,
 		points: 0,
+		combo: -1,
+		lastFour: false,
+		cleared: [],
+		flashT: 0,
+		flashText: "",
+		textT: 0,
 		over: false,
 	};
 	s.cur = spawn(draw(s, rnd));
@@ -183,58 +220,140 @@ const lock = (s: StState, rnd: Rnd, ev: StEvent[]): void => {
 		s.grid[y][x] = s.cur.k + 1;
 	}
 	ev.push("lock");
+	const cleared: number[] = [];
+	s.grid.forEach((row, y) => {
+		if (row.every((c) => c)) cleared.push(y);
+	});
 	const keep = s.grid.filter((row) => row.some((c) => !c));
-	const n = ST.rows - keep.length;
+	const n = cleared.length;
 	if (n > 0) {
+		const lv = stLevel(s) + 1;
 		s.grid = [
 			...Array.from({ length: n }, () => Array(ST.cols).fill(0)),
 			...keep,
 		];
+		s.combo++;
+		const four = n >= 4;
+		const b2b = four && s.lastFour;
+		const base = (ST.lineScore[n] ?? 800) * lv;
+		s.points +=
+			Math.floor(b2b ? base * 1.5 : base) +
+			(s.combo > 0 ? 50 * s.combo * lv : 0);
+		s.lastFour = four;
+		s.cleared = cleared;
+		s.flashT = 0.3;
+		s.textT = 1.2;
+		s.flashText = b2b
+			? ST_TEXT.b2b
+			: four
+				? ST_TEXT.four
+				: s.combo > 0
+					? ST_TEXT.combo.replace("{n}", String(s.combo + 1))
+					: "";
+		const before = stLevel(s);
 		s.lines += n;
-		s.points += ST.lineScore[n] ?? 800;
-		ev.push(n >= 4 ? "four" : "clear");
-	}
+		ev.push(four ? "four" : "clear");
+		if (stLevel(s) > before) {
+			s.flashText = ST_TEXT.levelUp;
+			ev.push("level");
+		}
+	} else s.combo = -1;
 	s.cur = spawn(s.next);
 	s.next = draw(s, rnd);
+	s.lockT = ST.lockDelay;
+	s.resets = 0;
 	if (s.over || !fits(s, s.cur)) {
 		s.over = true;
 		ev.push("over");
 	}
 };
 
+/** 一気に 置いた ときに 止まる 位置（影）。 */
+export const stGhost = (s: StState): StPiece => {
+	let p = s.cur;
+	for (;;) {
+		const q = { ...p, y: p.y + 1 };
+		if (!fits(s, q)) return p;
+		p = q;
+	}
+};
+
 export const stStep = (
 	s: StState,
 	dt: number,
-	input: { dx: number; rotate: boolean; soft: boolean },
+	input: { dx: number; rotate: boolean; soft: boolean; drop?: boolean },
 	rnd: Rnd,
 ): StEvent[] => {
 	const ev: StEvent[] = [];
 	if (s.over) return ev;
 	s.t += dt;
+	s.flashT = Math.max(0, s.flashT - dt);
+	s.textT = Math.max(0, s.textT - dt);
+	const grounded = () => !fits(s, { ...s.cur, y: s.cur.y + 1 });
+	// 下が ふさがって いる あいだに 動かすと 猶予を のばす
+	const moved = () => {
+		if (grounded() && s.resets < ST.lockResets) {
+			s.lockT = ST.lockDelay;
+			s.resets++;
+		}
+	};
 	if (input.dx) {
 		const p = { ...s.cur, x: s.cur.x + Math.sign(input.dx) };
 		if (fits(s, p)) {
 			s.cur = p;
 			ev.push("move");
+			moved();
 		}
 	}
 	if (input.rotate) {
-		// 壁ぎわでは 横へ ずらして 回す
-		for (const kick of [0, -1, 1, -2, 2]) {
-			const p = { ...s.cur, r: (s.cur.r + 1) % 4, x: s.cur.x + kick };
+		// 壁ぎわでは 横へ ずらして 回す（床ぎわでは 上へも）
+		for (const [kx, ky] of [
+			[0, 0],
+			[-1, 0],
+			[1, 0],
+			[-2, 0],
+			[2, 0],
+			[0, -1],
+		]) {
+			const p = {
+				...s.cur,
+				r: (s.cur.r + 1) % 4,
+				x: s.cur.x + kx,
+				y: s.cur.y + ky,
+			};
 			if (fits(s, p)) {
 				s.cur = p;
 				ev.push("rotate");
+				moved();
 				break;
 			}
 		}
+	}
+	if (input.drop) {
+		const g = stGhost(s);
+		s.points += (g.y - s.cur.y) * 2;
+		s.cur = g;
+		ev.push("drop");
+		lock(s, rnd, ev);
+		s.fallT = stFall(s);
+		return ev;
 	}
 	s.fallT = Math.min(s.fallT, input.soft ? ST.soft : stFall(s)) - dt;
 	while (s.fallT <= 0 && !s.over) {
 		s.fallT += input.soft ? ST.soft : stFall(s);
 		const p = { ...s.cur, y: s.cur.y + 1 };
-		if (fits(s, p)) s.cur = p;
-		else lock(s, rnd, ev);
+		if (fits(s, p)) {
+			// 下りたら 猶予は はじめから（動かして のばすのは 回数まで）
+			s.cur = p;
+			s.lockT = ST.lockDelay;
+		}
+	}
+	if (!s.over && grounded()) {
+		s.lockT -= dt;
+		if (s.lockT <= 0) {
+			lock(s, rnd, ev);
+			s.fallT = stFall(s);
+		}
 	}
 	return ev;
 };

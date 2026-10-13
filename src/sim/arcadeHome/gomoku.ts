@@ -50,4 +50,40 @@ export const tests: HomeGameTest[] = [
 			ok(j === at(0, 8) || j === at(5, 8), `止めるより 自分の 五（${j}）`);
 		},
 	},
+	{
+		name: "五目並べは ふつう 以上の 名無しが とびとびの 四・三を 止める",
+		run: () => {
+			for (let seed = 1; seed <= 5; seed++) {
+				// 黒 ●●＿●● （まんなかが 空いた 四）
+				const t = gmStart(1);
+				for (const x of [2, 3, 5, 6]) t.cells[at(x, 5)] = 1;
+				t.cells[at(0, 10)] = 2;
+				t.cells[at(10, 0)] = 2;
+				t.turn = 2;
+				const i = gmCpu(t, seeded(seed));
+				ok(i === at(4, 5), `とびとびの 四を 止めない（${i}）`);
+				// 黒 ＿●●＿●＿ （とびとびの 開いた 三）
+				const u = gmStart(2);
+				for (const x of [3, 4, 6]) u.cells[at(x, 5)] = 1;
+				u.cells[at(0, 10)] = 2;
+				u.cells[at(10, 0)] = 2;
+				u.turn = 2;
+				const j = gmCpu(u, seeded(seed));
+				ok(
+					[at(2, 5), at(5, 5), at(7, 5)].includes(j),
+					`とびとびの 三を 止めない（${j}）`,
+				);
+			}
+		},
+	},
+	{
+		name: "五目並べは 強い 名無しに 勝つほど 点が 多い",
+		run: () => {
+			const a = gmStart(0);
+			const b = gmStart(2);
+			a.winner = b.winner = 1;
+			a.moves = b.moves = 20;
+			ok(gmScore(b) > gmScore(a), "つよいに 勝つと 多い");
+		},
+	},
 ];

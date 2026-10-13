@@ -1,6 +1,7 @@
 // イッチ危機一髪の 板（決まりは data/arcade/home/kurohige.ts）。樽の 正面に 穴が 横 1列、てっぺんに イッチ。
-// ←→ で 穴を 選び、A で 刺す。タップは その 穴に じかに 刺す。刺したら 少し 間を おいて 結果（樽が ゆれる）。
-// 当たりなら イッチが 上へ 飛んでいく。
+// ←→ で 穴を 選び、A で 刺す。タップは 1度めで 穴を 選び、同じ 穴を もう 一度で 刺す。
+// 選んだ 穴が ピクッと する 穴なら イッチが 目を むく（穴の 下に 汗の しるしが 残る）。
+// 刺したら 少し 間を おいて 結果（樽が ゆれる）。当たりなら イッチが 上へ 飛んでいく。
 
 import {
 	KH,
@@ -39,6 +40,8 @@ type View = {
 	/** 刺している 穴（wait の あいだ）。 */
 	pend: number;
 	who: 1 | 2;
+	/** キリコが 剣を 当てて ピクッを 見た 穴。 */
+	seen: boolean[];
 };
 
 /** 刺さった 剣の 柄（穴から 上に 出る）。 */
@@ -92,6 +95,7 @@ export const playKurohige = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 			t: 0,
 			pend: -1,
 			who: 1,
+			seen: Array.from({ length: KH.slots }, () => false),
 		}),
 		step: (v, f) => {
 			const s = v.s;
@@ -139,11 +143,25 @@ export const playKurohige = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				else if (isTap(e)) {
 					const [x, y] = e.tap;
 					if (y < BTOP || x < BX || x > BX + BW_) continue;
-					const i = Math.round((x - CX) / GAP + (KH.slots - 1) / 2);
-					v.cur = Math.max(0, Math.min(KH.slots - 1, i));
-					stab = v.cur;
+					const i = Math.max(
+						0,
+						Math.min(
+							KH.slots - 1,
+							Math.round((x - CX) / GAP + (KH.slots - 1) / 2),
+						),
+					);
+					// 1度めは 選ぶだけ（ピクッを 見る）。同じ 穴を もう 一度で 刺す
+					if (i === v.cur) stab = i;
+					else {
+						v.cur = i;
+						f.se("cursor");
+					}
 				}
 				if (stab >= 0) break;
+			}
+			if (v.s.twitch[v.cur] && !s.stabbed[v.cur] && !v.seen[v.cur]) {
+				v.seen[v.cur] = true;
+				f.say(KH_SAY.twitch);
 			}
 			if (stab < 0) return;
 			if (s.stabbed[stab]) {
@@ -181,7 +199,15 @@ export const playKurohige = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 						6,
 					);
 			}
-			itchi(g, hx, hy, v.phase !== "pick" && v.phase !== "cpu");
+			// 選んだ 穴で ピクッ（目を むく）
+			const twitch = v.phase === "pick" && !s.stabbed[v.cur] && s.twitch[v.cur];
+			itchi(
+				g,
+				hx + (twitch ? Math.round(Math.sin(clock * 50)) : 0),
+				hy,
+				twitch || (v.phase !== "pick" && v.phase !== "cpu"),
+			);
+			if (twitch) txt(g, KH_SAY.twitch, CX + 24, BTOP - 18, 8, "#ffe060");
 			// 樽
 			const x0 = BX + shake;
 			g.fillStyle = "#8a5428";
@@ -203,6 +229,12 @@ export const playKurohige = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				g.fillStyle = "#1a1008";
 				g.fillRect(x - 2, SLOT_Y - 4, 4, 9);
 				const by = s.stabbed[i];
+				// ピクッを 見た 穴（汗の しるし）
+				if (!by && v.seen[i]) {
+					g.fillStyle = "#80c8ff";
+					g.fillRect(x - 1, SLOT_Y + 15, 2, 2);
+					g.fillRect(x, SLOT_Y + 14, 1, 1);
+				}
 				if (by) hilt(g, x, SLOT_Y - 4, by, 1);
 				else if (i === v.pend && v.phase === "wait")
 					hilt(

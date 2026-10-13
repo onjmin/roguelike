@@ -4187,3 +4187,442 @@ body.jolt #app {
 		opacity: 1;
 	}
 }
+
+/* ───────── キリコの 家の パソコンの BASIC（ui/petitcon/petitcon.ts） ───────── */
+
+.menu.petitcon {
+	left: 50%;
+	right: auto;
+	top: calc(8px + var(--safe-t));
+	transform: translateX(-50%);
+	width: min(560px, calc(var(--app-w) - 16px));
+	max-height: calc(var(--app-h) - 16px - var(--safe-t) - var(--safe-b));
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	/* プチコン ふうに 窓の 字も ドット（DotGothic16 は 16px が 元の 大きさ。にじませない） */
+	--pc-font: "DotGothic16", monospace;
+	--pc-bg: #000018;
+	--pc-fg: #e8ecff;
+	font-family: var(--pc-font);
+	-webkit-font-smoothing: none;
+	text-rendering: optimizeSpeed;
+}
+
+.menu.petitcon .menu-title,
+.menu.petitcon .menu-close,
+.mgame.petitcon-run,
+.petitcon-run .petitcon-key {
+	font-family: var(--pc-font, "DotGothic16", monospace);
+	-webkit-font-smoothing: none;
+}
+
+.menu.petitcon .menu-close {
+	font-size: 16px;
+}
+
+.petitcon-code {
+	display: block;
+	box-sizing: border-box;
+	width: 100%;
+	flex: 1 1 auto;
+	height: min(52vh, 380px);
+	min-height: 120px;
+	padding: 6px;
+	resize: none;
+	white-space: pre;
+	overflow: auto;
+	tab-size: 2;
+	color: var(--pc-fg);
+	background: var(--pc-bg);
+	caret-color: #7fd8ff;
+	border: 2px solid #3848a0;
+	border-radius: 2px;
+	box-shadow: inset 0 0 0 1px #000;
+	/* 16px（元の 大きさ）。小さいと iOS は タップで 拡大する */
+	font-family: var(--pc-font);
+	font-size: 16px;
+	line-height: 20px;
+	-webkit-font-smoothing: none;
+	user-select: text;
+	-webkit-user-select: text;
+}
+
+.petitcon-code::selection {
+	color: var(--pc-bg);
+	background: #7fd8ff;
+}
+
+.petitcon-code:focus {
+	outline: none;
+	border-color: #7fd8ff;
+}
+
+.petitcon-code[hidden],
+.petitcon-pick[hidden],
+.petitcon-bar[hidden] {
+	display: none;
+}
+
+.petitcon-note {
+	min-height: 1.4em;
+	margin-top: 4px;
+	font-size: 16px;
+	line-height: 20px;
+	color: #ffe060;
+}
+
+.petitcon-bar {
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.petitcon-bar > .menu-close {
+	flex: 1 1 0;
+	min-width: 56px;
+	padding: 6px 4px;
+}
+
+.petitcon-pick {
+	overflow-y: auto;
+	touch-action: pan-y;
+}
+
+.petitcon-pick-head {
+	font-size: 16px;
+	color: var(--muted);
+}
+
+.petitcon-pick .menu-close.dim {
+	opacity: 0.6;
+}
+
+.petitcon-ref {
+	margin-top: 8px;
+	padding: 4px 6px;
+	font-family: var(--pc-font);
+	font-size: 16px;
+	line-height: 20px;
+	color: var(--pc-fg);
+	background: var(--pc-bg);
+	overflow-x: auto;
+	white-space: nowrap;
+	opacity: 0.85;
+}
+
+.petitcon-hint {
+	margin-top: 4px;
+	font-size: 16px;
+	text-align: right;
+	opacity: 0.6;
+}
+
+.petitcon-pad {
+	display: flex;
+	gap: 4px;
+}
+
+.petitcon-key {
+	flex: 1;
+	min-height: 40px;
+	font: inherit;
+	font-size: 16px;
+	color: var(--win-fg, #f4f2ea);
+	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	border-radius: 6px;
+	touch-action: none;
+}
+
+.petitcon-key:active {
+	background: rgba(255, 255, 255, 0.25);
+}
+
+.petitcon-run .mgame-title,
+.petitcon-run .mgame-note,
+.petitcon-run .mgame-hint {
+	font-size: 16px;
+	line-height: 20px;
+}
+
+.petitcon-bar > .menu-close {
+	white-space: nowrap;
+}
+
+/* せまい 画面（スマホの 縦）：ボタンは 3つ ＋ 2つの 2段 */
+@media (max-width: 420px) {
+	.petitcon-bar > .menu-close {
+		flex: 1 1 calc(33% - 6px);
+		margin-top: 0;
+	}
+}
+
+/* ───────── キリコの 家の パソコンの「ネット」（ui/net/net.ts。古い ブラウザの 窓）───────── */
+.net {
+	position: absolute;
+	left: 50%;
+	top: calc(var(--safe-t) + 8px);
+	bottom: 8px;
+	transform: translateX(-50%);
+	width: min(96%, 720px);
+	z-index: 45;
+	display: flex;
+	flex-direction: column;
+	background: #c0c0c0;
+	color: #000;
+	border: 2px solid;
+	border-color: #fff #404040 #404040 #fff;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+	font-size: 13px;
+}
+
+.net-titlebar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 2px 2px 2px 6px;
+	background: linear-gradient(90deg, #000080, #1084d0);
+	color: #fff;
+}
+
+.net-title-text {
+	flex: 1;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.net-tools,
+.net-addr {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 4px;
+	border-bottom: 1px solid #808080;
+}
+
+.net-btn {
+	background: #c0c0c0;
+	color: #000;
+	border: 2px solid;
+	border-color: #fff #404040 #404040 #fff;
+	padding: 2px 10px;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.net-btn:active:not(:disabled) {
+	border-color: #404040 #fff #fff #404040;
+}
+
+.net-btn:disabled {
+	color: #808080;
+	cursor: default;
+}
+
+.net-close {
+	padding: 2px 8px;
+}
+
+.net-addr-url {
+	flex: 1;
+	min-width: 0;
+	background: #fff;
+	border: 2px solid;
+	border-color: #404040 #fff #fff #404040;
+	padding: 1px 4px;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	font-family: monospace;
+}
+
+.net-view {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+	touch-action: pan-y;
+	margin: 3px;
+	padding: 6px 10px 16px;
+	background: #efefef;
+	border: 2px solid;
+	border-color: #404040 #fff #fff #404040;
+	line-height: 1.55;
+	user-select: text;
+	-webkit-user-select: text;
+}
+
+.net-view.net-kind-portal,
+.net-view.net-kind-dic,
+.net-view.net-kind-news,
+.net-view.net-kind-tenki {
+	background: #fff;
+}
+
+.net-view.net-kind-matome {
+	background: #fffaf0;
+}
+
+.net-h {
+	font-size: 15px;
+	font-weight: bold;
+	color: #c00;
+	margin: 8px 0 4px;
+}
+
+.net-kind-portal .net-h,
+.net-kind-dic .net-h,
+.net-kind-news .net-h,
+.net-kind-tenki .net-h {
+	color: #000080;
+	border-bottom: 1px solid #000080;
+}
+
+.net-small {
+	font-size: 12px;
+	color: #555;
+}
+
+.net-a {
+	color: #00e;
+	text-decoration: underline;
+	cursor: pointer;
+	overflow-wrap: anywhere;
+}
+
+.net-a.net-focus {
+	outline: 2px dashed #c00;
+	outline-offset: 1px;
+	background: #ffe;
+}
+
+.net-li {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0 8px;
+	padding: 2px 0;
+}
+
+.net-kako .net-a {
+	color: #551a8b;
+}
+
+.net-note {
+	font-size: 11px;
+	color: #777;
+}
+
+.net-post {
+	margin: 0 0 10px;
+}
+
+.net-post-head {
+	font-size: 12px;
+	color: #333;
+}
+
+.net-name {
+	color: #080;
+	font-weight: bold;
+}
+
+.net-post-body {
+	margin-left: 1.5em;
+	overflow-wrap: anywhere;
+}
+
+.net-kind-matome .net-post-body {
+	font-size: 15px;
+	font-weight: bold;
+	color: #0a3a8a;
+}
+
+.net-hr {
+	border: none;
+	border-top: 1px solid #aaa;
+	margin: 10px 0;
+}
+
+.net-pop {
+	position: absolute;
+	left: 12px;
+	right: 12px;
+	z-index: 1;
+	padding: 6px 8px 0;
+	background: #ffffe8;
+	border: 1px solid #555;
+	box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.net-status {
+	padding: 1px 6px 2px;
+	font-size: 12px;
+	border-top: 1px solid #fff;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* ネットの お気に入り：90年代の 軽い ホームページの 見た目（data/net/site.ts の abePages） */
+.net-view.net-kind-abe {
+	background: #fff;
+	text-align: center;
+	font-family: "Times New Roman", "MS PMincho", serif;
+}
+
+.net-kind-abe .net-h {
+	color: #000;
+	font-size: 22px;
+	font-weight: normal;
+}
+
+.net-photo {
+	width: 120px;
+	height: 150px;
+	margin: 8px auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #ccc;
+	color: #555;
+}
+
+.net-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+	gap: 6px 12px;
+	max-width: 420px;
+	margin: 8px auto;
+	text-align: left;
+}
+
+.net-cell {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.net-icon {
+	flex: none;
+	width: 10px;
+	height: 10px;
+	border: 1px solid #000;
+	background: #9cf;
+}
+
+.net-kind-abe .net-li {
+	justify-content: center;
+}
+
+/* 40x48 の ドット絵を 3倍に */
+.net-photo.net-pixel {
+	display: block;
+	width: 120px;
+	height: 144px;
+	background: none;
+	image-rendering: pixelated;
+	border: 1px solid #888;
+}

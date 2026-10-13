@@ -1,6 +1,7 @@
 // 金魚すくいの 板（決まりは data/arcade/home/kingyo.ts）。上から 見た たらい。
 // 十字キーで ポイを 動かす（押しっぱなしは くり返しで 届く）、A で すくう。
 // タップは ポイの 上なら すくう、ほかは その 場所へ ポイが 向かう。
+// すくうと その 場所に 点が 浮かぶ（まとめて すくうと 名無しが 声を かける）。
 
 import {
 	KG,
@@ -65,6 +66,9 @@ export const playKingyo = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 	let dy = 0;
 	let held = 0;
 	let target: readonly [number, number] | null = null;
+	/** 浮かぶ 点（t は のこりの 秒）。 */
+	let pops: { x: number; y: number; s: string; t: number }[] = [];
+	let warned = false;
 	return playBoard(ctx, "kingyo", {
 		start: () => kgStart(rnd),
 		note: KINGYO_TEXT.note,
@@ -91,12 +95,27 @@ export const playKingyo = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			// 押しっぱなしは くり返しで 届く。とぎれたら 止まる
 			held -= f.dt;
 			if (held <= 0) [dx, dy] = [0, 0];
-			for (const e of kgStep(s, f.dt, { dx, dy, target, scoop }, rnd)) {
+			for (const p of pops) p.t -= f.dt;
+			pops = pops.filter((p) => p.t > 0);
+			const evs = kgStep(s, f.dt, { dx, dy, target, scoop }, rnd);
+			for (const e of evs) {
 				if (e === "dip") f.se("bubble");
 				else if (e === "catch") f.se("item");
 				else if (e === "bigCatch") f.se("arcCoin");
 				else if (e === "empty") f.se("cursor");
 				else if (e === "torn") f.se("glassBreak");
+			}
+			const got = s.lastScoop;
+			if (got && evs.some((e) => e === "catch" || e === "bigCatch")) {
+				pops.push({ x: got.x, y: got.y - 14, s: `+${got.pts}`, t: 0.9 });
+				if (got.n >= 2) {
+					f.se("jingle");
+					f.say(KINGYO_TEXT.multi.replace("{n}", `${got.n}`));
+				}
+			}
+			if (!warned && !s.over && s.paper < 30) {
+				warned = true;
+				f.say(KINGYO_TEXT.thin);
 			}
 		},
 		draw: (g, s, clock) => {
@@ -154,8 +173,22 @@ export const playKingyo = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			g.fillRect(X + R - 1, Y + R - 3, 3, 3);
 			g.fillRect(X + R + 1, Y + R - 1, 3, 3);
 			g.fillRect(X + R + 3, Y + R + 1, 3, 3);
+			for (const p of pops)
+				txt(
+					g,
+					p.s,
+					Math.round(p.x),
+					Math.round(p.y - (0.9 - p.t) * 12),
+					8,
+					"#ffe060",
+					"center",
+				);
 			const bw = 40;
-			hud(g, `${kgScore(s)}匹`, `${ARCADE_BOARD.time} ${kgTimeLeft(s)}`);
+			hud(
+				g,
+				`${kgScore(s)}点 ${s.caught}匹`,
+				`${ARCADE_BOARD.time} ${kgTimeLeft(s)}`,
+			);
 			// 紙の のこり（帯の まんなか）
 			txt(g, KINGYO_TEXT.paper, AW / 2 - bw / 2 - 3, 3, 8, "#e8e8f0", "right");
 			g.fillStyle = "#30303a";

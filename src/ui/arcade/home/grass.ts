@@ -57,6 +57,8 @@ const pxOf = (s: string): number =>
 export const playGrass = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 	let movedAt = -1;
 	let goalAt = -9;
+	/** いちばん 育った 草。 */
+	let top = 4;
 	return playBoard(ctx, "grass", {
 		start: () => grStart(rnd),
 		step: (s, f) => {
@@ -81,6 +83,15 @@ export const playGrass = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					f.se("levelup");
 				} else if (ev.includes("merge")) f.se("bubble");
 				else f.se("cursor");
+				// 新しい 段に 届いたら 名を 出す（草草・大草原 までは 出さない）
+				const best = grBest(s);
+				if (best > top) {
+					top = best;
+					if (best >= 32 && !ev.includes("goal")) {
+						f.se("jingle");
+						f.say(GR_TEXT.grew.replace("{name}", grName(best)));
+					}
+				}
 				if (s.over) break;
 			}
 		},

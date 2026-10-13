@@ -6,16 +6,19 @@
 // 記録は localStorage の kiriko-roguelike/arcade だけ（?stage= ・?event= の ときは 書かない。memo には 残る）。
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
 
-import { ARCADE, ARCADE_TEXT } from "../../data/arcade/text";
+import { ARCADE, ARCADE_PLAY_YEN, ARCADE_TEXT } from "../../data/arcade/text";
 import {
 	ARCADE_GAMES,
+	ARCADE_HOME,
 	type ArcadeGame,
 	isArcadeGame,
 } from "../../data/arcade/types";
 import { devEvent } from "../../data/story/objectives";
 import type { Story } from "../../engine/defs";
+import { spendYen, walletYen, yen } from "../../engine/wallet";
 import type { UiCtx } from "../list";
 import { playOrRecord } from "../minigames/playMenu";
+import { craneGift } from "../village/myhome";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
 import {
@@ -34,18 +37,41 @@ import {
 	playSuika,
 } from "./arcadeParlor";
 import { playFighter, playMole, playRhythm, playSlot } from "./arcadeTiming";
+import { playBaccarat } from "./home/baccarat";
+import { playBlackjack } from "./home/blackjack";
+import { playClicker } from "./home/clicker";
+import { craneLastWins, playCrane } from "./home/crane";
 import { playCrossing } from "./home/crossing";
+import { playDanmaku } from "./home/danmaku";
+import { playDarts } from "./home/darts";
+import { playDigkiriko } from "./home/digkiriko";
+import { playDoom } from "./home/doom";
 import { playGomoku } from "./home/gomoku";
 import { playGrass } from "./home/grass";
 import { playHasami } from "./home/hasami";
 import { playKingyo } from "./home/kingyo";
+import { playKoikoi } from "./home/koikoi";
 import { playKurohige } from "./home/kurohige";
+import { playMikiri } from "./home/mikiri";
 import { playMines } from "./home/mines";
+import { playMojisagashi } from "./home/mojisagashi";
+import { playNineball } from "./home/nineball";
+import { playPachinko } from "./home/pachinko";
+import { playPatapata } from "./home/patapata";
+import { playPicross } from "./home/picross";
+import { playPinball } from "./home/pinball";
+import { playPoker } from "./home/poker";
 import { playPong } from "./home/pong";
+import { playPuyupuyu } from "./home/puyupuyu";
+import { playResukui } from "./home/resukui";
+import { playReversi } from "./home/reversi";
 import { playSimon } from "./home/simon";
 import { playSnake } from "./home/snake";
+import { playSoko } from "./home/soko";
 import { playStack } from "./home/stack";
 import { playTaiko } from "./home/taiko";
+import { playTsuribori } from "./home/tsuribori";
+import { playWangan } from "./home/wangan";
 
 export { isArcadeGame };
 
@@ -172,6 +198,29 @@ const BOARDS: Record<ArcadeGame, (ctx: UiCtx) => Promise<ArcadeResult | null>> =
 		pong: playPong,
 		kurohige: playKurohige,
 		kingyo: playKingyo,
+		puyupuyu: playPuyupuyu,
+		pinball: playPinball,
+		danmaku: playDanmaku,
+		mikiri: playMikiri,
+		mojisagashi: playMojisagashi,
+		clicker: playClicker,
+		doom: playDoom,
+		wangan: playWangan,
+		crane: playCrane,
+		resukui: playResukui,
+		digkiriko: playDigkiriko,
+		patapata: playPatapata,
+		reversi: playReversi,
+		koikoi: playKoikoi,
+		picross: playPicross,
+		soko: playSoko,
+		nineball: playNineball,
+		darts: playDarts,
+		tsuribori: playTsuribori,
+		poker: playPoker,
+		blackjack: playBlackjack,
+		baccarat: playBaccarat,
+		pachinko: playPachinko,
 	};
 
 /** 筐体を 調べた あと（物の 文は ui/village/facilities.ts が 先に 読む）。 */
@@ -186,7 +235,18 @@ export const arcadeScript = async (
 		m.best[game] > 0
 			? [fill(ARCADE.record, { best: m.best[game], unit: t.unit })]
 			: [];
-	if ((await playOrRecord(s, record, ARCADE.menu)) === null) return;
+	// ゲームセンターの 筐体は 1プレイ ARCADE_PLAY_YEN 円（財布から。足りなければ 遊べない。途中で やめても もどらない）
+	const paid = ARCADE_HOME[game] === "arcade";
+	const price = yen(ARCADE_PLAY_YEN);
+	const menu = paid
+		? ARCADE.payMenu.map((x) => fill(x, { price }))
+		: ARCADE.menu;
+	if ((await playOrRecord(s, record, menu)) === null) return;
+	if (paid && !spendYen(ARCADE_PLAY_YEN, previewing())) {
+		await s.narrate(fill(ARCADE.short, { price, have: yen(walletYen()) }));
+		return;
+	}
+	if (paid) ctx.se("arcCoin");
 	if (!m.tutored.includes(game)) {
 		await s.narrate(t.rule);
 		m.tutored.push(game);
@@ -209,6 +269,9 @@ export const arcadeScript = async (
 		ctx.se("arcBest");
 		await s.narrate(ARCADE.newBest);
 	}
+	// クレーンゲームで 金の ぷゆゆを とったら、家に ぬいぐるみの 家具が 届く（家を 買って いて、まだ 持って いなければ）
+	if (game === "crane" && !hooks && craneLastWins().includes("puyuGold"))
+		await craneGift(s);
 };
 
 /** 部屋の 物から（物の 名前が ゲームの 名前。知らない 名前なら 何もしない）。 */

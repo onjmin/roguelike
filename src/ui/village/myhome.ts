@@ -39,6 +39,7 @@ import {
 	LOAN_MONTHS,
 	MOVE_IN_GIFT,
 	NOT_SOLD,
+	PC_FURNITURE,
 	type Placed,
 	placeInFront,
 	RESIDENT_GIFTS,
@@ -56,6 +57,9 @@ import { arcadeScript, loadArcade } from "../arcade/arcade";
 import { loadBushitsu } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
+import { netBrowse } from "../net/net";
+import { paintEasel } from "../paint/paint";
+import { petitcon } from "../petitcon/petitcon";
 import { cafeBonds } from "./cafe";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
@@ -577,7 +581,23 @@ export const homeThing =
 		await s.narrate(FURNITURE[kind].line);
 		if (!m.owned) return;
 		// 遊べる 家具：「遊ぶ」が 先頭（遊ぶ・ハイスコアは ゲームセンターの 台と 同じ。ui/arcade/arcade.ts）
+		// 画家の キャンバス：絵を 描く（ui/paint/paint.ts）
+		if (kind === "easel") {
+			const g = await s.choose([...HOME_MSG.easelMenu], { cancel: 3 });
+			if (g === 0) await paintEasel(ctx, s);
+			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
+			return;
+		}
 		const game = FURNITURE_GAME[kind];
+		// パソコン：ゲームの ほかに BASIC を 書いて 動かせる（ui/petitcon/petitcon.ts）
+		if (game && PC_FURNITURE.includes(kind)) {
+			const g = await s.choose([...HOME_MSG.pcMenu], { cancel: 5 });
+			if (g === 0) await arcadeScript(ctx, s, game);
+			else if (g === 1) await petitcon(ctx, s);
+			else if (g === 2) await netBrowse(ctx, s);
+			else if (g === 3 || g === 4) await moveOrStore(s, m, kind, g - 3);
+			return;
+		}
 		if (game) {
 			const g = await s.choose([...HOME_MSG.gameMenu], { cancel: 3 });
 			if (g === 0) {
@@ -659,6 +679,16 @@ const openParcels = async (s: Story): Promise<void> => {
 /** その 家具を 持っているか（収納か 部屋）。 */
 const owns = (m: HomeMemo, id: FurnitureId): boolean =>
 	m.stored.includes(id) || m.placed.some((p) => p.id === id);
+
+/** クレーンゲームの 金の ぷゆゆ → ぷゆゆの ぬいぐるみを 収納へ（家を 買って いて、まだ 持って いない とき）。 */
+export const craneGift = async (s: Story): Promise<void> => {
+	const m = loadHome();
+	if (!m.owned || owns(m, "puyuPlush")) return;
+	m.stored.push("puyuPlush");
+	saveHome(m);
+	s.se("item");
+	await s.narrate(HOME_MSG.craneGift);
+};
 
 // ───────────────── 買う（リサイクルショップの レジ） ─────────────────
 

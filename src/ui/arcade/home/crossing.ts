@@ -6,6 +6,7 @@ import {
 	CR_TEXT,
 	crOrigin,
 	crScore,
+	crSink,
 	crStart,
 	crStep,
 	crTimeLeft,
@@ -38,8 +39,10 @@ const kiriko = (g: G, x: number, y: number, c: number): void => {
 	g.fillRect(x + c - 4, y + 8, 1, 2);
 };
 
-export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> =>
-	playBoard(ctx, "crossing", {
+export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+	// 5つ うめた ときの 光
+	let flash = 0;
+	return playBoard(ctx, "crossing", {
 		start: () => crStart(rnd),
 		step: (s, f) => {
 			const [ox, oy] = crOrigin();
@@ -58,9 +61,15 @@ export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					else [dx, dy] = [0, Math.sign(ay)];
 				}
 			}
+			flash = Math.max(0, flash - f.dt);
 			for (const e of crStep(s, f.dt, { dx, dy }, rnd)) {
 				if (e === "hop") f.se("cursor");
 				else if (e === "goal") f.se("arcCoin");
+				else if (e === "full") {
+					f.se("levelup");
+					flash = 0.8;
+				} else if (e === "bonus") f.se("item");
+				else if (e === "blocked") f.se("arcBlock");
 				else if (e === "crash") f.se("arcCrash");
 				else if (e === "splash" || e === "timeout") f.se("miss");
 			}
@@ -74,9 +83,18 @@ export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 			for (const l of s.lanes) {
 				const Y = oy + l.y * c;
 				if (l.kind === "g") {
-					g.fillStyle = "#3a8a3a";
+					// 次スレの 枠（空き・うまり）
+					g.fillStyle =
+						flash > 0 && Math.floor(flash * 10) % 2 ? "#6aca6a" : "#3a8a3a";
 					g.fillRect(ox, Y, W, c);
-					txt(g, CR_TEXT.goal, ox + W / 2, Y + 1, 8, "#f4f2ea", "center");
+					CR.slots.forEach((col, i) => {
+						const X = ox + col * c;
+						g.fillStyle = "#f4f2ea";
+						g.fillRect(X - 1, Y, c + 2, c);
+						g.fillStyle = s.filled[i] ? "#e8e0c8" : "#1a3a1a";
+						g.fillRect(X, Y + 1, c, c - 1);
+						if (s.filled[i]) kiriko(g, X, Y, c);
+					});
 				} else if (l.kind === "w") {
 					g.fillStyle = "#2a5ab0";
 					g.fillRect(ox, Y, W, c);
@@ -96,22 +114,43 @@ export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					g.fillStyle = l.kind === "s" ? "#5a8a3a" : "#8a8070";
 					for (let x = 0; x < W; x += 8) g.fillRect(ox + x, Y + c - 1, 7, 1);
 				}
+				const sink = crSink(s, l);
 				for (const it of l.items) {
 					const X = Math.round(ox + it.x * c);
 					const w = it.w * c;
 					if (l.kind === "w") {
-						g.fillStyle = "#7a4a22";
+						// 沈む 丸太は 沈みかけで 点滅、沈むと 水の 影だけ
+						if (sink === 2) {
+							g.fillStyle = "#24509a";
+							g.fillRect(X, Y + 3, w, c - 6);
+							continue;
+						}
+						if (sink === 1 && Math.floor(clock * 10) % 2) {
+							g.fillStyle = "#5a3a1a";
+							g.fillRect(X, Y + 2, w, c - 4);
+							continue;
+						}
+						g.fillStyle = l.type === "sink" ? "#8a5a2a" : "#7a4a22";
 						g.fillRect(X, Y + 1, w, c - 2);
 						g.fillStyle = "#a06a3a";
 						g.fillRect(X, Y + 2, w, 1);
 						g.fillStyle = "#5a3418";
 						g.fillRect(X + w - 2, Y + 1, 2, c - 2);
 					} else {
-						g.fillStyle = CARS[it.tone % CARS.length];
+						const truck = l.type === "truck";
+						g.fillStyle = truck
+							? "#d0a050"
+							: l.type === "racer"
+								? "#f050c0"
+								: CARS[it.tone % CARS.length];
 						g.fillRect(X + 1, Y + 1, w - 2, c - 2);
 						g.fillStyle = "#9ad0f0";
 						const front = l.speed > 0 ? X + w - 5 : X + 2;
 						g.fillRect(front, Y + 2, 3, c - 4);
+						if (truck) {
+							g.fillStyle = "#a07830";
+							g.fillRect(l.speed > 0 ? X + 2 : X + 7, Y + 2, w - 10, c - 4);
+						}
 						g.fillStyle = "#141418";
 						g.fillRect(X + 2, Y, 3, 1);
 						g.fillRect(X + w - 5, Y, 3, 1);
@@ -119,6 +158,14 @@ export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 						g.fillRect(X + w - 5, Y + c - 1, 3, 1);
 					}
 				}
+			}
+			// 安価（ふわふわ 光る）
+			if (s.bonus) {
+				const X = ox + s.bonus.x * c;
+				const Y = oy + s.bonus.y * c;
+				g.fillStyle = Math.floor(clock * 4) % 2 ? "#f0f0f4" : "#c8d8ff";
+				g.fillRect(X, Y + 1, c, c - 2);
+				txt(g, CR_TEXT.bonus, X + c / 2, Y + 2, 6, "#2040c0", "center");
 			}
 			// 盤の 外に はみだした 物を 隠す
 			g.fillStyle = "#101010";
@@ -134,12 +181,20 @@ export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					g.fillRect(px + 3, py + 3, c - 6, c - 6);
 				}
 			} else kiriko(g, px, py, c);
+			for (const p of s.pops) {
+				const X = Math.round(ox + p.x * c + c / 2);
+				const Y = Math.round(oy + p.y * c + 2 + p.t * 10);
+				txt(g, p.text, X + 1, Y + 1, 7, "#000000", "center");
+				txt(g, p.text, X, Y, 7, "#ffe060", "center");
+			}
+			const left = s.filled.filter((f) => !f).length;
 			hud(
 				g,
 				`${ARCADE_BOARD.score} ${crScore(s)}　${ARCADE_BOARD.lives} ${Math.max(0, s.lives)}`,
-				`${s.lap + 1}${CR_TEXT.lap}　${ARCADE_BOARD.time} ${crTimeLeft(s)}`,
+				`${CR_TEXT.goal} ${left}　${s.lap + 1}${CR_TEXT.lap}　${ARCADE_BOARD.time} ${crTimeLeft(s)}`,
 			);
 		},
 		over: (s) => s.over,
 		score: crScore,
 	});
+};

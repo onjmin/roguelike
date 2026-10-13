@@ -2183,10 +2183,7 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 					placed.push({ id, x, y });
 	// （2026-10-13 に 家具を 買えるように して ふえ、遊べる 家具も 12 ふえたので、ぜんぶは 部屋に 入りきらない。
 	// 入りきらない 物は 収納に しまって 入れかえる。ここは 部屋の 広さ（だいたい 18 個）を 見る）
-	ok(
-		placed.length >= 16,
-		`only ${placed.length} placed`,
-	);
+	ok(placed.length >= 16, `only ${placed.length} placed`);
 	ok(layoutOk(placed), "full room is not walkable");
 	const built = homeRows({ placed, wall: 0, floor: 0 });
 	ok(

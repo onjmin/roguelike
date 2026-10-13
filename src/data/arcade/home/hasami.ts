@@ -1,9 +1,11 @@
 // キリコの 家の 遊べる 家具「将棋盤」の はさみ将棋（板は ui/arcade/home/hasami.ts）。
 // 9×9 の 盤。キリコの 歩 9枚が 下の 段、名無し（CPU）の と 9枚が 上の 段。キリコが 先手。
 // 駒は 飛車と 同じく 縦横に 何マスでも 動ける（とびこえは なし）。動いた 駒と 味方の 駒で 縦か 横に
-// 相手の 駒を 挟むと 取る（何枚 ならんでいても よい。隅の 取りは なし。自分から 挟まれに 入っても 取られない）。
+// 相手の 駒を 挟むと 取る（何枚 ならんでいても よい。自分から 挟まれに 入っても 取られない）。
+// 隅の 駒は、となりの 2マスを ふさぐと 取れる（隅の 取り）。
 // 先に 5枚 取った ほうが 勝ち。120手で おわれば 取った 数で 決める。
-// 名無しは 取れる 手を 好み、すぐ 取りかえされる 手を さける（少し ぶれる）。
+// 名無しは 取れる 手を 好み、すぐ 取りかえされる 手を さけ、次に ねらえる 駒（両取り）を ふやす 手と
+// 相手に 寄る 手を 好む（守って ばかりで 120手まで もつれないように。名無しどうしで 平均 65手ほど）。
 // スコア：勝ち＝1000＋(取った−取られた)×50、それ以外＝取った×50。DOM に 触らない（試験できる）。
 
 import type { Rnd } from "../logic";
@@ -111,8 +113,24 @@ const sandwiched = (
 		if (line.length && inside(x, y) && cells[y * HS.n + x] === who)
 			out.push(...line);
 	}
+	// 隅の 取り：隅の 相手の 駒を、となりの 2マスで ふさぐと 取る（動いた 駒が その 片方）
+	for (const [dx, dy] of DIRS) {
+		const x = x0 + dx;
+		const y = y0 + dy;
+		if (!inside(x, y) || !isCorner(x, y) || cells[y * HS.n + x] !== you)
+			continue;
+		const ox = x === 0 ? 1 : HS.n - 2;
+		const oy = y === 0 ? 1 : HS.n - 2;
+		// もう 片方の となり（to と 反対の 辺の がわ）
+		const other = x0 === x ? y * HS.n + ox : oy * HS.n + x;
+		if (cells[other] === who && !out.includes(y * HS.n + x))
+			out.push(y * HS.n + x);
+	}
 	return out;
 };
+
+const isCorner = (x: number, y: number): boolean =>
+	(x === 0 || x === HS.n - 1) && (y === 0 || y === HS.n - 1);
 
 /** 動かした あとの 盤と 取れる マス（盤は 書きかえない）。 */
 const tryMove = (
@@ -164,6 +182,17 @@ const bestTake = (cells: readonly HsPiece[], who: 1 | 2): number => {
 	return best;
 };
 
+/** who が 次の 1手で ねらえる 相手の 駒の 数（ちがう 手で ねらう ぶんも 足す。2つ あれば 両取り）。 */
+const aimed = (cells: readonly HsPiece[], who: 1 | 2): number => {
+	const hit = new Set<number>();
+	for (let i = 0; i < cells.length; i++) {
+		if (cells[i] !== who) continue;
+		for (const to of hsDests(cells, i))
+			for (const k of sandwiched(tryMoveRaw(cells, i, to), to, who)) hit.add(k);
+	}
+	return hit.size;
+};
+
 /** 取りを 見ずに 動かした 盤。 */
 const tryMoveRaw = (
 	cells: readonly HsPiece[],
@@ -174,6 +203,17 @@ const tryMoveRaw = (
 	next[to] = next[from];
 	next[from] = 0;
 	return next;
+};
+
+/** to の 縦横 となりに いる 相手の 駒の 数（寄って いく 手を 好む）。 */
+const near = (cells: readonly HsPiece[], to: number, you: 1 | 2): number => {
+	const x0 = to % HS.n;
+	const y0 = Math.floor(to / HS.n);
+	let n = 0;
+	for (const [dx, dy] of DIRS)
+		if (inside(x0 + dx, y0 + dy) && cells[(y0 + dy) * HS.n + x0 + dx] === you)
+			n++;
+	return n;
 };
 
 /** 名無しの 手 [from, to]。取る 数 − すぐ 取りかえされる 数 で 選ぶ（少し ぶれる）。 */
@@ -188,15 +228,19 @@ export const hsCpu = (s: HsState, rnd: Rnd): [number, number] => {
 			const r = tryMove(s.cells, i, to);
 			const win = s.took[me] + r.gone.length >= HS.goal;
 			const back = win ? 0 : bestTake(r.cells, you);
-			// 前へ 出る 手を ほんの 少し 好む（じっと しない）
+			// 次に 取れる 数（ねらい）。守りに 入って 千日手に ならないよう、攻めを 好む
+			const aim = win || back ? 0 : aimed(r.cells, me);
+			// 前へ 出る 手を 少し 好む（じっと しない）
 			const ahead =
 				me === 2 ? Math.floor(to / HS.n) : HS.n - 1 - Math.floor(to / HS.n);
 			const v =
 				(win ? 10000 : 0) +
 				r.gone.length * 100 -
 				back * 90 +
-				Math.min(ahead, 4) * 2 +
-				rnd() * 30;
+				aim * 55 +
+				near(r.cells, to, you) * 12 +
+				Math.min(ahead, 5) * 3 +
+				rnd() * 25;
 			if (v > bestV) {
 				bestV = v;
 				best = [i, to];

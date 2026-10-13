@@ -15,13 +15,17 @@ import {
 import {
 	AW,
 	BK,
+	bkLayout,
+	bkRect,
 	bkStart,
 	bkStep,
 	DR,
+	drPickup,
 	drScore,
 	drStart,
 	drStep,
 	FT_FOES,
+	ftInPerfect,
 	ftInWindow,
 	ftStart,
 	ftStep,
@@ -35,6 +39,7 @@ import {
 	rhStart,
 	rhStep,
 	rnScore,
+	rnSpeed,
 	rnStart,
 	rnStep,
 	SH,
@@ -42,10 +47,12 @@ import {
 	SL_PAY,
 	SL_REELS,
 	SL_SYMS,
+	shMult,
 	shStart,
 	shStep,
 	slAt,
 	slLine,
+	slSpeed,
 	slStart,
 	slStep,
 } from "../data/arcade/logic";
@@ -58,31 +65,45 @@ import {
 	gcRoll,
 	gcStart,
 	gcStep,
+	gcToCeiling,
 	gsPoints,
 	gsStart,
 	gsStep,
 	gsStopX,
 	HL,
+	hlCash,
 	hlJudge,
+	hlMult,
 	hlScore,
 	hlStart,
 	hlStep,
+	RL,
+	RL_BETS,
 	RL_PAY,
 	RL_RED,
 	RL_WHEEL,
 	rlColorOf,
 	rlNumber,
+	rlPayout,
 	rlStart,
 	rlStep,
+	rlTotal,
+	rlWins,
 	SK_H,
 	SK_W,
 	SW,
 	swDistance,
 	swStart,
 	swStep,
+	swTrollRate,
 	swTruth,
 } from "../data/arcade/parlor";
-import { ARCADE, ARCADE_BOARD, ARCADE_TEXT } from "../data/arcade/text";
+import {
+	ARCADE,
+	ARCADE_BOARD,
+	ARCADE_PLAY_YEN,
+	ARCADE_TEXT,
+} from "../data/arcade/text";
 import { ARCADE_GAMES, ARCADE_HOME, isArcadeGame } from "../data/arcade/types";
 import { sfx } from "../data/audio/sfx";
 import {
@@ -92,6 +113,7 @@ import {
 } from "../data/village/facilities";
 import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
+import { forgetWalletMemo, walletYen, yen } from "../engine/wallet";
 import {
 	arcadeScript,
 	forgetArcadeMemo,
@@ -122,7 +144,7 @@ const seeded = (seed: number) => {
 };
 /** netaTests.ts の BANNED と 同じ（画面に 出さない 語）。 */
 const BANNED =
-	/落ちる|落ちた|落ちない|黄色|きいろ|山吹|114514|1919|810|うんこ|うんち|マイクラ|オセロ|ガイジ|アスペ|チー牛|原カス|淫夢/;
+	/落ちる|落ちた|落ちない|黄色|きいろ|山吹|114514|1919|810|うんこ|うんち|オセロ|ガイジ|アスペ|チー牛|原カス|淫夢/;
 const width = (s: string) =>
 	[...s].reduce((n, c) => n + (/[\x20-\x7e｡-ﾟ]/.test(c) ? 0.5 : 1), 0);
 const fits = (where: string, s: string, w = 22, lines = 2) => {
@@ -204,6 +226,24 @@ const same = (log: string[], want: string[], what: string) =>
 		JSON.stringify(log) === JSON.stringify(want),
 		`${what}:\n${log.join("\n")}\n--- want ---\n${want.join("\n")}`,
 	);
+
+/** ゲームセンターの 筐体の 品書き（1プレイ 100円）。 */
+const payMenu = (): string =>
+	ARCADE.payMenu.map((x) => fill(x, { price: yen(ARCADE_PLAY_YEN) })).join("/");
+/** 町の 売り上げを 置く（財布の 元。engine/wallet.ts）。 */
+const setTownYen = (store: Map<string, string>, points: number): void => {
+	store.set(
+		"kiriko-roguelike/town",
+		JSON.stringify({
+			points,
+			stage: 0,
+			storage: [],
+			pending: null,
+			returned: [],
+		}),
+	);
+	forgetWalletMemo();
+};
 
 // ───────────────── 置き場所・つなぎ ─────────────────
 
@@ -297,7 +337,10 @@ test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/village/fa
 			await ev.run(r.s);
 			same(
 				r.log,
-				[`narrate: ${ARCADE_TEXT[g].line}`, `choose: ${ARCADE.menu.join("/")}`],
+				[
+					`narrate: ${ARCADE_TEXT[g].line}`,
+					`choose: ${ARCADE_HOME[g] === "arcade" ? payMenu() : ARCADE.menu.join("/")}`,
+				],
 				g,
 			);
 		}
@@ -332,6 +375,12 @@ test("文: 窓は 22×2、板の 題と 押し方は 1行 22、ボタン 9", () 
 				fits("swNear", t, 22, 1);
 				ok(width(who) + width(t) <= 12.5, `swNear "${who} ${t}"`);
 			}
+	for (const t of ARCADE_BOARD.swGaya) {
+		fits("swGaya", t, 22, 1);
+		ok(width(ARCADE_BOARD.swNanashi) + width(t) <= 12.5, `swGaya "${t}"`);
+	}
+	for (const t of Object.values(ARCADE_BOARD.rlBets))
+		ok(width(t) <= 3, `rlBets ${t}`);
 	for (const t of ARCADE_TEXT.gacha.rule.split("\n")) ok(width(t) <= 22, t);
 });
 
@@ -355,7 +404,7 @@ test("音: 板と 窓で 鳴らす 効果音は どれも data/audio/sfx.ts に 
 
 // ───────────────── 決まり ─────────────────
 
-test("シューティング: 撃たないと 残機が なくなる・よく 撃つと 60秒 しのいで ボーナス", () => {
+test("シューティング: 撃たないと 残機が なくなる・よく 撃つと しのいで クリア、自演を 倒すと その場で クリア", () => {
 	let s = shStart();
 	let rnd = seeded(1);
 	for (let i = 0; i < 60 * 30 && !s.over; i++)
@@ -370,8 +419,35 @@ test("シューティング: 撃たないと 残機が なくなる・よく 撃
 		const ev = shStep(s, 1 / 30, { target: low?.x ?? AW / 2, fire: true }, rnd);
 		kills += ev.filter((e) => e === "kill").length;
 	}
-	ok(s.over && s.t >= SH.time - 0.05, `time up (t=${s.t}, lives=${s.lives})`);
+	ok(
+		s.over && s.lives > 0 && (s.beat || s.t >= SH.time - 0.05),
+		`clear (t=${s.t}, lives=${s.lives})`,
+	);
+	ok(s.bossSeen, "boss shows up");
 	ok(kills > 30 && s.score > kills * 10, `kills ${kills} score ${s.score}`);
+	// 下まで 来そうな 荒らしを 先に 撃ち、あとは 自演の 真下で 撃つと 時間 内に 倒せる
+	s = shStart();
+	rnd = seeded(12);
+	s.t = SH.bossAt - 0.01;
+	shStep(s, 0.02, { fire: false }, rnd);
+	ok(s.boss && s.boss.hp === SH.bossHp, "boss");
+	for (let i = 0; i < (SH.time - SH.bossAt) * 30 && !s.over; i++) {
+		const low = [...s.foes]
+			.filter((f) => f.y > 60)
+			.sort((a, b) => b.y - a.y)[0];
+		const target = low?.x ?? s.boss?.x ?? s.x;
+		shStep(s, 1 / 30, { target, fire: true }, rnd);
+	}
+	ok(s.over && s.beat && s.lives > 0, `beat boss (lives ${s.lives})`);
+	ok(s.score >= SH.bossBonus, `boss bonus ${s.score}`);
+	// コピペは 2つに 割れる・続けて 倒すと 倍率
+	s = shStart();
+	s.foes.push({ x: 120, y: 60, kind: "kopipe", hp: 1, vy: 0, ph: 0, flash: 0 });
+	s.shots.push({ x: 120, y: 62, vx: 0 });
+	const ev = shStep(s, 0.001, { fire: false }, rnd);
+	ok(ev.includes("split") && s.foes.length >= 2, `split ${s.foes.length}`);
+	s.chain = SH.chainStep;
+	ok(shMult(s) === 2, "mult");
 });
 
 test("レースゲーム: 動かないと ぶつかる・空いた 車線へ よけると 長く 走れる、どの 列も 1車線は 空く", () => {
@@ -388,7 +464,7 @@ test("レースゲーム: 動かないと ぶつかる・空いた 車線へ よ
 			s.things.some(
 				(o) =>
 					o.lane === lane &&
-					o.kind !== "hoshu" &&
+					!drPickup(o.kind) &&
 					o.y > DR.carY - 70 &&
 					o.y < DR.carY + 12,
 			);
@@ -401,10 +477,20 @@ test("レースゲーム: 動かないと ぶつかる・空いた 車線へ よ
 		// 同じ 高さの じゃまは 2つまで
 		const rows = new Map<number, number>();
 		for (const o of s.things)
-			if (o.kind !== "hoshu") rows.set(o.y, (rows.get(o.y) ?? 0) + 1);
+			if (!drPickup(o.kind)) rows.set(o.y, (rows.get(o.y) ?? 0) + 1);
 		for (const n of rows.values()) ok(n <= 2, "a lane is always open");
 	}
 	ok(drScore(s) > idle * 3, `dodging ${drScore(s)} vs idle ${idle}`);
+	// 保守は 続けて 拾うと 上がる・age の あいだは はね飛ばせる
+	s = drStart();
+	for (const kind of ["hoshu", "hoshu", "age", "car"] as const) {
+		s.things.push({ lane: s.lane, y: DR.carY, kind });
+		drStep(s, 0.001, 0, rnd);
+	}
+	ok(
+		s.streak === 2 && s.bonus === DR.pickup * 3 + DR.smash && !s.over,
+		`streak ${s.streak} bonus ${s.bonus}`,
+	);
 });
 
 test("ブロックくずし: 板で 追えば 1面 くずせる（次の 面へ）、追わないと 3球で おわり", () => {
@@ -432,27 +518,66 @@ test("ブロックくずし: 板で 追えば 1面 くずせる（次の 面へ�
 	}
 	ok(s.wave === 2, `cleared wave 1 (score ${s.score}, lives ${s.lives})`);
 	ok(s.score >= BK.cols * BK.rows * BK.brick + BK.waveBonus, "score");
+	// 面ごとに 並びが かわり、濃い 札が ある
+	ok(
+		bkLayout(2).some((hp) => hp === 2),
+		"hard bricks",
+	);
+	ok(JSON.stringify(bkLayout(2)) !== JSON.stringify(bkLayout(3)), "layouts");
+	for (let w = 1; w <= 8; w++)
+		ok(
+			bkLayout(w).some((hp) => hp > 0),
+			"not empty",
+		);
+	// 濃い 札は 2回、貫く 球は 1回で
+	s = bkStart();
+	s.bricks = s.bricks.map(() => 0);
+	s.bricks[0] = 2;
+	s.bricks[1] = 1;
+	const [x0, y0, w0, h0] = bkRect(0);
+	s.held = false;
+	s.ball = { x: x0 + w0 / 2, y: y0 + h0 + 3, vx: 0, vy: -100 };
+	ok(
+		bkStep(s, 0.05, { launch: false }, rnd).includes("dent") &&
+			s.bricks[0] === 1,
+		"dent",
+	);
+	s.pierce = BK.pierce;
+	s.ball = { x: x0 + w0 / 2, y: y0 + h0 + 3, vx: 0, vy: -100 };
+	bkStep(s, 0.05, { launch: false }, rnd);
+	ok(s.bricks[0] === 0 && s.ball.vy < 0, "pierce goes through");
 });
 
-test("もぐらたたき: 30秒で おわる、ROM だけ たたくと 点、イッチを たたくと 減る", () => {
+test("もぐらたたき: 30秒で おわる、イッチ 以外を たたくと 点（続けると 倍率）、イッチを たたくと 減る", () => {
 	const rnd = seeded(7);
 	const s = mlStart();
-	let icchi = 0;
+	const seen = new Set<string>();
+	let fever = false;
 	for (let i = 0; i < 31 * 30 && !s.over; i++) {
 		const hits = s.holes
-			.map((h, j) => (h.kind === "rom" ? j : -1))
+			.map((h, j) => (h.kind && h.kind !== "icchi" ? j : -1))
 			.filter((j) => j >= 0);
-		icchi += s.holes.filter((h) => h.kind === "icchi").length > 0 ? 1 : 0;
-		mlStep(s, 1 / 30, hits, rnd);
+		for (const h of s.holes) if (h.kind) seen.add(h.kind);
+		if (mlStep(s, 1 / 30, hits, rnd).includes("fever")) fever = true;
 	}
 	ok(s.over && s.t >= ML.time - 0.05, "time up");
-	ok(s.hits > 20 && s.score === s.hits * ML.rom, `hits ${s.hits}`);
-	ok(icchi > 0, "icchi shows up");
+	ok(s.hits > 20 && s.score > s.hits * ML.rom, `hits ${s.hits} ${s.score}`);
+	ok(seen.size === 4, `kinds ${[...seen]}`);
+	ok(fever, "fever");
+	// たたかないと 点は 入らない
+	const idle = mlStart();
+	for (let i = 0; i < 31 * 30 && !idle.over; i++) mlStep(idle, 1 / 30, [], rnd);
+	ok(idle.score === 0, "idle");
 	const t = mlStart();
-	t.holes[0] = { kind: "icchi", left: 1, bonk: 0, bonkKind: null };
+	t.holes[0] = { kind: "icchi", hp: 1, left: 1, bonk: 0, bonkKind: null };
+	t.holes[1] = { kind: "ara", hp: 2, left: 1, bonk: 0, bonkKind: null };
 	t.score = 20;
+	t.combo = 7;
 	ok(mlStep(t, 0, [0], rnd)[0] === "ouch" && t.score === 0, "icchi costs");
+	ok(t.combo === 0, "icchi breaks the combo");
 	ok(mlStep(t, 0, [8], rnd)[0] === "whiff", "empty hole");
+	ok(mlStep(t, 0, [1], rnd)[0] === "armor" && t.score === 0, "ara 1");
+	ok(mlStep(t, 0, [1], rnd)[0] === "bonk" && t.score === ML.ara, "ara 2");
 });
 
 test("格ゲー: 返せる はばで 押すと 5人 勝ちぬき、押さないと 負け、早押しは スキ", () => {
@@ -471,6 +596,23 @@ test("格ゲー: 返せる はばで 押すと 5人 勝ちぬき、押さない�
 	// フェイントは 返せる はばより 前に やめる
 	for (const f of FT_FOES)
 		ok(f.wind * 0.4 < f.wind - f.guard, `${f.name}: feint before the window`);
+	// ぎりぎりで 返すと 完全論破（2つ 減る）、それでも 5人 勝ちぬける
+	s = ftStart();
+	rnd = seeded(13);
+	let perfect = 0;
+	let chained = false;
+	for (let i = 0; i < 600 * 60 && !s.over; i++) {
+		if (s.chained && s.phase === "wind") chained = true;
+		const ev = ftStep(s, 1 / 60, ftInPerfect(s), rnd);
+		perfect += ev.filter((e) => e === "perfect").length;
+	}
+	ok(s.clear && perfect > 5, `perfect ${perfect}`);
+	ok(chained, "後半の 相手は すぐ もう 1発");
+	const one = FT_FOES[0];
+	s = ftStart();
+	s.phase = "wind";
+	s.t = (one?.wind ?? 0) - 0.01;
+	ok(ftStep(s, 0, true, rnd)[0] === "perfect" && s.foeHp === 1, "perfect -2");
 });
 
 test("メダルスロット: 3つ そろうと 払いだし、なくなったら おわり、目押しで 7 が そろう", () => {
@@ -503,9 +645,21 @@ test("メダルスロット: 3つ そろうと 払いだし、なくなったら
 			s.best === s.medals,
 		`777 ${slLine(s)} ${s.medals}`,
 	);
+	// 777 で BIG：次の 3回は 払いだし 2倍
+	ok(s.big === SL.big, `big ${s.big}`);
+	for (let i = 0; i < 60; i++) slStep(s, 1 / 30, false);
+	slStep(s, 0, true);
+	ok(s.bonus && s.big === SL.big - 1, "big spin");
+	// 持つ ほど リールが 速い
+	const rich = slStart();
+	rich.medals = 500;
+	ok(
+		slSpeed(rich) > slSpeed(slStart()) && slSpeed(rich) <= SL.maxSpin,
+		"speed",
+	);
 });
 
-test("なんJラン: 跳ばないと ぶつかる、石の 手前で 跳ぶと 長く 走れる", () => {
+test("なんJラン: 跳ばないと ぶつかる、石の 手前で 跳ぶと 長く 走れる、煽は くぐれる", () => {
 	let s = rnStart();
 	let rnd = seeded(10);
 	for (let i = 0; i < 60 * 60 && !s.over; i++) rnStep(s, 1 / 60, false, rnd);
@@ -513,13 +667,40 @@ test("なんJラン: 跳ばないと ぶつかる、石の 手前で 跳ぶと �
 	const idle = rnScore(s);
 	s = rnStart();
 	rnd = seeded(11);
+	let birds = 0;
 	for (let i = 0; i < 90 * 60 && !s.over; i++) {
-		const next = s.rocks.find((r) => r.x + r.w > RN.x - RN.w / 2);
-		const v = Math.min(210, 90 + s.t * 3.5);
+		// 石 だけ 跳ぶ（煽は 地面で くぐる）
+		const next = s.rocks.find(
+			(r) => r.kind === "rock" && r.x + r.w > RN.x - RN.w / 2,
+		);
+		const v = rnSpeed(s.t);
 		const press = !!next && next.x - (RN.x + RN.w / 2) < v * 0.12;
+		if (s.rocks.some((r) => r.kind === "bird")) birds++;
 		rnStep(s, 1 / 60, press, rnd);
 	}
 	ok(!s.over && rnScore(s) > idle * 10, `ran ${rnScore(s)} vs ${idle}`);
+	ok(birds > 0 && s.mile > 0, `birds ${birds} mile ${s.mile}`);
+	// 煽は 跳ぶと 当たる
+	const b = rnStart();
+	b.y = 20;
+	b.vy = 1;
+	b.rocks.push({
+		x: RN.x - 4,
+		w: RN.birdW,
+		h: RN.birdH,
+		kind: "bird",
+		alt: RN.birdAlt,
+	});
+	ok(rnStep(b, 0.001, false, rnd).includes("crash"), "bird hits a jumper");
+	// 草は 跳んで 拾う
+	const c = rnStart();
+	c.y = 25;
+	c.vy = 1;
+	c.coins.push({ x: RN.x, y: 32 });
+	ok(
+		rnStep(c, 0.001, false, rnd).includes("coin") && c.bonus === RN.coin,
+		"coin",
+	);
 });
 
 test("音ゲー: 譜面は 毎回 同じ・ぜんぶ ちょうどで 押すと FULL COMBO、押さないと ぜんぶ MISS", () => {
@@ -560,7 +741,7 @@ test("音ゲー: 譜面は 毎回 同じ・ぜんぶ ちょうどで 押すと F
 	ok(first.judged === null, "wrong lane");
 });
 
-test("ガチャスロット: 1枚で 引き、3つ そろうと 表の 払いだし・左 2つで 1枚、なくなったら おわり、リーチは SR 以上", () => {
+test("ガチャスロット: 1枚で 引き、3つ そろうと 表の 払いだし・左 2つで 1枚、なくなったら おわり、リーチは SR 以上、天井で SSR 確定・確変、予告", () => {
 	ok(gcPayout(["UR", "UR", "UR"]) === GC_PAY.UR, "UR");
 	ok(gcPayout(["N", "N", "R"]) === GC.pair, "pair");
 	ok(gcPayout(["N", "R", "R"]) === 0, "right pair pays nothing");
@@ -573,7 +754,7 @@ test("ガチャスロット: 1枚で 引き、3つ そろうと 表の 払いだ
 	let s = gcStart();
 	let reach = 0;
 	let wins = 0;
-	for (let i = 0; i < 200000 && !s.over; i++) {
+	for (let i = 0; i < 2_000_000 && !s.over; i++) {
 		const ev = gcStep(s, 1 / 30, true, rnd);
 		if (ev.includes("reach")) {
 			reach++;
@@ -598,14 +779,73 @@ test("ガチャスロット: 1枚で 引き、3つ そろうと 表の 払いだ
 	for (let t = 0; t < 3 && s.phase === "spin"; t += 0.05)
 		if (gcStep(s, 0.05, false, rnd).includes("stop")) stops.push(s.stopped);
 	ok(JSON.stringify(stops) === "[1,2,3]", `stops ${stops}`);
+	// 天井：SSR 以上が そろわないまま GC.ceiling 回 → 次は SSR 確定、そのあと 確変（N が 出ない）
+	s = gcStart();
+	s.since = GC.ceiling;
+	ok(gcToCeiling(s) === 0, "ceiling is next");
+	let ev = gcStep(s, 0, true, rnd);
+	ok(ev.includes("ceiling") && s.reels.every((x) => x === "SSR"), "ceiling");
+	ev = [];
+	for (let i = 0; i < 200 && s.phase !== "idle"; i++)
+		ev.push(...gcStep(s, 0.05, false, rnd));
+	ok(
+		ev.includes("fever") && s.fever === GC.fever && s.since === 0,
+		`fever ${ev}`,
+	);
+	ok(s.chips === GC.start - 1 + GC_PAY.SSR, `ceiling pays ${s.chips}`);
+	for (let k = 0; k < GC.fever; k++) {
+		gcStep(s, 0, true, rnd);
+		ok(s.feverPull && !s.reels.includes("N"), `fever pull ${s.reels}`);
+		for (let i = 0; i < 200 && s.phase !== "idle"; i++)
+			gcStep(s, 0.05, false, rnd);
+	}
+	// 予告は 大当たりで よく 出て、はずれでは まれ（ガセ）
+	let omenBig = 0;
+	let big = 0;
+	let omenElse = 0;
+	let other = 0;
+	s = gcStart();
+	for (let i = 0; i < 6000; i++) {
+		s.chips = 100;
+		s.phase = "idle";
+		s.since = 0;
+		s.fever = 0;
+		gcStep(s, 0, true, rnd);
+		if (gcPayout(s.reels) >= GC_PAY.SR) {
+			big++;
+			if (s.omen) omenBig++;
+		} else {
+			other++;
+			if (s.omen) omenElse++;
+		}
+	}
+	ok(
+		big > 0 && omenBig / big > 0.3 && omenElse / other < 0.06,
+		`omen ${omenBig}/${big} ${omenElse}/${other}`,
+	);
 });
 
-test("ハイ＆ロー: 当たれば 倍・同じ 数は そのまま・はずれは なくなる、降りると 手もとへ、10連勝で 自動で 降りる", () => {
+test("ハイ＆ロー: 当たれば 倍率（当たりにくい ほど 高い）・同じ 数は そのまま・はずれは なくなる、降りると 手もとへ、10連勝で 自動で 降りる、得な 札は ない", () => {
 	ok(
 		hlJudge(5, 9, "high") === "win" && hlJudge(5, 2, "high") === "lose",
 		"high",
 	);
 	ok(hlJudge(5, 2, "low") === "win" && hlJudge(5, 5, "low") === "push", "low");
+	// 倍率：当たる 札が ない 方は 0、遠い ほど 高い、どの 札でも 平均は 賭けより 少し 少ない
+	ok(hlMult(1, "low") === 0 && hlMult(13, "high") === 0, "no way");
+	ok(hlMult(7, "high") > hlMult(3, "high") && hlMult(2, "low") > 10, "odds");
+	let avg = 0;
+	for (let c = 1; c <= 13; c++) {
+		let best = 0;
+		for (const d of ["high", "low"] as const) {
+			const w = d === "high" ? 13 - c : c - 1;
+			const e = (w / 13) * hlMult(c, d) + 1 / 13;
+			ok(hlMult(c, d) === 0 || e < 1.05, `ev ${c} ${d} ${e}`);
+			best = Math.max(best, hlMult(c, d) > 0 ? e : 0);
+		}
+		avg += best / 13;
+	}
+	ok(avg < 0.97, `avg ev ${avg}`);
 	const rnd = seeded(13);
 	let s = hlStart(rnd);
 	// いつも 有利な ほう（7より 上なら ロー）を 言い、3連勝で 降りる
@@ -620,25 +860,61 @@ test("ハイ＆ロー: 当たれば 倍・同じ 数は そのまま・はずれ
 	}
 	ok(takes > 3, `takes ${takes}`);
 	ok(hlScore(s) >= HL.start, "score");
-	// 賭けが 倍に なる
-	s = hlStart(() => 0.5);
-	s.card = 2;
-	hlStep(s, 0, "high", () => 0.99);
-	ok(s.chips === HL.start - 1 && s.pot === 2 && s.streak === 1, "double");
-	ok(hlScore(s) === HL.start + 1, "score counts the pot");
-	hlStep(s, 1, null, rnd);
-	hlStep(s, 0, "take", rnd);
-	ok(s.chips === HL.start + 1 && s.pot === 0, "take");
-	// 10連勝で 自動
+	// 端の 札だけ 続ける 作戦でも 平均は 減る（チップが 湧かない）
+	let gain = 0;
+	for (let k = 0; k < 20000; k++) {
+		s = hlStart(rnd);
+		s.chips = 1000;
+		hlStep(s, 0, null, rnd, 10);
+		for (let i = 0; i < 100; i++) {
+			if (s.phase === "reveal") {
+				hlStep(s, 1, null, rnd);
+				continue;
+			}
+			if (i > 0 && s.pot === 0) break;
+			const d = s.card >= 7 ? "low" : "high";
+			const w = d === "high" ? 13 - s.card : s.card - 1;
+			if (i > 0 && (w / 13) * hlMult(s.card, d) + 1 / 13 < 1) {
+				hlStep(s, 0, "take", rnd);
+				break;
+			}
+			hlStep(s, 0, d, rnd);
+		}
+		gain += s.chips + hlCash(s.pot) - 1000;
+	}
+	ok(gain < 0, `edge strategy gains ${gain / 20000}`);
+	// 当たる 札の ない 方は 言えない
 	s = hlStart(rnd);
 	s.card = 1;
+	ok(hlStep(s, 0, "low", rnd).length === 0 && s.pot === 0, "can't go lower");
+	// 賭ける 枚数を えらび、倍率が かかる
+	s = hlStart(() => 0.5);
+	s.card = 7;
+	hlStep(s, 0, null, rnd, 10);
+	ok(s.bet === 10, "bet 10");
+	hlStep(s, 0, "high", () => 0.99);
+	const pot = 10 * hlMult(7, "high");
+	ok(
+		s.chips === HL.start - 10 && s.pot === pot && s.streak === 1,
+		`mult ${s.pot}`,
+	);
+	ok(hlScore(s) === HL.start - 10 + hlCash(pot), "score counts the pot");
+	hlStep(s, 0, null, rnd, 1);
+	ok(s.bet === 10, "can't change the bet while betting");
+	hlStep(s, 1, null, rnd);
+	hlStep(s, 0, "take", rnd);
+	ok(s.chips === HL.start - 10 + hlCash(pot) && s.pot === 0, "take");
+	// 10連勝で 自動
+	s = hlStart(rnd);
+	let want = 1;
 	for (let i = 0; i < HL.maxStreak; i++) {
-		s.card = 1;
+		s.card = 7;
+		want *= hlMult(7, "high");
 		hlStep(s, 0, "high", () => 0.99);
 		hlStep(s, 1, null, rnd);
 	}
 	ok(
-		s.pot === 0 && s.chips === HL.start - 1 + 2 ** HL.maxStreak,
+		s.pot === 0 && s.chips === HL.start - 1 + hlCash(want),
 		`auto take ${s.chips}`,
 	);
 });
@@ -647,40 +923,82 @@ test("ルーレット: 37の ポケット・赤 18・黒 18・緑 1、止まっ�
 	ok(RL_WHEEL.length === 37 && new Set(RL_WHEEL).size === 37, "wheel");
 	ok(RL_RED.size === 18 && rlColorOf(0) === "green", "colors");
 	ok(RL_WHEEL.filter((n) => rlColorOf(n) === "black").length === 18, "black");
+	// どの 札も 数の 半分・3分の1 などを 正しく 当て、払いもどしの 平均は どれも 36/37
+	for (let n = 1; n <= 36; n++) {
+		const hit = (bs: readonly string[]) =>
+			bs.filter((b) => rlWins(b as (typeof RL_BETS)[number], n)).length;
+		ok(
+			hit(["red", "black"]) === 1 &&
+				hit(["odd", "even"]) === 1 &&
+				hit(["low", "high"]) === 1 &&
+				hit(["d1", "d2", "d3"]) === 1 &&
+				!rlWins("zero", n),
+			`bets on ${n}`,
+		);
+		ok(rlWins("red", n) === (rlColorOf(n) === "red"), `red ${n}`);
+	}
+	ok(
+		RL_BETS.every((b) => rlWins(b, 0) === (b === "zero")),
+		"only zero on 0",
+	);
+	for (const b of RL_BETS) {
+		let p = 0;
+		for (let n = 0; n <= 36; n++) if (rlWins(b, n)) p += RL_PAY[b];
+		ok(p === 36, `ev ${b} ${p}/37`);
+	}
 	const rnd = seeded(14);
 	let s = rlStart();
 	let spins = 0;
 	for (let i = 0; i < 200000 && !s.over; i++) {
 		const before = s.chips;
-		const ev = rlStep(s, 1 / 30, { color: "red", amount: 5, spin: true }, rnd);
+		const ip = { place: "red", amount: 5, spin: true } as const;
+		const ev = rlStep(s, 1 / 30, ip, rnd);
 		if (ev.includes("spin")) {
 			spins++;
-			ok(s.chips === before - s.amount, "bet");
+			ok(s.chips === before - rlTotal(s.bets), "bet");
 		}
 		if (ev.includes("win") || ev.includes("lose")) {
 			const n = rlNumber(s);
 			ok(n === RL_WHEEL[s.result], "the wheel stops on the result");
 			ok(ev.includes("win") === (rlColorOf(n) === "red"), `pay ${n}`);
-			if (ev.includes("win")) ok(s.lastWin === s.amount * RL_PAY.red, "x2");
+			ok(s.lastWin === rlPayout(s.bets, n), "payout");
+			ok(s.history[0] === n, "history");
 		}
 	}
 	ok(s.over && s.chips === 0 && spins > 5, `spins ${spins}`);
-	// 緑は 14倍
+	// 0 は 36倍、いくつも 置ける、戻す、何も 置かずに 回すと 前と 同じ
 	s = rlStart();
-	rlStep(s, 0, { color: "green", amount: 10, spin: true }, () => 0);
-	for (let i = 0; i < 200 && s.phase === "spin"; i++)
+	rlStep(s, 0, { amount: 10, place: "zero", spin: false }, rnd);
+	rlStep(s, 0, { place: "d1", spin: false }, rnd);
+	rlStep(s, 0, { amount: 1, place: "odd", spin: false }, rnd);
+	ok(s.chips === RL.start - 21 && rlTotal(s.bets) === 21, `bets ${s.chips}`);
+	rlStep(s, 0, { clear: true, spin: false }, rnd);
+	ok(s.chips === RL.start && rlTotal(s.bets) === 0, "clear");
+	rlStep(s, 0, { amount: 10, place: "zero", spin: true }, () => 0);
+	for (let i = 0; i < 200 && s.phase !== "bet"; i++)
 		rlStep(s, 0.05, { spin: false }, rnd);
-	ok(rlNumber(s) === 0 && s.chips === 20 + 140, `green ${s.chips}`);
+	ok(rlNumber(s) === 0 && s.chips === 20 + 360, `zero ${s.chips}`);
+	ok(rlTotal(s.bets) === 0 && s.lastBets.zero === 10, "bets clear");
+	rlStep(s, 0, { spin: true }, () => 0);
+	ok(s.phase === "spin" && s.bets.zero === 10 && s.chips === 370, "again");
+	// 1回に 置ける 合計は RL.maxBet まで
+	s = rlStart();
+	s.chips = 500;
+	for (let i = 0; i < 30; i++)
+		rlStep(s, 0, { amount: 10, place: "red", spin: false }, rnd);
+	ok(rlTotal(s.bets) === RL.maxBet, `max ${rlTotal(s.bets)}`);
 });
 
-test("スイカ割り: 声は ほんとうの 方（荒らしは 逆）、真上で ふると 当たり、となりは かすり、25秒で おわる", () => {
+test("スイカ割り: 声は ほんとうの 方（荒らしは 逆、進むほど 多い）、真上で ふると 割れて 次の スイカ、空ぶりは ふらつく、40秒で おわる", () => {
 	const rnd = seeded(15);
 	let s = swStart(rnd);
 	ok(swDistance(s) >= 4, "the watermelon is away");
 	ok(s.sx >= 0 && s.sx < SK_W && s.sy >= 0 && s.sy < SK_H, "on the beach");
-	// 声の とおりに 歩く（荒らしは 無視）と たどりつく
+	ok(swTrollRate(0) < swTrollRate(3) && swTrollRate(99) < 0.5, "trolls grow");
+	// 声の とおりに 歩く（荒らしは 無視）と いくつも 割れる
 	let lies = 0;
-	for (let i = 0; i < 25 * 30 && !s.over; i++) {
+	let gaya = 0;
+	for (let i = 0; i < SW.time * 30 + 5 && !s.over; i++) {
 		const h = s.hints[s.hints.length - 1];
 		const truth = swTruth(s);
 		let move: "up" | "down" | "left" | "right" | undefined;
@@ -688,37 +1006,74 @@ test("スイカ割り: 声は ほんとうの 方（荒らしは 逆）、真上
 			lies++;
 			ok(h.dir !== truth.dir, "a troll lies");
 		}
-		if (i % 10 === 0 && truth.dir) move = truth.dir;
+		if (h && h.who === "gaya") {
+			gaya++;
+			ok(h.dir === null, "chatter has no direction");
+		}
+		if (i % 8 === 0 && truth.dir) move = truth.dir;
 		const swing = truth.dir === null;
-		swStep(s, 1 / 30, { move, swing }, rnd);
+		const ev = swStep(s, 1 / 30, { move, swing }, rnd);
+		if (ev.includes("hit")) {
+			ok(swDistance(s) >= 4, "the next one is away");
+			ok(s.lastPts > SW.hit, `quick bonus ${s.lastPts}`);
+		}
 	}
-	ok(s.result === "hit" && s.score > SW.hit, `hit ${s.result} ${s.score}`);
-	// となり → かすり、遠い → 空ぶり、何もしない → 時間ぎれ
+	ok(s.over && s.melons >= 3, `melons ${s.melons} ${s.score}`);
+	ok(s.score > s.melons * SW.hit, `score ${s.score}`);
+	ok(lies > 0 && gaya > 0, `lies ${lies} gaya ${gaya}`);
+	// となり → かすり（点なし・少し ふらつく）、遠い → 空ぶり（長く ふらつく）、ふらつく あいだは 歩けない
 	s = swStart(rnd);
 	s.x = s.sx === 0 ? 1 : s.sx - 1;
 	s.y = s.sy;
 	swStep(s, 0, { swing: true }, rnd);
-	ok(s.result === "near" && s.score === SW.near, "near");
+	ok(s.result === "near" && s.score === 0 && s.stun > 0, "near");
+	const x = s.x;
+	swStep(s, 0.01, { move: "up", swing: false }, rnd);
+	swStep(s, 0.01, { move: "down", swing: false }, rnd);
+	ok(s.x === x && s.stun > 0, "stunned");
 	s = swStart(rnd);
-	for (let i = 0; i < 30 * 30 && !s.over; i++)
+	swStep(s, 0, { swing: true }, rnd);
+	ok(s.result === "miss" && s.stun >= SW.missStun - 0.01, "miss");
+	// 何もしない → 時間ぎれ
+	s = swStart(rnd);
+	for (let i = 0; i < (SW.time + 5) * 30 && !s.over; i++)
 		swStep(s, 1 / 30, { swing: false }, rnd);
-	ok(s.over && s.result === "miss" && s.score === 0, "time up");
-	ok(lies >= 0, "lies counted");
+	ok(s.over && s.melons === 0 && s.score === 0, "time up");
 });
 
-test("グラス滑らせ: 力で 止まる 所が きまり、ぴったりで 100点、はしを 越えると 割れて 0点、5杯で おわる", () => {
+test("グラス滑らせ: 力で 止まる 所が きまり、ぴったりで 100点・続くと ボーナス、はしを 越えると 割れて 0点、酔っぱらいは ゆれる、6杯で おわる", () => {
 	ok(gsStopX(0) > GS.startX && gsStopX(1) > GS.endX, "range");
 	ok(gsPoints(150, 150) === 100 && gsPoints(153, 150) === 100, "exact");
 	ok(gsPoints(160, 150) < 100 && gsPoints(200, 150) === 0, "far");
-	// ちょうどの 力で 押す
+	// ちょうどの 力で 押す（酔っぱらいは 押した あとも ゆれるので 外れる ことも ある）
 	const rnd = seeded(16);
 	let s = gsStart(rnd);
+	let drunk = 0;
 	for (let i = 0; i < 60 * 60 && !s.over; i++) {
 		const press =
 			s.phase === "aim" && Math.abs(gsStopX(s.power) - s.target) < 5;
+		const before = s.target;
 		gsStep(s, 1 / 120, press, rnd);
+		if (s.drunk && s.phase === "aim" && s.target !== before) drunk++;
+		if (s.round < GS.drunkFrom) ok(!s.drunk, "no drunk early");
 	}
-	ok(s.over && s.round === GS.rounds && s.score >= 400, `good ${s.score}`);
+	ok(s.over && s.round === GS.rounds && s.score >= 300, `good ${s.score}`);
+	ok(drunk > 0, "a drunk guest sways");
+	// ぴったりが 3つ 続くと 100 ＋ 150 ＋ 200
+	s = gsStart(rnd);
+	for (let k = 0; k < 3; k++) {
+		s.drunk = false;
+		s.base = gsStopX(0.5);
+		s.target = s.base;
+		s.power = 0.5;
+		gsStep(s, 0, true, rnd);
+		for (let i = 0; i < 2000 && s.phase === "slide"; i++)
+			gsStep(s, 1 / 120, false, rnd);
+		ok(s.last === 100 && s.combo === k + 1, `exact ${k} ${s.last}`);
+		for (let i = 0; i < 2000 && s.phase === "result"; i++)
+			gsStep(s, 1 / 30, false, rnd);
+	}
+	ok(s.score === 100 + 150 + 200, `combo ${s.score}`);
 	// いちばん 強く → 割れる
 	s = gsStart(rnd);
 	let broke = 0;
@@ -733,6 +1088,7 @@ test("グラス滑らせ: 力で 止まる 所が きまり、ぴったりで 10
 
 test("窓: はじめは 決まり → スコア → ハイスコア、2回目は 決まりなし・記録を 見せる、やめたら 記録しない", async () => {
 	await withStore(async (store) => {
+		setTownYen(store, 1000);
 		const t = ARCADE_TEXT.shooter;
 		setArcadeHooks({ shooter: async () => ({ score: 120 }) });
 		played.length = 0;
@@ -741,7 +1097,7 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 		same(
 			r.log,
 			[
-				`choose: ${ARCADE.menu.join("/")}`,
+				`choose: ${payMenu()}`,
 				`narrate: ${t.rule}`,
 				`narrate: ${fill(ARCADE.after, { score: 120, unit: t.unit })}`,
 				`narrate: ${ARCADE.newBest}`,
@@ -761,9 +1117,9 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 		same(
 			r.log,
 			[
-				`choose: ${ARCADE.menu.join("/")}`,
+				`choose: ${payMenu()}`,
 				`narrate: ${fill(ARCADE.record, { best: 120, unit: t.unit })}`,
-				`choose: ${ARCADE.menu.join("/")}`,
+				`choose: ${payMenu()}`,
 				`narrate: ${fill(ARCADE.after, { score: 50, unit: t.unit })}`,
 			],
 			"second",
@@ -778,8 +1134,25 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 		// 品書きで やめる
 		r = recorder([2]);
 		await arcadeScript(CTX, r.s, "slot");
-		same(r.log, [`choose: ${ARCADE.menu.join("/")}`], "cancel");
+		same(r.log, [`choose: ${payMenu()}`], "cancel");
 		ok(!loadArcade().tutored.includes("slot"), "no rule yet");
+		// 1プレイ 100円：3回 遊んで 300円（品書きで やめた 分は 払わない）
+		ok(walletYen() === 700, `wallet ${walletYen()}`);
+		// お金が なければ 遊べない
+		// （使った 300円は 残るので、売り上げ 350円 → 手もと 50円）
+		setTownYen(store, 350);
+		setArcadeHooks({ shooter: async () => ({ score: 999 }) });
+		r = recorder([0]);
+		await arcadeScript(CTX, r.s, "shooter");
+		same(
+			r.log,
+			[
+				`choose: ${payMenu()}`,
+				`narrate: ${fill(ARCADE.short, { price: yen(ARCADE_PLAY_YEN), have: yen(50) })}`,
+			],
+			"short",
+		);
+		ok(loadArcade().best.shooter === 120, "not played");
 	});
 });
 
@@ -812,36 +1185,132 @@ test("記録: こわれた 中身は 初期値、台ごとに 別、?stage= の 
 
 // ───────────────── キリコの 家の ゲーム（data/arcade/homeLogic.ts） ─────────────────
 
-test("家の ゲーム: 横スクロールは 穴に 落ちると おわり・ぷゆゆは 踏める・旗で クリア", () => {
-	// 穴だけの コース：歩きつづけると 落ちる
-	const a = pfStart(() => 0.1);
-	a.floor = a.floor.map((_, i) => i < 8);
-	a.enemies = [];
+/** 横スクロールの 平らな コース（地面 2段だけ。敵・足場・🥺 なし）。 */
+const flatPf = () => {
+	const s = pfStart(() => 0.9);
+	s.tiles = s.tiles.map((col) => col.map((_, r) => (r < 2 ? 1 : 0)));
+	s.enemies = [];
+	s.lifts = [];
+	s.coins = [];
+	return s;
+};
+const puyuAt = (x: number) => ({
+	kind: "puyu" as const,
+	x,
+	y: 0,
+	vx: 0.001,
+	vy: 0,
+	ground: true,
+	hopT: 9,
+	dead: 0,
+	awake: true,
+});
+
+test("家の ゲーム: 横スクロールは 穴で 残機が 減り、3回で おわり", () => {
+	const a = flatPf();
+	a.tiles = a.tiles.map((col, i) => (i < 8 ? col : col.map(() => 0)));
 	let ev: string[] = [];
-	for (let i = 0; i < 400 && !a.over; i++)
+	for (let i = 0; i < 2000 && !a.over; i++)
 		ev = ev.concat(pfStep(a, 0.05, { dir: 1, jump: false }));
-	ok(a.over && !a.clear && ev.includes("fall"), `fall ${ev.slice(-3)}`);
-	// 上から 落ちて 踏む
-	const b = pfStart(() => 0.9);
-	b.enemies = [{ x: b.x, y: 0, vx: 0.001, dead: 0 }];
+	ok(a.over && !a.clear && a.lives === 0, `lives ${a.lives}`);
+	ok(ev.filter((e) => e === "fall").length === PF.lives, `ev ${ev.slice(-3)}`);
+});
+
+test("家の ゲーム: 横スクロールは 上から 踏むと たおせて、続けて 踏むと 点が 倍", () => {
+	const b = flatPf();
+	b.enemies = [puyuAt(b.x), puyuAt(b.x + 200)];
 	b.y = 8;
 	b.vy = -50;
 	b.ground = false;
-	const e2 = pfStep(b, 0.02, { dir: 0, jump: false });
-	ok(e2.includes("stomp") && b.stomps === 1 && !b.over, `stomp ${e2}`);
-	// 平らな コースを 右へ 走りきると 旗
-	const c = pfStart(() => 0.9);
-	c.floor = c.floor.map(() => true);
-	c.enemies = [];
-	for (let i = 0; i < 4000 && !c.over; i++)
-		pfStep(c, 0.05, { dir: 1, jump: false });
-	ok(c.clear, `no goal at ${c.x} / ${PF.length * PF.cell}`);
+	const e1 = pfStep(b, 0.02, { dir: 0, jump: false });
+	ok(e1.includes("stomp") && b.points === 50 && !b.over, `stomp ${e1}`);
+	// 着地せずに もう 1体
+	b.enemies[1].x = b.x;
+	b.y = 8;
+	b.vy = -50;
+	pfStep(b, 0.02, { dir: 0, jump: false });
+	ok(b.stomps === 2 && b.points === 150, `chain ${b.points}`);
+	// 横から ぶつかると 残機が 減り、再開の あとは 無敵
+	const h = flatPf();
+	h.enemies = [{ ...puyuAt(h.x + 20), vx: -40 }];
+	let ev: string[] = [];
+	for (let i = 0; i < 40 && !ev.includes("hit"); i++)
+		ev = ev.concat(pfStep(h, 0.05, { dir: 0, jump: false }));
+	ok(ev.includes("hit") && h.lives === PF.lives - 1, `hit ${ev}`);
+	for (let i = 0; i < 30; i++) pfStep(h, 0.05, { dir: 0, jump: false });
+	ok(!h.over && h.deadT <= 0, "respawned");
 });
 
-test("家の ゲーム: ボンバーは 爆風で レスと 荒らしを 吹きとばし、巻きこまれると おわり", () => {
+test("家の ゲーム: 横スクロールは ？ブロックを 下から たたくと 🥺、旗は 高いほど 点", () => {
+	const d = flatPf();
+	const mx = Math.floor(d.x / PF.cell);
+	d.tiles[mx][3 + 2] = 3;
+	let ev: string[] = pfStep(d, 0.02, { dir: 0, jump: true });
+	for (let i = 0; i < 60; i++)
+		ev = ev.concat(pfStep(d, 0.02, { dir: 0, jump: false }));
+	ok(ev.includes("bump") && d.coinsGot === 1, `bump ${ev}`);
+	ok(d.tiles[mx][3 + 2] === 4 && d.ground, "used block");
+	// 平らな コースを 走りきると 旗（地面の 高さ＝いちばん 下の 点）
+	const c = flatPf();
+	for (let i = 0; i < 4000 && !c.over; i++)
+		pfStep(c, 0.05, { dir: 1, jump: false });
+	ok(c.clear && c.points === 100, `goal ${c.x} pts ${c.points}`);
+	// 階段の 上から 跳ぶと 高く つかまる
+	const t = pfStart(() => 0.9);
+	t.enemies = [];
+	t.x = (PF.length - 8 - 4) * PF.cell;
+	t.y = 60;
+	for (let i = 0; i < 4000 && !t.over; i++) {
+		const edge = t.x > (PF.length - 8 - 2) * PF.cell - 6;
+		pfStep(t, 0.02, { dir: 1, jump: edge && t.ground });
+	}
+	ok(t.clear && t.flagY >= 66, `flag ${t.flagY}`);
+});
+
+test("家の ゲーム: 横スクロールの コースは どの 種でも 跳べる 穴と 旗が ある", () => {
+	for (let seed = 1; seed <= 40; seed++) {
+		const s = pfStart(seeded(seed));
+		const hole = s.tiles.map((col) => col[1] === 0);
+		for (let x = 0; x < hole.length; ) {
+			if (!hole[x]) {
+				x++;
+				continue;
+			}
+			let w = 0;
+			while (hole[x + w]) w++;
+			// 4マスより 広い 穴には 動く 足場
+			ok(
+				w <= 4 ||
+					s.lifts.some(
+						(l) =>
+							l.x0 <= (x + 1) * PF.cell && l.x1 + l.w >= (x + w - 1) * PF.cell,
+					),
+				`seed ${seed}: hole ${x}+${w}`,
+			);
+			x += w;
+		}
+		ok(!hole[3] && !hole[Math.floor(s.check / PF.cell)], `seed ${seed} start`);
+		const kinds = new Set(s.tiles.flat());
+		ok(kinds.has(3) && kinds.has(6), `seed ${seed} blocks`);
+		ok(s.enemies.length >= 8, `seed ${seed} foes ${s.enemies.length}`);
+	}
+});
+
+/** 動かない 荒らし。 */
+const idleFoe = (x: number, y: number) => ({
+	kind: "arashi" as const,
+	x,
+	y,
+	t: 999,
+	d: 0,
+	alive: true,
+});
+
+test("家の ゲーム: ボンバーは 爆風で レスと 荒らしを 吹きとばし、巻きこまれると 残機が 減る", () => {
 	const s = bmStart(() => 0.5);
 	// 遠くで 動かない 荒らしを 1体（いなければ すぐ クリアに なる）
-	s.enemies = [{ x: 17, y: 9, t: 999, alive: true }];
+	s.enemies = [idleFoe(17, 9)];
+	s.items = [];
 	s.grid[1][3] = "r";
 	s.grid[1][2] = ".";
 	// 置いて すぐ 下へ 逃げる（1,1 → 1,4。爆風は 2マス）
@@ -856,14 +1325,68 @@ test("家の ゲーム: ボンバーは 爆風で レスと 荒らしを 吹き�
 		(s.grid[1][3] as string) === "." && s.broken === 1 && !s.over,
 		`broke ${s.broken}`,
 	);
-	// 爆弾の 上に 立ったまま → 巻きこまれる
+	// 爆弾の 上に 立ったまま → 巻きこまれて 残機が 減る。3回で おわり
 	const t = bmStart(() => 0.5);
-	t.enemies = [{ x: 17, y: 9, t: 999, alive: true }];
-	bmStep(t, 0.01, { dx: 0, dy: 0, bomb: true }, () => 0);
-	for (let i = 0; i < 60 && !t.over; i++)
-		bmStep(t, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
-	ok(t.over && !t.clear, "stood in the blast");
+	t.enemies = [idleFoe(17, 9)];
+	let dead = 0;
+	for (let n = 0; n < 3; n++) {
+		for (let i = 0; i < 80 && t.inv > 0; i++)
+			bmStep(t, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
+		bmStep(t, 0.01, { dx: 0, dy: 0, bomb: true }, () => 0);
+		for (let i = 0; i < 80 && !t.over && t.deadT <= 0; i++)
+			if (
+				bmStep(t, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0).includes("dead")
+			)
+				dead++;
+		for (let i = 0; i < 40 && t.deadT > 0; i++)
+			bmStep(t, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
+	}
+	ok(dead === BM.lives && t.over && !t.clear, `dead ${dead} over ${t.over}`);
 	ok(BM.cols * BM.cell <= 240, "the maze fits the board");
+});
+
+test("家の ゲーム: ボンバーは レスの 下の 力を 拾うと 強くなり、まとめて たおすと 倍", () => {
+	const s = bmStart(() => 0.5);
+	s.enemies = [idleFoe(17, 9)];
+	// 右の レスに 火を かくす → 爆ぜて 出たら 拾う
+	s.grid[1][2] = ".";
+	s.grid[1][3] = "r";
+	s.items = [{ x: 3, y: 1, kind: "fire", shown: false }];
+	for (const y of [2, 3, 4]) s.grid[y][1] = ".";
+	bmStep(s, 0.01, { dx: 0, dy: 0, bomb: true }, () => 0);
+	for (let i = 0; i < 3; i++)
+		bmStep(s, 0.2, { dx: 0, dy: 1, bomb: false }, () => 0);
+	for (let i = 0; i < 50; i++)
+		bmStep(s, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
+	ok(s.items[0]?.shown, "revealed");
+	s.px = 2;
+	s.py = 1;
+	const ev = bmStep(s, 0.2, { dx: 1, dy: 0, bomb: false }, () => 0);
+	ok(ev.includes("power") && s.range === BM.range + 1, `range ${s.range}`);
+	// 爆風の 中の 2体 → 100＋200
+	const t = bmStart(() => 0.5);
+	t.enemies = [idleFoe(5, 5), idleFoe(5, 6), idleFoe(17, 9)];
+	const p0 = t.points;
+	t.blasts = [
+		{ x: 5, y: 5, t: 1 },
+		{ x: 5, y: 6, t: 1 },
+	];
+	bmStep(t, 0.01, { dx: 0, dy: 0, bomb: false }, () => 0);
+	ok(t.killed === 2 && t.points - p0 === 300, `pts ${t.points - p0}`);
+	// のこりを たおすと 次の 面
+	t.blasts = [{ x: 17, y: 9, t: 1 }];
+	const e2 = bmStep(t, 0.01, { dx: 0, dy: 0, bomb: false }, () => 0);
+	ok(e2.includes("clear") && !t.over && t.pause > 0, `clear ${e2}`);
+	let e3: string[] = [];
+	for (let i = 0; i < 60 && !e3.includes("stage"); i++)
+		e3 = bmStep(t, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0.5);
+	ok(t.stage === 2 && t.enemies.some((e) => e.kind === "nenchaku"), "stage 2");
+	// 5面めを クリアすると おわり
+	t.stage = BM.stages;
+	t.enemies = [idleFoe(17, 9)];
+	t.blasts = [{ x: 17, y: 9, t: 1 }];
+	bmStep(t, 0.01, { dx: 0, dy: 0, bomb: false }, () => 0);
+	ok(t.over && t.clear, "all clear");
 });
 
 for (const c of HOME_GAME_TESTS) test(`家の ゲーム: ${c.name}`, c.run);

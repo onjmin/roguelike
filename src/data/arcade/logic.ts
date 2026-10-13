@@ -20,9 +20,15 @@ const pick = <T>(xs: readonly T[], rnd: Rnd): T =>
 const approach = (x: number, to: number, v: number): number =>
 	x < to ? Math.min(to, x + v) : Math.max(to, x - v);
 
+/** 点が 入った 所（板が 数字を 浮かべる）。step の たびに 空に する。 */
+export type ArcPop = { x: number; y: number; pts: number };
+
 // ───────────────── シューティング「荒らし撃退」 ─────────────────
 // 上から 荒らしの レスが 降りてくる。自機（キリコ）は 下で 左右に 動いて 撃つ。
 // 荒らしが 下まで 来るか 自機に ぶつかると 残機が 1つ 減る。60秒 しのぐか 残機が なくなったら おわり。
+// - 続けて 倒すと 倍率が 上がる（×4 まで）。被弾・通すと もどる。
+// - 倒すと ときどき「規制」の 札が 降る。拾うと しばらく 3方向に 撃てる。
+// - 22秒から コピペ（倒すと 2つに 割れる）。45秒で 本体の「自演」が 出る（倒すと その場で クリア）。
 
 export const SH = {
 	time: 60,
@@ -35,12 +41,26 @@ export const SH = {
 	maxShots: 3,
 	foeW: 18,
 	foeH: 11,
-	/** 残った 残機 1つの ボーナス（60秒 しのいだ とき）。 */
+	/** 残った 残機 1つの ボーナス（クリアの とき）。 */
 	lifeBonus: 100,
+	/** 倍率が 1つ 上がる 撃破数。 */
+	chainStep: 8,
+	maxMult: 4,
+	/** 規制の 札：出る 確率・効く 秒・降る 速さ。 */
+	dropRate: 0.08,
+	power: 7,
+	itemV: 40,
+	/** 本体「自演」。 */
+	bossAt: 45,
+	bossY: 32,
+	bossW: 44,
+	bossH: 16,
+	bossHp: 16,
+	bossBonus: 600,
 } as const;
 
-/** 荒＝ふつう・煽＝速くて 左右に ゆれる・粘＝2発 いる。 */
-export type ShKind = "are" | "aori" | "neba";
+/** 荒＝ふつう・煽＝速くて 左右に ゆれる・粘＝2発 いる・コ＝倒すと 2つに 割れる。 */
+export type ShKind = "are" | "aori" | "neba" | "kopipe";
 export const SH_KIND: Record<
 	ShKind,
 	{ glyph: string; score: number; hp: number }
@@ -48,6 +68,7 @@ export const SH_KIND: Record<
 	are: { glyph: "荒", score: 10, hp: 1 },
 	aori: { glyph: "煽", score: 20, hp: 1 },
 	neba: { glyph: "粘", score: 30, hp: 2 },
+	kopipe: { glyph: "コ", score: 15, hp: 1 },
 };
 
 export type ShFoe = {
@@ -62,11 +83,20 @@ export type ShFoe = {
 	flash: number;
 };
 
+export type ShBoss = {
+	x: number;
+	vx: number;
+	hp: number;
+	flash: number;
+	/** 子分を 出す までの 秒。 */
+	spawn: number;
+};
+
 export type ShState = {
 	t: number;
 	x: number;
 	target: number;
-	shots: { x: number; y: number }[];
+	shots: { x: number; y: number; vx: number }[];
 	foes: ShFoe[];
 	lives: number;
 	score: number;
@@ -74,10 +104,33 @@ export type ShState = {
 	spawn: number;
 	/** 被弾して 点滅する 残り秒。 */
 	hurt: number;
+	/** 続けて 倒した 数（倍率の もと）。 */
+	chain: number;
+	/** 3方向に 撃てる 残り秒。 */
+	power: number;
+	/** 降って くる「規制」の 札。 */
+	item: { x: number; y: number } | null;
+	boss: ShBoss | null;
+	bossSeen: boolean;
+	/** 自演を 倒した。 */
+	beat: boolean;
+	pops: ArcPop[];
 	over: boolean;
 };
 
-export type ShEvent = "shot" | "hit" | "kill" | "hurt" | "breach" | "clear";
+export type ShEvent =
+	| "shot"
+	| "hit"
+	| "kill"
+	| "split"
+	| "mult"
+	| "power"
+	| "hurt"
+	| "breach"
+	| "boss"
+	| "bossHit"
+	| "bossDown"
+	| "clear";
 
 export const shStart = (): ShState => ({
 	t: 0,
@@ -90,8 +143,19 @@ export const shStart = (): ShState => ({
 	cool: 0,
 	spawn: 0.8,
 	hurt: 0,
+	chain: 0,
+	power: 0,
+	item: null,
+	boss: null,
+	bossSeen: false,
+	beat: false,
+	pops: [],
 	over: false,
 });
+
+/** いまの 倍率。 */
+export const shMult = (s: ShState): number =>
+	Math.min(SH.maxMult, 1 + Math.floor(s.chain / SH.chainStep));
 
 export const shStep = (
 	s: ShState,
@@ -101,34 +165,80 @@ export const shStep = (
 ): ShEvent[] => {
 	const ev: ShEvent[] = [];
 	if (s.over) return ev;
+	s.pops = [];
 	s.t += dt;
 	const k = s.t / SH.time;
+	const fall = lerp(1, 2.2, k);
 	if (ip.target !== undefined)
 		s.target = clamp(ip.target, SH.shipW / 2, AW - SH.shipW / 2);
 	s.x = approach(s.x, s.target, SH.speed * dt);
 	s.cool = Math.max(0, s.cool - dt);
 	s.hurt = Math.max(0, s.hurt - dt);
-	if (ip.fire && s.cool === 0 && s.shots.length < SH.maxShots) {
-		s.shots.push({ x: s.x, y: SH.shipY - 6 });
+	s.power = Math.max(0, s.power - dt);
+	const spread = s.power > 0 ? [-70, 0, 70] : [0];
+	if (
+		ip.fire &&
+		s.cool === 0 &&
+		s.shots.length + spread.length <= SH.maxShots * spread.length
+	) {
+		for (const vx of spread) s.shots.push({ x: s.x, y: SH.shipY - 6, vx });
 		s.cool = SH.cool;
 		ev.push("shot");
 	}
-	for (const b of s.shots) b.y -= SH.shot * dt;
-	s.shots = s.shots.filter((b) => b.y > ATOP);
-	// 出る 間は 1.2秒 → 0.45秒。速さも 上がる
+	for (const b of s.shots) {
+		b.x += b.vx * dt;
+		b.y -= SH.shot * dt;
+	}
+	s.shots = s.shots.filter((b) => b.y > ATOP && b.x > 0 && b.x < AW);
+	// 本体「自演」（ゆききして 子分を 出す。弱るほど 速い）
+	if (!s.bossSeen && s.t >= SH.bossAt) {
+		s.bossSeen = true;
+		s.boss = { x: AW / 2, vx: 40, hp: SH.bossHp, flash: 0, spawn: 1.5 };
+		ev.push("boss");
+	}
+	const boss = s.boss;
+	if (boss) {
+		boss.flash = Math.max(0, boss.flash - dt);
+		const sp = 40 + (1 - boss.hp / SH.bossHp) * 60;
+		boss.vx = Math.sign(boss.vx || 1) * sp;
+		boss.x += boss.vx * dt;
+		if (boss.x < SH.bossW / 2 + 4) boss.vx = sp;
+		else if (boss.x > AW - SH.bossW / 2 - 4) boss.vx = -sp;
+		boss.spawn -= dt;
+		if (boss.spawn <= 0) {
+			boss.spawn = 1.6;
+			s.foes.push({
+				x: clamp(boss.x, SH.foeW / 2, AW - SH.foeW / 2),
+				y: SH.bossY + 10,
+				kind: "are",
+				hp: 1,
+				vy: 24 * fall,
+				ph: 0,
+				flash: 0,
+			});
+		}
+	}
+	// 出る 間は 1.2秒 → 0.45秒（自演の ときは 間を あける）。速さも 上がる
 	s.spawn -= dt;
 	if (s.spawn <= 0) {
-		s.spawn = lerp(1.2, 0.45, k) * (0.7 + rnd() * 0.6);
+		s.spawn = lerp(1.2, 0.45, k) * (0.7 + rnd() * 0.6) * (boss ? 1.8 : 1);
 		const r = rnd();
 		const kind: ShKind =
-			s.t > 15 && r < 0.2 ? "neba" : s.t > 8 && r < 0.45 ? "aori" : "are";
-		const base = kind === "aori" ? 34 : kind === "neba" ? 14 : 20;
+			s.t > 22 && r < 0.14
+				? "kopipe"
+				: s.t > 15 && r < 0.32
+					? "neba"
+					: s.t > 8 && r < 0.55
+						? "aori"
+						: "are";
+		const base =
+			kind === "aori" ? 34 : kind === "neba" ? 14 : kind === "kopipe" ? 18 : 20;
 		s.foes.push({
 			x: SH.foeW / 2 + rnd() * (AW - SH.foeW),
 			y: ATOP - SH.foeH / 2,
 			kind,
 			hp: SH_KIND[kind].hp,
-			vy: base * lerp(1, 2.2, k),
+			vy: base * fall,
 			ph: rnd() * Math.PI * 2,
 			flash: 0,
 		});
@@ -145,8 +255,37 @@ export const shStep = (
 			);
 		}
 	}
-	// 弾と 荒らし
+	// 規制の 札
+	if (s.item) {
+		s.item.y += SH.itemV * dt;
+		if (Math.abs(s.item.x - s.x) <= 11 && Math.abs(s.item.y - SH.shipY) <= 9) {
+			s.item = null;
+			s.power = SH.power;
+			ev.push("power");
+		} else if (s.item.y > AH + 6) s.item = null;
+	}
+	// 弾と 荒らし・自演
+	const born: ShFoe[] = [];
 	for (const b of s.shots) {
+		const bs = s.boss;
+		if (
+			bs &&
+			Math.abs(b.x - bs.x) <= SH.bossW / 2 &&
+			Math.abs(b.y - SH.bossY) <= SH.bossH / 2 + 3
+		) {
+			b.y = -99;
+			bs.hp--;
+			bs.flash = 0.1;
+			if (bs.hp <= 0) {
+				const pts = SH.bossBonus * shMult(s);
+				s.score += pts;
+				s.pops.push({ x: bs.x, y: SH.bossY, pts });
+				s.boss = null;
+				s.beat = true;
+				ev.push("bossDown");
+			} else ev.push("bossHit");
+			continue;
+		}
 		const f = s.foes.find(
 			(f) =>
 				f.hp > 0 &&
@@ -157,35 +296,53 @@ export const shStep = (
 		b.y = -99;
 		f.hp--;
 		f.flash = 0.12;
-		if (f.hp <= 0) {
-			s.score += SH_KIND[f.kind].score;
-			ev.push("kill");
-		} else ev.push("hit");
+		if (f.hp > 0) {
+			ev.push("hit");
+			continue;
+		}
+		const m0 = shMult(s);
+		s.chain++;
+		const pts = SH_KIND[f.kind].score * m0;
+		s.score += pts;
+		s.pops.push({ x: f.x, y: f.y, pts });
+		ev.push("kill");
+		if (shMult(s) > m0) ev.push("mult");
+		if (f.kind === "kopipe") {
+			for (const dx of [-11, 11])
+				born.push({
+					x: clamp(f.x + dx, SH.foeW / 2, AW - SH.foeW / 2),
+					y: f.y,
+					kind: "are",
+					hp: 1,
+					vy: f.vy * 1.2,
+					ph: 0,
+					flash: 0.12,
+				});
+			ev.push("split");
+		}
+		if (!s.item && s.power === 0 && rnd() < SH.dropRate)
+			s.item = { x: f.x, y: f.y };
 	}
 	s.shots = s.shots.filter((b) => b.y > ATOP);
+	s.foes.push(...born);
 	// 自機に ぶつかる・下まで 来る
 	for (const f of s.foes) {
 		if (f.hp <= 0) continue;
-		if (
+		const hit =
 			Math.abs(f.x - s.x) <= (SH.foeW + SH.shipW) / 2 - 2 &&
-			Math.abs(f.y - SH.shipY) <= SH.foeH / 2 + 4
-		) {
-			f.hp = 0;
-			s.lives--;
-			s.hurt = 1;
-			ev.push("hurt");
-		} else if (f.y - SH.foeH / 2 > SH.shipY + 8) {
-			f.hp = 0;
-			s.lives--;
-			s.hurt = 1;
-			ev.push("breach");
-		}
+			Math.abs(f.y - SH.shipY) <= SH.foeH / 2 + 4;
+		if (!hit && f.y - SH.foeH / 2 <= SH.shipY + 8) continue;
+		f.hp = 0;
+		s.lives--;
+		s.hurt = 1;
+		s.chain = 0;
+		ev.push(hit ? "hurt" : "breach");
 	}
 	s.foes = s.foes.filter((f) => f.hp > 0);
 	if (s.lives <= 0) {
 		s.lives = 0;
 		s.over = true;
-	} else if (s.t >= SH.time) {
+	} else if (s.beat || s.t >= SH.time) {
 		s.score += s.lives * SH.lifeBonus;
 		s.over = true;
 		ev.push("clear");
@@ -196,6 +353,8 @@ export const shStep = (
 // ───────────────── レースゲーム「おんJドライブ」 ─────────────────
 // 3車線の 道を 上へ 走る。コーンと 荒らしの 車を よけて、保守の 札を 拾う。ぶつかったら おわり。
 // 速さは だんだん 上がる。スコアは 走った きょり ＋ 札。
+// - 保守を 続けて 拾うと 1枚の 点が 上がる（見のがすと もどる）。
+// - まれに「age」の 札。拾うと しばらく 速く なって、じゃまを はね飛ばせる。
 
 export const DR = {
 	lanes: [90, 120, 150] as readonly number[],
@@ -206,11 +365,17 @@ export const DR = {
 	carW: 12,
 	obH: 12,
 	pickup: 50,
+	/** 保守の 続けて 拾った 数の 上限（1枚 50 × この 数 まで）。 */
+	maxStreak: 5,
+	/** age の 秒・速さの 倍・はね飛ばした 1つの 点。 */
+	star: 3,
+	starBoost: 1.3,
+	smash: 30,
 	/** 1点 ＝ この px。 */
 	perPoint: 8,
 } as const;
 
-export type DrKind = "cone" | "car" | "hoshu";
+export type DrKind = "cone" | "car" | "hoshu" | "age";
 export type DrThing = { lane: number; y: number; kind: DrKind };
 export type DrState = {
 	t: number;
@@ -221,9 +386,14 @@ export type DrState = {
 	gap: number;
 	things: DrThing[];
 	bonus: number;
+	/** 保守を 続けて 拾った 数。 */
+	streak: number;
+	/** age の 残り秒。 */
+	star: number;
+	pops: ArcPop[];
 	over: boolean;
 };
-export type DrEvent = "move" | "pickup" | "crash";
+export type DrEvent = "move" | "pickup" | "age" | "smash" | "crash";
 
 export const drStart = (): DrState => ({
 	t: 0,
@@ -233,12 +403,18 @@ export const drStart = (): DrState => ({
 	gap: 40,
 	things: [],
 	bonus: 0,
+	streak: 0,
+	star: 0,
+	pops: [],
 	over: false,
 });
 
-export const drSpeed = (t: number): number => Math.min(200, 70 + t * 3.2);
+export const drSpeed = (t: number): number => Math.min(225, 70 + t * 3.2);
 export const drScore = (s: DrState): number =>
 	Math.floor(s.dist / DR.perPoint) + s.bonus;
+
+/** 拾う 札（ぶつかっても おわらない）。 */
+export const drPickup = (k: DrKind): boolean => k === "hoshu" || k === "age";
 
 export const drStep = (
 	s: DrState,
@@ -248,6 +424,7 @@ export const drStep = (
 ): DrEvent[] => {
 	const ev: DrEvent[] = [];
 	if (s.over) return ev;
+	s.pops = [];
 	s.t += dt;
 	if (move !== 0) {
 		const to = clamp(s.lane + move, 0, DR.lanes.length - 1);
@@ -258,16 +435,20 @@ export const drStep = (
 		}
 	}
 	s.slide = approach(s.slide, 0, dt * 8);
-	const v = drSpeed(s.t);
+	s.star = Math.max(0, s.star - dt);
+	const v = drSpeed(s.t) * (s.star > 0 ? DR.starBoost : 1);
 	const d = v * dt;
 	s.dist += d;
 	for (const o of s.things) o.y += d;
+	// 見のがした 保守で 続きが 切れる
+	for (const o of s.things)
+		if (o.kind === "hoshu" && o.y >= AH + DR.obH) s.streak = 0;
 	s.things = s.things.filter((o) => o.y < AH + DR.obH);
 	// 次の 列（間は 速さに あわせて 広げる：ぶつかる 前に 2車線 動ける）
 	s.gap -= d;
 	if (s.gap <= 0) {
 		s.gap = Math.max(34, v * 0.5) + rnd() * 30;
-		const two = rnd() < lerp(0.1, 0.45, s.t / 60);
+		const two = rnd() < lerp(0.1, 0.55, s.t / 75);
 		const lanes = [0, 1, 2].sort(() => rnd() - 0.5);
 		const block = lanes.slice(0, two ? 2 : 1);
 		for (const lane of block)
@@ -277,31 +458,52 @@ export const drStep = (
 				kind: rnd() < 0.4 ? "car" : "cone",
 			});
 		const free = lanes[two ? 2 : 1];
-		if (free !== undefined && rnd() < 0.2)
-			s.things.push({ lane: free, y: ATOP - DR.obH, kind: "hoshu" });
+		const r = rnd();
+		const kind: DrKind | null =
+			s.t > 10 && s.star === 0 && r < 0.05 ? "age" : r < 0.25 ? "hoshu" : null;
+		if (free !== undefined && kind)
+			s.things.push({ lane: free, y: ATOP - DR.obH, kind });
 	}
+	const gone = new Set<DrThing>();
 	for (const o of s.things) {
 		if (o.lane !== s.lane) continue;
 		const overlap =
 			Math.abs(o.y - DR.carY) <= (DR.obH + DR.carH) / 2 - 2 &&
 			Math.abs(s.slide) < 0.5;
 		if (!overlap) continue;
+		const x = DR.lanes[o.lane] ?? 0;
 		if (o.kind === "hoshu") {
-			o.y = AH + 99;
-			s.bonus += DR.pickup;
+			gone.add(o);
+			s.streak = Math.min(DR.maxStreak, s.streak + 1);
+			const pts = DR.pickup * s.streak;
+			s.bonus += pts;
+			s.pops.push({ x, y: o.y, pts });
 			ev.push("pickup");
+		} else if (o.kind === "age") {
+			gone.add(o);
+			s.star = DR.star;
+			ev.push("age");
+		} else if (s.star > 0) {
+			gone.add(o);
+			s.bonus += DR.smash;
+			s.pops.push({ x, y: o.y, pts: DR.smash });
+			ev.push("smash");
 		} else {
 			s.over = true;
 			ev.push("crash");
 			break;
 		}
 	}
+	if (gone.size) s.things = s.things.filter((o) => !gone.has(o));
 	return ev;
 };
 
 // ───────────────── ブロックくずし「スレ崩し」 ─────────────────
-// 上に ならんだ スレの 札を 球で くずす。板（パドル）で はね返す。ぜんぶ くずすと 次の 板（球が 速く なる）。
+// 上に ならんだ スレの 札を 球で くずす。板（パドル）で はね返す。ぜんぶ くずすと 次の 面（球が 速く なる）。
 // 球を 3回 のがしたら おわり。
+// - 面ごとに 並びが かわる。濃い 札は 2回 当てないと 崩れない。
+// - 板に もどらずに 続けて 崩すと 1枚の 点が 上がる（×5 まで）。
+// - 崩すと ときどき 札が 降る：広（板が 広い）・貫（球が つらぬく）・命（球が 1つ ふえる）。
 
 export const BK = {
 	cols: 8,
@@ -313,18 +515,38 @@ export const BK = {
 	gap: 1,
 	padY: 136,
 	padW: 34,
+	wideW: 52,
 	padSpeed: 220,
 	r: 2,
 	lives: 3,
+	maxLives: 5,
 	brick: 10,
+	/** 濃い 札に 1回 当てた ときの 点。 */
+	dent: 5,
+	maxChain: 5,
 	waveBonus: 200,
+	/** 札の 降る 確率・速さ、広と 貫の 秒。 */
+	capRate: 0.14,
+	capV: 45,
+	wide: 10,
+	pierce: 5,
 	/** 板で はね返す ときの いちばん 小さい かたむき（ラジアン）。 */
 	minTilt: 0.25,
 } as const;
 
+export type BkCapKind = "wide" | "pierce" | "life";
+export const BK_CAP: Record<BkCapKind, { glyph: string; ink: string }> = {
+	wide: { glyph: "広", ink: "#3080e0" },
+	pierce: { glyph: "貫", ink: "#e04040" },
+	life: { glyph: "命", ink: "#30a050" },
+};
+export type BkCap = { x: number; y: number; kind: BkCapKind };
+
 export type BkState = {
-	bricks: boolean[];
+	/** 札の 硬さ（0 ＝ ない）。 */
+	bricks: number[];
 	pad: number;
+	padW: number;
 	target: number;
 	ball: { x: number; y: number; vx: number; vy: number };
 	/** 球が 板に のって いる（A／タップで 打ちだす）。 */
@@ -333,16 +555,47 @@ export type BkState = {
 	score: number;
 	wave: number;
 	hits: number;
+	/** 板に もどらずに 崩した 数。 */
+	chain: number;
+	caps: BkCap[];
+	wide: number;
+	pierce: number;
+	pops: ArcPop[];
 	over: boolean;
 };
-export type BkEvent = "launch" | "wall" | "paddle" | "brick" | "lost" | "wave";
+export type BkEvent =
+	| "launch"
+	| "wall"
+	| "paddle"
+	| "brick"
+	| "dent"
+	| "cap"
+	| "lost"
+	| "wave";
 
-const bkFull = (): boolean[] =>
-	Array.from({ length: BK.cols * BK.rows }, () => true);
+/** 面の 並び（. ＝ なし、1 ＝ ふつう、2 ＝ 濃い）。4面 ごとに くり返す（2周目からは 上の 2段が 濃い）。 */
+const BK_LAYOUTS: readonly (readonly string[])[] = [
+	["11111111", "11111111", "11111111", "11111111", "11111111"],
+	["22222222", "1.1111.1", "11.11.11", "111..111", "11111111"],
+	["...22...", "..1111..", ".222222.", "11111111", "21111112"],
+	["2.2.2.2.", ".1.1.1.1", "2.2.2.2.", ".1.1.1.1", "11111111"],
+];
+
+export const bkLayout = (wave: number): number[] => {
+	const n = BK_LAYOUTS.length;
+	const rows = BK_LAYOUTS[(wave - 1) % n] ?? BK_LAYOUTS[0] ?? [];
+	const hard = wave > n;
+	return rows.flatMap((r, y) =>
+		[...r].map((c) =>
+			c === "2" || (c === "1" && hard && y < 2) ? 2 : c === "1" ? 1 : 0,
+		),
+	);
+};
 
 export const bkStart = (): BkState => ({
-	bricks: bkFull(),
+	bricks: bkLayout(1),
 	pad: AW / 2,
+	padW: BK.padW,
 	target: AW / 2,
 	ball: { x: AW / 2, y: BK.padY - BK.r - 1, vx: 0, vy: 0 },
 	held: true,
@@ -350,6 +603,11 @@ export const bkStart = (): BkState => ({
 	score: 0,
 	wave: 1,
 	hits: 0,
+	chain: 0,
+	caps: [],
+	wide: 0,
+	pierce: 0,
+	pops: [],
 	over: false,
 });
 
@@ -372,9 +630,29 @@ export const bkStep = (
 ): BkEvent[] => {
 	const ev: BkEvent[] = [];
 	if (s.over) return ev;
-	if (ip.target !== undefined)
-		s.target = clamp(ip.target, BK.padW / 2, AW - BK.padW / 2);
+	s.pops = [];
+	s.wide = Math.max(0, s.wide - dt);
+	s.pierce = Math.max(0, s.pierce - dt);
+	s.padW = s.wide > 0 ? BK.wideW : BK.padW;
+	if (ip.target !== undefined) s.target = ip.target;
+	s.target = clamp(s.target, s.padW / 2, AW - s.padW / 2);
 	s.pad = approach(s.pad, s.target, BK.padSpeed * dt);
+	// 降る 札
+	for (const c of s.caps) {
+		c.y += BK.capV * dt;
+		if (
+			c.y >= BK.padY - 3 &&
+			c.y <= BK.padY + 6 &&
+			Math.abs(c.x - s.pad) <= s.padW / 2 + 4
+		) {
+			c.y = AH + 99;
+			if (c.kind === "wide") s.wide = BK.wide;
+			else if (c.kind === "pierce") s.pierce = BK.pierce;
+			else s.lives = Math.min(BK.maxLives, s.lives + 1);
+			ev.push("cap");
+		}
+	}
+	s.caps = s.caps.filter((c) => c.y < AH + 6);
 	const b = s.ball;
 	if (s.held) {
 		b.x = s.pad;
@@ -416,9 +694,9 @@ export const bkStep = (
 			b.vy > 0 &&
 			b.y + BK.r >= BK.padY &&
 			py + BK.r <= BK.padY + 1 &&
-			Math.abs(b.x - s.pad) <= BK.padW / 2 + BK.r
+			Math.abs(b.x - s.pad) <= s.padW / 2 + BK.r
 		) {
-			const off = clamp((b.x - s.pad) / (BK.padW / 2), -1, 1);
+			const off = clamp((b.x - s.pad) / (s.padW / 2), -1, 1);
 			// 60度ほど まで。まっすぐ 上下に 行き来しない ように 少しは かたむける
 			const a =
 				Math.abs(off) < BK.minTilt / 1.05
@@ -428,11 +706,12 @@ export const bkStep = (
 			b.vx = Math.sin(a) * sp;
 			b.vy = -Math.cos(a) * sp;
 			b.y = BK.padY - BK.r;
+			s.chain = 0;
 			ev.push("paddle");
 		}
 		// 札（1刻みに 1つ）
-		const hit = s.bricks.findIndex((on, j) => {
-			if (!on) return false;
+		const hit = s.bricks.findIndex((hp, j) => {
+			if (hp <= 0) return false;
 			const [x, y, w, hh] = bkRect(j);
 			return (
 				b.x + BK.r > x &&
@@ -442,25 +721,50 @@ export const bkStep = (
 			);
 		});
 		if (hit >= 0) {
-			s.bricks[hit] = false;
-			s.hits++;
-			s.score += BK.brick;
-			const [x, , w] = bkRect(hit);
-			// 横から 入ったら 左右、上下から なら 上下に はね返す
-			if (px + BK.r <= x || px - BK.r >= x + w) b.vx = -b.vx;
-			else b.vy = -b.vy;
-			ev.push("brick");
-			if (!s.bricks.some(Boolean)) {
+			const [x, y, w, hh] = bkRect(hit);
+			const pierce = s.pierce > 0;
+			s.bricks[hit] = pierce ? 0 : (s.bricks[hit] ?? 1) - 1;
+			if (!pierce) {
+				// 横から 入ったら 左右、上下から なら 上下に はね返す
+				if (px + BK.r <= x || px - BK.r >= x + w) b.vx = -b.vx;
+				else b.vy = -b.vy;
+			}
+			if ((s.bricks[hit] ?? 0) > 0) {
+				s.score += BK.dent;
+				ev.push("dent");
+			} else {
+				s.hits++;
+				s.chain = Math.min(BK.maxChain, s.chain + 1);
+				const pts = BK.brick * s.chain;
+				s.score += pts;
+				s.pops.push({ x: x + w / 2, y: y + hh / 2, pts });
+				ev.push("brick");
+				if (s.caps.length < 2 && rnd() < BK.capRate) {
+					const r = rnd();
+					const kind: BkCapKind =
+						r < 0.2 && s.lives < BK.maxLives
+							? "life"
+							: r < 0.6
+								? "wide"
+								: "pierce";
+					s.caps.push({ x: x + w / 2, y: y + hh / 2, kind });
+				}
+			}
+			if (!s.bricks.some((hp) => hp > 0)) {
 				s.score += BK.waveBonus * s.wave;
 				s.wave++;
-				s.bricks = bkFull();
+				s.bricks = bkLayout(s.wave);
 				s.held = true;
+				s.chain = 0;
 				ev.push("wave");
 			}
 		}
 		if (b.y - BK.r > AH) {
 			s.lives--;
 			s.held = true;
+			s.chain = 0;
+			s.wide = 0;
+			s.pierce = 0;
 			ev.push("lost");
 			if (s.lives <= 0) {
 				s.lives = 0;
@@ -474,18 +778,36 @@ export const bkStep = (
 // ───────────────── もぐらたたき「ROMたたき」 ─────────────────
 // 3×3 の 穴から ROM専（名無し）が 顔を 出す。たたくと 書きこむ（+10）。ときどき 出る イッチは たたかない（−30）。
 // 30秒。
+// - 続けて たたくと 倍率（×4 まで）。空ぶり・イッチ・逃がすと もどる。
+// - 5秒から コテハン（すぐ 引っこむ、+50）、10秒から 荒らし（2回 たたく、+30）。
+// - のこり 6秒は「祭り」：たくさん 出て 点が 2倍。
 
 export const ML = {
 	time: 30,
 	cells: 9,
 	rom: 10,
 	icchi: -30,
+	kote: 50,
+	ara: 30,
 	maxUp: 3,
+	/** 倍率が 1つ 上がる 続けた 数。 */
+	comboStep: 5,
+	maxMult: 4,
+	/** 祭りが はじまる 秒。 */
+	fever: 24,
 } as const;
 
-export type MlKind = "rom" | "icchi";
+export type MlKind = "rom" | "icchi" | "kote" | "ara";
+export const ML_KIND: Record<MlKind, { glyph: string; pts: number }> = {
+	rom: { glyph: "ROM", pts: ML.rom },
+	icchi: { glyph: "イッチ", pts: ML.icchi },
+	kote: { glyph: "コテ", pts: ML.kote },
+	ara: { glyph: "荒らし", pts: ML.ara },
+};
 export type MlHole = {
 	kind: MlKind | null;
+	/** あと 何回 たたけば 引っこむか（荒らしは 2）。 */
+	hp: number;
 	/** 引っこむ までの 秒。 */
 	left: number;
 	/** たたかれた 見た目の 残り秒（そのあいだは 出ない）。 */
@@ -498,14 +820,26 @@ export type MlState = {
 	next: number;
 	score: number;
 	hits: number;
+	combo: number;
+	/** その こまで 点が 動いた 穴。 */
+	gains: { hole: number; pts: number }[];
 	over: boolean;
 };
-export type MlEvent = "pop" | "bonk" | "ouch" | "whiff";
+export type MlEvent =
+	| "pop"
+	| "bonk"
+	| "kote"
+	| "armor"
+	| "ouch"
+	| "whiff"
+	| "escape"
+	| "fever";
 
 export const mlStart = (): MlState => ({
 	t: 0,
 	holes: Array.from({ length: ML.cells }, () => ({
 		kind: null,
+		hp: 0,
 		left: 0,
 		bonk: 0,
 		bonkKind: null,
@@ -513,8 +847,16 @@ export const mlStart = (): MlState => ({
 	next: 0.6,
 	score: 0,
 	hits: 0,
+	combo: 0,
+	gains: [],
 	over: false,
 });
+
+export const mlFever = (s: MlState): boolean => s.t >= ML.fever;
+/** いまの 倍率（祭りは 2倍）。 */
+export const mlMult = (s: MlState): number =>
+	Math.min(ML.maxMult, 1 + Math.floor(s.combo / ML.comboStep)) *
+	(mlFever(s) ? 2 : 1);
 
 export const mlStep = (
 	s: MlState,
@@ -524,46 +866,81 @@ export const mlStep = (
 ): MlEvent[] => {
 	const ev: MlEvent[] = [];
 	if (s.over) return ev;
+	s.gains = [];
 	for (const i of hits) {
 		const h = s.holes[i];
 		if (!h) continue;
-		if (h.kind === "rom") {
-			s.score += ML.rom;
-			s.hits++;
-			ev.push("bonk");
-		} else if (h.kind === "icchi") {
-			s.score = Math.max(0, s.score + ML.icchi);
-			ev.push("ouch");
-		} else {
+		const kind = h.kind;
+		if (!kind) {
+			s.combo = 0;
 			ev.push("whiff");
 			continue;
 		}
-		h.bonkKind = h.kind;
+		if (kind === "icchi") {
+			s.score = Math.max(0, s.score + ML.icchi);
+			s.combo = 0;
+			s.gains.push({ hole: i, pts: ML.icchi });
+			ev.push("ouch");
+		} else if (h.hp > 1) {
+			h.hp--;
+			h.left += 0.25;
+			ev.push("armor");
+			continue;
+		} else {
+			s.combo++;
+			const pts = ML_KIND[kind].pts * mlMult(s);
+			s.score += pts;
+			s.hits++;
+			s.gains.push({ hole: i, pts });
+			ev.push(kind === "kote" ? "kote" : "bonk");
+		}
+		h.bonkKind = kind;
 		h.kind = null;
 		h.bonk = 0.35;
 	}
+	const fever = mlFever(s);
 	s.t += dt;
+	if (!fever && mlFever(s)) ev.push("fever");
 	const k = s.t / ML.time;
 	for (const h of s.holes) {
 		h.bonk = Math.max(0, h.bonk - dt);
 		if (h.bonk === 0) h.bonkKind = null;
 		if (h.kind) {
 			h.left -= dt;
-			if (h.left <= 0) h.kind = null;
+			if (h.left <= 0) {
+				if (h.kind !== "icchi") {
+					s.combo = 0;
+					ev.push("escape");
+				}
+				h.kind = null;
+			}
 		}
 	}
 	s.next -= dt;
 	if (s.next <= 0) {
-		s.next = lerp(0.75, 0.32, k) * (0.6 + rnd() * 0.8);
+		s.next = lerp(0.75, 0.32, k) * (0.6 + rnd() * 0.8) * (fever ? 0.7 : 1);
 		const up = s.holes.filter((h) => h.kind).length;
 		const free = s.holes
 			.map((h, i) => (h.kind || h.bonk > 0 ? -1 : i))
 			.filter((i) => i >= 0);
-		if (up < ML.maxUp && free.length) {
+		if (up < ML.maxUp + (fever ? 1 : 0) && free.length) {
 			const h = s.holes[pick(free, rnd)];
 			if (h) {
-				h.kind = rnd() < 0.16 ? "icchi" : "rom";
-				h.left = lerp(1.25, 0.6, k) * (0.8 + rnd() * 0.4);
+				const r = rnd();
+				const kind: MlKind =
+					r < 0.16
+						? "icchi"
+						: s.t > 5 && r < 0.24
+							? "kote"
+							: s.t > 10 && r < 0.34
+								? "ara"
+								: "rom";
+				h.kind = kind;
+				h.hp = kind === "ara" ? 2 : 1;
+				h.left =
+					lerp(1.25, 0.6, k) *
+					(0.8 + rnd() * 0.4) *
+					(kind === "kote" ? 0.6 : kind === "ara" ? 1.4 : 1);
 				ev.push("pop");
 			}
 		}
@@ -575,9 +952,13 @@ export const mlStep = (
 // ───────────────── 格ゲー「レスバトル」 ─────────────────
 // 相手が「！」と 構えて なぐる 直前に A で 返す（論破）。早すぎる・何もしない と こちらが 1つ 減る。
 // 構えて やめる フェイントも ある。5人 勝ちぬいたら おわり（クリア）、こちらの 体力が なくなっても おわり。
+// - ぎりぎり（返せる はばの 終わりの 4割）で 返すと「完全論破」：2つ 減らして 点も 多い。
+// - 続けて 返すと 1回の 点が 上がる。後半の 相手は 返された 直後に すぐ もう 1発（「！！」）。
 
 export type FtFoe = {
 	name: string;
+	/** 服の 色。 */
+	ink: string;
 	hp: number;
 	/** 待つ 秒（はば）。 */
 	idle: readonly [number, number];
@@ -586,54 +967,72 @@ export type FtFoe = {
 	/** 返せる はば（なぐる 直前の この 秒）。 */
 	guard: number;
 	feint: number;
+	/** 返された あと すぐ もう 1発 くる 確率。 */
+	chain: number;
 };
 
 export const FT_FOES: readonly FtFoe[] = [
 	{
 		name: "煽りカス",
+		ink: "#a03030",
 		hp: 3,
 		idle: [0.8, 1.6],
 		wind: 0.8,
 		guard: 0.34,
 		feint: 0.1,
+		chain: 0,
 	},
 	{
 		name: "論破厨",
+		ink: "#3a8a40",
 		hp: 3,
 		idle: [0.6, 1.5],
 		wind: 0.65,
 		guard: 0.3,
 		feint: 0.18,
+		chain: 0.15,
 	},
 	{
 		name: "レスバ常勝",
+		ink: "#c07020",
 		hp: 4,
 		idle: [0.5, 1.4],
 		wind: 0.55,
 		guard: 0.26,
 		feint: 0.22,
+		chain: 0.25,
 	},
 	{
 		name: "有識者",
+		ink: "#505060",
 		hp: 4,
 		idle: [0.4, 1.3],
 		wind: 0.46,
 		guard: 0.22,
 		feint: 0.26,
+		chain: 0.35,
 	},
 	{
 		name: "ネ申",
+		ink: "#d0a020",
 		hp: 5,
 		idle: [0.35, 1.2],
 		wind: 0.38,
 		guard: 0.19,
 		feint: 0.3,
+		chain: 0.45,
 	},
 ];
 
 export const FT = {
 	hp: 5,
 	counter: 100,
+	/** 続けて 返した 1回ごとに 足す 点（5回 ぶん まで）。 */
+	streak: 20,
+	maxStreak: 5,
+	/** 完全論破：返せる はばの 終わりの この 割合・足す 点。 */
+	perfect: 0.4,
+	perfectBonus: 300,
 	ko: 500,
 	/** クリアの とき 残った 体力 1つの ボーナス。 */
 	hpBonus: 200,
@@ -660,12 +1059,19 @@ export type FtState = {
 	dur: number;
 	score: number;
 	ko: number;
+	/** 続けて 返した 数。 */
+	streak: number;
+	/** すぐ もう 1発（フェイント なし）。 */
+	chained: boolean;
+	/** いまの 返しが 完全論破。 */
+	perfect: boolean;
 	clear: boolean;
 	over: boolean;
 };
 export type FtEvent =
 	| "wind"
 	| "counter"
+	| "perfect"
 	| "early"
 	| "hit"
 	| "feint"
@@ -679,6 +1085,7 @@ const ftIdle = (s: FtState, rnd: Rnd, short = false): void => {
 	if (!f) return;
 	s.phase = "idle";
 	s.t = 0;
+	s.chained = false;
 	s.dur = short
 		? 0.3 + rnd() * 0.4
 		: f.idle[0] + rnd() * (f.idle[1] - f.idle[0]);
@@ -693,6 +1100,9 @@ export const ftStart = (): FtState => ({
 	dur: 1.2,
 	score: 0,
 	ko: 0,
+	streak: 0,
+	chained: false,
+	perfect: false,
 	clear: false,
 	over: false,
 });
@@ -701,6 +1111,12 @@ export const ftStart = (): FtState => ({
 export const ftInWindow = (s: FtState): boolean => {
 	const f = FT_FOES[s.foe];
 	return !!f && s.phase === "wind" && s.t >= f.wind - f.guard;
+};
+
+/** 完全論破の はばに 入って いるか。 */
+export const ftInPerfect = (s: FtState): boolean => {
+	const f = FT_FOES[s.foe];
+	return !!f && s.phase === "wind" && s.t >= f.wind - f.guard * FT.perfect;
 };
 
 export const ftStep = (
@@ -714,6 +1130,7 @@ export const ftStep = (
 	if (s.over || !f) return ev;
 	const stun = (e: FtEvent) => {
 		s.hp--;
+		s.streak = 0;
 		s.phase = "stun";
 		s.t = 0;
 		s.dur = 0.7;
@@ -721,12 +1138,18 @@ export const ftStep = (
 	};
 	if (press) {
 		if (s.phase === "wind" && ftInWindow(s)) {
-			s.foeHp--;
-			s.score += FT.counter;
+			const perfect = ftInPerfect(s);
+			s.foeHp = Math.max(0, s.foeHp - (perfect ? 2 : 1));
+			s.score +=
+				FT.counter +
+				FT.streak * Math.min(FT.maxStreak, s.streak) +
+				(perfect ? FT.perfectBonus : 0);
+			s.streak++;
+			s.perfect = perfect;
 			s.phase = "counter";
 			s.t = 0;
 			s.dur = 0.55;
-			ev.push("counter");
+			ev.push(perfect ? "perfect" : "counter");
 		} else if (s.phase === "idle" || s.phase === "wind" || s.phase === "feint")
 			stun("early");
 	}
@@ -735,7 +1158,7 @@ export const ftStep = (
 	switch (s.phase) {
 		case "idle":
 			s.t = 0;
-			if (rnd() < f.feint) {
+			if (!s.chained && rnd() < f.feint) {
 				s.phase = "feint";
 				s.dur = f.wind * FT.feintAt;
 			} else {
@@ -766,6 +1189,12 @@ export const ftStep = (
 				s.phase = "done";
 				s.over = true;
 				ev.push("lose");
+			} else if (s.phase === "counter" && !s.chained && rnd() < f.chain) {
+				// 返された 直後に もう 1発
+				s.phase = "idle";
+				s.t = 0;
+				s.dur = 0.12;
+				s.chained = true;
 			} else ftIdle(s, rnd);
 			break;
 		case "ko":
@@ -790,6 +1219,9 @@ export const ftStep = (
 
 // ───────────────── ジャンプアクション「なんJラン」 ─────────────────
 // 右へ 走る キリコを A で 跳ばせて、荒らしの 石を よける。ぶつかったら おわり。速さは だんだん 上がる。
+// - 12秒から 飛んで くる「煽」：頭の 上を 通るので 跳ぶと 当たる（跳ばない 判断）。
+// - 石の 上に「草」が 浮かぶ ことが ある。うまく 跳ぶと 拾えて 点。
+// - 100点 ごとに 節目の 声。
 
 export const RN = {
 	x: 36,
@@ -801,9 +1233,26 @@ export const RN = {
 	/** 着く 前の この 秒の A は 着いた ときに 跳ぶ。 */
 	buffer: 0.12,
 	perPoint: 8,
+	/** 煽：出はじめる 秒・地面からの 下はしの 高さ・大きさ。 */
+	birdAt: 12,
+	birdAlt: 17,
+	birdW: 14,
+	birdH: 9,
+	/** 草 1つの 点。 */
+	coin: 10,
+	/** 節目の 点。 */
+	mile: 100,
 } as const;
 
-export type RnRock = { x: number; w: number; h: number };
+export type RnKind = "rock" | "bird";
+/** じゃま（石は 地面に、煽は 宙に。alt は 地面からの 下はし）。 */
+export type RnRock = {
+	x: number;
+	w: number;
+	h: number;
+	kind: RnKind;
+	alt: number;
+};
 export type RnState = {
 	t: number;
 	/** 地面からの 高さ。 */
@@ -813,9 +1262,15 @@ export type RnState = {
 	dist: number;
 	gap: number;
 	rocks: RnRock[];
+	/** 草（y は 地面からの 高さ）。 */
+	coins: { x: number; y: number }[];
+	bonus: number;
+	/** 節目を いくつ 越えたか。 */
+	mile: number;
+	pops: ArcPop[];
 	over: boolean;
 };
-export type RnEvent = "jump" | "land" | "crash";
+export type RnEvent = "jump" | "land" | "coin" | "mile" | "crash";
 
 export const rnStart = (): RnState => ({
 	t: 0,
@@ -825,11 +1280,16 @@ export const rnStart = (): RnState => ({
 	dist: 0,
 	gap: 160,
 	rocks: [],
+	coins: [],
+	bonus: 0,
+	mile: 0,
+	pops: [],
 	over: false,
 });
 
-export const rnSpeed = (t: number): number => Math.min(210, 90 + t * 3.5);
-export const rnScore = (s: RnState): number => Math.floor(s.dist / RN.perPoint);
+export const rnSpeed = (t: number): number => Math.min(240, 90 + t * 3.5);
+export const rnScore = (s: RnState): number =>
+	Math.floor(s.dist / RN.perPoint) + s.bonus;
 
 export const rnStep = (
 	s: RnState,
@@ -839,6 +1299,7 @@ export const rnStep = (
 ): RnEvent[] => {
 	const ev: RnEvent[] = [];
 	if (s.over) return ev;
+	s.pops = [];
 	s.t += dt;
 	if (press) s.buffered = RN.buffer;
 	const ground = s.y === 0 && s.vy === 0;
@@ -861,22 +1322,65 @@ export const rnStep = (
 	const d = v * dt;
 	s.dist += d;
 	for (const r of s.rocks) r.x -= d;
+	for (const c of s.coins) c.x -= d;
 	s.rocks = s.rocks.filter((r) => r.x + r.w > -4);
-	// 次の 石（間は 速さに あわせて 広げる：着いてから 跳び直せる）
+	s.coins = s.coins.filter((c) => c.x > -4);
+	// 次の じゃま（間は 速さに あわせて 広げる：着いてから 跳び直せる）
 	s.gap -= d;
 	if (s.gap <= 0) {
 		const air = (2 * RN.jump) / RN.gravity;
 		s.gap = v * air * (1.1 + rnd() * 0.9);
-		const w = 8 + Math.floor(rnd() * 3) * 5;
-		s.rocks.push({ x: AW + 4, w, h: 10 + Math.floor(rnd() * 3) * 5 });
+		if (s.t > RN.birdAt && rnd() < 0.28)
+			s.rocks.push({
+				x: AW + 4,
+				w: RN.birdW,
+				h: RN.birdH,
+				kind: "bird",
+				alt: RN.birdAlt,
+			});
+		else {
+			const w = 8 + Math.floor(rnd() * 3) * 5;
+			s.rocks.push({
+				x: AW + 4,
+				w,
+				h: 10 + Math.floor(rnd() * 3) * 5,
+				kind: "rock",
+				alt: 0,
+			});
+			// 跳んだ ときの 弧に そって 3つ
+			if (rnd() < 0.35)
+				for (const [dx, y] of [
+					[-18, 24],
+					[0, 32],
+					[18, 24],
+				] as const)
+					s.coins.push({ x: AW + 4 + w / 2 + dx, y });
+		}
 	}
+	const mid = s.y + RN.h / 2;
+	s.coins = s.coins.filter((c) => {
+		if (Math.abs(c.x - RN.x) > 8 || Math.abs(c.y - mid) > 9) return true;
+		s.bonus += RN.coin;
+		s.pops.push({ x: c.x, y: RN.groundY - c.y, pts: RN.coin });
+		ev.push("coin");
+		return false;
+	});
 	for (const r of s.rocks) {
 		const hitX = r.x < RN.x + RN.w / 2 - 2 && r.x + r.w > RN.x - RN.w / 2 + 2;
-		if (hitX && s.y < r.h - 2) {
+		const hitY =
+			r.kind === "rock"
+				? s.y < r.h - 2
+				: s.y + RN.h - 2 > r.alt && s.y < r.alt + r.h - 1;
+		if (hitX && hitY) {
 			s.over = true;
 			ev.push("crash");
 			break;
 		}
+	}
+	const mile = Math.floor(rnScore(s) / RN.mile);
+	if (!s.over && mile > s.mile) {
+		s.mile = mile;
+		ev.push("mile");
 	}
 	return ev;
 };
@@ -884,6 +1388,8 @@ export const rnStep = (
 // ───────────────── メダルゲーム「メダルスロット」 ─────────────────
 // メダル 10枚から。A で 1枚 入れて 回し、A で 左から 1つずつ 止める（目押し）。まんなかの 列が 3つ そろえば 払いだし。
 // メダルが なくなるか、B で やめたら おわり。スコアは いちばん 多く 持った 枚数。
+// - 持って いる メダルが 多いほど リールが 速い（目押しが むずかしく なる）。
+// - 左 2つが そろうと リーチ。7 が 3つ そろうと BIG：次の 3回は 払いだしが 2倍。
 
 export const SL_SYMS = ["7", "ID", "鯖", "草", "ｗ", "乙"] as const;
 export type SlSym = (typeof SL_SYMS)[number];
@@ -905,9 +1411,12 @@ export const SL_REELS: readonly (readonly SlSym[])[] = [
 export const SL = {
 	start: 10,
 	cap: 999,
-	/** 1秒に 進む コマ。 */
+	/** 1秒に 進む コマ（メダル 50枚 ごとに 1 速く、maxSpin まで）。 */
 	spin: 7,
+	maxSpin: 13,
 	pay: 0.9,
+	/** BIG の 回数。 */
+	big: 3,
 } as const;
 
 export type SlPhase = "idle" | "spin" | "pay";
@@ -920,9 +1429,21 @@ export type SlState = {
 	t: number;
 	lastWin: number;
 	spins: number;
+	/** BIG の 残り 回数。 */
+	big: number;
+	/** いま 回して いるのが BIG の 1回。 */
+	bonus: boolean;
+	reach: boolean;
 	over: boolean;
 };
-export type SlEvent = "bet" | "stop" | "win" | "lose" | "bust";
+export type SlEvent =
+	| "bet"
+	| "stop"
+	| "reach"
+	| "win"
+	| "big"
+	| "lose"
+	| "bust";
 
 export const slStart = (): SlState => ({
 	medals: SL.start,
@@ -933,8 +1454,15 @@ export const slStart = (): SlState => ({
 	t: 0,
 	lastWin: 0,
 	spins: 0,
+	big: 0,
+	bonus: false,
+	reach: false,
 	over: false,
 });
+
+/** リールの 速さ（コマ／秒）。 */
+export const slSpeed = (s: SlState): number =>
+	Math.min(SL.maxSpin, SL.spin + Math.floor(s.medals / 50));
 
 /** まんなかの 列に 見えて いる コマ。 */
 export const slAt = (reel: number, pos: number): SlSym => {
@@ -955,28 +1483,41 @@ export const slStep = (s: SlState, dt: number, press: boolean): SlEvent[] => {
 		s.phase = "spin";
 		s.stopped = [false, false, false];
 		s.lastWin = 0;
+		s.reach = false;
+		s.bonus = s.big > 0;
+		if (s.bonus) s.big--;
 		ev.push("bet");
 		press = false;
 	}
 	if (s.phase === "spin") {
+		const v = slSpeed(s);
 		for (let i = 0; i < 3; i++)
-			if (!s.stopped[i]) s.pos[i] = ((s.pos[i] ?? 0) + SL.spin * dt) % 12;
+			if (!s.stopped[i]) s.pos[i] = ((s.pos[i] ?? 0) + v * dt) % 12;
 		if (press) {
 			const i = s.stopped.indexOf(false);
 			if (i >= 0) {
 				s.pos[i] = Math.round(s.pos[i] ?? 0) % 12;
 				s.stopped[i] = true;
 				ev.push("stop");
+				const [a, b] = slLine(s);
+				if (i === 1 && a === b) {
+					s.reach = true;
+					ev.push("reach");
+				}
 			}
 			if (s.stopped.every(Boolean)) {
 				const [a, b, c] = slLine(s);
 				s.phase = "pay";
 				s.t = 0;
 				if (a && a === b && b === c) {
-					s.lastWin = SL_PAY[a];
+					s.lastWin = SL_PAY[a] * (s.bonus ? 2 : 1);
 					s.medals = Math.min(SL.cap, s.medals + s.lastWin);
 					s.best = Math.max(s.best, s.medals);
 					ev.push("win");
+					if (a === "7") {
+						s.big = SL.big;
+						ev.push("big");
+					}
 				} else ev.push("lose");
 			}
 		}

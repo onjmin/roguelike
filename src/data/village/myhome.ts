@@ -57,7 +57,24 @@ export type FurnitureId =
 	| "turntable"
 	| "crtGame"
 	| "barrel"
-	| "kingyoBucket";
+	| "kingyoBucket"
+	| "pinball"
+	| "danmakuCab"
+	| "kakejiku"
+	| "mojiBook"
+	| "puyuPlush"
+	| "gamingPc"
+	| "easel"
+	| "cabResu"
+	| "pickaxe"
+	| "handheld"
+	| "reversiBoard"
+	| "hanafuda"
+	| "picrossNote"
+	| "crateBox"
+	| "billiards"
+	| "dartboard"
+	| "fishingRod";
 
 export type Furniture = {
 	name: string;
@@ -66,6 +83,11 @@ export type Furniture = {
 	/** 調べた ときの 文（1窓）。 */
 	line: string;
 };
+
+/** 遊べる 家具の 自前の 絵（48x32 の ドット）。 */
+const HOME_GAMES_IMG = "pub:sprites/home-games.png";
+/** 遊べる 家具の 自前の 絵 その2（160x32。白い 筐体・リバーシ・花札・方眼ノート・つるはし・携帯ゲーム機・ダーツ・釣り竿・ビリヤード台）。 */
+const HOME_GAMES2_IMG = "pub:sprites/home-games2.png";
 
 const row = (name: RoomArtName, w: number, r = 0): string[] =>
 	Array.from({ length: w }, (_, c) => riCell(name, c, r));
@@ -123,7 +145,7 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 	},
 	// 遊べる 家具（1つに 1つの ゲーム。data/arcade/types.ts。line は ARCADE_TEXT の line と 同じ）
 	cabSnake: {
-		name: "赤い　筐体",
+		name: "金色の　筐体",
 		cells: [[base(0, 519)], [base(0, 520)]],
 		line: ARCADE_TEXT.snake.line,
 	},
@@ -133,7 +155,7 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 		line: ARCADE_TEXT.stack.line,
 	},
 	cabCross: {
-		name: "緑の　筐体",
+		name: "赤い　筐体",
 		cells: [[base(4, 519)], [base(4, 520)]],
 		line: ARCADE_TEXT.crossing.line,
 	},
@@ -182,6 +204,102 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 		cells: [[ri("bucket")]],
 		line: ARCADE_TEXT.kingyo.line,
 	},
+	// 自前の 絵（public/sprites/home-games.png。ピンボール台・弾幕の 筐体・ぷゆゆの ぬいぐるみ）
+	pinball: {
+		name: "ピンボール台",
+		cells: [[`${HOME_GAMES_IMG}#0,0,16,16`], [`${HOME_GAMES_IMG}#0,16,16,16`]],
+		line: ARCADE_TEXT.pinball.line,
+	},
+	danmakuCab: {
+		name: "紫の　筐体",
+		cells: [
+			[`${HOME_GAMES_IMG}#16,0,16,16`],
+			[`${HOME_GAMES_IMG}#16,16,16,16`],
+		],
+		line: ARCADE_TEXT.danmaku.line,
+	},
+	kakejiku: {
+		name: "掛け軸",
+		cells: [[ri("scroll")]],
+		line: ARCADE_TEXT.mikiri.line,
+	},
+	mojiBook: {
+		name: "文字さがしの　冊子",
+		cells: [[ri("paperNote")]],
+		line: ARCADE_TEXT.mojisagashi.line,
+	},
+	puyuPlush: {
+		name: "ぷゆゆの　ぬいぐるみ",
+		cells: [[`${HOME_GAMES_IMG}#32,16,16,16`]],
+		line: ARCADE_TEXT.clicker.line,
+	},
+	cabResu: {
+		name: "白い　筐体",
+		cells: [
+			[`${HOME_GAMES2_IMG}#0,0,16,16`],
+			[`${HOME_GAMES2_IMG}#0,16,16,16`],
+		],
+		line: ARCADE_TEXT.resukui.line,
+	},
+	pickaxe: {
+		name: "つるはしと　ヘルメット",
+		cells: [[`${HOME_GAMES2_IMG}#64,16,16,16`]],
+		line: ARCADE_TEXT.digkiriko.line,
+	},
+	handheld: {
+		name: "携帯ゲーム機",
+		cells: [[`${HOME_GAMES2_IMG}#80,16,16,16`]],
+		line: ARCADE_TEXT.patapata.line,
+	},
+	reversiBoard: {
+		name: "リバーシの　盤",
+		cells: [[`${HOME_GAMES2_IMG}#16,16,16,16`]],
+		line: ARCADE_TEXT.reversi.line,
+	},
+	hanafuda: {
+		name: "花札",
+		cells: [[`${HOME_GAMES2_IMG}#32,16,16,16`]],
+		line: ARCADE_TEXT.koikoi.line,
+	},
+	picrossNote: {
+		name: "方眼ノート",
+		cells: [[`${HOME_GAMES2_IMG}#48,16,16,16`]],
+		line: ARCADE_TEXT.picross.line,
+	},
+	crateBox: {
+		name: "木箱",
+		cells: [[ri("crate")]],
+		line: ARCADE_TEXT.soko.line,
+	},
+	billiards: {
+		name: "ビリヤード台",
+		cells: [
+			[`${HOME_GAMES2_IMG}#128,16,16,16`, `${HOME_GAMES2_IMG}#144,16,16,16`],
+		],
+		line: ARCADE_TEXT.nineball.line,
+	},
+	dartboard: {
+		name: "ダーツの　的",
+		cells: [[`${HOME_GAMES2_IMG}#96,16,16,16`]],
+		line: ARCADE_TEXT.darts.line,
+	},
+	fishingRod: {
+		name: "釣り竿と　クーラー",
+		cells: [[`${HOME_GAMES2_IMG}#112,16,16,16`]],
+		line: ARCADE_TEXT.tsuribori.line,
+	},
+	// 絵を 描ける イーゼル（ui/paint/paint.ts。ゲームでは ないので FURNITURE_GAME には 入れない）。
+	// 絵は 実行中に 作る（イーゼルの 絵 home-games.png 32,0 に 描いた 絵を 重ねた もの。engine/assets.ts の rt:）
+	easel: {
+		name: "画家の　キャンバス",
+		cells: [["rt:easel"]],
+		line: "画家の　キャンバス。\n絵の具の　においが　する。",
+	},
+	gamingPc: {
+		name: "ゲーミングPC",
+		cells: [[`${HOME_GAMES_IMG}#48,16,16,16`]],
+		line: ARCADE_TEXT.doom.line,
+	},
 	tvTall: {
 		name: "台つきの　テレビ",
 		cells: [[riCell("tvTall", 0, 0)], [riCell("tvTall", 0, 1)]],
@@ -215,7 +333,7 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 	game: {
 		name: "ゲーム機",
 		cells: [[ri("console")]],
-		line: "ゲーム機。\nコントローラーが　2つ。",
+		line: "ゲーム機。\n「ぷゆぷゆ」の　ソフトが　刺さっている。",
 	},
 	tansu: {
 		name: "たんす",
@@ -279,6 +397,23 @@ export const FURNITURE_PRICE: Record<FurnitureId, number> = {
 	crtGame: 18000,
 	barrel: 9000,
 	kingyoBucket: 7000,
+	pinball: 48000,
+	danmakuCab: 40000,
+	kakejiku: 16000,
+	mojiBook: 6000,
+	puyuPlush: 5000,
+	gamingPc: 55000,
+	easel: 14000,
+	cabResu: 40000,
+	pickaxe: 15000,
+	handheld: 12000,
+	reversiBoard: 9000,
+	hanafuda: 8000,
+	picrossNote: 5000,
+	crateBox: 6000,
+	billiards: 60000,
+	dartboard: 11000,
+	fishingRod: 10000,
 };
 
 /** 遊べる 家具（調べると「遊ぶ」。data/arcade/types.ts の ゲーム）。 */
@@ -297,7 +432,32 @@ export const FURNITURE_GAME: Partial<Record<FurnitureId, ArcadeGame>> = {
 	crtGame: "pong",
 	barrel: "kurohige",
 	kingyoBucket: "kingyo",
+	// 宅配便で 届く ゲーム機（部室棟の おさがり）でも 遊べる
+	game: "puyupuyu",
+	pinball: "pinball",
+	danmakuCab: "danmaku",
+	kakejiku: "mikiri",
+	mojiBook: "mojisagashi",
+	puyuPlush: "clicker",
+	gamingPc: "doom",
+	cabResu: "resukui",
+	pickaxe: "digkiriko",
+	handheld: "patapata",
+	reversiBoard: "reversi",
+	hanafuda: "koikoi",
+	picrossNote: "picross",
+	crateBox: "soko",
+	billiards: "nineball",
+	dartboard: "darts",
+	fishingRod: "tsuribori",
 };
+
+/** パソコン（調べると ゲームの ほかに BASIC も 選べる。ui/petitcon/petitcon.ts）。 */
+export const PC_FURNITURE: readonly FurnitureId[] = [
+	"desktopPc",
+	"laptop",
+	"gamingPc",
+];
 
 /** 店では 売らない 家具（できごとで もらう）。 */
 export const NOT_SOLD: readonly FurnitureId[] = ["platformer", "bomberbox"];
@@ -751,6 +911,10 @@ export const HOME_MSG = {
 	thingMenu: ["動かす", "片づける", "そのまま"],
 	/** 遊べる 家具を 調べた あと。 */
 	gameMenu: ["遊ぶ", "動かす", "片づける", "そのまま"],
+	pcMenu: ["遊ぶ", "BASIC", "ネット", "動かす", "片づける", "そのまま"],
+	easelMenu: ["描く", "動かす", "片づける", "そのまま"],
+	craneGift:
+		"金の　ぷゆゆを　家に　送った。\n（ぷゆゆの　ぬいぐるみ　が　収納に）",
 	picked: "{name}を　持った。\nうすい　絵の　所に、A　で　置く。",
 	/** 持っている あいだの 知らせ（画面の 上）。 */
 	carryHint: "{name}：うすい　絵の　所に　A　で　置く",

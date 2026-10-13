@@ -95,8 +95,8 @@ export const playSimon = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			if (s.phase !== "input") press = null;
 			for (const e of smStep(s, f.dt, press, rnd)) {
 				if (e.k === "lit" || e.k === "ok") ring(e.pad);
-				else if (e.k === "round") f.se("arcCoin");
-				else if (e.k === "wrong") f.se("miss");
+				else if (e.k === "round") f.se(e.rev ? "jingle" : "arcCoin");
+				else if (e.k === "wrong") f.se(e.retry ? "cancel" : "miss");
 			}
 		},
 		draw: (g, s, clock) => {
@@ -117,13 +117,35 @@ export const playSimon = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			}
 			const say =
 				s.phase === "fail"
-					? SM_TEXT.wrong
+					? s.retry
+						? SM_TEXT.again
+						: SM_TEXT.wrong
 					: s.phase === "input"
-						? SM_TEXT.yours
-						: s.rounds && s.i === 0 && s.lit === null
-							? SM_TEXT.nice
-							: SM_TEXT.watch;
-			txt(g, say, 8, 136, 8, s.phase === "fail" ? "#ff8080" : "#d8d8e0");
+						? s.rev
+							? SM_TEXT.rev
+							: SM_TEXT.yours
+						: s.rev
+							? SM_TEXT.revWatch
+							: s.rounds && s.i === 0 && s.lit === null
+								? SM_TEXT.nice
+								: SM_TEXT.watch;
+			txt(
+				g,
+				say,
+				8,
+				136,
+				8,
+				s.phase === "fail" ? "#ff8080" : s.rev ? "#ffb050" : "#d8d8e0",
+			);
+			// のこりの おかわり（左上）
+			if (s.lives > 0)
+				txt(g, `${SM_TEXT.life}　${s.lives}`, 8, 20, 8, "#70f080");
+			// 逆からの 回は 皿の まわりを 橙に
+			if (s.rev) {
+				g.fillStyle = "#ffb050";
+				g.fillRect(CX - 62, CY - 57, 124, 1);
+				g.fillRect(CX - 62, CY + 56, 124, 1);
+			}
 			txt(
 				g,
 				`${s.phase === "input" ? s.i : 0} / ${s.seq.length}`,

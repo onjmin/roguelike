@@ -1,6 +1,12 @@
 // 安価スネーク の 試験（data/arcade/home/snake.ts）。
 
-import { SN, snStart, snStep } from "../../data/arcade/home/snake";
+import {
+	SN,
+	snInterval,
+	snLevel,
+	snStart,
+	snStep,
+} from "../../data/arcade/home/snake";
 import { type HomeGameTest, ok, seeded } from "./kit";
 
 export const tests: HomeGameTest[] = [
@@ -26,6 +32,44 @@ export const tests: HomeGameTest[] = [
 			ok(ev.includes("eat") && s.eaten === 1, `ev ${ev}`);
 			ok(s.body.length === len + 1 && !s.over, `len ${s.body.length}`);
 			ok(s.dir === 1, `dir ${s.dir}`);
+		},
+	},
+	{
+		name: "安価スネークは 続けて 拾うと 連続、5つで 段が 上がって 神安価と 荒らしが 出る",
+		run: () => {
+			const s = snStart(seeded(7));
+			const rnd = seeded(8);
+			let ev: string[] = [];
+			for (let i = 0; i < 200 && s.eaten < 5; i++) {
+				const [hx, hy] = s.body[0];
+				s.food = [hx + 1, hy];
+				ev = ev.concat(snStep(s, 0.02, { dir: null }, rnd));
+			}
+			ok(s.eaten === 5 && s.combo === 5, `combo ${s.combo}`);
+			ok(s.points === 10 + 20 + 30 + 40 + 50, `pts ${s.points}`);
+			ok(ev.includes("level") && snLevel(s) === 2, `level ${snLevel(s)}`);
+			ok(s.rocks.length === 1 && s.bonus !== null, "rock and bonus");
+			// 荒らしは 頭の 前には 出ない
+			const [hx, hy] = s.body[0];
+			const [rx, ry] = s.rocks[0];
+			ok(Math.abs(rx - hx) + Math.abs(ry - hy) >= 4, `rock ${rx},${ry}`);
+			// 神安価を 拾う
+			const b = s.bonus;
+			if (b) {
+				s.body = [[b.x - 1, b.y], ...s.body.slice(1)];
+				s.dir = 1;
+				s.rocks = [];
+				const p0 = s.points;
+				const e2 = snStep(s, snInterval(s) + 0.001, { dir: null }, rnd);
+				ok(e2.includes("bonus") && s.points - p0 >= 50, `bonus ${e2}`);
+			}
+			// 荒らしに ぶつかると おわり
+			const t = snStart(seeded(9));
+			const [tx, ty] = t.body[0];
+			t.rocks = [[tx + 1, ty]];
+			t.food = [0, 0];
+			snStep(t, SN.interval + 0.001, { dir: null }, rnd);
+			ok(t.over, "hit a rock");
 		},
 	},
 	{

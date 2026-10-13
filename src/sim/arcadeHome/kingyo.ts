@@ -1,6 +1,12 @@
 // 金魚すくい（data/arcade/home/kingyo.ts）の 試験。
 
-import { KG, kgScore, kgStart, kgStep } from "../../data/arcade/home/kingyo";
+import {
+	KG,
+	KG_KIND,
+	kgScore,
+	kgStart,
+	kgStep,
+} from "../../data/arcade/home/kingyo";
 import { type HomeGameTest, ok, seeded } from "./kit";
 
 const idle = { dx: 0, dy: 0, target: null, scoop: false } as const;
@@ -23,8 +29,37 @@ export const tests: HomeGameTest[] = [
 			ok(ev.includes("dip"), `dip ${ev}`);
 			for (let i = 0; i < 40 && s.caught === 0; i++)
 				ev = kgStep(s, 0.01, idle, rnd);
-			ok(kgScore(s) === 1 && ev.includes("catch"), `caught ${s.caught} ${ev}`);
+			ok(
+				s.caught === 1 &&
+					kgScore(s) === KG_KIND.red.pts &&
+					ev.includes("catch"),
+				`caught ${s.caught} ${kgScore(s)} ${ev}`,
+			);
 			ok(s.paper < KG.paper && !s.over, `paper ${s.paper}`);
+		},
+	},
+	{
+		name: "金魚すくいは 1回で 2匹 すくうと 点が 倍、でかい 金魚は 高い",
+		run: () => {
+			const rnd = seeded(7);
+			const s = kgStart(rnd);
+			s.fish = s.fish.slice(0, 2);
+			for (const f of s.fish) {
+				f.kind = "red";
+				f.x = s.px;
+				f.y = s.py;
+				f.vx = f.vy = 0;
+				f.turn = 99;
+			}
+			kgStep(s, 0.01, { ...idle, scoop: true }, rnd);
+			for (let i = 0; i < 40 && s.caught === 0; i++) kgStep(s, 0.01, idle, rnd);
+			ok(s.caught === 2, `2匹 ${s.caught}`);
+			ok(kgScore(s) === KG_KIND.red.pts * 2 * 2, `倍 ${kgScore(s)}`);
+			ok(s.lastScoop?.n === 2, "まとめて");
+			ok(
+				KG_KIND.big.pts / KG_KIND.big.cost > KG_KIND.red.pts / KG_KIND.red.cost,
+				"でかい 金魚は 紙の わりに 高い",
+			);
 		},
 	},
 	{

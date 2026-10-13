@@ -1,7 +1,9 @@
 // キリコの 家の ゲーム「音おぼえ」（simon）の 決まり。板は ui/arcade/home/simon.ts、文は data/arcade/text.ts。
 // - 4つの パッド（←↓↑→）。それぞれ 色と 高さの ちがう 音。
 // - ターンテーブルが 光らせて 鳴らした 順に 押す。1回 そろうごとに 1つ ふえ、すこし 速くなる。
-// - まちがえると 正しい パッドが 点滅して おわり。スコア＝そろえた 回数×100。
+// - 4回めごとに「逆から」の 回（見せた 順の 逆に 押す。点は 倍）。
+// - まちがえると 正しい パッドが 点滅する。1度だけ おかわり（同じ 並びを もう 一度 見せる）、2度めで おわり。
+// - スコア：そろえた 回ごとに 並びの 長さ×100（逆からは ×2）。
 // DOM に 触らない（試験できる）。乱数は 渡された rnd。
 
 import type { Rnd } from "../logic";
@@ -22,6 +24,10 @@ export const SM = {
 	press: 0.22,
 	/** まちがえた あと 正しい パッドを 点滅させる 秒。 */
 	fail: 1.4,
+	/** 逆から 押す 回（ROUND が この 数の 倍数）。 */
+	revEvery: 4,
+	/** まちがえても もう 一度 見せて もらえる 数。 */
+	lives: 1,
 	/** パッドの 音（MIDI 番号。ド・ミ・ソ・上の ド）。 */
 	notes: [60, 64, 67, 72] as readonly number[],
 } as const;
@@ -33,6 +39,12 @@ export const SM_TEXT = {
 	round: "ROUND",
 	nice: "そろった！",
 	wrong: "ちがう",
+	/** 逆から 押す 回。 */
+	rev: "逆から　押して！",
+	revWatch: "逆から　来るで……",
+	/** おかわり（もう 一度 見せる）。 */
+	again: "ちがう　もう　1回　見せる",
+	life: "おかわり",
 } as const;
 
 export type SmState = {
@@ -49,13 +61,20 @@ export type SmState = {
 	want: SmPad | null;
 	/** そろえた 回数。 */
 	rounds: number;
+	/** いまの 回は 逆から 押す。 */
+	rev: boolean;
+	/** のこりの おかわり。 */
+	lives: number;
+	/** まちがえた あと もう 一度 見せる（fail の あと show へ）。 */
+	retry: boolean;
+	pts: number;
 	over: boolean;
 };
 export type SmEvent =
 	| { k: "lit"; pad: SmPad }
 	| { k: "ok"; pad: SmPad }
-	| { k: "round" }
-	| { k: "wrong"; pad: SmPad };
+	| { k: "round"; rev: boolean }
+	| { k: "wrong"; pad: SmPad; retry: boolean };
 
 const pick = (rnd: Rnd): SmPad => Math.floor(rnd() * 4) as SmPad;
 
@@ -68,6 +87,10 @@ export const smStart = (rnd: Rnd): SmState => ({
 	litT: 0,
 	want: null,
 	rounds: 0,
+	rev: false,
+	lives: SM.lives,
+	retry: false,
+	pts: 0,
 	over: false,
 });
 
@@ -75,7 +98,11 @@ export const smStart = (rnd: Rnd): SmState => ({
 export const smOn = (s: SmState): number =>
 	Math.max(SM.fastest, SM.on - s.rounds * SM.speedUp);
 
-export const smScore = (s: SmState): number => s.rounds * 100;
+export const smScore = (s: SmState): number => s.pts;
+
+/** その 回で 押す 順の k 番目。 */
+const wantAt = (s: SmState, k: number): SmPad =>
+	s.rev ? s.seq[s.seq.length - 1 - k] : s.seq[k];
 
 export const smStep = (
 	s: SmState,
@@ -106,13 +133,15 @@ export const smStep = (
 	}
 	if (s.phase === "input") {
 		if (press === null) return ev;
-		const want = s.seq[s.i];
+		const want = wantAt(s, s.i);
 		if (press !== want) {
 			s.phase = "fail";
 			s.want = want;
 			s.lit = want;
 			s.t = 0;
-			ev.push({ k: "wrong", pad: want });
+			s.retry = s.lives > 0;
+			if (s.retry) s.lives--;
+			ev.push({ k: "wrong", pad: want, retry: s.retry });
 			return ev;
 		}
 		s.lit = press;
@@ -121,7 +150,9 @@ export const smStep = (
 		s.i++;
 		if (s.i >= s.seq.length) {
 			s.rounds++;
-			ev.push({ k: "round" });
+			s.pts += s.seq.length * 100 * (s.rev ? 2 : 1);
+			ev.push({ k: "round", rev: s.rev });
+			s.rev = (s.rounds + 1) % SM.revEvery === 0;
 			s.seq.push(pick(rnd));
 			s.phase = "show";
 			s.i = 0;
@@ -130,6 +161,17 @@ export const smStep = (
 		return ev;
 	}
 	if (s.phase === "fail" && s.t >= SM.fail) {
+		if (s.retry) {
+			// おかわり：同じ 並びを もう 一度 見せる
+			s.retry = false;
+			s.phase = "show";
+			s.i = 0;
+			s.t = -SM.lead;
+			s.lit = null;
+			s.litT = 0;
+			s.want = null;
+			return ev;
+		}
 		s.phase = "done";
 		s.over = true;
 	}

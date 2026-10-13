@@ -34,4 +34,33 @@ export const tests: HomeGameTest[] = [
 			}
 		},
 	},
+	{
+		name: "イッチ危機一髪は ピクッを さけると 勝ちやすい（当たりは よく ピクッと する）",
+		run: () => {
+			const rnd = seeded(11);
+			let hot = 0;
+			let win = 0;
+			const N = 2000;
+			for (let n = 0; n < N; n++) {
+				const s = khStart(rnd);
+				if (s.twitch[s.trigger]) hot++;
+				while (!s.loser) {
+					if (s.turn === 2) {
+						khStab(s, khCpu(s, rnd));
+						continue;
+					}
+					const free = s.stabbed.flatMap((v, i) => (v ? [] : [i]));
+					const calm = free.filter((i) => !s.twitch[i]);
+					const pool = calm.length ? calm : free;
+					khStab(s, pool[Math.floor(rnd() * pool.length)]);
+				}
+				if (s.loser === 2) win++;
+			}
+			ok(hot / N > 0.75, `当たりの ピクッ ${hot / N}`);
+			ok(
+				win / N > 0.55 && win / N < 0.8,
+				`よく 見れば 勝てるが 運も 残る ${win / N}`,
+			);
+		},
+	},
 ];
