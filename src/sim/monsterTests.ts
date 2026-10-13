@@ -2546,7 +2546,7 @@ test(
 
 test(
 	"floor",
-	"anka: its trap brings it once and vanishes; doing it gives 2 known items, ignoring it adds res, wakes the floor and 3 trolls",
+	"anka: its trap brings it once and vanishes; doing it gives 2 items (unidentified stay so), ignoring it adds res, wakes the floor, 5 trolls and takes an item",
 	() => {
 		const r = arena("anka");
 		const herb = give(r, "h_heal");
@@ -2574,17 +2574,20 @@ test(
 		);
 		r.f.traps = r.f.traps.filter((t) => t !== second);
 		r.act({ c: "move", dir: 6 });
-		// こなす：草を 飲めば 足元に 正体つきの 道具が 2つ
+		// こなす：草を 飲めば 足元に 道具が 2つ（未識別の 種類は 未識別の まま）
 		r.f.anka = { kind: "herb", need: 1, done: 0, due: r.f.res + 100 };
 		r.f.res = 500;
 		const items = r.f.items.length;
+		const knownBefore = { ...r.s.ids.known };
 		r.act({ c: "use", item: herb.uid });
 		ok(!r.f.anka, "drinking a herb did not clear the herb anka");
 		const gifts = r.f.items.slice(items);
 		ok(gifts.length === 2, `${gifts.length} gifts for the anka`);
 		ok(
-			gifts.every((fi) => fi.item.known && isKnownKind(r.s, fi.item.kind)),
-			"a gift was not identified",
+			Object.keys(r.s.ids.known).every(
+				(k) => knownBefore[k] || k === "h_heal",
+			),
+			"a gift was identified for free",
 		);
 		// 敵を 2体 たおす：1体では まだ
 		r.f.anka = { kind: "kill", need: 2, done: 0, due: r.f.res + 100 };
@@ -2595,7 +2598,9 @@ test(
 			ok(m.hp <= 0, "harness: could not kill the target");
 			ok(!!r.f.anka === (i === 0), `the kill anka was wrong after ${i + 1}`);
 		}
-		// 守らない：期限で レスが 伸び、眠っていた 敵が 起き、荒らしが 3体 来る
+		// 守らない：期限で レスが 伸び、眠っていた 敵が 起き、荒らしが 5体 来て、持ち物を 1つ 取られる
+		give(r, "h_heal");
+		const held = r.p.items.length;
 		const sleeper = put(
 			r,
 			"tousuko",
@@ -2610,13 +2615,14 @@ test(
 		r.act({ c: "wait" });
 		ok(!r.f.anka, "the anka did not expire");
 		ok(
-			r.f.res >= res + 100,
+			r.f.res >= res + 200,
 			`the ignored anka added only ${r.f.res - res} res`,
 		);
 		ok(
-			r.f.monsters.length === mons + 3,
+			r.f.monsters.length === mons + 5,
 			`${r.f.monsters.length - mons} trolls came for the ignored anka`,
 		);
+		ok(r.p.items.length === held - 1, "the ignored anka took nothing");
 		ok(sleeper.status.sleep === 0, "a sleeping monster slept through it");
 	},
 );

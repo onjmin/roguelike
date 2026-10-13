@@ -5,9 +5,10 @@
 //   釣りスレで ふえる 罠も ANKA_SNARE_CHANCE で 安価の罠に なる。安価が 出ている うちは 踏んでも 動かず 残る。
 // - お題は その時の 持ち物で できる ものから 選ぶ（草が なければ「草を　1つ　飲む」は 来ない）。
 //   むずかしい お題（寝る・攻撃を 受ける・罠・レベル など）は 来にくい（doable の 重み）。
-// - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個（正体つき）足元に 置く。
-// - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧く
-//   （ボスが 生きている 階には 湧かない）。
+// - ANKA_DUE レス 以内に こなせば 神安価：スレ民が この板の 道具を ANKA_GIFTS 個 足元に 置く
+//   （正体は 落ちている 物と 同じ。未識別なら 未識別の まま）。
+// - 守らなければ スレが 荒れる：レスが ANKA_PENALTY 伸び、階の 敵が みんな 目を さまし、荒らしが ANKA_TROLLS 体 湧き
+//   （ボスが 生きている 階には 湧かない）、スレ民が 持ち物を 1つ 持ち去る（大事な 物・装備中は 取らない）。
 // - 帰り道には 来ない（帰り道は 補給なし）。ボスの 待つ 階にも 来ない（湧かないので 敵を たおす お題が こなせない）。
 // - 出ている 安価は 階を かわっても 消えない（次スレに 持ちこし。のこりの レス数も そのまま）。
 
@@ -15,7 +16,6 @@ import { EXP_AT, MAX_LV } from "./balance";
 import { freeRoomTiles, randomFloorPos, spawnMonster } from "./floor";
 import {
 	defOf,
-	identifyKind,
 	isKeyItem,
 	isKnownKind,
 	itemHidden,
@@ -34,10 +34,10 @@ export const ANKA_TRAPS: [number, number] = [1, 2];
 /** こなす までの レス数。 */
 export const ANKA_DUE = 100;
 /** 守らなかったときに 伸びる レス。 */
-export const ANKA_PENALTY = 100;
+export const ANKA_PENALTY = 200;
 /** 守らなかったときに 湧く 荒らしの 数（起きている）。 */
-export const ANKA_TROLLS = 3;
-/** 神安価で スレ民が 置いていく 道具の 数（正体つき）。 */
+export const ANKA_TROLLS = 5;
+/** 神安価で スレ民が 置いていく 道具の 数。 */
 export const ANKA_GIFTS = 2;
 
 const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
@@ -247,6 +247,13 @@ export const tickAnka = (r: Run): void => {
 		if (at && spawnMonster(r, null, at, { awake: true })) trolls++;
 	}
 	if (trolls) r.msg(`荒らしが　${trolls}体　湧いてきた`, "warn");
+	// 持ち物を 1つ 持ち去られる（安価を 無視した 罰。大事な 物・装備中の 物は 取らない）
+	const loot = r.p.items.filter((it) => !isKeyItem(it.kind) && !r.isEquipped(it));
+	const it = r.rng.pick(loot);
+	if (it) {
+		r.removeItem(it);
+		r.msg(`スレ民に　${r.name(it)}を　持ち去られた`, "warn");
+	}
 };
 
 /** お題に あたる ことを した（草を 飲んだ・敵を たおした など）。 */
@@ -259,11 +266,7 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 	r.se("victory");
 	r.emit({ t: "anka" });
 	r.msg("神安価！　スレ民が　いろいろ　置いていった", "good");
-	// 道具（正体つき。見分ける 手間も ごほうび）
-	for (const kind of rollKinds(r.rng, itemTableOf(r.s), ANKA_GIFTS)) {
-		const it = r.newItem(kind);
-		identifyKind(r.s, kind);
-		it.known = true;
-		r.placeItem(it, { x: r.p.x, y: r.p.y });
-	}
+	// 道具（落ちている 物と 同じ。未識別の 種類は 未識別の まま）
+	for (const kind of rollKinds(r.rng, itemTableOf(r.s), ANKA_GIFTS))
+		r.placeItem(r.newItem(kind), { x: r.p.x, y: r.p.y });
 };
