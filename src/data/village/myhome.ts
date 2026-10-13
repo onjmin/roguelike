@@ -1,4 +1,4 @@
-// キリコの 家（マイホーム）。住宅街（段6）から 中庭の 分譲住宅（地図の 53,31。data/village/facilities.ts の myhome）を
+// キリコの 家（マイホーム）。小屋の 段（段3）から 中庭の 分譲住宅（地図の 53,31。data/village/facilities.ts の myhome）を
 // 35年ローンで 買う。2026-10-13 から 本当に 払う（作者：「稼いだ 金で 何か 買えるように」。財布は engine/wallet.ts）：
 // 契約で 頭金（HOME_DOWN）、帰るたびに 月の 返済（HOME_MONTHLY）。払えない 月は 滞納に なる（追い出されは しない）。
 // 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 3通りで 手に 入る：
@@ -12,13 +12,13 @@ import type { Cell } from "./map";
 import { type RoomArtName, ri, riCell } from "./rpgenArt";
 import { base } from "./tiles";
 
-/** 分譲住宅が 建つ 町の 段（住宅街）。 */
+/** 分譲住宅が 建つ 町の 段（2026-10-14 に 段6 から 早めた。作者：「お楽しみが 後半に 寄っている」）。 */
 export const MYHOME_FROM = 3;
 
 /** ローンの 月数（35年）。帰るたびに 1か月 返す。 */
 export const LOAN_MONTHS = 35 * 12;
 /** 契約の ときの 頭金（円）。 */
-export const HOME_DOWN = 50000;
+export const HOME_DOWN = 20000;
 /** 帰るたびの 返済（円。財布から 引き落とし。足りなければ 滞納）。 */
 export const HOME_MONTHLY = 1500;
 
