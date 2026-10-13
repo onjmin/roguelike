@@ -72,6 +72,7 @@
 // | piropiro     | -33.8（7）     | 7 → 24  | -23.0    |
 // | tekitou      | -25.1（28）    | 28 → 36 | -23.0    |
 // | touhoufu     | -23.2（50）    | 50 → 47 | -23.8    |
+// | yofukashi    | -30.6（20）    | 20 → 45 | -23.6    |
 // （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
@@ -132,6 +133,7 @@ import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽�
 import touhoufu from "./bgm/touhoufu.mml?raw"; // post/1318 の >>5 2901c31452f0484d「東方風（メロディライン微改変）」：134・piano・16beat → だらだら諸島
 import town from "./bgm/town.mml?raw"; // 2826c0b1ce744003「？」
 import white from "./bgm/white.mml?raw"; // 本編 B16〜17 あぼーんの白野：変ホ短調 130・synth_pop・dance
+import yofukashi from "./bgm/yofukashi.mml?raw"; // よふかし諸島 夜ふかしの 板：変ニ長調 84・jazz_night・shuffle（エレピの 旋律・オルゴールの 星・ウッドベース。2026-10-13 書き下ろし）
 
 export const bgm: Record<string, string> = {
 	title,
@@ -179,4 +181,5 @@ export const bgm: Record<string, string> = {
 	piropiro,
 	tekitou,
 	touhoufu,
+	yofukashi,
 };

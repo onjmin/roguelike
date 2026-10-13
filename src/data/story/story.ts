@@ -901,9 +901,9 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 		ambient: "glitter",
 		zones: OPUNU_ZONES,
 	},
-	// 乗っ取られた 小島：夏の 浜（にぎやかな 曲）・夜の 洞（氷の 曲）・鯖代の 切れかけた 岩山（ピアノの 16ビート）
+	// 乗っ取られた 小島：夏の 浜（にぎやかな 曲）・夜の 洞（夜ふかしの ジャズ）・鯖代の 切れかけた 岩山（ピアノの 16ビート）
 	isle1: { theme: "beach", bgm: "piropiro", ambient: "glitter" },
-	isle2: { theme: "stone", bgm: "deq_ice", ambient: "snow" },
+	isle2: { theme: "stone", bgm: "yofukashi", ambient: "snow" },
 	isle3: { theme: "lattice", bgm: "touhoufu", ambient: "data" },
 	// 野球chの 跡地：2012年の 層を 下へ
 	ato: { theme: "stone", bgm: "deep1", ambient: "dust", zones: ATO_ZONES },
