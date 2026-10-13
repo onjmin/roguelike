@@ -63,7 +63,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 	// レンガ館：本棚・飾り棚・帳簿。名無しの 当番
 	[
 		"############",
-		"#HHHHWWCCCC#",
+		"#CCCCWWCCCC#",
 		"#KktN[]$ccc#",
 		"#..........#",
 		"#..........#",
@@ -75,7 +75,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 	// 本館：金の じゅうたんが 実況モニターまで。石の 柱・殿堂の 旗と 空いた いす
 	[
 		"################",
-		"#HHHHWWHHCCCCHH#",
+		"#CCCCWWHHCCCCHH#",
 		"#KktN[]Mm$cccGg#",
 		"#......--.....r#",
 		"#......--......#",

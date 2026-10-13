@@ -69,6 +69,17 @@ export const ISLANDS: readonly Island[] = [
 	},
 	// 北東の 沖の 小島：過疎の 専門板の 列（避難J。第三ルート）
 	{ name: "", label: [0, 0], blobs: [[203, 17, 9]] },
+	// 南の 海の おーぷぬの 板（だれでも 立てられる。おんJ関連板：マーキュリー・おんMu・おんキム・闇の板）
+	{
+		name: "",
+		label: [0, 0],
+		blobs: [
+			[114, 198, 13],
+			[98, 194, 8],
+			[132, 206, 9],
+			[122, 186, 6],
+		],
+	},
 ];
 
 /** おんJタウン（おんJ）の 位置。道は ここから 出る。 */
@@ -271,6 +282,50 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[190, 46],
 			[198, 30],
 			[203, 18],
+		],
+	},
+	// おーぷぬの おんJ関連板（南の 海の 島）
+	mercury: {
+		server: "open",
+		place: "水星の　観測所",
+		building: "studio",
+		route: [
+			[110, 142],
+			[108, 164],
+			[100, 182],
+			[98, 192],
+		],
+	},
+	onmu: {
+		server: "open",
+		place: "沈んだ　大陸の　空港",
+		building: "island",
+		route: [
+			[110, 142],
+			[110, 164],
+			[114, 182],
+			[114, 200],
+		],
+	},
+	onkimu: {
+		server: "open",
+		place: "管理部の　ビル",
+		building: "building",
+		route: [
+			[110, 142],
+			[110, 164],
+			[120, 186],
+			[132, 204],
+		],
+	},
+	inferno: {
+		server: "open",
+		place: "闇の　塔",
+		building: "lighthouse",
+		route: [
+			[110, 142],
+			[110, 164],
+			[122, 184],
 		],
 	},
 	main: {

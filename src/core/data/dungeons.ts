@@ -823,6 +823,91 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		reliefAfter: null,
 		secret: true,
 	},
+	// ── おーぷぬ（だれでも 板を 立てられる open.open2ch.net）の おんJ関連板。おんJwiki（3代目）の
+	// 「おーぷぬの おんJ関連板一覧」（pages/519）と 板の トップから。どれも 持ち帰りの 寄り道
+	// なんでも実況（マーキュリー）：「おんJに 飽きた 方」の ほのぼの 板（デフォルトネーム 水星の名無し）。
+	// ほのぼの なので 自然回復が はやく、荒らしは 来ない
+	mercury: {
+		id: "mercury",
+		objective: "fetch",
+		foes: { tousuko: 2, kaso: 1.5, oni: 0, ninja: 0, fallen: 0 },
+		floors: 9,
+		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
+		perFloor: [4, 6],
+		level: ramp(9, 10, 2),
+		unidentified: ["staff"],
+		curses: false,
+		start: ["f_large"],
+		goal: "hoshi",
+		houses: { from: 4, chance: 1 / 12, early: null },
+		trapsFrom: 3,
+		unlockAfter: "tropical",
+		reliefAfter: null,
+		regenStep: 100,
+	},
+	// なんでも実況（ムー大陸）＝おんMu：「呑気な おんJを 求めて 作られた 板」（デフォルトネーム ムーミン谷の名無し）。
+	// 「相変わらず 廃墟やのぅ」の 過疎。沈んだ 大陸へ 潜る
+	onmu: {
+		id: "onmu",
+		objective: "fetch",
+		foes: { hitodama: 2, funamushi: 2, kaso: 1.5, ninja: 0 },
+		floors: 11,
+		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
+		perFloor: [4, 6],
+		level: ramp(11, 12, 2),
+		unidentified: ["herb", "scroll", "staff"],
+		curses: true,
+		start: ["f_large"],
+		goal: "tojoken",
+		houses: null,
+		trapsFrom: 3,
+		unlockAfter: "konamono",
+		reliefAfter: null,
+		sparse: 0.5,
+	},
+	// おんキム：キムチを 愛する 板から 始まった（2023年3月。管理部スレ・「植民地一覧」・おんMuとの 植民地戦争・
+	// 「おんキムに 来ませんか？」の 勧誘）。勧誘と 公安（特定班）が 多く、植民地が 多いので 祭りも 出やすい
+	onkimu: {
+		id: "onkimu",
+		objective: "fetch",
+		foes: { eye: 2, ninja: 2, yuki: 1.5, copipe: 1.5 },
+		floors: 13,
+		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
+		perFloor: [5, 7],
+		level: ramp(13, 16, 2),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "kimchi",
+		houses: { from: 3, chance: 1 / 4, early: [4, 6] },
+		trapsFrom: 3,
+		unlockAfter: "onmu",
+		reliefAfter: null,
+	},
+	// †ダークネスインフェルノ†板：「†邪気眼に 魅入られし 孤高なる 闇の 眷属たちの 集いし 板†」
+	// （デフォルトネーム †名も無き暗黒の使い†。中二病 専用板）。闇の 力で 杖の 回数が 1 多く、のろいも 多い
+	inferno: {
+		id: "inferno",
+		objective: "fetch",
+		foes: { chimera: 2, kage: 2, mojibake: 1.5, golem: 1 },
+		floors: 15,
+		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape").map((e) =>
+			e.kind === "s_uncurse" ? { kind: e.kind, weight: e.weight * 2 } : e,
+		),
+		perFloor: [5, 7],
+		level: ramp(15, 19, 2),
+		unidentified: ALL_UNIDENTIFIED,
+		curses: true,
+		start: ["f_large"],
+		goal: "grimoire",
+		houses: { from: 4, chance: 1 / 10, early: [5, 7] },
+		trapsFrom: 3,
+		unlockAfter: "festival",
+		reliefAfter: null,
+		charge: 1,
+		// 闇の 塔を 上る
+		up: true,
+	},
 };
 
 export const DUNGEON_IDS: readonly DungeonId[] = [
@@ -842,6 +927,10 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"hinan",
 	"y1901",
 	"vocalo",
+	"mercury",
+	"onmu",
+	"onkimu",
+	"inferno",
 ];
 
 /** 裏シナリオの 承の 小島（乗っ取られた 板。開く 順）。 */

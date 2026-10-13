@@ -27,7 +27,12 @@ export type DungeonId =
 	| "hinan"
 	| "y1901"
 	// 束音ロゼの 依頼：ボカロ作り避難所（engine/heroes.ts）
-	| "vocalo";
+	| "vocalo"
+	// おーぷぬ（だれでも 立てられる 板）の おんJ関連板（2026-10-13 作者：「おーぷんの 史実に 基づいて 増やせ」）
+	| "mercury"
+	| "onmu"
+	| "onkimu"
+	| "inferno";
 
 /**
  * 冒険の 目的。fetch：いちばん底の 品を 拾って 入口まで 持ち帰る。

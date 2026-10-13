@@ -721,6 +721,39 @@ add({
 	desc: "離島・沖縄板の　山の　上に　引っかかっていた　ヤシの実。持ち帰ろう",
 	flavor: "ヤッシッシ～。島民は　6人。拾ったのは　7人目",
 });
+// おーぷぬの おんJ関連板の 品（2026-10-13）
+add({
+	id: "hoshi",
+	cat: "goal",
+	icon: art("hoshi"),
+	name: "水星の　かけら",
+	desc: "マーキュリーの　いちばん　底で　光っていた。持ち帰ろう",
+	flavor: "おんJに　飽きた　人の、ほのぼのした　温度",
+});
+add({
+	id: "tojoken",
+	cat: "goal",
+	icon: art("tojoken"),
+	name: "おんMu国際空港の　搭乗券",
+	desc: "沈んだ　大陸の　空港の、行き先の　ない　搭乗券。持ち帰ろう",
+	flavor: "「新境地への　旅行　はじめり」",
+});
+add({
+	id: "kimchi",
+	cat: "goal",
+	icon: art("kimchi"),
+	name: "おんキムの　キムチ壺",
+	desc: "管理部の　奥で　漬かっていた。持ち帰ろう",
+	flavor: "植民地は　ふえても、キムチは　1つ",
+});
+add({
+	id: "grimoire",
+	cat: "goal",
+	icon: art("grimoire"),
+	name: "†漆黒の　魔導書†",
+	desc: "闇の　塔の　てっぺんに　封印されていた。持ち帰ろう",
+	flavor: "読むと、14歳の　ころの　自分が　ふりむく",
+});
 add({
 	id: "takoyaki",
 	cat: "goal",
