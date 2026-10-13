@@ -247,9 +247,24 @@ export const reactionOf = (def: MobDef): string | null => {
 	return last.far ? def.react.deep : def.react.dead;
 };
 
-/** いつもの ひとこと（7つなら 曜日で）。 */
+/**
+ * なかよし度（ui/village/bonds.ts）が 差しこむ 口。idle は 親しく なった 子の いつもの ひとこと（無ければ null）、
+ * news は 新しい話を 聞いた（なかよし度が 1 ふえる）。bonds.ts が 読みこまれた とき 差しかえる。
+ */
+export const mobHooks: {
+	idle: (id: MobId) => string | null;
+	news: (id: MobId) => void;
+} = { idle: () => null, news: () => {} };
+
+const warmIdle = (def: MobDef): string | null => {
+	const id = MOB_IDS.find((m) => MOBS[m] === def);
+	return id ? mobHooks.idle(id) : null;
+};
+
+/** いつもの ひとこと（7つなら 曜日で。親しく なった 子は なかよし度で かわる）。 */
 export const idleOf = (def: MobDef): string =>
 	mobSulk(def) ??
+	warmIdle(def) ??
 	(typeof def.idle === "string"
 		? def.idle
 		: (def.idle[today().w] ?? def.idle[0] ?? ""));
@@ -405,6 +420,7 @@ export const mobScript =
 			}
 			save(v);
 			if (news) {
+				mobHooks.news(id);
 				// 節目（key に「:@」）は おーぷんの 日替わりを かけない（data/town/openModes.ts の rawModes）
 				await (news.key.includes(":@")
 					? rawModes(() => play(s, id, news.lines))
@@ -430,6 +446,31 @@ export const mobScript =
 		if (await tip(s, def, at)) return;
 		await sayAs(s, id, idleOf(def));
 	};
+
+/** その子と 話した 新しい話の 数（はじめまして・節目・雑談。なかよし度の もと。ui/village/bonds.ts）。 */
+export const mobTalkCount = (id: MobId): number => {
+	const v = load();
+	return (
+		(v.met.includes(id) ? 1 : 0) +
+		v.seen.filter((k) => k.startsWith(`${id}:`)).length
+	);
+};
+
+/** 会った 子。 */
+export const metMobs = (): MobId[] => [...load().met];
+
+/** この 帰りに もう 新しい話を 聞いたか（会って いなければ true）。 */
+export const mobHeardNow = (id: MobId): boolean => {
+	const v = load();
+	return !v.met.includes(id) || v.heard[id] === returnAt();
+};
+
+/** この 帰りの 新しい話を 聞いた ことに する（なかよし度の 話を 聞いた とき）。 */
+export const markMobHeard = (id: MobId): void => {
+	const v = load();
+	v.heard[id] = returnAt();
+	save(v);
+};
 
 /** 小ネタが 出るかの さいころ（試しでは 出ないように 差しかえる）。 */
 export const tipDice = { roll: (): number => Math.random() };

@@ -1,5 +1,5 @@
 // ゲームセンター「連コ」の プリクラ（data/village/facilities.ts の booth。決まりは data/purikura/purikura.ts）。
-// - 「撮る／プリ帳を　見る／やめる」。撮るのは キリコと、喫茶で 親しく なった 人（ui/village/cafe.ts の cafeBonds。
+// - 「撮る／プリ帳を　見る／やめる」。撮るのは キリコと、親しく なった 人（喫茶か ♥2 から。ui/village/bonds.ts の bondCast。
 //   村に いない 仲間は 出ない）2人まで。だれも いなければ キリコ ひとりで。
 // - 板（240x150）：背景を えらぶ（←→）→ 3・2・1（ポーズは 機械が きめる）→ パシャ → 落書き（スタンプを
 //   カーソルと A か タップで はる。下の 欄で 種類・もどす・できた）→ シールの 台紙（2x2）。
@@ -41,7 +41,7 @@ import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
 import { board, sleep, tick } from "../minigames/minigameBoard";
 import { BW, crisp, type G, pad, twoB, txt } from "../neta/netaBoard";
-import { cafeBonds } from "../village/cafe";
+import { bondCast } from "../village/bonds";
 import { sayAs } from "../village/villageMobs";
 import { previewStage } from "../village/villageReturn";
 import { drawPhoto, drawSheet, drawStamp } from "./purikuraDraw";
@@ -144,7 +144,7 @@ const preload = (who: readonly Cast[]): Promise<unknown> =>
 /** 写る 人（null は やめた）。 */
 const pickCompanions = async (ctx: Ctx, s: Story): Promise<Cast[] | null> => {
 	const away = awayFriends(loadProgress().cleared, loadTown().stage);
-	const bonds = cafeBonds().filter((w) => !away.includes(w as Speaker));
+	const bonds = bondCast(2).filter((w) => !away.includes(w as Speaker));
 	if (!bonds.length) {
 		await s.narrate(PURI_TEXT.none);
 		return [];

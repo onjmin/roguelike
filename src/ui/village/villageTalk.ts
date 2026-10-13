@@ -233,10 +233,32 @@ const reaction = (who: Speaker): Quote | null => {
 	return pickQuote(quoteContext(), seed, who);
 };
 
+/**
+ * なかよし度（ui/village/bonds.ts）が 差しこむ 口。idle は 親しく なった 仲間の 決まった ひとこと（無ければ null）、
+ * news は 新しい話を 聞いた（なかよし度が 1 ふえる）。bonds.ts が 読みこまれた とき 差しかえる。
+ */
+export const talkHooks: {
+	idle: (who: Speaker) => string | null;
+	news: (who: Speaker) => void;
+} = { idle: () => null, news: () => {} };
+
+/** この 帰りに もう 新しい話を 聞いたか。 */
+export const heardNow = (who: Speaker): boolean =>
+	loadHeard()[who] === returnAt();
+
+/** この 帰りの 新しい話を 聞いた ことに する（なかよし度の 話を 聞いた とき）。 */
+export const markHeard = (who: Speaker): void => {
+	const h = loadHeard();
+	h[who] = returnAt();
+	saveHeard(h);
+};
+
 /** その人の 決まった ひとこと（新しい話を 聞いたあと）。 */
 const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
 	// 口の前で 見張っている間は 見張りの ひとこと
 	if (who === "nanj" && o.gate) return VILLAGE_IDLE.gate;
+	const warm = talkHooks.idle(who);
+	if (warm) return warm;
 	const stage = loadTown().stage;
 	const town = (TITLE_TOWN_QUOTES[stage] ?? []).find((x) => x.who === who);
 	if (town) return town.text;
@@ -268,7 +290,10 @@ export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string => {
 		const news = reaction(who);
 		heard[who] = at;
 		saveHeard(heard);
-		if (news) return news.text;
+		if (news) {
+			talkHooks.news(who);
+			return news.text;
+		}
 	}
 	return idleLine(who, o);
 };

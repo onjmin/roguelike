@@ -48,6 +48,8 @@ import { playOrRecord } from "../minigames/playMenu";
 import { isNetaPlay, netaPlay } from "../neta/neta";
 import { purikura } from "../purikura/purikura";
 import { sabaPlay } from "../saba/saba";
+import { tradeTerminal } from "../trade/trade";
+import { giftShelf } from "./bonds";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
 import {
@@ -298,6 +300,10 @@ export const buildFacility = (
 			else if (play === "furnshop") await furnitureShop(ctx, s);
 			// ゲームセンターの プリクラ：仲良く なった 人と 撮る（ui/purikura/purikura.ts）
 			else if (play === "purikura") await purikura(ctx, s);
+			// おんJマートの ギフトの 棚：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）
+			else if (play === "giftshop") await giftShelf(ctx, s);
+			// おんJマートの ATM：おんJ証券（ui/trade/trade.ts）
+			else if (play === "trade") await tradeTerminal(ctx, s);
 		});
 	});
 	for (const who of room?.people ?? [])

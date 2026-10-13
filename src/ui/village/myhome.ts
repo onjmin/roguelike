@@ -60,7 +60,8 @@ import { listWindow } from "../list";
 import { netBrowse } from "../net/net";
 import { paintEasel } from "../paint/paint";
 import { petitcon } from "../petitcon/petitcon";
-import { cafeBonds } from "./cafe";
+import { tradeTerminal } from "../trade/trade";
+import { bondCast, bondLevel, heartsOf, keepsakeList } from "./bonds";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -487,7 +488,12 @@ const closet = async (ctx: Ctx, s: Story): Promise<void> => {
 		return;
 	}
 	await s.narrate(HOME_MSG.closet);
-	const n = await s.choose([...HOME_MSG.closetMenu], { cancel: 4 });
+	const n = await s.choose([...HOME_MSG.closetMenu], { cancel: 5 });
+	// もらった 物（なかよく なった 人から。ui/village/bonds.ts）
+	if (n === 4) {
+		await keepsakeList(ctx, s);
+		return;
+	}
 	if (n === 3) {
 		// ぜんぶ 片づける（置いた 家具を まとめて 収納へ）
 		const m = loadHome();
@@ -591,11 +597,13 @@ export const homeThing =
 		const game = FURNITURE_GAME[kind];
 		// パソコン：ゲームの ほかに BASIC を 書いて 動かせる（ui/petitcon/petitcon.ts）
 		if (game && PC_FURNITURE.includes(kind)) {
-			const g = await s.choose([...HOME_MSG.pcMenu], { cancel: 5 });
+			const g = await s.choose([...HOME_MSG.pcMenu], { cancel: 6 });
 			if (g === 0) await arcadeScript(ctx, s, game);
 			else if (g === 1) await petitcon(ctx, s);
 			else if (g === 2) await netBrowse(ctx, s);
-			else if (g === 3 || g === 4) await moveOrStore(s, m, kind, g - 3);
+			// おんJ証券（株・デイトレ・FX。ui/trade/trade.ts）
+			else if (g === 3) await tradeTerminal(ctx, s);
+			else if (g === 4 || g === 5) await moveOrStore(s, m, kind, g - 4);
 			return;
 		}
 		if (game) {
@@ -770,7 +778,7 @@ const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 		return;
 	}
 	const away = awayFriends(loadProgress().cleared, loadTown().stage);
-	const list = cafeBonds().filter((w) => !away.includes(w as Speaker));
+	const list = bondCast(1).filter((w) => !away.includes(w as Speaker));
 	if (!list.length) {
 		await s.narrate(HOME_MSG.phoneNone);
 		return;
@@ -780,7 +788,11 @@ const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 	const v = await listWindow(
 		ctx,
 		HOME_MSG.phoneTitle,
-		list.map((w) => ({ label: castName(w), value: w })),
+		list.map((w) => ({
+			label: castName(w),
+			sub: heartsOf(bondLevel(w)),
+			value: w,
+		})),
 		{ closeLabel: "やめる" },
 	);
 	if (!v || !isCast(v)) return;

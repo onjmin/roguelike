@@ -116,6 +116,7 @@ import { pinPad } from "../minigames/pinPad";
 import { makeQuiz } from "../minigames/quiz";
 import { sabaEvents } from "../saba/saba";
 import { openSettings } from "../settings";
+import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { civicBoardMenu, civicBoardScript } from "./civic";
 import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
@@ -747,11 +748,18 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
 	if (p.who) {
 		const who = p.who;
-		return npc(p.id, p.x, p.y, CAST[who].walk, friendScript(who, ctx), {
-			who,
-			dir: p.dir,
-			wander: p.wander,
-		});
+		return npc(
+			p.id,
+			p.x,
+			p.y,
+			CAST[who].walk,
+			withBond(who, friendScript(who, ctx)),
+			{
+				who,
+				dir: p.dir,
+				wander: p.wander,
+			},
+		);
 	}
 	if (p.exit && p.trigger === "touch")
 		return {
@@ -762,10 +770,17 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		};
 	if (p.exit) return sign(p.id, p.x, p.y, exitSignScript);
 	if (p.mob) {
-		return npc(p.id, p.x, p.y, p.sprite ?? "", mobScript(p.mob), {
-			dir: p.dir,
-			wander: p.wander,
-		});
+		return npc(
+			p.id,
+			p.x,
+			p.y,
+			p.sprite ?? "",
+			withBond(p.mob, mobScript(p.mob)),
+			{
+				dir: p.dir,
+				wander: p.wander,
+			},
+		);
 	}
 	if (p.id.startsWith("board_")) return sign(p.id, p.x, p.y, boardScript(ctx));
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);

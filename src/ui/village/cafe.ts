@@ -169,6 +169,20 @@ export const cafeBonds = (): Cast[] => {
 	) as Cast[];
 };
 
+/**
+ * 喫茶で つもった なかよし度（ui/village/bonds.ts）：おごった 1杯で 2、聞いた 話 1本で 1
+ * （仲間どうしの 話・住人の 店での 話も その 人の ぶん）。
+ */
+export const cafeBondPoints = (w: Cast): number => {
+	const st = load();
+	let n = ((st.treats as Partial<Record<string, number>>)[w] ?? 0) * 2;
+	for (const t of [...CAFE_TALKS, ...TREAT_TALKS])
+		if (st.heard.includes(t.id) && (t.cast as readonly string[]).includes(w))
+			n++;
+	n += (st.mobSeen ?? []).filter((k) => k.startsWith(`${w}:`)).length;
+	return n;
+};
+
 /** 試験用：覚えている 写しを 捨てる。 */
 export const forgetCafeMemo = (): void => {
 	memo = null;

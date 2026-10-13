@@ -1,5 +1,5 @@
 // ゲームセンター「連コ」の プリクラ（ui/purikura/purikura.ts）の 決まり。
-// - 撮れるのは キリコと、喫茶で 親しく なった 人（ui/village/cafe.ts の cafeBonds）2人まで。
+// - 撮れるのは キリコと、親しく なった 人（喫茶か ♥2 から。ui/village/bonds.ts の bondCast）2人まで。
 // - 1枚は 組み立ての 手だけ（だれ・背景・ポーズ・スタンプ・日付）を 字に して 覚える。絵は 覚えず、見る たびに 描き直す。
 // - プリ帳は 新しい 順に 8枚まで（localStorage の kiriko-roguelike/purikura。ui 側で 読み書き）。
 
@@ -186,7 +186,7 @@ export const PURI_TEXT = {
 	pickSecond: "もう　1人　よぶ？",
 	alone: "キリコ　ひとりで",
 	asIs: "このまま　撮る",
-	none: "いっしょに　撮れる　人は　まだ　いない。\n喫茶で　親しく　なると　いいかも。",
+	none: "いっしょに　撮れる　人は　まだ　いない。\n贈り物を　すると　いいかも。",
 	hintBg: "←→ 背景　A・タップ 撮る　B 2回 やめる",
 	hintCount: "B 2回 やめる",
 	hintDeco: "十字 うごく　A・タップ はる　B 2回 完成",

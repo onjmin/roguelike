@@ -178,6 +178,8 @@ export type FacilityRoom = {
 		| "arcade"
 		| "furnshop"
 		| "purikura"
+		| "giftshop"
+		| "trade"
 		| NetaPlay
 	>;
 };
@@ -1102,7 +1104,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"]": "register",
 				i: "ice",
 				I: "ice",
-				M: "magazine",
+				M: "gift",
 				N: "magazine",
 				b: "bins",
 				B: "bins",
@@ -1120,7 +1122,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"中から「……もう　ちょい」と　声。",
 				],
 				copier: ["コピー機。\n……スレの　まとめを　刷った　あと。"],
-				atm: ["ATM。\n画面に「ただいま　保守中」。"],
+				atm: ["ATM。\n「おんJ証券　提携。株・FX　24時間」"],
 				coffee: ["コーヒーマシン。\n「S　100円。Lは　気持ち」"],
 				hot: [
 					"ホットスナックの　ケース。\n「おんJチキ」が　1つだけ　残っている。",
@@ -1136,7 +1138,11 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"「立ち読み　ご遠慮ください」\n……キリコは　そっと　棚に　もどした。",
 				],
 				bins: ["ゴミ箱。\n「缶」「ペットボトル」「燃える」。"],
+				gift: ["ギフトの　棚。\n「大切な　あの人へ。包装　無料」"],
 			},
+			// ギフトの 棚：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）
+			// ATM：おんJ証券（株・デイトレ・FX。ui/trade/trade.ts）
+			plays: { gift: "giftshop", atm: "trade" },
 			people: [
 				{
 					id: "konbini_clerk",
