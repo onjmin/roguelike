@@ -20,6 +20,7 @@ import {
 } from "../../data/people/guests";
 import { MOBS, type MobId } from "../../data/people/mobs";
 import { awayFriends } from "../../data/story/story";
+import { BATH_GATE, BATH_YEN } from "../../data/town/bath";
 import { today } from "../../data/town/calendar";
 import {
 	BANK,
@@ -53,6 +54,7 @@ import {
 } from "../../data/village/rooms";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
 import { loadProgress, loadTown } from "../../engine/save";
+import { yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { watchProgram } from "../jikkyo/jikkyoWatch";
 import { type ListItem, listWindow } from "../list";
@@ -62,6 +64,7 @@ import { eggScript, ideaNpc, museumScript } from "./folk";
 import { readShelf } from "./glossary";
 import { guestsOf, returnAt } from "./guests";
 import { openStorage } from "./home";
+import { payOrShort } from "./pay";
 import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
 import { fill } from "./villageTalk";
@@ -109,6 +112,30 @@ export const leaveRoom =
 export const isWeekend = (): boolean => {
 	const w = today().w;
 	return w === 0 || w === 6;
+};
+
+/** 銭湯の 入湯料を 払った 印（村に いる あいだ）。 */
+const BATH_PAID = "bathPaid";
+
+/**
+ * 銭湯の 扉：村に いる あいだの はじめは 札を 読んで 入湯料を 払うか 聞く（2026-10-14 作者：「他の 有料に して いい」）。
+ * やめた・足りない ときは 1歩 もどる。払ったら あとは 出入り 自由。
+ */
+export const enterBath: Script = async (s) => {
+	if (!s.flag(BATH_PAID)) {
+		const price = yen(BATH_YEN);
+		await s.narrate(fill(BATH_GATE.ask, { price }));
+		const menu = BATH_GATE.menu.map((x) => fill(x, { price }));
+		if (
+			(await s.choose(menu, { cancel: 1 })) !== 0 ||
+			!(await payOrShort(s, BATH_YEN))
+		) {
+			await s.move("player", "d");
+			return;
+		}
+		s.set(BATH_PAID);
+	}
+	await enterRoom("bath")(s);
 };
 
 /** 音楽室の 扉：週末なら 中へ。平日は はり紙を 読んで 1歩 もどる。 */

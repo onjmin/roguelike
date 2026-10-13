@@ -109,7 +109,10 @@ const symbol = (g: G, x: number, y: number, n: number, dim: boolean): void => {
 	g.globalAlpha = 1;
 };
 
-export const playPachinko = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playPachinko = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let auto = false;
 	let held = 0;
 	let flash = "";
@@ -119,8 +122,9 @@ export const playPachinko = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 		flashT = t;
 	};
 	return playBoard(ctx, "pachinko", {
-		start: pcStart,
+		start: () => pcStart(stake),
 		quitScores: true,
+		cash: (s) => s.balls,
 		step: (s, f) => {
 			const inp: PcInput = {};
 			let power = s.power;

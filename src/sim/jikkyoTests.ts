@@ -98,6 +98,7 @@ import {
 	STAFF_LINES,
 	STAFF_ONCE,
 	staffLines,
+	TICKET_YEN,
 	VENUE_LINES,
 	venueLines,
 } from "../data/jikkyo/text";
@@ -146,6 +147,7 @@ import {
 } from "../data/village/facilities";
 import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
+import { forgetWalletMemo, walletYen } from "../engine/wallet";
 import type { Ctx } from "../ui/ctx";
 import {
 	forgetJikkyoMemo,
@@ -510,7 +512,9 @@ test(
 );
 
 /** 地の文・セリフ・選ぶ だけを 記録する 台本の 相手（選ぶ ときは pick を 返す）。 */
-export const recorder = (pick = 0) => {
+/** 選ぶ 窓の 答え（数なら いつも それ、並びなら 順に。使いきったら 最後の まま）。 */
+export const recorder = (pick: number | readonly number[] = 0) => {
+	const picks = typeof pick === "number" ? [pick] : [...pick];
 	const log: string[] = [];
 	const s = new Proxy({} as Story, {
 		get: (_t, k) => {
@@ -525,7 +529,7 @@ export const recorder = (pick = 0) => {
 			if (k === "choose")
 				return async () => {
 					log.push("choose");
-					return pick;
+					return (picks.length > 1 ? picks.shift() : picks[0]) ?? 0;
 				};
 			if (k === "then") return undefined;
 			return () => undefined;
@@ -1772,6 +1776,24 @@ test(
 );
 
 /** 試験の あいだだけ localStorage を かえる（Map で 持つ）。もどす 手を 返す。 */
+/** 町の 売り上げ（財布の 元。engine/wallet.ts）を 置く（映画館・劇場の 券。2026-10-14 有料に）。 */
+export const setTownYen = (
+	store: Map<string, string>,
+	points: number,
+): void => {
+	store.set(
+		"kiriko-roguelike/town",
+		JSON.stringify({
+			points,
+			stage: 0,
+			storage: [],
+			pending: null,
+			returned: [],
+		}),
+	);
+	forgetWalletMemo();
+};
+
 export const swapStorage = (): {
 	store: Map<string, string>;
 	restore: () => void;
@@ -1791,11 +1813,14 @@ export const swapStorage = (): {
 		configurable: true,
 		writable: true,
 	});
+	// 財布の 写しも 捨てる（払った 額が ほかの 試験に 残らないように）
+	forgetWalletMemo();
 	return {
 		store,
 		restore: () => {
 			if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 			else delete (globalThis as { localStorage?: unknown }).localStorage;
+			forgetWalletMemo();
 		},
 	};
 };
@@ -2799,6 +2824,9 @@ test(
 				try {
 					store.clear();
 					forgetJikkyoMemo();
+					// 券は 1回 TICKET_YEN.cinema（2026-10-14 有料に）
+					const ticket = TICKET_YEN.cinema;
+					setTownYen(store, ticket * 2);
 					const events = buildFacility(f, view, {} as Ctx).events ?? [];
 					const run = async (id: string, pick = 0) => {
 						const r = recorder(pick);
@@ -2814,8 +2842,10 @@ test(
 						cue: "kami",
 					});
 					const a = await run("screen_0");
+					// 夜の部・昼の部を 選ぶ → 券を 買って 見るか 聞く
 					const want = [
 						...screen.map((l) => `narrate: ${l}`),
+						"choose",
 						"choose",
 						`narrate: ${JK_PROG_MSG.howto.replace("{n}", String(goal))}`,
 						`narrate: ${JK_PROG_MSG.seat}`,
@@ -2841,6 +2871,16 @@ test(
 					// 夜の部・昼の部・やめる の いちばん 下
 					const c = await run("screen_0", 2);
 					ok(c.at(-1) === "choose", `quit: ${c.join("|")}`);
+					// 2回 見て 券 2枚。もう お金が ない（見られない）
+					ok(walletYen() === 0, `wallet ${walletYen()}`);
+					slot = null;
+					const d = await run("screen_0");
+					ok(
+						slot === null &&
+							d.at(-1)?.startsWith("narrate: お金が") &&
+							!d.includes(`narrate: ${JK_PROG_MSG.seat}`),
+						`short: ${d.join("|")}`,
+					);
 				} finally {
 					loc();
 				}
@@ -3771,6 +3811,8 @@ test(
 				try {
 					store.clear();
 					forgetJikkyoMemo();
+					// 劇場の 券（2026-10-14 有料に。1日 2回 見る ぶん）
+					setTownYen(store, TICKET_YEN.theater * 2);
 					slot = null;
 					const events = buildFacility(f, view, {} as Ctx).events ?? [];
 					const run = async (id: string, pick = 0) => {

@@ -218,6 +218,19 @@ export const JK_PROG_MSG = {
 	left: "……上映の　とちゅうで、\nそっと　席を　立った。",
 } as const;
 
+/**
+ * 券を 買って 見る 会場（映画館・劇場）の 1回の 値段（円。ui/jikkyo/jikkyoWatch.ts の watchProgram）。
+ * ほかの 会場（店の テレビ・公園・桟橋・図書館 など）は タダの まま。
+ * 2026-10-14 作者：「他の 有料に して いい」
+ */
+export const TICKET_YEN: Readonly<Record<string, number>> = {
+	cinema: 1500,
+	theater: 1500,
+};
+
+/** 券の いる 会場の 見るか 聞く 窓（{price} は TICKET_YEN）。 */
+export const JK_TICKET_MENU = ["見る（{price}）", "やめる"] as const;
+
 export type ProgMsgKey = Exclude<keyof typeof JK_PROG_MSG, "menu">;
 
 /** 番組ごとに かえる 村の 窓（無い 鍵は JK_PROG_MSG）。 */

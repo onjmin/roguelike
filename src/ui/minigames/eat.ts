@@ -4,16 +4,24 @@
 // - 券売機（部屋の plays:"eat"）は 調べた 文の あと すぐ 品書き（受けるのは 店番）。
 // - 選ぶ → 店番の ひとこと → チーン → 出てきた 一品（板に 大きく。湯気が のぼる・冷たい 品は のぼらない。
 //   1.2秒か A／タップ）→ 食べる 音 →
-//   地の文 1〜2窓。村に いる あいだの 1回目だけ、食べた あとに 店番の「お代は　ええ」（お金の しくみは ない）。
+//   地の文 1〜2窓。村に いる あいだの 店ごとの 1回目だけ、食べた あとに 店番の「お代は　ええ」。
+// - 2回目からは 品の 値段（品書きに「名前　値段」）を 注文の 前に 払う（チャリン）。足りなければ 店番の short で
+//   断られて 何も 出ない（2026-10-14 作者：「他の 有料に して いい」。財布は engine/wallet.ts）。
 // どれも 寄り道で、何も 持ちこまない（満腹度・道具・強さ・記録には ふれない。乱数も 使わない）。
 // 板の 見た目は 別ゲーの 板（ui/minigames/minigames.ts）と 同じ クラス（.mgame）。
 
-import { EAT_MENUS } from "../../data/town/eateries";
+import { type Dish, EAT_MENUS } from "../../data/town/eateries";
 import { loadImage } from "../../engine/assets";
 import type { Story } from "../../engine/defs";
+import { yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { el } from "../dom";
+import { pay } from "../village/pay";
 import { fill } from "../village/villageTalk";
+
+/** 品書きの 1行（「名前　値段」。長い 名前は label）。 */
+export const dishLabel = (d: Dish): string =>
+	`${d.label ?? d.name}　${yen(d.price)}`;
 
 /** 店番の ひとこと（中の 人と 同じ 声：やきうの 声で 名前欄だけ 店番）。 */
 const keeperSay = (s: Story, name: string, text: string) =>
@@ -124,7 +132,7 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	const m = EAT_MENUS[id];
 	if (!m) return;
 	const n = m.dishes.length;
-	const k = await s.choose([...m.dishes.map((d) => d.name), "やめる"], {
+	const k = await s.choose([...m.dishes.map(dishLabel), "やめる"], {
 		cancel: n,
 	});
 	if (k < 0 || k >= n) {
@@ -132,6 +140,12 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 		return;
 	}
 	const d = m.dishes[k];
+	const ate = `eat:${id}`;
+	// 1回目は お代 なし（食べた あとに free）。2回目からは 注文の 前に 払う
+	if (s.flag(ate) && !pay(s, d.price)) {
+		await keeperSay(s, m.keeper, fill(m.short, { price: yen(d.price) }));
+		return;
+	}
 	await keeperSay(s, m.keeper, fill(m.order, { dish: d.name }));
 	// チーン（できあがりの 呼び鈴）
 	s.se("glass");
@@ -139,7 +153,6 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	if (d.art) await showDish(ctx, d.art, d.name, d.cold);
 	s.se("eat");
 	for (const t of d.eat) await s.narrate(t);
-	const ate = `eat:${id}`;
 	if (!s.flag(ate)) {
 		s.set(ate);
 		await keeperSay(s, m.keeper, m.free);

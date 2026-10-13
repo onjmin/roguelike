@@ -40,9 +40,21 @@ export const GROUND_BAT = {
 	derbyBest: "ホームラン　{n}本。\n……自己ベスト　更新！",
 } as const;
 
-/** ファミレスの ドリンクバー（1杯 注いで、その場で 飲む：持ち物には 入らない）。 */
+/**
+ * 有料の 寄り道で お金が 足りない とき（ui/village/pay.ts）。{price} は 値段、{have} は 手もと。
+ * 2026-10-14 作者：「他の 有料に して いい」
+ */
+export const PAY_SHORT = "お金が　たりない。\n（{price}。手もと　{have}）";
+
+/** ドリンクバー 1杯の 値段（2026-10-14 作者：「他の 有料に して いい」）。 */
+export const DRINK_BAR_YEN = 300;
+
+/** 自販機 1本の 値段（2026-10-14 作者：「他の 有料に して いい」）。 */
+export const VEND_YEN = 150;
+
+/** ファミレスの ドリンクバー（1杯 注いで、その場で 飲む：持ち物には 入らない）。menu の {price} は 1杯の 値段。 */
 export const DRINK_BAR = {
-	menu: ["注ぐ", "やめる"],
+	menu: ["注ぐ（{price}）", "やめる"],
 	got: "キリコは　{drink}を　注いだ。",
 	drank: "……その場で　飲みほした。",
 	drinks: [
@@ -55,9 +67,9 @@ export const DRINK_BAR = {
 	],
 } as const;
 
-/** 自販機（飲み物が 出て、その場で 飲む：持ち物には 入らない）。 */
+/** 自販機（飲み物が 出て、その場で 飲む：持ち物には 入らない）。menu の {price} は 1本の 値段。 */
 export const VENDING = {
-	menu: ["買う", "やめる"],
+	menu: ["買う（{price}）", "やめる"],
 	got: "ガコン。\n……{drink}が　出てきた。",
 	drank: "キリコは　その場で　飲んだ。",
 	drinks: [

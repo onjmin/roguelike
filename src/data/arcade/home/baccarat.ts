@@ -133,8 +133,8 @@ export type BcEvent =
 	| "push"
 	| "lose";
 
-export const bcStart = (): BcState => ({
-	chips: BC.start,
+export const bcStart = (chips: number = BC.start): BcState => ({
+	chips,
 	bet: 1,
 	side: "player",
 	phase: "bet",

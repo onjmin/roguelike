@@ -173,8 +173,8 @@ export type PkInput = {
 };
 export type PkEvent = "bet" | "deal" | "hold" | "cursor" | "win" | "lose";
 
-export const pkStart = (): PkState => ({
-	chips: PK.start,
+export const pkStart = (chips: number = PK.start): PkState => ({
+	chips,
 	bet: 1,
 	phase: "bet",
 	deck: [],

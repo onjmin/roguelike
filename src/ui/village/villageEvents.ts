@@ -124,7 +124,7 @@ import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag, openStorage } from "./home";
 import { escBr, openRecords, showStory } from "./records";
-import { enterMusic, enterRoom } from "./rooms";
+import { enterBath, enterMusic, enterRoom } from "./rooms";
 import type { Arrival } from "./village";
 import { mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
 import { chooseRecord, villageSong } from "./villageMusic";
@@ -779,7 +779,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "door_music")
 		return { ...at, trigger: "touch", through: true, run: enterMusic };
 	if (p.id === "door_bath")
-		return { ...at, trigger: "touch", through: true, run: enterRoom("bath") };
+		return { ...at, trigger: "touch", through: true, run: enterBath };
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
 	if (p.id === "door_store")

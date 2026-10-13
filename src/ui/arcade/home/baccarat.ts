@@ -44,11 +44,15 @@ const row = (g: G, x0: number, cards: readonly Card[]): void => {
 	});
 };
 
-export const playBaccarat = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playBaccarat = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let flash = "";
 	return playBoard(ctx, "baccarat", {
-		start: bcStart,
+		start: () => bcStart(stake),
 		quitScores: true,
+		cash: (s) => s.chips,
 		step: (s, f) => {
 			const inp: BcInput = {};
 			const si = BC_SIDES.indexOf(s.side);

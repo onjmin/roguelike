@@ -4,7 +4,8 @@
 // - ルーレット：右の 札を 十字で えらんで A（タップは その 札）。賭けの 札に 置く・枚数・戻す・回す。
 // - スイカ割り：十字キーで 1歩、A で 棒を ふる。タップは キリコから 見た 方へ 1歩（キリコの マスなら ふる）。
 // - グラス滑らせ：A・タップで 力を 決める。
-// チップは 店が 貸す 遊びの チップ（ゴールドとは 別）。B（板の 外を 2回）で やめると その ときの いちばんで 記録する。
+// チップは 財布で 買った 枚数（stake。ui/arcade/casinoChips.ts）。B（板の 外を 2回）で やめると その ときの いちばんで
+// 記録し、手もとの 枚数（cash）を 換金する（2026-10-14 作者：「お金を 賭けない 方針は 撤廃」）。
 
 import { AH, ATOP, AW } from "../../data/arcade/logic";
 import {
@@ -21,6 +22,7 @@ import {
 	HL,
 	type HlChoice,
 	hlCash,
+	hlLeft,
 	hlMult,
 	hlScore,
 	hlStart,
@@ -31,6 +33,7 @@ import {
 	type RlColor,
 	type RlInput,
 	rlColorOf,
+	rlLeft,
 	rlNumber,
 	rlStart,
 	rlStep,
@@ -127,13 +130,17 @@ const GC_INK: Record<GcSym, string> = {
 };
 const GC_TABLE = GC_SYMS.map((s) => `${s}=${GC_PAY[s]}`).join(" ");
 
-export const playGacha = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playGacha = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let flash = "";
 	let hot = false;
 	const shown = counter();
 	return playBoard(ctx, "gacha", {
-		start: gcStart,
+		start: () => gcStart(stake),
 		quitScores: true,
+		cash: (s) => s.chips,
 		step: (s, f) => {
 			const press = f.evs.some((e) => isKey(e, "a") || isTap(e));
 			for (const e of gcStep(s, f.dt, press, rnd)) {
@@ -314,12 +321,16 @@ const card = (g: G, x: number, y: number, n: number | null): void => {
 
 const multLabel = (m: number): string => (m > 0 ? `×${m.toFixed(2)}` : "—");
 
-export const playHighLow = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playHighLow = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let flash = "";
 	const shown = counter();
 	return playBoard(ctx, "highlow", {
-		start: () => hlStart(rnd),
+		start: () => hlStart(rnd, stake),
 		quitScores: true,
+		cash: hlLeft,
 		step: (s, f) => {
 			let c: HlChoice | null = null;
 			let bet: number | undefined;
@@ -496,7 +507,10 @@ const rlBetInk = (b: RlBet): string =>
 				? RL_INK.green
 				: "#3a2a10";
 
-export const playRoulette = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playRoulette = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let flash = "";
 	let cr = 0;
 	let cc = 0;
@@ -509,8 +523,9 @@ export const playRoulette = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 		else ip.spin = true;
 	};
 	return playBoard(ctx, "roulette", {
-		start: rlStart,
+		start: () => rlStart(stake),
 		quitScores: true,
+		cash: rlLeft,
 		step: (s, f) => {
 			const ip: RlInput = { spin: false };
 			let moved = false;

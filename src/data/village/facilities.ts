@@ -1615,7 +1615,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	{
 		id: "recycle",
 		name: "リサイクルショップ「おさがり」",
-		from: 6,
+		from: 4,
 		at: [40, 4],
 		// 鉄の 屋根・開いた 搬入口・SHOP の 札・段ボール
 		look: {
@@ -2019,7 +2019,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	{
 		id: "gym",
 		name: "ageジム",
-		from: 6,
+		from: 5,
 		at: [40, 37],
 		// 紫の 帯に ダンベルの 札 2枚・灰色の ガラス（右の ガラスに 会員募集の はり紙）
 		look: {
@@ -2122,7 +2122,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	{
 		id: "bar",
 		name: "バー「次スレ」",
-		from: 6,
+		from: 5,
 		at: [33, 32],
 		// 木の 屋根・黒レンガ・灯りの 窓・ジョッキの 看板・赤い 扉
 		look: {
@@ -2419,7 +2419,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 	{
 		id: "famires",
 		name: "ファミレス「ドリンクバー」",
-		from: 6,
+		from: 4,
 		at: [80, 4],
 		// 赤い 軒・だいだいの 帯に ナイフと フォークの 看板・黄色い 枠の 窓・自動ドア
 		look: {
@@ -3688,8 +3688,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 			lines: {
 				tv: ["大画面。\nレースの　中継が　映る。"],
 				rule: [
-					"はり紙。\n「チップの　販売は　ありません」",
-					"小さく「遊びの　チップは　お貸しします。\nお帰りの　さいに　ご返却を」",
+					"はり紙。\n「チップは　各台で　お買い求めください」",
+					"小さく「チップ　1枚　100円、玉　1発　4円。\nお帰りの　さいに　換金いたします」",
 				],
 				gacha: [ARCADE_TEXT.gacha.line],
 				highlow: [ARCADE_TEXT.highlow.line],
@@ -3698,11 +3698,15 @@ const BASE_FACILITIES: readonly Facility[] = [
 				pachinko: [ARCADE_TEXT.pachinko.line],
 				baccarat: [ARCADE_TEXT.baccarat.line],
 				blackjack: [ARCADE_TEXT.blackjack.line],
-				cashier: ["チップの　窓口。\n「本日の　両替は　終了しました」"],
+				cashier: [
+					"チップの　窓口。\n「チップは　1枚　100円で　ございます」",
+					"「台を　立たれる　さいに、\n同じ　値段で　換金いたします」",
+				],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
 			// 奥の 壁の 大画面で おんJ記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
-			// スロット・カードの 台・ルーレットは 遊びの チップで 遊ぶ（お金は 賭けない。ui/arcade/arcade.ts）
+			// スロット・カードの 台・ルーレット・パチンコは 財布で 買った チップ（玉）で 遊び、席を 立つと 換金
+			// （2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。ui/arcade/casinoChips.ts・data/arcade/casino.ts）
 			plays: {
 				tv: "jikkyo",
 				gacha: "arcade",
@@ -3720,7 +3724,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 					at: [4, 5],
 					dir: "down",
 					name: "ディーラー",
-					lines: ["チップは　遊びの　チップや。\n……賭けるなら、冒険に　賭けえ"],
+					lines: [
+						"チップは　ほんまの　お金や。\n……冒険の　稼ぎ、溶かさんようにな",
+					],
 				},
 			],
 		},

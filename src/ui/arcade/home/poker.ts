@@ -122,11 +122,15 @@ const BET_DN: Rect = [10, 120, 22, 20];
 const BET_UP: Rect = [82, 120, 22, 20];
 const GO: Rect = [140, 120, 90, 20];
 
-export const playPoker = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playPoker = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let flash = "";
 	return playBoard(ctx, "poker", {
-		start: pkStart,
+		start: () => pkStart(stake),
 		quitScores: true,
+		cash: (s) => s.chips,
 		step: (s, f) => {
 			const inp: PkInput = {};
 			for (const e of f.evs as ArcEv[]) {

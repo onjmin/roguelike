@@ -37,16 +37,20 @@ import {
 	JK_PROG_MSG,
 	JK_PROG_RESULT,
 	JK_PROG_TV,
+	JK_TICKET_MENU,
 	progMsg,
 	STAFF_ONCE,
+	TICKET_YEN,
 } from "../../data/jikkyo/text";
 import { devEvent } from "../../data/story/objectives";
 import { today } from "../../data/town/calendar";
 import type { Story } from "../../engine/defs";
+import { yen } from "../../engine/wallet";
 import { el } from "../dom";
 import { markOpened, onTap, type UiCtx } from "../list";
 import { tick } from "../minigames/minigameBoard";
 import { picker } from "../minigames/minigamePicker";
+import { payOrShort } from "../village/pay";
 import { villageSong } from "../village/villageMusic";
 import { previewStage } from "../village/villageReturn";
 import { type JikkyoMemo, loadJikkyo, saveJikkyo } from "./jikkyo";
@@ -641,7 +645,14 @@ export const watchProgram = async (
 	const script = PROGRAMS[slot.program];
 	if (!script) return;
 	const M = progMsg(script.id);
-	if (slots.length === 1) {
+	const ticket = TICKET_YEN[venue];
+	if (ticket) {
+		// 映画館・劇場は 券を 買って 見る（番組を 選んだ あとも 値段を 見せて 聞く。足りなければ 見られない）
+		const price = yen(ticket);
+		const menu = JK_TICKET_MENU.map((x) => fill(x, { price }));
+		if ((await s.choose(menu, { cancel: 1 })) !== 0) return;
+		if (!(await payOrShort(s, ticket))) return;
+	} else if (slots.length === 1) {
 		const n = await s.choose([...M.menu], { cancel: 1 });
 		if (n !== 0) return;
 	}

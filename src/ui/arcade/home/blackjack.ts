@@ -45,11 +45,15 @@ const hand = (
 	});
 };
 
-export const playBlackjack = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+export const playBlackjack = (
+	ctx: UiCtx,
+	stake?: number,
+): Promise<ArcadeResult | null> => {
 	let flash = "";
 	return playBoard(ctx, "blackjack", {
-		start: bjStart,
+		start: () => bjStart(stake),
 		quitScores: true,
+		cash: (s) => s.chips,
 		step: (s, f) => {
 			const inp: BjInput = {};
 			for (const e of f.evs) {

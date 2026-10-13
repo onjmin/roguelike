@@ -8,8 +8,10 @@ import { awayFriends } from "../../data/story/story";
 import { today } from "../../data/town/calendar";
 import {
 	DRINK_BAR,
+	DRINK_BAR_YEN,
 	FISHING,
 	GROUND_BAT,
+	VEND_YEN,
 	VENDING,
 } from "../../data/town/facilities";
 import {
@@ -30,6 +32,7 @@ import { layRoomTatami } from "../../data/village/tatami";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
 import { loadProgress, loadTown } from "../../engine/save";
 import { TILE } from "../../engine/types";
+import { yen } from "../../engine/wallet";
 import { arcadePlay } from "../arcade/arcade";
 import { bushitsuThing } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
@@ -58,6 +61,7 @@ import {
 	homeThing,
 	residentGift,
 } from "./myhome";
+import { payOrShort } from "./pay";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -152,18 +156,24 @@ const bat = async (ctx: Ctx, s: Story): Promise<void> => {
 	);
 };
 
-/** 自販機（飲み物が 出る。見た目の 乱数なので Math.random）。 */
+/** 自販機（1本 VEND_YEN 円。飲み物が 出る。見た目の 乱数なので Math.random）。 */
 const vend = async (s: Story): Promise<void> => {
-	if ((await s.choose([...VENDING.menu], { cancel: 1 })) !== 0) return;
+	const menu = VENDING.menu.map((x) => fill(x, { price: yen(VEND_YEN) }));
+	if ((await s.choose(menu, { cancel: 1 })) !== 0) return;
+	if (!(await payOrShort(s, VEND_YEN))) return;
 	const drink =
 		VENDING.drinks[Math.floor(Math.random() * VENDING.drinks.length)];
 	await s.narrate(fill(VENDING.got, { drink }));
 	await s.narrate(VENDING.drank);
 };
 
-/** ファミレスの ドリンクバー（1杯 注いで その場で 飲む。見た目の 乱数なので Math.random）。 */
+/** ファミレスの ドリンクバー（1杯 DRINK_BAR_YEN 円。注いで その場で 飲む。見た目の 乱数なので Math.random）。 */
 const drinkBar = async (s: Story): Promise<void> => {
-	if ((await s.choose([...DRINK_BAR.menu], { cancel: 1 })) !== 0) return;
+	const menu = DRINK_BAR.menu.map((x) =>
+		fill(x, { price: yen(DRINK_BAR_YEN) }),
+	);
+	if ((await s.choose(menu, { cancel: 1 })) !== 0) return;
+	if (!(await payOrShort(s, DRINK_BAR_YEN))) return;
 	const drink =
 		DRINK_BAR.drinks[Math.floor(Math.random() * DRINK_BAR.drinks.length)];
 	await s.narrate(fill(DRINK_BAR.got, { drink }));

@@ -4,6 +4,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOWN_STAGES } from "../core/town";
+import { CASINO, CASINO_NET } from "../data/arcade/casino";
+import { bcStart } from "../data/arcade/home/baccarat";
+import { bjStart } from "../data/arcade/home/blackjack";
+import { pcStart } from "../data/arcade/home/pachinko";
+import { pkStart } from "../data/arcade/home/poker";
 import {
 	BM,
 	bmStart,
@@ -73,6 +78,7 @@ import {
 	HL,
 	hlCash,
 	hlJudge,
+	hlLeft,
 	hlMult,
 	hlScore,
 	hlStart,
@@ -83,6 +89,7 @@ import {
 	RL_RED,
 	RL_WHEEL,
 	rlColorOf,
+	rlLeft,
 	rlNumber,
 	rlPayout,
 	rlStart,
@@ -121,6 +128,7 @@ import {
 	saveArcade,
 	setArcadeHooks,
 } from "../ui/arcade/arcade";
+import { casinoCash, casinoMenu } from "../ui/arcade/casinoChips";
 import type { Ctx } from "../ui/ctx";
 import { buildFacility } from "../ui/village/facilities";
 import { HOME_GAME_TESTS } from "./arcadeHome";
@@ -294,16 +302,21 @@ test("置き場所: どの ゲームも 決まった 施設の 物に あり（p
 			if (play === "arcade")
 				ok(isArcadeGame(kind) && ARCADE_HOME[kind] === id, `${id}.${kind}`);
 	}
-	// カジノの 台は どれも 遊べる（文だけの 台は ない）。チップは 遊びの チップ
+	// カジノの 台は どれも 遊べる（文だけの 台は ない）。チップは ほんまの お金（2026-10-14 から 財布で 買う）
 	const casino = fac("casino").room;
 	for (const k of ["slot", "cards", "cooler"])
 		ok(!casino?.lines[k], `no old ${k} line`);
 	ok(
 		casino?.people
 			?.find((p) => p.id === "casino_dealer")
-			?.lines[0]?.includes("遊びの　チップ"),
+			?.lines[0]?.includes("ほんまの　お金"),
 		"dealer",
 	);
+	for (const t of [
+		...(casino?.lines.rule ?? []),
+		...(casino?.lines.cashier ?? []),
+	])
+		ok(!/遊びの|お貸し|販売は|終了/.test(t), `old casino line ${t}`);
 });
 
 test("置き場所: 筐体の 前に 人が 立たない（乱入待ちの 名無しは 格ゲーの 台の 横）", () => {
@@ -339,7 +352,7 @@ test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/village/fa
 				r.log,
 				[
 					`narrate: ${ARCADE_TEXT[g].line}`,
-					`choose: ${ARCADE_HOME[g] === "arcade" ? payMenu() : ARCADE.menu.join("/")}`,
+					`choose: ${ARCADE_HOME[g] === "casino" ? casinoMenu(g).join("/") : ["arcade", "umi", "bar"].includes(ARCADE_HOME[g]) ? payMenu() : ARCADE.menu.join("/")}`,
 				],
 				g,
 			);
@@ -1154,6 +1167,150 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 		);
 		ok(loadArcade().best.shooter === 120, "not played");
 	});
+});
+
+// ───────────────── カジノの チップ（2026-10-14 から 財布で 買って 換金する）─────────────────
+
+test("カジノ: チップを 買うと 財布から へり、席を 立つと 手もとを 換金（勝ち・負け）、足りなければ 買えない", async () => {
+	await withStore(async (store) => {
+		setTownYen(store, 10_000);
+		const C = CASINO.chip;
+		const P = CASINO.ball;
+		const money = (n: number) => yen(n);
+		const opts = (c: typeof C, ns: readonly number[]) =>
+			[
+				...ns.map((n) => fill(c.option, { n, price: money(n * c.rate) })),
+				"やめる",
+			].join("/");
+		let got = -1;
+		// 30枚（3,000円）買って、42枚で おわる → 4,200円 もどる（1,200円の 勝ち）
+		setArcadeHooks({
+			gacha: async (stake) => {
+				got = stake ?? -1;
+				return { score: 45, cash: 42 };
+			},
+		});
+		let r = recorder([0, 1]);
+		await arcadeScript(CTX, r.s, "gacha");
+		ok(got === 30, `stake ${got}`);
+		same(
+			r.log,
+			[
+				`choose: ${casinoMenu("gacha").join("/")}`,
+				`narrate: ${fill(C.ask, { have: money(10_000) })}`,
+				`choose: ${opts(C, C.buyins)}`,
+				`narrate: ${fill(C.bought, { n: 30, price: money(3000) })}`,
+				`narrate: ${ARCADE_TEXT.gacha.rule}`,
+				`narrate: ${fill(ARCADE.after, { score: 45, unit: "枚" })}`,
+				`narrate: ${ARCADE.newBest}`,
+				`narrate: ${fill(C.cashed, { n: 42, price: money(4200) })}\n${fill(CASINO_NET.win, { price: money(1200) })}`,
+			],
+			"gacha",
+		);
+		ok(walletYen() === 11_200, `wallet ${walletYen()}`);
+		ok(loadArcade().best.gacha === 45, "best is the game's score");
+		// 10枚 買って 0枚（B で やめても 同じ）→ 1,000円の 負け
+		setArcadeHooks({ highlow: async () => ({ score: 10, cash: 0 }) });
+		r = recorder([0, 0]);
+		await arcadeScript(CTX, r.s, "highlow");
+		ok(
+			r.log.at(-1) ===
+				`narrate: ${C.none}\n${fill(CASINO_NET.lose, { price: money(1000) })}`,
+			`lose ${r.log.at(-1)}`,
+		);
+		ok(walletYen() === 10_200, `wallet ${walletYen()}`);
+		// cash が なければ スコアを 手もとと みる・同じ 枚数なら とんとん
+		setArcadeHooks({ roulette: async () => ({ score: 10 }) });
+		r = recorder([0, 0]);
+		await arcadeScript(CTX, r.s, "roulette");
+		ok(r.log.at(-1)?.endsWith(CASINO_NET.even), `even ${r.log.at(-1)}`);
+		ok(walletYen() === 10_200, `wallet ${walletYen()}`);
+		// パチンコは 玉（1発 4円）：250発 1,000円 → 300発 1,200円
+		setArcadeHooks({
+			pachinko: async (stake) => ({ score: 300, cash: stake ? 300 : 0 }),
+		});
+		r = recorder([0, 0]);
+		await arcadeScript(CTX, r.s, "pachinko");
+		ok(r.log[0] === `choose: ${casinoMenu("pachinko").join("/")}`, "ball menu");
+		ok(r.log[2] === `choose: ${opts(P, P.buyins)}`, "ball buyins");
+		ok(walletYen() === 10_400, `wallet ${walletYen()}`);
+		// 勝った 分は 売り上げより 多く 持てる（使った 額が マイナス）、読みなおしても 同じ
+		const saved = JSON.parse(store.get("kiriko-roguelike/wallet") ?? "{}");
+		ok(saved.spent === -400, `spent ${saved.spent}`);
+		forgetWalletMemo();
+		ok(walletYen() === 10_400, `reloaded ${walletYen()}`);
+		// 買う 窓で やめると 払わない・遊ばない
+		got = -1;
+		setArcadeHooks({
+			gacha: async (stake) => {
+				got = stake ?? -1;
+				return { score: 1, cash: 1 };
+			},
+		});
+		r = recorder([0, 3]);
+		await arcadeScript(CTX, r.s, "gacha");
+		ok(got === -1 && walletYen() === 10_400, "cancel buy");
+		// 払える ものだけ 出る（手もと 3,000円 → 10枚・30枚）
+		setTownYen(store, 2600);
+		r = recorder([0, 2]);
+		await arcadeScript(CTX, r.s, "poker");
+		ok(r.log[2] === `choose: ${opts(C, [10, 30])}`, `affordable ${r.log[2]}`);
+		ok(walletYen() === 3000, "not bought");
+		// 1,000円 ない → 買えない（遊ばない）
+		setTownYen(store, 0);
+		r = recorder([0]);
+		await arcadeScript(CTX, r.s, "blackjack");
+		same(
+			r.log,
+			[
+				`choose: ${casinoMenu("blackjack").join("/")}`,
+				`narrate: ${fill(C.short, { price: money(1000), have: money(400) })}`,
+			],
+			"short",
+		);
+		ok(loadArcade().plays.blackjack === 0, "not played");
+		// 換金の 円
+		ok(casinoCash("pachinko", 10, true) === 40, "ball rate");
+		ok(casinoCash("baccarat", -3, true) === 0, "no minus");
+	});
+});
+
+test("カジノ: どの 台も 買った 枚数で はじまり（既定は もとの 枚数）、やめた ときの 手もとは 賭けて いる 分も ふくむ", () => {
+	const rnd = seeded(7);
+	ok(gcStart().chips === GC.start && gcStart(100).chips === 100, "gacha");
+	ok(gcStart(100).best === 100, "gacha best");
+	ok(hlStart(rnd).chips === HL.start && hlStart(rnd, 10).chips === 10, "hl");
+	ok(rlStart().chips === RL.start && rlStart(30).chips === 30, "rl");
+	ok(pkStart().chips === 20 && pkStart(100).chips === 100, "poker");
+	ok(bjStart().chips === 20 && bjStart(10).chips === 10, "blackjack");
+	ok(bcStart().chips === 20 && bcStart(30).chips === 30, "baccarat");
+	ok(pcStart().balls === 200 && pcStart(1250).balls === 1250, "pachinko");
+	// ルーレット：回す 前に 置いた 分は もどる
+	const rl = rlStart(30);
+	rlStep(rl, 0, { place: "red", spin: false }, rnd);
+	ok(rl.chips === 29 && rlLeft(rl) === 30, `rl left ${rlLeft(rl)}`);
+	// ハイ＆ロー：賭けて いる 分は 降りたのと 同じ
+	const hl = hlStart(rnd, 10);
+	hl.chips = 9;
+	hl.pot = 2.5;
+	ok(hlLeft(hl) === 11, `hl left ${hlLeft(hl)}`);
+	// 文
+	for (const c of [CASINO.chip, CASINO.ball]) {
+		ok(width(c.buy) <= 9, `buy ${c.buy}`);
+		for (const n of c.buyins) {
+			const o = fill(c.option, { n, price: yen(n * c.rate) });
+			ok(width(o) <= 9, `option ${o}`);
+		}
+		fits("ask", fill(c.ask, { have: yen(9_999_999) }));
+		fits("short", fill(c.short, { price: yen(1000), have: yen(9_999_999) }));
+		fits("bought", fill(c.bought, { n: 9999, price: yen(999_900) }));
+		for (const t of Object.values(CASINO_NET))
+			fits(
+				"cashed",
+				`${fill(c.cashed, { n: 9999, price: yen(999_900) })}\n${fill(t, { price: yen(999_900) })}`,
+			);
+		fits("none", c.none);
+	}
 });
 
 test("記録: こわれた 中身は 初期値、台ごとに 別、?stage= の ときは 書かない", async () => {

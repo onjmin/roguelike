@@ -1,13 +1,20 @@
 // 飲食店の 品書きと 注文の 文（ui/minigames/eat.ts）。店の 形と 調べる 物の 文は data/village/eateries.ts
 // （麺屋「乙」は data/village/facilities.ts）。キーは 施設の id。
-// 村の 窓と 同じ 決まり：1行は 全角22字・2行まで。キリコは しゃべらない（食べるのは 地の文）。
-// 食べても 何も 持ちこまない（満腹度・道具・強さ・記録には ふれない）。お金の しくみも ないので、
-// 1回目は 店番が「お代は　ええ」（町が 育ったのは キリコの おかげ）。
+// 村の 窓と 同じ 決まり：1行は 全角22字・2行まで。キリコも 話してよい（吾輩・ンゴで 短く）。
+// 食べても 何も 持ちこまない（満腹度・道具・強さ・記録には ふれない）。
+// 村に いる あいだの 店ごとの 1回目は 店番が「お代は　ええ」（町が 育ったのは キリコの おかげ）。
+// 2回目からは 品の 値段を キリコの 財布から 払う（2026-10-14 作者：「他の 有料に して いい」。
+// 1回の 冒険で 数千円 稼ぐ ので、町の 飲食店くらいの 値段）。足りなければ 店番の short で 断られる。
 import { food } from "../village/rpgenArt";
 
-/** 品（選択肢の 名前・出てきた 一品の 絵・食べる 窓。cold は 冷たい 品＝湯気を 出さない）。 */
+/**
+ * 品（選択肢の 名前・出てきた 一品の 絵・食べる 窓。cold は 冷たい 品＝湯気を 出さない）。
+ * price は 円（2回目からの お代）。品書きは「名前　値段」で、長い 名前は label（品書きだけの 短い 名前）。
+ */
 export type Dish = {
 	name: string;
+	label?: string;
+	price: number;
 	art?: string;
 	cold?: boolean;
 	eat: readonly string[];
@@ -24,6 +31,8 @@ export type EatMenu = {
 	free: string;
 	/** やめた とき。 */
 	no: string;
+	/** 2回目から お金が 足りない とき（{price} は その 品の 値段）。 */
+	short: string;
 	dishes: readonly Dish[];
 };
 
@@ -35,9 +44,11 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、まいど！\n……熱いから　気ぃつけや",
 		free: "お代？　ええて　ええて。\n町が　にぎやかなんは　あんたの　おかげや",
 		no: "ほな、また　焼きたて　食べに　来てや",
+		short: "{price}や。……あれ、たりへんな。\nまた　稼いで　おいで",
 		dishes: [
 			{
 				name: "たこ焼き",
+				price: 500,
 				art: food("takoyaki"),
 				eat: [
 					"はふ、はふ。\n……外は　カリッ、中は　とろっ。",
@@ -46,11 +57,13 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "ねぎだこ",
+				price: 600,
 				art: food("takoyaki"),
 				eat: ["ねぎが　山もり。\n……しょうゆと　ねぎの　香りが　抜ける。"],
 			},
 			{
 				name: "焼きそば",
+				price: 500,
 				art: food("yakisoba"),
 				eat: [
 					"ソースの　こげた　ところが　うまい。\n……海の家のと、どっちが　うまいか。",
@@ -58,6 +71,7 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "ラムネ",
+				price: 150,
 				art: food("ramune"),
 				cold: true,
 				eat: ["ビー玉を　押しこむ。しゅわっ。\n……のどの　奥が　ぱちぱちする。"],
@@ -71,24 +85,29 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、一丁！\n……はい、お待ち",
 		free: "お代は　ええ。\nこの　峠を　にぎやかに　してくれた　礼や",
 		no: "ほな、いってらっしゃい。\n気ぃつけてな",
+		short: "{price}や。……足りんな。\nまた　峠を　越える　ときに　な",
 		dishes: [
 			{
 				name: "かけそば",
+				price: 350,
 				art: food("kake"),
 				eat: ["ずるずる、と　すする。\n……だしが　体の　芯まで　しみる。"],
 			},
 			{
 				name: "きつねそば",
+				price: 450,
 				art: food("kitsune"),
 				eat: ["甘い　油揚げを　かじる。\n……じゅわっと　だしが　あふれた。"],
 			},
 			{
 				name: "たぬきそば",
+				price: 420,
 				art: food("tanuki"),
 				eat: ["天かすが　つゆを　吸って　ふやける。\n……これが　いい。"],
 			},
 			{
 				name: "月見そば",
+				price: 450,
 				art: food("tsukimi"),
 				eat: [
 					"月を　くずすか、最後まで　残すか。\n……キリコは　最後まで　残した。",
@@ -96,6 +115,8 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "コロッケそば",
+				label: "コロッケ",
+				price: 480,
 				art: food("korokke"),
 				eat: [
 					"コロッケを　つゆに　しずめる。\n……衣が　ほどけて、じゃがいもの　味。",
@@ -110,9 +131,11 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、あいよ。\n……チャッ、チャッ（湯切りの　音）",
 		free: "お代は　ええ。\n町が　育つと　客も　ふえる。……礼や",
 		no: "……おう。\nまた　来いや",
+		short: "{price}や。……足りんな。\n稼いでから　来いや",
 		dishes: [
 			{
 				name: "ラーメン",
+				price: 800,
 				art: food("ramen"),
 				eat: [
 					"すき通った　しょうゆの　スープ。\n……鶏ガラの　香りが　ふわっと　立つ。",
@@ -120,11 +143,14 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "替え玉",
+				price: 150,
 				art: food("ramen"),
 				eat: ["かため　で　たのんだ。\n……麺が　スープを　また　吸っていく。"],
 			},
 			{
 				name: "保守（大盛）",
+				label: "保守大盛",
+				price: 1000,
 				art: food("ramenRed"),
 				eat: [
 					"どんぶりが　ずしりと　重い。\n……食べても　食べても　落ちない。",
@@ -133,6 +159,7 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "ぎょうざ",
+				price: 350,
 				art: food("gyoza"),
 				eat: ["パリッと　焼けた　羽根。\n……肉汁が　あつい。"],
 			},
@@ -145,24 +172,31 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、入りまーす。\n……はい、お待たせしました",
 		free: "お代は……店長が　ええって。\n町の　恩人やから、だそうです",
 		no: "ありがとうございましたー。\n……また　どうぞ",
+		short: "{price}に　なります。\n……あ、たりないですね",
 		dishes: [
 			{
 				name: "牛丼　並",
+				price: 450,
 				art: food("gyudon"),
 				eat: ["甘い　つゆが　ごはんに　しみている。\n……紅しょうがを　のせた。"],
 			},
 			{
 				name: "牛丼　大盛り",
+				label: "牛丼　大盛",
+				price: 600,
 				art: food("gyudon"),
 				eat: ["どんぶりが　ずしりと　重い。\n……食べても　食べても　へらない。"],
 			},
 			{
 				name: "つゆだく",
+				price: 450,
 				art: food("gyudon"),
 				eat: ["つゆが　ひたひた。\n……ごはんが　つゆを　吸って　ほどける。"],
 			},
 			{
 				name: "ねぎだく　ギョク",
+				label: "ねぎギョク",
+				price: 550,
 				art: food("gyudon"),
 				eat: [
 					"ねぎ　多めに　生卵を　のせる。\n……通の　たのみ方、らしい。",
@@ -171,6 +205,7 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "豚汁",
+				price: 200,
 				art: food("motsu"),
 				eat: [
 					"大きな　具が　ごろごろ。\n……豚汁は、なんで　こんなに　落ちつくのか。",
@@ -185,14 +220,17 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、あいよ！\n……へい、お待ち！",
 		free: "お代？　ええて！\n町の　ために　潜っとる　子から　取れるかい",
 		no: "ほな　またな！\n……次は　勝っとる　とき　来てや",
+		short: "{price}や！　……足りんがな！\nツケは　やってへんのや",
 		dishes: [
 			{
 				name: "焼き鳥",
+				price: 400,
 				art: food("yakitori"),
 				eat: ["タレが　こげて、照りが　光る。\n……ねぎまの　ねぎが　あまい。"],
 			},
 			{
 				name: "枝豆",
+				price: 300,
 				art: food("edamame"),
 				eat: [
 					"さやを　押すと　豆が　とんだ。\n……もう1つ、もう1つ、と　止まらない。",
@@ -200,16 +238,20 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "もつ煮",
+				price: 450,
 				art: food("motsu"),
 				eat: ["やわらかい　もつが　みそに　とける。\n……七味を　ふった。"],
 			},
 			{
 				name: "アジフライ",
+				price: 500,
 				art: food("fried"),
 				eat: ["釣りたての　アジ。サクッ。\n……身が　ふわっと　ほどける。"],
 			},
 			{
 				name: "オレンジジュース",
+				label: "オレンジ",
+				price: 250,
 				art: food("juice"),
 				cold: true,
 				eat: ["ストローで　すする。\n……となりの　J民が　乾杯を　求めてきた。"],
@@ -223,33 +265,40 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、へい。\n……どうぞ",
 		free: "お代は　いらねえ。\nこの　港が　あるのは　あんたの　おかげだ",
 		no: "毎度。\n……また　どうぞ",
+		short: "{price}だ。……足りねえな。\nまた　稼いだら　おいで",
 		dishes: [
 			{
 				name: "しめ鯖",
+				price: 300,
 				art: food("saba"),
 				cold: true,
 				eat: ["ほどよい　酢と　脂。\n……鯖、という　名に　はじない　味。"],
 			},
 			{
 				name: "ikura",
+				price: 400,
 				art: food("ikura"),
 				cold: true,
 				eat: ["いくら。\n……口の　中で、ぷちぷち　はじける。"],
 			},
 			{
 				name: "uni",
+				price: 600,
 				art: food("uni"),
 				cold: true,
 				eat: ["うに。\n……とろっと　甘い。海の　味が　広がる。"],
 			},
 			{
 				name: "awabi",
+				price: 600,
 				art: food("awabi"),
 				cold: true,
 				eat: ["あわび。\n……こりっ、こりっ。かむほど　うまい。"],
 			},
 			{
 				name: "特上「hayabusa」",
+				label: "特上",
+				price: 2500,
 				art: food("maguro"),
 				cold: true,
 				eat: [
@@ -266,9 +315,11 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、いっちょう！\n……ほい、お待ち！",
 		free: "お代は　ええ！\n町が　育ったんは　あんたの　おかげや",
 		no: "まいど！\n……また　来てな！",
+		short: "{price}や！　……足りんで！\nまた　稼いで　来てな",
 		dishes: [
 			{
 				name: "麻婆豆腐",
+				price: 800,
 				art: food("mabo"),
 				eat: [
 					"ひとくち。……からい！\n……あとから、ほんのり　あまい。",
@@ -277,21 +328,25 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 			},
 			{
 				name: "チャーハン",
+				price: 700,
 				art: food("chahan"),
 				eat: ["パラパラの　ごはん。\n……れんげが　すすむ。"],
 			},
 			{
 				name: "ぎょうざ",
+				price: 400,
 				art: food("gyoza"),
 				eat: ["羽根つき。\n……酢と　こしょうで　さっぱり。"],
 			},
 			{
 				name: "エビチリ",
+				price: 900,
 				art: food("ebichili"),
 				eat: ["ぷりっぷりの　エビ。\n……甘からい　ソースが　ごはんを　呼ぶ。"],
 			},
 			{
 				name: "天津飯",
+				price: 700,
 				art: food("tenshin"),
 				eat: ["ふわふわの　卵に　あんが　とろり。\n……やさしい　味。"],
 			},

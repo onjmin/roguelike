@@ -12,7 +12,8 @@ import type { UiCtx } from "../list";
 import { board, sleep, tick } from "../minigames/minigameBoard";
 import { BH, BW, crisp, type G, twoB, txt } from "../neta/netaBoard";
 
-export type ArcadeResult = { score: number };
+/** cash は カジノの 台で やめた ときの 手もとの 枚数（換金する。ui/arcade/casinoChips.ts）。 */
+export type ArcadeResult = { score: number; cash?: number };
 
 export type ArcEv =
 	| { k: Key; at: number; repeat: boolean }
@@ -116,6 +117,8 @@ export type BoardSpec<S> = {
 	end?: (s: S) => string;
 	/** B で やめても スコアに する（メダルスロットの 払いもどし）。 */
 	quitScores?: boolean;
+	/** カジノの 台：やめた ときの 手もと（換金する 枚数）。 */
+	cash?: (s: S) => number;
 	/** はじめの 下の 字（既定は 押し方）。 */
 	note?: string;
 };
@@ -155,7 +158,7 @@ export const playBoard = async <S>(
 					if (quit.press(e.at)) {
 						if (!spec.quitScores) return null;
 						await sleep(300);
-						return { score: spec.score(s) };
+						return { score: spec.score(s), cash: spec.cash?.(s) };
 					}
 					say(ARCADE.quit1);
 				} else evs.push(e);
@@ -175,7 +178,7 @@ export const playBoard = async <S>(
 				banner(g, end, end === ARCADE.clear ? "#ffe060" : "#f4f2ea");
 				ctx.se(end === ARCADE.clear ? "victory" : "miss");
 				await sleep(1600);
-				return { score: spec.score(s) };
+				return { score: spec.score(s), cash: spec.cash?.(s) };
 			}
 		}
 	} finally {

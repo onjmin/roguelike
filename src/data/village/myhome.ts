@@ -13,7 +13,7 @@ import { type RoomArtName, ri, riCell } from "./rpgenArt";
 import { base } from "./tiles";
 
 /** 分譲住宅が 建つ 町の 段（住宅街）。 */
-export const MYHOME_FROM = 6;
+export const MYHOME_FROM = 3;
 
 /** ローンの 月数（35年）。帰るたびに 1か月 返す。 */
 export const LOAN_MONTHS = 35 * 12;

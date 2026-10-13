@@ -37,6 +37,7 @@ import {
 	type Shown,
 	type ShowSet,
 	seeded,
+	setTownYen,
 	stubCanvas,
 	swapLocation,
 	swapStorage,
@@ -556,7 +557,9 @@ each(
 	async (p) => {
 		const { live } = daysOf(p);
 		if (!live) throw new Fail("no live day");
-		const { restore } = swapStorage();
+		const { store, restore } = swapStorage();
+		// 映画館・劇場は 券を 買う（2026-10-14 有料に。data/jikkyo/text.ts の TICKET_YEN）
+		setTownYen(store, 10_000);
 		const mmdd = `${String(live.m).padStart(2, "0")}${String(live.d).padStart(2, "0")}`;
 		const loc = swapLocation(`?debug&date=${mmdd}&wday=${live.w}`);
 		let slot: JkSlot | null = null;
@@ -580,9 +583,9 @@ each(
 			);
 			const k = slots.findIndex((s) => s.program === p.script.id);
 			ok(k >= 0, `not on the live day ${mmdd}`);
-			// 番組が 2つ 以上 なら 選ぶ 窓で その 番組を、1つなら「見る」を
+			// 番組が 2つ 以上 なら 選ぶ 窓で その 番組を、1つなら「見る」を（券の いる 会場は そのあと「見る（値段）」）
 			const pickAt = slots.length > 1 ? k : 0;
-			const r = recorder(pickAt);
+			const r = recorder([pickAt, 0]);
 			await watchProgram({} as UiCtx, r.s, p.venue, stage);
 			const M = progMsg(p.script.id);
 			const sl = slot as JkSlot | null;
@@ -598,7 +601,7 @@ each(
 			);
 			// 2回目は 遊び方なし、途中で 出たら 1窓
 			fake = null;
-			const r2 = recorder(pickAt);
+			const r2 = recorder([pickAt, 0]);
 			await watchProgram({} as UiCtx, r2.s, p.venue, stage);
 			ok(
 				!r2.log.some((l) => l.startsWith(`narrate: ${M.howto.slice(0, 8)}`)),

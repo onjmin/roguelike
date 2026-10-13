@@ -3,9 +3,12 @@
 // 物の 文 → ハイスコア（あれば）→「遊ぶ／やめる」→ はじめての 台は 決まり → 板（ui/arcade/arcadeAction.ts・ui/arcade/arcadeTiming.ts）
 // → スコア（ハイスコアを こえたら ひとこと）。板は ui/arcade/arcadeParlor.ts も（カジノ・海の家・バー）。B で やめたら「途中で　席を　立った」だけ（記録しない）。
 // どれも 寄り道で、強さ・道具・売上・町の 段には 何も 効かない。見た目の 乱数は Math.random。
+// カジノの 台は 財布の お金で チップを 買って 遊び、席を 立つと 換金する（ui/arcade/casinoChips.ts。
+// 2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。前は 店が 貸す 遊びの チップだった）。
 // 記録は localStorage の kiriko-roguelike/arcade だけ（?stage= ・?event= の ときは 書かない。memo には 残る）。
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
 
+import { isCasinoGame } from "../../data/arcade/casino";
 import { ARCADE, ARCADE_PLAY_YEN, ARCADE_TEXT } from "../../data/arcade/text";
 import {
 	ARCADE_GAMES,
@@ -37,6 +40,7 @@ import {
 	playSuika,
 } from "./arcadeParlor";
 import { playFighter, playMole, playRhythm, playSlot } from "./arcadeTiming";
+import { buyChips, cashOut, casinoMenu } from "./casinoChips";
 import { playBaccarat } from "./home/baccarat";
 import { playBlackjack } from "./home/blackjack";
 import { playClicker } from "./home/clicker";
@@ -159,7 +163,7 @@ export const forgetArcadeMemo = (): void => {
 // ───────────────── 試験の 差しこみ口 ─────────────────
 
 export type ArcadeHooks = Partial<
-	Record<ArcadeGame, () => Promise<ArcadeResult | null>>
+	Record<ArcadeGame, (stake?: number) => Promise<ArcadeResult | null>>
 >;
 let hooks: ArcadeHooks | null = null;
 /** 試験用：板を 出さずに 結果を わたす（null で もとに もどす）。 */
@@ -169,59 +173,62 @@ export const setArcadeHooks = (h: ArcadeHooks | null): void => {
 
 // ───────────────── 窓の がわ ─────────────────
 
-const BOARDS: Record<ArcadeGame, (ctx: UiCtx) => Promise<ArcadeResult | null>> =
-	{
-		shooter: playShooter,
-		drive: playDrive,
-		breakout: playBreakout,
-		mole: playMole,
-		fighter: playFighter,
-		slot: playSlot,
-		runner: playRunner,
-		rhythm: playRhythm,
-		gacha: playGacha,
-		highlow: playHighLow,
-		roulette: playRoulette,
-		suika: playSuika,
-		glassSlide: playGlassSlide,
-		platform: playPlatform,
-		bomber: playBomber,
-		snake: playSnake,
-		stack: playStack,
-		crossing: playCrossing,
-		gomoku: playGomoku,
-		hasami: playHasami,
-		mines: playMines,
-		grass: playGrass,
-		taiko: playTaiko,
-		simon: playSimon,
-		pong: playPong,
-		kurohige: playKurohige,
-		kingyo: playKingyo,
-		puyupuyu: playPuyupuyu,
-		pinball: playPinball,
-		danmaku: playDanmaku,
-		mikiri: playMikiri,
-		mojisagashi: playMojisagashi,
-		clicker: playClicker,
-		doom: playDoom,
-		wangan: playWangan,
-		crane: playCrane,
-		resukui: playResukui,
-		digkiriko: playDigkiriko,
-		patapata: playPatapata,
-		reversi: playReversi,
-		koikoi: playKoikoi,
-		picross: playPicross,
-		soko: playSoko,
-		nineball: playNineball,
-		darts: playDarts,
-		tsuribori: playTsuribori,
-		poker: playPoker,
-		blackjack: playBlackjack,
-		baccarat: playBaccarat,
-		pachinko: playPachinko,
-	};
+/** stake は カジノの 台の はじめの チップ（玉）。ほかの 台は 見ない。 */
+const BOARDS: Record<
+	ArcadeGame,
+	(ctx: UiCtx, stake?: number) => Promise<ArcadeResult | null>
+> = {
+	shooter: playShooter,
+	drive: playDrive,
+	breakout: playBreakout,
+	mole: playMole,
+	fighter: playFighter,
+	slot: playSlot,
+	runner: playRunner,
+	rhythm: playRhythm,
+	gacha: playGacha,
+	highlow: playHighLow,
+	roulette: playRoulette,
+	suika: playSuika,
+	glassSlide: playGlassSlide,
+	platform: playPlatform,
+	bomber: playBomber,
+	snake: playSnake,
+	stack: playStack,
+	crossing: playCrossing,
+	gomoku: playGomoku,
+	hasami: playHasami,
+	mines: playMines,
+	grass: playGrass,
+	taiko: playTaiko,
+	simon: playSimon,
+	pong: playPong,
+	kurohige: playKurohige,
+	kingyo: playKingyo,
+	puyupuyu: playPuyupuyu,
+	pinball: playPinball,
+	danmaku: playDanmaku,
+	mikiri: playMikiri,
+	mojisagashi: playMojisagashi,
+	clicker: playClicker,
+	doom: playDoom,
+	wangan: playWangan,
+	crane: playCrane,
+	resukui: playResukui,
+	digkiriko: playDigkiriko,
+	patapata: playPatapata,
+	reversi: playReversi,
+	koikoi: playKoikoi,
+	picross: playPicross,
+	soko: playSoko,
+	nineball: playNineball,
+	darts: playDarts,
+	tsuribori: playTsuribori,
+	poker: playPoker,
+	blackjack: playBlackjack,
+	baccarat: playBaccarat,
+	pachinko: playPachinko,
+};
 
 /** 筐体を 調べた あと（物の 文は ui/village/facilities.ts が 先に 読む）。 */
 export const arcadeScript = async (
@@ -235,13 +242,19 @@ export const arcadeScript = async (
 		m.best[game] > 0
 			? [fill(ARCADE.record, { best: m.best[game], unit: t.unit })]
 			: [];
-	// ゲームセンターの 筐体は 1プレイ ARCADE_PLAY_YEN 円（財布から。足りなければ 遊べない。途中で やめても もどらない）
-	const paid = ARCADE_HOME[game] === "arcade";
+	// ゲームセンターの 筐体・海の家の スイカ割り・バーの グラス滑らせは 1回 ARCADE_PLAY_YEN 円
+	// （財布から。足りなければ 遊べない。途中で やめても もどらない）。カジノは チップを 買う（ui/arcade/casinoChips.ts）
+	const paid = ["arcade", "umi", "bar"].includes(ARCADE_HOME[game]);
 	const price = yen(ARCADE_PLAY_YEN);
-	const menu = paid
-		? ARCADE.payMenu.map((x) => fill(x, { price }))
-		: ARCADE.menu;
+	const casino = isCasinoGame(game);
+	const menu = casino
+		? casinoMenu(game)
+		: paid
+			? ARCADE.payMenu.map((x) => fill(x, { price }))
+			: ARCADE.menu;
 	if ((await playOrRecord(s, record, menu)) === null) return;
+	const stake = casino ? await buyChips(ctx, s, game, previewing()) : null;
+	if (casino && stake === null) return;
 	if (paid && !spendYen(ARCADE_PLAY_YEN, previewing())) {
 		await s.narrate(fill(ARCADE.short, { price, have: yen(walletYen()) }));
 		return;
@@ -253,10 +266,11 @@ export const arcadeScript = async (
 		saveArcade(m);
 	}
 	await s.wait(0);
-	const play = hooks?.[game] ?? (() => BOARDS[game](ctx));
-	const r = await play();
+	const play = hooks?.[game] ?? ((n?: number) => BOARDS[game](ctx, n));
+	const r = await play(stake ?? undefined);
 	if (!r) {
 		await s.narrate(ARCADE.quit);
+		if (stake !== null) await cashOut(s, game, stake, 0, previewing());
 		return;
 	}
 	const score = nat(r.score);
@@ -269,6 +283,9 @@ export const arcadeScript = async (
 		ctx.se("arcBest");
 		await s.narrate(ARCADE.newBest);
 	}
+	// カジノは 手もとの チップ（玉）を 換金（板が cash を 返さなければ スコアを 手もとと みる）
+	if (stake !== null)
+		await cashOut(s, game, stake, r.cash ?? r.score, previewing());
 	// クレーンゲームで 金の ぷゆゆを とったら、家に ぬいぐるみの 家具が 届く（家を 買って いて、まだ 持って いなければ）
 	if (game === "crane" && !hooks && craneLastWins().includes("puyuGold"))
 		await craneGift(s);

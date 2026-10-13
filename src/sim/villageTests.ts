@@ -120,13 +120,23 @@ import {
 	goalWhy,
 	synopsisHtml,
 } from "../data/story/synopsis";
-import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/town/bath";
+import {
+	BANDAI,
+	BATH_GATE,
+	BATH_MEN,
+	BATH_SOAK,
+	BATH_WOMEN,
+	BATH_YEN,
+} from "../data/town/bath";
 import { SEASONS, season } from "../data/town/calendar";
 import { EAT_MENUS } from "../data/town/eateries";
 import {
 	DRINK_BAR,
+	DRINK_BAR_YEN,
 	FISHING,
 	GROUND_BAT,
+	PAY_SHORT,
+	VEND_YEN,
 	VENDING,
 } from "../data/town/facilities";
 import {
@@ -307,6 +317,7 @@ import {
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
 import { DIR_VEC, type Dir } from "../engine/types";
+import { forgetWalletMemo, walletYen, yen } from "../engine/wallet";
 import { itemIcon } from "../ui/art/icons";
 import { floorsText } from "../ui/bookView";
 import type { Ctx } from "../ui/ctx";
@@ -335,6 +346,7 @@ import {
 	toField,
 	walkDir,
 } from "../ui/minigames/batting";
+import { dishLabel } from "../ui/minigames/eat";
 import { sharedHead } from "../ui/share";
 import {
 	buildCafe,
@@ -345,7 +357,7 @@ import {
 	mixScene,
 	talksWith,
 } from "../ui/village/cafe";
-import { buildFacility } from "../ui/village/facilities";
+import { buildFacility, outdoorScript } from "../ui/village/facilities";
 import { descWindows, shelfWords } from "../ui/village/glossary";
 import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/village/guests";
 import {
@@ -364,6 +376,7 @@ import {
 } from "../ui/village/hallEvents";
 import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
 import {
+	enterBath,
 	enterMusic,
 	enterRoom,
 	isWeekend,
@@ -1844,6 +1857,7 @@ const swapStorage = (write: boolean): (() => void) => {
 	forgetMobMemo();
 	forgetOpeningMemo();
 	forgetHallMemo();
+	forgetWalletMemo();
 	return () => {
 		if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 		else delete (globalThis as { localStorage?: unknown }).localStorage;
@@ -1852,6 +1866,7 @@ const swapStorage = (write: boolean): (() => void) => {
 		forgetMobMemo();
 		forgetOpeningMemo();
 		forgetHallMemo();
+		forgetWalletMemo();
 	};
 };
 
@@ -4329,9 +4344,11 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 				`narrate: ${OPENING.premise[0]}`,
 				"show phono",
 				`narrate: ${OPENING.premise[1]}`,
+				`kiriko voice: ${OPENING.mumble[0]}`,
 				"look nanj",
 				`say nanj: ${OPENING.nanjCall[0]}`,
 				`say nanj: ${OPENING.nanjMouth[2]}`,
+				`kiriko voice: ${OPENING.reply[0]}`,
 				`look ${VILLAGE_SPOTS.exit.join(",")}`,
 				`narrate: ${OPENING.goal[0]}`,
 				"look kiriko",
@@ -4344,11 +4361,9 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 		setProgress(["shallow"]);
 		pushRecord({});
 		ok(!needsOpening(), "the opening plays after a run");
-				`kiriko voice: ${OPENING.mumble[0]}`,
 	});
 });
 
-				`kiriko voice: ${OPENING.reply[0]}`,
 // ───────────────── ぷゆゆ（はじめから いる 子。data/people/mobs.ts の MOBS.puyu） ─────────────────
 
 /** 図鑑を 置く（会った 敵の id と たおした 数）。 */
@@ -7603,6 +7618,19 @@ test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓�
 		);
 		for (const d of m.dishes) {
 			ok(width(d.name) <= 9, `${id}: "${d.name}" is too long for a choice`);
+			// 品書きは「名前　値段」（2026-10-14 有料に。長い 名前は label）
+			ok(
+				width(dishLabel(d)) <= 9,
+				`${id}: "${dishLabel(d)}" is too long for a choice`,
+			);
+			ok(
+				Number.isInteger(d.price) && d.price >= 100 && d.price <= 3000,
+				`${id}.${d.name}: price ${d.price}`,
+			);
+			texts.push([
+				`${id}.short(${d.name})`,
+				fill(m.short, { price: yen(d.price) }),
+			]);
 			ok(
 				d.eat.length >= 1 && d.eat.length <= 2,
 				`${id}.${d.name}: ${d.eat.length} windows`,
@@ -7662,7 +7690,7 @@ test("飲食店で 食べる: 店番は セリフ 1つ → 品書き → 注文 
 			: stall && village.find((e) => e.id === outdoorId(f, stall));
 		ok(who && ev?.run, `${id}: no keeper to talk to`);
 		if (!who || !ev?.run) continue;
-		const menu = `choose ${[...m.dishes.map((d) => d.name), "やめる"].join("/")}`;
+		const menu = `choose ${[...m.dishes.map(dishLabel), "やめる"].join("/")}`;
 		const d = m.dishes[0];
 		const { s, log } = fakeStory({ pick: 0 });
 		await ev.run(s);
@@ -7712,4 +7740,180 @@ test("飲食店で 食べる: 店番は セリフ 1つ → 品書き → 注文 
 			);
 		}
 	}
+});
+
+/** 町の 売り上げ（財布の 元。engine/wallet.ts）を 置く。使った 額は 消さない。 */
+const setTownYen = (points: number): void => {
+	setTown(TOWN_STAGES - 1, points);
+	forgetWalletMemo();
+};
+
+test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目から 品の 値段、足りなければ 店番が 断る", async () => {
+	await withStorageAsync(async () => {
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: [],
+		};
+		const f = facilityById("tako");
+		const m = EAT_MENUS.tako;
+		const stall = f?.outdoor?.find((t) => t.play === "eat" && t.sprite);
+		const ev =
+			f &&
+			stall &&
+			(buildVillage(view, {} as Ctx).events ?? []).find(
+				(e) => e.id === outdoorId(f, stall),
+			);
+		ok(ev?.run, "no tako keeper");
+		if (!ev?.run) return;
+		const d = m.dishes[0];
+		setTownYen(d.price + 100);
+		const { s, log } = fakeStory({ pick: 0 });
+		// 1回目：払わない（お代は ええ）
+		await ev.run(s);
+		ok(
+			!log.includes("se arcCoin") && log.includes(`say nanj: ${m.free}`),
+			`free:\n${log.join("\n")}`,
+		);
+		ok(walletYen() === d.price + 100, `wallet ${walletYen()}`);
+		// 2回目：注文の 前に 払う
+		log.length = 0;
+		await ev.run(s);
+		ok(
+			inOrder(log, [
+				"se arcCoin",
+				`say nanj: ${fill(m.order, { dish: d.name })}`,
+				"se eat",
+			]) && !log.includes(`say nanj: ${m.free}`),
+			`paid:\n${log.join("\n")}`,
+		);
+		ok(walletYen() === 100, `wallet ${walletYen()}`);
+		// 3回目：足りない（何も 出ない）
+		log.length = 0;
+		await ev.run(s);
+		ok(
+			log.includes(`say nanj: ${fill(m.short, { price: yen(d.price) })}`) &&
+				!log.includes("se eat") &&
+				!log.includes("se arcCoin"),
+			`short:\n${log.join("\n")}`,
+		);
+		ok(walletYen() === 100, `wallet ${walletYen()}`);
+		forgetWalletMemo();
+	});
+});
+
+test("有料の 寄り道（2026-10-14）: 自販機と ドリンクバーは 1杯ごとに 払う・足りなければ 何も 出ない、窓は 収まる", async () => {
+	fitsWindow([
+		["pay short", fill(PAY_SHORT, { price: yen(1500), have: yen(99_999) })],
+	]);
+	for (const x of [...VENDING.menu, ...DRINK_BAR.menu])
+		ok(width(fill(x, { price: yen(300) })) <= 9, `${x} is too long`);
+	await withStorageAsync(async () => {
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: [],
+		};
+		const vf = FACILITIES.find((f) =>
+			(f.outdoor ?? []).some((t) => t.play === "vend"),
+		);
+		const vt = vf?.outdoor?.find((t) => t.play === "vend");
+		ok(vf && vt, "no vending machine");
+		if (!vf || !vt) return;
+		const vend = outdoorScript({} as Ctx, vf, vt);
+		const fam = facilityById("famires");
+		const bar =
+			fam &&
+			(buildFacility(fam, view, {} as Ctx).events ?? []).find(
+				(e) => e.id === "drinkbar_0",
+			);
+		ok(bar?.run, "no drink bar");
+		if (!bar?.run) return;
+		setTownYen(VEND_YEN + DRINK_BAR_YEN);
+		const a = fakeStory({ pick: 0 });
+		await vend(a.s);
+		ok(
+			inOrder(a.log, [
+				`choose ${VENDING.menu.map((x) => fill(x, { price: yen(VEND_YEN) })).join("/")}`,
+				"se arcCoin",
+				`narrate: ${VENDING.drank}`,
+			]),
+			`vend:\n${a.log.join("\n")}`,
+		);
+		ok(walletYen() === DRINK_BAR_YEN, `wallet ${walletYen()}`);
+		const b = fakeStory({ pick: 0 });
+		await bar.run(b.s);
+		ok(
+			inOrder(b.log, [
+				`choose ${DRINK_BAR.menu.map((x) => fill(x, { price: yen(DRINK_BAR_YEN) })).join("/")}`,
+				"se arcCoin",
+				`narrate: ${DRINK_BAR.drank}`,
+			]),
+			`drink bar:\n${b.log.join("\n")}`,
+		);
+		ok(walletYen() === 0, `wallet ${walletYen()}`);
+		// 足りない
+		const c = fakeStory({ pick: 0 });
+		await vend(c.s);
+		ok(
+			c.log.at(-1) ===
+				`narrate: ${fill(PAY_SHORT, { price: yen(VEND_YEN), have: yen(0) })}` &&
+				!c.log.includes(`narrate: ${VENDING.drank}`),
+			`vend short:\n${c.log.join("\n")}`,
+		);
+		// やめる なら 払わない
+		setTownYen(VEND_YEN + DRINK_BAR_YEN + 500);
+		const q = fakeStory({ pick: 1 });
+		await bar.run(q.s);
+		ok(!q.log.includes("se arcCoin") && walletYen() === 500, "quit pays");
+		forgetWalletMemo();
+	});
+});
+
+test("有料の 寄り道（2026-10-14）: 銭湯は 村に いる あいだ 1回 入湯料、足りない・やめる なら 1歩 もどる", async () => {
+	const price = yen(BATH_YEN);
+	fitsWindow([["bath gate", fill(BATH_GATE.ask, { price })]]);
+	for (const x of BATH_GATE.menu)
+		ok(width(fill(x, { price })) <= 9, `${x} is too long`);
+	await withStorageAsync(async () => {
+		setTownYen(BATH_YEN - 1);
+		const menu = `choose ${BATH_GATE.menu.map((x) => fill(x, { price })).join("/")}`;
+		const a = fakeStory({ pick: 0 });
+		await enterBath(a.s);
+		ok(
+			inOrder(a.log, [
+				`narrate: ${fill(BATH_GATE.ask, { price })}`,
+				menu,
+				`narrate: ${fill(PAY_SHORT, { price, have: yen(BATH_YEN - 1) })}`,
+				"move player d",
+			]) && !a.log.some((l) => l.startsWith("warp")),
+			`short:\n${a.log.join("\n")}`,
+		);
+		setTownYen(BATH_YEN * 2);
+		const b = fakeStory({ pick: 1 });
+		await enterBath(b.s);
+		ok(
+			b.log.at(-1) === "move player d" && walletYen() === BATH_YEN * 2,
+			`quit:\n${b.log.join("\n")}`,
+		);
+		const { s, log } = fakeStory({ pick: 0 });
+		await enterBath(s);
+		ok(
+			inOrder(log, [menu, "se arcCoin", "fadeOut"]) &&
+				log.some((l) => l.startsWith("warp bath")),
+			`paid:\n${log.join("\n")}`,
+		);
+		ok(walletYen() === BATH_YEN, `wallet ${walletYen()}`);
+		// 2回目は 払わずに 入る
+		log.length = 0;
+		await enterBath(s);
+		ok(
+			!log.includes(menu) &&
+				!log.includes("se arcCoin") &&
+				log.some((l) => l.startsWith("warp bath")),
+			`again:\n${log.join("\n")}`,
+		);
+		ok(walletYen() === BATH_YEN, `wallet ${walletYen()}`);
+		forgetWalletMemo();
+	});
 });

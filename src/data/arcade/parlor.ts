@@ -1,6 +1,8 @@
 // カジノ「ガチャ」の 台と、海の家・バーの 遊びの 決まり（板＝ui/arcade/arcadeParlor.ts は 描く だけ）。
 // data/arcade/logic.ts と 同じく 状態 + step(状態, 秒, 入力, 乱数) の 形（src/sim/arcadeTests.ts が 回す）。
-// カジノの チップは 店が 貸す 遊びの チップ（ゴールドとは 別。席を 立つと 返す）。スコアは 手もとに 持った いちばん 多い 枚数。
+// カジノの チップは 財布の お金で 買い、席を 立つと 換金する（2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。
+// 1枚 100円。ui/arcade/casinoChips.ts）。はじめの 枚数は 買った 枚数（xxStart の 引数）。
+// スコアは 手もとに 持った いちばん 多い 枚数、換金は やめた ときの 手もと（xxCash）。
 
 import type { Rnd } from "./logic";
 
@@ -85,9 +87,9 @@ export type GcEvent =
 	| "lose"
 	| "bust";
 
-export const gcStart = (): GcState => ({
-	chips: GC.start,
-	best: GC.start,
+export const gcStart = (chips: number = GC.start): GcState => ({
+	chips,
+	best: chips,
 	phase: "idle",
 	t: 0,
 	reels: ["N", "R", "SR"],
@@ -249,9 +251,9 @@ export type HlEvent = "bet" | "pick" | "flip" | HlOutcome | "take" | "bust";
 
 export const hlDraw = (rnd: Rnd): number => 1 + Math.floor(rnd() * 13);
 
-export const hlStart = (rnd: Rnd): HlState => ({
-	chips: HL.start,
-	best: HL.start,
+export const hlStart = (rnd: Rnd, chips: number = HL.start): HlState => ({
+	chips,
+	best: chips,
 	bet: 1,
 	pot: 0,
 	streak: 0,
@@ -285,6 +287,9 @@ export const hlCash = (pot: number): number => Math.floor(pot + 1e-9);
 /** やめた ときも 賭けて いる 分は 手もとに（降りたのと 同じ）。 */
 export const hlScore = (s: HlState): number =>
 	Math.max(s.best, s.chips + hlCash(s.pot));
+
+/** やめた ときに 換金する 枚数（賭けて いる 分は 降りたのと 同じ）。 */
+export const hlLeft = (s: HlState): number => s.chips + hlCash(s.pot);
 
 const hlTake = (s: HlState, ev: HlEvent[]): void => {
 	s.chips = Math.min(HL.cap, s.chips + hlCash(s.pot));
@@ -481,9 +486,9 @@ export type RlInput = {
 	spin: boolean;
 };
 
-export const rlStart = (): RlState => ({
-	chips: RL.start,
-	best: RL.start,
+export const rlStart = (chips: number = RL.start): RlState => ({
+	chips,
+	best: chips,
 	bets: rlNoBets(),
 	lastBets: rlNoBets(),
 	amount: 1,
@@ -498,6 +503,10 @@ export const rlStart = (): RlState => ({
 	spins: 0,
 	over: false,
 });
+
+/** やめた ときに 換金する 枚数（回す 前に 置いた 分は もどす。回って いる 間の 賭けは 返らない）。 */
+export const rlLeft = (s: RlState): number =>
+	s.chips + (s.phase === "bet" ? rlTotal(s.bets) : 0);
 
 /** 止まった 数。 */
 export const rlNumber = (s: RlState): number =>

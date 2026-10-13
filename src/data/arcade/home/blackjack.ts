@@ -85,8 +85,8 @@ export type BjInput = {
 };
 export type BjEvent = "bet" | "deal" | "card" | "open" | BjResult;
 
-export const bjStart = (): BjState => ({
-	chips: BJ.start,
+export const bjStart = (chips: number = BJ.start): BjState => ({
+	chips,
 	bet: 1,
 	stake: 0,
 	phase: "bet",

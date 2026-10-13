@@ -1,5 +1,6 @@
 // カジノ「ガチャ」の CRおんJタウン（pachinko）の 決まり。板は ui/arcade/home/pachinko.ts、文は data/arcade/text.ts。
-// - 遊びの 玉を 200発 借りる。A を 押しっぱなし（タップは 打つ／止めるの 切りかえ）で 1発ずつ 打つ。↑↓ で 打つ 強さ。
+// - 財布の お金で 玉を 買う（1発 4円。ui/arcade/casinoChips.ts。2026-10-14 作者：「お金を 賭けない 方針は 撤廃」）。
+//   A を 押しっぱなし（タップは 打つ／止めるの 切りかえ）で 1発ずつ 打つ。↑↓ で 打つ 強さ。
 // - 玉は 右上から 左へ 飛びだし、釘に はねて 下へ。下の はしまで 行くと 消える。
 // - まんなかの 下の ヘソに 入ると 3発 もどり、液晶の 絵が 回る（保留は 4つまで）。
 //   絵は 村の もの：ぷゆゆ（4色）・キリコの 蓄音機・草・>>1。
@@ -182,8 +183,8 @@ export const pcNails = (): [number, number][] => {
 	return out;
 };
 
-export const pcStart = (): PcState => ({
-	balls: PC.start,
+export const pcStart = (balls: number = PC.start): PcState => ({
+	balls,
 	shot: 0,
 	paid: 0,
 	power: 0.5,
