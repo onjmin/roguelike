@@ -11,6 +11,7 @@ import {
 	type CrowdNode,
 	crowdLine,
 	crowdSize,
+	PACE,
 	PERSONAS,
 	type PedCost,
 	type Persona,
@@ -167,7 +168,11 @@ export class Crowd {
 			persona,
 			route,
 			to,
-			ms: between(this.rng, persona.ms),
+			// 人ごとの 速さの くせ（せかせか・ふつう・のんびり。data/village/crowd.ts の PACE）
+			ms: Math.round(
+				between(this.rng, persona.ms) *
+					PACE[Math.floor(this.rng() * PACE.length) % PACE.length],
+			),
 			blocked: 0,
 			rerouted: false,
 			stay: 0,

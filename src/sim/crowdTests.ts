@@ -227,6 +227,31 @@ test("流れ：出てくるのは 扉・家・出口から。朝は 職場へ �
 			);
 });
 
+test("よく 出入りする 所：看護師は 病院、学生は 遊び場の 中でも ゲームセンターなどへ 多く 行く。名前は どれも 実在の 施設", () => {
+	const rng = seeded(7);
+	const nodes = crowdNodes(view(7));
+	const places = new Set<string>();
+	for (let st = 0; st < TOWN_STAGES; st++)
+		for (const n of crowdNodes(view(st))) if (n.place) places.add(n.place);
+	for (const p of PERSONAS)
+		for (const ids of Object.values(p.haunts ?? {}))
+			for (const id of ids ?? [])
+				ok(places.has(id), `${p.id}: no ${id} on any map`);
+	// 看護師の 行き先・出る 所で、病院・診療所の 割合が 病院の 扉の 割合より ずっと 多い
+	let care = 0;
+	let hosp = 0;
+	for (let i = 0; i < 3000; i++) {
+		const t = pickTrip(rng, nodes, "day", false);
+		if (t?.persona.id !== "nurse") continue;
+		for (const n of [t.from, t.to])
+			if (n.kind === "care") {
+				care++;
+				if (n.place === "hospital" || n.place === "clinic") hosp++;
+			}
+	}
+	ok(care > 0 && hosp / care >= 0.6, `nurse at the hospital ${hosp}/${care}`);
+});
+
 /** 村の 窓（全角 22字・2行）に 収まるか（villageTests.ts の fitsWindow と 同じ 数え方）。 */
 const width = (line: string): number =>
 	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);

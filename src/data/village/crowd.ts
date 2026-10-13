@@ -90,6 +90,8 @@ export type CrowdNode = {
 	stay?: readonly [number, number];
 	/** 立ったあと 乗って いく（消える。バス停・タクシー乗り場）。 */
 	board?: boolean;
+	/** 施設の 扉なら その 施設（data/village/facilities.ts の id）か 町の まんなかの 扉の id。 */
+	place?: string;
 };
 
 /** 施設の 扉の 行き先（data/village/facilities.ts の id。のっていない 施設には 人は 入らない）。 */
@@ -330,7 +332,14 @@ export const crowdNodes = (v: VillageView): CrowdNode[] => {
 		}
 		const f = facilityOfDoor(p.id);
 		const kind = f ? FACILITY_KIND[f.id] : CORE_DOOR_KIND[p.id];
-		if (kind) out.push({ id: p.id, at: [p.x, p.y], kind, enter: true });
+		if (kind)
+			out.push({
+				id: p.id,
+				at: [p.x, p.y],
+				kind,
+				enter: true,
+				place: f?.id ?? p.id,
+			});
 	}
 	// 住宅街の 家（入れない 家。表札の 1つ下から 上を 向いて 入る）
 	for (const f of facilitiesAt(stage)) {
@@ -528,8 +537,16 @@ export type Persona = {
 	label: string;
 	/** 歩行グラ（RPGEN。下の 敵・村の 名前の ある 人と 同じ 絵は 使わない）。 */
 	sprites: readonly string[];
-	/** 1マス 歩く ms（この あいだで ばらける）。 */
+	/**
+	 * 1マス 歩く ms（この あいだで ばらける。2026-10-13 作者：「歩く 速度を それぞれ 別々に」。
+	 * 人ごとに さらに PACE を かける：せかせか・ふつう・のんびり）。
+	 */
 	ms: readonly [number, number];
+	/**
+	 * よく 出入りする 所（2026-10-13 作者：「スプライトに よって 出てくる・入る 建物に 偏りを」。
+	 * 看護師なら 病院まわり）。その 種類の 行き先・出る 所を 選ぶ とき、ここの 施設を HAUNT_W 倍 選びやすい。
+	 */
+	haunts?: Partial<Record<CrowdKind, readonly string[]>>;
 	/** 時間帯ごとの 出やすさ（週末は weekend を かける）。 */
 	share: Record<TimeBand, number>;
 	weekend: number;
@@ -549,7 +566,13 @@ export const PERSONAS: readonly Persona[] = [
 		label: "会社員",
 		// RPGEN「サラリーマン1・2」
 		sprites: ["sa:Rn1eai", "sa:dID4NE"],
-		ms: [190, 230],
+		ms: [170, 220],
+		haunts: {
+			work: ["townhall", "cityhall", "factory", "tvstudio", "court", "power"],
+			food: ["soba", "gyudon", "izakaya", "ramen"],
+			fun: ["bar"],
+			transit: ["station"],
+		},
 		share: { late: 0.5, morning: 3, day: 1.2, evening: 3, night: 1.2 },
 		weekend: 0.3,
 		flows: {
@@ -606,7 +629,12 @@ export const PERSONAS: readonly Persona[] = [
 		label: "学生",
 		// RPGEN「男の子・女の子（ポケモンRS）」「男の子2・女の子2」「優しい少年」
 		sprites: ["sa:XW7bn0", "sa:zBfcrg", "sa:0JtTLF", "sa:CliSpf", "sa:mLHxrK"],
-		ms: [170, 210],
+		ms: [150, 210],
+		haunts: {
+			fun: ["arcade", "go", "dojo", "cinema", "gym", "door_music"],
+			food: ["famires", "ramen", "door_cafe"],
+			shop: ["konbini", "door_books"],
+		},
 		share: { late: 0, morning: 1.5, day: 0.6, evening: 1.5, night: 0.3 },
 		weekend: 3,
 		flows: {
@@ -654,7 +682,12 @@ export const PERSONAS: readonly Persona[] = [
 		label: "住人",
 		// RPGEN「通行人」「女村人」「青年ブラウン」「赤い少女」
 		sprites: ["sa:y9WrTy", "sa:gb0HD8", "sa:RH1eyq", "sa:jkswZA"],
-		ms: [200, 250],
+		ms: [190, 260],
+		haunts: {
+			shop: ["konbini", "recycle", "pawn"],
+			food: ["umi", "chuka", "famires", "sushi"],
+			care: ["clinic"],
+		},
 		share: { late: 0.3, morning: 1, day: 2.5, evening: 1.5, night: 0.8 },
 		weekend: 1.3,
 		flows: {
@@ -702,7 +735,12 @@ export const PERSONAS: readonly Persona[] = [
 		label: "おばあさん",
 		// RPGEN「婆さん」
 		sprites: ["sa:fUn9JD"],
-		ms: [260, 320],
+		ms: [280, 360],
+		haunts: {
+			care: ["clinic", "hospital"],
+			fun: ["door_bath", "go"],
+			shop: ["pawn", "door_books"],
+		},
 		share: { late: 0, morning: 1.5, day: 1.5, evening: 0.5, night: 0.1 },
 		weekend: 1,
 		flows: {
@@ -737,7 +775,11 @@ export const PERSONAS: readonly Persona[] = [
 		id: "nanashi",
 		label: "名無し",
 		sprites: NANASHI_WALKS,
-		ms: [180, 230],
+		ms: [160, 240],
+		haunts: {
+			fun: ["arcade", "casino", "door_music", "cinema"],
+			food: ["door_cafe", "gyudon", "ramen"],
+		},
 		share: { late: 2, morning: 1, day: 1.2, evening: 1.2, night: 2 },
 		weekend: 1.2,
 		flows: {
@@ -793,7 +835,8 @@ export const PERSONAS: readonly Persona[] = [
 		label: "看護師",
 		// RPGEN「ナース」
 		sprites: ["sa:Ksa5dI"],
-		ms: [180, 220],
+		ms: [150, 190],
+		haunts: { care: ["hospital", "clinic"], food: ["konbini", "famires"] },
 		share: { late: 0.3, morning: 0.4, day: 0.3, evening: 0.4, night: 0.3 },
 		weekend: 1,
 		flows: {
@@ -828,7 +871,8 @@ export const PERSONAS: readonly Persona[] = [
 		label: "ダジャレニキ",
 		// RPGEN「父」（ほかの 人・敵・店番と かぶらない。src/sim/folkTests.ts の F10）
 		sprites: ["sa:2GAYAx"],
-		ms: [200, 240],
+		ms: [200, 270],
+		haunts: { fun: ["theater", "bar"], food: ["izakaya", "sushi"] },
 		share: { late: 0.1, morning: 0.2, day: 0.5, evening: 0.4, night: 0.3 },
 		weekend: 1.2,
 		flows: {
@@ -875,6 +919,28 @@ export const personaById = (id: PersonaId): Persona =>
 // ───────────────── 流れを 選ぶ ─────────────────
 
 export type Trip = { persona: Persona; from: CrowdNode; to: CrowdNode };
+
+/** よく 出入りする 所を 選ぶ 重み（ほかの 所は 1）。 */
+export const HAUNT_W = 6;
+
+/** 人ごとの 歩く 速さの くせ（ms に かける。せかせか・ふつう・のんびり）。 */
+export const PACE: readonly number[] = [0.75, 1, 1, 1.3];
+
+/** その 人が その 種類の 所を 選ぶ（よく 出入りする 所は 重く）。 */
+const pickNode = (
+	rng: () => number,
+	p: Persona,
+	kind: CrowdKind,
+	xs: readonly CrowdNode[],
+): CrowdNode => {
+	const likes = p.haunts?.[kind] ?? [];
+	return (
+		pickW(
+			rng,
+			xs.map((n) => [n, likes.includes(n.place ?? "") ? HAUNT_W : 1] as const),
+		) ?? pick(rng, xs)
+	);
+};
 
 /** 行き先の 種類に 合う 所（家・駅が 無い 段は 村の 出口：外に 住む 人・外から 来る 人）。 */
 const nodesOf = (nodes: readonly CrowdNode[], kind: CrowdKind): CrowdNode[] => {
@@ -937,13 +1003,15 @@ export const pickTrip = (
 		flowsFor(persona, band, nodes).map((f) => [f, f[2]] as const),
 	);
 	if (!flow) return null;
-	const from = pick(
+	const from = pickNode(
 		rng,
+		persona,
+		flow[0],
 		nodesOf(nodes, flow[0]).filter((n) => n.enter),
 	);
 	const tos = nodesOf(nodes, flow[1]).filter((n) => n.id !== from.id);
 	if (!tos.length) return null;
-	return { persona, from, to: pick(rng, tos) };
+	return { persona, from, to: pickNode(rng, persona, flow[1], tos) };
 };
 
 /** 立ちどまった あとの 行き先（その 人の いまの 時間帯の 流れの 行き先から。無ければ 出口）。 */
@@ -960,7 +1028,11 @@ export const pickNext = (
 	const kind = pickW(rng, kinds) ?? "edge";
 	const tos = nodesOf(nodes, kind).filter((n) => n.id !== here.id && n.enter);
 	const any = nodes.filter((n) => n.enter && n.id !== here.id);
-	return tos.length ? pick(rng, tos) : any.length ? pick(rng, any) : null;
+	return tos.length
+		? pickNode(rng, persona, kind, tos)
+		: any.length
+			? pick(rng, any)
+			: null;
 };
 
 /** 話しかけた ときの ひとこと（その 時間帯の ひとことが あれば 半分は そちら）。 */
