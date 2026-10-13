@@ -914,13 +914,13 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// ボカロ作り避難所：荒らしの あとの 静かな 避難所（電子の 格子）
 	vocalo: { theme: "lattice", bgm: "tense", ambient: "data" },
 	// 水星の 名無しの 板：青白い 水晶と 氷の 曲
-	mercury: { theme: "crystal", bgm: "deq_ice", ambient: "glitter" },
+	mercury: { theme: "crystal", bgm: "mercury", ambient: "glitter" },
 	// 沈んだ ムー大陸：水底の 遺跡（水底に さす 光）
-	onmu: { theme: "ruins", bgm: "deq_sea", ambient: "spores" },
+	onmu: { theme: "ruins", bgm: "deq_mu", ambient: "spores" },
 	// キムチの 赤：張りつめた 曲
-	onkimu: { theme: "forge", bgm: "tense", ambient: "embers" },
+	onkimu: { theme: "forge", bgm: "kimchi", ambient: "embers" },
 	// 闇の 塔：短調の バイオリン
-	inferno: { theme: "cyber", bgm: "lastboss", ambient: "data" },
+	inferno: { theme: "cyber", bgm: "inferno", ambient: "data" },
 };
 
 // ───────────────── 目的の品 ─────────────────

@@ -65,6 +65,11 @@
 // はじめ 14（−1 dB）に したが、裏の 小島1で まだ うるさいと 言われて 12 に 下げた）
 // dtm 2.1.29 から studio.play でも #reverb= などの 全体の 残響と #drumfont= が 鳴る（それまでは 無視されていた）。
 // 上げた ときに 全曲 測り直したが、どれも 目標から ±0.8 以内（boss +0.8・lastboss +0.6・ending +0.5、ほかは ±0.5）なので 直していない。
+// | mercury      | -25.0（10）    | 10 → 12 | -23.4（比例。13 で -22.7） |
+// | kimchi       | -29.4（10）    | 10 → 20 | -23.4（比例。21 で -23.0） |
+// | deq_mu       | -32.6（20）    | 20 → 56 | -23.7（比例。60 で -23.1） |
+// | inferno      | -31.1（20）    | 20 → 48 | -23.5（比例。51 で -23.0） |
+// （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
 
@@ -87,6 +92,7 @@ import deep6 from "./bgm/deep6.mml?raw"; // もっと B30 つづきの原盤：�
 // Dequivsia 系の 試作 v2（2026-09。作曲エージェントの 試作。ループは 曲全体＝前奏なし。音色を 替えた v3 を 作っているので、1曲 1ファイルで 差し替えやすく してある）
 import deq_ice from "./bgm/deq_ice.mml?raw"; // 薄氷の回廊（氷系）：ホ短調 100・ambient_cloud（ベースの 3+3+2 オスティナート・チェレスタの 点・ビブラフォンの 旋律。中盤に 借用の F）
 import deq_laundry from "./bgm/deq_laundry.mml?raw"; // 乾燥機がまわるあいだ（夜のコインランドリー系）：ハ短調 70・ambient_cloud（電子ピアノの 3+3+2 の 刻みが 乾燥機の 回転。C の 持続の 上で sus2→m7→sus4→madd9）
+import deq_mu from "./bgm/deq_mu.mml?raw"; // おんMu 沈んだ大陸の空港：ニ・ドリア 92・ambient_cloud（ビブラフォンの 旋律・チェレスタの 空港チャイム。打楽器なし。2026-10-13 書き下ろし）
 import deq_sea from "./bgm/deq_sea.mml?raw"; // 水底にさす光（海の底系）：ニ・ミクソリディア 126・ambient_cloud（Dsus2 と Csus2 を 2小節ずつ 揺らす。チェレスタの 積み5度・ビブラフォンの 疎な 旋律）
 import deq_strata from "./bgm/deq_strata.mml?raw"; // ずれる地層（断層系）：イの 空5度 100・ambient_cloud（和音・低音・動機が 半音／全音ずつ 平行移動。中盤は 低音が 8分 ずれる。ハープ・チェロ・ビブラフォン）
 import deq_volcano from "./bgm/deq_volcano.mml?raw"; // 活火山の底（活火山系）：ホ・フリギア 132（半分の ノリ）・ambient_cloud（低音が F→E→D を 2小節周期で 下りつづける。4小節ごとに 脈動の 細かさが 変わる）
@@ -99,10 +105,13 @@ import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 // お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
 // 離島板＝island（もとは deq_sea。2026-10-05 の 5曲目。dtm 2.1.32 の 音色 ep_celesta を 使うので dtm を 上げた）
 import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音
+import inferno from "./bgm/inferno.mml?raw"; // †闇の板† 闇の塔：ニ短調（和声的） 150・orchestra・8beat（オルガンの 旋律・合唱・弦の 刻み。2026-10-13 書き下ろし）
 import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたらテンション上がりそうなサビ」：ニ長調 131・ビブラフォン・チェレスタ・エレピ（前奏 12 小節）
+import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
+import mercury from "./bgm/mercury.mml?raw"; // post/1318 の >>22 16eab4aec9bf4699「Speder2風」：118・ep_celesta（ビブラフォン・チェレスタ・オルゴール）→ マーキュリー
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
 // うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）。アップテンポなので 序盤ではなく、
@@ -157,4 +166,8 @@ export const bgm: Record<string, string> = {
 	kouseki,
 	speder2,
 	island,
+	mercury,
+	kimchi,
+	deq_mu,
+	inferno,
 };
