@@ -69,6 +69,9 @@
 // | kimchi       | -29.4（10）    | 10 → 20 | -23.4（比例。21 で -23.0） |
 // | deq_mu       | -32.6（20）    | 20 → 56 | -23.7（比例。60 で -23.1） |
 // | inferno      | -31.1（20）    | 20 → 48 | -23.5（比例。51 で -23.0） |
+// | piropiro     | -33.8（7）     | 7 → 24  | -23.0    |
+// | tekitou      | -25.1（28）    | 28 → 36 | -23.0    |
+// | touhoufu     | -23.2（50）    | 50 → 47 | -23.8    |
 // （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
@@ -112,6 +115,7 @@ import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
 import mercury from "./bgm/mercury.mml?raw"; // post/1318 の >>22 16eab4aec9bf4699「Speder2風」：118・ep_celesta（ビブラフォン・チェレスタ・オルゴール）→ マーキュリー
+import piropiro from "./bgm/piropiro.mml?raw"; // post/1318 の >>15 b3fc594fb9954004「ﾋﾟﾛﾋﾟﾛﾋﾟﾛﾋﾟﾛﾋﾟの部分がいいらしい」：acoustic・dance → ひまわり諸島
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
 // うんｊレゼ の 名無し155 の曲（使ってよい曲として もらったもの）。アップテンポなので 序盤ではなく、
@@ -122,8 +126,10 @@ import sad from "./bgm/sad.mml?raw"; // 155deb066bc94429「イ短調（Aマイ�
 import shallow3 from "./bgm/shallow3.mml?raw"; // ちょっと B10 過去ログ倉庫：ホ短調 112・fantasy_rpg（ハープの雪、打楽器なし）
 import speder2 from "./bgm/speder2.mml?raw"; // 6375「Speder2リスペクト」：嬰ハ短調 110・retro_game・dance（ビブラフォン・エレピ・オルゴール）
 import stone from "./bgm/stone.mml?raw"; // 本編 B3〜4・ちょっと B3〜4 dat の石室：イ短調 104・acoustic・shuffle（足音の 動機）
+import tekitou from "./bgm/tekitou.mml?raw"; // post/1318 の >>6 6eed5b1ef8394472「適当歌詞」：150・acoustic・disco（歌詞行は 鳴らさない）→ ボカロ作り避難所
 import tense from "./bgm/tense.mml?raw"; // 1d9e7eed2db44ce7「荒ぶるメロディライン」
 import title from "./bgm/title.mml?raw"; // 6c5cd6e3edc4433b「ゲーム音楽っぽい何か」
+import touhoufu from "./bgm/touhoufu.mml?raw"; // post/1318 の >>5 2901c31452f0484d「東方風（メロディライン微改変）」：134・piano・16beat → だらだら諸島
 import town from "./bgm/town.mml?raw"; // 2826c0b1ce744003「？」
 import white from "./bgm/white.mml?raw"; // 本編 B16〜17 あぼーんの白野：変ホ短調 130・synth_pop・dance
 
@@ -170,4 +176,7 @@ export const bgm: Record<string, string> = {
 	kimchi,
 	deq_mu,
 	inferno,
+	piropiro,
+	tekitou,
+	touhoufu,
 };

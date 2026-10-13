@@ -901,10 +901,10 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 		ambient: "glitter",
 		zones: OPUNU_ZONES,
 	},
-	// 乗っ取られた 小島：夏の 浜・夜の 洞（氷の 曲）・鯖代の 切れかけた 岩山（張りつめた 曲）
-	isle1: { theme: "beach", bgm: "island", ambient: "glitter" },
+	// 乗っ取られた 小島：夏の 浜（にぎやかな 曲）・夜の 洞（氷の 曲）・鯖代の 切れかけた 岩山（ピアノの 16ビート）
+	isle1: { theme: "beach", bgm: "piropiro", ambient: "glitter" },
 	isle2: { theme: "stone", bgm: "deq_ice", ambient: "snow" },
-	isle3: { theme: "lattice", bgm: "tense", ambient: "data" },
+	isle3: { theme: "lattice", bgm: "touhoufu", ambient: "data" },
 	// 野球chの 跡地：2012年の 層を 下へ
 	ato: { theme: "stone", bgm: "deep1", ambient: "dust", zones: ATO_ZONES },
 	// 避難J：だれも いない 避難所（沈んだ スレの 曲）
@@ -912,7 +912,7 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// 1901年の スレ：日付を 下へ（2012年 → 1901年）
 	y1901: { theme: "stone", bgm: "deep1", ambient: "dust", zones: Y1901_ZONES },
 	// ボカロ作り避難所：荒らしの あとの 静かな 避難所（電子の 格子）
-	vocalo: { theme: "lattice", bgm: "tense", ambient: "data" },
+	vocalo: { theme: "lattice", bgm: "tekitou", ambient: "data" },
 	// 水星の 名無しの 板：青白い 水晶と 氷の 曲
 	mercury: { theme: "crystal", bgm: "mercury", ambient: "glitter" },
 	// 沈んだ ムー大陸：水底の 遺跡（水底に さす 光）
