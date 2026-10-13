@@ -22,7 +22,9 @@ export const FISHING = {
  * 板の 中の 文は data/minigames/batting.ts。ここは 板を 閉じた あとの 窓。
  */
 export const GROUND_BAT = {
-	menu: ["1打席", "ホームラン競争", "やめる"],
+	menu: ["1打席", "ホームラン競争", "ハイスコアを　見る", "やめる"],
+	/** ハイスコア（ホームラン競争の 自己ベスト）。 */
+	record: "ホームラン競争の　自己ベスト：{best}本。",
 	title: "おんJタウン　グラウンド",
 	derbyTitle: "おんJタウン　ホームラン競争",
 	pitcher: "やきう",

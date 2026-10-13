@@ -15,6 +15,7 @@ import {
 import { devEvent } from "../../data/story/objectives";
 import type { Story } from "../../engine/defs";
 import type { UiCtx } from "../list";
+import { playOrRecord } from "../minigames/playMenu";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
 import {
@@ -154,9 +155,11 @@ export const arcadeScript = async (
 ): Promise<void> => {
 	const t = ARCADE_TEXT[game];
 	const m = loadArcade();
-	if (m.best[game] > 0)
-		await s.narrate(fill(ARCADE.record, { best: m.best[game], unit: t.unit }));
-	if ((await s.choose([...ARCADE.menu], { cancel: 1 })) !== 0) return;
+	const record =
+		m.best[game] > 0
+			? [fill(ARCADE.record, { best: m.best[game], unit: t.unit })]
+			: [];
+	if ((await playOrRecord(s, record, ARCADE.menu)) === null) return;
 	if (!m.tutored.includes(game)) {
 		await s.narrate(t.rule);
 		m.tutored.push(game);

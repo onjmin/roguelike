@@ -41,6 +41,7 @@ import type { EventDef, Story } from "../../engine/defs";
 import { loadTown } from "../../engine/save";
 import type { Dir } from "../../engine/types";
 import type { Ctx } from "../ctx";
+import { playOrRecord } from "../minigames/playMenu";
 import { returnAt } from "../village/guests";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
@@ -229,9 +230,9 @@ const nag = async (s: Story, now: SabaNow, sv: SabaSave): Promise<void> => {
 
 /** ブラマイ場。 */
 const mine = async (ctx: Ctx, s: Story, sv: SabaSave): Promise<void> => {
-	if (sv.mine.best > 0)
-		await s.narrate(fill(X.mineRecord, { n: sv.mine.best }));
-	if ((await s.choose([...X.mineMenu], { cancel: 1 })) !== 0) return;
+	const record =
+		sv.mine.best > 0 ? [fill(X.mineRecord, { n: sv.mine.best })] : [];
+	if ((await playOrRecord(s, record, X.mineMenu)) === null) return;
 	await s.wait(0);
 	const r = await playMine(ctx);
 	if (!r) return;

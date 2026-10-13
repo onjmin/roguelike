@@ -879,7 +879,7 @@ test(
 			const M = BS_MSG.ww;
 			setBushitsuEnv({ returnAt: () => 1000 });
 			const menu = `choose: ${M.menu.join("/")}`;
-			const quit = await examine("table", [2]);
+			const quit = await examine("table", [3]);
 			ok(
 				quit.join("\n") === [...thingLines("table"), menu].join("\n"),
 				`quit:\n${quit.join("\n")}`,

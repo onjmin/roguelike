@@ -39,6 +39,7 @@ import type { Story } from "../../engine/defs";
 import { loadRecords } from "../../engine/save";
 import type { Ctx } from "../ctx";
 import type { UiCtx } from "../list";
+import { playOrRecord } from "../minigames/playMenu";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
 import {
@@ -207,8 +208,8 @@ export const isGoWari = (r: Record3): boolean => r.w >= 1 && r.w === r.l;
 
 export const yakyuScript = async (ctx: UiCtx, s: Story): Promise<void> => {
 	const m = loadNeta();
-	if (games(m.yakyu) > 0) await s.narrate(fill(YAKYU.record, wld(m.yakyu)));
-	if ((await s.choose([...YAKYU.menu], { cancel: 1 })) !== 0) return;
+	const record = games(m.yakyu) > 0 ? [fill(YAKYU.record, wld(m.yakyu))] : [];
+	if ((await playOrRecord(s, record, YAKYU.menu)) === null) return;
 	if (!m.yakyu.tutored) {
 		await s.narrate(YAKYU.rule);
 		m.yakyu.tutored = true;
@@ -245,9 +246,9 @@ export const kabeScript = async (s: Story, at = returnNow()): Promise<void> => {
 
 export const othelloScript = async (ctx: UiCtx, s: Story): Promise<void> => {
 	const m = loadNeta();
-	if (games(m.othello) > 0)
-		await s.narrate(fill(OTHELLO.record, wld(m.othello)));
-	if ((await s.choose([...OTHELLO.menu], { cancel: 1 })) !== 0) return;
+	const record =
+		games(m.othello) > 0 ? [fill(OTHELLO.record, wld(m.othello))] : [];
+	if ((await playOrRecord(s, record, OTHELLO.menu)) === null) return;
 	if (!m.othello.tutored) {
 		await s.narrate(OTHELLO.rule);
 		m.othello.tutored = true;
@@ -358,8 +359,17 @@ export const commaScript = async (
 ): Promise<void> => {
 	const m = loadNeta();
 	const menu = zeroOpen(hour) ? COMMA.menuNight : COMMA.menu;
-	const n = await s.choose([...menu], { cancel: menu.length - 1 });
-	if (n === menu.length - 1) return;
+	const record =
+		m.comma.posts > 0 || m.comma.best0 !== null
+			? [
+					fill(COMMA.recordLine, { posts: m.comma.posts, zoro: m.comma.zoro }),
+					...(m.comma.best0 !== null
+						? [fill(COMMA.zeroBest, { best: zeroText(m.comma.best0) })]
+						: []),
+				]
+			: [];
+	const n = await playOrRecord(s, record, menu);
+	if (n === null) return;
 	// ゾロ目の 決まりは コンマの とき だけ（0時ちょうどは 板の 字で わかる）
 	if (n === 0 && !m.comma.tutored) {
 		await s.narrate(COMMA.rule);

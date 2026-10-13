@@ -34,6 +34,7 @@ import type { Story } from "../../engine/defs";
 import { loadRecords } from "../../engine/save";
 import type { Ctx } from "../ctx";
 import type { UiCtx } from "../list";
+import { playOrRecord } from "../minigames/playMenu";
 import { villageSong } from "../village/villageMusic";
 import { previewStage } from "../village/villageReturn";
 import {
@@ -254,8 +255,15 @@ const say = (s: Story, who: keyof typeof BS_STAFF, t: string) =>
 /** 人狼部の 机：ワードウルフ（6人）・人狼（10人。そろわない）・やめる。 */
 const wordWolfScript = async (ctx: Ctx, s: Story): Promise<void> => {
 	const M = BS_MSG.ww;
-	const n = await s.choose([...M.menu], { cancel: 2 });
-	if (n === 2) return;
+	const ww = loadBushitsu().ww;
+	const n = await playOrRecord(
+		s,
+		ww.plays > 0
+			? [fillText(M.record, { p: ww.plays, w: ww.wins, b: ww.best })]
+			: [],
+		M.menu,
+	);
+	if (n === null) return;
 	if (n === 1) {
 		// 人狼は 10人から。……10回目の 帰りより あとに 1度だけ、そろいかけて 1人 抜ける
 		const m = loadBushitsu();
@@ -304,7 +312,12 @@ const wordWolfScript = async (ctx: Ctx, s: Story): Promise<void> => {
 /** お糸会かき部の イーゼル：うろ覚えお糸会かき大会。 */
 const oekakiScript = async (ctx: Ctx, s: Story): Promise<void> => {
 	const M = BS_MSG.oe;
-	if ((await s.choose([...M.menu], { cancel: 1 })) !== 0) return;
+	const oe = loadBushitsu().oe;
+	const record =
+		oe.plays > 0
+			? [fillText(M.record, { p: oe.plays, b: oe.best, x: oe.perfect })]
+			: [];
+	if ((await playOrRecord(s, record, M.menu)) === null) return;
 	const first = loadBushitsu();
 	if (!first.oe.howto) {
 		for (const t of M.howto) await s.narrate(t);
@@ -424,7 +437,12 @@ const testPlayScript = async (ctx: Ctx, s: Story): Promise<void> => {
 /** 廊下の 譜面台：校歌　斉唱（村の 曲を 止めて 板。おわったら 曲を もどす）。 */
 const koukaScript = async (ctx: Ctx, s: Story): Promise<void> => {
 	const M = BS_MSG.kk;
-	if ((await s.choose([...M.menu], { cancel: 1 })) !== 0) return;
+	const kk = loadBushitsu().kk;
+	const record =
+		kk.plays > 0
+			? [fillText(M.record, { p: kk.plays, b: (kk.best / 10).toFixed(1) })]
+			: [];
+	if ((await playOrRecord(s, record, M.menu)) === null) return;
 	const first = loadBushitsu();
 	if (!first.kk.howto) {
 		for (const t of M.howto) await s.narrate(t);

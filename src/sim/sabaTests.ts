@@ -1175,7 +1175,7 @@ test("ホシュクラ：ブラマイ場（やめれば 板なし・ダイヤの 
 			calls++;
 			return { dia: calls === 1 ? 3 : 1, end: "broke" };
 		});
-		const cancel = recorder([1]);
+		const cancel = recorder([2]);
 		await sabaPlay(ctx, cancel.s, fac("saba3"), "mine", true);
 		ok(calls === 0, "the board opened after やめる");
 		const a = recorder([0]);
@@ -1190,10 +1190,11 @@ test("ホシュクラ：ブラマイ場（やめれば 板なし・ダイヤの 
 			a.log.includes(`narrate: ${X.mineBest.replace("{n}", "3")}`),
 			a.log.join("\n"),
 		);
-		const b = recorder([0]);
+		// ハイスコアを 見てから 掘る（見ても 品書きに もどる）
+		const b = recorder([1, 0]);
 		await sabaPlay(ctx, b.s, fac("saba3"), "mine", true);
 		ok(
-			b.log[0] === `narrate: ${X.mineRecord.replace("{n}", "3")}`,
+			b.log.includes(`narrate: ${X.mineRecord.replace("{n}", "3")}`),
 			b.log.join("\n"),
 		);
 		ok(!b.log.some((l) => l.includes("書きかわった")), b.log.join("\n"));

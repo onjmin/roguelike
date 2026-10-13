@@ -6,7 +6,7 @@ import type { ArcadeGame } from "./types";
 
 /** どの 台でも 同じ 文。 */
 export const ARCADE = {
-	menu: ["遊ぶ", "やめる"],
+	menu: ["遊ぶ", "ハイスコアを　見る", "やめる"],
 	record: "ハイスコア　{best}{unit}。",
 	after: "スコア　{score}{unit}。",
 	newBest: "ハイスコアを　こえた！\nランキングの　1位に「キリコ」。",

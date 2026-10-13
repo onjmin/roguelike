@@ -282,7 +282,7 @@ test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/village/fa
 			const ev = events.find((e) => e.id === `${g}_0`);
 			ok(ev?.run, `event ${g}`);
 			if (!ev?.run) continue;
-			const r = recorder([1]);
+			const r = recorder([2]);
 			await ev.run(r.s);
 			same(
 				r.log,
@@ -745,11 +745,12 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 		);
 		// 2回目：低い スコア（ハイスコアの 窓なし）
 		setArcadeHooks({ shooter: async () => ({ score: 50 }) });
-		r = recorder([0]);
+		r = recorder([1, 0]);
 		await arcadeScript(CTX, r.s, "shooter");
 		same(
 			r.log,
 			[
+				`choose: ${ARCADE.menu.join("/")}`,
 				`narrate: ${fill(ARCADE.record, { best: 120, unit: t.unit })}`,
 				`choose: ${ARCADE.menu.join("/")}`,
 				`narrate: ${fill(ARCADE.after, { score: 50, unit: t.unit })}`,
@@ -764,7 +765,7 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 		const m = loadArcade();
 		ok(m.best.shooter === 120 && m.plays.shooter === 2, "quit is not counted");
 		// 品書きで やめる
-		r = recorder([1]);
+		r = recorder([2]);
 		await arcadeScript(CTX, r.s, "slot");
 		same(r.log, [`choose: ${ARCADE.menu.join("/")}`], "cancel");
 		ok(!loadArcade().tutored.includes("slot"), "no rule yet");

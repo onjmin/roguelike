@@ -178,7 +178,7 @@ export const SABA_TEXT = {
 	},
 
 	// ── ブラマイ（村の 窓） ──
-	mineMenu: ["掘る", "やめる"],
+	mineMenu: ["掘る", "ハイスコアを　見る", "やめる"],
 	mineRecord: "入口の　札：\n「最高　ダイヤ　{n}個」",
 	mineBest: "入口の　札が　書きかわった。\n「最高　ダイヤ　{n}個」",
 	mineAfter: {

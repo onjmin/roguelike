@@ -35,11 +35,13 @@ import { bushitsuThing } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
 import { watchGikai } from "../jikkyo/jikkyoGikai";
 import { staffOnceLine, watchProgram } from "../jikkyo/jikkyoWatch";
+import { derbyBest } from "../minigames/batting";
 import { debateScript, kibenScript, minutesScript } from "../minigames/debate";
 import { dosukoiWindow } from "../minigames/dosukoi";
 import { eatAt, keeperTalk } from "../minigames/eat";
 import { imoniPlay } from "../minigames/imoni";
 import { atBat, playDerby } from "../minigames/minigames";
+import { playOrRecord } from "../minigames/playMenu";
 import { isNetaPlay, netaPlay } from "../neta/neta";
 import { sabaPlay } from "../saba/saba";
 import { facilityDecor } from "./cinemaDecor";
@@ -117,8 +119,13 @@ const BAT_AFTER = {
  * B で 板を 閉じたら 何も 言わない。
  */
 const bat = async (ctx: Ctx, s: Story): Promise<void> => {
-	const n = await s.choose([...GROUND_BAT.menu], { cancel: 2 });
-	if (n === 2) return;
+	const best = derbyBest();
+	const n = await playOrRecord(
+		s,
+		best > 0 ? [fill(GROUND_BAT.record, { best })] : [],
+		GROUND_BAT.menu,
+	);
+	if (n === null) return;
 	await s.wait(0);
 	const gone = awayFriends(loadProgress().cleared).includes("nanj");
 	const who = gone ? "nanashi" : "yakiu";

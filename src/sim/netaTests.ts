@@ -893,7 +893,7 @@ test("記録: こわれた 保存は はじめの 値・?stage= の ときは �
 test("グラウンド: 三塁側の ベンチ → 文 → ランダム野球／やめる（やめるなら 板なし）、1勝 1敗で 5割の壁が 動く", async () => {
 	await withStore(async () => {
 		const { f, t } = thing("ground", "bench_r");
-		let r = recorder([1]);
+		let r = recorder([2]);
 		await outdoorScript(CTX, f, t)(r.s);
 		same(
 			r.log,
@@ -930,12 +930,14 @@ test("グラウンド: 三塁側の ベンチ → 文 → ランダム野球／�
 			],
 			"1st game",
 		);
-		r = recorder([0]);
+		// 2回目は ハイスコア（戦績）を 見てから 遊ぶ
+		r = recorder([1, 0]);
 		await outdoorScript(CTX, f, t)(r.s);
 		same(
 			r.log,
 			[
 				...t.lines.map((l) => `narrate: ${l}`),
+				`choose: ${YAKYU.menu.join("/")}`,
 				`narrate: ${fill(YAKYU.record, { w: 1, l: 0, d: 0 })}`,
 				`choose: ${YAKYU.menu.join("/")}`,
 				`narrate: ${fill(YAKYU.after, { w: 1, l: 1, d: 0 })}`,
@@ -1021,7 +1023,6 @@ test("碁会所: リバーシ盤 → 対局（はじめだけ 決まりの 1窓�
 			r.log,
 			[
 				...line.map((l) => `narrate: ${l}`),
-				`narrate: ${fill(OTHELLO.record, { w: 1, l: 0, d: 0 })}`,
 				`choose: ${OTHELLO.menu.join("/")}`,
 				`narrate: ${OTHELLO.resigned}`,
 			],
@@ -1034,19 +1035,19 @@ test("碁会所: リバーシ盤 → 対局（はじめだけ 決まりの 1窓�
 			r.log,
 			[
 				...line.map((l) => `narrate: ${l}`),
-				`narrate: ${fill(OTHELLO.record, { w: 1, l: 0, d: 0 })}`,
 				`choose: ${OTHELLO.menu.join("/")}`,
 				`narrate: ${fill(OTHELLO.afterLose, { b: 20, w: 44 })}`,
 			],
 			"lose",
 		);
 		setNetaHooks({ othello: async () => ({ black: 32, white: 32 }) });
-		r = recorder([0]);
+		r = recorder([1, 0]);
 		await run(r.s);
 		same(
 			r.log,
 			[
 				...line.map((l) => `narrate: ${l}`),
+				`choose: ${OTHELLO.menu.join("/")}`,
 				`narrate: ${fill(OTHELLO.record, { w: 1, l: 1, d: 0 })}`,
 				`choose: ${OTHELLO.menu.join("/")}`,
 				`narrate: ${fill(OTHELLO.afterDraw, { b: 32, w: 32 })}`,
