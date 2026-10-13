@@ -21,6 +21,7 @@ import {
 } from "../../engine/save";
 
 import type { Ctx } from "../ctx";
+import { explain } from "../explain";
 import { gearPower, itemSub } from "../itemText";
 import { infoWindow, type ListItem, listWindow } from "../list";
 import { itemArt as itemArtEl } from "../menu";
@@ -215,19 +216,21 @@ const bagRow = (it: Item, value: string, note = ""): ListItem => ({
 	value,
 });
 
-/** 村の 持ち物の「せつめい」（正体は わかって いる。分類・説明・ひとこと・強さ）。 */
-const bagInfo = (it: Item): string => {
+/** 村の 持ち物の「せつめい」（正体は わかって いる。分類・説明・ひとこと・強さ。1ページずつ 送る）。 */
+const bagInfo = (it: Item): string[] => {
 	const d = defOf(it.kind);
-	const lines = [`【${CAT_NAME[d.cat]}】${esc(d.desc)}`, esc(d.flavor)];
+	const pages = [`【${CAT_NAME[d.cat]}】${d.desc}`, d.flavor];
+	const stats: string[] = [];
 	const g = gearPower(it);
 	if (g)
-		lines.push(
+		stats.push(
 			`強さ　${g.value}　修正値　${it.plus > 0 ? `+${it.plus}` : it.plus}`,
 		);
-	if (d.cat === "staff") lines.push(`残り回数　${it.charges}回`);
-	if (d.cat === "arrow") lines.push(`強さ　${d.atk ?? 0}　${it.count}球`);
-	if (it.cursed) lines.push("のろわれている");
-	return lines.map((l) => `<p>${l}</p>`).join("");
+	if (d.cat === "staff") stats.push(`残り回数　${it.charges}回`);
+	if (d.cat === "arrow") stats.push(`強さ　${d.atk ?? 0}　${it.count}球`);
+	if (it.cursed) stats.push("のろわれている");
+	if (stats.length) pages.push(stats.join("\n"));
+	return pages;
 };
 
 /**
@@ -264,7 +267,7 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 		if (v === null) return;
 		start = Number(v);
 		const got = items[Number(v)];
-		if (got) await infoWindow(ctx, esc(townItemName(got.it)), bagInfo(got.it));
+		if (got) await explain(ctx, bagInfo(got.it));
 	}
 };
 

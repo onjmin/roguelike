@@ -6,8 +6,9 @@ import { GLOSSARY, TIER_FROM, type Word } from "../../data/story/glossary";
 import type { Story } from "../../engine/defs";
 import { loadProgress, loadTown, loadWords, markWord } from "../../engine/save";
 import type { Ctx } from "../ctx";
+import { explain } from "../explain";
 import { esc } from "../itemText";
-import { infoWindow, listWindow } from "../list";
+import { listWindow } from "../list";
 
 /**
  * ログの 1行に はじめて 出た ことばが あれば、その 説明の 1行を 返して「説明した」と 覚える（1行に 1つまで）。
@@ -122,12 +123,6 @@ export const openGlossary = async (ctx: Ctx): Promise<void> => {
 			words.findIndex((w) => w.id === v),
 		);
 		const w = words[start];
-		await infoWindow(
-			ctx,
-			esc(w.word),
-			descWindows(w.desc)
-				.map((l) => `<p>${esc(joined(l))}</p>`)
-				.join(""),
-		);
+		await explain(ctx, descWindows(w.desc).map(joined));
 	}
 };
