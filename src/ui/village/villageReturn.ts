@@ -59,6 +59,7 @@ import {
 	WRAP_NEWS,
 	withoutAway,
 } from "../../data/story/story";
+import { villageResLine } from "../../data/story/synopsis";
 import {
 	TAMPER_NARRATION,
 	TAMPER_SCENE,
@@ -397,7 +398,15 @@ const playCue = async (
 	} else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
 	// 蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結。ダンジョンで 声を 鳴らす ときと 同じ 音）
 	else if (c === "selfVoice") s.se("spell");
-	else if (c === "getter" && hooks.getter) {
+	// 電池板の 山場：999 で 鐘、1000 で ファンファーレと 札（山場が わかるように。2026-10-13 作者の 指摘）
+	else if (c === "res999") {
+		s.se("chapter");
+		s.toast("村の　スレ　999／1000");
+	} else if (c === "res1000") {
+		s.se("victory");
+		s.toast("★　村の　スレ　1000　完走　★");
+		await s.wait(600);
+	} else if (c === "getter" && hooks.getter) {
 		for (let tries = 0; ; tries++) {
 			if (await hooks.getter()) break;
 			await s.narrate(GETTER_RETRY[Math.min(tries, GETTER_RETRY.length - 1)]);
@@ -445,6 +454,8 @@ export const returnScene = async (
 	await rebuild(s);
 	s.bgm(villageSong());
 	await s.fadeIn(300);
+	// 持ち帰ったら 村の スレの 伸びを 札で（目標の 1000 まで どこまで 来たか）
+	if (a.kind === "clear") s.toast(villageResLine(loadProgress().cleared));
 };
 
 // ───────────────── 話す 仲間を そばに ─────────────────

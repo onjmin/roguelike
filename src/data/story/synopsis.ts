@@ -153,39 +153,70 @@ export const diveResAt = (
 	return r;
 };
 
+/**
+ * 村の スレの 伸び（2026-10-13 作者：「動機付けを 見直せ」。目標の「1000まで」が どこまで 来たかを 数で 見せる）。
+ * ゼロが 語りで 言う 数（パン板の あと ひとけた・風呂板で 500・電池板で 1000）と そろえる。寄り道の 板は
+ * 1つ 40。電池板の あとは 次スレの 数。
+ */
+export const villageRes = (
+	cleared: readonly DungeonId[],
+): { next: boolean; res: number } => {
+	const side = cleared.filter(
+		(d) => d !== "shallow" && d !== "main" && d !== "deep",
+	).length;
+	if (cleared.includes("deep"))
+		return { next: true, res: Math.min(900, 150 + side * 30) };
+	if (cleared.includes("main"))
+		return { next: false, res: Math.min(980, 500 + side * 40) };
+	if (cleared.includes("shallow"))
+		return { next: false, res: Math.min(460, 120 + side * 40) };
+	return { next: false, res: 3 };
+};
+
+/** 村の スレの 札（「村の　スレ　520／1000」・電池板の あとは「次スレ　210」）。 */
+export const villageResLine = (cleared: readonly DungeonId[]): string => {
+	const r = villageRes(cleared);
+	return r.next ? `次スレ　${r.res}` : `村の　スレ　${r.res}／1000`;
+};
+
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */
 export const goalWhy = (
 	d: DungeonId,
 	cleared: readonly DungeonId[],
 ): string | null => (cleared.includes(d) ? null : (GOAL_WHY[d] ?? null));
 
+/**
+ * あらすじの 章（2026-10-13 作者：「踏破した 板ごとの あらすじは 見にくいので 減らせ。要約の 形に」）。
+ * 章ごとに、そこまでの 話を まとめた 要約（sum）を 持つ。あらすじでは 本筋と 小島の 話の それぞれ
+ * いちばん 新しい 章の 要約だけを 見せる。
+ */
 type Chapter = {
 	done: (c: readonly DungeonId[], f: readonly string[]) => boolean;
 	title: string;
-	text: string;
+	sum: string;
 };
 
-/** 本筋の 章（起きた 順）。done を 満たした 章だけ 見せる。 */
+/** 本筋の 章（起きた 順）。 */
 const MAIN_CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("shallow"),
 		title: "パン板",
-		text: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　スレを　1000まで。",
+		sum: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　スレを　1000まで。",
 	},
 	{
 		done: (c) => c.includes("main"),
 		title: "風呂板",
-		text: "長湯スレを　貼ると、スレは　500を　こえた。知らない　人が　書きこみはじめた。電池板は、人が　いないのに　スレが　上がるらしい。",
+		sum: "植民地の　ネタを　貼りつづけて、村の　スレは　500を　こえた。知らない　人が　書きこみ、町が　育っていく。やきうは、みんなが　去ったあとも　ひとりで　保守していた。「1000　いったら……」と、なにか　言いかけた。",
 	},
 	{
 		done: (c) => c.includes("deep"),
 		title: "電池板",
-		text: "鉄塔の　保守スレは、やきうの　書きこみだった。村の　スレは　1000に　届き、1000は　知らない　名無し。やきうは　次スレを　キリコに　まかせて、外へ　出ていった。キリコは　小屋の　前の　札に「保守」と　書いた。",
+		sum: "村の　スレは　1000に　届いて　完走した。1000を　取ったのは　知らない　名無し。鉄塔の　保守スレは、やきうの　書きこみだった。やきうは　次スレを　キリコに　まかせて　外へ　出ていき、キリコは　小屋の　札に「保守」と　書いた。",
 	},
 	{
 		done: (c) => c.includes("hidden"),
 		title: "過去ログの底",
-		text: "古井戸の　底で、キリコの　生まれた　スレを　拾った。あちこちに　名無しの「保守」と、「次スレ　立てといたで」。",
+		sum: "やきうが　去って、キリコが　次スレを　保守している。古井戸の　底で、キリコの　生まれた　スレを　拾った。あちこちに　名無しの「保守」と、「次スレ　立てといたで」。",
 	},
 ];
 
@@ -203,52 +234,52 @@ const mainNext = (
 	return null;
 };
 
-/** 裏の 章（起きた 順）。 */
+/** 小島と 原住民の 話（裏）の 章（起きた 順）。 */
 const CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("isle1"),
 		title: "ひまわり諸島",
-		text: "南西の　小島は、おんJ民が　立てて　捨てた　板だった。乗っ取り屋に　名前を　変えられ、丘の　上に　置き手紙が　1枚。",
+		sum: "南西の　小島は、おんJ民が　立てて　捨てた　板だった。乗っ取り屋に　名前を　変えられ、丘の　上に　だれかの　置き手紙が　1枚。",
 	},
 	{
 		done: (c) => c.includes("isle2"),
 		title: "よふかし諸島",
-		text: "となりの　小島も　乗っ取られた　板。置き手紙の　2枚目。取り返すと、板の　名前が　もどった。",
+		sum: "乗っ取られた　小島を　2つ　取り返し、板の　名前を　もどした。置き手紙は　2枚。",
 	},
 	{
 		done: (c) => c.includes("isle3"),
 		title: "だらだら諸島",
-		text: "置き手紙が　3枚　そろった。灯台の　扉の　パスワードの　手がかり。",
+		sum: "小島を　3つ　取り返した。そろった　置き手紙は、灯台の　扉の　パスワードの　手がかり。",
 	},
 	{
 		done: (c) => c.includes("opunu"),
 		title: "灯台",
-		text: "てっぺんの　板主の　スレを　上げると、原住民が　村へ　帰ってきた。おんJ民が　来る　前から　いた　20人の　ひとり。",
+		sum: "灯台の　てっぺんの　スレを　上げると、原住民が　村へ　帰ってきた。おんJ民より　前から　いた　20人の　ひとり。仲間は「全滅」と　されている。原住民は、ROM専の　声を　聞きたがっている。",
 	},
 	{
 		done: (c, f) => c.includes("opunu") && f.includes("romVoice"),
 		title: "ROM専の　声",
-		text: "ROM専の　声を　聞かせると、原住民は「この　声、知ってる」。本館の　奥の　古い　札の　床下が　あいた。",
+		sum: "原住民は、仲間が　全滅したと　されている　古参。ROM専の　声を　聞かせると「この　声、知ってる」。本館の　奥の　古い　札の　床下が　あいた。",
 	},
 	{
 		done: (c) => c.includes("ato"),
 		title: "野球chの　跡地",
-		text: "いちばん　古い　スレを　参拝で　完走させた。1000は　ROM専たちの「見てた」。原住民は　全滅して　いなかった。ROMに　なって、見ていた　だけ。……あと　ひとり。",
+		sum: "いちばん　古い　スレを　参拝で　完走させると、1000は　ROM専たちの「見てた」。原住民の　仲間は　全滅して　いなかった。ROMに　なって、ずっと　見ていた。……19人。あと　ひとり。",
 	},
 	{
 		done: (c) => c.includes("hinan"),
 		title: "避難J",
-		text: "20人目の　最後の　レスは「ワイも　やきう民に　なるわ」。1000を　あけておくと、外から「保守　(´・ω・｀)」。",
+		sum: "原住民の　仲間は　19人まで　見つかった。20人目の　最後の　レスは「ワイも　やきう民に　なるわ」。1000を　あけておくと、外から「保守　(´・ω・｀)」。",
 	},
 	{
 		done: (_, f) => f.includes("wrap"),
 		title: "時計",
-		text: "外から　コピペが　届いた。「おんJを　見てんのは　さとると　ワイと　お前だけや」。笑って　いるうちに、時計が　1901年に　もどった。",
+		sum: "20人目は、外から　保守していた。そこへ　コピペが　届いた。「おんJを　見てんのは　さとると　ワイと　お前だけや」。笑って　いるうちに、時計が　1901年に　もどった。",
 	},
 	{
 		done: (c) => c.includes("y1901"),
 		title: "1901年の　スレ",
-		text: "コピペの　続きを　読んだ。キリコは、鉄塔の　保守スレの　1000を　書いた。",
+		sum: "時計が　もどった　日の　スレで、コピペの　続きを　読んだ。鉄塔の　保守スレの　1000を　書いたのは、キリコだった。",
 	},
 ];
 
@@ -273,29 +304,16 @@ const nextStep = (
 	return null;
 };
 
-/** 章の 並びと 次の 行き先（章が 1つも なければ 空）。 */
-/**
- * 見せる 並び（題で）。本筋と 裏を 分けて 見せると 裏が あると わかって しまうので、1本の 話として まぜる。
- * 遊ぶ 順は 人に よって ちがうが、だいたい 起きる 順に。
- */
-const ORDER: readonly string[] = [
-	"パン板",
-	"ひまわり諸島",
-	"よふかし諸島",
-	"だらだら諸島",
-	"風呂板",
-	"灯台",
-	"ROM専の　声",
-	"電池板",
-	"野球chの　跡地",
-	"過去ログの底",
-	"避難J",
-	"時計",
-	"1901年の　スレ",
-];
+/** いちばん 新しい 章（どれも まだなら null）。 */
+const latest = (
+	list: readonly Chapter[],
+	c: readonly DungeonId[],
+	f: readonly string[],
+): Chapter | null => [...list].reverse().find((ch) => ch.done(c, f)) ?? null;
 
 /**
- * あらすじの 中身（パン板を 持ち帰る 前は null）。章を 1本に まぜ、最後に「つぎ：」の 行き先。
+ * あらすじの 中身（パン板を 持ち帰る 前は null）。村の スレの 数・本筋の 要約・小島の 話の 要約（入って
+ * いれば）・仲間の 依頼・「つぎ：」の 行き先。見出しは 章の 題だけ（本筋・裏と 書くと 裏が あると わかる）。
  * open は 開いている 板（風呂板は きのこ板で 5回 倒れても 開く）。
  */
 export const synopsisHtml = (
@@ -303,10 +321,9 @@ export const synopsisHtml = (
 	flags: readonly string[],
 	open: readonly DungeonId[] = cleared,
 ): string | null => {
-	const done = [...MAIN_CHAPTERS, ...CHAPTERS]
-		.filter((ch) => ch.done(cleared, flags))
-		.sort((a, b) => ORDER.indexOf(a.title) - ORDER.indexOf(b.title));
-	if (!done.length) return null;
+	const main = latest(MAIN_CHAPTERS, cleared, flags);
+	const ura = latest(CHAPTERS, cleared, flags);
+	if (!main && !ura) return null;
 	// 仲間の 依頼（束音ロゼ・解音ゼロ。悩みを かかえて から。data/people/heroQuests.ts）
 	const quests = QUEST_HEROES.flatMap((h) => {
 		const st = questStage(h, flags);
@@ -316,13 +333,16 @@ export const synopsisHtml = (
 		? `<p><b>仲間の　依頼</b><br>${quests.join("<br>")}</p>`
 		: "";
 	// 裏の 行き先は 裏に 入って いる ときだけ（入る 前に 出すと 入口を 教えて しまう）
-	const inUra = CHAPTERS.some((ch) => ch.done(cleared, flags));
 	const next = [
 		mainNext(cleared, open),
-		inUra ? nextStep(cleared, flags) : null,
+		ura ? nextStep(cleared, flags) : null,
 	].filter((x): x is string => !!x);
+	const chapter = (ch: Chapter | null) =>
+		ch ? `<p><b>${ch.title}　まで</b><br>${ch.sum}</p>` : "";
 	return (
-		done.map((ch) => `<p><b>${ch.title}</b><br>${ch.text}</p>`).join("") +
+		`<p class="hint">${villageResLine(cleared)}</p>` +
+		chapter(main) +
+		chapter(ura) +
 		questHtml +
 		next.map((x) => `<p class="hint">つぎ：${x}</p>`).join("")
 	);

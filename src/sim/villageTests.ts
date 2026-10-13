@@ -7570,16 +7570,22 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 			["romVoice", "wrap"],
 		) ?? "";
 	ok(end.includes("1901年の　スレ") && !end.includes("つぎ："), end);
-	// 本筋と 裏を 分けて 見せない（裏が あると わかって しまう）。1本に まぜて 起きる 順
+	// 本筋・裏と 書かない（裏が あると わかって しまう）
 	ok(!/本筋|裏/.test(end), "no route labels");
-	const at = (t: string) => end.indexOf(`<b>${t}</b>`);
+	// 要約：本筋と 小島の 話の いちばん 新しい 章だけ（板ごとに 並べない）・村の スレの 数
+	const heads = [...end.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
 	ok(
-		at("パン板") >= 0 &&
-			at("パン板") < at("ひまわり諸島") &&
-			at("風呂板") < at("灯台") &&
-			at("電池板") < at("避難J") &&
-			at("避難J") < at("1901年の　スレ"),
-		"chapters in story order",
+		heads.length === 2 &&
+			heads[0] === "過去ログの底　まで" &&
+			heads[1] === "1901年の　スレ　まで",
+		`summary heads ${heads}`,
+	);
+	ok(end.includes("次スレ"), "no thread count after the 1000");
+	ok(
+		(synopsisHtml(["shallow", "main"], []) ?? "").includes(
+			"村の　スレ　500／1000",
+		),
+		"thread count after main",
 	);
 });
 

@@ -58,7 +58,14 @@ export type StoryPage = {
 	 * getter＝1000取り（別ゲー。ui/minigames/minigames.ts）、selfVoice＝蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結）。
 	 * 地の文の 前に 起きる。
 	 */
-	cue?: "roms" | "romsLeave" | "getter" | "selfVoice" | "nanjLeave";
+	cue?:
+		| "roms"
+		| "romsLeave"
+		| "getter"
+		| "selfVoice"
+		| "nanjLeave"
+		| "res999"
+		| "res1000";
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
@@ -405,4 +412,21 @@ export const ENDING: StoryPage[] = [
 		text: "スレ、500を　こえました！\n……知らない　人が、書きこんでます",
 	},
 	{ who: null, text: "……知らない　人ンゴ", kiriko: "think" },
+	// やきうの 身の上（電池板の 山場で 出ていく 人を、ここで 見せておく。STORY.md §5.9）
+	{
+		who: null,
+		text: "夜。みんなが　帰った　あと、\nやきうが　小屋の　前に　すわっていた。",
+		about: "nanj",
+		instead: { who: null, text: "夜。村は　しずかだった。" },
+	},
+	{
+		who: "nanj",
+		text: "みんな　出ていってから、\nワイ　ひとりで　ここ　保守しとったんや",
+	},
+	{
+		who: "nanj",
+		text: "昼は　外で　働いとる。\n夜だけ　来て、「保守」って　書くんや",
+	},
+	{ who: "nanj", text: "……1000　いったらな、\nワイ……" },
+	{ who: "nanj", text: "……まあ、ええわ。\nその　ときや" },
 ];
