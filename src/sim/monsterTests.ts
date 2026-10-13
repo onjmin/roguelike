@@ -2584,9 +2584,7 @@ test(
 		const gifts = r.f.items.slice(items);
 		ok(gifts.length === 2, `${gifts.length} gifts for the anka`);
 		ok(
-			Object.keys(r.s.ids.known).every(
-				(k) => knownBefore[k] || k === "h_heal",
-			),
+			Object.keys(r.s.ids.known).every((k) => knownBefore[k] || k === "h_heal"),
 			"a gift was identified for free",
 		);
 		// 敵を 2体 たおす：1体では まだ

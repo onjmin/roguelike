@@ -14,13 +14,7 @@
 
 import { EXP_AT, MAX_LV } from "./balance";
 import { freeRoomTiles, randomFloorPos, spawnMonster } from "./floor";
-import {
-	defOf,
-	isKeyItem,
-	isKnownKind,
-	itemHidden,
-	itemTableOf,
-} from "./item";
+import { defOf, isKeyItem, isKnownKind, itemHidden, itemTableOf } from "./item";
 import { rollKinds } from "./itemTable";
 import { wakeMonster } from "./monster";
 import type { Run } from "./run";
@@ -248,7 +242,9 @@ export const tickAnka = (r: Run): void => {
 	}
 	if (trolls) r.msg(`荒らしが　${trolls}体　湧いてきた`, "warn");
 	// 持ち物を 1つ 持ち去られる（安価を 無視した 罰。大事な 物・装備中の 物は 取らない）
-	const loot = r.p.items.filter((it) => !isKeyItem(it.kind) && !r.isEquipped(it));
+	const loot = r.p.items.filter(
+		(it) => !isKeyItem(it.kind) && !r.isEquipped(it),
+	);
 	const it = r.rng.pick(loot);
 	if (it) {
 		r.removeItem(it);
