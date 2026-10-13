@@ -767,10 +767,13 @@ export const openWorldMap = (
 	return v;
 };
 
+/** 行き先の 一覧の 1ページの 板の 数（2列 × 4行）。 */
+export const COLONY_PAGE = 8;
+
 /**
  * 全体マップで 行き先の 植民地を 選ぶ（やめたら null）。下の 選択肢（植民地と やめる）の カーソルに
  * 地図の ▼ と フキダシと 札が ついていく。A か 選択肢を 押すか、同じ 建物を もう一度 タップで 決める
- * （建物を タップすると 選択肢の カーソルも そこへ）。まだ 開いていない 植民地も 選べて、開き方が 出る。
+ * （建物を タップすると 選択肢の カーソルも そこへ）。まだ 開いていない 植民地は 出さない。
  * view を わたすと その 地図で 選び、閉じない（openWorldMap）。
  */
 export const pickColony = async (
@@ -792,57 +795,84 @@ export const pickColony = async (
 	}
 	// 地図に 出る 植民地（隠しの 板は 出さない。過去ログの底は 村の 井戸から）と、さいごに やめる。
 	// 目的を 1度でも はたした 板には 地図・札と 同じく ★
-	// 開くまで 出さない 板（裏シナリオ）は 一覧にも 出さない。静かな 板は 行くまで「南西の 小島」
-	const spots = DUNGEON_IDS.filter((d) => {
-		const dg = DUNGEONS[d];
-		const open = o.open.includes(d);
-		return !dg.secret && !(dg.hidden && !open) && !(dg.quiet && !open);
-	});
+	// まだ 行けない 板は 一覧に 出さない（2026-10-13 作者：「？？？？ 表記では なく そもそも 出さなくて いい」）。
+	// 静かな 板は 行くまで「南西の 小島」
+	const spots = DUNGEON_IDS.filter(
+		(d) => !DUNGEONS[d].secret && o.open.includes(d),
+	);
+	// 板が ふえたので ページに わける（1ページ COLONY_PAGE 個。「つぎの　ページ」「まえの　ページ」）
+	const pages = Math.max(1, Math.ceil(spots.length / COLONY_PAGE));
+	const first = o.open.includes(o.start) ? o.start : spots[0];
+	let page = Math.max(0, Math.floor(spots.indexOf(first) / COLONY_PAGE));
 	// 主人公の 切りかえ（ロゼ・ゼロを 解放してから。engine/heroes.ts）：やめるの 前の 1行。選ぶと 次の 主人公に
 	const heroes = unlockedHeroes();
-	const heroRow = heroes.length > 1 ? spots.length : -1;
 	const heroLabel = () => `探索者：${HERO_NAME[chosenHero()]}`;
-	const labels = [
-		...spots.map((d) =>
-			!o.open.includes(d)
-				? "？？？"
-				: DUNGEONS[d].quiet && !v.visited().includes(d)
-					? QUIET_SPOT.label
-					: `${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`,
-		),
-		...(heroRow >= 0 ? [heroLabel()] : []),
-		"やめる",
+	const spotLabel = (d: DungeonId) =>
+		DUNGEONS[d].quiet && !v.visited().includes(d)
+			? QUIET_SPOT.label
+			: `${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`;
+	/** いまの ページの 行（板・前後の ページ・探索者・やめる）。 */
+	type Row =
+		| { k: "spot"; d: DungeonId }
+		| { k: "prev" }
+		| { k: "next" }
+		| { k: "hero" }
+		| { k: "quit" };
+	const rowsOf = (pg: number): Row[] => [
+		...spots
+			.slice(pg * COLONY_PAGE, (pg + 1) * COLONY_PAGE)
+			.map((d): Row => ({ k: "spot", d })),
+		...(pg > 0 ? [{ k: "prev" } as Row] : []),
+		...(pg < pages - 1 ? [{ k: "next" } as Row] : []),
+		...(heroes.length > 1 ? [{ k: "hero" } as Row] : []),
+		{ k: "quit" },
 	];
-	const cancel = labels.length - 1;
-	const first = o.open.includes(o.start) ? o.start : o.open[0];
+	const labelOf = (r: Row): string =>
+		r.k === "spot"
+			? spotLabel(r.d)
+			: r.k === "prev"
+				? `◀　まえの　ページ（${page}／${pages}）`
+				: r.k === "next"
+					? `つぎの　ページ　▶（${page + 2}／${pages}）`
+					: r.k === "hero"
+						? heroLabel()
+						: "やめる";
+	let rows = rowsOf(page);
 	const onMove = (i: number) => {
-		const d = i < spots.length ? spots[i] : undefined;
-		if (i === heroRow) {
+		const r = rows[i];
+		if (r?.k === "hero") {
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
 			const h = chosenHero();
 			v.panel.innerHTML = `<div class="wm-name">${heroLabel()}</div><div class="wm-desc">${HERO_DESC[h]}<br><small>A で　切りかえ</small></div>`;
 			return;
 		}
-		if (!d) {
+		if (r?.k === "prev" || r?.k === "next") {
+			v.mode = { k: "idle" };
+			v.bubble.innerHTML = "";
+			v.panel.innerHTML = `<div class="wm-name">${labelOf(r)}</div><div class="wm-desc">ほかの　植民地を　見る。</div>`;
+			return;
+		}
+		if (r?.k !== "spot") {
 			// やめる：▼ と フキダシを しまう
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
 			v.panel.innerHTML = `<div class="wm-name">やめる</div><div class="wm-desc">おんJタウンに　のこる。</div>`;
 			return;
 		}
-		v.mode = { k: "pick", cur: d };
-		v.aim(d);
-		v.info(d);
-		v.say(d);
+		v.mode = { k: "pick", cur: r.d };
+		v.aim(r.d);
+		v.info(r.d);
+		v.say(r.d);
 	};
 	const ctl: { move?: (i: number) => void; pick?: (i: number) => void } = {};
 	const onTap = (e: PointerEvent) => {
 		const [mx, my] = v.toMap(e);
 		let near = -1;
 		let nd = 18;
-		spots.forEach((d, i) => {
-			const [x, y] = spotOf(d);
+		rows.forEach((r, i) => {
+			if (r.k !== "spot") return;
+			const [x, y] = spotOf(r.d);
 			const dd = Math.hypot(mx - x, my - (y - 8));
 			if (dd < nd) {
 				nd = dd;
@@ -851,7 +881,8 @@ export const pickColony = async (
 		});
 		if (near < 0) return;
 		const m = v.mode;
-		if (m.k === "pick" && m.cur === spots[near]) ctl.pick?.(near);
+		const r = rows[near];
+		if (m.k === "pick" && r?.k === "spot" && m.cur === r.d) ctl.pick?.(near);
 		else ctl.move?.(near);
 	};
 	v.canvas.addEventListener("pointerup", onTap);
@@ -867,40 +898,63 @@ export const pickColony = async (
 			);
 		}
 	});
-	let at = Math.max(0, spots.indexOf(first));
-	let i = cancel;
+	let at = Math.max(
+		0,
+		rows.findIndex((r) => r.k === "spot" && r.d === first),
+	);
+	let picked: DungeonId | null = null;
 	for (;;) {
-		const picking = choice.choose(labels, cancel, (name) => ctx.se(name), at, {
-			parent: v.box,
-			className: "wm-choice",
-			cols: 2,
-			onMove,
-			disabled: (i) =>
-				i < spots.length && !o.open.includes(spots[i] as DungeonId),
-			ctl,
-			// 歩いて 口に 入った 押しっぱなしで すぐに カーソルが 動かないように 長めに 待つ
-			waitMs: 400,
-			// 押しっぱなしで 行き先が 走りまわらないように ゆっくり
-			repeatMs: 320,
-		});
+		const labels = rows.map(labelOf);
+		const picking = choice.choose(
+			labels,
+			labels.length - 1,
+			(name) => ctx.se(name),
+			at,
+			{
+				parent: v.box,
+				className: "wm-choice",
+				cols: 2,
+				onMove,
+				ctl,
+				// 歩いて 口に 入った 押しっぱなしで すぐに カーソルが 動かないように 長めに 待つ
+				waitMs: 400,
+				// 押しっぱなしで 行き先が 走りまわらないように ゆっくり
+				repeatMs: 320,
+			},
+		);
 		const list = v.box.querySelector<HTMLElement>(".wm-choice");
 		if (list) listed.observe(list);
 		listed.observe(v.panel);
 		v.box.classList.add("wm-listing");
-		i = await picking;
-		if (i !== heroRow) break;
-		// 次の 主人公へ（選んだ 主人公は 覚えて おく）
-		const next =
-			heroes[(heroes.indexOf(chosenHero()) + 1) % heroes.length] ?? "kiriko";
-		chooseHero(next);
-		labels[heroRow] = heroLabel();
-		at = heroRow;
+		const i = await picking;
+		const r = rows[i];
+		if (r?.k === "prev" || r?.k === "next") {
+			page += r.k === "next" ? 1 : -1;
+			rows = rowsOf(page);
+			// 移った 先の ページでも 同じ 向きの 行に カーソル（無ければ はじめの 板）
+			at = Math.max(
+				0,
+				rows.findIndex((x) => x.k === r.k),
+			);
+			if (rows[at]?.k !== r.k) at = 0;
+			continue;
+		}
+		if (r?.k === "hero") {
+			// 次の 主人公へ（選んだ 主人公は 覚えて おく）
+			const next =
+				heroes[(heroes.indexOf(chosenHero()) + 1) % heroes.length] ?? "kiriko";
+			chooseHero(next);
+			at = i;
+			continue;
+		}
+		picked = r?.k === "spot" ? r.d : null;
+		break;
 	}
 	listed.disconnect();
 	v.box.classList.remove("wm-listing");
 	v.canvas.removeEventListener("pointerup", onTap);
 	if (!o.view) await v.close();
-	return (i < spots.length ? spots[i] : undefined) ?? null;
+	return picked;
 };
 
 // ───────────────── 向かう・もどる ─────────────────
