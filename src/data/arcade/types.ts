@@ -24,6 +24,19 @@ export const ARCADE_GAMES = [
 	// ── キリコの 家の 家具（ちょっとした できごとで もらう。data/village/myhome.ts の EVENT_GIFTS）
 	"platform", // 横スクロールの 筐体：スーパーキリコ
 	"bomber", // ボンバーの ゲーム機：荒らし爆破
+	// ── キリコの 家の 家具（リサイクルショップで 買う。1つの 家具に 1つの ゲーム。2026-10-13）
+	"snake", // 赤い 筐体：安価スネーク（>>を つないで 伸びる）
+	"stack", // 青い 筐体：スレ積み（落ちものパズル）
+	"crossing", // 緑の 筐体：道路わたり（車を よけて 向こう岸へ）
+	"gomoku", // 碁盤：五目並べ（名無しと 打つ）
+	"hasami", // 将棋盤：はさみ将棋（名無しと 指す）
+	"mines", // ノートパソコン：地雷スレ（マインスイーパー）
+	"grass", // デスクトップの パソコン：大草原2048（草を あわせて 育てる）
+	"taiko", // 太鼓：おんJ太鼓（BGMの 譜面に あわせて たたく）
+	"simon", // ターンテーブル：音おぼえ（光った 順を まねる）
+	"pong", // ブラウン管と ゲーム機：ピンポン（名無しと 打ちあう）
+	"kurohige", // 樽：イッチ危機一髪（剣を 刺して イッチを 飛ばさない）
+	"kingyo", // バケツ：金魚すくい（ポイが 破れる 前に）
 ] as const;
 
 export type ArcadeGame = (typeof ARCADE_GAMES)[number];
@@ -45,6 +58,18 @@ export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	glassSlide: "bar",
 	platform: "myhome",
 	bomber: "myhome",
+	snake: "myhome",
+	stack: "myhome",
+	crossing: "myhome",
+	gomoku: "myhome",
+	hasami: "myhome",
+	mines: "myhome",
+	grass: "myhome",
+	taiko: "myhome",
+	simon: "myhome",
+	pong: "myhome",
+	kurohige: "myhome",
+	kingyo: "myhome",
 };
 
 export const isArcadeGame = (k: string | undefined): k is ArcadeGame =>

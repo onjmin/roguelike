@@ -101,6 +101,8 @@ import {
 } from "../ui/arcade/arcade";
 import type { Ctx } from "../ui/ctx";
 import { buildFacility } from "../ui/village/facilities";
+import { HOME_GAME_TESTS } from "./arcadeHome";
+import { HomeFail } from "./arcadeHome/kit";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -864,6 +866,8 @@ test("家の ゲーム: ボンバーは 爆風で レスと 荒らしを 吹き�
 	ok(BM.cols * BM.cell <= 240, "the maze fits the board");
 });
 
+for (const c of HOME_GAME_TESTS) test(`家の ゲーム: ${c.name}`, c.run);
+
 export const runArcadeTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];
 	for (const c of CASES) {
@@ -875,7 +879,8 @@ export const runArcadeTests = async (): Promise<TestResult[]> => {
 				id: "arcade",
 				name: c.name,
 				ok: false,
-				reason: e instanceof Fail ? e.message : String(e),
+				reason:
+					e instanceof Fail || e instanceof HomeFail ? e.message : String(e),
 			});
 		}
 	}

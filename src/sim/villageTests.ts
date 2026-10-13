@@ -2181,9 +2181,10 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 			for (let x = 1; x <= 10; x++)
 				if (!placed.some((p) => p.id === id) && canPlace(placed, { id, x, y }))
 					placed.push({ id, x, y });
-	// （2026-10-13 に 家具を 買えるように して ふえたので、部屋に 入りきらない 物が すこし ある）
+	// （2026-10-13 に 家具を 買えるように して ふえ、遊べる 家具も 12 ふえたので、ぜんぶは 部屋に 入りきらない。
+	// 入りきらない 物は 収納に しまって 入れかえる。ここは 部屋の 広さ（だいたい 18 個）を 見る）
 	ok(
-		placed.length >= Object.keys(FURNITURE).length - 5,
+		placed.length >= 16,
 		`only ${placed.length} placed`,
 	);
 	ok(layoutOk(placed), "full room is not walkable");

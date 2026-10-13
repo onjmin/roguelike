@@ -24,6 +24,7 @@ import {
 	slStart,
 	slStep,
 } from "../../data/arcade/logic";
+import { BEAT_OPTS } from "../../data/arcade/songChart";
 import { ARCADE, ARCADE_BOARD } from "../../data/arcade/text";
 import type { UiCtx } from "../list";
 import { type G, txt } from "../neta/netaBoard";
@@ -36,6 +37,13 @@ import {
 	isTap,
 	playBoard,
 } from "./arcadeKit";
+import {
+	pickSong,
+	SONG_LOADING,
+	type SongClock,
+	saveSongBest,
+	startSong,
+} from "./songPlay";
 
 const rnd = Math.random;
 
@@ -332,28 +340,44 @@ const LW = 28;
 const LANE_KEYS = ["left", "down", "up", "right"] as const;
 const LANE_INK = ["#e05080", "#40a0e0", "#60c060", "#e0a030"];
 
-export const playRhythm = (ctx: UiCtx): Promise<ArcadeResult | null> => {
+/**
+ * 音ゲー：町で 聞いた 曲を えらび、その 曲の 旋律から 作った 譜面で 遊ぶ（ui/arcade/songPlay.ts）。
+ * 時計は 鳴っている 曲の 位置。曲が 作れない ときは 決まった 1曲（rhChart）で 音なし。
+ */
+export const playRhythm = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
+	const song = await pickSong(ctx, "rhythm", BEAT_OPTS);
+	if (!song) return null;
 	let judge = "";
 	let judgeT = 0;
 	const lit = [0, 0, 0, 0];
-	return playBoard(ctx, "rhythm", {
-		start: rhStart,
+	let clock: SongClock | null = null;
+	let loading = false;
+	const r = await playBoard(ctx, "rhythm", {
+		start: () => rhStart(song.chart),
+		note: song.label,
 		step: (s, f) => {
+			// はじめの こまで 曲を 鳴らす（READY の あと）
+			clock ??= startSong(ctx, song);
+			const now = clock.now(f.clock);
+			const wait = clock.waiting() && f.clock > 0.4;
+			if (wait !== loading) f.say(wait ? SONG_LOADING : song.label);
+			loading = wait;
 			const hits: { lane: number; at: number }[] = [];
 			for (const e of f.evs) {
 				const k = LANE_KEYS.findIndex((d) => isKey(e, d));
-				if (k >= 0) hits.push({ lane: k, at: f.secOf(e.at) });
+				const at = clock.at(e.at, f.clock);
+				if (k >= 0) hits.push({ lane: k, at });
 				else if (isTap(e)) {
 					const l = Math.floor((e.tap[0] - LX) / LW);
-					if (l >= 0 && l < RH.lanes) hits.push({ lane: l, at: f.secOf(e.at) });
+					if (l >= 0 && l < RH.lanes) hits.push({ lane: l, at });
 				}
 			}
 			for (const h of hits) lit[h.lane] = 0.12;
 			for (let i = 0; i < lit.length; i++)
 				lit[i] = Math.max(0, (lit[i] ?? 0) - f.dt);
 			judgeT = Math.max(0, judgeT - f.dt);
-			// 時計どおりに 進める（こまが 遅れても 札の 時刻は ずれない）
-			for (const e of rhStep(s, Math.max(0, f.clock - s.t), hits)) {
+			// 曲の 時計どおりに 進める（こまが 遅れても 札の 時刻は ずれない）
+			for (const e of rhStep(s, Math.max(0, now - s.t), hits)) {
 				if (e.judge !== "miss") f.se("cursor");
 				judge = ARCADE_BOARD.rhythmJudge[e.judge];
 				judgeT = 0.5;
@@ -403,5 +427,7 @@ export const playRhythm = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 		over: (s) => s.over,
 		score: (s) => s.score,
 		end: () => ARCADE.clear,
-	});
+	}).finally(() => clock?.stop());
+	if (r) saveSongBest("rhythm", song.bgm, r.score);
+	return r;
 };

@@ -1023,6 +1023,8 @@ export type RhNote = { at: number; lane: number; judged: RhJudge | null };
 export type RhState = {
 	t: number;
 	notes: RhNote[];
+	/** おわりの 秒（BGM の 譜面は 小節の きり。無ければ さいごの 札の 1秒 あと）。 */
+	end?: number;
 	score: number;
 	combo: number;
 	maxCombo: number;
@@ -1071,9 +1073,14 @@ export const rhChart = (): { at: number; lane: number }[] => {
 	return out;
 };
 
-export const rhStart = (): RhState => ({
+/** chart を わたせば その 譜面（BGM の 譜面。data/arcade/songChart.ts）、無ければ 決まった 1曲。 */
+export const rhStart = (chart?: {
+	notes: readonly { at: number; lane: number }[];
+	endSec: number;
+}): RhState => ({
 	t: 0,
-	notes: rhChart().map((n) => ({ ...n, judged: null })),
+	notes: (chart?.notes ?? rhChart()).map((n) => ({ ...n, judged: null })),
+	end: chart?.endSec,
 	score: 0,
 	combo: 0,
 	maxCombo: 0,
@@ -1128,7 +1135,7 @@ export const rhStep = (
 	s.t += dt;
 	for (const n of s.notes)
 		if (!n.judged && s.t - n.at > RH.good) rhMark(s, n, "miss", ev);
-	const end = (s.notes[s.notes.length - 1]?.at ?? 0) + 1;
+	const end = s.end ?? (s.notes[s.notes.length - 1]?.at ?? 0) + 1;
 	if (s.t >= end) {
 		s.over = true;
 		if (s.counts.miss === 0) s.score += RH.fullCombo;

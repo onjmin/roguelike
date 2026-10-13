@@ -6,6 +6,8 @@
 // リサイクルショップの レジで 買う（FURNITURE_PRICE。高め）。電話で 喫茶で 親しく なった 人を 招ける。
 // ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/village/myhome.ts。
 
+import { ARCADE_TEXT } from "../arcade/text";
+import type { ArcadeGame } from "../arcade/types";
 import type { Cell } from "./map";
 import { type RoomArtName, ri, riCell } from "./rpgenArt";
 import { base } from "./tiles";
@@ -43,7 +45,19 @@ export type FurnitureId =
 	| "shelfDark"
 	| "tvTall"
 	| "platformer"
-	| "bomberbox";
+	| "bomberbox"
+	| "cabSnake"
+	| "cabStack"
+	| "cabCross"
+	| "goban"
+	| "shogiban"
+	| "laptop"
+	| "desktopPc"
+	| "taiko"
+	| "turntable"
+	| "crtGame"
+	| "barrel"
+	| "kingyoBucket";
 
 export type Furniture = {
 	name: string;
@@ -106,6 +120,67 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 		name: "ボンバーの　ゲーム機",
 		cells: [[base(2, 519)], [base(2, 520)]],
 		line: "ボンバーの　ゲーム機。\n画面に「荒らし爆破」の　文字。",
+	},
+	// 遊べる 家具（1つに 1つの ゲーム。data/arcade/types.ts。line は ARCADE_TEXT の line と 同じ）
+	cabSnake: {
+		name: "赤い　筐体",
+		cells: [[base(0, 519)], [base(0, 520)]],
+		line: ARCADE_TEXT.snake.line,
+	},
+	cabStack: {
+		name: "青い　筐体",
+		cells: [[base(3, 519)], [base(3, 520)]],
+		line: ARCADE_TEXT.stack.line,
+	},
+	cabCross: {
+		name: "緑の　筐体",
+		cells: [[base(4, 519)], [base(4, 520)]],
+		line: ARCADE_TEXT.crossing.line,
+	},
+	goban: {
+		name: "碁盤",
+		cells: [[ri("goban")]],
+		line: ARCADE_TEXT.gomoku.line,
+	},
+	shogiban: {
+		name: "将棋盤",
+		cells: [[ri("shogiban")]],
+		line: ARCADE_TEXT.hasami.line,
+	},
+	laptop: {
+		name: "ノートパソコン",
+		cells: [[ri("laptop")]],
+		line: ARCADE_TEXT.mines.line,
+	},
+	desktopPc: {
+		name: "デスクトップの　パソコン",
+		cells: [[ri("pcTop")]],
+		line: ARCADE_TEXT.grass.line,
+	},
+	taiko: {
+		name: "太鼓",
+		cells: [[ri("taiko")]],
+		line: ARCADE_TEXT.taiko.line,
+	},
+	turntable: {
+		name: "ターンテーブル",
+		cells: [[ri("turntableTop")]],
+		line: ARCADE_TEXT.simon.line,
+	},
+	crtGame: {
+		name: "古い　ゲーム機",
+		cells: [[ri("tvCrtB")]],
+		line: ARCADE_TEXT.pong.line,
+	},
+	barrel: {
+		name: "イッチの　樽",
+		cells: [[ri("barrel")]],
+		line: ARCADE_TEXT.kurohige.line,
+	},
+	kingyoBucket: {
+		name: "金魚の　バケツ",
+		cells: [[ri("bucket")]],
+		line: ARCADE_TEXT.kingyo.line,
 	},
 	tvTall: {
 		name: "台つきの　テレビ",
@@ -191,12 +266,38 @@ export const FURNITURE_PRICE: Record<FurnitureId, number> = {
 	// ゲームの 家具は 売っていない（できごとで もらう：EVENT_GIFTS）
 	platformer: 99999,
 	bomberbox: 99999,
+	// 遊べる 家具（リサイクルショップで 売る）
+	cabSnake: 38000,
+	cabStack: 42000,
+	cabCross: 36000,
+	goban: 14000,
+	shogiban: 12000,
+	laptop: 32000,
+	desktopPc: 45000,
+	taiko: 22000,
+	turntable: 26000,
+	crtGame: 18000,
+	barrel: 9000,
+	kingyoBucket: 7000,
 };
 
 /** 遊べる 家具（調べると「遊ぶ」。data/arcade/types.ts の ゲーム）。 */
-export const FURNITURE_GAME: Partial<
-	Record<FurnitureId, "platform" | "bomber">
-> = { platformer: "platform", bomberbox: "bomber" };
+export const FURNITURE_GAME: Partial<Record<FurnitureId, ArcadeGame>> = {
+	platformer: "platform",
+	bomberbox: "bomber",
+	cabSnake: "snake",
+	cabStack: "stack",
+	cabCross: "crossing",
+	goban: "gomoku",
+	shogiban: "hasami",
+	laptop: "mines",
+	desktopPc: "grass",
+	taiko: "taiko",
+	turntable: "simon",
+	crtGame: "pong",
+	barrel: "kurohige",
+	kingyoBucket: "kingyo",
+};
 
 /** 店では 売らない 家具（できごとで もらう）。 */
 export const NOT_SOLD: readonly FurnitureId[] = ["platformer", "bomberbox"];

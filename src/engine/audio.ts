@@ -549,13 +549,14 @@ export class GameAudio {
 		});
 	}
 
-	/** destination は軽量の音の出口（省略で ctx.destination）。 */
+	/** destination は軽量の音の出口（省略で ctx.destination）。tick は 鳴っている 位置（ステップ）を 受ける 口。 */
 	private async startMml(
 		mml: string,
 		loop: boolean,
 		startStep: number | undefined,
 		token: number,
 		destination?: AudioNode,
+		tick?: (step: number) => void,
 	): Promise<MmlPlayback | null> {
 		const ctx = this.ctx;
 		if (!ctx) return null;
@@ -567,6 +568,7 @@ export class GameAudio {
 		const volume = this.volumeFor(mml);
 		const onTick = (step: number) => {
 			if (token === this.bgmToken) this.bgmLastStep = step;
+			tick?.(step);
 		};
 		// 自分で止めていないのに止まった = 停滞検知。見えていれば続きから鳴らし直す
 		const onStop = () => {
@@ -608,6 +610,52 @@ export class GameAudio {
 			console.warn("[audio] BGM を鳴らせませんでした", e);
 			return null;
 		}
+	}
+
+	// ───────────────── 音ゲー（ui/arcade/songPlay.ts） ─────────────────
+
+	/**
+	 * 音ゲーの 曲：BGM を fromStep から 1回だけ（ループ なし）鳴らす。step() は 鳴っている 位置
+	 * （dtm の onTick。音の 時計から 出した ステップ。鳴りはじめる 前は fromStep）。
+	 * 鳴らせない（ミュート・BGM 切・音を まだ 許して いない）ときは null。止めた あとは 曲名を 忘れる
+	 * （次の bgm() は 頭から）。
+	 */
+	async playChartSong(
+		name: string,
+		fromStep: number,
+	): Promise<{ step: () => number; stop: () => void } | null> {
+		this.stopBgmPlayback();
+		this.bgmName = null;
+		const mml = this.bgmData[name];
+		const ctx = this.ctx;
+		if (!mml || !ctx || !this.canPlayBgm()) return null;
+		const token = this.bgmToken;
+		let at = fromStep;
+		const bus = settings.bgm === "hq" ? null : ctx.createGain();
+		bus?.connect(ctx.destination);
+		const pb = await this.startMml(
+			mml,
+			false,
+			fromStep || undefined,
+			token,
+			bus ?? undefined,
+			(step) => {
+				at = step;
+			},
+		);
+		if (!pb || token !== this.bgmToken) {
+			if (pb) this.dispose(pb);
+			if (bus) releaseBus(bus);
+			return null;
+		}
+		this.bgmPlayback = pb;
+		this.bgmBus = bus;
+		return {
+			step: () => at,
+			stop: () => {
+				if (this.bgmPlayback === pb) this.stopBgmPlayback();
+			},
+		};
 	}
 
 	// ───────────────── ピアノ（音楽室。ui/minigames/piano.ts） ─────────────────

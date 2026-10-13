@@ -28,17 +28,37 @@ import { type ArcadeResult, hud, isKey, isTap, playBoard } from "./arcadeKit";
 
 const rnd = Math.random;
 
-/** 横から 見た 小さな キリコ。 */
+/**
+ * 小さな キリコ。色は 歩行グラ（data/people/cast.ts の KIRIKO_WALK）から：赤茶の 髪に 緑の 髪かざり、
+ * 緑の 服、黄土色の スカート、紺の 目。
+ */
 const kiriko = (g: G, x: number, y: number, step: number): void => {
 	const X = Math.round(x);
 	const Y = Math.round(y);
-	g.fillStyle = "#7a3a20";
-	g.fillRect(X - 4, Y - 14, 8, 4);
-	g.fillStyle = "#f2d0a8";
-	g.fillRect(X - 3, Y - 11, 6, 4);
-	g.fillStyle = "#4060c0";
-	g.fillRect(X - 4, Y - 7, 8, 4);
-	g.fillStyle = "#303040";
+	// 髪（両わきは 顔の 横まで）と 緑の 髪かざり
+	g.fillStyle = "#72241f";
+	g.fillRect(X - 4, Y - 14, 8, 3);
+	g.fillRect(X - 4, Y - 11, 1, 4);
+	g.fillRect(X + 3, Y - 11, 1, 4);
+	g.fillStyle = "#28a131";
+	g.fillRect(X - 3, Y - 14, 6, 1);
+	g.fillStyle = "#9f5753";
+	g.fillRect(X - 2, Y - 13, 4, 1);
+	// 顔と 目
+	g.fillStyle = "#f0c8a8";
+	g.fillRect(X - 3, Y - 11, 6, 3);
+	g.fillStyle = "#031c3e";
+	g.fillRect(X - 2, Y - 10, 1, 1);
+	g.fillRect(X + 1, Y - 10, 1, 1);
+	// 緑の 服（すそは 濃い 緑）
+	g.fillStyle = "#28a131";
+	g.fillRect(X - 4, Y - 8, 8, 3);
+	g.fillStyle = "#105516";
+	g.fillRect(X - 4, Y - 6, 8, 1);
+	// 黄土色の スカート
+	g.fillStyle = "#926855";
+	g.fillRect(X - 4, Y - 5, 8, 2);
+	g.fillStyle = "#353333";
 	g.fillRect(X - 3 + step, Y - 3, 2, 3);
 	g.fillRect(X + 1 - step, Y - 3, 2, 3);
 };

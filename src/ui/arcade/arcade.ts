@@ -34,6 +34,18 @@ import {
 	playSuika,
 } from "./arcadeParlor";
 import { playFighter, playMole, playRhythm, playSlot } from "./arcadeTiming";
+import { playCrossing } from "./home/crossing";
+import { playGomoku } from "./home/gomoku";
+import { playGrass } from "./home/grass";
+import { playHasami } from "./home/hasami";
+import { playKingyo } from "./home/kingyo";
+import { playKurohige } from "./home/kurohige";
+import { playMines } from "./home/mines";
+import { playPong } from "./home/pong";
+import { playSimon } from "./home/simon";
+import { playSnake } from "./home/snake";
+import { playStack } from "./home/stack";
+import { playTaiko } from "./home/taiko";
 
 export { isArcadeGame };
 
@@ -148,6 +160,18 @@ const BOARDS: Record<ArcadeGame, (ctx: UiCtx) => Promise<ArcadeResult | null>> =
 		glassSlide: playGlassSlide,
 		platform: playPlatform,
 		bomber: playBomber,
+		snake: playSnake,
+		stack: playStack,
+		crossing: playCrossing,
+		gomoku: playGomoku,
+		hasami: playHasami,
+		mines: playMines,
+		grass: playGrass,
+		taiko: playTaiko,
+		simon: playSimon,
+		pong: playPong,
+		kurohige: playKurohige,
+		kingyo: playKingyo,
 	};
 
 /** 筐体を 調べた あと（物の 文は ui/village/facilities.ts が 先に 読む）。 */
