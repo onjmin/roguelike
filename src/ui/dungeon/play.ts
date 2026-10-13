@@ -302,6 +302,8 @@ export class Play {
 	private bossUid: number | null = null;
 	/** 帰り方の 演出（rescue。冒険の記録の 前に 終わるのを 待つ）。 */
 	private rescueFx: Promise<void> | null = null;
+	/** 帰還スレで 地上へ もどる ところ（「もどる」を えらんだ。リプレイでは 終わりの 種類で 見る）。 */
+	private escaping = false;
 	/** カメラを 止める（帰り方の 演出で キリコだけ 動かす あいだ）。 */
 	private camFreeze = false;
 	/**
@@ -1920,8 +1922,10 @@ export class Play {
 					],
 					{ start: 1 },
 				);
-				if (v === "go")
+				if (v === "go") {
+					this.escaping = true;
 					return this.exec({ c: "use", item: cmd.item, target: 0 });
+				}
 				return ev;
 			}
 			if (run.s.end) {
@@ -2440,6 +2444,47 @@ export class Play {
 			pd.ty = lift.y - 9;
 		}
 		await wait(900 * k);
+	}
+
+	/**
+	 * 帰還スレの 演出（2026-10-13 作者：「帰還スレは 効果音と エフェクトを」）。表示だけ。
+	 * 足もとに 光の 柱 → キリコが くるくる まわる → 光が つよく なって 上へ 抜ける。
+	 */
+	private async escapeScene(): Promise<void> {
+		const pd = this.disp.get(PLAYER_ID);
+		const fast = settings.speed === "fast" || !!(this.rp && this.rp.speed >= 4);
+		const k = fast ? 0.6 : 1;
+		this.travel = null;
+		this.camFreeze = true;
+		this.ctx.se("warp");
+		const at = pd ? { x: pd.tx, y: pd.ty } : null;
+		if (at) this.pop(at, "帰還", "dup");
+		// くるくる まわる（8方向を 2周。だんだん はやく）
+		const spin = (async () => {
+			if (!pd) return;
+			for (let i = 0; i < 16 && !this.stopped; i++) {
+				pd.dir = ((i * 2) % 8) as Dir8;
+				await wait(Math.max(35, (120 - i * 6) * k));
+			}
+		})();
+		await Promise.all([this.flash("rgba(170,225,255,0.35)", 300 * k), spin]);
+		if (this.stopped) return;
+		this.ctx.se("chapter");
+		if (pd && at) {
+			const now = performance.now();
+			pd.dir = 4;
+			pd.keys = [
+				{ x: at.x, y: at.y, t: now },
+				{ x: at.x, y: at.y - 0.4, t: now + 200 * k },
+				{ x: at.x, y: at.y - 9, t: now + 800 * k },
+			];
+			pd.tx = at.x;
+			pd.ty = at.y - 9;
+		}
+		await Promise.all([
+			this.flash("rgba(235,250,255,0.7)", 500 * k),
+			wait(800 * k),
+		]);
 	}
 
 	private async playEvents(ev: GameEvent[], fast: boolean): Promise<void> {
@@ -3152,6 +3197,19 @@ export class Play {
 			await nextFrame();
 			this.fadeEl.style.opacity = "1";
 			await wait(700);
+		} else if (
+			s.end?.kind === "escape" ||
+			(this.escaping && s.end?.kind === "clear")
+		) {
+			// 帰還スレ：光の 柱に つつまれて くるくる まわり、上へ 抜けて 白く 暗転
+			await this.logDrained();
+			await this.escapeScene();
+			if (this.stopped) return;
+			this.fadeEl.style.background = "#f4fbff";
+			this.fadeEl.style.transition = "opacity 0.5s";
+			await nextFrame();
+			this.fadeEl.style.opacity = "1";
+			await wait(600);
 		} else await wait(700);
 		if (this.rp) {
 			await this.replayEnd();
