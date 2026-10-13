@@ -75,6 +75,12 @@ export const lastStepOf = (stage: number): number => {
 	return at;
 };
 
+/**
+ * 売り上げは もう 次の 段に 届いているが、1回の 帰りで 1段までなので 次の 帰りを 待っている（ゼロが そう 言う）。
+ */
+export const nextStageReady = (stage: number, points: number): boolean =>
+	stage >= 1 && stage < TOWN_STAGES - 1 && points >= STAGE_POINTS[stage + 1];
+
 /** 段 → 倉庫に あずけられる数。 */
 export const STORAGE_CAP: readonly number[] = [0, 0, 3, 5, 10, 20, 40, 60];
 

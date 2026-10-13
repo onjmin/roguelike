@@ -3,7 +3,7 @@
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story/story.ts・data/town/town.ts・data/story/quotes.ts）を引く。
 
 import { DUNGEON_IDS, dungeonById } from "../../core/data/dungeons";
-import { STORAGE_CAP, TOWN_STAGES } from "../../core/town";
+import { nextStageReady, STORAGE_CAP, TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import {
 	pickQuote,
@@ -314,6 +314,8 @@ export const ledgerLine = (): string => {
 	if (t.stage >= TOWN_STAGES - 1)
 		return fill(VILLAGE_MSG.ledgerMax, { points: t.points });
 	if (t.points <= 0) return VILLAGE_MSG.ledgerNone;
+	if (nextStageReady(t.stage, t.points))
+		return fill(VILLAGE_MSG.ledgerNext, { points: t.points });
 	return fill(VILLAGE_MSG.ledger, { points: t.points });
 };
 
