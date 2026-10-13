@@ -7,17 +7,53 @@
 //   地の文 1〜2窓。村に いる あいだの 店ごとの 1回目だけ、食べた あとに 店番の「お代は　ええ」。
 // - 2回目からは 品の 値段（品書きに「名前　値段」）を 注文の 前に 払う（チャリン）。足りなければ 店番の short で
 //   断られて 何も 出ない（2026-10-14 作者：「他の 有料に して いい」。財布は engine/wallet.ts）。
+// - 居酒屋「草」だけ ツケが きく（作者：「居酒屋は ツケも できる ように」）：足りなければ「ツケに　しとこか？」で
+//   TAB_CAP 円まで ツケに できる。ツケが あって 払える ときは 品書きの 前に「払ってくか？」（kiriko-roguelike/tab）。
 // どれも 寄り道で、何も 持ちこまない（満腹度・道具・強さ・記録には ふれない。乱数も 使わない）。
 // 板の 見た目は 別ゲーの 板（ui/minigames/minigames.ts）と 同じ クラス（.mgame）。
 
-import { type Dish, EAT_MENUS } from "../../data/town/eateries";
+import { type Dish, EAT_MENUS, TAB_CAP } from "../../data/town/eateries";
 import { loadImage } from "../../engine/assets";
 import type { Story } from "../../engine/defs";
-import { yen } from "../../engine/wallet";
+import { walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { el } from "../dom";
-import { pay } from "../village/pay";
+import { pay, previewing } from "../village/pay";
 import { fill } from "../village/villageTalk";
+
+// ───────────────── ツケ（居酒屋「草」。data/town/eateries.ts の tab） ─────────────────
+
+const TAB_KEY = "kiriko-roguelike/tab";
+/** 書けない ときの この 回の ツケ（下見・保存できない とき）。 */
+let tabMemo: number | null = null;
+
+/** たまった ツケ（円）。 */
+export const loadTab = (): number => {
+	if (tabMemo !== null) return tabMemo;
+	try {
+		const v = JSON.parse(localStorage.getItem(TAB_KEY) ?? "0") as unknown;
+		return typeof v === "number" && Number.isFinite(v) && v > 0
+			? Math.floor(v)
+			: 0;
+	} catch {
+		return 0;
+	}
+};
+
+const saveTab = (n: number): void => {
+	tabMemo = n;
+	if (previewing()) return;
+	try {
+		localStorage.setItem(TAB_KEY, JSON.stringify(n));
+	} catch {
+		// 保存できなくても この 回は 覚えている
+	}
+};
+
+/** 試験用：覚えた ツケを 忘れる。 */
+export const forgetTabMemo = (): void => {
+	tabMemo = null;
+};
 
 /** 品書きの 1行（「名前　値段」。長い 名前は label）。 */
 export const dishLabel = (d: Dish): string =>
@@ -131,6 +167,20 @@ export const showDish = async (
 export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	const m = EAT_MENUS[id];
 	if (!m) return;
+	// ツケが あって 払える なら 先に 聞く（払わなくても 注文は できる）
+	const owe = m.tab ? loadTab() : 0;
+	if (m.tab && owe > 0 && walletYen() >= owe) {
+		const tab = yen(owe);
+		await keeperSay(s, m.keeper, fill(m.tab.payAsk, { tab }));
+		const p = await s.choose(
+			m.tab.payMenu.map((x) => fill(x, { tab })),
+			{ cancel: 1 },
+		);
+		if (p === 0 && pay(s, owe)) {
+			saveTab(0);
+			await keeperSay(s, m.keeper, m.tab.paid);
+		} else await keeperSay(s, m.keeper, m.tab.later);
+	}
 	const n = m.dishes.length;
 	const k = await s.choose([...m.dishes.map(dishLabel), "やめる"], {
 		cancel: n,
@@ -141,10 +191,23 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	}
 	const d = m.dishes[k];
 	const ate = `eat:${id}`;
-	// 1回目は お代 なし（食べた あとに free）。2回目からは 注文の 前に 払う
+	// 1回目は お代 なし（食べた あとに free）。2回目からは 注文の 前に 払う。
+	// 足りない とき ツケが きく 店（居酒屋）なら ツケに できる（上限 TAB_CAP）
 	if (s.flag(ate) && !pay(s, d.price)) {
-		await keeperSay(s, m.keeper, fill(m.short, { price: yen(d.price) }));
-		return;
+		const t = m.tab;
+		const owe = loadTab();
+		if (!t || owe + d.price > TAB_CAP) {
+			const line = t ? fill(t.full, { tab: yen(owe) }) : m.short;
+			await keeperSay(s, m.keeper, fill(line, { price: yen(d.price) }));
+			return;
+		}
+		await keeperSay(s, m.keeper, fill(t.ask, { price: yen(d.price) }));
+		if ((await s.choose([...t.menu], { cancel: 1 })) !== 0) {
+			await keeperSay(s, m.keeper, m.no);
+			return;
+		}
+		saveTab(owe + d.price);
+		await keeperSay(s, m.keeper, fill(t.put, { tab: yen(owe + d.price) }));
 	}
 	await keeperSay(s, m.keeper, fill(m.order, { dish: d.name }));
 	// チーン（できあがりの 呼び鈴）

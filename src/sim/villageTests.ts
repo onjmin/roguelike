@@ -129,7 +129,7 @@ import {
 	BATH_YEN,
 } from "../data/town/bath";
 import { SEASONS, season } from "../data/town/calendar";
-import { EAT_MENUS } from "../data/town/eateries";
+import { EAT_MENUS, TAB_CAP } from "../data/town/eateries";
 import {
 	DRINK_BAR,
 	DRINK_BAR_YEN,
@@ -346,7 +346,7 @@ import {
 	toField,
 	walkDir,
 } from "../ui/minigames/batting";
-import { dishLabel } from "../ui/minigames/eat";
+import { dishLabel, forgetTabMemo, loadTab } from "../ui/minigames/eat";
 import { sharedHead } from "../ui/share";
 import {
 	buildCafe,
@@ -7799,6 +7799,76 @@ test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目
 		);
 		ok(walletYen() === 100, `wallet ${walletYen()}`);
 		forgetWalletMemo();
+	});
+});
+
+test("居酒屋の ツケ（2026-10-14）: 足りなければ ツケに できて 上限まで、払える とき 来ると「払ってくか？」で 払う", async () => {
+	await withStorageAsync(async () => {
+		forgetTabMemo();
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: [],
+		};
+		const f = facilityById("izakaya");
+		const m = EAT_MENUS.izakaya;
+		const t = m.tab;
+		ok(f && t, "izakaya has a tab");
+		if (!f || !t) return;
+		const person = f.room?.people?.find((p) => p.play === "eat");
+		const ev = (buildFacility(f, view, {} as Ctx).events ?? []).find(
+			(e) => e.id === person?.id,
+		);
+		ok(ev?.run, "no izakaya keeper");
+		if (!ev?.run) return;
+		const d = m.dishes[0];
+		setTownYen(0);
+		const { s, log } = fakeStory({ pick: 0 });
+		await ev.run(s); // 1回目は タダ
+		// 2回目：お金が ない → ツケに する
+		log.length = 0;
+		await ev.run(s);
+		ok(
+			inOrder(log, [
+				`say nanj: ${fill(t.ask, { price: yen(d.price) })}`,
+				`choose ${t.menu.join("/")}`,
+				`say nanj: ${fill(t.put, { tab: yen(d.price) })}`,
+				"se eat",
+			]),
+			`tab:\n${log.join("\n")}`,
+		);
+		ok(loadTab() === d.price, `tab ${loadTab()}`);
+		// 上限を こえる ツケは できない
+		forgetTabMemo();
+		localStorage.setItem("kiriko-roguelike/tab", JSON.stringify(TAB_CAP));
+		log.length = 0;
+		await ev.run(s);
+		ok(
+			log.includes(`say nanj: ${fill(t.full, { tab: yen(TAB_CAP) })}`) &&
+				!log.includes("se eat"),
+			`full:\n${log.join("\n")}`,
+		);
+		// 払える とき：先に「払ってくか？」→ 払う
+		forgetTabMemo();
+		localStorage.setItem("kiriko-roguelike/tab", JSON.stringify(d.price));
+		setTownYen(d.price * 2);
+		log.length = 0;
+		await ev.run(s);
+		ok(
+			inOrder(log, [
+				`say nanj: ${fill(t.payAsk, { tab: yen(d.price) })}`,
+				"se arcCoin",
+				`say nanj: ${t.paid}`,
+			]),
+			`pay:\n${log.join("\n")}`,
+		);
+		ok(loadTab() === 0, `tab ${loadTab()}`);
+		for (const x of [t.ask, t.put, t.full, t.payAsk, t.paid, t.later])
+			fitsWindow([["tab", fill(x, { price: yen(2500), tab: yen(TAB_CAP) })]]);
+		for (const x of [...t.menu, ...t.payMenu])
+			ok(width(fill(x, { tab: yen(TAB_CAP) })) <= 9, `${x} is too long`);
+		forgetWalletMemo();
+		forgetTabMemo();
 	});
 });
 

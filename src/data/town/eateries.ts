@@ -33,8 +33,29 @@ export type EatMenu = {
 	no: string;
 	/** 2回目から お金が 足りない とき（{price} は その 品の 値段）。 */
 	short: string;
+	/** ツケが きく 店（居酒屋「草」だけ。2026-10-14 作者：「居酒屋は ツケも できる ように」。ui/minigames/eat.ts）。 */
+	tab?: EatTab;
 	dishes: readonly Dish[];
 };
+
+/** ツケの 文（{price} 品の 値段・{tab} たまった ツケ）。 */
+export type EatTab = {
+	/** 足りない とき「ツケに　する？」。 */
+	ask: string;
+	menu: readonly [string, string];
+	/** ツケに した。 */
+	put: string;
+	/** 上限まで たまって いて もう ツケに できない。 */
+	full: string;
+	/** 来た とき ツケが あって 払える：「払って　く？」。 */
+	payAsk: string;
+	payMenu: readonly [string, string];
+	paid: string;
+	later: string;
+};
+
+/** ツケの 上限（円）。 */
+export const TAB_CAP = 5000;
 
 export const EAT_MENUS: Record<string, EatMenu> = {
 	// たこ焼き屋台「たこ八」（浜。タコは 店番が 突堤で 釣ってくる）
@@ -220,7 +241,17 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		order: "{dish}、あいよ！\n……へい、お待ち！",
 		free: "お代？　ええて！\n町の　ために　潜っとる　子から　取れるかい",
 		no: "ほな　またな！\n……次は　勝っとる　とき　来てや",
-		short: "{price}や！　……足りんがな！\nツケは　やってへんのや",
+		short: "{price}や！　……足りんがな！\nツケも　もう　いっぱいや",
+		tab: {
+			ask: "{price}や！　……足りんな。\nほな　ツケに　しとこか？",
+			menu: ["ツケで　たのむ", "やめとく"],
+			put: "ツケ　{tab}。\nあるとき　払いで　ええで",
+			full: "ツケが　{tab}　たまっとる。\nまず　それ　払てからや",
+			payAsk: "ツケが　{tab}　あるで。\n払ってくか？",
+			payMenu: ["払う（{tab}）", "また　今度"],
+			paid: "毎度！\nツケ、きれいに　なったで",
+			later: "ええよ、ええよ。\n……逃げたら　あかんで",
+		},
 		dishes: [
 			{
 				name: "焼き鳥",
