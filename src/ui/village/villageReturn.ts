@@ -386,7 +386,15 @@ const playCue = async (
 	hooks: ReturnHooks,
 ): Promise<void> => {
 	if (c === "roms") await walkInRoms(s, a.dungeon);
-	else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
+	// やきうが 村の 口から 出ていく（電池板の 山場。歩いて 口まで 行き、見えなく なる。
+	// 前は 語りで 出ていった あとも 姿が 残っていた。2026-10-13 作者の 指摘）
+	else if (c === "nanjLeave") {
+		const gate = exitFor(a.dungeon).cell;
+		await s.look("nanj");
+		await s.goto("nanj", gate[0], gate[1], { speed: 0.8, noWarp: true });
+		s.hide("nanj");
+		await s.look(null);
+	} else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
 	// 蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結。ダンジョンで 声を 鳴らす ときと 同じ 音）
 	else if (c === "selfVoice") s.se("spell");
 	else if (c === "getter" && hooks.getter) {

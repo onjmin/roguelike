@@ -58,7 +58,7 @@ export type StoryPage = {
 	 * getter＝1000取り（別ゲー。ui/minigames/minigames.ts）、selfVoice＝蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結）。
 	 * 地の文の 前に 起きる。
 	 */
-	cue?: "roms" | "romsLeave" | "getter" | "selfVoice";
+	cue?: "roms" | "romsLeave" | "getter" | "selfVoice" | "nanjLeave";
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
