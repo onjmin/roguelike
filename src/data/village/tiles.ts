@@ -615,15 +615,17 @@ export const CITY: Record<string, TileDef> = {
  * 切れ目の 両がわ（A D F I・V j s t）と 町の 区画の 両はし（地図の x=9・30）は 擁壁の はし。
  */
 export const CITY_CLIFF: Record<string, TileDef> = {
-	"1": solid(C_WALK, SIDEWALK),
+	// 擁壁の 上の 歩道（柵の 1マス 上）は 歩ける。前は 歩道の 絵なのに 通れず、見えない 壁に なっていた
+	// （2026-10-13 作者：「植民地へ　つづく　道」の 看板の 上の 柵の 1マス上に 謎の 当たり判定）
+	"1": floor(C_WALK, SIDEWALK),
 	"2": solid(C_WALK, COPING.m, FENCE.h),
 	"3": solid(C_WALL, WALL_UP.m),
 	"4": solid(C_WALL, WALL_LOW.m),
-	A: solid(C_WALK, SIDEWALK),
+	A: floor(C_WALK, SIDEWALK),
 	D: solid(C_WALK, COPING.r, FENCE.endR),
 	F: solid(C_WALL, WALL_UP.r),
 	I: solid(C_WALL, WALL_LOW.r),
-	V: solid(C_WALK, SIDEWALK),
+	V: floor(C_WALK, SIDEWALK),
 	j: solid(C_WALK, COPING.l, FENCE.endL),
 	s: solid(C_WALL, WALL_UP.l),
 	t: solid(C_WALL, WALL_LOW.l),
