@@ -4,13 +4,12 @@
 //   VHz8-0（通称 メインさん） … メイン機。話に 出てくる ゼロ（data/people/cast.ts の zero）。
 //   HeBc-0（通称 プロト）     … サブ機。RPGEN「解音ゼロ - HeBc-0（通称: プロト）」（sa:KxS5YZ・作者の 手描き）を そのまま 使う。
 //   XQxS-0（通称 レン）       … サブ機。
-// メインさん・レンの 歩行グラは RPGEN に 無いので、プロトの 絵（形・顔・足の 運び）を 元に、ちがう 所だけ 塗りかえる。
-//   メインさん … 帯の 前に 赤い X の 結び目（公式の 手描き）、目を 紫に、腰の 後ろから 赤い ケーブルの しっぽ。
-//   レン       … 髪の 先を 青の グラデに、角（アンテナ）を 金に、帯の ふちを 金に、手袋と 脚の よろいと 靴を 黒に、目を 青に。
+// メインさん・レンの 歩行グラは RPGEN に 無いので、プロトの 頭の 位置と 足の 運びに 合わせて、公式の 絵から 1コマずつ 描いた（下の VARIANTS）。
+// 色を 塗りかえるだけでは 3体の 見分けが つかないので、形（ファー・髪・脚・持ち物）から 描き分けている。
 //
-//   node scripts/make-zero.mjs                       … public/sprites/zero_main.png・zero_ren.png
-//   node scripts/make-zero.mjs --src KxS5YZ.png      … 元絵を 手元の ファイルから（無ければ CDN から 取る）
-//   node scripts/make-zero.mjs --compare out.png     … プロト・メインさん・レンを 8倍で 並べた 見くらべ用
+//   node scripts/make-zero.mjs                                … public/sprites/zero_main.png・zero_ren.png
+//   node scripts/make-zero.mjs --compare out.png [--src KxS5YZ.png] … プロト・メインさん・レンを 8倍で 並べた 見くらべ用
+//                                                                （プロトは --src の ファイルから、無ければ CDN から 取る）
 //
 // 依存なし（zlib だけ）。
 
@@ -92,7 +91,8 @@ const decodePng = (buf) => {
 		p += 12 + len;
 	}
 	const chans = { 2: 3, 3: 1, 6: 4 }[ctype];
-	if (!chans || (ctype !== 3 && depth !== 8)) throw new Error(`色の形 ${ctype}/${depth} は読めません`);
+	if (!chans || (ctype !== 3 && depth !== 8))
+		throw new Error(`色の形 ${ctype}/${depth} は読めません`);
 	const bpp = Math.max(1, (chans * depth) >> 3);
 	const stride = Math.ceil((w * chans * depth) / 8);
 	const raw = inflateSync(Buffer.concat(idat));
@@ -117,7 +117,9 @@ const decodePng = (buf) => {
 			const o = (y * w + x) * 4;
 			if (ctype === 3) {
 				const per = 8 / depth;
-				const idx = (line[Math.floor(x / per)] >> (8 - depth * ((x % per) + 1))) & ((1 << depth) - 1);
+				const idx =
+					(line[Math.floor(x / per)] >> (8 - depth * ((x % per) + 1))) &
+					((1 << depth) - 1);
 				plte.copy(rgba, o, idx * 3, idx * 3 + 3);
 				rgba[o + 3] = trns && idx < trns.length ? trns[idx] : 255;
 			} else if (ctype === 2) {
@@ -129,174 +131,196 @@ const decodePng = (buf) => {
 	return { w, h, rgba };
 };
 
-// ───────────────── 塗りかえ ─────────────────
+// ───────────────── 描き分け ─────────────────
 //
-// プロトの 14色に 名前を つけて、1文字で 扱う（下の 表の 左が 元の 色）。
-// 行は 上から 背中・右・正面・左（ART_TODO.md と 同じ）、1行に 2コマ。
+// メインさん・レンは 1コマずつ 手で 描いた ドット（16x16）。プロトの 頭の 位置と 足の 運び（上下の ゆれ）に 合わせてある。
+// 1行に 2コマ（左が コマ1・右が コマ2）。向きは 背中・右・正面の 順で、左は 右の 左右反転（プロトも そう）。
+// 小文字は プロトと 同じ 色（BASE）、大文字と 一部の 小文字は キャラごとの 色。
 
 const hex = (s) => {
 	const n = Number.parseInt(s.slice(1), 16);
 	return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-const KEY = {
-	"#daa98a": "a", // 髪の かげ
-	"#fef3df": "b", // 髪
-	"#e5cca0": "h", // 髪の なか
-	"#c3cde1": "c", // 着物・アンテナの かげ（水色）
-	"#1f4f87": "d", // ふち・帯（紺）
-	"#fefeff": "e", // 着物（白）
-	"#000000": "f", // ふち・目・帯の へり（黒）
-	"#2574ba": "g", // アンテナ・靴（青）
-	"#eebfb3": "i", // はだ
-	"#fef4f1": "j", // はだ（明）
-	"#cea6a0": "k", // はだ（暗）
-	"#975649": "l", // 目
-	"#d68471": "m", // ほお
-	"#b98d7b": "n", // まぶた
+const BASE = {
+	a: "#daa98a", // 髪の かげ
+	b: "#fef3df", // 髪
+	h: "#e5cca0", // 髪の なか
+	c: "#c3cde1", // 着物の かげ（水色）
+	d: "#1f4f87", // ふち・帯（紺）
+	e: "#fefeff", // 着物（白）
+	f: "#000000", // ふち・目
+	g: "#2574ba", // 青
+	i: "#eebfb3", // はだ
+	j: "#fef4f1", // はだ（明）
+	k: "#cea6a0", // はだ（暗）
+	l: "#975649", // 目
+	m: "#d68471", // ほお
+	n: "#b98d7b", // まぶた
 };
 const CELL = 16;
 const DIRS = ["up", "right", "down", "left"];
 
-const toGrid = (src) => {
-	const g = [];
-	for (let y = 0; y < src.h; y++) {
-		const row = [];
-		for (let x = 0; x < src.w; x++) {
-			const i = (y * src.w + x) * 4;
-			if (src.rgba[i + 3] < 128) {
-				row.push(".");
-				continue;
-			}
-			const h = `#${[...src.rgba.subarray(i, i + 3)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
-			if (!KEY[h]) throw new Error(`知らない 色 ${h}（${x},${y}）。元絵が 変わった？`);
-			row.push(KEY[h]);
-		}
-		g.push(row);
-	}
-	return g;
-};
-const BASE = Object.fromEntries(Object.entries(KEY).map(([h, k]) => [k, hex(h)]));
-
-/** 帯（1行の「黒 紺… 黒」の 並び）の 位置。[y, x0, x1]（x0・x1 は 両はしの 黒）。 */
-const obiRuns = (g) => {
-	const out = [];
-	for (let y = 0; y < g.length; y++) {
-		const s = g[y].join("");
-		for (const m of s.matchAll(/fd+f/g)) {
-			// コマを またがない
-			if (Math.floor(m.index / CELL) !== Math.floor((m.index + m[0].length - 1) / CELL)) continue;
-			out.push([y, m.index, m.index + m[0].length - 1]);
-		}
-	}
-	return out;
-};
-
-/**
- * 1体ぶんの 塗りかえ。
- * recolor(ch, lx, ly, dir) … 元の 文字と コマの 中の 位置から 色（#rrggbb）か 文字を 返す（undefined なら そのまま）。
- * obi … 帯の 紺 と へりの 黒 の 色。
- * add … 足す 点（コマの 中の [lx, ly]）を 向き・コマごとに。
- */
-const make = (grid, { palette, recolor, obi, knot, add }) => {
-	const w = grid[0].length;
-	const h = grid.length;
-	const col = grid.map((row) => row.map((ch) => (ch === "." ? null : BASE[ch])));
-	const pick = (v) => (v in palette ? hex(palette[v]) : v.startsWith("#") ? hex(v) : BASE[v]);
-	for (let y = 0; y < h; y++)
-		for (let x = 0; x < w; x++) {
-			const ch = grid[y][x];
-			if (ch === ".") continue;
-			const v = recolor?.(ch, x % CELL, y % CELL, DIRS[Math.floor(y / CELL)]);
-			if (v) col[y][x] = pick(v);
-			else if (ch in palette) col[y][x] = hex(palette[ch]);
-		}
-	if (obi)
-		for (const [y, x0, x1] of obiRuns(grid))
-			for (let x = x0; x <= x1; x++) col[y][x] = hex(x === x0 || x === x1 ? obi.edge : obi.band);
-	// 帯の 結び目：向きごとに 帯の 位置から 置く（正面は まんなか、横向きは 前の はし）
-	if (knot)
-		for (const [y, x0, x1] of obiRuns(grid)) {
-			const dir = DIRS[Math.floor(y / CELL)];
-			const ax = dir === "down" ? (x0 + x1) >> 1 : dir === "right" ? x1 : x0;
-			for (const [dx, dy, c] of knot[dir] ?? []) col[y + dy][ax + dx] = pick(c);
-		}
-	for (const [dir, frames] of Object.entries(add ?? {}))
-		frames.forEach((dots, f) => {
-			const oy = DIRS.indexOf(dir) * CELL;
-			const ox = f * CELL;
-			for (const [lx, ly, c] of dots) col[oy + ly][ox + lx] = pick(c);
-		});
-	const rgba = Buffer.alloc(w * h * 4);
-	for (let y = 0; y < h; y++)
-		for (let x = 0; x < w; x++) {
-			const c = col[y][x];
-			if (!c) continue;
-			rgba.set([...c, 255], (y * w + x) * 4);
-		}
-	return { w, h, rgba };
-};
-
-const HAIR = new Set(["a", "b", "h"]);
-
 const VARIANTS = {
-	// VHz8-0（メインさん）：公式の 手描き（人力出力版）の 赤い 帯・赤い ケーブルの しっぽ・赤紫の 目。
+	// VHz8-0（メインさん）：公式の 手描き（人力出力版）。肩と 袖口の 白い ファー（袖口に 赤い ひも）、むき出しの 肩と 太もも、
+	// 青い レッグウォーマーに 赤い 下駄、帯の 前に 赤い X の 結び目、腰の 後ろから 赤い ケーブル（先に プラグ）、赤紫の 目。
 	main: {
-		palette: { l: "#8e3a7e", R: "#d8303e", r: "#8a1a28", P: "#f0f0f4", Q: "#6a6a78" },
-		// 帯は 青の まま、前に 赤い X の 結び目（公式の 絵）。横向きは 前の はしに 細く 見える
-		knot: {
-			down: [[0, 0, "R"], [-1, -1, "R"], [1, -1, "R"], [-1, 1, "r"], [1, 1, "r"]],
-			right: [[0, 0, "R"], [1, -1, "R"], [1, 1, "r"]],
-			left: [[0, 0, "R"], [-1, -1, "R"], [-1, 1, "r"]],
+		palette: {
+			l: "#8e3a7e",
+			u: "#ffffff",
+			v: "#b4bed0",
+			R: "#d8303e",
+			r: "#8a1a28",
+			Q: "#9a9aa8",
 		},
-		// しっぽ（赤い ケーブル）：腰の 後ろから 出て たれ、先に 白い プラグ。
-		// 背中向きは まんなかから 手前に、正面は 体の 陰から のぞき、横向きは 後ろへ 流れる。歩くと ゆれる
-		add: {
-			up: [
-				[[8, 12, "r"], [9, 13, "R"], [10, 14, "R"], [11, 14, "r"], [12, 15, "P"]],
-				[[8, 12, "r"], [9, 13, "R"], [10, 13, "R"], [11, 14, "R"], [12, 14, "r"], [13, 15, "P"]],
-			],
-			right: [
-				[[3, 12, "r"], [2, 13, "R"], [1, 14, "R"], [1, 15, "P"]],
-				[[2, 12, "r"], [1, 13, "R"], [0, 13, "R"], [0, 14, "P"]],
-			],
-			down: [
-				[[12, 12, "r"], [13, 13, "R"], [13, 14, "r"], [14, 15, "P"]],
-				[[13, 12, "r"], [14, 13, "R"], [14, 14, "r"], [15, 15, "P"]],
-			],
-			left: [
-				[[12, 12, "r"], [13, 13, "R"], [14, 14, "R"], [14, 15, "P"]],
-				[[13, 12, "r"], [14, 13, "R"], [15, 13, "R"], [15, 14, "P"]],
-			],
-		},
+		frames: [
+			// up
+			"................ ...g..a....g....",
+			"...g..a....g.... ...cc..a..cc....",
+			"...cc..a..cc.... ...dcaaaaacd....",
+			"...dcaaaaacd.... ...aahbbbhaa....",
+			"...aahbbbhaa.... ...ahbbbbbha....",
+			"...ahbbbbbha.... ...abbbbbbba....",
+			"...abbbbbbba.... .aahbbhhhbbhaa..",
+			".aahbbhhhbbhaa.. uuvuahhhhhauvuu.",
+			"uuvuahhhhhauvuu. vuuvuvhhhvuvuuv.",
+			"vuuvuvhhhvuvuuv. aauvuuvuuvuuvaa.",
+			"aauvuuvuuvuuvaa. .cdavuuvuuvadc..",
+			".cdavuuvuuvadc.. .uuddddrddddvu..",
+			".uuddddrddddvu.. ..r..ki.Rik..r..",
+			"..r..ki.Rik..r.. .....RR.Rgg.....",
+			".....gg.R.gg.... .......R.RR.....",
+			".....RR..RQ..... .......Q........",
+			// right
+			"....g....a.d.... .....g....a.d...",
+			"....eeaaa..c.... .....eeaaa..c...",
+			"....ggebbbad.... ....aggebbbad...",
+			"....adbbbbba.... ....aadbbbbba...",
+			"...ababbbabba... ....ababbbaba...",
+			"...abablailba... ....abablailba..",
+			"..ababbmjjmbba.. ...ababbmjjmba..",
+			"..aabafijjifa... .a.abbafijjifa..",
+			"..aavuuujijja... .aaaavuuujijja..",
+			"..aavuuuvdeee... .aaavuuuvdeee...",
+			"..aabvuvfddRf... ...aavuvfddRf...",
+			"..ar.vuvdeeer... ..rr.vuvdeeer...",
+			".Rr..uRuddcdd... .R...uRuddcdd...",
+			".R....Rkiiii.... .Q....R.kiik....",
+			".Q...gg...gg.... ........ggg.....",
+			".....RR....RR... .......RRRR.....",
+			// down
+			"...g..a....g.... ................",
+			"...ee..a..ee.... ...g..a....g....",
+			"...geaaaaaeg.... ...ee..a..ee....",
+			"...dabbbbbad.... ...geaaaaaeg....",
+			"...abbababba.... ...dabbbbbad....",
+			"...abliailba.... ...abbababba....",
+			"..abbmjjjmbba... ...abliailba....",
+			".aaafijjjifaaa.. ..abbmjjjmbba...",
+			".uuvujiiijuvuu.. .aaafijjjifaaa..",
+			"auvucdReRdcuvua. .uuvujiiijuvuu..",
+			"aauvfddRddfvuaa. auvucdReRdcuvua.",
+			"a.cederereced.a. aauvfddRddfvuaa.",
+			"..uuddcdcdduu... a.cederereced.a.",
+			"..r..kiiiik.rr.. ..uudkiiiikduurr",
+			".....gg..RR..R.. ..r..RR..gg.r..R",
+			".....RR......Q.. .........RR....Q",
+		],
 	},
-	// XQxS-0（レン）：公式の 絵（ステージの 子）の 先が 青い 金髪・金の 角・黒い 手袋と 脚の よろい・青い 目。
+	// XQxS-0（レン）：公式の 絵（ステージの 子）。まっすぐ 長い 髪（ぱっつん前髪、下へ いくほど 青）、金の 角と 黒い ヘッドホン、
+	// 長めの 着物（金の 線、黒い 帯に 青い リボン）、黒い 手袋、マイク、黒い 脚の よろいと 金の 靴、青い 目。
 	ren: {
 		palette: {
 			l: "#2a64c8",
-			A: "#2d5f9e", // 髪の 先（かげ）
+			A: "#2d5f9e",
 			H: "#4f8fd0",
 			B: "#9fd0f2",
-			G: "#e0b040", // 金
+			G: "#e0b040",
 			Y: "#f6dc80",
 			O: "#8a5a18",
-			K: "#2a2a34", // 黒い よろい
+			K: "#24242c",
 			N: "#50505e",
 		},
-		recolor: (ch, lx, ly, dir) => {
-			// 角（アンテナ）を 金に
-			if (ly <= 2 && !HAIR.has(ch)) return { c: "G", e: "Y", g: "O", d: "O" }[ch];
-			// 髪は 下ほど 青く
-			if (HAIR.has(ch) && ly >= 10) return { a: "A", h: "H", b: "B" }[ch];
-			if (HAIR.has(ch) && ly === 9) return { a: "H", h: "B" }[ch];
-			// 手袋（横の はしの はだ）
-			if (ly >= 8 && ly <= 11 && (ch === "i" || ch === "k") && (lx <= 4 || lx >= 11) && dir !== "up") return "K";
-			// 脚の よろいと 靴
-			if (ly >= 13 && (ch === "c" || ch === "k")) return "N";
-			if (ly >= 14 && ch === "g") return "K";
-			return undefined;
-		},
-		obi: { band: "#1f4f87", edge: "#e0b040" },
+		frames: [
+			// up
+			"................ ...O.......O....",
+			"...O.......O.... ...GO.....OG....",
+			"...GO.....OG.... ...GYaaaaaYG....",
+			"...GYaaaaaYG.... ...abbbbbbba....",
+			"...abbbbbbba.... ..NKbbbbbbbKN...",
+			"..NKbbbbbbbKN... ...abbabbbba....",
+			"...abbabbbba.... ..abbabbbabba...",
+			"..abbabbbabba... ..abbabbbabba...",
+			"..abbabbbabba... ..ahbahbhabha...",
+			"..ahbahbhabha... .chBhaBhBahBhc..",
+			".chBhaBhBahBhc.. .KHBBHBBBHBBHK..",
+			".KHBBHBBBHBBHK.. ..HBAHBBBHABH...",
+			"..HBAHBBBHABH... ..A.AHA.AHA.A...",
+			"..A.AHA.AHA.A... .....KN..NK.....",
+			".....KN..YO..... .....YO..NK.....",
+			".....YO......... .........OY.....",
+			// right
+			"....O......O.... .....O......O...",
+			"....GYaaa..G.... .....GYaaa..G...",
+			"....GGYbbbaG.... .....GGYbbbaG...",
+			"....aabbbbba.... .....aabbbbba...",
+			"...abbbbbbbba... ....abbbbbbbba..",
+			"...abablailba... ....abablailba..",
+			"..abKbbmjjmbba.. ...abKbbmjjmbba.",
+			"...abafijjifa... ....abafijjifa..",
+			"..aabahKKKK.Y... ...aabahKKKK.Y..",
+			"..hBbhceeYeKO... ..hBabhceeYeKO..",
+			"..BhBcecKKgK.... .hBBhcecKKgK....",
+			"..HBHceeYeeec... .BHBHceeYeeec...",
+			"..AHAcdYdddcd... .AHAHcdYdddcd...",
+			"..A.A.KN.KN..... .A.A....KNK.....",
+			"......KN..KN.... ........KNK.....",
+			"......YO...YO... ........YOO.....",
+			// down
+			"...O.......O.... ................",
+			"...GO.....OG.... ...O.......O....",
+			"...GYaaaaaYG.... ...GO.....OG....",
+			"...aabbbbbaa.... ...GYaaaaaYG....",
+			"...abbbbbbba.... ...aabbbbbaa....",
+			"...abliailba.... ...abbbbbbba....",
+			"..KbbmjjjmbbK... ...abliailba....",
+			"..aaafijjjifaaa. ..KbbmjjjmbbK...",
+			".aahHcKKKcHhaa.. ..aaafijjjifaaa.",
+			"hBhceeeYeeechBh. .aahHcKKKcHhaa..",
+			"BHYecKKgKKcecHB. hBhceeeYeeechBh.",
+			"HAOKeeeYeeeKc.AH BHYecKKgKKcecHB.",
+			"A..ceeeYeeec..A. HAOKeeeYeeeKc.AH",
+			"A..cdYdddYdc..A. A..cdYdddYdc..A.",
+			".A...KN..YO..A.. .A...YO..KN..A..",
+			".....YO......... .........YO.....",
+		],
 	},
+};
+
+/** frames（背中・右・正面 × 16行、1行に 2コマ）を 32x64 の 絵に。左は 右の 左右反転。 */
+const paint = ({ palette, frames }) => {
+	const color = { ...BASE, ...palette };
+	const w = CELL * 2;
+	const h = CELL * 4;
+	const rgba = Buffer.alloc(w * h * 4);
+	const put = (x, y, ch) => {
+		if (ch === ".") return;
+		if (!color[ch]) throw new Error(`知らない 色の 文字 ${ch}`);
+		rgba.set([...hex(color[ch]), 255], (y * w + x) * 4);
+	};
+	const rows = frames.map((r) => r.replace(" ", ""));
+	if (rows.length !== CELL * 3 || rows.some((r) => r.length !== w))
+		throw new Error("コマの 大きさが ちがいます");
+	for (const [d, dir] of ["up", "right", "down"].entries())
+		for (let y = 0; y < CELL; y++)
+			for (let x = 0; x < w; x++)
+				put(x, DIRS.indexOf(dir) * CELL + y, rows[d * CELL + y][x]);
+	const left = DIRS.indexOf("left") * CELL;
+	for (let y = 0; y < CELL; y++)
+		for (let x = 0; x < w; x++) {
+			const f = Math.floor(x / CELL);
+			put(x, left + y, rows[CELL + y][f * CELL + (CELL - 1 - (x % CELL))]);
+		}
+	return { w, h, rgba };
 };
 
 // ───────────────── 見くらべ用 ─────────────────
@@ -310,7 +334,8 @@ const scaleOn = (img, z, bg) => {
 			const s = (Math.floor(y / z) * img.w + Math.floor(x / z)) * 4;
 			const a = img.rgba[s + 3] / 255;
 			const o = (y * W + x) * 4;
-			for (let k = 0; k < 3; k++) out[o + k] = Math.round(img.rgba[s + k] * a + bg[k] * (1 - a));
+			for (let k = 0; k < 3; k++)
+				out[o + k] = Math.round(img.rgba[s + k] * a + bg[k] * (1 - a));
 			out[o + 3] = 255;
 		}
 	return { w: W, h: H, rgba: out };
@@ -322,7 +347,8 @@ const hcat = (imgs, gap, bg) => {
 	for (let i = 0; i < W * H; i++) out.set([...bg, 255], i * 4);
 	let ox = 0;
 	for (const im of imgs) {
-		for (let y = 0; y < im.h; y++) im.rgba.copy(out, (y * W + ox) * 4, y * im.w * 4, (y + 1) * im.w * 4);
+		for (let y = 0; y < im.h; y++)
+			im.rgba.copy(out, (y * W + ox) * 4, y * im.w * 4, (y + 1) * im.w * 4);
 		ox += im.w + gap;
 	}
 	return { w: W, h: H, rgba: out };
@@ -341,21 +367,26 @@ const opt = (name) => {
 	return i >= 0 ? args[i + 1] : null;
 };
 const ROOT = join(HERE, "..");
-const srcPath = opt("--src");
-const srcBuf =
-	srcPath && existsSync(srcPath)
-		? readFileSync(srcPath)
-		: Buffer.from(await (await fetch(SRC_URL)).arrayBuffer());
-const src = decodePng(srcBuf);
-if (src.w !== 32 || src.h !== 64) throw new Error(`32x64 ではありません: ${src.w}x${src.h}`);
-const grid = toGrid(src);
 const out = {};
 for (const [id, v] of Object.entries(VARIANTS)) {
-	out[id] = make(grid, v);
+	out[id] = paint(v);
 	save(join(ROOT, `public/sprites/zero_${id}.png`), out[id]);
 }
 const compare = opt("--compare");
 if (compare) {
+	const srcPath = opt("--src");
+	const srcBuf =
+		srcPath && existsSync(srcPath)
+			? readFileSync(srcPath)
+			: Buffer.from(await (await fetch(SRC_URL)).arrayBuffer());
+	const src = decodePng(srcBuf);
 	const GREEN = [88, 120, 72];
-	save(resolve(compare), hcat([src, out.main, out.ren].map((i) => scaleOn(i, 8, GREEN)), 16, GREEN));
+	save(
+		resolve(compare),
+		hcat(
+			[src, out.main, out.ren].map((i) => scaleOn(i, 8, GREEN)),
+			16,
+			GREEN,
+		),
+	);
 }
