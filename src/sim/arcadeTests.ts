@@ -850,7 +850,10 @@ test("家の ゲーム: ボンバーは 爆風で レスと 荒らしを 吹き�
 	ok(s.py === 4, `ran to ${s.px},${s.py}`);
 	for (let i = 0; i < 40; i++)
 		bmStep(s, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
-	ok(s.grid[1][3] === "." && s.broken === 1 && !s.over, `broke ${s.broken}`);
+	ok(
+		(s.grid[1][3] as string) === "." && s.broken === 1 && !s.over,
+		`broke ${s.broken}`,
+	);
 	// 爆弾の 上に 立ったまま → 巻きこまれる
 	const t = bmStart(() => 0.5);
 	t.enemies = [{ x: 17, y: 9, t: 999, alive: true }];
