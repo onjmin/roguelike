@@ -11,7 +11,7 @@
 //   群衆・題・字幕の「保守」は 固有名詞（おんJグランプリ）の 中だけ。
 // - 日：日曜は 決勝（LAP3）、ほかの 日は 再放送（LAP2。群衆に「再放送　乙」が まざる）。中身は 曜日で 閉じない。
 // - 勢いは 低め（目標の LAP が 少ない。静かな 序盤は 群衆を 少なく、スタート・最終周・チェッカーで わく）。
-// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoF1Tv.ts（絵に 出す 文は F1_ART）。
+// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyo/jikkyoF1Tv.ts（絵に 出す 文は F1_ART）。
 
 import type {
 	JkFit,

@@ -7,7 +7,7 @@
 // 置き場所：牛丼「つゆだく」（段5〜、x47〜51）が CIVIC の 予定地 x46〜52 を ふさいだので、段4〜7 に ずっと 空いて
 // いる 7マスの 区画 x63〜69 y3〜7 に 置く（裁判所 x53〜62 の となり。三権の 並び）。7マスの 空きは ここ だけなので、
 // 段7 の 議事堂は 別の 建物に せず、市役所の 中の 議場に する（ENGINE.md §9）。
-// 中の 物：演壇＝討論会（模擬議会の カンペ係）・はり紙＝見分け方・議事録＝模擬議会の 号（どれも ui/debate.ts）。
+// 中の 物：演壇＝討論会（模擬議会の カンペ係）・はり紙＝見分け方・議事録＝模擬議会の 号（どれも ui/minigames/debate.ts）。
 // 議題と 派閥は ぜんぶ 架空の 村の 話。おんJ神社は 出さない。強さには 何も 効かない。
 // 絵は RPGEN の 部品（rpgenArt.ts の art・ri・riCell）と 同梱の Base.png。
 // ここからは facilities.ts の 値を 読まない（facilities.ts が ここを 読むので、まわりこむと 読みこみの 順で こわれる）。
@@ -153,9 +153,9 @@ const TOWNHALL: Facility = {
 			bench: ["待合の　長いす。\n傍聴も　ここから。……ほぼ　ROM専。"],
 			seat: ["議員の　机。\n名札の　ひとつに『ホゲェ』。"],
 		},
-		// 演壇で 討論会（模擬議会。いつでも 何度でも）、はり紙で 見分け方・議事録（ui/debate.ts）、
-		// 中継モニターで 議会の 日の 議会中継（ui/jikkyoGikai.ts）、
-		// 1番窓口で どすこいポイントの 照会（ui/dosukoi.ts）
+		// 演壇で 討論会（模擬議会。いつでも 何度でも）、はり紙で 見分け方・議事録（ui/minigames/debate.ts）、
+		// 中継モニターで 議会の 日の 議会中継（ui/jikkyo/jikkyoGikai.ts）、
+		// 1番窓口で どすこいポイントの 照会（ui/minigames/dosukoi.ts）
 		plays: {
 			podium: "debate",
 			kiben: "kiben",
@@ -344,8 +344,8 @@ const CITYHALL: Facility = {
 				"市長室の　札。\n『市長　募集中。……当番は　みんなで』",
 			],
 		},
-		// 演壇で 討論会、議事録、見分け方の はり紙（ui/debate.ts）、中継モニターで 議会中継（ui/jikkyoGikai.ts）、
-		// 1番 住民課で どすこいポイントの 照会（ui/dosukoi.ts）
+		// 演壇で 討論会、議事録、見分け方の はり紙（ui/minigames/debate.ts）、中継モニターで 議会中継（ui/jikkyo/jikkyoGikai.ts）、
+		// 1番 住民課で どすこいポイントの 照会（ui/minigames/dosukoi.ts）
 		plays: {
 			podium: "debate",
 			kiben: "kiben",

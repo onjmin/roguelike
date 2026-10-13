@@ -1,12 +1,12 @@
-// ホシュクラ（おんJタウンの 南西の 島。data/village/saba.ts・data/saba.ts・data/sabaMine.ts・ui/saba.ts）の 試験（pnpm test）。
+// ホシュクラ（おんJタウンの 南西の 島。data/village/saba.ts・data/saba/saba.ts・data/saba/sabaMine.ts・ui/saba/saba.ts）の 試験（pnpm test）。
 // 置き場所・絵・文の 幅・命名投票・お知らせ・ブラマイの 決まりと 釣りあい・村での 流れ（板は setMineHook で 差しかえ）・
-// 共有の 振り分け（ui/facilities.ts・ui/villageEvents.ts の 1行が 落ちたら ここで 気づく）。
+// 共有の 振り分け（ui/village/facilities.ts・ui/village/villageEvents.ts の 1行が 落ちたら ここで 気づく）。
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOWN_STAGES } from "../core/town";
-import { CAST } from "../data/cast";
-import { MOBS } from "../data/mobs";
+import { CAST } from "../data/people/cast";
+import { MOBS } from "../data/people/mobs";
 import {
 	EVENT_HOUR,
 	eventOf,
@@ -22,7 +22,7 @@ import {
 	tankLine,
 	townName,
 	voteResult,
-} from "../data/saba";
+} from "../data/saba/saba";
 import {
 	CELL,
 	cellAt,
@@ -40,9 +40,9 @@ import {
 	type Rand,
 	seeded,
 	seenAt,
-} from "../data/sabaMine";
-import { SABA_CELLS, SABA_SIZE, TAKUMI_WALK } from "../data/sabaSheet";
-import { SABA_TEXT as X } from "../data/sabaText";
+} from "../data/saba/sabaMine";
+import { SABA_CELLS, SABA_SIZE, TAKUMI_WALK } from "../data/saba/sabaSheet";
+import { SABA_TEXT as X } from "../data/saba/sabaText";
 import { PERSONAS } from "../data/village/crowd";
 import {
 	FACILITIES,
@@ -65,7 +65,6 @@ import { ISLE_ROWS } from "../data/village/saba";
 import type { Story, VState } from "../engine/defs";
 import type { Dir } from "../engine/types";
 import type { Ctx } from "../ui/ctx";
-import { buildFacility } from "../ui/facilities";
 import {
 	ASA,
 	forgetSabaMemo,
@@ -77,9 +76,10 @@ import {
 	setSabaNow,
 	TAKUMI_ID,
 	TAKUMI_SEEN,
-} from "../ui/saba";
-import { setMineHook } from "../ui/sabaMine";
-import { buildVillage } from "../ui/villageEvents";
+} from "../ui/saba/saba";
+import { setMineHook } from "../ui/saba/sabaMine";
+import { buildFacility } from "../ui/village/facilities";
+import { buildVillage } from "../ui/village/villageEvents";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -416,7 +416,7 @@ test("ホシュクラ：文は 窓に おさまる（22字×2行）・板の 一
 	for (const c of chestItems) one("chestItems", c, 13);
 	for (const n of Object.values(names)) one("names", n, 11);
 	one("voteDefault", voteDefault, 7);
-	// 島の 人は 話す たびに 全部 読む ので 2窓まで（このあと ui/saba.ts が 1窓 足す ことが ある）
+	// 島の 人は 話す たびに 全部 読む ので 2窓まで（このあと ui/saba/saba.ts が 1窓 足す ことが ある）
 	for (const f of SABA)
 		for (const t of f.outdoor ?? [])
 			if (t.name)
@@ -1386,7 +1386,7 @@ test("ホシュクラ：共有の 振り分けを 通る（村の 地図の 豚�
 					...kan.lines.map((l) => `say(鯖缶): ${l}`),
 					`say(鯖缶): ${noticeOf({ n: 1, stage: 3, day: DAY, hour: 12, asa: false })}`,
 				]),
-			`the 鯖缶 (ui/facilities.ts outdoorScript → sabaPlay):\n${a.log.join("\n")}`,
+			`the 鯖缶 (ui/village/facilities.ts outdoorScript → sabaPlay):\n${a.log.join("\n")}`,
 		);
 		const town = f3.outdoor?.find((t) => t.id === "town");
 		const tev = town && village.find((e) => e.id === outdoorId(f3, town));
@@ -1412,7 +1412,7 @@ test("ホシュクラ：共有の 振り分けを 通る（村の 地図の 豚�
 						...X.tofuRoom.bed.map((l) => `narrate: ${l}`),
 						`choose: ${X.bedMenu.join("/")}`,
 					]),
-				`the bed (ui/facilities.ts buildFacility → sabaPlay):\n${c.log.join("\n")}`,
+				`the bed (ui/village/facilities.ts buildFacility → sabaPlay):\n${c.log.join("\n")}`,
 			);
 		}
 	});

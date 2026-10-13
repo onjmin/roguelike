@@ -4,7 +4,7 @@
 // - この 番組の 動詞：月の 形に 合う ひとこと（雲が かかれば「雲　どけ」、どいたら「雲　どいた」）・
 //   皆既の 瞬間を 1語で 書く（Cue「皆既」。beat 1000 の ゆっくりした 合図）・皆既の あいだ しばらく 黙って 見る
 //   （答えない ことが ◎＝timeoutFit。kohaku の 除夜の 鐘と 同じ 形）。勢いは 実況の 中で いちばん 低い（群衆の 重みを 小さく）。
-// - 月の 形は 名目の 時計で かわる（GESSHOKU_ECLIPSE。TV は ui/jikkyoGesshokuTv.ts）。欠けた 割合は 時間に 比例。
+// - 月の 形は 名目の 時計で かわる（GESSHOKU_ECLIPSE。TV は ui/jikkyo/jikkyoGesshokuTv.ts）。欠けた 割合は 時間に 比例。
 // - 日：毎月 15日（満月の 夜）は 本番（★3）、ほかの 日は 前の 月食の 過去ログ（★2。群衆に「過去ログ　乙」が まざる）。
 // - 実在の 天文台・中継・天気の 会社の 名前は 出さない（deny）。群衆の 文は 手で 書いた 一覧だけ。
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
@@ -18,7 +18,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import { type JkPack, liveOr } from "./pack";
 import type { DayLines } from "./text";
 

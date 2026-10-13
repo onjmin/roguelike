@@ -21,7 +21,7 @@ export type Settings = {
 	padSide: "left" | "right";
 	/** 小さいボタン（向き・足元・地図）を 出す。既定は 出さない（ボタンが 多いと 操作しにくい）。 */
 	minis: boolean;
-	/** 村で 鳴らす 曲（広場の 蓄音機で えらぶ。null は 村の 育ちに あわせる。data/music.ts）。 */
+	/** 村で 鳴らす 曲（広場の 蓄音機で えらぶ。null は 村の 育ちに あわせる。data/audio/music.ts）。 */
 	villageBgm: string | null;
 };
 

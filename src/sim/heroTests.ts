@@ -1,4 +1,4 @@
-// 冒険に 出る 主人公（束音ロゼ・解音ゼロ。core/data/heroes.ts・engine/heroes.ts・data/heroQuests.ts）の 試験（pnpm test）。
+// 冒険に 出る 主人公（束音ロゼ・解音ゼロ。core/data/heroes.ts・engine/heroes.ts・data/people/heroQuests.ts）の 試験（pnpm test）。
 
 import { HUNGER_MAX, START_HP, START_STR } from "../core/balance";
 import { DUNGEONS } from "../core/data/dungeons";
@@ -15,9 +15,9 @@ import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { townStep } from "../core/town";
 import type { RunState } from "../core/types";
-import { HERO_QUESTS } from "../data/heroQuests";
-import { MOBS } from "../data/mobs";
-import { synopsisHtml } from "../data/synopsis";
+import { HERO_QUESTS } from "../data/people/heroQuests";
+import { MOBS } from "../data/people/mobs";
+import { synopsisHtml } from "../data/story/synopsis";
 import type { Story } from "../engine/defs";
 import {
 	acceptQuest,
@@ -40,7 +40,7 @@ import {
 	saveProgress,
 	saveTown,
 } from "../engine/save";
-import { heroQuestScript } from "../ui/villageEvents";
+import { heroQuestScript } from "../ui/village/villageEvents";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}

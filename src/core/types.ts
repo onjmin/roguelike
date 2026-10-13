@@ -93,7 +93,7 @@ export type ItemDef = {
 	atk?: number;
 	/** 盾の強さ。 */
 	def?: number;
-	/** 武器の音（振った・当たった。data/sfx.ts の名前）。無ければ 素手と同じ。 */
+	/** 武器の音（振った・当たった。data/audio/sfx.ts の名前）。無ければ 素手と同じ。 */
 	sound?: { swing: string; hit: string };
 	/** 杖の回数（配るときにこの範囲で決める）。 */
 	charges?: [number, number];
@@ -101,7 +101,7 @@ export type ItemDef = {
 	order: number;
 	/** めずらしい道具：未識別の分類でも はじめから 正体が わかり、見た目も 専用（メタルぷゆゆの 落とし物）。 */
 	rare?: true;
-	/** 専用の 絵（目的の品。床・持ち物・投げたとき）。無ければ カテゴリの 絵（ui/icons.ts）。 */
+	/** 専用の 絵（目的の品。床・持ち物・投げたとき）。無ければ カテゴリの 絵（ui/art/icons.ts）。 */
 	icon?: string;
 	/**
 	 * たおれた あとの 支給品（ぷゆゆソード）：敵を なぐる たびに 修正値が 1 へる（強さが 0 に なると 折れる）・

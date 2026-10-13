@@ -1,6 +1,6 @@
 // 町が 育つと 建つ 施設（STORY.md §5.75 の 町割り）。1つの 施設を ここに 1つ 書けば、村の 地図の 外観・扉・
 // 中の 部屋・調べる 物・中の 人・外の 物（釣り場など）が そろう。DOM も 保存も 使わない
-// （スクリプトは ui/facilities.ts、試験は src/sim/villageTests.ts）。
+// （スクリプトは ui/village/facilities.ts、試験は src/sim/villageTests.ts）。
 //
 // - 建つ 段（from）から、建てかえの 段（until）の 前まで 立つ（交番 → 警察署 のように 同じ 所で 建てかわる）。
 // - 外観は 3つの 書き方：
@@ -13,7 +13,7 @@
 //   riCell で マスごとに、背の 高い 物（冷蔵ケース・ロッカー）は ri で 下から 1本に 切って 上の マスへ はみ出させる。
 // - 外の 物（outdoor）は 地図の マスに 見えない イベントを 置き、そこの 絵を 調べる。fishing・batting は 遊べる 物。
 //   sprite が あれば 見える 人（屋台の 店番）。
-// - 飲食店は data/village/eateries.ts（FACILITIES の うしろに 足す）。店番・券売機の eat で 品書き（ui/eat.ts）。
+// - 飲食店は data/village/eateries.ts（FACILITIES の うしろに 足す）。店番・券売機の eat で 品書き（ui/minigames/eat.ts）。
 // どれも 寄り道で、強さには 何も 効かない（冒険に 力を 持ちこまない）。
 
 import type { EventDef, TileDef } from "../../engine/defs";
@@ -136,8 +136,8 @@ export type FacilityPerson = {
 	name: string;
 	lines: readonly string[];
 	/**
-	 * 話すと 品書きが 出る 店番（eat。data/eateries.ts の EAT_MENUS[施設の id]。話す たびに lines を 1つ
-	 * 出して から 品書き。ui/eat.ts）。
+	 * 話すと 品書きが 出る 店番（eat。data/town/eateries.ts の EAT_MENUS[施設の id]。話す たびに lines を 1つ
+	 * 出して から 品書き。ui/minigames/eat.ts）。
 	 */
 	play?: "eat";
 };
@@ -153,14 +153,14 @@ export type FacilityRoom = {
 	people?: readonly FacilityPerson[];
 	/**
 	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
-	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/eat.ts・
-	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyoWatch.ts・
-	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/debate.ts・
-	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyoGikai.ts）・
-	 * bushitsu＝部室棟の 遊び（ui/bushitsu.ts）・saba＝ホシュクラの 部屋の 物（ui/saba.ts）・
-	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/dosukoi.ts）・
-	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade.ts）・
-	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta.ts））。
+	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/minigames/eat.ts・
+	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyo/jikkyoWatch.ts・
+	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/minigames/debate.ts・
+	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyo/jikkyoGikai.ts）・
+	 * bushitsu＝部室棟の 遊び（ui/bushitsu/bushitsu.ts）・saba＝ホシュクラの 部屋の 物（ui/saba/saba.ts）・
+	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/minigames/dosukoi.ts）・
+	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade/arcade.ts）・
+	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta/neta.ts））。
 	 */
 	plays?: Record<
 		string,
@@ -187,8 +187,8 @@ export type OutdoorThing = {
 	/**
 	 * 遊べる 物（釣り・1打席・バス＝どの 板へも 出かけられる・eat＝その 施設の 品書き・
 	 * jikkyo＝その 施設の 実況の 番組を スマホで 見る。data/jikkyo/packs.ts・
-	 * saba＝ホシュクラの 島の 物（ui/saba.ts）・imoni＝おんJ芋煮会の 大鍋と 人（ui/imoni.ts）・
-	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta.ts））。
+	 * saba＝ホシュクラの 島の 物（ui/saba/saba.ts）・imoni＝おんJ芋煮会の 大鍋と 人（ui/minigames/imoni.ts）・
+	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta/neta.ts））。
 	 */
 	play?:
 		| "fishing"
@@ -225,7 +225,7 @@ export type Facility = {
 	clear?: readonly (readonly [number, number, string, number?])[];
 	/** 扉を 踏んで 入る ときの 1窓（村に いる あいだ 1回）。 */
 	door?: string;
-	/** 出入りの 音（data/sfx.ts。なければ 木の 扉）。 */
+	/** 出入りの 音（data/audio/sfx.ts。なければ 木の 扉）。 */
 	doorSe?: "doorSteel" | "autoDoor" | "slideDoor";
 	room?: FacilityRoom;
 	outdoor?: readonly OutdoorThing[];
@@ -290,7 +290,7 @@ const LOOKS = {
 
 const PAPER = basePx(32, 1446);
 const WINDOW = basePx(48, 1382);
-/** 台（台ごしに 向こうの 人・物と 話せる。ui/village.ts は 台の マスの 物を 先に 読むので、人の 前の 台に 物は 置かない）。 */
+/** 台（台ごしに 向こうの 人・物と 話せる。ui/village/village.ts は 台の マスの 物を 先に 読むので、人の 前の 台に 物は 置かない）。 */
 const ctr = <T extends object>(t: T) => ({ ...t, counter: true });
 /** 壁の 丸い 時計（Base.png 507 行）。 */
 const CLOCK = base(7, 507);
@@ -592,7 +592,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				],
 				plant: ["ヤシの　鉢植え。\n葉の　先が　すこし　こげている。"],
 			},
-			// 壁の テレビで 夏の おんJ園（高校野球）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、クーラーボックスの スイカで スイカ割り（ui/arcade.ts）
+			// 壁の テレビで 夏の おんJ園（高校野球）（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、クーラーボックスの スイカで スイカ割り（ui/arcade/arcade.ts）
 			plays: { tv: "jikkyo", suika: "arcade" },
 			people: [
 				{
@@ -714,8 +714,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				tea: ["お茶の　台。\n急須の　お茶が　すっかり　ぬるい。"],
 				othello: ["リバーシ盤。\n「リバーシの　時間です」と　札が　ある。"],
 			},
-			// 壁の テレビで おんJ名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
-			// リバーシ盤で 常連と 対局（スレ「オセロの時間です」の 盤の 遊び。ui/netaOthello.ts）
+			// 壁の テレビで おんJ名人戦の おやつ実況（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
+			// リバーシ盤で 常連と 対局（スレ「オセロの時間です」の 盤の 遊び。ui/neta/netaOthello.ts）
 			plays: { tv: "jikkyo", othello: "othello" },
 			people: [
 				{
@@ -797,7 +797,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				at: [34, 2],
 				lines: ["バックネット。\nボールの　あとで、あちこち　へこんでいる。"],
 			},
-			// 三塁側の ベンチ：ランダム野球（!random の ルールA。おんJwiki pages/334。ui/netaYakyu.ts）
+			// 三塁側の ベンチ：ランダム野球（!random の ルールA。おんJwiki pages/334。ui/neta/netaYakyu.ts）
 			{
 				id: "bench_r",
 				at: [38, 9],
@@ -807,7 +807,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				play: "yakyu",
 			},
 			// 外野の へいの「5割の壁」（順位スレの 5割の 線。おんJwiki pages/21。絵は scripts/make-neta.mjs）。
-			// ランダム野球の 通算が ちょうど 5割の ときだけ しゃべる（ui/neta.ts の kabeScript）
+			// ランダム野球の 通算が ちょうど 5割の ときだけ しゃべる（ui/neta/neta.ts の kabeScript）
 			{
 				id: "kabe",
 				at: [35, 9],
@@ -1356,7 +1356,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"文机。半紙と　筆が　ある。\n……すずりに「!sk」と　彫ってある。",
 				],
 			},
-			// 文机で !sk 習字（おーぷんの サイコロ機能。ui/netaSk.ts）
+			// 文机で !sk 習字（おーぷんの サイコロ機能。ui/neta/netaSk.ts）
 			plays: { shuji: "sk" },
 			people: [
 				{
@@ -1941,9 +1941,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				plant: ["観葉植物。\n……鉢に　メダルが　1枚　埋まっている。"],
 				comma: ["コンマの　台。画面の　時計が、\nミリ秒まで　回っている。"],
 			},
-			// 壁の 大画面で 新作発表会・おんJリーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
-			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/netaComma.ts）、
-			// 筐体 7台と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade.ts）
+			// 壁の 大画面で 新作発表会・おんJリーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
+			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/neta/netaComma.ts）、
+			// 筐体 7台と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade/arcade.ts）
 			plays: {
 				tv: "jikkyo",
 				comma: "comma",
@@ -2084,7 +2084,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				plant: ["観葉植物。\n……いちばん　鍛えて　なさそう。"],
 				fukkin: ["腹筋台。はり紙：\n「ようこそID腹筋スレへ！」"],
 			},
-			// 腹筋台で ID腹筋（「ようこそID腹筋スレへ！」。外の はり紙「sage　進行　お断り」と 同じ 店。ui/netaFukkin.ts）
+			// 腹筋台で ID腹筋（「ようこそID腹筋スレへ！」。外の はり紙「sage　進行　お断り」と 同じ 店。ui/neta/netaFukkin.ts）
 			plays: { fukkin: "fukkin" },
 			people: [
 				{
@@ -2299,7 +2299,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			],
 		},
 	},
-	// ── 麺屋「乙」（街から。線路の 東の 南の 区画。台の 前の 丸いすで 食べる 店。店主か 券売機で 品書き：ui/eat.ts）
+	// ── 麺屋「乙」（街から。線路の 東の 南の 区画。台の 前の 丸いすで 食べる 店。店主か 券売機で 品書き：ui/minigames/eat.ts）
 	{
 		id: "ramen",
 		name: "麺屋「乙」",
@@ -2617,7 +2617,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 		room: MANSION_ROOM,
 	},
 	// 分譲住宅「おんJヶ丘」＝キリコの 家（住宅街。35年ローンで 買う：演出だけ。中は 家具と 模様替え。
-	//    data/village/myhome.ts・ui/myhome.ts。部屋の 形は 保存から 組みなおす。ここの room は 何も 置かない 形）
+	//    data/village/myhome.ts・ui/village/myhome.ts。部屋の 形は 保存から 組みなおす。ここの room は 何も 置かない 形）
 	{
 		id: "myhome",
 		name: "分譲住宅「おんJヶ丘」",
@@ -3196,7 +3196,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				f: k.on(base(1, 44)),
 				B: k.on(base(0, 121)),
 				"~": k.floor(ri("runner")),
-				// 判例集（模擬議会の 議事録も とじてある。ui/debate.ts）
+				// 判例集（模擬議会の 議事録も とじてある。ui/minigames/debate.ts）
 				L: k.low(riCell("bookshelf", 0, 0)),
 			}),
 			things: {
@@ -3355,7 +3355,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				wagon: ["黄色い　ワゴン。\nうしろの　席に　バットが　3本。"],
 				tank: ["ポリタンク。\n「ガソリン　入れるな」の　札。"],
 			},
-			// 事務所の テレビで おんJグランプリ（F1）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）
+			// 事務所の テレビで おんJグランプリ（F1）（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）
 			plays: { tv: "jikkyo" },
 			people: [
 				{
@@ -3639,8 +3639,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				cashier: ["チップの　窓口。\n「本日の　両替は　終了しました」"],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
-			// 奥の 壁の 大画面で おんJ記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyoWatch.ts）、
-			// スロット・カードの 台・ルーレットは 遊びの チップで 遊ぶ（お金は 賭けない。ui/arcade.ts）
+			// 奥の 壁の 大画面で おんJ記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
+			// スロット・カードの 台・ルーレットは 遊びの チップで 遊ぶ（お金は 賭けない。ui/arcade/arcade.ts）
 			plays: {
 				tv: "jikkyo",
 				gacha: "arcade",
@@ -4750,7 +4750,7 @@ export const facilityTiles = (): Record<string, TileDef> => {
 
 /**
  * 建物の 影（マス単位。光は 左上から：建物の 右がわの 地面に、軒から 足もとまで）。ふつうの 家と 絵を 並べた
- * 外観（車・バス停は 落とさない。block の 外観＝グラウンド・港なども 影なし）。ui/facilities.ts の shadowDecor が 描く。
+ * 外観（車・バス停は 落とさない。block の 外観＝グラウンド・港なども 影なし）。ui/village/facilities.ts の shadowDecor が 描く。
  * 絵を 並べた 外観は 右はしの 同じ 行を まとめて 1本ずつ（コンビニの 自販機のような 出っぱりにも 影）。
  */
 export const facilityShadows = (

@@ -1,5 +1,5 @@
 // ネタスレの 遊びの 絵（scripts/make-neta.mjs が 作る public/sprites/neta.png・neta_kabe.png）。
-// 部屋の 物は facilities.ts の 部屋の 絵（k.on）に、ベンチの 札は グラウンドの 外観の 字に、板の 絵は ui/neta*.ts で
+// 部屋の 物は facilities.ts の 部屋の 絵（k.on）に、ベンチの 札は グラウンドの 外観の 字に、板の 絵は ui/neta/neta*.ts で
 // 使う。ゲームは CDN を 見ない。
 
 export const NETA_IMG = "pub:sprites/neta.png";

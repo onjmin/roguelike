@@ -1,5 +1,5 @@
-// ゲームセンターの 筐体の 遊び（data/arcade/*・ui/arcade*.ts・ゲームセンター「連コ」の 部屋の 物）の 試験（pnpm test）。
-// 板（canvas）は 出さない：決まりは 種つきの 乱数と 決まった 手で 回し、窓の 流れは ui/arcade.ts の setArcadeHooks で 見る。
+// ゲームセンターの 筐体の 遊び（data/arcade/*・ui/arcade/arcade*.ts・ゲームセンター「連コ」の 部屋の 物）の 試験（pnpm test）。
+// 板（canvas）は 出さない：決まりは 種つきの 乱数と 決まった 手で 回し、窓の 流れは ui/arcade/arcade.ts の setArcadeHooks で 見る。
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -76,7 +76,7 @@ import {
 } from "../data/arcade/parlor";
 import { ARCADE, ARCADE_BOARD, ARCADE_TEXT } from "../data/arcade/text";
 import { ARCADE_GAMES, ARCADE_HOME, isArcadeGame } from "../data/arcade/types";
-import { sfx } from "../data/sfx";
+import { sfx } from "../data/audio/sfx";
 import {
 	type Facility,
 	facilityById,
@@ -90,9 +90,9 @@ import {
 	loadArcade,
 	saveArcade,
 	setArcadeHooks,
-} from "../ui/arcade";
+} from "../ui/arcade/arcade";
 import type { Ctx } from "../ui/ctx";
-import { buildFacility } from "../ui/facilities";
+import { buildFacility } from "../ui/village/facilities";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -270,7 +270,7 @@ test("置き場所: 筐体の 前に 人が 立たない（乱入待ちの 名�
 		);
 });
 
-test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/facilities.ts → ui/arcade.ts）", async () => {
+test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/village/facilities.ts → ui/arcade/arcade.ts）", async () => {
 	await withStore(async () => {
 		const view: VillageView = {
 			stage: TOWN_STAGES - 1,
@@ -324,8 +324,8 @@ test("文: 窓は 22×2、板の 題と 押し方は 1行 22、ボタン 9", () 
 	for (const t of ARCADE_TEXT.gacha.rule.split("\n")) ok(width(t) <= 22, t);
 });
 
-test("音: 板と 窓で 鳴らす 効果音は どれも data/sfx.ts に ある", () => {
-	const root = join(process.cwd(), "src/ui");
+test("音: 板と 窓で 鳴らす 効果音は どれも data/audio/sfx.ts に ある", () => {
+	const root = join(process.cwd(), "src/ui/arcade");
 	const names = new Set<string>(["victory", "miss"]);
 	for (const file of [
 		"arcade.ts",

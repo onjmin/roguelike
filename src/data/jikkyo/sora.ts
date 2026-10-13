@@ -9,7 +9,7 @@
 //   群衆・題・字幕の「保守」は 固有名詞（金曜ロード保守・金保守・おんJタウン）の 中だけ。
 // - 金曜は 本放送（★4）、ほかの 日は 再上映（★2。群衆に「何回　やるねん」が まざる）。中身は 曜日で 閉じない。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin 22（全角）。試験は src/sim/jikkyoTests.ts の S 節。
-// 絵は ui/jikkyoScenes.ts（場面の 鍵は SORA_SCENES、絵に 出す 文は SORA_ART）。
+// 絵は ui/jikkyo/jikkyoScenes.ts（場面の 鍵は SORA_SCENES、絵に 出す 文は SORA_ART）。
 
 import type {
 	JkFit,

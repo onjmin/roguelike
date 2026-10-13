@@ -2,10 +2,10 @@
 // public/sprites/equip の PNG を重ねて見る（pnpm equip で書き出してから）。?w=steel&s=bronze で装備を選ぶ。行＝向き（正面・右・左・うしろ）、列＝足踏み2コマと攻撃の3つの形。
 
 import type { SpriteDir } from "../src/core/geom";
-import { KIRIKO_WALK } from "../src/data/cast";
+import { KIRIKO_WALK } from "../src/data/people/cast";
 import { loadImage } from "../src/engine/assets";
 import { drawWalk } from "../src/engine/sprite";
-import { drawEquip, equipSheet } from "../src/ui/equip";
+import { drawEquip, equipSheet } from "../src/ui/dungeon/equip";
 
 const q = new URLSearchParams(location.search);
 const look = { weapon: q.get("w") ?? "steel", shield: q.get("s") ?? "bronze" };

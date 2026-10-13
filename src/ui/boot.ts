@@ -5,17 +5,17 @@
 // 冒険の記録・図鑑・あそびかた・せってい は 村の中（人と B／☰ の メニュー）へ 移した。
 
 import type { RunState } from "../core/types";
-import { SPEAKERS } from "../data/quotes";
-import { DUNGEON_NAMES } from "../data/story";
-import { VILLAGE_MSG } from "../data/town";
+import { SPEAKERS } from "../data/story/quotes";
+import { DUNGEON_NAMES } from "../data/story/story";
+import { VILLAGE_MSG } from "../data/town/town";
 import { clearRun, hasRunSave, loadProgress, loadRun } from "../engine/save";
 import { sleep } from "../engine/types";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
-import { floorShort } from "./floorName";
+import { floorShort } from "./dungeon/floorName";
 import { infoWindow, onTap } from "./list";
-import { esc, escBr } from "./records";
-import { titleQuote } from "./villageTalk";
+import { esc, escBr } from "./village/records";
+import { titleQuote } from "./village/villageTalk";
 
 export type BootChoice =
 	| { kind: "start" }

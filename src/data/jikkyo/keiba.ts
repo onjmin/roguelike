@@ -12,7 +12,7 @@
 //   群衆・題・字幕の「保守」は 固有名詞（おんJ記念）の 中だけ。馬の 名前は 絵と 字幕と 書きこみだけ（レスに 入れない）。
 // - 日曜は 本番（★4）、ほかの 日は 再放送（★2。群衆に「結果　知っとる」が まざる）。
 // - スレタイは「おんJ競馬部　1717R」から（次スレは R を 1つ 足す）。終わりの 区切りで【反省会】に かわる。
-// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoKeibaTv.ts。
+// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyo/jikkyoKeibaTv.ts。
 import type {
 	JkFit,
 	JkOpt,
@@ -21,7 +21,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import { type JkPack, liveOr, onWeekdays } from "./pack";
 
 const o = (text: string, fit: JkFit, boo?: string): JkOpt =>

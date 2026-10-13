@@ -12,7 +12,7 @@ import { wipeSaves } from "../engine/save";
 import { type Settings, saveSettings, settings } from "../engine/settings";
 import type { Ctx } from "./ctx";
 import { listWindow } from "./list";
-import { makeQuiz } from "./quiz";
+import { makeQuiz } from "./minigames/quiz";
 
 const BGM_LABEL: Record<Settings["bgm"], string> = {
 	hq: "高音質",
@@ -83,7 +83,7 @@ const KEYS = [
 	"wipe",
 ] as const;
 
-/** セーブデータを 消すか 2回 きき、計算問題（ui/quiz.ts）に 答えさせる。消したら 読みなおす（村の はじめから）。 */
+/** セーブデータを 消すか 2回 きき、計算問題（ui/minigames/quiz.ts）に 答えさせる。消したら 読みなおす（村の はじめから）。 */
 const askWipe = async (ctx: Ctx): Promise<void> => {
 	const no = [
 		{ label: "消す", value: "yes" },
@@ -103,7 +103,7 @@ const askWipe = async (ctx: Ctx): Promise<void> => {
 		{ start: 1 },
 	);
 	if (v2 !== "yes") return;
-	// 最後に 計算問題（押しまちがいで 消さないように。ui/quiz.ts）。まちがえたら 消さない
+	// 最後に 計算問題（押しまちがいで 消さないように。ui/minigames/quiz.ts）。まちがえたら 消さない
 	const q = makeQuiz();
 	const v3 = await listWindow(
 		ctx,

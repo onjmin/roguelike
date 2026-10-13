@@ -1,8 +1,8 @@
-// 町が 育ったときの「町の お知らせ」（ui/villageReturn.ts の stageUp）。町の まんなか（店・小屋・倉庫・本館）は
+// 町が 育ったときの「町の お知らせ」（ui/village/villageReturn.ts の stageUp）。町の まんなか（店・小屋・倉庫・本館）は
 // 仲間の ひとことで 知らせるが、新市街・浜・町の まわりに 建った 物は だまって 増えていた（作者の 指示：通知不足）。
 // 段が 上がった あいだに 建った・建てかわった 建物を 地区ごとに 並べ、カメラで 1つずつ 見せる。DOM も 保存も 使わない。
 
-import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
+import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import { FACILITIES, type Facility, facilityBlock } from "./facilities";
 import {
 	BATH_FROM,

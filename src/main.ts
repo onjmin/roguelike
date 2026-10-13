@@ -8,9 +8,9 @@ import { type HeroId, isHeroId } from "./core/data/heroes";
 import { callHunter } from "./core/floor";
 import { Run } from "./core/run";
 import type { Item } from "./core/types";
-import { bgm } from "./data/bgm";
-import { devEvent } from "./data/objectives";
-import { sfx } from "./data/sfx";
+import { bgm } from "./data/audio/bgm";
+import { sfx } from "./data/audio/sfx";
+import { devEvent } from "./data/story/objectives";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
 import { chosenHero, noteHeroQuests, rollHeroWorries } from "./engine/heroes";
@@ -28,12 +28,12 @@ import {
 import { Screen } from "./engine/screen";
 import { decodeShare, takeSharedHash } from "./engine/share";
 import type { Ctx } from "./ui/ctx";
-import { mountHud } from "./ui/hud";
+import { mountHud } from "./ui/dungeon/hud";
+import { Play } from "./ui/dungeon/play";
 import { infoWindow } from "./ui/list";
-import { Play } from "./ui/play";
 import { confirmShared } from "./ui/share";
-import { type Arrival, Village } from "./ui/village";
-import { travelHome } from "./ui/worldMap";
+import { type Arrival, Village } from "./ui/village/village";
+import { travelHome } from "./ui/village/worldMap";
 
 const app = document.getElementById("app");
 if (!app) throw new Error("#app がありません");
@@ -192,7 +192,7 @@ const runFor = (
 		};
 	}
 	if (choice.kind === "new") {
-		// 開発用の ?event（期間限定の イベントを 起きている ことに する。data/objectives.ts）で 決めた 目的は、
+		// 開発用の ?event（期間限定の イベントを 起きている ことに する。data/story/objectives.ts）で 決めた 目的は、
 		// 本物の 進み具合・記録に 残さない：debug: の シード（保存・記録・リプレイ・出撃の 数・★・町の 精算 なし）。
 		// 倉庫からも 取り出さない（写しを 持っていく。終わっても 村に 持ち帰らない）
 		if (devEvent()) {

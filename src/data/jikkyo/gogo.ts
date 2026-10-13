@@ -11,7 +11,7 @@
 //   群衆・題・字幕・会場の 文の「保守」は 固有名詞（おんJタウン・おんJ浜）の 中だけ。
 // - 月〜金は 昼の部の 本上映（★4）、土日は 再上映（★2。群衆に「再放送　乙」が まざる）。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
-// 絵は ui/jikkyoGogoTv.ts（場面の 鍵は GOGO_SCENES、絵に 出す 文は GOGO_ART）。
+// 絵は ui/jikkyo/jikkyoGogoTv.ts（場面の 鍵は GOGO_SCENES、絵に 出す 文は GOGO_ART）。
 
 import type {
 	JkFit,
@@ -20,7 +20,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import { type JkPack, liveOr, onWeekdays } from "./pack";
 
 const o = (text: string, fit: JkFit): JkOpt => ({ text, fit });

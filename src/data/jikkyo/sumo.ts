@@ -10,7 +10,7 @@
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 //   群衆・題・字幕の「保守」は 固有名詞（おんJ場所・おんJノ海）の 中だけ。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
-// 絵は ui/jikkyoSumoTv.ts（場面の 鍵は SUMO_SCENES、絵に 出す 文は SUMO_ART）。
+// 絵は ui/jikkyo/jikkyoSumoTv.ts（場面の 鍵は SUMO_SCENES、絵に 出す 文は SUMO_ART）。
 
 import type {
 	JkFit,
@@ -19,7 +19,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import type { JkPack } from "./pack";
 
 const o = (text: string, fit: JkFit): JkOpt => ({ text, fit });

@@ -11,13 +11,13 @@
 //   y48〜50 を 横に さがす（map.ts の lineupSpots）ので、島には y48 より 下に 歩ける マスを 作らない。
 //   段2 の (16,46) も 崖（南の 口から 4マスの 内。呼んだ 仲間の 立つ 所に 選ばれない）。
 // - 釣り場の 突堤（15〜20, y39）から 西の 海（y39〜40）は 海の まま。
-// - 豚レース場の 走路（12〜16, y47）は 柵で かこって 豚だけ（台ごしに 話せる 柵 f）。豚と 夜の 匠は ui/saba.ts の sabaEvents。
-// 絵は scripts/make-saba.mjs（public/sprites/saba.png・saba_takumi.png・src/data/sabaSheet.ts）。
-// 文は data/sabaText.ts、遊び（ブラマイ・投票・朝やで・入居・お知らせ・水槽・匠）は ui/saba.ts。
+// - 豚レース場の 走路（12〜16, y47）は 柵で かこって 豚だけ（台ごしに 話せる 柵 f）。豚と 夜の 匠は ui/saba/saba.ts の sabaEvents。
+// 絵は scripts/make-saba.mjs（public/sprites/saba.png・saba_takumi.png・src/data/saba/sabaSheet.ts）。
+// 文は data/saba/sabaText.ts、遊び（ブラマイ・投票・朝やで・入居・お知らせ・水槽・匠）は ui/saba/saba.ts。
 // facilities.ts から 値を import しない（facilities.ts が この ファイルを 読むので 循環する）。
 
-import { sb } from "../sabaSheet";
-import { SABA_TEXT as X } from "../sabaText";
+import { sb } from "../saba/sabaSheet";
+import { SABA_TEXT as X } from "../saba/sabaText";
 import type {
 	Facility,
 	FacilityRoom,
@@ -130,7 +130,7 @@ export const ISLE_ROWS: Record<2 | 3 | 4 | 5 | 6 | 7, readonly string[]> = {
 	],
 };
 
-/** 島の 物（地図の 座標）。どれも play:"saba"（読んだ あと ui/saba.ts：日・帰りで かわる 1窓・夜の 匠）。 */
+/** 島の 物（地図の 座標）。どれも play:"saba"（読んだ あと ui/saba/saba.ts：日・帰りで かわる 1窓・夜の 匠）。 */
 const thing = (
 	id: string,
 	at: readonly [number, number],

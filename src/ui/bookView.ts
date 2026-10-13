@@ -5,15 +5,15 @@
 import { dungeonById } from "../core/data/dungeons";
 import { MONSTER_LIST } from "../core/data/monsters";
 import type { DungeonId, MonsterDef, MonsterTag } from "../core/types";
-import { DUNGEON_NAMES } from "../data/story";
+import { DUNGEON_NAMES } from "../data/story/story";
 import { loadBook, loadProgress } from "../engine/save";
+import { animateArts, monsterArt } from "./art/monsterArt";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { floorShort } from "./dungeon/floorName";
 import { explain } from "./explain";
-import { floorShort } from "./floorName";
 import { esc } from "./itemText";
 import { listWindow } from "./list";
-import { animateArts, monsterArt } from "./monsterArt";
 
 const TAG_NAME: Record<MonsterTag, string> = {
 	undead: "アンデッド",

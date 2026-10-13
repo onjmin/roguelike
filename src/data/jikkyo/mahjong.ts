@@ -11,7 +11,7 @@
 //   群衆・題・字幕・会場の 文の「保守」は 固有名詞（おんJリーグ・チームおんJ）の 中だけ。
 // - 日：月曜と 木曜は 本番（★4）、ほかの 日は 再放送（★2。群衆に「再放送　乙」が まざる）。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
-// TV は ui/jikkyoMahjongTv.ts（場面の 鍵は MAHJONG_SCENES、絵に 出す 文は MAHJONG_ART）。
+// TV は ui/jikkyo/jikkyoMahjongTv.ts（場面の 鍵は MAHJONG_SCENES、絵に 出す 文は MAHJONG_ART）。
 
 import type {
 	JkFit,
@@ -20,7 +20,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import type { JkPack } from "./pack";
 
 const o = (text: string, fit: JkFit, boo?: string): JkOpt =>

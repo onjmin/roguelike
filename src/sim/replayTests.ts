@@ -27,7 +27,7 @@ import {
 	type DungeonId,
 	type Objective,
 } from "../core/types";
-import { BOARD_LOOKS } from "../data/story";
+import { BOARD_LOOKS } from "../data/story/story";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 import { MAIN_PARITY } from "./parityFixture";

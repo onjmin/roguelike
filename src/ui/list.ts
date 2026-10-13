@@ -166,7 +166,7 @@ export const listWindow = (
 		actions?: { label: string; value: string; key?: Key; keyHint?: string }[];
 		header?: string;
 		cols?: number;
-		/** カーソルが のった 行（開いた ときも 1回。模様替えの 下見：ui/myhome.ts）。 */
+		/** カーソルが のった 行（開いた ときも 1回。模様替えの 下見：ui/village/myhome.ts）。 */
 		onCursor?: (value: string) => void;
 	} = {},
 ): Promise<string | null> =>

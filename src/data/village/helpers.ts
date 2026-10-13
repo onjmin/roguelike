@@ -3,7 +3,7 @@
 
 import type { EventDef, Script } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
-import type { Speaker } from "../quotes";
+import type { Speaker } from "../story/quotes";
 
 /** 看板・置物（調べると 地の文が出る）。sprite を省くと 見えない（タイルの絵を そのまま調べる）。 */
 export const sign = (
@@ -30,7 +30,7 @@ export const sign = (
 /**
  * 話しかけられる人。
  * talk は「セリフの配列」（話者は who）か、自由なスクリプト。
- * who は 仲間（data/cast.ts）。名前だけ変えたいモブは who を省いて name を渡す。
+ * who は 仲間（data/people/cast.ts）。名前だけ変えたいモブは who を省いて name を渡す。
  */
 export const npc = (
 	id: string,

@@ -3,7 +3,7 @@
 // - 読み込む：貼りつけるか ファイルを 選ぶ。
 // - もらった リプレイを 見るか 聞く。
 
-import { DUNGEON_NAMES } from "../data/story";
+import { DUNGEON_NAMES } from "../data/story/story";
 import type { SavedReplay } from "../engine/save";
 import {
 	decodeShare,
@@ -14,9 +14,9 @@ import {
 } from "../engine/share";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
-import { floorShort } from "./floorName";
+import { floorShort } from "./dungeon/floorName";
 import { listWindow, markOpened, onTap } from "./list";
-import { bossHomeLine, esc, isBossClear } from "./records";
+import { bossHomeLine, esc, isBossClear } from "./village/records";
 
 /**
  * もらった リプレイの 見出し（どこで どう 終わったか。ボスなら「B10で　〇〇を　たおした」と、

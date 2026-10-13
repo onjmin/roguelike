@@ -22,7 +22,7 @@ export const YAKYU = {
 	rule: "!random（0〜100）で　1打席ずつ。\n5回まで、同点なら　7回まで。",
 	after: "ベンチの　札を　めくった。\n……{w}勝　{l}敗　{d}分。",
 	kabeHint: "……外野の　へいの　ほうで、\nだれかが　つぶやいた　気が　した。",
-	// 板（1行）。B は 板の 外を タップしても 押した ことに なる（ui/netaBoard.ts の pressesB）
+	// 板（1行）。B は 板の 外を タップしても 押した ことに なる（ui/neta/netaBoard.ts の pressesB）
 	title: "ランダム野球　{away}　対　{home}",
 	hint: "A／タップで　!random　B／外を　2回で　やめる",
 	rulesNote: "A／タップで　はじめる",
@@ -147,7 +147,7 @@ export const FUKKIN = {
 	doneToday: "今日の　ぶんは、\nもう　おわっている。",
 	finish: "{n}回　おわった。\n……通算　{total}回。",
 	stopped: "{done}回で　そっ閉じした。\n……通算　{total}回。",
-	// 板。B は 板の 外を タップしても 押した ことに なる（ui/netaBoard.ts の mash）
+	// 板。B は 板の 外を タップしても 押した ことに なる（ui/neta/netaBoard.ts の mash）
 	title: "ようこそID腹筋スレへ！",
 	hint: "A／板を　連打　B／外を　タップで　そっ閉じ",
 	note: "あと　{left}回",
@@ -182,7 +182,7 @@ export const COMMA = {
 	zeroNone: "……書きこめなかった。",
 	zeroAfter: "……{time}。\n{judge}",
 	zeroBest: "いちばん　早かったのは\n{best}。",
-	// 板。B は 板の 外を タップしても 押した ことに なる（コンマ・0時ちょうど。ui/netaBoard.ts の pressesB）
+	// 板。B は 板の 外を タップしても 押した ことに なる（コンマ・0時ちょうど。ui/neta/netaBoard.ts の pressesB）
 	title: "！コンマ",
 	hint: "A／タップで　書く　B／外を　タップで　やめる",
 	note: "あと　{n}回　書きこめる",
@@ -229,7 +229,7 @@ export const SK = {
 		"門下生が　のぞきこんだ。\n「……なんや　それ」",
 		"師範が　うなずいた。\n「……押忍」",
 	],
-	// 板。B は 板の 外を タップしても 押した ことに なる（ui/netaBoard.ts の pressesB）
+	// 板。B は 板の 外を タップしても 押した ことに なる（ui/neta/netaBoard.ts の pressesB）
 	title: "!sk　が　!sk2　で　!sk3。",
 	hint: "A／タップで　止める　B／外タップで　やめる",
 	notes: [

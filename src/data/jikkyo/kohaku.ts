@@ -12,7 +12,7 @@
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 //   群衆・題・字幕の「保守」は 固有名詞の 中だけ。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・名前欄 22（全角）。試験は src/sim/jikkyoTests.ts の K 節。
-// 絵は ui/jikkyoKohakuTv.ts（場面の 鍵は KOHAKU_SCENES、絵に 出す 文は KOHAKU_ART）。
+// 絵は ui/jikkyo/jikkyoKohakuTv.ts（場面の 鍵は KOHAKU_SCENES、絵に 出す 文は KOHAKU_ART）。
 
 import type {
 	JkCueGrade,

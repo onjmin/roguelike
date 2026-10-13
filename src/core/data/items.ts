@@ -39,7 +39,7 @@ add({
 	sound: { swing: "swing_blade", hit: "hit_puyusword" },
 	name: "ぷゆゆソード",
 	atk: 35,
-	// 正体が わかって いる 支給品なので 専用の 絵（🥺 の 柄頭。ui/itemArt.ts → scripts/make-items.mjs）
+	// 正体が わかって いる 支給品なので 専用の 絵（🥺 の 柄頭。ui/art/itemArt.ts → scripts/make-items.mjs）
 	icon: "pub:sprites/items/puyusword.png",
 	relief: true,
 	desc: "とても　強いが、なぐる　たびに　修正値が　1　へる（強さが　0に　なると　折れる）。ボスには　効かない。売っても　0",
@@ -592,7 +592,7 @@ add({
 // ───────── 目的の品（床には出ない） ─────────
 // 各板の 底に 眠る、落ちた ネタ（STORY.md §5。持ち帰って おんJに 貼ると スレが 伸びて 人が 来る）。
 // 絵は まだ 前の 筋（針・レコード）の まま（ART_TODO.md）。
-/** 目的の品の 専用の 絵（ui/itemArt.ts → scripts/make-items.mjs で 書き出す）。 */
+/** 目的の品の 専用の 絵（ui/art/itemArt.ts → scripts/make-items.mjs で 書き出す）。 */
 const art = (name: string): string => `pub:sprites/items/${name}.png`;
 
 add({
@@ -641,7 +641,7 @@ add({
 });
 
 // 裏シナリオの 承：乗っ取られた 小島 3つの 品。乗っ取り屋の 置き手紙（灯台の パスワードの 手がかり。
-// 持ち帰ると まとめ掲示板に 貼られる：data/scraps.ts）
+// 持ち帰ると まとめ掲示板に 貼られる：data/story/scraps.ts）
 add({
 	id: "memo1",
 	cat: "goal",

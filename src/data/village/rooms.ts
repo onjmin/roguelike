@@ -1,5 +1,5 @@
 // 村の 建物の 中（喫茶「おんJ」・やきうの 小屋・常識堂の 奥・倉庫）。DOM も 保存も 使わない 組み立てだけ
-// （src/sim/villageTests.ts で 形と 歩ける道を 調べる）。スクリプトは ui/rooms.ts（喫茶は ui/cafe.ts）が id で 付ける。
+// （src/sim/villageTests.ts で 形と 歩ける道を 調べる）。スクリプトは ui/village/rooms.ts（喫茶は ui/village/cafe.ts）が id で 付ける。
 // おんJ 本館の 中は data/village/hall.ts（段で 育つので 別）。
 //
 // 部屋の 形は 本館と 同じ（上に 天井 # と 壁 2段 H h、下の 壁に 出口の マット D が 2マス）。
@@ -14,7 +14,7 @@
 //   字：7 8 9 / 1 2 3  赤い ステージ   P p ピアノ   L スピーカー   n 客席の いす（通れる）   m 供養の 札
 //       e 拍手の はり紙   d 楽屋の 扉   f スタンド花   B 楽譜の 棚   t 物販の 机
 //
-// 銭湯「ゆ」（町の 段4 から。南東の 池の そば。人と 会話は ui/bath.ts）
+// 銭湯「ゆ」（町の 段4 から。南東の 池の そば。人と 会話は ui/minigames/bath.ts）
 //   下が 入口（番台）、のれんの 先が 脱衣所、戸の 先が 浴室。左が 男湯・右が 女湯で、まんなかの 仕切りの 上に 番台。
 //   キリコは 女湯へ（男湯の のれんを くぐろうと すると 番台に 止められる）。浴室の 仕切りは 台と 同じで、
 //   壁ごしに 男湯の 人と 話せる。湯（~）に 入ると 体の 下半分が 湯に かくれる（タイルの above）。
@@ -26,24 +26,24 @@
 //
 // 喫茶「おんJ」（町の 段5 から）
 //   左に カウンター（台の うしろに マスター、台の 前に 丸いす）。右に ソファの 席。下に 丸テーブルと ピアノ。
-//   客は 冒険から 帰るたびに 抽選（ui/cafe.ts の cafeLayout）。仲間は 席（CAFE_SLOTS）に すわり、
+//   客は 冒険から 帰るたびに 抽選（ui/village/cafe.ts の cafeLayout）。仲間は 席（CAFE_SLOTS）に すわり、
 //   となりが 空いていれば キリコが すわって 話す。となりに だれか いれば 話しこんでいる（そばで 聞ける）。
 //   住人（おんJマイナーズ）は 越してきた 子の なかから 帰りごとに 何人か 来ている（CAFE_PATRON_SPOTS）。
-//   字：b 酒棚（壁の 下段。瓶は ui/cafe.ts の decor が 描く）  A 杯の 看板  m 品書き  k 柱時計  Q 絵
+//   字：b 酒棚（壁の 下段。瓶は ui/village/cafe.ts の decor が 描く）  A 杯の 看板  m 品書き  k 柱時計  Q 絵
 //       [ = ]  カウンター（台ごしに マスターと 話す）  U 樽  s S ソファ  t 低い 机  n 丸いす（通れる）
 //       O 白い 丸テーブル  P p ピアノ  F 観葉植物  r 開店の 日の 写真  e サイン色紙  B 漫画の 棚
 //       R 入口の そばの レジ（席・グラスの 置き場とは 重ならない 空きマスだけ）
 //
 // 本屋（町の 段3〜5。広場の 西）→ 図書館（段6 から。同じ 所に 建てかえ）
-//   ことばの 辞典（data/glossary.ts）を 立ち読みする 店（売り場では ない。お金を 使う 所は 作らない）。
+//   ことばの 辞典（data/story/glossary.ts）を 立ち読みする 店（売り場では ない。お金を 使う 所は 作らない）。
 //   本棚（B）を 調べると 辞典。本屋で 板の ことば、図書館で 深い ネタが ふえる。壁の はり紙（m）は 監修の ヒナリー。
-//   中の 人は 名無しの 店番・司書（ヒナリーは 村で 話す。ui/rooms.ts の booksPeople）。
+//   中の 人は 名無しの 店番・司書（ヒナリーは 村で 話す。ui/village/rooms.ts の booksPeople）。
 //   字：B 本棚   T 机   t 読書の 机   n いす（通れる）
 
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
-import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
-import type { Speaker } from "../quotes";
+import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
+import type { Speaker } from "../story/quotes";
 import { FOLK_ART } from "./folk";
 import type { Cell } from "./map";
 import { ri, riCell } from "./rpgenArt";
@@ -79,7 +79,7 @@ export const MUSIC_STAGE: Cell = [4, 3];
 /** 立つ 所と 向き。 */
 export type Spot = { x: number; y: number; dir: Dir };
 
-/** 音楽室の 客席（帰りごとに 名無しと 住人が すわる。ui/guests.ts）。 */
+/** 音楽室の 客席（帰りごとに 名無しと 住人が すわる。ui/village/guests.ts）。 */
 export const MUSIC_SEATS: readonly Spot[] = [
 	{ x: 2, y: 6, dir: "up" },
 	{ x: 3, y: 6, dir: "up" },
@@ -90,7 +90,7 @@ export const MUSIC_SEATS: readonly Spot[] = [
 ];
 
 /**
- * 本屋・図書館で 立ち読み している 住人の 所（本棚の 前。帰りごとに ui/guests.ts が 決める）。
+ * 本屋・図書館で 立ち読み している 住人の 所（本棚の 前。帰りごとに ui/village/guests.ts が 決める）。
  * 本棚の 絵は 2マスの 高さなので、本棚の 1つ上の マスに 立つと 絵に かくれる。そこは 使わない。
  */
 export const BOOKS_BROWSE: Record<"bookstore" | "library", readonly Spot[]> = {
@@ -242,7 +242,7 @@ const ROWS: Record<RoomId, readonly string[]> = {
 /** 部屋の 行。 */
 export const roomRows = (id: RoomId): string[] => [...ROWS[id]];
 
-/** 喫茶の カウンターの 丸いす（台の 前の n）か。「あちらの　お客様から」は ここだけ（ui/cafe.ts）。 */
+/** 喫茶の カウンターの 丸いす（台の 前の n）か。「あちらの　お客様から」は ここだけ（ui/village/cafe.ts）。 */
 export const onCafeCounter = (x: number, y: number): boolean =>
 	ROWS.cafe[y]?.[x] === "n" && "[=]".includes(ROWS.cafe[y - 1]?.[x] || "#");
 
@@ -552,7 +552,7 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				X: on(base(4, 123)),
 				// 視聴覚コーナーの テレビ（過去ログの世紀）
 				"@": on(ri("tvCrt")),
-				// 1レス博物館の ガラスケース 2つ（左・右。ui/folk.ts の museumScript）
+				// 1レス博物館の ガラスケース 2つ（左・右。ui/village/folk.ts の museumScript）
 				a: on(riCell("glassCase", 0, 0)),
 				b: on(riCell("glassCase", 1, 0)),
 				c: on(riCell("glassCase", 0, 0)),
@@ -601,7 +601,7 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				// 料金表（入口の 壁）・マッサージ椅子（脱衣所）・脱衣所の テレビ（大相撲）
 				P: low(PAPER),
 				"@": low(ri("tvSmall")),
-				// 番台の 左の 壁の メモ（七不思議 その1『温泉卵的な？』。ui/folk.ts の eggScript）
+				// 番台の 左の 壁の メモ（七不思議 その1『温泉卵的な？』。ui/village/folk.ts の eggScript）
 				y: low(FOLK_ART.memo),
 				C: solid("#c8a86a", base(0, 46), base(4, 116, 1, 2)),
 				// 入口の 下駄箱・消火器・長いす（左・右）

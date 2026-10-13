@@ -1,10 +1,10 @@
 // 村（おんJタウン）の地図。DOM も保存も使わない 組み立てだけ（src/sim/villageTests.ts で 形と 歩ける道を 調べる）。
-// スクリプトは ui/villageEvents.ts が id ごとに 付ける。
+// スクリプトは ui/village/villageEvents.ts が id ごとに 付ける。
 //
 // 地図は 87×52 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
 // まわりの 森は 四角く ならないよう 木と しげみで 囲み、西の 空き地（切り株・丸太）・東の 畑（かかし・畝・麦）・
 // 南の 池へ 抜けられる（OUTSKIRTS_ROWS・EDGE_CELLS）。下の 図と 区画の 関数は 町の 区画の 座標で、
-// VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 9, 7）。
+// VILLAGE_SPOTS と 住人の 家（data/people/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 9, 7）。
 // - 北に 崖。まんなかに おんJ 本館（縦の 道が 扉 10〜11 に 突きあたる。段で 集会所 幅4 → レンガ 幅6 → 本館 幅10。
 //   扉を 踏むと 中の 地図へ。中は data/village/hall.ts）。
 //   東の 崖の 切れ目を 道が 北へ 抜ける（区画 18,3 が 村の 出口。立て札は 19,5）。出口を 踏むと 全体マップで 行き先の 植民地を 選ぶ。
@@ -13,7 +13,7 @@
 //   売り場は「囲い（y=10。売る人が立つ）＋ 台（y=11）」。キリコは 通り（y=12）から 台ごしに 話しかける。
 //   常識堂の 奥・倉庫の 扉は 台の 横の 細道の 奥（常識堂は 右・倉庫は 左）。踏むと 中へ（data/village/rooms.ts）。
 // - やきうは 小屋の前（12,11）で 大工。人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人。
-// - おんJマイナーズ（data/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
+// - おんJマイナーズ（data/people/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
 // - 町の まわりも 段で かわる：東の 畑は 荒れ地から 実りへ（farmRows）、住宅街で 市民農園・都市で 公園
 //   （facilities.ts の garden・park）、段2 で 北西の 森に おんJ神社（おみくじ）、
 //   段3 で 池の そばに 音楽室、段4 で 南東に 銭湯、段5 で 西の 空き地に 喫茶。
@@ -53,12 +53,12 @@ import { lastStepOf, TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
-import { CAST, YAJI_WALK } from "../cast";
-import { BOOKSTORE_FROM, LIBRARY_FROM } from "../glossary";
-import { MOBS, type MobId, movedIn } from "../mobs";
-import type { Speaker } from "../quotes";
-import { awayFriends, FRIEND_FROM } from "../story";
-import { COLONY_SPOTS, VILLAGE_PT } from "../worldMap";
+import { CAST, YAJI_WALK } from "../people/cast";
+import { MOBS, type MobId, movedIn } from "../people/mobs";
+import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
+import type { Speaker } from "../story/quotes";
+import { awayFriends, FRIEND_FROM } from "../story/story";
+import { COLONY_SPOTS, VILLAGE_PT } from "../town/worldMap";
 import {
 	doorId,
 	facilitiesAt,
@@ -115,7 +115,7 @@ export const VILLAGE_H = 52;
 
 /**
  * 町（22×18 の 区画。下の 図の 座標）を 地図の どこに 置くか。まわりは 森で、西の 空き地・東の 畑・
- * 南の 池へ 抜けられる（OUTSKIRTS）。VILLAGE_SPOTS と 住人の 家（data/mobs.ts の spot）は 地図の 座標。
+ * 南の 池へ 抜けられる（OUTSKIRTS）。VILLAGE_SPOTS と 住人の 家（data/people/mobs.ts の spot）は 地図の 座標。
  */
 const OX = 9;
 const OY = 7;
@@ -678,7 +678,7 @@ const coreCity = (rows: string[], stage: number): void => {
 };
 
 /**
- * 町の 中心の 建物の 影（住宅街から。facilities.ts の facilityShadows と 同じ 形。ui/facilities.ts の shadowDecor が 描く）。
+ * 町の 中心の 建物の 影（住宅街から。facilities.ts の facilityShadows と 同じ 形。ui/village/facilities.ts の shadowDecor が 描く）。
  * 本館・商店街の 店・小屋・倉庫（銀行）・喫茶・図書館・音楽室・銭湯の 右がわ。
  */
 export const coreShadows = (
@@ -886,7 +886,7 @@ export const carLane = (stage: number, x: number, y: number): boolean => {
 /** 喫茶「おんJ」が 建つ 町の 段。 */
 export const CAFE_FROM = 5;
 
-/** 音楽室「ピアノ機能」が 建つ 町の 段（開くのは 週末だけ。ui/rooms.ts）。 */
+/** 音楽室「ピアノ機能」が 建つ 町の 段（開くのは 週末だけ。ui/village/rooms.ts）。 */
 export const MUSIC_FROM = 3;
 
 /** 音楽室（地図の 21, 25 から。池の そばの 道の 東。扉 22,28 は 下の 草地 y=29 から 踏む）。 */
@@ -895,7 +895,7 @@ const MUSIC_BLOCK: readonly string[] = ["ααα", "βββ", "δγδ", "εζε"];
 /**
  * 本屋（地図の 3, 20 から。町の 段3〜5）と 図書館（2, 20 から。段6 から 建てかえて 1マス 広い）。
  * 広場の 西の 草地。屋根は 軒だけの 低い 建物（上の 道に かからないように）。扉 4,22 は 下の 草地 y=23 から 踏む。
- * 字は data/village/tiles.ts の BOOKS。ことばの 辞典は data/glossary.ts（本屋で 板の ことば、図書館で 深い ネタが ふえる）。
+ * 字は data/village/tiles.ts の BOOKS。ことばの 辞典は data/story/glossary.ts（本屋で 板の ことば、図書館で 深い ネタが ふえる）。
  */
 const BOOKS_BLOCK: readonly string[] = ["アアア", "イウイ", "エオエ"];
 const LIBRARY_BLOCK: readonly string[] = ["カカカカ", "キククキ", "ケケコケ"];
@@ -1083,7 +1083,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 /** 蓄音機（キリコの。16x16 の1枚絵なので 向きのない置物として 切り出しで指す）。 */
 export const PHONO_SPRITE = "pub:sprites/phono.png#0,0,16,16";
 
-/** 村に置く イベント（人・看板・口）。スクリプトは ui/villageEvents.ts が id で 付ける。 */
+/** 村に置く イベント（人・看板・口）。スクリプトは ui/village/villageEvents.ts が id で 付ける。 */
 export type VillagePlace = {
 	id: string;
 	x: number;
@@ -1183,12 +1183,12 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [x, y] = VILLAGE_SPOTS.shopDoor;
 		out.push({ id: "door_shop", x, y, trigger: "touch" });
 	}
-	// 仲間は 越してきてから（data/story.ts の FRIEND_FROM。はじめの おんJタウンには やきうだけ）
+	// 仲間は 越してきてから（data/story/story.ts の FRIEND_FROM。はじめの おんJタウンには やきうだけ）
 	const here = (w: Speaker) => stage >= FRIEND_FROM[w];
 	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
 	if (here("shiyo")) out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
 	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
-	// やきうは 電池板の 山場で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story.ts）
+	// やきうは 電池板の 山場で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story/story.ts）
 	if (awayFriends(v.cleared).includes("nanj")) {
 		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
 		out.push({ id: "hoshu_sign", x: nx, y: ny, trigger: "talk" });
@@ -1249,7 +1249,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				wander: true,
 			});
 		});
-	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts。話し方は ui/folk.ts）
+	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts。話し方は ui/village/folk.ts）
 	out.push(...folkPlaces(stage));
 	return out;
 };
@@ -1317,7 +1317,7 @@ const isTaken = (taken: readonly Cell[], [x, y]: Cell): boolean =>
 
 /**
  * (x, y) の まわりの 空いた マス（近い 順に n こ）。村の 場面で 話す 仲間を キリコの そばに 呼ぶ ときに 使う
- * （ui/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
+ * （ui/village/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
  * 広場（蓄音機の 前）から (x, y) を 通らずに 歩いて 来られる マスだけ（店の 台の うしろ・キリコが 立つと
  * ふさがる 細道の 先には 呼ばない。前は そこへ 呼ばれた 人が 歩いて 来られず、遠くから 話していた）。
  * taken は 場面で もう 人を 置いた マス（口の 前に 並んだ 仲間・呼んだ 仲間。地図の 人では ないので ここで 外す）。
@@ -1337,7 +1337,7 @@ export const spotsAround = (
 };
 
 /**
- * 口の 前に 立つ キリコが どく マス（となりから 近い 順の 空いた マス。ui/villageReturn.ts の stepAside）。
+ * 口の 前に 立つ キリコが どく マス（となりから 近い 順の 空いた マス。ui/village/villageReturn.ts の stepAside）。
  * そこに 立っても 口から 広場まで 歩いて 行ける マスだけ（口から 歩いてくる 人の 道を ふさがない。
  * 細道なら 横の 行き止まりへ よける）。taken（場面で 人を 置いた マス）にも 立たない。なければ undefined。
  */

@@ -1,6 +1,6 @@
 // 飲食店（町が 育つと 1軒ずつ ふえる 寄り道。食べても 何も 持ちこまない）。施設の 書き方は facilities.ts と
 // 同じで、facilities.ts の FACILITIES の うしろに 足す（外観の 字も そこで 割りふる）。
-// 店番に 話すか 券売機を 調べると 品書き（data/eateries.ts の EAT_MENUS・ui/eat.ts）。
+// 店番に 話すか 券売機を 調べると 品書き（data/town/eateries.ts の EAT_MENUS・ui/minigames/eat.ts）。
 // 麺屋「乙」と ファミレス「ドリンクバー」は facilities.ts（ファミレスは ドリンクバーだけ）。
 //
 //   段2 たこ焼き屋台「たこ八」（浜。桟橋の 東。中は なく、台ごしに 店番）

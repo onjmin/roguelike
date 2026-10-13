@@ -1,5 +1,5 @@
-// ネタスレの 遊び（data/neta/*・ui/neta*.ts・グラウンド／碁会所／おんJ道場／ageジム／ゲームセンターの 物）の 試験（pnpm test）。
-// 板（canvas）は 出さない：ui/neta.ts の setNetaHooks で 結果を わたし、窓の 流れと 記録だけ 見る。
+// ネタスレの 遊び（data/neta/*・ui/neta/neta*.ts・グラウンド／碁会所／おんJ道場／ageジム／ゲームセンターの 物）の 試験（pnpm test）。
+// 板（canvas）は 出さない：ui/neta/neta.ts の setNetaHooks で 結果を わたし、窓の 流れと 記録だけ 見る。
 // 決まり（ランダム野球・オセロ・コンマ・!sk・ID）は 種つきの 乱数で 何度でも 同じ 結果。
 
 import { readFileSync } from "node:fs";
@@ -84,7 +84,6 @@ import {
 import type { Story } from "../engine/defs";
 import { isWalkRef } from "../engine/sprite";
 import type { Ctx } from "../ui/ctx";
-import { buildFacility, outdoorScript } from "../ui/facilities";
 import {
 	commaScript,
 	forgetNetaMemo,
@@ -93,8 +92,9 @@ import {
 	loadNeta,
 	saveNeta,
 	setNetaHooks,
-} from "../ui/neta";
-import { twoB } from "../ui/netaBoard";
+} from "../ui/neta/neta";
+import { twoB } from "../ui/neta/netaBoard";
+import { buildFacility, outdoorScript } from "../ui/village/facilities";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -200,7 +200,7 @@ const thing = (fid: string, tid: string) => {
 	if (!t) throw new Fail(`no ${fid}.${tid}`);
 	return { f, t };
 };
-/** 部屋の 物の 台本（buildFacility → ui/facilities.ts の 振りわけ → ui/neta.ts）。 */
+/** 部屋の 物の 台本（buildFacility → ui/village/facilities.ts の 振りわけ → ui/neta/neta.ts）。 */
 const roomEvent = (fid: string, id: string) => {
 	const view: VillageView = {
 		stage: TOWN_STAGES - 1,

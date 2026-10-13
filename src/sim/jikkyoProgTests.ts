@@ -6,7 +6,6 @@
 
 import { compileScript, type JkResult, type JkSlot } from "../core/jikkyo";
 import { TOWN_STAGES } from "../core/town";
-import type { Today } from "../data/calendar";
 import type { JkPack } from "../data/jikkyo/pack";
 import { PACKS } from "../data/jikkyo/packs";
 import { packOpen, programSlots } from "../data/jikkyo/schedule";
@@ -16,11 +15,12 @@ import {
 	staffLines,
 	venueLines,
 } from "../data/jikkyo/text";
+import type { Today } from "../data/town/calendar";
 import { FACILITIES } from "../data/village/facilities";
 import { isRoom, roomPlaces } from "../data/village/rooms";
-import { forgetJikkyoMemo } from "../ui/jikkyo";
-import { PROGRAM_TVS } from "../ui/jikkyoTvs";
-import { setWatchHook, watchProgram } from "../ui/jikkyoWatch";
+import { forgetJikkyoMemo } from "../ui/jikkyo/jikkyo";
+import { PROGRAM_TVS } from "../ui/jikkyo/jikkyoTvs";
+import { setWatchHook, watchProgram } from "../ui/jikkyo/jikkyoWatch";
 import type { UiCtx } from "../ui/list";
 import {
 	type BotName,

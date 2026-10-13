@@ -1,13 +1,13 @@
 // メッセージ窓（名前欄・1文字ずつ表示・送り）と立ち絵。rpg の ui/message.ts から移した（村で使う）。
 //
-// 立ち絵は data/cast.ts の portrait.src の透過 PNG を出す。ファイルが無い／読めないときは
+// 立ち絵は data/people/cast.ts の portrait.src の透過 PNG を出す。ファイルが無い／読めないときは
 // キャラ色のダミー（シルエット＋名前）を出す。話している側を明るく、
 // もう片方を少し暗くする（左右に1人ずつ）。
 //
 // 描く人の手間を減らすため、次の3つは自動で調整する。
 // - 向き: 絵の向き（facing。既定は右向き）と立つ側が合わないときは左右反転して、中央を向かせる。
 // - 大きさ・位置: 頭（てっぺん〜あご）の大きさがどのキャラも同じになる大きさで出し、てっぺんの高さをそろえ、
-//   顔の横の真ん中を枠の中央に合わせる。顔の位置は data/portraits.ts に手で書く（耳・アホ毛・帽子や、
+//   顔の横の真ん中を枠の中央に合わせる。顔の位置は data/people/portraits.ts に手で書く（耳・アホ毛・帽子や、
 //   頭身・ポーズの違いで、自動で測ると ずれるので）。書いていない絵は 透明な余白から 自動で測る。
 //   キャンバスの大きさ・余白・ポーズは自由（横に広がる髪・腕は、外側は画面の端まで出し、
 //   内側は左右の枠のあいだの真ん中でぼかして消す。下はメッセージ窓の裏でぼかして消す）。
@@ -25,7 +25,7 @@
 // 読み上げが OFF のとき・声の無い人（GameAudio.speak が started を返さないとき）は待たずにすぐ出し始める。
 // rpg の 重い文（pace: "slow"）と 文字送りの 速さの 設定は このゲームに 無いので 移していない。
 
-import { PORTRAIT_HEAD } from "../data/portraits";
+import { PORTRAIT_HEAD } from "../data/people/portraits";
 import { publicUrl } from "../engine/assets";
 import type { SpeechStart } from "../engine/audio";
 import type { Input } from "../engine/input";
@@ -86,7 +86,7 @@ const SILENT_LEAD = /^[…‥・.．、。\s]+/u;
 type Art = {
 	/** 透明な余白を切り詰めた全身絵。 */
 	canvas: HTMLCanvasElement;
-	/** 切り詰めた左・上の幅（元の絵の px。data/portraits.ts の値を canvas の位置に直すのに使う）。 */
+	/** 切り詰めた左・上の幅（元の絵の px。data/people/portraits.ts の値を canvas の位置に直すのに使う）。 */
 	ox: number;
 	oy: number;
 	/** 頭のてっぺん（canvas の上からの px。アホ毛・耳の先などの細いはみ出しは除く）。 */

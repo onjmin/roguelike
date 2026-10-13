@@ -19,15 +19,16 @@ import {
 import type { Run } from "../core/run";
 import { trapName } from "../core/traps";
 import type { Command, Item, ItemCat, TrapKind } from "../core/types";
-import { synopsisNow } from "../data/synopsis";
+import { synopsisNow } from "../data/story/synopsis";
 import { drawRefInCell, onImageLoaded } from "../engine/assets";
+import { itemIcon } from "./art/icons";
 import { openBook } from "./bookView";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
+import { backVerb, goVerb, isUpBoard } from "./dungeon/floorName";
+import { openStatus } from "./dungeon/statusView";
 import { explain } from "./explain";
-import { backVerb, goVerb, isUpBoard } from "./floorName";
 import { openHowto } from "./howto";
-import { itemIcon } from "./icons";
 import { esc, itemDesc, itemInfo, itemLabel, itemSub } from "./itemText";
 import {
 	infoWindow,
@@ -38,7 +39,6 @@ import {
 	markOpened,
 	paginate,
 } from "./list";
-import { openStatus } from "./statusView";
 
 export type MenuAction =
 	// 呼び出し側が run.act(cmd) する（reopen なら そのあと もちものを 開きなおす）
@@ -245,7 +245,7 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "あそびかた", value: "howto" },
 			{ label: "中断する", value: "suspend" },
 		];
-		// 裏シナリオに 入っていれば、潜っている あいだも あらすじを 読み返せる（data/synopsis.ts）
+		// 裏シナリオに 入っていれば、潜っている あいだも あらすじを 読み返せる（data/story/synopsis.ts）
 		const syn = synopsisNow();
 		if (syn)
 			rows.splice(rows.length - 1, 0, { label: "あらすじ", value: "synopsis" });

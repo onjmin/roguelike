@@ -11,7 +11,7 @@
 // - 土日は 本番（★4）、ほかの 日は 再放送（★2。群衆に「再放送　乙」が まざる）。中身は 曜日で 閉じない。
 // - キリコが 書ける 文（候補・当番・山場の 1語）には「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 //   群衆・題・字幕の「保守」は 固有名詞（おんJ名人戦・喫茶「おんJ」）の 中だけ。
-// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoOyatsuTv.ts。
+// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyo/jikkyoOyatsuTv.ts。
 
 import type {
 	JkCueGrade,

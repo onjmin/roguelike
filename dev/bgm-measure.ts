@@ -2,14 +2,14 @@
 //
 // ゲームと同じ形（dtm studio・マスター 100・既定の BGM 音量 40 ＝ #volume の 2 割）で 1 周鳴らし、
 // studio の最終出力（startWavRecording）を録って、BS.1770 の I（ゲート付きの平均。LUFS）を出す。
-// 目標（data/bgm.ts）に合わせた #volume も出す：新しい #volume = 今の #volume × 10^((目標 − I) / 20)。
+// 目標（data/audio/bgm.ts）に合わせた #volume も出す：新しい #volume = 今の #volume × 10^((目標 − I) / 20)。
 // 等速で鳴らすので、曲の長さだけ時間がかかる（前奏のある曲は 前奏も入る。1 周＝ループなしで最後まで）。
 // 「全曲」は 1 曲ずつ 続けて 測る（30 分ほど）。同時に 鳴らすと studio を 分けても 4 dB ほど 大きく 出るので 使えない。
 // NO_HMR=1 の サーバーで 開くと、ほかの 編集で ページが 読み直されない。
 // 音の出るページなので、最初は ボタンを押して始める（ブラウザの自動再生の決まり）。
 
 import { createDtmStudio, type DtmStudio } from "@onjmin/dtm";
-import { bgm } from "../src/data/bgm";
+import { bgm } from "../src/data/audio/bgm";
 
 /** 目標（既定の BGM 音量で）。sad・ending は静かな曲なので -24。 */
 const targetFor = (name: string): number =>

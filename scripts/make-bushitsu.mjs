@@ -1,7 +1,7 @@
 // 部室棟（data/village/bushitsu.ts）の 絵を 1枚に まとめて 書き出す（node scripts/make-bushitsu.mjs）。
 //
 //   public/sprites/bushitsu.png   … 部室棟の 中の 家具・はり紙・札・外観の 小物・別ゲーの 人（256x80）
-//   src/data/bushitsuSheet.ts     … どの 絵が どこに あるか（BS。この スクリプトが 書く。手で 直さない）
+//   src/data/bushitsu/bushitsuSheet.ts     … どの 絵が どこに あるか（BS。この スクリプトが 書く。手で 直さない）
 //
 // 絵の 出どころ:
 //   - RPGEN（https://rpgen-search.pages.dev）の 素材を 作る ときに 取ってきて 貼る（遊ぶ ときは CDN を 見ない）：
@@ -150,7 +150,7 @@ const argOf = (name) => {
 const OUT_DIR = argOf("--out");
 const ROOT = join(HERE, ".."); // repo root when this file lives in scripts/
 const PNG_OUT = OUT_DIR ? join(OUT_DIR, "bushitsu.png") : join(ROOT, "public/sprites/bushitsu.png");
-const TS_OUT = OUT_DIR ? join(OUT_DIR, "bushitsuSheet.ts") : join(ROOT, "src/data/bushitsuSheet.ts");
+const TS_OUT = OUT_DIR ? join(OUT_DIR, "bushitsuSheet.ts") : join(ROOT, "src/data/bushitsu/bushitsuSheet.ts");
 const CACHE = argOf("--cache");
 const CDN = "https://rpgen-search.pages.dev/data/images";
 

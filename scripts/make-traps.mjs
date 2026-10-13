@@ -7,7 +7,7 @@
 //   3 ピッチングマシン（前の 版の 矢の罠。黄色い 機械の ホイールから ボールが 飛びだす）
 //   4 危険球マシン（前の 版の 毒矢の罠。3 の 球が 紫・紫の しずく）
 //   5 転移床（青く 光る 輪）
-// 地雷・落とし穴は RPGEN の 絵（src/ui/theme.ts の TRAP_ICON）。
+// 地雷・落とし穴は RPGEN の 絵（src/ui/dungeon/theme.ts の TRAP_ICON）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-anka-trap.mjs と 同じ。
 

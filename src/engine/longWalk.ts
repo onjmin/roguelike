@@ -1,4 +1,4 @@
-// 場面で 人を 歩かせる 長い 道を 縮める（Story.goto。ui/village.ts）。
+// 場面で 人を 歩かせる 長い 道を 縮める（Story.goto。ui/village/village.ts）。
 // 地図が 87×52 に 広がって、遠くの 人が キリコの そばへ 来るまで 長く 待つように なった
 // （東の 口から 帰ると、ぷゆゆパンを 持った ぷゆゆが 来るまで 75歩）。場面 ごとに 直さず、ここで まとめて 縮める。
 //
@@ -115,7 +115,7 @@ const inside = (w: number, h: number, [x, y]: Cell): boolean =>
 	x >= 0 && y >= 0 && x < w && y < h;
 
 /**
- * from から to までの 場面の 道（幅優先）。open の マスだけを 通る。行けなければ null（ui/village.ts の routeTo）。
+ * from から to までの 場面の 道（幅優先）。open の マスだけを 通る。行けなければ null（ui/village/village.ts の routeTo）。
  * 出だしの マスは 聞かない（人の いる マスから 歩きだす）。
  */
 export const findRoute = (

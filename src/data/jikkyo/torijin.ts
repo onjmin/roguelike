@@ -10,7 +10,7 @@
 // - 大会・湖・大学・チームは 架空（板の 語から）。実在の 大会・湖・町・局・会社の 名前は 使わない（deny で 守る）。
 // - キリコが 書ける 文（候補・当番・山場の 1語）には「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 //   群衆・題・字幕・会場の 文の「保守」は 固有名詞（おんJ杯・おんJ大学・おんJ湖）の 中だけ。
-// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoTorijinTv.ts。
+// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyo/jikkyoTorijinTv.ts。
 
 import type {
 	JkFit,
@@ -22,7 +22,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import { type JkPack, liveOr } from "./pack";
 
 const o = (text: string, fit: JkFit): JkOpt => ({ text, fit });

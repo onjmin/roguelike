@@ -1,17 +1,17 @@
 // 実況の 番組の 会場の 文（調べる 物と 人の 文の 上書き）。曜日・日付で かわる 文だけを 持つ。
-// 合う 文が なければ null を 返し、呼ぶ 側（ui/facilities.ts）は いつもの 文
+// 合う 文が なければ null を 返し、呼ぶ 側（ui/village/facilities.ts）は いつもの 文
 // （data/village/facilities.ts の room.lines・people の lines）を 読む。
 // - 映画館「スクリーン1000」：金曜の 夜は 金曜ロード保守の 実況上映（スマホ OK の 上映）。ほかの 日の 文は 昼の部
 //   （午後の B級映画。data/jikkyo/gogo.ts の 束）が 出す。
-//   絵は ui/cinemaDecor.ts。
+//   絵は ui/village/cinemaDecor.ts。
 // - おんJ劇場：12月は 紅白スレ合戦（12/31 本番・12/1〜30 公開リハ）、1/1〜7 は 去年の 回の 録画。ほかの 月は いつもの 文。
 //   {kai} は 回（年 − 2011）で 埋める。
 // ほかに 番組の あとで 係員が 1回だけ 言う 1行（STAFF_ONCE）、おんJの 決まり文句（分かち書きの 試験の 白い 一覧）、
-// 番組の 村の 窓・板・結果カードの 字（ui/jikkyoWatch.ts）。
+// 番組の 村の 窓・板・結果カードの 字（ui/jikkyo/jikkyoWatch.ts）。
 // 番組名・映画の 題は 架空の パロディで、実在の 番組・局・映画とは 関係が ない。
 // どの 文も 村の 窓（全角 22字 × 2行）に 収める（src/sim/jikkyoTests.ts）。
 
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import { kohakuKai } from "./kohaku";
 import { PACKS } from "./packs";
 

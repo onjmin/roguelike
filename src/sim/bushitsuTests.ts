@@ -1,6 +1,6 @@
 // 部室棟の 試験（pnpm test で いっしょに 動く。spec-bushitsu §9）。形は civicTests と 同じ（Fail・ok・{ id, name, ok, reason }）。
 // B1〜B5：置き場所・部屋・絵・人の 歩行グラ。B6：文の 幅と 使わない 語。B7〜B9：ワードウルフ・うろ覚え・校歌の 決まり。
-// B10〜：村の 入口（ui/bushitsu.ts。板は 差しかえ）と 保存（kiriko-roguelike/bushitsu）。
+// B10〜：村の 入口（ui/bushitsu/bushitsu.ts。板は 差しかえ）と 保存（kiriko-roguelike/bushitsu）。
 
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -50,8 +50,8 @@ import {
 	wwVerdict,
 	wwWho,
 	wwWord,
-} from "../data/bushitsu";
-import { BS_CELLS, BS_IMG, BS_SIZE, bs } from "../data/bushitsuSheet";
+} from "../data/bushitsu/bushitsu";
+import { BS_CELLS, BS_IMG, BS_SIZE, bs } from "../data/bushitsu/bushitsuSheet";
 import {
 	FACILITIES,
 	facilityById,
@@ -74,11 +74,11 @@ import {
 	saveBushitsu,
 	setBushitsuBoards,
 	setBushitsuEnv,
-} from "../ui/bushitsu";
-import type { KoukaResult } from "../ui/bushitsuBoards";
+} from "../ui/bushitsu/bushitsu";
+import type { KoukaResult } from "../ui/bushitsu/bushitsuBoards";
 import type { Ctx } from "../ui/ctx";
-import { buildFacility } from "../ui/facilities";
-import { villageSong } from "../ui/villageMusic";
+import { buildFacility } from "../ui/village/facilities";
+import { villageSong } from "../ui/village/villageMusic";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -349,7 +349,7 @@ const srcFiles = (dir: string): string[] =>
 
 test(
 	"B5",
-	"部長の 歩行グラ：7つの ちがう sa:。src の どこにも ほかに 出てこない（data/bushitsu.ts だけ）",
+	"部長の 歩行グラ：7つの ちがう sa:。src の どこにも ほかに 出てこない（data/bushitsu/bushitsu.ts だけ）",
 	() => {
 		const walks: string[] = Object.values(BS_STAFF).map((s) => s.walk);
 		ok(new Set(walks).size === 7, `walks ${walks}`);
@@ -360,7 +360,7 @@ test(
 			"room people use other sheets",
 		);
 		const root = join(process.cwd(), "src");
-		const home = join(root, "data", "bushitsu.ts");
+		const home = join(root, "data", "bushitsu", "bushitsu.ts");
 		const ids = walks.map((w) => w.slice(3));
 		for (const file of srcFiles(root)) {
 			if (file === home) continue;

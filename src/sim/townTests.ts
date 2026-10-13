@@ -21,9 +21,9 @@ import {
 } from "../core/town";
 import { triggerTrap } from "../core/traps";
 import type { Item, RunState } from "../core/types";
-import { SE_LOUDNESS } from "../data/loudness";
-import { ROOM_DOOR_SE } from "../data/rooms";
-import { sfx } from "../data/sfx";
+import { SE_LOUDNESS } from "../data/audio/loudness";
+import { sfx } from "../data/audio/sfx";
+import { ROOM_DOOR_SE } from "../data/town/rooms";
 import { FACILITIES } from "../data/village/facilities";
 import {
 	depositBag,

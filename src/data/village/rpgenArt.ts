@@ -281,7 +281,7 @@ export const riCell = (name: RoomArtName, col: number, row: number): string => {
 	return `${ROOM_IMG}#${(c + col) * 16},${(r + row) * 16},16,16`;
 };
 
-/** 飲食店の 品（public/sprites/rpgen-food.png。256x32）。出てきた 一品の 絵（ui/eat.ts）。たこ焼きは 手描き。 */
+/** 飲食店の 品（public/sprites/rpgen-food.png。256x32）。出てきた 一品の 絵（ui/minigames/eat.ts）。たこ焼きは 手描き。 */
 export const FOOD_IMG = "pub:sprites/rpgen-food.png";
 export const FOOD_SIZE = [256, 32] as const;
 

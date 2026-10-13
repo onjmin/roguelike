@@ -9,7 +9,7 @@
 //   実在の 大会・球場・新聞社・学校・応援曲の 名前は 出さない（deny）。「保守」は おんJ園・おんJ実業 の 中だけ。
 // - キリコが 書ける 文（候補・当番・山場の 1語）には「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
-// TV は ui/jikkyoKoshienTv.ts（場面の 鍵は KOSHIEN_SCENES、絵に 出す 文は KOSHIEN_ART）。
+// TV は ui/jikkyo/jikkyoKoshienTv.ts（場面の 鍵は KOSHIEN_SCENES、絵に 出す 文は KOSHIEN_ART）。
 
 import type {
 	JkFit,

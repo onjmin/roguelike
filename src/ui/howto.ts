@@ -4,10 +4,10 @@
 // 1ページが だいたい画面に収まるくらいの量にする。
 
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
-import { DUNGEON_NAMES } from "../data/story";
+import { DUNGEON_NAMES } from "../data/story/story";
 import type { Ctx } from "./ctx";
-import { openGlossary } from "./glossary";
 import { infoWindow, listWindow } from "./list";
+import { openGlossary } from "./village/glossary";
 
 /** 見出し。 */
 const h = (text: string): string => `<h3>${text}</h3>`;

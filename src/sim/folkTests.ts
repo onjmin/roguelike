@@ -1,4 +1,4 @@
-// おんJタウンの 小さな 名物（folk。data/folk.ts・data/village/folk.ts・ui/folk.ts）の 試験（pnpm test で いっしょに 動く）。
+// おんJタウンの 小さな 名物（folk。data/people/folk.ts・data/village/folk.ts・ui/village/folk.ts）の 試験（pnpm test で いっしょに 動く）。
 // 文の 幅・帰りごとに 1つ 進む 決まり・置き場所（どの 段でも 道を ふさがず 遠回りに させず 話せる）・本館／図書館／銭湯の すみ・
 // 歩行グラが ほかと かぶらない こと・下見で 保存を 書かない こと を 見る。
 
@@ -7,8 +7,7 @@ import { join } from "node:path";
 import { MONSTERS } from "../core/data/monsters";
 import { TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
-import { CAST, YAJI_WALK } from "../data/cast";
-import { YORIAI_SPOTS } from "../data/civic";
+import { CAST, YAJI_WALK } from "../data/people/cast";
 import {
 	BALUS,
 	BALUS_BEATS,
@@ -46,9 +45,10 @@ import {
 	RIDDLES,
 	riddleAnswer,
 	rolliLine,
-} from "../data/folk";
-import { MOBS } from "../data/mobs";
-import { ROOM_MSG } from "../data/rooms";
+} from "../data/people/folk";
+import { MOBS } from "../data/people/mobs";
+import { YORIAI_SPOTS } from "../data/town/civic";
+import { ROOM_MSG } from "../data/town/rooms";
 import { crowdNodes, PERSONAS } from "../data/village/crowd";
 import { FACILITIES, facilityById } from "../data/village/facilities";
 import {
@@ -98,7 +98,7 @@ import {
 	ideaScript,
 	loadFolk,
 	nazoScript,
-} from "../ui/folk";
+} from "../ui/village/folk";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -288,7 +288,7 @@ const swapLocation = (search: string): (() => void) => {
 	};
 };
 
-/** 冒険から 帰った（記録の 時刻。新しい 順。ui/guests.ts の returnAt が いちばん 新しい 時刻を 読む）。 */
+/** 冒険から 帰った（記録の 時刻。新しい 順。ui/village/guests.ts の returnAt が いちばん 新しい 時刻を 読む）。 */
 const comeBack = (...ats: number[]): void => {
 	localStorage.setItem(
 		"kiriko-roguelike/records",
@@ -570,7 +570,7 @@ test("F5 人工無能ニキ・墓・温泉卵・博物館: 10個で 構想10年�
 		odoruAwake(20) && odoruAwake(3) && !odoruAwake(5) && !odoruAwake(12),
 		"night",
 	);
-	// ピアノ機能は 音楽室の 供養の 札（data/rooms.ts）に あるので 墓に しない
+	// ピアノ機能は 音楽室の 供養の 札（data/town/rooms.ts）に あるので 墓に しない
 	ok(!GRAVES.some((g) => g.id === "piano"), "piano grave");
 	ok(
 		!GRAVE.balus.join().includes("成功して") &&

@@ -16,7 +16,7 @@
 //   （おんJ大を 呼ぶ のは 群衆・字幕だけ）。群衆・題・字幕の「保守」は names の 固有名詞の 中だけ。
 // - けが・転倒・途中棄権は 出さない。繰り上げは「よう　走った」で 送る（人を 笑わない）。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・名前欄・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
-// 絵は ui/jikkyoEkidenTv.ts（場面の 鍵は EKIDEN_SCENES、絵に 出す 文は EKIDEN_ART）。
+// 絵は ui/jikkyo/jikkyoEkidenTv.ts（場面の 鍵は EKIDEN_SCENES、絵に 出す 文は EKIDEN_ART）。
 
 import type {
 	JkCueGrade,
@@ -26,7 +26,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import type { JkPack } from "./pack";
 import type { DayLines } from "./text";
 

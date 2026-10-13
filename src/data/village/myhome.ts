@@ -2,7 +2,7 @@
 // 35年ローンで 買える（演出だけ：ゲームの 中に お金を 払う ところは ない。返済予定表が 帰るたびに 1か月 進む）。
 // 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 買わず、もらう：
 // 帰るたびに 1つ 宅配便で 届く（仲間・町の 人から。HOME_GIFTS）のと、町の 住人に 話すと 1度だけ（RESIDENT_GIFTS）。
-// ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/myhome.ts。
+// ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/village/myhome.ts。
 
 import type { Cell } from "./map";
 import { type RoomArtName, ri, riCell } from "./rpgenArt";

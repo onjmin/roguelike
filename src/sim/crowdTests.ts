@@ -1,9 +1,9 @@
-// 街の 人通り（data/village/crowd.ts・ui/villageCrowd.ts）の 試験（pnpm test で いっしょに 動く）。
+// 街の 人通り（data/village/crowd.ts・ui/village/villageCrowd.ts）の 試験（pnpm test で いっしょに 動く）。
 
 import { MONSTERS } from "../core/data/monsters";
 import { TOWN_STAGES } from "../core/town";
-import { CAST } from "../data/cast";
-import { MOBS } from "../data/mobs";
+import { CAST } from "../data/people/cast";
+import { MOBS } from "../data/people/mobs";
 import {
 	CROWD_SPOTS,
 	type CrowdNode,
@@ -28,7 +28,7 @@ import {
 } from "../data/village/map";
 import { Actor, type Field } from "../engine/field";
 import { DIR_VEC } from "../engine/types";
-import { Crowd } from "../ui/villageCrowd";
+import { Crowd } from "../ui/village/villageCrowd";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}

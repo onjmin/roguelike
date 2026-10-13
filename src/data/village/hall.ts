@@ -1,5 +1,5 @@
 // おんJ 本館の 中（村の 崖の 前の 建物。扉を 踏むと 入る）。DOM も 保存も 使わない 組み立てだけ
-// （src/sim/villageTests.ts で 形と 歩ける道を 調べる）。スクリプトは ui/hallEvents.ts が id ごとに 付ける。
+// （src/sim/villageTests.ts で 形と 歩ける道を 調べる）。スクリプトは ui/village/hallEvents.ts が id ごとに 付ける。
 //
 // 本館の 段（hallTier。data/village/tiles.ts）で 広さと 中身が 育つ（前の 段の 物は 残る）：
 //   0 集会所（町の 段0〜2。8×7）   座布団と 長机・壁の スレ（冒険の記録）・保守の 当番表・>>1 テンプレ（あそびかた）・
@@ -18,7 +18,7 @@
 //   #  天井   H h  壁（上段・下段。段で 板壁 → 白い 壁 → 石の 壁）   W  上段の 窓
 //   .  床（段で 板 → 板 → 石）   -  金の じゅうたん   D  出口の マット（踏むと 外へ）
 //   K k  壁の スレ（掲示板の 左右）   [ ]  保守の 当番表（黒板の 左右）   t  >>1 テンプレ   N  期間限定の 告知
-//   $  帳簿の 貼り紙（金貨の 札）   C c  飾り棚（上段・下段。棚と 持ち帰った 品は ui/hallEvents.ts の decor が 描く）
+//   $  帳簿の 貼り紙（金貨の 札）   C c  飾り棚（上段・下段。棚と 持ち帰った 品は ui/village/hallEvents.ts の decor が 描く）
 //   M m  実況モニター（左右）   G g  殿堂の 旗（左右）
 //   z  座布団   ( )  長机（左右）   x  みかん箱   B  本棚   F  鉢植え   T  机   n  いす   r  空いた いす（殿堂の となり）
 //   V  映写機（リプレイを 上映する。絵は scripts/make-projector.mjs）
@@ -28,7 +28,7 @@ import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
-import { YAJI_WALK } from "../cast";
+import { YAJI_WALK } from "../people/cast";
 import { FOLK_WALK } from "./folk";
 import type { Cell, VillageView } from "./map";
 import { VILLAGE_SPOTS } from "./map";
@@ -204,7 +204,7 @@ export const hallPalette = (tier: HallTier): Record<string, TileDef> => {
 
 // ───────────────── 置く 物 ─────────────────
 
-/** 本館の 中に 置く イベント（人・壁の 物・出口）。スクリプトは ui/hallEvents.ts が id で 付ける。 */
+/** 本館の 中に 置く イベント（人・壁の 物・出口）。スクリプトは ui/village/hallEvents.ts が id で 付ける。 */
 export type HallPlace = {
 	id: string;
 	x: number;
@@ -258,10 +258,10 @@ const PEOPLE: readonly (readonly {
 	[],
 	[
 		{ id: "nanashi_toban", at: [8, 5], dir: "down" },
-		// 野球の 実況民（data/hall.ts の JIKKYO）。机を かこんで スマホで 実況しながら 言いあう
+		// 野球の 実況民（data/town/hall.ts の JIKKYO）。机を かこんで スマホで 実況しながら 言いあう
 		{ id: "jikkyo_tora", at: [3, 5], dir: "down" },
 		{ id: "jikkyo_g", at: [6, 6], dir: "left" },
-		// 右下の すみで「!バルス」と 書いては 失敗している 名無し（ui/folk.ts の balusScript）
+		// 右下の すみで「!バルス」と 書いては 失敗している 名無し（ui/village/folk.ts の balusScript）
 		{ id: "balus", at: [9, 7], dir: "left", sprite: FOLK_WALK.balus },
 	],
 	[
@@ -342,11 +342,11 @@ export const ON_PHONO: readonly DungeonId[] = [
 
 /**
  * シヨが 倉庫で あずかっている 品の 板（過去ログの底の 1作目の スレ。STORY.md §5.8。裏の 2段目の 続きの レスも
- * ：data/story.ts の CLEAR.y1901。棚には 置かない）。
+ * ：data/story/story.ts の CLEAR.y1901。棚には 置かない）。
  */
 export const IN_STORE: readonly DungeonId[] = ["hidden", "y1901"];
 
-/** まとめ掲示板に 貼ってある 品の 板（乗っ取り屋の 置き手紙。data/scraps.ts。棚には 置かない）。 */
+/** まとめ掲示板に 貼ってある 品の 板（乗っ取り屋の 置き手紙。data/story/scraps.ts。棚には 置かない）。 */
 export const ON_BOARD: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
 
 /** 飾り棚の 段（上の 段から 左 → 右。絵を 描く マス）。棚が 無い 段は 空。 */

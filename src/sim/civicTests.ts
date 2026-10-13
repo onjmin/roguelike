@@ -1,25 +1,18 @@
 // 町の 役所と 議会の 試験（pnpm test で いっしょに 動く。CIVIC.md §6・ENGINE.md §7.9）。
-// C 節：施設の 置き場所（三権の 並び）。T 節：討論会の 採点と 試合（data/debate.ts）。W 節：文の 幅と 使わない 語。
-// V 節：村の 入口（ui/debate.ts。板は 差しかえ）と 保存。
+// C 節：施設の 置き場所（三権の 並び）。T 節：討論会の 採点と 試合（data/minigames/debate.ts）。W 節：文の 幅と 使わない 語。
+// V 節：村の 入口（ui/minigames/debate.ts。板は 差しかえ）と 保存。
 // 形は jikkyoTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は 節の 字。
 
 import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
-import type { Today } from "../data/calendar";
 import {
-	AGENDA,
-	ASSEMBLY_LINES,
-	type Assembly,
-	agendaOf,
-	assemblyMembers,
-	CIVIC_BOARD,
-	DAYORI,
-	inSession,
-	NANASHI_CHAIR,
-	NOT_IN_ASSEMBLY,
-	SEATS,
-	YORIAI_SPOTS,
-} from "../data/civic";
+	GIKAI_CLOSE,
+	GIKAI_EPISODES,
+	GIKAI_OPEN,
+	GIKAI_RERUN,
+	GIKAI_TEXT,
+	GIKAI_YAJI,
+} from "../data/jikkyo/gikai";
 import {
 	ACTS,
 	BOARD,
@@ -56,17 +49,24 @@ import {
 	TOPICS,
 	type Topic,
 	VERDICT,
-} from "../data/debate";
-import { GLOSSARY } from "../data/glossary";
+} from "../data/minigames/debate";
+import { MOB_IDS, MOBS, type MobId, movedIn } from "../data/people/mobs";
+import { GLOSSARY } from "../data/story/glossary";
+import type { Today } from "../data/town/calendar";
 import {
-	GIKAI_CLOSE,
-	GIKAI_EPISODES,
-	GIKAI_OPEN,
-	GIKAI_RERUN,
-	GIKAI_TEXT,
-	GIKAI_YAJI,
-} from "../data/jikkyo/gikai";
-import { MOB_IDS, MOBS, type MobId, movedIn } from "../data/mobs";
+	AGENDA,
+	ASSEMBLY_LINES,
+	type Assembly,
+	agendaOf,
+	assemblyMembers,
+	CIVIC_BOARD,
+	DAYORI,
+	inSession,
+	NANASHI_CHAIR,
+	NOT_IN_ASSEMBLY,
+	SEATS,
+	YORIAI_SPOTS,
+} from "../data/town/civic";
 import {
 	FACILITIES,
 	type Facility,
@@ -85,12 +85,6 @@ import { hallPalette, hallPlaces, hallRows } from "../data/village/hall";
 import { stepOf, type VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
-import {
-	assemblyEvents,
-	civicBoardMenu,
-	civicBoardScript,
-	yoriaiMovedLine,
-} from "../ui/civic";
 import type { Ctx } from "../ui/ctx";
 import {
 	type DebateResult,
@@ -99,10 +93,20 @@ import {
 	pageText,
 	saveCivic,
 	setDebateHook,
-} from "../ui/debate";
-import { buildFacility } from "../ui/facilities";
-import { assemblyToday, forgetGuestsMemo, guestsOf } from "../ui/guests";
-import { fill } from "../ui/villageTalk";
+} from "../ui/minigames/debate";
+import {
+	assemblyEvents,
+	civicBoardMenu,
+	civicBoardScript,
+	yoriaiMovedLine,
+} from "../ui/village/civic";
+import { buildFacility } from "../ui/village/facilities";
+import {
+	assemblyToday,
+	forgetGuestsMemo,
+	guestsOf,
+} from "../ui/village/guests";
+import { fill } from "../ui/village/villageTalk";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}

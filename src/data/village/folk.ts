@@ -1,5 +1,5 @@
 // おんJタウンの 小さな 名物（folk）の 置き場所（地図の 座標）と 機能の 墓場の 外観。DOM も 保存も 使わない。
-// 文と 決まりは data/folk.ts、話し方は ui/folk.ts（村の イベントは ui/villageEvents.ts の eventFor から folkEvent）。
+// 文と 決まりは data/people/folk.ts、話し方は ui/village/folk.ts（村の イベントは ui/village/villageEvents.ts の eventFor から folkEvent）。
 // ここからは map.ts・facilities.ts の 値を 読まない（どちらも ここを 読むので、まわりこむと 読みこみの 順で こわれる）。
 //
 //   ひらがなニキ   (8,17)  西の 空き地（段5 からは 喫茶の 東）。x=7 の 道の となりの くぼみ。段1 から。
@@ -9,7 +9,7 @@
 //   モフちゃん     (1,16)  西の 空き地の 北西の すみの くぼみ（段5 からは 喫茶の 裏の 路地の 行き止まり）。段1 から。
 //                  絵は 段ごとに 少し かわる。(7,22) は 西口の 乗り場・図書館・碁会所への 近道なので 置かない（map.ts の 片づけ）。
 //                  (1,21) は すぐ 下の 木の 葉に かくれて 白い 体が 見えない
-//   おどちゃん     (16,30) 池の 南の 原っぱ。夜（20〜4時）だけ 見える（ui/folk.ts の when）。段1 から。うろうろ する
+//   おどちゃん     (16,30) 池の 南の 原っぱ。夜（20〜4時）だけ 見える（ui/village/folk.ts の when）。段1 から。うろうろ する
 //   機能の 墓場    神社の 上の 森（x1〜7, y1〜3）。神社の 東の わき道（5,4）（7,4）から 入る。段2 から（神社と 同じ）
 //     y1  墓 ×7（タグ機能・ロリード・草ボタン・GPS・バルス・弾幕・イイ！ボタン）  y2  玉砂利の 道
 //     y3  森・森・森・供養碑・道・新しい 墓（!okpic）・道
@@ -128,7 +128,7 @@ export const FOLK_FACILITIES: readonly Facility[] = [
 	},
 ];
 
-/** 村に 置く folk の イベント（id は folk_ で はじまる。ui/folk.ts の folkEvent が 話し方を つける）。 */
+/** 村に 置く folk の イベント（id は folk_ で はじまる。ui/village/folk.ts の folkEvent が 話し方を つける）。 */
 export const folkPlaces = (stage: number): VillagePlace[] => {
 	if (stage < FOLK_FROM) return [];
 	const out: VillagePlace[] = [

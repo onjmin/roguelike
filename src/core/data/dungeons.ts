@@ -1,22 +1,22 @@
 // ダンジョン＝おんJの 植民地（おーぷん2ch の ほかの板）。村の 入口で 行き先を 選ぶ。
-// 板ごとに 階の数・道具の出かた・決まり（板の 気風から）が ちがう。名前と 語りは data/story.ts、
-// 見た目と 曲（板ごとに 1つ。全フロア 同じ）は ui/theme.ts。
+// 板ごとに 階の数・道具の出かた・決まり（板の 気風から）が ちがう。名前と 語りは data/story/story.ts、
+// 見た目と 曲（板ごとに 1つ。全フロア 同じ）は ui/dungeon/theme.ts。
 //
 // - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 4階。入門：杖だけ未識別・のろいなし・祭りなし・
 //   罠は B3 から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
 // - main：風呂板（おふJ）の 20階。湯治：HP の 自然回復が 1.5倍。
 //
 // 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
-// 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town.ts の CARRY_REFUSE）。
+// 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town/town.ts の CARRY_REFUSE）。
 // - deep：電池板（でんJ。過疎で 謎が多い）の 30階。充電：杖の 回数が 1 多い。
 //   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい。
 //
 // 目的（objective）：物語の 品を 運ぶ 板（パン板・風呂板・電池板・過去ログの底）は 持ち帰り（fetch）、
 // 4つの 植民地は いちばん底の ボスを たおす（boss。たおすと 品ごと 一瞬で 入口へ 帰る）。
-// パン板・風呂板にも 期間限定の ボスが いる（いつ boss に なるかは 村の イベント：data/objectives.ts。core は 決めない）。
+// パン板・風呂板にも 期間限定の ボスが いる（いつ boss に なるかは 村の イベント：data/story/objectives.ts。core は 決めない）。
 //
 // level は「その階が 本編の何階ぶんの強さか」。敵の顔ぶれ・罠の数と種類・祭りの大きさ・変化の杖は
-// これで引く。見た目と曲の層は UI 側（ui/theme.ts）。
+// これで引く。見た目と曲の層は UI 側（ui/dungeon/theme.ts）。
 //
 // 階の数は 開く 順に およそ 1.5倍ずつ（ポケダンの ちいさなもり が B3F で はじまるのに ならった）：
 // パン板 4 → きのこ板 6 → 離島板 9 → おんたこ・お祭り 13 → 風呂板 20 → 電池板 30 → 過去ログの底 99。
@@ -49,7 +49,7 @@ export type BossSpec = {
 export type Dungeon = {
 	id: DungeonId;
 	/**
-	 * 目的の 既定（村の 期間限定の イベントで かわる ことも ある：data/objectives.ts）。
+	 * 目的の 既定（村の 期間限定の イベントで かわる ことも ある：data/story/objectives.ts）。
 	 * boss に できるのは boss の ある 板だけ。
 	 */
 	objective: Objective;
@@ -589,7 +589,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		reliefAfter: null,
 	},
 	// 隠し：過去ログの底（おんJタウンの 下の 古井戸。電池板を 持ち帰ると 開く）。99階で、階の 層ごとに 見た目と 曲が 変わる
-	// （data/story.ts の BOARD_LOOKS の zones）。いちばん底の「蓄音キリコのうた」を 持ったまま 帰還スレで 帰れる
+	// （data/story/story.ts の BOARD_LOOKS の zones）。いちばん底の「蓄音キリコのうた」を 持ったまま 帰還スレで 帰れる
 	hidden: {
 		id: "hidden",
 		noCarry: true,
@@ -610,7 +610,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		secret: true,
 	},
 	// 裏ルート：おーぷぬの 灯台（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。小島を 3つ 取り返すと 開く。
-	// 乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる（data/story.ts の BOARD_LOOKS の zones）。
+	// 乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる（data/story/story.ts の BOARD_LOOKS の zones）。
 	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底 30 ＞ 風呂板 27・持ちこみ 不可）
 	opunu: {
 		id: "opunu",
@@ -630,7 +630,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "aisatsu",
 		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
 		trapsFrom: 3,
-		// 小島を 3つ 取り返すと 開く（扉の パスワードは 村の 口で：ui/villageEvents.ts）
+		// 小島を 3つ 取り返すと 開く（扉の パスワードは 村の 口で：ui/village/villageEvents.ts）
 		unlockAfter: null,
 		unlockAfterAll: ["isle1", "isle2", "isle3"],
 		reliefAfter: null,
@@ -643,7 +643,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	isle1: {
 		id: "isle1",
 		objective: "fetch",
-		// 入口：パン板を 持ち帰ると 開くが 知らせない。地図の 南西の 小島に 小舟が つく（ui/worldMap.ts）
+		// 入口：パン板を 持ち帰ると 開くが 知らせない。地図の 南西の 小島に 小舟が つく（ui/village/worldMap.ts）
 		quiet: true,
 		// 裏は 本筋より むずかしい：小舟で わたる（倉庫の 道具は 持ちこめない）・底が 高い・のろいも 祭りも ある
 		noCarry: true,
@@ -787,7 +787,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	// ── 裏の 2段目：1901年の スレ（STORY.md §5.98）。時計が 2038年から 1901年に もどった 日に 立ち、日付の 順で
 	// いちばん 古い スレより 下に 沈んだ。入口は 本館の 古い 札の さらに 下だけ（全体マップには 出ない）。
-	// 開くのは 転（避難J を 持ち帰った 次の 帰り）が 旗 wrap を 立てた とき（ui/villageReturn.ts の wrapScript）。
+	// 開くのは 転（避難J を 持ち帰った 次の 帰り）が 旗 wrap を 立てた とき（ui/village/villageReturn.ts の wrapScript）。
 	// 裏の さいごの 板なので 避難J より むずかしく。敵は 結で やきうが 「鳴らしとった」と 言う 夏休みキッズと ピッチャー
 	y1901: {
 		id: "y1901",

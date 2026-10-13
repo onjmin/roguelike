@@ -1,5 +1,5 @@
 // セーブの 書きかえ（チート）を 見つける。書きかえは とめない（読みこんで そのまま 遊べる）。
-// 見つけたら 覚えておき、仲間が がっかりする（ui/villageReturn.ts の tamperScript、ui/villageTalk.ts、ui/villageMobs.ts）。
+// 見つけたら 覚えておき、仲間が がっかりする（ui/village/villageReturn.ts の tamperScript、ui/village/villageTalk.ts、ui/village/villageMobs.ts）。
 // 書きかえた 中断セーブで もぐると、各階に 削除人が 1体 出る（RunState.cheat。core/floor.ts）。
 //
 // 見るのは「ゲームが 決して 作らない 値」だけ（HP が 最大HPより 多い など）。

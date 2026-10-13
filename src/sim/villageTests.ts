@@ -5,12 +5,12 @@
 //   となり（か カウンター越し）から 話しかけられる（口の中には 立たずに）
 // - 本編の口は 開くまで やきうが ふさぐ・もっとの口は 開くまで 板で ふさぐ
 // - 町の段ごとに 建物が ふえる・売る人は 台の うしろ（囲いの中へは 入れない）・絵は 同梱の Base.png だけ
-// - 仲間の ひとこと（ui/villageTalk.ts）：1回の 帰りに 1人 1つ 新しい話（「！」）、聞いたら 決まった ひとこと。
+// - 仲間の ひとこと（ui/village/villageTalk.ts）：1回の 帰りに 1人 1つ 新しい話（「！」）、聞いたら 決まった ひとこと。
 //   ゼロの 帳簿。村の窓で 読む 文（村の 新しい文・口と 立て札・仲間の たまり）は 全角22字・2行まで
 //   （localStorage の かわりに 入れものを 置いて 試す）
-// - 帰ってきたとき（ui/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
+// - 帰ってきたとき（ui/village/villageReturn.ts。仮の Story で 試す）：口の前に 仲間が 並んで 語り、開いた知らせ
 //   （やきうが どく。見せる 前に 閉じたら また 見せる）、倉庫へ・売る（別のタブ・閉じた タブの 守り）・町が 育つ
-// - おんJ 本館（data/village/hall.ts・ui/hallEvents.ts）：外観の 幅・扉、中の 形と 歩ける道（段ごと）、
+// - おんJ 本館（data/village/hall.ts・ui/village/hallEvents.ts）：外観の 幅・扉、中の 形と 歩ける道（段ごと）、
 //   扉で 入って 出たら 入った 扉の 前、保守の 当番表の 数、期間限定の 告知、飾り棚の 中身、段の 上がる 場面
 
 import { readFileSync } from "node:fs";
@@ -27,10 +27,8 @@ import {
 	TOWN_STEPS,
 } from "../core/town";
 import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
-import { BB_FX, BB_POSE, BB_SHEET, BB_SPR } from "../data/baseballSheet";
-import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/bath";
-import { BATTING } from "../data/batting";
-import { bgm } from "../data/bgm";
+import { bgm } from "../data/audio/bgm";
+import { records, stageBgm, villageBgm } from "../data/audio/music";
 import {
 	CAFE_DRINKS,
 	CAFE_GREET,
@@ -43,22 +41,23 @@ import {
 	TREAT_REACTIONS,
 	TREAT_SIPS,
 	TREAT_TALKS,
-} from "../data/cafe";
-import { CAFE_MOBS } from "../data/cafeMobs";
-import { SEASONS, season } from "../data/calendar";
-import { MOB_VOICE, VOICE_MODELS } from "../data/cast";
-import { EAT_MENUS } from "../data/eateries";
-import { DRINK_BAR, FISHING, GROUND_BAT, VENDING } from "../data/facilities";
-import { GLOSSARY } from "../data/glossary";
-import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/guests";
+} from "../data/cafe/cafe";
+import { CAFE_MOBS } from "../data/cafe/cafeMobs";
 import {
-	HALL_MSG,
-	IN_STORE_TEXT,
-	JIKKYO,
-	ON_PHONO_TEXT,
-	TOBAN_MENU,
-	YAKYU_SHELF,
-} from "../data/hall";
+	BB_FX,
+	BB_POSE,
+	BB_SHEET,
+	BB_SPR,
+} from "../data/minigames/baseballSheet";
+import { BATTING } from "../data/minigames/batting";
+import {
+	guideKeys,
+	PIANO_DONE,
+	PIANO_GUIDES,
+	PIANO_MENU,
+} from "../data/minigames/piano";
+import { MOB_VOICE, VOICE_MODELS } from "../data/people/cast";
+import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/people/guests";
 import {
 	MOB_IDS,
 	MOBS,
@@ -69,8 +68,8 @@ import {
 	PUYU_RELIEF,
 	RELIEF_NOTE,
 	SENKYO,
-} from "../data/mobs";
-import { records, stageBgm, villageBgm } from "../data/music";
+} from "../data/people/mobs";
+import { GLOSSARY } from "../data/story/glossary";
 import {
 	advanceEvents,
 	bossName,
@@ -80,8 +79,7 @@ import {
 	eventText,
 	goalText,
 	objectiveFor,
-} from "../data/objectives";
-import { guideKeys, PIANO_DONE, PIANO_GUIDES, PIANO_MENU } from "../data/piano";
+} from "../data/story/objectives";
 import {
 	type KirikoMode,
 	pickQuote,
@@ -89,17 +87,8 @@ import {
 	type QuoteContext,
 	SPEAKERS,
 	type Speaker,
-} from "../data/quotes";
-import {
-	BANK,
-	BANK_FROM,
-	MUSIC_CLOSED,
-	PIANO_MSG,
-	ROOM_DOOR,
-	ROOM_DOOR_SE,
-	ROOM_MSG,
-} from "../data/rooms";
-import { SCRAP_MSG, SCRAPS } from "../data/scraps";
+} from "../data/story/quotes";
+import { SCRAP_MSG, SCRAPS } from "../data/story/scraps";
 import {
 	awayFriends,
 	BOARD_LOOKS,
@@ -122,7 +111,7 @@ import {
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
 	WRAP_NEWS,
-} from "../data/story";
+} from "../data/story/story";
 import {
 	DIVE_RES,
 	diveResAt,
@@ -130,14 +119,40 @@ import {
 	GOAL_WHY,
 	goalWhy,
 	synopsisHtml,
-} from "../data/synopsis";
+} from "../data/story/synopsis";
+import { BANDAI, BATH_MEN, BATH_SOAK, BATH_WOMEN } from "../data/town/bath";
+import { SEASONS, season } from "../data/town/calendar";
+import { EAT_MENUS } from "../data/town/eateries";
+import {
+	DRINK_BAR,
+	FISHING,
+	GROUND_BAT,
+	VENDING,
+} from "../data/town/facilities";
+import {
+	HALL_MSG,
+	IN_STORE_TEXT,
+	JIKKYO,
+	ON_PHONO_TEXT,
+	TOBAN_MENU,
+	YAKYU_SHELF,
+} from "../data/town/hall";
+import {
+	BANK,
+	BANK_FROM,
+	MUSIC_CLOSED,
+	PIANO_MSG,
+	ROOM_DOOR,
+	ROOM_DOOR_SE,
+	ROOM_MSG,
+} from "../data/town/rooms";
 import {
 	TAMPER_LEDGER,
 	TAMPER_MOB,
 	TAMPER_NARRATION,
 	TAMPER_SCENE,
 	TAMPER_TALK,
-} from "../data/tamper";
+} from "../data/town/tamper";
 import {
 	ARRIVE_MSG,
 	ESCAPE_QUOTES,
@@ -155,7 +170,7 @@ import {
 	VILLAGE_MSG,
 	WAKE_PAGES,
 	ZERO_VOICELESS,
-} from "../data/town";
+} from "../data/town/town";
 import {
 	doorId,
 	FACILITIES,
@@ -291,7 +306,11 @@ import {
 } from "../engine/save";
 import { isWalkRef } from "../engine/sprite";
 import { DIR_VEC, type Dir } from "../engine/types";
-import { bathLayout } from "../ui/bath";
+import { itemIcon } from "../ui/art/icons";
+import { floorsText } from "../ui/bookView";
+import type { Ctx } from "../ui/ctx";
+import { floorShort } from "../ui/dungeon/floorName";
+import { bathLayout } from "../ui/minigames/bath";
 import {
 	applyOutcome,
 	type BallKind,
@@ -314,8 +333,8 @@ import {
 	timingOf,
 	toField,
 	walkDir,
-} from "../ui/batting";
-import { floorsText } from "../ui/bookView";
+} from "../ui/minigames/batting";
+import { sharedHead } from "../ui/share";
 import {
 	buildCafe,
 	cafeLayout,
@@ -324,12 +343,10 @@ import {
 	hasCafeNews,
 	mixScene,
 	talksWith,
-} from "../ui/cafe";
-import type { Ctx } from "../ui/ctx";
-import { buildFacility } from "../ui/facilities";
-import { floorShort } from "../ui/floorName";
-import { descWindows, shelfWords } from "../ui/glossary";
-import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/guests";
+} from "../ui/village/cafe";
+import { buildFacility } from "../ui/village/facilities";
+import { descWindows, shelfWords } from "../ui/village/glossary";
+import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/village/guests";
 import {
 	buildHall,
 	canWriteHoshu,
@@ -343,9 +360,8 @@ import {
 	shelfRows,
 	tobanScript,
 	trophies,
-} from "../ui/hallEvents";
-import { itemIcon } from "../ui/icons";
-import { bossHomeLine, endLine, recordHead } from "../ui/records";
+} from "../ui/village/hallEvents";
+import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
 import {
 	enterMusic,
 	enterRoom,
@@ -353,9 +369,8 @@ import {
 	leaveRoom,
 	planLines,
 	thingLines,
-} from "../ui/rooms";
-import { sharedHead } from "../ui/share";
-import { buildVillage } from "../ui/villageEvents";
+} from "../ui/village/rooms";
+import { buildVillage } from "../ui/village/villageEvents";
 import {
 	forgetMobMemo,
 	hasMobNews,
@@ -365,14 +380,14 @@ import {
 	senkyoOpen,
 	senkyoScript,
 	tipDice,
-} from "../ui/villageMobs";
-import { villageSong } from "../ui/villageMusic";
+} from "../ui/village/villageMobs";
+import { villageSong } from "../ui/village/villageMusic";
 import {
 	forgetOpeningMemo,
 	needsOpening,
 	openingPrepare,
 	openingScript,
-} from "../ui/villageOpening";
+} from "../ui/village/villageOpening";
 import {
 	deathScene,
 	gather,
@@ -393,7 +408,7 @@ import {
 	TALK_NEAR,
 	villageView,
 	wrapScript,
-} from "../ui/villageReturn";
+} from "../ui/village/villageReturn";
 import {
 	DUNGEON_DESC,
 	fill,
@@ -402,7 +417,7 @@ import {
 	ledgerLine,
 	pinnedScrap,
 	talkLine,
-} from "../ui/villageTalk";
+} from "../ui/village/villageTalk";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -487,13 +502,13 @@ const surveyMap = <P extends Place>(
 		}
 	}
 	const reachable = (x: number, y: number) => reach.has(key(x, y));
-	/** 話しかけに 立てる マス（歩いて行けて、踏むと もぐる 口では ない。ui/village.ts の walkTo と同じ）。 */
+	/** 話しかけに 立てる マス（歩いて行けて、踏むと もぐる 口では ない。ui/village/village.ts の walkTo と同じ）。 */
 	const standable = (x: number, y: number) =>
 		reachable(x, y) &&
 		!places.some((p) => p.trigger === "touch" && p.x === x && p.y === y);
 	/**
 	 * となり（か カウンター越し）の 立てる マスから 話しかけられるか。
-	 * noBack なら 北どなり（掲示板などの 裏）からは 数えない（ui/village.ts の talkFront と同じ）。
+	 * noBack なら 北どなり（掲示板などの 裏）からは 数えない（ui/village/village.ts の talkFront と同じ）。
 	 */
 	const talkable = (p: Place, noBack = false) =>
 		[
@@ -1014,7 +1029,7 @@ test("倉庫の 整理：持ち物の 整理と 同じ 分類の 順・同じ �
 	});
 });
 
-/** 場面の 道（ui/village.ts の routeTo と 同じ 幅優先。上・右・下・左の 順に 地形だけを 見て、キリコの マスは よける）。 */
+/** 場面の 道（ui/village/village.ts の routeTo と 同じ 幅優先。上・右・下・左の 順に 地形だけを 見て、キリコの マスは よける）。 */
 const sceneRoute = (
 	v: VillageView,
 	from: Cell,
@@ -1277,7 +1292,7 @@ test("場面の 歩きを とばさない とき：近い 道・キリコ・noWa
 /** 開き方 ごとの 村の 通れる マス（villageRows は 重いので 1度だけ 引く）。 */
 const passMemo = new Map<VillageView, (x: number, y: number) => boolean>();
 
-/** 場面の 人が 道に して よい マス（ui/village.ts の openFor と 同じ：地形だけ。キリコの マスは よける）。 */
+/** 場面の 人が 道に して よい マス（ui/village/village.ts の openFor と 同じ：地形だけ。キリコの マスは よける）。 */
 const sceneOpen = (v: VillageView, kiriko: Cell): Open => {
 	let pass = passMemo.get(v);
 	if (!pass) {
@@ -1763,7 +1778,7 @@ test("ロゼ and シヨ work behind closed counters once the stall and storehous
 		const s = survey(v);
 		const seller = (who: Speaker, counterFrom: number, closedFrom: number) => {
 			const p = s.places.find((x) => x.who === who);
-			// 越してくる 前は いない（data/story.ts の FRIEND_FROM）
+			// 越してくる 前は いない（data/story/story.ts の FRIEND_FROM）
 			ok(
 				!!p === v.stage >= FRIEND_FROM[who],
 				`${label(v)}: ${who} is ${p ? "there before moving in" : "missing"}`,
@@ -2009,7 +2024,7 @@ const width = (line: string): number =>
 	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
 
 type Shown = { text: string; kiriko?: KirikoMode };
-/** 窓に 出る 文（キリコの 独白は （　）で かこまれる。ui/village.ts の sayKiriko）。 */
+/** 窓に 出る 文（キリコの 独白は （　）で かこまれる。ui/village/village.ts の sayKiriko）。 */
 const shown = (l: Shown): string =>
 	l.kiriko === "think" ? `（${l.text}）` : l.text;
 
@@ -2277,7 +2292,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 			texts.push([`${where}[${i}]`, shown(l)]);
 		});
 	for (const d of DUNGEON_IDS) {
-		// 口・立て札の 札（ui/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
+		// 口・立て札の 札（ui/village/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
 		texts.push([
 			`sign ${d}`,
 			`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}　★\n${DUNGEON_DESC[d]}`,
@@ -2309,7 +2324,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	});
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
-	// 裏の 2段目の 転と 結の あと（ui/villageReturn.ts の wrapScript・kusaScript）
+	// 裏の 2段目の 転と 結の あと（ui/village/villageReturn.ts の wrapScript・kusaScript）
 	pool("WRAP_NEWS.pages", WRAP_NEWS.pages);
 	pool("WRAP_NEWS.hinaryAbsent", [WRAP_NEWS.hinaryAbsent]);
 	pool("KUSA_NEWS.lines", KUSA_NEWS.lines);
@@ -2433,7 +2448,7 @@ test("the boot title's quote keeps its two lines on a 320px phone (name and 「�
 	add(ESCAPE_QUOTES);
 	for (const d of DUNGEON_IDS) add(CLEAR[d]);
 	for (const ls of TITLE_TOWN_QUOTES) add(ls);
-	// 本編の たまり（data/quotes.ts。外へは 出していないので 引いて 集める）
+	// 本編の たまり（data/story/quotes.ts。外へは 出していないので 引いて 集める）
 	const causes = [
 		"おなかが　すいて　たおれた",
 		"荒らし草",
@@ -3580,7 +3595,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 	});
 });
 
-// ───────────────── おんJマイナーズ（ui/villageMobs.ts） ─────────────────
+// ───────────────── おんJマイナーズ（ui/village/villageMobs.ts） ─────────────────
 
 test("おんJマイナーズ: lines fit the window, one talk is at most 4 windows, companions only chime in", () => {
 	const texts: [string, string][] = [];
@@ -4327,7 +4342,7 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 	});
 });
 
-// ───────────────── ぷゆゆ（はじめから いる 子。data/mobs.ts の MOBS.puyu） ─────────────────
+// ───────────────── ぷゆゆ（はじめから いる 子。data/people/mobs.ts の MOBS.puyu） ─────────────────
 
 /** 図鑑を 置く（会った 敵の id と たおした 数）。 */
 const setBook = (seen: string[], kills: Record<string, number> = {}): void =>
@@ -5409,7 +5424,7 @@ test("the objective's new village texts fit the message window (22 full-width ×
 			);
 });
 
-// ───────────────── おんJ 本館（data/village/hall.ts・ui/hallEvents.ts） ─────────────────
+// ───────────────── おんJ 本館（data/village/hall.ts・ui/village/hallEvents.ts） ─────────────────
 
 /** 本館の 中を 引く 道具（外の 扉 i から 入った マスから）。 */
 const surveyHall = (v: VillageView, i = 0) => {
@@ -5974,7 +5989,7 @@ test("the town grows into a new hall: after the friends, the camera looks at the
 	});
 });
 
-// ───────────────── 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。data/village/rooms.ts・ui/rooms.ts・ui/cafe.ts） ─────────────────
+// ───────────────── 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。data/village/rooms.ts・ui/village/rooms.ts・ui/village/cafe.ts） ─────────────────
 
 /** 部屋の 地図を 引く（入口から）。extra は 部屋に 置く 人（喫茶の マスター・仲間・住人）。 */
 const surveyRoom = (id: RoomId, extra: Place[] = []) => {
@@ -6178,7 +6193,7 @@ test("施設の 中: every facility room is closed, draws only bundled art, and 
 			ok(s.talkable(p, hasBack(s, p)), `${f.id}: cannot reach ${p.id}`);
 		}
 		// 人の となりの 台には 調べる 物を 置かない（台の マスに 物が あると、台ごしに 話しかけても
-		// その 物が 先に 出て 向こうの 人に 届かない。ui/village.ts）
+		// その 物が 先に 出て 向こうの 人に 届かない。ui/village/village.ts）
 		const thingCounter = (x: number, y: number) =>
 			!!tiles[[...(rows[y] ?? "")][x]]?.counter &&
 			places.some((q) => q.trigger === "talk" && q.x === x && q.y === y);
@@ -6473,7 +6488,7 @@ test("施設の 文: every line fits the village window", () => {
 	fitsWindow(texts);
 });
 
-// ───────── 1打席（ui/batting.ts。板は 画面が 要るので、決まりの 純粋な 関数と 絵の 置き場を 調べる） ─────────
+// ───────── 1打席（ui/minigames/batting.ts。板は 画面が 要るので、決まりの 純粋な 関数と 絵の 置き場を 調べる） ─────────
 
 const PITCH_KINDS: readonly PitchKind[] = ["straight", "fast", "curve", "fork"];
 const BALL_KINDS: readonly (BallKind | null)[] = [
@@ -7023,7 +7038,7 @@ test("タップで 歩く 道は、行き先で ない 扉・出口を 踏まな
 		const s = survey(v);
 		const touch = (x: number, y: number) =>
 			s.places.some((p) => p.trigger === "touch" && p.x === x && p.y === y);
-		// engine/field.ts の Field.findPath を 村の データで 呼ぶ（ui/village.ts の walkTo と 同じく 踏む 所を よける）
+		// engine/field.ts の Field.findPath を 村の データで 呼ぶ（ui/village/village.ts の walkTo と 同じく 踏む 所を よける）
 		const field: Field = Object.assign(Object.create(Field.prototype), {
 			w: VILLAGE_W,
 			h: VILLAGE_H,
@@ -7478,7 +7493,7 @@ test("本館の 野球の 本棚: every line fits the village window, each book 
 	}
 });
 
-// ───────────────── 裏の 筋を 追う 行（data/synopsis.ts） ─────────────────
+// ───────────────── 裏の 筋を 追う 行（data/story/synopsis.ts） ─────────────────
 
 test("story helpers for the hidden route fit the log and the map card, and follow the story order", () => {
 	for (const [d, list] of Object.entries(DIVE_RES)) {

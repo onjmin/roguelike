@@ -1,7 +1,7 @@
 // 1打席の 絵を 1枚に まとめて 書き出す（node scripts/make-baseball.mjs）。
 //
 //   public/sprites/baseball.png … 球場（打席から・上から）、キリコ、ピッチャー、野手、球、花火 など（1024x432）
-//   src/data/baseballSheet.ts   … どの 絵が シートの どこに あるか（BB_SPR。この スクリプトが 書く。手で 直さない）
+//   src/data/minigames/baseballSheet.ts   … どの 絵が シートの どこに あるか（BB_SPR。この スクリプトが 書く。手で 直さない）
 //
 // 絵の 出どころ:
 //   - 球場・キリコの 打つ 絵・ピッチャー・キャッチャー・審判・球・数字 … ここで 描く（形を 重ねて、最後に ふちを 自動で 付ける）。
@@ -312,7 +312,7 @@ class Layer {
 	}
 }
 
-// ───────────────── シート（どこに 何を 置くか。src/data/baseballSheet.ts にも そのまま 書く） ─────────────────
+// ───────────────── シート（どこに 何を 置くか。src/data/minigames/baseballSheet.ts にも そのまま 書く） ─────────────────
 const SW = 1024;
 const SH = 432;
 const sheet = new Img(SW, SH);
@@ -1444,7 +1444,7 @@ const out = argv.find((a) => a.endsWith(".png")) ?? join(HERE, "../public/sprite
 writeFileSync(out, encodePng(SW, SH, sheet.d));
 console.log(`wrote ${out} (${SW}x${SH})`);
 {
-	const tsOut = argOf("--ts") ?? join(HERE, "../src/data/baseballSheet.ts");
+	const tsOut = argOf("--ts") ?? join(HERE, "../src/data/minigames/baseballSheet.ts");
 	const rows = Object.entries(LAYOUT).map(([k, [x, y, w, h, n]]) => `\t${k}: { x: ${x}, y: ${y}, w: ${w}, h: ${h}, n: ${n} },`);
 	const names = (list) => list.map(([k], i) => `\t${k}: ${i},`);
 	const ts = [

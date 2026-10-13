@@ -17,7 +17,7 @@
 //   優勝は 3組から 乱数（最終決戦の ネタ・字幕・優勝の 窓が かわる）。点数の 見たても 組ごとに 乱数。
 //   この ファイルは kohaku.ts・text.ts を import しない（text.ts → packs.ts → ここ の 循環に なる）。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
-// 絵は ui/jikkyoManzaiTv.ts（場面の 鍵は MANZAI_SCENES、絵に 出す 文は MANZAI_ART）。
+// 絵は ui/jikkyo/jikkyoManzaiTv.ts（場面の 鍵は MANZAI_SCENES、絵に 出す 文は MANZAI_ART）。
 
 import type {
 	JkFit,
@@ -27,7 +27,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import type { JkPack } from "./pack";
 
 const o = (text: string, fit: JkFit, boo?: string): JkOpt =>

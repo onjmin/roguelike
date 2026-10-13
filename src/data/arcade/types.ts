@@ -1,6 +1,6 @@
 // 施設の 台の 遊び（ゲームセンター「連コ」の 筐体・カジノ「ガチャ」の 台・海の家・バー。1台に 1つずつ 別の ゲーム。
 // data/village/facilities.ts の 部屋の 物）。物の 名前（room.things の 値）が そのまま ゲームの 名前で、plays は
-// どれも "arcade"。ui/facilities.ts は play が "arcade" なら ui/arcade.ts の arcadePlay に 物の 名前を わたす。
+// どれも "arcade"。ui/village/facilities.ts は play が "arcade" なら ui/arcade/arcade.ts の arcadePlay に 物の 名前を わたす。
 // どれも 寄り道で、強さ・道具・ゴールド・売上・町の 段には 何も 効かない（記録は ハイスコアだけ）。
 // カジノの 台は 店が 貸す「遊びの チップ」で 遊ぶ（お金は 賭けない。チップは 席を 立つと 返す）。
 

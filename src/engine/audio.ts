@@ -7,14 +7,14 @@
 //   onStop で「自分で止めたのではない」停止を見分け、最後の位置から鳴らし直す。
 // - 読み上げは rpg の engine/audio.ts から 移した（村の 会話だけ。ダンジョンの ログは 読まない）。
 //   既定 OFF（初回に 約45MBの TTS データを 取得するため）。設定で ON にする。準備するのは
-//   声の ある 人（data/cast.ts の VOICE_MODELS）の 音源だけ。
+//   声の ある 人（data/people/cast.ts の VOICE_MODELS）の 音源だけ。
 //   頭が欠けないよう、合成の最初のかたまり（＋声ごとの貯め。SPEECH_BUFFER_SEC）が出来てから
 //   頭から鳴らす（awaitRender: "first-chunk"）。合成が追いつかなければ後ろをずらす（言葉は欠けない）。
 //   鳴り始める時刻を返すので、メッセージ窓は文字送りをそこまで待たせる（ui/message.ts）。
 // - dtm は重いので、最初の音が要るまで動的 import で遅らせる。
-// - 大きさは測ったラウドネスでそろえる（data/loudness.ts）。既定の音量設定のとき、
+// - 大きさは測ったラウドネスでそろえる（data/audio/loudness.ts）。既定の音量設定のとき、
 //   BGM は曲ごとの #volume で、効果音は1音ずつの倍率で、声は声ごとの倍率で目標の大きさになる。
-// - 効果音が鳴り始めたら、その音の本体が鳴り終わる時刻（waitMs。data/loudness.ts）まで「区切り待ち」にする。
+// - 効果音が鳴り始めたら、その音の本体が鳴り終わる時刻（waitMs。data/audio/loudness.ts）まで「区切り待ち」にする。
 //   次の行動・選択肢の決定などはそれまで効かない（seSettled / seHeld）。
 //   連打で次の効果音が畳みかけて重ならないように。余韻までは待たせない。
 // - ジングル（勝利の曲）は途中で絞って止められる（fadeOutJingle。レベルアップの音と重ねない）。
@@ -22,14 +22,14 @@
 //   dtm の stop は先読みで予約済みの音符（約0.5秒ぶん）を鳴らし残すので、出口の音量ごと絞る。
 
 import type { DtmStudio, MmlPlayback, SpeechHandle, Units } from "@onjmin/dtm";
-import { VOICE_MODELS } from "../data/cast";
 import {
 	REF_VOLUME,
 	SE_LOUDNESS,
 	SE_UNMEASURED_GAIN,
 	SE_WAIT,
 	voiceGain,
-} from "../data/loudness";
+} from "../data/audio/loudness";
+import { VOICE_MODELS } from "../data/people/cast";
 import { soundUrl } from "./assets";
 import type { VoiceDef } from "./defs";
 import { onSettingsChange, settings } from "./settings";
@@ -42,7 +42,7 @@ const loadDtm = (): Promise<Dtm> => {
 	return dtmPromise;
 };
 
-/** MML ヘッダの `#volume=` （曲ごとの音量。ラウドネスをそろえてある。data/bgm.ts）。 */
+/** MML ヘッダの `#volume=` （曲ごとの音量。ラウドネスをそろえてある。data/audio/bgm.ts）。 */
 const songVolume = (mml: string): number => {
 	const m = /#volume=(\d+)/.exec(mml);
 	return m ? Number(m[1]) : 50;
@@ -53,7 +53,7 @@ const songVolume = (mml: string): number => {
  * 最大（100）で +4.4 dB（直す前と同じ幅）。
  */
 const seGainOf = (v: number): number => v / REF_VOLUME.se;
-/** 効果音ごとの倍率（data/loudness.ts）。測っていない音は直す前と同じ大きさ。 */
+/** 効果音ごとの倍率（data/audio/loudness.ts）。測っていない音は直す前と同じ大きさ。 */
 const seLevel = (name: string): number =>
 	SE_LOUDNESS[name]?.[4] ?? SE_UNMEASURED_GAIN;
 /** これより長い効果音（ジングル）は、同じ音が鳴っている間は重ねない。 */
@@ -610,7 +610,7 @@ export class GameAudio {
 		}
 	}
 
-	// ───────────────── ピアノ（音楽室。ui/piano.ts） ─────────────────
+	// ───────────────── ピアノ（音楽室。ui/minigames/piano.ts） ─────────────────
 
 	/**
 	 * ピアノの 音色を 用意する（音楽室の 鍵盤を 開く とき）。dtm の studio に SoundFont の グランドピアノを
@@ -817,7 +817,7 @@ export class GameAudio {
 					pitchOffset: voice.pitchOffset ?? 0,
 					emotion: voice.emotion ?? "neutral",
 					style: voice.style ?? "neutral",
-					// 既定（80）で声ごとの倍率＝目標の大きさ（data/loudness.ts）
+					// 既定（80）で声ごとの倍率＝目標の大きさ（data/audio/loudness.ts）
 					volume:
 						voiceGain(voice.model) * (settings.voiceVolume / REF_VOLUME.voice),
 					// 最初のかたまり（＋貯め）が出来たら頭から鳴らす。後続の合成が遅れたら

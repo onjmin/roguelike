@@ -8,7 +8,7 @@
 // 文の 幅：会場・人の 文は 村の 窓（全角 22字 × 2行）、menu は 10字（src/sim/jikkyoProgTests.ts）。
 
 import type { JkOpt, JkScript } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import type { DayLines, ProgMsgKey } from "./text";
 
 /** その 日の 枠（program・y は 番組表が 埋める。y を 書けば その 年）。 */

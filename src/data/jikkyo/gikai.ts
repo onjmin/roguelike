@@ -1,7 +1,7 @@
 // 議会中継（見るだけの 実況番組。CIVIC.md §3・ENGINE.md §4.9・§5.4）。町役場の モニター（段4〜6）・市役所の
 // 中継モニター（段7）・本館の 実況モニター（段6〜の 月曜）で、議会の 日に 映る。
 // - 見るだけ（interactive:false。窓を 出さない）。議長と 住人の 発言は 2行の 書きこみで 時刻どおりに 流れ、
-//   あいだに 名無しの ヤジ。A は 早送り、B 1回で 閉じる（ui/jikkyoGikai.ts）。
+//   あいだに 名無しの ヤジ。A は 早送り、B 1回で 閉じる（ui/jikkyo/jikkyoGikai.ts）。
 // - 1回の 帰りに 新しい 話 1つ。全部 見たら 再放送（「この　流れ　何回目や」）。
 // - 議長＝おんちゃん（越してきて いれば。いなければ 名無しの 議長で、口ぐせの ない 文）。書記＝プロト、参考人＝ロゼ。
 //   やきうは 出さない。話は 出る 住人が みな 越してきて いる ときだけ 流れる。
@@ -17,7 +17,7 @@ import {
 	PIN_MS,
 	PROGRAM_RULES,
 } from "../../core/jikkyo";
-import type { MobId } from "../mobs";
+import type { MobId } from "../people/mobs";
 
 /** 話し手（議長・名無しの レス・住人・参考人の ロゼ）。 */
 export type GikaiWho = "chair" | "res" | "roze" | MobId;
@@ -282,7 +282,7 @@ export const GIKAI_YAJI: readonly string[] = [
 
 /**
  * 中継する 議会（題の 議会の 名前）。本館の 月曜は その 段の 議会（段6 は 町議会、段7 から 市議会。
- * ui/jikkyoGikai.ts の hallGikai）。
+ * ui/jikkyo/jikkyoGikai.ts の hallGikai）。
  */
 export type GikaiPlace = "townhall" | "cityhall";
 
@@ -419,7 +419,7 @@ export const gikaiAvailable = (
 	moved: readonly MobId[],
 ): boolean => ep.cast.every((id) => moved.includes(id));
 
-/** 見た 話の 記録（kiriko-roguelike/jikkyo の gikai。ui/jikkyoGikai.ts）。 */
+/** 見た 話の 記録（kiriko-roguelike/jikkyo の gikai。ui/jikkyo/jikkyoGikai.ts）。 */
 export type GikaiMemo = {
 	readonly seen: readonly string[];
 	/** いちばん 新しく 見た 帰りと、その 帰りの 話（再放送か）。 */

@@ -1,9 +1,9 @@
 // 歩ける村（おんJタウン）のデータ（マップ・イベント）と、イベントのスクリプトから使う命令（Story）の型。
 // rpg の engine/defs.ts から、村で使う物だけを残した（戦闘・仲間・なかよし度・セーブは無い）。
-// 村のデータは src/data/village/、スクリプトは src/ui/villageEvents.ts に書く（おんJ 本館の 中は ui/hallEvents.ts）。
+// 村のデータは src/data/village/、スクリプトは src/ui/village/villageEvents.ts に書く（おんJ 本館の 中は ui/village/hallEvents.ts）。
 
 import type { DungeonId, Item, Objective, RunState } from "../core/types";
-import type { KirikoMode, Speaker } from "../data/quotes";
+import type { KirikoMode, Speaker } from "../data/story/quotes";
 import type { CrowdNode, PedCost } from "../data/village/crowd";
 import type { SavedReplay } from "./save";
 import type { Dir } from "./types";
@@ -72,7 +72,7 @@ export type MapDef = {
 	id: string;
 	/** 画面に出す地名。 */
 	name: string;
-	/** BGM 名（data/bgm.ts）。null なら無音、省略なら前の曲を続ける。 */
+	/** BGM 名（data/audio/bgm.ts）。null なら無音、省略なら前の曲を続ける。 */
 	bgm?: string | null;
 	/** 行の各文字 → タイル。 */
 	tiles: Record<string, TileDef>;
@@ -81,19 +81,19 @@ export type MapDef = {
 	events?: EventDef[];
 	/**
 	 * 入るとき、幕が 上がる前に 1回だけ 呼ぶ（人を 置く・隠すだけ。待たない）。
-	 * 帰ってきた場面で 仲間を 口の前に 並べておく（ui/villageReturn.ts）。
+	 * 帰ってきた場面で 仲間を 口の前に 並べておく（ui/village/villageReturn.ts）。
 	 */
 	prepare?: (s: Story) => void;
 	/** マップに入るたびに走るスクリプト（幕が 上がってから）。 */
 	onEnter?: Script;
 	/**
 	 * 目の前に 何も ない マスで A（スマホは キリコを タップ）。スクリプトを かえせば 走らせる
-	 * （キリコの 家で 家具を 置く。ui/myhome.ts）。null なら 何も しない。
+	 * （キリコの 家で 家具を 置く。ui/village/myhome.ts）。null なら 何も しない。
 	 */
 	onTalkEmpty?: (x: number, y: number) => Script | null;
 	/** マップの外側の色。 */
 	outside?: string;
-	/** 街の 人通り（村の 地図だけ。data/village/crowd.ts・ui/villageCrowd.ts）。 */
+	/** 街の 人通り（村の 地図だけ。data/village/crowd.ts・ui/village/villageCrowd.ts）。 */
 	crowd?: { stage: number; nodes: readonly CrowdNode[]; cost: PedCost };
 	/** タイルの ほかに 使う 画像（decor で 描く 絵など。入る 前に 先読みする）。 */
 	images?: string[];
@@ -112,7 +112,7 @@ export type MapDef = {
 
 // ───────────────── 村を出るとき ─────────────────
 
-/** 村を出て 冒険へ（main.ts が受け取る）。objective は 村で 行き先を 決めた ときの 目的（data/objectives.ts）。 */
+/** 村を出て 冒険へ（main.ts が受け取る）。objective は 村で 行き先を 決めた ときの 目的（data/story/objectives.ts）。 */
 export type VillageExit =
 	| {
 			kind: "new";
@@ -129,7 +129,7 @@ export type VillageExit =
 
 export type Script = (s: Story) => Promise<void>;
 
-/** 読み上げの声（data/cast.ts の voice。rpg の VoiceDef と 同じ）。 */
+/** 読み上げの声（data/people/cast.ts の voice。rpg の VoiceDef と 同じ）。 */
 export type VoiceDef = {
 	/** dtm の koe 音源キーワード（roze / shiyo …）。 */
 	model: string;
@@ -153,11 +153,11 @@ export type SayOptions = {
 
 export type Story = {
 	readonly state: VState;
-	/** セリフ。who は 仲間（data/cast.ts）か null（地の文。name を渡せばモブ）。キリコは kiriko で。 */
+	/** セリフ。who は 仲間（data/people/cast.ts）か null（地の文。name を渡せばモブ）。キリコは kiriko で。 */
 	say(who: Speaker | null, text: string, opt?: SayOptions): Promise<void>;
 	/**
 	 * キリコの ことば。think は 独白（（　）で かこむ・声なし・村の だれにも 聞こえない）、
-	 * voice は 声（村の 雑談と 喫茶だけ。uc で 読み上げる）。data/quotes.ts の KirikoMode。
+	 * voice は 声（村の 雑談と 喫茶だけ。uc で 読み上げる）。data/story/quotes.ts の KirikoMode。
 	 */
 	kiriko(text: string, mode: KirikoMode): Promise<void>;
 	/** 地の文。 */
@@ -176,7 +176,7 @@ export type Story = {
 	bgm(name: string | null): void;
 	/** 鳴っている BGM を ms かけて 絞って 止める。 */
 	fadeBgm(ms: number): Promise<void>;
-	/** 効果音（data/sfx.ts の名前）。 */
+	/** 効果音（data/audio/sfx.ts の名前）。 */
 	se(name: string): void;
 	flag(name: string): boolean | number | string | undefined;
 	set(name: string, value?: boolean | number | string): void;
@@ -191,7 +191,7 @@ export type Story = {
 	): Promise<void>;
 	/**
 	 * (x, y) まで 歩かせる（道は 地形だけで 決める。ほかの人は すりぬけ、キリコの マスは よける）。
-	 * avoid なら ほかの人・置物も よける（村の 子の 小さな しぐさ。data/mobs.ts の Beat）。着いたら 解決する。
+	 * avoid なら ほかの人・置物も よける（村の 子の 小さな しぐさ。data/people/mobs.ts の Beat）。着いたら 解決する。
 	 * 道が なければ（台の うしろ・キリコが ふさぐ 細道の 先）、キリコ 以外は 歩ける ところまで 歩いて
 	 * いちばん せまい すきまを とびこえる（engine/longWalk.ts の hopRoute）。キリコ と avoid は 行けなければ 何もしない。
 	 * 行き先に 入れなければ（通れない マス・キリコの マス）だれでも 何もしない。

@@ -1,18 +1,18 @@
 // 冒険に 出る 主人公の 解放と 選択（村では いつも キリコ）。
-// - 解放：束音ロゼ・解音ゼロは それぞれの 依頼（data/heroQuests.ts）を 経て 使える ように なる。
+// - 解放：束音ロゼ・解音ゼロは それぞれの 依頼（data/people/heroQuests.ts）を 経て 使える ように なる。
 //   進み具合は Progress.flags に 持つ：q_<id>_ask＝悩みを かかえた（話しかけると 悩みを 打ち明ける）、
 //   q_<id>＝依頼を 引き受けた、q_<id>_ok＝依頼の 条件を 満たして 帰った、hero_<id>＝本人から 申し出が あって 使える。
 // - 悩みの 始まり：冒険から 帰る たびに（main.ts の rollHeroWorries）、持ち帰った 板の 数が HERO_GATE に
 //   届いて いれば（ゼロは サブ機の プロト・レンも 村に 来てから。ZERO_SUBS_STEP） WORRY_CHANCE で 悩みを かかえる（はずれ つづきでも WORRY_SURE 回目には 必ず）。悩みは
 //   1人ずつ（片方の 依頼が 片づくまで もう 片方は 悩まない）。かかえた 帰りに 村で ひとこと 知らせる。
-// - 選択：行き先を 決める ところ（ui/worldMap.ts）で 切りかえる。localStorage の kiriko-roguelike/hero に
+// - 選択：行き先を 決める ところ（ui/village/worldMap.ts）で 切りかえる。localStorage の kiriko-roguelike/hero に
 //   覚えて おき、次に 出る ときも そのまま（使えない 主人公なら キリコ）。
 
 import { DUNGEON_IDS, openable } from "../core/data/dungeons";
 import { type HeroId, isHeroId } from "../core/data/heroes";
 import { townStep } from "../core/town";
 import type { RunState } from "../core/types";
-import { MOBS } from "../data/mobs";
+import { MOBS } from "../data/people/mobs";
 import { addFlag, hasFlag, loadProgress, loadTown, saveProgress } from "./save";
 
 export type QuestHero = Exclude<HeroId, "kiriko">;

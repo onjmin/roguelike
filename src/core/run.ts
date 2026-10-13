@@ -909,7 +909,7 @@ export class Run {
 			heldBy: null,
 		};
 		s.body = now + 1;
-		// 音は 場面が 鳴らす（停止 → 起動。ui/play.ts の batonScene。レベルアップの 音は 使わない）
+		// 音は 場面が 鳴らす（停止 → 起動。ui/dungeon/play.ts の batonScene。レベルアップの 音は 使わない）
 		this.emit({ t: "baton", body: now + 1, pos: { x: p.x, y: p.y } });
 		this.msg(`${next.name}（${next.model}）に　バトンタッチ！`, "good");
 		this.emit({
@@ -1361,7 +1361,7 @@ export class Run {
 		if (!at) return;
 		const c = spawnMonster(this, mdef(m).id, at, { awake: true });
 		if (c) {
-			// 分かれる 音と 絵（ui/play.ts の appear）を 先に、それから ログ
+			// 分かれる 音と 絵（ui/dungeon/play.ts の appear）を 先に、それから ログ
 			if (!quiet) this.se("spell");
 			this.emit({ t: "appear", id: c.uid, pos: at, from: { x: m.x, y: m.y } });
 			this.msg(`${monsterName(this, m)}が　ふえた！`, "warn");

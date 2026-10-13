@@ -20,7 +20,7 @@ import {
 	type Objective,
 	type RunState,
 } from "../core/types";
-import { type ActiveEvent, advanceEvents } from "../data/objectives";
+import { type ActiveEvent, advanceEvents } from "../data/story/objectives";
 import { noteTamper, oddRun, oddTown } from "./tamper";
 
 const PREFIX = "kiriko-roguelike/";
@@ -210,7 +210,7 @@ export type RunRecord = {
 	objective?: Objective;
 	/** 中断セーブを 書きかえた 冒険（engine/tamper.ts）。 */
 	cheat?: true;
-	/** 冒険に 出た 主人公（キリコなら 書かない。帰りの ひとことで 本人に ねぎらわせない。ui/villageTalk.ts）。 */
+	/** 冒険に 出た 主人公（キリコなら 書かない。帰りの ひとことで 本人に ねぎらわせない。ui/village/villageTalk.ts）。 */
 	hero?: "roze" | "zero";
 };
 
@@ -376,7 +376,7 @@ export const addRecord = (r: RunRecord): boolean => {
 
 export type ProgressNews = { dungeon: DungeonId; reason: "clear" | "relief" };
 
-/** 期間限定の イベントの 知らせ（始まった・終わった。data/objectives.ts）。 */
+/** 期間限定の イベントの 知らせ（始まった・終わった。data/story/objectives.ts）。 */
 export type EventNews = { id: string; started: boolean };
 
 export type Progress = {
@@ -394,11 +394,11 @@ export type Progress = {
 	news: ProgressNews[];
 	/** 出撃の 回数（冒険が 終わるたびに 1。期間限定の イベントの きっかけ。無ければ 0）。 */
 	outings?: number;
-	/** 起きている 期間限定の イベント（0か 1つ。data/objectives.ts）。 */
+	/** 起きている 期間限定の イベント（0か 1つ。data/story/objectives.ts）。 */
 	event?: ActiveEvent;
 	/** まだ 知らせていない イベントの 始まり・終わり（村に 帰ったとき）。 */
 	eventNews?: EventNews[];
-	/** 持ち帰りの 語り（data/story.ts の STORY[d].ending）を 見おえた 板。一度きりの 語りは 二度 出さない。 */
+	/** 持ち帰りの 語り（data/story/story.ts の STORY[d].ending）を 見おえた 板。一度きりの 語りは 二度 出さない。 */
 	endings?: DungeonId[];
 	/**
 	 * 裏シナリオの 旗（STORY.md §5.98）：romVoice＝ROM専の 声を 蓄音機に 入れたまま 持ち帰った（跡地が 開く）、
@@ -526,7 +526,7 @@ export const saveProgress = (p: Progress): void => {
 
 /**
  * 冒険が終わった（持ち帰った・倒れた・やめた）。次のダンジョンが開いたら 知らせを残す。
- * そのあと 期間限定の イベントを 進める（出撃を 数えて、終わった・始まったら 知らせを残す。data/objectives.ts）。
+ * そのあと 期間限定の イベントを 進める（出撃を 数えて、終わった・始まったら 知らせを残す。data/story/objectives.ts）。
  */
 export const noteRunEnd = (
 	dungeon: DungeonId,
@@ -581,7 +581,7 @@ export const addFlag = (flag: string): void => {
 };
 
 /**
- * 転を 見おえた（ui/villageReturn.ts の wrapScript）：旗 wrap を 立て、開く 条件を 満たした 板（1901年の スレ）を 開く。
+ * 転を 見おえた（ui/village/villageReturn.ts の wrapScript）：旗 wrap を 立て、開く 条件を 満たした 板（1901年の スレ）を 開く。
  * 知らせ（news）は 積まない：転の 場面が 自分で 言う（積むと newsScript が「新しい 植民地」を かさねて 出す）。
  */
 export const noteWrap = (): void => {
@@ -593,7 +593,7 @@ export const noteWrap = (): void => {
 	saveProgress(p);
 };
 
-/** 持ち帰りの 語りを 見おえた（ui/villageReturn.ts の returnScene）。 */
+/** 持ち帰りの 語りを 見おえた（ui/village/villageReturn.ts の returnScene）。 */
 export const noteEnding = (d: DungeonId): void => {
 	const p = loadProgress();
 	const seen = p.endings ?? [];
@@ -660,17 +660,17 @@ export type Town = {
 	bag: Item[];
 	/**
 	 * ぷゆゆの お弁当（ぷゆゆパン）を もらって いる。村に 帰って 持ち物（bag）が からっぽなら ぷゆゆが 持たせる
-	 * （ui/villageReturn.ts の lunchScript）。出るときに 持っていく（持ちこめない 板でも。倉庫の 道具とは べつ）。
+	 * （ui/village/villageReturn.ts の lunchScript）。出るときに 持っていく（持ちこめない 板でも。倉庫の 道具とは べつ）。
 	 */
 	lunch: boolean;
 	/**
 	 * たおれた あとの 支給品（ぷゆゆソード）を もらって いて、まだ 持って 出て いない（次の 冒険に 持っていく。
-	 * 持ちこめない 板でも。ui/villageReturn.ts の reliefScript）。無ければ もらって いない。
+	 * 持ちこめない 板でも。ui/village/villageReturn.ts の reliefScript）。無ければ もらって いない。
 	 */
 	relief?: true;
 	/** 支給品を くれた たおれの 記録の 時刻（同じ たおれで 二度 もらわない）。 */
 	reliefAt?: number;
-	/** 帰りごとの 売り上げ（古い順。SALES_KEEP 件まで。ゼロの 帳簿の グラフ：ui/home.ts の openSales）。 */
+	/** 帰りごとの 売り上げ（古い順。SALES_KEEP 件まで。ゼロの 帳簿の グラフ：ui/village/home.ts の openSales）。 */
 	sales: Sale[];
 	/** まだ決めていない 持ち帰り。 */
 	pending: PendingReturn | null;
@@ -1204,7 +1204,7 @@ const saveBook = (b: Book): void => {
 
 const WORDS_KEY = `${PREFIX}words`;
 
-/** ログに 1度 説明を 添えた ことば（data/glossary.ts の id）。 */
+/** ログに 1度 説明を 添えた ことば（data/story/glossary.ts の id）。 */
 export const loadWords = (): string[] => {
 	try {
 		const raw = localStorage.getItem(WORDS_KEY);
@@ -1246,7 +1246,7 @@ export const addBookKills = (kills: Record<string, number>): void => {
 };
 
 // ───────────────────────── 掲示板の 切れはし ─────────────────────────
-// まとめ掲示板に 貼られた「古い スレの 切れはし」（data/scraps.ts）。読んだ id と、最後に 読んだ 帰り（記録の 時刻）。
+// まとめ掲示板に 貼られた「古い スレの 切れはし」（data/story/scraps.ts）。読んだ id と、最後に 読んだ 帰り（記録の 時刻）。
 
 const SCRAPS_KEY = `${PREFIX}scraps`;
 

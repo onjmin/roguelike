@@ -1,7 +1,7 @@
 // ナイター実況の 絵を 1枚に まとめて 書き出す（node scripts/make-jikkyo.mjs）。
 //
 //   public/sprites/jikkyo.png … 本館の 実況モニターの TV（240x352）
-//   src/data/jikkyoSheet.ts   … どの 絵が シートの どこに あるか（JK_SPR。この スクリプトが 書く。手で 直さない）
+//   src/data/jikkyo/jikkyoSheet.ts   … どの 絵が シートの どこに あるか（JK_SPR。この スクリプトが 書く。手で 直さない）
 //
 // 枠（左上・大きさ・コマ数。コマは 右へ 並ぶ）:
 //   (0,0)   240x135 bg.pitch  センターカメラ（夜空と 照明塔・バックネット裏の スタンド・字の ない 広告の フェンス・本塁の 土・打席・芝・マウンド）
@@ -29,7 +29,7 @@ import { deflateSync } from "node:zlib";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "../public/sprites/jikkyo.png");
-const SHEET_TS = join(HERE, "../src/data/jikkyoSheet.ts");
+const SHEET_TS = join(HERE, "../src/data/jikkyo/jikkyoSheet.ts");
 
 // ───────────────── PNG ─────────────────
 const CRC_TABLE = new Uint32Array(256).map((_, n) => {

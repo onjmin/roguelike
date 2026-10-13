@@ -1,5 +1,5 @@
 // 実況の 番組の 試験（pnpm test で いっしょに 動く）。
-// A 節：映画館の 演出（曜日で かわる 会場の 文・スクリーンと 客席の 飾り。data/jikkyo/text.ts・ui/cinemaDecor.ts）と
+// A 節：映画館の 演出（曜日で かわる 会場の 文・スクリーンと 客席の 飾り。data/jikkyo/text.ts・ui/village/cinemaDecor.ts）と
 // 劇場の 12月・1月の 文。
 // E 節：実況の エンジン（core/jikkyo.ts）を ボットで 1歩ずつ 回す。Y 節：ナイター実況（core/jikkyoYakyu.ts・data/jikkyo/yakyu.ts）。
 // S 節：映画館の『空飛ぶ鯖』（data/jikkyo/sora.ts）。K 節：劇場の 紅白スレ合戦（data/jikkyo/kohaku.ts）。D 節：番組表。
@@ -40,7 +40,6 @@ import {
 } from "../core/jikkyoYakyu";
 import { Rng } from "../core/rng";
 import { TOWN_STAGES } from "../core/town";
-import type { Today } from "../data/calendar";
 import {
 	GIKAI_CLOSE,
 	GIKAI_EPISODES,
@@ -137,7 +136,8 @@ import {
 	yakyuTimeline,
 } from "../data/jikkyo/yakyu";
 import { JK_TEAMS } from "../data/jikkyo/yakyuRoster";
-import type { MobId } from "../data/mobs";
+import type { MobId } from "../data/people/mobs";
+import type { Today } from "../data/town/calendar";
 import {
 	FACILITIES,
 	type Facility,
@@ -146,17 +146,21 @@ import {
 } from "../data/village/facilities";
 import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
-import { facilityDecor } from "../ui/cinemaDecor";
 import type { Ctx } from "../ui/ctx";
-import { buildFacility } from "../ui/facilities";
 import {
 	forgetJikkyoMemo,
 	jikkyoAfterLine,
 	loadJikkyo,
 	markJikkyoHeard,
 	recordJikkyo,
-} from "../ui/jikkyo";
-import { programMemo, recordProgram, setWatchHook } from "../ui/jikkyoWatch";
+} from "../ui/jikkyo/jikkyo";
+import {
+	programMemo,
+	recordProgram,
+	setWatchHook,
+} from "../ui/jikkyo/jikkyoWatch";
+import { facilityDecor } from "../ui/village/cinemaDecor";
+import { buildFacility } from "../ui/village/facilities";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}

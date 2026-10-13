@@ -10,7 +10,7 @@
 // こちらは「テーブル・椅子」「家具」「空室改造セット」「テレビ」「音楽関係」「箱・壺・樽」「囲碁・将棋」「屋内床・タイル」
 // 「夏祭り素材集」などから 選び、台の 上の 家電など 少しは 同梱の Base.png から 切って 詰める。
 // 飲食店で 出てきた 一品の 絵（FOOD）は「食べ物/飲み物」「食べ物２」「夏祭り素材集」「おかし」から rpgen-food.png に
-// （data/eateries.ts・ui/eat.ts。たこ焼きと、ジュースの ストロー・焼きそばの 青のりだけ 手描き）。
+// （data/town/eateries.ts・ui/minigames/eat.ts。たこ焼きと、ジュースの ストロー・焼きそばの 青のりだけ 手描き）。
 //
 // ゲームは CDN を 見ない（村の 絵は 同梱の 画像だけ）。部品は 作る ときに CDN から 取る：
 //   https://rpgen-search.pages.dev/data/images/sprites/<id>.png（認証 なし）
@@ -625,8 +625,8 @@ const ROOM_PIECES = {
 	tatamiHalf: { ids: [["31dWf1"]] },
 };
 
-// ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/eateries.ts の 出てきた 一品の 絵） ─────────────────
-// ui/eat.ts が 6倍で 台の 上に 描くので、どの 品も 見える 画素の 下はしを マスの いちばん 下（行 15）に、
+// ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/town/eateries.ts の 出てきた 一品の 絵） ─────────────────
+// ui/minigames/eat.ts が 6倍で 台の 上に 描くので、どの 品も 見える 画素の 下はしを マスの いちばん 下（行 15）に、
 // 左右の まんなかを x=8 に 寄せて 詰める（seat。部品ごとの 下の すき間で 浮いて 見えない ように）。
 // たこ焼きは RPGEN に ないので 手描き（drawn）。over は 加工の あとに 重ねる 手描き（ストロー・青のり など）。
 const FOOD = {
@@ -1325,7 +1325,7 @@ export const riCell = (name: RoomArtName, col: number, row: number): string => {
 \treturn \`\${ROOM_IMG}#\${(c + col) * 16},\${(r + row) * 16},16,16\`;
 };
 
-/** 飲食店の 品（public/sprites/rpgen-food.png。${food.atlas.w}x${food.atlas.h}）。出てきた 一品の 絵（ui/eat.ts）。たこ焼きは 手描き。 */
+/** 飲食店の 品（public/sprites/rpgen-food.png。${food.atlas.w}x${food.atlas.h}）。出てきた 一品の 絵（ui/minigames/eat.ts）。たこ焼きは 手描き。 */
 export const FOOD_IMG = "pub:sprites/rpgen-food.png";
 export const FOOD_SIZE = [${food.atlas.w}, ${food.atlas.h}] as const;
 

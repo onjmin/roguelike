@@ -1,10 +1,10 @@
 // 季節の 行事の 絵を 書き出す（node scripts/make-season.mjs [--cache <dir>] → public/sprites/season.png）。
 //
-// おんJ芋煮会（浜の すみの 石の かまどと 大鍋。data/village/season.ts・ui/imoni.ts）。128x32：
+// おんJ芋煮会（浜の すみの 石の かまどと 大鍋。data/village/season.ts・ui/minigames/imoni.ts）。128x32：
 //   (0,0)   32x32 大鍋（冷えている。木の ふた）と 石の かまど。村の 地図の 外観（2x2 マス。GridLook の キー a b c d）
 //   (32,0)  32x32 火の 入った 大鍋の ふたの 所だけ（ふたを とって 芋煮。こんにゃく なし）。開催の 日に 飾り（decor）で 重ねる
 //   (64,0)  32x32 同じ（こんにゃく 入り）
-//   (96,0)  16x16 芋煮の お椀（こんにゃく なし）。食べる ときの 板（ui/eat.ts の showDish）
+//   (96,0)  16x16 芋煮の お椀（こんにゃく なし）。食べる ときの 板（ui/minigames/eat.ts の showDish）
 //   (112,0) 16x16 芋煮の お椀（こんにゃく 入り）
 //   (96,16)〜 空き
 // お椀は RPGEN の「味噌汁（豆腐craft）」rlAACtA（130: 食べ物２ #25）を CDN から とって、汁の 色を かえ、里芋・牛肉・ねぎ・
@@ -326,7 +326,7 @@ const potCold = (ox, oy) => {
 	stone(ox, oy, 6, 24, 7, 6);
 	stone(ox, oy, 19, 24, 7, 6);
 	stone(ox, oy, 24, 22, 7, 7);
-	// 火の 口（冷えた 灰）。開催の 日は ここに 火を 描く（ui/imoni.ts）
+	// 火の 口（冷えた 灰）。開催の 日は ここに 火を 描く（ui/minigames/imoni.ts）
 	for (let y = 25; y <= 29; y++)
 		for (let x = 13; x <= 18; x++) set(ox + x, oy + y, y >= 28 ? ASH : MOUTH);
 };
@@ -400,7 +400,7 @@ const potLit = (ox, oy, konnyaku) => {
 
 /**
  * 芋煮の お椀（RPGEN の 味噌汁の お椀に 汁と 具を 描きなおす）。見える 画素の 下はしを マスの 下に そろえる
- * （pack-rpgen.mjs の FOOD の seat と 同じ。ui/eat.ts の showDish が 台の 上に のせる）。
+ * （pack-rpgen.mjs の FOOD の seat と 同じ。ui/minigames/eat.ts の showDish が 台の 上に のせる）。
  */
 const bowl = (ox, oy0, base, konnyaku) => {
 	let bottom = 0;

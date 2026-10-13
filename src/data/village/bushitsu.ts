@@ -1,6 +1,6 @@
 // おんJ高校の 部室棟（段4〜。新市街の 北の はし x40〜52 y0〜2。STORY.md §5.75）。部は どれも 部員 1人＝部長。
 // 人狼部（ワードウルフ）・お糸会かき部（うろ覚え）・放送部（ぬとらじ）・ボカロ部・ゲーム制作部と 廊下の 合唱部・帰宅部。
-// 遊べる 物は room.plays の "bushitsu"（ui/bushitsu.ts）。文と 人は data/bushitsu.ts。
+// 遊べる 物は room.plays の "bushitsu"（ui/bushitsu/bushitsu.ts）。文と 人は data/bushitsu/bushitsu.ts。
 // 段7 でも 外観は かえない（町が 都市に なっても 部室棟だけ 建てかわらない）。
 // 絵は 同梱の Base.png・rpgen-interior.png と、scripts/make-bushitsu.mjs が 作る public/sprites/bushitsu.png（bs・bsCell）。
 // ここからは facilities.ts の 値を 読まない（facilities.ts が ここを 読む）。
@@ -11,9 +11,9 @@ import {
 	BS_STAFF,
 	BS_THING_LINES,
 	nutoOnAir,
-} from "../bushitsu";
-import { bs, bsCell } from "../bushitsuSheet";
-import { nowHour, today } from "../calendar";
+} from "../bushitsu/bushitsu";
+import { bs, bsCell } from "../bushitsu/bushitsuSheet";
+import { nowHour, today } from "../town/calendar";
 import type { Facility, FacilityPerson, RoomLook } from "./facilities";
 import { ri, riCell } from "./rpgenArt";
 import { base, basePx } from "./tiles";
@@ -192,7 +192,7 @@ export const BUSHITSU: Facility = {
 			x: "fire",
 		},
 		lines: BS_THING_LINES,
-		// 遊べる 物（ui/bushitsu.ts の bushitsuThing が 物の id で 分ける）
+		// 遊べる 物（ui/bushitsu/bushitsu.ts の bushitsuThing が 物の id で 分ける）
 		plays: {
 			table: "bushitsu",
 			easel: "bushitsu",

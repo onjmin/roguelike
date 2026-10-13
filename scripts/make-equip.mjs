@@ -1,7 +1,7 @@
 // 装備（武器・盾）の透過素材を書き出す（node scripts/make-equip.mjs）。
 //
-// src/ui/equipArt.ts の下描きを、1種類1枚の PNG（200×320）にして public/sprites/equip/ へ置く。
-// 並びは src/ui/equip.ts の先頭のコメントのとおり（列：足踏み2つ＋攻撃の3つの形、行：前4＋うしろ4）。
+// src/ui/art/equipArt.ts の下描きを、1種類1枚の PNG（200×320）にして public/sprites/equip/ へ置く。
+// 並びは src/ui/dungeon/equip.ts の先頭のコメントのとおり（列：足踏み2つ＋攻撃の3つの形、行：前4＋うしろ4）。
 //
 //   node scripts/make-equip.mjs              … ぜんぶ
 //   node scripts/make-equip.mjs steel,bronze … 指定した種類だけ
@@ -73,8 +73,8 @@ const server = await createServer({
 });
 
 try {
-	const art = await server.ssrLoadModule("/src/ui/equipArt.ts");
-	const eq = await server.ssrLoadModule("/src/ui/equip.ts");
+	const art = await server.ssrLoadModule("/src/ui/art/equipArt.ts");
+	const eq = await server.ssrLoadModule("/src/ui/dungeon/equip.ts");
 	const { EQUIP_CELL: CELL, EQUIP_OX: OX, EQUIP_OY: OY } = eq;
 	const W = CELL * eq.EQUIP_COLS;
 	const H = CELL * eq.EQUIP_ROWS;

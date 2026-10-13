@@ -1,17 +1,17 @@
-// 効果音の大きさ（ラウドネス）を測り、src/data/loudness.ts の SE_LOUDNESS を書き換える（pnpm loudness）。
+// 効果音の大きさ（ラウドネス）を測り、src/data/audio/loudness.ts の SE_LOUDNESS を書き換える（pnpm loudness）。
 //
-// - data/sfx.ts の効果音（rpgen:<id>）を、ゲームと同じ URL（engine/assets.ts の soundUrl）から取ってくる。
+// - data/audio/sfx.ts の効果音（rpgen:<id>）を、ゲームと同じ URL（engine/assets.ts の soundUrl）から取ってくる。
 //   取ったファイルは node_modules/.cache/loudness/ に置き、次からはそれを使う（--fresh で取り直す）。
 // - ffmpeg でゲームで鳴るときと同じ形（48 kHz・ステレオ。モノラルは L=R）にして、
 //   ebur128（EBU R128 / ITU-R BS.1770）で M-max と true peak を測る。
 //   M は 400 ms、S は 3 s たまるまで出ないので、末尾に 3 秒の無音を足して測る。
 // - L = M-max ＋ 10·log10(400 / 有音 ms)。有音 ms は M-max の窓の中で音が鳴っている時間
 //   （10 ms ごとに、大きいほうのチャンネルの RMS が -50 dBFS を超えるか。200〜400 に丸める）。
-// - 補正 dB = 区分の目標（data/loudness.ts の SE_TARGET、区分は data/sfx.ts）− L。
+// - 補正 dB = 区分の目標（data/audio/loudness.ts の SE_TARGET、区分は data/audio/sfx.ts）− L。
 //   効果音の音量 100 で true peak が上限を超えない・範囲（SE_DB_RANGE）に収まるように抑える。
 // - 鳴り始め・鳴り終わり = 有音（上と同じ -50 dBFS）の最初と最後の 10 ms。
 // - 待つ ms = K 特性（BS.1770）のエネルギーの累計が SE_WAIT.share（85 %）に届く 10 ms の終わり。
-//   上限は SE_WAIT.maxMs（jingle は jingleMaxMs）、ui は 0（data/loudness.ts の ■ waitMs）。
+//   上限は SE_WAIT.maxMs（jingle は jingleMaxMs）、ui は 0（data/audio/loudness.ts の ■ waitMs）。
 //
 // 使い方: pnpm loudness [--fresh] [--cache <dir>] [--dry-run]
 //   --fresh    キャッシュがあっても取り直す
@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "src/data/loudness.ts");
+const OUT = join(ROOT, "src/data/audio/loudness.ts");
 const BEGIN = "// <loudness:se>";
 const END = "// </loudness:se>";
 const RATE = 48000;
@@ -75,8 +75,8 @@ let sfxKind;
 let conf;
 let soundUrl;
 try {
-	({ sfx, sfxKind } = await server.ssrLoadModule("/src/data/sfx.ts"));
-	conf = await server.ssrLoadModule("/src/data/loudness.ts");
+	({ sfx, sfxKind } = await server.ssrLoadModule("/src/data/audio/sfx.ts"));
+	conf = await server.ssrLoadModule("/src/data/audio/loudness.ts");
 	({ soundUrl } = await server.ssrLoadModule("/src/engine/assets.ts"));
 } finally {
 	await server.close();

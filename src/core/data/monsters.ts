@@ -423,7 +423,7 @@ const M: MonsterDef[] = [
 		id: "oni",
 		name: "顔真っ赤",
 		sprite: "sa:UT7LXB",
-		// キレる までは やきうの 絵（data/cast.ts の nanj）の「おんJ民」に 見える
+		// キレる までは やきうの 絵（data/people/cast.ts の nanj）の「おんJ民」に 見える
 		calm: { name: "おんJ民", sprite: "sa:4rSOzo" },
 		hp: 51,
 		atk: 38,

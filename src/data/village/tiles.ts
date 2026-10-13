@@ -235,13 +235,13 @@ export const BANK: Record<string, TileDef> = {
 
 // ───────────────── おんJ 本館（崖の 前の まんなか。町の 段で 育つ） ─────────────────
 //   #  屋根の 棟   +  屋根の 軒   0  壁（上段）   $  壁（上段）に ちょうちん   6  壁（下段）
-//   5  扉（下段。2マスの 絵。通れる。踏むと 中へ。ui/villageEvents.ts）
+//   5  扉（下段。2マスの 絵。通れる。踏むと 中へ。ui/village/villageEvents.ts）
 // 段0〜2 木造の 集会所（茶の 屋根・板壁・木戸）、段3〜5 レンガ（赤い 瓦・レンガ壁・赤い 扉）、
 // 段6〜 本館（青い 瓦・柱の ならぶ 石の 壁・飾りの 門）。段で 横に 広がる（幅は data/village/map.ts）。
 
 /**
  * 本館の 段（0 集会所・1 レンガ・2 本館）。外観の 絵と 幅・中の 広さと 中身・扉の 文で 同じ しきいを 使う
- * （data/village/map.ts・data/village/hall.ts・ui/villageEvents.ts）。
+ * （data/village/map.ts・data/village/hall.ts・ui/village/villageEvents.ts）。
  */
 export const hallTier = (stage: number): 0 | 1 | 2 =>
 	stage >= 6 ? 2 : stage >= 3 ? 1 : 0;

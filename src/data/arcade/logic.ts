@@ -1,4 +1,4 @@
-// ゲームセンターの 筐体の ゲームの 決まり（板＝ui/arcadeAction.ts・ui/arcadeTiming.ts は 描く だけ）。
+// ゲームセンターの 筐体の ゲームの 決まり（板＝ui/arcade/arcadeAction.ts・ui/arcade/arcadeTiming.ts は 描く だけ）。
 // どれも 状態 + step(状態, 秒, 入力, 乱数) の 形で、DOM も 時計も 見ない（src/sim/arcadeTests.ts が 種つきの 乱数で 回す）。
 // 座標は 板の 240x150（上の 14px は スコアの 帯）。乱数は 見た目だけ（板は Math.random。冒険の 乱数に さわらない）。
 

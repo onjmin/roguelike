@@ -1,17 +1,14 @@
 // 季節の 行事の 試験（pnpm test で いっしょに 動く。STORY.md §5.75 季節の 行事）。
-// 日替わり（data/openModes.ts）・おんJ芋煮会（data/imoni.ts・ui/imoni.ts・data/village/season.ts）・
-// どすこいポイント（data/dosukoi.ts・ui/dosukoi.ts）。
+// 日替わり（data/town/openModes.ts）・おんJ芋煮会（data/town/imoni.ts・ui/minigames/imoni.ts・data/village/season.ts）・
+// どすこいポイント（data/minigames/dosukoi.ts・ui/minigames/dosukoi.ts）。
 // 日付・年・帰りは みな 引数で 渡す（端末の 日付・時刻に よらない。10月でも 8/5 でも 同じ 結果）。
 // 形は civicTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は S。
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DungeonId } from "../core/types";
-import * as bathTexts from "../data/bath";
-import * as cafeTexts from "../data/cafe";
-import * as cafeMobTexts from "../data/cafeMobs";
-import { openModeOf, seasonOf, type Today } from "../data/calendar";
-import * as civicTexts from "../data/civic";
+import * as cafeTexts from "../data/cafe/cafe";
+import * as cafeMobTexts from "../data/cafe/cafeMobs";
 import {
 	DOSUKOI,
 	DOSUKOI_GAINS,
@@ -22,11 +19,20 @@ import {
 	forgetDosukoiMemo,
 	loadDosukoi,
 	saveDosukoi,
-} from "../data/dosukoi";
-import * as eateryTexts from "../data/eateries";
-import * as facilityTexts from "../data/facilities";
-import * as guestTexts from "../data/guests";
-import * as hallTexts from "../data/hall";
+} from "../data/minigames/dosukoi";
+import * as pianoTexts from "../data/minigames/piano";
+import * as guestTexts from "../data/people/guests";
+import * as mobTexts from "../data/people/mobs";
+import * as quoteTexts from "../data/story/quotes";
+import * as scrapTexts from "../data/story/scraps";
+import * as storyTexts from "../data/story/story";
+import * as tipTexts from "../data/story/tips";
+import * as bathTexts from "../data/town/bath";
+import { openModeOf, seasonOf, type Today } from "../data/town/calendar";
+import * as civicTexts from "../data/town/civic";
+import * as eateryTexts from "../data/town/eateries";
+import * as facilityTexts from "../data/town/facilities";
+import * as hallTexts from "../data/town/hall";
 import {
 	emptyImoni,
 	forgetImoniMemo,
@@ -50,8 +56,7 @@ import {
 	imoniWeek,
 	loadImoni,
 	saveImoni,
-} from "../data/imoni";
-import * as mobTexts from "../data/mobs";
+} from "../data/town/imoni";
 import {
 	EMOJI_LINE_WIDTH,
 	modesHeld,
@@ -60,14 +65,9 @@ import {
 	TRICK_SWEETS,
 	WINDOW_WIDTH,
 	windowWidth,
-} from "../data/openModes";
-import * as pianoTexts from "../data/piano";
-import * as quoteTexts from "../data/quotes";
-import * as roomTexts from "../data/rooms";
-import * as scrapTexts from "../data/scraps";
-import * as storyTexts from "../data/story";
-import * as tipTexts from "../data/tips";
-import * as townTexts from "../data/town";
+} from "../data/town/openModes";
+import * as roomTexts from "../data/town/rooms";
+import * as townTexts from "../data/town/town";
 import * as crowdTexts from "../data/village/crowd";
 import * as villageFacilityTexts from "../data/village/facilities";
 import {
@@ -91,7 +91,7 @@ import {
 import * as trolleyTexts from "../data/village/trolley";
 import type { Story, VState } from "../engine/defs";
 import type { Ctx } from "../ui/ctx";
-import { dosukoiWindow } from "../ui/dosukoi";
+import { dosukoiWindow } from "../ui/minigames/dosukoi";
 import {
 	type ImoniEnv,
 	imoniBoardMenu,
@@ -99,9 +99,9 @@ import {
 	imoniDecor,
 	imoniPot,
 	imoniStaff,
-} from "../ui/imoni";
-import { buildVillage } from "../ui/villageEvents";
-import { fill } from "../ui/villageTalk";
+} from "../ui/minigames/imoni";
+import { buildVillage } from "../ui/village/villageEvents";
+import { fill } from "../ui/village/villageTalk";
 import { NG } from "./civicTests";
 import type { TestResult } from "./monsterTests";
 
@@ -340,7 +340,7 @@ const mustImoni = (): Facility => {
 
 // ───────────────── 日替わり ─────────────────
 
-/** 村の 文の 出どころ（ui/village.ts の say を 通る 文を もつ もの）。 */
+/** 村の 文の 出どころ（ui/village/village.ts の say を 通る 文を もつ もの）。 */
 const TEXT_MODULES: readonly [string, unknown][] = [
 	["town", townTexts],
 	["mobs", mobTexts],

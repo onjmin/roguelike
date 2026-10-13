@@ -1,6 +1,6 @@
 // 道具の見た目（床・持ち物の 16×16）を書き出す（node scripts/make-items.mjs）。
 //
-// src/ui/itemArt.ts のドット（1文字1ドットの行と 色の表）を、1つ1枚の PNG にして public/sprites/items/ へ置く。
+// src/ui/art/itemArt.ts のドット（1文字1ドットの行と 色の表）を、1つ1枚の PNG にして public/sprites/items/ へ置く。
 // あわせて 見くらべ用の 拡大した一覧（--sheet <出力先.png>）も作れる。
 //
 //   node scripts/make-items.mjs                    … ぜんぶ
@@ -82,7 +82,7 @@ const server = await createServer({
 
 try {
 	const { ITEM_ART, ICON_SIZE: S } = await server.ssrLoadModule(
-		"/src/ui/itemArt.ts",
+		"/src/ui/art/itemArt.ts",
 	);
 	const names = Object.keys(ITEM_ART).filter(
 		(n) => !only.length || only.includes(n),

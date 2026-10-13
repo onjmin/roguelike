@@ -10,7 +10,7 @@
 // - 題・人物は 架空（板の「age」から あげは・揚げパン）。曲名・歌は 出さない。
 // - キリコが 書ける 文（候補・当番・山場の 1語）には「保守」「立てといた」「立てたる」「立てたで」を 入れない。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。村の 窓は 22字 × 2行。
-// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyoAsadoraTv.ts。
+// 束の 形は data/jikkyo/pack.ts、試験は src/sim/jikkyoProgTests.ts、TV は ui/jikkyo/jikkyoAsadoraTv.ts。
 
 import type {
 	JkFit,
@@ -19,7 +19,7 @@ import type {
 	JkScriptSeg,
 	JkSlot,
 } from "../../core/jikkyo";
-import type { Today } from "../calendar";
+import type { Today } from "../town/calendar";
 import type { JkPack, JkPackSlot } from "./pack";
 
 const o = (text: string, fit: JkFit): JkOpt => ({ text, fit });

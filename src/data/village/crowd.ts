@@ -5,7 +5,7 @@
 // 人は 扉・家・村の 出口から 出てきて、別の 扉・家・出口へ 歩いて 入る（消える）。掲示板・ベンチ・バス停などでは
 // しばらく 立ちどまって、また 歩きだす（バス停・タクシー乗り場は 乗って いく）。
 // 歩くのは 歩道・広場・村の 道（新市街の 車道は 横断歩道で わたる。電柱などを よける ときだけ 1歩 はみ出す）。
-// 動かすのは ui/villageCrowd.ts（キリコも 村の 人も ふさがない）。話しかけると 1窓。強さには 効かない。
+// 動かすのは ui/village/villageCrowd.ts（キリコも 村の 人も ふさがない）。話しかけると 1窓。強さには 効かない。
 
 import type { TileDef } from "../../engine/defs";
 import { DIR_VEC, type Dir } from "../../engine/types";
@@ -823,7 +823,7 @@ export const PERSONAS: readonly Persona[] = [
 	},
 	{
 		// ダジャレニキ（おんJwiki pages/59 の 型「そうそう〇〇……って それは ××やないかーい！ｗｗ」。だじゃれは 新しく 書いた）。
-		// たまに しか 歩いていない（data/folk.ts の 名物の ひとり）
+		// たまに しか 歩いていない（data/people/folk.ts の 名物の ひとり）
 		id: "dajare",
 		label: "ダジャレニキ",
 		// RPGEN「父」（ほかの 人・敵・店番と かぶらない。src/sim/folkTests.ts の F10）
