@@ -21,6 +21,9 @@ export const ARCADE_GAMES = [
 	// ── ほかの 施設
 	"suika", // 海の家「age」の クーラーボックス：スイカ割り（目かくしで 名無しの 声を たよりに）
 	"glassSlide", // バー「次スレ」の カウンターの グラス：グラス滑らせ（客の 前で 止める）
+	// ── キリコの 家の 家具（ちょっとした できごとで もらう。data/village/myhome.ts の EVENT_GIFTS）
+	"platform", // 横スクロールの 筐体：スーパーキリコ
+	"bomber", // ボンバーの ゲーム機：荒らし爆破
 ] as const;
 
 export type ArcadeGame = (typeof ARCADE_GAMES)[number];
@@ -40,6 +43,8 @@ export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	roulette: "casino",
 	suika: "umi",
 	glassSlide: "bar",
+	platform: "myhome",
+	bomber: "myhome",
 };
 
 export const isArcadeGame = (k: string | undefined): k is ArcadeGame =>

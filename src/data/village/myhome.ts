@@ -41,7 +41,9 @@ export type FurnitureId =
 	| "safe"
 	| "dumbbell"
 	| "shelfDark"
-	| "tvTall";
+	| "tvTall"
+	| "platformer"
+	| "bomberbox";
 
 export type Furniture = {
 	name: string;
@@ -94,6 +96,16 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 		name: "黒い　本棚",
 		cells: [[riCell("bookshelfDark", 0, 0)], [riCell("bookshelfDark", 0, 1)]],
 		line: "黒い　本棚。\n過去ログの　製本が　ぎっしり。",
+	},
+	platformer: {
+		name: "横スクロールの　筐体",
+		cells: [[base(1, 519)], [base(1, 520)]],
+		line: "横スクロールの　筐体。\n画面に「スーパーキリコ」の　文字。",
+	},
+	bomberbox: {
+		name: "ボンバーの　ゲーム機",
+		cells: [[base(2, 519)], [base(2, 520)]],
+		line: "ボンバーの　ゲーム機。\n画面に「荒らし爆破」の　文字。",
 	},
 	tvTall: {
 		name: "台つきの　テレビ",
@@ -176,7 +188,18 @@ export const FURNITURE_PRICE: Record<FurnitureId, number> = {
 	chair: 10000,
 	safe: 80000,
 	dumbbell: 9000,
+	// ゲームの 家具は 売っていない（できごとで もらう：EVENT_GIFTS）
+	platformer: 99999,
+	bomberbox: 99999,
 };
+
+/** 遊べる 家具（調べると「遊ぶ」。data/arcade/types.ts の ゲーム）。 */
+export const FURNITURE_GAME: Partial<
+	Record<FurnitureId, "platform" | "bomber">
+> = { platformer: "platform", bomberbox: "bomber" };
+
+/** 店では 売らない 家具（できごとで もらう）。 */
+export const NOT_SOLD: readonly FurnitureId[] = ["platformer", "bomberbox"];
 
 export const furnitureSize = (id: FurnitureId): { w: number; h: number } => {
 	const c = FURNITURE[id].cells;
@@ -242,6 +265,28 @@ export const HOME_GIFTS: readonly Gift[] = [
 		note: "添え書き「貸金庫の　おまけです」",
 	},
 	{ id: "dumbbell", from: "ageジム", note: "添え書き「入会　お待ちしてます」" },
+];
+
+/**
+ * ちょっとした できごとで もらう 遊べる 家具（家に 入った ときに 宅配便で 届く。家を 買った あとだけ）。
+ * when は できごとの 名前（ui/village/myhome.ts が 調べる）：arcade5 ＝ ゲームセンターの 台で 5回 遊んだ・
+ * bushitsu3 ＝ 部室棟に 3回 来た。
+ */
+export const EVENT_GIFTS: readonly (Gift & {
+	when: "arcade5" | "bushitsu3";
+})[] = [
+	{
+		id: "platformer",
+		from: "ゲームセンター「連コ」",
+		note: "添え書き「台の　入れかえで　1台　あまった。\n常連さんに」",
+		when: "arcade5",
+	},
+	{
+		id: "bomberbox",
+		from: "おんJ高校　ゲーム制作部",
+		note: "添え書き「エターなった　ゲーム、\n完成しました。……たぶん」",
+		when: "bushitsu3",
+	},
 ];
 
 /** 町の 住人に 話すと 1度だけ もらえる 物（施設の id・人の id）。家を 買った あとだけ。 */
@@ -603,6 +648,8 @@ export const HOME_MSG = {
 	changed: "{name}に　した。",
 	/** 家具を 調べた あと。 */
 	thingMenu: ["動かす", "片づける", "そのまま"],
+	/** 遊べる 家具を 調べた あと。 */
+	gameMenu: ["遊ぶ", "動かす", "片づける", "そのまま"],
 	picked: "{name}を　持った。\nうすい　絵の　所に、A　で　置く。",
 	/** 持っている あいだの 知らせ（画面の 上）。 */
 	carryHint: "{name}：うすい　絵の　所に　A　で　置く",

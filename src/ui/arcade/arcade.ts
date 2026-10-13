@@ -24,6 +24,7 @@ import {
 	playRunner,
 	playShooter,
 } from "./arcadeAction";
+import { playBomber, playPlatform } from "./arcadeHome";
 import type { ArcadeResult } from "./arcadeKit";
 import {
 	playGacha,
@@ -145,6 +146,8 @@ const BOARDS: Record<ArcadeGame, (ctx: UiCtx) => Promise<ArcadeResult | null>> =
 		roulette: playRoulette,
 		suika: playSuika,
 		glassSlide: playGlassSlide,
+		platform: playPlatform,
+		bomber: playBomber,
 	};
 
 /** 筐体を 調べた あと（物の 文は ui/village/facilities.ts が 先に 読む）。 */

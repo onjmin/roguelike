@@ -5,6 +5,14 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TOWN_STAGES } from "../core/town";
 import {
+	BM,
+	bmStart,
+	bmStep,
+	PF,
+	pfStart,
+	pfStep,
+} from "../data/arcade/homeLogic";
+import {
 	AW,
 	BK,
 	bkStart,
@@ -223,7 +231,8 @@ test("置き場所: 筐体 7台と 音ゲーの 台は それぞれ 別の ゲ�
 });
 
 test("置き場所: どの ゲームも 決まった 施設の 物に あり（plays は arcade・文・調べる 所）、ほかの 施設には ない", () => {
-	for (const g of ARCADE_GAMES) {
+	// キリコの 家の ゲームは 家具（data/village/myhome.ts の FURNITURE_GAME）。部屋の 物では ない
+	for (const g of ARCADE_GAMES.filter((x) => ARCADE_HOME[x] !== "myhome")) {
 		const f = fac(ARCADE_HOME[g]);
 		const room = f.room;
 		if (!room) throw new Fail(`${f.id} has no room`);
@@ -277,7 +286,7 @@ test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/village/fa
 			unlocked: ["shallow"],
 			cleared: [],
 		};
-		for (const g of ARCADE_GAMES) {
+		for (const g of ARCADE_GAMES.filter((x) => ARCADE_HOME[x] !== "myhome")) {
 			const events = buildFacility(fac(ARCADE_HOME[g]), view, CTX).events ?? [];
 			const ev = events.find((e) => e.id === `${g}_0`);
 			ok(ev?.run, `event ${g}`);
@@ -797,6 +806,59 @@ test("記録: こわれた 中身は 初期値、台ごとに 別、?stage= の 
 		ok(loadArcade().best.mole === 300, "memo keeps it");
 		ok(store.get("kiriko-roguelike/arcade") === "{broken", "not written");
 	});
+});
+
+// ───────────────── キリコの 家の ゲーム（data/arcade/homeLogic.ts） ─────────────────
+
+test("家の ゲーム: 横スクロールは 穴に 落ちると おわり・ぷゆゆは 踏める・旗で クリア", () => {
+	// 穴だけの コース：歩きつづけると 落ちる
+	const a = pfStart(() => 0.1);
+	a.floor = a.floor.map((_, i) => i < 8);
+	a.enemies = [];
+	let ev: string[] = [];
+	for (let i = 0; i < 400 && !a.over; i++)
+		ev = ev.concat(pfStep(a, 0.05, { dir: 1, jump: false }));
+	ok(a.over && !a.clear && ev.includes("fall"), `fall ${ev.slice(-3)}`);
+	// 上から 落ちて 踏む
+	const b = pfStart(() => 0.9);
+	b.enemies = [{ x: b.x, y: 0, vx: 0.001, dead: 0 }];
+	b.y = 8;
+	b.vy = -50;
+	b.ground = false;
+	const e2 = pfStep(b, 0.02, { dir: 0, jump: false });
+	ok(e2.includes("stomp") && b.stomps === 1 && !b.over, `stomp ${e2}`);
+	// 平らな コースを 右へ 走りきると 旗
+	const c = pfStart(() => 0.9);
+	c.floor = c.floor.map(() => true);
+	c.enemies = [];
+	for (let i = 0; i < 4000 && !c.over; i++)
+		pfStep(c, 0.05, { dir: 1, jump: false });
+	ok(c.clear, `no goal at ${c.x} / ${PF.length * PF.cell}`);
+});
+
+test("家の ゲーム: ボンバーは 爆風で レスと 荒らしを 吹きとばし、巻きこまれると おわり", () => {
+	const s = bmStart(() => 0.5);
+	// 遠くで 動かない 荒らしを 1体（いなければ すぐ クリアに なる）
+	s.enemies = [{ x: 17, y: 9, t: 999, alive: true }];
+	s.grid[1][3] = "r";
+	s.grid[1][2] = ".";
+	// 置いて すぐ 下へ 逃げる（1,1 → 1,4。爆風は 2マス）
+	bmStep(s, 0.01, { dx: 0, dy: 0, bomb: true }, () => 0);
+	for (const y of [2, 3, 4]) s.grid[y][1] = ".";
+	for (let i = 0; i < 3; i++)
+		bmStep(s, 0.2, { dx: 0, dy: 1, bomb: false }, () => 0);
+	ok(s.py === 4, `ran to ${s.px},${s.py}`);
+	for (let i = 0; i < 40; i++)
+		bmStep(s, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
+	ok(s.grid[1][3] === "." && s.broken === 1 && !s.over, `broke ${s.broken}`);
+	// 爆弾の 上に 立ったまま → 巻きこまれる
+	const t = bmStart(() => 0.5);
+	t.enemies = [{ x: 17, y: 9, t: 999, alive: true }];
+	bmStep(t, 0.01, { dx: 0, dy: 0, bomb: true }, () => 0);
+	for (let i = 0; i < 60 && !t.over; i++)
+		bmStep(t, 0.05, { dx: 0, dy: 0, bomb: false }, () => 0);
+	ok(t.over && !t.clear, "stood in the blast");
+	ok(BM.cols * BM.cell <= 240, "the maze fits the board");
 });
 
 export const runArcadeTests = async (): Promise<TestResult[]> => {

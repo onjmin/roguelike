@@ -16,9 +16,11 @@ import { awayFriends } from "../../data/story/story";
 import type { Facility } from "../../data/village/facilities";
 import type { Cell } from "../../data/village/map";
 import {
+	EVENT_GIFTS,
 	FLOORINGS,
 	type Flooring,
 	FURNITURE,
+	FURNITURE_GAME,
 	FURNITURE_PRICE,
 	type FurnitureId,
 	furnitureAt,
@@ -36,6 +38,7 @@ import {
 	homeRows,
 	LOAN_MONTHS,
 	MOVE_IN_GIFT,
+	NOT_SOLD,
 	type Placed,
 	placeInFront,
 	RESIDENT_GIFTS,
@@ -49,6 +52,8 @@ import type { EventDef, Script, Story } from "../../engine/defs";
 import { loadProgress, loadRecords, loadTown } from "../../engine/save";
 import { DIR_VEC, type Dir, TILE } from "../../engine/types";
 import { spendYen, walletYen, yen } from "../../engine/wallet";
+import { arcadeScript, loadArcade } from "../arcade/arcade";
+import { loadBushitsu } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
 import { cafeBonds } from "./cafe";
@@ -571,19 +576,41 @@ export const homeThing =
 		if (!isFurn(kind)) return;
 		await s.narrate(FURNITURE[kind].line);
 		if (!m.owned) return;
+		// 遊べる 家具：「遊ぶ」が 先頭（遊ぶ・ハイスコアは ゲームセンターの 台と 同じ。ui/arcade/arcade.ts）
+		const game = FURNITURE_GAME[kind];
+		if (game) {
+			const g = await s.choose([...HOME_MSG.gameMenu], { cancel: 3 });
+			if (g === 0) {
+				await arcadeScript(ctx, s, game);
+				return;
+			}
+			if (g === 3) return;
+			await moveOrStore(s, m, kind, g - 1);
+			return;
+		}
 		const n = await s.choose([...HOME_MSG.thingMenu], { cancel: 2 });
 		if (n === 2) return;
-		m.placed = m.placed.filter((p) => p.id !== kind);
-		if (!m.stored.includes(kind)) m.stored = [...m.stored, kind];
-		saveHome(m);
-		if (n === 0) carry(s, kind);
-		await rebuildSoft(s);
-		await s.narrate(
-			fill(n === 0 ? HOME_MSG.picked : HOME_MSG.putAway, {
-				name: furnName(kind),
-			}),
-		);
+		await moveOrStore(s, m, kind, n);
 	};
+
+/** 家具を 動かす（n 0・持つ）か 片づける（n 1）。 */
+const moveOrStore = async (
+	s: Story,
+	m: HomeMemo,
+	kind: FurnitureId,
+	n: number,
+): Promise<void> => {
+	m.placed = m.placed.filter((p) => p.id !== kind);
+	if (!m.stored.includes(kind)) m.stored = [...m.stored, kind];
+	saveHome(m);
+	if (n === 0) carry(s, kind);
+	await rebuildSoft(s);
+	await s.narrate(
+		fill(n === 0 ? HOME_MSG.picked : HOME_MSG.putAway, {
+			name: furnName(kind),
+		}),
+	);
+};
 
 // ───────────────── もらう ─────────────────
 
@@ -597,7 +624,17 @@ const openParcels = async (s: Story): Promise<void> => {
 	const m = loadHome();
 	const repaid = syncReturns(m);
 	const due = Math.min(HOME_GIFTS.length, m.returns);
-	const gifts = HOME_GIFTS.slice(m.parcels, due);
+	// ちょっとした できごとの 家具（まだ 持って いない もの）
+	const happened = {
+		arcade5: () =>
+			Object.values(loadArcade().plays).reduce((a, n) => a + n, 0) >= 5,
+		bushitsu3: () => loadBushitsu().visits >= 3,
+	};
+	const events = EVENT_GIFTS.filter(
+		(g) => !owns(m, g.id) && !m.resident.includes(g.id) && happened[g.when](),
+	);
+	for (const g of events) m.resident = [...m.resident, g.id];
+	const gifts = [...HOME_GIFTS.slice(m.parcels, due), ...events];
 	m.parcels = Math.max(m.parcels, due);
 	// もう 持っている（買った）家具は 2つめを 置かない
 	const fresh = gifts.filter((g) => !owns(m, g.id));
@@ -640,7 +677,7 @@ export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
 	for (;;) {
 		const m = loadHome();
 		const ids = (Object.keys(FURNITURE) as FurnitureId[]).filter(
-			(id) => !owns(m, id),
+			(id) => !owns(m, id) && !NOT_SOLD.includes(id),
 		);
 		if (!ids.length) {
 			await s.say("nanj", HOME_MSG.shopEmpty, who);
