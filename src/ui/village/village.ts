@@ -79,8 +79,8 @@ import { Crowd } from "./villageCrowd";
 import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
 import { villageView } from "./villageReturn";
 
-/** 1マス歩く ms（rpg と同じ）。うろうろする人は この 1.6倍。 */
-const WALK_MS = 170;
+/** 1マス歩く ms（rpg は 170。2026-10-13 作者「気持ちよい タイミングに」で 少し 速く）。うろうろする人は この 1.6倍。 */
+const WALK_MS = 150;
 /** うろうろ 歩く 人を 押しのける：2回 続けて 押す 間（ms）と、押しつづける 長さ（ms）。 */
 const SWAP_DOUBLE_MS = 400;
 const SWAP_HOLD_MS = 450;
@@ -91,8 +91,8 @@ const DASH_SPEED = 2.5;
  * 押しっぱなしで ひとりでに 走りだすのは やめた（作者「キモい」）。走るのは ダッシュを 押しながら。
  */
 const RUN_PATH = 8;
-/** 1文字あたりの ms（rpg の既定と同じ）。 */
-const TEXT_MS = 28;
+/** 1文字あたりの ms（rpg の 既定は 28。2026-10-13 に 少し 速く）。 */
+const TEXT_MS = 24;
 /** 場面で 人を とばす とき、画面の はしから これだけ（マス）外までは 映る ことに する（歩く 絵は マスより 大きい）。 */
 const SEEN_MARGIN = 2;
 /** カメラが ついていく 人を 道の 先へ とばす 暗転の ms（片道）。 */

@@ -5,7 +5,7 @@ import type { Ctx } from "./ctx";
 import { MessageWindow } from "./message";
 
 /** 「せつめい」の 1文字あたりの ms（村の 会話と 同じ）。 */
-const TEXT_MS = 28;
+const TEXT_MS = 24;
 /** 「せつめい」を 出す メッセージ窓（画面ごとに 1つ。はじめて 使うときに 置く）。 */
 const explainWins = new WeakMap<HTMLElement, MessageWindow>();
 

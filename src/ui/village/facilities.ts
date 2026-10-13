@@ -79,10 +79,10 @@ const enterPlain =
 			await s.narrate(f.door);
 		}
 		s.se(f.doorSe ?? "doorWood");
-		await s.fadeOut(250);
+		await s.fadeOut(200);
 		const e = facilityEntry(f);
 		await s.warp(facilityMapId(f), e.x, e.y, e.dir);
-		await s.fadeIn(250);
+		await s.fadeIn(200);
 	};
 
 /** 出口の マット：扉の 音 → 暗転 → 村（扉の 前）→ 明転。 */
@@ -90,10 +90,10 @@ const leaveFacility =
 	(f: Facility): Script =>
 	async (s) => {
 		s.se(f.doorSe ?? "doorWood");
-		await s.fadeOut(250);
+		await s.fadeOut(200);
 		const o = facilityOutside(f);
 		await s.warp("village", o.x, o.y, o.dir);
-		await s.fadeIn(250);
+		await s.fadeIn(200);
 	};
 
 /** 釣り（竿を たらして、何かが かかる。すぐ 海に かえす）。見た目の 乱数なので Math.random。 */

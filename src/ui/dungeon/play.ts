@@ -3146,7 +3146,7 @@ export class Play {
 		// 鳴らしなおすと、20〜30階の 板で 同じ 出だしを 何十回も 聞くことに なった）
 		if (!first && this.ctx.audio.currentBgm !== floorBgm(run, this.bossShown))
 			await this.ctx.audio.fadeBgm(300);
-		await wait(first ? 900 : 1100);
+		await wait(first ? 900 : 850);
 		if (this.stopped) {
 			card.remove();
 			return;
