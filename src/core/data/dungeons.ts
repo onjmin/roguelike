@@ -158,13 +158,16 @@ const ALL_UNIDENTIFIED: readonly ItemCat[] = [
  * （10階だった ころに 決めた 割合の まま）。指輪は無し・杖は4種（ここだけ未識別）。
  */
 export const SHALLOW_ITEMS: readonly ItemWeight[] = [
-	// 武器 6（ちょっと：こん棒・銅の剣・鉄の斧 だけ。強い武器は出ない）
-	{ kind: "club", weight: 2 }, // 攻撃1。弱い武器・投げる物として。ちょっと では銅の剣と同じくらい出た
-	{ kind: "copper", weight: 4 }, // 攻撃3。ありふれた剣
-	{ kind: "bat", weight: 1 }, // 攻撃4。鉄の斧の位置（ちょっと の武器の 14%）。当たりの1本
-	// 盾 7（ちょっと：青銅・うろこ・鋼鉄）
-	{ kind: "leather", weight: 1 }, // 防御2。おなかが へりにくい。ちょっと には無いが、もっと深い迷宮で要る知恵を ここで見せる
-	{ kind: "bronze", weight: 3 }, // 防御3。ありふれた盾（ちょっと の盾の 67%）
+	// 武器 7。2026-10-13 作者：「名無しの剣ばかり 出る」。易しく するのに 種類を しぼるのでは なく、
+	// 強さの 上限だけ 抑えて 4種を ばらけさせる（たおれた あとの ぷゆゆソードも あるので 易しさは 軽めで いい）
+	{ kind: "club", weight: 2 }, // 攻撃1。弱い武器・投げる物として
+	{ kind: "copper", weight: 2 }, // 攻撃3。ありふれた剣
+	{ kind: "bat", weight: 2 }, // 攻撃4
+	{ kind: "wyrmbane", weight: 1 }, // 攻撃5。当たりの1本
+	// 盾 7（武器と 同じく 種類を ばらけさせる）
+	{ kind: "leather", weight: 1 }, // 防御2。おなかが へりにくい。もっと深い迷宮で要る知恵を ここで見せる
+	{ kind: "bronze", weight: 2 }, // 防御3。ありふれた盾
+	{ kind: "mirror", weight: 1 }, // 防御5。錆びない
 	{ kind: "scale", weight: 2 }, // 防御4。にょっす牛（レベル4〜）・毒矢の罠（レベル4〜）の ちから下げを防ぐ、を教える
 	{ kind: "steelsh", weight: 1 }, // 防御6。鋼鉄の盾の位置。いちばん強い盾で 1枚だけ
 	// 矢 5（ちょっと は 矢が多め：7.8%）
@@ -201,7 +204,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "s_hold", weight: 1 }, // 金縛り（ちょっと には無い）。となりの敵を止める、を1回だけ
 	// 入れないもの：指輪ぜんぶ（ちょっと に無い）、解呪スレ（のろいが無い）、防錆スレ、充填スレ、
 	//   飯テロスレ、釣りスレ（マイナス）、結界スレ、成長・疾風の実、暗闇草・見透し草、
-	//   竜断ち以上の武器・鏡銀以上の盾（もっと強い品は 本編から）、眠り・封印・鈍足・諸刃・分裂・加速の杖
+	//   コテハンの剣より 強い 武器・鉄板より 強い 盾（もっと強い品は 本編から）、眠り・封印・鈍足・諸刃・分裂・加速の杖
 ];
 
 /**
@@ -311,6 +314,12 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 	...SHALLOW_ITEMS.filter(
 		(e) => ITEMS[e.kind]?.cat !== "herb" && ITEMS[e.kind]?.cat !== "food",
 	),
+	// 指輪と 杖を すこし（入門の つぎ。品の 顔ぶれを 広げて、拾う たびに 何が 出るかを 楽しむ）
+	{ kind: "r_might", weight: 1 },
+	{ kind: "r_awake", weight: 1 },
+	{ kind: "r_clamor", weight: 1 },
+	{ kind: "w_sleep", weight: 1 },
+	{ kind: "w_slow", weight: 1 },
 	// 食べもの（パン板より 少し 多め。6階。2026-10-10 に 14 → 7：パンが たまる だけだった）
 	// 2回め：14 → 7 → 4（2026-10-10 の 2回め：床の パンだけで 1階 40% ほど 出て、始めの 200% と お弁当・パン兵の ぶんが まるまる 余っていた。長い 板は 1階 25% ほど、短い 板は 10% ほどに）
 	{ kind: "f_bread", weight: 2 },
@@ -356,6 +365,10 @@ const OPUNU_ITEMS: readonly ItemWeight[] = [
  */
 const ISLE1_ITEMS: readonly ItemWeight[] = [
 	...SHALLOW_ITEMS,
+	{ kind: "steel", weight: 1 },
+	{ kind: "r_might", weight: 1 },
+	{ kind: "r_trap", weight: 1 },
+	{ kind: "r_clamor", weight: 1 },
 	{ kind: "h_blink", weight: 2 },
 	{ kind: "h_daze", weight: 2 },
 	{ kind: "w_slow", weight: 1 },
