@@ -42,6 +42,8 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	});
 	// 束音ロゼの すり抜け（切りかえ。ロゼの ときだけ 出る。ON で 光る）
 	const phase = el("button", { class: "btn btn-phase", html: "すり<br>抜け" });
+	// 解音ゼロの オート（切りかえ。ゼロの ときだけ 出る。ON で 光る。キーは すり抜けと 同じ）
+	const auto = el("button", { class: "btn btn-auto", text: "オート" });
 	const small = (label: string, cls: string) =>
 		el("button", { class: `mini ${cls}`, html: label });
 	const foot = small("足元", "mini-foot");
@@ -53,7 +55,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const hud = el("div", { class: "hud" }, [
 		status,
 		pad,
-		el("div", { class: "ab" }, [b, shoot, phase, a]),
+		el("div", { class: "ab" }, [b, shoot, phase, auto, a]),
 		el("div", { class: "minis" }, [turn, foot, map]),
 		el("div", { class: "top-btns" }, [mute]),
 	]);
@@ -65,6 +67,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	kbd(b, "X");
 	kbd(shoot, "Q");
 	kbd(phase, "O");
+	kbd(auto, "O");
 	kbd(foot, "G");
 	kbd(map, "M");
 	kbd(turn, "F");
@@ -75,6 +78,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	input.bindButton(b, "b");
 	input.bindButton(shoot, "shoot");
 	input.bindButton(phase, "phase");
+	input.bindButton(auto, "phase");
 	input.bindButton(foot, "foot");
 	input.bindButton(map, "map");
 	input.bindHold(turn, "turn");

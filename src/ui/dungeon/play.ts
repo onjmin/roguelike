@@ -60,6 +60,7 @@ import {
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
+import { type BotOpts, botCommand, DEFAULT_BOT } from "../../sim/bot";
 import { FLOWER_ICON, itemIcon } from "../art/icons";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
@@ -430,6 +431,12 @@ export class Play {
 	private ankaSeen: Anka | null = null;
 	/** リプレイを見ているとき（入力の代わりに 記録のコマンドを入れる）。 */
 	private rp: ReplayDriver | null = null;
+	/** 解音ゼロの オート（ボットが 手を 決める。既定は OFF。冒険ごとに OFF から）。 */
+	private auto = false;
+	/** オートの 次の 手を 出して よい 時刻。 */
+	private autoAt = 0;
+	/** オートで 時間の 進まない 手が つづいた 数（つまったら 止める）。 */
+	private autoIdle = 0;
 
 	constructor(
 		run: Run,
@@ -530,7 +537,7 @@ export class Play {
 		this.hud.root.classList.remove("replay", "on-stairs");
 		const foot = this.hud.root.querySelector(".mini-foot");
 		if (foot) foot.textContent = "足元";
-		this.ctx.ui.classList.remove("replaying");
+		this.ctx.ui.classList.remove("replaying", "auto-mode");
 		cancelAnimationFrame(this.raf);
 		this.ctx.input.onFieldTap = null;
 		document.removeEventListener("visibilitychange", this.onHide);
@@ -874,6 +881,12 @@ export class Play {
 			this.hud.root.classList.toggle("has-phase", canPhase);
 		if (this.hud.root.classList.contains("phase-on") !== run.phasing)
 			this.hud.root.classList.toggle("phase-on", run.phasing);
+		// 解音ゼロの オート（ON で 光る）
+		const canAuto = run.hero === "zero" && !this.rp;
+		if (this.hud.root.classList.contains("has-auto") !== canAuto)
+			this.hud.root.classList.toggle("has-auto", canAuto);
+		if (this.hud.root.classList.contains("auto-on") !== this.auto)
+			this.hud.root.classList.toggle("auto-on", this.auto);
 		const count = this.hud.root.querySelector(".btn-shoot small");
 		const n = arrows ? String(arrows.count) : "";
 		if (count && count.textContent !== n) count.textContent = n;
@@ -1108,6 +1121,10 @@ export class Play {
 			this.pendingTap = null;
 			return;
 		}
+		if (this.auto) {
+			this.autoTick(t);
+			return;
+		}
 		if (!input.restHeld()) this.restHalt = false;
 		// 自動で歩いている（タップ・地図のタップ）あいだに 何かに さわったら 止める。
 		// さわった入力は 捨てる（止めるつもりの 十字キーで 1歩・A で 空振り、に ならないように）
@@ -1209,6 +1226,132 @@ export class Play {
 			return;
 		}
 		if (this.travel) void this.travelStep();
+	}
+
+	/** オートを 切りかえる（解音ゼロだけ。時間は 進まない）。 */
+	private setAuto(on: boolean): void {
+		if (this.rp || this.run.hero !== "zero" || this.auto === on) return;
+		this.auto = on;
+		this.autoIdle = 0;
+		this.travel = null;
+		this.swallowInput();
+		this.ctx.ui.classList.toggle("auto-mode", on);
+		this.addLog(on ? "オート：ON" : "オート：OFF");
+		// 手番の 途中（つまって 止めた ときなど）は 音だけ
+		if (this.busy || this.stopped) {
+			this.ctx.audio.se(on ? "batonUp" : "batonDown");
+			return;
+		}
+		this.busy = true;
+		void this.autoScene(on).finally(() => {
+			this.busy = false;
+			// 演出の あいだに 押した 入力は 捨てる（止めた とたんに 1歩 出ないように）
+			this.swallowInput();
+		});
+	}
+
+	/**
+	 * オートの 切りかえの 演出（バトンタッチの 小さい 版）。ON：ノイズで ぶれて 水色に 光り、帯「AUTO PILOT」。
+	 * OFF：赤く ぶれて 帯「MANUAL」。表示だけ（冒険の 状態には 触らない）。
+	 */
+	private async autoScene(on: boolean): Promise<void> {
+		const pd = this.disp.get(PLAYER_ID);
+		const sprite = ZERO_BODY_WALKS[this.run.s.body ?? 0];
+		const spec = ZERO_BODIES[this.run.s.body ?? 0];
+		const k = settings.speed === "fast" ? 0.6 : 1;
+		const look = sprite ? { sprite, alpha: 1, sink: 0, jitter: 0 } : null;
+		this.batonLook = look;
+		try {
+			this.ctx.audio.se(on ? "batonUp" : "batonDown");
+			if (pd) {
+				const at = { x: pd.tx, y: pd.ty };
+				this.pop(
+					at,
+					on ? "自律モード　起動" : "自律モード　停止",
+					on ? "auto-pop" : "baton-down",
+				);
+			}
+			void this.flash(
+				on ? "rgba(110, 216, 255, 0.45)" : "rgba(200, 30, 40, 0.35)",
+				140 * k,
+			);
+			// ノイズで 左右に ぶれる（ON は 終わりに 光る）
+			const t0 = performance.now();
+			const glitch = 360 * k;
+			while (look) {
+				const e = performance.now() - t0;
+				if (e >= glitch || this.stopped) break;
+				look.jitter = (Math.floor(e / 45) % 2 ? 1 : -1) * 0.08;
+				look.alpha = Math.floor(e / 90) % 3 === 2 ? 0.55 : 1;
+				await nextFrameP();
+			}
+			if (look) {
+				look.jitter = 0;
+				look.alpha = 1;
+			}
+			if (on && pd) pd.flashUntil = performance.now() + 400 * k;
+			if (this.stopped) return;
+			const band = el(
+				"div",
+				{ class: `baton-cut auto-cut${on ? "" : " off"}` },
+				[
+					el("div", {
+						class: "baton-cut-head",
+						text: on ? "AUTO PILOT" : "MANUAL",
+					}),
+					el("div", { class: "baton-cut-name" }, [
+						el("b", { text: on ? "オート　ON" : "オート　OFF" }),
+						el("small", { text: spec?.model ?? "" }),
+					]),
+				],
+			);
+			band.style.animationDuration = `${1100 * k}ms`;
+			this.ctx.ui.appendChild(band);
+			await wait(1100 * k);
+			band.remove();
+		} finally {
+			this.batonLook = null;
+		}
+	}
+
+	/**
+	 * オートの 毎コマ：ボット（sim/bot.ts）が 決めた 手を 1つずつ 入れる。オートの ボタンで 止まる。
+	 * ほかの 入力（十字キー・A・B・画面の タップ）でも 止めて、その 入力は 捨てる（地図だけは 開ける）。
+	 */
+	private autoTick(t: number): void {
+		const input = this.ctx.input;
+		const key = input.takeField();
+		if (key === "map") this.toggleMap();
+		else if (key) {
+			this.setAuto(false);
+			return;
+		}
+		if (
+			input.takeDirPress() !== null ||
+			input.heldDir() !== null ||
+			input.restHeld()
+		) {
+			this.setAuto(false);
+			return;
+		}
+		const run = this.run;
+		if (run.s.end || t < this.autoAt) return;
+		const turn0 = run.s.turn;
+		const floor0 = run.s.floor;
+		const cmd = botCommand(run, AUTO_BOT);
+		void this.exec(cmd).then((ev) => {
+			if (run.s.turn !== turn0 || run.s.floor !== floor0) this.autoIdle = 0;
+			else if (++this.autoIdle >= AUTO_IDLE_LIMIT) {
+				this.setAuto(false);
+				this.addLog("手が　つまったので　オートを　止めた", "warn");
+				return;
+			}
+			// 歩いた（向いた）だけの 手は 間を あけない（手で 歩きつづけるのと 同じ 速さ）
+			const quiet =
+				(cmd.c === "move" || cmd.c === "turn") &&
+				ev.every((e) => e.t === "move" || e.t === "turn");
+			this.autoAt = performance.now() + (quiet ? 0 : AUTO_GAP);
+		});
 	}
 
 	/**
@@ -1436,8 +1579,9 @@ export class Play {
 				await this.exec({ c: "play" });
 				return;
 			case "phase":
-				// 束音ロゼの すり抜けの ON／OFF（時間は 進まない）
+				// 束音ロゼの すり抜けの ON／OFF（時間は 進まない）。解音ゼロは オートの ON／OFF
 				if (run.wallWalker) await this.exec({ c: "phase" });
+				else if (run.hero === "zero") this.setAuto(true);
 				return;
 			case "shoot":
 				// 装備した矢を 向いている方へ 1本
@@ -1624,6 +1768,11 @@ export class Play {
 	}
 
 	private onTap(cssX: number, cssY: number): void {
+		// オートの あいだに 画面に さわったら 止める（自動で 歩いている ときと 同じ）
+		if (this.auto) {
+			this.setAuto(false);
+			return;
+		}
 		if (this.busy) {
 			// 自動で歩いている 途中の タップは、止まってから そこへ 行きなおす
 			// （そのあいだに カメラが 動くので、地図の上の 点で 覚えておく）
@@ -1898,6 +2047,13 @@ export class Play {
 					? (run.findItem(cmd.item) ??
 						run.f.items.find((fi) => fi.item.uid === cmd.item)?.item)
 					: undefined;
+			if (pick && scroll && cmd.c === "use" && !this.rp && this.auto) {
+				// オート：使える 相手の うち はじめの 1つ（なければ やめる）
+				this.busy = false;
+				const it = run.p.items.find((i) => canTarget(scroll, i));
+				if (it) return this.exec({ c: "use", item: cmd.item, target: it.uid });
+				return ev;
+			}
 			if (pick && scroll && cmd.c === "use" && !this.rp) {
 				this.busy = false;
 				const uid = await pickItem(this.ctx, run, "どれに　つかう？", (it) =>
@@ -1911,6 +2067,8 @@ export class Play {
 			const confirm = ev.some(
 				(e) => e.t === "fx" && e.kind === "confirm:escape",
 			);
+			// オートは 地上へ もどらない（冒険を 終わらせるのは 自分で）
+			if (confirm && cmd.c === "use" && !this.rp && this.auto) return ev;
 			if (confirm && cmd.c === "use" && !this.rp) {
 				this.busy = false;
 				const v = await listWindow(
@@ -1937,6 +2095,7 @@ export class Play {
 			const moved = before.x !== run.p.x || before.y !== run.p.y;
 			if (
 				!this.rp &&
+				!this.auto &&
 				!fast &&
 				moved &&
 				this.onUsableStairs() &&
@@ -3558,6 +3717,13 @@ type ReplayDriver = {
 
 /** コマンドとコマンドの間（ms。1倍のとき）。 */
 const REPLAY_GAP = 160;
+
+/** オートの 手と 手の 間（ms。歩く だけの 手は あけない）。 */
+const AUTO_GAP = 160;
+/** オートで 時間の 進まない 手が これだけ つづいたら 止める。 */
+const AUTO_IDLE_LIMIT = 30;
+/** オートの ボット：帰還スレで 地上へ もどらない（冒険を 終わらせるのは 自分で）。 */
+const AUTO_BOT: BotOpts = { ...DEFAULT_BOT, escape: false };
 
 /** 食べる・飲む・読む演出。 */
 type UseFx = {
