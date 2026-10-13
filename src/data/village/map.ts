@@ -955,8 +955,19 @@ export const VILLAGE_EXITS: readonly VillageExit[] = [
 	{ side: "s", cell: [20, 51], inward: "up", step: "u" },
 ];
 
-/** その 植民地から 帰ってくる 出口（全体マップで 村から 見た 植民地の 方角）。 */
+/**
+ * 村の 中から 降りる 隠しの 板の 帰り口（2026-10-13 作者：「帰還したときに 井戸から 出てこない」）。
+ * 過去ログの底は 広場の 古井戸の すぐ 下に 出る（仲間も 井戸の まわりで 迎える）。
+ * 跡地・1901年の スレは 結で 口から 人が 歩いてくる 場面が あるので、口の まま。
+ */
+const INNER_EXITS: Partial<Record<DungeonId, VillageExit>> = {
+	hidden: { side: "s", cell: [24, 22], inward: "down", step: "d" },
+};
+
+/** その 植民地から 帰ってくる 出口（全体マップで 村から 見た 植民地の 方角。隠しの 板は 村の 中の 入口）。 */
 export const exitFor = (d: DungeonId): VillageExit => {
+	const inner = INNER_EXITS[d];
+	if (inner) return inner;
 	const r = COLONY_SPOTS[d].route;
 	const [x, y] = r[r.length - 1];
 	const dx = x - VILLAGE_PT[0];

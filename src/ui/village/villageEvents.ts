@@ -20,6 +20,7 @@
 // - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/village/villageOpening.ts）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
+import { HERO_NAME } from "../../core/data/heroes";
 import { MONSTERS } from "../../core/data/monsters";
 import { CARRY_MAX, STORAGE_CAP } from "../../core/town";
 import type { DungeonId, Item } from "../../core/types";
@@ -59,6 +60,7 @@ import { facilityOfDoor, outdoorThingOf } from "../../data/village/facilities";
 import { npc, sign } from "../../data/village/helpers";
 import {
 	layoutStage,
+	VILLAGE_SPOTS,
 	VISITOR_WALK,
 	type VillagePlace,
 	type VillageView,
@@ -74,9 +76,12 @@ import {
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
 import {
 	acceptQuest,
+	chooseHero,
+	chosenHero,
 	type QuestHero,
 	questStage,
 	takeWorryNews,
+	unlockedHeroes,
 	unlockHero,
 } from "../../engine/heroes";
 import {
@@ -373,9 +378,34 @@ const wellScript =
 		if ((await s.choose(["降りる", "やめる"], { cancel: 1, start: 1 })) !== 0)
 			return;
 		if (!(await suspendedFirst(s, async () => {}))) return;
+		// 探索者が 2人 いじょう いれば、だれが 降りるかを 選ぶ（全体マップの「探索者」と 同じ。選んだ 人は 覚える）
+		const heroes = unlockedHeroes();
+		if (heroes.length > 1) {
+			await s.narrate(VILLAGE_MSG.wellWho);
+			const now = chosenHero();
+			const k = await s.choose([...heroes.map((h) => HERO_NAME[h]), "やめる"], {
+				cancel: heroes.length,
+				start: Math.max(0, heroes.indexOf(now)),
+			});
+			if (k >= heroes.length) return;
+			chooseHero(heroes[k]);
+		}
+		const hero = HERO_NAME[chosenHero()];
 		await departTo(ctx, s, "hidden", goalsNow().hidden, async () => {
+			// 井戸の 縁に 立って、のぞきこみ、縄ばしごを 降りていく（暗転しながら 下へ 沈む 音）
+			const [wx, wy] = VILLAGE_SPOTS.well;
+			await s.goto("player", wx, wy + 1, { speed: 1.4 });
+			s.face("player", "up");
+			await s.look([wx, wy]);
+			s.se("door");
+			await s.wait(350);
 			s.se("stairs");
-			await s.narrate(VILLAGE_MSG.wellDown);
+			await s.wait(250);
+			s.se("stairs");
+			void s.fadeBgm(900);
+			await s.fadeOut(900);
+			s.se("fall");
+			await s.narrate(fill(VILLAGE_MSG.wellDown, { hero }));
 		});
 	};
 
@@ -866,6 +896,15 @@ const arrivalScript =
 		const dove = !!back || arrival?.kind === "dead";
 		const wrapDue = dove && seen.includes("hinan") && !hasFlag("wrap");
 		const kusaDue = dove && seen.includes("y1901") && !hasFlag("kusa");
+		// 過去ログの底からは 井戸を のぼって 出てくる（立つのは 井戸の すぐ 下。data/village/map.ts の exitFor）
+		if (back?.dungeon === "hidden") {
+			s.se("stairs");
+			await s.wait(200);
+			s.se("stairs");
+			await s.narrate(
+				fill(VILLAGE_MSG.wellUp, { hero: HERO_NAME[chosenHero()] }),
+			);
+		}
 		if (back)
 			await returnScene(s, back, {
 				getter: async () => {
