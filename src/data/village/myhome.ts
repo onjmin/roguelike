@@ -3,7 +3,7 @@
 // 契約で 頭金（HOME_DOWN）、帰るたびに 月の 返済（HOME_MONTHLY）。払えない 月は 滞納に なる（追い出されは しない）。
 // 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 3通りで 手に 入る：
 // 帰るたびに 1つ 宅配便で 届く（仲間・町の 人から。HOME_GIFTS）、町の 住人に 話すと 1度だけ（RESIDENT_GIFTS）、
-// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め）。持ち帰った 板の 底の 品も 台に のせて 飾れる（GOAL_FURNITURE）。電話で 親しく なった 人（喫茶か ♥1 から。ui/village/bonds.ts）を 招ける。
+// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め。ヲタショップの グッズ・ガチャの 景品は data/village/otaku.ts）。持ち帰った 板の 底の 品も 台に のせて 飾れる（GOAL_FURNITURE）。電話で 親しく なった 人（喫茶か ♥1 から。ui/village/bonds.ts）を 招ける。
 // ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/village/myhome.ts。
 
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
@@ -14,6 +14,7 @@ import { ARCADE_TEXT } from "../arcade/text";
 import type { ArcadeGame } from "../arcade/types";
 import { textWidth } from "../bushitsu/bushitsu";
 import type { Cell } from "./map";
+import { oaCell } from "./otaku";
 import { type RoomArtName, ri, riCell } from "./rpgenArt";
 import { base } from "./tiles";
 
@@ -83,7 +84,18 @@ export type BaseFurnitureId =
 	| "crateBox"
 	| "billiards"
 	| "dartboard"
-	| "fishingRod";
+	| "fishingRod"
+	// ヲタショップ「神降臨」の グッズ（data/village/otaku.ts。レジで 買う・ガチャの 景品）
+	| "figZero"
+	| "figRino"
+	| "figAru"
+	| "otakuTapestry"
+	| "doujinShelf"
+	| "figureCase"
+	| "acstZero"
+	| "acstRen"
+	| "acstRino"
+	| "acstAru";
 
 /** 持ち帰った 板の 底の 品（台に のせて 飾る。GOAL_FURNITURE）。 */
 export type GoalFurnitureId = `goal_${DungeonId}`;
@@ -369,6 +381,57 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		cells: [[ri("dumbbells")]],
 		line: "ダンベル。\n……持ちあげると、重い。",
 	},
+	// ヲタショップ「神降臨」の グッズ（public/sprites/otaku.png。scripts/make-otaku.mjs）
+	figZero: {
+		name: "ゼロの　フィギュア",
+		cells: [[oaCell("figZero")]],
+		line: "ゼロの　フィギュア。\n耳の　パーツが　とれやすい。",
+	},
+	figRino: {
+		name: "リノの　フィギュア",
+		cells: [[oaCell("figRino")]],
+		line: "リノの　フィギュア。\n台座に「治安維持」の　刻印。",
+	},
+	figAru: {
+		name: "アルの　フィギュア",
+		cells: [[oaCell("figAru")]],
+		line: "アルの　フィギュア。\n……どこから　見ても　目が　合う。",
+	},
+	otakuTapestry: {
+		name: "タペストリー",
+		cells: [[oaCell("tapestry", 0, 0)], [oaCell("tapestry", 0, 1)]],
+		line: "ゼロの　タペストリー。\n夏の　限定版。……すずしげだ。",
+	},
+	doujinShelf: {
+		name: "同人誌の　棚",
+		cells: [[oaCell("doujinShelf", 0, 0)], [oaCell("doujinShelf", 0, 1)]],
+		line: "同人誌の　棚。\n『保守』が　全巻　そろっている。",
+	},
+	figureCase: {
+		name: "フィギュアケース",
+		cells: [[oaCell("figureCase", 0, 0)], [oaCell("figureCase", 0, 1)]],
+		line: "フィギュアケース。\nLEDで　ライトアップされている。",
+	},
+	acstZero: {
+		name: "ゼロの　アクスタ",
+		cells: [[oaCell("acstZero")]],
+		line: "ゼロの　アクリルスタンド。\nガチャで　出た。",
+	},
+	acstRen: {
+		name: "レンの　アクスタ",
+		cells: [[oaCell("acstRen")]],
+		line: "レンの　アクリルスタンド。\nいちばん　出にくかった　気が　する。",
+	},
+	acstRino: {
+		name: "リノの　アクスタ",
+		cells: [[oaCell("acstRino")]],
+		line: "リノの　アクリルスタンド。\nヘルメットが　ぴかぴか。",
+	},
+	acstAru: {
+		name: "アルの　アクスタ",
+		cells: [[oaCell("acstAru")]],
+		line: "アルの　アクリルスタンド。\n……裏から　見ても　アル。",
+	},
 };
 
 /** 底の 品を のせる 台。 */
@@ -504,6 +567,18 @@ export const FURNITURE_PRICE: Record<BaseFurnitureId, number> = {
 	billiards: 60000,
 	dartboard: 11000,
 	fishingRod: 10000,
+	// ヲタショップ「神降臨」の レジで 売る（data/village/otaku.ts の OTAKU_GOODS。リサイクルショップでは 売らない）
+	figZero: 9800,
+	figRino: 9800,
+	figAru: 9800,
+	otakuTapestry: 6800,
+	doujinShelf: 14800,
+	figureCase: 29800,
+	// ガチャの 景品（1回 500円。OTAKU_GACHA。店では 売らない）
+	acstZero: 99999,
+	acstRen: 99999,
+	acstRino: 99999,
+	acstAru: 99999,
 };
 
 /** 遊べる 家具（調べると「遊ぶ」。data/arcade/types.ts の ゲーム）。 */
@@ -758,6 +833,7 @@ export const FURNITURE_ACT: Partial<Record<BaseFurnitureId, GuestAct>> = {
 	guitar: "play",
 	records: "play",
 	dumbbell: "play",
+	doujinShelf: "read",
 };
 
 /** 性格（する ことの 重み・待つ 長さの 倍率・歩く 遅さの 倍率・する ことごとの 記号）。 */

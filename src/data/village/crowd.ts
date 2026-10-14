@@ -136,6 +136,7 @@ const FACILITY_KIND: Record<string, CrowdKind> = {
 	cinema: "fun",
 	theater: "fun",
 	casino: "fun",
+	otaku: "shop",
 	station: "transit",
 	harbor: "work",
 	soba: "food",
@@ -682,7 +683,7 @@ export const PERSONAS: readonly Persona[] = [
 		haunts: {
 			fun: ["arcade", "go", "dojo", "cinema", "gym", "door_music"],
 			food: ["famires", "ramen", "door_cafe"],
-			shop: ["konbini", "door_books"],
+			shop: ["konbini", "door_books", "otaku"],
 		},
 		share: { late: 0, morning: 1.5, day: 0.6, evening: 1.5, night: 0.3 },
 		weekend: 3,

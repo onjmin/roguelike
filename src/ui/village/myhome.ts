@@ -61,6 +61,7 @@ import {
 	WALLPAPERS,
 	type Wallpaper,
 } from "../../data/village/myhome";
+import { OTAKU_GACHA, OTAKU_GOODS } from "../../data/village/otaku";
 import { tatamiSample } from "../../data/village/tatami";
 import { drawRefInCell, loadImage } from "../../engine/assets";
 import type { EventDef, RoamStep, Script, Story } from "../../engine/defs";
@@ -128,7 +129,7 @@ const isCast = (x: unknown): x is Cast =>
 
 let memo: HomeMemo | null = null;
 
-const previewing = (): boolean =>
+export const previewing = (): boolean =>
 	previewStage() !== null || devEvent() !== null;
 
 const isFurn = (x: unknown): x is FurnitureId =>
@@ -285,7 +286,7 @@ const rebuildSoft = async (s: Story): Promise<void> => {
 	await s.fadeIn(120);
 };
 
-const furnName = (id: FurnitureId) => FURNITURE[id].name;
+export const furnName = (id: FurnitureId) => FURNITURE[id].name;
 
 /** 置く：目の前の マスに。置けたら true。 */
 const placeHere = async (
@@ -733,7 +734,7 @@ const openParcels = async (s: Story): Promise<void> => {
 };
 
 /** その 家具を 持っているか（収納か 部屋）。 */
-const owns = (m: HomeMemo, id: FurnitureId): boolean =>
+export const owns = (m: HomeMemo, id: FurnitureId): boolean =>
 	m.stored.includes(id) || m.placed.some((p) => p.id === id);
 
 /** クレーンゲームの 金の ぷゆゆ → ぷゆゆの ぬいぐるみを 収納へ（家を 買って いて、まだ 持って いない とき）。 */
@@ -748,33 +749,62 @@ export const craneGift = async (s: Story): Promise<void> => {
 
 // ───────────────── 買う（リサイクルショップの レジ） ─────────────────
 
+/** 家具を 売る 店（店番の 名前・売る 物・文）。 */
+export type FurnShop = {
+	who: string;
+	/** 売る 家具（値段は FURNITURE_PRICE）。 */
+	ids: readonly BaseFurnitureId[];
+	msg: {
+		shop: string;
+		shopTitle: string;
+		shopNoHome: string;
+		shopEmpty: string;
+		shopShort: string;
+	};
+};
+
+/** リサイクルショップ：ほかの 店の 品（ヲタショップの グッズ・ガチャの 景品）と できごとの 家具の ほか ぜんぶ。 */
+const RECYCLE_SHOP: FurnShop = {
+	who: "店主",
+	ids: (Object.keys(FURNITURE_PRICE) as BaseFurnitureId[]).filter(
+		(id) =>
+			!NOT_SOLD.includes(id) &&
+			!OTAKU_GOODS.includes(id) &&
+			!OTAKU_GACHA.includes(id),
+	),
+	msg: HOME_MSG,
+};
+
 /**
- * リサイクルショップの レジ（ui/village/facilities.ts の play "furnshop"）：まだ 持って いない 家具を
- * 絵つきの 一覧から 選んで 買う。家を 買う 前は すすめるだけ。
+ * 家具の 店の レジ（リサイクルショップ：ui/village/facilities.ts の play "furnshop"・ヲタショップ：
+ * ui/village/otaku.ts）：まだ 持って いない 家具を 絵つきの 一覧から 選んで 買う。家を 買う 前は すすめるだけ。
  */
-export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
-	const who = { name: "店主" };
+export const furnitureShop = async (
+	ctx: Ctx,
+	s: Story,
+	shop: FurnShop = RECYCLE_SHOP,
+): Promise<void> => {
+	const who = { name: shop.who };
+	const msg = shop.msg;
 	if (!loadHome().owned) {
-		await s.say("nanj", HOME_MSG.shopNoHome, who);
+		await s.say("nanj", msg.shopNoHome, who);
 		return;
 	}
-	await s.say("nanj", HOME_MSG.shop, who);
+	await s.say("nanj", msg.shop, who);
 	let start = 0;
 	for (;;) {
 		const m = loadHome();
 		// 底の 品（goal_〜）は 売らない：持ち帰ると 届く
-		const ids = (Object.keys(FURNITURE_PRICE) as BaseFurnitureId[]).filter(
-			(id) => !owns(m, id) && !NOT_SOLD.includes(id),
-		);
+		const ids = shop.ids.filter((id) => !owns(m, id));
 		if (!ids.length) {
-			await s.say("nanj", HOME_MSG.shopEmpty, who);
+			await s.say("nanj", msg.shopEmpty, who);
 			return;
 		}
 		const have = walletYen();
 		await s.wait(0);
 		const v = await listWindow(
 			ctx,
-			`${HOME_MSG.shopTitle}<br><small>手もと　${yen(have)}</small>`,
+			`${msg.shopTitle}<br><small>手もと　${yen(have)}</small>`,
 			ids.map((id) => ({
 				label: furnName(id),
 				sub: yen(FURNITURE_PRICE[id]),
@@ -793,7 +823,7 @@ export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
 		);
 		if ((await s.choose([...HOME_MSG.shopMenu], { cancel: 1 })) !== 0) continue;
 		if (!spendYen(price, previewing())) {
-			await s.say("nanj", fill(HOME_MSG.shopShort, { price: yen(price) }), who);
+			await s.say("nanj", fill(msg.shopShort, { price: yen(price) }), who);
 			continue;
 		}
 		const m2 = loadHome();

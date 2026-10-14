@@ -28,6 +28,7 @@ import { FOLK_FACILITIES } from "./folk";
 import { CORPO_ROOM, DANCHI_ROOM, MANSION_ROOM, TOWER_ROOM } from "./housing";
 import type { Cell } from "./map";
 import { HOME_MSG, HOME_ROWS, MYHOME_FROM } from "./myhome";
+import { OTAKU_FACILITIES } from "./otaku";
 import { art, ri, riCell } from "./rpgenArt";
 import { SABA_FACILITIES } from "./saba";
 import { SEASON_FACILITIES } from "./season";
@@ -184,6 +185,7 @@ export type FacilityRoom = {
 		| "purikura"
 		| "giftshop"
 		| "trade"
+		| "otaku"
 		| NetaPlay
 	>;
 };
@@ -4567,6 +4569,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 	...FOLK_FACILITIES,
 	// ── 季節の 行事（data/village/season.ts。浜の すみの 芋煮の かまど）
 	...SEASON_FACILITIES,
+	// ── ヲタショップ「神降臨」（data/village/otaku.ts。盛り場の 劇場と カジノの あいだ。段7〜）
+	...OTAKU_FACILITIES,
 ];
 
 /**

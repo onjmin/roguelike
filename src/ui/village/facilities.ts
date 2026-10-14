@@ -62,6 +62,7 @@ import {
 	homeThing,
 	residentGift,
 } from "./myhome";
+import { otakuPlay } from "./otaku";
 import { payOrShort } from "./pay";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
@@ -283,6 +284,8 @@ export const buildFacility = (
 			else if (play === "arcade") await arcadePlay(ctx, s, kind);
 			// リサイクルショップの レジ：家具を 買う（ui/village/myhome.ts）
 			else if (play === "furnshop") await furnitureShop(ctx, s);
+			// ヲタショップの レジ・ガチャ：グッズを 買う（ui/village/otaku.ts）
+			else if (play === "otaku") await otakuPlay(ctx, s, kind);
 			// ゲームセンターの プリクラ：仲良く なった 人と 撮る（ui/purikura/purikura.ts）
 			else if (play === "purikura") await purikura(ctx, s);
 			// おんJマートの ギフトの 棚：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）

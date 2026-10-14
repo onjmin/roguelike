@@ -251,11 +251,18 @@ import {
 	homeRows,
 	layoutOk,
 	MOVE_IN_GIFT,
+	NOT_SOLD,
 	type Placed,
 	placeInFront,
 	RESIDENT_GIFTS,
 } from "../data/village/myhome";
 import { newsPages, townNews } from "../data/village/news";
+import {
+	GACHA_PRICE,
+	OTAKU_GACHA,
+	OTAKU_GOODS,
+	OTAKU_MSG,
+} from "../data/village/otaku";
 import {
 	BATH_NOREN_M,
 	BATH_SPOTS,
@@ -397,6 +404,7 @@ import {
 	loadHome,
 	saveHome,
 } from "../ui/village/myhome";
+import { spinGacha } from "../ui/village/otaku";
 import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
 import {
 	enterBath,
@@ -8281,6 +8289,97 @@ test("有料の 寄り道（2026-10-14）: 銭湯は 村に いる あいだ 1�
 			`again:\n${log.join("\n")}`,
 		);
 		ok(walletYen() === BATH_YEN, `wallet ${walletYen()}`);
+		forgetWalletMemo();
+	});
+});
+
+test("ヲタショップ「神降臨」: 段7から 建ち、レジと ガチャは play otaku、グッズは 家具で リサイクルショップでは 売らない、ガチャは 家と お金が いる", async () => {
+	const f = facilityById("otaku");
+	ok(f?.from === 7, "otaku is not from stage 7");
+	ok(
+		f?.room?.plays?.register === "otaku" && f.room.plays.gacha === "otaku",
+		"the register or the gacha does not open the shop",
+	);
+	fitsWindow(
+		Object.entries(OTAKU_MSG).flatMap(([k, v]) =>
+			(Array.isArray(v) ? v : [v]).map(
+				(t) =>
+					[
+						`OTAKU_MSG.${k}`,
+						t
+							.replace("{price}", yen(99999))
+							.replace("{name}", "アルの　アクスタ"),
+					] as [string, string],
+			),
+		),
+	);
+	for (const id of [...OTAKU_GOODS, ...OTAKU_GACHA]) {
+		ok(id in FURNITURE && id in FURNITURE_PRICE, `${id}: not a furniture`);
+		ok(!NOT_SOLD.includes(id), `${id}: in NOT_SOLD`);
+	}
+	ok(
+		OTAKU_GOODS.every((id) => !OTAKU_GACHA.includes(id)),
+		"a gacha prize is sold at the register",
+	);
+	await withStorageAsync(async () => {
+		forgetHomeMemo();
+		// 家が ない：回せない（お金も とらない）
+		setTownYen(GACHA_PRICE * 3);
+		const none = fakeStory({ pick: 0 });
+		ok((await spinGacha(none.s)) === null, "spun without a home");
+		ok(
+			none.log.includes(`narrate: ${OTAKU_MSG.gachaNoHome}`) &&
+				walletYen() === GACHA_PRICE * 3,
+			`no home:\n${none.log.join("\n")}`,
+		);
+		const m = loadHome();
+		m.owned = true;
+		saveHome(m, false);
+		// 1回目：ゼロの アクスタが 収納に
+		const a = fakeStory({ pick: 0 });
+		const first = await spinGacha(a.s, () => 0);
+		ok(
+			first?.id === "acstZero" &&
+				!first.dup &&
+				loadHome().stored.includes("acstZero") &&
+				walletYen() === GACHA_PRICE * 2,
+			`first:\n${a.log.join("\n")}`,
+		);
+		// 2回目：同じ 物は ダブり（収納は ふえない・お金は とる）
+		const b = fakeStory({ pick: 0 });
+		const dup = await spinGacha(b.s, () => 0);
+		ok(
+			dup?.dup === true &&
+				loadHome().stored.filter((id) => id === "acstZero").length === 1 &&
+				walletYen() === GACHA_PRICE,
+			`dup:\n${b.log.join("\n")}`,
+		);
+		// やめる：お金は そのまま
+		const quit = fakeStory({ pick: 1 });
+		ok((await spinGacha(quit.s, () => 0.9)) === null, "spun after quitting");
+		ok(walletYen() === GACHA_PRICE, `quit: wallet ${walletYen()}`);
+		// 足りない
+		setTownYen(GACHA_PRICE - 1);
+		const short = fakeStory({ pick: 0 });
+		ok((await spinGacha(short.s, () => 0.9)) === null, "spun without money");
+		ok(
+			short.log.includes(`narrate: ${OTAKU_MSG.gachaShort}`),
+			`short:\n${short.log.join("\n")}`,
+		);
+		// そろったら もう 回さない
+		const all = loadHome();
+		all.stored.push(...OTAKU_GACHA.filter((id) => !all.stored.includes(id)));
+		saveHome(all, false);
+		setTownYen(GACHA_PRICE * 9);
+		const before = walletYen();
+		const comp = fakeStory({ pick: 0 });
+		ok((await spinGacha(comp.s)) === null, "spun after completing");
+		ok(
+			comp.log.includes(`narrate: ${OTAKU_MSG.gachaComp}`) &&
+				walletYen() === before,
+			`comp:\n${comp.log.join("\n")}`,
+		);
+		forgetHomeMemo();
 		forgetWalletMemo();
 	});
 });
