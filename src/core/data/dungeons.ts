@@ -82,19 +82,17 @@ export type Dungeon = {
 	trapsFrom: number;
 	/** 1階に 武器を 1本は 置く（入門の 板。core/floor.ts）。 */
 	firstWeapon?: boolean;
-	/** このダンジョンを持ち帰ると開く（null ははじめから開いている）。 */
+	/** このダンジョンを持ち帰ると開く（null ははじめから開いている。unlockFlag だけ あれば その 旗で 開く）。 */
 	unlockAfter: DungeonId | null;
 	/** これらを ぜんぶ 持ち帰ると 開く（unlockAfter と 両方 あれば どちらでも）。裏シナリオの 灯台・跡地・避難J。 */
 	unlockAfterAll?: readonly DungeonId[];
-	/** 開くには この 旗（Progress.flags）も 要る（跡地：ROM専の 声を 録ったまま 持ち帰った）。 */
-	unlockFlag?: string;
-	/** 開くまで 全体マップにも 一覧にも 出さない（？？？ の 影も 出さない。裏シナリオの 小島 2・3・灯台・避難J）。 */
-	hidden?: true;
 	/**
-	 * 開いても 知らせない。全体マップでは 建物の かわりに 小舟が つくだけで、行って はじめて 板だと わかる
-	 * （裏シナリオの 入口の 小島1：「あの 小島、何だろう」で 見つける）。
+	 * 開くには この 旗（Progress.flags）も 要る（跡地：ROM専の 声を 録ったまま 持ち帰った）。
+	 * unlockAfter も unlockAfterAll も なければ 旗 だけで 開く（町の 寄り道で 見つける 板：data/town/finds.ts）。
 	 */
-	quiet?: true;
+	unlockFlag?: string;
+	/** 開くまで 全体マップにも 一覧にも 出さない（？？？ の 影も 出さない。裏シナリオの 小島・灯台・避難J）。 */
+	hidden?: true;
 	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く。 */
 	reliefAfter: number | null;
 	/** 自然回復の 刻み（balance.ts の REGEN_STEP の 代わり。小さいほど はやい）。 */
@@ -656,8 +654,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	isle1: {
 		id: "isle1",
 		objective: "fetch",
-		// 入口：パン板を 持ち帰ると 開くが 知らせない。地図の 南西の 小島に 小舟が つく（ui/village/worldMap.ts）
-		quiet: true,
+		// 入口：釣り場の 竿に ひっかかった ビンの 手紙で 見つける（data/town/finds.ts）。それまでは 地図に 出ない
+		hidden: true,
 		// 裏は 本筋より むずかしい：小舟で わたる（倉庫の 道具は 持ちこめない）・底が 高い・のろいも 祭りも ある
 		noCarry: true,
 		// 夏に 立てた 板：夏休みキッズ 多め。乗っ取り屋は 1階から
@@ -673,16 +671,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "memo1",
 		houses: { from: 3, chance: 1 / 5, early: null },
 		trapsFrom: 3,
-		// パン板の あと（きのこ板と 並んで 開く。裏の 分岐は 序盤）
-		unlockAfter: "shallow",
+		// 町に 屋台が 出たら（裏の 分岐は 序盤）
+		unlockAfter: null,
+		unlockFlag: "town_isle1",
 		reliefAfter: null,
 		// 島の 丘を 上る
 		up: true,
 	},
 	// ボカロ作り避難所：束音ロゼの 依頼（engine/heroes.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
 	// 逃げこんだ 避難所。底に ロゼの 忘れ物（原音設定）が 残って いる。依頼を 引き受けると 開く（知らせは
-	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う。quiet は 裏の 小島の
-	// 「南西の 小島・小舟」の 見せ方なので 付けない）。荒らしが 追いかけて きて いる：文字化けが 多い
+	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：文字化けが 多い
 	vocalo: {
 		id: "vocalo",
 		objective: "fetch",
@@ -824,7 +822,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		secret: true,
 	},
 	// ── おーぷぬ（だれでも 板を 立てられる open.open2ch.net）の おんJ関連板。おんJwiki（3代目）の
-	// 「おーぷぬの おんJ関連板一覧」（pages/519）と 板の トップから。どれも 持ち帰りの 寄り道
+	// 「おーぷぬの おんJ関連板一覧」（pages/519）と 板の トップから。どれも 持ち帰りの 寄り道で、
+	// 板を 持ち帰っても 開かない：町の 寄り道（碁会所・質屋・おんJマート・道場）で 見つける（data/town/finds.ts）
 	// なんでも実況（マーキュリー）：「おんJに 飽きた 方」の ほのぼの 板（デフォルトネーム 水星の名無し）。
 	// ほのぼの なので 自然回復が はやく、荒らしは 来ない
 	mercury: {
@@ -841,7 +840,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "hoshi",
 		houses: { from: 4, chance: 1 / 12, early: null },
 		trapsFrom: 3,
-		unlockAfter: "tropical",
+		unlockAfter: null,
+		unlockFlag: "town_mercury",
 		reliefAfter: null,
 		regenStep: 100,
 	},
@@ -861,7 +861,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "tojoken",
 		houses: null,
 		trapsFrom: 3,
-		unlockAfter: "konamono",
+		unlockAfter: null,
+		unlockFlag: "town_onmu",
 		reliefAfter: null,
 		sparse: 0.5,
 	},
@@ -881,7 +882,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "kimchi",
 		houses: { from: 3, chance: 1 / 4, early: [4, 6] },
 		trapsFrom: 3,
-		unlockAfter: "onmu",
+		unlockAfter: null,
+		unlockFlag: "town_onkimu",
 		reliefAfter: null,
 	},
 	// †ダークネスインフェルノ†板：「†邪気眼に 魅入られし 孤高なる 闇の 眷属たちの 集いし 板†」
@@ -902,7 +904,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "grimoire",
 		houses: { from: 4, chance: 1 / 10, early: [5, 7] },
 		trapsFrom: 3,
-		unlockAfter: "festival",
+		unlockAfter: null,
+		unlockFlag: "town_inferno",
 		reliefAfter: null,
 		charge: 1,
 		// 闇の 塔を 上る
@@ -938,7 +941,7 @@ export const ISLES: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
 
 /**
  * その 板が 開く 条件を 満たしたか（持ち帰った 板と 旗から。開いているかは 見ない）。
- * unlockAfter か unlockAfterAll の どちらかを 満たし、unlockFlag が あれば その 旗も。
+ * unlockAfter か unlockAfterAll の どちらかを 満たし、unlockFlag が あれば その 旗も（どちらも なければ 旗 だけ）。
  */
 export const openable = (
 	d: DungeonId,
@@ -947,6 +950,7 @@ export const openable = (
 ): boolean => {
 	const dg = DUNGEONS[d];
 	const by =
+		(dg.unlockAfter === null && !dg.unlockAfterAll && !!dg.unlockFlag) ||
 		(dg.unlockAfter !== null && cleared.includes(dg.unlockAfter)) ||
 		(!!dg.unlockAfterAll &&
 			dg.unlockAfterAll.every((x) => cleared.includes(x)));

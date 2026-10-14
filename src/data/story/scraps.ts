@@ -65,7 +65,7 @@ export const SCRAPS: readonly Scrap[] = [
 		record: "rec_q",
 	},
 	// 裏シナリオ（おーぷぬ）：自分の 板を 立てて 出ていった 人（3作目の 対は walksim の street.ts の mado。STORY.md §4.5）。
-	// パン板を 持ち帰ると 貼られる（南西の 小島に 小舟が つく ころ、「板を 立てた 人」が 出る：入口の 伏線）
+	// パン板を 持ち帰ると 貼られる（「板を 立てた 人」が 出る：入口の 伏線。釣り場の ビンの 手紙の 人。data/town/finds.ts）
 	{
 		id: "jibun",
 		board: "shallow",

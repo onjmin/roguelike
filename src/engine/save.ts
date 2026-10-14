@@ -491,9 +491,11 @@ export const loadProgress = (): Progress => {
 	)
 		unlocked.push("main");
 	if (cleared.includes("main")) unlocked.push("deep");
-	// 口の ない 植民地：開く もとの 植民地を 持ち帰っていれば（旗の 要る 板は 記録からは 開かない）
+	// 口の ない 植民地：開く もとの 植民地を 持ち帰っていれば（旗の 要る 板は 記録からは 開かない。
+	// 持ち帰った 記録の ある 板は 開いていた）
 	for (const d of DUNGEON_IDS)
-		if (!unlocked.includes(d) && openable(d, cleared)) unlocked.push(d);
+		if (!unlocked.includes(d) && (openable(d, cleared) || cleared.includes(d)))
+			unlocked.push(d);
 	const fresh: Progress = {
 		unlocked,
 		cleared,
@@ -540,8 +542,7 @@ export const noteRunEnd = (
 	const unlock = (id: DungeonId, reason: ProgressNews["reason"]) => {
 		if (p.unlocked.includes(id)) return;
 		p.unlocked.push(id);
-		// 静かな 板（裏シナリオの 入口）は 知らせない：地図の 小舟に 気づいて 行く
-		if (!DUNGEONS[id].quiet) p.news.push({ dungeon: id, reason });
+		p.news.push({ dungeon: id, reason });
 	};
 	if (kind === "clear") {
 		if (!p.cleared.includes(dungeon)) p.cleared.push(dungeon);
@@ -585,12 +586,22 @@ export const addFlag = (flag: string): void => {
  * 知らせ（news）は 積まない：転の 場面が 自分で 言う（積むと newsScript が「新しい 植民地」を かさねて 出す）。
  */
 export const noteWrap = (): void => {
+	openByFlag("wrap");
+};
+
+/**
+ * 旗を 立てて、開く 条件を 満たした 板を 開く（知らせは 積まない：旗を 立てた 場面が 自分で 言う）。開いた 板を 返す。
+ * 転（wrap）と、町の 寄り道で 見つける 板（data/town/finds.ts）。
+ */
+export const openByFlag = (flag: string): DungeonId[] => {
 	const p = loadProgress();
-	if (!(p.flags ?? []).includes("wrap")) p.flags = [...(p.flags ?? []), "wrap"];
-	for (const d of DUNGEON_IDS)
-		if (!p.unlocked.includes(d) && openable(d, p.cleared, p.flags ?? []))
-			p.unlocked.push(d);
+	if (!(p.flags ?? []).includes(flag)) p.flags = [...(p.flags ?? []), flag];
+	const opened = DUNGEON_IDS.filter(
+		(d) => !p.unlocked.includes(d) && openable(d, p.cleared, p.flags ?? []),
+	);
+	p.unlocked.push(...opened);
 	saveProgress(p);
+	return opened;
 };
 
 /** 持ち帰りの 語りを 見おえた（ui/village/villageReturn.ts の returnScene）。 */

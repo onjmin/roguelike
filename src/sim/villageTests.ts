@@ -139,6 +139,7 @@ import {
 	VEND_YEN,
 	VENDING,
 } from "../data/town/facilities";
+import { TOWN_FINDS } from "../data/town/finds";
 import {
 	HALL_MSG,
 	IN_STORE_TEXT,
@@ -358,6 +359,7 @@ import {
 	talksWith,
 } from "../ui/village/cafe";
 import { buildFacility, outdoorScript } from "../ui/village/facilities";
+import { townFind } from "../ui/village/finds";
 import { descWindows, shelfWords } from "../ui/village/glossary";
 import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/village/guests";
 import {
@@ -3056,7 +3058,74 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 	});
 });
 
-test("裏シナリオ: the branch opens after パン板 (small isles → lighthouse → 跡地 → 避難J), the 原住民 walks in with the lighthouse ending and then lives in the village", async () => {
+test("町の 寄り道で 見つける 板（おーぷぬの おんJ関連板）は 持ち帰りでは 開かず、施設の 物・人で 1回だけ 開いて 知らせる", async () => {
+	await withStorageAsync(async () => {
+		const fresh = () =>
+			localStorage.setItem(
+				PROGRESS_KEY,
+				JSON.stringify({
+					unlocked: [...DUNGEON_IDS].filter(
+						(d) => !TOWN_FINDS.some((f) => f.dungeon === d),
+					),
+					cleared: [...DUNGEON_IDS].filter(
+						(d) => !TOWN_FINDS.some((f) => f.dungeon === d),
+					),
+					fails: {},
+					intro: [],
+					news: [],
+					endings: [],
+				}),
+			);
+		fresh();
+		noteRunEnd("festival", "clear", "find-1", null);
+		ok(
+			!TOWN_FINDS.some((f) => loadProgress().unlocked.includes(f.dungeon)),
+			`a town find opened by a clear: ${loadProgress().unlocked.join()}`,
+		);
+		putTown({ stage: TOWN_STAGES - 1 });
+		for (const f of TOWN_FINDS) {
+			const fac = FACILITIES.find((x) => x.id === f.facility);
+			ok(
+				!!fac &&
+					[
+						...Object.values(fac.room?.things ?? {}),
+						...(fac.room?.people ?? []).map((x) => x.id),
+						...(fac.outdoor ?? []).map((x) => x.id),
+					].includes(f.at),
+				`${f.dungeon}: no ${f.at} in ${f.facility}`,
+			);
+			ok(
+				DUNGEONS[f.dungeon].unlockAfter === null &&
+					DUNGEONS[f.dungeon].unlockFlag === `town_${f.dungeon}`,
+				`${f.dungeon}: opens by something else`,
+			);
+			fitsWindow(f.lines.map((l) => [f.dungeon, l.text]));
+		}
+		// おんキムは おんMuの あと（植民地戦争）
+		ok(
+			!(await townFind(fakeStory().s, "konbini", "notice")),
+			"おんキム before おんMu",
+		);
+		for (const f of TOWN_FINDS.filter((x) => x.dungeon !== "isle1")) {
+			const r = fakeStory();
+			ok(await townFind(r.s, f.facility, f.at), `${f.dungeon}: nothing`);
+			ok(
+				loadProgress().unlocked.includes(f.dungeon) &&
+					r.log.includes("se chapter") &&
+					r.log.some((l) =>
+						l.includes(`「${DUNGEON_NAMES[f.dungeon].name}」に`),
+					),
+				`${f.dungeon}: not opened or not told: ${r.log.join(" / ")}`,
+			);
+			ok(
+				!(await townFind(fakeStory().s, f.facility, f.at)),
+				`${f.dungeon}: twice`,
+			);
+		}
+	});
+});
+
+test("裏シナリオ: the branch opens by a bottle at the pier (small isles → lighthouse → 跡地 → 避難J), the 原住民 walks in with the lighthouse ending and then lives in the village", async () => {
 	const all = [...DUNGEON_IDS];
 	const put = (cleared: DungeonId[], endings: DungeonId[]) =>
 		localStorage.setItem(
@@ -3070,12 +3139,13 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 				endings,
 			}),
 		);
-	// 分岐は パン板の あと：小島1 が きのこ板と 並んで 開き、小島 2・3 と つづき、3つ そろうと 灯台。
+	// 分岐は 町の 寄り道：小島1 は 釣り場の ビンで 開き（data/town/finds.ts）、小島 2・3 と つづき、3つ そろうと 灯台。
 	// 跡地は 灯台と ROM専の 声の 旗、避難J は 本筋の 山場と 裏の 結の 両方の あと（STORY.md §5.98）
 	ok(
-		DUNGEONS.isle1.unlockAfter === "shallow" &&
-			DUNGEONS.kinoko.unlockAfter === "shallow",
-		"the branch is not after パン板",
+		DUNGEONS.isle1.unlockAfter === null &&
+			DUNGEONS.isle1.unlockFlag === "town_isle1" &&
+			TOWN_FINDS.some((f) => f.dungeon === "isle1" && f.facility === "pier"),
+		"the branch is not found at the pier",
 	);
 	ok(
 		DUNGEONS.isle2.unlockAfter === "isle1" &&
@@ -3197,8 +3267,8 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 				late.every((p) => p.who !== "nanj"),
 			`the late arrival is wrong:\n${late.map((p) => p.text).join("\n")}`,
 		);
-		// 入口は 知らせない：パン板を 持ち帰ると 小島1 は 開くが 知らせは 無く（地図の 小舟で 見つける）、
-		// きのこ板の 知らせだけ。やきうの おーぷぬの 話は 小島1 の 持ち帰りの 語りで
+		// 入口は 板の 踏破では 開かない：パン板を 持ち帰っても きのこ板だけ。小島1 は 町に 屋台が 出てから
+		// 釣り場の 竿を 調べると ビンの 手紙で 開き、その場で 知らせる（data/town/finds.ts）
 		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify({
@@ -3213,15 +3283,26 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 		noteRunEnd("shallow", "clear", "quiet-1", null);
 		const after = loadProgress();
 		ok(
-			after.unlocked.includes("isle1") &&
-				after.unlocked.includes("kinoko") &&
-				!after.news.some((n) => n.dungeon === "isle1") &&
-				after.news.some((n) => n.dungeon === "kinoko"),
-			`the entry isle is announced or closed: ${JSON.stringify(after.news)} ${after.unlocked.join()}`,
+			!after.unlocked.includes("isle1") && after.unlocked.includes("kinoko"),
+			`the entry isle opens by a clear: ${after.unlocked.join()}`,
+		);
+		putTown({ stage: 0 });
+		ok(
+			!(await townFind(fakeStory().s, "pier", "rod")) &&
+				!loadProgress().unlocked.includes("isle1"),
+			"the bottle is there before the stall",
+		);
+		putTown({ stage: 1 });
+		const bottle = fakeStory();
+		ok(
+			(await townFind(bottle.s, "pier", "rod")) &&
+				loadProgress().unlocked.includes("isle1") &&
+				bottle.log.some((l) => l.includes("ひまわり諸島」に")) &&
+				!(await townFind(fakeStory().s, "pier", "rod")),
+			`the bottle does not open the isle once: ${bottle.log.join(" / ")}`,
 		);
 		ok(
-			DUNGEONS.isle1.quiet === true &&
-				!DUNGEONS.isle1.hidden &&
+			!!DUNGEONS.isle1.hidden &&
 				!!DUNGEONS.isle2.hidden &&
 				!!DUNGEONS.isle3.hidden &&
 				!!DUNGEONS.opunu.hidden &&
@@ -3253,11 +3334,11 @@ test("裏シナリオ: the branch opens after パン板 (small isles → lightho
 				top("y1901") > top("hinan"),
 			`the hidden route is not harder: ${["isle1", "kinoko", "isle2", "tropical", "isle3", "konamono", "opunu", "main", "ato", "deep"].map((d) => `${d}=${top(d as DungeonId)}`).join(" ")}`,
 		);
-		// 小舟の 視線誘導：パン板の あとの ひとことに 小舟が 出る。切れはし「板 立てたわ」も パン板の あと
+		// ビンの 視線誘導：パン板の あとの ひとことに 釣り場の ビンが 出る。切れはし「板 立てたわ」も パン板の あと
 		ok(
-			CLEAR.shallow.some((l) => l.text.includes("小舟")) &&
+			CLEAR.shallow.some((l) => l.text.includes("ビン")) &&
 				SCRAPS.some((x) => x.id === "jibun" && x.board === "shallow"),
-			"no nudge toward the boat after パン板",
+			"no nudge toward the bottle after パン板",
 		);
 		localStorage.setItem(
 			PROGRESS_KEY,

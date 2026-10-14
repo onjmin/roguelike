@@ -52,6 +52,7 @@ import { tradeTerminal } from "../trade/trade";
 import { giftShelf } from "./bonds";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
+import { townFind } from "./finds";
 import {
 	enterHome,
 	furnitureShop,
@@ -196,6 +197,8 @@ export const outdoorScript =
 				for (const l of t.lines) await s.say("nanj", l, { name: t.name });
 			// 日で かわる 会場の 文（公園の 15日の 月食 など。data/jikkyo/text.ts）が あれば そちら
 			else await readAll(s, venueLines(f.id, t.id, today()) ?? t.lines);
+			// 町の 寄り道で 板を 見つける（釣り場の 竿の ビン。data/town/finds.ts）。見つけた 回は 遊ばない
+			if (await townFind(s, f.id, t.id)) return;
 			if (t.play === "fishing") await fish(s);
 			else if (t.play === "batting") await bat(ctx, s);
 			else if (t.play === "vend") await vend(s);
@@ -277,6 +280,8 @@ export const buildFacility = (
 				s,
 				venueLines(f.id, kind, today()) ?? room?.lines[kind] ?? [],
 			);
+			// 町の 寄り道で 板を 見つける（質屋の ケース・おんJマートの はり紙・道場の 木刀。data/town/finds.ts）
+			if (await townFind(s, f.id, kind)) return;
 			if (play === "depart" && depart) await depart(s);
 			else if (play === "drinkbar") await drinkBar(s);
 			else if (play === "eat") await eatAt(ctx, s, f.id);
@@ -324,6 +329,8 @@ export const buildFacility = (
 						await keeperTalk(ctx, s, f.id, who.name, lines);
 					else
 						for (const l of lines) await s.say("nanj", l, { name: who.name });
+					// 町の 寄り道で 板を 見つける（碁会所の 常連。data/town/finds.ts）
+					await townFind(s, f.id, who.id);
 					// キリコの 家を 買った あとなら、1度だけ 家具を くれる 住人（ui/village/myhome.ts）
 					await residentGift(s, f.id, who.id, who.name);
 					s.face(who.id, who.dir);
