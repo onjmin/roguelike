@@ -1,7 +1,7 @@
 // 街の 人通り（作者の 指示「街にも 人を 配置」「人流も 表現」）。
 //
 // 町の 段で 人が ふえ（殺風景の 村は だれも 来ない → 都市は にぎわう）、村の 時計で 流れが かわる
-// （朝は 家や 駅から 職場へ・昼は 店と 散歩・夕方は 帰り道・夜は 盛り場・深夜は まばら。週末は 遊びに 出る）。
+// （朝は 家や 駅から 職場へ・昼は 店と 散歩・夕方は 帰り道・夜は 盛り場だけ・深夜は 無人〜都市で まばら。週末は 遊びに 出る）。
 // 人は 扉・家・村の 出口から 出てきて、別の 扉・家・出口へ 歩いて 入る（消える）。掲示板・ベンチ・バス停などでは
 // しばらく 立ちどまって、また 歩きだす（バス停・タクシー乗り場は 乗って いく）。
 // 歩くのは 歩道・広場・村の 道（新市街の 車道は 横断歩道で わたる。電柱などを よける ときだけ 1歩 はみ出す）。
@@ -40,14 +40,30 @@ export const timeBand = (hour: number): TimeBand =>
 export const CROWD_BASE: readonly number[] = [0, 0, 2, 3, 6, 8, 13, 22];
 
 const BAND_RATE: Record<TimeBand, number> = {
-	late: 0.35,
+	late: 0,
 	morning: 1,
 	day: 0.85,
 	evening: 1,
-	night: 0.7,
+	night: 0.2,
 };
 
-/** その 段・時間帯・曜日の 人の 数。 */
+/**
+ * 夜・深夜の 人の 割合（2026-10-15 作者「夜・深夜は 人通り 少なめ〜無人で いい。繁華街は そうでもない？」）。
+ * 村・住宅街の 夜は ほとんど 出歩かず、深夜は 無人。盛り場（バー・カジノ・映画館……）の ある 都市だけ
+ * 夜も 人が 出て、深夜も 少し 残る（流れは 盛り場と 家の 行き来。PERSONAS の flows）。
+ */
+const nightRate = (stage: number, band: "night" | "late"): number =>
+	band === "night"
+		? stage >= 7
+			? 0.6
+			: stage >= 6
+				? 0.35
+				: BAND_RATE.night
+		: stage >= 7
+			? 0.2
+			: BAND_RATE.late;
+
+/** その 段・時間帯・曜日の 人の 数（昼間は 少なくとも 1人。夜・深夜は 0人も ある）。 */
 export const crowdSize = (
 	stage: number,
 	band: TimeBand,
@@ -55,9 +71,10 @@ export const crowdSize = (
 ): number => {
 	const base = CROWD_BASE[Math.max(0, Math.min(CROWD_BASE.length - 1, stage))];
 	if (!base) return 0;
-	// 都市の 夜は 盛り場が にぎわう
-	const rate = band === "night" && stage >= 7 ? 0.9 : BAND_RATE[band];
-	return Math.max(1, Math.round(base * rate * (weekend ? 1.15 : 1)));
+	const dark = band === "night" || band === "late";
+	const rate = dark ? nightRate(stage, band) : BAND_RATE[band];
+	const n = Math.round(base * rate * (weekend ? 1.15 : 1));
+	return dark ? n : Math.max(1, n);
 };
 
 // ───────────────── 行き先 ─────────────────
