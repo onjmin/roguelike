@@ -114,10 +114,14 @@ type Entry = {
 };
 
 const cache = new Map<string, Entry>();
-const listeners = new Set<() => void>();
+const listeners = new Set<(url: string) => void>();
 
-/** どれかの画像の読み込みが終わるたびに呼ばれる（マップのキャッシュ描き直し用）。 */
-export const onImageLoaded = (fn: () => void): (() => void) => {
+/**
+ * どれかの画像の読み込みが終わるたびに呼ばれる（マップのキャッシュ描き直し用）。読めた 画像の URL
+ * （resolveRef と 同じ 形）を 渡す：地図は 自分の 使う 絵の ときだけ 描き直す（顔グラなどが 届く たびに
+ * 町 ぜんぶを 描き直して カクついた）。
+ */
+export const onImageLoaded = (fn: (url: string) => void): (() => void) => {
 	listeners.add(fn);
 	return () => listeners.delete(fn);
 };
@@ -141,7 +145,7 @@ export const setRuntimeImage = (
 	runtimeImages.set(key, canvas);
 	for (const r of runtimeWaits.get(key) ?? []) r(asImg(canvas));
 	runtimeWaits.delete(key);
-	for (const fn of listeners) fn();
+	for (const fn of listeners) fn(key);
 };
 
 /** 画像の読み込みを始める（2回目以降はキャッシュ）。失敗したら null で解決する。 */
@@ -163,7 +167,7 @@ export const loadImage = (ref: string): Promise<HTMLImageElement | null> => {
 	entry.promise = new Promise((resolve) => {
 		img.onload = () => {
 			entry.ok = true;
-			for (const fn of listeners) fn();
+			for (const fn of listeners) fn(url);
 			resolve(img);
 		};
 		img.onerror = () => {

@@ -12,7 +12,12 @@ import { type Dir8, spriteDir } from "../../core/geom";
 import { itemHidden } from "../../core/item";
 import { T_WALL, tileAt } from "../../core/mapgen";
 import type { Floor, RunState, Trap } from "../../core/types";
-import { drawRefInCell, getImage, onImageLoaded } from "../../engine/assets";
+import {
+	drawRefInCell,
+	getImage,
+	onImageLoaded,
+	resolveRef,
+} from "../../engine/assets";
 import type { Screen } from "../../engine/screen";
 import { drawWalk, isWalkRef, stepFrame } from "../../engine/sprite";
 import { TILE } from "../../engine/types";
@@ -154,10 +159,13 @@ export class FloorView {
 	private dirty = true;
 	private theme: Theme | null = null;
 	private offLoaded: () => void;
+	/** 地形の キャッシュに 描いた 絵の URL（null は まだ 描いていない）。 */
+	private terrainUrls: Set<string> | null = null;
 
 	constructor() {
-		this.offLoaded = onImageLoaded(() => {
-			this.dirty = true;
+		// 地形の 絵が 読めたときだけ 描き直す（敵・道具の 絵が 届く たびに 階 ぜんぶを 描き直さない）
+		this.offLoaded = onImageLoaded((url) => {
+			if (!this.terrainUrls || this.terrainUrls.has(url)) this.dirty = true;
 		});
 	}
 
@@ -178,6 +186,11 @@ export class FloorView {
 		const l = f.layout;
 		const theme = themeFor(s.dungeon, f.depth);
 		this.theme = theme;
+		this.terrainUrls = new Set(
+			[theme.floor, STATUE_STILL, ...theme.wallLower, ...theme.wallUpper].map(
+				resolveRef,
+			),
+		);
 		if (!this.terrain || this.terrainFloor !== f) {
 			this.terrain = document.createElement("canvas");
 			this.terrain.width = l.w * TILE;

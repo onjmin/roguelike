@@ -6,6 +6,7 @@ import {
 	getImage,
 	onImageLoaded,
 	overflowsCell,
+	resolveRef,
 } from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
@@ -212,9 +213,14 @@ export class Field {
 		this.below = document.createElement("canvas");
 		this.below.width = this.w * TILE;
 		this.below.height = this.h * TILE;
-		// 素材の読み込みが進むたびに描き直す
-		this.unsub = onImageLoaded(() => {
-			this.dirty = true;
+		// 地形の 素材が 読めるたびに 描き直す（ほかの 絵では 描き直さない。町だと 1回 数十 ms かかる）
+		const uses = new Set<string>();
+		for (const t of Object.values(def.tiles)) {
+			for (const r of [...t.layers, ...(t.above ?? [])]) uses.add(resolveRef(r));
+			if (t.auto) uses.add(resolveRef(t.auto));
+		}
+		this.unsub = onImageLoaded((url) => {
+			if (uses.has(url)) this.dirty = true;
 		});
 	}
 

@@ -215,6 +215,26 @@ export class Crowd {
 		);
 	}
 
+	/**
+	 * busy を 地図 1枚ぶん まとめて 測った 表（道の 引きなおしで マスごとに 人を 全員 見ると、
+	 * 町では 1回 何万 × 200人 に なって カクついた）。
+	 */
+	private busyGrid(self: Actor): (x: number, y: number) => boolean {
+		const f = this.h.field;
+		const w = f.w;
+		const grid = new Uint8Array(w * f.h);
+		const mark = (x: number, y: number) => {
+			if (f.inBounds(x, y)) grid[y * w + x] = 1;
+		};
+		mark(this.h.player.x, this.h.player.y);
+		for (const a of f.actors) {
+			if (a === self || !a.visible || !a.sprite) continue;
+			mark(a.x, a.y);
+			if (a.moving) mark(Math.round(a.fx), Math.round(a.fy));
+		}
+		return (x, y) => f.inBounds(x, y) && grid[y * w + x] === 1;
+	}
+
 	update(dt: number): void {
 		this.bandIn -= dt;
 		if (this.bandIn <= 0) {
@@ -279,7 +299,7 @@ export class Crowd {
 			p.blocked += dt;
 			if (p.blocked >= REROUTE_MS && !p.rerouted) {
 				p.rerouted = true;
-				const r = this.route([a.x, a.y], p.to.at, (x, y) => this.busy(x, y, a));
+				const r = this.route([a.x, a.y], p.to.at, this.busyGrid(a));
 				if (r?.length) p.route = r;
 				else a.dir = d;
 				return;

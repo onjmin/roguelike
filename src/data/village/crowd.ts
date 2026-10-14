@@ -396,15 +396,26 @@ export const pedCost = (
 ): PedCost => {
 	const w = Math.max(...rows.map((r) => [...r].length));
 	const h = rows.length;
-	const grid = rows.map((r) => [...r]);
-	return (x, y) => {
-		if (x < 0 || y < 0 || x >= w || y >= h) return Number.POSITIVE_INFINITY;
-		const ch = grid[y][x] ?? " ";
-		if (!tiles[ch]?.passable || walls(x, y)) return Number.POSITIVE_INFINITY;
-		if (carLane(stage, x, y)) return LANE_COST;
-		if (ROADWAY.has(ch) || (ch === "." && stage >= 6)) return ROAD_COST;
-		return 1;
-	};
+	// 地形は 変わらないので 先に ぜんぶ 測っておく（道さがしで 何万回も 引く。町で 歩くと カクついた）
+	const table = new Float64Array(w * h);
+	rows.forEach((r, y) => {
+		const row = [...r];
+		for (let x = 0; x < w; x++) {
+			const ch = row[x] ?? " ";
+			table[y * w + x] =
+				!tiles[ch]?.passable || walls(x, y)
+					? Number.POSITIVE_INFINITY
+					: carLane(stage, x, y)
+						? LANE_COST
+						: ROADWAY.has(ch) || (ch === "." && stage >= 6)
+							? ROAD_COST
+							: 1;
+		}
+	});
+	return (x, y) =>
+		x < 0 || y < 0 || x >= w || y >= h
+			? Number.POSITIVE_INFINITY
+			: table[y * w + x];
 };
 
 const DIRS: readonly Dir[] = ["up", "right", "down", "left"];
@@ -424,34 +435,55 @@ export const pedRoute = (
 	const n = w * h * 4;
 	const dist = new Float64Array(n).fill(Number.POSITIVE_INFINITY);
 	const prev = new Int32Array(n).fill(-1);
-	// 小さい 順の ヒープ（[距離, 状態]）
-	const heap: [number, number][] = [];
+	// 小さい 順の ヒープ（距離と 状態を 別の 型つき 配列に。組を 作らない ので 速い）
+	let cap = 1024;
+	let hd = new Float64Array(cap);
+	let hs = new Int32Array(cap);
+	let size = 0;
 	const push = (d: number, s: number) => {
-		heap.push([d, s]);
-		let i = heap.length - 1;
+		if (size === cap) {
+			cap *= 2;
+			const nd = new Float64Array(cap);
+			const ns = new Int32Array(cap);
+			nd.set(hd);
+			ns.set(hs);
+			hd = nd;
+			hs = ns;
+		}
+		let i = size++;
 		while (i > 0) {
 			const p = (i - 1) >> 1;
-			if (heap[p][0] <= heap[i][0]) break;
-			[heap[p], heap[i]] = [heap[i], heap[p]];
+			if (hd[p] <= d) break;
+			hd[i] = hd[p];
+			hs[i] = hs[p];
 			i = p;
 		}
+		hd[i] = d;
+		hs[i] = s;
 	};
-	const pop = (): [number, number] | undefined => {
-		const top = heap[0];
-		const last = heap.pop();
-		if (heap.length && last) {
-			heap[0] = last;
+	/** いちばん 小さい 状態を 取り出す（距離は popD に）。空なら -1。 */
+	let popD = 0;
+	const pop = (): number => {
+		if (!size) return -1;
+		const top = hs[0];
+		popD = hd[0];
+		size--;
+		if (size) {
+			const d = hd[size];
+			const s = hs[size];
 			let i = 0;
 			for (;;) {
 				const l = i * 2 + 1;
+				if (l >= size) break;
 				const r = l + 1;
-				let m = i;
-				if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
-				if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
-				if (m === i) break;
-				[heap[m], heap[i]] = [heap[i], heap[m]];
+				const m = r < size && hd[r] < hd[l] ? r : l;
+				if (hd[m] >= d) break;
+				hd[i] = hd[m];
+				hs[i] = hs[m];
 				i = m;
 			}
+			hd[i] = d;
+			hs[i] = s;
 		}
 		return top;
 	};
@@ -470,8 +502,8 @@ export const pedRoute = (
 		}
 	}
 	let found = -1;
-	for (let top = pop(); top; top = pop()) {
-		const [d0, s] = top;
+	for (let s = pop(); s >= 0; s = pop()) {
+		const d0 = popD;
 		if (d0 > dist[s]) continue;
 		const cell = s >> 2;
 		const x = cell % w;
