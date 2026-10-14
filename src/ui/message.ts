@@ -668,6 +668,8 @@ export type ChoiceHooks = {
 	onMove?: (i: number) => void;
 	/** 決められない 項目（押すと カーソルを 合わせるだけ）。 */
 	disabled?: (i: number) => boolean;
+	/** 空きの 項目（見えず、カーソルも とばす。ページの 行数を そろえる 埋め草）。 */
+	skip?: (i: number) => boolean;
 	/** 外から カーソルを 動かす・決める（choose が 中身を 入れる）。 */
 	ctl?: { move?: (i: number) => void; pick?: (i: number) => void };
 	/** 開いてから キーを 受けない 時間（ms。既定は OPEN_WAIT_MS）。 */
@@ -720,9 +722,11 @@ export class ChoiceWindow {
 		let cur = start;
 		const items = options.map((label, i) => {
 			const b = el("button", { class: "choice-item", text: label });
+			if (hooks.skip?.(i)) b.style.visibility = "hidden";
 			b.addEventListener("pointerdown", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
+				if (hooks.skip?.(i)) return;
 				// 決められない 項目は、押した項目にカーソルを合わせるだけ。区切り待ちの 間は pick が 取っておく
 				if (hooks.disabled?.(i)) {
 					move(i);
@@ -749,7 +753,7 @@ export class ChoiceWindow {
 			if (hooks.parent) items[cur]?.scrollIntoView({ block: "nearest" });
 		};
 		const move = (i: number) => {
-			if (i === cur || i < 0 || i >= n) return;
+			if (i === cur || i < 0 || i >= n || hooks.skip?.(i)) return;
 			cur = i;
 			se?.("cursor");
 			render();
@@ -764,7 +768,7 @@ export class ChoiceWindow {
 		/** 効果音の 区切り待ちの あいだに 押した 決定（鳴り終わったら 決める）。 */
 		let later: number | null = null;
 		const pick = (i: number) => {
-			if (done || hooks.disabled?.(i)) return;
+			if (done || hooks.disabled?.(i) || hooks.skip?.(i)) return;
 			// 前の効果音の本体が鳴り終わるまでは決めない（カーソルは動かせる）。押しは 取っておいて
 			// 鳴り終わりしだい 決める（押したのに 何も 起きない、に しない）
 			if (this.held()) {
@@ -827,12 +831,18 @@ export class ChoiceWindow {
 					// 押しっぱなしは ゆっくり（repeatMs ごとに 1つ）
 					if (repeat && now - movedAt < (hooks.repeatMs ?? REPEAT_MS)) return;
 					movedAt = now;
-					if (key === "up") move(vertical(-1, repeat));
-					else if (key === "down") move(vertical(1, repeat));
+					// 空きの 項目に 着いたら 同じ 向きへ とばす（上下は 列ごと、左右は 1つずつ。はしを こえたら 動かない）
+					const hop = (i: number, step: number): number => {
+						for (let j = i; j >= 0 && j < n; j += step)
+							if (!hooks.skip?.(j)) return j;
+						return cur;
+					};
+					if (key === "up") move(hop(vertical(-1, repeat), -cols));
+					else if (key === "down") move(hop(vertical(1, repeat), cols));
 					else if (key === "left")
-						move(repeat ? Math.max(0, cur - 1) : (cur + n - 1) % n);
+						move(hop(repeat ? Math.max(0, cur - 1) : (cur + n - 1) % n, -1));
 					else if (key === "right")
-						move(repeat ? Math.min(n - 1, cur + 1) : (cur + 1) % n);
+						move(hop(repeat ? Math.min(n - 1, cur + 1) : (cur + 1) % n, 1));
 					else if (key === "a") pick(cur);
 					else if (key === "b" && cancel !== undefined) pick(cancel);
 				},

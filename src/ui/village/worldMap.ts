@@ -61,7 +61,7 @@ const heroWalkOf = (h: HeroId): string =>
 const HERO_DESC: Record<HeroId, string> = {
 	kiriko: "蓄音キリコ。いつもの　冒険。",
 	roze: "束音ロゼ。すり抜けを　ON（Oキー・すり抜けボタン）に　すると、壁の　中を　歩ける。壁の　中では　1歩ごとに　おなかが　5%　減る。壁の　中に　いれば、爆発　いがいは　当たらない。",
-	zero: "解音ゼロ。残機　3。たおれると　プロト・レンに　バトンタッチ（持ち物・装備・レベルは　そのまま。のびた　HP・ちからは　半分）。HP・ちからは　キリコより　ずっと　低い。",
+	zero: "解音ゼロ。残機　3。たおれると　プロト・レンに　バトンタッチ（持ち物・装備・レベルは　そのまま。のびた　HP・ちからは　半分）。HP・ちからは　キリコより　ずっと　低い。オート（Oキー・オートボタン）に　すると、自分で　探索して　戦い、階段を　見つけたら　降りる。なにか　押すと　止まる。",
 };
 
 // ───────────────── 島（はじめに 1回だけ） ─────────────────
@@ -787,32 +787,49 @@ export const pickColony = async (
 	const heroLabel = () => `探索者：${HERO_NAME[chosenHero()]}`;
 	const spotLabel = (d: DungeonId) =>
 		`${DUNGEON_NAMES[d].name}${o.cleared.includes(d) ? "　★" : ""}`;
-	/** いまの ページの 行（板・前後の ページ・探索者・やめる）。 */
+	/**
+	 * いまの ページの 行。ページを めくっても 位置が かわらない 決まった 形（2026-10-15 作者「ページ切り替えで
+	 * 位置が 変わるのが 気になる」）：上に 板の 枠（ページが 2つ 以上なら いつも COLONY_PAGE。足りない 所は 空き）、
+	 * その下に「◀　まえ」「つぎ　▶」（はしの ページでは うすく して 押せない）、さいごに「探索者」「やめる」。
+	 */
 	type Row =
 		| { k: "spot"; d: DungeonId }
+		| { k: "blank" }
 		| { k: "prev" }
 		| { k: "next" }
 		| { k: "hero" }
 		| { k: "quit" };
-	const rowsOf = (pg: number): Row[] => [
-		...spots
+	const rowsOf = (pg: number): Row[] => {
+		const here = spots
 			.slice(pg * COLONY_PAGE, (pg + 1) * COLONY_PAGE)
-			.map((d): Row => ({ k: "spot", d })),
-		...(pg > 0 ? [{ k: "prev" } as Row] : []),
-		...(pg < pages - 1 ? [{ k: "next" } as Row] : []),
-		...(heroes.length > 1 ? [{ k: "hero" } as Row] : []),
-		{ k: "quit" },
-	];
+			.map((d): Row => ({ k: "spot", d }));
+		const slots = pages > 1 ? COLONY_PAGE : here.length + (here.length % 2);
+		return [
+			...here,
+			...Array.from(
+				{ length: slots - here.length },
+				(): Row => ({ k: "blank" }),
+			),
+			...(pages > 1 ? [{ k: "prev" } as Row, { k: "next" } as Row] : []),
+			heroes.length > 1 ? { k: "hero" } : { k: "blank" },
+			{ k: "quit" },
+		];
+	};
 	const labelOf = (r: Row): string =>
 		r.k === "spot"
 			? spotLabel(r.d)
 			: r.k === "prev"
-				? `◀　まえの　ページ（${page}／${pages}）`
+				? "◀　まえの　ページ"
 				: r.k === "next"
-					? `つぎの　ページ　▶（${page + 2}／${pages}）`
+					? "つぎの　ページ　▶"
 					: r.k === "hero"
 						? heroLabel()
-						: "やめる";
+						: r.k === "blank"
+							? ""
+							: "やめる";
+	/** 押せない 行（はしの ページの めくり）。 */
+	const stuck = (r: Row | undefined): boolean =>
+		(r?.k === "prev" && page === 0) || (r?.k === "next" && page >= pages - 1);
 	let rows = rowsOf(page);
 	const onMove = (i: number) => {
 		const r = rows[i];
@@ -826,7 +843,12 @@ export const pickColony = async (
 		if (r?.k === "prev" || r?.k === "next") {
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
-			v.panel.innerHTML = `<div class="wm-name">${labelOf(r)}</div><div class="wm-desc">ほかの　植民地を　見る。</div>`;
+			const desc = stuck(r)
+				? r.k === "prev"
+					? "いまが　はじめの　ページ。"
+					: "いまが　さいごの　ページ。"
+				: "ほかの　植民地を　見る。";
+			v.panel.innerHTML = `<div class="wm-name">ページ　${page + 1}／${pages}</div><div class="wm-desc">${desc}</div>`;
 			return;
 		}
 		if (r?.k !== "spot") {
@@ -883,7 +905,7 @@ export const pickColony = async (
 		const labels = rows.map(labelOf);
 		const picking = choice.choose(
 			labels,
-			labels.length - 1,
+			rows.findIndex((r) => r.k === "quit"),
 			(name) => ctx.se(name),
 			at,
 			{
@@ -892,6 +914,8 @@ export const pickColony = async (
 				cols: 2,
 				onMove,
 				ctl,
+				disabled: (j) => stuck(rows[j]),
+				skip: (j) => rows[j]?.k === "blank",
 				// 歩いて 口に 入った 押しっぱなしで すぐに カーソルが 動かないように 長めに 待つ
 				waitMs: 400,
 				// 押しっぱなしで 行き先が 走りまわらないように ゆっくり
@@ -907,12 +931,10 @@ export const pickColony = async (
 		if (r?.k === "prev" || r?.k === "next") {
 			page += r.k === "next" ? 1 : -1;
 			rows = rowsOf(page);
-			// 移った 先の ページでも 同じ 向きの 行に カーソル（無ければ はじめの 板）
-			at = Math.max(
-				0,
-				rows.findIndex((x) => x.k === r.k),
-			);
-			if (rows[at]?.k !== r.k) at = 0;
+			// 行の 形は ページで かわらないので、カーソルは 押した 所の まま。はしに 着いたら 反対の めくりへ
+			at = stuck(rows[i])
+				? rows.findIndex((x) => x.k === (r.k === "next" ? "prev" : "next"))
+				: i;
 			continue;
 		}
 		if (r?.k === "hero") {
