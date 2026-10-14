@@ -1918,8 +1918,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"######DD########",
 			],
 			tiles: (k) => ({
-				// 天井の 照明（壁の 上段の 灯り）
-				L: k.up(basePx(96, 2250)),
+				// 天井の 照明（Base.png 2,87 の 灯りの 並んだ 器具。壁の 上段）
+				L: k.up(base(2, 87)),
 				// 筐体の 島の 奥の 段（手前の 台の 背が かぶる）
 				k: k.on(),
 				// 床を はう 配線（通れる）
