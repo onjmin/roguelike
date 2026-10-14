@@ -127,6 +127,22 @@ const HURRY = 0.3;
 const HURRY_LOG_GAP_MS = 120;
 /** 祭り（モンスターハウス）に 入ったとき 止めて 見せる 間（ms）。 */
 const HOUSE_PAUSE_MS = 900;
+/**
+ * 画面を 止める 演出（hitStop）の 長さ（ms）。大事な ところほど 長く。
+ * kill：キリコの 1撃で 倒した・hurt：最大HPの 2割 以上の 痛手・danger：HPが 4分の1を 切った・
+ * bossSeen：ボスが 見えた・bossDown：ボスを 倒した（ボスストップ）・goal：持ち帰る 品を 拾った・
+ * down：キリコが 倒れる 1撃・levelup：レベルが 上がった。祭り（モンスターハウス）は HOUSE_PAUSE_MS。
+ */
+const STOP_MS = {
+	kill: 50,
+	hurt: 80,
+	danger: 240,
+	bossSeen: 450,
+	bossDown: 650,
+	goal: 350,
+	down: 600,
+	levelup: 160,
+} as const;
 
 type Disp = Figure & {
 	/** 行き先（マス）。 */
@@ -335,6 +351,8 @@ export class Play {
 	private joltTimer: ReturnType<typeof setTimeout> | undefined;
 	private mapEl: HTMLCanvasElement;
 	private mapOn = false;
+	/** 止める 演出（hitStop）の あいだ：止めた 時刻（動きと 絵は この 時刻の まま）。 */
+	private freeze: { at: number } | null = null;
 	/** 地図を 最後に 描いた ときの 中身（同じなら 描き直さない）。 */
 	private mapKey: unknown[] | null = null;
 	private fadeEl: HTMLElement;
@@ -510,7 +528,8 @@ export class Play {
 			const frame = (t: number) => {
 				if (this.stopped) return;
 				this.update(t);
-				this.draw(t);
+				// 止める 演出（hitStop）の あいだは 止めた 時刻の 絵の まま
+				this.draw(this.freeze?.at ?? t);
 				this.raf = requestAnimationFrame(frame);
 			};
 			this.raf = requestAnimationFrame(frame);
@@ -643,17 +662,19 @@ export class Play {
 			if (this.rp) this.replayTick(t);
 			else this.control(t);
 		}
+		// 止める 演出の あいだは 動きの 時計も 止める（入力は 上で いつもどおり 見る）
+		const vt = this.freeze?.at ?? t;
 		for (const d of this.disp.values()) {
-			const at = posAt(d.keys, t);
+			const at = posAt(d.keys, vt);
 			d.fx = at.x;
 			d.fy = at.y;
-			const lk = (t - d.lungeT0) / 150;
+			const lk = (vt - d.lungeT0) / 150;
 			d.lunge = lk >= 0 && lk < 1 ? Math.sin(lk * Math.PI) : 0;
-			const bk = (t - (d.bumpT0 ?? -1e9)) / 120;
+			const bk = (vt - (d.bumpT0 ?? -1e9)) / 120;
 			if (bk >= 0 && bk < 1)
 				d.lunge = Math.max(d.lunge, Math.sin(bk * Math.PI) * 0.4);
 			if (d.dying) {
-				d.fade = Math.min(1, (t - d.fadeT0) / 320);
+				d.fade = Math.min(1, (vt - d.fadeT0) / 320);
 				if (d.fade >= 1) this.disp.delete(d.id);
 			}
 		}
@@ -2699,6 +2720,8 @@ export class Play {
 		// ボスが たおれた（この act の 中）。勝ちの 音（bossDown）が 鳴るので、たおした 音と レベルアップの 音は 鳴らさない
 		// （重なって 聞こえない。レベルが 上がった ことは 行と ステータスで わかる）
 		let bossFell = false;
+		/** いちばん 新しい 攻撃の 主（倒した 1撃が キリコの ものなら 止める）。 */
+		let lastAtk: number | null = null;
 		// 途中で閉じたら（リプレイの「やめる」）残りの出来事は流さない
 		while (i < ev.length && !this.stopped) {
 			const e = ev[i];
@@ -2736,6 +2759,26 @@ export class Play {
 				if (this.stopped) break;
 				await this.batonScene(e.body);
 				i++;
+				continue;
+			}
+			// ボスが 見えた・持ち帰る 品を 拾った：前の 行が 出てから 知らせ、画面を 止めて 見せる
+			if (
+				(e.t === "boss" || e.t === "goal" || (e.t === "levelup" && !fast)) &&
+				!(this.rp && fast)
+			) {
+				await this.logDrained();
+				if (this.stopped) break;
+				this.showNotice(e);
+				i++;
+				if (e.t === "boss") {
+					void this.flash("rgba(160,0,40,0.35)", 260);
+					await this.hitStop(STOP_MS.bossSeen);
+				} else if (e.t === "levelup") {
+					await this.hitStop(STOP_MS.levelup);
+				} else {
+					void this.flash("rgba(255,220,90,0.4)", 220);
+					await this.hitStop(STOP_MS.goal);
+				}
 				continue;
 			}
 			// 知らせ（動きでは ない もの）は、それを 伝える 行と いっしょに・前の 行が 出てから 出す。
@@ -2869,6 +2912,7 @@ export class Play {
 					break;
 				}
 				case "attack": {
+					lastAtk = e.id;
 					const d = this.disp.get(e.id);
 					if (d) {
 						d.dir = e.dir;
@@ -2898,12 +2942,28 @@ export class Play {
 						);
 					// 最大HPの 2割 以上 削られたら 画面を 1回 小さく ゆらす（点滅と 数字だけだと、音を 消した
 					// スマホでは 痛手が 伝わりにくい。小さな 傷では ゆらさない）
-					if (
+					const big =
 						e.id === PLAYER_ID &&
-						e.amount >= Math.max(3, this.run.p.maxHp * 0.2)
-					)
-						this.jolt();
+						e.amount >= Math.max(3, this.run.p.maxHp * 0.2);
+					if (big) this.jolt();
 					combat = true;
+					// HPが 4分の1を 切った 1撃：赤く 光って 長めに 止める（あぶない ことに 気づく 間）
+					const quarter = this.run.p.maxHp / 4;
+					const danger =
+						e.id === PLAYER_ID &&
+						e.hp !== undefined &&
+						e.hp > 0 &&
+						e.hp <= quarter &&
+						e.hp + e.amount > quarter;
+					// 倒れる 1撃：白く 光って いちばん 長く 止める（何に やられたかを 見る 間）
+					const down = e.id === PLAYER_ID && e.hp === 0;
+					if (down && !(this.rp && fast)) {
+						void this.flash("rgba(255,255,255,0.5)", 200);
+						await this.hitStop(STOP_MS.down);
+					} else if (danger && !fast) {
+						void this.flash("rgba(255,40,40,0.35)", 200);
+						await this.hitStop(STOP_MS.danger);
+					} else if (big && !fast) await this.hitStop(STOP_MS.hurt);
 					await this.beat(70 * speed);
 					break;
 				}
@@ -2914,6 +2974,19 @@ export class Play {
 					break;
 				case "die": {
 					const d = this.disp.get(e.id);
+					// 決着の 1撃は 消える 前に 画面を 止める。ボスは 白く 光って 長く（ボスストップ）、
+					// ふつうの 敵は キリコが 倒した ときだけ ほんの 一瞬
+					if (e.id === this.bossUid) {
+						this.jolt();
+						void this.flash("rgba(255,255,255,0.55)", 180);
+						await this.hitStop(STOP_MS.bossDown);
+					} else if (
+						lastAtk === PLAYER_ID &&
+						!fast &&
+						d &&
+						this.isShown(e.id, { x: d.tx, y: d.ty })
+					)
+						await this.hitStop(STOP_MS.kill);
 					if (d) {
 						d.dying = true;
 						d.fadeT0 = performance.now();
@@ -3030,8 +3103,15 @@ export class Play {
 					break;
 				case "house":
 					this.startHouseBgm();
-					// 祭りに 気づく 間（走っている 途中でも 止めて 見せる。早送りの リプレイだけ 待たない）
-					if (!(this.rp && fast)) await wait(HOUSE_PAUSE_MS);
+					// 祭りに 気づく 間（走っている 途中でも 止めて 見せる。早送りの リプレイだけ 待たない）。
+					// 敵も 絵も 止めて 見せる（先行入力でも 縮めない：そのまま 突っこまないように）
+					if (!(this.rp && fast)) {
+						this.freeze = { at: performance.now() };
+						const t0 = performance.now();
+						await wait(HOUSE_PAUSE_MS);
+						this.freeze = null;
+						this.shiftAnims(performance.now() - t0);
+					}
 					break;
 				case "sleep":
 					if (e.id === PLAYER_ID) {
@@ -3218,6 +3298,39 @@ export class Play {
 			await nextFrameP();
 		}
 		this.projectiles = this.projectiles.filter((p) => p !== proj);
+	}
+
+	/**
+	 * 画面を 一瞬 止める（ヒットストップ）。大事な 瞬間（ボスとの 決着・ボスが 見えた・持ち帰る 品・
+	 * 大きな 痛手・倒した 1撃）で、動きと 絵を 止めて 当たりの 重さを 見せる。止めて いる あいだも
+	 * 入力は 受ける（押せば beat が 残りを つめる）。明けたら 止めた ぶん 動きの 時刻を 後ろへ ずらす
+	 * （止まって いた ところから 続きを 動く）。早送りの リプレイでは 止めない。
+	 */
+	private async hitStop(ms: number): Promise<void> {
+		if (this.stopped || ms <= 0 || this.freeze) return;
+		if (this.rp && this.rp.speed >= 4) return;
+		const t0 = performance.now();
+		// 傷の 点滅（render.ts：60ms ごとに 消える）が 消えた 形で 止まらないように、見える コマに 合わせる
+		const at = Math.floor(t0 / 60) % 2 === 0 ? t0 + 60 - (t0 % 60) : t0;
+		this.freeze = { at };
+		try {
+			await this.beat(ms);
+		} finally {
+			// 止めて いた ぶん（見える コマへ 進めた ぶんは のぞく）だけ 後ろへ
+			this.freeze = null;
+			this.shiftAnims(performance.now() - at);
+		}
+	}
+
+	/** 止めて いた あいだの ぶん、動きの 時刻を 後ろへ ずらす（止まった ところから 続きを 動く）。 */
+	private shiftAnims(dur: number): void {
+		for (const d of this.disp.values()) {
+			for (const k of d.keys) if (k.t) k.t += dur;
+			d.lungeT0 += dur;
+			if (d.bumpT0 !== undefined) d.bumpT0 += dur;
+			d.fadeT0 += dur;
+			if (d.flashUntil) d.flashUntil += dur;
+		}
 	}
 
 	private async flash(color: string, ms: number): Promise<void> {
