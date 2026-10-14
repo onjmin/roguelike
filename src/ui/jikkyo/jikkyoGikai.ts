@@ -25,7 +25,11 @@ import {
 	gikaiProgram,
 	gikaiWatched,
 } from "../../data/jikkyo/gikai";
-import { programSlot } from "../../data/jikkyo/schedule";
+import {
+	JIKKYO_PAUSED,
+	jikkyoOpen,
+	programSlot,
+} from "../../data/jikkyo/schedule";
 import { MOBS, type MobId, movedIn } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
 import { SPEAKERS } from "../../data/story/quotes";
@@ -390,6 +394,11 @@ export const watchGikai = async (
 	const got = slot?.main.program === "gikai" ? pickEpisode(v, at) : null;
 	if (!got) {
 		for (const t of off) await s.narrate(t);
+		return;
+	}
+	// 本筋の 山場までは 休止（data/jikkyo/schedule.ts の jikkyoOpen）
+	if (!jikkyoOpen(v.cleared) && previewStage() === null) {
+		await s.narrate(JIKKYO_PAUSED);
 		return;
 	}
 	const n = await pitch(s, got.ep, got.rerun, GIKAI_TEXT.menuSimple);

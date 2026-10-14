@@ -75,7 +75,11 @@ import {
 	kohakuName,
 } from "../data/jikkyo/kohaku";
 import { PACKS } from "../data/jikkyo/packs";
-import { isVenue, programSlot } from "../data/jikkyo/schedule";
+import {
+	isVenue,
+	JIKKYO_STORY_GATE,
+	programSlot,
+} from "../data/jikkyo/schedule";
 import {
 	SORA,
 	SORA_ART,
@@ -1794,11 +1798,23 @@ export const setTownYen = (
 	forgetWalletMemo();
 };
 
+/**
+ * 番組は 本筋の 山場（電池板）の あとから（data/jikkyo/schedule.ts の jikkyoOpen）。番組の 試験は その あとの 村で
+ * （swapStorage は はじめから これ。store.clear() の あとは 呼びなおす）。
+ */
+export const afterClimax = (store: Map<string, string>): void => {
+	store.set(
+		"kiriko-roguelike/progress",
+		JSON.stringify({ cleared: [JIKKYO_STORY_GATE] }),
+	);
+};
+
 export const swapStorage = (): {
 	store: Map<string, string>;
 	restore: () => void;
 } => {
 	const store = new Map<string, string>();
+	afterClimax(store);
 	const prev = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 	Object.defineProperty(globalThis, "localStorage", {
 		value: {
@@ -1865,6 +1881,7 @@ test(
 			);
 			// noSave（下見）では 書かない
 			store.clear();
+			afterClimax(store);
 			forgetJikkyoMemo();
 			const g1 = gameOf(1);
 			recordJikkyo(g1, resultFor(900), { noSave: true });
@@ -1872,6 +1889,7 @@ test(
 			ok(loadJikkyo().plays === 1, "noSave did not remember this time");
 			// best は 大きい ときだけ。新しい 自己ベストは 前の ベストが ある とき
 			store.clear();
+			afterClimax(store);
 			forgetJikkyoMemo();
 			ok(!recordJikkyo(g1, resultFor(900)), "first record is NEW");
 			ok(!recordJikkyo(g1, resultFor(800)), "lower is NEW");
@@ -2823,6 +2841,7 @@ test(
 				const loc = swapLocation(`?debug&wday=${t.w}`);
 				try {
 					store.clear();
+					afterClimax(store);
 					forgetJikkyoMemo();
 					// 券は 1回 TICKET_YEN.cinema（2026-10-14 有料に）
 					const ticket = TICKET_YEN.cinema;
@@ -3810,6 +3829,7 @@ test(
 				const loc = swapLocation(`?debug&date=${q}`);
 				try {
 					store.clear();
+					afterClimax(store);
 					forgetJikkyoMemo();
 					// 劇場の 券（2026-10-14 有料に。1日 2回 見る ぶん）
 					setTownYen(store, TICKET_YEN.theater * 2);

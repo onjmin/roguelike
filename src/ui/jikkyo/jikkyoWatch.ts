@@ -32,7 +32,12 @@ import {
 } from "../../core/jikkyo";
 import { PROGRAMS } from "../../data/jikkyo/index";
 import { PACKS } from "../../data/jikkyo/packs";
-import { programMenuName, programSlots } from "../../data/jikkyo/schedule";
+import {
+	JIKKYO_PAUSED,
+	jikkyoOpen,
+	programMenuName,
+	programSlots,
+} from "../../data/jikkyo/schedule";
 import {
 	JK_PROG_MSG,
 	JK_PROG_RESULT,
@@ -45,6 +50,7 @@ import {
 import { devEvent } from "../../data/story/objectives";
 import { today } from "../../data/town/calendar";
 import type { Story } from "../../engine/defs";
+import { loadProgress } from "../../engine/save";
 import { yen } from "../../engine/wallet";
 import { el, setStyle, setText } from "../dom";
 import { markOpened, onTap, type UiCtx } from "../list";
@@ -633,6 +639,11 @@ export const watchProgram = async (
 		new Date().getFullYear(),
 	).filter((x) => PROGRAMS[x.program]);
 	if (!slots.length) return;
+	// 本筋の 山場（村の スレの 完走）までは 休止（段の 下見では 見られる）
+	if (!jikkyoOpen(loadProgress().cleared) && previewStage() === null) {
+		await s.narrate(JIKKYO_PAUSED);
+		return;
+	}
 	// 番組が 2つ 以上 ある 会場（映画館の 夜の部と 昼の部 など）は 番組を 選ぶ
 	let slot = slots[0];
 	if (slots.length > 1) {

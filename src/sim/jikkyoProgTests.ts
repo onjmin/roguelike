@@ -8,7 +8,7 @@ import { compileScript, type JkResult, type JkSlot } from "../core/jikkyo";
 import { TOWN_STAGES } from "../core/town";
 import type { JkPack } from "../data/jikkyo/pack";
 import { PACKS } from "../data/jikkyo/packs";
-import { packOpen, programSlots } from "../data/jikkyo/schedule";
+import { JIKKYO_PAUSED, packOpen, programSlots } from "../data/jikkyo/schedule";
 import {
 	JK_PROG_MSG,
 	progMsg,
@@ -615,6 +615,14 @@ each(
 			ok(
 				slot === null && r3.log.at(-1) === "choose",
 				`quit: ${r3.log.join("|")}`,
+			);
+			// 本筋の 山場（電池板）の 前は 休止の はり紙だけ（data/jikkyo/schedule.ts の jikkyoOpen）
+			store.set("kiriko-roguelike/progress", JSON.stringify({ cleared: [] }));
+			const r4 = recorder([pickAt, 0]);
+			await watchProgram({} as UiCtx, r4.s, p.venue, stage);
+			ok(
+				slot === null && r4.log.at(-1) === `narrate: ${JIKKYO_PAUSED}`,
+				`before the climax: ${r4.log.join("|")}`,
 			);
 		} finally {
 			setWatchHook(null);

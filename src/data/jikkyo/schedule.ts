@@ -86,6 +86,17 @@ export const programSlot = (
 	}
 };
 
+/**
+ * 実況の 番組は 本筋の 山場（電池板を 持ち帰って 村の スレが 完走した あと）から（2026-10-14 作者：本筋を 太く。
+ * 寄り道の 施設は そのまま、番組だけ 後へ）。それまで テレビ・モニターは はり紙だけ。段の 条件は この 上に かさなる。
+ */
+export const JIKKYO_STORY_GATE = "deep";
+export const jikkyoOpen = (cleared: readonly string[]): boolean =>
+	cleared.includes(JIKKYO_STORY_GATE);
+/** 山場の 前の テレビ・モニター（番組が ある はずの 日だけ 出す）。 */
+export const JIKKYO_PAUSED =
+	"番組表に、はり紙。\n「村の　スレが　完走するまで　休止」";
+
 /** 束の 番組（data/jikkyo/packs.ts）が その 段で 見られるか（作りかけは 出さない）。 */
 export const packOpen = (p: JkPack, stage: number): boolean =>
 	!p.draft && stage >= p.from && (p.until === undefined || stage < p.until);

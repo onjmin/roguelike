@@ -23,7 +23,11 @@ import {
 import type { JkGame, JkTeamId } from "../../core/jikkyoYakyu";
 import { Rng } from "../../core/rng";
 import { GIKAI_TEXT } from "../../data/jikkyo/gikai";
-import { programSlot } from "../../data/jikkyo/schedule";
+import {
+	JIKKYO_PAUSED,
+	jikkyoOpen,
+	programSlot,
+} from "../../data/jikkyo/schedule";
 import {
 	JIKKYO_AFTER,
 	JIKKYO_MENU,
@@ -44,7 +48,7 @@ import { devEvent } from "../../data/story/objectives";
 import { today } from "../../data/town/calendar";
 import { HALL_MSG, JIKKYO } from "../../data/town/hall";
 import type { Script, Story } from "../../engine/defs";
-import { loadTown } from "../../engine/save";
+import { loadProgress, loadTown } from "../../engine/save";
 import { el, setStyle, setText } from "../dom";
 import { markOpened, onTap, type UiCtx } from "../list";
 import { tick } from "../minigames/minigameBoard";
@@ -624,6 +628,16 @@ export const hallMonitor =
 		// （ui/jikkyo/jikkyoGikai.ts。チャンネルを かえると ナイターの 録画）
 		const stage = previewStage() ?? loadTown().stage;
 		const slot = programSlot("hall", today(), stage, new Date().getFullYear());
+		// 本筋の 山場までは 休止（data/jikkyo/schedule.ts の jikkyoOpen。段の 下見では 見られる）
+		if (
+			slot &&
+			!jikkyoOpen(loadProgress().cleared) &&
+			previewStage() === null
+		) {
+			await s.narrate(HALL_MSG.monitor[0]);
+			await s.narrate(JIKKYO_PAUSED);
+			return;
+		}
 		if (slot?.main.program === "gikai") {
 			const r = await hallGikai(ctx, s, villageView());
 			if (r !== "channel") return;
