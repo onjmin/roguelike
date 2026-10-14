@@ -235,6 +235,9 @@ const same = (log: string[], want: string[], what: string) =>
 		`${what}:\n${log.join("\n")}\n--- want ---\n${want.join("\n")}`,
 	);
 
+/** おわった あとの「もう一回（100円）／やめる」。 */
+const payAgain = (): string =>
+	`choose: ${ARCADE.payAgain.map((x) => fill(x, { price: yen(ARCADE_PLAY_YEN) })).join("/")}`;
 /** ゲームセンターの 筐体の 品書き（1プレイ 100円）。 */
 const payMenu = (): string =>
 	ARCADE.payMenu.map((x) => fill(x, { price: yen(ARCADE_PLAY_YEN) })).join("/");
@@ -376,6 +379,11 @@ test("文: 窓は 22×2、板の 題と 押し方は 1行 22、ボタン 9", () 
 	for (const k of ["ready", "over", "clear", "quit1"] as const)
 		fits(`ARCADE.${k}`, ARCADE[k], 22, 1);
 	for (const m of ARCADE.menu) ok(width(m) <= 9, `menu ${m}`);
+	for (const m of [
+		...ARCADE.again,
+		...ARCADE.payAgain.map((x) => fill(x, { price: yen(ARCADE_PLAY_YEN) })),
+	])
+		ok(width(m) <= 9, `again ${m}`);
 	for (const [k, v] of Object.entries(ARCADE_BOARD))
 		if (typeof v === "string")
 			fits(`ARCADE_BOARD.${k}`, fill(v, { n: 999, name: "レスバ常勝" }), 22, 1);
@@ -626,6 +634,20 @@ test("格ゲー: 返せる はばで 押すと 5人 勝ちぬき、押さない�
 	s.phase = "wind";
 	s.t = (one?.wind ?? 0) - 0.01;
 	ok(ftStep(s, 0, true, rnd)[0] === "perfect" && s.foeHp === 1, "perfect -2");
+	// 押した 時刻で はかる：こまの はじめは はばの 前でも、押したのが こまの おわりなら 返せる
+	const at = (ago: number) => {
+		const t = ftStart();
+		t.phase = "wind";
+		t.dur = (one?.wind ?? 0) + 0.06;
+		t.t = (one?.wind ?? 0) - (one?.guard ?? 0) - 0.01;
+		return ftStep(t, 1 / 60, ago, rnd)[0];
+	};
+	ok(at(0) === "counter", `pressed at the end of the frame: ${at(0)}`);
+	ok(
+		at(1 / 60) === "early",
+		`pressed at the start of the frame: ${at(1 / 60)}`,
+	);
+	ok(at(5) === "early", "ago is clamped to the frame");
 });
 
 test("メダルスロット: 3つ そろうと 払いだし、なくなったら おわり、目押しで 7 が そろう", () => {
@@ -1114,6 +1136,7 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 				`narrate: ${t.rule}`,
 				`narrate: ${fill(ARCADE.after, { score: 120, unit: t.unit })}`,
 				`narrate: ${ARCADE.newBest}`,
+				payAgain(),
 			],
 			"first",
 		);
@@ -1134,6 +1157,7 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 				`narrate: ${fill(ARCADE.record, { best: 120, unit: t.unit })}`,
 				`choose: ${payMenu()}`,
 				`narrate: ${fill(ARCADE.after, { score: 50, unit: t.unit })}`,
+				payAgain(),
 			],
 			"second",
 		);
@@ -1166,6 +1190,61 @@ test("窓: はじめは 決まり → スコア → ハイスコア、2回目は
 			"short",
 		);
 		ok(loadArcade().best.shooter === 120, "not played");
+	});
+});
+
+test("窓: おわったら「もう一回」で すぐ また 遊ぶ（毎回 払う・払えなければ 聞かない・カジノは 同じ 枚数）", async () => {
+	await withStore(async (store) => {
+		// 250円：1回目 → もう一回（100円）→ 2回目 → 手もと 50円なので もう 聞かない
+		setTownYen(store, 250);
+		let n = 0;
+		setArcadeHooks({ shooter: async () => ({ score: ++n * 10 }) });
+		let r = recorder([0, 0]);
+		await arcadeScript(CTX, r.s, "shooter");
+		ok(n === 2, `played ${n}`);
+		ok(walletYen() === 50, `wallet ${walletYen()}`);
+		ok(r.log.filter((l) => l === payAgain()).length === 1, "asked once");
+		ok(
+			r.log.at(-1)?.startsWith("narrate: ") === true,
+			`no ask when short ${r.log.at(-1)}`,
+		);
+		ok(loadArcade().plays.shooter === 2, "both counted");
+		// 途中で やめたら 聞かない
+		setTownYen(store, 1000);
+		setArcadeHooks({ shooter: async () => null });
+		r = recorder([0]);
+		await arcadeScript(CTX, r.s, "shooter");
+		ok(r.log.at(-1) === `narrate: ${ARCADE.quit}`, "quit: no ask");
+		// 家の 台は ただ
+		const home = ARCADE_GAMES.find((g) => ARCADE_HOME[g] === "myhome");
+		ok(home, "a home game");
+		if (home) {
+			n = 0;
+			setArcadeHooks({ [home]: async () => ({ score: ++n }) });
+			r = recorder([0, 0, 0, 1]);
+			await arcadeScript(CTX, r.s, home);
+			ok(n === 3, `home played ${n}`);
+			ok(r.log.at(-1) === `choose: ${ARCADE.again.join("/")}`, "free ask");
+		}
+		// カジノ：同じ 枚数を また 買う（10枚 → 0枚 → もう一回 10枚 → やめる）
+		setTownYen(store, 10_000);
+		const stakes: number[] = [];
+		setArcadeHooks({
+			gacha: async (stake) => {
+				stakes.push(stake ?? -1);
+				return { score: 1, cash: 0 };
+			},
+		});
+		const before = walletYen();
+		r = recorder([0, 0, 0, 1]);
+		await arcadeScript(CTX, r.s, "gacha");
+		same(stakes.map(String), ["10", "10"], "same stake");
+		ok(walletYen() === before - 2000, `casino wallet ${walletYen()}`);
+		ok(
+			r.log.at(-1) ===
+				`choose: ${fill(CASINO.chip.again, { n: 10 })}/${ARCADE.again[1]}`,
+			`casino ask ${r.log.at(-1)}`,
+		);
 	});
 });
 
@@ -1204,26 +1283,27 @@ test("カジノ: チップを 買うと 財布から へり、席を 立つと �
 				`narrate: ${fill(ARCADE.after, { score: 45, unit: "枚" })}`,
 				`narrate: ${ARCADE.newBest}`,
 				`narrate: ${fill(C.cashed, { n: 42, price: money(4200) })}\n${fill(CASINO_NET.win, { price: money(1200) })}`,
+				`choose: ${fill(C.again, { n: 30 })}/${ARCADE.again[1]}`,
 			],
 			"gacha",
 		);
 		ok(walletYen() === 11_200, `wallet ${walletYen()}`);
 		ok(loadArcade().best.gacha === 45, "best is the game's score");
-		// 10枚 買って 0枚（B で やめても 同じ）→ 1,000円の 負け
+		// 10枚 買って 0枚（B で やめても 同じ）→ 1,000円の 負け（さいごは「もう一回」を 聞く）
 		setArcadeHooks({ highlow: async () => ({ score: 10, cash: 0 }) });
 		r = recorder([0, 0]);
 		await arcadeScript(CTX, r.s, "highlow");
 		ok(
-			r.log.at(-1) ===
+			r.log.at(-2) ===
 				`narrate: ${C.none}\n${fill(CASINO_NET.lose, { price: money(1000) })}`,
-			`lose ${r.log.at(-1)}`,
+			`lose ${r.log.at(-2)}`,
 		);
 		ok(walletYen() === 10_200, `wallet ${walletYen()}`);
 		// cash が なければ スコアを 手もとと みる・同じ 枚数なら とんとん
 		setArcadeHooks({ roulette: async () => ({ score: 10 }) });
 		r = recorder([0, 0]);
 		await arcadeScript(CTX, r.s, "roulette");
-		ok(r.log.at(-1)?.endsWith(CASINO_NET.even), `even ${r.log.at(-1)}`);
+		ok(r.log.at(-2)?.endsWith(CASINO_NET.even), `even ${r.log.at(-2)}`);
 		ok(walletYen() === 10_200, `wallet ${walletYen()}`);
 		// パチンコは 玉（1発 4円）：250発 1,000円 → 300発 1,200円
 		setArcadeHooks({
@@ -1300,6 +1380,10 @@ test("カジノ: どの 台も 買った 枚数で はじまり（既定は も�
 		for (const n of c.buyins) {
 			const o = fill(c.option, { n, price: yen(n * c.rate) });
 			ok(width(o) <= 9, `option ${o}`);
+			ok(
+				width(fill(c.again, { n: c.buyins.at(-1) ?? 0 })) <= 9,
+				`again ${c.again}`,
+			);
 		}
 		fits("ask", fill(c.ask, { have: yen(9_999_999) }));
 		fits("short", fill(c.short, { price: yen(1000), have: yen(9_999_999) }));

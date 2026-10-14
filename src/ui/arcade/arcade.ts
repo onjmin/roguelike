@@ -1,14 +1,14 @@
 // 施設の 台の 遊び（ゲームセンター「連コ」の 筐体・カジノ「ガチャ」の 台・海の家・バー。1台に 1つずつ 別の ゲーム。data/arcade/types.ts）の 窓の がわ。
 // 部屋の 物（data/village/facilities.ts の plays が "arcade"）を 調べると ui/village/facilities.ts が arcadePlay を 呼ぶ：
 // 物の 文 → ハイスコア（あれば）→「遊ぶ／やめる」→ はじめての 台は 決まり → 板（ui/arcade/arcadeAction.ts・ui/arcade/arcadeTiming.ts）
-// → スコア（ハイスコアを こえたら ひとこと）。板は ui/arcade/arcadeParlor.ts も（カジノ・海の家・バー）。B で やめたら「途中で　席を　立った」だけ（記録しない）。
+// → スコア（ハイスコアを こえたら ひとこと）→「もう一回／やめる」（もう一回は 同じ 曲・同じ 枚数で すぐ。毎回 払う）。板は ui/arcade/arcadeParlor.ts も（カジノ・海の家・バー）。B で やめたら「途中で　席を　立った」だけ（記録しない）。
 // どれも 寄り道で、強さ・道具・売上・町の 段には 何も 効かない。見た目の 乱数は Math.random。
 // カジノの 台は 財布の お金で チップを 買って 遊び、席を 立つと 換金する（ui/arcade/casinoChips.ts。
 // 2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。前は 店が 貸す 遊びの チップだった）。
 // 記録は localStorage の kiriko-roguelike/arcade だけ（?stage= ・?event= の ときは 書かない。memo には 残る）。
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
 
-import { isCasinoGame } from "../../data/arcade/casino";
+import { CASINO, casinoKind, isCasinoGame } from "../../data/arcade/casino";
 import { ARCADE, ARCADE_PLAY_YEN, ARCADE_TEXT } from "../../data/arcade/text";
 import {
 	ARCADE_GAMES,
@@ -40,7 +40,7 @@ import {
 	playSuika,
 } from "./arcadeParlor";
 import { playFighter, playMole, playRhythm, playSlot } from "./arcadeTiming";
-import { buyChips, cashOut, casinoMenu } from "./casinoChips";
+import { buyChips, cashOut, casinoBuy, casinoMenu } from "./casinoChips";
 import { playBaccarat } from "./home/baccarat";
 import { playBlackjack } from "./home/blackjack";
 import { playClicker } from "./home/clicker";
@@ -76,6 +76,7 @@ import { playStack } from "./home/stack";
 import { playTaiko } from "./home/taiko";
 import { playTsuribori } from "./home/tsuribori";
 import { playWangan } from "./home/wangan";
+import { replaySong } from "./songPlay";
 
 export { isArcadeGame };
 
@@ -265,30 +266,56 @@ export const arcadeScript = async (
 		m.tutored.push(game);
 		saveArcade(m);
 	}
-	await s.wait(0);
-	const play = hooks?.[game] ?? ((n?: number) => BOARDS[game](ctx, n));
-	const r = await play(stake ?? undefined);
-	if (!r) {
-		await s.narrate(ARCADE.quit);
-		if (stake !== null) await cashOut(s, game, stake, 0, previewing());
-		return;
+	// おわったら「もう一回／やめる」（はじめが もう一回。台を 調べなおさずに 同じ 曲・同じ 枚数で すぐ また 遊ぶ。
+	// 値段は 毎回 払う。払えない ときは 聞かない）。B で 途中で やめたら 聞かない
+	for (let again = false; ; again = true) {
+		await s.wait(0);
+		replaySong(again);
+		const play = hooks?.[game] ?? ((n?: number) => BOARDS[game](ctx, n));
+		const r = await play(stake ?? undefined).finally(() => replaySong(false));
+		if (!r) {
+			await s.narrate(ARCADE.quit);
+			if (stake !== null) await cashOut(s, game, stake, 0, previewing());
+			return;
+		}
+		const score = nat(r.score);
+		const beat = score > m.best[game];
+		if (beat) m.best[game] = score;
+		m.plays[game]++;
+		saveArcade(m);
+		await s.narrate(fill(ARCADE.after, { score, unit: t.unit }));
+		if (beat) {
+			ctx.se("arcBest");
+			await s.narrate(ARCADE.newBest);
+		}
+		// カジノは 手もとの チップ（玉）を 換金（板が cash を 返さなければ スコアを 手もとと みる）
+		if (stake !== null)
+			await cashOut(s, game, stake, r.cash ?? r.score, previewing());
+		// クレーンゲームで 金の ぷゆゆを とったら、家に ぬいぐるみの 家具が 届く（家を 買って いて、まだ 持って いなければ）
+		if (game === "crane" && !hooks && craneLastWins().includes("puyuGold"))
+			await craneGift(s);
+		const cost =
+			stake !== null
+				? stake * CASINO[casinoKind(game)].rate
+				: paid
+					? ARCADE_PLAY_YEN
+					: 0;
+		if (walletYen() < cost) return;
+		const opts =
+			stake !== null
+				? [fill(CASINO[casinoKind(game)].again, { n: stake }), ARCADE.again[1]]
+				: paid
+					? ARCADE.payAgain.map((x) => fill(x, { price }))
+					: [...ARCADE.again];
+		if ((await s.choose(opts, { cancel: 1 })) !== 0) return;
+		if (
+			stake !== null
+				? !casinoBuy(game, stake, previewing())
+				: !spendYen(cost, previewing())
+		)
+			return;
+		if (cost > 0) ctx.se("arcCoin");
 	}
-	const score = nat(r.score);
-	const beat = score > m.best[game];
-	if (beat) m.best[game] = score;
-	m.plays[game]++;
-	saveArcade(m);
-	await s.narrate(fill(ARCADE.after, { score, unit: t.unit }));
-	if (beat) {
-		ctx.se("arcBest");
-		await s.narrate(ARCADE.newBest);
-	}
-	// カジノは 手もとの チップ（玉）を 換金（板が cash を 返さなければ スコアを 手もとと みる）
-	if (stake !== null)
-		await cashOut(s, game, stake, r.cash ?? r.score, previewing());
-	// クレーンゲームで 金の ぷゆゆを とったら、家に ぬいぐるみの 家具が 届く（家を 買って いて、まだ 持って いなければ）
-	if (game === "crane" && !hooks && craneLastWins().includes("puyuGold"))
-		await craneGift(s);
 };
 
 /** 部屋の 物から（物の 名前が ゲームの 名前。知らない 名前なら 何もしない）。 */

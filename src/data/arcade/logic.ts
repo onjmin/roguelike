@@ -1119,12 +1119,21 @@ export const ftInPerfect = (s: FtState): boolean => {
 	return !!f && s.phase === "wind" && s.t >= f.wind - f.guard * FT.perfect;
 };
 
+/**
+ * 1こま 進める。press は 押したか（true は こまの はじめの 時刻で はかる）、または 押した 時刻が
+ * こまの おわりから 何秒 前か（ago）。ago なら その 時刻まで 進めてから はかる（こまの 刻みで ずれない）。
+ */
 export const ftStep = (
 	s: FtState,
 	dt: number,
-	press: boolean,
+	press: boolean | number,
 	rnd: Rnd,
 ): FtEvent[] => {
+	if (typeof press === "number") {
+		const ago = Math.min(dt, Math.max(0, press));
+		const ev = ftStep(s, dt - ago, false, rnd);
+		return ev.concat(ftStep(s, ago, true, rnd));
+	}
 	const ev: FtEvent[] = [];
 	const f = FT_FOES[s.foe];
 	if (s.over || !f) return ev;

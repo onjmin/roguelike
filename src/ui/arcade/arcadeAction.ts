@@ -122,6 +122,7 @@ export const playShooter = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					f.say(ARCADE_BOARD.shBossDown);
 					quake(j, 6);
 					j.flash = 0.3;
+					f.hitStop(100);
 					if (boss) burst(j, boss.x, SH.bossY, "#e080ff", 24, 90);
 				} else if (e === "hurt" || e === "breach") {
 					f.se("arcCrash");

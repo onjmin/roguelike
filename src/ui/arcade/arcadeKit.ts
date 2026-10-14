@@ -1,5 +1,6 @@
 // ゲームセンターの 筐体の 板に 共通の 道具（ui/minigames/minigameBoard.ts の board() と ui/neta/netaBoard.ts の 2倍の 下地の 上）。
-// - playBoard：コインの 音 → READY → 毎こま step と 描画 → GAME OVER／CLEAR → { score }。
+// - playBoard：コインの 音 → READY → 毎こま step と 描画 → GAME OVER／CLEAR（0.9秒。A・タップで とばす）→ { score }。
+//   強い 当たりは f.hitStop(ms) で 板の 時を すこし 止める（ヒットストップ）。
 //   B（板の 外の タップ）を 1.5秒 以内に 2回で やめる（null。メダルスロットは やめても 枚数が 残る）。
 // - 入力（ArcEv）：十字キー（くり返しは repeat）・A・キャンバスの タップ（240x150 の 座標）。
 //   スマホでは 板を 出す あいだ 十字キーと A・B が 隠れる（main.ts の .hud.modal）ので、どの 台も タップだけで 遊べる。
@@ -9,7 +10,7 @@ import { ARCADE, ARCADE_TEXT } from "../../data/arcade/text";
 import type { ArcadeGame } from "../../data/arcade/types";
 import type { Key } from "../../engine/input";
 import type { UiCtx } from "../list";
-import { board, sleep, tick } from "../minigames/minigameBoard";
+import { board, evStamps, sleep, tick } from "../minigames/minigameBoard";
 import { BH, BW, crisp, type G, twoB, txt } from "../neta/netaBoard";
 
 /** cash は カジノの 台で やめた ときの 手もとの 枚数（換金する。ui/arcade/casinoChips.ts）。 */
@@ -31,9 +32,11 @@ const arcInput = (
 	canvas: HTMLCanvasElement,
 ): { take: () => ArcEv[]; stop: () => void } => {
 	let q: ArcEv[] = [];
+	// 押した 時刻は 出来事の 時刻（e.timeStamp）。音ゲー・格ゲー・ダーツは これで 押した 瞬間を はかる
+	const ev = evStamps();
 	const pop = ctx.input.push(
 		(k, repeat) => {
-			q.push({ k, at: performance.now(), repeat });
+			q.push({ k, at: ev.stamp().at, repeat });
 		},
 		{ tap: "b" },
 	);
@@ -45,7 +48,7 @@ const arcInput = (
 				((e.clientX - r.left) * BW) / r.width,
 				((e.clientY - r.top) * BH) / r.height,
 			],
-			at: performance.now(),
+			at: ev.stamp(e).at,
 		});
 	};
 	canvas.addEventListener("pointerdown", onDown);
@@ -57,6 +60,7 @@ const arcInput = (
 		},
 		stop: () => {
 			pop();
+			ev.stop();
 			canvas.removeEventListener("pointerdown", onDown);
 		},
 	};
@@ -97,14 +101,19 @@ export const chip = (
 export type Frame = {
 	/** 前の こまからの 秒（0.05秒まで）。 */
 	dt: number;
-	/** はじめてからの 秒（時計どおり。音ゲーの 押した 時刻と あわせる）。 */
+	/** はじめてからの 秒（時計どおり。音ゲーの 押した 時刻と あわせる）。止めた（hitStop）ぶんは 数えない。 */
 	clock: number;
 	/** その こまの 入力（B は 取りのぞいて ある）。 */
 	evs: ArcEv[];
-	/** 押した 時刻（performance.now）→ はじめてからの 秒。 */
+	/** 押した 時刻（performance.now）→ はじめてからの 秒（clock と 同じ 時計）。 */
 	secOf: (at: number) => number;
 	say: (s: string) => void;
 	se: (name: string) => void;
+	/**
+	 * ヒットストップ：ms の あいだ 板の 時を 止める（描画と ゆれは つづく。止めた あいだの 押しは あとで 渡す）。
+	 * 強い 当たりに 60〜100ms。曲の 時計で 進む 台（音ゲー・太鼓）では 使わない（曲は 止まらない）。
+	 */
+	hitStop: (ms: number) => void;
 };
 
 export type BoardSpec<S> = {
@@ -121,6 +130,28 @@ export type BoardSpec<S> = {
 	cash?: (s: S) => number;
 	/** はじめの 下の 字（既定は 押し方）。 */
 	note?: string;
+};
+
+/** おわりの 字を 見せる 長さ（ms）と、A・タップで とばせる までの 間（遊びの 押しの 名残で とばさない）。 */
+const END_MS = 900;
+const END_GRACE_MS = 250;
+
+/** おわりの 字を 出した まま 待つ（A か タップで 先へ）。 */
+const endWait = async (input: { take: () => ArcEv[] }): Promise<void> => {
+	const from = performance.now();
+	input.take();
+	for (;;) {
+		const now = await tick();
+		if (now - from >= END_MS) return;
+		const evs = input.take();
+		if (
+			now - from >= END_GRACE_MS &&
+			evs.some(
+				(e) => e.at - from >= END_GRACE_MS && (isKey(e, "a") || isTap(e)),
+			)
+		)
+			return;
+	}
 };
 
 /** 板を 出して 遊ぶ（やめたら null）。 */
@@ -147,11 +178,33 @@ export const playBoard = async <S>(
 		ctx.se("arcStart");
 		input.take();
 		const t0 = performance.now();
-		let last = t0;
+		// 板の 時（ms）：止めた ぶんを 引く。before は さいごの 止めより 前に 止めた 合計、
+		// stopFrom〜stopTo は さいごの 止め（その あいだの 押しは 止めた 時刻に 押した ことに）
+		let before = 0;
+		let stopFrom = 0;
+		let stopTo = 0;
+		const gameMs = (at: number): number =>
+			at - t0 - before - Math.max(0, Math.min(at, stopTo) - stopFrom);
+		let last = 0;
+		let now = t0;
+		const hitStop = (ms: number) => {
+			if (stopFrom === now) stopTo = Math.max(stopTo, now + ms);
+			else {
+				before += stopTo - stopFrom;
+				stopFrom = now;
+				stopTo = now + ms;
+			}
+		};
 		for (;;) {
-			const now = await tick();
-			const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
-			last = now;
+			now = await tick();
+			// 止めて いる あいだは 描くだけ（押しは 取らずに 残す）
+			if (now < stopTo) {
+				spec.draw(g, s, gameMs(now) / 1000);
+				continue;
+			}
+			const gt = gameMs(now);
+			const dt = Math.min(0.05, Math.max(0, (gt - last) / 1000));
+			last = gt;
 			const evs: ArcEv[] = [];
 			for (const e of input.take()) {
 				if (isKey(e, "b")) {
@@ -166,18 +219,19 @@ export const playBoard = async <S>(
 			if (quit.lapsed(now)) say(spec.note ?? "");
 			spec.step(s, {
 				dt,
-				clock: (now - t0) / 1000,
+				clock: gt / 1000,
 				evs,
-				secOf: (at) => (at - t0) / 1000,
+				secOf: (at) => gameMs(at) / 1000,
 				say,
 				se: ctx.se,
+				hitStop,
 			});
-			spec.draw(g, s, (now - t0) / 1000);
+			spec.draw(g, s, gt / 1000);
 			if (spec.over(s)) {
 				const end = spec.end?.(s) ?? ARCADE.over;
 				banner(g, end, end === ARCADE.clear ? "#ffe060" : "#f4f2ea");
 				ctx.se(end === ARCADE.clear ? "victory" : "miss");
-				await sleep(1600);
+				await endWait(input);
 				return { score: spec.score(s), cash: spec.cash?.(s) };
 			}
 		}

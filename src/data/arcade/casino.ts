@@ -27,6 +27,8 @@ export type CasinoMoney = {
 	cashed: string;
 	/** 手もとに 1枚も ない。 */
 	none: string;
+	/** おわった あとの「もう一回」（同じ 枚数を また 買う。ui/arcade/arcade.ts）。 */
+	again: string;
 };
 
 export const CASINO: Record<CasinoKind, CasinoMoney> = {
@@ -40,6 +42,7 @@ export const CASINO: Record<CasinoKind, CasinoMoney> = {
 		bought: "チップを　{n}枚　買った。（−{price}）",
 		cashed: "チップ　{n}枚を　換金した。（+{price}）",
 		none: "チップは　1枚も　のこらなかった。",
+		again: "もう一回　{n}枚",
 	},
 	ball: {
 		rate: 4,
@@ -51,6 +54,7 @@ export const CASINO: Record<CasinoKind, CasinoMoney> = {
 		bought: "玉を　{n}発　買った。（−{price}）",
 		cashed: "玉　{n}発を　換金した。（+{price}）",
 		none: "玉は　1発も　のこらなかった。",
+		again: "もう一回　{n}発",
 	},
 };
 

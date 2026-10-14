@@ -4,6 +4,7 @@
 // - 時計は 曲の 鳴っている 位置（engine/audio.ts の playChartSong）。押した 時刻も 曲の 秒に なおして 判定する。
 //   音が 出せない（ミュート・BGM 切）ときは 板の 時計で 回す（札は 同じ）。
 // - おわったら 曲を 絞って 止め、もとの 曲に もどす。
+// - 「もう一回」（ui/arcade/arcade.ts）の ときは 選ぶ 窓を 出さず、前に えらんだ 曲で また 遊ぶ（replaySong）。
 // - 曲ごとの ハイスコアは localStorage の kiriko-roguelike/arcade-songs（?stage= ・?event= の ときは 書かない）。
 
 import {
@@ -92,8 +93,29 @@ export const chartOf = async (
 
 export type PickedSong = { bgm: string; label: string; chart: SongChart };
 
+/** 台ごとの さいごに えらんだ 曲。 */
+const lastPick = new Map<SongGame, PickedSong>();
+let replay = false;
+/** 次の pickSong を 前と 同じ 曲に する（1回 かぎり。前が なければ 窓を 出す）。 */
+export const replaySong = (on: boolean): void => {
+	replay = on;
+};
+
 /** 曲を えらぶ（町で 聞いた 曲。やめたら null）。 */
 export const pickSong = async (
+	ctx: UiCtx,
+	game: SongGame,
+	opts: ChartOpts,
+): Promise<PickedSong | null> => {
+	const again = replay ? lastPick.get(game) : undefined;
+	replay = false;
+	if (again) return again;
+	const got = await pickFromList(ctx, game, opts);
+	if (got) lastPick.set(game, got);
+	return got;
+};
+
+const pickFromList = async (
 	ctx: UiCtx,
 	game: SongGame,
 	opts: ChartOpts,

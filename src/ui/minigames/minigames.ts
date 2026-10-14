@@ -62,6 +62,20 @@ const drawThread = (
 	}
 };
 
+/** ms 待つ（はじめの 0.3秒の あとに A・タップが あれば そこで おわる。押しの 名残で とばさない）。 */
+const sleepOrA = async (
+	p: { take: () => "a" | "b" | null },
+	ms: number,
+): Promise<void> => {
+	const from = performance.now();
+	p.take();
+	for (;;) {
+		const t = await tick();
+		if (t - from >= ms) return;
+		if (p.take() === "a" && t - from >= 300) return;
+	}
+};
+
 /**
  * 1000取り。>>999 を 取れば true（1000 は あけたまま）。早すぎ・遅すぎは 1000ゲッターが 1000 を 取って false。
  * レス番は 960 から 進み、だんだん 速くなる（はじめ 0.26秒 → 990 から 0.11秒）。999 だけ 0.42秒 止まる（ここで 押す）。
@@ -87,14 +101,7 @@ export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 		let result: "win" | "early" | "late" | "quit" | null = null;
 		for (;;) {
 			const t = await tick();
-			// 990 までは だんだん 速く、990 から 999 の 手前は 速いまま、999 は すこし 長く 止まる（ここで 押す）
-			const interval =
-				n < 990 ? 260 - ((n - 960) / 30) * 150 : n < 999 ? 110 : 420;
-			if (t - last >= interval) {
-				last = t;
-				n++;
-				if (n % 4 === 0) ctx.se("cursor");
-			}
+			// 押しは 進める 前に 見る：押した ときに 見えて いた レス番（前の こまで 描いた n）で はかる
 			const pr = p.take();
 			if (pr === "b") {
 				result = "quit";
@@ -103,6 +110,16 @@ export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 			if (pr === "a") {
 				result = n === 999 ? "win" : n < 999 ? "early" : "late";
 				break;
+			}
+			// 990 までは だんだん 速く、990 から 999 の 手前は 速いまま、999 は すこし 長く 止まる（ここで 押す）
+			const interval =
+				n < 990 ? 260 - ((n - 960) / 30) * 150 : n < 999 ? 110 : 420;
+			if (t - last >= interval) {
+				// 間を こまの 刻みで ずらさない（あまりは 次へ）。止まって いた ときは 追いつかせない
+				last += interval;
+				if (t - last >= interval) last = t;
+				n++;
+				if (n % 4 === 0) ctx.se("cursor");
 			}
 			if (n >= 1000) {
 				result = "late";
@@ -123,7 +140,8 @@ export const playGetter = async (ctx: UiCtx): Promise<boolean> => {
 		ctx.se("cancel");
 		drawThread(b.g, Math.max(n, 1000), 1, "1000　名前：1000ゲッター");
 		say(result === "early" ? "早すぎた！　……取られた" : "……取られた");
-		await sleep(1500);
+		// 負けの 字は A・タップで とばせる（すぐ 次スレへ。呼ぶ側が また はじめる）
+		await sleepOrA(p, 1500);
 		return false;
 	} finally {
 		p.stop();

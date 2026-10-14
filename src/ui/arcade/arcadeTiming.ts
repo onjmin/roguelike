@@ -1,6 +1,6 @@
 // ゲームセンターの 筐体の 板（ねらって たたく・間合いを はかる 台）。決まりは data/arcade/logic.ts、文は data/arcade/text.ts。
 // - もぐらたたき「ROMたたき」：十字キーで カーソル、A で たたく。穴を タップすると その 穴を たたく。
-// - 格ゲー「レスバトル」：A・タップで 返す（相手の「！」の あと、なぐられる 直前。ぎりぎりほど 強い）。
+// - 格ゲー「レスバトル」：A・タップで 返す（相手の「！」の あと、なぐられる 直前。ぎりぎりほど 強い）。押した 時刻で はかる。
 // - メダルゲーム「メダルスロット」：A・タップで 回す・止める。B（板の 外を 2回）で やめる（その ときの 枚数で 記録）。
 // - 音ゲー「おんJビート」：←↓↑→ が 左から 4つの 道。道を タップでも たたける。押した 時刻で 判定する
 //   （描画の こまで はかると 50ms の 刻みで ずれる）。
@@ -114,6 +114,7 @@ export const playMole = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				} else if (e === "kote") {
 					f.se("critical");
 					f.say(ARCADE_BOARD.moleKote);
+					f.hitStop(70);
 				} else if (e === "armor") {
 					f.se("hit_fist");
 					f.say(ARCADE_BOARD.moleArmor);
@@ -260,7 +261,9 @@ export const playFighter = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 		start: ftStart,
 		step: (s, f) => {
 			juiceStep(j, f.dt);
-			const press = f.evs.some((e) => isKey(e, "a") || isTap(e));
+			// 押した 時刻で はかる（こまの おわりから 何秒 前か。いちばん 早い 押し）
+			const hit = f.evs.find((e) => isKey(e, "a") || isTap(e));
+			const press = hit ? f.clock - f.secOf(hit.at) : false;
 			flashT = Math.max(0, flashT - f.dt);
 			const before = s.score;
 			for (const e of ftStep(s, f.dt, press, rnd)) {
@@ -276,6 +279,7 @@ export const playFighter = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					burst(j, 150, 92, "#ffe060", 18, 90);
 					quake(j, 4);
 					j.flash = 0.15;
+					f.hitStop(90);
 				} else if (e === "early") {
 					f.se("damage");
 					show(ARCADE_BOARD.fighterEarly);
@@ -290,6 +294,7 @@ export const playFighter = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					show(ARCADE_BOARD.fighterKo, "#ffe060");
 					quake(j, 6);
 					j.flash = 0.3;
+					f.hitStop(100);
 				} else if (e === "next")
 					f.say(
 						fill(ARCADE_BOARD.fighterNext, {
