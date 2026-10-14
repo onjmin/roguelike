@@ -1,4 +1,4 @@
-// 季節の 行事の 試験（pnpm test で いっしょに 動く。STORY.md §5.75 季節の 行事）。
+// 季節の 行事の 試験（pnpm test で いっしょに 動く。TOWN.md 季節の 行事）。
 // 日替わり（data/town/openModes.ts）・おんJ芋煮会（data/town/imoni.ts・ui/minigames/imoni.ts・data/village/season.ts）・
 // どすこいポイント（data/minigames/dosukoi.ts・ui/minigames/dosukoi.ts）。
 // 日付・年・帰りは みな 引数で 渡す（端末の 日付・時刻に よらない。10月でも 8/5 でも 同じ 結果）。

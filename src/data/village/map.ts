@@ -626,7 +626,7 @@ const CITY_CELLS: readonly (readonly [number, number, string])[] = [
 ];
 
 /**
- * 町の 中心（本館・広場・商店街と すぐ まわり）の 都市化（地図の 座標。STORY.md §5.75）。段5 までは 何も しない。
+ * 町の 中心（本館・広場・商店街と すぐ まわり）の 都市化（地図の 座標。TOWN.md）。段5 までは 何も しない。
  * 字と 絵は data/village/tiles.ts の CITY（CITY_CLIFF・HUT_CITY・CITY7 は 段7 の パレットで 上書き）。
  * - 住宅街（段6）：崖下の 道と 町の 通りに 路側帯（ゑ）と マンホール（ヴ）、本館への 道は 2車線（る れ）、
  *   通りの わきに 電柱、広場の 南は 刈りこんだ 生け垣。
@@ -698,7 +698,7 @@ export const coreShadows = (
 };
 
 /**
- * 東の 新市街（地図の x=40〜85。STORY.md §5.75）。街（段4）で 森が 開けて 草地と 通りが できる。
+ * 東の 新市街（地図の x=40〜85。TOWN.md）。街（段4）で 森が 開けて 草地と 通りが できる。
  * 道路は 横が 4マス（片側 2車線：y 方向）、縦が 5マス（片側 2車線と まんなか：x 方向）。見おろしの 絵で 立体感が 出る
  * （作者の 指示）。両がわに 歩道 1マス。横の 通りは 大通り（歩道 19・車線 20〜23・歩道 24）だけ。
  * 北と 南は 通りを 通さない 深い 街区（歩道が 5〜6行ごとに 並ぶと 道ばかりに 見える：作者の 指示）で、
@@ -949,7 +949,7 @@ export type VillageExit = {
 export const VILLAGE_EXITS: readonly VillageExit[] = [
 	{ side: "n", cell: [27, 0], inward: "down", step: "d" },
 	{ side: "w", cell: [0, 19], inward: "right", step: "r" },
-	// 東は 新市街の はし（町の 通りを のばした 大通りの 先。STORY.md §5.75）
+	// 東は 新市街の はし（町の 通りを のばした 大通りの 先。TOWN.md）
 	{ side: "e", cell: [86, 19], inward: "left", step: "l" },
 	// 南は 桟橋の 先の 港（船で 海の 向こうの 島へ）
 	{ side: "s", cell: [20, 51], inward: "up", step: "u" },

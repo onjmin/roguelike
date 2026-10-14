@@ -1,4 +1,4 @@
-// ネタスレの 遊び（グラウンド・碁会所・おんJ道場・ageジム・ゲームセンター。STORY.md §5.75「ネタスレの 遊び」）の 窓の がわ。
+// ネタスレの 遊び（グラウンド・碁会所・おんJ道場・ageジム・ゲームセンター。TOWN.md「ネタスレの 遊び」）の 窓の がわ。
 // 物（data/village/facilities.ts の plays・outdoor の play）を 調べると ui/village/facilities.ts が netaPlay を 呼ぶ。
 //   yakyu   グラウンドの 三塁側の ベンチ：ランダム野球（ui/neta/netaYakyu.ts）。勝ち負けは 記録に 残る。
 //   kabe    グラウンドの 外野の 5割の壁：ランダム野球の 通算が ちょうど 5割（勝ち＝負け、1勝 以上）の ときだけ、
