@@ -205,7 +205,7 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 	},
 	crtGame: {
 		name: "古い　ゲーム機",
-		cells: [[ri("tvCrtB")]],
+		cells: [[ri("tvCrt")]],
 		line: ARCADE_TEXT.pong.line,
 	},
 	barrel: {

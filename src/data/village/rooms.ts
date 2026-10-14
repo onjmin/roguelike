@@ -46,7 +46,7 @@ import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
 import { FOLK_ART } from "./folk";
 import type { Cell } from "./map";
-import { ri, riCell } from "./rpgenArt";
+import { ri } from "./rpgenArt";
 import { base, basePx, floor, INDOOR, onTop, solid } from "./tiles";
 
 export type RoomId =
@@ -461,7 +461,7 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				A: up(base(5, 95)),
 				Q: up(PICTURE),
 				// 壁の テレビ（朝の スレ小説）
-				"@": up(ri("tvSmall")),
+				"@": up(ri("tvCrt")),
 				b: low(),
 				k: low(base(2, 116, 1, 2)),
 				"[": { ...solid(bar, l.floor, base(5, 98)), counter: true },
@@ -553,10 +553,10 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				// 視聴覚コーナーの テレビ（過去ログの世紀）
 				"@": on(ri("tvCrt")),
 				// 1レス博物館の ガラスケース 2つ（左・右。ui/village/folk.ts の museumScript）
-				a: on(riCell("glassCase", 0, 0)),
-				b: on(riCell("glassCase", 1, 0)),
-				c: on(riCell("glassCase", 0, 0)),
-				d: on(riCell("glassCase", 1, 0)),
+				a: on(ri("yellowCounter")),
+				b: on(ri("yellowCounter", 1)),
+				c: on(ri("yellowCounter")),
+				d: on(ri("yellowCounter", 1)),
 			};
 		case "music":
 			return {
@@ -600,7 +600,7 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				":": floor("#a89878", base(3, 50)),
 				// 料金表（入口の 壁）・マッサージ椅子（脱衣所）・脱衣所の テレビ（大相撲）
 				P: low(PAPER),
-				"@": low(ri("tvSmall")),
+				"@": low(ri("tvCrt")),
 				// 番台の 左の 壁の メモ（七不思議 その1『温泉卵的な？』。ui/village/folk.ts の eggScript）
 				y: low(FOLK_ART.memo),
 				C: solid("#c8a86a", base(0, 46), base(4, 116, 1, 2)),

@@ -146,6 +146,22 @@ const goods = (c: number) => basePx(c * 16, 139 * 16, 16, 22);
 const POST_L = basePx(5, 30 * 16);
 const POST_R = basePx(11, 30 * 16);
 
+/**
+ * 2段の 台（台所の 台・ガラスケース。ri(名前, 列) を 下の 段の マスに 置き、天板は 上の マスへ はみ出す）の
+ * 天板に 小物を のせる。小物は 1マス 上に ずらし、はみ出した 天板より 手前（above）に 描く。
+ * 小物の 参照は `#sx,sy,sw,sh` の 4つ（ri・onTop・base）。
+ */
+export const onUpper = (t: TileDef, ...refs: string[]): TileDef => ({
+	...t,
+	above: [...(t.above ?? []), ...refs.map((r) => `${r},0,-16`)],
+});
+
+/**
+ * 受付・レジの 台（左はし・まんなか・右はし）。屋台の 台と 同じ 1段の 木の 台（天板と 前の ふち）。
+ * 台の うしろの 人が 隠れない（2段の 棚を 台に すると 上の 段が 人に かぶる）。台の 上の 小物は ri("bell") など。
+ */
+export const RECEPTION = [base(1, 98), base(2, 98), base(3, 98)] as const;
+
 export const STALL: Record<string, TileDef> = {
 	"<": counter(C_WOOD, TURF, base(1, 98)),
 	"-": counter(C_WOOD, TURF, base(2, 98)),

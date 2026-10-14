@@ -313,16 +313,13 @@ const ROOM_PIECES = {
 	drinkCase: { ids: [["BfdTj3t"], ["OtkGJi"]] },
 	// 106: 100 101。アイスの 冷凍ケース（2x1）
 	iceChest: { ids: [["07gdTS3", "nW8WqEv"]] },
-	// 106: 92 93。白い レジ台（2x1）
-	whiteCounter: { ids: [["RgPKe9L", "2hTiYrs"]] },
-	// 106: 94 95。黄色い 灯りの ケース（ホットスナック）
-	yellowCounter: { ids: [["07F5TSj", "LKSlpqX"]] },
-	// 106: 96 97。白い 低い 棚（2x1）
-	lowShelf: { ids: [["seiN8k2", "wFJtfx6"]] },
-	// 106: 112 113
-	lowShelfB: { ids: [["OtK5JKg", "07FFTdM"]] },
-	// 106: 110 111。木枠の ガラスケース（2x1）
-	glassCase: { ids: [["YB1JEfi", "ySs6rTR"]] },
+	// 106: 92 93 / 108 109（rpgen.org の 5849 5848 / 5847 5846）。白い 天板の 棚（2x2。上が 天板、下が 品の 段）。
+	// 2026-10-15 まで 天板の 段だけを 受付の 台に 使っていた（作者の 指摘。受付は Base.png の 木の 台 RECEPTION に した）
+	whiteCounter: { ids: [["RgPKe9L", "2hTiYrs"], ["dq:5847", "dq:5846"]] },
+	// 106: 94 95 / 110 111。黄色い 灯りの ガラスケース（ホットスナック。2x2）
+	yellowCounter: { ids: [["07F5TSj", "LKSlpqX"], ["YB1JEfi", "ySs6rTR"]] },
+	// （2026-10-15 まで あった 低い 棚 lowShelf・lowShelfB は shelfGoods の 上の 段・下の 段、
+	// ガラスケース glassCase は yellowCounter の 下の 段だった。どれも 全体を 使う 形に した）
 	// 106: 114
 	safe: { ids: [["sgid89n"]] },
 	// 25: 86。画面と ボタンの 機械（ATM・券売機）
@@ -376,16 +373,14 @@ const ROOM_PIECES = {
 	scale: { ids: [["hfpzBpS"], ["58VUQjp"]] },
 	// 25: 55。男女の お手洗いの 札
 	signRestroom: { ids: [["DVAP5Y"]] },
-	// 96: 0
-	tvSmall: { ids: [["dtjE4bd"]] },
+	// 96: 0 / 7（rpgen.org の 12772 / 12773）。台に のった 小さい テレビ（1x2）
+	tvSmall: { ids: [["dtjE4bd"], ["dq:12773"]] },
 	// 96: 2 3
 	tvBig: { ids: [["fLWE9id", "9p0BFuc"]] },
 	// 96: 7
 	tvCrt: { ids: [["dq:226"]] }, // 1マスで すむ テレビ（rpgen.org の 226。前は 2マスの テレビの 上だけ だった）
 	// 台つきの テレビ（1x2。rpgen.org の 209 / 210）
 	tvTall: { ids: [["dq:209"], ["dq:210"]] },
-	// 96: 8
-	tvCrtB: { ids: [["uBb2Ml"]] },
 	// 95: 2
 	console: { ids: [["YwGEml"]] },
 	// 201: 3
@@ -394,12 +389,11 @@ const ROOM_PIECES = {
 	guitarB: { ids: [["c7ZuPV"]] },
 	// 201: 14
 	records: { ids: [["3dANW5P"]] },
-	// 24: 161
-	ecg: { ids: [["BbtjiU"]] },
-	// 24: 181
-	medPanel: { ids: [["VvhXOb"]] },
-	// 24: 182
-	medPanelB: { ids: [["EV3hjU"]] },
+	// 24: 173 / 193（rpgen.org の 1380 / 1379）。心電図の 機械（1x2。上が 緑の 波の 画面、下が 画面と ボタン）。
+	// 2026-10-15 まで 上と 下を べつの 機械（ecg・medPanel）として 1マスずつ 使っていた（作者の 指摘）
+	ecg: { ids: [["BbtjiU"], ["VvhXOb"]] },
+	// 24: 174 / 194（rpgen.org の 1372 / 1371）。白い 検査の 機械（1x2。上が 画面、下が 赤い ボタン）
+	medPanel: { ids: [["dq:1372"], ["EV3hjU"]] },
 	// 24: 184
 	stoolWhite: { ids: [["NdpzjX"]] },
 	// 165: 27
@@ -431,22 +425,26 @@ const ROOM_PIECES = {
 	// 白い ソファ（2x2。上が 背もたれ、下が 座面と ひじかけ。rpgen.org の 5824 5823 / 5822 5821）。
 	// 2026-10-13 まで 座面の 段だけ だった（作者の 指摘）
 	sofaWhite: { ids: [["dq:5824", "dq:5823"], ["dq:5822", "dq:5821"]] },
-	// 105: 68。背中から 見た ひじかけ いす（映画館の 席）
-	seatBack: { ids: [["rIstCjf"]] },
+	// 背中から 見た 客席（劇場・映画館・傍聴席）。手描き（RPGEN の だいだいの ひじかけ いすと 同じ 色）。
+	// 2026-10-15 まで 横向きの ひじかけ いす（105: 55 / 68）の 下の 段だけ だった（全部 使うと 横を 向くので 描いた）
+	seatBack: { drawn: "seatBack" },
 	// 80: 3
 	bonsai: { ids: [["j9KDwc"]] },
 	// 125: 1
 	fenceIron: { ids: [["2f8TYSM"]] },
 	// 210: 22
 	runner: { ids: [["u9wM2hP"]] },
-	// 173: 135 136
-	stove: { ids: [["yS5brRh", "wFdvfCW"]] },
-	// 173: 140 141
-	sink: { ids: [["arkbtEe", "j97mw6P"]] },
-	// 173: 155 156 157
-	cabNavy: { ids: [["86ocR6", "VZzhXCr", "SmsgIbM"]] },
+	// ── 台所の 台（どれも 2段。上が 天板〔コンロ・流し〕、下が その 下の 戸棚。rpgen.org の 空室改造セット 173 の 8・9 行）。
+	// 2026-10-15 まで 天板の 段だけ・戸棚の 段だけ だった（作者の 指摘：流しの 右と 下が ない）。部屋では ri(名前, 列) を
+	// 下の 段の マスに 置き（天板は 上の マス〔ふつう 壁の 下段〕へ はみ出す）、天板の 小物は tiles.ts の onUpper で のせる
+	// 173: 135 136 / 155 156
+	stove: { ids: [["yS5brRh", "wFdvfCW"], ["dq:5650", "dq:5649"]] },
+	// 173: 140 141 / 160 161
+	sink: { ids: [["arkbtEe", "j97mw6P"], ["dq:5646", "dq:5645"]] },
+	// 173: 155 156 157（天板は 何も ない 灰色の 台：左はし・まんなか・右はし）
+	cabNavy: { ids: [["dq:5658", "dq:5651", "dq:5659"], ["86ocR6", "VZzhXCr", "SmsgIbM"]] },
 	// 173: 169 170 171
-	cabWood: { ids: [["2hWUY6J", "uESe21j", "14FC7A"]] },
+	cabWood: { ids: [["dq:5658", "dq:5651", "dq:5659"], ["2hWUY6J", "uESe21j", "14FC7A"]] },
 	// 173: 89 90 / 109 110
 	winBlue: { ids: [["uECS2iG", "sejj8YD"], ["07R8T7B", "HbUFVhc"]] },
 	// 209: 14
@@ -540,10 +538,10 @@ const ROOM_PIECES = {
 	// Base.png
 	coffeeMaker: { base: [6, 394], lift: 3 },
 	// ── ファミレス（窓ぎわの ボックス席・ドリンクバー）
-	// 105: 55。背もたれが 左の ソファ（右を 向いて すわる）
-	boothR: { ids: [["YBT2ESN"]] },
-	// 105: 56。背もたれが 右の ソファ（左を 向いて すわる）
-	boothL: { ids: [["3TwMWS7"]] },
+	// 105: 55 / 68。背もたれが 左の ソファ（右を 向いて すわる。1x2。2026-10-15 まで 上の 段だけ だった）
+	boothR: { ids: [["YBT2ESN"], ["rIstCjf"]] },
+	// 105: 56 / 69（rpgen.org の 5791 / 5790）。背もたれが 右の ソファ（左を 向いて すわる。1x2）
+	boothL: { ids: [["3TwMWS7"], ["dq:5790"]] },
 	// 105: 24。ボックス席の 机
 	tableBeige: { ids: [["ksiPKOV"]] },
 	// 35: 3。鉄板の ハンバーグ（机の 上）
@@ -559,22 +557,23 @@ const ROOM_PIECES = {
 	// 209: 7。明るい 板の 床
 	flWoodLight: { ids: [["uFsw2GE"]] },
 	// ── 飲食店（data/village/eateries.ts。立ち食いそば・牛丼・居酒屋・寿司・中華）
-	// 173: 137 138。黒い ガスコンロ（2x1）
-	stoveBlack: { ids: [["Pcb7NwJ", "yS5Hr8E"]] },
-	// 173: 148 149。広い 流し（2x1）
-	sink2: { ids: [["ml6oxp9", "86o8RE7"]] },
+	// 173: 137 138 / 157 158。黒い ガスコンロ（2x2。下は 紺の 引き出し）
+	stoveBlack: { ids: [["Pcb7NwJ", "yS5Hr8E"], ["dq:5648", "dq:5647"]] },
+	// 173: 148 149 / 167 168。広い 流し（2x2。下は 赤い 戸棚）
+	sink2: { ids: [["ml6oxp9", "86o8RE7"], ["dq:5666", "dq:5665"]] },
 	// 173: 157 158 159。紺の 戸棚（引き出し）
-	cabNavyB: { ids: [["SmsgIbM", "p5rvkv1", "Tdf91TW"]] },
+	cabNavyB: { ids: [["dq:5658", "dq:5651", "dq:5659"], ["SmsgIbM", "p5rvkv1", "Tdf91TW"]] },
 	// 173: 162 163 164。赤い 戸棚
-	cabRed: { ids: [["eHiR6wk", "OtLdJAC", "2h3zYAz"]] },
-	// 106: 98
-	fridgeWhite: { ids: [["4ykuOVt"]] },
-	// 106: 115
-	fridgeSilver: { ids: [["JCfazN"]] },
+	cabRed: { ids: [["dq:5658", "dq:5651", "dq:5659"], ["eHiR6wk", "OtLdJAC", "2h3zYAz"]] },
+	// 106: 98 / 114。白い 冷蔵庫（1x2。2026-10-15 まで 上の 段だけ。下の 段は 金庫 safe にも 使う）
+	fridgeWhite: { ids: [["4ykuOVt"], ["sgid89n"]] },
+	// 106: 99 / 115（rpgen.org の 207 / 208）。銀の 冷蔵庫（1x2。2026-10-15 まで 下の 段だけ）
+	fridgeSilver: { ids: [["dq:207"], ["JCfazN"]] },
 	// 106: 10。重ねた 皿（台の 上）
 	plateStack: { ids: [["oD4clAM"]], lift: 3 },
-	// 106: 51 52。酒瓶の 棚（2x1）
-	shelfBottles: { ids: [["iNhnDvV", "hwp7BpN"]] },
+	// 106 の 3・4 行 6・7 列（rpgen.org の 4242 4241 / 4240 4239）。瓶の 並んだ 木の 棚（2x2）。
+	// 2026-10-15 まで たんすの 右上と 棚の 左上を つないだ 2x1 だった
+	shelfBottles: { ids: [["dq:4242", "dq:4241"], ["dq:4240", "dq:4239"]] },
 	// 本棚（1x2。上が 冠、下が 棚の 下半分。rpgen.org の 391 / 392 = 明るい 木、5573 / 5572 = 暗い 木）。
 	// 2026-10-13 まで 明るい 本棚の 上と 暗い 本棚の 下を 横に ならべて 1つに していた（作者の 指摘）
 	bookshelf: { ids: [["dq:391"], ["dq:392"]] },
@@ -585,8 +584,8 @@ const ROOM_PIECES = {
 	stoolOrange: { ids: [["JrUaKI"]] },
 	// 105: 52
 	stoolSmall: { ids: [["TdDf1T2"]] },
-	// 105: 73
-	chairRed: { ids: [["eH1a6Rm"]] },
+	// 105: 60 / 73（rpgen.org の 4534 / 4533）。赤い 座面の 背の 高い いす（1x2。2026-10-15 まで 座面の 段だけ）
+	chairRed: { ids: [["dq:4534"], ["eH1a6Rm"]] },
 	// 92: 36。字の 書いた 紙（壁）
 	paperNote: { ids: [["Dz6gPb0"]] },
 	// 109: 46 47 48。生け簀（3x1）
@@ -1088,6 +1087,35 @@ const DRAWN = {
 			dot(img, x, y, "d8e8a8");
 		return img;
 	},
+	/** 背中から 見た 客席（丸い 背もたれ・両わきの ひじかけ・脚。横に 並べると 客席の 列に なる）。 */
+	seatBack: () => {
+		const img = blank(CELL, CELL);
+		const pal = { a: "363d5d", b: "f79f7e", c: "e56d45", d: "b95d45", e: "757e75" };
+		const rows = [
+			"",
+			"...aaaaaaaaaa...",
+			"..abbbbbbbbbba..",
+			"..abccccccccca..",
+			"..acccccccccca..",
+			"..acccccccccca..",
+			"..acccccccccca..",
+			"..acccccccccda..",
+			"aaacccccccccdaaa",
+			"abacccccccccdaba",
+			"acacccccccccdaca",
+			"acadddddddddddca",
+			"adaddddddddddada",
+			"aaaaaaaaaaaaaaaa",
+			".e.e........e.e.",
+			".e.e........e.e.",
+		];
+		rows.forEach((r, y) => {
+			[...r].forEach((c, x) => {
+				if (pal[c]) dot(img, x, y, pal[c]);
+			});
+		});
+		return img;
+	},
 	/** たこ焼き（舟皿に 6こ。ソース・マヨ・青のり）。 */
 	takoyaki: () => {
 		const img = blank(CELL, CELL);
@@ -1255,11 +1283,12 @@ const room = packAtlas(
 	ROOM_PIECES,
 	(p) => {
 		if (p.base) return [p.base[2] ?? 1, p.base[3] ?? 1];
-		if (p.parts) return [1, 1];
+		if (p.parts || p.drawn) return [1, 1];
 		return [Math.max(...p.ids.map((r) => r.length)), p.ids.length];
 	},
 	(p, w, h) => {
 		if (p.ids) return applyOp(drawIds(p.ids, w, h, p.lift), p.op);
+		if (p.drawn) return DRAWN[p.drawn]();
 		const img = blank(w * CELL, h * CELL);
 		if (p.base) {
 			paste(img, baseCut(...p.base), 0, -(p.lift ?? 0));

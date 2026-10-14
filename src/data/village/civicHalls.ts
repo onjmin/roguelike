@@ -14,7 +14,7 @@
 
 import type { Facility, RoomLook } from "./facilities";
 import { art, ri, riCell } from "./rpgenArt";
-import { base } from "./tiles";
+import { base, RECEPTION } from "./tiles";
 
 /** 台（台ごしに 向こうの 人と 話せる。人の となりの 台には 調べる 物を 置かない）。 */
 const ctr = <T extends object>(t: T) => ({ ...t, counter: true });
@@ -109,9 +109,9 @@ const TOWNHALL: Facility = {
 			g: k.low(FLAG_R),
 			B: k.low(ri("scroll")),
 			e: k.low(ri("notice")),
-			"[": ctr(k.on(riCell("whiteCounter", 0, 0), ri("bell"))),
-			"=": ctr(k.on(riCell("whiteCounter", 1, 0))),
-			"]": ctr(k.on(riCell("whiteCounter", 1, 0), ri("pcTop"))),
+			"[": ctr(k.on(RECEPTION[0], ri("bell"))),
+			"=": ctr(k.on(RECEPTION[1])),
+			"]": ctr(k.on(RECEPTION[2], ri("pcTop"))),
 			q: ctr(k.on(riCell("counterDark", 0, 0))),
 			Q: ctr(k.on(riCell("counterDark", 1, 0))),
 			r: ctr(k.on(riCell("counterDark", 2, 0))),
