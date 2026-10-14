@@ -800,6 +800,7 @@ const clearedOf = (pend: PendingReturn) => {
 	return {
 		shallowCleared: cleared && pend.dungeon === "shallow",
 		topCleared: cleared && pend.dungeon === "deep",
+		topOpen: loadProgress().cleared.includes("deep"),
 	};
 };
 

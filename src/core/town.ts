@@ -78,8 +78,27 @@ export const lastStepOf = (stage: number): number => {
 /**
  * 売り上げは もう 次の 段に 届いているが、1回の 帰りで 1段までなので 次の 帰りを 待っている（ゼロが そう 言う）。
  */
-export const nextStageReady = (stage: number, points: number): boolean =>
-	stage >= 1 && stage < TOWN_STAGES - 1 && points >= STAGE_POINTS[stage + 1];
+export const nextStageReady = (
+	stage: number,
+	points: number,
+	topOpen = true,
+): boolean =>
+	stage >= 1 &&
+	stage < (topOpen ? TOWN_STAGES - 1 : TOWN_STAGES - 2) &&
+	points >= STAGE_POINTS[stage + 1];
+
+/**
+ * 売り上げは いちばん上の 段（祭り）に 届いて いるが、電池板を まだ 持ち帰って いない（祭りは 本筋の 山場の あと。
+ * STORY.md §5「町が いちばん 大きく なるのは 電池板を 持ち帰った とき」）。
+ */
+export const topWaiting = (
+	stage: number,
+	points: number,
+	topOpen: boolean,
+): boolean =>
+	!topOpen &&
+	stage >= TOWN_STAGES - 2 &&
+	points >= STAGE_POINTS[TOWN_STAGES - 1];
 
 /** 段 → 倉庫に あずけられる数。 */
 export const STORAGE_CAP: readonly number[] = [0, 0, 3, 5, 10, 20, 40, 60];
@@ -197,9 +216,18 @@ export const pricedKinds = (): string[] => Object.keys(PRICE);
 export const nextStage = (
 	stage: number,
 	points: number,
-	opt: { shallowCleared: boolean; topCleared: boolean },
+	opt: {
+		shallowCleared: boolean;
+		topCleared: boolean;
+		/**
+		 * いちばん上の 段（祭り）まで 上がれるか（電池板を 持ち帰った ことが ある。省けば 上がれる）。
+		 * 売り上げだけで 山場の 前に 祭りに ならない ように（2026-10-14 紐づけの 見直し）。
+		 */
+		topOpen?: boolean;
+	},
 ): number => {
 	if (opt.topCleared) return TOWN_STAGES - 1;
+	const top = opt.topOpen === false ? TOWN_STAGES - 2 : TOWN_STAGES - 1;
 	let reach = 0;
 	for (let i = 1; i < TOWN_STAGES; i++)
 		if (
@@ -208,5 +236,5 @@ export const nextStage = (
 		)
 			reach = i;
 	if (opt.shallowCleared) reach = Math.max(reach, 1);
-	return Math.max(stage, Math.min(reach, stage + 1));
+	return Math.max(stage, Math.min(reach, stage + 1, top));
 };

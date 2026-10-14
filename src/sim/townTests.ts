@@ -11,12 +11,14 @@ import {
 	CARRY_MAX,
 	lastStepOf,
 	nextStage,
+	nextStageReady,
 	pricedKinds,
 	priceOf,
 	STAGE_POINTS,
 	STORAGE_CAP,
 	TOWN_STAGES,
 	TOWN_STEPS,
+	topWaiting,
 	townStep,
 } from "../core/town";
 import { triggerTrap } from "../core/traps";
@@ -176,6 +178,27 @@ test("town stage rules: one step per return, the deep (電池板) clear jumps to
 		"the deep clear did not jump to the top",
 	);
 	ok(nextStage(5, 0, none) === 5, "the town shrank");
+	// 祭り（いちばん上）は 電池板の 山場の あと：売り上げだけでは 段6 で 止まる。前から 段7 なら そのまま
+	const shut = { ...none, topOpen: false };
+	ok(
+		nextStage(TOWN_STAGES - 2, 1e9, shut) === TOWN_STAGES - 2,
+		"sales alone reached the festival before the climax",
+	);
+	ok(
+		nextStage(TOWN_STAGES - 2, 1e9, { ...none, topOpen: true }) ===
+			TOWN_STAGES - 1,
+		"the festival did not come after the climax",
+	);
+	ok(
+		nextStage(TOWN_STAGES - 1, 0, shut) === TOWN_STAGES - 1,
+		"an old festival town shrank",
+	);
+	ok(
+		!nextStageReady(TOWN_STAGES - 2, 1e9, false) &&
+			topWaiting(TOWN_STAGES - 2, 1e9, false) &&
+			!topWaiting(TOWN_STAGES - 2, 1e9, true),
+		"the ledger promised the festival before the climax",
+	);
 	ok(
 		STORAGE_CAP[1] === 0 && STORAGE_CAP[2] > 0 && CARRY_MAX[2] === 1,
 		"storage opens at stage 2 with carry 1",
