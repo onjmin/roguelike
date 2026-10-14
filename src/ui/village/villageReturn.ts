@@ -78,6 +78,7 @@ import {
 	TOWN_GREW_MSG,
 	TOWN_MSG,
 	WAKE_PAGES,
+	WALLET_WHY,
 } from "../../data/town/town";
 import {
 	asideSpot,
@@ -851,6 +852,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 
 /** 売り上げを 町で 使える ことを ゼロが 言った（Progress.flags）。 */
 const WALLET_TOLD = "toldWallet";
+const WALLET_WHY_TOLD = "toldWalletWhy";
 /** あずけた 物の 正体が わかる ことを シヨが 言った。 */
 const STORE_TOLD = "toldStoreKnown";
 
@@ -958,6 +960,13 @@ export const settleScript = async (
 				cueOf(TOWN_MSG.wallet),
 			);
 			addFlag(WALLET_TOLD);
+		}
+		// 町で お金を 使って いい わけ（町の 中で めぐる・使うと 活気が 出る）を 1回だけ。
+		// 前の 版で 財布の 話を 聞いた 人も、次の 売り上げの ときに 聞く
+		if (hasFlag(WALLET_TOLD) && !hasFlag(WALLET_WHY_TOLD)) {
+			for (const l of WALLET_WHY)
+				if (here(l.who)) await s.say(l.who, l.text, cueOf(l));
+			addFlag(WALLET_WHY_TOLD);
 		}
 	}
 	const stepTo = townStep(r.to, loadTown().points);
