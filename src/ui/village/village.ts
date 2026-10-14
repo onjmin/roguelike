@@ -609,9 +609,11 @@ export class Village {
 			if (a.def?.roam) {
 				if (this.scriptDepth === 0 && !this.scene && a !== this.pathTalk) {
 					if (!a.moving) this.roamTick(a, dt);
-				} else if (a.emote || this.roams.has(a)) {
-					// 話しかけられたら 記号を 消して、話の あとで する ことを 決めなおす
-					a.emote = null;
+				} else if (this.roams.has(a)) {
+					// 話しかけられたら 過ごし方の 記号と 動きを 消して、話の あとで する ことを 決めなおす
+					// （会話の 1行の 記号は 消さない）
+					if (a.emoteLoop) a.showEmote(null);
+					if (a.gestureLoop) a.showGesture(null);
 					this.roams.delete(a);
 				}
 				continue;
@@ -683,7 +685,8 @@ export class Village {
 					: [];
 			r = { step, path, arrived: false, wait: step.wait, turn: 600 };
 			this.roams.set(a, r);
-			a.emote = null;
+			a.showEmote(null);
+			a.showGesture(null);
 		}
 		const d = r.path[0];
 		if (d) {
@@ -704,7 +707,8 @@ export class Village {
 		if (!r.arrived) {
 			r.arrived = true;
 			if (r.step.face) a.dir = r.step.face;
-			a.emote = r.step.emote ?? null;
+			a.showEmote(r.step.emote ?? null, true);
+			if (r.step.gesture) a.showGesture(r.step.gesture, true);
 		}
 		r.wait -= dt;
 		if (r.step.look) {
@@ -716,7 +720,8 @@ export class Village {
 			}
 		}
 		if (r.wait <= 0) {
-			a.emote = null;
+			a.showEmote(null);
+			a.showGesture(null);
 			this.roams.delete(a);
 		}
 	}
@@ -1700,16 +1705,24 @@ export class Village {
 		if (auto?.def) void this.runEvent(auto.def);
 	}
 
+	/** 話しかけて いる 相手（名前を かえた 声の 記号を 出す 人。runEvent の あいだ）。 */
+	private talking: EventDef | null = null;
+
 	private async runEvent(e: EventDef): Promise<void> {
 		// ほかのスクリプトが 動いている間は 始めない（二重起動の防止）
 		if (!e.run || this.scriptDepth > 0 || this.leaving) return;
 		const run = e.run;
 		// 扉で 地図が かわっても、印は 始めた 地図に つける
 		const map = this.mapId;
-		await this.runScript(async (s) => {
-			await run(s);
-			if (e.once) this.state.flags[this.flagKey("done", e.id, map)] = true;
-		});
+		this.talking = e;
+		try {
+			await this.runScript(async (s) => {
+				await run(s);
+				if (e.once) this.state.flags[this.flagKey("done", e.id, map)] = true;
+			});
+		} finally {
+			this.talking = null;
+		}
 	}
 
 	/** スクリプトを 実行する。村を出ると 決まったら、いちばん外の スクリプトの 終わりで 出る。 */
@@ -1786,6 +1799,15 @@ export class Village {
 		// 声の ある 人（data/people/cast.ts の voice・MOB_VOICE）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
 		// 絵文字は 読み上げの 側で 落とす（engine/audio.ts）
 		const voice = opt.tts ?? c?.voice;
+		// 感情の 記号・体の 動き（engine/emote.ts）：話す 人の 頭に。名前を かえた 声（住人・来客）は 話しかけた 相手
+		if (opt.emote || opt.gesture) {
+			const who2 = opt.speaker ?? (who && !opt.name ? who : this.talking?.id);
+			const a = who2 ? this.actorFor(who2) : undefined;
+			if (a?.visible) {
+				if (opt.emote) a.showEmote(opt.emote, false);
+				if (opt.gesture) a.showGesture(opt.gesture, false);
+			}
+		}
 		return this.msg.show({
 			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
@@ -1871,8 +1893,11 @@ export class Village {
 				await this.beatHold();
 				return this.say(null, text);
 			},
-			kiriko: async (text, mode) => {
+			kiriko: async (text, mode, cue) => {
 				await this.beatHold();
+				// キリコの 頭に 感情の 記号・動き（engine/emote.ts）
+				if (cue?.emote) this.player.showEmote(cue.emote, false);
+				if (cue?.gesture) this.player.showGesture(cue.gesture, false);
 				return this.sayKiriko(text, mode);
 			},
 			choose: async (options, opt) => {

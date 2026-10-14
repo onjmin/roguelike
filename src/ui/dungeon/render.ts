@@ -18,6 +18,7 @@ import {
 	onImageLoaded,
 	resolveRef,
 } from "../../engine/assets";
+import { drawSleepZ } from "../../engine/emote";
 import type { Screen } from "../../engine/screen";
 import { drawWalk, isWalkRef, stepFrame } from "../../engine/sprite";
 import { TILE } from "../../engine/types";
@@ -115,43 +116,6 @@ export type Projectile = {
 	/** 野球の ボール（装備して 投げる ボール・ボールを 投げる 敵・ピッチングマシン）。回りながら 飛ぶ。 */
 	ball?: boolean;
 };
-
-/** 眠りの Z（ドット。文字だと 小さく にじんで 見えないので 画素で 描く）。小 4×4・大 5×5。 */
-const Z_SMALL = ["####", "..#.", ".#..", "####"];
-const Z_BIG = ["#####", "...#.", "..#..", ".#...", "#####"];
-
-/**
- * 眠っているキャラの 頭の上に Z を 2つ、右上へ ふわふわ 上らせる（上るほど 大きく、消えていく）。
- * x, y はキャラのマスの 左上（ソース画素）。alpha はキャラの 見えぐあい。
- */
-function drawSleepZ(
-	ctx: CanvasRenderingContext2D,
-	x: number,
-	y: number,
-	time: number,
-	alpha: number,
-): void {
-	const PERIOD = 1400;
-	for (let n = 0; n < 2; n++) {
-		const k = (time / PERIOD + n / 2) % 1;
-		const glyph = k < 0.5 ? Z_SMALL : Z_BIG;
-		const zx = Math.round(x + 9 + k * 5);
-		const zy = Math.round(y + 1 - k * 9);
-		ctx.globalAlpha = alpha * Math.min(1, k * 5, (1 - k) * 3);
-		for (let row = 0; row < glyph.length; row++)
-			for (let col = 0; col < glyph[row].length; col++) {
-				if (glyph[row][col] !== "#") continue;
-				// 縁どり（床や 壁の 上でも 見えるように）→ 本体
-				ctx.fillStyle = "#1a2440";
-				ctx.fillRect(zx + col + 1, zy + row + 1, 1, 1);
-			}
-		ctx.fillStyle = "#cfe8ff";
-		for (let row = 0; row < glyph.length; row++)
-			for (let col = 0; col < glyph[row].length; col++)
-				if (glyph[row][col] === "#") ctx.fillRect(zx + col, zy + row, 1, 1);
-	}
-	ctx.globalAlpha = alpha;
-}
 
 export class FloorView {
 	private terrain: HTMLCanvasElement | null = null;

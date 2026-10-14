@@ -21,6 +21,7 @@
 // ロジックは ui/village/villageMobs.ts、置き場所は data/village/map.ts。
 
 import type { DungeonId } from "../../core/types";
+import type { Cue } from "../../engine/emote";
 import type { Dir } from "../../engine/types";
 import type { Speaker } from "../story/quotes";
 import type { Season, Today } from "../town/calendar";
@@ -62,7 +63,7 @@ export type Beat =
  * 1窓。who が "mob" なら その子、"kiriko" なら キリコ、null なら 地の文、
  * 仲間・ほかの子なら 近くに いるときだけ。need も 同じ。
  */
-export type MobLine = {
+export type MobLine = Cue & {
 	who: "mob" | "kiriko" | Cast | null;
 	text: string;
 	need?: Cast;

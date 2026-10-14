@@ -973,6 +973,7 @@ const guestRoam = (
 			walk: act === "play" ? t.walk * 0.75 : t.walk,
 			look: act === "look" && Math.random() < 0.4,
 			emote: t.emotes[act],
+			gesture: t.gestures?.[act],
 		};
 	};
 };

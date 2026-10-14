@@ -84,6 +84,7 @@ import {
 	trolleyStops,
 } from "../../data/village/trolley";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
+import { cueOf } from "../../engine/emote";
 import {
 	acceptEscort,
 	doneEscortThanks,
@@ -815,7 +816,7 @@ const playQuestLines = async (
 	for (const l of lines)
 		if (l.who === null) await s.narrate(l.text);
 		else if (l.who === "kiriko") await s.kiriko(l.text, "voice");
-		else await s.say(l.who, l.text);
+		else await s.say(l.who, l.text, cueOf(l));
 };
 
 /**

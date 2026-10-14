@@ -8,6 +8,7 @@
 
 import type { DungeonId } from "../../core/types";
 import type { Story } from "../../engine/defs";
+import { type Cue, cueOf } from "../../engine/emote";
 import type { MobId } from "../people/mobs";
 import {
 	ENDING,
@@ -23,7 +24,7 @@ import { SCRAPS } from "./scraps";
 export type { StoryPage };
 
 /** 仲間の ひとこと（起動の札・村・開いたときの ひとこと）。 */
-export type Line = { who: Speaker; text: string };
+export type Line = { who: Speaker; text: string } & Cue;
 
 /** 語りの 1ページを 窓に 出す（仲間の セリフ・ナレーション・キリコの 独白）。 */
 export const playPage = (
@@ -34,17 +35,17 @@ export const playPage = (
 		kiriko?: KirikoMode;
 		nanashi?: string;
 		nameColor?: string;
-	},
+	} & Cue,
 ): Promise<void> =>
 	p.kiriko
-		? st.kiriko(p.text, p.kiriko)
+		? st.kiriko(p.text, p.kiriko, cueOf(p))
 		: p.nanashi
 			? st.say("nanj", p.text, {
 					name: p.nanashi,
 					...(p.nameColor ? { color: p.nameColor } : {}),
 				})
 			: p.who
-				? st.say(p.who, p.text)
+				? st.say(p.who, p.text, cueOf(p))
 				: st.narrate(p.text);
 
 // ───────────────── 村に いない 仲間（まだ 来ていない・出ていった） ─────────────────

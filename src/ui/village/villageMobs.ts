@@ -31,6 +31,7 @@ import { season, today } from "../../data/town/calendar";
 import { rawModes } from "../../data/town/openModes";
 import { TAMPER_MOB } from "../../data/town/tamper";
 import type { Script, Story } from "../../engine/defs";
+import { type Cue, cueOf } from "../../engine/emote";
 import {
 	loadBook,
 	loadProgress,
@@ -303,9 +304,16 @@ export const hasMobNews = (id: MobId): boolean => {
  * その子の 声で 1窓（名前欄は その子。色は color か、voice の 仲間の 色。立ち絵は その子の。無い子は 出さない）。
  * 音源の ある子（data/people/cast.ts の MOB_VOICE）は 読み上げる。
  */
-export const sayAs = (s: Story, id: MobId, text: string): Promise<void> => {
+export const sayAs = (
+	s: Story,
+	id: MobId,
+	text: string,
+	cue: Cue = {},
+): Promise<void> => {
 	const def = MOBS[id];
 	return s.say(def.voice ?? null, text, {
+		...cue,
+		speaker: `mob_${id}`,
 		name: def.label ?? def.name,
 		...(def.color ? { color: def.color } : {}),
 		...(MOB_VOICE[id] ? { tts: MOB_VOICE[id] } : {}),
@@ -357,10 +365,10 @@ export const play = async (
 			continue;
 		if (l.beat) await runBeat(s, id, l.beat);
 		if (l.who === null) await s.narrate(l.text);
-		else if (l.who === "mob") await sayAs(s, id, l.text);
-		else if (l.who === "kiriko") await s.kiriko(l.text, "voice");
-		else if (isMob(l.who)) await sayAs(s, l.who, l.text);
-		else await s.say(l.who, l.text);
+		else if (l.who === "mob") await sayAs(s, id, l.text, cueOf(l));
+		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
+		else if (isMob(l.who)) await sayAs(s, l.who, l.text, cueOf(l));
+		else await s.say(l.who, l.text, cueOf(l));
 	}
 };
 

@@ -6,6 +6,7 @@
 
 import { DUNGEONS } from "../../core/data/dungeons";
 import type { DungeonId } from "../../core/types";
+import type { Cue } from "../../engine/emote";
 import type { MobId } from "../people/mobs";
 
 export type Speaker = "roze" | "shiyo" | "feris" | "zero" | "nanj";
@@ -45,7 +46,7 @@ export type KirikoMode = "think" | "voice";
  * 話す 人か about の 人が 村に いない（出ていった やきう。data/story/story.ts の awayFriends）ときは
  * instead に かえる（無ければ その ページは 出さない）。
  */
-export type StoryPage = {
+export type StoryPage = Cue & {
 	who: Speaker | null;
 	text: string;
 	kiriko?: KirikoMode;

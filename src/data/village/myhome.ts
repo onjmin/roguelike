@@ -9,6 +9,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import { defOf } from "../../core/item";
 import type { DungeonId } from "../../core/types";
+import type { Emote, Gesture } from "../../engine/emote";
 import { ARCADE_TEXT } from "../arcade/text";
 import type { ArcadeGame } from "../arcade/types";
 import { textWidth } from "../bushitsu/bushitsu";
@@ -756,7 +757,9 @@ export type Temper = {
 	tempo: number;
 	/** 歩く 遅さ（村の 1歩の 何倍。小さいほど せかせか）。 */
 	walk: number;
-	emotes: Partial<Record<GuestAct, string>>;
+	emotes: Partial<Record<GuestAct, Emote>>;
+	/** する ことごとの 体の 動き（いる あいだ ときどき）。 */
+	gestures?: Partial<Record<GuestAct, Gesture>>;
 };
 
 export type TemperId = "lively" | "curious" | "steady" | "dreamy" | "tidy";
@@ -767,7 +770,8 @@ export const TEMPERS: Record<TemperId, Temper> = {
 		acts: { play: 6, look: 2, patrol: 2, window: 1, relax: 1, idle: 1 },
 		tempo: 0.7,
 		walk: 1.1,
-		emotes: { play: "!", look: "!", relax: "♪" },
+		emotes: { play: "!", look: "!", relax: "♪", patrol: "♪" },
+		gestures: { play: "hop", look: "startle" },
 	},
 	// なんでも 見て まわる（値ぶみ。品と 家具を 次々）
 	curious: {
@@ -775,6 +779,7 @@ export const TEMPERS: Record<TemperId, Temper> = {
 		tempo: 0.9,
 		walk: 1.3,
 		emotes: { look: "?", play: "!", read: "…" },
+		gestures: { look: "nod", play: "spin" },
 	},
 	// 腰を すえる（本・パソコン。動きは ゆっくり）
 	steady: {
@@ -782,20 +787,22 @@ export const TEMPERS: Record<TemperId, Temper> = {
 		tempo: 1.5,
 		walk: 1.7,
 		emotes: { read: "…", play: "…", relax: "…" },
+		gestures: { read: "nod" },
 	},
 	// ぼんやり くつろぐ（窓の 外・ソファ。鼻歌）
 	dreamy: {
 		acts: { relax: 5, window: 4, idle: 3, look: 1 },
 		tempo: 1.8,
 		walk: 2,
-		emotes: { relax: "♪", window: "♪", idle: "z" },
+		emotes: { relax: "花", window: "♪", idle: "z" },
 	},
 	// すみずみ 見回る（片づけの 目。収納と 棚）
 	tidy: {
 		acts: { patrol: 5, read: 2, look: 2, idle: 1 },
 		tempo: 1,
 		walk: 1.5,
-		emotes: { patrol: "…", read: "…", look: "…" },
+		emotes: { patrol: "…", read: "…", look: "汗" },
+		gestures: { look: "shake" },
 	},
 };
 

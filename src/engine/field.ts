@@ -9,6 +9,7 @@ import {
 	resolveRef,
 } from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
+import { drawEmote, type Emote, type Gesture, gestureAt } from "./emote";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
 
@@ -43,10 +44,31 @@ export class Actor {
 	/** 乗り物（キリコの おんJトロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
 	vehicle: string | null = null;
 	/** 頭の 右上に 出す 記号（EventDef の roam。null で 出さない）。 */
-	emote: string | null = null;
-	/** いま 描いて いる 記号と 出はじめた 時刻（記号が かわったら 頭から フェードイン）。 */
-	private emoteShown: string | null = null;
+	emote: Emote | null = null;
+	/** 記号を くりかえす（招いた 人の 過ごし方）。会話の 1行は 1めぐりで 消える。 */
+	emoteLoop = true;
+	/** いま 描いて いる 記号と 出はじめた 時刻（記号が かわったら 頭から フェードイン。-1 は 次の コマから）。 */
+	private emoteShown: Emote | null = null;
 	private emoteFrom = 0;
+	/** 体の 動き（engine/emote.ts の Gesture。ぴょんぴょん・ぶるぶる……）。 */
+	gesture: Gesture | null = null;
+	gestureLoop = false;
+	private gestureFrom = -1;
+
+	/** 記号を 出す（同じ 記号でも 頭から。null で 消す）。loop で なければ 1めぐりで 消える。 */
+	showEmote(e: Emote | null, loop = true): void {
+		this.emote = e;
+		this.emoteLoop = loop;
+		this.emoteShown = e;
+		this.emoteFrom = -1;
+	}
+
+	/** 体を 動かす（頭から。null で やめる）。 */
+	showGesture(g: Gesture | null, loop = false): void {
+		this.gesture = g;
+		this.gestureLoop = loop;
+		this.gestureFrom = -1;
+	}
 	/** 寝ころんで いる ときの 掛け布団（ベッドの 下の マスの 絵。少し 下げた 体の 上に かぶせる）。 */
 	blanket: string | null = null;
 	def: EventDef | null;
@@ -188,18 +210,41 @@ export class Actor {
 		}
 		const frame = stepFrame(time + ((this.id.length * 97) % 400), this.moving);
 		const seat = this.vehicle ? 3 : 0;
-		if (!drawWalk(ctx, this.sprite, this.dir, frame, px, py - seat)) {
+		// 体の 動き（歩いて いる あいだは しない）
+		let gx = 0;
+		let gy = 0;
+		let face = this.dir;
+		if (this.gesture && !this.moving) {
+			if (this.gestureFrom < 0) this.gestureFrom = time;
+			const m = gestureAt(
+				this.gesture,
+				time - this.gestureFrom,
+				this.gestureLoop,
+				this.dir,
+			);
+			gx = m.dx;
+			gy = m.dy;
+			face = m.dir ?? this.dir;
+		}
+		if (!drawWalk(ctx, this.sprite, face, frame, px + gx, py - seat + gy)) {
 			// 読み込み中は小さな影だけ
 			ctx.fillStyle = "rgba(0,0,0,0.3)";
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
 		if (this.vehicle) drawRefInCell(ctx, this.vehicle, px, py);
-		if (this.emote !== this.emoteShown) {
+		if (this.emote !== this.emoteShown || this.emoteFrom < 0) {
 			this.emoteShown = this.emote;
 			this.emoteFrom = time;
 		}
 		if (this.emote)
-			drawEmote(ctx, this.emote, px, py - seat, time - this.emoteFrom);
+			drawEmote(
+				ctx,
+				this.emote,
+				px + gx,
+				py - seat + gy,
+				time - this.emoteFrom,
+				this.emoteLoop,
+			);
 		if (this.blanket)
 			drawRefInCell(
 				ctx,
@@ -209,145 +254,6 @@ export class Actor {
 			);
 	}
 }
-
-/** 記号の 1回の 出かた（ms）：ふわっと 出て、少し 浮いて、消える。間を おいて くりかえす。 */
-const EMOTE_IN = 300;
-const EMOTE_HOLD = 1300;
-const EMOTE_OUT = 1700;
-const EMOTE_CYCLE = 2600;
-
-/**
- * 記号の ドット絵（# が 色、まわりに 1px の ふちを つける）。まっすぐに 描いて、上ほど 右へ ずらして
- * 少し 傾ける（emoteArt。作者「記号は 少し 傾けた ものを ドット絵で」）。
- */
-const EMOTE_DOTS: Record<string, { rows: readonly string[]; color: string }> = {
-	"!": {
-		rows: [".##", ".##", ".##", ".##", ".#.", "...", ".##", ".##"],
-		color: "#ff5a3a",
-	},
-	"?": {
-		rows: [
-			".###.",
-			"##.##",
-			"...##",
-			"..##.",
-			".##..",
-			".....",
-			".##..",
-			".##..",
-		],
-		color: "#ffd84a",
-	},
-	"♪": {
-		rows: [
-			"..#..",
-			"..##.",
-			"..#.#",
-			"..#..",
-			"..#..",
-			"###..",
-			"###..",
-			".#...",
-		],
-		color: "#6ac0ff",
-	},
-	"…": {
-		rows: [
-			"........",
-			"........",
-			"........",
-			"........",
-			"........",
-			"........",
-			"##.##.##",
-			"##.##.##",
-		],
-		color: "#ffffff",
-	},
-	z: {
-		rows: [
-			"...####",
-			"....#..",
-			"...####",
-			"#####..",
-			"...#...",
-			"..#....",
-			".#.....",
-			"#####..",
-		],
-		color: "#c8b8ff",
-	},
-};
-
-const emoteCache = new Map<string, HTMLCanvasElement | null>();
-
-/** 記号の 絵（ふちつき・傾けた もの。1度 作って 使いまわす。知らない 記号は null）。 */
-const emoteArt = (text: string): HTMLCanvasElement | null => {
-	const hit = emoteCache.get(text);
-	if (hit !== undefined) return hit;
-	const def = EMOTE_DOTS[text];
-	if (!def || typeof document === "undefined") {
-		emoteCache.set(text, null);
-		return null;
-	}
-	const h = def.rows.length;
-	// 下から 3行ごとに 1px 右へ（上ほど 右に 倒れる）
-	const shift = (r: number) => Math.floor((h - 1 - r) / 3);
-	const w = Math.max(...def.rows.map((l) => l.length)) + shift(0);
-	const on = (x: number, y: number) =>
-		y >= 0 && y < h && def.rows[y][x - shift(y)] === "#";
-	const c = document.createElement("canvas");
-	c.width = w + 2;
-	c.height = h + 2;
-	const g = c.getContext("2d");
-	if (g) {
-		g.fillStyle = "#2a2238";
-		for (let y = -1; y <= h; y++)
-			for (let x = -1; x <= w; x++)
-				if (
-					!on(x, y) &&
-					(on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1))
-				)
-					g.fillRect(x + 1, y + 1, 1, 1);
-		g.fillStyle = def.color;
-		for (let y = 0; y < h; y++)
-			for (let x = 0; x < w; x++) if (on(x, y)) g.fillRect(x + 1, y + 1, 1, 1);
-	}
-	emoteCache.set(text, c);
-	return c;
-};
-
-/**
- * 頭の 右上の 記号（"!" "?" "…" "♪" "z"。枠は なく、ドット絵が フェードイン・アウト）。
- * t は 記号が 出てからの 時間。
- */
-const drawEmote = (
-	ctx: CanvasRenderingContext2D,
-	text: string,
-	px: number,
-	py: number,
-	t: number,
-): void => {
-	const k = t % EMOTE_CYCLE;
-	const alpha =
-		k < EMOTE_IN
-			? k / EMOTE_IN
-			: k < EMOTE_HOLD
-				? 1
-				: k < EMOTE_OUT
-					? 1 - (k - EMOTE_HOLD) / (EMOTE_OUT - EMOTE_HOLD)
-					: 0;
-	if (alpha <= 0) return;
-	// 出ている あいだ 3px 浮かぶ
-	const rise = Math.round((Math.min(k, EMOTE_OUT) / EMOTE_OUT) * 3);
-	const art = emoteArt(text);
-	if (!art) return;
-	ctx.save();
-	ctx.globalAlpha = alpha;
-	// 頭の 右上（絵の 左下を 頭の 右はしの 少し 上に）
-	ctx.drawImage(art, px + 11, py - art.height + 3 - rise);
-	ctx.restore();
-};
 
 export class Field {
 	readonly def: MapDef;

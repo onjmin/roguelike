@@ -95,6 +95,7 @@ import {
 import { departNews, newsPages, townNews } from "../../data/village/news";
 import { hallTier } from "../../data/village/tiles";
 import type { Story } from "../../engine/defs";
+import { cueOf } from "../../engine/emote";
 import {
 	addFlag,
 	doneEventNews,
@@ -597,7 +598,7 @@ export const tamperScript = async (s: Story): Promise<void> => {
 		s,
 		lines.map((l) => l.who),
 	);
-	for (const l of lines) await s.say(l.who, l.text);
+	for (const l of lines) await s.say(l.who, l.text, cueOf(l));
 	await s.narrate(TAMPER_NARRATION[tier] ?? "");
 	doneTamperNews();
 };
@@ -816,7 +817,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 		const far =
 			Math.max(Math.abs(s.state.x - ex), Math.abs(s.state.y - ey)) > 3;
 		if (!far) await s.look(VILLAGE_SPOTS.exit);
-		for (const l of lines) await s.say(l.who, l.text);
+		for (const l of lines) await s.say(l.who, l.text, cueOf(l));
 		if (far) {
 			// 立ち絵が 出口を 隠さないように 窓を しまってから
 			await s.wait(0);
@@ -884,7 +885,7 @@ export const settleScript = async (
 	const away = awayFriends(loadProgress().cleared, t.stage);
 	const here = (w: Speaker) => !away.includes(w);
 	const say = (l: { who: Speaker; text: string }) => {
-		if (here(l.who)) return s.say(l.who, l.text);
+		if (here(l.who)) return s.say(l.who, l.text, cueOf(l));
 		const bare = BARE_TOWN_MSG.find((b) => b.of === l);
 		return bare && here(bare.line.who)
 			? s.say(bare.line.who, bare.line.text)
@@ -1101,7 +1102,7 @@ const stageUp = async (
 		);
 		await s.look(at);
 	}
-	for (const l of lines) await s.say(l.who, l.text);
+	for (const l of lines) await s.say(l.who, l.text, cueOf(l));
 	if (hallLine) {
 		// 本館を 見せて、話す 人が 本館の 前まで 歩いてきて 言う（カメラは 本館に 置いたまま、人が 画面に 入ってくる。
 		// 人に カメラを つけると 本館が 一瞬しか 映らず、建った 本館を 背に 行ったり 来たり した）
