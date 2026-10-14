@@ -267,6 +267,12 @@ export const ROOM_CELLS = {
 	regiCounter: [0, 17, 1, 1],
 	washstand: [1, 17, 1, 2],
 	toilet: [2, 17, 1, 2],
+	fTerm: [3, 17, 1, 2],
+	fConsole: [4, 17, 2, 2],
+	fBox: [6, 17, 1, 2],
+	fPanel: [7, 17, 2, 2],
+	fDrum: [9, 17, 1, 1],
+	belt: [10, 17, 3, 1],
 } as const;
 
 export type RoomArtName = keyof typeof ROOM_CELLS;
