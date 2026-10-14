@@ -3520,7 +3520,7 @@ export class Play {
 						: zoneNote
 							? zoneNote
 							: dive
-								? diveResLine(dive)
+								? diveResLine(dive, run.heroName)
 								: run.s.depth >= run.dungeon.floors
 									? isUpBoard(run.s.dungeon)
 										? "いちばん　上"
@@ -3568,7 +3568,7 @@ export class Play {
 			this.addLog(why, "gloss");
 		}
 		const r = diveResAt(s.dungeon, s.depth, cleared);
-		if (r) this.addLog(diveResLine(r), "gloss");
+		if (r) this.addLog(diveResLine(r, this.run.heroName), "gloss");
 	}
 
 	private async ending(): Promise<void> {

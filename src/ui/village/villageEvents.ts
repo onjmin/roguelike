@@ -380,6 +380,11 @@ export const departTo = async (
 	if (companion) {
 		await s.narrate(companion.join);
 		await requesterSays(s, companion.who, companion.line);
+	} else {
+		// 引き受けた 依頼の 板へ、依頼主 本人が 主人公で 出る：同じ 人は 2人 いない ので、依頼は つぎの 機会に
+		const e = escortById(loadEscort().accepted);
+		if (e && e.board === d && e.who === chosenHero())
+			await s.narrate(fill(ESCORT_MSG.self, { name: requesterName(e.who) }));
 	}
 	notePicked(d, false);
 	await hideMsg(s);
@@ -396,7 +401,10 @@ export const departTo = async (
 						`<span class="story-ep-no">${escBr(ep.no)}</span><br><span class="story-ep-title">${escBr(ep.title)}</span>`,
 					]
 				: []),
-			...STORY[d].intro.map(escBr),
+			// 潜る 人が キリコで なければ「キリコは」を その 人に（「キリコの　生まれた　スレ」は そのまま）
+			...STORY[d].intro.map((t) =>
+				escBr(t.replaceAll("キリコは", `${HERO_NAME[chosenHero()]}は`)),
+			),
 		]);
 		notePicked(d, true);
 	}

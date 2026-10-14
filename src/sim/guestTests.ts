@@ -15,6 +15,7 @@ import {
 	escortFor,
 	openEscorts,
 } from "../data/people/companions";
+import { diveResLine } from "../data/story/synopsis";
 import {
 	acceptEscort,
 	doneEscortThanks,
@@ -308,6 +309,45 @@ test("話しかける：様子（キリコの HP・同行者の HP・おなか�
 	ok(serializeRun(r.s) === before, "talking changed the run");
 	g.down = true;
 	ok(guestChat(r, 0) === null, "a downed guest talked");
+});
+
+test("同じ 人が 2人 いない：主人公と 同じ 人は 同行者に ならない。主人公が キリコ で なければ「キリコ」と 呼ばない", () => {
+	const self = Run.create("dup", "kinoko", [], "fetch", true, false, "roze", {
+		id: "roze",
+		goal: 99,
+	});
+	ok(self.s.guest === undefined, "ロゼ came with ロゼ");
+	const r = Run.create("dup2", "deep", [], "fetch", true, false, "roze", {
+		id: "zero",
+		goal: 99,
+	});
+	ok(guestHere(r), "no ゼロ with ロゼ");
+	r.p.hp = 1;
+	const hurt = guestChat(r, 0) ?? "";
+	ok(
+		hurt.includes("ロゼ") && !hurt.includes("キリコ"),
+		`called キリコ: ${hurt}`,
+	);
+	const lines = r.s.log.filter((l) => l.startsWith("ゼロ「"));
+	ok(
+		lines.length > 0 && lines.every((l) => !l.includes("キリコ")),
+		`log called キリコ: ${lines.join(" / ")}`,
+	);
+	// 潜っている 途中の レス：呼びかけは 主人公に、「キリコの　生まれた　スレ」は そのまま
+	ok(
+		diveResLine(
+			{ at: 13, who: "res", text: "キリコ、井戸に　降りたんか" },
+			"ロゼ",
+		).includes("ロゼ、井戸"),
+		"the res still calls キリコ",
+	);
+	ok(
+		diveResLine(
+			{ at: 95, who: null, text: "底に、キリコの　生まれた　スレが　ある。" },
+			"ロゼ",
+		).includes("キリコの　生まれた"),
+		"rewrote キリコ's own thread",
+	);
 });
 
 export const runGuestTests = async (): Promise<TestResult[]> => {

@@ -269,7 +269,8 @@ export class Run {
 		if (lunch) for (const k of dg.start) player.items.push(run.newItem(k));
 		else s.noLunch = true;
 		if (rom) s.rom = true;
-		if (guest) s.guest = newGuest(guest);
+		// 主人公と 同じ 人は 同行者に ならない（同じ 人が 2人 いる ことに なる。村では companions.ts の escortFor が よける）
+		if (guest && guest.id !== hero) s.guest = newGuest(guest);
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
 			s.carriedIn = carry.map((it) => ({ ...it }));

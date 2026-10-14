@@ -269,17 +269,27 @@ export const GUEST_TALK: Record<GuestId, GuestTalk> = {
 	},
 };
 
+/**
+ * 同行者の 文の「キリコ」を いまの 主人公の 名前に（束音ロゼ・解音ゼロで 潜って いる ときに「キリコさん」と
+ * 呼ばない。同行者の 文の キリコは どれも 呼びかけ・相手の こと。core/run.ts の ボスの 帰り方の 文と 同じ）。
+ */
+const toHero = (r: Run, text: string): string =>
+	text.replaceAll("キリコ", r.heroName);
+
 /** 話しかけた ときの 1窓（n は この 冒険で 話しかけた 回数。様子が 先）。 */
 export const guestChat = (r: Run, n: number): string | null => {
 	const g = guestHere(r);
 	if (!g) return null;
 	const t = GUEST_TALK[g.id];
 	const p = r.p;
-	if (p.hp * 3 <= p.maxHp) return t.hurt;
-	if (g.hp * 3 <= g.maxHp) return t.selfHurt;
-	if (p.hunger * 5 <= HUNGER_MAX) return t.hungry;
-	if (r.s.returning) return t.home;
-	return t.chat[n % t.chat.length];
+	const pick = (): string => {
+		if (p.hp * 3 <= p.maxHp) return t.hurt;
+		if (g.hp * 3 <= g.maxHp) return t.selfHurt;
+		if (p.hunger * 5 <= HUNGER_MAX) return t.hungry;
+		if (r.s.returning) return t.home;
+		return t.chat[n % t.chat.length];
+	};
+	return toHero(r, pick());
 };
 
 /** 同行者が この 階に 立っているか（たおれた・まだ 立っていない なら null）。 */
@@ -347,10 +357,10 @@ export const guestEnterFloor = (r: Run, first: boolean): void => {
 	const line = first
 		? def.first
 		: def.talk[(r.s.depth - 2 + def.talk.length) % def.talk.length];
-	r.msg(`${def.name}「${line}」`);
+	r.msg(`${def.name}「${toHero(r, line)}」`);
 	// 見たかった 階（依頼の 目的）：ひとこと 言って、満足して 村へ 帰る（帰り道の 階では 数えない）
 	if (!r.s.returning && r.s.depth >= g.goal) {
-		r.msg(`${def.name}「${def.seen}」`, "good");
+		r.msg(`${def.name}「${toHero(r, def.seen)}」`, "good");
 		r.se("item");
 		g.done = true;
 		r.emit({ t: "die", id: GUEST_ID, pos: { x: g.x, y: g.y } });
@@ -369,7 +379,7 @@ export const guestFloorLine = (r: Run): string | null => {
 		r.s.depth <= 1
 			? def.first
 			: def.talk[(r.s.depth - 2 + def.talk.length) % def.talk.length];
-	return `${def.name}「${line}」`;
+	return `${def.name}「${toHero(r, line)}」`;
 };
 
 /** 同行者が なぐってよい 敵か（起きている・化けていない・置物でない・見ているだけの ROM専でない）。 */

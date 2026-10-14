@@ -137,8 +137,12 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 };
 
 /** ログに 出す 形（名無しの レスは 頭に「村の　スレ」、ほかは「〜の　レス」）。 */
-export const diveResLine = (r: DiveRes): string =>
-	r.who === null ? r.text : `${RES_HEAD[r.who]}「${r.text}」`;
+export const diveResLine = (r: DiveRes, hero = "キリコ"): string => {
+	// 潜って いる 主人公への 呼びかけ（「キリコ、井戸に　降りたんか」）は いまの 主人公の 名前に。
+	// 「キリコの　生まれた　スレ」は キリコの こと なので そのまま
+	const text = r.text.replaceAll("キリコ、", `${hero}、`);
+	return r.who === null ? text : `${RES_HEAD[r.who]}「${text}」`;
+};
 
 const RES_HEAD = {
 	res: "村の　スレ",
