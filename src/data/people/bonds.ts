@@ -1278,6 +1278,14 @@ export const SEASON_PRESENTS: Partial<Record<Season, SeasonGift>> = {
 export const BOND_MSG = {
 	shelfMenu: ["贈り物を　えらぶ", "誕生日の　こよみ", "やめる"],
 	shelfTitle: "贈り物",
+	/** ギフトの 棚を はじめて 調べた ときだけ。 */
+	shelfHelp: [
+		"ギフトの　棚。買った　物は、\n話しかけた　あとに　わたせる。",
+		"わたせるのは　1人に　帰り　1回　1つ。\n好みに　合うと、なかよし度が　よく　上がる。",
+		"誕生日は　倍。なかよく　なると、\n向こうからも　なにか　くれる。",
+	],
+	/** この 帰りに もう わたした 人に 話した。 */
+	gaveAlready: "（{name}には、この　帰りは　もう　わたした）",
 	holding: "{gift}を　もう　持っている。\n……先に　だれかに　わたそう。",
 	wrapped: "{gift}を　包んで　もらった。\n話しかけた　あとに　わたせる。",
 	offer: "（{gift}を　{name}に　わたす？）",

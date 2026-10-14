@@ -226,6 +226,8 @@ export const FX = {
 export const TRADE_MSG = {
 	/** 端末（家の パソコン・おんJマートの ATM）。 */
 	terminal: "おんJ証券に　つないだ。\n「投資は　自己責任で」",
+	/** はじめて つないだ ときだけ（株価は 冒険から 帰る たびに 動く）。 */
+	howPrices: "株価は、冒険から　帰る　たびに　動く。\n配当も　そのとき　入る。",
 	menu: ["株", "デイトレ", "FX", "やめる"],
 	// 株
 	stockTitle: "株　（持ち株の　評価　{value}）",

@@ -101,6 +101,7 @@ import {
 	readScrap,
 	recordFromRun,
 } from "../../engine/save";
+import { walletYen, yen } from "../../engine/wallet";
 import { runSaveLabel } from "../boot";
 import type { Ctx } from "../ctx";
 import { infoWindow, type ListItem, listWindow } from "../list";
@@ -1036,7 +1037,8 @@ export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 		];
 		const v = await listWindow(
 			ctx,
-			`${TOWN_NAME}　${STAGE_NAMES[stage] ?? ""}`,
+			// 手もとの お金も（売り上げが あってから。engine/wallet.ts）
+			`${TOWN_NAME}　${STAGE_NAMES[stage] ?? ""}${loadTown().points > 0 ? `　手もと　${yen(walletYen())}` : ""}`,
 			items,
 			{ start },
 		);

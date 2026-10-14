@@ -91,7 +91,7 @@ import {
 	type VillageExit,
 	type VillageView,
 } from "../../data/village/map";
-import { newsPages, townNews } from "../../data/village/news";
+import { departNews, newsPages, townNews } from "../../data/village/news";
 import { hallTier } from "../../data/village/tiles";
 import type { Story } from "../../engine/defs";
 import {
@@ -101,6 +101,7 @@ import {
 	giveLunch,
 	giveRelief,
 	growForStorage,
+	hasFlag,
 	loadProgress,
 	loadRecords,
 	loadTown,
@@ -817,6 +818,11 @@ export const newsScript = async (s: Story): Promise<void> => {
 
 // ───────────────── 持ち帰った物 ─────────────────
 
+/** 売り上げを 町で 使える ことを ゼロが 言った（Progress.flags）。 */
+const WALLET_TOLD = "toldWallet";
+/** あずけた 物の 正体が わかる ことを シヨが 言った。 */
+const STORE_TOLD = "toldStoreKnown";
+
 /** あずける道具を えらぶ（uid）。村では ui/village/home.ts の chooseStored を 包む（試験では 仮の手）。 */
 export type StoreChooser = (
 	s: Story,
@@ -896,7 +902,14 @@ export const settleScript = async (
 	const stepFrom = townStep(cur.stage, cur.points);
 	const stageFrom = cur.stage;
 	const r = settleReturn(cur, chosen, grown.from);
-	if (chosen.length) await say(TOWN_MSG.storeDone);
+	if (chosen.length) {
+		await say(TOWN_MSG.storeDone);
+		// あずけた 物は 正体が わかる（engine/save.ts の settleReturn・depositBag）。はじめの 1回だけ
+		if (here(TOWN_MSG.storeKnown.who) && !hasFlag(STORE_TOLD)) {
+			await say(TOWN_MSG.storeKnown);
+			addFlag(STORE_TOLD);
+		}
+	}
 	if (r.sold > 0) {
 		// ゼロが まだ いなければ 地の文で
 		if (here(TOWN_MSG.sold.who))
@@ -905,6 +918,11 @@ export const settleScript = async (
 				fill(TOWN_MSG.sold.text, { points: r.sold }),
 			);
 		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
+		// 売り上げが 財布にも なる ことを はじめの 1回だけ（ゼロが いる とき）
+		if (here(TOWN_MSG.wallet.who) && !hasFlag(WALLET_TOLD)) {
+			await s.say(TOWN_MSG.wallet.who, TOWN_MSG.wallet.text);
+			addFlag(WALLET_TOLD);
+		}
 	}
 	const stepTo = townStep(r.to, loadTown().points);
 	if (r.to > stageFrom)
@@ -1079,7 +1097,13 @@ const stageUp = async (
 		await s.look(p.at);
 		await s.narrate(p.text);
 	}
-	if (news.length) await s.look(at);
+	// バス停・駅は 出かけられる 所なので、そう 言う
+	const depart = departNews(from, to);
+	for (const p of depart) {
+		await s.look(p.at);
+		await s.narrate(p.text);
+	}
+	if (news.length || depart.length) await s.look(at);
 	const carry = CARRY_MAX[to] ?? 0;
 	if (carry > (CARRY_MAX[from] ?? 0))
 		await s.narrate(`倉庫から　引き取って\n${carry}つまで　持っていける`);

@@ -35,7 +35,13 @@ import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { nowYear, season, today } from "../../data/town/calendar";
 import type { Script, Story } from "../../engine/defs";
-import { loadProgress, loadRecords, loadTown } from "../../engine/save";
+import {
+	addFlag,
+	hasFlag,
+	loadProgress,
+	loadRecords,
+	loadTown,
+} from "../../engine/save";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
@@ -52,6 +58,9 @@ import {
 import { fill, heardNow, markHeard, sulkTier, talkHooks } from "./villageTalk";
 
 const KEY = "kiriko-roguelike/bonds";
+
+/** ギフトの 棚で 決まりを 言った（Progress.flags）。 */
+const GIFT_TOLD = "toldGift";
 
 type BondMemo = {
 	v: 1;
@@ -233,7 +242,12 @@ const heardThisReturn = (w: Cast): boolean =>
 const offerGift = async (s: Story, w: Cast): Promise<void> => {
 	const m = loadBonds();
 	const g = m.carry;
-	if (!g || m.gave[w] === returnAt()) return;
+	if (!g) return;
+	// もう この 帰りに わたした 人には わたせない（だまって 終わると 持っている 物が 消えたように 見えた）
+	if (m.gave[w] === returnAt()) {
+		await s.narrate(fill(BOND_MSG.gaveAlready, { name: nameOf(w) }));
+		return;
+	}
 	const name = GIFT_GOODS[g].name;
 	await s.narrate(fill(BOND_MSG.offer, { gift: name, name: nameOf(w) }));
 	if ((await s.choose([...BOND_MSG.offerMenu], { cancel: 1 })) !== 0) return;
@@ -307,6 +321,8 @@ export const withBond =
 	async (s) => {
 		const sulking = sulkTier() !== null;
 		const m = loadBonds();
+		// 新しい話を 聞いて ♥ が 上がったら 知らせる（贈り物の ときだけ 出ていて、♥2・♥4 の 物が 前ぶれなく 来た）
+		const lvBefore = bondLevel(w, m);
 		const scene = sulking ? null : dueScene(w, m);
 		if (scene && !heardThisReturn(w)) {
 			m.scenes.push(scene.key);
@@ -316,6 +332,11 @@ export const withBond =
 			await playLines(s, w, scene.lines);
 		} else await inner(s);
 		if (sulking) return;
+		const lvTalk = bondLevel(w);
+		if (lvTalk > lvBefore)
+			await s.narrate(
+				fill(BOND_MSG.levelUp, { name: nameOf(w), hearts: heartsOf(lvTalk) }),
+			);
 		await offerGift(s, w);
 		if (await seasonPresent(s, w)) return;
 		await givePresent(s, w);
@@ -349,6 +370,11 @@ mobHooks.idle = (id) => warmLine(id, false);
 
 /** ギフトの 棚（data/village/facilities.ts の konbini。play "giftshop"）。 */
 export const giftShelf = async (ctx: Ctx, s: Story): Promise<void> => {
+	// なかよし度と 贈り物の 決まりを はじめの 1回だけ
+	if (!hasFlag(GIFT_TOLD)) {
+		for (const p of BOND_MSG.shelfHelp) await s.narrate(p);
+		if (!previewing()) addFlag(GIFT_TOLD);
+	}
 	const n = await s.choose([...BOND_MSG.shelfMenu], { cancel: 2 });
 	if (n === 0) await buyGift(ctx, s);
 	else if (n === 1) await bondBook(ctx, s);

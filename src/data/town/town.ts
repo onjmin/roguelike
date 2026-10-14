@@ -75,6 +75,11 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 		q("nanj", "小屋に　なったで。\n……ワイ、大工やったんか（自称）"),
 		q("roze", "小屋アル。これで　夜も\n店が　あけられるアル"),
 		q("shiyo", "……小屋ね。ほこりは、\nあとで　あたすが　はいとくわ"),
+		// 段3 で 分譲住宅（キリコの 家。data/village/myhome.ts の MYHOME_FROM）。買える ことを 言う
+		q(
+			"zero",
+			"東に、分譲住宅が　建ちました！\n……売り上げで、キリコさんの　家に？",
+		),
 	],
 	[
 		q("nanj", "物置、倉庫に　建てなおしたで。\n……鍵は、シヨが　はなさへん"),
@@ -174,9 +179,21 @@ export const TOWN_MSG: Record<
 	| "carryDone"
 	| "bagFull"
 	| "bagEmpty"
-	| "salesEmpty",
+	| "salesEmpty"
+	| "wallet"
+	| "storeKnown",
 	Line
 > = {
+	// はじめて ゼロが 売り上げを 読んだ ときだけ（engine/wallet.ts：使える お金 ＝ 売り上げ − 使った 額）
+	wallet: q(
+		"zero",
+		"売り上げは、町で　使って　いいんです！\n使っても、町は　小さく　なりません",
+	),
+	// はじめて あずけた ときだけ（あずけた 物は 正体が わかる。engine/save.ts の known）
+	storeKnown: q(
+		"shiyo",
+		"あずかった　物は、名前も　調べといたわ。\n……正体、もう　わかるでしょ",
+	),
 	noStorage: q("roze", "倉庫は　まだ　ないアル。\nぜんぶ、店で　売るアル"),
 	storePrompt: q(
 		"shiyo",

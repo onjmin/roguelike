@@ -24,7 +24,7 @@ export type TownNews = {
 
 /** 知らせない 物（車・自販機・ポスト・時計・電話ボックス・家・豆腐ハウス・芋煮の かまど など 小さな 物）。 */
 const QUIET =
-	/^(car_|vend_|post|phone|clock|house_|saba|imoni|pier|bochi|taxi|bus$)/;
+	/^(car_|vend_|post|phone|clock|house_|saba|imoni|pier|bochi|taxi)/;
 
 /** 町の まわりの 建物（facilities.ts に のっていない、map.ts が 建てる 物）。 */
 const AROUND: readonly {
@@ -61,6 +61,28 @@ const overlaps = (a: Facility, b: Facility): boolean => {
 	const [bx0, by0, bx1, by1] = box(b);
 	return ax0 <= bx1 && bx0 <= ax1 && ay0 <= by1 && by0 <= ay1;
 };
+
+/**
+ * 出かけられる 所（バス停・駅）が 建った ときの ひとこと（知らせの あと、カメラを 向けて）。
+ * 調べて はじめて わかるのでは なく、建った ときに 言う。
+ */
+const DEPART_AT: Readonly<Record<string, string>> = {
+	bus: "バス停からも、植民地へ　出かけられる。",
+	station: "駅からも、植民地へ　出かけられる。",
+};
+
+/** 段 from から to へ 上がる あいだに 建った 出かけられる 所。 */
+export const departNews = (
+	from: number,
+	to: number,
+): { at: Cell; text: string }[] =>
+	FACILITIES.filter(
+		(f) =>
+			DEPART_AT[f.id] &&
+			f.from > from &&
+			f.from <= to &&
+			(f.until === undefined || f.until > to),
+	).map((f) => ({ at: center(f), text: DEPART_AT[f.id] }));
 
 /** 地区の 並び（カメラが 行ったり 来たり しない 順）。 */
 const AREA_ORDER = ["町の　まわり", "浜", "新市街", "港"];

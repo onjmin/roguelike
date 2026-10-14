@@ -19,7 +19,7 @@ import {
 	TRADE_MSG,
 } from "../../data/trade/trade";
 import type { Story } from "../../engine/defs";
-import { runStats } from "../../engine/save";
+import { addFlag, hasFlag, runStats } from "../../engine/save";
 import { earnYen, spendYen, walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
@@ -29,6 +29,9 @@ import { playDayTrade } from "./dayTrade";
 import { playFx } from "./fx";
 
 const KEY = "kiriko-roguelike/stocks";
+
+/** 株価が いつ 動くかを 言った（Progress.flags）。 */
+const TRADE_TOLD = "toldTrade";
 
 type Holding = { n: number; cost: number };
 
@@ -157,6 +160,11 @@ const change = (h: readonly number[]): string => {
 export const tradeTerminal = async (ctx: Ctx, s: Story): Promise<void> => {
 	const r = syncStocks();
 	await s.narrate(TRADE_MSG.terminal);
+	// 株価が いつ 動くかを はじめの 1回だけ（端末を 開きなおしても 動かない）
+	if (!hasFlag(TRADE_TOLD)) {
+		await s.narrate(TRADE_MSG.howPrices);
+		if (!previewing()) addFlag(TRADE_TOLD);
+	}
 	if (r.dividend > 0)
 		await s.narrate(fill(TRADE_MSG.dividend, { price: yen(r.dividend) }));
 	if (r.news) {
