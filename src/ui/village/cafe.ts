@@ -1006,7 +1006,8 @@ const treatMob = async (
 	await s.narrate(
 		fill(MASTER_MSG.sip, { name: MOBS[id].name, drink: drink.name }),
 	);
-	await sayAs(s, id, CAFE_MOBS[id].sip);
+	// ひとくち 飲んだ 感想は どの子も しあわせそう（体から 花）
+	await sayAs(s, id, CAFE_MOBS[id].sip, { emote: "花" });
 	await standUp(s, v, spot.stand);
 	s.face(me, spot.dir);
 };
