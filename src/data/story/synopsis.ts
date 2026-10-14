@@ -12,10 +12,10 @@ import { HERO_QUESTS } from "../people/heroQuests";
 
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
-	// 本筋（目標は はじめから「村の スレを 1000まで」）
+	// 本筋（目標は はじめから「村の 過疎を なんとか する」。1000 は 目標に しない：ダンジョンの 時間切れと 逆の 意味に なる）
 	shallow: "沈みかけた　村の　スレを　伸ばす",
 	main: "よく　伸びた　スレを　貼って、人を　呼ぶ",
-	deep: "村の　スレを、1000まで　つれていく",
+	deep: "村の　過疎を、終わらせる",
 	hidden: "キリコの　生まれた　スレが　しまわれた　底",
 	// 裏
 	isle1: "丘の　上に、知らない　字の　紙きれ",
@@ -53,7 +53,7 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 	deep: [
 		{ at: 4, who: null, text: "人の　いない　板。なのに、スレが　上がる。" },
-		{ at: 9, who: "res", text: "1000まで　あと　どんくらいや" },
+		{ at: 9, who: "res", text: "最近、見とる　人　ふえたな" },
 		{ at: 14, who: "nanj", text: "鉄塔の　保守、だれやろな" },
 		{ at: 19, who: null, text: "上から、「保守」の　レスが　ふってくる。" },
 		{ at: 24, who: "nanj", text: "1000は、だれが　書くやろな" },
@@ -157,30 +157,25 @@ export const diveResAt = (
 };
 
 /**
- * 村の スレの 伸び（2026-10-13 作者：「動機付けを 見直せ」。目標の「1000まで」が どこまで 来たかを 数で 見せる）。
- * ゼロが 語りで 言う 数（パン板の あと ひとけた・風呂板で 500・電池板で 1000）と そろえる。寄り道の 板は
- * 1つ 40。電池板の あとは 次スレの 数。
+ * 村の スレを 見ている 人の 数（目標「過疎を　なんとか　する」が どこまで 来たか。2026-10-13「動機付けを 見直せ」→
+ * 2026-10-14 作者「ダンジョンの 中で レスが 進むので、1000まで 目指す ゴールは 不自然」「過疎を 解消する」）。
+ * レスの 数は 出さない（ダンジョンの 1000 は 時間切れ）。はじめは 3人（キリコ・やきう・ぷゆゆ。裏では コピペの
+ * 「さとると　ワイと　お前だけ」の 3人に 読みかわる）。ゼロが 語りで 言う 数（風呂板で 60人・電池板で 300人）と そろえる。
+ * 寄り道の 板は 1つ ぶん 足す。
  */
-export const villageRes = (
-	cleared: readonly DungeonId[],
-): { next: boolean; res: number } => {
+export const villageRes = (cleared: readonly DungeonId[]): number => {
 	const side = cleared.filter(
 		(d) => d !== "shallow" && d !== "main" && d !== "deep",
 	).length;
-	if (cleared.includes("deep"))
-		return { next: true, res: Math.min(900, 150 + side * 30) };
-	if (cleared.includes("main"))
-		return { next: false, res: Math.min(980, 500 + side * 40) };
-	if (cleared.includes("shallow"))
-		return { next: false, res: Math.min(460, 120 + side * 40) };
-	return { next: false, res: 3 };
+	if (cleared.includes("deep")) return 300 + side * 20;
+	if (cleared.includes("main")) return Math.min(240, 60 + side * 12);
+	if (cleared.includes("shallow")) return Math.min(50, 12 + side * 6);
+	return 3;
 };
 
-/** 村の スレの 札（「村の　スレ　520／1000」・電池板の あとは「次スレ　210」）。 */
-export const villageResLine = (cleared: readonly DungeonId[]): string => {
-	const r = villageRes(cleared);
-	return r.next ? `次スレ　${r.res}` : `村の　スレ　${r.res}／1000`;
-};
+/** 村の スレの 札（「村の　スレを　見ている　人：60人」）。 */
+export const villageResLine = (cleared: readonly DungeonId[]): string =>
+	`村の　スレを　見ている　人：${villageRes(cleared)}人`;
 
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */
 export const goalWhy = (
@@ -204,17 +199,17 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("shallow"),
 		title: "パン板",
-		sum: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　スレを　1000まで。",
+		sum: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　過疎を　なんとか　すること。",
 	},
 	{
 		done: (c) => c.includes("main"),
 		title: "風呂板",
-		sum: "植民地の　ネタを　貼りつづけて、村の　スレは　500を　こえた。知らない　人が　書きこみ、町が　育っていく。でも、出ていった　人は　だれも　もどらない。やきうは、みんなが　去ったあとも　ひとりで　保守していた。「1000　いったら……」と、なにか　言いかけた。",
+		sum: "植民地の　ネタを　貼りつづけて、村の　スレを　見る　人が　ふえた。知らない　人が　書きこみ、町が　育っていく。でも、出ていった　人は　だれも　もどらない。やきうは、みんなが　去ったあとも　ひとりで　保守していた。「1000　いったら……」と、なにか　言いかけた。",
 	},
 	{
 		done: (c) => c.includes("deep"),
 		title: "電池板",
-		sum: "村の　スレは　1000に　届いて　完走した。鉄塔の　保守スレは、やきうの　書きこみだった。いつか　だれかが　帰ってきて　1000を　書くと　思って、保守していた。1000を　取ったのは　知らない　名無し。保守は、帰りたい　人が　いつでも　帰れる　ように　しておく　こと。やきうは　次スレを　キリコに　まかせて　外へ　出ていき、キリコは　小屋の　札に、はじめて「保守」と　書いた。",
+		sum: "村は　人で　あふれ、村の　スレは　ひとりでに　1000に　届いて　完走した。過疎は　終わった。鉄塔の　保守スレは、やきうの　書きこみだった。いつか　だれかが　帰ってきて　1000を　書くと　思って、保守していた。1000を　取ったのは　知らない　名無し。保守は、帰りたい　人が　いつでも　帰れる　ように　しておく　こと。やきうは　次スレを　キリコに　まかせて　外へ　出ていき、キリコは　小屋の　札に、はじめて「保守」と　書いた。",
 	},
 	{
 		done: (c) => c.includes("hidden"),

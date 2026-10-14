@@ -415,7 +415,7 @@ export const ENDING: StoryPage[] = [
 	{ who: "nanj", text: "……ええ　スレや。\nこれ　貼ったら、人、来るで" },
 	{
 		who: "zero",
-		text: "スレ、500を　こえました！\n……知らない　人が、書きこんでます",
+		text: "見ている　人、60人を　こえました！\n……知らない　人が、書きこんでます",
 	},
 	{ who: null, text: "……知らない　人ンゴ", kiriko: "voice" },
 	// やきうの 身の上（電池板の 山場で 出ていく 人を、ここで 見せておく。STORY.md §5.9）

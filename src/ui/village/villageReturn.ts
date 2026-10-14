@@ -410,7 +410,7 @@ const playCue = async (
 	// 電池板の 山場：999 で 鐘、1000 で ファンファーレと 札（山場が わかるように。2026-10-13 作者の 指摘）
 	else if (c === "res999") {
 		s.se("chapter");
-		s.toast("村の　スレ　999／1000");
+		s.toast("村の　スレ　999");
 	} else if (c === "chapterEnd") {
 		s.se("chapter");
 		await s.wait(400);

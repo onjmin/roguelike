@@ -7759,12 +7759,17 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 			heads[1] === "1901年の　スレ　まで",
 		`summary heads ${heads}`,
 	);
-	ok(end.includes("次スレ"), "no thread count after the 1000");
+	// 目標は 過疎を なんとか する こと：レスの 数（ダンジョンの 1000 は 時間切れ）では なく 見ている 人の 数
+	ok(end.includes("見ている　人"), "no viewer count after the climax");
 	ok(
 		(synopsisHtml(["shallow", "main"], []) ?? "").includes(
-			"村の　スレ　500／1000",
+			"村の　スレを　見ている　人：60人",
 		),
-		"thread count after main",
+		"viewer count after main",
+	);
+	ok(
+		!(synopsisHtml(["shallow", "main"], []) ?? "").includes("／1000"),
+		"the synopsis still counts toward 1000",
 	);
 });
 
