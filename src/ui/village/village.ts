@@ -179,6 +179,17 @@ type Spot = { x: number; y: number; dir: Dir };
 /** 地図（村・本館・建物の 中・施設の 中 `f_<id>`）。 */
 type MapId = "village" | "hall" | RoomId | `f_${string}`;
 
+/**
+ * 街灯の 光（ドット。内から 3段、いちばん 外は 市松の ディザ。ぼかさない：作者「光表現は ファジーでは なく ドットに」）。
+ * 段は 足し算で かさなるので、内側ほど 明るい。
+ */
+const LAMP_RINGS = [
+	{ r: 6, a: 0.32, dither: false },
+	{ r: 13, a: 0.2, dither: false },
+	{ r: 21, a: 0.16, dither: true },
+] as const;
+const LAMP_R = 21;
+
 export class Village {
 	private readonly ctx: Ctx;
 	private readonly screen: Screen;
@@ -1416,19 +1427,45 @@ export class Village {
 			if (!seen(px, py, TILE)) continue;
 			g.fillRect(px + 4, py + 4, TILE - 8, TILE - 7);
 		}
-		// 街灯：頭（1マス 上）の まわりに 丸い 光
+		// 街灯：頭（1マス 上）の まわりに 段の ついた 丸い 光（ドット。ぼかさない：作者「光表現は ファジーでは なく
+		// ドットに」）。内から 3段、いちばん 外の 段は 市松（ディザ）。1画素ずつ 行で 塗る
+		const glow = this.lampGlow(k.lamp);
+		const R = LAMP_R;
 		for (const [x, y] of lamps) {
-			const cx = x * TILE - ox + TILE / 2;
-			const cy = y * TILE - oy - 10;
-			const r = 30;
-			if (!seen(cx, cy, r)) continue;
-			const grad = g.createRadialGradient(cx, cy, 1, cx, cy, r);
-			grad.addColorStop(0, `rgba(255, 226, 150, ${0.55 * k.lamp})`);
-			grad.addColorStop(1, "rgba(255, 226, 150, 0)");
-			g.fillStyle = grad;
-			g.fillRect(cx - r, cy - r, r * 2, r * 2);
+			const cx = Math.round(x * TILE - ox + TILE / 2);
+			const cy = Math.round(y * TILE - oy - 10);
+			if (!seen(cx, cy, R + 1)) continue;
+			g.drawImage(glow, cx - R, cy - R);
 		}
 		g.restore();
+	}
+
+	/** 街灯の 光の 絵（強さごとに 1枚 作って 使いまわす。毎コマ 画素を 塗ると 重い）。 */
+	private lampGlows = new Map<number, HTMLCanvasElement>();
+	private lampGlow(strength: number): HTMLCanvasElement {
+		const hit = this.lampGlows.get(strength);
+		if (hit) return hit;
+		const R = LAMP_R;
+		const c = document.createElement("canvas");
+		c.width = R * 2 + 1;
+		c.height = R * 2 + 1;
+		const g = c.getContext("2d");
+		if (g)
+			for (const ring of LAMP_RINGS) {
+				g.fillStyle = `rgba(255, 226, 150, ${ring.a * strength})`;
+				for (let dy = -ring.r; dy <= ring.r; dy++) {
+					const half = Math.floor(Math.sqrt(ring.r * ring.r - dy * dy));
+					if (!ring.dither) {
+						g.fillRect(R - half, R + dy, half * 2 + 1, 1);
+						continue;
+					}
+					// 市松（街灯の 中心は いつも 偶数の 画素なので、地図の 上でも 模様は そろう）
+					for (let dx = -half; dx <= half; dx++)
+						if ((dx + dy) % 2 === 0) g.fillRect(R + dx, R + dy, 1, 1);
+				}
+			}
+		this.lampGlows.set(strength, c);
+		return c;
 	}
 
 	/** 出口への 道の 先（キリコの マスごとに 覚える）。 */
