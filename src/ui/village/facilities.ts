@@ -52,7 +52,7 @@ import { tradeTerminal } from "../trade/trade";
 import { giftShelf } from "./bonds";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
-import { townFind } from "./finds";
+import { roomFindGlint, townFind } from "./finds";
 import {
 	enterHome,
 	furnitureShop,
@@ -217,6 +217,13 @@ export const outdoorScript =
 		if (t.sprite) s.face(outdoorId(f, t), t.dir ?? "down");
 	};
 
+/** 飾りを 重ねる。 */
+const joinDecor =
+	(...ds: MapDef["decor"][]): MapDef["decor"] =>
+	(g, ox, oy, t) => {
+		for (const d of ds) d?.(g, ox, oy, t);
+	};
+
 /**
  * 建物の 影（村の 地図の 飾り。右がわの 地面に 斜めの 影。キャラの 上にも 重なるので、影に 入ると 少し 暗く 見える）。
  * 施設の 家と、住宅街からは 町の 中心の 建物（data/village/map.ts の coreShadows）。
@@ -354,7 +361,10 @@ export const buildFacility = (
 		events,
 		onTalkEmpty: home ? homeEmpty(ctx) : undefined,
 		// 映画館の スクリーンと 客席の スマホの 光（ui/village/cinemaDecor.ts）・キリコの 家の 持っている 家具の 下見（ui/village/myhome.ts）
-		decor: home ? homeDecor() : facilityDecor(f, facilityRoomRows(f)),
+		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）
+		decor: home
+			? homeDecor()
+			: joinDecor(facilityDecor(f, facilityRoomRows(f)), roomFindGlint(f)),
 		images: home ? homeImages() : undefined,
 	};
 };

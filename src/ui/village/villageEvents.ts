@@ -120,6 +120,7 @@ import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { civicBoardMenu, civicBoardScript } from "./civic";
 import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
+import { villageFindGlint } from "./finds";
 import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
@@ -965,11 +966,13 @@ export const buildVillage = (
 		tiles: villagePalette(view),
 		rows,
 		// 銭湯の 煙突から 湯気・施設の 建物の 影（ui/village/facilities.ts）・
-		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）
+		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
+		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）
 		decor: joinDecor(
 			shadowDecor(view.stage),
 			chimneySteam(rows),
 			imoniDecor(imoniArrive()),
+			villageFindGlint(),
 		),
 		outside: "#1f2a14",
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
