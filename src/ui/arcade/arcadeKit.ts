@@ -130,7 +130,20 @@ export type BoardSpec<S> = {
 	cash?: (s: S) => number;
 	/** はじめの 下の 字（既定は 押し方）。 */
 	note?: string;
+	/**
+	 * 曲の 時計で 動く 台（音ゲー・太鼓）。止める 演出（hitStop・勝ちの 音で 止める）を しない
+	 * （曲は 止まらないので、止めると 譜面と 音が ずれる）。
+	 */
+	songClock?: boolean;
 };
+
+/**
+ * 大事な 音を 鳴らした 瞬間に 板を 止める 長さ（ms）。victory は 勝ち・役が そろった、
+ * levelup は ステージ・ボーナスの 節目。どの 台でも 同じ 手ざわりに（台ごとに 書かない）。
+ */
+const SE_STOP_MS: Record<string, number> = { victory: 160, levelup: 90 };
+/** 決着（おわり）の 瞬間を 止めて 見せてから おわりの 字を 出す（ms）。 */
+const END_STOP_MS = 280;
 
 /** おわりの 字を 見せる 長さ（ms）と、A・タップで とばせる までの 間（遊びの 押しの 名残で とばさない）。 */
 const END_MS = 900;
@@ -188,6 +201,7 @@ export const playBoard = async <S>(
 		let last = 0;
 		let now = t0;
 		const hitStop = (ms: number) => {
+			if (spec.songClock) return;
 			if (stopFrom === now) stopTo = Math.max(stopTo, now + ms);
 			else {
 				before += stopTo - stopFrom;
@@ -223,11 +237,17 @@ export const playBoard = async <S>(
 				evs,
 				secOf: (at) => gameMs(at) / 1000,
 				say,
-				se: ctx.se,
+				se: (name) => {
+					ctx.se(name);
+					const ms = SE_STOP_MS[name];
+					if (ms) hitStop(ms);
+				},
 				hitStop,
 			});
 			spec.draw(g, s, gt / 1000);
 			if (spec.over(s)) {
+				// 決着の 絵の まま 一瞬 止めてから 字を 出す（何が 起きて おわったかを 見る 間）
+				if (!spec.songClock) await sleep(END_STOP_MS);
 				const end = spec.end?.(s) ?? ARCADE.over;
 				banner(g, end, end === ARCADE.clear ? "#ffe060" : "#f4f2ea");
 				ctx.se(end === ARCADE.clear ? "victory" : "miss");

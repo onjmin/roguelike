@@ -36,6 +36,7 @@ export const playTaiko = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
 	let clock: SongClock | null = null;
 	let loading = false;
 	const r = await playBoard(ctx, "taiko", {
+		songClock: true,
 		start: () => rhStart(song.chart),
 		note: song.label,
 		step: (s, f) => {
