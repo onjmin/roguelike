@@ -35,6 +35,7 @@ import type { Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { loadImage } from "../../engine/assets";
 import type { Story } from "../../engine/defs";
+import type { Cue } from "../../engine/emote";
 import { loadProgress, loadTown } from "../../engine/save";
 import { spendYen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
@@ -559,8 +560,26 @@ const albumBoard = async (ctx: Ctx, list: PuriPhoto[]): Promise<void> => {
 
 // ───────────────── ひとこと ─────────────────
 
+/** 撮った あとの ひとことの 感情の 記号（ふつうは ごきげん。照れる 人・がっかりする 人だけ べつ）。 */
+const PURI_CUE: Partial<Record<Cast, Cue>> = {
+	shiyo: { emote: "汗" },
+	feris: { emote: "♪", gesture: "hop" },
+	zero: { emote: "花" },
+	nichie: { gesture: "slump" },
+	ngoane: { emote: "♥" },
+	onsu: { emote: "汗" },
+	mujje: { emote: "!", gesture: "hop" },
+	yayapoji: { gesture: "shiver" },
+	aru: { emote: "♥", gesture: "hop" },
+	ren: { emote: "♪", gesture: "spin" },
+	rino: { emote: "…" },
+	proto: { emote: "花" },
+	shobon: { emote: "…" },
+};
+
 const lineOf = async (s: Story, w: Cast): Promise<void> => {
 	const text = PURI_LINES[w];
+	const cue = PURI_CUE[w] ?? { emote: "♪" };
 	if (
 		w === "roze" ||
 		w === "shiyo" ||
@@ -568,8 +587,8 @@ const lineOf = async (s: Story, w: Cast): Promise<void> => {
 		w === "zero" ||
 		w === "nanj"
 	)
-		await s.say(w, text);
-	else await sayAs(s, w, text);
+		await s.say(w, text, cue);
+	else await sayAs(s, w, text, cue);
 };
 
 // ───────────────── 入口 ─────────────────

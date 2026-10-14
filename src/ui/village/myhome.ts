@@ -43,6 +43,7 @@ import {
 	HOME_MSG,
 	HOME_ROWS,
 	HOME_VISIT,
+	HOME_VISIT_CUES,
 	HOME_WINDOWS,
 	type HomeLayout,
 	homeRows,
@@ -56,6 +57,7 @@ import {
 	RESIDENT_GIFTS,
 	TEMPERS,
 	VISIT_ANY,
+	VISIT_ANY_CUES,
 	WALLPAPERS,
 	type Wallpaper,
 } from "../../data/village/myhome";
@@ -989,6 +991,7 @@ export const guestEvent = (): EventDef | null => {
 	if (!spot) return null;
 	const name = castName(w);
 	const lines = HOME_VISIT[w] ?? VISIT_ANY;
+	const cues = HOME_VISIT[w] ? HOME_VISIT_CUES[w] : VISIT_ANY_CUES;
 	return {
 		id: "home_guest",
 		x: spot[0],
@@ -1003,7 +1006,13 @@ export const guestEvent = (): EventDef | null => {
 			// 置いた 家具の 数で ひとこと（少ない・ふつう・多い）
 			const k = m.placed.length < 3 ? 0 : m.placed.length < 8 ? 1 : 2;
 			const say = w in CAST ? (w as Speaker) : "nanj";
-			await s.say(say, lines[Math.min(k, lines.length - 1)], { name });
+			const i = Math.min(k, lines.length - 1);
+			// 記号は 招いた 人の 頭に（名前欄は 仲間の 声を かりても、絵は home_guest）
+			await s.say(say, lines[i], {
+				name,
+				speaker: "home_guest",
+				...(cues?.[i] ?? {}),
+			});
 		},
 	};
 };

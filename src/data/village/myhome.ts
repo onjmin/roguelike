@@ -9,7 +9,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import { defOf } from "../../core/item";
 import type { DungeonId } from "../../core/types";
-import type { Emote, Gesture } from "../../engine/emote";
+import type { Cue, Emote, Gesture } from "../../engine/emote";
 import { ARCADE_TEXT } from "../arcade/text";
 import type { ArcadeGame } from "../arcade/types";
 import { textWidth } from "../bushitsu/bushitsu";
@@ -709,6 +709,15 @@ export const HOME_VISIT: Partial<Record<string, readonly string[]>> = {
 	],
 };
 
+/** HOME_VISIT の ひとことに つける 感情の 記号・体の 動き（同じ 順。無い 人・空の 窓は なし）。 */
+export const HOME_VISIT_CUES: Partial<Record<string, readonly Cue[]>> = {
+	roze: [{ emote: "!" }, { emote: "♪" }, { emote: "!" }],
+	zero: [{ emote: "…" }, { emote: "♪" }, { emote: "汗" }],
+	feris: [{ emote: "!" }, { emote: "花" }, { emote: "!", gesture: "hop" }],
+	shiyo: [{ emote: "…" }, { gesture: "nod" }, { emote: "…" }],
+	nanj: [{ emote: "!" }, { emote: "花" }, { emote: "花", gesture: "nod" }],
+};
+
 // ───────────────── 招いた 人の 過ごし方 ─────────────────
 // 作者「うろうろ だけでは 味気ない。家具で 遊んだり、緩急 つけて 特定の 所へ 行ったり、見回ったり、
 // のんびり したり。キャラに よって 性格も かわる」。ui/village/myhome.ts の guestRoam が 1つずつ 決める。
@@ -841,6 +850,12 @@ export const VISIT_ANY: readonly string[] = [
 	"おじゃまします。\n……ひろい　お部屋ですね",
 	"おじゃまします。\n住みごこち　よさそう",
 	"おじゃまします。\nすごい、家具が　いっぱい",
+];
+/** VISIT_ANY の 感情の 記号・体の 動き（同じ 順）。 */
+export const VISIT_ANY_CUES: readonly Cue[] = [
+	{ emote: "?" },
+	{ emote: "♪" },
+	{ emote: "!", gesture: "startle" },
 ];
 
 // ───────────────── 模様替え ─────────────────

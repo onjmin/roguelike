@@ -225,6 +225,7 @@ const nag = async (s: Story, now: SabaNow, sv: SabaSave): Promise<void> => {
 	saveSaba(sv);
 	await s.say("nanj", fill(X.nag, { n: NAG_BASE + sv.nag }), {
 		name: "謎の　上級者",
+		emote: "怒",
 	});
 };
 

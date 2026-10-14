@@ -164,11 +164,18 @@ export const imoniPot = async (s: Story, env: ImoniEnv): Promise<void> => {
 		});
 		s.face("mob_puyu", "player");
 		s.face("player", faceToward(s.state, IMONI_SCENE.puyu));
-		await sayAs(s, "puyu", o.puyu[first ? 0 : 1]);
+		await sayAs(
+			s,
+			"puyu",
+			o.puyu[first ? 0 : 1],
+			first ? { emote: "!", gesture: "hop" } : { emote: "♪" },
+		);
 		if (env.yakiuHere) {
 			await s.goto("nanj", IMONI_SCENE.yakiu[0], IMONI_SCENE.yakiu[1]);
 			s.face("nanj", "player");
-			await s.say("nanj", o.yakiu[first ? 0 : 1]);
+			await s.say("nanj", o.yakiu[first ? 0 : 1], {
+				emote: first ? "?" : "…",
+			});
 		}
 	} finally {
 		await s.fadeOut(300);

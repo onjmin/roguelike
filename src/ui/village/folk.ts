@@ -47,6 +47,7 @@ import {
 	type VillageView,
 } from "../../data/village/map";
 import type { EventDef, Script, Story } from "../../engine/defs";
+import type { Cue } from "../../engine/emote";
 import { loadRecords } from "../../engine/save";
 import type { Dir } from "../../engine/types";
 import { returnAt } from "./guests";
@@ -151,8 +152,12 @@ export const forgetFolkMemo = (): void => {
 
 // ───────────────── 道具 ─────────────────
 
-const say = (s: Story, name: string, text: string): Promise<void> =>
-	s.say("nanj", text, { name });
+const say = (
+	s: Story,
+	name: string,
+	text: string,
+	cue: Cue = {},
+): Promise<void> => s.say("nanj", text, { name, ...cue });
 
 /** 村に いる あいだの 数（印。村を 出ると 0 に もどる）。 */
 const tick = (s: Story, key: string): number => {
@@ -184,7 +189,7 @@ export const hiraScript =
 			if (m.hiraAt === -1) await say(s, name, HIRA.intro);
 			else if (entry.length < 3) {
 				const forgot = hiraForgot(returnsSince(m.hiraAt) - 1, m.hira);
-				if (forgot) await say(s, name, forgot);
+				if (forgot) await say(s, name, forgot, { emote: "汗" });
 			}
 			for (const l of entry) await say(s, name, l);
 			m.hira += 1;
@@ -217,7 +222,7 @@ export const nazoScript =
 			return;
 		}
 		const r = RIDDLES[(m.nazo - 1) % RIDDLES.length];
-		await say(s, name, r.q);
+		await say(s, name, r.q, { emote: "?" });
 		const k = await s.choose([...r.options, NAZO.quit], {
 			cancel: r.options.length,
 		});
@@ -285,11 +290,11 @@ export const ideaScript =
 			cancel: options.length,
 		});
 		if (k < 0 || k >= options.length) {
-			await say(s, name, IDEA.no);
+			await say(s, name, IDEA.no, { emote: "…" });
 			s.face(id, dir);
 			return;
 		}
-		await say(s, name, ideaOk(m.idea));
+		await say(s, name, ideaOk(m.idea), { gesture: "nod" });
 		const after = loadFolk();
 		after.idea += 1;
 		after.ideaDone = true;
@@ -317,11 +322,15 @@ export const odoruScript =
 	(id: string, dir: Dir): Script =>
 	async (s) => {
 		const k = tick(s, "folk:odoru");
+		// 踊る 宝石なので 話す たびに くるっと まわる
+		const spin: Cue = { gesture: "spin" };
 		if (k === 0) {
 			await s.narrate(ODORU.first);
-			await say(s, FOLK_NAMES.odoru, ODORU.main);
-		} else
-			await say(s, FOLK_NAMES.odoru, ODORU.more[(k - 1) % ODORU.more.length]);
+			await say(s, FOLK_NAMES.odoru, ODORU.main, { ...spin, emote: "♪" });
+		} else {
+			const text = ODORU.more[(k - 1) % ODORU.more.length];
+			await say(s, FOLK_NAMES.odoru, text, spin);
+		}
 		s.face(id, dir);
 	};
 
