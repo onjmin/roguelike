@@ -18,17 +18,27 @@
 //   ボイスネキの 収録を「4分の1くらい もらってる」ところで 止まった。メイン機と サブ機は web会議で メンテナンスしあう。
 //   → 足りない 声を さがして 深い 階へ。沈んで いた 声は だれの 声でも なかったが、声が なくても いっしょに 行ける。
 
+import type { Cue } from "../../engine/emote";
 import type { QuestHero } from "../../engine/heroes";
 import type { Speaker } from "../story/quotes";
 
+/** 話す 人の 行は 感情の 記号・体の 動き（Cue。engine/emote.ts）も 持てる。 */
 export type QuestLine =
-	| { who: Speaker; text: string }
+	| ({ who: Speaker; text: string } & Cue)
 	| { who: null; text: string }
-	| { who: "kiriko"; text: string };
+	| ({ who: "kiriko"; text: string } & Cue);
 
-const say = (who: Speaker, text: string): QuestLine => ({ who, text });
+const say = (who: Speaker, text: string, c?: Cue): QuestLine => ({
+	who,
+	text,
+	...c,
+});
 const nar = (text: string): QuestLine => ({ who: null, text });
-const kiriko = (text: string): QuestLine => ({ who: "kiriko", text });
+const kiriko = (text: string, c?: Cue): QuestLine => ({
+	who: "kiriko",
+	text,
+	...c,
+});
 
 export type HeroQuestText = {
 	/** 悩みを かかえた 帰りに 村で 見える ようす（地の文。話しかけると 打ち明ける）。 */
@@ -60,12 +70,14 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 	roze: {
 		hint: "ロゼが　店先で　古い　スレを　読んでいる。\n……ときどき、ため息。",
 		worry: [
-			say("roze", "……あ、キリコ。\nなんでも　ないアル"),
+			say("roze", "……あ、キリコ。\nなんでも　ないアル", { emote: "汗" }),
 			nar(
 				"画面には　古い　スレ。「安価で\nおんJ発の　ボカロキャラを　作ろう」",
 			),
 			say("roze", "わたし、ここで　生まれたアル。\n7月1日。……2号機アル"),
-			say("roze", "声は　2回　録ったアル。\n……2回とも、消えたアル"),
+			say("roze", "声は　2回　録ったアル。\n……2回とも、消えたアル", {
+				gesture: "slump",
+			}),
 			say(
 				"roze",
 				"さいごは　避難所で、声を\n直してたアル。……みんな、来なく　なったアル",
@@ -78,15 +90,15 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		],
 		menu: ["取ってくる", "そっとしておく"],
 		accept: [
-			kiriko("……行ってくるンゴ"),
+			kiriko("……行ってくるンゴ", { gesture: "nod" }),
 			say("roze", "……北東の　島アル。\nおんJボカロ作り避難所アル"),
 			say("roze", "文字化けが　うろついてるアル。\n……気を　つけるアル"),
 		],
 		decline: [say("roze", "……常識アル。\nだれだって、そうするアル")],
 		waiting: [say("roze", "……北東の　島の　小屋、\nまだ　あったアル？")],
 		offer: [
-			say("roze", "……あ。\nあー。あ、あ"),
-			say("roze", "ずれてないアル。……ふふ"),
+			say("roze", "……あ。\nあー。あ、あ", { emote: "♪" }),
+			say("roze", "ずれてないアル。……ふふ", { emote: "花" }),
 			say(
 				"roze",
 				"スレは　みんな　完走したアル。\n……次スレは、だれも　立てなかったアル",
@@ -95,7 +107,9 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 				"roze",
 				"でも　外で、知らない　人が\nわたしで　歌を　作ってくれたアル",
 			),
-			say("roze", "わたしは　まだ、ここに　アルアル。\n……体重は　ナイけど"),
+			say("roze", "わたしは　まだ、ここに　アルアル。\n……体重は　ナイけど", {
+				gesture: "spin",
+			}),
 			say("roze", "体重　ナイから、壁も　すり抜けられるアル。\n……常識アル"),
 			say("roze", "今度　下へ　行くとき、\nわたしも　連れていくアル"),
 		],
@@ -113,7 +127,10 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 	zero: {
 		hint: "ゼロが　広場で　口を　ぱくぱく　させている。\n……声は　出ていない。",
 		worry: [
-			say("zero", "あ、キリコさん！\n……見てました？"),
+			say("zero", "あ、キリコさん！\n……見てました？", {
+				emote: "汗",
+				gesture: "startle",
+			}),
 			say("zero", "歌の　練習です。\n……音、出ないんですけど"),
 			say("zero", "わたし、ロゼさんの　反対に\n作られたんです。黒髪は　金髪に"),
 			say("zero", "声は、録りはじめて　4分の1で\n止まったまま　なんです"),
@@ -125,16 +142,21 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		],
 		menu: ["聞いてくる", "そっとしておく"],
 		accept: [
-			kiriko("……蓄音機、持っていくンゴ"),
-			say("zero", "ほんとですか！\n……8階くらいまで、行けば"),
+			kiriko("……蓄音機、持っていくンゴ", { gesture: "nod" }),
+			say("zero", "ほんとですか！\n……8階くらいまで、行けば", {
+				emote: "!",
+				gesture: "hop",
+			}),
 			say("zero", "おかえりの　練習、して　おきます。\n……声なしで"),
 		],
-		decline: [say("zero", "……ですよね。\nわすれて　ください")],
+		decline: [
+			say("zero", "……ですよね。\nわすれて　ください", { gesture: "slump" }),
+		],
 		waiting: [say("zero", "深い　階の　声……。\n……あ、いえ、急ぎません")],
 		offer: [
 			nar("蓄音機を　回した。\n深い　階の　ざわめき。"),
 			nar("……だれの　声でも　なかった。"),
-			say("zero", "…………"),
+			say("zero", "…………", { emote: "…" }),
 			say("zero", "きれいでした。\nわたしのじゃ、ないですけど"),
 			say("zero", "名前の　投票で、イッチさんは\n「ユリ」に　入れたんですって"),
 			say("zero", "でも、ゼロに　なりました。\n……ゼロから　始める　名前です"),
@@ -142,6 +164,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			say(
 				"zero",
 				"わたしが　たおれても、プロトと\nレンが　いますから。……次は、いっしょに",
+				{ gesture: "nod" },
 			),
 		],
 		unlocked: "ゼロと　冒険に　出られる　ように　なった。",

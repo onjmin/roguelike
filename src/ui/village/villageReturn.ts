@@ -458,7 +458,7 @@ export const returnScene = async (
 				newcomer = true;
 				await walkInMob(s, a.dungeon);
 			}
-			await sayAs(s, p.mob, p.text);
+			await sayAs(s, p.mob, p.text, cueOf(p));
 		} else await playPage(s, p);
 		// 本筋の 語りで 読んだ 去った 人の 最後の レスは、掲示板でも 読んだ ことに する
 		if (p.scrap) readScrap(p.scrap, scrapReturnAt());
@@ -688,7 +688,7 @@ export const deathScene = async (s: Story): Promise<void> => {
 	await s.goto(q.who, bx + 1, by, { speed: 1.6 });
 	s.face(q.who, "player");
 	s.face("player", "right");
-	await s.say(q.who, q.text);
+	await s.say(q.who, q.text, cueOf(q));
 	await s.fadeOut(300);
 	await rebuild(s);
 	await s.fadeIn(300);
@@ -759,7 +759,10 @@ const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
 	if (d === "ato") {
 		s.se("spell");
 		await s.narrate(ATO_NEWS.play);
-		if (here) for (const l of ATO_NEWS.lines) await sayAs(s, id, l);
+		// 1行目（「この　声、知ってる」）は 気づいた ところ
+		if (here)
+			for (const [i, l] of ATO_NEWS.lines.entries())
+				await sayAs(s, id, l, i === 0 ? { emote: "!" } : {});
 		await s.narrate(ATO_NEWS.after);
 	} else {
 		if (here) for (const l of HINAN_NEWS.lines) await sayAs(s, id, l);
@@ -891,7 +894,7 @@ export const settleScript = async (
 		if (here(l.who)) return s.say(l.who, l.text, cueOf(l));
 		const bare = BARE_TOWN_MSG.find((b) => b.of === l);
 		return bare && here(bare.line.who)
-			? s.say(bare.line.who, bare.line.text)
+			? s.say(bare.line.who, bare.line.text, cueOf(bare.line))
 			: Promise.resolve();
 	};
 	// あずかる シヨ・売る ロゼ・読む ゼロを そばへ（いる 人だけ）
@@ -944,11 +947,16 @@ export const settleScript = async (
 			await s.say(
 				TOWN_MSG.sold.who,
 				fill(TOWN_MSG.sold.text, { points: r.sold }),
+				cueOf(TOWN_MSG.sold),
 			);
 		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
 		// 売り上げが 財布にも なる ことを はじめの 1回だけ（ゼロが いる とき）
 		if (here(TOWN_MSG.wallet.who) && !hasFlag(WALLET_TOLD)) {
-			await s.say(TOWN_MSG.wallet.who, TOWN_MSG.wallet.text);
+			await s.say(
+				TOWN_MSG.wallet.who,
+				TOWN_MSG.wallet.text,
+				cueOf(TOWN_MSG.wallet),
+			);
 			addFlag(WALLET_TOLD);
 		}
 	}
@@ -1117,7 +1125,7 @@ const stageUp = async (
 			await s.goto(hallLine.who, front[0], front[1], { speed: 1.4 });
 			s.face(hallLine.who, "up");
 		}
-		await s.say(hallLine.who, hallLine.text);
+		await s.say(hallLine.who, hallLine.text, cueOf(hallLine));
 	}
 	// 町の まわり・浜・新市街・港に 建った 物（仲間は 町の まんなかしか 語らないので、カメラで 回って 知らせる）
 	const news = newsPages(townNews(from, to));

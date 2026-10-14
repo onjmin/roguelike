@@ -84,7 +84,7 @@ import {
 	trolleyStops,
 } from "../../data/village/trolley";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
-import { cueOf } from "../../engine/emote";
+import { type Cue, cueOf } from "../../engine/emote";
 import {
 	acceptEscort,
 	doneEscortThanks,
@@ -177,7 +177,7 @@ import {
 	fill,
 	pinnedScrap,
 	scrapReturnAt,
-	talkLine,
+	talkQuote,
 } from "./villageTalk";
 import { openWorldMap, pickColony, travelTo } from "./worldMap";
 
@@ -357,7 +357,7 @@ export const departTo = async (
 		: undefined;
 	if (carry.length && refuse) {
 		await s.narrate(CARRY_CHASE);
-		await s.say(refuse.who, refuse.text);
+		await s.say(refuse.who, refuse.text, cueOf(refuse));
 		depositBag();
 		carry = [];
 	}
@@ -380,7 +380,7 @@ export const departTo = async (
 	);
 	if (companion) {
 		await s.narrate(companion.join);
-		await requesterSays(s, companion.who, companion.line);
+		await requesterSays(s, companion.who, companion.line, companion.lineCue);
 	} else {
 		// 引き受けた 依頼の 板へ、依頼主 本人が 主人公で 出る：同じ 人は 2人 いない ので、依頼は つぎの 機会に
 		const e = escortById(loadEscort().accepted);
@@ -623,10 +623,11 @@ const requesterSays = async (
 	s: Story,
 	who: GuestId,
 	text: string,
+	cue: Cue = {},
 ): Promise<void> => {
 	const sp = speakerOf(who);
-	if (sp) await s.say(sp, text);
-	else await sayAs(s, who as MobId, text);
+	if (sp) await s.say(sp, text, cue);
+	else await sayAs(s, who as MobId, text, cue);
 };
 
 /**
@@ -680,7 +681,8 @@ const escortThanksScript = async (s: Story): Promise<void> => {
 	if (!e) return;
 	const sp = speakerOf(e.who);
 	if (sp) await gather(s, [sp]);
-	for (const t of e.thanks) await requesterSays(s, e.who, t);
+	for (const [i, t] of e.thanks.entries())
+		await requesterSays(s, e.who, t, i === 0 ? e.thanksCue : undefined);
 	earnYen(e.reward);
 	s.se("item");
 	await s.narrate(fill(ESCORT_MSG.reward, { yen: yen(e.reward) }));
@@ -774,7 +776,8 @@ const speak = async (
 	who: Speaker,
 	o: { gate?: boolean } = {},
 ): Promise<void> => {
-	await s.say(who, talkLine(who, o));
+	const l = talkQuote(who, o);
+	await s.say(who, l.text, cueOf(l));
 };
 
 /**
@@ -815,7 +818,7 @@ const playQuestLines = async (
 ): Promise<void> => {
 	for (const l of lines)
 		if (l.who === null) await s.narrate(l.text);
-		else if (l.who === "kiriko") await s.kiriko(l.text, "voice");
+		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
 		else await s.say(l.who, l.text, cueOf(l));
 };
 
@@ -1010,7 +1013,11 @@ const storeChooser =
 		chooseStored(ctx, t, pend, {
 			prompt: "あずける　ものを　えらぶ",
 			confirmSell: async () => {
-				await s.say(TOWN_MSG.sellRest.who, TOWN_MSG.sellRest.text);
+				await s.say(
+					TOWN_MSG.sellRest.who,
+					TOWN_MSG.sellRest.text,
+					cueOf(TOWN_MSG.sellRest),
+				);
 				const yes =
 					(await s.choose(["はい", "いいえ"], { cancel: 1, start: 1 })) === 0;
 				await hideMsg(s);

@@ -5,10 +5,12 @@
 //   （ふだんの 新しい話・決まった ひとこと・起動の札・たおれた ときの ひとこと の かわり）。
 // - TAMPER_LEDGER：ゼロの 帳簿。TAMPER_MOB：村の 住人の ひそひそ話。
 
+import type { Cue } from "../../engine/emote";
 import type { Speaker } from "../story/quotes";
 import type { Line } from "../story/story";
 
-const q = (who: Speaker, text: string): Line => ({ who, text });
+/** c は 話す 人の 感情の 記号・体の 動き（engine/emote.ts）。 */
+const q = (who: Speaker, text: string, c?: Cue): Line => ({ who, text, ...c });
 
 /** 段（見つけた 回数 1・2・3〜 → 0・1・2）。 */
 export const tamperTier = (n: number): number =>
@@ -17,25 +19,37 @@ export const tamperTier = (n: number): number =>
 /** 気づく 場面（並びの 順に、村に いる 人から 3人まで）。 */
 export const TAMPER_SCENE: readonly (readonly Line[])[] = [
 	[
-		q("zero", "……あれ？　帳簿と　セーブが\n合いません。数えなおしても、です"),
-		q("shiyo", "数字を　いじったわね。\n……あたす、見ないふりは　しないわよ"),
+		q("zero", "……あれ？　帳簿と　セーブが\n合いません。数えなおしても、です", {
+			emote: "?",
+		}),
+		q("shiyo", "数字を　いじったわね。\n……あたす、見ないふりは　しないわよ", {
+			emote: "怒",
+		}),
 		q("roze", "ズルは　ばれるアル。\n……麻婆豆腐より　からい　話アル"),
-		q("feris", "書きかえたの〜？\n……ちょっと、さびしいな〜"),
+		q("feris", "書きかえたの〜？\n……ちょっと、さびしいな〜", {
+			gesture: "slump",
+		}),
 		q("nanj", "なんや、改造かいな。\n……ワイらの　保守は　なんやったんや"),
 	],
 	[
-		q("zero", "また、帳簿が　合いません。\n……ゼロ、数えるのが　つらいです"),
+		q("zero", "また、帳簿が　合いません。\n……ゼロ、数えるのが　つらいです", {
+			gesture: "slump",
+		}),
 		q("shiyo", "二度目よ。\n……生きてこそ、は　そういう　意味じゃない"),
-		q("roze", "また　いじったアル？\n……ロゼ、もう　笑えないアル"),
+		q("roze", "また　いじったアル？\n……ロゼ、もう　笑えないアル", {
+			emote: "…",
+		}),
 		q("feris", "また〜？\n……私、ageる　気分じゃ　ないかも〜"),
-		q("nanj", "また　やったんか。\n……ワイ、もう　何も　言わんで"),
+		q("nanj", "また　やったんか。\n……ワイ、もう　何も　言わんで", {
+			gesture: "shake",
+		}),
 	],
 	[
 		q("zero", "帳簿は、もう　つけません。\n……つけても、意味が　ないので"),
-		q("shiyo", "……ふんっ。\n好きに　すれば　いいじゃない"),
-		q("roze", "……アル"),
-		q("feris", "…………"),
-		q("nanj", "……"),
+		q("shiyo", "……ふんっ。\n好きに　すれば　いいじゃない", { emote: "怒" }),
+		q("roze", "……アル", { emote: "…" }),
+		q("feris", "…………", { emote: "…" }),
+		q("nanj", "……", { emote: "…" }),
 	],
 ];
 

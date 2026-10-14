@@ -10,6 +10,7 @@
 import type { HeroId } from "../../core/data/heroes";
 import { townStep } from "../../core/town";
 import type { DungeonId, GuestId, GuestSpec } from "../../core/types";
+import type { Cue } from "../../engine/emote";
 import type { Speaker } from "../story/quotes";
 import { awayFriends } from "../story/story";
 import { CAST } from "./cast";
@@ -29,8 +30,12 @@ export type EscortRequest = {
 	/** その 板へ 出る ときの 地の文と ひとこと。 */
 	join: string;
 	line: string;
+	/** line の 感情の 記号・体の 動き（engine/emote.ts。依頼主の 頭に）。 */
+	lineCue?: Cue;
 	/** 帰ってきた とき（1〜2窓）。 */
 	thanks: readonly string[];
+	/** thanks の 1窓目の 感情の 記号・体の 動き。 */
+	thanksCue?: Cue;
 	/** お礼（円）。 */
 	reward: number;
 	/** この 板も 持ち帰って いれば 出る（裏の 依頼）。 */
@@ -86,10 +91,12 @@ export const ESCORTS: readonly EscortRequest[] = [
 		],
 		join: "シヨが　タオルを　かかえて　ついてきた。",
 		line: "……湯治よ、湯治。\nあなたは　ついでよ",
+		lineCue: { emote: "汗" },
 		thanks: [
 			"……いい　お湯だったわ。\nべ、べつに　楽しかった　わけじゃ……",
 			"お礼よ。\n……受けとりなさいよ",
 		],
+		thanksCue: { emote: "花" },
 		reward: 400,
 	},
 	{
@@ -104,10 +111,12 @@ export const ESCORTS: readonly EscortRequest[] = [
 		],
 		join: "フェリスが　ぱたぱた　ついてきた。",
 		line: "島、いっしょに　歩こ〜。\n……飛ばないで　行って　みたいの〜",
+		lineCue: { emote: "♪" },
 		thanks: [
 			"歩いて　見る　島、\nきれいだった〜",
 			"おかえり、言う　係なのに\n言われちゃった〜。……お礼〜",
 		],
+		thanksCue: { emote: "花" },
 		reward: 300,
 	},
 	{
@@ -140,10 +149,12 @@ export const ESCORTS: readonly EscortRequest[] = [
 		],
 		join: "にぃちぇが　うきうきで　ついてきた。",
 		line: "お祭り、行くニィ！\n……今日は　日曜日ってことに　するニィ",
+		lineCue: { gesture: "hop" },
 		thanks: [
 			"日曜日、見てきたニィ！",
 			"……月曜日も、ちょっとだけ\n好きに　なったニィ。お礼ニィ",
 		],
+		thanksCue: { emote: "♪" },
 		reward: 400,
 	},
 	{
@@ -158,6 +169,7 @@ export const ESCORTS: readonly EscortRequest[] = [
 		],
 		join: "ゼロが　かけよってきた。",
 		line: "ゼロも　行きます。\n……近くで　数えたいんです",
+		lineCue: { emote: "!" },
 		thanks: [
 			"見てきました。\n「保守」、たくさん　ありました",
 			"ちゃんと　数えました。\n……お礼、です",

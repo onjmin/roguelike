@@ -10,12 +10,18 @@
 // 1行は全角22字・2行まで。説明せず、行間を読ませる（rpg README「セリフの書き方」）。
 // 段（0〜7）で引く表は ぜんぶ 配列（core/town.ts の STORAGE_CAP・CARRY_MAX と同じ引き方）。
 
+import type { Cue } from "../../engine/emote";
 import type { Speaker } from "../story/quotes";
 import type { Line, StoryPage } from "../story/story";
 
-const q = (who: Speaker, text: string): Line => ({ who, text });
+/** c は 話す 人の 感情の 記号・体の 動き（engine/emote.ts）。 */
+const q = (who: Speaker, text: string, c?: Cue): Line => ({ who, text, ...c });
 const n = (text: string): StoryPage => ({ who: null, text });
-const s = (who: Speaker, text: string): StoryPage => ({ who, text });
+const s = (who: Speaker, text: string, c?: Cue): StoryPage => ({
+	who,
+	text,
+	...c,
+});
 
 // ───────────────── 名前 ─────────────────
 /** 地上の町の名前（やきうが「上で　保守しとく」場所）。 */
@@ -55,7 +61,13 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 			"売れた　ネタは、買った　人が　スレに\n貼るアル。人が　来たら、町も　育つアル",
 		),
 		q("roze", "麻婆豆腐、ひと鍋　作ったアル。\n……いまは、ひと鍋で　足りるアル"),
-		q("zero", "売り上げは、ゼロが　帳簿に！\n……1000まで　数えるの、夢なんです"),
+		q(
+			"zero",
+			"売り上げは、ゼロが　帳簿に！\n……1000まで　数えるの、夢なんです",
+			{
+				emote: "♪",
+			},
+		),
 	],
 	[
 		// 天気の しくみは ないので 雨は 言わない（2026-10-14 紐づけの 見直し）
@@ -81,7 +93,9 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 	[
 		q("nanj", "物置、倉庫に　建てなおしたで。\n……鍵は、シヨが　はなさへん"),
 		q("shiyo", "……やっと　せまくなくなったわ。\nもっと　あずかって　あげる"),
-		q("zero", "倉庫、拡張！　在庫は　ゼロが\n数えます。……数えさせてください"),
+		q("zero", "倉庫、拡張！　在庫は　ゼロが\n数えます。……数えさせてください", {
+			gesture: "hop",
+		}),
 		// 段4 で 東の 森が 開けて 新市街が はじまる。だれが 建てたかを 言う
 		q(
 			"nanj",
@@ -91,11 +105,14 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 		q(
 			"zero",
 			"東に、分譲住宅が　建ちました！\n……売り上げで、キリコさんの　家に？",
+			{ emote: "?" },
 		),
 	],
 	[
 		q("roze", "店に　なったアル。名前は\n「常識堂」アル。常識アル"),
-		q("feris", "看板は　私が　かいたよ〜。\n……字、はねすぎた〜？"),
+		q("feris", "看板は　私が　かいたよ〜。\n……字、はねすぎた〜？", {
+			emote: "汗",
+		}),
 		q(
 			"shiyo",
 			"……倉庫も　すこし　広げたわ。\n冒険に　2つまで　持っていきなさい",
@@ -108,12 +125,16 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 			"shiyo",
 			"倉庫、広く　なったわ。……冒険には、\n3つまで　持っていって　いいわよ",
 		),
-		q("zero", "二つ目の　倉庫！\n……ゼロの　充電器も、置けますか"),
+		q("zero", "二つ目の　倉庫！\n……ゼロの　充電器も、置けますか", {
+			emote: "?",
+		}),
 		// 段6 は 住宅街（東に 家が 並ぶ）
 		q("nanj", "東に　家が　並んだで。\n……住みつく　気ぃの　やつまで　おる"),
 	],
 	[
-		q("nanj", "見てみ。祭りや。野次馬が\nあふれとる。……ええ祭りや"),
+		q("nanj", "見てみ。祭りや。野次馬が\nあふれとる。……ええ祭りや", {
+			emote: "♪",
+		}),
 		q("feris", "みんな、スレ　見に\n来たんだよ〜。……たぶん〜"),
 		q(
 			"shiyo",
@@ -122,6 +143,7 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 		q(
 			"shiyo",
 			"……冒険に、4つまで　持っていきなさい。\nおまけじゃ　ないんだからね",
+			{ emote: "汗" },
 		),
 	],
 ];
@@ -163,7 +185,9 @@ export const RETURN_PAGES: readonly StoryPage[] = [
 		"スレを　読むと、体が　ふわりと　あがった。\n気がつくと、見なれた　入口に　立っていた。",
 	),
 	// 何度も 見る 場面なので 2人まで
-	s("nanj", "はっや。……なんや、その　顔。\n途中で　あがってきたんか"),
+	s("nanj", "はっや。……なんや、その　顔。\n途中で　あがってきたんか", {
+		emote: "?",
+	}),
 	// おかえりは「おかえり　言う　係」の フェリス（段2 で 越してくる。まだ いなければ ゼロ。2026-10-14 紐づけの 見直し）
 	{
 		...s("feris", "おかえり〜。……途中でも、\nおかえりは　おかえりだよ〜"),
@@ -227,8 +251,11 @@ export const TOWN_MSG: Record<
 	nothingToStore: q(
 		"shiyo",
 		"あずける　ものが　ないの？\n……ふんっ。棚、空けといたのに",
+		{ emote: "怒" },
 	),
-	sold: q("zero", "売り上げ、{points}円！\n……帳簿に、花丸を　つけました"),
+	sold: q("zero", "売り上げ、{points}円！\n……帳簿に、花丸を　つけました", {
+		emote: "♪",
+	}),
 	soldNothing: q("roze", "売る　ものが　ないアル。\n……麻婆豆腐なら　あるアル"),
 	carryDone: q("shiyo", "……なくさないでよね。\nちゃんと　持って　帰りなさい"),
 	salesEmpty: q(
@@ -358,16 +385,24 @@ export const TITLE_TOWN_QUOTES: readonly (readonly Line[])[] = [
 	[
 		q("roze", "小屋に　なったアル。\n……棚、ふえたアル"),
 		q("nanj", "小屋や。トタン屋根や。\n……雨の音が、ええんよ"),
-		q("shiyo", "……小屋ね。\n入ってないわよ。のぞいた　だけ"),
+		q("shiyo", "……小屋ね。\n入ってないわよ。のぞいた　だけ", { emote: "汗" }),
 	],
 	[
 		q("shiyo", "倉庫番は　あたすよ。\n……ひまだからじゃ　ないわ"),
 		q("nanj", "倉庫、建てなおしたで。\nシヨが　鍵、はなさへん"),
-		q("zero", "在庫を　数えるの、好きです。\n……ひとつずつ、名前も　つけてます"),
+		q(
+			"zero",
+			"在庫を　数えるの、好きです。\n……ひとつずつ、名前も　つけてます",
+			{
+				emote: "♪",
+			},
+		),
 	],
 	[
 		q("roze", "常識堂、開店アル。\n……麻婆豆腐は、おまけアル"),
-		q("feris", "看板の　字、私が　かいたよ〜。\n……見た〜？　見た〜？"),
+		q("feris", "看板の　字、私が　かいたよ〜。\n……見た〜？　見た〜？", {
+			gesture: "hop",
+		}),
 		q("nanj", "店に　なってもうたな。\n……屋台のころも、よかったで"),
 	],
 	[
@@ -378,7 +413,9 @@ export const TITLE_TOWN_QUOTES: readonly (readonly Line[])[] = [
 	[
 		q("nanj", "祭りや。野次馬が　あふれとる。\n……ええ祭りや"),
 		q("roze", "大きな　店アル。……でも、\n麻婆豆腐は　ひと鍋だけアル"),
-		q("shiyo", "……にぎやかすぎるわよ。\nお茶、何人ぶん　いれればいいの"),
+		q("shiyo", "……にぎやかすぎるわよ。\nお茶、何人ぶん　いれればいいの", {
+			emote: "汗",
+		}),
 	],
 ];
 
@@ -386,7 +423,9 @@ export const TITLE_TOWN_QUOTES: readonly (readonly Line[])[] = [
 export const ESCAPE_QUOTES: readonly Line[] = [
 	q("nanj", "途中で　あがってきたんか。\n……ええで。ええで"),
 	q("shiyo", "逃げたんじゃ　ないでしょ。\n……生きてこそだ。それで　いいの"),
-	q("feris", "スレで　ageられたの〜？\n私の　ageと、どっちが　速い〜？"),
+	q("feris", "スレで　ageられたの〜？\n私の　ageと、どっちが　速い〜？", {
+		emote: "?",
+	}),
 	q("roze", "スレで　帰るのも、常識アル。\n……荷物は、ちゃんと　売るアル"),
 	q("zero", "帰還スレ、使ったんですね。\n……途中の　ログも、ゼロは　読みます"),
 ];

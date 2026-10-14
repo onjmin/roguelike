@@ -37,6 +37,7 @@ import {
 	ZERO_VOICELESS,
 } from "../../data/town/town";
 import { timeBand } from "../../data/village/crowd";
+import { type Cue, cueOf } from "../../engine/emote";
 import {
 	loadProgress,
 	loadRecords,
@@ -271,26 +272,31 @@ export const markHeard = (who: Speaker): void => {
 const idleCount = new Map<Speaker, number>();
 
 /** その人の 決まった ひとこと（新しい話を 聞いたあと）。 */
-const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
+/** 話しかけた ときの ひとこと（文と、話す 人の 感情の 記号・体の 動き）。 */
+export type TalkLine = { text: string } & Cue;
+
+const idleLine = (who: Speaker, o: { gate?: boolean }): TalkLine => {
 	// 口の前で 見張っている間は 見張りの ひとこと
-	if (who === "nanj" && o.gate) return VILLAGE_IDLE.gate;
+	if (who === "nanj" && o.gate) return { text: VILLAGE_IDLE.gate };
 	// 時間帯の ひとこと（昼の ほか。いつもの ひとことと 交互：data/town/town.ts の BAND_IDLE）
 	const n = (idleCount.get(who) ?? 0) + 1;
 	idleCount.set(who, n);
 	const band = bandNow();
 	const timed = band === "day" ? undefined : BAND_IDLE[who][band];
-	if (timed && n % 2 === 1) return timed;
+	if (timed && n % 2 === 1) return { text: timed };
 	const warm = talkHooks.idle(who);
-	if (warm) return warm;
+	if (warm) return { text: warm };
 	const stage = loadTown().stage;
 	const town = (TITLE_TOWN_QUOTES[stage] ?? []).find((x) => x.who === who);
-	if (town) return town.text;
+	if (town) return { text: town.text, ...cueOf(town) };
 	if (who === "shiyo" && (STORAGE_CAP[stage] ?? 0) > 0)
-		return VILLAGE_IDLE.store;
+		return { text: VILLAGE_IDLE.store };
 	// ボイスを オンに しても、ゼロだけは 声が 出ない（音源が まだ 無い）
 	if (who === "zero" && settings.voice)
-		return ZERO_VOICELESS[(returnAt() % 9973) % ZERO_VOICELESS.length];
-	return VILLAGE_IDLE[who];
+		return {
+			text: ZERO_VOICELESS[(returnAt() % 9973) % ZERO_VOICELESS.length] ?? "",
+		};
+	return { text: VILLAGE_IDLE[who] };
 };
 
 /** まだ 聞いていない 新しい ひとことが あるか。 */
@@ -303,10 +309,14 @@ export const hasNews = (who: Speaker): boolean =>
  * 話しかけたときの ひとこと。新しい話が あれば それ（聞いたと 覚える）、無ければ 決まった ひとこと。
  * gate は やきうが 本編の口の前で 見張っているとき。
  */
-export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string => {
+export const talkQuote = (
+	who: Speaker,
+	o: { gate?: boolean } = {},
+): TalkLine => {
 	// がっかり している あいだは 新しい話も しない（聞いたことにも しない。あとで 聞ける）
 	const sulk = sulkTier();
-	if (sulk !== null) return TAMPER_TALK[who][sulk] ?? VILLAGE_IDLE[who];
+	if (sulk !== null)
+		return { text: TAMPER_TALK[who][sulk] ?? VILLAGE_IDLE[who] };
 	const at = returnAt();
 	const heard = loadHeard();
 	if (heard[who] !== at) {
@@ -315,11 +325,15 @@ export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string => {
 		saveHeard(heard);
 		if (news) {
 			talkHooks.news(who);
-			return news.text;
+			return { text: news.text, ...cueOf(news) };
 		}
 	}
 	return idleLine(who, o);
 };
+
+/** talkQuote の 文だけ。 */
+export const talkLine = (who: Speaker, o: { gate?: boolean } = {}): string =>
+	talkQuote(who, o).text;
 
 /** 文の {name} を 埋める。 */
 export const fill = (
