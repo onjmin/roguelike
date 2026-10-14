@@ -528,6 +528,25 @@ body.jolt #app {
 
 /* ───────── ステータス行（左上） ───────── */
 
+/* 村の 時計（村だけ。暗さ・人通りが 時刻で かわる わけを 見せる） */
+.village-clock {
+	display: none;
+	position: absolute;
+	top: calc(8px + var(--safe-t));
+	left: calc(8px + var(--safe-l));
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: rgba(0, 0, 0, 0.45);
+	color: #f4ecd8;
+	font-size: 13px;
+	line-height: 1.5;
+	pointer-events: none;
+}
+
+.hud.village .village-clock {
+	display: block;
+}
+
 .status {
 	position: absolute;
 	top: calc(8px + var(--safe-t));

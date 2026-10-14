@@ -30,7 +30,7 @@ import type { KirikoMode, Speaker } from "../../data/story/quotes";
 import { nowHour, openMode, today } from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
 import { pedRoute, timeBand } from "../../data/village/crowd";
-import { BAND_TINT } from "../../data/village/daylight";
+import { BAND_TINT, clockLine } from "../../data/village/daylight";
 import { type Facility, facilityOfMap } from "../../data/village/facilities";
 import { exitFor, VILLAGE_SPOTS } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
@@ -529,7 +529,18 @@ export class Village {
 		this.time += dt;
 		this.update(dt);
 		this.render();
+		this.tickClock();
 		this.rafId = requestAnimationFrame((tt) => this.frame(tt));
+	}
+
+	/** 村の 時計の 文（かわった ときだけ 書く。data/village/daylight.ts）。 */
+	private clockText = "";
+	private tickClock(): void {
+		const h = nowHour();
+		const text = clockLine(today(), h, new Date().getMinutes(), timeBand(h));
+		if (text === this.clockText) return;
+		this.clockText = text;
+		this.hud.clock.textContent = text;
 	}
 
 	private get idle(): boolean {

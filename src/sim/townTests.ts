@@ -27,7 +27,7 @@ import { SE_LOUDNESS } from "../data/audio/loudness";
 import { sfx } from "../data/audio/sfx";
 import { ROOM_DOOR_SE } from "../data/town/rooms";
 import { timeBand } from "../data/village/crowd";
-import { BAND_TINT } from "../data/village/daylight";
+import { BAND_TINT, clockLine } from "../data/village/daylight";
 import { FACILITIES } from "../data/village/facilities";
 import {
 	depositBag,
@@ -82,6 +82,10 @@ test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、�
 		"the night is not darker than the evening",
 	);
 	ok(timeBand(21) === "night" && timeBand(18) === "evening", "bands");
+	ok(
+		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night") === "10/14（水）21:05　夜",
+		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night"),
+	);
 });
 
 test("every item except goal items has a price", () => {

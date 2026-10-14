@@ -22,6 +22,8 @@ export type Hud = {
 	root: HTMLElement;
 	/** 上のステータス行。 */
 	status: HTMLElement;
+	/** 村の 時計（日付・曜日・時刻・時間帯。村だけ 見える。ui/village/village.ts が 書く）。 */
+	clock: HTMLElement;
 	/** 村（おんJタウン）と ダンジョンで ボタンを 切りかえる。村では ステータス行・小さいボタン・矢を 隠す。 */
 	setMode(mode: "village" | "dungeon"): void;
 };
@@ -52,8 +54,11 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const mute = el("button", { class: "icon-btn mute-btn" });
 	mute.title = "BGM・効果音のミュート";
 	const status = el("div", { class: "status" });
+	// 村の 時計（暗さ・人通り・番組は 端末の 時刻で かわるので、いま 何時かを 見せる）
+	const clock = el("div", { class: "village-clock" });
 	const hud = el("div", { class: "hud" }, [
 		status,
+		clock,
 		pad,
 		el("div", { class: "ab" }, [b, shoot, phase, auto, a]),
 		el("div", { class: "minis" }, [turn, foot, map]),
@@ -108,5 +113,5 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const setMode = (mode: "village" | "dungeon") => {
 		hud.classList.toggle("village", mode === "village");
 	};
-	return { root: hud, status, setMode };
+	return { root: hud, status, clock, setMode };
 };
