@@ -273,6 +273,9 @@ export const ROOM_CELLS = {
 	fPanel: [7, 17, 2, 2],
 	fDrum: [9, 17, 1, 1],
 	belt: [10, 17, 3, 1],
+	techUp: [13, 17, 1, 1],
+	techLow: [15, 17, 1, 1],
+	cable: [0, 18, 1, 1],
 } as const;
 
 export type RoomArtName = keyof typeof ROOM_CELLS;

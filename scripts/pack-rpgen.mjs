@@ -657,6 +657,11 @@ const ROOM_PIECES = {
 	fDrum: { ids: [["dq:20575"]] },
 	// 94: 3 行 9〜11 列（青灰の 帯）を 緑に。流れ作業の ベルトコンベア（左はし・まんなか・右はし）
 	belt: { ids: [["dq:6058", "dq:6057", "dq:5535"]], op: "hue:-100" },
+	// ── ゲームセンター（facilities.ts の arcade）：rpgen.org の「4900」223 の 青緑の 機械の 壁（上段・下段）と、
+	// 床を はう 配線（手描き）
+	techUp: { ids: [["dq:20168"]] },
+	techLow: { ids: [["dq:20124"]] },
+	cable: { drawn: "cable" },
 };
 
 // ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/town/eateries.ts の 出てきた 一品の 絵） ─────────────────
@@ -1144,6 +1149,19 @@ const DRAWN = {
 				if (pal[c]) dot(img, x, y, pal[c]);
 			});
 		});
+		return img;
+	},
+	/** 床を はう 配線（黒い 太い 線と 灰色の 細い 線が 左右へ ゆるく うねる。床の 上に 重ねる）。 */
+	cable: () => {
+		const img = blank(CELL, CELL);
+		const thick = [9, 9, 10, 10, 11, 11, 11, 10, 10, 9, 9, 8, 8, 8, 9, 9];
+		const thin = [4, 4, 4, 5, 5, 5, 4, 4, 3, 3, 3, 4, 4, 5, 5, 4];
+		for (let x = 0; x < CELL; x++) {
+			dot(img, x, thick[x], "16161c");
+			dot(img, x, thick[x] + 1, "16161c");
+			dot(img, x, thick[x] - 1, "3c3c4a");
+			dot(img, x, thin[x], "5a5a68");
+		}
 		return img;
 	},
 	/** たこ焼き（舟皿に 6こ。ソース・マヨ・青のり）。 */
