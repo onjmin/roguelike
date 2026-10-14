@@ -608,11 +608,14 @@ export const tamperScript = async (s: Story): Promise<void> => {
 /**
  * 村に 帰って 持ち物（倉庫から 引き取った 道具）が からっぽなら、ぷゆゆが かけてきて ぷゆゆパンを 持たせる
  * （トルネコ1の ネネの お弁当の 役。出るときに 持っていく。data/story/story.ts の DEPART.puyu）。
+ * ぷゆゆソードを 渡した すぐ あと（reliefScript）で もう となりに いれば、かけてこず「ぷゆゆパンも」（DEPART.puyuToo）。
  */
 export const lunchScript = async (s: Story): Promise<void> => {
 	if (!giveLunch()) return;
+	// もう となりに いる（ぷゆゆソードを 渡した ばかり）なら、かけてこない
+	const already = s.near("mob_puyu", 1);
 	// ぷゆゆが キリコの となりまで かけてきて 渡す（そのあとは うろうろ しながら 広場の 下へ もどる。ui/village/village.ts）
-	const [to] = freeAround(s, 1);
+	const [to] = already ? [] : freeAround(s, 1);
 	if (to) {
 		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });
 		s.face("mob_puyu", "player");
@@ -624,7 +627,7 @@ export const lunchScript = async (s: Story): Promise<void> => {
 		PUYU_LUNCH[Math.floor(Math.random() * PUYU_LUNCH.length)] ?? "",
 	);
 	s.se("item");
-	await s.narrate(DEPART.puyu);
+	await s.narrate(already ? DEPART.puyuToo : DEPART.puyu);
 };
 
 // ───────────────── たおれた あとの 支給品 ─────────────────
