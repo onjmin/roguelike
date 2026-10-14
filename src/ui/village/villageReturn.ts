@@ -177,6 +177,8 @@ const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
 	);
 	// 潜った 本人（束音ロゼ・解音ゼロ）は 迎える 側に 立たない：自分で 持ち帰った 物を 自分で 迎えない
 	// （2026-10-14 作者が えらんだ。その 人の 頁は かわりの 頁に かわるか 出ない。起動の 札の mute と 同じ）
+	// ただし 本筋の 山場（電池板の はじめての 持ち帰り）だけは だれで 潜っても 全員 そろえる（作者の 指示）
+	if (a.dungeon === "deep" && firstEnding(a, p)) return away;
 	const hero = loadRecords()[0]?.hero;
 	return hero && !away.includes(hero) ? [...away, hero] : away;
 };

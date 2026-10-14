@@ -5510,6 +5510,15 @@ test("潜った 本人は 迎えない：ロゼが 主人公で 持ち帰ると�
 			`ロゼ greets herself:\n${pages.map((p) => `${p.who}: ${p.text}`).join("\n")}`,
 		);
 		ok(pages.length > 0, "the ending vanished");
+		// 山場（電池板の はじめての 持ち帰り）だけは 全員 そろう
+		setProgress(["shallow", "kinoko", "main", "tropical", "deep"]);
+		pushRecord({ kind: "clear", dungeon: "deep", hero: "roze" });
+		ok(
+			pagesFor({ kind: "clear", dungeon: "deep" }).some(
+				(p) => p.who === "roze",
+			),
+			"ロゼ is missing from the climax",
+		);
 		pushRecord({ kind: "escape", dungeon: "tropical", hero: "zero" });
 		ok(
 			pagesFor({ kind: "escape", dungeon: "tropical" }).every(
