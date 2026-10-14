@@ -3363,14 +3363,14 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 			second.log.some((l) => l.startsWith("place mob_shobon ")),
 			"the 原住民 does not line up once he lives here",
 		);
-		// 電池板の 山場：原住民が 来ていれば 2枚 口を はさみ、来ていなければ 出ない
+		// 電池板の 山場：原住民が 来ていれば 見送りで 1枚 口を はさみ、来ていなければ 出ない
 		put(
 			["shallow", "kinoko", "main", "opunu", "deep"],
 			["shallow", "kinoko", "main", "opunu"],
 		);
 		const deep: ReturnArrival = { kind: "clear", dungeon: "deep" };
 		ok(
-			pagesFor(deep).filter((p) => p.mob === "shobon").length === 2,
+			pagesFor(deep).filter((p) => p.mob === "shobon").length === 1,
 			"the 原住民 does not speak at the 1000",
 		);
 		put(["shallow", "kinoko", "main", "deep"], ["shallow", "kinoko", "main"]);
@@ -5672,9 +5672,11 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			inOrder(log, [
 				"show player",
 				...pages.map((p) =>
-					p.who || p.nanashi
-						? `say ${p.who ?? "nanj"}: ${p.text}`
-						: `narrate: ${p.text}`,
+					p.kiriko
+						? `kiriko ${p.kiriko}: ${p.text}`
+						: p.who || p.nanashi
+							? `say ${p.who ?? "nanj"}: ${p.text}`
+							: `narrate: ${p.text}`,
 				),
 				"fadeOut",
 				`bgm ${villageSong()}`,
