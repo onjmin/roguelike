@@ -78,6 +78,61 @@ export const clockLine = (
 	band: TimeBand,
 ): string => `${hour}:${String(minute).padStart(2, "0")}　${BAND_NAME[band]}`;
 
+// ───────────────── 時間帯の うつりかわり ─────────────────
+// 時間帯が かわった 瞬間に 色と 明かりが ぱっと かわると 電気を つけたように 見えるので、かわってから
+// FADE_MIN 分（村の 時計。現実の 約1分）かけて 前の 時間帯から なめらかに うつす（2026-10-15 作者
+// 「日照の 変化は 若干 フェージング させる 方が 自然」）。
+
+/** うつりかわる 長さ（村の 時計の 分）。 */
+export const FADE_MIN = 60;
+
+const BAND_ORDER: readonly TimeBand[] = [
+	"late",
+	"morning",
+	"day",
+	"evening",
+	"night",
+];
+/** 時間帯の はじまり（0時からの 分。data/village/crowd.ts の timeBand と そろえる）。 */
+const BAND_START: Record<TimeBand, number> = {
+	late: 0,
+	morning: 5 * 60,
+	day: 10 * 60,
+	evening: 17 * 60,
+	night: 20 * 60,
+};
+
+const rgbOf = (c: string | null): [number, number, number] => {
+	const m = c?.match(/\d+/g);
+	return m ? [Number(m[0]), Number(m[1]), Number(m[2])] : [255, 255, 255];
+};
+
+/**
+ * その 時刻（0時からの 分。小数も よい）の 重ねる 色と 明かりの 強さ。時間帯が かわってから FADE_MIN 分は
+ * 前の 時間帯と まぜる。tint が null なら 重ねない（昼）。
+ */
+export const daylightAt = (
+	minute: number,
+	bandOf: (hour: number) => TimeBand,
+): { tint: string | null; lamp: number; windows: number } => {
+	const m = ((minute % 1440) + 1440) % 1440;
+	const band = bandOf(Math.floor(m / 60));
+	const prev =
+		BAND_ORDER[
+			(BAND_ORDER.indexOf(band) + BAND_ORDER.length - 1) % BAND_ORDER.length
+		];
+	const k = Math.min(1, Math.max(0, (m - BAND_START[band]) / FADE_MIN));
+	const mix = (a: number, b: number) => a + (b - a) * k;
+	const [r0, g0, b0] = rgbOf(BAND_TINT[prev]);
+	const [r1, g1, b1] = rgbOf(BAND_TINT[band]);
+	const rgb = [mix(r0, r1), mix(g0, g1), mix(b0, b1)].map(Math.round);
+	return {
+		tint: rgb.every((v) => v >= 255) ? null : `rgb(${rgb.join(", ")})`,
+		lamp: mix(BAND_LIGHT[prev].lamp, BAND_LIGHT[band].lamp),
+		windows: mix(BAND_LIGHT[prev].windows, BAND_LIGHT[band].windows),
+	};
+};
+
 /** 時間帯ごとの 重ねる 色（null は 重ねない＝昼）。 */
 export const BAND_TINT: Record<TimeBand, string | null> = {
 	// 朝：ほんの すこし 白っぽく 青い
