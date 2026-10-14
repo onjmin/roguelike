@@ -222,9 +222,11 @@ export class Crowd {
 	private busyGrid(self: Actor): (x: number, y: number) => boolean {
 		const f = this.h.field;
 		const w = f.w;
-		const grid = new Uint8Array(w * f.h);
+		const h = f.h;
+		const grid = new Uint8Array(w * h);
+		const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < w && y < h;
 		const mark = (x: number, y: number) => {
-			if (f.inBounds(x, y)) grid[y * w + x] = 1;
+			if (inside(x, y)) grid[y * w + x] = 1;
 		};
 		mark(this.h.player.x, this.h.player.y);
 		for (const a of f.actors) {
@@ -232,7 +234,7 @@ export class Crowd {
 			mark(a.x, a.y);
 			if (a.moving) mark(Math.round(a.fx), Math.round(a.fy));
 		}
-		return (x, y) => f.inBounds(x, y) && grid[y * w + x] === 1;
+		return (x, y) => inside(x, y) && grid[y * w + x] === 1;
 	}
 
 	update(dt: number): void {

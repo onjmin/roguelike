@@ -29,7 +29,6 @@ import { loadImage } from "../../engine/assets";
 import { chooseHero, chosenHero, unlockedHeroes } from "../../engine/heroes";
 import { drawWalk, stepFrame } from "../../engine/sprite";
 import type { Dir } from "../../engine/types";
-import { viewport } from "../../engine/viewport";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
 import { isUpBoard } from "../dungeon/floorName";
@@ -562,7 +561,7 @@ export class MapView {
 	/** フキダシを カーソルの 上（上の はしでは 下）に。横は 地図から はみ出さない。 */
 	private placeBubble(at: Pt): void {
 		// 同じ 所・同じ 中身・同じ 画面なら 置き直さない（大きさを 読むと 毎コマ レイアウトが 走る）
-		const key = `${at[0]},${at[1]},${this.bubble.innerHTML},${viewport.w},${viewport.h}`;
+		const key = `${at[0]},${at[1]},${this.bubble.innerHTML},${window.innerWidth},${window.innerHeight}`;
 		if (key === this.bubbleKey) return;
 		const b = this.bubble;
 		const w = this.canvas.clientWidth;

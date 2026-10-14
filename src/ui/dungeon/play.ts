@@ -60,7 +60,6 @@ import {
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
-import { viewport } from "../../engine/viewport";
 import { type BotOpts, botCommand, DEFAULT_BOT } from "../../sim/bot";
 import { FLOWER_ICON, itemIcon } from "../art/icons";
 import type { Ctx } from "../ctx";
@@ -683,8 +682,8 @@ export class Play {
 				this.mapMark?.y,
 				this.lastTravel?.x,
 				this.lastTravel?.y,
-				viewport.w,
-				viewport.h,
+				window.innerWidth,
+				window.innerHeight,
 				window.devicePixelRatio,
 			];
 			const last = this.mapKey;
@@ -1501,12 +1500,13 @@ export class Play {
 	 */
 	private controlsH(): number {
 		const m = this.controlsMemo;
-		if (m && m.w === viewport.w && m.h === viewport.h) return m.px;
+		if (m && m.w === window.innerWidth && m.h === window.innerHeight)
+			return m.px;
 		const px =
 			Number.parseFloat(
 				getComputedStyle(this.hud.root).getPropertyValue("--controls-h"),
 			) || 0;
-		this.controlsMemo = { w: viewport.w, h: viewport.h, px };
+		this.controlsMemo = { w: window.innerWidth, h: window.innerHeight, px };
 		return px;
 	}
 
