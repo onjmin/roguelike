@@ -194,6 +194,7 @@ import {
 	ZERO_VOICELESS,
 } from "../data/town/town";
 import { crowdSize } from "../data/village/crowd";
+import { DINER_IMG, DINER_SIZE } from "../data/village/dinerSheet";
 import {
 	doorId,
 	FACILITIES,
@@ -7913,16 +7914,23 @@ test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓�
 				`${id}.${d.name}: ${d.eat.length} windows`,
 			);
 			if (d.art) {
-				ok(d.art.startsWith(`${FOOD_IMG}#`), `${id}.${d.name}: ${d.art}`);
+				// まとめた 品の 絵（RPGEN の rpgen-food.png か、手描きの diner.png。scripts/make-diner.mjs）
+				const sheets: [string, readonly [number, number]][] = [
+					[FOOD_IMG, FOOD_SIZE],
+					[DINER_IMG, DINER_SIZE],
+				];
+				const sheet = sheets.find(([img]) => d.art?.startsWith(`${img}#`));
+				ok(!!sheet, `${id}.${d.name}: ${d.art}`);
+				const size = sheet?.[1] ?? [0, 0];
 				const [x, y, w, h] = d.art.split("#")[1].split(",").map(Number);
 				ok(
-					w === 16 &&
-						h === 16 &&
-						x + w <= FOOD_SIZE[0] &&
-						y + h <= FOOD_SIZE[1],
+					w === 16 && h === 16 && x + w <= size[0] && y + h <= size[1],
 					`${id}.${d.name}: cuts ${d.art} outside the art`,
 				);
 			}
+			// おまじない（メイド喫茶）も 村の 窓に 収まる
+			for (const c of d.magic ?? [])
+				texts.push([`${id}.magic(${d.name})`, c.text]);
 			texts.push([`${id}.order(${d.name})`, fill(m.order, { dish: d.name })]);
 			for (const t of d.eat) texts.push([`${id}.eat(${d.name})`, t]);
 		}

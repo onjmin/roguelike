@@ -2,7 +2,7 @@
 // - 店番（中の 人 play:"eat"・屋台の 見える 外の 人）に 話すと、セリフを 1つ（話す たびに 次の セリフ。
 //   最後の 1つは「なんに　する？」の たぐい）→ 品書き。食べた あとに また 話すと、セリフの かわりに again。
 // - 券売機（部屋の plays:"eat"）は 調べた 文の あと すぐ 品書き（受けるのは 店番）。
-// - 選ぶ → 店番の ひとこと → チーン → 出てきた 一品（板に 大きく。湯気が のぼる・冷たい 品は のぼらない。
+// - 選ぶ → 店番の ひとこと（メイド喫茶は おまじない＝品の magic。頭に ♥）→ チーン → 出てきた 一品（板に 大きく。湯気が のぼる・冷たい 品は のぼらない。
 //   1.2秒か A／タップ）→ 食べる 音 →
 //   地の文 1〜2窓。村に いる あいだの 店ごとの 1回目だけ、食べた あとに 店番の「お代は　ええ」。
 // - 2回目からは 品の 値段（品書きに「名前　値段」）を 注文の 前に 払う（チャリン）。足りなければ 店番の short で
@@ -15,7 +15,7 @@
 
 import { type Dish, EAT_MENUS, TAB_CAP } from "../../data/town/eateries";
 import { loadImage } from "../../engine/assets";
-import type { Story } from "../../engine/defs";
+import type { SayOptions, Story } from "../../engine/defs";
 import { walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { el } from "../dom";
@@ -61,8 +61,12 @@ export const dishLabel = (d: Dish): string =>
 	`${d.label ?? d.name}　${yen(d.price)}`;
 
 /** 店番の ひとこと（中の 人と 同じ 声：やきうの 声で 名前欄だけ 店番）。 */
-const keeperSay = (s: Story, name: string, text: string) =>
-	s.say("nanj", text, { name });
+const keeperSay = (
+	s: Story,
+	name: string,
+	text: string,
+	cue: Pick<SayOptions, "emote" | "gesture"> = {},
+) => s.say("nanj", text, { name, ...cue });
 
 /** 次の 描画か 50ms（ペインが 隠れて rAF が 止まっても 進む）。 */
 const tick = (): Promise<number> =>
@@ -223,6 +227,12 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 		}
 	}
 	await keeperSay(s, m.keeper, fill(m.order, { dish: d.name }));
+	// おまじない（メイド喫茶。店番の 頭に ♥ など）
+	for (const c of d.magic ?? [])
+		await keeperSay(s, m.keeper, c.text, {
+			emote: c.emote,
+			gesture: c.gesture,
+		});
 	// チーン（できあがりの 呼び鈴）
 	s.se("glass");
 	await s.wait(0);

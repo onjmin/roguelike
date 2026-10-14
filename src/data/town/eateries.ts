@@ -5,6 +5,8 @@
 // 村に いる あいだの 店ごとの 1回目は 店番が「お代は　ええ」（町が 育ったのは キリコの おかげ）。
 // 2回目からは 品の 値段を キリコの 財布から 払う（2026-10-14 作者：「他の 有料に して いい」。
 // 1回の 冒険で 数千円 稼ぐ ので、町の 飲食店くらいの 値段）。足りなければ 店番の short で 断られる。
+import type { Emote, Gesture } from "../../engine/emote";
+import { diner } from "../village/dinerSheet";
 import { food } from "../village/rpgenArt";
 
 /**
@@ -17,8 +19,13 @@ export type Dish = {
 	price: number;
 	art?: string;
 	cold?: boolean;
+	/** 出す 前の 店番の ひとこと（メイド喫茶の おまじない。頭に 感情の 記号・体の 動き。engine/emote.ts）。 */
+	magic?: readonly Cue[];
 	eat: readonly string[];
 };
+
+/** 店番の ひとことと 感情の 記号。 */
+export type Cue = { text: string; emote?: Emote; gesture?: Gesture };
 
 /** 店の 品書き（話すのは 店番。名前欄は keeper）。 */
 export type EatMenu = {
@@ -385,6 +392,146 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 				price: 700,
 				art: food("tenshin"),
 				eat: ["ふわふわの　卵に　あんが　とろり。\n……やさしい　味。"],
+			},
+		],
+	},
+	// バーガー「ワイバーガー」（新市街の 北の 中庭。安い・早い。ageポテトは 揚げたて＝age）
+	burger: {
+		keeper: "店員",
+		again: "まだ　食べるんですか？\n……ありがとう　ございます！",
+		order: "{dish}、ですね！\n……はい、お待たせしました！",
+		free: "お代は　けっこうです。\n店長が「町の　恩人や」って",
+		no: "ありがとう　ございましたー！",
+		short: "{price}に　なります。\n……あ、ちょっと　たりないですね",
+		dishes: [
+			{
+				name: "ワイバーガー",
+				label: "バーガー",
+				price: 300,
+				art: diner("burger"),
+				eat: [
+					"ぱくっ。\n……肉と　ケチャップと　ピクルスの　味。",
+					"安い。早い。うまい。\n……ワイらの　味方や、と　となりの　客。",
+				],
+			},
+			{
+				name: "草バーガー",
+				price: 380,
+				art: diner("kusaBurger"),
+				eat: [
+					"レタスが　山もり。\n……草に　草を　はさんでいる。",
+					"食べても　食べても　レタス。\n……大草原。",
+				],
+			},
+			{
+				name: "ageポテト",
+				price: 250,
+				art: diner("fries"),
+				eat: [
+					"揚げたて。さくっ、ほくっ。\n……塩が　ちょうどいい。",
+					"1本　食べると、もう1本。\n……ageたら　止まらない。",
+				],
+			},
+			{
+				name: "ナゲット",
+				price: 280,
+				art: diner("nugget"),
+				eat: ["ソースに　つけて　ひとくち。\n……5こ　あったのに、もう　ない。"],
+			},
+			{
+				name: "シェイク",
+				price: 200,
+				art: diner("shake"),
+				cold: true,
+				eat: ["ストローが　かたい。\n……吸っても　なかなか　のぼってこない。"],
+			},
+			{
+				name: "ワイセット",
+				price: 650,
+				art: diner("set"),
+				eat: [
+					"バーガー・ポテト・ドリンク。\n……トレーの　上が　にぎやかだ。",
+					"セットの　ほうが　安い。\n……と　言われると、たのんでしまう。",
+				],
+			},
+		],
+	},
+	// メイド喫茶「メイドの土産」（新市街の 南の 中庭。お嬢さまを お出迎え。オムライスには おまじない）
+	maid: {
+		keeper: "メイドの　ここあ",
+		again: "まだ　召しあがるんですか？\n……ここあ、うれしいです♪",
+		order: "{dish}、かしこまりました♪\n少々　お待ちくださいませ",
+		free: "お代は　いただけません。\nこの　町の　お嬢さまですもの",
+		no: "いってらっしゃいませ、\nお嬢さま！",
+		short: "{price}で　ございます。\n……あら、お財布が　さみしいですね",
+		dishes: [
+			{
+				name: "萌えオムライス",
+				label: "オムライス",
+				price: 900,
+				art: diner("omurice"),
+				magic: [
+					{
+						text: "仕上げに　おまじないを\nかけますね。ごいっしょに♪",
+						emote: "♪",
+					},
+					{
+						text: "おいしく　なあれ、\nもえもえ……きゅん♥",
+						emote: "♥",
+						gesture: "spin",
+					},
+				],
+				eat: [
+					"ケチャップの　ハートを　くずす。\n……ふわとろ。ちゃんと　おいしい。",
+					"おまじないの　分だけ、\n……ほんの　すこし　あまい　気が　した。",
+				],
+			},
+			{
+				name: "いちごパフェ",
+				label: "パフェ",
+				price: 800,
+				art: diner("parfait"),
+				cold: true,
+				magic: [
+					{
+						text: "いちごを　のせて……\nはい、かわいく　なあれ♥",
+						emote: "♥",
+					},
+				],
+				eat: [
+					"グラスの　底まで　スプーンを　のばす。\n……フレークが　まだ　さくさく。",
+				],
+			},
+			{
+				name: "クリームソーダ",
+				label: "ソーダ",
+				price: 600,
+				art: diner("creamSoda"),
+				cold: true,
+				eat: ["アイスが　ソーダに　とけて\n……しゅわっと　あまい。"],
+			},
+			{
+				name: "ハートの　ラテ",
+				label: "ラテ",
+				price: 500,
+				art: diner("latte"),
+				magic: [
+					{
+						text: "泡で　ハートを　描きますね。\n……できました♥",
+						emote: "♥",
+					},
+				],
+				eat: ["ハートを　こわさないように\n……そっと　すすった。"],
+			},
+			{
+				name: "ショートケーキ",
+				label: "ケーキ",
+				price: 500,
+				art: diner("shortcake"),
+				cold: true,
+				eat: [
+					"いちごは　最後に　とっておく。\n……メイドさんが　にっこり　うなずいた。",
+				],
 			},
 		],
 	},

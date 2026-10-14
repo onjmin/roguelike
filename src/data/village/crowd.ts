@@ -144,6 +144,8 @@ const FACILITY_KIND: Record<string, CrowdKind> = {
 	izakaya: "food",
 	sushi: "food",
 	chuka: "food",
+	burger: "food",
+	maid: "food",
 	townhall: "work",
 	cityhall: "work",
 	corpo: "home",
@@ -682,7 +684,7 @@ export const PERSONAS: readonly Persona[] = [
 		ms: [150, 210],
 		haunts: {
 			fun: ["arcade", "go", "dojo", "cinema", "gym", "door_music"],
-			food: ["famires", "ramen", "door_cafe"],
+			food: ["famires", "ramen", "door_cafe", "burger"],
 			shop: ["konbini", "door_books", "otaku"],
 		},
 		share: { late: 0, morning: 1.5, day: 0.6, evening: 1.5, night: 0.3 },
@@ -828,7 +830,7 @@ export const PERSONAS: readonly Persona[] = [
 		ms: [160, 240],
 		haunts: {
 			fun: ["arcade", "casino", "door_music", "cinema"],
-			food: ["door_cafe", "gyudon", "ramen"],
+			food: ["door_cafe", "gyudon", "ramen", "maid", "burger"],
 		},
 		share: { late: 2, morning: 1, day: 1.2, evening: 1.2, night: 2 },
 		weekend: 1.2,

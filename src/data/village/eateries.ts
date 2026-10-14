@@ -9,10 +9,12 @@
 //   段5 牛丼「つゆだく」（新市街の 北の 通りの 突きあたり。縦の 通りの 北）
 //   段6 居酒屋「草」（浜の 西。海の家と 桟橋の あいだ）
 //   段7 寿司「鯖」・中華「炎上」（港の 岸壁。クレーンの 北）
+//   段6 バーガー「ワイバーガー」・段7 メイド喫茶「メイドの土産」（新市街の 緑道の 中庭。data/village/diners.ts）
 //
 // 絵は RPGEN の 部品（rpgenArt.ts の art・ri・riCell。scripts/pack-rpgen.mjs）と 同梱の Base.png。
 // ここからは facilities.ts の 値を 読まない（facilities.ts が ここを 読むので、まわりこむと 読みこみの 順で こわれる）。
 
+import { DINERS } from "./diners";
 import type { Facility, FacilityRoom, RoomLook } from "./facilities";
 import { art, ri, riCell } from "./rpgenArt";
 import { base, basePx, onUpper } from "./tiles";
@@ -795,4 +797,6 @@ export const EATERIES: readonly Facility[] = [
 			},
 		],
 	},
+	// ── バーガー「ワイバーガー」（段6）・メイド喫茶「メイドの土産」（段7）。新市街の 中庭（data/village/diners.ts）
+	...DINERS,
 ];
