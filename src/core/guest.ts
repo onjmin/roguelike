@@ -10,7 +10,7 @@
 // - 乱数は 同行者が いる 冒険でだけ 引く（いない 冒険の リプレイ・parity は かわらない）。
 // core は data/ を 読まないので、名前と ひとことは ここに じかに 書く（絵は data/people/cast.ts の guestWalk）。
 
-import { attackPower, HIT_RATE, rollDamage } from "./balance";
+import { attackPower, HIT_RATE, HUNGER_MAX, rollDamage } from "./balance";
 import { canSee } from "./fov";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "./geom";
 import { isFloor } from "./mapgen";
@@ -71,6 +71,71 @@ export const GUESTS: Record<GuestId, GuestDef> = {
 		],
 		down: "先に　帰るね。のんびり　待ってる",
 	},
+};
+
+/**
+ * 話しかけた ときの 文（向いて 調べる・タップ。時間は 進まない・記録にも 残らない）。村の 窓と 同じ 1行 22字・2行。
+ * 様子（キリコの HP・同行者の HP・おなか・帰り道）が 先、ふだんは chat を 話した 回数で 回す（先の 反転は 言わない）。
+ */
+type GuestTalk = {
+	hurt: string;
+	selfHurt: string;
+	hungry: string;
+	home: string;
+	chat: readonly string[];
+};
+
+export const GUEST_TALK: Record<GuestId, GuestTalk> = {
+	zero: {
+		hurt: "キリコさん、HPが　危ないです。\n……回復、してください",
+		selfHurt: "ゼロ、ちょっと　へこんでます。\n……でも、まだ　数えられます",
+		hungry: "おなかの　表示、少ないです。\n……ゼロには　わからない　感覚ですが",
+		home: "あとは　帰るだけ、ですね。\n……ちゃんと　数えて　帰ります",
+		chat: [
+			"ゼロ、まだ　声が　ないんです。\n……でも、数えるのは　得意です",
+			"1000まで　数えたら、\nなにか　変わる　気が　して",
+			"サブ機たちは　村で　留守番です。\n……ゼロが　代表です",
+			"やきうさん、上で　保守してますね。\n……ずっと、ひとりで",
+			"キリコさんと　いると、\n数字が　あったかいです",
+		],
+	},
+	feris: {
+		hurt: "キリコちゃん、いたそう〜。\n……むりしないでね〜",
+		selfHurt: "ふぇ……ちょっと　いたい〜。\nでも、まだ　歩けるよ〜",
+		hungry: "おなか　すいた〜？\nぷゆゆパン、まだ　ある〜？",
+		home: "帰ったら、いっしょに\nおかえりって　言われよ〜",
+		chat: [
+			"飛べば　すぐ　なんだけど〜。\n……歩くと、景色が　ちがうね〜",
+			"島の　人、ひとりでも\n帰ってきたら　いいな〜",
+			"おかえりって　言う　係だけど、\n今日は　いっしょに　行く　係〜",
+			"ヤシの実、耳に　あてたら\n波の　音　するかな〜",
+		],
+	},
+	shobon: {
+		hurt: "……つらそうだね。\nのんびり、休んでいこうよ",
+		selfHurt: "……おれは　だいじょうぶ。\nたぶん",
+		hungry: "……腹、へってない？\nおれは　へらないけど",
+		home: "上で、みんな　待ってるよ。\n……のんびり　帰ろう",
+		chat: [
+			"2012年の　6月。\n……おれたち、ここに　いたんだ",
+			"仲間、どこ　行ったんだろうね。\n……ほんとに",
+			"ROM専って、見てるだけで\n……楽しいんだよ、たぶん",
+			"のんびり　いこうよ。\n……急いでも、スレは　沈まない",
+		],
+	},
+};
+
+/** 話しかけた ときの 1窓（n は この 冒険で 話しかけた 回数。様子が 先）。 */
+export const guestChat = (r: Run, n: number): string | null => {
+	const g = guestHere(r);
+	if (!g) return null;
+	const t = GUEST_TALK[g.id];
+	const p = r.p;
+	if (p.hp * 3 <= p.maxHp) return t.hurt;
+	if (g.hp * 3 <= g.maxHp) return t.selfHurt;
+	if (p.hunger * 5 <= HUNGER_MAX) return t.hungry;
+	if (r.s.returning) return t.home;
+	return t.chat[n % t.chat.length];
 };
 
 /** 同行者が この 階に 立っているか（たおれた・まだ 立っていない なら null）。 */

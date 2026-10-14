@@ -119,6 +119,34 @@ export const heroWalk = (s: { hero?: string; body?: number }): string =>
 			? (ZERO_BODY_WALKS[s.body ?? 0] ?? WALK.zero)
 			: KIRIKO_WALK;
 
+/**
+ * 同行者が ダンジョンで 話す ときの 名前欄・色・立ち絵（ゼロ・フェリスは 仲間と 同じ。原住民は 住人の 色で 立ち絵なし）。
+ */
+export const guestVoice = (
+	id: GuestId,
+): {
+	name: string;
+	color: string;
+	portrait: {
+		id: string;
+		name: string;
+		color: string;
+		src: string;
+		side: "left" | "right";
+	} | null;
+} => {
+	if (id === "shobon")
+		return { name: "原住民", color: "#b8c8d8", portrait: null };
+	const c = CAST[id];
+	return {
+		name: c.label ?? c.name,
+		color: c.color,
+		portrait: c.portrait
+			? { id, name: c.name, color: c.color, ...c.portrait }
+			: null,
+	};
+};
+
 /** 同行者の 歩行グラ（core/guest.ts。原住民は 住人の 絵 data/people/mobs.ts と 同じ）。 */
 export const guestWalk = (id: GuestId): string =>
 	id === "shobon" ? "sa:nabqyI" : WALK[id];

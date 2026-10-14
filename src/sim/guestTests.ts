@@ -4,7 +4,7 @@
 
 import { spawnMonster } from "../core/floor";
 import { DIRS8, dist, step } from "../core/geom";
-import { GUESTS, guestHere } from "../core/guest";
+import { GUEST_TALK, GUESTS, guestChat, guestHere } from "../core/guest";
 import { isFloor } from "../core/mapgen";
 import { Run } from "../core/run";
 import { serializeRun } from "../core/serial";
@@ -183,6 +183,35 @@ test("文：同行者の ひとことは ログに 収まる（名前つきで �
 		for (const t of [p.join, p.line])
 			for (const l of t.split("\n")) ok(width(l) <= 22, `${d}: ${l}`);
 	}
+});
+
+test("話しかける：様子（キリコの HP・同行者の HP・おなか・帰り道）が 先、ふだんは 回す。窓は 22字×2行", () => {
+	for (const [id, t] of Object.entries(GUEST_TALK))
+		for (const s of [t.hurt, t.selfHurt, t.hungry, t.home, ...t.chat]) {
+			const ls = s.split("\n");
+			ok(ls.length <= 2, `${id}: ${s}`);
+			for (const l of ls) ok(width(l) <= 22, `${id}: "${l}"`);
+		}
+	const r = make("guest-talk", "deep", "zero");
+	const g = guestHere(r);
+	ok(g, "no guest");
+	if (!g) return;
+	const t = GUEST_TALK.zero;
+	ok(guestChat(r, 0) === t.chat[0] && guestChat(r, 1) === t.chat[1], "chat");
+	r.s.returning = true;
+	ok(guestChat(r, 0) === t.home, "home");
+	r.p.hunger = 1;
+	ok(guestChat(r, 0) === t.hungry, "hungry");
+	g.hp = 1;
+	ok(guestChat(r, 0) === t.selfHurt, "self hurt");
+	r.p.hp = 1;
+	ok(guestChat(r, 0) === t.hurt, "hurt");
+	// 話しかけても 状態は かわらない（時間が 進まない・乱数を 引かない）
+	const before = serializeRun(r.s);
+	guestChat(r, 3);
+	ok(serializeRun(r.s) === before, "talking changed the run");
+	g.down = true;
+	ok(guestChat(r, 0) === null, "a downed guest talked");
 });
 
 export const runGuestTests = async (): Promise<TestResult[]> => {

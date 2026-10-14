@@ -23,7 +23,7 @@ import {
 	type Pos,
 	step,
 } from "../../core/geom";
-import { guestFloorLine, guestHere } from "../../core/guest";
+import { guestChat, guestFloorLine, guestHere } from "../../core/guest";
 import { defOf, itemHidden } from "../../core/item";
 import { isFloor, roomAt, T_CORR } from "../../core/mapgen";
 import {
@@ -48,6 +48,7 @@ import {
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
 import {
+	guestVoice,
 	guestWalk,
 	heroWalk,
 	KIRIKO_WALK,
@@ -71,6 +72,7 @@ import { type BotOpts, botCommand, DEFAULT_BOT } from "../../sim/bot";
 import { FLOWER_ICON, itemIcon } from "../art/icons";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
+import { speak } from "../explain";
 import { esc } from "../itemText";
 import { listWindow } from "../list";
 import {
@@ -1618,10 +1620,18 @@ export class Play {
 	private async onKey(key: string): Promise<void> {
 		const run = this.run;
 		switch (key) {
-			case "a":
+			case "a": {
 				// 正面に 敵が いなくて、となりの 起きている 敵が 1匹だけなら そちらを 向いて なぐる（向きボタンを 使わずに すむように）
-				await this.exec({ c: "attack", dir: this.attackDir() });
+				const d = this.attackDir();
+				// なぐる 敵が いなくて 正面に 同行者が いれば 話しかける（調べる。時間は 進まない）
+				const front = step(run.p, d);
+				if (run.isGuestAt(front.x, front.y)) {
+					await this.talkGuest();
+					return;
+				}
+				await this.exec({ c: "attack", dir: d });
 				return;
+			}
 			case "b":
 				// 前作（rpg）と 同じく B は メニュー（1段目が もちもの）。ボタンを 減らすため ☰ と まとめた
 				await this.menu(openMainMenu(this.ctx, run));
@@ -1684,6 +1694,32 @@ export class Play {
 		// 地図を開いているあいだは 画面を押さえても 歩かない（ゆっくり押しても タップになる）
 		this.ctx.input.fieldHoldEnabled = !this.mapOn;
 		this.ctx.se("cursor");
+	}
+
+	/** この 冒険で 同行者に 話しかけた 回数（ふだんの 話を 回す。画面だけ：記録に 残さない）。 */
+	private guestTalks = 0;
+
+	/** 同行者に 話しかける（core/guest.ts の guestChat。時間は 進まない）。 */
+	private async talkGuest(): Promise<void> {
+		const run = this.run;
+		const g = guestHere(run);
+		const text = guestChat(run, this.guestTalks);
+		if (!g || !text || this.busy) return;
+		this.guestTalks++;
+		const v = guestVoice(g.id);
+		this.busy = true;
+		try {
+			// 同行者も キリコの ほうを 向く
+			const gd = this.disp.get(GUEST_ID);
+			const back = dirOf(Math.sign(run.p.x - g.x), Math.sign(run.p.y - g.y));
+			if (gd && back !== null) gd.dir = back;
+			this.ctx.se("decide");
+			await speak(this.ctx, [
+				{ name: v.name, color: v.color, text, portrait: v.portrait },
+			]);
+		} finally {
+			this.busy = false;
+		}
 	}
 
 	private async menu(p: Promise<MenuAction>): Promise<void> {
@@ -1881,6 +1917,18 @@ export class Play {
 			return;
 		}
 		const d = dirOf(x - p.x, y - p.y);
+		// 同行者を タップ：近ければ そちらを 向いて 話しかける（時間は 進まない）。遠ければ そばまで 歩く
+		if (run.isGuestAt(x, y) && run.playerSees({ x, y })) {
+			if (dist(p, { x, y }) <= 2) {
+				const fd = dirOf(Math.sign(x - p.x), Math.sign(y - p.y));
+				void (async () => {
+					if (fd !== null && fd !== p.dir)
+						await this.exec({ c: "turn", dir: fd });
+					await this.talkGuest();
+				})();
+			} else this.startTravel({ x, y });
+			return;
+		}
 		if (dist(p, { x, y }) === 1 && d !== null) {
 			const m = run.monsterAt(x, y);
 			// となりの敵をタップ：まず そちらを向く。向いていれば なぐる

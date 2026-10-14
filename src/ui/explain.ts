@@ -2,7 +2,7 @@
 // 一度に 全部 並べる 窓より 読みやすい（トルネコ1と同じ）。
 
 import type { Ctx } from "./ctx";
-import { MessageWindow } from "./message";
+import { type MessageParams, MessageWindow } from "./message";
 
 /** 「せつめい」の 1文字あたりの ms（村の 会話と 同じ）。 */
 const TEXT_MS = 24;
@@ -34,5 +34,29 @@ export const explain = async (
 	win.setArt(opt.art ?? null);
 	win.setTop(!!opt.top);
 	for (const text of pages) await win.show({ text });
+	win.close();
+};
+
+/**
+ * ダンジョンで 人が 話す（同行者に 話しかけた とき。core/guest.ts）。「せつめい」と 同じ 窓に 名前欄と 立ち絵つきで。
+ */
+export const speak = async (
+	ctx: Ctx,
+	pages: readonly MessageParams[],
+): Promise<void> => {
+	let win = explainWins.get(ctx.ui);
+	if (!win) {
+		win = new MessageWindow(
+			ctx.ui,
+			ctx.input,
+			() => TEXT_MS,
+			() => ctx.audio.seSettled(),
+			"over-menu",
+		);
+		explainWins.set(ctx.ui, win);
+	}
+	win.setArt(null);
+	win.setTop(false);
+	for (const p of pages) await win.show(p);
 	win.close();
 };
