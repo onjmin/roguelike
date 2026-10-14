@@ -115,7 +115,9 @@ export const playDarts = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 	return playBoard(ctx, "darts", {
 		start: dtStart,
 		step: (s, f) => {
-			const press = f.evs.some((e) => isKey(e, "a") || isTap(e));
+			// 押した 時刻の ゆれで 止める（こまの おわりから 何秒 前か）
+			const hit = f.evs.find((e) => isKey(e, "a") || isTap(e));
+			const press = hit ? f.clock - f.secOf(hit.at) : false;
 			const n0 = s.hits.length;
 			for (const e of dtStep(s, f.dt, press, rnd)) {
 				if (e === "stopX") f.se("cursor");

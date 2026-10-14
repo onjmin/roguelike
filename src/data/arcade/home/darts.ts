@@ -217,27 +217,32 @@ const nextDart = (s: DtState, rnd: Rnd): void => {
 	s.ay = 0;
 };
 
+/**
+ * 1こま 進める。press は 押したか（true は こまの おわりで 止める）、または 押した 時刻が
+ * こまの おわりから 何秒 前か（ago）。ago なら その 時刻の ゆれで 止める（見えて いた 所で 止まる）。
+ */
 export const dtStep = (
 	s: DtState,
 	dt: number,
-	press: boolean,
+	press: boolean | number,
 	rnd: Rnd,
 ): DtEvent[] => {
 	const ev: DtEvent[] = [];
 	if (s.over) return ev;
 	s.t += dt;
+	const ago = typeof press === "number" ? Math.min(dt, Math.max(0, press)) : 0;
 	if (s.phase === "x") {
-		s.tx += dt;
+		s.tx += press === false ? dt : dt - ago;
 		s.ax = sway(s.tx, DT.periodX);
 		s.ay = 0;
-		if (press) {
+		if (press !== false) {
 			s.phase = "y";
 			ev.push("stopX");
 		}
 	} else if (s.phase === "y") {
-		s.ty += dt;
+		s.ty += press === false ? dt : dt - ago;
 		s.ay = sway(s.ty, DT.periodY);
-		if (press) {
+		if (press !== false) {
 			s.phase = "fly";
 			s.timer = DT.fly;
 			s.fx = s.ax + (rnd() + rnd() - 1) * DT.wobble;

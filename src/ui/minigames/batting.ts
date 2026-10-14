@@ -2,7 +2,7 @@
 // 打席の うしろ（キャッチャーの うしろ 7m・高さ 3.5m）から 見た 球場で、投げられた 球を A／タップで 打つ。
 // - 球種：ストレート・剛速球（足を 長く 上げ、指先が 光る）・スローカーブ（ゆらゆら 足を 上げる）・
 //   フォーク（ストレートと 同じ 形で 来て、最後に 落ちる）。ボール球は 外・高め・ワンバン。
-// - 振った 時と 球が 本塁に 来る 時の ずれ（押した 瞬間の 時刻で はかる）で：芯＝ホームラン、よい＝ツーベース・ヒット・ゴロ、
+// - 振った 時と 球が 本塁に 来る 時の ずれ（押した 瞬間の 時刻で はかる。タップは 指の おくれを 引く）で：芯＝ホームラン、よい＝ツーベース・ヒット・ゴロ、
 //   かすり＝ファウル、それ より ずれたら 空振り。ワンバンを 振れば 空振り、外・高めの ボール球に 当てれば 凡打。
 // - カウント：ストライク 3つで 三振、ボール 4つで フォアボール（勝ち）。2ストライクからの ファウルは そのまま。
 // - 前に とんだら 上から 見た 球場（1m＝2px）に 切りかわり、カメラが 打球を 追う。村と 同じ 16x16 の 人が 守り、
@@ -83,7 +83,7 @@ export const PITCHER_DEFS: Record<BatWho, PitcherDef> = {
 		firstStrike: true,
 		flight: { straight: 900, curve: 1250 },
 		kmh: { straight: 98, curve: 71 },
-		win: { perfect: 22, good: 65, edge: 115 },
+		win: { perfect: 28, good: 68, edge: 115 },
 	},
 	// やきう（グラウンド）：4球種、ボール球も 多い。打てるが 楽勝では ない
 	yakiu: {
@@ -100,7 +100,7 @@ export const PITCHER_DEFS: Record<BatWho, PitcherDef> = {
 		firstStrike: false,
 		flight: { straight: 700, fast: 520, curve: 1100, fork: 820 },
 		kmh: { straight: 132, fast: 151, curve: 104, fork: 128 },
-		win: { perfect: 18, good: 58, edge: 105 },
+		win: { perfect: 24, good: 60, edge: 105 },
 	},
 	// 名無し（やきうが 出ていった あとの グラウンド）：やきうより すこし やさしい
 	nanashi: {
@@ -117,12 +117,12 @@ export const PITCHER_DEFS: Record<BatWho, PitcherDef> = {
 		firstStrike: false,
 		flight: { straight: 760, fast: 580, curve: 1150, fork: 860 },
 		kmh: { straight: 124, fast: 141, curve: 99, fork: 121 },
-		win: { perfect: 20, good: 64, edge: 110 },
+		win: { perfect: 26, good: 66, edge: 110 },
 	},
 };
 
 /** ホームラン競争：打ちごろの ストライク だけ（幅は ひろめ、間は みじかめ）。 */
-export const DERBY_WIN: Windows = { perfect: 26, good: 70, edge: 115 };
+export const DERBY_WIN: Windows = { perfect: 30, good: 72, edge: 115 };
 export const DERBY_SET: readonly [number, number] = [400, 700];
 const DERBY_MIX: readonly (readonly [PitchKind, number])[] = [
 	["straight", 5],
@@ -140,10 +140,15 @@ export const WINDUP: Record<PitchKind, readonly [number, number]> = {
 
 /** 画面の おくれ（押した 時から この ぶん 引いて はかる）。 */
 export const LAG_MS = 25;
+/** 指の おくれ（タッチは キーより 30〜50ms 遅れて とどく。タップで 振った ときは さらに 引く）。 */
+export const TOUCH_LAG_MS = 35;
 
-/** ずれ（+ が 遅い）。 */
-export const timingOf = (pressAt: number, arriveAt: number): number =>
-	pressAt - arriveAt - LAG_MS;
+/** ずれ（+ が 遅い）。touch は タップで 振った とき。 */
+export const timingOf = (
+	pressAt: number,
+	arriveAt: number,
+	touch = false,
+): number => pressAt - arriveAt - LAG_MS - (touch ? TOUCH_LAG_MS : 0);
 
 export const contactOf = (d: number, w: Windows): Contact => {
 	const a = Math.abs(d);
@@ -727,6 +732,8 @@ type Game = {
 	img: HTMLImageElement | null;
 	take: () => "a" | "b" | null;
 	at: () => number;
+	/** その 振りが タップか（指の おくれを 引く）。 */
+	touch: () => boolean;
 	say: (t: string) => void;
 	se: (name: string) => void;
 	who: BatWho;
@@ -974,7 +981,7 @@ const pitchOnce = async (
 	/** ミットに おさまる 時（よい 当たりの 幅が 過ぎるまでは 捕らない）。 */
 	const catchAt = rel + Math.max(1.08 * p.flight, p.flight + LAG_MS + w.good);
 	/** これより 遅い スイングは どう 振っても 空振り（見送りは ここまで 待つ）。 */
-	const late = rel + p.flight + LAG_MS + w.edge;
+	const late = rel + p.flight + LAG_MS + TOUCH_LAG_MS + w.edge;
 	const bounce = (() => {
 		const b = ballAt(p, 0.82);
 		const s = proj(b.X, b.Z, 0);
@@ -990,7 +997,7 @@ const pitchOnce = async (
 			st.u = (at - rel) / p.flight;
 			G.se("swing_blunt");
 			// ミットに 入った あとでも、かすりの 幅の うちなら 当たる（画面の おくれの ぶん）。それより 遅ければ 空振り
-			st.d = timingOf(at, rel + p.flight);
+			st.d = timingOf(at, rel + p.flight, G.touch());
 			st.c = contactOf(st.d, w);
 			st.o = outcomeOf(st.c, st.d, p, w);
 			if (st.o !== "whiff") return true;
@@ -1625,6 +1632,7 @@ const withBoard = async <T>(
 			img,
 			take: p.take,
 			at: p.at,
+			touch: p.touch,
 			say: (t) => {
 				b.note.textContent = t;
 			},

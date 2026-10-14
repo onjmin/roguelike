@@ -92,4 +92,24 @@ export const tests: HomeGameTest[] = [
 			}
 		},
 	},
+	{
+		name: "ダーツは 押した 時刻の ゆれで 止まる（こまの おわりより 前に 押したら その 所）",
+		run: () => {
+			const a = dtStart();
+			const b = dtStart();
+			dtStep(a, 0.2, false, seeded(6));
+			dtStep(b, 0.2, false, seeded(6));
+			const ax0 = a.ax;
+			// a は こまの はじめに 押した（ago＝こまの 長さ）：前の こまで 見えて いた 所で 止まる
+			dtStep(a, 0.05, 0.05, seeded(6));
+			dtStep(b, 0.05, true, seeded(6));
+			ok(a.phase === "y" && b.phase === "y", `phase ${a.phase} ${b.phase}`);
+			ok(Math.abs(a.ax - ax0) < 1e-9, `stopped at ${a.ax}, saw ${ax0}`);
+			ok(Math.abs(a.ax - b.ax) > 1e-6, "ago does not change the stop");
+			const c = dtStart();
+			dtStep(c, 0.2, false, seeded(6));
+			dtStep(c, 0.05, 9, seeded(6));
+			ok(Math.abs(c.ax - ax0) < 1e-9, "ago is not clamped to the frame");
+		},
+	},
 ];

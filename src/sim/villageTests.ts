@@ -343,6 +343,7 @@ import {
 	type PitchKind,
 	pickPitch,
 	proj,
+	TOUCH_LAG_MS,
 	takeOutcome,
 	timingOf,
 	toField,
@@ -6664,6 +6665,10 @@ test("1打席: timing windows, outcomes and the count", () => {
 	const w = { perfect: 20, good: 60, edge: 100 };
 	ok(timingOf(1000, 1000) === -LAG_MS, "timingOf does not subtract the lag");
 	ok(timingOf(1100, 1000) === 100 - LAG_MS, "late is not positive");
+	ok(
+		timingOf(1100, 1000, true) === 100 - LAG_MS - TOUCH_LAG_MS,
+		"a tap does not subtract the touch lag",
+	);
 	for (const [d, c] of [
 		[0, "perfect"],
 		[20, "perfect"],
