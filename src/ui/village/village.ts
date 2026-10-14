@@ -29,7 +29,8 @@ import { CAST, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
 import { nowHour, openMode, today } from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
-import { pedRoute } from "../../data/village/crowd";
+import { pedRoute, timeBand } from "../../data/village/crowd";
+import { BAND_TINT } from "../../data/village/daylight";
 import { type Facility, facilityOfMap } from "../../data/village/facilities";
 import { exitFor, VILLAGE_SPOTS } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
@@ -1344,6 +1345,17 @@ export class Village {
 			this.drawSpeedLines(g, ox, oy);
 		if (this.guideExit && this.mapId === "village")
 			this.drawExitGuide(g, ox, oy, this.scene);
+		// 時間帯の 色（外の 村だけ。人通りと 同じ 時計。data/village/daylight.ts）
+		if (this.mapId === "village") {
+			const tint = BAND_TINT[timeBand(nowHour())];
+			if (tint) {
+				g.save();
+				g.globalCompositeOperation = "multiply";
+				g.fillStyle = tint;
+				g.fillRect(0, 0, this.screen.width, this.screen.height);
+				g.restore();
+			}
+		}
 	}
 
 	/** 出口への 道の 先（キリコの マスごとに 覚える）。 */

@@ -26,6 +26,8 @@ import type { Item, RunState } from "../core/types";
 import { SE_LOUDNESS } from "../data/audio/loudness";
 import { sfx } from "../data/audio/sfx";
 import { ROOM_DOOR_SE } from "../data/town/rooms";
+import { timeBand } from "../data/village/crowd";
+import { BAND_TINT } from "../data/village/daylight";
 import { FACILITIES } from "../data/village/facilities";
 import {
 	depositBag,
@@ -66,6 +68,21 @@ const ok = (cond: unknown, why: string): void => {
 
 const CASES: { name: string; run: () => void }[] = [];
 const test = (name: string, run: () => void) => CASES.push({ name, run });
+
+test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、深夜が いちばん 暗い（人通りと 同じ 時間帯）", () => {
+	const sum = (c: string | null) =>
+		c ? (c.match(/\d+/g) ?? []).reduce((n, v) => n + Number(v), 0) : 765;
+	ok(BAND_TINT.day === null, "day is tinted");
+	for (const b of ["late", "morning", "day", "evening", "night"] as const)
+		ok(b in BAND_TINT, `no tint for ${b}`);
+	ok(
+		sum(BAND_TINT.late) < sum(BAND_TINT.night) &&
+			sum(BAND_TINT.night) < sum(BAND_TINT.evening) &&
+			sum(BAND_TINT.evening) < sum(BAND_TINT.morning),
+		"the night is not darker than the evening",
+	);
+	ok(timeBand(21) === "night" && timeBand(18) === "evening", "bands");
+});
 
 test("every item except goal items has a price", () => {
 	const priced = new Set(pricedKinds());
