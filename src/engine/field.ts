@@ -244,6 +244,15 @@ export class Field {
 		this.unsub();
 	}
 
+	/** タイルが 合う マス（村の 夜の 明かり など。左上から 順に）。 */
+	cellsWhere(pred: (t: TileDef) => boolean): [number, number][] {
+		const out: [number, number][] = [];
+		for (let y = 0; y < this.h; y++)
+			for (let x = 0; x < this.w; x++)
+				if (pred(this.grid[y * this.w + x])) out.push([x, y]);
+		return out;
+	}
+
 	tileAt(x: number, y: number): TileDef {
 		if (x < 0 || y < 0 || x >= this.w || y >= this.h) return FALLBACK_TILE;
 		return this.grid[y * this.w + x];

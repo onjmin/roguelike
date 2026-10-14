@@ -566,7 +566,8 @@ const FENCE = {
 	endL: base(4, 33),
 };
 const POLE_ART = street(64, 0, 32);
-const LAMP_ART = street(80, 0, 32);
+/** 街灯の 絵（16x32。夜は 灯る：data/village/daylight.ts の lightOf）。 */
+export const LAMP_ART = street(80, 0, 32);
 /** 擁壁（笠木の 段・上段・下段。中・左はし・右はし）。 */
 const COPING = { m: street(432, 0), l: street(448, 0), r: street(464, 0) };
 const WALL_UP = { m: street(480, 0), l: street(496, 0), r: street(512, 0) };

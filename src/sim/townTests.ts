@@ -27,8 +27,16 @@ import { SE_LOUDNESS } from "../data/audio/loudness";
 import { sfx } from "../data/audio/sfx";
 import { ROOM_DOOR_SE } from "../data/town/rooms";
 import { timeBand } from "../data/village/crowd";
-import { BAND_TINT, clockLine } from "../data/village/daylight";
-import { FACILITIES } from "../data/village/facilities";
+import {
+	BAND_LIGHT,
+	BAND_TINT,
+	clockLine,
+	lightOf,
+	windowLit,
+} from "../data/village/daylight";
+import { FACILITIES, facilityTiles } from "../data/village/facilities";
+import { villagePalette } from "../data/village/map";
+import { GROUND, SHOP } from "../data/village/tiles";
 import {
 	depositBag,
 	depositItem,
@@ -82,8 +90,33 @@ test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、�
 		"the night is not darker than the evening",
 	);
 	ok(timeBand(21) === "night" && timeBand(18) === "evening", "bands");
+	// 夜の 明かり：街灯（歩道・レンガ・草地）と 外の 窓（家の 上段・施設の 外観）が 見分けられる。昼は 灯らない
+	ok(lightOf(SHOP.w.layers) === "window", "the shop window does not light");
 	ok(
-		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night") === "10/14（水）21:05　夜",
+		["ゃ", "ギ", "ゲ"].every(
+			(c) =>
+				lightOf(
+					villagePalette({ stage: 7, unlocked: [], cleared: [] })[c]?.layers ??
+						[],
+				) === "lamp",
+		),
+		"a street lamp does not light",
+	);
+	ok(lightOf(GROUND[","]?.layers ?? ["x"]) === null, "the grass lights up");
+	const tiles = facilityTiles();
+	ok(
+		Object.values(tiles).filter((t) => lightOf(t.layers) === "window").length >
+			20,
+		"few facility windows light up",
+	);
+	ok(BAND_LIGHT.day.lamp === 0 && BAND_LIGHT.night.lamp > 0, "day lamps");
+	const lit = Array.from({ length: 400 }, (_, i) =>
+		windowLit(i % 20, Math.floor(i / 20), 0.25),
+	).filter(Boolean).length;
+	ok(lit > 60 && lit < 140, `late-night windows lit: ${lit}/400`);
+	ok(
+		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night") ===
+			"10/14（水）21:05　夜",
 		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night"),
 	);
 });

@@ -29,8 +29,14 @@ import { CAST, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
 import { nowHour, openMode, today } from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
-import { pedRoute, timeBand } from "../../data/village/crowd";
-import { BAND_TINT, clockLine } from "../../data/village/daylight";
+import { pedRoute, type TimeBand, timeBand } from "../../data/village/crowd";
+import {
+	BAND_LIGHT,
+	BAND_TINT,
+	clockLine,
+	lightOf,
+	windowLit,
+} from "../../data/village/daylight";
 import { type Facility, facilityOfMap } from "../../data/village/facilities";
 import { exitFor, VILLAGE_SPOTS } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
@@ -1358,7 +1364,8 @@ export class Village {
 			this.drawExitGuide(g, ox, oy, this.scene);
 		// 時間帯の 色（外の 村だけ。人通りと 同じ 時計。data/village/daylight.ts）
 		if (this.mapId === "village") {
-			const tint = BAND_TINT[timeBand(nowHour())];
+			const band = timeBand(nowHour());
+			const tint = BAND_TINT[band];
 			if (tint) {
 				g.save();
 				g.globalCompositeOperation = "multiply";
@@ -1366,7 +1373,62 @@ export class Village {
 				g.fillRect(0, 0, this.screen.width, this.screen.height);
 				g.restore();
 			}
+			this.drawLights(g, field, ox, oy, band);
 		}
+	}
+
+	/** 夜の 明かりの マス（地図ごとに 1回 さがす）。 */
+	private lightCells: {
+		field: Field;
+		lamps: [number, number][];
+		windows: [number, number][];
+	} | null = null;
+
+	/** 夕方から 街灯と 窓に 明かり（色を 重ねた あとに 足し算で。data/village/daylight.ts の BAND_LIGHT）。 */
+	private drawLights(
+		g: CanvasRenderingContext2D,
+		field: Field,
+		ox: number,
+		oy: number,
+		band: TimeBand,
+	): void {
+		const k = BAND_LIGHT[band];
+		if (!k.lamp && !k.windows) return;
+		if (this.lightCells?.field !== field)
+			this.lightCells = {
+				field,
+				lamps: field.cellsWhere((t) => lightOf(t.layers) === "lamp"),
+				windows: field.cellsWhere((t) => lightOf(t.layers) === "window"),
+			};
+		const { lamps, windows } = this.lightCells;
+		const W = this.screen.width;
+		const H = this.screen.height;
+		const seen = (px: number, py: number, r: number) =>
+			px > -r && py > -r && px < W + r && py < H + r;
+		g.save();
+		g.globalCompositeOperation = "lighter";
+		// 窓：ガラスの ところを あたたかい 色で（灯る 窓は マスごとに 決まる）
+		g.fillStyle = `rgba(255, 196, 110, ${0.55 * (k.windows ? 1 : 0)})`;
+		for (const [x, y] of windows) {
+			if (!windowLit(x, y, k.windows)) continue;
+			const px = x * TILE - ox;
+			const py = y * TILE - oy;
+			if (!seen(px, py, TILE)) continue;
+			g.fillRect(px + 4, py + 4, TILE - 8, TILE - 7);
+		}
+		// 街灯：頭（1マス 上）の まわりに 丸い 光
+		for (const [x, y] of lamps) {
+			const cx = x * TILE - ox + TILE / 2;
+			const cy = y * TILE - oy - 10;
+			const r = 30;
+			if (!seen(cx, cy, r)) continue;
+			const grad = g.createRadialGradient(cx, cy, 1, cx, cy, r);
+			grad.addColorStop(0, `rgba(255, 226, 150, ${0.55 * k.lamp})`);
+			grad.addColorStop(1, "rgba(255, 226, 150, 0)");
+			g.fillStyle = grad;
+			g.fillRect(cx - r, cy - r, r * 2, r * 2);
+		}
+		g.restore();
 	}
 
 	/** 出口への 道の 先（キリコの マスごとに 覚える）。 */
