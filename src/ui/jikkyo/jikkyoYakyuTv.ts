@@ -153,11 +153,22 @@ export const yakyuTv = (
 	const cache = new Map<string, HTMLCanvasElement>();
 	const fans = fanColor(game.home, game.away);
 	const fanOf = (id: JkTeamId) => (id === game.home ? fans.home : fans.away);
+	// 観客の 色（人ごとに 組を 作らず 使いまわす）
+	const fanUni = { home: { body: fans.home }, away: { body: fans.away } };
+	const fanUniOf = (id: JkTeamId): Colors =>
+		id === game.home ? fanUni.home : fanUni.away;
+	// 球団ごとに 1つ 作って 使いまわす（絵の キャッシュの 名札を 毎コマ 作らない）
+	const unis = new Map<JkTeamId, Colors>();
 	const uniOf = (id: JkTeamId): Colors => {
+		const hit = unis.get(id);
+		if (hit) return hit;
 		const c = JK_TEAMS[id].colors;
-		return id === game.home
-			? { body: c.body, cap: c.cap, trim: c.trim, pants: "#f4f2ea" }
-			: { body: c.away, cap: c.cap, trim: c.trim, pants: lighten(c.away) };
+		const u: Colors =
+			id === game.home
+				? { body: c.body, cap: c.cap, trim: c.trim, pants: "#f4f2ea" }
+				: { body: c.away, cap: c.cap, trim: c.trim, pants: lighten(c.away) };
+		unis.set(id, u);
+		return u;
 	};
 	// 観客の 並び（スタンドの 行ごとに 60%）
 	const rnd = lcg(game.seed);
@@ -189,17 +200,30 @@ export const yakyuTv = (
 	let openAt = -1e9;
 	let kansoAt = -1e9;
 
+	/** 色の 組の 名札（毎コマ JSON に しない）。 */
+	const colorKeys = new WeakMap<Colors, string>();
+	const colorKey = (colors?: Colors): string => {
+		if (!colors) return "";
+		let k = colorKeys.get(colors);
+		if (k === undefined) {
+			k = JSON.stringify(colors);
+			colorKeys.set(colors, k);
+		}
+		return k;
+	};
+
 	/** 絵の 1枚（差しかえ色つき。球団 × 色ごとに 覚える）。 */
 	const sheet = (spr: Spr, colors?: Colors): CanvasImageSource | null => {
 		if (!img) return null;
-		const key = `${spr}|${colors ? JSON.stringify(colors) : ""}`;
+		const key = `${spr}|${colorKey(colors)}`;
 		const hit = cache.get(key);
 		if (hit) return hit;
 		const s = JK_SPR[spr];
 		const cv = document.createElement("canvas");
 		cv.width = s.w * s.n;
 		cv.height = s.h;
-		const c = cv.getContext("2d", { willReadFrequently: true });
+		// 色を 読むのは 作る ときの 1回だけ。willReadFrequently に すると 描く たびに 送り直しに なる
+		const c = cv.getContext("2d");
 		if (!c) return null;
 		c.drawImage(img, s.x, s.y, s.w * s.n, s.h, 0, 0, s.w * s.n, s.h);
 		if (colors) {
@@ -303,7 +327,7 @@ export const yakyuTv = (
 		const wave = !opt.reduced && hot() ? Math.floor(now / 300) % 2 : 0;
 		for (const c of cells) {
 			const home = c.x >= 120;
-			put("crowd", wave, c.x, c.y + dy, { body: home ? fans.home : fans.away });
+			put("crowd", wave, c.x, c.y + dy, home ? fanUni.home : fanUni.away);
 		}
 	};
 
@@ -493,9 +517,13 @@ export const yakyuTv = (
 		g.fillRect(0, 0, 240, 135);
 		const side = batSide(d);
 		for (const c of crowdJoy)
-			put("crowd", opt.reduced ? 0 : Math.floor(now / 300) % 2, c.x, c.y, {
-				body: fanOf(side),
-			});
+			put(
+				"crowd",
+				opt.reduced ? 0 : Math.floor(now / 300) % 2,
+				c.x,
+				c.y,
+				fanUniOf(side),
+			);
 		for (const s of sparks) {
 			const k = opt.reduced ? 0 : Math.floor(now / 250 + s.d * 4) % 2;
 			put("fireworks", k, s.x, s.y);
