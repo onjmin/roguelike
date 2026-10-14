@@ -29,6 +29,7 @@ import { loadImage } from "../../engine/assets";
 import { chooseHero, chosenHero, unlockedHeroes } from "../../engine/heroes";
 import { drawWalk, stepFrame } from "../../engine/sprite";
 import type { Dir } from "../../engine/types";
+import { viewport } from "../../engine/viewport";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
 import { isUpBoard } from "../dungeon/floorName";
@@ -555,12 +556,19 @@ export class MapView {
 		this.bubble.classList.add("pop");
 	}
 
+	/** フキダシを 最後に 置いた ときの 位置と 中身（placeBubble）。 */
+	private bubbleKey = "";
+
 	/** フキダシを カーソルの 上（上の はしでは 下）に。横は 地図から はみ出さない。 */
 	private placeBubble(at: Pt): void {
+		// 同じ 所・同じ 中身・同じ 画面なら 置き直さない（大きさを 読むと 毎コマ レイアウトが 走る）
+		const key = `${at[0]},${at[1]},${this.bubble.innerHTML},${viewport.w},${viewport.h}`;
+		if (key === this.bubbleKey) return;
 		const b = this.bubble;
 		const w = this.canvas.clientWidth;
 		const h = this.canvas.clientHeight;
 		if (!w || !h) return;
+		this.bubbleKey = key;
 		const below = cursorBelow(at[1]);
 		const px = (at[0] / MAP_W) * w;
 		const py = ((below ? at[1] + 8 : at[1] - 32) / MAP_H) * h;

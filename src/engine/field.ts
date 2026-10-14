@@ -216,7 +216,8 @@ export class Field {
 		// 地形の 素材が 読めるたびに 描き直す（ほかの 絵では 描き直さない。町だと 1回 数十 ms かかる）
 		const uses = new Set<string>();
 		for (const t of Object.values(def.tiles)) {
-			for (const r of [...t.layers, ...(t.above ?? [])]) uses.add(resolveRef(r));
+			for (const r of [...t.layers, ...(t.above ?? [])])
+				uses.add(resolveRef(r));
 			if (t.auto) uses.add(resolveRef(t.auto));
 		}
 		this.unsub = onImageLoaded((url) => {

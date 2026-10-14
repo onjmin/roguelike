@@ -46,7 +46,7 @@ import { devEvent } from "../../data/story/objectives";
 import { today } from "../../data/town/calendar";
 import type { Story } from "../../engine/defs";
 import { yen } from "../../engine/wallet";
-import { el } from "../dom";
+import { el, setStyle, setText } from "../dom";
 import { markOpened, onTap, type UiCtx } from "../list";
 import { tick } from "../minigames/minigameBoard";
 import { picker } from "../minigames/minigamePicker";
@@ -344,26 +344,27 @@ export const playProgram = async (
 
 	// ── ヘッダー
 	const renderHead = (v: JkView) => {
-		titleEl.textContent = v.title;
-		headTitle.textContent = v.title;
-		part.textContent = v.label;
-		resEl.textContent = fill(JK_PROG_TV.res, { no: Math.min(v.no, 1000) });
+		setText(titleEl, v.title);
+		setText(headTitle, v.title);
+		setText(part, v.label);
+		setText(resEl, fill(JK_PROG_TV.res, { no: Math.min(v.no, 1000) }));
 		// 紅白は 名前欄（新年までの 時計・おみくじ）。無ければ 勢い
-		ikioiEl.textContent =
-			v.name ?? fill(JK_PROG_TV.ikioi, { ikioi: comma(v.ikioi) });
+		setText(
+			ikioiEl,
+			v.name ?? fill(JK_PROG_TV.ikioi, { ikioi: comma(v.ikioi) }),
+		);
 		ikioiEl.classList.toggle("jk-clock", v.name !== null);
 		const G = Math.max(1, v.G);
 		const left = Math.max(0, (v.total - v.t) / 1000);
-		fillEl.style.width = `${Math.min(100, (v.res / G) * 100)}%`;
+		setStyle(fillEl, "width", `${Math.min(100, (v.res / G) * 100)}%`);
 		fillEl.classList.toggle("ok", v.res + v.pace * left >= G);
-		combo.textContent =
-			v.combo >= 2 ? fill(JK_PROG_TV.combo, { c: v.combo }) : "";
+		setText(combo, v.combo >= 2 ? fill(JK_PROG_TV.combo, { c: v.combo }) : "");
 		board.classList.toggle("stall", v.stall);
 		if (v.win && !v.win.reveal) {
 			const frac = v.win.left / Math.max(1, v.win.open);
-			picks.style.setProperty("--left", `${(frac * 100).toFixed(1)}%`);
+			setStyle(picks, "--left", `${(frac * 100).toFixed(1)}%`);
 			picks.classList.toggle("warn", v.win.kind !== "cue" && v.win.left < 1000);
-		} else picks.style.setProperty("--left", "0%");
+		} else setStyle(picks, "--left", "0%");
 	};
 
 	// ── 出来事

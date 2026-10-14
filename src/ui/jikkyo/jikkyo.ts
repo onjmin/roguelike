@@ -45,7 +45,7 @@ import { today } from "../../data/town/calendar";
 import { HALL_MSG, JIKKYO } from "../../data/town/hall";
 import type { Script, Story } from "../../engine/defs";
 import { loadTown } from "../../engine/save";
-import { el } from "../dom";
+import { el, setStyle, setText } from "../dom";
 import { markOpened, onTap, type UiCtx } from "../list";
 import { tick } from "../minigames/minigameBoard";
 import { picker } from "../minigames/minigamePicker";
@@ -403,9 +403,9 @@ export const playJikkyo = async (
 	const best = memo0.best.res;
 	let kansoDone = false;
 	const renderHead = (v: JkView) => {
-		part.textContent = v.label;
-		resEl.textContent = fill(JK_TV.res, { no: Math.min(v.no, 1000) });
-		ikioiEl.textContent = fill(JK_TV.ikioi, { ikioi: comma(v.ikioi) });
+		setText(part, v.label);
+		setText(resEl, fill(JK_TV.res, { no: Math.min(v.no, 1000) }));
+		setText(ikioiEl, fill(JK_TV.ikioi, { ikioi: comma(v.ikioi) }));
 		const target = !kansoDone
 			? 1000
 			: best > v.res
@@ -413,22 +413,21 @@ export const playJikkyo = async (
 				: (Math.floor(v.res / 1000) + 1) * 1000;
 		const left = Math.max(0, (v.total - v.t) / 1000);
 		const okPace = v.res + v.pace * left >= target;
-		fillEl.style.width = `${Math.min(100, (v.res / target) * 100)}%`;
+		setStyle(fillEl, "width", `${Math.min(100, (v.res / target) * 100)}%`);
 		fillEl.classList.toggle("ok", okPace);
 		const showGhost = kansoDone && best > 0 && best >= v.res * 0.5;
-		ghost.style.display = showGhost ? "" : "none";
-		ghostLabel.style.display = showGhost ? "" : "none";
+		setStyle(ghost, "display", showGhost ? "" : "none");
+		setStyle(ghostLabel, "display", showGhost ? "" : "none");
 		if (showGhost) {
-			ghost.style.left = `${Math.min(100, (best / target) * 100)}%`;
-			ghostLabel.textContent = fill(JK_FEEDBACK.ghost, { best: comma(best) });
+			setStyle(ghost, "left", `${Math.min(100, (best / target) * 100)}%`);
+			setText(ghostLabel, fill(JK_FEEDBACK.ghost, { best: comma(best) }));
 		}
-		combo.textContent =
-			v.combo >= 2 ? fill(JK_FEEDBACK.combo, { c: v.combo }) : "";
+		setText(combo, v.combo >= 2 ? fill(JK_FEEDBACK.combo, { c: v.combo }) : "");
 		if (v.win && !v.win.reveal && !v.win.untimed) {
 			const frac = v.win.left / v.win.open;
-			picks.style.setProperty("--left", `${(frac * 100).toFixed(1)}%`);
+			setStyle(picks, "--left", `${(frac * 100).toFixed(1)}%`);
 			picks.classList.toggle("warn", v.win.left < 1000);
-		} else picks.style.setProperty("--left", v.win?.untimed ? "100%" : "0%");
+		} else setStyle(picks, "--left", v.win?.untimed ? "100%" : "0%");
 	};
 
 	// ── 出来事

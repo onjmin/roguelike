@@ -60,6 +60,7 @@ import {
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
+import { viewport } from "../../engine/viewport";
 import { type BotOpts, botCommand, DEFAULT_BOT } from "../../sim/bot";
 import { FLOWER_ICON, itemIcon } from "../art/icons";
 import type { Ctx } from "../ctx";
@@ -335,6 +336,8 @@ export class Play {
 	private joltTimer: ReturnType<typeof setTimeout> | undefined;
 	private mapEl: HTMLCanvasElement;
 	private mapOn = false;
+	/** 地図を 最後に 描いた ときの 中身（同じなら 描き直さない）。 */
+	private mapKey: unknown[] | null = null;
 	private fadeEl: HTMLElement;
 	private lastStepAt = 0;
 	private lastSavedTurn = -1;
@@ -664,6 +667,29 @@ export class Play {
 			const pd = this.disp.get(PLAYER_ID);
 			const pre = !this.preUse && this.preWarp && pd ? this.preWarp : null;
 			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : run.p;
+			// 地図は 動かない 絵なので、中身が 変わった ときだけ 描き直す（毎コマ 描くと 重い）
+			const key = [
+				run,
+				run.s.turn,
+				run.f,
+				pre,
+				eye.x,
+				eye.y,
+				this.lookHold?.blind,
+				this.hiddenItems,
+				this.hiddenItems?.size,
+				this.trapHold,
+				this.mapMark?.x,
+				this.mapMark?.y,
+				this.lastTravel?.x,
+				this.lastTravel?.y,
+				viewport.w,
+				viewport.h,
+				window.devicePixelRatio,
+			];
+			const last = this.mapKey;
+			if (last && key.every((v, i) => v === last[i])) return;
+			this.mapKey = key;
 			const blind = this.lookHold?.blind;
 			const vis = run.f.monsters.filter(
 				(m) => run.monsterVisible(m, eye, blind) && !m.disguise && !posing(m),
@@ -1467,6 +1493,23 @@ export class Play {
 		return { cells, hit: null };
 	}
 
+	private controlsMemo: { w: number; h: number; px: number } | null = null;
+
+	/**
+	 * 下の ボタン類の 高さ（CSS の --controls-h。px）。画面の 形（横持ち）で だけ 変わるので、
+	 * 画面の 大きさが 変わるまで 覚えておく（毎コマ getComputedStyle すると スタイルの 計算が 走る）。
+	 */
+	private controlsH(): number {
+		const m = this.controlsMemo;
+		if (m && m.w === viewport.w && m.h === viewport.h) return m.px;
+		const px =
+			Number.parseFloat(
+				getComputedStyle(this.hud.root).getPropertyValue("--controls-h"),
+			) || 0;
+		this.controlsMemo = { w: viewport.w, h: viewport.h, px };
+		return px;
+	}
+
 	/** 見えている敵と、画面の 見える所（上のステータス・下のボタンを のぞく）の 上下（ソース画素）。 */
 	private edgeThreats(): {
 		threats: Pos[];
@@ -1482,9 +1525,7 @@ export class Play {
 		const k = this.screen.tileCss / TILE;
 		const controls = this.hud.root.classList.contains("hidden")
 			? 0
-			: Number.parseFloat(
-					getComputedStyle(this.hud.root).getPropertyValue("--controls-h"),
-				) || 0;
+			: this.controlsH();
 		return {
 			threats,
 			top: 56 / k,
@@ -1602,6 +1643,7 @@ export class Play {
 
 	private toggleMap(): void {
 		this.mapOn = !this.mapOn;
+		this.mapKey = null;
 		this.mapEl.classList.toggle("shown", this.mapOn);
 		// 地図を開いているあいだは 画面を押さえても 歩かない（ゆっくり押しても タップになる）
 		this.ctx.input.fieldHoldEnabled = !this.mapOn;
