@@ -46,6 +46,7 @@ import {
 	DEPART,
 	DUNGEON_NAMES,
 	endingFor,
+	episodeEnd,
 	FRIEND_FROM,
 	GETTER_RETRY,
 	HINAN_NEWS,
@@ -198,8 +199,13 @@ export const pagesFor = (
 	if (a.kind !== "clear") return withoutAway(RETURN_PAGES, away);
 	const ending = endingFor(a.dungeon, !firstEnding(a, p), away, p.cleared);
 	const boss = a.objective === "boss" ? (BOSS_RETURN[a.dungeon] ?? []) : [];
+	// 本筋の 話の おわり（はじめて 持ち帰った ときだけ）
+	const end = firstEnding(a, p) ? episodeEnd(a.dungeon) : null;
 	return withoutAway(
-		boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending,
+		[
+			...(boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending),
+			...(end ? [end] : []),
+		],
 		away,
 	);
 };
@@ -405,6 +411,9 @@ const playCue = async (
 	else if (c === "res999") {
 		s.se("chapter");
 		s.toast("村の　スレ　999／1000");
+	} else if (c === "chapterEnd") {
+		s.se("chapter");
+		await s.wait(400);
 	} else if (c === "res1000") {
 		s.se("victory");
 		s.toast("★　村の　スレ　1000　完走　★");

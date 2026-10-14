@@ -2498,6 +2498,22 @@ body.jolt #app {
 	transform: none;
 }
 
+/* 本筋の 話数の 題（はじめて 潜る ときの 語りの 1枚目。data/story/story.ts の EPISODES） */
+.story-ep-no {
+	display: inline-block;
+	color: #f5d142;
+	letter-spacing: 0.3em;
+	font-size: 1.05em;
+}
+
+.story-ep-title {
+	display: inline-block;
+	margin-top: 0.4em;
+	font-size: 1.6em;
+	letter-spacing: 0.1em;
+	text-shadow: 0 0 12px rgba(245, 209, 66, 0.35);
+}
+
 .story-tap {
 	position: absolute;
 	left: 0;

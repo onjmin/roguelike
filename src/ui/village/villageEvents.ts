@@ -39,6 +39,7 @@ import {
 	awayFriends,
 	DEPART,
 	DUNGEON_NAMES,
+	EPISODES,
 	HOSHU_SIGN,
 	LIGHTHOUSE_DOOR,
 	ROM_COUNT,
@@ -355,7 +356,16 @@ export const departTo = async (
 	if (!loadProgress().intro.includes(d)) {
 		void ctx.audio.fadeBgm(500);
 		await s.fadeOut(500);
-		await showStory(ctx, STORY[d].intro.map(escBr));
+		// 本筋の 板は 話数の 題から（data/story/story.ts の EPISODES）
+		const ep = EPISODES[d];
+		await showStory(ctx, [
+			...(ep
+				? [
+						`<span class="story-ep-no">${escBr(ep.no)}</span><br><span class="story-ep-title">${escBr(ep.title)}</span>`,
+					]
+				: []),
+			...STORY[d].intro.map(escBr),
+		]);
 		notePicked(d, true);
 	}
 	// ぷゆゆの お弁当（村に 帰って 持ち物が からっぽなら もらえる。ui/village/villageReturn.ts の lunchScript）

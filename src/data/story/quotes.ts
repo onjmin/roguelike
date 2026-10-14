@@ -69,7 +69,9 @@ export type StoryPage = {
 		| "selfVoice"
 		| "nanjLeave"
 		| "res999"
-		| "res1000";
+		| "res1000"
+		/** 本筋の 話の おわり（data/story/story.ts の episodeEnd。章の 音）。 */
+		| "chapterEnd";
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */

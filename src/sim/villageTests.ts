@@ -98,6 +98,7 @@ import {
 	DEPART,
 	DUNGEON_NAMES,
 	endingFor,
+	episodeEnd,
 	FIRST_SHALLOW,
 	FRIEND_FROM,
 	GETTER_RETRY,
@@ -3002,7 +3003,8 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 		);
 		const a: ReturnArrival = { kind: "clear", dungeon: "deep" };
 		ok(
-			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.deep.ending),
+			JSON.stringify(pagesFor(a)) ===
+				JSON.stringify([...STORY.deep.ending, episodeEnd("deep")]),
 			"the 電池板 ending is cut the first time",
 		);
 		const v = villageView();
@@ -3069,7 +3071,10 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 		put(["shallow", "main", "deep"], ["shallow", "main"]);
 		ok(
 			JSON.stringify(pagesFor(deep)) ===
-				JSON.stringify(STORY.deep.ending.filter((p) => !p.needCleared)),
+				JSON.stringify([
+					...STORY.deep.ending.filter((p) => !p.needCleared),
+					episodeEnd("deep"),
+				]),
 			"the 電池板 ending is cut the first time",
 		);
 		put(["shallow", "main", "deep"], ["shallow", "main", "deep"]);
@@ -5510,7 +5515,10 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 				JSON.stringify(got.slice(1, 1 + n)) ===
 					JSON.stringify(BOSS_RETURN[d]) &&
 				got.length ===
-					STORY[d].ending.length + (STORY[d].once?.length ?? 0) + n,
+					STORY[d].ending.length +
+						(STORY[d].once?.length ?? 0) +
+						n +
+						(episodeEnd(d) ? 1 : 0),
 			`${d}: the boss pages are not right after the arrival`,
 		);
 	}
@@ -5529,12 +5537,18 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			...STORY.kinoko.ending.slice(1),
 			// はじめての 持ち帰りなので、去った 人の レスの 頁も
 			...(STORY.kinoko.once ?? []),
+			// 本筋の 話の おわり（第二話）
+			...[episodeEnd("kinoko")].filter((x) => !!x),
 		];
 		ok(
 			JSON.stringify(pagesFor(a)) === JSON.stringify(pages),
 			"the boss pages do not come right after the arrival",
 		);
-		const plain = [...STORY.kinoko.ending, ...(STORY.kinoko.once ?? [])];
+		const plain = [
+			...STORY.kinoko.ending,
+			...(STORY.kinoko.once ?? []),
+			...[episodeEnd("kinoko")].filter((x) => !!x),
+		];
 		ok(
 			JSON.stringify(pagesFor({ ...a, objective: "fetch" })) ===
 				JSON.stringify(plain) &&

@@ -124,6 +124,29 @@ export const endingFor = (
 		: main;
 };
 
+/**
+ * 本筋の 話数（2026-10-14 作者：本筋を 太く。ポケダンの 章立て）。はじめて 潜る ときの 語りの 前に 題の 札、
+ * はじめて 持ち帰った 語りの おわりに「〜　完」（ui/village/villageEvents.ts の departTo・villageReturn.ts の pagesFor）。
+ * 寄り道・裏の 板には つけない（本筋だけが 話数で 進む）。
+ */
+export const EPISODES: Partial<
+	Record<DungeonId, { no: string; title: string }>
+> = {
+	shallow: { no: "第一話", title: "沈みかけの　スレ" },
+	kinoko: { no: "第二話", title: "植民地の　植民地" },
+	main: { no: "第三話", title: "ひとりの　保守" },
+	deep: { no: "最終話", title: "1000" },
+	hidden: { no: "後日談", title: "次スレ" },
+};
+
+/** 話の おわりの 1窓（はじめて 持ち帰った とき。章の 音と いっしょに）。 */
+export const episodeEnd = (d: DungeonId): StoryPage | null => {
+	const e = EPISODES[d];
+	return e
+		? { who: null, text: `${e.no}「${e.title}」　完`, cue: "chapterEnd" }
+		: null;
+};
+
 /** 潜る ときの 一言（口で 行き先を 決めた あと）。やきうが 出ていった あとは キリコが 言う。 */
 export const DEPART = {
 	nanj: "ほな、上で　保守しとくわ",
