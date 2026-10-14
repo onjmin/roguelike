@@ -159,7 +159,8 @@ export type FacilityRoom = {
 	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyo/jikkyoGikai.ts）・
 	 * bushitsu＝部室棟の 遊び（ui/bushitsu/bushitsu.ts）・saba＝マイクラの 部屋の 物（ui/saba/saba.ts）・
 	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/minigames/dosukoi.ts）・
-	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade/arcade.ts）・
+	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade/arcade.ts。
+	 * カジノの 換金所は 物の 名前 cashier。ui/arcade/casinoChips.ts）・
 	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta/neta.ts））。
 	 */
 	plays?: Record<
@@ -3704,14 +3705,15 @@ const BASE_FACILITIES: readonly Facility[] = [
 				x: "blackjack",
 				y: "blackjack",
 				"[": "cashier",
+				"=": "cashier",
 				"]": "cashier",
 				F: "plant",
 			},
 			lines: {
 				tv: ["大画面。\nレースの　中継が　映る。"],
 				rule: [
-					"はり紙。\n「チップは　各台で　お買い求めください」",
-					"小さく「チップ　1枚　100円、玉　1発　4円。\nお帰りの　さいに　換金いたします」",
+					"はり紙。\n「チップの　購入・換金は　入口の　換金所へ」",
+					"小さく「チップ　1枚　100円。\nパチンコは　チップ　1枚で　玉　25発」",
 				],
 				gacha: [ARCADE_TEXT.gacha.line],
 				highlow: [ARCADE_TEXT.highlow.line],
@@ -3720,17 +3722,17 @@ const BASE_FACILITIES: readonly Facility[] = [
 				pachinko: [ARCADE_TEXT.pachinko.line],
 				baccarat: [ARCADE_TEXT.baccarat.line],
 				blackjack: [ARCADE_TEXT.blackjack.line],
-				cashier: [
-					"チップの　窓口。\n「チップは　1枚　100円で　ございます」",
-					"「台を　立たれる　さいに、\n同じ　値段で　換金いたします」",
-				],
+				// 換金所（窓の あとに 買う・換金する の 品書き。ui/arcade/casinoChips.ts の cashierScript）
+				cashier: ["換金所。\n「チップの　購入・換金は　こちらで」"],
 				plant: ["観葉植物。\n鉢の　ふちに　チップが　1枚。"],
 			},
 			// 奥の 壁の 大画面で おんJ記念（競馬）の 中継（見るだけ）（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
-			// スロット・カードの 台・ルーレット・パチンコは 財布で 買った チップ（玉）で 遊び、席を 立つと 換金
-			// （2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。ui/arcade/casinoChips.ts・data/arcade/casino.ts）
+			// スロット・カードの 台・ルーレット・パチンコは 持って いる チップを 出して 遊び、のこりは チップ入れに もどる。
+			// 円と チップの やり取りは 手前の 換金所（cashier）だけ（2026-10-15 作者：「ポケモン・ドラクエの カジノみたいに
+			// 換金所で 一元的に」。ui/arcade/casinoChips.ts・data/arcade/casino.ts・engine/chips.ts）
 			plays: {
 				tv: "jikkyo",
+				cashier: "arcade",
 				gacha: "arcade",
 				highlow: "arcade",
 				roulette: "arcade",
@@ -4855,7 +4857,7 @@ export const facilityTiles = (): Record<string, TileDef> => {
 
 /**
  * 建物の 影（マス単位。光は 左上から：建物の 右がわの 地面に、軒から 足もとまで）。ふつうの 家と 絵を 並べた
- * 外観（車・バス停は 落とさない。block の 外観＝グラウンド・港なども 影なし）。ui/village/facilities.ts の shadowDecor が 描く。
+ * 外観（車・バス停は 落とさない。block の 外観＝グラウンド・港なども 影なし）。ui/village/shadows.ts の shadowGround が 描く。
  * 絵を 並べた 外観は 右はしの 同じ 行を まとめて 1本ずつ（コンビニの 自販機のような 出っぱりにも 影）。
  */
 export const facilityShadows = (

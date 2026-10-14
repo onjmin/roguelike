@@ -1,7 +1,7 @@
 // カジノ「ガチャ」の 台と、海の家・バーの 遊びの 決まり（板＝ui/arcade/arcadeParlor.ts は 描く だけ）。
 // data/arcade/logic.ts と 同じく 状態 + step(状態, 秒, 入力, 乱数) の 形（src/sim/arcadeTests.ts が 回す）。
-// カジノの チップは 財布の お金で 買い、席を 立つと 換金する（2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。
-// 1枚 100円。ui/arcade/casinoChips.ts）。はじめの 枚数は 買った 枚数（xxStart の 引数）。
+// カジノの チップは 入口の 換金所で 買い、台には チップ入れから 出す（2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。
+// 1枚 100円。ui/arcade/casinoChips.ts）。はじめの 枚数は 出した 枚数（xxStart の 引数）。
 // スコアは 手もとに 持った いちばん 多い 枚数、換金は やめた ときの 手もと（xxCash）。
 
 import type { Rnd } from "./logic";

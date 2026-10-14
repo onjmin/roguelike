@@ -36,11 +36,10 @@ import {
 	today,
 } from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
-import { pedRoute, type TimeBand, timeBand } from "../../data/village/crowd";
+import { pedRoute, timeBand } from "../../data/village/crowd";
 import {
-	BAND_LIGHT,
-	BAND_TINT,
 	clockLine,
+	daylightAt,
 	lightOf,
 	windowLit,
 } from "../../data/village/daylight";
@@ -49,6 +48,7 @@ import { exitFor, VILLAGE_SPOTS } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
 import { TROLLEY_CART } from "../../data/village/trolley";
 import { preloadImages } from "../../engine/assets";
+import { chipsOwned } from "../../engine/chips";
 import type {
 	EventDef,
 	RoamStep,
@@ -80,6 +80,7 @@ import {
 	sleep,
 	TILE,
 } from "../../engine/types";
+import { walletYen, yen } from "../../engine/wallet";
 import { showBootTitle } from "../boot";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
@@ -577,9 +578,27 @@ export class Village {
 		}
 		const h = nowHour();
 		const text = clockLine(h, nowMinute(), timeBand(h));
+		this.tickMoney(dt);
 		if (text === this.clockText) return;
 		this.clockText = text;
 		this.hud.clock.textContent = text;
+	}
+
+	/** 時計の 下の 財布の 文（カジノの 中は チップも。かわった ときだけ 書く。0.2秒ごとに 見る）。 */
+	private moneyText = "";
+	private moneyMs = Number.POSITIVE_INFINITY;
+	private tickMoney(dt: number): void {
+		this.moneyMs += dt;
+		if (this.moneyMs < 200) return;
+		this.moneyMs = 0;
+		const chips =
+			facilityOfMap(this.mapId)?.id === "casino"
+				? `　チップ ${chipsOwned().toLocaleString("ja-JP")}枚`
+				: "";
+		const text = `財布 ${yen(walletYen())}${chips}`;
+		if (text === this.moneyText) return;
+		this.moneyText = text;
+		this.hud.money.textContent = text;
 	}
 
 	private get idle(): boolean {
@@ -1479,16 +1498,19 @@ export class Village {
 			this.drawExitGuide(g, ox, oy, this.scene);
 		// 時間帯の 色（外の 村だけ。人通りと 同じ 時計。data/village/daylight.ts）
 		if (this.mapId === "village") {
-			const band = timeBand(nowHour());
-			const tint = BAND_TINT[band];
-			if (tint) {
+			// 時間帯が かわったら 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
+			const day = daylightAt(
+				nowHour() * 60 + nowMinute() + this.clockMs / 1000,
+				timeBand,
+			);
+			if (day.tint) {
 				g.save();
 				g.globalCompositeOperation = "multiply";
-				g.fillStyle = tint;
+				g.fillStyle = day.tint;
 				g.fillRect(0, 0, this.screen.width, this.screen.height);
 				g.restore();
 			}
-			this.drawLights(g, field, ox, oy, band);
+			this.drawLights(g, field, ox, oy, day);
 		}
 	}
 
@@ -1505,10 +1527,9 @@ export class Village {
 		field: Field,
 		ox: number,
 		oy: number,
-		band: TimeBand,
+		k: { lamp: number; windows: number },
 	): void {
-		const k = BAND_LIGHT[band];
-		if (!k.lamp && !k.windows) return;
+		if (k.lamp < 0.01 && k.windows < 0.01) return;
 		if (this.lightCells?.field !== field)
 			this.lightCells = {
 				field,
@@ -1533,7 +1554,8 @@ export class Village {
 		}
 		// 街灯：頭（1マス 上）の まわりに 段の ついた 丸い 光（ドット。ぼかさない：作者「光表現は ファジーでは なく
 		// ドットに」）。内から 3段、いちばん 外の 段は 市松（ディザ）。1画素ずつ 行で 塗る
-		const glow = this.lampGlow(k.lamp);
+		// うつりかわりの あいだは 強さが 少しずつ かわるので 20段に まるめる（絵は 段ごとに 1枚）
+		const glow = this.lampGlow(Math.round(k.lamp * 20) / 20);
 		const R = LAMP_R;
 		for (const [x, y] of lamps) {
 			const cx = Math.round(x * TILE - ox + TILE / 2);

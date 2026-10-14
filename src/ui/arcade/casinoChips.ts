@@ -1,91 +1,204 @@
-// カジノ「ガチャ」の チップを 買う・換金する 窓（2026-10-14 作者：「「お金を 賭けない」という 方針は 撤廃して 良い」）。
-// ui/arcade/arcade.ts の arcadeScript が カジノの 台（data/arcade/casino.ts の isCasinoGame）で 使う：
-// 品書き「チップを　買う」→ 枚数を えらぶ（財布で 払える ものだけ。spendYen）→ 買った 枚数で 板 →
-// おわるか B で やめたら 手もとの 枚数を 同じ 値段で 換金（earnYen）と 差し引き。
-// 値段と 文は data/arcade/casino.ts。
+// カジノ「ガチャ」の チップの 窓（換金所と 台）。値段と 文は data/arcade/casino.ts、チップ入れは engine/chips.ts。
+// 2026-10-15 作者：「換金所が 設定され、そこで 一元的に 換金の やり取りが できると わかりやすい。
+// ゲームを やる 場所で やる ものじゃない」：
+// - 換金所（部屋の 窓口。data/village/facilities.ts の plays で "arcade"、物の 名前 "cashier" → ui/arcade/arcade.ts の
+//   arcadePlay が cashierScript を 呼ぶ）：財布の お金で チップを 買う・チップを 円に もどす。
+// - 台（ui/arcade/arcade.ts の arcadeScript）：bringChips で 持って いる チップから 何枚 出すか えらび、
+//   遊んだ あと returnChips で のこりを チップ入れに もどす（円には しない）。
+// - パチンコは 出した チップを 玉に かえて 座り（1枚 25発）、立つと 25発ごとに チップに もどす。はんぱは あずかる。
 
-import { CASINO, CASINO_NET, casinoKind } from "../../data/arcade/casino";
+import {
+	BALLS_PER_CHIP,
+	CASHIER,
+	CASINO_TABLE,
+	CHIP_YEN,
+	chipDiff,
+	usesBalls,
+} from "../../data/arcade/casino";
 import type { ArcadeGame } from "../../data/arcade/types";
+import {
+	addChips,
+	ballsKept,
+	chipsOwned,
+	keepBalls,
+	takeChips,
+} from "../../engine/chips";
 import type { Story } from "../../engine/defs";
 import { earnYen, spendYen, walletYen, yen } from "../../engine/wallet";
 import type { UiCtx } from "../list";
 import { fill } from "../village/villageTalk";
 
-/** 品書き（遊ぶ 項目が「〜を　買う」）。 */
-export const casinoMenu = (game: ArcadeGame): string[] => [
-	CASINO[casinoKind(game)].buy,
-	"ハイスコアを　見る",
-	"やめる",
-];
+/** 換金所の 物の 名前（data/village/facilities.ts の カジノの things）。 */
+export const CASHIER_THING = "cashier";
 
-/** 払う（足りなければ false）。noSave は 下見。 */
-export const casinoBuy = (
+/** チップを 買う（払えなければ false）。noSave は 下見。 */
+export const buyChipsAt = (n: number, noSave = false): boolean => {
+	if (!spendYen(n * CHIP_YEN, noSave)) return false;
+	addChips(n, noSave);
+	return true;
+};
+
+/** チップを 円に もどす（足りなければ 0）。もどった 円。noSave は 下見。 */
+export const cashChipsAt = (n: number, noSave = false): number => {
+	const k = Math.max(0, Math.floor(n));
+	if (!k || !takeChips(k, noSave)) return 0;
+	earnYen(k * CHIP_YEN, noSave);
+	return k * CHIP_YEN;
+};
+
+/** 換金所の 窓口（買う・換金する を 何度でも。やめるまで）。 */
+export const cashierScript = async (
+	ctx: UiCtx,
+	s: Story,
+	noSave = false,
+): Promise<void> => {
+	const C = CASHIER;
+	for (;;) {
+		await s.narrate(
+			fill(C.status, { chips: chipsOwned(), have: yen(walletYen()) }),
+		);
+		const k = await s.choose([...C.menu], { cancel: C.menu.length - 1 });
+		if (k === 0) {
+			const have = walletYen();
+			const can = C.buyins.filter((n) => n * CHIP_YEN <= have);
+			if (!can.length) {
+				await s.narrate(
+					fill(C.short, {
+						price: yen((C.buyins[0] ?? 0) * CHIP_YEN),
+						have: yen(have),
+					}),
+				);
+				continue;
+			}
+			await s.narrate(fill(C.buyAsk, { have: yen(have) }));
+			const opts = [
+				...can.map((n) => fill(C.option, { n, price: yen(n * CHIP_YEN) })),
+				"やめる",
+			];
+			const n = can[await s.choose(opts, { cancel: can.length })];
+			if (n === undefined || !buyChipsAt(n, noSave)) continue;
+			ctx.se("arcCoin");
+			await s.narrate(
+				fill(C.bought, {
+					n,
+					price: yen(n * CHIP_YEN),
+					chips: chipsOwned(),
+				}),
+			);
+		} else if (k === 1) {
+			const own = chipsOwned();
+			if (own <= 0) {
+				await s.narrate(C.noChips);
+				continue;
+			}
+			await s.narrate(fill(C.cashAsk, { chips: own }));
+			const ns = [...C.cashOuts.filter((n) => n < own), own];
+			const opts = [
+				...ns.map((n, i) =>
+					fill(i === ns.length - 1 ? C.all : C.cashOption, { n }),
+				),
+				"やめる",
+			];
+			const n = ns[await s.choose(opts, { cancel: ns.length })];
+			if (n === undefined) continue;
+			const got = cashChipsAt(n, noSave);
+			if (!got) continue;
+			ctx.se("arcCoin");
+			await s.narrate(
+				fill(C.cashed, { n, price: yen(got), chips: chipsOwned() }),
+			);
+		} else return;
+	}
+};
+
+/** 台に 出す チップ（出した 枚数と、板に わたす はじめの 枚数／玉）。 */
+export type Bring = { chips: number; stake: number };
+
+/** チップ（パチンコは 玉）に して 台に 出す。出した ぶん チップ入れから へる。 */
+export const sitWith = (
 	game: ArcadeGame,
 	n: number,
 	noSave = false,
-): boolean => spendYen(n * CASINO[casinoKind(game)].rate, noSave);
+): Bring | null => {
+	if (n <= 0 || !takeChips(n, noSave)) return null;
+	if (!usesBalls(game)) return { chips: n, stake: n };
+	const kept = ballsKept();
+	if (kept) keepBalls(0, noSave);
+	return { chips: n, stake: n * BALLS_PER_CHIP + kept };
+};
 
-/** 換金する（もどった 円）。noSave は 下見。 */
-export const casinoCash = (
+/** 何枚 出すかを えらんで 台に 出す（やめた・1枚も ない ときは null）。 */
+export const bringChips = async (
+	s: Story,
+	game: ArcadeGame,
+	noSave = false,
+): Promise<Bring | null> => {
+	const T = CASINO_TABLE;
+	const own = chipsOwned();
+	if (own <= 0) {
+		await s.narrate(T.none);
+		return null;
+	}
+	await s.narrate(fill(usesBalls(game) ? T.ballAsk : T.ask, { chips: own }));
+	const ns = [...T.bring.filter((n) => n < own), own];
+	const opts = [
+		...ns.map((n, i) => fill(i === ns.length - 1 ? T.all : T.option, { n })),
+		"やめる",
+	];
+	const n = ns[await s.choose(opts, { cancel: ns.length })];
+	if (n === undefined) return null;
+	const kept = ballsKept();
+	const b = sitWith(game, n, noSave);
+	if (b && usesBalls(game))
+		await s.narrate(
+			fill(kept ? T.ballsKept : T.balls, { n, b: b.stake, r: kept }),
+		);
+	return b;
+};
+
+/** 台を 立つ：のこった チップ（玉）を チップ入れに もどす。もどった 枚数。 */
+export const leaveWith = (
 	game: ArcadeGame,
 	left: number,
 	noSave = false,
 ): number => {
-	const got = Math.max(0, Math.floor(left)) * CASINO[casinoKind(game)].rate;
-	earnYen(got, noSave);
-	return got;
-};
-
-/** 買う 枚数を えらんで 払う（やめた・買えない ときは null）。 */
-export const buyChips = async (
-	ctx: UiCtx,
-	s: Story,
-	game: ArcadeGame,
-	noSave = false,
-): Promise<number | null> => {
-	const c = CASINO[casinoKind(game)];
-	const have = walletYen();
-	const can = c.buyins.filter((n) => n * c.rate <= have);
-	if (!can.length) {
-		await s.narrate(
-			fill(c.short, {
-				price: yen((c.buyins[0] ?? 0) * c.rate),
-				have: yen(have),
-			}),
-		);
-		return null;
+	const k = Math.max(0, Math.floor(left));
+	if (!usesBalls(game)) {
+		addChips(k, noSave);
+		return k;
 	}
-	await s.narrate(fill(c.ask, { have: yen(have) }));
-	const opts = [
-		...can.map((n) => fill(c.option, { n, price: yen(n * c.rate) })),
-		"やめる",
-	];
-	const k = await s.choose(opts, { cancel: can.length });
-	const n = can[k];
-	if (n === undefined || !casinoBuy(game, n, noSave)) return null;
-	ctx.se("arcCoin");
-	await s.narrate(fill(c.bought, { n, price: yen(n * c.rate) }));
-	return n;
+	const n = Math.floor(k / BALLS_PER_CHIP);
+	addChips(n, noSave);
+	keepBalls(ballsKept() + (k % BALLS_PER_CHIP), noSave);
+	// あずかりが 25発に なったら チップに
+	const more = Math.floor(ballsKept() / BALLS_PER_CHIP);
+	if (more) {
+		addChips(more, noSave);
+		keepBalls(ballsKept() % BALLS_PER_CHIP, noSave);
+	}
+	return n + more;
 };
 
-/** 手もとの 枚数を 換金して、差し引きを 言う。 */
-export const cashOut = async (
+/** 台を 立って、もどった 枚数と 増減を 言う。 */
+export const returnChips = async (
 	s: Story,
 	game: ArcadeGame,
-	bought: number,
+	bring: Bring,
 	left: number,
 	noSave = false,
 ): Promise<void> => {
-	const c = CASINO[casinoKind(game)];
-	const n = Math.max(0, Math.floor(left));
-	const got = casinoCash(game, n, noSave);
-	const net = got - bought * c.rate;
-	const head = n > 0 ? fill(c.cashed, { n, price: yen(got) }) : c.none;
-	const tail =
-		net > 0
-			? fill(CASINO_NET.win, { price: yen(net) })
-			: net < 0
-				? fill(CASINO_NET.lose, { price: yen(-net) })
-				: CASINO_NET.even;
-	await s.narrate(`${head}\n${tail}`);
+	const T = CASINO_TABLE;
+	const k = Math.max(0, Math.floor(left));
+	const n = leaveWith(game, k, noSave);
+	const v = {
+		n,
+		b: k,
+		chips: chipsOwned(),
+		diff: chipDiff(n - bring.chips),
+	};
+	if (usesBalls(game) && k > 0) {
+		await s.narrate(fill(T.ballBack, v));
+		const r = ballsKept();
+		if (r > 0) await s.narrate(fill(T.keep, { r }));
+	} else await s.narrate(fill(n > 0 ? T.back : T.lost, v));
 };

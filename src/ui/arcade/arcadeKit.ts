@@ -13,7 +13,7 @@ import type { UiCtx } from "../list";
 import { board, evStamps, sleep, tick } from "../minigames/minigameBoard";
 import { BH, BW, crisp, type G, twoB, txt } from "../neta/netaBoard";
 
-/** cash は カジノの 台で やめた ときの 手もとの 枚数（換金する。ui/arcade/casinoChips.ts）。 */
+/** cash は カジノの 台で やめた ときの 手もとの 枚数（チップ入れに もどす。ui/arcade/casinoChips.ts）。 */
 export type ArcadeResult = { score: number; cash?: number };
 
 export type ArcEv =

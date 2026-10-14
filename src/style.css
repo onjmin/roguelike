@@ -547,6 +547,26 @@ body.jolt #app {
 	display: block;
 }
 
+/* 村の 財布（時計の 下。カジノの 中は チップも。ui/village/village.ts の tickMoney） */
+.village-money {
+	display: none;
+	position: absolute;
+	top: calc(36px + var(--safe-t));
+	left: calc(8px + var(--safe-l));
+	padding: 1px 8px;
+	border-radius: 6px;
+	background: rgba(0, 0, 0, 0.45);
+	color: #ffe08a;
+	font-size: 12px;
+	line-height: 1.5;
+	font-variant-numeric: tabular-nums;
+	pointer-events: none;
+}
+
+.hud.village .village-money:not(:empty) {
+	display: block;
+}
+
 .status {
 	position: absolute;
 	top: calc(8px + var(--safe-t));

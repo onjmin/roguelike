@@ -3,12 +3,13 @@
 // 物の 文 → ハイスコア（あれば）→「遊ぶ／やめる」→ はじめての 台は 決まり → 板（ui/arcade/arcadeAction.ts・ui/arcade/arcadeTiming.ts）
 // → スコア（ハイスコアを こえたら ひとこと）→「もう一回／やめる」（もう一回は 同じ 曲・同じ 枚数で すぐ。毎回 払う）。板は ui/arcade/arcadeParlor.ts も（カジノ・海の家・バー）。B で やめたら「途中で　席を　立った」だけ（記録しない）。
 // どれも 寄り道で、強さ・道具・売上・町の 段には 何も 効かない。見た目の 乱数は Math.random。
-// カジノの 台は 財布の お金で チップを 買って 遊び、席を 立つと 換金する（ui/arcade/casinoChips.ts。
-// 2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。前は 店が 貸す 遊びの チップだった）。
+// カジノの 台は 持って いる チップ（チップ入れ。engine/chips.ts）から 何枚か 出して 遊び、のこりは チップ入れに もどる。
+// 円と チップの やり取りは 入口の 換金所（物の 名前 "cashier"）だけ（ui/arcade/casinoChips.ts。2026-10-15 作者：
+// 「換金所で 一元的に。ゲームを やる 場所で やる ものじゃない」。前は 台ごとに 買って 席を 立つと 換金だった）。
 // 記録は localStorage の kiriko-roguelike/arcade だけ（?stage= ・?event= の ときは 書かない。memo には 残る）。
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
 
-import { CASINO, casinoKind, isCasinoGame } from "../../data/arcade/casino";
+import { CASINO_TABLE, isCasinoGame } from "../../data/arcade/casino";
 import { ARCADE, ARCADE_PLAY_YEN, ARCADE_TEXT } from "../../data/arcade/text";
 import {
 	ARCADE_GAMES,
@@ -17,6 +18,7 @@ import {
 	isArcadeGame,
 } from "../../data/arcade/types";
 import { devEvent } from "../../data/story/objectives";
+import { chipsOwned } from "../../engine/chips";
 import type { Story } from "../../engine/defs";
 import { spendYen, walletYen, yen } from "../../engine/wallet";
 import type { UiCtx } from "../list";
@@ -40,7 +42,14 @@ import {
 	playSuika,
 } from "./arcadeParlor";
 import { playFighter, playMole, playRhythm, playSlot } from "./arcadeTiming";
-import { buyChips, cashOut, casinoBuy, casinoMenu } from "./casinoChips";
+import {
+	type Bring,
+	bringChips,
+	CASHIER_THING,
+	cashierScript,
+	returnChips,
+	sitWith,
+} from "./casinoChips";
 import { playBaccarat } from "./home/baccarat";
 import { playBlackjack } from "./home/blackjack";
 import { playClicker } from "./home/clicker";
@@ -244,18 +253,18 @@ export const arcadeScript = async (
 			? [fill(ARCADE.record, { best: m.best[game], unit: t.unit })]
 			: [];
 	// ゲームセンターの 筐体・海の家の スイカ割り・バーの グラス滑らせは 1回 ARCADE_PLAY_YEN 円
-	// （財布から。足りなければ 遊べない。途中で やめても もどらない）。カジノは チップを 買う（ui/arcade/casinoChips.ts）
+	// （財布から。足りなければ 遊べない。途中で やめても もどらない）。カジノは 持って いる チップを 出す（ui/arcade/casinoChips.ts）
 	const paid = ["arcade", "umi", "bar"].includes(ARCADE_HOME[game]);
 	const price = yen(ARCADE_PLAY_YEN);
 	const casino = isCasinoGame(game);
-	const menu = casino
-		? casinoMenu(game)
-		: paid
-			? ARCADE.payMenu.map((x) => fill(x, { price }))
-			: ARCADE.menu;
+	const menu = paid
+		? ARCADE.payMenu.map((x) => fill(x, { price }))
+		: ARCADE.menu;
 	if ((await playOrRecord(s, record, menu)) === null) return;
-	const stake = casino ? await buyChips(ctx, s, game, previewing()) : null;
-	if (casino && stake === null) return;
+	let bring: Bring | null = casino
+		? await bringChips(s, game, previewing())
+		: null;
+	if (casino && bring === null) return;
 	if (paid && !spendYen(ARCADE_PLAY_YEN, previewing())) {
 		await s.narrate(fill(ARCADE.short, { price, have: yen(walletYen()) }));
 		return;
@@ -267,15 +276,15 @@ export const arcadeScript = async (
 		saveArcade(m);
 	}
 	// おわったら「もう一回／やめる」（はじめが もう一回。台を 調べなおさずに 同じ 曲・同じ 枚数で すぐ また 遊ぶ。
-	// 値段は 毎回 払う。払えない ときは 聞かない）。B で 途中で やめたら 聞かない
+	// 値段は 毎回 払う。払えない ときは 聞かない。カジノは 同じ 枚数を チップ入れから また 出す）。B で 途中で やめたら 聞かない
 	for (let again = false; ; again = true) {
 		await s.wait(0);
 		replaySong(again);
 		const play = hooks?.[game] ?? ((n?: number) => BOARDS[game](ctx, n));
-		const r = await play(stake ?? undefined).finally(() => replaySong(false));
+		const r = await play(bring?.stake).finally(() => replaySong(false));
 		if (!r) {
 			await s.narrate(ARCADE.quit);
-			if (stake !== null) await cashOut(s, game, stake, 0, previewing());
+			if (bring) await returnChips(s, game, bring, 0, previewing());
 			return;
 		}
 		const score = nat(r.score);
@@ -288,43 +297,40 @@ export const arcadeScript = async (
 			ctx.se("arcBest");
 			await s.narrate(ARCADE.newBest);
 		}
-		// カジノは 手もとの チップ（玉）を 換金（板が cash を 返さなければ スコアを 手もとと みる）
-		if (stake !== null)
-			await cashOut(s, game, stake, r.cash ?? r.score, previewing());
+		// カジノは 手もとの チップ（玉）を チップ入れに もどす（板が cash を 返さなければ スコアを 手もとと みる）
+		if (bring)
+			await returnChips(s, game, bring, r.cash ?? r.score, previewing());
 		// クレーンゲームで 金の ぷゆゆを とったら、家に ぬいぐるみの 家具が 届く（家を 買って いて、まだ 持って いなければ）
 		if (game === "crane" && !hooks && craneLastWins().includes("puyuGold"))
 			await craneGift(s);
-		const cost =
-			stake !== null
-				? stake * CASINO[casinoKind(game)].rate
-				: paid
-					? ARCADE_PLAY_YEN
-					: 0;
+		if (bring) {
+			const n = bring.chips;
+			if (chipsOwned() < n) return;
+			const opts = [fill(CASINO_TABLE.again, { n }), ARCADE.again[1]];
+			if ((await s.choose(opts, { cancel: 1 })) !== 0) return;
+			bring = sitWith(game, n, previewing());
+			if (!bring) return;
+			continue;
+		}
+		const cost = paid ? ARCADE_PLAY_YEN : 0;
 		if (walletYen() < cost) return;
-		const opts =
-			stake !== null
-				? [fill(CASINO[casinoKind(game)].again, { n: stake }), ARCADE.again[1]]
-				: paid
-					? ARCADE.payAgain.map((x) => fill(x, { price }))
-					: [...ARCADE.again];
+		const opts = paid
+			? ARCADE.payAgain.map((x) => fill(x, { price }))
+			: [...ARCADE.again];
 		if ((await s.choose(opts, { cancel: 1 })) !== 0) return;
-		if (
-			stake !== null
-				? !casinoBuy(game, stake, previewing())
-				: !spendYen(cost, previewing())
-		)
-			return;
+		if (!spendYen(cost, previewing())) return;
 		if (cost > 0) ctx.se("arcCoin");
 	}
 };
 
-/** 部屋の 物から（物の 名前が ゲームの 名前。知らない 名前なら 何もしない）。 */
+/** 部屋の 物から（物の 名前が ゲームの 名前。カジノの 換金所は "cashier"。知らない 名前なら 何もしない）。 */
 export const arcadePlay = async (
 	ctx: UiCtx,
 	s: Story,
 	kind: string,
 ): Promise<void> => {
-	if (isArcadeGame(kind)) await arcadeScript(ctx, s, kind);
+	if (kind === CASHIER_THING) await cashierScript(ctx, s, previewing());
+	else if (isArcadeGame(kind)) await arcadeScript(ctx, s, kind);
 };
 
 // 開発用（pnpm dev の とき だけ。本番の ?debug では 出ない）：__arcade("shooter") で 板だけ
