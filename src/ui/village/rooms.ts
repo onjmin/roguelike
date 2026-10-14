@@ -94,7 +94,8 @@ export const enterRoom =
 		await s.fadeOut(200);
 		const e = roomEntry(id);
 		await s.warp(id, e.x, e.y, e.dir);
-		await s.fadeIn(200);
+		// 明けはじめたら もう 歩ける（明けきるまで 待たせない）
+		void s.fadeIn(200);
 	};
 
 /** 出口の マット：扉の 音 → 暗転 → 村（部屋ごとの 所）→ 明転。 */
@@ -105,7 +106,8 @@ export const leaveRoom =
 		await s.fadeOut(200);
 		const o = ROOM_OUTSIDE[id];
 		await s.warp("village", o.x, o.y, o.dir);
-		await s.fadeIn(200);
+		// 明けはじめたら もう 歩ける（明けきるまで 待たせない）
+		void s.fadeIn(200);
 	};
 
 /** 週末（土・日。端末の 曜日。開発中は &wday= で 決め打ち）。音楽室が 開く。 */

@@ -213,7 +213,8 @@ export const enterHall =
 		s.set("hallFrom", VILLAGE_SPOTS.hallDoors[i]?.[0] ?? 0);
 		const [x, y] = hallEntry(tier, i);
 		await s.warp("hall", x, y, "up");
-		await s.fadeIn(200);
+		// 明けはじめたら もう 歩ける（明けきるまで 待たせない）
+		void s.fadeIn(200);
 	};
 
 /** 出口の マット：扉の 音 → 暗転 → 入った 扉の 前（外。下を 向く）→ 明転。 */
@@ -222,7 +223,8 @@ export const leaveHall: Script = async (s) => {
 	await s.fadeOut(200);
 	const [x, y] = hallOutside(s.flag("hallFrom"));
 	await s.warp("village", x, y, HALL_OUT_DIR);
-	await s.fadeIn(200);
+	// 明けはじめたら もう 歩ける（明けきるまで 待たせない）
+	void s.fadeIn(200);
 };
 
 // ───────────────── 中の 物 ─────────────────

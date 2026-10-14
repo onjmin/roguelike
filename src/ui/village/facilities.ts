@@ -90,7 +90,8 @@ const enterPlain =
 		await s.fadeOut(200);
 		const e = facilityEntry(f);
 		await s.warp(facilityMapId(f), e.x, e.y, e.dir);
-		await s.fadeIn(200);
+		// 明けはじめたら もう 歩ける（明けきるまで 待たせない）
+		void s.fadeIn(200);
 	};
 
 /** 出口の マット：扉の 音 → 暗転 → 村（扉の 前）→ 明転。 */
@@ -101,7 +102,8 @@ const leaveFacility =
 		await s.fadeOut(200);
 		const o = facilityOutside(f);
 		await s.warp("village", o.x, o.y, o.dir);
-		await s.fadeIn(200);
+		// 明けはじめたら もう 歩ける（明けきるまで 待たせない）
+		void s.fadeIn(200);
 	};
 
 /** 釣り（竿を たらして、何かが かかる。すぐ 海に かえす）。見た目の 乱数なので Math.random。 */
