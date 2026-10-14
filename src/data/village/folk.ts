@@ -4,7 +4,7 @@
 //
 //   ひらがなニキ   (8,17)  西の 空き地（段5 からは 喫茶の 東）。x=7 の 道の となりの くぼみ。段1 から。
 //                  段6 からは すぐ 下に 街灯が 立つので、図書館の 入口の 西の すみ (3,23) へ（FOLK_MOVES）
-//   なぞなぞ仮面   (29,23) 広場の 南東の すみ（x=29 の 細道の 行き止まり）。段1 から。
+//   なぞなぞ仮面   (30,25) 広場の 南東の 池への 細道の わき。段1 から。
 //                  段7 は すぐ 下の 植えこみに 街灯が 立つので、柵の かど (30,25) へ（FOLK_MOVES）
 //   モフちゃん     (1,16)  西の 空き地の 北西の すみの くぼみ（段5 からは 喫茶の 裏の 路地の 行き止まり）。段1 から。
 //                  絵は 段ごとに 少し かわる。(7,22) は 西口の 乗り場・図書館・碁会所への 近道なので 置かない（map.ts の 片づけ）。
@@ -52,7 +52,7 @@ export const mofuWalk = (stage: number): string =>
 
 export const FOLK_SPOTS = {
 	hira: [8, 17] as Cell,
-	nazo: [29, 23] as Cell,
+	nazo: [30, 25] as Cell,
 	mofu: [1, 16] as Cell,
 	odoru: [16, 30] as Cell,
 } as const;
@@ -61,13 +61,12 @@ type FolkWho = keyof typeof FOLK_SPOTS;
 
 /**
  * 段 from から 立つ マスを かえる 人（すぐ 下の マスに 新市街の 街灯が 立ち、頭が 街灯の 上に かくれるので）。
- * ひらがなニキは 図書館の 入口の 西の すみ、なぞなぞ仮面は 広場の 南東の 柵の かど。
+ * ひらがなニキは 図書館の 入口の 西の すみ。
  */
 export const FOLK_MOVES: Partial<
 	Record<FolkWho, { from: number; at: Cell; dir: Dir }>
 > = {
 	hira: { from: 6, at: [3, 23], dir: "right" },
-	nazo: { from: 7, at: [30, 25], dir: "right" },
 };
 
 /** その 段で 立つ マスと 向き。 */

@@ -1045,7 +1045,52 @@ export const villageRows = (v: VillageView): string[] => {
 	coreCity(rows, layoutStage(v));
 	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
 	stampFacilities(rows, layoutStage(v), put);
+	thinStrips(rows, villagePalette(v));
 	return rows;
+};
+
+/** 抜いてよい 木・しげみ・生け垣（森と 町の へり）。 */
+const GREENERY = new Set(["T", "b", "^", "H", "h"]);
+
+/**
+ * 歩ける 所に はさまれた 細い 木の 帯（幅 1〜2マス）を 芝に する（作者「壁を 減らして ストレスなく 通れるように」）。
+ * 区画と 区画の あいだに 残った 森の 列などで 遠回り させない。ぽつんと 立つ 1本（帯でない）は 飾りなので 残す。
+ */
+const thinStrips = (rows: string[], pal: Record<string, TileDef>): void => {
+	const g = rows.map((r) => [...r]);
+	const H = g.length;
+	const W = g[0].length;
+	const at = (x: number, y: number) =>
+		x < 0 || y < 0 || x >= W || y >= H ? undefined : g[y][x];
+	const walk = (x: number, y: number) => {
+		const c = at(x, y);
+		return c !== undefined && pal[c]?.passable === true;
+	};
+	const green = (x: number, y: number) => GREENERY.has(at(x, y) ?? "");
+	// dx,dy の 向きに 歩ける 所に はさまれた 帯か（となり、か 1つ 先の 木を こえて）
+	const between = (x: number, y: number, dx: number, dy: number) => {
+		const a = walk(x - dx, y - dy);
+		const b = walk(x + dx, y + dy);
+		return (
+			(a && b) ||
+			(a && green(x + dx, y + dy) && walk(x + 2 * dx, y + 2 * dy)) ||
+			(b && green(x - dx, y - dy) && walk(x - 2 * dx, y - 2 * dy))
+		);
+	};
+	const out: Cell[] = [];
+	// 地図の はしの 2列は 森の 縁として 残す
+	for (let y = 2; y < H - 2; y++)
+		for (let x = 2; x < W - 2; x++) {
+			if (!green(x, y)) continue;
+			// 町の 区画の 中（売り場の 囲いの しげみ など）は さわらない。へりの 生け垣は 抜く
+			if (x > OX && y > OY && x < OX + TOWN_W - 1 && y < OY + TOWN_H - 1)
+				continue;
+			// 帯の 向き：左右に はさまれて 上下に 木が 続く（縦の 帯）か、その 逆
+			const v = between(x, y, 1, 0) && (green(x, y - 1) || green(x, y + 1));
+			const h = between(x, y, 0, 1) && (green(x - 1, y) || green(x + 1, y));
+			if (v || h) out.push([x, y]);
+		}
+	for (const c of out) put(rows, c, ",");
 };
 
 /** 村の パレット（道・広場・倉庫の 絵は 町の段で かわる）。 */
