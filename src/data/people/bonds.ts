@@ -1285,7 +1285,7 @@ export const BOND_MSG = {
 		"誕生日は　倍。なかよく　なると、\n向こうからも　なにか　くれる。",
 	],
 	/** この 帰りに もう わたした 人に 話した。 */
-	gaveAlready: "（{name}には、この　帰りは　もう　わたした）",
+	gaveAlready: "（{name}には、\nこの　帰りは　もう　わたした）",
 	holding: "{gift}を　もう　持っている。\n……先に　だれかに　わたそう。",
 	wrapped: "{gift}を　包んで　もらった。\n話しかけた　あとに　わたせる。",
 	offer: "（{gift}を　{name}に　わたす？）",
