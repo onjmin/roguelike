@@ -55,7 +55,18 @@ export type Dungeon = {
 	objective: Objective;
 	/** 目的が boss の ときの ボス（無い 板は boss に ならない）。 */
 	boss?: BossSpec;
+	/** 階の 数（randomFloors の 板は いちばん 深い ときの 数）。 */
 	floors: number;
+	/**
+	 * 底の 深さが 潜るたびに かわる（ポケダンの 階が 決まらない ダンジョンに ならった。おんMu）。
+	 * Run.create が min〜max から 1つ 引いて RunState.floors に 書き、level は その 深さで 作りなおす
+	 * （dungeonOf）。floors と level は max の ときの もの。
+	 */
+	randomFloors?: {
+		min: number;
+		max: number;
+		level: (n: number) => readonly number[];
+	};
 	/** 道具の出かた（重み。合計は 1回の冒険で 出る数の 目安）。 */
 	items: readonly ItemWeight[];
 	/** 1つの階に 置く 道具の数（祭りの階は houseItems を 足す）。 */
@@ -108,7 +119,7 @@ export type Dungeon = {
 	foes?: Readonly<Record<string, number>>;
 	/** 😡：どの 敵も HP が 半分を 切ると 怒って 倍速に なる。 */
 	angry?: boolean;
-	/** 持ち帰る 品を 持ったまま 帰還スレで 帰れる（99階ある 隠しの 板だけ）。 */
+	/** 持ち帰る 品を 持ったまま 帰還スレで 帰れる（99階ある 隠しの 板と、50階の †闇の板†）。 */
 	escapeWithGoal?: boolean;
 	/** 全体マップに 出さない（隠し。過去ログの底は 村の 広場の 井戸から 降りる）。 */
 	secret?: boolean;
@@ -143,6 +154,10 @@ const ramp = (n: number, top: number, curve = RAMP_CURVE): number[] =>
 				? top
 				: Math.round(1 + (top - 1) * ((i - 1) / (n - 1)) ** curve),
 	);
+
+/** 1階が 本編の from階ぶんで 始まる ramp（おんキム：1階から 敵が 強い）。底は top。 */
+const rampFrom = (n: number, from: number, top: number, curve = 1): number[] =>
+	ramp(n, top - from + 1, curve).map((v, i) => (i === 0 ? 0 : v + from - 1));
 
 const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 	"ring",
@@ -803,37 +818,50 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// ── おーぷぬ（だれでも 板を 立てられる open.open2ch.net）の おんJ関連板。おんJwiki（3代目）の
 	// 「おーぷぬの おんJ関連板一覧」（pages/519）と 板の トップから。どれも 持ち帰りの 寄り道で、
 	// 板を 持ち帰っても 開かない：町の 寄り道（碁会所・質屋・おんJマート・道場）で 見つける（data/town/finds.ts）
+	//
+	// 1回で 完結する 寄り道 なので、4つとも 本筋と ちがう 遊びかたを 1つずつ 持たせる（2026-10-14 作者：
+	// 「単発の 寄り道は もう少し バリエーションを。個性の 出しかた・階数は ポケダンを 参考に」。名前は 借りない）：
+	// - マーキュリー：6階の 宝の 板。祭りも ふつうの 罠も 無く（安価の罠だけ）、敵は 少なく、道具が 多い（ほのぼの。倉庫を ふやしに 行く 板）
+	// - おんMu：底の 深さが 潜るたびに かわる（7〜17階。沈んだ 大陸の 沈みかたが 毎回 ちがう）
+	// - おんキム：1階から 敵が 強い 10階（植民地戦争の 最前線。本編の 5階ぶんから 始まる。倉庫の 装備で 挑む）
+	// - †闇の板†：50階の 塔（ハードコア。倉庫の 道具は 持ちこめない。頂の 品は 帰還スレで 持ち帰れる）
+	//
 	// なんでも実況（マーキュリー）：「おんJに 飽きた 方」の ほのぼの 板（デフォルトネーム 水星の名無し）。
-	// ほのぼの なので 自然回復が はやく、荒らしは 来ない
+	// ほのぼの なので 自然回復が はやく、荒らしは 来ない。水星の 名無しが 置いていった 物が 床に 多い 宝の 板：
+	// 6階・1階に 8〜10個・祭りと ふつうの 罠は 無し（安価の罠は どの 板とも 同じ：core/anka.ts）・敵は 7割
 	mercury: {
 		id: "mercury",
 		objective: "fetch",
 		foes: { tousuko: 2, kaso: 1.5, oni: 0, ninja: 0, fallen: 0 },
-		floors: 9,
+		floors: 6,
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
-		perFloor: [4, 6],
-		level: ramp(9, 10, 2),
+		perFloor: [8, 10],
+		level: ramp(6, 7, 2),
 		unidentified: ["staff"],
 		curses: false,
 		start: ["f_large"],
 		goal: "hoshi",
-		houses: { from: 4, chance: 1 / 12, early: null },
-		trapsFrom: 3,
+		houses: null,
+		// ふつうの 罠は 置かない（7階より 浅い 階には 置かない ＝ どの 階にも 無い）
+		trapsFrom: 7,
 		unlockAfter: null,
 		unlockFlag: "town_mercury",
 		reliefAfter: null,
 		regenStep: 100,
+		sparse: 0.7,
 	},
 	// なんでも実況（ムー大陸）＝おんMu：「呑気な おんJを 求めて 作られた 板」（デフォルトネーム ムーミン谷の名無し）。
-	// 「相変わらず 廃墟やのぅ」の 過疎。沈んだ 大陸へ 潜る
+	// 「相変わらず 廃墟やのぅ」の 過疎。沈んだ 大陸へ 潜る。大陸の 沈みかたが 毎回 ちがうので、底の 深さは
+	// 潜るたびに 7〜17階から 決まる（randomFloors。強さは 底が n階なら 本編の n+1階ぶんまで）
 	onmu: {
 		id: "onmu",
 		objective: "fetch",
 		foes: { hitodama: 2, funamushi: 2, kaso: 1.5, ninja: 0 },
-		floors: 11,
+		floors: 17,
+		randomFloors: { min: 7, max: 17, level: (n) => ramp(n, n + 1, 2) },
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
 		perFloor: [4, 6],
-		level: ramp(11, 12, 2),
+		level: ramp(17, 18, 2),
 		unidentified: ["herb", "scroll", "staff"],
 		curses: true,
 		start: ["f_large"],
@@ -846,47 +874,58 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		sparse: 0.5,
 	},
 	// おんキム：キムチを 愛する 板から 始まった（2023年3月。管理部スレ・「植民地一覧」・おんMuとの 植民地戦争・
-	// 「おんキムに 来ませんか？」の 勧誘）。勧誘と 公安（特定班）が 多く、植民地が 多いので 祭りも 出やすい
+	// 「おんキムに 来ませんか？」の 勧誘）。勧誘と 公安（特定班）が 多く、植民地が 多いので 祭りも 出やすい。
+	// 植民地戦争の 最前線なので 1階から 敵が 強い（1階で もう 本編の 5階ぶん。ゾンJ民が 出る）。そのぶん 階は 10・
+	// 底は 本編の 11階ぶんで 止め、道具は 多め。倉庫の 装備を 持ちこむ 前提の 板（pnpm sim -- --dungeon onkimu
+	// --carry steel+2,steelsh+2,h_heal,h_heal,f_bread で クリア 13%。持ちこみ なしの ボットは 1階で ほぼ 倒れる）
 	onkimu: {
 		id: "onkimu",
 		objective: "fetch",
 		foes: { eye: 2, ninja: 2, yuki: 1.5, copipe: 1.5 },
-		floors: 13,
+		floors: 10,
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
-		perFloor: [5, 7],
-		level: ramp(13, 16, 2),
+		perFloor: [6, 8],
+		level: rampFrom(10, 5, 11),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "kimchi",
 		houses: { from: 3, chance: 1 / 4, early: [4, 6] },
-		trapsFrom: 3,
+		trapsFrom: 2,
 		unlockAfter: null,
 		unlockFlag: "town_onkimu",
 		reliefAfter: null,
 	},
 	// †ダークネスインフェルノ†板：「†邪気眼に 魅入られし 孤高なる 闇の 眷属たちの 集いし 板†」
-	// （デフォルトネーム †名も無き暗黒の使い†。中二病 専用板）。闇の 力で 杖の 回数が 1 多く、のろいも 多い
+	// （デフォルトネーム †名も無き暗黒の使い†。中二病 専用板）。闇の 力で 杖の 回数が 1 多く、のろいも 多い。
+	// 寄り道の ハードコア：闇の 塔を 50階 上る。倉庫の 道具は 持ちこめない（闇の 試練は 身ひとつで）
 	inferno: {
 		id: "inferno",
 		objective: "fetch",
+		noCarry: true,
 		foes: { chimera: 2, kage: 2, mojibake: 1.5, golem: 1 },
-		floors: 15,
-		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape").map((e) =>
-			e.kind === "s_uncurse" ? { kind: e.kind, weight: e.weight * 2 } : e,
+		floors: 50,
+		// 解呪スレは 倍。食べものも 倍（50階は 長い。本編の 割合の ままだと ボットの 7割が 飢え死に した）。
+		// 寄り道で ここだけ 帰還スレが 出る（頂の 魔導書を 持ったまま 帰れる：escapeWithGoal）
+		items: MAIN_ITEMS.map((e) =>
+			e.kind === "s_uncurse" || ITEMS[e.kind]?.cat === "food"
+				? { kind: e.kind, weight: e.weight * 2 }
+				: e,
 		),
 		perFloor: [5, 7],
-		level: ramp(15, 19, 2),
+		level: ramp(50, 32, 1.3),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "grimoire",
-		houses: { from: 4, chance: 1 / 10, early: [5, 7] },
+		houses: { from: 5, chance: 1 / 10, early: [6, 8] },
 		trapsFrom: 3,
 		unlockAfter: null,
 		unlockFlag: "town_inferno",
 		reliefAfter: null,
 		charge: 1,
+		// 50階を 歩いて 降りるのは 長すぎるので、過去ログの底と 同じく 品ごと 帰還スレで 帰れる
+		escapeWithGoal: true,
 		// 闇の 塔を 上る
 		up: true,
 	},
@@ -938,3 +977,34 @@ export const openable = (
 /** 知らない id（壊れた記録など）は本編として読む。 */
 export const dungeonById = (id: string | undefined): Dungeon =>
 	DUNGEONS[id as DungeonId] ?? DUNGEONS.main;
+
+const sized = new Map<string, Dungeon>();
+
+/**
+ * 冒険の ダンジョン（底の 深さが かわる 板は その 冒険で 引いた 階の 数と 強さ に した もの）。
+ * floors が 無い・かわらない 板は dungeonById と 同じ。
+ */
+export const dungeonOf = (s: {
+	dungeon: DungeonId;
+	floors?: number;
+}): Dungeon => {
+	const dg = dungeonById(s.dungeon);
+	const rf = dg.randomFloors;
+	if (!rf || s.floors === undefined || s.floors === dg.floors) return dg;
+	const n = Math.max(rf.min, Math.min(rf.max, s.floors));
+	const key = `${dg.id}:${n}`;
+	let v = sized.get(key);
+	if (!v) {
+		v = { ...dg, floors: n, level: rf.level(n) };
+		sized.set(key, v);
+	}
+	return v;
+};
+
+/** 札・地図に 出す 階の 数（底の 深さが かわる 板は「7〜17」）。 */
+export const floorsLabel = (d: DungeonId): string => {
+	const dg = DUNGEONS[d];
+	return dg.randomFloors
+		? `${dg.randomFloors.min}〜${dg.randomFloors.max}`
+		: `${dg.floors}`;
+};

@@ -15,7 +15,12 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
+import {
+	DUNGEON_IDS,
+	DUNGEONS,
+	floorsLabel,
+	openable,
+} from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
 import {
@@ -2396,7 +2401,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 		// 口・立て札の 札（ui/village/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
 		texts.push([
 			`sign ${d}`,
-			`「${DUNGEON_NAMES[d].name}」　B${DUNGEONS[d].floors}　★\n${DUNGEON_DESC[d]}`,
+			`「${DUNGEON_NAMES[d].name}」　${floorsLabel(d)}階　★\n${DUNGEON_DESC[d]}`,
 		]);
 		for (const [i, l] of (UNLOCK_VISIT[d] ?? []).entries())
 			texts.push([`UNLOCK_VISIT.${d}[${i}]`, l.text]);

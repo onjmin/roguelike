@@ -287,7 +287,8 @@ export const CARRY_REFUSE: Record<
 	| "isle3"
 	| "opunu"
 	| "hinan"
-	| "y1901",
+	| "y1901"
+	| "inferno",
 	Line
 > = {
 	// 裏シナリオの 板へは 小舟で わたる（荷物は のらない：裏は 本筋より むずかしく）
@@ -328,6 +329,11 @@ export const CARRY_REFUSE: Record<
 	hidden: q(
 		"shiyo",
 		"古井戸の　底よ？　落としたら　それきり。\n……あたすが　預かっとく",
+	),
+	// 寄り道の ハードコア（†闇の板†の 50階の 塔）
+	inferno: q(
+		"shiyo",
+		"入口に「†身ひとつで　上れ†」って\n貼り紙よ。……荷物は　あたすが　預かる",
 	),
 };
 

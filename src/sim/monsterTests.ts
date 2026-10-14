@@ -4157,6 +4157,55 @@ test(
 	},
 );
 
+// 寄り道の 4板は それぞれ 1つ 個性を 持つ（data/dungeons.ts の おーぷぬの 板の 説明）
+test(
+	"side boards",
+	"each side board keeps its hook: treasure, random depth, strong from B1, 50-floor tower",
+	() => {
+		// おんMu：底の 深さは 潜るたびに 7〜17階。同じ シードなら 同じ 深さ。中断セーブを はさんでも かわらない
+		const seen = new Set<number>();
+		for (let i = 0; i < 60; i++) {
+			const r = Run.create(`onmu-depth-${i}`, "onmu");
+			const n = r.s.floors ?? -1;
+			ok(n >= 7 && n <= 17, `onmu ${i}: ${n} floors`);
+			ok(r.dungeon.floors === n, `onmu ${i}: dungeon says ${r.dungeon.floors}`);
+			ok(r.dungeon.level.length === n + 1, `onmu ${i}: level table`);
+			ok(
+				Run.create(`onmu-depth-${i}`, "onmu").s.floors === n,
+				`onmu ${i}: the depth is not fixed by the seed`,
+			);
+			seen.add(n);
+			if (i < 3) {
+				const back = deserializeRun(serializeRun(r.s));
+				ok(back.floors === n, `onmu ${i}: the depth was lost in the save`);
+				r.enterFloor(n, false);
+				ok(r.atBottom, `onmu ${i}: B${n} is not the bottom`);
+			}
+		}
+		ok(seen.size >= 6, `onmu: only ${[...seen].join(",")} floors`);
+		// ほかの 板は 深さを 書かない（前の 版の 中断セーブ・リプレイと 同じ 形）
+		for (const d of DUNGEON_IDS)
+			if (d !== "onmu")
+				ok(Run.create(`plain-${d}`, d).s.floors === undefined, `${d}`);
+		// マーキュリー：祭りも ふつうの 罠も ない 宝の 板（安価の罠は どの 板にも 来る）
+		const m = Run.create("mercury-treasure", "mercury");
+		ok(m.s.houses.length === 0, "mercury has a festival");
+		for (let d = 1; d <= DUNGEONS.mercury.floors; d++) {
+			m.enterFloor(d, false);
+			const traps = m.f.traps.filter((t) => t.kind !== "anka").length;
+			ok(traps === 0, `mercury B${d}: ${traps} traps`);
+		}
+		// おんキム：1階から 本編の 5階ぶん。†闇の板†：50階の 塔で 持ちこみ 不可
+		ok(DUNGEONS.onkimu.level[1] >= 5, `onkimu B1: ${DUNGEONS.onkimu.level[1]}`);
+		ok(
+			DUNGEONS.inferno.floors === 50 &&
+				DUNGEONS.inferno.noCarry === true &&
+				DUNGEONS.inferno.up === true,
+			"inferno is not the 50-floor tower",
+		);
+	},
+);
+
 test("inventory", "a picked-up item joins its kind's group", () => {
 	const r = arena("inventory-group");
 	r.p.items = [];

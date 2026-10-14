@@ -5,7 +5,7 @@
 // 絵は 小さな キャンバス（MAP_W × MAP_H）に 画素で 描いて、CSS で 引きのばす（ぼかさない）。
 // 島の 形は はじめに 1回だけ 描いて しまっておく。建物は ここの drawBuilding が 矩形で 描く ドット絵。
 
-import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME, type HeroId } from "../../core/data/heroes";
 import type { DungeonId } from "../../core/types";
 import { heroWalk } from "../../data/people/cast";
@@ -545,7 +545,7 @@ export class MapView {
 		const g = this.goals[d];
 		const boss = g?.objective === "boss" ? "・ボス" : "";
 		this.bubble.innerHTML = open
-			? `<b>${n.name}</b><small>${DUNGEONS[d].floors}階・${isUpBoard(d) ? "上り" : "下り"}${boss}</small>` +
+			? `<b>${n.name}</b><small>${floorsLabel(d)}階・${isUpBoard(d) ? "上り" : "下り"}${boss}</small>` +
 				(g?.event ? `<small class="wm-limited">期間限定</small>` : "")
 			: "<b>？？？</b><small>まだ　行けない</small>";
 		this.bubble.classList.toggle("locked", !open);
@@ -673,7 +673,7 @@ export class MapView {
 		const g = this.goals[d];
 		this.panel.innerHTML = open
 			? `<div class="wm-name">${n.name}<small>（${n.nick}）${star}</small></div>` +
-				`<div class="wm-sub">${dg.floors}階・${isUpBoard(d) ? "上り" : "下り"}　${COLONY_SPOTS[d].place}</div>` +
+				`<div class="wm-sub">${floorsLabel(d)}階・${isUpBoard(d) ? "上り" : "下り"}　${COLONY_SPOTS[d].place}</div>` +
 				(g
 					? `<div class="wm-goal${g.objective === "boss" ? " boss" : ""}">目的：${goalText(d, g.objective)}</div>` +
 						(g.event ? `<div class="wm-limited">${eventText(g)}</div>` : "") +
@@ -980,7 +980,7 @@ const arrivalCard = async (ctx: Ctx, d: DungeonId): Promise<void> => {
 		el("div", { class: "wm-arrive-name", text: n.name }),
 		el("div", {
 			class: "wm-arrive-sub",
-			text: `${COLONY_SPOTS[d].place}を　${up ? "上る" : "降りる"}　${DUNGEONS[d].floors}階`,
+			text: `${COLONY_SPOTS[d].place}を　${up ? "上る" : "降りる"}　${floorsLabel(d)}階`,
 		}),
 		el("div", { class: "wm-arrive-mascot", text: n.mascot }),
 	]);

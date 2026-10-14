@@ -5,7 +5,7 @@
 //   今は見えない所は暗く）→ 演出（飛ぶ道具・攻撃の踏み込み）の順に重ねる。
 // - モンスターの表示位置は UI 側が持つ（core の状態は一瞬で変わるので、演出の途中は古い位置に描く）。
 
-import { dungeonById } from "../../core/data/dungeons";
+import { dungeonOf } from "../../core/data/dungeons";
 import { MONSTERS } from "../../core/data/monsters";
 import { forEachVisible } from "../../core/fov";
 import { type Dir8, spriteDir } from "../../core/geom";
@@ -975,7 +975,7 @@ export const drawMap = (
 	// いちばん底は、原盤を拾うまで階段が無い
 	if (
 		f.seen[f.stairs.y * l.w + f.stairs.x] &&
-		(f.depth < dungeonById(s.dungeon).floors || s.returning)
+		(f.depth < dungeonOf(s).floors || s.returning)
 	)
 		dot(f.stairs.x, f.stairs.y, "#ffffff");
 	for (const t of opt.traps ?? f.traps)

@@ -438,6 +438,11 @@ export type RunState = {
 	/** どのダンジョンか。 */
 	dungeon: DungeonId;
 	/**
+	 * この 冒険の 階の 数（底の 深さが 潜るたびに かわる 板だけ。Run.create が 引く：data/dungeons.ts の randomFloors）。
+	 * ほかの 板では 書かない（前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
+	 */
+	floors?: number;
+	/**
 	 * 目的（村で 決めて Run.create に 渡す）。fetch のときは 書かない（無ければ fetch。
 	 * 前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
 	 */

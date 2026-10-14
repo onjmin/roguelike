@@ -558,9 +558,10 @@ export const DUNGEON_NAMES: Record<
 		nick: "水星",
 		mascot: "水星の名無し",
 		rules: [
-			"おんJに　飽きた　人の　ほのぼの板。9階",
-			"ほのぼの：HPの　自然回復が　はやい",
-			"杖だけ　未識別。のろいは　ない",
+			"おんJに　飽きた　人の　ほのぼの板。6階",
+			"宝の　板：道具が　多く、罠は　安価だけ",
+			"祭りも　ない。敵は　少ない",
+			"HPの　自然回復が　はやい。杖だけ　未識別",
 		],
 	},
 	onmu: {
@@ -569,9 +570,9 @@ export const DUNGEON_NAMES: Record<
 		nick: "おんMu",
 		mascot: "ムーミン谷の名無し　§^ム^§",
 		rules: [
-			"呑気な　おんJを　求めて　作られた　板。11階",
-			"過疎：敵も　道具も　少ない",
-			"草・スレ・杖が　未識別",
+			"呑気な　おんJを　求めて　作られた　板。7〜17階",
+			"沈む　大陸：底の　深さが　潜るたびに　かわる",
+			"過疎：敵も　道具も　少ない。草・スレ・杖が　未識別",
 		],
 	},
 	onkimu: {
@@ -580,9 +581,9 @@ export const DUNGEON_NAMES: Record<
 		nick: "キムチ板",
 		mascot: "キムりん　🌶",
 		rules: [
-			"キムチを　愛する　板から　始まった。13階",
-			"植民地が　多い：祭りが　出やすい",
-			"ぜんぶ　未識別",
+			"キムチを　愛する　板から　始まった。10階",
+			"植民地戦争の　最前線：1階から　敵が　強い",
+			"倉庫の　装備で　挑め。祭りが　多い。ぜんぶ　未識別",
 		],
 	},
 	inferno: {
@@ -591,9 +592,10 @@ export const DUNGEON_NAMES: Record<
 		nick: "中二病　専用板",
 		mascot: "†名も無き暗黒の使い†",
 		rules: [
-			"邪気眼に　魅入られし　者の　板。15階",
-			"闇の　力：杖の　回数が　1　多い",
-			"ぜんぶ　未識別。解呪スレが　多い",
+			"邪気眼に　魅入られし　者の　塔。50階",
+			"†闇の　試練†：倉庫の　道具は　持ちこめない",
+			"魔導書を　持ったまま　帰還スレで　帰れる",
+			"杖の　回数が　1　多い。ぜんぶ　未識別。解呪スレが　多い",
 		],
 	},
 	// 束音ロゼの 依頼（engine/heroes.ts）
@@ -987,14 +989,7 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 // ───────────────── 目的の品 ─────────────────
 /** 本編の「長湯スレ」は core/data/items.ts にある（desc は同じ書き方）。 */
 export const GOAL_ITEMS: Record<
-	| "shallow"
-	| "deep"
-	| "opunu"
-	| "isle1"
-	| "isle3"
-	| "ato"
-	| "hinan"
-	| "y1901",
+	"shallow" | "deep" | "opunu" | "isle1" | "isle3" | "ato" | "hinan" | "y1901",
 	{ id: string; name: string; desc: string }
 > = {
 	shallow: {
@@ -1825,13 +1820,7 @@ export const BOSS_HOME: Partial<Record<DungeonId, string>> = {
  * relief は きのこ板 で5回 倒れて 本編が開いたとき（きのこ板の ネタは シヨが 貼っておく）。
  */
 export const UNLOCK_LINES: Record<
-	| "main"
-	| "deep"
-	| "relief"
-	| "colony"
-	| "hidden"
-	| "opunu"
-	| "isle3",
+	"main" | "deep" | "relief" | "colony" | "hidden" | "opunu" | "isle3",
 	readonly Line[]
 > = {
 	main: [

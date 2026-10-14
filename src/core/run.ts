@@ -35,7 +35,12 @@ import {
 	VOICE_FREEZE,
 	WAKE_CHANCE,
 } from "./balance";
-import { type BossSpec, type Dungeon, dungeonById } from "./data/dungeons";
+import {
+	type BossSpec,
+	type Dungeon,
+	dungeonById,
+	dungeonOf,
+} from "./data/dungeons";
 import {
 	HERO_NAME,
 	type HeroId,
@@ -178,9 +183,14 @@ export class Run {
 		/** 同行の 依頼で ついてくる 同行者（core/guest.ts。乱数は 引かない。いなければ 書かない）。 */
 		guest: GuestSpec | null = null,
 	): Run {
-		const dg = dungeonById(dungeon);
-		const boss = objective === "boss" && !!dg.boss;
+		const base = dungeonById(dungeon);
+		const boss = objective === "boss" && !!base.boss;
 		const rng = Rng.fromSeed(seed);
+		// 底の 深さが かわる 板（おんMu）だけ、はじめに 深さを 引く（ほかの 板は 乱数の 順が 前と 同じ）
+		const floors = base.randomFloors
+			? rng.range(base.randomFloors.min, base.randomFloors.max)
+			: undefined;
+		const dg = dungeonOf({ dungeon: base.id, floors });
 		// モンスターハウス（祭り）の階（本編は 5階から 1/16 ずつ。B8 までに無ければ B6〜8 のどこかに1つ）。
 		const houses: number[] = [];
 		if (dg.houses) {
@@ -241,6 +251,8 @@ export class Run {
 			v: SAVE_VERSION,
 			seed,
 			dungeon: dg.id,
+			// 底の 深さが かわる 板だけ 書く（ほかの 板は 前の 版と 同じ 形の まま）
+			...(floors !== undefined ? { floors } : {}),
 			// fetch は 書かない（無ければ fetch。前の 版と 同じ 形の まま）
 			...(boss ? { objective: "boss" as const } : {}),
 			rng: rng.state(),
@@ -339,7 +351,7 @@ export class Run {
 
 	/** このダンジョン。 */
 	get dungeon(): Dungeon {
-		return dungeonById(this.s.dungeon);
+		return dungeonOf(this.s);
 	}
 
 	/** その階が 本編の何階ぶんの強さか（敵・罠・祭りの大きさ・変化の杖を引くのに使う）。 */

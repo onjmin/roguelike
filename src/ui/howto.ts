@@ -3,7 +3,7 @@
 // 1つの長い窓にすると、スマホでは読みたい所まで巻き取るのが手間なので、項目ごとに分けている。
 // 1ページが だいたい画面に収まるくらいの量にする。
 
-import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { DUNGEON_NAMES } from "../data/story/story";
 import type { Ctx } from "./ctx";
 import { infoWindow, listWindow } from "./list";
@@ -228,7 +228,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 				.map(
 					(d) =>
 						h(
-							`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${DUNGEONS[d].floors}階`,
+							`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${floorsLabel(d)}階`,
 						) + lines([...DUNGEON_NAMES[d].rules]),
 				)
 				.join(""),

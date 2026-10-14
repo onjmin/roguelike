@@ -19,7 +19,7 @@
 //   倉庫・売り → 町が 育つ（場面は ui/village/villageReturn.ts。あずける 一覧だけ ui/village/home.ts）。
 // - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/village/villageOpening.ts）。
 
-import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME } from "../../core/data/heroes";
 import { MONSTERS } from "../../core/data/monsters";
 import { CARRY_MAX, STORAGE_CAP } from "../../core/town";
@@ -182,7 +182,7 @@ import { openWorldMap, pickColony, travelTo } from "./worldMap";
 
 /** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
 const signText = (d: DungeonId): string =>
-	`「${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）」　${DUNGEONS[d].floors}階${loadProgress().cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`;
+	`「${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）」　${floorsLabel(d)}階${loadProgress().cleared.includes(d) ? "　★" : ""}\n${DUNGEON_DESC[d]}`;
 
 /** 立て札の 2枚目から（板の ようすと ほかの 決まり・マスコット）。 */
 const signMore = (d: DungeonId): string[] => {

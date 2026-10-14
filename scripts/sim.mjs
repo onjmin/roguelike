@@ -9,6 +9,8 @@
 //   pnpm sim -- --objective boss  … 目的（fetch / boss。既定は そのダンジョンの 既定。boss の ない 板は fetch）
 //   pnpm sim -- --reach           … 目的に たどりつくまで 倒れない（底の つり合いを 見る。下の REACH）
 //   pnpm sim -- --reach --lag 3   … --reach で 足す レベルを「その階の 強さ − 3」までに（既定は 下の LAG）
+//   pnpm sim -- --carry steel+3,steelsh+3,h_heal … 倉庫から 持ちこむ 道具（種類+修正値。のろいなし・正体つき。
+//                                                   持ちこみ 不可の 板では 村と 同じく 持ちこまない）
 //
 // Vite の SSR で src/core を読み込む（ビルドせずに TS のまま動かす）。
 // 例外が出たら シードと スタックを出して 終了コード 1。
@@ -37,9 +39,15 @@ const DUNGEON = arg("dungeon", "main");
 // 目的（fetch / boss）。無ければ その板の 既定
 const OBJECTIVE = arg("objective", null);
 // 筋で ついてくる 同行者（zero / feris / shobon。core/guest.ts）。無ければ ひとり
-const GUEST = arg("guest", null)
-	? { id: arg("guest", null), goal: 999 }
-	: null;
+const GUEST = arg("guest", null) ? { id: arg("guest", null), goal: 999 } : null;
+// 倉庫から 持ちこむ 道具（kind+plus を カンマで）
+const CARRY = (arg("carry", "") ?? "")
+	.split(",")
+	.filter(Boolean)
+	.map((t) => {
+		const [kind, plus] = t.split("+");
+		return { kind, plus: Number(plus ?? 0) };
+	});
 const MAX_ACTIONS = 60000;
 
 const server = await createServer({
@@ -65,6 +73,17 @@ try {
 		"/src/core/data/dungeons.ts",
 	);
 	const { EXP_AT } = await server.ssrLoadModule("/src/core/balance.ts");
+	const { rollItem } = await server.ssrLoadModule("/src/core/item.ts");
+	const { Rng } = await server.ssrLoadModule("/src/core/rng.ts");
+	const carryItems = dungeonById(DUNGEON).noCarry
+		? []
+		: CARRY.map((c, i) => ({
+				...rollItem(Rng.fromSeed(`carry-${i}`), 0, c.kind, { curses: false }),
+				plus: c.plus,
+				cursed: false,
+				known: true,
+			}));
+	// いちばん 深い ときの 底（底の 深さが かわる 板は 冒険ごとの 底を results の floors で 見る）
 	const LAST_DEPTH = dungeonById(DUNGEON).floors;
 	if (dungeonById(DUNGEON).id !== DUNGEON) {
 		console.error(`知らないダンジョン: ${DUNGEON}`);
@@ -112,7 +131,16 @@ try {
 			return r;
 		};
 		run = godify(
-			Run.create(seed, DUNGEON, [], objective, true, false, "kiriko", GUEST),
+			Run.create(
+				seed,
+				DUNGEON,
+				carryItems,
+				objective,
+				!carryItems.length,
+				false,
+				"kiriko",
+				GUEST,
+			),
 		);
 		const lvAt = {};
 		const turnsAt = {};
@@ -139,7 +167,7 @@ try {
 					turnsAt[lastDepth] = run.s.turn;
 					lastDepth = run.s.depth;
 				}
-				if (!bottomAt && run.s.depth >= LAST_DEPTH) {
+				if (!bottomAt && run.s.depth >= run.dungeon.floors) {
 					const p = run.s.player;
 					bottomAt = { lv: p.lv, maxHp: p.maxHp, turn: run.s.turn };
 				}
@@ -168,6 +196,7 @@ try {
 			end: s.end?.kind ?? "stuck",
 			cause: s.end?.cause ?? "(行動の上限)",
 			depth: s.stats.maxDepth,
+			floors: run.dungeon.floors,
 			finalDepth: s.depth,
 			returning: s.returning,
 			lv: s.player.lv,
@@ -185,13 +214,13 @@ try {
 	const clears = results.filter((r) => r.end === "clear").length;
 	const escapes = results.filter((r) => r.end === "escape").length;
 	const stuck = results.filter((r) => r.end === "stuck").length;
-	const reached = results.filter((r) => r.depth >= LAST_DEPTH).length;
+	const reached = results.filter((r) => r.depth >= r.floors).length;
 	console.log(
 		`\n${n}回（${objective}${REACH ? `・目的まで 倒れない・強さ − ${LAG}` : ""}）　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
 	);
 	// いちばん底に 着いた 冒険の うち：fetch は 入口まで 帰れた・boss は ボスに 勝った 割合
 	{
-		const got = results.filter((r) => r.depth >= LAST_DEPTH);
+		const got = results.filter((r) => r.depth >= r.floors);
 		const won = got.filter((r) => r.end === "clear").length;
 		const rate = got.length ? ((won / got.length) * 100).toFixed(1) : "-";
 		const kinds = {};
