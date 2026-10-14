@@ -25,6 +25,7 @@ import { MONSTERS } from "../../core/data/monsters";
 import { CARRY_MAX, STORAGE_CAP } from "../../core/town";
 import type { DungeonId, Item } from "../../core/types";
 import { CAST } from "../../data/people/cast";
+import { guestFor } from "../../data/people/companions";
 import { HERO_QUESTS, type QuestLine } from "../../data/people/heroQuests";
 import { BOARD_MENU, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { LIBRARY_FROM } from "../../data/story/glossary";
@@ -129,11 +130,12 @@ import { chooseStored, openBag, openStorage } from "./home";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
 import type { Arrival } from "./village";
-import { mobScript, senkyoOpen, senkyoScript } from "./villageMobs";
+import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
 import { chooseRecord, villageSong } from "./villageMusic";
 import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
+	gather,
 	kusaScript,
 	lineUp,
 	lunchScript,
@@ -349,6 +351,20 @@ export const departTo = async (
 	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
 	// 離れていても 毎回 聞かせる（山場の あと 聞けなく なる 一言。STORY.md §5.9）
 	else await s.narrate(DEPART.nanjFar);
+	// 筋で ついてくる 同行者（data/people/companions.ts。選ばない：板と 筋で 決まる）
+	const companion = guestFor(
+		d,
+		loadProgress().cleared,
+		previewStage() ?? loadTown().stage,
+		chosenHero(),
+	);
+	if (companion) {
+		await s.narrate(companion.join);
+		if (companion.speaker) {
+			await gather(s, [companion.speaker]);
+			await s.say(companion.speaker, companion.line);
+		} else await sayAs(s, companion.who as MobId, companion.line);
+	}
 	notePicked(d, false);
 	await hideMsg(s);
 	await travel();
@@ -375,6 +391,7 @@ export const departTo = async (
 		carry,
 		objective: goal.objective,
 		lunch: loadTown().lunch,
+		...(companion ? { guest: companion.who } : {}),
 	});
 };
 

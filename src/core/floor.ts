@@ -74,6 +74,8 @@ export const freeRoomTiles = (
 			if (f.traps.some((i) => i.x === t.x && i.y === t.y)) continue;
 			if (f.monsters.some((m) => m.x === t.x && m.y === t.y)) continue;
 			if (r.s.floor === f && r.p.x === t.x && r.p.y === t.y) continue;
+			// 同行者の マスにも 置かない（core/guest.ts）
+			if (r.s.floor === f && r.isGuestAt(t.x, t.y)) continue;
 			out.push(t);
 		}
 	return out;

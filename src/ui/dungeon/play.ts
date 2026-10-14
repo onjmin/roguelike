@@ -23,6 +23,7 @@ import {
 	type Pos,
 	step,
 } from "../../core/geom";
+import { guestFloorLine, guestHere } from "../../core/guest";
 import { defOf, itemHidden } from "../../core/item";
 import { isFloor, roomAt, T_CORR } from "../../core/mapgen";
 import {
@@ -39,13 +40,19 @@ import {
 	type Command,
 	type Floor,
 	type GameEvent,
+	GUEST_ID,
 	PLAYER_ID,
 	type RescueKind,
 	type RunState,
 	type Trap,
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
-import { heroWalk, KIRIKO_WALK, ZERO_BODY_WALKS } from "../../data/people/cast";
+import {
+	guestWalk,
+	heroWalk,
+	KIRIKO_WALK,
+	ZERO_BODY_WALKS,
+} from "../../data/people/cast";
 import { goalText } from "../../data/story/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
 import { loadImage } from "../../engine/assets";
@@ -642,6 +649,9 @@ export class Play {
 			}
 		};
 		put(PLAYER_ID, heroWalk(run.s), run.p.x, run.p.y, run.p.dir);
+		// 同行者（core/guest.ts。たおれた・まだ 立っていない ときは 描かない）
+		const g = guestHere(run);
+		if (g) put(GUEST_ID, guestWalk(g.id), g.x, g.y, g.dir);
 		for (const m of run.f.monsters) {
 			put(m.uid, monsterSprite(m), m.x, m.y, m.dir);
 			// ボスは 大きく 描く
@@ -842,6 +852,11 @@ export class Play {
 				continue;
 			}
 			if (!live && !warping) continue;
+			// 同行者：キリコから 見える ときだけ
+			if (d.id === GUEST_ID) {
+				if (run.playerSees({ x: d.tx, y: d.ty }, run.p, blind)) figs.push(d);
+				continue;
+			}
 			const m = run.f.monsters.find((x) => x.uid === d.id);
 			if (!m) {
 				// もう たおれたが たおれる 演出の 前：直前の 見え方の まま 描く
@@ -3227,6 +3242,10 @@ export class Play {
 	/** その動きが画面に見えているか（見えない敵・視界の外は待たない）。 */
 	private moveShown(id: number): boolean {
 		if (id === PLAYER_ID) return true;
+		if (id === GUEST_ID) {
+			const g = guestHere(this.run);
+			return !!g && this.run.playerSees(g);
+		}
 		const m = this.run.f.monsters.find((x) => x.uid === id);
 		return !!m && !m.disguise && !posing(m) && this.run.monsterVisible(m);
 	}
@@ -3438,6 +3457,8 @@ export class Play {
 			!up && !this.rp && !boss && !zoneNote
 				? diveResAt(run.s.dungeon, run.s.depth, loadProgress().cleared)
 				: null;
+		// 同行者の ひとこと（筋の 1行が ない 階。帰り道でも 言う）
+		const guestLine = !boss && !zoneNote && !dive ? guestFloorLine(run) : null;
 		const card = el("div", { class: "chapter shown" }, [
 			el("div", {
 				class: "chapter-label",
@@ -3463,6 +3484,10 @@ export class Play {
 										: "いちばん　底"
 									: "",
 			}),
+			// 同行者の ひとこと（core/guest.ts。階に 着くたび。ログにも 出る）
+			...(guestLine
+				? [el("div", { class: "chapter-sub chapter-guest", text: guestLine })]
+				: []),
 		]);
 		this.ctx.ui.appendChild(card);
 		// 次の 階も 同じ 曲なら 止めずに 流しつづける（板の 曲は 全部の 階で 同じ。階段の たびに 頭から
@@ -3470,7 +3495,7 @@ export class Play {
 		if (!first && this.ctx.audio.currentBgm !== floorBgm(run, this.bossShown))
 			await this.ctx.audio.fadeBgm(300);
 		// 筋の 1行が 出る 階は 読む 間だけ 長く
-		await wait((first ? 900 : 850) + (dive ? 1100 : 0));
+		await wait((first ? 900 : 850) + (dive || guestLine ? 1100 : 0));
 		if (this.stopped) {
 			card.remove();
 			return;

@@ -501,6 +501,29 @@ export type RunState = {
 	body?: number;
 	/** 束音ロゼの すり抜けが ON（切りかえ式。OFF の ときは 書かない）。 */
 	phase?: true;
+	/**
+	 * 筋で ついてくる 同行者（core/guest.ts。村で 決めて Run.create に 渡す）。いない 冒険では 書かない
+	 * （前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
+	 */
+	guest?: Guest;
+};
+
+/** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */
+export type GuestId = "zero" | "feris" | "shobon";
+
+export type Guest = {
+	id: GuestId;
+	x: number;
+	y: number;
+	dir: Dir8;
+	hp: number;
+	maxHp: number;
+	/** たおれて 村へ 帰った（冒険は つづく）。 */
+	down?: true;
+	/** この 階に まだ 立っていない（キリコの まわりが ふさがっていた。空けば 次の ターンに 立つ）。 */
+	off?: true;
+	/** キリコへ 近づけなかった ターン数（続けて）。 */
+	stuck?: number;
 };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────
@@ -594,3 +617,5 @@ export type GameEvent =
 
 /** プレイヤーの id（イベントの id）。モンスターは uid（1 以上）。 */
 export const PLAYER_ID = 0;
+/** 同行者の id（イベントの id。モンスターの uid は 1 から、キリコは 0）。 */
+export const GUEST_ID = -1;

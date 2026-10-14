@@ -20,6 +20,7 @@ import {
 	rotate,
 	step,
 } from "./geom";
+import { guestTargetDir, meleeGuest } from "./guest";
 import { defOf, isKeyItem } from "./item";
 import { isFloor, roomAt, roomExits, roomTiles } from "./mapgen";
 import type { Run } from "./run";
@@ -183,6 +184,8 @@ const canEnter = (r: Run, m: Monster, d: Dir8): boolean => {
 	if (!r.cornerOk(m, d)) return false;
 	if (r.monsterAt(to.x, to.y)) return false;
 	if (r.isPlayerAt(to.x, to.y)) return false;
+	// 同行者とも 重ならない（core/guest.ts）
+	if (r.isGuestAt(to.x, to.y)) return false;
 	return true;
 };
 
@@ -334,7 +337,7 @@ const inLine = (r: Run, m: Pos, target: Pos, maxRange: number): Dir8 | null => {
 		if (!r.cornerOk(p, d)) return null;
 		p = step(p, d);
 		if (!isFloor(r.f.layout, p.x, p.y)) return null;
-		if (r.monsterAt(p.x, p.y)) return null;
+		if (r.monsterAt(p.x, p.y) || r.isGuestAt(p.x, p.y)) return null;
 	}
 	if (!r.cornerOk(p, d)) return null;
 	return d;
@@ -413,6 +416,13 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		if (r.isPlayerAt(to.x, to.y) && r.cornerOk(m, m.dir)) meleePlayer(r, m);
 		else if (canEnter(r, m, m.dir)) moveTo(r, m, m.dir);
 		else m.dir = r.rng.pick(DIRS8);
+		return;
+	}
+
+	// キリコの となりに いなくて 同行者の となりなら、同行者を なぐる（core/guest.ts）
+	const toGuest = guestTargetDir(r, m);
+	if (toGuest !== null) {
+		meleeGuest(r, m, toGuest);
 		return;
 	}
 
@@ -1013,7 +1023,9 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 		const to = step(p, d);
 		// 束音ロゼは すり抜けが ON なら 壁の 中まで 飛ぶ（いちばん 外の 壁と 敵には ぶつかる）
 		const free = r.phasing
-			? r.playerCanStep(p, d) && !r.monsterAt(to.x, to.y)
+			? r.playerCanStep(p, d) &&
+				!r.monsterAt(to.x, to.y) &&
+				!r.isGuestAt(to.x, to.y)
 			: r.cornerOk(p, d) && r.isFree(to.x, to.y);
 		if (!free) {
 			r.msg(`${seenName(r, m)}に　吹きとばされて　ぶつかった！`, "warn");

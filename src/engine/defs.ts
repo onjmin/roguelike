@@ -2,7 +2,13 @@
 // rpg の engine/defs.ts から、村で使う物だけを残した（戦闘・仲間・なかよし度・セーブは無い）。
 // 村のデータは src/data/village/、スクリプトは src/ui/village/villageEvents.ts に書く（おんJ 本館の 中は ui/village/hallEvents.ts）。
 
-import type { DungeonId, Item, Objective, RunState } from "../core/types";
+import type {
+	DungeonId,
+	GuestId,
+	Item,
+	Objective,
+	RunState,
+} from "../core/types";
 import type { KirikoMode, Speaker } from "../data/story/quotes";
 import type { CrowdNode, PedCost } from "../data/village/crowd";
 import type { SavedReplay } from "./save";
@@ -121,6 +127,8 @@ export type VillageExit =
 			objective: Objective;
 			/** ぷゆゆの お弁当を 持って 出る。 */
 			lunch: boolean;
+			/** 筋で ついてくる 同行者（data/people/companions.ts の guestFor。いなければ 書かない）。 */
+			guest?: GuestId;
 	  }
 	| { kind: "continue"; state: RunState }
 	| { kind: "replay"; replay: SavedReplay };

@@ -9,6 +9,7 @@ import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
 import { FAKE_NAMES, OLD_FAKE_NAMES } from "../core/data/names";
+import { GUESTS } from "../core/guest";
 import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
@@ -16,6 +17,7 @@ import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
 import {
 	CAT_ORDER,
 	type DungeonId,
+	type GuestId,
 	type Item,
 	type Objective,
 	type RunState,
@@ -1028,6 +1030,8 @@ export type SavedReplay = {
 	rom?: boolean;
 	/** 冒険に 出た 主人公（キリコなら 書かない。core/data/heroes.ts）。 */
 	hero?: "roze" | "zero";
+	/** 筋で ついてきた 同行者（いなければ 書かない。core/guest.ts）。 */
+	guest?: GuestId;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -1108,12 +1112,14 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
+	if (r.guest !== undefined && !(r.guest in GUESTS)) return null;
 	return renamed({
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.noLunch ? { noLunch: true } : {}),
 		...(r.rom ? { rom: true } : {}),
 		...(r.hero ? { hero: r.hero } : {}),
+		...(r.guest ? { guest: r.guest } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
 		...(r.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: r.at,
@@ -1156,6 +1162,7 @@ const addReplay = (s: RunState): void => {
 		...(s.noLunch ? { noLunch: true } : {}),
 		...(s.rom ? { rom: true } : {}),
 		...(s.hero ? { hero: s.hero } : {}),
+		...(s.guest ? { guest: s.guest.id } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

@@ -6,8 +6,9 @@ import "./style.css";
 import { EXP_AT } from "./core/balance";
 import { type HeroId, isHeroId } from "./core/data/heroes";
 import { callHunter } from "./core/floor";
+import { GUESTS } from "./core/guest";
 import { Run } from "./core/run";
-import type { Item } from "./core/types";
+import type { GuestId, Item } from "./core/types";
 import { bgm } from "./data/audio/bgm";
 import { sfx } from "./data/audio/sfx";
 import { devEvent } from "./data/story/objectives";
@@ -139,7 +140,7 @@ const newSeed = (): string =>
 /**
  * 開発用：URL で好きな階から始める（pnpm dev か ?debug のときだけ）。
  * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ほかの 板も。`&objective=boss` で いちばん底に ボス。
- * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ）
+ * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ。`&guest=zero` で 同行者つき）
  */
 const devRun = (): Run | null => {
 	const q = new URLSearchParams(location.search);
@@ -157,6 +158,8 @@ const devRun = (): Run | null => {
 		true,
 		false,
 		isHeroId(q.get("hero")) ? (q.get("hero") as HeroId) : "kiriko",
+		// 同行者（&guest=zero・feris・shobon。core/guest.ts）
+		(q.get("guest") ?? "") in GUESTS ? (q.get("guest") as GuestId) : null,
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
@@ -187,6 +190,7 @@ const runFor = (
 				!replay.noLunch,
 				!!replay.rom,
 				replay.hero ?? "kiriko",
+				replay.guest ?? null,
 			),
 			replay,
 		};
@@ -204,6 +208,7 @@ const runFor = (
 				choice.lunch,
 				romNow(),
 				chosenHero(),
+				choice.guest ?? null,
 			);
 			return { run, replay: undefined };
 		}
@@ -223,6 +228,7 @@ const runFor = (
 			lunch,
 			romNow(),
 			chosenHero(),
+			choice.guest ?? null,
 		);
 		if (carry.length || relief.length) saveRun(run.s);
 		return { run, replay: undefined };

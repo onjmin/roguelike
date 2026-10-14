@@ -63,6 +63,13 @@ import {
 	step,
 } from "./geom";
 import {
+	guestAct,
+	guestEnterFloor,
+	isGuestAt,
+	newGuest,
+	swapWithGuest,
+} from "./guest";
+import {
 	defOf,
 	identifyKind,
 	isKeyItem,
@@ -95,6 +102,7 @@ import {
 	type Floor,
 	type FloorItem,
 	type GameEvent,
+	type GuestId,
 	HOLD,
 	type Item,
 	type ItemCat,
@@ -167,6 +175,8 @@ export class Run {
 		rom = false,
 		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
 		hero: HeroId = "kiriko",
+		/** 筋で ついてくる 同行者（core/guest.ts。乱数は 引かない。いなければ 書かない）。 */
+		guest: GuestId | null = null,
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;
@@ -259,6 +269,7 @@ export class Run {
 		if (lunch) for (const k of dg.start) player.items.push(run.newItem(k));
 		else s.noLunch = true;
 		if (rom) s.rom = true;
+		if (guest) s.guest = newGuest(guest);
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
 			s.carriedIn = carry.map((it) => ({ ...it }));
@@ -508,6 +519,11 @@ export class Run {
 		return this.p.x === x && this.p.y === y;
 	}
 
+	/** 同行者が 立っているか（core/guest.ts。敵も キリコも 重ならない マス）。 */
+	isGuestAt(x: number, y: number): boolean {
+		return isGuestAt(this, x, y);
+	}
+
 	// ───────────────── 主人公（core/data/heroes.ts） ─────────────────
 
 	get hero(): HeroId {
@@ -593,7 +609,8 @@ export class Run {
 		return (
 			isFloor(this.f.layout, x, y) &&
 			!this.monsterAt(x, y) &&
-			!this.isPlayerAt(x, y)
+			!this.isPlayerAt(x, y) &&
+			!this.isGuestAt(x, y)
 		);
 	}
 
@@ -763,6 +780,7 @@ export class Run {
 	enterFloor(depth: number, fell: boolean): void {
 		const s = this.s;
 		const carried = carryAnka(s.floor);
+		const first = s.depth === 0;
 		s.depth = depth;
 		s.stats.maxDepth = Math.max(s.stats.maxDepth, depth);
 		s.floor = buildFloor(this, depth, s.houses.includes(depth) && !s.returning);
@@ -779,6 +797,8 @@ export class Run {
 				this.dungeon.up ? "上の階へ　押し上げられた" : "下の階に　落ちた",
 			);
 		this.updateVision();
+		// 同行者も キリコの そばに 着く（core/guest.ts）
+		guestEnterFloor(this, first);
 		if (!carried && ankaOnArrival(this)) startAnka(this, true);
 	}
 
@@ -1441,6 +1461,10 @@ export class Run {
 			}
 		}
 
+		// 同行者の 番（キリコの あと、敵の 前。core/guest.ts）
+		guestAct(this);
+		if (s.end) return;
+
 		// モンスターの番
 		const cost = p.status.fast > 0 ? 1 : 2;
 		p.nextAt += cost;
@@ -1765,9 +1789,16 @@ export class Run {
 			return st.confuse > 0; // 混乱で壁に向かったときは時間が進む
 		}
 		const from = { x: p.x, y: p.y };
+		// 同行者の マスへ 歩いたら 入れかわる（壁の 中からは 入れかわれない：重ならない ように 止まる）
+		const swap = this.isGuestAt(to.x, to.y);
+		if (swap && !isFloor(this.f.layout, from.x, from.y)) {
+			this.emit({ t: "turn", id: PLAYER_ID, dir: d, bump: true });
+			return false;
+		}
 		p.x = to.x;
 		p.y = to.y;
 		this.emit({ t: "move", id: PLAYER_ID, from, to, dir: d });
+		if (swap) swapWithGuest(this, from, to, d);
 		this.afterStep(noPickup);
 		return true;
 	}

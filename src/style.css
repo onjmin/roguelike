@@ -1669,6 +1669,12 @@ body.jolt #app {
 	font-size: 13px;
 }
 
+/* 同行者の ひとこと（core/guest.ts）。副題の 下に、少し あかるく */
+.chapter-guest {
+	margin-top: 6px;
+	color: #f0e6c8;
+}
+
 /* 地震の3回目：2ch の 1001（このスレッドは1000を超えました）。書きこまれて、下の階へ 落ちる */
 .over1000 {
 	position: absolute;

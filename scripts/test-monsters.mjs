@@ -51,6 +51,9 @@ try {
 		"/src/sim/arcadeTests.ts",
 	);
 	const { runHeroTests } = await server.ssrLoadModule("/src/sim/heroTests.ts");
+	const { runGuestTests } = await server.ssrLoadModule(
+		"/src/sim/guestTests.ts",
+	);
 	const { runBushitsuTests } = await server.ssrLoadModule(
 		"/src/sim/bushitsuTests.ts",
 	);
@@ -73,6 +76,7 @@ try {
 		...(await runNetaTests()),
 		...(await runArcadeTests()),
 		...(await runHeroTests()),
+		...(await runGuestTests()),
 		...(await runBushitsuTests()),
 		...(await runFolkTests()),
 		...(await runSeasonTests()),
