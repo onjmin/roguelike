@@ -387,6 +387,39 @@ test("つなぎ: 部屋の 物を 調べると 文 → 品書き（ui/village/fa
 	});
 });
 
+test("つなぎ: カジノの 換金所は 台の うしろの 受付と 話しても、台を 調べても 同じ 窓", async () => {
+	await withStore(async () => {
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: [],
+		};
+		const f = fac("casino");
+		const who = f.room?.people?.find((p) => p.id === "casino_cashier");
+		ok(who?.play === "cashier", "receptionist");
+		// 受付の 前（上）は 換金所の 台の まんなか（物に しない：台ごしに 受付と 話す）、両はしは 換金所
+		const row = f.room?.rows[(who?.at[1] ?? 0) - 1] ?? "";
+		const x = who?.at[0] ?? 0;
+		ok(row[x] === "=" && !f.room?.things["="], `counter ${row[x]}`);
+		ok(
+			f.room?.things[row[x - 1] ?? ""] === "cashier" &&
+				f.room?.things[row[x + 1] ?? ""] === "cashier",
+			"counter ends",
+		);
+		const events = buildFacility(f, view, CTX).events ?? [];
+		const status = `narrate: ${fill(CASHIER.status, { chips: 0, have: yen(0) })}`;
+		for (const id of ["casino_cashier", "cashier_0"]) {
+			const ev = events.find((e) => e.id === id);
+			ok(ev?.run, `event ${id}`);
+			if (!ev?.run) continue;
+			const r = recorder([2]);
+			await ev.run(r.s);
+			ok(r.log.includes(status), `${id}: ${r.log.join(" / ")}`);
+			ok(r.log.at(-1) === `choose: ${CASHIER.menu.join("/")}`, `${id} menu`);
+		}
+	});
+});
+
 // ───────────────── 文・音 ─────────────────
 
 test("文: 窓は 22×2、板の 題と 押し方は 1行 22、ボタン 9", () => {

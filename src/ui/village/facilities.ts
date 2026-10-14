@@ -309,6 +309,8 @@ export const buildFacility = (
 						await keeperTalk(ctx, s, f.id, who.name, lines);
 					else
 						for (const l of lines) await s.say("nanj", l, { name: who.name });
+					// カジノの 換金所の 受付：ひとこと → 換金所の 窓（ui/arcade/casinoChips.ts）
+					if (who.play === "cashier") await arcadePlay(ctx, s, "cashier");
 					// 町の 寄り道で 板を 見つける（碁会所の 常連。data/town/finds.ts）
 					await townFind(s, f.id, who.id);
 					// キリコの 家を 買った あとなら、1度だけ 家具を くれる 住人（ui/village/myhome.ts）

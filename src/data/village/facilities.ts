@@ -137,9 +137,10 @@ export type FacilityPerson = {
 	lines: readonly string[];
 	/**
 	 * 話すと 品書きが 出る 店番（eat。data/town/eateries.ts の EAT_MENUS[施設の id]。話す たびに lines を 1つ
-	 * 出して から 品書き。ui/minigames/eat.ts）。
+	 * 出して から 品書き。ui/minigames/eat.ts）。cashier＝カジノの 換金所の 受付（lines の あと 換金所の 窓。
+	 * ui/arcade/casinoChips.ts の cashierScript）。
 	 */
-	play?: "eat";
+	play?: "eat" | "cashier";
 };
 
 export type FacilityRoom = {
@@ -3604,7 +3605,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 		doorSe: "doorSteel",
 		// 中：赤い 幕の 壁と 金の ふちの じゅうたん。奥に スロット 10台・パチンコ 2台（色ちがい）と 丸いす、
 		// まんなかに 左から バカラの 緑の 台・ルーレット（盤と 賭けの 台。横に ディーラー）・ハイ＆ローと
-		// ブラックジャックの 半円の 台、その 手前に ポーカーの 緑の 台（ディーラーが 配る）、手前に チップの 窓口
+		// ブラックジャックの 半円の 台、その 手前に ポーカーの 緑の 台（ディーラーが 配る）、右手前に 換金所の 台（うしろに 受付の お姉さん）
 		// （2026-10-13 に 台を ふやして 幅 16 に。2026-10-15 作者「ポーカーは スロットの 筐体より テーブルで やる
 		// ゲーム」：ビデオポーカーの 筐体を スロットに かえ、ポーカーは 台に）
 		room: {
@@ -3619,8 +3620,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"#efg.RrL.tuvwxy#",
 				"#..............#",
 				"#.123..........#",
-				"#.456..........#",
-				"#F........[=].F#",
+				"#.456.....[=]..#",
+				"#F............F#",
 				"#######DD#######",
 			],
 			tiles: (k) => ({
@@ -3704,8 +3705,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				w: "blackjack",
 				x: "blackjack",
 				y: "blackjack",
+				// まんなかの "=" は 物に しない（台ごしに 受付と 話す）
 				"[": "cashier",
-				"=": "cashier",
 				"]": "cashier",
 				F: "plant",
 			},
@@ -3762,6 +3763,16 @@ const BASE_FACILITIES: readonly Facility[] = [
 					lines: [
 						"5枚　配って、1回だけ　かえられる。\nジャックの　ペアから　払いもどしや",
 					],
+				},
+				// 換金所の 台の うしろの 受付（話すと ひとこと → 換金所の 窓。台を 調べても 同じ 窓。RPGEN「女村人」）
+				{
+					id: "casino_cashier",
+					walk: "sa:gb0HD8",
+					at: [11, 10],
+					dir: "up",
+					name: "換金所の　お姉さん",
+					lines: ["チップの　購入・換金は\nこちらで　承ります"],
+					play: "cashier",
 				},
 			],
 		},
