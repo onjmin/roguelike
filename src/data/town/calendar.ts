@@ -28,7 +28,10 @@ export const today = (): Today => {
  * 開発中（pnpm dev か ?debug）は URL の &hour=0〜23 で 決め打ちできる。
  */
 export const nowHour = (): number => {
-	const h = new Date().getHours();
+	// 試験（pnpm test）は 昼に 決め打ち（時間帯の 台詞・色が 試験を 走らせた 時刻で かわらない ように。
+	// &hour= の ある 試験は そちらが 先）
+	const test = (globalThis as { __testHour?: number }).__testHour;
+	const h = typeof test === "number" ? test : new Date().getHours();
 	if (typeof location === "undefined") return h;
 	const q = new URLSearchParams(location.search);
 	if (!import.meta.env.DEV && !q.has("debug")) return h;

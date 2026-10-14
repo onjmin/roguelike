@@ -19,7 +19,18 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 	nanj: { name: "やきう", color: "#f5d142" },
 };
 
-export type Quote = { who: Speaker; text: string };
+/** 時間帯（data/village/crowd.ts の TimeBand と 同じ。型だけ）。 */
+export type QuoteBand = "late" | "morning" | "day" | "evening" | "night";
+
+export type Quote = {
+	who: Speaker;
+	text: string;
+	/**
+	 * この 時間帯だけ 出る（端末の 時刻。村の 色・人通りと 同じ 時計）。省けば いつでも。
+	 * 時刻を 言う 台詞（ナイター・夜ふかし・おはよう）は ここで しばる（2026-10-14 紐づけの 見直し）。
+	 */
+	bands?: readonly QuoteBand[];
+};
 
 /**
  * キリコの ことば（口数は 少ないが、ふつうに 会話に 加わる。吾輩・ンゴで 短く。2026-10-14 に 喋らない 主人公を やめた）。
@@ -88,6 +99,12 @@ export type QuoteContext = {
 } | null;
 
 const q = (who: Speaker, text: string): Quote => ({ who, text });
+/** 時間帯だけ 出る 台詞。 */
+const qb = (
+	bands: readonly QuoteBand[],
+	who: Speaker,
+	text: string,
+): Quote => ({ who, text, bands });
 
 // ───────────────── はじめて（まだ降りていない） ─────────────────
 const FIRST: readonly Quote[] = [
@@ -108,6 +125,9 @@ const SHALLOW: readonly Quote[] = [
 	q("roze", "入口の　あたりは　忘れスレの霊が\n多いアル。……知り合いアル"),
 	q("shiyo", "もう　帰ってきたの？\n……掃除、まだ　終わってないわよ"),
 	q("zero", "おかえりなさい！　ハグの　準備が\n……あ、いらない。了解です"),
+	// 夜だけ（ナイターの 時間）
+	qb(["night"], "nanj", "はっや。ナイター、\nまだ　1回の　表やで"),
+	qb(["morning"], "feris", "おはよ〜。朝から\nもう　もどってきた〜？"),
 ];
 
 /** 板の 7割まで。 */
@@ -118,6 +138,8 @@ const MID: readonly Quote[] = [
 	q("feris", "そのへん、自演くん　いるよね〜。\n……私の　別アカじゃ　ないよ〜"),
 	q("shiyo", "ふんっ。まあまあ　じゃない。\n……ほめてないわよ、あたすは"),
 	q("zero", "まんなかまで　行ったんですね。\nサブ機たちと　拍手　しました"),
+	qb(["night"], "nanj", "おかえり。ナイターは\nいま　5回の　裏や"),
+	qb(["evening"], "roze", "夕飯どきアル。\n麻婆豆腐、できてるアル"),
 ];
 
 /** 板の 奥（7割から）。下りの 板。 */
@@ -128,6 +150,9 @@ const DEEP: readonly Quote[] = [
 	q("roze", "そんな　深くまで……。\n麻婆豆腐、食べながら　聞くアル"),
 	q("feris", "そんな　下まで〜？\n私、飛んでも　届かないよ〜"),
 	q("zero", "そんな　深くの　ログ、\nゼロ、はじめて　見ました！"),
+	// 深夜だけ（夜ふかし）
+	qb(["late"], "shiyo", "こんな　時間まで……。\nあなた、ちゃんと　寝てるの？"),
+	qb(["late"], "zero", "深夜です。……ゼロは\n眠らないので、見張ってました"),
 ];
 
 /** 板の 奥（7割から）。上りの 板（塔・やぐら・山）。 */
@@ -265,6 +290,16 @@ const CLEAR: readonly Quote[] = [
 	q("feris", "長湯スレ、いっしょに　きこ〜。\nくしゃみ、がまんするから〜"),
 	q("shiyo", "……お、お帰りなさいませ。\nいまのは　練習よ。練習！"),
 	q("zero", "スレ、伸びました！　ゼロ、拍手の\n音量を　最大に　しました！"),
+	qb(
+		["night", "late"],
+		"feris",
+		"おかえり〜。夜の　おかえりは、\nちょっと　小さい　声で〜",
+	),
+	qb(
+		["morning"],
+		"nanj",
+		"朝イチで　持って帰ったんか。\n……出勤前に　ええもん　見たわ",
+	),
 ];
 
 /** 2回目からの　持ち帰り。 */
@@ -351,12 +386,15 @@ export const pickQuote = (
 	away: readonly Speaker[] = [],
 	/** しゃべらせない 仲間（冒険から 帰って きた 本人。自分を ねぎらわない）。名前が 出てくる セリフは 引く。 */
 	mute: readonly Speaker[] = [],
+	/** いまの 時間帯（時間帯つきの 台詞は その 時間帯だけ。省けば 時間帯つきは 出ない）。 */
+	band?: QuoteBand,
 ): Quote | null => {
 	const pick = (pool: readonly Quote[], salt: number) =>
 		at(
 			pool.filter(
 				(x) =>
 					(!who || x.who === who) &&
+					(!x.bands || (!!band && x.bands.includes(band))) &&
 					!away.includes(x.who) &&
 					!mute.includes(x.who) &&
 					!away.some((w) => x.text.includes(SPEAKERS[w].name)),

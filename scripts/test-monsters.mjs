@@ -9,6 +9,9 @@ import { createServer } from "vite";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
+// 時刻で かわる もの（時間帯の 台詞・色・人通り）は 昼に 決め打ち（data/town/calendar.ts の nowHour）
+globalThis.__testHour = 12;
+
 const server = await createServer({
 	root: ROOT,
 	server: { middlewareMode: true, hmr: false, ws: false },

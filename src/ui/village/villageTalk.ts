@@ -26,14 +26,17 @@ import {
 	mentionsAway,
 	SHALLOW_DEATH,
 } from "../../data/story/story";
+import { nowHour } from "../../data/town/calendar";
 import { TAMPER_LEDGER, TAMPER_TALK, tamperTier } from "../../data/town/tamper";
 import {
+	BAND_IDLE,
 	ESCAPE_QUOTES,
 	TITLE_TOWN_QUOTES,
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
 	ZERO_VOICELESS,
 } from "../../data/town/town";
+import { timeBand } from "../../data/village/crowd";
 import {
 	loadProgress,
 	loadRecords,
@@ -111,8 +114,11 @@ export const deathQuote = (seed: number): Quote | null => {
 	);
 	if ((last.dungeon ?? "main") === "shallow" && seed % 2 === 0 && here.length)
 		return here[seed % here.length] ?? null;
-	return pickQuote(quoteContext(), seed, undefined, away, mute);
+	return pickQuote(quoteContext(), seed, undefined, away, mute, bandNow());
 };
+
+/** いまの 時間帯（端末の 時刻。村の 色・人通りと 同じ）。時間帯つきの 台詞を えらぶ。 */
+const bandNow = () => timeBand(nowHour());
 
 /** 村に いない 仲間（まだ 来ていない・出ていった やきう）。 */
 const away_ = (): Speaker[] =>
@@ -156,7 +162,7 @@ export const titleQuote = (seed: number): Quote | null => {
 	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
 	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
 		return pick(SHALLOW_DEATH, 3);
-	return pickQuote(quoteContext(), seed, undefined, away, mute);
+	return pickQuote(quoteContext(), seed, undefined, away, mute, bandNow());
 };
 
 // ───────────────── 村で 話しかけたとき ─────────────────
@@ -234,8 +240,11 @@ const reaction = (who: Speaker): Quote | null => {
 	if (last.kind === "escape") return mine(ESCAPE_QUOTES);
 	if (last.kind === "clear" && d !== "main") return mine(CLEAR[d]);
 	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
-		return mine(SHALLOW_DEATH) ?? pickQuote(quoteContext(), seed, who);
-	return pickQuote(quoteContext(), seed, who);
+		return (
+			mine(SHALLOW_DEATH) ??
+			pickQuote(quoteContext(), seed, who, [], [], bandNow())
+		);
+	return pickQuote(quoteContext(), seed, who, [], [], bandNow());
 };
 
 /**
@@ -258,10 +267,19 @@ export const markHeard = (who: Speaker): void => {
 	saveHeard(h);
 };
 
+/** 決まった ひとことを 言った 回数（時間帯の ひとことと 交互に する。ページを 閉じれば 消える）。 */
+const idleCount = new Map<Speaker, number>();
+
 /** その人の 決まった ひとこと（新しい話を 聞いたあと）。 */
 const idleLine = (who: Speaker, o: { gate?: boolean }): string => {
 	// 口の前で 見張っている間は 見張りの ひとこと
 	if (who === "nanj" && o.gate) return VILLAGE_IDLE.gate;
+	// 時間帯の ひとこと（昼の ほか。いつもの ひとことと 交互：data/town/town.ts の BAND_IDLE）
+	const n = (idleCount.get(who) ?? 0) + 1;
+	idleCount.set(who, n);
+	const band = bandNow();
+	const timed = band === "day" ? undefined : BAND_IDLE[who][band];
+	if (timed && n % 2 === 1) return timed;
 	const warm = talkHooks.idle(who);
 	if (warm) return warm;
 	const stage = loadTown().stage;

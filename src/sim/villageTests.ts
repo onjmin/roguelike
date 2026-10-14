@@ -171,6 +171,7 @@ import {
 } from "../data/town/tamper";
 import {
 	ARRIVE_MSG,
+	BAND_IDLE,
 	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
@@ -1950,8 +1951,66 @@ const setTown = (stage: number, points: number): void =>
 		JSON.stringify({ points, stage, storage: [], pending: null, returned: [] }),
 	);
 
+test("時間帯の ひとこと：昼の ほかは いつもの ひとことと 交互。どれも 村の 窓に 収まる", () => {
+	withStorage(() => {
+		setTown(0, 0);
+		for (const who of FRIENDS) talkLine(who); // 新しい話を 聞いておく
+		const restore = swapLocation("?debug&hour=21");
+		try {
+			for (const who of FRIENDS) {
+				const lines = [talkLine(who), talkLine(who), talkLine(who)];
+				const night = BAND_IDLE[who].night;
+				ok(
+					!!night && lines.filter((l) => l === night).length >= 1,
+					`${who} never says the night line: ${lines.join(" / ")}`,
+				);
+				ok(
+					lines.some((l) => l !== night),
+					`${who} only says the night line`,
+				);
+			}
+		} finally {
+			restore();
+		}
+		fitsWindow(
+			Object.entries(BAND_IDLE).flatMap(([who, m]) =>
+				Object.values(m).map((t): [string, string] => [
+					`BAND_IDLE.${who}`,
+					t ?? "",
+				]),
+			),
+		);
+	});
+	// 時間帯つきの 台詞は その 時間帯だけ（ナイターは 夜だけ）
+	const nights = [...Array(200).keys()]
+		.map((i) => pickQuote(null, i, "nanj", [], [], "day")?.text ?? "")
+		.concat(
+			[...Array(200).keys()].map(
+				(i) =>
+					pickQuote(
+						{
+							kind: "dead",
+							depth: 1,
+							cause: "x",
+							runs: 1,
+							clears: 0,
+							ratio: 0.1,
+						},
+						i,
+						"nanj",
+						[],
+						[],
+						"day",
+					)?.text ?? "",
+			),
+		);
+	ok(!nights.some((t) => t.includes("ナイター")), "ナイター in the daytime");
+});
+
 test("each friend has one new line per return (「！」), then a short fixed line", () => {
 	withStorage(() => {
+		// 時間帯の ひとことが まざらない 昼に（端末の 時刻で かわらない ように）
+		const restoreLoc = swapLocation("?debug&hour=12");
 		setTown(0, 0);
 		// まだ 一度も もぐっていない：みんなに 新しい話
 		for (const who of FRIENDS)
@@ -1999,6 +2058,7 @@ test("each friend has one new line per return (「！」), then a short fixed li
 		forgetHeardMemo();
 		for (const who of FRIENDS)
 			ok(!hasNews(who), `${who} forgot after a reload`);
+		restoreLoc();
 	});
 	// 保存できなくても この回は 覚えている
 	withStorage(() => {
