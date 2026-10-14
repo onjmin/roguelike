@@ -136,6 +136,7 @@ import {
 	kusaScript,
 	lineUp,
 	lunchScript,
+	mitoruScript,
 	NEWCOMER,
 	newsScript,
 	previewStage,
@@ -345,6 +346,8 @@ export const departTo = async (
 	if (awayFriends(loadProgress().cleared).includes("nanj"))
 		await s.kiriko(DEPART.kiriko, "voice");
 	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
+	// 離れていても 毎回 聞かせる（山場の あと 聞けなく なる 一言。STORY.md §5.9）
+	else await s.narrate(DEPART.nanjFar);
 	notePicked(d, false);
 	await hideMsg(s);
 	await travel();
@@ -906,6 +909,8 @@ const arrivalScript =
 		const dove = !!back || arrival?.kind === "dead";
 		const wrapDue = dove && seen.includes("hinan") && !hasFlag("wrap");
 		const kusaDue = dove && seen.includes("y1901") && !hasFlag("kusa");
+		// 本筋の 結の あと（電池板の 山場の 次の 帰り）
+		const mitoruDue = dove && seen.includes("deep") && !hasFlag("mitoru");
 		// 過去ログの底からは 井戸を のぼって 出てくる（立つのは 井戸の すぐ 下。data/village/map.ts の exitFor）
 		if (back?.dungeon === "hidden") {
 			s.se("stairs");
@@ -935,6 +940,7 @@ const arrivalScript =
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
 		const worry = takeWorryNews();
 		if (worry) await s.narrate(HERO_QUESTS[worry].hint);
+		if (mitoruDue) await mitoruScript(s);
 		// 転（時計が もどる）と 結の あとの「草」
 		if (wrapDue) await wrapScript(s);
 		if (kusaDue) await kusaScript(s);

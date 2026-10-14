@@ -50,6 +50,7 @@ import {
 	GETTER_RETRY,
 	HINAN_NEWS,
 	KUSA_NEWS,
+	MITORU_NEWS,
 	mentionsAway,
 	playPage,
 	ROM_COUNT,
@@ -110,6 +111,7 @@ import {
 	type PendingReturn,
 	type Progress,
 	QUIT_CAUSE,
+	readScrap,
 	settleReturn,
 	type Town,
 } from "../../engine/save";
@@ -117,7 +119,7 @@ import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
-import { deathQuote, fill } from "./villageTalk";
+import { deathQuote, fill, scrapReturnAt } from "./villageTalk";
 
 /**
  * 開発用：`?stage=N` で 描く 町の段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
@@ -442,6 +444,8 @@ export const returnScene = async (
 			}
 			await sayAs(s, p.mob, p.text);
 		} else await playPage(s, p);
+		// 本筋の 語りで 読んだ 去った 人の 最後の レスは、掲示板でも 読んだ ことに する
+		if (p.scrap) readScrap(p.scrap, scrapReturnAt());
 	}
 	// 見おえた（一度きりの 語りは 次から 短く。やきうが 出ていく 語りなら、建て直すと 村に いない）
 	if (a.kind === "clear") noteEnding(a.dungeon);
@@ -711,6 +715,13 @@ export const wrapScript = async (s: Story): Promise<void> => {
 	noteWrap();
 	s.se("chapter");
 	await s.narrate(WRAP_NEWS.open);
+};
+
+/** 本筋の 結の あと（STORY.md §5.9）：電池板の 山場の 次の 帰りに 1回だけ、次スレに 外から「見とるで」。 */
+export const mitoruScript = async (s: Story): Promise<void> => {
+	await gather(s, ["zero", "feris"]);
+	for (const p of MITORU_NEWS.lines) await playPage(s, p);
+	addFlag("mitoru");
 };
 
 /** 結の あと（STORY.md §5.98）：次の 帰りに 1回だけ、鉄塔の 次スレに 外から「草」。喫茶の 柱時計が 動きだす。 */

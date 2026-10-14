@@ -103,6 +103,7 @@ import {
 	GETTER_RETRY,
 	KUSA_NEWS,
 	LIGHTHOUSE_DOOR,
+	MITORU_NEWS,
 	opunuZones,
 	ROM_COUNT,
 	SHALLOW_DEATH,
@@ -2344,6 +2345,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 		pool(`CLEAR.${d}`, CLEAR[d]);
 		pool(`STORY.${d}.ending`, STORY[d].ending);
 		pool(`STORY.${d}.again`, STORY[d].again ?? []);
+		pool(`STORY.${d}.once`, STORY[d].once ?? []);
 	}
 	// やきうが 出ていった あとの かわりの 頁
 	const standIns = [
@@ -2370,6 +2372,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	pool("WRAP_NEWS.pages", WRAP_NEWS.pages);
 	pool("WRAP_NEWS.hinaryAbsent", [WRAP_NEWS.hinaryAbsent]);
 	pool("KUSA_NEWS.lines", KUSA_NEWS.lines);
+	pool("MITORU_NEWS.lines", MITORU_NEWS.lines);
 	texts.push(["WRAP_NEWS.hinary", WRAP_NEWS.hinary]);
 	texts.push(["WRAP_NEWS.after", WRAP_NEWS.after]);
 	texts.push(["WRAP_NEWS.open", WRAP_NEWS.open]);
@@ -2811,10 +2814,7 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 		// 仲間が みんな 越してきた 町（まだ 来ていない 仲間の 場合は 下の 試験）
 		putTown({ stage: 7 });
 		const v = villageView();
-		const cases: [
-			ReturnArrival,
-			readonly { who: Speaker | null; text: string; kiriko?: KirikoMode }[],
-		][] = [
+		const cases: [ReturnArrival, readonly StoryPage[]][] = [
 			[{ kind: "clear", dungeon: "shallow" }, STORY.shallow.ending],
 			[{ kind: "escape", dungeon: "shallow" }, RETURN_PAGES],
 		];
@@ -2842,7 +2842,9 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 							? `kiriko ${p.kiriko}: ${p.text}`
 							: p.who
 								? `say ${p.who}: ${p.text}`
-								: `narrate: ${p.text}`,
+								: p.nanashi
+									? `say nanj: ${p.text}`
+									: `narrate: ${p.text}`,
 					),
 					"fadeOut",
 					"rebuild",
@@ -4274,7 +4276,8 @@ test("裏の 2段目: the 転 opens 1901年の スレ (flag wrap, no news), its 
 			!openable("y1901", [], ["wrap"]),
 		"1901年の スレ opens without both 避難J and the 転",
 	);
-	// 結：やきうは 名無しの 書きこみ だけ。キリコが 自分の 声で 固まるのは 1回。独白は さいごの 1枚だけ
+	// 結：やきうは 名無しの 書きこみ だけ。キリコが 自分の 声で 固まるのは 1回。ひとりで 読むので キリコは
+	// 独白だけ（明かしの 拍に 受けとめる 独白を はさむ）で、さいごの 1枚も 独白
 	const pages = STORY.y1901.ending;
 	ok(
 		pages.every((p) => p.who !== "nanj"),
@@ -4288,8 +4291,9 @@ test("裏の 2段目: the 転 opens 1901年の スレ (flag wrap, no news), its 
 		"Kiriko does not freeze at her own voice exactly once",
 	);
 	ok(
-		pages.findIndex((p) => p.kiriko) === pages.length - 1,
-		"Kiriko thinks before the last page of the 1901 ending",
+		pages.at(-1)?.kiriko === "think" &&
+			pages.every((p) => !p.kiriko || p.kiriko === "think"),
+		"Kiriko speaks aloud alone, or the 1901 ending does not end on her thought",
 	);
 	// やきうの 名前を ふくむ 頁が keep で 包まれていないと、出ていった あとに ending ごと again に かわる
 	ok(
@@ -5505,7 +5509,8 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			got[0] === first &&
 				JSON.stringify(got.slice(1, 1 + n)) ===
 					JSON.stringify(BOSS_RETURN[d]) &&
-				got.length === STORY[d].ending.length + n,
+				got.length ===
+					STORY[d].ending.length + (STORY[d].once?.length ?? 0) + n,
 			`${d}: the boss pages are not right after the arrival`,
 		);
 	}
@@ -5522,16 +5527,19 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			STORY.kinoko.ending[0],
 			...(BOSS_RETURN.kinoko ?? []),
 			...STORY.kinoko.ending.slice(1),
+			// はじめての 持ち帰りなので、去った 人の レスの 頁も
+			...(STORY.kinoko.once ?? []),
 		];
 		ok(
 			JSON.stringify(pagesFor(a)) === JSON.stringify(pages),
 			"the boss pages do not come right after the arrival",
 		);
+		const plain = [...STORY.kinoko.ending, ...(STORY.kinoko.once ?? [])];
 		ok(
 			JSON.stringify(pagesFor({ ...a, objective: "fetch" })) ===
-				JSON.stringify(STORY.kinoko.ending) &&
+				JSON.stringify(plain) &&
 				JSON.stringify(pagesFor({ kind: "clear", dungeon: "kinoko" })) ===
-					JSON.stringify(STORY.kinoko.ending),
+					JSON.stringify(plain),
 			"a fetch clear got boss pages",
 		);
 		ok(
@@ -5551,7 +5559,9 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			inOrder(log, [
 				"show player",
 				...pages.map((p) =>
-					p.who ? `say ${p.who}: ${p.text}` : `narrate: ${p.text}`,
+					p.who || p.nanashi
+						? `say ${p.who ?? "nanj"}: ${p.text}`
+						: `narrate: ${p.text}`,
 				),
 				"fadeOut",
 				`bgm ${villageSong()}`,

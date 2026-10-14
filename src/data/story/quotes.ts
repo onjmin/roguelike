@@ -53,6 +53,11 @@ export type StoryPage = {
 	/** nanashi の 名前欄の 色（無ければ やきうの 黄色。時報之は 灰色）。 */
 	nameColor?: string;
 	/**
+	 * この 頁で 読んだ 切れはし（data/story/scraps.ts の id）。本筋の 語りで 去った 人の 最後の レスを 読んだら、
+	 * 掲示板でも 読んだ ことに する（同じ 1枚を すみに 貼りなおさない）。
+	 */
+	scrap?: string;
+	/**
 	 * 村の 場面の 合図（ui/village/villageReturn.ts）：roms＝ROM専 18体が 口から 歩いてくる、romsLeave＝口へ 帰る、
 	 * getter＝1000取り（別ゲー。ui/minigames/minigames.ts）、selfVoice＝蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結）。
 	 * 地の文の 前に 起きる。
@@ -422,10 +427,21 @@ export const ENDING: StoryPage[] = [
 		who: "nanj",
 		text: "みんな　出ていってから、\nワイ　ひとりで　ここ　保守しとったんや",
 	},
+	// 去った 人を やきうは 知っている（パン板の 切れはしの 人。data/story/scraps.ts）
+	{
+		who: "nanj",
+		text: "社会人に　なった　やつも、\n受験の　やつも。……だれも　もどらんかった",
+	},
 	{
 		who: "nanj",
 		text: "昼は　外で　働いとる。\n夜だけ　来て、「保守」って　書くんや",
 	},
+	{ who: null, text: "……やきうは、ずっと　いるンゴ？", kiriko: "voice" },
 	{ who: "nanj", text: "……1000　いったらな、\nワイ……" },
 	{ who: "nanj", text: "……まあ、ええわ。\nその　ときや" },
 ];
+
+/**
+ * 2回目からの 長湯スレ（夜の 身の上は 1回だけ。くり返すと「言いかけて やめる」が 軽く なる）。
+ */
+export const ENDING_AGAIN: StoryPage[] = ENDING.slice(0, 7);
