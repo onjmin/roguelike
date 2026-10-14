@@ -867,7 +867,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"#LJ......#",
 				"#lj..n...#",
 				"#...[=]..#",
-				"#........#",
+				"#vV.....y#",
 				"#x....oP.#",
 				"####DD####",
 			],
@@ -890,6 +890,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"]": ctr(k.on(riCell("deskDark", 2, 1), ri("laptop"))),
 				x: k.on(ri("boxesB")),
 				o: k.on(base(2, 108), ri("riceCooker")),
+				// パトロールの 自転車・消火器
+				v: k.on(riCell("bike", 0, 0)),
+				V: k.on(riCell("bike", 1, 0)),
+				y: k.on(ri("extinguisher")),
 				P: k.on(ri("standSign")),
 			}),
 			things: {
@@ -906,6 +910,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				x: "lost",
 				o: "pot",
 				P: "patrol",
+				v: "bike",
+				V: "bike",
+				y: "extinguisher",
 			},
 			lines: {
 				wanted: ["手配書。\n「荒らしを　見かけたら　通報を」"],
@@ -919,6 +926,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				lost: ["落とし物の　箱。\n片方だけの　手袋と、トリップの　メモ。"],
 				pot: ["電気ポット。\n湯のみが　2つ　ふせてある。"],
 				patrol: ["立て札「パトロール中」。\n……巡査は　机に　いる。"],
+				bike: ["パトロールの　自転車。\nかごに「保守」の　腕章。"],
+				extinguisher: ["消火器。\n「炎上にも　ききます」の　手書き。"],
 			},
 			people: [
 				{
