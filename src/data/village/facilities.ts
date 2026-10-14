@@ -46,8 +46,8 @@ import {
 	onTop,
 	onUpper,
 	RECEPTION,
-	SIDEWALK,
 	road,
+	SIDEWALK,
 	solid,
 } from "./tiles";
 
@@ -1107,9 +1107,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				P: "atm",
 				C: "coffee",
 				y: "hot",
+				Y: "hot",
 				S: "shelf",
 				T: "shelf",
-				Y: "hot",
 				s: "shelf",
 				t: "shelf",
 				"[": "register",
@@ -2607,10 +2607,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 		name: "コーポ「おんJ荘」",
 		from: 5,
 		at: [80, 31],
-		look: {
-			kind: "grid",
 		// 2階建ての アパート：青い 波板の 屋根・サーモンの 壁に 部屋ごとの 扉と 格子窓・2階の 外廊下の 手すり・
 		// まんなかの 鉄の 外階段（どれも aptRoof・aptWall・aptDoor・aptVent・aptStair の 1つの 組）
+		look: {
+			kind: "grid",
 			rows: ["rrrrr", "dvsvd", "llSll", "dvDvb"],
 			door: "D",
 			keys: {
@@ -3157,10 +3157,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				ソ: "sofa",
 				フ: "sofa",
 				i: "kitchen",
-				K: "kitchen",
-				e: "extinguisher",
 				I: "kitchen",
+				K: "kitchen",
 				Q: "kitchen",
+				e: "extinguisher",
 				F: "plant",
 			},
 			lines: {
