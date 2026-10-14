@@ -55,7 +55,7 @@ export const ISLANDS: readonly Island[] = [
 		],
 	},
 	// おーぷぬ（だれでも 板を 立てられた。open.open2ch.net）。南西の 海に ちらばる 小島＝乗っ取り事件で
-	// 「〜〜諸島」に 名前を 変えられた 板たち。裏シナリオの 灯台は いちばん 大きい 島に、乗っ取られた 小島 3つは
+	// 「〜〜諸島」に 名前を 変えられた 板たち。裏シナリオの 灯台は いちばん 大きい 島に、乗っ取られた 小島 2つは
 	// まわりの 小さな 島に（STORY.md §5.98）
 	{
 		name: "open",
@@ -199,7 +199,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[98, 144],
 		],
 	},
-	// 裏シナリオ：おーぷぬの 諸島の 灯台（小島を 3つ 取り返すと 開く。扉は パスワード）
+	// 裏シナリオ：おーぷぬの 諸島の 灯台（小島を 2つ 取り返すと 開く。扉は パスワード）
 	opunu: {
 		server: "open",
 		place: "諸島の　灯台",
@@ -211,7 +211,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[58, 184],
 		],
 	},
-	// 乗っ取られた 小島 3つ（裏シナリオの 承。パン板の あとに 1つ目が 開く）
+	// 乗っ取られた 小島 2つ（裏シナリオの 承。パン板の あとに 1つ目が 開く）
 	isle1: {
 		server: "open",
 		place: "小島の　丘",
@@ -223,18 +223,6 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[58, 184],
 			[46, 196],
 			[38, 204],
-		],
-	},
-	isle2: {
-		server: "open",
-		place: "小島の　洞",
-		building: "islet",
-		route: [
-			[104, 140],
-			[90, 158],
-			[80, 180],
-			[74, 196],
-			[72, 204],
 		],
 	},
 	isle3: {

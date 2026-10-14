@@ -3116,8 +3116,8 @@ const COLONY_FOES: readonly [string, readonly DungeonId[]][] = [
 	["natsuko", ["tropical"]],
 	["takonomin", ["konamono"]],
 	["mashii", ["festival"]],
-	// 乗っ取り屋は 乗っ取られた 小島 3つと 灯台（裏シナリオ）
-	["hijacker", ["isle1", "isle2", "isle3", "opunu"]],
+	// 乗っ取り屋は 乗っ取られた 小島 2つと 灯台（裏シナリオ）
+	["hijacker", ["isle1", "isle3", "opunu"]],
 	["getter", ["hinan"]],
 ];
 

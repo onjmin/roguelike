@@ -647,8 +647,8 @@ const M: MonsterDef[] = [
 			{ k: "fastMove" },
 		],
 		sleep: "deep",
-		// 乗っ取られた 小島 3つと 灯台（裏シナリオの 承。STORY.md §5.98）
-		board: ["isle1", "isle2", "isle3", "opunu"],
+		// 乗っ取られた 小島 2つと 灯台（裏シナリオの 承。STORY.md §5.98）
+		board: ["isle1", "isle3", "opunu"],
 		desc: "パスワードを　当てて、持ち物を　1つ　乗っ取って　逃げる。すばやい。たおせば　取り返せる",
 		flavor:
 			"板の　名前を「〇〇諸島」に　変えて　回った。弱い　パスワードが　好き",

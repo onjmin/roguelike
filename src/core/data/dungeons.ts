@@ -372,7 +372,7 @@ const ISLE1_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_slow", weight: 1 },
 ];
 
-/** 小島の 2つ目・3つ目と 避難J：風呂板の 表から 帰還スレを 抜いた もの。 */
+/** 小島の 2つ目と 避難J：風呂板の 表から 帰還スレを 抜いた もの。 */
 const ISLE_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.filter(
 	(e) => e.kind !== "s_escape",
 );
@@ -620,7 +620,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		escapeWithGoal: true,
 		secret: true,
 	},
-	// 裏ルート：おーぷぬの 灯台（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。小島を 3つ 取り返すと 開く。
+	// 裏ルート：おーぷぬの 灯台（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。小島を 2つ 取り返すと 開く。
 	// 乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる（data/story/story.ts の BOARD_LOOKS の zones）。
 	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底 30 ＞ 風呂板 27・持ちこみ 不可）
 	opunu: {
@@ -641,14 +641,14 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "aisatsu",
 		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
 		trapsFrom: 3,
-		// 小島を 3つ 取り返すと 開く（扉の パスワードは 村の 口で：ui/village/villageEvents.ts）
+		// 小島を 2つ 取り返すと 開く（扉の パスワードは 村の 口で：ui/village/villageEvents.ts）
 		unlockAfter: null,
-		unlockAfterAll: ["isle1", "isle2", "isle3"],
+		unlockAfterAll: ["isle1", "isle3"],
 		reliefAfter: null,
 		// 灯台を 上る
 		up: true,
 	},
-	// ── 裏シナリオの 承：乗っ取られた 小島 3つ（STORY.md §5.98）。おんJ民が おーぷぬで 立てて 飽きて 捨て、
+	// ── 裏シナリオの 承：乗っ取られた 小島 2つ（STORY.md §5.98）。おんJ民が おーぷぬで 立てて 飽きて 捨て、
 	// 本物の 乗っ取り屋に 名前を「〇〇諸島」に 変えられた 板。底の 品は 乗っ取り屋の 置き手紙（灯台の パスワードの 手がかり）。
 	// 階は 本筋と 同じ 1.5倍ずつ：6 → 9 → 13 → 灯台 20 → 跡地 30
 	isle1: {
@@ -700,27 +700,6 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockFlag: "q_roze",
 		reliefAfter: null,
 	},
-	isle2: {
-		id: "isle2",
-		objective: "fetch",
-		hidden: true,
-		noCarry: true,
-		// 夜中に 立てた 板：寝落ち民が 多く、敵も 眠りがち。すこし 過疎
-		foes: { neochi: 2.5, bat: 0 },
-		floors: 9,
-		items: ISLE_ITEMS,
-		perFloor: [5, 7],
-		level: ramp(9, 11, 2),
-		unidentified: ALL_UNIDENTIFIED,
-		curses: true,
-		start: ["f_large"],
-		goal: "memo2",
-		houses: null,
-		trapsFrom: 3,
-		unlockAfter: "isle1",
-		reliefAfter: null,
-		sparse: 0.7,
-	},
 	isle3: {
 		id: "isle3",
 		objective: "fetch",
@@ -742,7 +721,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "memo3",
 		houses: { from: 3, chance: 1 / 8, early: [4, 6] },
 		trapsFrom: 3,
-		unlockAfter: "isle2",
+		unlockAfter: "isle1",
 		reliefAfter: null,
 		// 岩山を 上る
 		up: true,
@@ -924,7 +903,6 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"hidden",
 	"opunu",
 	"isle1",
-	"isle2",
 	"isle3",
 	"ato",
 	"hinan",
@@ -937,7 +915,7 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 ];
 
 /** 裏シナリオの 承の 小島（乗っ取られた 板。開く 順）。 */
-export const ISLES: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
+export const ISLES: readonly DungeonId[] = ["isle1", "isle3"];
 
 /**
  * その 板が 開く 条件を 満たしたか（持ち帰った 板と 旗から。開いているかは 見ない）。

@@ -18,10 +18,9 @@ export type DungeonId =
 	| "festival"
 	| "hidden"
 	| "opunu"
-	// 裏シナリオ「さとると　ワイと　お前だけ」（STORY.md §5.98）：乗っ取られた 小島 3つ → 灯台（opunu）→ 野球chの 跡地（ato）
+	// 裏シナリオ「さとると　ワイと　お前だけ」（STORY.md §5.98）：乗っ取られた 小島 2つ → 灯台（opunu）→ 野球chの 跡地（ato）
 	// → 避難J（hinan）→ 時計が もどった 日の 1901年の スレ（y1901）
 	| "isle1"
-	| "isle2"
 	| "isle3"
 	| "ato"
 	| "hinan"

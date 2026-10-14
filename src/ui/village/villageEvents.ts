@@ -551,7 +551,7 @@ const mouthScript =
 				return;
 			}
 			if (ok !== 0) continue;
-			// 灯台の 扉は パスワード（乗っ取り屋の 置き手紙 3枚が 手がかり。当てるまで 入れない。STORY.md §5.98）
+			// 灯台の 扉は パスワード（乗っ取り屋の 置き手紙 2枚が 手がかり。当てるまで 入れない。STORY.md §5.98）
 			if (d === "opunu" && !hasFlag("pass") && !(await passwordScript(ctx, s)))
 				continue;
 			break;

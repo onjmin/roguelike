@@ -142,8 +142,8 @@ const OWNER_VIEWS: VillageView[] = Array.from(
 	{ length: TOWN_STAGES },
 	(_, stage) => ({
 		stage,
-		unlocked: ["shallow", "main", "deep", "isle1", "isle2", "isle3", "opunu"],
-		cleared: ["shallow", "main", "deep", "isle1", "isle2", "isle3", "opunu"],
+		unlocked: ["shallow", "main", "deep", "isle1", "isle3", "opunu"],
+		cleared: ["shallow", "main", "deep", "isle1", "isle3", "opunu"],
 	}),
 );
 

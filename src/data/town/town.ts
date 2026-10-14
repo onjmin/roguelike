@@ -284,7 +284,6 @@ export const CARRY_REFUSE: Record<
 	| "hidden"
 	| "ato"
 	| "isle1"
-	| "isle2"
 	| "isle3"
 	| "opunu"
 	| "hinan"
@@ -296,13 +295,9 @@ export const CARRY_REFUSE: Record<
 		"shiyo",
 		"小島へは　小舟でしょ。荷物は　のらない。\n……あたすが　預かるわ",
 	),
-	isle2: q(
-		"shiyo",
-		"また　小舟？　荷物は　のらないって\n言ったでしょ。あたすが　預かる",
-	),
 	isle3: q(
 		"shiyo",
-		"小舟に　荷物は　のらないの。\n……三度目よ。あたすが　預かる",
+		"また　小舟？　荷物は　のらないって\n言ったでしょ。あたすが　預かる",
 	),
 	opunu: q(
 		"shiyo",

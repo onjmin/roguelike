@@ -1684,7 +1684,6 @@ test("場面で 置いた 人の マスに 重ならない：口の 前に 並�
 					"kinoko",
 					"main",
 					"isle1",
-					"isle2",
 					"isle3",
 					"opunu",
 					"ato",
@@ -3272,15 +3271,14 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		"the branch is not found at the pier",
 	);
 	ok(
-		DUNGEONS.isle2.unlockAfter === "isle1" &&
-			DUNGEONS.isle3.unlockAfter === "isle2",
+		DUNGEONS.isle3.unlockAfter === "isle1",
 		"the isles do not chain",
 	);
 	ok(
 		DUNGEONS.opunu.unlockAfter === null &&
 			JSON.stringify(DUNGEONS.opunu.unlockAfterAll) ===
-				JSON.stringify(["isle1", "isle2", "isle3"]),
-		"the lighthouse does not need the three isles",
+				JSON.stringify(["isle1", "isle3"]),
+		"the lighthouse does not need the two isles",
 	);
 	ok(
 		DUNGEONS.ato.secret === true &&
@@ -3295,10 +3293,9 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		"避難J does not need both climaxes",
 	);
 	ok(
-		[6, 9, 13, 20, 30, 25].join() ===
+		[6, 13, 20, 30, 25].join() ===
 			[
 				DUNGEONS.isle1.floors,
-				DUNGEONS.isle2.floors,
 				DUNGEONS.isle3.floors,
 				DUNGEONS.opunu.floors,
 				DUNGEONS.ato.floors,
@@ -3427,7 +3424,6 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		);
 		ok(
 			!!DUNGEONS.isle1.hidden &&
-				!!DUNGEONS.isle2.hidden &&
 				!!DUNGEONS.isle3.hidden &&
 				!!DUNGEONS.opunu.hidden &&
 				!!DUNGEONS.hinan.hidden,
@@ -3444,19 +3440,18 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		// 裏は 本筋より むずかしい：どの 板も 倉庫の 道具を 持ちこめない。底の 強さも 本筋の 対より 上
 		ok(
 			(
-				["isle1", "isle2", "isle3", "opunu", "ato", "hinan", "y1901"] as const
+				["isle1", "isle3", "opunu", "ato", "hinan", "y1901"] as const
 			).every((d) => DUNGEONS[d].noCarry === true),
 			"a hidden-route board lets storage items in",
 		);
 		const top = (d: DungeonId) => DUNGEONS[d].level[DUNGEONS[d].floors];
 		ok(
 			top("isle1") > top("kinoko") &&
-				top("isle2") > top("tropical") &&
 				top("isle3") >= top("konamono") &&
 				top("opunu") > top("main") &&
 				top("ato") > top("deep") &&
 				top("y1901") > top("hinan"),
-			`the hidden route is not harder: ${["isle1", "kinoko", "isle2", "tropical", "isle3", "konamono", "opunu", "main", "ato", "deep"].map((d) => `${d}=${top(d as DungeonId)}`).join(" ")}`,
+			`the hidden route is not harder: ${["isle1", "kinoko", "isle3", "konamono", "opunu", "main", "ato", "deep"].map((d) => `${d}=${top(d as DungeonId)}`).join(" ")}`,
 		);
 		// ビンの 視線誘導：パン板の あとの ひとことに 釣り場の ビンが 出る。切れはし「板 立てたわ」も パン板の あと
 		ok(
@@ -3468,7 +3463,7 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 			PROGRESS_KEY,
 			JSON.stringify({
 				unlocked: all,
-				cleared: ["shallow", "kinoko", "main", "isle1", "isle2", "isle3"],
+				cleared: ["shallow", "kinoko", "main", "isle1", "isle3"],
 				fails: {},
 				intro: all,
 				news: [{ dungeon: "opunu", reason: "clear" }],
@@ -4102,16 +4097,16 @@ test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick 
 
 // ───────────────── 裏シナリオ「全滅の うそ」（STORY.md §5.98） ─────────────────
 
-test("裏シナリオ: the lighthouse password follows from the three memos, and the isles restore the lighthouse floors one by one", () => {
+test("裏シナリオ: the lighthouse password follows from the two memos, and the isles restore the lighthouse floors one by one", () => {
 	const memos = SCRAPS.filter((x) => x.kind === "memo");
 	ok(
-		memos.map((x) => x.board).join() === "isle1,isle2,isle3",
+		memos.map((x) => x.board).join() === "isle1,isle3",
 		`memos are on ${memos.map((x) => x.board).join()}`,
 	);
-	// 手紙：板主のは 1234、新しいのは 1つ 多い → 12345
+	// 手紙：板主のは 1234、新しいのは 1けた 足した だけ → 12345
 	ok(
 		memos.some((x) => x.text.includes("1234")) &&
-			memos.some((x) => x.text.includes("1つ　多い")) &&
+			memos.some((x) => x.text.includes("1けた　足した")) &&
 			LIGHTHOUSE_DOOR.answer === "12345",
 		"the password cannot be worked out from the memos",
 	);
@@ -4158,9 +4153,9 @@ test("裏シナリオ: 跡地 opens only when the lighthouse is cleared and a RO
 		"避難J opens without both",
 	);
 	ok(
-		openable("opunu", ["isle1", "isle2", "isle3"]) &&
-			!openable("opunu", ["isle1", "isle2"]),
-		"the lighthouse opens without the three isles",
+		openable("opunu", ["isle1", "isle3"]) &&
+			!openable("opunu", ["isle1"]),
+		"the lighthouse opens without the two isles",
 	);
 	await withStorageAsync(async () => {
 		const all = [...DUNGEON_IDS];
@@ -4168,7 +4163,7 @@ test("裏シナリオ: 跡地 opens only when the lighthouse is cleared and a RO
 			PROGRESS_KEY,
 			JSON.stringify({
 				unlocked: all.filter((d) => d !== "ato" && d !== "hinan"),
-				cleared: ["shallow", "kinoko", "isle1", "isle2", "isle3", "opunu"],
+				cleared: ["shallow", "kinoko", "isle1", "isle3", "opunu"],
 				fails: {},
 				intro: all,
 				news: [],
@@ -4230,7 +4225,6 @@ test("裏シナリオ: the 跡地 ending brings 18 ROM専 in from the mouth, the
 					"kinoko",
 					"main",
 					"isle1",
-					"isle2",
 					"isle3",
 					"opunu",
 					"ato",
@@ -7841,7 +7835,6 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 				"deep",
 				"hidden",
 				"isle1",
-				"isle2",
 				"isle3",
 				"opunu",
 				"ato",

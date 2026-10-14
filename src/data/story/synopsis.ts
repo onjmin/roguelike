@@ -25,7 +25,6 @@ export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 	hidden: "キリコの　生まれた　スレが　しまわれた　底",
 	// 裏
 	isle1: "丘の　上に、知らない　字の　紙きれ",
-	isle2: "置き手紙を　そろえて、灯台の　扉を　あける",
 	isle3: "さいごの　置き手紙。灯台の　鍵に　なる",
 	opunu: "てっぺんの、板主の　はじめの　スレを　上げる",
 	ato: "原住民　20人の　スレを、村で　参拝する",
@@ -80,11 +79,6 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	isle1: [
 		{ at: 3, who: null, text: "丘の　上で、紙きれが　はためいている。" },
 		{ at: 5, who: "res", text: "南の　小島、だれか　行っとる？" },
-	],
-	isle2: [
-		{ at: 3, who: null, text: "壁に　古い　レス。「ねれない」" },
-		{ at: 6, who: "res", text: "置き手紙、だれの　字なんや" },
-		{ at: 8, who: null, text: "奥で、紙の　こすれる　音が　した。" },
 	],
 	isle3: [
 		{ at: 4, who: null, text: "明かりが　ちらついた。鯖代が　あぶない。" },
@@ -264,14 +258,9 @@ const CHAPTERS: readonly Chapter[] = [
 		sum: "南西の　小島は、おんJ民が　立てて　捨てた　板だった。乗っ取り屋に　名前を　変えられ、丘の　上に　だれかの　置き手紙が　1枚。",
 	},
 	{
-		done: (c) => c.includes("isle2"),
-		title: "よふかし諸島",
-		sum: "乗っ取られた　小島を　2つ　取り返し、板の　名前を　もどした。置き手紙は　2枚。",
-	},
-	{
 		done: (c) => c.includes("isle3"),
 		title: "だらだら諸島",
-		sum: "小島を　3つ　取り返した。そろった　置き手紙は、灯台の　扉の　パスワードの　手がかり。",
+		sum: "乗っ取られた　小島を　2つとも　取り返し、板の　名前を　もどした。そろった　置き手紙は、灯台の　扉の　パスワードの　手がかり。",
 	},
 	{
 		done: (c) => c.includes("opunu"),
@@ -310,8 +299,7 @@ const nextStep = (
 	c: readonly DungeonId[],
 	f: readonly string[],
 ): string | null => {
-	if (!c.includes("isle2")) return "となりの　小島（よふかし諸島）へ";
-	if (!c.includes("isle3")) return "その　先の　小島（だらだら諸島）へ";
+	if (!c.includes("isle3")) return "となりの　小島（だらだら諸島）へ";
 	if (!c.includes("opunu"))
 		return "灯台（のんびり諸島）へ。扉の　パスワードは　置き手紙に";
 	if (!f.includes("romVoice"))

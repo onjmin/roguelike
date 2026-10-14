@@ -347,7 +347,7 @@ export const ON_PHONO: readonly DungeonId[] = [
 export const IN_STORE: readonly DungeonId[] = ["hidden", "y1901"];
 
 /** まとめ掲示板に 貼ってある 品の 板（乗っ取り屋の 置き手紙。data/story/scraps.ts。棚には 置かない）。 */
-export const ON_BOARD: readonly DungeonId[] = ["isle1", "isle2", "isle3"];
+export const ON_BOARD: readonly DungeonId[] = ["isle1", "isle3"];
 
 /** 飾り棚の 段（上の 段から 左 → 右。絵を 描く マス）。棚が 無い 段は 空。 */
 export const shelfSlots = (tier: HallTier): Cell[] => {

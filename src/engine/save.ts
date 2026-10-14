@@ -156,6 +156,8 @@ export const loadRun = (): RunState | null => {
 		if (!raw) return null;
 		const s = migrateRun(deserializeRun(raw));
 		if (!s?.player || !s.floor || s.end) return null;
+		// あとの版で 消えた 板（2026-10-14 の 小島2）の 中断セーブは 読まない
+		if (!DUNGEON_IDS.includes(s.dungeon)) return null;
 		// あとの版で消えた モンスター・道具が入っていたら 読まない（途中で落ちるより良い）
 		const items = [
 			...s.player.items,
@@ -257,7 +259,9 @@ const isRecord = (r: unknown): r is RunRecord => {
 		(o.kind === "dead" || o.kind === "clear" || o.kind === "escape") &&
 		typeof o.at === "number" &&
 		typeof o.depth === "number" &&
-		typeof o.cause === "string"
+		typeof o.cause === "string" &&
+		// あとの版で 消えた 板（2026-10-14 の 小島2）の 記録は 読まない
+		(o.dungeon === undefined || DUNGEON_IDS.includes(o.dungeon))
 	);
 };
 
