@@ -25,6 +25,7 @@ import {
 	STAGE_POINTS,
 	TOWN_STAGES,
 	TOWN_STEPS,
+	townStep,
 } from "../core/town";
 import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
 import { bgm } from "../data/audio/bgm";
@@ -64,6 +65,7 @@ import {
 	type MobCtx,
 	type MobId,
 	type MobLine,
+	movedIn,
 	PUYU_LUNCH,
 	PUYU_RELIEF,
 	RELIEF_NOTE,
@@ -121,6 +123,7 @@ import {
 	GOAL_WHY,
 	goalWhy,
 	synopsisHtml,
+	villageRes,
 } from "../data/story/synopsis";
 import {
 	BANDAI,
@@ -184,6 +187,7 @@ import {
 	WAKE_PAGES,
 	ZERO_VOICELESS,
 } from "../data/town/town";
+import { crowdSize } from "../data/village/crowd";
 import {
 	doorId,
 	FACILITIES,
@@ -7761,11 +7765,20 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 	);
 	// 目標は 過疎を なんとか する こと：レスの 数（ダンジョンの 1000 は 時間切れ）では なく 見ている 人の 数
 	ok(end.includes("見ている　人"), "no viewer count after the climax");
+	// 見ている 人＝キリコ＋村に いる 仲間＋越してきた 住人＋通行人（町で 見える 数と 同じ）。はじめは 3人
+	const noon = { hour: 12, weekend: false };
+	ok(villageRes([], 0, 0, noon) === 3, `start ${villageRes([], 0, 0, noon)}`);
 	ok(
-		(synopsisHtml(["shallow", "main"], []) ?? "").includes(
-			"村の　スレを　見ている　人：60人",
-		),
-		"viewer count after main",
+		villageRes(["shallow", "main", "deep"], 7, 1e9, noon) ===
+			1 +
+				(Object.keys(SPEAKERS).length - 1) +
+				movedIn(townStep(7, 1e9), ["shallow", "main", "deep"]).length +
+				crowdSize(7, "day", false),
+		"the count is not friends + residents + passers-by",
+	);
+	ok(
+		villageRes(["shallow"], 3, 0, noon) < villageRes(["shallow"], 6, 0, noon),
+		"the count does not grow with the town",
 	);
 	ok(
 		!(synopsisHtml(["shallow", "main"], []) ?? "").includes("／1000"),

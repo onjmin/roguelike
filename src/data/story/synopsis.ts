@@ -5,10 +5,16 @@
 //   synopsis：これまでの あらすじと 次の 行き先（村の メニュー・ダンジョンの メニュー）
 // どれも 起きた ことを なぞる だけで、先の どんでん返しは 言わない。
 
+import { townStep } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import { QUEST_HEROES, questStage } from "../../engine/heroes";
-import { loadProgress } from "../../engine/save";
+import { loadProgress, loadTown } from "../../engine/save";
 import { HERO_QUESTS } from "../people/heroQuests";
+import { movedIn } from "../people/mobs";
+import { nowHour, today } from "../town/calendar";
+import { crowdSize, timeBand } from "../village/crowd";
+import { SPEAKERS, type Speaker } from "./quotes";
+import { awayFriends } from "./story";
 
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
@@ -158,24 +164,38 @@ export const diveResAt = (
 
 /**
  * 村の スレを 見ている 人の 数（目標「過疎を　なんとか　する」が どこまで 来たか。2026-10-13「動機付けを 見直せ」→
- * 2026-10-14 作者「ダンジョンの 中で レスが 進むので、1000まで 目指す ゴールは 不自然」「過疎を 解消する」）。
+ * 2026-10-14 作者「ダンジョンの 中で レスが 進むので、1000まで 目指す ゴールは 不自然」「過疎を 解消する」
+ * 「人数＝固定住民の数＋通行人の数」）。町で 見える 人と 同じ 数：キリコ ＋ 村に いる 仲間 ＋ 越してきた 住人 ＋
+ * いまの 時間帯の 通行人（data/village/crowd.ts の crowdSize。村の 人通りと 同じ 計算）。
  * レスの 数は 出さない（ダンジョンの 1000 は 時間切れ）。はじめは 3人（キリコ・やきう・ぷゆゆ。裏では コピペの
- * 「さとると　ワイと　お前だけ」の 3人に 読みかわる）。ゼロが 語りで 言う 数（風呂板で 60人・電池板で 300人）と そろえる。
- * 寄り道の 板は 1つ ぶん 足す。
+ * 「さとると　ワイと　お前だけ」の 3人に 読みかわる）。
  */
-export const villageRes = (cleared: readonly DungeonId[]): number => {
-	const side = cleared.filter(
-		(d) => d !== "shallow" && d !== "main" && d !== "deep",
+export const villageRes = (
+	cleared: readonly DungeonId[],
+	stage: number,
+	points: number,
+	clock: { hour: number; weekend: boolean },
+): number => {
+	const away = awayFriends(cleared, stage);
+	const friends = (Object.keys(SPEAKERS) as Speaker[]).filter(
+		(w) => !away.includes(w),
 	).length;
-	if (cleared.includes("deep")) return 300 + side * 20;
-	if (cleared.includes("main")) return Math.min(240, 60 + side * 12);
-	if (cleared.includes("shallow")) return Math.min(50, 12 + side * 6);
-	return 3;
+	const mobs = movedIn(townStep(stage, points), cleared).length;
+	const crowd = crowdSize(stage, timeBand(clock.hour), clock.weekend);
+	return 1 + friends + mobs + crowd;
 };
 
-/** 村の スレの 札（「村の　スレを　見ている　人：60人」）。 */
-export const villageResLine = (cleared: readonly DungeonId[]): string =>
-	`村の　スレを　見ている　人：${villageRes(cleared)}人`;
+/** 村の スレの 札（「村の　スレを　見ている　人：24人」。いまの 進みと 時刻で）。 */
+export const villageResLine = (): string => {
+	const p = loadProgress();
+	const t = loadTown();
+	const w = today().w;
+	const n = villageRes(p.cleared, t.stage, t.points, {
+		hour: nowHour(),
+		weekend: w === 0 || w === 6,
+	});
+	return `村の　スレを　見ている　人：${n}人`;
+};
 
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */
 export const goalWhy = (
@@ -338,7 +358,7 @@ export const synopsisHtml = (
 	const chapter = (ch: Chapter | null) =>
 		ch ? `<p><b>${ch.title}　まで</b><br>${ch.sum}</p>` : "";
 	return (
-		`<p class="hint">${villageResLine(cleared)}</p>` +
+		`<p class="hint">${villageResLine()}</p>` +
 		chapter(main) +
 		chapter(ura) +
 		questHtml +

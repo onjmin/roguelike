@@ -61,7 +61,6 @@ import {
 	WRAP_NEWS,
 	withoutAway,
 } from "../../data/story/story";
-import { villageResLine } from "../../data/story/synopsis";
 import {
 	TAMPER_NARRATION,
 	TAMPER_SCENE,
@@ -468,8 +467,6 @@ export const returnScene = async (
 	await rebuild(s);
 	s.bgm(villageSong());
 	await s.fadeIn(300);
-	// 持ち帰ったら 村の スレの 伸びを 札で（目標の 1000 まで どこまで 来たか）
-	if (a.kind === "clear") s.toast(villageResLine(loadProgress().cleared));
 };
 
 // ───────────────── 話す 仲間を そばに ─────────────────
