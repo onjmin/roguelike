@@ -3431,6 +3431,13 @@ export class Play {
 		const up = run.s.returning;
 		// ボスの 待つ いちばん底は 副題で 知らせる
 		const boss = run.boss;
+		const zoneNote = zoneFor(run.s.dungeon, run.s.depth).note;
+		// 潜っている 途中の 筋の 1行（やきうの レスなど。data/story/synopsis.ts）は、ほかに 副題が なければ 札にも 出す
+		// （ログだけだと 読みおとして、20〜30階の あいだ 筋が 止まって 見えた）
+		const dive =
+			!up && !this.rp && !boss && !zoneNote
+				? diveResAt(run.s.dungeon, run.s.depth, loadProgress().cleared)
+				: null;
 		const card = el("div", { class: "chapter shown" }, [
 			el("div", {
 				class: "chapter-label",
@@ -3446,13 +3453,15 @@ export class Play {
 					? `${isUpBoard(run.s.dungeon) ? "下り" : "上り"}階段を　さがそう`
 					: boss
 						? `${mdef(boss).name}が　待ちかまえている`
-						: zoneFor(run.s.dungeon, run.s.depth).note
-							? (zoneFor(run.s.dungeon, run.s.depth).note ?? "")
-							: run.s.depth >= run.dungeon.floors
-								? isUpBoard(run.s.dungeon)
-									? "いちばん　上"
-									: "いちばん　底"
-								: "",
+						: zoneNote
+							? zoneNote
+							: dive
+								? diveResLine(dive)
+								: run.s.depth >= run.dungeon.floors
+									? isUpBoard(run.s.dungeon)
+										? "いちばん　上"
+										: "いちばん　底"
+									: "",
 			}),
 		]);
 		this.ctx.ui.appendChild(card);
@@ -3460,7 +3469,8 @@ export class Play {
 		// 鳴らしなおすと、20〜30階の 板で 同じ 出だしを 何十回も 聞くことに なった）
 		if (!first && this.ctx.audio.currentBgm !== floorBgm(run, this.bossShown))
 			await this.ctx.audio.fadeBgm(300);
-		await wait(first ? 900 : 850);
+		// 筋の 1行が 出る 階は 読む 間だけ 長く
+		await wait((first ? 900 : 850) + (dive ? 1100 : 0));
 		if (this.stopped) {
 			card.remove();
 			return;

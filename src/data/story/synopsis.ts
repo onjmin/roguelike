@@ -40,12 +40,15 @@ export type DiveRes = {
 
 export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	// ── 本筋。村に 人が 来るのは 風呂板の あと（それまでの 村の スレは やきうだけ）
+	// やきうの レスは 相棒の 声（2026-10-14：潜っている あいだも 筋が 止まらない ように。階の 札にも 出る）。
+	// 風呂板で ひとりの 夜を、電池板で 1000 への 願いを、山場の 前に 少しずつ 見せる
 	shallow: [{ at: 3, who: "nanj", text: "保守しとるで。ゆっくり　来い" }],
+	kinoko: [{ at: 3, who: "nanj", text: "そこも　昔は　人　おったんや" }],
 	main: [
 		{ at: 4, who: null, text: "湯気の　むこうに、古い　レスが　浮いている。" },
-		{ at: 8, who: "nanj", text: "長湯スレ、あったか？" },
+		{ at: 8, who: "nanj", text: "こっちは　静かや。いつもや" },
 		{ at: 12, who: null, text: "だれも　読まない　スレが、まだ　ぬくい。" },
-		{ at: 16, who: "nanj", text: "上の　スレは　保守しとるで" },
+		{ at: 16, who: "nanj", text: "昔は　スレ、追えんかった" },
 		{ at: 19, who: null, text: "源泉の　底が、近い。" },
 	],
 	deep: [
@@ -53,7 +56,7 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 		{ at: 9, who: "res", text: "1000まで　あと　どんくらいや" },
 		{ at: 14, who: "nanj", text: "鉄塔の　保守、だれやろな" },
 		{ at: 19, who: null, text: "上から、「保守」の　レスが　ふってくる。" },
-		{ at: 24, who: "res", text: "1000、もう　すぐ　ちゃうか" },
+		{ at: 24, who: "nanj", text: "1000は、だれが　書くやろな" },
 		{ at: 29, who: null, text: "てっぺんに、いちばん　長い　保守スレ。" },
 	],
 	// 過去ログの底（99階。やきうは もう 外）。層の 札の 階は よける
