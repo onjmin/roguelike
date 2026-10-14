@@ -41,6 +41,7 @@ import {
 	saveTown,
 } from "../engine/save";
 import { heroQuestScript } from "../ui/village/villageEvents";
+import { type BotOpts, botCommand, DEFAULT_BOT } from "./bot";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -272,6 +273,32 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 	ok(r.s.body === 2 && r.heroName === "レン" && !r.s.end, "ren");
 	ok(r.hurtPlayer(999, "最後"), "the last one falls");
 	ok(r.s.end?.kind === "dead", "dead");
+});
+
+test("ゼロ: オートは 階段を 見たら 降りる（階を 見つくすまで うろうろ しない。道が まだ わからなければ 探す）", () => {
+	const AUTO = { ...DEFAULT_BOT, escape: false, stairsWhenSeen: true };
+	let auto = 0;
+	let full = 0;
+	for (const seed of ["auto-0", "auto-1", "auto-2", "auto-3"]) {
+		// 階段だけ 見えている（地図スレで 見た ような。道は まだ わからない）
+		const leaveTurns = (opts: BotOpts): number => {
+			const r = quiet(
+				Run.create(seed, "main", [], "fetch", true, false, "zero"),
+			);
+			const f = r.f;
+			f.seen[f.stairs.y * f.layout.w + f.stairs.x] = 1;
+			let n = 0;
+			while (r.s.depth === 1 && !r.s.end && n < 2000) {
+				r.act(botCommand(r, opts));
+				n++;
+			}
+			ok(r.s.depth === 2, `${seed}: left the floor (${n})`);
+			return n;
+		};
+		auto += leaveTurns(AUTO);
+		full += leaveTurns(DEFAULT_BOT);
+	}
+	ok(auto * 2 < full, `auto ${auto} vs full ${full}`);
 });
 
 test("主人公: キリコの 冒険は 前と 同じ 形（hero・body を 書かない）、名前は キリコ", () => {

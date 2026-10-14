@@ -30,6 +30,11 @@ export type BotOpts = {
 	leaveWhenNoItems: boolean;
 	/** 危ないときに 帰還スレで 地上へ もどる（倒れないモードでは 深い階まで行きたいので 使わない）。 */
 	escape: boolean;
+	/**
+	 * 階段を 見つけたら（見えている 道具を 拾い おえたら）その 階を 出る。解音ゼロの オート用
+	 * （2026-10-14 作者：「階段 見つけても まだ ウロウロ」。sim は 階を 見つくして 道具と 経験値を 集める ままに する）。
+	 */
+	stairsWhenSeen?: boolean;
 };
 
 export const DEFAULT_BOT: BotOpts = {
@@ -452,6 +457,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	const leave =
 		!boss &&
 		(r.s.returning ||
+			(opts.stairsWhenSeen === true && stairsSeen(r)) ||
 			f.turns > opts.floorTurnLimit ||
 			(opts.leaveWhenNoItems && unseenItems(r) === 0 && !frontierExists(r)));
 	if (target && !leave && (dist(target, p) <= 6 || target === boss)) {
@@ -500,13 +506,18 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		}
 	}
 	const bottom = r.s.depth >= r.dungeon.floors && !r.s.returning;
-	const sIdx = f.stairs.y * f.layout.w + f.stairs.x;
-	const stairsKnown = f.seen[sIdx] === 1;
+	const stairsKnown = stairsSeen(r);
 	if (!bottom && r.onStairs() && (leave || !frontierExists(r))) {
 		return { c: "stairs" };
 	}
-	// いちばん底では原盤を、帰り道・出るときは階段を 見つけるまで探索する
-	if (!leave || !stairsKnown || bottom) {
+	// 階段への 一歩（見た だけで 道が まだ わからない ときは null。地図スレ・遠くから 見えた など）
+	const toStairs =
+		stairsKnown && !bottom && !r.onStairs()
+			? pathStep(r, f.stairs, true)
+			: null;
+	// いちばん底では原盤を、帰り道・出るときは階段への 道を 見つけるまで探索する
+	// （見えただけで 道の ない 階段へは 行けず、その場で うろうろ していた）
+	if (!leave || (toStairs === null && !r.onStairs()) || bottom) {
 		const fr = frontier(r);
 		if (fr) {
 			const d = pathStep(r, fr, true);
@@ -530,8 +541,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	// 階段へ
 	if (stairsKnown && !bottom) {
 		if (r.onStairs()) return { c: "stairs" };
-		const d = pathStep(r, f.stairs, true);
-		if (d !== null) return { c: "move", dir: d };
+		if (toStairs !== null) return { c: "move", dir: toStairs };
 	}
 	// どこへも行けない：ランダムに歩く
 	const dirs = DIRS8.filter(
@@ -543,6 +553,10 @@ const decide = (r: Run, opts: BotOpts): Command => {
 };
 
 const frontierExists = (r: Run): boolean => frontier(r) !== null;
+
+/** この 階の 階段を 見たか。 */
+const stairsSeen = (r: Run): boolean =>
+	r.f.seen[r.f.stairs.y * r.f.layout.w + r.f.stairs.x] === 1;
 
 /** この階の、まだ見ていない道具の数（床・モンスターの持ち物。ボットだけが のぞける）。 */
 const unseenItems = (r: Run): number => {
