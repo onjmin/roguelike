@@ -1,4 +1,4 @@
-// カジノ「ガチャ」の ビデオポーカー（poker）の 決まり。板は ui/arcade/home/poker.ts、文は data/arcade/text.ts。
+// カジノ「ガチャ」の ポーカー（poker。緑の 台で ディーラーが 配る 5枚の ドローポーカー）の 決まり。板は ui/arcade/home/poker.ts、文は data/arcade/text.ts。
 // - ジャックス・オア・ベター。↑↓ で 賭ける 枚数（1〜5）、A で 5枚 配る。
 // - 残す 札を 選んで（HOLD）A で 交換。役の 払いだしは 表の 倍率 × 賭けた 枚数（ロイヤルは 5枚 賭けなら 800倍）。
 // - チップが なくなるか、B（板の 外を 2回）で やめると その ときの 枚数が スコア。
@@ -50,7 +50,7 @@ export const drawCard = (deck: Card[], rnd: Rnd): Card => {
 	return deck.pop() as Card;
 };
 
-// ───────────────── ビデオポーカー ─────────────────
+// ───────────────── ドローポーカー ─────────────────
 
 export const PK = {
 	start: 20,

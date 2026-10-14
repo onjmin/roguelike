@@ -1,4 +1,4 @@
-// 「ビデオポーカー」（data/arcade/home/poker.ts）の 試験。
+// 「ポーカー」（data/arcade/home/poker.ts）の 試験。
 
 import {
 	type Card,
@@ -30,7 +30,7 @@ const hand = (s: string): Card[] =>
 
 export const tests: HomeGameTest[] = [
 	{
-		name: "ビデオポーカーは 役を 見分ける",
+		name: "ポーカーは 役を 見分ける",
 		run: () => {
 			const cases: [string, ReturnType<typeof pkEval>][] = [
 				["10S JS QS KS AS", "royal"],
@@ -60,7 +60,7 @@ export const tests: HomeGameTest[] = [
 		},
 	},
 	{
-		name: "ビデオポーカーは 賭けて 配り、残した 札は かわらず、チップが なくなると おわる",
+		name: "ポーカーは 賭けて 配り、残した 札は かわらず、チップが なくなると おわる",
 		run: () => {
 			const rnd = seeded(11);
 			const s = pkStart();

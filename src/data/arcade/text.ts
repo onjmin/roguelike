@@ -367,9 +367,9 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 		unit: "点",
 	},
 	poker: {
-		line: "ビデオポーカーの　台。\n画面に「ジャックス・オア・ベター」。",
+		line: "ポーカーの　緑の　台。\nディーラーが　札を　切っている。",
 		rule: "チップは　席を　立つと　換金する。\n5枚の　札を　残すか　かえるか。",
-		title: "ビデオポーカー",
+		title: "ポーカー",
 		hint: "←→　札　↑　残す　A　配る　B／外2回",
 		unit: "枚",
 	},

@@ -3601,20 +3601,24 @@ const BASE_FACILITIES: readonly Facility[] = [
 		},
 		door: "カジノ「ガチャ」。\nコインの　音が　鳴りひびく。",
 		doorSe: "doorSteel",
-		// 中：赤い 幕の 壁と 金の ふちの じゅうたん。奥に スロット 8台・ビデオポーカー 2台・パチンコ 2台（色ちがい）と 丸いす、
+		// 中：赤い 幕の 壁と 金の ふちの じゅうたん。奥に スロット 10台・パチンコ 2台（色ちがい）と 丸いす、
 		// まんなかに 左から バカラの 緑の 台・ルーレット（盤と 賭けの 台。横に ディーラー）・ハイ＆ローと
-		// ブラックジャックの 半円の 台、手前に チップの 窓口（2026-10-13 に 台を ふやして 幅 16 に）
+		// ブラックジャックの 半円の 台、その 手前に ポーカーの 緑の 台（ディーラーが 配る）、手前に チップの 窓口
+		// （2026-10-13 に 台を ふやして 幅 16 に。2026-10-15 作者「ポーカーは スロットの 筐体より テーブルで やる
+		// ゲーム」：ビデオポーカーの 筐体を スロットに かえ、ポーカーは 台に）
 		room: {
 			look: LOOKS.casino,
 			rows: [
 				"################",
 				"#HHHHH@&HHHHHHH#",
 				"#hhhhh〔〕mhhhhhh#",
-				"#AABCKE..EKCBAA#",
+				"#AABCBE..ECBCAA#",
 				"#nnnnnn..nnnnnn#",
 				"#bcd.....TUVWXY#",
 				"#efg.RrL.tuvwxy#",
 				"#..............#",
+				"#.123..........#",
+				"#.456..........#",
 				"#F........[=].F#",
 				"#######DD#######",
 			],
@@ -3645,6 +3649,13 @@ const BASE_FACILITIES: readonly Facility[] = [
 				e: k.on(base(0, 517)),
 				f: k.on(base(1, 517)),
 				g: k.on(base(2, 517)),
+				// ポーカーの 緑の 台（バカラと 同じ 形）
+				"1": k.on(base(0, 514)),
+				"2": k.on(base(1, 514)),
+				"3": k.on(base(2, 514)),
+				"4": k.on(base(0, 517)),
+				"5": k.on(base(1, 517)),
+				"6": k.on(base(2, 517)),
 				// 半円の カードの 台（ブラックジャック。ハイ＆ローと 同じ 形）
 				W: k.on(base(3, 514)),
 				X: k.on(base(4, 514)),
@@ -3663,9 +3674,14 @@ const BASE_FACILITIES: readonly Facility[] = [
 				A: "gacha",
 				B: "gacha",
 				C: "gacha",
-				// 内がわの 4台は ビデオポーカーと パチンコ
-				K: "poker",
+				// 内がわの 2台は パチンコ
 				E: "pachinko",
+				"1": "poker",
+				"2": "poker",
+				"3": "poker",
+				"4": "poker",
+				"5": "poker",
+				"6": "poker",
 				T: "highlow",
 				U: "highlow",
 				V: "highlow",
@@ -3732,6 +3748,17 @@ const BASE_FACILITIES: readonly Facility[] = [
 					name: "ディーラー",
 					lines: [
 						"チップは　ほんまの　お金や。\n……冒険の　稼ぎ、溶かさんようにな",
+					],
+				},
+				// ポーカーの 台の 右はしで 札を 配る
+				{
+					id: "casino_dealer_poker",
+					walk: NANASHI[3],
+					at: [5, 8],
+					dir: "left",
+					name: "ディーラー",
+					lines: [
+						"5枚　配って、1回だけ　かえられる。\nジャックの　ペアから　払いもどしや",
 					],
 				},
 			],
