@@ -640,6 +640,10 @@ const ROOM_PIECES = {
 	tatamiHalf: { ids: [["31dWf1"]] },
 	// rpgen.org の 1356「レジカウンター」。木の 台に 画面つきの レジ（1マスで 全体。バーガー屋・メイド喫茶の 注文の 台）
 	regiCounter: { ids: [["EVAhBn"]] },
+	// 173: 7・8 行 16 列（rpgen.org の 5639 / 5642）。洗面台（1x2。上が 蛇口と 台、下が 白い 洗面器）
+	washstand: { ids: [["dq:5639"], ["dq:5642"]] },
+	// 173: 6・7 行 7 列（rpgen.org の 7025 / 7023）。白い 便器（1x2。上が ふた、下が 便座）
+	toilet: { ids: [["dq:7025"], ["dq:7023"]] },
 };
 
 // ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/town/eateries.ts の 出てきた 一品の 絵） ─────────────────

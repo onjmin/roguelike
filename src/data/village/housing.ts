@@ -29,11 +29,15 @@ const CLOCK = base(7, 507);
 
 /** 部屋ごとの 床（廊下と ちがう 床。物を 置く マスも 同じ 床の 上に）。 */
 const area = (color: string, ref: string) => ({
-	floor: () => floor(color, ref),
+	floor: (...refs: string[]) => floor(color, ref, ...refs),
 	on: (...refs: string[]) => solid(color, ref, ...refs),
 });
 const TATAMI = area("#b8b878", base(0, 436));
 const FLOORING = area("#d8b888", ri("flWoodLight"));
+/** 玄関の たたき・台所・洗面所の タイル。 */
+const TILE = area("#e8e8e8", ri("flWhite"));
+/** ベランダの 床（灰色の タイル）。 */
+const VERANDA = area("#a8a8a8", ri("flGrey"));
 /** 和室の 壁（しっくい）。 */
 const WA_UP = base(1, 57);
 const WA_LOW = base(1, 58);
@@ -49,71 +53,103 @@ const stairsLines = (what: string): readonly string[] => [
 ];
 
 // ───────────────── コーポ（木造 2階建て。1階の 外廊下に 101・102） ─────────────────
-// 101：住人の 1K の 和室（布団・本棚・ブラウン管・流し・コンロ）。102：空き部屋（内見の 不動産屋）。
+// 部屋は 玄関の たたき（タイル）から 入る、仕切られた 間取り（作者「独立した 部屋に」。2026-10-15）。
+// 101：住人の 和室。奥の 壁ぎわに 流し・コンロ・冷蔵庫、6畳の 畳に 布団、手前は 板の 間の 食卓と テレビ、
+// 窓に 青い カーテン、右の ガラス戸の 向こうに ベランダ。
+// 102：空き部屋（内見の 不動産屋）の 1K。奥が 洋室、仕切りの 壁の 手前に 廊下・台所・洗面所と トイレ。
 // 廊下：集合ポスト・大家の はり紙・傘立て・2階への 階段。
 export const CORPO_ROOM: FacilityRoom = {
 	look: look(base(0, 46), "#b8905a", base(1, 73), base(1, 74), "#9a7a4a"),
 	rows: [
-		"###################",
-		"#JJwJJJwJ#QVQQQQVQ#",
-		"#jjjmjjjj#qqqNqqqq#",
-		"#BbcyTSsK#eeeeeeee#",
-		"#zyyyyyyy#eeeeeXXe#",
-		"#yyyoyyyy#eeeeeeee#",
-		"#gyyyyyyf#eeeeeeee#",
-		"#######.###.#######",
-		"#HHHHHH.HHH.HHHHHH#",
-		"#hhvhhp.hhh.Phhhhh#",
-		"#Ll.............u!#",
-		"#................Z#",
-		"########DD#########",
+		"#####################",
+		"#JJJwWJJJJ#QQQRRQQQQ#",
+		"#jjjvVmjjj#qqqqqNqqq#",
+		"#SsKkttfG,#eeeeeeeeX#",
+		"#eetBtttG,#eeeeeeeee#",
+		"#eetzttt/,#eeeeeeeee#",
+		"#TnOneeeGF###e#######",
+		"#eeeeeeeG,#QQe#QQQQQ#",
+		"#eeeeeeeG,#qqe#qqqqq#",
+		"#geeeeeeG,#Yy~|~U~^~#",
+		"#ee~eeeeG,#~~~#~~~~~#",
+		"###.#########.#######",
+		"#HH.HHHHHHHHH.HHHHHH#",
+		"#hh.ph%hhhhhh.Phhhhh#",
+		"#Ll...............u!#",
+		"#..................Z#",
+		"#########DD##########",
 	],
 	tiles: (k) => ({
 		J: solid("#8a6a3a", WA_UP),
-		w: solid("#8a6a3a", WA_UP, WINDOW),
+		// 青い カーテンの 窓（2x2。壁の 上段・下段）
+		w: solid("#8a6a3a", WA_UP, riCell("winBlue", 0, 0)),
+		W: solid("#8a6a3a", WA_UP, riCell("winBlue", 1, 0)),
 		j: solid("#8a6a3a", WA_LOW),
+		v: solid("#8a6a3a", WA_LOW, riCell("winBlue", 0, 1)),
+		V: solid("#8a6a3a", WA_LOW, riCell("winBlue", 1, 1)),
 		m: solid("#8a6a3a", WA_LOW, ri("poster")),
 		Q: solid("#e8e8e4", MODERN_UP),
-		V: solid("#e8e8e4", MODERN_UP, WINDOW),
+		R: solid("#e8e8e4", MODERN_UP, WINDOW),
 		q: solid("#e8e8e4", MODERN_LOW),
 		N: solid("#e8e8e4", MODERN_LOW, PAPER),
-		y: TATAMI.floor(),
+		t: TATAMI.floor(),
 		B: TATAMI.on(base(0, 112)),
 		z: TATAMI.on(base(0, 113)),
-		b: TATAMI.on(ri("bookshelf")),
-		c: TATAMI.on(ri("bookshelfDark")),
-		T: TATAMI.on(ri("tvCrt")),
-		S: TATAMI.on(ri("sink")),
-		s: TATAMI.on(ri("sink", 1)),
-		K: TATAMI.on(ri("stove")),
-		o: TATAMI.on(ri("roundTable")),
 		f: TATAMI.on(ri("fridgeWhite")),
-		g: TATAMI.on(ri("binBurn")),
 		e: FLOORING.floor(),
+		S: FLOORING.on(ri("sink")),
+		s: FLOORING.on(ri("sink", 1)),
+		K: FLOORING.on(ri("stove")),
+		k: FLOORING.on(ri("stove", 1)),
+		T: FLOORING.on(ri("tvCrt")),
+		O: FLOORING.on(ri("roundTable")),
+		n: FLOORING.floor(ri("stoolBrown")),
+		g: FLOORING.on(ri("binBurn")),
 		X: FLOORING.on(ri("boxesB")),
-		v: k.low(ri("notice")),
+		// ベランダの ガラス戸（あいた 1枚は 通れる）と ベランダの 床
+		G: FLOORING.on(ri("mirror")),
+		"/": FLOORING.floor(),
+		",": VERANDA.floor(),
+		F: VERANDA.on(ri("bonsai")),
+		// 玄関の たたき・台所と 洗面所の タイル
+		"~": TILE.floor(),
+		"|": TILE.floor(),
+		Y: TILE.on(ri("sink")),
+		y: TILE.on(ri("sink", 1)),
+		U: TILE.on(ri("washstand")),
+		u: k.on(ri("bucket")),
+		"^": TILE.on(ri("toilet")),
 		p: k.low(ri("memo")),
 		P: k.low(ri("memo")),
 		L: k.on(ri("lockers")),
 		l: k.on(ri("lockers", 1)),
-		u: k.on(ri("bucket")),
 		"!": k.on(),
 		Z: k.on(STAIRS),
+		// 大家の はり紙（廊下の 壁の 下段）
+
+		"%": k.low(ri("notice")),
 	}),
 	things: {
 		m: "poster",
+		B: "futon",
 		z: "futon",
-		b: "shelf",
-		c: "shelf",
 		T: "tv",
+		O: "table",
 		S: "sink",
 		s: "sink",
 		K: "stove",
+		k: "stove",
 		f: "fridge",
 		g: "trash",
+		G: "veranda",
+		F: "veranda",
 		N: "bosyu",
 		X: "box",
-		v: "ooya",
+		Y: "sink102",
+		y: "sink102",
+		U: "washstand",
+		"^": "toilet",
+		"%": "ooya",
 		p: "plate101",
 		P: "plate102",
 		L: "post",
@@ -124,9 +160,16 @@ export const CORPO_ROOM: FacilityRoom = {
 	lines: {
 		poster: ["壁の　ポスター。\n「目指せ　1000レス」"],
 		futon: ["せんべい布団。\n……昼すぎまで　しかれた　まま。"],
-		shelf: ["本棚。\n赤本と、まんがの　1巻だけ　ずらり。"],
 		tv: ["ブラウン管の　テレビ。\nたたくと　映る。"],
+		table: ["ちゃぶ台。\n食べかけの　ポテチと　リモコン。"],
 		sink: ["流し。\nカップ麺の　ふたが　3つ　重なっている。"],
+		veranda: [
+			"ベランダ。\n洗濯物が　1枚だけ　ぶらさがっている。",
+			"となりの　ベランダから　実況の　声。\n……壁、うすいな。",
+		],
+		sink102: ["台所の　流し。\nまだ　水あかも　ない。"],
+		washstand: ["洗面台。\n鏡に「内見中」の　付せん。"],
+		toilet: ["トイレ。\n「ウォシュレット　なし」の　札。"],
 		stove: ["ひと口の　コンロ。\n……やかんしか　のっていない。"],
 		fridge: ["小さな　冷蔵庫。\n中は　麦茶と、からしの　小袋。"],
 		trash: ["ゴミ袋。\n「燃えるゴミは　月・木」"],
@@ -146,7 +189,7 @@ export const CORPO_ROOM: FacilityRoom = {
 		{
 			id: "corpo_tenant",
 			walk: NANASHI[1],
-			at: [6, 5],
+			at: [6, 7],
 			dir: "left",
 			name: "住人",
 			lines: [
@@ -157,7 +200,7 @@ export const CORPO_ROOM: FacilityRoom = {
 		{
 			id: "corpo_agent",
 			walk: NANASHI[0],
-			at: [13, 4],
+			at: [15, 4],
 			dir: "down",
 			name: "不動産屋",
 			lines: [
@@ -168,7 +211,7 @@ export const CORPO_ROOM: FacilityRoom = {
 		{
 			id: "corpo_upstairs",
 			walk: NANASHI[3],
-			at: [5, 11],
+			at: [6, 15],
 			dir: "up",
 			name: "2階の　住人",
 			lines: [
