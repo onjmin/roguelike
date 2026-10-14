@@ -708,6 +708,127 @@ export const HOME_VISIT: Partial<Record<string, readonly string[]>> = {
 	],
 };
 
+// ───────────────── 招いた 人の 過ごし方 ─────────────────
+// 作者「うろうろ だけでは 味気ない。家具で 遊んだり、緩急 つけて 特定の 所へ 行ったり、見回ったり、
+// のんびり したり。キャラに よって 性格も かわる」。ui/village/myhome.ts の guestRoam が 1つずつ 決める。
+
+/** 招いた 人の する こと。 */
+export type GuestAct =
+	/** 遊べる 家具・テレビ・楽器の 前で 遊ぶ。 */
+	| "play"
+	/** ベッド・ソファ・いす・ちゃぶ台の そばで くつろぐ。 */
+	| "relax"
+	/** 本棚・掛け軸・冊子の 前で 読む。 */
+	| "read"
+	/** 置物・水槽・持ち帰った 品を ながめる。 */
+	| "look"
+	/** 窓の 下から 外を 見る。 */
+	| "window"
+	/** 部屋の すみを 順に 見回る（きょろきょろ）。 */
+	| "patrol"
+	/** その場で ぼんやり（向きを かえる だけ）。 */
+	| "idle";
+
+/** 家具の 使い方（決めて いない 家具は ながめる）。 */
+export const FURNITURE_ACT: Partial<Record<BaseFurnitureId, GuestAct>> = {
+	bed: "relax",
+	sofa: "relax",
+	chair: "relax",
+	table: "relax",
+	coffee: "relax",
+	shelf: "read",
+	shelfDark: "read",
+	kakejiku: "read",
+	mojiBook: "read",
+	picrossNote: "read",
+	crt: "play",
+	tvTall: "play",
+	tv: "play",
+	guitar: "play",
+	records: "play",
+	dumbbell: "play",
+};
+
+/** 性格（する ことの 重み・待つ 長さの 倍率・歩く 遅さの 倍率・する ことごとの 吹き出し）。 */
+export type Temper = {
+	acts: Partial<Record<GuestAct, number>>;
+	/** 1つの ことを する 長さの 倍率（大きいほど のんびり）。 */
+	tempo: number;
+	/** 歩く 遅さ（村の 1歩の 何倍。小さいほど せかせか）。 */
+	walk: number;
+	emotes: Partial<Record<GuestAct, string>>;
+};
+
+export type TemperId = "lively" | "curious" | "steady" | "dreamy" | "tidy";
+
+export const TEMPERS: Record<TemperId, Temper> = {
+	// せかせか 遊ぶ（ゲームと テレビ。見回りは さっと）
+	lively: {
+		acts: { play: 6, look: 2, patrol: 2, window: 1, relax: 1, idle: 1 },
+		tempo: 0.7,
+		walk: 1.1,
+		emotes: { play: "!", look: "!", relax: "♪" },
+	},
+	// なんでも 見て まわる（値ぶみ。品と 家具を 次々）
+	curious: {
+		acts: { look: 5, play: 2, patrol: 3, read: 1, window: 1, idle: 1 },
+		tempo: 0.9,
+		walk: 1.3,
+		emotes: { look: "?", play: "!", read: "…" },
+	},
+	// 腰を すえる（本・パソコン。動きは ゆっくり）
+	steady: {
+		acts: { read: 5, play: 2, relax: 2, look: 1, idle: 2 },
+		tempo: 1.5,
+		walk: 1.7,
+		emotes: { read: "…", play: "…", relax: "…" },
+	},
+	// ぼんやり くつろぐ（窓の 外・ソファ。鼻歌）
+	dreamy: {
+		acts: { relax: 5, window: 4, idle: 3, look: 1 },
+		tempo: 1.8,
+		walk: 2,
+		emotes: { relax: "♪", window: "♪", idle: "z" },
+	},
+	// すみずみ 見回る（片づけの 目。収納と 棚）
+	tidy: {
+		acts: { patrol: 5, read: 2, look: 2, idle: 1 },
+		tempo: 1,
+		walk: 1.5,
+		emotes: { patrol: "…", read: "…", look: "…" },
+	},
+};
+
+/** 人ごとの 性格（書いて いない 人は 好奇心）。 */
+export const GUEST_TEMPER: Partial<Record<string, TemperId>> = {
+	nanj: "lively",
+	roze: "curious",
+	zero: "steady",
+	feris: "dreamy",
+	shiyo: "tidy",
+	puyu: "lively",
+	onchan: "lively",
+	panmatsu: "steady",
+	ngoane: "dreamy",
+	onsu: "curious",
+	shobon: "steady",
+	mujje: "dreamy",
+};
+
+/** 窓の 下（外を 見る 所。壁の 窓 W の 下の 床）と 部屋の すみ（見回る 所）。 */
+export const HOME_WINDOWS: readonly Cell[] = [
+	[3, 3],
+	[8, 3],
+];
+export const HOME_CORNERS: readonly Cell[] = [
+	[2, 3],
+	[9, 3],
+	[1, 8],
+	[10, 8],
+	[1, 5],
+	[10, 6],
+];
+
 /** 住人を 招いた とき（家具の 少ない・ふつう・多い）。 */
 export const VISIT_ANY: readonly string[] = [
 	"おじゃまします。\n……ひろい　お部屋ですね",

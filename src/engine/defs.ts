@@ -65,6 +65,11 @@ export type EventDef = {
 	through?: boolean;
 	/** うろうろ歩く。 */
 	wander?: boolean;
+	/**
+	 * 自分で 次に する ことを 決めて 動く（キリコの 家に 招いた 人。wander より 先）。
+	 * 1つ 終わるたびに 呼ばれ、行き先へ 歩いて、向いて、吹き出しを 出して しばらく いる。
+	 */
+	roam?: (at: { x: number; y: number }) => RoamStep;
 	/** 向きを変えない（看板・置物）。 */
 	fixedDir?: boolean;
 	/** 出現条件。偽の間はマップに居ない扱い。 */
@@ -157,6 +162,20 @@ export type SayOptions = {
 	color?: string;
 	/** 読み上げの 声（仲間でない人。無ければ who の 声）。 */
 	tts?: VoiceDef;
+};
+
+/** roam の 1つの こと（行き先・着いて 向く 向き・吹き出し・いる 長さ・歩く 遅さ・きょろきょろ）。 */
+export type RoamStep = {
+	to?: readonly [number, number];
+	face?: Dir;
+	/** 頭の 上の 吹き出しの 字（"!" "?" "…" "♪" "z" など。1字）。 */
+	emote?: string;
+	/** 着いてから いる 長さ（ms）。 */
+	wait: number;
+	/** 1歩の 遅さ（村の 1歩の 何倍）。 */
+	walk?: number;
+	/** いる あいだ ときどき 向きを かえる。 */
+	look?: boolean;
 };
 
 export type Story = {

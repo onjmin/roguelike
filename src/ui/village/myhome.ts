@@ -23,6 +23,7 @@ import {
 	FLOORINGS,
 	type Flooring,
 	FURNITURE,
+	FURNITURE_ACT,
 	FURNITURE_GAME,
 	FURNITURE_PRICE,
 	type FurnitureId,
@@ -30,14 +31,19 @@ import {
 	furnitureSize,
 	type Gift,
 	GUEST_SPOTS,
+	GUEST_TEMPER,
+	type GuestAct,
 	goalFurniture,
+	HOME_CORNERS,
 	HOME_DOWN,
 	HOME_GIFTS,
+	HOME_KEEP,
 	HOME_MAX,
 	HOME_MONTHLY,
 	HOME_MSG,
 	HOME_ROWS,
 	HOME_VISIT,
+	HOME_WINDOWS,
 	type HomeLayout,
 	homeRows,
 	INVITE_HEARTS,
@@ -48,13 +54,14 @@ import {
 	type Placed,
 	placeInFront,
 	RESIDENT_GIFTS,
+	TEMPERS,
 	VISIT_ANY,
 	WALLPAPERS,
 	type Wallpaper,
 } from "../../data/village/myhome";
 import { tatamiSample } from "../../data/village/tatami";
 import { drawRefInCell, loadImage } from "../../engine/assets";
-import type { EventDef, Script, Story } from "../../engine/defs";
+import type { EventDef, RoamStep, Script, Story } from "../../engine/defs";
 import { loadProgress, loadRecords, loadTown } from "../../engine/save";
 import { DIR_VEC, type Dir, TILE } from "../../engine/types";
 import { spendYen, walletYen, yen } from "../../engine/wallet";
@@ -848,7 +855,129 @@ const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 	await rebuildSoft(s);
 };
 
-/** 招いた 人（キリコの 家の 中を うろうろ する。話すと 家に ついての ひとこと）。 */
+/** 家具の まわりの 立てる 床（下・左・右・上の 順。向く 向きは 家具の ほう）。 */
+const besides = (
+	placed: readonly Placed[],
+	p: Placed,
+): { at: Cell; face: Dir }[] => {
+	const { w, h } = furnitureSize(p.id);
+	const out: { at: Cell; face: Dir }[] = [];
+	for (let dx = 0; dx < w; dx++)
+		out.push({ at: [p.x + dx, p.y + h], face: "up" });
+	for (let dy = 0; dy < h; dy++) {
+		out.push({ at: [p.x - 1, p.y + dy], face: "right" });
+		out.push({ at: [p.x + w, p.y + dy], face: "left" });
+	}
+	for (let dx = 0; dx < w; dx++)
+		out.push({ at: [p.x + dx, p.y - 1], face: "down" });
+	return out.filter(({ at }) => freeFloor(placed, at));
+};
+
+/** 人が 立てる 床か（家具・壁・扉・入口の マットの 前で ない）。 */
+const freeFloor = (placed: readonly Placed[], [x, y]: Cell): boolean =>
+	HOME_ROWS[y]?.[x] === "." &&
+	!furnitureAt(placed, x, y) &&
+	!HOME_KEEP.some(([kx, ky]) => kx === x && ky === y);
+
+/** 家具で する こと（遊べる 物は 遊ぶ。決めて いない 物は ながめる）。 */
+const actOf = (id: FurnitureId): GuestAct =>
+	FURNITURE_GAME[id] || PC_FURNITURE.includes(id)
+		? "play"
+		: (FURNITURE_ACT[id as keyof typeof FURNITURE_ACT] ?? "look");
+
+/** する ことごとの いる 長さ（ms。性格の tempo を かける）。 */
+const ACT_MS: Record<GuestAct, number> = {
+	play: 6500,
+	relax: 8000,
+	read: 7000,
+	look: 2600,
+	window: 6000,
+	patrol: 1400,
+	idle: 4000,
+};
+
+/**
+ * 招いた 人が 次に する こと（性格の 重みで えらぶ）。見回りは すみを 3つ 続けて まわり、
+ * 同じ 所へは 続けて 行かない。行く 所の ない ことは その場で ぼんやり。
+ */
+const guestRoam = (
+	w: Cast,
+	placed: readonly Placed[],
+): ((at: { x: number; y: number }) => RoamStep) => {
+	const t = TEMPERS[GUEST_TEMPER[w] ?? "curious"];
+	let patrol: Cell[] = [];
+	let last = "";
+	const spots = (act: GuestAct): { at: Cell; face?: Dir }[] => {
+		if (act === "window")
+			return HOME_WINDOWS.filter((c) => freeFloor(placed, c)).map((at) => ({
+				at,
+				face: "up" as Dir,
+			}));
+		return placed
+			.filter((p) => actOf(p.id) === act)
+			.flatMap((p) => besides(placed, p));
+	};
+	const pick = <T>(xs: readonly T[]): T =>
+		xs[Math.floor(Math.random() * xs.length)];
+	const len = (act: GuestAct) =>
+		ACT_MS[act] * t.tempo * (0.7 + Math.random() * 0.6);
+	return (here) => {
+		// 見回りの 続き
+		const next = patrol.shift();
+		if (next)
+			return {
+				to: next,
+				wait: len("patrol"),
+				walk: t.walk,
+				look: true,
+				emote: t.emotes.patrol,
+			};
+		const acts = (Object.entries(t.acts) as [GuestAct, number][]).filter(
+			([a]) => a === "idle" || a === "patrol" || spots(a).length,
+		);
+		let r = Math.random() * acts.reduce((n, [, k]) => n + k, 0);
+		let act: GuestAct = "idle";
+		for (const [a, k] of acts) {
+			r -= k;
+			if (r < 0) {
+				act = a;
+				break;
+			}
+		}
+		if (act === "patrol") {
+			const free = HOME_CORNERS.filter((c) => freeFloor(placed, c));
+			patrol = [...free].sort(() => Math.random() - 0.5).slice(0, 3);
+			const first = patrol.shift();
+			if (first)
+				return {
+					to: first,
+					wait: len("patrol"),
+					walk: t.walk * 0.9,
+					look: true,
+					emote: t.emotes.patrol,
+				};
+		}
+		const options = act === "idle" ? [] : spots(act);
+		const fresh = options.filter(({ at }) => `${at}` !== last);
+		const spot = fresh.length ? pick(fresh) : options[0];
+		if (!spot) {
+			last = `${here.x},${here.y}`;
+			return { wait: len("idle"), look: true, emote: t.emotes.idle };
+		}
+		last = `${spot.at}`;
+		return {
+			to: spot.at,
+			face: spot.face,
+			wait: len(act),
+			// 遊ぶ ときは 足どりが 軽い（緩急）
+			walk: act === "play" ? t.walk * 0.75 : t.walk,
+			look: act === "look" && Math.random() < 0.4,
+			emote: t.emotes[act],
+		};
+	};
+};
+
+/** 招いた 人（キリコの 家の 中で 性格どおりに 過ごす。話すと 家に ついての ひとこと）。 */
 export const guestEvent = (): EventDef | null => {
 	const m = loadHome();
 	const w = m.guest;
@@ -866,8 +995,8 @@ export const guestEvent = (): EventDef | null => {
 		sprite: castWalk(w),
 		dir: "down",
 		trigger: "talk",
-		// 家の 中を うろうろ する（立つ 所から 2マスまで。ui/village/village.ts）
-		wander: true,
+		// 家の 中で 性格どおりに 過ごす（遊ぶ・くつろぐ・見回る……。ui/village/village.ts の roamTick）
+		roam: guestRoam(w, m.placed),
 		run: async (s) => {
 			s.face("home_guest", "player");
 			// 置いた 家具の 数で ひとこと（少ない・ふつう・多い）

@@ -51,6 +51,7 @@ import { TROLLEY_CART } from "../../data/village/trolley";
 import { preloadImages } from "../../engine/assets";
 import type {
 	EventDef,
+	RoamStep,
 	SayOptions,
 	Script,
 	Story,
@@ -604,6 +605,17 @@ export class Village {
 		}
 		for (const a of field.actors) {
 			a.update(dt);
+			// 自分で する ことを 決める 人（キリコの 家に 招いた 人）
+			if (
+				a.def?.roam &&
+				!a.moving &&
+				this.scriptDepth === 0 &&
+				!this.scene &&
+				a !== this.pathTalk
+			) {
+				this.roamTick(a, dt);
+				continue;
+			}
 			// 話しかけに 向かっている 相手は 待っている
 			if (
 				a.def?.wander &&
@@ -641,6 +653,72 @@ export class Village {
 		this.crowd?.update(dt);
 		if (this.idle && !this.player.moving) this.control();
 		this.updateCamera(dt);
+	}
+
+	/** roam で いま して いる こと（人ごと。歩く 残りの 道・着いたか・残りの 時間・次に 向きを かえるまで）。 */
+	private roams = new WeakMap<
+		Actor,
+		{
+			step: RoamStep;
+			path: Dir[];
+			arrived: boolean;
+			wait: number;
+			turn: number;
+		}
+	>();
+
+	/** roam の 1コマ：道を 1歩ずつ 歩き、着いたら 向いて 吹き出しを 出し、時間が たったら 次を 決める。 */
+	private roamTick(a: Actor, dt: number): void {
+		const field = this.field;
+		const roam = a.def?.roam;
+		if (!field || !roam) return;
+		let r = this.roams.get(a);
+		if (!r) {
+			const step = roam({ x: a.x, y: a.y });
+			const to = step.to;
+			const path =
+				to && (to[0] !== a.x || to[1] !== a.y)
+					? (field.findPath(a.x, a.y, to[0], to[1], a, false, undefined, 400) ??
+						[])
+					: [];
+			r = { step, path, arrived: false, wait: step.wait, turn: 600 };
+			this.roams.set(a, r);
+			a.emote = null;
+		}
+		const d = r.path[0];
+		if (d) {
+			const nx = a.x + DIR_VEC[d].dx;
+			const ny = a.y + DIR_VEC[d].dy;
+			// キリコや 人が 道に 立ったら そこで 止まる（着いた ことに する）
+			if (
+				field.canEnter(nx, ny, a) &&
+				!(nx === this.player.x && ny === this.player.y) &&
+				!this.onPath(nx, ny)
+			) {
+				r.path.shift();
+				void a.walk(d, WALK_MS * (r.step.walk ?? 1.6));
+				return;
+			}
+			r.path = [];
+		}
+		if (!r.arrived) {
+			r.arrived = true;
+			if (r.step.face) a.dir = r.step.face;
+			a.emote = r.step.emote ?? null;
+		}
+		r.wait -= dt;
+		if (r.step.look) {
+			r.turn -= dt;
+			if (r.turn <= 0) {
+				r.turn = 700 + Math.random() * 900;
+				const dirs: Dir[] = ["up", "right", "down", "left"];
+				a.dir = dirs[Math.floor(Math.random() * 4)];
+			}
+		}
+		if (r.wait <= 0) {
+			a.emote = null;
+			this.roams.delete(a);
+		}
 	}
 
 	/** タップで決めた 道の上か（うろうろする人が 道を ふさがないように）。 */

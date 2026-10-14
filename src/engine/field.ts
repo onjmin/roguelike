@@ -42,6 +42,8 @@ export class Actor {
 	through: boolean;
 	/** 乗り物（キリコの おんJトロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
 	vehicle: string | null = null;
+	/** 頭の 上の 吹き出しの 字（EventDef の roam。null で 出さない）。 */
+	emote: string | null = null;
 	/** 寝ころんで いる ときの 掛け布団（ベッドの 下の マスの 絵。少し 下げた 体の 上に かぶせる）。 */
 	blanket: string | null = null;
 	def: EventDef | null;
@@ -189,6 +191,7 @@ export class Actor {
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
 		if (this.vehicle) drawRefInCell(ctx, this.vehicle, px, py);
+		if (this.emote) drawEmote(ctx, this.emote, px, py - seat, time);
 		if (this.blanket)
 			drawRefInCell(
 				ctx,
@@ -198,6 +201,35 @@ export class Actor {
 			);
 	}
 }
+
+/** 吹き出し（白い 四角に 1字。ゆっくり 上下に ゆれる。"z" は 寝息で 2字ぶん 浮かぶ）。 */
+const drawEmote = (
+	ctx: CanvasRenderingContext2D,
+	text: string,
+	px: number,
+	py: number,
+	time: number,
+): void => {
+	const bob = Math.round(Math.sin(time / 260) * 1);
+	const x = px + 9;
+	const y = py - 11 + bob;
+	ctx.save();
+	ctx.fillStyle = "#3a3048";
+	ctx.fillRect(x - 1, y - 1, 11, 10);
+	ctx.fillStyle = "#fffdf6";
+	ctx.fillRect(x, y, 9, 8);
+	// しっぽ
+	ctx.fillRect(x + 1, y + 8, 2, 1);
+	ctx.fillStyle = "#3a3048";
+	ctx.fillRect(x + 1, y + 9, 1, 1);
+	ctx.font = "bold 8px sans-serif";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillStyle =
+		text === "!" ? "#d03a2a" : text === "♪" ? "#2a7ad0" : "#3a3048";
+	ctx.fillText(text, x + 4.5, y + 4.5);
+	ctx.restore();
+};
 
 export class Field {
 	readonly def: MapDef;
