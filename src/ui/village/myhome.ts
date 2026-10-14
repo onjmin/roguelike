@@ -18,6 +18,7 @@ import type { Facility } from "../../data/village/facilities";
 import type { Cell } from "../../data/village/map";
 import {
 	type BaseFurnitureId,
+	cellLayers,
 	EVENT_GIFTS,
 	FLOORINGS,
 	type Flooring,
@@ -39,6 +40,7 @@ import {
 	HOME_VISIT,
 	type HomeLayout,
 	homeRows,
+	INVITE_HEARTS,
 	LOAN_MONTHS,
 	MOVE_IN_GIFT,
 	NOT_SOLD,
@@ -241,7 +243,10 @@ export const homeFacility = (f: Facility): Facility => {
 			tiles: (k) => ({
 				...room.tiles?.(k),
 				...Object.fromEntries(
-					Object.entries(art).map(([ch, ref]) => [ch, k.on(ref)]),
+					Object.entries(art).map(([ch, ref]) => [
+						ch,
+						k.on(...cellLayers(ref)),
+					]),
 				),
 			}),
 			things,
@@ -326,7 +331,7 @@ const artIcon = (
 	c.style.height = `${ICON_H}px`;
 	const g = c.getContext("2d");
 	if (!g) return c;
-	const refs = cells.flat();
+	const refs = cells.flat().flatMap(cellLayers);
 	void Promise.all(refs.map((r) => loadImage(r))).then(() => {
 		g.imageSmoothingEnabled = false;
 		g.clearRect(0, 0, c.width, c.height);
@@ -336,7 +341,8 @@ const artIcon = (
 		}
 		cells.forEach((row, y) => {
 			row.forEach((ref, x) => {
-				drawRefInCell(g, ref, x * TILE, y * TILE, TILE, "cell");
+				for (const l of cellLayers(ref))
+					drawRefInCell(g, l, x * TILE, y * TILE, TILE, "cell");
 			});
 		});
 	});
@@ -428,7 +434,8 @@ export const homeDecor =
 				row.forEach((ref, dx) => {
 					const x = (p.x + dx) * TILE - ox;
 					const y = (p.y + dy) * TILE - oy;
-					drawRefInCell(g, ref, x, y, TILE, "cell");
+					for (const l of cellLayers(ref))
+						drawRefInCell(g, l, x, y, TILE, "cell");
 				});
 			});
 			const { w, h } = furnitureSize(carrying);
@@ -456,7 +463,7 @@ export const homeDecor =
 
 /** キリコの 家で 先に 読む 絵（下見の 家具）。 */
 export const homeImages = (): string[] =>
-	Object.values(FURNITURE).flatMap((f) => f.cells.flat());
+	Object.values(FURNITURE).flatMap((f) => f.cells.flat().flatMap(cellLayers));
 
 /**
  * 目の前が 家具の ない 床で A（ui/village/village.ts の onTalkEmpty）：持っている 家具か、片づけた 家具から 選んで 置く。
@@ -597,6 +604,13 @@ export const homeThing =
 			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
 			return;
 		}
+		// ベッド：寝ころぶ（枕に 頭を のせて 掛け布団を かぶる。もう 1度 押すと 起きる）
+		if (kind === "bed") {
+			const g = await s.choose([...HOME_MSG.bedMenu], { cancel: 3 });
+			if (g === 0) await lieDown(s, m);
+			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
+			return;
+		}
 		const game = FURNITURE_GAME[kind];
 		// パソコン：ゲームの ほかに BASIC を 書いて 動かせる（ui/petitcon/petitcon.ts）
 		if (game && PC_FURNITURE.includes(kind)) {
@@ -623,6 +637,22 @@ export const homeThing =
 		if (n === 2) return;
 		await moveOrStore(s, m, kind, n);
 	};
+
+/** ベッドに 寝ころぶ（置いた ベッドの 上の マスが 枕、下の マスが 掛け布団）。窓を 閉じると 起きる。 */
+const lieDown = async (s: Story, m: HomeMemo): Promise<void> => {
+	const bed = m.placed.find((p) => p.id === "bed");
+	if (!bed) return;
+	const blanket = FURNITURE.bed.cells[1]?.[0];
+	if (!blanket) return;
+	s.lie({ x: bed.x, y: bed.y, blanket });
+	try {
+		await s.wait(400);
+		const lines = HOME_MSG.lieDown;
+		await s.narrate(lines[m.returns % lines.length]);
+	} finally {
+		s.lie(null);
+	}
+};
 
 /** 家具を 動かす（n 0・持つ）か 片づける（n 1）。 */
 const moveOrStore = async (
@@ -775,7 +805,7 @@ const castWalk = (w: Cast): string =>
 		? CAST[w as Speaker].walk
 		: MOBS[w as Exclude<Cast, Speaker>].sprite;
 
-/** 電話：喫茶で 親しく なった 人を 招く（村に いない 人は 出ない）。来ている 人は 帰って もらえる。 */
+/** 電話：♥ が INVITE_HEARTS 以上の 人を 招く（村に いない 人は 出ない）。来ている 人は 帰って もらえる。 */
 const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 	const m = loadHome();
 	if (m.guest) {
@@ -789,7 +819,10 @@ const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 		return;
 	}
 	const away = awayFriends(loadProgress().cleared, loadTown().stage);
-	const list = bondCast(1).filter((w) => !away.includes(w as Speaker));
+	// bondCast は 喫茶で 親しく なった 人を ♥0 でも ふくむので、ここで ♥ を 見なおす
+	const list = bondCast(INVITE_HEARTS).filter(
+		(w) => !away.includes(w as Speaker) && bondLevel(w) >= INVITE_HEARTS,
+	);
 	if (!list.length) {
 		await s.narrate(HOME_MSG.phoneNone);
 		return;
@@ -815,7 +848,7 @@ const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 	await rebuildSoft(s);
 };
 
-/** 招いた 人（キリコの 家の 中。話すと 家に ついての ひとこと）。 */
+/** 招いた 人（キリコの 家の 中を うろうろ する。話すと 家に ついての ひとこと）。 */
 export const guestEvent = (): EventDef | null => {
 	const m = loadHome();
 	const w = m.guest;
@@ -833,6 +866,8 @@ export const guestEvent = (): EventDef | null => {
 		sprite: castWalk(w),
 		dir: "down",
 		trigger: "talk",
+		// 家の 中を うろうろ する（立つ 所から 2マスまで。ui/village/village.ts）
+		wander: true,
 		run: async (s) => {
 			s.face("home_guest", "player");
 			// 置いた 家具の 数で ひとこと（少ない・ふつう・多い）

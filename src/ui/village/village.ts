@@ -561,6 +561,9 @@ export class Village {
 		this.rafId = requestAnimationFrame((tt) => this.frame(tt));
 	}
 
+	/** ベッドに 寝ころぶ 前に いた マス（Story の lie）。 */
+	private lieFrom: { x: number; y: number; dir: Dir } | null = null;
+
 	/** 村の 時計の 文（かわった ときだけ 書く。data/village/daylight.ts）。 */
 	private clockText = "";
 	/** 村の 時計の 端数（ms。現実の 1秒で 1分 すすむ。data/town/calendar.ts）。 */
@@ -1942,6 +1945,26 @@ export class Village {
 			warp: (map, x, y, dir) =>
 				this.warp(map, { x, y, dir: dir ?? this.player.dir }),
 			ride: (x, y) => this.ride(x, y),
+			lie: (at) => {
+				const p = this.player;
+				if (at) {
+					this.lieFrom ??= { x: p.x, y: p.y, dir: p.dir };
+					p.setPos(at.x, at.y);
+					// 枕に 頭が のるよう 4px 下げる（下の マスの 掛け布団を かぶせる。顔は 布団の 上に 出る。engine/field.ts）
+					p.fy = at.y + 0.25;
+					p.dir = "down";
+					p.blanket = at.blanket;
+				} else {
+					p.blanket = null;
+					const f = this.lieFrom;
+					this.lieFrom = null;
+					if (f) {
+						p.setPos(f.x, f.y);
+						p.dir = f.dir;
+					}
+				}
+				this.syncState();
+			},
 			exit: (choice) => {
 				this.exitChoice = choice;
 			},

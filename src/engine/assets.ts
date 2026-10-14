@@ -39,7 +39,15 @@ export const resolveRef = (ref: string): string => {
 	return base;
 };
 
-export type Crop = { sx: number; sy: number; sw: number; sh: number };
+/** 切り出し（`#sx,sy,sw,sh`）。5・6番めの 数は 描く 位置の ずらし（px。`#sx,sy,sw,sh,dx,dy`）。 */
+export type Crop = {
+	sx: number;
+	sy: number;
+	sw: number;
+	sh: number;
+	dx?: number;
+	dy?: number;
+};
 
 const cropCache = new Map<string, Crop | null>();
 
@@ -50,12 +58,12 @@ export const cropOf = (ref: string): Crop | null => {
 	const hash = ref.indexOf("#");
 	let crop: Crop | null = null;
 	if (hash >= 0) {
-		const [sx, sy, sw, sh] = ref
+		const [sx, sy, sw, sh, dx = 0, dy = 0] = ref
 			.slice(hash + 1)
 			.split(",")
 			.map(Number);
-		if ([sx, sy, sw, sh].every((n) => Number.isFinite(n)))
-			crop = { sx, sy, sw, sh };
+		if ([sx, sy, sw, sh, dx, dy].every((n) => Number.isFinite(n)))
+			crop = { sx, sy, sw, sh, dx, dy };
 	}
 	cropCache.set(ref, crop);
 	return crop;
@@ -89,8 +97,8 @@ export const drawRefInCell = (
 			c.sy + top,
 			c.sw,
 			h,
-			x + (cell - c.sw) / 2,
-			y + cell - c.sh + top,
+			x + (cell - c.sw) / 2 + (c.dx ?? 0),
+			y + cell - c.sh + top + (c.dy ?? 0),
 			c.sw,
 			h,
 		);

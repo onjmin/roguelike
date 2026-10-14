@@ -235,6 +235,7 @@ import {
 } from "../data/village/map";
 import {
 	canPlace,
+	cellLayers,
 	FURNITURE,
 	FURNITURE_PRICE,
 	type FurnitureId,
@@ -1679,15 +1680,7 @@ test("場面で 置いた 人の マスに 重ならない：口の 前に 並�
 		// 跡地の 結（北の 口。仲間と 原住民が 並び、キリコが どいて、ROM専 18体が まわりに 立つ）
 		for (const stage of [2, 5, 7]) {
 			progress(
-				[
-					"shallow",
-					"kinoko",
-					"main",
-					"isle1",
-					"isle3",
-					"opunu",
-					"ato",
-				],
+				["shallow", "kinoko", "main", "isle1", "isle3", "opunu", "ato"],
 				["shallow", "kinoko", "main", "opunu"],
 			);
 			putTown({ stage });
@@ -2231,7 +2224,8 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 				goalFurniture(d) in FURNITURE &&
 				!(goalFurniture(d) in FURNITURE_PRICE) &&
 				!sources.includes(goalFurniture(d)) &&
-				!!FURNITURE[goalFurniture(d)].cells[0][0] &&
+				// 品は 下の マスの 台に 重ねる（台 | 品。cellLayers）
+				cellLayers(FURNITURE[goalFurniture(d)].cells[1][0]).length === 2 &&
 				FURNITURE[goalFurniture(d)].cells.length === 2,
 		),
 		"a goal item is not a stand-only furniture",
@@ -2823,6 +2817,9 @@ const fakeStory = (
 			state.x = x;
 			state.y = y;
 		},
+		lie: (at) => {
+			log.push(at ? `lie ${at.x},${at.y}` : "getup");
+		},
 		exit: () => {},
 	};
 	return { s, log, walks, clashes };
@@ -3270,10 +3267,7 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 			TOWN_FINDS.some((f) => f.dungeon === "isle1" && f.facility === "pier"),
 		"the branch is not found at the pier",
 	);
-	ok(
-		DUNGEONS.isle3.unlockAfter === "isle1",
-		"the isles do not chain",
-	);
+	ok(DUNGEONS.isle3.unlockAfter === "isle1", "the isles do not chain");
 	ok(
 		DUNGEONS.opunu.unlockAfter === null &&
 			JSON.stringify(DUNGEONS.opunu.unlockAfterAll) ===
@@ -3439,9 +3433,9 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		);
 		// 裏は 本筋より むずかしい：どの 板も 倉庫の 道具を 持ちこめない。底の 強さも 本筋の 対より 上
 		ok(
-			(
-				["isle1", "isle3", "opunu", "ato", "hinan", "y1901"] as const
-			).every((d) => DUNGEONS[d].noCarry === true),
+			(["isle1", "isle3", "opunu", "ato", "hinan", "y1901"] as const).every(
+				(d) => DUNGEONS[d].noCarry === true,
+			),
 			"a hidden-route board lets storage items in",
 		);
 		const top = (d: DungeonId) => DUNGEONS[d].level[DUNGEONS[d].floors];
@@ -4153,8 +4147,7 @@ test("裏シナリオ: 跡地 opens only when the lighthouse is cleared and a RO
 		"避難J opens without both",
 	);
 	ok(
-		openable("opunu", ["isle1", "isle3"]) &&
-			!openable("opunu", ["isle1"]),
+		openable("opunu", ["isle1", "isle3"]) && !openable("opunu", ["isle1"]),
 		"the lighthouse opens without the two isles",
 	);
 	await withStorageAsync(async () => {

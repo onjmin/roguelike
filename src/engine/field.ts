@@ -42,6 +42,8 @@ export class Actor {
 	through: boolean;
 	/** 乗り物（キリコの おんJトロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
 	vehicle: string | null = null;
+	/** 寝ころんで いる ときの 掛け布団（ベッドの 下の マスの 絵。少し 下げた 体の 上に かぶせる）。 */
+	blanket: string | null = null;
 	def: EventDef | null;
 	private tween: {
 		fromX: number;
@@ -187,6 +189,13 @@ export class Actor {
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
 		if (this.vehicle) drawRefInCell(ctx, this.vehicle, px, py);
+		if (this.blanket)
+			drawRefInCell(
+				ctx,
+				this.blanket,
+				px,
+				Math.round((Math.floor(this.fy) + 1) * TILE - oy),
+			);
 	}
 }
 

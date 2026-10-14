@@ -373,6 +373,21 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 /** 底の 品を のせる 台。 */
 const GOAL_STAND = ri("tableBeige");
 
+/**
+ * 家具の 1マスの 絵の 重ね（`|` で 区切ると 下から 順に 重ねる。台の 上に 品を のせる ときなど）。
+ */
+export const cellLayers = (cell: string): string[] =>
+	cell ? cell.split("|") : [];
+
+/**
+ * 台に のせる 品の 絵（16x16）を 半マス 上に ずらす（台と 同じ マスに 重ね、台の 天板に のって 見える。
+ * 作者「テーブルの 上の 物は 0.5 下に ずらした ほうが 立体的」）。
+ */
+const onStand = (icon: string): string => {
+	const at = icon.indexOf("#");
+	return at < 0 ? `${icon}#0,0,16,16,0,-8` : `${icon},0,-8`;
+};
+
 /** 1行の 幅（全角 22字）。 */
 const LINE_W = 22;
 
@@ -418,8 +433,8 @@ export const GOAL_FURNITURE = Object.fromEntries(
 			goalFurniture(d),
 			{
 				name: def.name,
-				// 品の 下に 台（1×2。上の マスに 品、下の マスに 台）
-				cells: [[def.icon ?? ""], [GOAL_STAND]],
+				// 台（1×2）。品は 下の マスの 台に 重ねて 半マス 上に 描く（上の マスは 品の 上半分だけ）
+				cells: [[""], [`${GOAL_STAND}|${onStand(def.icon ?? "")}`]],
 				line: goalLine(def.name, def.flavor),
 			},
 		];
@@ -756,6 +771,8 @@ export const HOME_KEEP: readonly Cell[] = [
 	[3, 3],
 	[1, 4],
 ];
+/** 家に 招ける なかよし度（♥。喫茶で 親しく なっただけでは 足りない。作者「親睦0でも 呼べるのは おかしい」）。 */
+export const INVITE_HEARTS = 2;
 /** 招いた 人が 立つ 所（空いて いる 床から 順に さがす）。 */
 export const GUEST_SPOTS: readonly Cell[] = [
 	[5, 5],
@@ -987,6 +1004,15 @@ export const HOME_MSG = {
 	changed: "{name}に　した。",
 	/** 家具を 調べた あと。 */
 	thingMenu: ["動かす", "片づける", "そのまま"],
+	/** ベッド：寝ころぶ（起きると もとの マスへ）。 */
+	bedMenu: ["寝ころぶ", "動かす", "片づける", "そのまま"],
+	/** 寝ころんだ ときの 文（順に 1つ。帰りの 数で まわす）。 */
+	lieDown: [
+		"ごろん。\n……天井の　しみを　数えた。",
+		"ごろん。\nシーツが　ひんやり　している。",
+		"ごろん。\n……このまま　ちょっと　だけ。",
+		"ごろん。\n外で　だれかが　笑っている。",
+	],
 	/** 遊べる 家具を 調べた あと。 */
 	gameMenu: ["遊ぶ", "動かす", "片づける", "そのまま"],
 	pcMenu: [

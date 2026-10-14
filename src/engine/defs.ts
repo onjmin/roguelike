@@ -244,6 +244,11 @@ export type Story = {
 	 * （人は すりぬけ、扉・口は 踏まない）。カメラは ついていく。道が なければ 暗転して 置きなおす。着いたら 解決する。
 	 */
 	ride(x: number, y: number): Promise<void>;
+	/**
+	 * キリコが ベッドに 寝ころぶ（at の マス＝枕に 頭を のせ、下の マスの 掛け布団 blanket を かぶる）。
+	 * null で 起きて、寝ころぶ 前の マスに もどる。
+	 */
+	lie(at: { x: number; y: number; blanket: string } | null): void;
 	/** 村を出る（いちばん外のスクリプトが終わってから 暗転して 出る）。 */
 	exit(choice: VillageExit): void;
 };
