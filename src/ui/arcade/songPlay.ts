@@ -149,9 +149,15 @@ export const startSong = (ctx: UiCtx, song: PickedSong): SongClock => {
 			play = p;
 			if (!p) silent = true;
 		});
+	// 曲の 秒は 鳴らした 時刻では なく 聞こえる 時刻で 数える（Bluetooth の イヤホンだと 0.2秒ほど
+	// 遅れて 聞こえ、音に 合わせて 押すと ぜんぶ「早い」に なった）。譜面の 絵も これで 動くので 音と そろう
 	const songSec = (): number =>
 		play
-			? Math.max(0, (play.step() - song.chart.fromStep) * song.chart.sps)
+			? Math.max(
+					0,
+					(play.step() - song.chart.fromStep) * song.chart.sps -
+						(audio?.outputLatencySec() ?? 0),
+				)
 			: 0;
 	return {
 		now: (clock) => {

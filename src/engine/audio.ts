@@ -828,6 +828,19 @@ export class GameAudio {
 		return this.voiceReady;
 	}
 
+	/**
+	 * 鳴らしてから 耳に 届くまでの 遅れ（秒。出力の バッファと Bluetooth の イヤホンなど）。
+	 * 音ゲーの 時計を 聞こえる 音に 合わせるのに 使う。分からなければ 0。
+	 */
+	outputLatencySec(): number {
+		const ctx = this.ctx;
+		if (!ctx) return 0;
+		const out = Number.isFinite(ctx.outputLatency) ? ctx.outputLatency : 0;
+		const base = Number.isFinite(ctx.baseLatency) ? ctx.baseLatency : 0;
+		// 0.5秒を こえる 値は 測りちがいと みなす
+		return Math.min(0.5, Math.max(0, out || base));
+	}
+
 	/** AudioContext の時刻 t（秒）に鳴らした音が聞こえる時刻（performance.now の時計、ms）。 */
 	private audibleAt(t: number): number {
 		const ctx = this.ctx;

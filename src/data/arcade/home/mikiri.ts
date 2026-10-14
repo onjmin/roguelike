@@ -203,6 +203,9 @@ export const mkStep = (
 	}
 	if (s.phase === "wait" && now >= s.goAt) {
 		s.phase = "go";
+		// 「！」が 出るのは この コマから。反応の 時間と 窓は ここから 数える
+		// （決めた 時刻から 数えると、出る 前の 1コマぶん 遅く 測られて 最後の 0.3秒の 窓で 損をした）
+		s.goAt = now;
 		ev.push("go");
 	} else if (s.phase === "wait") {
 		for (const f of s.fakes)
