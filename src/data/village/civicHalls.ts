@@ -14,7 +14,7 @@
 
 import type { Facility, RoomLook } from "./facilities";
 import { art, ri, riCell } from "./rpgenArt";
-import { base, RECEPTION } from "./tiles";
+import { base, onUpper, RECEPTION } from "./tiles";
 
 /** 台（台ごしに 向こうの 人と 話せる。人の となりの 台には 調べる 物を 置かない）。 */
 const ctr = <T extends object>(t: T) => ({ ...t, counter: true });
@@ -263,8 +263,8 @@ const CITYHALL: Facility = {
 			R: ctr(k.on(riCell("counterDark", 2, 0))),
 			r: k.on(ri("seatBack")),
 			t: k.on(ri("podium")),
-			v: k.on(riCell("deskDark", 0, 0), ri("laptop")),
-			V: k.on(riCell("deskDark", 2, 0)),
+			v: onUpper(k.on(ri("deskDark")), ri("laptop")),
+			V: k.on(ri("deskDark", 2)),
 			"-": k.floor(base(5, 47)),
 			a: ctr(k.on(riCell("counterLong", 0, 0), ri("bell"))),
 			A: ctr(k.on(riCell("counterLong", 1, 0))),

@@ -419,8 +419,15 @@ const ROOM_PIECES = {
 	counterLong: { ids: [["Jy24ago", "LKqFp8d", "YBRzEfW"]] },
 	// 105: 46 47 48
 	tableLong: { ids: [["W19A0QY", "86DhRbH", "HbufVOh"]] },
-	// 105: 13 14 15
-	deskDark: { ids: [["kQYpKqy", "eHF86Ug", "2hIzYWj"]] },
+	// 105: 0 1 2 / 13 14 15（rpgen.org の 6650 6649 6648 / 6647 6646 6645）。濃い 木の 机（3x2。上が 天板、下が 前の ふちと 脚）。
+	// 2026-10-15 まで 下の 段だけ だった。台ごしに 話す 受付の 台は riCell(…, 1) の 下の 段だけを 使う
+	// （天板まで 置くと 台の うしろの 人に かぶる）。事務の 机は ri("deskDark", 列) で 天板ごと 置く
+	deskDark: {
+		ids: [
+			["dq:6650", "dq:6649", "dq:6648"],
+			["kQYpKqy", "eHF86Ug", "2hIzYWj"],
+		],
+	},
 	// 105: 32 33 34
 	counterDark: { ids: [["eHib6pH", "5sIRQaE", "4aUtOjj"]] },
 	// 105: 51

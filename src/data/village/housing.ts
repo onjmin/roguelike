@@ -475,7 +475,7 @@ export const DANCHI_ROOM: FacilityRoom = {
 		O: FLOORING.on(ri("bookshelf")),
 		o: FLOORING.on(ri("bookshelfDark")),
 		G: FLOORING.on(ri("guitar")),
-		d: FLOORING.on(ri("deskDark"), ri("laptop")),
+		d: FLOORING.on(ri("tableBeige"), ri("laptop")),
 		x: FLOORING.on(ri("boxesB")),
 		// 奥の 和室の テレビ・若い 住人の ベッド（上の 段）
 		"♪": TATAMI.on(ri("tvCrt")),

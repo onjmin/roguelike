@@ -129,9 +129,9 @@ export const BUSHITSU: Facility = {
 			"4": kit.low(bs("plateVoca")),
 			S: kit.on(ri("flWhite"), bs("speaker")),
 			Y: kit.on(ri("flWhite"), bs("synth")),
-			"<": kit.on(ri("flWhite"), riCell("deskDark", 0, 0)),
-			"^": kit.on(ri("flWhite"), riCell("deskDark", 1, 0), ri("pcTop")),
-			">": kit.on(ri("flWhite"), riCell("deskDark", 2, 0), ri("paperNote")),
+			"<": kit.on(ri("flWhite"), riCell("deskDark", 0, 1)),
+			"^": kit.on(ri("flWhite"), riCell("deskDark", 1, 1), ri("pcTop")),
+			">": kit.on(ri("flWhite"), riCell("deskDark", 2, 1), ri("paperNote")),
 			// ゲーム制作部：エター札・札・パソコンと 机（2×2）・筐体（16x32）
 			e: kit.up(bs("eta")),
 			"5": kit.low(bs("plateGame")),
