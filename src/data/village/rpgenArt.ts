@@ -87,6 +87,11 @@ export const RPGEN_CELLS = {
 	redLamp: [15, 14, 1, 1],
 	redCross: [14, 15, 1, 1],
 	dumbbellSign: [15, 15, 1, 1],
+	aptRoof: [14, 16, 1, 1],
+	aptWall: [15, 16, 1, 1],
+	aptDoor: [12, 17, 1, 1],
+	aptVent: [13, 17, 1, 1],
+	aptStair: [14, 17, 1, 1],
 } as const;
 
 export type RpgenName = keyof typeof RPGEN_CELLS;
@@ -259,6 +264,7 @@ export const ROOM_CELLS = {
 	tatamiH: [12, 16, 2, 1],
 	tatamiV: [14, 16, 1, 2],
 	tatamiHalf: [15, 16, 1, 1],
+	regiCounter: [0, 17, 1, 1],
 } as const;
 
 export type RoomArtName = keyof typeof ROOM_CELLS;

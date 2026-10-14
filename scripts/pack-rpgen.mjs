@@ -296,6 +296,17 @@ const GROUPS = {
 	redLamp: { drawn: "redLamp" },
 	redCross: { drawn: "redCross" },
 	dumbbellSign: { drawn: "dumbbellSign" },
+	// ── アパート（コーポ）の 外観：同じ 色の 組で そろえる（青い 屋根・サーモンの 壁・茶の 扉・格子の 窓・鉄の 階段）
+	// 青い 波板の 屋根（Base.png 5,84 の 灰の 軒を 青に）
+	aptRoof: { base: [5, 84], op: "tint:5a78c8" },
+	// サーモン色の 壁（Base.png 1,59 の 白い 壁を 染める）
+	aptWall: { base: [1, 59], op: "tint:c07060" },
+	// 108: 9 行 5 列（rpgen.org の 18975）。茶色の 扉（1マス）
+	aptDoor: { ids: [["dq:18975"]] },
+	// 108: 9 行 1 列（rpgen.org の 12782）。格子の 窓（換気口）
+	aptVent: { ids: [["dq:12782"]] },
+	// 94: 1 行 14 列（rpgen.org の 8685）。鉄の 外階段
+	aptStair: { ids: [["dq:8685"]] },
 };
 
 // ───────────────── 施設の 部屋の 部品（public/sprites/rpgen-interior.png。facilities.ts の ri・riCell） ─────────────────
@@ -627,6 +638,8 @@ const ROOM_PIECES = {
 	tatamiH: { ids: [["OyaJmV", "kAQKH7"]] },
 	tatamiV: { ids: [["FppGtX"], ["kAsKVf"]] },
 	tatamiHalf: { ids: [["31dWf1"]] },
+	// rpgen.org の 1356「レジカウンター」。木の 台に 画面つきの レジ（1マスで 全体。バーガー屋・メイド喫茶の 注文の 台）
+	regiCounter: { ids: [["EVAhBn"]] },
 };
 
 // ───────────────── 飲食店の 品（public/sprites/rpgen-food.png。data/town/eateries.ts の 出てきた 一品の 絵） ─────────────────

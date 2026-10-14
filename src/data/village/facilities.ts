@@ -44,10 +44,10 @@ import {
 	floor,
 	INDOOR,
 	onTop,
-	road,
 	onUpper,
 	RECEPTION,
 	SIDEWALK,
+	road,
 	solid,
 } from "./tiles";
 
@@ -2609,16 +2609,19 @@ const BASE_FACILITIES: readonly Facility[] = [
 		at: [80, 31],
 		look: {
 			kind: "grid",
-			rows: ["aaaaa", "ddddd", "gsgsg", "ipDpi"],
+		// 2階建ての アパート：青い 波板の 屋根・サーモンの 壁に 部屋ごとの 扉と 格子窓・2階の 外廊下の 手すり・
+		// まんなかの 鉄の 外階段（どれも aptRoof・aptWall・aptDoor・aptVent・aptStair の 1つの 組）
+			rows: ["rrrrr", "dvsvd", "llSll", "dvDvb"],
 			door: "D",
 			keys: {
-				a: [base(5, 82)],
-				d: [base(5, 84)],
-				g: [base(1, 55), art("win24", 3)],
-				s: [base(1, 55)],
-				i: [base(1, 56), art("bike")],
-				p: [base(1, 56), art("pot", 1)],
-				D: [base(1, 56), base(7, 55, 1, 2)],
+				r: [art("aptRoof")],
+				d: [art("aptWall"), art("aptDoor")],
+				v: [art("aptWall"), art("aptVent")],
+				s: [art("aptWall"), art("aptStair")],
+				S: [art("aptWall"), art("aptStair")],
+				l: [art("aptWall"), ri("fenceIron")],
+				b: [art("aptWall"), art("aptDoor"), art("bike", 1)],
+				D: [art("aptWall"), art("aptDoor")],
 			},
 		},
 		door: "コーポ「おんJ荘」。\n階段が　ぎしっと　鳴った。",
@@ -3157,8 +3160,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				K: "kitchen",
 				e: "extinguisher",
 				I: "kitchen",
-				F: "plant",
 				Q: "kitchen",
+				F: "plant",
 			},
 			lines: {
 				bell: ["警報の　ベル。\n……鳴るのは、炎上の　ときだけ。"],
