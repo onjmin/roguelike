@@ -515,7 +515,7 @@ export const VILLAGE_IDLE: Record<Speaker | "gate" | "store", string> = {
 };
 
 /**
- * 時間帯の ひとこと（VILLAGE_IDLE と 交互。昼は いつもの ひとこと だけ。端末の 時刻：村の 色・人通りと 同じ）。
+ * 時間帯の ひとこと（VILLAGE_IDLE と 交互。昼は いつもの ひとこと だけ。村の 時計：村の 色・人通りと 同じ）。
  * 時刻を 言う 台詞は ここに 置く（いつ 話しかけても 出る VILLAGE_IDLE には 時刻を 書かない）。
  */
 export const BAND_IDLE: Record<

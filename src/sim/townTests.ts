@@ -114,11 +114,7 @@ test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、�
 		windowLit(i % 20, Math.floor(i / 20), 0.25),
 	).filter(Boolean).length;
 	ok(lit > 60 && lit < 140, `late-night windows lit: ${lit}/400`);
-	ok(
-		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night") ===
-			"10/14（水）21:05　夜",
-		clockLine({ m: 10, d: 14, w: 3 }, 21, 5, "night"),
-	);
+	ok(clockLine(21, 5, "night") === "21:05　夜", clockLine(21, 5, "night"));
 });
 
 test("every item except goal items has a price", () => {

@@ -2008,7 +2008,7 @@ test("時間帯の ひとこと：昼の ほかは いつもの ひとことと 
 
 test("each friend has one new line per return (「！」), then a short fixed line", () => {
 	withStorage(() => {
-		// 時間帯の ひとことが まざらない 昼に（端末の 時刻で かわらない ように）
+		// 時間帯の ひとことが まざらない 昼に（村の 時計で かわらない ように）
 		const restoreLoc = swapLocation("?debug&hour=12");
 		setTown(0, 0);
 		// まだ 一度も もぐっていない：みんなに 新しい話

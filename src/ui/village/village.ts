@@ -27,7 +27,14 @@ import { type Dir8, DX, DY, isDiagonal } from "../../core/geom";
 import type { DungeonId, Objective } from "../../core/types";
 import { CAST, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
-import { nowHour, openMode, today } from "../../data/town/calendar";
+import {
+	advanceClock,
+	nowHour,
+	nowMinute,
+	openMode,
+	RETURN_HOURS,
+	today,
+} from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
 import { pedRoute, type TimeBand, timeBand } from "../../data/village/crowd";
 import {
@@ -293,6 +300,10 @@ export class Village {
 		this.leaving = false;
 		this.scriptDepth = 0;
 		this.arrival = o.arrival;
+		// ダンジョンから 帰ったら 村の 時計を すすめる（data/town/calendar.ts）
+		const k = o.arrival?.kind;
+		if (k === "clear" || k === "escape" || k === "dead")
+			advanceClock(RETURN_HOURS * 60);
 		// 起動の札の うしろでは 村が 動いている（うろうろ する。場面は 札を 閉じてから）
 		this.scene = !o.boot;
 		this.lookAt = null;
@@ -546,15 +557,22 @@ export class Village {
 		this.time += dt;
 		this.update(dt);
 		this.render();
-		this.tickClock();
+		this.tickClock(dt);
 		this.rafId = requestAnimationFrame((tt) => this.frame(tt));
 	}
 
 	/** 村の 時計の 文（かわった ときだけ 書く。data/village/daylight.ts）。 */
 	private clockText = "";
-	private tickClock(): void {
+	/** 村の 時計の 端数（ms。現実の 1秒で 1分 すすむ。data/town/calendar.ts）。 */
+	private clockMs = 0;
+	private tickClock(dt: number): void {
+		this.clockMs += dt;
+		if (this.clockMs >= 1000) {
+			advanceClock(Math.floor(this.clockMs / 1000));
+			this.clockMs %= 1000;
+		}
 		const h = nowHour();
-		const text = clockLine(today(), h, new Date().getMinutes(), timeBand(h));
+		const text = clockLine(h, nowMinute(), timeBand(h));
 		if (text === this.clockText) return;
 		this.clockText = text;
 		this.hud.clock.textContent = text;

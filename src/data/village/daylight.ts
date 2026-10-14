@@ -1,5 +1,5 @@
 // 村の 時間帯の 色（2026-10-14 作者：天候・朝昼夕夜の しくみの 導入を 検討 → 時間帯から）。
-// 時刻は 端末の 時計（data/town/calendar.ts の nowHour。開発は &hour=0〜23）。人通り（data/village/crowd.ts）と
+// 時刻は 村の 時計（現実の 時計とは つながない。data/town/calendar.ts の nowHour。開発は &hour=0〜23）。人通り（data/village/crowd.ts）と
 // 同じ 時間帯なので、夜は 盛り場へ 向かう 人と 暗い 町が そろう。外の 村だけ（施設の 中は そのまま）。
 // 店・施設は 時刻で 閉めない（遊べる 時間が へるだけ）。天気は まだ 入れない。
 // 色は canvas の 乗算（multiply）で 重ねる：白は かわらず、色が 暗いほど 暗く なる。文字や 窓は canvas の
@@ -68,19 +68,15 @@ export const BAND_NAME: Record<TimeBand, string> = {
 	night: "夜",
 };
 
-const WDAY = ["日", "月", "火", "水", "木", "金", "土"];
-
 /**
- * 村の 時計の 文（「10/14（水）21:05　夜」）。日付・曜日も 出す：番組・議会・人通り（週末）が 曜日で かわる。
- * hour は 開発の &hour= を 通した 時（data/town/calendar.ts の nowHour）、minute は 端末の 分。
+ * 村の 時計の 文（「21:05　夜」）。月日・曜日は 出さない（作者：表示は いらない）。
+ * hour・minute は 村の 時計（data/town/calendar.ts の nowHour・nowMinute。開発は &hour=）。
  */
 export const clockLine = (
-	t: { m: number; d: number; w: number },
 	hour: number,
 	minute: number,
 	band: TimeBand,
-): string =>
-	`${t.m}/${t.d}（${WDAY[t.w] ?? ""}）${hour}:${String(minute).padStart(2, "0")}　${BAND_NAME[band]}`;
+): string => `${hour}:${String(minute).padStart(2, "0")}　${BAND_NAME[band]}`;
 
 /** 時間帯ごとの 重ねる 色（null は 重ねない＝昼）。 */
 export const BAND_TINT: Record<TimeBand, string | null> = {

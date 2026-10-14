@@ -117,7 +117,7 @@ export const deathQuote = (seed: number): Quote | null => {
 	return pickQuote(quoteContext(), seed, undefined, away, mute, bandNow());
 };
 
-/** いまの 時間帯（端末の 時刻。村の 色・人通りと 同じ）。時間帯つきの 台詞を えらぶ。 */
+/** いまの 時間帯（村の 時計。村の 色・人通りと 同じ）。時間帯つきの 台詞を えらぶ。 */
 const bandNow = () => timeBand(nowHour());
 
 /** 村に いない 仲間（まだ 来ていない・出ていった やきう）。 */

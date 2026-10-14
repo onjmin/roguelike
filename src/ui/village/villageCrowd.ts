@@ -62,7 +62,7 @@ export type CrowdHost = {
 	cost: PedCost;
 	stage: number;
 	player: Actor;
-	/** 端末の 時刻（時）と 週末か（village.ts が 読む。試すときは URL の &hour・&wday）。 */
+	/** 村の 時計（時）と 週末か（village.ts が 読む。試すときは URL の &hour・&wday）。 */
 	clock: () => { hour: number; weekend: boolean };
 	/** 歩きださない（窓が 開いている・村を 出る）。 */
 	paused: () => boolean;

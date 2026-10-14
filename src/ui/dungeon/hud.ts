@@ -54,7 +54,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const mute = el("button", { class: "icon-btn mute-btn" });
 	mute.title = "BGM・効果音のミュート";
 	const status = el("div", { class: "status" });
-	// 村の 時計（暗さ・人通り・番組は 端末の 時刻で かわるので、いま 何時かを 見せる）
+	// 村の 時計（暗さ・人通り・番組は 村の 時計で かわるので、いま 何時かを 見せる）
 	const clock = el("div", { class: "village-clock" });
 	const hud = el("div", { class: "hud" }, [
 		status,
