@@ -264,6 +264,8 @@ const PAD_REST_MS = 350;
 const B_TAP_MS = 500;
 /** 窓が開いてから、外のタップで閉じられるようになるまで（ms）。 */
 const WINDOW_TAP_GRACE_MS = 300;
+/** 窓が 閉じて これより 早く 次の 窓が 開いたら、続きの 窓と みなす（ms。会話の 次の 行など）。 */
+const WINDOW_CHAIN_MS = 100;
 /** 画面を押して これより 指が動いたら、タップではなく なぞり（CSS 画素。半マスほど）。 */
 const TAP_SLOP_PX = 16;
 
@@ -395,7 +397,8 @@ export class Input {
 				e.preventDefault();
 				if (!this.keysHeld.size && this.padDir === null)
 					this.dirSince = performance.now();
-				this.dirFromKeys = true;
+				// スティック（Gs）は 斜めも 1度に 来るので 同時押しを 待たない（1歩目が 45ms 遅れない）
+				this.dirFromKeys = !e.code.startsWith("Gs");
 				this.keysHeld.set(e.code, d);
 				if (this.bKey) this.bKey.used = true;
 				// メニューが開いているあいだの向きは、閉じたあとの1歩にしない
@@ -616,21 +619,36 @@ export class Input {
 
 	/** ハンドラを積む。戻り値を呼ぶと外れる。 */
 	push(handler: Handler, opt: PushOptions = {}): () => void {
+		const now = performance.now();
 		const h = {
 			fn: handler,
 			tap: opt.tap === undefined ? "a" : opt.tap,
-			at: performance.now(),
+			at: now,
 		};
+		// 会話の 次の 行（タップで 送る 窓が 続けて 開く）なら 開きはじめの 時刻は そのまま。
+		// 選択肢・メニュー（タップで 閉じる 窓）は いつも 開いた ときから 数える（送りの 連打で すぐ 閉じない）
+		if (
+			h.tap !== "a" ||
+			this.handlers.some((x) => x.tap !== "a") ||
+			(!this.handlers.length && now - this.emptiedAt > WINDOW_CHAIN_MS)
+		)
+			this.busySince = now;
 		this.handlers.push(h);
 		this.fieldQueue = [];
 		this.pendingDir = null;
 		return () => {
 			const i = this.handlers.lastIndexOf(h);
 			if (i >= 0) this.handlers.splice(i, 1);
+			if (!this.handlers.length) this.emptiedAt = performance.now();
 			this.pendingDir = null;
 			this.fieldQueue = [];
 		};
 	}
+
+	/** 窓が 開きはじめた 時刻（続けて 開いた 窓は 最初の 窓の 時刻）。 */
+	private busySince = 0;
+	/** 窓が ぜんぶ 閉じた 時刻。 */
+	private emptiedAt = -1e9;
 
 	get busy(): boolean {
 		return this.handlers.length > 0;
@@ -781,7 +799,12 @@ export class Input {
 			if (top) {
 				// 窓が開いた直後のタップは数えない（歩こうとして続けて押したタップで、
 				// 開いたばかりの「階段を降りますか？」などを すぐ閉じてしまわないように）
-				if (top.tap && performance.now() - top.at >= WINDOW_TAP_GRACE_MS)
+				// 会話の 行ごとに 数えなおすと、タップで 送るたびに 3回に 1回ほど 捨てていた。
+				// 窓が 開きはじめてから 数える
+				if (
+					top.tap &&
+					performance.now() - this.busySince >= WINDOW_TAP_GRACE_MS
+				)
 					this.press(top.tap);
 				return;
 			}

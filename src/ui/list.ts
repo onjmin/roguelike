@@ -7,7 +7,7 @@
 
 import type { Input, Key } from "../engine/input";
 import { el } from "./dom";
-import { OPEN_WAIT_MS } from "./message";
+import { OPEN_WAIT_MS, REPEAT_MS } from "./message";
 
 export type UiCtx = {
 	ui: HTMLElement;
@@ -304,11 +304,16 @@ export const listWindow = (
 		const openedAt = performance.now();
 		// 開いてから 押しなおした キーが あったか（開く 前からの 押しっぱなしで 行が 動かないように。message.ts の OPEN_WAIT_MS）
 		let fresh = false;
+		let movedAt = 0;
 		const pop = ctx.input.push(
 			(k, repeat) => {
-				if (performance.now() - openedAt < OPEN_WAIT_MS) return;
+				const now = performance.now();
+				if (now - openedAt < OPEN_WAIT_MS) return;
 				if (repeat && !fresh) return;
 				if (!repeat) fresh = true;
+				// 押しっぱなしは ゆっくり（message.ts の REPEAT_MS）
+				if (repeat && now - movedAt < REPEAT_MS) return;
+				movedAt = now;
 				if (
 					k === "up" ||
 					k === "down" ||
@@ -321,9 +326,16 @@ export const listWindow = (
 						(k === "up" || k === "down" ? cols : 1);
 					let next = cur;
 					for (let n = 0; n < items.length; n++) {
-						next = (next + step + items.length) % items.length;
+						const raw = next + step;
+						// 押しっぱなしでは はしで 止まる（下の はしから 上へ 飛ばない。押しなおせば 回る）
+						if (repeat && (raw < 0 || raw >= items.length)) {
+							next = cur;
+							break;
+						}
+						next = (raw + items.length) % items.length;
 						if (!items[next].disabled) break;
 					}
+					if (next === cur) return;
 					cur = next;
 					ctx.se("cursor");
 					render();

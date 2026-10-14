@@ -75,6 +75,11 @@ const VOICE_HOLD_TAIL = 0.25;
 const VOICE_HOLD_MAX_MS = 5000;
 /** 声に合わせて文字送りを遅くするときの上限（1文字あたりの ms の何倍まで）。 */
 const VOICE_PACE_MAX = 2;
+/**
+ * 全文が 出てから これより あとの 送りは、▼ が 出る 前でも 取っておく（ms）。
+ * それより 前は 全文を 出した 押しの 2度押しと みなして 捨てる。
+ */
+const QUEUE_AFTER_MS = 150;
 
 /**
  * 出だしで声にならない文字（読み上げでは「……」などを落とすので、声はすぐ言葉から始まる）。
@@ -479,6 +484,12 @@ export class MessageWindow {
 			let done = false;
 			/** 効果音の区切りまで鳴った（送れる）。 */
 			let ready = false;
+			/** 全文が 出た 時刻（▼ の 前の 押しを 取っておくか 決める）。 */
+			let doneAt = 0;
+			/** ▼ が 出る 前に 押した 送り（出たら すぐ 送る）。 */
+			let queued = false;
+			/** 送る（窓の 押しの 受け手が 入る）。 */
+			let advance = () => {};
 			/** 文字送りを始めた（声の頭を待ち終えた）。 */
 			let typing = false;
 			/**
@@ -496,6 +507,7 @@ export class MessageWindow {
 			const finish = () => {
 				if (done) return;
 				done = true;
+				doneAt = performance.now();
 				window.clearTimeout(timer);
 				this.textEl.textContent = p.text;
 				// 鳴らしたばかりの効果音の本体が鳴り終わってから ▼ を出して送れるようにする
@@ -504,6 +516,7 @@ export class MessageWindow {
 					if (token !== this.showToken) return;
 					ready = true;
 					this.nextEl.classList.add("shown");
+					if (queued) advance();
 				});
 			};
 			/**
@@ -588,12 +601,20 @@ export class MessageWindow {
 					finish(); // 文字送りの飛ばしはいつでも効く（声は そのまま 続ける。rpg と 同じ）
 					return;
 				}
-				if (!ready) return; // 区切りまでは押しても送らない
+				// 区切りまでは 送らないが、押しは 捨てずに 取っておいて ▼ が 出たら 送る（押したのに 進まない、に しない）。
+				// 全文を 出した 押しの すぐ あと（2度押し）は 取っておかない：読む前に 次へ 行かない
+				if (!ready) {
+					if (performance.now() - doneAt >= QUEUE_AFTER_MS) queued = true;
+					return;
+				}
+				advance();
+			});
+			advance = () => {
 				pop();
 				this.waits--;
 				stop?.();
 				resolve();
-			});
+			};
 		});
 	}
 
@@ -649,6 +670,12 @@ export type ChoiceHooks = {
  */
 export const OPEN_WAIT_MS = 200;
 
+/**
+ * 押しっぱなしの くり返しで カーソルが 動く 最短の 間（ms）。キーボードの くり返しは OS まかせで
+ * 1秒 30回 ほど 来て 長い 一覧を 行きすぎるので、ゲームパッド（engine/input.ts の GP_REPEAT_MS）に そろえる。
+ */
+export const REPEAT_MS = 90;
+
 /** 選択肢。 */
 export class ChoiceWindow {
 	private root: HTMLElement;
@@ -684,8 +711,8 @@ export class ChoiceWindow {
 			b.addEventListener("pointerdown", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
-				// 区切り待ちの間・決められない 項目は、押した項目にカーソルを合わせるだけ（もう一度押すと決まる）
-				if (this.held() || hooks.disabled?.(i)) {
+				// 決められない 項目は、押した項目にカーソルを合わせるだけ。区切り待ちの 間は pick が 取っておく
+				if (hooks.disabled?.(i)) {
 					move(i);
 					return;
 				}
@@ -722,9 +749,30 @@ export class ChoiceWindow {
 		let pop: () => void = () => {};
 		let resolveFn: (n: number) => void = () => {};
 		let done = false;
+		/** 効果音の 区切り待ちの あいだに 押した 決定（鳴り終わったら 決める）。 */
+		let later: number | null = null;
 		const pick = (i: number) => {
-			// 前の効果音の本体が鳴り終わるまでは決めない（カーソルは動かせる）
-			if (done || this.held() || hooks.disabled?.(i)) return;
+			if (done || hooks.disabled?.(i)) return;
+			// 前の効果音の本体が鳴り終わるまでは決めない（カーソルは動かせる）。押しは 取っておいて
+			// 鳴り終わりしだい 決める（押したのに 何も 起きない、に しない）
+			if (this.held()) {
+				if (later === null) {
+					const retry = () => {
+						if (done || later === null) return;
+						if (this.held()) {
+							window.setTimeout(retry, 30);
+							return;
+						}
+						const j = later;
+						later = null;
+						pick(j);
+					};
+					window.setTimeout(retry, 30);
+				}
+				later = i;
+				return;
+			}
+			later = null;
 			done = true;
 			se?.("decide");
 			pop();
@@ -736,10 +784,15 @@ export class ChoiceWindow {
 			hooks.ctl.pick = pick;
 		}
 		/** 上下（横に ならべるときは 同じ 列の 上・下。はしでは 反対の はしへ）。 */
-		const vertical = (d: number): number => {
-			if (cols === 1) return (cur + d + n) % n;
+		const vertical = (d: number, repeat = false): number => {
+			// 押しっぱなしでは はしで 止まる（下の はしから 上へ 飛ばない。押しなおせば 回る）
+			if (cols === 1)
+				return repeat
+					? Math.max(0, Math.min(n - 1, cur + d))
+					: (cur + d + n) % n;
 			const next = cur + d * cols;
 			if (next >= 0 && next < n) return next;
+			if (repeat) return cur;
 			const col = cur % cols;
 			if (d > 0) return col;
 			let last = col;
@@ -760,13 +813,14 @@ export class ChoiceWindow {
 					if (repeat && !fresh) return;
 					if (!repeat) fresh = true;
 					// 押しっぱなしは ゆっくり（repeatMs ごとに 1つ）
-					if (repeat && hooks.repeatMs && now - movedAt < hooks.repeatMs)
-						return;
+					if (repeat && now - movedAt < (hooks.repeatMs ?? REPEAT_MS)) return;
 					movedAt = now;
-					if (key === "up") move(vertical(-1));
-					else if (key === "down") move(vertical(1));
-					else if (key === "left") move((cur + n - 1) % n);
-					else if (key === "right") move((cur + 1) % n);
+					if (key === "up") move(vertical(-1, repeat));
+					else if (key === "down") move(vertical(1, repeat));
+					else if (key === "left")
+						move(repeat ? Math.max(0, cur - 1) : (cur + n - 1) % n);
+					else if (key === "right")
+						move(repeat ? Math.min(n - 1, cur + 1) : (cur + 1) % n);
 					else if (key === "a") pick(cur);
 					else if (key === "b" && cancel !== undefined) pick(cancel);
 				},
