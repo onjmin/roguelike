@@ -749,7 +749,7 @@ export const FURNITURE_ACT: Partial<Record<BaseFurnitureId, GuestAct>> = {
 	dumbbell: "play",
 };
 
-/** 性格（する ことの 重み・待つ 長さの 倍率・歩く 遅さの 倍率・する ことごとの 吹き出し）。 */
+/** 性格（する ことの 重み・待つ 長さの 倍率・歩く 遅さの 倍率・する ことごとの 記号）。 */
 export type Temper = {
 	acts: Partial<Record<GuestAct, number>>;
 	/** 1つの ことを する 長さの 倍率（大きいほど のんびり）。 */

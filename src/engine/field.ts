@@ -42,8 +42,11 @@ export class Actor {
 	through: boolean;
 	/** 乗り物（キリコの おんJトロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
 	vehicle: string | null = null;
-	/** 頭の 上の 吹き出しの 字（EventDef の roam。null で 出さない）。 */
+	/** 頭の 右上に 出す 記号（EventDef の roam。null で 出さない）。 */
 	emote: string | null = null;
+	/** いま 描いて いる 記号と 出はじめた 時刻（記号が かわったら 頭から フェードイン）。 */
+	private emoteShown: string | null = null;
+	private emoteFrom = 0;
 	/** 寝ころんで いる ときの 掛け布団（ベッドの 下の マスの 絵。少し 下げた 体の 上に かぶせる）。 */
 	blanket: string | null = null;
 	def: EventDef | null;
@@ -191,7 +194,12 @@ export class Actor {
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
 		if (this.vehicle) drawRefInCell(ctx, this.vehicle, px, py);
-		if (this.emote) drawEmote(ctx, this.emote, px, py - seat, time);
+		if (this.emote !== this.emoteShown) {
+			this.emoteShown = this.emote;
+			this.emoteFrom = time;
+		}
+		if (this.emote)
+			drawEmote(ctx, this.emote, px, py - seat, time - this.emoteFrom);
 		if (this.blanket)
 			drawRefInCell(
 				ctx,
@@ -202,32 +210,55 @@ export class Actor {
 	}
 }
 
-/** 吹き出し（白い 四角に 1字。ゆっくり 上下に ゆれる。"z" は 寝息で 2字ぶん 浮かぶ）。 */
+/** 記号の 1回の 出かた（ms）：ふわっと 出て、少し 浮いて、消える。間を おいて くりかえす。 */
+const EMOTE_IN = 300;
+const EMOTE_HOLD = 1300;
+const EMOTE_OUT = 1700;
+const EMOTE_CYCLE = 2600;
+
+/**
+ * 頭の 右上の 記号（"!" "?" "…" "♪" "z"。枠は 描かず 字だけを フェードイン・アウト）。
+ * t は 記号が 出てからの 時間。
+ */
 const drawEmote = (
 	ctx: CanvasRenderingContext2D,
 	text: string,
 	px: number,
 	py: number,
-	time: number,
+	t: number,
 ): void => {
-	const bob = Math.round(Math.sin(time / 260) * 1);
-	const x = px + 9;
-	const y = py - 11 + bob;
+	const k = t % EMOTE_CYCLE;
+	const alpha =
+		k < EMOTE_IN
+			? k / EMOTE_IN
+			: k < EMOTE_HOLD
+				? 1
+				: k < EMOTE_OUT
+					? 1 - (k - EMOTE_HOLD) / (EMOTE_OUT - EMOTE_HOLD)
+					: 0;
+	if (alpha <= 0) return;
+	// 出ている あいだ 3px 浮かぶ
+	const rise = Math.round((Math.min(k, EMOTE_OUT) / EMOTE_OUT) * 3);
+	const x = px + 14;
+	const y = py - 1 - rise;
 	ctx.save();
-	ctx.fillStyle = "#3a3048";
-	ctx.fillRect(x - 1, y - 1, 11, 10);
-	ctx.fillStyle = "#fffdf6";
-	ctx.fillRect(x, y, 9, 8);
-	// しっぽ
-	ctx.fillRect(x + 1, y + 8, 2, 1);
-	ctx.fillStyle = "#3a3048";
-	ctx.fillRect(x + 1, y + 9, 1, 1);
-	ctx.font = "bold 8px sans-serif";
+	ctx.globalAlpha = alpha;
+	ctx.font = "bold 9px sans-serif";
 	ctx.textAlign = "center";
 	ctx.textBaseline = "middle";
+	ctx.lineWidth = 2;
+	ctx.lineJoin = "round";
+	ctx.strokeStyle = "#2a2238";
+	ctx.strokeText(text, x, y);
 	ctx.fillStyle =
-		text === "!" ? "#d03a2a" : text === "♪" ? "#2a7ad0" : "#3a3048";
-	ctx.fillText(text, x + 4.5, y + 4.5);
+		text === "!"
+			? "#ff5a3a"
+			: text === "♪"
+				? "#6ac0ff"
+				: text === "?"
+					? "#ffd84a"
+					: "#ffffff";
+	ctx.fillText(text, x, y);
 	ctx.restore();
 };
 

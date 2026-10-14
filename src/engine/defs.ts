@@ -67,7 +67,7 @@ export type EventDef = {
 	wander?: boolean;
 	/**
 	 * 自分で 次に する ことを 決めて 動く（キリコの 家に 招いた 人。wander より 先）。
-	 * 1つ 終わるたびに 呼ばれ、行き先へ 歩いて、向いて、吹き出しを 出して しばらく いる。
+	 * 1つ 終わるたびに 呼ばれ、行き先へ 歩いて、向いて、記号を 出して しばらく いる。
 	 */
 	roam?: (at: { x: number; y: number }) => RoamStep;
 	/** 向きを変えない（看板・置物）。 */
@@ -164,11 +164,11 @@ export type SayOptions = {
 	tts?: VoiceDef;
 };
 
-/** roam の 1つの こと（行き先・着いて 向く 向き・吹き出し・いる 長さ・歩く 遅さ・きょろきょろ）。 */
+/** roam の 1つの こと（行き先・着いて 向く 向き・記号・いる 長さ・歩く 遅さ・きょろきょろ）。 */
 export type RoamStep = {
 	to?: readonly [number, number];
 	face?: Dir;
-	/** 頭の 上の 吹き出しの 字（"!" "?" "…" "♪" "z" など。1字）。 */
+	/** 頭の 右上に フェードイン・アウトする 記号（"!" "?" "…" "♪" "z" など。1字）。 */
 	emote?: string;
 	/** 着いてから いる 長さ（ms）。 */
 	wait: number;

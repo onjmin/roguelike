@@ -610,7 +610,7 @@ export class Village {
 				if (this.scriptDepth === 0 && !this.scene && a !== this.pathTalk) {
 					if (!a.moving) this.roamTick(a, dt);
 				} else if (a.emote || this.roams.has(a)) {
-					// 話しかけられたら 吹き出しを 消して、話の あとで する ことを 決めなおす
+					// 話しかけられたら 記号を 消して、話の あとで する ことを 決めなおす
 					a.emote = null;
 					this.roams.delete(a);
 				}
@@ -667,7 +667,7 @@ export class Village {
 		}
 	>();
 
-	/** roam の 1コマ：道を 1歩ずつ 歩き、着いたら 向いて 吹き出しを 出し、時間が たったら 次を 決める。 */
+	/** roam の 1コマ：道を 1歩ずつ 歩き、着いたら 向いて 記号を 出し、時間が たったら 次を 決める。 */
 	private roamTick(a: Actor, dt: number): void {
 		const field = this.field;
 		const roam = a.def?.roam;
