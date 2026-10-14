@@ -4,7 +4,7 @@
 
 import type {
 	DungeonId,
-	GuestId,
+	GuestSpec,
 	Item,
 	Objective,
 	RunState,
@@ -127,8 +127,8 @@ export type VillageExit =
 			objective: Objective;
 			/** ぷゆゆの お弁当を 持って 出る。 */
 			lunch: boolean;
-			/** 筋で ついてくる 同行者（data/people/companions.ts の guestFor。いなければ 書かない）。 */
-			guest?: GuestId;
+			/** 同行の 依頼で ついてくる 同行者（data/people/companions.ts の escortFor。いなければ 書かない）。 */
+			guest?: GuestSpec;
 	  }
 	| { kind: "continue"; state: RunState }
 	| { kind: "replay"; replay: SavedReplay };

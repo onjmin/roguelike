@@ -509,7 +509,18 @@ export type RunState = {
 };
 
 /** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */
-export type GuestId = "zero" | "feris" | "shobon";
+export type GuestId =
+	// 仲間（data/story/quotes.ts の Speaker。やきうは 連れていかない）
+	| "zero"
+	| "feris"
+	| "roze"
+	| "shiyo"
+	// 住人（data/people/mobs.ts）
+	| "shobon"
+	| "panmatsu"
+	| "ngoane"
+	| "nichie"
+	| "hinary";
 
 export type Guest = {
 	id: GuestId;
@@ -524,7 +535,14 @@ export type Guest = {
 	off?: true;
 	/** キリコへ 近づけなかった ターン数（続けて）。 */
 	stuck?: number;
+	/** 見たかった 階（同行の 依頼の 目的。data/people/companions.ts）。着いたら 満足して 村へ 帰る。 */
+	goal: number;
+	/** 見たかった 階に 着いて、満足して 村へ 帰った（依頼を はたした）。 */
+	done?: true;
 };
+
+/** 冒険に 連れていく 同行者（村が 決める。Run.create・リプレイ）。 */
+export type GuestSpec = { id: GuestId; goal: number };
 
 // ───────────────────────── コマンドとイベント ─────────────────────────
 

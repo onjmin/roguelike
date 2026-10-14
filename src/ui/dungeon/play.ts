@@ -47,13 +47,8 @@ import {
 	type Trap,
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
-import {
-	guestVoice,
-	guestWalk,
-	heroWalk,
-	KIRIKO_WALK,
-	ZERO_BODY_WALKS,
-} from "../../data/people/cast";
+import { heroWalk, KIRIKO_WALK, ZERO_BODY_WALKS } from "../../data/people/cast";
+import { guestVoice, guestWalk } from "../../data/people/companions";
 import { goalText } from "../../data/story/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
 import { loadImage } from "../../engine/assets";

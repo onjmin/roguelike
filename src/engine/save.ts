@@ -17,12 +17,13 @@ import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
 import {
 	CAT_ORDER,
 	type DungeonId,
-	type GuestId,
+	type GuestSpec,
 	type Item,
 	type Objective,
 	type RunState,
 } from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/story/objectives";
+import { noteEscortRun } from "./escort";
 import { noteTamper, oddRun, oddTown } from "./tamper";
 
 const PREFIX = "kiriko-roguelike/";
@@ -107,6 +108,8 @@ export const saveRun = (s: RunState): void => {
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
 		noteRunEnd(s.dungeon, s.end.kind, s.seed, s.voice);
+		// 同行の 依頼（見たかった 階まで 連れていけたら、次に 村へ 入ると お礼。engine/escort.ts）
+		noteEscortRun(s.guest);
 		return;
 	}
 	const text = serializeRun(s);
@@ -1030,8 +1033,8 @@ export type SavedReplay = {
 	rom?: boolean;
 	/** 冒険に 出た 主人公（キリコなら 書かない。core/data/heroes.ts）。 */
 	hero?: "roze" | "zero";
-	/** 筋で ついてきた 同行者（いなければ 書かない。core/guest.ts）。 */
-	guest?: GuestId;
+	/** 同行の 依頼で ついてきた 同行者と 見たかった 階（いなければ 書かない。core/guest.ts）。 */
+	guest?: GuestSpec;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -1112,7 +1115,16 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
-	if (r.guest !== undefined && !(r.guest in GUESTS)) return null;
+	if (
+		r.guest !== undefined &&
+		!(
+			typeof r.guest === "object" &&
+			r.guest !== null &&
+			r.guest.id in GUESTS &&
+			typeof r.guest.goal === "number"
+		)
+	)
+		return null;
 	return renamed({
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
@@ -1162,7 +1174,7 @@ const addReplay = (s: RunState): void => {
 		...(s.noLunch ? { noLunch: true } : {}),
 		...(s.rom ? { rom: true } : {}),
 		...(s.hero ? { hero: s.hero } : {}),
-		...(s.guest ? { guest: s.guest.id } : {}),
+		...(s.guest ? { guest: { id: s.guest.id, goal: s.guest.goal } } : {}),
 		dungeon: s.dungeon,
 		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
 		at: Date.now(),

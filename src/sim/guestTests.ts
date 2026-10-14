@@ -9,8 +9,21 @@ import { isFloor } from "../core/mapgen";
 import { Run } from "../core/run";
 import { serializeRun } from "../core/serial";
 import type { Command, DungeonId, GuestId } from "../core/types";
-import { GUEST_PLAN, guestFor } from "../data/people/companions";
+import {
+	ESCORT_MSG,
+	ESCORTS,
+	escortFor,
+	openEscorts,
+} from "../data/people/companions";
+import {
+	acceptEscort,
+	doneEscortThanks,
+	loadEscort,
+	noteEscortRun,
+	pendingThanks,
+} from "../engine/escort";
 import { botCommand } from "./bot";
+import { swapStorage } from "./jikkyoTests";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -24,8 +37,18 @@ const test = (name: string, run: () => void | Promise<void>) =>
 const width = (s: string) =>
 	[...s].reduce((n, c) => n + (/[\x20-\x7e｡-ﾟ]/.test(c) ? 0.5 : 1), 0);
 
-const make = (seed: string, d: DungeonId, g: GuestId | null): Run =>
-	Run.create(seed, d, [], "fetch", true, false, "kiriko", g);
+/** 同行者つきの 冒険（見たい 階は 既定で 着かない 深さ）。 */
+const make = (seed: string, d: DungeonId, g: GuestId | null, goal = 99): Run =>
+	Run.create(
+		seed,
+		d,
+		[],
+		"fetch",
+		true,
+		false,
+		"kiriko",
+		g ? { id: g, goal } : null,
+	);
 
 /** いまの 階で 重なって いないか（同行者・キリコ・敵）。 */
 const noOverlap = (r: Run, where: string): void => {
@@ -160,29 +183,102 @@ test("なぐられる・帰る：キリコの となりに いない 敵は 同�
 	ok(guestHere(r) === null, "a downed guest is still on the floor");
 });
 
-test("だれが ついてくるか：板と 筋で 1人。持ち帰った あと・主人公と 同じ 人・村に まだ いない 人は 来ない", () => {
+test("同行の 依頼：持ち帰った 板だけ・依頼主が 村に いる ときだけ 掲示板に 出る。はたした 依頼は 出ない", () => {
+	const all = 1e9;
+	ok(openEscorts([], 7, all, []).length === 0, "requests before any board");
+	const k = openEscorts(["kinoko"], 7, all, []);
 	ok(
-		guestFor("deep", ["shallow", "main"], 7, "kiriko")?.who === "zero",
-		"deep",
+		k.some((e) => e.id === "roze_kinoko"),
+		"no きのこ板 request",
 	);
-	ok(guestFor("deep", ["deep"], 7, "kiriko") === null, "deep after the climax");
-	ok(guestFor("deep", [], 7, "zero") === null, "zero as the hero");
-	ok(guestFor("tropical", [], 7, "kiriko")?.who === "feris", "tropical");
-	ok(guestFor("tropical", [], 1, "kiriko") === null, "feris not moved in");
-	ok(guestFor("ato", [], 7, "kiriko") === null, "原住民 before the lighthouse");
-	ok(guestFor("ato", ["opunu"], 7, "kiriko")?.who === "shobon", "ato");
-	ok(guestFor("main", [], 7, "kiriko") === null, "no guest for 風呂板");
+	ok(
+		!openEscorts(["kinoko"], 7, all, ["roze_kinoko"]).some(
+			(e) => e.id === "roze_kinoko",
+		),
+		"a done request is still up",
+	);
+	ok(
+		!openEscorts(["tropical"], 1, 0, []).some((e) => e.who === "feris"),
+		"feris asked before moving in",
+	);
+	ok(
+		!openEscorts(["ato"], 7, all, []).some((e) => e.id === "shobon_ato"),
+		"原住民 asked before coming home",
+	);
+	ok(
+		openEscorts(["ato", "opunu"], 7, all, []).some(
+			(e) => e.id === "shobon_ato",
+		),
+		"no 跡地 request",
+	);
+	// 引き受けた 依頼の 板だけ ついてくる。主人公と 同じ 人は 来ない
+	ok(
+		escortFor("kinoko", "roze_kinoko", ["kinoko"], 7, all, "kiriko")?.who ===
+			"roze",
+		"ロゼ does not come",
+	);
+	ok(
+		escortFor("deep", "roze_kinoko", ["kinoko", "deep"], 7, all, "kiriko") ===
+			null,
+		"came to another board",
+	);
+	ok(
+		escortFor("kinoko", "roze_kinoko", ["kinoko"], 7, all, "roze") === null,
+		"ロゼ came with herself",
+	);
+	ok(
+		escortFor("kinoko", null, ["kinoko"], 7, all, "kiriko") === null,
+		"came without a request",
+	);
 });
 
-test("文：同行者の ひとことは ログに 収まる（名前つきで 全角 24字まで）。村の 文は 22字×2行", () => {
-	for (const [id, g] of Object.entries(GUESTS))
-		for (const l of [g.first, g.down, ...g.talk])
-			ok(width(`${g.name}「${l}」`) <= 24, `${id}: ${l}`);
-	for (const [d, p] of Object.entries(GUEST_PLAN)) {
-		if (!p) continue;
-		for (const t of [p.join, p.line])
-			for (const l of t.split("\n")) ok(width(l) <= 22, `${d}: ${l}`);
+test("見たかった 階：着くと ひとこと 言って 満足して 帰る（冒険は つづく）。帰ると お礼、依頼は すむ", () => {
+	const r = make("guest-goal", "kinoko", "roze", 2);
+	ok(guestHere(r), "no guest on 1F");
+	r.enterFloor(2, false);
+	ok(r.s.guest?.done, "not done on the goal floor");
+	ok(guestHere(r) === null, "still on the floor after the goal");
+	ok(
+		r.s.log.includes(`${GUESTS.roze.name}「${GUESTS.roze.seen}」`),
+		"no seen line",
+	);
+	ok(!r.s.end, "the run ended");
+	r.enterFloor(3, false);
+	ok(guestHere(r) === null, "came back on the next floor");
+	const { restore } = swapStorage();
+	try {
+		ok(pendingThanks() === null, "thanks before anything");
+		acceptEscort("roze_kinoko");
+		noteEscortRun({ id: "roze" });
+		ok(pendingThanks() === null, "thanks without reaching the floor");
+		noteEscortRun({ id: "roze", done: true });
+		ok(pendingThanks() === "roze_kinoko", "no thanks");
+		ok(loadEscort().accepted === null, "still accepted");
+		doneEscortThanks();
+		ok(loadEscort().done.includes("roze_kinoko"), "not done");
+		ok(pendingThanks() === null, "thanks twice");
+	} finally {
+		restore();
 	}
+});
+
+test("文：同行者の ひとことは ログに 収まる（名前つきで 全角 24字まで）。依頼の 文は 22字×2行・題は 16字", () => {
+	for (const [id, g] of Object.entries(GUESTS))
+		for (const l of [g.first, g.down, g.seen, ...g.talk])
+			ok(width(`${g.name}「${l}」`) <= 24, `${id}: ${l}`);
+	for (const e of ESCORTS) {
+		ok(width(e.title) <= 16, `${e.id}: title`);
+		for (const t of [...e.ask, e.join, e.line, ...e.thanks]) {
+			const ls = t.split("\n");
+			ok(ls.length <= 2, `${e.id}: ${t}`);
+			for (const l of ls) ok(width(l) <= 22, `${e.id}: "${l}"`);
+		}
+		ok(e.who in GUESTS && e.goal >= 2, `${e.id}: who/goal`);
+	}
+	for (const t of Object.values(ESCORT_MSG))
+		for (const x of Array.isArray(t) ? t : [t])
+			for (const l of String(x).split("\n"))
+				ok(width(l) <= 22, `ESCORT_MSG: "${l}"`);
 });
 
 test("話しかける：様子（キリコの HP・同行者の HP・おなか・帰り道）が 先、ふだんは 回す。窓は 22字×2行", () => {

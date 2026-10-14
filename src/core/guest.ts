@@ -16,7 +16,13 @@ import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "./geom";
 import { isFloor } from "./mapgen";
 import { mdef, seenName } from "./monster";
 import type { Run } from "./run";
-import { GUEST_ID, type Guest, type GuestId, type Monster } from "./types";
+import {
+	GUEST_ID,
+	type Guest,
+	type GuestId,
+	type GuestSpec,
+	type Monster,
+} from "./types";
 
 type GuestDef = {
 	name: string;
@@ -26,26 +32,27 @@ type GuestDef = {
 	talk: readonly string[];
 	/** たおれた とき。 */
 	down: string;
+	/** 見たかった 階に 着いた とき（依頼の 目的。このあと 満足して 村へ 帰る）。 */
+	seen: string;
 };
 
-/** 1行は 全角 20字まで（ログの 幅。「名前「…」」で 出る）。 */
+/** 1行は 全角 20字まで（ログの 幅。「名前「…」」で 出る）。依頼は data/people/companions.ts。 */
 export const GUESTS: Record<GuestId, GuestDef> = {
-	// 電池板（最終話）：1000まで 数えるのが 夢の 人が、鉄塔まで ついてくる
+	// 電池板：鉄塔の 保守スレを 見たい（1000まで 数えるのが 夢）
 	zero: {
 		name: "ゼロ",
-		first: "1000まで　数えるの、近くで　見たくて",
+		first: "鉄塔、近くで　数えたくて",
 		talk: [
 			"いま　何レス目か、数えてます",
-			"鉄塔、ゼロも　見て　みたかったんです",
 			"暗い　ところ、ちょっと　苦手です",
 			"上の　スレ、伸びてますか",
 			"キリコさんの　うしろ、安心します",
 			"サブ機たちに、あとで　報告します",
-			"1000まで、もう　すこしですね",
 		],
 		down: "ここまで　です。先に　数えてます",
+		seen: "「保守」、ここにも　あります",
 	},
-	// 離島板：飛べるけど 飛ばない 人が、歩いて 島へ
+	// 離島板：飛べるけど、歩いて 島を 見たい
 	feris: {
 		name: "フェリス",
 		first: "飛ばないで　歩いて　みたかったの〜",
@@ -57,19 +64,89 @@ export const GUESTS: Record<GuestId, GuestDef> = {
 			"潮の　におい、すき〜",
 		],
 		down: "先に　帰って、おかえりの　準備〜",
+		seen: "海、歩いて　見ると　ひろいね〜",
 	},
-	// 野球chの 跡地（裏）：>>1 を 書いた 本人が 案内する
+	// きのこ板：むかし 来た 板を もう一度
+	roze: {
+		name: "ロゼ",
+		first: "きのこ板、ひさしぶりアル",
+		talk: [
+			"生えてる　ものは　食べないアル",
+			"パン板の　子が　植民したアル",
+			"前は　にぎやかだったアル",
+			"変わらないのも　常識アル",
+		],
+		down: "先に　帰るアル。鍋、あたためとくアル",
+		seen: "……ここ、変わってないアル",
+	},
+	// 風呂板：湯治の つきそい（べつに 行きたい わけじゃ ない）
+	shiyo: {
+		name: "シヨ",
+		first: "ゆ、湯気で　眼鏡が　くもるわね",
+		talk: [
+			"タオル、持ってきて　あげたわよ",
+			"……べつに　心配じゃ　ないわよ",
+			"のぼせないように　しなさいよ",
+			"あたすは　待つのが　仕事なのに",
+		],
+		down: "……先に　帰るわ。待ってるからね",
+		seen: "……あったかいわね。ここ",
+	},
+	// パン板：本家の 視察
+	panmatsu: {
+		name: "パン松",
+		first: "本家の　視察だ。手荒な　まねは　しない",
+		talk: ["パン板は、人が　残った　板だ", "……パンを　食え"],
+		down: "……撤退する。パンを　食え",
+		seen: "……本家だ。パンの　においが　する",
+	},
+	// おんたこ：弟（やきう）の 好物さがし
+	ngoane: {
+		name: "ンゴ姉",
+		first: "弟の　好物、さがすンゴねぇ",
+		talk: [
+			"弟は、ちゃんと　食べてるかしらンゴ",
+			"フェリスちゃんに　おみやげンゴ",
+			"道のりは　けわしいンゴねぇ……",
+		],
+		down: "先に　帰るンゴ……。気をつけてンゴ",
+		seen: "ソースの　におい、ここンゴねぇ",
+	},
+	// お祭り：日曜日みたいな 祭りを 見たい
+	nichie: {
+		name: "にぃちぇ",
+		first: "お祭り！　日曜日みたいだニィ！",
+		talk: [
+			"太鼓の　音、日曜日の　音ニィ",
+			"月曜が　来ないで　ほしいニィ",
+			"にぎやかだった　ころの　祭りニィ",
+		],
+		down: "先に　帰るニィ……。日曜日、待ってる",
+		seen: "ここ、ずっと　日曜日ニィ！",
+	},
+	// 避難J：現地調査
+	hinary: {
+		name: "ヒナリー",
+		first: "現地調査を　開始したいと　思います",
+		talk: [
+			"最後の　レスは、1000日前です",
+			"リロードの　音を　記録しています",
+			"避難先の　人は、暮らしています",
+		],
+		down: "撤収したいと　思います",
+		seen: "……記録しました。ここが　避難J",
+	},
+	// 野球chの 跡地（裏）：もう一度 見て おきたい
 	shobon: {
 		name: "原住民",
-		first: ">>1、おれが　書いたんだ。案内するよ",
+		first: "……のんびり　行こうよ",
 		talk: [
 			"ここ、2012年の　6月なんだよね",
 			"ROM専、いるね。……見てる　だけだよ",
-			"のんびり　いこうよ",
 			"20人、ちゃんと　いたんだ",
-			"……もう　すこし、下",
 		],
 		down: "先に　帰るね。のんびり　待ってる",
+		seen: "……ここ。おれたち、いたんだ",
 	},
 };
 
@@ -123,6 +200,73 @@ export const GUEST_TALK: Record<GuestId, GuestTalk> = {
 			"のんびり　いこうよ。\n……急いでも、スレは　沈まない",
 		],
 	},
+	roze: {
+		hurt: "キリコ、顔色　わるいアル。\n……休むのが　常識アル",
+		selfHurt: "ちょっと　痛いアル。\n……カツラは　無事アル",
+		hungry: "おなか　すいたアル？\n……麻婆、ないアル",
+		home: "帰ったら　麻婆豆腐アル。\n……ひと鍋、作るアル",
+		chat: [
+			"前に　いた　人の　ことは、\nちゃんと　覚えてるアル",
+			"わたしは　変わらないアル。\n……変われないだけ、かもアル",
+			"きのこ板の　子、\n態度が　でかいアル",
+			"キリコと　歩くの、\n……わるくないアル",
+		],
+	},
+	shiyo: {
+		hurt: "ちょっと！　HP、少ないわよ。\n……生きてこそだ。忘れないで",
+		selfHurt: "……へ、へいきよ。\nこれくらい",
+		hungry: "おなか　すいたでしょ。\n……パン、ちゃんと　食べなさい",
+		home: "帰り道ね。\n……お茶、いれなおさなきゃ",
+		chat: [
+			"あたすは　あずかる　係よ。\n……キリコの　ことも",
+			"待ってる　ほうが　得意なの。\n……ついてきちゃったけど",
+			"湯気で　見えないわね。\n……はぐれないでよ",
+		],
+	},
+	panmatsu: {
+		hurt: "顔色が　わるい。\n……パンを　食え",
+		selfHurt: "……これしき。\nパン板の　民は　しぶとい",
+		hungry: "腹が　へったか。\n……パンを　食え",
+		home: "帰還する。\n……パン板の　出張所へ",
+		chat: [
+			"侵略と　いっても、\n……遊びだったのだ",
+			"パン板は、人が　残った。\n……めずらしい　ことだ",
+			"パンは、裏切らない",
+		],
+	},
+	ngoane: {
+		hurt: "あらあら、たいへんンゴ。\n……むりは　だめンゴねぇ",
+		selfHurt: "ちょっと　痛いンゴ……。\nでも　平気ンゴねぇ",
+		hungry: "おなか、すいてないンゴ？\n……たこ焼き、まだンゴ",
+		home: "帰ったら、弟の　小屋に\n寄って　いこうかしらンゴ",
+		chat: [
+			"弟は、ずっと　ここに　いるンゴ。\n……むかしから　そうンゴねぇ",
+			"フェリスちゃん、元気ンゴ？\n……き、聞いてみただけンゴ",
+			"キリコちゃん、弟を\nよろしくンゴねぇ",
+		],
+	},
+	nichie: {
+		hurt: "キリコ、ぼろぼろニィ！\n……休むのも　日曜日ニィ",
+		selfHurt: "いたいニィ……。\n月曜日みたいニィ",
+		hungry: "おなか　すいたニィ？\n……屋台、ないニィ",
+		home: "帰り道ニィ。\n……祭りの　あとって、さびしいニィ",
+		chat: [
+			"毎日　日曜日なら　いいのに\n……って、いつも　思うニィ",
+			"祭りって、だれも　いなくても\n続くんだニィ",
+			"キリコと　来られて、\n……今日は　日曜日ニィ",
+		],
+	},
+	hinary: {
+		hurt: "キリコさんの　HPが\n減っている　模様です",
+		selfHurt: "……損傷を　確認しました。\n研究は　つづけます",
+		hungry: "満腹度の　低下を\n観測しました",
+		home: "帰還したいと　思います。\n……発表は　村で",
+		chat: [
+			"避難した　人は、ふつうに\n暮らしている　模様です",
+			"1000ゲッターの　習性を\n研究しています",
+			"これで　発表を\n終わりたいと……　まだです",
+		],
+	},
 };
 
 /** 話しかけた ときの 1窓（n は この 冒険で 話しかけた 回数。様子が 先）。 */
@@ -141,7 +285,7 @@ export const guestChat = (r: Run, n: number): string | null => {
 /** 同行者が この 階に 立っているか（たおれた・まだ 立っていない なら null）。 */
 export const guestHere = (r: Run): Guest | null => {
 	const g = r.s.guest;
-	return g && !g.down && !g.off ? g : null;
+	return g && !g.down && !g.done && !g.off ? g : null;
 };
 
 /** (x, y) に 同行者が 立っているか。 */
@@ -194,7 +338,7 @@ const standNearPlayer = (r: Run, g: Guest): boolean => {
 /** 階に 着いた とき（Run.enterFloor）：キリコの そばに 立って、ひとこと。 */
 export const guestEnterFloor = (r: Run, first: boolean): void => {
 	const g = r.s.guest;
-	if (!g || g.down) return;
+	if (!g || g.down || g.done) return;
 	const max = guestMaxHp(r);
 	g.hp = Math.min(max, g.hp + Math.max(0, max - g.maxHp));
 	g.maxHp = max;
@@ -204,12 +348,22 @@ export const guestEnterFloor = (r: Run, first: boolean): void => {
 		? def.first
 		: def.talk[(r.s.depth - 2 + def.talk.length) % def.talk.length];
 	r.msg(`${def.name}「${line}」`);
+	// 見たかった 階（依頼の 目的）：ひとこと 言って、満足して 村へ 帰る（帰り道の 階では 数えない）
+	if (!r.s.returning && r.s.depth >= g.goal) {
+		r.msg(`${def.name}「${def.seen}」`, "good");
+		r.se("item");
+		g.done = true;
+		r.emit({ t: "die", id: GUEST_ID, pos: { x: g.x, y: g.y } });
+		r.msg(`${def.name}は　満足して、村へ　帰っていった`);
+	}
 };
 
 /** 同行者の いまの ひとこと（階の 札に 出す。画面用）。 */
 export const guestFloorLine = (r: Run): string | null => {
 	const g = r.s.guest;
 	if (!g || g.down) return null;
+	// 見たかった 階に 着いた（この 階で 帰っていく）
+	if (g.done) return null;
 	const def = GUESTS[g.id];
 	const line =
 		r.s.depth <= 1
@@ -282,7 +436,7 @@ const guestAttack = (r: Run, g: Guest, m: Monster, d: Dir8): void => {
  */
 export const guestAct = (r: Run): void => {
 	const g = r.s.guest;
-	if (!g || g.down) return;
+	if (!g || g.down || g.done) return;
 	if (g.off) {
 		standNearPlayer(r, g);
 		return;
@@ -412,9 +566,10 @@ export const swapWithGuest = (r: Run, from: Pos, to: Pos, d: Dir8): boolean => {
 	return true;
 };
 
-/** 冒険の はじめの 同行者（村が 決めた id から）。 */
-export const newGuest = (id: GuestId): Guest => ({
+/** 冒険の はじめの 同行者（村が 決めた 依頼から）。 */
+export const newGuest = ({ id, goal }: GuestSpec): Guest => ({
 	id,
+	goal,
 	x: 0,
 	y: 0,
 	dir: 4,

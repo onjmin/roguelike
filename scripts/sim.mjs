@@ -37,7 +37,9 @@ const DUNGEON = arg("dungeon", "main");
 // 目的（fetch / boss）。無ければ その板の 既定
 const OBJECTIVE = arg("objective", null);
 // 筋で ついてくる 同行者（zero / feris / shobon。core/guest.ts）。無ければ ひとり
-const GUEST = arg("guest", null);
+const GUEST = arg("guest", null)
+	? { id: arg("guest", null), goal: 999 }
+	: null;
 const MAX_ACTIONS = 60000;
 
 const server = await createServer({

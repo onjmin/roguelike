@@ -23,9 +23,18 @@ import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import { HERO_NAME } from "../../core/data/heroes";
 import { MONSTERS } from "../../core/data/monsters";
 import { CARRY_MAX, STORAGE_CAP } from "../../core/town";
-import type { DungeonId, Item } from "../../core/types";
+import type { DungeonId, GuestId, Item } from "../../core/types";
 import { CAST } from "../../data/people/cast";
-import { guestFor } from "../../data/people/companions";
+import {
+	ESCORT_MSG,
+	type EscortRequest,
+	escortById,
+	escortFor,
+	escortSpec,
+	openEscorts,
+	requesterName,
+	speakerOf,
+} from "../../data/people/companions";
 import { HERO_QUESTS, type QuestLine } from "../../data/people/heroQuests";
 import { BOARD_MENU, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { LIBRARY_FROM } from "../../data/story/glossary";
@@ -76,6 +85,13 @@ import {
 } from "../../data/village/trolley";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
 import {
+	acceptEscort,
+	doneEscortThanks,
+	dropEscort,
+	loadEscort,
+	pendingThanks,
+} from "../../engine/escort";
+import {
 	acceptQuest,
 	chooseHero,
 	chosenHero,
@@ -102,7 +118,7 @@ import {
 	readScrap,
 	recordFromRun,
 } from "../../engine/save";
-import { walletYen, yen } from "../../engine/wallet";
+import { earnYen, walletYen, yen } from "../../engine/wallet";
 import { runSaveLabel } from "../boot";
 import type { Ctx } from "../ctx";
 import { infoWindow, type ListItem, listWindow } from "../list";
@@ -351,19 +367,19 @@ export const departTo = async (
 	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
 	// 離れていても 毎回 聞かせる（山場の あと 聞けなく なる 一言。STORY.md §5.9）
 	else await s.narrate(DEPART.nanjFar);
-	// 筋で ついてくる 同行者（data/people/companions.ts。選ばない：板と 筋で 決まる）
-	const companion = guestFor(
+	// 同行の 依頼（引き受けた 依頼の 板へ 出る ときだけ 依頼主が ついてくる。data/people/companions.ts）
+	const town = loadTown();
+	const companion = escortFor(
 		d,
+		loadEscort().accepted,
 		loadProgress().cleared,
-		previewStage() ?? loadTown().stage,
+		previewStage() ?? town.stage,
+		town.points,
 		chosenHero(),
 	);
 	if (companion) {
 		await s.narrate(companion.join);
-		if (companion.speaker) {
-			await gather(s, [companion.speaker]);
-			await s.say(companion.speaker, companion.line);
-		} else await sayAs(s, companion.who as MobId, companion.line);
+		await requesterSays(s, companion.who, companion.line);
 	}
 	notePicked(d, false);
 	await hideMsg(s);
@@ -391,7 +407,7 @@ export const departTo = async (
 		carry,
 		objective: goal.objective,
 		lunch: loadTown().lunch,
-		...(companion ? { guest: companion.who } : {}),
+		...(companion ? { guest: escortSpec(companion) } : {}),
 	});
 };
 
@@ -584,6 +600,84 @@ const readScrapScript = async (s: Story, x: Scrap): Promise<void> => {
 	await s.narrate(memo ? SCRAP_MSG.afterMemo : SCRAP_MSG.after);
 };
 
+/** 掲示板に 出ている 同行の 依頼（段の 下見も 段で）。 */
+const boardEscorts = (stage: number) =>
+	openEscorts(
+		loadProgress().cleared,
+		stage,
+		loadTown().points,
+		loadEscort().done,
+	);
+
+/** 依頼主の 声（仲間は 村の 窓・住人は sayAs。呼びよせない：はり紙の 字や 出発の ひとこと）。 */
+const requesterSays = async (
+	s: Story,
+	who: GuestId,
+	text: string,
+): Promise<void> => {
+	const sp = speakerOf(who);
+	if (sp) await s.say(sp, text);
+	else await sayAs(s, who as MobId, text);
+};
+
+/**
+ * 掲示板の 同行の 依頼：一覧 → はり紙を 読む（依頼主の 声で）→ 引き受ける／やめる（引き受けて いれば とりやめも）。
+ * 引き受けるのは 1つまで（ほかを 引き受けて いれば かえるか きく）。
+ */
+const escortBoardScript = async (
+	ctx: Ctx,
+	s: Story,
+	list: readonly EscortRequest[],
+): Promise<void> => {
+	const memo = loadEscort();
+	await hideMsg(s);
+	const id = await listWindow(
+		ctx,
+		fill(ESCORT_MSG.list, { n: list.length }),
+		list.map((e) => ({
+			label: `「${e.title}」`,
+			sub: `${requesterName(e.who)}・${DUNGEON_NAMES[e.board].short}${memo.accepted === e.id ? `・${ESCORT_MSG.mark}` : ""}`,
+			value: e.id,
+		})),
+	);
+	const e = list.find((x) => x.id === id);
+	if (!e) return;
+	await s.narrate(fill(ESCORT_MSG.head, { name: requesterName(e.who) }));
+	for (const t of e.ask) await requesterSays(s, e.who, t);
+	if (memo.accepted === e.id) {
+		const n = await s.choose([...ESCORT_MSG.chooseAccepted], { cancel: 0 });
+		if (n === 1) {
+			dropEscort();
+			await s.narrate(ESCORT_MSG.dropped);
+		}
+		return;
+	}
+	if (memo.accepted) await s.narrate(ESCORT_MSG.swap);
+	const n = await s.choose([...ESCORT_MSG.choose], { cancel: 1 });
+	if (n !== 0) return;
+	acceptEscort(e.id);
+	s.se("decide");
+	await s.narrate(
+		fill(ESCORT_MSG.accepted, {
+			board: DUNGEON_NAMES[e.board].name,
+			name: requesterName(e.who),
+		}),
+	);
+};
+
+/** 同行の 依頼を はたして 帰った：依頼主が 来て お礼（少しの お金。data/people/companions.ts）。 */
+const escortThanksScript = async (s: Story): Promise<void> => {
+	const e = escortById(pendingThanks());
+	if (!e) return;
+	const sp = speakerOf(e.who);
+	if (sp) await gather(s, [sp]);
+	for (const t of e.thanks) await requesterSays(s, e.who, t);
+	earnYen(e.reward);
+	s.se("item");
+	await s.narrate(fill(ESCORT_MSG.reward, { yen: yen(e.reward) }));
+	doneEscortThanks();
+};
+
 /**
  * まとめ掲示板：新しい 切れはしが 貼られて いれば まず それを 読む。ふだんは 冒険の 記録・読んだ 切れはし・
  * 総選挙の はり紙（出て いれば）から えらぶ。
@@ -609,8 +703,11 @@ const boardScript =
 		const civic = civicBoardMenu(stage);
 		// おんJ芋煮会の はり紙（10月だけ。ui/minigames/imoni.ts）
 		const imoni = imoniBoardMenu();
+		// 同行の 依頼（data/people/companions.ts。持ち帰った 板の 依頼が 出ている・引き受けている ときだけ）
+		const escorts = boardEscorts(stage);
 		const opts = [
 			"冒険の記録",
+			...(escorts.length ? [ESCORT_MSG.menu] : []),
 			...(read.length ? ["古い　切れはし"] : []),
 			...(memos.length ? [SCRAP_MSG.listMemo] : []),
 			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
@@ -625,6 +722,7 @@ const boardScript =
 		const n = await s.choose(opts, { cancel: opts.length - 1 });
 		const v = opts[n];
 		if (v === "冒険の記録") await records(ctx, s);
+		else if (v === ESCORT_MSG.menu) await escortBoardScript(ctx, s, escorts);
 		else if (v === BOARD_MENU[1]) await senkyoScript(s);
 		else if (civic && v === civic) await civicBoardScript(s, stage);
 		else if (imoni && v === imoni) await imoniBoardScript(s);
@@ -971,6 +1069,8 @@ const arrivalScript =
 		// 転（時計が もどる）と 結の あとの「草」
 		if (wrapDue) await wrapScript(s);
 		if (kusaDue) await kusaScript(s);
+		// 同行の 依頼を はたして 帰った：お礼
+		await escortThanksScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
 		await settleScript(s, storeChooser(ctx));

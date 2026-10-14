@@ -102,7 +102,7 @@ import {
 	type Floor,
 	type FloorItem,
 	type GameEvent,
-	type GuestId,
+	type GuestSpec,
 	HOLD,
 	type Item,
 	type ItemCat,
@@ -175,8 +175,8 @@ export class Run {
 		rom = false,
 		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
 		hero: HeroId = "kiriko",
-		/** 筋で ついてくる 同行者（core/guest.ts。乱数は 引かない。いなければ 書かない）。 */
-		guest: GuestId | null = null,
+		/** 同行の 依頼で ついてくる 同行者（core/guest.ts。乱数は 引かない。いなければ 書かない）。 */
+		guest: GuestSpec | null = null,
 	): Run {
 		const dg = dungeonById(dungeon);
 		const boss = objective === "boss" && !!dg.boss;

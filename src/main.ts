@@ -159,7 +159,9 @@ const devRun = (): Run | null => {
 		false,
 		isHeroId(q.get("hero")) ? (q.get("hero") as HeroId) : "kiriko",
 		// 同行者（&guest=zero・feris・shobon。core/guest.ts）
-		(q.get("guest") ?? "") in GUESTS ? (q.get("guest") as GuestId) : null,
+		(q.get("guest") ?? "") in GUESTS
+			? { id: q.get("guest") as GuestId, goal: Number(q.get("goal") ?? 999) }
+			: null,
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
