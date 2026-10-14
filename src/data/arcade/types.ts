@@ -8,7 +8,6 @@
 export const ARCADE_GAMES = [
 	// ── ゲームセンター「連コ」
 	"shooter", // 奥の 1台目：シューティング「荒らし撃退」
-	"drive", // 奥の 2台目：レースゲーム「おんJドライブ」
 	"breakout", // 奥の 3台目：ブロックくずし「スレ崩し」
 	"mole", // 奥の 4台目：もぐらたたき「ROMたたき」
 	"fighter", // 奥の 5台目：格ゲーの 対戦台「レスバトル」（乱入を 待つ 名無しの 横）
@@ -71,7 +70,6 @@ export type ArcadeGame = (typeof ARCADE_GAMES)[number];
 /** どの 施設の 物か（試験が 置き場所を 見る）。 */
 export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	shooter: "arcade",
-	drive: "arcade",
 	breakout: "arcade",
 	mole: "arcade",
 	fighter: "arcade",

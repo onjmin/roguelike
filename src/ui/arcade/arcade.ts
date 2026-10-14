@@ -26,12 +26,7 @@ import { playOrRecord } from "../minigames/playMenu";
 import { craneGift } from "../village/myhome";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
-import {
-	playBreakout,
-	playDrive,
-	playRunner,
-	playShooter,
-} from "./arcadeAction";
+import { playBreakout, playRunner, playShooter } from "./arcadeAction";
 import { playBomber, playPlatform } from "./arcadeHome";
 import type { ArcadeResult } from "./arcadeKit";
 import {
@@ -189,7 +184,6 @@ const BOARDS: Record<
 	(ctx: UiCtx, stake?: number) => Promise<ArcadeResult | null>
 > = {
 	shooter: playShooter,
-	drive: playDrive,
 	breakout: playBreakout,
 	mole: playMole,
 	fighter: playFighter,

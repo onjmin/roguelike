@@ -150,7 +150,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		batonDown: "rpgen:0JNThb", // [ポケ]PC終了
 		/** 解音ゼロの 次の 機体が 起動した（バトンタッチ）。 */
 		batonUp: "rpgen:0JDT7S", // [ポケ]PC起動
-		/** 筐体の 自機が やられた・ぶつかった（シューティング・ドライブ・なんJラン）。 */
+		/** 筐体の 自機が やられた・ぶつかった（シューティング・なんJラン）。 */
 		arcCrash: "rpgen:YHEG4T", // 自機爆発音1
 	},
 	/** いちばん目立たせる音。 */

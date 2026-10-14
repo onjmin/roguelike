@@ -1,6 +1,5 @@
 // ゲームセンターの 筐体の 板（動かして よける・撃つ 台）。決まりは data/arcade/logic.ts、文は data/arcade/text.ts。
 // - シューティング「荒らし撃退」：←→ で 動く（くり返しで 進む）、A で 撃つ（押しっぱなしで 連射）。タップは その 横位置へ 動いて 撃つ。
-// - レースゲーム「おんJドライブ」：←→ で 車線を かえる。タップは 車より 左なら 左、右なら 右。
 // - ブロックくずし「スレ崩し」：←→ で 板を 動かす、A で 球を 打つ。タップは その 横位置へ（球が のって いれば 打つ）。
 // - ジャンプアクション「なんJラン」：A・↑・タップで 跳ぶ。
 // 点が 入ると 数字が 浮かび、粒が はじける。ぶつかると 画面が ゆれる（ui/arcade/arcadeJuice.ts）。
@@ -15,12 +14,6 @@ import {
 	bkRect,
 	bkStart,
 	bkStep,
-	DR,
-	type DrEvent,
-	drScore,
-	drSpeed,
-	drStart,
-	drStep,
 	RN,
 	rnScore,
 	rnStart,
@@ -218,129 +211,6 @@ export const playShooter = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 		over: (s) => s.over,
 		score: (s) => s.score,
 		end: (s) => (s.lives > 0 ? ARCADE.clear : ARCADE.over),
-	});
-};
-
-// ───────────────── レースゲーム ─────────────────
-
-const STAR_INK = ["#ff6060", "#ffb040", "#60e060", "#60a0ff", "#e060e0"];
-
-export const playDrive = (ctx: UiCtx): Promise<ArcadeResult | null> => {
-	const j = juice();
-	return playBoard(ctx, "drive", {
-		start: drStart,
-		step: (s, f) => {
-			juiceStep(j, f.dt);
-			const evs: DrEvent[] = [];
-			for (const e of f.evs) {
-				let move: -1 | 0 | 1 = 0;
-				if (isKey(e, "left")) move = -1;
-				else if (isKey(e, "right")) move = 1;
-				else if (isTap(e))
-					move = e.tap[0] < (DR.lanes[s.lane] ?? AW / 2) ? -1 : 1;
-				if (move !== 0) evs.push(...drStep(s, 0, move, rnd));
-			}
-			evs.push(...drStep(s, f.dt, 0, rnd));
-			for (const e of evs) {
-				if (e === "move") f.se("cursor");
-				else if (e === "pickup") {
-					f.se("item");
-					if (s.streak >= 2)
-						f.say(fill(ARCADE_BOARD.driveStreak, { n: s.streak }));
-				} else if (e === "age") {
-					f.se("rustproof");
-					f.say(ARCADE_BOARD.driveAge);
-					j.flash = 0.15;
-				} else if (e === "smash") {
-					f.se("arcBlock");
-					quake(j, 2);
-				} else if (e === "crash") {
-					f.se("arcCrash");
-					quake(j, 5);
-					j.flash = 0.2;
-					burst(j, DR.lanes[s.lane] ?? AW / 2, DR.carY, "#ff8040", 16, 80);
-				}
-			}
-			for (const p of s.pops) {
-				pop(j, p.x, p.y, `+${p.pts}`);
-				burst(j, p.x, p.y, "#80c0ff", 6);
-			}
-			if (s.over) f.say(ARCADE_BOARD.driveCrash);
-		},
-		draw: (g, s, clock) => {
-			shaken(g, j, () => {
-				g.fillStyle = "#2f7a32"; // 草地
-				g.fillRect(0, 0, AW, AH);
-				g.fillStyle = "#4a4a52";
-				g.fillRect(DR.roadL, ATOP, DR.roadR - DR.roadL, AH - ATOP);
-				g.fillStyle = "#e8e8e8";
-				g.fillRect(DR.roadL, ATOP, 2, AH - ATOP);
-				g.fillRect(DR.roadR - 2, ATOP, 2, AH - ATOP);
-				// 車線の 点線（走った ぶん 流れる）
-				g.fillStyle = "#c8c8c8";
-				const off = s.dist % 16;
-				for (const x of [105, 135])
-					for (let y = ATOP - 16 + off; y < AH; y += 16) g.fillRect(x, y, 1, 8);
-				// 道ばたの 木（流れて 速さが わかる）
-				g.fillStyle = "#1f5a22";
-				const tree = s.dist % 40;
-				for (let y = ATOP - 40 + tree; y < AH; y += 40) {
-					g.fillRect(52, Math.round(y), 8, 8);
-					g.fillRect(180, Math.round(y + 20), 8, 8);
-				}
-				// age の あいだは 速さの 線
-				if (s.star > 0) {
-					g.fillStyle = "rgba(255,255,255,0.5)";
-					for (let i = 0; i < 6; i++) {
-						const y = (i * 29 + s.dist * 1.5) % (AH - ATOP);
-						g.fillRect(DR.roadL + 6 + ((i * 37) % 80), ATOP + y, 1, 12);
-					}
-				}
-				for (const o of s.things) {
-					const x = DR.lanes[o.lane] ?? 0;
-					if (o.kind === "cone")
-						chip(g, x, o.y, 10, DR.obH, "#f07020", "▲", "#ffffff", 7);
-					else if (o.kind === "car")
-						chip(g, x, o.y, 14, DR.obH + 2, "#c03030", "荒");
-					else if (o.kind === "age")
-						chip(
-							g,
-							x,
-							o.y,
-							16,
-							DR.obH,
-							STAR_INK[Math.floor(clock * 10) % STAR_INK.length] ?? "#f80",
-							"age",
-							"#ffffff",
-							6,
-						);
-					else chip(g, x, o.y, 16, DR.obH, "#2060c0", "保守", "#ffffff", 6);
-				}
-				const cx = (DR.lanes[s.lane] ?? 0) + s.slide * 30;
-				// age の 終わりぎわは 点滅
-				const starOn =
-					s.star > 1 || (s.star > 0 && Math.floor(clock * 12) % 2 === 0);
-				g.fillStyle = starOn
-					? (STAR_INK[Math.floor(clock * 12) % STAR_INK.length] ?? "#fff")
-					: "#f0f0f0";
-				g.fillRect(
-					Math.round(cx) - DR.carW / 2,
-					DR.carY - DR.carH / 2,
-					DR.carW,
-					DR.carH,
-				);
-				g.fillStyle = "#4060c0";
-				g.fillRect(Math.round(cx) - 4, DR.carY - 3, 8, 6);
-				juiceDraw(g, j, AW, AH);
-			});
-			hud(
-				g,
-				`${ARCADE_BOARD.score} ${drScore(s)}`,
-				`${s.streak >= 2 ? `${fill(ARCADE_BOARD.driveStreak, { n: s.streak })}　` : ""}${Math.round(drSpeed(s.t) * (s.star > 0 ? DR.starBoost : 1))} km/h`,
-			);
-		},
-		over: (s) => s.over,
-		score: drScore,
 	});
 };
 

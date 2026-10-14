@@ -47,13 +47,6 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 		hint: "←→／タップで　動く　A／タップで　撃つ",
 		unit: "点",
 	},
-	drive: {
-		line: "レースゲームの　台。\n画面に「おんJドライブ」の　文字。",
-		rule: "コーンと　車を　よけて　走る。\n「保守」の　札は　拾うと　点。",
-		title: "おんJドライブ",
-		hint: "←→／左右を　タップで　車線を　かえる",
-		unit: "点",
-	},
 	breakout: {
 		line: "ブロックくずしの　台。\n画面に「スレ崩し」の　文字。",
 		rule: "球を　はね返して　スレを　崩す。\n球を　3回　のがすと　おわり。",
@@ -409,7 +402,6 @@ export const ARCADE_BOARD = {
 	breakoutWave: "WAVE {n}",
 	moleBonk: "書けや",
 	moleOuch: "イッチや！",
-	driveCrash: "CRASH!",
 	fighterYou: "キリコ",
 	fighterCounter: "論破！",
 	fighterEarly: "スキあり",
@@ -418,13 +410,11 @@ export const ARCADE_BOARD = {
 	fighterNext: "次の　相手：{name}",
 	fighterPerfect: "完全論破！",
 	fighterStreak: "{n}連続　論破",
-	// 荒らし撃退・おんJドライブ・スレ崩し・ROMたたき・なんJラン・メダルスロット
+	// 荒らし撃退・スレ崩し・ROMたたき・なんJラン・メダルスロット
 	shMult: "連続　撃破！　点が　{n}倍",
 	shPower: "規制！　しばらく　3方向に　撃てる",
 	shBoss: "本体の「自演」が　来た！",
 	shBossDown: "自演を　論破した！",
-	driveStreak: "保守×{n}",
-	driveAge: "age！　しばらく　はね飛ばせる",
 	bkWide: "板が　広く　なった",
 	bkPierce: "球が　スレを　つらぬく",
 	bkLife: "球が　1つ　ふえた",

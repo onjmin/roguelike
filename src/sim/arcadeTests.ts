@@ -30,11 +30,6 @@ import {
 	bkRect,
 	bkStart,
 	bkStep,
-	DR,
-	drPickup,
-	drScore,
-	drStart,
-	drStep,
 	FT_FOES,
 	ftInPerfect,
 	ftInWindow,
@@ -281,7 +276,7 @@ test("置き場所: 筐体 7台と 音ゲーの 台は それぞれ 別の ゲ�
 	const byChar: Record<string, string> = {};
 	for (const [ch, kind] of Object.entries(room.things))
 		if (isArcadeGame(kind)) byChar[ch] = kind;
-	const cabinets = ["A", "b", "C", "K", "E", "G", "I"];
+	const cabinets = ["A", "Q", "C", "K", "E", "G", "I"];
 	for (const ch of cabinets)
 		ok(isArcadeGame(byChar[ch]), `cabinet ${ch} has a game`);
 	const games = cabinets.map((ch) => byChar[ch]);
@@ -526,49 +521,6 @@ test("シューティング: 撃たないと 残機が なくなる・よく 撃
 	ok(ev.includes("split") && s.foes.length >= 2, `split ${s.foes.length}`);
 	s.chain = SH.chainStep;
 	ok(shMult(s) === 2, "mult");
-});
-
-test("レースゲーム: 動かないと ぶつかる・空いた 車線へ よけると 長く 走れる、どの 列も 1車線は 空く", () => {
-	let s = drStart();
-	let rnd = seeded(3);
-	for (let i = 0; i < 120 * 30 && !s.over; i++) drStep(s, 1 / 30, 0, rnd);
-	ok(s.over, "idle crashes");
-	const idle = drScore(s);
-	s = drStart();
-	rnd = seeded(4);
-	for (let i = 0; i < 90 * 30 && !s.over; i++) {
-		// 前に いちばん 近い じゃまの ない 車線へ
-		const danger = (lane: number) =>
-			s.things.some(
-				(o) =>
-					o.lane === lane &&
-					!drPickup(o.kind) &&
-					o.y > DR.carY - 70 &&
-					o.y < DR.carY + 12,
-			);
-		let move: -1 | 0 | 1 = 0;
-		if (danger(s.lane)) {
-			if (s.lane > 0 && !danger(s.lane - 1)) move = -1;
-			else if (s.lane < 2 && !danger(s.lane + 1)) move = 1;
-		}
-		drStep(s, 1 / 30, move, rnd);
-		// 同じ 高さの じゃまは 2つまで
-		const rows = new Map<number, number>();
-		for (const o of s.things)
-			if (!drPickup(o.kind)) rows.set(o.y, (rows.get(o.y) ?? 0) + 1);
-		for (const n of rows.values()) ok(n <= 2, "a lane is always open");
-	}
-	ok(drScore(s) > idle * 3, `dodging ${drScore(s)} vs idle ${idle}`);
-	// 保守は 続けて 拾うと 上がる・age の あいだは はね飛ばせる
-	s = drStart();
-	for (const kind of ["hoshu", "hoshu", "age", "car"] as const) {
-		s.things.push({ lane: s.lane, y: DR.carY, kind });
-		drStep(s, 0.001, 0, rnd);
-	}
-	ok(
-		s.streak === 2 && s.bonus === DR.pickup * 3 + DR.smash && !s.over,
-		`streak ${s.streak} bonus ${s.bonus}`,
-	);
 });
 
 test("ブロックくずし: 板で 追えば 1面 くずせる（次の 面へ）、追わないと 3球で おわり", () => {
@@ -1564,14 +1516,16 @@ test("記録: こわれた 中身は 初期値、台ごとに 別、?stage= の 
 			"kiriko-roguelike/arcade",
 			JSON.stringify({
 				v: 1,
-				best: { shooter: -5, slot: 77, rhythm: "x", drive: 1e12 },
+				// drive は 消した 台（2026-10-15。古い 記録は 読みとばす）
+				best: { shooter: -5, slot: 77, rhythm: "x", wangan: 1e12, drive: 500 },
 				plays: { slot: 3 },
 				tutored: ["slot", "nope", 3],
 			}),
 		);
 		const m = loadArcade();
 		ok(m.best.shooter === 0 && m.best.slot === 77, "best");
-		ok(m.best.rhythm === 0 && m.best.drive === 9_999_999, "clamped");
+		ok(m.best.rhythm === 0 && m.best.wangan === 9_999_999, "clamped");
+		ok(!("drive" in m.best), "removed game is dropped");
 		ok(m.plays.slot === 3 && m.plays.mole === 0, "plays");
 		ok(JSON.stringify(m.tutored) === '["slot"]', "tutored");
 		forgetArcadeMemo();
