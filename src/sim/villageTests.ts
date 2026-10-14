@@ -5910,6 +5910,9 @@ test("保守の 当番表: one 「保守」 per return, counted in its own save,
 				`narrate: ${HALL_MSG.toban[0]}`,
 				"se read",
 				`narrate: ${fill(HALL_MSG.tobanDone, { n: 1 })}`,
+				// 1回目の 節目：外から 1レス
+				`narrate: ${HALL_MSG.tobanReplyHead}`,
+				`say nanj: ${HALL_MSG.tobanReply[1]}`,
 			]),
 			`wrote:\n${yes.log.join("\n")}`,
 		);
@@ -5921,6 +5924,8 @@ test("保守の 当番表: one 「保守」 per return, counted in its own save,
 			again.log.join("\n") ===
 				[
 					`narrate: ${HALL_MSG.toban[1]}`,
+					// キリコの 書いた 数が 当番表に 残る
+					`narrate: ${fill(HALL_MSG.tobanMine, { n: 1 })}`,
 					`narrate: ${fill(HALL_MSG.tobanAgain, { n: 1 })}`,
 				].join("\n"),
 			`again:\n${again.log.join("\n")}`,

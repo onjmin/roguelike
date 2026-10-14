@@ -92,15 +92,25 @@ const gone = (p: StoryPage, away: readonly Speaker[]): boolean =>
 	(!!p.about && away.includes(p.about)) ||
 	mentionsAway(p.text, away);
 
+/** 話す 人（地の文なら 出てくる 人）が 村に いないか（かわりの 頁を 選ぶ とき）。 */
+const speakerGone = (p: StoryPage, away: readonly Speaker[]): boolean =>
+	(!!p.who && away.includes(p.who)) || (!!p.about && away.includes(p.about));
+
 /** 村に いない 人の ページを かわりに かえる（かわりが 無ければ 出さない）。だれも いなければ そのまま。 */
 export const withoutAway = (
 	pages: readonly StoryPage[],
 	away: readonly Speaker[],
 ): readonly StoryPage[] =>
 	away.length
-		? pages.flatMap((p) =>
-				!gone(p, away) ? [p] : p.instead ? [p.instead] : [],
-			)
+		? pages.flatMap((p) => {
+				// かわりの 頁の 人も いなければ、その かわりへ（なければ 出さない）。keep（自分が かわり）は そのまま 出す
+				// （かわりの 頁は 話す 人が いれば よい：文に 名前が 出るのは 書いた 人の つもり。例「やきう民、いないんだ」）
+				if (!gone(p, away)) return [p];
+				let q: StoryPage | undefined = p.instead;
+				for (let hop = 0; q && speakerGone(q, away) && hop < 4; hop++)
+					q = q.instead;
+				return q ? [q] : [];
+			})
 		: pages;
 
 /**

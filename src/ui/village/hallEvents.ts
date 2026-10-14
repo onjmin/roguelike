@@ -251,6 +251,9 @@ export const tobanScript =
 			await s.narrate(HALL_MSG.tobanNotYet);
 			return;
 		}
+		// やきうが 出ていった あとは キリコの 書いた 数が 当番表に 残る
+		if (hoshuCount() > 0)
+			await s.narrate(fill(HALL_MSG.tobanMine, { n: hoshuCount() }));
 		if (!canWriteHoshu()) {
 			await s.narrate(fill(HALL_MSG.tobanAgain, { n: hoshuCount() }));
 			return;
@@ -263,6 +266,12 @@ export const tobanScript =
 		save(m);
 		s.se("read");
 		await s.narrate(fill(HALL_MSG.tobanDone, { n: m.hoshu }));
+		// 節目には 外から 1レス（出ていった 人に 届いている）
+		const reply = HALL_MSG.tobanReply[m.hoshu];
+		if (reply) {
+			await s.narrate(HALL_MSG.tobanReplyHead);
+			await s.say("nanj", reply, { name: "名無しさん" });
+		}
 	};
 
 /** 期間限定の 告知。 */
