@@ -217,7 +217,108 @@ const EMOTE_OUT = 1700;
 const EMOTE_CYCLE = 2600;
 
 /**
- * 頭の 右上の 記号（"!" "?" "…" "♪" "z"。枠は 描かず 字だけを フェードイン・アウト）。
+ * 記号の ドット絵（# が 色、まわりに 1px の ふちを つける）。まっすぐに 描いて、上ほど 右へ ずらして
+ * 少し 傾ける（emoteArt。作者「記号は 少し 傾けた ものを ドット絵で」）。
+ */
+const EMOTE_DOTS: Record<string, { rows: readonly string[]; color: string }> = {
+	"!": {
+		rows: [".##", ".##", ".##", ".##", ".#.", "...", ".##", ".##"],
+		color: "#ff5a3a",
+	},
+	"?": {
+		rows: [
+			".###.",
+			"##.##",
+			"...##",
+			"..##.",
+			".##..",
+			".....",
+			".##..",
+			".##..",
+		],
+		color: "#ffd84a",
+	},
+	"♪": {
+		rows: [
+			"..#..",
+			"..##.",
+			"..#.#",
+			"..#..",
+			"..#..",
+			"###..",
+			"###..",
+			".#...",
+		],
+		color: "#6ac0ff",
+	},
+	"…": {
+		rows: [
+			"........",
+			"........",
+			"........",
+			"........",
+			"........",
+			"........",
+			"##.##.##",
+			"##.##.##",
+		],
+		color: "#ffffff",
+	},
+	z: {
+		rows: [
+			"...####",
+			"....#..",
+			"...####",
+			"#####..",
+			"...#...",
+			"..#....",
+			".#.....",
+			"#####..",
+		],
+		color: "#c8b8ff",
+	},
+};
+
+const emoteCache = new Map<string, HTMLCanvasElement | null>();
+
+/** 記号の 絵（ふちつき・傾けた もの。1度 作って 使いまわす。知らない 記号は null）。 */
+const emoteArt = (text: string): HTMLCanvasElement | null => {
+	const hit = emoteCache.get(text);
+	if (hit !== undefined) return hit;
+	const def = EMOTE_DOTS[text];
+	if (!def || typeof document === "undefined") {
+		emoteCache.set(text, null);
+		return null;
+	}
+	const h = def.rows.length;
+	// 下から 3行ごとに 1px 右へ（上ほど 右に 倒れる）
+	const shift = (r: number) => Math.floor((h - 1 - r) / 3);
+	const w = Math.max(...def.rows.map((l) => l.length)) + shift(0);
+	const on = (x: number, y: number) =>
+		y >= 0 && y < h && def.rows[y][x - shift(y)] === "#";
+	const c = document.createElement("canvas");
+	c.width = w + 2;
+	c.height = h + 2;
+	const g = c.getContext("2d");
+	if (g) {
+		g.fillStyle = "#2a2238";
+		for (let y = -1; y <= h; y++)
+			for (let x = -1; x <= w; x++)
+				if (
+					!on(x, y) &&
+					(on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1))
+				)
+					g.fillRect(x + 1, y + 1, 1, 1);
+		g.fillStyle = def.color;
+		for (let y = 0; y < h; y++)
+			for (let x = 0; x < w; x++) if (on(x, y)) g.fillRect(x + 1, y + 1, 1, 1);
+	}
+	emoteCache.set(text, c);
+	return c;
+};
+
+/**
+ * 頭の 右上の 記号（"!" "?" "…" "♪" "z"。枠は なく、ドット絵が フェードイン・アウト）。
  * t は 記号が 出てからの 時間。
  */
 const drawEmote = (
@@ -239,26 +340,12 @@ const drawEmote = (
 	if (alpha <= 0) return;
 	// 出ている あいだ 3px 浮かぶ
 	const rise = Math.round((Math.min(k, EMOTE_OUT) / EMOTE_OUT) * 3);
-	const x = px + 14;
-	const y = py - 1 - rise;
+	const art = emoteArt(text);
+	if (!art) return;
 	ctx.save();
 	ctx.globalAlpha = alpha;
-	ctx.font = "bold 9px sans-serif";
-	ctx.textAlign = "center";
-	ctx.textBaseline = "middle";
-	ctx.lineWidth = 2;
-	ctx.lineJoin = "round";
-	ctx.strokeStyle = "#2a2238";
-	ctx.strokeText(text, x, y);
-	ctx.fillStyle =
-		text === "!"
-			? "#ff5a3a"
-			: text === "♪"
-				? "#6ac0ff"
-				: text === "?"
-					? "#ffd84a"
-					: "#ffffff";
-	ctx.fillText(text, x, y);
+	// 頭の 右上（絵の 左下を 頭の 右はしの 少し 上に）
+	ctx.drawImage(art, px + 11, py - art.height + 3 - rise);
 	ctx.restore();
 };
 
