@@ -22,16 +22,14 @@ import {
 	facilityRoomPalette,
 	facilityRoomPlaces,
 	facilityRoomRows,
-	facilityShadows,
 	type OutdoorThing,
 	outdoorId,
 } from "../../data/village/facilities";
 import { npc, sign } from "../../data/village/helpers";
-import { coreShadows, type VillageView } from "../../data/village/map";
+import type { VillageView } from "../../data/village/map";
 import { layRoomTatami } from "../../data/village/tatami";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
 import { loadProgress, loadTown } from "../../engine/save";
-import { TILE } from "../../engine/types";
 import { yen } from "../../engine/wallet";
 import { arcadePlay } from "../arcade/arcade";
 import { bushitsuThing } from "../bushitsu/bushitsu";
@@ -225,33 +223,6 @@ const joinDecor =
 	(g, ox, oy, t) => {
 		for (const d of ds) d?.(g, ox, oy, t);
 	};
-
-/**
- * 建物の 影（村の 地図の 飾り。右がわの 地面に 斜めの 影。キャラの 上にも 重なるので、影に 入ると 少し 暗く 見える）。
- * 施設の 家と、住宅街からは 町の 中心の 建物（data/village/map.ts の coreShadows）。
- */
-export const shadowDecor = (stage: number): MapDef["decor"] => {
-	const list = [...facilityShadows(stage), ...coreShadows(stage)];
-	if (!list.length) return undefined;
-	const T = TILE;
-	return (g, ox, oy) => {
-		g.save();
-		g.fillStyle = "rgba(10, 16, 30, 0.22)";
-		for (const s of list) {
-			const x = s.x * T - ox;
-			const top = s.top * T - oy;
-			const bottom = s.bottom * T - oy;
-			g.beginPath();
-			g.moveTo(x, top);
-			g.lineTo(x + 10, top + 10);
-			g.lineTo(x + 10, bottom + 4);
-			g.lineTo(x, bottom);
-			g.closePath();
-			g.fill();
-		}
-		g.restore();
-	};
-};
 
 /** 施設の 中の 地図。曲は 村の まま。 */
 export const buildFacility = (

@@ -471,6 +471,7 @@ export class Field {
 	drawBelow(ctx: CanvasRenderingContext2D, ox: number, oy: number): void {
 		if (this.dirty) this.redraw();
 		ctx.drawImage(this.below, -ox, -oy);
+		this.def.ground?.(ctx, ox, oy);
 	}
 
 	/** 地形の上の層（キャラより手前）。 */

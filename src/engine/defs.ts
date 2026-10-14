@@ -120,6 +120,8 @@ export type MapDef = {
 		t: number,
 		me?: { x: number; y: number; dir: Dir },
 	) => void;
+	/** 地面の すぐ 上に 描く 物（建物の 影など。人や 上の 層より 下。engine/field.ts の drawBelow の あと）。 */
+	ground?: (g: CanvasRenderingContext2D, ox: number, oy: number) => void;
 };
 
 // ───────────────── 村を出るとき ─────────────────

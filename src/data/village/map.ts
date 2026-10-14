@@ -678,7 +678,7 @@ const coreCity = (rows: string[], stage: number): void => {
 };
 
 /**
- * 町の 中心の 建物の 影（住宅街から。facilities.ts の facilityShadows と 同じ 形。ui/village/facilities.ts の shadowDecor が 描く）。
+ * 町の 中心の 建物の 影（住宅街から。facilities.ts の facilityShadows と 同じ 形。ui/village/shadows.ts の shadowGround が 描く）。
  * 本館・商店街の 店・小屋・倉庫（銀行）・喫茶・図書館・音楽室・銭湯の 右がわ。
  */
 export const coreShadows = (

@@ -138,7 +138,7 @@ import { openSettings } from "../settings";
 import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { civicBoardMenu, civicBoardScript } from "./civic";
-import { enterFacility, outdoorScript, shadowDecor } from "./facilities";
+import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
 import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
@@ -146,6 +146,7 @@ import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag, openStorage } from "./home";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
+import { shadowGround } from "./shadows";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
 import { chooseRecord, villageSong } from "./villageMusic";
@@ -1116,11 +1117,12 @@ export const buildVillage = (
 		bgm: villageSong(),
 		tiles: villagePalette(view),
 		rows,
-		// 銭湯の 煙突から 湯気・施設の 建物の 影（ui/village/facilities.ts）・
+		// 建物の 影（地面だけ。日の 向きで かわる。ui/village/shadows.ts）
+		ground: shadowGround(view.stage, rows, villagePalette(view)),
+		// 銭湯の 煙突から 湯気・
 		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
 		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）
 		decor: joinDecor(
-			shadowDecor(view.stage),
 			chimneySteam(rows),
 			imoniDecor(imoniArrive()),
 			villageFindGlint(),
