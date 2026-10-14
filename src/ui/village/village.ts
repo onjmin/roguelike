@@ -79,6 +79,15 @@ import { Crowd } from "./villageCrowd";
 import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
 import { villageView } from "./villageReturn";
 
+/**
+ * 節目の 音（台本の s.se）を 鳴らしたら、次の 文まで おく 間（ms）。victory は 完走・勝ち、
+ * levelup は 仲間・家・段の ふえる ところ、chapter は 鐘（板が 開く・999）。ほかの 音は 待たない。
+ */
+const BEAT_SE_MS: Record<string, number> = {
+	victory: 600,
+	levelup: 450,
+	chapter: 350,
+};
 /** 1マス歩く ms（rpg は 170。2026-10-13 作者「気持ちよい タイミングに」で 少し 速く）。うろうろする人は この 1.6倍。 */
 const WALK_MS = 150;
 /** うろうろ 歩く 人を 押しのける：2回 続けて 押す 間（ms）と、押しつづける 長さ（ms）。 */
@@ -1609,6 +1618,19 @@ export class Village {
 		return this.field?.actor(target);
 	}
 
+	/** 節目の 音の あと、次の 文を 出さずに 待つ 時刻（BEAT_SE_MS）。 */
+	private holdUntil = 0;
+
+	/**
+	 * 節目の 音を 鳴らした 直後なら、その 間が すぎるまで 待つ（画面を 止めて 鳴らし、それから 文）。
+	 * ファンファーレと 同時に 文が 出ると、大事な ところが 流れて しまう。
+	 */
+	private async beatHold(): Promise<void> {
+		const left = this.holdUntil - performance.now();
+		this.holdUntil = 0;
+		if (left > 0) await sleep(left);
+	}
+
 	/** Story API（イベントの スクリプトから 使う 命令）。 */
 	private readonly story: Story = this.makeStory();
 
@@ -1619,19 +1641,28 @@ export class Village {
 				return v.state;
 			},
 			say: async (who, text, opt) => {
+				await this.beatHold();
 				// 名前を かえた 声（住人・来客）は 声の 持ち主が 話す 人では ないので 見ない
 				if (who && !opt?.name) await this.showSpeaker(who);
 				return this.say(who, text, opt);
 			},
-			narrate: (text) => this.say(null, text),
-			kiriko: (text, mode) => this.sayKiriko(text, mode),
-			choose: (options, opt) =>
-				this.choice.choose(
+			narrate: async (text) => {
+				await this.beatHold();
+				return this.say(null, text);
+			},
+			kiriko: async (text, mode) => {
+				await this.beatHold();
+				return this.sayKiriko(text, mode);
+			},
+			choose: async (options, opt) => {
+				await this.beatHold();
+				return this.choice.choose(
 					options,
 					opt?.cancel,
 					(name) => this.ctx.audio.se(name),
 					opt?.start,
-				),
+				);
+			},
 			wait: (ms) => {
 				// 窓と 立ち絵を 片付ける（一覧・歩く 場面の 前に。立ち絵が 人を 隠さないように）
 				this.msg.close();
@@ -1641,7 +1672,13 @@ export class Village {
 			fadeIn: (ms) => this.fadeIn(ms),
 			bgm: (name) => this.ctx.audio.bgm(name),
 			fadeBgm: (ms) => this.ctx.audio.fadeBgm(ms),
-			se: (name) => this.ctx.audio.se(name),
+			se: (name) => {
+				this.ctx.audio.se(name);
+				// 節目の 音（ファンファーレ・鐘）の あとは 間を おいてから 次の 文（beatHold）
+				const ms = BEAT_SE_MS[name];
+				if (ms)
+					this.holdUntil = Math.max(this.holdUntil, performance.now() + ms);
+			},
 			flag: (name) => this.state.flags[name],
 			set: (name, value = true) => {
 				this.state.flags[name] = value;
