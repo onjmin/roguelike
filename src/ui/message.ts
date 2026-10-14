@@ -80,6 +80,8 @@ const VOICE_PACE_MAX = 2;
  * それより 前は 全文を 出した 押しの 2度押しと みなして 捨てる。
  */
 const QUEUE_AFTER_MS = 150;
+/** A の 押しっぱなしで 早送り する とき、▼ が 出てから 次へ 送るまでの 最短の 間（ms。行が 一瞬は 見える）。 */
+const FF_MIN_MS = 120;
 
 /**
  * 出だしで声にならない文字（読み上げでは「……」などを落とすので、声はすぐ言葉から始まる）。
@@ -486,6 +488,8 @@ export class MessageWindow {
 			let ready = false;
 			/** 全文が 出た 時刻（▼ の 前の 押しを 取っておくか 決める）。 */
 			let doneAt = 0;
+			/** ▼ が 出た 時刻（早送りで 1行を 見せる 最短の 間を 数える）。 */
+			let readyAt = 0;
 			/** ▼ が 出る 前に 押した 送り（出たら すぐ 送る）。 */
 			let queued = false;
 			/** 送る（窓の 押しの 受け手が 入る）。 */
@@ -515,6 +519,7 @@ export class MessageWindow {
 				void this.settled().then(() => {
 					if (token !== this.showToken) return;
 					ready = true;
+					readyAt = performance.now();
 					this.nextEl.classList.add("shown");
 					if (queued) advance();
 				});
@@ -596,6 +601,13 @@ export class MessageWindow {
 			}
 			this.waits++;
 			const pop = this.input.push((key, repeat) => {
+				// A の 押しっぱなし（キーボード・ゲームパッドの くり返し）で 早送り：全文を 出し、▼ が 出て
+				// FF_MIN_MS たったら 次へ。選択肢は くり返しでは 決まらない（ChoiceWindow の fresh）ので そこで 止まる
+				if (repeat && key === "a") {
+					if (!done) finish();
+					else if (ready && performance.now() - readyAt >= FF_MIN_MS) advance();
+					return;
+				}
 				if (repeat || (key !== "a" && key !== "b")) return;
 				if (!done) {
 					finish(); // 文字送りの飛ばしはいつでも効く（声は そのまま 続ける。rpg と 同じ）

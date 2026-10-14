@@ -495,10 +495,10 @@ export class Input {
 					this.gpDown.set(code, t);
 					this.keyDown({ code, repeat: false, preventDefault: () => {} });
 				} else if (
-					DIR_KEYS[code] !== undefined &&
+					(DIR_KEYS[code] !== undefined || OTHER_KEYS[code] === "a") &&
 					t - since >= GP_REPEAT_DELAY
 				) {
-					// 窓の カーソル送りの くりかえし（キーボードの リピートと 同じく repeat で 配る）
+					// 窓の カーソル送り・A の 押しっぱなしの 早送りの くりかえし（キーボードの リピートと 同じく repeat で 配る）
 					this.gpDown.set(code, t - GP_REPEAT_DELAY + GP_REPEAT_MS);
 					this.keyDown({ code, repeat: true, preventDefault: () => {} });
 				}
