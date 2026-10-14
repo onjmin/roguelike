@@ -35,6 +35,7 @@ import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { nowYear, season, today } from "../../data/town/calendar";
 import type { Script, Story } from "../../engine/defs";
+import { type Cue, cueOf } from "../../engine/emote";
 import {
 	addFlag,
 	hasFlag,
@@ -205,8 +206,13 @@ export const tasteOf = (w: Cast, g: GiftId): GiftTaste => {
 // ───────────────── 話す ─────────────────
 
 /** その 人の 声で 1窓（仲間は 名前欄と 立ち絵、住人は sayAs）。 */
-const speak = (s: Story, w: Cast, text: string): Promise<void> =>
-	isMob(w) ? sayAs(s, w, text) : s.say(w as Speaker, text);
+const speak = (
+	s: Story,
+	w: Cast,
+	text: string,
+	cue: Cue = {},
+): Promise<void> =>
+	isMob(w) ? sayAs(s, w, text, cue) : s.say(w as Speaker, text, cue);
 
 const playLines = async (
 	s: Story,
@@ -214,8 +220,8 @@ const playLines = async (
 	lines: readonly BondLine[],
 ): Promise<void> => {
 	for (const l of lines)
-		if (l.who === "me") await speak(s, w, l.text);
-		else if (l.who === "kiriko") await s.kiriko(l.text, "voice");
+		if (l.who === "me") await speak(s, w, l.text, cueOf(l));
+		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
 		else await s.narrate(l.text);
 };
 
@@ -260,10 +266,18 @@ const offerGift = async (s: Story, w: Cast): Promise<void> => {
 	saveBonds(m);
 	s.se("item");
 	await s.narrate(fill(BOND_MSG.handed, { gift: name, name: nameOf(w) }));
-	await speak(s, w, def.react[taste]);
+	await speak(s, w, def.react[taste], TASTE_CUE[taste]);
 	// ♥ が 上がっても 知らせない（作者「仲良くなったとしても『なかよくなった』は 通知しない方が いい」。
 	// 好みの ひとことで 伝わる。♥ は 本館の 名簿などで 見える）
-	if (bday) await speak(s, w, def.react.bday);
+	if (bday) await speak(s, w, def.react.bday, { emote: "花" });
+};
+
+/** 贈り物の 好みの ひとことに つける 感情の 記号（ふつうは なし）。 */
+const TASTE_CUE: Record<GiftTaste, Cue> = {
+	love: { emote: "♥", gesture: "hop" },
+	like: { emote: "♪" },
+	normal: {},
+	hate: { emote: "汗" },
 };
 
 /** ♥2・♥4 で くれる 物（まだ もらって いない 1つ）。 */
