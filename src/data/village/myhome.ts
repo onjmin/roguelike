@@ -16,8 +16,11 @@ import type { Cell } from "./map";
 import { type RoomArtName, ri, riCell } from "./rpgenArt";
 import { base } from "./tiles";
 
-/** 分譲住宅が 建つ 町の 段（2026-10-14 に 段6 から 早めた。作者：「お楽しみが 後半に 寄っている」）。 */
-export const MYHOME_FROM = 3;
+/**
+ * 分譲住宅が 建つ 町の 段（2026-10-14 に 段6 から 段3 へ 早めた。作者：「お楽しみが 後半に 寄っている」。
+ * 同じ日に 段4 へ：家は 東の 区画に 建つので、東の 森が 開く 段4 より 前だと 森の 中に 建って 見えた）。
+ */
+export const MYHOME_FROM = 4;
 
 /** ローンの 月数（35年）。帰るたびに 1か月 返す。 */
 export const LOAN_MONTHS = 35 * 12;

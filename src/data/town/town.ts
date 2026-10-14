@@ -77,11 +77,6 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 		// 店は 時刻で 閉まらないので「夜も　あけられる」は 言わない
 		q("roze", "小屋アル。これで\n品を　ならべる　棚が　置けるアル"),
 		q("shiyo", "……小屋ね。ほこりは、\nあとで　あたすが　はいとくわ"),
-		// 段3 で 分譲住宅（キリコの 家。data/village/myhome.ts の MYHOME_FROM）。買える ことを 言う
-		q(
-			"zero",
-			"東に、分譲住宅が　建ちました！\n……売り上げで、キリコさんの　家に？",
-		),
 	],
 	[
 		q("nanj", "物置、倉庫に　建てなおしたで。\n……鍵は、シヨが　はなさへん"),
@@ -91,6 +86,11 @@ export const STAGE_UP: readonly (readonly Line[])[] = [
 		q(
 			"nanj",
 			"東の　森、知らん　連中が　開いとる。\nスレ　見て、越してきたんやて",
+		),
+		// 段4 で 分譲住宅（キリコの 家。data/village/myhome.ts の MYHOME_FROM）。東の 森が 開いた あとに 建つ
+		q(
+			"zero",
+			"東に、分譲住宅が　建ちました！\n……売り上げで、キリコさんの　家に？",
 		),
 	],
 	[
