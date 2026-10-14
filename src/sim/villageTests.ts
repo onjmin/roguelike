@@ -5494,6 +5494,32 @@ test("a run end counts the outing and leaves event news; the village reads it on
 	});
 });
 
+test("潜った 本人は 迎えない：ロゼが 主人公で 持ち帰ると、迎える 語りに ロゼは 出ない（かわりの 頁か 出さない）", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "kinoko", "tropical"]);
+		putTown({ stage: 7 });
+		const a: ReturnArrival = { kind: "clear", dungeon: "tropical" };
+		ok(
+			pagesFor(a).some((p) => p.who === "roze"),
+			"ロゼ does not speak when キリコ dove (the check would be empty)",
+		);
+		pushRecord({ kind: "clear", dungeon: "tropical", hero: "roze" });
+		const pages = pagesFor(a);
+		ok(
+			pages.every((p) => p.who !== "roze" && !p.text.includes("ロゼ")),
+			`ロゼ greets herself:\n${pages.map((p) => `${p.who}: ${p.text}`).join("\n")}`,
+		);
+		ok(pages.length > 0, "the ending vanished");
+		pushRecord({ kind: "escape", dungeon: "tropical", hero: "zero" });
+		ok(
+			pagesFor({ kind: "escape", dungeon: "tropical" }).every(
+				(p) => p.who !== "zero",
+			),
+			"ゼロ greets herself after an escape",
+		);
+	});
+});
+
 test("boss wins come home: the arrival, then how they got back, then the rest of the usual ending", async () => {
 	for (const d of DUNGEON_IDS) {
 		const has = !!DUNGEONS[d].boss;

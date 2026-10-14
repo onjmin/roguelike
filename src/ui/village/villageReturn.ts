@@ -170,11 +170,16 @@ const firstEnding = (a: ReturnArrival, p: Progress): boolean =>
  * 場面で 村に いない 仲間。はじめての 持ち帰りの 語りは その 板を 持ち帰る 前の 村で 語る
  * （電池板の 山場は やきうが 出ていく 場面なので、やきうは まだ いる）。
  */
-const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] =>
-	awayFriends(
+const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
+	const away = awayFriends(
 		firstEnding(a, p) ? p.cleared.filter((d) => d !== a.dungeon) : p.cleared,
 		loadTown().stage,
 	);
+	// 潜った 本人（束音ロゼ・解音ゼロ）は 迎える 側に 立たない：自分で 持ち帰った 物を 自分で 迎えない
+	// （2026-10-14 作者が えらんだ。その 人の 頁は かわりの 頁に かわるか 出ない。起動の 札の mute と 同じ）
+	const hero = loadRecords()[0]?.hero;
+	return hero && !away.includes(hero) ? [...away, hero] : away;
+};
 
 /**
  * 帰ってきた 場面の 村（はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村。
