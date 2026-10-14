@@ -606,14 +606,14 @@ export class Village {
 		for (const a of field.actors) {
 			a.update(dt);
 			// 自分で する ことを 決める 人（キリコの 家に 招いた 人）
-			if (
-				a.def?.roam &&
-				!a.moving &&
-				this.scriptDepth === 0 &&
-				!this.scene &&
-				a !== this.pathTalk
-			) {
-				this.roamTick(a, dt);
+			if (a.def?.roam) {
+				if (this.scriptDepth === 0 && !this.scene && a !== this.pathTalk) {
+					if (!a.moving) this.roamTick(a, dt);
+				} else if (a.emote || this.roams.has(a)) {
+					// 話しかけられたら 吹き出しを 消して、話の あとで する ことを 決めなおす
+					a.emote = null;
+					this.roams.delete(a);
+				}
 				continue;
 			}
 			// 話しかけに 向かっている 相手は 待っている
