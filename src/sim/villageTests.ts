@@ -4491,10 +4491,6 @@ test("裏シナリオ: the hall has the oldest-thread sign on every tier, and th
 		!!MOBS.hinary.milestones.ato?.some((l) => l.text.includes("避難J")),
 		"ヒナリー does not point to 避難J",
 	);
-	ok(
-		CAFE_MOBS.shobon.talks.some((t) => t.key === "noroshi"),
-		"the 狼煙 cafe talk is missing",
-	);
 });
 
 export const runVillageTests = async (): Promise<TestResult[]> => {

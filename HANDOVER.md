@@ -1,9 +1,10 @@
-# 引き継ぎメモ（2026-10-08 裏シナリオ「さとると　ワイと　お前だけ」）
+# 引き継ぎメモ（裏シナリオ「さとると　ワイと　お前だけ」。2026-10-08 起こし、10-14 整理）
 
 次に 作業する 人（Claude Code を ふくむ）への メモ。物語の 正本は [STORY.md](./STORY.md)（裏シナリオは §5.98）、遊びの 決まりは [README.md](./README.md)、絵の 仮置きは [ART_TODO.md](./ART_TODO.md)。
 
 ## 入れた もの
 
+- **整理（2026-10-14）**：STORY.md §5.98 を 遊ぶ 順（道すじの 表 → 1段目 → 第三ルート → 2段目）に 並べなおした。喫茶の 小話「狼煙」は 置き手紙の パスワードと 食いちがうので やめた。1901年の スレの 結で、避難Jの 外からの「保守　(´・ω・｀)」は やきうで、顔と 猛虎弁は 20人目の ログから、と 言う。
 - **2段目（2026-10-08）**：新しい 板 `y1901`「1901年の　スレ」（`core/data/dungeons.ts`。`secret`・`noCarry`・30階・`unlockAfterAll: ["hinan"]`＋`unlockFlag: "wrap"`。層は `Y1901_ZONES`、品は `zokures`「続きの　レス」＝シヨが あずかる `IN_STORE`）。入口は 本館の 古い 札の さらに 下（`ui/village/hallEvents.ts` の `oldestScript`。`OLDEST_DEEP_MENU`。1打席は 跡地へ 降りる ときだけ）。
 - **転と「草」**：`ui/village/villageReturn.ts` の `wrapScript`（`WRAP_NEWS`）と `kusaScript`（`KUSA_NEWS`）。どちらも「結を 見た 次の 帰り」に 1回だけ：`ui/village/villageEvents.ts` の `arrivalScript` が returnScene（`noteEnding`）より 前に `endings` を 読んで 決める（たおれて 帰っても 出る。起動したて は 出ない）。見おえてから 旗（`wrap` は `engine/save.ts` の `noteWrap` で 板も 開く。知らせは 積まない／`kusa` は `addFlag`）。
 - **時報之**：`data/story/story.ts` の `jihou()`（`StoryPage.nameColor` で 名前欄を 灰色に。`playPage` が `SayOptions.color` を わたす）。起動画面の ログ（`ui/boot.ts` の `uraLevel`・`uraLog`）。ゲームの 中の おしらせは 出さない（作者）。断りは README の クレジット。
@@ -22,7 +23,7 @@
 - **結の あとの 変化**：`Run.create(..., rom)` → `RunState.rom`（`main.ts` の `romNow()`：`endings` に `ato`）。ROM専は 追いつめても 戦わない（`core/monster.ts`）、蓄音機の 声で 固まらず 手を 振る（`core/run.ts` の `playVoice`）、図鑑の 文が かわる（`ui/bookView.ts` の `bookText`）。リプレイにも `rom` を 残す（`SavedReplay.rom`）。本館の 札は「1000　(´・ω・｀)　見てた」。
 - **開いた 知らせ**：跡地（原住民が 声を 聞く）・避難J（ヒナリーの 発表）は 住人が 話す（`ui/village/villageReturn.ts` の `mobNewsScript`。文は `ATO_NEWS`・`HINAN_NEWS`）。小島 1〜3・灯台は `UNLOCK_LINES`（板ごとの 行。`newsScript` は 板名の 鍵が あれば それ）。
 - **第三ルート**：避難J（`hinan`）。板だけの 敵 `getter`（新しい 特技 `spam`：なぐる かわりに `addRes` で スレを 伸ばす。`core/monster.ts`）。結の **1000取り**は `playGetter`（`cue: "getter"`。`returnScene(s, a, { getter })` の 手で 遊び、負けたら `GETTER_RETRY` を 出して くり返す。試験では 手を 渡さず とばす）。
-- **住人**：原住民の 節目 `opunu`（頼み）・`ato`（18 → あと ひとり）、雑談 `shima`・`rom`、喫茶の 小話「狼煙」（`noroshi`・`noroshi2`・`noroshi3`）。ヒナリーの 節目 `ato`。`Milestone` に `ato`、`ui/village/villageMobs.ts` の `MILESTONES` に `opunu`・`ato`。
+- **住人**：原住民の 節目 `opunu`（頼み）・`ato`（18 → あと ひとり）、雑談 `shima`・`rom`。ヒナリーの 節目 `ato`。`Milestone` に `ato`、`ui/village/villageMobs.ts` の `MILESTONES` に `opunu`・`ato`。
 - **敵が いくつかの 板に 出る**：`MonsterDef.board` が 並びも 取れる（`onBoard`）。乗っ取り屋は 小島 3つと 灯台。
 - 小ネタ（`rom_voice`）、持ちこみ 不可の 文（`CARRY_REFUSE.ato`）、飾り棚は 置き手紙と >>1・20人目を 置かない（`ON_BOARD`・`ON_PHONO`）。
 - テスト：`monsterTests`（getter・板の 並び）、`villageTests` の「裏シナリオ」5本（分岐の 形・パスワードと 層・開く 条件・跡地の 結・避難Jの 結と 1000取り・札と 節目）。
