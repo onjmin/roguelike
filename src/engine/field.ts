@@ -54,6 +54,11 @@ export class Actor {
 	} | null = null;
 	/** いま 浮いている 高さ（px。jump の あいだだけ）。 */
 	private lift = 0;
+	/**
+	 * 前の 1マスで 使いきらなかった 時間（ms）。続けて 歩けば 次の 1マスに 回す（捨てると 1マスごとに
+	 * コマの はんぱで 足が 止まって 見え、走りが 1割ほど 遅くなった）。止まった コマで 0 に もどす。
+	 */
+	private carry = 0;
 	wanderWait = 1000 + Math.random() * 2000;
 
 	constructor(
@@ -86,13 +91,18 @@ export class Actor {
 			this.tween = {
 				fromX: this.x,
 				fromY: this.y,
-				t: 0,
+				t: Math.min(this.carry, msPerTile / 2),
 				dur: msPerTile,
 				resolve,
 				lift: 0,
 			};
+			this.carry = 0;
 			this.x += v.dx;
 			this.y += v.dy;
+			// 回した 時間の ぶん もう 進んだ 所に 描く（この コマの 描画は 歩きだした あと）
+			const k = this.tween.t / msPerTile;
+			this.fx = this.tween.fromX + v.dx * k;
+			this.fy = this.tween.fromY + v.dy * k;
 		});
 	}
 
@@ -131,6 +141,7 @@ export class Actor {
 		this.x = this.fx = x;
 		this.y = this.fy = y;
 		this.lift = 0;
+		this.carry = 0;
 		const tw = this.tween;
 		this.tween = null;
 		tw?.resolve();
@@ -138,7 +149,10 @@ export class Actor {
 
 	update(dt: number): void {
 		const tw = this.tween;
-		if (!tw) return;
+		if (!tw) {
+			this.carry = 0;
+			return;
+		}
 		tw.t += dt;
 		const k = Math.min(1, tw.t / tw.dur);
 		this.fx = tw.fromX + (this.x - tw.fromX) * k;
@@ -147,6 +161,7 @@ export class Actor {
 		if (k >= 1) {
 			this.tween = null;
 			this.lift = 0;
+			this.carry = tw.t - tw.dur;
 			tw.resolve();
 		}
 	}
