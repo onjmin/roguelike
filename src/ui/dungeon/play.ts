@@ -2560,6 +2560,8 @@ export class Play {
 	 * レベルアップの 音・札は 使わない（成長では なく 交代なので）。
 	 */
 	private async batonScene(body: number): Promise<void> {
+		// 次の 機体は 状態が まっさら（core/run.ts。目ざめの 知らせは 来ないので、眠りの Z を ここで 消す）
+		this.sleepShown = false;
 		const pd = this.disp.get(PLAYER_ID);
 		const prev = ZERO_BODY_WALKS[body - 1];
 		const next = ZERO_BODY_WALKS[body];
