@@ -9,7 +9,7 @@ import {
 } from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
-import { T_WALL, tileAt } from "../core/mapgen";
+import { roomExits, T_WALL, tileAt } from "../core/mapgen";
 import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
@@ -41,7 +41,7 @@ import {
 	saveTown,
 } from "../engine/save";
 import { heroQuestScript } from "../ui/village/villageEvents";
-import { type BotOpts, botCommand, DEFAULT_BOT } from "./bot";
+import { AUTO_BOT, type BotOpts, botCommand, DEFAULT_BOT } from "./bot";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -299,6 +299,66 @@ test("ゼロ: オートは 階段を 見たら 降りる（階を 見つくす�
 		full += leaveTurns(DEFAULT_BOT);
 	}
 	ok(auto * 2 < full, `auto ${auto} vs full ${full}`);
+});
+
+test("ゼロ: オートは 部屋で 2体に はさまれたら 入口（通路）へ 下がって 待つ（1体なら そのまま なぐる）", () => {
+	// 上の 壁に 入口の ある 部屋。入口の 前の 床に 立ち、左右に 敵
+	const setup = (seed: string) => {
+		const r = quiet(Run.create(seed, "main", [], "fetch", true, false, "zero"));
+		const l = r.f.layout;
+		for (const room of l.rooms) {
+			if (room.h < 2) continue;
+			const ex = roomExits(l, room).find(
+				(e) => e.y === room.y - 1 && e.x > room.x && e.x < room.x + room.w - 1,
+			);
+			if (ex) return { r, ex, at: { x: ex.x, y: room.y } };
+		}
+		return null;
+	};
+	let checked = 0;
+	for (const seed of ["choke-0", "choke-1", "choke-2", "choke-3", "choke-4"]) {
+		const s = setup(seed);
+		if (!s) continue;
+		const { r, ex, at } = s;
+		r.f.seen.fill(1);
+		place(r, at);
+		const a = spawnMonster(
+			r,
+			"kaze",
+			{ x: at.x - 1, y: at.y },
+			{ awake: true },
+		);
+		ok(a, `${seed}: spawn a`);
+		// 1体だけ：下がらずに なぐる
+		const one = botCommand(r, AUTO_BOT);
+		ok(one.c === "attack", `${seed}: one foe → ${one.c}`);
+		const b = spawnMonster(
+			r,
+			"kaze",
+			{ x: at.x + 1, y: at.y },
+			{ awake: true },
+		);
+		ok(b, `${seed}: spawn b`);
+		// sim の ボット（入口へ 下がるのは となりの 敵が 1体 まで）は その場で なぐる
+		ok(
+			botCommand(r, DEFAULT_BOT).c === "attack",
+			`${seed}: default bot fights in place`,
+		);
+		const cmd = botCommand(r, AUTO_BOT);
+		ok(
+			cmd.c === "move" &&
+				step(r.p, cmd.dir).x === ex.x &&
+				step(r.p, cmd.dir).y === ex.y,
+			`${seed}: auto steps into the doorway (${JSON.stringify(cmd)})`,
+		);
+		r.act(cmd);
+		ok(r.p.x === ex.x && r.p.y === ex.y, `${seed}: in the doorway`);
+		// 入口では 部屋の 中から まっすぐ 1体 しか なぐれない。敵が 来なくても すぐには 部屋へ もどらない
+		r.f.monsters = [];
+		ok(botCommand(r, AUTO_BOT).c === "wait", `${seed}: holds the doorway`);
+		checked++;
+	}
+	ok(checked >= 2, `checked ${checked}`);
 });
 
 test("主人公: キリコの 冒険は 前と 同じ 形（hero・body を 書かない）、名前は キリコ", () => {

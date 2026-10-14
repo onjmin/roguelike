@@ -7,6 +7,9 @@
 //   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep / kinoko / tropical / konamono / festival / hidden / opunu。既定は main）
 //   pnpm sim -- --guest zero      … 同行者を 連れて（zero / feris / shobon。core/guest.ts）
 //   pnpm sim -- --objective boss  … 目的（fetch / boss。既定は そのダンジョンの 既定。boss の ない 板は fetch）
+//   pnpm sim -- --hero zero       … 主人公（kiriko / roze / zero。既定は kiriko）
+//   pnpm sim -- --auto            … 解音ゼロの オートと 同じ ボット（sim/bot.ts の AUTO_BOT）
+//   pnpm sim -- --auto --no-choke … そこから 通路で 待ちうける 手（chokepoint）だけ 外す（くらべる 用）
 //   pnpm sim -- --reach           … 目的に たどりつくまで 倒れない（底の つり合いを 見る。下の REACH）
 //   pnpm sim -- --reach --lag 3   … --reach で 足す レベルを「その階の 強さ − 3」までに（既定は 下の LAG）
 //   pnpm sim -- --carry steel+3,steelsh+3,h_heal … 倉庫から 持ちこむ 道具（種類+修正値。のろいなし・正体つき。
@@ -61,11 +64,17 @@ const server = await createServer({
 let failed = false;
 try {
 	const { Run } = await server.ssrLoadModule("/src/core/run.ts");
-	const { botCommand, DEFAULT_BOT } =
+	const { botCommand, DEFAULT_BOT, AUTO_BOT } =
 		await server.ssrLoadModule("/src/sim/bot.ts");
+	const baseBot = args.includes("--auto")
+		? {
+				...AUTO_BOT,
+				chokepoint: !args.includes("--no-choke") && AUTO_BOT.chokepoint,
+			}
+		: DEFAULT_BOT;
 	// 倒れないモードは 深い階・帰り道まで通したいので 帰還スレで もどらない
-	const noEscape = { ...DEFAULT_BOT, escape: false };
-	const botOpts = GOD ? noEscape : DEFAULT_BOT;
+	const noEscape = { ...baseBot, escape: false };
+	const botOpts = GOD ? noEscape : baseBot;
 	const { serializeRun, deserializeRun } = await server.ssrLoadModule(
 		"/src/core/serial.ts",
 	);
@@ -138,7 +147,7 @@ try {
 				objective,
 				!carryItems.length,
 				false,
-				"kiriko",
+				arg("hero", "kiriko"),
 				GUEST,
 			),
 		);

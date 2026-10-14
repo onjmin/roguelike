@@ -9,7 +9,7 @@ import { HUNGER_UNIT } from "../core/balance";
 import { needsTarget } from "../core/effects";
 import { roomsSeenFrom } from "../core/fov";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
-import { defOf, isKnownKind } from "../core/item";
+import { defOf, isKnownKind, itemHidden } from "../core/item";
 import { isFloor, roomAt, roomExits } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
@@ -35,12 +35,32 @@ export type BotOpts = {
 	 * （2026-10-14 作者：「階段 見つけても まだ ウロウロ」。sim は 階を 見つくして 道具と 経験値を 集める ままに する）。
 	 */
 	stairsWhenSeen?: boolean;
+	/**
+	 * 2体 以上に 向かってこられたら、まわりの 開けた（なぐられる 向きの 多い）所から、1〜2方向 しか
+	 * なぐられない 所（通路・入口）へ 下がって、そこで 待ちうける。解音ゼロの オート用
+	 * （2026-10-15 作者：「複数の 敵と 戦うとき、通路に 逃げるとか しないのですか」）。
+	 * 下の 部屋の 入口へ 下がる 手は sim の ボットにも ある。こちらは 部屋の 外・2体に 囲まれた 後でも 下がり、
+	 * 下がった 所で 敵が 来るのを 待つ（見えなく なって すぐ 部屋へ もどる のを くり返さない）。
+	 */
+	chokepoint?: boolean;
 };
 
 export const DEFAULT_BOT: BotOpts = {
 	floorTurnLimit: 700,
 	leaveWhenNoItems: true,
 	escape: true,
+};
+
+/**
+ * 解音ゼロの オートの ボット（ui/dungeon/play.ts。pnpm sim -- --auto でも 使う）：帰還スレで 地上へ
+ * もどらない（冒険を 終わらせるのは 自分で）。階段を 見つけたら 見えている 道具を 拾って 降りる
+ * （階を 見つくすまで 歩きまわらない）。2体 以上には 通路・入口で 1体ずつ。
+ */
+export const AUTO_BOT: BotOpts = {
+	...DEFAULT_BOT,
+	escape: false,
+	stairsWhenSeen: true,
+	chokepoint: true,
 };
 
 /** 知っているマスの上の道のり（罠を避ける）。to へ向かう最初の一歩。 */
@@ -178,6 +198,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	);
 	const hpRate = p.hp / p.maxHp;
 	const known = (it: Item) => isKnownKind(r.s, it.kind);
+	// アク禁中・見えない スレは 読めない（ターンが 進まず、同じ 手を くり返して 止まって いた）
+	const readable = (it: Item) =>
+		p.status.blind === 0 && !itemHidden(r.s, it.kind);
 	const faceAnd = (dir: Dir8, cmd: Command): Command =>
 		p.dir !== dir ? { c: "turn", dir } : cmd;
 
@@ -202,7 +225,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			if (staff) return faceAnd(dir, { c: "use", item: staff.uid });
 			if (hpRate < 0.25) {
 				// 正体のわかった帰還スレで 地上へ（帰り道では効かない）
-				const esc = items.find((i) => i.kind === "s_escape" && known(i));
+				const esc = items.find(
+					(i) => i.kind === "s_escape" && known(i) && readable(i),
+				);
 				if (esc && !r.s.returning && opts.escape)
 					return { c: "use", item: esc.uid, target: 0 };
 				const unk = items.find(
@@ -213,6 +238,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					(i) =>
 						defOf(i.kind).cat === "scroll" &&
 						!known(i) &&
+						readable(i) &&
 						!["s_appraise", "s_bread", "s_recharge"].includes(i.kind),
 				);
 				if (scroll) return { c: "use", item: scroll.uid };
@@ -243,6 +269,25 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			items.find((i) => i.kind === "f_moldy");
 		if (food) return { c: "use", item: food.uid };
 	}
+	// オート：2体 以上に 向かってこられたら、なぐられる 向きの 多い 所から 通路・入口へ 下がる。
+	// 2体に 囲まれて いても、1歩で 入口へ 入れる なら 入る（入口へは 部屋の 中から まっすぐ 1体 しか なぐれない）
+	if (opts.chokepoint && threats.length >= 2) {
+		// 階を 出る ところで 階段の 上なら 降りて しまう
+		if (
+			opts.stairsWhenSeen &&
+			r.onStairs() &&
+			!r.boss &&
+			(r.s.returning || r.s.depth < r.dungeon.floors)
+		)
+			return { c: "stairs" };
+		if (exposure(r, p) >= 3 && adjacent.length <= 2) {
+			const c = chokeStep(r, threats, [3, 2, 1][adjacent.length]);
+			if (c) {
+				setHold(r, c.to);
+				return { c: "move", dir: c.dir };
+			}
+		}
+	}
 	// 部屋で2体以上に向かってこられたら、通路（入口）へ下がって1体ずつ相手にする
 	const inRoom = roomAt(f.layout, p.x, p.y) >= 0;
 	if (inRoom && threats.length >= 2 && adjacent.length <= 1) {
@@ -270,9 +315,15 @@ const decide = (r: Run, opts: BotOpts): Command => {
 				roomAt(f.layout, n.x, n.y) < 0 &&
 				roomsSeenFrom(f.layout, n.x, n.y).length === 0 &&
 				!r.monsterAt(n.x, n.y) &&
-				r.cornerOk(p, d)
-			)
+				r.cornerOk(p, d) &&
+				!(
+					opts.chokepoint &&
+					f.traps.some((t) => t.found && t.x === n.x && t.y === n.y)
+				)
+			) {
+				if (opts.chokepoint) setHold(r, n);
 				return { c: "move", dir: d };
+			}
 		}
 	}
 	// となりの敵
@@ -302,6 +353,18 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		}
 		return { c: "attack", dir };
 	}
+	// オート：下がった 所で 敵が 来るのを 待つ（見えなく なっても すぐには 部屋へ もどらない。
+	// もどると また 2体に 向かってこられて 下がる のを くり返す）
+	if (opts.chokepoint) {
+		const h = holds.get(f);
+		if (h && (h.x !== p.x || h.y !== p.y)) holds.delete(f);
+		else if (h) {
+			const t = r.s.turn;
+			if (threats.length) h.until = Math.max(h.until, t + HOLD_LINGER);
+			if (t < h.until && t - h.since < HOLD_MAX) return { c: "wait" };
+			holds.delete(f);
+		}
+	}
 	// 安価：敵が いないうちに こなす（人も 安い お題なら 乗る）
 	const anka = f.anka;
 	if (anka && threats.length === 0) {
@@ -323,7 +386,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					? (() => {
 							const s = pick(
 								"scroll",
-								(i) => !known(i) || !["s_escape", "s_snare"].includes(i.kind),
+								(i) =>
+									readable(i) &&
+									(!known(i) || !["s_escape", "s_snare"].includes(i.kind)),
 							);
 							if (!s) return null;
 							// 相手を 選ぶ スレは ほかの 持ち物を 1つ（帰還スレは 聞かれて やめる）
@@ -403,7 +468,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	// 敵が見えていないときに 識別・強化
 	if (visible.length === 0) {
 		const scroll = items.find(
-			(i) => defOf(i.kind).cat === "scroll" && !known(i),
+			(i) => defOf(i.kind).cat === "scroll" && !known(i) && readable(i),
 		);
 		if (scroll) {
 			const need = ["s_appraise", "s_bread", "s_recharge"].includes(
@@ -422,7 +487,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			} else return { c: "use", item: scroll.uid };
 		}
 		for (const k of ["s_whet", "s_temper", "h_might", "h_growth"]) {
-			const it = items.find((i) => i.kind === k && known(i));
+			const it = items.find((i) => i.kind === k && known(i) && readable(i));
 			if (
 				it &&
 				(k !== "s_whet" || r.weapon()) &&
@@ -550,6 +615,92 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	if (dirs.length)
 		return { c: "move", dir: dirs[(r.s.turn * 7) % dirs.length] };
 	return { c: "wait" };
+};
+
+/** (x, y) を となりから なぐれる 向きの 数（床で、角ぬけ できる 向き。斜めは 壁の 角で ふさがる）。 */
+const exposure = (r: Run, at: Pos): number => {
+	let n = 0;
+	for (const d of DIRS8) {
+		const q = step(at, d);
+		if (isFloor(r.f.layout, q.x, q.y) && r.cornerOk(at, d)) n++;
+	}
+	return n;
+};
+
+/**
+ * 通路・入口への 下がり方：maxSteps 歩 以内で、なぐられる 向きが 2 以下の マス（敵より 先に 着ける 所）への
+ * 最初の 一歩と 行き先。罠・敵の いる マスは 通らない。近い 順、同じ なら なぐられる 向きの 少ない 順。
+ */
+const chokeStep = (
+	r: Run,
+	threats: readonly Pos[],
+	maxSteps: number,
+): { dir: Dir8; to: Pos } | null => {
+	const f = r.f;
+	const l = f.layout;
+	const w = l.w;
+	const start = r.p.y * w + r.p.x;
+	const traps = new Set(
+		f.traps.filter((t) => t.found).map((t) => t.y * w + t.x),
+	);
+	const prev = new Map<number, number>([[start, -1]]);
+	const depth = new Map<number, number>([[start, 0]]);
+	const q = [start];
+	let best: { i: number; k: number; e: number } | null = null;
+	for (let h = 0; h < q.length; h++) {
+		const i = q[h];
+		const k = depth.get(i) ?? 0;
+		const x = i % w;
+		const y = (i - x) / w;
+		if (i !== start) {
+			const e = exposure(r, { x, y });
+			// 敵が 先に 着く・ふさぐ 所は だめ（同じ ときは なぐり合いに なるが、入口の 1体だけ）
+			const safe = threats.every((m) => dist(m, { x, y }) >= k);
+			if (
+				e <= 2 &&
+				safe &&
+				(!best || k < best.k || (k === best.k && e < best.e))
+			)
+				best = { i, k, e };
+		}
+		if (k >= maxSteps) continue;
+		for (const d of DIRS8) {
+			const n = step({ x, y }, d);
+			if (!isFloor(l, n.x, n.y)) continue;
+			const ni = n.y * w + n.x;
+			if (prev.has(ni) || !f.seen[ni] || traps.has(ni)) continue;
+			if (!r.cornerOk({ x, y }, d) || r.monsterAt(n.x, n.y)) continue;
+			prev.set(ni, i);
+			depth.set(ni, k + 1);
+			q.push(ni);
+		}
+	}
+	if (!best) return null;
+	let cur = best.i;
+	while (prev.get(cur) !== start) cur = prev.get(cur) as number;
+	const cx = cur % w;
+	const bx = best.i % w;
+	return {
+		dir: dirOf(cx - r.p.x, (cur - cx) / w - r.p.y) as Dir8,
+		to: { x: bx, y: (best.i - bx) / w },
+	};
+};
+
+/** 通路で 待ちうけて いる 所（階ごと。r.f が かわれば 消える）。 */
+const holds = new WeakMap<
+	object,
+	{ x: number; y: number; since: number; until: number }
+>();
+/** 待ちうけは 長くても これだけ（動かない 敵が 見えた ままでも 先へ 進む）。 */
+const HOLD_MAX = 15;
+/** 敵が 見えなく なってから 待つ ターン。 */
+const HOLD_LINGER = 4;
+
+const setHold = (r: Run, at: Pos): void => {
+	const h = holds.get(r.f);
+	const t = r.s.turn;
+	if (h && h.x === at.x && h.y === at.y) return;
+	holds.set(r.f, { x: at.x, y: at.y, since: t, until: t + HOLD_LINGER + 1 });
 };
 
 const frontierExists = (r: Run): boolean => frontier(r) !== null;

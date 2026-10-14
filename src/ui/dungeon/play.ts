@@ -63,7 +63,7 @@ import {
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
-import { type BotOpts, botCommand, DEFAULT_BOT } from "../../sim/bot";
+import { AUTO_BOT, botCommand } from "../../sim/bot";
 import { FLOWER_ICON, itemIcon } from "../art/icons";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
@@ -3957,15 +3957,6 @@ const REPLAY_GAP = 160;
 const AUTO_GAP = 160;
 /** オートで 時間の 進まない 手が これだけ つづいたら 止める。 */
 const AUTO_IDLE_LIMIT = 30;
-/**
- * オートの ボット：帰還スレで 地上へ もどらない（冒険を 終わらせるのは 自分で）。階段を 見つけたら
- * 見えている 道具を 拾って 降りる（階を 見つくすまで 歩きまわらない）。
- */
-const AUTO_BOT: BotOpts = {
-	...DEFAULT_BOT,
-	escape: false,
-	stairsWhenSeen: true,
-};
 
 /** 食べる・飲む・読む演出。 */
 type UseFx = {
