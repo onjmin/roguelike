@@ -75,13 +75,6 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 		hint: "A／タップで　回す・止める　B／外で　やめる",
 		unit: "枚",
 	},
-	runner: {
-		line: "アクションゲームの　台。\n画面に「なんJラン」の　文字。",
-		rule: "走る　キリコを　跳ばせて　石を　よける。\n飛んでくる　煽は　跳ばずに　くぐる。",
-		title: "なんJラン",
-		hint: "A／タップで　跳ぶ",
-		unit: "点",
-	},
 	rhythm: {
 		line: "音ゲーの　台。\nランキングの　1位は「>>1」。",
 		rule: "町で　聞いた　曲を　えらんで、\n札が　線に　重なったら　たたく。",
@@ -247,13 +240,6 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 		hint: "十字キー／ドラッグで　動く　弾は　自動",
 		unit: "点",
 	},
-	mikiri: {
-		line: "掛け軸。\n「一閃」と　書いてある。",
-		rule: "「！」が　出たら　すぐ　A。\n名無しより　早ければ　勝ち。",
-		title: "居合い　一閃",
-		hint: "「！」で　A／タップ　早すぎると　負け",
-		unit: "点",
-	},
 	mojisagashi: {
 		line: "文字さがしの　冊子。\n表紙に「キリコさがし」。",
 		rule: "文字の　盤から　名前を　さがす。\n縦・横・ななめに　つながる。",
@@ -410,7 +396,7 @@ export const ARCADE_BOARD = {
 	fighterNext: "次の　相手：{name}",
 	fighterPerfect: "完全論破！",
 	fighterStreak: "{n}連続　論破",
-	// 荒らし撃退・スレ崩し・ROMたたき・なんJラン・メダルスロット
+	// 荒らし撃退・スレ崩し・ROMたたき・メダルスロット
 	shMult: "連続　撃破！　点が　{n}倍",
 	shPower: "規制！　しばらく　3方向に　撃てる",
 	shBoss: "本体の「自演」が　来た！",
@@ -421,8 +407,6 @@ export const ARCADE_BOARD = {
 	moleKote: "コテハンや！",
 	moleArmor: "まだや！",
 	moleFever: "祭りや！　点が　2倍",
-	runnerMile: "{n}点　突破！",
-	runnerBird: "煽が　来た。跳ばずに　くぐれ",
 	slotReach: "リーチ！",
 	slotBig: "BIG！　次の　3回は　払いだし　2倍",
 	slotBigLeft: "BIG　あと{n}回",

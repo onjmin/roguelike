@@ -16,7 +16,6 @@ import { tests as kingyo } from "./kingyo";
 import type { HomeGameTest } from "./kit";
 import { tests as koikoi } from "./koikoi";
 import { tests as kurohige } from "./kurohige";
-import { tests as mikiri } from "./mikiri";
 import { tests as mines } from "./mines";
 import { tests as mojisagashi } from "./mojisagashi";
 import { tests as net } from "./net";
@@ -57,7 +56,6 @@ export const HOME_GAME_TESTS: readonly HomeGameTest[] = [
 	...puyupuyu,
 	...pinball,
 	...danmaku,
-	...mikiri,
 	...mojisagashi,
 	...clicker,
 	...doom,

@@ -39,15 +39,10 @@ import {
 	mlStart,
 	mlStep,
 	RH,
-	RN,
 	rhChart,
 	rhJudgeOf,
 	rhStart,
 	rhStep,
-	rnScore,
-	rnSpeed,
-	rnStart,
-	rnStep,
 	SH,
 	SL,
 	SL_PAY,
@@ -268,7 +263,7 @@ const setTownYen = (store: Map<string, string>, points: number): void => {
 
 // ───────────────── 置き場所・つなぎ ─────────────────
 
-test("置き場所: 筐体 7台と 音ゲーの 台は それぞれ 別の ゲーム（同じ ゲームは 1台だけ）", () => {
+test("置き場所: 筐体 6台と 音ゲーの 台は それぞれ 別の ゲーム（同じ ゲームは 1台だけ。I は 故障中）", () => {
 	const room = fac("arcade").room;
 	ok(room, "arcade has a room");
 	if (!room) return;
@@ -276,7 +271,9 @@ test("置き場所: 筐体 7台と 音ゲーの 台は それぞれ 別の ゲ�
 	const byChar: Record<string, string> = {};
 	for (const [ch, kind] of Object.entries(room.things))
 		if (isArcadeGame(kind)) byChar[ch] = kind;
-	const cabinets = ["A", "Q", "C", "K", "E", "G", "I"];
+	// なんJランの あとの I は 故障中の はり紙（遊べない）
+	ok(room.things.I === "broken", `cabinet I is broken: ${room.things.I}`);
+	const cabinets = ["A", "Q", "C", "K", "E", "G"];
 	for (const ch of cabinets)
 		ok(isArcadeGame(byChar[ch]), `cabinet ${ch} has a game`);
 	const games = cabinets.map((ch) => byChar[ch]);
@@ -700,50 +697,6 @@ test("メダルスロット: 3つ そろうと 払いだし、なくなったら
 	ok(
 		slSpeed(rich) > slSpeed(slStart()) && slSpeed(rich) <= SL.maxSpin,
 		"speed",
-	);
-});
-
-test("なんJラン: 跳ばないと ぶつかる、石の 手前で 跳ぶと 長く 走れる、煽は くぐれる", () => {
-	let s = rnStart();
-	let rnd = seeded(10);
-	for (let i = 0; i < 60 * 60 && !s.over; i++) rnStep(s, 1 / 60, false, rnd);
-	ok(s.over, "idle crashes");
-	const idle = rnScore(s);
-	s = rnStart();
-	rnd = seeded(11);
-	let birds = 0;
-	for (let i = 0; i < 90 * 60 && !s.over; i++) {
-		// 石 だけ 跳ぶ（煽は 地面で くぐる）
-		const next = s.rocks.find(
-			(r) => r.kind === "rock" && r.x + r.w > RN.x - RN.w / 2,
-		);
-		const v = rnSpeed(s.t);
-		const press = !!next && next.x - (RN.x + RN.w / 2) < v * 0.12;
-		if (s.rocks.some((r) => r.kind === "bird")) birds++;
-		rnStep(s, 1 / 60, press, rnd);
-	}
-	ok(!s.over && rnScore(s) > idle * 10, `ran ${rnScore(s)} vs ${idle}`);
-	ok(birds > 0 && s.mile > 0, `birds ${birds} mile ${s.mile}`);
-	// 煽は 跳ぶと 当たる
-	const b = rnStart();
-	b.y = 20;
-	b.vy = 1;
-	b.rocks.push({
-		x: RN.x - 4,
-		w: RN.birdW,
-		h: RN.birdH,
-		kind: "bird",
-		alt: RN.birdAlt,
-	});
-	ok(rnStep(b, 0.001, false, rnd).includes("crash"), "bird hits a jumper");
-	// 草は 跳んで 拾う
-	const c = rnStart();
-	c.y = 25;
-	c.vy = 1;
-	c.coins.push({ x: RN.x, y: 32 });
-	ok(
-		rnStep(c, 0.001, false, rnd).includes("coin") && c.bonus === RN.coin,
-		"coin",
 	);
 });
 

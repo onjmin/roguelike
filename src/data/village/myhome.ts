@@ -70,7 +70,6 @@ export type BaseFurnitureId =
 	| "kingyoBucket"
 	| "pinball"
 	| "danmakuCab"
-	| "kakejiku"
 	| "mojiBook"
 	| "puyuPlush"
 	| "gamingPc"
@@ -243,11 +242,6 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 			[`${HOME_GAMES_IMG}#16,16,16,16`],
 		],
 		line: ARCADE_TEXT.danmaku.line,
-	},
-	kakejiku: {
-		name: "掛け軸",
-		cells: [[ri("scroll")]],
-		line: ARCADE_TEXT.mikiri.line,
 	},
 	mojiBook: {
 		name: "文字さがしの　冊子",
@@ -552,7 +546,6 @@ export const FURNITURE_PRICE: Record<BaseFurnitureId, number> = {
 	kingyoBucket: 7000,
 	pinball: 48000,
 	danmakuCab: 40000,
-	kakejiku: 16000,
 	mojiBook: 6000,
 	puyuPlush: 5000,
 	gamingPc: 55000,
@@ -601,7 +594,6 @@ export const FURNITURE_GAME: Partial<Record<FurnitureId, ArcadeGame>> = {
 	game: "puyupuyu",
 	pinball: "pinball",
 	danmakuCab: "danmaku",
-	kakejiku: "mikiri",
 	mojiBook: "mojisagashi",
 	puyuPlush: "clicker",
 	gamingPc: "doom",
@@ -804,7 +796,7 @@ export type GuestAct =
 	| "play"
 	/** ベッド・ソファ・いす・ちゃぶ台の そばで くつろぐ。 */
 	| "relax"
-	/** 本棚・掛け軸・冊子の 前で 読む。 */
+	/** 本棚・冊子の 前で 読む。 */
 	| "read"
 	/** 置物・水槽・持ち帰った 品を ながめる。 */
 	| "look"
@@ -824,7 +816,6 @@ export const FURNITURE_ACT: Partial<Record<BaseFurnitureId, GuestAct>> = {
 	coffee: "relax",
 	shelf: "read",
 	shelfDark: "read",
-	kakejiku: "read",
 	mojiBook: "read",
 	picrossNote: "read",
 	crt: "play",

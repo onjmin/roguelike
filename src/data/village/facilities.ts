@@ -1968,7 +1968,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				E: "fighter",
 				G: "slot",
 				J: "comma",
-				I: "runner",
+				// なんJランの あとの 台（2026-10-15 作者：消して いい）。故障中の はり紙
+				I: "broken",
 				v: "rhythm",
 				V: "rhythm",
 				Q: "wangan",
@@ -1990,7 +1991,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				mole: [ARCADE_TEXT.mole.line],
 				fighter: [ARCADE_TEXT.fighter.line],
 				slot: [ARCADE_TEXT.slot.line],
-				runner: [ARCADE_TEXT.runner.line],
+				broken: ["筐体。\n「故障中」の　はり紙が　してある。"],
 				rhythm: [ARCADE_TEXT.rhythm.line],
 				wangan: [ARCADE_TEXT.wangan.line],
 				crane: [ARCADE_TEXT.crane.line],
@@ -2003,7 +2004,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 			// 壁の 大画面で 新作発表会・おんJリーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
 			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/neta/netaComma.ts）、
-			// 筐体 7台と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade/arcade.ts）
+			// 筐体 6台（と 故障中の 1台）と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade/arcade.ts）
 			plays: {
 				tv: "jikkyo",
 				comma: "comma",
@@ -2012,7 +2013,6 @@ const BASE_FACILITIES: readonly Facility[] = [
 				mole: "arcade",
 				fighter: "arcade",
 				slot: "arcade",
-				runner: "arcade",
 				rhythm: "arcade",
 				wangan: "arcade",
 				crane: "arcade",

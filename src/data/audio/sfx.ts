@@ -66,7 +66,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		arcShot: "rpgen:95bF44", // [マリオRPG]ファイアボール
 		/** 荒らし・スレの 札を くずす（シューティング・ブロックくずし）。 */
 		arcBlock: "rpgen:wsdfpV", // マリオ3-ブロック
-		/** 跳ぶ（なんJラン）。 */
+		/** 跳ぶ。 */
 		arcJump: "rpgen:RJwe7P", // [ツクール]ジャンプ
 		/** カードを めくる（カジノの ハイ＆ロー）。 */
 		cardFlip: "rpgen:h50BUS", // マリオ3-カード
@@ -150,7 +150,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		batonDown: "rpgen:0JNThb", // [ポケ]PC終了
 		/** 解音ゼロの 次の 機体が 起動した（バトンタッチ）。 */
 		batonUp: "rpgen:0JDT7S", // [ポケ]PC起動
-		/** 筐体の 自機が やられた・ぶつかった（シューティング・なんJラン）。 */
+		/** 筐体の 自機が やられた・ぶつかった（シューティング）。 */
 		arcCrash: "rpgen:YHEG4T", // 自機爆発音1
 	},
 	/** いちばん目立たせる音。 */

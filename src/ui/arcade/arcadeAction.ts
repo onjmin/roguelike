@@ -1,7 +1,6 @@
 // ゲームセンターの 筐体の 板（動かして よける・撃つ 台）。決まりは data/arcade/logic.ts、文は data/arcade/text.ts。
 // - シューティング「荒らし撃退」：←→ で 動く（くり返しで 進む）、A で 撃つ（押しっぱなしで 連射）。タップは その 横位置へ 動いて 撃つ。
 // - ブロックくずし「スレ崩し」：←→ で 板を 動かす、A で 球を 打つ。タップは その 横位置へ（球が のって いれば 打つ）。
-// - ジャンプアクション「なんJラン」：A・↑・タップで 跳ぶ。
 // 点が 入ると 数字が 浮かび、粒が はじける。ぶつかると 画面が ゆれる（ui/arcade/arcadeJuice.ts）。
 // 見た目の 乱数は Math.random（冒険の 乱数に さわらない）。
 
@@ -14,10 +13,6 @@ import {
 	bkRect,
 	bkStart,
 	bkStep,
-	RN,
-	rnScore,
-	rnStart,
-	rnStep,
 	SH,
 	SH_KIND,
 	shMult,
@@ -332,122 +327,5 @@ export const playBreakout = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 		},
 		over: (s) => s.over,
 		score: (s) => s.score,
-	});
-};
-
-// ───────────────── ジャンプアクション ─────────────────
-
-export const playRunner = (ctx: UiCtx): Promise<ArcadeResult | null> => {
-	const j = juice();
-	let warned = false;
-	return playBoard(ctx, "runner", {
-		start: rnStart,
-		step: (s, f) => {
-			juiceStep(j, f.dt);
-			const press = f.evs.some(
-				(e) => isKey(e, "a") || isKey(e, "up") || isTap(e),
-			);
-			for (const e of rnStep(s, f.dt, press, rnd)) {
-				if (e === "jump") f.se("arcJump");
-				else if (e === "coin") f.se("cursor");
-				else if (e === "mile") {
-					f.se("chapter");
-					f.say(fill(ARCADE_BOARD.runnerMile, { n: s.mile * RN.mile }));
-					pop(
-						j,
-						AW / 2,
-						40,
-						fill(ARCADE_BOARD.runnerMile, { n: s.mile * RN.mile }),
-						"#ffffff",
-					);
-				} else if (e === "crash") {
-					f.se("arcCrash");
-					quake(j, 5);
-					j.flash = 0.2;
-					burst(j, RN.x, RN.groundY - 7 - s.y, "#ff8040", 14, 70);
-				}
-			}
-			if (!warned && s.rocks.some((r) => r.kind === "bird")) {
-				warned = true;
-				f.say(ARCADE_BOARD.runnerBird);
-			}
-			for (const p of s.pops) {
-				pop(j, p.x, p.y, `+${p.pts}`);
-				burst(j, p.x, p.y, "#80e080", 5);
-			}
-		},
-		draw: (g, s, clock) => {
-			shaken(g, j, () => {
-				g.fillStyle = "#88c8f0"; // 空
-				g.fillRect(0, 0, AW, AH);
-				// 遠くの 山（ゆっくり 流れる）
-				g.fillStyle = "#70a8c8";
-				const far = (s.dist * 0.2) % 80;
-				for (let x = -far; x < AW + 80; x += 80) {
-					g.beginPath();
-					g.moveTo(x, RN.groundY);
-					g.lineTo(x + 40, RN.groundY - 30);
-					g.lineTo(x + 80, RN.groundY);
-					g.fill();
-				}
-				g.fillStyle = "#5a9a3a";
-				g.fillRect(0, RN.groundY, AW, AH - RN.groundY);
-				g.fillStyle = "#4a7a2a";
-				const near = s.dist % 12;
-				for (let x = -near; x < AW; x += 12)
-					g.fillRect(Math.round(x), RN.groundY + 4, 6, 1);
-				for (const c of s.coins)
-					txt(
-						g,
-						"草",
-						Math.round(c.x),
-						RN.groundY - c.y - 4,
-						8,
-						"#208020",
-						"center",
-					);
-				for (const r of s.rocks) {
-					const x = Math.round(r.x);
-					if (r.kind === "bird") {
-						// 煽（羽ばたく）
-						const top = RN.groundY - r.alt - r.h;
-						const up = Math.floor(clock * 8) % 2 === 0;
-						g.fillStyle = "#8a3a8a";
-						g.fillRect(x - 3, top + (up ? -2 : 4), 4, 3);
-						g.fillRect(x + r.w - 1, top + (up ? -2 : 4), 4, 3);
-						chip(
-							g,
-							x + r.w / 2,
-							top + r.h / 2,
-							r.w,
-							r.h,
-							"#b04090",
-							"煽",
-							"#ffffff",
-							7,
-						);
-						continue;
-					}
-					g.fillStyle = "#6a6a72";
-					g.fillRect(x, RN.groundY - r.h, r.w, r.h);
-					if (r.h >= 15)
-						txt(
-							g,
-							"荒",
-							Math.round(r.x + r.w / 2),
-							RN.groundY - r.h + 2,
-							7,
-							"#f0e0e0",
-							"center",
-						);
-				}
-				const step = s.y === 0 ? Math.floor(clock * 10) % 2 : 0;
-				kiriko(g, RN.x, RN.groundY - 7 - s.y, step);
-				juiceDraw(g, j, AW, AH);
-			});
-			hud(g, `${ARCADE_BOARD.score} ${rnScore(s)}`, "");
-		},
-		over: (s) => s.over,
-		score: rnScore,
 	});
 };

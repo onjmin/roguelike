@@ -12,7 +12,6 @@ export const ARCADE_GAMES = [
 	"mole", // 奥の 4台目：もぐらたたき「ROMたたき」
 	"fighter", // 奥の 5台目：格ゲーの 対戦台「レスバトル」（乱入を 待つ 名無しの 横）
 	"slot", // まんなかの 左：メダルゲーム「メダルスロット」（メダルを すった 名無しの 前）
-	"runner", // まんなかの 右：ジャンプアクション「なんJラン」
 	"rhythm", // 音ゲーの 台「おんJビート」
 	"crane", // クレーンゲーム「ぷゆゆキャッチャー」（とれた 景品は ぬいぐるみの 家具に なる ことも）
 	"wangan", // 座って 遊ぶ レースの 台「湾岸ナイトラン」（夜の 湾岸線で ライバルと 走る。2026-10-14）
@@ -43,7 +42,6 @@ export const ARCADE_GAMES = [
 	"puyupuyu", // ゲーム機：ぷゆぷゆ（ぷゆゆを 4つ つなげて 消す 連鎖パズル）
 	"pinball", // ピンボール台：保守ピンボール（バンパーは 保守・age）
 	"danmaku", // 紫の 筐体：弾幕スレ（よけて 撃つ 弾幕シューティング）
-	"mikiri", // 掛け軸：居合い 一閃（「！」で 先に 押した ほうが 勝ち）
 	"mojisagashi", // 文字さがしの 冊子：キリコさがし（盤から 名前を 見つける）
 	"clicker", // ぷゆゆの ぬいぐるみ：ぷゆゆ なでなで（なでて ふやす）
 	"doom", // ゲーミングPC：DOOM（3Dの 迷路で 荒らしを 撃つ。作者：「DOOMも」「名前 借りていい」）
@@ -74,7 +72,6 @@ export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	mole: "arcade",
 	fighter: "arcade",
 	slot: "arcade",
-	runner: "arcade",
 	rhythm: "arcade",
 	wangan: "arcade",
 	crane: "arcade",
@@ -100,7 +97,6 @@ export const ARCADE_HOME: Record<ArcadeGame, string> = {
 	puyupuyu: "myhome",
 	pinball: "myhome",
 	danmaku: "myhome",
-	mikiri: "myhome",
 	mojisagashi: "myhome",
 	clicker: "myhome",
 	doom: "myhome",

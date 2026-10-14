@@ -26,7 +26,7 @@ import { playOrRecord } from "../minigames/playMenu";
 import { craneGift } from "../village/myhome";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
-import { playBreakout, playRunner, playShooter } from "./arcadeAction";
+import { playBreakout, playShooter } from "./arcadeAction";
 import { playBomber, playPlatform } from "./arcadeHome";
 import type { ArcadeResult } from "./arcadeKit";
 import {
@@ -60,7 +60,6 @@ import { playHasami } from "./home/hasami";
 import { playKingyo } from "./home/kingyo";
 import { playKoikoi } from "./home/koikoi";
 import { playKurohige } from "./home/kurohige";
-import { playMikiri } from "./home/mikiri";
 import { playMines } from "./home/mines";
 import { playMojisagashi } from "./home/mojisagashi";
 import { playNineball } from "./home/nineball";
@@ -188,7 +187,6 @@ const BOARDS: Record<
 	mole: playMole,
 	fighter: playFighter,
 	slot: playSlot,
-	runner: playRunner,
 	rhythm: playRhythm,
 	gacha: playGacha,
 	highlow: playHighLow,
@@ -212,7 +210,6 @@ const BOARDS: Record<
 	puyupuyu: playPuyupuyu,
 	pinball: playPinball,
 	danmaku: playDanmaku,
-	mikiri: playMikiri,
 	mojisagashi: playMojisagashi,
 	clicker: playClicker,
 	doom: playDoom,
