@@ -1291,7 +1291,6 @@ export const BOND_MSG = {
 	offer: "（{gift}を　{name}に　わたす？）",
 	offerMenu: ["わたす", "やめておく"],
 	handed: "{name}に　{gift}を　わたした。",
-	levelUp: "{name}と　なかよく　なった。\n{hearts}",
 	got: "{gift}を　もらった。\n（家の　収納の「もらった　物」に）",
 	bookTitle: "誕生日の　こよみ",
 	bookDay: "{m}月{d}日",

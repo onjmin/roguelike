@@ -2,7 +2,7 @@
 // プレゼントの イベントを 散りばめたり」）。文と 好みは data/people/bonds.ts。
 // - なかよし度 ＝ 新しい話を 聞いた 数（仲間は 帰りごとの ひとこと、住人は はじめまして・節目・雑談）＋
 //   喫茶（おごった 1杯で 2・聞いた 話で 1。ui/village/cafe.ts の cafeBondPoints）＋ 贈り物。
-//   ♥ は BOND_STEPS で 0〜5。
+//   ♥ は BOND_STEPS で 0〜5。上がっても「なかよく　なった」とは 知らせない（2026-10-15 作者）。
 // - 贈り物：おんJマートの ギフトの 棚で 1つ 買って 持ち歩き、話しかけた あとに わたせる（1人 1回の 帰りに 1つ）。
 //   好み（大好き・好き・ふつう・苦手）で ふえ方が かわり、誕生日（端末の 日付）は 倍。
 // - 向こうから：♥2 と ♥4 で 1つずつ 物を くれる（もらった 物。キリコの 家の 収納で 見られる）。
@@ -254,7 +254,6 @@ const offerGift = async (s: Story, w: Cast): Promise<void> => {
 	const def = BOND_DEFS[w];
 	const taste = tasteOf(w, g);
 	const bday = birthday(def);
-	const before = bondLevel(w, m);
 	m.carry = null;
 	m.gave[w] = returnAt();
 	m.pts[w] = (m.pts[w] ?? 0) + GIFT_PTS[taste] * (bday ? BIRTHDAY_MUL : 1);
@@ -262,12 +261,9 @@ const offerGift = async (s: Story, w: Cast): Promise<void> => {
 	s.se("item");
 	await s.narrate(fill(BOND_MSG.handed, { gift: name, name: nameOf(w) }));
 	await speak(s, w, def.react[taste]);
+	// ♥ が 上がっても 知らせない（作者「仲良くなったとしても『なかよくなった』は 通知しない方が いい」。
+	// 好みの ひとことで 伝わる。♥ は 本館の 名簿などで 見える）
 	if (bday) await speak(s, w, def.react.bday);
-	const after = bondLevel(w, m);
-	if (after > before)
-		await s.narrate(
-			fill(BOND_MSG.levelUp, { name: nameOf(w), hearts: heartsOf(after) }),
-		);
 };
 
 /** ♥2・♥4 で くれる 物（まだ もらって いない 1つ）。 */
@@ -321,8 +317,7 @@ export const withBond =
 	async (s) => {
 		const sulking = sulkTier() !== null;
 		const m = loadBonds();
-		// 新しい話を 聞いて ♥ が 上がったら 知らせる（贈り物の ときだけ 出ていて、♥2・♥4 の 物が 前ぶれなく 来た）
-		const lvBefore = bondLevel(w, m);
+		// 新しい話を 聞いて ♥ が 上がっても「なかよく　なった」とは 知らせない（作者：通知しない 方が いい）
 		const scene = sulking ? null : dueScene(w, m);
 		if (scene && !heardThisReturn(w)) {
 			m.scenes.push(scene.key);
@@ -332,11 +327,6 @@ export const withBond =
 			await playLines(s, w, scene.lines);
 		} else await inner(s);
 		if (sulking) return;
-		const lvTalk = bondLevel(w);
-		if (lvTalk > lvBefore)
-			await s.narrate(
-				fill(BOND_MSG.levelUp, { name: nameOf(w), hearts: heartsOf(lvTalk) }),
-			);
 		await offerGift(s, w);
 		if (await seasonPresent(s, w)) return;
 		await givePresent(s, w);

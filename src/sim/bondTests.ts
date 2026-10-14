@@ -32,7 +32,6 @@ import {
 import {
 	bondLevel,
 	forgetBondsMemo,
-	heartsOf,
 	loadBonds,
 	tasteOf,
 	withBond,
@@ -165,10 +164,7 @@ test(
 			if (typeof t === "string")
 				fits(
 					`BOND_MSG.${k}`,
-					t
-						.replace("{gift}", "ぬいぐるみ")
-						.replace("{name}", "ジェイトルマン")
-						.replace("{hearts}", heartsOf(5)),
+					t.replace("{gift}", "ぬいぐるみ").replace("{name}", "ジェイトルマン"),
 				);
 		for (const p of Object.values(SEASON_PRESENTS))
 			fits(
@@ -243,6 +239,11 @@ test(
 				await give();
 			}
 			ok(bondLevel("roze") >= 3, `three loved gifts: ♥${bondLevel("roze")}`);
+			// ♥ が 上がっても「なかよく　なった」とは 知らせない（作者の 指示）
+			ok(
+				!log.some((t) => t.includes("なかよく　なった")),
+				"a bond level-up notice was shown",
+			);
 			ok(
 				loadBonds().got.includes("roze_hashi"),
 				"the ♥2 keepsake was not handed",
