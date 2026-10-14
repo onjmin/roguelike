@@ -531,8 +531,8 @@ export const roomPalette = (id: RoomId, stage = 7): Record<string, TileDef> => {
 				A: up(base(3, 96)),
 				k: low(base(5, 90)),
 				B: on(base(3, 104, 1, 2)),
-				// 店番の 机（羽ペンと インク）
-				T: on(base(2, 108), onTop(3, 156)),
+				// 店番の レジカウンター（rpgen.org の「レジカウンター」）
+				T: on(ri("regiCounter")),
 				// 平台（新刊の 山）・雑誌の 棚
 				s: on(base(2, 108), onTop(2, 150)),
 				M: on(base(2, 104, 1, 2)),
