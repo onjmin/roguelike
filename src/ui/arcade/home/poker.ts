@@ -1,6 +1,7 @@
 // カジノ「ガチャ」の ポーカーの 板（決まりは data/arcade/home/poker.ts、文は data/arcade/text.ts）。
-// - ↑↓ で 賭ける 枚数、A で 配る。←→ で 札、↑ で 残す（HOLD）、A で 交換。
+// - ↑↓ で 賭ける 枚数、A で 配る。←→ で 札、↑ で 残す、A で 交換。
 // - タップは 札で 残す、下の −／＋ で 枚数、右の 札で 配る／交換。
+// - 札の 下に 「残す／かえる」、台の 下に いま する ことを 出す（初めてでも 押し方が わかる）。
 // トランプの 札・ボタン・緑の 台の 描き方は ブラックジャック・バカラの 板も ここから 使う。
 // 見た目の 乱数は Math.random（冒険の 乱数に さわらない）。
 
@@ -10,7 +11,9 @@ import {
 	PK,
 	PK_HANDS,
 	PK_TEXT,
+	type PkEvent,
 	type PkInput,
+	type PkState,
 	pkPay,
 	pkStart,
 	pkStep,
@@ -122,16 +125,177 @@ const BET_DN: Rect = [10, 120, 22, 20];
 const BET_UP: Rect = [82, 120, 22, 20];
 const GO: Rect = [140, 120, 90, 20];
 
+// ───────────────── 配る・めくる 演出 ─────────────────
+// 決まりは 一瞬で 決まるので、板の 側で 札を 1枚ずつ 見せる（その あいだ 押しは A で とばすだけ）。
+// 配る：前の 札を 消す → 山から 1枚ずつ 飛んでくる → 左から めくる。
+// 交換：かえる 札を 消す → 飛んでくる → 1枚ずつ めくる（さいごの 1枚は ためてから）→ 役と 払い。
+
+/** めくる・消す・飛ぶ 長さ（秒）。 */
+const FLIP = 0.14;
+const SLIDE = 0.16;
+/** さいごの 1枚を めくる 前の ため（秒）。 */
+const TAME = 0.32;
+
+type Slot = {
+	/** 前の 札（消える。null は 配る 前の 裏）。 */
+	old: Card | null;
+	/** 前の 札が 消えはじめる 時刻。 */
+	away: number;
+	/** 新しい 札が 着く 時刻。 */
+	land: number;
+	/** 表に なりきる 時刻。 */
+	open: number;
+};
+type Show = {
+	t: number;
+	slots: (Slot | null)[];
+	/** 交換の とき 残した 札（演出の あいだも 残す 札を 見せる）。 */
+	held: boolean[];
+	end: number;
+	/** おわったら 出す 結果（win／lose）。 */
+	after: PkEvent | null;
+	/** その 結果の 払い（おわる まで 手もとに 足さない）。 */
+	pay: number;
+};
+
+const showDeal = (prev: readonly Card[]): Show => {
+	const slots: Slot[] = [];
+	for (let i = 0; i < 5; i++) {
+		const land = 0.28 + i * 0.07 + SLIDE;
+		slots.push({ old: prev[i] ?? null, away: i * 0.03, land, open: 0 });
+	}
+	const base = (slots[4]?.land ?? 0) + 0.12;
+	slots.forEach((sl, i) => {
+		sl.open = base + i * 0.08 + FLIP;
+	});
+	return {
+		t: 0,
+		slots,
+		held: [false, false, false, false, false],
+		end: (slots[4]?.open ?? 0) + 0.05,
+		after: null,
+		pay: 0,
+	};
+};
+
+const showDraw = (
+	prev: readonly Card[],
+	held: readonly boolean[],
+	after: PkEvent,
+	pay: number,
+): Show => {
+	const slots: (Slot | null)[] = [];
+	let k = 0;
+	for (let i = 0; i < 5; i++) {
+		if (held[i]) {
+			slots.push(null);
+			continue;
+		}
+		slots.push({
+			old: prev[i] ?? null,
+			away: k * 0.05,
+			land: 0.14 + k * 0.08 + SLIDE,
+			open: 0,
+		});
+		k++;
+	}
+	const moving = slots.filter((x): x is Slot => x !== null);
+	const base = Math.max(0, ...moving.map((x) => x.land)) + 0.18;
+	moving.forEach((sl, j) => {
+		sl.open = base + j * 0.16 + (j === moving.length - 1 ? TAME : 0) + FLIP;
+	});
+	const last = Math.max(0.3, ...moving.map((x) => x.open));
+	return { t: 0, slots, held: [...held], end: last + 0.12, after, pay };
+};
+
+/** 札を 横に つぶして 描く（めくる・消える。p：0＝幅 なし … 1＝ふつう）。 */
+const squeeze = (
+	g: G,
+	x: number,
+	y: number,
+	p: number,
+	c: Card | null,
+): void => {
+	const w = Math.max(1, Math.round(CW * p));
+	const X = x + (CW - w) / 2;
+	g.save();
+	g.beginPath();
+	g.rect(X, y, w, CH);
+	g.clip();
+	cardFace(g, X, y, w, CH, c);
+	g.restore();
+};
+
+const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
+const clamp01 = (p: number): number => Math.max(0, Math.min(1, p));
+
+/** 演出 中の 札 1枚。 */
+const drawSlot = (g: G, x: number, sl: Slot, t: number, c: Card): void => {
+	if (t < sl.land - SLIDE) {
+		// 前の 札が 消える（つぶれて なくなる）
+		if (t >= sl.away + FLIP) return;
+		const p = clamp01((t - sl.away) / FLIP);
+		squeeze(g, x, CY, 1 - p, sl.old);
+		return;
+	}
+	if (t < sl.land) {
+		// 山（上の まんなか）から 飛んでくる
+		const p = easeOut(clamp01((t - (sl.land - SLIDE)) / SLIDE));
+		const fx = AW / 2 - CW / 2;
+		const fy = ATOP - CH;
+		cardFace(g, fx + (x - fx) * p, fy + (CY - fy) * p, CW, CH, null);
+		return;
+	}
+	if (t < sl.open - FLIP) {
+		cardFace(g, x, CY, CW, CH, null);
+		return;
+	}
+	if (t < sl.open) {
+		// めくる：前半は 裏が つぶれ、後半は 表が ひらく
+		const p = (t - (sl.open - FLIP)) / FLIP;
+		if (p < 0.5) squeeze(g, x, CY, 1 - p * 2, null);
+		else squeeze(g, x, CY, (p - 0.5) * 2, c);
+		return;
+	}
+	cardFace(g, x, CY, CW, CH, c);
+};
+
 export const playPoker = (
 	ctx: UiCtx,
 	stake?: number,
 ): Promise<ArcadeResult | null> => {
 	let flash = "";
+	let show: Show | null = null;
+	/** 演出の おわりに 結果を 出す。 */
+	const finish = (s: PkState, sh: Show, se: (n: string) => void): void => {
+		if (sh.after === "win") {
+			se(s.lastWin >= s.bet * 25 ? "victory" : "levelup");
+			flash = `${s.last ? PK_TEXT.hands[s.last] : ""}　${fill(PK_TEXT.win, { n: s.lastWin })}`;
+		} else if (sh.after === "lose") {
+			// 音は さいごに めくった 札で 足りる
+			flash = s.chips > 0 ? PK_TEXT.lose : B.bust;
+		}
+	};
 	return playBoard(ctx, "poker", {
 		start: () => pkStart(stake),
 		quitScores: true,
 		cash: (s) => s.chips,
 		step: (s, f) => {
+			if (show) {
+				const sh = show;
+				const t0 = sh.t;
+				// A・タップで 演出を とばす
+				const skip = (f.evs as ArcEv[]).some((e) => isKey(e, "a") || isTap(e));
+				sh.t = skip ? sh.end : sh.t + f.dt;
+				if (!skip)
+					for (const sl of sh.slots)
+						if (sl && t0 < sl.open && sh.t >= sl.open) f.se("cardFlip");
+				if (sh.t >= sh.end) {
+					show = null;
+					finish(s, sh, f.se);
+				}
+				return;
+			}
 			const inp: PkInput = {};
 			for (const e of f.evs as ArcEv[]) {
 				if (s.phase === "bet") {
@@ -153,23 +317,25 @@ export const playPoker = (
 							if (inside(e.tap, cardRect(i))) inp.toggle = i;
 				}
 			}
+			const prev = s.hand.slice();
+			const held = s.held.slice();
 			for (const e of pkStep(s, f.dt, inp, rnd)) {
 				if (e === "bet") f.se("arcCoin");
 				else if (e === "deal") {
-					f.se("cardFlip");
-					flash = PK_TEXT.pick;
+					f.se("arcCoin");
+					flash = "";
+					show = showDeal(prev);
 				} else if (e === "cursor") f.se("cursor");
 				else if (e === "hold") f.se("decide");
-				else if (e === "win") {
-					f.se(s.lastWin >= s.bet * 25 ? "victory" : "levelup");
-					flash = `${s.last ? PK_TEXT.hands[s.last] : ""}　${fill(PK_TEXT.win, { n: s.lastWin })}`;
-				} else if (e === "lose") {
-					f.se("cardFlip");
-					flash = s.chips > 0 ? PK_TEXT.lose : B.bust;
+				else if (e === "win" || e === "lose") {
+					f.se("decide");
+					flash = "";
+					show = showDraw(prev, held, e, s.lastWin);
 				}
 			}
 		},
 		draw: (g, s, clock) => {
+			const sh = show;
 			felt(g, "#101a38");
 			// 役の 表（いまの 枚数で の 払いだし）
 			PK_HANDS.forEach((h, i) => {
@@ -177,7 +343,7 @@ export const playPoker = (
 				const row = i % 3;
 				const x = 7 + col * 76;
 				const y = 20 + row * 8;
-				const hit = s.phase === "bet" && s.shown && s.last === h;
+				const hit = !sh && s.phase === "bet" && s.shown && s.last === h;
 				if (hit && Math.floor(clock * 4) % 2 === 0) {
 					g.fillStyle = "#5a4010";
 					g.fillRect(x - 1, y - 1, 74, 8);
@@ -187,34 +353,46 @@ export const playPoker = (
 				txt(g, String(pkPay(h, s.bet)), x + 72, y, 7, ink, "right");
 			});
 			// 札
+			const choosing = !sh && s.phase === "hold";
 			for (let i = 0; i < 5; i++) {
 				const x = cardX(i);
 				const c = s.hand[i];
-				cardFace(g, x, CY, CW, CH, c ?? null);
-				if (s.phase === "hold") {
-					if (s.held[i]) {
-						g.fillStyle = "#f0c040";
-						g.fillRect(x, CY + CH + 2, CW, 9);
-						txt(
-							g,
-							PK_TEXT.hold,
-							x + CW / 2,
-							CY + CH + 3,
-							7,
-							"#201000",
-							"center",
-						);
-					}
-					if (i === s.cur) {
-						g.strokeStyle = "#ffe060";
-						g.lineWidth = 1;
-						g.strokeRect(x - 1.5, CY - 1.5, CW + 3, CH + 3);
-					}
+				const sl = sh?.slots[i];
+				if (sh && sl && c) drawSlot(g, x, sl, sh.t, c);
+				else cardFace(g, x, CY, CW, CH, c ?? null);
+				// 札の 下：残す（金）／かえる（うすい 枠）。交換の 演出 中も 残した 札は 見せる
+				const keep = choosing ? s.held[i] : sh?.held[i];
+				const ly = CY + CH + 2;
+				if (keep) {
+					g.fillStyle = "#f0c040";
+					g.fillRect(x, ly, CW, 9);
+					txt(g, PK_TEXT.hold, x + CW / 2, ly + 1, 7, "#201000", "center");
+				} else if (choosing) {
+					g.strokeStyle = "#6a6a90";
+					g.lineWidth = 1;
+					g.strokeRect(x + 0.5, ly + 0.5, CW - 1, 8);
+					txt(g, PK_TEXT.swap, x + CW / 2, ly + 1, 7, "#8a8ab0", "center");
+				}
+				if (choosing && i === s.cur) {
+					g.strokeStyle = "#ffe060";
+					g.lineWidth = 1;
+					g.strokeRect(x - 1.5, CY - 1.5, CW + 3, CH + 3);
 				}
 			}
-			if (flash) txt(g, flash, AW / 2, 107, 8, "#ffe060", "center");
+			// 案内：結果が なければ いま すること
+			const guide = sh
+				? ""
+				: flash ||
+					(s.phase === "hold"
+						? PK_TEXT.howHold
+						: s.chips
+							? PK_TEXT.howBet
+							: "");
+			if (guide)
+				txt(g, guide, AW / 2, 107, 8, flash ? "#ffe060" : "#c8c0e0", "center");
 			const betting = s.phase === "bet";
-			button(g, BET_DN, "−", false, "#3a2a10", !betting);
+			const swaps = s.held.filter((h) => !h).length;
+			button(g, BET_DN, "−", false, "#3a2a10", !betting || !!sh);
 			txt(
 				g,
 				`${PK_TEXT.bet} ${s.bet}`,
@@ -224,15 +402,16 @@ export const playPoker = (
 				"#f4e8c8",
 				"center",
 			);
-			button(g, BET_UP, "＋", false, "#3a2a10", !betting);
-			button(
-				g,
-				GO,
-				`A ${betting ? PK_TEXT.deal : PK_TEXT.draw}`,
-				false,
-				"#5a3a10",
-			);
-			hud(g, `${B.chips} ${s.chips}`, `${PK_TEXT.bet} ${s.bet}／${PK.maxBet}`);
+			button(g, BET_UP, "＋", false, "#3a2a10", !betting || !!sh);
+			const go = betting
+				? PK_TEXT.deal
+				: swaps
+					? fill(PK_TEXT.draw, { n: swaps })
+					: PK_TEXT.stand;
+			button(g, GO, `A ${go}`, false, "#5a3a10", !!sh);
+			// 払いは めくり おわって から 手もとに 足す
+			const chips = s.chips - (sh?.pay ?? 0);
+			hud(g, `${B.chips} ${chips}`, `${PK_TEXT.bet} ${s.bet}／${PK.maxBet}`);
 		},
 		over: (s) => s.over,
 		score: (s) => s.chips,
