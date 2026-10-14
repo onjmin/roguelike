@@ -8,6 +8,7 @@
 //   収納で 家具の 一覧・壁紙・床を かえる。
 // 保存は kiriko-roguelike/myhome だけ（段の 下見 ?stage=・?event= の あいだは 書かない）。強さ・道具・段には ふれない。
 
+import { DUNGEON_IDS } from "../../core/data/dungeons";
 import { CAST } from "../../data/people/cast";
 import { type Cast, MOBS } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
@@ -16,6 +17,7 @@ import { awayFriends } from "../../data/story/story";
 import type { Facility } from "../../data/village/facilities";
 import type { Cell } from "../../data/village/map";
 import {
+	type BaseFurnitureId,
 	EVENT_GIFTS,
 	FLOORINGS,
 	type Flooring,
@@ -27,6 +29,7 @@ import {
 	furnitureSize,
 	type Gift,
 	GUEST_SPOTS,
+	goalFurniture,
 	HOME_DOWN,
 	HOME_GIFTS,
 	HOME_MAX,
@@ -667,21 +670,27 @@ const openParcels = async (s: Story): Promise<void> => {
 	// もう 持っている（買った）家具は 2つめを 置かない
 	const fresh = gifts.filter((g) => !owns(m, g.id));
 	for (const g of fresh) m.stored.push(g.id);
+	// 持ち帰った 板の 底の 品（台に のって 収納へ。data/village/myhome.ts の GOAL_FURNITURE）
+	const goals = DUNGEON_IDS.filter((d) => loadProgress().cleared.includes(d))
+		.map(goalFurniture)
+		.filter((id) => !owns(m, id));
+	m.stored.push(...goals);
 	saveHome(m);
 	if (repaid > 0)
 		await s.narrate(
 			fill(HOME_MSG.repaid, { n: repaid, price: yen(repaid * HOME_MONTHLY) }),
 		);
 	else if (repaid < 0) await s.narrate(HOME_MSG.unpaid);
-	if (!gifts.length) return;
+	if (!gifts.length && !goals.length) return;
 	s.se("item");
-	await s.narrate(HOME_MSG.parcel);
+	if (gifts.length) await s.narrate(HOME_MSG.parcel);
 	for (const g of gifts) {
 		await receive(s, g);
 		if (!fresh.includes(g))
 			await s.narrate(fill(HOME_MSG.already, { name: furnName(g.id) }));
 	}
-	if (fresh.length) await s.narrate(HOME_MSG.placeHint);
+	if (goals.length) await s.narrate(fill(HOME_MSG.goals, { n: goals.length }));
+	if (fresh.length || goals.length) await s.narrate(HOME_MSG.placeHint);
 };
 
 /** その 家具を 持っているか（収納か 部屋）。 */
@@ -714,7 +723,8 @@ export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
 	let start = 0;
 	for (;;) {
 		const m = loadHome();
-		const ids = (Object.keys(FURNITURE) as FurnitureId[]).filter(
+		// 底の 品（goal_〜）は 売らない：持ち帰ると 届く
+		const ids = (Object.keys(FURNITURE_PRICE) as BaseFurnitureId[]).filter(
 			(id) => !owns(m, id) && !NOT_SOLD.includes(id),
 		);
 		if (!ids.length) {
@@ -735,11 +745,12 @@ export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
 			})),
 			{ closeLabel: "やめる", start },
 		);
-		if (!v || !isFurn(v)) return;
-		start = Math.max(0, ids.indexOf(v));
-		const price = FURNITURE_PRICE[v];
+		if (!v || !ids.includes(v as BaseFurnitureId)) return;
+		const id = v as BaseFurnitureId;
+		start = Math.max(0, ids.indexOf(id));
+		const price = FURNITURE_PRICE[id];
 		await s.narrate(
-			fill(HOME_MSG.shopAsk, { name: furnName(v), price: yen(price) }),
+			fill(HOME_MSG.shopAsk, { name: furnName(id), price: yen(price) }),
 		);
 		if ((await s.choose([...HOME_MSG.shopMenu], { cancel: 1 })) !== 0) continue;
 		if (!spendYen(price, previewing())) {
@@ -747,10 +758,10 @@ export const furnitureShop = async (ctx: Ctx, s: Story): Promise<void> => {
 			continue;
 		}
 		const m2 = loadHome();
-		if (!owns(m2, v)) m2.stored.push(v);
+		if (!owns(m2, id)) m2.stored.push(id);
 		saveHome(m2);
 		s.se("item");
-		await s.narrate(fill(HOME_MSG.bought, { name: furnName(v) }));
+		await s.narrate(fill(HOME_MSG.bought, { name: furnName(id) }));
 	}
 };
 

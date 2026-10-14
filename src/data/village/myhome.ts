@@ -3,11 +3,15 @@
 // 契約で 頭金（HOME_DOWN）、帰るたびに 月の 返済（HOME_MONTHLY）。払えない 月は 滞納に なる（追い出されは しない）。
 // 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 3通りで 手に 入る：
 // 帰るたびに 1つ 宅配便で 届く（仲間・町の 人から。HOME_GIFTS）、町の 住人に 話すと 1度だけ（RESIDENT_GIFTS）、
-// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め）。電話で 親しく なった 人（喫茶か ♥1 から。ui/village/bonds.ts）を 招ける。
+// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め）。持ち帰った 板の 底の 品も 台に のせて 飾れる（GOAL_FURNITURE）。電話で 親しく なった 人（喫茶か ♥1 から。ui/village/bonds.ts）を 招ける。
 // ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/village/myhome.ts。
 
+import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
+import { defOf } from "../../core/item";
+import type { DungeonId } from "../../core/types";
 import { ARCADE_TEXT } from "../arcade/text";
 import type { ArcadeGame } from "../arcade/types";
+import { textWidth } from "../bushitsu/bushitsu";
 import type { Cell } from "./map";
 import { type RoomArtName, ri, riCell } from "./rpgenArt";
 import { base } from "./tiles";
@@ -24,7 +28,8 @@ export const HOME_MONTHLY = 1500;
 
 // ───────────────── 家具 ─────────────────
 
-export type FurnitureId =
+/** 店で 売る・もらう 家具。 */
+export type BaseFurnitureId =
 	| "bed"
 	| "table"
 	| "crt"
@@ -76,6 +81,11 @@ export type FurnitureId =
 	| "dartboard"
 	| "fishingRod";
 
+/** 持ち帰った 板の 底の 品（台に のせて 飾る。GOAL_FURNITURE）。 */
+export type GoalFurnitureId = `goal_${DungeonId}`;
+
+export type FurnitureId = BaseFurnitureId | GoalFurnitureId;
+
 export type Furniture = {
 	name: string;
 	/** 絵（行 × 列。マスごとの 絵）。 */
@@ -92,7 +102,7 @@ const HOME_GAMES2_IMG = "pub:sprites/home-games2.png";
 const row = (name: RoomArtName, w: number, r = 0): string[] =>
 	Array.from({ length: w }, (_, c) => riCell(name, c, r));
 
-export const FURNITURE: Record<FurnitureId, Furniture> = {
+const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 	bed: {
 		name: "ベッド",
 		cells: [[base(2, 112)], [base(2, 113)]],
@@ -357,11 +367,72 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 	},
 };
 
+/** 底の 品を のせる 台。 */
+const GOAL_STAND = ri("tableBeige");
+
+/** 1行の 幅（全角 22字）。 */
+const LINE_W = 22;
+
+/**
+ * 底の 品を 調べた 文：名前と 味わいの 2行。味わいが 1行に 入らなければ、味わいだけを
+ * 区切り（、。　……の 前）で 2行に わける（名前は 一覧に 出ている）。
+ */
+const goalLine = (name: string, flavor: string): string => {
+	if (textWidth(flavor) <= LINE_W) return `${name}。\n${flavor}`;
+	const chars = [...flavor];
+	let best: [string, string] | null = null;
+	for (let i = 1; i < chars.length; i++) {
+		const ch = chars[i - 1];
+		const breaks =
+			ch === "、" || ch === "。" || ch === "　" || chars[i] === "…";
+		if (!breaks) continue;
+		const a = chars.slice(0, i).join("").replace(/　$/, "");
+		const b = chars.slice(i).join("");
+		if (textWidth(a) > LINE_W || textWidth(b) > LINE_W) continue;
+		// 2行の 長さが いちばん そろう 所
+		if (
+			!best ||
+			Math.abs(textWidth(a) - textWidth(b)) <
+				Math.abs(textWidth(best[0]) - textWidth(best[1]))
+		)
+			best = [a, b];
+	}
+	return best ? best.join("\n") : `${name}。`;
+};
+
+/** 板の 底の 品の 家具の id。 */
+export const goalFurniture = (d: DungeonId): GoalFurnitureId => `goal_${d}`;
+
+/**
+ * 持ち帰った 板の 底の 品（2026-10-14 作者：底の 品を 家に 飾れる ように）。はじめて 持ち帰った あと、
+ * 家を 買って いれば 家に 入った ときに 届く（ui/village/myhome.ts の openParcels）。店では 売らない。
+ * 絵は 道具の 絵（core/data/items.ts の icon）、調べた 文は 品の 名前と 味わいの 1行。
+ */
+export const GOAL_FURNITURE = Object.fromEntries(
+	DUNGEON_IDS.map((d) => {
+		const def = defOf(DUNGEONS[d].goal);
+		return [
+			goalFurniture(d),
+			{
+				name: def.name,
+				// 品の 下に 台（1×2。上の マスに 品、下の マスに 台）
+				cells: [[def.icon ?? ""], [GOAL_STAND]],
+				line: goalLine(def.name, def.flavor),
+			},
+		];
+	}),
+) as unknown as Record<GoalFurnitureId, Furniture>;
+
+export const FURNITURE: Record<FurnitureId, Furniture> = {
+	...BASE_FURNITURE,
+	...GOAL_FURNITURE,
+};
+
 /**
  * リサイクルショップの レジで 買う ときの 値段（円）。本編に 関係ない 物なので 高め
  * （1回の 冒険の 売り上げは 数千円。node scripts/sales-sim.mjs）。
  */
-export const FURNITURE_PRICE: Record<FurnitureId, number> = {
+export const FURNITURE_PRICE: Record<BaseFurnitureId, number> = {
 	bed: 20000,
 	table: 8000,
 	crt: 6000,
@@ -875,6 +946,8 @@ export const HOME_MSG = {
 	welcome: "「では、ごゆっくり。\n家具は……これから　ですね」",
 	/** 宅配便。 */
 	parcel: "玄関に　荷物が　届いていた。",
+	/** 持ち帰った 板の 底の 品（{n}つ。収納に 入る）。 */
+	goals: "持ち帰った　品が　{n}点、\n台に　のって　届いていた。",
 	from: "{from}から：{name}",
 	/** 返済予定表（{y}年{m}か月）。 */
 	loan: [

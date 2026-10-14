@@ -231,6 +231,7 @@ import {
 	FURNITURE,
 	FURNITURE_PRICE,
 	type FurnitureId,
+	goalFurniture,
 	HOME_GIFTS,
 	HOME_MAX,
 	HOME_MSG,
@@ -376,6 +377,12 @@ import {
 	tobanScript,
 	trophies,
 } from "../ui/village/hallEvents";
+import {
+	enterHome,
+	forgetHomeMemo,
+	loadHome,
+	saveHome,
+} from "../ui/village/myhome";
 import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
 import {
 	enterBath,
@@ -2148,10 +2155,22 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 	]);
 	fitsWindow(texts);
 	// もらえる 家具は 宅配便・住人・入居の どれか 1つだけ（もらえない 家具は 買うだけ）。どの 家具にも 値段
+	// （板の 底の 品は 持ち帰ると 届くので 売らない：値段なし）
 	const sources = [MOVE_IN_GIFT, ...HOME_GIFTS, ...RESIDENT_GIFTS].map(
 		(g) => g.id,
 	);
-	for (const id of Object.keys(FURNITURE)) {
+	ok(
+		DUNGEON_IDS.every(
+			(d) =>
+				goalFurniture(d) in FURNITURE &&
+				!(goalFurniture(d) in FURNITURE_PRICE) &&
+				!sources.includes(goalFurniture(d)) &&
+				!!FURNITURE[goalFurniture(d)].cells[0][0] &&
+				FURNITURE[goalFurniture(d)].cells.length === 2,
+		),
+		"a goal item is not a stand-only furniture",
+	);
+	for (const id of Object.keys(FURNITURE_PRICE)) {
 		ok(
 			sources.filter((x) => x === id).length <= 1,
 			`${id}: ${sources.filter((x) => x === id).length} sources`,
@@ -3122,6 +3141,39 @@ test("町の 寄り道で 見つける 板（おーぷぬの おんJ関連板）
 				`${f.dungeon}: twice`,
 			);
 		}
+	});
+});
+
+test("持ち帰った 板の 底の 品は、家を 買って いれば 入った ときに 台に のって 届く（1つずつ・1度だけ）", async () => {
+	await withStorageAsync(async () => {
+		localStorage.setItem(
+			PROGRESS_KEY,
+			JSON.stringify({
+				unlocked: ["shallow", "kinoko"],
+				cleared: ["shallow", "kinoko"],
+				fails: {},
+				intro: [],
+				news: [],
+				endings: [],
+			}),
+		);
+		forgetHomeMemo();
+		saveHome({ ...loadHome(), owned: true }, false);
+		const first = fakeStory();
+		await enterHome(async () => {})(first.s);
+		const got = loadHome().stored.filter((id) => id.startsWith("goal_"));
+		ok(
+			got.join() === "goal_shallow,goal_kinoko" &&
+				first.log.some((l) => l.includes("品が　2点")),
+			`the goal items did not arrive: ${got.join()} / ${first.log.join(" / ")}`,
+		);
+		const again = fakeStory();
+		await enterHome(async () => {})(again.s);
+		ok(
+			loadHome().stored.filter((id) => id.startsWith("goal_")).length === 2 &&
+				!again.log.some((l) => l.includes("品が")),
+			"the goal items arrived twice",
+		);
 	});
 });
 
