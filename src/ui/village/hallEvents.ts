@@ -15,6 +15,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import { defOf } from "../../core/item";
 import type { DungeonId } from "../../core/types";
+import { jikkyoOpen } from "../../data/jikkyo/schedule";
 import { BOOKSTORE_FROM } from "../../data/story/glossary";
 import {
 	devEvent,
@@ -498,6 +499,8 @@ const peopleLines = (id: string): readonly string[] => {
 	const n = Number(id.split("_")[1]) || 0;
 	if (id.startsWith("yaji_"))
 		return HALL_MSG.yaji[n % HALL_MSG.yaji.length] ?? [];
+	// モニターを 見ている 名無し：番組が 休止の あいだ（電池板の 山場の 前）は 休止の 話
+	if (!jikkyoOpen(loadProgress().cleared)) return HALL_MSG.watchPaused;
 	return HALL_MSG.watch[n % HALL_MSG.watch.length] ?? [];
 };
 

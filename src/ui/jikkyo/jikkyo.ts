@@ -634,7 +634,8 @@ export const hallMonitor =
 			!jikkyoOpen(loadProgress().cleared) &&
 			previewStage() === null
 		) {
-			await s.narrate(HALL_MSG.monitor[0]);
+			// 休止の あいだは 画面も 消えている（「映っている」と「休止」を 両方 言わない）
+			await s.narrate(HALL_MSG.monitorOff);
 			await s.narrate(JIKKYO_PAUSED);
 			return;
 		}
