@@ -25,6 +25,7 @@ import {
 	type OutdoorThing,
 	outdoorId,
 } from "../../data/village/facilities";
+import { NETCAFE_MSG, NETCAFE_YEN } from "../../data/village/finance";
 import { npc, sign } from "../../data/village/helpers";
 import type { VillageView } from "../../data/village/map";
 import { layRoomTatami } from "../../data/village/tatami";
@@ -43,10 +44,16 @@ import { eatAt, keeperTalk } from "../minigames/eat";
 import { imoniPlay } from "../minigames/imoni";
 import { atBat, playDerby } from "../minigames/minigames";
 import { playOrRecord } from "../minigames/playMenu";
+import { netBrowse } from "../net/net";
 import { isNetaPlay, netaPlay } from "../neta/neta";
 import { purikura } from "../purikura/purikura";
 import { sabaPlay } from "../saba/saba";
-import { tradeTerminal } from "../trade/trade";
+import {
+	atmDesk,
+	shokenWindow,
+	stockBoard,
+	tradeTerminal,
+} from "../trade/trade";
 import { giftShelf } from "./bonds";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
@@ -184,6 +191,28 @@ const drinkBar = async (s: Story): Promise<void> => {
 	await s.narrate(DRINK_BAR.drank);
 };
 
+/** ネットカフェの 料金を 払った 印（村に いる あいだ）。 */
+const NETCAFE_PAID = "netcafePaid";
+
+/** ネットカフェの ブース（村に いる あいだの はじめに NETCAFE_YEN。あとは ネットと トレード）。 */
+const netcafeBooth = async (ctx: Ctx, s: Story): Promise<void> => {
+	if (!s.flag(NETCAFE_PAID)) {
+		const price = yen(NETCAFE_YEN);
+		await s.narrate(fill(NETCAFE_MSG.ask, { price }));
+		const menu = NETCAFE_MSG.askMenu.map((x) => fill(x, { price }));
+		if (
+			(await s.choose(menu, { cancel: 1 })) !== 0 ||
+			!(await payOrShort(s, NETCAFE_YEN))
+		)
+			return;
+		s.set(NETCAFE_PAID);
+		await s.narrate(NETCAFE_MSG.paid);
+	}
+	const n = await s.choose([...NETCAFE_MSG.menu], { cancel: 2 });
+	if (n === 0) await netBrowse(ctx, s);
+	else if (n === 1) await tradeTerminal(ctx, s);
+};
+
 /**
  * 外に 置く 物（地図の マス。調べると 文、遊べる 物は 遊ぶか 聞く）。見える 人（屋台の 店番）は 名前欄つきの
  * セリフで、eat なら セリフを 1つ → 品書き（ui/minigames/eat.ts）。
@@ -290,8 +319,14 @@ export const buildFacility = (
 			else if (play === "purikura") await purikura(ctx, s);
 			// おんJマートの ギフトの 棚：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）
 			else if (play === "giftshop") await giftShelf(ctx, s);
-			// おんJマートの ATM：おんJ証券（ui/trade/trade.ts）
+			// おんJ証券（ui/trade/trade.ts）：支店の 端末＝売り買い・おんJマートの ATM＝入金・出金・
+			// 支店の 窓口＝口座の 開設と 入金・出金・支店の 電光ボード＝いまの 株価
 			else if (play === "trade") await tradeTerminal(ctx, s);
+			else if (play === "atm") await atmDesk(s);
+			else if (play === "shoken") await shokenWindow(s);
+			else if (play === "stockboard") await stockBoard(s);
+			// ネットカフェの ブース：払って ネットと トレード
+			else if (play === "netcafe") await netcafeBooth(ctx, s);
 		});
 	});
 	for (const who of room?.people ?? [])

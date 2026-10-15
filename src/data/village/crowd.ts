@@ -137,6 +137,8 @@ const FACILITY_KIND: Record<string, CrowdKind> = {
 	theater: "fun",
 	casino: "fun",
 	otaku: "shop",
+	shoken: "shop",
+	netcafe: "fun",
 	station: "transit",
 	harbor: "work",
 	soba: "food",
@@ -736,7 +738,7 @@ export const PERSONAS: readonly Persona[] = [
 		sprites: ["sa:y9WrTy", "sa:gb0HD8", "sa:RH1eyq", "sa:jkswZA"],
 		ms: [190, 260],
 		haunts: {
-			shop: ["konbini", "recycle", "pawn"],
+			shop: ["konbini", "recycle", "pawn", "shoken"],
 			food: ["umi", "chuka", "famires", "sushi"],
 			care: ["clinic"],
 		},
@@ -791,7 +793,7 @@ export const PERSONAS: readonly Persona[] = [
 		haunts: {
 			care: ["clinic", "hospital"],
 			fun: ["door_bath", "go"],
-			shop: ["pawn", "door_books"],
+			shop: ["pawn", "door_books", "shoken"],
 		},
 		share: { late: 0, morning: 1.5, day: 1.5, evening: 0.5, night: 0.1 },
 		weekend: 1,
@@ -829,7 +831,7 @@ export const PERSONAS: readonly Persona[] = [
 		sprites: NANASHI_WALKS,
 		ms: [160, 240],
 		haunts: {
-			fun: ["arcade", "casino", "door_music", "cinema"],
+			fun: ["arcade", "casino", "door_music", "cinema", "netcafe"],
 			food: ["door_cafe", "gyudon", "ramen", "maid", "burger"],
 		},
 		share: { late: 2, morning: 1, day: 1.2, evening: 1.2, night: 2 },

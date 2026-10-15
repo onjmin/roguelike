@@ -13,6 +13,7 @@ import {
 import { MOB_IDS, MOBS } from "../data/people/mobs";
 import { SPEAKERS } from "../data/story/quotes";
 import {
+	ACCOUNT_MSG,
 	DAY_TEXT,
 	FX,
 	FX_TEXT,
@@ -22,12 +23,17 @@ import {
 	startPrices,
 	TRADE_MSG,
 } from "../data/trade/trade";
+import { NETCAFE_MSG } from "../data/village/finance";
 import { forgetWalletMemo, walletYen } from "../engine/wallet";
 import {
+	accountYen,
+	deposit,
 	forgetStocksMemo,
 	loadStocks,
+	openAccount,
 	stockValue,
 	syncStocks,
+	withdraw,
 } from "../ui/trade/trade";
 import {
 	bondLevel,
@@ -313,9 +319,10 @@ test(
 				`history ${loadStocks().hist.hoshu.length}`,
 			);
 			ok(
-				r.dividend > 0 && walletYen() === before + r.dividend,
-				"dividend not paid",
+				r.dividend > 0 && loadStocks().cash === r.dividend,
+				"dividend not paid into the account",
 			);
+			ok(walletYen() === before, "dividend went to the wallet");
 			ok(syncStocks(8).dividend === 0, "the same return paid twice");
 			syncStocks(200);
 			ok(loadStocks().hist.hoshu.length <= 24, "history too long");
@@ -328,12 +335,20 @@ test(
 	"B7",
 	"trading texts fit the window and the board lines fit their bars",
 	() => {
-		for (const [k, t] of Object.entries(TRADE_MSG))
+		for (const [k, t] of [
+			...Object.entries(TRADE_MSG),
+			...Object.entries(ACCOUNT_MSG).flatMap(([k, v]) =>
+				([] as string[]).concat(v).map((x) => [`a.${k}`, x] as const),
+			),
+			...Object.entries(NETCAFE_MSG).flatMap(([k, v]) =>
+				([] as string[]).concat(v).map((x) => [`n.${k}`, x] as const),
+			),
+		])
 			if (typeof t === "string")
 				fits(
 					`TRADE_MSG.${k}`,
 					t
-						.replace(/\{(price|have|value|left|net)\}/g, "100,000円")
+						.replace(/\{(price|have|value|left|net|cash)\}/g, "100,000円")
 						.replace("{name}", STOCKS.joshiki.short)
 						.replace("{text}", "")
 						.replace("{head}", "100,000円が　もどってきた。")
@@ -351,6 +366,39 @@ test(
 			FX.levers.includes(1000) && FX.losscut === 0.5,
 			"high leverage and losscut",
 		);
+	},
+);
+
+test(
+	"B8",
+	"the account: deposit and withdraw move yen between the wallet and the account, never below 0",
+	async () => {
+		await withStorage(async (store) => {
+			setPoints(store, 10000);
+			ok(!loadStocks().open, "a new player already has an account");
+			openAccount();
+			ok(loadStocks().open, "the account did not open");
+			ok(deposit(3000), "deposit failed");
+			ok(walletYen() === 7000 && accountYen() === 3000, "deposit did not move");
+			ok(!deposit(8000), "deposited more than the wallet");
+			ok(!withdraw(4000), "withdrew more than the account");
+			ok(withdraw(1000), "withdraw failed");
+			ok(
+				walletYen() === 8000 && accountYen() === 2000,
+				"withdraw did not move",
+			);
+		});
+		// 口座が できる 前に 株を 持っていた 人は 口座が ある ことに
+		await withStorage(async (store) => {
+			setPoints(store, 0);
+			const m = loadStocks();
+			const { open: _o, cash: _c, ...old } = m;
+			old.hold.hoshu = { n: 1, cost: 100 };
+			store.set("kiriko-roguelike/stocks", JSON.stringify(old));
+			forgetStocksMemo();
+			ok(loadStocks().open, "an old holder has no account");
+			ok(loadStocks().cash === 0, "an old holder got free cash");
+		});
 	},
 );
 

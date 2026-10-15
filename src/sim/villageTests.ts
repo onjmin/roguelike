@@ -198,6 +198,7 @@ import { DINER_IMG, DINER_SIZE } from "../data/village/dinerSheet";
 import {
 	doorId,
 	FACILITIES,
+	facilitiesAt,
 	facilityById,
 	facilityEntry,
 	facilityMats,
@@ -8397,4 +8398,27 @@ test("ヲタショップ「神降臨」: 段7から 建ち、レジと ガチャ
 		forgetHomeMemo();
 		forgetWalletMemo();
 	});
+});
+
+test("おんJ証券（2026-10-15）: 新市街支店は 段4から 窓口・端末・株価ボード、ネットカフェは 段5から ブース、おんJマートの ATM は 入金・出金だけ", () => {
+	const shoken = facilityById("shoken");
+	ok(shoken?.from === 4, "the branch is not from stage 4");
+	const sp = shoken?.room?.plays ?? {};
+	ok(
+		sp.window === "shoken" &&
+			sp.terminal === "trade" &&
+			sp.board === "stockboard",
+		"the branch window, terminal or board does not open its play",
+	);
+	const net = facilityById("netcafe");
+	ok(net?.from === 5, "the net cafe is not from stage 5");
+	ok(net?.room?.plays?.booth === "netcafe", "the booth is not play netcafe");
+	const konbini = facilityById("konbini");
+	ok(konbini?.room?.plays?.atm === "atm", "the konbini ATM still trades");
+	// どの 段でも 支店と ネットカフェの 扉の 前は 歩ける（ほかの 施設と かさならない）
+	for (const stage of [4, 5, 6, 7]) {
+		const ids = facilitiesAt(stage).map((f) => f.id);
+		ok(ids.includes("shoken"), `stage ${stage}: no branch`);
+		if (stage >= 5) ok(ids.includes("netcafe"), `stage ${stage}: no net cafe`);
+	}
 });

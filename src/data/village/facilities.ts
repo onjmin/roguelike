@@ -21,9 +21,11 @@ import type { Dir } from "../../engine/types";
 import { ARCADE_TEXT } from "../arcade/text";
 import { NETA_KABE_WALK, netaArt } from "../neta/art";
 import type { NetaPlay } from "../neta/types";
+import { ACCOUNT_MSG } from "../trade/trade";
 import { BUSHITSU_FACILITIES } from "./bushitsu";
 import { CIVIC_FACILITIES } from "./civicHalls";
 import { EATERIES } from "./eateries";
+import { FINANCE_FACILITIES } from "./finance";
 import { FOLK_FACILITIES } from "./folk";
 import { CORPO_ROOM, DANCHI_ROOM, MANSION_ROOM, TOWER_ROOM } from "./housing";
 import type { Cell } from "./map";
@@ -185,6 +187,10 @@ export type FacilityRoom = {
 		| "purikura"
 		| "giftshop"
 		| "trade"
+		| "atm"
+		| "shoken"
+		| "stockboard"
+		| "netcafe"
 		| "otaku"
 		| NetaPlay
 	>;
@@ -1145,7 +1151,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"中から「……もう　ちょい」と　声。",
 				],
 				copier: ["コピー機。\n……スレの　まとめを　刷った　あと。"],
-				atm: ["ATM。\n「おんJ証券　提携。株・FX　24時間」"],
+				atm: [ACCOUNT_MSG.atm],
 				coffee: ["コーヒーマシン。\n「S　100円。Lは　気持ち」"],
 				hot: [
 					"ホットスナックの　ケース。\n「おんJチキ」が　1つだけ　残っている。",
@@ -1164,8 +1170,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 				gift: ["ギフトの　棚。\n「大切な　あの人へ。包装　無料」"],
 			},
 			// ギフトの 棚：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）
-			// ATM：おんJ証券（株・デイトレ・FX。ui/trade/trade.ts）
-			plays: { gift: "giftshop", atm: "trade" },
+			// ATM：おんJ証券の 口座の 入金・出金だけ（売り買いは 端末で。ui/trade/trade.ts）
+			plays: { gift: "giftshop", atm: "atm" },
 			people: [
 				{
 					id: "konbini_clerk",
@@ -4670,6 +4676,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 	...SEASON_FACILITIES,
 	// ── ヲタショップ「神降臨」（data/village/otaku.ts。盛り場の 劇場と カジノの あいだ。段7〜）
 	...OTAKU_FACILITIES,
+	// ── おんJ証券 新市街支店（段4〜）・ネットカフェ「ROM専」（段5〜）（data/village/finance.ts）
+	...FINANCE_FACILITIES,
 ];
 
 /**

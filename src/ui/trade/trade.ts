@@ -1,10 +1,14 @@
-// おんJ証券の 端末（家の パソコン・おんJマートの ATM）。株・デイトレ・FX（決まりと 文は data/trade/trade.ts）。
-// 株価と 持ち株は 別の 保存場所（kiriko-roguelike/stocks）。中断セーブ・記録・町には ふれない。
+// おんJ証券。端末（家の パソコン・ネットカフェ・新市街支店の 端末）で 株・デイトレ・FX、
+// 支店の 窓口で 口座の 開設と 入金・出金、おんJマートの ATM で 入金・出金（決まりと 文は data/trade/trade.ts）。
+// 株価・持ち株・口座は 別の 保存場所（kiriko-roguelike/stocks）。中断セーブ・記録・町には ふれない。
 // 株価は 冒険から 帰った 回数（runStats().runs）だけ 動く（端末を 開いた ときに まとめて。STOCK_CATCHUP まで）。
-// 配当は そのとき 持ち株に 応じて 財布へ。
-// デイトレ・FX は 元手・証拠金を 先に 財布から 出し（spendYen）、終わったら のこりを もどす（earnYen）。
+// 配当は そのとき 持ち株に 応じて 口座へ。
+// 売り買いは 口座の お金（cash）で する。デイトレ・FX は 元手・証拠金を 先に 口座から 出し、終わったら のこりを もどす。
+// 財布（engine/wallet.ts）と 口座の あいだは 入金（spendYen）・出金（earnYen）だけ。
 
 import {
+	ACCOUNT_MSG,
+	CASH_STEPS,
 	DAY,
 	FX,
 	priceStep,
@@ -44,6 +48,10 @@ type StockMemo = {
 	hold: Partial<Record<StockId, Holding>>;
 	/** いちばん 新しい ニュース。 */
 	news: StockNews | null;
+	/** 口座を 作ったか（新市街支店の 窓口）。 */
+	open: boolean;
+	/** 口座の お金（円）。 */
+	cash: number;
 };
 
 let memo: StockMemo | null = null;
@@ -59,6 +67,8 @@ const fresh = (): StockMemo => {
 		) as Record<StockId, number[]>,
 		hold: {},
 		news: null,
+		open: false,
+		cash: 0,
 	};
 };
 
@@ -80,6 +90,13 @@ export const loadStocks = (): StockMemo => {
 			}
 			base.runs = raw.runs;
 			base.news = raw.news ?? null;
+			// 口座が できる 前（2026-10-15 まで）に 端末を 使った 人は 口座が ある ことに（お金は 0円から）
+			base.open =
+				typeof raw.open === "boolean"
+					? raw.open
+					: Object.keys(base.hold).length > 0 || hasFlag(TRADE_TOLD);
+			const cash = Number(raw.cash);
+			base.cash = Number.isFinite(cash) ? Math.max(0, Math.floor(cash)) : 0;
 			return base;
 		}
 	} catch {
@@ -127,9 +144,42 @@ export const syncStocks = (
 	}
 	m.runs = Math.max(m.runs, runs);
 	if (news) m.news = news;
+	m.cash += dividend;
 	saveStocks(m);
-	if (dividend > 0 && !previewing()) earnYen(dividend);
 	return { dividend, news };
+};
+
+/** 口座の お金を ふやす・へらす（へらす ときは 足りなければ 何も せず false）。 */
+const moveCash = (d: number): boolean => {
+	const m = loadStocks();
+	if (m.cash + d < 0) return false;
+	m.cash += d;
+	saveStocks(m);
+	return true;
+};
+
+/** 口座の お金（円）。 */
+export const accountYen = (): number => loadStocks().cash;
+
+/** 口座を 作る（新市街支店の 窓口）。 */
+export const openAccount = (): void => {
+	const m = loadStocks();
+	m.open = true;
+	saveStocks(m);
+};
+
+/** 入金（財布 → 口座）。手もとが 足りなければ 何も せず false。 */
+export const deposit = (yen: number): boolean => {
+	if (!spendYen(yen, previewing())) return false;
+	moveCash(yen);
+	return true;
+};
+
+/** 出金（口座 → 財布）。口座が 足りなければ 何も せず false。 */
+export const withdraw = (yen: number): boolean => {
+	if (!moveCash(-yen)) return false;
+	if (!previewing()) earnYen(yen);
+	return true;
 };
 
 /** 持ち株の 評価（円）。 */
@@ -156,10 +206,14 @@ const change = (h: readonly number[]): string => {
 	return p === 0 ? "±0%" : `${p > 0 ? "▲" : "▼"}${Math.abs(p).toFixed(1)}%`;
 };
 
-/** 端末（家の パソコン・ATM）。 */
+/** 端末（家の パソコン・ネットカフェ・新市街支店の 端末）。口座が なければ 支店を すすめるだけ。 */
 export const tradeTerminal = async (ctx: Ctx, s: Story): Promise<void> => {
+	if (!loadStocks().open) {
+		await s.narrate(TRADE_MSG.noAccount);
+		return;
+	}
 	const r = syncStocks();
-	await s.narrate(TRADE_MSG.terminal);
+	await s.narrate(fill(TRADE_MSG.terminal, { cash: yen(accountYen()) }));
 	// 株価が いつ 動くかを はじめの 1回だけ（端末を 開きなおしても 動かない）
 	if (!hasFlag(TRADE_TOLD)) {
 		await s.narrate(TRADE_MSG.howPrices);
@@ -189,7 +243,7 @@ const stockDesk = async (ctx: Ctx, s: Story): Promise<void> => {
 		await s.wait(0);
 		const v = await listWindow(
 			ctx,
-			`${fill(TRADE_MSG.stockTitle, { value: yen(stockValue(m)) })}<br><small>手もと　${yen(walletYen())}</small>`,
+			`${fill(TRADE_MSG.stockTitle, { value: yen(stockValue(m)) })}<br><small>口座　${yen(m.cash)}</small>`,
 			STOCK_IDS.map((id) => {
 				const h = m.hold[id];
 				return {
@@ -221,7 +275,7 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 	);
 	const k = await s.choose([...TRADE_MSG.stockMenu], { cancel: 2 });
 	if (k === 0) {
-		const have = walletYen();
+		const have = m.cash;
 		const max = Math.floor(have / price);
 		if (max <= 0) {
 			await s.narrate(fill(TRADE_MSG.short, { have: yen(have) }));
@@ -236,7 +290,7 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 			{ cancel: sizes.length },
 		);
 		const q = sizes[i];
-		if (!q || !spendYen(q * price, previewing())) return;
+		if (!q || !moveCash(-q * price)) return;
 		const m2 = loadStocks();
 		const h = m2.hold[id] ?? { n: 0, cost: 0 };
 		m2.hold[id] = {
@@ -276,8 +330,8 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 		const net = Math.round((price - h.cost) * q);
 		h.n -= q;
 		if (h.n <= 0) delete m2.hold[id];
+		m2.cash += got;
 		saveStocks(m2);
-		if (!previewing()) earnYen(got);
 		s.se("arcCoin");
 		await s.narrate(
 			fill(TRADE_MSG.sold, {
@@ -297,13 +351,13 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 
 // ───────────────── デイトレ・FX ─────────────────
 
-/** 元手を えらんで 払う（やめた・足りない ときは null）。 */
+/** 元手を えらんで 口座から 出す（やめた・足りない ときは null）。 */
 const stake = async (
 	s: Story,
 	ask: string,
 	list: readonly number[],
 ): Promise<number | null> => {
-	const have = walletYen();
+	const have = accountYen();
 	const can = list.filter((x) => x <= have);
 	if (!can.length) {
 		await s.narrate(
@@ -316,19 +370,19 @@ const stake = async (
 		cancel: can.length,
 	});
 	const x = can[i];
-	if (!x || !spendYen(x, previewing())) return null;
+	if (!x || !moveCash(-x)) return null;
 	s.se("pay");
 	return x;
 };
 
-/** 終わった あと：のこりを 財布へ もどして 差し引きを 言う。 */
+/** 終わった あと：のこりを 口座へ もどして 差し引きを 言う。 */
 const settle = async (
 	s: Story,
 	paid: number,
 	back: number,
 	head: string,
 ): Promise<void> => {
-	if (back > 0 && !previewing()) earnYen(back);
+	if (back > 0) moveCash(back);
 	const net = back - paid;
 	await s.narrate(
 		fill(TRADE_MSG.result, {
@@ -387,4 +441,129 @@ const fxDesk = async (ctx: Ctx, s: Story): Promise<void> => {
 	}
 	if (r.cut === "losscut") await s.narrate(TRADE_MSG.losscut);
 	await settle(s, paid, r.left, fill(TRADE_MSG.back, { price: yen(r.left) }));
+};
+
+// ───────────────── 口座（窓口・ATM） ─────────────────
+
+/** 額を えらぶ（CASH_STEPS の うち max まで ＋ のこり ぜんぶ。やめたら null）。 */
+const pickAmount = async (
+	s: Story,
+	ask: string,
+	max: number,
+): Promise<number | null> => {
+	const list = CASH_STEPS.filter((x) => x < max);
+	await s.narrate(ask);
+	const i = await s.choose(
+		[
+			...list.map((x) => yen(x)),
+			fill(ACCOUNT_MSG.all, { price: yen(max) }),
+			"やめる",
+		],
+		{ cancel: list.length + 1 },
+	);
+	if (i === list.length) return max;
+	return list[i] ?? null;
+};
+
+/** 入金・出金・残高（ATM と 口座の ある 窓口）。 */
+const cashDesk = async (s: Story): Promise<void> => {
+	for (;;) {
+		const n = await s.choose([...ACCOUNT_MSG.menu], { cancel: 3 });
+		if (n === 0) {
+			const have = walletYen();
+			if (have <= 0) {
+				await s.narrate(ACCOUNT_MSG.noWallet);
+				continue;
+			}
+			const x = await pickAmount(
+				s,
+				fill(ACCOUNT_MSG.depositAsk, { have: yen(have) }),
+				have,
+			);
+			if (x === null || !deposit(x)) continue;
+			s.se("pay");
+			await s.narrate(
+				fill(ACCOUNT_MSG.deposited, {
+					price: yen(x),
+					cash: yen(accountYen()),
+				}),
+			);
+		} else if (n === 1) {
+			const cash = accountYen();
+			if (cash <= 0) {
+				await s.narrate(ACCOUNT_MSG.noCash);
+				continue;
+			}
+			const x = await pickAmount(
+				s,
+				fill(ACCOUNT_MSG.withdrawAsk, { cash: yen(cash) }),
+				cash,
+			);
+			if (x === null || !withdraw(x)) continue;
+			s.se("arcCoin");
+			await s.narrate(
+				fill(ACCOUNT_MSG.withdrew, {
+					price: yen(x),
+					cash: yen(accountYen()),
+				}),
+			);
+		} else if (n === 2) {
+			syncStocks();
+			await s.narrate(
+				fill(ACCOUNT_MSG.balance, {
+					cash: yen(accountYen()),
+					value: yen(stockValue()),
+				}),
+			);
+		} else return;
+	}
+};
+
+/** おんJマートの ATM（ATM の 文の あと。口座が なければ カードが ない）。 */
+export const atmDesk = async (s: Story): Promise<void> => {
+	if (!loadStocks().open) {
+		await s.narrate(ACCOUNT_MSG.noCard);
+		return;
+	}
+	await cashDesk(s);
+};
+
+/** 新市街支店の 窓口（口座が なければ 開設、あれば 入金・出金）。 */
+export const shokenWindow = async (s: Story): Promise<void> => {
+	if (loadStocks().open) {
+		await s.narrate(ACCOUNT_MSG.window);
+		await cashDesk(s);
+		return;
+	}
+	await s.narrate(ACCOUNT_MSG.welcome);
+	await s.narrate(ACCOUNT_MSG.openAsk);
+	if ((await s.choose([...ACCOUNT_MSG.openMenu], { cancel: 1 })) !== 0) {
+		await s.narrate(ACCOUNT_MSG.nevermind);
+		return;
+	}
+	await s.narrate(ACCOUNT_MSG.idCheck);
+	await s.narrate(ACCOUNT_MSG.careerAsk);
+	const c = await s.choose([...ACCOUNT_MSG.careerMenu], { cancel: 0 });
+	await s.narrate(ACCOUNT_MSG.career[c] ?? ACCOUNT_MSG.career[0]);
+	await s.narrate(ACCOUNT_MSG.risk);
+	if ((await s.choose([...ACCOUNT_MSG.agreeMenu], { cancel: 1 })) !== 0) {
+		await s.narrate(ACCOUNT_MSG.nevermind);
+		return;
+	}
+	openAccount();
+	await s.narrate(ACCOUNT_MSG.opened);
+	await s.narrate(ACCOUNT_MSG.howTo);
+};
+
+/** 支店の 株価ボード（いまの 株価と 前の 帰りからの 動き。2銘柄ずつ）。 */
+export const stockBoard = async (s: Story): Promise<void> => {
+	syncStocks();
+	const m = loadStocks();
+	const rows = STOCK_IDS.map((id) =>
+		[STOCKS[id].short, yen(m.prices[id]), change(m.hist[id] ?? [])]
+			.filter(Boolean)
+			.join("　"),
+	);
+	for (let i = 0; i < rows.length; i += 2)
+		await s.narrate(rows.slice(i, i + 2).join("\n"));
 };
