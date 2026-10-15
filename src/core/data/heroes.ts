@@ -5,7 +5,9 @@
 //   範囲の 技（爆発）でしか 手を 出せない。吹きとばされると 壁の 中まで 飛ぶ。
 // - 解音ゼロ：残機 3。メイン機 VHz8-0 → プロト HeBc-0 → レン XQxS-0 の 順に、たおれると 次の 機体に
 //   バトンタッチ（装備・持ち物・レベルは 引きつぐ。別の 機体なので HP・おなかは 満タン、状態異常は もどる。
-//   のびた 最大HP・最大ちからは 4分の3 引きつぐ）。どの 機体も 初めの HP・ちからは キリコより はっきり 低い。
+//   のびた 最大HP・最大ちからも 欠けずに 引きつぐ）。どの 機体も 初めの HP・ちからは キリコより はっきり 低い。
+//   のびた ぶんは はじめ 半分ずつ 欠けて いたが、2機目で 4分の1 しか 残らず Lv6 で HP 19 ほどに なったので、
+//   2026-10-15 に 欠けないように した（作者）。
 // core は data/ を 読まないので、名前と 能力値は ここに じかに 書く（絵は data/people/cast.ts の heroWalk）。
 
 import { START_HP, START_STR } from "../balance";
@@ -32,14 +34,6 @@ export const ZERO_BODIES: readonly ZeroBody[] = [
 	{ model: "HeBc-0", name: "プロト", hp: START_HP - 6, str: START_STR - 2 },
 	{ model: "XQxS-0", name: "レン", hp: START_HP - 4, str: START_STR - 3 },
 ];
-
-/**
- * バトンタッチで 次の 機体へ 引きつぐ「のびた ぶん」（レベルアップ・成長の実などで 上がった 最大HP・
- * 最大ちから）の 割合。データの 引きつぎで 4分の1 欠ける。
- * 2026-10-15 に 0.5 → 0.75（半分だと 2機目で 4分の1 しか 残らず、Lv6 で HP 19 ほどに なった。
- * pnpm sim --hero zero で 倒れる 階の 平均は B12.9 → B13.3）。レベル・経験値は そのまま。
- */
-export const ZERO_GROWTH_CARRY = 0.75;
 
 export const HERO_NAME: Record<HeroId, string> = {
 	kiriko: "キリコ",

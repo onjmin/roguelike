@@ -2,11 +2,7 @@
 
 import { HUNGER_MAX, START_HP, START_STR } from "../core/balance";
 import { DUNGEONS } from "../core/data/dungeons";
-import {
-	WALL_HUNGER,
-	ZERO_BODIES,
-	ZERO_GROWTH_CARRY,
-} from "../core/data/heroes";
+import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
 import { roomExits, T_WALL, tileAt } from "../core/mapgen";
@@ -222,7 +218,7 @@ test("ロゼ: すり抜けの 切りかえは リプレイに 残る（キリコ
 
 // ───────────────── 解音ゼロ ─────────────────
 
-test("ゼロ: 3機とも キリコより はっきり 低い、たおれると 次の 機体に バトンタッチ（持ち物・レベルは そのまま、のびた ぶんは 半分、おなかは 満タン）", () => {
+test("ゼロ: 3機とも キリコより はっきり 低い、たおれると 次の 機体に バトンタッチ（持ち物・レベルは そのまま、のびた ぶんも そのまま、おなかは 満タン）", () => {
 	ok(ZERO_BODIES.length === 3, "3 bodies");
 	ok(
 		ZERO_BODIES.map((b) => b.model).join() === "VHz8-0,HeBc-0,XQxS-0",
@@ -251,9 +247,8 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 	ok(!r.s.end && r.s.body === 1 && r.heroName === "プロト", "proto");
 	ok(
 		r.p.hp === r.p.maxHp &&
-			r.p.maxHp ===
-				(ZERO_BODIES[1]?.hp ?? 0) + Math.floor(grown * ZERO_GROWTH_CARRY),
-		`hp: half of the growth (${grown}) → ${r.p.maxHp}`,
+			r.p.maxHp === (ZERO_BODIES[1]?.hp ?? 0) + grown,
+		`hp: all of the growth (${grown}) → ${r.p.maxHp}`,
 	);
 	ok(r.p.str === r.p.maxStr && r.p.status.confuse === 0, "reset");
 	ok(r.p.hunger === HUNGER_MAX, "fed: a different body");
