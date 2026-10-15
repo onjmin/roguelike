@@ -50,6 +50,7 @@ import { purikura } from "../purikura/purikura";
 import { sabaPlay } from "../saba/saba";
 import {
 	atmDesk,
+	guideRack,
 	shokenWindow,
 	stockBoard,
 	tradeTerminal,
@@ -325,6 +326,8 @@ export const buildFacility = (
 			else if (play === "atm") await atmDesk(s);
 			else if (play === "shoken") await shokenWindow(s);
 			else if (play === "stockboard") await stockBoard(s);
+			// 支店の パンフ：はじめての 人への 説明
+			else if (play === "tradeguide") await guideRack(s);
 			// ネットカフェの ブース：払って ネットと トレード
 			else if (play === "netcafe") await netcafeBooth(ctx, s);
 		});

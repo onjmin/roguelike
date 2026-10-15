@@ -21,6 +21,7 @@ import {
 	STOCK_IDS,
 	STOCKS,
 	startPrices,
+	TRADE_GUIDE,
 	TRADE_MSG,
 } from "../data/trade/trade";
 import { NETCAFE_MSG } from "../data/village/finance";
@@ -342,6 +343,12 @@ test(
 			),
 			...Object.entries(NETCAFE_MSG).flatMap(([k, v]) =>
 				([] as string[]).concat(v).map((x) => [`n.${k}`, x] as const),
+			),
+			...Object.entries(TRADE_GUIDE).flatMap(([k, v]) =>
+				([] as unknown[])
+					.concat(v)
+					.flat()
+					.map((x) => [`g.${k}`, x] as const),
 			),
 		])
 			if (typeof t === "string")

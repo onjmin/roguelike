@@ -190,6 +190,7 @@ export type FacilityRoom = {
 		| "atm"
 		| "shoken"
 		| "stockboard"
+		| "tradeguide"
 		| "netcafe"
 		| "otaku"
 		| NetaPlay

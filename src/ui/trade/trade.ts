@@ -20,6 +20,7 @@ import {
 	type StockId,
 	type StockNews,
 	startPrices,
+	TRADE_GUIDE,
 	TRADE_MSG,
 } from "../../data/trade/trade";
 import type { Story } from "../../engine/defs";
@@ -36,6 +37,31 @@ const KEY = "kiriko-roguelike/stocks";
 
 /** 株価が いつ 動くかを 言った（Progress.flags）。 */
 const TRADE_TOLD = "toldTrade";
+/** デイトレ・FX の はじめての 説明を 言った（Progress.flags）。 */
+const DAY_TOLD = "toldDayTrade";
+const FX_TOLD = "toldFx";
+
+/** はじめての ときだけ 説明を 読む（下見では 覚えない）。 */
+const tellOnce = async (
+	s: Story,
+	flag: string,
+	lines: readonly string[],
+): Promise<void> => {
+	if (hasFlag(flag)) return;
+	for (const t of lines) await s.narrate(t);
+	if (!previewing()) addFlag(flag);
+};
+
+/** 支店の パンフの 棚（口座・株・デイトレ・FX の 説明。いつでも 読める）。 */
+export const guideRack = async (s: Story): Promise<void> => {
+	const last = TRADE_GUIDE.topics.length - 1;
+	for (;;) {
+		const n = await s.choose([...TRADE_GUIDE.topics], { cancel: last });
+		const pages = TRADE_GUIDE.pages[n];
+		if (!pages) return;
+		for (const t of pages) await s.narrate(t);
+	}
+};
 
 type Holding = { n: number; cost: number };
 
@@ -399,6 +425,7 @@ const settle = async (
 
 const dayDesk = async (ctx: Ctx, s: Story): Promise<void> => {
 	const m = loadStocks();
+	await tellOnce(s, DAY_TOLD, TRADE_GUIDE.firstDay);
 	await s.narrate(TRADE_MSG.pickStock);
 	const i = await s.choose(
 		[
@@ -423,6 +450,7 @@ const fxOpen = (): number => {
 };
 
 const fxDesk = async (ctx: Ctx, s: Story): Promise<void> => {
+	await tellOnce(s, FX_TOLD, TRADE_GUIDE.firstFx);
 	await s.narrate(TRADE_MSG.leverAsk);
 	const li = await s.choose([...FX.levers.map((x) => `${x}倍`), "やめる"], {
 		cancel: FX.levers.length,
@@ -552,7 +580,7 @@ export const shokenWindow = async (s: Story): Promise<void> => {
 	}
 	openAccount();
 	await s.narrate(ACCOUNT_MSG.opened);
-	await s.narrate(ACCOUNT_MSG.howTo);
+	for (const t of TRADE_GUIDE.afterOpen) await s.narrate(t);
 };
 
 /** 支店の 株価ボード（いまの 株価と 前の 帰りからの 動き。2銘柄ずつ）。 */

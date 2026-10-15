@@ -42,7 +42,7 @@ const reception = (k: RoomKit): Record<string, TileDef> => ({
 // ───────────────── 新市街支店 ─────────────────
 
 // 灰色の 床と 白い 壁。奥の 壁に 電光の 株価ボード、左に 窓口（台の うしろに 係）、右に 端末 3台（手前に いす）、
-// 左の 手前に 待合の ソファ、右の 手前に 観葉植物と ごみ箱
+// 左の 手前に 待合の ソファ、入口の 右に パンフレットの 立て札（はじめての 人への 説明）、右の 手前に 観葉植物と ごみ箱
 const SHOKEN_ROOM: FacilityRoom = {
 	look: {
 		floor: ri("flGrey"),
@@ -59,10 +59,11 @@ const SHOKEN_ROOM: FacilityRoom = {
 		"#[==]...tuv#",
 		"#.......ccc#",
 		"#sr........#",
-		"#SR......Fq#",
+		"#SR...p..Fq#",
 		"####DD######",
 	],
 	tiles: (k) => ({
+		p: k.on(ri("standSign")),
 		"1": k.low(art("led")),
 		"2": k.low(art("led", 1)),
 		"3": k.low(art("led", 2)),
@@ -97,8 +98,10 @@ const SHOKEN_ROOM: FacilityRoom = {
 		r: "sofa",
 		F: "plant",
 		q: "trash",
+		p: "guide",
 	},
 	lines: {
+		guide: ["パンフレットの　立て札。\n「はじめての　おんJ証券」"],
 		board: ["電光の　株価ボード。\n数字が　ちかちか　流れている。"],
 		notice: ["はり紙。\n「投資は　余裕資金で」"],
 		plant: ["観葉植物。\n……葉っぱが　右肩あがりに　のびている。"],
@@ -107,8 +110,14 @@ const SHOKEN_ROOM: FacilityRoom = {
 		sofa: ["待合の　ソファ。\n……株価ボードが　よく　見える。"],
 		trash: ["ごみ箱。\n……くしゃくしゃの　取引報告書。"],
 	},
-	// 窓口：口座の 開設・入金・出金。端末：株・デイトレ・FX。ボード：いまの 株価（ui/trade/trade.ts）
-	plays: { window: "shoken", terminal: "trade", board: "stockboard" },
+	// 窓口：口座の 開設・入金・出金。端末：株・デイトレ・FX。ボード：いまの 株価。
+	// パンフ：口座・株・デイトレ・FX の 説明（ui/trade/trade.ts）
+	plays: {
+		window: "shoken",
+		terminal: "trade",
+		board: "stockboard",
+		guide: "tradeguide",
+	},
 	people: [
 		{
 			id: "shoken_clerk",
