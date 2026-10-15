@@ -954,7 +954,7 @@ test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひ�
 	});
 });
 
-test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持たせる（外れた たおれで 引きなおさない・同じ たおれで 二度・持って 出る 前・倉庫に ある ときは 渡さない。やめた 冒険では 渡さない）", async () => {
+test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（同じ たおれで 二度・持って 出る 前・倉庫に ある ときは 渡さない。やめた 冒険では 渡さない）", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
 		putTown({ stage: 1 });
@@ -974,7 +974,7 @@ test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持�
 			});
 		died(1000);
 		const first = fakeStory();
-		await reliefScript(first.s, 0);
+		await reliefScript(first.s);
 		ok(
 			PUYU_RELIEF.some((t) => first.log.includes(`say nanj: ${t}`)) &&
 				first.log.includes(`narrate: ${RELIEF_NOTE}`),
@@ -986,18 +986,15 @@ test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持�
 		);
 		// 同じ たおれ：もう 来ない
 		const again = fakeStory();
-		await reliefScript(again.s, 0);
+		await reliefScript(again.s);
 		ok(!again.log.length, `came twice: ${again.log.join(" / ")}`);
 		// 持って 出る 前に また たおれても（別の タブ など）ふえない
-		ok(!giveRelief(2000, 0), "a second sword while one is pending");
+		ok(!giveRelief(2000), "a second sword while one is pending");
 		// 持って 出る（1回だけ）
 		ok(takeRelief() && !takeRelief(), "taken twice");
 		ok(loadTown().relief === undefined, "still pending after taking");
 		// 次の たおれで また もらえる。倉庫に ある ときは もらえない
-		ok(giveRelief(3000, 0) && takeRelief(), "no sword for a new fall");
-		// 外れ：その たおれでは もらえず、帰りなおしても 引きなおさない
-		ok(!giveRelief(3500, 0.99) && !loadTown().relief, "a sword on a miss");
-		ok(!giveRelief(3500, 0), "rerolled the same fall");
+		ok(giveRelief(3000) && takeRelief(), "no sword for a new fall");
 		const t = loadTown();
 		t.storage.push({
 			uid: 1,
@@ -1009,12 +1006,12 @@ test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持�
 			count: 1,
 		});
 		saveTown(t);
-		ok(!giveRelief(4000, 0), "a sword while one is in the storehouse");
+		ok(!giveRelief(4000), "a sword while one is in the storehouse");
 		// やめた 冒険では 渡さない
 		saveTown({ ...loadTown(), storage: [] });
 		died(5000, QUIT_CAUSE);
 		const quit = fakeStory();
-		await reliefScript(quit.s, 0);
+		await reliefScript(quit.s);
 		ok(!quit.log.length && !loadTown().relief, "a sword for quitting");
 	});
 });
