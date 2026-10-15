@@ -5,7 +5,7 @@
 // どれも 寄り道で、強さ・道具・売上・町の 段には 何も 効かない。見た目の 乱数は Math.random。
 // カジノの 台は 持って いる チップ（チップ入れ。engine/chips.ts）から 何枚か 出して 遊び、のこりは チップ入れに もどる。
 // 円と チップの やり取りは 入口の 換金所（物の 名前 "cashier"）だけ（ui/arcade/casinoChips.ts。2026-10-15 作者：
-// 「換金所で 一元的に。ゲームを やる 場所で やる ものじゃない」。前は 台ごとに 買って 席を 立つと 換金だった）。
+// 「換金所で 一元的に。ゲームを やる 場所で やる ものじゃない」）。
 // 記録は localStorage の kiriko-roguelike/arcade だけ（?stage= ・?event= の ときは 書かない。memo には 残る）。
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
 

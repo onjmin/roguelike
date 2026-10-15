@@ -1073,7 +1073,7 @@ const contactPhase = async (
 	const stop = STOP_MS[c];
 	const amp = SHAKE_PX[c];
 	const flyMs = bb ? 250 : 450;
-	// 前は センターの 上へ、ファウルは 早ければ 三塁がわ、遅ければ 上へ
+	// 前に 飛んだ 打球は センターの 上へ、ファウルは 早ければ 三塁がわ、遅ければ 上へ
 	const to = bb
 		? { x: 120 + bb.theta * 2, y: 40 }
 		: d < 0

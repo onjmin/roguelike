@@ -315,7 +315,7 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
  * 口から 人が 歩いてくる 場面（来客・越してくる 仲間や 住人・ROM専）の 前に、キリコが その 口の 前に いれば
  * となりの 空いた マスへ 1歩 どかす（口から 広場への 道を ふさがない マス。細道なら 横の 行き止まりへ。
  * data/village/map.ts の asideSpot）。口から はなれて いれば 動かない。場面で 人を 置いた マス（並んだ・呼んだ 仲間）には
- * どかない（前は 口の 前に 並んだ 仲間の マスへ キリコが 重なって 立った）。
+ * どかない（重なって 立たない ように）。
  */
 const stepAside = async (
 	s: Story,
@@ -404,8 +404,7 @@ const playCue = async (
 	hooks: ReturnHooks,
 ): Promise<void> => {
 	if (c === "roms") await walkInRoms(s, a.dungeon);
-	// やきうが 村の 口から 出ていく（電池板の 山場。歩いて 口まで 行き、見えなく なる。
-	// 前は 語りで 出ていった あとも 姿が 残っていた。2026-10-13 作者の 指摘）
+	// やきうが 村の 口から 出ていく（電池板の 山場。歩いて 口まで 行き、見えなく なる）
 	else if (c === "nanjLeave") {
 		const gate = exitFor(a.dungeon).cell;
 		await s.look("nanj");

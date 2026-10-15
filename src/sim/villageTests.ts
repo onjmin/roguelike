@@ -7905,7 +7905,7 @@ test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓�
 		);
 		for (const d of m.dishes) {
 			ok(width(d.name) <= 9, `${id}: "${d.name}" is too long for a choice`);
-			// 品書きは「名前　値段」（2026-10-14 有料に。長い 名前は label）
+			// 品書きは「名前　値段」（長い 名前は label）
 			ok(
 				width(dishLabel(d)) <= 9,
 				`${id}: "${dishLabel(d)}" is too long for a choice`,

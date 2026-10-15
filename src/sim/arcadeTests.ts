@@ -1475,7 +1475,7 @@ test("記録: こわれた 中身は 初期値、台ごとに 別、?stage= の 
 			"kiriko-roguelike/arcade",
 			JSON.stringify({
 				v: 1,
-				// drive は 消した 台（2026-10-15。古い 記録は 読みとばす）
+				// drive は もう ない 台（古い 記録に 残って いても 読みとばす）
 				best: { shooter: -5, slot: 77, rhythm: "x", wangan: 1e12, drive: 500 },
 				plays: { slot: 3 },
 				tutored: ["slot", "nope", 3],

@@ -679,7 +679,7 @@ test("pitcher", "not in a straight line: never throws", () => {
 	}
 });
 
-// ───────────────── にょっす牛（poison。前の名前は 毒カボチャ → まんぜう軍） ─────────────────
+// ───────────────── にょっす牛（poison） ─────────────────
 
 test("pumpkin", "poison: lowers str", () => {
 	const r = arena("pumpkin");
@@ -1047,7 +1047,7 @@ test("knight", "armor: melee halved; throw/magic/blast unchanged", () => {
 	ok(dealt(r, m, 20, "hit") === 20, "sealed knight still halves melee");
 });
 
-// ───────────────── 風呂キャンセル界隈（rust。前の名前は 錆び亡者） ─────────────────
+// ───────────────── 風呂キャンセル界隈（rust） ─────────────────
 
 test("sabi", "rust: lowers the shield's plus", () => {
 	const r = arena("sabi");
