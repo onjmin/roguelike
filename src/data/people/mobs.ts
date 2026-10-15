@@ -353,7 +353,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					k("……かわいいンゴ"),
 					b(
 						{ k: "turn", route: "RDLUD" },
-						e({ emote: "!" }, m("……しゃべった🥺\n……知ってた。")),
+						e({ emote: "!" }, m("……かわいいって、いった🥺\n……知ってた。")),
 					),
 				],
 			},
