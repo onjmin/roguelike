@@ -640,7 +640,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			[1, 28, ",,,,,,,"],
 			[1, 29, ",,,,,,;"],
 			[2, 30, ",,,,,"],
-			// 庭から 浜へ 抜ける すきま（前は 森を 回って 町の 通りまで 出た）
+			// 庭から 浜へ 抜ける すきま（森を 回って 町の 通りまで 出なくて すむ）
 			[4, 31, ","],
 		],
 		// 灰色の 瓦・和の 店先
@@ -2769,7 +2769,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			door2: "E",
 			keys: {
 				...ROOF_FLAT,
-				// ガラスの 壁で そろえる（前は 1階だけ 茶色の 板で、ちぐはぐ だった。2026-10-13）
+				// どの 階も ガラスの 壁で そろえる
 				g: [art("wallTex", 3)],
 				G: [art("wallTex", 3), art("glass", 1)],
 				t: [art("wallTex", 3), art("autoDoor")],

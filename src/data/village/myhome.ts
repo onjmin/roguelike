@@ -530,7 +530,7 @@ export const GOAL_FURNITURE = Object.fromEntries(
 			goalFurniture(d),
 			{
 				name: def.name,
-				// 台（1×1。2026-10-15 まで 1×2）。品は 台に 重ねて 半マス 上に、キャラより 手前に 描く
+				// 台（1×1）。品は 台に 重ねて 半マス 上に、キャラより 手前に 描く
 				cells: [[`${GOAL_STAND}|${onStand(def.icon ?? "")}`]],
 				line: goalLine(def.name, def.flavor),
 			},

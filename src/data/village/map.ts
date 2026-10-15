@@ -822,13 +822,13 @@ const eastDistrict = (stage: number): [number, number, string][] => {
 	for (let y = 3; y <= 40; y++) out.push([EAST_X, y, ",".repeat(w)]);
 	for (const y of [41, 42])
 		out.push([EAST_X, y, (paved ? "ゆ" : "さ").repeat(w)]);
-	// 銭湯の 裏から 新市街へ 抜ける 小道（森の へりの 木を 抜く。前は 浜か 町の 通りまで 回った）
+	// 銭湯の 裏から 新市街へ 抜ける 小道（森の へりの 木を 抜く。浜や 町の 通りまで 回らずに すむ）
 	out.push([38, 25, ",,"]);
 	const vAt = (x: number) =>
 		V_STREETS.find((v) => x >= v.walks[0] && x <= v.walks[1]);
 	const hAt = (y: number) =>
 		H_STREETS.find((h) => y >= h.walks[0] && y <= h.walks[1]);
-	// 崖下の 道から 北の 中庭へ 抜ける 芝の 小道（前は 北の 通りの 2車線）
+	// 崖下の 道から 北の 中庭へ 抜ける 芝の 小道
 	for (const y of [10, 11]) out.push([31, y, ",".repeat(EAST_X - 31)]);
 	// 横の 通り
 	for (const h of H_STREETS) {
@@ -1029,7 +1029,7 @@ export const villageRows = (v: VillageView): string[] => {
 	if (layoutStage(v) >= SHRINE_FROM) stamp(rows, 1, 4, SHRINE_BLOCK);
 	if (layoutStage(v) >= BATH_FROM) {
 		stamp(rows, 31, 24, BATH_BLOCK);
-		// のれんの 前から 北の 道（バス停）へ 抜ける すきま（前は 池の 側か 浜を 回った）
+		// のれんの 前から 北の 道（バス停）へ 抜ける すきま（池の 側や 浜を 回らずに すむ）
 		put(rows, [32, 23], ",");
 	}
 	// 音楽室「ピアノ機能」（段3 から。南の 池の そば）
@@ -1375,7 +1375,7 @@ const isTaken = (taken: readonly Cell[], [x, y]: Cell): boolean =>
  * (x, y) の まわりの 空いた マス（近い 順に n こ）。村の 場面で 話す 仲間を キリコの そばに 呼ぶ ときに 使う
  * （ui/village/villageReturn.ts の gather）。人や 看板の いる マス・踏むと 動く マスは さける。
  * 広場（蓄音機の 前）から (x, y) を 通らずに 歩いて 来られる マスだけ（店の 台の うしろ・キリコが 立つと
- * ふさがる 細道の 先には 呼ばない。前は そこへ 呼ばれた 人が 歩いて 来られず、遠くから 話していた）。
+ * ふさがる 細道の 先には 呼ばない。そこだと 呼ばれた 人が 歩いて 来られず、遠くから 話す ことに なる）。
  * taken は 場面で もう 人を 置いた マス（口の 前に 並んだ 仲間・呼んだ 仲間。地図の 人では ないので ここで 外す）。
  */
 export const spotsAround = (

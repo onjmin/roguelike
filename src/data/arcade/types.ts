@@ -3,7 +3,7 @@
 // どれも "arcade"。ui/village/facilities.ts は play が "arcade" なら ui/arcade/arcade.ts の arcadePlay に 物の 名前を わたす。
 // どれも 寄り道で、強さ・道具・ゴールド・売上・町の 段には 何も 効かない（記録は ハイスコアだけ）。
 // カジノの 台は 財布の お金で 買った チップ（パチンコは 玉）で 遊び、席を 立つと 換金する
-// （2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。前は 店が 貸す 遊びの チップ。data/arcade/casino.ts）。
+// （2026-10-14 作者：「お金を 賭けない 方針は 撤廃」。data/arcade/casino.ts）。
 
 export const ARCADE_GAMES = [
 	// ── ゲームセンター「連コ」
