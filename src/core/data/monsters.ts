@@ -722,7 +722,7 @@ const M: MonsterDef[] = [
 		atk: 10,
 		def: 12,
 		exp: 50,
-		floors: [10, 10],
+		floors: [8, 8],
 		weight: 0,
 		abilities: [
 			{ k: "ranged", rate: 1 / 3, atk: 14, verb: "ヤシの実を　投げた" },
@@ -741,7 +741,7 @@ const M: MonsterDef[] = [
 		atk: 7,
 		def: 20,
 		exp: 180,
-		floors: [15, 15],
+		floors: [11, 11],
 		weight: 0,
 		abilities: [
 			{ k: "breath", rate: 1 / 5, dmg: [6, 10], what: "熱々の　たこ焼き" },
@@ -761,7 +761,7 @@ const M: MonsterDef[] = [
 		atk: 7,
 		def: 20,
 		exp: 380,
-		floors: [16, 16],
+		floors: [12, 12],
 		weight: 0,
 		abilities: [{ k: "knockback", rate: 1 / 4 }, { k: "berserk" }],
 		board: "festival",
@@ -779,7 +779,7 @@ const M: MonsterDef[] = [
 		atk: 10,
 		def: 20,
 		exp: 750,
-		floors: [27, 27],
+		floors: [16, 16],
 		weight: 0,
 		abilities: [
 			{ k: "ranged", rate: 1 / 3, atk: 18, verb: "熱い　湯を　かけた" },

@@ -2,13 +2,13 @@
 // 板ごとに 階の数・道具の出かた・決まり（板の 気風から）が ちがう。名前と 語りは data/story/story.ts、
 // 見た目と 曲（板ごとに 1つ。全フロア 同じ）は ui/dungeon/theme.ts。
 //
-// - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 4階。入門：杖だけ未識別・のろいなし・祭りなし・
-//   罠は B3 から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
-// - main：風呂板（おふJ）の 20階。湯治：HP の 自然回復が 1.5倍。
+// - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 3階。入門：杖だけ未識別・のろいなし・祭りなし・
+//   罠は B3（底）から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
+// - main：風呂板（おふJ）の 14階。湯治：HP の 自然回復が 1.5倍。
 //
 // 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
 // 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town/town.ts の CARRY_REFUSE）。
-// - deep：電池板（でんJ。過疎で 謎が多い）の 30階。充電：杖の 回数が 1 多い。
+// - deep：電池板（でんJ。過疎で 謎が多い）の 20階。充電：杖の 回数が 1 多い。
 //   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい。
 //
 // 目的（objective）：物語の 品を 運ぶ 板（パン板・風呂板・電池板・過去ログの底）は 持ち帰り（fetch）、
@@ -18,10 +18,11 @@
 // level は「その階が 本編の何階ぶんの強さか」。敵の顔ぶれ・罠の数と種類・祭りの大きさ・変化の杖は
 // これで引く。見た目と曲の層は UI 側（ui/dungeon/theme.ts）。
 //
-// 階の数は 開く 順に およそ 1.5倍ずつ（ポケダンの ちいさなもり が B3F で はじまるのに ならった）：
-// パン板 4 → きのこ板 6 → 離島板 9 → おんたこ・お祭り 13 → 風呂板 20 → 電池板 30 → 過去ログの底 99。
-// 出だしは ゆるく、底へ 向けて 急に 上げる（ramp）。短い 板は 着いたときの レベルが 低いので、パン板（底の 強さ 4）・
-// きのこ板（底の 強さ 5）は 底を 下げて ボスも 弱める（pnpm sim で クリア率を 見て 決める）。
+// 本筋の 階の数は ポケダン（はじめの ダンジョンは 3階、物語の 山場でも 20階 ほど）に ならって 短く：
+// パン板 3 → きのこ板 5 → 離島板 7 → おんたこ・お祭り 10 → 風呂板 14 → 電池板 20。
+// 長く 潜らせる のは やり込みの 過去ログの底（99階）と 寄り道・裏の 板。
+// 出だしは ゆるく、底へ 向けて 急に 上げる（ramp）。レベルは 毎回 1 から なので、短い 板ほど 着いたときの
+// レベルが 低い。底の 強さ（*_TOP）は pnpm sim で クリア率を 見て 決める。
 
 import type { ItemWeight } from "../itemTable";
 import type { DungeonId, ItemCat, Objective, RescueKind } from "../types";
@@ -139,10 +140,8 @@ export type Dungeon = {
  * 階 → 本編の 何階ぶんか：1階は 1、いちばん底（n階）は top。あいだは 1.5乗の 曲がりで 上げる（四捨五入）。
  * まっすぐ だと 3階で もう レベル4〜5 に なり、Lv2〜3 の ころに 倒れる 冒険が 固まった（pnpm sim）。
  * 出だしは 本編と 同じ 1階に 1 ずつ、後ろほど 急に（着いた ころには 経験値も 多い）。
- * 2026-10-11：短い 板（6〜13階）・のんびり諸島・避難J は 序盤から 強い 敵が 出すぎた（13階の 板の 7階で 本編の
- * 10階ぶん。作者の 指示）。底を 下げ、曲がりを 2乗（避難J は 1.6）に して、前半は 本編と 同じ くらいに した
- * （おんたこ 19 → 15・お祭り会場 20 → 16・だらだら 23 → 18・沖縄 12 → 10・よふかし 14 → 11・ひまわり 9 → 7・
- * ボカロ避難所 8 → 7・のんびり 30 → 28・避難J は 底 35 の まま 曲がりだけ。ボットで 倒れる 階が 2〜3階 深く なった）。
+ * 短い 板・のんびり諸島・避難J は 曲がりを 2乗（避難J は 1.6）に して、前半を 本編と 同じ くらいに する
+ * （1.5 では 13階の 板の 7階で もう 本編の 10階ぶんに なった。作者の 指示 2026-10-11）。
  */
 const RAMP_CURVE = 1.5;
 const ramp = (n: number, top: number, curve = RAMP_CURVE): number[] =>
@@ -166,7 +165,7 @@ const ALL_UNIDENTIFIED: readonly ItemCat[] = [
 ];
 
 /**
- * パン板の 道具の出かた（重みの合計 66）。重みは 割合で、4階で 出るのは 30ほど
+ * パン板の 道具の出かた（重みの合計 66）。重みは 割合で、3階で 出るのは 20ほど
  * 指輪は無し・杖は4種（ここだけ未識別）。
  */
 export const SHALLOW_ITEMS: readonly ItemWeight[] = [
@@ -186,7 +185,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "a_wood", weight: 3 }, // 寝落ち民・ゾンJ民を 離れて削る
 	{ kind: "a_iron", weight: 2 }, // 本編の 3束に 対して 2束の 割合（ちょっと は 鉄・銀の矢のほうが 木より多かった）
 	// 食べもの 5（ちょっと：片親パン・ぷゆゆパン・チギュリパン が 1:1:1、全体の 9.4%）。
-	// 4階（1250ターンほど）は 始めの 大きな パンと ぷゆゆの お弁当で 足りるので、床の パンは 1階 10% ほど
+	// 3階（1000ターンほど）は 始めの 大きな パンと ぷゆゆの お弁当で 足りるので、床の パンは 1階 10% ほど
 	// （多いと 始めの 200% と お弁当・パン兵の ぶんが まるまる 余る。長い 板は 1階 25% ほど）
 	{ kind: "f_bread", weight: 1 }, // +50%。ぷゆゆパン（+100%）は 床に 出さない（始めの 1つと お弁当で 足りる）
 	{ kind: "f_moldy", weight: 1 }, // +100% だが ちから−1・HP−5。「食べものにも 外れがある」を1回だけ
@@ -196,7 +195,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_reel", weight: 1 }, // メダパニ
 	{ kind: "w_change", weight: 1 }, // へんげ（候補は レベル+4 まで。B4（レベル7）なら レベル11 の敵もありうる）
 	// 草 21（識別ずみ。ちょっと：弟切草・薬草・毒けし草×2・ちからの種・ルーラ草・火炎草・まどわし草）
-	{ kind: "h_heal", weight: 7 }, // 草の 1/3。始めの1つと合わせて 4階で 3〜4つ
+	{ kind: "h_heal", weight: 7 }, // 草の 1/3。始めの1つと合わせて 3階で 3つほど
 	{ kind: "h_greater", weight: 3 }, // 弟切草。ちょっと では 薬草と同じだけ出たが、ここは 強いので少なめ
 	{ kind: "h_antidote", weight: 4 }, // ちょっと では 草の中で倍の率。にょっす牛・毒矢の罠・チギュリパンの あと始末
 	{ kind: "h_might", weight: 2 }, // ちからの種
@@ -220,22 +219,20 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 ];
 
 /**
- * はじめの4階の 階 → 本編の何階ぶんか（= ramp(4, 4)）。B1〜2 は罠なし、B3 から罠、B4 は 本編の B4。
- * ボットが Lv3 ほどで 着くので 本編の B4 まで（7 だと クリア 53%。4 で 90%）。
+ * はじめの3階の 階 → 本編の何階ぶんか。B1〜2 は罠なし、B3 から罠、B3 は 本編の B4。
  * ゾンJ民・風吹けば名無し から 先は きのこ板と 本編で。
  */
 export const SHALLOW_LEVEL: readonly number[] = [
 	0, // [0] 使わない
 	1, // B1：ぷゆゆ・dat落ちの霊・夏休みキッズ・ROM専。罠なし
 	2, // B2：kskボット・寝落ち民（眠りの呪文）が 加わる。罠なし
-	3, // B3：罠が出はじめる（1〜3個。トラバサミ・眠り・転び・矢・ワープ・落とし穴）
-	4, // B4：にょっす牛・コピペ が 加わる。毒矢の罠も。針を 拾って 帰る。
+	4, // B3：にょっす牛・コピペ が 加わる。罠も（毒矢の罠まで）。針を 拾って 帰る。
 	//     ゾンJ民は きのこ板から。1つ 先の 強さ（5）で 出すと、Lv4 前後で 着く 入門の 板では 倒れた 冒険の
-	//     7割が B4 の ゾンJ民に なる（2026-10-10 ボット）
+	//     7割が 底の ゾンJ民に なる（2026-10-10 ボット）
 ];
 
 /**
- * もっと深い30階の 道具の出かた（重みの合計 210。本編 ×1.5 から ぷゆゆパン・不食の指輪を抜き、マイナスの品を ふやし、
+ * 電池板（20階）と 裏の 30階の 板の 道具の出かた（重みの合計 210。本編 ×1.5 から ぷゆゆパン・不食の指輪を抜き、マイナスの品を ふやし、
  * いちばん強い品は 本編と同じ数のまま）。食べものは 始めの200% ＋ 1100%（1階 433ターン）。
  * スレ（ぷゆゆパン）・草を飲む（+5%）・革の盾で しのぐ。
  */
@@ -332,7 +329,7 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 	{ kind: "r_clamor", weight: 1 },
 	{ kind: "w_sleep", weight: 1 },
 	{ kind: "w_slow", weight: 1 },
-	// 食べもの（パン板より 少し 多め。6階。短い 板なので 床の パンは 1階 10% ほど。多いと パンが たまる だけ）
+	// 食べもの（パン板より 少し 多め。5階。短い 板なので 床の パンは 1階 10% ほど。多いと パンが たまる だけ）
 	{ kind: "f_bread", weight: 2 },
 	{ kind: "f_moldy", weight: 1 },
 	{ kind: "h_heal", weight: 9 },
@@ -348,7 +345,14 @@ export const KINOKO_ITEMS: readonly ItemWeight[] = [
 ];
 
 /** 階 → 本編の 何階ぶんか（入門の つぎ。パン板より 少し 強い 顔ぶれまで）。 */
-const KINOKO_LEVEL: readonly number[] = ramp(6, 5);
+const KINOKO_LEVEL: readonly number[] = ramp(5, 5, 2);
+
+/** 本筋の 板の 底の 強さ（本編の 何階ぶんか）。pnpm sim で クリア率を 見て 決める。 */
+const TROPICAL_TOP = 8;
+const KONAMONO_TOP = 11;
+const FESTIVAL_TOP = 12;
+const MAIN_TOP = 16;
+const DEEP_TOP = 22;
 
 /**
  * 隠しの 99階の 道具の出かた：風呂板の 表で、食べものを ふやした（99階ぶん 歩くので。
@@ -412,7 +416,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// パン松は やきうが きらい（ピッチャーは 追い出した）。にょっす牛（前の名前 まんぜう軍＝まんじゅう）は パンの なかま。
 		// 寝落ち民は 入門の 板では 少なめ（2026-10-03 ボットで パン板の 死因の 6割・B2 に 固まった）
 		foes: { pumpkin: 2, pitcher: 0, neochi: 0.4 },
-		floors: 4,
+		floors: 3,
 		items: SHALLOW_ITEMS,
 		perFloor: [5, 9],
 		level: SHALLOW_LEVEL,
@@ -441,19 +445,18 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
 		foes: { sabi: 2, neochi: 1.5 },
-		floors: 20,
+		floors: 14,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		// 序盤を ゆるく：曲がりを 2乗に（底の 強さは 27 の まま。中ほどまで 1〜4階ぶん 弱い）。
-		// 祭りも B5 から、はじめの 1つは B6〜8 に（2026-10-03 ボットで B1〜7 で 倒れるのが 91 → 20 / 200回）
-		level: ramp(20, 27, 2),
+		// 序盤を ゆるく：曲がりを 2乗に。祭りは B5 から、はじめの 1つは B6〜8 に
+		level: ramp(14, MAIN_TOP, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "genban",
 		houses: { from: 5, chance: 1 / 16, early: [6, 8] },
 		trapsFrom: 3,
-		// パン板（4階）から いきなり 20階に ならないよう、きのこ板（6階）を はさむ
+		// パン板（3階）から いきなり 14階に ならないよう、きのこ板（5階）を はさむ
 		unlockAfter: "kinoko",
 		reliefAfter: 5,
 		// 湯治：150 → 100（1.5倍）
@@ -465,13 +468,11 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		objective: "fetch",
 		// 機械と 回線の 敵が 多い
 		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
-		floors: 30,
+		floors: 20,
 		items: DEEP_ITEMS,
 		perFloor: [5, 8],
-		// 風呂板と 同じく 序盤を ゆるく：曲がりを 1.3 に（底の 強さは 30 の まま。B9 で 6・B20 で 18）。
-		// 祭りも B5 から、はじめの 1つは B6〜8 に。本編と 同じ 曲がりだと 倒れた 冒険の 7割が B1〜9、
-		// これで 4割（2026-10-04 ボット。祭りを 遅らせる だけでは 7割の まま。1.5 だと 飢え死にが 3割）
-		level: ramp(30, 30, 1.3),
+		// 風呂板と 同じく 序盤を ゆるく（曲がり 1.3）。祭りは B5 から、はじめの 1つは B6〜8 に
+		level: ramp(20, DEEP_TOP, 1.3),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -501,7 +502,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 胞子で 眠くなり（寝落ち民）、毒きのこ（にょっす牛）が 多い。
 		// 寝落ち民は 少なめ（眠らされて なぐられつづけるのが 序盤で いちばん 理不尽なので）
 		foes: { neochi: 1, pumpkin: 2, pitcher: 0 },
-		floors: 6,
+		floors: 5,
 		items: KINOKO_ITEMS,
 		perFloor: [5, 8],
 		level: KINOKO_LEVEL,
@@ -530,12 +531,11 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 風の 島（風吹けば名無し）と 浜の フナムシ（ROM専）
 		foes: { kaze: 3, funamushi: 2 },
-		floors: 9,
+		floors: 7,
 		items: MAIN_ITEMS,
 		perFloor: [4, 6],
-		// きのこ板（底で 本編5階ぶん）の つぎ。過疎で 経験値が 少ないので 底を 12 に、曲がりを 2乗に
-		// （2026-10-03 ボットで クリア 6% → 25%・底まで 12.5% → 51.5%。ramp(9, 15) では きのこ板との 段が 大きすぎた）
-		level: ramp(9, 10, 2),
+		// きのこ板（底で 本編5階ぶん）の つぎ。過疎で 経験値が 少ないので 曲がりを 2乗に
+		level: ramp(7, TROPICAL_TOP, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -565,10 +565,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ。怒りの レスで スレが あがりつづけるので、dat落ちの霊は 出ない
 		// （1階から 怒るので、素手の Lv1 で 3発 かかる 霊が 怒って 2回ずつ なぐり、1階で 倒れる 冒険が 19% あった → 5%。2026-10-04 ボット）
 		foes: { oni: 3, ninja: 1.5, fallen: 1.5, hitodama: 0 },
-		floors: 13,
+		floors: 10,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(13, 15, 2),
+		level: ramp(10, KONAMONO_TOP, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -596,10 +596,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 野次馬（コピペ）・群れ（VIPPER）・炎上
 		foes: { copipe: 2, yuki: 2, bomb: 2 },
-		floors: 13,
+		floors: 10,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
-		level: ramp(13, 16, 2),
+		level: ramp(10, FESTIVAL_TOP, 2),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -635,7 +635,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	// 裏ルート：おーぷぬの 灯台（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。小島を 2つ 取り返すと 開く。
 	// 乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる（data/story/story.ts の BOARD_LOOKS の zones）。
-	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底 30 ＞ 風呂板 27・持ちこみ 不可）
+	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底の 強さ・持ちこみ 不可）
 	opunu: {
 		id: "opunu",
 		objective: "fetch",
@@ -663,7 +663,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	// ── 裏シナリオの 承：乗っ取られた 小島 2つ（STORY.md §5.98）。おんJ民が おーぷぬで 立てて 飽きて 捨て、
 	// 本物の 乗っ取り屋に 名前を「〇〇諸島」に 変えられた 板。底の 品は 乗っ取り屋の 置き手紙（灯台の パスワードの 手がかり）。
-	// 階は 本筋と 同じ 1.5倍ずつ：6 → 9 → 13 → 灯台 20 → 跡地 30
+	// 階は 1.5倍ずつ：6 → 13 → 灯台 20 → 跡地 30
 	isle1: {
 		id: "isle1",
 		objective: "fetch",
