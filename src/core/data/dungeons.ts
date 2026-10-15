@@ -287,14 +287,14 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "s_temper", weight: 5 }, // 同じ
 	{ kind: "s_uncurse", weight: 4 }, // 指輪・装備が ふえ、のろいの数も ふえるので 本編2 → 4
 	{ kind: "s_rustproof", weight: 1 }, // もっと では 消えた メッキ。1枚だけ
-	{ kind: "s_map", weight: 6 }, // 罠7〜9 を見せる。本編3 → 6（）
+	{ kind: "s_map", weight: 6 }, // 罠7〜9 を見せる。本編3 → 6
 	{ kind: "s_sense", weight: 2 }, // もっと では 消えた 地獄耳。本編と同じ2枚（階あたり 2/3）
 	{ kind: "s_treasure", weight: 2 }, // もっと では 消えた 千里眼。本編と同じ2枚
 	{ kind: "s_hold", weight: 5 }, // 本編3 × 1.5 を切り上げ（もっと にも ある）
 	{ kind: "s_blast", weight: 3 }, // もっと では 消えた イオ。本編と同じ3枚（階あたり 2/3）
 	{ kind: "s_ward", weight: 1 }, // 結界。いちばん強いスレは 1枚のまま（もっと の 聖域 2/256）
 	{ kind: "s_recharge", weight: 3 }, // もっと の 祈り。本編2 → 3
-	{ kind: "s_bread", weight: 2 }, // 3 → 2（2026-10-10）。もっと の パンの巻物。ぷゆゆパンが 床に無いぶんの 逃げ道
+	{ kind: "s_bread", weight: 2 }, // もっと の パンの巻物。ぷゆゆパンが 床に無いぶんの 逃げ道
 	{ kind: "s_snare", weight: 5 }, // マイナス（ワナの巻物）。本編2 → 5
 	{ kind: "s_gacha", weight: 1 }, // もっと だけの パルプンテ。当たりも 外れも 大きいので 1枚
 	// 杖 16（未識別）
@@ -313,7 +313,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "a_wood", weight: 6 }, // 本編4 × 1.5
 	{ kind: "a_iron", weight: 3 }, // 本編2 × 1.5
 	// 食べもの 17（ぷゆゆパンは 入れない。もっと の 片親パン:チギュリパン ≒ 2:1）
-	// 2026-10-10 に 片親パン 14 → 10 → 7・チギュリパン 5 → 4（2026-10-10 の 2回め：床の パンだけで 1階 40% ほど 出て、始めの 200% と お弁当・パン兵の ぶんが まるまる 余っていた。長い 板は 1階 25% ほど、短い 板は 10% ほどに）
+	// 床の パンは 1階 25% ほど（多いと 始めの 200% と お弁当・パン兵の ぶんが まるまる 余る）
 	{ kind: "f_bread", weight: 7 }, // +50%
 	{ kind: "f_moldy", weight: 4 }, // +100%（ちから−1・HP−5）
 ];
@@ -499,7 +499,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			cause: "親玉きのにゃんを　たおした",
 		},
 		// 胞子で 眠くなり（寝落ち民）、毒きのこ（にょっす牛）が 多い。
-		// 寝落ち民は 2 → 1（2026-10-10。眠らされて なぐられつづけるのが 序盤で いちばん 理不尽なので）
+		// 寝落ち民は 少なめ（眠らされて なぐられつづけるのが 序盤で いちばん 理不尽なので）
 		foes: { neochi: 1, pumpkin: 2, pitcher: 0 },
 		floors: 6,
 		items: KINOKO_ITEMS,
