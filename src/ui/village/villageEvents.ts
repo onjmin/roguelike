@@ -143,6 +143,7 @@ import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { civicBoardMenu, civicBoardScript } from "./civic";
+import { outsideDisplays } from "./displays";
 import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
 import { folkEvent } from "./folk";
@@ -1138,7 +1139,7 @@ export const buildVillage = (
 		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
 		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）・
 		// おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・建物の 看板（ui/village/signboards.ts）・
-		// 線路を 不定期に 走る ぷゆゆ列車（ui/village/puyuTrain.ts）
+		// 線路を 不定期に 走る ぷゆゆ列車（ui/village/puyuTrain.ts）・映画館や 駅の 電光表示（ui/village/displays.ts）
 		decor: joinDecor(
 			chimneySteam(rows),
 			imoniDecor(imoniArrive()),
@@ -1146,6 +1147,7 @@ export const buildVillage = (
 			stockBoardDecor(shokenSign(layoutStage(view))),
 			signboardDecor(layoutStage(view)),
 			puyuTrainDecor(layoutStage(view)),
+			outsideDisplays(layoutStage(view)),
 		),
 		outside: "#1f2a14",
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）

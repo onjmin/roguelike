@@ -61,6 +61,7 @@ import {
 import { giftShelf } from "./bonds";
 import { facilityDecor } from "./cinemaDecor";
 import { assemblyEvents } from "./civic";
+import { insideDisplays } from "./displays";
 import { roomFindGlint, townFind } from "./finds";
 import {
 	enterHome,
@@ -396,6 +397,7 @@ export const buildFacility = (
 						? stockBoardDecor(boardCell(facilityRoomRows(f)))
 						: undefined,
 					roomFindGlint(f),
+					insideDisplays(f),
 				),
 		images: home ? homeImages() : undefined,
 	};
