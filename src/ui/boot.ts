@@ -177,6 +177,8 @@ const LOG_LINES = [
 	"ぷゆゆ",
 	"また　明日",
 ];
+/** 本筋の 結の あと（旗 mitoru）に まじる 行：やきうの 独り言だった「保守」「まだ　おるで」が、ふたりの やりとりに なる。 */
+const MITORU_LOG = ["見とるで", "まだ　おるンゴ"] as const;
 const WEEK = "日月火水木金土";
 
 /**
@@ -219,10 +221,13 @@ const uraLog = (r: () => number, ura: number): string | null => {
 	return null;
 };
 
-const logLine = (r: () => number, ura: number): string => {
+const logLine = (r: () => number, ura: number, mitoru: boolean): string => {
 	const odd = uraLog(r, ura);
 	if (odd) return odd;
-	const pick = LOG_LINES[Math.floor(r() * LOG_LINES.length)];
+	const pool: readonly string[] = mitoru
+		? [...LOG_LINES, ...MITORU_LOG]
+		: LOG_LINES;
+	const pick = pool[Math.floor(r() * pool.length)];
 	if (r() < 0.45) return pick;
 	const n = 1 + Math.floor(r() * 999);
 	const y = 2009 + Math.floor(r() * 15);
@@ -244,12 +249,13 @@ const sinkLogs = (cv: HTMLCanvasElement, root: HTMLElement): void => {
 	if (!g) return;
 	const r = Math.random;
 	const ura = uraLevel();
+	const mitoru = loadProgress().flags?.includes("mitoru") ?? false;
 	type Drop = { text: string; x: number; y: number; v: number; size: number };
 	let w = 0;
 	let h = 0;
 	const drops: Drop[] = [];
 	const spawn = (y: number): Drop => ({
-		text: logLine(r, ura),
+		text: logLine(r, ura, mitoru),
 		x: r() * w * 0.9 - w * 0.1,
 		y,
 		v: 6 + r() * 10,
