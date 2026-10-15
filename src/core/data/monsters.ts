@@ -1,13 +1,12 @@
 // モンスターの定義。トルネコ1の32種の役割・数値・出る階（不思議のダンジョンの 27階と同じ。99階まで の敵は もっと の 30階まで）に沿って、
 // rpg と同じ「おんJ・ネットの怪異」と ぷゆゆ・汎用の歩行グラ（RPGEN）を当てている。
-// DQ の固有名は使わない。
+// DQ の固有名は使わない。id は 図鑑・中断セーブの 鍵なので、名前と 合わなくても 変えない。
 
 import type { DungeonId, MonsterDef } from "../types";
 
 const M: MonsterDef[] = [
 	// ───────── 浅い階 ─────────
 	{
-		// 前の名前は とうすこ。id は 図鑑・中断セーブの 鍵なので そのまま
 		id: "tousuko",
 		name: "ぷゆゆ",
 		sprite: "sa:DszPWT",
@@ -22,7 +21,6 @@ const M: MonsterDef[] = [
 		flavor: "のろいのは　足だけ。愛され　ぶりは　だれより　速い",
 	},
 	{
-		// 前の名前は ひとだま。絵は そのまま
 		id: "hitodama",
 		name: "忘れスレの霊",
 		sprite: "sa:xBroMV",
@@ -39,8 +37,7 @@ const M: MonsterDef[] = [
 		flavor: "沈んだ　スレは　だれも　上げない。未練だけが　まだ　ageている",
 	},
 	{
-		// 前の名前は 迷いコウモリ → 深夜テンション。夏に 板へ 湧く 夏休みキッズ（夏厨）。
-		// 絵は RPGEN の「夏休み勇者」（前は 扇子で踊る男A sa:oHldpr）
+		// 夏に 板へ 湧く 夏休みキッズ（夏厨）。絵は RPGEN の「夏休み勇者」
 		id: "bat",
 		name: "夏休みキッズ",
 		sprite: "sa:I81vcW",
@@ -55,8 +52,7 @@ const M: MonsterDef[] = [
 		flavor: "8月の　終わりに　いっせいに　消える。宿題が　あるので",
 	},
 	{
-		// 前の名前は フナムシ → バグ。見るだけで 書きこまない ROM専。
-		// 絵は RPGEN の「メンダコぼっち」（前は フナムシ sa:9RtFUy）
+		// 見るだけで 書きこまない ROM専。絵は RPGEN の「メンダコぼっち」
 		id: "funamushi",
 		name: "ROM専",
 		sprite: "sa:TGl1LN",
@@ -124,7 +120,7 @@ const M: MonsterDef[] = [
 		flavor: "投げるのは　ボールより、試合の　ほうが　多い",
 	},
 	{
-		// 前の名前は 毒カボチャ → まんぜう軍。にょっす牛（🐮 の ネタ）は 冷笑系（真剣な人を 上から 茶化す）の 牛。
+		// にょっす牛（🐮 の ネタ）は 冷笑系（真剣な人を 上から 茶化す）の 牛。
 		// 冷笑で ちからを 下げる（セリフは core/monster.ts の SNEERS）。
 		// 絵は RPGEN の「不良牛」sp:AXTDsXV から 組んだ 歩行グラ（scripts/make-reisho-ushi.mjs）。
 		// 水分補給草を 投げると 50（トルネコ1の どくけしそう → おばけキノコ と 同じ 役）なので plant の まま
@@ -175,7 +171,6 @@ const M: MonsterDef[] = [
 	},
 	// ───────── 中ほどの階 ─────────
 	{
-		// 前の名前は さらいUFO。絵は そのまま
 		id: "ufo",
 		name: "拾い画UFO",
 		sprite: "sa:HcYVTc",
@@ -204,7 +199,6 @@ const M: MonsterDef[] = [
 		flavor: "議論を　吹きとばして、本人は　どこにも　いない",
 	},
 	{
-		// 前の名前は キメラ。絵は そのまま
 		id: "chimera",
 		name: "自演くん",
 		sprite: "sa:iHaD7p",
@@ -237,7 +231,6 @@ const M: MonsterDef[] = [
 		flavor: "盗むのは　一瞬。「無断転載禁止」を　読む　ひまは　ない",
 	},
 	{
-		// 前の名前は さまよう騎士。絵は そのまま
 		// 出る階は 11 から（トルネコ1の 10 より 1つ あと。自演くんと 同じ 階に 出ないように。転載ガモの ところ）
 		id: "knight",
 		name: "鋼メンタル",
@@ -253,9 +246,9 @@ const M: MonsterDef[] = [
 		flavor: "効いていない　ことを、3レス　かけて　説明してくる",
 	},
 	{
-		// 前の名前は 錆び亡者。風呂に 入らない 子（X の「風呂キャンセル界隈」）。なぐらず、ふれた 板を 汚して 錆びさせるだけ
+		// 風呂に 入らない 子（X の「風呂キャンセル界隈」）。なぐらず、ふれた 板を 汚して 錆びさせるだけ
 		// （ひとことは core/monster.ts の FUROCAN）。絵は とうすこ民（泥版）を くすませた もの（scripts/make-furocan.mjs）。
-		// 投げた 草の 効き目（undead）は 前の 役の まま。
+		// 投げた 草の 効き目は undead。
 		// 出る階は 8 から（なぐって こないので 転載ガモと いっしょに 強さ10の 壁より 先に。転載ガモの ところ）
 		id: "sabi",
 		name: "風呂キャンセル界隈",
@@ -289,8 +282,8 @@ const M: MonsterDef[] = [
 		flavor: "見つけた　ときの　興奮と、逃げられた　ときの　絶望が　セット",
 	},
 	{
-		// 前の名前は 雪だるま → 凍結アカ。集団で 荒らしに 来る VIP の 住人（祭り・突撃）。
-		// 絵は RPGEN の「やる夫」（VIP 生まれの AA。前は 氷に とじこめられた 初期アイコン）
+		// 集団で 荒らしに 来る VIP の 住人（祭り・突撃）。
+		// 絵は RPGEN の「やる夫」（VIP 生まれの AA）
 		id: "yuki",
 		name: "VIPPER",
 		sprite: "sa:yQuruG",
@@ -306,7 +299,6 @@ const M: MonsterDef[] = [
 		flavor: "「VIPから　来ました」。祭りの　会場は　ここでは　ない",
 	},
 	{
-		// 前の名前は 石像。絵は そのまま
 		id: "statue",
 		name: "置物",
 		sprite: "sa:VOpXq9",
@@ -324,7 +316,7 @@ const M: MonsterDef[] = [
 		flavor: "何も　しない　ことに　かけては、だれにも　負けない",
 	},
 	{
-		// 前の名前は ばくだん。絵は 燃えている スマホ（怒った 顔の 画面。scripts/make-enemies.mjs）
+		// 絵は 燃えている スマホ（怒った 顔の 画面。scripts/make-enemies.mjs）
 		id: "bomb",
 		name: "炎上案件",
 		sprite: "pub:sprites/enjo.png",
@@ -340,8 +332,7 @@ const M: MonsterDef[] = [
 	},
 	// ───────── 深い階 ─────────
 	{
-		// 前の名前は ゴーレム → ゴリラ（ゴーレムの 絵に 合わせた だけで 元ネタが なかった）。
-		// 「はい論破」の 論破厨。絵は RPGEN の J民の「メガネ」（前は ゴリラ sa:6rFg1q）
+		// 「はい論破」の 論破厨。絵は RPGEN の J民の「メガネ」
 		id: "golem",
 		name: "論破厨",
 		sprite: "sa:V7UXpN",
@@ -371,7 +362,7 @@ const M: MonsterDef[] = [
 		flavor: "何年　積んだ　レベルも、エラー　ひとつで　初心者",
 	},
 	{
-		// 前の名前は 過疎。動かずに 足を つかんで 離さない 役と、女の子の 絵に 合わせた。絵は そのまま
+		// 動かずに 足を つかんで 離さない 役と、女の子の 絵に 合わせた 名前
 		id: "kaso",
 		name: "かまってちゃん",
 		sprite: "sa:YkoESZ",
@@ -387,7 +378,7 @@ const M: MonsterDef[] = [
 		flavor: "無視すると　ついてくる。かまうと　もっと　ついてくる",
 	},
 	{
-		// 前の名前は ばけ札。絵は 顔の ある 浮きと 釣り針（scripts/make-enemies.mjs）
+		// 絵は 顔の ある 浮きと 釣り針（scripts/make-enemies.mjs）
 		id: "bakefuda",
 		name: "釣り",
 		sprite: "pub:sprites/tsuri.png",
@@ -402,7 +393,6 @@ const M: MonsterDef[] = [
 		flavor: "餌は　いつも　おいしそう。針は　いつも　見えない",
 	},
 	{
-		// 前の名前は 影。絵は そのまま
 		id: "kage",
 		name: "透明あぼーん",
 		sprite: "sa:AeCss3",
@@ -419,7 +409,7 @@ const M: MonsterDef[] = [
 		flavor: "見えないのに、いると　わかる。NGにしても　気配は　消えない",
 	},
 	{
-		// 前の名前は 赤鬼。絵は RPGEN の「発狂J民」（前は 赤鬼 sa:m9nxuZ）
+		// 絵は RPGEN の「発狂J民」
 		id: "oni",
 		name: "顔真っ赤",
 		sprite: "sa:UT7LXB",
@@ -436,7 +426,6 @@ const M: MonsterDef[] = [
 		flavor: "「顔真っ赤で　草」と　言われて、さらに　赤くなる",
 	},
 	{
-		// 前の名前は 凝視の目。絵は そのまま
 		id: "eye",
 		name: "特定班",
 		sprite: "sa:f5k9hM",
@@ -466,7 +455,7 @@ const M: MonsterDef[] = [
 		flavor: "縺ｧ縺ｯ……何を　言っているかは、本人にも　わからない",
 	},
 	{
-		// 前の名前は 黒装束。絵は 怒った ふきだしと 残像（scripts/make-enemies.mjs）
+		// 絵は 怒った ふきだしと 残像（scripts/make-enemies.mjs）
 		id: "ninja",
 		name: "連投荒らし",
 		sprite: "pub:sprites/rento.png",
@@ -481,7 +470,7 @@ const M: MonsterDef[] = [
 		flavor: "1回で　言えば　いい　ことを、2回　言う",
 	},
 	{
-		// 前の名前は 闇堕ち兵。絵は むらさきの ねばねば（scripts/make-enemies.mjs）
+		// 絵は むらさきの ねばねば（scripts/make-enemies.mjs）
 		id: "fallen",
 		name: "粘着アンチ",
 		sprite: "pub:sprites/nenchaku.png",

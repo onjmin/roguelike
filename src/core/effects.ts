@@ -159,7 +159,7 @@ const drink = (r: Run, it: Item): boolean => {
 				}
 			}
 			// 飲んだだけでは たおれない（HP 1 で 耐える）。正体の わからない 草を
-			// 飲んで 即死すると、知らない 人には 理不尽に 見える（きのこ板の 死因の 1位だった）
+			// 飲んで 即死すると、知らない 人には 理不尽に 見える（たおれる なら きのこ板の 死因の 1位に なる）
 			if (p.hp > 1) r.hurtPlayer(Math.min(5, p.hp - 1), "荒らし草を　飲んだ");
 			break;
 		case "h_might":
@@ -548,7 +548,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				);
 			} else if (tgt && cat === "scroll") {
 				// 持ち物から 読めば その ぶん 1つ 空くが、床の 次スレを 読んだ ときは 空かない。
-				// 持ち物が いっぱいなら 足もとに 置く（前は 消えていた）
+				// 持ち物が いっぱいなら 足もとに 置く
 				const copy = { ...tgt, uid: r.s.nextUid++ };
 				r.msg(`${r.name(tgt)}の　次スレが　立った`, "good");
 				if (!r.addItem(copy) && r.placeItem(copy, { x: p.x, y: p.y }))
