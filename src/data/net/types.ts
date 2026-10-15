@@ -63,7 +63,7 @@ export type Page = {
 	title: string;
 	kind: PageKind;
 	nodes: Node[];
-	/** 開いたときの 下の 帯の 字（無ければ「ページが　表示されました」）。 */
+	/** 開いたときの 下の 帯の 字（無ければ「ページが表示されました」）。 */
 	status?: string;
 };
 

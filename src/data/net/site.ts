@@ -415,7 +415,7 @@ const dicPages = (env: NetEnv): Page[] => {
 	return [
 		page(DIC, "2ch語辞典", "dic", index),
 		...words.map((w) =>
-			page(url(w.id), `${w.word}　- 2ch語辞典`, "dic", [
+			page(url(w.id), `${w.word} - 2ch語辞典`, "dic", [
 				h(w.word),
 				...w.desc.split("\n\n").map((para) => p(para.replace(/\n/g, ""))),
 				{ t: "hr" },
@@ -492,9 +492,9 @@ const tenkiPage = (env: NetEnv): Page => {
 				: Math.floor(r() * 4) * 10;
 		nodes.push(
 			h(
-				`${["今日", "明日", "あさって"][i]}　${m}月${d}日（${WDAY[t.getUTCDay()]}）`,
+				`${["今日", "明日", "あさって"][i]}　　${m}月${d}日（${WDAY[t.getUTCDay()]}）`,
 			),
-			p(`${sky}　　最高　${hi}度　最低　${hi - 7}度　　降水確率　${rain}％`),
+			p(`${sky}　　最高　${hi}度　　最低　${hi - 7}度　　降水確率　${rain}％`),
 		);
 		const s = seasonOf(m, d);
 		if (s && SEASON_LINE[s]) nodes.push(p(SEASON_LINE[s], true));
@@ -569,16 +569,70 @@ const abePages = (): Page[] => [
 
 /** 見つからない ページ（試験で 出ないことを 見る。ui は 念のため これを 出す）。 */
 export const notFound = (url: string): Page =>
-	page(url, "404 Not Found", "none", [
-		h("404 Not Found"),
-		p("ページが　見つかりません。　……沈んだ　かも　しれません。"),
-		link(NET_HOME, "おんJへ　もどる"),
-	]);
+	tightPage(
+		page(url, "404 Not Found", "none", [
+			h("404 Not Found"),
+			p("ページが　見つかりません。　……沈んだ　かも　しれません。"),
+			link(NET_HOME, "おんJへ　もどる"),
+		]),
+	);
+
+/**
+ * ネットの 字は 詰めて 書く（2026-10-16 作者：「おんJブラウザで 見れる 文章は いちいち スペースを 挟まなくて いい」）。
+ * 文は ゲームの 窓と 同じ 分かち書きで 書いて おき（マイクラの 文など 窓と 同じ 物も ある）、ページに 出す ときに
+ * 全角の あきを 消す。英数どうしの あいだは 半角の あき、2つ 続く あき（天気の 欄の 区切り）は 1つ 残す。
+ */
+export const tight = (s: string): string =>
+	s
+		.replace(/([!-~])　(?=[!-~])/g, "$1 ")
+		.replace(/　+/g, (m) => (m.length >= 2 ? "　" : ""));
+
+/**
+ * 行頭の 安価・リンクの すぐ あとの あきは 半角で 残す（「>>1 はよ寝ろ」）。文の 途中の 安価は 詰める（「>>1の辞典」）。
+ */
+const tightSpans = (xs: readonly Span[]): Span[] =>
+	xs.map((x, i) => {
+		const head = xs.slice(0, i);
+		const after =
+			i > 0 && head.every((y) => "anchor" in y || "href" in y || !y.s.trim());
+		const s = after && x.s.startsWith("　") ? ` ${x.s.slice(1)}` : x.s;
+		return { ...x, s: tight(s) };
+	});
+
+const tightNode = (n: Node): Node => {
+	if (n.t === "h") return { ...n, text: tight(n.text) };
+	if (n.t === "p") return { ...n, spans: tightSpans(n.spans) };
+	if (n.t === "link")
+		return {
+			...n,
+			text: tight(n.text),
+			...(n.note ? { note: tight(n.note) } : {}),
+		};
+	if (n.t === "grid")
+		return { ...n, items: n.items.map((x) => ({ ...x, text: tight(x.text) })) };
+	if (n.t === "post")
+		return {
+			...n,
+			post: {
+				...n.post,
+				name: tight(n.post.name),
+				lines: n.post.lines.map(tightSpans),
+			},
+		};
+	return n;
+};
+
+const tightPage = (pg: Page): Page => ({
+	...pg,
+	title: tight(pg.title),
+	...(pg.status ? { status: tight(pg.status) } : {}),
+	nodes: pg.nodes.map(tightNode),
+});
 
 /** ぜんぶの ページ（同じ env なら いつも 同じ）。 */
 export const buildSite = (env: NetEnv): Site => {
 	const pages = new Map<string, Page>();
-	const add = (pg: Page) => pages.set(pg.url, pg);
+	const add = (pg: Page) => pages.set(pg.url, tightPage(pg));
 	const used = new Set<number>();
 	const boards = BOARDS.filter((b) => b.from <= env.stage);
 	const pinned: ThreadDef[] = [

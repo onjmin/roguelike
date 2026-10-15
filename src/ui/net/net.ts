@@ -29,9 +29,9 @@ const TEXT = {
 	home: "ホーム",
 	close: "とじる",
 	addr: "アドレス",
-	done: "ページが　表示されました",
+	done: "ページが表示されました",
 	reloaded: "更新しました",
-	noNew: "新着レスは　ありません",
+	noNew: "新着レスはありません",
 	hint: "↑↓　リンク　A　開く　B　戻る",
 } as const;
 
