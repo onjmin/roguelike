@@ -36,7 +36,14 @@ type View = {
 	endT: number;
 	/** 取られた 駒が 光る のこり（秒）。 */
 	flash: number;
+	/** 動いた 駒（すべって いく あいだは 取られた 駒を 残す）。 */
+	mv: { from: number; to: number; t: number; got: boolean } | null;
 };
+
+/** 駒が すべる 長さ（秒）。 */
+const SLIDE = 0.22;
+/** 取られた 駒が 光る 長さ（秒）。 */
+const FLASH = 0.6;
 
 /** 駒（五角形）。名無しの 駒は 逆さ。 */
 const piece = (g: G, cx: number, cy: number, who: 1 | 2): void => {
@@ -86,10 +93,21 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 			cpuT: 0,
 			endT: 0,
 			flash: 0,
+			mv: null,
 		}),
 		step: (v, f) => {
 			const s = v.s;
 			v.flash = Math.max(0, v.flash - f.dt);
+			if (v.mv) {
+				v.mv.t += f.dt;
+				// すべりおえて から 取った 音
+				if (v.mv.t >= SLIDE) {
+					if (v.mv.got) f.se("hit_copper");
+					v.flash = Math.min(v.flash, FLASH);
+					v.mv = null;
+				}
+				return;
+			}
 			// v.s で 見る（s.winner の 絞りこみを 後に 残さない）
 			if (v.s.winner) {
 				v.endT += f.dt;
@@ -100,8 +118,9 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				if (v.cpuT > 0) return;
 				const [from, to] = hsCpu(s, rnd);
 				const got = hsMove(s, from, to);
-				f.se(got > 0 ? "hit_copper" : "put");
-				if (got > 0) v.flash = 0.6;
+				f.se("put");
+				v.mv = { from, to, t: 0, got: got > 0 };
+				if (got > 0) v.flash = FLASH + SLIDE;
 				if (s.winner === 2) f.say(HS_SAY.cpuWin);
 				else if (s.winner === 1) f.say(HS_SAY.meWin);
 				else if (s.winner === 3) f.say(HS_SAY.draw);
@@ -145,9 +164,10 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				f.se("cancel");
 				return;
 			}
+			v.mv = { from: v.sel, to: pick, t: 0, got: got > 0 };
 			v.sel = -1;
-			f.se(got > 0 ? "hit_copper" : "put");
-			if (got > 0) v.flash = 0.6;
+			f.se("put");
+			if (got > 0) v.flash = FLASH + SLIDE;
 			if (s.winner === 1) f.say(HS_SAY.meWin);
 			else if (s.winner === 2) f.say(HS_SAY.cpuWin);
 			else if (s.winner === 3) f.say(HS_SAY.draw);
@@ -178,8 +198,8 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 						C - 1,
 					);
 				}
-			// 取られた 駒（光って 消える）
-			if (v.flash > 0 && Math.floor(clock * 12) % 2 === 0)
+			// 取られた 駒（すべりおえて から 光って 消える）
+			if (v.flash > 0 && v.flash <= FLASH && Math.floor(clock * 12) % 2 === 0)
 				for (const i of s.gone) {
 					g.fillStyle = "#ffffff";
 					g.fillRect(
@@ -204,11 +224,25 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					g.fillRect(X - 1, Y - 1, 3, 3);
 				}
 			}
+			const mv = v.mv;
 			for (let i = 0; i < s.cells.length; i++) {
 				const c = s.cells[i];
-				if (c === 0) continue;
+				if (c === 0 || (mv && i === mv.to)) continue;
 				const [X, Y] = at(i);
 				piece(g, X, Y, c);
+			}
+			if (mv) {
+				const who = s.cells[mv.to] === 2 ? 2 : 1;
+				// 挟まれる 駒は すべりおえる まで 残す
+				for (const i of s.gone) {
+					const [X, Y] = at(i);
+					piece(g, X, Y, who === 1 ? 2 : 1);
+				}
+				const [x0, y0] = at(mv.from);
+				const [x1, y1] = at(mv.to);
+				const p = Math.min(1, mv.t / SLIDE);
+				const e = 1 - (1 - p) * (1 - p);
+				piece(g, x0 + (x1 - x0) * e, y0 + (y1 - y0) * e, who);
 			}
 			if (!s.winner && s.turn === 1) {
 				const X = OX + v.cx * C;
@@ -234,7 +268,7 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				: s.turn === 1
 					? v.sel >= 0
 						? "行き先を　選ぶ"
-						: "キリコの　番"
+						: "動かす　駒を　選ぶ"
 					: `名無し　考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
 			hud(g, `${s.ply}／${HS.maxPly}手`, right);
 		},

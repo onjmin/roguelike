@@ -9,19 +9,31 @@ import {
 	BC_TEXT,
 	type BcInput,
 	type BcSide,
+	type BcState,
 	bcShown,
 	bcStart,
 	bcStep,
 	bcTotal,
 } from "../../../data/arcade/home/baccarat";
 import type { Card } from "../../../data/arcade/home/poker";
-import { AW } from "../../../data/arcade/logic";
+import { ATOP, AW } from "../../../data/arcade/logic";
 import { ARCADE, ARCADE_BOARD } from "../../../data/arcade/text";
 import type { UiCtx } from "../../list";
 import { type G, txt } from "../../neta/netaBoard";
 import { fill } from "../../village/villageTalk";
 import { type ArcadeResult, hud, isKey, isTap, playBoard } from "../arcadeKit";
-import { button, cardFace, felt, inside, type Rect } from "./poker";
+import {
+	button,
+	cardFace,
+	clamp01,
+	easeOut,
+	FLIP,
+	felt,
+	flipCard,
+	inside,
+	type Rect,
+	SLIDE,
+} from "./poker";
 
 const rnd = Math.random;
 const B = ARCADE_BOARD;
@@ -38,9 +50,38 @@ const BET_DN: Rect = [10, 120, 22, 20];
 const BET_UP: Rect = [82, 120, 22, 20];
 const DEAL: Rect = [140, 120, 90, 20];
 
-const row = (g: G, x0: number, cards: readonly Card[]): void => {
-	cards.forEach((c, i) => {
-		cardFace(g, x0 + i * 26, 30, CW, CH, c);
+const CY = 30;
+
+/**
+ * 片がわの 札。めくる 前の はじめの 2枚は 裏で 置き（配った 直後は 山から 飛んでくる）、
+ * いちばん 新しく めくった 札は 裏から 返す。
+ */
+const row = (
+	g: G,
+	x0: number,
+	s: BcState,
+	side: "p" | "b",
+	shown: readonly Card[],
+): void => {
+	const dealing = s.phase === "deal";
+	const last = s.order[s.shown - 1];
+	// 配る 順（p b p b）での 何枚目か
+	const nth = (i: number): number => i * 2 + (side === "b" ? 1 : 0);
+	for (let i = 0; i < (dealing ? 2 : 0); i++) {
+		if (i < shown.length) continue;
+		const x = x0 + i * 26;
+		const at = nth(i) * 0.08;
+		if (s.t < at && s.shown === 0) continue;
+		const p = s.shown === 0 ? easeOut(clamp01((s.t - at) / SLIDE)) : 1;
+		const fx0 = AW / 2 - CW / 2;
+		const fy0 = ATOP - CH;
+		cardFace(g, fx0 + (x - fx0) * p, fy0 + (CY - fy0) * p, CW, CH, null);
+	}
+	shown.forEach((c, i) => {
+		const x = x0 + i * 26;
+		const fresh = dealing && last === side && i === shown.length - 1;
+		if (fresh) flipCard(g, x, CY, clamp01(s.t / FLIP), null, c, CW, CH);
+		else cardFace(g, x, CY, CW, CH, c);
 	});
 };
 
@@ -118,14 +159,18 @@ export const playBaccarat = (
 				);
 			}
 			const shown = bcShown(s);
-			row(g, 24, shown.player);
-			row(g, 140, shown.banker);
+			row(g, 24, s, "p", shown.player);
+			row(g, 140, s, "b", shown.banker);
 			if (shown.player.length)
 				txt(g, String(bcTotal(shown.player)), 62, 63, 12, "#ffe060", "center");
 			if (shown.banker.length)
 				txt(g, String(bcTotal(shown.banker)), 178, 63, 12, "#ffe060", "center");
-			if (flash) txt(g, flash, AW / 2, 81, 8, "#ffe060", "center");
 			const betting = s.phase === "bet";
+			// 案内：結果が なければ いま すること
+			const guide =
+				flash || (betting ? (s.chips ? BC_TEXT.howBet : "") : BC_TEXT.howDeal);
+			if (guide)
+				txt(g, guide, AW / 2, 81, 8, flash ? "#ffe060" : "#c8e0c8", "center");
 			BC_SIDES.forEach((side, i) => {
 				button(
 					g,

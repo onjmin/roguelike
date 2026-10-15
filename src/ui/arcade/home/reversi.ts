@@ -122,10 +122,9 @@ const react = (
 		burst(v.j, X, Y, "#ffe060", 10);
 		quake(v.j, 2);
 	}
-	if (s.winner === 1) f.say(RV_SAY.meWin);
-	else if (s.winner === 2) f.say(RV_SAY.cpuWin);
-	else if (s.winner === 3) f.say(RV_SAY.draw);
-	else if (mv.pass === 1) f.say(RV_SAY.mePass);
+	// 勝ち負けは 返しおえて から（step で 言う）
+	if (s.winner) return;
+	if (mv.pass === 1) f.say(RV_SAY.mePass);
 	else if (mv.pass === 2) f.say(RV_SAY.cpuPass);
 	else if (rvCorner(at)) f.say(who === 2 ? RV_SAY.corner : RV_SAY.meCorner);
 	else if (who === 2 && mv.flips.length >= 6) f.say(RV_SAY.many);
@@ -150,6 +149,10 @@ export const playReversi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				v.flip[i] = Math.max(0, (v.flip[i] ?? 0) - f.dt);
 			if (v.s.winner) {
 				if (busy(v)) return;
+				if (v.endT === 0) {
+					const w = v.s.winner;
+					f.say(w === 1 ? RV_SAY.meWin : w === 2 ? RV_SAY.cpuWin : RV_SAY.draw);
+				}
 				v.endT += f.dt;
 				if (goesOn(v.s) && v.endT >= NEXT_WAIT) {
 					const lv = v.s.lv;

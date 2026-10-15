@@ -829,7 +829,7 @@ export const furnitureShop = async (
 		const m2 = loadHome();
 		if (!owns(m2, id)) m2.stored.push(id);
 		saveHome(m2);
-		s.se("item");
+		s.se("pay");
 		await s.narrate(fill(HOME_MSG.bought, { name: furnName(id) }));
 	}
 };
@@ -1093,7 +1093,7 @@ const buy = async (s: Story): Promise<boolean> => {
 		);
 		return false;
 	}
-	s.se("arcCoin");
+	s.se("pay");
 	await s.narrate(fill(HOME_MSG.paid, { price: yen(HOME_DOWN) }));
 	for (const [i, l] of HOME_MSG.contract.entries())
 		if (i === 1) await s.say("nanj", l, { name: "不動産屋" });

@@ -347,9 +347,9 @@ export const ARCADE_TEXT: Record<ArcadeGame, ArcadeText> = {
 	},
 	poker: {
 		line: "ポーカーの　緑の　台。\nディーラーが　札を　切っている。",
-		rule: "配られた　5枚から　残す　札を　選び、\nほかを　1回だけ　かえる。換金は　席を　立つとき。",
+		rule: "残す　札を　選び、ほかを　1回　かえる。\nチップは　席を　立つと　換金する。",
 		title: "ポーカー",
-		hint: "↑↓　枚数　A　配る　←→↑　残す　A　交換　B／外2回",
+		hint: "↑↓枚数　←→↑残す　A配る　B／外2回",
 		unit: "枚",
 	},
 	blackjack: {

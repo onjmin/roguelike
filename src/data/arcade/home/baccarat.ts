@@ -16,6 +16,8 @@ export const BC = {
 	maxBet: 5,
 	/** 1枚 めくる 間（秒）。 */
 	flip: 0.5,
+	/** さいごの 1枚を めくる 前の ため（秒）。 */
+	tame: 0.45,
 	bustWait: 1.2,
 } as const;
 
@@ -39,6 +41,10 @@ export const BC_TEXT = {
 	push: "TIE　賭けは　もどった",
 	lose: "はずれ",
 	natural: "ナチュラル！",
+	/** 配る 前の 案内。 */
+	howBet: "←→で　賭け先、↑↓で　枚数、Aで　配る",
+	/** めくって いる あいだの 案内。 */
+	howDeal: "9に　近い　ほうが　勝ち",
 } as const;
 
 /** 札の 点。 */
@@ -199,8 +205,9 @@ export const bcStep = (
 		ev.push("deal");
 		return ev;
 	}
-	// 1枚ずつ めくる
-	if (s.t < BC.flip) return ev;
+	// 1枚ずつ めくる（勝負が 決まる さいごの 1枚は ためてから）
+	const tame = s.shown === s.order.length - 1 ? BC.tame : 0;
+	if (s.t < BC.flip + tame) return ev;
 	s.t = 0;
 	if (s.shown < s.order.length) {
 		s.shown++;

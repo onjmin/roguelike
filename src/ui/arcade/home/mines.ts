@@ -86,14 +86,20 @@ export const playMines = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 	let cy = 0;
 	/** true なら 押すと 旗。 */
 	let flagMode = false;
+	/** おわってからの 秒（踏んだ 所から 地雷を 順に 見せて から おわる）。 */
+	let endT = 0;
+	/** 踏んだ 所から 地雷が 見えて いく 速さ（マス／秒）。 */
+	const SPREAD = 14;
 	return playBoard(ctx, "mines", {
 		start: () => {
+			endT = 0;
 			cx = Math.floor(MS.cols / 2);
 			cy = Math.floor(MS.rows / 2);
 			flagMode = false;
 			return msStart();
 		},
 		step: (s, f) => {
+			if (s.over) endT += f.dt;
 			const evs: MsEvent[] = [...msTick(s, f.dt)];
 			const act = (x: number, y: number) => {
 				evs.push(...(flagMode ? msFlag : msOpen)(s, x, y, rnd));
@@ -166,7 +172,10 @@ export const playMines = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					const m = s.grid[y][x];
 					const X = GX + x * c;
 					const Y = GY + y * c;
-					const show = m.open || (s.over && m.mine && !m.flag);
+					const near = s.boom
+						? Math.hypot(x - s.boom[0], y - s.boom[1]) <= endT * SPREAD
+						: true;
+					const show = m.open || (s.over && m.mine && !m.flag && near);
 					if (!show) {
 						bevel(g, X, Y, c, c);
 						if (m.flag) flagIcon(g, X + 7, Y + 6);
@@ -225,7 +234,8 @@ export const playMines = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				`TIME ${msTimeLeft(s)}`,
 			);
 		},
-		over: (s) => s.over,
+		// 踏んだら 地雷が 広がって 見えおわる まで 待つ
+		over: (s) => s.over && endT >= (s.boom ? 1.2 : 0.3),
 		score: msScore,
 		end: (s) => (s.clear ? ARCADE.clear : ARCADE.over),
 	});

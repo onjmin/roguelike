@@ -776,7 +776,12 @@ export const playKoikoi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				s.phase === "end"
 					? ""
 					: s.turn === 0
-						? "キリコの　番"
+						? // キリコの 番は いま 押す ことを 出す（同じ 月が 2枚 ある ときは どちらを 取るか）
+							s.phase === "hand"
+							? "←→　札　A　出す"
+							: s.phase === "pickHand" || s.phase === "pickFlip"
+								? "どれを　取る？　←→　A"
+								: "キリコの　番"
 						: `名無し${".".repeat(Math.floor(clock * 4) % 4)}`;
 			hud(g, `${s.month + 1}／${KK.months}月　${s.pts[0]}対${s.pts[1]}`, turn);
 			juiceDraw(g, v.j, AW, AH);

@@ -77,7 +77,7 @@ export const felt = (g: G, ink = "#123018"): void => {
 	g.strokeRect(3.5, ATOP + 3.5, AW - 7, AH - ATOP - 7);
 };
 
-/** トランプの 札（null は 裏）。左上に 数、まんなかに 印。 */
+/** トランプの 札（null は 裏）。左上に 数、まんなかに 印。big は 字の 大きさ（めくる 途中は もとの 幅で 決める）。 */
 export const cardFace = (
 	g: G,
 	x: number,
@@ -85,6 +85,7 @@ export const cardFace = (
 	w: number,
 	h: number,
 	c: Card | null,
+	big = w >= 30,
 ): void => {
 	const X = Math.round(x);
 	const Y = Math.round(y);
@@ -100,7 +101,6 @@ export const cardFace = (
 		return;
 	}
 	const ink = isRed(c) ? "#c82030" : "#181818";
-	const big = w >= 30;
 	txt(g, RANKS[c.r] ?? "?", X + 2, Y + 2, big ? 10 : 8, ink);
 	const sp = big ? 16 : 11;
 	txt(
@@ -131,8 +131,8 @@ const GO: Rect = [140, 120, 90, 20];
 // 交換：かえる 札を 消す → 飛んでくる → 1枚ずつ めくる（さいごの 1枚は ためてから）→ 役と 払い。
 
 /** めくる・消す・飛ぶ 長さ（秒）。 */
-const FLIP = 0.14;
-const SLIDE = 0.16;
+export const FLIP = 0.14;
+export const SLIDE = 0.16;
 /** さいごの 1枚を めくる 前の ため（秒）。 */
 const TAME = 0.32;
 
@@ -208,26 +208,47 @@ const showDraw = (
 	return { t: 0, slots, held: [...held], end: last + 0.12, after, pay };
 };
 
-/** 札を 横に つぶして 描く（めくる・消える。p：0＝幅 なし … 1＝ふつう）。 */
-const squeeze = (
+/**
+ * 札を 横に つぶして 描く（めくる・消える。p：0＝幅 なし … 1＝ふつう）。
+ * 字の 大きさは もとの 幅の まま（つぶれても 字が 小さく ならない）。
+ */
+export const squeeze = (
 	g: G,
 	x: number,
 	y: number,
 	p: number,
 	c: Card | null,
+	cw = CW,
+	ch = CH,
 ): void => {
-	const w = Math.max(1, Math.round(CW * p));
-	const X = x + (CW - w) / 2;
+	const w = Math.max(1, Math.round(cw * p));
+	const X = x + (cw - w) / 2;
 	g.save();
 	g.beginPath();
-	g.rect(X, y, w, CH);
+	g.rect(X, y, w, ch);
 	g.clip();
-	cardFace(g, X, y, w, CH, c);
+	cardFace(g, X, y, w, ch, c, cw >= 30);
 	g.restore();
 };
 
-const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
-const clamp01 = (p: number): number => Math.max(0, Math.min(1, p));
+/** 表／裏を 入れかえる めくり（p：0＝from … 1＝to。前半は from が つぶれ、後半は to が ひらく）。 */
+export const flipCard = (
+	g: G,
+	x: number,
+	y: number,
+	p: number,
+	from: Card | null,
+	to: Card | null,
+	cw = CW,
+	ch = CH,
+): void => {
+	if (p >= 1) cardFace(g, x, y, cw, ch, to);
+	else if (p < 0.5) squeeze(g, x, y, 1 - p * 2, from, cw, ch);
+	else squeeze(g, x, y, (p - 0.5) * 2, to, cw, ch);
+};
+
+export const easeOut = (p: number): number => 1 - (1 - p) * (1 - p);
+export const clamp01 = (p: number): number => Math.max(0, Math.min(1, p));
 
 /** 演出 中の 札 1枚。 */
 const drawSlot = (g: G, x: number, sl: Slot, t: number, c: Card): void => {

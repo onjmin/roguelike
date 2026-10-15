@@ -216,6 +216,17 @@ export const playDarts = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			if (s.bust) txt(g, DT_TEXT.bust, 196, 96, 8, "#ff6060", "center");
 			txt(g, DT_TEXT.aim, px, 110, 7, "#a0a8b8");
 			txt(g, routeText(s), 196, 122, 8, "#80e0ff", "center");
+			// いま 押す こと（横→縦の 2段で 止める）
+			if (s.phase === "x" || s.phase === "y")
+				txt(
+					g,
+					s.phase === "x" ? DT_TEXT.stopX : DT_TEXT.stopY,
+					196,
+					136,
+					8,
+					Math.floor(clock * 2) % 2 === 0 ? "#ffe060" : "#c0a840",
+					"center",
+				);
 			juiceDraw(g, j, AW, AH);
 			hud(
 				g,

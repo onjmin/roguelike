@@ -46,6 +46,9 @@ export const DT_TEXT = {
 	left: "のこり",
 	aim: "ねらい",
 	bust: "バースト！",
+	/** 照準を 止める 案内（横、縦）。 */
+	stopX: "A　横を　止める",
+	stopY: "A　縦を　止める",
 	finish: "あがり！",
 	out: "はずれ",
 	nextRound: "ラウンド {n}",
