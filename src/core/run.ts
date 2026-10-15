@@ -910,7 +910,7 @@ export class Run {
 
 	/**
 	 * 解音ゼロの バトンタッチ（たおれた とき。次の 機体が なければ false）。装備・持ち物・レベル・経験値は
-	 * そのまま。最大HP・最大ちからは 機体ごとの はじめの 値に、それまでに のびた 分の 半分
+	 * そのまま。最大HP・最大ちからは 機体ごとの はじめの 値に、それまでに のびた 分の 4分の3
 	 * （ZERO_GROWTH_CARRY）を 足す（減った 分は そのまま 引きつぐ）。別の 機体なので HP・おなかは 満タン、
 	 * 状態異常は もどる。乱数は 引かない。
 	 */
@@ -922,7 +922,7 @@ export class Run {
 		const next = ZERO_BODIES[now + 1];
 		if (!old || !next) return false;
 		const p = this.p;
-		// のびた ぶんは 半分だけ（減って いれば そのまま 引きつぐ）。別の 機体なので おなかは 満タン
+		// のびた ぶんは 4分の3だけ（減って いれば そのまま 引きつぐ）。別の 機体なので おなかは 満タン
 		const carry = (grown: number) =>
 			grown > 0 ? Math.floor(grown * ZERO_GROWTH_CARRY) : grown;
 		p.maxHp = Math.max(1, next.hp + carry(p.maxHp - old.hp));
