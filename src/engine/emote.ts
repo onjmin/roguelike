@@ -321,13 +321,7 @@ export const drawEmote = (
 			const [dx, dy] = m.at(k, i);
 			ctx.globalAlpha = a;
 			// 汗は 頭の 右の 横、ほかは 頭の 右上（絵の 左下が 頭の 右はしの 少し 上）
-			drawGlyph(
-				ctx,
-				look,
-				g,
-				px + 10 + dx,
-				(e === "汗" ? py : py + 1) + dy,
-			);
+			drawGlyph(ctx, look, g, px + 10 + dx, (e === "汗" ? py : py + 1) + dy);
 		}
 	}
 	ctx.restore();
