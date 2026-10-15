@@ -150,6 +150,7 @@ import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag, openStorage } from "./home";
+import { previewing } from "./pay";
 import { puyuTrainDecor } from "./puyuTrain";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
@@ -208,6 +209,8 @@ const hideMsg = (s: Story) => s.wait(0);
 
 /** おんJトロッコの 乗り場を はじめて 調べた（村に いる あいだ。data/village/trolley.ts）。 */
 const TROLLEY_SEEN = "trolley_seen";
+/** 探索者を かえられる ことを 知らせた 印（Progress.flags）。 */
+const HERO_GUIDE_TOLD = "toldHero";
 
 /**
  * おんJトロッコの 乗り場（data/village/trolley.ts）：行き先を えらぶと、トロッコに 乗って 道なりに 走る
@@ -542,6 +545,12 @@ const mouthScript =
 			await map.close();
 			await back();
 		};
+		// 仲間が 加わって はじめて 出る ときは、探索者を かえられる ことを 1回だけ 知らせる
+		if (unlockedHeroes().length > 1 && !hasFlag(HERO_GUIDE_TOLD)) {
+			const hero = HERO_NAME[chosenHero()];
+			for (const t of VILLAGE_MSG.heroGuide) await s.narrate(fill(t, { hero }));
+			if (!previewing()) addFlag(HERO_GUIDE_TOLD);
+		}
 		// 選んだら 本当に 行くか きく（地図の 押しまちがいで 出ないように。えらびなおすと 地図へ）
 		for (;;) {
 			await hideMsg(s);
