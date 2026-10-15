@@ -18,16 +18,20 @@ import type { Facility } from "../../data/village/facilities";
 import type { Cell } from "../../data/village/map";
 import {
 	type BaseFurnitureId,
+	BED_FURNITURE,
 	cellLayers,
+	cellTile,
 	EVENT_GIFTS,
 	FLOORINGS,
 	type Flooring,
 	FURNITURE,
 	FURNITURE_ACT,
+	FURNITURE_CATEGORIES,
 	FURNITURE_GAME,
 	FURNITURE_PRICE,
 	type FurnitureId,
 	furnitureAt,
+	furnitureCategory,
 	furnitureSize,
 	type Gift,
 	GUEST_SPOTS,
@@ -44,6 +48,7 @@ import {
 	HOME_ROWS,
 	HOME_VISIT,
 	HOME_VISIT_CUES,
+	HOME_WALL_Y,
 	HOME_WINDOWS,
 	type HomeLayout,
 	homeRows,
@@ -71,7 +76,7 @@ import { spendYen, walletYen, yen } from "../../engine/wallet";
 import { arcadeScript, loadArcade } from "../arcade/arcade";
 import { loadBushitsu } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
-import { listWindow } from "../list";
+import { type ListItem, listWindow, TAB_PICKED } from "../list";
 import { netBrowse } from "../net/net";
 import { paintEasel } from "../paint/paint";
 import { petitcon } from "../petitcon/petitcon";
@@ -85,7 +90,8 @@ import { fill } from "./villageTalk";
 const KEY = "kiriko-roguelike/myhome";
 
 export type HomeMemo = {
-	v: 1;
+	/** 2：底の 品の 台が 1マス（1 は 1×2 で、置いた 所の 1つ 下が 台）。 */
+	v: 2;
 	owned: boolean;
 	/** 契約の あとの 帰りの 数（返済した 月・届いた 宅配便の もと）。 */
 	returns: number;
@@ -108,7 +114,7 @@ export type HomeMemo = {
 };
 
 const EMPTY = (): HomeMemo => ({
-	v: 1,
+	v: 2,
 	owned: false,
 	returns: 0,
 	returnAt: -1,
@@ -146,20 +152,22 @@ export const loadHome = (): HomeMemo => {
 			string,
 			unknown
 		> | null;
-		if (raw && raw.v === 1) {
+		if (raw && (raw.v === 1 || raw.v === 2)) {
 			const ids = (x: unknown) =>
 				Array.isArray(x) ? [...new Set(x.filter(isFurn))] : [];
+			// v1 の 底の 品の 台は 1×2 の 下の マス（台の 所に 残す）
+			const oldStand = (id: string) => raw.v === 1 && id.startsWith("goal_");
 			const placed = Array.isArray(raw.placed)
 				? (raw.placed as Record<string, unknown>[])
 						.filter((p) => p && isFurn(p.id))
 						.map((p) => ({
 							id: p.id as FurnitureId,
 							x: count(p.x),
-							y: count(p.y),
+							y: count(p.y) + (oldStand(p.id as string) ? 1 : 0),
 						}))
 				: [];
 			return {
-				v: 1,
+				v: 2,
 				owned: raw.owned === true,
 				returns: count(raw.returns),
 				returnAt:
@@ -232,6 +240,7 @@ export const homeFacility = (f: Facility): Facility => {
 	const m = loadHome();
 	const layout: HomeLayout = { placed: m.placed, wall: m.wall, floor: m.floor };
 	const { rows, art, things } = homeRows(layout);
+	const onWall = new Set(rows[HOME_WALL_Y]);
 	// 一覧で えらんで いる あいだは その 壁紙・床で（下見。保存は しない）
 	const wall = WALLPAPERS[trying?.wall ?? m.wall];
 	const fl = FLOORINGS[trying?.floor ?? m.floor];
@@ -253,10 +262,12 @@ export const homeFacility = (f: Facility): Facility => {
 			tiles: (k) => ({
 				...room.tiles?.(k),
 				...Object.fromEntries(
-					Object.entries(art).map(([ch, ref]) => [
-						ch,
-						k.on(...cellLayers(ref)),
-					]),
+					Object.entries(art).map(([ch, ref]) => {
+						const { layers, above } = cellTile(ref);
+						// 壁に 寄せた 家具の 上の 段は 壁の 下段に 重ねる
+						const t = onWall.has(ch) ? k.low(...layers) : k.on(...layers);
+						return [ch, above.length ? { ...t, above } : t];
+					}),
 				),
 			}),
 			things,
@@ -370,6 +381,49 @@ const sizeLabel = (id: FurnitureId) => {
 	return w * h > 1 ? `${w}×${h}` : undefined;
 };
 
+/** 家具の 一覧で 開いて いた 札（"all" は すべて）。 */
+let furnTab = "all";
+
+/**
+ * 家具の 一覧（上に 分けの 札：すべて と、行の ある 分け。札を かえると その 分けの 行で 開きなおす）。
+ * 選んだ 家具（やめたら null）。
+ */
+const furnList = async (
+	ctx: Ctx,
+	title: string,
+	ids: readonly FurnitureId[],
+	item: (id: FurnitureId) => ListItem,
+	start?: FurnitureId,
+): Promise<FurnitureId | null> => {
+	const tabs = [
+		{ label: "すべて", value: "all" },
+		...FURNITURE_CATEGORIES.filter((c) =>
+			ids.some((id) => furnitureCategory(id) === c.id),
+		).map((c) => ({ label: c.name, value: c.id as string })),
+	];
+	if (!tabs.some((t) => t.value === furnTab)) furnTab = "all";
+	if (start && furnTab !== "all" && furnitureCategory(start) !== furnTab)
+		furnTab = "all";
+	for (;;) {
+		const shown = ids.filter(
+			(id) => furnTab === "all" || furnitureCategory(id) === furnTab,
+		);
+		const v = await listWindow(ctx, title, shown.map(item), {
+			closeLabel: "やめる",
+			start: start ? Math.max(0, shown.indexOf(start)) : 0,
+			// 分けが 1つしか なければ 札は 出さない
+			tabs: tabs.length > 2 ? tabs : undefined,
+			tab: furnTab,
+		});
+		if (v?.startsWith(TAB_PICKED)) {
+			furnTab = v.slice(TAB_PICKED.length);
+			start = undefined;
+			continue;
+		}
+		return v && isFurn(v) ? v : null;
+	}
+};
+
 /** 片づけた 家具の 一覧から 1つ 選ぶ（絵つき。なければ null）。 */
 const chooseStored = async (
 	ctx: Ctx,
@@ -382,18 +436,12 @@ const chooseStored = async (
 		return null;
 	}
 	await s.wait(0);
-	const v = await listWindow(
-		ctx,
-		title,
-		m.stored.map((id) => ({
-			label: furnName(id),
-			sub: sizeLabel(id),
-			value: id,
-			icon: furnIcon(id),
-		})),
-		{ closeLabel: "やめる" },
-	);
-	return v && isFurn(v) ? v : null;
+	return furnList(ctx, title, m.stored, (id) => ({
+		label: furnName(id),
+		sub: sizeLabel(id),
+		value: id,
+		icon: furnIcon(id),
+	}));
 };
 
 /** 持つ（目の前に うすい 絵で 置く 所を 見せる。A で 置く）。 */
@@ -615,9 +663,9 @@ export const homeThing =
 			return;
 		}
 		// ベッド：寝ころぶ（枕に 頭を のせて 掛け布団を かぶる。もう 1度 押すと 起きる）
-		if (kind === "bed") {
+		if (BED_FURNITURE.includes(kind)) {
 			const g = await s.choose([...HOME_MSG.bedMenu], { cancel: 3 });
-			if (g === 0) await lieDown(s, m);
+			if (g === 0) await lieDown(s, m, kind);
 			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
 			return;
 		}
@@ -649,10 +697,14 @@ export const homeThing =
 	};
 
 /** ベッドに 寝ころぶ（置いた ベッドの 上の マスが 枕、下の マスが 掛け布団）。窓を 閉じると 起きる。 */
-const lieDown = async (s: Story, m: HomeMemo): Promise<void> => {
-	const bed = m.placed.find((p) => p.id === "bed");
+const lieDown = async (
+	s: Story,
+	m: HomeMemo,
+	kind: FurnitureId,
+): Promise<void> => {
+	const bed = m.placed.find((p) => p.id === kind);
 	if (!bed) return;
-	const blanket = FURNITURE.bed.cells[1]?.[0];
+	const blanket = FURNITURE[kind].cells[1]?.[0];
 	if (!blanket) return;
 	s.lie({ x: bed.x, y: bed.y, blanket });
 	try {
@@ -700,6 +752,7 @@ const openParcels = async (s: Story): Promise<void> => {
 		arcade5: () =>
 			Object.values(loadArcade().plays).reduce((a, n) => a + n, 0) >= 5,
 		bushitsu3: () => loadBushitsu().visits >= 3,
+		moveIn: () => true,
 	};
 	const events = EVENT_GIFTS.filter(
 		(g) => !owns(m, g.id) && !m.resident.includes(g.id) && happened[g.when](),
@@ -791,7 +844,7 @@ export const furnitureShop = async (
 		return;
 	}
 	await s.say("nanj", msg.shop, who);
-	let start = 0;
+	let start: FurnitureId | undefined;
 	for (;;) {
 		const m = loadHome();
 		// 底の 品（goal_〜）は 売らない：持ち帰ると 届く
@@ -802,21 +855,22 @@ export const furnitureShop = async (
 		}
 		const have = walletYen();
 		await s.wait(0);
-		const v = await listWindow(
+		const v = await furnList(
 			ctx,
 			`${msg.shopTitle}<br><small>手もと　${yen(have)}</small>`,
-			ids.map((id) => ({
+			ids,
+			(id) => ({
 				label: furnName(id),
-				sub: yen(FURNITURE_PRICE[id]),
+				sub: yen(FURNITURE_PRICE[id as BaseFurnitureId]),
 				value: id,
 				icon: furnIcon(id),
-				disabled: FURNITURE_PRICE[id] > have,
-			})),
-			{ closeLabel: "やめる", start },
+				disabled: FURNITURE_PRICE[id as BaseFurnitureId] > have,
+			}),
+			start,
 		);
 		if (!v || !ids.includes(v as BaseFurnitureId)) return;
 		const id = v as BaseFurnitureId;
-		start = Math.max(0, ids.indexOf(id));
+		start = id;
 		const price = FURNITURE_PRICE[id];
 		await s.narrate(
 			fill(HOME_MSG.shopAsk, { name: furnName(id), price: yen(price) }),

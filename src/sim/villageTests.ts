@@ -242,6 +242,7 @@ import {
 import {
 	canPlace,
 	cellLayers,
+	cellTile,
 	FURNITURE,
 	FURNITURE_PRICE,
 	type FurnitureId,
@@ -2238,9 +2239,10 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 				goalFurniture(d) in FURNITURE &&
 				!(goalFurniture(d) in FURNITURE_PRICE) &&
 				!sources.includes(goalFurniture(d)) &&
-				// 品は 下の マスの 台に 重ねる（台 | 品。cellLayers）
-				cellLayers(FURNITURE[goalFurniture(d)].cells[1][0]).length === 2 &&
-				FURNITURE[goalFurniture(d)].cells.length === 2,
+				// 品は 1マスの 台に 重ねる（台 | 品。cellLayers）。品は キャラより 手前（cellTile の above）
+				cellLayers(FURNITURE[goalFurniture(d)].cells[0][0]).length === 2 &&
+				cellTile(FURNITURE[goalFurniture(d)].cells[0][0]).above.length === 1 &&
+				FURNITURE[goalFurniture(d)].cells.length === 1,
 		),
 		"a goal item is not a stand-only furniture",
 	);
@@ -2267,6 +2269,11 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 	ok(!canPlace([], { id: "table", x: 3, y: 3 }), "table under the loan");
 	ok(!canPlace([], { id: "table", x: 0, y: 4 }), "table in the wall");
 	ok(canPlace([], { id: "table", x: 2, y: 5 }), "table on the floor");
+	// 背の 高い 家具は 上の 段を 壁の 下段に 重ねて 壁に 寄せられる（ベッドと 1マスの 物・予定表の 下は だめ）
+	ok(canPlace([], { id: "shelf", x: 8, y: 2 }), "shelf against the wall");
+	ok(!canPlace([], { id: "bed", x: 8, y: 2 }), "bed against the wall");
+	ok(!canPlace([], { id: "table", x: 8, y: 2 }), "table on the wall");
+	ok(!canPlace([], { id: "shelf", x: 3, y: 2 }), "shelf over the loan");
 	// 1列に ならべて 部屋を 区切ると 通れなく なる
 	const wall: Placed[] = [];
 	for (let x = 1; x <= 10; x++) wall.push({ id: "table", x, y: 6 });

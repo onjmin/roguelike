@@ -36,6 +36,9 @@ export const HOME_MONTHLY = 1500;
 /** 店で 売る・もらう 家具。 */
 export type BaseFurnitureId =
 	| "bed"
+	| "bedBeige"
+	| "bedCream"
+	| "bedRed"
 	| "table"
 	| "crt"
 	| "bonsai"
@@ -122,6 +125,24 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		name: "ベッド",
 		cells: [[base(2, 112)], [base(2, 113)]],
 		line: "ベッド。\nシーツに　まだ　のりが　きいている。",
+	},
+	bedBeige: {
+		name: "木の　ベッド",
+		cells: [[base(0, 112)], [base(0, 113)]],
+		line: "木の　ベッド。\n寝がえりの　たびに　きしむ。",
+	},
+	bedCream: {
+		name: "クリーム色の　ベッド",
+		cells: [[base(1, 112)], [base(1, 113)]],
+		line: "クリーム色の　ベッド。\n毛布から　お日さまの　におい。",
+	},
+	bedRed: {
+		name: "赤い　ダブルベッド",
+		cells: [
+			[base(3, 112), base(4, 112)],
+			[base(3, 113), base(4, 113)],
+		],
+		line: "赤い　ダブルベッド。\n……ひとりで　寝るには　広すぎる。",
 	},
 	table: {
 		name: "ちゃぶ台",
@@ -431,19 +452,37 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 /** 底の 品を のせる 台。 */
 const GOAL_STAND = ri("tableBeige");
 
+/** 家具の 1マスで キャラより 手前に 描く 絵の 印（`^` で はじまる 重ね。台に のせた 品）。 */
+const ABOVE = "^";
+
 /**
  * 家具の 1マスの 絵の 重ね（`|` で 区切ると 下から 順に 重ねる。台の 上に 品を のせる ときなど）。
+ * 一覧の 絵・下見で 使う ぶん（手前の 印は はずして ぜんぶ）。
  */
 export const cellLayers = (cell: string): string[] =>
-	cell ? cell.split("|") : [];
+	cell
+		? cell.split("|").map((r) => (r.startsWith(ABOVE) ? r.slice(1) : r))
+		: [];
+
+/** 部屋に 描く ときの 重ね：奥（layers）と キャラより 手前（above）。 */
+export const cellTile = (
+	cell: string,
+): { layers: string[]; above: string[] } => {
+	const refs = cell ? cell.split("|") : [];
+	return {
+		layers: refs.filter((r) => !r.startsWith(ABOVE)),
+		above: refs.filter((r) => r.startsWith(ABOVE)).map((r) => r.slice(1)),
+	};
+};
 
 /**
  * 台に のせる 品の 絵（16x16）を 半マス 上に ずらす（台と 同じ マスに 重ね、台の 天板に のって 見える。
- * 作者「テーブルの 上の 物は 0.5 下に ずらした ほうが 立体的」）。
+ * 作者「テーブルの 上の 物は 0.5 下に ずらした ほうが 立体的」）。台の 奥の マスは 歩けて、品は
+ * キャラより 手前に 描く（奥に 立つと 品の 上半分が 体に かかる）。
  */
 const onStand = (icon: string): string => {
 	const at = icon.indexOf("#");
-	return at < 0 ? `${icon}#0,0,16,16,0,-8` : `${icon},0,-8`;
+	return ABOVE + (at < 0 ? `${icon}#0,0,16,16,0,-8` : `${icon},0,-8`);
 };
 
 /** 1行の 幅（全角 22字）。 */
@@ -491,8 +530,8 @@ export const GOAL_FURNITURE = Object.fromEntries(
 			goalFurniture(d),
 			{
 				name: def.name,
-				// 台（1×2）。品は 下の マスの 台に 重ねて 半マス 上に 描く（上の マスは 品の 上半分だけ）
-				cells: [[""], [`${GOAL_STAND}|${onStand(def.icon ?? "")}`]],
+				// 台（1×1。2026-10-15 まで 1×2）。品は 台に 重ねて 半マス 上に、キャラより 手前に 描く
+				cells: [[`${GOAL_STAND}|${onStand(def.icon ?? "")}`]],
 				line: goalLine(def.name, def.flavor),
 			},
 		];
@@ -504,12 +543,23 @@ export const FURNITURE: Record<FurnitureId, Furniture> = {
 	...GOAL_FURNITURE,
 };
 
+/** ベッド（寝ころべる。上の マスが 枕、下の マスが 掛け布団。壁には 寄せない：作者「遠近感的に 置けない ほうが いい」）。 */
+export const BED_FURNITURE: readonly FurnitureId[] = [
+	"bed",
+	"bedBeige",
+	"bedCream",
+	"bedRed",
+];
+
 /**
  * リサイクルショップの レジで 買う ときの 値段（円）。本編に 関係ない 物なので 高め
  * （1回の 冒険の 売り上げは 数千円。node scripts/sales-sim.mjs）。
  */
 export const FURNITURE_PRICE: Record<BaseFurnitureId, number> = {
 	bed: 20000,
+	bedBeige: 12000,
+	bedCream: 16000,
+	bedRed: 48000,
 	table: 8000,
 	crt: 6000,
 	bonsai: 12000,
@@ -619,6 +669,66 @@ export const PC_FURNITURE: readonly FurnitureId[] = [
 /** 店では 売らない 家具（できごとで もらう）。 */
 export const NOT_SOLD: readonly FurnitureId[] = ["platformer", "bomberbox"];
 
+/** 家具の 一覧の 分け方（収納・店の 一覧の 上の 札。作者「カテゴリで 分けて 見れる ように」）。 */
+export type FurnitureCategory =
+	| "bed"
+	| "furniture"
+	| "appliance"
+	| "game"
+	| "goods"
+	| "deco"
+	| "goal";
+
+/** 札の 名前（並びは 札の 順）。 */
+export const FURNITURE_CATEGORIES: readonly {
+	id: FurnitureCategory;
+	name: string;
+}[] = [
+	{ id: "bed", name: "寝具" },
+	{ id: "furniture", name: "家具" },
+	{ id: "appliance", name: "家電" },
+	{ id: "game", name: "遊ぶ" },
+	{ id: "goods", name: "グッズ" },
+	{ id: "deco", name: "飾り" },
+	{ id: "goal", name: "底の品" },
+];
+
+const CATEGORY_OF: Partial<Record<FurnitureId, FurnitureCategory>> = {
+	table: "furniture",
+	sofa: "furniture",
+	chair: "furniture",
+	shelf: "furniture",
+	shelfDark: "furniture",
+	tansu: "furniture",
+	safe: "furniture",
+	doujinShelf: "furniture",
+	figureCase: "furniture",
+	crt: "appliance",
+	tv: "appliance",
+	tvTall: "appliance",
+	coffee: "appliance",
+	fridge: "appliance",
+	records: "appliance",
+	figZero: "goods",
+	figRino: "goods",
+	figAru: "goods",
+	otakuTapestry: "goods",
+	acstZero: "goods",
+	acstRen: "goods",
+	acstRino: "goods",
+	acstAru: "goods",
+};
+
+/** 家具の 分け（ベッド・遊べる 物・底の 品は 決まり。ほかは CATEGORY_OF、なければ 飾り）。 */
+export const furnitureCategory = (id: FurnitureId): FurnitureCategory =>
+	id.startsWith("goal_")
+		? "goal"
+		: BED_FURNITURE.includes(id)
+			? "bed"
+			: FURNITURE_GAME[id]
+				? "game"
+				: (CATEGORY_OF[id] ?? "deco");
+
 export const furnitureSize = (id: FurnitureId): { w: number; h: number } => {
 	const c = FURNITURE[id].cells;
 	return { w: c[0].length, h: c.length };
@@ -688,11 +798,24 @@ export const HOME_GIFTS: readonly Gift[] = [
 /**
  * ちょっとした できごとで もらう 遊べる 家具（家に 入った ときに 宅配便で 届く。家を 買った あとだけ）。
  * when は できごとの 名前（ui/village/myhome.ts が 調べる）：arcade5 ＝ ゲームセンターの 台で 5回 遊んだ・
- * bushitsu3 ＝ 部室棟に 3回 来た。
+ * bushitsu3 ＝ 部室棟に 3回 来た・moveIn ＝ 家を 買った あと はじめて 入った とき（絵を 描く キャンバス・
+ * BASIC の 書ける パソコンは すぐ 手に 入る ように。作者「もっと 簡単に 入手 できる ように」。店でも 買える）。
  */
 export const EVENT_GIFTS: readonly (Gift & {
-	when: "arcade5" | "bushitsu3";
+	when: "arcade5" | "bushitsu3" | "moveIn";
 })[] = [
+	{
+		id: "laptop",
+		from: "おんJ高校　ゲーム制作部",
+		note: "添え書き「型落ちの　ノートパソコン。\nBASICで　なんか　作ってみて」",
+		when: "moveIn",
+	},
+	{
+		id: "easel",
+		from: "おんJ高校　美術部",
+		note: "添え書き「キャンバス　1つ　あまりました。\n描いたら　見せてね」",
+		when: "moveIn",
+	},
 	{
 		id: "platformer",
 		from: "ゲームセンター「連コ」",
@@ -810,6 +933,9 @@ export type GuestAct =
 /** 家具の 使い方（決めて いない 家具は ながめる）。 */
 export const FURNITURE_ACT: Partial<Record<BaseFurnitureId, GuestAct>> = {
 	bed: "relax",
+	bedBeige: "relax",
+	bedCream: "relax",
+	bedRed: "relax",
 	sofa: "relax",
 	chair: "relax",
 	table: "relax",
@@ -960,7 +1086,8 @@ export const FLOORINGS: readonly Flooring[] = [
 
 /**
  * 部屋の 形（12×10）。W 窓・m 返済予定表（下の 床から 読む）・K 収納（模様替えの 箱）。
- * 家具は y=3〜8・x=1〜10 の 床に 置く。KEEP の マスには 置かない（入口の 前・予定表の 前）。
+ * 家具は y=3〜8・x=1〜10 の 床に 置く（高さ 2 以上は ベッドの ほか
+ * 上の 段を y=2 の 壁の 下段に 重ねられる）。KEEP の マスには 置かない（入口の 前・予定表の 前）。
  */
 export const HOME_ROWS: readonly string[] = [
 	"############",
@@ -1026,6 +1153,9 @@ const baseCh = (x: number, y: number): string =>
 const isFloor = (placed: readonly Placed[], x: number, y: number): boolean =>
 	baseCh(x, y) === "." && !furnitureAt(placed, x, y);
 
+/** 壁の 下段（h）の 行。高さ 2 以上の 家具は 上の 段を ここに 重ねて 壁に 寄せられる。 */
+export const HOME_WALL_Y = 2;
+
 /**
  * その 並びで 歩けなく なる 所が ないか：床は みんな 入口から つながり、家具・収納・返済予定表は
  * どれも となりの 床から 調べられる。
@@ -1075,7 +1205,10 @@ export const layoutOk = (placed: readonly Placed[]): boolean => {
 	return things.every(([x, y]) => reach(x, y));
 };
 
-/** 家具が その 左上で 置けるか（床の 上・KEEP を ふさがない・ほかと 重ならない・歩けなく ならない）。 */
+/**
+ * 家具が その 左上で 置けるか（床の 上・KEEP を ふさがない・ほかと 重ならない・歩けなく ならない）。
+ * 高さ 2 以上の 家具は 上の 段だけ 壁の 下段に 重ねられる（壁に 寄せた 本棚・筐体。作者「立体的」。ベッドは のぞく）。
+ */
 export const canPlace = (
 	placed: readonly Placed[],
 	p: Placed,
@@ -1084,7 +1217,14 @@ export const canPlace = (
 	const { w, h } = furnitureSize(p.id);
 	for (let y = p.y; y < p.y + h; y++)
 		for (let x = p.x; x < p.x + w; x++) {
-			if (!isFloor(placed, x, y)) return false;
+			const onWall =
+				h >= 2 &&
+				!BED_FURNITURE.includes(p.id) &&
+				y === p.y &&
+				y === HOME_WALL_Y &&
+				baseCh(x, y) === "h" &&
+				!furnitureAt(placed, x, y);
+			if (!onWall && !isFloor(placed, x, y)) return false;
 			if (HOME_KEEP.some(([kx, ky]) => kx === x && ky === y)) return false;
 			if (stand && stand[0] === x && stand[1] === y) return false;
 		}

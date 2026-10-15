@@ -148,12 +148,17 @@ const showPage = (
 	if (label) label.textContent = `${p + 1}／${pages.length}`;
 };
 
+/** 札（listWindow の tabs）を 選んだ ときの 返り値の 頭（あとに 札の value）。 */
+export const TAB_PICKED = "tab:";
+
 /**
  * 縦に並ぶ選択ウィンドウ。B・とじる・外のタップで null。
  * actions は とじるの横に並べるボタン（もちものの「整理」など）。押すと その value で閉じる。
  * key を つけた ボタンは その キー（PC）でも 押せる。
  * header は 題の下・行の上に出す 見るだけの HTML（メインメニューの つよさ）。
  * cols が 2 なら 行を 2 列に並べる（トルネコ1のメニューのように。上下で 段、左右で 列を動く）。
+ * tabs は 題の下の 札（家具の 分け。ui/village/myhome.ts）。札を 押すか、左右で ページの はしを こえると
+ * TAB_PICKED + 札の value で 閉じる（呼んだ 側が その 札の 行で 開きなおす）。tab は いまの 札。
  */
 export const listWindow = (
 	ctx: UiCtx,
@@ -168,6 +173,8 @@ export const listWindow = (
 		cols?: number;
 		/** カーソルが のった 行（開いた ときも 1回。模様替えの 下見：ui/village/myhome.ts）。 */
 		onCursor?: (value: string) => void;
+		tabs?: { label: string; value: string }[];
+		tab?: string;
 	} = {},
 ): Promise<string | null> =>
 	new Promise((resolve) => {
@@ -178,6 +185,17 @@ export const listWindow = (
 		if (items[cur]?.disabled) {
 			const firstOk = items.findIndex((i) => !i.disabled);
 			if (firstOk >= 0) cur = firstOk;
+		}
+		if (opt.tabs?.length) {
+			const bar = box.appendChild(el("div", { class: "menu-tabs" }));
+			for (const t of opt.tabs) {
+				const b = el("button", { class: "menu-tab", text: t.label });
+				if (t.value === opt.tab) b.classList.add("cur");
+				onTap(b, box, () => {
+					if (t.value !== opt.tab) pickTab(t.value);
+				});
+				bar.appendChild(b);
+			}
 		}
 		if (opt.header)
 			box.appendChild(el("div", { class: "menu-header", html: opt.header }));
@@ -257,8 +275,15 @@ export const listWindow = (
 		};
 		/** となりのページへ（同じ段の行に。選べない行は とばす）。 */
 		const flip = (d: -1 | 1) => {
-			if (pages.length < 2) return;
 			const p = pageOf(cur);
+			// 札の ある 一覧は はしの ページの 先が となりの 札
+			const tabs = opt.tabs ?? [];
+			if (tabs.length > 1 && (p + d < 0 || p + d >= pages.length)) {
+				const i = tabs.findIndex((t) => t.value === opt.tab);
+				pickTab(tabs[(i + d + tabs.length) % tabs.length].value);
+				return;
+			}
+			if (pages.length < 2) return;
 			const np = (p + d + pages.length) % pages.length;
 			const row = pages[p].indexOf(cur);
 			const target = pages[np];
@@ -355,12 +380,13 @@ export const listWindow = (
 			},
 			{ tap: "b" },
 		);
-		const done = (v: string | null) => {
+		const done = (v: string | null, se?: string) => {
 			pop();
-			ctx.se(v === null ? "cancel" : "decide");
+			ctx.se(se ?? (v === null ? "cancel" : "decide"));
 			box.remove();
 			resolve(v);
 		};
+		const pickTab = (v: string) => done(TAB_PICKED + v, "cursor");
 	});
 
 /**
