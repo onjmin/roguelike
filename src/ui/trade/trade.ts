@@ -27,6 +27,7 @@ import type { Story } from "../../engine/defs";
 import { addFlag, hasFlag, runStats } from "../../engine/save";
 import { earnYen, spendYen, walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
+import { readGuide } from "../guide";
 import { listWindow } from "../list";
 import { previewing } from "../village/pay";
 import { fill } from "../village/villageTalk";
@@ -53,15 +54,7 @@ const tellOnce = async (
 };
 
 /** 支店の パンフの 棚（口座・株・デイトレ・FX の 説明。いつでも 読める）。 */
-export const guideRack = async (s: Story): Promise<void> => {
-	const last = TRADE_GUIDE.topics.length - 1;
-	for (;;) {
-		const n = await s.choose([...TRADE_GUIDE.topics], { cancel: last });
-		const pages = TRADE_GUIDE.pages[n];
-		if (!pages) return;
-		for (const t of pages) await s.narrate(t);
-	}
-};
+export const guideRack = (s: Story): Promise<void> => readGuide(s, TRADE_GUIDE);
 
 type Holding = { n: number; cost: number };
 

@@ -34,7 +34,7 @@ import { type Cast, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { nowYear, season, today } from "../../data/town/calendar";
-import { BOND_GUIDE } from "../../data/town/guides";
+import { BOND_GUIDE, byHeading } from "../../data/town/guides";
 import type { Script, Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import {
@@ -46,6 +46,7 @@ import {
 } from "../../engine/save";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
+import { readGuide } from "../guide";
 import { listWindow } from "../list";
 import { cafeBondPoints, cafeBonds } from "./cafe";
 import { payOrShort, previewing } from "./pay";
@@ -384,7 +385,7 @@ export const giftShelf = async (ctx: Ctx, s: Story): Promise<void> => {
 	if (n === 0) await buyGift(ctx, s);
 	else if (n === 1) await bondBook(ctx, s);
 	// なかよし度の しくみ（いつでも 読める。data/town/guides.ts。あそびかたの「町の　しくみ」と 同じ）
-	else if (n === 2) for (const p of BOND_GUIDE) await s.narrate(p);
+	else if (n === 2) await readGuide(s, byHeading(BOND_GUIDE));
 };
 
 const buyGift = async (ctx: Ctx, s: Story): Promise<void> => {

@@ -77,6 +77,7 @@ import { spendYen, walletYen, yen } from "../../engine/wallet";
 import { arcadeScript, loadArcade } from "../arcade/arcade";
 import { loadBushitsu } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
+import { readGuide } from "../guide";
 import { type ListItem, listWindow, TAB_PICKED } from "../list";
 import { OPEN_WAIT_MS } from "../message";
 import { netBrowse } from "../net/net";
@@ -665,15 +666,9 @@ export const homeThing =
 			if (m.owned && m.late > 0)
 				await s.narrate(fill(HOME_MSG.late, { n: m.late }));
 			// 家と ローンの しくみ（いつでも 読める。data/town/guides.ts。あそびかたの「町の　しくみ」と 同じ）
-			if ((await s.choose([...HOME_MSG.loanMenu], { cancel: 1 })) !== 0) return;
-			// 読みたい ところだけ えらぶ（やめるまで 何度でも）
-			const last = HOME_GUIDE.topics.length - 1;
-			for (;;) {
-				const n = await s.choose([...HOME_GUIDE.topics], { cancel: last });
-				const pages = HOME_GUIDE.pages[n];
-				if (!pages) return;
-				for (const p of pages) await s.narrate(p);
-			}
+			if ((await s.choose([...HOME_MSG.loanMenu], { cancel: 1 })) === 0)
+				await readGuide(s, HOME_GUIDE);
+			return;
 		}
 		if (kind === "phone") {
 			if (m.owned) await phone(ctx, s);

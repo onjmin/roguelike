@@ -6,7 +6,7 @@
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { GAME_GUIDES } from "../data/arcade/guides";
 import { DUNGEON_NAMES } from "../data/story/story";
-import { TOWN_GUIDES } from "../data/town/guides";
+import { type Guide, TOWN_GUIDES } from "../data/town/guides";
 import type { Ctx } from "./ctx";
 import { explain } from "./explain";
 import { infoWindow, listWindow } from "./list";
@@ -299,7 +299,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 const openGuides = async (
 	ctx: Ctx,
 	title: string,
-	guides: { label: string; pages: readonly string[] }[],
+	guides: { label: string; pages: readonly string[]; guide?: Guide }[],
 ): Promise<void> => {
 	let start = 0;
 	for (;;) {
@@ -312,7 +312,34 @@ const openGuides = async (
 		if (v === null) return;
 		start = Number(v);
 		const g = guides[start];
-		if (g) await explain(ctx, [...g.pages]);
+		if (!g) continue;
+		// 項目の ある 説明は もう 1段 えらぶ（読みたい ところだけ）
+		if (g.guide && g.guide.pages.length > 1)
+			await openTopics(ctx, g.label, g.guide);
+		else await explain(ctx, [...g.pages]);
+	}
+};
+
+const openTopics = async (
+	ctx: Ctx,
+	title: string,
+	guide: Guide,
+): Promise<void> => {
+	let start = 0;
+	for (;;) {
+		const v = await listWindow(
+			ctx,
+			title,
+			guide.pages.map((_, i) => ({
+				label: guide.topics[i] ?? "",
+				value: String(i),
+			})),
+			{ start },
+		);
+		if (v === null) return;
+		start = Number(v);
+		const pages = guide.pages[start];
+		if (pages) await explain(ctx, [...pages]);
 	}
 };
 

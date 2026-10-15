@@ -1203,7 +1203,7 @@ test("窓: おわったら「もう一回」で すぐ また 遊ぶ（毎回 �
 			},
 		});
 		const before = walletYen();
-		r = recorder([0, 0, 0]);
+		r = recorder([0, 0, 0, 0]);
 		await arcadeScript(CTX, r.s, "gacha");
 		same(stakes.map(String), ["10", "10"], "same stake");
 		ok(walletYen() === before, `casino wallet ${walletYen()}`);
@@ -1304,7 +1304,7 @@ test("カジノ: 台では チップ入れから 出して 遊び、のこりは
 				return { score: 45, cash: 42 };
 			},
 		});
-		let r = recorder([0, 1, 1]);
+		let r = recorder([0, 1, 0, 1]);
 		await arcadeScript(CTX, r.s, "gacha");
 		ok(got === 30, `stake ${got}`);
 		same(
@@ -1313,7 +1313,8 @@ test("カジノ: 台では チップ入れから 出して 遊び、のこりは
 				`choose: ${ARCADE.menu.join("/")}`,
 				`narrate: ${fill(T.ask, { chips: 45 })}`,
 				`choose: ${[fill(T.option, { n: 10 }), fill(T.option, { n: 30 }), fill(T.all, { n: 45 }), "やめる"].join("/")}`,
-				// はじめての 1回は くわしい 説明（data/arcade/guides.ts。rule の かわり）
+				// はじめての 1回は くわしい 説明を 聞くか きく（data/arcade/guides.ts。聞けば rule の かわり）
+				`choose: ${ARCADE.guideMenu.join("/")}`,
 				...(ARCADE_GUIDE.gacha ?? [ARCADE_TEXT.gacha.rule]).map(
 					(l) => `narrate: ${l}`,
 				),
@@ -1722,6 +1723,13 @@ test("ガイド（2026-10-15）: ゲームの 決まりと 町の しくみの �
 		BASIC_GUIDE.topics.length === BASIC_GUIDE.pages.length,
 		"basic topics and pages differ",
 	);
+	// 町の しくみは 項目を えらんで 読む（最後は「やめる」。1項目 8窓まで）
+	for (const { label, guide } of TOWN_GUIDES()) {
+		ok(guide.topics.length === guide.pages.length + 1, `town ${label}: topics`);
+		ok(guide.topics.at(-1) === "やめる", `town ${label}: やめる`);
+		for (const [i, p] of guide.pages.entries())
+			ok(p.length <= 8 && guide.topics[i], `town ${label} ${i}: ${p.length}`);
+	}
 });
 
 export const runArcadeTests = async (): Promise<TestResult[]> => {

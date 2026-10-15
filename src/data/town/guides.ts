@@ -107,12 +107,39 @@ export const BOND_GUIDE: readonly string[] = [
 	"どれも　強さには　効かない。\nのんびり　どうぞ。",
 ];
 
-/** あそびかたの「町の　しくみ」の 一覧（題と 窓）。 */
-export const TOWN_GUIDES = (): { label: string; pages: readonly string[] }[] =>
+/** えらんで 読む 説明（topics の 最後は「やめる」。pages は topics の 順の 窓）。 */
+export type Guide = {
+	readonly topics: readonly string[];
+	readonly pages: readonly (readonly string[])[];
+};
+
+/** 【】の 見出しの 窓で 区切って 項目に する（見出しが 項目の 名前）。 */
+export const byHeading = (lines: readonly string[]): Guide => {
+	const topics: string[] = [];
+	const pages: string[][] = [];
+	for (const l of lines) {
+		const h = /^【(.+?)】/.exec(l)?.[1];
+		if (h || !pages.length) {
+			topics.push(h ?? "");
+			pages.push([]);
+		}
+		pages[pages.length - 1]?.push(l);
+	}
+	return { topics: [...topics, "やめる"], pages };
+};
+
+/** あそびかたの「町の　しくみ」の 一覧（題・項目・全部の 窓）。 */
+export const TOWN_GUIDES = (): {
+	label: string;
+	guide: Guide;
+	pages: readonly string[];
+}[] =>
 	[
-		{ label: "お金", pages: MONEY_GUIDE },
-		{ label: "倉庫と　持ちこみ", pages: STORAGE_GUIDE },
-		{ label: "家", pages: HOME_GUIDE.pages.flat() },
-		{ label: "なかよし", pages: BOND_GUIDE },
-		{ label: "おんJ証券", pages: TRADE_GUIDE.pages.flat() },
-	].filter((g) => g.pages.length > 0);
+		{ label: "お金", guide: byHeading(MONEY_GUIDE) },
+		{ label: "倉庫と　持ちこみ", guide: byHeading(STORAGE_GUIDE) },
+		{ label: "家", guide: HOME_GUIDE },
+		{ label: "なかよし", guide: byHeading(BOND_GUIDE) },
+		{ label: "おんJ証券", guide: TRADE_GUIDE },
+	]
+		.map((g) => ({ ...g, pages: g.guide.pages.flat() }))
+		.filter((g) => g.pages.length > 0);

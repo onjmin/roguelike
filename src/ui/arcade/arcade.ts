@@ -263,8 +263,11 @@ export const arcadeScript = async (
 	}
 	if (paid) ctx.se("arcCoin");
 	if (!m.tutored.includes(game)) {
-		// 決まりの むずかしい 台は くわしい 説明（data/arcade/guides.ts。あそびかたの「ゲームの　決まり」で 読みかえせる）
-		for (const line of ARCADE_GUIDE[game] ?? [t.rule]) await s.narrate(line);
+		// 決まりの むずかしい 台は くわしい 説明を 聞くか えらぶ（data/arcade/guides.ts。あそびかたの「ゲームの　決まり」で 読みかえせる）
+		const guide = ARCADE_GUIDE[game];
+		const long =
+			guide && (await s.choose([...ARCADE.guideMenu], { cancel: 1 })) === 0;
+		for (const line of long ? guide : [t.rule]) await s.narrate(line);
 		m.tutored.push(game);
 		saveArcade(m);
 	}

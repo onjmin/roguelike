@@ -22,6 +22,8 @@ export const ARCADE = {
 	// おわった あと すぐ もう一度（はじめが「もう一回」。同じ 曲・同じ 枚数で、また 払う。ui/arcade/arcade.ts）
 	again: ["もう一回", "やめる"],
 	payAgain: ["もう一回（{price}）", "やめる"],
+	// はじめて 遊ぶ ときの くわしい 説明（data/arcade/guides.ts）を 聞くか。すぐ 遊ぶなら rule の 2行 だけ
+	guideMenu: ["説明を　聞く", "すぐ　遊ぶ"],
 } as const;
 
 /** ゲームセンター「連コ」の 1プレイの 値段（円）。 */
