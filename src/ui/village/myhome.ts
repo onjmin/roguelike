@@ -665,9 +665,15 @@ export const homeThing =
 			if (m.owned && m.late > 0)
 				await s.narrate(fill(HOME_MSG.late, { n: m.late }));
 			// 家と ローンの しくみ（いつでも 読める。data/town/guides.ts。あそびかたの「町の　しくみ」と 同じ）
-			if ((await s.choose([...HOME_MSG.loanMenu], { cancel: 1 })) === 0)
-				for (const p of HOME_GUIDE) await s.narrate(p);
-			return;
+			if ((await s.choose([...HOME_MSG.loanMenu], { cancel: 1 })) !== 0) return;
+			// 読みたい ところだけ えらぶ（やめるまで 何度でも）
+			const last = HOME_GUIDE.topics.length - 1;
+			for (;;) {
+				const n = await s.choose([...HOME_GUIDE.topics], { cancel: last });
+				const pages = HOME_GUIDE.pages[n];
+				if (!pages) return;
+				for (const p of pages) await s.narrate(p);
+			}
 		}
 		if (kind === "phone") {
 			if (m.owned) await phone(ctx, s);
