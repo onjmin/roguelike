@@ -333,8 +333,9 @@ const ROOM_PIECES = {
 	// ガラスケース glassCase は yellowCounter の 下の 段だった。どれも 全体を 使う 形に した）
 	// 106: 114
 	safe: { ids: [["sgid89n"]] },
-	// 25: 86。画面と ボタンの 機械（ATM・券売機）
-	atm: { ids: [["p5Slkwn"]] },
+	// ATM（青い「ATM」の 看板・画面・テンキー・カード口。16x32 の 下 24px）。手描き。
+	// 2026-10-15 まで 25: 86 の 画面と ボタンの 低い 機械だった（電卓に 見えて わかりにくい と 作者の 指摘）
+	atm: { drawn: "atm", size: [1, 2] },
 	// 25: 125。画面つきの レジ（台の 上）
 	register: { ids: [["GoZU5Y"]], lift: 5 },
 	// 25: 100 / 120。段ボール（黄）
@@ -1158,6 +1159,56 @@ const DRAWN = {
 		});
 		return img;
 	},
+	/** ATM（16x32。上の 8px は 空けて、本体より 少し 広い 青い 看板に 白い「ATM」、画面、手前に 張り出す 台、テンキーと カード口）。 */
+	atm: () => {
+		const img = blank(CELL, CELL * 2);
+		const pal = {
+			o: "2b2f3a",
+			b: "2f62d6",
+			B: "1d3f99",
+			w: "f4f6fa",
+			g: "d4d8e0",
+			G: "a9afbb",
+			l: "bcc2cc",
+			d: "4a505e",
+			s: "79c7ee",
+			S: "c8ecff",
+			k: "7a808c",
+			y: "3ccf5a",
+		};
+		const rows = [
+			"oooooooooooooooo",
+			"obbbbbbbbbbbbbbo",
+			"obwbbwwwbwbbbwbo",
+			"owbwbbwbbwwbwwbo",
+			"owwwbbwbbwbwbwbo",
+			"owbwbbwbbwbbbwbo",
+			"owbwbbwbbwbbbwbo",
+			"obbbbbbbbbbbbbbo",
+			"oBBBBBBBBBBBBBBo",
+			".oggggggggggggo.",
+			".ogddddddddddgo.",
+			".ogdSSssssssdgo.",
+			".ogdSsssssssdgo.",
+			".ogdssssssssdgo.",
+			".ogddddddddddgo.",
+			".oGGGGGGGGGGGGo.",
+			"ollllllllllllllo",
+			".ogkgkgkgggddgo.",
+			".oggggggggggygo.",
+			".ogkgkgkggggggo.",
+			".oggggggggggggo.",
+			".oggddddddddggo.",
+			".oGGGGGGGGGGGGo.",
+			".oooooooooooooo.",
+		];
+		rows.forEach((r, y) => {
+			[...r].forEach((c, x) => {
+				if (pal[c]) dot(img, x, y + 8, pal[c]);
+			});
+		});
+		return img;
+	},
 	/** 床を はう 配線（黒い 太い 線と 灰色の 細い 線が 左右へ ゆるく うねる。床の 上に 重ねる）。 */
 	cable: () => {
 		const img = blank(CELL, CELL);
@@ -1338,7 +1389,8 @@ const room = packAtlas(
 	ROOM_PIECES,
 	(p) => {
 		if (p.base) return [p.base[2] ?? 1, p.base[3] ?? 1];
-		if (p.parts || p.drawn) return [1, 1];
+		if (p.drawn) return p.size ?? [1, 1];
+		if (p.parts) return [1, 1];
 		return [Math.max(...p.ids.map((r) => r.length)), p.ids.length];
 	},
 	(p, w, h) => {
