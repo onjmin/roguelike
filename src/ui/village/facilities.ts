@@ -49,6 +49,7 @@ import { netBrowse } from "../net/net";
 import { isNetaPlay, netaPlay } from "../neta/neta";
 import { purikura } from "../purikura/purikura";
 import { sabaPlay } from "../saba/saba";
+import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import {
 	atmDesk,
 	guideRack,
@@ -383,10 +384,16 @@ export const buildFacility = (
 		// ベッドに ぶつかるか タップしたら 寝ころぶ（ui/village/myhome.ts）
 		onBumpThing: home ? homeBump(ctx) : undefined,
 		// 映画館の スクリーンと 客席の スマホの 光（ui/village/cinemaDecor.ts）・キリコの 家の 持っている 家具の 下見（ui/village/myhome.ts）
-		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）
+		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）・証券の 株価ボード（ui/trade/stockBoardDecor.ts）
 		decor: home
 			? homeDecor()
-			: joinDecor(facilityDecor(f, facilityRoomRows(f)), roomFindGlint(f)),
+			: joinDecor(
+					facilityDecor(f, facilityRoomRows(f)),
+					f.id === "shoken"
+						? stockBoardDecor(boardCell(facilityRoomRows(f)))
+						: undefined,
+					roomFindGlint(f),
+				),
 		images: home ? homeImages() : undefined,
 	};
 };

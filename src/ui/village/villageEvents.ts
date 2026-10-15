@@ -66,7 +66,11 @@ import {
 	VILLAGE_MSG,
 } from "../../data/town/town";
 import { crowdNodes, villagePedCost } from "../../data/village/crowd";
-import { facilityOfDoor, outdoorThingOf } from "../../data/village/facilities";
+import {
+	facilitiesAt,
+	facilityOfDoor,
+	outdoorThingOf,
+} from "../../data/village/facilities";
 import { npc, sign } from "../../data/village/helpers";
 import {
 	layoutStage,
@@ -135,6 +139,7 @@ import { pinPad } from "../minigames/pinPad";
 import { makeQuiz } from "../minigames/quiz";
 import { sabaEvents } from "../saba/saba";
 import { openSettings } from "../settings";
+import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { civicBoardMenu, civicBoardScript } from "./civic";
@@ -236,6 +241,14 @@ const records = async (ctx: Ctx, s: Story): Promise<void> => {
 };
 
 /** 飾りを 重ねる（影 → 湯気の 順）。 */
+/** おんJ証券の 店先の 株価の 看板（外の 形の 1234）の 左端の マス（建って いなければ null）。 */
+const shokenSign = (stage: number): readonly [number, number] | null => {
+	const f = facilitiesAt(stage).find((x) => x.id === "shoken");
+	if (f?.look.kind !== "grid") return null;
+	const c = boardCell(f.look.rows);
+	return c && [f.at[0] + c[0], f.at[1] + c[1]];
+};
+
 const joinDecor =
 	(...ds: MapDef["decor"][]): MapDef["decor"] =>
 	(g, ox, oy, t) => {
@@ -1121,11 +1134,13 @@ export const buildVillage = (
 		ground: shadowGround(view.stage, rows, villagePalette(view)),
 		// 銭湯の 煙突から 湯気・
 		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
-		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）
+		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）・
+		// おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）
 		decor: joinDecor(
 			chimneySteam(rows),
 			imoniDecor(imoniArrive()),
 			villageFindGlint(),
+			stockBoardDecor(shokenSign(layoutStage(view))),
 		),
 		outside: "#1f2a14",
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
