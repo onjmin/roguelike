@@ -1,7 +1,7 @@
 // 町の 寄り道で 板を 見つける（data/town/finds.ts）。施設の 物・人の 文の あとに 1回だけ。
 // 板が 開いたら その場で「〜に もぐれるように なった」と 知らせる（知らせ（news）は 積まない）。
 // まだ 起きていない 出来事の 物・人には きらっと 光る 点を 出して 誘う（findGlint）。
-// 同じ 点は 飾った 持ち帰り品（本館の 飾り棚・キリコの 家の 台）にも 出す（trophyGlint）。
+// 同じ 点は 飾った 持ち帰り品（本館の 飾り棚・キリコの 家の 台）にも 不定期に 一瞬だけ 出す（trophyGlint）。
 
 import { DUNGEON_NAMES } from "../../data/story/story";
 import { TOWN_FINDS, type TownFind } from "../../data/town/finds";
@@ -9,6 +9,7 @@ import { type Facility, facilityById } from "../../data/village/facilities";
 import type { MapDef, Story } from "../../engine/defs";
 import { loadProgress, loadTown, openByFlag } from "../../engine/save";
 import { TILE } from "../../engine/types";
+import { hash } from "./cinemaDecor";
 
 /** 起きる ところか（施設が 建ち、板が まだ 開いていない・前の 板が 開いている・町の 段）。 */
 const ready = (f: TownFind): boolean => {
@@ -119,14 +120,35 @@ export const cellGlint = (
 	sparkle(g, px + 4, py + 9, t + 700, false);
 };
 
-/** 飾った 品の 光る 点（並びの i 番目。いっせいに 光らないよう 時を ずらす）。 */
+/** 飾った 品の くじの 区切り（ミリ秒。1区切りに 1回まで 光る）。 */
+const TROPHY_SLOT = 1600;
+/** 1区切りで 光る 割合（平均 4〜5秒に 1回）。 */
+const TROPHY_CHANCE = 0.33;
+/** 光って いる 長さ（ミリ秒）。 */
+const TROPHY_FLASH = 380;
+/** sparkle の 光って いる 長さ（7コマ × 110ms）。 */
+const SPARKLE_LIT = 770;
+
+/**
+ * 飾った 品の 光る 点（並びの i 番目）。不定期に 一瞬だけ、品の 上の どこかが きらっと 光る
+ * （区切りごとの くじで 光るか・いつ・どこを 決める。品ごとに くじが ちがうので いっせいには 光らない）。
+ */
 export const trophyGlint = (
 	g: CanvasRenderingContext2D,
 	px: number,
 	py: number,
 	t: number,
 	i: number,
-): void => cellGlint(g, px, py, t + i * 530);
+): void => {
+	const n = Math.floor(t / TROPHY_SLOT);
+	if (hash(n, i, 53) >= TROPHY_CHANCE) return;
+	const start = n * TROPHY_SLOT + hash(n, i, 54) * (TROPHY_SLOT - TROPHY_FLASH);
+	const e = t - start;
+	if (e < 0 || e >= TROPHY_FLASH) return;
+	const cx = px + 4 + Math.floor(hash(n, i, 55) * 8);
+	const cy = py + 3 + Math.floor(hash(n, i, 56) * 6);
+	sparkle(g, cx, cy, (e * SPARKLE_LIT) / TROPHY_FLASH, true);
+};
 
 const glintDecor = (cellsOf: () => Glint[]): MapDef["decor"] => {
 	let seen = -1;
