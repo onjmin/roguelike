@@ -954,7 +954,7 @@ test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひ�
 	});
 });
 
-test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（同じ たおれで 二度・持って 出る 前・倉庫に ある ときは 渡さない。やめた 冒険では 渡さない）", async () => {
+test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持たせる（外れた たおれで 引きなおさない・同じ たおれで 二度・持って 出る 前・倉庫に ある ときは 渡さない。やめた 冒険では 渡さない）", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
 		putTown({ stage: 1 });
@@ -974,7 +974,7 @@ test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（�
 			});
 		died(1000);
 		const first = fakeStory();
-		await reliefScript(first.s);
+		await reliefScript(first.s, 0);
 		ok(
 			PUYU_RELIEF.some((t) => first.log.includes(`say nanj: ${t}`)) &&
 				first.log.includes(`narrate: ${RELIEF_NOTE}`),
@@ -986,15 +986,18 @@ test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（�
 		);
 		// 同じ たおれ：もう 来ない
 		const again = fakeStory();
-		await reliefScript(again.s);
+		await reliefScript(again.s, 0);
 		ok(!again.log.length, `came twice: ${again.log.join(" / ")}`);
 		// 持って 出る 前に また たおれても（別の タブ など）ふえない
-		ok(!giveRelief(2000), "a second sword while one is pending");
+		ok(!giveRelief(2000, 0), "a second sword while one is pending");
 		// 持って 出る（1回だけ）
 		ok(takeRelief() && !takeRelief(), "taken twice");
 		ok(loadTown().relief === undefined, "still pending after taking");
 		// 次の たおれで また もらえる。倉庫に ある ときは もらえない
-		ok(giveRelief(3000) && takeRelief(), "no sword for a new fall");
+		ok(giveRelief(3000, 0) && takeRelief(), "no sword for a new fall");
+		// 外れ：その たおれでは もらえず、帰りなおしても 引きなおさない
+		ok(!giveRelief(3500, 0.99) && !loadTown().relief, "a sword on a miss");
+		ok(!giveRelief(3500, 0), "rerolled the same fall");
 		const t = loadTown();
 		t.storage.push({
 			uid: 1,
@@ -1006,12 +1009,12 @@ test("ぷゆゆソード：たおれて 帰ると ぷゆゆが 持たせる（�
 			count: 1,
 		});
 		saveTown(t);
-		ok(!giveRelief(4000), "a sword while one is in the storehouse");
+		ok(!giveRelief(4000, 0), "a sword while one is in the storehouse");
 		// やめた 冒険では 渡さない
 		saveTown({ ...loadTown(), storage: [] });
 		died(5000, QUIT_CAUSE);
 		const quit = fakeStory();
-		await reliefScript(quit.s);
+		await reliefScript(quit.s, 0);
 		ok(!quit.log.length && !loadTown().relief, "a sword for quitting");
 	});
 });
@@ -1020,7 +1023,7 @@ test("ぷゆゆソード：村の 持ち物に 出て、倉庫が あれば あ�
 	withStorage(() => {
 		setProgress(["shallow"]);
 		putTown({ stage: 1 });
-		ok(giveRelief(100), "harness: no sword");
+		ok(giveRelief(100, 0), "harness: no sword");
 		// 倉庫が まだ ない 段：あずけられない（持って 出る）
 		ok(
 			!stashRelief() && loadTown().relief === true,
@@ -1038,7 +1041,7 @@ test("ぷゆゆソード：村の 持ち物に 出て、倉庫が あれば あ�
 		);
 		ok(!stashRelief(), "stashed twice");
 		ok(!takeRelief(), "took a stashed sword");
-		ok(!giveRelief(200), "a second sword while one is in the storehouse");
+		ok(!giveRelief(200, 0), "a second sword while one is in the storehouse");
 	});
 });
 
@@ -8310,13 +8313,31 @@ test("有料の 寄り道（2026-10-14）: 銭湯は 村に いる あいだ 1�
 	});
 });
 
-test("ヲタショップ「神降臨」: 段7から 建ち、レジと ガチャは play otaku、グッズは 家具で リサイクルショップでは 売らない、ガチャは 家と お金が いる", async () => {
+test("ヲタショップ「神降臨」: 段7から 建ち、グッズは レジの 店員・ガチャは 機械で play otaku、グッズは 家具で リサイクルショップでは 売らない、ガチャは 家と お金が いる", async () => {
 	const f = facilityById("otaku");
 	ok(f?.from === 7, "otaku is not from stage 7");
 	ok(
-		f?.room?.plays?.register === "otaku" && f.room.plays.gacha === "otaku",
-		"the register or the gacha does not open the shop",
+		f?.room?.people?.some((p) => p.play === "otaku") &&
+			f.room.plays?.gacha === "otaku",
+		"the clerk or the gacha does not open the shop",
 	);
+	// 売り買いは 棚・レジの 物では なく 店員に 話して（2026-10-16 作者）
+	for (const [id, play] of [
+		["konbini", "giftshop"],
+		["recycle", "furnshop"],
+		["otaku", "otaku"],
+	] as const) {
+		const room = facilityById(id)?.room;
+		ok(
+			room?.people?.some((p) => p.play === play),
+			`${id}: no clerk sells (${play})`,
+		);
+		// ガチャは 機械なので そのまま（レジ・ギフトの 棚は 売らない）
+		ok(
+			!room?.plays?.register && !room?.plays?.gift,
+			`${id}: a shelf or the register still sells (${play})`,
+		);
+	}
 	fitsWindow(
 		Object.entries(OTAKU_MSG).flatMap(([k, v]) =>
 			(Array.isArray(v) ? v : [v]).map(

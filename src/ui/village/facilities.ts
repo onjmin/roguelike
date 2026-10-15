@@ -17,6 +17,7 @@ import {
 } from "../../data/town/facilities";
 import {
 	type Facility,
+	type FacilityPerson,
 	facilityEntry,
 	facilityMapId,
 	facilityOutside,
@@ -255,6 +256,12 @@ export const outdoorScript =
 		if (t.sprite) s.face(outdoorId(f, t), t.dir ?? "down");
 	};
 
+/** 話すと 店の 窓を 開く 店員か（贈り物・家具・グッズ）。 */
+const isShopKeeper = (
+	p: FacilityPerson["play"],
+): p is "giftshop" | "furnshop" | "otaku" =>
+	p === "giftshop" || p === "furnshop" || p === "otaku";
+
 /** 飾りを 重ねる。 */
 const joinDecor =
 	(...ds: MapDef["decor"][]): MapDef["decor"] =>
@@ -357,7 +364,17 @@ export const buildFacility = (
 					// 店番：セリフを 1つ → 品書き（ui/minigames/eat.ts）
 					if (who.play === "eat")
 						await keeperTalk(ctx, s, f.id, who.name, lines);
-					else
+					else if (isShopKeeper(who.play)) {
+						// 売り場の 店員：セリフを 1つ（話す たびに 次）→ 店の 窓
+						const key = `shopTalk:${f.id}`;
+						const i = Number(s.flag(key) ?? 0);
+						s.set(key, i + 1);
+						const l = lines[i % lines.length];
+						if (l) await s.say("nanj", l, { name: who.name });
+						if (who.play === "giftshop") await giftShelf(ctx, s);
+						else if (who.play === "furnshop") await furnitureShop(ctx, s);
+						else await otakuPlay(ctx, s, "register");
+					} else
 						for (const l of lines) await s.say("nanj", l, { name: who.name });
 					// カジノの 換金所の 受付：ひとこと → 換金所の 窓（ui/arcade/casinoChips.ts）
 					if (who.play === "cashier") await arcadePlay(ctx, s, "cashier");

@@ -200,12 +200,15 @@ const OTAKU_ROOM: FacilityRoom = {
 			"『ぷゆゆ　観察日記』。\n1日目「ぷゆ」2日目「ぷゆゆ」。",
 			"最終日「ぷゆゆゆ」。\n……成長が　見られる。",
 		],
-		register: ["レジ。\n「グッズは　ご自宅へ　配送します」"],
+		register: [
+			"レジ。\n「グッズは　ご自宅へ　配送します」",
+			"グッズは　店員に　声を　かけて　買う。",
+		],
 		trash: ["ごみ箱。\n……レシートと、ガチャの　空カプセル。"],
 		plant: ["鉢植え。\n……葉っぱに　アクスタが　1枚。"],
 	},
-	// レジで グッズを 買う・ガチャを 回す（ui/village/otaku.ts）
-	plays: { register: "otaku", gacha: "otaku" },
+	// ガチャを 回す（ui/village/otaku.ts）
+	plays: { gacha: "otaku" },
 	people: [
 		{
 			id: "otaku_clerk",
@@ -213,6 +216,8 @@ const OTAKU_ROOM: FacilityRoom = {
 			at: [9, 6],
 			dir: "down",
 			name: "店員",
+			// レジの 店員に 話して グッズを 買う（ui/village/otaku.ts）
+			play: "otaku",
 			lines: [
 				"いらっしゃいませー。\n新刊、入っとります",
 				"フィギュアは　お家に　飾れますよ。\n……ホコリには　お気をつけて",

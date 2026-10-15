@@ -144,8 +144,11 @@ export type FacilityPerson = {
 	 * 話すと 品書きが 出る 店番（eat。data/town/eateries.ts の EAT_MENUS[施設の id]。話す たびに lines を 1つ
 	 * 出して から 品書き。ui/minigames/eat.ts）。cashier＝カジノの 換金所の 受付（lines の あと 換金所の 窓。
 	 * ui/arcade/casinoChips.ts の cashierScript）。
+	 * 売り買いは 棚では なく カウンターの 店員に 話して する（2026-10-16 作者）：giftshop＝おんJマートの 贈り物
+	 * （ui/village/bonds.ts）・furnshop＝リサイクルショップの 家具（ui/village/myhome.ts）・otaku＝ヲタショップの
+	 * グッズ（ui/village/otaku.ts）。どれも lines を 1つ 言って から 店の 窓。
 	 */
-	play?: "eat" | "cashier";
+	play?: "eat" | "cashier" | "giftshop" | "furnshop" | "otaku";
 };
 
 export type FacilityRoom = {
@@ -1172,11 +1175,13 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"「立ち読み　ご遠慮ください」\n……キリコは　そっと　棚に　もどした。",
 				],
 				bins: ["ゴミ箱。\n「缶」「ペットボトル」「燃える」。"],
-				gift: ["ギフトの　棚。\n「大切な　あの人へ。包装　無料」"],
+				gift: [
+					"ギフトの　棚。\n「大切な　あの人へ。包装　無料」",
+					"「贈り物は　レジで　店員に\nお申しつけください」",
+				],
 			},
-			// ギフトの 棚：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）
 			// ATM：おんJ証券の 口座の 入金・出金だけ（売り買いは 端末で。ui/trade/trade.ts）
-			plays: { gift: "giftshop", atm: "atm" },
+			plays: { atm: "atm" },
 			people: [
 				{
 					id: "konbini_clerk",
@@ -1184,6 +1189,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 					at: [2, 6],
 					dir: "down",
 					name: "店員",
+					// レジの 店員：贈り物を 買う・誕生日の こよみ（ui/village/bonds.ts）
+					play: "giftshop",
 					lines: [
 						"いらっしゃいませー。\n……あたため　ますか？",
 						"深夜は　ワンオペなんですよ。\n……おんJ　見ながら　です",
@@ -1759,13 +1766,14 @@ const BASE_FACILITIES: readonly Facility[] = [
 				bike: ["自転車。\nサドルが　ちょっと　高すぎる。"],
 				sofa: ["ソファ。\n「すわり心地　保証」の　札。"],
 				box: ["段ボール。\n「おさがり　ご自由に」"],
-				register: ["レジ。\n値札の　シールが　山積み。"],
+				register: [
+					"レジ。\n値札の　シールが　山積み。",
+					"家具は　店主に　声を　かけて　買う。",
+				],
 				records: [
 					"樽に　レコードが　つめこんである。\n……どれも　針の　あとが　深い。",
 				],
 			},
-			// レジで 家具を 買う（キリコの 家。ui/village/myhome.ts の furnitureShop）
-			plays: { register: "furnshop" },
 			people: [
 				{
 					id: "recycle_clerk",
@@ -1773,6 +1781,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 					at: [9, 6],
 					dir: "down",
 					name: "店主",
+					// 店主に 話して 家具を 買う（キリコの 家。ui/village/myhome.ts の furnitureShop）
+					play: "furnshop",
 					lines: [
 						"いらっしゃい。\n……捨てる　神あれば、拾う　神や",
 						"このテレビ？　映るで。\n……たぶん、昭和の　なにかが",
