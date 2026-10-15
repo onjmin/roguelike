@@ -1,7 +1,8 @@
 // 建物の 看板（2026-10-15 作者：「それぞれの 建物に 看板とか 旗とか 店の 名前を 示す ものが あると 親切」）。
-// 外観の 扉の 上に 名前の 板を かける（ui/village/signboards.ts が 描く）。
+// 外観の 扉の 上の 壁に 名前の 板を かける（ui/village/signboards.ts が 描く）。
 // 字は 8px の ドット字で 1マスに 1字ほど。建物の 幅に おさまる よう 短く した 名前を 書く。
-// 載って いない 施設（車・バス停・自販機・広場の 物・マイクラの 一角・絵に 名前の ある ヲタショップ）は 看板なし。
+// 載って いない 施設（車・バス停・自販機・広場の 物・マイクラの 一角・絵に 名前の ある ヲタショップ・
+// 電光表示に 名前が 流れる 映画館・カジノ・テレビ局・駅。data/village/displays.ts）は 看板なし。
 
 /** 板の 色（店：木の 板。役所・会社：白い 板。夜の 店：黒い 板に ネオン）。 */
 export type SignStyle = "shop" | "public" | "night";
@@ -9,7 +10,7 @@ export type SignStyle = "shop" | "public" | "night";
 export type SignDef = {
 	text: string;
 	style?: SignStyle;
-	/** 板を かける 行（外観の 上から。この 行の 上端に かける。省くと 扉の 行、扉が 無ければ いちばん 下の 行）。 */
+	/** 板を かける 行（外観の 上から。この 行の すぐ 上に かける。省くと 扉の 行、扉が 無ければ いちばん 下の 行）。 */
 	row?: number;
 };
 
@@ -36,11 +37,7 @@ export const SIGNS: Record<string, SignDef> = {
 	firestation: { text: "消防署", style: "public" },
 	court: { text: "地方裁判所", style: "public" },
 	repair: { text: "整備工場" },
-	cinema: { text: "スクリーン1000", style: "night" },
 	theater: { text: "おんJ劇場" },
-	casino: { text: "カジノ　ガチャ", style: "night" },
-	station: { text: "おんJタウン駅", style: "public" },
-	tvstudio: { text: "おんJテレビ", style: "public" },
 	harbor: { text: "港湾事務所", style: "public" },
 	factory: { text: "工場", style: "public" },
 	power: { text: "発電所", style: "public" },
