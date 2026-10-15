@@ -1498,10 +1498,12 @@ export class Village {
 			this.drawExitGuide(g, ox, oy, this.scene);
 		// 時間帯の 色（外の 村だけ。人通りと 同じ 時計。data/village/daylight.ts）
 		if (this.mapId === "village") {
-			// 時間帯が かわったら 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
+			// 日付の 日の 出・日の 入りに 合わせて 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
+			const { m, d } = today();
 			const day = daylightAt(
 				nowHour() * 60 + nowMinute() + this.clockMs / 1000,
-				timeBand,
+				m,
+				d,
 			);
 			if (day.tint) {
 				g.save();

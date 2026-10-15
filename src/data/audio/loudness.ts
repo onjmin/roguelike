@@ -113,7 +113,7 @@ export type SeLoudness = readonly [
 
 // <loudness:se> ここから下は pnpm loudness（scripts/measure-loudness.mjs）が書き換える。手で直さない。
 /**
- * 効果音ごとの実測と補正（2026-10-12、ffmpeg 6.1.1 の ebur128）。
+ * 効果音ごとの実測と補正（2026-10-15、ffmpeg 8.0 の ebur128）。
  * [素材 id, L, true peak, 補正 dB, 倍率, 鳴り始め ms, 鳴り終わり ms, 待つ ms]。
  * 行末は「区分 → 既定の設定での L」。
  */
@@ -142,6 +142,7 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	mix: ["M7lnrK", -14.4, -5.1, -8.6, 0.372, 0, 1830, 1200], // field → -23.0
 	bubble: ["RSetbN", -9.5, -4.7, -13.5, 0.211, 0, 490, 230], // field → -23.0
 	glass: ["IQXvTI", -10.8, -2, -12.2, 0.245, 30, 1640, 780], // field → -23.0
+	pay: ["FM2G43", -13.9, -0.4, -9.1, 0.351, 50, 630, 430], // field → -23.0
 	arcCoin: ["alktAh", -9.8, 0.2, -13.2, 0.219, 10, 740, 360], // field → -23.0
 	arcShot: ["95bF44", -9.9, -4.3, -13.1, 0.221, 0, 270, 230], // field → -23.0
 	arcBlock: ["wsdfpV", -4.5, 3.9, -18.5, 0.119, 0, 700, 450], // field → -23.0

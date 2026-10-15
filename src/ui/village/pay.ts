@@ -16,7 +16,7 @@ export const previewing = (): boolean =>
 /** 払う（チャリン）。足りなければ 何も せず false。 */
 export const pay = (s: Story, price: number): boolean => {
 	if (!spendYen(price, previewing())) return false;
-	s.se("arcCoin");
+	s.se("pay");
 	return true;
 };
 

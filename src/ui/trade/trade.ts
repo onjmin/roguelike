@@ -244,7 +244,7 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 			cost: (h.cost * h.n + price * q) / (h.n + q),
 		};
 		saveStocks(m2);
-		s.se("arcCoin");
+		s.se("pay");
 		await s.narrate(
 			fill(TRADE_MSG.bought, {
 				name: STOCKS[id].short,
@@ -317,7 +317,7 @@ const stake = async (
 	});
 	const x = can[i];
 	if (!x || !spendYen(x, previewing())) return null;
-	s.se("arcCoin");
+	s.se("pay");
 	return x;
 };
 

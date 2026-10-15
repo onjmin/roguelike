@@ -78,29 +78,62 @@ export const clockLine = (
 	band: TimeBand,
 ): string => `${hour}:${String(minute).padStart(2, "0")}　${BAND_NAME[band]}`;
 
-// ───────────────── 時間帯の うつりかわり ─────────────────
-// 時間帯が かわった 瞬間に 色と 明かりが ぱっと かわると 電気を つけたように 見えるので、かわってから
-// FADE_MIN 分（村の 時計。現実の 約1分）かけて 前の 時間帯から なめらかに うつす（2026-10-15 作者
-// 「日照の 変化は 若干 フェージング させる 方が 自然」）。
+// ───────────────── 日の 出・日の 入り ─────────────────
+// 空の 色と 明かりは 人通りの 時間帯（data/village/crowd.ts の timeBand）では なく、端末の 日付から 出した
+// 東京の 日の 出・日の 入りに 合わせる（2026-10-15 作者「20時台で 夕方の オレンジみが 見えるのが 違和感。
+// 季節に 合わせて 何時ごろから 暗くなるかを 反映したい」）。夏は 19時ごろまで 明るく、冬は 17時前に 暗くなる。
+// 時刻は 村の 時計の まま（日付だけ 端末。開発は &date=MMDD）。色は 下の 節目の あいだを なめらかに まぜる
+// （2026-10-15 作者「日照の 変化は 若干 フェージング させる 方が 自然」）。
 
-/** うつりかわる 長さ（村の 時計の 分）。 */
-export const FADE_MIN = 60;
+const RAD = Math.PI / 180;
+/** 東京（緯度・経度）。 */
+const LAT = 35.68;
+const LON = 139.77;
 
-const BAND_ORDER: readonly TimeBand[] = [
-	"late",
-	"morning",
-	"day",
-	"evening",
-	"night",
-];
-/** 時間帯の はじまり（0時からの 分。data/village/crowd.ts の timeBand と そろえる）。 */
-const BAND_START: Record<TimeBand, number> = {
-	late: 0,
-	morning: 5 * 60,
-	day: 10 * 60,
-	evening: 17 * 60,
-	night: 20 * 60,
+/**
+ * その 日（月・日）の 東京の 日の 出・日の 入り（0時からの 分。日本時間）。簡単な 近似で、
+ * 数分 ずれるが 季節の うつりかわりには 十分。
+ */
+export const sunTimes = (
+	m: number,
+	d: number,
+): { rise: number; set: number } => {
+	const days = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+	const n = (days[m - 1] ?? 0) + d;
+	const decl = 23.44 * RAD * Math.sin((2 * Math.PI * (284 + n)) / 365);
+	const B = (2 * Math.PI * (n - 81)) / 364;
+	const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+	const noon = 12 * 60 - (LON - 135) * 4 - eot;
+	const cosH =
+		(Math.sin(-0.833 * RAD) - Math.sin(LAT * RAD) * Math.sin(decl)) /
+		(Math.cos(LAT * RAD) * Math.cos(decl));
+	const half = (Math.acos(Math.max(-1, Math.min(1, cosH))) / RAD) * 4;
+	return { rise: noon - half, set: noon + half };
 };
+
+type Sky = { tint: string | null; lamp: number; windows: number };
+const sky = (band: TimeBand, windows = BAND_LIGHT[band].windows): Sky => ({
+	tint: BAND_TINT[band],
+	lamp: BAND_LIGHT[band].lamp,
+	windows,
+});
+
+/**
+ * 1日の 節目（0時からの 分と その ときの 空）。日の 出の 前に 白みはじめ、日の 入りの 前から 橙、
+ * 日の 入りの 40分 あとには 夜（薄明が おわる ころ）。0時から 1時に かけて 深夜へ。
+ */
+const keyframes = (rise: number, set: number): [number, Sky][] => [
+	[0, sky("night")],
+	[60, sky("late")],
+	[rise - 60, sky("late")],
+	[rise - 15, sky("night", BAND_LIGHT.late.windows)],
+	[rise + 30, sky("morning")],
+	[Math.max(rise + 150, 9 * 60), sky("day")],
+	[set - 90, sky("day")],
+	[set - 20, sky("evening")],
+	[set + 40, sky("night")],
+	[1440, sky("night")],
+];
 
 const rgbOf = (c: string | null): [number, number, number] => {
 	const m = c?.match(/\d+/g);
@@ -108,28 +141,26 @@ const rgbOf = (c: string | null): [number, number, number] => {
 };
 
 /**
- * その 時刻（0時からの 分。小数も よい）の 重ねる 色と 明かりの 強さ。時間帯が かわってから FADE_MIN 分は
- * 前の 時間帯と まぜる。tint が null なら 重ねない（昼）。
+ * その 時刻（0時からの 分。小数も よい）と 日付（月・日）の 重ねる 色と 明かりの 強さ。
+ * tint が null なら 重ねない（昼）。
  */
-export const daylightAt = (
-	minute: number,
-	bandOf: (hour: number) => TimeBand,
-): { tint: string | null; lamp: number; windows: number } => {
-	const m = ((minute % 1440) + 1440) % 1440;
-	const band = bandOf(Math.floor(m / 60));
-	const prev =
-		BAND_ORDER[
-			(BAND_ORDER.indexOf(band) + BAND_ORDER.length - 1) % BAND_ORDER.length
-		];
-	const k = Math.min(1, Math.max(0, (m - BAND_START[band]) / FADE_MIN));
-	const mix = (a: number, b: number) => a + (b - a) * k;
-	const [r0, g0, b0] = rgbOf(BAND_TINT[prev]);
-	const [r1, g1, b1] = rgbOf(BAND_TINT[band]);
+export const daylightAt = (minute: number, m: number, d: number): Sky => {
+	const t = ((minute % 1440) + 1440) % 1440;
+	const { rise, set } = sunTimes(m, d);
+	const keys = keyframes(rise, set);
+	let i = 0;
+	while (i < keys.length - 2 && t >= keys[i + 1][0]) i++;
+	const [t0, a] = keys[i];
+	const [t1, b] = keys[i + 1];
+	const k = t1 > t0 ? Math.min(1, Math.max(0, (t - t0) / (t1 - t0))) : 1;
+	const mix = (x: number, y: number) => x + (y - x) * k;
+	const [r0, g0, b0] = rgbOf(a.tint);
+	const [r1, g1, b1] = rgbOf(b.tint);
 	const rgb = [mix(r0, r1), mix(g0, g1), mix(b0, b1)].map(Math.round);
 	return {
 		tint: rgb.every((v) => v >= 255) ? null : `rgb(${rgb.join(", ")})`,
-		lamp: mix(BAND_LIGHT[prev].lamp, BAND_LIGHT[band].lamp),
-		windows: mix(BAND_LIGHT[prev].windows, BAND_LIGHT[band].windows),
+		lamp: mix(a.lamp, b.lamp),
+		windows: mix(a.windows, b.windows),
 	};
 };
 

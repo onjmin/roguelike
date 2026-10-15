@@ -59,6 +59,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		bubble: "rpgen:RSetbN", // 泡の音1
 		/** グラスを 置く。 */
 		glass: "rpgen:IQXvTI", // チーン
+		/** 代金を 払う（店・自販機・銭湯・家・株 など。遊びの 台に 入れる ときは arcCoin）。 */
+		pay: "rpgen:FM2G43", // [ツクール]売買
 		// ── ゲームセンターの 筐体（ui/arcade/arcade*.ts）
 		/** メダル・コインを 入れる（どの 台も はじめに。スロットは 回す たび）。 */
 		arcCoin: "rpgen:alktAh", // スロットのコイン投入音

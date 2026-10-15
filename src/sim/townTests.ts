@@ -31,7 +31,9 @@ import {
 	BAND_LIGHT,
 	BAND_TINT,
 	clockLine,
+	daylightAt,
 	lightOf,
+	sunTimes,
 	windowLit,
 } from "../data/village/daylight";
 import { FACILITIES, facilityTiles } from "../data/village/facilities";
@@ -77,7 +79,7 @@ const ok = (cond: unknown, why: string): void => {
 const CASES: { name: string; run: () => void }[] = [];
 const test = (name: string, run: () => void) => CASES.push({ name, run });
 
-test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、深夜が いちばん 暗い（人通りと 同じ 時間帯）", () => {
+test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、深夜が いちばん 暗い。空は 日付の 日の 出・日の 入りに 合わせる", () => {
 	const sum = (c: string | null) =>
 		c ? (c.match(/\d+/g) ?? []).reduce((n, v) => n + Number(v), 0) : 765;
 	ok(BAND_TINT.day === null, "day is tinted");
@@ -115,6 +117,31 @@ test("村の 時間帯の 色：昼は 重ねない、夜・深夜は 暗く、�
 	).filter(Boolean).length;
 	ok(lit > 60 && lit < 140, `late-night windows lit: ${lit}/400`);
 	ok(clockLine(21, 5, "night") === "21:05　夜", clockLine(21, 5, "night"));
+	// 空は 日付の 日の 出・日の 入りに 合わせる：夏は 19時でも 夕方、冬は 18時に もう 夜。20時台は いつも 夜
+	const summer = sunTimes(6, 21);
+	const winter = sunTimes(12, 21);
+	ok(
+		summer.set > 18.8 * 60 && summer.set < 19.2 * 60,
+		`summer set ${summer.set}`,
+	);
+	ok(
+		winter.set > 16.4 * 60 && winter.set < 16.7 * 60,
+		`winter set ${winter.set}`,
+	);
+	ok(winter.rise > 6.6 * 60 && summer.rise < 4.6 * 60, "sunrise");
+	const night = BAND_TINT.night;
+	for (const [m, d] of [
+		[6, 21],
+		[10, 15],
+		[12, 21],
+	] as const)
+		ok(
+			daylightAt(20 * 60 + 30, m, d).tint === night,
+			`${m}/${d} 20:30 not night`,
+		);
+	ok(daylightAt(18 * 60, 12, 21).tint === night, "winter 18:00 not night");
+	ok(daylightAt(17 * 60, 6, 21).tint === null, "summer 17:00 not day");
+	ok(daylightAt(13 * 60, 1, 10).tint === null, "winter noon tinted");
 });
 
 test("every item except goal items has a price", () => {
