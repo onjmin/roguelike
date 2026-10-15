@@ -580,7 +580,8 @@ export type GameEvent =
 	| { t: "attack"; id: number; dir: Dir8 }
 	| { t: "hurt"; id: number; pos: Pos; amount: number; hp?: number }
 	| { t: "heal"; id: number; pos: Pos; amount: number; hp?: number }
-	| { t: "miss"; id: number; pos: Pos }
+	/** 当たらなかった（immune は 当たったが 効かない：支給品で ボスを なぐった）。 */
+	| { t: "miss"; id: number; pos: Pos; immune?: true }
 	| { t: "die"; id: number; pos: Pos }
 	/** 敵が ふえた（from は もとの敵の マス。そこから 分かれて 出てくる）。 */
 	| { t: "appear"; id: number; pos: Pos; from?: Pos }

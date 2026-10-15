@@ -1055,7 +1055,12 @@ export class Run {
 		// 支給品（ぷゆゆソード）は ボスには 効かない（当たっても すり減らない）
 		if (relief && w && isBoss(m)) {
 			this.se(this.weaponSound().swing);
-			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
+			this.emit({
+				t: "miss",
+				id: m.uid,
+				pos: { x: m.x, y: m.y },
+				immune: true,
+			});
 			this.msg(
 				`${this.name(w)}は　${monsterName(this, m)}には　効かない！`,
 				"warn",

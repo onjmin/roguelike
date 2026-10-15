@@ -3029,7 +3029,8 @@ export class Play {
 					break;
 				}
 				case "miss":
-					if (this.isShown(e.id, e.pos)) this.pop(e.pos, "ミス", "miss");
+					if (this.isShown(e.id, e.pos))
+						this.pop(e.pos, e.immune ? "効かない！" : "ミス", "miss");
 					combat = true;
 					await this.beat(60 * speed);
 					break;
