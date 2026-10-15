@@ -101,12 +101,37 @@ const carveLine = (
 	}
 };
 
+/** 通路が 2×2 以上の かたまりに なっている所が あるか（道が 並んで 太くなり、出口が わかりにくい）。 */
+const hasWideCorridor = (l: Layout): boolean => {
+	for (let y = 0; y < l.h - 1; y++)
+		for (let x = 0; x < l.w - 1; x++)
+			if (
+				tileAt(l, x, y) === T_CORR &&
+				tileAt(l, x + 1, y) === T_CORR &&
+				tileAt(l, x, y + 1) === T_CORR &&
+				tileAt(l, x + 1, y + 1) === T_CORR
+			)
+				return true;
+	return false;
+};
+
 /**
  * ふつうの階を作る。部屋は最低 minRooms 個。
+ * 通路が 並んで 太い かたまりに なった 形は 作りなおす。
  */
 export const generateLayout = (
 	rng: Rng,
 	opts: { minRooms?: number; junctions?: number } = {},
+): Layout => {
+	let l = generateOnce(rng, opts);
+	for (let i = 0; i < 50 && hasWideCorridor(l); i++)
+		l = generateOnce(rng, opts);
+	return l;
+};
+
+const generateOnce = (
+	rng: Rng,
+	opts: { minRooms?: number; junctions?: number },
 ): Layout => {
 	const W = MAP_W;
 	const H = MAP_H;
