@@ -70,7 +70,7 @@ const BURGER_ROOM: FacilityRoom = {
 		T: k.on(ri("tableBeige"), diner("fries")),
 		Y: k.on(ri("tableBeige"), diner("shake")),
 		U: k.on(ri("tableBeige"), diner("burger")),
-		P: k.on(ri("atm")),
+		P: k.on(ri("kiosk")),
 		q: k.on(ri("trash")),
 	}),
 	things: {

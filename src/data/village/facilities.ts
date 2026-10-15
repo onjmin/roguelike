@@ -1955,7 +1955,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				W: k.on(riCell("vend", 1, 0)),
 				x: k.on(riCell("vend", 0, 1)),
 				X: k.on(riCell("vend", 1, 1)),
-				a: k.on(ri("atm")),
+				a: k.on(ri("kiosk")),
 			}),
 			things: {
 				"〔": "tv",
@@ -2416,7 +2416,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				b: ctr(k.on(riCell("counterLong", 1, 0), ri("ramen"))),
 				"]": ctr(k.on(riCell("counterLong", 2, 0), ri("gyoza"))),
 				n: k.floor(ri("stoolRed")),
-				Q: k.on(ri("atm")),
+				Q: k.on(ri("kiosk")),
 				w: k.on(ri("coffeeMaker")),
 			}),
 			things: {
@@ -3914,7 +3914,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				f: k.on(ri("fenceIron")),
 				"[": ctr(k.on(RECEPTION[0], ri("bell"))),
 				"]": ctr(k.on(RECEPTION[2])),
-				K: k.on(ri("atm")),
+				K: k.on(ri("kiosk")),
 				L: k.on(riCell("lockers", 0, 0)),
 				J: k.on(riCell("lockers", 1, 0)),
 				l: k.on(riCell("lockers", 0, 1)),

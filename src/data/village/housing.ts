@@ -596,7 +596,7 @@ export const TOWER_ROOM: FacilityRoom = {
 		"[": ctr(k.on(riCell("counterDark", 0, 0), ri("bell"))),
 		"=": ctr(k.on(riCell("counterDark", 1, 0))),
 		"]": ctr(k.on(riCell("counterDark", 2, 0), ri("phone"))),
-		P: k.on(ri("atm")),
+		P: k.on(ri("kiosk")),
 		L: k.on(ri("lockers")),
 		l: k.on(ri("lockers", 1)),
 	}),

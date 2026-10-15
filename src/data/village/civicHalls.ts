@@ -277,7 +277,7 @@ const CITYHALL: Facility = {
 			u: ctr(k.on(riCell("counterLong", 2, 0))),
 			j: k.on(riCell("bench", 0, 0)),
 			J: k.on(riCell("bench", 1, 0)),
-			x: k.on(ri("atm")),
+			x: k.on(ri("kiosk")),
 			y: k.on(ri("standSign")),
 		}),
 		things: {

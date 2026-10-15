@@ -62,7 +62,7 @@ const SOBA_ROOM: FacilityRoom = {
 		"[": ctr(k.on(base(1, 98), ri("tanuki"))),
 		"=": ctr(k.on(base(2, 98))),
 		"]": ctr(k.on(base(3, 98), ri("kitsune"))),
-		V: k.on(ri("atm")),
+		V: k.on(ri("kiosk")),
 		q: k.on(ri("trash")),
 	}),
 	things: {
