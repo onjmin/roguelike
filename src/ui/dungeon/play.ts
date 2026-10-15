@@ -47,7 +47,7 @@ import {
 	type Trap,
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
-import { heroWalk, KIRIKO_WALK, ZERO_BODY_WALKS } from "../../data/people/cast";
+import { heroWalk, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { goalText } from "../../data/story/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
@@ -813,8 +813,9 @@ export class Play {
 				: s0;
 		const figs: Figure[] = [];
 		const fakeItems: { x: number; y: number; kind: string }[] = [];
-		// まどわされているときは 敵が みんな キリコの姿に、床の道具が お花に 見える
+		// まどわされているときは 敵が みんな 自分（キリコ・ゼロ・ロゼ…）の姿に、床の道具が お花に 見える
 		const dazed = run.p.status.daze > 0;
+		const selfSprite = heroWalk(run.s);
 		for (const d of this.disp.values()) {
 			if (d.id === PLAYER_ID) {
 				// 装備している武器・盾を重ねて描く。攻撃の踏みこみに合わせて振る
@@ -880,11 +881,11 @@ export class Play {
 			const look = {
 				// 動きだす 前の 置物は、ただの 置物と 同じ 絵（歩かず 前向き）
 				sprite: dazed
-					? KIRIKO_WALK
+					? selfSprite
 					: (was?.posing ?? posing(m))
 						? (mdef(m).still ?? d.sprite)
 						: d.sprite,
-				// まどわされていると みんな 同じ 大きさの キリコに 見える
+				// まどわされていると みんな 同じ 大きさの 自分に 見える
 				scale: dazed ? undefined : d.scale,
 				asleep: was?.asleep ?? (m.status.sleep > 0 || m.status.paralyze > 0),
 			};

@@ -307,7 +307,7 @@ export type PlayerStatus = {
 	sleep: number;
 	confuse: number;
 	blind: number;
-	/** まどわし（ターン）。敵が キリコの姿に、床の道具が お花に 見える。 */
+	/** まどわし（ターン）。敵が 自分（キリコ・ゼロ・ロゼ…）の姿に、床の道具が お花に 見える。 */
 	daze: number;
 	fast: number;
 	/** トラばさみ（ターン）。 */

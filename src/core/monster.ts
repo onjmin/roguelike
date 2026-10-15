@@ -49,7 +49,7 @@ export const restLook = (m: Monster): { asleep: boolean; posing: boolean } => ({
 	posing: posing(m),
 });
 
-/** まどわされているときの 敵の呼び名（みんな キリコの姿に 見えて 見分けが つかない）。 */
+/** まどわされているときの 敵の呼び名（みんな 自分の姿に 見えて 見分けが つかない）。 */
 const DAZED_NAME = "なにか";
 
 /** 記録に出す 敵の名前（まどわされているときは 伏せる）。 */
