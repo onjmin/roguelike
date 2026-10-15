@@ -5,8 +5,15 @@
 
 import { BAT_GUIDE_TOLD, BATTING_GUIDE } from "../../data/arcade/guides";
 import { staffLines, venueLines } from "../../data/jikkyo/text";
+import { CAST } from "../../data/people/cast";
+import {
+	SHIYO_MAID_AT,
+	SHIYO_MAID_LINES,
+	SHIYO_MAID_MILK,
+	shiyoAtMaid,
+} from "../../data/people/shiyoShift";
 import { awayFriends } from "../../data/story/story";
-import { today } from "../../data/town/calendar";
+import { nowHour, today } from "../../data/town/calendar";
 import {
 	DRINK_BAR,
 	DRINK_BAR_YEN,
@@ -348,6 +355,26 @@ export const buildFacility = (
 			else if (play === "bank") await bankWindow(s);
 		});
 	});
+	// シヨの アルバイト（金・土・日の 夜。data/people/shiyoShift.ts）：ホールに 立ち、みるくの 話も かわる
+	const shiyoShift =
+		f.id === "maid" && shiyoAtMaid(v.stage, today(), nowHour());
+	if (shiyoShift)
+		events.push(
+			npc(
+				"maid_shiyo",
+				SHIYO_MAID_AT[0],
+				SHIYO_MAID_AT[1],
+				CAST.shiyo.walk,
+				async (s) => {
+					const i = Number(s.flag("maidShiyo") ?? 0);
+					s.set("maidShiyo", i + 1);
+					const l = SHIYO_MAID_LINES[i % SHIYO_MAID_LINES.length];
+					if (l) await s.say("shiyo", l);
+					s.face("maid_shiyo", "down");
+				},
+				{ dir: "down" },
+			),
+		);
 	for (const who of room?.people ?? [])
 		events.push(
 			npc(
@@ -360,7 +387,9 @@ export const buildFacility = (
 					const once = staffOnceLine(f.id, who.id);
 					const lines = once
 						? [once]
-						: (staffLines(f.id, who.id, today()) ?? who.lines);
+						: shiyoShift && who.id === "maid_milk"
+							? SHIYO_MAID_MILK
+							: (staffLines(f.id, who.id, today()) ?? who.lines);
 					// 店番：セリフを 1つ → 品書き（ui/minigames/eat.ts）
 					if (who.play === "eat")
 						await keeperTalk(ctx, s, f.id, who.name, lines);

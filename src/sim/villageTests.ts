@@ -76,6 +76,12 @@ import {
 	RELIEF_NOTE,
 	SENKYO,
 } from "../data/people/mobs";
+import {
+	SHIYO_MAID_AT,
+	SHIYO_MAID_LINES,
+	SHIYO_MAID_MILK,
+	shiyoAtMaid,
+} from "../data/people/shiyoShift";
 import { GLOSSARY } from "../data/story/glossary";
 import {
 	advanceEvents,
@@ -8311,6 +8317,26 @@ test("有料の 寄り道（2026-10-14）: 銭湯は 村に いる あいだ 1�
 		ok(walletYen() === BATH_YEN, `wallet ${walletYen()}`);
 		forgetWalletMemo();
 	});
+});
+
+test("シヨの アルバイト: 段7の 金・土・日の 17〜21時だけ メイド喫茶に 出て、その あいだは 村の 場所に いない。文は 窓に おさまる", () => {
+	const fri = { m: 10, d: 16, w: 5 };
+	const tue = { m: 10, d: 13, w: 2 };
+	ok(shiyoAtMaid(7, fri, 17) && shiyoAtMaid(7, fri, 21), "not on shift");
+	ok(!shiyoAtMaid(7, fri, 16) && !shiyoAtMaid(7, fri, 22), "off-hours shift");
+	ok(!shiyoAtMaid(7, tue, 19), "weekday shift");
+	ok(!shiyoAtMaid(6, fri, 19), "before the maid cafe is built");
+	const room = facilityById("maid")?.room;
+	const [x, y] = SHIYO_MAID_AT;
+	ok(room?.rows[y]?.[x] === ".", "シヨ stands on furniture");
+	ok(
+		!room?.people?.some((p) => p.at[0] === x && p.at[1] === y),
+		"シヨ stands on another maid",
+	);
+	fitsWindow([
+		...SHIYO_MAID_LINES.map((l, i): [string, string] => [`shiyo.${i}`, l]),
+		...SHIYO_MAID_MILK.map((l, i): [string, string] => [`milk.${i}`, l]),
+	]);
 });
 
 test("ヲタショップ「神降臨」: 段7から 建ち、グッズは レジの 店員・ガチャは 機械で play otaku、グッズは 家具で リサイクルショップでは 売らない、ガチャは 家と お金が いる", async () => {

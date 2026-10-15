@@ -55,9 +55,11 @@ import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../people/cast";
 import { MOBS, type MobId, movedIn } from "../people/mobs";
+import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
 import { awayFriends, FRIEND_FROM } from "../story/story";
+import { nowHour, today } from "../town/calendar";
 import { COLONY_SPOTS, VILLAGE_PT } from "../town/worldMap";
 import {
 	doorId,
@@ -1244,7 +1246,9 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	// 仲間は 越してきてから（data/story/story.ts の FRIEND_FROM。はじめの おんJタウンには やきうだけ）
 	const here = (w: Speaker) => stage >= FRIEND_FROM[w];
 	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
-	if (here("shiyo")) out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
+	// シヨは 金・土・日の 夜は メイド喫茶で アルバイト（data/people/shiyoShift.ts）
+	if (here("shiyo") && !shiyoAtMaid(stage, today(), nowHour()))
+		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
 	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
 	// やきうは 電池板の 山場で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story/story.ts）
 	if (awayFriends(v.cleared).includes("nanj")) {
