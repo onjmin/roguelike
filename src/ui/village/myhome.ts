@@ -752,7 +752,6 @@ const openParcels = async (s: Story): Promise<void> => {
 		arcade5: () =>
 			Object.values(loadArcade().plays).reduce((a, n) => a + n, 0) >= 5,
 		bushitsu3: () => loadBushitsu().visits >= 3,
-		moveIn: () => true,
 	};
 	const events = EVENT_GIFTS.filter(
 		(g) => !owns(m, g.id) && !m.resident.includes(g.id) && happened[g.when](),

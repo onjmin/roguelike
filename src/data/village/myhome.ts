@@ -798,24 +798,11 @@ export const HOME_GIFTS: readonly Gift[] = [
 /**
  * ちょっとした できごとで もらう 遊べる 家具（家に 入った ときに 宅配便で 届く。家を 買った あとだけ）。
  * when は できごとの 名前（ui/village/myhome.ts が 調べる）：arcade5 ＝ ゲームセンターの 台で 5回 遊んだ・
- * bushitsu3 ＝ 部室棟に 3回 来た・moveIn ＝ 家を 買った あと はじめて 入った とき（絵を 描く キャンバス・
- * BASIC の 書ける パソコンは すぐ 手に 入る ように。作者「もっと 簡単に 入手 できる ように」。店でも 買える）。
+ * bushitsu3 ＝ 部室棟に 3回 来た。
  */
 export const EVENT_GIFTS: readonly (Gift & {
-	when: "arcade5" | "bushitsu3" | "moveIn";
+	when: "arcade5" | "bushitsu3";
 })[] = [
-	{
-		id: "laptop",
-		from: "おんJ高校　ゲーム制作部",
-		note: "添え書き「型落ちの　ノートパソコン。\nBASICで　なんか　作ってみて」",
-		when: "moveIn",
-	},
-	{
-		id: "easel",
-		from: "おんJ高校　美術部",
-		note: "添え書き「キャンバス　1つ　あまりました。\n描いたら　見せてね」",
-		when: "moveIn",
-	},
 	{
 		id: "platformer",
 		from: "ゲームセンター「連コ」",
