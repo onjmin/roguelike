@@ -1,6 +1,7 @@
 // 町の 寄り道で 板を 見つける（data/town/finds.ts）。施設の 物・人の 文の あとに 1回だけ。
 // 板が 開いたら その場で「〜に もぐれるように なった」と 知らせる（知らせ（news）は 積まない）。
 // まだ 起きていない 出来事の 物・人には きらっと 光る 点を 出して 誘う（findGlint）。
+// 同じ 点は 飾った 持ち帰り品（本館の 飾り棚・キリコの 家の 台）にも 出す（trophyGlint）。
 
 import { DUNGEON_NAMES } from "../../data/story/story";
 import { TOWN_FINDS, type TownFind } from "../../data/town/finds";
@@ -107,6 +108,26 @@ const sparkle = (
 	g.fillRect(cx, cy, 1, 1);
 };
 
+/** 1マス（左上 px, py）に 大きい 点と 小さい 点を 半周期 ずらして 光らせる。 */
+export const cellGlint = (
+	g: CanvasRenderingContext2D,
+	px: number,
+	py: number,
+	t: number,
+): void => {
+	sparkle(g, px + 12, py + 3, t, true);
+	sparkle(g, px + 4, py + 9, t + 700, false);
+};
+
+/** 飾った 品の 光る 点（並びの i 番目。いっせいに 光らないよう 時を ずらす）。 */
+export const trophyGlint = (
+	g: CanvasRenderingContext2D,
+	px: number,
+	py: number,
+	t: number,
+	i: number,
+): void => cellGlint(g, px, py, t + i * 530);
+
 const glintDecor = (cellsOf: () => Glint[]): MapDef["decor"] => {
 	let seen = -1;
 	let cells: Glint[] = [];
@@ -118,8 +139,7 @@ const glintDecor = (cellsOf: () => Glint[]): MapDef["decor"] => {
 		for (const c of cells) {
 			const px = c.x * TILE - ox;
 			const py = c.y * TILE - oy - (c.lift ? TILE : 0);
-			sparkle(g, px + 12, py + 3, t, true);
-			sparkle(g, px + 4, py + 9, t + 700, false);
+			cellGlint(g, px, py, t);
 		}
 	};
 };

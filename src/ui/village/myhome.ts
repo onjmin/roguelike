@@ -84,6 +84,7 @@ import { paintEasel } from "../paint/paint";
 import { petitcon } from "../petitcon/petitcon";
 import { tradeTerminal } from "../trade/trade";
 import { bondCast, bondLevel, heartsOf, keepsakeList } from "./bonds";
+import { trophyGlint } from "./finds";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -471,7 +472,8 @@ const ghostAt = (
 };
 
 /**
- * キリコの 家の 飾り：持っている 家具を 目の前に うすく 描く（置ける 所。置けなければ 赤い 印）。
+ * キリコの 家の 飾り：台に のせた 底の 品の 光る 点と、持っている 家具を 目の前に うすく 描く（置ける 所。
+ * 置けなければ 赤い 印）。
  */
 export const homeDecor =
 	() =>
@@ -482,8 +484,14 @@ export const homeDecor =
 		t: number,
 		me?: { x: number; y: number; dir: Dir },
 	): void => {
-		if (!carrying || !me) return;
 		const m = loadHome();
+		// 台に のせた 底の 品は きらっと 光る（品は 台の 半マス 上）
+		m.placed
+			.filter((p) => furnitureCategory(p.id) === "goal")
+			.forEach((p, i) => {
+				trophyGlint(g, p.x * TILE - ox, p.y * TILE - oy - 8, t, i);
+			});
+		if (!carrying || !me) return;
 		if (!m.stored.includes(carrying)) return;
 		const p = ghostAt(m, carrying, me);
 		const [fx, fy] = frontOf(me);

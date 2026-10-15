@@ -93,6 +93,7 @@ import { type ListItem, listWindow } from "../list";
 import { playBatting } from "../minigames/minigames";
 import { tellOnce } from "../minigames/playMenu";
 import { yoriaiEvents, yoriaiMovedLine } from "./civic";
+import { trophyGlint } from "./finds";
 import { balusScript } from "./folk";
 import { openGlossary } from "./glossary";
 import { openSales } from "./home";
@@ -602,7 +603,7 @@ const shelfDecor = (
 	const y0 = Math.min(...ys);
 	const w = (Math.max(...xs) + 1 - x0) * TILE;
 	const rows = Math.max(...ys) + 1 - y0;
-	return (g, ox, oy) => {
+	return (g, ox, oy, t) => {
 		const px = x0 * TILE - ox;
 		const py = y0 * TILE - oy;
 		g.fillStyle = SHELF_INK.frame;
@@ -616,14 +617,16 @@ const shelfDecor = (
 			g.fillStyle = SHELF_INK.shade;
 			g.fillRect(px + 2, y - 1, w - 4, 1);
 		}
-		// 品は 棚板に のせる（棚の 外へは はみ出させない）
+		// 品は 棚板に のせて きらっと 光らせる（棚の 外へは はみ出させない）
 		g.save();
 		g.beginPath();
 		g.rect(px + 1, py + 1, w - 2, rows * TILE - 1);
 		g.clip();
 		refs.forEach((ref, i) => {
 			const c = slots[i];
-			if (c) drawRefInCell(g, ref, c[0] * TILE - ox, c[1] * TILE - oy);
+			if (!c) return;
+			drawRefInCell(g, ref, c[0] * TILE - ox, c[1] * TILE - oy);
+			trophyGlint(g, c[0] * TILE - ox, c[1] * TILE - oy, t, i);
 		});
 		g.restore();
 	};
