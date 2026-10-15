@@ -208,7 +208,10 @@ export class Actor {
 			drawRefInCell(ctx, this.sprite, px, py);
 			return;
 		}
-		const frame = stepFrame(time + ((this.id.length * 97) % 400), this.moving);
+		// 寝ころんで いる あいだは 足踏みしない
+		const frame = this.blanket
+			? 0
+			: stepFrame(time + ((this.id.length * 97) % 400), this.moving);
 		const seat = this.vehicle ? 3 : 0;
 		// 体の 動き（歩いて いる あいだは しない）
 		let gx = 0;
