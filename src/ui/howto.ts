@@ -4,8 +4,11 @@
 // 1ページが だいたい画面に収まるくらいの量にする。
 
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
+import { GAME_GUIDES } from "../data/arcade/guides";
 import { DUNGEON_NAMES } from "../data/story/story";
+import { TOWN_GUIDES } from "../data/town/guides";
 import type { Ctx } from "./ctx";
+import { explain } from "./explain";
 import { infoWindow, listWindow } from "./list";
 import { openGlossary } from "./village/glossary";
 
@@ -292,6 +295,27 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 	},
 ];
 
+/** 説明の 一覧 → えらんだ 説明を ふだんの 窓で 1窓ずつ（ui/explain.ts）。 */
+const openGuides = async (
+	ctx: Ctx,
+	title: string,
+	guides: { label: string; pages: readonly string[] }[],
+): Promise<void> => {
+	let start = 0;
+	for (;;) {
+		const v = await listWindow(
+			ctx,
+			title,
+			guides.map((g, i) => ({ label: g.label, value: String(i) })),
+			{ start },
+		);
+		if (v === null) return;
+		start = Number(v);
+		const g = guides[start];
+		if (g) await explain(ctx, [...g.pages]);
+	}
+};
+
 export const openHowto = async (ctx: Ctx): Promise<void> => {
 	let start = 0;
 	for (;;) {
@@ -302,6 +326,17 @@ export const openHowto = async (ctx: Ctx): Promise<void> => {
 				...PAGES.map((p) => ({ label: p.label, sub: p.sub, value: p.value })),
 				// 2ch の ことば（ダンジョンの 中からも 引けるように。村では 集会所の 本棚にも ある）
 				{ label: "ことば", sub: "2ch・おんJの　ことば", value: "words" },
+				// 決まりの むずかしい ゲームと 町の しくみ（data/arcade/guides.ts・data/town/guides.ts）
+				{
+					label: "ゲームの　決まり",
+					sub: "こいこい・カジノ　ほか",
+					value: "games",
+				},
+				{
+					label: "町の　しくみ",
+					sub: "お金・倉庫・家・なかよし",
+					value: "town",
+				},
 			],
 			{ start },
 		);
@@ -309,6 +344,15 @@ export const openHowto = async (ctx: Ctx): Promise<void> => {
 		if (v === "words") {
 			start = PAGES.length;
 			await openGlossary(ctx);
+			continue;
+		}
+		if (v === "games" || v === "town") {
+			start = PAGES.length + (v === "games" ? 1 : 2);
+			await openGuides(
+				ctx,
+				v === "games" ? "ゲームの　決まり" : "町の　しくみ",
+				v === "games" ? GAME_GUIDES() : TOWN_GUIDES(),
+			);
 			continue;
 		}
 		const i = PAGES.findIndex((p) => p.value === v);

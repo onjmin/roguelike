@@ -12,6 +12,7 @@ import { loadProgress, loadTown } from "../../engine/save";
 import { HERO_QUESTS } from "../people/heroQuests";
 import { movedIn } from "../people/mobs";
 import { nowHour, today } from "../town/calendar";
+import { OPENING } from "../town/town";
 import { crowdSize, timeBand } from "../village/crowd";
 import { SPEAKERS, type Speaker } from "./quotes";
 import { awayFriends } from "./story";
@@ -358,8 +359,17 @@ export const synopsisHtml = (
 	);
 };
 
-/** いまの 進みの あらすじ（パン板を 持ち帰る 前は null）。 */
-export const synopsisNow = (): string | null => {
+/**
+ * パン板を 持ち帰る 前の あらすじ（はじまりの 目標だけ。2026-10-15 ガイドの 洗い出し：「最初の 目標が
+ * 1回きりで 読みかえせない」）。はじまりの やきうの 言葉（data/town/town.ts の OPENING）を そのまま。
+ */
+export const firstGoalHtml = (): string =>
+	`<p class="hint">${villageResLine()}</p>` +
+	`<p><b>はじまり</b><br>${OPENING.nanjMouth.map((l) => l.replaceAll("\n", "")).join("<br>")}</p>` +
+	`<p class="hint">つぎ：${OPENING.goal[0].replaceAll("\n", "")}</p>`;
+
+/** いまの 進みの あらすじ（パン板を 持ち帰る 前は はじまりの 目標）。 */
+export const synopsisNow = (): string => {
 	const p = loadProgress();
-	return synopsisHtml(p.cleared, p.flags ?? [], p.unlocked);
+	return synopsisHtml(p.cleared, p.flags ?? [], p.unlocked) ?? firstGoalHtml();
 };

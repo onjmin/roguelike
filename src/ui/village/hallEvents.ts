@@ -15,6 +15,7 @@
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import { defOf } from "../../core/item";
 import type { DungeonId } from "../../core/types";
+import { BAT_GUIDE_TOLD, BATTING_GUIDE } from "../../data/arcade/guides";
 import { jikkyoOpen } from "../../data/jikkyo/schedule";
 import { BOOKSTORE_FROM } from "../../data/story/glossary";
 import {
@@ -90,6 +91,7 @@ import {
 } from "../jikkyo/jikkyo";
 import { type ListItem, listWindow } from "../list";
 import { playBatting } from "../minigames/minigames";
+import { tellOnce } from "../minigames/playMenu";
 import { yoriaiEvents, yoriaiMovedLine } from "./civic";
 import { balusScript } from "./folk";
 import { openGlossary } from "./glossary";
@@ -427,6 +429,8 @@ const oldestScript =
 		} else {
 			await s.narrate(HALL_MSG.batIntro);
 			await sayAs(s, "shobon", HALL_MSG.batAsk);
+			// 打席の 決まり（はじめての 1回。グラウンドと 同じ 印。data/arcade/guides.ts）
+			await tellOnce(s, BAT_GUIDE_TOLD, BATTING_GUIDE);
 		}
 		while (play) {
 			await hideMsg(s);

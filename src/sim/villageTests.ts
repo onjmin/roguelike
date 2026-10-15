@@ -125,6 +125,7 @@ import {
 	DIVE_RES,
 	diveResAt,
 	diveResLine,
+	firstGoalHtml,
 	GOAL_WHY,
 	goalWhy,
 	synopsisHtml,
@@ -8421,4 +8422,19 @@ test("おんJ証券（2026-10-15）: 新市街支店は 段4から 窓口・端�
 		ok(ids.includes("shoken"), `stage ${stage}: no branch`);
 		if (stage >= 5) ok(ids.includes("netcafe"), `stage ${stage}: no net cafe`);
 	}
+});
+
+test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじまりの 目標（パン板の 4階）を 読みかえせる", () => {
+	ok(
+		synopsisHtml([], []) === null,
+		"the story summary starts before the first clear",
+	);
+	const html = firstGoalHtml();
+	ok(
+		html.includes("はじまり") &&
+			html.includes("パン板") &&
+			html.includes("4階"),
+		`first goal: ${html}`,
+	);
+	ok(!html.includes("\n"), "a raw newline in the html");
 });

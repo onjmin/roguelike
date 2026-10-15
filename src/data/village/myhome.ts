@@ -1319,6 +1319,8 @@ export const HOME_MSG = {
 	/** 払えなかった。 */
 	unpaid: "返済の　お金が　たりなかった。\n予定表に　赤い　字が　ふえた。",
 	loanDone: ["返済予定表。\n「完済」の　はんこ。"],
+	/** 返済予定表を 読んだ あと（家の しくみ。data/town/guides.ts の HOME_GUIDE）。 */
+	loanMenu: ["家の　しくみ", "とじる"],
 	closet: "収納。\n片づけた　家具と、模様替えの　道具。",
 	closetMenu: [
 		"家具を　出す",

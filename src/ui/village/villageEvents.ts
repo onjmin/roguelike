@@ -1180,8 +1180,8 @@ export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 		const stage = loadTown().stage;
 		const items: ListItem[] = [
 			{ label: "持ち物", value: "bag" },
-			// これまでの あらすじ（パン板を 持ち帰ってから。ダンジョンの メニューと 同じ：data/story/synopsis.ts）
-			...(synopsisNow() ? [{ label: "あらすじ", value: "synopsis" }] : []),
+			// これまでの あらすじ（パン板を 持ち帰る 前は はじまりの 目標。ダンジョンの メニューと 同じ：data/story/synopsis.ts）
+			{ label: "あらすじ", value: "synopsis" },
 			{ label: "せってい", value: "settings" },
 		];
 		const v = await listWindow(

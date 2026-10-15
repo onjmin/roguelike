@@ -6,6 +6,7 @@
 //   B を 2回（板の 外の タップも B）か「STOP」で とめる。スマホでは 板の 下の ◀▲▼▶ A で BUTTON() を 押す。
 // - 保存：localStorage の kiriko-roguelike/basic に 5つ と 書きかけ（見るだけの 起動では 書かない）。
 
+import { BASIC_GUIDE } from "../../data/petitcon/guide";
 import { BASIC_SAMPLES } from "../../data/petitcon/samples";
 import {
 	CELL,
@@ -58,6 +59,8 @@ const T = {
 	end: "おわり（Aか　Bで　もどる）",
 	stopped: "とめた",
 	errBack: "（Aか　Bで　もどる）",
+	refAll: "命令の　一覧",
+	refBack: "一覧へ",
 	ref: [
 		"PRINT LOCATE x,y COLOR 前,後 CLS",
 		"GCLS PSET LINE BOX CIRCLE PUYU x,y",
@@ -219,6 +222,22 @@ const editor = (ctx: Ctx, st: Store, es: EditState): Promise<"run" | "close"> =>
 			area.hidden = false;
 			bar.hidden = false;
 		};
+		/** 命令の 一覧：題を えらぶ → その 題の 命令（行ごと）。「一覧へ」で 題に もどる。 */
+		const openRef = (): void =>
+			openPick(
+				T.refAll,
+				BASIC_GUIDE.topics.map((t, i) => ({
+					label: t,
+					fn: () => {
+						ctx.se("decide");
+						openPick(
+							t,
+							[{ label: T.refBack, fn: () => openRef() }],
+							(BASIC_GUIDE.pages[i] ?? []).flatMap((p) => p.split("\n")),
+						);
+					},
+				})),
+			);
 		const bar = el("div", { class: "menu-foot petitcon-bar" }, [
 			btn(T.run, () => {
 				ctx.se("decide");
@@ -270,14 +289,24 @@ const editor = (ctx: Ctx, st: Store, es: EditState): Promise<"run" | "close"> =>
 				ctx.se("cursor");
 				openPick(
 					T.sampleWhich,
-					BASIC_SAMPLES.map((s) => ({
-						label: s.name,
-						fn: () => {
-							area.value = s.code;
-							ctx.se("decide");
-							say(T.sampleLoaded(s.name));
+					[
+						// 命令の 一覧（題ごと。data/petitcon/guide.ts）
+						{
+							label: T.refAll,
+							fn: () => {
+								ctx.se("decide");
+								openRef();
+							},
 						},
-					})),
+						...BASIC_SAMPLES.map((s) => ({
+							label: s.name,
+							fn: () => {
+								area.value = s.code;
+								ctx.se("decide");
+								say(T.sampleLoaded(s.name));
+							},
+						})),
+					],
 					T.ref,
 				);
 			}),

@@ -1312,7 +1312,12 @@ export const SEASON_PRESENTS: Partial<Record<Season, SeasonGift>> = {
 };
 
 export const BOND_MSG = {
-	shelfMenu: ["贈り物を　えらぶ", "誕生日の　こよみ", "やめる"],
+	shelfMenu: [
+		"贈り物を　えらぶ",
+		"誕生日の　こよみ",
+		"なかよしの　しくみ",
+		"やめる",
+	],
 	shelfTitle: "贈り物",
 	/** ギフトの 棚を はじめて 調べた ときだけ。 */
 	shelfHelp: [

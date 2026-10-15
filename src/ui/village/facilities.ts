@@ -3,6 +3,7 @@
 // 外の 物（釣り場の 竿・グラウンドの マウンド）は 調べると 文、遊べる 物は そのあと 遊ぶか 聞く。
 // どれも 寄り道で、強さにも 冒険にも 何も 残さない（釣れた 物は すぐ 海に かえす）。
 
+import { BAT_GUIDE_TOLD, BATTING_GUIDE } from "../../data/arcade/guides";
 import { staffLines, venueLines } from "../../data/jikkyo/text";
 import { awayFriends } from "../../data/story/story";
 import { today } from "../../data/town/calendar";
@@ -43,7 +44,7 @@ import { dosukoiWindow } from "../minigames/dosukoi";
 import { eatAt, keeperTalk } from "../minigames/eat";
 import { imoniPlay } from "../minigames/imoni";
 import { atBat, playDerby } from "../minigames/minigames";
-import { playOrRecord } from "../minigames/playMenu";
+import { playOrRecord, tellOnce } from "../minigames/playMenu";
 import { netBrowse } from "../net/net";
 import { isNetaPlay, netaPlay } from "../neta/neta";
 import { purikura } from "../purikura/purikura";
@@ -143,6 +144,8 @@ const bat = async (ctx: Ctx, s: Story): Promise<void> => {
 		GROUND_BAT.menu,
 	);
 	if (n === null) return;
+	// 打席の 決まり（はじめての 1回。本館の 関所と 同じ 印）
+	await tellOnce(s, BAT_GUIDE_TOLD, BATTING_GUIDE);
 	await s.wait(0);
 	const gone = awayFriends(loadProgress().cleared).includes("nanj");
 	const who = gone ? "nanashi" : "yakiu";

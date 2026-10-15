@@ -14,6 +14,7 @@ import { type Cast, MOBS } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
+import { HOME_GUIDE } from "../../data/town/guides";
 import type { Facility } from "../../data/village/facilities";
 import type { Cell } from "../../data/village/map";
 import {
@@ -640,6 +641,9 @@ export const homeThing =
 				);
 			if (m.owned && m.late > 0)
 				await s.narrate(fill(HOME_MSG.late, { n: m.late }));
+			// 家と ローンの しくみ（いつでも 読める。data/town/guides.ts。あそびかたの「町の　しくみ」と 同じ）
+			if ((await s.choose([...HOME_MSG.loanMenu], { cancel: 1 })) === 0)
+				for (const p of HOME_GUIDE) await s.narrate(p);
 			return;
 		}
 		if (kind === "phone") {

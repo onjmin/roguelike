@@ -34,6 +34,7 @@ import { type Cast, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { nowYear, season, today } from "../../data/town/calendar";
+import { BOND_GUIDE } from "../../data/town/guides";
 import type { Script, Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import {
@@ -379,9 +380,11 @@ export const giftShelf = async (ctx: Ctx, s: Story): Promise<void> => {
 		for (const p of BOND_MSG.shelfHelp) await s.narrate(p);
 		if (!previewing()) addFlag(GIFT_TOLD);
 	}
-	const n = await s.choose([...BOND_MSG.shelfMenu], { cancel: 2 });
+	const n = await s.choose([...BOND_MSG.shelfMenu], { cancel: 3 });
 	if (n === 0) await buyGift(ctx, s);
 	else if (n === 1) await bondBook(ctx, s);
+	// なかよし度の しくみ（いつでも 読める。data/town/guides.ts。あそびかたの「町の　しくみ」と 同じ）
+	else if (n === 2) for (const p of BOND_GUIDE) await s.narrate(p);
 };
 
 const buyGift = async (ctx: Ctx, s: Story): Promise<void> => {

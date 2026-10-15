@@ -245,7 +245,7 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "あそびかた", value: "howto" },
 			{ label: "中断する", value: "suspend" },
 		];
-		// 裏シナリオに 入っていれば、潜っている あいだも あらすじを 読み返せる（data/story/synopsis.ts）
+		// あらすじ（パン板を 持ち帰る 前は はじまりの 目標。data/story/synopsis.ts）
 		const syn = synopsisNow();
 		if (syn)
 			rows.splice(rows.length - 1, 0, { label: "あらすじ", value: "synopsis" });

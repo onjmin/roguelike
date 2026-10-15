@@ -10,6 +10,7 @@
 // 試験は setArcadeHooks で 板の かわりに 結果を わたす（src/sim/arcadeTests.ts）。
 
 import { CASINO_TABLE, isCasinoGame } from "../../data/arcade/casino";
+import { ARCADE_GUIDE } from "../../data/arcade/guides";
 import { ARCADE, ARCADE_PLAY_YEN, ARCADE_TEXT } from "../../data/arcade/text";
 import {
 	ARCADE_GAMES,
@@ -262,7 +263,8 @@ export const arcadeScript = async (
 	}
 	if (paid) ctx.se("arcCoin");
 	if (!m.tutored.includes(game)) {
-		await s.narrate(t.rule);
+		// 決まりの むずかしい 台は くわしい 説明（data/arcade/guides.ts。あそびかたの「ゲームの　決まり」で 読みかえせる）
+		for (const line of ARCADE_GUIDE[game] ?? [t.rule]) await s.narrate(line);
 		m.tutored.push(game);
 		saveArcade(m);
 	}

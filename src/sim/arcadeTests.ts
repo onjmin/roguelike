@@ -11,6 +11,7 @@ import {
 	CHIP_YEN,
 	chipDiff,
 } from "../data/arcade/casino";
+import { ARCADE_GUIDE, GAME_GUIDES } from "../data/arcade/guides";
 import { bcStart } from "../data/arcade/home/baccarat";
 import { bjStart } from "../data/arcade/home/blackjack";
 import { pcStart } from "../data/arcade/home/pachinko";
@@ -109,6 +110,8 @@ import {
 } from "../data/arcade/text";
 import { ARCADE_GAMES, ARCADE_HOME, isArcadeGame } from "../data/arcade/types";
 import { sfx } from "../data/audio/sfx";
+import { BASIC_GUIDE } from "../data/petitcon/guide";
+import { TOWN_GUIDES } from "../data/town/guides";
 import {
 	type Facility,
 	facilityById,
@@ -1310,7 +1313,10 @@ test("カジノ: 台では チップ入れから 出して 遊び、のこりは
 				`choose: ${ARCADE.menu.join("/")}`,
 				`narrate: ${fill(T.ask, { chips: 45 })}`,
 				`choose: ${[fill(T.option, { n: 10 }), fill(T.option, { n: 30 }), fill(T.all, { n: 45 }), "やめる"].join("/")}`,
-				`narrate: ${ARCADE_TEXT.gacha.rule}`,
+				// はじめての 1回は くわしい 説明（data/arcade/guides.ts。rule の かわり）
+				...(ARCADE_GUIDE.gacha ?? [ARCADE_TEXT.gacha.rule]).map(
+					(l) => `narrate: ${l}`,
+				),
 				`narrate: ${fill(ARCADE.after, { score: 45, unit: "枚" })}`,
 				`narrate: ${ARCADE.newBest}`,
 				`narrate: ${fill(T.back, { n: 42, chips: 57, diff: chipDiff(12) })}`,
@@ -1699,6 +1705,24 @@ test("家の ゲーム: ボンバーは レスの 下の 力を 拾うと 強く
 });
 
 for (const c of HOME_GAME_TESTS) test(`家の ゲーム: ${c.name}`, c.run);
+
+test("ガイド（2026-10-15）: ゲームの 決まりと 町の しくみの 説明は どれも 窓に 収まり、中身が ある", () => {
+	const all = [
+		...GAME_GUIDES().map((g) => [`game ${g.label}`, g.pages] as const),
+		...TOWN_GUIDES().map((g) => [`town ${g.label}`, g.pages] as const),
+		...BASIC_GUIDE.pages.map((p, i) => [`basic ${i}`, p] as const),
+	];
+	for (const [where, pages] of all) {
+		ok(pages.length > 0, `${where}: empty`);
+		// ♥（なかよし度の 印。村で ふだん 使う 字）は 絵文字の 決まりから 外す（幅は 全角 1）
+		for (const [i, p] of pages.entries())
+			fits(`${where} ${i}`, p.replaceAll("♥", "＊"));
+	}
+	ok(
+		BASIC_GUIDE.topics.length === BASIC_GUIDE.pages.length,
+		"basic topics and pages differ",
+	);
+});
 
 export const runArcadeTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];

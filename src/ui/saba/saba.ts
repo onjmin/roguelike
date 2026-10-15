@@ -15,6 +15,7 @@
 // sabaEvents は 村の 地図の 人（ui/village/villageEvents.ts の buildVillage）：豚レース場の 豚（うろうろ）と 匠（ふだんは いない）。
 // 記録は kiriko-roguelike/saba だけ（段の 下見 ?stage=・?event= の あいだは 書かない）。強さ・道具・段には ふれない。
 
+import { MINE_GUIDE, MINE_GUIDE_TOLD } from "../../data/arcade/guides";
 import {
 	countReturn,
 	isleMap,
@@ -41,7 +42,7 @@ import type { EventDef, Story } from "../../engine/defs";
 import { loadTown } from "../../engine/save";
 import type { Dir } from "../../engine/types";
 import type { Ctx } from "../ctx";
-import { playOrRecord } from "../minigames/playMenu";
+import { playOrRecord, tellOnce } from "../minigames/playMenu";
 import { returnAt } from "../village/guests";
 import { previewStage } from "../village/villageReturn";
 import { fill } from "../village/villageTalk";
@@ -234,6 +235,8 @@ const mine = async (ctx: Ctx, s: Story, sv: SabaSave): Promise<void> => {
 	const record =
 		sv.mine.best > 0 ? [fill(X.mineRecord, { n: sv.mine.best })] : [];
 	if ((await playOrRecord(s, record, X.mineMenu)) === null) return;
+	// ブラマイ場の 決まり（はじめての 1回。data/arcade/guides.ts）
+	await tellOnce(s, MINE_GUIDE_TOLD, MINE_GUIDE);
 	await s.wait(0);
 	const r = await playMine(ctx);
 	if (!r) return;
