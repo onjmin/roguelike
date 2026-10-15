@@ -739,7 +739,7 @@ const waitAnyInput = (ctx: Ctx): Promise<void> =>
 	});
 
 /**
- * ベッドに 寝ころぶ（置いた ベッドの 上の マスが 枕、下の マスが 掛け布団）。文の あとも 寝ころんだ まま、
+ * ベッドに 寝ころぶ（置いた ベッドの 上の マスが 枕、下の マスが 掛け布団）。文は 出さず 寝ころんだ まま、
  * 何か キーを 押すか タップすると 起きる（作者「それまでは 寝ころんだ まま」）。
  */
 const lieDown = async (
@@ -755,8 +755,6 @@ const lieDown = async (
 	s.lie({ x: bed.x, y: bed.y, blanket });
 	try {
 		await s.wait(400);
-		const lines = HOME_MSG.lieDown;
-		await s.narrate(lines[m.returns % lines.length]);
 		await waitAnyInput(ctx);
 	} finally {
 		s.lie(null);
