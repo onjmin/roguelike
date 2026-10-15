@@ -116,7 +116,7 @@ export const loadStocks = (): StockMemo => {
 			}
 			base.runs = raw.runs;
 			base.news = raw.news ?? null;
-			// 口座が できる 前（2026-10-15 まで）に 端末を 使った 人は 口座が ある ことに（お金は 0円から）
+			// open の ない 保存は、持ち株か 端末を 使った 印が あれば 口座が ある ことに（お金は 0円から）
 			base.open =
 				typeof raw.open === "boolean"
 					? raw.open

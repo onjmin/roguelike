@@ -1,9 +1,9 @@
-// キリコの 家（マイホーム）。小屋の 段（段3）から 中庭の 分譲住宅（地図の 53,31。data/village/facilities.ts の myhome）を
-// 35年ローンで 買う。2026-10-13 から 本当に 払う（作者：「稼いだ 金で 何か 買えるように」。財布は engine/wallet.ts）：
+// キリコの 家（マイホーム）。倉庫の 段（段4。MYHOME_FROM）から 中庭の 分譲住宅（地図の 53,31。data/village/facilities.ts の myhome）を
+// 35年ローンで 買う（作者：「稼いだ 金で 何か 買えるように」。財布は engine/wallet.ts）：
 // 契約で 頭金（HOME_DOWN）、帰るたびに 月の 返済（HOME_MONTHLY）。払えない 月は 滞納に なる（追い出されは しない）。
 // 中では 家具を 置く・動かす・片づける、壁紙と 床を かえる（模様替え）。家具は 3通りで 手に 入る：
 // 帰るたびに 1つ 宅配便で 届く（仲間・町の 人から。HOME_GIFTS）、町の 住人に 話すと 1度だけ（RESIDENT_GIFTS）、
-// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め。ヲタショップの グッズ・ガチャの 景品は data/village/otaku.ts）。持ち帰った 板の 底の 品も 台に のせて 飾れる（GOAL_FURNITURE）。電話で 親しく なった 人（喫茶か ♥1 から。ui/village/bonds.ts）を 招ける。
+// リサイクルショップの レジで 買う（FURNITURE_PRICE。高め。ヲタショップの グッズ・ガチャの 景品は data/village/otaku.ts）。持ち帰った 板の 底の 品も 台に のせて 飾れる（GOAL_FURNITURE）。電話で 親しく なった 人（♥2 から。INVITE_HEARTS）を 招ける。
 // ここは 形と 決まりだけ（DOM も 保存も 使わない）。保存・場面は ui/village/myhome.ts。
 
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
