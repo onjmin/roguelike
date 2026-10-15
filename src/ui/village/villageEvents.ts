@@ -149,6 +149,7 @@ import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag, openStorage } from "./home";
+import { puyuTrainDecor } from "./puyuTrain";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
 import { shadowGround } from "./shadows";
@@ -1136,13 +1137,15 @@ export const buildVillage = (
 		// 銭湯の 煙突から 湯気・
 		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
 		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）・
-		// おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・建物の 看板（ui/village/signboards.ts）
+		// おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・建物の 看板（ui/village/signboards.ts）・
+		// 線路を 不定期に 走る ぷゆゆ列車（ui/village/puyuTrain.ts）
 		decor: joinDecor(
 			chimneySteam(rows),
 			imoniDecor(imoniArrive()),
 			villageFindGlint(),
 			stockBoardDecor(shokenSign(layoutStage(view))),
 			signboardDecor(layoutStage(view)),
+			puyuTrainDecor(layoutStage(view)),
 		),
 		outside: "#1f2a14",
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）

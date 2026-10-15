@@ -751,8 +751,10 @@ const V_STREETS: readonly VStreet[] = [vStreet(46)];
 /** 縦の 通りが 走る 行（北の 通りの 歩道から 浜の 遊歩道まで）。 */
 const V_Y0 = 8;
 const V_Y1 = 42;
-const RAIL_X = [78, 79] as const;
-const RAIL_Y1 = 40;
+/** 線路の 列と 南の はし・敷く 段（住宅街。ぷゆゆ列車が 走る。ui/village/puyuTrain.ts）。 */
+export const RAIL_X = [78, 79] as const;
+export const RAIL_Y1 = 40;
+export const RAIL_FROM = 6;
 /** 深い 街区の 中庭を 線路の 東（北：ファミレス、南：コーポ・ラーメン屋）へ わたる 歩行者の 踏切の 行。 */
 const RAIL_WALK = [8, 30];
 /** 街灯（大通りと 遊歩道。消防署の 車庫の 前は よける）・踏切の 警報機。 */
