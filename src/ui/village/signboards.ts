@@ -6,6 +6,7 @@ import {
 	type Facility,
 	facilitiesAt,
 	gridDoor,
+	gridKeyCell,
 } from "../../data/village/facilities";
 import { SIGNS, type SignStyle } from "../../data/village/signs";
 import type { MapDef } from "../../engine/defs";
@@ -40,7 +41,11 @@ const boardOf = (f: Facility): Board | null => {
 	const w = Math.max(...rows.map((r) => [...r].length));
 	const door = gridDoor(f.look);
 	const row = sign.row ?? door?.[1] ?? rows.length - 1;
-	const col = door ? door[0] + 0.5 : w / 2;
+	// 両開きなら 2枚の まんなか
+	const door2 = gridKeyCell(f.look, f.look.door2);
+	const col = door
+		? (door[0] + (door2 && door2[1] === door[1] ? door2[0] : door[0])) / 2 + 0.5
+		: w / 2;
 	return {
 		text: sign.text,
 		style: sign.style ?? "shop",

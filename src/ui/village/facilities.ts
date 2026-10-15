@@ -49,6 +49,7 @@ import { netBrowse } from "../net/net";
 import { isNetaPlay, netaPlay } from "../neta/neta";
 import { purikura } from "../purikura/purikura";
 import { sabaPlay } from "../saba/saba";
+import { bankWindow } from "../trade/bank";
 import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import {
 	atmDesk,
@@ -335,6 +336,8 @@ export const buildFacility = (
 			else if (play === "tradeguide") await guideRack(s);
 			// ネットカフェの ブース：払って ネットと トレード
 			else if (play === "netcafe") await netcafeBooth(ctx, s);
+			// おんJ銀行の 窓口：定期預金と 家の ローンの 繰り上げ返済（ui/trade/bank.ts）
+			else if (play === "bank") await bankWindow(s);
 		});
 	});
 	for (const who of room?.people ?? [])

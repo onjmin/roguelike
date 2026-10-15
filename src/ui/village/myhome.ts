@@ -232,6 +232,21 @@ const syncReturns = (m: HomeMemo): number => {
 	return n > 0 ? n : -1;
 };
 
+/**
+ * 繰り上げ返済（おんJ銀行の 窓口。ui/trade/bank.ts）：months か月ぶんを 財布から 返す（滞納の ぶんから）。
+ * 返した 月数（契約が ない・完済・財布が 足りなければ 0）。
+ */
+export const prepayLoan = (months: number): number => {
+	const m = loadHome();
+	if (!m.owned) return 0;
+	const n = Math.min(months, LOAN_MONTHS - paidMonths(m));
+	if (n <= 0 || !spendYen(n * HOME_MONTHLY, previewing())) return 0;
+	m.paid += n;
+	m.late = Math.max(0, m.late - n);
+	saveHome(m);
+	return n;
+};
+
 /** 返済した 月（35年で 完済）。 */
 export const paidMonths = (m: HomeMemo): number =>
 	Math.min(LOAN_MONTHS, m.paid);

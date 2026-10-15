@@ -1,4 +1,5 @@
-// なかよし度（data/people/bonds.ts・ui/village/bonds.ts）と おんJ証券（data/trade/trade.ts・ui/trade/trade.ts）の 試験。
+// なかよし度（data/people/bonds.ts・ui/village/bonds.ts）と おんJ証券（data/trade/trade.ts・ui/trade/trade.ts）・
+// おんJ銀行（data/trade/bank.ts・ui/trade/bank.ts）の 試験。
 // pnpm test で いっしょに 動く。形は seasonTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は B。
 
 import {
@@ -12,6 +13,7 @@ import {
 } from "../data/people/bonds";
 import { MOB_IDS, MOBS } from "../data/people/mobs";
 import { SPEAKERS } from "../data/story/quotes";
+import { BANK_CAP, BANK_CATCHUP, BANK_RATE } from "../data/trade/bank";
 import {
 	ACCOUNT_MSG,
 	DAY_TEXT,
@@ -25,7 +27,16 @@ import {
 	TRADE_MSG,
 } from "../data/trade/trade";
 import { NETCAFE_MSG } from "../data/village/finance";
+import { HOME_MONTHLY, LOAN_MONTHS } from "../data/village/myhome";
 import { forgetWalletMemo, walletYen } from "../engine/wallet";
+import {
+	bankDeposit,
+	bankWithdraw,
+	forgetBankMemo,
+	interestOf,
+	loadBank,
+	syncBank,
+} from "../ui/trade/bank";
 import {
 	accountYen,
 	deposit,
@@ -44,6 +55,12 @@ import {
 	withBond,
 } from "../ui/village/bonds";
 import { forgetCafeMemo } from "../ui/village/cafe";
+import {
+	forgetHomeMemo,
+	loadHome,
+	prepayLoan,
+	saveHome,
+} from "../ui/village/myhome";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -94,6 +111,8 @@ const withStorage = async (
 		forgetCafeMemo();
 		forgetStocksMemo();
 		forgetWalletMemo();
+		forgetBankMemo();
+		forgetHomeMemo();
 	};
 	forget();
 	try {
@@ -405,6 +424,62 @@ test(
 			forgetStocksMemo();
 			ok(loadStocks().open, "an old holder has no account");
 			ok(loadStocks().cash === 0, "an old holder got free cash");
+		});
+	},
+);
+
+test(
+	"B9",
+	"the bank: time deposits earn interest once per return (up to the cap), and the counter prepays the house loan",
+	async () => {
+		await withStorage(async (store) => {
+			setPoints(store, 500000);
+			store.set(
+				"kiriko-roguelike/stats",
+				JSON.stringify({ runs: 3, clears: 0, best: 1 }),
+			);
+			ok(!bankDeposit(600000), "deposited more than the wallet");
+			ok(bankDeposit(100000), "deposit failed");
+			ok(walletYen() === 400000, "deposit did not leave the wallet");
+			ok(syncBank(3) === 0, "interest without a return");
+			// 2回目は 1回目の 利息にも つく
+			const one = interestOf(100000);
+			ok(
+				syncBank(5) === one + interestOf(100000 + one),
+				"2 returns, wrong interest",
+			);
+			ok(syncBank(5) === 0, "the same return paid twice");
+			const saved = loadBank().saved;
+			ok(saved === 100000 + loadBank().earned, "interest not added");
+			ok(bankDeposit(300000), "second deposit failed");
+			ok(
+				interestOf(loadBank().saved) === BANK_CAP * BANK_RATE,
+				"interest above the cap",
+			);
+			ok(
+				syncBank(5 + 100) === BANK_CATCHUP * BANK_CAP * BANK_RATE,
+				"catch-up not limited",
+			);
+			ok(!bankWithdraw(loadBank().saved + 1), "withdrew more than saved");
+			const w = walletYen();
+			ok(bankWithdraw(5000), "withdraw failed");
+			ok(walletYen() === w + 5000, "withdraw did not reach the wallet");
+		});
+		await withStorage(async (store) => {
+			setPoints(store, 20000);
+			ok(prepayLoan(12) === 0, "prepaid without a house");
+			const h = loadHome();
+			h.owned = true;
+			h.late = 2;
+			saveHome(h, false);
+			ok(prepayLoan(12) === 12, "prepay failed");
+			ok(walletYen() === 20000 - 12 * HOME_MONTHLY, "prepay cost");
+			ok(loadHome().paid === 12 && loadHome().late === 0, "late not cleared");
+			ok(prepayLoan(12) === 0, "prepaid beyond the wallet");
+			const done = loadHome();
+			done.paid = LOAN_MONTHS - 1;
+			saveHome(done, false);
+			ok(prepayLoan(60) === 1, "prepaid past the end of the loan");
 		});
 	},
 );

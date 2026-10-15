@@ -57,10 +57,10 @@ export const SIGNS: Record<string, SignDef> = {
 	cityhall: { text: "おんJ市役所", style: "public" },
 	bushitsu: { text: "部室棟", style: "public" },
 	shoken: { text: "おんJ証券", style: "public" },
+	bank: { text: "おんJ銀行", style: "public" },
 	netcafe: { text: "ROM専", style: "night" },
 	sharehouse: { text: "スレ立て荘" },
 	heights: { text: "ハイツおんJ" },
-	grandmaison: { text: "グランメゾン", style: "public" },
 	mansion2: { text: "メゾンII", style: "public" },
 	tower2: { text: "タワーサウス", style: "public" },
 };

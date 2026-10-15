@@ -192,6 +192,7 @@ export type FacilityRoom = {
 		| "stockboard"
 		| "tradeguide"
 		| "netcafe"
+		| "bank"
 		| "otaku"
 		| NetaPlay
 	>;
@@ -323,7 +324,10 @@ const C_GRASS = "#97bc25";
 const TURF = base(0, 4);
 
 /** 絵を 並べた 外観で その キーの マス（外観の 左上から。無ければ null）。 */
-const gridKeyCell = (g: GridLook, key: string | undefined): Cell | null => {
+export const gridKeyCell = (
+	g: GridLook,
+	key: string | undefined,
+): Cell | null => {
 	if (!key) return null;
 	for (const [y, r] of g.rows.entries()) {
 		const x = [...r].indexOf(key);
@@ -4771,22 +4775,6 @@ const MORE_HOUSING: readonly Facility[] = [
 				lines: [
 					"駅に　近いのが　取り柄や。\n……電車の　音は　子守唄",
 					"大家さんが　保守　好きでな。\n家賃の　振込名も「ホシュ」や",
-				],
-			},
-		],
-	}),
-	variant("mansion", {
-		id: "grandmaison",
-		name: "グランメゾンおんJ",
-		at: [70, 9],
-		from: 7,
-		door: "グランメゾンおんJ。\nエントランスに　大きな　鉢植え。",
-		swap: [[art("wallTex", 2), art("wallTex", 0)]],
-		people: [
-			{
-				lines: [
-					"角部屋は　日当たり　ええで。\n……洗濯物が　よう　乾く",
-					"管理組合の　理事に　なってもうた。\n……議題は　ずっと　ゴミ置き場や",
 				],
 			},
 		],

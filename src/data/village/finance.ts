@@ -1,6 +1,7 @@
 // おんJ証券 新市街支店と ネットカフェ「ROM専」（2026-10-15 作者：「デイトレ・株・FX って ATM で やるような もの？」
 // →「本物っぽく するなら 証券口座の 開設から」）。
 // - 支店（段4〜。新市街の 南、分譲住宅の 東）：窓口で 口座を 作り、入金・出金。端末で 売り買い。壁の 電光の 株価ボード。
+// - おんJ銀行（段5〜。新市街の 北、消防署の 上）：窓口で 定期預金と 家の ローンの 繰り上げ返済（data/trade/bank.ts）。
 // - ネットカフェ（段5〜。広場の 南、前は 浜）：ブースの パソコンで ネットと トレード
 //   （村に いる あいだ 1回 NETCAFE_YEN。家の パソコンが なくても 売り買い できる 所）。
 // おんJマートの ATM は 入金・出金だけ。口座と 売り買いの 決まりは data/trade/trade.ts・ui/trade/trade.ts。
@@ -149,6 +150,105 @@ const SHOKEN_ROOM: FacilityRoom = {
 	],
 };
 
+// ───────────────── おんJ銀行 ─────────────────
+
+// 灰色の 床と 白い 壁。奥に 窓口の 長い 台（うしろに 行員と 金庫 2つ）、右の 壁ぎわに ATM と 番号札の 機械、
+// 入口から 窓口まで 赤い じゅうたん、左の 手前に 待合の ソファ、右の 手前に 観葉植物と ごみ箱
+const BANK_ROOM: FacilityRoom = {
+	look: {
+		floor: ri("flGrey"),
+		floorColor: "#c8cad0",
+		up: base(0, 507),
+		low: base(0, 508),
+		wallColor: "#e8e8e4",
+	},
+	rows: [
+		"############",
+		"#HHHHHHHHHH#",
+		"#hhhhhhphmh#",
+		"#$$.......a#",
+		"#[====]...A#",
+		"#...~~....k#",
+		"#sr.~~.....#",
+		"#SR.~~...Fq#",
+		"####DD######",
+	],
+	tiles: (k) => ({
+		p: k.low(ri("poster")),
+		$: k.on(ri("safe")),
+		a: k.on(riCell("atm", 0, 0)),
+		A: k.on(riCell("atm", 0, 1)),
+		k: k.on(ri("kiosk")),
+		"~": k.floor(ri("runner")),
+		...reception(k),
+		s: k.on(riCell("sofaWhite", 0, 0)),
+		r: k.on(riCell("sofaWhite", 1, 0)),
+		S: k.on(riCell("sofaWhite", 0, 1)),
+		R: k.on(riCell("sofaWhite", 1, 1)),
+		F: k.on(ri("bonsai")),
+		q: k.on(ri("trash")),
+	}),
+	things: {
+		p: "poster",
+		m: "notice",
+		$: "safe",
+		"[": "window",
+		"]": "window",
+		a: "atm",
+		A: "atm",
+		k: "ticket",
+		s: "sofa",
+		r: "sofa",
+		F: "plant",
+		q: "trash",
+	},
+	lines: {
+		poster: ["ポスター。\n「保守も　貯金も　コツコツと」"],
+		notice: [
+			"はり紙。\n「振り込め詐欺に　ご注意ください」",
+			"……「スレ立て代行の　振込は\nお受けできません」とも　ある。",
+		],
+		safe: ["金庫。\n……ダイヤルが　1000で　止まっている。"],
+		window: ["窓口。\n「定期預金・住宅ローン」の　札。"],
+		atm: ["ATM。\n「定期預金の　お手続きは　窓口へ」"],
+		ticket: ["番号札の　機械。\n……1001番。呼ばれる　気配は　ない。"],
+		sofa: ["待合の　ソファ。\n……テレビは　ずっと　天気予報。"],
+		plant: ["観葉植物。\n……鉢に「開店祝」の　札。"],
+		trash: ["ごみ箱。\n……くしゃくしゃの　番号札。"],
+	},
+	// 窓口：定期預金と 家の ローン（ui/trade/bank.ts）
+	plays: { window: "bank" },
+	people: [
+		{
+			id: "bank_clerk",
+			walk: NANASHI[2],
+			at: [3, 3],
+			dir: "down",
+			name: "行員",
+			lines: [
+				"定期預金の　利息は\n冒険から　お帰りの　たびに　つきます",
+				"番号札は　お取りに　ならなくて\n大丈夫です。……いつも　すいてますので",
+			],
+		},
+		{
+			id: "bank_a",
+			walk: NANASHI[0],
+			at: [8, 5],
+			dir: "up",
+			name: "名無し",
+			lines: ["定期に　入れとけば\n使わずに　済むやろ。……たぶん"],
+		},
+		{
+			id: "bank_guard",
+			walk: NANASHI[3],
+			at: [7, 7],
+			dir: "down",
+			name: "警備員",
+			lines: ["……。", "……銀行強盗の　スレは\n立てないで　ください"],
+		},
+	],
+};
+
 // ───────────────── ネットカフェ ─────────────────
 
 // 赤い じゅうたんと 白い 壁。奥に 漫画の 棚と ブース 2つ（パソコンの 台と いす）、
@@ -280,6 +380,36 @@ export const FINANCE_FACILITIES: readonly Facility[] = [
 				],
 			},
 		],
+	},
+	// ── おんJ銀行（段5〜。新市街の 北、消防署の 上。data/trade/bank.ts）
+	{
+		id: "bank",
+		name: "おんJ銀行",
+		from: 5,
+		at: [70, 9],
+		// 平らな 屋根の へり・灰色の 石・両はしに 白い 柱・アーチの 窓・両開きの 扉（どちらからも 入れる）
+		look: {
+			kind: "grid",
+			rows: ["[====]", "PwssWP", "QxssXQ", "RsLDsR"],
+			door: "D",
+			door2: "L",
+			keys: {
+				...ROOF,
+				s: [art("wallTex", 2)],
+				P: [art("wallTex", 2), art("pillar")],
+				Q: [art("wallTex", 2), art("pillar", 0, 1)],
+				R: [art("wallTex", 2), art("pillar", 0, 2)],
+				w: [art("wallTex", 2), art("archTall")],
+				x: [art("wallTex", 2), art("archTall", 0, 1)],
+				W: [art("wallTex", 2), art("archTall")],
+				X: [art("wallTex", 2), art("archTall", 0, 1)],
+				L: [art("wallTex", 2), base(2, 92, 1, 2)],
+				D: [art("wallTex", 2), base(3, 92, 1, 2)],
+			},
+		},
+		door: "おんJ銀行。\n扉の　横に　ATMの　灯り。",
+		doorSe: "autoDoor",
+		room: BANK_ROOM,
 	},
 	// ── ネットカフェ「ROM専」（段5〜。広場の 南。前は 浜）
 	{
