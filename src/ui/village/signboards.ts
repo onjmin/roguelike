@@ -1,6 +1,10 @@
-// 建物の 看板（村の 地図の decor）。外観の 扉の 上の 壁に 名前の 板を かける（名前は data/village/signs.ts）。
-// 扉の ない 外観は いちばん 下の 行の 上、まんなかに。板は 建物の 幅から はみ出させない。
-// 同梱の チップに 字の 看板が 無いので 塗って 書く（ui/village/cinemaDecor.ts の 番組名の 帯と 同じ 字）。
+// 建物の 看板（村の 地図の decor）。施設は 扉の 上の 壁、町の まんなかの 建物は 決めた 所に 名前の 板を かける
+// （名前・場所・見た目は data/village/signs.ts）。
+// 画面は 1ソース画素 ＝ 数デバイス画素で 描くので、そのまま 字を 書くと なめらかな 字が ドット絵の 上に 浮く。
+// そこで 看板は ソース画素の 大きさの 小さな キャンバスに 描いて、字は にじみを 0 か 1 に 落として ドットに する
+// （書体の 形は 残る）。できた 板は 1枚ずつ 覚えて おく。
+// 書体は Google Fonts から 看板の 字だけ 読みこむ（text= で しぼる）。読めるまでは DotGothic16 で 描いて、
+// 読めたら 描きなおす。
 
 import {
 	type Facility,
@@ -8,68 +12,185 @@ import {
 	gridDoor,
 	gridKeyCell,
 } from "../../data/village/facilities";
-import { SIGNS, type SignStyle } from "../../data/village/signs";
+import {
+	CORE_SIGNS,
+	SIGN_FONTS,
+	SIGN_LOOKS,
+	SIGNS,
+	type SignLook,
+	signChars,
+} from "../../data/village/signs";
 import type { MapDef } from "../../engine/defs";
 import { TILE } from "../../engine/types";
 
-const FONT = "8px 'DotGothic16', monospace";
-/** 板の 高さ（字 8px ＋ 上下 1px）。 */
-const H = 10;
-
-/**
- * 板の 描き方（2026-10-16 作者：「看板は もっと 自然な 感じに」）。
- * 店：木の 板（上に 明るい ふち・下と 右に 暗い ふち・壁に 落ちる 影）、こげ茶の 字。
- * 役所・会社：白い 半透明の パネルに 紺の 字（ふちなし）。夜の 店：暗い 板に うっすら 光る ネオンの 字。
- */
-const drawBoard = (
-	g: CanvasRenderingContext2D,
-	style: SignStyle,
-	x: number,
-	y: number,
-	w: number,
-): void => {
-	// 壁に 落ちる 影
-	g.fillStyle = "rgba(0, 0, 0, 0.28)";
-	g.fillRect(x + 1, y + H, w, 1);
-	g.fillRect(x + w, y + 1, 1, H);
-	if (style === "shop") {
-		g.fillStyle = "#9a6a3c";
-		g.fillRect(x, y, w, H);
-		g.fillStyle = "#c08a52";
-		g.fillRect(x, y, w, 1);
-		g.fillStyle = "#6a4422";
-		g.fillRect(x, y + H - 1, w, 1);
-		g.fillRect(x + w - 1, y, 1, H);
-	} else if (style === "public") {
-		g.fillStyle = "rgba(246, 246, 240, 0.88)";
-		g.fillRect(x, y, w, H);
-	} else {
-		g.fillStyle = "#1a1226";
-		g.fillRect(x, y, w, H);
-		g.fillStyle = "#2c2040";
-		g.fillRect(x, y, w, 1);
-	}
-};
-
-/** 字の 色（夜の 店は 光の にじみ つき）。 */
-const TEXT_INK: Record<SignStyle, string> = {
-	shop: "#2e1a0a",
-	public: "#1c2a48",
-	night: "#ff9ade",
-};
+/** 字の 大きさと 板の 高さ（ソース画素）。字が 入りきらなければ 小さく する。 */
+const FONT_PX = 10;
+const MIN_PX = 8;
+const H = 12;
+/** 字の にじみを 字と みなす こさ（0〜255）。 */
+const SOLID = 110;
 
 type Board = {
+	key: string;
 	text: string;
-	style: SignStyle;
-	/** 板の まんなかの x と 上端の y（地図の ソース画素）。 */
+	look: SignLook;
+	/** 板の まんなかの x と 下の はしの y（地図の ソース画素）。 */
 	cx: number;
-	y: number;
-	/** 建物の 左右（板を おさめる）。 */
+	bottom: number;
+	/** 板を おさめる 左右（建物の はば）。 */
 	left: number;
 	right: number;
 };
 
-const boardOf = (f: Facility): Board | null => {
+// ───────────────── 書体 ─────────────────
+
+let fontsAsked = false;
+let fontsReady = false;
+
+const cache = new Map<string, HTMLCanvasElement>();
+
+/** 看板の 書体を 読みこむ（1回だけ。読めたら 板を 描きなおす）。 */
+const loadFonts = (): void => {
+	if (fontsAsked || typeof document === "undefined") return;
+	fontsAsked = true;
+	const text = signChars();
+	const fams = Object.values(SIGN_FONTS)
+		.map(
+			(f) =>
+				`family=${f.family.replaceAll(" ", "+")}${f.weight !== 400 ? `:wght@${f.weight}` : ""}`,
+		)
+		.join("&");
+	const link = document.createElement("link");
+	link.rel = "stylesheet";
+	link.href = `https://fonts.googleapis.com/css2?${fams}&text=${encodeURIComponent(text)}&display=block`;
+	link.onload = () => {
+		void Promise.all(
+			Object.values(SIGN_FONTS).map((f) =>
+				document.fonts.load(`${f.weight} ${FONT_PX}px "${f.family}"`, text),
+			),
+		)
+			.then(() => {
+				fontsReady = true;
+				cache.clear();
+			})
+			.catch(() => {
+				// 読めなければ DotGothic16 の まま
+			});
+	};
+	document.head.appendChild(link);
+};
+
+const fontOf = (look: SignLook, px: number): string => {
+	const f = SIGN_FONTS[look.font];
+	return fontsReady
+		? `${f.weight} ${px}px "${f.family}", "DotGothic16", sans-serif`
+		: `${px}px "DotGothic16", sans-serif`;
+};
+
+// ───────────────── 板を 描く ─────────────────
+
+/** 字を ドットに 落とした 型（その 字の 画素だけ 不透明）。 */
+const textMask = (
+	text: string,
+	font: string,
+	w: number,
+	maxW: number,
+): HTMLCanvasElement => {
+	const c = document.createElement("canvas");
+	c.width = w;
+	c.height = H;
+	const g = c.getContext("2d");
+	if (!g) return c;
+	g.font = font;
+	g.textBaseline = "middle";
+	g.textAlign = "center";
+	g.fillStyle = "#000";
+	g.fillText(text, w / 2, H / 2 + 0.5, maxW);
+	const d = g.getImageData(0, 0, w, H);
+	for (let i = 3; i < d.data.length; i += 4)
+		d.data[i] = (d.data[i] ?? 0) >= SOLID ? 255 : 0;
+	g.putImageData(d, 0, 0);
+	return c;
+};
+
+/** 型を 色で 塗った 写し（上下左右に ずらして 重ねると ふち取りに なる）。 */
+const tinted = (mask: HTMLCanvasElement, color: string): HTMLCanvasElement => {
+	const c = document.createElement("canvas");
+	c.width = mask.width;
+	c.height = mask.height;
+	const g = c.getContext("2d");
+	if (!g) return c;
+	g.drawImage(mask, 0, 0);
+	g.globalCompositeOperation = "source-in";
+	g.fillStyle = color;
+	g.fillRect(0, 0, c.width, c.height);
+	return c;
+};
+
+const AROUND = [
+	[-1, 0],
+	[1, 0],
+	[0, -1],
+	[0, 1],
+] as const;
+
+/** 1枚の 板（地・上の 明るい ふち・暗い ふち・壁に 落ちる 影・字）。幅は 字に 合わせ、maxW を こえない。 */
+const renderBoard = (
+	text: string,
+	look: SignLook,
+	maxW: number,
+): HTMLCanvasElement => {
+	const probe = document.createElement("canvas").getContext("2d");
+	let px = FONT_PX;
+	let tw = 0;
+	for (; px > MIN_PX; px--) {
+		if (!probe) break;
+		probe.font = fontOf(look, px);
+		tw = Math.ceil(probe.measureText(text).width);
+		if (tw + 8 <= maxW) break;
+	}
+	const w = Math.min(maxW, tw + 8);
+	// 影の ぶん 右と 下に 1画素
+	const c = document.createElement("canvas");
+	c.width = w + 1;
+	c.height = H + 1;
+	const g = c.getContext("2d");
+	if (!g) return c;
+	g.fillStyle = "rgba(0, 0, 0, 0.3)";
+	g.fillRect(1, 1, w, H);
+	g.fillStyle = look.bg;
+	g.fillRect(0, 0, w, H);
+	g.fillStyle = look.top;
+	g.fillRect(0, 0, w, 1);
+	g.fillStyle = look.edge;
+	g.fillRect(0, H - 1, w, 1);
+	g.fillRect(0, 0, 1, H);
+	g.fillRect(w - 1, 0, 1, H);
+	const mask = textMask(text, fontOf(look, px), w, w - 6);
+	const halo = look.outline ?? look.glow;
+	if (halo) {
+		const ring = tinted(mask, halo);
+		g.save();
+		if (look.glow) g.globalAlpha = 0.55;
+		for (const [dx, dy] of AROUND) g.drawImage(ring, dx, dy);
+		g.restore();
+	}
+	g.drawImage(tinted(mask, look.ink), 0, 0);
+	return c;
+};
+
+const boardImage = (b: Board): HTMLCanvasElement => {
+	let img = cache.get(b.key);
+	if (!img) {
+		img = renderBoard(b.text, b.look, b.right - b.left);
+		cache.set(b.key, img);
+	}
+	return img;
+};
+
+// ───────────────── 場所 ─────────────────
+
+const facilityBoard = (f: Facility): Board | null => {
 	const sign = SIGNS[f.id];
 	if (!sign || f.look.kind !== "grid") return null;
 	const rows = f.look.rows;
@@ -82,50 +203,54 @@ const boardOf = (f: Facility): Board | null => {
 		? (door[0] + (door2 && door2[1] === door[1] ? door2[0] : door[0])) / 2 + 0.5
 		: w / 2;
 	return {
+		key: `f:${f.id}`,
 		text: sign.text,
-		style: sign.style ?? "shop",
+		look: SIGN_LOOKS[sign.look],
 		cx: (f.at[0] + col) * TILE,
 		// 扉の 上の 壁に かける（扉には かからない）
-		y: (f.at[1] + row) * TILE - H - 1,
+		bottom: (f.at[1] + row) * TILE - 1,
 		left: f.at[0] * TILE,
 		right: (f.at[0] + w) * TILE,
 	};
 };
 
+/** 町の まんなかの 建物の 看板（その 段に 建って いる もの）。 */
+const coreBoards = (stage: number): Board[] =>
+	CORE_SIGNS.filter(
+		(c) => stage >= c.from && (c.until === undefined || stage < c.until),
+	).map((c) => {
+		const cx = c.at[0] * TILE;
+		return {
+			key: `c:${c.id}:${stage}`,
+			text: c.text(stage),
+			look: SIGN_LOOKS[c.look(stage)],
+			cx,
+			bottom: c.at[1] * TILE - 1,
+			left: cx - 4 * TILE,
+			right: cx + 4 * TILE,
+		};
+	});
+
 /** その 段の 建物の 看板。 */
 export const signboardDecor = (stage: number): MapDef["decor"] => {
-	const boards = facilitiesAt(stage).flatMap((f) => boardOf(f) ?? []);
+	const boards = [
+		...facilitiesAt(stage).flatMap((f) => facilityBoard(f) ?? []),
+		...coreBoards(stage),
+	];
 	if (!boards.length) return undefined;
-	const widths = new Map<Board, number>();
 	return (g, ox, oy) => {
-		g.save();
-		g.font = FONT;
-		g.textAlign = "left";
-		g.textBaseline = "top";
+		loadFonts();
 		const vw = g.canvas.width;
 		const vh = g.canvas.height;
 		for (const b of boards) {
-			let tw = widths.get(b);
-			if (tw === undefined) {
-				tw = Math.ceil(g.measureText(b.text).width);
-				widths.set(b, tw);
-			}
-			const bw = Math.min(tw + 6, b.right - b.left);
+			const img = boardImage(b);
+			const w = img.width - 1;
 			const x = Math.round(
-				Math.max(b.left, Math.min(b.right - bw, b.cx - bw / 2)) - ox,
+				Math.max(b.left, Math.min(b.right - w, b.cx - w / 2)) - ox,
 			);
-			const y = b.y - oy;
-			if (x + bw < 0 || x > vw || y + H < 0 || y > vh) continue;
-			drawBoard(g, b.style, x, y, bw);
-			const tx = x + Math.round((bw - tw) / 2);
-			if (b.style === "night") {
-				g.fillStyle = "rgba(255, 120, 210, 0.35)";
-				g.fillText(b.text, tx + 1, y + 1, bw - 2);
-				g.fillText(b.text, tx - 1, y + 1, bw - 2);
-			}
-			g.fillStyle = TEXT_INK[b.style];
-			g.fillText(b.text, tx, y + 1, bw - 2);
+			const y = b.bottom - H - oy;
+			if (x + img.width < 0 || x > vw || y + img.height < 0 || y > vh) continue;
+			g.drawImage(img, x, y);
 		}
-		g.restore();
 	};
 };
