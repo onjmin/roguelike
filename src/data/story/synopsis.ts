@@ -21,6 +21,7 @@ import { awayFriends } from "./story";
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 	// 本筋（目標は はじめから「村の 過疎を なんとか する」。1000 は 目標に しない：ダンジョンの 時間切れと 逆の 意味に なる）
 	shallow: "沈みかけた　村の　スレを　伸ばす",
+	kinoko: "居座る　親玉を、村の　スレに　貼る",
 	main: "よく　伸びた　スレを　貼って、人を　呼ぶ",
 	deep: "村の　過疎を、終わらせる",
 	hidden: "キリコの　生まれた　スレが　しまわれた　底",
@@ -49,7 +50,10 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	// やきうの レスは 相棒の 声（2026-10-14：潜っている あいだも 筋が 止まらない ように。階の 札にも 出る）。
 	// 風呂板で ひとりの 夜を、電池板で 1000 への 願いを、山場の 前に 少しずつ 見せる
 	shallow: [{ at: 3, who: "nanj", text: "保守しとるで。ゆっくり　来い" }],
-	kinoko: [{ at: 3, who: "nanj", text: "そこも　昔は　人　おったんや" }],
+	kinoko: [
+		{ at: 3, who: "nanj", text: "そこも　昔は　人　おったんや" },
+		{ at: 5, who: null, text: "底で、親玉が　ふんぞりかえっている。" },
+	],
 	main: [
 		{ at: 4, who: null, text: "湯気の　むこうに、古い　レスが　浮いている。" },
 		{ at: 8, who: "nanj", text: "こっちは　静かや。いつもや" },
@@ -219,6 +223,11 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 		done: (c) => c.includes("shallow"),
 		title: "パン板",
 		sum: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。目標は、村の　過疎を　なんとか　すること。",
+	},
+	{
+		done: (c) => c.includes("kinoko"),
+		title: "きのこ板",
+		sum: "人が　散って、沈みかけた　おんJタウンの　スレ。植民地の　底から　沈んだ　ネタを　拾って　貼ると、スレが　伸びた。それを　見て、きのこ板の　名無しが　来た。親玉きのにゃんを　連れ帰ると、外の　板から　はじめて　レスが　ついた。植民地化宣言だった。",
 	},
 	{
 		done: (c) => c.includes("main"),
