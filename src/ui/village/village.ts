@@ -1830,6 +1830,8 @@ export class Village {
 				if (opt.gesture) a.showGesture(opt.gesture, false);
 			}
 		}
+		// 暗転した ままの 文は 幕の 上に（幕の 下だと 真っ暗な まま 送りを 待つ だけに なる）
+		this.msg.overFade(this.fadeEl.style.opacity === "1");
 		return this.msg.show({
 			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
@@ -1860,6 +1862,7 @@ export class Village {
 	 */
 	private sayKiriko(text: string, mode: KirikoMode): Promise<void> {
 		const voice = mode === "voice" ? KIRIKO.voice : undefined;
+		this.msg.overFade(this.fadeEl.style.opacity === "1");
 		return this.msg.show({
 			name: KIRIKO.name,
 			color: KIRIKO.color,

@@ -259,6 +259,11 @@ body.jolt #app {
 	color: #e8e2ff;
 }
 
+/* 暗転した ままの 語り（村の 井戸を 降りる ところ など）：暗転の 幕（.fade 50）の 上に */
+.msg.over-fade {
+	z-index: 52;
+}
+
 /* ダンジョンの「せつめい」：開いている メニュー（30・31）の 上に 重ねる */
 .msg.over-menu {
 	z-index: 32;

@@ -434,6 +434,11 @@ export class MessageWindow {
 		return this.win.classList.contains("shown");
 	}
 
+	/** 暗転の 幕（.fade）より 上に 出すか（暗転した ままの 語り。立ち絵は 幕の 下の まま）。 */
+	overFade(on: boolean): void {
+		this.win.classList.toggle("over-fade", on);
+	}
+
 	/**
 	 * どちらの枠に立たせるか。すでに出ていればその枠。いつもの側が空いていればそこ。
 	 * ふさがっていれば反対側が空いているとき反対側、両方ふさがっていれば長く話していない方と入れ替える。
