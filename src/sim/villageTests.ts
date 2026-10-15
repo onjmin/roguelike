@@ -8057,7 +8057,7 @@ test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目
 		// 1回目：払わない（お代は ええ）
 		await ev.run(s);
 		ok(
-			!log.includes("se arcCoin") && log.includes(`say nanj: ${m.free}`),
+			!log.includes("se pay") && log.includes(`say nanj: ${m.free}`),
 			`free:\n${log.join("\n")}`,
 		);
 		ok(walletYen() === d.price + 100, `wallet ${walletYen()}`);
@@ -8066,7 +8066,7 @@ test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目
 		await ev.run(s);
 		ok(
 			inOrder(log, [
-				"se arcCoin",
+				"se pay",
 				`say nanj: ${fill(m.order, { dish: d.name })}`,
 				"se eat",
 			]) && !log.includes(`say nanj: ${m.free}`),
@@ -8079,7 +8079,7 @@ test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目
 		ok(
 			log.includes(`say nanj: ${fill(m.short, { price: yen(d.price) })}`) &&
 				!log.includes("se eat") &&
-				!log.includes("se arcCoin"),
+				!log.includes("se pay"),
 			`short:\n${log.join("\n")}`,
 		);
 		ok(walletYen() === 100, `wallet ${walletYen()}`);
@@ -8142,7 +8142,7 @@ test("居酒屋の ツケ（2026-10-14）: 足りなければ ツケに でき�
 		ok(
 			inOrder(log, [
 				`say nanj: ${fill(t.payAsk, { tab: yen(d.price) })}`,
-				"se arcCoin",
+				"se pay",
 				`say nanj: ${t.paid}`,
 			]),
 			`pay:\n${log.join("\n")}`,
@@ -8152,7 +8152,7 @@ test("居酒屋の ツケ（2026-10-14）: 足りなければ ツケに でき�
 		ok(
 			inOrder(log, [
 				`say nanj: ${fill(t.choice, { price: yen(d.price) })}`,
-				"se arcCoin",
+				"se pay",
 				`say nanj: ${fill(m.order, { dish: d.name })}`,
 			]),
 			`choice pay:\n${log.join("\n")}`,
@@ -8218,7 +8218,7 @@ test("有料の 寄り道（2026-10-14）: 自販機と ドリンクバーは 1�
 		ok(
 			inOrder(a.log, [
 				`choose ${VENDING.menu.map((x) => fill(x, { price: yen(VEND_YEN) })).join("/")}`,
-				"se arcCoin",
+				"se pay",
 				`narrate: ${VENDING.drank}`,
 			]),
 			`vend:\n${a.log.join("\n")}`,
@@ -8229,7 +8229,7 @@ test("有料の 寄り道（2026-10-14）: 自販機と ドリンクバーは 1�
 		ok(
 			inOrder(b.log, [
 				`choose ${DRINK_BAR.menu.map((x) => fill(x, { price: yen(DRINK_BAR_YEN) })).join("/")}`,
-				"se arcCoin",
+				"se pay",
 				`narrate: ${DRINK_BAR.drank}`,
 			]),
 			`drink bar:\n${b.log.join("\n")}`,
@@ -8248,7 +8248,7 @@ test("有料の 寄り道（2026-10-14）: 自販機と ドリンクバーは 1�
 		setTownYen(VEND_YEN + DRINK_BAR_YEN + 500);
 		const q = fakeStory({ pick: 1 });
 		await bar.run(q.s);
-		ok(!q.log.includes("se arcCoin") && walletYen() === 500, "quit pays");
+		ok(!q.log.includes("se pay") && walletYen() === 500, "quit pays");
 		forgetWalletMemo();
 	});
 });
@@ -8282,7 +8282,7 @@ test("有料の 寄り道（2026-10-14）: 銭湯は 村に いる あいだ 1�
 		const { s, log } = fakeStory({ pick: 0 });
 		await enterBath(s);
 		ok(
-			inOrder(log, [menu, "se arcCoin", "fadeOut"]) &&
+			inOrder(log, [menu, "se pay", "fadeOut"]) &&
 				log.some((l) => l.startsWith("warp bath")),
 			`paid:\n${log.join("\n")}`,
 		);
@@ -8292,7 +8292,7 @@ test("有料の 寄り道（2026-10-14）: 銭湯は 村に いる あいだ 1�
 		await enterBath(s);
 		ok(
 			!log.includes(menu) &&
-				!log.includes("se arcCoin") &&
+				!log.includes("se pay") &&
 				log.some((l) => l.startsWith("warp bath")),
 			`again:\n${log.join("\n")}`,
 		);
