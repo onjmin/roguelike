@@ -136,7 +136,6 @@ import {
 } from "../minigames/imoni";
 import { playGetter } from "../minigames/minigames";
 import { pinPad } from "../minigames/pinPad";
-import { makeQuiz } from "../minigames/quiz";
 import { sabaEvents } from "../saba/saba";
 import { openSettings } from "../settings";
 import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
@@ -283,20 +282,6 @@ const stepOf: Record<string, string> = {
 	right: "r",
 };
 
-/** 冒険を すてる 前の 計算問題（ui/minigames/quiz.ts）。まちがえたら すてない。 */
-const discardQuiz = async (s: Parameters<Script>[0]): Promise<boolean> => {
-	const q = makeQuiz();
-	await s.narrate(`すてる　なら、問題に　答えて。\n${q.text}　は？`);
-	const n = await s.choose([...q.options.map(String), "やめる"], {
-		cancel: 4,
-		start: 4,
-	});
-	if (n === 4) return false;
-	if (q.options[n] === q.answer) return true;
-	await s.narrate("ちがう。すてるのは　やめておいた。");
-	return false;
-};
-
 /**
  * 中断した冒険が あれば 先に きく（冒険に　もどる・すてて　新しく　もぐる・やめる）。村の 出口と 井戸で 同じ。
  * 続きへ 出た・やめた なら false（呼ぶ側は そこで 終わる。やめたときは back 済み）。
@@ -316,10 +301,7 @@ export const suspendedFirst = async (
 	// すてるのは もどせないので もう一度 きく
 	if (n === 1) {
 		await s.narrate("中断した　冒険は　もどらない。\n本当に　すてる？");
-		if (
-			(await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !== 0 ||
-			!(await discardQuiz(s))
-		) {
+		if ((await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !== 0) {
 			await back();
 			return false;
 		}
