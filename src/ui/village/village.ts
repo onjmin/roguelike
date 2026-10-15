@@ -90,6 +90,7 @@ import { dosukoiEnter } from "../minigames/dosukoi";
 import { buildCafe } from "./cafe";
 import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
+import { MoneyPops } from "./moneyPop";
 import { buildRoom } from "./rooms";
 import { Crowd } from "./villageCrowd";
 import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
@@ -241,6 +242,8 @@ export class Village {
 	private guideExit = false;
 	private time = 0;
 	private last = 0;
+	/** お金の 出入りの 金額（ui/village/moneyPop.ts）。 */
+	private moneyPops = new MoneyPops();
 	/** 描くときの カメラ（画面の 画素に 丸めた）。 */
 	private camX = 0;
 	private camY = 0;
@@ -1514,6 +1517,13 @@ export class Village {
 			}
 			this.drawLights(g, field, ox, oy, day);
 		}
+		// お金の 出入り（頭の 上に ＋／−の 金額。夜の 色を かぶらない よう 最後に）
+		this.moneyPops.draw(
+			g,
+			Math.round(this.player.fx * TILE - ox),
+			Math.round(this.player.fy * TILE - oy),
+			this.time,
+		);
 	}
 
 	/** 夜の 明かりの マス（地図ごとに 1回 さがす）。 */

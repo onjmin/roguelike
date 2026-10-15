@@ -14,6 +14,19 @@ type WalletMemo = { v: 1; spent: number };
 
 let memo: WalletMemo | null = null;
 
+/** 財布が 動いた ことを 知らせる 先（村の 頭上の 金額。ui/village/moneyPop.ts）。d は ＋が もらう、−が 払う。 */
+const listeners = new Set<(d: number) => void>();
+
+/** 財布の 出入りを 聞く（やめる 関数を 返す）。 */
+export const onWalletChange = (fn: (d: number) => void): (() => void) => {
+	listeners.add(fn);
+	return () => listeners.delete(fn);
+};
+
+const tell = (d: number): void => {
+	for (const fn of listeners) fn(d);
+};
+
 const load = (): WalletMemo => {
 	if (memo) return { ...memo };
 	try {
@@ -51,6 +64,7 @@ export const spendYen = (yen: number, noSave = false): boolean => {
 		} catch {
 			// 保存できなくても この 回は 覚えている
 		}
+	tell(-yen);
 	return true;
 };
 
@@ -59,6 +73,7 @@ export const earnYen = (yen: number, noSave = false): void => {
 	if (!(yen > 0) || !Number.isFinite(yen)) return;
 	const m = load();
 	m.spent -= Math.floor(yen);
+	tell(Math.floor(yen));
 	memo = { ...m };
 	if (!noSave)
 		try {
