@@ -374,7 +374,7 @@ test(
 				fits(
 					`TRADE_MSG.${k}`,
 					t
-						.replace(/\{(price|have|value|left|net|cash)\}/g, "100,000円")
+						.replace(/\{(price|have|value|left|net|cash|cost|pl)\}/g, "100,000円")
 						.replace("{name}", STOCKS.joshiki.short)
 						.replace("{text}", "")
 						.replace("{head}", "100,000円が　もどってきた。")

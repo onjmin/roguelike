@@ -205,6 +205,16 @@ export const withdraw = (yen: number): boolean => {
 export const stockValue = (m: StockMemo = loadStocks()): number =>
 	STOCK_IDS.reduce((a, id) => a + (m.hold[id]?.n ?? 0) * m.prices[id], 0);
 
+/** 買った ときからの 含み損益（円。持っていなければ 0）。 */
+const holdPl = (m: StockMemo, id: StockId): number => {
+	const h = m.hold[id];
+	return h ? Math.round((m.prices[id] - h.cost) * h.n) : 0;
+};
+
+/** 損益の 字（+1,200円・−1,200円・±0）。 */
+const plText = (n: number): string =>
+	n > 0 ? `+${yen(n)}` : n < 0 ? `−${yen(-n)}` : "±0";
+
 /** 小さな グラフ（▁▂▃▄▅▆▇█）。 */
 const spark = (h: readonly number[]): string => {
 	const v = h.slice(-12);
@@ -262,13 +272,19 @@ const stockDesk = async (ctx: Ctx, s: Story): Promise<void> => {
 		await s.wait(0);
 		const v = await listWindow(
 			ctx,
-			`${fill(TRADE_MSG.stockTitle, { value: yen(stockValue(m)) })}<br><small>口座　${yen(m.cash)}</small>`,
+			`${fill(TRADE_MSG.stockTitle, { value: yen(stockValue(m)) })}<br><small>${fill(
+				TRADE_MSG.stockSub,
+				{
+					cash: yen(m.cash),
+					pl: plText(STOCK_IDS.reduce((a, id) => a + holdPl(m, id), 0)),
+				},
+			)}</small>`,
 			STOCK_IDS.map((id) => {
 				const h = m.hold[id];
 				return {
 					label: STOCKS[id].name,
 					sub: `${yen(m.prices[id])}　${change(m.hist[id] ?? [])}`,
-					desc: `${spark(m.hist[id] ?? [])}　${h ? `${h.n}株` : STOCKS[id].note}`,
+					desc: `${spark(m.hist[id] ?? [])}　${h ? fill(TRADE_MSG.stockHeld, { n: h.n, pl: plText(holdPl(m, id)) }) : STOCKS[id].note}`,
 					value: id,
 				};
 			}),
@@ -286,10 +302,12 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 	const price = m.prices[id];
 	const held = m.hold[id]?.n ?? 0;
 	await s.narrate(
-		fill(TRADE_MSG.stockAsk, {
+		fill(held > 0 ? TRADE_MSG.stockAskHeld : TRADE_MSG.stockAsk, {
 			name: STOCKS[id].short,
 			price: yen(price),
 			n: held,
+			cost: yen(Math.round(m.hold[id]?.cost ?? 0)),
+			pl: plText(holdPl(m, id)),
 		}),
 	);
 	const k = await s.choose([...TRADE_MSG.stockMenu], { cancel: 2 });
@@ -336,8 +354,15 @@ const trade = async (s: Story, id: StockId): Promise<void> => {
 			...new Set([1, 10, 100, held].filter((x) => x <= held)),
 		].sort((a, b) => a - b);
 		await s.narrate(fill(TRADE_MSG.sellHow, { n: held }));
+		const cost = m.hold[id]?.cost ?? price;
 		const i = await s.choose(
-			[...sizes.map((x) => `${x}株　${yen(x * price)}`), "やめる"],
+			[
+				...sizes.map(
+					(x) =>
+						`${x}株　${yen(x * price)}（${plText(Math.round((price - cost) * x))}）`,
+				),
+				"やめる",
+			],
 			{ cancel: sizes.length },
 		);
 		const q = sizes[i];

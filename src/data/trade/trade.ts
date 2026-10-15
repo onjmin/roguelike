@@ -237,10 +237,16 @@ export const TRADE_MSG = {
 	menu: ["株", "デイトレ", "FX", "やめる"],
 	// 株
 	stockTitle: "株　（持ち株の　評価　{value}）",
+	/** 一覧の 2行目（{pl} 買った ときからの 含み損益の 合計）。 */
+	stockSub: "口座　{cash}　含み　{pl}",
+	/** 一覧の 行の 下（持っている 銘柄）。 */
+	stockHeld: "{n}株　含み　{pl}",
 	/** ニュースの 前置き（次の 窓が ニュースの 文）。 */
 	news: "【おんJ証券　ニュース】",
 	dividend: "配当が　口座に　入った。（+{price}）",
 	stockAsk: "{name}　{price}／株\n持ち株　{n}株",
+	/** 持っている ときの stockAsk（{cost} 買値の 平均・{pl} 含み損益）。 */
+	stockAskHeld: "{name}　{price}／株\n{n}株　買値　{cost}　含み　{pl}",
 	stockMenu: ["買う", "売る", "やめる"],
 	buyHow: "何株　買う？（口座　{have}）",
 	sellHow: "何株　売る？（{n}株　持っている）",
