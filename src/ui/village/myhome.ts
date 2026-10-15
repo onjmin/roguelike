@@ -77,6 +77,7 @@ import { arcadeScript, loadArcade } from "../arcade/arcade";
 import { loadBushitsu } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
 import { type ListItem, listWindow, TAB_PICKED } from "../list";
+import { OPEN_WAIT_MS } from "../message";
 import { netBrowse } from "../net/net";
 import { paintEasel } from "../paint/paint";
 import { petitcon } from "../petitcon/petitcon";
@@ -665,7 +666,7 @@ export const homeThing =
 		// ベッド：寝ころぶ（枕に 頭を のせて 掛け布団を かぶる。もう 1度 押すと 起きる）
 		if (BED_FURNITURE.includes(kind)) {
 			const g = await s.choose([...HOME_MSG.bedMenu], { cancel: 3 });
-			if (g === 0) await lieDown(s, m, kind);
+			if (g === 0) await lieDown(ctx, s, m, kind);
 			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
 			return;
 		}
@@ -696,8 +697,26 @@ export const homeThing =
 		await moveOrStore(s, m, kind, n);
 	};
 
-/** ベッドに 寝ころぶ（置いた ベッドの 上の マスが 枕、下の マスが 掛け布団）。窓を 閉じると 起きる。 */
+/** 何か キーを 押すか 画面を タップするまで 待つ（押しっぱなしの くり返しと 窓を 閉じた 直後の 押しは 数えない）。 */
+const waitAnyInput = (ctx: Ctx): Promise<void> =>
+	new Promise((resolve) => {
+		const at = performance.now();
+		const pop = ctx.input.push(
+			(_k, repeat) => {
+				if (repeat || performance.now() - at < OPEN_WAIT_MS) return;
+				pop();
+				resolve();
+			},
+			{ tap: "a" },
+		);
+	});
+
+/**
+ * ベッドに 寝ころぶ（置いた ベッドの 上の マスが 枕、下の マスが 掛け布団）。文の あとも 寝ころんだ まま、
+ * 何か キーを 押すか タップすると 起きる（作者「それまでは 寝ころんだ まま」）。
+ */
 const lieDown = async (
+	ctx: Ctx,
 	s: Story,
 	m: HomeMemo,
 	kind: FurnitureId,
@@ -711,6 +730,7 @@ const lieDown = async (
 		await s.wait(400);
 		const lines = HOME_MSG.lieDown;
 		await s.narrate(lines[m.returns % lines.length]);
+		await waitAnyInput(ctx);
 	} finally {
 		s.lie(null);
 	}
