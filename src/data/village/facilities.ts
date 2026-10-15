@@ -332,7 +332,7 @@ const gridKeyCell = (g: GridLook, key: string | undefined): Cell | null => {
 	return null;
 };
 /** 絵を 並べた 外観の 扉の マス（外観の 左上から。扉の キーが 無ければ null）。 */
-const gridDoor = (g: GridLook): Cell | null => gridKeyCell(g, g.door);
+export const gridDoor = (g: GridLook): Cell | null => gridKeyCell(g, g.door);
 
 /** 住宅街の 家（入れない。扉の マスに 表札。until の 段で 都市の 建物に 建てかわる）。 */
 const house = (
