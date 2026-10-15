@@ -251,8 +251,9 @@ const BANK_ROOM: FacilityRoom = {
 
 // ───────────────── ネットカフェ ─────────────────
 
-// 赤い じゅうたんと 白い 壁。奥に 漫画の 棚と ブース 2つ（パソコンの 台と いす）、
-// まんなかに 受付（台の うしろに 店員）、左に フリードリンクの 台、入口の そばに 観葉植物
+// 赤い じゅうたんと 白い 壁。奥に 個室 4つ（仕切りの 壁と 入口。リクライニング 2つ・畳の フラット・ペアの パソコン 2台）と
+// すみの シャワー室、まんなかに 漫画の 棚の 通路 3本と ドリンクバー（コーヒー・冷たい 飲み物・ソフトクリーム）、
+// 入口の 正面に 受付（台の うしろに 店員）。個室は 机の パソコンを 調べると 払って ネットと トレード。
 export const NETCAFE_ROOM: FacilityRoom = {
 	look: {
 		floor: ri("flCarpet"),
@@ -262,68 +263,110 @@ export const NETCAFE_ROOM: FacilityRoom = {
 		wallColor: "#e8e8e4",
 	},
 	rows: [
-		"##########",
-		"#HHHHHHHH#",
-		"#hhhhhhhm#",
-		"#KKK.pPq.#",
-		"#....c.c.#",
-		"#d.......#",
-		"#..[=]...#",
-		"#.......F#",
-		"####DD####",
+		"################",
+		"#HH#HH#HH#HH#HH#",
+		"#hm#hh#hh#hh#Sh#",
+		"#P.#P.#lf#PP#~U#",
+		"#c.#c.#tt#cc#~~#",
+		"#h.#h.#h.#h.#.##",
+		"#..............#",
+		"#KK.KK.KK..dE..#",
+		"#kk.kk.kk..ie..#",
+		"#..............#",
+		"#......[==]..F.#",
+		"#.............q#",
+		"######DD########",
 	],
 	tiles: (k) => ({
-		K: k.on(ri("bookshelf")),
-		// ブース 2つ：事務の 机の 両はしに パソコン（まんなかは 仕切りの かわり）
-		p: desk(k, 0, true),
-		P: desk(k, 1, false),
-		q: desk(k, 2, true),
+		// 個室：机の 上の パソコンと、手前の いす（いすには 座れる）
+		P: k.on(ri("tableBeige"), ri("pcTop")),
 		c: k.floor(ri("chairDarkUp")),
+		// フラット席：畳に ちゃぶ台の ノートパソコン
+		l: k.on(ri("flTatami"), ri("laptop")),
+		f: k.floor(ri("flTatami")),
+		t: k.floor(ri("flTatami")),
+		// シャワー室（タイルの 床・洗面台・壁の 札）
+		S: k.low(ri("signRestroom")),
+		"~": k.floor(ri("flBlue")),
+		U: k.on(ri("flBlue"), ri("sink")),
+		K: k.on(riCell("bookshelf", 0, 0)),
+		k: k.on(riCell("bookshelf", 0, 1)),
 		d: k.on(ri("podium"), ri("coffeeMaker")),
+		E: k.on(riCell("drinkCase", 0, 0)),
+		e: k.on(riCell("drinkCase", 0, 1)),
+		i: k.on(ri("kakigoriMachine")),
 		...reception(k),
+		q: k.on(ri("trash")),
 	}),
 	things: {
-		K: "manga",
 		m: "notice",
-		p: "booth",
-		q: "booth",
+		P: "booth",
+		l: "booth",
+		S: "shower",
+		U: "shower",
+		K: "manga",
+		k: "manga",
 		d: "drink",
+		E: "cold",
+		e: "cold",
+		i: "softcream",
 		"[": "reception",
 		"]": "reception",
 		F: "plant",
+		q: "trash",
 	},
 	lines: {
+		notice: ["はり紙。\n「完全個室　鍵つき　ナイトパック　あります」"],
+		booth: ["個室の　パソコン。\nリクライニングの　いすが　ぎしっと　鳴る。"],
+		shower: ["シャワー室。\n「ご利用は　30分まで」の　札。"],
 		manga: [
 			"漫画の　棚。\n長い　連載が　1巻から　ぜんぶ。",
-			"……最新刊だけ　ない。\nだれかが　ブースに　持ちこんでいる。",
+			"……最新刊だけ　ない。\nだれかが　個室に　持ちこんでいる。",
 		],
-		notice: ["はり紙。\n「ナイトパック　あります」"],
-		booth: ["ブースの　パソコン。"],
 		drink: ["フリードリンク。\nコーンスープの　ボタンが　すりへっている。"],
-		reception: ["受付。\n「ブースは　1回　200円」"],
+		cold: ["冷たい　飲み物の　ケース。\nメロンソーダだけ　すぐ　なくなる。"],
+		softcream: ["ソフトクリームの　機械。\n……巻くのが　むずかしい。"],
+		reception: ["受付。\n「個室は　1回　200円」"],
 		plant: ["観葉植物。\n……ちょっと　ほこりっぽい。"],
+		trash: ["ごみ箱。\n……カップ麺の　容器で　いっぱい。"],
 	},
-	// ブースの パソコン：払って ネットと トレード（ui/village/facilities.ts の netcafeBooth）
+	// 個室の パソコン：払って ネットと トレード（ui/village/facilities.ts の netcafeBooth）
 	plays: { booth: "netcafe" },
 	people: [
 		{
 			id: "netcafe_clerk",
 			walk: NANASHI[1],
-			at: [4, 5],
+			at: [8, 9],
 			dir: "down",
 			name: "店員",
 			lines: [
-				"いらっしゃいませー。\nブースは　空いてますよ",
+				"いらっしゃいませー。\n個室は　空いてますよ",
 				"ここで　スレ　立てても　ええけど\n……IPは　店のやで",
 			],
 		},
 		{
 			id: "netcafe_a",
 			walk: NANASHI[0],
-			at: [3, 4],
+			at: [4, 4],
 			dir: "up",
 			name: "名無し",
 			lines: ["家の　回線より　速いんや。\n……家、ないけどな"],
+		},
+		{
+			id: "netcafe_b",
+			walk: NANASHI[2],
+			at: [7, 4],
+			dir: "down",
+			name: "名無し",
+			lines: ["……（寝息）", "……ナイトパック……延長……"],
+		},
+		{
+			id: "netcafe_c",
+			walk: NANASHI[3],
+			at: [3, 8],
+			dir: "left",
+			name: "名無し",
+			lines: ["この　漫画、来るたびに　つづきから\n読んどる。……もう　3年や"],
 		},
 	],
 };
