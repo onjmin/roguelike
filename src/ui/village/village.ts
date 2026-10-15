@@ -237,6 +237,10 @@ export class Village {
 	} | null = null;
 	/** タップした 道が 長い（走る）。 */
 	private pathRun = false;
+	/** タップした 物が onBumpThing の 物（着いたら 話さずに そちらを 起こす）。 */
+	private pathBump = false;
+	/** 十字キーで つっかえて いる マス（押しっぱなしで ぶつかり つづけても onBumpThing は 1回だけ）。 */
+	private blockedAt: string | null = null;
 	private marker: { x: number; y: number; t: number } | null = null;
 	/** まだ 1度も もぐっていない（村の 出口に 矢印を 出す。はじめての 人が 出口を さがさないように）。 */
 	private guideExit = false;
@@ -796,6 +800,7 @@ export class Village {
 			if (d !== null) this.stepToward(d, false);
 			return;
 		}
+		this.blockedAt = null;
 		if (this.path.length) {
 			const d = this.path.shift() as Dir;
 			const v = DIR_VEC[d];
@@ -807,9 +812,11 @@ export class Village {
 				// 人が 前に 来た：その場で 道を 引き直す（だめなら あきらめる）
 				const goal = this.marker;
 				const talk = this.pathTalk;
+				const bump = this.pathBump;
 				this.clearPath();
 				this.player.dir = d;
 				if (goal) this.walkTo(goal.x, goal.y, talk);
+				this.pathBump = bump && !!this.pathTalk;
 				return;
 			}
 			// 話しかけるのは 最後の 1歩が 着いてから（下）。途中で 口などを 踏んだら afterStep が 道を 消す
@@ -840,12 +847,29 @@ export class Village {
 				return;
 			}
 			this.faceTo(this.player, target.x, target.y);
-			this.talkFront();
+			const bump = this.pathBump;
+			this.pathBump = false;
+			if (!bump || !this.bumpFront()) this.talkFront();
 		}
+	}
+
+	/** 目の前の onBumpThing の 物を 起こす（あれば true）。 */
+	private bumpFront(): boolean {
+		const field = this.field;
+		if (!field || this.scriptDepth > 0 || this.leaving) return false;
+		const v = DIR_VEC[this.player.dir];
+		const run = field.def.onBumpThing?.(
+			this.player.x + v.dx,
+			this.player.y + v.dy,
+		);
+		if (!run) return false;
+		void this.runScript(run);
+		return true;
 	}
 
 	private clearPath(): void {
 		this.path = [];
+		this.pathBump = false;
 		this.pathTalk = null;
 		this.marker = null;
 	}
@@ -864,6 +888,7 @@ export class Village {
 				field.canEnter(this.player.x + v.dx, this.player.y + v.dy, this.player)
 			) {
 				this.bump = null;
+				this.blockedAt = null;
 				void this.tryStep(d);
 				return;
 			}
@@ -875,6 +900,12 @@ export class Village {
 		// つっかえたら 向くだけ（横へ ずれて 回りこまない。物の 前で そちらを 向いて 調べたい）
 		// 持ち場に 立つ 人に ぶつかっても その 人は よけない（作者「逃げるのは やめて」）
 		this.player.dir = tries[0];
+		// ぶつかると 起きる 物（キリコの 家の ベッド）：つっかえ はじめた ときに 1回
+		const v = DIR_VEC[tries[0]];
+		const at = `${this.player.x + v.dx},${this.player.y + v.dy}`;
+		if (this.blockedAt === at) return;
+		this.blockedAt = at;
+		this.bumpFront();
 	}
 
 	/**
@@ -1237,6 +1268,19 @@ export class Village {
 			return;
 		}
 		let talk = talkAt(tx, ty);
+		// ぶつかると 起きる 物（キリコの 家の ベッド）：となりなら すぐ、遠ければ 歩いて 着いたら 起こす
+		if (talk && field.def.onBumpThing?.(tx, ty)) {
+			if (Math.abs(tx - this.player.x) + Math.abs(ty - this.player.y) === 1) {
+				this.clearPath();
+				this.faceTo(this.player, tx, ty);
+				this.bumpFront();
+				return;
+			}
+			this.clearPath();
+			this.walkTo(tx, ty, talk);
+			this.pathBump = !!this.pathTalk;
+			return;
+		}
 		// 前に 人が 立って ふさいでいる 口（本編が 開くまでの やきう）を タップしたら、その人に 話しかける
 		if (!talk && this.touchAt(tx, ty)) {
 			const guard = talkAt(tx, ty + 1);

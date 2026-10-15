@@ -748,6 +748,23 @@ const lieDown = async (
 	}
 };
 
+/**
+ * 十字キーで ベッドに ぶつかるか ベッドを タップしたら、すぐ 寝ころぶ（ui/village/village.ts の onBumpThing。
+ * 調べる 文と 選ぶ 窓は A で 調べた とき だけ）。ベッドで なければ null。
+ */
+export const homeBump =
+	(ctx: Ctx) =>
+	(x: number, y: number): Script | null => {
+		const m = loadHome();
+		if (!m.owned || carrying) return null;
+		const bed = m.placed.find((p) => {
+			if (!BED_FURNITURE.includes(p.id)) return false;
+			const { w, h } = furnitureSize(p.id);
+			return x >= p.x && x < p.x + w && y >= p.y && y < p.y + h;
+		});
+		return bed ? (s) => lieDown(ctx, s, loadHome(), bed.id) : null;
+	};
+
 /** 家具を 動かす（n 0・持つ）か 片づける（n 1）。 */
 const moveOrStore = async (
 	s: Story,

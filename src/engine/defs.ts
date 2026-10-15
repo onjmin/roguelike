@@ -103,6 +103,11 @@ export type MapDef = {
 	 * （キリコの 家で 家具を 置く。ui/village/myhome.ts）。null なら 何も しない。
 	 */
 	onTalkEmpty?: (x: number, y: number) => Script | null;
+	/**
+	 * 十字キーで ぶつかった・タップした 物で A を 待たずに 起きる こと（キリコの 家の ベッドに 寝ころぶ。
+	 * ui/village/myhome.ts）。null なら いつもどおり（ぶつかれば 向くだけ・タップなら 話す）。
+	 */
+	onBumpThing?: (x: number, y: number) => Script | null;
 	/** マップの外側の色。 */
 	outside?: string;
 	/** 街の 人通り（村の 地図だけ。data/village/crowd.ts・ui/village/villageCrowd.ts）。 */

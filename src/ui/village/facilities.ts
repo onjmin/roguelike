@@ -64,6 +64,7 @@ import {
 	enterHome,
 	furnitureShop,
 	guestEvent,
+	homeBump,
 	homeDecor,
 	homeEmpty,
 	homeFacility,
@@ -379,6 +380,8 @@ export const buildFacility = (
 		outside: "#000",
 		events,
 		onTalkEmpty: home ? homeEmpty(ctx) : undefined,
+		// ベッドに ぶつかるか タップしたら 寝ころぶ（ui/village/myhome.ts）
+		onBumpThing: home ? homeBump(ctx) : undefined,
 		// 映画館の スクリーンと 客席の スマホの 光（ui/village/cinemaDecor.ts）・キリコの 家の 持っている 家具の 下見（ui/village/myhome.ts）
 		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）
 		decor: home
