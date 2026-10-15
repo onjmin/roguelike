@@ -633,13 +633,17 @@ export const lunchScript = async (s: Story): Promise<void> => {
 // ───────────────── たおれた あとの 支給品 ─────────────────
 
 /**
- * たおれて 帰った あと、ぷゆゆが かけてきて ぷゆゆソードを 持たせる（易しく する 助け。作者の 指示）。
+ * たおれて 帰った あと、ときどき（RELIEF_CHANCE）ぷゆゆが かけてきて ぷゆゆソードを 持たせる（易しく する 助け）。
  * 次の 冒険に 持っていく（engine/save.ts の giveRelief。二重に 渡さない）。やめた 冒険では 渡さない。
+ * roll は 試験で 決める ため。
  */
-export const reliefScript = async (s: Story): Promise<void> => {
+export const reliefScript = async (
+	s: Story,
+	roll = Math.random(),
+): Promise<void> => {
 	const last = loadRecords()[0];
 	if (last?.kind !== "dead" || last.cause === QUIT_CAUSE) return;
-	if (!giveRelief(last.at)) return;
+	if (!giveRelief(last.at, roll)) return;
 	const [to] = freeAround(s, 1);
 	if (to) {
 		await s.goto("mob_puyu", to[0], to[1], { speed: 1.6 });

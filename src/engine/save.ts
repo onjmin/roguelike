@@ -937,19 +937,23 @@ export const giveLunch = (): boolean => {
 /** 支給品（ぷゆゆソード）の 種類。 */
 export const RELIEF_KIND = "puyusword";
 
+/** たおれた あと ぷゆゆソードを もらえる 割合（毎回 だと 頼りきりに なる。作者の 指示 2026-10-16）。 */
+export const RELIEF_CHANCE = 1 / 3;
+
 /**
- * たおれた あと（at は その たおれの 記録の 時刻）、ぷゆゆソードを 持たせる。持たせたら true。
- * 二重に 渡さない：まだ 持って 出て いない・同じ たおれで もう 渡した・倉庫か 村の 持ち物に もう ある なら 渡さない。
+ * たおれた あと（at は その たおれの 記録の 時刻）、RELIEF_CHANCE で ぷゆゆソードを 持たせる。持たせたら true。
+ * roll は 0〜1 の 乱数（試験で 決める ため）。外れても その たおれは 引いた ことに する（帰りなおしで 引きなおさない）。
+ * 二重に 渡さない：まだ 持って 出て いない・同じ たおれで もう 引いた・倉庫か 村の 持ち物に もう ある なら 渡さない。
  */
-export const giveRelief = (at: number): boolean => {
+export const giveRelief = (at: number, roll = Math.random()): boolean => {
 	const t = loadTown();
 	if (t.relief || t.reliefAt === at) return false;
 	if ([...t.storage, ...t.bag].some((it) => it.kind === RELIEF_KIND))
 		return false;
-	t.relief = true;
 	t.reliefAt = at;
+	if (roll < RELIEF_CHANCE) t.relief = true;
 	saveTown(t);
-	return true;
+	return !!t.relief;
 };
 
 /** 支給品の 道具（強さ ＋0・正体は わかっている。番号は 冒険に 入る ときに つけなおす）。 */
