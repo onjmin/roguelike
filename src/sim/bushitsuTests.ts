@@ -53,7 +53,6 @@ import {
 } from "../data/bushitsu/bushitsu";
 import { BS_CELLS, BS_IMG, BS_SIZE, bs } from "../data/bushitsu/bushitsuSheet";
 import {
-	FACILITIES,
 	facilityById,
 	facilityDoor,
 	facilityOutside,
@@ -115,11 +114,11 @@ const view = (stage: number, step?: number): VillageView => ({
 
 test(
 	"B1",
-	"施設：段4から（終わり なし）・(40,0) の 13×3・扉 (46,2)・外 (46,3)・町の 役所と 中華の うしろ・遊べる 物は 物",
+	"施設：段4から（終わり なし）・(8,1) の 13×3・扉 (14,3)・外 (14,4)・遊べる 物は 物",
 	() => {
 		const f = must();
 		ok(f.from === 4 && f.until === undefined, `from ${f.from} ${f.until}`);
-		ok(f.at[0] === 40 && f.at[1] === 0, `at ${f.at}`);
+		ok(f.at[0] === 8 && f.at[1] === 1, `at ${f.at}`);
 		ok(
 			f.look.kind === "grid" &&
 				f.look.rows.length === 3 &&
@@ -127,15 +126,9 @@ test(
 			"not a 13x3 grid",
 		);
 		const d = facilityDoor(f);
-		ok(d?.[0] === 46 && d[1] === 2, `door ${d}`);
+		ok(d?.[0] === 14 && d[1] === 3, `door ${d}`);
 		const o = facilityOutside(f);
-		ok(o.x === 46 && o.y === 3 && o.dir === "down", `outside ${o.x},${o.y}`);
-		const ix = (id: string) => FACILITIES.findIndex((x) => x.id === id);
-		ok(ix("cityhall") >= 0 && ix("chuka") >= 0, "no cityhall / chuka");
-		ok(
-			ix("bushitsu") > ix("cityhall") && ix("bushitsu") > ix("chuka"),
-			"order",
-		);
+		ok(o.x === 14 && o.y === 4 && o.dir === "down", `outside ${o.x},${o.y}`);
 		const things = new Set(Object.values(f.room?.things ?? {}));
 		for (const [k, p] of Object.entries(f.room?.plays ?? {})) {
 			ok(p === "bushitsu", `${k}: ${p}`);
@@ -153,7 +146,7 @@ const UNLOCKS: DungeonId[][] = [
 
 test(
 	"B2",
-	"置き場所：段4〜7 で 扉・外の マス・外の 物 4つに 歩いて 行け、北の 通り（y3）と x46・x52 の すきまは あいたまま。段0〜3 は 何も ない",
+	"置き場所：段4〜7 で 扉・外の マス・外の 物 4つに 歩いて 行け、前の 通り（y4）は あいていて 歩いて 行ける。段0〜3 は 何も ない",
 	() => {
 		for (let stage = 0; stage < TOWN_STAGES; stage++)
 			for (const unlocked of UNLOCKS) {
@@ -199,12 +192,12 @@ test(
 				const at = (x: number, y: number) => reach.has(`${x},${y}`);
 				const door = mine.find((p) => p.id === "door_f_bushitsu");
 				ok(
-					door?.x === 46 && door.y === 2 && door.trigger === "touch",
+					door?.x === 14 && door.y === 3 && door.trigger === "touch",
 					`${where}: door ${door?.x},${door?.y}`,
 				);
-				ok(at(46, 2) && at(46, 3), `${where}: door not reachable`);
+				ok(at(14, 3) && at(14, 4), `${where}: door not reachable`);
 				for (const p of mine.filter((q) => q.id.startsWith("fthing_"))) {
-					ok(p.y === 2 && !p.sprite, `${where}: ${p.id} at ${p.x},${p.y}`);
+					ok(p.y === 3 && !p.sprite, `${where}: ${p.id} at ${p.x},${p.y}`);
 					const near = [
 						[0, -1],
 						[1, 0],
@@ -220,16 +213,15 @@ test(
 					);
 					ok(near, `${where}: ${p.id} has no reachable side`);
 				}
-				for (let x = 40; x <= 52; x++) {
-					ok(pass(x, 3), `${where}: (${x},3) blocked`);
+				for (let x = 8; x <= 20; x++) {
+					ok(pass(x, 4), `${where}: (${x},4) blocked`);
 					ok(
-						!places.some((p) => p.x === x && p.y === 3),
-						`${where}: a place on (${x},3)`,
+						!places.some((p) => p.x === x && p.y === 4),
+						`${where}: a place on (${x},4)`,
 					);
 				}
-				for (const x of [46, 52])
-					for (let y = 3; y <= 7; y++)
-						ok(pass(x, y) && at(x, y), `${where}: (${x},${y}) not open`);
+				for (let x = 8; x <= 20; x++)
+					ok(at(x, 4), `${where}: (${x},4) not reachable`);
 			}
 	},
 );

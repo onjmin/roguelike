@@ -1,4 +1,4 @@
-// おんJ駅伝（おんJタウン駅の 待合の 壁の テレビ。PROGRAMS §1.6 の 正月の 大学駅伝を 架空の 大会に した もの）。
+// おんJ駅伝（海の家「age」の テレビ。PROGRAMS §1.6 の 正月の 大学駅伝を 架空の 大会に した もの）。
 // 1/2 は 往路、1/3 は 復路の 本番（★4）、ほかの 日は 去年の 復路の 再放送（★2）。2日を 縮めた 形：
 // スタート → 1区（沿道の 旗）→ 給水 → 中継所 → 山（往路は 5区の 山上りと 山の神、復路は 6区の 山下りの VTR）→
 // 繰り上げ → ゴール → 優勝 → 反省会。往路と 復路は 字幕・背景・優勝の 名前が かわる（筋は 同じ）。
@@ -89,7 +89,7 @@ export type EkidenData = {
 		| "yusho";
 	/** card の 大きな 文。 */
 	readonly card?: string;
-	/** 復路（山は 下りの VTR、スタートは 湖・ゴールは 駅前）。 */
+	/** 復路（山は 下りの VTR、スタートは 湖・ゴールは 港）。 */
 	readonly down?: boolean;
 	/** 1区の 先頭・優勝（EKIDEN_UNIS の 番）。 */
 	readonly lead?: number;
@@ -105,10 +105,10 @@ export type EkidenData = {
 /** 絵に 出す 文（どれも 全角 22字まで）。 */
 export const EKIDEN_ART = {
 	logo: "おんJ駅伝",
-	machiai: "待合",
+	machiai: "海の家",
 	soon: "まもなく　スタート",
 	end: "本日の　中継は　おわりました",
-	station: "おんJタウン駅",
+	station: "おんJタウン港",
 	start: "スタート",
 	goal: "ゴール",
 	kuriage: "繰り上げまで",
@@ -126,7 +126,7 @@ export const EKIDEN_ART = {
 /** 往路（0）と 復路（1）の 字幕（{u} は 学校）。 */
 const CAP = [
 	{
-		start: "往路　スタート　おんJタウン駅前",
+		start: "往路　スタート　おんJタウン港",
 		road: "1区　先頭は　{u}",
 		chukei: "第1中継所",
 		ku: "2区や",
@@ -143,7 +143,7 @@ const CAP = [
 		yama: "6区　山下りを　ふりかえる",
 		kuriage: "第9中継所　繰り上げが　せまる",
 		relay: "第9中継所",
-		goal: "おんJタウン駅前に　ゴール",
+		goal: "おんJタウン港に　ゴール",
 	},
 ] as const;
 
@@ -302,7 +302,7 @@ export const EKIDEN_POOLS = {
 		"おめでとう",
 		"はやい",
 		"強すぎ",
-		"駅前　すごい人",
+		"港　すごい人",
 		"8888",
 		"ええぞ",
 		"完勝や",
@@ -764,7 +764,7 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 /** おんJ駅伝の 台本。 */
 export const EKIDEN: JkScript = {
 	id: "ekiden",
-	venue: "station",
+	venue: "umi",
 	length: 146000,
 	goal: { live: 4, rerun: 2 },
 	pools: EKIDEN_POOLS,
@@ -808,47 +808,47 @@ export const EKIDEN: JkScript = {
 	timeline: ekidenTimeline,
 };
 
-// ───────────────── 会場（おんJタウン駅の 待合） ─────────────────
+// ───────────────── 会場（海の家「age」） ─────────────────
 
 const isDay = (m: number, d: number) => (t: Today) => t.m === m && t.d === d;
-/** 年の 暮れ（12/26〜1/1）：駅員が 駅伝の 日を 知らせる。 */
+/** 年の 暮れ（12/26〜1/1）：海の家の 店主が 駅伝の 日を 知らせる。 */
 const isEve = (t: Today): boolean =>
 	(t.m === 12 && t.d >= 26) || (t.m === 1 && t.d === 1);
 
 const TV_LINES: DayLines = [
 	{
 		when: isDay(1, 2),
-		lines: ["待合の　テレビ。\nおんJ駅伝の　往路を　中継している。"],
+		lines: ["海の家の　テレビ。\nおんJ駅伝の　往路を　中継している。"],
 	},
 	{
 		when: isDay(1, 3),
-		lines: ["待合の　テレビ。\nおんJ駅伝の　復路を　中継している。"],
+		lines: ["海の家の　テレビ。\nおんJ駅伝の　復路を　中継している。"],
 	},
 	{
 		when: () => true,
-		lines: ["待合の　テレビ。\nおんJ駅伝の　再放送を　流している。"],
+		lines: ["海の家の　テレビ。\nおんJ駅伝の　再放送を　流している。"],
 	},
 ];
 
 const STAFF: DayLines = [
 	{
 		when: isDay(1, 2),
-		lines: ["本日は　おんJ駅伝の　往路です。\n……駅前は　大変　混み合います"],
+		lines: ["今日は　おんJ駅伝の　往路や。\n……浜の　道を　選手が　走るで"],
 	},
 	{
 		when: isDay(1, 3),
-		lines: ["本日は　おんJ駅伝の　復路です。\n……ゴールは　駅前で　ございます"],
+		lines: ["今日は　おんJ駅伝の　復路や。\n……正月から　かき氷は　売れへんな"],
 	},
 	{
 		when: isEve,
-		lines: ["1月2日と　3日は　おんJ駅伝です。\n……駅前を　選手が　走ります"],
+		lines: ["1月2日と　3日は　おんJ駅伝や。\n……うちの　テレビで　見ていき"],
 	},
 ];
 
 /** おんJ駅伝。 */
 export const EKIDEN_PACK: JkPack = {
 	script: EKIDEN,
-	venue: "station",
+	venue: "umi",
 	from: 7,
 	menu: "おんJ駅伝",
 	slot: (t) =>
@@ -857,19 +857,19 @@ export const EKIDEN_PACK: JkPack = {
 			: { live: false },
 	scenes: EKIDEN_SCENES,
 	venueLines: { tv: TV_LINES },
-	staffLines: { station_staff: STAFF },
+	staffLines: { umi_master: STAFF },
 	staffOnce: {
-		station_staff: {
-			kami: "この前の　号砲の　ひとこと、\nぴったりで　ございました",
-			rerun: "この前は　★{n}まで　のびましたね。\n1月2日は、もっと　のびますよ",
+		umi_master: {
+			kami: "この前の　号砲の　ひとこと、\nぴったりやったな",
+			rerun: "この前は　★{n}まで　のびたな。\n1月2日は、もっと　のびるで",
 		},
 	},
 	msgs: {
-		seat: "キリコは　待合の　ベンチに　すわった。\n……スマホで、実況スレを　ひらく。",
+		seat: "キリコは　海の家の　座敷に　すわった。\n……スマホで、実況スレを　ひらく。",
 		over: "中継が　おわった。\n実況は　★{n}まで　のびた。",
 		kanso: "……完走。\nスレの　襷は　つながった。",
 		kami: "名前欄に「名無し＠大吉」。\n……ぴったりの　号砲だった。",
-		left: "……中継の　とちゅうで、\nそっと　ベンチを　立った。",
+		left: "……中継の　とちゅうで、\nそっと　座敷を　立った。",
 	},
 	art: [
 		...Object.values(EKIDEN_ART).flatMap((v) =>
@@ -878,7 +878,7 @@ export const EKIDEN_PACK: JkPack = {
 		...EKIDEN_UNIS.map((u) => u.name),
 		HOSHU_UNI.name,
 	],
-	names: ["おんJ駅伝", "おんJタウン駅", "おんJ大"],
+	names: ["おんJ駅伝", "おんJタウン港", "おんJ大"],
 	deny: [
 		"箱根",
 		"芦ノ湖",

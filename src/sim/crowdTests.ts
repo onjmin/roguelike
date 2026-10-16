@@ -18,7 +18,6 @@ import {
 	villagePedCost,
 } from "../data/village/crowd";
 import {
-	carLane,
 	layoutStage,
 	VILLAGE_H,
 	VILLAGE_W,
@@ -27,7 +26,6 @@ import {
 	villageRows,
 } from "../data/village/map";
 import { Actor, type Field } from "../engine/field";
-import { DIR_VEC } from "../engine/types";
 import { Crowd } from "../ui/village/villageCrowd";
 import type { TestResult } from "./monsterTests";
 
@@ -131,55 +129,6 @@ test("行き先：どの 段でも 立ちどまる 所は 歩ける マスで、
 		}
 });
 
-test("歩く 道：新市街の 車道は 横断歩道で わたり、車道を 歩くのは 踏切の 警報機・電柱を よける 数歩だけ", () => {
-	for (const stage of [6, 7]) {
-		const v = view(stage);
-		const nodes = crowdNodes(v);
-		const cost = villagePedCost(v);
-		const rng = seeded(7 + stage);
-		let steps = 0;
-		let lane = 0;
-		for (let i = 0; i < 200; i++) {
-			const t = pickTrip(rng, nodes, BANDS[i % BANDS.length], i % 3 === 0);
-			if (!t) continue;
-			const r = pedRoute(VILLAGE_W, VILLAGE_H, cost, t.from.at, t.to.at);
-			ok(r, `stage ${stage}: no route ${t.from.id} → ${t.to.id}`);
-			let [x, y] = t.from.at;
-			let mine = 0;
-			for (const d of r ?? []) {
-				x += DIR_VEC[d].dx;
-				y += DIR_VEC[d].dy;
-				steps++;
-				if (carLane(stage, x, y)) mine++;
-			}
-			lane += mine;
-			// 踏切は 両がわの 歩道に 警報機と 街灯が 立つので、2つ わたると 10歩 ほど 車道に 出る
-			ok(
-				mine <= 12,
-				`stage ${stage}: ${t.from.id} → ${t.to.id} walks ${mine} cells in the road`,
-			);
-		}
-		ok(
-			lane / steps < 0.05,
-			`stage ${stage}: ${lane}/${steps} steps in the road`,
-		);
-	}
-	// 車道の マス：横断歩道（わ・を）は 歩道 あつかい。住宅街の 前（段5 まで）は 車道は ない
-	const rows7 = villageRows(view(7)).map((r) => [...r]);
-	for (let y = 0; y < VILLAGE_H; y++)
-		for (let x = 0; x < VILLAGE_W; x++) {
-			const ch = rows7[y][x];
-			if (ch === "わ" || ch === "を")
-				ok(!carLane(7, x, y), `stage 7: the crosswalk at ${x},${y} is a lane`);
-			if (ch === "ら" || ch === "ヰ" || ch === "ヱ" || ch === "る")
-				ok(
-					x < 40 || carLane(7, x, y),
-					`stage 7: the lane at ${x},${y} is not a lane`,
-				);
-			ok(!carLane(5, x, y), `stage 5: a lane at ${x},${y}`);
-		}
-});
-
 test("流れ：出てくるのは 扉・家・出口から。朝は 職場へ 通い、夕方は 帰り、家の ない 段は 村の 外から 通う", () => {
 	const rng = seeded(42);
 	const count = (
@@ -225,31 +174,6 @@ test("流れ：出てくるのは 扉・家・出口から。朝は 職場へ �
 				pickTrip(rng, crowdNodes(view(stage)), b, false) !== null,
 				`stage ${stage} ${b}: nobody walks`,
 			);
-});
-
-test("よく 出入りする 所：看護師は 病院、学生は 遊び場の 中でも ゲームセンターなどへ 多く 行く。名前は どれも 実在の 施設", () => {
-	const rng = seeded(7);
-	const nodes = crowdNodes(view(7));
-	const places = new Set<string>();
-	for (let st = 0; st < TOWN_STAGES; st++)
-		for (const n of crowdNodes(view(st))) if (n.place) places.add(n.place);
-	for (const p of PERSONAS)
-		for (const ids of Object.values(p.haunts ?? {}))
-			for (const id of ids ?? [])
-				ok(places.has(id), `${p.id}: no ${id} on any map`);
-	// 看護師の 行き先・出る 所で、病院・診療所の 割合が 病院の 扉の 割合より ずっと 多い
-	let care = 0;
-	let hosp = 0;
-	for (let i = 0; i < 3000; i++) {
-		const t = pickTrip(rng, nodes, "day", false);
-		if (t?.persona.id !== "nurse") continue;
-		for (const n of [t.from, t.to])
-			if (n.kind === "care") {
-				care++;
-				if (n.place === "hospital" || n.place === "clinic") hosp++;
-			}
-	}
-	ok(care > 0 && hosp / care >= 0.6, `nurse at the hospital ${hosp}/${care}`);
 });
 
 /** 村の 窓（全角 22字・2行）に 収まるか（villageTests.ts の fitsWindow と 同じ 数え方）。 */
@@ -306,6 +230,16 @@ const fakeField = (v: VillageView): Field => {
 		tileAt: (x: number, y: number) => tiles[rows[y]?.[x] ?? ""] ?? solid,
 	} as unknown as Field;
 };
+
+test("よく 出入りする 所：名前は どれも 町に ある 施設", () => {
+	const places = new Set<string>();
+	for (let st = 0; st < TOWN_STAGES; st++)
+		for (const n of crowdNodes(view(st))) if (n.place) places.add(n.place);
+	for (const p of PERSONAS)
+		for (const ids of Object.values(p.haunts ?? {}))
+			for (const id of ids ?? [])
+				ok(places.has(id), `${p.id}: no ${id} on any map`);
+});
 
 test("動き（都市・夕方を 3分）：人は へらず ふえすぎず、通れない マスに 立たず、行き先に 着いて 入れかわる", () => {
 	for (const stage of [4, 7]) {

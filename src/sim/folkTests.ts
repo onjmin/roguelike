@@ -17,7 +17,6 @@ import {
 	EGG_THEORIES,
 	eggTheory,
 	FOLK_NAMES,
-	GRAVE,
 	HIRA,
 	HIRA_AVOID,
 	HIRA_BOTTOM,
@@ -32,7 +31,6 @@ import {
 	ideaAfter,
 	ideaOk,
 	ideaText,
-	kusaShown,
 	MOFU,
 	MUSEUM,
 	mofuTag,
@@ -44,21 +42,16 @@ import {
 	odoruAwake,
 	RIDDLES,
 	riddleAnswer,
-	rolliLine,
 } from "../data/people/folk";
 import { MOBS } from "../data/people/mobs";
-import { YORIAI_SPOTS } from "../data/town/civic";
 import { ROOM_MSG } from "../data/town/rooms";
 import { crowdNodes, PERSONAS } from "../data/village/crowd";
-import { FACILITIES, facilityById } from "../data/village/facilities";
+import { FACILITIES } from "../data/village/facilities";
 import {
-	BOCHI_FROM,
 	FOLK_ART,
 	FOLK_FROM,
 	FOLK_SPOTS,
 	FOLK_WALK,
-	GRAVES,
-	MONUMENT,
 	mofuWalk,
 } from "../data/village/folk";
 import {
@@ -90,9 +83,7 @@ import {
 import type { Story, TileDef } from "../engine/defs";
 import {
 	balusScript,
-	folkEvent,
 	forgetFolkMemo,
-	graveScript,
 	hiraScript,
 	IDEA_AT,
 	ideaScript,
@@ -383,15 +374,11 @@ test("F1 文: every folk window fits 22×2 (emoji lines 21), choices fit 9, name
 	add("ODORU", ODORU.first, ODORU.main, ...ODORU.more);
 	for (let st = 0; st < TOWN_STAGES; st++) add(`mofuTag(${st})`, mofuTag(st));
 	add("MOFU", MOFU.owner, ...MOFU.more);
-	for (const [k, v] of Object.entries(GRAVE)) add(`GRAVE.${k}`, v);
-	for (const n of [1, 9, 10, 13, 19, 20, 99, 9999])
-		add(`kusaShown(${n})`, GRAVE.kusaNow.replace("{w}", kusaShown(n)));
 	add("EGG_THEORIES", ...EGG_THEORIES);
 	for (const [i, c] of MUSEUM.entries())
 		add(`MUSEUM[${i}]`, ...c.map(([a, b]) => `${a}\n${b}`));
 	add("ROOM_MSG", ROOM_MSG.bath.egg[0], ROOM_MSG.library.museum[0]);
 	for (const [where, t] of all) fits(where, t);
-	for (const c of GRAVE.kusaMenu) ok(width(c) <= 9, `kusa menu ${c}`);
 	for (const n of [...Object.values(FOLK_NAMES), balusName(3)])
 		ok(width(n) <= 10, `name box ${n} is ${width(n)} wide`);
 	for (const [where, t] of all) {
@@ -532,24 +519,12 @@ test("F4 バルス失敗ニキ: 1回目は 初出、あとは 5つを くり返�
 	}
 });
 
-test("F5 人工無能ニキ・墓・温泉卵・博物館: 10個で 構想10年、返事は 入れかわる、ロリードは 入れかわり、草は きうりに、説は 5つめで 答えなし、展示は 帰りで きまる", () => {
+test("F5 人工無能ニキ・温泉卵・博物館: 10個で 構想10年、返事は 入れかわる、説は 5つめで 答えなし、展示は 帰りで きまる", () => {
 	ok(IDEA_ASKS.length === 10, "ten asks");
 	ok(ideaAfter(10) === IDEA.ten && ideaAfter(9) === null, "構想10年");
 	ok(
 		new Set([0, 1, 2].map(ideaOk)).size === 3 && ideaOk(3) === ideaOk(0),
 		"なるほど",
-	);
-	ok(
-		rolliLine(0) !== rolliLine(1) && rolliLine(1) !== rolliLine(2),
-		"ロリード",
-	);
-	ok(rolliLine(3) === rolliLine(1), "ロリード cycles");
-	ok(kusaShown(3) === "ｗｗｗ", kusaShown(3));
-	ok(kusaShown(10) === "きうり　1本", kusaShown(10));
-	ok(kusaShown(23) === "きうり　2本と、ｗｗｗ", kusaShown(23));
-	ok(
-		GRAVE.kusaTen.includes("きうり") && !GRAVE.kusaTen.includes("絵"),
-		GRAVE.kusaTen,
 	);
 	ok(
 		eggTheory(4) === EGG_THEORIES[4] && eggTheory(5) === EGG_THEORIES[0],
@@ -570,18 +545,11 @@ test("F5 人工無能ニキ・墓・温泉卵・博物館: 10個で 構想10年�
 		odoruAwake(20) && odoruAwake(3) && !odoruAwake(5) && !odoruAwake(12),
 		"night",
 	);
-	// ピアノ機能は 音楽室の 供養の 札（data/town/rooms.ts）に あるので 墓に しない
-	ok(!GRAVES.some((g) => g.id === "piano"), "piano grave");
-	ok(
-		!GRAVE.balus.join().includes("成功して") &&
-			GRAVE.balus[0].includes("再開てすと中"),
-		"balus grave",
-	);
 });
 
 // ───────────────── 置き場所 ─────────────────
 
-test("F6 村: 名無したちは 段1 から（段0 は ぷゆゆと やきうだけ）、墓場は 段2 から。どの 段でも 通れる マスに 立ち、話せて、道を ふさがず、遠回りも させない", () => {
+test("F6 村: 名無したちは 段1 から（段0 は ぷゆゆと やきうだけ）。どの 段でも 通れる マスに 立ち、話せて、道を ふさがず、遠回りも させない", () => {
 	const RESERVED = [
 		[27, 12],
 		[24, 12],
@@ -608,14 +576,9 @@ test("F6 村: 名無したちは 段1 から（段0 は ぷゆゆと やきう�
 	for (const v of [...VIEWS, ...OWNER_VIEWS]) {
 		const places = villagePlaces(v);
 		const folk = places.filter((p) => p.id.startsWith("folk_"));
-		const graves = folk.filter((p) => p.id.startsWith("folk_grave_"));
 		ok(
 			v.stage >= FOLK_FROM || folk.length === 0,
 			`stage ${v.stage}: ${folk.length} folk`,
-		);
-		ok(
-			graves.length === (v.stage >= BOCHI_FROM ? GRAVES.length : 0),
-			`stage ${v.stage}: ${graves.length} graves`,
 		);
 		const s = villageSurvey(v);
 		const nodes = new Set(crowdNodes(v).map((n) => `${n.at[0]},${n.at[1]}`));
@@ -711,39 +674,7 @@ test("F6 村: 名無したちは 段1 から（段0 は ぷゆゆと やきう�
 	);
 });
 
-test("F7 機能の 墓場: 段2 から 神社の 上（x1〜7, y1〜3）。墓は 通れず、玉砂利は 通れ、(5,4)(7,4) から 入れる", () => {
-	const f = facilityById("bochi");
-	ok(f && f.from === BOCHI_FROM && f.at[0] === 1 && f.at[1] === 1, "no bochi");
-	for (let stage = BOCHI_FROM; stage < TOWN_STAGES; stage++) {
-		const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
-		const s = villageSurvey(v);
-		for (const g of GRAVES)
-			ok(
-				!s.tile(g.at[0], g.at[1])?.passable,
-				`stage ${stage}: grave ${g.id} is open`,
-			);
-		ok(!s.tile(MONUMENT[0], MONUMENT[1])?.passable, "monument is open");
-		for (let x = 1; x <= 7; x++)
-			ok(s.reach.has(`${x},2`), `stage ${stage}: path (${x},2) cut off`);
-		for (const [x, y] of [
-			[5, 3],
-			[7, 3],
-			[5, 4],
-			[7, 4],
-		])
-			ok(s.reach.has(`${x},${y}`), `stage ${stage}: (${x},${y}) not reachable`);
-	}
-	const v1: VillageView = { stage: 1, unlocked: ["shallow"], cleared: [] };
-	ok(
-		!villagePlaces(v1).some((p) => p.id.startsWith("folk_grave_")),
-		"graves at 1",
-	);
-	for (const ref of Object.values(FOLK_ART)) ok(ref.startsWith("pub:"), ref);
-	for (const ref of [FOLK_WALK.odoru, FOLK_WALK.hira, mofuWalk(3)])
-		ok(ref.startsWith("pub:") && !ref.includes("#"), ref);
-});
-
-test("F8 本館: バルス失敗ニキは レンガ館（段3〜5）と 本館（段6〜7）の すみ。寄り合いの 日も みんなに 届く", () => {
+test("F8 本館: バルス失敗ニキは レンガ館（段3〜5）と 本館（段6〜7）の すみ。みんなに 届く", () => {
 	for (let stage = 0; stage < TOWN_STAGES; stage++) {
 		const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
 		const tier = hallTierOf(v);
@@ -752,8 +683,7 @@ test("F8 本館: バルス失敗ニキは レンガ館（段3〜5）と 本館�
 		ok(!!b === tier >= 1, `stage ${stage}: balus ${!!b}`);
 		if (!b) continue;
 		ok(b.sprite === FOLK_WALK.balus, "balus looks like a 名無し");
-		const yoriai = (YORIAI_SPOTS[tier] ?? []).map((p) => [p.x, p.y] as const);
-		ok(!yoriai.some(([x, y]) => x === b.x && y === b.y), "on a yoriai spot");
+		const yoriai: (readonly [number, number])[] = [];
 		// バルス失敗ニキが いても いなくても 届く 物は かわらない（寄り合いの 日に 住人が 立っても）
 		const others = places.filter((p) => p.id !== "balus");
 		for (const i of [0, 1])
@@ -985,42 +915,6 @@ test("F11 帰りごとに 1つ：ひらがなニキ・なぞなぞ仮面・バ�
 			t.log.join("\n"),
 		);
 		ok(loadFolk().idea === 10, "ideas");
-	});
-});
-
-test("F12 墓場：ロリードは 調べる たびに 入れかわり、草ボタンは やめるまで 押せて 10回目で きうり、村の イベントは 墓と 人を 組む", async () => {
-	await withStorage(async () => {
-		const t = fakeStory();
-		for (let i = 0; i < 3; i++) await graveScript("rolli")(t.s);
-		ok(
-			t.log.join("\n") ===
-				[0, 1, 2].map((k) => `narrate: ${rolliLine(k)}`).join("\n"),
-			t.log.join("\n"),
-		);
-		const k = fakeStory([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
-		await graveScript("kusa")(k.s);
-		ok(loadFolk().kusa === 10, `kusa ${loadFolk().kusa}`);
-		ok(k.log.includes(`narrate: ${GRAVE.kusaTen}`), k.log.join("\n"));
-		ok(k.log.filter((l) => l.startsWith("choose")).length === 11, "menu");
-		const again = fakeStory();
-		await graveScript("kusa")(again.s);
-		ok(
-			again.log[0] ===
-				`narrate: ${GRAVE.kusaNow.replace("{w}", "きうり　1本")}`,
-			again.log.join("\n"),
-		);
-		const v: VillageView = { stage: 7, unlocked: ["shallow"], cleared: [] };
-		for (const p of villagePlaces(v).filter((q) => q.id.startsWith("folk_"))) {
-			const e = folkEvent(p, v);
-			ok(e.id === p.id && typeof e.run === "function", `${p.id} has no script`);
-			ok(!!e.when === (p.id === "folk_odoru"), `${p.id} when`);
-			ok((e.sprite ?? "") === (p.sprite ?? ""), `${p.id} sprite`);
-		}
-		ok(
-			FOLK_SPOTS.odoru[0] === 16 &&
-				villagePlaces(v).find((p) => p.id === "folk_odoru")?.wander === true,
-			"おどちゃん does not dance",
-		);
 	});
 });
 

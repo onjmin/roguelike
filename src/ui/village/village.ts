@@ -36,7 +36,7 @@ import {
 	today,
 } from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
-import { pedRoute, timeBand } from "../../data/village/crowd";
+import { timeBand } from "../../data/village/crowd";
 import {
 	clockLine,
 	daylightAt,
@@ -46,7 +46,6 @@ import {
 import { type Facility, facilityOfMap } from "../../data/village/facilities";
 import { exitFor, VILLAGE_SPOTS } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
-import { TROLLEY_CART } from "../../data/village/trolley";
 import { preloadImages } from "../../engine/assets";
 import { chipsOwned } from "../../engine/chips";
 import type {
@@ -86,7 +85,6 @@ import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
 import type { Hud } from "../dungeon/hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "../message";
-import { dosukoiEnter } from "../minigames/dosukoi";
 import { buildCafe } from "./cafe";
 import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
@@ -127,15 +125,6 @@ const CUT_FADE_MS = 200;
 const HOP_JUMP = 2;
 /** とびこえる のに かける ms（これより 短くは しない。歩く 速さで 1マス ぶんずつ）。 */
 const JUMP_MS = 320;
-
-/**
- * おんJトロッコ（data/village/trolley.ts）の 速さ：かかる ms は RIDE_BASE_MS ＋ 1マス RIDE_STEP_MS
- * （遠い 乗り場でも 2秒 ほど）。1マスは RIDE_MIN_MS〜RIDE_MAX_MS。
- */
-const RIDE_BASE_MS = 600;
-const RIDE_STEP_MS = 16;
-const RIDE_MIN_MS = 20;
-const RIDE_MAX_MS = 60;
 
 /** 出口への 道を 何歩 先まで たどって 矢印の 向きに するか（曲がり角の 手前で 斜めに なる）。 */
 const GUIDE_AHEAD = 5;
@@ -448,12 +437,6 @@ export class Village {
 		const def = this.field?.def;
 		if (def?.bgm !== undefined) this.ctx.audio.bgm(def.bgm);
 		if (def) this.toast(def.name);
-		// どすこいポイント（その 帰りに はじめて 建物に 入ったら、地名の 札の あとに。ui/minigames/dosukoi.ts）
-		if (this.mapId !== "village")
-			dosukoiEnter(
-				(t) => this.toast(t),
-				() => (this.running ? this.mapId : null),
-			);
 	}
 
 	/** 暗転して 村を出る。 */
@@ -1119,77 +1102,6 @@ export class Village {
 		await this.player.walk(d, ms);
 	}
 
-	/**
-	 * おんJトロッコ（Story.ride）：トロッコに 乗って (x, y) まで 道なりに 速く 走る。人は すりぬけ、扉・口は 踏まない
-	 * （曲がるのが 少ない 道。data/village/crowd.ts の pedRoute）。着く マスに 人が いれば となりの あいている マスへ。
-	 * 道が なければ 短い 暗転で 置きなおす。カメラは キリコに ついていく。
-	 */
-	private async ride(x: number, y: number): Promise<void> {
-		const field = this.field;
-		const me = this.player;
-		if (!field) return;
-		const free = (cx: number, cy: number) =>
-			field.canEnter(cx, cy, me) && !this.touchAt(cx, cy);
-		const goal: [number, number] = free(x, y)
-			? [x, y]
-			: ((["down", "left", "right", "up"] as Dir[])
-					.map((d): [number, number] => [x + DIR_VEC[d].dx, y + DIR_VEC[d].dy])
-					.find(([cx, cy]) => free(cx, cy)) ?? [x, y]);
-		const route = pedRoute(
-			field.w,
-			field.h,
-			(cx, cy) =>
-				field.tileAt(cx, cy).passable && !this.touchAt(cx, cy)
-					? 1
-					: Number.POSITIVE_INFINITY,
-			[me.x, me.y],
-			goal,
-		);
-		if (!route) {
-			await this.cutWalk(me, goal[0], goal[1]);
-		} else if (route.length) {
-			const ms = clamp(
-				(RIDE_BASE_MS + RIDE_STEP_MS * route.length) / route.length,
-				RIDE_MIN_MS,
-				RIDE_MAX_MS,
-			);
-			me.vehicle = TROLLEY_CART;
-			try {
-				for (const d of route) await me.walk(d, ms);
-			} finally {
-				me.vehicle = null;
-			}
-		}
-		me.dir = "down";
-		this.syncState();
-	}
-
-	/** トロッコで 走っている ときの 風の 線（うしろへ 3本）。 */
-	private drawSpeedLines(
-		g: CanvasRenderingContext2D,
-		ox: number,
-		oy: number,
-	): void {
-		const me = this.player;
-		const v = DIR_VEC[me.dir];
-		const cx = me.fx * TILE + TILE / 2 - ox;
-		const cy = me.fy * TILE + TILE / 2 - oy;
-		g.fillStyle = "rgba(255,255,255,0.75)";
-		for (const [k, off] of [
-			[0, -4],
-			[1, 0],
-			[2, 4],
-		] as const) {
-			const len = 5 + ((Math.floor(this.time / 60) + k) % 3) * 2;
-			// うしろへ のびる 線（横に 走れば 横の 線、縦なら 縦の 線）
-			const bx = cx - v.dx * (TILE / 2 + 2) - (v.dx > 0 ? len : 0);
-			const by = cy - v.dy * (TILE / 2 + 2) - (v.dy > 0 ? len : 0);
-			if (v.dx !== 0)
-				g.fillRect(Math.round(bx), Math.round(by + off + 2), len, 1);
-			else g.fillRect(Math.round(bx + off), Math.round(by), 1, len);
-		}
-	}
-
 	/** そのマスの 踏むイベント（ダンジョンの口）。 */
 	private touchAt(x: number, y: number): Actor | undefined {
 		return this.field?.actors.find(
@@ -1539,8 +1451,6 @@ export class Village {
 			y: this.player.y,
 			dir: this.player.dir,
 		});
-		if (this.player.vehicle && this.player.moving)
-			this.drawSpeedLines(g, ox, oy);
 		if (this.guideExit && this.mapId === "village")
 			this.drawExitGuide(g, ox, oy, this.scene);
 		// 時間帯の 色（外の 村だけ。人通りと 同じ 時計。data/village/daylight.ts）
@@ -2129,7 +2039,6 @@ export class Village {
 			rebuild: () => this.rebuild(),
 			warp: (map, x, y, dir) =>
 				this.warp(map, { x, y, dir: dir ?? this.player.dir }),
-			ride: (x, y) => this.ride(x, y),
 			lie: (at) => {
 				const p = this.player;
 				if (at) {

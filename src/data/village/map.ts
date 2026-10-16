@@ -1,22 +1,21 @@
 // 村（おんJタウン）の地図。DOM も保存も使わない 組み立てだけ（src/sim/villageTests.ts で 形と 歩ける道を 調べる）。
 // スクリプトは ui/village/villageEvents.ts が id ごとに 付ける。
 //
-// 地図は 87×52 マス（1文字 = 16px の 1マス）。森の 中に 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。
-// まわりの 森は 四角く ならないよう 木と しげみで 囲み、西の 空き地（切り株・丸太）・東の 畑（かかし・畝・麦）・
-// 南の 池へ 抜けられる（OUTSKIRTS_ROWS・EDGE_CELLS）。下の 図と 区画の 関数は 町の 区画の 座標で、
+// 地図は 63×52 マス（1文字 = 16px の 1マス）。港（南）から 山（北）への 坂の 町（TOWN.md §0）。
+// まんなかに 町の 区画（22×18）を 置く（OX, OY だけ ずらす）。西の 空き地・東の 商店街・北の 丘・
+// 南の 池と 浜へ 抜けられる（OUTSKIRTS_ROWS・EDGE_CELLS）。下の 図と 区画の 関数は 町の 区画の 座標で、
 // VILLAGE_SPOTS と 住人の 家（data/people/mobs.ts の spot）は 地図の 座標（区画の 座標 ＋ 9, 7）。
 // - 北に 崖。まんなかに おんJ 本館（縦の 道が 扉 10〜11 に 突きあたる。段で 集会所 幅4 → レンガ 幅6 → 本館 幅10。
 //   扉を 踏むと 中の 地図へ。中は data/village/hall.ts）。
-//   東の 崖の 切れ目を 道が 北へ 抜ける（区画 18,3 が 村の 出口。立て札は 19,5）。出口を 踏むと 全体マップで 行き先の 植民地を 選ぶ。
+//   東の 崖の 切れ目を 道が 北の 丘へ 抜ける。村の 出口は 南の 桟橋の 先（港）だけ。出口を 踏むと 全体マップで 行き先の 板を 選ぶ。
 // - 崖の下に 道（区画 y=4）。そこから 町の 通り（y=12）まで 道（x=10〜11）が のびる。
 // - 西に 店の区画（x=1〜8）、まんなかに 小屋（x=12〜15）、東に 倉庫の区画（x=16〜20）。その下が 広場（掲示板・蓄音機）。
 //   売り場は「囲い（y=10。売る人が立つ）＋ 台（y=11）」。キリコは 通り（y=12）から 台ごしに 話しかける。
 //   常識堂の 奥・倉庫の 扉は 台の 横の 細道の 奥（常識堂は 右・倉庫は 左）。踏むと 中へ（data/village/rooms.ts）。
 // - やきうは 小屋の前（12,11）で 大工。人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人。
 // - おんJマイナーズ（data/people/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
-// - 町の まわりも 段で かわる：東の 畑は 荒れ地から 実りへ（farmRows）、住宅街で 市民農園・都市で 公園
-//   （facilities.ts の garden・park）、段2 で 北西の 森に おんJ神社（おみくじ）、
-//   段3 で 池の そばに 音楽室、段4 で 南東に 銭湯、段5 で 西の 空き地に 喫茶。
+// - 町の まわりも 段で かわる：段2 で 北西の 森に おんJ神社（おみくじ）、
+//   段3 で 池の そばに 音楽室、段5 で 西の 空き地に 喫茶。銭湯は 東の 商店街の 南に いつも ある。
 // - 帰ってきたとき 仲間が 出口の前に 並ぶ マス（lineupSpots）と、町が 育ったとき カメラを 向ける 所（VILLAGE_SPOTS.growth）。
 //
 // 段ごとの 区画（前の段の物は 形を かえて 残る）
@@ -59,7 +58,6 @@ import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
 import { nowHour, today } from "../town/calendar";
-import { COLONY_SPOTS, VILLAGE_PT } from "../town/worldMap";
 import {
 	doorId,
 	facilitiesAt,
@@ -109,13 +107,12 @@ import {
 	solid,
 	TURF,
 } from "./tiles";
-import { TROLLEY_SPRITE, trolleyStops } from "./trolley";
 
-export const VILLAGE_W = 87;
+export const VILLAGE_W = 63;
 export const VILLAGE_H = 52;
 
 /**
- * 町（22×18 の 区画。下の 図の 座標）を 地図の どこに 置くか。まわりは 森で、西の 空き地・東の 畑・
+ * 町（22×18 の 区画。下の 図の 座標）を 地図の どこに 置くか。まわりは 森で、西の 空き地・東の 商店街・
  * 南の 池へ 抜けられる（OUTSKIRTS）。VILLAGE_SPOTS と 住人の 家（data/people/mobs.ts の spot）は 地図の 座標。
  */
 const OX = 9;
@@ -142,10 +139,10 @@ export type Cell = readonly [x: number, y: number];
 
 /** 村の 決まった場所。 */
 export const VILLAGE_SPOTS = {
-	/** 北の 出口（崖の 切れ目を 抜けた 丘の 先。地図の 上はし）。はじめの 場面・開いた 知らせで 見る 所。 */
-	exit: [27, 0] as Cell,
-	/** 出口の 立て札（崖の足もと。下の道から 上を向いて 読む）。 */
-	exitSign: [28, 12] as Cell,
+	/** 町の 出口（桟橋の 先の 港。船で 全体マップの 板へ 出る）。はじめの 場面・開いた 知らせで 見る 所。 */
+	exit: [20, 51] as Cell,
+	/** 出口の 立て札（桟橋の 付け根の 砂浜。板の 札を 読む）。 */
+	exitSign: [21, 35] as Cell,
 	/** 喫茶「おんJ」の 扉（段5 から。踏むと 中へ。data/village/rooms.ts）。 */
 	cafeDoor: [4, 18] as Cell,
 	/**
@@ -183,8 +180,8 @@ export const VILLAGE_SPOTS = {
 	booksDoor: [4, 22] as Cell,
 	/** おんJ神社の 賽銭箱（段2 から。お参りすると おみくじ）。 */
 	shrine: [3, 9] as Cell,
-	/** 銭湯の のれんの 扉（段4 から。踏むと 中へ。data/village/rooms.ts の bath）。 */
-	bath: [35, 27] as Cell,
+	/** 銭湯の のれんの 扉（踏むと 中へ。data/village/rooms.ts の bath）。 */
+	bath: [35, 29] as Cell,
 	/** 小屋の扉（段3から。踏むと 中へ）。 */
 	hutDoor: [23, 18] as Cell,
 	/** 倉庫の 扉（段2 から。台の 左の 細道の 奥。踏むと 中へ。出ると 1つ下）。 */
@@ -343,16 +340,15 @@ const forestAt = (x: number, y: number): string =>
 
 /**
  * 村の まわりに 置く 物（地図の 座標 x, y から 右へ 字の 並び）。字は data/village/tiles.ts の OUTSKIRTS。
- * 北の 丘（崖の 切れ目の 上）、西の 空き地（切り株・丸太・花）、東の 畑（かかし・畝・麦）、南の 池。
- * どこからも 地図の はしへ 道が 抜けて、はしが 村の 出口（VILLAGE_EXITS）。
+ * 北の 丘（崖の 切れ目の 上）、西の 空き地（切り株・丸太・花）、東の 商店街、南の 池。
  */
 const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
-	// 北の 丘
-	[27, 0, "."],
+	// 北の 丘（部室棟・分譲住宅・立ち食いそば・グラウンド。道は 丘の 上で 行きどまり）
+	[27, 0, ","],
 	[26, 1, ",.,"],
 	[22, 2, ",,*,,.;,,"],
 	[20, 3, ",,,,Y,,.,,*,"],
-	[19, 4, "b,*,,,,,.,,,,b"],
+	[8, 4, ",,,,,,,,,,,,,,,,,,,*,,,,,.,,,,b"],
 	[20, 5, ",,,,=,,.,,;,"],
 	[21, 6, ",,,,,,.,,,"],
 	// 西の 空き地
@@ -360,21 +356,23 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
 	[1, 16, ",=,,;,,"],
 	[1, 17, ",,_,,,v,"],
 	[1, 18, ";,,,*,,,"],
-	[0, 19, "........."],
+	[1, 19, "........"],
 	[1, 20, ",,v,,%,,"],
 	[1, 21, ",*,,,,,,"],
 	[2, 22, ",,B,,;"],
 	[3, 23, ",,,,"],
-	// 東の 畑（町の 段で 育つ。farmRows）。y=19 は 東の 出口への 道
-	[31, 19, ".".repeat(56)],
-	// 東の 口の 前の 草地（帰ってきた ときに 仲間が 並ぶ。新市街が 育つまでは 森の 中の 空き地）
-	[81, 16, ",,,,,"],
-	[79, 17, ",,;,,,,"],
-	[78, 18, ",,,,,,*,"],
-	[78, 20, ",*,,,,,,"],
-	[79, 21, ",,,,;,,"],
-	[81, 22, ",,,,,"],
-	[32, 22, ",,,bb"],
+	// 東の 商店街（x=31〜61。y=19 は 町の 通りの 続き、店先は レンガ。店は data/village/facilities.ts の MOVED）
+	...Array.from({ length: 21 }, (_, i): [number, number, string] => [
+		31,
+		11 + i,
+		i === 8 ? ".".repeat(31) : ":".repeat(31),
+	]),
+	// 北東の 丘（リサイクル・質屋。グラウンドの 東）
+	...Array.from({ length: 8 }, (_, i): [number, number, string] => [
+		39,
+		3 + i,
+		",".repeat(23),
+	]),
 	// 南の 池
 	[10, 25, ",,%,,,,,,,.,,,;,,,*,,"],
 	[10, 26, ",~~~~~,,,,.,,,,,~~~,,"],
@@ -388,7 +386,7 @@ const OUTSKIRTS_ROWS: readonly [number, number, string][] = [
 /**
  * 南の 浜（地図の y=32〜51。hayabusa 島の 南の 岸。STORY.md §5.7）。字は data/village/tiles.ts の BEACH。
  * 池の 下の 道が 砂浜へ 抜け、まんなかの 桟橋（x=20）が 海へ のびる。桟橋の 先（20,51）が 南の 出口＝港
- * （おーぷぬの 南の 島の 板へは 船で わたる）。先の 3×3 は 船着き場（帰ってきた ときに 仲間が 並べる 広さ）。
+ * （おーぷぬの 南の 島の 板へは 船で わたる）。先の 5×3 は 船着き場（帰ってきた ときに 仲間が 並べる 広さ）。
  */
 const SHORE_ROWS: readonly string[] = [
 	"TbさささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささささbT",
@@ -413,77 +411,11 @@ const SHORE_ROWS: readonly string[] = [
 	"ううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううううう",
 ];
 const SHORE_Y = 32;
-/** 桟橋（x=20 を 砂浜の へり y=36 から 港 y=51 まで。先の 3×3 は 船着き場）。 */
+/** 桟橋（x=20 を 砂浜の へり y=36 から 港 y=51 まで。先の 5×3 は 船着き場：帰ってきた ときに 仲間が 並ぶ）。 */
 const PIER_CELLS: readonly Cell[] = [
 	...Array.from({ length: 13 }, (_, i): Cell => [20, 36 + i]),
-	...[49, 50, 51].flatMap((y) => [19, 20, 21].map((x): Cell => [x, y])),
+	...[49, 50, 51].flatMap((y) => [19, 20, 21, 22, 23].map((x): Cell => [x, y])),
 ];
-
-/**
- * 東の 畑（地図の x=31〜38, y=11〜22。y=19 の 道は OUTSKIRTS_ROWS）。町の 段で 育つ：
- * 0 雑草だらけの 荒れ地 → 1 畝 1つに 芽 → 2 畝 2つ・かかし → 3〜4 キャベツと 麦（4 で 干し草）→
- * 5 トマト・りんごの 木・収穫の かご。字は data/village/tiles.ts の FARM。
- * 住宅街（段6）から 町に 飲みこまれ、市民農園（6。小さな 区画と 歩道）→ 公園（7。噴水・ベンチ・花壇・砂場）。
- * この 2つは data/village/facilities.ts の garden・park（y=12〜18 に 敷く）。ここは 道の 下の 足もと だけ。
- * x=31 の 列は いつも 歩ける（町の へりの 切れ目から）。
- */
-const FARM_X = 31;
-const farmRows = (stage: number): readonly [number, string][] => {
-	const foot: [number, string][] = [
-		[20, stage >= 5 ? ",,Ξ,,,,b" : ",,;,v,,b"],
-		[21, "*,,,,,bb"],
-	];
-	if (stage === 0)
-		return [
-			[11, ",v,,b"],
-			[12, ",,v,;,,b"],
-			[13, ",v,,,%v,"],
-			[14, ";,,=,,,,"],
-			[15, ",,v,,;v,"],
-			[16, ",%,,v,,,"],
-			[17, ",,;,,,v,"],
-			[18, ",v,,,%,,"],
-			...foot,
-		];
-	if (stage <= 2)
-		return [
-			[11, ",,,,b"],
-			[12, ",,v,,,,b"],
-			[13, stage >= 2 ? ",ηθθι,S," : ",ηθθι,v,"],
-			[14, stage >= 2 ? ",κπολ,,," : ",κοολ,,,"],
-			[15, ",μννξ,;,"],
-			[16, ",,,v,,,,"],
-			[17, stage >= 2 ? ",ηθθθι,," : ",%,,,,v,"],
-			[18, stage >= 2 ? ",μνννξ,," : ",,,;,,,,"],
-			...foot,
-		];
-	if (stage <= 4)
-		return [
-			[11, ",,,,b"],
-			[12, ",,,,,,,b"],
-			[13, ",ηθθθιS,"],
-			[14, ",κρρρλ,,"],
-			[15, ",μνννξ,;"],
-			[16, ",,,,,,,,"],
-			[17, ",WWWW,,,"],
-			[18, stage >= 4 ? ",WWWW,υ," : ",WWWW,,,"],
-			...foot,
-		];
-	if (stage <= 5)
-		return [
-			[11, ",,,,b"],
-			[12, ",Ω,,,,,b"],
-			[13, ",ηθθθθι,"],
-			[14, ",κρρσσλ,"],
-			[15, ",μννννξS"],
-			[16, ",,,,,,χ,"],
-			[17, ",WWWWW,,"],
-			[18, ",WWWWWυ,"],
-			...foot,
-		];
-	// 段6〜：y=12〜18 は 市民農園（段6）・公園（段7）。data/village/facilities.ts の garden・park が 敷く
-	return foot;
-};
 
 /**
  * 町の 区画の へりを 開ける・木を 植える（地図の 座標）。四角く 見えないように、生け垣を ところどころ
@@ -685,196 +617,8 @@ export const coreShadows = (
 		{ x: 7, top: 16, bottom: 19 },
 		{ x: 6, top: 21, bottom: 23 },
 		{ x: 24, top: 26, bottom: 29 },
-		{ x: 38, top: 25, bottom: 28 },
+		{ x: 38, top: 27, bottom: 30 },
 	];
-};
-
-/**
- * 東の 新市街（地図の x=40〜85。TOWN.md）。街（段4）で 森が 開けて 草地と 通りが できる。
- * 道路は 横が 4マス（片側 2車線：y 方向）、縦が 5マス（片側 2車線と まんなか：x 方向）。見おろしの 絵で 立体感が 出る
- * （作者の 指示）。両がわに 歩道 1マス。横の 通りは 大通り（歩道 19・車線 20〜23・歩道 24）だけ。
- * 北と 南は 通りを 通さない 深い 街区（歩道が 5〜6行ごとに 並ぶと 道ばかりに 見える：作者の 指示）で、
- * まんなかは 芝の 中庭（北 y=8〜13：崖下の 道から 芝の 小道 x=31〜39・y=10〜11 で つながる。
- * 南 y=30〜35：集合住宅。facilities.ts）。縦の 通り：x=46〜52 の 1本（歩道・車線 5・歩道。北は 中庭で 行きどまり）。x=63〜69 は 木の 並ぶ 緑道。
- * 線路の 東へは 中庭の 行（y=8・30）に 歩行者の 踏切。浜ぞい（y=41〜42）は 遊歩道、その 下は 海（都市で 港）。
- * 住宅街（段6）から アスファルト（中央線・はしの 白線・横断歩道）と、線路（x=78〜79。踏切は 通りと 交わる 所）・
- * 街灯・踏切の 警報機。区画に 建つ 物は data/village/facilities.ts。
- */
-const EAST_X = 40;
-const EAST_R = 85;
-/** 横の 通り（歩道の 行・車線の 行と 字・西の はし）。 */
-type HStreet = {
-	walks: readonly number[];
-	lanes: readonly (readonly [number, string])[];
-	x0: number;
-};
-const H_STREETS: readonly HStreet[] = [
-	{
-		walks: [19, 24],
-		lanes: [
-			[20, "ら"],
-			[21, "ヰ"],
-			[22, "ヱ"],
-			[23, "り"],
-		],
-		x0: 40,
-	},
-];
-/** 縦の 通り（歩道の 列・車線の 列と 字）。 */
-type VStreet = {
-	walks: readonly number[];
-	lanes: readonly (readonly [number, string])[];
-};
-const vStreet = (x: number): VStreet => ({
-	walks: [x, x + 6],
-	lanes: [
-		[x + 1, "る"],
-		[x + 2, "."],
-		[x + 3, "ヲ"],
-		[x + 4, "."],
-		[x + 5, "れ"],
-	],
-});
-/**
- * 縦の 通りは 1本（x=46〜52）。2本 あると 大通りの 交差点が 2つ ならび、横断歩道が 10マスの うち 6マスを
- * しめて 歩道と 横断歩道ばかりに 見えた（作者の 指示）。もう 1本の あと（x=63〜69）は 木の 並ぶ 緑道（GREENWAY）。
- */
-const V_STREETS: readonly VStreet[] = [vStreet(46)];
-/** 縦の 通りが 走る 行（北の 通りの 歩道から 浜の 遊歩道まで）。 */
-const V_Y0 = 8;
-const V_Y1 = 42;
-/** 線路の 列と 南の はし・敷く 段（住宅街。ぷゆゆ列車が 走る。ui/village/puyuTrain.ts）。 */
-export const RAIL_X = [78, 79] as const;
-export const RAIL_Y1 = 40;
-export const RAIL_FROM = 6;
-/** 深い 街区の 中庭を 線路の 東（北：ファミレス、南：コーポ・ラーメン屋）へ わたる 歩行者の 踏切の 行。 */
-const RAIL_WALK = [8, 30];
-/** 街灯（大通りと 遊歩道。消防署の 車庫の 前は よける）・踏切の 警報機。 */
-const LAMPS: readonly Cell[] = [
-	[45, 19],
-	[54, 19],
-	[61, 19],
-	[76, 19],
-	[44, 24],
-	[54, 24],
-	[61, 24],
-	[71, 24],
-	[76, 24],
-	[85, 24],
-	[45, 42],
-	[56, 42],
-	[66, 42],
-	[76, 42],
-	[84, 42],
-];
-const CROSSING_SIGNS: readonly Cell[] = [
-	[77, 19],
-	[80, 24],
-];
-/** 信号機（交差点の 歩道の 角。向かいあう 2つ）。 */
-const SIGNALS: readonly Cell[] = [
-	[52, 19],
-	[46, 24],
-];
-/** 緑道（もと 縦の 通りの x=63〜69。両はしの 列に 木。まんなかの 芝を 歩く。大通り・中庭の 行は あける）。 */
-const GREENWAY: readonly Cell[] = [9, 11, 15, 17, 32, 34, 37, 39].flatMap(
-	(y): Cell[] => [
-		[63, y],
-		[69, y],
-	],
-);
-/**
- * 公園の 木（新市街の 空いた 区画。地図の 左上から 右へ）。止まっている 車と 線路の 東の 店
- * （ファミレス・ラーメン屋）は data/village/facilities.ts。
- */
-const PARK: readonly [number, number, string][] = [
-	[76, 4, "b,"],
-	[76, 6, "b,"],
-];
-/**
- * 横断歩道の 幅（作者の 指示：見おろしで 立体感が 出る 形）。横の 道を わたる 横断歩道は 横に 3マス
- * （交差点の となりの 歩道の 列と その 外の 2マス）、縦の 道を わたる 横断歩道は 縦に 2マス（歩道の 行と その 外の 1マス）。
- */
-const crossH = (x: number): boolean =>
-	V_STREETS.some(
-		(v) =>
-			(x >= v.walks[0] - 2 && x <= v.walks[0]) ||
-			(x >= v.walks[1] && x <= v.walks[1] + 2),
-	);
-const crossV = (y: number): boolean =>
-	H_STREETS.some(
-		(h) =>
-			(y >= h.walks[0] - 1 && y <= h.walks[0]) ||
-			(y >= h.walks[1] && y <= h.walks[1] + 1),
-	);
-const eastDistrict = (stage: number): [number, number, string][] => {
-	if (stage < 4) return [];
-	const paved = stage >= 6;
-	const walk = paved ? "ゆ" : ".";
-	const w = EAST_R - EAST_X + 1;
-	const out: [number, number, string][] = [];
-	for (let y = 3; y <= 40; y++) out.push([EAST_X, y, ",".repeat(w)]);
-	for (const y of [41, 42])
-		out.push([EAST_X, y, (paved ? "ゆ" : "さ").repeat(w)]);
-	// 銭湯の 裏から 新市街へ 抜ける 小道（森の へりの 木を 抜く。浜や 町の 通りまで 回らずに すむ）
-	out.push([38, 25, ",,"]);
-	const vAt = (x: number) =>
-		V_STREETS.find((v) => x >= v.walks[0] && x <= v.walks[1]);
-	const hAt = (y: number) =>
-		H_STREETS.find((h) => y >= h.walks[0] && y <= h.walks[1]);
-	// 崖下の 道から 北の 中庭へ 抜ける 芝の 小道
-	for (const y of [10, 11]) out.push([31, y, ",".repeat(EAST_X - 31)]);
-	// 横の 通り
-	for (const h of H_STREETS) {
-		for (const y of h.walks) out.push([EAST_X, y, walk.repeat(w)]);
-		for (const [y, ch] of h.lanes) {
-			const line = Array.from({ length: EAST_R - h.x0 + 1 }, (_, i) => {
-				const x = h.x0 + i;
-				if (!paved) return ".";
-				const v = vAt(x);
-				// 縦の 通りの 車線の 列は 交差点。交差点の 左右 3マス（歩道の 列と その 外の 2マス）は 横断歩道
-				if (v?.lanes.some(([lx]) => lx === x)) return ".";
-				return crossH(x) ? "わ" : ch;
-			});
-			out.push([h.x0, y, line.join("")]);
-		}
-	}
-	// 縦の 通り（横の 通りの 車線を よこぎる 歩道は 横断歩道の まま）。交差点の 上下 2マス（歩道の 行と その 外の 1マス）は 横断歩道
-	for (const v of V_STREETS)
-		for (let y = V_Y0; y <= V_Y1; y++) {
-			const h = hAt(y);
-			const lane = !!h && h.lanes.some(([ly]) => ly === y);
-			for (const x of v.walks) if (!lane) out.push([x, y, walk]);
-			for (const [x, ch] of v.lanes) {
-				if (y >= 41) out.push([x, y, walk]);
-				else if (!paved || lane) out.push([x, y, "."]);
-				// T字の 突きあたり（北の 通りの 歩道の 行）は 歩道の まま：その 先に 道は ない
-				else out.push([x, y, y === V_Y0 ? walk : crossV(y) ? "を" : ch]);
-			}
-		}
-	if (!paved) return out;
-	// 線路（住宅街から。通りと 交わる 所は 踏切）
-	for (let y = 0; y <= RAIL_Y1; y++)
-		for (const x of RAIL_X)
-			out.push([x, y, hAt(y) || RAIL_WALK.includes(y) ? "ぅ" : "ぃ"]);
-	for (const [x, y] of LAMPS) out.push([x, y, "ゃ"]);
-	for (const [x, y] of CROSSING_SIGNS) out.push([x, y, "ゅ"]);
-	for (const [x, y] of SIGNALS) out.push([x, y, "ゔ"]);
-	out.push(...PARK);
-	for (const [x, y] of GREENWAY) out.push([x, y, "b"]);
-	return out;
-};
-
-/**
- * 新市街の 車道の マスか（アスファルトの 住宅街から。横断歩道と 縦の 通りの 突きあたりは 歩道 あつかい）。
- * 通行人は 車道を 歩かない（data/village/crowd.ts）。キリコは 歩ける。
- */
-export const carLane = (stage: number, x: number, y: number): boolean => {
-	if (stage < 6 || x < EAST_X || x > EAST_R) return false;
-	const h = H_STREETS.find((s) => s.lanes.some(([ly]) => ly === y));
-	if (h) return x >= h.x0 && !crossH(x);
-	const v = V_STREETS.find((s) => s.lanes.some(([lx]) => lx === x));
-	return !!v && y > V_Y0 && y <= 40 && !crossV(y);
 };
 
 /** 喫茶「おんJ」が 建つ 町の 段。 */
@@ -941,7 +685,7 @@ const SHRINE_BLOCK: readonly string[] = [
 	",,,,,,,",
 ];
 
-/** 銭湯（地図の 31, 24 から。字は BATH）。のれんの 扉（35,27）を 踏むと 中へ（出ると 35,28）。池の 東の 草地に つながる。 */
+/** 銭湯（地図の 31, 26 から。字は BATH）。のれんの 扉（35,29）を 踏むと 中へ（出ると 35,30）。広場の 東の 草地に つながる。 */
 const BATH_BLOCK: readonly string[] = [
 	",,БЦБББ,",
 	",,ДДДДД,",
@@ -960,12 +704,8 @@ export type VillageExit = {
 	step: "u" | "d" | "l" | "r";
 };
 
+/** 町の 出口は 桟橋の 先の 港 だけ（船で 全体マップの 板へ。TOWN.md §0.1）。 */
 export const VILLAGE_EXITS: readonly VillageExit[] = [
-	{ side: "n", cell: [27, 0], inward: "down", step: "d" },
-	{ side: "w", cell: [0, 19], inward: "right", step: "r" },
-	// 東は 新市街の はし（町の 通りを のばした 大通りの 先。TOWN.md）
-	{ side: "e", cell: [86, 19], inward: "left", step: "l" },
-	// 南は 桟橋の 先の 港（船で 海の 向こうの 島へ）
 	{ side: "s", cell: [20, 51], inward: "up", step: "u" },
 ];
 
@@ -978,18 +718,9 @@ const INNER_EXITS: Partial<Record<DungeonId, VillageExit>> = {
 	hidden: { side: "s", cell: [24, 22], inward: "down", step: "d" },
 };
 
-/** その 植民地から 帰ってくる 出口（全体マップで 村から 見た 植民地の 方角。隠しの 板は 村の 中の 入口）。 */
-export const exitFor = (d: DungeonId): VillageExit => {
-	const inner = INNER_EXITS[d];
-	if (inner) return inner;
-	const r = COLONY_SPOTS[d].route;
-	const [x, y] = r[r.length - 1];
-	const dx = x - VILLAGE_PT[0];
-	const dy = y - VILLAGE_PT[1];
-	const side =
-		Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "w" : "e") : dy < 0 ? "n" : "s";
-	return VILLAGE_EXITS.find((e) => e.side === side) ?? VILLAGE_EXITS[0];
-};
+/** その 植民地から 帰ってくる 出口（どの 板も 港。隠しの 板は 村の 中の 入口）。 */
+export const exitFor = (d: DungeonId): VillageExit =>
+	INNER_EXITS[d] ?? VILLAGE_EXITS[0];
 
 /** 出口の セルか（そこの 出口）。 */
 export const exitAt = (x: number, y: number): VillageExit | undefined =>
@@ -1034,26 +765,22 @@ export const villageRows = (v: VillageView): string[] => {
 		rows.push(r);
 	}
 	for (const [x0, y, line] of OUTSKIRTS_ROWS) stamp(rows, x0, y, [line]);
-	stamp(rows, 0, SHORE_Y, SHORE_ROWS);
+	stamp(
+		rows,
+		0,
+		SHORE_Y,
+		SHORE_ROWS.map((r) => [...r].slice(0, VILLAGE_W).join("")),
+	);
 	for (const c of PIER_CELLS) put(rows, c, "は");
-	for (const [y, line] of farmRows(layoutStage(v)))
-		stamp(rows, FARM_X, y, [line]);
 	// 喫茶「おんJ」（段5 から。西の 空き地の 奥。扉は 下の 道から）
 	if (layoutStage(v) >= CAFE_FROM) stamp(rows, 2, 15, CAFE_BLOCK);
 	if (layoutStage(v) >= SHRINE_FROM) stamp(rows, 1, 4, SHRINE_BLOCK);
-	if (layoutStage(v) >= BATH_FROM) {
-		stamp(rows, 31, 24, BATH_BLOCK);
-		// のれんの 前から 北の 道（バス停）へ 抜ける すきま（池の 側や 浜を 回らずに すむ）
-		put(rows, [32, 23], ",");
-	}
+	stamp(rows, 31, 26, BATH_BLOCK);
 	// 音楽室「ピアノ機能」（段3 から。南の 池の そば）
 	if (layoutStage(v) >= MUSIC_FROM) stamp(rows, 21, 25, MUSIC_BLOCK);
 	// 本屋（段3〜5）→ 図書館（段6 から）。広場の 西
 	if (layoutStage(v) >= LIBRARY_FROM) stamp(rows, 2, 20, LIBRARY_BLOCK);
 	else if (layoutStage(v) >= BOOKSTORE_FROM) stamp(rows, 3, 20, BOOKS_BLOCK);
-	// 東の 新市街の 草地と 通り（畑の 上の はしの 北の 通りも）
-	for (const [x0, y, line] of eastDistrict(layoutStage(v)))
-		stamp(rows, x0, y, [line]);
 	for (const [x, y, ch] of EDGE_CELLS) put(rows, [x, y], ch);
 	// 町の 中心の 都市化（住宅街・都市。へりの 木を 植えた あと、施設の 前）
 	coreCity(rows, layoutStage(v));
@@ -1189,7 +916,7 @@ export const VISITOR_WALK = "sa:C2hS8U";
 export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	const stage = layoutStage(v);
 	const out: VillagePlace[] = [];
-	// 村の 出口（四方の はし。出ると 全体マップで 行き先を 選ぶ）と その 立て札
+	// 町の 出口（桟橋の 先の 港。出ると 全体マップで 行き先を 選ぶ）と その 立て札
 	for (const e of VILLAGE_EXITS)
 		out.push({
 			id: e.side === "n" ? "exit" : `exit_${e.side}`,
@@ -1236,7 +963,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [x, y] = VILLAGE_SPOTS.shrine;
 		out.push({ id: "shrine", x, y, trigger: "talk" });
 	}
-	if (stage >= BATH_FROM) {
+	{
 		const [x, y] = VILLAGE_SPOTS.bath;
 		out.push({ id: "door_bath", x, y, trigger: "touch" });
 	}
@@ -1281,15 +1008,6 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				...(t.sprite ? { sprite: t.sprite, dir: t.dir } : {}),
 			});
 	}
-	// おんJトロッコの 乗り場（data/village/trolley.ts。調べると 行き先を えらんで 走る）
-	for (const t of trolleyStops(stage))
-		out.push({
-			id: `trolley_${t.id}`,
-			x: t.at[0],
-			y: t.at[1],
-			trigger: "talk",
-			sprite: TROLLEY_SPRITE,
-		});
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of MOB_IDS) {
 		const d = MOBS[id];

@@ -1,25 +1,13 @@
 // 季節の 行事の 試験（pnpm test で いっしょに 動く。TOWN.md 季節の 行事）。
 // 日替わり（data/town/openModes.ts）・おんJ芋煮会（data/town/imoni.ts・ui/minigames/imoni.ts・data/village/season.ts）・
-// どすこいポイント（data/minigames/dosukoi.ts・ui/minigames/dosukoi.ts）。
 // 日付・年・帰りは みな 引数で 渡す（端末の 日付・時刻に よらない。10月でも 8/5 でも 同じ 結果）。
-// 形は civicTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は S。
+// 形は ほかの 試験と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は S。
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { DungeonId } from "../core/types";
 import * as cafeTexts from "../data/cafe/cafe";
 import * as cafeMobTexts from "../data/cafe/cafeMobs";
-import {
-	DOSUKOI,
-	DOSUKOI_GAINS,
-	DOSUKOI_SHOW_MAX,
-	type DosukoiRec,
-	dosukoiStep,
-	emptyDosukoi,
-	forgetDosukoiMemo,
-	loadDosukoi,
-	saveDosukoi,
-} from "../data/minigames/dosukoi";
 import * as pianoTexts from "../data/minigames/piano";
 import * as guestTexts from "../data/people/guests";
 import * as mobTexts from "../data/people/mobs";
@@ -28,7 +16,6 @@ import * as storyTexts from "../data/story/story";
 import * as tipTexts from "../data/story/tips";
 import * as bathTexts from "../data/town/bath";
 import { openModeOf, seasonOf, type Today } from "../data/town/calendar";
-import * as civicTexts from "../data/town/civic";
 import * as eateryTexts from "../data/town/eateries";
 import * as facilityTexts from "../data/town/facilities";
 import * as hallTexts from "../data/town/hall";
@@ -70,7 +57,6 @@ import * as townTexts from "../data/town/town";
 import * as crowdTexts from "../data/village/crowd";
 import * as villageFacilityTexts from "../data/village/facilities";
 import {
-	FACILITIES,
 	type Facility,
 	facilityBlock,
 	facilityById,
@@ -87,10 +73,8 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
-import * as trolleyTexts from "../data/village/trolley";
 import type { Story, VState } from "../engine/defs";
 import type { Ctx } from "../ui/ctx";
-import { dosukoiWindow } from "../ui/minigames/dosukoi";
 import {
 	type ImoniEnv,
 	imoniBoardMenu,
@@ -100,8 +84,6 @@ import {
 	imoniStaff,
 } from "../ui/minigames/imoni";
 import { buildVillage } from "../ui/village/villageEvents";
-import { fill } from "../ui/village/villageTalk";
-import { NG } from "./civicTests";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -221,12 +203,10 @@ const swapStorage = (): { store: Map<string, string>; restore: () => void } => {
 		writable: true,
 	});
 	forgetImoniMemo();
-	forgetDosukoiMemo();
 	return {
 		store,
 		restore: () => {
 			forgetImoniMemo();
-			forgetDosukoiMemo();
 			if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 			else delete (globalThis as { localStorage?: unknown }).localStorage;
 		},
@@ -351,7 +331,6 @@ const TEXT_MODULES: readonly [string, unknown][] = [
 	["village/crowd", crowdTexts],
 	["village/hall", villageHallTexts],
 	["hall", hallTexts],
-	["civic", civicTexts],
 	["guests", guestTexts],
 	["bath", bathTexts],
 	["rooms", roomTexts],
@@ -359,7 +338,6 @@ const TEXT_MODULES: readonly [string, unknown][] = [
 	["quotes", quoteTexts],
 	["tips", tipTexts],
 	["piano", pianoTexts],
-	["village/trolley", trolleyTexts],
 ];
 
 test(
@@ -369,7 +347,6 @@ test(
 		const strings = new Map<string, string>();
 		for (const [name, mod] of TEXT_MODULES) collect(mod, name, strings);
 		collect(IMONI, "IMONI", strings);
-		collect(DOSUKOI, "DOSUKOI", strings);
 		const changed = { neko: 0, hakata: 0, trick: 0 };
 		for (const mode of ["neko", "hakata", "trick"] as const)
 			for (const [t, where] of strings) {
@@ -546,7 +523,157 @@ test(
 
 // ───────────────── 文 ─────────────────
 
-/** 出荷の 文に 使わない 語（civicTests の NG に 足す。この 包みの 元ネタに 近い 語）。 */
+/**
+ * 出荷する 文に 出さない 語：実在の 政党・政治家・政治の 決まり文句・争点・実在の 宗教と 習わし・婚姻・戸籍・
+ * 本籍・植民の 図・集団を 消す 言い回し・色の 派・差別語ほか。スレが「落ちる」も 書かない（おんJには dat落ちが ない）。
+ */
+const NG = [
+	"自民",
+	"立憲",
+	"維新",
+	"共産",
+	"公明",
+	"れいわ",
+	"参政",
+	"社民",
+	"国民民主",
+	"N国",
+	"安倍",
+	"石破",
+	"岸田",
+	"菅",
+	"麻生",
+	"蓮舫",
+	"稲田",
+	"高市",
+	"小泉",
+	"河野",
+	"枝野",
+	"野田",
+	"玉木",
+	"山本太郎",
+	"百田",
+	"立花",
+	"橋下",
+	"小池",
+	"ひろゆき",
+	"トランプ",
+	"今村",
+	"ヒトラー",
+	"金正恩",
+	"保守派",
+	"保守党",
+	"保守系",
+	"革新",
+	"リベラル",
+	"右派",
+	"左派",
+	"右翼",
+	"左翼",
+	"与党",
+	"野党",
+	"政党",
+	"ネトウヨ",
+	"パヨク",
+	"ブサヨ",
+	"売国",
+	"反日",
+	"極左",
+	"非国民",
+	"政教分離",
+	"靖国",
+	"神社本庁",
+	"日本会議",
+	"天皇",
+	"皇室",
+	"改憲",
+	"護憲",
+	"9条",
+	"憲法",
+	"同性婚",
+	"夫婦別姓",
+	"参政権",
+	"外国人",
+	"増税",
+	"消費税",
+	"自衛隊",
+	"死刑",
+	"移民",
+	"原発",
+	"ワクチン",
+	"領土",
+	"印象操作",
+	"ご飯論法",
+	"丁寧に説明",
+	"真摯に",
+	"検討を",
+	"スピード感",
+	"全く問題ない",
+	"指摘は当たらない",
+	"セクシー",
+	"2位じゃ",
+	"お気持ち",
+	"記憶にございません",
+	"遺憾",
+	"仏教",
+	"神道",
+	"キリスト",
+	"イスラム",
+	"創価",
+	"統一教会",
+	"幸福の科学",
+	"エホバ",
+	"オウム",
+	"天理",
+	"大川",
+	"聖戦",
+	"ジハード",
+	"十字軍",
+	"異教徒",
+	"神社",
+	"参道",
+	"御利益",
+	"おみくじ",
+	"絵馬",
+	"賽銭",
+	"婚姻",
+	"戸籍",
+	"本籍",
+	"同性",
+	"部落",
+	"在日",
+	"支那",
+	"シナ",
+	"チョン",
+	"植民地",
+	"原住民",
+	"侵略",
+	"民よ",
+	"消えろ",
+	"消えるがいい",
+	"滅び",
+	"駆除",
+	"出ていけ",
+	"追放",
+	"赤派",
+	"青派",
+	"ガイジ",
+	"アスペ",
+	"キチガイ",
+	"池沼",
+	"チンパン",
+	"土人",
+	"チー牛",
+	"ジャップ",
+	"アメカス",
+	"さとる",
+	"矢野",
+	"落ちた",
+	"落ちる",
+	"落ちない",
+];
+
+/** 出荷の 文に 使わない 語（NG に 足す。この 包みの 元ネタに 近い 語）。 */
 const SEASON_NG = [
 	"Minecraft",
 	"クリーパー",
@@ -566,25 +693,13 @@ const SEASON_NG = [
 
 test(
 	"S5",
-	"芋煮会・どすこい：窓は 2行・22字、えらぶ 字は 10字まで、ぷゆゆは 🥺 1つで 21字まで、絵文字は ほかに なし、使わない 語なし",
+	"芋煮会：窓は 2行・22字、えらぶ 字は 10字まで、ぷゆゆは 🥺 1つで 21字まで、絵文字は ほかに なし、使わない 語なし",
 	() => {
 		const texts: [string, string][] = [];
 		const all = new Map<string, string>();
 		collect(IMONI, "IMONI", all);
-		collect(DOSUKOI, "DOSUKOI", all);
 		for (const [t, where] of all)
 			if (!/\{\w+\}/.test(t)) texts.push([where, t]);
-		for (const g of DOSUKOI_GAINS)
-			texts.push([`gain ${g}`, DOSUKOI.gain.replace("{n}", String(g))]);
-		for (const where of ["窓口", "住民課"]) {
-			for (const n of [170, DOSUKOI_SHOW_MAX])
-				texts.push([
-					`balance ${where} ${n}`,
-					fill(DOSUKOI.balance, { where, n }),
-				]);
-			for (const l of DOSUKOI.lapse)
-				texts.push([`lapse ${where}`, fill(l, { where })]);
-		}
 		for (const [w, t] of texts) {
 			fitsWindow(w, t);
 			for (const n of [...NG, ...SEASON_NG])
@@ -600,7 +715,6 @@ test(
 			IMONI.board.menu,
 			...IMONI.open.options,
 			...IMONI.open.more,
-			...DOSUKOI.options,
 		])
 			ok(width(o) <= 10, `"${o}" is too wide for a choice`);
 		const puyu = new Set<string>(IMONI.open.puyu);
@@ -699,9 +813,6 @@ test(
 	"芋煮会：浜の すみの かまど（段0〜、2x2、影なし）と 大鍋・名無しの マス。鍋は (1,34)・(2,35) から だけ 読める。並ぶ マス・場面の マスを ふさがない",
 	() => {
 		const f = mustImoni();
-		const i = FACILITIES.indexOf(f);
-		const ch = FACILITIES.findIndex((x) => x.id === "cityhall");
-		ok(ch >= 0 && i > ch, `imoni (${i}) is not after cityhall (${ch})`);
 		ok(f.from === 0, `from ${f.from}`);
 		ok(!f.room, "the pot has a room");
 		ok(
@@ -1118,135 +1229,8 @@ test(
 // ───────────────── どすこいポイント ─────────────────
 
 test(
-	"S14",
-	"どすこい：建物に 入ると 帰りに 1回だけ ふえる（数は スレの 順に 回る）。8/5 は 廃止の 札、8/6 は 年に 1回 詫びの ＋500",
-	() => {
-		const steps: [Today, number][] = [
-			[day(1, 1), 1],
-			[day(1, 1), 1],
-			[day(1, 2), 2],
-			[day(8, 5), 3],
-			[day(8, 6), 4],
-			[day(8, 6), 5],
-			[day(8, 6), 6],
-			[day(9, 1), 7],
-		];
-		const gain = (n: number) => DOSUKOI.gain.replace("{n}", String(n));
-		const want = [
-			gain(170),
-			null,
-			gain(500),
-			DOSUKOI.gone,
-			DOSUKOI.wabi,
-			gain(600),
-			gain(200),
-			gain(100),
-		];
-		let r: DosukoiRec = emptyDosukoi();
-		const toasts: (string | null)[] = [];
-		for (const [t, at] of steps) {
-			const next = dosukoiStep(r, t, Y, at);
-			ok(next.rec.pts >= r.pts, `points went down at ${at}`);
-			toasts.push(next.toast);
-			r = next.rec;
-		}
-		eq(toasts, want, "toasts");
-		eq([r.pts, r.n, r.wabi, r.at], [2070, 5, Y, 7], "record");
-		// 次の 年の 8/6 は また 詫び
-		const w2 = dosukoiStep(r, day(8, 6), Y + 1, 8);
-		ok(w2.toast === DOSUKOI.wabi && w2.rec.pts === 2570, "wabi next year");
-		// 数は DOSUKOI_GAINS を 順に 回る
-		let c = emptyDosukoi();
-		for (let i = 0; i < DOSUKOI_GAINS.length * 2; i++) {
-			const next = dosukoiStep(c, day(3, 3), Y, 100 + i);
-			const g = DOSUKOI_GAINS[i % DOSUKOI_GAINS.length];
-			ok(next.toast === gain(g), `step ${i}: ${next.toast}`);
-			ok(next.rec.pts === c.pts + g, `step ${i}: points`);
-			c = next.rec;
-		}
-	},
-);
-
-test(
-	"S15",
-	"どすこい：町役場の 窓口・市役所の 住民課で 照会（6けたまで・8/5 は 失効の 画面・8/6 は 詫びの 一言）",
-	async () => {
-		const opts = `choose: ${DOSUKOI.options.join("/")}`;
-		const run = async (
-			pts: number,
-			facility: string,
-			t: Today,
-			picks: number[] = [0],
-			wabi = 0,
-		): Promise<string[]> => {
-			let log: string[] = [];
-			await withStorage(async () => {
-				saveDosukoi({ v: 1, pts, at: 1, wabi, n: 3 }, false);
-				const a = recorder(picks);
-				await dosukoiWindow(a.s, facility, t, Y);
-				log = a.log;
-			});
-			return log;
-		};
-		const balance = (where: string, n: number) =>
-			`narrate: ${fill(DOSUKOI.balance, { where, n })}`;
-		eq(
-			await run(1190, "townhall", day(1, 10)),
-			[opts, balance("窓口", 1190), `say(窓口): ${DOSUKOI.shrug}`],
-			"townhall",
-		);
-		eq(
-			await run(1190, "cityhall", day(1, 10)),
-			[opts, balance("住民課", 1190), `say(住民課): ${DOSUKOI.shrug}`],
-			"cityhall",
-		);
-		eq(
-			await run(1234567, "cityhall", day(1, 10)),
-			[opts, balance("住民課", 999999), `say(住民課): ${DOSUKOI.shrug}`],
-			"6 digits",
-		);
-		const lapse = [
-			opts,
-			...DOSUKOI.lapse.map((l) => `narrate: ${fill(l, { where: "窓口" })}`),
-			`say(窓口): ${DOSUKOI.back}`,
-		];
-		eq(await run(1190, "townhall", day(8, 5)), lapse, "8/5");
-		eq(await run(0, "townhall", day(8, 5)), lapse, "8/5 with no points");
-		eq(
-			await run(1190, "townhall", day(8, 6), [0], Y),
-			[opts, balance("窓口", 1190), `say(窓口): ${DOSUKOI.wabiNote}`],
-			"8/6",
-		);
-		eq(
-			await run(1190, "townhall", day(8, 6), [0], Y - 1),
-			[opts, balance("窓口", 1190), `say(窓口): ${DOSUKOI.shrug}`],
-			"8/6 without this year's wabi",
-		);
-		eq(await run(1190, "townhall", day(1, 10), [1]), [opts], "やめる");
-		eq(await run(0, "townhall", day(1, 10)), [], "no points");
-	},
-);
-
-test("S16", "どすこい：照会は 町役場の 1番窓口と 市役所の 住民課 だけ", () => {
-	ok(
-		facilityById("townhall")?.room?.plays?.window === "dosukoi",
-		"townhall window",
-	);
-	ok(
-		facilityById("cityhall")?.room?.plays?.jumin === "dosukoi",
-		"cityhall jumin",
-	);
-	const users = FACILITIES.flatMap((f) =>
-		Object.entries(f.room?.plays ?? {})
-			.filter(([, p]) => p === "dosukoi")
-			.map(([k]) => `${f.id}.${k}`),
-	);
-	eq(users, ["townhall.window", "cityhall.jumin"], "dosukoi plays");
-});
-
-test(
 	"S17",
-	"季節：保存（kiriko-roguelike/imoni・dosukoi。壊れた 中身は 初期値。下見は 覚える だけ）",
+	"季節：保存（kiriko-roguelike/imoni。壊れた 中身は 初期値。下見は 覚える だけ）",
 	async () => {
 		await withStorage((store) => {
 			const r = rec({
@@ -1261,19 +1245,10 @@ test(
 			saveImoni(r, false);
 			forgetImoniMemo();
 			eq(loadImoni(), r, "imoni round trip");
-			const d: DosukoiRec = { v: 1, pts: 1190, at: A, wabi: Y, n: 4 };
-			saveDosukoi(d, false);
-			forgetDosukoiMemo();
-			eq(loadDosukoi(), d, "dosukoi round trip");
-			eq(
-				[...store.keys()].sort(),
-				["kiriko-roguelike/dosukoi", "kiriko-roguelike/imoni"],
-				"keys",
-			);
+			eq([...store.keys()].sort(), ["kiriko-roguelike/imoni"], "keys");
 			const bad = (k: string, v: string) => {
 				store.set(k, v);
 				forgetImoniMemo();
-				forgetDosukoiMemo();
 			};
 			for (const v of [
 				"{broken",
@@ -1283,8 +1258,6 @@ test(
 			]) {
 				bad("kiriko-roguelike/imoni", v);
 				eq(loadImoni(), emptyImoni(), `imoni ${v}`);
-				bad("kiriko-roguelike/dosukoi", v);
-				eq(loadDosukoi(), emptyDosukoi(), `dosukoi ${v}`);
 			}
 			bad(
 				"kiriko-roguelike/imoni",
@@ -1300,20 +1273,12 @@ test(
 				}),
 			);
 			eq(loadImoni(), emptyImoni(), "imoni bad fields");
-			bad(
-				"kiriko-roguelike/dosukoi",
-				JSON.stringify({ v: 1, pts: -5, at: 2.5, wabi: -1, n: 1.5 }),
-			);
-			eq(loadDosukoi(), emptyDosukoi(), "dosukoi bad fields");
 		});
 		await withStorage((store) => {
 			const r = rec({ held: Y, heldAt: A, kon: "in", ever: true });
 			saveImoni(r, true);
 			ok(store.size === 0, "preview wrote imoni");
 			eq(loadImoni(), r, "imoni memo");
-			saveDosukoi({ v: 1, pts: 170, at: A, wabi: 0, n: 1 }, true);
-			ok(store.size === 0, "preview wrote dosukoi");
-			ok(loadDosukoi().pts === 170, "dosukoi memo");
 		});
 	},
 );

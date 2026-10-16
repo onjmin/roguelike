@@ -13,8 +13,6 @@ import {
 	balusName,
 	eggTheory,
 	FOLK_NAMES,
-	GRAVE,
-	type GraveId,
 	HIRA,
 	hiraEntry,
 	hiraForgot,
@@ -23,8 +21,6 @@ import {
 	ideaAsk,
 	ideaOk,
 	ideaText,
-	isObon,
-	kusaShown,
 	MOFU,
 	mofuTag,
 	museumText,
@@ -34,12 +30,11 @@ import {
 	ODORU,
 	odoruAwake,
 	RIDDLES,
-	rolliLine,
 } from "../../data/people/folk";
 import { devEvent } from "../../data/story/objectives";
-import { nowHour, today } from "../../data/town/calendar";
+import { nowHour } from "../../data/town/calendar";
 import { FOLK_WALK } from "../../data/village/folk";
-import { npc, sign } from "../../data/village/helpers";
+import { npc } from "../../data/village/helpers";
 import type { VillagePlace, VillageView } from "../../data/village/map";
 import type { EventDef, Script, Story } from "../../engine/defs";
 import type { Cue } from "../../engine/emote";
@@ -68,8 +63,6 @@ export type FolkMemo = {
 	idea: number;
 	ideaAt: number;
 	ideaDone: boolean;
-	/** 草ボタンを 押した 数（9999 まで）。 */
-	kusa: number;
 };
 
 const EMPTY: FolkMemo = {
@@ -84,7 +77,6 @@ const EMPTY: FolkMemo = {
 	idea: 0,
 	ideaAt: -1,
 	ideaDone: false,
-	kusa: 0,
 };
 
 let memo: FolkMemo | null = null;
@@ -118,7 +110,6 @@ export const loadFolk = (): FolkMemo => {
 				idea: count(o.idea),
 				ideaAt: stamp(o.ideaAt),
 				ideaDone: o.ideaDone === true,
-				kusa: Math.min(count(o.kusa), 9999),
 			};
 	} catch {
 		// 読めなければ はじめから
@@ -160,9 +151,6 @@ const tick = (s: Story, key: string): number => {
 	s.set(key, k + 1);
 	return k;
 };
-
-const fill = (t: string, v: Record<string, string>): string =>
-	t.replace(/\{(\w+)\}/g, (_, k: string) => v[k] ?? "");
 
 /** at より あとに 帰った 回数（記録の 数。いまの 帰りも 数える）。 */
 const returnsSince = (at: number): number =>
@@ -341,55 +329,6 @@ export const mofuScript =
 		s.face(id, dir);
 	};
 
-// ───────────────── 機能の 墓場 ─────────────────
-
-const readAll = async (s: Story, lines: readonly string[]): Promise<void> => {
-	for (const t of lines) await s.narrate(t);
-};
-
-/** 草ボタン（押すと ｗ が ふえる。10回目で きうり。やめるまで 何回でも 押せる）。 */
-const kusaScript: Script = async (s) => {
-	const m = loadFolk();
-	await s.narrate(
-		m.kusa > 0 ? fill(GRAVE.kusaNow, { w: kusaShown(m.kusa) }) : GRAVE.kusa,
-	);
-	while ((await s.choose([...GRAVE.kusaMenu], { cancel: 1 })) === 0) {
-		s.se("decide");
-		const after = loadFolk();
-		after.kusa = Math.min(after.kusa + 1, 9999);
-		saveFolk(after);
-		await s.narrate(
-			after.kusa === 10
-				? GRAVE.kusaTen
-				: fill(GRAVE.kusaPush, { w: kusaShown(after.kusa) }),
-		);
-	}
-};
-
-/** 墓（id は data/village/folk.ts の GRAVES）。 */
-export const graveScript =
-	(g: GraveId): Script =>
-	async (s) => {
-		const t = today();
-		if (g === "rolli") {
-			await s.narrate(rolliLine(tick(s, "folk:rolli")));
-			return;
-		}
-		if (g === "kusa") {
-			await kusaScript(s);
-			return;
-		}
-		await readAll(s, GRAVE[g]);
-		if (g === "tag" && isObon(t.m, t.d)) await s.narrate(GRAVE.tagObon);
-	};
-
-/** 供養碑（お盆だけ 1窓 ふえる）。 */
-export const monumentScript: Script = async (s) => {
-	await readAll(s, GRAVE.monument);
-	const t = today();
-	if (isObon(t.m, t.d)) await s.narrate(GRAVE.obon);
-};
-
 // ───────────────── 部屋の すみ（ui/village/rooms.ts から） ─────────────────
 
 /** 銭湯の 温泉卵の メモ（はり紙の 窓の あと。村に いる あいだ 調べる たびに つぎの 説）。 */
@@ -406,17 +345,6 @@ export const museumScript =
 	};
 
 // ───────────────── 村の イベント（ui/village/villageEvents.ts の eventFor から） ─────────────────
-
-const GRAVE_IDS: readonly GraveId[] = [
-	"tag",
-	"rolli",
-	"kusa",
-	"gps",
-	"balus",
-	"danmaku",
-	"iine",
-	"okpic",
-];
 
 /** folk_ で はじまる 置き場所に 話し方を つける。 */
 export const folkEvent = (p: VillagePlace, v: VillageView): EventDef => {
@@ -436,10 +364,6 @@ export const folkEvent = (p: VillagePlace, v: VillageView): EventDef => {
 				wander: p.wander,
 				when: () => odoruAwake(nowHour()),
 			});
-		case "folk_monument":
-			return sign(p.id, p.x, p.y, monumentScript);
 	}
-	const g = p.id.replace(/^folk_grave_/, "") as GraveId;
-	if (GRAVE_IDS.includes(g)) return sign(p.id, p.x, p.y, graveScript(g));
 	return { id: p.id, x: p.x, y: p.y, trigger: p.trigger };
 };

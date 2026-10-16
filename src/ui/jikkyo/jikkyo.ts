@@ -22,7 +22,6 @@ import {
 } from "../../core/jikkyo";
 import type { JkGame, JkTeamId } from "../../core/jikkyoYakyu";
 import { Rng } from "../../core/rng";
-import { GIKAI_TEXT } from "../../data/jikkyo/gikai";
 import {
 	JIKKYO_PAUSED,
 	jikkyoOpen,
@@ -53,8 +52,7 @@ import { el, setStyle, setText } from "../dom";
 import { markOpened, onTap, type UiCtx } from "../list";
 import { tick } from "../minigames/minigameBoard";
 import { picker } from "../minigames/minigamePicker";
-import { previewStage, villageView } from "../village/villageReturn";
-import { hallGikai } from "./jikkyoGikai";
+import { previewStage } from "../village/villageReturn";
 import { yakyuTv } from "./jikkyoYakyuTv";
 
 // ───────────────── 保存（kiriko-roguelike/jikkyo） ─────────────────
@@ -103,8 +101,6 @@ export type JikkyoMemo = {
 			}
 		>
 	>;
-	/** 議会中継の 見た 話・いちばん 新しく 見た 帰りと その 話（再放送か）。ui/jikkyo/jikkyoGikai.ts。 */
-	gikai?: { seen: string[]; at: number; ep?: string; rerun?: boolean };
 };
 
 const EMPTY = (): JikkyoMemo => ({
@@ -122,7 +118,7 @@ let memo: JikkyoMemo | null = null;
 const num = (x: unknown, d = 0): number =>
 	typeof x === "number" && Number.isFinite(x) ? Math.max(0, x) : d;
 
-/** 読む（壊れた JSON・足りない 欄は 初期値。prog・gikai が 無い 古い 形も 読める）。 */
+/** 読む（壊れた JSON・足りない 欄は 初期値。prog が 無い 古い 形も 読める）。 */
 export const loadJikkyo = (): JikkyoMemo => {
 	if (memo) return structuredClone(memo);
 	try {
@@ -147,9 +143,6 @@ export const loadJikkyo = (): JikkyoMemo => {
 					? raw.heard.filter((x: unknown) => typeof x === "string")
 					: [],
 				...(raw.prog && typeof raw.prog === "object" ? { prog: raw.prog } : {}),
-				...(raw.gikai && typeof raw.gikai === "object"
-					? { gikai: raw.gikai }
-					: {}),
 			};
 		}
 	} catch {
@@ -624,8 +617,7 @@ export const newYakyuGame = (seed = newSeed()): JkGame => {
 export const hallMonitor =
 	(ctx: UiCtx): Script =>
 	async (s) => {
-		// 番組表（data/jikkyo/schedule.ts）で 配信会館の 枠を 引く。月曜は 議会中継が はじめの チャンネル
-		// （ui/jikkyo/jikkyoGikai.ts。チャンネルを かえると ナイターの 録画）
+		// 番組表（data/jikkyo/schedule.ts）で 配信会館の 枠を 引く
 		const stage = previewStage() ?? loadTown().stage;
 		const slot = programSlot("hall", today(), stage, new Date().getFullYear());
 		// 本筋の 山場までは 休止（data/jikkyo/schedule.ts の jikkyoOpen。段の 下見では 見られる）
@@ -639,16 +631,10 @@ export const hallMonitor =
 			await s.narrate(JIKKYO_PAUSED);
 			return;
 		}
-		if (slot?.main.program === "gikai") {
-			const r = await hallGikai(ctx, s, villageView());
-			if (r !== "channel") return;
-			await s.narrate(GIKAI_TEXT.record);
-		} else {
-			await s.narrate(HALL_MSG.monitor[0]);
-			if (slot?.main.program !== "yakyu") {
-				await s.narrate(HALL_MSG.monitor[1]);
-				return;
-			}
+		await s.narrate(HALL_MSG.monitor[0]);
+		if (slot?.main.program !== "yakyu") {
+			await s.narrate(HALL_MSG.monitor[1]);
+			return;
 		}
 		let game = newYakyuGame();
 		for (;;) {

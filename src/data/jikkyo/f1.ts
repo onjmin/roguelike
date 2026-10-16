@@ -1,4 +1,4 @@
-// おんJグランプリ（自動車整備工場の 事務所の テレビ。PROGRAMS §1.6「LAP1〜3 と 数える・雨・セーフティカーで 荒れる」）。
+// おんJグランプリ（ゲームセンター「連コ」の テレビ。PROGRAMS §1.6「LAP1〜3 と 数える・雨・セーフティカーで 荒れる」）。
 // 架空の 自動車レースの 決勝の 中継。スレは LAP で 数える（スレタイ「【実況】おんJグランプリ　LAP{n}」、ヘッダーも LAP{n}）。
 // 流れ：グリッド → スタート（赤い 灯が 5つ ついて 消える。4つめ・5つめ・消える 前が 合図、消える 拍で「スタート！」＝Cue）
 // → 序盤（静か）→ 雨が 降りだす → ピット（レーダーの 雨の 強さを 読んで タイヤ交換の 判断を 当てる。乱数で 小雨／大雨）
@@ -602,7 +602,7 @@ const f1Timeline: JkScript["timeline"] = (rand, slot) => {
 /** おんJグランプリ（決勝の 中継）。 */
 export const F1: JkScript = {
 	id: "f1",
-	venue: "repair",
+	venue: "arcade",
 	length: 146000,
 	goal: { live: 3, rerun: 2 },
 	pools: F1_POOLS,
@@ -654,10 +654,10 @@ const isRaceDay = onWeekdays(0);
 const isRaceEve = onWeekdays(6);
 const anyDay = () => true;
 
-/** おんJグランプリ（整備工場の 事務所の テレビ。会場の 文は 決勝の 日・前の 日・再放送の 日）。 */
+/** おんJグランプリ（ゲームセンターの テレビ。会場の 文は 決勝の 日・前の 日・再放送の 日）。 */
 export const F1_PACK: JkPack = {
 	script: F1,
-	venue: "repair",
+	venue: "arcade",
 	from: 7,
 	menu: "おんJグランプリ",
 	slot: liveOr(isRaceDay),
@@ -667,29 +667,29 @@ export const F1_PACK: JkPack = {
 			{
 				when: isRaceDay,
 				lines: [
-					"事務所の　テレビ。オイルの　におい。\n今夜は『おんJグランプリ』の　決勝。",
+					"ゲーセンの　テレビ。レースゲームの　音。\n今夜は『おんJグランプリ』の　決勝。",
 				],
 			},
 			{
 				when: isRaceEve,
 				lines: [
-					"事務所の　テレビ。工具の　音。\n明日の　夜は『おんJグランプリ』の　決勝。",
+					"ゲーセンの　テレビ。レースゲームの　音。\n明日の　夜は『おんJグランプリ』の　決勝。",
 				],
 			},
 			{
 				when: anyDay,
 				lines: [
-					"事務所の　テレビ。工具の　音。\n『おんJグランプリ』の　再放送。",
+					"ゲーセンの　テレビ。レースゲームの　音。\n『おんJグランプリ』の　再放送。",
 				],
 			},
 		],
 	},
 	staffLines: {
-		repair_mech: [
+		arcade_a: [
 			{
 				when: isRaceDay,
 				lines: [
-					"今夜は　おんJグランプリの　決勝や。\n……タイヤ交換は　うちの　方が　早いで",
+					"今夜は　おんJグランプリの　決勝や。\n……湾岸の　筐体も、今日は　満席や",
 				],
 			},
 			{
@@ -707,7 +707,7 @@ export const F1_PACK: JkPack = {
 		],
 	},
 	staffOnce: {
-		repair_mech: {
+		arcade_a: {
 			kami: "この前の　スタート、\nシグナルと　ぴったり　やったな",
 			rerun: "この前は　LAP{n}まで　のびたな。\n日曜の　夜は、もっと　のびるで",
 		},
@@ -715,10 +715,10 @@ export const F1_PACK: JkPack = {
 	msgs: {
 		howto:
 			"見せ場に　合う　レスを　えらぶと、\nスレが　のびる。目標：LAP{n}　完走",
-		seat: "キリコは　事務所の　いすに　すわった。\n……オイルの　におい。実況スレを　ひらく。",
+		seat: "キリコは　レースゲームの　いすに　すわった。\n……エンジン音。実況スレを　ひらく。",
 		over: "チェッカーが　ふられた。\n実況は　LAP{n}まで　のびた。",
 		kami: "あの　ひとことは、\nシグナルが　消える　一瞬だった。",
-		left: "……レースの　とちゅうで、\nそっと　事務所を　出た。",
+		left: "……レースの　とちゅうで、\nそっと　いすを　立った。",
 	},
 	art: [
 		F1_ART.logo,

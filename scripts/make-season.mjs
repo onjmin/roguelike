@@ -10,7 +10,7 @@
 // お椀は RPGEN の「味噌汁（豆腐craft）」rlAACtA（130: 食べ物２ #25）を CDN から とって、汁の 色を かえ、里芋・牛肉・ねぎ・
 // こんにゃくを 描きたす（ゲームは CDN を 見ない。--cache で 取った 絵を 置いておける）。鍋と かまどは 手描き。
 //
-// 依存なし（zlib だけ）。PNG の 書き方は make-trolley.mjs と 同じ、読み方は pack-rpgen.mjs の decodePng と 同じ。
+// 依存なし（zlib だけ）。PNG の 書き方は make-folk.mjs と 同じ、読み方は pack-rpgen.mjs の decodePng と 同じ。
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";

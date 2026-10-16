@@ -43,11 +43,8 @@ import { yen } from "../../engine/wallet";
 import { arcadePlay } from "../arcade/arcade";
 import { bushitsuThing } from "../bushitsu/bushitsu";
 import type { Ctx } from "../ctx";
-import { watchGikai } from "../jikkyo/jikkyoGikai";
 import { staffOnceLine, watchProgram } from "../jikkyo/jikkyoWatch";
 import { derbyBest } from "../minigames/batting";
-import { debateScript, kibenScript, minutesScript } from "../minigames/debate";
-import { dosukoiWindow } from "../minigames/dosukoi";
 import { eatAt, keeperTalk } from "../minigames/eat";
 import { imoniPlay } from "../minigames/imoni";
 import { atBat, playDerby } from "../minigames/minigames";
@@ -67,7 +64,6 @@ import {
 } from "../trade/trade";
 import { giftShelf } from "./bonds";
 import { facilityDecor } from "./cinemaDecor";
-import { assemblyEvents } from "./civic";
 import { insideDisplays } from "./displays";
 import { roomFindGlint, townFind } from "./finds";
 import {
@@ -300,11 +296,6 @@ export const buildFacility = (
 		if (home) return sign(p.id, p.x, p.y, homeThing(ctx, kind));
 		return sign(p.id, p.x, p.y, async (s) => {
 			const play = room?.plays?.[kind];
-			// 町役場・市役所の 中継モニター：議会の 日は 議会中継（ui/jikkyo/jikkyoGikai.ts）、ほかの 日は 部屋の 文
-			if (play === "gikai" && (f.id === "townhall" || f.id === "cityhall")) {
-				await watchGikai(ctx, s, f.id, v, room?.lines[kind] ?? []);
-				return;
-			}
 			// 曜日で かわる 会場の 文（映画館の 金曜は 実況上映。data/jikkyo/text.ts）が あれば そちら
 			await readAll(
 				s,
@@ -317,18 +308,12 @@ export const buildFacility = (
 			else if (play === "eat") await eatAt(ctx, s, f.id);
 			// 実況の 番組（映画館の 実況上映・カジノの 競馬 ほか。番組表は data/jikkyo/schedule.ts、板は ui/jikkyo/jikkyoWatch.ts）
 			else if (play === "jikkyo") await watchProgram(ctx, s, f.id, v.stage);
-			// 町の 役所の 演壇（討論会）と 見分け方の はり紙（ui/minigames/debate.ts）
-			else if (play === "debate") await debateScript(ctx, s, v);
-			else if (play === "kiben") await kibenScript(ctx, s);
-			else if (play === "minutes") await minutesScript(ctx, s);
 			// 部室棟の 遊べる 物（ui/bushitsu/bushitsu.ts）
 			else if (play === "bushitsu") await bushitsuThing(ctx, s, f, kind, v);
 			// マイクラの 部屋の 物（ui/saba/saba.ts）
 			else if (play === "saba") await sabaPlay(ctx, s, f, kind, false);
 			// ネタスレの 遊び（リバーシ・!sk 習字・ID腹筋・コンマ。ui/neta/neta.ts）
 			else if (isNetaPlay(play)) await netaPlay(ctx, s, play);
-			// どすこいポイントの 照会（町役場の 1番窓口・市役所の 住民課。ui/minigames/dosukoi.ts）
-			else if (play === "dosukoi") await dosukoiWindow(s, f.id);
 			// ゲームセンターの 筐体（物の 名前が ゲームの 名前。ui/arcade/arcade.ts）
 			else if (play === "arcade") await arcadePlay(ctx, s, kind);
 			// リサイクルショップの レジ：家具を 買う（ui/village/myhome.ts）
@@ -414,8 +399,6 @@ export const buildFacility = (
 				{ dir: who.dir },
 			),
 		);
-	// 議会の 日の 議席・役の 住人（町役場・市役所。ui/village/civic.ts）
-	events.push(...assemblyEvents(f, v));
 	// キリコの 家に 招いた 人（ui/village/myhome.ts）
 	const guest = home ? guestEvent() : null;
 	if (guest) events.push(guest);

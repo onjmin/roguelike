@@ -38,14 +38,8 @@ try {
 	const { runJikkyoProgTests } = await server.ssrLoadModule(
 		"/src/sim/jikkyoProgTests.ts",
 	);
-	const { runCivicTests } = await server.ssrLoadModule(
-		"/src/sim/civicTests.ts",
-	);
 	const { runCrowdTests } = await server.ssrLoadModule(
 		"/src/sim/crowdTests.ts",
-	);
-	const { runTrolleyTests } = await server.ssrLoadModule(
-		"/src/sim/trolleyTests.ts",
 	);
 	// 2026-10 の 5つの 寄り道（マイクラ・ネタスレ・部室棟・村の 名物・季節の 行事）
 	const { runSabaTests } = await server.ssrLoadModule("/src/sim/sabaTests.ts");
@@ -72,9 +66,7 @@ try {
 		...(await runVillageTests()),
 		...(await runJikkyoTests()),
 		...(await runJikkyoProgTests()),
-		...(await runCivicTests()),
 		...runCrowdTests(),
-		...runTrolleyTests(),
 		...(await runSabaTests()),
 		...(await runNetaTests()),
 		...(await runArcadeTests()),

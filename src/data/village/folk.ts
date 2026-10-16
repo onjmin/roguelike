@@ -16,20 +16,13 @@
 // どの 人も 道を ふさがない・遠回りに しない・木の 葉や 街灯に かくれない（くぼみ・行き止まり・原っぱ。src/sim/folkTests.ts の F6）。
 
 import type { Dir } from "../../engine/types";
-import type { Facility } from "./facilities";
 import type { Cell, VillagePlace } from "./map";
-import { base } from "./tiles";
 
-/** 墓場の 絵（scripts/make-folk.mjs が 書き出す public/sprites/folk.png の 16x16 の マス）。 */
+/** 銭湯の メモの 絵（scripts/make-folk.mjs が 書き出す public/sprites/folk.png の 16x16 の マス）。 */
 const FOLK_IMG = "pub:sprites/folk.png";
 const cell = (i: number): string => `${FOLK_IMG}#${i * 16},0,16,16`;
 export const FOLK_ART = {
-	grave: cell(0),
-	graveKusa: cell(1),
-	graveTag: cell(2),
-	graveNew: cell(3),
 	memo: cell(4),
-	monument: cell(5),
 } as const;
 
 /** 歩行グラ（RPGEN の CDN と 手描き・ぬりかえ）。ほかの 人・敵・通行人と かぶらない（folkTests F10）。 */
@@ -83,50 +76,6 @@ export const folkSpot = (
 /** 名無したちが 来る 段（最序盤の 段0 は ぷゆゆと やきうの 2人だけ）。 */
 export const FOLK_FROM = 1;
 
-/** 墓場の 立つ 段（神社と 同じ）。 */
-export const BOCHI_FROM = 2;
-
-/** 墓（地図の 座標）。 */
-export const GRAVES: readonly { id: string; at: Cell }[] = [
-	{ id: "tag", at: [1, 1] },
-	{ id: "rolli", at: [2, 1] },
-	{ id: "kusa", at: [3, 1] },
-	{ id: "gps", at: [4, 1] },
-	{ id: "balus", at: [5, 1] },
-	{ id: "danmaku", at: [6, 1] },
-	{ id: "iine", at: [7, 1] },
-	{ id: "okpic", at: [6, 3] },
-];
-export const MONUMENT: Cell = [4, 3];
-
-/** 玉砂利（Base.png の 地面の 灰色）。 */
-const GRAVEL = base(7, 4);
-
-/** 機能の 墓場（森を 開いた 小さな 墓地。中は ない）。FACILITIES の いちばん うしろに 足す。 */
-export const FOLK_FACILITIES: readonly Facility[] = [
-	{
-		id: "bochi",
-		name: "機能の　墓場",
-		from: BOCHI_FROM,
-		at: [1, 1],
-		look: {
-			kind: "grid",
-			ground: "grass",
-			shadow: false,
-			floor: ".",
-			rows: ["GGkGtGt", ".......", "   S.n."],
-			keys: {
-				".": [GRAVEL],
-				G: [GRAVEL, FOLK_ART.grave],
-				k: [GRAVEL, FOLK_ART.graveKusa],
-				t: [GRAVEL, FOLK_ART.graveTag],
-				n: [GRAVEL, FOLK_ART.graveNew],
-				S: [GRAVEL, FOLK_ART.monument],
-			},
-		},
-	},
-];
-
 /** 村に 置く folk の イベント（id は folk_ で はじまる。ui/village/folk.ts の folkEvent が 話し方を つける）。 */
 export const folkPlaces = (stage: number): VillagePlace[] => {
 	if (stage < FOLK_FROM) return [];
@@ -162,20 +111,5 @@ export const folkPlaces = (stage: number): VillagePlace[] => {
 			wander: true,
 		},
 	];
-	if (stage >= BOCHI_FROM) {
-		for (const g of GRAVES)
-			out.push({
-				id: `folk_grave_${g.id}`,
-				x: g.at[0],
-				y: g.at[1],
-				trigger: "talk",
-			});
-		out.push({
-			id: "folk_monument",
-			x: MONUMENT[0],
-			y: MONUMENT[1],
-			trigger: "talk",
-		});
-	}
 	return out;
 };

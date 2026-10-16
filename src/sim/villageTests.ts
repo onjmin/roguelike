@@ -290,7 +290,6 @@ import {
 	LONG_WALK,
 	mayWarp,
 	type Open,
-	routeCells,
 	type Seen,
 	WALK_TAIL,
 	type WalkStep,
@@ -615,8 +614,8 @@ test("from the boot spot, Kiriko can walk to the exit and talk to everyone", () 
 		ok(s.canEnter(bx, by), `${label(v)}: the boot spot is blocked`);
 		const [mx, my] = VILLAGE_SPOTS.exit;
 		ok(s.reachable(mx, my), `${label(v)}: cannot walk to the exit`);
-		// 帰ってきたとき 出口から 1歩 下へ 出られる
-		ok(s.canEnter(mx, my + 1), `${label(v)}: cannot step out of the exit`);
+		// 帰ってきたとき 出口（桟橋の 先）から 1歩 町の 側へ 出られる
+		ok(s.canEnter(mx, my - 1), `${label(v)}: cannot step out of the exit`);
 		for (const p of s.places)
 			if (p.trigger === "talk")
 				ok(s.talkable(p), `${label(v)}: cannot talk to ${p.id}`);
@@ -659,11 +658,15 @@ test("tall things (boards, signs) cannot be read from behind, and each can be re
 	ok(tall > 0, "no tall thing in the village has a back");
 });
 
-test("the village has an exit on each side (and one sign); nobody guards them", () => {
+test("the village has one exit, at the end of the pier (and one sign); nobody guards it", () => {
 	for (const v of VIEWS) {
 		const s = survey(v);
 		const exits = s.places.filter((p) => p.trigger === "touch" && p.exit);
-		ok(exits.length === 4, `${label(v)}: ${exits.length} exits`);
+		ok(exits.length === 1, `${label(v)}: ${exits.length} exits`);
+		ok(
+			VILLAGE_EXITS.length === 1 && VILLAGE_EXITS[0].side === "s",
+			"the exit is not the pier",
+		);
 		for (const e of VILLAGE_EXITS) {
 			const [x, y] = e.cell;
 			ok(
@@ -754,7 +757,7 @@ test("町の 中心（段6〜7）：住宅街は 路側帯・電柱・マンホ�
 	};
 	for (let x = 10; x <= 29; x++)
 		ok(lined(x, 11, [19, 20, 27]), `stage 6: (${x},11) is ${at(r6, x, 11)}`);
-	for (let x = 0; x <= 39; x++)
+	for (let x = 1; x <= 39; x++)
 		ok(lined(x, 19, [19, 20]), `stage 6: (${x},19) is ${at(r6, x, 19)}`);
 	for (let y = 12; y <= 18; y++)
 		ok(
@@ -808,7 +811,7 @@ test("町の 中心（段6〜7）：住宅街は 路側帯・電柱・マンホ�
 			p6[ch]?.layers.join() !== p7[ch]?.layers.join(),
 			`stage 7: "${ch}" looks the same as stage 6`,
 		);
-	// 抜け道（東の 広場の すみ・神社・図書館と 碁会所・バス停・出口の 立て札を 調べる 所）は ふさがない
+	// 抜け道（東の 広場の すみ・神社・図書館と 碁会所・出口の 立て札を 調べる 所）は ふさがない
 	for (const stage of [6, 7]) {
 		const rows = villageRows(view(stage));
 		const tiles = villagePalette(view(stage));
@@ -829,7 +832,6 @@ test("町の 中心（段6〜7）：住宅街は 路側帯・電柱・マンホ�
 			[26, 20],
 			[29, 20],
 			[9, 19],
-			[33, 21],
 			[19, 11],
 			[20, 11],
 		])
@@ -1139,74 +1141,6 @@ const recordWalk = async (
 
 const onlySteps = (log: readonly string[], n: number): boolean =>
 	log.length === n && log.every((l) => l.startsWith("step "));
-
-test("場面で 遠くから 歩く 人は 映らない ところを とばす：東の 口に いる キリコへ ぷゆゆパン（画面の はしの 外から 歩いて 入る）", async () => {
-	await withStorageAsync(async () => {
-		setProgress(["shallow"]);
-		putTown({ stage: 1 });
-		const east = VILLAGE_EXITS.find((e) => e.side === "e");
-		ok(!!east, "no east exit");
-		if (!east) return;
-		// 東の 板から 帰ると、口から 1歩 村へ 入った ところに 立つ
-		const v = DIR_VEC[east.inward];
-		const at: Cell = [east.cell[0] + v.dx, east.cell[1] + v.dy];
-		const { s, walks } = fakeStory({ at });
-		await lunchScript(s);
-		const come = walks.find((w) => w.target === "mob_puyu");
-		ok(!!come && !come.noWarp, `ぷゆゆ does not come: ${JSON.stringify(come)}`);
-		if (!come) return;
-		const home = MOBS.puyu.spot;
-		const to: Cell = [come.x, come.y];
-		const route = sceneRoute(villageView(), home, to, at);
-		ok(
-			!!route && route.length > LONG_WALK,
-			`ぷゆゆ's walk from the east exit is short: ${route?.length}`,
-		);
-		if (!route) return;
-		const n = route.length;
-		ok(mayWarp("mob_puyu", n), `a ${n}-step walk by ぷゆゆ is not shortened`);
-		const arrived = (c: Cell) => c[0] === to[0] && c[1] === to[1];
-		// スマホの 画面：はじめに 1度だけ 映らない マスへ 置きなおして、はしの 外から 歩いて 入る
-		const seen = phoneView(at);
-		const phone = await recordWalk(home, route, { warp: true, seen });
-		const places = phone.log.filter((l) => l.startsWith("place "));
-		const [px, py] = places[0]?.split(" ")[1]?.split(",").map(Number) ?? [];
-		const steps = phone.log.filter((l) => l.startsWith("step ")).length;
-		ok(
-			phone.log[0]?.startsWith("place ") &&
-				places.length === 1 &&
-				!seen(px, py),
-			`ぷゆゆ is not moved off-screen before walking:\n${phone.log.join("\n")}`,
-		);
-		ok(
-			steps >= WALK_TAIL && steps <= 20 && arrived(phone.at),
-			`ぷゆゆ walks ${steps} of ${n} steps and ends at ${phone.at}`,
-		);
-		// 画面の 大きさが わからなければ、行き先の WALK_TAIL 歩 手前へ 置いてから 歩く
-		const blind = await recordWalk(home, route, { warp: true, seen: null });
-		ok(
-			blind.log[0] ===
-				`place ${routeCells(home, route)[n - WALK_TAIL].join(",")}` &&
-				onlySteps(blind.log.slice(1), WALK_TAIL) &&
-				arrived(blind.at),
-			`unknown screen:\n${blind.log.join("\n")}`,
-		);
-		// キリコの 歩き・noWarp は 長くても ぜんぶ 歩く
-		for (const [who, opt] of [
-			["player", undefined],
-			["mob_puyu", { noWarp: true }],
-		] as const) {
-			const full = await recordWalk(home, route, {
-				warp: mayWarp(who, n, opt),
-				seen,
-			});
-			ok(
-				onlySteps(full.log, n) && arrived(full.at),
-				`${who}${opt ? " (noWarp)" : ""} skips part of the walk`,
-			);
-		}
-	});
-});
 
 test("場面の 歩きを とばさない とき：近い 道・キリコ・noWarp・映っている 人。出ていく 人は 映らなく なってから 行き先へ。カメラが ついていく 人は 長い 道だけ 暗転", async () => {
 	await withStorageAsync(async () => {
@@ -2603,11 +2537,6 @@ const fakeStory = (
 			state.y = y;
 			if (dir) state.dir = dir;
 		},
-		ride: async (x, y) => {
-			log.push(`ride ${x},${y}`);
-			state.x = x;
-			state.y = y;
-		},
 		lie: (at) => {
 			log.push(at ? `lie ${at.x},${at.y}` : "getup");
 		},
@@ -2688,7 +2617,7 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 			ok(
 				inOrder(log, [
 					"show player",
-					"move player d",
+					`move player ${VILLAGE_EXITS[0].step}`,
 					...pages.map((p) =>
 						p.kiriko
 							? `kiriko ${p.kiriko}: ${p.text}`
@@ -2708,7 +2637,7 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 				`${a.kind}: the scene is out of order:\n${log.join("\n")}`,
 			);
 			ok(
-				s.state.y === VILLAGE_SPOTS.exit[1] + 1,
+				s.state.y === VILLAGE_SPOTS.exit[1] - 1,
 				`${a.kind}: Kiriko is still in the exit`,
 			);
 		}
@@ -5410,119 +5339,6 @@ test("施設の 外観（絵を 並べた 形）: 字は キーだけ・扉は 1
 				JSON.stringify(pal[ch]) === JSON.stringify(t),
 				`stage ${stage}: facility "${ch}" is drawn as another tile`,
 			);
-	}
-});
-
-test("東の 畑の あと: 段ごとに 形が かわり（段6 市民農園・段7 公園）、x=31 の 列と 北の 通りは 歩けて、区画・噴水・ベンチ・砂場・立て札・バス停に 届く", () => {
-	const view = (stage: number): VillageView => ({
-		stage,
-		unlocked: ["shallow"],
-		cleared: [],
-	});
-	// 畑の 区画（地図の x=31〜38, y=12〜18）
-	const farm = (stage: number) =>
-		villageRows(view(stage))
-			.slice(12, 19)
-			.map((r) => [...r].slice(31, 39).join(""))
-			.join("|");
-	for (let stage = 1; stage < TOWN_STAGES; stage++)
-		ok(
-			farm(stage) !== farm(stage - 1),
-			`stage ${stage}: the east farm looks the same as stage ${stage - 1}`,
-		);
-	for (const v of VIEWS) {
-		const s = survey(v);
-		for (let y = 12; y <= 18; y++)
-			ok(
-				s.reachable(31, y),
-				`${label(v)}: (31,${y}) on the farm's west edge cannot be walked`,
-			);
-		if (v.stage >= 4)
-			for (let x = 31; x <= 39; x++)
-				for (const y of [10, 11])
-					ok(
-						s.reachable(x, y),
-						`${label(v)}: the north street lane (${x},${y}) is blocked`,
-					);
-	}
-	const things: [number, string, readonly string[]][] = [
-		[6, "garden", ["sign", "plot", "bucket"]],
-		[
-			7,
-			"park",
-			[
-				"sign",
-				"rules",
-				"fountain",
-				"fountain_nw",
-				"fountain_n",
-				"fountain_ne",
-				"fountain_w",
-				"fountain_e",
-				"fountain_sw",
-				"fountain_se",
-				"bench",
-				"bench_r",
-				"bench_e",
-				"bench_e_r",
-				"sandbox",
-			],
-		],
-	];
-	for (const [stage, id, ids] of things) {
-		const f = facilityById(id);
-		ok(f, `${id}: no facility`);
-		if (!f) continue;
-		const s = survey(view(stage));
-		for (const tid of ids) {
-			const t = f.outdoor?.find((o) => o.id === tid);
-			const p = t && s.places.find((q) => q.id === outdoorId(f, t));
-			ok(
-				p && s.talkable(p, hasBack(s, p)),
-				`stage ${stage}: cannot reach the ${id} ${tid}`,
-			);
-		}
-		// バス停・自販機は 道の 下の 同じ マスの まま
-		for (const [pid, x, y] of [
-			["fthing_bus_stop", 31, 20],
-			["fthing_vend_bus_vend", 32, 20],
-		] as const) {
-			const p = s.places.find((q) => q.id === pid);
-			ok(
-				p && p.x === x && p.y === y && s.talkable(p, hasBack(s, p)),
-				`stage ${stage}: ${pid} moved or cannot be reached`,
-			);
-		}
-	}
-	// 公園の 噴水は 3×3（通れない）。まわりの 道を 一周 できる
-	const s7 = survey(view(7));
-	for (let y = 14; y <= 16; y++)
-		for (let x = 34; x <= 36; x++)
-			ok(
-				!s7.tile(x, y)?.passable,
-				`the fountain cell (${x},${y}) can be walked through`,
-			);
-	for (let i = 0; i <= 4; i++)
-		for (const [x, y] of [
-			[33 + i, 13],
-			[33 + i, 17],
-			[33, 13 + i],
-			[37, 13 + i],
-		])
-			ok(
-				s7.reachable(x, y),
-				`the path around the fountain is cut at (${x},${y})`,
-			);
-	// 施設の 字は ほかの パレットに 上書き されない（字が かぶると 絵が すりかわる）
-	for (let stage = 0; stage < TOWN_STAGES; stage++) {
-		const pal = villagePalette(view(stage));
-		for (const f of FACILITIES)
-			if (f.look.kind === "block")
-				for (const [ch, t] of Object.entries(f.look.tiles))
-					ok(
-						JSON.stringify(pal[ch]) === JSON.stringify(t),
-						`stage ${stage}: "${ch}" of ${f.id} is drawn as another tile`,
-					);
 	}
 });
 

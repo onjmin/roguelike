@@ -277,11 +277,6 @@ export type Story = {
 	 */
 	warp(map: string, x: number, y: number, dir?: Dir): Promise<void>;
 	/**
-	 * おんJトロッコ（data/village/trolley.ts）：キリコが トロッコに 乗って (x, y) まで 道なりに 速く 走る
-	 * （人は すりぬけ、扉・口は 踏まない）。カメラは ついていく。道が なければ 暗転して 置きなおす。着いたら 解決する。
-	 */
-	ride(x: number, y: number): Promise<void>;
-	/**
 	 * キリコが ベッドに 寝ころぶ（at の マス＝枕に 頭を のせ、下の マスの 掛け布団 blanket を かぶる）。
 	 * null で 起きて、寝ころぶ 前の マスに もどる。
 	 */

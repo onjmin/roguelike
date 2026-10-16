@@ -41,8 +41,6 @@ export class Actor {
 	still: boolean;
 	visible = true;
 	through: boolean;
-	/** 乗り物（キリコの おんJトロッコ。体を 少し 上げて、腰から 下に かぶせて 描く）。 */
-	vehicle: string | null = null;
 	/** 頭の 右上に 出す 記号（EventDef の roam。null で 出さない）。 */
 	emote: Emote | null = null;
 	/** 記号を くりかえす（招いた 人の 過ごし方）。会話の 1行は 1めぐりで 消える。 */
@@ -212,7 +210,6 @@ export class Actor {
 		const frame = this.blanket
 			? 0
 			: stepFrame(time + ((this.id.length * 97) % 400), this.moving);
-		const seat = this.vehicle ? 3 : 0;
 		// 体の 動き（歩いて いる あいだは しない）
 		let gx = 0;
 		let gy = 0;
@@ -229,12 +226,11 @@ export class Actor {
 			gy = m.dy;
 			face = m.dir ?? this.dir;
 		}
-		if (!drawWalk(ctx, this.sprite, face, frame, px + gx, py - seat + gy)) {
+		if (!drawWalk(ctx, this.sprite, face, frame, px + gx, py + gy)) {
 			// 読み込み中は小さな影だけ
 			ctx.fillStyle = "rgba(0,0,0,0.3)";
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
-		if (this.vehicle) drawRefInCell(ctx, this.vehicle, px, py);
 		if (this.emote !== this.emoteShown || this.emoteFrom < 0) {
 			this.emoteShown = this.emote;
 			this.emoteFrom = time;
@@ -244,7 +240,7 @@ export class Actor {
 				ctx,
 				this.emote,
 				px + gx,
-				py - seat + gy,
+				py + gy,
 				time - this.emoteFrom,
 				this.emoteLoop,
 			);

@@ -274,7 +274,7 @@ export const ROOM_OUTSIDE: Record<RoomId, Spot> = {
 	shop: { x: 16, y: 17, dir: "down" },
 	store: { x: 25, y: 17, dir: "down" },
 	music: { x: 22, y: 29, dir: "down" },
-	bath: { x: 35, y: 28, dir: "down" },
+	bath: { x: 35, y: 30, dir: "down" },
 	bookstore: { x: 4, y: 23, dir: "down" },
 	library: { x: 4, y: 23, dir: "down" },
 };
@@ -286,7 +286,7 @@ export const ROOM_FROM: Record<RoomId, number> = {
 	shop: 5,
 	store: 2,
 	music: 3,
-	bath: 4,
+	bath: 0,
 	bookstore: BOOKSTORE_FROM,
 	library: LIBRARY_FROM,
 };

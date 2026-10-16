@@ -1,5 +1,5 @@
-// 皆既月食　観察部（おんJ中央公園の 北の ベンチ。PROGRAMS §1.6「空を 見上げる 静かな 実況」）。
-// テレビは ない：キリコは ベンチに すわって 夜空を 見上げ、スマホで 実況スレを ひらく。月が 左から 欠けはじめ、
+// 皆既月食　観察部（浜の 平たい 岩。PROGRAMS §1.6「空を 見上げる 静かな 実況」）。
+// テレビは ない：キリコは 浜の 岩に すわって 夜空を 見上げ、スマホで 実況スレを ひらく。月が 左から 欠けはじめ、
 // 半分 → 雲が 横切る → 細く なって 皆既（赤銅色の 赤い 月）→ 左から 光が 戻り → 満月に もどる。
 // - この 番組の 動詞：月の 形に 合う ひとこと（雲が かかれば「雲　どけ」、どいたら「雲　どいた」）・
 //   皆既の 瞬間を 1語で 書く（Cue「皆既」。beat 1000 の ゆっくりした 合図）・皆既の あいだ しばらく 黙って 見る
@@ -8,7 +8,7 @@
 // - 日：毎月 15日（満月の 夜）は 本番（★3）、ほかの 日は 前の 月食の 過去ログ（★2。群衆に「過去ログ　乙」が まざる）。
 // - 実在の 天文台・中継・天気の 会社の 名前は 出さない（deny）。群衆の 文は 手で 書いた 一覧だけ。
 // - キリコが 書ける 文（候補・当番・山場の 1語）に「保守」「立てといた」「立てたる」「立てたで」を 入れない。
-//   「保守」は 固有名詞（おんJ中央公園・おんJタウン）の 中だけ。
+//   「保守」は 固有名詞（おんJタウン）の 中だけ。
 // - 文の 幅：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22（全角）。試験は src/sim/jikkyoProgTests.ts。
 
 import type {
@@ -243,7 +243,7 @@ const gesshokuTimeline: JkScript["timeline"] = () => {
 			pool: "wait",
 			rate: 0.4,
 			bgm: "stone",
-			caption: "おんJ中央公園　北の　ベンチ",
+			caption: "おんJタウン　浜の　岩",
 		},
 		{
 			at: 4000,
@@ -470,7 +470,7 @@ const gesshokuTimeline: JkScript["timeline"] = () => {
 /** 皆既月食　観察部（台本）。 */
 export const GESSHOKU: JkScript = {
 	id: "gesshoku",
-	venue: "park",
+	venue: "pier",
 	length: 150000,
 	goal: { live: 3, rerun: 2 },
 	pools: GESSHOKU_POOLS,
@@ -519,36 +519,35 @@ export const GESSHOKU: JkScript = {
 /** 本番の 夜（毎月 15日。満月）。 */
 const isEclipseNight = (t: Today): boolean => t.d === 15;
 
-/** ベンチ（外の 物。左右の 半分と 東の ベンチも 同じ 文）。 */
+/** 浜の 岩（外の 物）。 */
 const BENCH_LINES: DayLines = [
 	{
 		when: isEclipseNight,
-		lines: ["ベンチ。\n今夜は　皆既月食。空が　よく　見える。"],
+		lines: [
+			"浜の　平たい　岩。\n今夜は　皆既月食。空が　よく　見える。",
+		],
 	},
 ];
 
 /** 皆既月食　観察部。 */
 export const GESSHOKU_PACK: JkPack = {
 	script: GESSHOKU,
-	venue: "park",
+	venue: "pier",
 	from: 7,
 	menu: "皆既月食",
 	slot: liveOr(isEclipseNight),
 	scenes: GESSHOKU_SCENES,
 	venueLines: {
 		bench: BENCH_LINES,
-		bench_r: BENCH_LINES,
-		bench_e: BENCH_LINES,
-		bench_e_r: BENCH_LINES,
 	},
 	msgs: {
 		howto:
 			"合う　レスで　スレが　のびる。皆既の　間は\n黙って　見るのも　ええ。目標：★{n}　完走",
-		seat: "キリコは　ベンチで　空を　見上げた。\n……スマホで、実況スレを　ひらく。",
+		seat: "キリコは　岩に　すわって　空を　見上げた。\n……スマホで、実況スレを　ひらく。",
 		over: "月が　まるく　もどった。\n実況は　★{n}まで　のびた。",
 		kanso: "……完走。\n夜風が　つめたい。",
 		kami: "「皆既」の　ひとことは、\n月が　赤く　なった　一瞬だった。",
-		left: "……観察の　とちゅうで、\nそっと　ベンチを　立った。",
+		left: "……観察の　とちゅうで、\nそっと　岩を　立った。",
 	},
 	art: Object.values(GESSHOKU_ART),
 	deny: [
@@ -560,5 +559,5 @@ export const GESSHOKU_PACK: JkPack = {
 		"星ナビ",
 		"天文ガイド",
 	],
-	names: ["おんJ中央公園"],
+	names: ["おんJタウン"],
 };

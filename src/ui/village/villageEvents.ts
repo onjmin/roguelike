@@ -76,11 +76,6 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../../data/village/map";
-import {
-	TROLLEY_MSG,
-	trolleyStand,
-	trolleyStops,
-} from "../../data/village/trolley";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import {
@@ -131,7 +126,6 @@ import { openSettings } from "../settings";
 import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
-import { civicBoardMenu, civicBoardScript } from "./civic";
 import { outsideDisplays } from "./displays";
 import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
@@ -140,7 +134,6 @@ import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag, openStorage } from "./home";
 import { previewing } from "./pay";
-import { puyuTrainDecor } from "./puyuTrain";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
 import { shadowGround } from "./shadows";
@@ -186,38 +179,8 @@ const signMore = (d: DungeonId): string[] => {
 /** メッセージ窓を 隠す（メニュー・一覧の窓を 出す前に）。 */
 const hideMsg = (s: Story) => s.wait(0);
 
-/** おんJトロッコの 乗り場を はじめて 調べた（村に いる あいだ。data/village/trolley.ts）。 */
-const TROLLEY_SEEN = "trolley_seen";
 /** 探索者を かえられる ことを 知らせた 印（Progress.flags）。 */
 const HERO_GUIDE_TOLD = "toldHero";
-
-/**
- * おんJトロッコの 乗り場（data/village/trolley.ts）：行き先を えらぶと、トロッコに 乗って 道なりに 走る
- * （Story.ride）。着いたら 行き先の 名前を 知らせる。
- */
-const trolleyScript =
-	(id: string, v: VillageView): Script =>
-	async (s) => {
-		const stops = trolleyStops(layoutStage(v));
-		const here = stops.find((t) => `trolley_${t.id}` === id);
-		if (!here) return;
-		if (!s.flag(TROLLEY_SEEN)) {
-			s.set(TROLLEY_SEEN);
-			await s.narrate(TROLLEY_MSG.first);
-		}
-		const to = stops.filter((t) => t !== here);
-		await s.narrate(TROLLEY_MSG.ask(here.name));
-		const i = await s.choose([...to.map((t) => t.name), TROLLEY_MSG.cancel], {
-			cancel: to.length,
-		});
-		await hideMsg(s);
-		const dest = to[i];
-		if (!dest) return;
-		s.se("trolley");
-		const [x, y] = trolleyStand(dest);
-		await s.ride(x, y);
-		s.toast(TROLLEY_MSG.arrive(dest.name));
-	};
 
 /** 冒険の記録を見る（記録だけ。リプレイは 本館の 映写機で：ui/village/hallEvents.ts）。 */
 const records = async (ctx: Ctx, s: Story): Promise<void> => {
@@ -652,9 +615,7 @@ const boardScript =
 			loadRecords().length,
 		))
 			await s.narrate(w);
-		// 寄り合いの はり紙（段2〜3）・議会だより（段4〜）。ui/village/civic.ts
 		const stage = previewStage() ?? loadTown().stage;
-		const civic = civicBoardMenu(stage);
 		// おんJ芋煮会の はり紙（10月だけ。ui/minigames/imoni.ts）
 		const imoni = imoniBoardMenu();
 		// 同行の 依頼（data/people/companions.ts。持ち帰った 板の 依頼が 出ている・引き受けている ときだけ）
@@ -663,7 +624,6 @@ const boardScript =
 			"冒険の記録",
 			...(escorts.length ? [ESCORT_MSG.menu] : []),
 			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
-			...(civic ? [civic] : []),
 			...(imoni ? [imoni] : []),
 			"やめる",
 		];
@@ -676,7 +636,6 @@ const boardScript =
 		if (v === "冒険の記録") await records(ctx, s);
 		else if (v === ESCORT_MSG.menu) await escortBoardScript(ctx, s, escorts);
 		else if (v === BOARD_MENU[1]) await senkyoScript(s);
-		else if (civic && v === civic) await civicBoardScript(s, stage);
 		else if (imoni && v === imoni) await imoniBoardScript(s);
 	};
 
@@ -845,8 +804,6 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "shrine")
 		return sign(p.id, p.x, p.y, shut(SHRINE_FROM, v, false) ?? shrineScript);
-	if (p.id.startsWith("trolley_"))
-		return sign(p.id, p.x, p.y, trolleyScript(p.id, v), p.sprite);
 	// 小屋・銭湯・倉庫・常識堂の 勝手口・喫茶の 扉（踏むと 中へ。前で A でも。ui/village/rooms.ts・ui/village/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/village/rooms.ts）
 	if (p.id === "door_music")
@@ -1076,7 +1033,6 @@ export const buildVillage = (
 			villageFindGlint(),
 			stockBoardDecor(shokenSign(layoutStage(view))),
 			signboardDecor(layoutStage(view)),
-			puyuTrainDecor(layoutStage(view)),
 			outsideDisplays(layoutStage(view)),
 		),
 		outside: "#1f2a14",

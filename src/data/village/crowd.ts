@@ -12,7 +12,6 @@ import { DIR_VEC, type Dir } from "../../engine/types";
 import { facilitiesAt, facilityOfDoor } from "./facilities";
 import {
 	type Cell,
-	carLane,
 	layoutStage,
 	type VillageView,
 	villagePalette,
@@ -115,53 +114,26 @@ export type CrowdNode = {
 const FACILITY_KIND: Record<string, CrowdKind> = {
 	umi: "food",
 	go: "fun",
-	koban: "work",
-	fire: "work",
 	konbini: "shop",
-	clinic: "care",
 	dojo: "fun",
 	pawn: "shop",
 	recycle: "shop",
-	garage: "work",
 	arcade: "fun",
 	gym: "fun",
 	bar: "fun",
 	ramen: "food",
 	famires: "food",
-	police: "work",
-	hospital: "care",
-	firestation: "work",
-	court: "work",
-	repair: "work",
 	cinema: "fun",
 	theater: "fun",
 	casino: "fun",
 	otaku: "shop",
-	shoken: "shop",
-	bank: "shop",
+	// 寂れた 港町の 勤め先は 銀行と 証券
+	shoken: "work",
+	bank: "work",
 	netcafe: "fun",
-	station: "transit",
-	harbor: "work",
 	soba: "food",
-	gyudon: "food",
 	izakaya: "food",
-	sushi: "food",
-	chuka: "food",
-	burger: "food",
 	maid: "food",
-	townhall: "work",
-	cityhall: "work",
-	corpo: "home",
-	mansion: "home",
-	danchi: "home",
-	tower: "home",
-	sharehouse: "home",
-	heights: "home",
-	mansion2: "home",
-	tower2: "home",
-	tvstudio: "work",
-	factory: "work",
-	power: "work",
 };
 
 /** 町の まんなかの 扉（小屋・倉庫・常識堂の 奥は 住人の 所なので 入らない）。 */
@@ -188,7 +160,7 @@ type Spot = {
 const S = 1000;
 /**
  * 立ちどまる 所（町の 段の from〜until）。ランキング掲示板を 読む・神社に お参り・浜で 海を 見る・
- * 自販機で 飲む・バス停で 待つ・広場の 時計の 下で 待ち合わせ・公園の 噴水の まわり。
+ * 自販機で 飲む・広場の 時計の 下で 待ち合わせ・店先で 立ち話。
  */
 const SPOTS: readonly Spot[] = [
 	{
@@ -240,43 +212,6 @@ const SPOTS: readonly Spot[] = [
 		stay: [3 * S, 6 * S],
 	},
 	{
-		id: "bus_0",
-		at: [30, 20],
-		face: "up",
-		kind: "wait",
-		from: 6,
-		until: 7,
-		stay: [8 * S, 20 * S],
-		board: true,
-	},
-	{
-		id: "bus_1",
-		at: [29, 20],
-		face: "up",
-		kind: "wait",
-		from: 6,
-		until: 7,
-		stay: [8 * S, 20 * S],
-		board: true,
-	},
-	{
-		id: "vend_bus",
-		at: [32, 21],
-		face: "up",
-		kind: "rest",
-		from: 6,
-		stay: [3 * S, 6 * S],
-	},
-	{
-		id: "taxi",
-		at: [33, 21],
-		face: "up",
-		kind: "wait",
-		from: 7,
-		stay: [6 * S, 14 * S],
-		board: true,
-	},
-	{
 		id: "clock",
 		at: [24, 23],
 		face: "down",
@@ -285,32 +220,8 @@ const SPOTS: readonly Spot[] = [
 		stay: [8 * S, 18 * S],
 	},
 	{
-		id: "fountain_w",
-		at: [33, 15],
-		face: "right",
-		kind: "rest",
-		from: 7,
-		stay: [8 * S, 18 * S],
-	},
-	{
-		id: "fountain_e",
-		at: [37, 15],
-		face: "left",
-		kind: "rest",
-		from: 7,
-		stay: [8 * S, 18 * S],
-	},
-	{
-		id: "fountain_n",
-		at: [35, 13],
-		face: "down",
-		kind: "rest",
-		from: 7,
-		stay: [8 * S, 18 * S],
-	},
-	{
 		id: "konbini",
-		at: [45, 30],
+		at: [34, 16],
 		face: "up",
 		kind: "rest",
 		from: 4,
@@ -318,27 +229,11 @@ const SPOTS: readonly Spot[] = [
 	},
 	{
 		id: "arcade",
-		at: [75, 30],
+		at: [41, 16],
 		face: "up",
 		kind: "rest",
 		from: 6,
 		stay: [5 * S, 12 * S],
-	},
-	{
-		id: "station_0",
-		at: [81, 19],
-		face: "down",
-		kind: "wait",
-		from: 7,
-		stay: [6 * S, 14 * S],
-	},
-	{
-		id: "station_1",
-		at: [84, 19],
-		face: "down",
-		kind: "wait",
-		from: 7,
-		stay: [6 * S, 14 * S],
 	},
 ];
 
@@ -401,8 +296,6 @@ export type PedCost = (x: number, y: number) => number;
 /** 町の まんなかの 車の 通る 道（住宅街から アスファルト）。歩道が あれば そちらを 歩く。 */
 const ROADWAY = new Set(["ゑ", "ヴ", "ろ", "ゐ", "ら", "り", "ヰ", "ヱ"]);
 const ROAD_COST = 1.8;
-/** 新市街の 車道（横断歩道の ほかは まず 歩かない。歩道を ふさぐ 警報機などを よける 1歩だけ）。 */
-const LANE_COST = 12;
 /** 曲がる たびに 足す（同じ 長さなら まっすぐな 道を えらぶ。広場を ジグザグに 歩かない）。 */
 const TURN_COST = 0.6;
 
@@ -427,11 +320,9 @@ export const pedCost = (
 			table[y * w + x] =
 				!tiles[ch]?.passable || walls(x, y)
 					? Number.POSITIVE_INFINITY
-					: carLane(stage, x, y)
-						? LANE_COST
-						: ROADWAY.has(ch) || (ch === "." && stage >= 6)
-							? ROAD_COST
-							: 1;
+					: ROADWAY.has(ch) || (ch === "." && stage >= 6)
+						? ROAD_COST
+						: 1;
 		}
 	});
 	return (x, y) =>
@@ -580,7 +471,6 @@ export type PersonaId =
 	| "local"
 	| "elder"
 	| "nanashi"
-	| "nurse"
 	| "dajare";
 
 type Flow = readonly [from: CrowdKind, to: CrowdKind, w: number];
@@ -622,10 +512,9 @@ export const PERSONAS: readonly Persona[] = [
 		sprites: ["sa:Rn1eai", "sa:dID4NE"],
 		ms: [170, 220],
 		haunts: {
-			work: ["townhall", "cityhall", "factory", "tvstudio", "court", "power"],
-			food: ["soba", "gyudon", "izakaya", "ramen"],
+			work: ["bank", "shoken"],
+			food: ["soba", "izakaya", "ramen"],
 			fun: ["bar"],
-			transit: ["station"],
 		},
 		share: { late: 0.5, morning: 3, day: 1.2, evening: 3, night: 1.2 },
 		weekend: 0.3,
@@ -686,7 +575,7 @@ export const PERSONAS: readonly Persona[] = [
 		ms: [150, 210],
 		haunts: {
 			fun: ["arcade", "go", "dojo", "cinema", "gym", "door_music"],
-			food: ["famires", "ramen", "door_cafe", "burger"],
+			food: ["famires", "ramen", "door_cafe"],
 			shop: ["konbini", "door_books", "otaku"],
 		},
 		share: { late: 0, morning: 1.5, day: 0.6, evening: 1.5, night: 0.3 },
@@ -738,9 +627,8 @@ export const PERSONAS: readonly Persona[] = [
 		sprites: ["sa:y9WrTy", "sa:gb0HD8", "sa:RH1eyq", "sa:jkswZA"],
 		ms: [190, 260],
 		haunts: {
-			shop: ["konbini", "recycle", "pawn", "shoken"],
-			food: ["umi", "chuka", "famires", "sushi"],
-			care: ["clinic"],
+			shop: ["konbini", "recycle", "pawn"],
+			food: ["umi", "famires", "izakaya"],
 		},
 		share: { late: 0.3, morning: 1, day: 2.5, evening: 1.5, night: 0.8 },
 		weekend: 1.3,
@@ -791,9 +679,8 @@ export const PERSONAS: readonly Persona[] = [
 		sprites: ["sa:fUn9JD"],
 		ms: [280, 360],
 		haunts: {
-			care: ["clinic", "hospital"],
 			fun: ["door_bath", "go"],
-			shop: ["pawn", "door_books", "shoken"],
+			shop: ["pawn", "door_books"],
 		},
 		share: { late: 0, morning: 1.5, day: 1.5, evening: 0.5, night: 0.1 },
 		weekend: 1,
@@ -832,7 +719,7 @@ export const PERSONAS: readonly Persona[] = [
 		ms: [160, 240],
 		haunts: {
 			fun: ["arcade", "casino", "door_music", "cinema", "netcafe"],
-			food: ["door_cafe", "gyudon", "ramen", "maid", "burger"],
+			food: ["door_cafe", "ramen", "maid"],
 		},
 		share: { late: 2, morning: 1, day: 1.2, evening: 1.2, night: 2 },
 		weekend: 1.2,
@@ -885,40 +772,6 @@ export const PERSONAS: readonly Persona[] = [
 		},
 	},
 	{
-		id: "nurse",
-		label: "看護師",
-		// RPGEN「ナース」
-		sprites: ["sa:Ksa5dI"],
-		ms: [150, 190],
-		haunts: { care: ["hospital", "clinic"], food: ["konbini", "famires"] },
-		share: { late: 0.3, morning: 0.4, day: 0.3, evening: 0.4, night: 0.3 },
-		weekend: 1,
-		flows: {
-			morning: [
-				["home", "care", 2],
-				["care", "home", 1],
-				["transit", "care", 1],
-			],
-			day: [
-				["care", "food", 1],
-				["food", "care", 1],
-			],
-			evening: [
-				["care", "home", 2],
-				["care", "transit", 1],
-			],
-			night: [["home", "care", 1]],
-			late: [["care", "home", 1]],
-		},
-		lines: [
-			"体には　気をつけてね。\n無理は　禁物よ",
-			"病院では　お静かに。\n……実況は　ほどほどに",
-		],
-		bandLines: {
-			morning: ["夜勤明けなの。\n……おやすみなさい"],
-		},
-	},
-	{
 		// ダジャレニキ（おんJwiki pages/59 の 型「そうそう〇〇……って それは ××やないかーい！ｗｗ」。だじゃれは 新しく 書いた）。
 		// たまに しか 歩いていない（data/people/folk.ts の 名物の ひとり）
 		id: "dajare",
@@ -926,7 +779,7 @@ export const PERSONAS: readonly Persona[] = [
 		// RPGEN「父」（ほかの 人・敵・店番と かぶらない。src/sim/folkTests.ts の F10）
 		sprites: ["sa:2GAYAx"],
 		ms: [200, 270],
-		haunts: { fun: ["theater", "bar"], food: ["izakaya", "sushi"] },
+		haunts: { fun: ["theater", "bar"], food: ["izakaya", "soba"] },
 		share: { late: 0.1, morning: 0.2, day: 0.5, evening: 0.4, night: 0.3 },
 		weekend: 1.2,
 		flows: {
@@ -1026,10 +879,13 @@ const flowsFor = (
 	band: TimeBand,
 	nodes: readonly CrowdNode[],
 ): Flow[] =>
-	p.flows[band].filter(
-		([a, b]) =>
-			nodesOf(nodes, a).some((n) => n.enter) && nodesOf(nodes, b).length > 0,
-	);
+	p.flows[band].filter(([a, b]) => {
+		// 出る 所と ちがう 行き先が いる（出口が 1つなら 出口から 出口へは 歩かない）
+		const tos = nodesOf(nodes, b);
+		return nodesOf(nodes, a).some(
+			(n) => n.enter && tos.some((t) => t.id !== n.id),
+		);
+	});
 
 /**
  * 次に 出てくる 人と 道すじ（どこから 出て どこへ 行くか）。歩ける 流れが 1つも なければ null。
@@ -1061,7 +917,9 @@ export const pickTrip = (
 		rng,
 		persona,
 		flow[0],
-		nodesOf(nodes, flow[0]).filter((n) => n.enter),
+		nodesOf(nodes, flow[0]).filter(
+			(n) => n.enter && nodesOf(nodes, flow[1]).some((t) => t.id !== n.id),
+		),
 	);
 	const tos = nodesOf(nodes, flow[1]).filter((n) => n.id !== from.id);
 	if (!tos.length) return null;
