@@ -2440,7 +2440,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 		pool(`STORY.${d}.again`, STORY[d].again ?? []);
 		pool(`STORY.${d}.once`, STORY[d].once ?? []);
 	}
-	// やきうが 出ていった あとの かわりの 頁
+	// 村に いない 人の かわりの 頁
 	const standIns = [
 		...DUNGEON_IDS.flatMap((d) => STORY[d].ending),
 		...Object.values(BOSS_RETURN).flatMap((ps) => ps ?? []),
@@ -6337,11 +6337,9 @@ test("建物の 中: every room is closed, draws only bundled art, and from the 
 			}
 		}
 	}
-	// やきうの 出ていった あとの 小屋・銀行の 文は、部屋に ある 物だけ
+	// 銀行の 文は、部屋に ある 物だけ
 	const kinds = (id: RoomId) =>
 		new Set(roomPlaces(id).map((p) => p.id.replace(/_\d+$/, "")));
-	for (const k of Object.keys(ROOM_MSG.hutGone))
-		ok(kinds("hut").has(k), `hutGone.${k} is not in the hut`);
 	for (const k of Object.keys(BANK.msg))
 		ok(kinds("store").has(k), `BANK.msg.${k} is not in the store`);
 });
@@ -6978,8 +6976,6 @@ test("1打席: the 跡地 gate stays winnable, やきう is not a sure thing, th
 	ok(gateCasual >= 0.9, `the gate, casual: ${gateCasual}`);
 	const yakiu = winRate(PITCHER_DEFS.yakiu, casual);
 	ok(yakiu >= 0.55 && yakiu <= 0.95, `やきう, casual: ${yakiu}`);
-	const nanashi = winRate(PITCHER_DEFS.nanashi, casual);
-	ok(nanashi >= yakiu, `名無し (${nanashi}) is harder than やきう (${yakiu})`);
 	// ホームラン競争（10球。芯だけ 数える）
 	let hrs = 0;
 	for (let i = 0; i < N; i++)

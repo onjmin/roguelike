@@ -12,7 +12,6 @@ import {
 	SHIYO_MAID_MILK,
 	shiyoAtMaid,
 } from "../../data/people/shiyoShift";
-import { awayFriends } from "../../data/story/story";
 import { nowHour, today } from "../../data/town/calendar";
 import {
 	DRINK_BAR,
@@ -39,7 +38,7 @@ import { npc, sign } from "../../data/village/helpers";
 import type { VillageView } from "../../data/village/map";
 import { layRoomTatami } from "../../data/village/tatami";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
-import { loadProgress, loadTown } from "../../engine/save";
+import { loadTown } from "../../engine/save";
 import { yen } from "../../engine/wallet";
 import { arcadePlay } from "../arcade/arcade";
 import { bushitsuThing } from "../bushitsu/bushitsu";
@@ -145,7 +144,7 @@ const BAT_AFTER = {
 } as const;
 
 /**
- * グラウンドの 1打席か ホームラン競争（投げるのは やきう。出ていった あとは 名無し。板は ui/minigames/batting.ts）。
+ * グラウンドの 1打席か ホームラン競争（投げるのは やきう。板は ui/minigames/batting.ts）。
  * B で 板を 閉じたら 何も 言わない。
  */
 const bat = async (ctx: Ctx, s: Story): Promise<void> => {
@@ -159,9 +158,8 @@ const bat = async (ctx: Ctx, s: Story): Promise<void> => {
 	// 打席の 決まり（はじめての 1回。本館の 関所と 同じ 印）
 	await tellOnce(s, BAT_GUIDE_TOLD, BATTING_GUIDE);
 	await s.wait(0);
-	const gone = awayFriends(loadProgress().cleared).includes("nanj");
-	const who = gone ? "nanashi" : "yakiu";
-	const pitcher = gone ? GROUND_BAT.pitcherGone : GROUND_BAT.pitcher;
+	const who = "yakiu";
+	const pitcher = GROUND_BAT.pitcher;
 	if (n === 0) {
 		const r = await atBat(ctx, { title: GROUND_BAT.title, pitcher, who });
 		if (r !== "quit") await s.narrate(GROUND_BAT[BAT_AFTER[r]]);

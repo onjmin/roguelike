@@ -18,7 +18,7 @@ export const FISHING = {
 } as const;
 
 /**
- * グラウンドの 1打席と ホームラン競争（投げるのは やきう。出ていった あとは 名無し）。
+ * グラウンドの 1打席と ホームラン競争（投げるのは やきう）。
  * 板の 中の 文は data/minigames/batting.ts。ここは 板を 閉じた あとの 窓。
  */
 export const GROUND_BAT = {
@@ -28,7 +28,6 @@ export const GROUND_BAT = {
 	title: "おんJタウン　グラウンド",
 	derbyTitle: "おんJタウン　ホームラン競争",
 	pitcher: "やきう",
-	pitcherGone: "名無し",
 	derbyRule:
 		"10球で　ホームランを　何本　打てるか。\n……打ちごろの　球しか　来ない。",
 	hr: "カキーン！　……打球は、\n森の　向こうへ　消えていった。",

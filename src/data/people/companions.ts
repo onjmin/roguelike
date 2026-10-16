@@ -221,7 +221,7 @@ export const escortById = (
 /** 仲間（Speaker）の 依頼主か（住人なら false）。 */
 const isFriend = (who: GuestId): who is GuestId & Speaker => who in CAST;
 
-/** 依頼主が いま 村に いるか（仲間は 越してきて いて 出ていって いない・住人は 越してきている）。 */
+/** 依頼主が いま 村に いるか（仲間も 住人も 越してきている）。 */
 export const requesterHere = (
 	who: GuestId,
 	cleared: readonly DungeonId[],

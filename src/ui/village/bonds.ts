@@ -165,7 +165,7 @@ export const heartsOf = (n: number): string =>
 const nameOf = (w: Cast): string =>
 	isMob(w) ? MOBS[w].name : CAST[w as Speaker].name;
 
-/** 村に いない 仲間（まだ 来ていない・出ていった）。 */
+/** 村に いない 仲間（まだ 来ていない）。 */
 const away = (): Speaker[] =>
 	awayFriends(loadProgress().cleared, loadTown().stage);
 

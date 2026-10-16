@@ -50,7 +50,7 @@ export type Outcome =
 	| "whiff";
 export type Call = Outcome | "strike" | "ball";
 export type Count = { b: number; s: number };
-export type BatWho = "shobon" | "yakiu" | "nanashi";
+export type BatWho = "shobon" | "yakiu";
 export type BatOpt = { title?: string; pitcher?: string; who?: BatWho };
 export type BatResult = "hr" | "hit" | "walk" | "k" | "out" | "quit";
 
@@ -101,23 +101,6 @@ export const PITCHER_DEFS: Record<BatWho, PitcherDef> = {
 		flight: { straight: 700, fast: 520, curve: 1100, fork: 820 },
 		kmh: { straight: 132, fast: 151, curve: 104, fork: 128 },
 		win: { perfect: 24, good: 60, edge: 105 },
-	},
-	// 名無し（やきうが 出ていった あとの グラウンド）：やきうより すこし やさしい
-	nanashi: {
-		night: false,
-		setMs: [550, 950],
-		mix: [
-			["straight", 5],
-			["fast", 1],
-			["curve", 3],
-			["fork", 1],
-		],
-		ballRate: 0.25,
-		ballKinds: ["wide", "bounce"],
-		firstStrike: false,
-		flight: { straight: 760, fast: 580, curve: 1150, fork: 860 },
-		kmh: { straight: 124, fast: 141, curve: 99, fork: 121 },
-		win: { perfect: 26, good: 66, edge: 110 },
 	},
 };
 
@@ -619,12 +602,10 @@ const drawFireworks = (
 const PITCHER_KEY: Record<BatWho, SprKey> = {
 	shobon: "pitcherShobon",
 	yakiu: "pitcherYakiu",
-	nanashi: "pitcherNanashi",
 };
 const PITCHER_NAME: Record<BatWho, string> = {
 	shobon: "原住民",
 	yakiu: "やきう",
-	nanashi: "名無し",
 };
 /** 守る 人（0 投手 1 捕手 2 一塁 3 二塁 4 遊撃 5 三塁 6 左翼 7 中堅 8 右翼。m）。 */
 const FIELD_POS: readonly (readonly [number, number])[] = [
@@ -1261,20 +1242,9 @@ const teamOf = (who: BatWho): Man[] =>
 			if (k === 1) return man(X, Z, "walkGen", 0, "genCatcher", "up");
 			return man(X, Z, "walkGen", 0, "genGlove", "down");
 		}
-		if (k === 0)
-			return who === "yakiu"
-				? man(X, Z, "walkYakiu", 0, "yakiuGlove", "down")
-				: man(X, Z, "walkNanashi", 0, null, "down");
+		if (k === 0) return man(X, Z, "walkYakiu", 0, "yakiuGlove", "down");
 		if (k === 1) return man(X, Z, "walkNanashi", 3, null, "up");
-		const i = k - 2;
-		return man(
-			X,
-			Z,
-			"walkNanashi",
-			who === "yakiu" ? i % 4 : (i + 1) % 4,
-			null,
-			"down",
-		);
+		return man(X, Z, "walkNanashi", (k - 2) % 4, null, "down");
 	});
 
 /** 目当てへ 1コマ ぶん 歩く（着いたら true）。 */

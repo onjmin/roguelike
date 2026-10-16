@@ -47,7 +47,7 @@ export const playPage = (
 				? st.say(p.who, p.text, cueOf(p))
 				: st.narrate(p.text);
 
-// ───────────────── 村に いない 仲間（まだ 来ていない・出ていった） ─────────────────
+// ───────────────── 村に いない 仲間（まだ 来ていない） ─────────────────
 /**
  * 仲間が 村に 来る 町の 段（STORY.md §5「選挙事務所が 大きく なると 陣営に 人が 入る」）。はじめの おんJタウンには
  * 現職の やきうだけ（と、前から いる ぷゆゆ）。建物と いっしょに 越してくる：屋台で 売る ロゼと 帳簿の ゼロ、屋根つき屋台の
@@ -73,7 +73,7 @@ export const awayFriends = (
 	(Object.keys(FRIEND_FROM) as Speaker[]).filter((w) => stage < FRIEND_FROM[w]);
 
 /**
- * 文に 村に いない 仲間の 名前が 出てくるか（まだ 越してきていない 人・出ていった 人の 話を しない）。
+ * 文に 村に いない 仲間の 名前が 出てくるか（まだ 越してきていない 人の 話を しない）。
  * 「フェリスちゃん」「ゼロさん」なども 名前を ふくむので 数える。
  */
 export const mentionsAway = (text: string, away: readonly Speaker[]): boolean =>

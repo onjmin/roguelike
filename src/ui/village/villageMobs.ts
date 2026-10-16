@@ -172,7 +172,7 @@ const ctxOf = (v: MobMemo): MobCtx => {
 const eventOf = (w: Cast): string => (isMob(w) ? `mob_${w}` : w);
 const nearCast = (s: Story, w: Cast): boolean => s.near(eventOf(w), NEAR);
 /** when が 無いか、この 帰りに 合う。 */
-/** 村に いない 仲間（まだ 越してきていない・出ていった。data/story/story.ts の awayFriends）。 */
+/** 村に いない 仲間（まだ 越してきていない。data/story/story.ts の awayFriends）。 */
 const absent = (): Speaker[] =>
 	awayFriends(loadProgress().cleared, loadTown().stage);
 

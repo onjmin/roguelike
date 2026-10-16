@@ -2,7 +2,7 @@
 // - 番台：仕切りの 上に すわる 名無し。男湯の のれんを くぐろうと すると 止めて、キリコは 1歩 もどる。
 // - 女湯：村に いる 女の子が 帰りごとに 湯船（つかって いる）か 脱衣所（着がえて いる）に 分かれる。
 //   同じ 帰りなら 同じ 並び（記録の 終わった 時刻で 決める）。
-// - 男湯：やきう（出ていった あとは 名無し）と ジェイトルマンが 仕切りの となりで つかって いて、壁ごしに 話す。
+// - 男湯：やきうと ジェイトルマンが 仕切りの となりで つかって いて、壁ごしに 話す。
 // - キリコが はじめて 湯に 入ると 地の文（銭湯に いるあいだ 1回）。
 
 import { CAST } from "../../data/people/cast";
@@ -272,27 +272,15 @@ export const bathPeople = (v: VillageView): EventDef[] => {
 	for (const p of bathLayout(v, seed)) out.push(woman(p.who, p.at, p.place));
 	// 男湯（仕切りの となり。壁ごしに 話す）
 	const [a, b] = BATH_SPOTS.menSoak;
-	const nanjHere = !awayFriends(v.cleared, v.stage).includes("nanj");
 	out.push(
-		nanjHere
-			? npc(
-					"bath_nanj",
-					a.x,
-					a.y,
-					CAST.nanj.walk,
-					talk("bath_nanj", a.dir, (s) => sayLines(s, "nanj", BATH_MEN.nanj)),
-					{ who: "nanj", dir: a.dir },
-				)
-			: npc(
-					"bath_nanashi",
-					a.x,
-					a.y,
-					NANASHI_WALK[0],
-					talk("bath_nanashi", a.dir, (s) =>
-						sayLines(s, "nanj", BATH_MEN.nanashi, "名無し"),
-					),
-					{ dir: a.dir },
-				),
+		npc(
+			"bath_nanj",
+			a.x,
+			a.y,
+			CAST.nanj.walk,
+			talk("bath_nanj", a.dir, (s) => sayLines(s, "nanj", BATH_MEN.nanj)),
+			{ who: "nanj", dir: a.dir },
+		),
 	);
 	if (guests.bath.includes("jtleman"))
 		out.push(

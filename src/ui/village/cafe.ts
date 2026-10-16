@@ -194,7 +194,7 @@ const returnAt = (): number => loadRecords()[0]?.at ?? 0;
 /** いまの 町の 段（開発用の 下見 ?stage= も）。 */
 const stageNow = (): number => villageView().stage;
 
-/** いまの 町・おごった 回数で 聞ける 話（出ていった 仲間の 出る 話は 聞けない）。 */
+/** いまの 町・おごった 回数で 聞ける 話（まだ 越してきて いない 仲間の 出る 話は 聞けない）。 */
 export const cafeTalks = (
 	stage: number,
 	st: CafeState = load(),
@@ -290,7 +290,7 @@ export const cafeLayout = (
 		}
 		return a;
 	};
-	// 出ていった 仲間（やきう）は 店に 来ない
+	// まだ 越してきて いない 仲間は 店に 来ない
 	const away = awayFriends(loadProgress().cleared, stage);
 	const all = (Object.keys(SPEAKERS) as Speaker[]).filter(
 		(w) => !away.includes(w),

@@ -74,7 +74,6 @@ import {
 	STAGE_NAMES,
 	STAGE_UP,
 	STAGE_UP_HALL,
-	STAGE_UP_HALL_INSTEAD,
 	TOWN_GREW_MSG,
 	TOWN_MSG,
 	WAKE_PAGES,
@@ -170,7 +169,7 @@ const firstEnding = (a: ReturnArrival, p: Progress): boolean =>
 
 /**
  * 場面で 村に いない 仲間。はじめての 持ち帰りの 語りは その 板を 持ち帰る 前の 村で 語る
- * （電池板の 山場は やきうが 出ていく 場面なので、やきうは まだ いる）。
+ * （その 板を 持ち帰った 段で 越してくる 人は、まだ いない）。
  */
 const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
 	const away = awayFriends(
@@ -456,7 +455,7 @@ export const returnScene = async (
 		// 本筋の 語りで 読んだ 去った 人の 最後の レスは、掲示板でも 読んだ ことに する
 		if (p.scrap) readScrap(p.scrap, scrapReturnAt());
 	}
-	// 見おえた（一度きりの 語りは 次から 短く。やきうが 出ていく 語りなら、建て直すと 村に いない）
+	// 見おえた（一度きりの 語りは 次から 短く）
 	if (a.kind === "clear") noteEnding(a.dungeon);
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲
 	await Promise.all([
@@ -776,7 +775,7 @@ const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
  * 村の 出口を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
  */
 export const newsScript = async (s: Story): Promise<void> => {
-	// 出ていった 仲間は 知らせでも 話さない
+	// まだ 越してきて いない 仲間は 知らせでも 話さない
 	const away = awayFriends(loadProgress().cleared, loadTown().stage);
 	const news = loadProgress().news;
 	for (const n of news) {
@@ -1062,24 +1061,15 @@ const stageUp = async (
 	to: number,
 	arriving: readonly MobId[] = [],
 ): Promise<void> => {
-	// 話すのは 村に いる 人だけ（まだ 来ていない・出ていった 仲間の 行は 出さない）
+	// 話すのは 村に いる 人だけ（まだ 来ていない 仲間の 行は 出さない）
 	const away = awayFriends(loadProgress().cleared, to);
 	const lines = (STAGE_UP[to] ?? []).filter(
 		(l) => !away.includes(l.who) && !mentionsAway(l.text, away),
 	);
-	// 本館の ひとことは やきう。出ていった あとなら かわりの 人（STAGE_UP_HALL_INSTEAD）
+	// 本館の ひとことは やきう（はじめから 村に いる）
 	const hall =
 		hallTier(to) > hallTier(from) ? STAGE_UP_HALL[hallTier(to)] : null;
-	const hallInstead =
-		hall && away.includes(hall.who)
-			? STAGE_UP_HALL_INSTEAD[hallTier(to)]
-			: null;
-	const hallLine =
-		hall && !away.includes(hall.who)
-			? hall
-			: hallInstead && !away.includes(hallInstead.who)
-				? hallInstead
-				: null;
+	const hallLine = hall && !away.includes(hall.who) ? hall : null;
 	// この 段で 越してきた 仲間（data/story/story.ts の FRIEND_FROM）
 	const moved = (Object.keys(FRIEND_FROM) as Speaker[]).filter(
 		(w) => FRIEND_FROM[w] > from && FRIEND_FROM[w] <= to && !away.includes(w),

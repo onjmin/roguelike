@@ -1124,7 +1124,7 @@ export const buildVillage = (
 	opt: { arrival?: Arrival } = {},
 ): MapDef => {
 	const arrival = opt.arrival ?? null;
-	// はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村（やきうが 出ていく 語りでも 村に いる）
+	// はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村
 	const back = returnOf(arrival);
 	const view = back ? sceneView(v, back) : v;
 	const rows = villageRows(view);
