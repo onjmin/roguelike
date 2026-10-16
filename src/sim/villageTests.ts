@@ -7754,21 +7754,12 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 					`${d} ${r.at}: shobon before opunu`,
 				);
 	}
-	// 村に 人が 来るのは 風呂板の あと：パン板・風呂板の 途中に 名無しの レスは 来ない
-	for (const d of ["shallow", "main"] as const)
-		ok(
-			!DIVE_RES[d]?.some((r) => r.who === "res"),
-			`${d}: res before people come`,
-		);
-	// やきうの レスは 電池板の 山場で 出ていった あとは 出ない
+	// やきうの レスは 開票の あとも 出る（だれも 出ていかない。その 板を 持ち帰る 前だけ）
 	ok(
 		diveResAt("main", 6, ["shallow"])?.who === "nanj",
 		"yakiu writes while he is here",
 	);
-	ok(
-		diveResAt("main", 6, ["shallow", "deep"]) === null,
-		"yakiu is gone after deep",
-	);
+	ok(diveResAt("main", 6, ["main"]) === null, "res after the board is cleared");
 	const mainOnly = synopsisHtml(["shallow"], [], ["shallow", "kinoko"]) ?? "";
 	ok(mainOnly.includes("パン板") && mainOnly.includes("きのこ板"), mainOnly);
 	for (const [d, why] of Object.entries(GOAL_WHY))
@@ -7810,9 +7801,9 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 			heads[1] === "1901年の　スレ　まで",
 		`summary heads ${heads}`,
 	);
-	// 目標は 過疎を なんとか する こと：レスの 数（ダンジョンの 1000 は 時間切れ）では なく 見ている 人の 数
-	ok(end.includes("見ている　人"), "no viewer count after the climax");
-	// 見ている 人＝キリコ＋村に いる 仲間＋越してきた 住人＋通行人（町で 見える 数と 同じ）。はじめは 3人
+	// 目標は 総選挙：レスの 数（ダンジョンの 1000 は 時間切れ）では なく 支持者の 数
+	ok(end.includes("支持者"), "no supporter count after the climax");
+	// 支持者＝キリコ＋村に いる 仲間＋越してきた 住人＋通行人（町で 見える 数と 同じ）。はじめは 3人
 	const noon = { hour: 12, weekend: false };
 	ok(villageRes([], 0, 0, noon) === 3, `start ${villageRes([], 0, 0, noon)}`);
 	ok(

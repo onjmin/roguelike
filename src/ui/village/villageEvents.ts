@@ -1099,7 +1099,7 @@ const arrivalScript =
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
 		await settleScript(s, storeChooser(ctx));
-		// 持ち帰ったら、町が 育った あとの 見ている 人の 数を 札で（過疎が どこまで 終わったか。data/story/synopsis.ts）
+		// 持ち帰ったら、町が 育った あとの 支持者の 数を 札で（総選挙が どこまで 来たか。data/story/synopsis.ts）
 		if (back?.kind === "clear") s.toast(villageResLine());
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
