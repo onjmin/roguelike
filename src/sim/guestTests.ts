@@ -146,7 +146,7 @@ test("入れかわる：キリコが 同行者の マスへ 歩くと 入れか�
 });
 
 test("なぐられる・帰る：キリコの となりに いない 敵は 同行者を なぐる。たおれると 村へ 帰り、冒険は つづく", () => {
-	const r = make("guest-hit", "deep", "zero");
+	const r = make("guest-hit-4", "deep", "zero");
 	r.f.monsters = [];
 	const g = guestHere(r);
 	ok(g, "no guest");

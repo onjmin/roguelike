@@ -57,6 +57,8 @@ export const FAKE_NAMES: Partial<Record<ItemCat, readonly string[]>> = {
 		"チョコ・レイトの杖",
 		"おん君の杖",
 		"おんすちゃんの杖",
+		"キムりんの杖",
+		"真弓の杖",
 	],
 	ring: [
 		"◆2get",

@@ -173,6 +173,9 @@ const CAND_HINT: Record<string, string> = {
 	w_edge: "道連れ",
 	w_split: "分裂",
 	w_haste: "敵が倍速",
+	w_ng: "敵が見えない",
+	w_yobun: "道具を渡す",
+	w_totsu: "引き寄せ",
 	w_rebut: "一撃",
 };
 

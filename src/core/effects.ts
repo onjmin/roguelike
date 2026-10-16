@@ -713,6 +713,15 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			if (lose > 0) r.hurtPlayer(lose, "諸刃の杖で　たおれた");
 			m.hp = 1;
 			r.msg(`${nm}の　HPが　1に　なった！`);
+			// 炎上案件は その場で 止まる（ダメージでは ないので 爆発は しない。次に なぐれば 爆発）
+			if (
+				mdef(m).abilities.some((a) => a.k === "explode") &&
+				!m.status.sealed &&
+				!m.fuse
+			) {
+				m.fuse = true;
+				r.msg(`${nm}の　動きが　止まった……`, "warn");
+			}
 			return;
 		}
 		case "w_split":
@@ -726,6 +735,52 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			r.msg(`${nm}を　論破した！`);
 			r.killMonster(m, true);
 			return;
+		case "w_ng":
+			if (m.ng) {
+				r.msg("しかし　何も　起きなかった");
+				return;
+			}
+			// 消える 前に ひとこと（消えたあとは 名前も 見えない）
+			r.msg(`${nm}の　姿が　消えた！`, "warn");
+			m.ng = true;
+			return;
+		case "w_yobun": {
+			if (m.carry) {
+				r.msg(`${nm}は　もう　何か　持っている`);
+				return;
+			}
+			const cands = r.p.items.filter(
+				(i) => !r.isEquipped(i) && !isKeyItem(i.kind),
+			);
+			if (!cands.length) {
+				r.msg("しかし　さしだす　ものが　なかった");
+				return;
+			}
+			const it = r.rng.pick(cands);
+			r.removeItem(it);
+			m.carry = it;
+			r.se("steal");
+			r.msg(`${nm}に　${r.name(it)}を　さしだした！`, "warn");
+			return;
+		}
+		case "w_totsu": {
+			const spots = r.rng
+				.shuffle([...DIRS8])
+				.map((d) => step(r.p, d))
+				.filter((t) => r.isFree(t.x, t.y));
+			const to = spots[0];
+			if (!to || dist(m, r.p) === 1) {
+				r.msg("しかし　何も　起きなかった");
+				return;
+			}
+			r.se("warp");
+			r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
+			m.x = to.x;
+			m.y = to.y;
+			if (canTrack(m)) track(m, r.p);
+			r.msg(`${nm}が　凸して　きた！`, "warn");
+			return;
+		}
 		case "w_haste":
 			// 遅い 敵は ふつうに もどり、もう 速い 敵には 効かない
 			if (m.status.fast > 0) r.msg("しかし　何も　起きなかった");

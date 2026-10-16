@@ -537,6 +537,43 @@ test(
 	},
 );
 
+test("bomb", "w_edge stops a 炎上案件 at once (it does not hit first)", () => {
+	const r = arena("edge-bomb");
+	const m = put(r, "bomb", at(1, 0));
+	staffEffect(r, "w_edge", m);
+	ok(m.hp === 1 && m.fuse, `not stopped (hp=${m.hp}, fuse=${m.fuse})`);
+	let attacks = 0;
+	waitTurns(r, 3, (ev) => {
+		attacks += count(ev, "attack", m.uid);
+		return false;
+	});
+	ok(attacks === 0, `hit ${attacks} times after w_edge`);
+});
+
+test(
+	"staff",
+	"w_ng hides, w_yobun hands over an item, w_totsu pulls the foe beside Kiriko",
+	() => {
+		const r = arena("bad-staves");
+		const m = put(r, "bat", at(4, 0), { sleep: DEEP });
+		ok(r.monsterVisible(m), "not visible before w_ng");
+		staffEffect(r, "w_ng", m);
+		ok(!r.monsterVisible(m), "still visible after w_ng");
+		r.f.sight = true;
+		ok(r.monsterVisible(m), "晒し草 does not show it");
+		r.f.sight = false;
+		r.p.items = r.p.items.filter((i) => r.isEquipped(i));
+		const it = give(r, "h_heal");
+		staffEffect(r, "w_yobun", m);
+		ok(
+			m.carry === it && !r.p.items.includes(it),
+			"the item was not handed over",
+		);
+		staffEffect(r, "w_totsu", m);
+		ok(dist(m, r.p) === 1, `not beside Kiriko (dist=${dist(m, r.p)})`);
+	},
+);
+
 // ───────────────── 寝落ち民（sleepSpell・深い眠り） ─────────────────
 
 /** 眠りの呪文を数える（となえた回数・眠っているのに となえた回数・眠らされた回数）。 */

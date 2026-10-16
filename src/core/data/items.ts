@@ -534,6 +534,33 @@ add({
 	flavor: "kskしたいのは　スレで　あって、敵では　ない",
 });
 add({
+	// NG登録した レスは 見えなく なる（透明あぼーん）。消えた わけでは ない
+	id: "w_ng",
+	cat: "staff",
+	name: "NGの杖",
+	charges: [3, 5],
+	desc: "敵が　見えなく　なる（晒し草を　飲めば　見える）",
+	flavor: "NGに　入れても　レスは　消えない。見えなく　なる　だけ",
+});
+add({
+	// 「養分」＝ 貢ぐ だけの 負け役（パチンコ・ガチャの 養分）
+	id: "w_yobun",
+	cat: "staff",
+	name: "養分の杖",
+	charges: [3, 5],
+	desc: "敵に　もちものを　1つ　さしだす（たおせば　落とす）",
+	flavor: "貢いだ　ぶんは　返って　こない。たおせば　別",
+});
+add({
+	// 凸 ＝ 乗りこむ こと。ここでは 敵の ほうが 凸して くる
+	id: "w_totsu",
+	cat: "staff",
+	name: "凸の杖",
+	charges: [3, 6],
+	desc: "敵が　キリコの　となりへ　飛んで　くる",
+	flavor: "凸は　する　ほうは　楽しい。される　ほうは　たまらない",
+});
+add({
 	// 言い負かして 終わらせる「論破」（おんJでも「動物愛護スレのイッチを論破してしまったなぁ」）。
 	// トルネコ1の ザキの杖（もっと不思議だけ。いつも 回数0で 出て、祈りの巻物で ふやして 使う）
 	id: "w_rebut",
@@ -839,7 +866,7 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	{ kind: "s_snare", weight: 2 },
 	// 帰還 3（リレミトにあたる。読むと その場で地上へ。持ちこみ・倉庫に つながる）
 	{ kind: "s_escape", weight: 3 },
-	// 杖 10
+	// 杖 13
 	{ kind: "w_bolt", weight: 1 },
 	{ kind: "w_reel", weight: 1 },
 	{ kind: "w_sleep", weight: 1 },
@@ -850,6 +877,9 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_edge", weight: 1 },
 	{ kind: "w_split", weight: 1 },
 	{ kind: "w_haste", weight: 1 },
+	{ kind: "w_ng", weight: 1 },
+	{ kind: "w_yobun", weight: 1 },
+	{ kind: "w_totsu", weight: 1 },
 	// 矢 9
 	{ kind: "a_wood", weight: 6 },
 	{ kind: "a_iron", weight: 3 },

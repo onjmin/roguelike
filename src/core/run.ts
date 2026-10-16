@@ -655,6 +655,7 @@ export class Run {
 		if (d.abilities.some((a) => a.k === "invisible") && !m.status.sealed) {
 			if (!this.f.sight) return false;
 		}
+		if (m.ng && !this.f.sight) return false;
 		if (this.f.senseMonsters) return true;
 		return this.playerSees(m, from, blind);
 	}
