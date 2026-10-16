@@ -38,10 +38,10 @@ type GuestDef = {
 
 /** 1行は 全角 20字まで（ログの 幅。「名前「…」」で 出る）。依頼は data/people/companions.ts。 */
 export const GUESTS: Record<GuestId, GuestDef> = {
-	// 電池板：鉄塔の 保守スレを 見たい（1000まで 数えるのが 夢）
+	// 電池板：投票箱の しずんでいた 所を 見たい（票を 数えるのが 夢）
 	zero: {
 		name: "ゼロ",
-		first: "鉄塔、近くで　数えたくて",
+		first: "投票箱の　あった　所、見たくて",
 		talk: [
 			"いま　何レス目か、数えてます",
 			"暗い　ところ、ちょっと　苦手です",
