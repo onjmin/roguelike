@@ -173,6 +173,19 @@ export const DEPART = {
 } as const;
 
 /**
+ * 寄り道「残機」（STORY.md §5）：やきうの 頭の 上の 数を 本人が 言う。きのこ板（「残機：1」が 出た）から 開票まで は 1。
+ * 開票の あとは、遺影祭り（お祭り会場）を 持ち帰って いれば 99（確定が とけて 遺影が 数に なった）。
+ */
+export const zankiLine = (cleared: readonly DungeonId[]): string | null =>
+	!cleared.includes("kinoko")
+		? null
+		: !cleared.includes("deep")
+			? "……頭の　上の「残機：1」か。\n気に　すんな"
+			: cleared.includes("festival")
+				? "頭の　上、「残機：99」や。\n……多すぎて、使い道が　ないわ"
+				: null;
+
+/**
  * 灯台の 扉の パスワード（裏シナリオの 承。数字を 1桁ずつ 入れる：ui/village/villageEvents.ts・ui/minigames/pinPad.ts）。答えは 置き手紙 3枚から：板主のは いちばん 弱い 1234、
  * 新しいのは それより 1つ 多い、長くは しない → 12345。
  */

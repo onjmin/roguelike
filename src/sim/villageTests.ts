@@ -126,6 +126,7 @@ import {
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
 	WRAP_NEWS,
+	zankiLine,
 } from "../data/story/story";
 import {
 	DIVE_RES,
@@ -134,6 +135,7 @@ import {
 	firstGoalHtml,
 	GOAL_WHY,
 	goalWhy,
+	posterLine,
 	synopsisHtml,
 	villageRes,
 } from "../data/story/synopsis";
@@ -3697,11 +3699,12 @@ test("the camera after the town grows: from the new building straight to the gat
 			`the camera goes home before the newcomer:\n${log.join("\n")}`,
 		);
 		// 越してきた あとは 1回の 暗転で キリコへ（寄せてから すぐ 暗転しない）
-		const arrived = log.indexOf(
-			`narrate: ${fill(ARRIVE_MSG, { names: `${MOBS.proto.name}と　${MOBS.ren.name}` })}`,
-		);
+		// （越してきた 子の 立候補を 降りる ひとことの あと）
+		const arrived = log.findIndex((l) => l.endsWith(MOBS.ren.withdraw ?? "-"));
 		ok(
-			log[arrived + 1] === "fadeOut" && log[arrived + 2] === "look kiriko",
+			arrived >= 0 &&
+				log[arrived + 1] === "fadeOut" &&
+				log[arrived + 2] === "look kiriko",
 			`the way home after the newcomer:\n${log.join("\n")}`,
 		);
 	});
@@ -7817,6 +7820,28 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 	ok(
 		villageRes(["shallow"], 3, 0, noon) < villageRes(["shallow"], 6, 0, noon),
 		"the count does not grow with the town",
+	);
+	// 立候補の ポスター（23枚。村に 来た 人は「辞退」）と 寄り道「残機」の 数
+	ok(
+		posterLine([], 0, 0).startsWith("立候補の　ポスターが　23枚。") &&
+			posterLine([], 0, 0).endsWith(
+				`「辞退」の　札が　${movedIn(townStep(0, 0), []).length}枚。`,
+			),
+		posterLine([], 0, 0),
+	);
+	ok(
+		posterLine(["shallow", "main"], 7, 1e9).endsWith(
+			`「辞退」の　札が　${4 + movedIn(townStep(7, 1e9), ["shallow", "main"]).length}枚。`,
+		),
+		posterLine(["shallow", "main"], 7, 1e9),
+	);
+	ok(posterLine(["deep"], 7, 1e9).includes("当選の　花"), "no 当選 after deep");
+	ok(
+		zankiLine([]) === null &&
+			zankiLine(["kinoko"])?.includes("残機：1") &&
+			zankiLine(["kinoko", "deep"]) === null &&
+			zankiLine(["kinoko", "deep", "festival"])?.includes("残機：99"),
+		"the 残機 lines follow the side story",
 	);
 	ok(
 		!(synopsisHtml(["shallow", "main"], []) ?? "").includes("／1000"),

@@ -68,11 +68,6 @@ export type MobLine = Cue & {
 	text: string;
 	need?: Cast;
 	beat?: Beat;
-	/**
-	 * 出ていった 人の 話（deep の 節目で「やきうは　出ていったか」など）。ふつうは 村に いない 仲間の 名前を
-	 * ふくむ 行は 出さないが、この 行は 出ていった 人の 話なので 出す（ui/village/villageMobs.ts の absentIn）。
-	 */
-	gone?: true;
 };
 
 /**
@@ -125,6 +120,8 @@ export type MobDef = {
 	sprite: string;
 	/** 越してくる 町の 小段（core/town.ts の TOWN_STEPS。0 は はじめから いる）。小段ごとに 1人ずつ。 */
 	from: number;
+	/** 越してくる ときの ひとこと：総選挙の 立候補を 降りて キリコの 陣営に 入る わけ（STORY.md §5。1人 1ネタ）。 */
+	withdraw?: string;
 	/**
 	 * 町の 段では なく、この 板を 持ち帰ると 越してくる（裏ルートの 原住民。持ち帰りの 語りの 中で 歩いてくる。
 	 * ui/village/villageReturn.ts）。from は 見ない（0 に しておく）。
@@ -194,8 +191,6 @@ const c = (who: Cast, text: string): MobLine => ({ who, text });
 const b = (beat: Beat, line: MobLine): MobLine => ({ ...line, beat });
 /** 窓に 感情の 記号・体の 動きを つける（engine/emote.ts。話す 人が 同じ マップに いるときだけ 出る）。 */
 const e = (cue: Cue, line: MobLine): MobLine => ({ ...line, ...cue });
-/** 出ていった 人（やきう）の 話の 行（その人が 村に いなくても 出す）。 */
-const g = (line: MobLine): MobLine => ({ ...line, gone: true });
 
 // ───── ぷゆゆの 手がかり（死因は 前の版の 名前「とうすこ」も 見る） ─────
 const PUYU_NAMES = ["ぷゆゆ", "とうすこ"] as const;
@@ -228,10 +223,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			m("ぷゆうゆ。……こんぷゆ🥺\nぼくちん、ぷゆゆ。きみわ？"),
 			n("キリコは　しゃがんで、\nちいさく　頭を　さげた。"),
 			k("……キリコ、ンゴ"),
-			e(
-				{ emote: "!" },
-				m("きりこ！　ちょっとしか\nしゃべらない　子ゆ🥺"),
-			),
+			e({ emote: "!" }, m("きりこ！　ちょっとしか\nしゃべらない　子ゆ🥺")),
 			m("……じゃあ、のこりは\nぼくちんが　しゃべゆ🥺"),
 			c("zero", "……ぷゆゆさんは、ゼロが　来る\n前から　ここに　いたそうです"),
 		],
@@ -250,12 +242,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				e({ emote: "!", gesture: "hop" }, m("……へんじ、きたゆ！🥺")),
 				c("nanj", "……草。ぷゆテストかいな"),
 			],
-			// deep の 節目は どの子も 電池板の 山場（村の スレの 完走と やきうの 旅立ち）への その子なりの こたえ
-			// （STORY.md §5.85）。ぷゆゆは 🥺 が 書かれるたびに 生まれる 子
+			// 開票の あと（STORY.md §5）
 			deep: [
-				g(m("やきう、そとに　いったゆ？🥺")),
-				m("そとでも　だれかが　ぼくちんの\nかお　かいたら、また　うまれゆ🥺"),
-				m("……だから、さびしく　ないゆ🥺"),
+				m("きりこ、とうせん　したゆ🥺"),
+				m("かいぶんしょ、ごめんゆ。\n……でも、おうえん　してたゆ🥺"),
 			],
 			runs10: [
 				m("きみの　おかえり、\nもう　10かいゆ🥺"),
@@ -715,6 +705,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "にぃちぇ",
 		sprite: "pub:sprites/minors_nichie.png",
 		from: 2,
+		withdraw: "告示の　日、まちがえたニィ。\n……もう　締め切りだったニィ",
 		spot: [22, 20],
 		dir: "left",
 		meet: [
@@ -732,11 +723,11 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("キリコは　首を　かしげた。"),
 				m("……日曜日だったことに　するニィ"),
 			],
-			// 日曜日を 待つ 子：外で 働く 人も 日曜日には のぞきに 来る
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("1000の　日、日曜日だったニィ？"),
-				n("キリコは　首を　かしげた。"),
-				m("……外の　人も、日曜日には\nのぞきに　来るニィ。きっと"),
+				m("開票の　日、ちゃんと\n来られたニィ"),
+				n("キリコは　うなずいた。"),
+				m("……毎日　投票日なら\nいいのにニィ"),
 			],
 			runs10: [m("また　もぐるニィ？\n……毎日　月曜日みたいだニィ")],
 		},
@@ -875,6 +866,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "パン松",
 		sprite: "pub:sprites/minors_panmatsu.png",
 		from: 5,
+		withdraw: "パン板は　推した。\n……オレは　パンを　焼く　係だ",
 		spot: [17, 18],
 		dir: "left",
 		meet: [
@@ -887,12 +879,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("長湯スレか。\n……パン板の　スレは、まだ　200だ"),
 				m("……いい　スレだった。\nパンを　食え"),
 			],
-			// 人が 残った 植民地の 主：残るのも 出るのも 板の 自由
+			// 開票の あと（STORY.md §5）
 			deep: [
-				g(m("やきうは　出ていったか")),
-				m("パン板は　人が　残った　植民地だ。\n……残るのも、出るのも　自由だ"),
-				// 山場の 朝に キリコが ぷゆゆパンを 持たせた（data/story/story.ts の STORY.deep）
-				e({ emote: "…" }, m("……キリコが　パンを　持たせたか。\n上出来だ")),
+				m("当選か。……推薦状、\n書いた　かいが　あった"),
+				e({ emote: "…" }, m("……パンを　食え。\n公式の　パンだ")),
 			],
 			runs10: [m("何度でも　もぐる　やつだ。\n……パン板に　ほしい　人材だ")],
 		},
@@ -1018,6 +1008,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ンゴ姉",
 		sprite: "pub:sprites/minors_ngoane.png",
 		from: 7,
+		withdraw:
+			"弟には　負けて　ほしいンゴねぇ……\nだから、キリコに　つくンゴねぇ",
 		spot: [28, 22],
 		dir: "left",
 		meet: [
@@ -1035,11 +1027,11 @@ export const MOBS: Record<MobId, MobDef> = {
 				),
 				c("feris", "え〜？　となりは　キリコだよ〜"),
 			],
-			// やきうの 姉：外の 暮らしを 知っている（STORY.md §5.85）
+			// 開票の あと（STORY.md §5）
 			deep: [
 				m("弟から、電話が　あったンゴねぇ……"),
-				m("「外は　腹　へるわ」って\n言ってたンゴねぇ"),
-				m("……ちゃんと　暮らしてるンゴねぇ"),
+				m("「来年は　勝つで」って\n言ってたンゴねぇ"),
+				m("……ひさしぶりに、来年の\n話を　したンゴねぇ"),
 			],
 			runs10: [
 				m("弟が　言ってたンゴねぇ……\n「あいつ、しぶといで」って"),
@@ -1175,6 +1167,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "おんすちゃん",
 		sprite: "pub:sprites/minors_onsu.png",
 		from: 10,
+		withdraw:
+			"おんSの　宣伝、させて　くれるなら\n……降りて　あげても　いいのよぉ",
 		spot: [29, 12],
 		dir: "left",
 		meet: [
@@ -1201,10 +1195,9 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("……もう　ひとこと、\n書きこんで　くださる？"),
 				n("キリコは　ひとこと　書いた。\n……「ンゴ」"),
 			],
-			// だれも 来ない 板：知らない 人が 1人 来た
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("1000……。おんSは、\nまだ　39レスよぉ"),
-				m("……でも、知らない　人が\n40レス目を　書いて　くれたのぉ"),
+				m("当選、おめでとう。\n……おんSの　宣伝、たのむわよぉ"),
 				n("おんすちゃんは　ハンカチで、\nそっと　目を　おさえた。"),
 			],
 			runs10: [m("何度も　もぐって……。\nあなた、書きこみも　まめなのねぇ")],
@@ -1345,6 +1338,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "おんちゃん",
 		sprite: "sa:oLrlUq",
 		from: 13,
+		withdraw: "殿堂入りは、出られないおん。\n……今日は　降りる　日だおん",
 		spot: [21, 22],
 		dir: "down",
 		noVote: true,
@@ -1360,11 +1354,11 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("おんちゃんは　小石を\nひとつ　キリコに　わたした。"),
 				m("……一軍の　小石だおん"),
 			],
-			// 殿堂入りの 古株：出ていった 人の ぶんも 石を 置く
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("1000、おめでとうだおん"),
+				m("当選、おめでとうだおん"),
 				n("おんちゃんは　大きな　石を\n広場の　すみに　置いた。"),
-				g(m("……やきうくんの　ぶんの、\n一軍の　石だおん")),
+				m("……公式の　石だおん。\n来年は、また　動かすおん"),
 			],
 			runs10: [
 				n("おんちゃんの　足もとに、\n小石が　たくさん　ならんでいる。"),
@@ -1509,6 +1503,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ヤヤポジ",
 		sprite: "pub:sprites/minors_yayapoji.png",
 		from: 16,
+		withdraw:
+			"勝つのも　負けるのも　いやだから、\n降りたんだ。……引き分けなんだ",
 		spot: [11, 22],
 		dir: "right",
 		meet: [
@@ -1522,10 +1518,9 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("ヤヤポジは　すこし　考えて、\nちいさく　手を　たたいた。"),
 				e({ gesture: "nod" }, m("……持ち帰って、いいんだ")),
 			],
-			// 引き分けが 好きな 子：1000に 届いて、ひとり 出ていった
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("1000まで　行って、\nひとり　出ていったんだ"),
-				m("……勝って、ちょっと　負けた。\n引き分けなんだ"),
+				m("1票　差なんだ……。\nほとんど　引き分けなんだ"),
 				n("ヤヤポジは　ほっとした　顔で\n空を　見た。"),
 			],
 			runs10: [
@@ -1649,6 +1644,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "pub:sprites/minors_mujje.png",
 		color: "#e0584a",
 		from: 8,
+		withdraw: "ホゲェ。\n（辞退届を　さしだした）",
 		spot: [23, 23],
 		dir: "down",
 		meet: [
@@ -1664,10 +1660,12 @@ export const MOBS: Record<MobId, MobDef> = {
 				e({ emote: "!", gesture: "hop" }, m("ホゲェ！")),
 				n("ムッジェは　長湯スレの　湯気を、\nふしぎそうに　かいでいる。"),
 			],
+			// 開票の あと（STORY.md §5）
 			deep: [
-				n("ムッジェの　頭の　プロペラが、\n村の　口の　ほうへ　回りだした。"),
-				e({ emote: "…" }, m("ホゲェ……")),
-				g(n("……やきうの　出ていった\n方角だった。")),
+				n(
+					"ムッジェの　頭の　プロペラが、\nキリコの　ポスターの　ほうへ　回った。",
+				),
+				e({ emote: "♪" }, m("ホゲェ！")),
 			],
 			runs10: [
 				n("ムッジェは　もぐった　数だけ、\n地面を　たたこうと　した。"),
@@ -1768,6 +1766,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "pub:sprites/minors_asakonro.png",
 		color: "#ff8a4a",
 		from: 11,
+		withdraw: "ガスの　元栓、閉めてくるもん。\n……選挙は、そのあとで　いいもん",
 		spot: [10, 20],
 		dir: "right",
 		meet: [
@@ -1776,10 +1775,10 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 		milestones: {
 			main: [m("長湯スレ？　うちは\nお風呂より　焚き火が　いいもん！")],
-			// 外から 見えるように 火を 絶やさない
+			// 開票の あと（STORY.md §5）
 			deep: [
-				g(m("やきう、出ていったの？")),
-				m("……うち、焚き火　しとくもん。\n外から　煙が　見える　ように"),
+				m("当選の　お祝いに、\n焚き火　しとくもん"),
+				m("……ガスの　元栓は、\n閉めたもん"),
 			],
 			runs10: [m("10回も　もぐったの？\n……うちより　がんこだもん")],
 		},
@@ -1857,6 +1856,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "pub:sprites/minors_jtleman.png",
 		color: "#9aa0c8",
 		from: 14,
+		withdraw: "選挙は　若い　者に　ゆずろう。\n……コーヒーでも　どうかね",
 		spot: [8, 20],
 		dir: "right",
 		meet: [
@@ -1865,10 +1865,10 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 		milestones: {
 			main: [m("長湯スレを　持ち帰ったか。\n……湯あたりは　しなかったかね")],
-			// にぎやかに なってから 来た 新しい 人
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("私は　にぎやかに　なってから\n来た　口だ"),
-				m("……先に　いた　者の　庭を、\n荒らさぬ　ように　するよ"),
+				m("見事な　開票だった。\n……若い　者に　ゆずって　正解だ"),
+				m("公式どの、コーヒーでも\nどうかね"),
 			],
 			runs10: [m("10回か。庭の　手入れと\n同じだ。つづけたまえ")],
 		},
@@ -1954,6 +1954,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "pub:sprites/minors_miaumiau.png",
 		color: "#e4e4f0",
 		from: 18,
+		withdraw: "選挙を　侵略しに　来たぷ。\n……ポスター、23枚も　あったぷ",
 		spot: [15, 23],
 		dir: "right",
 		meet: [
@@ -1968,10 +1969,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				e({ emote: "?" }, m("……ぜんぜん　怒ってない。\n侵略、むずかしいにゃ")),
 			],
 			main: [m("長湯スレ、侵略　しそこねたぷ。\n……のぼせたぷ")],
-			// 侵略しに 来た 新入り（植民地化宣言の 反転）
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("おんJを　侵略しに　来たら、\nもう　1000だったぷ"),
-				e({ emote: "汗" }, m("……侵略じゃ　なくて、\n住んでも　いいぷ？")),
+				m("選挙は　侵略　しそこねたぷ"),
+				e({ emote: "汗" }, m("……来年は、立候補　しても\nいいぷ？")),
 				n("キリコは　うなずいた。"),
 			],
 			runs10: [m("10回ぷ？　侵略には、\nまだ　たりないぷ")],
@@ -2047,6 +2048,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/rino.png",
 		sprite: "pub:sprites/rino.png",
 		from: 19,
+		withdraw: "演説は、人前だ。\n……DIOは　降りる。以上だ",
 		spot: [18, 16],
 		dir: "right",
 		color: "#bdb76b",
@@ -2063,9 +2065,9 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("リノは　軍帽の　つばを、\nすこしだけ　下げた。"),
 				m("……よく　やった。\n会話は　以上だ"),
 			],
-			// 人が 散った あとに 生まれた 新しい UTAU：新入りにも 席が あった
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("1000を　見た。……新入りの\nDIOにも、席が　あった"),
+				m("開票を　見た。……1票　差。\n見事だ"),
 				n("リノは　敬礼して、\nすこしだけ　口もとを　ゆるめた。"),
 				m("……会話は　以上だ"),
 			],
@@ -2234,6 +2236,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/aru.png",
 		sprite: "pub:sprites/aru.png",
 		from: 20,
+		withdraw: "1票でも　入れば　すごいんですよ！\n……だから、先輩に　入れます",
 		spot: [12, 20],
 		dir: "down",
 		color: "#8fd694",
@@ -2255,14 +2258,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("ぼくも　いつか、\nあんな　音に　なれるかな……"),
 				n("キリコは　うなずいた。"),
 			],
-			// いちばん 新しい 声（2026年9月に 声が できた）：新しい 声は これからも 生まれる
+			// 開票の あと（STORY.md §5）
 			deep: [
-				e(
-					{ gesture: "hop" },
-					m("先輩！　ぼく、声の　設定が\nやっと　できたんです！"),
-				),
-				m("ぼくみたいな　新しい　声、\nこれから　もっと　ふえますよ"),
-				n("キリコは　うなずいた。"),
+				e({ gesture: "hop" }, m("先輩！　当選　おめでとう\nございます！")),
+				m("1票　差でも、1票は　1票です。\n……すごいんですよ"),
 			],
 			runs10: [
 				m("先輩、10回も　もぐったんですね。\n……再生数みたいに　数えてました"),
@@ -2410,6 +2409,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/zero_proto.png",
 		sprite: "sa:KxS5YZ",
 		from: 3,
+		withdraw: "当選確率を　計算したゼロ。\n……0.3%　だったゼロ",
 		spot: [13, 22],
 		dir: "right",
 		color: "#9ab8d8",
@@ -2425,11 +2425,13 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("プロトの　目の　青い　マークが、\n一度だけ　光った。"),
 				e({ emote: "花" }, m("……これが　うれしい、か。\n学習したゼロ")),
 			],
-			// 感情を 学習中の 試作機：「うれしい」（main）の つぎは「さびしい」
+			// 開票の あと（STORY.md §5）
 			deep: [
-				g(m("やきうの　不在を　記録したゼロ")),
-				e({ emote: "…" }, m("……胸の　あたりに、計算できない\n値が　あるゼロ")),
-				m("これが　さびしい、か。\n学習したゼロ"),
+				m("当選を　記録したゼロ"),
+				e(
+					{ emote: "花" },
+					m("……0.3%が　当たったゼロ。\n計算を　学習しなおすゼロ"),
+				),
 			],
 			runs10: [
 				m("もぐった　回数　10。\n平均を　出したゼロ"),
@@ -2615,6 +2617,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/zero_ren.png",
 		sprite: "pub:sprites/zero_ren.png",
 		from: 4,
+		withdraw:
+			"博士が　公約を　勝手に　更新したの！\n……もう　出られない　中身に　なった",
 		spot: [25, 20],
 		dir: "down",
 		color: "#e0b040",
@@ -2636,13 +2640,12 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("キリコは　首を　ふった。"),
 				m("……だよね。次の　更新で\n歌える　ように　なる！"),
 			],
-			// しょっちゅう 更新される 子：かわっても、前の 版は なくならない
+			// 開票の あと（STORY.md §5）
 			deep: [
 				m(
-					"レンね、今日も　更新　されたの！\n前の　レンは　どこ　行ったと　思う？",
+					"レンね、また　更新　されたの！\n公約、ぜんぶ　キリコ推しに　なった！",
 				),
-				n("キリコは　首を　かしげた。"),
-				m("……ぜんぶ、ここに　あるよ。\nスレと　いっしょ！"),
+				e({ emote: "?" }, m("……これ、選挙　違反？")),
 			],
 			runs10: [
 				m("キリコ、10回も　もぐったの？\nレンは　10回　更新された！"),
@@ -2827,6 +2830,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		portrait: "portraits/hinary.png",
 		sprite: "sa:mV6xaq",
 		from: 9,
+		withdraw:
+			"選挙管理委員に　なりました。\n……これで　発表を　終わりたいと　思います",
 		spot: [26, 23],
 		dir: "up",
 		color: "#7ab8e8",
@@ -2846,10 +2851,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("……みなさん、のぼせている\n模様です"),
 				m("これで　発表を　終わりたいと\n思います"),
 			],
-			// 避難J（おんJが 落ちた ときの 避難先）の 研究者：人が 散った 先を 調べている（3作目への 橋）
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("みなさんが　避難した　先を\n研究しました"),
-				m("……ほとんどの　人は、ふつうに\n暮らしている　模様です"),
+				m("開票の　結果を　発表します"),
+				m("……1票　差で、キリコさんの\n当選の　模様です"),
 				m("これで　発表を　終わりたいと\n思います"),
 			],
 			// 跡地の 参拝の あと：20人目の 手がかりは 避難Jに（第三ルートへの 橋。開くのは 本筋の 山場の あとでも）
@@ -3044,10 +3049,9 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("あと　ひとりは、どこ　行ったんだろ。\n……ヒナリーが　調べてる"),
 				m("まあ、のんびり　待つよ。\n消えないしね、おれたち"),
 			],
-			// 電池板の 山場：ツッコむ 相手（やきう）が 出ていった。それでも ここに いる
+			// 開票の あと（STORY.md §5）
 			deep: [
-				m("やきう民、出てったんだ。"),
-				m("ツッコむ　相手が　いないと、\nツッコミは　ただの　文句だね"),
+				m("2012年の　選挙、見てたよ。\n……やっと　来年に　なったね"),
 				m("……まあ、いいけど。\nここに　いるよ"),
 			],
 			runs10: [
@@ -3193,13 +3197,13 @@ export const PUYU_LUNCH: readonly string[] = [
 	"ぼくちんの　ぶんも、\nがんばってゆ🥺",
 ];
 
-// ───────────────── 総選挙（まとめ掲示板の はり紙） ─────────────────
+// ───────────────── 一軍選抜の 人気投票（まとめ掲示板の はり紙。本筋の 総選挙とは べつ） ─────────────────
 /**
  * 2人 以上に 会うと、まとめ掲示板に はり紙が 出る。1票だけ（入れた子は 次に 話しかけたとき 1回 ひとこと）。
  * おんちゃん（殿堂入り）と ぷゆゆ（マイナーズでは ない）は 候補に 入らない（noVote）。{name} は 入れた子。
  */
 export const SENKYO = {
-	title: "かたすみに　はり紙。\n『おんJマイナーズ　一軍選抜総選挙』",
+	title: "かたすみに　はり紙。\n『おんJマイナーズ　一軍選抜　人気投票』",
 	hall: "『殿堂入り：おんちゃん』\n『開票日：未定』",
 	box: "すみに　投票箱が　ぶらさがっている。",
 	done: "{name}に　1票　入れた。",
@@ -3208,4 +3212,8 @@ export const SENKYO = {
 } as const;
 
 /** 掲示板の 選択肢（はり紙が 出たら）。 */
-export const BOARD_MENU = ["冒険の記録", "総選挙の　はり紙", "やめる"] as const;
+export const BOARD_MENU = [
+	"冒険の記録",
+	"人気投票の　はり紙",
+	"やめる",
+] as const;

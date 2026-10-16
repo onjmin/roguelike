@@ -1008,6 +1008,11 @@ const movedIn = async (
 	await s.narrate(
 		fill(ARRIVE_MSG, { names: ids.map((id) => MOBS[id].name).join("と　") }),
 	);
+	// 総選挙の 立候補を 降りて キリコの 陣営に 入る わけ（1人 1ネタ。STORY.md §5）
+	for (const id of ids) {
+		const w = MOBS[id].withdraw;
+		if (w) await sayAs(s, id, w);
+	}
 	return true;
 };
 

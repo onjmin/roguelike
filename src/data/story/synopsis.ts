@@ -10,7 +10,7 @@ import type { DungeonId } from "../../core/types";
 import { QUEST_HEROES, questStage } from "../../engine/heroes";
 import { loadProgress, loadTown } from "../../engine/save";
 import { HERO_QUESTS } from "../people/heroQuests";
-import { movedIn } from "../people/mobs";
+import { MOB_IDS, movedIn } from "../people/mobs";
 import { nowHour, today } from "../town/calendar";
 import { OPENING } from "../town/town";
 import { crowdSize, timeBand } from "../village/crowd";
@@ -192,6 +192,27 @@ export const villageResLine = (): string => {
 		weekend: w === 0 || w === 6,
 	});
 	return `キリコの　支持者：${n}人`;
+};
+
+/**
+ * まとめ掲示板の 立候補の ポスター（STORY.md §5。村の 状態と 同じ 数）。キリコと 仲間・住人 ぜんぶで 23枚。
+ * 村に 来た 人（越してきた 住人と、やきう 以外の 仲間）は 降りて キリコの 陣営に 入ったので「辞退」の 札。
+ * 開票（電池板）の あとは 当選の 花と 来年の ポスター。
+ */
+export const posterLine = (
+	cleared: readonly DungeonId[],
+	stage: number,
+	points: number,
+): string => {
+	const all = 1 + Object.keys(SPEAKERS).length + MOB_IDS.length;
+	if (cleared.includes("deep"))
+		return `キリコの　ポスターに、当選の　花。\n来年の　ポスターも、もう　${all}枚。`;
+	const away = awayFriends(cleared, stage);
+	const friends = (Object.keys(SPEAKERS) as Speaker[]).filter(
+		(w) => w !== "nanj" && !away.includes(w),
+	).length;
+	const out = friends + movedIn(townStep(stage, points), cleared).length;
+	return `立候補の　ポスターが　${all}枚。\n「辞退」の　札が　${out}枚。`;
 };
 
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */

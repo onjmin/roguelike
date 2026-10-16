@@ -324,7 +324,7 @@ export const SOLD_BARE = "拾った　品は、{points}円に　なった。";
 export const TOWN_GREW_MSG = "町に　人が　ふえた";
 
 /** 町が 育って 仲間・住人が 越してきた ときの 地の文（{names} は 名前を「と　」で つないだ もの）。 */
-export const ARRIVE_MSG = "{names}が、村に　越してきた。";
+export const ARRIVE_MSG = "{names}が、立候補を　降りて\n村に　越してきた。";
 
 export const CARRY_CHASE = "シヨが　追いかけてきた。";
 

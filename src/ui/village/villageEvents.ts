@@ -53,7 +53,11 @@ import {
 	ROM_COUNT,
 	STORY,
 } from "../../data/story/story";
-import { synopsisNow, villageResLine } from "../../data/story/synopsis";
+import {
+	posterLine,
+	synopsisNow,
+	villageResLine,
+} from "../../data/story/synopsis";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
@@ -716,6 +720,11 @@ const boardScript =
 			return;
 		}
 		await s.narrate(VILLAGE_MSG.board);
+		// 立候補の ポスター（総選挙の 進み。村の 状態と 同じ 数）
+		const t = loadTown();
+		await s.narrate(
+			posterLine(loadProgress().cleared, previewStage() ?? t.stage, t.points),
+		);
 		const readAll = SCRAPS.filter((x) => loadScraps().read.includes(x.id));
 		const read = readAll.filter((x) => x.kind !== "memo");
 		const memos = readAll.filter((x) => x.kind === "memo");
