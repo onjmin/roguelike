@@ -305,8 +305,8 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_edge", weight: 1 }, // もろ刃。強くて 危ないので 1本のまま
 	{ kind: "w_split", weight: 2 }, // マイナス（もっと にも ある）。本編1 → 2
 	{ kind: "w_haste", weight: 2 }, // マイナス（ピオリム）。本編1 → 2
-	{ kind: "w_ng", weight: 1 }, // マイナス。見えない 敵が ふえる
-	{ kind: "w_yobun", weight: 1 }, // マイナス。道具を 取られる
+	{ kind: "w_batsu", weight: 1 }, // マイナス。見えない 敵が ふえる
+	{ kind: "w_afi", weight: 1 }, // マイナス。道具を 取られる
 	{ kind: "w_totsu", weight: 1 }, // マイナス。敵を 呼び寄せる（通路に 引きこむにも）
 	{ kind: "w_rebut", weight: 1 }, // もっと だけの ザキ。回数0で 出るので 次スレと 組んで はじめて 強い
 	// 矢 9

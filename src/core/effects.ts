@@ -735,16 +735,16 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			r.msg(`${nm}を　論破した！`);
 			r.killMonster(m, true);
 			return;
-		case "w_ng":
-			if (m.ng) {
+		case "w_batsu":
+			if (m.batsu) {
 				r.msg("しかし　何も　起きなかった");
 				return;
 			}
 			// 消える 前に ひとこと（消えたあとは 名前も 見えない）
 			r.msg(`${nm}の　姿が　消えた！`, "warn");
-			m.ng = true;
+			m.batsu = true;
 			return;
-		case "w_yobun": {
+		case "w_afi": {
 			if (m.carry) {
 				r.msg(`${nm}は　もう　何か　持っている`);
 				return;
@@ -753,14 +753,14 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 				(i) => !r.isEquipped(i) && !isKeyItem(i.kind),
 			);
 			if (!cands.length) {
-				r.msg("しかし　さしだす　ものが　なかった");
+				r.msg("しかし　転載される　ものが　なかった");
 				return;
 			}
 			const it = r.rng.pick(cands);
 			r.removeItem(it);
 			m.carry = it;
 			r.se("steal");
-			r.msg(`${nm}に　${r.name(it)}を　さしだした！`, "warn");
+			r.msg(`${nm}に　${r.name(it)}を　転載された！`, "warn");
 			return;
 		}
 		case "w_totsu": {

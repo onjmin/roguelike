@@ -534,22 +534,24 @@ add({
 	flavor: "kskしたいのは　スレで　あって、敵では　ない",
 });
 add({
-	// NG登録した レスは 見えなく なる（透明あぼーん）。消えた わけでは ない
-	id: "w_ng",
+	// おーぷんの バツポチ：レスの ✕ を ポチると、その ID の 書きこみが 自分にだけ 見えなく なる
+	// （荒らしよけ。ID が かわる 1日 かぎり）。相手は 消えずに 書きつづける
+	id: "w_batsu",
 	cat: "staff",
-	name: "NGの杖",
+	name: "バツポチの杖",
 	charges: [3, 5],
 	desc: "敵が　見えなく　なる（晒し草を　飲めば　見える）",
-	flavor: "NGに　入れても　レスは　消えない。見えなく　なる　だけ",
+	flavor:
+		"バツポチしても　相手は　そこに　いる。見えなく　なるのは　自分　だけ",
 });
 add({
-	// 「養分」＝ 貢ぐ だけの 負け役（パチンコ・ガチャの 養分）
-	id: "w_yobun",
+	// アフィ：スレを 勝手に まとめて 広告で もうける まとめブログ（転載で おんJ民の レスを もっていく）
+	id: "w_afi",
 	cat: "staff",
-	name: "養分の杖",
+	name: "アフィの杖",
 	charges: [3, 5],
-	desc: "敵に　もちものを　1つ　さしだす（たおせば　落とす）",
-	flavor: "貢いだ　ぶんは　返って　こない。たおせば　別",
+	desc: "敵に　もちものを　1つ　転載される（たおせば　取りかえせる）",
+	flavor: "書いたのは　おんJ民。もうけるのは　アフィ",
 });
 add({
 	// 凸 ＝ 乗りこむ こと。ここでは 敵の ほうが 凸して くる
@@ -877,8 +879,8 @@ export const MAIN_ITEMS: readonly ItemWeight[] = [
 	{ kind: "w_edge", weight: 1 },
 	{ kind: "w_split", weight: 1 },
 	{ kind: "w_haste", weight: 1 },
-	{ kind: "w_ng", weight: 1 },
-	{ kind: "w_yobun", weight: 1 },
+	{ kind: "w_batsu", weight: 1 },
+	{ kind: "w_afi", weight: 1 },
 	{ kind: "w_totsu", weight: 1 },
 	// 矢 9
 	{ kind: "a_wood", weight: 6 },

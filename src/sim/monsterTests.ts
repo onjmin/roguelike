@@ -552,19 +552,19 @@ test("bomb", "w_edge stops a 炎上案件 at once (it does not hit first)", () =
 
 test(
 	"staff",
-	"w_ng hides, w_yobun hands over an item, w_totsu pulls the foe beside Kiriko",
+	"w_batsu hides, w_afi takes an item, w_totsu pulls the foe beside Kiriko",
 	() => {
 		const r = arena("bad-staves");
 		const m = put(r, "bat", at(4, 0), { sleep: DEEP });
-		ok(r.monsterVisible(m), "not visible before w_ng");
-		staffEffect(r, "w_ng", m);
-		ok(!r.monsterVisible(m), "still visible after w_ng");
+		ok(r.monsterVisible(m), "not visible before w_batsu");
+		staffEffect(r, "w_batsu", m);
+		ok(!r.monsterVisible(m), "still visible after w_batsu");
 		r.f.sight = true;
 		ok(r.monsterVisible(m), "晒し草 does not show it");
 		r.f.sight = false;
 		r.p.items = r.p.items.filter((i) => r.isEquipped(i));
 		const it = give(r, "h_heal");
-		staffEffect(r, "w_yobun", m);
+		staffEffect(r, "w_afi", m);
 		ok(
 			m.carry === it && !r.p.items.includes(it),
 			"the item was not handed over",

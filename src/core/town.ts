@@ -182,8 +182,8 @@ const PRICE: Record<string, number> = {
 	w_edge: 800,
 	w_split: 100,
 	w_haste: 100,
-	w_ng: 100,
-	w_yobun: 100,
+	w_batsu: 100,
+	w_afi: 100,
 	w_totsu: 200,
 	w_rebut: 1500,
 	// 矢（1本）
