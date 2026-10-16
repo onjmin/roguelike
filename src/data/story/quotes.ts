@@ -69,9 +69,10 @@ export type StoryPage = Cue & {
 		/** キリコ 当選（ファンファーレと 札）。 */
 		| "res1000"
 		/** 本筋の 話の おわり（data/story/story.ts の episodeEnd。章の 音）。 */
-		| "chapterEnd"
-		/** やきうの 残機が 跳ねる（1UP の 音を 重ねる）。 */
-		| "oneUp";
+		| "chapterEnd";
+	/** 地の文の 前に 鳴らす 効果音（data/audio/sfx.ts の 名前。村の 場面だけ）。seRepeat で 間を あけずに 重ねる。 */
+	se?: string;
+	seRepeat?: number;
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
@@ -518,8 +519,17 @@ export const ENDING: StoryPage[] = [
 		who: null,
 		text: "そのうち、湯の　温度で　もめはじめた。\n41℃派と、42℃派。",
 	},
-	{ who: null, text: "追いだきの　ボタンが、\n連打された。" },
-	{ who: null, text: "……1時間後。候補は　みんな\nのぼせて、浮いていた。" },
+	{
+		who: null,
+		text: "追いだきの　ボタンが、\n連打された。",
+		se: "pushButton",
+		seRepeat: 5,
+	},
+	{
+		who: null,
+		text: "……1時間後。候補は　みんな\nのぼせて、浮いていた。",
+		se: "chiin",
+	},
 	// 怪文書の 犯人（第二話の 小さな 問いの 答え。STORY.md §5）
 	{
 		who: null,

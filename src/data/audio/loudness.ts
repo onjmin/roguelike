@@ -113,7 +113,7 @@ export type SeLoudness = readonly [
 
 // <loudness:se> ここから下は pnpm loudness（scripts/measure-loudness.mjs）が書き換える。手で直さない。
 /**
- * 効果音ごとの実測と補正（2026-10-15、ffmpeg 8.0 の ebur128）。
+ * 効果音ごとの実測と補正（2026-10-16、ffmpeg 8.0 の ebur128）。
  * [素材 id, L, true peak, 補正 dB, 倍率, 鳴り始め ms, 鳴り終わり ms, 待つ ms]。
  * 行末は「区分 → 既定の設定での L」。
  */
@@ -149,6 +149,9 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	arcJump: ["RJwe7P", -12, -4.2, -11, 0.282, 40, 350, 280], // field → -23.0
 	cardFlip: ["h50BUS", -2.3, 0.7, -20.7, 0.092, 0, 480, 330], // field → -23.0
 	glassBreak: ["h5RBbR", -7.4, -0.6, -15.6, 0.166, 70, 860, 390], // field → -23.0
+	pushButton: ["dwe4PP", -12, -0.5, -11, 0.282, 140, 320, 240], // field → -23.0
+	chiin: ["Wb0Nzr", -6.2, -1.4, -16.8, 0.145, 230, 3220, 1200], // field → -23.0
+	laughCrowd: ["3D8WxU", -14.7, -6.6, -8.3, 0.385, 0, 3790, 1200], // field → -23.0
 	encounter: ["qm03Mw", -19.2, -9.2, -1.8, 0.813, 360, 2390, 1200], // battle → -21.0
 	attackStart: ["n0fqek", -10.3, -3.6, -10.7, 0.292, 40, 290, 240], // battle → -21.0
 	attack: ["7JKd21", -5.9, -0.7, -15.1, 0.176, 20, 210, 180], // battle → -21.0

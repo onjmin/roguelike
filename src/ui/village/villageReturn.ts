@@ -314,12 +314,16 @@ const playCue = async (
 		s.se("victory");
 		s.toast("★　キリコ　当選　★");
 		await s.wait(600);
-	} else if (c === "oneUp") {
-		// 残機が 跳ねる（寄り道「残機」の 回収）：1UP の 音を 鳴りやまない ように 重ねる
-		for (let i = 0; i < 4; i++) {
-			s.se("arcBest");
-			await s.wait(260);
-		}
+	}
+};
+
+/** 語りの 頁の 効果音（StoryPage.se）。seRepeat が あれば 短い 間で 重ねる（連打・鳴りやまない 音）。 */
+const playPageSe = async (s: Story, p: StoryPage): Promise<void> => {
+	if (!p.se) return;
+	const n = p.seRepeat ?? 1;
+	for (let i = 0; i < n; i++) {
+		s.se(p.se);
+		if (n > 1) await s.wait(220);
 	}
 };
 
@@ -340,6 +344,7 @@ export const returnScene = async (
 	for (const id of here) s.face(`mob_${id}`, "player");
 	for (const p of pages) {
 		if (p.cue) await playCue(s, p.cue);
+		await playPageSe(s, p);
 		if (p.mob) await sayAs(s, p.mob, p.text, cueOf(p));
 		else await playPage(s, p);
 	}

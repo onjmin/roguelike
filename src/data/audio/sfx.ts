@@ -74,6 +74,13 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		cardFlip: "rpgen:h50BUS", // マリオ3-カード
 		/** グラスが 割れた（バーの グラス滑らせ）。 */
 		glassBreak: "rpgen:h5RBbR", // 皿が割れる音
+		// ── 語りの 効果音（data/story の StoryPage.se。村の 場面で 地の文の 前に 鳴る）
+		/** 押しボタン（討論会の 追いだきの 連打）。 */
+		pushButton: "rpgen:dwe4PP", // スイッチの音？
+		/** 間の ぬけた オチ（討論会で 全員 のぼせて 浮く）。 */
+		chiin: "rpgen:Wb0Nzr", // ち～ん(笑)
+		/** みんなで 笑う（後日談の「草が　生えた」）。 */
+		laughCrowd: "rpgen:3D8WxU", // みんなで大笑い3
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {

@@ -721,13 +721,14 @@ export const STORY: Record<
 			mob("hinary", "当選者は、確定の　前に\n規則を　1つ　変えられます"),
 			k("……確定は、なしンゴ。\n公式も、安価で　変わって　ええンゴ"),
 			mob("hinary", "……規則上、有効です"),
-			n("やきうの　肩から、\nなにかが　ほどけた。"),
+			{ ...n("やきうの　肩から、\nなにかが　ほどけた。"), se: "uncurse" },
 			// 寄り道「残機」を 終えて いれば、確定が とけた その 場で（祭りで 書いた 遺影が、やっと 数に なる）。
 			// 本気の 一言の あと、笑いで 落とす（遺影は、みんなが 構って くれた 数）
 			{
 				...n("やきうの　頭の　上で、1UPの　音が\n鳴りはじめた。"),
 				needCleared: "festival",
-				cue: "oneUp",
+				se: "arcBest",
+				seRepeat: 4,
 			},
 			{
 				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
@@ -736,7 +737,8 @@ export const STORY: Record<
 			{
 				...n("1UPの　音は、まだ　鳴っていた。\n……98回　鳴った。「残機：99」"),
 				needCleared: "festival",
-				cue: "oneUp",
+				se: "arcBest",
+				seRepeat: 4,
 			},
 			{
 				...s("nanj", "うるさいわ！　……草", { emote: "怒" }),
@@ -913,7 +915,7 @@ export const STORY: Record<
 				emote: "汗",
 			}),
 			s("zero", "安価は、絶対　ですからね"),
-			n("広場じゅうで、草が　生えた。"),
+			{ ...n("広場じゅうで、草が　生えた。"), se: "laughCrowd" },
 			k("……>>1、来年も　選挙ンゴ"),
 		],
 		again: [
