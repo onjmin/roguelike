@@ -25,11 +25,10 @@ import {
 	rosterWindows,
 	WW_BUCHO,
 } from "../../data/bushitsu/bushitsu";
-import { MOBS } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
 import { nowHour, today } from "../../data/town/calendar";
 import type { Facility } from "../../data/village/facilities";
-import { stepOf, type VillageView } from "../../data/village/map";
+import type { VillageView } from "../../data/village/map";
 import type { Story } from "../../engine/defs";
 import { loadRecords } from "../../engine/save";
 import type { Ctx } from "../ctx";
@@ -370,8 +369,8 @@ const radioScript = async (s: Story): Promise<void> => {
 };
 
 /** おんｊボカロ一覧の 額：村に いる 子の 名前 → はじめて なら キリコの ひとこと、あとは 安価で 足した 子。 */
-const rosterScript = async (s: Story, v: VillageView): Promise<void> => {
-	const names = rosterNames(stepOf(v), MOBS.rino.from, MOBS.aru.from);
+const rosterScript = async (s: Story): Promise<void> => {
+	const names = rosterNames();
 	for (const t of rosterWindows(names)) await s.narrate(t);
 	const m = loadBushitsu();
 	if (!m.vc.kiriko) {
@@ -483,7 +482,7 @@ export const bushitsuThing = async (
 	s: Story,
 	_f: Facility,
 	kind: string,
-	v: VillageView,
+	_v: VillageView,
 ): Promise<void> => {
 	touchVisit();
 	if (kind === "table") await wordWolfScript(ctx, s);
@@ -495,7 +494,7 @@ export const bushitsuThing = async (
 	else if (kind === "radio") await radioScript(s);
 	else if (kind === "nisshi")
 		for (const t of nisshiWindows(loadBushitsu().nt.heard)) await s.narrate(t);
-	else if (kind === "roster") await rosterScript(s, v);
+	else if (kind === "roster") await rosterScript(s);
 	else if (kind === "pc") await vocaMakeScript(s);
 	else if (kind === "cabinet") await testPlayScript(ctx, s);
 	else if (kind === "fumendai") await koukaScript(ctx, s);

@@ -488,17 +488,8 @@ export const boshuLine = (visits: number): string => {
 /** 安価で 作った 子。 */
 export type VocaMade = { name: string; look: string; tic: string };
 
-/** 一覧の 名前（春音リノ・響化アルは 越してきてから）。 */
-export const rosterNames = (
-	step: number,
-	rinoFrom: number,
-	aruFrom: number,
-): string[] =>
-	BS_MSG.vc.official.filter(
-		(n) =>
-			!(n === "春音リノ" && step < rinoFrom) &&
-			!(n === "響化アル" && step < aruFrom),
-	);
+/** 一覧の 名前（町に いる 子 ぜんぶ）。 */
+export const rosterNames = (): string[] => [...BS_MSG.vc.official];
 
 /** 一覧の 窓（名前を「　」で つないで 2行ずつ）。 */
 export const rosterWindows = (names: readonly string[]): string[] =>

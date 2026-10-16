@@ -1,5 +1,5 @@
 // 村（おんJタウン）に 帰ってきたときの 場面（ui/village/village.ts が 村に 入るたびに 走らせる。つなぎは ui/village/villageEvents.ts）。
-// トルネコ1と 同じ順：口から 出る → 仲間が むかえる → 開いた知らせ → 持ち帰った物を 倉庫へ・売る → 町が 育つ。
+// 口から 出る → 仲間が むかえる → 開いた知らせ → 撮れ高の 発表（登録者・店が 開く）→ 持ち帰った物を 倉庫へ・売る。
 //
 // - 持ち帰った・帰還スレ：キリコが 口の奥から 出てくると、口の前に 仲間が 並んで 待っている（幕が 上がる前に
 //   並べる。lineUp）。持ち帰りの 語り（STORY[d].ending）か 帰還スレの 語り（RETURN_PAGES）を 村の窓で 話して、
@@ -8,28 +8,20 @@
 // - 開いた知らせ（Progress.news）：本編は 口の前で 見張る やきうが どいて 小屋の前へ、もっとは 板が はずれる。
 //   見せおえてから 1つずつ 消す（途中で 閉じても 次に 開いたとき また 見せる）。知らせの 前は 閉じたまま 描く（villageView）。
 //   期間限定の イベントの 始まり・終わり（Progress.eventNews。data/story/objectives.ts）も そのあとに 1〜2行。
-// - 持ち帰った物（Town.pending）：シヨが あずける物を きいて（一覧は ui/village/home.ts の chooseStored）、のこりを ロゼが 売り、
-//   ゼロが 売り上げを 読む。町が 育ったら 暗転して 建て直し、建った所を 見せて「町が「…」に なった」
-//   （おんJ 本館の 形が かわった 段なら 本館も 見せる）。
+// - 撮れ高（Town.gain）：ヒナリーが ふえた 登録者を 発表する（倒れて 帰っても。放送事故）。節目に 届けば
+//   「準備中」の シャッターが あがって 店が 開く（TOWN.md §0.1。町は はじめから 都市の 姿）。
+// - 持ち帰った物（Town.pending）：ンゴ姉が 機材倉庫に あずける物を きいて（一覧は ui/village/home.ts の chooseStored）、
+//   のこりを ジェイトルマンが 買い取る（TOWN.md §0.4。ライバルは 店の 仕事を しない）。
 //   決める前に 閉じても pending が 残るので 次に 村に 入ったとき 続きから。選んでいるあいだに 別のタブで
 //   決められていたら 何もしない（古い町で 上書きしない）。
-// - 倒れたときは 場面も 精算も ない（仲間は 話しかけると 反応する。ui/village/villageTalk.ts）。
-// - キリコは 1人で 動いている。知らせ・精算・町が 育つ 場面で 話す 仲間が 遠ければ（TALK_NEAR より 先）、
+// - キリコは 1人で 動いている。知らせ・精算の 場面で 話す 人が 遠ければ（TALK_NEAR より 先）、
 //   暗転の あいだに キリコの そばへ 呼び（gather）、場面の 終わりに 建て直して 持ち場へ もどす（sendBack）。
 //   離れた 人の 声だけが 飛んでくる 掛け合いは しない（そばに いる 人とだけ 話す）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
-import {
-	CARRY_MAX,
-	lastStepOf,
-	STORAGE_CAP,
-	TOWN_STAGES,
-	townStep,
-} from "../../core/town";
+import { CARRY_MAX, STORAGE_CAP, subsText, TOWN_STAGES } from "../../core/town";
 import type { DungeonId, Objective } from "../../core/types";
 import {
-	MOB_IDS,
-	MOBS,
 	type MobId,
 	PUYU_LUNCH,
 	PUYU_RELIEF,
@@ -37,7 +29,6 @@ import {
 } from "../../data/people/mobs";
 import { eventById, eventNewsText } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
-import { SPEAKERS } from "../../data/story/quotes";
 import {
 	awayFriends,
 	BOSS_RETURN,
@@ -45,7 +36,6 @@ import {
 	DUNGEON_NAMES,
 	endingFor,
 	episodeEnd,
-	FRIEND_FROM,
 	mentionsAway,
 	playPage,
 	type StoryPage,
@@ -60,14 +50,9 @@ import {
 	tamperTier,
 } from "../../data/town/tamper";
 import {
-	ARRIVE_MSG,
-	BARE_TOWN_MSG,
 	RETURN_PAGES,
-	SOLD_BARE,
-	STAGE_NAMES,
-	STAGE_UP,
-	STAGE_UP_HALL,
-	TOWN_GREW_MSG,
+	type StaffLine,
+	SUBS_MSG,
 	TOWN_MSG,
 	WAKE_PAGES,
 	WALLET_WHY,
@@ -78,15 +63,12 @@ import {
 	exitAt,
 	exitFor,
 	lineupSpots,
+	shopsOpened,
 	spotsAround,
-	stepOf,
-	VILLAGE_EXITS,
 	VILLAGE_SPOTS,
 	type VillageExit,
 	type VillageView,
 } from "../../data/village/map";
-import { departNews, newsPages, townNews } from "../../data/village/news";
-import { hallTier } from "../../data/village/tiles";
 import type { Story } from "../../engine/defs";
 import { cueOf } from "../../engine/emote";
 import {
@@ -95,15 +77,16 @@ import {
 	doneProgressNews,
 	giveLunch,
 	giveRelief,
-	growForStorage,
 	hasFlag,
 	loadProgress,
 	loadRecords,
 	loadTown,
 	noteEnding,
+	openShops,
 	type PendingReturn,
 	type Progress,
 	QUIT_CAUSE,
+	saveTown,
 	settleReturn,
 	type Town,
 } from "../../engine/save";
@@ -114,8 +97,8 @@ import { villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
 
 /**
- * 開発用：`?stage=N` で 描く 町の段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
- * 保存は 書きかえない（売り上げ・倉庫・会話は 本当の段のまま）。帰ってきた 持ち物の 精算も しない。
+ * 開発用：`?stage=N` で 開いた 店の 段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
+ * 保存は 書きかえない（登録者・倉庫・会話は 本当の段のまま）。帰ってきた 持ち物の 精算も しない。
  */
 export const previewStage = (): number | null => {
 	if (typeof location === "undefined") return null;
@@ -128,7 +111,7 @@ export const previewStage = (): number | null => {
 };
 
 /**
- * いまの 町の段・開いたダンジョン（保存から 読む）。
+ * いまの 村（保存から 読む）。町は はじめから 都市の 姿（いちばん上の 段で 描く）、open は 開いた 店の 段。
  * 開いた知らせを まだ 見せていない ダンジョンは 閉じたまま 描く（知らせの 場面で やきうが どく・板が はずれる）。
  */
 export const villageView = (): VillageView => {
@@ -137,11 +120,10 @@ export const villageView = (): VillageView => {
 	const t = loadTown();
 	const preview = previewStage();
 	return {
-		stage: preview ?? t.stage,
+		stage: TOWN_STAGES - 1,
+		open: preview ?? t.stage,
 		unlocked: p.unlocked.filter((d) => !fresh.has(d)),
 		cleared: [...p.cleared],
-		// 下見（?stage=N）は その 段の いちばん上（住人は みんな いる）
-		step: preview === null ? townStep(t.stage, t.points) : lastStepOf(preview),
 	};
 };
 
@@ -218,9 +200,9 @@ const mobsOf = (pages: readonly StoryPage[]): MobId[] => [
 	...new Set(pages.flatMap((p) => (p.mob ? [p.mob] : []))),
 ];
 
-/** 語りで 話す 住人の うち、いま 村に 立っている 子（まだ 越してきて いない 子は 名前欄だけで 話す）。 */
-const mobsHere = (pages: readonly StoryPage[], v: VillageView): MobId[] =>
-	mobsOf(pages).filter((id) => stepOf(v) >= MOBS[id].from);
+/** 語りで 話す 住人（みんな はじめから 町に いる）。 */
+const mobsHere = (pages: readonly StoryPage[], _v: VillageView): MobId[] =>
+	mobsOf(pages);
 
 /** キリコが 立っている 村の 出口（帰ってきたところ。出口で なければ undefined）。 */
 const inMouth = (s: Story, _d: DungeonId): VillageExit | undefined =>
@@ -371,7 +353,7 @@ export const TALK_NEAR = 2;
 const called = new WeakSet<Story>();
 
 /**
- * 村の 場面で 話す 仲間を キリコの そばへ（離れた 人の 声が 飛んでこないように）。遠い 人だけ、暗転の あいだに
+ * 村の 場面で 話す 人（仲間・住人。住人は mob_<id>）を キリコの そばへ（離れた 人の 声が 飛んでこないように）。遠い 人だけ、暗転の あいだに
  * キリコの まわりへ 置いて こちらを 向かせる。dark なら もう 暗い（明けるのは 呼ぶ側）。
  * もどすのは sendBack（場面の 終わりに 建て直す）。
  * at を わたすと キリコでは なく その マスの まわりへ（カメラが 建物を 見ている 場面。みんな 置きなおす）。
@@ -379,11 +361,11 @@ const called = new WeakSet<Story>();
  */
 export const gather = async (
 	s: Story,
-	who: readonly (Speaker | null)[],
+	who: readonly (string | null)[],
 	opt: { dark?: boolean; at?: readonly [number, number] } = {},
-): Promise<ReadonlyMap<Speaker, Cell>> => {
-	const out = new Map<Speaker, Cell>();
-	const far = [...new Set(who.filter((w): w is Speaker => !!w))].filter(
+): Promise<ReadonlyMap<string, Cell>> => {
+	const out = new Map<string, Cell>();
+	const far = [...new Set(who.filter((w): w is string => !!w))].filter(
 		(w) => !!opt.at || !s.near(w, TALK_NEAR),
 	);
 	if (!far.length) return out;
@@ -418,14 +400,6 @@ export const sendBack = async (s: Story): Promise<void> => {
 	await rebuild(s);
 	await s.look(null, { instant: true });
 	await s.fadeIn(250);
-};
-
-/**
- * 場面の 終わりに カメラを キリコへ。仲間を 呼んでいれば すぐ sendBack の 暗転が 来るので、そこで もどす
- * （キリコまで 寄せた とたんに 暗くなって、むだに 行き来して 見えた）。
- */
-const lookHome = async (s: Story): Promise<void> => {
-	if (!called.has(s)) await s.look(null);
 };
 
 // ───────────────── 寄り道の 板の 来客 ─────────────────
@@ -663,12 +637,58 @@ export const newsScript = async (s: Story): Promise<void> => {
 	}
 };
 
+// ───────────────── 撮れ高と 開いた 店 ─────────────────
+
+/** 住人の イベント ID（gather で 呼ぶ）。 */
+const mobEv = (id: MobId): string => `mob_${id}`;
+
+/**
+ * 前の 冒険の 撮れ高（ふえた 登録者）を ヒナリーが 発表する（倒れて 帰っても：放送事故）。
+ * 節目に 届いたら「準備中」の シャッターが あがって 店が 開く（TOWN.md §0.1。core/town.ts の stageOfSubs）。
+ */
+export const subsScript = async (s: Story): Promise<void> => {
+	const t = loadTown();
+	const g = t.gain;
+	if (!g) return;
+	await gather(s, [mobEv(SUBS_MSG.gain.who)]);
+	const l = g.kind === "dead" ? SUBS_MSG.dead : SUBS_MSG.gain;
+	await sayAs(
+		s,
+		l.who,
+		fill(l.text, { n: subsText(g.n), subs: subsText(t.subs) }),
+		cueOf(l),
+	);
+	t.gain = null;
+	const r = openShops(t);
+	saveTown(t);
+	if (r.to > r.from) await shopsOpen(s, r.from, r.to, t.subs);
+};
+
+/** 店が 開いた 知らせ（開いた 店の 名前と 数・持ちこめる 数）。 */
+const shopsOpen = async (
+	s: Story,
+	from: number,
+	to: number,
+	subs: number,
+): Promise<void> => {
+	s.se("levelup");
+	await s.narrate(fill(SUBS_MSG.open, { subs: subsText(subs) }));
+	const names = shopsOpened(from, to);
+	if (names.length === 1)
+		await s.narrate(fill(SUBS_MSG.shopOne, { name: names[0] }));
+	else if (names.length)
+		await s.narrate(fill(SUBS_MSG.shops, { name: names[0], n: names.length }));
+	const carry = CARRY_MAX[to] ?? 0;
+	if (carry > (CARRY_MAX[from] ?? 0))
+		await s.narrate(fill(SUBS_MSG.carry, { n: carry }));
+};
+
 // ───────────────── 持ち帰った物 ─────────────────
 
-/** 売り上げを 町で 使える ことを ゼロが 言った（Progress.flags）。 */
+/** 売り上げを 町で 使える ことを ジェイトルマンが 言った（Progress.flags）。 */
 const WALLET_TOLD = "toldWallet";
 const WALLET_WHY_TOLD = "toldWalletWhy";
-/** あずけた 物の 正体が わかる ことを シヨが 言った。 */
+/** あずけた 物の 正体が わかる ことを ンゴ姉が 言った。 */
 const STORE_TOLD = "toldStoreKnown";
 
 /** あずける道具を えらぶ（uid）。村では ui/village/home.ts の chooseStored を 包む（試験では 仮の手）。 */
@@ -679,8 +699,8 @@ export type StoreChooser = (
 ) => Promise<number[]>;
 
 /**
- * 持ち帰った物を 倉庫へ・売る（おあずかりが 無ければ 何もしない）。
- * 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずける物を きく。のこりは 売って ゼロが 売り上げを 読む。
+ * 持ち帰った物を 機材倉庫へ・買い取り屋で 売る（おあずかりが 無ければ 何もしない）。
+ * ンゴ姉が あずける物を きいて、のこりを ジェイトルマンが 買い取る（TOWN.md §0.4）。
  */
 export const settleScript = async (
 	s: Story,
@@ -689,277 +709,47 @@ export const settleScript = async (
 	const t = loadTown();
 	const pend = t.pending;
 	if (!pend) return;
-	// ぜんぶ 売れば 倉庫が 広がる 帰りは、先に 町が 育って から あずける 物を きく（売ってから 建つと 悲しい）
-	const stepBefore = townStep(t.stage, t.points);
-	const grown = growForStorage(t);
-	const dark = grown.to > grown.from;
-	if (dark) {
-		const stepMid = townStep(t.stage, t.points);
-		await stageUp(s, grown.from, grown.to, movingIn(stepBefore, stepMid));
-		await movedIn(s, stepBefore, stepMid, true);
-		// 建った所から キリコへは 暗転で もどる（あずける 物を きく 仲間を そばへ 呼ぶのも この 暗転の 中で）
-		await s.fadeOut(250);
-		await s.look(null, { instant: true });
-	}
 	const cap = STORAGE_CAP[t.stage] ?? 0;
-	// 持ち帰っても 帰還スレでも、倉庫が あれば シヨが あずかる 物を きく
-	const canStore = cap > 0;
-	// まだ 来ていない 仲間の 行は、やきうの 行（BARE_TOWN_MSG）か 地の文に かわる（data/story/story.ts の FRIEND_FROM）
-	const away = awayFriends(loadProgress().cleared, t.stage);
-	const here = (w: Speaker) => !away.includes(w);
-	const say = (l: { who: Speaker; text: string }) => {
-		if (here(l.who)) return s.say(l.who, l.text, cueOf(l));
-		const bare = BARE_TOWN_MSG.find((b) => b.of === l);
-		return bare && here(bare.line.who)
-			? s.say(bare.line.who, bare.line.text, cueOf(bare.line))
-			: Promise.resolve();
-	};
-	// あずかる シヨ・売る ロゼ・読む ゼロを そばへ（いる 人だけ）
+	const say = (l: StaffLine, vars: Record<string, string | number> = {}) =>
+		sayAs(s, l.who, fill(l.text, vars), cueOf(l));
+	// あずかる ンゴ姉・買い取る ジェイトルマンを そばへ
 	await gather(
 		s,
 		(pend.items.length
-			? [
-					canStore ? TOWN_MSG.storePrompt : TOWN_MSG.noStorage,
-					TOWN_MSG.sellRest,
-					TOWN_MSG.sold,
-				]
-			: [canStore ? TOWN_MSG.nothingToStore : TOWN_MSG.soldNothing]
-		).map((l) =>
-			here(l.who)
-				? l.who
-				: (BARE_TOWN_MSG.find((b) => b.of === l)?.line.who ?? null),
-		),
-		{ dark },
+			? [TOWN_MSG.storePrompt, TOWN_MSG.sold]
+			: [TOWN_MSG.soldNothing]
+		).map((l) => mobEv(l.who)),
 	);
-	if (dark) await s.fadeIn(250);
 	let chosen: number[] = [];
-	if (!pend.items.length)
-		await say(canStore ? TOWN_MSG.nothingToStore : TOWN_MSG.soldNothing);
-	else if (canStore) {
-		if (t.storage.length >= cap) await say(TOWN_MSG.storageFull);
-		else {
-			await say(TOWN_MSG.storePrompt);
-			await s.wait(0);
-			chosen = await choose(s, t, pend);
-		}
-	} else await say(TOWN_MSG.noStorage);
+	if (!pend.items.length) await say(TOWN_MSG.soldNothing);
+	else if (t.storage.length >= cap) await say(TOWN_MSG.storageFull);
+	else {
+		await say(TOWN_MSG.storePrompt);
+		await s.wait(0);
+		chosen = await choose(s, t, pend);
+	}
 	// 選んでいるあいだに 別のタブで 決められていたら、ここでは 何もしない（古い町で 上書きしない）
 	const cur = loadTown();
 	if (JSON.stringify(cur.pending) !== JSON.stringify(pend)) return;
-	// 売る 前の 小段（売れて 小段が 上がると 住人が 越してくる）
-	const stepFrom = townStep(cur.stage, cur.points);
-	const stageFrom = cur.stage;
-	const r = settleReturn(cur, chosen, grown.from);
+	const r = settleReturn(cur, chosen);
 	if (chosen.length) {
 		await say(TOWN_MSG.storeDone);
 		// あずけた 物は 正体が わかる（engine/save.ts の settleReturn・depositBag）。はじめの 1回だけ
-		if (here(TOWN_MSG.storeKnown.who) && !hasFlag(STORE_TOLD)) {
+		if (!hasFlag(STORE_TOLD)) {
 			await say(TOWN_MSG.storeKnown);
 			addFlag(STORE_TOLD);
 		}
 	}
 	if (r.sold > 0) {
-		// ゼロが まだ いなければ 地の文で
-		if (here(TOWN_MSG.sold.who))
-			await s.say(
-				TOWN_MSG.sold.who,
-				fill(TOWN_MSG.sold.text, { points: r.sold }),
-				cueOf(TOWN_MSG.sold),
-			);
-		else await s.narrate(fill(SOLD_BARE, { points: r.sold }));
-		// 売り上げが 財布にも なる ことを はじめの 1回だけ（ゼロが いる とき）
-		if (here(TOWN_MSG.wallet.who) && !hasFlag(WALLET_TOLD)) {
-			await s.say(
-				TOWN_MSG.wallet.who,
-				TOWN_MSG.wallet.text,
-				cueOf(TOWN_MSG.wallet),
-			);
+		await say(TOWN_MSG.sold, { points: r.sold });
+		// 売り上げが 財布にも なる ことと、町で 使って いい わけを はじめの 1回だけ
+		if (!hasFlag(WALLET_TOLD)) {
+			await say(TOWN_MSG.wallet);
 			addFlag(WALLET_TOLD);
 		}
-		// 町で お金を 使って いい わけ（町の 中で めぐる・使うと 活気が 出る）を 1回だけ。
-		// 前の 版で 財布の 話を 聞いた 人も、次の 売り上げの ときに 聞く
-		if (hasFlag(WALLET_TOLD) && !hasFlag(WALLET_WHY_TOLD)) {
-			for (const l of WALLET_WHY)
-				if (here(l.who)) await s.say(l.who, l.text, cueOf(l));
+		if (!hasFlag(WALLET_WHY_TOLD)) {
+			for (const l of WALLET_WHY) await say(l);
 			addFlag(WALLET_WHY_TOLD);
 		}
 	}
-	const stepTo = townStep(r.to, loadTown().points);
-	if (r.to > stageFrom)
-		await stageUp(s, stageFrom, r.to, movingIn(stepFrom, stepTo));
-	const arrived = await movedIn(s, stepFrom, stepTo, r.to > stageFrom);
-	if (r.to > stageFrom || arrived) await lookHome(s);
-};
-
-/**
- * 小段が 上がって 住人が 越してきた（data/people/mobs.ts の from）。越してきた 子を 見せて「〜が、村に　越してきた。」。
- * 建物の 段が 上がった ときは stageUp で もう 建て直して（その子は 隠して）いるので、建った所を 見ていた
- * カメラを そのまま 口へ 寄せる（キリコへ もどって 暗転して 口へ とぶと、行ったり 来たり して 見えた）。
- * 小段だけの ときは 暗転して 建て直し、町に 人が ふえた 知らせ。1回の 帰りで 何人でも（まとめて 1回）。
- * カメラは 越してきた 子に 置いたまま（もどすのは 呼ぶ側。lookHome）。だれか 来たかを かえす。
- */
-const movedIn = async (
-	s: Story,
-	from: number,
-	to: number,
-	rebuilt: boolean,
-): Promise<boolean> => {
-	const ids = movingIn(from, to);
-	if (!ids.length) return false;
-	// 越してきた 子は 村の 口（持ち場に いちばん 近い 出口）から 歩いてきて、持ち場に 着いてから 知らせる
-	if (!rebuilt) {
-		await s.fadeOut(300);
-		await rebuild(s);
-		for (const id of ids) s.hide(`mob_${id}`);
-		await s.look(gateNear(MOBS[ids[0]].spot), { instant: true });
-		await s.fadeIn(300);
-		s.se("served");
-		s.toast(TOWN_GREW_MSG);
-	}
-	for (const id of ids) {
-		await walkIn(s, `mob_${id}`, MOBS[id].spot);
-		s.face(`mob_${id}`, MOBS[id].dir);
-	}
-	await s.narrate(
-		fill(ARRIVE_MSG, { names: ids.map((id) => MOBS[id].name).join("と　") }),
-	);
-	// 総選挙の 立候補を 降りて キリコの 陣営に 入る わけ（1人 1ネタ。STORY.md §5）
-	for (const id of ids) {
-		const w = MOBS[id].withdraw;
-		if (w) await sayAs(s, id, w);
-	}
-	return true;
-};
-
-/** 小段 from → to で 越してくる 住人。 */
-const movingIn = (from: number, to: number): MobId[] =>
-	MOB_IDS.filter((id) => MOBS[id].from > from && MOBS[id].from <= to);
-
-/** (x, y) に いちばん 近い 村の 口。 */
-const gateNear = ([x, y]: readonly [number, number]): readonly [
-	number,
-	number,
-] =>
-	[...VILLAGE_EXITS].sort(
-		(a, b) =>
-			Math.max(Math.abs(a.cell[0] - x), Math.abs(a.cell[1] - y)) -
-			Math.max(Math.abs(b.cell[0] - x), Math.abs(b.cell[1] - y)),
-	)[0]?.cell ?? [x, y];
-
-/**
- * 越してきた 人（イベント ID）が 行き先に いちばん 近い 村の 口から 歩いてくる（カメラが ついていく。
- * その 口の 前に キリコが いれば 先に どく。stepAside）。
- */
-const walkIn = async (
-	s: Story,
-	ev: string,
-	to: readonly [number, number],
-): Promise<void> => {
-	const [gx, gy] = gateNear(to);
-	await stepAside(s, [gx, gy]);
-	// show で 生まれさせてから 口に 置く（先に 置くと show が 持ち場に 生まれさせて、歩いて こなかった）
-	s.show(ev);
-	s.place(ev, gx, gy);
-	await s.look(ev);
-	await s.goto(ev, to[0], to[1], { speed: 1.3 });
-};
-
-/**
- * 町が 育った：暗転して 建て直し、建った所を 見せて 知らせる。仲間の ひとことと 持ちこみの 数。
- * おんJ 本館の 形が かわったら（段3・6。段を とばしても）本館を 見て ひとこと。
- * 話す 仲間を 建った所へ 呼ぶ（gather）ので、終わりは 呼ぶ側の 暗転（sendBack か settleScript）で キリコへ もどる。
- */
-const stageUp = async (
-	s: Story,
-	from: number,
-	to: number,
-	arriving: readonly MobId[] = [],
-): Promise<void> => {
-	// 話すのは 村に いる 人だけ（まだ 来ていない 仲間の 行は 出さない）
-	const away = awayFriends(loadProgress().cleared, to);
-	const lines = (STAGE_UP[to] ?? []).filter(
-		(l) => !away.includes(l.who) && !mentionsAway(l.text, away),
-	);
-	// 本館の ひとことは やきう（はじめから 村に いる）
-	const hall =
-		hallTier(to) > hallTier(from) ? STAGE_UP_HALL[hallTier(to)] : null;
-	const hallLine = hall && !away.includes(hall.who) ? hall : null;
-	// この 段で 越してきた 仲間（data/story/story.ts の FRIEND_FROM）
-	const moved = (Object.keys(FRIEND_FROM) as Speaker[]).filter(
-		(w) => FRIEND_FROM[w] > from && FRIEND_FROM[w] <= to && !away.includes(w),
-	);
-	const at = VILLAGE_SPOTS.growth(to);
-	await s.fadeOut(400);
-	await rebuild(s);
-	// 話す 仲間は カメラが 見る 建った所の まわりへ（暗い うちに）。越してきた 仲間は あとから 歩いてくるので
-	// その 場所だけ とっておいて 隠す。このあと 越してくる 住人（movedIn）も まだ 見せない
-	const talkers = [...new Set([...lines.map((l) => l.who), ...moved])];
-	const spots = await gather(s, talkers, { dark: true, at });
-	for (const w of moved) s.hide(w);
-	for (const id of arriving) s.hide(`mob_${id}`);
-	await s.look(at, { instant: true });
-	await s.fadeIn(400);
-	s.se("levelup");
-	s.toast(`町が　「${STAGE_NAMES[to] ?? ""}」に　なった`);
-	if (moved.length) {
-		// いっしょに 越してきた 仲間は 建った所に いちばん 近い 口から 連れだって 歩いてくる
-		// （1人ずつ べつの 口から 来ると、カメラが 村の はしから はしへ 2度 往復した）
-		const gate = gateNear(at);
-		const walkers = moved.flatMap((w) => {
-			const c = spots.get(w);
-			return c ? [{ w, c }] : [];
-		});
-		await stepAside(s, gate);
-		for (const { w } of walkers) {
-			// show で 生まれさせてから 口に 置く（walkIn と 同じ）
-			s.show(w);
-			s.place(w, gate[0], gate[1]);
-		}
-		if (walkers[0]) await s.look(walkers[0].w);
-		// カメラは 先頭に ついていく。うしろの 人は 少し 遅れて（口の マスで 重ならないように）
-		await Promise.all(
-			walkers.map(async ({ w, c }, i) => {
-				if (i) await s.wait(300 * i);
-				await s.goto(w, c[0], c[1], { speed: 1.3 });
-				s.face(w, c[1] > at[1] ? "up" : "down");
-			}),
-		);
-		await s.narrate(
-			fill(ARRIVE_MSG, {
-				names: moved.map((w) => SPEAKERS[w].name).join("と　"),
-			}),
-		);
-		await s.look(at);
-	}
-	for (const l of lines) await s.say(l.who, l.text, cueOf(l));
-	if (hallLine) {
-		// 本館を 見せて、話す 人が 本館の 前まで 歩いてきて 言う（カメラは 本館に 置いたまま、人が 画面に 入ってくる。
-		// 人に カメラを つけると 本館が 一瞬しか 映らず、建った 本館を 背に 行ったり 来たり した）
-		await s.wait(0);
-		await s.look(VILLAGE_SPOTS.hallLook);
-		const [door] = VILLAGE_SPOTS.hallDoors;
-		const [front] = freeAround(s, 1, [door[0], door[1] + 1]);
-		if (front) {
-			await s.goto(hallLine.who, front[0], front[1], { speed: 1.4 });
-			s.face(hallLine.who, "up");
-		}
-		await s.say(hallLine.who, hallLine.text, cueOf(hallLine));
-	}
-	// 町の まわり・浜・新市街・港に 建った 物（仲間は 町の まんなかしか 語らないので、カメラで 回って 知らせる）
-	const news = newsPages(townNews(from, to));
-	for (const p of news) {
-		await s.look(p.at);
-		await s.narrate(p.text);
-	}
-	// バス停・駅は 出かけられる 所なので、そう 言う
-	const depart = departNews(from, to);
-	for (const p of depart) {
-		await s.look(p.at);
-		await s.narrate(p.text);
-	}
-	if (news.length || depart.length) await s.look(at);
-	const carry = CARRY_MAX[to] ?? 0;
-	if (carry > (CARRY_MAX[from] ?? 0))
-		await s.narrate(`倉庫から　引き取って\n${carry}つまで　持っていける`);
-	// カメラは 建った所に 置いたまま（越してくる 住人が いれば そのまま 口へ。もどすのは 呼ぶ側）
 };

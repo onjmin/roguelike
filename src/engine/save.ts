@@ -13,7 +13,13 @@ import { GUESTS } from "../core/guest";
 import { defOf } from "../core/item";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import { CARRY_MAX, nextStage, priceOf, STORAGE_CAP } from "../core/town";
+import {
+	CARRY_MAX,
+	priceOf,
+	STORAGE_CAP,
+	stageOfSubs,
+	subsGain,
+} from "../core/town";
 import {
 	CAT_ORDER,
 	type DungeonId,
@@ -104,6 +110,7 @@ export const saveRun = (s: RunState): void => {
 		// 倒れた回数・図鑑・町の売上が ふえないように）
 		if (!fresh) return;
 		addBookKills(s.kills);
+		addSubs(s);
 		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）。
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
@@ -655,8 +662,12 @@ export type PendingReturn = {
 export type Town = {
 	/** 売上の合計。 */
 	points: number;
-	/** 町の段（0〜7。core/town.ts）。 */
+	/** 開いた 店の 段（0〜7。登録者数で 決まる：core/town.ts の stageOfSubs）。 */
 	stage: number;
+	/** キリコの チャンネルの 登録者数。 */
+	subs: number;
+	/** まだ 村で 知らせて いない 前の 冒険の 撮れ高（ふえた 登録者。ui/village/villageReturn.ts の subsScript）。 */
+	gain: SubsGain | null;
 	/** 倉庫の道具。 */
 	storage: Item[];
 	/**
@@ -686,13 +697,27 @@ export type Town = {
 
 const RETURNED_KEEP = 50;
 
+/** 1回の 冒険で ふえた 登録者（知らせる まで 足して いく）。 */
+export type SubsGain = {
+	n: number;
+	kind: "dead" | "clear" | "escape";
+	dungeon: DungeonId;
+};
+
+const isGain = (x: unknown): x is SubsGain =>
+	!!x &&
+	typeof x === "object" &&
+	typeof (x as SubsGain).n === "number" &&
+	isDungeon((x as SubsGain).dungeon) &&
+	["dead", "clear", "escape"].includes((x as SubsGain).kind);
+
 /** 1回の 帰りの 売り上げ。 */
 export type Sale = {
 	/** 売れた 額（円）。 */
 	points: number;
 	dungeon: DungeonId;
 	kind: "clear" | "escape";
-	/** この 帰りで 町の 段が 上がった。 */
+	/** この 帰りで 店が 開いた（前の 版の 記録では 町の 段が 上がった）。 */
 	up: boolean;
 };
 
@@ -719,9 +744,12 @@ export const loadTown = (): Town => {
 			if (oddTown(o))
 				noteTamper(`town:${o.points}:${o.stage}`, runStats().runs);
 			const pend = o.pending;
+			const subs = typeof o.subs === "number" ? Math.max(0, o.subs) : 0;
 			return {
 				points: typeof o.points === "number" ? o.points : 0,
 				stage: typeof o.stage === "number" ? o.stage : 0,
+				subs,
+				gain: isGain(o.gain) ? o.gain : null,
 				storage: Array.isArray(o.storage) ? o.storage.filter(isItem) : [],
 				bag: Array.isArray(o.bag) ? o.bag.filter(isItem) : [],
 				lunch: o.lunch === true,
@@ -741,15 +769,12 @@ export const loadTown = (): Town => {
 	} catch {
 		// 読めなければ はじめから
 	}
-	// まだ無ければ：パン板 を持ち帰っていれば屋台、電池板 を持ち帰っていれば いちばん上
-	const p = loadProgress();
+	// まだ無ければ 登録者 0人（店は 段0 だけ）
 	return {
 		points: 0,
-		stage: p.cleared.includes("deep")
-			? 7
-			: p.cleared.includes("shallow")
-				? 1
-				: 0,
+		stage: 0,
+		subs: 0,
+		gain: null,
 		storage: [],
 		bag: [],
 		lunch: false,
@@ -785,44 +810,50 @@ const addPendingReturn = (s: RunState): void => {
 	saveTown(t);
 };
 
-const clearedOf = (pend: PendingReturn) => {
-	const cleared = pend.kind === "clear";
-	return {
-		shallowCleared: cleared && pend.dungeon === "shallow",
-		topCleared: cleared && pend.dungeon === "deep",
-		topOpen: loadProgress().cleared.includes("deep"),
-	};
-};
-
 /**
- * 持ち帰った物を ぜんぶ 売れば 倉庫が 広がる 帰りなら、あずける 前に 段を 上げる（保存する）。
- * 先に 売られてから 倉庫が 建つと、あずけたかった 物が 売れてしまうので。返り値は 段の前後（上げなければ 同じ）。
+ * 冒険の 撮れ高で 登録者を ふやす（倒れても。知らせるのは 村で：gain に 足して おく）。
  */
-export const growForStorage = (t: Town): { from: number; to: number } => {
-	const from = t.stage;
-	const pend = t.pending;
-	if (!pend?.items.length) return { from, to: from };
-	const all = pend.items.reduce((n, it) => n + priceOf(it), 0);
-	const to = nextStage(from, t.points + all, clearedOf(pend));
-	if ((STORAGE_CAP[to] ?? 0) <= (STORAGE_CAP[from] ?? 0))
-		return { from, to: from };
-	t.stage = to;
+const addSubs = (s: RunState): void => {
+	if (!s.end) return;
+	const t = loadTown();
+	const n = subsGain(t.subs, {
+		kind: s.end.kind,
+		depth: s.end.depth,
+		kills: Object.values(s.kills).reduce((a, b) => a + b, 0),
+	});
+	t.subs += n;
+	t.gain = {
+		n: n + (t.gain?.n ?? 0),
+		kind: s.end.kind,
+		dungeon: s.dungeon,
+	};
 	saveTown(t);
-	return { from, to };
 };
 
 /**
- * おあずかりを 決める：stored（uid）を倉庫へ、残りを売って 売上に。段を上げる。
- * 倉庫に入れた道具は 正体がわかる（町で 見てもらう）。返り値は 売上と 段の前後。
+ * 登録者数で 店を 開ける（段を 上げる。下げない）。段の 前後を かえす（保存する）。
+ * いちばん上の 段は 電池板を 持ち帰って から。
+ */
+export const openShops = (t: Town): { from: number; to: number } => {
+	const from = t.stage;
+	const topOpen = loadProgress().cleared.includes("deep");
+	t.stage = Math.max(from, stageOfSubs(t.subs, topOpen));
+	if (t.stage !== from) saveTown(t);
+	return { from, to: t.stage };
+};
+
+/**
+ * おあずかりを 決める：stored（uid）を倉庫へ、残りを 買い取り屋で 売って 売上に。
+ * 倉庫に入れた道具は 正体がわかる（町で 見てもらう）。返り値は 売上。
  */
 export const settleReturn = (
 	t: Town,
 	stored: readonly number[],
-	// growForStorage で 先に 上げた ときの 上がる 前の 段（売上の 記録の 「上がった」に 使う）
+	// この 帰りで 店が 開く 前の 段（売上の 記録の 「開いた」に 使う）
 	from = t.stage,
-): { sold: number; from: number; to: number } => {
+): { sold: number } => {
 	const pend = t.pending;
-	if (!pend) return { sold: 0, from, to: t.stage };
+	if (!pend) return { sold: 0 };
 	const cap = STORAGE_CAP[t.stage] ?? 0;
 	let sold = 0;
 	for (const it of pend.items) {
@@ -832,7 +863,6 @@ export const settleReturn = (
 		else sold += priceOf(it);
 	}
 	t.points += sold;
-	t.stage = nextStage(t.stage, t.points, clearedOf(pend));
 	t.pending = null;
 	t.sales = [
 		...t.sales,
@@ -844,7 +874,7 @@ export const settleReturn = (
 		},
 	].slice(-SALES_KEEP);
 	saveTown(t);
-	return { sold, from, to: t.stage };
+	return { sold };
 };
 
 /**

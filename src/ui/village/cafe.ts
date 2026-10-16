@@ -19,7 +19,6 @@
 // 聞いた 印・おごった 回数・知った 好みは 別の 保存場所に 残す（中断セーブ・記録・町には 手を ふれない。倉庫の 草だけ へる）。
 
 import { defOf } from "../../core/item";
-import { lastStepOf } from "../../core/town";
 import type { Item } from "../../core/types";
 import {
 	CAFE_DRINKS,
@@ -42,25 +41,14 @@ import {
 import { CAFE_MOBS, type CafeMobTalk } from "../../data/cafe/cafeMobs";
 import { venueLines } from "../../data/jikkyo/text";
 import { CAST } from "../../data/people/cast";
-import {
-	type Cast,
-	MOB_IDS,
-	MOBS,
-	type MobId,
-	movedIn,
-} from "../../data/people/mobs";
+import { type Cast, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends, playPage } from "../../data/story/story";
 import { today } from "../../data/town/calendar";
 import { ROOM_MSG, ROOM_NAMES } from "../../data/town/rooms";
 import { NANASHI_WALK } from "../../data/village/hall";
 import { npc, sign } from "../../data/village/helpers";
-import {
-	CAFE_FROM,
-	type Cell,
-	stepOf,
-	type VillageView,
-} from "../../data/village/map";
+import { CAFE_FROM, type Cell, type VillageView } from "../../data/village/map";
 import {
 	CAFE_ALL_SEATS,
 	CAFE_MASTER,
@@ -276,8 +264,6 @@ export const cafeLayout = (
 	o: {
 		pairTalk: (a: Speaker, b: Speaker) => string | undefined;
 		mobTalk: (id: MobId, who: Speaker) => string | undefined;
-		/** 町の 小段（来ている 住人。省くと その 段の いちばん上）。 */
-		step?: number;
 	},
 ): CafeLayout => {
 	const rnd = rng(hash(`cafe:${at}`));
@@ -321,8 +307,7 @@ export const cafeLayout = (
 		f.talk = undefined;
 		friends.push({ who: mate, slot: slots[friends.length] });
 	}
-	const step = o.step ?? lastStepOf(stage);
-	const moved = shuffle(movedIn(step, loadProgress().cleared));
+	const moved = shuffle([...MOB_IDS]);
 	const busy = new Set<MobId>();
 	for (const f of friends) {
 		const free = friends.filter((x) => !x.partner).length;
@@ -1220,7 +1205,6 @@ export const buildCafe = (view: VillageView, ctx: Ctx): MapDef => {
 	const rows = roomRows("cafe");
 	const st = load();
 	const layout = cafeLayout(view.stage, returnAt(), {
-		step: stepOf(view),
 		pairTalk: pairTalkOf(view.stage, st),
 		mobTalk: mobTalkOf(st),
 	});

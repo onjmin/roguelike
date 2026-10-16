@@ -20,7 +20,6 @@
 // - 期間限定・曜日は 遊んでいる 端末の 日付（data/town/calendar.ts）。
 // ロジックは ui/village/villageMobs.ts、置き場所は data/village/map.ts。
 
-import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { Dir } from "../../engine/types";
 import type { Speaker } from "../story/quotes";
@@ -111,10 +110,6 @@ export type MobDef = {
 	name: string;
 	/** 歩行グラ（RPGEN 形式）。 */
 	sprite: string;
-	/** 越してくる 町の 小段（core/town.ts の TOWN_STEPS。0 は はじめから いる）。小段ごとに 1人ずつ。 */
-	from: number;
-	/** 越してくる ときの ひとこと：総選挙の 立候補を 降りて キリコの 陣営に 入る わけ（STORY.md §5。1人 1ネタ）。 */
-	withdraw?: string;
 	spot: readonly [number, number];
 	dir: Dir;
 	/** 家の まわり 2マスを うろうろ する。 */
@@ -201,7 +196,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	puyu: {
 		name: "ぷゆゆ",
 		sprite: PUYU_WALK,
-		from: 0,
 		spot: [17, 23],
 		dir: "down",
 		wander: true,
@@ -689,8 +683,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	nichie: {
 		name: "にぃちぇ",
 		sprite: "pub:sprites/minors_nichie.png",
-		from: 2,
-		withdraw: "告示の　日、まちがえたニィ。\n……もう　締め切りだったニィ",
 		spot: [22, 20],
 		dir: "left",
 		meet: [
@@ -850,8 +842,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	panmatsu: {
 		name: "パン松",
 		sprite: "pub:sprites/minors_panmatsu.png",
-		from: 5,
-		withdraw: "パン板は　推した。\n……オレは　パンを　焼く　係だ",
 		spot: [17, 18],
 		dir: "left",
 		meet: [
@@ -992,11 +982,8 @@ export const MOBS: Record<MobId, MobDef> = {
 	ngoane: {
 		name: "ンゴ姉",
 		sprite: "pub:sprites/minors_ngoane.png",
-		from: 7,
-		withdraw:
-			"弟には　負けて　ほしいンゴねぇ……\nだから、キリコに　つくンゴねぇ",
-		spot: [28, 22],
-		dir: "left",
+		spot: [27, 17],
+		dir: "down",
 		meet: [
 			e({ emote: "♥" }, m("あら、フェリスちゃんの\nおともだち……！")),
 			m("なかよく　してほしいンゴねぇ……"),
@@ -1151,9 +1138,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	onsu: {
 		name: "おんすちゃん",
 		sprite: "pub:sprites/minors_onsu.png",
-		from: 10,
-		withdraw:
-			"おんSの　宣伝、させて　くれるなら\n……降りて　あげても　いいのよぉ",
 		spot: [29, 12],
 		dir: "left",
 		meet: [
@@ -1322,8 +1306,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	onchan: {
 		name: "おんちゃん",
 		sprite: "sa:oLrlUq",
-		from: 13,
-		withdraw: "殿堂入りは、出られないおん。\n……今日は　降りる　日だおん",
 		spot: [21, 22],
 		dir: "down",
 		noVote: true,
@@ -1487,9 +1469,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	yayapoji: {
 		name: "ヤヤポジ",
 		sprite: "pub:sprites/minors_yayapoji.png",
-		from: 16,
-		withdraw:
-			"勝つのも　負けるのも　いやだから、\n降りたんだ。……引き分けなんだ",
 		spot: [11, 22],
 		dir: "right",
 		meet: [
@@ -1628,8 +1607,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ムッジェ",
 		sprite: "pub:sprites/minors_mujje.png",
 		color: "#e0584a",
-		from: 8,
-		withdraw: "ホゲェ。\n（辞退届を　さしだした）",
 		spot: [23, 23],
 		dir: "down",
 		meet: [
@@ -1750,8 +1727,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "朝コンロ",
 		sprite: "pub:sprites/minors_asakonro.png",
 		color: "#ff8a4a",
-		from: 11,
-		withdraw: "ガスの　元栓、閉めてくるもん。\n……選挙は、そのあとで　いいもん",
 		spot: [10, 20],
 		dir: "right",
 		meet: [
@@ -1840,10 +1815,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ジェイトルマン",
 		sprite: "pub:sprites/minors_jtleman.png",
 		color: "#9aa0c8",
-		from: 14,
-		withdraw: "選挙は　若い　者に　ゆずろう。\n……コーヒーでも　どうかね",
-		spot: [8, 20],
-		dir: "right",
+		spot: [13, 17],
+		dir: "down",
 		meet: [
 			m("ここは　私の　新しい　庭だ"),
 			e({ emote: "汗" }, m("……ああ、失礼。\n君の　村だったね")),
@@ -1938,8 +1911,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ミャウミャウ",
 		sprite: "pub:sprites/minors_miaumiau.png",
 		color: "#e4e4f0",
-		from: 18,
-		withdraw: "選挙を　侵略しに　来たぷ。\n……ポスター、23枚も　あったぷ",
 		spot: [15, 23],
 		dir: "right",
 		meet: [
@@ -2027,8 +1998,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "リノ",
 		portrait: "portraits/rino.png",
 		sprite: "pub:sprites/rino.png",
-		from: 19,
-		withdraw: "演説は、人前だ。\n……DIOは　降りる。以上だ",
 		spot: [18, 16],
 		dir: "right",
 		color: "#bdb76b",
@@ -2215,8 +2184,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "アル",
 		portrait: "portraits/aru.png",
 		sprite: "pub:sprites/aru.png",
-		from: 20,
-		withdraw: "1票でも　入れば　すごいんですよ！\n……だから、先輩に　入れます",
 		spot: [12, 20],
 		dir: "down",
 		color: "#8fd694",
@@ -2388,8 +2355,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		label: "プロト　HeBc-0",
 		portrait: "portraits/zero_proto.png",
 		sprite: "sa:KxS5YZ",
-		from: 3,
-		withdraw: "当選確率を　計算したゼロ。\n……0.3%　だったゼロ",
 		spot: [13, 22],
 		dir: "right",
 		color: "#9ab8d8",
@@ -2596,9 +2561,6 @@ export const MOBS: Record<MobId, MobDef> = {
 		label: "レン　XQxS-0",
 		portrait: "portraits/zero_ren.png",
 		sprite: "pub:sprites/zero_ren.png",
-		from: 4,
-		withdraw:
-			"博士が　公約を　勝手に　更新したの！\n……もう　出られない　中身に　なった",
 		spot: [25, 20],
 		dir: "down",
 		color: "#e0b040",
@@ -2809,11 +2771,8 @@ export const MOBS: Record<MobId, MobDef> = {
 		name: "ヒナリー",
 		portrait: "portraits/hinary.png",
 		sprite: "sa:mV6xaq",
-		from: 9,
-		withdraw:
-			"選挙管理委員に　なりました。\n……これで　発表を　終わりたいと　思います",
-		spot: [26, 23],
-		dir: "up",
+		spot: [17, 21],
+		dir: "down",
 		color: "#7ab8e8",
 		noVote: true,
 		meet: [
@@ -2994,7 +2953,6 @@ export const MOBS: Record<MobId, MobDef> = {
 	shobon: {
 		name: "原住民",
 		sprite: "sa:nabqyI",
-		from: 0,
 		// 西の 空き地の 東の はし（西の 口への 道の そば）。のんびり すわっているので うろうろ しない。
 		// (7,21) は 空き地 → 西口の 乗り場・図書館・碁会所の 近道を ふさぐ（段3〜 で +34 歩）ので 1つ 東
 		spot: [8, 21],
@@ -3088,15 +3046,6 @@ export const MOBS: Record<MobId, MobDef> = {
 };
 
 export const MOB_IDS = Object.keys(MOBS) as MobId[];
-
-/**
- * 村に 越してきている 住人（町の 小段 step までに 来た 子。data/village/map.ts・ui/village/cafe.ts・
- * ui/village/guests.ts が 同じ 決まりで 数える）。cleared は 呼ぶ 側と 形を そろえる ため（いまは 見ない）。
- */
-export const movedIn = (
-	step: number,
-	_cleared: readonly DungeonId[],
-): MobId[] => MOB_IDS.filter((id) => step >= MOBS[id].from);
 
 /**
  * ぷゆゆが お弁当の ぷゆゆパンを 持たせる ときの ひとこと（ui/village/villageReturn.ts の lunchScript。帰りごとに 1つ）。

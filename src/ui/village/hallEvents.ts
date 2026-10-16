@@ -24,7 +24,7 @@ import {
 	objectiveFor,
 	withDevEvent,
 } from "../../data/story/objectives";
-import { DUNGEON_NAMES, FRIEND_FROM } from "../../data/story/story";
+import { DUNGEON_NAMES } from "../../data/story/story";
 import {
 	BOOK_MENU,
 	HALL_MSG,
@@ -328,18 +328,11 @@ const shelfScript =
 	};
 
 /**
- * 売り上げの 帳簿（棒グラフ：ui/village/home.ts）。段1〜 は 帳簿の 貼り紙、集会所では 長机に ひろげてある。
- * ゼロが 越してくる 前は 何も 書いていない（data/story/story.ts の FRIEND_FROM）。
+ * ヒナリーの 帳簿（登録者数と、売り上げの 棒グラフ：ui/village/home.ts）。帳簿の 貼り紙、集会所では 長机に ひろげてある。
  */
 const ledgerScript =
 	(ctx: Ctx, at: "ledger" | "desk"): Script =>
 	async (s) => {
-		if (loadTown().stage < FRIEND_FROM.zero) {
-			await s.narrate(
-				at === "desk" ? HALL_MSG.deskEmpty : HALL_MSG.ledgerEmpty,
-			);
-			return;
-		}
 		await s.narrate(at === "desk" ? HALL_MSG.desk : HALL_MSG.ledger);
 		await s.narrate(ledgerLine());
 		await hideMsg(s);

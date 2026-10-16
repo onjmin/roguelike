@@ -36,16 +36,11 @@ import {
 	RIDDLES,
 	rolliLine,
 } from "../../data/people/folk";
-import { movedIn } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
 import { nowHour, today } from "../../data/town/calendar";
 import { FOLK_WALK } from "../../data/village/folk";
 import { npc, sign } from "../../data/village/helpers";
-import {
-	stepOf,
-	type VillagePlace,
-	type VillageView,
-} from "../../data/village/map";
+import type { VillagePlace, VillageView } from "../../data/village/map";
 import type { EventDef, Script, Story } from "../../engine/defs";
 import type { Cue } from "../../engine/emote";
 import { loadRecords } from "../../engine/save";
@@ -334,10 +329,6 @@ export const odoruScript =
 		s.face(id, dir);
 	};
 
-/** 原住民が 村に いるか（はじめから いる。段の 下見でも 同じ）。 */
-const ownerHere = (v: VillageView): boolean =>
-	movedIn(stepOf(v), v.cleared).includes("shobon");
-
 /** モフちゃん（地の文だけ。札の 版は 町の 段 + 1）。 */
 export const mofuScript =
 	(id: string, dir: Dir, v: VillageView): Script =>
@@ -345,7 +336,7 @@ export const mofuScript =
 		const k = tick(s, "folk:mofu");
 		if (k === 0) {
 			await s.narrate(mofuTag(v.stage));
-			if (ownerHere(v)) await s.narrate(MOFU.owner);
+			await s.narrate(MOFU.owner);
 		} else await s.narrate(MOFU.more[(k - 1) % MOFU.more.length]);
 		s.face(id, dir);
 	};

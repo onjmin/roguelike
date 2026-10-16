@@ -49,16 +49,15 @@
 // 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
 
-import { lastStepOf, TOWN_STAGES } from "../../core/town";
+import { SUB_TIERS, TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../people/cast";
-import { MOBS, type MobId, movedIn } from "../people/mobs";
+import { MOB_IDS, MOBS, type MobId } from "../people/mobs";
 import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
-import { FRIEND_FROM } from "../story/story";
 import { nowHour, today } from "../town/calendar";
 import { COLONY_SPOTS, VILLAGE_PT } from "../town/worldMap";
 import {
@@ -124,18 +123,20 @@ const OY = 7;
 const TOWN_W = 22;
 const TOWN_H = 18;
 
-/** 村の形を決める物（町の段・開いたダンジョン・持ち帰ったダンジョン）。 */
+/**
+ * 村の形を決める物（町の段・開いたダンジョン・持ち帰ったダンジョン）。
+ * 町は はじめから 都市の 姿（ui/village/villageReturn.ts の villageView は stage を いちばん上に する）。
+ * open は 開いた 店の 段（登録者数で 決まる。core/town.ts の stageOfSubs）。省くと stage と 同じ。
+ */
 export type VillageView = {
 	stage: number;
 	unlocked: readonly DungeonId[];
 	cleared: readonly DungeonId[];
-	/** 町の 小段（core/town.ts の TOWN_STEPS。住人が 何人 越してきたか）。省くと その段の いちばん上。 */
-	step?: number;
+	open?: number;
 };
 
-/** その 村の 小段（省いたら その 段の いちばん上）。 */
-export const stepOf = (v: VillageView): number =>
-	v.step ?? lastStepOf(layoutStage(v));
+/** 開いた 店の 段（それより 上の 段の 店は「準備中」）。 */
+export const openOf = (v: VillageView): number => v.open ?? v.stage;
 
 export type Cell = readonly [x: number, y: number];
 
@@ -164,16 +165,17 @@ export const VILLAGE_SPOTS = {
 		[15, 21],
 		[16, 21],
 	] as readonly Cell[],
-	zero: [17, 21] as Cell,
+	/** ゼロ（ライバル。3機で 配信する ラボの そば。店の 仕事は しない：TOWN.md §0.4）。 */
+	zero: [26, 23] as Cell,
 	/** 広場の 井戸（段5 から）。過去ログの底へは ここから 降りる。 */
 	well: [24, 21] as Cell,
-	/** フェリス（海の家の 看板娘。店の 前の 砂浜）。 */
+	/** フェリス（ライバル。海の家の ステージで アイドル配信。店の 前の 砂浜）。 */
 	feris: [12, 35] as Cell,
-	/** ロゼ（段0は 鍋の となり、屋台が出たら 台の うしろ）。 */
-	roze: (stage: number): Cell => (stage === 0 ? [13, 18] : [13, 17]),
-	/** シヨ（倉庫が 建つまでは 崖の そば。建ったら 台の うしろ）。 */
-	shiyo: (stage: number): Cell => (stage >= 2 ? [27, 17] : [26, 12]),
-	/** やきう（小屋の前で 大工）。 */
+	/** ロゼ（ライバル。スタジオ帰りに 広場の 西で 休む）。 */
+	roze: [8, 20] as Cell,
+	/** シヨ（ライバル。自宅スタジオの そば）。 */
+	shiyo: [28, 22] as Cell,
+	/** やきう（名無しの 視聴者。家の 前）。 */
 	nanj: (_v: VillageView): Cell => [21, 18],
 	/** 音楽室「ピアノ機能」の 扉（段3 から。週末だけ 踏むと 中へ）。 */
 	musicDoor: [22, 28] as Cell,
@@ -195,18 +197,6 @@ export const VILLAGE_SPOTS = {
 		[22, 23],
 		[27, 20],
 	] as readonly Cell[],
-	/**
-	 * 町が その段に なったとき カメラを 向ける 所（建った・変わった 建物）。
-	 * 小屋（3）・倉庫（4・6）・大きな店と 広場の 桜（7）・ほかは 店。
-	 */
-	growth: (stage: number): Cell =>
-		stage === 3
-			? [22, 16]
-			: stage === 4 || stage === 6
-				? [27, 15]
-				: stage >= 7
-					? [15, 17]
-					: [14, 16],
 } as const;
 
 /** 地図の形に使う 町の段（0〜7 に 丸める）。 */
@@ -913,6 +903,26 @@ export const SHRINE_FROM = 2;
 /** 銭湯が 建つ 町の 段（南東。池の 東の 森を 開いた 所）。 */
 export const BATH_FROM = 4;
 
+/** 地図に 字で 描く 店（FACILITIES の ほか）と 開く 段。 */
+const BLOCK_SHOPS: readonly { from: number; name: string }[] = [
+	{ from: SHRINE_FROM, name: "おんJ神社" },
+	{ from: MUSIC_FROM, name: "音楽室" },
+	{ from: BATH_FROM, name: "銭湯" },
+	{ from: CAFE_FROM, name: "喫茶「おんJ」" },
+	{ from: LIBRARY_FROM, name: "図書館" },
+];
+
+/** 段 from → to で 開いた 店の 名前（開く 順）。 */
+export const shopsOpened = (from: number, to: number): string[] =>
+	[...BLOCK_SHOPS, ...facilitiesAt(TOWN_STAGES - 1).filter((f) => f.room)]
+		.filter((x) => x.from > from && x.from <= to)
+		.sort((a, b) => a.from - b.from)
+		.map((x) => x.name);
+
+/** その 段の 店が 開く 登録者数（core/town.ts の SUB_TIERS）。 */
+export const subsToOpen = (from: number): number =>
+	SUB_TIERS.find((t) => t.stage >= from)?.subs ?? 0;
+
 /**
  * おんJ神社（地図の 1, 4 から。字は data/village/tiles.ts の SHRINE）。拝殿の 前に 賽銭箱（3,9。下の 3,10 から 調べる）、
  * 鳥居（3,13。絵は 11〜13 に かかる）を くぐって 下の 空き地（x=7 の 草）へ 抜ける。
@@ -1243,17 +1253,16 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [x, y] = VILLAGE_SPOTS.shopDoor;
 		out.push({ id: "door_shop", x, y, trigger: "touch" });
 	}
-	// 仲間は 越してきてから（data/story/story.ts の FRIEND_FROM。はじめの おんJタウンには やきうだけ）
-	const here = (w: Speaker) => stage >= FRIEND_FROM[w];
-	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze(stage)));
+	// ライバル 4人と やきう（みんな はじめから 町に いる。店の 仕事は しない：TOWN.md §0.4）
+	out.push(friend("roze", VILLAGE_SPOTS.roze));
 	// シヨは 金・土・日の 夜は メイド喫茶で アルバイト（data/people/shiyoShift.ts）
-	if (here("shiyo") && !shiyoAtMaid(stage, today(), nowHour()))
-		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
-	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
-	// やきうは はじめから 小屋の 前（現職。村から 出ていかない）
+	if (!shiyoAtMaid(stage, today(), nowHour()))
+		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo));
+	out.push(friend("zero", VILLAGE_SPOTS.zero));
+	// やきうは 名無しの 視聴者（家の 前）
 	out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
-	// フェリスは 海の家の 看板娘（おんJの マスコット。海の家は フェリスと 同じ 段に 建つ）
-	if (here("feris")) out.push(friend("feris", VILLAGE_SPOTS.feris, true));
+	// フェリスは 海の家の ステージ（不死鳥アイドル）
+	out.push(friend("feris", VILLAGE_SPOTS.feris, true));
 	// 施設の 扉（中が ある 施設）と 外に 置く 物（釣り場の 竿・グラウンドの マウンドなど）
 	for (const f of facilitiesAt(stage)) {
 		const d = facilityDoor(f);
@@ -1282,7 +1291,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			sprite: TROLLEY_SPRITE,
 		});
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
-	for (const id of movedIn(stepOf(v), v.cleared)) {
+	for (const id of MOB_IDS) {
 		const d = MOBS[id];
 		out.push({
 			id: `mob_${id}`,

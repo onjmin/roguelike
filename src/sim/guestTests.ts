@@ -174,7 +174,7 @@ test("なぐられる・帰る：キリコの となりに いない 敵は 同�
 	ok(guestHere(r) === null, "a downed guest is still on the floor");
 });
 
-test("同行の 依頼：持ち帰った 板だけ・依頼主が 村に いる ときだけ 掲示板に 出る。はたした 依頼は 出ない", () => {
+test("同行の 依頼：持ち帰った 板だけ 掲示板に 出る。はたした 依頼は 出ない", () => {
 	const all = 1e9;
 	ok(openEscorts([], 7, all, []).length === 0, "requests before any board");
 	const k = openEscorts(["kinoko"], 7, all, []);
@@ -188,9 +188,10 @@ test("同行の 依頼：持ち帰った 板だけ・依頼主が 村に いる 
 		),
 		"a done request is still up",
 	);
+	// 依頼主は みんな はじめから 町に いる
 	ok(
-		!openEscorts(["tropical"], 1, 0, []).some((e) => e.who === "feris"),
-		"feris asked before moving in",
+		openEscorts(["tropical"], 0, 0, []).some((e) => e.who === "feris"),
+		"feris does not ask at the start",
 	);
 	// 引き受けた 依頼の 板だけ ついてくる。主人公と 同じ 人は 来ない
 	ok(

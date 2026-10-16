@@ -509,7 +509,7 @@ test(
 		for (const id of WW_IDS)
 			ok(id.length === 4 && !BS_BAD_NUMBER.test(id), `id ${id}`);
 		// 作る 文
-		const all6 = rosterNames(99, 19, 20);
+		const all6 = rosterNames();
 		ok(all6.join("/") === BS_MSG.vc.official.join("/"), `roster ${all6}`);
 		const rw = rosterWindows(all6);
 		ok(rw.length === 1, `roster windows ${rw.length}`);
@@ -1048,7 +1048,7 @@ test(
 
 test(
 	"B13",
-	"ボカロ一覧：村に いる 子だけ（リノ・アルは 越してきてから）。安価キャラメイクは 帰りに 1回、原音設定か エター。作った 子は 一覧に のる",
+	"ボカロ一覧：町に いる 子 ぜんぶ（はじめから リノ・アルも）。安価キャラメイクは 帰りに 1回、原音設定か エター。作った 子は 一覧に のる",
 	() =>
 		sandbox(async (store) => {
 			const C = BS_MSG.vc;
@@ -1072,7 +1072,7 @@ test(
 				);
 			setBushitsuEnv({ returnAt: () => 50, rand: () => 0.1 });
 			let r = await examine("roster", [], view(4, 18));
-			const early = rosterWindows(rosterNames(18, 19, 20));
+			const early = rosterWindows(rosterNames());
 			ok(
 				r.join("\n") ===
 					[...thingLines("roster"), ...early.map(narr), narr(C.kiriko)].join(
@@ -1080,7 +1080,11 @@ test(
 					),
 				`first roster:\n${r.join("\n")}`,
 			);
-			ok(!r.some((l) => /春音リノ|響化アル/.test(l)), "rino/aru too early");
+			ok(
+				r.some((l) => l.includes("春音リノ")) &&
+					r.some((l) => l.includes("響化アル")),
+				`rino/aru missing: ${r}`,
+			);
 			r = await examine("roster", [], view(7, 20));
 			ok(
 				r.some((l) => l.includes("春音リノ")) &&

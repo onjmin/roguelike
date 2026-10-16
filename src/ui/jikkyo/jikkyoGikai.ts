@@ -30,12 +30,12 @@ import {
 	jikkyoOpen,
 	programSlot,
 } from "../../data/jikkyo/schedule";
-import { MOBS, type MobId, movedIn } from "../../data/people/mobs";
+import { MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
 import { SPEAKERS } from "../../data/story/quotes";
 import { today } from "../../data/town/calendar";
 import { CITYHALL_FROM, inSession } from "../../data/town/civic";
-import { stepOf, type VillageView } from "../../data/village/map";
+import type { VillageView } from "../../data/village/map";
 import type { Story } from "../../engine/defs";
 import { el } from "../dom";
 import type { UiCtx } from "../list";
@@ -337,12 +337,9 @@ export const playGikai = async (
 
 // ───────────────── 村の 入口 ─────────────────
 
-/** 越してきた 住人。 */
-const movedOf = (v: VillageView): MobId[] => movedIn(stepOf(v), v.cleared);
-
 /** この 帰りの 話を 選ぶ（議長が おんちゃんかも）。流せる 話が なければ null。 */
-const pickEpisode = (v: VillageView, at: number) => {
-	const moved = movedOf(v);
+const pickEpisode = (at: number) => {
+	const moved: MobId[] = [...MOB_IDS];
 	const got = gikaiEpisodeFor(gikaiMemo(), at, moved);
 	return got ? { ...got, onchan: moved.includes("onchan") } : null;
 };
@@ -391,7 +388,7 @@ export const watchGikai = async (
 	const slot = programSlot(place, today(), v.stage, new Date().getFullYear(), {
 		session: inSession(today(), at),
 	});
-	const got = slot?.main.program === "gikai" ? pickEpisode(v, at) : null;
+	const got = slot?.main.program === "gikai" ? pickEpisode(at) : null;
 	if (!got) {
 		for (const t of off) await s.narrate(t);
 		return;
@@ -416,7 +413,7 @@ export const hallGikai = async (
 	v: VillageView,
 	at: number = returnAt(),
 ): Promise<"watched" | "channel" | "quit"> => {
-	const got = pickEpisode(v, at);
+	const got = pickEpisode(at);
 	if (!got) return "channel";
 	const n = await pitch(
 		s,

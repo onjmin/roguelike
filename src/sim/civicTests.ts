@@ -50,7 +50,7 @@ import {
 	type Topic,
 	VERDICT,
 } from "../data/minigames/debate";
-import { MOB_IDS, MOBS, type MobId, movedIn } from "../data/people/mobs";
+import { MOB_IDS, MOBS, type MobId } from "../data/people/mobs";
 import { GLOSSARY } from "../data/story/glossary";
 import type { Today } from "../data/town/calendar";
 import {
@@ -82,7 +82,7 @@ import {
 	facilityRoomRows,
 } from "../data/village/facilities";
 import { hallPalette, hallPlaces, hallRows } from "../data/village/hall";
-import { stepOf, type VillageView } from "../data/village/map";
+import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
 import { loadProgress } from "../engine/save";
 import type { Ctx } from "../ui/ctx";
@@ -976,7 +976,7 @@ test(
 				`first board ${JSON.stringify(g1)}`,
 			);
 			ok(loadCivic().debate.tutored, "not tutored after the first");
-			// 2回目：お題（湯温）→ 派（42℃派）→ 板 → 負けた 味方の 1窓（段4 は ジェイトルマンが まだ → 名無し）
+			// 2回目：お題（湯温）→ 派（42℃派）→ 板 → 負けた 味方（ジェイトルマン。住人は はじめから 町に いる）の 1窓
 			fake = { outcome: "lose", jien: false };
 			const b = recorder([1, 1]);
 			await podium?.run?.(b.s);
@@ -990,7 +990,8 @@ test(
 			);
 			const after = b.log.at(-1) ?? "";
 			ok(
-				after === `say(42℃派の　名無し): ${NANASHI_LINES.shrug}`,
+				after.startsWith("say(ジェイトルマン): ") &&
+					!after.includes(NANASHI_LINES.shrug),
 				`after: ${after}`,
 			);
 			const g2 = seen.v;
@@ -1250,7 +1251,7 @@ const GOLDEN_AT = (stage: number, k: number) => k * 7919 + stage * 104729;
  * （原住民が はじめから 村に いる ように なって 作りなおした）。
  */
 const GOLDEN =
-	"1g2h8jv 1n2bi7n 1yzjith 1pg47uc 2bgqvi 1yzjith symsqs 1pg47uc wfwvxx 2bgqvi 2bgqvi 1g2h8jv 1jp2f3q 50en6q 15sn3zz bazk45 xj2rf1 1lj02a1 1fmaayb wab1y0 w5neks 1lj02a1 1lcbt57 n0w2pv ivx4rb d9u1xj 1np2wme 1pc0qn8 1no11s6 wcaznr 19ayhh1 17kxguy 1j66tcn 5g9q9i 13axdae ojwpzg 1gznuef 1gws5l5 3gysxl 19nczoe 1wf62h 1dcksam 12k8lto w0bqr9 1ivtj8s 1banw7j 1eqxghl d9j3a ryuvmp ngrni1 up9vjq 1elgm0h c17oxv 10cy5xv 1qo7b0x 54jbo2 r2dxp3 3codj9 r7j6al g93hku 113hhbu ffcshp 1qgonmo h7ctg6 1e2aund 1h879m6 9bfvd8 16mnjc 1yougl5 r3wea2 1q9al6l 1z8uie".split(
+	"symsqs 1g2h8jv 1pg47uc 1g2h8jv 1yzjith x6hzau symsqs x6hzau 1g2h8jv 2bgqvi wfwvxx 1yzjith 1199pk0 ywin29 dksll5 1ue4hc 22er8a 1ph2cgn 1scdwoy 1kcondz zn78cl 1mbsu74 1ox3v2l ln01sa 1f0pkje 6k4mok 1uxrsr3 10d6wf7 du4h7j t7mskg jou3k2 rpo3is 1tv31yq ztoy5m 1st6as2 g0ehsn mjf3s3 1h1rxwh dm5aiw vyvq0n 17f6jgc zkax5p 11pkifs 13mpi2j 11i22ae 1srcpq5 75zlfw t81ep3 z8nufz 1mqmqk4 19933pd 1o7nobe iqy658 13dtpsz 19cgc24 ufar38 lyqour s0a1xb 13lwndp 1fegv35 113hhbu ffcshp 1qgonmo h7ctg6 1e2aund 1h879m6 9bfvd8 16mnjc 1yougl5 r3wea2 1q9al6l 1z8uie".split(
 		" ",
 	);
 const fnv = (s: string): string => {
@@ -1375,7 +1376,7 @@ test(
 				JSON.stringify({ unlocked: v.unlocked, cleared: v.cleared }),
 			);
 			// deep の 節目の ある 住人の うち 1人（d）だけ まだ 見て いない
-			const deepers = movedIn(stepOf(v), v.cleared).filter(
+			const deepers = MOB_IDS.filter(
 				(id) => !!MOBS[id].milestones.deep && !NOT_IN_ASSEMBLY.includes(id),
 			);
 			const d = deepers[0];

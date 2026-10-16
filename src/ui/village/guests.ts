@@ -14,7 +14,7 @@ import {
 	STAGE_SINGERS,
 	type StageSinger,
 } from "../../data/people/guests";
-import { MOB_IDS, type MobId, movedIn } from "../../data/people/mobs";
+import { MOB_IDS, type MobId } from "../../data/people/mobs";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../../data/story/glossary";
 import { type Today, today } from "../../data/town/calendar";
 import {
@@ -22,7 +22,7 @@ import {
 	assemblyMembers,
 	assemblyOf,
 } from "../../data/town/civic";
-import { stepOf, type VillageView } from "../../data/village/map";
+import type { VillageView } from "../../data/village/map";
 import {
 	BATH_SPOTS,
 	BOOKS_BROWSE,
@@ -147,9 +147,7 @@ const assemblyFrom = (
 		v.stage,
 		at,
 		t,
-		movedIn(stepOf(v), v.cleared).filter(
-			(id) => id !== singer && !pending.includes(id),
-		),
+		MOB_IDS.filter((id) => id !== singer && !pending.includes(id)),
 	);
 };
 
@@ -166,8 +164,7 @@ const baseGuests = (v: VillageView, at: number): Guests => {
 	const music = v.stage >= ROOM_FROM.music;
 	const bath = v.stage >= ROOM_FROM.bath;
 	const books = booksRoom(v);
-	const step = stepOf(v);
-	const moved = rng.shuffle(movedIn(step, v.cleared));
+	const moved = rng.shuffle([...MOB_IDS]);
 	const out: Guests = {
 		stage: null,
 		music: [],

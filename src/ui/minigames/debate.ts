@@ -41,9 +41,9 @@ import {
 	type Topic,
 	VERDICT,
 } from "../../data/minigames/debate";
-import { MOBS, type MobId, movedIn } from "../../data/people/mobs";
+import { MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
-import { stepOf, type VillageView } from "../../data/village/map";
+import type { VillageView } from "../../data/village/map";
 import type { Story } from "../../engine/defs";
 import { el } from "../dom";
 import { listWindow, markOpened, onTap, type UiCtx } from "../list";
@@ -130,14 +130,13 @@ export const forgetCivicMemo = (): void => {
 
 // ───────────────── 名前 ─────────────────
 
-/** 派で 戦う 人の 名前欄（越してきた 住人なら その 名前、まだなら「{派}の　名無し」）。 */
+/** 派で 戦う 人の 名前欄（町の 住人なら その 名前、ちがえば「{派}の　名無し」）。 */
 export const fighterOf = (
 	side: PolicySide | FaithSide,
-	v: VillageView,
+	_v: VillageView,
 ): { mob: MobId | null; name: string } => {
 	const id = side.fighter;
-	if (id && movedIn(stepOf(v), v.cleared).includes(id))
-		return { mob: id, name: MOBS[id].name };
+	if (id && MOB_IDS.includes(id)) return { mob: id, name: MOBS[id].name };
 	return { mob: null, name: fillDebate(BOARD.nanashi, { side: side.name }) };
 };
 

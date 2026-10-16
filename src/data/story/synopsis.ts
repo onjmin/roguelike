@@ -5,17 +5,13 @@
 //   synopsis：これまでの あらすじと 次の 行き先（村の メニュー・ダンジョンの メニュー）
 // どれも 起きた ことを なぞる だけで、先の どんでん返しは 言わない。
 
-import { townStep } from "../../core/town";
+import { subsText } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import { QUEST_HEROES, questStage } from "../../engine/heroes";
 import { loadProgress, loadTown } from "../../engine/save";
 import { HERO_QUESTS } from "../people/heroQuests";
-import { MOB_IDS, movedIn } from "../people/mobs";
-import { nowHour, today } from "../town/calendar";
 import { OPENING } from "../town/town";
-import { crowdSize, timeBand } from "../village/crowd";
-import { SPEAKERS, type Speaker } from "./quotes";
-import { awayFriends } from "./story";
+import { SPEAKERS } from "./quotes";
 
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
@@ -105,57 +101,51 @@ export const diveResAt = (
 	return r;
 };
 
-/**
- * キリコの 支持者の 数（総選挙が どこまで 来たか。STORY.md §5「しくみと 話の つなぎ」）。町で 見える 人と 同じ 数：
- * キリコ ＋ 村に いる 仲間 ＋ 越してきた 住人 ＋ いまの 時間帯の 通行人（data/village/crowd.ts の crowdSize。
- * 村の 人通りと 同じ 計算）。はじめは 4人（キリコ・やきう・ぷゆゆ・原住民）。
- */
-export const villageRes = (
-	cleared: readonly DungeonId[],
-	stage: number,
-	points: number,
-	clock: { hour: number; weekend: boolean },
-): number => {
-	const away = awayFriends(cleared, stage);
-	const friends = (Object.keys(SPEAKERS) as Speaker[]).filter(
-		(w) => !away.includes(w),
-	).length;
-	const mobs = movedIn(townStep(stage, points), cleared).length;
-	const crowd = crowdSize(stage, timeBand(clock.hour), clock.weekend);
-	return 1 + friends + mobs + crowd;
-};
+/** キリコの 登録者の 札（「キリコの　登録者：24人」）。 */
+export const subsLine = (subs: number = loadTown().subs): string =>
+	`キリコの　登録者：${subsText(subs)}人`;
 
-/** 支持者の 札（「キリコの　支持者：24人」。いまの 進みと 時刻で）。 */
-export const villageResLine = (): string => {
-	const p = loadProgress();
-	const t = loadTown();
-	const w = today().w;
-	const n = villageRes(p.cleared, t.stage, t.points, {
-		hour: nowHour(),
-		weekend: w === 0 || w === 6,
-	});
-	return `キリコの　支持者：${n}人`;
+/** ランキングに のる ライバル（STORY.md §5 の 配役）。 */
+export const RIVALS = ["roze", "zero", "shiyo", "feris"] as const;
+export type Rival = (typeof RIVALS)[number];
+
+/** フェリスの 登録者（伸びては 過疎り、また 復活する。もぐった 回数で 上下）。 */
+const FERIS_WAVE: readonly number[] = [800, 26000, 3100, 61000, 1200, 9000];
+
+/**
+ * ライバルの 登録者（話が 進むと ふえる。ロゼは 上位の 常識派、ゼロは 3機の 合計、シヨは 少ないが 濃い）。
+ */
+export const rivalSubs = (
+	cleared: readonly DungeonId[],
+	runs: number,
+): Record<Rival, number> => {
+	const k = cleared.length;
+	return {
+		roze: 120000 + 20000 * k,
+		zero: 81000 + 15000 * k,
+		shiyo: 4200 + 600 * k,
+		feris: FERIS_WAVE[runs % FERIS_WAVE.length],
+	};
 };
 
 /**
- * まとめ掲示板の 立候補の ポスター（STORY.md §5。村の 状態と 同じ 数）。キリコと 仲間・住人 ぜんぶで 23枚。
- * 村に 来た 人（越してきた 住人と、やきう 以外の 仲間）は 降りて キリコの 陣営に 入ったので「辞退」の 札。
- * 開票（電池板）の あとは 当選の 花と 来年の ポスター。
+ * ランキング掲示板の 窓（多い 順。2人ずつ 1窓）。同じ 数なら キリコが 上。
  */
-export const posterLine = (
+export const rankingWindows = (
+	subs: number,
 	cleared: readonly DungeonId[],
-	stage: number,
-	points: number,
-): string => {
-	const all = 1 + Object.keys(SPEAKERS).length + MOB_IDS.length;
-	if (cleared.includes("deep"))
-		return `キリコの　ポスターに、当選の　花。\n来年の　ポスターも、もう　${all}枚。`;
-	const away = awayFriends(cleared, stage);
-	const friends = (Object.keys(SPEAKERS) as Speaker[]).filter(
-		(w) => w !== "nanj" && !away.includes(w),
-	).length;
-	const out = friends + movedIn(townStep(stage, points), cleared).length;
-	return `立候補の　ポスターが　${all}枚。\n「辞退」の　札が　${out}枚。`;
+	runs: number,
+): string[] => {
+	const r = rivalSubs(cleared, runs);
+	const rows = [
+		{ name: "キリコ", n: subs },
+		...RIVALS.map((w) => ({ name: SPEAKERS[w].name, n: r[w] })),
+	].sort((a, b) => b.n - a.n);
+	const lines = rows.map((x, i) => `${i + 1}位　${x.name}　${subsText(x.n)}人`);
+	const out: string[] = [];
+	for (let i = 0; i < lines.length; i += 2)
+		out.push(lines.slice(i, i + 2).join("\n"));
+	return out;
 };
 
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */
@@ -248,7 +238,7 @@ export const synopsisHtml = (
 	const chapter = (ch: Chapter | null) =>
 		ch ? `<p><b>${ch.title}　まで</b><br>${ch.sum}</p>` : "";
 	return (
-		`<p class="hint">${villageResLine()}</p>` +
+		`<p class="hint">${subsLine()}</p>` +
 		chapter(main) +
 		questHtml +
 		(next ? `<p class="hint">つぎ：${next}</p>` : "")
@@ -260,7 +250,7 @@ export const synopsisHtml = (
  * 1回きりで 読みかえせない」）。はじまりの やきうの 言葉（data/town/town.ts の OPENING）を そのまま。
  */
 export const firstGoalHtml = (): string =>
-	`<p class="hint">${villageResLine()}</p>` +
+	`<p class="hint">${subsLine()}</p>` +
 	`<p><b>はじまり</b><br>${OPENING.nanjMouth.map((l) => l.replaceAll("\n", "")).join("<br>")}</p>` +
 	`<p class="hint">つぎ：${OPENING.goal[0].replaceAll("\n", "")}</p>`;
 

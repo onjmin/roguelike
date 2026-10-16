@@ -21,7 +21,7 @@
 
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME } from "../../core/data/heroes";
-import { CARRY_MAX, STORAGE_CAP } from "../../core/town";
+import { CARRY_MAX, subsText } from "../../core/town";
 import type { DungeonId, GuestId, Item } from "../../core/types";
 import { CAST } from "../../data/people/cast";
 import {
@@ -44,16 +44,11 @@ import {
 } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
-import {
-	posterLine,
-	synopsisNow,
-	villageResLine,
-} from "../../data/story/synopsis";
+import { rankingWindows, synopsisNow } from "../../data/story/synopsis";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
-	SHIYO_DESK,
-	STAGE_NAMES,
+	STORE_DESK,
 	TOWN_MSG,
 	TOWN_NAME,
 	VILLAGE_MSG,
@@ -66,7 +61,13 @@ import {
 } from "../../data/village/facilities";
 import { npc, sign } from "../../data/village/helpers";
 import {
+	BATH_FROM,
+	CAFE_FROM,
 	layoutStage,
+	MUSIC_FROM,
+	openOf,
+	SHRINE_FROM,
+	subsToOpen,
 	VILLAGE_SPOTS,
 	VISITOR_WALK,
 	type VillagePlace,
@@ -162,7 +163,7 @@ import {
 	sceneView,
 	sendBack,
 	settleScript,
-	TALK_NEAR,
+	subsScript,
 	tamperScript,
 	tenScript,
 } from "./villageReturn";
@@ -338,21 +339,17 @@ export const departTo = async (
 		: undefined;
 	if (carry.length && refuse) {
 		await s.narrate(CARRY_CHASE);
-		await s.say(refuse.who, refuse.text, cueOf(refuse));
+		await sayAs(s, refuse.who, refuse.text, cueOf(refuse));
 		depositBag();
 		carry = [];
 	}
-	// 潜る ときの やきうの 一言（STORY.md §5）。開票までは 確定して 毎回 同じ。離れていても 毎回 聞かせる
-	// （同じ 一言の くり返しが 転の 証拠）。開票の あとは 潜った 回数で 毎回 ちがう 一言
-	if (loadProgress().cleared.includes("deep")) {
-		const free = DEPART.free[loadRecords().length % DEPART.free.length];
-		if (s.near("nanj", TALK_NEAR)) await s.say("nanj", free);
-		else
-			await s.narrate(
-				`遠くから、やきうの　声。\n「${free.replace("\n", "")}」`,
-			);
-	} else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
-	else await s.narrate(DEPART.nanjFar);
+	// 配信を はじめると つく 名無しの 視聴者（やきう）の コメント（STORY.md §5）。最終話までは 毎回 同じ
+	// （同じ 一言の くり返しが 頂点の 伏線）。最終話の あとは 潜った 回数で 毎回 ちがう 一言
+	await s.narrate(
+		loadProgress().cleared.includes("deep")
+			? DEPART.free[loadRecords().length % DEPART.free.length]
+			: DEPART.nanj,
+	);
 	// 同行の 依頼（引き受けた 依頼の 板へ 出る ときだけ 依頼主が ついてくる。data/people/companions.ts）
 	const town = loadTown();
 	const companion = escortFor(
@@ -642,17 +639,19 @@ const escortThanksScript = async (s: Story): Promise<void> => {
 };
 
 /**
- * まとめ掲示板：立候補の ポスター（総選挙の 進み）を 見て、冒険の 記録・人気投票の はり紙（出て いれば）などから えらぶ。
+ * ランキング掲示板：配信者の 登録者数の 順位を 見て、冒険の 記録・人気投票の はり紙（出て いれば）などから えらぶ。
  */
 const boardScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
 		await s.narrate(VILLAGE_MSG.board);
-		// 立候補の ポスター（総選挙の 進み。村の 状態と 同じ 数）
-		const t = loadTown();
-		await s.narrate(
-			posterLine(loadProgress().cleared, previewStage() ?? t.stage, t.points),
-		);
+		// 登録者数の 順位（キリコと ライバル 4人。data/story/synopsis.ts）
+		for (const w of rankingWindows(
+			loadTown().subs,
+			loadProgress().cleared,
+			loadRecords().length,
+		))
+			await s.narrate(w);
 		// 寄り合いの はり紙（段2〜3）・議会だより（段4〜）。ui/village/civic.ts
 		const stage = previewStage() ?? loadTown().stage;
 		const civic = civicBoardMenu(stage);
@@ -705,11 +704,7 @@ const speak = async (
 	await s.say(who, l.text, cueOf(l));
 };
 
-/**
- * 仲間の 話しかけ（ひとこと）。帳簿・図鑑・あそびかたは 本館の 物。
- * 倉庫番の シヨは 倉庫が 建ってから（STORAGE_CAP）、話しかけると 倉庫から 引き取る・持ち物を もどす も
- * えらべる（倉庫の 中の 棚と 同じ 一覧）。
- */
+/** 仲間の 話しかけ（ひとこと）。帳簿・図鑑・あそびかたは 本館の 物。 */
 const friendScript =
 	(who: Speaker, ctx: Ctx): Script =>
 	async (s) => {
@@ -718,24 +713,25 @@ const friendScript =
 			(await heroQuestScript(s, who, (h) => heroJoinScene(ctx, h)))
 		)
 			return;
-		if (who === "shiyo" && (STORAGE_CAP[loadTown().stage] ?? 0) > 0) {
-			await shiyoDesk(ctx, s);
-			return;
-		}
 		await speak(s, who);
 	};
 
-/** シヨの 窓口：倉庫を つかう（引き出す・預ける。ui/village/home.ts の openStorage）・話す。 */
-const shiyoDesk = async (ctx: Ctx, s: Story): Promise<void> => {
-	await s.say("shiyo", SHIYO_DESK.ask);
-	const menu = [SHIYO_DESK.withdraw, SHIYO_DESK.talk, SHIYO_DESK.quit];
-	const n = await s.choose(menu, { cancel: menu.length - 1 });
-	const pick = menu[n];
-	if (pick === SHIYO_DESK.withdraw) {
-		await s.wait(0);
-		await openStorage(ctx);
-	} else if (pick === SHIYO_DESK.talk) await speak(s, "shiyo");
-};
+/**
+ * ンゴ姉の 窓口（機材倉庫の 人。TOWN.md §0.4）：倉庫を つかう（引き出す・預ける。ui/village/home.ts の openStorage）・
+ * 話す（ふだんの 住人の 話。talk）。
+ */
+const storeDesk =
+	(ctx: Ctx, talk: Script): Script =>
+	async (s) => {
+		await sayAs(s, "ngoane", STORE_DESK.ask);
+		const menu = [STORE_DESK.withdraw, STORE_DESK.talk, STORE_DESK.quit];
+		const n = await s.choose(menu, { cancel: menu.length - 1 });
+		const pick = menu[n];
+		if (pick === STORE_DESK.withdraw) {
+			await s.wait(0);
+			await openStorage(ctx);
+		} else if (pick === STORE_DESK.talk) await talk(s);
+	};
 
 const playQuestLines = async (
 	s: Story,
@@ -835,7 +831,9 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			p.x,
 			p.y,
 			p.sprite ?? "",
-			withBond(p.mob, mobScript(p.mob)),
+			p.mob === "ngoane"
+				? storeDesk(ctx, withBond(p.mob, mobScript(p.mob)))
+				: withBond(p.mob, mobScript(p.mob)),
 			{
 				dir: p.dir,
 				wander: p.wander,
@@ -845,34 +843,50 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id.startsWith("board_")) return sign(p.id, p.x, p.y, boardScript(ctx));
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
-	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
+	if (p.id === "shrine")
+		return sign(p.id, p.x, p.y, shut(SHRINE_FROM, v, false) ?? shrineScript);
 	if (p.id.startsWith("trolley_"))
 		return sign(p.id, p.x, p.y, trolleyScript(p.id, v), p.sprite);
 	// 小屋・銭湯・倉庫・常識堂の 勝手口・喫茶の 扉（踏むと 中へ。前で A でも。ui/village/rooms.ts・ui/village/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/village/rooms.ts）
 	if (p.id === "door_music")
-		return { ...at, trigger: "touch", through: true, run: enterMusic };
+		return {
+			...at,
+			trigger: "touch",
+			through: true,
+			run: shut(MUSIC_FROM, v) ?? enterMusic,
+		};
 	if (p.id === "door_bath")
-		return { ...at, trigger: "touch", through: true, run: enterBath };
+		return {
+			...at,
+			trigger: "touch",
+			through: true,
+			run: shut(BATH_FROM, v) ?? enterBath,
+		};
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
 	if (p.id === "door_store")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("store") };
 	if (p.id === "door_shop")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("shop") };
-	// 本屋（段3〜5）→ 図書館（段6 から。同じ 扉）
+	// 図書館（町は はじめから 都市の 姿なので 本屋は ない）
 	if (p.id === "door_books")
 		return {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: enterRoom(v.stage >= LIBRARY_FROM ? "library" : "bookstore"),
+			run: shut(LIBRARY_FROM, v) ?? enterRoom("library"),
 		};
 	// 町が 育つと 建つ 施設の 扉と 外の 物（data/village/facilities.ts・ui/village/facilities.ts）
 	if (p.id.startsWith("door_f_")) {
 		const f = facilityOfDoor(p.id);
 		if (f)
-			return { ...at, trigger: "touch", through: true, run: enterFacility(f) };
+			return {
+				...at,
+				trigger: "touch",
+				through: true,
+				run: shut(f.from, v) ?? enterFacility(f),
+			};
 	}
 	if (p.id.startsWith("fthing_")) {
 		const got = outdoorThingOf(p.id);
@@ -884,19 +898,29 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 				await mouthScript(ctx, null)(s);
 			});
 		// 屋台の 店番：見える 人（話すと こちらを 向く。台ごしに 話す）。when が あれば その 日だけ（おんJ芋煮会の 人）
+		// まだ 開いて いない 店の 物は シャッターの 札だけ
+		const closed = got ? shut(got.f.from, v, false) : null;
 		if (got && t?.sprite)
-			return npc(p.id, p.x, p.y, t.sprite, outdoorScript(ctx, got.f, t), {
-				dir: t.dir,
-				when: t.when,
-			});
-		if (got && t) return sign(p.id, p.x, p.y, outdoorScript(ctx, got.f, t));
+			return npc(
+				p.id,
+				p.x,
+				p.y,
+				t.sprite,
+				closed ?? outdoorScript(ctx, got.f, t),
+				{
+					dir: t.dir,
+					when: t.when,
+				},
+			);
+		if (got && t)
+			return sign(p.id, p.x, p.y, closed ?? outdoorScript(ctx, got.f, t));
 	}
 	if (p.id === "door_cafe")
 		return {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: enterCafe,
+			run: shut(CAFE_FROM, v) ?? enterCafe,
 		};
 	if (p.id.startsWith("door_hall_")) {
 		const i = Number(p.id.slice("door_hall_".length));
@@ -928,6 +952,23 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 };
 
 /**
+ * まだ 開いて いない 店（段 from が 開いた 段より 上）なら「準備中」の シャッターの 札（扉なら 1歩 もどる）。
+ * 開いて いれば null（町は はじめから 都市の 姿で、店は 登録者数で 開く。TOWN.md §0.1）。
+ */
+const shut = (from: number, v: VillageView, door = true): Script | null =>
+	openOf(v) >= from
+		? null
+		: async (s) => {
+				const need = subsToOpen(from);
+				await s.narrate(
+					loadTown().subs >= need
+						? VILLAGE_MSG.shutTop
+						: fill(VILLAGE_MSG.shut, { subs: subsText(need) }),
+				);
+				if (door) await s.move("player", "d");
+			};
+
+/**
  * 村の窓で あずける物を えらぶ（一覧は ui/village/home.ts。のこりを 売るかは ロゼが 村の窓で きく。
  * 「いいえ」から：押しすぎて 売ってしまわないように）。
  */
@@ -937,7 +978,8 @@ const storeChooser =
 		chooseStored(ctx, t, pend, {
 			prompt: "あずける　ものを　えらぶ",
 			confirmSell: async () => {
-				await s.say(
+				await sayAs(
+					s,
 					TOWN_MSG.sellRest.who,
 					TOWN_MSG.sellRest.text,
 					cueOf(TOWN_MSG.sellRest),
@@ -994,9 +1036,9 @@ const arrivalScript =
 		await escortThanksScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
+		// 撮れ高の 発表（ふえた 登録者。節目なら 店が 開く）→ 持ち帰った 物を 倉庫へ・売る
+		await subsScript(s);
 		await settleScript(s, storeChooser(ctx));
-		// 持ち帰ったら、町が 育った あとの 支持者の 数を 札で（総選挙が どこまで 来たか。data/story/synopsis.ts）
-		if (back?.kind === "clear") s.toast(villageResLine());
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
 		if (arrival?.kind === "dead") await reliefScript(s);
@@ -1017,7 +1059,7 @@ export const buildVillage = (
 	const rows = villageRows(view);
 	return {
 		id: "village",
-		name: `${TOWN_NAME}　${STAGE_NAMES[v.stage] ?? ""}`,
+		name: TOWN_NAME,
 		bgm: villageSong(),
 		tiles: villagePalette(view),
 		rows,
@@ -1071,7 +1113,6 @@ export const buildVillage = (
 export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 	let start = 0;
 	for (;;) {
-		const stage = loadTown().stage;
 		const items: ListItem[] = [
 			{ label: "持ち物", value: "bag" },
 			// これまでの あらすじ（パン板を 持ち帰る 前は はじまりの 目標。ダンジョンの メニューと 同じ：data/story/synopsis.ts）
@@ -1080,8 +1121,8 @@ export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 		];
 		const v = await listWindow(
 			ctx,
-			// 手もとの お金も（売り上げが あってから。engine/wallet.ts）
-			`${TOWN_NAME}　${STAGE_NAMES[stage] ?? ""}${loadTown().points > 0 ? `　手もと　${yen(walletYen())}` : ""}`,
+			// 登録者数と 手もとの お金（お金は 売り上げが あってから。engine/wallet.ts）
+			`${TOWN_NAME}　登録者　${subsText(loadTown().subs)}人${loadTown().points > 0 ? `　手もと　${yen(walletYen())}` : ""}`,
 			items,
 			{ start },
 		);

@@ -9,17 +9,15 @@ import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import {
 	CARRY_MAX,
-	lastStepOf,
-	nextStage,
-	nextStageReady,
+	nextTier,
 	pricedKinds,
 	priceOf,
-	STAGE_POINTS,
 	STORAGE_CAP,
+	SUB_TIERS,
+	stageOfSubs,
+	subsGain,
+	subsText,
 	TOWN_STAGES,
-	TOWN_STEPS,
-	topWaiting,
-	townStep,
 } from "../core/town";
 import { triggerTrap } from "../core/traps";
 import type { Item, RunState } from "../core/types";
@@ -50,6 +48,7 @@ import {
 	loadRun,
 	loadTown,
 	noteRunEnd,
+	openShops,
 	replayMatches,
 	runStats,
 	saveRun,
@@ -208,82 +207,72 @@ test("建物の 出入りの 音：どれも 素材が あって 測ってあり
 	ok(new Set(names).size >= 4, "every building sounds the same");
 });
 
-test("町の 小段：建物の 段の あいだを 約1.1倍ずつ 刻む。段を こえた 小段は 済み、いまの 段の 小段は 売上しだい", () => {
-	// 建物の 段は 小段の 表の 中に あり、小段は 段の 順・売上の 順
-	for (let s = 0; s < TOWN_STAGES; s++)
+test("登録者の 節目：0人で 段0、10人・100人・1000人・1万人で 店が 開く。いちばん上は 最終話の あと", () => {
+	ok(SUB_TIERS[0].subs === 0 && SUB_TIERS[0].stage === 0, "tier 0");
+	for (let i = 1; i < SUB_TIERS.length; i++)
 		ok(
-			TOWN_STEPS.some((x) => x.stage === s && x.points === STAGE_POINTS[s]),
-			`stage ${s} is not a step`,
+			SUB_TIERS[i].subs > SUB_TIERS[i - 1].subs &&
+				SUB_TIERS[i].stage > SUB_TIERS[i - 1].stage,
+			`tier ${i} is out of order`,
 		);
-	for (let i = 1; i < TOWN_STEPS.length; i++) {
-		const [a, b] = [TOWN_STEPS[i - 1], TOWN_STEPS[i]];
-		ok(b.stage >= a.stage && b.points >= a.points, `step ${i} is out of order`);
-	}
-	// 差は だいたい 1.1倍ずつ（段1 の 屋台は パン板で 開くので 0）
-	const gaps = TOWN_STEPS.slice(2).map(
-		(x, i) => x.points - TOWN_STEPS[i + 1].points,
-	);
-	for (let i = 1; i < gaps.length; i++) {
-		const r = gaps[i] / gaps[i - 1];
-		ok(r > 1.05 && r < 1.15, `step ${i + 2}: x${r.toFixed(2)}`);
-	}
-	// 段の 中は 売上しだい・段を こえた 小段は 済み・次の 段の 小段には 建つまで 上がらない
 	ok(
-		townStep(1, 2999) === 1 && townStep(1, 3000) === 2,
-		"the first small step",
+		SUB_TIERS[SUB_TIERS.length - 1].stage === TOWN_STAGES - 1,
+		"the last tier is not the top stage",
 	);
-	ok(townStep(1, 999999) === 2, "went past the next building without it");
+	ok(stageOfSubs(0) === 0 && stageOfSubs(9) === 0, "opened below 10");
+	ok(stageOfSubs(10) === 3 && stageOfSubs(99) === 3, "10 does not open 1〜3");
+	ok(stageOfSubs(100) === 5 && stageOfSubs(1000) === 6, "100 / 1000");
+	ok(stageOfSubs(10000) === 7, "1万 does not open the top");
 	ok(
-		townStep(7, 0) === lastStepOf(6) + 1,
-		"a jump to the top leaves steps behind",
+		stageOfSubs(1e9, false) === TOWN_STAGES - 2,
+		"the top opened before the final episode",
 	);
-	ok(lastStepOf(TOWN_STAGES - 1) === TOWN_STEPS.length - 1, "lastStepOf");
+	ok(
+		nextTier(0) === 10 && nextTier(10) === 100 && nextTier(1e9) === null,
+		"nextTier",
+	);
+	ok(
+		subsText(9999) === "9,999" &&
+			subsText(10000) === "1万" &&
+			subsText(123456) === "12.3万",
+		`subsText ${subsText(123456)}`,
+	);
 });
 
-test("town stage rules: one step per return, the deep (電池板) clear jumps to the top", () => {
-	const none = { shallowCleared: false, topCleared: false };
-	ok(nextStage(0, 0, none) === 0, "grew with nothing");
+test("撮れ高：深い・たおした・持ち帰ると 多い。倒れても 少し ふえる。登録者が 多いほど 伸びる", () => {
+	const take = (kind: "dead" | "clear" | "escape", depth: number) => ({
+		kind,
+		depth,
+		kills: 10,
+	});
+	ok(subsGain(0, take("dead", 1)) >= 1, "an accident gained nobody");
 	ok(
-		nextStage(0, 0, { shallowCleared: true, topCleared: false }) === 1,
-		"the beginner clear did not open the stall",
-	);
-	ok(nextStage(1, 999999, none) === 2, "grew more than one stage at once");
-	ok(nextStage(3, STAGE_POINTS[4], none) === 4, "did not reach the storehouse");
-	ok(
-		nextStage(2, 0, { shallowCleared: false, topCleared: true }) ===
-			TOWN_STAGES - 1,
-		"the deep clear did not jump to the top",
-	);
-	ok(nextStage(5, 0, none) === 5, "the town shrank");
-	// 祭り（いちばん上）は 電池板の 山場の あと：売り上げだけでは 段6 で 止まる。前から 段7 なら そのまま
-	const shut = { ...none, topOpen: false };
-	ok(
-		nextStage(TOWN_STAGES - 2, 1e9, shut) === TOWN_STAGES - 2,
-		"sales alone reached the festival before the climax",
+		subsGain(0, take("clear", 5)) > subsGain(0, take("escape", 5)) &&
+			subsGain(0, take("escape", 5)) > subsGain(0, take("dead", 5)),
+		"clear > escape > dead",
 	);
 	ok(
-		nextStage(TOWN_STAGES - 2, 1e9, { ...none, topOpen: true }) ===
-			TOWN_STAGES - 1,
-		"the festival did not come after the climax",
+		subsGain(0, take("escape", 9)) > subsGain(0, take("escape", 3)),
+		"deeper is not more",
 	);
 	ok(
-		nextStage(TOWN_STAGES - 1, 0, shut) === TOWN_STAGES - 1,
-		"an old festival town shrank",
+		subsGain(5000, take("escape", 5)) > subsGain(0, take("escape", 5)),
+		"a big channel does not grow faster",
 	);
+	// 1回目の ふつうの 冒険で 10人（段3 の 店が 開く）
 	ok(
-		!nextStageReady(TOWN_STAGES - 2, 1e9, false) &&
-			topWaiting(TOWN_STAGES - 2, 1e9, false) &&
-			!topWaiting(TOWN_STAGES - 2, 1e9, true),
-		"the ledger promised the festival before the climax",
+		subsGain(0, { kind: "escape", depth: 4, kills: 6 }) >= 10,
+		"the first run does not reach 10",
 	);
+	// はじめから 機材倉庫（持ちこみ 1つ）。開いた 段で 広がる
 	ok(
-		STORAGE_CAP[1] === 0 && STORAGE_CAP[2] > 0 && CARRY_MAX[2] === 1,
-		"storage opens at stage 2 with carry 1",
+		STORAGE_CAP[0] > 0 && CARRY_MAX[0] === 1,
+		"the equipment storage is not there from the start",
 	);
 	ok(
 		STORAGE_CAP.every((c, i) => i === 0 || c >= STORAGE_CAP[i - 1]) &&
-			STORAGE_CAP.slice(3).every((c, i) => c > STORAGE_CAP[i + 2]),
-		"the storehouse does not grow with the town",
+			CARRY_MAX.every((c, i) => i === 0 || c >= CARRY_MAX[i - 1]),
+		"storage shrinks with more shops",
 	);
 	ok(CARRY_MAX[TOWN_STAGES - 1] === 4, "carry max is not 4 at the top");
 });
@@ -433,22 +422,40 @@ test("a finished run saved again (tab hidden during the ending) counts once", ()
 	});
 });
 
-test("the first shallow clear on a new profile opens the stall (0 → 1)", () => {
+test("the first clear gains subscribers once and opens shops; selling does not open shops", () => {
 	withStorage(() => {
 		loadProgress();
 		const run = Run.create("first-clear", "shallow");
 		run.finish("clear", "試験");
-		saveRun(run.s);
-		const r = settleReturn(loadTown(), []);
-		ok(r.from === 0 && r.to === 1, `settled ${r.from} → ${r.to}`);
-		// ゼロの 帳簿の グラフ：帰りごとに 1本（板・売れた レス・段が 上がったか）
+		for (let i = 0; i < 3; i++) saveRun(run.s);
+		const t = loadTown();
+		ok(
+			t.subs > 0 && t.gain?.n === t.subs && t.gain.kind === "clear",
+			`gain ${JSON.stringify(t.gain)} subs ${t.subs}`,
+		);
+		const r = settleReturn(t, []);
+		ok(loadTown().stage === 0, "selling opened shops");
+		const o = openShops(loadTown());
+		ok(
+			o.from === 0 && o.to === stageOfSubs(t.subs, false),
+			`opened ${o.from} → ${o.to}`,
+		);
+		// ヒナリーの 帳簿の グラフ：帰りごとに 1本（板・売れた 額）
 		const sales = loadTown().sales;
 		ok(
 			sales.length === 1 &&
 				sales[0].dungeon === "shallow" &&
-				sales[0].points === r.sold &&
-				sales[0].up,
+				sales[0].points === r.sold,
 			`sales ${JSON.stringify(sales)}`,
+		);
+		// 倒れても 少し ふえる（放送事故）。知らせる 前の 分に 足す
+		const dead = Run.create("first-dead", "shallow");
+		dead.finish("dead", "試験");
+		saveRun(dead.s);
+		const t2 = loadTown();
+		ok(
+			t2.subs > t.subs && t2.gain?.kind === "dead",
+			`dead gain ${JSON.stringify(t2.gain)}`,
 		);
 	});
 });

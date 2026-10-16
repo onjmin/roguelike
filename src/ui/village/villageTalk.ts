@@ -1,14 +1,9 @@
 // 地上の ひとこと：タイトル（起動の札）の ひとこと、村で 仲間に 話しかけたときの ひとこと（1回の 帰りに
-// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、ゼロの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
+// 1人 1つの 新しい話と、そのあとの 決まった ひとこと）、ヒナリーの 帳簿、ダンジョンの ひとことの説明（口・立て札）。
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story/story.ts・data/town/town.ts・data/story/quotes.ts）を引く。
 
 import { DUNGEON_IDS, dungeonById } from "../../core/data/dungeons";
-import {
-	nextStageReady,
-	STORAGE_CAP,
-	TOWN_STAGES,
-	topWaiting,
-} from "../../core/town";
+import { nextTier, subsText, TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import {
 	pickQuote,
@@ -293,8 +288,6 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): TalkLine => {
 	const stage = loadTown().stage;
 	const town = (TITLE_TOWN_QUOTES[stage] ?? []).find((x) => x.who === who);
 	if (town) return { text: town.text, ...cueOf(town) };
-	if (who === "shiyo" && (STORAGE_CAP[stage] ?? 0) > 0)
-		return { text: VILLAGE_IDLE.store };
 	// ボイスを オンに しても、ゼロだけは 声が 出ない（音源が まだ 無い）
 	if (who === "zero" && settings.voice)
 		return {
@@ -346,20 +339,21 @@ export const fill = (
 ): string =>
 	text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
 
-/** ゼロの 帳簿：売り上げの 合計（次の 段まで いくら かは 言わない）。 */
+/** ヒナリーの 帳簿：登録者数と、次の 店が 何人で 開くか（TOWN.md §0.4）。 */
 export const ledgerLine = (): string => {
 	const t = loadTown();
 	const sulk = sulkTier();
 	if (sulk !== null)
 		return fill(TAMPER_LEDGER[sulk] ?? "", { points: t.points });
 	if (t.stage >= TOWN_STAGES - 1)
-		return fill(VILLAGE_MSG.ledgerMax, { points: t.points });
-	if (t.points <= 0) return VILLAGE_MSG.ledgerNone;
-	// 祭り（いちばん上の 段）は 電池板の 山場の あと（core/town.ts の topWaiting）
-	const topOpen = loadProgress().cleared.includes("deep");
-	if (topWaiting(t.stage, t.points, topOpen))
-		return fill(VILLAGE_MSG.ledgerTop, { points: t.points });
-	if (nextStageReady(t.stage, t.points, topOpen))
-		return fill(VILLAGE_MSG.ledgerNext, { points: t.points });
-	return fill(VILLAGE_MSG.ledger, { points: t.points });
+		return fill(VILLAGE_MSG.ledgerMax, { subs: subsText(t.subs) });
+	if (t.subs <= 0) return VILLAGE_MSG.ledgerNone;
+	const next = nextTier(t.subs);
+	// 登録者は 届いて いるが、いちばん上の 段は 電池板を 持ち帰って から（core/town.ts の stageOfSubs）
+	if (next === null)
+		return fill(VILLAGE_MSG.ledgerTop, { subs: subsText(t.subs) });
+	return fill(VILLAGE_MSG.ledger, {
+		subs: subsText(t.subs),
+		next: subsText(next),
+	});
 };

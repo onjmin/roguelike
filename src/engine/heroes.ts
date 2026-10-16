@@ -10,10 +10,8 @@
 
 import { DUNGEON_IDS, openable } from "../core/data/dungeons";
 import { type HeroId, isHeroId } from "../core/data/heroes";
-import { townStep } from "../core/town";
 import type { RunState } from "../core/types";
-import { MOBS } from "../data/people/mobs";
-import { addFlag, hasFlag, loadProgress, loadTown, saveProgress } from "./save";
+import { addFlag, hasFlag, loadProgress, saveProgress } from "./save";
 
 export type QuestHero = Exclude<HeroId, "kiriko">;
 export const QUEST_HEROES: readonly QuestHero[] = ["roze", "zero"];
@@ -49,20 +47,9 @@ export const WORRY_CHANCE = 1 / 3;
 /** はずれ つづきでも この 回目の 帰りには 必ず。 */
 export const WORRY_SURE = 4;
 
-/**
- * ゼロの 依頼は、サブ機の プロト・レンが 村に 越して きてから（ゼロ・プロト・レンが そろって から。作者の 指示）。
- * 町の 小段（core/town.ts）で 見る。
- */
-export const ZERO_SUBS_STEP = Math.max(MOBS.proto.from, MOBS.ren.from);
-
 /** 悩みを かかえる ころか。 */
-export const questOpen = (
-	h: QuestHero,
-	p = loadProgress(),
-	town: { stage: number; points: number } = loadTown(),
-): boolean =>
-	p.cleared.length >= HERO_GATE[h] &&
-	(h !== "zero" || townStep(town.stage, town.points) >= ZERO_SUBS_STEP);
+export const questOpen = (h: QuestHero, p = loadProgress()): boolean =>
+	p.cleared.length >= HERO_GATE[h];
 
 const ROLL_KEY = "kiriko-roguelike/heroq";
 type RollMemo = {

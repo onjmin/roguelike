@@ -62,28 +62,6 @@ const overlaps = (a: Facility, b: Facility): boolean => {
 	return ax0 <= bx1 && bx0 <= ax1 && ay0 <= by1 && by0 <= ay1;
 };
 
-/**
- * 出かけられる 所（バス停・駅）が 建った ときの ひとこと（知らせの あと、カメラを 向けて）。
- * 調べて はじめて わかるのでは なく、建った ときに 言う。
- */
-const DEPART_AT: Readonly<Record<string, string>> = {
-	bus: "バス停からも、植民地へ　出かけられる。",
-	station: "駅からも、植民地へ　出かけられる。",
-};
-
-/** 段 from から to へ 上がる あいだに 建った 出かけられる 所。 */
-export const departNews = (
-	from: number,
-	to: number,
-): { at: Cell; text: string }[] =>
-	FACILITIES.filter(
-		(f) =>
-			DEPART_AT[f.id] &&
-			f.from > from &&
-			f.from <= to &&
-			(f.until === undefined || f.until > to),
-	).map((f) => ({ at: center(f), text: DEPART_AT[f.id] }));
-
 /** 地区の 並び（カメラが 行ったり 来たり しない 順）。 */
 const AREA_ORDER = ["町の　まわり", "浜", "新市街", "港"];
 
@@ -130,32 +108,3 @@ export const townNews = (from: number, to: number): TownNews[] => {
 /** 一覧の 1行（建てかえは「前　→　あと」）。 */
 export const newsLine = (n: TownNews): string =>
 	n.was ? `・${n.was}　→　${n.name}` : `・${n.name}`;
-
-/** 地区の 見出し（はじめの 窓の 1行目）。 */
-export const NEWS_HEAD = "{area}に　新しい　建物：";
-
-/** 1つの 地区で 名前を 出す 数（1段で 建つ 数の いちばん 多い 段に 合わせる。段を とばした ときに 窓が 続きすぎない）。あふれた 分は NEWS_MORE。 */
-export const NEWS_MAX = 20;
-export const NEWS_MORE = "……ほかにも　{n}軒。";
-
-/** 知らせの 窓（1つずつ カメラを 向ける 所と 文）。地区ごとに 見出し＋名前、あとは 名前 2つずつ。 */
-export const newsPages = (
-	news: readonly TownNews[],
-): { at: Cell; text: string }[] => {
-	const out: { at: Cell; text: string }[] = [];
-	for (const area of AREA_ORDER) {
-		const here = news.filter((n) => n.area === area);
-		if (!here.length) continue;
-		const shown = here.slice(0, NEWS_MAX);
-		const lines = [NEWS_HEAD.replace("{area}", area), ...shown.map(newsLine)];
-		const ats = [shown[0].at, ...shown.map((n) => n.at)];
-		const more = here.length - shown.length;
-		if (more > 0) {
-			lines.push(NEWS_MORE.replace("{n}", String(more)));
-			ats.push(shown[shown.length - 1].at);
-		}
-		for (let i = 0; i < lines.length; i += 2)
-			out.push({ at: ats[i], text: lines.slice(i, i + 2).join("\n") });
-	}
-	return out;
-};

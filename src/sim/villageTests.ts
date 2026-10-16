@@ -18,15 +18,7 @@ import { join } from "node:path";
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
-import {
-	CARRY_MAX,
-	lastStepOf,
-	priceOf,
-	STAGE_POINTS,
-	TOWN_STAGES,
-	TOWN_STEPS,
-	townStep,
-} from "../core/town";
+import { priceOf, TOWN_STAGES } from "../core/town";
 import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
@@ -67,7 +59,6 @@ import {
 	type MobCtx,
 	type MobId,
 	type MobLine,
-	movedIn,
 	PUYU_LUNCH,
 	PUYU_RELIEF,
 	RELIEF_NOTE,
@@ -108,7 +99,6 @@ import {
 	DUNGEON_NAMES,
 	episodeEnd,
 	FIRST_SHALLOW,
-	FRIEND_FROM,
 	SHALLOW_DEATH,
 	STORY,
 	type StoryPage,
@@ -124,9 +114,10 @@ import {
 	firstGoalHtml,
 	GOAL_WHY,
 	goalWhy,
-	posterLine,
+	RIVALS,
+	rankingWindows,
+	rivalSubs,
 	synopsisHtml,
-	villageRes,
 } from "../data/story/synopsis";
 import {
 	BANDAI,
@@ -173,25 +164,20 @@ import {
 	TAMPER_TALK,
 } from "../data/town/tamper";
 import {
-	ARRIVE_MSG,
 	BAND_IDLE,
 	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
-	SHIYO_DESK,
-	SOLD_BARE,
-	STAGE_NAMES,
-	STAGE_UP,
-	STAGE_UP_HALL,
+	STORE_DESK,
+	type StaffLine,
+	SUBS_MSG,
 	TITLE_TOWN_QUOTES,
-	TOWN_GREW_MSG,
 	TOWN_MSG,
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
 	WAKE_PAGES,
 	ZERO_VOICELESS,
 } from "../data/town/town";
-import { crowdSize } from "../data/village/crowd";
 import { DINER_IMG, DINER_SIZE } from "../data/village/dinerSheet";
 import {
 	doorId,
@@ -257,7 +243,6 @@ import {
 	placeInFront,
 	RESIDENT_GIFTS,
 } from "../data/village/myhome";
-import { newsPages, townNews } from "../data/village/news";
 import {
 	GACHA_PRICE,
 	OTAKU_GACHA,
@@ -866,34 +851,31 @@ test("the village is drawn only from the bundled Base.png and sprites (no CDN ti
 	}
 });
 
-test("はじめの おんJタウンには やきう（と ぷゆゆ）だけ。仲間は 町が 育つと 越してきて、来る 前は 語りでも 話さない", async () => {
+test("おんJタウンには はじめから ライバル 4人・やきう・住人が いる（店の 仕事は しない）", () => {
 	const FRIENDS = ["roze", "shiyo", "zero", "feris", "nanj"] as const;
-	for (let stage = 0; stage < TOWN_STAGES; stage++) {
-		const places = villagePlaces({ stage, unlocked: ["shallow"], cleared: [] });
-		for (const w of FRIENDS)
-			ok(
-				places.some((p) => p.who === w) === stage >= FRIEND_FROM[w],
-				`stage ${stage}: ${w} ${stage >= FRIEND_FROM[w] ? "is missing" : "is there before moving in"}`,
-			);
-	}
-	ok(
-		villagePlaces({ stage: 0, unlocked: ["shallow"], cleared: [] }).some(
-			(p) => p.id === "mob_puyu",
-		),
-		"ぷゆゆ is not there from the start",
-	);
-	// はじめて パン板を 持ち帰った 語り（まだ 段0）：やきうと 地の文だけ
-	await withStorageAsync(async () => {
-		setProgress(["shallow"]);
-		putTown({ stage: 0 });
-		const who = new Set(
-			pagesFor({ kind: "clear", dungeon: "shallow" }).map((p) => p.who),
-		);
-		ok(
-			[...who].every((w) => w === null || w === "nanj"),
-			`speakers before anyone moved in: ${[...who].join(",")}`,
-		);
+	const places = villagePlaces({
+		stage: 0,
+		unlocked: ["shallow"],
+		cleared: [],
 	});
+	for (const w of FRIENDS)
+		ok(
+			// シヨは 週末の 夜は メイド喫茶（村の 時計しだい）
+			w === "shiyo" || places.some((p) => p.who === w),
+			`${w} is missing at the start`,
+		);
+	for (const id of MOB_IDS)
+		ok(
+			places.some((p) => p.id === `mob_${id}`),
+			`${id} is not there from the start`,
+		);
+	// 店の 人は ライバルが いた 台の うしろ・倉庫の 窓口・掲示板の そば
+	ok(
+		MOBS.jtleman.spot.join() === "13,17" &&
+			MOBS.ngoane.spot.join() === "27,17" &&
+			MOBS.hinary.spot.join() === "17,21",
+		"the staff are not at the counters",
+	);
 });
 
 test("どの 段でも、まだ 越してきていない 仲間は 帰りの 語り・知らせに 出てこない（話さない・名前も 出ない）", async () => {
@@ -1010,17 +992,12 @@ test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持�
 	});
 });
 
-test("ぷゆゆソード：村の 持ち物に 出て、倉庫が あれば あずけられる（あずけると 次の 支給は ない）", () => {
+test("ぷゆゆソード：村の 持ち物に 出て、機材倉庫に あずけられる（あずけると 次の 支給は ない）", () => {
 	withStorage(() => {
 		setProgress(["shallow"]);
-		putTown({ stage: 1 });
+		putTown({ stage: 0 });
 		ok(giveRelief(100, 0), "harness: no sword");
-		// 倉庫が まだ ない 段：あずけられない（持って 出る）
-		ok(
-			!stashRelief() && loadTown().relief === true,
-			"stashed without a storehouse",
-		);
-		saveTown({ ...loadTown(), stage: 2 });
+		// 機材倉庫は はじめから ある
 		ok(stashRelief(), "could not stash the sword");
 		const t = loadTown();
 		ok(
@@ -1428,39 +1405,6 @@ test("場面の 道が ない とき：歩ける ところまで 歩いて、い
 	}
 });
 
-test("台の うしろの ロゼ・シヨは 台を とびこえて 出てきて、蓄音機の 前の キリコの となりまで 歩く（たおれて もどったとき）", () => {
-	const [bx, by] = VILLAGE_SPOTS.boot;
-	const to: Cell = [bx + 1, by];
-	let hopped = 0;
-	for (const v of STAGE_VIEWS)
-		for (const [who, from] of [
-			["ロゼ", VILLAGE_SPOTS.roze(v.stage)],
-			["シヨ", VILLAGE_SPOTS.shiyo(v.stage)],
-		] as const) {
-			const open = sceneOpen(v, [bx, by]);
-			if (findRoute(VILLAGE_W, VILLAGE_H, open, from, to)) continue;
-			const route = hopRoute(VILLAGE_W, VILLAGE_H, open, from, to);
-			const t = route && traceRoute(from, route, open);
-			ok(
-				!!route &&
-					!!t &&
-					typeof route[0] !== "string" &&
-					t.gaps.length === 1 &&
-					t.gaps[0] <= 2 &&
-					!t.stray &&
-					t.at[0] === to[0] &&
-					t.at[1] === to[1],
-				`${label(v)} ${who}: ${JSON.stringify(route)}`,
-			);
-			hopped++;
-		}
-	// 屋台が 出てからは ロゼは 台の うしろ（段2〜）
-	ok(
-		hopped >= STAGE_VIEWS.filter((v) => v.stage >= 2).length,
-		`only ${hopped} counter hops`,
-	);
-});
-
 test("場面で 人を 呼ぶ：だれが どこから 来ても、キリコの となりの 通れる マスへ 着く（道が なければ すきまを 1つ とびこえる）", () => {
 	for (const v of STAGE_VIEWS) {
 		const people = villagePlaces(v)
@@ -1494,12 +1438,10 @@ test("場面で 人を 呼ぶ：だれが どこから 来ても、キリコの 
 test("村の 場面で 人を 呼ぶ マスは 広場から 歩いて 来られる（店の 台の うしろ・キリコの 先の 行き止まりには 呼ばない）", () => {
 	const [bx, by] = VILLAGE_SPOTS.boot;
 	for (const v of STAGE_VIEWS) {
-		const [gx, gy] = VILLAGE_SPOTS.growth(v.stage);
 		const [hx, hy] = VILLAGE_SPOTS.hallDoors[0];
 		const centers: Cell[] = [
 			VILLAGE_SPOTS.boot,
 			...VILLAGE_EXITS.map(inwardOf),
-			[Math.round(gx), Math.round(gy)],
 			[hx, hy + 1],
 		];
 		for (const c of centers) {
@@ -1573,7 +1515,7 @@ test("寄り道の 板が 開く：その 板の 名無しが 口から 来て �
 	});
 });
 
-test("口から 人が 歩いてくる 場面：キリコが その 口の 前に いれば 先に どく（来客・越してくる 住人。とびこえて 来ない）。はなれて いれば 動かない", async () => {
+test("口から 人が 歩いてくる 場面：キリコが その 口の 前に いれば 先に どく（来客。とびこえて 来ない）。はなれて いれば 動かない", async () => {
 	await withStorageAsync(async () => {
 		// 寄り道の 板の 来客（きのこ板の 口から）
 		const visit = async (at?: Cell) => {
@@ -1602,72 +1544,6 @@ test("口から 人が 歩いてくる 場面：キリコが その 口の 前�
 		ok(
 			!far.some((l) => l.startsWith("goto player ")),
 			`Kiriko steps aside far from the mouth:\n${far.join("\n")}`,
-		);
-		// 町が 育って 越してくる 住人（プロト。持ち場に いちばん 近い 口から）
-		const grow = async (at?: Cell) => {
-			setProgress(["shallow", "main"], [], ["shallow"]);
-			putTown({
-				stage: 1,
-				points: TOWN_STEPS[4].points + 50,
-				pending: pending("escape", [item(1, "starsword")]),
-			});
-			const f = fakeStory(at ? { at } : {});
-			await settleScript(f.s, chooser([]));
-			return f.log;
-		};
-		const first = await grow();
-		const placed = first.find((l) => l.startsWith("place mob_proto "));
-		const mouth = VILLAGE_EXITS.find(
-			(x) => placed === `place mob_proto ${x.cell.join(",")}`,
-		);
-		ok(!!mouth, `proto does not walk in from a mouth:\n${first.join("\n")}`);
-		if (!mouth) return;
-		const pk = inwardOf(mouth);
-		const moved = await grow(pk);
-		const by = asideSpot(villageView(), pk, mouth.cell);
-		const side = moved.indexOf(`goto player ${by?.join(",")}`);
-		ok(
-			!!by && side >= 0 && side < moved.indexOf(placed ?? ""),
-			`Kiriko does not step aside before proto:\n${moved.join("\n")}`,
-		);
-		ok(
-			!first.some((l) => l.startsWith("goto player ")),
-			`Kiriko steps aside far from the mouth:\n${first.join("\n")}`,
-		);
-		// 建物の 段は そのまま、売れて 小段だけ 上がって レンが 越してくる（movedIn が 建て直して walkIn だけで どく）
-		const sub = async (at?: Cell) => {
-			setProgress(["shallow", "main"], [], ["shallow"]);
-			putTown({
-				stage: 2,
-				points: TOWN_STEPS[4].points - 100,
-				pending: pending("escape", [item(1, "starsword")]),
-			});
-			const f = fakeStory(at ? { at } : {});
-			await settleScript(f.s, chooser([]));
-			return f;
-		};
-		// レンが 来る 口（持ち場に いちばん 近い 口）を 先に 見て、その 口の 前に 立って もう 一度
-		const dry = (await sub()).log.find((l) => l.startsWith("place mob_ren "));
-		const west = VILLAGE_EXITS.find(
-			(x) => dry === `place mob_ren ${x.cell.join(",")}`,
-		);
-		ok(!!west, `ren does not walk in from a mouth: ${dry}`);
-		if (!west) return;
-		const wk = inwardOf(west);
-		const only = await sub(wk);
-		const wby = asideSpot(villageView(), wk, west.cell);
-		const wside = only.log.indexOf(`goto player ${wby?.join(",")}`);
-		const wplace = only.log.indexOf(`place mob_ren ${west.cell.join(",")}`);
-		ok(
-			!only.log.some((l) => l.startsWith("toast 町が")) &&
-				!!wby &&
-				wside >= 0 &&
-				wplace > wside,
-			`Kiriko does not step aside before ren (no new building):\n${only.log.join("\n")}`,
-		);
-		ok(
-			only.s.state.x === wby?.[0] && only.s.state.y === wby?.[1],
-			`Kiriko is not on the aside cell: ${only.s.state.x},${only.s.state.y}`,
 		);
 	});
 });
@@ -1740,45 +1616,6 @@ test("場面で 置いた 人の マスに 重ならない：口の 前に 並�
 		clashes.push(...lone.clashes.map((c) => `news kinoko: ${c}`));
 		ok(!clashes.length, `two people on one cell:\n${clashes.join("\n")}`);
 	});
-});
-
-test("ロゼ and シヨ work behind closed counters once the stall and storehouse are built", () => {
-	for (const v of VIEWS) {
-		const s = survey(v);
-		const seller = (who: Speaker, counterFrom: number, closedFrom: number) => {
-			const p = s.places.find((x) => x.who === who);
-			// 越してくる 前は いない（data/story/story.ts の FRIEND_FROM）
-			ok(
-				!!p === v.stage >= FRIEND_FROM[who],
-				`${label(v)}: ${who} is ${p ? "there before moving in" : "missing"}`,
-			);
-			if (!p || v.stage < counterFrom) return;
-			ok(
-				s.tile(p.x, p.y + 1)?.counter,
-				`${label(v)}: ${who} has no counter in front at (${p.x},${p.y + 1})`,
-			);
-			if (v.stage < closedFrom) return;
-			// 囲いの中（売る人の 左右）へは 歩いて 入れない
-			for (const dx of [-1, 1])
-				ok(
-					!s.reachable(p.x + dx, p.y),
-					`${label(v)}: Kiriko can walk into the pen of ${who} at (${p.x + dx},${p.y})`,
-				);
-		};
-		seller("roze", 1, 2);
-		// 倉庫の 扉への 細道（台の 左）が できても、シヨの 囲いは 木箱で とじている
-		seller("shiyo", 2, 2);
-		// 小屋の扉は 3段から（見るだけ）
-		ok(
-			s.places.some((p) => p.id === "door_hut") === v.stage >= 3,
-			`${label(v)}: the hut door does not match the stage`,
-		);
-		// 野次馬は 祭り（段7）だけ
-		ok(
-			s.places.some((p) => p.id.startsWith("yaji_")) === v.stage >= 7,
-			`${label(v)}: the 野次馬 do not match the stage`,
-		);
-	}
 });
 
 // ───────────────── 仲間の ひとこと（保存は 入れものに） ─────────────────
@@ -1985,12 +1822,12 @@ test("each friend has one new line per return (「！」), then a short fixed li
 			);
 		}
 		for (const who of FRIENDS) ok(!hasNews(who), `${who} has two new lines`);
-		// 倉庫が 建ったら シヨの 決まった ひとことは 倉庫番
+		// シヨは ライバル：店が 開いても 倉庫番の ひとことは 言わない（倉庫は ンゴ姉）
 		setTown(4, 3000);
 		const shiyo = TITLE_TOWN_QUOTES[4].find((q) => q.who === "shiyo")?.text;
 		ok(
-			talkLine("shiyo") === (shiyo ?? VILLAGE_IDLE.store),
-			"シヨ does not keep the storehouse",
+			talkLine("shiyo") === (shiyo ?? VILLAGE_IDLE.shiyo),
+			"シヨ keeps the storehouse",
 		);
 		// 聞いたことは ページを 開きなおしても 覚えている
 		forgetHeardMemo();
@@ -2034,18 +1871,22 @@ test("the friends react to how the last run ended", () => {
 	});
 });
 
-test("ゼロ reads the ledger: sales so far, never how much to the next stage", () => {
+test("ヒナリーの 帳簿: 登録者数と、次の 店が 何人で 開くか", () => {
 	withStorage(() => {
 		setTown(0, 0);
-		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "stage 0 with no sales");
-		setTown(2, 500);
-		const rest = STAGE_POINTS[3] - 500;
+		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "no subscribers");
+		putTown({ stage: 3, subs: 42 });
 		ok(
-			ledgerLine().includes("500円") && !ledgerLine().includes(`${rest}円`),
-			`stage 2: ${ledgerLine()}`,
+			ledgerLine().includes("42人") && ledgerLine().includes("100人"),
+			`42: ${ledgerLine()}`,
 		);
-		setTown(TOWN_STAGES - 1, 99999);
-		ok(ledgerLine().includes("いっぱい"), `the top stage: ${ledgerLine()}`);
+		putTown({ stage: TOWN_STAGES - 2, subs: 20000 });
+		ok(
+			ledgerLine() === fill(VILLAGE_MSG.ledgerTop, { subs: "2万" }),
+			`waiting for the final episode: ${ledgerLine()}`,
+		);
+		putTown({ stage: TOWN_STAGES - 1, subs: 20000 });
+		ok(ledgerLine().includes("ぜんぶ"), `the top stage: ${ledgerLine()}`);
 	});
 });
 
@@ -2251,50 +2092,6 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 	ok(placed.length <= HOME_MAX, "more than HOME_MAX");
 });
 
-test("町の お知らせ: 段が 上がると 新市街・浜・町の まわりに 建った 物を 地区ごとに 知らせ、窓に 収まる", () => {
-	for (let from = 0; from < TOWN_STAGES - 1; from++)
-		for (let to = from + 1; to < TOWN_STAGES; to++) {
-			const news = townNews(from, to);
-			const pages = newsPages(news);
-			fitsWindow(pages.map((p, i) => [`news ${from}→${to}[${i}]`, p.text]));
-			for (const p of pages)
-				ok(
-					p.at[0] >= 0 &&
-						p.at[0] < VILLAGE_W &&
-						p.at[1] >= 0 &&
-						p.at[1] < VILLAGE_H,
-					`news ${from}→${to}: camera at ${p.at}`,
-				);
-			// 1段ずつ 上がる ときは 建った 物を みんな 名前で 出す
-			if (to === from + 1)
-				for (const n of news)
-					ok(
-						pages.some((p) => p.text.includes(n.name)),
-						`news ${from}→${to}: ${n.name} is not shown`,
-					);
-		}
-	const names = (from: number, to: number) =>
-		townNews(from, to).map((n) => n.name);
-	ok(names(4, 5).includes("コーポ「おんJ荘」"), "corpo is not news at 5");
-	ok(
-		names(6, 7).includes("ザ・おんJタワー　レジデンス"),
-		"tower is not news at 7",
-	);
-	ok(
-		townNews(6, 7).some(
-			(n) => n.was === "おんJ交番" && n.name === "おんJ警察署",
-		),
-		"koban → police is not a rebuild",
-	);
-	// 段を とばしたら、あいだで 建って なくなった 物（交番）は 出さず、建てかえでも ない
-	ok(!names(3, 7).includes("おんJ交番"), "koban shows after skipping");
-	ok(
-		!townNews(3, 7).some((n) => n.was === "おんJ交番"),
-		"police is a rebuild after skipping",
-	);
-	ok(townNews(0, 1).length === 0, "news at the stall");
-});
-
 test("セーブの 書きかえ: every line fits the village window, every friend has a line for each tier", () => {
 	const texts: [string, string][] = [];
 	TAMPER_SCENE.forEach((ls, t) => {
@@ -2401,14 +2198,27 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	pool("RETURN_PAGES", RETURN_PAGES);
 	for (const [k, v] of Object.entries(UNLOCK_LINES))
 		pool(`UNLOCK_LINES.${k}`, v);
-	STAGE_UP.forEach((v, i) => {
-		pool(`STAGE_UP[${i}]`, v);
-	});
 	TITLE_TOWN_QUOTES.forEach((v, i) => {
 		pool(`TITLE_TOWN_QUOTES[${i}]`, v);
 	});
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
+	// 撮れ高の 発表・開いた 店・準備中の シャッター（いちばん 長い 数と 名前で）
+	for (const [k, v] of Object.entries(SUBS_MSG))
+		texts.push([
+			`SUBS_MSG.${k}`,
+			fill(typeof v === "string" ? v : v.text, {
+				n: "12.3万",
+				subs: "123.4万",
+				name: "おんJタワー　サウス",
+			}),
+		]);
+	for (const k of ["shut", "shutTop"] as const)
+		texts.push([`VILLAGE_MSG.${k}`, fill(VILLAGE_MSG[k], { subs: "1,000" })]);
+	DEPART.free.forEach((t, i) => {
+		texts.push([`DEPART.free[${i}]`, t]);
+	});
+	texts.push(["DEPART.nanj", DEPART.nanj]);
 	// 裏の 2段目の 転と 結の あと（ui/village/villageReturn.ts の wrapScript・kusaScript）
 	pool("TEN_NEWS.pages", TEN_NEWS.pages);
 	pool(
@@ -3200,7 +3010,11 @@ const chooser =
 		return uids;
 	};
 
-test("settling in the village: シヨ stores, the rest is sold, ゼロ reads the sales", async () => {
+/** 店の 人の 行（住人は 名前欄の 色を かりた 仲間か null で 話す。ui/village/villageMobs.ts の sayAs）。 */
+const staffSay = (l: StaffLine, vars: Record<string, string | number> = {}) =>
+	`say ${MOBS[l.who].voice ?? null}: ${fill(l.text, vars)}`;
+
+test("settling in the village: ンゴ姉 stores, ジェイトルマン buys the rest", async () => {
 	await withStorageAsync(async () => {
 		setProgress(["shallow", "main"], [], ["shallow"]);
 		const keep = item(1, "bat", { plus: 2 });
@@ -3218,7 +3032,7 @@ test("settling in the village: シヨ stores, the rest is sold, ゼロ reads the
 				asked++;
 			}),
 		);
-		ok(asked === 1, "シヨ did not ask what to store");
+		ok(asked === 1, "ンゴ姉 did not ask what to store");
 		const t = loadTown();
 		ok(!t.pending, "the haul is still pending");
 		ok(
@@ -3230,223 +3044,17 @@ test("settling in the village: シヨ stores, the rest is sold, ゼロ reads the
 		ok(t.points === 1000 + priceOf(sell), `points: ${t.points}`);
 		ok(
 			inOrder(log, [
-				`say shiyo: ${TOWN_MSG.storePrompt.text}`,
-				`say shiyo: ${TOWN_MSG.storeDone.text}`,
-				`say zero: ${fill(TOWN_MSG.sold.text, { points: priceOf(sell) })}`,
+				staffSay(TOWN_MSG.storePrompt),
+				staffSay(TOWN_MSG.storeDone),
+				staffSay(TOWN_MSG.sold, { points: priceOf(sell) }),
 			]),
 			`the settle is out of order:\n${log.join("\n")}`,
 		);
-		ok(!log.includes("rebuild"), "the town was rebuilt without growing");
-	});
-});
-
-test("小段が 上がると 住人が 越してくる：暗転・建て直し・その子を 見せて「〜が、村に　越してきた。」（建物は かわらない）", async () => {
-	await withStorageAsync(async () => {
-		setProgress(["shallow", "main"], [], ["shallow"]);
-		// 屋台（段1）で 売上 1000 → 3500（小段 2：にぃちぇ）。建物の 段は まだ（6300）
-		putTown({
-			stage: 1,
-			points: 1000,
-			pending: pending("escape", [item(1, "starsword")]),
-		});
-		const { s, log } = fakeStory();
-		await settleScript(s, chooser([]));
-		// 呼んだ 仲間を もどす 暗転で カメラも キリコへ
-		await sendBack(s);
-		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
 		ok(
-			inOrder(log, [
-				"rebuild",
-				"hide mob_nichie",
-				"se served",
-				`toast ${TOWN_GREW_MSG}`,
-				"show mob_nichie",
-				"look mob_nichie",
-				`goto mob_nichie ${MOBS.nichie.spot.join(",")}`,
-				`narrate: ${fill(ARRIVE_MSG, { names: MOBS.nichie.name })}`,
-				"fadeOut",
-				"look kiriko",
-				"fadeIn",
-			]),
-			`nichie did not move in:\n${log.join("\n")}`,
+			!log.some((l) => /^say (roze|shiyo|zero|feris):/.test(l)),
+			`a rival worked the shop:\n${log.join("\n")}`,
 		);
-		// show の あとで 口に 置く（先に 置くと show が 持ち場に 生まれさせて、歩いて こなかった）
-		const shown = log.lastIndexOf("show mob_nichie");
-		const placed = log
-			.map((l) => l.startsWith("place mob_nichie "))
-			.lastIndexOf(true);
-		ok(
-			shown >= 0 && placed > shown,
-			`nichie is placed at the gate before she is shown:\n${log.join("\n")}`,
-		);
-		// 小段が かわらなければ 何も しない
-		putTown({
-			stage: 1,
-			points: 3100,
-			pending: pending("escape", [item(2, "h_heal")]),
-		});
-		const quiet = fakeStory();
-		await settleScript(quiet.s, chooser([]));
-		ok(
-			!quiet.log.includes(`toast ${TOWN_GREW_MSG}`),
-			"the town grew without a new step",
-		);
-	});
-});
-
-test("the town grows in the village: fade, rebuild, show the new building, then the friends", async () => {
-	await withStorageAsync(async () => {
-		// はじめて ちょっと を 持ち帰った：空き地 → 屋台
-		setProgress(["shallow", "main"], [], ["shallow"]);
-		const herb = item(1, "h_heal");
-		putTown({ stage: 0, pending: pending("clear", [herb], "shallow") });
-		const first = fakeStory();
-		await settleScript(
-			first.s,
-			chooser([], () => ok(false, "a clear asked to store")),
-		);
-		await sendBack(first.s);
-		ok(loadTown().stage === 1, `stage ${loadTown().stage}`);
-		ok(
-			inOrder(first.log, [
-				`narrate: ${fill(SOLD_BARE, { points: priceOf(herb) })}`,
-				"fadeOut",
-				"rebuild",
-				`look ${VILLAGE_SPOTS.growth(1).join(",")}`,
-				"fadeIn",
-				"se levelup",
-				`toast 町が　「${STAGE_NAMES[1]}」に　なった`,
-				`narrate: ${fill(ARRIVE_MSG, { names: "ロゼと　ゼロ" })}`,
-				...STAGE_UP[1].map((l) => `say ${l.who}: ${l.text}`),
-				"fadeOut",
-				"look kiriko",
-				"fadeIn",
-			]),
-			`the first stall is out of order:\n${first.log.join("\n")}`,
-		);
-		// 建った所を 見たまま 呼ぶ側の 暗転へ（キリコへ 寄せた とたんに 暗くならない）
-		const said1 = first.log.lastIndexOf(
-			`say ${STAGE_UP[1].at(-1)?.who}: ${STAGE_UP[1].at(-1)?.text}`,
-		);
-		ok(
-			first.log[said1 + 1] === "fadeOut",
-			`the camera pans home just before the fade:\n${first.log.join("\n")}`,
-		);
-		// 話す 人は カメラが 見る 建った所の そばに いる。越してきた 仲間は 口から 歩いてくる
-		const [gx, gy] = VILLAGE_SPOTS.growth(1);
-		const said = first.log.findIndex((l) =>
-			l.startsWith(`say ${STAGE_UP[1][0]?.who}: ${STAGE_UP[1][0]?.text}`),
-		);
-		for (const w of new Set(STAGE_UP[1].map((l) => l.who))) {
-			const last = first.log
-				.slice(0, said)
-				.filter(
-					(l) => l.startsWith(`place ${w} `) || l.startsWith(`goto ${w} `),
-				)
-				.at(-1);
-			const [x, y] = (last ?? "").split(" ")[2]?.split(",").map(Number) ?? [];
-			ok(
-				!!last && Math.max(Math.abs(x - gx), Math.abs(y - gy)) <= 4,
-				`${w} talks away from the new stall: ${last}`,
-			);
-		}
-		// 2人は 同じ 口から 連れだって 来る（カメラは 先頭の ロゼに ついていく。1人ずつ べつの 口から 来ると
-		// カメラが 村の はしから はしへ 往復した）
-		const gate = (w: string) =>
-			first.log
-				.slice(first.log.indexOf(`show ${w}`))
-				.find((l) => l.startsWith(`place ${w} `))
-				?.split(" ")[2];
-		for (const w of ["roze", "zero"])
-			ok(
-				inOrder(first.log, [
-					`hide ${w}`,
-					"se levelup",
-					`show ${w}`,
-					"look roze",
-					first.log.find((l) => l.startsWith(`goto ${w} `)) ?? `goto ${w}`,
-					`narrate: ${fill(ARRIVE_MSG, { names: "ロゼと　ゼロ" })}`,
-				]),
-				`${w} does not walk in:\n${first.log.join("\n")}`,
-			);
-		ok(
-			!first.log.includes("look zero"),
-			`the camera jumps to the second friend:\n${first.log.join("\n")}`,
-		);
-		ok(
-			!!gate("roze") && gate("roze") === gate("zero"),
-			`the friends come from different gates: ${gate("roze")} / ${gate("zero")}`,
-		);
-		ok(
-			!first.log.some((l) => l.startsWith("narrate: 倉庫から")),
-			"a carry hint before the storehouse",
-		);
-		// 物置（倉庫）が 建つ（段2）：売る 前に 建って シヨが 越してきて、持ちこみの 数を 知らせてから あずける 物を きく
-		const sword = item(3, "starsword");
-		const herb2 = item(4, "h_heal");
-		putTown({
-			stage: 1,
-			points: STAGE_POINTS[2] - 10,
-			pending: pending("escape", [sword, herb2]),
-		});
-		const store = fakeStory();
-		await settleScript(store.s, chooser([3]));
-		const built = loadTown();
-		ok(built.stage === 2, `stage ${built.stage}`);
-		ok(
-			built.storage.length === 1 && built.storage[0].kind === "starsword",
-			"the sword was sold before the storehouse was built",
-		);
-		ok(built.points === STAGE_POINTS[2] - 10 + priceOf(herb2), "points");
-		ok(built.sales.at(-1)?.up === true, "the sales do not record the growth");
-		ok(
-			!store.log.includes(`say roze: ${TOWN_MSG.noStorage.text}`),
-			"ロゼ says there is no storehouse after it was built",
-		);
-		ok(
-			inOrder(store.log, [
-				`toast 町が　「${STAGE_NAMES[2]}」に　なった`,
-				"show shiyo",
-				`narrate: 倉庫から　引き取って\n${CARRY_MAX[2]}つまで　持っていける`,
-				`say shiyo: ${TOWN_MSG.storePrompt.text}`,
-				`say shiyo: ${TOWN_MSG.storeDone.text}`,
-			]),
-			`the storehouse is not built before storing:\n${store.log.join("\n")}`,
-		);
-		ok(store.log.filter((l) => l === "rebuild").length === 1, "rebuilt twice");
-	});
-});
-
-test("the camera after the town grows: from the new building straight to the gate of a newcomer, then home in one fade", async () => {
-	await withStorageAsync(async () => {
-		setProgress(["shallow", "main"], [], ["shallow"]);
-		// 屋台（段1）から 物置（段2）へ、同じ 帰りで 小段 3・4（プロト・レン）も
-		putTown({
-			stage: 1,
-			points: TOWN_STEPS[4].points + 50,
-			pending: pending("escape", [item(1, "starsword")]),
-		});
-		const { s, log } = fakeStory();
-		await settleScript(s, chooser([]));
-		await sendBack(s);
-		const grew = log.findIndex((l) => l.startsWith("toast 町が"));
-		const came = log.indexOf("look mob_proto");
-		ok(grew >= 0 && came > grew, `proto does not walk in:\n${log.join("\n")}`);
-		// 建った所から 口へは 暗転せずに 寄せる（キリコへ もどって 暗転して 口へ とんでいた）
-		const between = log.slice(grew, came);
-		ok(
-			!between.includes("fadeOut") && !between.includes("look kiriko"),
-			`the camera goes home before the newcomer:\n${log.join("\n")}`,
-		);
-		// 越してきた あとは 1回の 暗転で キリコへ（寄せてから すぐ 暗転しない）
-		// （越してきた 子の 立候補を 降りる ひとことの あと）
-		const arrived = log.findIndex((l) => l.endsWith(MOBS.ren.withdraw ?? "-"));
-		ok(
-			arrived >= 0 &&
-				log[arrived + 1] === "fadeOut" &&
-				log[arrived + 2] === "look kiriko",
-			`the way home after the newcomer:\n${log.join("\n")}`,
-		);
+		ok(loadTown().stage === 4, "selling opened shops");
 	});
 });
 
@@ -3460,6 +3068,8 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 		const other = {
 			points: 1234,
 			stage: 4,
+			subs: 0,
+			gain: null,
 			storage: [],
 			bag: [],
 			lunch: false,
@@ -3477,7 +3087,9 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 			"the other tab's settle was overwritten",
 		);
 		ok(
-			!a.log.some((l) => l.startsWith("say zero")),
+			!a.log.includes(
+				staffSay(TOWN_MSG.sold, { points: priceOf(item(2, "h_heal")) }),
+			),
 			"sales were read for a haul another tab settled",
 		);
 		// 一覧の 途中で タブを 閉じた：おあずかりは そのまま（次に 開いたとき 続きから）
@@ -3506,18 +3118,17 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 		);
 		ok(
 			c.log.find((l) => l.startsWith("say ")) ===
-				`say shiyo: ${TOWN_MSG.storageFull.text}` &&
+				staffSay(TOWN_MSG.storageFull) &&
 				loadTown().storage.length === 10 &&
 				!loadTown().pending,
 			`full storehouse:\n${c.log.join("\n")}`,
 		);
 		// 何も 持ち帰らなかった：ひとことだけ
 		putTown({ stage: 4, points: 1000, pending: pending("escape", []) });
-		const d = fakeStory({ near: ["shiyo"] });
+		const d = fakeStory({ near: ["mob_jtleman"] });
 		await settleScript(d.s, chooser([]));
 		ok(
-			d.log.length === 1 &&
-				d.log[0] === `say shiyo: ${TOWN_MSG.nothingToStore.text}`,
+			d.log.length === 1 && d.log[0] === staffSay(TOWN_MSG.soldNothing),
 			`empty escape:\n${d.log.join("\n")}`,
 		);
 		// おあずかりが 無い（倒れた・もう 決めた）：何もしない
@@ -3593,35 +3204,6 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 	for (const [k, v] of Object.entries(SENKYO))
 		texts.push([`SENKYO.${k}`, fill(v, { name: "おんすちゃん" })]);
 	fitsWindow(texts);
-});
-
-test("おんJマイナーズ move in one by one as the town grows", () => {
-	for (const v of VIEWS) {
-		const here = villagePlaces(v).filter((p) => p.mob);
-		const want = MOB_IDS.filter((id) => MOBS[id].from <= lastStepOf(v.stage));
-		ok(
-			here.length === want.length,
-			`${label(v)}: ${here.map((p) => p.id).join()}`,
-		);
-		// 小段の 途中：その 小段までに 越してきた 子だけ
-		for (let step = 0; step <= lastStepOf(v.stage); step++) {
-			const at = villagePlaces({ ...v, step }).filter((p) => p.mob).length;
-			const n = MOB_IDS.filter((id) => MOBS[id].from <= step).length;
-			ok(at === n, `${label(v)} step ${step}: ${at} residents (want ${n})`);
-		}
-	}
-	const froms = MOB_IDS.map((id) => MOBS[id].from).filter((f) => f > 0);
-	ok(
-		froms.every((f) => f >= 0 && f < TOWN_STEPS.length),
-		`move-in steps: ${froms}`,
-	);
-	// 小段ごとに 1人ずつ（同じ 小段に 2人は 来ない）
-	ok(new Set(froms).size === froms.length, `two move in at once: ${froms}`);
-	// はじめから いるのは ぷゆゆと 原住民 だけ（マイナーズは 町が 育ってから）
-	ok(
-		MOB_IDS.filter((id) => MOBS[id].from === 0).join() === "puyu,shobon",
-		"only ぷゆゆ and the 原住民 are there from the start",
-	);
 });
 
 test("住人の 声: 音源の ある子（春音リノ・響化アル）だけ 読み上げ、その 音源も 取ってくる", async () => {
@@ -5488,9 +5070,6 @@ test("おんJ 本館: every line fits the village window (22 full-width × 2 lin
 	for (const [k, v] of Object.entries(HALL_MSG))
 		if (k !== "noticeGoal") add(`HALL_MSG.${k}`, v);
 	for (const [k, j] of Object.entries(JIKKYO)) add(`JIKKYO.${k}`, j.lines);
-	STAGE_UP_HALL.forEach((l, i) => {
-		if (l) texts.push([`STAGE_UP_HALL[${i}]`, l.text]);
-	});
 	fitsWindow(texts);
 	for (const ls of [
 		HALL_MSG.toban_nanashi,
@@ -5503,59 +5082,6 @@ test("おんJ 本館: every line fits the village window (22 full-width × 2 lin
 			`a hall talk has ${ls.length} windows`,
 		);
 	ok(HALL_MSG.monitor.length <= 3, "the monitor talks too long");
-	ok(
-		STAGE_UP_HALL[0] === null && !!STAGE_UP_HALL[1] && !!STAGE_UP_HALL[2],
-		"STAGE_UP_HALL",
-	);
-});
-
-test("the town grows into a new hall: after the friends, the camera looks at the hall for one more line (also when stages are skipped)", async () => {
-	await withStorageAsync(async () => {
-		setProgress(["shallow", "main"], [], ["shallow"]);
-		const look = `look ${VILLAGE_SPOTS.hallLook.join(",")}`;
-		const cases: [number, number, PendingReturn, number | null][] = [
-			[2, STAGE_POINTS[3] - 10, pending("escape", [item(1, "starsword")]), 1],
-			[5, STAGE_POINTS[6] - 10, pending("escape", [item(1, "starsword")]), 2],
-			[
-				3,
-				STAGE_POINTS[4] - 10,
-				pending("escape", [item(1, "starsword")]),
-				null,
-			],
-			// 電池板を 持ち帰ると いちどに 段7（本館の 形は 集会所から 本館へ。STORY.md §5 の 転）
-			[1, 100, pending("clear", [item(1, "h_heal")], "deep"), 2],
-		];
-		for (const [stage, points, pend, tier] of cases) {
-			putTown({ stage, points, pending: pend });
-			const { s, log } = fakeStory();
-			await settleScript(s, chooser([]));
-			await sendBack(s);
-			const to = loadTown().stage;
-			ok(to > stage, `stage ${stage} did not grow`);
-			const hall = tier === null ? null : STAGE_UP_HALL[tier];
-			if (!hall) {
-				ok(
-					!log.includes(look),
-					`${stage} → ${to}: looked at the hall:\n${log.join("\n")}`,
-				);
-				continue;
-			}
-			ok(
-				inOrder(log, [
-					"rebuild",
-					...(STAGE_UP[to] ?? [])
-						.filter(
-							(l) => !awayFriends(loadProgress().cleared, to).includes(l.who),
-						)
-						.map((l) => `say ${l.who}: ${l.text}`),
-					look,
-					`say ${hall.who}: ${hall.text}`,
-					"look kiriko",
-				]),
-				`${stage} → ${to}: the hall is not shown:\n${log.join("\n")}`,
-			);
-		}
-	});
 });
 
 // ───────────────── 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。data/village/rooms.ts・ui/village/rooms.ts・ui/village/cafe.ts） ─────────────────
@@ -6497,7 +6023,7 @@ test("建物に 入る・出る: door text once, a door sound and a fade, then o
 	}
 });
 
-test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番の ロゼは 話すだけ、シヨは 倉庫の 窓口）", async () => {
+test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（倉庫の 窓口は ンゴ姉。ライバルの ロゼ・シヨは 話すだけ）", async () => {
 	const DOORS = [
 		["store", "door_store", VILLAGE_SPOTS.storeDoor],
 		["shop", "door_shop", VILLAGE_SPOTS.shopDoor],
@@ -6558,23 +6084,23 @@ test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（店番�
 					`stage ${stage} ${door}:\n${log.join("\n")}`,
 				);
 			}
-			// ロゼは 話すだけ。シヨは 倉庫の 窓口（倉庫を つかう・話す・やめる）。
-			// 「話す」を えらぶと ひとこと。どちらも 中へは 移らない
-			for (const who of ["shiyo", "roze"] as const) {
-				const ev = events.find((e) => e.id === who);
-				ok(!!ev?.run, `stage ${stage}: ${who} is not there`);
+			// ンゴ姉は 倉庫の 窓口（倉庫を つかう・話す・やめる）。「話す」を えらぶと ふだんの 話。
+			// ライバルの ロゼ・シヨは 話すだけ（店の 仕事は しない：TOWN.md §0.4）。どれも 中へは 移らない
+			for (const id of ["mob_ngoane", "shiyo", "roze"] as const) {
+				const ev = events.find((e) => e.id === id);
+				ok(!!ev?.run, `stage ${stage}: ${id} is not there`);
 				const { s, log } = fakeStory({ pick: 1 });
 				await ev?.run?.(s);
-				const says = log.filter((l) => l.startsWith(`say ${who}: `));
+				const says = log.filter((l) => l.startsWith("say "));
 				const chose = log.some((l) => l.startsWith("choose"));
 				ok(
-					(who === "shiyo"
-						? says[0] === `say shiyo: ${SHIYO_DESK.ask}` &&
-							says.length === 2 &&
+					(id === "mob_ngoane"
+						? says[0] === `say null: ${STORE_DESK.ask}` &&
+							says.length >= 2 &&
 							chose
 						: says.length > 0 && !chose) &&
 						!log.some((l) => l.startsWith("warp")),
-					`stage ${stage} ${who}:\n${log.join("\n")}`,
+					`stage ${stage} ${id}:\n${log.join("\n")}`,
 				);
 			}
 		}
@@ -6725,7 +6251,7 @@ test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friend
 			);
 		}
 		for (const p of l.patrons) {
-			ok(MOBS[p.id].from <= lastStepOf(7), `${at}: ${p.id} has not moved in`);
+			ok(!!MOBS[p.id], `${at}: ${p.id} is not a resident`);
 			cells.push(CAFE_PATRON_SPOTS[p.spot].at.join(","));
 		}
 		for (const n of l.nanashi) {
@@ -6741,10 +6267,6 @@ test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friend
 		chats > 0 && nanashi > 0 && all > 0,
 		`chats ${chats} / nanashi ${nanashi} / all five ${all}`,
 	);
-	// 段5 は 越してきた 子だけ
-	for (let at = 1000; at < 1050; at++)
-		for (const p of cafeLayout(5, at, layoutTalks).patrons)
-			ok(MOBS[p.id].from <= lastStepOf(5), `stage 5: ${p.id}`);
 });
 
 test("建物の 中の 文: every line fits the village window, talks are 1〜4 windows, and every resident has cafe lines", () => {
@@ -7077,38 +6599,27 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 		heads.length === 1 && heads[0] === "過去ログの底　まで",
 		`summary heads ${heads}`,
 	);
-	// 目標は 総選挙：レスの 数（ダンジョンの 1000 は 時間切れ）では なく 支持者の 数
-	ok(end.includes("支持者"), "no supporter count after the climax");
-	// 支持者＝キリコ＋村に いる 仲間＋越してきた 住人＋通行人（町で 見える 数と 同じ）。はじめは 4人
-	const noon = { hour: 12, weekend: false };
-	ok(villageRes([], 0, 0, noon) === 4, `start ${villageRes([], 0, 0, noon)}`);
+	// 目標は 登録者数（ダンジョンの 1000 は 時間切れ）。あらすじにも 出る
+	ok(end.includes("登録者"), "no subscriber count in the synopsis");
+	// ランキング掲示板：キリコと ライバル 4人を 多い 順に 2人ずつ。窓に 収まる
+	const rank = rankingWindows(42, ["shallow"], 3);
+	ok(rank.length === 3, `ranking windows ${rank.length}`);
+	const rows = rank.join("\n").split("\n");
 	ok(
-		villageRes(["shallow", "main", "deep"], 7, 1e9, noon) ===
-			1 +
-				Object.keys(SPEAKERS).length +
-				movedIn(townStep(7, 1e9), ["shallow", "main", "deep"]).length +
-				crowdSize(7, "day", false),
-		"the count is not friends + residents + passers-by",
+		rows.length === 1 + RIVALS.length &&
+			rows[rows.length - 1].startsWith("5位　キリコ"),
+		`a new channel is not last:\n${rows.join("\n")}`,
 	);
 	ok(
-		villageRes(["shallow"], 3, 0, noon) < villageRes(["shallow"], 6, 0, noon),
-		"the count does not grow with the town",
+		rankingWindows(1e7, [], 0)[0].startsWith("1位　キリコ"),
+		"a huge channel is not first",
 	);
-	// 立候補の ポスター（23枚。村に 来た 人は「辞退」）と 寄り道「残機」の 数
-	ok(
-		posterLine([], 0, 0).startsWith("立候補の　ポスターが　23枚。") &&
-			posterLine([], 0, 0).endsWith(
-				`「辞退」の　札が　${movedIn(townStep(0, 0), []).length}枚。`,
-			),
-		posterLine([], 0, 0),
+	for (const t of rank) ok(width(t.split("\n")[0]) <= 22, t);
+	// フェリスは 伸びては 過疎る（もぐった 回数で 上下）
+	const feris = new Set(
+		Array.from({ length: 6 }, (_, i) => rivalSubs([], i).feris),
 	);
-	ok(
-		posterLine(["shallow", "main"], 7, 1e9).endsWith(
-			`「辞退」の　札が　${4 + movedIn(townStep(7, 1e9), ["shallow", "main"]).length}枚。`,
-		),
-		posterLine(["shallow", "main"], 7, 1e9),
-	);
-	ok(posterLine(["deep"], 7, 1e9).includes("当選の　花"), "no 当選 after deep");
+	ok(feris.size > 2, "フェリス does not rise and fall");
 	ok(
 		zankiLine([]) === null &&
 			zankiLine(["kinoko"])?.includes("残機：1") &&

@@ -8,13 +8,12 @@
 // やきうは 依頼しない（現職。自分の 遊説で いそがしい）。
 
 import type { HeroId } from "../../core/data/heroes";
-import { townStep } from "../../core/town";
 import type { DungeonId, GuestId, GuestSpec } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { Speaker } from "../story/quotes";
 import { awayFriends } from "../story/story";
 import { CAST } from "./cast";
-import { MOBS, type MobId, movedIn } from "./mobs";
+import { MOB_IDS, MOBS, type MobId } from "./mobs";
 
 export type EscortRequest = {
 	id: string;
@@ -190,11 +189,11 @@ export const requesterHere = (
 	who: GuestId,
 	cleared: readonly DungeonId[],
 	stage: number,
-	points: number,
+	_points: number,
 ): boolean =>
 	isFriend(who)
 		? !awayFriends(cleared, stage).includes(who)
-		: movedIn(townStep(stage, points), cleared).includes(who as MobId);
+		: MOB_IDS.includes(who as MobId);
 
 /** 掲示板に 出ている 依頼（持ち帰った 板・依頼主が 村に いる・まだ はたして いない。順は ESCORTS）。 */
 export const openEscorts = (
