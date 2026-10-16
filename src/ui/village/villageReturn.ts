@@ -317,13 +317,13 @@ const playCue = async (
 	}
 };
 
-/** 語りの 頁の 効果音（StoryPage.se）。seRepeat が あれば 短い 間で 重ねる（連打・鳴りやまない 音）。 */
+/** 語りの 頁の 効果音（StoryPage.se）。seRepeat が あれば seGap ずつ あけて 重ねる（連打・鳴りやまない 音）。 */
 const playPageSe = async (s: Story, p: StoryPage): Promise<void> => {
 	if (!p.se) return;
 	const n = p.seRepeat ?? 1;
 	for (let i = 0; i < n; i++) {
 		s.se(p.se);
-		if (n > 1) await s.wait(220);
+		if (n > 1) await s.wait(p.seGap ?? 220);
 	}
 };
 
@@ -337,6 +337,8 @@ export const returnScene = async (
 	const pages = pagesFor(a);
 	// はじめての 持ち帰りの 語りの あいだは、その 板で 来る 子は まだ いない（sceneView）
 	const here = mobsHere(pages, sceneView(villageView(), a));
+	// 語りの 効果音は 一度きりなので 先に 読みこむ（読みこみ 待ちで 落ちると、オチの 音が 消える）
+	s.preloadSe([...new Set(pages.flatMap((p) => (p.se ? [p.se] : [])))]);
 	s.se("stairs");
 	s.show("player");
 	await s.move("player", exit.step);

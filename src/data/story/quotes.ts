@@ -70,9 +70,14 @@ export type StoryPage = Cue & {
 		| "res1000"
 		/** 本筋の 話の おわり（data/story/story.ts の episodeEnd。章の 音）。 */
 		| "chapterEnd";
-	/** 地の文の 前に 鳴らす 効果音（data/audio/sfx.ts の 名前。村の 場面だけ）。seRepeat で 間を あけずに 重ねる。 */
+	/**
+	 * 地の文の 前に 鳴らす 効果音（data/audio/sfx.ts の 名前。村の 持ち帰りの 語りだけ）。seRepeat 回、seGap ms ずつ
+	 * あけて 重ねる（既定 220ms）。instead の 頁は この 音を 引き継がない（かわりの 頁は 自分の se を 持つ）。
+	 * 付けるのは 文に 音や 手の 動きが 出てくる 所と、各話 1回までの オチだけ（STORY.md §0）。
+	 */
 	se?: string;
 	seRepeat?: number;
+	seGap?: number;
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
@@ -523,7 +528,8 @@ export const ENDING: StoryPage[] = [
 		who: null,
 		text: "追いだきの　ボタンが、\n連打された。",
 		se: "pushButton",
-		seRepeat: 5,
+		seRepeat: 6,
+		seGap: 120,
 	},
 	{
 		who: null,
@@ -534,6 +540,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "湯船の　すみで、ぷゆゆが\n怪文書を　せっせと　書いていた。",
+		se: "pencil",
 	},
 	{
 		who: null,

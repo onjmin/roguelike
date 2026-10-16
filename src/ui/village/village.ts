@@ -1999,6 +1999,7 @@ export class Village {
 			fadeIn: (ms) => this.fadeIn(ms),
 			bgm: (name) => this.ctx.audio.bgm(name),
 			fadeBgm: (ms) => this.ctx.audio.fadeBgm(ms),
+			preloadSe: (names) => this.ctx.audio.preloadSe(names),
 			se: (name) => {
 				this.ctx.audio.se(name);
 				// 節目の 音（ファンファーレ・鐘）の あとは 間を おいてから 次の 文（beatHold）

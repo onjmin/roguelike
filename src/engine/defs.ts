@@ -221,6 +221,8 @@ export type Story = {
 	fadeBgm(ms: number): Promise<void>;
 	/** 効果音（data/audio/sfx.ts の名前）。 */
 	se(name: string): void;
+	/** 効果音を 先に 読みこむ（一度きりの 語りの 音が 読みこみ 待ちで 落ちない ように）。 */
+	preloadSe(names: string[]): void;
 	flag(name: string): boolean | number | string | undefined;
 	set(name: string, value?: boolean | number | string): void;
 	/**

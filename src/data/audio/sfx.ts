@@ -79,8 +79,10 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		pushButton: "rpgen:dwe4PP", // スイッチの音？
 		/** 間の ぬけた オチ（討論会で 全員 のぼせて 浮く）。 */
 		chiin: "rpgen:Wb0Nzr", // ち～ん(笑)
-		/** みんなで 笑う（後日談の「草が　生えた」）。 */
-		laughCrowd: "rpgen:3D8WxU", // みんなで大笑い3
+		/** 草が 生える（後日談の「草が　生えた」を 音に する）。 */
+		kusa: "rpgen:1oU7sv", // [Minecraft]草1
+		/** 鉛筆で 書く（怪文書・遺影）。 */
+		pencil: "rpgen:ZDkMVz", // writing_pencil
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {

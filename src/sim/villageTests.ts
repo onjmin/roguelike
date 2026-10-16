@@ -29,7 +29,9 @@ import {
 } from "../core/town";
 import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
 import { bgm } from "../data/audio/bgm";
+import { SE_LOUDNESS } from "../data/audio/loudness";
 import { records, stageBgm, villageBgm } from "../data/audio/music";
+import { sfx } from "../data/audio/sfx";
 import {
 	CAFE_DRINKS,
 	CAFE_GREET,
@@ -2336,6 +2338,37 @@ test("new village lines fit the message window (22 full-width × 2 lines)", () =
 	fitsWindow(texts);
 });
 
+test("story page sounds exist, are measured, and repeat sanely", () => {
+	const pages = [
+		...DUNGEON_IDS.flatMap((d) => [
+			...STORY[d].ending,
+			...(STORY[d].again ?? []),
+			...(STORY[d].once ?? []),
+		]),
+		...Object.values(BOSS_RETURN).flatMap((ps) => ps ?? []),
+		...RETURN_PAGES,
+		...TEN_NEWS.pages,
+	];
+	const all = [
+		...pages,
+		...pages.flatMap((p) => (p.instead ? [p.instead] : [])),
+	];
+	ok(
+		all.some((p) => p.se),
+		"no story page has a sound (the check would pass vacuously)",
+	);
+	for (const p of all) {
+		if (!p.se) {
+			ok(!p.seRepeat && !p.seGap, `"${p.text}": seRepeat/seGap without se`);
+			continue;
+		}
+		ok(sfx[p.se], `"${p.text}": no sound file for ${p.se}`);
+		ok(SE_LOUDNESS[p.se], `${p.se} is not measured (pnpm loudness)`);
+		const n = p.seRepeat ?? 1;
+		ok(Number.isInteger(n) && n >= 1 && n <= 12, `"${p.text}": seRepeat ${n}`);
+	}
+});
+
 test("everything the village window reads out fits it (22 full-width × 2 lines)", () => {
 	const texts: [string, string][] = [];
 	const pool = (where: string, ls: readonly Shown[]) =>
@@ -2702,6 +2735,7 @@ const fakeStory = (
 			log.push(`bgm ${name}`);
 		},
 		fadeBgm: async () => {},
+		preloadSe: () => {},
 		se: (name) => {
 			log.push(`se ${name}`);
 		},
