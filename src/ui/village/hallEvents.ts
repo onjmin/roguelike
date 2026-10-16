@@ -6,7 +6,7 @@
 // リプレイは 本館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。
 // 実況モニターは ナイター実況（別ゲー。ui/jikkyo/jikkyo.ts）。試合の あと 実況民は 1窓だけ 結果に ふれる。
 // 本館 だけの もの：
-//   - 保守の 当番表：「保守」と 書きこめる（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
+//   - 街頭演説の 当番表：名前を 書いて 演説する（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/story/objectives.ts。?event= の 下見も）を いつでも 読める。
 //   - 飾り棚：持ち帰った 品を 絵で 並べる（植民地化宣言・長湯スレは 蓄音機で 鳴らしているので 一覧だけ）。
 // 書いた 数は 別の 保存場所（kiriko-roguelike/hall）に 残す（保存 できなくても この回は 覚えている）。
@@ -25,11 +25,7 @@ import {
 	objectiveFor,
 	withDevEvent,
 } from "../../data/story/objectives";
-import {
-	awayFriends,
-	DUNGEON_NAMES,
-	FRIEND_FROM,
-} from "../../data/story/story";
+import { DUNGEON_NAMES, FRIEND_FROM } from "../../data/story/story";
 import {
 	BAT_AGAIN_MENU,
 	BAT_MENU,
@@ -244,18 +240,13 @@ const records = async (ctx: Ctx, s: Story, replay = false): Promise<void> => {
 };
 
 /**
- * 保守の 当番表：この 帰りに まだなら「保守」と 書ける。やきうが 出ていく 前は 読むだけ
- * （キリコが はじめて 書く「保守」は 山場の 札。STORY.md §5.9）。
+ * 街頭演説の 当番表：この 帰りに まだなら 空き欄に 名前を 書いて 演説できる（保存の 名前は hoshu の まま）。
+ * キリコの 書いた 数が 当番表に 残る。
  */
 export const tobanScript =
 	(tier: HallTier): Script =>
 	async (s) => {
 		await s.narrate(HALL_MSG.toban[tier]);
-		if (!awayFriends(loadProgress().cleared).includes("nanj")) {
-			await s.narrate(HALL_MSG.tobanNotYet);
-			return;
-		}
-		// やきうが 出ていった あとは キリコの 書いた 数が 当番表に 残る
 		if (hoshuCount() > 0)
 			await s.narrate(fill(HALL_MSG.tobanMine, { n: hoshuCount() }));
 		if (!canWriteHoshu()) {
@@ -270,7 +261,7 @@ export const tobanScript =
 		save(m);
 		s.se("read");
 		await s.narrate(fill(HALL_MSG.tobanDone, { n: m.hoshu }));
-		// 節目には 外から 1レス（出ていった 人に 届いている）
+		// 節目には 聞いていた 名無しが ひとこと
 		const reply = HALL_MSG.tobanReply[m.hoshu];
 		if (reply) {
 			await s.narrate(HALL_MSG.tobanReplyHead);

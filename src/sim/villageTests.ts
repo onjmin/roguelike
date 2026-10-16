@@ -117,12 +117,12 @@ import {
 	GETTER_RETRY,
 	KUSA_NEWS,
 	LIGHTHOUSE_DOOR,
-	MITORU_NEWS,
 	opunuZones,
 	ROM_COUNT,
 	SHALLOW_DEATH,
 	STORY,
 	type StoryPage,
+	TEN_NEWS,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
 	WRAP_NEWS,
@@ -461,6 +461,7 @@ import {
 	sendBack,
 	settleScript,
 	TALK_NEAR,
+	tenScript,
 	villageView,
 	wrapScript,
 } from "../ui/village/villageReturn";
@@ -2462,7 +2463,11 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	pool("WRAP_NEWS.pages", WRAP_NEWS.pages);
 	pool("WRAP_NEWS.hinaryAbsent", [WRAP_NEWS.hinaryAbsent]);
 	pool("KUSA_NEWS.lines", KUSA_NEWS.lines);
-	pool("MITORU_NEWS.lines", MITORU_NEWS.lines);
+	pool("TEN_NEWS.pages", TEN_NEWS.pages);
+	pool(
+		"DEPART.free",
+		DEPART.free.map((text) => ({ who: "nanj", text })),
+	);
 	texts.push(["WRAP_NEWS.hinary", WRAP_NEWS.hinary]);
 	texts.push(["WRAP_NEWS.after", WRAP_NEWS.after]);
 	texts.push(["WRAP_NEWS.open", WRAP_NEWS.open]);
@@ -2522,7 +2527,7 @@ test("喫茶「おんJ」: every talk fits the village window, and the door appe
 		new Set(CAFE_TALKS.map((t) => t.id)).size === CAFE_TALKS.length,
 		"two cafe talks share an id",
 	);
-	// 出ていった やきうの 話は 聞けない（扉の「！」も 残らない）
+	// やきうの 話は いつでも 聞ける（扉の「！」も 出る）
 	withStorage(() => {
 		forgetCafeMemo();
 		putTown({ stage: TOWN_STAGES - 1 });
@@ -2548,12 +2553,12 @@ test("喫茶「おんJ」: every talk fits the village window, and the door appe
 			talksWith("nanj", TOWN_STAGES - 1).length > 0,
 			"no talks with やきう while he is here",
 		);
+		// 開票の あとも やきうは 村に いる（だれも 出ていかない。STORY.md §5）
 		setProgress(all, [], all);
-		ok(!hasCafeNews(), "「！」 stays for the talks of やきう, who has left");
+		ok(hasCafeNews(), "やきう's talks give no 「！」 after the 開票");
 		ok(
-			talksWith("nanj", TOWN_STAGES - 1).length === 0 &&
-				cafeTalks(TOWN_STAGES - 1).every((t) => !t.cast.includes("nanj")),
-			"talks with やきう after he has left",
+			talksWith("nanj", TOWN_STAGES - 1).length > 0,
+			"no talks with やきう after the 開票",
 		);
 		forgetCafeMemo();
 	});
@@ -3066,15 +3071,9 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 	});
 });
 
-test("やきう leaves: the 電池板 ending plays once with him, then no return, boss page or news has him", async () => {
+test("開票: the 電池板 ending plays once and やきう stays; 転 plays once after 風呂板", async () => {
 	const all = [...DUNGEON_IDS];
-	const his = (pages: readonly StoryPage[]) =>
-		pages.filter((p) => p.who === "nanj" || p.about === "nanj");
-	const put = (
-		cleared: DungeonId[],
-		endings: DungeonId[],
-		news: ProgressNews[] = [],
-	) =>
+	const put = (cleared: DungeonId[], endings: DungeonId[]) =>
 		localStorage.setItem(
 			PROGRESS_KEY,
 			JSON.stringify({
@@ -3082,13 +3081,13 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 				cleared,
 				fails: {},
 				intro: all,
-				news,
+				news: [],
 				endings,
 			}),
 		);
 	await withStorageAsync(async () => {
 		putTown({ stage: TOWN_STAGES - 1 });
-		// はじめて 持ち帰った：やきうは まだ 村に いて、口の 前で 待ち、結末を 語る
+		// はじめて 持ち帰った：開票の 語り（寄り道「残機」を 終えて いれば 数字が 跳ねる 頁も）
 		put(
 			all,
 			all.filter((d) => d !== "deep"),
@@ -3097,83 +3096,55 @@ test("やきう leaves: the 電池板 ending plays once with him, then no return
 		ok(
 			JSON.stringify(pagesFor(a)) ===
 				JSON.stringify([...STORY.deep.ending, episodeEnd("deep")]),
-			"the 電池板 ending is cut the first time",
-		);
-		const v = villageView();
-		ok(
-			!villagePlaces(v).some((p) => p.id === "nanj"),
-			"やきう stands in the village after 電池板 is cleared",
-		);
-		ok(
-			villagePlaces(sceneView(v, a)).some((p) => p.id === "nanj"),
-			"やきう is not in the village for his own departure",
+			"the 開票 is cut the first time",
 		);
 		const { s, log } = fakeStory({ at: exitFor("deep").cell });
-		lineUp(s, a, sceneView(v, a));
-		ok(
-			log.some((l) => l.startsWith("place nanj ")),
-			"やきう does not wait at the mouth",
-		);
+		lineUp(s, a, sceneView(villageView(), a));
 		await returnScene(s, a);
 		ok(
-			his(STORY.deep.ending).every(
+			STORY.deep.ending.every(
 				(p) => p.who !== "nanj" || log.includes(`say nanj: ${p.text}`),
 			),
-			`やきう's departure is not played:\n${log.join("\n")}`,
+			`やきう's lines in the 開票 are not played:\n${log.join("\n")}`,
+		);
+		ok(
+			log.some((l) => l.includes("★　キリコ　当選　★")),
+			"no 当選 card at the 開票",
 		);
 		ok(
 			!!loadProgress().endings?.includes("deep"),
-			"the departure is not remembered",
+			"the 開票 is not remembered",
 		);
-		// 見おえたら（暗転で 建て直すと）もう いない。2回目からは 短い 語り
+		// 見おえても やきうは 村に いる。2回目からは 短い 語り
 		ok(
-			!villagePlaces(sceneView(villageView(), a)).some((p) => p.id === "nanj"),
-			"やきう comes back after his departure",
+			villagePlaces(villageView()).some((p) => p.id === "nanj"),
+			"やきう left the village after the 開票",
 		);
 		ok(
 			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.deep.again),
-			"the departure plays again",
+			"the 開票 plays again",
 		);
-		// どの 板・帰り方でも やきうの 頁は 出ない（見た 語りでも、はじめての 語りでも）。着いた 語りから 始まる
-		for (const seen of [all, ["deep"] as DungeonId[]]) {
-			put(all, seen);
-			for (const d of all)
-				for (const kind of ["clear", "escape"] as const)
-					for (const objective of [undefined, "boss"] as const) {
-						const got = pagesFor({ kind, dungeon: d, objective });
-						const at = `${d} ${kind} ${objective ?? "fetch"} (seen ${seen.length})`;
-						ok(his(got).length === 0, `${at}: やきう is in the scene`);
-						ok(
-							got.length > 0 && got[0]?.who === null,
-							`${at}: does not open with the arrival`,
-						);
-					}
-		}
-		// 開いた 知らせでも 話さない
-		put(all, all, [{ dungeon: "hidden", reason: "clear" }]);
-		const news = fakeStory();
-		await newsScript(news.s);
-		ok(
-			!news.log.some((l) => l.startsWith("say nanj:")) &&
-				news.log.some((l) => l.startsWith("say ")),
-			`the news after he left:\n${news.log.join("\n")}`,
-		);
-		// 電池板の 転（「そろそろ　外、行くわ」）も 一度きり
-		const deep: ReturnArrival = { kind: "clear", dungeon: "deep" };
+		// 寄り道「残機」を 終えて いなければ、数字が 跳ねる 頁は 出ない
 		put(["shallow", "main", "deep"], ["shallow", "main"]);
 		ok(
-			JSON.stringify(pagesFor(deep)) ===
+			JSON.stringify(pagesFor(a)) ===
 				JSON.stringify([
 					...STORY.deep.ending.filter((p) => !p.needCleared),
 					episodeEnd("deep"),
 				]),
-			"the 電池板 ending is cut the first time",
+			"the 残機 pages show without the side story",
 		);
-		put(["shallow", "main", "deep"], ["shallow", "main", "deep"]);
+		// 転：風呂板の 語りを 見おえた 帰りに 1回だけ。旗 ten
+		put(["shallow", "kinoko", "main"], ["shallow", "kinoko", "main"]);
+		const ten = fakeStory();
+		await tenScript(ten.s);
 		ok(
-			JSON.stringify(pagesFor(deep)) === JSON.stringify(STORY.deep.again),
-			"the 電池板 ending plays again",
+			TEN_NEWS.pages.every(
+				(p) => p.who !== "nanj" || ten.log.includes(`say nanj: ${p.text}`),
+			),
+			`the 転 is not played:\n${ten.log.join("\n")}`,
 		);
+		ok(hasFlag("ten"), "the 転 is not remembered");
 	});
 });
 
@@ -3354,7 +3325,7 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		);
 		await returnScene(s, a);
 		const gate = exitFor("opunu").cell.join(",");
-		const walk = log.findIndex((l) => l === `place newcomer ${gate}`);
+		const walk = log.indexOf(`place newcomer ${gate}`);
 		const talk = log.findIndex((l) =>
 			l.startsWith("say null: ……上がってたから"),
 		);
@@ -3385,34 +3356,6 @@ test("裏シナリオ: the branch opens by a bottle at the pier (small isles →
 		ok(
 			second.log.some((l) => l.startsWith("place mob_shobon ")),
 			"the 原住民 does not line up once he lives here",
-		);
-		// 電池板の 山場：原住民が 来ていれば 見送りで 1枚 口を はさみ、来ていなければ 出ない
-		put(
-			["shallow", "kinoko", "main", "opunu", "deep"],
-			["shallow", "kinoko", "main", "opunu"],
-		);
-		const deep: ReturnArrival = { kind: "clear", dungeon: "deep" };
-		ok(
-			pagesFor(deep).filter((p) => p.mob === "shobon").length === 1,
-			"the 原住民 does not speak at the 1000",
-		);
-		put(["shallow", "kinoko", "main", "deep"], ["shallow", "kinoko", "main"]);
-		ok(
-			pagesFor(deep).every((p) => p.mob !== "shobon"),
-			"the 原住民 speaks at the 1000 before he has arrived",
-		);
-		// やきうが 出ていった あとに はじめて 持ち帰っても、語りは 省かれず、かわりの 頁で 入れかわりを 言う
-		put(
-			["shallow", "kinoko", "main", "deep", "opunu"],
-			["shallow", "kinoko", "main", "deep"],
-		);
-		putTown({ stage: TOWN_STAGES - 1 });
-		const late = pagesFor(a);
-		ok(
-			late.length > (STORY.opunu.again?.length ?? 0) &&
-				late.some((p) => p.text.includes("入れかわりだね")) &&
-				late.every((p) => p.who !== "nanj"),
-			`the late arrival is wrong:\n${late.map((p) => p.text).join("\n")}`,
 		);
 		// 入口は 板の 踏破では 開かない：パン板を 持ち帰っても きのこ板だけ。小島1 は 町に 屋台が 出てから
 		// 釣り場の 竿を 調べると ビンの 手紙で 開き、その場で 知らせる（data/town/finds.ts）
@@ -4272,7 +4215,7 @@ test("裏シナリオ: the 跡地 ending brings 18 ROM専 in from the mouth, the
 			"the ROM専 parade may be shortened",
 		);
 		const gate = exitFor("ato").cell.join(",");
-		const arrive = log.findIndex((l) => l === `place ${ROMS}_0 ${gate}`);
+		const arrive = log.indexOf(`place ${ROMS}_0 ${gate}`);
 		const post = log.findIndex((l) => l.startsWith("say nanj: 見てた"));
 		const leave = log.findIndex(
 			(l) => l === `goto ${ROMS}_${ROM_COUNT - 1} ${gate}`,
@@ -4564,6 +4507,7 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 			inOrder(a.log, [
 				`narrate: ${OPENING.arrive[0]}`,
 				`narrate: ${OPENING.premise[0]}`,
+				`narrate: ${OPENING.fine[0]}`,
 				"show phono",
 				`narrate: ${OPENING.premise[1]}`,
 				`kiriko voice: ${OPENING.mumble[0]}`,
@@ -5305,11 +5249,11 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		goalText("kinoko", "boss"),
 	);
 	ok(
-		goalText("shallow", "fetch") === "植民地化宣言を　持ち帰る",
+		goalText("shallow", "fetch") === "パン板の　推薦状を　持ち帰る",
 		goalText("shallow", "fetch"),
 	);
 	ok(
-		goalText("deep", "boss") === "鉄塔の保守スレを　持ち帰る",
+		goalText("deep", "boss") === "投票箱を　持ち帰る",
 		"a board without a boss reads as a boss run",
 	);
 	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);
@@ -5987,24 +5931,11 @@ test("おんJ 本館の 扉: the door text once per tier, a door sound and a fad
 	});
 });
 
-test("保守の 当番表: one 「保守」 per return, counted in its own save, nothing else changes", async () => {
+test("演説の 当番表: one speech per return, counted in its own save, nothing else changes", async () => {
 	await withStorageAsync(async () => {
-		// やきうが 出ていく 前は 読むだけ（キリコは まだ「保守」と 書かない）
+		// 立候補した その 日から 書ける（STORY.md §5）
 		setProgress(["shallow"]);
 		putTown({ stage: 0, points: 10 });
-		const early = fakeStory({ pick: 0 });
-		await tobanScript(0)(early.s);
-		ok(hoshuCount() === 0, "wrote 「保守」 before やきう left");
-		ok(
-			early.log.join("\n") ===
-				[
-					`narrate: ${HALL_MSG.toban[0]}`,
-					`narrate: ${HALL_MSG.tobanNotYet}`,
-				].join("\n"),
-			`before やきう left:\n${early.log.join("\n")}`,
-		);
-		// 出ていった あとは 書ける
-		setProgress(["shallow", "main", "deep"], [], ["shallow", "main", "deep"]);
 		const town = localStorage.getItem(TOWN_KEY);
 		const progress = localStorage.getItem(PROGRESS_KEY);
 		const no = fakeStory({ pick: 1 });
@@ -7887,7 +7818,7 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 	ok(
 		villageRes(["shallow", "main", "deep"], 7, 1e9, noon) ===
 			1 +
-				(Object.keys(SPEAKERS).length - 1) +
+				Object.keys(SPEAKERS).length +
 				movedIn(townStep(7, 1e9), ["shallow", "main", "deep"]).length +
 				crowdSize(7, "day", false),
 		"the count is not friends + residents + passers-by",

@@ -58,7 +58,7 @@ import { MOBS, type MobId, movedIn } from "../people/mobs";
 import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
-import { awayFriends, FRIEND_FROM } from "../story/story";
+import { FRIEND_FROM } from "../story/story";
 import { nowHour, today } from "../town/calendar";
 import { COLONY_SPOTS, VILLAGE_PT } from "../town/worldMap";
 import {
@@ -1250,11 +1250,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	if (here("shiyo") && !shiyoAtMaid(stage, today(), nowHour()))
 		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo(stage)));
 	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
-	// やきうは 電池板の 山場で 外へ 出ていく。そのあとは 小屋の 前に「保守」の 札（data/story/story.ts）
-	if (awayFriends(v.cleared).includes("nanj")) {
-		const [nx, ny] = VILLAGE_SPOTS.nanj(v);
-		out.push({ id: "hoshu_sign", x: nx, y: ny, trigger: "talk" });
-	} else out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
+	// やきうは はじめから 小屋の 前（現職。村から 出ていかない）
+	out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
 	// フェリスは 海の家の 看板娘（おんJの マスコット。海の家は フェリスと 同じ 段に 建つ）
 	if (here("feris")) out.push(friend("feris", VILLAGE_SPOTS.feris, true));
 	// 施設の 扉（中が ある 施設）と 外に 置く 物（釣り場の 竿・グラウンドの マウンドなど）

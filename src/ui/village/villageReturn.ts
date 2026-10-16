@@ -51,11 +51,11 @@ import {
 	GETTER_RETRY,
 	HINAN_NEWS,
 	KUSA_NEWS,
-	MITORU_NEWS,
 	mentionsAway,
 	playPage,
 	ROM_COUNT,
 	type StoryPage,
+	TEN_NEWS,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
 	WRAP_NEWS,
@@ -404,26 +404,19 @@ const playCue = async (
 	hooks: ReturnHooks,
 ): Promise<void> => {
 	if (c === "roms") await walkInRoms(s, a.dungeon);
-	// やきうが 村の 口から 出ていく（電池板の 山場。歩いて 口まで 行き、見えなく なる）
-	else if (c === "nanjLeave") {
-		const gate = exitFor(a.dungeon).cell;
-		await s.look("nanj");
-		await s.goto("nanj", gate[0], gate[1], { speed: 0.8, noWarp: true });
-		s.hide("nanj");
-		await s.look(null);
-	} else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
+	else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
 	// 蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結。ダンジョンで 声を 鳴らす ときと 同じ 音）
 	else if (c === "selfVoice") s.se("spell");
-	// 電池板の 山場：999 で 鐘、1000 で ファンファーレと 札（山場が わかるように。2026-10-13 作者の 指摘）
+	// 開票（電池板の 山場）：のこり 1票で 鐘、当選で ファンファーレと 札（山場が わかるように）
 	else if (c === "res999") {
 		s.se("chapter");
-		s.toast("村の　スレ　999");
+		s.toast("開票　のこり　1票");
 	} else if (c === "chapterEnd") {
 		s.se("chapter");
 		await s.wait(400);
 	} else if (c === "res1000") {
 		s.se("victory");
-		s.toast("★　村の　スレ　1000　完走　★");
+		s.toast("★　キリコ　当選　★");
 		await s.wait(600);
 	} else if (c === "getter" && hooks.getter) {
 		for (let tries = 0; ; tries++) {
@@ -738,11 +731,15 @@ export const wrapScript = async (s: Story): Promise<void> => {
 	await s.narrate(WRAP_NEWS.open);
 };
 
-/** 本筋の 結の あと（STORY.md §5.9）：電池板の 山場の 次の 帰りに 1回だけ、次スレに 外から「見とるで」。 */
-export const mitoruScript = async (s: Story): Promise<void> => {
-	await gather(s, ["zero", "feris"]);
-	for (const p of MITORU_NEWS.lines) await playPage(s, p);
-	addFlag("mitoru");
+/** 転（STORY.md §5）：風呂板の 語りを 見おえた 帰りに 1回だけ。告示の 小さい 字と、貼ったのは やきう。 */
+export const tenScript = async (s: Story): Promise<void> => {
+	await gather(s, ["zero", "roze", "feris", "nanj"]);
+	for (const p of withoutAway(
+		TEN_NEWS.pages,
+		awayFriends([], loadTown().stage),
+	))
+		await playPage(s, p);
+	addFlag("ten");
 };
 
 /** 結の あと（STORY.md §5.98）：次の 帰りに 1回だけ、鉄塔の 次スレに 外から「草」。喫茶の 柱時計が 動きだす。 */

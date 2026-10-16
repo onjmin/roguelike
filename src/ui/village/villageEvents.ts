@@ -46,11 +46,9 @@ import {
 import type { Speaker } from "../../data/story/quotes";
 import { SCRAP_MSG, SCRAPS, type Scrap } from "../../data/story/scraps";
 import {
-	awayFriends,
 	DEPART,
 	DUNGEON_NAMES,
 	EPISODES,
-	HOSHU_SIGN,
 	LIGHTHOUSE_DOOR,
 	ROM_COUNT,
 	STORY,
@@ -165,7 +163,6 @@ import {
 	kusaScript,
 	lineUp,
 	lunchScript,
-	mitoruScript,
 	NEWCOMER,
 	newsScript,
 	previewStage,
@@ -179,6 +176,7 @@ import {
 	settleScript,
 	TALK_NEAR,
 	tamperScript,
+	tenScript,
 	wrapScript,
 } from "./villageReturn";
 import {
@@ -363,12 +361,16 @@ export const departTo = async (
 		depositBag();
 		carry = [];
 	}
-	// 潜る ときの 一言（やきう。出ていった あとは キリコが 言う。STORY.md §5.9）。
-	// キリコは 1人で 出ていく：やきうが そばに いるときだけ 声を かける
-	if (awayFriends(loadProgress().cleared).includes("nanj"))
-		await s.kiriko(DEPART.kiriko, "voice");
-	else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
-	// 離れていても 毎回 聞かせる（山場の あと 聞けなく なる 一言。STORY.md §5.9）
+	// 潜る ときの やきうの 一言（STORY.md §5）。開票までは 確定して 毎回 同じ。離れていても 毎回 聞かせる
+	// （同じ 一言の くり返しが 転の 証拠）。開票の あとは 潜った 回数で 毎回 ちがう 一言
+	if (loadProgress().cleared.includes("deep")) {
+		const free = DEPART.free[loadRecords().length % DEPART.free.length];
+		if (s.near("nanj", TALK_NEAR)) await s.say("nanj", free);
+		else
+			await s.narrate(
+				`遠くから、やきうの　声。\n「${free.replace("\n", "")}」`,
+			);
+	} else if (s.near("nanj", TALK_NEAR)) await s.say("nanj", DEPART.nanj);
 	else await s.narrate(DEPART.nanjFar);
 	// 同行の 依頼（引き受けた 依頼の 板へ 出る ときだけ 依頼主が ついてくる。data/people/companions.ts）
 	const town = loadTown();
@@ -928,7 +930,6 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id.startsWith("board_")) return sign(p.id, p.x, p.y, boardScript(ctx));
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
-	if (p.id === "hoshu_sign") return sign(p.id, p.x, p.y, HOSHU_SIGN);
 	if (p.id === "shrine") return sign(p.id, p.x, p.y, shrineScript);
 	if (p.id.startsWith("trolley_"))
 		return sign(p.id, p.x, p.y, trolleyScript(p.id, v), p.sprite);
@@ -1058,8 +1059,6 @@ const arrivalScript =
 		const dove = !!back || arrival?.kind === "dead";
 		const wrapDue = dove && seen.includes("hinan") && !hasFlag("wrap");
 		const kusaDue = dove && seen.includes("y1901") && !hasFlag("kusa");
-		// 本筋の 結の あと（電池板の 山場の 次の 帰り）
-		const mitoruDue = dove && seen.includes("deep") && !hasFlag("mitoru");
 		// 過去ログの底からは 井戸を のぼって 出てくる（立つのは 井戸の すぐ 下。data/village/map.ts の exitFor）
 		if (back?.dungeon === "hidden") {
 			s.se("stairs");
@@ -1083,13 +1082,15 @@ const arrivalScript =
 		s.bgm(villageSong());
 		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）
 		if (previewStage() !== null) return;
+		// 転（STORY.md §5）：風呂板の 語りを 見おえた その 帰りに 1回だけ。電池板が 開く 知らせ（newsScript）より 前
+		if (loadProgress().endings?.includes("main") && !hasFlag("ten"))
+			await tenScript(s);
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
 		await newsScript(s);
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
 		const worry = takeWorryNews();
 		if (worry) await s.narrate(HERO_QUESTS[worry].hint);
-		if (mitoruDue) await mitoruScript(s);
 		// 転（時計が もどる）と 結の あとの「草」
 		if (wrapDue) await wrapScript(s);
 		if (kusaDue) await kusaScript(s);
