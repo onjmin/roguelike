@@ -17,14 +17,6 @@ export type DungeonId =
 	| "konamono"
 	| "festival"
 	| "hidden"
-	| "opunu"
-	// 裏シナリオ「さとると　ワイと　お前だけ」（STORY.md §5.98）：乗っ取られた 小島 2つ → 灯台（opunu）→ 野球chの 跡地（ato）
-	// → 避難J（hinan）→ 時計が もどった 日の 1901年の スレ（y1901）
-	| "isle1"
-	| "isle3"
-	| "ato"
-	| "hinan"
-	| "y1901"
 	// 束音ロゼの 依頼：ボカロ作り避難所（engine/heroes.ts）
 	| "vocalo"
 	// おーぷぬ（だれでも 立てられる 板）の おんJ関連板（2026-10-13 作者：「おーぷんの 史実に 基づいて 増やせ」）
@@ -166,7 +158,6 @@ export type Ability =
 	| { k: "metal" } // 逃げる・ダメージは最大1・なぐられるとワープ
 	| { k: "slow" } // 2ターンに1回しか動かない
 	| { k: "shy" } // 近づくと逃げる（追いつめられると戦う）
-	| { k: "spam"; rate: number; amount: number } // なぐる かわりに 連投して スレを amount 伸ばす（1000ゲッター。1000 で 次の 階へ 押し出される）
 	| { k: "accel"; after: number } // となりに after ターンいると倍速になる
 	| { k: "revive" } // たおしても一度だけ起き上がる（投げた薬草・封印で防げる）
 	| { k: "retreat" } // 弱ると逃げて回復する
@@ -494,11 +485,6 @@ export type RunState = {
 	/** 倉庫から持ちこんだ道具（はじめの形。リレミトならぬ 帰還スレで持ち帰った道具を、次の冒険へ。リプレイで同じに始めるため）。 */
 	carriedIn?: Item[];
 	/**
-	 * 裏シナリオの 結（野球chの 跡地の 参拝）を 見た あと：ROM専は 戦わず、蓄音機の 声にも 固まらず 手を 振る
-	 * （STORY.md §5.98）。リプレイで 同じに なるよう 冒険に 焼きつける。ふつうは 書かない。
-	 */
-	rom?: true;
-	/**
 	 * 冒険に 出た 主人公（core/data/heroes.ts）。キリコの ときは 書かない（前の 版の 中断セーブ・リプレイ・
 	 * parity の 基準が そのまま 通るように）。
 	 */
@@ -522,11 +508,9 @@ export type GuestId =
 	| "roze"
 	| "shiyo"
 	// 住人（data/people/mobs.ts）
-	| "shobon"
 	| "panmatsu"
 	| "ngoane"
-	| "nichie"
-	| "hinary";
+	| "nichie";
 
 export type Guest = {
 	id: GuestId;

@@ -14,7 +14,7 @@ import {
 	goalText,
 	type ObjectiveInfo,
 } from "../../data/story/objectives";
-import { DUNGEON_NAMES, ISLE_NAMES } from "../../data/story/story";
+import { DUNGEON_NAMES } from "../../data/story/story";
 import { goalWhy } from "../../data/story/synopsis";
 import {
 	type BuildingKind,
@@ -336,7 +336,7 @@ export const drawBuilding = (
 			break;
 		}
 		case "lighthouse": {
-			// 諸島の 灯台（白と 赤の しま。てっぺんの 明かりが 回る）
+			// 塔（白と 赤の しま。てっぺんの 明かりが 回る。†闇の板†）
 			r(-6, -2, 12, 2, "#7a7a88");
 			for (let i = 0; i < 18; i++) {
 				const w = 5 - Math.floor(i / 6);
@@ -356,35 +356,6 @@ export const drawBuilding = (
 				else if (turn === 1) r(-1, -33, 1, 6, "rgba(255,224,96,0.45)");
 			}
 			r(-1, -6, 2, 4, "#2a2020");
-			break;
-		}
-		case "islet": {
-			// 乗っ取られた 小島：小さな 岩と、乗っ取り屋の 立てた 旗（開いて いなければ 影）
-			for (let i = 0; i < 6; i++)
-				r(-7 + i, -i - 1, 14 - i * 2, 1, i < 2 ? "#7a6440" : "#9a8252");
-			r(-1, -7, 1, 1, "#c8b890");
-			r(2, -14, 1, 8, "#5a4a3a");
-			r(3, -14, 5, 3, blink ? "#d8382a" : "#b82a1e");
-			r(3, -11, 3, 1, "#b82a1e");
-			break;
-		}
-		case "boat": {
-			// 小舟（裏シナリオの 入口の 小島の 岸。だれも 乗っていない。波で 上下する）
-			const bob = Math.floor(t / 500) % 2;
-			r(-5, -3 - bob, 10, 2, "#8a5a2a");
-			r(-4, -1 - bob, 8, 1, "#6a4020");
-			r(-3, -4 - bob, 6, 1, "#b08050");
-			r(2, -8 - bob, 1, 6, "#d8c8a0");
-			break;
-		}
-		case "tent": {
-			// 避難所の テント（三角の 幕と ランプ。だれも いない）
-			for (let i = 0; i < 9; i++)
-				r(-i - 1, -i - 1, i * 2 + 2, 1, i % 2 ? "#e8e4d8" : "#c8c0b0");
-			r(-10, -1, 20, 1, "#7a7a66");
-			r(-1, -4, 2, 4, "#2a2630");
-			r(5, -12, 1, 6, "#5a4a3a");
-			r(4, -13, 3, 2, blink ? "#ffe060" : "#d8b840");
 			break;
 		}
 		case "studio": {
@@ -610,31 +581,14 @@ export class MapView {
 			const [x, y] = spotOf(d);
 			const open = this.open.includes(d);
 			const dg = DUNGEONS[d];
-			// 隠しの 板と、開くまで 出さない 板（裏シナリオ）は 影も ？ も 出さない
+			// 隠しの 板と、開くまで 出さない 板（ボカロ作り避難所）は 影も ？ も 出さない
 			if (dg.secret || (dg.hidden && !open)) continue;
 			drawBuilding(g, COLONY_SPOTS[d].building, x, y, 1, t, !open);
-			// 裏シナリオの 入口の 小島：岸に 小舟（釣り場の ビンの 手紙で 見つける。data/town/finds.ts）
-			if (open && d === "isle1") drawBuilding(g, "boat", x + 9, y + 3, 1, t);
 			if (!open) {
 				g.fillStyle = "rgba(255,255,255,0.7)";
 				g.fillText("？", x, y - 5);
 			}
 			if (this.cleared.includes(d)) drawStar(g, x + 8, y - 16);
-			// 乗っ取られた 小島の 名前：取り返すと 元の 板の 名前に もどる（裏シナリオ。data/story/story.ts の ISLE_NAMES）
-			if (open && d in ISLE_NAMES) {
-				const nm = ISLE_NAMES[d as keyof typeof ISLE_NAMES];
-				g.font = "7px 'DotGothic16', monospace";
-				g.fillStyle = this.cleared.includes(d)
-					? "rgba(255,240,180,0.9)"
-					: "rgba(255,160,160,0.85)";
-				g.fillText(
-					this.cleared.includes(d) ? nm.original : nm.hijacked,
-					x,
-					y + 8,
-				);
-				g.font = "8px 'DotGothic16', monospace";
-				g.fillStyle = "#fff";
-			}
 		}
 		// えらんでいる 植民地の 目印（▼ が はねる。えらび直すと すべって いく。上の はしでは 下に ▲）
 		if (this.mode.k === "pick") {
@@ -680,7 +634,7 @@ export class MapView {
 				(g
 					? `<div class="wm-goal${g.objective === "boss" ? " boss" : ""}">目的：${goalText(d, g.objective)}</div>` +
 						(g.event ? `<div class="wm-limited">${eventText(g)}</div>` : "") +
-						// 何のために 行くか（裏シナリオ。持ち帰る 前だけ：data/story/synopsis.ts）
+						// 何のために 行くか（持ち帰る 前だけ：data/story/synopsis.ts）
 						(goalWhy(d, this.cleared)
 							? `<div class="wm-desc">${goalWhy(d, this.cleared)}</div>`
 							: "")
@@ -699,9 +653,6 @@ export class MapView {
 		const dg = DUNGEONS[d];
 		const nameOf = (x: DungeonId) =>
 			this.open.includes(x) ? DUNGEON_NAMES[x].name : "？？？";
-		// いくつかの 板を ぜんぶ 持ち帰ると 開く（裏シナリオの 灯台・避難J）
-		if (dg.unlockAfterAll)
-			return `${dg.unlockAfterAll.map(nameOf).join("・")}を　ぜんぶ　持ち帰ると　開く`;
 		const after = dg.unlockAfter;
 		if (!after) return "まだ　行けない";
 		const known = this.open.includes(after);

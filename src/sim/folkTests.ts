@@ -137,13 +137,13 @@ const VIEWS: VillageView[] = [];
 for (let stage = 0; stage < TOWN_STAGES; stage++)
 	for (const unlocked of ALL_UNLOCKS)
 		VIEWS.push({ stage, unlocked, cleared: unlocked.slice(0, -1) });
-/** 原住民が 越してきた 村（灯台を 持ち帰った あと。villageTests の VIEWS には ない）。 */
+/** 本筋を 持ち帰った 村（原住民は はじめから いる）。 */
 const OWNER_VIEWS: VillageView[] = Array.from(
 	{ length: TOWN_STAGES },
 	(_, stage) => ({
 		stage,
-		unlocked: ["shallow", "main", "deep", "isle1", "isle3", "opunu"],
-		cleared: ["shallow", "main", "deep", "isle1", "isle3", "opunu"],
+		unlocked: ["shallow", "main", "deep"],
+		cleared: ["shallow", "main", "deep"],
 	}),
 );
 

@@ -24,7 +24,6 @@ import * as pianoTexts from "../data/minigames/piano";
 import * as guestTexts from "../data/people/guests";
 import * as mobTexts from "../data/people/mobs";
 import * as quoteTexts from "../data/story/quotes";
-import * as scrapTexts from "../data/story/scraps";
 import * as storyTexts from "../data/story/story";
 import * as tipTexts from "../data/story/tips";
 import * as bathTexts from "../data/town/bath";
@@ -359,7 +358,6 @@ const TEXT_MODULES: readonly [string, unknown][] = [
 	["story", storyTexts],
 	["quotes", quoteTexts],
 	["tips", tipTexts],
-	["scraps", scrapTexts],
 	["piano", pianoTexts],
 	["village/trolley", trolleyTexts],
 ];

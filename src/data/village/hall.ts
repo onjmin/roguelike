@@ -22,7 +22,7 @@
 //   M m  実況モニター（左右）   G g  殿堂の 旗（左右）
 //   z  座布団   ( )  長机（左右）   x  みかん箱   B  本棚   F  鉢植え   T  机   n  いす   r  空いた いす（殿堂の となり）
 //   V  映写機（リプレイを 上映する。絵は scripts/make-projector.mjs）
-//   P  石の 柱   Q  いちばん 古い スレの 札（原住民の「ここが野球chだ」。裏シナリオ：跡地へ 降りる 床下の 入口）
+//   P  石の 柱   Q  いちばん 古い スレの 札（原住民の「ここが野球chだ」）
 
 import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
@@ -328,26 +328,11 @@ export const hallPlaces = (v: VillageView): HallPlace[] => {
 
 // ───────────────── 飾り棚 ─────────────────
 
-/**
- * 蓄音機で 鳴らしている 品の 板（植民地化宣言・長湯スレ・鉄塔の保守スレ。裏シナリオの >>1 と 20人目の レスも。
- * 棚には 置かない）。
- */
-export const ON_PHONO: readonly DungeonId[] = [
-	"shallow",
-	"main",
-	"deep",
-	"ato",
-	"hinan",
-];
+/** 蓄音機で 鳴らしている 品の 板（パン板の 推薦状・長湯スレ・開票の ファンファーレ。棚には 置かない）。 */
+export const ON_PHONO: readonly DungeonId[] = ["shallow", "main", "deep"];
 
-/**
- * シヨが 倉庫で あずかっている 品の 板（過去ログの底の 1作目の スレ。STORY.md §5.8。裏の 2段目の 続きの レスも
- * ：data/story/story.ts の CLEAR.y1901。棚には 置かない）。
- */
-export const IN_STORE: readonly DungeonId[] = ["hidden", "y1901"];
-
-/** まとめ掲示板に 貼ってある 品の 板（乗っ取り屋の 置き手紙。data/story/scraps.ts。棚には 置かない）。 */
-export const ON_BOARD: readonly DungeonId[] = ["isle1", "isle3"];
+/** シヨが 倉庫で あずかっている 品の 板（過去ログの底の 最初の 告示。棚には 置かない）。 */
+export const IN_STORE: readonly DungeonId[] = ["hidden"];
 
 /** 飾り棚の 段（上の 段から 左 → 右。絵を 描く マス）。棚が 無い 段は 空。 */
 export const shelfSlots = (tier: HallTier): Cell[] => {
@@ -368,8 +353,5 @@ export const shelfBoards = (
 ): DungeonId[] =>
 	order.filter(
 		(d) =>
-			cleared.includes(d) &&
-			!ON_PHONO.includes(d) &&
-			!IN_STORE.includes(d) &&
-			!ON_BOARD.includes(d),
+			cleared.includes(d) && !ON_PHONO.includes(d) && !IN_STORE.includes(d),
 	);

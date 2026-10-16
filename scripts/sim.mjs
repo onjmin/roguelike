@@ -146,7 +146,6 @@ try {
 				carryItems,
 				objective,
 				!carryItems.length,
-				false,
 				arg("hero", "kiriko"),
 				GUEST,
 			),

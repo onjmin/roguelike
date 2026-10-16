@@ -68,7 +68,7 @@ const statusHtml = (run: Run): string => {
 		row("ターン", String(s.turn)),
 	];
 	const out = [`<table>${rows.join("")}</table>`];
-	// 何のために 来たか（裏シナリオ。持ち帰る 前だけ：data/story/synopsis.ts）
+	// 何のために 来たか（持ち帰る 前だけ：data/story/synopsis.ts）
 	const why = goalWhy(s.dungeon, loadProgress().cleared);
 	if (why && !s.returning) out.push(`<p class="hint">${esc(why)}</p>`);
 	if (floor.length)

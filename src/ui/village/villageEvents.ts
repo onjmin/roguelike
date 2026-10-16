@@ -21,7 +21,6 @@
 
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME } from "../../core/data/heroes";
-import { MONSTERS } from "../../core/data/monsters";
 import { CARRY_MAX, STORAGE_CAP } from "../../core/town";
 import type { DungeonId, GuestId, Item } from "../../core/types";
 import { CAST } from "../../data/people/cast";
@@ -36,7 +35,7 @@ import {
 	speakerOf,
 } from "../../data/people/companions";
 import { HERO_QUESTS, type QuestLine } from "../../data/people/heroQuests";
-import { BOARD_MENU, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
+import { BOARD_MENU, type MobId } from "../../data/people/mobs";
 import { LIBRARY_FROM } from "../../data/story/glossary";
 import {
 	type ObjectiveInfo,
@@ -44,15 +43,7 @@ import {
 	withDevEvent,
 } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
-import { SCRAP_MSG, SCRAPS, type Scrap } from "../../data/story/scraps";
-import {
-	DEPART,
-	DUNGEON_NAMES,
-	EPISODES,
-	LIGHTHOUSE_DOOR,
-	ROM_COUNT,
-	STORY,
-} from "../../data/story/story";
+import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import {
 	posterLine,
 	synopsisNow,
@@ -118,11 +109,9 @@ import {
 	loadProgress,
 	loadRecords,
 	loadRun,
-	loadScraps,
 	loadTown,
 	notePicked,
 	noteRunEnd,
-	readScrap,
 	recordFromRun,
 } from "../../engine/save";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
@@ -136,8 +125,6 @@ import {
 	imoniBoardScript,
 	imoniDecor,
 } from "../minigames/imoni";
-import { playGetter } from "../minigames/minigames";
-import { pinPad } from "../minigames/pinPad";
 import { sabaEvents } from "../saba/saba";
 import { openSettings } from "../settings";
 import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
@@ -164,14 +151,11 @@ import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
 	gather,
-	kusaScript,
 	lineUp,
 	lunchScript,
-	NEWCOMER,
 	newsScript,
 	previewStage,
 	type ReturnArrival,
-	ROMS,
 	reliefScript,
 	returnScene,
 	type StoreChooser,
@@ -181,15 +165,8 @@ import {
 	TALK_NEAR,
 	tamperScript,
 	tenScript,
-	wrapScript,
 } from "./villageReturn";
-import {
-	DUNGEON_DESC,
-	fill,
-	pinnedScrap,
-	scrapReturnAt,
-	talkQuote,
-} from "./villageTalk";
+import { DUNGEON_DESC, fill, talkQuote } from "./villageTalk";
 import { openWorldMap, pickColony, travelTo } from "./worldMap";
 
 /** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
@@ -566,9 +543,6 @@ const mouthScript =
 				return;
 			}
 			if (ok !== 0) continue;
-			// 灯台の 扉は パスワード（乗っ取り屋の 置き手紙 2枚が 手がかり。当てるまで 入れない。STORY.md §5.98）
-			if (d === "opunu" && !hasFlag("pass") && !(await passwordScript(ctx, s)))
-				continue;
 			break;
 		}
 		// 前に 行ったことが あれば 速く 歩く（語りを 見た＝行った）
@@ -586,42 +560,6 @@ const mouthScript =
 			}),
 		);
 	};
-
-/**
- * 灯台の 扉の パスワード（数字を 1桁ずつ 入れる。ui/minigames/pinPad.ts。答えは 置き手紙の とおり 12345）。
- * 当てれば 旗 pass が 立って 二度と きかれない。外しても 笑われる だけで、また 当てられる（地図に もどる）。
- */
-const passwordScript = async (ctx: Ctx, s: Story): Promise<boolean> => {
-	await s.narrate(LIGHTHOUSE_DOOR.ask);
-	await s.wait(0);
-	const code = await pinPad(ctx, LIGHTHOUSE_DOOR.title, {
-		max: LIGHTHOUSE_DOOR.max,
-	});
-	if (code === null) return false;
-	if (code !== LIGHTHOUSE_DOOR.answer) {
-		s.se("cancel");
-		await s.narrate(LIGHTHOUSE_DOOR.wrong);
-		return false;
-	}
-	s.se("decide");
-	addFlag("pass");
-	await s.narrate(LIGHTHOUSE_DOOR.open);
-	return true;
-};
-
-/** 切れはしを 読む（見出し・名無しの 書きこみ・それきり）。乗っ取り屋の 置き手紙は 見出しと 結びが ちがう。 */
-const readScrapScript = async (s: Story, x: Scrap): Promise<void> => {
-	const memo = x.kind === "memo";
-	await s.narrate(
-		fill(memo ? SCRAP_MSG.headMemo : SCRAP_MSG.head, {
-			board: DUNGEON_NAMES[x.board].name,
-		}),
-	);
-	await s.say("nanj", x.text, {
-		name: memo ? "乗っ取り屋" : "名無しさん@おんJ",
-	});
-	await s.narrate(memo ? SCRAP_MSG.afterMemo : SCRAP_MSG.after);
-};
 
 /** 掲示板に 出ている 同行の 依頼（段の 下見も 段で）。 */
 const boardEscorts = (stage: number) =>
@@ -704,30 +642,17 @@ const escortThanksScript = async (s: Story): Promise<void> => {
 };
 
 /**
- * まとめ掲示板：新しい 切れはしが 貼られて いれば まず それを 読む。ふだんは 冒険の 記録・読んだ 切れはし・
- * 総選挙の はり紙（出て いれば）から えらぶ。
+ * まとめ掲示板：立候補の ポスター（総選挙の 進み）を 見て、冒険の 記録・人気投票の はり紙（出て いれば）などから えらぶ。
  */
 const boardScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
-		const pin = pinnedScrap();
-		if (pin) {
-			await s.narrate(
-				pin.kind === "memo" ? SCRAP_MSG.pinnedMemo : SCRAP_MSG.pinned,
-			);
-			await readScrapScript(s, pin);
-			readScrap(pin.id, scrapReturnAt());
-			return;
-		}
 		await s.narrate(VILLAGE_MSG.board);
 		// 立候補の ポスター（総選挙の 進み。村の 状態と 同じ 数）
 		const t = loadTown();
 		await s.narrate(
 			posterLine(loadProgress().cleared, previewStage() ?? t.stage, t.points),
 		);
-		const readAll = SCRAPS.filter((x) => loadScraps().read.includes(x.id));
-		const read = readAll.filter((x) => x.kind !== "memo");
-		const memos = readAll.filter((x) => x.kind === "memo");
 		// 寄り合いの はり紙（段2〜3）・議会だより（段4〜）。ui/village/civic.ts
 		const stage = previewStage() ?? loadTown().stage;
 		const civic = civicBoardMenu(stage);
@@ -738,8 +663,6 @@ const boardScript =
 		const opts = [
 			"冒険の記録",
 			...(escorts.length ? [ESCORT_MSG.menu] : []),
-			...(read.length ? ["古い　切れはし"] : []),
-			...(memos.length ? [SCRAP_MSG.listMemo] : []),
 			...(senkyoOpen() ? [BOARD_MENU[1]] : []),
 			...(civic ? [civic] : []),
 			...(imoni ? [imoni] : []),
@@ -756,23 +679,6 @@ const boardScript =
 		else if (v === BOARD_MENU[1]) await senkyoScript(s);
 		else if (civic && v === civic) await civicBoardScript(s, stage);
 		else if (imoni && v === imoni) await imoniBoardScript(s);
-		else if (v === "古い　切れはし" || v === SCRAP_MSG.listMemo) {
-			const memo = v === SCRAP_MSG.listMemo;
-			const list = memo ? memos : read;
-			const all = SCRAPS.filter((x) => (x.kind === "memo") === memo).length;
-			await hideMsg(s);
-			const id = await listWindow(
-				ctx,
-				`${v}　${list.length}／${all}`,
-				list.map((x) => ({
-					label: `「${x.text.replace("\n", "")}」`,
-					sub: `${DUNGEON_NAMES[x.board].short}・${x.why}`,
-					value: x.id,
-				})),
-			);
-			const x = list.find((r) => r.id === id);
-			if (x) await readScrapScript(s, x);
-		}
 	};
 
 /** 口の 立て札。 */
@@ -1043,10 +949,6 @@ const storeChooser =
 			},
 		});
 
-/** その 板を 持ち帰ると 越してくる 住人（data/people/mobs.ts の after。いなければ 原住民の 絵を 予備に）。 */
-const newcomerFor = (d: DungeonId | undefined): MobId =>
-	MOB_IDS.find((id) => d && MOBS[id].after === d) ?? "shobon";
-
 /** 場面の ある 帰り方（持ち帰った・帰還スレ）なら その形。 */
 const returnOf = (a: Arrival): ReturnArrival | null =>
 	a && (a.kind === "clear" || a.kind === "escape")
@@ -1062,12 +964,6 @@ const arrivalScript =
 	async (s) => {
 		if (arrival?.kind === "replay") return;
 		const back = returnOf(arrival);
-		// 裏の 2段目（STORY.md §5.98）：避難J・1901年の スレの 結を 見た「次の 帰り」に 1回だけ の 場面。
-		// この 帰りの 語りで はじめて 結を 見た ときは 数えないので、returnScene（noteEnding）より 前に 決める
-		const seen = loadProgress().endings ?? [];
-		const dove = !!back || arrival?.kind === "dead";
-		const wrapDue = dove && seen.includes("hinan") && !hasFlag("wrap");
-		const kusaDue = dove && seen.includes("y1901") && !hasFlag("kusa");
 		// 過去ログの底からは 井戸を のぼって 出てくる（立つのは 井戸の すぐ 下。data/village/map.ts の exitFor）
 		if (back?.dungeon === "hidden") {
 			s.se("stairs");
@@ -1077,13 +973,7 @@ const arrivalScript =
 				fill(VILLAGE_MSG.wellUp, { hero: HERO_NAME[chosenHero()] }),
 			);
 		}
-		if (back)
-			await returnScene(s, back, {
-				getter: async () => {
-					await hideMsg(s);
-					return playGetter(ctx);
-				},
-			});
+		if (back) await returnScene(s, back);
 		// たおれて もどった：蓄音機の 前で 目を さまし、仲間が 歩いてくる
 		if (arrival?.kind === "dead" && previewStage() === null)
 			await deathScene(s);
@@ -1100,9 +990,6 @@ const arrivalScript =
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
 		const worry = takeWorryNews();
 		if (worry) await s.narrate(HERO_QUESTS[worry].hint);
-		// 転（時計が もどる）と 結の あとの「草」
-		if (wrapDue) await wrapScript(s);
-		if (kusaDue) await kusaScript(s);
 		// 同行の 依頼を はたして 帰った：お礼
 		await escortThanksScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
@@ -1165,22 +1052,6 @@ export const buildVillage = (
 			npc("visitor", 1, 1, VISITOR_WALK, async () => {}, {
 				when: (st) => !!st.flags.visitor,
 			}),
-			// 持ち帰りの 語りの 中で 越してくる 住人（旗 NEWCOMER の あいだだけ。絵は その 板で 来る 子の 歩行グラ。
-			// ui/village/villageReturn.ts の walkInMob）
-			npc(
-				NEWCOMER,
-				1,
-				1,
-				MOBS[newcomerFor(back?.dungeon)].sprite,
-				async () => {},
-				{ when: (st) => !!st.flags[NEWCOMER] },
-			),
-			// 跡地の 結：口から 来て はじめて 書きこむ ROM専 18体（旗 ROMS の あいだだけ。ui/village/villageReturn.ts の cue roms）
-			...Array.from({ length: ROM_COUNT }, (_, i) =>
-				npc(`${ROMS}_${i}`, 1, 1, MONSTERS.funamushi.sprite, async () => {}, {
-					when: (st) => !!st.flags[ROMS],
-				}),
-			),
 		],
 		// 帰ってきた場面は 幕が 上がる前に 仲間を 口の前に 並べておく
 		prepare: (s) => {

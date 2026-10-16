@@ -3559,7 +3559,7 @@ export class Play {
 	}
 
 	/**
-	 * 裏シナリオの 筋を 忘れないための 行（data/story/synopsis.ts）。潜りはじめ・続きからは 目的と わけ、
+	 * 筋を 忘れないための 行（data/story/synopsis.ts）。潜りはじめ・続きからは 目的と わけ、
 	 * 途中の 決まった 階では 村の スレの レスか 地の文。持ち帰る 前の 下りだけ（リプレイでは 出さない）。
 	 */
 	private storyLog(first: boolean): void {

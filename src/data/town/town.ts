@@ -318,45 +318,9 @@ export const ARRIVE_MSG = "{names}が、立候補を　降りて\n村に　越�
 export const CARRY_CHASE = "シヨが　追いかけてきた。";
 
 export const CARRY_REFUSE: Record<
-	| "deep"
-	| "tropical"
-	| "hidden"
-	| "ato"
-	| "isle1"
-	| "isle3"
-	| "opunu"
-	| "hinan"
-	| "y1901"
-	| "inferno",
+	"deep" | "tropical" | "hidden" | "inferno",
 	Line
 > = {
-	// 裏シナリオの 板へは 小舟で わたる（荷物は のらない：裏は 本筋より むずかしく）
-	isle1: q(
-		"shiyo",
-		"小島へは　小舟でしょ。荷物は　のらない。\n……あたすが　預かるわ",
-	),
-	isle3: q(
-		"shiyo",
-		"また　小舟？　荷物は　のらないって\n言ったでしょ。あたすが　預かる",
-	),
-	opunu: q(
-		"shiyo",
-		"灯台へも　小舟なのね。\n荷物は　のらない。……気を　つけなさいよ",
-	),
-	hinan: q(
-		"shiyo",
-		"避難Jへは　沖まで　小舟よ。\n荷物は　のらない。あたすが　預かるわ",
-	),
-	// 1901年の スレ（本館の 床下の さらに 下。裏の 2段目）
-	y1901: q(
-		"shiyo",
-		"1901年？　……知らない　時代よ。\n荷物は　預かるわ。帰って　きなさいよ",
-	),
-	// 野球chの 跡地（本館の 床下。裏シナリオ）
-	ato: q(
-		"shiyo",
-		"本館の　床下よ？　2012年の　ほこりで\n道具が　だめに　なるわ。あたすが　預かる",
-	),
 	deep: q(
 		"shiyo",
 		"電池板は　回線が　あやしいの。\n持ちこんだら　なくすわよ。あたすが　預かる",

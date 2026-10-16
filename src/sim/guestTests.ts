@@ -40,16 +40,7 @@ const width = (s: string) =>
 
 /** 同行者つきの 冒険（見たい 階は 既定で 着かない 深さ）。 */
 const make = (seed: string, d: DungeonId, g: GuestId | null, goal = 99): Run =>
-	Run.create(
-		seed,
-		d,
-		[],
-		"fetch",
-		true,
-		false,
-		"kiriko",
-		g ? { id: g, goal } : null,
-	);
+	Run.create(seed, d, [], "fetch", true, "kiriko", g ? { id: g, goal } : null);
 
 /** いまの 階で 重なって いないか（同行者・キリコ・敵）。 */
 const noOverlap = (r: Run, where: string): void => {
@@ -71,7 +62,6 @@ const noOverlap = (r: Run, where: string): void => {
 const PAIRS: [DungeonId, GuestId][] = [
 	["deep", "zero"],
 	["tropical", "feris"],
-	["ato", "shobon"],
 ];
 
 test("重ならない：ボットで 遊ばせて どの ターンも 同行者・キリコ・敵が 同じ マスに いない", () => {
@@ -202,16 +192,6 @@ test("同行の 依頼：持ち帰った 板だけ・依頼主が 村に いる 
 		!openEscorts(["tropical"], 1, 0, []).some((e) => e.who === "feris"),
 		"feris asked before moving in",
 	);
-	ok(
-		!openEscorts(["ato"], 7, all, []).some((e) => e.id === "shobon_ato"),
-		"原住民 asked before coming home",
-	);
-	ok(
-		openEscorts(["ato", "opunu"], 7, all, []).some(
-			(e) => e.id === "shobon_ato",
-		),
-		"no 跡地 request",
-	);
 	// 引き受けた 依頼の 板だけ ついてくる。主人公と 同じ 人は 来ない
 	ok(
 		escortFor("kinoko", "roze_kinoko", ["kinoko"], 7, all, "kiriko")?.who ===
@@ -312,12 +292,12 @@ test("話しかける：様子（キリコの HP・同行者の HP・おなか�
 });
 
 test("同じ 人が 2人 いない：主人公と 同じ 人は 同行者に ならない。主人公が キリコ で なければ「キリコ」と 呼ばない", () => {
-	const self = Run.create("dup", "kinoko", [], "fetch", true, false, "roze", {
+	const self = Run.create("dup", "kinoko", [], "fetch", true, "roze", {
 		id: "roze",
 		goal: 99,
 	});
 	ok(self.s.guest === undefined, "ロゼ came with ロゼ");
-	const r = Run.create("dup2", "deep", [], "fetch", true, false, "roze", {
+	const r = Run.create("dup2", "deep", [], "fetch", true, "roze", {
 		id: "zero",
 		goal: 99,
 	});

@@ -3223,7 +3223,7 @@ body.jolt #app {
 	text-align: right;
 }
 
-/* ───────── 裏シナリオの 別ゲー（ui/minigames.ts）：1打席・1000取り ───────── */
+/* ───────── 村の 別ゲーの 板（ui/minigames/minigameBoard.ts）：グラウンドの 1打席など ───────── */
 
 .mgame {
 	position: absolute;
@@ -4000,84 +4000,6 @@ body.jolt #app {
 .hud.village .btn-auto,
 .hud.replay .btn-auto {
 	display: none;
-}
-
-/* ───────── 数字を 1桁ずつ 入れる 窓（灯台の 扉の パスワード。ui/pinPad.ts）───────── */
-/* スマホの 指でも 押しやすい 大きな ボタン（電話の 並び）。窓は 画面の まんなか */
-.menu.pinpad {
-	top: 50%;
-	left: 50%;
-	right: auto;
-	transform: translate(-50%, -50%);
-	width: min(300px, calc(var(--app-w) - 24px));
-	touch-action: none;
-}
-
-.pin-shown {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 6px;
-	min-height: 48px;
-	margin: 4px 0 10px;
-	padding: 6px;
-	background: rgba(0, 0, 0, 0.35);
-	border-radius: 6px;
-	font-size: 26px;
-	letter-spacing: 0;
-}
-
-.pin-digit {
-	min-width: 22px;
-	text-align: center;
-	border-bottom: 2px solid rgba(255, 255, 255, 0.5);
-}
-
-.pin-caret {
-	width: 2px;
-	height: 28px;
-	background: currentColor;
-	animation: pin-blink 1s steps(1) infinite;
-}
-
-@keyframes pin-blink {
-	50% {
-		opacity: 0;
-	}
-}
-
-.pin-grid {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
-	gap: 8px;
-}
-
-.pin-key {
-	min-height: 54px;
-	font-size: 24px;
-	color: inherit;
-	background: rgba(255, 255, 255, 0.08);
-	border: 2px solid rgba(255, 255, 255, 0.25);
-	border-radius: 8px;
-	cursor: pointer;
-	touch-action: manipulation;
-}
-
-.pin-key.pin-fn {
-	font-size: 16px;
-}
-
-.pin-key.cur {
-	border-color: var(--win-border);
-	background: rgba(255, 255, 255, 0.18);
-}
-
-.pin-key:active {
-	background: rgba(255, 255, 255, 0.3);
-}
-
-.pin-key.disabled {
-	opacity: 0.35;
 }
 
 /* ───────── 解音ゼロの バトンタッチ（ui/play.ts の batonScene）───────── */

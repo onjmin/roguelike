@@ -1246,10 +1246,11 @@ test(
 const GOLDEN_AT = (stage: number, k: number) => k * 7919 + stage * 104729;
 /**
  * 議会の ない 日の guestsOf の 写し（段2〜7 × 帰り 12。FNV-1a の 36進）。議会の ない 日は この まま
- * （CIVIC.md §4：議会の ない 日の 顔ぶれを かえない）。だれかの 越してくる 小段を 変えたら 作りなおす。
+ * （CIVIC.md §4：議会の ない 日の 顔ぶれを かえない）。だれかの 越してくる 小段を 変えたら 作りなおす
+ * （原住民が はじめから 村に いる ように なって 作りなおした）。
  */
 const GOLDEN =
-	"1n2bi7n 1g2h8jv symsqs 1n2bi7n 1n2bi7n 1n2bi7n 1ray4d9 1ray4d9 wfwvxx wfwvxx symsqs 1yzjith uza0zi 1cy9ry0 k077k4 175y05o ts7e8t 1ehc9pq e94u2g dzlcxc 1g2h8jv 1g7l9f2 10p37i5 jenjdw hamq5b 1ktsdn2 eyoe83 qqzz5g av24c4 1j6pxje 2fres6 1g138b6 1smkrfw irnbeo u5bwvf 4srw84 11p1c0s bxxamb 1oqyav3 1ecshjo 1n2v9bi owvufi 1tk2sr zx6m60 k6kkjl aavgfl 4for6h 91vo5u 3387x2 qjvxot 18wcw2z vnk7xg 14uci9j ojgaid 1butdqi 18omgx8 fwizji 1q5r2lt 19nry0t 1btbveu 1da8dyr j0hwd2 15bj0v3 jtk5ha 1prg5dy 1fqqj8d e8xwkc gp0vqm nycw9k 9m421p qyvd1z 14upkub".split(
+	"1g2h8jv 1n2bi7n 1yzjith 1pg47uc 2bgqvi 1yzjith symsqs 1pg47uc wfwvxx 2bgqvi 2bgqvi 1g2h8jv 1jp2f3q 50en6q 15sn3zz bazk45 xj2rf1 1lj02a1 1fmaayb wab1y0 w5neks 1lj02a1 1lcbt57 n0w2pv ivx4rb d9u1xj 1np2wme 1pc0qn8 1no11s6 wcaznr 19ayhh1 17kxguy 1j66tcn 5g9q9i 13axdae ojwpzg 1gznuef 1gws5l5 3gysxl 19nczoe 1wf62h 1dcksam 12k8lto w0bqr9 1ivtj8s 1banw7j 1eqxghl d9j3a ryuvmp ngrni1 up9vjq 1elgm0h c17oxv 10cy5xv 1qo7b0x 54jbo2 r2dxp3 3codj9 r7j6al g93hku 113hhbu ffcshp 1qgonmo h7ctg6 1e2aund 1h879m6 9bfvd8 16mnjc 1yougl5 r3wea2 1q9al6l 1z8uie".split(
 		" ",
 	);
 const fnv = (s: string): string => {
@@ -1313,7 +1314,7 @@ test(
 				const v: VillageView = {
 					stage,
 					unlocked: ["shallow"],
-					cleared: ["shallow", "main", "deep", "opunu"],
+					cleared: ["shallow", "main", "deep"],
 				};
 				const a = assemblyToday(v, at * 131, day(1));
 				const room =
@@ -1367,7 +1368,7 @@ test(
 			const v: VillageView = {
 				stage: 7,
 				unlocked: ["shallow", "main", "deep"],
-				cleared: ["shallow", "main", "deep", "opunu"],
+				cleared: ["shallow", "main", "deep"],
 			};
 			store.set(
 				"kiriko-roguelike/progress",
@@ -1576,7 +1577,7 @@ test(
 			const w = GLOSSARY.find((x) => x.id === id);
 			ok(w, `no glossary word ${id}`);
 			if (!w) continue;
-			ok(w.tier === 1 && !w.board && !w.secret, `${id}: tier ${w.tier}`);
+			ok(w.tier === 1 && !w.board, `${id}: tier ${w.tier}`);
 			ngCheck(`glossary ${id}`, `${w.word}\n${w.desc}`);
 		}
 		ok(

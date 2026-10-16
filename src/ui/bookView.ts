@@ -6,7 +6,7 @@ import { dungeonById } from "../core/data/dungeons";
 import { MONSTER_LIST } from "../core/data/monsters";
 import type { DungeonId, MonsterDef, MonsterTag } from "../core/types";
 import { DUNGEON_NAMES } from "../data/story/story";
-import { loadBook, loadProgress } from "../engine/save";
+import { loadBook } from "../engine/save";
 import { animateArts, monsterArt } from "./art/monsterArt";
 import type { Ctx } from "./ctx";
 import { el } from "./dom";
@@ -55,20 +55,11 @@ export const floorsText = (d: MonsterDef): string => {
 	);
 };
 
-/**
- * 図鑑の 一言と ひとこと（裏シナリオの 結（跡地の 参拝）の あと、ROM専は 全滅して いなかった 原住民だと わかるので
- * 文が かわる。STORY.md §5.98）。
- */
-export const bookText = (
-	d: MonsterDef,
-	done = !!loadProgress().endings?.includes("ato"),
-): { desc: string; flavor: string } =>
-	done && d.id === "funamushi"
-		? {
-				desc: "見ているだけ。近づくと　逃げる。もう　戦わない。手を　振れば　手を　振り返す",
-				flavor: "書きこんだのは　1度だけ。「見てた」",
-			}
-		: { desc: d.desc, flavor: d.flavor };
+/** 図鑑の 一言と ひとこと。 */
+export const bookText = (d: MonsterDef): { desc: string; flavor: string } => ({
+	desc: d.desc,
+	flavor: d.flavor,
+});
 
 /** 一覧の 絵の 大きさ（2倍）。 */
 const ROW_PX = 32;

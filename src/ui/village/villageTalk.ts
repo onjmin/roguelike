@@ -17,7 +17,6 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../../data/story/quotes";
-import { SCRAPS, type Scrap } from "../../data/story/scraps";
 import {
 	awayFriends,
 	CLEAR,
@@ -42,7 +41,6 @@ import { type Cue, cueOf } from "../../engine/emote";
 import {
 	loadProgress,
 	loadRecords,
-	loadScraps,
 	loadTown,
 	runStats,
 } from "../../engine/save";
@@ -364,22 +362,4 @@ export const ledgerLine = (): string => {
 	if (nextStageReady(t.stage, t.points, topOpen))
 		return fill(VILLAGE_MSG.ledgerNext, { points: t.points });
 	return fill(VILLAGE_MSG.ledger, { points: t.points });
-};
-
-/** 記録の 時刻（帰りごとに かわる。切れはしは 1回の 帰りに 1枚まで）。 */
-export const scrapReturnAt = (): number => loadRecords()[0]?.at ?? 0;
-
-/**
- * いま 貼られて いる 切れはし（その 板を 持ち帰った ことが あり、まだ 読んで いない ものの うち 1枚目。
- * この 帰りに もう 1枚 読んで いれば 次の 帰りまで 貼られない）。data/story/scraps.ts。
- */
-export const pinnedScrap = (): Scrap | undefined => {
-	const m = loadScraps();
-	if (m.at && m.at === scrapReturnAt()) return undefined;
-	const cleared = loadProgress().cleared;
-	const fresh = SCRAPS.filter(
-		(x) => cleared.includes(x.board) && !m.read.includes(x.id),
-	);
-	// 乗っ取り屋の 置き手紙（灯台の 手がかり）は ほかの 切れはしより 先に 貼る
-	return fresh.find((x) => x.kind === "memo") ?? fresh[0];
 };

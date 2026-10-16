@@ -21,22 +21,6 @@ export type TownFind = {
 };
 
 export const TOWN_FINDS: readonly TownFind[] = [
-	// 裏シナリオの 入口：釣り場の 竿に ビン。板を 立てて 名前を 変えられた 人の 手紙（掲示板の「板　立てたわ」の 人）
-	{
-		dungeon: "isle1",
-		facility: "pier",
-		at: "rod",
-		stage: 1,
-		lines: [
-			{
-				text: "竿の　先に、ビンが　ひっかかった。\n中に　紙きれが　入っている。",
-			},
-			{
-				text: "「板　立てたけど、名前を　変えられた。\n……だれか、取り返してくれ」",
-			},
-			{ text: "見ると、南西の　小島の　岸に\n小舟が　ついていた。" },
-		],
-	},
 	// マーキュリー（おんJに 飽きた 人の ほのぼの 板）：碁会所の 常連の 碁敵が 越していった
 	{
 		dungeon: "mercury",

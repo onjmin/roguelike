@@ -15,7 +15,6 @@
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import { defOf } from "../../core/item";
 import type { DungeonId } from "../../core/types";
-import { BAT_GUIDE_TOLD, BATTING_GUIDE } from "../../data/arcade/guides";
 import { jikkyoOpen } from "../../data/jikkyo/schedule";
 import { BOOKSTORE_FROM } from "../../data/story/glossary";
 import {
@@ -27,15 +26,10 @@ import {
 } from "../../data/story/objectives";
 import { DUNGEON_NAMES, FRIEND_FROM } from "../../data/story/story";
 import {
-	BAT_AGAIN_MENU,
-	BAT_MENU,
 	BOOK_MENU,
 	HALL_MSG,
 	IN_STORE_TEXT,
 	JIKKYO,
-	OLDEST_DEEP_MENU,
-	OLDEST_MENU,
-	ON_BOARD_TEXT,
 	ON_PHONO_TEXT,
 	TOBAN_MENU,
 	YAKYU_SHELF,
@@ -54,7 +48,6 @@ import {
 	hallRows,
 	hallTierOf,
 	IN_STORE,
-	ON_BOARD,
 	ON_PHONO,
 	shelfBoards,
 	shelfSlots,
@@ -67,13 +60,7 @@ import {
 } from "../../data/village/map";
 import { drawRefInCell, getImage, loadImage } from "../../engine/assets";
 import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
-import {
-	addFlag,
-	hasFlag,
-	loadProgress,
-	loadRecords,
-	loadTown,
-} from "../../engine/save";
+import { loadProgress, loadRecords, loadTown } from "../../engine/save";
 import { TILE } from "../../engine/types";
 import { itemIcon } from "../art/icons";
 import { openBook } from "../bookView";
@@ -86,18 +73,13 @@ import {
 	markJikkyoHeard,
 } from "../jikkyo/jikkyo";
 import { type ListItem, listWindow } from "../list";
-import { playBatting } from "../minigames/minigames";
-import { tellOnce } from "../minigames/playMenu";
 import { yoriaiEvents, yoriaiMovedLine } from "./civic";
 import { trophyGlint } from "./finds";
 import { balusScript } from "./folk";
 import { openGlossary } from "./glossary";
 import { openSales } from "./home";
 import { openRecords } from "./records";
-// 村の 口と 同じ 出かた（降りる 前の 確認・持ちこみ・語り）。ui/village/villageEvents.ts とは 互いに 読みあうが、
-// どちらも 呼ぶ ときに 使うだけ（読みこみの 途中では 使わない）
-import { departTo, goalsNow, suspendedFirst } from "./villageEvents";
-import { sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
+import { senkyoOpen, senkyoScript } from "./villageMobs";
 import { previewStage } from "./villageReturn";
 import { fill, ledgerLine } from "./villageTalk";
 
@@ -309,9 +291,7 @@ export const shelfRows = (
 				? ON_PHONO_TEXT
 				: IN_STORE.includes(d)
 					? IN_STORE_TEXT
-					: ON_BOARD.includes(d)
-						? ON_BOARD_TEXT
-						: item.flavor,
+					: item.flavor,
 		};
 	});
 
@@ -374,77 +354,11 @@ const projectorScript =
 		await records(ctx, s, true);
 	};
 
-/**
- * いちばん 古い スレの 札（裏シナリオ。STORY.md §5.98）：原住民 20人の スレ。跡地が 開く（灯台を 持ち帰り、ROM専の 声を
- * 持ち帰った）と 床下へ 降りられる。はじめの 1回は 原住民の 1打席（別ゲー）に 勝ってから。2回目からは 打たなくても よい。
- * 降りる 流れは 村の 口と 同じ（中断した 冒険の 確認 → 持ちこみ → 語り → 出る：ui/village/villageEvents.ts の departTo）。
- */
-const oldestScript =
-	(ctx: Ctx): Script =>
-	async (s) => {
-		const p = loadProgress();
-		const done = !!p.endings?.includes("ato");
-		await s.narrate(done ? HALL_MSG.oldestDone : HALL_MSG.oldest);
-		await s.narrate(done ? HALL_MSG.oldestDoneMore : HALL_MSG.oldestMore);
-		if (!p.unlocked.includes("ato")) {
-			if (p.cleared.includes("opunu")) await s.narrate(HALL_MSG.oldestShut);
-			return;
-		}
-		await s.narrate(HALL_MSG.oldestOpen);
-		// 裏の 2段目：転の あとは 床板の さらに 下に 1901年の スレ（1打席は 跡地へ 降りる ときだけ）
-		if (p.unlocked.includes("y1901")) {
-			await s.narrate(HALL_MSG.oldestDeeper);
-			if (p.endings?.includes("y1901"))
-				await s.narrate(HALL_MSG.oldestDeepDone);
-			const n = await s.choose([...OLDEST_DEEP_MENU], { cancel: 2, start: 2 });
-			if (n === 2) return;
-			if (n === 1) {
-				if (!(await suspendedFirst(s, async () => {}))) return;
-				await departTo(ctx, s, "y1901", goalsNow().y1901, async () => {
-					s.se("stairs");
-					await s.narrate(HALL_MSG.oldestDeepDown);
-				});
-				return;
-			}
-		} else if (
-			(await s.choose([...OLDEST_MENU], { cancel: 1, start: 1 })) !== 0
-		)
-			return;
-		if (!(await suspendedFirst(s, async () => {}))) return;
-		// 1打席（はじめは かならず。あとは 任意）
-		const batted = hasFlag("bat");
-		let play = !batted;
-		if (batted) {
-			const n = await s.choose([...BAT_AGAIN_MENU], { cancel: 2 });
-			if (n === 2) return;
-			play = n === 1;
-		} else {
-			await s.narrate(HALL_MSG.batIntro);
-			await sayAs(s, "shobon", HALL_MSG.batAsk);
-			// 打席の 決まり（はじめての 1回。グラウンドと 同じ 印。data/arcade/guides.ts）
-			await tellOnce(s, BAT_GUIDE_TOLD, BATTING_GUIDE);
-		}
-		while (play) {
-			await hideMsg(s);
-			const won = await playBatting(ctx);
-			if (won) {
-				addFlag("bat");
-				await s.narrate(HALL_MSG.batHit);
-				break;
-			}
-			await sayAs(s, "shobon", HALL_MSG.batOut);
-			const n = await s.choose([...BAT_MENU], { cancel: 1 });
-			if (n !== 0) {
-				if (!batted) return;
-				await sayAs(s, "shobon", HALL_MSG.batSkip);
-				break;
-			}
-		}
-		await departTo(ctx, s, "ato", goalsNow().ato, async () => {
-			s.se("stairs");
-			await s.narrate(HALL_MSG.oldestDown);
-		});
-	};
+/** いちばん 古い スレの 札（2012年6月7日。おんJが できた 日の スレ）。 */
+const oldestScript: Script = async (s) => {
+	await s.narrate(HALL_MSG.oldest);
+	await s.narrate(HALL_MSG.oldestMore);
+};
 
 /** 殿堂の 壁（総選挙の はり紙が 出ていれば それも）。 */
 const dendoScript: Script = async (s) => {
@@ -561,7 +475,7 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "chair":
 			return sign(p.id, p.x, p.y, HALL_MSG.chair);
 		case "oldest":
-			return sign(p.id, p.x, p.y, oldestScript(ctx));
+			return sign(p.id, p.x, p.y, oldestScript);
 		case "projector":
 			return sign(p.id, p.x, p.y, projectorScript(ctx));
 		default:

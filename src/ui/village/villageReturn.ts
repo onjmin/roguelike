@@ -31,7 +31,6 @@ import {
 	MOB_IDS,
 	MOBS,
 	type MobId,
-	movedIn as mobsMovedIn,
 	PUYU_LUNCH,
 	PUYU_RELIEF,
 	RELIEF_NOTE,
@@ -40,7 +39,6 @@ import { eventById, eventNewsText } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
 import { SPEAKERS } from "../../data/story/quotes";
 import {
-	ATO_NEWS,
 	awayFriends,
 	BOSS_RETURN,
 	DEPART,
@@ -48,17 +46,12 @@ import {
 	endingFor,
 	episodeEnd,
 	FRIEND_FROM,
-	GETTER_RETRY,
-	HINAN_NEWS,
-	KUSA_NEWS,
 	mentionsAway,
 	playPage,
-	ROM_COUNT,
 	type StoryPage,
 	TEN_NEWS,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
-	WRAP_NEWS,
 	withoutAway,
 } from "../../data/story/story";
 import {
@@ -108,11 +101,9 @@ import {
 	loadRecords,
 	loadTown,
 	noteEnding,
-	noteWrap,
 	type PendingReturn,
 	type Progress,
 	QUIT_CAUSE,
-	readScrap,
 	settleReturn,
 	type Town,
 } from "../../engine/save";
@@ -120,7 +111,7 @@ import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
-import { deathQuote, fill, scrapReturnAt } from "./villageTalk";
+import { deathQuote, fill } from "./villageTalk";
 
 /**
  * 開発用：`?stage=N` で 描く 町の段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
@@ -227,27 +218,9 @@ const mobsOf = (pages: readonly StoryPage[]): MobId[] => [
 	...new Set(pages.flatMap((p) => (p.mob ? [p.mob] : []))),
 ];
 
-/**
- * 語りで 話す 住人の うち、いま 村に 立っている 子（after の 板を 持ち帰った あと）。まだ いない 子は、
- * 語りの 中で 村の 口から 歩いてくる（NEWCOMER の 旗の 人。ui/village/villageEvents.ts の buildVillage）。
- */
+/** 語りで 話す 住人の うち、いま 村に 立っている 子（まだ 越してきて いない 子は 名前欄だけで 話す）。 */
 const mobsHere = (pages: readonly StoryPage[], v: VillageView): MobId[] =>
-	mobsOf(pages).filter((id) => {
-		const d = MOBS[id];
-		return d.after ? v.cleared.includes(d.after) : stepOf(v) >= d.from;
-	});
-
-/** 語りの 中で 越してくる 住人の 旗（この 旗が 立っている あいだだけ 村に いる 人の イベント ID）。 */
-export const NEWCOMER = "newcomer";
-
-/** 跡地の 結で 口から 来る ROM専 18体の 旗と イベント ID の 頭（`roms_0`〜。ui/village/villageEvents.ts の buildVillage）。 */
-export const ROMS = "roms";
-
-/** 帰りの 場面の 外の 手（別ゲー。試験では 渡さない：合図は とばす）。 */
-export type ReturnHooks = {
-	/** 1000取り（避難Jの 結）。勝てば true。負けたら 次スレで もう一度 きく。 */
-	getter?: () => Promise<boolean>;
-};
+	mobsOf(pages).filter((id) => stepOf(v) >= MOBS[id].from);
 
 /** キリコが 立っている 村の 出口（帰ってきたところ。出口で なければ undefined）。 */
 const inMouth = (s: Story, _d: DungeonId): VillageExit | undefined =>
@@ -325,89 +298,13 @@ const stepAside = async (
 	if (to) await s.goto("player", to[0], to[1], { speed: 1.2 });
 };
 
-/**
- * 語りの 中で 越してくる 住人（after の 板を はじめて 持ち帰った とき）：その 板の 方角の 村の 口から 歩いてきて、
- * キリコの そばに 立つ。旗 NEWCOMER の 人を 動かす（絵は その子の 歩行グラ）。語りの あとの 建て直しで 本人に かわる。
- */
-const walkInMob = async (s: Story, d: DungeonId): Promise<void> => {
-	const gate = exitFor(d).cell;
-	await stepAside(s, gate);
-	const [to] = freeAround(s, 1);
-	if (to) take(s, [to]);
-	// 旗を 立てただけでは 人は 生まれない（when は 見なおされない）。show で 生まれさせてから 置く
-	s.set(NEWCOMER);
-	s.show(NEWCOMER);
-	s.place(NEWCOMER, gate[0], gate[1]);
-	await s.look(NEWCOMER);
-	if (to) {
-		await s.goto(NEWCOMER, to[0], to[1], { speed: 1.2 });
-		s.face(NEWCOMER, "player");
-		s.face("player", faceTo(s.state, to));
-	}
-	await s.look(null);
-};
-
-/**
- * 跡地の 結：ROM専 18体が 板の 方角の 口から 歩いてきて、キリコの まわりに 立つ（旗 ROMS の 人を 動かす。
- * まわりの 空いた マスに 入りきらない 分は 口の そばに 残る）。行列は とばさず ぜんぶ 歩いて 見せる（noWarp）。
- */
-const walkInRoms = async (s: Story, d: DungeonId): Promise<void> => {
-	const gate = exitFor(d).cell;
-	await stepAside(s, gate);
-	const spots = freeAround(s, ROM_COUNT);
-	take(s, spots);
-	s.set(ROMS);
-	for (let i = 0; i < ROM_COUNT; i++) {
-		// 旗を 立てただけでは 生まれない：show で 生まれさせてから 口に 置く
-		s.show(`${ROMS}_${i}`);
-		s.place(`${ROMS}_${i}`, gate[0], gate[1]);
-	}
-	await s.look(`${ROMS}_0`);
-	// 18体の 行列は 長い 道でも とばさない（ぞろぞろ 歩いてくるのを 見せる 場面）
-	await Promise.all(
-		spots.map((to, i) =>
-			s.goto(`${ROMS}_${i}`, to[0], to[1], {
-				speed: 1.4 + (i % 3) * 0.2,
-				noWarp: true,
-			}),
-		),
-	);
-	for (let i = 0; i < ROM_COUNT; i++) s.face(`${ROMS}_${i}`, "player");
-	await s.look(null);
-};
-
-/** ROM専たちが 口へ 帰っていく（また 見る 側へ）。 */
-const walkOutRoms = async (s: Story, d: DungeonId): Promise<void> => {
-	const gate = exitFor(d).cell;
-	// 帰りの 行列も とばさない
-	await Promise.all(
-		Array.from({ length: ROM_COUNT }, (_, i) =>
-			s.goto(`${ROMS}_${i}`, gate[0], gate[1], {
-				speed: 1.4 + (i % 3) * 0.2,
-				noWarp: true,
-			}),
-		),
-	);
-	s.set(ROMS, false);
-	for (let i = 0; i < ROM_COUNT; i++) s.hide(`${ROMS}_${i}`);
-};
-
-/**
- * 語りの 合図（data/story/quotes.ts の StoryPage.cue）を 起こす。roms・romsLeave は ROM専の 歩き、getter は 1000取り
- * （勝つまで 次スレで くり返す。手が 無ければ とばす）。
- */
+/** 語りの 合図（data/story/quotes.ts の StoryPage.cue）を 起こす。 */
 const playCue = async (
 	s: Story,
-	a: ReturnArrival,
 	c: NonNullable<StoryPage["cue"]>,
-	hooks: ReturnHooks,
 ): Promise<void> => {
-	if (c === "roms") await walkInRoms(s, a.dungeon);
-	else if (c === "romsLeave") await walkOutRoms(s, a.dungeon);
-	// 蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結。ダンジョンで 声を 鳴らす ときと 同じ 音）
-	else if (c === "selfVoice") s.se("spell");
 	// 開票（電池板の 山場）：のこり 1票で 鐘、当選で ファンファーレと 札（山場が わかるように）
-	else if (c === "res999") {
+	if (c === "res999") {
 		s.se("chapter");
 		s.toast("開票　のこり　1票");
 	} else if (c === "chapterEnd") {
@@ -417,11 +314,6 @@ const playCue = async (
 		s.se("victory");
 		s.toast("★　キリコ　当選　★");
 		await s.wait(600);
-	} else if (c === "getter" && hooks.getter) {
-		for (let tries = 0; ; tries++) {
-			if (await hooks.getter()) break;
-			await s.narrate(GETTER_RETRY[Math.min(tries, GETTER_RETRY.length - 1)]);
-		}
 	}
 };
 
@@ -429,7 +321,6 @@ const playCue = async (
 export const returnScene = async (
 	s: Story,
 	a: ReturnArrival,
-	hooks: ReturnHooks = {},
 ): Promise<void> => {
 	const exit = inMouth(s, a.dungeon);
 	if (!exit) return;
@@ -441,19 +332,10 @@ export const returnScene = async (
 	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const id of here) s.face(`mob_${id}`, "player");
-	let newcomer = false;
 	for (const p of pages) {
-		if (p.cue) await playCue(s, a, p.cue, hooks);
-		if (p.mob) {
-			// まだ 村に いない 住人は、はじめて 口を ひらく 前に 口から 歩いてくる
-			if (!here.includes(p.mob) && !newcomer) {
-				newcomer = true;
-				await walkInMob(s, a.dungeon);
-			}
-			await sayAs(s, p.mob, p.text, cueOf(p));
-		} else await playPage(s, p);
-		// 本筋の 語りで 読んだ 去った 人の 最後の レスは、掲示板でも 読んだ ことに する
-		if (p.scrap) readScrap(p.scrap, scrapReturnAt());
+		if (p.cue) await playCue(s, p.cue);
+		if (p.mob) await sayAs(s, p.mob, p.text, cueOf(p));
+		else await playPage(s, p);
 	}
 	// 見おえた（一度きりの 語りは 次から 短く）
 	if (a.kind === "clear") noteEnding(a.dungeon);
@@ -462,8 +344,6 @@ export const returnScene = async (
 		a.kind === "clear" ? s.fadeBgm(300) : Promise.resolve(),
 		s.fadeOut(300),
 	]);
-	s.set(NEWCOMER, false);
-	s.set(ROMS, false);
 	await rebuild(s);
 	s.bgm(villageSong());
 	await s.fadeIn(300);
@@ -692,44 +572,6 @@ export const deathScene = async (s: Story): Promise<void> => {
 
 // ───────────────── 開いた知らせ ─────────────────
 
-/** 住人が 村に 住んでいれば キリコの そばへ 歩いてくる（住んでいるか を 返す。いなければ 何もしない）。 */
-const mobWalkOver = async (s: Story, id: MobId): Promise<boolean> => {
-	const ev = `mob_${id}`;
-	const here = mobsMovedIn(
-		townStep(loadTown().stage, loadTown().points),
-		loadProgress().cleared,
-	).includes(id);
-	if (here) {
-		const [to] = freeAround(s, 1);
-		if (to) {
-			take(s, [to]);
-			await s.look(ev);
-			await s.goto(ev, to[0], to[1], { speed: 1.4 });
-			s.face(ev, "player");
-			s.face("player", faceTo(s.state, to));
-			await s.look(null);
-		}
-	}
-	return here;
-};
-
-/**
- * 転（裏の 2段目。STORY.md §5.98）：避難J の 結を 見た 次の 帰りに 1回だけ（ui/village/villageEvents.ts の arrivalScript）。
- * 外から コピペの 1レス目が 届き、時計が 1901年に もどる。ヒナリーが 1窓で わけを 言う（いなければ ゼロ）。
- * 見おえてから 旗 wrap を 立てて 1901年の スレを 開く（途中で 閉じたら 次の 帰りに もう一度）。
- */
-export const wrapScript = async (s: Story): Promise<void> => {
-	await gather(s, ["feris", "zero"]);
-	for (const p of WRAP_NEWS.pages) await playPage(s, p);
-	if (await mobWalkOver(s, "hinary"))
-		await sayAs(s, "hinary", WRAP_NEWS.hinary);
-	else await playPage(s, WRAP_NEWS.hinaryAbsent);
-	await s.narrate(WRAP_NEWS.after);
-	noteWrap();
-	s.se("chapter");
-	await s.narrate(WRAP_NEWS.open);
-};
-
 /** 転（STORY.md §5）：風呂板の 語りを 見おえた 帰りに 1回だけ。告示の 小さい 字と、貼ったのは やきう。 */
 export const tenScript = async (s: Story): Promise<void> => {
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
@@ -741,35 +583,6 @@ export const tenScript = async (s: Story): Promise<void> => {
 	addFlag("ten");
 };
 
-/** 結の あと（STORY.md §5.98）：次の 帰りに 1回だけ、鉄塔の 次スレに 外から「草」。喫茶の 柱時計が 動きだす。 */
-export const kusaScript = async (s: Story): Promise<void> => {
-	await gather(s, ["zero"]);
-	for (const p of KUSA_NEWS.lines) await playPage(s, p);
-	await s.narrate(KUSA_NEWS.after);
-	addFlag("kusa");
-};
-
-/**
- * 住人が 話す 開いた 知らせ（裏シナリオ）。跡地：原住民が キリコの そばへ 来て、持ち帰った ROM専の 声を 聞く。
- * 避難J：ヒナリーが 来て 20人目の 手がかりを 発表する。その子が 村に いなければ（下見など）地の文だけ。
- */
-const mobNewsScript = async (s: Story, d: "ato" | "hinan"): Promise<void> => {
-	const id: MobId = d === "ato" ? "shobon" : "hinary";
-	const here = await mobWalkOver(s, id);
-	if (d === "ato") {
-		s.se("spell");
-		await s.narrate(ATO_NEWS.play);
-		// 1行目（「この　声、知ってる」）は 気づいた ところ
-		if (here)
-			for (const [i, l] of ATO_NEWS.lines.entries())
-				await sayAs(s, id, l, i === 0 ? { emote: "!" } : {});
-		await s.narrate(ATO_NEWS.after);
-	} else {
-		if (here) for (const l of HINAN_NEWS.lines) await sayAs(s, id, l);
-		await s.narrate(HINAN_NEWS.after);
-	}
-};
-
 /**
  * 次のダンジョンが 開いた 知らせ（持ち帰った・何度も たおれた）。開く口を 見て 仲間が 話し、
  * 村の 出口を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
@@ -779,16 +592,6 @@ export const newsScript = async (s: Story): Promise<void> => {
 	const away = awayFriends(loadProgress().cleared, loadTown().stage);
 	const news = loadProgress().news;
 	for (const n of news) {
-		// 裏シナリオ：跡地（原住民が ROM専の 声を 聞く）・避難J（ヒナリーの 発表）は 住人が 話す
-		if (n.dungeon === "ato" || n.dungeon === "hinan") {
-			await mobNewsScript(s, n.dungeon);
-			doneProgressNews(n);
-			s.se("chapter");
-			await s.narrate(
-				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,
-			);
-			continue;
-		}
 		// 寄り道の 板：その 板の 名無しが 来て 話す（仲間の ひとことの かわり）
 		if (UNLOCK_VISIT[n.dungeon]) {
 			await visitScript(s, n.dungeon);
@@ -800,7 +603,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 			continue;
 		}
 		const name = DUNGEON_NAMES[n.dungeon].name;
-		// 板ごとの 行が あれば それ（本編・電池板・過去ログの底・裏シナリオの 小島と 灯台）。救いで 開いた 本編は relief。
+		// 板ごとの 行が あれば それ（本編・電池板・過去ログの底）。救いで 開いた 本編は relief。
 		// ほかの 寄り道は 口の ない 植民地の 行
 		const key: keyof typeof UNLOCK_LINES =
 			n.reason === "relief"
@@ -1015,11 +818,9 @@ const movedIn = async (
 	return true;
 };
 
-/** 小段 from → to で 越してくる 住人（板を 持ち帰ると 来る 子は 語りの 中で 来る）。 */
+/** 小段 from → to で 越してくる 住人。 */
 const movingIn = (from: number, to: number): MobId[] =>
-	MOB_IDS.filter(
-		(id) => !MOBS[id].after && MOBS[id].from > from && MOBS[id].from <= to,
-	);
+	MOB_IDS.filter((id) => MOBS[id].from > from && MOBS[id].from <= to);
 
 /** (x, y) に いちばん 近い 村の 口。 */
 const gateNear = ([x, y]: readonly [number, number]): readonly [

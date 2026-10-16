@@ -15,12 +15,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-	DUNGEON_IDS,
-	DUNGEONS,
-	floorsLabel,
-	openable,
-} from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
 import {
@@ -101,7 +96,6 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../data/story/quotes";
-import { SCRAP_MSG, SCRAPS } from "../data/story/scraps";
 import {
 	awayFriends,
 	BOARD_LOOKS,
@@ -110,22 +104,15 @@ import {
 	CLEAR,
 	DEPART,
 	DUNGEON_NAMES,
-	endingFor,
 	episodeEnd,
 	FIRST_SHALLOW,
 	FRIEND_FROM,
-	GETTER_RETRY,
-	KUSA_NEWS,
-	LIGHTHOUSE_DOOR,
-	opunuZones,
-	ROM_COUNT,
 	SHALLOW_DEATH,
 	STORY,
 	type StoryPage,
 	TEN_NEWS,
 	UNLOCK_LINES,
 	UNLOCK_VISIT,
-	WRAP_NEWS,
 	zankiLine,
 } from "../data/story/story";
 import {
@@ -332,14 +319,12 @@ import {
 	loadReplays,
 	loadTown,
 	noteRunEnd,
-	noteWrap,
 	type PendingReturn,
 	type Progress,
 	type ProgressNews,
 	QUIT_CAUSE,
 	RELIEF_KIND,
 	type RunRecord,
-	readScrap,
 	replayMatches,
 	type SavedReplay,
 	saveTown,
@@ -394,7 +379,7 @@ import {
 } from "../ui/village/cafe";
 import { buildFacility, outdoorScript } from "../ui/village/facilities";
 import { townFind } from "../ui/village/finds";
-import { descWindows, shelfWords } from "../ui/village/glossary";
+import { descWindows } from "../ui/village/glossary";
 import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/village/guests";
 import {
 	buildHall,
@@ -448,14 +433,11 @@ import {
 import {
 	deathScene,
 	gather,
-	kusaScript,
 	lineUp,
 	lunchScript,
-	NEWCOMER,
 	newsScript,
 	pagesFor,
 	type ReturnArrival,
-	ROMS,
 	reliefScript,
 	returnScene,
 	type StoreChooser,
@@ -465,7 +447,6 @@ import {
 	TALK_NEAR,
 	tenScript,
 	villageView,
-	wrapScript,
 } from "../ui/village/villageReturn";
 import {
 	DUNGEON_DESC,
@@ -473,7 +454,6 @@ import {
 	forgetHeardMemo,
 	hasNews,
 	ledgerLine,
-	pinnedScrap,
 	talkLine,
 } from "../ui/village/villageTalk";
 import type { TestResult } from "./monsterTests";
@@ -1706,24 +1686,6 @@ test("場面で 置いた 人の マスに 重ならない：口の 前に 並�
 				}),
 			);
 		const clashes: string[] = [];
-		// 跡地の 結（北の 口。仲間と 原住民が 並び、キリコが どいて、ROM専 18体が まわりに 立つ）
-		for (const stage of [2, 5, 7]) {
-			progress(
-				["shallow", "kinoko", "main", "isle1", "isle3", "opunu", "ato"],
-				["shallow", "kinoko", "main", "opunu"],
-			);
-			putTown({ stage });
-			const a: ReturnArrival = { kind: "clear", dungeon: "ato" };
-			const f = fakeStory({ at: exitFor("ato").cell });
-			lineUp(f.s, a, sceneView(villageView(), a));
-			await returnScene(f.s, a);
-			ok(
-				f.log.some((l) => l.startsWith("goto player ")) &&
-					f.log.some((l) => l.startsWith(`goto ${ROMS}_0 `)),
-				`stage ${stage}: the 跡地 ending has no step aside or no ROM専:\n${f.log.join("\n")}`,
-			);
-			clashes.push(...f.clashes.map((c) => `ato stage ${stage}: ${c}`));
-		}
 		// どの 板の 帰りでも（はじめての 持ち帰り・帰還スレ。語りの 中で 口から 来る 住人も）
 		for (const d of all)
 			for (const stage of [1, 2, 4, 7])
@@ -1774,54 +1736,7 @@ test("場面で 置いた 人の マスに 重ならない：口の 前に 並�
 			`friends are gathered for the visitor's news:\n${lone.log.join("\n")}`,
 		);
 		clashes.push(...lone.clashes.map((c) => `news kinoko: ${c}`));
-		// 転：呼んだ フェリス・ゼロの マスへ ヒナリーが 来ない
-		progress(
-			all.filter((d) => d !== "y1901"),
-			all.filter((d) => d !== "y1901"),
-		);
-		putTown({ stage: TOWN_STAGES - 1 });
-		const turn = fakeStory();
-		await wrapScript(turn.s);
-		ok(
-			turn.log.some((l) => l.startsWith("goto mob_hinary ")),
-			`ヒナリー does not walk over:\n${turn.log.join("\n")}`,
-		);
-		clashes.push(...turn.clashes.map((c) => `wrap: ${c}`));
 		ok(!clashes.length, `two people on one cell:\n${clashes.join("\n")}`);
-	});
-});
-
-test("掲示板の 切れはし：その 板を 持ち帰ると 貼られ、1回の 帰りに 1枚。読んだら 次の 帰りに 次の 1枚", () => {
-	fitsWindow([
-		...SCRAPS.map((x): [string, string] => [`SCRAPS.${x.id}`, x.text]),
-		...Object.entries(SCRAP_MSG).map(([k, t]): [string, string] => [
-			`SCRAP_MSG.${k}`,
-			fill(t, { board: "離島・沖縄板" }),
-		]),
-	]);
-	ok(
-		new Set(SCRAPS.map((x) => x.id)).size === SCRAPS.length,
-		"two scraps share an id",
-	);
-	withStorage(() => {
-		// まだ どの 板も 持ち帰って いない：貼られない
-		setProgress(["shallow"], [], []);
-		ok(!pinnedScrap(), "a scrap before any board was carried home");
-		// パン板を 持ち帰った：パン板の 1枚目
-		setProgress(["shallow", "main"], [], ["shallow"]);
-		pushRecord({});
-		const first = pinnedScrap();
-		ok(first?.board === "shallow", `pinned: ${first?.id}`);
-		// 読んだ：この 帰りは もう 貼られない
-		readScrap(first?.id ?? "", loadRecords()[0]?.at ?? 0);
-		ok(!pinnedScrap(), "two scraps in one return");
-		// 次の 帰り：パン板の 2枚目
-		pushRecord({ at: (loadRecords()[0]?.at ?? 0) + 1000 });
-		const second = pinnedScrap();
-		ok(
-			second?.board === "shallow" && second.id !== first?.id,
-			`next return: ${second?.id}`,
-		);
 	});
 });
 
@@ -2462,18 +2377,11 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
 	// 裏の 2段目の 転と 結の あと（ui/village/villageReturn.ts の wrapScript・kusaScript）
-	pool("WRAP_NEWS.pages", WRAP_NEWS.pages);
-	pool("WRAP_NEWS.hinaryAbsent", [WRAP_NEWS.hinaryAbsent]);
-	pool("KUSA_NEWS.lines", KUSA_NEWS.lines);
 	pool("TEN_NEWS.pages", TEN_NEWS.pages);
 	pool(
 		"DEPART.free",
 		DEPART.free.map((text) => ({ who: "nanj", text })),
 	);
-	texts.push(["WRAP_NEWS.hinary", WRAP_NEWS.hinary]);
-	texts.push(["WRAP_NEWS.after", WRAP_NEWS.after]);
-	texts.push(["WRAP_NEWS.open", WRAP_NEWS.open]);
-	texts.push(["KUSA_NEWS.after", KUSA_NEWS.after]);
 	fitsWindow(texts);
 });
 
@@ -3169,7 +3077,7 @@ test("町の 寄り道で 見つける 板（おーぷぬの おんJ関連板）
 				}),
 			);
 		fresh();
-		noteRunEnd("festival", "clear", "find-1", null);
+		noteRunEnd("festival", "clear", "find-1");
 		ok(
 			!TOWN_FINDS.some((f) => loadProgress().unlocked.includes(f.dungeon)),
 			`a town find opened by a clear: ${loadProgress().unlocked.join()}`,
@@ -3198,7 +3106,7 @@ test("町の 寄り道で 見つける 板（おーぷぬの おんJ関連板）
 			!(await townFind(fakeStory().s, "konbini", "notice")),
 			"おんキム before おんMu",
 		);
-		for (const f of TOWN_FINDS.filter((x) => x.dungeon !== "isle1")) {
+		for (const f of TOWN_FINDS) {
 			const r = fakeStory();
 			ok(await townFind(r.s, f.facility, f.at), `${f.dungeon}: nothing`);
 			ok(
@@ -3246,208 +3154,6 @@ test("持ち帰った 板の 底の 品は、家を 買って いれば 入っ�
 			loadHome().stored.filter((id) => id.startsWith("goal_")).length === 2 &&
 				!again.log.some((l) => l.includes("品が")),
 			"the goal items arrived twice",
-		);
-	});
-});
-
-test("裏シナリオ: the branch opens by a bottle at the pier (small isles → lighthouse → 跡地 → 避難J), the 原住民 walks in with the lighthouse ending and then lives in the village", async () => {
-	const all = [...DUNGEON_IDS];
-	const put = (cleared: DungeonId[], endings: DungeonId[]) =>
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: all,
-				cleared,
-				fails: {},
-				intro: all,
-				news: [],
-				endings,
-			}),
-		);
-	// 分岐は 町の 寄り道：小島1 は 釣り場の ビンで 開き（data/town/finds.ts）、小島 2・3 と つづき、3つ そろうと 灯台。
-	// 跡地は 灯台と ROM専の 声の 旗、避難J は 本筋の 山場と 裏の 結の 両方の あと（STORY.md §5.98）
-	ok(
-		DUNGEONS.isle1.unlockAfter === null &&
-			DUNGEONS.isle1.unlockFlag === "town_isle1" &&
-			TOWN_FINDS.some((f) => f.dungeon === "isle1" && f.facility === "pier"),
-		"the branch is not found at the pier",
-	);
-	ok(DUNGEONS.isle3.unlockAfter === "isle1", "the isles do not chain");
-	ok(
-		DUNGEONS.opunu.unlockAfter === null &&
-			JSON.stringify(DUNGEONS.opunu.unlockAfterAll) ===
-				JSON.stringify(["isle1", "isle3"]),
-		"the lighthouse does not need the two isles",
-	);
-	ok(
-		DUNGEONS.ato.secret === true &&
-			JSON.stringify(DUNGEONS.ato.unlockAfterAll) ===
-				JSON.stringify(["opunu"]) &&
-			DUNGEONS.ato.unlockFlag === "romVoice",
-		"the 跡地 does not need the lighthouse and the ROM専 voice",
-	);
-	ok(
-		JSON.stringify(DUNGEONS.hinan.unlockAfterAll) ===
-			JSON.stringify(["deep", "ato"]),
-		"避難J does not need both climaxes",
-	);
-	ok(
-		[6, 13, 20, 30, 25].join() ===
-			[
-				DUNGEONS.isle1.floors,
-				DUNGEONS.isle3.floors,
-				DUNGEONS.opunu.floors,
-				DUNGEONS.ato.floors,
-				DUNGEONS.hinan.floors,
-			].join(),
-		"the hidden route's floor counts drifted",
-	);
-	ok(
-		MOBS.shobon.after === "opunu" &&
-			Array.isArray(MONSTERS.hijacker.board) &&
-			MONSTERS.hijacker.board.includes("opunu"),
-		"the 原住民 or the 乗っ取り屋 is not tied to おーぷぬ",
-	);
-	await withStorageAsync(async () => {
-		putTown({ stage: 4 });
-		// はじめての 持ち帰り：まだ 原住民は 村に いない。語りの 中で 口から 歩いてきて、本人の 窓で 話す
-		put(["shallow", "kinoko", "main", "opunu"], ["shallow", "kinoko", "main"]);
-		const a: ReturnArrival = { kind: "clear", dungeon: "opunu" };
-		const v = villageView();
-		ok(
-			villagePlaces(v).some((p) => p.mob === "shobon") &&
-				!villagePlaces(sceneView(v, a)).some((p) => p.mob === "shobon"),
-			"the 原住民 is placed wrong around his own arrival",
-		);
-		const { s, log } = fakeStory({ at: exitFor("opunu").cell });
-		lineUp(s, a, sceneView(v, a));
-		ok(
-			!log.some((l) => l.startsWith("place mob_shobon ")),
-			"the 原住民 waits at the mouth before he has arrived",
-		);
-		await returnScene(s, a);
-		const gate = exitFor("opunu").cell.join(",");
-		const walk = log.indexOf(`place newcomer ${gate}`);
-		const talk = log.findIndex((l) =>
-			l.startsWith("say null: ……上がってたから"),
-		);
-		ok(
-			walk >= 0 && talk > walk,
-			`he does not walk in before talking:\n${log.join("\n")}`,
-		);
-		ok(
-			log.includes(
-				"say nanj: ……草。侵略されたんは、\nワイらの　ほうやったんか",
-			),
-			"やきう's mirror line is missing",
-		);
-		ok(!s.flag(NEWCOMER), "the newcomer flag stays up after the scene");
-		ok(
-			!!loadProgress().endings?.includes("opunu"),
-			"the arrival is not remembered",
-		);
-		// 2回目からは 短い 語りで、本人が 口の 前に 並ぶ
-		const again = pagesFor(a);
-		ok(
-			JSON.stringify(again) === JSON.stringify(STORY.opunu.again) &&
-				again.some((p) => p.mob === "shobon"),
-			"the second visit does not use the short ending",
-		);
-		const second = fakeStory({ at: exitFor("opunu").cell });
-		lineUp(second.s, a, villageView());
-		ok(
-			second.log.some((l) => l.startsWith("place mob_shobon ")),
-			"the 原住民 does not line up once he lives here",
-		);
-		// 入口は 板の 踏破では 開かない：パン板を 持ち帰っても きのこ板だけ。小島1 は 町に 屋台が 出てから
-		// 釣り場の 竿を 調べると ビンの 手紙で 開き、その場で 知らせる（data/town/finds.ts）
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: ["shallow"],
-				cleared: [],
-				fails: {},
-				intro: ["shallow"],
-				news: [],
-				endings: [],
-			}),
-		);
-		noteRunEnd("shallow", "clear", "quiet-1", null);
-		const after = loadProgress();
-		ok(
-			!after.unlocked.includes("isle1") && after.unlocked.includes("kinoko"),
-			`the entry isle opens by a clear: ${after.unlocked.join()}`,
-		);
-		putTown({ stage: 0 });
-		ok(
-			!(await townFind(fakeStory().s, "pier", "rod")) &&
-				!loadProgress().unlocked.includes("isle1"),
-			"the bottle is there before the stall",
-		);
-		putTown({ stage: 1 });
-		const bottle = fakeStory();
-		ok(
-			(await townFind(bottle.s, "pier", "rod")) &&
-				loadProgress().unlocked.includes("isle1") &&
-				bottle.log.some((l) => l.includes("ひまわり諸島」に")) &&
-				!(await townFind(fakeStory().s, "pier", "rod")),
-			`the bottle does not open the isle once: ${bottle.log.join(" / ")}`,
-		);
-		ok(
-			!!DUNGEONS.isle1.hidden &&
-				!!DUNGEONS.isle3.hidden &&
-				!!DUNGEONS.opunu.hidden &&
-				!!DUNGEONS.hinan.hidden,
-			"the hidden route shows up on the map before it is found",
-		);
-		ok(
-			STORY.isle1.intro.some((p) => p.includes("小舟")) &&
-				STORY.isle1.ending.some((p) =>
-					p.text.includes("おーぷぬ、知っとるか"),
-				) &&
-				STORY.isle1.ending.some((p) => p.text.includes("古い　スレ")),
-			"the entry isle does not explain itself on arrival / return",
-		);
-		// 裏は 本筋より むずかしい：どの 板も 倉庫の 道具を 持ちこめない。底の 強さも 本筋の 対より 上
-		ok(
-			(["isle1", "isle3", "opunu", "ato", "hinan", "y1901"] as const).every(
-				(d) => DUNGEONS[d].noCarry === true,
-			),
-			"a hidden-route board lets storage items in",
-		);
-		const top = (d: DungeonId) => DUNGEONS[d].level[DUNGEONS[d].floors];
-		ok(
-			top("isle1") > top("kinoko") &&
-				top("isle3") >= top("konamono") &&
-				top("opunu") > top("main") &&
-				top("ato") > top("deep") &&
-				top("y1901") > top("hinan"),
-			`the hidden route is not harder: ${["isle1", "kinoko", "isle3", "konamono", "opunu", "main", "ato", "deep"].map((d) => `${d}=${top(d as DungeonId)}`).join(" ")}`,
-		);
-		// ビンの 視線誘導：パン板の あとの ひとことに 釣り場の ビンが 出る。切れはし「板 立てたわ」も パン板の あと
-		ok(
-			CLEAR.shallow.some((l) => l.text.includes("ビン")) &&
-				SCRAPS.some((x) => x.id === "jibun" && x.board === "shallow"),
-			"no nudge toward the bottle after パン板",
-		);
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: all,
-				cleared: ["shallow", "kinoko", "main", "isle1", "isle3"],
-				fails: {},
-				intro: all,
-				news: [{ dungeon: "opunu", reason: "clear" }],
-				endings: [],
-			}),
-		);
-		const news2 = fakeStory();
-		await newsScript(news2.s);
-		ok(
-			news2.log.some((l) => l.includes("灯台")) &&
-				news2.log.some((l) => l.includes("鍵")) &&
-				news2.log.some((l) => l.includes("「のんびり諸島」に")),
-			`the lighthouse news is wrong:\n${news2.log.join("\n")}`,
 		);
 	});
 });
@@ -3856,15 +3562,9 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 });
 
 test("おんJマイナーズ move in one by one as the town grows", () => {
-	// 板を 持ち帰ると 来る 子（裏ルートの 原住民）は 町の 段では 数えない
-	const byStep = MOB_IDS.filter((id) => !MOBS[id].after);
-	const byBoard = MOB_IDS.filter((id) => MOBS[id].after);
 	for (const v of VIEWS) {
 		const here = villagePlaces(v).filter((p) => p.mob);
-		const want = [
-			...byStep.filter((id) => MOBS[id].from <= lastStepOf(v.stage)),
-			...byBoard.filter((id) => v.cleared.includes(MOBS[id].after ?? "main")),
-		];
+		const want = MOB_IDS.filter((id) => MOBS[id].from <= lastStepOf(v.stage));
 		ok(
 			here.length === want.length,
 			`${label(v)}: ${here.map((p) => p.id).join()}`,
@@ -3872,34 +3572,21 @@ test("おんJマイナーズ move in one by one as the town grows", () => {
 		// 小段の 途中：その 小段までに 越してきた 子だけ
 		for (let step = 0; step <= lastStepOf(v.stage); step++) {
 			const at = villagePlaces({ ...v, step }).filter((p) => p.mob).length;
-			const n =
-				byStep.filter((id) => MOBS[id].from <= step).length +
-				byBoard.filter((id) => v.cleared.includes(MOBS[id].after ?? "main"))
-					.length;
+			const n = MOB_IDS.filter((id) => MOBS[id].from <= step).length;
 			ok(at === n, `${label(v)} step ${step}: ${at} residents (want ${n})`);
 		}
 	}
-	const froms = byStep.map((id) => MOBS[id].from);
+	const froms = MOB_IDS.map((id) => MOBS[id].from).filter((f) => f > 0);
 	ok(
 		froms.every((f) => f >= 0 && f < TOWN_STEPS.length),
 		`move-in steps: ${froms}`,
 	);
 	// 小段ごとに 1人ずつ（同じ 小段に 2人は 来ない）
 	ok(new Set(froms).size === froms.length, `two move in at once: ${froms}`);
-	// はじめから いるのは ぷゆゆ だけ（マイナーズは 町が 育ってから）
+	// はじめから いるのは ぷゆゆと 原住民 だけ（マイナーズは 町が 育ってから）
 	ok(
-		byStep.filter((id) => MOBS[id].from === 0).join() === "puyu",
-		"only ぷゆゆ is there from the start",
-	);
-	// 板で 来る 子は その 板を 持ち帰った 村に だけ 立つ
-	ok(byBoard.join() === "shobon", `moves in with a board: ${byBoard.join()}`);
-	const top = VIEWS[VIEWS.length - 1];
-	ok(
-		!villagePlaces({ ...top, cleared: [] }).some((p) => p.mob === "shobon") &&
-			villagePlaces({ ...top, cleared: ["opunu"] }).some(
-				(p) => p.mob === "shobon",
-			),
-		"原住民 does not follow the おーぷぬ clear",
+		MOB_IDS.filter((id) => MOBS[id].from === 0).join() === "puyu,shobon",
+		"only ぷゆゆ and the 原住民 are there from the start",
 	);
 });
 
@@ -4068,395 +3755,6 @@ test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick 
 });
 
 // ───────────────── 裏シナリオ「全滅の うそ」（STORY.md §5.98） ─────────────────
-
-test("裏シナリオ: the lighthouse password follows from the two memos, and the isles restore the lighthouse floors one by one", () => {
-	const memos = SCRAPS.filter((x) => x.kind === "memo");
-	ok(
-		memos.map((x) => x.board).join() === "isle1,isle3",
-		`memos are on ${memos.map((x) => x.board).join()}`,
-	);
-	// 手紙：板主のは 1234、新しいのは 1けた 足した だけ → 12345
-	ok(
-		memos.some((x) => x.text.includes("1234")) &&
-			memos.some((x) => x.text.includes("1けた　足した")) &&
-			LIGHTHOUSE_DOOR.answer === "12345",
-		"the password cannot be worked out from the memos",
-	);
-	// 1桁ずつ 入れる 窓：答えは 数字だけで、入れられる 桁に おさまる
-	ok(
-		/^\d+$/.test(LIGHTHOUSE_DOOR.answer) &&
-			LIGHTHOUSE_DOOR.answer.length <= LIGHTHOUSE_DOOR.max,
-		"the password does not fit the pin pad",
-	);
-	// 置き手紙は 読み返す 一覧でも 1行に おさまる
-	for (const m of memos)
-		ok(
-			m.text.split("\n").every((l) => width(l) <= 22),
-			`memo ${m.id} is too wide`,
-		);
-	// 灯台の 層：取り返した 数だけ 浜に もどる
-	const hijacked = (n: number) =>
-		opunuZones(n).filter((z) => z.theme !== "beach").length;
-	ok(
-		hijacked(0) === 2 &&
-			hijacked(1) === 1 &&
-			hijacked(2) === 0 &&
-			hijacked(3) === 0,
-		`hijacked floors by isles: ${[0, 1, 2, 3].map(hijacked).join()}`,
-	);
-	ok(
-		opunuZones(0).length === opunuZones(3).length &&
-			opunuZones(3)[opunuZones(3).length - 1].last === DUNGEONS.opunu.floors,
-		"the restored zones do not cover the lighthouse",
-	);
-	ok(
-		opunuZones(1)[1].name !== opunuZones(0)[1].name,
-		"restoring an isle does not rename the floor",
-	);
-});
-
-test("裏シナリオ: 跡地 opens only when the lighthouse is cleared and a ROM専 voice came home (noteRunEnd), and 避難J after both climaxes", async () => {
-	ok(
-		!openable("ato", ["opunu"]) && openable("ato", ["opunu"], ["romVoice"]),
-		"openable ignores the flag",
-	);
-	ok(
-		!openable("hinan", ["deep"]) && openable("hinan", ["deep", "ato"]),
-		"避難J opens without both",
-	);
-	ok(
-		openable("opunu", ["isle1", "isle3"]) && !openable("opunu", ["isle1"]),
-		"the lighthouse opens without the two isles",
-	);
-	await withStorageAsync(async () => {
-		const all = [...DUNGEON_IDS];
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: all.filter((d) => d !== "ato" && d !== "hinan"),
-				cleared: ["shallow", "kinoko", "isle1", "isle3", "opunu"],
-				fails: {},
-				intro: all,
-				news: [],
-				endings: [],
-			}),
-		);
-		// ぷゆゆの 声では 開かない
-		noteRunEnd("isle1", "clear", "s1", "tousuko");
-		ok(
-			!loadProgress().unlocked.includes("ato"),
-			"a non-ROM voice opened the 跡地",
-		);
-		// ROM専の 声を 持ち帰ると 旗が 立って 開く（どの 板でも）
-		noteRunEnd("isle1", "clear", "s2", "funamushi");
-		const p = loadProgress();
-		ok(
-			(p.flags ?? []).includes("romVoice") &&
-				p.unlocked.includes("ato") &&
-				p.news.some((n) => n.dungeon === "ato"),
-			"the ROM voice did not open the 跡地",
-		);
-		// 跡地を 持ち帰っても 本筋の 山場（電池板）の 前は 避難J は 開かない
-		noteRunEnd("ato", "clear", "s3", null);
-		ok(
-			!loadProgress().unlocked.includes("hinan"),
-			"避難J opened before 電池板",
-		);
-		noteRunEnd("deep", "clear", "s4", null);
-		ok(loadProgress().unlocked.includes("hinan"), "避難J did not open");
-	});
-});
-
-test("裏シナリオ: the 跡地 ending brings 18 ROM専 in from the mouth, they post, and leave; the 原住民 counts 「あと ひとり」", async () => {
-	const pages = STORY.ato.ending;
-	const cues = pages.flatMap((p) => (p.cue ? [p.cue] : []));
-	ok(
-		cues.join() === "roms,romsLeave",
-		`cues are ${cues.join()} (expected roms then romsLeave)`,
-	);
-	const roms = pages.findIndex((p) => p.cue === "roms");
-	const posts = pages.filter((p) => p.nanashi);
-	ok(
-		posts.length >= 2 && pages.indexOf(posts[0]) > roms,
-		"the ROM専 post before they arrive",
-	);
-	ok(
-		pages.some((p) => p.text.includes(`${ROM_COUNT}体`)) &&
-			pages.some((p) => p.mob === "shobon" && p.text.includes("あと、ひとり")),
-		"the count or the loose thread is missing",
-	);
-	await withStorageAsync(async () => {
-		const all = [...DUNGEON_IDS];
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: all,
-				cleared: [
-					"shallow",
-					"kinoko",
-					"main",
-					"isle1",
-					"isle3",
-					"opunu",
-					"ato",
-				],
-				fails: {},
-				intro: all,
-				news: [],
-				endings: ["shallow", "kinoko", "main", "opunu"],
-			}),
-		);
-		putTown({ stage: 5 });
-		const a: ReturnArrival = { kind: "clear", dungeon: "ato" };
-		const { s, log, walks } = fakeStory({ at: exitFor("ato").cell });
-		lineUp(s, a, sceneView(villageView(), a));
-		await returnScene(s, a);
-		// 行列は 長い 道でも とばさない（noWarp）
-		const roms = walks.filter((w) => w.target.startsWith(`${ROMS}_`));
-		ok(
-			roms.length > 0 && roms.every((w) => w.noWarp),
-			"the ROM専 parade may be shortened",
-		);
-		const gate = exitFor("ato").cell.join(",");
-		const arrive = log.indexOf(`place ${ROMS}_0 ${gate}`);
-		const post = log.findIndex((l) => l.startsWith("say nanj: 見てた"));
-		const leave = log.findIndex(
-			(l) => l === `goto ${ROMS}_${ROM_COUNT - 1} ${gate}`,
-		);
-		ok(
-			arrive >= 0 && post > arrive && leave > post,
-			`the ROM専 scene is out of order:\n${log.filter((l) => l.includes(ROMS) || l.startsWith("say nanj")).join("\n")}`,
-		);
-		ok(
-			log.filter((l) => l.startsWith(`place ${ROMS}_`)).length === ROM_COUNT,
-			"not every ROM専 is placed at the mouth",
-		);
-		ok(!s.flag(ROMS), "the ROM専 flag stays up after the scene");
-		ok(!!loadProgress().endings?.includes("ato"), "the 参拝 is not remembered");
-		// 2回目からは 短い 語り（ROM専は 来ない）
-		ok(
-			pagesFor(a).every((p) => !p.cue),
-			"the ROM専 come again on the second visit",
-		);
-	});
-});
-
-test("裏シナリオ: the 避難J ending plays the 1000取り until it is won (skipped without a hook), and never has やきう", async () => {
-	const pages = STORY.hinan.ending;
-	ok(
-		pages.filter((p) => p.cue === "getter").length === 1,
-		"the 1000取り cue is missing or doubled",
-	);
-	ok(
-		pages.every((p) => p.who !== "nanj" && !p.text.includes("やきう民、")),
-		"やきう speaks in the 避難J ending",
-	);
-	await withStorageAsync(async () => {
-		const all = [...DUNGEON_IDS];
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: all,
-				cleared: all,
-				fails: {},
-				intro: all,
-				news: [],
-				endings: all.filter((d) => d !== "hinan"),
-			}),
-		);
-		putTown({ stage: TOWN_STAGES - 1 });
-		const a: ReturnArrival = { kind: "clear", dungeon: "hinan" };
-		// 手が 無ければ 別ゲーは とばす
-		const plain = fakeStory({ at: exitFor("hinan").cell });
-		await returnScene(plain.s, a);
-		ok(
-			plain.log.some((l) => l.includes("知ってる　名無しンゴ")),
-			"the ending did not reach its last line",
-		);
-		ok(
-			!plain.log.some((l) => l.includes(GETTER_RETRY[0])),
-			"a retry line appeared without the minigame",
-		);
-		// 1回 負けて 1回 勝つ：次スレの 1行が 1回だけ
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: all,
-				cleared: all,
-				fails: {},
-				intro: all,
-				news: [],
-				endings: all.filter((d) => d !== "hinan"),
-			}),
-		);
-		let calls = 0;
-		const played = fakeStory({ at: exitFor("hinan").cell });
-		await returnScene(played.s, a, {
-			getter: async () => ++calls >= 2,
-		});
-		ok(calls === 2, `the minigame was played ${calls} times`);
-		ok(
-			played.log.filter((l) => l.includes(GETTER_RETRY[0])).length === 1,
-			"the retry line did not appear once",
-		);
-	});
-});
-
-test("裏の 2段目: the 転 opens 1901年の スレ (flag wrap, no news), its ending keeps やきう nameless and freezes Kiriko once, and the 「草」 starts the clock", async () => {
-	// 開き方：避難J と 旗 wrap の 両方
-	ok(
-		!openable("y1901", ["hinan"]) &&
-			openable("y1901", ["hinan"], ["wrap"]) &&
-			!openable("y1901", [], ["wrap"]),
-		"1901年の スレ opens without both 避難J and the 転",
-	);
-	// 結：やきうは 名無しの 書きこみ だけ。キリコが 自分の 声で 固まるのは 1回。ひとりで 読むので キリコは
-	// 独白だけ（明かしの 拍に 受けとめる 独白を はさむ）で、さいごの 1枚も 独白
-	const pages = STORY.y1901.ending;
-	ok(
-		pages.every((p) => p.who !== "nanj"),
-		"やきう speaks by name in the 1901 ending",
-	);
-	ok(
-		pages.filter((p) => p.cue === "selfVoice").length === 1 &&
-			pages.some((p) =>
-				p.text.includes("自分の　声を\n聞かされて　固まった！"),
-			),
-		"Kiriko does not freeze at her own voice exactly once",
-	);
-	ok(
-		pages.at(-1)?.kiriko === "think" &&
-			pages.every((p) => !p.kiriko || p.kiriko === "think"),
-		"Kiriko speaks aloud alone, or the 1901 ending does not end on her thought",
-	);
-	// やきうの 名前を ふくむ 頁が keep で 包まれていないと、出ていった あとに ending ごと again に かわる
-	ok(
-		endingFor("y1901", false, ["nanj"]).length === pages.length,
-		"the 1901 ending turns into again after やきう left",
-	);
-	// 事実は はっきり 1回：人は もう いない・さとるの 残した プログラム・999回・13万6千年
-	for (const fact of [
-		"人は、もう　おらん",
-		"さとるの　残した　プログラム",
-		"999回",
-		"13万6千年",
-	])
-		ok(
-			pages.some((p) => p.text.includes(fact)),
-			`the 1901 ending never says ${fact}`,
-		);
-	await withStorageAsync(async () => {
-		const all = [...DUNGEON_IDS];
-		const before = {
-			unlocked: all.filter((d) => d !== "y1901"),
-			cleared: all.filter((d) => d !== "y1901"),
-			fails: {},
-			intro: all,
-			news: [],
-			endings: all.filter((d) => d !== "y1901"),
-		};
-		localStorage.setItem(PROGRESS_KEY, JSON.stringify(before));
-		putTown({ stage: TOWN_STAGES - 1 });
-		// 避難J を 持ち帰っても 旗が なければ 開かない
-		noteRunEnd("hinan", "clear", "s1", null);
-		ok(
-			!loadProgress().unlocked.includes("y1901"),
-			"1901年の スレ opened before the 転",
-		);
-		// 転：時計が もどり、旗 wrap が 立って 開く（知らせは 積まない）
-		const turn = fakeStory();
-		await wrapScript(turn.s);
-		const p = loadProgress();
-		ok(
-			(p.flags ?? []).includes("wrap") &&
-				p.unlocked.includes("y1901") &&
-				!p.news.some((n) => n.dungeon === "y1901"),
-			"the 転 did not open 1901年の スレ quietly",
-		);
-		ok(
-			turn.log.some((l) => l.includes("お前だけや。")) &&
-				turn.log.some((l) => l.includes(WRAP_NEWS.open)),
-			"the 転 did not play through",
-		);
-		// 結：さいごの 独白まで
-		const end = fakeStory({ at: exitFor("y1901").cell });
-		await returnScene(end.s, { kind: "clear", dungeon: "y1901" });
-		ok(
-			end.log.some((l) => l.includes("……やきうンゴ")),
-			"the 1901 ending did not reach its last line",
-		);
-		// 結の あと：「草」で 柱時計が 動く
-		ok(!hasFlag("kusa"), "the clock moved before the 「草」");
-		await kusaScript(fakeStory().s);
-		ok(hasFlag("kusa"), "the 「草」 did not set its flag");
-		// noteWrap は 2回 呼んでも 旗は 1つ
-		noteWrap();
-		ok(
-			(loadProgress().flags ?? []).filter((f) => f === "wrap").length === 1,
-			"noteWrap doubled the flag",
-		);
-	});
-	// 図書館：1901年の スレが 開くまでは ？？？ の 枠も 出さない（本筋だけ 遊ぶ 人に 見せない）
-	withStorage(() => {
-		putTown({ stage: TOWN_STAGES - 1 });
-		const words = () => shelfWords(0, 1).map((w) => w.id);
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: ["shallow"],
-				cleared: [],
-				fails: {},
-				intro: [],
-				news: [],
-			}),
-		);
-		forgetProgressMemo();
-		ok(
-			!words().includes("y2038"),
-			"the 2038 word shows before the board opens",
-		);
-		localStorage.setItem(
-			PROGRESS_KEY,
-			JSON.stringify({
-				unlocked: ["shallow", "y1901"],
-				cleared: [],
-				fails: {},
-				intro: [],
-				news: [],
-			}),
-		);
-		forgetProgressMemo();
-		ok(words().includes("y2038"), "the 2038 word is missing after it opens");
-	});
-});
-
-test("裏シナリオ: the hall has the oldest-thread sign on every tier, and the 原住民・ヒナリー have the new milestones", () => {
-	for (let stage = 0; stage < TOWN_STAGES; stage++) {
-		const places = hallPlaces({ stage, unlocked: ["shallow"], cleared: [] });
-		ok(
-			places.filter((p) => p.id === "oldest_0").length === 1,
-			`stage ${stage}: the oldest-thread sign is missing or doubled`,
-		);
-	}
-	ok(
-		!!MOBS.shobon.milestones.opunu?.some((l) => l.text.includes("録って")) &&
-			!!MOBS.shobon.milestones.ato?.some((l) =>
-				l.text.includes("あと　ひとり"),
-			),
-		"the 原住民 is missing the request or the count",
-	);
-	// 灯台の 持ち帰りの 場面で 原住民が 頼む（話しかけなくても 次の 一歩が わかる）
-	ok(
-		STORY.opunu.ending.some(
-			(l) => l.text.includes("ROM専") && l.text.includes("いるでしょ"),
-		) && STORY.opunu.ending.some((l) => l.text.includes("録って")),
-		"the lighthouse ending does not ask for the ROM専 voice",
-	);
-	ok(
-		!!MOBS.hinary.milestones.ato?.some((l) => l.text.includes("避難J")),
-		"ヒナリー does not point to 避難J",
-	);
-});
 
 export const runVillageTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];
@@ -7744,14 +7042,6 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 			ok(r.at > 1 && r.at <= dg.floors, `${d} ${r.at}: outside the board`);
 			ok(!zoneStarts.includes(r.at), `${d} ${r.at}: same floor as a zone sign`);
 		}
-		// 原住民の 行は 灯台を 持ち帰るまで 出ない
-		for (const r of list ?? [])
-			if (r.who === "shobon")
-				ok(
-					diveResAt(d as DungeonId, r.at, []) === null &&
-						diveResAt(d as DungeonId, r.at, ["opunu"]) === r,
-					`${d} ${r.at}: shobon before opunu`,
-				);
 	}
 	// やきうの レスは 開票の あとも 出る（だれも 出ていかない。その 板を 持ち帰る 前だけ）
 	ok(
@@ -7763,48 +7053,22 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 	ok(mainOnly.includes("パン板") && mainOnly.includes("きのこ板"), mainOnly);
 	for (const [d, why] of Object.entries(GOAL_WHY))
 		ok(width(why ?? "") <= 22, `${d}: ${why}`);
-	ok(goalWhy("isle1", ["isle1"]) === null, "why stays after clearing");
-	ok(synopsisHtml([], []) === null, "synopsis before the hidden route");
-	const first = synopsisHtml(["shallow", "isle1"], []) ?? "";
-	ok(first.includes("ひまわり諸島") && first.includes("つぎ：となりの"), first);
-	// ROM専の 声は 灯台の あとの 章（先に 録って いても 灯台の 前には 出ない）
-	ok(
-		!(synopsisHtml(["isle1"], ["romVoice"]) ?? "").includes("ROM専の　声"),
-		"rom before opunu",
-	);
+	ok(goalWhy("main", ["main"]) === null, "why stays after clearing");
+	ok(synopsisHtml([], []) === null, "synopsis before the first board");
 	const end =
-		synopsisHtml(
-			[
-				"shallow",
-				"kinoko",
-				"main",
-				"deep",
-				"hidden",
-				"isle1",
-				"isle3",
-				"opunu",
-				"ato",
-				"hinan",
-				"y1901",
-			],
-			["romVoice", "wrap"],
-		) ?? "";
-	ok(end.includes("1901年の　スレ") && !end.includes("つぎ："), end);
-	// 本筋・裏と 書かない（裏が あると わかって しまう）
-	ok(!/本筋|裏/.test(end), "no route labels");
-	// 要約：本筋と 小島の 話の いちばん 新しい 章だけ（板ごとに 並べない）・村の スレの 数
+		synopsisHtml(["shallow", "kinoko", "main", "deep", "hidden"], []) ?? "";
+	ok(end.includes("過去ログの底　まで") && !end.includes("つぎ："), end);
+	// 要約：本筋の いちばん 新しい 章だけ（板ごとに 並べない）
 	const heads = [...end.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
 	ok(
-		heads.length === 2 &&
-			heads[0] === "過去ログの底　まで" &&
-			heads[1] === "1901年の　スレ　まで",
+		heads.length === 1 && heads[0] === "過去ログの底　まで",
 		`summary heads ${heads}`,
 	);
 	// 目標は 総選挙：レスの 数（ダンジョンの 1000 は 時間切れ）では なく 支持者の 数
 	ok(end.includes("支持者"), "no supporter count after the climax");
-	// 支持者＝キリコ＋村に いる 仲間＋越してきた 住人＋通行人（町で 見える 数と 同じ）。はじめは 3人
+	// 支持者＝キリコ＋村に いる 仲間＋越してきた 住人＋通行人（町で 見える 数と 同じ）。はじめは 4人
 	const noon = { hour: 12, weekend: false };
-	ok(villageRes([], 0, 0, noon) === 3, `start ${villageRes([], 0, 0, noon)}`);
+	ok(villageRes([], 0, 0, noon) === 4, `start ${villageRes([], 0, 0, noon)}`);
 	ok(
 		villageRes(["shallow", "main", "deep"], 7, 1e9, noon) ===
 			1 +

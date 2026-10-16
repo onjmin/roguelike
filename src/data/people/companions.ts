@@ -176,42 +176,6 @@ export const ESCORTS: readonly EscortRequest[] = [
 		],
 		reward: 500,
 	},
-	{
-		id: "hinary_hinan",
-		who: "hinary",
-		board: "hinan",
-		goal: 8,
-		title: "避難Jの　現地調査",
-		ask: [
-			"避難Jを　現地調査したいと\n思います",
-			"……ひとりでは　心細い\n模様です。8階まで、同行を",
-		],
-		join: "ヒナリーが　メモを　かかえて　ついてきた。",
-		line: "現地調査を　開始したいと\n思います",
-		thanks: [
-			"調査の　結果、\n避難Jは　しずかでした",
-			"これで　発表を　終わりたいと\n思います。……お礼です",
-		],
-		reward: 500,
-	},
-	{
-		id: "shobon_ato",
-		who: "shobon",
-		board: "ato",
-		goal: 10,
-		title: "跡地を　もう一度",
-		ask: [
-			"跡地、もう一度\n見て　おきたいんだ",
-			"……ひとりだと、\nちょっと　さびしくて",
-		],
-		join: "原住民が　梯子の　前で　待っていた。",
-		line: "……のんびり　行こうよ。\n10階まで",
-		thanks: [
-			"……見てきた。\nなんにも　かわってなかった",
-			"それで　いいんだ。\n……お礼、少しだけど",
-		],
-		reward: 500,
-	},
 ];
 
 export const escortById = (

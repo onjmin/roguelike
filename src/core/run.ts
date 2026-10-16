@@ -59,7 +59,6 @@ import {
 	type Dir8,
 	DX,
 	DY,
-	dirOf,
 	dist,
 	isDiagonal,
 	type Pos,
@@ -175,8 +174,6 @@ export class Run {
 		objective: Objective = "fetch",
 		/** ぷゆゆの お弁当（始めの持ち物）を 持って 出るか（村で 引き取った 道具が あると もらえない）。 */
 		lunch = true,
-		/** 裏シナリオの 結を 見た あと（ROM専は 戦わない。RunState.rom）。 */
-		rom = false,
 		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
 		hero: HeroId = "kiriko",
 		/** 同行の 依頼で ついてくる 同行者（core/guest.ts。乱数は 引かない。いなければ 書かない）。 */
@@ -279,7 +276,6 @@ export class Run {
 		// 始めの持ち物：ぷゆゆが 持たせる お弁当（ぷゆゆパン）。もらって いなければ 持たない（リプレイの ため 覚える）
 		if (lunch) for (const k of dg.start) player.items.push(run.newItem(k));
 		else s.noLunch = true;
-		if (rom) s.rom = true;
 		// 主人公と 同じ 人は 同行者に ならない（同じ 人が 2人 いる ことに なる。村では companions.ts の escortFor が よける）
 		if (guest && guest.id !== hero) s.guest = newGuest(guest);
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
@@ -1215,19 +1211,13 @@ export class Run {
 
 	/**
 	 * たおした 敵の 声を 蓄音機に 録る（1つだけ。前の 声は 上書き）。
-	 * 記録に 出すのは 蓄音機が 空の ときと ROM専の ときだけ（毎回 出すと 読みとばされる。いま 何が 入っているかは メニューの 蓄音機に 出る）。
+	 * 記録に 出すのは 蓄音機が 空の ときだけ（毎回 出すと 読みとばされる。いま 何が 入っているかは メニューの 蓄音機に 出る）。
 	 */
 	private recordVoice(m: Monster): void {
 		if (this.s.voice === m.kind) return;
 		const was = this.s.voice;
 		this.s.voice = m.kind;
-		// ROM専の 声は 上書きでも 出す（持ち帰ると 裏シナリオが 進む。録れたか わからないと 困る）
-		const rom = m.kind === "funamushi";
-		if (!was || rom) {
-			this.msg(`${mdef(m).name}の　声を　録った`);
-			// 1901年の スレ（裏の 2段目）：鳴らしているのは 昔の ログ。どの 声にも 聞きおぼえが ある（記録だけ。乱数に 触れない）
-			if (this.s.dungeon === "y1901") this.msg("……知ってる　声だ");
-		}
+		if (!was) this.msg(`${mdef(m).name}の　声を　録った`);
 	}
 
 	/**
@@ -1246,25 +1236,13 @@ export class Run {
 		this.emit({ t: "fx", kind: "voice", pos: { x: this.p.x, y: this.p.y } });
 		this.msg(`蓄音機から　${name}の　声が　流れた`);
 		let n = 0;
-		// 裏シナリオの 結の あと、ROM専は 自分の 声を 聞いても 固まらない。こちらを 向いて 手を 振る（STORY.md §5.98）
-		const wave =
-			!!this.s.rom && MONSTERS[kind]?.abilities.some((a) => a.k === "shy");
 		for (const m of this.f.monsters) {
 			if (m.kind !== kind || !this.monsterVisible(m)) continue;
 			if (m.disguise) m.disguise = null;
-			if (wave) {
-				m.dir =
-					dirOf(Math.sign(this.p.x - m.x), Math.sign(this.p.y - m.y)) ?? m.dir;
-				n++;
-				continue;
-			}
 			m.status.paralyze = Math.max(m.status.paralyze, VOICE_FREEZE);
 			n++;
 		}
-		if (n && wave)
-			this.msg(`${name}は　こちらを　向いて　手を　振った`, "good");
-		else if (n)
-			this.msg(`${name}は　自分の　声を　聞かされて　固まった！`, "good");
+		if (n) this.msg(`${name}は　自分の　声を　聞かされて　固まった！`, "good");
 		else this.msg("しかし　聞かせる　相手が　いなかった");
 		return true;
 	}
@@ -1301,8 +1279,7 @@ export class Run {
 		}
 		if (giveExp) {
 			ankaHit(this, "kill");
-			// ボスの 声は 録らない（たおすと その場で 帰るので 使い道が なく、録って いた 声を 上書きすると
-			// ROM専の 声を 持ち帰る 裏シナリオが ボスの 板で 進まなく なる）
+			// ボスの 声は 録らない（たおすと その場で 帰るので 使い道が ない）
 			if (!d.boss) this.recordVoice(m);
 		}
 		if (giveExp && d.exp > 0) {

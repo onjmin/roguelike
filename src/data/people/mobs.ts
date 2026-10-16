@@ -71,16 +71,9 @@ export type MobLine = Cue & {
 };
 
 /**
- * 節目（持ち帰った ダンジョン・もぐった回数）。shallow は 段0から いる ぷゆゆ だけ。
- * opunu は 裏シナリオの 灯台（原住民が 来た）、ato は 裏の 結（跡地の 参拝。ROM専は 全滅していなかった）。
+ * 節目（持ち帰った ダンジョン・もぐった回数）。shallow は 段0から いる ぷゆゆ と 原住民 だけ。
  */
-export type Milestone =
-	| "shallow"
-	| "main"
-	| "deep"
-	| "opunu"
-	| "ato"
-	| "runs10";
+export type Milestone = "shallow" | "main" | "deep" | "runs10";
 
 /** 話を えらぶ 手がかり（ui/village/villageMobs.ts が 保存と 端末の 日付から 作る。data は 保存を 読まない）。 */
 export type MobCtx = {
@@ -122,11 +115,6 @@ export type MobDef = {
 	from: number;
 	/** 越してくる ときの ひとこと：総選挙の 立候補を 降りて キリコの 陣営に 入る わけ（STORY.md §5。1人 1ネタ）。 */
 	withdraw?: string;
-	/**
-	 * 町の 段では なく、この 板を 持ち帰ると 越してくる（裏ルートの 原住民。持ち帰りの 語りの 中で 歩いてくる。
-	 * ui/village/villageReturn.ts）。from は 見ない（0 に しておく）。
-	 */
-	after?: DungeonId;
 	spot: readonly [number, number];
 	dir: Dir;
 	/** 家の まわり 2マスを うろうろ する。 */
@@ -1963,11 +1951,6 @@ export const MOBS: Record<MobId, MobDef> = {
 			m("……ぷゆゆ🥺"),
 		],
 		milestones: {
-			// 裏ルート：侵略しに 来た 新入りが、侵略された 側の 人に はじめて 会う（STORY.md §5.98）
-			opunu: [
-				m("西に　いる　(´・ω・｀)、\n侵略された　側の　人　なんだって"),
-				e({ emote: "?" }, m("……ぜんぜん　怒ってない。\n侵略、むずかしいにゃ")),
-			],
 			main: [m("長湯スレ、侵略　しそこねたぷ。\n……のぼせたぷ")],
 			// 開票の あと（STORY.md §5）
 			deep: [
@@ -2857,12 +2840,6 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("……1票　差で、キリコさんの\n当選の　模様です"),
 				m("これで　発表を　終わりたいと\n思います"),
 			],
-			// 跡地の 参拝の あと：20人目の 手がかりは 避難Jに（第三ルートへの 橋。開くのは 本筋の 山場の あとでも）
-			ato: [
-				m("全滅した　20人を\n数えなおしました"),
-				m("ひとりだけ、避難Jに　書きこみが\nあります。……2012年の"),
-				m("これで　発表を　終わりたいと\n思います。……研究は、つづけます"),
-			],
 			runs10: [
 				m("キリコさんの　もぐった　回数を\n数えていました"),
 				e(
@@ -3015,15 +2992,12 @@ export const MOBS: Record<MobId, MobDef> = {
 	},
 	// 原住民 (´・ω・｀)（おんJwiki「原住民」）。やきう民が なんJに 来る 前から いた 非野球民で、やきう民の ボケに
 	// ツッコむ 役。おんJでは 開設日（2012/6/7）に 20人 いて、1か月で だれも いなくなった。この 子は その ひとりで、
-	// 2020年に おーぷぬで「のんびり板」を 立てて、飽きて 出た（創作。STORY.md §5.98）。板主の あいさつスレを 持ち帰って
-	// 貼ると、上がった スレに 気づいて 村へ 帰ってきて、西の 空き地に 住みつく（after。町の 段では 来ない）。
-	// 役は「前から いた 人」（去った・残った・新しく 来た、の どれでも ない）。絵は rpgen の「原住民（きうりアーマー）」（sa:nabqyI）。
-	// マイナーズでは ないので 総選挙には 出ない。声なし
+	// はじめから 西の 空き地に いる。総選挙では 2012年の 最初の 選挙を 見ていた 証人（STORY.md §5）。
+	// 絵は rpgen の「原住民（きうりアーマー）」（sa:nabqyI）。マイナーズでは ないので 人気投票には 出ない。声なし
 	shobon: {
 		name: "原住民",
 		sprite: "sa:nabqyI",
 		from: 0,
-		after: "opunu",
 		// 西の 空き地の 東の はし（西の 口への 道の そば）。のんびり すわっているので うろうろ しない。
 		// (7,21) は 空き地 → 西口の 乗り場・図書館・碁会所の 近道を ふさぐ（段3〜 で +34 歩）ので 1つ 東
 		spot: [8, 21],
@@ -3032,23 +3006,11 @@ export const MOBS: Record<MobId, MobDef> = {
 		noVote: true,
 		meet: [
 			n("キリコは　ちいさく　おじぎした。"),
-			m("ああ、板主の　スレ　上げてくれた　子か。\n……どうも。原住民です"),
+			m("ああ、新しい　候補の　子か。\n……どうも。原住民です"),
 			c("nanj", "ショボン、って　呼んだら　ええで"),
 			e({ emote: "…" }, m("……それ、なんJの　呼び方だから")),
 		],
 		milestones: {
-			// 灯台（自分の 板）の あと：頼み。ROM専の 声を 蓄音機に 入れたまま 持ち帰ると、跡地が 開く（STORY.md §5.98 の 転）
-			opunu: [
-				m("ROM専の　声、蓄音機に　録って\nそのまま　持って　帰ってきてね"),
-				m("あいつら、近づくと　逃げるからね。\n……遠くから　ねらうと　いいよ"),
-				m("ほかの　敵を　たおすと、声が\nそっちに　なるから　気を　つけて"),
-			],
-			// 跡地の 参拝の あと：18人。おれで 19。あと ひとり
-			ato: [
-				m("18人。おれで　19。\n……20人　いたんだけどね"),
-				m("あと　ひとりは、どこ　行ったんだろ。\n……ヒナリーが　調べてる"),
-				m("まあ、のんびり　待つよ。\n消えないしね、おれたち"),
-			],
 			// 開票の あと（STORY.md §5）
 			deep: [
 				m("2012年の　選挙、見てたよ。\n……やっと　来年に　なったね"),
@@ -3063,15 +3025,6 @@ export const MOBS: Record<MobId, MobDef> = {
 			],
 		},
 		chats: [
-			// ── 前の冒険に こたえる ──
-			{
-				key: "kagi",
-				when: (x) => x.seen.includes("hijacker"),
-				lines: [
-					m("乗っ取り屋、いた？\nパスワード、1234に　してたから"),
-					e({ emote: "汗" }, m("……おれが　悪いね。\nのんびり　しすぎた")),
-				],
-			},
 			// ── 暦 ──
 			// 先住民 ( 'ｊ' )「あ！今日土曜日ど！」（おんJwiki「先住民」。原住民より 前から いた 住民）
 			{
@@ -3084,17 +3037,6 @@ export const MOBS: Record<MobId, MobDef> = {
 				],
 			},
 			// ── いつでも（知りあって いく 順） ──
-			{
-				key: "ita",
-				lines: [
-					m("おれの　板、まだ　あるんだよね。\n消せないから"),
-					e(
-						{ emote: "?" },
-						m("名前は　変えられたけど。\n……のんびり諸島って　なに"),
-					),
-					k("……のんびりンゴ"),
-				],
-			},
 			{
 				key: "nonbiri",
 				lines: [
@@ -3121,15 +3063,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				],
 			},
 			{
-				// 小島の 名前が 元に もどった（取り返すたびに）
-				key: "shima",
-				lines: [
-					m("小島の　名前、もどってるね。\n……おんJ民の　板、なつかしい　名前"),
-					m("立てて、3日で　飽きて。\n……でも、消えないんだよね"),
-				],
-			},
-			{
-				// ROM専は 見ているだけ（跡地の 前に 聞ける。結で 反転する）
+				// ROM専は 見ているだけ
 				key: "rom",
 				lines: [
 					m("ROM専って、書きこまないでしょ。\n見てる　だけで"),
@@ -3143,7 +3077,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 		season: {
 			newyear: "あけおめ。(´・ω・｀)\n……のんびり　いこうよ",
-			april: "板の　名前、もどってた。\n……うそ",
+			april: "今年の　選挙、中止だって。\n……うそ",
 			halloween: "仮装？　この　顔が　もう\n仮装みたいな　ものだよ",
 			xmas: "メリクリ。\nおれは　のんびり　してる",
 		},
@@ -3162,14 +3096,13 @@ export const MOBS: Record<MobId, MobDef> = {
 export const MOB_IDS = Object.keys(MOBS) as MobId[];
 
 /**
- * 村に 越してきている 住人（町の 小段 step までに 来た 子と、after の 板を 持ち帰って 来た 子。
- * data/village/map.ts・ui/village/cafe.ts・ui/village/guests.ts が 同じ 決まりで 数える）。
+ * 村に 越してきている 住人（町の 小段 step までに 来た 子。data/village/map.ts・ui/village/cafe.ts・
+ * ui/village/guests.ts が 同じ 決まりで 数える）。cleared は 呼ぶ 側と 形を そろえる ため（いまは 見ない）。
  */
-export const movedIn = (step: number, cleared: readonly DungeonId[]): MobId[] =>
-	MOB_IDS.filter((id) => {
-		const d = MOBS[id];
-		return d.after ? cleared.includes(d.after) : step >= d.from;
-	});
+export const movedIn = (
+	step: number,
+	_cleared: readonly DungeonId[],
+): MobId[] => MOB_IDS.filter((id) => step >= MOBS[id].from);
 
 /**
  * ぷゆゆが お弁当の ぷゆゆパンを 持たせる ときの ひとこと（ui/village/villageReturn.ts の lunchScript。帰りごとに 1つ）。

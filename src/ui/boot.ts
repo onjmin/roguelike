@@ -181,49 +181,7 @@ const LOG_LINES = [
 const WIN_LOG = ["キリコ　当選　おめ", "来年は　勝つで"] as const;
 const WEEK = "日月火水木金土";
 
-/**
- * 時報之（さとるの kusa の 時報 bot。STORY.md §5.98）：年を 知らない 正直な 時計。いまの 時だけを ひろゆき構文で 言う。
- * 転（時計が もどる）を 見てから 沈む ログに まじる。
- */
-const JIHOU_LOG = [
-	(h: number) => `時報之：嘘を嘘と　見抜けない　${h}時です。`,
-	(h: number) => `時報之：なんか　${h}時とか　あるんですか？`,
-	(h: number) => `時報之：それって　${h}時ですよね`,
-] as const;
-
-/**
- * 裏の 段（STORY.md §5.98 の 起の 伏線）：0 裏を 知らない・1 小島1 を 見つけた・2 転を 見た（旗 wrap）・
- * 3 1901年の スレの 結を 見た。段が 上がるほど 沈む ログの 日付が 化ける。
- */
-const uraLevel = (): number => {
-	const p = loadProgress();
-	if (p.endings?.includes("y1901")) return 3;
-	if (p.flags?.includes("wrap")) return 2;
-	return p.intro.includes("isle1") || p.cleared.includes("isle1") ? 1 : 0;
-};
-
-/** 裏の 段で まじる 行（日付は どれも 本物の 曜日。時計の 0・2038年の 上限・1901年への もどり）。無ければ null。 */
-const uraLog = (r: () => number, ura: number): string | null => {
-	if (!ura) return null;
-	const x = r();
-	const n = 1 + Math.floor(r() * 999);
-	const id = Math.floor(r() * 36 ** 6)
-		.toString(36)
-		.padStart(6, "0");
-	if (x < 0.03) return `${n} ：名無しさん：1970/1/1(木) 09:00 ID:${id}`;
-	if (ura >= 2 && x < 0.07)
-		return JIHOU_LOG[Math.floor(r() * JIHOU_LOG.length)](new Date().getHours());
-	if (ura >= 2 && x < 0.1)
-		return `${n} ：名無しさん：1901/12/14(土) 05:45 ID:${id}`;
-	// 鉄塔の 999の「保守」（どれも 同じ 1秒）
-	if (ura >= 3 && x < 0.14)
-		return `${n} ：名無しさん：2038/1/19(火) 12:14:07　保守`;
-	return null;
-};
-
-const logLine = (r: () => number, ura: number, won: boolean): string => {
-	const odd = uraLog(r, ura);
-	if (odd) return odd;
+const logLine = (r: () => number, won: boolean): string => {
 	const pool: readonly string[] = won ? [...LOG_LINES, ...WIN_LOG] : LOG_LINES;
 	const pick = pool[Math.floor(r() * pool.length)];
 	if (r() < 0.45) return pick;
@@ -246,14 +204,13 @@ const sinkLogs = (cv: HTMLCanvasElement, root: HTMLElement): void => {
 	const g = cv.getContext("2d");
 	if (!g) return;
 	const r = Math.random;
-	const ura = uraLevel();
 	const won = loadProgress().cleared.includes("deep");
 	type Drop = { text: string; x: number; y: number; v: number; size: number };
 	let w = 0;
 	let h = 0;
 	const drops: Drop[] = [];
 	const spawn = (y: number): Drop => ({
-		text: logLine(r, ura, won),
+		text: logLine(r, won),
 		x: r() * w * 0.9 - w * 0.1,
 		y,
 		v: 6 + r() * 10,

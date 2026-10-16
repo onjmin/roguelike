@@ -334,7 +334,7 @@ export const odoruScript =
 		s.face(id, dir);
 	};
 
-/** 原住民が 越してきて いるか（data/people/mobs.ts の after: "opunu"）。 */
+/** 原住民が 村に いるか（はじめから いる。段の 下見でも 同じ）。 */
 const ownerHere = (v: VillageView): boolean =>
 	movedIn(stepOf(v), v.cleared).includes("shobon");
 

@@ -105,9 +105,7 @@ test("ロゼ: 壁に 入れる（キリコは 入れない）、いちばん 外
 	ok(kiri.p.x === w.from.x && kiri.p.y === w.from.y, "kiriko bumps");
 	ok(!kiri.playerInWall(), "kiriko never in a wall");
 
-	const r = quiet(
-		Run.create("hero-a", "shallow", [], "fetch", true, false, "roze"),
-	);
+	const r = quiet(Run.create("hero-a", "shallow", [], "fetch", true, "roze"));
 	ok(r.s.hero === "roze" && r.heroName === "ロゼ", "hero");
 	const v = wallBeside(r);
 	place(r, v.from);
@@ -135,9 +133,7 @@ test("ロゼ: 壁に 入れる（キリコは 入れない）、いちばん 外
 });
 
 test("ロゼ: 壁の 中では 1ターンごとに おなかが 5% 減る（床では ふつう）、帰り道でも 減る", () => {
-	const r = quiet(
-		Run.create("hero-b", "shallow", [], "fetch", true, false, "roze"),
-	);
+	const r = quiet(Run.create("hero-b", "shallow", [], "fetch", true, "roze"));
 	r.s.phase = true;
 	const v = wallBeside(r);
 	place(r, v.to);
@@ -162,9 +158,7 @@ test("ロゼ: 壁の 中では 1ターンごとに おなかが 5% 減る（床�
 });
 
 test("ロゼ: 壁の 中の ロゼを 敵は なぐれない（床に 出ると なぐられる）", () => {
-	const r = quiet(
-		Run.create("hero-c", "shallow", [], "fetch", true, false, "roze"),
-	);
+	const r = quiet(Run.create("hero-c", "shallow", [], "fetch", true, "roze"));
 	r.s.phase = true;
 	const v = wallBeside(r);
 	place(r, v.to);
@@ -180,9 +174,7 @@ test("ロゼ: 壁の 中の ロゼを 敵は なぐれない（床に 出ると 
 	}
 	ok(r.p.hp === hp && !r.s.end, `safe in a wall (${hp} → ${r.p.hp})`);
 	// 床に 出て となりに 敵 → いずれ なぐられる
-	const k = quiet(
-		Run.create("hero-c", "shallow", [], "fetch", true, false, "roze"),
-	);
+	const k = quiet(Run.create("hero-c", "shallow", [], "fetch", true, "roze"));
 	const w = wallBeside(k);
 	place(k, w.from);
 	const m2 = spawnMonster(
@@ -229,9 +221,7 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 			b.hp <= START_HP - 4 && b.str <= START_STR - 2,
 			`${b.model} is clearly weaker`,
 		);
-	const r = quiet(
-		Run.create("hero-z", "shallow", [], "fetch", true, false, "zero"),
-	);
+	const r = quiet(Run.create("hero-z", "shallow", [], "fetch", true, "zero"));
 	ok(
 		r.p.maxHp === ZERO_BODIES[0]?.hp && r.p.str === ZERO_BODIES[0]?.str,
 		"start",
@@ -246,8 +236,7 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 	ok(!r.hurtPlayer(999, "test"), "not dead");
 	ok(!r.s.end && r.s.body === 1 && r.heroName === "プロト", "proto");
 	ok(
-		r.p.hp === r.p.maxHp &&
-			r.p.maxHp === (ZERO_BODIES[1]?.hp ?? 0) + grown,
+		r.p.hp === r.p.maxHp && r.p.maxHp === (ZERO_BODIES[1]?.hp ?? 0) + grown,
 		`hp: all of the growth (${grown}) → ${r.p.maxHp}`,
 	);
 	ok(r.p.str === r.p.maxStr && r.p.status.confuse === 0, "reset");
@@ -277,9 +266,7 @@ test("ゼロ: オートは 階段を 見たら 降りる（階を 見つくす�
 	for (const seed of ["auto-0", "auto-1", "auto-2", "auto-3"]) {
 		// 階段だけ 見えている（地図スレで 見た ような。道は まだ わからない）
 		const leaveTurns = (opts: BotOpts): number => {
-			const r = quiet(
-				Run.create(seed, "main", [], "fetch", true, false, "zero"),
-			);
+			const r = quiet(Run.create(seed, "main", [], "fetch", true, "zero"));
 			const f = r.f;
 			f.seen[f.stairs.y * f.layout.w + f.stairs.x] = 1;
 			let n = 0;
@@ -299,7 +286,7 @@ test("ゼロ: オートは 階段を 見たら 降りる（階を 見つくす�
 test("ゼロ: オートは 部屋で 2体に はさまれたら 入口（通路）へ 下がって 待つ（1体なら そのまま なぐる）", () => {
 	// 上の 壁に 入口の ある 部屋。入口の 前の 床に 立ち、左右に 敵
 	const setup = (seed: string) => {
-		const r = quiet(Run.create(seed, "main", [], "fetch", true, false, "zero"));
+		const r = quiet(Run.create(seed, "main", [], "fetch", true, "zero"));
 		const l = r.f.layout;
 		for (const room of l.rooms) {
 			if (room.h < 2) continue;
@@ -455,7 +442,7 @@ test("悩み: パン板の あと もう 少し 先から、帰る たびに 1/3
 		ok(questStage("roze") === "asked", "asked");
 		ok(takeWorryNews() === "roze" && takeWorryNews() === null, "news once");
 		// 1人ずつ：ロゼが 片づくまで ゼロは 悩まない（3つ 持ち帰っていても）
-		p.cleared = ["shallow", "kinoko", "isle1"];
+		p.cleared = ["shallow", "kinoko", "tropical"];
 		saveProgress({ ...loadProgress(), cleared: p.cleared });
 		ok(rollHeroWorries(always) === null, "one at a time");
 		ok(questStage("zero") === "none", "zero waits");
@@ -501,7 +488,7 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 		// ロゼが 片づいたので、3つ 持ち帰って いれば ゼロが 悩む。ただし サブ機の プロト・レンが 村に 来てから
 		saveProgress({
 			...loadProgress(),
-			cleared: ["shallow", "kinoko", "isle1"],
+			cleared: ["shallow", "kinoko", "tropical"],
 		});
 		saveTown({ ...loadTown(), stage: 2, points: 0 });
 		ok(
@@ -522,7 +509,7 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 test(`依頼: ゼロは どの 板でも ${ZERO_QUEST_DEPTH}階まで 行って 生きて 帰ると 申し出`, async () => {
 	await withStore(async () => {
 		const p = loadProgress();
-		p.cleared = ["shallow", "kinoko", "isle1"];
+		p.cleared = ["shallow", "kinoko", "tropical"];
 		saveProgress(p);
 		acceptQuest("zero");
 		noteHeroQuests(ended("main", "dead", 12));

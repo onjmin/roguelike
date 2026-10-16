@@ -110,8 +110,6 @@ export const ROOM_MSG = {
 		clock: ["柱時計。\n針は　ずっと　0時を　さしている。"],
 		// 壁の テレビ（朝の スレ小説。data/jikkyo/asadora.ts）
 		tv: ["壁の　テレビ。\n朝の　ドラマが　小さな　音で　流れる。"],
-		// 裏の 2段目の 結の あと（旗 kusa。ui/village/cafe.ts の cafeThing）
-		clockMoving: ["柱時計。\n0時で　止まっていた　針が、動いている。"],
 		picture: ["絵。\nにぎやかだった　ころの　おんJの　スレ。"],
 		piano: ["古い　ピアノ。\n鍵盤が　ひとつ　鳴らない。"],
 		barrel: ["樽。\n『kskエスプレッソ用　豆』と　ある。"],

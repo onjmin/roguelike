@@ -4238,7 +4238,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 			lines: {
 				window: ["窓。\nコンテナ船が　ゆっくり　入ってくる。"],
-				chart: ["入港予定の　表。\n「乗っ取り屋の　船：入港　禁止」"],
+				chart: ["入港予定の　表。\n「選挙カー　船：入港　禁止」"],
 				buoy: ["浮き輪。\n「おんJ港」と　書いてある。"],
 				cabinet: ["書類の　棚。\n積み荷の　台帳が　ぎっしり。"],
 				radio: ["無線機。\n「こちら　おんJ港。どうぞ」"],

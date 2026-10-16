@@ -54,9 +54,7 @@ export const ISLANDS: readonly Island[] = [
 			[190, 176, 12],
 		],
 	},
-	// おーぷぬ（だれでも 板を 立てられた。open.open2ch.net）。南西の 海に ちらばる 小島＝乗っ取り事件で
-	// 「〜〜諸島」に 名前を 変えられた 板たち。裏シナリオの 灯台は いちばん 大きい 島に、乗っ取られた 小島 2つは
-	// まわりの 小さな 島に（STORY.md §5.98）
+	// おーぷぬ（だれでも 板を 立てられた。open.open2ch.net）。南西の 海に ちらばる 小島
 	{
 		name: "open",
 		label: [52, 216],
@@ -67,8 +65,6 @@ export const ISLANDS: readonly Island[] = [
 			[30, 184, 5],
 		],
 	},
-	// 北東の 沖の 小島：過疎の 専門板の 列（避難J。第三ルート）
-	{ name: "", label: [0, 0], blobs: [[203, 17, 9]] },
 	// 南の 海の おーぷぬの 板（だれでも 立てられる。おんJ関連板：マーキュリー・おんMu・おんキム・闇の板）
 	{
 		name: "",
@@ -97,10 +93,7 @@ export type BuildingKind =
 	| "yagura"
 	| "well"
 	| "lighthouse"
-	| "islet"
-	| "tent"
-	| "studio"
-	| "boat";
+	| "studio";
 
 export type ColonySpot = {
 	/** 置かれている サーバー。 */
@@ -197,79 +190,6 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 		route: [
 			[106, 138],
 			[98, 144],
-		],
-	},
-	// 裏シナリオ：おーぷぬの 諸島の 灯台（小島を 2つ 取り返すと 開く。扉は パスワード）
-	opunu: {
-		server: "open",
-		place: "諸島の　灯台",
-		building: "lighthouse",
-		route: [
-			[104, 140],
-			[90, 158],
-			[74, 174],
-			[58, 184],
-		],
-	},
-	// 乗っ取られた 小島 2つ（裏シナリオの 承。パン板の あとに 1つ目が 開く）
-	isle1: {
-		server: "open",
-		place: "小島の　丘",
-		building: "islet",
-		route: [
-			[104, 140],
-			[90, 158],
-			[74, 174],
-			[58, 184],
-			[46, 196],
-			[38, 204],
-		],
-	},
-	isle3: {
-		server: "open",
-		place: "小島の　岩山",
-		building: "islet",
-		route: [
-			[104, 140],
-			[90, 158],
-			[74, 174],
-			[58, 184],
-			[42, 186],
-			[30, 184],
-		],
-	},
-	// 裏シナリオの 結：野球chの 跡地（本館の 奥の 札から 降りる。地図には 出ない。北＝本館の 向き）
-	ato: {
-		server: "hayabusa",
-		place: "本館の　奥の　床下",
-		building: "well",
-		route: [
-			[110, 118],
-			[110, 110],
-		],
-	},
-	// 裏の 2段目：1901年の スレ（本館の 古い 札の さらに 下。全体マップには 出ない）
-	y1901: {
-		server: "hayabusa",
-		place: "本館の　床下の　さらに　下",
-		building: "well",
-		route: [
-			[110, 118],
-			[110, 110],
-		],
-	},
-	// 第三ルート：避難J（北東の 沖の 過疎板の 列）
-	hinan: {
-		server: "",
-		place: "避難所の　テント",
-		building: "tent",
-		route: [
-			[126, 108],
-			[148, 88],
-			[170, 66],
-			[190, 46],
-			[198, 30],
-			[203, 18],
 		],
 	},
 	// おーぷぬの おんJ関連板（南の 海の 島）

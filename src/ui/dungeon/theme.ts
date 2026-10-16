@@ -4,15 +4,13 @@
 // その上に「上の面」、それ以外の壁は闇の色で塗る。
 // 階は 層（ZONES）に分かれていて、層ごとに 見た目・曲・ただよう粒 が変わる。
 
-import { dungeonById, ISLES } from "../../core/data/dungeons";
+import { dungeonById } from "../../core/data/dungeons";
 import type { DungeonId, TrapKind } from "../../core/types";
 import {
 	BOARD_LOOKS,
 	DUNGEON_NAMES,
-	opunuZones,
 	type ThemeName,
 } from "../../data/story/story";
-import { loadProgress } from "../../engine/save";
 
 const BASE = "pub:assets/rpg-reze/Base.png";
 /** 野外の シート（WOLF の 地形。砂浜の 砂だけ ここから）。 */
@@ -237,13 +235,7 @@ const lookOf = (dungeon: DungeonId): Zone => {
  */
 export const zoneFor = (dungeon: DungeonId, depth = 1): Zone => {
 	const id = dungeonById(dungeon).id;
-	// 灯台（裏シナリオ）：取り返した 小島の 数だけ、乗っ取られた 層が 元の 浜に もどる（data/story/story.ts の opunuZones）
-	const zones =
-		id === "opunu"
-			? opunuZones(
-					ISLES.filter((d) => loadProgress().cleared.includes(d)).length,
-				)
-			: BOARD_LOOKS[id].zones;
+	const zones = BOARD_LOOKS[id].zones;
 	if (!zones?.length) return lookOf(dungeon);
 	const z = zones.find((x) => depth <= x.last) ?? zones[zones.length - 1];
 	const i = zones.indexOf(z);

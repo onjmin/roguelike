@@ -95,14 +95,12 @@ export type Dungeon = {
 	firstWeapon?: boolean;
 	/** このダンジョンを持ち帰ると開く（null ははじめから開いている。unlockFlag だけ あれば その 旗で 開く）。 */
 	unlockAfter: DungeonId | null;
-	/** これらを ぜんぶ 持ち帰ると 開く（unlockAfter と 両方 あれば どちらでも）。裏シナリオの 灯台・跡地・避難J。 */
-	unlockAfterAll?: readonly DungeonId[];
 	/**
-	 * 開くには この 旗（Progress.flags）も 要る（跡地：ROM専の 声を 録ったまま 持ち帰った）。
-	 * unlockAfter も unlockAfterAll も なければ 旗 だけで 開く（町の 寄り道で 見つける 板：data/town/finds.ts）。
+	 * 開くには この 旗（Progress.flags）も 要る（ボカロ作り避難所：ロゼの 依頼）。
+	 * unlockAfter が なければ 旗 だけで 開く（町の 寄り道で 見つける 板：data/town/finds.ts）。
 	 */
 	unlockFlag?: string;
-	/** 開くまで 全体マップにも 一覧にも 出さない（？？？ の 影も 出さない。裏シナリオの 小島・灯台・避難J）。 */
+	/** 開くまで 全体マップにも 一覧にも 出さない（？？？ の 影も 出さない。ボカロ作り避難所）。 */
 	hidden?: true;
 	/** unlockAfter のダンジョンで これだけ倒れたら、持ち帰らなくても開く。 */
 	reliefAfter: number | null;
@@ -368,20 +366,10 @@ const HIDDEN_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
 );
 
 /**
- * おーぷぬの 諸島（裏シナリオ。灯台 20階）の 道具の出かた：風呂板の 表から 帰還スレ（風呂板だけの 決まり）を 抜き、
- * 忍法帖の実を 足す（板を 立てるには 忍法帖の レベルが 要る。ほかの 板では メタルぷゆゆの 落とし物だけ。
- * はじめから 正体が わかる）。2026-10-06 ボット 100回（24階の ころ）：倒れた 階の 山は 風呂板と 同じ B11〜13。
- */
-const OPUNU_ITEMS: readonly ItemWeight[] = [
-	...MAIN_ITEMS.filter((e) => e.kind !== "h_growth" && e.kind !== "s_escape"),
-	{ kind: "h_growth", weight: 3 },
-];
-
-/**
- * 乗っ取られた 小島（裏シナリオの 承。ひまわり板 6階）の 道具の出かた：きのこ板と 同じ ころに 開くので、
+ * ボカロ作り避難所（6階）の 道具の出かた：きのこ板と 同じ ころに 開くので、
  * パン板の 表を 下地に 草と 杖を すこし 足す（草と 杖が 未識別）。
  */
-const ISLE1_ITEMS: readonly ItemWeight[] = [
+const VOCALO_ITEMS: readonly ItemWeight[] = [
 	...SHALLOW_ITEMS,
 	{ kind: "steel", weight: 1 },
 	{ kind: "r_might", weight: 1 },
@@ -391,11 +379,6 @@ const ISLE1_ITEMS: readonly ItemWeight[] = [
 	{ kind: "h_daze", weight: 2 },
 	{ kind: "w_slow", weight: 1 },
 ];
-
-/** 小島の 2つ目と 避難J：風呂板の 表から 帰還スレを 抜いた もの。 */
-const ISLE_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.filter(
-	(e) => e.kind !== "s_escape",
-);
 
 /** 隠しの 99階：本編の 30階ぶんまで 少しずつ 強くなり、61階から 先は ずっと 30階ぶん。 */
 const HIDDEN_LEVEL: readonly number[] = Array.from({ length: 100 }, (_, i) =>
@@ -636,64 +619,6 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		escapeWithGoal: true,
 		secret: true,
 	},
-	// 裏ルート：おーぷぬの 灯台（だれでも 板を 立てられ、立てたら 消せない。STORY.md §5.98）。小島を 2つ 取り返すと 開く。
-	// 乗っ取られて 名前と 色を 変えられた 板なので、層ごとに 景色と 曲が 変わる（data/story/story.ts の BOARD_LOOKS の zones）。
-	// 灯台を 上る 20階。裏は クリアまで 本筋の 対より むずかしく（底の 強さ・持ちこみ 不可）
-	opunu: {
-		id: "opunu",
-		objective: "fetch",
-		hidden: true,
-		noCarry: true,
-		// のんびりした 板：ROM専と ぷゆゆが 多め。乗っ取り屋は 板だけの 敵（data/monsters.ts の board）
-		foes: { funamushi: 2, tousuko: 1.5, tensai: 0 },
-		floors: 20,
-		items: OPUNU_ITEMS,
-		perFloor: [5, 7],
-		// 裏は 本筋（風呂板 27）より むずかしく
-		level: ramp(20, 28, 2),
-		unidentified: ALL_UNIDENTIFIED,
-		curses: true,
-		start: ["f_large"],
-		goal: "aisatsu",
-		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
-		trapsFrom: 3,
-		// 小島を 2つ 取り返すと 開く（扉の パスワードは 村の 口で：ui/village/villageEvents.ts）
-		unlockAfter: null,
-		unlockAfterAll: ["isle1", "isle3"],
-		reliefAfter: null,
-		// 灯台を 上る
-		up: true,
-	},
-	// ── 裏シナリオの 承：乗っ取られた 小島 2つ（STORY.md §5.98）。おんJ民が おーぷぬで 立てて 飽きて 捨て、
-	// 本物の 乗っ取り屋に 名前を「〇〇諸島」に 変えられた 板。底の 品は 乗っ取り屋の 置き手紙（灯台の パスワードの 手がかり）。
-	// 階は 1.5倍ずつ：6 → 13 → 灯台 20 → 跡地 30
-	isle1: {
-		id: "isle1",
-		objective: "fetch",
-		// 入口：釣り場の 竿に ひっかかった ビンの 手紙で 見つける（data/town/finds.ts）。それまでは 地図に 出ない
-		hidden: true,
-		// 裏は 本筋より むずかしい：小舟で わたる（倉庫の 道具は 持ちこめない）・底が 高い・のろいも 祭りも ある
-		noCarry: true,
-		// 夏に 立てた 板：夏休みキッズ 多め。乗っ取り屋は 1階から
-		foes: { bat: 2, pitcher: 0 },
-		floors: 6,
-		items: ISLE1_ITEMS,
-		perFloor: [4, 7],
-		// 底 7・祭り 4階から では ボットの 最下層まで が きのこ板と ほぼ 同じ（65% と 71%）だった（2026-10-07）
-		level: ramp(6, 7, 2),
-		unidentified: ["herb", "staff"],
-		curses: true,
-		start: ["f_large"],
-		goal: "memo1",
-		houses: { from: 3, chance: 1 / 5, early: null },
-		trapsFrom: 3,
-		// 町に 屋台が 出たら（裏の 分岐は 序盤）
-		unlockAfter: null,
-		unlockFlag: "town_isle1",
-		reliefAfter: null,
-		// 島の 丘を 上る
-		up: true,
-	},
 	// ボカロ作り避難所：束音ロゼの 依頼（engine/heroes.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
 	// 逃げこんだ 避難所。底に ロゼの 忘れ物（原音設定）が 残って いる。依頼を 引き受けると 開く（知らせは
 	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：文字化けが 多い
@@ -703,7 +628,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		hidden: true,
 		foes: { mojibake: 2 },
 		floors: 6,
-		items: ISLE1_ITEMS,
+		items: VOCALO_ITEMS,
 		perFloor: [4, 6],
 		level: ramp(6, 7, 2),
 		unidentified: ["herb", "staff"],
@@ -715,106 +640,6 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockAfter: "shallow",
 		unlockFlag: "q_roze",
 		reliefAfter: null,
-	},
-	isle3: {
-		id: "isle3",
-		objective: "fetch",
-		hidden: true,
-		noCarry: true,
-		// 鯖代が 切れかけた 板：道具が 少ない。乗っ取り屋が 多い
-		foes: { hijacker: 2 },
-		floors: 13,
-		items: ISLE_ITEMS,
-		// 道具は 少なめ（鯖代切れ）だが、[3, 5] だと ボットの 2割が 飢え死にした（2026-10-07）
-		perFloor: [4, 5],
-		// 底 19（おんたこと 同じ）では ボットが おんたこ（B4〜6 で 倒れる）より 深く B9〜10 まで 行けた。
-		// おんたこの 😡 の かわりに 底を 上げ、祭りを ふやし、自然回復を おそく（鯖が 重い）
-		level: ramp(13, 18, 2),
-		regenStep: 200,
-		unidentified: ALL_UNIDENTIFIED,
-		curses: true,
-		start: ["f_large"],
-		goal: "memo3",
-		houses: { from: 3, chance: 1 / 8, early: [4, 6] },
-		trapsFrom: 3,
-		unlockAfter: "isle1",
-		reliefAfter: null,
-		// 岩山を 上る
-		up: true,
-	},
-	// ── 裏シナリオの 結：野球chの 跡地（おんJが できた 日の 板。原住民 20人の スレが 沈んでいる）。
-	// 入口は 本館の 奥の 古い スレの 札だけ（全体マップには 出ない）。開くのは 灯台を 持ち帰り、
-	// ROM専の 声を 蓄音機に 入れたまま 持ち帰った あと（Progress.flags の romVoice）。ROM専だらけの 過疎
-	ato: {
-		id: "ato",
-		noCarry: true,
-		objective: "fetch",
-		foes: { funamushi: 4, hitodama: 1.5, pitcher: 0, bat: 0 },
-		floors: 30,
-		items: DEEP_ITEMS,
-		perFloor: [5, 8],
-		// 裏は 本筋（電池板 30）より むずかしく
-		level: ramp(30, 33, 1.3),
-		unidentified: ALL_UNIDENTIFIED,
-		curses: true,
-		start: ["f_large"],
-		goal: "ichi",
-		houses: { from: 6, chance: 1 / 12, early: [7, 9] },
-		trapsFrom: 3,
-		unlockAfter: null,
-		unlockAfterAll: ["opunu"],
-		unlockFlag: "romVoice",
-		reliefAfter: null,
-		sparse: 0.7,
-		secret: true,
-	},
-	// ── 第三ルート：避難J（おんJが 落ちた ときの 避難先。1 の 裏の 板）。本筋の 山場と 裏の 結の あとに 開く。
-	// 板だけの 敵は 1000ゲッター（連投で スレを 伸ばして 1000 へ 押し出す）
-	hinan: {
-		id: "hinan",
-		objective: "fetch",
-		hidden: true,
-		noCarry: true,
-		foes: { funamushi: 1.5, ksk: 2 },
-		floors: 25,
-		items: ISLE_ITEMS,
-		perFloor: [5, 7],
-		// 電池板（30）より 上に（底 30 では ボットが 電池板と 同じ B12〜14 まで 行けた）
-		level: ramp(25, 35, 1.6),
-		unidentified: ALL_UNIDENTIFIED,
-		curses: true,
-		start: ["f_large"],
-		goal: "nijuu",
-		houses: { from: 5, chance: 1 / 12, early: [6, 8] },
-		trapsFrom: 3,
-		unlockAfter: null,
-		unlockAfterAll: ["deep", "ato"],
-		reliefAfter: null,
-	},
-	// ── 裏の 2段目：1901年の スレ（STORY.md §5.98）。時計が 2038年から 1901年に もどった 日に 立ち、日付の 順で
-	// いちばん 古い スレより 下に 沈んだ。入口は 本館の 古い 札の さらに 下だけ（全体マップには 出ない）。
-	// 開くのは 転（避難J を 持ち帰った 次の 帰り）が 旗 wrap を 立てた とき（ui/village/villageReturn.ts の wrapScript）。
-	// 裏の さいごの 板なので 避難J より むずかしく。敵は 結で やきうが 「鳴らしとった」と 言う 夏休みキッズと ピッチャー
-	y1901: {
-		id: "y1901",
-		objective: "fetch",
-		noCarry: true,
-		foes: { bat: 2, pitcher: 2, copipe: 1.5 },
-		floors: 30,
-		items: DEEP_ITEMS,
-		perFloor: [5, 8],
-		level: ramp(30, 38, 1.1),
-		unidentified: ALL_UNIDENTIFIED,
-		curses: true,
-		start: ["f_large"],
-		goal: "zokures",
-		houses: { from: 6, chance: 1 / 12, early: [7, 9] },
-		trapsFrom: 3,
-		unlockAfter: null,
-		unlockAfterAll: ["hinan"],
-		unlockFlag: "wrap",
-		reliefAfter: null,
-		secret: true,
 	},
 	// ── おーぷぬ（だれでも 板を 立てられる open.open2ch.net）の おんJ関連板。おんJwiki（3代目）の
 	// 「おーぷぬの おんJ関連板一覧」（pages/519）と 板の トップから。どれも 持ち帰りの 寄り道で、
@@ -941,12 +766,6 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"konamono",
 	"festival",
 	"hidden",
-	"opunu",
-	"isle1",
-	"isle3",
-	"ato",
-	"hinan",
-	"y1901",
 	"vocalo",
 	"mercury",
 	"onmu",
@@ -954,12 +773,9 @@ export const DUNGEON_IDS: readonly DungeonId[] = [
 	"inferno",
 ];
 
-/** 裏シナリオの 承の 小島（乗っ取られた 板。開く 順）。 */
-export const ISLES: readonly DungeonId[] = ["isle1", "isle3"];
-
 /**
  * その 板が 開く 条件を 満たしたか（持ち帰った 板と 旗から。開いているかは 見ない）。
- * unlockAfter か unlockAfterAll の どちらかを 満たし、unlockFlag が あれば その 旗も（どちらも なければ 旗 だけ）。
+ * unlockAfter を 満たし、unlockFlag が あれば その 旗も（unlockAfter が なければ 旗 だけ）。
  */
 export const openable = (
 	d: DungeonId,
@@ -968,10 +784,8 @@ export const openable = (
 ): boolean => {
 	const dg = DUNGEONS[d];
 	const by =
-		(dg.unlockAfter === null && !dg.unlockAfterAll && !!dg.unlockFlag) ||
-		(dg.unlockAfter !== null && cleared.includes(dg.unlockAfter)) ||
-		(!!dg.unlockAfterAll &&
-			dg.unlockAfterAll.every((x) => cleared.includes(x)));
+		(dg.unlockAfter === null && !!dg.unlockFlag) ||
+		(dg.unlockAfter !== null && cleared.includes(dg.unlockAfter));
 	return by && (!dg.unlockFlag || flags.includes(dg.unlockFlag));
 };
 

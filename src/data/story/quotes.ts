@@ -59,28 +59,12 @@ export type StoryPage = Cue & {
 	 * 原住民が 電池板の 山場に 口を はさむ 頁など。
 	 */
 	mob?: MobId;
-	/** この 板を 持ち帰って いる ときだけ 出る 頁（裏ルートの 住人が 来ている ときの 1枚。data/story/story.ts の endingFor）。 */
+	/** この 板を 持ち帰って いる ときだけ 出る 頁（寄り道「残機」を 終えた ときの 開票の 頁。data/story/story.ts の endingFor）。 */
 	needCleared?: DungeonId;
-	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色。裏シナリオの ROM専の 書きこみ）。 */
+	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色）。 */
 	nanashi?: string;
-	/** nanashi の 名前欄の 色（無ければ やきうの 黄色。時報之は 灰色）。 */
-	nameColor?: string;
-	/**
-	 * この 頁で 読んだ 切れはし（data/story/scraps.ts の id）。本筋の 語りで 去った 人の 最後の レスを 読んだら、
-	 * 掲示板でも 読んだ ことに する（同じ 1枚を すみに 貼りなおさない）。
-	 */
-	scrap?: string;
-	/**
-	 * 村の 場面の 合図（ui/village/villageReturn.ts）：roms＝ROM専 18体が 口から 歩いてくる、romsLeave＝口へ 帰る、
-	 * getter＝1000取り（別ゲー。ui/minigames/minigames.ts）、selfVoice＝蓄音機で キリコ 自身の 声を 鳴らす（裏の 2段目の 結）。
-	 * 地の文の 前に 起きる。
-	 */
-	cue?:
-		| "roms"
-		| "romsLeave"
-		| "getter"
-		| "selfVoice"
-		/** 開票の のこり 1票（鐘と 札）。 */
+	/** 村の 場面の 合図（ui/village/villageReturn.ts。地の文の 前に 起きる）。 */
+	cue?: /** 開票の のこり 1票（鐘と 札）。 */
 		| "res999"
 		/** キリコ 当選（ファンファーレと 札）。 */
 		| "res1000"

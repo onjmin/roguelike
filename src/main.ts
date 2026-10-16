@@ -156,9 +156,8 @@ const devRun = (): Run | null => {
 		[],
 		q.get("objective") === "boss" ? "boss" : "fetch",
 		true,
-		false,
 		isHeroId(q.get("hero")) ? (q.get("hero") as HeroId) : "kiriko",
-		// 同行者（&guest=zero・feris・shobon。core/guest.ts）
+		// 同行者（&guest=zero・feris など。core/guest.ts）
 		(q.get("guest") ?? "") in GUESTS
 			? { id: q.get("guest") as GuestId, goal: Number(q.get("goal") ?? 999) }
 			: null,
@@ -171,9 +170,6 @@ const devRun = (): Run | null => {
 	run.s.rng = run.rng.state();
 	return run;
 };
-
-/** 裏シナリオの 結（野球chの 跡地の 参拝）を 見た あとか（ROM専は 戦わない。STORY.md §5.98）。 */
-const romNow = (): boolean => !!loadProgress().endings?.includes("ato");
 
 /** 村を出て 冒険を 作る（村の 持ち物から 取り出すのは ここ）。 */
 const runFor = (
@@ -190,7 +186,6 @@ const runFor = (
 				replay.carry ?? [],
 				replay.objective ?? "fetch",
 				!replay.noLunch,
-				!!replay.rom,
 				replay.hero ?? "kiriko",
 				replay.guest ?? null,
 			),
@@ -208,7 +203,6 @@ const runFor = (
 				choice.carry,
 				choice.objective,
 				choice.lunch,
-				romNow(),
 				chosenHero(),
 				choice.guest ?? null,
 			);
@@ -228,7 +222,6 @@ const runFor = (
 			[...carry, ...relief],
 			choice.objective,
 			lunch,
-			romNow(),
 			chosenHero(),
 			choice.guest ?? null,
 		);

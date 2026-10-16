@@ -124,30 +124,6 @@ export const GUESTS: Record<GuestId, GuestDef> = {
 		down: "先に　帰るニィ……。日曜日、待ってる",
 		seen: "ここ、ずっと　日曜日ニィ！",
 	},
-	// 避難J：現地調査
-	hinary: {
-		name: "ヒナリー",
-		first: "現地調査を　開始したいと　思います",
-		talk: [
-			"最後の　レスは、1000日前です",
-			"リロードの　音を　記録しています",
-			"避難先の　人は、暮らしています",
-		],
-		down: "撤収したいと　思います",
-		seen: "……記録しました。ここが　避難J",
-	},
-	// 野球chの 跡地（裏）：もう一度 見て おきたい
-	shobon: {
-		name: "原住民",
-		first: "……のんびり　行こうよ",
-		talk: [
-			"ここ、2012年の　6月なんだよね",
-			"ROM専、いるね。……見てる　だけだよ",
-			"20人、ちゃんと　いたんだ",
-		],
-		down: "先に　帰るね。のんびり　待ってる",
-		seen: "……ここ。おれたち、いたんだ",
-	},
 };
 
 /**
@@ -186,18 +162,6 @@ export const GUEST_TALK: Record<GuestId, GuestTalk> = {
 			"島の　人、ひとりでも\n帰ってきたら　いいな〜",
 			"おかえりって　言う　係だけど、\n今日は　いっしょに　行く　係〜",
 			"ヤシの実、耳に　あてたら\n波の　音　するかな〜",
-		],
-	},
-	shobon: {
-		hurt: "……つらそうだね。\nのんびり、休んでいこうよ",
-		selfHurt: "……おれは　だいじょうぶ。\nたぶん",
-		hungry: "……腹、へってない？\nおれは　へらないけど",
-		home: "上で、みんな　待ってるよ。\n……のんびり　帰ろう",
-		chat: [
-			"2012年の　6月。\n……おれたち、ここに　いたんだ",
-			"仲間、どこ　行ったんだろうね。\n……ほんとに",
-			"ROM専って、見てるだけで\n……楽しいんだよ、たぶん",
-			"のんびり　いこうよ。\n……急いでも、スレは　沈まない",
 		],
 	},
 	roze: {
@@ -254,17 +218,6 @@ export const GUEST_TALK: Record<GuestId, GuestTalk> = {
 			"毎日　日曜日なら　いいのに\n……って、いつも　思うニィ",
 			"祭りって、だれも　いなくても\n続くんだニィ",
 			"キリコと　来られて、\n……今日は　日曜日ニィ",
-		],
-	},
-	hinary: {
-		hurt: "キリコさんの　HPが\n減っている　模様です",
-		selfHurt: "……損傷を　確認しました。\n研究は　つづけます",
-		hungry: "満腹度の　低下を\n観測しました",
-		home: "帰還したいと　思います。\n……発表は　村で",
-		chat: [
-			"避難した　人は、ふつうに\n暮らしている　模様です",
-			"1000ゲッターの　習性を\n研究しています",
-			"これで　発表を\n終わりたいと……　まだです",
 		],
 	},
 };
@@ -382,13 +335,9 @@ export const guestFloorLine = (r: Run): string | null => {
 	return `${def.name}「${toHero(r, line)}」`;
 };
 
-/** 同行者が なぐってよい 敵か（起きている・化けていない・置物でない・見ているだけの ROM専でない）。 */
-const fair = (r: Run, m: Monster): boolean =>
-	m.hp > 0 &&
-	!m.disguise &&
-	!m.status.dormant &&
-	m.status.sleep === 0 &&
-	!(r.s.rom && mdef(m).abilities.some((a) => a.k === "shy"));
+/** 同行者が なぐってよい 敵か（起きている・化けていない・置物でない）。 */
+const fair = (_r: Run, m: Monster): boolean =>
+	m.hp > 0 && !m.disguise && !m.status.dormant && m.status.sleep === 0;
 
 /** 同行者が 1歩 入れる マスか（地形・角・キャラ。敵にも キリコにも 重ならない）。 */
 const guestCanEnter = (r: Run, g: Guest, d: Dir8): boolean => {
@@ -520,7 +469,7 @@ export const guestAct = (r: Run): void => {
 };
 
 /** 同行者を なぐる 敵か（キリコの となりに いない・同行者の となり・なぐるだけの 敵）。 */
-const ITEM_HANDS = ["steal", "swap", "spam", "rust", "grab", "shy", "metal"];
+const ITEM_HANDS = ["steal", "swap", "rust", "grab", "shy", "metal"];
 export const guestTargetDir = (r: Run, m: Monster): Dir8 | null => {
 	const g = guestHere(r);
 	if (!g || dist(m, r.p) <= 1 || dist(m, g) !== 1) return null;

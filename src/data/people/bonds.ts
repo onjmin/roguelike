@@ -978,7 +978,7 @@ export const BOND_DEFS: Record<Cast, BondDef> = {
 		],
 		warm: [
 			"のんびり　してるよ。\n……キリコも　する？",
-			"キリコが　来ると、灯台の\n見張りも　さぼれる",
+			"キリコが　来ると、選挙の\n話を　しなくて　すむ",
 		],
 	},
 };
@@ -1288,9 +1288,9 @@ export const KEEPSAKES: Partial<Record<Cast, readonly [Keepsake, Keepsake]>> = {
 		},
 		{
 			id: "shobon_memo",
-			name: "灯台の　メモ",
-			say: "灯台の　新しい　パスワード。\n……キリコには　教えとく",
-			desc: "原住民の　メモ。\n1234 では　ない。",
+			name: "2012年の　投票用紙",
+			say: "最初の　選挙の　投票用紙。\n……おれ、白票だった",
+			desc: "原住民の　古い　投票用紙。\nなにも　書いていない。",
 		},
 	],
 };

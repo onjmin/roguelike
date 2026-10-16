@@ -394,7 +394,7 @@ const TIER_NAME = ["基本の　ことば", "板の　ことば", "深い　ネ�
 
 const dicPages = (env: NetEnv): Page[] => {
 	const words = GLOSSARY.filter(
-		(w) => !w.secret && !w.board && TIER_FROM[w.tier] <= env.stage,
+		(w) => !w.board && TIER_FROM[w.tier] <= env.stage,
 	);
 	const url = (id: string) => `${DIC}word/${id}.html`;
 	const index: Node[] = [

@@ -1,4 +1,4 @@
-// 1打席（裏シナリオの 跡地の 関所・村の グラウンド）と ホームラン競争（グラウンド）。ui/minigames/minigames.ts から 出す。
+// 1打席と ホームラン競争（村の グラウンド）。ui/minigames/minigames.ts から 出す。投げる 人は やきう（原住民の 投げ方も 残してある）。
 // 打席の うしろ（キャッチャーの うしろ 7m・高さ 3.5m）から 見た 球場で、投げられた 球を A／タップで 打つ。
 // - 球種：ストレート・剛速球（足を 長く 上げ、指先が 光る）・スローカーブ（ゆらゆら 足を 上げる）・
 //   フォーク（ストレートと 同じ 形で 来て、最後に 落ちる）。ボール球は 外・高め・ワンバン。
@@ -1673,15 +1673,6 @@ export const atBat = async (
 		playAtBat(G, opt.pitcher ?? PITCHER_NAME[who]),
 	);
 	return r ?? "quit";
-};
-
-/** 1打席（関所）。ホームラン・ヒット・フォアボールで true。三振・凡打・B で やめても false。 */
-export const playBatting = async (
-	ctx: UiCtx,
-	opt: BatOpt = {},
-): Promise<boolean> => {
-	const r = await atBat(ctx, opt);
-	return r === "hr" || r === "hit" || r === "walk";
 };
 
 const runDerby = async (

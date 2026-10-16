@@ -16,17 +16,11 @@ export type CafeMobTalk = {
 	key: string;
 	/** その人・その子が 店に いるときだけ。 */
 	with?: Cast;
-	/** 裏シナリオの この 旗（Progress.flags）が 立ったら もう 出さない（止まっていた 柱時計の 話：結の あとの kusa）。 */
-	until?: string;
-	/** この 旗が 立ってから 出す。 */
-	since?: string;
 	lines: MobLine[];
 };
 
 export type CafeMob = {
 	hello: string;
-	/** この 旗が 立ってからの hello（原住民：結の あとは 柱時計が 動いている）。 */
-	helloAfter?: { flag: string; text: string };
 	talks: CafeMobTalk[];
 	idle: string;
 	treat: string;
@@ -60,7 +54,6 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			{
 				// 柱時計は 0時で 止まっている
 				key: "tokei",
-				until: "kusa",
 				lines: [
 					m("0時で　止まった　柱時計も、\n一日　2回は　正しいゼロ"),
 					n("キリコは　時計を　見て、\nそれから　プロトを　見た。"),
@@ -275,7 +268,6 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			},
 			{
 				key: "tokei",
-				until: "kusa",
 				lines: [
 					m("あの　時計、0時で\n止まってるでしょ"),
 					m("レンも　更新中は、\nずっと　0時　表示なの！"),
@@ -460,7 +452,6 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		talks: [
 			{
 				key: "tokei",
-				until: "kusa",
 				lines: [
 					m("あの　時計、\nずっと　0時ニィ"),
 					e(
@@ -634,7 +625,6 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			},
 			{
 				key: "tokei",
-				until: "kusa",
 				lines: [
 					m("時計が　0時で\n止まってるおん"),
 					m("0は　まるいおん。\n……だから　止まったおん"),
@@ -738,7 +728,6 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			},
 			{
 				key: "clock",
-				until: "kusa",
 				lines: [
 					m("あの　柱時計、ずっと\n0時だもん"),
 					e({ emote: "怒" }, m("……うちの　朝が、\nこないもん！")),
@@ -1006,21 +995,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 			{
 				// 0時で 止まった 柱時計
 				key: "tokei",
-				until: "kusa",
 				lines: [
 					n("ヒナリーが　柱時計を\nじっと　見ている。"),
 					m("この　時計は、0時の\n模様です"),
 					m("……ずっと、0時の　模様です"),
-				],
-			},
-			{
-				// 動きだした 柱時計（裏の 2段目の 結の あと）
-				key: "tokei2",
-				since: "kusa",
-				lines: [
-					n("ヒナリーが　柱時計を\nじっと　見ている。"),
-					m("この　時計、動いている\n模様です"),
-					e({ emote: "汗" }, m("……研究を、やりなおします")),
 				],
 			},
 			{
@@ -1046,10 +1024,9 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 		treat: "{drink}……いただきます。\n研究に　役立てます",
 		sip: "……おいしい　模様です",
 	},
-	// 原住民 (´・ω・｀)（裏ルートで 越してくる。やきう民の ツッコミ役。のんびり）
+	// 原住民 (´・ω・｀)（はじめから 村に いる。やきう民の ツッコミ役。のんびり）
 	shobon: {
 		hello: "(´・ω・｀)　……ここ、\n0時で　止まってるんだね。時計",
-		helloAfter: { flag: "kusa", text: "(´・ω・｀)　……時計、\n動いてるね" },
 		talks: [
 			{
 				key: "nanj",

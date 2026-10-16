@@ -107,7 +107,7 @@ export const saveRun = (s: RunState): void => {
 		// 持ち帰った（目的の品・帰還スレ）なら、持ち物を 町へ（倉庫にあずける・売る は この次の画面で）。
 		// 町が まだ無ければ この冒険の前の進み具合から作るので、noteRunEnd より先に
 		if (s.end.kind !== "dead") addPendingReturn(s);
-		noteRunEnd(s.dungeon, s.end.kind, s.seed, s.voice);
+		noteRunEnd(s.dungeon, s.end.kind, s.seed);
 		// 同行の 依頼（見たかった 階まで 連れていけたら、次に 村へ 入ると お礼。engine/escort.ts）
 		noteEscortRun(s.guest);
 		return;
@@ -410,9 +410,8 @@ export type Progress = {
 	/** 持ち帰りの 語り（data/story/story.ts の STORY[d].ending）を 見おえた 板。一度きりの 語りは 二度 出さない。 */
 	endings?: DungeonId[];
 	/**
-	 * 裏シナリオの 旗（STORY.md §5.98）：romVoice＝ROM専の 声を 蓄音機に 入れたまま 持ち帰った（跡地が 開く）、
-	 * pass＝灯台の 扉の パスワードを 当てた、wrap＝転を 見おえた（時計が 1901年に もどった。1901年の スレが 開く）、
-	 * kusa＝結の あとの「草」の 知らせを 見おえた（喫茶の 柱時計が 動く）。
+	 * 旗：ten＝転（告示の 小さい 字）を 見おえた、q_roze など 仲間の 依頼、town_* ＝ 町の 寄り道で 見つけた 板、
+	 * toldWallet など 一度きりの 知らせ。
 	 */
 	flags?: string[];
 };
@@ -543,8 +542,6 @@ export const noteRunEnd = (
 	dungeon: DungeonId,
 	kind: "dead" | "clear" | "escape",
 	seed?: string,
-	/** 持ち帰った ときの 蓄音機の 中身（敵の 種類。ROM専なら 跡地が 開く：裏シナリオ）。 */
-	voice?: string | null,
 ): void => {
 	if (seed?.startsWith(DEBUG_SEED)) return;
 	let p = loadProgress();
@@ -555,9 +552,6 @@ export const noteRunEnd = (
 	};
 	if (kind === "clear") {
 		if (!p.cleared.includes(dungeon)) p.cleared.push(dungeon);
-		// ROM専の 声を 録ったまま 持ち帰った（どの 板でも よい。原住民の 頼み：STORY.md §5.98 の 転）
-		if (voice === "funamushi" && !(p.flags ?? []).includes("romVoice"))
-			p.flags = [...(p.flags ?? []), "romVoice"];
 		for (const d of DUNGEON_IDS)
 			if (openable(d, p.cleared, p.flags ?? [])) unlock(d, "clear");
 	} else if (kind === "dead") {
@@ -578,11 +572,11 @@ export const noteRunEnd = (
 	saveProgress(p);
 };
 
-/** 裏シナリオの 旗（Progress.flags）が 立っているか。 */
+/** 旗（Progress.flags）が 立っているか。 */
 export const hasFlag = (flag: string): boolean =>
 	(loadProgress().flags ?? []).includes(flag);
 
-/** 裏シナリオの 旗を 立てる（灯台の 扉の パスワードを 当てた、など）。 */
+/** 旗を 立てる（転を 見た、など）。 */
 export const addFlag = (flag: string): void => {
 	const p = loadProgress();
 	if ((p.flags ?? []).includes(flag)) return;
@@ -591,16 +585,8 @@ export const addFlag = (flag: string): void => {
 };
 
 /**
- * 転を 見おえた（ui/village/villageReturn.ts の wrapScript）：旗 wrap を 立て、開く 条件を 満たした 板（1901年の スレ）を 開く。
- * 知らせ（news）は 積まない：転の 場面が 自分で 言う（積むと newsScript が「新しい 植民地」を かさねて 出す）。
- */
-export const noteWrap = (): void => {
-	openByFlag("wrap");
-};
-
-/**
  * 旗を 立てて、開く 条件を 満たした 板を 開く（知らせは 積まない：旗を 立てた 場面が 自分で 言う）。開いた 板を 返す。
- * 転（wrap）と、町の 寄り道で 見つける 板（data/town/finds.ts）。
+ * 町の 寄り道で 見つける 板（data/town/finds.ts）。
  */
 export const openByFlag = (flag: string): DungeonId[] => {
 	const p = loadProgress();
@@ -1038,8 +1024,6 @@ export type SavedReplay = {
 	dungeon?: DungeonId;
 	/** 目的（ボスの ときだけ 書く。無ければ 持ち帰り。今の 板の 既定からは 決めない）。 */
 	objective?: Objective;
-	/** 裏シナリオの 結を 見た あとの 冒険（ROM専が 戦わない。同じに 始めるため）。 */
-	rom?: boolean;
 	/** 冒険に 出た 主人公（キリコなら 書かない。core/data/heroes.ts）。 */
 	hero?: "roze" | "zero";
 	/** 同行の 依頼で ついてきた 同行者と 見たかった 階（いなければ 書かない。core/guest.ts）。 */
@@ -1065,7 +1049,9 @@ const isReplay = (r: unknown): r is SavedReplay => {
 		typeof o.seed === "string" &&
 		typeof o.text === "string" &&
 		Array.isArray(o.builds) &&
-		(o.kind === "dead" || o.kind === "clear" || o.kind === "escape")
+		(o.kind === "dead" || o.kind === "clear" || o.kind === "escape") &&
+		// 消した 板（裏シナリオ）の リプレイは 本編に 化けるので 読まない
+		(o.dungeon === undefined || DUNGEON_IDS.includes(o.dungeon))
 	);
 };
 
@@ -1121,7 +1107,6 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	)
 		return null;
 	if (r.noLunch !== undefined && typeof r.noLunch !== "boolean") return null;
-	if (r.rom !== undefined && typeof r.rom !== "boolean") return null;
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
 	if (
@@ -1138,7 +1123,6 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		seed: r.seed,
 		...(r.carry?.length ? { carry: r.carry } : {}),
 		...(r.noLunch ? { noLunch: true } : {}),
-		...(r.rom ? { rom: true } : {}),
 		...(r.hero ? { hero: r.hero } : {}),
 		...(r.guest ? { guest: r.guest } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
@@ -1181,7 +1165,6 @@ const addReplay = (s: RunState): void => {
 		seed: s.seed,
 		carry: s.carriedIn,
 		...(s.noLunch ? { noLunch: true } : {}),
-		...(s.rom ? { rom: true } : {}),
 		...(s.hero ? { hero: s.hero } : {}),
 		...(s.guest ? { guest: { id: s.guest.id, goal: s.guest.goal } } : {}),
 		dungeon: s.dungeon,
@@ -1285,36 +1268,3 @@ export const addBookKills = (kills: Record<string, number>): void => {
 };
 
 // ───────────────────────── 掲示板の 切れはし ─────────────────────────
-// まとめ掲示板に 貼られた「古い スレの 切れはし」（data/story/scraps.ts）。読んだ id と、最後に 読んだ 帰り（記録の 時刻）。
-
-const SCRAPS_KEY = `${PREFIX}scraps`;
-
-export type ScrapMemo = { read: string[]; at: number };
-
-export const loadScraps = (): ScrapMemo => {
-	try {
-		const o = JSON.parse(
-			localStorage.getItem(SCRAPS_KEY) ?? "null",
-		) as Partial<ScrapMemo> | null;
-		return {
-			read: Array.isArray(o?.read)
-				? o.read.filter((x): x is string => typeof x === "string")
-				: [],
-			at: typeof o?.at === "number" ? o.at : 0,
-		};
-	} catch {
-		return { read: [], at: 0 };
-	}
-};
-
-/** 切れはしを 読んだ（at は その 帰り。1回の 帰りに 1枚まで）。 */
-export const readScrap = (id: string, at: number): void => {
-	const m = loadScraps();
-	if (!m.read.includes(id)) m.read.push(id);
-	m.at = at;
-	try {
-		localStorage.setItem(SCRAPS_KEY, JSON.stringify(m));
-	} catch {
-		// 残せなくても 遊べる
-	}
-};
