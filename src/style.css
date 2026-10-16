@@ -2156,11 +2156,11 @@ body.jolt #app {
 	filter: drop-shadow(0 3px 0 #3d200c) drop-shadow(0 0 14px rgba(0, 0, 0, 0.9));
 }
 
-/* 「底」だけ 一段 沈み、ゆっくり ゆれる */
+/* 「選挙」だけ 大きく、演説台で 跳ねるように ゆれる */
 .title-logo-deep {
 	display: inline-block;
-	font-size: 1.22em;
-	transform: translateY(0.18em);
+	font-size: 1.12em;
+	transform: translateY(0.06em);
 	background: linear-gradient(#ffe0a0 10%, #d27a2c 60%, #5a2410);
 	-webkit-background-clip: text;
 	background-clip: text;
@@ -2169,7 +2169,7 @@ body.jolt #app {
 
 @keyframes title-sink {
 	50% {
-		transform: translateY(0.3em);
+		transform: translateY(-0.08em);
 	}
 }
 

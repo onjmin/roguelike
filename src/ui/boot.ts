@@ -46,11 +46,11 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 			]),
 			el("h1", {
 				class: "title-logo",
-				html: `<span class="title-logo-pre">蓄音キリコと</span><span class="title-logo-main">過去ログの<span class="title-logo-deep">底</span></span>`,
+				html: `<span class="title-logo-pre">蓄音キリコの</span><span class="title-logo-main">総<span class="title-logo-deep">選挙</span></span>`,
 			}),
 			el("div", {
 				class: "title-sub",
-				text: "このスレッドは　過去ログ倉庫に　格納されています",
+				text: "おんJ公式マスコット　総選挙　告示",
 			}),
 			quoteEl,
 			buttons,
