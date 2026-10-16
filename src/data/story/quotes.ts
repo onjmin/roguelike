@@ -69,7 +69,9 @@ export type StoryPage = Cue & {
 		/** キリコ 当選（ファンファーレと 札）。 */
 		| "res1000"
 		/** 本筋の 話の おわり（data/story/story.ts の episodeEnd。章の 音）。 */
-		| "chapterEnd";
+		| "chapterEnd"
+		/** やきうの 残機が 跳ねる（1UP の 音を 重ねる）。 */
+		| "oneUp";
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */
@@ -485,35 +487,25 @@ const BATH_HEAD: StoryPage[] = [
 
 export const ENDING: StoryPage[] = [
 	...BATH_HEAD,
-	// 討論会（湯気で だれが だれだか わからない。降りて いない 候補は 名無しの 札で 出る）
+	// 討論会（湯気で だれが だれだか わからない。候補は 名無しの 札で 出る。越してきた 住人と
+	// 食い違わない ように、だれの 持ちネタでも ない 公約に する。司会の ゼロは 第三話の 前に 越してきて いる）
+	{ who: "zero", text: "公約を　どうぞ。\n……どなたか、わかりませんが" },
 	{
 		who: null,
-		text: "司会は　ゼロ。\n……湯気で、紙が　ふやけていく。",
-		about: "zero",
-		instead: { who: null, text: "湯気で、司会の　紙が\nふやけていく。" },
+		text: "公約。……湯船を、もっと\nひろく　する",
+		nanashi: "湯気の　中の　候補",
 	},
-	{
-		who: "zero",
-		text: "公約を　どうぞ。\n……どなたか、わかりませんが",
-		instead: { who: null, text: "「公約を　どうぞ」と、\nだれかが　言った。" },
-	},
-	{ who: null, text: "ホゲェ", nanashi: "湯気の　中の　候補" },
 	{
 		who: null,
-		text: "公約。……ガスの　元栓、\n閉めた？",
+		text: "公約。……風呂上がりの　牛乳、\nタダに　する",
 		nanashi: "湯気の　中の　候補",
 	},
 	{ who: "nanj", text: "公約。おんJを、もっと\nおんJに　する。以上や" },
-	// 転の 前ぶれ（確定して いるので 毎年 同じ 公約）
+	// 転の 前ぶれ（確定して いるので 毎年 同じ 公約）。ゼロの「数えました」は 開票で もう一度
 	{
 		who: "zero",
-		text: "……去年の　議事録と、\n一字一句　同じです",
+		text: "……去年の　議事録と、\n1字も　ちがいません。数えました",
 		emote: "?",
-		instead: {
-			who: null,
-			text: "それ、去年と　同じ　公約やん",
-			nanashi: "湯気の　中の　候補",
-		},
 	},
 	{ who: "nanj", text: "……ええ　公約は、\n変えへんのや", emote: "汗" },
 	{
@@ -524,7 +516,7 @@ export const ENDING: StoryPage[] = [
 	{ who: null, text: "……で、あんた　だれ？", nanashi: "湯気の　中の　候補" },
 	{
 		who: null,
-		text: "そのうち、湯の　温度で　もめはじめた。\n42度派と、44度派。",
+		text: "そのうち、湯の　温度で　もめはじめた。\n41℃派と、42℃派。",
 	},
 	{ who: null, text: "追いだきの　ボタンが、\n連打された。" },
 	{ who: null, text: "……1時間後。候補は　みんな\nのぼせて、浮いていた。" },

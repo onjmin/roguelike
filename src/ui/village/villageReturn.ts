@@ -314,6 +314,12 @@ const playCue = async (
 		s.se("victory");
 		s.toast("★　キリコ　当選　★");
 		await s.wait(600);
+	} else if (c === "oneUp") {
+		// 残機が 跳ねる（寄り道「残機」の 回収）：1UP の 音を 鳴りやまない ように 重ねる
+		for (let i = 0; i < 4; i++) {
+			s.se("arcBest");
+			await s.wait(260);
+		}
 	}
 };
 
