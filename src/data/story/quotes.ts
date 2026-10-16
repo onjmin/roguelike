@@ -485,6 +485,49 @@ const BATH_HEAD: StoryPage[] = [
 
 export const ENDING: StoryPage[] = [
 	...BATH_HEAD,
+	// 討論会（湯気で だれが だれだか わからない。降りて いない 候補は 名無しの 札で 出る）
+	{
+		who: null,
+		text: "司会は　ゼロ。\n……湯気で、紙が　ふやけていく。",
+		about: "zero",
+		instead: { who: null, text: "湯気で、司会の　紙が\nふやけていく。" },
+	},
+	{
+		who: "zero",
+		text: "公約を　どうぞ。\n……どなたか、わかりませんが",
+		instead: { who: null, text: "「公約を　どうぞ」と、\nだれかが　言った。" },
+	},
+	{ who: null, text: "ホゲェ", nanashi: "湯気の　中の　候補" },
+	{
+		who: null,
+		text: "公約。……ガスの　元栓、\n閉めた？",
+		nanashi: "湯気の　中の　候補",
+	},
+	{ who: "nanj", text: "公約。おんJを、もっと\nおんJに　する。以上や" },
+	// 転の 前ぶれ（確定して いるので 毎年 同じ 公約）
+	{
+		who: "zero",
+		text: "……去年の　議事録と、\n一字一句　同じです",
+		emote: "?",
+		instead: {
+			who: null,
+			text: "それ、去年と　同じ　公約やん",
+			nanashi: "湯気の　中の　候補",
+		},
+	},
+	{ who: "nanj", text: "……ええ　公約は、\n変えへんのや", emote: "汗" },
+	{
+		who: null,
+		text: "吾輩の　公約……名前を、\nおぼえて　ほしいンゴ",
+		kiriko: "voice",
+	},
+	{ who: null, text: "……で、あんた　だれ？", nanashi: "湯気の　中の　候補" },
+	{
+		who: null,
+		text: "そのうち、湯の　温度で　もめはじめた。\n42度派と、44度派。",
+	},
+	{ who: null, text: "追いだきの　ボタンが、\n連打された。" },
+	{ who: null, text: "……1時間後。候補は　みんな\nのぼせて、浮いていた。" },
 	// 怪文書の 犯人（第二話の 小さな 問いの 答え。STORY.md §5）
 	{
 		who: null,
