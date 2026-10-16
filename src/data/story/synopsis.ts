@@ -42,6 +42,11 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	// ── 本筋（STORY.md §5）。やきうの レスは 現職の 声（潜っている あいだも 筋が 止まらない ように。階の 札にも 出る）
 	shallow: [{ at: 2, who: "nanj", text: "今年も　ワイが　勝つで" }],
 	kinoko: [
+		{
+			at: 2,
+			who: null,
+			text: "壁に、キリコの　顔の　たけのこが　描いてある。",
+		},
 		{ at: 3, who: "res", text: "キリコって　たけのこ派なん？" },
 		{ at: 4, who: null, text: "底で、親玉が　ふんぞりかえっている。" },
 	],
@@ -49,13 +54,15 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 		{ at: 3, who: null, text: "湯気の　むこうで、公約が　ふやけている。" },
 		{ at: 6, who: "nanj", text: "毎年、同じ　湯や" },
 		{ at: 8, who: null, text: "湯船の　すみで、だれかが　紙を　書いている。" },
-		{ at: 11, who: "res", text: "討論会、ホゲェしか　聞こえん" },
+		{ at: 10, who: "res", text: "討論会、湯船が　満員で　草" },
+		{ at: 11, who: "res", text: "討論会、湯気で　だれも　見えん" },
 		{ at: 13, who: null, text: "源泉の　底が、近い。" },
 	],
 	deep: [
 		{ at: 3, who: null, text: "でんちゃんの　板。ビリビリ　する。" },
 		{ at: 6, who: "res", text: "最近、支持者　ふえたな" },
 		{ at: 9, who: "nanj", text: "ワイも、本気で　回っとるで" },
+		{ at: 11, who: "res", text: "開票の　日、鯖　もつんか？" },
 		{ at: 13, who: null, text: "上から、やきうの　ポスターが　ふってくる。" },
 		{ at: 16, who: "nanj", text: "勝ったら　あかんで" },
 		{ at: 19, who: null, text: "いちばん　下に、投票箱が　見えた。" },
