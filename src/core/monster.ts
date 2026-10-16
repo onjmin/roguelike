@@ -95,10 +95,11 @@ const SNEERS: readonly string[] = [
 /** 削除人（purge）の ひとこと（乱数は 使わない：ターンで 選ぶ）。 */
 const PURGE_LINES: readonly string[] = [
 	"規約違反を　確認しました",
-	"削除依頼が　出ています",
-	"該当レスを　削除します",
-	"ログは　保存されています",
-	"異議は　受けつけません",
+	"削除依頼が　出ています（私から）",
+	"該当レスを　削除します。あなたごと",
+	"ログは　保存されています。永久に",
+	"異議は　受けつけません（定時なので）",
+	"ご協力　ありがとう　ございました",
 ];
 
 /**
@@ -375,7 +376,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		// 置物：となりに来たら 目を覚まして すぐなぐる
 		if (dist(m, p) <= 1) {
 			st.dormant = false;
-			r.msg(`${seenName(r, m)}が　動きだした！`, "warn");
+			r.msg(`${seenName(r, m)}が　動きだした！　置物じゃ　なかった`, "warn");
 			const dir = dirOf(p.x - m.x, p.y - m.y);
 			if (dir !== null && r.cornerOk(m, dir)) meleePlayer(r, m);
 		}
@@ -451,7 +452,8 @@ export const monsterAct = (r: Run, m: Monster): void => {
 	if (has(m, "retreat")) {
 		if (!m.retreating && m.hp <= m.maxHp * 0.4) {
 			m.retreating = true;
-			if (r.playerSees(m)) r.msg(`${seenName(r, m)}は　逃げだした`);
+			if (r.playerSees(m))
+				r.msg(`${seenName(r, m)}は　逃げだした。IDを　変える　気だ`);
 		}
 		if (m.retreating) {
 			m.hp = Math.min(m.maxHp, m.hp + 2);
@@ -599,7 +601,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				r.rng.chance(a.rate)
 			) {
 				r.se("spell");
-				r.msg(`${seenName(r, m)}と　目が　合った`);
+				r.msg(`${seenName(r, m)}と　目が　合った。最寄り駅を　当てられた`);
 				p.status.confuse = Math.max(p.status.confuse, 5);
 				r.se("debuff");
 				r.msg(`${r.heroName}は　混乱した`, "warn");
@@ -743,7 +745,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 					`${nm}は　${r.name(bread)}を　押しつけて、${r.name(it)}を　持っていった！`,
 					"warn",
 				);
-				r.msg("「パンに　従え」");
+				r.msg("「パンに　従え。返品は　受けつけん」");
 				const to = randomAway(r, m);
 				if (to) {
 					r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
@@ -783,7 +785,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				return;
 			}
 		}
-		r.msg(`${nm}は　ようすを　うかがっている`);
+		r.msg(`${nm}は　転載の　チャンスを　うかがっている`);
 		return;
 	}
 	// 錆びさせる：なぐらない。ときどき 板を 汚して 錆びさせるだけ（風呂キャンセル界隈）
@@ -792,7 +794,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 			.rate;
 		const sh = r.shield();
 		if (!sh || !r.rng.chance(rate)) {
-			r.msg(`${nm}から　におう…`);
+			r.msg(`${nm}から　におう…　目に　しみる`);
 			return;
 		}
 		// 風呂キャンセルの ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
@@ -879,13 +881,13 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			}
 			p.str--;
 			r.se("debuff");
-			r.msg("ちからが　1　下がった", "warn");
+			r.msg("ちからが　1　下がった。なんか　はずかしい", "warn");
 			return;
 		case "drainLv":
-			r.msg(`${nm}の　エラーが　${r.heroName}を　巻きこんだ！`);
+			r.msg(`${nm}「忍法帖が　破損しました」`);
 			show();
 			if (r.hasRing("r_ward")) r.msg("しかし　トリップが　守ってくれた");
-			else if (p.lv <= 1) r.msg("しかし　レベルは　もう　下がらない");
+			else if (p.lv <= 1) r.msg("しかし　もう　これ以上　初心者に　なれない");
 			else r.drainLevel();
 			return;
 		case "drainMax":
@@ -899,14 +901,14 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 				p.maxHp = Math.max(1, p.maxHp - 5);
 				p.hp = Math.min(p.hp, p.maxHp);
 				r.se("debuff");
-				r.msg("最大HPが　5　下がった", "warn");
+				r.msg("最大HPが　5　下がった（字が　化けた）", "warn");
 			} else if (r.hasRing("r_purity"))
 				r.msg(`しかし　${r.heroName}は　スルーした`);
 			else {
 				p.maxStr = Math.max(1, p.maxStr - 1);
 				p.str = Math.min(p.str, p.maxStr);
 				r.se("debuff");
-				r.msg("最大ちからが　1　下がった", "warn");
+				r.msg("最大ちからが　1　下がった（字が　化けた）", "warn");
 			}
 			return;
 		case "warpPlayer":

@@ -106,7 +106,7 @@ const eat = (r: Run, it: Item): boolean => {
 		r.msg("おなかが　いっぱいに　なった");
 	} else {
 		r.feed(100);
-		r.msg("うっ……　カビている！", "warn");
+		r.msg("うっ……　カビている！　でも　完食した", "warn");
 		if (!r.hasRing("r_purity") && r.p.str > 1) {
 			r.p.str--;
 			r.se("debuff");
@@ -178,7 +178,7 @@ const drink = (r: Run, it: Item): boolean => {
 			break;
 		case "h_swift":
 			p.status.fast = 10;
-			r.msg("体が　軽くなった！", "good");
+			r.msg("体が　軽くなった！　倍速だ", "good");
 			break;
 		case "h_blind":
 			p.status.blind = 50;
@@ -191,7 +191,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_reel":
 			p.status.confuse = 10;
 			r.se("debuff");
-			r.msg("安価が　止まらない……", "warn");
+			r.msg("安価が　止まらない……　足が　勝手に　動く", "warn");
 			break;
 		case "h_daze":
 			p.status.daze = 50;
@@ -301,7 +301,7 @@ const gacha = (r: Run): void => {
 		case 4:
 			// この階の 敵が 全滅（経験値は 入らない）。ボスは 残る
 			for (const m of [...f.monsters]) if (!isBoss(m)) r.killMonster(m, false);
-			r.msg("この階の　敵が　いなくなった！", "good");
+			r.msg("この階の　敵が　いなくなった！　過疎", "good");
 			bossStays(r);
 			return;
 		case 5:
@@ -604,7 +604,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					// 聖地巡礼スレを 読んだ 階なら、ふえた 罠も 地図に のる
 					found: !!f.mapped,
 				});
-			r.msg("どこかで　カチリと　音がした……", "warn");
+			r.msg("どこかで　カチリと　音がした……　30回くらい", "warn");
 			break;
 		}
 	}
@@ -709,7 +709,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 				!m.fuse
 			) {
 				m.fuse = true;
-				r.msg(`${nm}の　動きが　止まった……`, "warn");
+				r.msg(`${nm}の　動きが　止まった……　いやな　予感`, "warn");
 			}
 			return;
 		}

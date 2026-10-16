@@ -240,7 +240,8 @@ export const tickAnka = (r: Run): void => {
 		const at = randomFloorPos(r, true) ?? randomFloorPos(r, false);
 		if (at && spawnMonster(r, null, at, { awake: true })) trolls++;
 	}
-	if (trolls) r.msg(`荒らしが　${trolls}体　湧いてきた`, "warn");
+	if (trolls)
+		r.msg(`荒らしが　${trolls}体　湧いてきた。ID　全部　ちがう`, "warn");
 	// 持ち物を 1つ 持ち去られる（安価を 無視した 罰。大事な 物・装備中の 物は 取らない）
 	const loot = r.p.items.filter(
 		(it) => !isKeyItem(it.kind) && !r.isEquipped(it),
@@ -248,7 +249,7 @@ export const tickAnka = (r: Run): void => {
 	const it = r.rng.pick(loot);
 	if (it) {
 		r.removeItem(it);
-		r.msg(`スレ民に　${r.name(it)}を　持ち去られた`, "warn");
+		r.msg(`スレ民が　${r.name(it)}を　お持ち帰り`, "warn");
 	}
 };
 
@@ -261,7 +262,7 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 	r.f.anka = null;
 	r.se("victory");
 	r.emit({ t: "anka" });
-	r.msg("神安価！　スレ民が　いろいろ　置いていった", "good");
+	r.msg("神安価！　スレ民が　足元に　何か　置いていった", "good");
 	// 道具（落ちている 物と 同じ。未識別の 種類は 未識別の まま）
 	for (const kind of rollKinds(r.rng, itemTableOf(r.s), ANKA_GIFTS))
 		r.placeItem(r.newItem(kind), { x: r.p.x, y: r.p.y });

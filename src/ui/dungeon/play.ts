@@ -3456,11 +3456,11 @@ export class Play {
 				class: "over1000-body",
 				text: falls
 					? isUpBoard(this.run.s.dungeon)
-						? "もう書けないので、上の階へ押し出されます。。。"
-						: "もう書けないので、下の階へ落ちます。。。"
+						? "もう書けないので、上の階で演説してくださいです。。。"
+						: "もう書けないので、下の階で演説してくださいです。。。"
 					: isUpBoard(this.run.s.dungeon)
-						? "もう書けませんが、これより上は　ありません。。。"
-						: "もう書けませんが、これより下は　ありません。。。",
+						? "もう書けませんが、上は　ないので、ここで演説してくださいです。。。"
+						: "もう書けませんが、下は　ないので、ここで演説してくださいです。。。",
 			}),
 		]);
 		this.ctx.ui.appendChild(post);
@@ -3527,8 +3527,8 @@ export class Play {
 								? diveResLine(dive, run.heroName)
 								: run.s.depth >= run.dungeon.floors
 									? isUpBoard(run.s.dungeon)
-										? "いちばん　上"
-										: "いちばん　底"
+										? "いちばん　上。支持率も　こう　ありたい"
+										: "いちばん　底。もう　落ちようが　ない"
 									: "",
 			}),
 			// 同行者の ひとこと（core/guest.ts。階に 着くたび。ログにも 出る）
@@ -3650,7 +3650,7 @@ export class Play {
 		const scene = el("div", { class: "death" }, [
 			el("div", {
 				class: "death-title",
-				text: `${this.run.heroName}は　たおれた`,
+				text: `${this.run.heroName}、落選`,
 			}),
 			el("div", {
 				class: "death-cause",

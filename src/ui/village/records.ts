@@ -235,7 +235,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 						? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
 						: escaped
 							? "地上へ　もどった"
-							: "たおれた",
+							: "落選した",
 		}),
 		el("p", {
 			class: "matome-line runend-cause",
@@ -257,7 +257,11 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-sec" }, [
 			el("div", {
 				class: "matome-title",
-				text: `持ち物（${p.items.length}）`,
+				// 倒れた ときは 持ち物を ぜんぶ 失う（落選で 供託金の 没収）
+				text:
+					clear || escaped
+						? `持ち物（${p.items.length}）`
+						: `没収された　供託金（${p.items.length}）`,
 			}),
 			items,
 		]),

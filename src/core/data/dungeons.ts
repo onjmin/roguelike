@@ -395,7 +395,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			lines: [
 				"どこからか　パン松の　号令が　ひびいた！",
 				"パン兵たちが　キリコを　かつぎあげた",
-				"わっしょい　わっしょい……　入口まで　運ばれた",
+				"「おんJ民は　帰れ！」　入口まで　運び出された",
 			],
 			cause: "パン兵長を　たおした",
 		},
@@ -424,7 +424,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			rescue: "geyser",
 			lines: [
 				"足もとの　源泉が　ごぼごぼと　わきだした……",
-				"湯柱が　噴きあがった！",
+				"湯柱が　噴きあがった！　どう見ても　42℃",
 				"湯柱に　押し上げられて、入口まで　もどった",
 			],
 			cause: "湯守おふ郎くんを　たおした",
@@ -481,6 +481,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			rescue: "sprout",
 			lines: [
 				"足もとの　きのこが　ぐんぐん　伸びだした！",
+				"きのこ民「たけのこより　速いやろ」",
 				"きのこに　押し上げられて、地上まで　運ばれた",
 			],
 			cause: "親玉きのにゃんを　たおした",
@@ -511,6 +512,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			rescue: "escort",
 			lines: [
 				"島民たちが　小舟で　迎えに　来た！",
+				"島民6人、全員　来た。島が　からっぽだ",
 				"川を　くだって、ふもとまで　降ろしてもらった",
 			],
 			cause: "怒れるナツコを　たおした",
@@ -543,7 +545,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			rescue: "eruption",
 			lines: [
 				"鉄板が　ぐつぐつと　煮えたぎる……",
-				"鉄板が　噴火した！",
+				"鉄板が　噴火した！😡",
 				"熱風で　ビルの　入口まで　吹き飛ばされた",
 			],
 			cause: "大たこのみんを　たおした",
@@ -576,6 +578,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			rescue: "escort",
 			lines: [
 				"野次馬たちが　わっしょいと　集まってきた！",
+				"だれかが　「キリコ　当確！」と　叫んだ",
 				"神輿に　のせられて、やぐらの　下まで　運ばれた",
 			],
 			cause: "祭りの親分マシーを　たおした",
