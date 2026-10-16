@@ -35,7 +35,6 @@ import {
 	mdef,
 	monsterName,
 	sealMonster,
-	seenName,
 	track,
 	traitFast,
 	transformMonster,
@@ -638,16 +637,16 @@ const wave = (r: Run, it: Item): boolean => {
 
 /**
  * ボスには 効かない（変化・分裂・論破・諸刃・まどわし。ボスが 消える・ふえる・一撃で たおれる のを ふせぐ）。
- * 効かなければ ひとこと 言って true。
+ * 効かなければ true（何も 言わない）。
  */
-const bossShrugs = (r: Run, m: Monster, nm: string): boolean => {
+const bossShrugs = (m: Monster): boolean =>
 	// 削除人（書きかえた 冒険の 追っ手）にも 杖の いたずらは 効かない
-	if (!isBoss(m) && !mdef(m).hunter) return false;
-	r.msg(`${nm}には　効かなかった`);
-	return true;
-};
+	isBoss(m) || !!mdef(m).hunter;
 
-/** 杖の効き目（振ったとき・投げて当たったとき）。 */
+/**
+ * 杖の効き目（振ったとき・投げて当たったとき）。
+ * 敵への 効き目は 行に 出さない（トルネコ1と 同じく、敵の ようすを 見て 当てる）。
+ */
 export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 	const nm = monsterName(r, m);
 	if (m.disguise) m.disguise = null;
@@ -661,22 +660,17 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			return;
 		case "w_reel":
 			m.status.confuse = 10;
-			r.msg(`${nm}は　混乱した`);
 			return;
 		case "w_sleep":
 			m.status.sleep = 5;
-			r.msg(`${nm}は　眠ってしまった`);
 			return;
 		case "w_seal":
 			sealMonster(m);
-			r.msg(`${nm}の　とくぎを　封じた`);
 			return;
-		case "w_change": {
-			if (bossShrugs(r, m, nm)) return;
+		case "w_change":
+			if (bossShrugs(m)) return;
 			transformMonster(r, m);
-			r.msg(`${nm}は　${seenName(r, m)}に　変わった！`);
 			return;
-		}
 		case "w_send": {
 			const cands = r.f.layout.rooms
 				.flatMap((room) => roomTiles(room))
@@ -689,30 +683,25 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 				m.y = to.y;
 				// 飛ばされた敵は キリコを見失う（投げつけられて覚えた位置も忘れる）
 				forget(m);
-				r.msg(`${nm}を　どこかへ　飛ばした`);
 			}
 			return;
 		}
 		case "w_slow":
 			// 倍速の 敵は ふつうに もどり、もう 遅い 敵には 効かない
 			// （とくちょうで 加速した 敵は、加速ごと 消えて 遅くなる）
-			if (m.status.slow > 0) r.msg("しかし　何も　起きなかった");
-			else if (m.status.fast > 0 && !traitFast(m)) {
-				m.status.fast = 0;
-				r.msg(`${nm}の　動きが　もとに　もどった`);
-			} else {
+			if (m.status.slow > 0) return;
+			if (m.status.fast > 0 && !traitFast(m)) m.status.fast = 0;
+			else {
 				m.status.slow = 999;
 				m.status.fast = 0;
-				r.msg(`${nm}の　足が　おそくなった`);
 			}
 			return;
 		case "w_edge": {
-			if (bossShrugs(r, m, nm)) return;
+			if (bossShrugs(m)) return;
 			const p = r.p;
 			const lose = p.hp - Math.ceil(p.hp / 2);
 			if (lose > 0) r.hurtPlayer(lose, "諸刃の杖で　たおれた");
 			m.hp = 1;
-			r.msg(`${nm}の　HPが　1に　なった！`);
 			// 炎上案件は その場で 止まる（ダメージでは ないので 爆発は しない。次に なぐれば 爆発）
 			if (
 				mdef(m).abilities.some((a) => a.k === "explode") &&
@@ -725,37 +714,25 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			return;
 		}
 		case "w_split":
-			if (bossShrugs(r, m, nm)) return;
+			if (bossShrugs(m)) return;
 			// 振った（wave）・投げた ときの 音で 足りる。ふえる 音を 重ねない
 			r.splitMonster(m, true);
 			return;
 		case "w_rebut":
-			if (bossShrugs(r, m, nm)) return;
+			if (bossShrugs(m)) return;
 			// 一撃で たおす（トルネコ1の ザキ。経験値も 入る）
-			r.msg(`${nm}を　論破した！`);
 			r.killMonster(m, true);
 			return;
 		case "w_batsu":
-			if (m.batsu) {
-				r.msg("しかし　何も　起きなかった");
-				return;
-			}
-			// 消える 前に ひとこと（消えたあとは 名前も 見えない）
-			r.msg(`${nm}の　姿が　消えた！`, "warn");
 			m.batsu = true;
 			return;
 		case "w_afi": {
-			if (m.carry) {
-				r.msg(`${nm}は　もう　何か　持っている`);
-				return;
-			}
+			if (m.carry) return;
 			const cands = r.p.items.filter(
 				(i) => !r.isEquipped(i) && !isKeyItem(i.kind),
 			);
-			if (!cands.length) {
-				r.msg("しかし　転載される　ものが　なかった");
-				return;
-			}
+			if (!cands.length) return;
+			// 持ち物が へるのは キリコの ことなので 行に 出す
 			const it = r.rng.pick(cands);
 			r.removeItem(it);
 			m.carry = it;
@@ -769,28 +746,19 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 				.map((d) => step(r.p, d))
 				.filter((t) => r.isFree(t.x, t.y));
 			const to = spots[0];
-			if (!to || dist(m, r.p) === 1) {
-				r.msg("しかし　何も　起きなかった");
-				return;
-			}
+			if (!to || dist(m, r.p) === 1) return;
 			r.se("warp");
 			r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
 			m.x = to.x;
 			m.y = to.y;
 			if (canTrack(m)) track(m, r.p);
-			r.msg(`${nm}が　凸して　きた！`, "warn");
 			return;
 		}
 		case "w_haste":
 			// 遅い 敵は ふつうに もどり、もう 速い 敵には 効かない
-			if (m.status.fast > 0) r.msg("しかし　何も　起きなかった");
-			else if (m.status.slow > 0) {
-				m.status.slow = 0;
-				r.msg(`${nm}の　足が　もとに　もどった`);
-			} else {
-				m.status.fast = 999;
-				r.msg(`${nm}の　動きが　速くなった！`, "warn");
-			}
+			if (m.status.fast > 0) return;
+			if (m.status.slow > 0) m.status.slow = 0;
+			else m.status.fast = 999;
 			return;
 	}
 };
@@ -903,7 +871,6 @@ const herbOnMonster = (
 	undead: boolean,
 	small: () => number,
 ): void => {
-	const nm = monsterName(r, m);
 	const md = mdef(m);
 	switch (kind) {
 		case "h_heal":
@@ -911,21 +878,16 @@ const herbOnMonster = (
 			const v = kind === "h_greater" ? 100 : 25;
 			// 生ける屍には毒。この一撃で たおすと、もう起き上がらない
 			if (undead) r.damageMonster(m, v, "holy");
-			else {
-				m.hp = Math.min(m.maxHp, m.hp + v);
-				r.msg(`${nm}の　HPが　回復した`);
-			}
+			else m.hp = Math.min(m.maxHp, m.hp + v);
 			return;
 		}
 		case "h_swift":
 			m.status.fast = 999;
 			m.status.slow = 0;
-			r.msg(`${nm}の　動きが　速くなった`, "warn");
 			return;
 		case "h_blind":
 			m.status.blind = true;
 			sealMonster(m);
-			r.msg(`${nm}を　アク禁した`);
 			return;
 		case "h_blink": {
 			staffEffect(r, "w_send", m);
@@ -933,24 +895,21 @@ const herbOnMonster = (
 		}
 		case "h_reel":
 			m.status.confuse = 10;
-			r.msg(`${nm}は　混乱した`);
 			return;
 		case "h_daze":
 			// まどわされた敵は ずっと逃げる（トルネコ1の まどわし草）。ボスは 逃げない
-			if (bossShrugs(r, m, nm)) return;
+			if (bossShrugs(m)) return;
 			m.fleeing = true;
 			r.se("flee");
-			r.msg(`${nm}は　逃げだした`);
 			return;
 		case "h_sleep":
 			m.status.sleep = 5;
-			r.msg(`${nm}は　眠ってしまった`);
 			return;
 		case "h_antidote":
 			if (md.tags?.includes("plant") || md.tags?.includes("doll")) {
 				sealMonster(m);
 				r.damageMonster(m, 50, "throw");
-			} else r.msg(`${nm}には　効かなかった`);
+			}
 			return;
 		case "h_fire":
 			r.se("fire");

@@ -1517,15 +1517,13 @@ test("oni", "touchy: a hit sometimes snaps it, only once", () => {
 test("oni", "touchy: a thrown herb always snaps it", () => {
 	const r = arena("oni-herb");
 	const m = put(r, "oni", at(1, 0));
+	m.hp = 1;
 	for (let i = 0; i < 20 && !m.enraged; i++) {
 		const it = give(r, "h_heal");
 		turn(r, { c: "throw", item: it.uid, dir: 2 });
 	}
 	ok(m.enraged, "a thrown herb did not snap it");
-	ok(
-		r.s.log.some((t) => t.includes("顔真っ赤の　HPが　回復した")),
-		"the herb did not land after the snap",
-	);
+	ok(now(m).hp > 1, "the herb did not land after the snap");
 	ok(snaps(r) === 1, `snapped ${snaps(r)} times`);
 });
 
@@ -3650,18 +3648,20 @@ test(
 			);
 			ok(r.p.hp === php, `${kind}: the player lost HP`);
 			ok(!r.s.end, `${kind}: the run ended`);
-			ok(logHas(r, "効かなかった"), `${kind}: no "didn't work" line`);
 		}
 		const { r, b } = bossArena("boss-daze", "festival", {
 			pos: at(3, 0),
 			opts: { sleep: DEEP },
 		});
 		const dir = dirOf(1, 0) as Dir8;
-		for (let i = 0; i < 6 && !logHas(r, "効かなかった"); i++) {
+		// 当たった 草は 消え、外れた 草は 床に 落ちる
+		let hit = false;
+		for (let i = 0; i < 6 && !hit; i++) {
 			const it = give(r, "h_daze");
 			turn(r, { c: "throw", item: it.uid, dir });
+			hit = !r.f.items.some((f) => f.item.uid === it.uid);
 		}
-		ok(logHas(r, "効かなかった"), "harness: the herb never hit");
+		ok(hit, "harness: the herb never hit");
 		ok(!b.fleeing, "the boss runs away");
 	},
 );
@@ -4024,7 +4024,6 @@ test(
 		const h = put(r, HUNTER, at(1, 0));
 		staffEffect(r, "w_change", h);
 		ok(h.kind === HUNTER, `became ${h.kind}`);
-		ok(logHas(r, "効かなかった"), "no 効かなかった line");
 		for (let i = 1; i <= 5; i++) {
 			const n = count(turn(r), "attack", h.uid);
 			ok(n === 2, `turn ${i}: ${n} attacks (expected 2)`);
