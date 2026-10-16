@@ -1,4 +1,4 @@
-// 1打席と ホームラン競争（村の グラウンド）。ui/minigames/minigames.ts から 出す。投げる 人は やきう（原住民の 投げ方も 残してある）。
+// 1打席と ホームラン競争（村の グラウンド。投げる 人は やきう）。ui/minigames/minigames.ts から 出す。
 // 打席の うしろ（キャッチャーの うしろ 7m・高さ 3.5m）から 見た 球場で、投げられた 球を A／タップで 打つ。
 // - 球種：ストレート・剛速球（足を 長く 上げ、指先が 光る）・スローカーブ（ゆらゆら 足を 上げる）・
 //   フォーク（ストレートと 同じ 形で 来て、最後に 落ちる）。ボール球は 外・高め・ワンバン。
@@ -6,10 +6,10 @@
 //   かすり＝ファウル、それ より ずれたら 空振り。ワンバンを 振れば 空振り、外・高めの ボール球に 当てれば 凡打。
 // - カウント：ストライク 3つで 三振、ボール 4つで フォアボール（勝ち）。2ストライクからの ファウルは そのまま。
 // - 前に とんだら 上から 見た 球場（1m＝2px）に 切りかわり、カメラが 打球を 追う。村と 同じ 16x16 の 人が 守り、
-//   いちばん 近い 野手が「！」で 追う。関所の 原住民は 抜けていく 球に 飛びつく。キリコは 一塁へ 走る。
+//   いちばん 近い 野手が「！」で 追う。キリコは 一塁へ 走る。
 // - ホームラン競争：ストライク だけ 10球、芯の 数を 数える。自己ベストは localStorage（kiriko-roguelike/derby）。
 // 絵は public/sprites/baseball.png（scripts/make-baseball.mjs。上から 見た 人・効果・花火は RPGEN の 素材）。
-// 読めない ときは 四角だけの 絵で 同じ ように 遊べる（関所で 止まらない）。B で いつでも やめられる
+// 読めない ときは 四角だけの 絵で 同じ ように 遊べる。B で いつでも やめられる
 // （打席の 結果が 決まった あとの B は のこりの 場面を とばすだけ：結果は そのまま）。
 // 決まり（球の 道・当たり・カウント・打球・カメラ）は 純粋な 関数で、試験（sim/villageTests.ts）が 数を 確かめる。
 // 冒険の 乱数・記録には 触らない（球と 見た目の 乱数は Math.random）。モジュールの 上では DOM・画像・localStorage に 触らない。
@@ -50,12 +50,12 @@ export type Outcome =
 	| "whiff";
 export type Call = Outcome | "strike" | "ball";
 export type Count = { b: number; s: number };
-export type BatWho = "shobon" | "yakiu";
+export type BatWho = "yakiu";
 export type BatOpt = { title?: string; pitcher?: string; who?: BatWho };
 export type BatResult = "hr" | "hit" | "walk" | "k" | "out" | "quit";
 
 export type PitcherDef = {
-	/** 夜の 野球ch（関所）か 昼の おんJタウン（グラウンド）か。 */
+	/** 夜の 球場か 昼の おんJタウン（グラウンド）か。 */
 	night: boolean;
 	/** セットの 長さ（ms。この あいだで ばらつく）。 */
 	setMs: readonly [number, number];
@@ -70,21 +70,6 @@ export type PitcherDef = {
 };
 
 export const PITCHER_DEFS: Record<BatWho, PitcherDef> = {
-	// 原住民（関所）：のんびり。まっすぐと スローカーブ だけ、ボールは ワンバンだけ
-	shobon: {
-		night: true,
-		setMs: [650, 1050],
-		mix: [
-			["straight", 7],
-			["curve", 3],
-		],
-		ballRate: 0.15,
-		ballKinds: ["bounce"],
-		firstStrike: true,
-		flight: { straight: 900, curve: 1250 },
-		kmh: { straight: 98, curve: 71 },
-		win: { perfect: 28, good: 68, edge: 115 },
-	},
 	// やきう（グラウンド）：4球種、ボール球も 多い。打てるが 楽勝では ない
 	yakiu: {
 		night: false,
@@ -600,11 +585,9 @@ const drawFireworks = (
 
 // 打席の 絵の 置き場（240x150）
 const PITCHER_KEY: Record<BatWho, SprKey> = {
-	shobon: "pitcherShobon",
 	yakiu: "pitcherYakiu",
 };
 const PITCHER_NAME: Record<BatWho, string> = {
-	shobon: "原住民",
 	yakiu: "やきう",
 };
 /** 守る 人（0 投手 1 捕手 2 一塁 3 二塁 4 遊撃 5 三塁 6 左翼 7 中堅 8 右翼。m）。 */
@@ -775,19 +758,9 @@ const drawA = (G: Game): void => {
 			[...String(Math.round(A.kmh)).padStart(3, " ")].forEach((ch, i) => {
 				if (ch !== " ") spr(g, img, "digit", Number(ch), 123 + i * 4, 25);
 			});
-		// 遠くの 野手（関所は 原住民、グラウンドは 名無し 4人）
+		// 遠くの 野手（名無し 4人）
 		FAR_AT.forEach(([x, y], i) => {
-			if (G.who === "shobon")
-				spr(g, img, "farGen", A.back ? 1 : 0, x - 4, y - 11);
-			else
-				spr(
-					g,
-					img,
-					"farNanashi",
-					(i % 4) * 2 + (A.back ? 1 : 0),
-					x - 4,
-					y - 11,
-				);
+			spr(g, img, "farNanashi", (i % 4) * 2 + (A.back ? 1 : 0), x - 4, y - 11);
 		});
 		spr(g, img, PITCHER_KEY[G.who], A.pose, 108 + A.sway, 35);
 		if (A.glint !== null) spr(g, img, "glint", A.glint, 116, 40);
@@ -1234,14 +1207,9 @@ const man = (
 	stepMs: 120,
 });
 
-/** 守る 9人。関所は 原住民（グラブと 飛びつきの ポーズ）、グラウンドは 名無し 4人。 */
-const teamOf = (who: BatWho): Man[] =>
+/** 守る 9人（投手は やきう、ほかは 名無し 4人の くり返し）。 */
+const teamOf = (): Man[] =>
 	FIELD_POS.map(([X, Z], k) => {
-		if (who === "shobon") {
-			if (k === 0) return man(X, Z, "walkGen", 0, null, "down");
-			if (k === 1) return man(X, Z, "walkGen", 0, "genCatcher", "up");
-			return man(X, Z, "walkGen", 0, "genGlove", "down");
-		}
 		if (k === 0) return man(X, Z, "walkYakiu", 0, "yakiuGlove", "down");
 		if (k === 1) return man(X, Z, "walkNanashi", 3, null, "up");
 		return man(X, Z, "walkNanashi", (k - 2) % 4, null, "down");
@@ -1372,7 +1340,7 @@ const fieldScene = async (
 	bb: Batted,
 	derby: boolean,
 ): Promise<Banner> => {
-	const men = teamOf(G.who);
+	const men = teamOf();
 	const runner: Man = {
 		...man(-1.2, 0.4, "walkKiriko", 0, null, "right"),
 		speed: RUNNER_MS,
@@ -1390,29 +1358,10 @@ const fieldScene = async (
 	const uz = Math.cos(a);
 	const restAt = bb.T + (bb.roll ? ROLL_MS : 0);
 	const rest = flightAt(bb, restAt);
-	// 関所の 原住民は、抜けていく ゴロ・ライナーに いちばん 近い 内野手が 飛びつく
-	let diver = -1;
-	let along = 0;
-	if (G.who === "shobon" && (bb.o === "single" || bb.o === "grounder")) {
-		let best = 7;
-		for (let k = 2; k <= 5; k++) {
-			const [X, Z] = FIELD_POS[k];
-			const al = X * ux + Z * uz;
-			const perp = Math.abs(X * uz - Z * ux);
-			if (al > 0 && al < bb.dist && perp <= best) {
-				best = perp;
-				diver = k;
-				along = al;
-			}
-		}
-	}
 	// 追う 人（ホームランは 外野が フェンスまで、凡打は 遊撃か 二塁、ヒットは 止まる 所に いちばん 近い 人）
 	const chaseTo: readonly [number, number] =
 		bb.o === "hr" ? [93 * ux, 93 * uz] : [rest.X, rest.Z];
-	const pool =
-		bb.o === "hr"
-			? [6, 7, 8]
-			: [2, 3, 4, 5, 6, 7, 8].filter((k) => k !== diver);
+	const pool = bb.o === "hr" ? [6, 7, 8] : [2, 3, 4, 5, 6, 7, 8];
 	const chaser =
 		bb.o === "popout"
 			? bb.late
@@ -1440,7 +1389,6 @@ const fieldScene = async (
 		bannerAt: -1,
 		fenceAt: -1,
 		fwAt: 0,
-		diveAt: -1,
 		cam: { x: 60, y: 130 },
 		last: 0,
 	};
@@ -1480,7 +1428,6 @@ const fieldScene = async (
 				men[2].target = BASE1;
 				men[2].endDir = "left";
 			}
-			if (diver >= 0) men[diver].target = [along * ux, along * uz];
 			runner.target = legs[0];
 			runner.fixDir = LEG_DIR[0];
 			runner.endDir = legs.length > 1 ? LEG_DIR[1] : "down";
@@ -1535,14 +1482,6 @@ const fieldScene = async (
 			if ((bb.o === "single" || bb.o === "double") && t >= bb.T)
 				show(hitBanner, hitNote, "decide", t);
 			if (bb.o === "grounder" && r >= 40) show(hitBanner, hitNote, "decide", t);
-			// 飛びつく（とどかない）
-			if (diver >= 0 && st.diveAt < 0 && r >= along - 1.5) {
-				st.diveAt = t;
-				const m = men[diver];
-				m.target = null;
-				m.moving = false;
-				m.pose = "genDive";
-			}
 			// 追いついて 拾う（ヒットは 止まってから）
 			const C = men[chaser];
 			if (
@@ -1554,8 +1493,6 @@ const fieldScene = async (
 			)
 				st.holder = chaser;
 		}
-		if (diver >= 0 && st.diveAt >= 0 && t - st.diveAt >= 600)
-			men[diver].pose = "genGlove";
 		// カメラ：打球が 生きている あいだ 追う（走る キリコが 下へ 切れる なら、球が 上に 切れない ぶんだけ 下げる）
 		if (ball && st.holder < 0) {
 			const f = toField(ball.X, ball.Z);
@@ -1662,13 +1599,13 @@ const playAtBat = async (
 
 /**
  * 1打席。ホームラン・ヒット・フォアボールなら "hr"・"hit"・"walk"、三振 "k"、凡打 "out"、B で やめたら "quit"。
- * opt は 村の グラウンドで 打つ ときの 題・投げる 人の 名前・だれが 投げるか（ふだんは 跡地の 関所：原住民）。
+ * opt は 村の グラウンドで 打つ ときの 題・投げる 人の 名前・だれが 投げるか（ふだんは やきう）。
  */
 export const atBat = async (
 	ctx: UiCtx,
 	opt: BatOpt = {},
 ): Promise<BatResult> => {
-	const who = opt.who ?? "shobon";
+	const who = opt.who ?? "yakiu";
 	const r = await withBoard(ctx, opt.title ?? "野球ch　1打席", who, (G) =>
 		playAtBat(G, opt.pitcher ?? PITCHER_NAME[who]),
 	);

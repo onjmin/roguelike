@@ -6150,10 +6150,6 @@ test("1打席: every pitch reaches the plate on time; strikes cross the zone and
 		seed = (seed * 1103515245 + 12345) & 0x7fffffff;
 		return seed / 0x7fffffff;
 	};
-	for (let i = 0; i < 50; i++) {
-		const p = pickPitch(PITCHER_DEFS.shobon, 0, rnd);
-		ok(p.kind === "straight" && p.ball === null, "the gate's first pitch");
-	}
 	for (const [who, def] of Object.entries(PITCHER_DEFS) as [
 		string,
 		PitcherDef,
@@ -6198,7 +6194,7 @@ test("1打席: every pitch reaches the plate on time; strikes cross the zone and
 			}
 });
 
-test("1打席: the 跡地 gate stays winnable, やきう is not a sure thing, the derby gives a few home runs", () => {
+test("1打席: やきう is not a sure thing, the derby gives a few home runs", () => {
 	// 人の まね（押す 時の ずれ：平均と ばらつき ms。球が 本塁に 来た 時から はかる）。数は 決まった 種で 毎回 同じ
 	let seed = 7;
 	const rnd = () => {
@@ -6216,16 +6212,7 @@ test("1打席: the 跡地 gate stays winnable, やきう is not a sure thing, th
 		err: Record<PitchKind, readonly [number, number]>;
 		swingBall: Record<BallKind, number>;
 	};
-	// はじめて スマホで 打つ 人（遅れぎみ・ばらつき 大）と、ふつうに キーで 打つ 人
-	const phone: Model = {
-		err: {
-			straight: [60, 80],
-			fast: [80, 90],
-			curve: [40, 95],
-			fork: [0, 105],
-		},
-		swingBall: { bounce: 0.5, wide: 0.6, high: 0.6 },
-	};
+	// ふつうに キーで 打つ 人
 	const casual: Model = {
 		err: {
 			straight: [20, 60],
@@ -6264,14 +6251,6 @@ test("1打席: the 跡地 gate stays winnable, やきう is not a sure thing, th
 		}
 		return win / N;
 	};
-	const gatePhone = winRate(PITCHER_DEFS.shobon, phone);
-	ok(gatePhone >= 0.75, `the gate, first time on a phone: ${gatePhone}`);
-	ok(
-		1 - (1 - gatePhone) ** 3 >= 0.97,
-		`the gate within 3 tries: ${1 - (1 - gatePhone) ** 3}`,
-	);
-	const gateCasual = winRate(PITCHER_DEFS.shobon, casual);
-	ok(gateCasual >= 0.9, `the gate, casual: ${gateCasual}`);
 	const yakiu = winRate(PITCHER_DEFS.yakiu, casual);
 	ok(yakiu >= 0.55 && yakiu <= 0.95, `やきう, casual: ${yakiu}`);
 	// ホームラン競争（10球。芯だけ 数える）

@@ -240,7 +240,7 @@ const SHALLOW_BASE: readonly StoryPage[] = [
 		"キリコは　推薦状を　ポスターに　貼った。\n「パン板は　キリコを　推す（パンで）」",
 	),
 	// 迎えの 掛け合いは 2〜3人まで（だれが だれか 知らない 人が 流し読み しないように）
-	s("zero", "支持者、ふえました！\n……ひさしぶりに、数字が　動きました", {
+	s("zero", "支持者、ふえました！\n……はじめて、数字が　動きました", {
 		emote: "!",
 	}),
 ];
@@ -502,7 +502,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 10,
 		name: "dat の石室",
-		note: "「まだ　見てる　やつ　おる？」",
+		note: "「告示、まだ？」",
 		theme: "stone",
 		bgm: "stone",
 		ambient: "dust",
@@ -510,7 +510,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 15,
 		name: "埋もれた dat",
-		note: "「沈む前に　言っとく。楽しかった」",
+		note: "「今年も　やきうか。草」",
 		theme: "stone",
 		bgm: "deep_dat",
 		ambient: "dust",
@@ -518,7 +518,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 20,
 		name: "苔むしたスレ跡",
-		note: "「ほな、また」",
+		note: "「ほな、来年も」",
 		theme: "moss",
 		bgm: "field",
 		ambient: "spores",
@@ -526,7 +526,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 25,
 		name: "崩れたまとめ",
-		note: "「まとめられて、それきり」",
+		note: "「公約：毎日　ナイター」",
 		theme: "ruins",
 		bgm: "deep_matome",
 		ambient: "spores",
@@ -566,7 +566,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 70,
 		name: "規制の檻",
-		note: "「規制で　書けん。……見てるで」",
+		note: "「規制で　書けん。投票は　した」",
 		theme: "lattice",
 		bgm: "deep_kisei",
 		ambient: "data",
@@ -582,7 +582,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 	{
 		last: 90,
 		name: "焦げた回線",
-		note: "「燃えた。でも、ここに　おった」",
+		note: "「怪文書、燃やしといたで」",
 		theme: "forge",
 		bgm: "deep_koge",
 		ambient: "embers",
@@ -1100,7 +1100,7 @@ export const UNLOCK_LINES: Record<
 	relief: [
 		q(
 			"shiyo",
-			"きのこ板の　ネタは　あたすが　貼ったわ。\n……あなたの　ためじゃ　ないから",
+			"きのこ板の　推薦は　あたすが　頼んだわ。\n……あなたの　ためじゃ　ないから",
 			{ emote: "汗" },
 		),
 		q("zero", "5回の　挑戦、ぜんぶ　見てました。\n……6回目も、応援します！", {

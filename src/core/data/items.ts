@@ -620,7 +620,6 @@ add({
 
 // ───────── 目的の品（床には出ない） ─────────
 // 各板の 底で その 板の 代表から もらう 推薦の しるし（STORY.md §5。持ち帰って 売ると 選挙資金に なる）。
-// 絵は まだ 前の 筋（針・レコード）の まま（ART_TODO.md）。
 /** 目的の品の 専用の 絵（ui/art/itemArt.ts → scripts/make-items.mjs で 書き出す）。 */
 const art = (name: string): string => `pub:sprites/items/${name}.png`;
 

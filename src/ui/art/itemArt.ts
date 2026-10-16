@@ -366,12 +366,65 @@ export const ITEM_ART: Record<
 	},
 
 	// ───── 目的の品（持ち帰る品）。1つずつ 専用の 絵（data/items.ts の icon）
-	// はじまりの原盤：金の ラベルの レコード
+	// 長湯スレ（風呂板）：金の ラベルの レコード（蓄音機で 鳴らす）
 	genban: RECORD("#e8b830"),
-	// つづきの原盤：まだ なにも 入っていない 白い ラベル
-	tsuzuki: RECORD("#f0f0ea"),
-	// 1001の原盤：赤い ラベル（dat落ちの 1001）
-	g1001: RECORD("#d03838"),
+	// 投票箱（電池板）：木の 箱に 投票口、前に 白い 札「投票」
+	tsuzuki: {
+		palette: {
+			o: "#4a2c14",
+			w: "#a8743c",
+			W: "#c8955a",
+			d: "#1e1208",
+			p: "#f4efe0",
+			k: "#3a3a44",
+		},
+		rows: [
+			"................",
+			"................",
+			"................",
+			"..oooooooooooo..",
+			"..oWWWWWWWWWWo..",
+			"..oWWWddddWWWo..",
+			"..oooooooooooo..",
+			"..owwwwwwwwwwo..",
+			"..owwppppppwwo..",
+			"..owwpkkkkpwwo..",
+			"..owwppppppwwo..",
+			"..owwwwwwwwwwo..",
+			"..owwwwwwwwwwo..",
+			"..oooooooooooo..",
+			"................",
+			"................",
+		],
+	},
+	// 最初の 告示（過去ログの底）：黄ばんだ 貼り紙に 2本の 画びょう、すみに 小さい 字
+	g1001: {
+		palette: {
+			o: "#7a6440",
+			p: "#e8dcb0",
+			s: "#c8b880",
+			k: "#3a3a44",
+			r: "#d03838",
+		},
+		rows: [
+			"................",
+			"...r........r...",
+			"..ooooooooooooo.",
+			"..opppppppppppo.",
+			"..opkkkkkkkkkpo.",
+			"..opppppppppppo.",
+			"..opkkkpkkkkppo.",
+			"..opppppppppppo.",
+			"..opkkkkkkpkkpo.",
+			"..opppppppppppo.",
+			"..opppppppppppo.",
+			"..opspspsppppso.",
+			"..opsssppppsspo.",
+			"..ooooooooooooo.",
+			"................",
+			"................",
+		],
+	},
 	// 紙きれ（ロゼの 原音設定）：折り目の ついた 紙きれに 2行の 字と、すみに「草」
 	memo: {
 		palette: {
@@ -400,31 +453,32 @@ export const ITEM_ART: Record<
 			"................",
 		],
 	},
-	// 蓄音機の針：ななめの 鋼の 針と 金の 針止め
+	// パン板の 推薦状：折り目の ついた 紙に 字と 赤い はんこ、すみに パンくず
 	needle: {
 		palette: {
-			y: "#b8862a",
-			Y: "#ffe07a",
-			h: "#f4f8fc",
-			s: "#b4bcc8",
-			m: "#6a7282",
+			o: "#8a7a5a",
+			p: "#f4efe0",
+			k: "#3a3a44",
+			r: "#d03838",
+			R: "#ff6a5a",
+			b: "#c88a3a",
 		},
 		rows: [
 			"................",
-			"...........yy...",
-			"..........yYYy..",
-			"..........yYyy..",
-			"...........yy...",
-			"..........hs....",
-			".........hsm....",
-			"........hsm.....",
-			".......hsm......",
-			"......hsm.......",
-			".....hsm........",
-			"....hsm.........",
-			"...hsm..........",
-			"...sm...........",
-			"..m.............",
+			"...ooooooooooo..",
+			"...opppppppppo..",
+			"...opkkkkkkppo..",
+			"...opppppppppo..",
+			"...opkkkkkpppo..",
+			"...opppppppppo..",
+			"...opkkkkkkkpo..",
+			"...opppppppppo..",
+			"...oppppppprro..",
+			"...opppppprRro..",
+			"...opbpppppRro..",
+			"...obbpppppppo..",
+			"...ooooooooooo..",
+			"................",
 			"................",
 		],
 	},

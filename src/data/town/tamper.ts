@@ -29,7 +29,7 @@ export const TAMPER_SCENE: readonly (readonly Line[])[] = [
 		q("feris", "書きかえたの〜？\n……ちょっと、さびしいな〜", {
 			gesture: "slump",
 		}),
-		q("nanj", "なんや、改造かいな。\n……ワイらの　保守は　なんやったんや"),
+		q("nanj", "なんや、改造かいな。\n……選挙違反は、一発　落選やで"),
 	],
 	[
 		q("zero", "また、帳簿が　合いません。\n……ゼロ、数えるのが　つらいです", {
@@ -83,7 +83,7 @@ export const TAMPER_TALK: Record<Speaker, readonly string[]> = {
 		"…………",
 	],
 	nanj: [
-		"保守ってのは、地道に\nレス　つける　ことやで",
+		"選挙ってのは、地道に\n名前　呼ぶ　ことやで",
 		"ワイは　見張っとるだけや。\n……口の　前も、キリコも",
 		"……",
 	],
