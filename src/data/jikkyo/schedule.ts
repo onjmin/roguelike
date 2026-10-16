@@ -1,13 +1,13 @@
 // 実況の 番組表（どの 場所で、どの 日に、どの 番組を 流すか。PROGRAMS §6・ENGINE §5.5）。
 // 純粋な 関数。日付は 呼ぶ 側が わたす（村は calendar.today()、開発は &wday=・&date=、試験は そのまま）。
-// - 本館の 実況モニター（段6〜）：ナイター実況（野球）。月曜は 議会中継（見るだけ）が はじめの チャンネルで、
+// - 配信会館の 実況モニター（段6〜）：ナイター実況（野球）。月曜は 議会中継（見るだけ）が はじめの チャンネルで、
 //   ナイターは チャンネルを かえた 先の 録画。
 // - 町役場（段4〜6）・市役所（段7）の 中継モニター：議会の 日（data/town/civic.ts）だけ 議会中継。ほかの 日は 砂あらし。
 // - 映画館「スクリーン1000」（段7）：金曜は 金曜ロード保守の 本放送（★4）、ほかの 日は 再上映（★2）。
 // - おんJ劇場（段7）：12/31 は 紅白スレ合戦の 本番（★5、回 = 年 − 2011）、12/1〜30 は 公開リハ（★3）、
 //   1/1〜7 は 去年の 回の 録画（★2。y − 1）。ほかの 月は 番組なし（舞台は ふだんの「やきう　物語」）。
 //   年は 呼ぶ 側が わたす（村は 端末の 年。calendar.ts は かえない）。開発は &date=1231・&date=1215・&date=0103。
-// 曜日と 季節の リズム：月曜は 議会、金曜は 映画館、土日は 音楽室（ui/village/rooms.ts）、12月は 劇場、本館は 野球。
+// 曜日と 季節の リズム：月曜は 議会、金曜は 映画館、土日は 音楽室（ui/village/rooms.ts）、12月は 劇場、配信会館は 野球。
 // あとから 足した 番組（銭湯の 大相撲・カジノの 競馬 ほか）は 束（data/jikkyo/packs.ts）が 日を 決める（programSlots）。
 
 import type { JkSlot } from "../../core/jikkyo";
@@ -28,12 +28,12 @@ const VENUES: readonly string[] = [
 	"cityhall",
 ] satisfies VenueId[];
 
-/** 本館で 議会中継を 流す 曜日（月曜。定例会の 日で、ナイターが ない）。 */
+/** 配信会館で 議会中継を 流す 曜日（月曜。定例会の 日で、ナイターが ない）。 */
 export const GIKAI_WDAY = 1;
 /** 番組の ある 場所の id か（施設の id から）。 */
 export const isVenue = (id: string): id is VenueId => VENUES.includes(id);
 
-/** 本館の 実況モニターが ある 段（本館の 段2）。 */
+/** 配信会館の 実況モニターが ある 段（配信会館の 段2）。 */
 export const HALL_JIKKYO_FROM = 6;
 /** 映画館が 建つ 段。 */
 export const CINEMA_FROM = 7;
@@ -87,14 +87,15 @@ export const programSlot = (
 };
 
 /**
- * 実況の 番組は 本筋の 山場（電池板を 持ち帰って 村の スレが 完走した あと）から（2026-10-14 作者：本筋を 太く。
+ * 実況の 番組は 本筋の 山場（最終話の あと。電池板の 同時配信大会が すんでから）から（2026-10-14 作者：本筋を 太く。
  * 寄り道の 施設は そのまま、番組だけ 後へ）。それまで テレビ・モニターは はり紙だけ。段の 条件は この 上に かさなる。
  */
 export const JIKKYO_STORY_GATE = "deep";
 export const jikkyoOpen = (cleared: readonly string[]): boolean =>
 	cleared.includes(JIKKYO_STORY_GATE);
 /** 山場の 前の テレビ・モニター（番組が ある はずの 日だけ 出す）。 */
-export const JIKKYO_PAUSED = "番組表に、はり紙。\n「開票が　すむまで　休止」";
+export const JIKKYO_PAUSED =
+	"番組表に、はり紙。\n「同時配信大会の　あいだ　休止」";
 
 /** 束の 番組（data/jikkyo/packs.ts）が その 段で 見られるか（作りかけは 出さない）。 */
 export const packOpen = (p: JkPack, stage: number): boolean =>
@@ -102,7 +103,7 @@ export const packOpen = (p: JkPack, stage: number): boolean =>
 
 /**
  * その 場所・日に 見られる 番組（前からの 番組 → 束の 番組の 順。会場で 調べた ときに 2つ 以上 なら 選ぶ）。
- * 本館の 実況モニターは ui/village/hallEvents.ts の 入口（programSlot の main と alt）なので ここには 入れない。
+ * 配信会館の 実況モニターは ui/village/hallEvents.ts の 入口（programSlot の main と alt）なので ここには 入れない。
  */
 export const programSlots = (
 	venue: string,

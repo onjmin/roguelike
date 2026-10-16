@@ -1,4 +1,4 @@
-// 実況の 板（本館の 実況モニターの 別ゲー『ナイター実況』）。エンジンは core/jikkyo.ts、試合は core/jikkyoYakyu.ts、
+// 実況の 板（配信会館の 実況モニターの 別ゲー『ナイター実況』）。エンジンは core/jikkyo.ts、試合は core/jikkyoYakyu.ts、
 // 文と 組み立ては data/jikkyo/yakyu.ts、TV は ui/jikkyo/jikkyoYakyuTv.ts、選ぶ 部品は ui/minigames/minigamePicker.ts。
 // - 板：題・TV・ヘッダー（Part・レス・勢い・進み具合の バー）・スレ（DOM 40行まで）・候補の 引き出し・ノート・ヒント。
 //   画面の 形（.narrow・.short-landscape）と 動きを へらす 設定は style.css の .mgame.jk。
@@ -83,7 +83,7 @@ export type JikkyoMemo = {
 	kanso: number;
 	tutored: boolean;
 	last: JikkyoLast | null;
-	/** 試合後の 1窓を もう 言った 本館の 人。 */
+	/** 試合後の 1窓を もう 言った 配信会館の 人。 */
 	heard: string[];
 	/**
 	 * 番組ごとの 記録（映画館・劇場。ui/jikkyo/jikkyoWatch.ts）。best は 届いた ★、rerun は 再上映で 届いた ★、
@@ -215,7 +215,7 @@ const fill = (s: string, v: Record<string, string | number>): string =>
 	s.replace(/\{(\w+)\}/g, (m, k: string) => (k in v ? String(v[k]) : m));
 
 /**
- * 本館の 実況民の 試合後の 1窓（まだ 聞いて いなければ）。jikkyo_<id> は 自分の 球団が 勝った・負けた・ほかの 試合、
+ * 配信会館の 実況民の 試合後の 1窓（まだ 聞いて いなければ）。jikkyo_<id> は 自分の 球団が 勝った・負けた・ほかの 試合、
  * nanashi_0 は 完走したか 止まったか。無ければ null。
  */
 export const jikkyoAfterLine = (npcId: string): string | null => {
@@ -527,7 +527,7 @@ export const playJikkyo = async (
 			}
 		}
 		if (!result) return null;
-		// 見るだけも last は 残す（本館の 実況民が 感想を 言う）。best・plays・kanso には 数えない
+		// 見るだけも last は 残す（配信会館の 実況民が 感想を 言う）。best・plays・kanso には 数えない
 		const newBest = recordJikkyo(game, result, { noSave: opt.noSave });
 		await showResult(ctx, root, board, game, result, newBest, pk);
 		return { result, game, newBest };
@@ -603,7 +603,7 @@ const showResult = async (
 	});
 };
 
-// ───────────────── 本館の 実況モニター ─────────────────
+// ───────────────── 配信会館の 実況モニター ─────────────────
 
 /** 試合の 種（冒険の 乱数には 触らない）。 */
 const newSeed = (): string => `jk:${Date.now()}${Math.random()}`;
@@ -618,13 +618,13 @@ export const newYakyuGame = (seed = newSeed()): JkGame => {
 };
 
 /**
- * 本館の 実況モニター：カードの 窓 → 『実況する／チャンネルを　かえる／見るだけ／やめる』。
+ * 配信会館の 実況モニター：カードの 窓 → 『実況する／チャンネルを　かえる／見るだけ／やめる』。
  * チャンネルを かえると 種を 作りなおす（何回でも）。はじめての 1回は 遊び方の 窓。終わったら 完走か 止まったかの 1窓。
  */
 export const hallMonitor =
 	(ctx: UiCtx): Script =>
 	async (s) => {
-		// 番組表（data/jikkyo/schedule.ts）で 本館の 枠を 引く。月曜は 議会中継が はじめの チャンネル
+		// 番組表（data/jikkyo/schedule.ts）で 配信会館の 枠を 引く。月曜は 議会中継が はじめの チャンネル
 		// （ui/jikkyo/jikkyoGikai.ts。チャンネルを かえると ナイターの 録画）
 		const stage = previewStage() ?? loadTown().stage;
 		const slot = programSlot("hall", today(), stage, new Date().getFullYear());

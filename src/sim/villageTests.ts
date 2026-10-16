@@ -2694,9 +2694,11 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 							? `kiriko ${p.kiriko}: ${p.text}`
 							: p.who
 								? `say ${p.who}: ${p.text}`
-								: p.nanashi
-									? `say nanj: ${p.text}`
-									: `narrate: ${p.text}`,
+								: p.mob
+									? `say ${MOBS[p.mob].voice ?? null}: ${p.text}`
+									: p.nanashi
+										? `say nanj: ${p.text}`
+										: `narrate: ${p.text}`,
 					),
 					"fadeOut",
 					"rebuild",
@@ -2862,7 +2864,7 @@ test("開票: the 電池板 ending plays once and やきう stays; 転 plays onc
 			`やきう's lines in the 開票 are not played:\n${log.join("\n")}`,
 		);
 		ok(
-			log.some((l) => l.includes("★　キリコ　当選　★")),
+			log.some((l) => l.includes("★　キリコ　1位　★")),
 			"no 当選 card at the 開票",
 		);
 		ok(
@@ -4166,11 +4168,11 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		goalText("kinoko", "boss"),
 	);
 	ok(
-		goalText("shallow", "fetch") === "パン板の　推薦状を　持ち帰る",
+		goalText("shallow", "fetch") === "パン板の　サイン色紙を　持ち帰る",
 		goalText("shallow", "fetch"),
 	);
 	ok(
-		goalText("deep", "boss") === "投票箱を　持ち帰る",
+		goalText("deep", "boss") === "町の　主電源を　持ち帰る",
 		"a board without a boss reads as a boss run",
 	);
 	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);

@@ -578,7 +578,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			rescue: "escort",
 			lines: [
 				"野次馬たちが　わっしょいと　集まってきた！",
-				"だれかが　「キリコ　当確！」と　叫んだ",
+				"だれかが　「撮れ高　確定！」と　叫んだ",
 				"神輿に　のせられて、やぐらの　下まで　運ばれた",
 			],
 			cause: "祭りの親分マシーを　たおした",

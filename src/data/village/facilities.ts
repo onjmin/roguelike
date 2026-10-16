@@ -8,7 +8,7 @@
 //     building  ふつうの 家（屋根の 棟・軒、壁の 上段・下段。扉は 下段。Base.png の 家・壁・屋根）。字は 自動で 割りふる。
 //     block     自分で 字を 並べる（グラウンド・桟橋など。字と 絵は tiles に）。
 // - clear は 外観の 前に 敷く 地面（森を 開いた 草地・道。地図の 座標で 左上から 右へ）。
-// - 中（room）が あれば 扉を 踏むと 入る。部屋の 形は 本館・建物の 中と 同じ（上に 天井と 壁 2段、下に マット 2マス）。
+// - 中（room）が あれば 扉を 踏むと 入る。部屋の 形は 配信会館・建物の 中と 同じ（上に 天井と 壁 2段、下に マット 2マス）。
 //   家具・小物は RPGEN の 部品（rpgenArt.ts の ri・riCell。rpgen-interior.png）と Base.png。幅の ある 物（台・車）は
 //   riCell で マスごとに、背の 高い 物（冷蔵ケース・ロッカー）は ri で 下から 1本に 切って 上の マスへ はみ出させる。
 // - 外の 物（outdoor）は 地図の マスに 見えない イベントを 置き、そこの 絵を 調べる。fishing・batting は 遊べる 物。
@@ -318,7 +318,7 @@ const CLOCK = base(7, 507);
 
 // ───────────────── 施設 ─────────────────
 
-/** 名無し（本館の 中の 人と 同じ 絵。data/village/hall.ts の NANASHI_WALK）。 */
+/** 名無し（配信会館の 中の 人と 同じ 絵。data/village/hall.ts の NANASHI_WALK）。 */
 const NANASHI = ["sa:xjuotB", "sa:qPN3cT", "sa:C2hS8U", "sa:VaBXqn"] as const;
 
 const C_PIER = "#a8804c";
@@ -4238,7 +4238,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 			lines: {
 				window: ["窓。\nコンテナ船が　ゆっくり　入ってくる。"],
-				chart: ["入港予定の　表。\n「選挙カー　船：入港　禁止」"],
+				chart: ["入港予定の　表。\n「凸待ち　配信者：入港　禁止」"],
 				buoy: ["浮き輪。\n「おんJ港」と　書いてある。"],
 				cabinet: ["書類の　棚。\n積み荷の　台帳が　ぎっしり。"],
 				radio: ["無線機。\n「こちら　おんJ港。どうぞ」"],
@@ -4639,7 +4639,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			},
 		},
 	},
-	// 足もとは 本館の 屋根なので 正面に 扉は 描かない（扉の 列を 灰色の 壁に）。看板は 右はしの 下の 段（東の 草地から 読む）
+	// 足もとは 配信会館の 屋根なので 正面に 扉は 描かない（扉の 列を 灰色の 壁に）。看板は 右はしの 下の 段（東の 草地から 読む）
 	{
 		id: "zakkyo",
 		name: "雑居ビル",

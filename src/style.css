@@ -2156,7 +2156,7 @@ body.jolt #app {
 	filter: drop-shadow(0 3px 0 #3d200c) drop-shadow(0 0 14px rgba(0, 0, 0, 0.9));
 }
 
-/* 「選挙」だけ 大きく、演説台で 跳ねるように ゆれる */
+/* 「配信」だけ 大きく、配信中の ランプのように ゆれる */
 .title-logo-deep {
 	display: inline-block;
 	font-size: 1.12em;

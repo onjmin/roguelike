@@ -285,16 +285,16 @@ const playCue = async (
 	s: Story,
 	c: NonNullable<StoryPage["cue"]>,
 ): Promise<void> => {
-	// 開票（電池板の 山場）：のこり 1票で 鐘、当選で ファンファーレと 札（山場が わかるように）
+	// 同接の 読みあげ（電池板の 山場）：同点 のこり 1人で 鐘、1位で ファンファーレと 札（山場が わかるように）
 	if (c === "res999") {
 		s.se("chapter");
-		s.toast("開票　のこり　1票");
+		s.toast("同点　のこり　1人");
 	} else if (c === "chapterEnd") {
 		s.se("chapter");
 		await s.wait(400);
 	} else if (c === "res1000") {
 		s.se("victory");
-		s.toast("★　キリコ　当選　★");
+		s.toast("★　キリコ　1位　★");
 		await s.wait(600);
 	}
 };
@@ -559,7 +559,7 @@ export const deathScene = async (s: Story): Promise<void> => {
 
 // ───────────────── 開いた知らせ ─────────────────
 
-/** 転（STORY.md §5）：風呂板の 語りを 見おえた 帰りに 1回だけ。告示の 小さい 字と、貼ったのは やきう。 */
+/** 転（STORY.md §5）：風呂板の 語りを 見おえた 帰りに 1回だけ。ダンジョンの 壁の 字は コメントで、いちばん下の 1つ目は 初配信の「見とるで」。 */
 export const tenScript = async (s: Story): Promise<void> => {
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
 	for (const p of withoutAway(

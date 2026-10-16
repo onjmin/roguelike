@@ -80,7 +80,7 @@ export const crowdSize = (
 // ───────────────── 行き先 ─────────────────
 
 /**
- * 行き先の 種類。home 家・work 職場・care 病院・shop 店・food 飲食店・fun 遊び場・hall 本館・transit 駅・
+ * 行き先の 種類。home 家・work 職場・care 病院・shop 店・food 飲食店・fun 遊び場・hall 配信会館・transit 駅・
  * edge 村の 出口（村の 外に 住む 人・よその 板から 来る 人）・rest 立ちどまる 所・wait 乗り物を 待つ 所。
  */
 export type CrowdKind =
@@ -187,7 +187,7 @@ type Spot = {
 
 const S = 1000;
 /**
- * 立ちどまる 所（町の 段の from〜until）。まとめ掲示板を 読む・神社に お参り・浜で 海を 見る・
+ * 立ちどまる 所（町の 段の from〜until）。ランキング掲示板を 読む・神社に お参り・浜で 海を 見る・
  * 自販機で 飲む・バス停で 待つ・広場の 時計の 下で 待ち合わせ・公園の 噴水の まわり。
  */
 const SPOTS: readonly Spot[] = [
@@ -611,7 +611,7 @@ export type Persona = {
 	bandLines: Partial<Record<TimeBand, readonly string[]>>;
 };
 
-/** 名無し（おんJ民。本館の 名無しと 同じ 絵）。 */
+/** 名無し（おんJ民。配信会館の 名無しと 同じ 絵）。 */
 const NANASHI_WALKS = ["sa:xjuotB", "sa:qPN3cT", "sa:C2hS8U", "sa:VaBXqn"];
 
 export const PERSONAS: readonly Persona[] = [
@@ -665,7 +665,7 @@ export const PERSONAS: readonly Persona[] = [
 		},
 		lines: [
 			"定時で　帰るンゴ。\n……今日こそは",
-			"遊説　お疲れさん。\nワイは　会社の　保守や",
+			"配信　お疲れさん。\nワイは　会社の　保守や",
 			"昼休みに　スレ　見るのが\nいちばんの　楽しみなんや",
 			"会議が　長すぎて\n実況　見逃したわ",
 			"有給？　ああ、\nそんなのも　あったな",
@@ -819,7 +819,7 @@ export const PERSONAS: readonly Persona[] = [
 			"わたしの　若いころはね、\nみんな　2ch　だったのよ",
 			"孫が　おんJに\n入りびたってるの。……わたしもよ",
 			"ゆっくり　歩くのも\nいいものよ",
-			"人が　ふえたわねえ。\n……選挙って、にぎやかね",
+			"人が　ふえたわねえ。\n……配信って、にぎやかね",
 		],
 		bandLines: {
 			morning: ["朝の　散歩は\n欠かせないのよ"],
@@ -871,7 +871,7 @@ export const PERSONAS: readonly Persona[] = [
 			],
 		},
 		lines: [
-			"本館で　実況　見てくるわ",
+			"配信会館で　実況　見てくるわ",
 			"ワイ、名無し。\n名前は　まだ　ない",
 			"スレ立て　代行　まだかいな",
 			"保守。\n……言うてみた　だけや",
@@ -955,7 +955,7 @@ export const PERSONAS: readonly Persona[] = [
 		lines: [
 			"そうそう　安価……\nって　それは　あんかけやないかーい！ｗｗ",
 			"そうそう　トロッコの　乗り場……\nって　トロと　海苔巻きやないかーい！ｗｗ",
-			"そうそう　まとめ掲示板……\nって　それは　まとめ買いやないかーい！ｗｗ",
+			"そうそう　投げ銭……\nって　それは　お賽銭やないかーい！ｗｗ",
 			"そうそう　キリ番　ゲット……\nって　キリンの　ゲップやないかーい！ｗｗ",
 			"そうそう　海の家の　かき氷……\nって　それは　牡蠣ごおりやないかーい！ｗｗ",
 		],

@@ -5,7 +5,7 @@
 // - 引き受けた あと その 板へ 出ると、依頼主が ついてくる（core/guest.ts）。見たかった 階に 着くと 満足して 村へ 帰り、
 //   帰ってきた キリコに お礼（少しの お金）。たおれたら 依頼は そのまま（また 行ける）。
 // - 依頼主が 村に まだ いない・冒険に 出る 主人公（ロゼ・ゼロ）と 同じ 人なら、その 冒険には ついてこない。
-// やきうは 依頼しない（現職。自分の 遊説で いそがしい）。
+// やきうは 依頼しない（名無しの 視聴者。配信を 見るので いそがしい）。
 
 import type { HeroId } from "../../core/data/heroes";
 import type { DungeonId, GuestId, GuestSpec } from "../../core/types";
@@ -113,7 +113,7 @@ export const ESCORTS: readonly EscortRequest[] = [
 		lineCue: { emote: "♪" },
 		thanks: [
 			"歩いて　見る　島、\nきれいだった〜",
-			"おかえり、言う　係なのに\n言われちゃった〜。……お礼〜",
+			"ステージ　なしで　歩くの、\nはじめて　だった〜。……お礼〜",
 		],
 		thanksCue: { emote: "花" },
 		reward: 300,
@@ -161,16 +161,16 @@ export const ESCORTS: readonly EscortRequest[] = [
 		who: "zero",
 		board: "deep",
 		goal: 10,
-		title: "投票箱の　あった　所",
+		title: "主電源の　あった　所",
 		ask: [
-			"投票箱の　しずんでた　所、\nゼロも　見て　みたいんです",
+			"町の　主電源が　あった　所、\nゼロも　見て　みたいんです",
 			"……ひとりだと、数えまちがえ\nそうで。10階まで、いっしょに",
 		],
 		join: "ゼロが　かけよってきた。",
 		line: "ゼロも　行きます。\n……近くで　数えたいんです",
 		lineCue: { emote: "!" },
 		thanks: [
-			"見てきました。\n来年の　票も、ここに　しずむんですね",
+			"見てきました。\nコメントは、ここに　積もるんですね",
 			"ちゃんと　数えました。\n……お礼、です",
 		],
 		reward: 500,
@@ -184,7 +184,7 @@ export const escortById = (
 /** 仲間（Speaker）の 依頼主か（住人なら false）。 */
 const isFriend = (who: GuestId): who is GuestId & Speaker => who in CAST;
 
-/** 依頼主が いま 村に いるか（仲間も 住人も 越してきている）。 */
+/** 依頼主が いま 村に いるか（住人は はじめから いる。仲間は 筋で 留守の ことが ある）。 */
 export const requesterHere = (
 	who: GuestId,
 	cleared: readonly DungeonId[],

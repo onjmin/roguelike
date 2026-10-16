@@ -806,8 +806,8 @@ export class Run {
 		if (fell)
 			this.msg(
 				this.dungeon.up
-					? "上の階へ　押し上げられた。繰り上げ当選だ"
-					: "下の階に　落ちた。まだ　落選では　ない",
+					? "上の階へ　押し上げられた。枠移動だ"
+					: "下の階に　落ちた。まだ　放送事故では　ない",
 			);
 		this.updateVision();
 		// 同行者も キリコの そばに 着く（core/guest.ts）

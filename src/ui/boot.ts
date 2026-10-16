@@ -46,11 +46,11 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 			]),
 			el("h1", {
 				class: "title-logo",
-				html: `<span class="title-logo-pre">蓄音キリコの</span><span class="title-logo-main">総<span class="title-logo-deep">選挙</span></span>`,
+				html: `<span class="title-logo-pre">蓄音キリコの</span><span class="title-logo-main">ダンジョン<span class="title-logo-deep">配信</span></span>`,
 			}),
 			el("div", {
 				class: "title-sub",
-				text: "おんJ公式マスコット　総選挙　告示",
+				text: "登録者　0人からの　攻略配信",
 			}),
 			quoteEl,
 			buttons,
@@ -159,16 +159,16 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 const LOG_LINES = [
 	"乙",
 	">>1　乙",
-	"キリコに　一票",
+	"キリコ　登録した",
 	"ほんま草",
-	"今年も　やきうか",
+	"見とるで",
 	"このスレッドは　1000を　超えました",
 	"age",
-	"立候補　締め切り　まだ？",
+	"同接　何人や？",
 	"キリコ　すこ",
 	"ワイも　もぐる",
 	"底には　なにが　あるんや",
-	"推薦　もろてこい",
+	"撮れ高　もろてこい",
 	"長湯スレ　どこ",
 	"B10で　力尽きた",
 	"腹へった",
@@ -177,8 +177,8 @@ const LOG_LINES = [
 	"ぷゆゆ",
 	"また　明日",
 ];
-/** 開票の あと（電池板を 持ち帰った）に まじる 行（STORY.md §5）。 */
-const WIN_LOG = ["キリコ　当選　おめ", "来年は　勝つで"] as const;
+/** 最終話の あと（電池板を 持ち帰った）に まじる 行（STORY.md §5）。 */
+const WIN_LOG = ["キリコ　1位　おめ", "配信　切るの　惜しかったな"] as const;
 const WEEK = "日月火水木金土";
 
 const logLine = (r: () => number, won: boolean): string => {

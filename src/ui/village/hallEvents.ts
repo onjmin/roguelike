@@ -1,12 +1,12 @@
-// おんJ 本館の 中の スクリプト（地図と 置き場所は data/village/hall.ts、文は data/town/hall.ts）。
+// 配信会館の 中の スクリプト（地図と 置き場所は data/village/hall.ts、文は data/town/hall.ts）。
 // 村の 扉を 踏むと（前で A でも）入り、出口の マットを 踏むと 入った 扉の 前へ 出る（Story.warp。暗転の 中で）。
 // 中の 物は どれも 村の ほかの 入口（掲示板・仲間・B／☰ の メニュー）と 同じ 窓を 開く もう 1つの 入口：
 //   壁の スレ＝冒険の記録・>>1 テンプレ＝あそびかた・本棚＝図鑑・
-//   帳簿の 貼り紙（集会所では 長机）＝売り上げ・殿堂の 壁＝総選挙の はり紙。
-// リプレイは 本館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。
+//   帳簿の 貼り紙（集会所では 長机）＝売り上げ・殿堂の 壁＝人気投票の はり紙。
+// リプレイは 配信会館の 映写機（どの 段にも）だけで 見る。選んだら 村から 出る。
 // 実況モニターは ナイター実況（別ゲー。ui/jikkyo/jikkyo.ts）。試合の あと 実況民は 1窓だけ 結果に ふれる。
-// 本館 だけの もの：
-//   - 街頭演説の 当番表：名前を 書いて 演説する（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
+// 配信会館 だけの もの：
+//   - 配信枠の 予約表：名前を 書いて 路上で 配信する（1回の 帰りに 1回まで。数を 数えるだけで 強さには 何も 効かない）。
 //   - 期間限定の 告知：起きている イベント（data/story/objectives.ts。?event= の 下見も）を いつでも 読める。
 //   - 飾り棚：持ち帰った 品を 絵で 並べる（植民地化宣言・長湯スレは 蓄音機で 鳴らしているので 一覧だけ）。
 // 書いた 数は 別の 保存場所（kiriko-roguelike/hall）に 残す（保存 できなくても この回は 覚えている）。
@@ -222,8 +222,8 @@ const records = async (ctx: Ctx, s: Story, replay = false): Promise<void> => {
 };
 
 /**
- * 街頭演説の 当番表：この 帰りに まだなら 空き欄に 名前を 書いて 演説できる（保存の 名前は hoshu の まま）。
- * キリコの 書いた 数が 当番表に 残る。
+ * 配信枠の 予約表：この 帰りに まだなら 空き枠に 名前を 書いて 路上で 配信できる（保存の 名前は hoshu の まま）。
+ * キリコの 書いた 数が 予約表に 残る。
  */
 export const tobanScript =
 	(tier: HallTier): Script =>
@@ -243,7 +243,7 @@ export const tobanScript =
 		save(m);
 		s.se("read");
 		await s.narrate(fill(HALL_MSG.tobanDone, { n: m.hoshu }));
-		// 節目には 聞いていた 名無しが ひとこと
+		// 節目には 見ていた 名無しが コメント
 		const reply = HALL_MSG.tobanReply[m.hoshu];
 		if (reply) {
 			await s.narrate(HALL_MSG.tobanReplyHead);
@@ -353,7 +353,7 @@ const oldestScript: Script = async (s) => {
 	await s.narrate(HALL_MSG.oldestMore);
 };
 
-/** 殿堂の 壁（総選挙の はり紙が 出ていれば それも）。 */
+/** 殿堂の 壁（人気投票の はり紙が 出ていれば それも）。 */
 const dendoScript: Script = async (s) => {
 	if (senkyoOpen()) await senkyoScript(s);
 	else await s.narrate(HALL_MSG.dendo);
@@ -378,7 +378,7 @@ const nanashiScript =
 		if (p.dir) s.face(p.id, p.dir);
 	};
 
-/** 本館の 下の 本棚：野球の 本を 選んで 読む（やめるまで）。 */
+/** 配信会館の 下の 本棚：野球の 本を 選んで 読む（やめるまで）。 */
 const yakyuShelf: Script = async (s) => {
 	await s.narrate(YAKYU_SHELF.line);
 	const books = YAKYU_SHELF.books;
@@ -439,7 +439,7 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "notice":
 			return sign(p.id, p.x, p.y, noticeScript);
 		case "book":
-			// 本館の 2つ目の 本棚は 野球の 本
+			// 配信会館の 2つ目の 本棚は 野球の 本
 			if (p.id !== "book_0") return sign(p.id, p.x, p.y, yakyuShelf);
 			return sign(p.id, p.x, p.y, async (s) => {
 				// 本屋が 建ったら 辞典は そちらへ（はり紙を 残して、図鑑だけ）
@@ -532,7 +532,7 @@ const shelfDecor = (
 
 /**
  * 実況モニターの 画面（ナイターの 中継と、右から 左へ 流れる 実況の 書きこみ）。壁の M の マスに かかる
- * 大きな 画面の 絵（Base.png の 0,485 の 2×2）の ガラスの ところだけ 描く。本館の 段で なければ 無い。
+ * 大きな 画面の 絵（Base.png の 0,485 の 2×2）の ガラスの ところだけ 描く。配信会館の 段で なければ 無い。
  */
 const monitorDecor = (rows: readonly string[]): MapDef["decor"] => {
 	const my = rows.findIndex((r) => r.includes("M"));
@@ -572,7 +572,7 @@ const monitorDecor = (rows: readonly string[]): MapDef["decor"] => {
 	};
 };
 
-/** おんJ 本館の 中の 地図（本館の 段は 描いている 村の 段から）。曲は 村の まま。 */
+/** 配信会館の 中の 地図（配信会館の 段は 描いている 村の 段から）。曲は 村の まま。 */
 export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 	const tier = hallTierOf(v);
 	const rows = hallRows(tier);

@@ -1,5 +1,5 @@
 // 冒険の記録：倒れた・持ち帰ったときの全画面の札（showRunEnd）と、村で見る過去の記録（openRecords。
-// まとめ掲示板・ゼロ・村のメニューから）。
+// ランキング掲示板・ゼロ・村のメニューから）。
 // 1ページずつタップで送る語りの札（showStory。はじめての前口上）もここに置く。
 
 import { dungeonById } from "../../core/data/dungeons";
@@ -235,7 +235,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 						? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
 						: escaped
 							? "地上へ　もどった"
-							: "落選した",
+							: "放送事故",
 		}),
 		el("p", {
 			class: "matome-line runend-cause",
@@ -257,11 +257,11 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-sec" }, [
 			el("div", {
 				class: "matome-title",
-				// 倒れた ときは 持ち物を ぜんぶ 失う（落選で 供託金の 没収）
+				// 倒れた ときは 持ち物を ぜんぶ 失う（放送事故。機材も ドロップ品も 現地に 置いてくる）
 				text:
 					clear || escaped
 						? `持ち物（${p.items.length}）`
-						: `没収された　供託金（${p.items.length}）`,
+						: `現地に　置いてきた　機材（${p.items.length}）`,
 			}),
 			items,
 		]),
@@ -281,10 +281,10 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 };
 
 /**
- * 「冒険の記録」（村の まとめ掲示板・本館の 壁の スレから）：通算と、これまでの冒険（新しい順）。
- * replay（本館の 映写機の「リプレイ上映」）の ときだけ、冒険を選ぶと 残っていれば「リプレイを見る」
+ * 「冒険の記録」（村の ランキング掲示板・配信会館の 壁の スレから）：通算と、これまでの冒険（新しい順）。
+ * replay（配信会館の 映写機の「リプレイ上映」）の ときだけ、冒険を選ぶと 残っていれば「リプレイを見る」
  * 「リプレイを わたす」。見るなら そのリプレイを返す。「読み込む」で 人から もらった リプレイも 見られる。
- * 記録だけの ときは 選んでも 見出しだけ（リプレイは 本館で）。
+ * 記録だけの ときは 選んでも 見出しだけ（リプレイは 配信会館で）。
  */
 export const openRecords = async (
 	ctx: Ctx,
@@ -356,7 +356,7 @@ export const openRecords = async (
 			await infoWindow(
 				ctx,
 				"",
-				`<p>${head}</p>${rp ? `<p class="dim">リプレイは　本館の　映写機で　見られる</p>` : ""}`,
+				`<p>${head}</p>${rp ? `<p class="dim">リプレイは　配信会館の　映写機で　見られる</p>` : ""}`,
 			);
 			continue;
 		}

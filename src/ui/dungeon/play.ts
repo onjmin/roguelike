@@ -3456,11 +3456,11 @@ export class Play {
 				class: "over1000-body",
 				text: falls
 					? isUpBoard(this.run.s.dungeon)
-						? "もう書けないので、上の階で演説してくださいです。。。"
-						: "もう書けないので、下の階で演説してくださいです。。。"
+						? "もう書けないので、上の枠で配信してくださいです。。。"
+						: "もう書けないので、下の枠で配信してくださいです。。。"
 					: isUpBoard(this.run.s.dungeon)
-						? "もう書けませんが、上は　ないので、ここで演説してくださいです。。。"
-						: "もう書けませんが、下は　ないので、ここで演説してくださいです。。。",
+						? "もう書けませんが、上は　ないので、ここで配信してくださいです。。。"
+						: "もう書けませんが、下は　ないので、ここで配信してくださいです。。。",
 			}),
 		]);
 		this.ctx.ui.appendChild(post);
@@ -3527,7 +3527,7 @@ export class Play {
 								? diveResLine(dive, run.heroName)
 								: run.s.depth >= run.dungeon.floors
 									? isUpBoard(run.s.dungeon)
-										? "いちばん　上。支持率も　こう　ありたい"
+										? "いちばん　上。ランキングも　こう　ありたい"
 										: "いちばん　底。もう　落ちようが　ない"
 									: "",
 			}),
@@ -3650,7 +3650,7 @@ export class Play {
 		const scene = el("div", { class: "death" }, [
 			el("div", {
 				class: "death-title",
-				text: `${this.run.heroName}、落選`,
+				text: `${this.run.heroName}、放送事故`,
 			}),
 			el("div", {
 				class: "death-cause",

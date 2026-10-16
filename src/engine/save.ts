@@ -417,7 +417,7 @@ export type Progress = {
 	/** 持ち帰りの 語り（data/story/story.ts の STORY[d].ending）を 見おえた 板。一度きりの 語りは 二度 出さない。 */
 	endings?: DungeonId[];
 	/**
-	 * 旗：ten＝転（告示の 小さい 字）を 見おえた、q_roze など 仲間の 依頼、town_* ＝ 町の 寄り道で 見つけた 板、
+	 * 旗：ten＝転（広場の 地面の コメントの 層）を 見おえた、q_roze など 仲間の 依頼、town_* ＝ 町の 寄り道で 見つけた 板、
 	 * toldWallet など 一度きりの 知らせ。
 	 */
 	flags?: string[];
