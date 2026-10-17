@@ -495,6 +495,7 @@ export const ENDING: StoryPage[] = [
 		seRepeat: 6,
 		seGap: 120,
 	},
+	{ who: null, text: "……押してたの、吾輩ンゴ", kiriko: "voice" },
 	// 規模が ふくらむ（銭湯の 外まで）。次の 窓で のぼせて 浮いて、話は 湯船に もどる
 	{
 		who: null,
