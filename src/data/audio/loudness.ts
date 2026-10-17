@@ -21,7 +21,7 @@
 // | 効果音 field           | -23  |  0  | 階段・拾う音など。BGM と同じくらい           |
 // | 効果音 battle          | -21  | +2  | 戦闘の音。BGM の上に聞こえるように           |
 // | 効果音 impact          | -19  | +4  | 会心の一撃・爆発。いちばん目立たせる         |
-// | 効果音 jingle          | -22  | +1  | BGM の代わりに鳴る短い曲。BGM の M-max と同じくらい |
+// | 効果音 jingle          | -25  | -2  | 短い曲。鳴るあいだ BGM を絞るので、ひとりで目立つ。レベルアップ・1UP が うるさいと 言われて 3 dB 下げた |
 //
 // ■ 効果音の測り方（L）
 // 3 秒より短い音が多く、I（ゲート付きの平均）は 400 ms より短い音では出ないので、
@@ -53,7 +53,7 @@ export const SE_TARGET = {
 	field: -23,
 	battle: -21,
 	impact: -19,
-	jingle: -22,
+	jingle: -25,
 } as const;
 
 export type SeKind = keyof typeof SE_TARGET;
@@ -113,7 +113,7 @@ export type SeLoudness = readonly [
 
 // <loudness:se> ここから下は pnpm loudness（scripts/measure-loudness.mjs）が書き換える。手で直さない。
 /**
- * 効果音ごとの実測と補正（2026-10-16、ffmpeg 8.0 の ebur128）。
+ * 効果音ごとの実測と補正（2026-10-17、ffmpeg 8.0 の ebur128）。
  * [素材 id, L, true peak, 補正 dB, 倍率, 鳴り始め ms, 鳴り終わり ms, 待つ ms]。
  * 行末は「区分 → 既定の設定での L」。
  */
@@ -200,13 +200,13 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	arcCrash: ["YHEG4T", -12.6, -6.7, -8.4, 0.38, 0, 1360, 630], // battle → -21.0
 	critical: ["3xdWAT", -12.7, -7.8, -6.3, 0.484, 0, 430, 360], // impact → -19.0
 	explosion: ["HydVaH", -6.6, -0.4, -12.4, 0.24, 120, 1580, 990], // impact → -19.0
-	victory: ["tSHy6V", -13.7, -7.8, -8.3, 0.385, 20, 1540, 970], // jingle → -22.0
-	levelup: ["JrcaUb", -8, -1.7, -14, 0.2, 90, 2390, 1500], // jingle → -22.0
-	wipeout: ["rEaCCP", -10.7, -5.8, -11.3, 0.272, 560, 6690, 1500], // jingle → -22.0
-	save: ["jVOw87", -10.4, -0.3, -11.6, 0.263, 90, 3730, 1100], // jingle → -22.0
-	chapter: ["thHyyN", -7.7, -2, -14.3, 0.193, 50, 1220, 410], // jingle → -22.0
-	served: ["wMSfsJ", -11.7, -2.9, -10.3, 0.305, 60, 1810, 1410], // jingle → -22.0
-	arcStart: ["2GAYAx", -5, -0.1, -17, 0.141, 0, 560, 470], // jingle → -22.0
-	arcBest: ["VvhXOb", -7.2, -2.2, -14.8, 0.182, 30, 830, 710], // jingle → -22.0
+	victory: ["tSHy6V", -13.7, -7.8, -11.3, 0.272, 20, 1540, 970], // jingle → -25.0
+	levelup: ["JrcaUb", -8, -1.7, -17, 0.141, 90, 2390, 1500], // jingle → -25.0
+	wipeout: ["rEaCCP", -10.7, -5.8, -14.3, 0.193, 560, 6690, 1500], // jingle → -25.0
+	save: ["jVOw87", -10.4, -0.3, -14.6, 0.186, 90, 3730, 1100], // jingle → -25.0
+	chapter: ["thHyyN", -7.7, -2, -17.3, 0.136, 50, 1220, 410], // jingle → -25.0
+	served: ["wMSfsJ", -11.7, -2.9, -13.3, 0.216, 60, 1810, 1410], // jingle → -25.0
+	arcStart: ["2GAYAx", -5, -0.1, -20, 0.1, 0, 560, 470], // jingle → -25.0
+	arcBest: ["VvhXOb", -7.2, -2.2, -17.8, 0.129, 30, 830, 710], // jingle → -25.0
 };
 // </loudness:se>
