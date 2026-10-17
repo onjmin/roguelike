@@ -145,7 +145,12 @@ export const skitAfterEvent = async (
 	const sk =
 		o.to !== o.from
 			? find((on) => on.k === "enter" && on.map === o.to)
-			: find((on) => on.k === "look" && o.thing.startsWith(on.thing));
+			: find(
+					(on) =>
+						on.k === "look" &&
+						o.thing.startsWith(on.thing) &&
+						(!on.map || on.map === o.to),
+				);
 	if (!sk) return false;
 	await play(s, sk);
 	return true;

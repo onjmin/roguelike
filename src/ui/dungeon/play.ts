@@ -3680,7 +3680,7 @@ export class Play {
 
 	/**
 	 * 敵の いない 大部屋に 入ったら、村の スレの 寸劇を 少しずつ ログに 流す（data/story/roomSkits.ts）。
-	 * 名所・ボス・集落の 階と 持ち帰る 途中・リプレイでは 出さない。
+	 * 名所・ボス・集落の 階と 持ち帰る 途中・同行者の いる 冒険・リプレイでは 出さない。
 	 */
 	private roomSkit(before: { x: number; y: number }): void {
 		const run = this.run;
@@ -3689,6 +3689,8 @@ export class Play {
 			this.rp ||
 			this.roomSkitShown ||
 			run.s.returning ||
+			// 同行者が いると「だれもおらん」「一人」が うそに なる
+			run.s.guest ||
 			f.rest ||
 			f.boss !== undefined ||
 			f.folk ||

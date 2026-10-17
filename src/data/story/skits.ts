@@ -25,8 +25,8 @@ export type SkitLine = Cue & {
 export type SkitOn =
 	/** 建物（施設は f_<施設の id>、銭湯などの 部屋は data/village/rooms.ts の id）に はじめて 入った。 */
 	| { k: "enter"; map: string }
-	/** 村の 物（イベントの id が この 頭で はじまる）を はじめて 調べた。 */
-	| { k: "look"; thing: string }
+	/** 物（イベントの id が この 頭で はじまる）を はじめて 調べた。map が あれば その 地図の 物だけ（部屋の 物は「safe_0」など）。 */
+	| { k: "look"; thing: string; map?: string }
 	/** 地図（map）の この 四角（x・y の はしを 含む）に はじめて 来た。口への 道（桟橋）には 置かない。 */
 	| {
 			k: "near";
@@ -70,42 +70,46 @@ const e = (cue: Cue, line: SkitLine): SkitLine => ({
 
 const clerk = by("店員");
 const owner = by("店主");
-const regular = by("常連");
 const trainer = by("トレーナー");
 const master = by("マスター");
 const usher = by("係員");
 const dealer = by("ディーラー");
 const banndai = by("番台");
 const nanashi = by("名無し");
+const native = by("原住民");
+const waiter = by("給仕");
+const actor = by("役者");
+const boss = by("首領");
+const member = by("構成員");
 const sensei = by("師範");
 
 export const SKITS: readonly Skit[] = [
 	// ───── 期間限定（話の あいだ だけ。その あいだに 村を 歩いたら。先へ 進むと 二度と 出ない） ─────
 	// 本筋は パン板（shallow）→ きのこ板（kinoko）→ 風呂板（main）→ 電池板（deep）→ 後日談（hidden）。
-	// 名無しの 口で、いまの 話の ようすに ふれる（STORY.md の 各話の 事件）
+	// いまの 話の ようすに ふれる（STORY.md の 各話の 事件。町の 人数・停電と 食いちがわない 人に 言わせる）
+	// パン板の 前：町には やきう・ぷゆゆ・原住民 だけで、広場は パン兵に 占領されて いる
 	{
 		key: "window_pan",
 		window: { before: "shallow" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("ワイ、パン板って\n行ったことないわ"),
-			nanashi("パンしかないらしいで"),
-			nanashi("……パンしか\nないんか"),
-			nanashi("パンしかないんや"),
-			k("……行けばわかるンゴ"),
+			native("広場、パン兵に\n占領されちゃったね"),
+			native("2012年には、\nやきう民に占領されたよ"),
+			native("……おれ、占領される\n係なのかな"),
+			e({ gesture: "shake" }, k("そんな係ないンゴ！")),
 		],
 	},
-	// 第一話の あと：町じゅう 独立して、申請書 1枚で 片づいた
+	// 第一話の あと：町じゅう 独立したが、申請書の 1枚は パン板が 使って いて 片づいた
 	{
 		key: "window_dokuritsu",
 		window: { after: "shallow", before: "kinoko" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("申請書1枚で\n独立できるらしいで"),
+			nanashi("独立の申請書、\nもう1枚刷ったろか"),
 			nanashi("ほな、ワイの家も\n独立や"),
 			nanashi("ワイの部屋も\n独立や"),
-			nanashi("……ワイの机も"),
-			e({ emote: "汗" }, k("……独立しすぎンゴ")),
+			nanashi("ワイの机も\n独立や"),
+			e({ emote: "汗" }, k("独立しすぎンゴ！！")),
 		],
 	},
 	// 第二話の あと：きのこの 行進が 港まで 来て、摘んで 片づいた
@@ -116,22 +120,22 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			nanashi("きのこの行進、\nすごかったな"),
 			nanashi("ワイの頭にも\n生えとったで"),
-			nanashi("……まだ生えとるで"),
-			e({ emote: "!", gesture: "startle" }, nanashi("えっ")),
-			k("……冗談ンゴ"),
+			nanashi("ワイのは、\nまだ生えとる"),
+			e({ emote: "怒" }, nanashi("抜けや！")),
+			k("……育ててるンゴ？"),
 		],
 	},
-	// 第三話の あと：銭湯は 42℃派と 41℃派の あいだの 41.5℃に なった
+	// 第三話の あと〜最終話：電池板が 開いて 町は 停電（data/town/revival.ts の inBlackout）
 	{
-		key: "window_onsen",
+		key: "window_teiden",
 		window: { after: "main", before: "deep" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("銭湯、41.5℃で\n落ちついたらしいな"),
-			nanashi("……ワイは43℃派や"),
-			nanashi("ワイは44℃派や"),
-			e({ emote: "怒" }, nanashi("また戦争になるやろ！")),
-			k("……もう潜らないンゴ"),
+			nanashi("停電、まだ\n直らんな"),
+			nanashi("銭湯の追いだきも\n止まっとるで"),
+			nanashi("ほな、ワイが\n自転車こいで発電したる"),
+			e({ emote: "怒" }, nanashi("町ひとつ分、\nこげるかい！")),
+			k("……電池板に行くンゴ"),
 		],
 	},
 	// 最終話の あと（後日談の 前）：見出しの 名無しは やきうだった
@@ -144,7 +148,20 @@ export const SKITS: readonly Skit[] = [
 			nanashi("見た。\nまさか、やきうが……"),
 			e({ emote: "怒" }, nanashi("ネタバレすな！")),
 			nanashi("……この町に、\nまだ見とらんやつおるか？"),
-			k("……みんな見てたンゴ"),
+			k("みんな見てたンゴ！"),
+		],
+	},
+	// 風呂板の 前の 銭湯（42℃派と 41℃派が まだ もめて いる。決着は 41.5℃）
+	{
+		key: "enter_bath",
+		window: { before: "main" },
+		on: { k: "enter", map: "bath" },
+		lines: [
+			banndai("いらっしゃい。\nうちの湯は42℃や"),
+			banndai("41℃派の客には、\n41℃って言うとる"),
+			k("ほんとは何℃ンゴ？"),
+			banndai("……温度計の目もり、\n毎回書き直しとる"),
+			e({ gesture: "shake" }, k("温度計の意味\nないンゴ！")),
 		],
 	},
 	// ───── 建物に はじめて 入った ─────
@@ -153,20 +170,33 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "enter", map: "f_konbini" },
 		lines: [
 			clerk("いらっしゃいませー。\nただいまポイント5倍デーです"),
-			clerk("……さらに今だけ、\nレシートが2枚出ます"),
-			clerk("……さらにさらに、\nレシートの裏にもレシートが"),
-			k("……レシートしか\nふえてないンゴ"),
+			clerk("さらに今だけ、\nレシートが2枚出ます"),
+			clerk("さらにさらに、\nレシートの裏にもレシートが！"),
+			e({ gesture: "shake" }, k("レシートしか\nふえてないンゴ！")),
 		],
 	},
+	// 何を 売って いるか わからない 質屋（店主も わかって いない）
 	{
 		key: "enter_pawn",
 		on: { k: "enter", map: "f_pawn" },
 		lines: [
 			owner("いらっしゃい。\nうちはなんでも売っとるで"),
-			k("……なにを売ってるンゴ？"),
-			owner("それを言うたら、\n売れへんやろ"),
-			owner("……ちなみに、\nあんたも売り物や"),
+			k("なにを売ってるンゴ？"),
+			owner("……それは、\nワイにもわからん"),
+			owner("ちなみに、\nあんたも売り物や"),
 			e({ emote: "汗", gesture: "startle" }, k("いつから\nンゴ！？")),
+		],
+	},
+	// 質屋の 金庫（中で なにか 鳴いて いる）：主人公が 原因と、嘘に 本気の 数字
+	{
+		key: "look_pawn_safe",
+		on: { k: "look", thing: "safe", map: "f_pawn" },
+		lines: [
+			k("鳴いてる金庫、\n開けてみるンゴ"),
+			e({ emote: "!" }, owner("あかん！")),
+			owner("……中身、いま\n町じゅうに逃げたで"),
+			e({ gesture: "startle" }, k("吾輩のせいンゴ！？")),
+			owner("請求は、\n1000万円や"),
 		],
 	},
 	// 海上レストラン「1000」：客は 2人なのに 満席（真面目な 給仕は 本気）
@@ -174,22 +204,22 @@ export const SKITS: readonly Skit[] = [
 		key: "enter_restaurant",
 		on: { k: "enter", map: "f_restaurant" },
 		lines: [
-			by("給仕")("いらっしゃいませ。\n本日は満席でございます"),
-			k("……お客さん、\n2人しかいないンゴ"),
-			by("給仕")("はい。2名さまで\n満席でございます"),
-			k("……テーブル、\nほとんど空いてるンゴ"),
-			by("給仕")("残りのお席は、1000日後の\nご予約のお客さまのものです"),
+			waiter("いらっしゃいませ。\n本日は満席でございます"),
+			k("お客さん、\n2人しかいないンゴ"),
+			waiter("はい。2名さまで\n満席でございます"),
+			k("テーブル、\nほとんど空いてるンゴ！"),
+			waiter("残りのお席は、1000日後の\nご予約のお客さまのものです"),
 		],
 	},
 	{
 		key: "enter_arcade",
 		on: { k: "enter", map: "f_arcade" },
 		lines: [
-			regular("……連コインは、\n男の美学や"),
-			regular("（ちゃりん）"),
-			regular("（ちゃりん）（ちゃりん）\n（ちゃりん）"),
-			regular("……両替してくるわ"),
-			k("美学、すぐ尽きたンゴ"),
+			nanashi("連コインは、\n男の美学や"),
+			nanashi("（ちゃりん）"),
+			nanashi("（ちゃりん）（ちゃりん）\n（ちゃりん）（ちゃりん）"),
+			nanashi("……両替してくるわ"),
+			e({ gesture: "shake" }, k("美学、すぐ\n尽きたンゴ！")),
 		],
 	},
 	{
@@ -197,9 +227,9 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "enter", map: "f_gym" },
 		lines: [
 			trainer("ようこそageジムへ！\nまずはスクワット10回！"),
-			trainer("……いや、100回！"),
-			trainer("……いや、スレが\n1000行くまで！"),
-			k("……終わらないンゴ"),
+			trainer("いや、100回！"),
+			trainer("いや、スレが\n1000行くまで！"),
+			e({ gesture: "shake" }, k("終わらないンゴ！")),
 			e({ emote: "!" }, trainer("それがageや！")),
 		],
 	},
@@ -207,10 +237,10 @@ export const SKITS: readonly Skit[] = [
 		key: "enter_bar",
 		on: { k: "enter", map: "f_bar" },
 		lines: [
-			master("……いらっしゃい。\n次スレへようこそ"),
-			master("前スレのお客さんは、\nもう帰ったよ"),
-			master("……前々スレのお客さんは、\nまだそこで寝てる"),
-			k("……起こしてあげるンゴ"),
+			master("いらっしゃい。\n次スレへようこそや"),
+			master("前スレの客は、\nもう帰ったで"),
+			master("前々スレの客は、\nまだ来とらん"),
+			e({ emote: "?" }, k("順番が逆ンゴ！")),
 		],
 	},
 	{
@@ -220,17 +250,17 @@ export const SKITS: readonly Skit[] = [
 			owner("へいらっしゃい！\n麺のかたさは？"),
 			k("……ふつうンゴ"),
 			e({ emote: "!" }, owner("乙！")),
-			owner("……うちは何を言われても\n「乙」で返す店や"),
-			k("……注文、通ってるンゴ？"),
+			owner("うちは何を言われても\n「乙」で返す店や"),
+			e({ emote: "?" }, k("注文、通ってるンゴ！？")),
 		],
 	},
 	{
 		key: "enter_cinema",
 		on: { k: "enter", map: "f_cinema" },
 		lines: [
-			usher("本日の上映は\n『スレ立てから1000まで』です"),
+			usher("本日の上映は、\nスレ1本まるごとです"),
 			usher("上映時間は、\nおよそ3年です"),
-			k("……長いンゴ"),
+			e({ gesture: "shake" }, k("長いンゴ！")),
 			usher("なお、途中で落ちる\nこともございます"),
 		],
 	},
@@ -240,19 +270,8 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			dealer("いらっしゃいませ。\n当店の勝率は、5割です"),
 			dealer("……お店の、です"),
-			k("……吾輩のは何割ンゴ？"),
-			dealer("それは、回してからの\nお楽しみです"),
-		],
-	},
-	// 銭湯「ゆ」（data/village/rooms.ts の bath。入口の 上に 番台）
-	{
-		key: "enter_bath",
-		on: { k: "enter", map: "bath" },
-		lines: [
-			banndai("いらっしゃい。\nうちの湯は42℃だよ"),
-			banndai("……41℃派のお客さんには、\n41℃って言ってる"),
-			k("……ほんとは何℃ンゴ？"),
-			banndai("……測ったことないねぇ"),
+			dealer("なお、常連さまは通算\n3勝1万2千敗です"),
+			e({ emote: "汗" }, k("常連、なんで\n来つづけてるンゴ！？")),
 		],
 	},
 	// ───── 爆発オチ（201 の「困ったら 毎回 同じ 最終手段と 同じ 音」。どの 建物も 最後は 爆発） ─────
@@ -263,7 +282,7 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "enter", map: "f_famires" },
 		lines: [
 			clerk("ドリンクバーは、\nおかわり自由です"),
-			k("……ぜんぶ混ぜるンゴ"),
+			k("ぜんぶ混ぜるンゴ"),
 			n("コーラ、メロンソーダ、\nコーヒー、コーンスープ……"),
 			{ ...clerk("混ぜるな危険です！"), fx: "boom" },
 			{ ...clerk("……おかわりは、\n自由です"), calm: true },
@@ -274,10 +293,10 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "enter", map: "f_recycle" },
 		lines: [
 			owner("うちは何でも\n直して売るよ"),
-			owner("この扇風機も、\n直したばっかりだ"),
-			n("スイッチを入れた。"),
-			{ ...k("……直ってないンゴ！"), fx: "boom" },
-			{ ...owner("……ほら、\nもう1回直せる"), calm: true },
+			owner("直したやつは、\nだいたい爆発するけどな"),
+			e({ gesture: "shake" }, k("売っちゃだめンゴ！")),
+			{ ...owner("……ほら、\nいま1台爆発した"), fx: "boom" },
+			{ ...owner("よし。\nまた直せる"), calm: true },
 		],
 	},
 	{
@@ -285,9 +304,9 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "enter", map: "f_dojo" },
 		lines: [
 			sensei("気合いだ！\n気合いで瓦を割れ！"),
-			sensei("……10枚！"),
-			sensei("……100枚！"),
-			{ ...sensei("……道場ごと！！"), fx: "boom" },
+			sensei("10枚！"),
+			sensei("100枚！"),
+			{ ...sensei("道場ごと！！"), fx: "boom" },
 			{ ...sensei("……よし。\n次は10枚からな"), calm: true },
 		],
 	},
@@ -295,23 +314,36 @@ export const SKITS: readonly Skit[] = [
 		key: "enter_theater",
 		on: { k: "enter", map: "f_theater" },
 		lines: [
-			usher("本日の演目は、\n『爆発オチ』です"),
-			k("……題で\nネタバレしてるンゴ"),
-			{ ...usher("……以上です"), fx: "boom" },
+			actor("本日の演目は、\n『やきう物語』！"),
+			actor("……なんやけど、\n台本が1行しかない"),
+			k("なんて書いてあるンゴ？"),
+			{ ...actor("『爆発』"), fx: "boom" },
 			{ ...k("……オチだけの劇ンゴ"), calm: true },
 		],
 	},
 	// ───── 村の 物を はじめて 調べた ─────
-	// 秘密結社の 本部（分譲住宅の 青い 家。表札を 出して いる）。テロは スレの 埋め立てで、最後は 自分の 家で 爆発
+	// 秘密結社の 本部（分譲住宅の 青い 家。表札を 出して いる）。テロは スレの 埋め立てで、最後は 自分の 家で 爆発。
+	// 2回目は 爆発の 天丼を ずらす（よその 家を ねらう）。見た 帰りの 次から
 	{
 		key: "look_kessha",
 		on: { k: "look", thing: "fthing_house_b" },
 		lines: [
-			by("首領")("作戦を発表する。\n今夜、おんJの全スレを1000にする"),
-			by("構成員")("……それ、毎晩みんな\nやっとることですやん"),
-			by("首領")("……作戦変更や。\nまず、この家を爆破する"),
-			{ ...k("……自分の家ンゴ！？"), fx: "boom" },
-			{ ...by("首領")("……作戦は、成功や"), calm: true },
+			boss("作戦を発表する。\n今夜、おんJの全スレを1000にする"),
+			member("それ、毎晩だれかが\nやっとることですやん"),
+			boss("……作戦変更や。\nまず、この家を爆破する"),
+			{ ...k("自分の家ンゴ！？"), fx: "boom" },
+			{ ...boss("……作戦は、成功や"), calm: true },
+		],
+	},
+	{
+		key: "look_kessha2",
+		on: { k: "look", thing: "fthing_house_b" },
+		lines: [
+			boss("作戦その2を発表する"),
+			member("どうせまた、\nこの家を爆破するんでしょ"),
+			boss("せえへん。\n今回は、となりの家や"),
+			{ ...k("人の家ンゴ！！"), fx: "boom" },
+			{ ...member("……となり、\nうちの実家ですけど"), calm: true },
 		],
 	},
 	{
@@ -320,7 +352,7 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			k("……吾輩、さっきから\n見られてる気がするンゴ"),
 			n("ふりかえっても、\nだれもいない。"),
-			n("……もう一度ふりかえっても、\nやっぱりだれもいない。"),
+			n("もう一度ふりかえっても、\nやっぱりだれもいない。"),
 			e({ emote: "汗" }, k("……ROM専の神さまンゴ？")),
 		],
 	},
@@ -330,9 +362,9 @@ export const SKITS: readonly Skit[] = [
 		key: "look_well",
 		on: { k: "look", thing: "well" },
 		lines: [
-			k("……おーい、ンゴ"),
+			k("おーい、ンゴ"),
 			n("底から、少し遅れて\n「……おーい」と返ってきた。"),
-			n("……もう少し遅れて、\n「……ふぇ」と聞こえた。"),
+			n("もう少し遅れて、\n「……ふぇ」と聞こえた。"),
 			e({ emote: "?" }, k("……いまの、吾輩の声じゃ\nないンゴ")),
 		],
 	},
@@ -341,32 +373,33 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "look", thing: "fthing_vend" },
 		lines: [
 			n("自販機の下に、\nなにか光っている。"),
-			n("……10円玉だ。\nその奥に、もう1枚。"),
-			n("……その奥に、\nレシートが1枚。"),
-			k("……最後のだけ\nいらないンゴ"),
+			n("……レシートだ。\nその奥に、もう1枚。"),
+			n("その奥に、\nレシートの束。"),
+			e({ gesture: "shake" }, k("レシートしか\nないンゴ！")),
 		],
 	},
 	// ───── ある 場所に はじめて 来た ─────
-	// 広場の 南東の 滝（段2 から）の 下
+	// 広場の 南東の 噴水（パン板の あとから 水が 出る）
 	{
-		key: "near_falls",
+		key: "near_fountain",
+		window: { after: "shallow" },
 		on: { k: "near", map: "village", x: [23, 30], y: [29, 30] },
 		lines: [
-			k("……滝ンゴ"),
+			k("噴水ンゴ"),
 			k("打たれたら、吾輩も\n強くなれるンゴ？"),
-			n("……キリコは、指を1本だけ\n入れてみた。"),
-			e({ gesture: "shiver" }, k("……冷たいンゴ。\n修行は今日はここまでンゴ")),
+			n("……噴水は、\n下から打ってくる。"),
+			e({ gesture: "startle" }, k("修行の向きが\n逆ンゴ！")),
 		],
 	},
-	// 広場の 南の 池の ほとり
+	// 広場の 南の 池の ほとり（キリコの 頭には 蓄音機の ラッパ）
 	{
 		key: "near_pond",
 		on: { k: "near", map: "village", x: [10, 17], y: [30, 31] },
 		lines: [
-			k("……池ンゴ"),
+			k("池ンゴ"),
 			n("水面に、キリコの顔が\nうつっている。"),
 			n("……となりに、ラッパの形の\n顔もうつっている。"),
-			k("……それ、吾輩の\n蓄音機ンゴ"),
+			k("……それ、吾輩の\n頭のラッパンゴ"),
 		],
 	},
 	// 浜の 東の はし（桟橋からは 遠い）
@@ -374,10 +407,10 @@ export const SKITS: readonly Skit[] = [
 		key: "near_beach",
 		on: { k: "near", map: "village", x: [40, 62], y: [33, 36] },
 		lines: [
-			k("……海ンゴ"),
-			k("この海のむこうに、\n板がたくさんあるンゴ"),
-			k("……ぜんぶ回ったら、\n吾輩、日焼けするンゴ"),
+			k("海ンゴ"),
+			e({ gesture: "hop" }, k("全部の板を\n回るンゴーー！！")),
 			n("波の音が、\n「保守」と聞こえた。"),
+			e({ emote: "怒" }, k("返事が雑ンゴ！")),
 		],
 	},
 	// ───── ある 死に方で 帰ってきた ─────
@@ -385,11 +418,11 @@ export const SKITS: readonly Skit[] = [
 		key: "death_mine",
 		on: { k: "death", mob: "asakonro", cause: "地雷" },
 		lines: [
-			m("地雷ふんだって聞いたもん！\n……よく焼けた？"),
-			k("……焼けたンゴ。\nこんがりンゴ"),
+			m("地雷ふんだって聞いたもん！\nよく焼けた？"),
+			k("焼けたンゴ。\nこんがりンゴ"),
 			e({ emote: "汗" }, m("……うちより\n焼けてるもん……")),
 			e({ emote: "怒" }, m("くやしいもん！\n今夜は火力2倍だもん！")),
-			k("……張りあわないでほしいンゴ"),
+			e({ gesture: "shake" }, k("張りあわないで\nほしいンゴ！")),
 		],
 	},
 	{
@@ -398,8 +431,8 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			m("落とし穴の調査結果を\n発表します"),
 			m("穴は、下に向かって\nあいている模様です"),
-			m("……落ちた人は、下に向かって\n落ちた模様です"),
-			k("……知ってるンゴ。\n落ちたの吾輩ンゴ"),
+			m("落ちた人は、下に向かって\n落ちた模様です"),
+			e({ emote: "怒" }, k("知ってるンゴ！\n落ちたの吾輩ンゴ！")),
 			m("これで発表を終わりたいと\n思います"),
 		],
 	},
@@ -408,9 +441,9 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "death", mob: "onsu", cause: "自演くん" },
 		lines: [
 			m("自演くんに\nやられたのぉ？"),
-			m("……あの子、わたくしの板にも\nよく来るのよぉ"),
+			m("あの子、わたくしの板にも\nよく来るのよぉ"),
 			e({ emote: "汗" }, m("……来るのは、\nあの子だけなのよぉ")),
-			k("……常連ンゴ"),
+			k("常連ンゴ"),
 			e({ emote: "怒" }, m("ふ、ふん。\n常連は大事よぉ！")),
 		],
 	},
@@ -419,8 +452,8 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "death", mob: "yayapoji", cause: "ピッチャー" },
 		lines: [
 			m("ピッチャーに\n負けたんだ"),
-			m("……キリコさん、これで\n何勝何敗なんだ"),
-			k("……数えてないンゴ"),
+			m("キリコさん、これで\n何勝何敗なんだ"),
+			k("数えてないンゴ"),
 			e({ emote: "花" }, m("わからないなら、\n5割なんだ")),
 		],
 	},
@@ -430,8 +463,8 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			m("コピペにたおされたと\n記録したゼロ"),
 			m("コピペにたおされたと\n記録したゼロ"),
-			m("……コピペにたおされたと\n記録したゼロ"),
-			k("……3回言ったンゴ"),
+			m("コピペにたおされたと\n記録したゼロ"),
+			e({ gesture: "shake" }, k("3回言ったンゴ！")),
 			e({ emote: "…" }, m("……うつったゼロ")),
 		],
 	},
@@ -440,19 +473,20 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "death", mob: "shobon", cause: "置物" },
 		lines: [
 			m("置物にやられたの？\n……あれ、動かないでしょ"),
-			k("……動かないのに\nやられたンゴ"),
+			k("動かないのに\nやられたンゴ"),
 			m("(´・ω・｀)　おれも、\n置物ってよく言われるよ"),
 			m("……動かないのに、\nだれもやっつけてないけど"),
 		],
 	},
+	// 粘着アンチ（ンゴ姉は フェリスへの 粘着を 愛と 呼ぶ。フェリスの 名前は 出さない）
 	{
-		key: "death_furo",
-		on: { k: "death", mob: "ngoane", cause: "風呂キャンセル" },
+		key: "death_nenchaku",
+		on: { k: "death", mob: "ngoane", cause: "粘着アンチ" },
 		lines: [
-			m("風呂キャンセル界隈に\nやられたンゴねぇ……"),
-			m("……弟も、きのう\nお風呂キャンセルしたンゴねぇ"),
-			e({ emote: "怒" }, m("……姉として、\n湯船に沈めてきたンゴねぇ")),
-			k("……弟、無事ンゴ？"),
+			m("粘着アンチに\nやられたンゴねぇ……"),
+			m("粘着は、愛がないと\nだめンゴねぇ"),
+			e({ emote: "♥" }, m("わたしの粘着は、\n愛ンゴねぇ……")),
+			e({ gesture: "shake" }, k("自覚あったンゴ！？")),
 		],
 	},
 ];

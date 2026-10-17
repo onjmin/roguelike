@@ -39,7 +39,7 @@ export const MOB_MUTTERS: Record<MobId, readonly Overheard[]> = {
 		solo("panmatsu2", "大使館、本日も\n異常なし"),
 	],
 	ngoane: [
-		solo("ngoane1", "フェリスちゃん……\nンゴねぇ……"),
+		solo("ngoane1", "在庫、\nあわないンゴねぇ"),
 		solo("ngoane2", "となりの席、\nあいてるンゴねぇ"),
 	],
 	onsu: [
@@ -156,7 +156,8 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"elder2",
 			"朝の散歩で、\n5キロ歩いたの",
 			"……帰りは\n50キロ",
-			"……どこまで\n行ったのかしら",
+			"……板を3つ\nこえたわ",
+			"散歩ちゃう\nわよ！",
 		),
 		solo(
 			"elder3",
@@ -205,23 +206,42 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 		solo(
 			"dajare4",
 			"イカはいかが？",
-			"タコはいかが？",
-			"タコはイカ\nちゃうやろ！",
+			"タコは\nたこうござる",
+			"カニは\nかにかく買え",
+			"質が\n落ちとる！",
 		),
 	],
 };
 
 /** 通行人どうしの 掛け合い（おばあさんと ダジャレニキは 入らない。ui/village/overhear.ts の PAIR_OUT）。 */
 export const CROWD_PAIRS: readonly Overheard[] = [
-	pair("p_game", "今日の試合、\n見たか？", "見とらん", "ワイも"),
-	pair("p_shop", "ここ、何の店や？", "知らん。\n入ったことない", "ワイもや"),
+	pair(
+		"p_game",
+		"試合、見たか？",
+		"見た。\n9回裏逆転や",
+		"打ったのワイや",
+		"客席にも\nおらんかったやろ！",
+	),
+	pair(
+		"p_shop",
+		"ここ、何の店や？",
+		"知らん",
+		"……ワイが\n店主や",
+		"把握しとけや！",
+	),
 	pair("p_hara", "腹減ったンゴ", "さっき\n食うてたやろ", "あれは前菜や"),
 	pair("p_hoshu", "保守", "保守", "……保守"),
 	pair("p_honki", "ワイ、明日から\n本気出すわ", "それ、去年も\n聞いたで"),
-	pair("p_sure", "スレ立てたで", "何のスレや", "……忘れた"),
+	pair(
+		"p_sure",
+		"スレ立てたで",
+		"何のスレや",
+		"スレを立てる\nスレや",
+		"終わらんやろ！",
+	),
 	pair(
 		"p_kiriko",
-		"あいつ、また\n潜っとるで",
+		"あいつ、また\n帰ってきとるで",
 		"よう死なんな",
 		"いや、\nよう死んどる",
 	),

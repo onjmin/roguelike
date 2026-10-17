@@ -8249,7 +8249,8 @@ test("寸劇: every place skit sits on cells Kiriko can walk to, and none sits o
 	const pal = villagePalette(v);
 	for (const sk of SKITS) {
 		const on = sk.on;
-		if (on.k !== "near" || sk.window) continue;
+		// 村の どこでも（期間限定の きっかけ）は 見ない
+		if (on.k !== "near" || on.x[1] >= 999) continue;
 		let walk = 0;
 		for (let y: number = on.y[0]; y <= on.y[1]; y++)
 			for (let x: number = on.x[0]; x <= on.x[1]; x++) {
@@ -8260,8 +8261,21 @@ test("寸劇: every place skit sits on cells Kiriko can walk to, and none sits o
 		ok(walk > 0, `${sk.key}: no walkable cell`);
 	}
 	withStorage(() => {
-		ok(nearSkit("village", 26, 30)?.key === "near_falls", "below the falls");
-		ok(nearSkit("village", 20, 40) === null, "nothing on the pier");
+		// 噴水は パン板の あと（水が 出てから）
+		ok(nearSkit("village", 26, 30) === null, "the dry fountain");
+		setProgress(["shallow"], [], ["shallow"]);
+		pushRecord({ kind: "escape" });
+		forgetSkits();
+		const at = nearSkit("village", 26, 30)?.key;
+		ok(
+			at === "near_fountain" || at === "window_dokuritsu",
+			`the fountain: ${at}`,
+		);
+		const pier = nearSkit("village", 20, 40);
+		ok(
+			!pier || (pier.on.k === "near" && pier.on.x[1] >= 999),
+			`a place skit on the pier: ${pier?.key}`,
+		);
 	});
 });
 
