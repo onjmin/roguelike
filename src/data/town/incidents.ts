@@ -125,6 +125,26 @@ export const INCIDENTS: readonly Incident[] = [
 		],
 	},
 	{
+		dungeon: "konamono",
+		people: [
+			{
+				id: "tako_messenger",
+				at: [45, 17],
+				sprite: "pub:sprites/takonomin.png",
+				dir: "down",
+				name: "たこ民",
+				lines: ["招待状、届いたか？\n……来んかったら、知らんで😡"],
+			},
+		],
+	},
+	{
+		dungeon: "festival",
+		people: [],
+		shut: {
+			theater: "劇場の扉に貼り紙。\n『太鼓で聞こえへんので、本日休演』",
+		},
+	},
+	{
 		dungeon: "main",
 		people: [],
 		shut: {

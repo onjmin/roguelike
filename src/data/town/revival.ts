@@ -42,7 +42,7 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 		id: "plaza",
 		dungeon: "shallow",
 		name: "広場",
-		line: "宣戦布告の貼り紙がはがされ、\n広場に人がもどってきた。",
+		line: "独立宣言の貼り紙がはがされ、\n広場に人がもどってきた。",
 		places: ["clock", "post_city", "library", "bookstore", "music", "fountain"],
 	},
 	{

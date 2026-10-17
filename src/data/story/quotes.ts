@@ -532,5 +532,14 @@ export const ENDING: StoryPage[] = [
 	{ who: null, text: "やきうは、湯に顔までしずんだ。", about: "nanj" },
 ];
 
-/** 2回目からの 銭湯の 札。 */
-export const ENDING_AGAIN: StoryPage[] = BATH_HEAD;
+/**
+ * 2回目からの 語り（銭湯が 開いて いるかは 言わない。停電の あいだに 持ち帰っても うそに ならない ように）。
+ */
+export const ENDING_AGAIN: StoryPage[] = [
+	{ who: null, text: "蓄音機に、長湯スレの\n湯の音がまた1枚ふえた。" },
+	{
+		who: "zero",
+		text: "湯温、41.5℃のままです！\n……ずっと数えてます",
+		emote: "!",
+	},
+];
