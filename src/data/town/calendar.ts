@@ -17,6 +17,8 @@ export const today = (): Today => {
 	if (date !== null && /^\d{4}$/.test(date)) {
 		n.m = Number(date.slice(0, 2));
 		n.d = Number(date.slice(2));
+		// 曜日も その 日付の もの（今年の。&wday= が あれば そちら）
+		n.w = new Date(t.getFullYear(), n.m - 1, n.d).getDay();
 	}
 	const w = q.get("wday");
 	if (w !== null && /^[0-6]$/.test(w)) n.w = Number(w);
