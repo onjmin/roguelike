@@ -45,7 +45,11 @@ import {
 	withoutAway,
 } from "../../data/story/story";
 import { BOARD_NEWS, deathLine } from "../../data/town/headlines";
-import { inBlackout, REVIVE_AREAS } from "../../data/town/revival";
+import {
+	inBlackout,
+	REVIVE_AREAS,
+	revivedAreas,
+} from "../../data/town/revival";
 import {
 	TAMPER_NARRATION,
 	TAMPER_SCENE,
@@ -286,14 +290,18 @@ const stepAside = async (
 };
 
 /** 語りの 合図（data/story/quotes.ts の StoryPage.cue）を 起こす。 */
-/** 明かりの もどる 坂で カメラを 向ける 所（話の 順。STORY.md §4.9 の 頂点）。 */
-const LIGHTS_UP: readonly { name: string; at: Cell }[] = [
-	{ name: "広場に明かり", at: [20, 21] },
-	{ name: "商店街に明かり", at: [45, 17] },
-	{ name: "銭湯に明かり", at: [36, 27] },
-	{ name: "浜に明かり", at: [12, 34] },
-	{ name: "たこ八に明かり", at: [22, 32] },
-	{ name: "丘の神社に明かり", at: [4, 9] },
+/**
+ * 明かりの もどる 坂で カメラを 向ける 所（話の 順。STORY.md §4.9 の 頂点）。area は 生き返る 通り
+ * （data/town/revival.ts）。持ち帰った 板の 通りだけ 回る。
+ */
+const LIGHTS_UP: readonly { area: string; name: string; at: Cell }[] = [
+	{ area: "plaza", name: "広場に明かり", at: [20, 21] },
+	{ area: "street", name: "商店街に明かり", at: [45, 17] },
+	{ area: "bath", name: "銭湯に明かり", at: [36, 27] },
+	{ area: "beach", name: "浜に明かり", at: [12, 34] },
+	{ area: "tako", name: "たこ八に明かり", at: [22, 32] },
+	{ area: "shrine", name: "丘の神社に明かり", at: [4, 9] },
+	{ area: "lights", name: "町じゅうの街灯に明かり", at: [28, 6] },
 ];
 
 const playCue = async (
@@ -303,7 +311,8 @@ const playCue = async (
 	if (c === "lightsUp") {
 		// 明かりの もどる 坂（STORY.md §4.9 の 頂点）：まだ 暗い 町で、生き返った 通りを 話の 順に 見せる。
 		// 見おえたら 暗転で 電池板を 持ち帰った 町（明るい）に 建て直す
-		for (const spot of LIGHTS_UP) {
+		const lit = new Set(revivedAreas(loadProgress().cleared).map((a) => a.id));
+		for (const spot of LIGHTS_UP.filter((x) => lit.has(x.area))) {
 			await s.look(spot.at);
 			s.se("uncurse");
 			s.toast(spot.name);
