@@ -145,10 +145,17 @@ import {
 	YAKYU_SHELF,
 } from "../data/town/hall";
 import {
+	activeIncidents,
+	INCIDENTS,
+	incidentPlaceId,
+} from "../data/town/incidents";
+import {
+	inBlackout,
 	isRevived,
 	lampsLit,
 	MAIN_BOARDS,
 	REVIVE_AREAS,
+	revivedBoards,
 } from "../data/town/revival";
 import {
 	BANK,
@@ -2146,14 +2153,16 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
 	// 生き返った 通りの 知らせ・シャッター（いちばん 長い 名前と 数で）
 	for (const [k, v] of Object.entries(REVIVE_MSG))
-		texts.push([
-			`REVIVE_MSG.${k}`,
-			fill(v, {
-				n: 60,
-				name: [...REVIVE_AREAS].sort((a, b) => b.name.length - a.name.length)[0]
-					.name,
-			}),
-		]);
+		for (const t of typeof v === "string" ? [v] : v)
+			texts.push([
+				`REVIVE_MSG.${k}`,
+				fill(t, {
+					n: 60,
+					name: [...REVIVE_AREAS].sort(
+						(a, b) => b.name.length - a.name.length,
+					)[0].name,
+				}),
+			]);
 	for (const a of REVIVE_AREAS) texts.push([`REVIVE_AREAS.${a.id}`, a.line]);
 	texts.push(["VILLAGE_MSG.shut", VILLAGE_MSG.shut]);
 	DEPART.free.forEach((t, i) => {
@@ -7270,4 +7279,83 @@ test("町割り（TOWN.md §0.2）: 広場の 噴水は パン板まで 止ま�
 			`${ch} is out of reach`,
 		);
 	}
+});
+
+test("町の 騒ぎ（STORY.md §4.9）: 板が 開いて から 持ち帰るまで 騒ぎの 人が 立ち、広場の 掲示板は パン板の あいだ 差し押さえ。騒ぎの 人は 歩ける マスで ほかと 重ならない", async () => {
+	const base: VillageView = {
+		stage: TOWN_STAGES - 1,
+		unlocked: [],
+		cleared: [],
+	};
+	const ids = (v: VillageView) => villagePlaces(v).map((p) => p.id);
+	for (const inc of INCIDENTS) {
+		const open: VillageView = { ...base, unlocked: [inc.dungeon] };
+		const done: VillageView = {
+			...base,
+			unlocked: [inc.dungeon],
+			cleared: [inc.dungeon],
+		};
+		ok(
+			activeIncidents(open).includes(inc) && !activeIncidents(done).length,
+			`${inc.dungeon}: incident window`,
+		);
+		const rows = villageRows(open).map((r) => [...r]);
+		const pal = villagePalette(open);
+		const places = villagePlaces(open);
+		for (const p of inc.people) {
+			const id = incidentPlaceId(p);
+			ok(ids(open).includes(id) && !ids(done).includes(id), `${id} window`);
+			ok(pal[rows[p.at[1]][p.at[0]]]?.passable, `${id} stands on a wall`);
+			ok(
+				places.filter((q) => q.x === p.at[0] && q.y === p.at[1]).length === 1,
+				`${id} shares a cell`,
+			);
+			fitsWindow(p.lines.map((l) => [id, l]));
+		}
+		fitsWindow(Object.values(inc.shut ?? {}).map((l) => [inc.dungeon, l]));
+		if (inc.seize) fitsWindow([[`${inc.dungeon} seize`, inc.seize]]);
+	}
+	// 差し押さえの 掲示板は 札だけ
+	const panv: VillageView = { ...base, unlocked: ["shallow"] };
+	const board = (buildVillage(panv, {} as Ctx).events ?? []).find(
+		(e) => e.id === "board_0",
+	);
+	ok(board?.run, "no plaza board");
+	if (board?.run) {
+		const { s, log } = fakeStory();
+		await board.run(s);
+		const seize = INCIDENTS.find((i) => i.seize)?.seize ?? "";
+		ok(
+			log.join("\n") === `narrate: ${seize}`,
+			`the seized board opened: ${log.join(" / ")}`,
+		);
+	}
+});
+
+test("転の 停電: 電池板が 開いて 持ち帰るまで、生き返った 通りも ぜんぶ 閉まって 街灯も 消える", () => {
+	const lit: VillageView = {
+		stage: TOWN_STAGES - 1,
+		unlocked: ["shallow", "kinoko", "main"],
+		cleared: ["shallow", "kinoko"],
+	};
+	const dark: VillageView = { ...lit, unlocked: [...lit.unlocked, "deep"] };
+	const back: VillageView = {
+		...dark,
+		cleared: [...dark.cleared, "main", "deep"],
+	};
+	ok(!inBlackout(lit) && inBlackout(dark) && !inBlackout(back), "window");
+	ok(
+		isRevived("konbini", revivedBoards(lit)),
+		"street shut before the blackout",
+	);
+	ok(!isRevived("konbini", revivedBoards(dark)), "street open in the blackout");
+	ok(!isRevived("fountain", revivedBoards(dark)), "plaza open in the blackout");
+	ok(!lampsLit(revivedBoards(dark)) && lampsLit(revivedBoards(back)), "lamps");
+	const f = facilityById("konbini");
+	const d = f && facilityDoor(f);
+	if (d)
+		ok(
+			[...villageRows(dark)[d[1]]][d[0]] === "ｼ",
+			"no shutter in the blackout",
+		);
 });

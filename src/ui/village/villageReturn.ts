@@ -44,7 +44,7 @@ import {
 	UNLOCK_VISIT,
 	withoutAway,
 } from "../../data/story/story";
-import { REVIVE_AREAS } from "../../data/town/revival";
+import { inBlackout, REVIVE_AREAS } from "../../data/town/revival";
 import {
 	TAMPER_NARRATION,
 	TAMPER_SCENE,
@@ -645,10 +645,19 @@ const mobEv = (id: MobId): string => `mob_${id}`;
  */
 export const reviveScript = async (s: Story): Promise<void> => {
 	const t = loadTown();
-	const cleared = loadProgress().cleared;
-	const fresh = REVIVE_AREAS.filter(
-		(a) => cleared.includes(a.dungeon) && !t.revived.includes(a.id),
-	);
+	const p = loadProgress();
+	const cleared = p.cleared;
+	// 転の 停電（電池板が 開いた 帰り）：1回だけ 知らせる。停電の あいだは 生き返った 知らせも 出さない
+	const dark = inBlackout(p);
+	if (dark && !hasFlag(BLACKOUT_TOLD)) {
+		for (const l of REVIVE_MSG.blackout) await s.narrate(l);
+		addFlag(BLACKOUT_TOLD);
+	}
+	const fresh = dark
+		? []
+		: REVIVE_AREAS.filter(
+				(a) => cleared.includes(a.dungeon) && !t.revived.includes(a.id),
+			);
 	const r = growTown(t);
 	if (!fresh.length && r.to === r.from) return;
 	for (const a of fresh) {
@@ -664,6 +673,9 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	if (carry > (CARRY_MAX[r.from] ?? 0))
 		await s.narrate(fill(REVIVE_MSG.carry, { n: carry }));
 };
+
+/** 停電を 知らせた（Progress.flags）。 */
+const BLACKOUT_TOLD = "toldBlackout";
 
 // ───────────────── 持ち帰った物 ─────────────────
 

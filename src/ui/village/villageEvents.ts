@@ -50,7 +50,12 @@ import {
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
-import { isRevived, lampsLit } from "../../data/town/revival";
+import {
+	activeIncidents,
+	type IncidentPerson,
+	incidentPlaceId,
+} from "../../data/town/incidents";
+import { isRevived, lampsLit, revivedBoards } from "../../data/town/revival";
 import { type Surface, surfaceMapId, surfaceOf } from "../../data/town/surface";
 import {
 	CARRY_CHASE,
@@ -696,8 +701,14 @@ const escortThanksScript = async (s: Story): Promise<void> => {
  * 広場の 掲示板：生き返った 通りの 数を 見て、冒険の 記録・人気投票の はり紙（出て いれば）などから えらぶ。
  */
 const boardScript =
-	(ctx: Ctx): Script =>
+	(ctx: Ctx, view: VillageView): Script =>
 	async (s) => {
+		// パン板の 騒ぎの あいだは 差し押さえ（data/town/incidents.ts）
+		const seized = activeIncidents(view).find((i) => i.seize)?.seize;
+		if (seized) {
+			await s.narrate(seized);
+			return;
+		}
 		await s.narrate(VILLAGE_MSG.board);
 		// 生き返った 通り（data/town/revival.ts）
 		await s.narrate(revivedLine(loadProgress().cleared));
@@ -885,7 +896,8 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			},
 		);
 	}
-	if (p.id.startsWith("board_")) return sign(p.id, p.x, p.y, boardScript(ctx));
+	if (p.id.startsWith("board_"))
+		return sign(p.id, p.x, p.y, boardScript(ctx, v));
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "shrine")
@@ -986,19 +998,40 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	}
 	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts・ui/village/folk.ts）
 	if (p.id.startsWith("folk_")) return folkEvent(p, v);
+	// 町の 騒ぎの 人（data/town/incidents.ts）
+	const inc = incidentPerson(p.id, v);
+	if (inc && p.sprite)
+		return npc(
+			p.id,
+			p.x,
+			p.y,
+			p.sprite,
+			async (s) => {
+				for (const l of inc.lines) await s.say("nanj", l, { name: inc.name });
+			},
+			{ dir: p.dir },
+		);
 	return { ...at, sprite: p.sprite, trigger: p.trigger };
 };
 
 /**
  * まだ 生き返って いない 所（data/town/revival.ts）なら シャッターの 札（扉なら 1歩 もどる）。開いて いれば null。
  */
-const shut = (place: string, v: VillageView, door = true): Script | null =>
-	isRevived(place, v.cleared)
-		? null
-		: async (s) => {
-				await s.narrate(VILLAGE_MSG.shut);
-				if (door) await s.move("player", "d");
-			};
+const shut = (place: string, v: VillageView, door = true): Script | null => {
+	// 騒ぎで 閉まって いる 所は その わけの 札（data/town/incidents.ts）
+	const why = activeIncidents(v).find((i) => i.shut?.[place])?.shut?.[place];
+	if (!why && isRevived(place, revivedBoards(v))) return null;
+	return async (s) => {
+		await s.narrate(why ?? VILLAGE_MSG.shut);
+		if (door) await s.move("player", "d");
+	};
+};
+
+/** 騒ぎの 人（村での id から）。 */
+const incidentPerson = (id: string, v: VillageView): IncidentPerson | null =>
+	activeIncidents(v)
+		.flatMap((i) => i.people)
+		.find((p) => incidentPlaceId(p) === id) ?? null;
 
 /**
  * 村の窓で あずける物を えらぶ（一覧は ui/village/home.ts。のこりを 売るかは ロゼが 村の窓で きく。
@@ -1107,15 +1140,15 @@ export const buildVillage = (
 			imoniDecor(imoniArrive()),
 			villageFindGlint(),
 			stockBoardDecor(shokenSign(layoutStage(view))),
-			signboardDecor(layoutStage(view), view.cleared),
+			signboardDecor(layoutStage(view), revivedBoards(view)),
 			outsideDisplays(layoutStage(view)),
 		),
 		outside: "#1f2a14",
 		// 夜の 明かり：生き返って いない 建物は 窓も 看板も 暗い・街灯は 電池板から（data/town/revival.ts）
 		lights: {
 			unlit: unlitCells(view),
-			lamps: lampsLit(view.cleared),
-			glow: signboardGlow(layoutStage(view), view.cleared),
+			lamps: lampsLit(revivedBoards(view)),
+			glow: signboardGlow(layoutStage(view), revivedBoards(view)),
 		},
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
 		crowd: {

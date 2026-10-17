@@ -132,6 +132,24 @@ export const isRevived = (
 export const lampsLit = (cleared: readonly DungeonId[]): boolean =>
 	REVIVE_AREAS.some((a) => a.id === "lights" && cleared.includes(a.dungeon));
 
+/** 転の 停電の 板（STORY.md §4.9：開いて から 持ち帰るまで、生き返った 通りも ぜんぶ 暗く 閉まる）。 */
+export const BLACKOUT_BOARD: DungeonId = "deep";
+
+/** 停電 中か（電池板が 開いて いて、まだ 持ち帰って いない）。 */
+export const inBlackout = (v: {
+	unlocked: readonly DungeonId[];
+	cleared: readonly DungeonId[];
+}): boolean =>
+	v.unlocked.includes(BLACKOUT_BOARD) && !v.cleared.includes(BLACKOUT_BOARD);
+
+/**
+ * 町の 店と 明かりを 決める 板（isRevived・lampsLit に 渡す）。停電の あいだは 何も 生き返って いない 扱い。
+ */
+export const revivedBoards = (v: {
+	unlocked: readonly DungeonId[];
+	cleared: readonly DungeonId[];
+}): readonly DungeonId[] => (inBlackout(v) ? [] : v.cleared);
+
 /** 持ち帰った 板で 生き返った 通り（表の 順）。 */
 export const revivedAreas = (cleared: readonly DungeonId[]): ReviveArea[] =>
 	REVIVE_AREAS.filter((a) => cleared.includes(a.dungeon));

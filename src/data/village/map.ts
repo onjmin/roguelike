@@ -58,7 +58,8 @@ import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
 import { nowHour, today } from "../town/calendar";
-import { type CorePlace, isRevived } from "../town/revival";
+import { activeIncidents, incidentPlaceId } from "../town/incidents";
+import { type CorePlace, isRevived, revivedBoards } from "../town/revival";
 import {
 	doorId,
 	facilitiesAt,
@@ -850,8 +851,12 @@ export const villageRows = (v: VillageView): string[] => {
 	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
 	stampFacilities(rows, layoutStage(v), put);
 	// 広場の 噴水・商店街の パン屋・港の 小屋・北の 丘の やぐら広場（TOWN.md §0.2）
-	stamp(rows, ...FOUNTAIN_AT, fountainBlock(isRevived("fountain", v.cleared)));
-	stamp(rows, ...BAKERY_AT, bakeryBlock(isRevived("bakery", v.cleared)));
+	stamp(
+		rows,
+		...FOUNTAIN_AT,
+		fountainBlock(isRevived("fountain", revivedBoards(v))),
+	);
+	stamp(rows, ...BAKERY_AT, bakeryBlock(isRevived("bakery", revivedBoards(v))));
 	for (const [x0, y, line] of [...HARBOR_HUT, ...YAGURA_PLAZA])
 		stamp(rows, x0, y, [line]);
 	// まだ 生き返って いない 所の 扉は シャッター（data/town/revival.ts。踏むと 札を 読んで 1歩 もどる）
@@ -877,11 +882,13 @@ const CORE_DOORS: readonly [CorePlace, Cell][] = [
 /** シャッターの 下りた 扉の マス。 */
 const shutDoors = (v: VillageView): Cell[] => [
 	...facilitiesAt(layoutStage(v))
-		.filter((f) => !isRevived(f.id, v.cleared))
+		.filter((f) => !isRevived(f.id, revivedBoards(v)))
 		.flatMap((f) =>
 			[facilityDoor(f), facilityDoor2(f)].filter((d): d is Cell => !!d),
 		),
-	...CORE_DOORS.filter(([id]) => !isRevived(id, v.cleared)).map(([, c]) => c),
+	...CORE_DOORS.filter(([id]) => !isRevived(id, revivedBoards(v))).map(
+		([, c]) => c,
+	),
 ];
 
 /** 町の まんなかの 建物の 外観の 四角（x, y, 幅, 高さ。夜の 窓を 消す 範囲）。 */
@@ -902,7 +909,7 @@ const CORE_RECTS: readonly [CorePlace, number, number, number, number][] = [
 export const unlitCells = (v: VillageView): Set<number> => {
 	const out = new Set<number>();
 	for (const f of facilitiesAt(layoutStage(v))) {
-		if (isRevived(f.id, v.cleared)) continue;
+		if (isRevived(f.id, revivedBoards(v))) continue;
 		facilityBlock(f).forEach((line, dy) => {
 			[...line].forEach((ch, dx) => {
 				if (ch !== " ") out.add((f.at[1] + dy) * VILLAGE_W + f.at[0] + dx);
@@ -910,7 +917,7 @@ export const unlitCells = (v: VillageView): Set<number> => {
 		});
 	}
 	for (const [id, x0, y0, w, h] of CORE_RECTS) {
-		if (isRevived(id, v.cleared)) continue;
+		if (isRevived(id, revivedBoards(v))) continue;
 		for (let y = y0; y < y0 + h; y++)
 			for (let x = x0; x < x0 + w; x++) out.add(y * VILLAGE_W + x);
 	}
@@ -1112,7 +1119,12 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	// ライバル 4人と やきう（みんな はじめから 町に いる。店の 仕事は しない：TOWN.md §0.4）
 	out.push(friend("roze", VILLAGE_SPOTS.roze));
 	// シヨは 金・土・日の 夜は メイド喫茶で アルバイト（data/people/shiyoShift.ts）
-	if (!(isRevived("maid", v.cleared) && shiyoAtMaid(stage, today(), nowHour())))
+	if (
+		!(
+			isRevived("maid", revivedBoards(v)) &&
+			shiyoAtMaid(stage, today(), nowHour())
+		)
+	)
 		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo));
 	out.push(friend("zero", VILLAGE_SPOTS.zero));
 	// やきうは 名無しの 視聴者（家の 前）
@@ -1164,8 +1176,19 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				wander: true,
 			});
 		});
-	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts。話し方は ui/village/folk.ts）
+	// 村の はしの 名無したち（data/village/folk.ts。話し方は ui/village/folk.ts）
 	out.push(...folkPlaces(stage));
+	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで。data/town/incidents.ts）
+	for (const inc of activeIncidents(v))
+		for (const p of inc.people)
+			out.push({
+				id: incidentPlaceId(p),
+				x: p.at[0],
+				y: p.at[1],
+				trigger: "talk",
+				sprite: p.sprite,
+				dir: p.dir,
+			});
 	return out;
 };
 

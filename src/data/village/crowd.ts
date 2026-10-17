@@ -9,7 +9,7 @@
 
 import type { TileDef } from "../../engine/defs";
 import { DIR_VEC, type Dir } from "../../engine/types";
-import { isRevived } from "../town/revival";
+import { isRevived, revivedBoards } from "../town/revival";
 import { facilitiesAt, facilityOfDoor } from "./facilities";
 import {
 	type Cell,
@@ -248,7 +248,7 @@ const SPOTS: readonly Spot[] = [
 export const crowdNodes = (v: VillageView): CrowdNode[] => {
 	const stage = layoutStage(v);
 	// まだ 生き返って いない 所（シャッター）には 人が 出入りしない・立ちどまらない（data/town/revival.ts）
-	const open = (place: string) => isRevived(place, v.cleared);
+	const open = (place: string) => isRevived(place, revivedBoards(v));
 	const out: CrowdNode[] = [];
 	for (const p of villagePlaces(v)) {
 		if (p.trigger !== "touch") continue;
