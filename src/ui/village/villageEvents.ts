@@ -167,7 +167,7 @@ import { shadowGround } from "./shadows";
 import { signboardDecor, signboardGlow } from "./signboards";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
-import { chooseRecord, villageSong } from "./villageMusic";
+import { chooseRecord, endScene, sceneBgm, villageSong } from "./villageMusic";
 import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
 import {
 	deathScene,
@@ -838,7 +838,7 @@ const playQuestLines = async (
 	lines: readonly QuestLine[],
 ): Promise<void> => {
 	for (const l of lines) {
-		if (l.bgm !== undefined) s.bgm(l.bgm);
+		if (l.bgm !== undefined) sceneBgm(s, l.bgm);
 		if (l.who === null) await s.narrate(l.text);
 		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
 		else await s.say(l.who, l.text, cueOf(l));
@@ -867,9 +867,9 @@ export const heroQuestScript = async (
 			await join(who);
 		} else s.se("join");
 		await s.narrate(q.unlocked);
-		// 申し出の 曲（蓄音機・無音）は ここまで。村の 曲に もどす
+		// 申し出の 曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。無音なら 村の 曲に もどす
 		if (q.offer.some((l) => l.bgm !== undefined)) {
-			await s.fadeBgm(300);
+			if (!endScene()) await s.fadeBgm(300);
 			s.bgm(villageSong());
 		}
 		return true;

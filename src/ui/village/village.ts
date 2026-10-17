@@ -100,6 +100,7 @@ import {
 	departAnywhere,
 	villageMenu,
 } from "./villageEvents";
+import { clearLinger, endLinger, lingerDone } from "./villageMusic";
 import { villageView } from "./villageReturn";
 
 /**
@@ -458,6 +459,7 @@ export class Village {
 		if (this.leaving) return;
 		this.leaving = true;
 		this.exitChoice = null;
+		clearLinger();
 		void this.ctx.audio.fadeBgm(400);
 		await this.fadeOut(400);
 		this.stop();
@@ -564,7 +566,23 @@ export class Village {
 		this.update(dt);
 		this.render();
 		this.tickClock(dt);
+		this.tickLinger();
 		this.rafId = requestAnimationFrame((tt) => this.frame(tt));
+	}
+
+	/**
+	 * 場面の 曲の 余韻が 1周 おわったら、村が ひまな とき（語りの 外）に 村の 曲へ 絞って もどす
+	 * （ui/village/villageMusic.ts）。ほかの 曲に かわって いれば 余韻だけ やめる。
+	 */
+	private tickLinger(): void {
+		const done = lingerDone(performance.now());
+		if (!done || this.scene || this.scriptDepth > 0) return;
+		const song = endLinger();
+		const audio = this.ctx.audio;
+		if (audio.currentBgm !== done) return;
+		void audio.fadeBgm(1500).then(() => {
+			if (this.running && audio.currentBgm === null) audio.bgm(song);
+		});
 	}
 
 	/** ベッドに 寝ころぶ 前に いた マス（Story の lie）。 */

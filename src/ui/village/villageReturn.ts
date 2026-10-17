@@ -107,7 +107,7 @@ import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { sceneSky, setSceneSky } from "./sceneSky";
 import { sayAs } from "./villageMobs";
-import { villageSong } from "./villageMusic";
+import { endScene, sceneBgm, villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
 
 /**
@@ -376,7 +376,7 @@ export const returnScene = async (
 	let fx: { kind: SceneFx; run: FxRun } | null = null;
 	for (const p of pages) {
 		// 場面の 曲（頂点の 場面など。null で 止める）
-		if (p.bgm !== undefined) s.bgm(p.bgm);
+		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		// 場面の 空（明かりの 場面は 夜。ui/village/sceneSky.ts）
 		if (p.sky !== undefined) setSceneSky(p.sky);
 		if (p.cue) await playCue(s, p.cue);
@@ -396,9 +396,11 @@ export const returnScene = async (
 	fx?.run.end();
 	// 見おえた（一度きりの 語りは 次から 短く）
 	if (a.kind === "clear") noteEnding(a.dungeon);
-	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲
+	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲。場面の 曲が 鳴って いれば 1周 おわるまで そのまま
+	// （villageSong が その 曲を かえす。ui/village/villageMusic.ts の 余韻）
+	const lingering = endScene();
 	await Promise.all([
-		a.kind === "clear" ? s.fadeBgm(300) : Promise.resolve(),
+		a.kind === "clear" && !lingering ? s.fadeBgm(300) : Promise.resolve(),
 		s.fadeOut(300),
 	]);
 	await rebuild(s);
@@ -636,12 +638,12 @@ export const tenScript = async (s: Story): Promise<void> => {
 		awayFriends([], loadTown().stage),
 	)) {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
-		if (p.bgm !== undefined) s.bgm(p.bgm);
+		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		if (p.sky !== undefined) setSceneSky(p.sky);
 		await playPage(s, p);
 	}
-	// 場面の 曲と 空は ここまで。村の 曲・時計に もどす
-	await s.fadeBgm(300);
+	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす
+	if (!endScene()) await s.fadeBgm(300);
 	setSceneSky(null);
 	s.bgm(villageSong());
 	addFlag("ten");

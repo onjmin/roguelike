@@ -549,7 +549,12 @@ export const ENDING: StoryPage[] = [
 	},
 	{ who: "nanj", text: "……人がおらん町は、\nつまらんからな", emote: "…" },
 	{ who: "feris", text: "……やきうくん、\nなにか知ってる顔〜" },
-	{ who: null, text: "やきうは、湯に顔までしずんだ。", about: "nanj" },
+	// 答えの かわりに 泡（本気の 一場面なので 絵で 終える。ツッコミは 入れない）
+	{
+		who: null,
+		text: "やきうは湯に顔までしずんだ。\nぶくぶく、泡だけがのぼってくる。",
+		about: "nanj",
+	},
 ];
 
 /**

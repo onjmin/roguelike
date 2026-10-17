@@ -24,6 +24,20 @@ export const ENDING_BGM = "ending";
  */
 export const INCIDENT_BGM = "kaiwai";
 
+/**
+ * 村の 語りで 鳴らす 場面の 曲と、その 1周の 長さ（秒）。場面が 短くても、場面の あとも 村で
+ * 1周 おわるまで 鳴らしつづけ、それから 村の 曲へ もどす（ui/village/villageMusic.ts の 余韻）。
+ * 長さは MML の いちばん 遅い 音の 終わり（dtm の parseMML。4分音符＝48 ステップ）を テンポで 割った 値。
+ */
+export const SCENE_BGM_SEC: Readonly<Record<string, number>> = {
+	yofukashi: 91,
+	deep4: 38,
+	sad: 129,
+	kaiwai2: 132,
+	deep6: 55,
+	deep1: 45,
+};
+
 /** 村の 曲（from の 段から。町が 育つと 明るい 曲に）。 */
 const VILLAGE_TIERS: readonly { from: number; bgm: string }[] = [
 	// 名無し2rt さんの「？」
