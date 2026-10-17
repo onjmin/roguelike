@@ -125,7 +125,7 @@ export const INCIDENTS: readonly Incident[] = [
 		dungeon: "main",
 		people: [],
 		shut: {
-			bath: "『42℃以外お断り』の貼り紙。\n……中から、湯気と怒鳴り声。",
+			bath: "『42℃以外お断り』の貼り紙。\n中から、湯気と怒鳴り声。",
 		},
 	},
 ];

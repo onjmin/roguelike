@@ -1025,7 +1025,7 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	],
 	main: [
 		n("キリコの髪から、\nまだ湯気が立ちのぼっていた。"),
-		s("roze", "湯柱で飛んできたアル？\n……湯冷めする前に着がえるアル", {
+		s("roze", "湯柱で飛んできたアル？\n湯冷めする前に着がえるアル", {
 			emote: "?",
 		}),
 	],
@@ -1099,10 +1099,10 @@ export const UNLOCK_LINES: Record<
 	readonly Line[]
 > = {
 	main: [
-		q("nanj", "次は風呂板や。銭湯、閉まっとる。\n……のぼせんなよ"),
+		q("nanj", "次は風呂板や。銭湯、閉まっとる。\nのぼせんなよ"),
 		q(
 			"zero",
-			"風呂板への入口、開きました！\nゼロ、いっしょには行けませんが……",
+			"風呂板への入口、開きました！\nゼロは、ここで湯温を数えてます！",
 			{ emote: "!" },
 		),
 	],
@@ -1211,7 +1211,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	main: [
 		q("nanj", "41.5℃、ええ湯やったな。\n……湯気で、なんも見えへんかった"),
-		q("roze", "おかえりアル。……蓄音機、\nずっとまわってるアル"),
+		q("roze", "おかえりアル。蓄音機、\nずっとまわってるアル"),
 		q("feris", "長湯スレ、もう1回きこ〜。\n……もう1回だけ〜", { emote: "♪" }),
 		q("shiyo", "41.5℃は、ぬるいわよ。\n……まあ、わるくないけど"),
 		q(

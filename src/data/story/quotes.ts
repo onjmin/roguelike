@@ -455,30 +455,32 @@ export const INTRO: string[] = [
 ];
 
 // ───────────────── 長湯スレを　持ち帰ったあと ─────────────────
-/** 2回目からは 頭の 4枚（湯温の もめごとと 夜の 湯船は 1回だけ）。 */
+/** 2回目からは 頭の 5枚（湯温の もめごとと 夜の 湯船は 1回だけ）。 */
 const BATH_HEAD: StoryPage[] = [
 	{
 		who: null,
 		text: "村に帰りつくと、\n銭湯ののれんが上がっていた。",
 	},
-	{ who: "nanj", text: "おっそ。……一番風呂、\nもう入っとるで" },
+	{ who: "nanj", text: "おっそ。一番風呂、\nもう入っとるで" },
 	{
 		who: null,
 		text: "湯船に町の人がずらり。\n湯気で、だれがだれだかわからない。",
 	},
+	// ボケ（ゼロ）→ ツッコミ（やきう）
 	{
 		who: "zero",
-		text: "湯船の温度、41.5℃です！\n……数えました",
+		text: "湯船の温度、41.5℃です！\n数えました！",
 		emote: "!",
 	},
+	{ who: "nanj", text: "温度は測るもんや" },
 ];
 
 export const ENDING: StoryPage[] = [
 	...BATH_HEAD,
 	// シヨは 湯温に うるさい（STORY.md §4.9）
-	{ who: "shiyo", text: "……ぬるいわね。\nあたすは42℃がいいけど" },
-	{ who: null, text: "……ぬるい", nanashi: "湯気の中の42℃派" },
-	{ who: null, text: "……熱い", nanashi: "湯気の中の41℃派" },
+	{ who: "shiyo", text: "ぬるいわね。\nあたすは42℃がいいけど" },
+	{ who: null, text: "ぬるい", nanashi: "湯気の中の42℃派" },
+	{ who: null, text: "熱い", nanashi: "湯気の中の41℃派" },
 	{
 		who: null,
 		text: "そのうち、また湯の温度で\nもめはじめた。",
@@ -502,8 +504,8 @@ export const ENDING: StoryPage[] = [
 	},
 	{
 		who: "roze",
-		text: "……決着しても、\nもめるのが常識アル",
-		emote: "汗",
+		text: "決着したのに、\nなんでもめるアル！",
+		emote: "怒",
 	},
 	// 夜の 湯船（転の 前ぶれ。やきうの 本音：人が おらん 町は つまらん）
 	{

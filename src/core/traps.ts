@@ -30,7 +30,7 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 	// 源泉（名所の 階）：罠では ないので 罠よけの 指輪でも 効く。何度でも
 	if (t.kind === "spring") {
 		const p = r.p;
-		if (p.hp >= p.maxHp) r.msg("源泉につかった。ええ湯や");
+		if (p.hp >= p.maxHp) r.msg("源泉につかった。41.5℃。ええ湯や");
 		else {
 			p.hp = p.maxHp;
 			r.msg("源泉につかった。HPがもどった！", "good");

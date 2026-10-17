@@ -146,7 +146,7 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 4],
 		sign: [10, 5],
-		line: "銭湯街。のれんに『42℃以外おことわり』。",
+		line: "銭湯街。のれんに『42℃以外お断り』。",
 	},
 	{
 		dungeon: "deep",
