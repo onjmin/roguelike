@@ -80,7 +80,7 @@ export type CrPrize = {
 export const CR_PRIZES: readonly CrPrize[] = [
 	{
 		id: "puyu",
-		name: "ぷゆゆの　ぬいぐるみ",
+		name: "ぷゆゆのぬいぐるみ",
 		ink: "#f0c838",
 		rare: false,
 		size: 1,
@@ -88,7 +88,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuPink",
-		name: "ももいろ　ぷゆゆ",
+		name: "ももいろぷゆゆ",
 		ink: "#f08cb4",
 		rare: false,
 		size: 1,
@@ -96,7 +96,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuBlue",
-		name: "みずいろ　ぷゆゆ",
+		name: "みずいろぷゆゆ",
 		ink: "#7cc8f0",
 		rare: false,
 		size: 1,
@@ -104,7 +104,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuGreen",
-		name: "みどりの　ぷゆゆ",
+		name: "みどりのぷゆゆ",
 		ink: "#8cd878",
 		rare: false,
 		size: 1,
@@ -112,7 +112,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuWhite",
-		name: "しろい　ぷゆゆ",
+		name: "しろいぷゆゆ",
 		ink: "#f4f0e8",
 		rare: false,
 		size: 1,
@@ -120,7 +120,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuGold",
-		name: "金の　ぷゆゆ",
+		name: "金のぷゆゆ",
 		ink: "#d8a020",
 		rare: true,
 		size: 1,
@@ -128,7 +128,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuBig",
-		name: "でかい　ぷゆゆ",
+		name: "でかいぷゆゆ",
 		ink: "#f0c838",
 		rare: true,
 		size: 1.5,
@@ -136,7 +136,7 @@ export const CR_PRIZES: readonly CrPrize[] = [
 	},
 	{
 		id: "puyuRainbow",
-		name: "にじいろ　ぷゆゆ",
+		name: "にじいろぷゆゆ",
 		ink: "#e070e0",
 		rare: true,
 		size: 1,
@@ -149,16 +149,16 @@ export const crPrize = (id: CrPrizeId): CrPrize =>
 
 /** 板の 字。 */
 export const CR_TEXT = {
-	right: "→を　押して　いる　あいだ　右へ",
-	up: "↑を　押して　いる　あいだ　奥へ",
+	right: "→を押しているあいだ右へ",
+	up: "↑を押しているあいだ奥へ",
 	miss: "つかめなかった",
-	slip: "あっ　すべった……",
+	slip: "あっすべった……",
 	win: "{name}　ゲット！",
-	lucky: "とりだし口に　ころがった！",
+	lucky: "とりだし口にころがった！",
 	plays: "のこり",
 	chute: "とりだし口",
-	got: "{n}個　とれた",
-	note: "タップ：押して　いる　あいだ　アームが　動く",
+	got: "{n}個とれた",
+	note: "タップ：押しているあいだアームが動く",
 } as const;
 
 export type CrItem = {

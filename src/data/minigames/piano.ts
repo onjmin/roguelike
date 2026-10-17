@@ -20,14 +20,14 @@ export const PIANO_GUIDES: readonly {
 	{
 		// ドイツの 民謡（岡本敏明 訳詞）
 		id: "kaeru",
-		name: "かえるの　合唱",
+		name: "かえるの合唱",
 		notes:
 			"ド レ ミ ファ ミ レ ド | ミ ファ ソ ラ ソ ファ ミ | ド ド ド ド | ド ド レ レ ミ ミ ファ ファ ミ レ ド",
 	},
 	{
 		// アメリカの 童謡
 		id: "mary",
-		name: "メリーさんの　ひつじ",
+		name: "メリーさんのひつじ",
 		notes:
 			"ミ レ ド レ ミ ミ ミ | レ レ レ | ミ ソ ソ | ミ レ ド レ ミ ミ ミ | レ レ ミ レ ド",
 	},
@@ -41,7 +41,7 @@ export const PIANO_GUIDES: readonly {
 	{
 		// 日本の 古謡（ラ シ ド ミ ファ の 都節）
 		id: "sakura",
-		name: "さくら　さくら",
+		name: "さくらさくら",
 		notes:
 			"ラ ラ シ | ラ ラ シ | ラ シ ド シ | ラ シ ラ ファ | ミ ド ミ ファ | ミ ミ ド シ",
 	},
@@ -92,7 +92,7 @@ export const PIANO_BASE = 60;
 export const pitchClass = (midi: number): number => ((midi % 12) + 12) % 12;
 
 /** ピアノを 調べた ときの 選択肢。 */
-export const PIANO_MENU = ["弾いて　みる", "ガイドで　弾く", "やめる"] as const;
+export const PIANO_MENU = ["弾いてみる", "ガイドで弾く", "やめる"] as const;
 
 /** ガイドの 曲を 最後まで 弾けた。 */
-export const PIANO_DONE = "客席から、ぱちぱちと　拍手。";
+export const PIANO_DONE = "客席から、ぱちぱちと拍手。";

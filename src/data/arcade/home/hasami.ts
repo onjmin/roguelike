@@ -41,7 +41,7 @@ export type HsState = {
 export const HS_SAY = {
 	took: "もろたで",
 	lost: "痛っ",
-	cpuWin: "ワイの　勝ちやな",
+	cpuWin: "ワイの勝ちやな",
 	meWin: "ファッ！？",
 	draw: "引き分けやん",
 } as const;

@@ -1326,7 +1326,7 @@ export class Play {
 				const at = { x: pd.tx, y: pd.ty };
 				this.pop(
 					at,
-					on ? "自律モード　起動" : "自律モード　停止",
+					on ? "自律モード起動" : "自律モード停止",
 					on ? "auto-pop" : "baton-down",
 				);
 			}
@@ -1359,7 +1359,7 @@ export class Play {
 						text: on ? "AUTO PILOT" : "MANUAL",
 					}),
 					el("div", { class: "baton-cut-name" }, [
-						el("b", { text: on ? "オート　ON" : "オート　OFF" }),
+						el("b", { text: on ? "オートON" : "オートOFF" }),
 						el("small", { text: spec?.model ?? "" }),
 					]),
 				],
@@ -1402,7 +1402,7 @@ export class Play {
 			if (run.s.turn !== turn0 || run.s.floor !== floor0) this.autoIdle = 0;
 			else if (++this.autoIdle >= AUTO_IDLE_LIMIT) {
 				this.setAuto(false);
-				this.addLog("手が　つまったので　オートを　止めた", "warn");
+				this.addLog("手がつまったのでオートを止めた", "warn");
 				return;
 			}
 			// 歩いた（向いた）だけの 手は 間を あけない（手で 歩きつづけるのと 同じ 速さ）
@@ -1671,12 +1671,7 @@ export class Play {
 				await this.exec({ c: "shoot" });
 				return;
 			case "throw": {
-				const uid = await pickItem(
-					this.ctx,
-					run,
-					"なにを　投げる？",
-					() => true,
-				);
+				const uid = await pickItem(this.ctx, run, "なにを投げる？", () => true);
 				if (uid !== null) await this.exec({ c: "throw", item: uid });
 				return;
 			}
@@ -2178,7 +2173,7 @@ export class Play {
 			}
 			if (pick && scroll && cmd.c === "use" && !this.rp) {
 				this.busy = false;
-				const uid = await pickItem(this.ctx, run, "どれに　つかう？", (it) =>
+				const uid = await pickItem(this.ctx, run, "どれにつかう？", (it) =>
 					canTarget(scroll, it),
 				);
 				if (uid !== null)
@@ -2195,7 +2190,7 @@ export class Play {
 				this.busy = false;
 				const v = await listWindow(
 					this.ctx,
-					"地上へ　もどりますか？<br><small>持ち物を　持って　帰れる。冒険は　ここで　おわる</small>",
+					"地上へもどりますか？<br><small>持ち物を持って帰れる。冒険はここでおわる</small>",
 					[
 						{ label: "もどる", value: "go" },
 						{ label: "やめる", value: "stay" },
@@ -2464,20 +2459,20 @@ export class Play {
 			!!end &&
 			(end.kind !== r.kind || end.depth !== r.depth || end.turn !== r.turn);
 		const line = mismatch
-			? `今の版では　記録と　ちがう　ところで　終わりました<br><small>（記録では　${floorShort(this.run.s.dungeon, r.depth)}で　${esc(r.cause)}。リプレイを残したあとで ゲームの中身が 変わった）</small>`
+			? `今の版では記録とちがうところで終わりました<br><small>（記録では${floorShort(this.run.s.dungeon, r.depth)}で${esc(r.cause)}。リプレイを残したあとで ゲームの中身が 変わった）</small>`
 			: rp.drift
-				? "ここから先は　今の版では　同じに　ならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
+				? "ここから先は今の版では同じにならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
 				: end
 					? end.kind === "clear" && this.run.objective === "boss"
 						? `${esc(end.cause)}<br><small>${bossHomeLine(this.run.s.dungeon)}　${this.run.s.turn}ターン</small>`
 						: end.kind === "clear"
-							? `${defOf(this.run.dungeon.goal).name}を　持ち帰った<br><small>${this.run.s.turn}ターン</small>`
-							: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}で　${esc(end.cause)}`
-					: `記録は　ここまで<br><small>（${floorShort(this.run.s.dungeon, r.depth)}で　${esc(r.cause)}）</small>`;
+							? `${defOf(this.run.dungeon.goal).name}を持ち帰った<br><small>${this.run.s.turn}ターン</small>`
+							: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}で${esc(end.cause)}`
+					: `記録はここまで<br><small>（${floorShort(this.run.s.dungeon, r.depth)}で${esc(r.cause)}）</small>`;
 		const card = el("div", { class: "replay-end" }, [
-			el("div", { class: "rp-end-title", text: "リプレイ　おわり" }),
+			el("div", { class: "rp-end-title", text: "リプレイおわり" }),
 			el("div", { class: "rp-end-line", html: line }),
-			el("div", { class: "rp-end-hint", text: "タップで　もどる" }),
+			el("div", { class: "rp-end-hint", text: "タップでもどる" }),
 		]);
 		this.ctx.ui.appendChild(card);
 		await nextFrame();
@@ -2503,7 +2498,7 @@ export class Play {
 		const verb = run.s.returning
 			? backVerb(run.s.dungeon)
 			: goVerb(run.s.dungeon);
-		const title = `階段を　${verb === "上る" ? "上り" : "降り"}ますか？`;
+		const title = `階段を${verb === "上る" ? "上り" : "降り"}ますか？`;
 		this.busy = true;
 		const v = await listWindow(
 			this.ctx,
@@ -2661,7 +2656,7 @@ export class Play {
 			el("div", { class: "baton-cut-lives" }, [
 				el("span", {
 					class: "label",
-					text: left > 1 ? `残機　${left}` : "最後の　機体",
+					text: left > 1 ? `残機　${left}` : "最後の機体",
 				}),
 				...lives,
 			]),
@@ -2938,7 +2933,7 @@ export class Play {
 				case "msg":
 					// 拾った 行が 出たら、足もとに 残して 描いていた 道具（ghostItems）を その場で 消す
 					// （act の ログが ぜんぶ 出るまで 待つと、拾った あとも しばらく 残像のように 見えていた）
-					if (e.text.endsWith("を　拾った")) {
+					if (e.text.endsWith("を拾った")) {
 						const at = { x: this.run.p.x, y: this.run.p.y };
 						onLine.push(() => {
 							this.ghostItems = this.ghostItems.filter(
@@ -3201,7 +3196,7 @@ export class Play {
 					this.preUse = this.preUseUntil = null;
 					// わかった所は 地図に 載る。地図を 閉じていれば ひとこと（記録の ログには 残さない）
 					if (!this.mapOn) {
-						this.logQueue.push({ text: "地図を　開いて　みよう", fast });
+						this.logQueue.push({ text: "地図を開いてみよう", fast });
 						this.pumpLog();
 					}
 					break;
@@ -3420,11 +3415,11 @@ export class Play {
 			]),
 			el("div", { class: "over1000-body" }, [
 				el("span", { class: "anka-to", text: `>>${at}` }),
-				`　が　${text}`,
+				`　が${text}`,
 			]),
 			el("div", {
 				class: "over1000-body anka-note",
-				text: `（${ANKA_DUE}レス　以内に。安価は　絶対）`,
+				text: `（${ANKA_DUE}レス以内に。安価は絶対）`,
 			}),
 		]);
 		this.ctx.ui.appendChild(post);
@@ -3459,8 +3454,8 @@ export class Play {
 						? "もう書けないので、上の枠で配信してくださいです。。。"
 						: "もう書けないので、下の枠で配信してくださいです。。。"
 					: isUpBoard(this.run.s.dungeon)
-						? "もう書けませんが、上は　ないので、ここで配信してくださいです。。。"
-						: "もう書けませんが、下は　ないので、ここで配信してくださいです。。。",
+						? "もう書けませんが、上はないので、ここで配信してくださいです。。。"
+						: "もう書けませんが、下はないので、ここで配信してくださいです。。。",
 			}),
 		]);
 		this.ctx.ui.appendChild(post);
@@ -3518,17 +3513,17 @@ export class Play {
 			el("div", {
 				class: "chapter-sub",
 				text: up
-					? `${isUpBoard(run.s.dungeon) ? "下り" : "上り"}階段を　さがそう`
+					? `${isUpBoard(run.s.dungeon) ? "下り" : "上り"}階段をさがそう`
 					: boss
-						? `${mdef(boss).name}が　待ちかまえている`
+						? `${mdef(boss).name}が待ちかまえている`
 						: zoneNote
 							? zoneNote
 							: dive
 								? diveResLine(dive, run.heroName)
 								: run.s.depth >= run.dungeon.floors
 									? isUpBoard(run.s.dungeon)
-										? "いちばん　上。ランキングも　こう　ありたい"
-										: "いちばん　底。もう　落ちようが　ない"
+										? "いちばん上。ランキングもこうありたい"
+										: "いちばん底。もう落ちようがない"
 									: "",
 			}),
 			// 同行者の ひとこと（core/guest.ts。階に 着くたび。ログにも 出る）

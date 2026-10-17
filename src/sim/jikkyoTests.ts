@@ -83,7 +83,6 @@ import {
 	JK_PROG_RESULT,
 	JK_PROG_TV,
 	kohakuMode,
-	ONJ_PHRASES,
 	progMsg,
 	STAFF_LINES,
 	STAFF_ONCE,
@@ -652,7 +651,7 @@ test(
 		// 12月の 役者の 1行（公開リハの あいだ）
 		ok(
 			staffLines("theater", "theater_actor", date(12, 15), 2026)?.join() ===
-				"大みそかの　夜は、\n『紅白スレ合戦』の　本番やで",
+				"大みそかの夜は、\n『紅白スレ合戦』の本番やで",
 			"the December actor line",
 		);
 	},
@@ -2233,12 +2232,6 @@ test(
 	},
 );
 
-/** かな・漢字が 6字 以上 つづく ところ（おんJの 決まり文句を のぞく）。 */
-export const longRun = (s: string): string | null => {
-	const bare = ONJ_PHRASES.reduce((t, p) => t.replaceAll(p, "　"), s);
-	return /[ぁ-んァ-ヶー一-龠々]{6,}/.exec(bare)?.[0] ?? null;
-};
-
 /** 『空飛ぶ鯖』の 文（種類ごと）。 */
 const soraTexts = () => {
 	const fillN = (s: string) =>
@@ -2299,17 +2292,13 @@ const soraTexts = () => {
 
 test(
 	"S2",
-	"文：レス 12・候補 10・スレタイ・字幕・pin 22、分かち書き、実在の 名前なし、キリコの 候補に「保守」なし、「保守」は 固有名詞の 中だけ",
+	"文：レス 12・候補 10・スレタイ・字幕・pin 22、実在の 名前なし、キリコの 候補に「保守」なし、「保守」は 固有名詞の 中だけ",
 	() => {
 		const { opts, crowd, titles, short } = soraTexts();
 		for (const t of crowd) ok(width(t) <= 12, `res "${t}" is ${width(t)} wide`);
 		for (const t of opts) ok(width(t) <= 10, `option "${t}" is ${width(t)}`);
 		for (const t of [...titles, ...short])
 			ok(width(t) <= 22, `"${t}" is ${width(t)} wide`);
-		for (const t of [...crowd, ...opts]) {
-			const run = longRun(t);
-			ok(run === null, `"${t}": write "${run}" with a full-width space`);
-		}
 		const all = [...opts, ...crowd, ...titles, ...short];
 		for (const t of all) {
 			for (const ng of NG_NAMES) ok(!t.includes(ng), `"${ng}" in ${t}`);
@@ -2741,7 +2730,7 @@ test(
 
 test(
 	"S11",
-	"鯖が　重い の あいだは 行が 止まり 数は 進む。スレタイは 【バルス用】 が 次の 1本だけ、反省会で すぐ かわる。完走の 印は 1000 の 行で 1回",
+	"鯖が重い の あいだは 行が 止まり 数は 進む。スレタイは 【バルス用】 が 次の 1本だけ、反省会で すぐ かわる。完走の 印は 1000 の 行で 1回",
 	() => {
 		const p = playShow(LIVE, "kami", "s11", { keep: true });
 		const stallSeg = p.log.find((r) => r.ev.t === "scene" && r.ev.seg.stall);
@@ -3348,7 +3337,7 @@ const kohakuTexts = () => {
 
 test(
 	"K2",
-	"文：レス 12・候補 10・スレタイ（回 15〜51・★1〜12）・字幕・pin 22・名前欄 12、分かち書き、実在の 名前なし、キリコの 候補に「保守」なし、バルスなし、劇場の 窓は 22字 × 2行",
+	"文：レス 12・候補 10・スレタイ（回 15〜51・★1〜12）・字幕・pin 22・名前欄 12、実在の 名前なし、キリコの 候補に「保守」なし、バルスなし、劇場の 窓は 22字 × 2行",
 	() => {
 		const { opts, crowd, titles, short, names } = kohakuTexts();
 		for (const t of crowd) ok(width(t) <= 12, `res "${t}" is ${width(t)} wide`);
@@ -3358,10 +3347,6 @@ test(
 		for (const t of names)
 			ok(t && width(t) <= 12, `name "${t}" is ${width(t)}`);
 		ok(new Set(Object.values(KOHAKU_NAMES)).size === 5, "omikuji names repeat");
-		for (const t of [...crowd, ...opts]) {
-			const run = longRun(t);
-			ok(run === null, `"${t}": write "${run}" with a full-width space`);
-		}
 		for (const t of [...opts, ...crowd, ...titles, ...short, ...names]) {
 			for (const ng of NG_NAMES) ok(!t.includes(ng), `"${ng}" in ${t}`);
 			ok(!/[{}]/.test(t), `an unfilled {…} in ${t}`);
@@ -3468,7 +3453,7 @@ const bellRun = (seed: string, choose: "ok" | "miss" | null) => {
 
 test(
 	"K4",
-	"除夜の 鐘：黙れば ◎（コンボ +1・キリコは 書かない・群衆が 静かに）、「ゴーン」は ○、さわぐと ×（コンボ 0）。上に「静かに　見よ」",
+	"除夜の 鐘：黙れば ◎（コンボ +1・キリコは 書かない・群衆が 静かに）、「ゴーン」は ○、さわぐと ×（コンボ 0）。上に「静かに見よ」",
 	() => {
 		for (const seed of ["k4:a", "k4:b", "k4:c"]) {
 			const quiet = bellRun(seed, null);
@@ -3576,7 +3561,7 @@ test(
 
 test(
 	"K6",
-	"おみくじの 名前欄：0時までの キリコの レスは 時計、山場の 判定の あとは 神エイム＝大吉・おしい＝吉・おくれた＝小吉・フライング＝まだ　去年や・見てただけ＝末吉",
+	"おみくじの 名前欄：0時までの キリコの レスは 時計、山場の 判定の あとは 神エイム＝大吉・おしい＝吉・おくれた＝小吉・フライング＝まだ去年や・見てただけ＝末吉",
 	() => {
 		const cases: [number | null, JkCueGrade][] = [
 			[0, "kami"],

@@ -20,39 +20,37 @@ export const BALLS_PER_CHIP = 25;
 export const CASHIER = {
 	/** 窓口を 調べると 毎回（いまの 枚数と 財布）。 */
 	status: "「いらっしゃいませ」\nチップ　{chips}枚・財布　{have}",
-	menu: ["チップを　買う", "換金する", "やめる"],
+	menu: ["チップを買う", "換金する", "やめる"],
 	buyins: [10, 50, 100, 500],
-	buyAsk: "何枚　お買い求めですか？\n（1枚　100円。財布　{have}）",
+	buyAsk: "何枚お買い求めですか？\n（1枚100円。財布　{have}）",
 	option: "{n}枚　{price}",
-	short: "お金が　たりない。\n（10枚　{price}から。財布　{have}）",
-	bought: "チップを　{n}枚　買った。（−{price}）\nチップ　{chips}枚",
-	cashAsk: "何枚　換金しますか？\n（チップ　{chips}枚。1枚　100円）",
+	short: "お金がたりない。\n（10枚　{price}から。財布　{have}）",
+	bought: "チップを{n}枚買った。（−{price}）\nチップ　{chips}枚",
+	cashAsk: "何枚換金しますか？\n（チップ　{chips}枚。1枚100円）",
 	cashOuts: [10, 50, 100, 500],
 	cashOption: "{n}枚",
 	all: "全部　{n}枚",
-	cashed: "チップ　{n}枚を　換金した。\n+{price}　のこり　{chips}枚",
-	noChips: "「チップを　お持ちでは　ないようです」",
+	cashed: "チップ　{n}枚を換金した。\n+{price}のこり　{chips}枚",
+	noChips: "「チップをお持ちではないようです」",
 } as const;
 
 /** 台の 窓（チップを 出す・もどる）。 */
 export const CASINO_TABLE = {
 	/** チップが 1枚も ない。 */
-	none: "チップを　持って　いない。\n入口の　換金所で　買える。",
-	ask: "チップを　何枚　出す？\n（チップ　{chips}枚）",
-	ballAsk:
-		"チップを　何枚　玉に　かえる？\n（1枚＝玉　25発。チップ　{chips}枚）",
+	none: "チップを持っていない。\n入口の換金所で買える。",
+	ask: "チップを何枚出す？\n（チップ　{chips}枚）",
+	ballAsk: "チップを何枚玉にかえる？\n（1枚＝玉25発。チップ　{chips}枚）",
 	/** 出す 枚数の えらび（持って いる 分より 少ない ものだけ。さいごに 全部）。 */
 	bring: [10, 30, 100],
 	option: "{n}枚",
 	all: "全部　{n}枚",
-	balls: "チップ　{n}枚を　玉　{b}発に　かえた。",
+	balls: "チップ　{n}枚を玉　{b}発にかえた。",
 	ballsKept:
-		"チップ　{n}枚を　玉　{b}発に　かえた。\n（あずけて　いた　玉　{r}発も　足した）",
-	back: "チップ　{n}枚が　もどった。\nチップ　{chips}枚（{diff}）",
-	lost: "チップは　1枚も　のこらなかった。\nチップ　{chips}枚（{diff}）",
-	ballBack:
-		"玉　{b}発を　チップ　{n}枚に　かえた。\nチップ　{chips}枚（{diff}）",
-	keep: "はんぱの　玉　{r}発は　あずかった。\n次に　座ると　足される。",
+		"チップ　{n}枚を玉　{b}発にかえた。\n（あずけていた玉　{r}発も足した）",
+	back: "チップ　{n}枚がもどった。\nチップ　{chips}枚（{diff}）",
+	lost: "チップは1枚ものこらなかった。\nチップ　{chips}枚（{diff}）",
+	ballBack: "玉　{b}発をチップ　{n}枚にかえた。\nチップ　{chips}枚（{diff}）",
+	keep: "はんぱの玉　{r}発はあずかった。\n次に座ると足される。",
 	/** おわった あとの「もう一回」（同じ 枚数を また 出す。ui/arcade/arcade.ts）。 */
 	again: "もう一回　{n}枚",
 } as const;

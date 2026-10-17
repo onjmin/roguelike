@@ -124,84 +124,84 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 	bed: {
 		name: "ベッド",
 		cells: [[base(2, 112)], [base(2, 113)]],
-		line: "ベッド。\nシーツに　まだ　のりが　きいている。",
+		line: "ベッド。\nシーツにまだのりがきいている。",
 	},
 	bedBeige: {
-		name: "木の　ベッド",
+		name: "木のベッド",
 		cells: [[base(0, 112)], [base(0, 113)]],
-		line: "木の　ベッド。\n寝がえりの　たびに　きしむ。",
+		line: "木のベッド。\n寝がえりのたびにきしむ。",
 	},
 	bedCream: {
-		name: "クリーム色の　ベッド",
+		name: "クリーム色のベッド",
 		cells: [[base(1, 112)], [base(1, 113)]],
-		line: "クリーム色の　ベッド。\n毛布から　お日さまの　におい。",
+		line: "クリーム色のベッド。\n毛布からお日さまのにおい。",
 	},
 	bedRed: {
-		name: "赤い　ダブルベッド",
+		name: "赤いダブルベッド",
 		cells: [
 			[base(3, 112), base(4, 112)],
 			[base(3, 113), base(4, 113)],
 		],
-		line: "赤い　ダブルベッド。\n……ひとりで　寝るには　広すぎる。",
+		line: "赤いダブルベッド。\n……ひとりで寝るには広すぎる。",
 	},
 	table: {
 		name: "ちゃぶ台",
 		cells: [[ri("roundTable")]],
-		line: "ちゃぶ台。\n脚が　1本　すこし　短い。",
+		line: "ちゃぶ台。\n脚が1本すこし短い。",
 	},
 	crt: {
 		name: "ブラウン管テレビ",
 		cells: [[ri("tvCrt")]],
-		line: "ブラウン管テレビ。\nたたくと　映る。",
+		line: "ブラウン管テレビ。\nたたくと映る。",
 	},
 	bonsai: {
 		name: "盆栽",
 		cells: [[ri("bonsai")]],
-		line: "盆栽。\n「水は　朝だけ」の　札。",
+		line: "盆栽。\n「水は朝だけ」の札。",
 	},
 	coffee: {
 		name: "コーヒーメーカー",
 		cells: [[ri("coffeeMaker")]],
-		line: "コーヒーメーカー。\n豆の　におい。",
+		line: "コーヒーメーカー。\n豆のにおい。",
 	},
 	sofa: {
-		name: "白い　ソファ",
+		name: "白いソファ",
 		cells: [row("sofaWhite", 2, 0), row("sofaWhite", 2, 1)],
-		line: "白い　ソファ。\nすわると、ちょうど　いい　沈みかた。",
+		line: "白いソファ。\nすわると、ちょうどいい沈みかた。",
 	},
 	shelf: {
 		name: "本棚",
 		cells: [[riCell("bookshelf", 0, 0)], [riCell("bookshelf", 0, 1)]],
-		line: "本棚。\nまだ　半分　あいている。",
+		line: "本棚。\nまだ半分あいている。",
 	},
 	shelfDark: {
-		name: "黒い　本棚",
+		name: "黒い本棚",
 		cells: [[riCell("bookshelfDark", 0, 0)], [riCell("bookshelfDark", 0, 1)]],
-		line: "黒い　本棚。\n過去ログの　製本が　ぎっしり。",
+		line: "黒い本棚。\n過去ログの製本がぎっしり。",
 	},
 	platformer: {
-		name: "横スクロールの　筐体",
+		name: "横スクロールの筐体",
 		cells: [[base(1, 519)], [base(1, 520)]],
-		line: "横スクロールの　筐体。\n画面に「スーパーキリコ」の　文字。",
+		line: "横スクロールの筐体。\n画面に「スーパーキリコ」の文字。",
 	},
 	bomberbox: {
-		name: "ボンバーの　ゲーム機",
+		name: "ボンバーのゲーム機",
 		cells: [[base(2, 519)], [base(2, 520)]],
-		line: "ボンバーの　ゲーム機。\n画面に「荒らし爆破」の　文字。",
+		line: "ボンバーのゲーム機。\n画面に「荒らし爆破」の文字。",
 	},
 	// 遊べる 家具（1つに 1つの ゲーム。data/arcade/types.ts。line は ARCADE_TEXT の line と 同じ）
 	cabSnake: {
-		name: "金色の　筐体",
+		name: "金色の筐体",
 		cells: [[base(0, 519)], [base(0, 520)]],
 		line: ARCADE_TEXT.snake.line,
 	},
 	cabStack: {
-		name: "青い　筐体",
+		name: "青い筐体",
 		cells: [[base(3, 519)], [base(3, 520)]],
 		line: ARCADE_TEXT.stack.line,
 	},
 	cabCross: {
-		name: "赤い　筐体",
+		name: "赤い筐体",
 		cells: [[base(4, 519)], [base(4, 520)]],
 		line: ARCADE_TEXT.crossing.line,
 	},
@@ -221,7 +221,7 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.mines.line,
 	},
 	desktopPc: {
-		name: "デスクトップの　パソコン",
+		name: "デスクトップのパソコン",
 		cells: [[ri("pcTop")]],
 		line: ARCADE_TEXT.grass.line,
 	},
@@ -236,17 +236,17 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.simon.line,
 	},
 	crtGame: {
-		name: "古い　ゲーム機",
+		name: "古いゲーム機",
 		cells: [[ri("tvCrt")]],
 		line: ARCADE_TEXT.pong.line,
 	},
 	barrel: {
-		name: "イッチの　樽",
+		name: "イッチの樽",
 		cells: [[ri("barrel")]],
 		line: ARCADE_TEXT.kurohige.line,
 	},
 	kingyoBucket: {
-		name: "金魚の　バケツ",
+		name: "金魚のバケツ",
 		cells: [[ri("bucket")]],
 		line: ARCADE_TEXT.kingyo.line,
 	},
@@ -257,7 +257,7 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.pinball.line,
 	},
 	danmakuCab: {
-		name: "紫の　筐体",
+		name: "紫の筐体",
 		cells: [
 			[`${HOME_GAMES_IMG}#16,0,16,16`],
 			[`${HOME_GAMES_IMG}#16,16,16,16`],
@@ -265,17 +265,17 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.danmaku.line,
 	},
 	mojiBook: {
-		name: "文字さがしの　冊子",
+		name: "文字さがしの冊子",
 		cells: [[ri("paperNote")]],
 		line: ARCADE_TEXT.mojisagashi.line,
 	},
 	puyuPlush: {
-		name: "ぷゆゆの　ぬいぐるみ",
+		name: "ぷゆゆのぬいぐるみ",
 		cells: [[`${HOME_GAMES_IMG}#32,16,16,16`]],
 		line: ARCADE_TEXT.clicker.line,
 	},
 	cabResu: {
-		name: "白い　筐体",
+		name: "白い筐体",
 		cells: [
 			[`${HOME_GAMES2_IMG}#0,0,16,16`],
 			[`${HOME_GAMES2_IMG}#0,16,16,16`],
@@ -283,7 +283,7 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.resukui.line,
 	},
 	pickaxe: {
-		name: "つるはしと　ヘルメット",
+		name: "つるはしとヘルメット",
 		cells: [[`${HOME_GAMES2_IMG}#64,16,16,16`]],
 		line: ARCADE_TEXT.digkiriko.line,
 	},
@@ -293,7 +293,7 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.patapata.line,
 	},
 	reversiBoard: {
-		name: "リバーシの　盤",
+		name: "リバーシの盤",
 		cells: [[`${HOME_GAMES2_IMG}#16,16,16,16`]],
 		line: ARCADE_TEXT.reversi.line,
 	},
@@ -320,21 +320,21 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.nineball.line,
 	},
 	dartboard: {
-		name: "ダーツの　的",
+		name: "ダーツの的",
 		cells: [[`${HOME_GAMES2_IMG}#96,16,16,16`]],
 		line: ARCADE_TEXT.darts.line,
 	},
 	fishingRod: {
-		name: "釣り竿と　クーラー",
+		name: "釣り竿とクーラー",
 		cells: [[`${HOME_GAMES2_IMG}#112,16,16,16`]],
 		line: ARCADE_TEXT.tsuribori.line,
 	},
 	// 絵を 描ける イーゼル（ui/paint/paint.ts。ゲームでは ないので FURNITURE_GAME には 入れない）。
 	// 絵は 実行中に 作る（イーゼルの 絵 home-games.png 32,0 に 描いた 絵を 重ねた もの。engine/assets.ts の rt:）
 	easel: {
-		name: "画家の　キャンバス",
+		name: "画家のキャンバス",
 		cells: [["rt:easel"]],
-		line: "画家の　キャンバス。\n絵の具の　においが　する。",
+		line: "画家のキャンバス。\n絵の具のにおいがする。",
 	},
 	gamingPc: {
 		name: "ゲーミングPC",
@@ -342,54 +342,54 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: ARCADE_TEXT.doom.line,
 	},
 	tvTall: {
-		name: "台つきの　テレビ",
+		name: "台つきのテレビ",
 		cells: [[riCell("tvTall", 0, 0)], [riCell("tvTall", 0, 1)]],
-		line: "台つきの　テレビ。\n下の　段に　ビデオデッキ。",
+		line: "台つきのテレビ。\n下の段にビデオデッキ。",
 	},
 	tv: {
-		name: "大きな　テレビ",
+		name: "大きなテレビ",
 		cells: [row("tvGame", 2, 0), row("tvGame", 2, 1)],
-		line: "大きな　テレビ。\nナイター中継が　よく　映る。",
+		line: "大きなテレビ。\nナイター中継がよく映る。",
 	},
 	tank: {
 		name: "水槽",
 		cells: [row("fishTank", 3)],
-		line: "水槽。\n小さな　魚が　保守している。",
+		line: "水槽。\n小さな魚が保守している。",
 	},
 	guitar: {
 		name: "ギター",
 		cells: [[ri("guitar")]],
-		line: "ギター。\nチューニングは　ばっちり。",
+		line: "ギター。\nチューニングはばっちり。",
 	},
 	fridge: {
 		name: "冷蔵庫",
 		cells: [[ri("fridgeWhite")]],
-		line: "冷蔵庫。\n中は　麦茶だけ。",
+		line: "冷蔵庫。\n中は麦茶だけ。",
 	},
 	records: {
-		name: "レコードの　箱",
+		name: "レコードの箱",
 		cells: [[ri("records")]],
-		line: "レコードの　箱。\n蓄音機で　聞いた　曲も　ある。",
+		line: "レコードの箱。\n蓄音機で聞いた曲もある。",
 	},
 	game: {
 		name: "ゲーム機",
 		cells: [[ri("console")]],
-		line: "ゲーム機。\n「ぷゆぷゆ」の　ソフトが　刺さっている。",
+		line: "ゲーム機。\n「ぷゆぷゆ」のソフトが刺さっている。",
 	},
 	tansu: {
 		name: "たんす",
 		cells: [row("cabWood", 3)],
-		line: "たんす。\n引き出しに　質札が　1枚。",
+		line: "たんす。\n引き出しに質札が1枚。",
 	},
 	chair: {
-		name: "赤い　いす",
+		name: "赤いいす",
 		cells: [[ri("chairRed")]],
-		line: "赤い　いす。\nファミレスの　すみに　あった　形。",
+		line: "赤いいす。\nファミレスのすみにあった形。",
 	},
 	safe: {
 		name: "金庫",
 		cells: [[ri("safe")]],
-		line: "金庫。\n……入れる　物は、まだ　ない。",
+		line: "金庫。\n……入れる物は、まだない。",
 	},
 	dumbbell: {
 		name: "ダンベル",
@@ -398,54 +398,54 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 	},
 	// ヲタショップ「神降臨」の グッズ（public/sprites/otaku.png。scripts/make-otaku.mjs）
 	figZero: {
-		name: "ゼロの　フィギュア",
+		name: "ゼロのフィギュア",
 		cells: [[oaCell("figZero")]],
-		line: "ゼロの　フィギュア。\n耳の　パーツが　とれやすい。",
+		line: "ゼロのフィギュア。\n耳のパーツがとれやすい。",
 	},
 	figRino: {
-		name: "リノの　フィギュア",
+		name: "リノのフィギュア",
 		cells: [[oaCell("figRino")]],
-		line: "リノの　フィギュア。\n台座に「治安維持」の　刻印。",
+		line: "リノのフィギュア。\n台座に「治安維持」の刻印。",
 	},
 	figAru: {
-		name: "アルの　フィギュア",
+		name: "アルのフィギュア",
 		cells: [[oaCell("figAru")]],
-		line: "アルの　フィギュア。\n……どこから　見ても　目が　合う。",
+		line: "アルのフィギュア。\n……どこから見ても目が合う。",
 	},
 	otakuTapestry: {
 		name: "タペストリー",
 		cells: [[oaCell("tapestry", 0, 0)], [oaCell("tapestry", 0, 1)]],
-		line: "ゼロの　タペストリー。\n夏の　限定版。……すずしげだ。",
+		line: "ゼロのタペストリー。\n夏の限定版。……すずしげだ。",
 	},
 	doujinShelf: {
-		name: "同人誌の　棚",
+		name: "同人誌の棚",
 		cells: [[oaCell("doujinShelf", 0, 0)], [oaCell("doujinShelf", 0, 1)]],
-		line: "同人誌の　棚。\n『保守』が　全巻　そろっている。",
+		line: "同人誌の棚。\n『保守』が全巻そろっている。",
 	},
 	figureCase: {
 		name: "フィギュアケース",
 		cells: [[oaCell("figureCase", 0, 0)], [oaCell("figureCase", 0, 1)]],
-		line: "フィギュアケース。\nLEDで　ライトアップされている。",
+		line: "フィギュアケース。\nLEDでライトアップされている。",
 	},
 	acstZero: {
-		name: "ゼロの　アクスタ",
+		name: "ゼロのアクスタ",
 		cells: [[oaCell("acstZero")]],
-		line: "ゼロの　アクリルスタンド。\nガチャで　出た。",
+		line: "ゼロのアクリルスタンド。\nガチャで出た。",
 	},
 	acstRen: {
-		name: "レンの　アクスタ",
+		name: "レンのアクスタ",
 		cells: [[oaCell("acstRen")]],
-		line: "レンの　アクリルスタンド。\nいちばん　出にくかった　気が　する。",
+		line: "レンのアクリルスタンド。\nいちばん出にくかった気がする。",
 	},
 	acstRino: {
-		name: "リノの　アクスタ",
+		name: "リノのアクスタ",
 		cells: [[oaCell("acstRino")]],
-		line: "リノの　アクリルスタンド。\nヘルメットが　ぴかぴか。",
+		line: "リノのアクリルスタンド。\nヘルメットがぴかぴか。",
 	},
 	acstAru: {
-		name: "アルの　アクスタ",
+		name: "アルのアクスタ",
 		cells: [[oaCell("acstAru")]],
-		line: "アルの　アクリルスタンド。\n……裏から　見ても　アル。",
+		line: "アルのアクリルスタンド。\n……裏から見てもアル。",
 	},
 };
 
@@ -748,7 +748,7 @@ export type Gift = {
 export const MOVE_IN_GIFT: Gift = {
 	id: "bed",
 	from: "不動産屋",
-	note: "「ご入居　おめでとう　ございます。\nベッドは　サービスです」",
+	note: "「ご入居おめでとうございます。\nベッドはサービスです」",
 };
 
 /** 帰るたびに 1つ 届く 宅配便（並びの 順。届くのは 契約の あとの 帰りから）。 */
@@ -756,43 +756,43 @@ export const HOME_GIFTS: readonly Gift[] = [
 	{
 		id: "sofa",
 		from: "ロゼ",
-		note: "添え書き「引っ越し祝い！\nすわって　スレ　見てね」",
+		note: "添え書き「引っ越し祝い！\nすわってスレ見てね」",
 	},
-	{ id: "shelf", from: "シヨ", note: "添え書き「本は　自分で　ならべて」" },
-	{ id: "tv", from: "やきう", note: "添え書き「ナイター　見に　行くで」" },
-	{ id: "tank", from: "フェリス", note: "添え書き「浜で　すくった　子です」" },
+	{ id: "shelf", from: "シヨ", note: "添え書き「本は自分でならべて」" },
+	{ id: "tv", from: "やきう", note: "添え書き「ナイター見に行くで」" },
+	{ id: "tank", from: "フェリス", note: "添え書き「浜ですくった子です」" },
 	{
 		id: "guitar",
 		from: "ゼロ",
-		note: "添え書き「……弾けたら　聞かせて」",
+		note: "添え書き「……弾けたら聞かせて」",
 	},
 	{
 		id: "fridge",
-		from: "おんJヶ丘　町内会",
-		note: "添え書き「ゴミの　日は　月・木です」",
+		from: "おんJヶ丘町内会",
+		note: "添え書き「ゴミの日は月・木です」",
 	},
-	{ id: "records", from: "名無し", note: "添え書き「蓄音機の　おとも」" },
+	{ id: "records", from: "名無し", note: "添え書き「蓄音機のおとも」" },
 	{
 		id: "game",
-		from: "おんJ高校　部室棟",
-		note: "添え書き「部の　おさがり。2P　募集」",
+		from: "おんJ高校部室棟",
+		note: "添え書き「部のおさがり。2P　募集」",
 	},
 	{
 		id: "tansu",
 		from: "質屋「流れ」",
-		note: "添え書き「流れ品。3か月　たったんで」",
+		note: "添え書き「流れ品。3か月たったんで」",
 	},
 	{
 		id: "chair",
 		from: "ファミレス「ドリンクバー」",
-		note: "添え書き「改装で　あまりました」",
+		note: "添え書き「改装であまりました」",
 	},
 	{
 		id: "safe",
-		from: "おんJタウン　銀行",
-		note: "添え書き「貸金庫の　おまけです」",
+		from: "おんJタウン銀行",
+		note: "添え書き「貸金庫のおまけです」",
 	},
-	{ id: "dumbbell", from: "ageジム", note: "添え書き「入会　お待ちしてます」" },
+	{ id: "dumbbell", from: "ageジム", note: "添え書き「入会お待ちしてます」" },
 ];
 
 /**
@@ -806,13 +806,13 @@ export const EVENT_GIFTS: readonly (Gift & {
 	{
 		id: "platformer",
 		from: "ゲームセンター「連コ」",
-		note: "添え書き「台の　入れかえで　1台　あまった。\n常連さんに」",
+		note: "添え書き「台の入れかえで1台あまった。\n常連さんに」",
 		when: "arcade5",
 	},
 	{
 		id: "bomberbox",
-		from: "おんJ高校　ゲーム制作部",
-		note: "添え書き「エターなった　ゲーム、\n完成しました。……たぶん」",
+		from: "おんJ高校ゲーム制作部",
+		note: "添え書き「エターなったゲーム、\n完成しました。……たぶん」",
 		when: "bushitsu3",
 	},
 ];
@@ -824,29 +824,29 @@ export const RESIDENT_GIFTS: readonly (Gift & {
 })[] = [
 	{
 		id: "table",
-		from: "リサイクルショップの　店員",
-		note: "「家　買うたんか。\nほな、この　ちゃぶ台　持ってき」",
+		from: "リサイクルショップの店員",
+		note: "「家買うたんか。\nほな、このちゃぶ台持ってき」",
 		facility: "recycle",
 		person: "recycle_clerk",
 	},
 	{
 		id: "crt",
-		from: "海の家の　店主",
-		note: "「店の　テレビ　買いかえたんや。\n古いの、もらってくれへん？」",
+		from: "海の家の店主",
+		note: "「店のテレビ買いかえたんや。\n古いの、もらってくれへん？」",
 		facility: "umi",
 		person: "umi_master",
 	},
 	{
 		id: "bonsai",
-		from: "碁会所の　じいちゃん",
-		note: "「新しい　家に　緑が　ないとな。\nこれ、持って　おいき」",
+		from: "碁会所のじいちゃん",
+		note: "「新しい家に緑がないとな。\nこれ、持っておいき」",
 		facility: "go",
 		person: "go_a",
 	},
 	{
 		id: "coffee",
-		from: "バーの　マスター",
-		note: "「2台　あるんや、それ。\n家で　飲む　ぶんに　1台　あげるわ」",
+		from: "バーのマスター",
+		note: "「2台あるんや、それ。\n家で飲むぶんに1台あげるわ」",
 		facility: "bar",
 		person: "bar_master",
 	},
@@ -861,29 +861,29 @@ export const RESIDENT_GIFTS: readonly (Gift & {
 export const HOME_VISIT: Partial<Record<string, readonly string[]>> = {
 	// 口ぐせは それぞれの 声（ロゼは アル、ゼロは です・キリコさん、フェリスは 〜、シヨは あたす・〜わよ）
 	roze: [
-		"ひろいアル！　なんにも　ないアル。\nソファ　置くアル、スレ　見る　用の",
-		"いい　感じアル。\n……ネタは　わたしに　先に　見せるアル",
-		"もう　店が　開けるアル、これ。\nロゼの　出張所に　するアル",
+		"ひろいアル！なんにもないアル。\nソファ置くアル、スレ見る用の",
+		"いい感じアル。\n……ネタはわたしに先に見せるアル",
+		"もう店が開けるアル、これ。\nロゼの出張所にするアル",
 	],
 	zero: [
-		"……がらんと　してますね。\n帳簿で　いうと、まだ　1ページ目です",
-		"収支、ちょっと　黒字に　なってきました。\n……この　部屋の　話です",
-		"これ　ぜんぶ　キリコさんの　売り上げから？\n……ローン、ちゃんと　返してくださいね",
+		"……がらんとしてますね。\n帳簿でいうと、まだ1ページ目です",
+		"収支、ちょっと黒字になってきました。\n……この部屋の話です",
+		"これぜんぶキリコさんの売り上げから？\n……ローン、ちゃんと返してくださいね",
 	],
 	feris: [
-		"わあ〜、まっしろ〜！\nここ、なに　置くの〜？",
-		"いい　お部屋〜。\n私、ここで　お昼寝　したいな〜",
-		"すご〜い……。\n私の　お部屋より　にぎやか〜",
+		"わあ〜、まっしろ〜！\nここ、なに置くの〜？",
+		"いいお部屋〜。\n私、ここでお昼寝したいな〜",
+		"すご〜い……。\n私のお部屋よりにぎやか〜",
 	],
 	shiyo: [
-		"……倉庫より　空いてるわね。\nあたすの　あずかり物、置いて　いい？",
-		"整理整頓、まあまあね。\n……収納の　中は　見ないで　おくわ",
-		"物、多いわね。\n……ちゃんと　使ってるなら、いいわよ",
+		"……倉庫より空いてるわね。\nあたすのあずかり物、置いていい？",
+		"整理整頓、まあまあね。\n……収納の中は見ないでおくわ",
+		"物、多いわね。\n……ちゃんと使ってるなら、いいわよ",
 	],
 	nanj: [
-		"なんもないやんけ！\nテレビ　置けや、ナイター　見るで",
-		"ええやん。\n……ワイの　小屋より　ずっと　家っぽいわ",
-		"ほんま　ええ　家に　なったな。\n……キリコ、えらいで",
+		"なんもないやんけ！\nテレビ置けや、ナイター見るで",
+		"ええやん。\n……ワイの小屋よりずっと家っぽいわ",
+		"ほんまええ家になったな。\n……キリコ、えらいで",
 	],
 };
 
@@ -1028,9 +1028,9 @@ export const HOME_CORNERS: readonly Cell[] = [
 
 /** 住人を 招いた とき（家具の 少ない・ふつう・多い）。 */
 export const VISIT_ANY: readonly string[] = [
-	"おじゃまします。\n……ひろい　お部屋ですね",
-	"おじゃまします。\n住みごこち　よさそう",
-	"おじゃまします。\nすごい、家具が　いっぱい",
+	"おじゃまします。\n……ひろいお部屋ですね",
+	"おじゃまします。\n住みごこちよさそう",
+	"おじゃまします。\nすごい、家具がいっぱい",
 ];
 /** VISIT_ANY の 感情の 記号・体の 動き（同じ 順）。 */
 export const VISIT_ANY_CUES: readonly Cue[] = [
@@ -1050,23 +1050,23 @@ export type Wallpaper = {
 export type Flooring = { name: string; floor: string; color: string };
 
 export const WALLPAPERS: readonly Wallpaper[] = [
-	{ name: "白い　壁", up: base(1, 77), low: base(1, 78), color: "#e8e4dc" },
-	{ name: "板の　壁", up: base(1, 55), low: base(1, 56), color: "#6a4a2a" },
-	{ name: "和室の　壁", up: base(1, 57), low: base(1, 58), color: "#8a6a3a" },
-	{ name: "黄色い　壁", up: base(1, 73), low: base(1, 74), color: "#c8a86a" },
+	{ name: "白い壁", up: base(1, 77), low: base(1, 78), color: "#e8e4dc" },
+	{ name: "板の壁", up: base(1, 55), low: base(1, 56), color: "#6a4a2a" },
+	{ name: "和室の壁", up: base(1, 57), low: base(1, 58), color: "#8a6a3a" },
+	{ name: "黄色い壁", up: base(1, 73), low: base(1, 74), color: "#c8a86a" },
 	{ name: "赤レンガ", up: base(1, 61), low: base(1, 62), color: "#a84a3a" },
 	{ name: "白レンガ", up: base(1, 63), low: base(1, 64), color: "#d8d8d8" },
-	{ name: "しまの　壁", up: base(1, 75), low: base(1, 76), color: "#c8c8c8" },
+	{ name: "しまの壁", up: base(1, 75), low: base(1, 76), color: "#c8c8c8" },
 ];
 
 export const FLOORINGS: readonly Flooring[] = [
-	{ name: "板の　床", floor: base(0, 46), color: "#b8905a" },
-	{ name: "明るい　板", floor: ri("flWoodLight"), color: "#d8b888" },
-	{ name: "濃い　板", floor: ri("flDarkWood"), color: "#5a4030" },
+	{ name: "板の床", floor: base(0, 46), color: "#b8905a" },
+	{ name: "明るい板", floor: ri("flWoodLight"), color: "#d8b888" },
+	{ name: "濃い板", floor: ri("flDarkWood"), color: "#5a4030" },
 	{ name: "畳", floor: ri("flTatami"), color: "#b8b878" },
-	{ name: "ベージュの　床", floor: ri("flBeige"), color: "#d8c8a8" },
+	{ name: "ベージュの床", floor: ri("flBeige"), color: "#d8c8a8" },
 	{ name: "じゅうたん", floor: ri("flCarpet"), color: "#c04010" },
-	{ name: "白い　タイル", floor: ri("flWhite"), color: "#e4e4e0" },
+	{ name: "白いタイル", floor: ri("flWhite"), color: "#e4e4e0" },
 ];
 
 // ───────────────── 部屋 ─────────────────
@@ -1281,67 +1281,64 @@ export const homeRows = (
 
 export const HOME_MSG = {
 	/** 買う 前の 扉。 */
-	forSale: [
-		"分譲住宅「おんJヶ丘」。\n玄関に「モデルハウス　ご見学　どうぞ」。",
-	],
+	forSale: ["分譲住宅「おんJヶ丘」。\n玄関に「モデルハウスご見学どうぞ」。"],
 	agent: [
-		"いらっしゃいませ！　おんJヶ丘　不動産です。\nこちら、最後の　1区画　なんですよ",
-		"35年ローン、毎月　{monthly}。\n金利は「保守金利」で　ございます",
+		"いらっしゃいませ！おんJヶ丘不動産です。\nこちら、最後の1区画なんですよ",
+		"35年ローン、毎月　{monthly}。\n金利は「保守金利」でございます",
 	],
-	ask: ["契約する（頭金を　払う）", "やめておく"],
-	declined: "またの　ご来場を　お待ちしております。",
+	ask: ["契約する（頭金を払う）", "やめておく"],
+	declined: "またのご来場をお待ちしております。",
 	contract: [
-		"書類に　名前を　書いた。\n「キリコ」。……はんこは、ない。",
-		"「拇印で　けっこうです！」",
+		"書類に名前を書いた。\n「キリコ」。……はんこは、ない。",
+		"「拇印でけっこうです！」",
 		// 引き落とすのは 家に 入った とき（ui/village/myhome.ts の syncReturns。冒険から 帰って 家に 来るたびに 1か月）
-		"返済は、冒険から　帰って　家に　来るたびに\n1か月ぶん　引き落とし。帳簿は　ロゼ。",
+		"返済は、冒険から帰って家に来るたびに\n1か月ぶん引き落とし。帳簿はロゼ。",
 	],
 	/** 頭金（{price}・{have}）。 */
-	down: "「頭金は　{price}。\nお手元の　ご予算は……」",
-	downShort: "「……{have}。\n頭金が　たりませんね。また　ぜひ」",
-	paid: "頭金　{price}を　払った。",
-	keys: "家の　鍵を　受けとった。",
-	welcome: "「では、ごゆっくり。\n家具は……これから　ですね」",
+	down: "「頭金は{price}。\nお手元のご予算は……」",
+	downShort: "「……{have}。\n頭金がたりませんね。またぜひ」",
+	paid: "頭金　{price}を払った。",
+	keys: "家の鍵を受けとった。",
+	welcome: "「では、ごゆっくり。\n家具は……これからですね」",
 	/** 宅配便。 */
-	parcel: "玄関に　荷物が　届いていた。",
+	parcel: "玄関に荷物が届いていた。",
 	/** 持ち帰った 板の 底の 品（{n}つ。収納に 入る）。 */
-	goals: "持ち帰った　品が　{n}点、\n台に　のって　届いていた。",
+	goals: "持ち帰った品が{n}点、\n台にのって届いていた。",
 	from: "{from}から：{name}",
 	/** 返済予定表（{y}年{m}か月）。 */
 	loan: [
-		"返済予定表。\n35年ローン　残り　{y}年{m}か月。",
-		"毎月の　返済額は　{monthly}。\n手もとの　お金：{have}",
+		"返済予定表。\n35年ローン残り　{y}年{m}か月。",
+		"毎月の返済額は{monthly}。\n手もとのお金：{have}",
 	],
 	/** 滞納（{n} 回）。 */
-	late: "赤い　字で「滞納　{n}回」。\n……次に　来たら　まとめて　引き落とし。",
+	late: "赤い字で「滞納　{n}回」。\n……次に来たらまとめて引き落とし。",
 	/** 家に 入ったとき 返済した（{n}か月・{price}）。 */
-	repaid: "ローンを　{n}か月ぶん　返した（{price}）。",
+	repaid: "ローンを{n}か月ぶん返した（{price}）。",
 	/** 払えなかった。 */
-	unpaid: "返済の　お金が　たりなかった。\n予定表に　赤い　字が　ふえた。",
-	loanDone: ["返済予定表。\n「完済」の　はんこ。"],
+	unpaid: "返済のお金がたりなかった。\n予定表に赤い字がふえた。",
+	loanDone: ["返済予定表。\n「完済」のはんこ。"],
 	/** 返済予定表を 読んだ あと（家の しくみ。data/town/guides.ts の HOME_GUIDE）。 */
-	loanMenu: ["家の　しくみ", "とじる"],
-	closet: "収納。\n片づけた　家具と、模様替えの　道具。",
+	loanMenu: ["家のしくみ", "とじる"],
+	closet: "収納。\n片づけた家具と、模様替えの道具。",
 	closetMenu: [
-		"家具を　出す",
-		"壁紙を　かえる",
-		"床を　かえる",
-		"ぜんぶ　片づける",
-		"もらった　物",
+		"家具を出す",
+		"壁紙をかえる",
+		"床をかえる",
+		"ぜんぶ片づける",
+		"もらった物",
 		"やめる",
 	],
 	/** ぜんぶ 片づける。 */
-	clearAsk: "置いた　家具を　ぜんぶ　収納に　しまう？",
+	clearAsk: "置いた家具をぜんぶ収納にしまう？",
 	clearMenu: ["しまう", "やめる"],
-	cleared: "家具を　ぜんぶ　しまった。\n部屋が　広く　なった。",
-	clearNone: "置いた　家具は　ない。",
-	stored: "片づけた　家具",
-	none: "片づけた　家具は　ない。",
-	placeHint:
-		"置きたい　所の　前に　立って　A。\n（スマホは　キリコを　タップ）",
+	cleared: "家具をぜんぶしまった。\n部屋が広くなった。",
+	clearNone: "置いた家具はない。",
+	stored: "片づけた家具",
+	none: "片づけた家具はない。",
+	placeHint: "置きたい所の前に立ってA。\n（スマホはキリコをタップ）",
 	wallTitle: "壁紙",
 	floorTitle: "床",
-	changed: "{name}に　した。",
+	changed: "{name}にした。",
 	/** 家具を 調べた あと。 */
 	thingMenu: ["動かす", "片づける", "そのまま"],
 	/** ベッド：寝ころぶ（起きると もとの マスへ）。 */
@@ -1358,38 +1355,36 @@ export const HOME_MSG = {
 		"そのまま",
 	],
 	easelMenu: ["描く", "動かす", "片づける", "そのまま"],
-	craneGift:
-		"金の　ぷゆゆを　家に　送った。\n（ぷゆゆの　ぬいぐるみ　が　収納に）",
-	picked: "{name}を　持った。\nうすい　絵の　所に、A　で　置く。",
+	craneGift: "金のぷゆゆを家に送った。\n（ぷゆゆのぬいぐるみが収納に）",
+	picked: "{name}を持った。\nうすい絵の所に、A　で置く。",
 	/** 持っている あいだの 知らせ（画面の 上）。 */
-	carryHint: "{name}：うすい　絵の　所に　A　で　置く",
+	carryHint: "{name}：うすい絵の所にA　で置く",
 	/** 持った まま 収納を 調べた。 */
-	returned: "{name}を　収納に　もどした。",
-	putAway: "{name}を　収納に　しまった。",
-	emptyTitle: "どれを　置く？",
-	cannot: "そこには　置けない。\n（通れなく　なるか、すきまが　ない）",
-	full: "これ　いじょう　置けない。",
-	carrying: "{name}を　持っている。",
-	gotFrom: "{name}を　もらった。\n家の　収納に　入れておこう。",
+	returned: "{name}を収納にもどした。",
+	putAway: "{name}を収納にしまった。",
+	emptyTitle: "どれを置く？",
+	cannot: "そこには置けない。\n（通れなくなるか、すきまがない）",
+	full: "これいじょう置けない。",
+	carrying: "{name}を持っている。",
+	gotFrom: "{name}をもらった。\n家の収納に入れておこう。",
 	/** 宅配便で 届いたが もう 持っていた。 */
-	already: "……{name}は　もう　ある。\n気持ちだけ　もらっておこう。",
+	already: "……{name}はもうある。\n気持ちだけもらっておこう。",
 	/** リサイクルショップの レジ（{have} は 手もとの お金）。 */
-	shop: "「家具なら　ここで　そろうで。\n配送料は　サービスや」",
-	shopTitle: "家具を　買う",
+	shop: "「家具ならここでそろうで。\n配送料はサービスや」",
+	shopTitle: "家具を買う",
 	shopNoHome:
-		"「家具？　まず　住む　家が　いるやろ。\nおんJヶ丘の　分譲、まだ　あいとるで」",
-	shopEmpty: "「うちに　ある　家具は、\nもう　ぜんぶ　持っとるやん」",
-	shopAsk: "{name}を　{price}で　買う？",
+		"「家具？まず住む家がいるやろ。\nおんJヶ丘の分譲、まだあいとるで」",
+	shopEmpty: "「うちにある家具は、\nもうぜんぶ持っとるやん」",
+	shopAsk: "{name}を{price}で買う？",
 	shopMenu: ["買う", "やめる"],
-	shopShort: "「……{price}、たりへんな。\nまた　来てや」",
-	bought: "{name}を　買った。\n家の　収納に　届けてもらった。",
+	shopShort: "「……{price}、たりへんな。\nまた来てや」",
+	bought: "{name}を買った。\n家の収納に届けてもらった。",
 	/** 電話（招く）。 */
-	phone: "電話。\n仲よく　なった　人の　番号が　ある。",
-	phoneNone:
-		"まだ　かける　相手が　いない。\n（話したり、贈り物を　したり　すると）",
-	phoneTitle: "だれを　招く？",
-	phoneCall: "{name}に　電話を　かけた。\n……すぐ　行く、と　言った。",
-	phoneBye: "{name}は　帰っていった。",
-	phoneMenu: ["帰って　もらう", "そのまま"],
-	phoneHere: "{name}が　来ている。",
+	phone: "電話。\n仲よくなった人の番号がある。",
+	phoneNone: "まだかける相手がいない。\n（話したり、贈り物をしたりすると）",
+	phoneTitle: "だれを招く？",
+	phoneCall: "{name}に電話をかけた。\n……すぐ行く、と言った。",
+	phoneBye: "{name}は帰っていった。",
+	phoneMenu: ["帰ってもらう", "そのまま"],
+	phoneHere: "{name}が来ている。",
 } as const;

@@ -50,11 +50,11 @@ const DIRS: readonly (readonly [number, number])[] = [
 ];
 
 export const MOJI_TEXT = {
-	note: "はじめと　おわりの　文字で　A／タップ",
-	find: "さがす　名前",
+	note: "はじめとおわりの文字でA／タップ",
+	find: "さがす名前",
 	found: "見つけた！",
 	miss: "ちがう",
-	pick: "おわりの　文字を　えらぶ",
+	pick: "おわりの文字をえらぶ",
 	timeUp: "TIME UP",
 } as const;
 

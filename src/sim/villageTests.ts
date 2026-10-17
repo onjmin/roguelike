@@ -941,7 +941,7 @@ test("ぷゆゆソード：たおれて 帰ると ときどき ぷゆゆが 持�
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);
 		putTown({ stage: 1 });
-		const died = (at: number, cause = "寝落ち民に　たおされた") =>
+		const died = (at: number, cause = "寝落ち民にたおされた") =>
 			addRecord({
 				at,
 				kind: "dead",
@@ -1425,7 +1425,7 @@ test("口から 人が 歩いてくる 前に キリコが どく マス：口�
 		}
 });
 
-test("寄り道の 板が 開く：その 板の 名無しが 口から 来て キリコの となりで 話し、口へ 帰る。そのあと「もぐれるように　なった」", async () => {
+test("寄り道の 板が 開く：その 板の 名無しが 口から 来て キリコの となりで 話し、口へ 帰る。そのあと「もぐれるようになった」", async () => {
 	await withStorageAsync(async () => {
 		setProgress(
 			["shallow", "main", "kinoko"],
@@ -1448,7 +1448,7 @@ test("寄り道の 板が 開く：その 板の 名無しが 口から 来て �
 					.map((l) => (l.who ? `say nanj: ${l.text}` : `narrate: ${l.text}`)),
 				`goto visitor ${gate}`,
 				`narrate: ${lines[lines.length - 1]?.text}`,
-				"narrate: 「きのこ板」に\nもぐれるように　なった",
+				"narrate: 「きのこ板」に\nもぐれるようになった",
 			]),
 			`visit:\n${log.join("\n")}`,
 		);
@@ -1647,7 +1647,7 @@ const pushRecord = (r: Partial<RunRecord>): void => {
 	const rec: RunRecord = {
 		at: 1000 + list.length,
 		kind: "dead",
-		cause: "おなかが　すいて　たおれた",
+		cause: "おなかがすいてたおれた",
 		depth: 3,
 		maxDepth: 3,
 		lv: 2,
@@ -1800,10 +1800,10 @@ test("the friends react to how the last run ended", () => {
 		);
 		// どの 死因・深さでも、だれもが 何か 新しく 言う（その人の 分が 無い たまりは 深さへ）
 		for (const cause of [
-			"ワイ バーンに　たおされた",
-			"ぷゆゆに　たおされた",
-			"とうすこに　たおされた",
-			"かまってちゃんに　たおされた",
+			"ワイ バーンにたおされた",
+			"ぷゆゆにたおされた",
+			"とうすこにたおされた",
+			"かまってちゃんにたおされた",
 		])
 			for (const depth of [2, 9, 18]) {
 				pushRecord({ kind: "dead", cause, depth });
@@ -2117,7 +2117,7 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 		// 口・立て札の 札（ui/village/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
 		texts.push([
 			`sign ${d}`,
-			`「${DUNGEON_NAMES[d].name}」　${floorsLabel(d)}階　★\n${DUNGEON_DESC[d]}`,
+			`「${DUNGEON_NAMES[d].name}」　${floorsLabel(d)}階★\n${DUNGEON_DESC[d]}`,
 		]);
 		for (const [i, l] of (UNLOCK_VISIT[d] ?? []).entries())
 			texts.push([`UNLOCK_VISIT.${d}[${i}]`, l.text]);
@@ -2284,7 +2284,7 @@ test("the boot title's quote keeps its two lines on a 320px phone (name and 「�
 	for (const ls of TITLE_TOWN_QUOTES) add(ls);
 	// 本編の たまり（data/story/quotes.ts。外へは 出していないので 引いて 集める）
 	const causes = [
-		"おなかが　すいて　たおれた",
+		"おなかがすいてたおれた",
 		"荒らし草",
 		"爆発",
 		"寝落ち民",
@@ -2727,7 +2727,7 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 				exit,
 				...UNLOCK_LINES.main.map((l) => `say ${l.who}: ${l.text}`),
 				"se chapter",
-				"narrate: 「風呂板」に\nもぐれるように　なった",
+				"narrate: 「風呂板」に\nもぐれるようになった",
 				"look kiriko",
 			]),
 			`the 本編 news is out of order:\n${log.join("\n")}`,
@@ -2748,7 +2748,7 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 			inOrder(deep.log, [
 				...UNLOCK_LINES.deep.map((l) => `say ${l.who}: ${l.text}`),
 				exit,
-				"narrate: 「電池板」に\nもぐれるように　なった",
+				"narrate: 「電池板」に\nもぐれるようになった",
 			]),
 			`the 電池板 news is out of order:\n${deep.log.join("\n")}`,
 		);
@@ -2800,7 +2800,7 @@ test("開票: the 電池板 ending plays once and やきう stays; 転 plays onc
 			`やきう's lines in the 開票 are not played:\n${log.join("\n")}`,
 		);
 		ok(
-			log.some((l) => l.includes("★　キリコ　1位　★")),
+			log.some((l) => l.includes("★キリコ1位★")),
 			"no 当選 card at the 開票",
 		);
 		ok(
@@ -2927,7 +2927,7 @@ test("持ち帰った 板の 底の 品は、家を 買って いれば 入っ�
 		const got = loadHome().stored.filter((id) => id.startsWith("goal_"));
 		ok(
 			got.join() === "goal_shallow,goal_kinoko" &&
-				first.log.some((l) => l.includes("品が　2点")),
+				first.log.some((l) => l.includes("品が2点")),
 			`the goal items did not arrive: ${got.join()} / ${first.log.join(" / ")}`,
 		);
 		const again = fakeStory();
@@ -3205,7 +3205,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 		await mobScript(id)(b.s);
 		ok(b.log.join() === plain(idleOf(d)), `same return:\n${b.log.join("\n")}`);
 		// 帰ってきた：新しい話（フェリスが 近くに いないので フェリスとの 話は とばす）
-		pushRecord({ kind: "dead", cause: "おなかが　すいて　たおれた" });
+		pushRecord({ kind: "dead", cause: "おなかがすいてたおれた" });
 		ok(hasMobNews(id), "no 「！」 after a return");
 		const c = fakeStory();
 		await mobScript(id)(c.s);
@@ -3420,11 +3420,11 @@ test("ぷゆゆ・マイナーズ: every conditional talk and reaction can happe
 	for (let m = 1; m <= 12; m++)
 		for (let w = 0; w < 7; w++)
 			for (const [cause, depth, returning] of [
-				["ぷゆゆに　たおされた", 1, false],
-				["メタルぷゆゆに　たおされた", 12, false],
-				["おなかが　すいて　たおれた", 9, false],
-				["コピペに　たおされた", 15, true],
-				["忘れスレの霊に　たおされた", 2, false],
+				["ぷゆゆにたおされた", 1, false],
+				["メタルぷゆゆにたおされた", 12, false],
+				["おなかがすいてたおれた", 9, false],
+				["コピペにたおされた", 15, true],
+				["忘れスレの霊にたおされた", 2, false],
 			] as const)
 				rich.push({
 					last: { kind: "dead", cause, depth, returning },
@@ -3670,7 +3670,7 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 		ok(!senkyoOpen(), "ぷゆゆ counts as a 総選挙 candidate");
 		// 1回目の 帰り：B1 で たおれた → 早すぎる 帰りの 話。反応を かねるので 次は いつもの ひとこと
 		setBook(["tousuko"]);
-		pushRecord({ kind: "dead", cause: "忘れスレの霊に　たおされた", depth: 1 });
+		pushRecord({ kind: "dead", cause: "忘れスレの霊にたおされた", depth: 1 });
 		ok(hasMobNews("puyu"), "no 「！」 after an early fall");
 		const b = fakeStory();
 		await mobScript("puyu")(b.s);
@@ -3685,7 +3685,7 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 			`the same fall answered twice:\n${b2.log.join("\n")}`,
 		);
 		// 2回目：下で 会った 子の 話（図鑑に ぷゆゆ）
-		pushRecord({ kind: "dead", cause: "コピペに　たおされた", depth: 6 });
+		pushRecord({ kind: "dead", cause: "コピペにたおされた", depth: 6 });
 		const c = fakeStory();
 		await mobScript("puyu")(c.s);
 		ok(
@@ -3693,7 +3693,7 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 			`nakama:\n${c.log.join("\n")}`,
 		);
 		// 3回目：ぷゆゆに たおされた（前の版の 名前の 記録でも）→ 標準語の ひとこと
-		pushRecord({ kind: "dead", cause: "とうすこに　たおされた", depth: 2 });
+		pushRecord({ kind: "dead", cause: "とうすこにたおされた", depth: 2 });
 		const e = fakeStory();
 		await mobScript("puyu")(e.s);
 		ok(
@@ -3702,11 +3702,11 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 		);
 		// たおれ方ごとの 反応（メタルが 先。前の版の 名前でも）
 		for (const [cause, depth, i] of [
-			["メタルぷゆゆに　たおされた", 12, 0],
-			["メタルとうすこに　たおされた", 12, 0],
-			["ぷゆゆに　たおされた", 1, 1],
-			["とうすこに　たおされた", 2, 1],
-			["忘れスレの霊に　たおされた", 2, 3],
+			["メタルぷゆゆにたおされた", 12, 0],
+			["メタルとうすこにたおされた", 12, 0],
+			["ぷゆゆにたおされた", 1, 1],
+			["とうすこにたおされた", 2, 1],
+			["忘れスレの霊にたおされた", 2, 3],
 		] as const) {
 			pushRecord({ kind: "dead", cause, depth });
 			ok(
@@ -3716,12 +3716,12 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 		}
 		pushRecord({
 			kind: "dead",
-			cause: "コピペに　たおされた",
+			cause: "コピペにたおされた",
 			depth: 15,
 			returning: true,
 		});
 		ok(reactionOf(d) === d.react.by?.[2]?.text, "no reaction on the way back");
-		pushRecord({ kind: "dead", cause: "おなかが　すいて　たおれた", depth: 8 });
+		pushRecord({ kind: "dead", cause: "おなかがすいてたおれた", depth: 8 });
 		ok(reactionOf(d) === d.react.starve, "no reaction to hunger");
 		pushRecord({ kind: "escape" });
 		ok(reactionOf(d) === d.react.escape, "no reaction to an escape");
@@ -3825,7 +3825,7 @@ test("ぷゆゆ: one new talk per return in array order, mob pairs only when bot
 
 test("old records and replays that say とうすこ read as ぷゆゆ and still pair up", () => {
 	withStorage(() => {
-		const cause = "メタルとうすこに　たおされた";
+		const cause = "メタルとうすこにたおされた";
 		pushRecord({ kind: "dead", cause, depth: 9, turn: 321, seed: "old-1" });
 		localStorage.setItem(
 			"kiriko-roguelike/replays",
@@ -3846,7 +3846,7 @@ test("old records and replays that say とうすこ read as ぷゆゆ and still 
 		);
 		const r = loadRecords()[0];
 		const p = loadReplays()[0];
-		ok(r?.cause === "メタルぷゆゆに　たおされた", `record: ${r?.cause}`);
+		ok(r?.cause === "メタルぷゆゆにたおされた", `record: ${r?.cause}`);
 		ok(
 			!!r && !!p && p.cause === r.cause && replayMatches(p, r),
 			"the old replay lost its record",
@@ -3857,18 +3857,18 @@ test("old records and replays that say とうすこ read as ぷゆゆ and still 
 test("old records with the renamed monsters read with the new names", () => {
 	withStorage(() => {
 		for (const [old, now] of [
-			["ひとだまに　たおされた", "忘れスレの霊に　たおされた"],
-			["dat落ちの霊に　たおされた", "忘れスレの霊に　たおされた"],
-			["ばくだんの　爆発に　巻きこまれた", "炎上案件の　爆発に　巻きこまれた"],
-			["ゴーレムに　吹きとばされた", "論破厨に　吹きとばされた"],
-			["ゴリラに　吹きとばされた", "論破厨に　吹きとばされた"],
-			["凍結アカに　たおされた", "VIPPERに　たおされた"],
-			["フナムシに　たおされた", "ROM専に　たおされた"],
-			["バグに　たおされた", "ROM専に　たおされた"],
-			["深夜テンションに　たおされた", "夏休みキッズに　たおされた"],
-			["過疎に　たおされた", "かまってちゃんに　たおされた"],
+			["ひとだまにたおされた", "忘れスレの霊にたおされた"],
+			["dat落ちの霊にたおされた", "忘れスレの霊にたおされた"],
+			["ばくだんの爆発に巻きこまれた", "炎上案件の爆発に巻きこまれた"],
+			["ゴーレムに吹きとばされた", "論破厨に吹きとばされた"],
+			["ゴリラに吹きとばされた", "論破厨に吹きとばされた"],
+			["凍結アカにたおされた", "VIPPERにたおされた"],
+			["フナムシにたおされた", "ROM専にたおされた"],
+			["バグにたおされた", "ROM専にたおされた"],
+			["深夜テンションにたおされた", "夏休みキッズにたおされた"],
+			["過疎にたおされた", "かまってちゃんにたおされた"],
 			// 影 は 1文字なので「影に」だけ 読みかえる
-			["影に　たおされた", "透明あぼーんに　たおされた"],
+			["影にたおされた", "透明あぼーんにたおされた"],
 		] as const) {
 			pushRecord({ kind: "dead", cause: old, depth: 9, turn: 1, seed: old });
 			const r = loadRecords()[0];
@@ -3938,7 +3938,7 @@ test("a boss clear reads as a win plus how she got home with the item (records, 
 		const where = floorShort(d, depth);
 		// 図鑑：ボスは その板の いちばん奥の 階（上りの 板は F。floors は 強さなので 出さない）
 		ok(
-			floorsText(def) === `${where}（${DUNGEON_NAMES[d].name}の　ボス）`,
+			floorsText(def) === `${where}（${DUNGEON_NAMES[d].name}のボス）`,
 			`${d}: the book says ${floorsText(def)}`,
 		);
 		const home = bossHomeLine(d);
@@ -3960,7 +3960,7 @@ test("a boss clear reads as a win plus how she got home with the item (records, 
 			turn: 99,
 		} as const;
 		ok(
-			endLine(rec) === `${DUNGEON_NAMES[d].short}　${where}で　${b.cause}`,
+			endLine(rec) === `${DUNGEON_NAMES[d].short}　${where}で${b.cause}`,
 			`${d}: ${endLine(rec)}`,
 		);
 		ok(
@@ -3982,7 +3982,7 @@ test("a boss clear reads as a win plus how she got home with the item (records, 
 		};
 		const head = sharedHead(rp);
 		ok(
-			head.includes(`${where}で　${b.cause}`) &&
+			head.includes(`${where}で${b.cause}`) &&
 				head.includes(`<small>${home}　99ターン</small>`),
 			`${d}: the shared head reads ${head}`,
 		);
@@ -4065,12 +4065,12 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 	const g = objectiveFor("shallow", march);
 	ok(g.objective === "boss", "the march does not make パン板 a boss run");
 	ok(
-		g.event?.name === "パン板の　大行進" &&
-			g.event.endsIn === "次の　クリアか　あと　3回",
+		g.event?.name === "パン板の大行進" &&
+			g.event.endsIn === "次のクリアかあと3回",
 		`the march reads ${g.event?.name} / ${g.event?.endsIn}`,
 	);
 	ok(
-		eventText(g) === "期間限定：パン板の　大行進（次の　クリアか　あと　3回）",
+		eventText(g) === "期間限定：パン板の大行進（次のクリアかあと3回）",
 		eventText(g),
 	);
 	ok(
@@ -4089,7 +4089,7 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 	});
 	const k = objectiveFor("kinoko", hunt);
 	ok(k.objective === "fetch", "the hunt keeps the boss");
-	ok(k.event?.endsIn === "あと　2回", `the hunt reads ${k.event?.endsIn}`);
+	ok(k.event?.endsIn === "あと2回", `the hunt reads ${k.event?.endsIn}`);
 	// 知らない イベント（あとの 版で 消えた）は 無かった ことに
 	const gone = prog({ event: { id: "no-such", since: 0, clearsSince: 0 } });
 	for (const d of DUNGEON_IDS)
@@ -4099,15 +4099,15 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		);
 	// 目的の ひとこと
 	ok(
-		goalText("kinoko", "boss") === "親玉きのにゃんを　たおす",
+		goalText("kinoko", "boss") === "親玉きのにゃんをたおす",
 		goalText("kinoko", "boss"),
 	);
 	ok(
-		goalText("shallow", "fetch") === "パン板の　サイン色紙を　持ち帰る",
+		goalText("shallow", "fetch") === "パン板のサイン色紙を持ち帰る",
 		goalText("shallow", "fetch"),
 	);
 	ok(
-		goalText("deep", "boss") === "町の　主電源を　持ち帰る",
+		goalText("deep", "boss") === "町の主電源を持ち帰る",
 		"a board without a boss reads as a boss run",
 	);
 	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);
@@ -4413,7 +4413,7 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 		// ending の 1枚目は 着いた 語り（だれも 話さない）。仲間が 声を かけるのは その あと
 		const first = STORY[d].ending[0];
 		ok(
-			first && first.who === null && first.text.startsWith("村に　帰りつくと"),
+			first && first.who === null && first.text.startsWith("村に帰りつくと"),
 			`${d}: the ending does not open with the arrival: ${first?.text}`,
 		);
 		// 仲間が みんな 越してきた 町で（まだ 来ていない 仲間の 頁は 出ない）
@@ -4998,7 +4998,7 @@ test("おんJ 本館: every line fits the village window (22 full-width × 2 lin
 	const texts: [string, string][] = [];
 	const add = (where: string, v: unknown) => {
 		if (typeof v === "string")
-			texts.push([where, fill(v, { n: 999, name: "風呂板の　湯けむり騒動" })]);
+			texts.push([where, fill(v, { n: 999, name: "風呂板の湯けむり騒動" })]);
 		else if (Array.isArray(v))
 			v.forEach((x, i) => {
 				add(`${where}[${i}]`, x);
@@ -5989,7 +5989,7 @@ test("一杯を まぜる: hand the herb, the master spins with a drum roll, it 
 		await mixScene(s, herb, drink);
 		ok(
 			inOrder(log, [
-				`narrate: キリコは　${defOf("h_heal").name}を　わたした。`,
+				`narrate: キリコは${defOf("h_heal").name}をわたした。`,
 				`look ${CAFE_MASTER.join(",")}`,
 				`say null: ${fill(MASTER_MSG.take, { herb: defOf("h_heal").name })}`,
 				`narrate: ${MASTER_MSG.spin}`,
@@ -6249,7 +6249,7 @@ test("銭湯「ゆ」: women soak or change on free cells Kiriko can reach, men 
 			ok(ls.length >= 1 && ls.length <= 3, "a bath talk is too long");
 });
 
-test("喫茶の「あちらの　お客様から」: only at the counter, from a friend at the counter; Kiriko may refuse, and after the talk she is back on her stool", async () => {
+test("喫茶の「あちらのお客様から」: only at the counter, from a friend at the counter; Kiriko may refuse, and after the talk she is back on her stool", async () => {
 	const view = VIEWS.find((v) => v.stage >= 6) as VillageView;
 	// カウンターの 2つの 席の うち、左は 話しこんでいて（そばで 聞く）、右は となりが 空いた 帰りを さがす
 	const play = async (at: number, picks: number[]) => {
@@ -6279,7 +6279,7 @@ test("喫茶の「あちらの　お客様から」: only at the counter, from a
 	let tried = 0;
 	for (let at = 1; at < 4000 && tried < 3; at++) {
 		const yes = await play(at, [0, 0]);
-		if (!yes?.log.some((l) => l.includes("あちらの　お客様からです"))) continue;
+		if (!yes?.log.some((l) => l.includes("あちらのお客様からです"))) continue;
 		tried++;
 		ok(
 			yes.log.some((l) => l === `choose ${GLASS_CHOICES.join("/")}`),
@@ -6294,8 +6294,8 @@ test("喫茶の「あちらの　お客様から」: only at the counter, from a
 			no.log.findIndex((l) => l.startsWith("choose 受け取る")),
 		);
 		ok(
-			!!after?.some((l) => l.includes("首を　ふった")) &&
-				!after.some((l) => l.includes("となりに　すわった")),
+			!!after?.some((l) => l.includes("首をふった")) &&
+				!after.some((l) => l.includes("となりにすわった")),
 			`refusing still sat down:\n${no?.log.join("\n")}`,
 		);
 		ok(no?.x === 1 && no.y === 5, "refusing moved Kiriko");
@@ -6416,18 +6416,15 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 	ok(synopsisHtml([], []) === null, "synopsis before the first board");
 	const end =
 		synopsisHtml(["shallow", "kinoko", "main", "deep", "hidden"], []) ?? "";
-	ok(end.includes("過去ログの底　まで") && !end.includes("つぎ："), end);
+	ok(end.includes("過去ログの底まで") && !end.includes("つぎ："), end);
 	// 要約：本筋の いちばん 新しい 章だけ（板ごとに 並べない）
 	const heads = [...end.matchAll(/<b>([^<]+)<\/b>/g)].map((m) => m[1]);
 	ok(
-		heads.length === 1 && heads[0] === "過去ログの底　まで",
+		heads.length === 1 && heads[0] === "過去ログの底まで",
 		`summary heads ${heads}`,
 	);
 	// 町の 進み（生き返った 通りの 数）が あらすじにも 出る（data/town/revival.ts）
-	ok(
-		end.includes("生き返った　通り"),
-		"no revived-street count in the synopsis",
-	);
+	ok(end.includes("生き返った通り"), "no revived-street count in the synopsis");
 	ok(
 		zankiLine([]) === null &&
 			zankiLine(["kinoko"])?.includes("残機：1") &&
@@ -6911,7 +6908,7 @@ test("ヲタショップ「神降臨」: 段7から 建ち、グッズは レジ
 						`OTAKU_MSG.${k}`,
 						t
 							.replace("{price}", yen(99999))
-							.replace("{name}", "アルの　アクスタ"),
+							.replace("{name}", "アルのアクスタ"),
 					] as [string, string],
 			),
 		),

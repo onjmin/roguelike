@@ -94,12 +94,12 @@ const SNEERS: readonly string[] = [
 
 /** 削除人（purge）の ひとこと（乱数は 使わない：ターンで 選ぶ）。 */
 const PURGE_LINES: readonly string[] = [
-	"規約違反を　確認しました",
-	"削除依頼が　出ています（私から）",
-	"該当レスを　削除します。あなたごと",
-	"ログは　保存されています。永久に",
-	"異議は　受けつけません（定時なので）",
-	"ご協力　ありがとう　ございました",
+	"規約違反を確認しました",
+	"削除依頼が出ています（私から）",
+	"該当レスを削除します。あなたごと",
+	"ログは保存されています。永久に",
+	"異議は受けつけません（定時なので）",
+	"ご協力ありがとうございました",
 ];
 
 /**
@@ -107,10 +107,10 @@ const PURGE_LINES: readonly string[] = [
  * 語録は 作らず、実際に 出回っている 言い回しだけ（X の 投稿・用語の 解説に 出てくる 例文）。
  */
 const FUROCAN: readonly string[] = [
-	"今日は　風呂キャンする",
-	"風呂キャンセルし過ぎて　頭が　かゆい",
-	"疲れすぎて　風呂キャンして　朝を　迎えた",
-	"完全に　風呂キャンセル界隈の　住人です",
+	"今日は風呂キャンする",
+	"風呂キャンセルし過ぎて頭がかゆい",
+	"疲れすぎて風呂キャンして朝を迎えた",
+	"完全に風呂キャンセル界隈の住人です",
 ];
 
 const has = (m: Monster, k: string): boolean =>
@@ -376,7 +376,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		// 置物：となりに来たら 目を覚まして すぐなぐる
 		if (dist(m, p) <= 1) {
 			st.dormant = false;
-			r.msg(`${seenName(r, m)}が　動きだした！　置物じゃ　なかった`, "warn");
+			r.msg(`${seenName(r, m)}が動きだした！置物じゃなかった`, "warn");
 			const dir = dirOf(p.x - m.x, p.y - m.y);
 			if (dir !== null && r.cornerOk(m, dir)) meleePlayer(r, m);
 		}
@@ -443,8 +443,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		if (m.seenTurns >= (accel as { after: number }).after) {
 			st.fast = 999;
 			st.slow = 0;
-			if (r.playerSees(m))
-				r.msg(`${seenName(r, m)}が　加速した！　kskst`, "warn");
+			if (r.playerSees(m)) r.msg(`${seenName(r, m)}が加速した！kskst`, "warn");
 		}
 	}
 
@@ -453,7 +452,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 		if (!m.retreating && m.hp <= m.maxHp * 0.4) {
 			m.retreating = true;
 			if (r.playerSees(m))
-				r.msg(`${seenName(r, m)}は　逃げだした。IDを　変える　気だ`);
+				r.msg(`${seenName(r, m)}は逃げだした。IDを変える気だ`);
 		}
 		if (m.retreating) {
 			m.hp = Math.min(m.maxHp, m.hp + 2);
@@ -511,10 +510,7 @@ export const monsterAct = (r: Run, m: Monster): void => {
 			r.f.items = r.f.items.filter((i) => i !== here);
 			m.carry = here.item;
 			if (r.playerSees(m))
-				r.msg(
-					`${seenName(r, m)}は　${r.name(here.item)}を　回収した！`,
-					"warn",
-				);
+				r.msg(`${seenName(r, m)}は${r.name(here.item)}を回収した！`, "warn");
 			return;
 		}
 		if (adjacentDir() === null) {
@@ -541,14 +537,14 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					});
 					r.se("throw");
 					if (!r.rng.chance(HIT_RATE)) {
-						r.msg(`${seenName(r, m)}は　${a.verb}。しかし　はずれた`);
+						r.msg(`${seenName(r, m)}は${a.verb}。しかしはずれた`);
 						r.emit({ t: "miss", id: PLAYER_ID, pos: { x: p.x, y: p.y } });
 						return;
 					}
 					const dmg = rollDamage(a.atk, r.playerDef(), r.dmgRoll());
-					r.msg(`${seenName(r, m)}は　${a.verb}。${dmg}の　ダメージ`);
+					r.msg(`${seenName(r, m)}は${a.verb}。${dmg}のダメージ`);
 					r.se("damage");
-					r.hurtPlayer(dmg, `${d.name}に　たおされた`);
+					r.hurtPlayer(dmg, `${d.name}にたおされた`);
 					ankaHit(r, "hit");
 					return;
 				}
@@ -567,10 +563,10 @@ export const monsterAct = (r: Run, m: Monster): void => {
 					let dmg = r.rng.range(a.dmg[0], a.dmg[1]);
 					if (r.shield()?.kind === "fireward") dmg = Math.floor(dmg / 2);
 					r.msg(
-						`${seenName(r, m)}は　${a.what ?? "炎"}を　吐いた！　${dmg}の　ダメージ`,
+						`${seenName(r, m)}は${a.what ?? "炎"}を吐いた！　${dmg}のダメージ`,
 						"warn",
 					);
-					r.hurtPlayer(dmg, `${d.name}の　${a.what ?? "炎"}で　たおれた`);
+					r.hurtPlayer(dmg, `${d.name}の${a.what ?? "炎"}でたおれた`);
 					ankaHit(r, "hit");
 					return;
 				}
@@ -584,12 +580,11 @@ export const monsterAct = (r: Run, m: Monster): void => {
 			) {
 				m.dir = adjacentDir() ?? m.dir;
 				r.se("spell");
-				r.msg(`${seenName(r, m)}は　眠りの　呪文を　となえた`);
-				if (r.hasRing("r_awake"))
-					r.msg(`しかし　${r.heroName}は　眠らなかった`);
+				r.msg(`${seenName(r, m)}は眠りの呪文をとなえた`);
+				if (r.hasRing("r_awake")) r.msg(`しかし　${r.heroName}は眠らなかった`);
 				else {
 					r.sleepPlayer(5);
-					r.msg(`${r.heroName}は　眠ってしまった`, "warn");
+					r.msg(`${r.heroName}は眠ってしまった`, "warn");
 				}
 				return;
 			}
@@ -601,10 +596,10 @@ export const monsterAct = (r: Run, m: Monster): void => {
 				r.rng.chance(a.rate)
 			) {
 				r.se("spell");
-				r.msg(`${seenName(r, m)}と　目が　合った。最寄り駅を　当てられた`);
+				r.msg(`${seenName(r, m)}と目が合った。最寄り駅を当てられた`);
 				p.status.confuse = Math.max(p.status.confuse, 5);
 				r.se("debuff");
-				r.msg(`${r.heroName}は　混乱した`, "warn");
+				r.msg(`${r.heroName}は混乱した`, "warn");
 				return;
 			}
 		}
@@ -742,10 +737,10 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				m.fleeing = true;
 				r.se("throw");
 				r.msg(
-					`${nm}は　${r.name(bread)}を　押しつけて、${r.name(it)}を　持っていった！`,
+					`${nm}は${r.name(bread)}を押しつけて、${r.name(it)}を持っていった！`,
 					"warn",
 				);
-				r.msg("「パンに　従え。返品は　受けつけん」");
+				r.msg("「パンに従え。返品は受けつけん」");
 				const to = randomAway(r, m);
 				if (to) {
 					r.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
@@ -774,7 +769,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				m.carry = it;
 				m.fleeing = true;
 				r.se("steal");
-				r.msg(`${nm}は　${r.name(it)}を　${st.verb ?? "盗んだ"}！`, "warn");
+				r.msg(`${nm}は${r.name(it)}を${st.verb ?? "盗んだ"}！`, "warn");
 				if (st.quip) r.msg(st.quip);
 				const to = randomAway(r, m);
 				if (to) {
@@ -785,7 +780,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				return;
 			}
 		}
-		r.msg(`${nm}は　転載の　チャンスを　うかがっている`);
+		r.msg(`${nm}は転載のチャンスをうかがっている`);
 		return;
 	}
 	// 錆びさせる：なぐらない。ときどき 板を 汚して 錆びさせるだけ（風呂キャンセル界隈）
@@ -794,19 +789,19 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 			.rate;
 		const sh = r.shield();
 		if (!sh || !r.rng.chance(rate)) {
-			r.msg(`${nm}から　におう…　目に　しみる`);
+			r.msg(`${nm}からにおう…目にしみる`);
 			return;
 		}
 		// 風呂キャンセルの ひとこと（乱数は 使わない：ターンで 選ぶ。記録の 再生が ずれないように）
 		r.msg(`${nm}「${FUROCAN[r.s.turn % FUROCAN.length]}」`);
 		if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
-			r.msg("しかし　板は　錆びなかった");
+			r.msg("しかし板は錆びなかった");
 			return;
 		}
 		sh.plus -= 1;
 		sh.known = true;
 		r.se("debuff");
-		r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
+		r.msg(`板が錆びてしまった！（${r.name(sh)}）`, "warn");
 		return;
 	}
 	// 特技：なぐる 代わりに（はずれない）。音と 演出の あとで 効き目
@@ -822,13 +817,13 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 		// 敵の はずれは キリコの はずれ（振った音）とは 別の音
 		r.se("enemyMiss");
 		r.emit({ t: "miss", id: PLAYER_ID, pos: { x: p.x, y: p.y } });
-		r.msg(`${nm}の　攻撃は　はずれた`);
+		r.msg(`${nm}の攻撃ははずれた`);
 		return;
 	}
 	const dmg = rollDamage(d.atk, r.playerDef(), r.dmgRoll());
 	r.se("damage");
-	r.msg(`${nm}の　攻撃。${dmg}の　ダメージ`);
-	if (r.hurtPlayer(dmg, `${d.name}に　たおされた`)) return;
+	r.msg(`${nm}の攻撃。${dmg}のダメージ`);
+	if (r.hurtPlayer(dmg, `${d.name}にたおされた`)) return;
 	// 安価「攻撃を　n回　受ける」（当たった ものだけ）
 	ankaHit(r, "hit");
 };
@@ -872,53 +867,53 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			r.msg(`${nm}「${SNEERS[r.s.turn % SNEERS.length]}」`);
 			show();
 			if (r.hasRing("r_purity") || r.shield()?.kind === "scale") {
-				r.msg(`しかし　${r.heroName}は　スルーした`);
+				r.msg(`しかし　${r.heroName}はスルーした`);
 				return;
 			}
 			if (p.str <= 1) {
-				r.msg("しかし　ちからは　もう　下がらない");
+				r.msg("しかしちからはもう下がらない");
 				return;
 			}
 			p.str--;
 			r.se("debuff");
-			r.msg("ちからが　1　下がった。なんか　はずかしい", "warn");
+			r.msg("ちからが1　下がった。なんかはずかしい", "warn");
 			return;
 		case "drainLv":
-			r.msg(`${nm}「忍法帖が　破損しました」`);
+			r.msg(`${nm}「忍法帖が破損しました」`);
 			show();
-			if (r.hasRing("r_ward")) r.msg("しかし　トリップが　守ってくれた");
-			else if (p.lv <= 1) r.msg("しかし　もう　これ以上　初心者に　なれない");
+			if (r.hasRing("r_ward")) r.msg("しかしトリップが守ってくれた");
+			else if (p.lv <= 1) r.msg("しかしもうこれ以上初心者になれない");
 			else r.drainLevel();
 			return;
 		case "drainMax":
-			r.msg(`${nm}が　まとわりついた！　縺ｧ縺ｯ……`);
+			r.msg(`${nm}がまとわりついた！縺ｧ縺ｯ……`);
 			show();
 			if (r.hasRing("r_ward")) {
-				r.msg("しかし　トリップが　守ってくれた");
+				r.msg("しかしトリップが守ってくれた");
 				return;
 			}
 			if (r.rng.chance(1 / 2)) {
 				p.maxHp = Math.max(1, p.maxHp - 5);
 				p.hp = Math.min(p.hp, p.maxHp);
 				r.se("debuff");
-				r.msg("最大HPが　5　下がった（字が　化けた）", "warn");
+				r.msg("最大HPが5　下がった（字が化けた）", "warn");
 			} else if (r.hasRing("r_purity"))
-				r.msg(`しかし　${r.heroName}は　スルーした`);
+				r.msg(`しかし　${r.heroName}はスルーした`);
 			else {
 				p.maxStr = Math.max(1, p.maxStr - 1);
 				p.str = Math.min(p.str, p.maxStr);
 				r.se("debuff");
-				r.msg("最大ちからが　1　下がった（字が　化けた）", "warn");
+				r.msg("最大ちからが1　下がった（字が化けた）", "warn");
 			}
 			return;
 		case "warpPlayer":
-			r.msg(`${nm}が　風を　吹かせた！`);
+			r.msg(`${nm}が風を吹かせた！`);
 			show();
-			r.msg(`${nm}に　吹きとばされた！`, "warn");
+			r.msg(`${nm}に吹きとばされた！`, "warn");
 			r.warpPlayer();
 			return;
 		case "knockback":
-			r.msg(`${nm}の　体当たり！`);
+			r.msg(`${nm}の体当たり！`);
 			show();
 			knockPlayer(r, m, 2);
 			return;
@@ -928,20 +923,20 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			purgePlayer(r, m);
 			return;
 		case "curse": {
-			r.msg(`${nm}が　粘着してきた！`);
+			r.msg(`${nm}が粘着してきた！`);
 			show();
 			const eq = [r.weapon(), r.shield(), r.ring()].filter(
 				(x): x is NonNullable<typeof x> => !!x && !x.cursed,
 			);
 			if (!eq.length) {
-				r.msg("しかし　のろう　装備が　なかった");
+				r.msg("しかしのろう装備がなかった");
 				return;
 			}
 			const it = r.rng.pick(eq);
 			it.cursed = true;
 			it.known = true;
 			r.se("curse");
-			r.msg(`${r.name(it)}が　のろわれた！`, "warn");
+			r.msg(`${r.name(it)}がのろわれた！`, "warn");
 			return;
 		}
 	}
@@ -962,7 +957,7 @@ const purgePlayer = (r: Run, m: Monster): void => {
 			const it = r.rng.pick(gear);
 			r.removeItem(it);
 			r.emit({ t: "look" });
-			r.msg(`${r.name(it)}を　はがされた！`, "warn");
+			r.msg(`${r.name(it)}をはがされた！`, "warn");
 			// キリコの 向こう側（削除人から 遠い 方）へ
 			const d = dirOf(p.x - m.x, p.y - m.y);
 			const to = d === null ? p : step(step(p, d), d);
@@ -971,23 +966,23 @@ const purgePlayer = (r: Run, m: Monster): void => {
 	if (p.str > 1)
 		can.push(() => {
 			p.str--;
-			r.msg("ちからが　1　下がった", "warn");
+			r.msg("ちからが1　下がった", "warn");
 		});
 	if (p.lv > 1) can.push(() => r.drainLevel());
 	if (p.maxHp > 5)
 		can.push(() => {
 			p.maxHp -= 5;
 			p.hp = Math.min(p.hp, p.maxHp);
-			r.msg("最大HPが　5　下がった", "warn");
+			r.msg("最大HPが5　下がった", "warn");
 		});
 	can.push(() => {
 		p.status.confuse = Math.max(p.status.confuse, 5);
-		r.msg(`${r.heroName}は　混乱した`, "warn");
+		r.msg(`${r.heroName}は混乱した`, "warn");
 	});
 	can.push(() => {
 		p.status.blind = Math.max(p.status.blind, 10);
 		r.emit({ t: "look" });
-		r.msg("アク禁された！　何も　見えない！", "warn");
+		r.msg("アク禁された！何も見えない！", "warn");
 	});
 	r.se("debuff");
 	r.rng.pick(can)();
@@ -1009,8 +1004,8 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 				!r.isGuestAt(to.x, to.y)
 			: r.cornerOk(p, d) && r.isFree(to.x, to.y);
 		if (!free) {
-			r.msg(`${seenName(r, m)}に　吹きとばされて　ぶつかった！`, "warn");
-			r.hurtPlayer(5, `${mdef(m).name}に　吹きとばされた`);
+			r.msg(`${seenName(r, m)}に吹きとばされてぶつかった！`, "warn");
+			r.hurtPlayer(5, `${mdef(m).name}に吹きとばされた`);
 			break;
 		}
 		p.x = to.x;
@@ -1020,7 +1015,7 @@ const knockPlayer = (r: Run, m: Monster, n: number): void => {
 	if (moved > 0) {
 		p.status.heldBy = null;
 		r.emit({ t: "warp", id: PLAYER_ID, from, to: { x: p.x, y: p.y } });
-		if (moved === n) r.msg(`${seenName(r, m)}に　吹きとばされた！`, "warn");
+		if (moved === n) r.msg(`${seenName(r, m)}に吹きとばされた！`, "warn");
 		r.updateVision();
 	}
 };

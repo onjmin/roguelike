@@ -46,11 +46,11 @@ export type GmState = {
 export const GM_SAY = {
 	block: "させるか",
 	four: "せやろか",
-	cpuWin: "ワイの　勝ちやな",
+	cpuWin: "ワイの勝ちやな",
 	meWin: "ファッ！？",
 	draw: "引き分けやん",
 	/** 勝って 次の 局へ（強さで かわる）。 */
-	next: ["やるやん　次は　本気や", "ほな　ワイの　とっておきや"],
+	next: ["やるやん次は本気や", "ほなワイのとっておきや"],
 } as const;
 
 const DIRS: readonly (readonly [number, number])[] = [

@@ -20,7 +20,7 @@ import { AH, ATOP, AW, type Rnd } from "./logic";
 export const PF_TEXT = {
 	check: "中間",
 	oneUp: "1UP",
-	note: "タップ　左右＝歩く　まんなか＝跳ぶ",
+	note: "タップ左右＝歩くまんなか＝跳ぶ",
 } as const;
 
 export const PF = {
@@ -646,7 +646,7 @@ export const BM_TEXT = {
 	speed: "速",
 	arashi: "荒",
 	nenchaku: "粘",
-	note: "タップした　マスへ　歩く・自分で　爆弾",
+	note: "タップしたマスへ歩く・自分で爆弾",
 } as const;
 
 export const BM = {

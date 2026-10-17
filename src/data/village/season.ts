@@ -22,7 +22,7 @@ const NANASHI = ["sa:xjuotB", "sa:qPN3cT", "sa:C2hS8U", "sa:VaBXqn"] as const;
 /** おんJ芋煮会の かまど（data/town/imoni.ts・ui/minigames/imoni.ts）。 */
 const IMONI_FACILITY: Facility = {
 	id: "imoni",
-	name: "芋煮の　かまど",
+	name: "芋煮のかまど",
 	from: 0,
 	at: IMONI_POT,
 	look: {

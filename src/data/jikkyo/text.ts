@@ -6,7 +6,7 @@
 //   絵は ui/village/cinemaDecor.ts。
 // - おんJ劇場：12月は 紅白スレ合戦（12/31 本番・12/1〜30 公開リハ）、1/1〜7 は 去年の 回の 録画。ほかの 月は いつもの 文。
 //   {kai} は 回（年 − 2011）で 埋める。
-// ほかに 番組の あとで 係員が 1回だけ 言う 1行（STAFF_ONCE）、おんJの 決まり文句（分かち書きの 試験の 白い 一覧）、
+// ほかに 番組の あとで 係員が 1回だけ 言う 1行（STAFF_ONCE）、
 // 番組の 村の 窓・板・結果カードの 字（ui/jikkyo/jikkyoWatch.ts）。
 // 番組名・映画の 題は 架空の パロディで、実在の 番組・局・映画とは 関係が ない。
 // どの 文も 村の 窓（全角 22字 × 2行）に 収める（src/sim/jikkyoTests.ts）。
@@ -43,19 +43,19 @@ export const VENUE_LINES: Readonly<
 		screen: [
 			{
 				when: isRoadshowNight,
-				lines: ["スクリーン。\n今夜は『空飛ぶ鯖』の　実況上映。"],
+				lines: ["スクリーン。\n今夜は『空飛ぶ鯖』の実況上映。"],
 			},
 		],
 		poster: [
 			{
 				when: isRoadshowNight,
-				lines: ["今夜　実況上映『空飛ぶ鯖』\nスマホ　OK、音は　消してな"],
+				lines: ["今夜実況上映『空飛ぶ鯖』\nスマホOK、音は消してな"],
 			},
 		],
 		seat: [
 			{
 				when: isRoadshowNight,
-				lines: ["客席。\nスマホの　光が　ならんでいる。"],
+				lines: ["客席。\nスマホの光がならんでいる。"],
 			},
 		],
 	},
@@ -63,25 +63,25 @@ export const VENUE_LINES: Readonly<
 		stage: [
 			{
 				when: isMode("live"),
-				lines: ["舞台。\n今夜は『第{kai}回　紅白スレ合戦』。"],
+				lines: ["舞台。\n今夜は『第{kai}回紅白スレ合戦』。"],
 			},
 			{
 				when: isMode("reha"),
-				lines: ["舞台。\n『紅白スレ合戦』の　公開リハ。"],
+				lines: ["舞台。\n『紅白スレ合戦』の公開リハ。"],
 			},
 			{
 				when: isMode("rec"),
-				lines: ["舞台。\n『紅白スレ合戦』の　録画を　流している。"],
+				lines: ["舞台。\n『紅白スレ合戦』の録画を流している。"],
 			},
 		],
 		playbill: [
 			{
 				when: isDecember,
-				lines: ["演目の　はり紙。\n大みそか『紅白スレ合戦』"],
+				lines: ["演目のはり紙。\n大みそか『紅白スレ合戦』"],
 			},
 			{
 				when: isMode("rec"),
-				lines: ["演目の　はり紙。\n録画上映『紅白スレ合戦』"],
+				lines: ["演目のはり紙。\n録画上映『紅白スレ合戦』"],
 			},
 		],
 	},
@@ -95,18 +95,18 @@ export const STAFF_LINES: Readonly<
 		cinema_staff: [
 			{
 				when: isRoadshowNight,
-				lines: ["今夜は　金曜ロード保守の　実況上映や。\n……実況は　実況スレで"],
+				lines: ["今夜は金曜ロード保守の実況上映や。\n……実況は実況スレで"],
 			},
 		],
 	},
 	theater: {
 		theater_actor: [
-			{ when: isMode("live"), lines: ["今夜は　本番や。\n……セリフ、忘れた"] },
+			{ when: isMode("live"), lines: ["今夜は本番や。\n……セリフ、忘れた"] },
 			{
 				when: isMode("reha"),
-				lines: ["大みそかの　夜は、\n『紅白スレ合戦』の　本番やで"],
+				lines: ["大みそかの夜は、\n『紅白スレ合戦』の本番やで"],
 			},
-			{ when: isMode("rec"), lines: ["去年の　紅白、\n録画で　流しとるで"] },
+			{ when: isMode("rec"), lines: ["去年の紅白、\n録画で流しとるで"] },
 		],
 	},
 };
@@ -169,53 +169,26 @@ export const STAFF_ONCE: Readonly<
 > = {
 	cinema: {
 		cinema_staff: {
-			kami: "この前の　バルス、\nぴったり　やったな",
-			rerun: "この前は　★{n}まで　のびたな。\n金曜の　夜は、もっと　のびるで",
+			kami: "この前のバルス、\nぴったりやったな",
+			rerun: "この前は★{n}までのびたな。\n金曜の夜は、もっとのびるで",
 		},
 	},
 	theater: {
 		theater_actor: {
-			kami: "0時の　あけおめ、\nぴったり　やったな",
+			kami: "0時のあけおめ、\nぴったりやったな",
 		},
 	},
 };
 
-/**
- * おんJの 決まり文句（スレの つづりの まま。全角スペースで 区切らない）。
- * それ以外で かな・漢字が 6字 以上 つづく レスは 全角スペースで 区切る（試験）。
- */
-export const ONJ_PHRASES: readonly string[] = [
-	"ここすき",
-	"飯テロ",
-	"今北産業",
-	"これは大関",
-	"これは横綱",
-	"善戦定期",
-	"サンキュー速記ニキ",
-	"ksk",
-	"8888",
-	"950ちうい",
-	"たておつ",
-	"サンイチ",
-	"はじまた",
-	"リマスターかよ",
-	"準備できた",
-	"やりきった",
-	"ありがとう",
-	"くるうううう",
-	"新年だああああ",
-	"終わっちゃった",
-];
-
 /** 番組の 村の 窓（全角 22字 × 2行。キリコも 話してよい。吾輩・ンゴ）。 */
 export const JK_PROG_MSG = {
 	menu: ["見る", "やめる"],
-	howto: "見せ場に　合う　レスを　えらぶと、\nスレが　のびる。目標：★{n}　完走",
-	seat: "キリコは　席に　ついた。\n……スマホで、実況スレを　ひらく。",
-	over: "上映が　おわった。\n実況は　★{n}まで　のびた。",
+	howto: "見せ場に合うレスをえらぶと、\nスレがのびる。目標：★{n}　完走",
+	seat: "キリコは席についた。\n……スマホで、実況スレをひらく。",
+	over: "上映がおわった。\n実況は★{n}までのびた。",
 	kanso: "……完走。",
-	kami: "あの　ひとことは、\nぴったりの　一瞬だった。",
-	left: "……上映の　とちゅうで、\nそっと　席を　立った。",
+	kami: "あのひとことは、\nぴったりの一瞬だった。",
+	left: "……上映のとちゅうで、\nそっと席を立った。",
 } as const;
 
 /**
@@ -238,10 +211,10 @@ export const JK_PROG_MSGS: Readonly<
 	Record<string, { readonly [K in ProgMsgKey]?: string }>
 > = {
 	kohaku: {
-		seat: "キリコは　客席に　ついた。\n……スマホで、実況スレを　ひらく。",
-		over: "幕が　おりた。\n実況は　★{n}まで　のびた。",
-		kami: "名前欄に「あけおめ＠大吉」。\n……ぴったりの　0時だった。",
-		left: "……公演の　とちゅうで、\nそっと　席を　立った。",
+		seat: "キリコは客席についた。\n……スマホで、実況スレをひらく。",
+		over: "幕がおりた。\n実況は★{n}までのびた。",
+		kami: "名前欄に「あけおめ＠大吉」。\n……ぴったりの0時だった。",
+		left: "……公演のとちゅうで、\nそっと席を立った。",
 	},
 };
 
@@ -256,15 +229,15 @@ export const progMsg = (
 
 /** 番組の 板と TV の 小さな 字（全角 22字まで）。 */
 export const JK_PROG_TV = {
-	hint: "↑↓　えらぶ　A　書きこむ　B　出る",
-	picks: "書きこむ　レスを　えらぶ",
+	hint: "↑↓えらぶA　書きこむB　出る",
+	picks: "書きこむレスをえらぶ",
 	res: "レス　{no}／1000",
 	ikioi: "勢い　{ikioi}",
-	duty: "950：次スレを　どうする？",
-	cue: "合図の　次の　拍で　書きこむ",
-	stall: "鯖が　重い……",
-	gap: "次スレ　まち……",
-	kansoTv: "スレ　完走！",
+	duty: "950：次スレをどうする？",
+	cue: "合図の次の拍で書きこむ",
+	stall: "鯖が重い……",
+	gap: "次スレまち……",
+	kansoTv: "スレ完走！",
 	close: "とじる",
 	grade: {
 		kami: "神エイム！",
@@ -274,10 +247,10 @@ export const JK_PROG_TV = {
 		none: "見てただけ",
 	},
 	gradeNote: "{g}　+{gain}",
-	best: "◎　的確！　+{g}",
-	ok: "○　まあまあ　+{g}",
-	miss: "×　スベった　+{g}",
-	silent: "◎　だまって　聞いた　+{g}",
+	best: "◎的確！+{g}",
+	ok: "○まあまあ+{g}",
+	miss: "×スベった+{g}",
+	silent: "◎だまって聞いた+{g}",
 	late: "見送り……",
 	fast: "神速",
 	combo: "{c}連続",
@@ -285,13 +258,13 @@ export const JK_PROG_TV = {
 
 /** 番組の 結果カード（全角 22字まで）。 */
 export const JK_PROG_RESULT = {
-	over: "★{n}まで　のびた",
-	kanso: "完走！　目標の　★{goal}",
+	over: "★{n}までのびた",
+	kanso: "完走！目標の★{goal}",
 	res: "{res}レス",
-	ikioi: "最高の　勢い　{ikioi}",
+	ikioi: "最高の勢い　{ikioi}",
 	combo: "最高コンボ　{c}連続",
 	fits: "◎{x}　○{y}　×{z}　見送り{w}",
 	cue: "山場：{g}",
-	best: "これまでの　最高　★{best}",
+	best: "これまでの最高★{best}",
 	new: "NEW!",
 } as const;

@@ -48,7 +48,7 @@ const staff = (
 
 export const BUSHITSU: Facility = {
 	id: "bushitsu",
-	name: "おんJ高校　部室棟",
+	name: "おんJ高校部室棟",
 	from: 4,
 	at: [40, 0],
 	// 白い 壁と 腰板（Base.png 77・78 行の 0 列）・青い 瓦の 軒（84 行 2 列）。扉の 左に 縦長の 校札、右に 時計と 小窓

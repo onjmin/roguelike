@@ -473,8 +473,8 @@ test("落とし穴：1つ 下へ 落ちて、落ちた 先で ダメージ（ト
 		if (r.s.depth === depth) continue; // 罠が 動かなかった
 		fell++;
 		const log = r.s.log.slice(log0);
-		const i0 = log.indexOf("落とし穴に　落ちた！");
-		const i1 = log.findIndex((l) => l.endsWith("の　ダメージを　受けた"));
+		const i0 = log.indexOf("落とし穴に落ちた！");
+		const i1 = log.findIndex((l) => l.endsWith("のダメージを受けた"));
 		ok(r.s.depth === depth + 1, `depth ${depth} → ${r.s.depth}`);
 		ok(i0 >= 0 && i1 > i0, `log: ${log.join(" / ")}`);
 		ok(r.p.hp <= hp, "healed by a pit");
@@ -588,7 +588,7 @@ test("a boss run's record and replay keep the objective; replays without it (old
 		loadProgress();
 		const boss = Run.create("boss-record", "kinoko", [], "boss");
 		boss.act({ c: "wait" });
-		boss.finish("clear", "親玉きのにゃんを　たおした");
+		boss.finish("clear", "親玉きのにゃんをたおした");
 		saveRun(boss.s);
 		const rec = loadRecords()[0];
 		const rp = loadReplays()[0];

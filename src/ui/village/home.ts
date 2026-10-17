@@ -63,10 +63,10 @@ export const chooseStored = async (
 			value: String(it.uid),
 			disabled: !chosen.has(it.uid) && room <= 0,
 		}));
-		rows.push({ label: "これで　きめる", value: "done" });
+		rows.push({ label: "これできめる", value: "done" });
 		const v = await listWindow(
 			ctx,
-			`${opt.prompt}<br><small>倉庫　${t.storage.length + chosen.size}／${cap}　えらばなかった　道具は　売る</small>`,
+			`${opt.prompt}<br><small>倉庫　${t.storage.length + chosen.size}／${cap}えらばなかった道具は売る</small>`,
 			rows,
 			{ start },
 		);
@@ -111,7 +111,7 @@ export const openStorage = async (ctx: Ctx): Promise<void> => {
 		if (!t.storage.length && !canPut) {
 			await infoWindow(
 				ctx,
-				`倉庫　0／${cap}`,
+				`倉庫0／${cap}`,
 				`<p class="dim">${escBr(TOWN_MSG.storageEmpty.text)}</p>`,
 			);
 			return;
@@ -144,7 +144,7 @@ const takeFromStorage = async (ctx: Ctx): Promise<void> => {
 		}));
 		const v = await listWindow(
 			ctx,
-			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　引き出す　持ち物　${t.bag.length}／${max}${full ? `<br>${escBr(fill(TOWN_MSG.bagFull.text, { n: max }))}` : ""}</small>`,
+			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと引き出す持ち物　${t.bag.length}／${max}${full ? `<br>${escBr(fill(TOWN_MSG.bagFull.text, { n: max }))}` : ""}</small>`,
 			rows,
 			{
 				start,
@@ -193,7 +193,7 @@ const putIntoStorage = async (ctx: Ctx): Promise<void> => {
 		if (!rows.length) return;
 		const v = await listWindow(
 			ctx,
-			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと　預ける</small>`,
+			`倉庫　${t.storage.length}／${cap}<br><small>えらぶと預ける</small>`,
 			rows,
 			{ start },
 		);
@@ -251,15 +251,15 @@ export const openBag = async (ctx: Ctx): Promise<void> => {
 				? [{ it: reliefItem(), note: "<small>（ぷゆゆから）</small>" }]
 				: []),
 			...(t.lunch
-				? [{ it: lunch, note: "<small>（ぷゆゆの　お弁当）</small>" }]
+				? [{ it: lunch, note: "<small>（ぷゆゆのお弁当）</small>" }]
 				: []),
 		];
-		const title = `持ち物${max > 0 ? `　${t.bag.length}／${max}` : ""}<br><small>このまま　出口から　出れば　持っていく</small>`;
+		const title = `持ち物${max > 0 ? `　${t.bag.length}／${max}` : ""}<br><small>このまま出口から出れば持っていく</small>`;
 		if (!items.length) {
 			await infoWindow(
 				ctx,
-				max > 0 ? `持ち物　0／${max}` : "持ち物",
-				`<p class="dim">${max > 0 ? escBr(TOWN_MSG.bagEmpty.text) : "なにも　持っていない"}</p>`,
+				max > 0 ? `持ち物0／${max}` : "持ち物",
+				`<p class="dim">${max > 0 ? escBr(TOWN_MSG.bagEmpty.text) : "なにも持っていない"}</p>`,
 			);
 			return;
 		}
@@ -296,7 +296,7 @@ export const openSales = async (ctx: Ctx): Promise<void> => {
 				)
 				.join(
 					"",
-				)}</div><small class="sales-legend">金の　棒は　町の　段が　上がった　帰り</small>`
+				)}</div><small class="sales-legend">金の棒は町の段が上がった帰り</small>`
 		: `<p class="dim">${escBr(TOWN_MSG.salesEmpty.text)}</p>`;
 	const html =
 		`<div class="sales-kpis">${kpi("合計", `${t.points}円`)}${kpi("手もと", `${walletYen()}円`)}${kpi("前回", last ? `${last.points}円` : "—")}${kpi("平均", t.sales.length ? `${avg}円` : "—")}</div>` +

@@ -99,21 +99,21 @@ export const PK_TEXT = {
 		straight: "ストレート",
 		three: "3カード",
 		two: "2ペア",
-		jacks: "J以上の　1ペア",
+		jacks: "J以上の1ペア",
 	} as Record<PkHand, string>,
 	bet: "BET",
 	hold: "残す",
 	swap: "かえる",
 	deal: "配る",
-	draw: "{n}枚　交換",
+	draw: "{n}枚交換",
 	/** 全部 残した ときの 交換の 札。 */
-	stand: "この　まま",
+	stand: "このまま",
 	win: "{n}枚！",
 	lose: "役なし",
 	/** 配る 前の 案内。 */
-	howBet: "↑↓で　賭ける　枚数、Aで　配る",
+	howBet: "↑↓で賭ける枚数、Aで配る",
 	/** 残す 札を えらぶ ときの 案内。 */
-	howHold: "残す　札を　タップ（←→と↑）　Aで　交換",
+	howHold: "残す札をタップ（←→と↑）Aで交換",
 } as const;
 
 /** 役（なしは null）。 */

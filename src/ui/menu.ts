@@ -208,11 +208,11 @@ const statsHtml = (run: Run): string => {
 const confirmSuspend = async (ctx: Ctx): Promise<boolean> =>
 	(await listWindow(
 		ctx,
-		"中断して　タイトルへ？",
+		"中断してタイトルへ？",
 		[
 			{
 				label: "はい",
-				desc: "ここまでを　記録する。つづきから　再開できる",
+				desc: "ここまでを記録する。つづきから再開できる",
 				value: "yes",
 			},
 			{ label: "いいえ", value: "no" },
@@ -305,18 +305,18 @@ const openVoice = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 	if (!kind) {
 		await listWindow(ctx, "蓄音機", [
 			{
-				label: "まだ　何も　録っていない",
-				desc: "敵を　たおすと、その　声を　1つ　録る",
+				label: "まだ何も録っていない",
+				desc: "敵をたおすと、その声を1つ録る",
 				value: "",
 			},
 		]);
 		return NONE;
 	}
 	const name = MONSTERS[kind]?.name ?? "";
-	const v = await listWindow(ctx, `蓄音機（${esc(name)}の　声）`, [
+	const v = await listWindow(ctx, `蓄音機（${esc(name)}の声）`, [
 		{
 			label: "再生する",
-			desc: `見えている　${esc(name)}が　自分の　声を　聞かされて　固まる。声は　消える`,
+			desc: `見えている　${esc(name)}が自分の声を聞かされて固まる。声は消える`,
 			value: "play",
 		},
 		{ label: "やめる", value: "" },
@@ -361,11 +361,11 @@ const actionRows = (run: Run, it: Item): ListItem[] => {
 	// 置けない所では先に知らせる（選んでから「置けない」と言われるより親切）
 	const onWard = run.f.wards.includes(run.p.y * run.f.layout.w + run.p.x);
 	const blocked = under
-		? "足元に　ものが　ある"
+		? "足元にものがある"
 		: run.onStairs()
-			? "階段の　上には　置けない"
+			? "階段の上には置けない"
 			: onWard
-				? "避難所の　上には　置けない"
+				? "避難所の上には置けない"
 				: "";
 	rows.push({
 		label: "置く",
@@ -400,12 +400,12 @@ const pickName = async (
 		};
 	});
 	rows.push({
-		label: "名前を　消す",
+		label: "名前を消す",
 		value: "",
 		disabled: !named,
 	});
 	const cur = named ? cands.findIndex((e) => defOf(e.kind).name === named) : 0;
-	const v = await listWindow(ctx, "なんと　よぶ？", rows, {
+	const v = await listWindow(ctx, "なんとよぶ？", rows, {
 		start: Math.max(0, cur),
 	});
 	if (v === null) return null;
@@ -442,7 +442,7 @@ const itemActions = async (
 				// 相手を選ぶスレ（鑑定・次スレ・飯テロ）。聞かれること自体で種類がしぼれるのはトルネコと同じ。
 				// 一覧は どのスレでも 同じ（しぼると 正体が ばれるので）
 				if (!needsTarget(it)) return command({ c: "use", item: it.uid });
-				const target = await pickItem(ctx, run, "どれに　つかう？", (x) =>
+				const target = await pickItem(ctx, run, "どれにつかう？", (x) =>
 					canTarget(it, x),
 				);
 				// キャンセルなら読まずに もどる（スレは減らない）
@@ -497,10 +497,10 @@ export const openInventory = async (
 	let jump: string | null = null;
 	for (;;) {
 		const items = grouped(run.p.items);
-		const title = `もちもの　${items.length}/${INVENTORY_MAX}`;
+		const title = `もちもの${items.length}/${INVENTORY_MAX}`;
 		const rows = items.length
 			? items.map((it) => itemRow(run, it))
-			: [emptyRow("何も　持っていない")];
+			: [emptyRow("何も持っていない")];
 		const v =
 			jump ??
 			(await listWindow(ctx, title, rows, {
@@ -541,7 +541,7 @@ export const pickItem = async (
 	const list = grouped(run.p.items).filter(filter);
 	const rows = list.length
 		? list.map((it) => itemRow(run, it))
-		: [emptyRow("えらべる　ものが　ない")];
+		: [emptyRow("えらべるものがない")];
 	const v = await listWindow(ctx, esc(title), rows);
 	if (v === null || v === "") return null;
 	return Number(v);
@@ -551,16 +551,16 @@ export const pickItem = async (
 
 /** 罠の一言（足元の罠を選んだとき）。 */
 const TRAP_DESC: Record<TrapKind, string> = {
-	bear: "足を　はさまれて　しばらく　動けない",
-	acid: "板が　錆びて　弱くなる",
+	bear: "足をはさまれてしばらく動けない",
+	acid: "板が錆びて弱くなる",
 	sleep: "眠ってしまう",
-	trip: "転んで　持ち物を　1つ　落とす",
-	mine: "爆発して　HPが　半分になる。まわりの　道具も　燃える",
-	arrow: "ボールが　飛んでくる（ダメージだけ）",
-	dart: "毒ボールが　飛んでくる（ダメージと、ちからが　1　下がる）",
-	warp: "この階の　どこかへ　飛ばされる",
-	pit: "次の　階へ　落ちる（上りの　板では　吹き上げられる）",
-	anka: "安価が　来る。1回　踏むと　沈んで　もう　動かない",
+	trip: "転んで持ち物を1つ落とす",
+	mine: "爆発してHPが半分になる。まわりの道具も燃える",
+	arrow: "ボールが飛んでくる（ダメージだけ）",
+	dart: "毒ボールが飛んでくる（ダメージと、ちからが1　下がる）",
+	warp: "この階のどこかへ飛ばされる",
+	pit: "次の階へ落ちる（上りの板では吹き上げられる）",
+	anka: "安価が来る。1回踏むと沈んでもう動かない",
 };
 
 /** 拾えるか（持ち物の枠。矢は同じ種類の束にまとまるので、いっぱいでも拾える）。 */
@@ -583,7 +583,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			const ok = canPickUp(run, fi.item);
 			rows.push({
 				label: "ひろう",
-				desc: ok ? itemDesc(run, fi.item) : "持ち物が　いっぱい",
+				desc: ok ? itemDesc(run, fi.item) : "持ち物がいっぱい",
 				value: "pickup",
 				disabled: !ok,
 			});
@@ -591,7 +591,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			const cat = defOf(fi.item.kind).cat;
 			const stuck = run.isWardItem(fi);
 			const held = cat === "goal" || stuck;
-			const why = stuck ? "床に　はりついている" : undefined;
+			const why = stuck ? "床にはりついている" : undefined;
 			if (cat !== "goal") {
 				const wear =
 					cat === "weapon" ||
@@ -604,7 +604,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 								label: "装備する",
 								value: "equip",
 								disabled: held || !ok,
-								desc: why ?? (ok ? undefined : "持ち物が　いっぱい"),
+								desc: why ?? (ok ? undefined : "持ち物がいっぱい"),
 							}
 						: {
 								label: USE_VERB[cat],
@@ -623,7 +623,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 					desc: why,
 				});
 			rows.push({
-				label: "持ち物と　交換",
+				label: "持ち物と交換",
 				value: "swap",
 				disabled: !p.items.some((x) => !isKeyItem(x.kind)),
 			});
@@ -634,10 +634,10 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				label: s.returning ? backVerb(s.dungeon) : goVerb(s.dungeon),
 				desc: s.returning
 					? s.depth <= 1
-						? "地上へ　もどる"
+						? "地上へもどる"
 						: `${s.depth - 1}階へ`
 					: deepest
-						? `これより　${isUpBoard(s.dungeon) ? "上" : "下"}へは　行けない`
+						? `これより　${isUpBoard(s.dungeon) ? "上" : "下"}へは行けない`
 						: `${s.depth + 1}階へ`,
 				value: "stairs",
 				disabled: deepest,
@@ -650,7 +650,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				value: "trap",
 			});
 		if (!rows.length) {
-			await infoWindow(ctx, "足元", "<p>足元には　何もない</p>");
+			await infoWindow(ctx, "足元", "<p>足元には何もない</p>");
 			return NONE;
 		}
 		const title = fi ? esc(run.name(fi.item)) : stairs ? "階段" : "足元";
@@ -674,7 +674,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				const it = fi.item;
 				if (!needsTarget(it)) return command({ c: "use", item: it.uid });
 				// 相手を 選ぶ スレ（持ち物から 選ぶ）。キャンセルなら 読まずに もどる
-				const target = await pickItem(ctx, run, "どれに　つかう？", (x) =>
+				const target = await pickItem(ctx, run, "どれにつかう？", (x) =>
 					canTarget(it, x),
 				);
 				if (target !== null) return command({ c: "use", item: it.uid, target });
@@ -686,7 +686,7 @@ export const openFootMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 				const uid = await pickItem(
 					ctx,
 					run,
-					"どれと　交換する？",
+					"どれと交換する？",
 					(x) => !isKeyItem(x.kind),
 				);
 				if (uid !== null) return command({ c: "swap", item: uid });
@@ -710,7 +710,7 @@ export const openLog = async (ctx: Ctx, run: Run): Promise<void> => {
 	const lines = run.s.log.slice(-120);
 	const html = lines.length
 		? lines.map((l) => `<p class="log-row">${esc(l)}</p>`).join("")
-		: '<p class="dim">まだ　何も　ない</p>';
+		: '<p class="dim">まだ何もない</p>';
 	const shown = infoWindow(ctx, "ログ", html, { cls: "log-view" });
 	// infoWindow は呼んだ時点で窓を置いているので、ここで いちばん下まで巻き取れる
 	const boxes = ctx.ui.querySelectorAll<HTMLElement>(".menu.log-view");

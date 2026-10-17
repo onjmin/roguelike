@@ -190,7 +190,7 @@ const isleThings = (st: 2 | 3 | 4 | 5 | 6 | 7): OutdoorThing[] => [
 					...thing("joukyu", [0, 45], X.joukyu),
 					sprite: "sa:ohUlqd",
 					dir: "right" as const,
-					name: "謎の　上級者",
+					name: "謎の上級者",
 				},
 				thing("tower", [1, 43], X.tower),
 				thing("machine", [1, 46], X.machine),

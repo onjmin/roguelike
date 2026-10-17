@@ -62,9 +62,9 @@ const heroWalkOf = (h: HeroId): string =>
  * 1行 1つの ことだけ、3行まで（細かい 決まりは 遊べば わかる：core/data/heroes.ts）。
  */
 const HERO_DESC: Record<HeroId, string> = {
-	kiriko: "いつもの　冒険。",
-	roze: "すり抜け（O）で　壁の　中を　歩ける。<br>壁の　中なら　爆発しか　当たらない。<br>そのかわり　1歩ごとに　おなか　−5%。",
-	zero: "残機　3。たおれても　次の　機体で　つづく。<br>そのぶん　HP・ちからは　低め。<br>オート（O）で　勝手に　探索する。",
+	kiriko: "いつもの冒険。",
+	roze: "すり抜け（O）で壁の中を歩ける。<br>壁の中なら爆発しか当たらない。<br>そのかわり1歩ごとにおなか−5%。",
+	zero: "残機3。たおれても次の機体でつづく。<br>そのぶんHP・ちからは低め。<br>オート（O）で勝手に探索する。",
 };
 
 // ───────────────── 島（はじめに 1回だけ） ─────────────────
@@ -521,7 +521,7 @@ export class MapView {
 		this.bubble.innerHTML = open
 			? `<b>${n.name}</b><small>${floorsLabel(d)}階・${isUpBoard(d) ? "上り" : "下り"}${boss}</small>` +
 				(g?.event ? `<small class="wm-limited">期間限定</small>` : "")
-			: "<b>？？？</b><small>まだ　行けない</small>";
+			: "<b>？？？</b><small>まだ行けない</small>";
 		this.bubble.classList.toggle("locked", !open);
 		// 変わるたびに ぽんと 出す
 		this.bubble.classList.remove("pop");
@@ -643,7 +643,7 @@ export class MapView {
 				// 決まり（未識別など）と 倉庫の 道具の 持ちこみ（倉庫が 建ってから）
 				`<div class="wm-desc">${n.rules[2] ?? ""}</div>` +
 				(this.carryMax > 0
-					? `<div class="wm-carry${dg.noCarry ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った　道具は　シヨが　預かる）" : `できる（${this.carryMax}つまで）`}</div>`
+					? `<div class="wm-carry${dg.noCarry ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った道具はシヨが預かる）" : `できる（${this.carryMax}つまで）`}</div>`
 					: "")
 			: `<div class="wm-name">？？？</div><div class="wm-desc">${this.howToOpen(d)}</div>`;
 	}
@@ -654,14 +654,14 @@ export class MapView {
 		const nameOf = (x: DungeonId) =>
 			this.open.includes(x) ? DUNGEON_NAMES[x].name : "？？？";
 		const after = dg.unlockAfter;
-		if (!after) return "まだ　行けない";
+		if (!after) return "まだ行けない";
 		const known = this.open.includes(after);
 		const name = nameOf(after);
 		const relief =
 			known && dg.reliefAfter
-				? `<br>（${name}で　${dg.reliefAfter}回　たおれても　開く）`
+				? `<br>（${name}で${dg.reliefAfter}回たおれても開く）`
 				: "";
-		return `${name}を　持ち帰ると　開く${relief}`;
+		return `${name}を持ち帰ると開く${relief}`;
 	}
 }
 
@@ -690,7 +690,7 @@ export const openWorldMap = (
 		carryMax?: number;
 	},
 ): MapView => {
-	const v = new MapView(ctx, "どの　植民地へ？");
+	const v = new MapView(ctx, "どの植民地へ？");
 	v.open = o.open;
 	v.cleared = o.cleared;
 	v.goals = o.goals ?? {};
@@ -720,7 +720,7 @@ export const pickColony = async (
 		view?: MapView;
 	},
 ): Promise<DungeonId | null> => {
-	const v = o.view ?? new MapView(ctx, "どの　植民地へ？");
+	const v = o.view ?? new MapView(ctx, "どの植民地へ？");
 	if (!o.view) {
 		v.open = o.open;
 		v.cleared = o.cleared;
@@ -773,9 +773,9 @@ export const pickColony = async (
 		r.k === "spot"
 			? spotLabel(r.d)
 			: r.k === "prev"
-				? "◀　まえの　ページ"
+				? "◀まえのページ"
 				: r.k === "next"
-					? "つぎの　ページ　▶"
+					? "つぎのページ▶"
 					: r.k === "hero"
 						? heroLabel()
 						: r.k === "blank"
@@ -791,7 +791,7 @@ export const pickColony = async (
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
 			const h = chosenHero();
-			v.panel.innerHTML = `<div class="wm-name">${heroLabel()}</div><div class="wm-desc">${HERO_DESC[h]}<br><small>A で　切りかえ</small></div>`;
+			v.panel.innerHTML = `<div class="wm-name">${heroLabel()}</div><div class="wm-desc">${HERO_DESC[h]}<br><small>A で切りかえ</small></div>`;
 			return;
 		}
 		if (r?.k === "prev" || r?.k === "next") {
@@ -799,9 +799,9 @@ export const pickColony = async (
 			v.bubble.innerHTML = "";
 			const desc = stuck(r)
 				? r.k === "prev"
-					? "いまが　はじめの　ページ。"
-					: "いまが　さいごの　ページ。"
-				: "ほかの　植民地を　見る。";
+					? "いまがはじめのページ。"
+					: "いまがさいごのページ。"
+				: "ほかの植民地を見る。";
 			v.panel.innerHTML = `<div class="wm-name">ページ　${page + 1}／${pages}</div><div class="wm-desc">${desc}</div>`;
 			return;
 		}
@@ -809,7 +809,7 @@ export const pickColony = async (
 			// やめる：▼ と フキダシを しまう
 			v.mode = { k: "idle" };
 			v.bubble.innerHTML = "";
-			v.panel.innerHTML = `<div class="wm-name">やめる</div><div class="wm-desc">おんJタウンに　のこる。</div>`;
+			v.panel.innerHTML = `<div class="wm-name">やめる</div><div class="wm-desc">おんJタウンにのこる。</div>`;
 			return;
 		}
 		v.mode = { k: "pick", cur: r.d };
@@ -956,7 +956,7 @@ const arrivalCard = async (ctx: Ctx, d: DungeonId): Promise<void> => {
 		el("div", { class: "wm-arrive-name", text: n.name }),
 		el("div", {
 			class: "wm-arrive-sub",
-			text: `${COLONY_SPOTS[d].place}を　${up ? "上る" : "降りる"}　${floorsLabel(d)}階`,
+			text: `${COLONY_SPOTS[d].place}を${up ? "上る" : "降りる"}　${floorsLabel(d)}階`,
 		}),
 		el("div", { class: "wm-arrive-mascot", text: n.mascot }),
 	]);

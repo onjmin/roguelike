@@ -79,8 +79,8 @@ export const RK_TEXT = {
 	pellet: "通",
 	bonus: "草",
 	level: "段",
-	next: "次の　段へ",
-	caught: "通報　された…",
+	next: "次の段へ",
+	caught: "通報された…",
 } as const;
 
 /** 向き：0 上・1 右・2 下・3 左。 */

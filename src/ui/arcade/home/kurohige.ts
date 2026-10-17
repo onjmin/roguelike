@@ -258,8 +258,8 @@ export const playKurohige = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				v.phase === "fly"
 					? ""
 					: v.phase === "pick" || (v.phase === "wait" && v.who === 1)
-						? "キリコの　番"
-						: "名無しの　番";
+						? "キリコの番"
+						: "名無しの番";
 			hud(g, `刺した　${s.safe}本`, right);
 			if (v.phase === "fly" && fly > 0.15)
 				txt(g, KH_SAY.fly, CX, 28, 8, "#ffe060", "center");

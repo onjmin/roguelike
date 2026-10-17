@@ -101,7 +101,7 @@ const draw = (
 	const c = countDiscs(b);
 	txt(
 		g,
-		`●　キリコ　${c.black}`,
+		`●キリコ　${c.black}`,
 		144,
 		12,
 		8,
@@ -109,7 +109,7 @@ const draw = (
 	);
 	txt(
 		g,
-		`○　常連　${c.white}`,
+		`○常連　${c.white}`,
 		144,
 		24,
 		8,

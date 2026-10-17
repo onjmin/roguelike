@@ -267,9 +267,9 @@ export const playHasami = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				? ""
 				: s.turn === 1
 					? v.sel >= 0
-						? "行き先を　選ぶ"
-						: "動かす　駒を　選ぶ"
-					: `名無し　考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
+						? "行き先を選ぶ"
+						: "動かす駒を選ぶ"
+					: `名無し考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
 			hud(g, `${s.ply}／${HS.maxPly}手`, right);
 		},
 		over: (v) => v.s.winner !== 0 && v.endT >= HS.endWait,

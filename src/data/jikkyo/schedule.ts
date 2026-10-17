@@ -69,8 +69,7 @@ export const JIKKYO_STORY_GATE = "deep";
 export const jikkyoOpen = (cleared: readonly string[]): boolean =>
 	cleared.includes(JIKKYO_STORY_GATE);
 /** 山場の 前の テレビ・モニター（番組が ある はずの 日だけ 出す）。 */
-export const JIKKYO_PAUSED =
-	"番組表に、はり紙。\n「同時配信大会の　あいだ　休止」";
+export const JIKKYO_PAUSED = "番組表に、はり紙。\n「同時配信大会のあいだ休止」";
 
 /** 束の 番組（data/jikkyo/packs.ts）が その 段で 見られるか（作りかけは 出さない）。 */
 export const packOpen = (p: JkPack, stage: number): boolean =>

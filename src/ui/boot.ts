@@ -25,7 +25,7 @@ export type BootChoice =
 export const runSaveLabel = (s: RunState | null): string =>
 	s
 		? `${DUNGEON_NAMES[s.dungeon]?.short ?? ""}　${floorShort(s.dungeon, s.depth)}　Lv${s.player.lv}${s.returning ? "　帰り道" : ""}`
-		: "中断した　冒険";
+		: "中断した冒険";
 
 export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 	new Promise((resolve) => {
@@ -50,13 +50,13 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 			}),
 			el("div", {
 				class: "title-sub",
-				text: "登録者　0人からの　攻略配信",
+				text: "登録者0人からの攻略配信",
 			}),
 			quoteEl,
 			buttons,
 			el("div", {
 				class: "title-foot",
-				text: "1歩1ターンの　ローグライク　／　音は　右上の　🔊",
+				text: "1歩1ターンのローグライク／音は右上の🔊",
 			}),
 		]);
 		ctx.ui.appendChild(root);
@@ -79,8 +79,8 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 						class: `title-btn${c === cur ? " cur" : ""}`,
 						html: `<span class="title-btn-no">${i + 1}:</span>${
 							c === "start"
-								? "村へ<small>おんJタウンを　歩く</small>"
-								: `冒険に　もどる<small>${esc(runSaveLabel(saved))}</small>`
+								? "村へ<small>おんJタウンを歩く</small>"
+								: `冒険にもどる<small>${esc(runSaveLabel(saved))}</small>`
 						}`,
 					});
 					onTap(b, root, () => {
@@ -159,26 +159,26 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 const LOG_LINES = [
 	"乙",
 	">>1　乙",
-	"キリコ　登録した",
+	"キリコ登録した",
 	"ほんま草",
 	"見とるで",
-	"このスレッドは　1000を　超えました",
+	"このスレッドは1000を超えました",
 	"age",
-	"同接　何人や？",
-	"キリコ　すこ",
-	"ワイも　もぐる",
-	"底には　なにが　あるんや",
-	"撮れ高　もろてこい",
-	"長湯スレ　どこ",
-	"B10で　力尽きた",
+	"同接何人や？",
+	"キリコすこ",
+	"ワイももぐる",
+	"底にはなにがあるんや",
+	"撮れ高もろてこい",
+	"長湯スレどこ",
+	"B10で力尽きた",
 	"腹へった",
 	"はえーすっごい",
 	"せやな",
 	"ぷゆゆ",
-	"また　明日",
+	"また明日",
 ];
 /** 最終話の あと（電池板を 持ち帰った）に まじる 行（STORY.md §5）。 */
-const WIN_LOG = ["キリコ　1位　おめ", "配信　切るの　惜しかったな"] as const;
+const WIN_LOG = ["キリコ1位おめ", "配信切るの惜しかったな"] as const;
 const WEEK = "日月火水木金土";
 
 const logLine = (r: () => number, won: boolean): string => {

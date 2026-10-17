@@ -40,7 +40,7 @@ const PORTRAIT: Partial<Record<Speaker, CastDef["portrait"]>> = {
 
 /** 名前欄の 名前。解音ゼロは 3体 いるので 型番も 出す（公式サイトの 書き方）。サブ機は data/people/mobs.ts の label。 */
 const LABEL: Partial<Record<Speaker, string>> = {
-	zero: "ゼロ　VHz8-0",
+	zero: "ゼロVHz8-0",
 };
 
 /**

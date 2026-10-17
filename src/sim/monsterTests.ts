@@ -1479,7 +1479,7 @@ test("kage", "気配スレ (senseMonsters) alone does not show it", () => {
 // ───────────────── 顔真っ赤（touchy） ─────────────────
 
 const snaps = (r: Run): number =>
-	r.s.log.filter((t) => t.includes("顔真っ赤に　なった")).length;
+	r.s.log.filter((t) => t.includes("顔真っ赤になった")).length;
 
 test("oni", "touchy: looks like an おんJ民 until it snaps", () => {
 	const r = arena("oni-look");
@@ -1536,8 +1536,8 @@ test("oni", "touchy: misses more once snapped", () => {
 	for (let i = 0; i < 150; i++) {
 		r.p.hp = r.p.maxHp;
 		for (const e of evs(turn(r), "msg")) {
-			if (e.text.startsWith("顔真っ赤の　攻撃。")) hit++;
-			if (e.text.startsWith("顔真っ赤の　攻撃は　はずれた")) miss++;
+			if (e.text.startsWith("顔真っ赤の攻撃。")) hit++;
+			if (e.text.startsWith("顔真っ赤の攻撃ははずれた")) miss++;
 		}
 	}
 	const rate = hit / (hit + miss);
@@ -2433,7 +2433,7 @@ test("scroll", "s_gacha: every one of the 8 outcomes can happen", () => {
 		["Lv+3", (r) => r.p.lv >= 4],
 		["装備+3", (r) => r.s.log.some((l) => l.includes("強くなった"))],
 		["全滅", (r) => r.s.log.some((l) => l.includes("いなくなった"))],
-		["道具に", (r) => r.s.log.some((l) => l.includes("道具に　なった"))],
+		["道具に", (r) => r.s.log.some((l) => l.includes("道具になった"))],
 		["メタル", (r) => r.f.monsters.some((m) => m.kind === "metal")],
 		["落ちる", (r, d0) => r.s.depth === d0 + 5],
 	];
@@ -2457,12 +2457,12 @@ test("scroll", "s_gacha: hidden and unreadable until h_sight", () => {
 	r.f.items.push({ x: r.p.x + 2, y: r.p.y, item: fi });
 	turn(r);
 	ok(!r.s.seen.includes(fi.uid), "the hidden scroll on the floor was seen");
-	ok(r.name(it) === "見えない　何か", `named ${r.name(it)}`);
+	ok(r.name(it) === "見えない何か", `named ${r.name(it)}`);
 	const t0 = r.s.turn;
 	turn(r, { c: "use", item: it.uid });
 	ok(r.s.turn === t0 && r.findItem(it.uid), "read without h_sight");
 	turn(r, { c: "use", item: give(r, "h_sight").uid });
-	ok(r.name(it) !== "見えない　何か", "still hidden after h_sight");
+	ok(r.name(it) !== "見えない何か", "still hidden after h_sight");
 	ok(r.s.seen.includes(fi.uid), "the floor scroll stayed unseen after h_sight");
 	turn(r, { c: "use", item: it.uid });
 	ok(!r.findItem(it.uid), "could not read it after h_sight");
@@ -3187,10 +3187,10 @@ test("takonomin", "breath: throws hot takoyaki, not fire", () => {
 	const hit = waitTurns(r, 60, () => {
 		m.x = home.x;
 		m.y = home.y;
-		return r.s.log.some((l) => l.includes("たこ焼きを　吐いた"));
+		return r.s.log.some((l) => l.includes("たこ焼きを吐いた"));
 	});
 	ok(hit > 0, "never threw takoyaki");
-	ok(!r.s.log.some((l) => l.includes("炎を　吐いた")), "said it breathed fire");
+	ok(!r.s.log.some((l) => l.includes("炎を吐いた")), "said it breathed fire");
 });
 
 test("mashii", "pack: comes in a group of four", () => {
@@ -3314,7 +3314,7 @@ test(
 			// 記録の 1行に おさまる（ほかの 行と 同じ 24字まで）
 			const long = spec.lines.filter((l) => [...l].length > 24);
 			ok(!long.length, `${d}: long rescue lines ${long.join(" / ")}`);
-			ok(spec.cause === `${def.name}を　たおした`, `${d}: cause ${spec.cause}`);
+			ok(spec.cause === `${def.name}をたおした`, `${d}: cause ${spec.cause}`);
 			for (let lv = 1; lv <= 30; lv++)
 				for (const other of DUNGEON_IDS)
 					ok(
@@ -3560,11 +3560,11 @@ test(
 		});
 		r.f.anka = { kind: "kill", need: 2, done: 0, due: 1 };
 		const ev = turn(r);
-		ok(saw(ev, "安価を　守らなかった"), "harness: the anka did not run out");
+		ok(saw(ev, "安価を守らなかった"), "harness: the anka did not run out");
 		ok(b.status.sleep === DEEP, "the ignored anka woke the boss");
 		ok(!r.f.bossSeen && !evs(ev, "boss").length, "the fight started");
 		ok(r.f.monsters.length === 1, `${r.f.monsters.length - 1} trolls came`);
-		ok(!saw(ev, "目を　さました"), "said everyone woke up");
+		ok(!saw(ev, "目をさました"), "said everyone woke up");
 	},
 );
 
@@ -3680,7 +3680,7 @@ test("boss", "!sk: wipe-out, items and metal leave the boss as it is", () => {
 			});
 		put(r, "tousuko", at(-4, 0), { sleep: DEEP });
 		const ev = turn(r, { c: "use", item: it.uid });
-		for (const t of ["いなくなった", "道具に　なった", "メタルぷゆゆに"])
+		for (const t of ["いなくなった", "道具になった", "メタルぷゆゆに"])
 			if (saw(ev, t)) {
 				seen.add(t);
 				ok(saw(ev, "効かなかった"), `${t}: no "didn't work" line`);
@@ -3703,9 +3703,9 @@ test(
 			opts: { sleep: DEEP },
 		});
 		const q = Math.ceil(b.maxHp / 4);
-		for (let i = 0; i < 20 && !logHas(r, "地雷が　爆発した"); i++)
+		for (let i = 0; i < 20 && !logHas(r, "地雷が爆発した"); i++)
 			triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "mine", found: false });
-		ok(logHas(r, "地雷が　爆発した"), "harness: the mine never went off");
+		ok(logHas(r, "地雷が爆発した"), "harness: the mine never went off");
 		ok(r.f.monsters.includes(b), "the mine blew the boss away");
 		ok(b.hp === b.maxHp - q, `mine: hp ${b.hp}/${b.maxHp}`);
 		ok(!r.s.end, "the run ended");
@@ -3934,7 +3934,7 @@ test(
 		m.hp = 9999;
 		ok(dealt(r, m, 20, "hit") === 10, "melee was not halved");
 		ok(dealt(r, m, 20, "magic") === 20, "magic was halved");
-		const n = holdAndWait(r, m, 60, () => logHas(r, "胞子を　吐いた"));
+		const n = holdAndWait(r, m, 60, () => logHas(r, "胞子を吐いた"));
 		ok(n > 0, "never breathed spores");
 	},
 );
@@ -3945,7 +3945,7 @@ test(
 	() => {
 		const r = arena("boss-natsuko");
 		const m = put(r, "boss_natsuko", at(4, 0));
-		const n = holdAndWait(r, m, 40, () => logHas(r, "ヤシの実を　投げた"));
+		const n = holdAndWait(r, m, 40, () => logHas(r, "ヤシの実を投げた"));
 		ok(n > 0, "never threw a coconut");
 		const r2 = arena("boss-natsuko-near");
 		const m2 = put(r2, "boss_natsuko", at(2, 0));
@@ -3960,7 +3960,7 @@ test(
 	() => {
 		const r = arena("boss-takonomin", bigRoomLayout(), CENTER, "konamono");
 		const m = put(r, "boss_takonomin", at(4, 0));
-		const n = holdAndWait(r, m, 60, () => logHas(r, "たこ焼きを　吐いた"));
+		const n = holdAndWait(r, m, 60, () => logHas(r, "たこ焼きを吐いた"));
 		ok(n > 0, "never threw takoyaki");
 		r.damageMonster(m, Math.ceil(m.maxHp / 2), "hit");
 		ok(m.enraged && m.status.fast === 999, "did not get angry");
@@ -3991,7 +3991,7 @@ test(
 	() => {
 		const r = arena("boss-ofurou");
 		const m = put(r, "boss_ofurou", at(4, 0));
-		const n = holdAndWait(r, m, 40, () => logHas(r, "湯を　かけた"));
+		const n = holdAndWait(r, m, 40, () => logHas(r, "湯をかけた"));
 		ok(n > 0, "never splashed hot water");
 		const r2 = arena("boss-ofurou-near");
 		put(r2, "boss_ofurou", at(1, 0));

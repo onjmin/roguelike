@@ -29,7 +29,7 @@ const TAG_NAME: Record<MonsterTag, string> = {
  */
 const TAG_LABEL: Partial<Record<string, Partial<Record<MonsterTag, string>>>> =
 	{
-		pumpkin: { plant: "水分補給草が　よく　効く" },
+		pumpkin: { plant: "水分補給草がよく効く" },
 	};
 
 /**
@@ -37,14 +37,14 @@ const TAG_LABEL: Partial<Record<string, Partial<Record<MonsterTag, string>>>> =
  * ほかは floors（板だけの 敵は その板の 名前を 添える）。
  */
 export const floorsText = (d: MonsterDef): string => {
-	if (d.hunter) return "書きかえた　冒険の　各階";
+	if (d.hunter) return "書きかえた冒険の各階";
 	const boards: readonly DungeonId[] = !d.board
 		? []
 		: typeof d.board === "string"
 			? [d.board]
 			: d.board;
 	if (d.boss && boards.length === 1)
-		return `${floorShort(boards[0], dungeonById(boards[0]).floors)}（${DUNGEON_NAMES[boards[0]].name}の　ボス）`;
+		return `${floorShort(boards[0], dungeonById(boards[0]).floors)}（${DUNGEON_NAMES[boards[0]].name}のボス）`;
 	const where = boards.length
 		? `（${boards.map((b) => DUNGEON_NAMES[b].name).join("・")}だけ）`
 		: "";
@@ -80,8 +80,8 @@ const detail = (d: MonsterDef, kills: number, now = 0): string[] => {
 		bookText(d).flavor,
 		`出る階　${floorsText(d)}　経験値　${d.exp}\nHP　${d.hp}　攻撃　${d.atk}　守り　${d.def}`,
 		total > 0
-			? `これまでに　${total}匹　たおした${now > 0 ? `（この　冒険で　${now}匹）` : ""}`
-			: "まだ　1匹も　たおしていない",
+			? `これまでに${total}匹たおした${now > 0 ? `（この冒険で${now}匹）` : ""}`
+			: "まだ1匹もたおしていない",
 	];
 };
 
@@ -111,7 +111,7 @@ export const openBook = async (
 				: {
 						label: "？？？",
 						sub: floorsText(d),
-						desc: "まだ　会ったことが　ない",
+						desc: "まだ会ったことがない",
 						value: d.id,
 						disabled: true,
 						icon: arts[i].canvas,

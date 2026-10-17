@@ -102,7 +102,7 @@ export const itemHidden = (s: RunState, kind: string): boolean =>
 	!!defOf(kind).invisible && !s.floor.sight;
 
 /** 見えない 道具の 呼び名。 */
-export const HIDDEN_NAME = "見えない　何か";
+export const HIDDEN_NAME = "見えない何か";
 
 /** 道具の呼び名（修正値・回数・本数つき）。 */
 export const itemName = (s: RunState, it: Item): string => {

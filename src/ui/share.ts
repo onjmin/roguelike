@@ -26,12 +26,12 @@ export const sharedHead = (rp: SavedReplay): string => {
 	const where = DUNGEON_NAMES[rp.dungeon ?? "main"].short;
 	const boss = isBossClear(rp);
 	const how = boss
-		? `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`
+		? `${floorShort(rp.dungeon, rp.depth)}で${esc(rp.cause)}`
 		: rp.kind === "clear"
 			? "持ち帰った"
 			: rp.kind === "escape"
-				? `${floorShort(rp.dungeon, rp.depth)}から　帰還スレで　もどった`
-				: `${floorShort(rp.dungeon, rp.depth)}で　${esc(rp.cause)}`;
+				? `${floorShort(rp.dungeon, rp.depth)}から帰還スレでもどった`
+				: `${floorShort(rp.dungeon, rp.depth)}で${esc(rp.cause)}`;
 	const home = boss ? `${esc(bossHomeLine(rp.dungeon ?? "main"))}　` : "";
 	return `${esc(where)}　${how}<br><small>${home}${rp.turn}ターン</small>`;
 };
@@ -41,11 +41,9 @@ export const confirmShared = async (
 	ctx: Ctx,
 	rp: SavedReplay,
 ): Promise<boolean> => {
-	const pick = await listWindow(
-		ctx,
-		`もらった　リプレイ<br>${sharedHead(rp)}`,
-		[{ label: "リプレイを　見る", value: "play" }],
-	);
+	const pick = await listWindow(ctx, `もらったリプレイ<br>${sharedHead(rp)}`, [
+		{ label: "リプレイを見る", value: "play" },
+	]);
 	return pick === "play";
 };
 
@@ -87,16 +85,16 @@ const actionBtn = (label: string): HTMLButtonElement =>
 /** リプレイを 人に わたす：リンクを 見せて、コピー／ファイルに 保存。 */
 export const shareWindow = async (ctx: Ctx, rp: SavedReplay): Promise<void> => {
 	const url = shareUrl(await encodeShare(rp));
-	await textWindow(ctx, "リプレイを　わたす", (box) => {
+	await textWindow(ctx, "リプレイをわたす", (box) => {
 		const area = el("textarea", { class: "share-text" });
 		area.readOnly = true;
 		area.value = url;
 		const note = el("div", {
 			class: "share-note",
-			html: `リンクを　開くと　見られます（${url.length.toLocaleString()}文字）<br><small>長くて　貼れない　ときは　ファイルで　わたしてね</small>`,
+			html: `リンクを開くと見られます（${url.length.toLocaleString()}文字）<br><small>長くて貼れないときはファイルでわたしてね</small>`,
 		});
 		const copy = actionBtn("コピー");
-		const file = actionBtn("ファイルに　保存");
+		const file = actionBtn("ファイルに保存");
 		onTap(copy, box, () => {
 			area.select();
 			const ok = () => {
@@ -121,9 +119,9 @@ export const shareWindow = async (ctx: Ctx, rp: SavedReplay): Promise<void> => {
 /** もらった リプレイを 読み込む：貼りつけるか ファイルを 選ぶ。見るなら そのリプレイを 返す。 */
 export const importWindow = async (ctx: Ctx): Promise<SavedReplay | null> => {
 	const got: { rp: SavedReplay | null } = { rp: null };
-	await textWindow(ctx, "リプレイを　読み込む", (box, done) => {
+	await textWindow(ctx, "リプレイを読み込む", (box, done) => {
 		const area = el("textarea", { class: "share-text" });
-		area.placeholder = "もらった　リンクを　ここに　貼りつける";
+		area.placeholder = "もらったリンクをここに貼りつける";
 		const note = el("div", { class: "share-note" });
 		const input = el("input");
 		input.type = "file";
@@ -135,7 +133,7 @@ export const importWindow = async (ctx: Ctx): Promise<SavedReplay | null> => {
 			const rp = await decodeShare(text);
 			if (!rp) {
 				ctx.se("cancel");
-				note.innerHTML = `<small class="warn">読めませんでした。リンクを　ぜんぶ　貼りつけて　ね</small>`;
+				note.innerHTML = `<small class="warn">読めませんでした。リンクをぜんぶ貼りつけてね</small>`;
 				return;
 			}
 			got.rp = rp;

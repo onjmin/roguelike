@@ -35,7 +35,7 @@ export const ST_TEXT = {
 	four: "4列！",
 	b2b: "4列 連発！",
 	levelUp: "LEVEL UP",
-	note: "タップ　左右＝動く　上＝回す　下＝置く",
+	note: "タップ左右＝動く上＝回す下＝置く",
 } as const;
 
 /** 7つの 形（n×n の 枠の 中の マス）。1〜7 が 色。 */

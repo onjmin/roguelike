@@ -43,9 +43,9 @@ const statusHtml = (run: Run): string => {
 		st.heldBy !== null ? "つかまれている" : "",
 	].filter(Boolean);
 	const floor = [
-		run.f.senseMonsters ? "敵の　いる所" : "",
-		run.f.senseItems ? "道具の　ある所" : "",
-		run.f.sight ? "罠と　見えない敵" : "",
+		run.f.senseMonsters ? "敵のいる所" : "",
+		run.f.senseItems ? "道具のある所" : "",
+		run.f.sight ? "罠と見えない敵" : "",
 	].filter(Boolean);
 	const rows = [
 		row("レベル", String(p.lv)),
@@ -53,7 +53,7 @@ const statusHtml = (run: Run): string => {
 		row("ちから", `${p.str}/${p.maxStr}`),
 		row("満腹度", `${hunger}%`),
 		row("経験値", String(p.exp)),
-		row("次の　レベルまで", next),
+		row("次のレベルまで", next),
 		row("攻撃", String(attackPower(p.lv, run.meleePower()))),
 		row("守り", String(run.playerDef())),
 		row("状態", states.length ? states.join("・") : "ふつう"),
@@ -64,7 +64,7 @@ const statusHtml = (run: Run): string => {
 		'<tr><th colspan="2">冒険</th></tr>',
 		row("目的", esc(goalText(s.dungeon, run.objective))),
 		row("階", `${s.depth}階${s.returning ? "（帰り道）" : ""}`),
-		row("スレ", `${Math.min(RES_LIMIT, run.f.res)}レス（1000で　下の階へ）`),
+		row("スレ", `${Math.min(RES_LIMIT, run.f.res)}レス（1000で下の階へ）`),
 		row("ターン", String(s.turn)),
 	];
 	const out = [`<table>${rows.join("")}</table>`];
@@ -72,20 +72,20 @@ const statusHtml = (run: Run): string => {
 	const why = goalWhy(s.dungeon, loadProgress().cleared);
 	if (why && !s.returning) out.push(`<p class="hint">${esc(why)}</p>`);
 	if (floor.length)
-		out.push(`<p class="hint">この階では　${floor.join("・")}が　わかる</p>`);
+		out.push(`<p class="hint">この階では${floor.join("・")}がわかる</p>`);
 	if (s.returning)
 		out.push(
-			`<p class="hint">${esc(defOf(run.dungeon.goal).name)}を　持って　地上へ　もどろう</p>`,
+			`<p class="hint">${esc(defOf(run.dungeon.goal).name)}を持って地上へもどろう</p>`,
 		);
 	// ボス：いちばん底で 待っている（たおせば 品ごと その場で 入口へ 帰れる）
 	const boss = run.boss;
 	if (boss && run.f.bossSeen)
 		out.push(
-			`<p class="hint">${esc(mdef(boss).name)}を　たおせば、${esc(defOf(run.dungeon.goal).name)}ごと　入口へ　帰れる</p>`,
+			`<p class="hint">${esc(mdef(boss).name)}をたおせば、${esc(defOf(run.dungeon.goal).name)}ごと入口へ帰れる</p>`,
 		);
 	else if (run.bossSpec)
 		out.push(
-			`<p class="hint">${run.atBottom ? "この　階の　どこか" : `いちばん　${isUpBoard(s.dungeon) ? "上" : "底"}`}で　ボスが　待っている</p>`,
+			`<p class="hint">${run.atBottom ? "この階のどこか" : `いちばん　${isUpBoard(s.dungeon) ? "上" : "底"}`}でボスが待っている</p>`,
 		);
 	return out.join("");
 };

@@ -667,7 +667,7 @@ export const mixScene = async (
 	st.mixed = n;
 	save(st);
 	const herbName = defOf(herb.kind).name;
-	await s.narrate(`キリコは　${herbName}を　わたした。`);
+	await s.narrate(`キリコは${herbName}をわたした。`);
 	await s.look(CAFE_MASTER);
 	await sayMaster(s, fill(MASTER_MSG.take, { herb: herbName }));
 	await s.narrate(MASTER_MSG.spin);
@@ -702,7 +702,7 @@ const pickHerb = async (ctx: Ctx, s: Story): Promise<Item | null> => {
 	await s.wait(0);
 	const v = await listWindow(
 		ctx,
-		"どの　草で　まぜてもらう？",
+		"どの草でまぜてもらう？",
 		herbs.map(
 			(it, i): ListItem => ({
 				label: defOf(it.kind).name,
@@ -807,11 +807,9 @@ const seatMenu = async (
 		const herbs = drinkHerbs().length;
 		const rows: ListItem[] = [
 			{
-				label: "一杯　おごる",
+				label: "一杯おごる",
 				sub: herbs ? `草 ${herbs}` : "",
-				desc: herbs
-					? "倉庫の　草で　まぜてもらって、送る"
-					: "倉庫に　草が　ない",
+				desc: herbs ? "倉庫の草でまぜてもらって、送る" : "倉庫に草がない",
 				value: "__treat",
 				disabled: !herbs,
 			},
@@ -823,7 +821,7 @@ const seatMenu = async (
 		];
 		const pick = await listWindow(
 			ctx,
-			`${SPEAKERS[f.who].name}の　となり`,
+			`${SPEAKERS[f.who].name}のとなり`,
 			rows,
 			{ start, closeLabel: SEAT_MSG.leave },
 		);
@@ -906,7 +904,7 @@ const companionScript =
 			return;
 		}
 		await s.say(f.who, greetOf(f.who));
-		const n = await s.choose(["となりに　すわる", "やめる"], { cancel: 1 });
+		const n = await s.choose(["となりにすわる", "やめる"], { cancel: 1 });
 		if (n !== 0) {
 			goHome(s, v, f.who);
 			return;
@@ -995,7 +993,7 @@ const patronScript =
 	(ctx: Ctx, v: Visit, id: MobId, spot: PatronSpot): Script =>
 	async (s) => {
 		await sayAs(s, id, CAFE_MOBS[id].hello);
-		const n = await s.choose(["話す", "一杯　おごる", "やめる"], {
+		const n = await s.choose(["話す", "一杯おごる", "やめる"], {
 			cancel: 2,
 		});
 		if (n === 0) await mobTalk(s, v, id, spot);
@@ -1072,9 +1070,9 @@ const orderScript = async (
 			label: MOBS[p.id].name,
 			value: `mob:${p.id}`,
 		})),
-		{ label: "キリコ", sub: "じぶんで　飲む", value: "__self" },
+		{ label: "キリコ", sub: "じぶんで飲む", value: "__self" },
 	];
-	const pick = await listWindow(ctx, "だれに　出す？", rows, {
+	const pick = await listWindow(ctx, "だれに出す？", rows, {
 		closeLabel: "やめる",
 	});
 	if (!pick) return;
@@ -1163,9 +1161,9 @@ const incoming = async (
 	if (!talk || !f) return;
 	st.sentAt = at;
 	save(st);
-	await sayMaster(s, "あちらの　お客様からです");
+	await sayMaster(s, "あちらのお客様からです");
 	s.se("glass");
-	await s.narrate(`${SPEAKERS[f.who].name}が　グラスを　かかげた。`);
+	await s.narrate(`${SPEAKERS[f.who].name}がグラスをかかげた。`);
 	const n = await s.choose([...GLASS_CHOICES], { cancel: 1 });
 	if (n !== 0) {
 		await s.narrate(fill(SEAT_MSG.decline, { name: SPEAKERS[f.who].name }));

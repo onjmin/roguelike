@@ -62,8 +62,8 @@ export type SoraData = {
 export const SORA_ART = {
 	logo: "金曜ロード保守",
 	title: "『空飛ぶ鯖』",
-	soon: "まもなく　はじまります",
-	end: "本日の　上映は　おわりました",
+	soon: "まもなくはじまります",
+	end: "本日の上映はおわりました",
 	hut: "age",
 	kisei: "連投規制中",
 	anchor: "安価：別スレへ",
@@ -71,24 +71,24 @@ export const SORA_ART = {
 	oldest: "初代スレ",
 	trip: "◆SabaSora10",
 	command: "!バルス",
-	flash: "禁断呪文　バルス　発動！",
+	flash: "禁断呪文バルス発動！",
 	akukin: "アク禁",
 	cmTag: "CM",
 	/** CM（店の 看板と 1行。村の 店だけ）。 */
 	cm: [
-		{ shop: "海の家「age」", line: "焼きそば、大盛りしか　ないで" },
-		{ shop: "おんJマート", line: "24時間　営業中" },
-		{ shop: "ageジム", line: "1日　1000回" },
-		{ shop: "おんJタウン駅", line: "どの　板へも" },
+		{ shop: "海の家「age」", line: "焼きそば、大盛りしかないで" },
+		{ shop: "おんJマート", line: "24時間営業中" },
+		{ shop: "ageジム", line: "1日1000回" },
+		{ shop: "おんJタウン駅", line: "どの板へも" },
 	],
 	/** スタッフロール（役は ぜんぶ 名無しさん）。 */
 	staff: [
-		"原作　名無しさん",
-		"脚本　名無しさん",
-		"作画　名無しさん",
-		"音楽　名無しさん",
-		"実況　名無しさん",
-		"監督　名無しさん",
+		"原作名無しさん",
+		"脚本名無しさん",
+		"作画名無しさん",
+		"音楽名無しさん",
+		"実況名無しさん",
+		"監督名無しさん",
 	],
 } as const;
 
@@ -96,11 +96,11 @@ export const SORA_ART = {
 export const SORA_PREVIEW = [
 	{
 		card: "来週も『空飛ぶ鯖』",
-		set: [B("また　それかよ"), K("たのしみ"), X("31")],
+		set: [B("またそれかよ"), K("たのしみ"), X("31")],
 	},
 	{
-		card: "近日『1000レスの　夏』",
-		set: [B("たのしみ"), K("来週は？"), X("また　それかよ")],
+		card: "近日『1000レスの夏』",
+		set: [B("たのしみ"), K("来週は？"), X("またそれかよ")],
 	},
 ] as const;
 
@@ -111,55 +111,55 @@ export const SORA_POOLS = {
 		"サンイチ",
 		"たておつ",
 		"待機",
-		"あと　5分",
+		"あと5分",
 		"はよ",
 		"くるぞ…",
-		"金曜は　これや",
+		"金曜はこれや",
 	],
-	op: ["はじまた", "きたあ", "懐かしい", "何回目や", "この曲　すき", "おお"],
+	op: ["はじまた", "きたあ", "懐かしい", "何回目や", "この曲すき", "おお"],
 	minato: [
 		"うまそう",
 		"腹へった",
 		"おんJタウンやん",
 		"飯テロ",
 		"平和やな",
-		"焼きそば　食いたい",
+		"焼きそば食いたい",
 	],
-	kisei: ["ひえっ", "あぶな", "こわい", "規制　つらい", "ゆれとる"],
-	copipe: ["ひえっ", "はやい", "有能", "誘導　うまい", "にげろ", "安価　すき"],
-	saba: ["きれい", "名シーン", "鳥肌", "ここすき", "作画　ええな", "でかい"],
+	kisei: ["ひえっ", "あぶな", "こわい", "規制つらい", "ゆれとる"],
+	copipe: ["ひえっ", "はやい", "有能", "誘導うまい", "にげろ", "安価すき"],
+	saba: ["きれい", "名シーン", "鳥肌", "ここすき", "作画ええな", "でかい"],
 	ume: [
 		"埋めろ",
 		"ksk",
 		"くるぞ…",
-		"お前ら　レス止めろ！",
-		"指　つった",
+		"お前らレス止めろ！",
+		"指つった",
 		"準備できた",
 	],
 	cm: [
-		"ここで　CM",
+		"ここでCM",
 		"CM　なげえ",
-		"トイレ　行ってくる",
-		"カップ麺　作るわ",
+		"トイレ行ってくる",
+		"カップ麺作るわ",
 		"今北産業",
-		"CMの間に　300　進んどる",
-		"ここで　CMは　ずるい",
+		"CMの間に300　進んどる",
+		"ここでCMはずるい",
 	],
 	flood: ["バルス", "バルス！", "バルス", "はやすぎ", "おそかった"],
-	after: ["鯖が　重い", "生きてる？", "やりきった", "ありがとう", "有能"],
-	ed: ["神曲", "8888", "いい　映画やった", "終わっちゃった", "泣ける"],
-	preview: ["来週は？", "また　それかよ", "何回　やるねん", "たのしみ"],
-	hansei: ["反省会や", "乙", "ほな", "おやすみ", "解散", "来週も　見るで"],
-	rerun: ["何回　やるねん", "もう　覚えとる", "何回　見ても　ええ"],
-	gap: ["次スレ　どこ？", "乱立すな", "950ちうい", "誰か踏め"],
-	open: ["31", "サンイチ", "たておつ", "スレ立て　乙"],
+	after: ["鯖が重い", "生きてる？", "やりきった", "ありがとう", "有能"],
+	ed: ["神曲", "8888", "いい映画やった", "終わっちゃった", "泣ける"],
+	preview: ["来週は？", "またそれかよ", "何回やるねん", "たのしみ"],
+	hansei: ["反省会や", "乙", "ほな", "おやすみ", "解散", "来週も見るで"],
+	rerun: ["何回やるねん", "もう覚えとる", "何回見てもええ"],
+	gap: ["次スレどこ？", "乱立すな", "950ちうい", "誰か踏め"],
+	open: ["31", "サンイチ", "たておつ", "スレ立て乙"],
 	boo: ["は？", "なんて？"],
-	booStart: ["はじまった　ばっかや", "まだ　早い"],
-	booEarly: ["まだ　早い", "は？"],
-	booLate: ["まだ　バルス　しとる", "は？"],
+	booStart: ["はじまったばっかや", "まだ早い"],
+	booEarly: ["まだ早い", "は？"],
+	booLate: ["まだバルスしとる", "は？"],
 	"reply:best": [">>{n}　わかる", ">>{n}　それな", ">>{n}　ほんまそれ"],
 	"reply:ok": [">>{n}　せやな", ">>{n}　まあな"],
-	"reply:miss": [">>{n}　は？", ">>{n}　なんて？", ">>{n}　どこ　見とるんや"],
+	"reply:miss": [">>{n}　は？", ">>{n}　なんて？", ">>{n}　どこ見とるんや"],
 	/** 1000 の 流れの 予備（群衆の 区切りが ない とき）。 */
 	nanashi: ["くるぞ…", "はよ"],
 } as const satisfies Readonly<Record<string, readonly string[]>>;
@@ -167,18 +167,18 @@ export const SORA_POOLS = {
 /** スレの 決まり文句。 */
 export const SORA_THREAD = {
 	live: "【金保守実況】空飛ぶ鯖★{n}",
-	rerun: "【再上映】空飛ぶ鯖　実況★{n}",
+	rerun: "【再上映】空飛ぶ鯖実況★{n}",
 	liveBarusu: "【金保守実況】空飛ぶ鯖★{n}【バルス用】",
 	rerunBarusu: "【再上映】空飛ぶ鯖★{n}【バルス用】",
 	liveHansei: "【金保守実況・反省会】空飛ぶ鯖★{n}",
 	rerunHansei: "【再上映・反省会】空飛ぶ鯖★{n}",
-	get1000: "1000なら　来週も　鯖",
+	get1000: "1000なら来週も鯖",
 	praise: ">>{n}　神エイム",
-	crossGap: "次スレで　バルス",
-	crossFresh: "新スレで　バルス　できた",
-	failed: "禁断呪文　バルス　発動失敗。。",
-	cannot: "実況スレは　バルス　できぬいの刑",
-	quit: "もう一度　Bで　出る",
+	crossGap: "次スレでバルス",
+	crossFresh: "新スレでバルスできた",
+	failed: "禁断呪文バルス発動失敗。。",
+	cannot: "実況スレはバルスできぬいの刑",
+	quit: "もう一度Bで出る",
 } as const;
 
 const fillN = (s: string, n: number) => s.replace("{n}", String(n));
@@ -215,7 +215,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "kisei",
 			rate: 1.2,
 			bgm: "deep_kisei",
-			caption: "連投規制の　嵐を　ぬける",
+			caption: "連投規制の嵐をぬける",
 		},
 		{
 			at: 42000,
@@ -223,7 +223,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "copipe",
 			rate: 1.3,
 			bgm: "tense",
-			caption: "安価で　群れを　別スレへ",
+			caption: "安価で群れを別スレへ",
 		},
 		{
 			at: 56000,
@@ -231,7 +231,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "saba",
 			rate: 1.1,
 			bgm: "island",
-			caption: "雲の　上を　泳ぐ　鯖",
+			caption: "雲の上を泳ぐ鯖",
 		},
 		{
 			at: 70000,
@@ -239,7 +239,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "ume",
 			rate: 1.6,
 			bgm: "tense",
-			caption: "大将が　初代スレを　ねらう",
+			caption: "大将が初代スレをねらう",
 			title: { next: title("Barusu") },
 			data: { phase: "ume" } satisfies SoraData,
 		},
@@ -249,8 +249,8 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "cm",
 			rate: 0.8,
 			bgm: "retro",
-			caption: "CMの　あとで",
-			react: [{ who: "nanashi", text: "ここで　CMは　ずるい" }],
+			caption: "CMのあとで",
+			react: [{ who: "nanashi", text: "ここでCMはずるい" }],
 			data: { cm } satisfies SoraData,
 		},
 		{
@@ -259,7 +259,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "ume",
 			rate: 1.4,
 			bgm: "tense",
-			caption: "初代スレに　コピペの　山",
+			caption: "初代スレにコピペの山",
 			data: { phase: "pre" } satisfies SoraData,
 		},
 		{
@@ -289,7 +289,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "after",
 			rate: 1.3,
 			bgm: "title",
-			caption: "荒らしは　アク禁に　なった",
+			caption: "荒らしはアク禁になった",
 			title: { next: null },
 			data: { phase: "akukin" } satisfies SoraData,
 		},
@@ -299,7 +299,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "ed",
 			rate: 1.1,
 			bgm: "ending",
-			caption: "鯖は　雲の　上へ　泳いで　いった",
+			caption: "鯖は雲の上へ泳いでいった",
 		},
 		{
 			at: 128000,
@@ -328,7 +328,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("31"), K("はよ"), X("はじまた")],
 					[B("待機"), K("くるぞ…"), X("乙")],
-					[B("あと　1分"), K("はよ"), X("いい　映画やった")],
+					[B("あと1分"), K("はよ"), X("いい映画やった")],
 				],
 			},
 			{
@@ -337,7 +337,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("はじまた"), K("おお"), X("31")],
 					[B("きたあ"), K("懐かしい"), X("乙")],
-					[B("この曲　すき"), K("何回目や"), X("8888")],
+					[B("この曲すき"), K("何回目や"), X("8888")],
 				],
 			},
 			{
@@ -354,7 +354,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: [
 					[B("あぶな"), K("ゆれとる"), X("平和やな")],
-					[B("ひえっ"), K("規制　つらい"), X("うまそう")],
+					[B("ひえっ"), K("規制つらい"), X("うまそう")],
 					[B("こわい"), K("ここすき"), X("飯テロ")],
 				],
 			},
@@ -363,7 +363,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: [
 					[B("有能"), K("はやい"), X("おやすみ")],
-					[B("誘導　うまい"), K("安価　すき"), X("ここで　CM")],
+					[B("誘導うまい"), K("安価すき"), X("ここでCM")],
 					[B("有能"), K("にげろ"), X("CM　なげえ")],
 				],
 			},
@@ -372,7 +372,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: [
 					[B("きれい"), K("でかい"), X("乙")],
-					[B("名シーン"), K("作画　ええな"), X("解散")],
+					[B("名シーン"), K("作画ええな"), X("解散")],
 					[B("鳥肌"), K("ここすき"), X("はじまた")],
 				],
 			},
@@ -381,7 +381,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: [
 					[B("埋めろ"), K("待機"), X("31")],
-					[B("ksk"), K("指　つった"), X("乙")],
+					[B("ksk"), K("指つった"), X("乙")],
 					[B("くるぞ…"), K("準備できた"), X("解散")],
 				],
 			},
@@ -389,9 +389,9 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 79000,
 				boo: "booEarly",
 				sets: [
-					[B("ここで　CM"), K("トイレ　行く"), X(SORA_WORD)],
-					[B("CM　なげえ"), K("カップ麺　作るわ"), X(SORA_WORD)],
-					[B("トイレ　行く"), K("CM　なげえ"), X("有能")],
+					[B("ここでCM"), K("トイレ行く"), X(SORA_WORD)],
+					[B("CM　なげえ"), K("カップ麺作るわ"), X(SORA_WORD)],
+					[B("トイレ行く"), K("CM　なげえ"), X("有能")],
 				],
 			},
 			{
@@ -399,8 +399,8 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "booEarly",
 				sets: [
 					[B("待機"), K("くるぞ…"), X("今北産業")],
-					[B("準備できた"), K("指　つった"), X(SORA_WORD)],
-					[B("お前ら　レス止めろ！"), K("埋めろ"), X("ありがとう")],
+					[B("準備できた"), K("指つった"), X(SORA_WORD)],
+					[B("お前らレス止めろ！"), K("埋めろ"), X("ありがとう")],
 				],
 			},
 			{
@@ -408,8 +408,8 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "booLate",
 				sets: [
 					[B("やりきった"), K("生きてる？"), X(SORA_WORD)],
-					[B("ありがとう"), K("鯖が　重い"), X("待機")],
-					[B("有能"), K("スカッと　した"), X("くるぞ…")],
+					[B("ありがとう"), K("鯖が重い"), X("待機")],
+					[B("有能"), K("スカッとした"), X("くるぞ…")],
 				],
 			},
 			{
@@ -418,7 +418,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("神曲"), K("泣ける"), X("はじまた")],
 					[B("8888"), K("終わっちゃった"), X("31")],
-					[B("いい　映画やった"), K("ありがとう"), X("埋めろ")],
+					[B("いい映画やった"), K("ありがとう"), X("埋めろ")],
 				],
 			},
 			// 予告の 中身で ◎ が かわる（来週も 同じ なら「また　それかよ」、新しい 映画なら「たのしみ」）
@@ -429,7 +429,7 @@ const soraTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("乙"), K("反省会や"), X("はじまた")],
 					[B("ほな"), K("解散"), X("待機")],
-					[B("おやすみ"), K("来週も　見るで"), X("31")],
+					[B("おやすみ"), K("来週も見るで"), X("31")],
 				],
 			},
 		],
@@ -462,16 +462,16 @@ export const SORA: JkScript = {
 		first: [B("立ててくる"), K("誰か踏め"), X("ksk")],
 		variants: [
 			{
-				pin: "スレ立て　規制中です",
-				opts: [B("誰か　頼む"), K("誰か踏め"), X("立ててくる")],
+				pin: "スレ立て規制中です",
+				opts: [B("誰か頼む"), K("誰か踏め"), X("立ててくる")],
 			},
 			{
-				pin: "次スレ　できたで",
+				pin: "次スレできたで",
 				opts: [B("たておつ"), K("乙"), X("立ててくる")],
 			},
 			{
-				pin: "★{m}が　2つ　あるぞ",
-				opts: [B("誘導　しとく"), K("どっちや"), X("両方に　書く")],
+				pin: "★{m}が2つあるぞ",
+				opts: [B("誘導しとく"), K("どっちや"), X("両方に書く")],
 			},
 		],
 	},

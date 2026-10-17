@@ -41,14 +41,14 @@ export const DISPLAYS: readonly DisplayDef[] = [
 			isRoadshowNight(t)
 				? [
 						["今夜", "red"],
-						["　金曜ロード保守　実況上映", "amber"],
+						["　金曜ロード保守実況上映", "amber"],
 						SEP,
 						["スクリーン1000", "amber"],
 					]
 				: [
 						["予告編上映中", "amber"],
 						SEP,
-						["金曜の夜は　金曜ロード保守", "amber"],
+						["金曜の夜は金曜ロード保守", "amber"],
 						SEP,
 						["スクリーン1000", "amber"],
 					],
@@ -59,7 +59,7 @@ export const DISPLAYS: readonly DisplayDef[] = [
 		key: "1234",
 		face: "led",
 		text: () => [
-			["カジノ　ガチャ", "red"],
+			["カジノガチャ", "red"],
 			SEP,
 			["ポーカー・ブラックジャック・バカラ・ルーレット", "amber"],
 			SEP,
@@ -92,7 +92,7 @@ export const DISPLAYS: readonly DisplayDef[] = [
 		where: "outside",
 		key: "12",
 		face: "lightbox",
-		text: () => [["ネット・漫画・シャワー　24時間営業", "dark"]],
+		text: () => [["ネット・漫画・シャワー24時間営業", "dark"]],
 	},
 	{
 		facility: "zakkyo",

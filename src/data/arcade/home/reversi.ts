@@ -46,15 +46,15 @@ export type RvMove = { flips: number[]; pass: 0 | 1 | 2 };
 
 /** 名無しの ひとこと（板の 下の 行）。 */
 export const RV_SAY = {
-	cpuPass: "置けへん　パスや",
-	mePass: "キリコは　置けへんな　パスやで",
-	corner: "角　もろたで",
-	meCorner: "角は　あかんて",
-	many: "ごっそり　いったで",
-	cpuWin: "ワイの　勝ちやな",
+	cpuPass: "置けへんパスや",
+	mePass: "キリコは置けへんなパスやで",
+	corner: "角もろたで",
+	meCorner: "角はあかんて",
+	many: "ごっそりいったで",
+	cpuWin: "ワイの勝ちやな",
 	meWin: "ファッ！？",
 	draw: "引き分けやん",
-	next: ["やるやん　次は　本気や", "ほな　ワイの　とっておきや"],
+	next: ["やるやん次は本気や", "ほなワイのとっておきや"],
 } as const;
 
 const N = RV.n;

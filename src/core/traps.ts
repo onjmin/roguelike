@@ -31,9 +31,9 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 		// かならず 動いて、消える（1回きり。「罠を　踏む」の お題にも 数えない。来た お題が その場で こなせて しまう）。
 		// 安価が もう 出ていれば 動かず 残る（釣りスレで ふえた ぶんを、こなした あとで 踏める）
 		t.found = true;
-		r.msg(`${trapName(t)}を　踏んだ！`, "warn");
+		r.msg(`${trapName(t)}を踏んだ！`, "warn");
 		if (r.f.anka) {
-			r.msg("しかし　安価は　もう　出ている");
+			r.msg("しかし安価はもう出ている");
 			return;
 		}
 		r.f.traps = r.f.traps.filter((x) => x !== t);
@@ -50,43 +50,43 @@ export const triggerTrap = (r: Run, t: Trap): void => {
 const fireTrap = (r: Run, t: Trap): void => {
 	t.found = true;
 	const p = r.p;
-	r.msg(`${trapName(t)}を　踏んだ！`, "warn");
+	r.msg(`${trapName(t)}を踏んだ！`, "warn");
 	if (!r.rng.chance(TRAP_CHANCE)) {
-		r.msg("しかし　罠は　動かなかった。メンテ中らしい");
+		r.msg("しかし罠は動かなかった。メンテ中らしい");
 		return;
 	}
 	switch (t.kind) {
 		case "bear":
 			p.status.trapped = 5;
 			r.se("bearTrap");
-			r.msg("足を　はさまれた！　トラは　しつこい", "warn");
+			r.msg("足をはさまれた！トラはしつこい", "warn");
 			return;
 		case "acid": {
 			const sh = r.shield();
 			if (!sh) {
-				r.msg("しかし　板を　持っていなかった");
+				r.msg("しかし板を持っていなかった");
 				return;
 			}
 			if (sh.rustproof || sh.kind === "leather" || sh.kind === "mirror") {
-				r.msg("しかし　板は　錆びなかった");
+				r.msg("しかし板は錆びなかった");
 				return;
 			}
 			sh.plus--;
 			sh.known = true;
 			r.se("debuff");
-			r.msg(`板が　錆びてしまった！（${r.name(sh)}）`, "warn");
+			r.msg(`板が錆びてしまった！（${r.name(sh)}）`, "warn");
 			return;
 		}
 		case "sleep":
 			if (r.hasRing("r_awake")) {
-				r.msg("しかし　眠くならなかった");
+				r.msg("しかし眠くならなかった");
 				return;
 			}
 			r.sleepPlayer(5);
-			r.msg(`${r.heroName}は　眠ってしまった`, "warn");
+			r.msg(`${r.heroName}は眠ってしまった`, "warn");
 			return;
 		case "trip": {
-			r.msg(`${r.heroName}は　転んだ！　受け身は　とれなかった`, "warn");
+			r.msg(`${r.heroName}は転んだ！受け身はとれなかった`, "warn");
 			const cands = p.items.filter(
 				(i) => !r.isEquipped(i) && !isKeyItem(i.kind),
 			);
@@ -94,14 +94,14 @@ const fireTrap = (r: Run, t: Trap): void => {
 			const it = r.rng.pick(cands);
 			r.removeItem(it);
 			const ahead = step(step(p, p.dir), p.dir);
-			r.msg(`${r.name(it)}を　落とした`);
+			r.msg(`${r.name(it)}を落とした`);
 			r.placeItem(it, r.isFree(ahead.x, ahead.y) ? ahead : step(p, p.dir));
 			return;
 		}
 		case "mine": {
 			r.se("explosion");
 			r.emit({ t: "fx", kind: "explosion", pos: { x: p.x, y: p.y }, r: 1 });
-			r.msg("地雷が　爆発した！　まわりが　更地に　なった", "warn");
+			r.msg("地雷が爆発した！まわりが更地になった", "warn");
 			// 爆風で 消え去る（経験値なし・落とす 道具も 燃える。巻きこまれた 炎上案件も 誘爆しない。トルネコ1と 同じ）。
 			// ボスは 消え去らず、最大HPの 1/4 の ダメージ（ほかの 敵の あとで。たおれたら その場で 冒険が 終わる）
 			const near = r.f.monsters.filter((m) => dist(m, p) <= 1);
@@ -110,7 +110,7 @@ const fireTrap = (r: Run, t: Trap): void => {
 				if (dist(fi, p) <= 1) r.destroyFloorItem(fi);
 			for (const m of near) if (isBoss(m)) r.blastBoss(m);
 			if (!r.s.end)
-				r.hurtPlayer(Math.ceil(p.hp / 2), "地雷を　踏みぬいて　たおれた");
+				r.hurtPlayer(Math.ceil(p.hp / 2), "地雷を踏みぬいてたおれた");
 			return;
 		}
 		case "arrow":
@@ -125,13 +125,13 @@ const fireTrap = (r: Run, t: Trap): void => {
 			r.se("damage");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			r.msg(
-				`${t.kind === "dart" ? "毒入りの　デッドボール！" : "デッドボール！"}　${dmg}の　ダメージ`,
+				`${t.kind === "dart" ? "毒入りのデッドボール！" : "デッドボール！"}　${dmg}のダメージ`,
 			);
-			if (r.hurtPlayer(dmg, `${trapName(t)}の　死球で　たおれた`)) return;
+			if (r.hurtPlayer(dmg, `${trapName(t)}の死球でたおれた`)) return;
 			if (t.kind === "dart" && !r.hasRing("r_purity") && p.str > 1) {
 				p.str--;
 				r.se("debuff");
-				r.msg("ちからが　1　下がった", "warn");
+				r.msg("ちからが1　下がった", "warn");
 			}
 			return;
 		}
@@ -143,11 +143,11 @@ const fireTrap = (r: Run, t: Trap): void => {
 			// 上りの 板（塔・やぐら・山）では 1つ 前の 階へ 落ちる（のぼった ぶんが もどる。1階なら 下は ない）
 			r.se("fall");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
-			r.msg("落とし穴に　落ちた！");
+			r.msg("落とし穴に落ちた！");
 			if (!r.pitFall()) return;
 			r.se("damage");
-			r.msg(`着地は　0点。${dmg}の　ダメージを　受けた`);
-			r.hurtPlayer(dmg, "落とし穴に　落ちて　たおれた");
+			r.msg(`着地は0点。${dmg}のダメージを受けた`);
+			r.hurtPlayer(dmg, "落とし穴に落ちてたおれた");
 			return;
 		}
 	}

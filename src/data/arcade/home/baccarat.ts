@@ -36,15 +36,15 @@ export const BC_TEXT = {
 	>,
 	bet: "BET",
 	deal: "配る",
-	win: "{side}の　勝ち",
+	win: "{side}の勝ち",
 	paid: "{n}枚！",
-	push: "TIE　賭けは　もどった",
+	push: "TIE　賭けはもどった",
 	lose: "はずれ",
 	natural: "ナチュラル！",
 	/** 配る 前の 案内。 */
-	howBet: "←→で　賭け先、↑↓で　枚数、Aで　配る",
+	howBet: "←→で賭け先、↑↓で枚数、Aで配る",
 	/** めくって いる あいだの 案内。 */
-	howDeal: "9に　近い　ほうが　勝ち",
+	howDeal: "9に近いほうが勝ち",
 } as const;
 
 /** 札の 点。 */

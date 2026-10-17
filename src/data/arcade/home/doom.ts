@@ -51,15 +51,15 @@ export const DOOM = {
 
 /** 板の 字。 */
 export const DOOM_TEXT = {
-	note: "タップ　左右＝向く　中の上＝進む　中の下＝撃つ",
+	note: "タップ左右＝向く中の上＝進む中の下＝撃つ",
 	hp: "体力",
 	ammo: "弾",
 	level: "スレ",
 	score: "SCORE",
 	next: "次スレ　{n}",
-	first: "スレ　1",
-	locked: "スレ主が　いる　かぎり　開かない",
-	boss: "スレ主　降臨",
+	first: "スレ1",
+	locked: "スレ主がいるかぎり開かない",
+	boss: "スレ主降臨",
 } as const;
 
 // マップの 字：# れんが・B 掲示板・S 過去ログの 石・E 出口（次スレ）

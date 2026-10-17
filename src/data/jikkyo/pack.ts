@@ -86,10 +86,10 @@ export const draftScript = (
 	pools: {
 		wait: ["待機", "はよ"],
 		open: ["たておつ", "サンイチ"],
-		gap: ["次スレ　どこ？", "乱立すな"],
+		gap: ["次スレどこ？", "乱立すな"],
 	},
 	title: (n) => title.replace("{n}", String(n)),
-	at1000: () => "1000なら　また　見る",
+	at1000: () => "1000ならまた見る",
 	open: "open",
 	gapPool: "gap",
 	duty: {
@@ -101,7 +101,7 @@ export const draftScript = (
 		],
 		variants: [],
 	},
-	quitNote: "もう一度　Bで　出る",
+	quitNote: "もう一度Bで出る",
 	bands: {},
 	timeline: () => ({
 		segments: [{ at: 0, scene: "card", pool: "wait", rate: 1 }],

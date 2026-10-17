@@ -493,7 +493,7 @@ export class Run {
 			this.emit({ t: "item", uid: it.uid, pos: c });
 			return true;
 		}
-		if (!quiet) this.msg(`${this.name(it)}は　消えてしまった`);
+		if (!quiet) this.msg(`${this.name(it)}は消えてしまった`);
 		return false;
 	}
 
@@ -559,7 +559,7 @@ export class Run {
 	private togglePhase(): void {
 		if (!this.wallWalker) return;
 		if (this.s.phase && this.playerInWall()) {
-			this.msg("壁の　中では　もどれない");
+			this.msg("壁の中ではもどれない");
 			return;
 		}
 		if (this.s.phase) delete this.s.phase;
@@ -707,7 +707,7 @@ export class Run {
 			}
 			this.emit({ t: "house" });
 			this.se("encounter");
-			this.msg("祭りだ！　野次馬が　いっせいに　こっちを　見た！", "warn");
+			this.msg("祭りだ！野次馬がいっせいにこっちを見た！", "warn");
 		}
 		this.checkBossSeen();
 	}
@@ -739,9 +739,7 @@ export class Run {
 		}
 		this.emit({ t: "boss", id: m.uid });
 		this.msg(
-			waiting
-				? `${name}が　正座して　待ちかまえていた！`
-				: `${name}が　あらわれた！`,
+			waiting ? `${name}が正座して待ちかまえていた！` : `${name}があらわれた！`,
 			"warn",
 		);
 	}
@@ -806,8 +804,8 @@ export class Run {
 		if (fell)
 			this.msg(
 				this.dungeon.up
-					? "上の階へ　押し上げられた。枠移動だ"
-					: "下の階に　落ちた。まだ　放送事故では　ない",
+					? "上の階へ押し上げられた。枠移動だ"
+					: "下の階に落ちた。まだ放送事故ではない",
 			);
 		this.updateVision();
 		// 同行者も キリコの そばに 着く（core/guest.ts）
@@ -818,14 +816,14 @@ export class Run {
 	/** 階段を使う。 */
 	private useStairs(): boolean {
 		if (!this.onStairs()) {
-			this.msg("ここに　階段は　ない");
+			this.msg("ここに階段はない");
 			return false;
 		}
 		if (this.atBottom) {
 			this.msg(
 				this.dungeon.up
-					? "これより　上へは　行けないようだ"
-					: "これより　下へは　行けないようだ",
+					? "これより上へは行けないようだ"
+					: "これより下へは行けないようだ",
 			);
 			return false;
 		}
@@ -833,7 +831,7 @@ export class Run {
 		if (this.s.returning) {
 			const next = this.s.depth - 1;
 			if (next <= 0) {
-				this.finish("clear", `${defOf(this.dungeon.goal).name}を　持ち帰った`);
+				this.finish("clear", `${defOf(this.dungeon.goal).name}を持ち帰った`);
 				return false;
 			}
 			this.enterFloor(next, false);
@@ -850,18 +848,18 @@ export class Run {
 	pitFall(): boolean {
 		if (!this.dungeon.up) {
 			if (this.s.depth >= this.dungeon.floors) {
-				this.msg("しかし　これより　下は　なかった");
+				this.msg("しかしこれより下はなかった");
 				return false;
 			}
 			this.enterFloor(this.s.depth + 1, true);
 			return true;
 		}
 		if (this.s.depth <= 1) {
-			this.msg("しかし　これより　下は　なかった");
+			this.msg("しかしこれより下はなかった");
 			return false;
 		}
 		this.enterFloor(this.s.depth - 1, false);
-		this.msg("下の階に　落ちた。のぼった　ぶんが　パー");
+		this.msg("下の階に落ちた。のぼったぶんがパー");
 		return true;
 	}
 
@@ -870,8 +868,8 @@ export class Run {
 		if (this.s.depth >= this.dungeon.floors) {
 			this.msg(
 				this.dungeon.up
-					? "しかし　これより　上は　なかった"
-					: "しかし　これより　下は　なかった",
+					? "しかしこれより上はなかった"
+					: "しかしこれより下はなかった",
 			);
 			return;
 		}
@@ -899,7 +897,7 @@ export class Run {
 			hp: p.hp,
 		});
 		if (p.hp <= 0) {
-			this.msg(`${this.heroName}は　たおれた……`, "warn");
+			this.msg(`${this.heroName}はたおれた……`, "warn");
 			// 解音ゼロ：次の 機体が 残って いれば バトンタッチ（冒険は つづく）
 			if (this.batonTouch()) return false;
 			this.finish("dead", cause);
@@ -941,7 +939,7 @@ export class Run {
 		s.body = now + 1;
 		// 音は 場面が 鳴らす（停止 → 起動。ui/dungeon/play.ts の batonScene。レベルアップの 音は 使わない）
 		this.emit({ t: "baton", body: now + 1, pos: { x: p.x, y: p.y } });
-		this.msg(`${next.name}（${next.model}）に　バトンタッチ！`, "good");
+		this.msg(`${next.name}（${next.model}）にバトンタッチ！`, "good");
 		this.emit({
 			t: "heal",
 			id: PLAYER_ID,
@@ -989,7 +987,7 @@ export class Run {
 			// 何段上がっても音は1回（続けて鳴るとうるさい）
 			this.se("levelup");
 			this.emit({ t: "levelup", lv: p.lv, hp: p.hp, maxHp: p.maxHp });
-			this.msg(`レベルが　${p.lv}に　上がった！　実感は　ない`, "good");
+			this.msg(`レベルが${p.lv}に上がった！実感はない`, "good");
 			ankaHit(this, "level");
 		}
 	}
@@ -1004,7 +1002,7 @@ export class Run {
 		p.maxHp = Math.max(1, p.maxHp - g);
 		p.hp = Math.min(p.hp, p.maxHp);
 		this.se("debuff");
-		this.msg(`レベルが　${p.lv}に　下がった。思い出も　少し　消えた`, "warn");
+		this.msg(`レベルが${p.lv}に下がった。思い出も少し消えた`, "warn");
 	}
 
 	// ───────────────── 戦闘 ─────────────────
@@ -1041,14 +1039,14 @@ export class Run {
 		this.emit({ t: "attack", id: PLAYER_ID, dir: this.p.dir });
 		if (m.disguise) {
 			m.disguise = null;
-			this.msg(`${monsterName(this, m)}が　化けていた！`, "warn");
+			this.msg(`${monsterName(this, m)}が化けていた！`, "warn");
 		}
 		wakeMonster(this, m, true);
 		if (!this.rng.chance(HIT_RATE)) {
 			// はずれは 振った音だけ（トルネコ1と同じ）
 			this.se(this.weaponSound().swing);
 			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
-			this.msg(`${this.heroName}の　攻撃は　はずれた`);
+			this.msg(`${this.heroName}の攻撃ははずれた`);
 			return;
 		}
 		const w = this.weapon();
@@ -1063,7 +1061,7 @@ export class Run {
 				immune: true,
 			});
 			this.msg(
-				`${this.name(w)}は　${monsterName(this, m)}には　効かない！`,
+				`${this.name(w)}は${monsterName(this, m)}には効かない！`,
 				"warn",
 			);
 			return;
@@ -1084,7 +1082,7 @@ export class Run {
 		const name = this.name(w);
 		this.removeItem(w);
 		this.se("debuff");
-		this.msg(`${name}は　折れてしまった。支給品の　限界`, "warn");
+		this.msg(`${name}は折れてしまった。支給品の限界`, "warn");
 	}
 
 	/** 怒って 倍速に なる（顔真っ赤・😡の 板・弱った 親分）。 */
@@ -1100,7 +1098,7 @@ export class Run {
 		if (!mdef(m).abilities.some((a) => a.k === "touchy")) return;
 		const nm = monsterName(this, m);
 		this.enrage(m);
-		this.msg(`${nm}は　顔真っ赤に　なった！`, "warn");
+		this.msg(`${nm}は顔真っ赤になった！`, "warn");
 	}
 
 	/**
@@ -1118,13 +1116,13 @@ export class Run {
 		// かたい鎧：なぐる攻撃は半分（杖・投げた物・爆発は そのまま）
 		if (by === "hit" && !sealed && d.abilities.some((a) => a.k === "armor")) {
 			amount = Math.max(1, Math.ceil(amount / 2));
-			this.msg("かたい　鎧に　はばまれた");
+			this.msg("かたい鎧にはばまれた");
 		}
 		amount = Math.max(0, amount);
 		m.hp -= amount;
 		this.emit({ t: "hurt", id: m.uid, pos: { x: m.x, y: m.y }, amount });
 		const nm = monsterName(this, m);
-		this.msg(`${nm}に　${amount}の　ダメージ`);
+		this.msg(`${nm}に${amount}のダメージ`);
 		if (m.hp <= 0) {
 			// 一度だけ起き上がる（投げた薬草で たおすか、封印していれば起きない）
 			if (
@@ -1142,7 +1140,7 @@ export class Run {
 					pos: { x: m.x, y: m.y },
 					amount: m.hp,
 				});
-				this.msg(`${nm}は　起き上がった！　……ほ……しゅ……`, "warn");
+				this.msg(`${nm}は起き上がった！……ほ……しゅ……`, "warn");
 				return false;
 			}
 			this.killMonster(m, by !== "none");
@@ -1156,10 +1154,7 @@ export class Run {
 			(this.dungeon.angry || d.abilities.some((a) => a.k === "berserk"))
 		) {
 			this.enrage(m);
-			this.msg(
-				`${nm}は　怒りだした！${this.dungeon.angry ? "😡" : ""}`,
-				"warn",
-			);
+			this.msg(`${nm}は怒りだした！${this.dungeon.angry ? "😡" : ""}`, "warn");
 		}
 		// キレやすい（顔真っ赤）：なぐられた 拍子に キレる
 		if (
@@ -1178,7 +1173,7 @@ export class Run {
 						this.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
 						m.x = to.x;
 						m.y = to.y;
-						this.msg(`${nm}は　どこかへ　逃げた`);
+						this.msg(`${nm}はどこかへ逃げた`);
 					}
 				}
 				// 盗んで 逃げている 転載ガモは、なぐられても 1/2 で また 飛ぶ（トルネコ1の ベビーサタン）
@@ -1195,7 +1190,7 @@ export class Run {
 						this.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
 						m.x = to.x;
 						m.y = to.y;
-						this.msg(`${nm}は　どこかへ　逃げた`);
+						this.msg(`${nm}はどこかへ逃げた`);
 					}
 				}
 			}
@@ -1204,7 +1199,7 @@ export class Run {
 					this.explode(m);
 				} else if (m.hp <= 29 && !m.fuse) {
 					m.fuse = true;
-					this.msg(`${nm}の　動きが　止まった……　いやな　予感`, "warn");
+					this.msg(`${nm}の動きが止まった……いやな予感`, "warn");
 				}
 			}
 		}
@@ -1221,7 +1216,7 @@ export class Run {
 		if (this.s.voice === m.kind) return;
 		const was = this.s.voice;
 		this.s.voice = m.kind;
-		if (!was) this.msg(`${mdef(m).name}の　声を　録った（無断）`);
+		if (!was) this.msg(`${mdef(m).name}の声を録った（無断）`);
 	}
 
 	/**
@@ -1231,14 +1226,14 @@ export class Run {
 	private playVoice(): boolean {
 		const kind = this.s.voice;
 		if (!kind) {
-			this.msg("蓄音機に　何も　録っていない。ハンドルが　空回り");
+			this.msg("蓄音機に何も録っていない。ハンドルが空回り");
 			return false;
 		}
 		this.s.voice = null;
 		const name = MONSTERS[kind]?.name ?? "だれか";
 		this.se("spell");
 		this.emit({ t: "fx", kind: "voice", pos: { x: this.p.x, y: this.p.y } });
-		this.msg(`蓄音機から　${name}の　声が　流れた`);
+		this.msg(`蓄音機から　${name}の声が流れた`);
 		let n = 0;
 		for (const m of this.f.monsters) {
 			if (m.kind !== kind || !this.monsterVisible(m)) continue;
@@ -1246,8 +1241,8 @@ export class Run {
 			m.status.paralyze = Math.max(m.status.paralyze, VOICE_FREEZE);
 			n++;
 		}
-		if (n) this.msg(`${name}は　自分の　声を　聞かされて　固まった！`, "good");
-		else this.msg("しかし　だれも　聞いていなかった");
+		if (n) this.msg(`${name}は自分の声を聞かされて固まった！`, "good");
+		else this.msg("しかしだれも聞いていなかった");
 		return true;
 	}
 
@@ -1257,7 +1252,7 @@ export class Run {
 		m.hp = 0;
 		this.emit({ t: "die", id: m.uid, pos: { x: m.x, y: m.y } });
 		this.se("enemyDown");
-		this.msg(`${monsterName(this, m)}を　たおした`);
+		this.msg(`${monsterName(this, m)}をたおした`);
 		this.f.monsters = this.f.monsters.filter((x) => x !== m);
 		if (this.p.status.heldBy === m.uid) this.p.status.heldBy = null;
 		this.s.kills[d.id] = (this.s.kills[d.id] ?? 0) + 1;
@@ -1267,7 +1262,7 @@ export class Run {
 			if (!burnt) {
 				// 回収した 道具は 返ってきたと わかるように 言う
 				if (d.abilities.some((a) => a.k === "pickup"))
-					this.msg(`${monsterName(this, m)}は　${this.name(it)}を　落とした`);
+					this.msg(`${monsterName(this, m)}は${this.name(it)}を落とした`);
 				this.placeItem(it, m);
 			}
 		}
@@ -1275,10 +1270,7 @@ export class Run {
 		if (d.drop && !burnt) {
 			const it = this.newItem(d.drop);
 			identifyKind(this.s, it.kind);
-			this.msg(
-				`${monsterName(this, m)}は　${this.name(it)}を　落とした！`,
-				"good",
-			);
+			this.msg(`${monsterName(this, m)}は${this.name(it)}を落とした！`, "good");
 			this.placeItem(it, m);
 		}
 		if (giveExp) {
@@ -1287,7 +1279,7 @@ export class Run {
 			if (!d.boss) this.recordVoice(m);
 		}
 		if (giveExp && d.exp > 0) {
-			this.msg(`${d.exp}ポイントの　経験値を　かせいだ`);
+			this.msg(`${d.exp}ポイントの経験値をかせいだ`);
 			this.gainExp(d.exp);
 		}
 		// ボス：経験値と レベルアップの あとに、品を 手に 入れて 入口へ
@@ -1307,8 +1299,8 @@ export class Run {
 		const it = this.newItem(this.dungeon.goal);
 		if (!this.addItem(it)) this.p.items.push(it);
 		const goal = defOf(it.kind).name;
-		this.msg(`${monsterName(this, m)}は　${goal}を　落とした`);
-		this.msg(`${this.heroName}は　${goal}を　手に入れた！`, "good");
+		this.msg(`${monsterName(this, m)}は${goal}を落とした`);
+		this.msg(`${this.heroName}は${goal}を手に入れた！`, "good");
 		// 帰り方（画面の 演出は この 出来事から。文は 板ごとに 決まっている）
 		this.emit({ t: "rescue", kind: spec.rescue });
 		for (const line of spec.lines)
@@ -1331,7 +1323,7 @@ export class Run {
 		const cy = m.y;
 		this.se("explosion");
 		this.emit({ t: "fx", kind: "explosion", pos: { x: cx, y: cy }, r: 2 });
-		this.msg(`${monsterName(this, m)}は　爆発した！　まとめに　載った`, "warn");
+		this.msg(`${monsterName(this, m)}は爆発した！まとめに載った`, "warn");
 		m.hp = 0;
 		this.f.monsters = this.f.monsters.filter((x) => x !== m);
 		// 持っていた道具も いっしょに燃える
@@ -1357,9 +1349,8 @@ export class Run {
 		// ボスは 消え去らない（ほかの 敵の あとで。たおれたら その場で 冒険が 終わる）
 		for (const o of bosses) this.blastBoss(o);
 		if (inArea(this.p) && !this.s.end) {
-			if (this.p.hp <= 1)
-				this.hurtPlayer(1, "炎上案件の　爆発に　巻きこまれた");
-			else this.hurtPlayer(this.p.hp - 1, "炎上案件の　爆発に　巻きこまれた");
+			if (this.p.hp <= 1) this.hurtPlayer(1, "炎上案件の爆発に巻きこまれた");
+			else this.hurtPlayer(this.p.hp - 1, "炎上案件の爆発に巻きこまれた");
 		}
 		for (const o of chain)
 			if (!this.s.end && this.f.monsters.includes(o)) this.explode(o);
@@ -1380,7 +1371,7 @@ export class Run {
 			// 分かれる 音と 絵（ui/dungeon/play.ts の appear）を 先に、それから ログ
 			if (!quiet) this.se("spell");
 			this.emit({ t: "appear", id: c.uid, pos: at, from: { x: m.x, y: m.y } });
-			this.msg(`${monsterName(this, m)}が　ふえた！　本物は　不明`, "warn");
+			this.msg(`${monsterName(this, m)}がふえた！本物は不明`, "warn");
 		}
 	}
 
@@ -1414,7 +1405,7 @@ export class Run {
 		let guard = 0;
 		while (!this.s.end && this.p.status.sleep > 0 && guard++ < 50) {
 			this.emit({ t: "doze" });
-			this.msg(`${this.heroName}は　眠っている`);
+			this.msg(`${this.heroName}は眠っている`);
 			this.endTurn(this.nearMap());
 		}
 		this.s.rng = this.rng.state();
@@ -1443,7 +1434,7 @@ export class Run {
 			this.hasRing("r_patrol") &&
 			this.rng.chance(PATROL_CHANCE)
 		) {
-			this.msg("◆巡回が　光った！");
+			this.msg("◆巡回が光った！");
 			this.warpPlayer();
 		}
 
@@ -1538,17 +1529,17 @@ export class Run {
 		if (lv < RES_WARN.length) {
 			this.msg(
 				lv === 1
-					? "950を　こえた……　床が　ゆれる。次スレ　まだ？"
-					: "埋めが　はじまった！　うめ　うめ　うめ　うめ",
+					? "950をこえた……床がゆれる。次スレまだ？"
+					: "埋めがはじまった！うめうめうめうめ",
 				"warn",
 			);
 			return false;
 		}
-		this.msg("このスレッドは　1000を　超えました。", "warn");
+		this.msg("このスレッドは1000を超えました。", "warn");
 		this.msg(
 			this.dungeon.up
-				? "もう　書けないので、上の階へ　押し出される……"
-				: "もう　書けないので、下の階へ　落ちる……",
+				? "もう書けないので、上の階へ押し出される……"
+				: "もう書けないので、下の階へ落ちる……",
 			"warn",
 		);
 		this.fallDown();
@@ -1571,18 +1562,17 @@ export class Run {
 		const st = this.p.status;
 		if (st.sleep > 0 && --st.sleep === 0) {
 			this.emit({ t: "sleep", id: PLAYER_ID, on: false });
-			this.msg(`${this.heroName}は　目を　さました`);
+			this.msg(`${this.heroName}は目をさました`);
 		}
-		if (st.confuse > 0 && --st.confuse === 0) this.msg("混乱が　とけた");
+		if (st.confuse > 0 && --st.confuse === 0) this.msg("混乱がとけた");
 		if (st.blind > 0 && --st.blind === 0) {
 			this.emit({ t: "look" });
-			this.msg("アク禁が　とけた！　また　書きこめる");
+			this.msg("アク禁がとけた！また書きこめる");
 			this.updateVision();
 		}
 		if (st.daze > 0 && --st.daze === 0)
-			this.msg("まどわしが　とけた。お花畑は　しおれた");
-		if (st.fast > 0 && --st.fast === 0)
-			this.msg("足の　速さが　もとに　もどった");
+			this.msg("まどわしがとけた。お花畑はしおれた");
+		if (st.fast > 0 && --st.fast === 0) this.msg("足の速さがもとにもどった");
 		if (st.trapped > 0) st.trapped--;
 	}
 
@@ -1606,12 +1596,12 @@ export class Run {
 			this.msg(text, "warn");
 		};
 		if (pct(before) > 20 && pct(p.hunger) <= 20)
-			warn("おなかが　へってきた。ぐう");
+			warn("おなかがへってきた。ぐう");
 		if (pct(before) > 10 && pct(p.hunger) <= 10)
-			warn("おなかが　ぺこぺこだ……　パンの　話は　やめて");
+			warn("おなかがぺこぺこだ……パンの話はやめて");
 		if (before > 0 && p.hunger === 0)
-			warn("はらぺこで　目が　まわる！　HPが　けずれていく");
-		if (p.hunger === 0) this.hurtPlayer(1, "おなかが　すいて　たおれた");
+			warn("はらぺこで目がまわる！HPがけずれていく");
+		if (p.hunger === 0) this.hurtPlayer(1, "おなかがすいてたおれた");
 	}
 
 	/** おなかを満たす（%）。 */
@@ -1676,7 +1666,7 @@ export class Run {
 				// 装備した ボールを 1球、向いている方へ（トルネコ1の 矢の装備と同じ）
 				const a = this.arrows();
 				if (!a) {
-					this.msg("ボールを　装備していない");
+					this.msg("ボールを装備していない");
 					return false;
 				}
 				return throwItem(this, a.uid, p.dir);
@@ -1716,7 +1706,7 @@ export class Run {
 		const before = this.p.items.map((it) => it.uid).join();
 		this.p.items = rows.map((r) => r.it);
 		if (this.p.items.map((it) => it.uid).join() !== before)
-			this.msg("持ち物を　整理した");
+			this.msg("持ち物を整理した");
 	}
 
 	/** 混乱しているときの向き。 */
@@ -1752,7 +1742,7 @@ export class Run {
 				mdef(h).abilities.some((a) => a.k === "grab");
 			if (h && grabs && h.hp > 0 && dist(h, p) <= 1) {
 				p.dir = dir;
-				this.msg(`${monsterName(this, h)}に　足を　つかまれている！`, "warn");
+				this.msg(`${monsterName(this, h)}に足をつかまれている！`, "warn");
 				return true;
 			}
 			st.heldBy = null;
@@ -1760,7 +1750,7 @@ export class Run {
 		if (st.trapped > 0) {
 			p.dir = dir;
 			this.se("bearTrap");
-			this.msg("トラばさみに　はさまれて　動けない", "warn");
+			this.msg("トラばさみにはさまれて動けない", "warn");
 			return true;
 		}
 		const d = this.confusedDir(dir);
@@ -1772,7 +1762,7 @@ export class Run {
 			if (m.disguise) {
 				m.disguise = null;
 				wakeMonster(this, m, true);
-				this.msg(`${monsterName(this, m)}が　化けていた！`, "warn");
+				this.msg(`${monsterName(this, m)}が化けていた！`, "warn");
 				return true;
 			}
 			// 混乱してよろけた先の敵は なぐってしまう
@@ -1781,7 +1771,7 @@ export class Run {
 				return true;
 			}
 			// 見えない敵には ぶつかって 進めない（時間は進む）
-			this.msg("なにかに　ぶつかった");
+			this.msg("なにかにぶつかった");
 			return true;
 		}
 		if (!this.playerCanStep(p, d)) {
@@ -1808,7 +1798,7 @@ export class Run {
 		const p = this.p;
 		const fi = this.itemAt(p.x, p.y);
 		if (fi) {
-			if (noPickup) this.msg(`${this.name(fi.item)}の　上に　乗った`);
+			if (noPickup) this.msg(`${this.name(fi.item)}の上に乗った`);
 			else this.doPickup(false);
 		}
 		const trap = this.f.traps.find((t) => t.x === p.x && t.y === p.y);
@@ -1823,21 +1813,21 @@ export class Run {
 		const p = this.p;
 		const fi = this.itemAt(p.x, p.y);
 		if (!fi) {
-			if (explicit) this.msg("足元には　何もない");
+			if (explicit) this.msg("足元には何もない");
 			return false;
 		}
 		if (this.isWardItem(fi)) {
-			this.msg(`${this.name(fi.item)}は　床に　はりついていて　拾えない`);
+			this.msg(`${this.name(fi.item)}は床にはりついていて拾えない`);
 			return explicit;
 		}
 		if (!this.addItem(fi.item)) {
-			this.msg(`持ち物が　いっぱいで　${this.name(fi.item)}を　拾えない`);
+			this.msg(`持ち物がいっぱいで${this.name(fi.item)}を拾えない`);
 			return explicit;
 		}
 		this.f.items = this.f.items.filter((i) => i !== fi);
 		if (!this.s.seen.includes(fi.item.uid)) this.s.seen.push(fi.item.uid);
 		this.se("item");
-		this.msg(`${this.name(fi.item)}を　拾った`);
+		this.msg(`${this.name(fi.item)}を拾った`);
 		this.onAcquire(fi.item);
 		return true;
 	}
@@ -1885,7 +1875,7 @@ export class Run {
 		const merges =
 			defOf(kind).cat === "arrow" && this.p.items.some((i) => i.kind === kind);
 		if (this.p.items.length >= INVENTORY_MAX && !merges) {
-			this.msg(`持ち物が　いっぱいで　${this.name(fi.item)}を　拾えない`);
+			this.msg(`持ち物がいっぱいで${this.name(fi.item)}を拾えない`);
 			return false;
 		}
 		this.doPickup(true);
@@ -1901,7 +1891,7 @@ export class Run {
 			this.s.returning = true;
 			this.emit({ t: "goal" });
 			this.msg(
-				`${defOf(it.kind).name}を　手に入れた！　階段が　${this.dungeon.up ? "下り" : "上り"}向きに　変わった`,
+				`${defOf(it.kind).name}を手に入れた！階段が${this.dungeon.up ? "下り" : "上り"}向きに変わった`,
 				"good",
 			);
 		}
@@ -1911,11 +1901,11 @@ export class Run {
 		const it = this.findItem(uid);
 		if (!it) return false;
 		if (isKeyItem(it.kind)) {
-			this.msg("これは　手放せない");
+			this.msg("これは手放せない");
 			return false;
 		}
 		if (this.isEquipped(it) && it.cursed) {
-			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
+			this.msg(`${this.name(it)}はのろわれていて外せない！`, "warn");
 			this.se("curse");
 			return false;
 		}
@@ -1924,18 +1914,18 @@ export class Run {
 			this.onStairs() ||
 			this.playerInWall()
 		) {
-			this.msg("ここには　置けない");
+			this.msg("ここには置けない");
 			return false;
 		}
 		const ward = this.p.y * this.f.layout.w + this.p.x;
 		if (this.f.wards.includes(ward)) {
-			this.msg("ここには　置けない");
+			this.msg("ここには置けない");
 			return false;
 		}
 		this.removeItem(it);
 		this.f.items.push({ x: this.p.x, y: this.p.y, item: it });
 		this.se("put");
-		this.msg(`${this.name(it)}を　置いた`);
+		this.msg(`${this.name(it)}を置いた`);
 		this.emit({ t: "item", uid: it.uid, pos: { x: this.p.x, y: this.p.y } });
 		// 避難所スレは 置くと 効く（その マスは 避難所に なり、もう 拾えない）
 		if (it.kind === "s_ward") this.f.wards.push(ward);
@@ -1948,15 +1938,15 @@ export class Run {
 		const fi = this.itemAt(this.p.x, this.p.y);
 		if (!it || !fi) return false;
 		if (this.isWardItem(fi)) {
-			this.msg(`${this.name(fi.item)}は　床に　はりついていて　拾えない`);
+			this.msg(`${this.name(fi.item)}は床にはりついていて拾えない`);
 			return false;
 		}
 		if (isKeyItem(it.kind)) {
-			this.msg("これは　手放せない");
+			this.msg("これは手放せない");
 			return false;
 		}
 		if (this.isEquipped(it) && it.cursed) {
-			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
+			this.msg(`${this.name(it)}はのろわれていて外せない！`, "warn");
 			this.se("curse");
 			return false;
 		}
@@ -1966,7 +1956,7 @@ export class Run {
 		this.f.items.push({ x: this.p.x, y: this.p.y, item: it });
 		if (!this.s.seen.includes(fi.item.uid)) this.s.seen.push(fi.item.uid);
 		this.se("item");
-		this.msg(`${this.name(it)}と　${this.name(fi.item)}を　入れかえた`);
+		this.msg(`${this.name(it)}と${this.name(fi.item)}を入れかえた`);
 		this.emit({ t: "item", uid: it.uid, pos: { x: this.p.x, y: this.p.y } });
 		this.onAcquire(fi.item);
 		return true;
@@ -1992,7 +1982,7 @@ export class Run {
 		if (p[slot] === it.uid) return this.doUnequip(uid);
 		const cur = this.findItem(p[slot] ?? -1);
 		if (cur?.cursed) {
-			this.msg(`${this.name(cur)}は　のろわれていて　外せない！`, "warn");
+			this.msg(`${this.name(cur)}はのろわれていて外せない！`, "warn");
 			this.se("curse");
 			return false;
 		}
@@ -2010,10 +2000,10 @@ export class Run {
 			p[slot] = it.uid;
 			it.known = true;
 		}
-		this.msg(`${this.name(it)}を　装備した`);
+		this.msg(`${this.name(it)}を装備した`);
 		if (it.cursed) {
 			it.known = true;
-			this.msg("のろわれていた！　もう　外せない", "warn");
+			this.msg("のろわれていた！もう外せない", "warn");
 			this.se("curse");
 		} else this.se(slot === "ring" ? "tripOn" : "equip");
 		// 安価「装備を　かえる」（矢は 数えない）
@@ -2025,7 +2015,7 @@ export class Run {
 		const it = this.findItem(uid);
 		if (!it || !this.isEquipped(it)) return false;
 		if (it.cursed) {
-			this.msg(`${this.name(it)}は　のろわれていて　外せない！`, "warn");
+			this.msg(`${this.name(it)}はのろわれていて外せない！`, "warn");
 			this.se("curse");
 			return false;
 		}
@@ -2038,7 +2028,7 @@ export class Run {
 		if (this.p.shield === it.uid) this.p.shield = null;
 		if (this.p.arrow === it.uid) this.p.arrow = null;
 		this.se("equip");
-		this.msg(`${this.name(it)}を　外した`);
+		this.msg(`${this.name(it)}を外した`);
 		return true;
 	}
 
@@ -2056,12 +2046,11 @@ export class Run {
 		this.emit({ t: "attack", id: PLAYER_ID, dir: d });
 		this.se(this.weaponSound().swing);
 		// 見えている 敵が ななめの 壁の かどの 向こう：何も 言わずに ターンだけ 過ぎると、なぜ 当たらないのか わからない
-		if (m && this.monsterVisible(m))
-			this.msg("壁の　かどが　じゃまで　とどかない");
+		if (m && this.monsterVisible(m)) this.msg("壁のかどがじゃまでとどかない");
 		const trap = this.f.traps.find((t) => t.x === to.x && t.y === to.y);
 		if (trap && !trap.found) {
 			trap.found = true;
-			this.msg("罠を　見つけた");
+			this.msg("罠を見つけた");
 		}
 		return true;
 	}

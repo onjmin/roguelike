@@ -163,7 +163,7 @@ const pianoScript =
 			await s.wait(0);
 			const v = await listWindow(
 				ctx,
-				"どの　曲に　する？",
+				"どの曲にする？",
 				PIANO_GUIDES.map((t): ListItem => ({ label: t.name, value: t.id })),
 				{ closeLabel: "やめる" },
 			);

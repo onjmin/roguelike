@@ -168,7 +168,7 @@ test("なぐられる・帰る：キリコの となりに いない 敵は 同�
 	ok(r.s.guest?.down, "the guest never went down");
 	ok(!r.s.end, "the run ended with the guest");
 	ok(
-		r.s.log.some((l) => l === `${GUESTS.zero.name}は　村へ　帰っていった`),
+		r.s.log.some((l) => l === `${GUESTS.zero.name}は村へ帰っていった`),
 		"no going-home line",
 	);
 	ok(guestHere(r) === null, "a downed guest is still on the floor");
@@ -317,16 +317,16 @@ test("同じ 人が 2人 いない：主人公と 同じ 人は 同行者に な
 	// 潜っている 途中の レス：呼びかけは 主人公に、「キリコの　生まれた　スレ」は そのまま
 	ok(
 		diveResLine(
-			{ at: 13, who: "res", text: "キリコ、井戸に　降りたんか" },
+			{ at: 13, who: "res", text: "キリコ、井戸に降りたんか" },
 			"ロゼ",
 		).includes("ロゼ、井戸"),
 		"the res still calls キリコ",
 	);
 	ok(
 		diveResLine(
-			{ at: 95, who: null, text: "底に、キリコの　生まれた　スレが　ある。" },
+			{ at: 95, who: null, text: "底に、キリコの生まれたスレがある。" },
 			"ロゼ",
-		).includes("キリコの　生まれた"),
+		).includes("キリコの生まれた"),
 		"rewrote キリコ's own thread",
 	);
 });

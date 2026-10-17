@@ -921,7 +921,7 @@ test(
 			ok(!b.some((l) => M.howto.some((h) => l.includes(h))), "howto twice");
 			ok(
 				b.includes(narr(fillText(M.streak, { n: 2 }))) &&
-					b.includes(narr("……2回　つづけて　当てた。")),
+					b.includes(narr("……2回つづけて当てた。")),
 				`streak:\n${b.join("\n")}`,
 			);
 			ok(boards === 2, `boards ${boards}`);
@@ -1031,7 +1031,7 @@ test(
 			r = await examine("radio");
 			ok(r.at(-1) === sayOf("hoso", MUKASHI[1].lines[0]), `mukashi 1 ${r}`);
 			r = await examine("nisshi");
-			ok(r.at(-1) === narr("昔話の　回：2回　ぶん\n2012"), `diary ${r.at(-1)}`);
+			ok(r.at(-1) === narr("昔話の回：2回ぶん\n2012"), `diary ${r.at(-1)}`);
 			setBushitsuEnv({ h: () => 1, w: () => 1, returnAt: () => 200 });
 			r = await examine("onair");
 			ok(r.at(-1) === narr(M.lampOn), `late night ${r}`);
@@ -1132,7 +1132,7 @@ test(
 			r = await examine("roster");
 			ok(
 				r.length === 3 &&
-					r.at(-1) === narr("（安価）乙音サンイチ\nすみに「エター　1人」"),
+					r.at(-1) === narr("（安価）乙音サンイチ\nすみに「エター1人」"),
 				`roster with made:\n${r.join("\n")}`,
 			);
 		}),
@@ -1158,7 +1158,7 @@ test(
 						"wait",
 						"bgm null",
 						`bgm ${song}`,
-						narr("……12.3秒。いちばん　ぎりぎり。"),
+						narr("……12.3秒。いちばんぎりぎり。"),
 						sayOf("gassho", K.byeGood),
 					].join("\n"),
 				`best:\n${r.join("\n")}`,
@@ -1169,9 +1169,7 @@ test(
 			ok(!r.some((l) => K.howto.some((h) => l.includes(h))), "howto twice");
 			ok(
 				r.slice(-2).join("\n") ===
-					[narr("……10.0秒　伸ばした。"), sayOf("gassho", K.byeShort)].join(
-						"\n",
-					),
+					[narr("……10.0秒伸ばした。"), sayOf("gassho", K.byeShort)].join("\n"),
 				`short:\n${r.join("\n")}`,
 			);
 			ok(saved(store).kk.best === 878, "best overwritten");
@@ -1223,7 +1221,7 @@ test(
 			ok(
 				r.join("\n") ===
 					[...thingLines("boshu"), narr(boshuLine(1))].join("\n") &&
-					boshuLine(1).includes("「人狼部　部員募集　part31」"),
+					boshuLine(1).includes("「人狼部　部員募集part31」"),
 				`first:\n${r.join("\n")}`,
 			);
 			r = await examine("boshu");

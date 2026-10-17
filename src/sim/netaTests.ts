@@ -800,14 +800,8 @@ test("コンマ: ミリ秒・ゾロ目・惜しい・出さない 数／0時ち�
 });
 
 test("!sk: 文・縦の 列・目の 回り", () => {
-	ok(
-		skSentence(0, 0, 0) === "名無し　が　銭湯　で　起きた。",
-		skSentence(0, 0, 0),
-	);
-	ok(
-		skSentence(5, 0, 1) === "ぷゆゆ　が　銭湯　で　寝た。",
-		skSentence(5, 0, 1),
-	);
+	ok(skSentence(0, 0, 0) === "名無しが銭湯で起きた。", skSentence(0, 0, 0));
+	ok(skSentence(5, 0, 1) === "ぷゆゆが銭湯で寝た。", skSentence(5, 0, 1));
 	ok(
 		JSON.stringify(skColumns(5, 0, 1)) ===
 			JSON.stringify(["ぷゆゆが", "銭湯で", "寝た。"]),
@@ -984,7 +978,7 @@ test("5割の壁: 5割で ない ときは「……」だけ、5割なら しゃ
 			(i) => `say(${KABE_NAME}): ${KABE_TALK[i]}`,
 		);
 		same(heard, want, "order");
-		ok(KABE_TALK[5].includes("また　だまる"), "the last line closes the loop");
+		ok(KABE_TALK[5].includes("まただまる"), "the last line closes the loop");
 		// 2勝1敗（5割で ない）に なったら また「……」だけ
 		const n = loadNeta();
 		n.yakyu = { ...n.yakyu, w: 2, l: 1 };
@@ -1082,7 +1076,7 @@ test("おんJ道場: 文机 → 書く → 半紙を 乾かす（師範たちの
 			r.log,
 			[
 				...line.map((l) => `narrate: ${l}`),
-				`narrate: ${fill(SK.last, { text: "ぷゆゆ　が　銭湯　で　寝た。" })}`,
+				`narrate: ${fill(SK.last, { text: "ぷゆゆが銭湯で寝た。" })}`,
 				`choose: ${SK.menu.join("/")}`,
 			],
 			"second",
@@ -1097,7 +1091,7 @@ const findReturn = (want: (reps: number | null) => boolean): number => {
 	throw new Fail("no such return");
 };
 
-test("ageジム: 腹筋台（1窓）→ 書きこむ（はじめだけ 決まりの 1窓）→ ID と 回数の 1窓 → 腹筋 → そっ閉じ・つづき・完走、完走した 帰りは「もう　おわっている」、休み・0回・1000回 以上", async () => {
+test("ageジム: 腹筋台（1窓）→ 書きこむ（はじめだけ 決まりの 1窓）→ ID と 回数の 1窓 → 腹筋 → そっ閉じ・つづき・完走、完走した 帰りは「もうおわっている」、休み・0回・1000回 以上", async () => {
 	await withStore(async () => {
 		const run = roomEvent("gym", "fukkin_0");
 		const line = fac("gym").room?.lines.fukkin ?? [];

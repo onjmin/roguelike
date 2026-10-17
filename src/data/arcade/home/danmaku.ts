@@ -49,7 +49,7 @@ export const DM_TEXT = {
 	bossName: "スレ主",
 	lives: "残機",
 	graze: "かすり",
-	warn: "スレ主　降臨",
+	warn: "スレ主降臨",
 } as const;
 
 export type DmKind = "nana" | "are" | "boss";

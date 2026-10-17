@@ -26,10 +26,10 @@ export const CK_SHOP: readonly {
 ];
 
 export const CLICKER_TEXT = {
-	note: "上下で　えらぶ　右で　やとう　A で　なでる",
-	short: "ぷゆゆが　たりない",
-	bought: "{name}を　やとった",
-	glove: "なでる　手が　うまくなった",
+	note: "上下でえらぶ右でやとうA でなでる",
+	short: "ぷゆゆがたりない",
+	bought: "{name}をやとった",
+	glove: "なでる手がうまくなった",
 	timeUp: "TIME UP",
 	perSec: "毎秒",
 } as const;

@@ -57,15 +57,15 @@ export const NB_TEXT = {
 	shots: "打",
 	shoot: "打つ",
 	power: "力",
-	foul: "ファウル　手玉は　もどる",
-	scratch: "手玉が　沈んだ　ファウル",
-	noHit: "どれにも　当たらない　ファウル",
-	wrong: "{n}番から　当てる　ファウル",
-	nine: "9番　イン！　ラックを　とった",
-	next: "次の　ラック",
+	foul: "ファウル手玉はもどる",
+	scratch: "手玉が沈んだファウル",
+	noHit: "どれにも当たらないファウル",
+	wrong: "{n}番から当てるファウル",
+	nine: "9番イン！ラックをとった",
+	next: "次のラック",
 	none: "沈まなかった",
-	pot: "{n}球　イン",
-	out: "打数が　つきた",
+	pot: "{n}球イン",
+	out: "打数がつきた",
 } as const;
 
 export type NbBall = {

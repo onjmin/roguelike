@@ -66,9 +66,9 @@ export const DK_TEXT = {
 	arashi: "荒",
 	enjo: "炎",
 	round: "面",
-	note: "A／キリコを　タップで　ポンプ",
+	note: "A／キリコをタップでポンプ",
 	crush: "崩れた！",
-	next: "次の　面へ",
+	next: "次の面へ",
 } as const;
 
 /** 向き：0 上・1 右・2 下・3 左。 */

@@ -15,15 +15,14 @@ export const villageSong = (): string =>
 export const chooseRecord = async (ctx: Ctx, s: Story): Promise<void> => {
 	const list = records(loadTown().stage, loadProgress().cleared);
 	if (list.length < 2) return;
-	if ((await s.choose(["曲を　かえる", "そのまま"], { cancel: 1 })) !== 0)
-		return;
+	if ((await s.choose(["曲をかえる", "そのまま"], { cancel: 1 })) !== 0) return;
 	await s.wait(0);
 	const now = settings.villageBgm ? villageSong() : "";
 	const items: ListItem[] = [
-		{ label: "おまかせ（村の　育ちに　あわせる）", value: "" },
+		{ label: "おまかせ（村の育ちにあわせる）", value: "" },
 		...list.map((r) => ({ label: r.label, value: r.bgm })),
 	].map((it) => (it.value === now ? { ...it, sub: "♪" } : it));
-	const v = await listWindow(ctx, "どの　曲を　かける？", items, {
+	const v = await listWindow(ctx, "どの曲をかける？", items, {
 		closeLabel: "やめる",
 		start: Math.max(
 			0,

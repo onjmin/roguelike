@@ -20,7 +20,7 @@ import { type HomeGameTest, ok, seeded } from "./kit";
 
 export const tests: HomeGameTest[] = [
 	{
-		name: "画家の　キャンバスは 保存の 字に して もどすと 同じ 絵",
+		name: "画家のキャンバスは 保存の 字に して もどすと 同じ 絵",
 		run: () => {
 			const rnd = seeded(5);
 			const p = blankPicture();
@@ -40,7 +40,7 @@ export const tests: HomeGameTest[] = [
 		},
 	},
 	{
-		name: "画家の　キャンバスの 塗りつぶしは 線の 内がわだけ 塗る",
+		name: "画家のキャンバスの 塗りつぶしは 線の 内がわだけ 塗る",
 		run: () => {
 			const p = blankPicture();
 			// 4x4〜10x10 の 四角の 枠
@@ -59,7 +59,7 @@ export const tests: HomeGameTest[] = [
 		},
 	},
 	{
-		name: "画家の　キャンバスの 線は とぎれず、左右反転で 写る",
+		name: "画家のキャンバスの 線は とぎれず、左右反転で 写る",
 		run: () => {
 			const p = blankPicture();
 			drawLine(p, 0, 0, 31, 7, 4);
@@ -76,7 +76,7 @@ export const tests: HomeGameTest[] = [
 		},
 	},
 	{
-		name: "画家の　キャンバスの 元に戻すは 20手まで",
+		name: "画家のキャンバスの 元に戻すは 20手まで",
 		run: () => {
 			const u = new UndoStack();
 			let p = blankPicture();
@@ -99,7 +99,7 @@ export const tests: HomeGameTest[] = [
 		},
 	},
 	{
-		name: "画家の　キャンバスの 名無しの ひとことは 22字・2行まで",
+		name: "画家のキャンバスの 名無しの ひとことは 22字・2行まで",
 		run: () => {
 			const w = (s: string) =>
 				[...s].reduce((n, ch) => n + (ch.charCodeAt(0) < 0x80 ? 0.5 : 1), 0);

@@ -51,7 +51,7 @@ export const records = (
 	};
 	for (const t of VILLAGE_TIERS)
 		if (stage >= t.from)
-			add(t.bgm, `おんJタウン（${STAGE_NAMES[t.from] ?? ""}の　ころ）`);
+			add(t.bgm, `おんJタウン（${STAGE_NAMES[t.from] ?? ""}のころ）`);
 	for (const d of DUNGEON_IDS) {
 		if (!cleared.includes(d)) continue;
 		const look = BOARD_LOOKS[d];
@@ -64,7 +64,7 @@ export const records = (
 		add(HOUSE_BGM, "祭り");
 		if (cleared.some((d) => DUNGEONS[d].boss)) add(BOSS_BGM, "ボス");
 		add(RETURN_BGM, "帰り道");
-		add(ENDING_BGM, "持ち帰った　とき");
+		add(ENDING_BGM, "持ち帰ったとき");
 	}
 	return out;
 };

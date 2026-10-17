@@ -34,7 +34,7 @@ export const GR_TEXT = {
 	best: "最大",
 	goal: "富士の樹海！",
 	/** 新しい 段に 届いた（{name} は 草の 名）。 */
-	grew: "{name}が　生えた",
+	grew: "{name}が生えた",
 } as const;
 
 /** 0 は 空き、ほかは 2 の べき。 */

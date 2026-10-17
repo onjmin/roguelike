@@ -214,7 +214,7 @@ export const playClicker = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			// 毎秒
 			txt(
 				g,
-				`${CLICKER_TEXT.perSec} ${ckRate(s)}　なで ${ckPower(s)}`,
+				`${CLICKER_TEXT.perSec} ${ckRate(s)}なで ${ckPower(s)}`,
 				PX,
 				PY + 8,
 				8,

@@ -24,8 +24,7 @@ export const esc = (s: string): string =>
 		.replace(/"/g, "&quot;");
 
 /** 見えない 道具（!skスレ）の 説明。 */
-const HIDDEN_DESC =
-	"何かが　ある　手ざわり。見透し草を　飲んだ　階でだけ　見えて　読める";
+const HIDDEN_DESC = "何かがある手ざわり。見透し草を飲んだ階でだけ見えて読める";
 
 /** 一覧の2行目（HTML）。頭にカテゴリの札、うしろに装備中・のろいの札。 */
 export const itemDesc = (run: Run, it: Item): string => {
@@ -40,13 +39,13 @@ export const itemDesc = (run: Run, it: Item): string => {
 	if (known) return h + esc(d.desc);
 	// 未識別でも 当たりを つけられるように、候補の 数（3つまでなら 中身も）を 出す
 	const cands = candKinds(run, it);
-	if (!cands.length) return h + esc("まだ　正体が　わからない");
+	if (!cands.length) return h + esc("まだ正体がわからない");
 	return (
 		h +
 		esc(
 			cands.length <= 3
-				? `正体は　${cands.map((k) => CAND_HINT[k] ?? defOf(k).name).join("・")}　の　どれか`
-				: `正体は　${cands.length}種の　どれか（せつめいで　候補）`,
+				? `正体は${cands.map((k) => CAND_HINT[k] ?? defOf(k).name).join("・")}のどれか`
+				: `正体は${cands.length}種のどれか（せつめいで候補）`,
 		)
 	);
 };
@@ -112,10 +111,10 @@ const signed = (n: number): string => (n > 0 ? `+${n}` : `${n}`);
 
 /** 正体のわかりかた（未識別のとき「せつめい」に出す）。 */
 const HOW_TO_ID: Partial<Record<ItemCat, string>> = {
-	herb: "飲むか　有識者スレで　わかる",
-	scroll: "読むか　有識者スレで　わかる",
-	staff: "振って　効き目が　見えるか、有識者スレで　わかる",
-	ring: "装備して　わかる　ものも　ある。有識者スレなら　かならず　わかる",
+	herb: "飲むか有識者スレでわかる",
+	scroll: "読むか有識者スレでわかる",
+	staff: "振って効き目が見えるか、有識者スレでわかる",
+	ring: "装備してわかるものもある。有識者スレならかならずわかる",
 };
 
 /**
@@ -216,7 +215,7 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 	const pages: string[] = [
 		known
 			? `【${CAT_NAME[d.cat]}】${d.desc}`
-			: `【${CAT_NAME[d.cat]}】まだ　正体が　わからない。${HOW_TO_ID[d.cat] ?? ""}`,
+			: `【${CAT_NAME[d.cat]}】まだ正体がわからない。${HOW_TO_ID[d.cat] ?? ""}`,
 	];
 	// ひとこと（正体が わかっている ときだけ。未識別で 出すと 識別に なってしまう）
 	if (known) pages.push(d.flavor);
@@ -244,19 +243,19 @@ export const itemInfo = (run: Run, it: Item): string[] => {
 			`のろい　${!curseKnown ? "？" : it.cursed ? "のろわれている" : "なし"}`,
 		);
 	}
-	if (run.isEquipped(it)) rows.push("いま　装備中");
+	if (run.isEquipped(it)) rows.push("いま装備中");
 	if (rows.length) pages.push(rows.join("\n"));
 	if (plusUnknown(it))
 		pages.push(
-			"修正値と　のろいは　装備するか　有識者スレで　わかる（のろわれていたら　外せない）",
+			"修正値とのろいは装備するか有識者スレでわかる（のろわれていたら外せない）",
 		);
 	if (d.cat === "goal") {
-		pages.push("投げたり　置いたり　できない");
+		pages.push("投げたり置いたりできない");
 	} else if (isUnidentifiedCat(it.kind) && !known) {
 		// 候補（このダンジョンで出る、まだ正体のわからない 同じカテゴリの種類）
 		const cands = candKinds(run, it).map(candLabel);
 		candPages(cands).forEach((ls, i) => {
-			pages.push(`${i === 0 ? "この　どれか" : "……または"}\n${ls.join("\n")}`);
+			pages.push(`${i === 0 ? "このどれか" : "……または"}\n${ls.join("\n")}`);
 		});
 	}
 	return pages;

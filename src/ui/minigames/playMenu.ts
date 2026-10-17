@@ -21,7 +21,7 @@ export const tellOnce = async (
 };
 
 /** 記録が まだ ない とき。 */
-export const NO_RECORD = "まだ　記録は　ない。";
+export const NO_RECORD = "まだ記録はない。";
 
 /**
  * 品書きを 出す。遊ぶ 項目なら その 番号（0 から）、やめたら null。うしろから 2つめ（ハイスコア）を

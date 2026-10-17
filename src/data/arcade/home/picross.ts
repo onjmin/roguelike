@@ -30,7 +30,7 @@ export const PX_TEXT = {
 	off: "なし",
 	miss: "-10秒",
 	solvedN: "完成 {n}",
-	done: "「{name}」が　できた！",
+	done: "「{name}」ができた！",
 } as const;
 
 /** 問題（rows は 1行 1文字列。「.」は 塗らない、ほかの 字は ink の 色で 塗る）。 */
@@ -104,7 +104,7 @@ export const PX_PUZZLES: readonly PxPuzzle[] = [
 		ink: { S: "#a8b0b8", B: "#3878b0" },
 	},
 	{
-		name: "キリコの　蓄音機",
+		name: "キリコの蓄音機",
 		rows: [
 			"......GGGG",
 			".....GG..G",

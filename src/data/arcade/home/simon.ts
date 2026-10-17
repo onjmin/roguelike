@@ -40,10 +40,10 @@ export const SM_TEXT = {
 	nice: "そろった！",
 	wrong: "ちがう",
 	/** 逆から 押す 回。 */
-	rev: "逆から　押して！",
-	revWatch: "逆から　来るで……",
+	rev: "逆から押して！",
+	revWatch: "逆から来るで……",
 	/** おかわり（もう 一度 見せる）。 */
-	again: "ちがう　もう　1回　見せる",
+	again: "ちがうもう1回見せる",
 	life: "おかわり",
 } as const;
 

@@ -328,7 +328,7 @@ test("置き場所: どの ゲームも 決まった 施設の 物に あり（p
 	ok(
 		casino?.people
 			?.find((p) => p.id === "casino_dealer")
-			?.lines[0]?.includes("ほんまの　お金"),
+			?.lines[0]?.includes("ほんまのお金"),
 		"dealer",
 	);
 	for (const t of [

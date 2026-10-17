@@ -291,12 +291,12 @@ export const playReversi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 			const right = s.winner
 				? ""
 				: s.turn === 1
-					? "キリコの　番"
-					: `名無し　考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
+					? "キリコの番"
+					: `名無し考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
 			hud(g, `第${s.lv + 1}局`, right);
 			juiceDraw(g, v.j, AW, AH);
 			if (goesOn(s) && v.endT >= RV.endWait)
-				banner(g, `次は　${RV_LV[s.lv + 1]}　名無し`, "#ffe060");
+				banner(g, `次は${RV_LV[s.lv + 1]}　名無し`, "#ffe060");
 		},
 		over: (v) => v.s.winner !== 0 && !goesOn(v.s) && v.endT >= RV.endWait,
 		score: (v) => v.total + rvScore(v.s),

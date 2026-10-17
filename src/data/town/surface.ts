@@ -60,7 +60,7 @@ const asphalt = { ".": floor(C_ASPHALT, road(0)) };
 export const SURFACES: readonly Surface[] = [
 	{
 		dungeon: "shallow",
-		name: "パン板　国境の　関所",
+		name: "パン板国境の関所",
 		// パン屋（扉が 地下の 窯への 入口）・関所の 柵と 独立の 旗
 		rows: [
 			"bbbbbbbbbbbbbbb",
@@ -90,11 +90,11 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [6, 4],
 		sign: [10, 4],
 		// 仮
-		line: "国境の　関所。『パン国　独立』の　旗が　ゆれている。",
+		line: "国境の関所。『パン国独立』の旗がゆれている。",
 	},
 	{
 		dungeon: "kinoko",
-		name: "きのこ板　森の　入口",
+		name: "きのこ板森の入口",
 		// きのこの 森（行進の 出発点）。崖の 口が 地下の 菌床
 		rows: [
 			"111111111111111",
@@ -116,11 +116,11 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [7, 3],
 		sign: [10, 4],
 		// 仮
-		line: "きのこの　森。ここから　行進が　出ていった　らしい。",
+		line: "きのこの森。ここから行進が出ていったらしい。",
 	},
 	{
 		dungeon: "main",
-		name: "風呂板　銭湯街",
+		name: "風呂板銭湯街",
 		// 銭湯の 並ぶ 通り。まんなかの 銭湯の のれんが 源泉への 入口
 		rows: [
 			"bbbbbbbbbbbbbbb",
@@ -149,11 +149,11 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [7, 4],
 		sign: [10, 5],
 		// 仮
-		line: "銭湯街。おんJタウンの　銭湯の　湯は　ここから　引いている。",
+		line: "銭湯街。おんJタウンの銭湯の湯はここから引いている。",
 	},
 	{
 		dungeon: "deep",
-		name: "電池板　発電所の　町",
+		name: "電池板発電所の町",
 		// 消えかけの 発電所の 町。電柱の 先、崖の 口が 送電鉄塔への 入口
 		rows: [
 			"111111111111111",
@@ -182,11 +182,11 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [7, 3],
 		sign: [10, 4],
 		// 仮
-		line: "発電所の　町。町の　電気は　ここから　来ている。",
+		line: "発電所の町。町の電気はここから来ている。",
 	},
 	{
 		dungeon: "tropical",
-		name: "離島板　島の　浜",
+		name: "離島板島の浜",
 		// 島の 浜（船で 桟橋に 着く）。崖の 口が 島の 山への 入口
 		rows: [
 			"111111111111111",
@@ -213,11 +213,11 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [7, 3],
 		sign: [9, 4],
 		// 仮
-		line: "島の　浜。総島民は　6人　らしい。",
+		line: "島の浜。総島民は6人らしい。",
 	},
 	{
 		dungeon: "konamono",
-		name: "おんたこ　雑居ビルの　前",
+		name: "おんたこ雑居ビルの前",
 		// 大阪の 雑居ビル（扉が 入口）。たこパ会場の 看板
 		rows: [
 			"bbbbbbbbbbbbbbb",
@@ -246,11 +246,11 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [7, 4],
 		sign: [10, 5],
 		// 仮
-		line: "雑居ビルの　前。『たこパ会場　こちら』の　はり紙。",
+		line: "雑居ビルの前。『たこパ会場こちら』のはり紙。",
 	},
 	{
 		dungeon: "festival",
-		name: "お祭り会場　やぐらの　下",
+		name: "お祭り会場やぐらの下",
 		// 祭りの 参道（鳥居・ちょうちん・のぼり）。崖の 口が やぐらへの 入口
 		rows: [
 			"111111111111111",
@@ -278,7 +278,7 @@ export const SURFACES: readonly Surface[] = [
 		mouth: [7, 3],
 		sign: [9, 4],
 		// 仮
-		line: "祭りの　参道。太鼓の　音が　鳴りやまない。",
+		line: "祭りの参道。太鼓の音が鳴りやまない。",
 	},
 ];
 

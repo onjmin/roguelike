@@ -238,15 +238,12 @@ export const suspendedFirst = async (
 ): Promise<boolean> => {
 	if (!hasRunSave()) return true;
 	await s.narrate(`${VILLAGE_MSG.suspended}\n${runSaveLabel(loadRun())}`);
-	const n = await s.choose(
-		["冒険に　もどる", "すてて　新しく　もぐる", "やめる"],
-		{
-			cancel: 2,
-		},
-	);
+	const n = await s.choose(["冒険にもどる", "すてて新しくもぐる", "やめる"], {
+		cancel: 2,
+	});
 	// すてるのは もどせないので もう一度 きく
 	if (n === 1) {
-		await s.narrate("中断した　冒険は　もどらない。\n本当に　すてる？");
+		await s.narrate("中断した冒険はもどらない。\n本当にすてる？");
 		if ((await s.choose(["すてる", "やめる"], { cancel: 1, start: 1 })) !== 0) {
 			await back();
 			return false;
@@ -440,7 +437,7 @@ export const buildSurface = (surf: Surface, ctx: Ctx): MapDef => {
 				y: by,
 				trigger: "touch",
 				run: async (s) => {
-					const c = await s.choose(["町へ　もどる", "やめる"], {
+					const c = await s.choose(["町へもどる", "やめる"], {
 						cancel: 1,
 					});
 					if (c !== 0) {
@@ -589,7 +586,7 @@ const mouthScript =
 			if (open.length === 1) break;
 			// 問いの 窓は 出さず、選ぶ 窓だけ（行き先は 地図の 札に 出ている。押す 回数を 1つ へらす）
 			const ok = await s.choose(
-				[`${DUNGEON_NAMES[d].name}へ　行く`, "えらびなおす", "やめる"],
+				[`${DUNGEON_NAMES[d].name}へ行く`, "えらびなおす", "やめる"],
 				{ cancel: 1 },
 			);
 			if (ok === 2) {
@@ -733,7 +730,7 @@ const exitSignScript: Script = async (s) => {
 	const p = loadProgress();
 	const open = DUNGEON_IDS.filter((d) => p.unlocked.includes(d));
 	await s.narrate(
-		`「植民地へ　つづく　道」\n行ける　板：${open.length}　持ち帰った　板：${p.cleared.length}`,
+		`「植民地へつづく道」\n行ける板：${open.length}　持ち帰った板：${p.cleared.length}`,
 	);
 	// 前に 行った 板（無ければ パン板）の 札
 	const d = p.last && open.includes(p.last) ? p.last : open[0];
@@ -1011,7 +1008,7 @@ const storeChooser =
 	(ctx: Ctx): StoreChooser =>
 	(s, t, pend) =>
 		chooseStored(ctx, t, pend, {
-			prompt: "あずける　ものを　えらぶ",
+			prompt: "あずけるものをえらぶ",
 			confirmSell: async () => {
 				await sayAs(
 					s,

@@ -231,7 +231,7 @@ const runFor = (
 	const run = new Run(choice.state);
 	// 書きかえた 中断セーブ（engine/tamper.ts）：この 階にも 削除人を。act の 外で 乱数を 使ったので 状態を 入れなおす
 	if (callHunter(run)) {
-		run.msg("どこかで　削除人の　足音が　する……", "warn");
+		run.msg("どこかで削除人の足音がする……", "warn");
 		run.s.rng = run.rng.state();
 	}
 	return { run, replay: undefined };
@@ -262,7 +262,7 @@ const loop = async () => {
 				await infoWindow(
 					ctx,
 					"",
-					`<p class="dim">リプレイの　リンクが　読めませんでした<br><small>（ぜんぶ　コピー　できていない　かも）</small></p>`,
+					`<p class="dim">リプレイのリンクが読めませんでした<br><small>（ぜんぶコピーできていないかも）</small></p>`,
 				);
 			else if (await confirmShared(ctx, rp))
 				({ run, replay } = runFor({ kind: "replay", replay: rp }));

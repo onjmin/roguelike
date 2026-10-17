@@ -110,12 +110,12 @@ const N = SUMO_NAMES;
 export const SUMO_ART = {
 	logo: "大相撲",
 	basho: "おんJ場所",
-	encore: "名勝負　アンコール",
-	soon: "まもなく　中継",
-	soonEncore: "まもなく　名勝負",
-	end: "本日の　中継は　おわり",
-	endRaku: "また　来場所",
-	endEncore: "また　本場所で",
+	encore: "名勝負アンコール",
+	soon: "まもなく中継",
+	soonEncore: "まもなく名勝負",
+	end: "本日の中継はおわり",
+	endRaku: "また来場所",
+	endEncore: "また本場所で",
 	east: "東",
 	west: "西",
 	yokozuna: "横綱",
@@ -147,16 +147,16 @@ export const SUMO_POOLS = {
 		"たておつ",
 		"待機",
 		"はよ",
-		"きょうも　見る",
-		"あと　5分",
+		"きょうも見る",
+		"あと5分",
 	],
-	op: ["はじまた", "きたきた", "おお", "渋い", "落ち着く", "この　時間　すき"],
+	op: ["はじまた", "きたきた", "おお", "渋い", "落ち着く", "この時間すき"],
 	shikiri: [
 		"見合って",
-		"まだ　仕切る",
-		"塩　まいた",
-		"ええ　顔や",
-		"謎に　人多いよな",
+		"まだ仕切る",
+		"塩まいた",
+		"ええ顔や",
+		"謎に人多いよな",
 		"静かやな",
 		"がんばれ",
 	],
@@ -172,8 +172,8 @@ export const SUMO_POOLS = {
 	kekka: [
 		"つよい",
 		"完勝や",
-		"ええ　相撲",
-		"手刀　きれい",
+		"ええ相撲",
+		"手刀きれい",
 		"善戦定期",
 		"これは大関",
 	],
@@ -182,83 +182,77 @@ export const SUMO_POOLS = {
 		"どっちや",
 		"同体やろ",
 		"長いな",
-		"審判　集まった",
-		"スロー　見せて",
+		"審判集まった",
+		"スロー見せて",
 		"微妙やな",
 	],
-	torinaoshi: ["取り直しや", "もう　1回", "得した", "ええぞ", "仕切り　直しや"],
+	torinaoshi: ["取り直しや", "もう1回", "得した", "ええぞ", "仕切り直しや"],
 	musubi: [
 		"結びや",
-		"横綱　来た",
-		"懸賞　すごい",
-		"旗　多すぎ",
-		"名無ノ里　がんばれ",
-		"スポンサー　多い",
+		"横綱来た",
+		"懸賞すごい",
+		"旗多すぎ",
+		"名無ノ里がんばれ",
+		"スポンサー多い",
 	],
-	jikan: [
-		"時間　いっぱい",
-		"くるぞ…",
-		"静かに　しろ",
-		"息　止まる",
-		"はよ　立て",
-	],
+	jikan: ["時間いっぱい", "くるぞ…", "静かにしろ", "息止まる", "はよ立て"],
 	flood: ["はっけよい", "はっけよい！", "のこった！", "立った！"],
 	zabuton: [
-		"座布団　舞っとる",
+		"座布団舞っとる",
 		"投げるな",
 		"危ないで",
-		"舞った　舞った",
-		"片づけ　大変そう",
-		"わかるけど　あかん",
+		"舞った舞った",
+		"片づけ大変そう",
+		"わかるけどあかん",
 	],
 	kinboshi: [
 		"金星や！",
 		"うおおお",
-		"名無ノ里　すげえ",
-		"横綱　負けた",
+		"名無ノ里すげえ",
+		"横綱負けた",
 		"大金星",
 		"やりおった",
 	],
-	yumitori: ["弓取り　すき", "くるくる", "ええな", "弓　すごい", "締めや"],
+	yumitori: ["弓取りすき", "くるくる", "ええな", "弓すごい", "締めや"],
 	hyosho: [
 		"平幕優勝や",
-		"名無ノ里　おめでとう",
-		"優勝杯　でかい",
+		"名無ノ里おめでとう",
+		"優勝杯でかい",
 		"泣ける",
-		"ええ　場所やった",
+		"ええ場所やった",
 	],
-	hansei: ["乙", "ほな", "おやすみ", "解散", "明日も　見るで", "風呂　入るか"],
+	hansei: ["乙", "ほな", "おやすみ", "解散", "明日も見るで", "風呂入るか"],
 	rerun: [
 		"名勝負や",
-		"何回　見ても　ええ",
-		"再放送　乙",
+		"何回見てもええ",
+		"再放送乙",
 		"懐かしい",
-		"知っとる　けど　見る",
+		"知っとるけど見る",
 	],
-	gap: ["次スレ　どこ？", "乱立すな", "950ちうい", "誰か踏め"],
-	open: ["31", "サンイチ", "たておつ", "スレ立て　乙"],
+	gap: ["次スレどこ？", "乱立すな", "950ちうい", "誰か踏め"],
+	open: ["31", "サンイチ", "たておつ", "スレ立て乙"],
 	boo: ["は？", "なんて？"],
-	booStart: ["はじまった　ばっかや", "まだ　早い"],
-	booEarly: ["まだ　仕切っとる", "まだ　早い"],
-	booLate: ["もう　終わったで", "は？"],
+	booStart: ["はじまったばっかや", "まだ早い"],
+	booEarly: ["まだ仕切っとる", "まだ早い"],
+	booLate: ["もう終わったで", "は？"],
 	"reply:best": [">>{n}　わかる", ">>{n}　それな", ">>{n}　ほんまそれ"],
 	"reply:ok": [">>{n}　せやな", ">>{n}　まあな"],
-	"reply:miss": [">>{n}　は？", ">>{n}　なんて？", ">>{n}　どこ　見とるんや"],
+	"reply:miss": [">>{n}　は？", ">>{n}　なんて？", ">>{n}　どこ見とるんや"],
 	/** 1000 の 流れの 予備（群衆の 区切りが ない とき）。 */
 	nanashi: ["静かやな", "渋い"],
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 
 /** スレの 決まり文句。 */
 export const SUMO_THREAD = {
-	live: "【中継】大相撲総合スレ　おんJ場所　Part{n}",
-	rerun: "【再放送】大相撲総合スレ　おんJ場所　Part{n}",
-	get1000: "1000なら　結びで　座布団",
-	praise: ">>{n}　ええ　立ち合い",
-	crossGap: "次スレで　はっけよい",
-	crossFresh: "新スレで　立ち合えた",
+	live: "【中継】大相撲総合スレおんJ場所Part{n}",
+	rerun: "【再放送】大相撲総合スレおんJ場所Part{n}",
+	get1000: "1000なら結びで座布団",
+	praise: ">>{n}　ええ立ち合い",
+	crossGap: "次スレではっけよい",
+	crossFresh: "新スレで立ち合えた",
 	/** 場内の 字幕（座布団は 投げないで）。 */
-	zabuton: "座布団を　投げないで　ください",
-	quit: "もう一度　Bで　出る",
+	zabuton: "座布団を投げないでください",
+	quit: "もう一度Bで出る",
 } as const;
 
 /** 山場の 1語（4つめの こぶしで 書く）。 */
@@ -301,11 +295,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 		: raku
 			? SUMO_ART.endRaku
 			: SUMO_ART.end;
-	const endWord = !live
-		? "また　本場所で"
-		: raku
-			? "また　来場所"
-			: "明日も　見るで";
+	const endWord = !live ? "また本場所で" : raku ? "また来場所" : "明日も見るで";
 	const segments: JkScriptSeg[] = [
 		{
 			at: 0,
@@ -324,7 +314,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "op",
 			rate: 0.8,
 			bgm: "deep_kisei",
-			caption: live ? `大相撲　おんJ場所　${sub}` : SUMO_ART.encore,
+			caption: live ? `大相撲おんJ場所　${sub}` : SUMO_ART.encore,
 			data: { sub } satisfies SumoData,
 		},
 		// 1番目：仕切り（懸賞旗 2本）→ 取組 → 勝ち名乗り（速記ニキ）
@@ -382,7 +372,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "dohyo",
 			pool: "shikiri",
 			rate: 0.9,
-			caption: "関脇　age富士",
+			caption: "関脇age富士",
 			data: { phase: "shikiri", ...bout2 } satisfies SumoData,
 		},
 		{
@@ -390,7 +380,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "dohyo",
 			pool: "torikumi",
 			rate: 1.4,
-			caption: "長い　相撲",
+			caption: "長い相撲",
 			data: {
 				phase: "bout",
 				...bout2,
@@ -405,7 +395,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			rate: 1.1,
 			bgm: "tense",
 			caption: "物言い",
-			react: [{ who: "nanashi", text: "物言い　ついた" }],
+			react: [{ who: "nanashi", text: "物言いついた" }],
 			data: bout2 satisfies SumoData,
 		},
 		{
@@ -414,7 +404,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "torinaoshi",
 			rate: 1.1,
 			bgm: "deep_hakushi",
-			caption: "同体と　みて　取り直し",
+			caption: "同体とみて取り直し",
 			data: { phase: "shikiri", ...bout2 } satisfies SumoData,
 		},
 		{
@@ -429,7 +419,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "dohyo",
 			pool: "kekka",
 			rate: 1,
-			caption: "関脇　age富士　大関取りへ",
+			caption: "関脇age富士大関取りへ",
 			data: { phase: "kekka", ...bout2, win: "e" } satisfies SumoData,
 		},
 		// 結び：懸賞旗 ぜんぶ → 時間いっぱい → 立ち合い（山場）→ 横綱が 負けて 座布団 → 速記ニキ
@@ -440,10 +430,10 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			rate: 1.1,
 			bgm: "deep_kisei",
 			caption: raku
-				? "千秋楽　結びの　一番"
+				? "千秋楽結びの一番"
 				: live
-					? "結びの　一番"
-					: "名勝負　結びの　一番",
+					? "結びの一番"
+					: "名勝負結びの一番",
 			data: { phase: "musubi", ...musubi, kensho: all } satisfies SumoData,
 		},
 		{
@@ -452,7 +442,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "jikan",
 			rate: 1.3,
 			bgm: "tense",
-			caption: raku ? "勝てば　優勝" : "時間　いっぱい",
+			caption: raku ? "勝てば優勝" : "時間いっぱい",
 			data: { phase: "jikan", ...musubi } satisfies SumoData,
 		},
 		{
@@ -482,7 +472,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "dohyo",
 			pool: "kinboshi",
 			rate: 1.1,
-			caption: raku ? "名無ノ里　平幕優勝" : "名無ノ里　金星",
+			caption: raku ? "名無ノ里平幕優勝" : "名無ノ里金星",
 			posts: [
 				{
 					at: 5500,
@@ -534,7 +524,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("31"), K("はよ"), X(SUMO_WORD)],
 					[B("待機"), K("くるぞ…"), X("乙")],
-					[B("きょうも　見る"), K("はよ"), X("金星や！")],
+					[B("きょうも見る"), K("はよ"), X("金星や！")],
 				],
 			},
 			{
@@ -542,8 +532,8 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "booStart",
 				sets: [
 					[B("はじまた"), K("おお"), X("31")],
-					[B("きたきた"), K("落ち着く"), X("座布団　投げるな")],
-					[B("渋い"), K("この　時間　すき"), X("おやすみ")],
+					[B("きたきた"), K("落ち着く"), X("座布団投げるな")],
+					[B("渋い"), K("この時間すき"), X("おやすみ")],
 				],
 			},
 			// 仕切り（まだ 立たない。静かに 見る）
@@ -552,8 +542,8 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "booEarly",
 				sets: [
 					[B("見合って"), K("渋い"), X("のこった")],
-					[B("塩　まいた"), K("見合って"), X("物言いや")],
-					[B("謎に　人多いよな"), K("静かやな"), X("金星や！")],
+					[B("塩まいた"), K("見合って"), X("物言いや")],
+					[B("謎に人多いよな"), K("静かやな"), X("金星や！")],
 				],
 			},
 			// 速記ニキの 書き写しが 上に 止まって いる
@@ -563,7 +553,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("サンキュー速記ニキ"), K("つよい"), X("見合って")],
 					[B("サンキュー速記ニキ"), K("完勝や"), X("取り直しや")],
-					[B("サンキュー速記ニキ"), K("ええ　相撲"), X("31")],
+					[B("サンキュー速記ニキ"), K("ええ相撲"), X("31")],
 				],
 			},
 			// 長い 相撲（まだ 勝負は ついて いない）
@@ -572,7 +562,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: [
 					[B("のこった"), K("うおお"), X("サンキュー速記ニキ")],
-					[B("粘れ"), K("のこった"), X("塩　まいた")],
+					[B("粘れ"), K("のこった"), X("塩まいた")],
 					[B("あぶな"), K("おお"), X("おやすみ")],
 				],
 			},
@@ -583,7 +573,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("物言いや"), K("どっちや"), X("サンキュー速記ニキ")],
 					[B("同体やろ"), K("長いな"), X("金星や！")],
-					[B("スロー　見せて"), K("どっちや"), X("のこった")],
+					[B("スロー見せて"), K("どっちや"), X("のこった")],
 				],
 			},
 			// 取り直し
@@ -591,9 +581,9 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 57500,
 				boo: "boo",
 				sets: [
-					[B("取り直しや"), K("もう　1回"), X("物言いや")],
+					[B("取り直しや"), K("もう1回"), X("物言いや")],
 					[B("得した"), K("取り直しや"), X("同体やろ")],
-					[B("もう　1回"), K("ええぞ"), X(SUMO_WORD)],
+					[B("もう1回"), K("ええぞ"), X(SUMO_WORD)],
 				],
 			},
 			// 関脇の 突き出し（大関取りへ）
@@ -601,7 +591,7 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 67500,
 				boo: "boo",
 				sets: [
-					[B("これは大関"), K("ええ　相撲"), X("取り直しや")],
+					[B("これは大関"), K("ええ相撲"), X("取り直しや")],
 					[B("これは大関"), K("善戦定期"), X("同体やろ")],
 					[B("これは大関"), K("つよい"), X("見合って")],
 				],
@@ -612,9 +602,9 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 77500,
 				boo: "booEarly",
 				sets: [
-					[B("懸賞　すごい"), K("結びや"), X(SUMO_WORD)],
-					[B("旗　多すぎ"), K("横綱　来た"), X("取り直しや")],
-					[B("横綱　来た"), K("名無ノ里　がんばれ"), X("金星や！")],
+					[B("懸賞すごい"), K("結びや"), X(SUMO_WORD)],
+					[B("旗多すぎ"), K("横綱来た"), X("取り直しや")],
+					[B("横綱来た"), K("名無ノ里がんばれ"), X("金星や！")],
 				],
 			},
 			// 横綱が 負けて 座布団が 舞う
@@ -622,9 +612,9 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 99500,
 				boo: "booLate",
 				sets: [
-					[B("金星や！"), K("うおおお"), X("懸賞　すごい")],
-					[B("座布団　投げるな"), K("金星や！"), X(SUMO_WORD)],
-					[B("大金星"), K("横綱　負けた"), X("塩　まいた")],
+					[B("金星や！"), K("うおおお"), X("懸賞すごい")],
+					[B("座布団投げるな"), K("金星や！"), X(SUMO_WORD)],
+					[B("大金星"), K("横綱負けた"), X("塩まいた")],
 				],
 			},
 			// 速記ニキの 書き写し（結び）。前の 窓との あいだで 950 の 当番が 出られる ように 少し あとに
@@ -632,8 +622,8 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 113500,
 				boo: "boo",
 				sets: [
-					[B("サンキュー速記ニキ"), K("これは横綱"), X("横綱　来た")],
-					[B("サンキュー速記ニキ"), K("名無ノ里　すげえ"), X("見合って")],
+					[B("サンキュー速記ニキ"), K("これは横綱"), X("横綱来た")],
+					[B("サンキュー速記ニキ"), K("名無ノ里すげえ"), X("見合って")],
 				],
 			},
 			// 弓取式（千秋楽は 表彰式）
@@ -642,11 +632,11 @@ const sumoTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: raku
 					? [
-							[B("名無ノ里　おめでとう"), K("優勝杯　でかい"), X("取り直しや")],
+							[B("名無ノ里おめでとう"), K("優勝杯でかい"), X("取り直しや")],
 							[B("平幕優勝や"), K("泣ける"), X("見合って")],
 						]
 					: [
-							[B("弓取り　すき"), K("ええな"), X("金星や！")],
+							[B("弓取りすき"), K("ええな"), X("金星や！")],
 							[B("ええな"), K("くるくる"), X("物言いや")],
 						],
 			},
@@ -696,16 +686,16 @@ export const SUMO: JkScript = {
 		first: [B("立ててくる"), K("誰か踏め"), X("ksk")],
 		variants: [
 			{
-				pin: "スレ立て　規制中です",
-				opts: [B("誰か　頼む"), K("誰か踏め"), X("立ててくる")],
+				pin: "スレ立て規制中です",
+				opts: [B("誰か頼む"), K("誰か踏め"), X("立ててくる")],
 			},
 			{
-				pin: "次スレ　できたで",
+				pin: "次スレできたで",
 				opts: [B("たておつ"), K("乙"), X("立ててくる")],
 			},
 			{
-				pin: "次スレが　2つ　あるぞ",
-				opts: [B("誘導　しとく"), K("どっちや"), X("両方に　書く")],
+				pin: "次スレが2つあるぞ",
+				opts: [B("誘導しとく"), K("どっちや"), X("両方に書く")],
 			},
 		],
 	},
@@ -741,25 +731,25 @@ export const SUMO_PACK: JkPack = {
 		tv: [
 			{
 				when: isRaku,
-				lines: ["脱衣所の　テレビ。\n今日は　おんJ場所の　千秋楽。"],
+				lines: ["脱衣所のテレビ。\n今日はおんJ場所の千秋楽。"],
 			},
 			{
 				when: isBasho,
-				lines: ["脱衣所の　テレビ。\n大相撲『おんJ場所』の　中継が　映る。"],
+				lines: ["脱衣所のテレビ。\n大相撲『おんJ場所』の中継が映る。"],
 			},
 			{
 				when: () => true,
-				lines: ["脱衣所の　テレビ。\n大相撲の　名勝負　アンコール。"],
+				lines: ["脱衣所のテレビ。\n大相撲の名勝負アンコール。"],
 			},
 		],
 	},
 	msgs: {
-		howto: "取組に　合う　レスを　えらぶと、\nスレが　のびる。目標：★{n}　完走",
-		seat: "キリコは　脱衣所の　長いすに　すわった。\n……スマホで、実況スレを　ひらく。",
-		over: "テレビの　中継が　おわった。\n実況は　★{n}まで　のびた。",
-		kanso: "……完走。\n番台の　名無しが、小さく　うなずいた。",
-		kami: "あの　はっけよい、\nぴったりの　立ち合いだった。",
-		left: "……中継の　とちゅうで、\nそっと　長いすを　立った。",
+		howto: "取組に合うレスをえらぶと、\nスレがのびる。目標：★{n}　完走",
+		seat: "キリコは脱衣所の長いすにすわった。\n……スマホで、実況スレをひらく。",
+		over: "テレビの中継がおわった。\n実況は★{n}までのびた。",
+		kanso: "……完走。\n番台の名無しが、小さくうなずいた。",
+		kami: "あのはっけよい、\nぴったりの立ち合いだった。",
+		left: "……中継のとちゅうで、\nそっと長いすを立った。",
 	},
 	art: [
 		...Object.values(SUMO_ART).flatMap((v) =>

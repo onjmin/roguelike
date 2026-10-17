@@ -68,7 +68,7 @@ export const useItem = (r: Run, uid: number, target?: number): boolean => {
 		case "arrow":
 			return throwItem(r, uid, r.p.dir);
 		case "goal":
-			r.msg("大事に　しまっておこう");
+			r.msg("大事にしまっておこう");
 			return false;
 		case "food":
 			return eat(r, it) && ankaDone(r, "eat");
@@ -97,22 +97,22 @@ const consume = (r: Run, it: Item): void => {
 const eat = (r: Run, it: Item): boolean => {
 	consume(r, it);
 	r.se("heal");
-	r.msg(`${r.name(it)}を　食べた`);
+	r.msg(`${r.name(it)}を食べた`);
 	if (it.kind === "f_bread") {
 		r.feed(50);
-		r.msg("おなかが　ふくれた");
+		r.msg("おなかがふくれた");
 	} else if (it.kind === "f_large") {
 		r.feed(100);
-		r.msg("おなかが　いっぱいに　なった");
+		r.msg("おなかがいっぱいになった");
 	} else {
 		r.feed(100);
-		r.msg("うっ……　カビている！　でも　完食した", "warn");
+		r.msg("うっ……カビている！でも完食した", "warn");
 		if (!r.hasRing("r_purity") && r.p.str > 1) {
 			r.p.str--;
 			r.se("debuff");
-			r.msg("ちからが　1　下がった", "warn");
+			r.msg("ちからが1　下がった", "warn");
 		}
-		r.hurtPlayer(5, "チギュリパンに　あたった");
+		r.hurtPlayer(5, "チギュリパンにあたった");
 	}
 	return true;
 };
@@ -123,8 +123,8 @@ const drink = (r: Run, it: Item): boolean => {
 	const p = r.p;
 	consume(r, it);
 	const newly = identifyKind(r.s, it.kind);
-	r.msg(`${r.name(it)}を　飲んだ`);
-	if (newly) r.msg(`${r.kindName(it.kind)}　だった！`, "good");
+	r.msg(`${r.name(it)}を飲んだ`);
+	if (newly) r.msg(`${r.kindName(it.kind)}だった！`, "good");
 	r.feed(5);
 	switch (it.kind) {
 		case "h_heal":
@@ -134,10 +134,10 @@ const drink = (r: Run, it: Item): boolean => {
 			if (p.hp >= p.maxHp) {
 				p.maxHp += big ? 2 : 1;
 				p.hp = p.maxHp;
-				r.msg(`最大HPが　${big ? 2 : 1}　上がった`, "good");
+				r.msg(`最大HPが${big ? 2 : 1}　上がった`, "good");
 			} else {
 				const got = r.healPlayer(big ? 100 : 25);
-				r.msg(`HPが　${got}　回復した`);
+				r.msg(`HPが${got}　回復した`);
 			}
 			p.status.blind = 0;
 			if (big) {
@@ -154,22 +154,22 @@ const drink = (r: Run, it: Item): boolean => {
 				p.str = Math.max(1, p.str - 3);
 				if (p.str < before) {
 					r.se("debuff");
-					r.msg(`ちからが　${before - p.str}　下がった`, "warn");
+					r.msg(`ちからが${before - p.str}　下がった`, "warn");
 				}
 			}
 			// 飲んだだけでは たおれない（HP 1 で 耐える）。正体の わからない 草を
 			// 飲んで 即死すると、知らない 人には 理不尽に 見える（たおれる なら きのこ板の 死因の 1位に なる）
-			if (p.hp > 1) r.hurtPlayer(Math.min(5, p.hp - 1), "荒らし草を　飲んだ");
+			if (p.hp > 1) r.hurtPlayer(Math.min(5, p.hp - 1), "荒らし草を飲んだ");
 			break;
 		case "h_might":
 			r.se("heal");
 			if (p.str >= p.maxStr) {
 				p.maxStr++;
 				p.str = p.maxStr;
-				r.msg("最大ちからが　1　上がった", "good");
+				r.msg("最大ちからが1　上がった", "good");
 			} else {
 				p.str++;
-				r.msg("ちからが　1　回復した", "good");
+				r.msg("ちからが1　回復した", "good");
 			}
 			break;
 		case "h_growth":
@@ -178,12 +178,12 @@ const drink = (r: Run, it: Item): boolean => {
 			break;
 		case "h_swift":
 			p.status.fast = 10;
-			r.msg("体が　軽くなった！　倍速だ", "good");
+			r.msg("体が軽くなった！倍速だ", "good");
 			break;
 		case "h_blind":
 			p.status.blind = 50;
 			r.se("debuff");
-			r.msg("アク禁された！　何も　見えない！", "warn");
+			r.msg("アク禁された！何も見えない！", "warn");
 			break;
 		case "h_blink":
 			r.warpPlayer();
@@ -191,36 +191,36 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_reel":
 			p.status.confuse = 10;
 			r.se("debuff");
-			r.msg("安価が　止まらない……　足が　勝手に　動く", "warn");
+			r.msg("安価が止まらない……足が勝手に動く", "warn");
 			break;
 		case "h_daze":
 			p.status.daze = 50;
 			r.se("debuff");
-			r.msg(`${r.heroName}は　まどわされた！　あたり一面　お花畑……`, "warn");
+			r.msg(`${r.heroName}はまどわされた！あたり一面お花畑……`, "warn");
 			break;
 		case "h_sleep":
-			if (r.hasRing("r_awake")) r.msg("しかし　眠くならなかった");
+			if (r.hasRing("r_awake")) r.msg("しかし眠くならなかった");
 			else {
 				r.sleepPlayer(5);
-				r.msg(`${r.heroName}は　眠ってしまった`, "warn");
+				r.msg(`${r.heroName}は眠ってしまった`, "warn");
 			}
 			break;
 		case "h_antidote":
 			if (p.str < p.maxStr) {
 				p.str = p.maxStr;
-				r.msg("ちからが　元に　もどった", "good");
-			} else r.msg("何も　起きなかった");
+				r.msg("ちからが元にもどった", "good");
+			} else r.msg("何も起きなかった");
 			break;
 		case "h_fire": {
 			r.se("fire");
 			// 炎が とどくのは 目の前の 1マスだけ（そこの 道具も 燃える）
 			const { hit, last } = firstInLine(r, p, p.dir, 1);
 			r.emit({ t: "bolt", from: { x: p.x, y: p.y }, to: last, kind: "fire" });
-			r.msg(`${r.heroName}は　炎を　吐いた！`);
+			r.msg(`${r.heroName}は炎を吐いた！`);
 			const under =
 				last.x !== p.x || last.y !== p.y ? r.itemAt(last.x, last.y) : undefined;
 			if (under && !isKeyItem(under.item.kind)) {
-				r.msg(`${r.name(under.item)}が　燃えてしまった`, "warn");
+				r.msg(`${r.name(under.item)}が燃えてしまった`, "warn");
 				r.destroyFloorItem(under);
 			}
 			if (hit) r.damageMonster(hit, r.rng.range(65, 75), "magic");
@@ -229,7 +229,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_sight":
 			r.f.sight = true;
 			p.status.blind = 0;
-			r.msg("目が　すみわたった", "good");
+			r.msg("目がすみわたった", "good");
 			break;
 	}
 	return true;
@@ -241,7 +241,7 @@ const expToNext = (r: Run): number => (EXP_AT[r.p.lv] ?? r.p.exp) - r.p.exp;
 /** !skスレの 全滅・道具・メタルは ボスに 効かない（生きている ボスが いれば ひとこと）。 */
 const bossStays = (r: Run): void => {
 	const b = r.boss;
-	if (b) r.msg(`しかし　${monsterName(r, b)}には　効かなかった`, "warn");
+	if (b) r.msg(`しかし　${monsterName(r, b)}には効かなかった`, "warn");
 };
 
 /** !skスレで 下へ 落ちる 階の数（トルネコ1の パルプンテと 同じ 5階）。 */
@@ -256,7 +256,7 @@ const gacha = (r: Run): void => {
 	const f = r.f;
 	const canFall = !r.s.returning && r.s.depth < r.dungeon.floors;
 	const roll = r.rng.int(canFall ? 8 : 7);
-	r.msg("!sk ……サイコロが　転がった");
+	r.msg("!sk ……サイコロが転がった");
 	switch (roll) {
 		case 0:
 			// 全快（HP・ちから・満腹度）
@@ -264,7 +264,7 @@ const gacha = (r: Run): void => {
 			p.hp = p.maxHp;
 			p.str = p.maxStr;
 			p.hunger = HUNGER_MAX;
-			r.msg("HPも　ちからも　おなかも　満タンに　なった！", "good");
+			r.msg("HPもちからもおなかも満タンになった！", "good");
 			return;
 		case 1:
 			// 最大 HP と ちからの 最大が 3 上がる
@@ -273,7 +273,7 @@ const gacha = (r: Run): void => {
 			p.hp = Math.min(p.maxHp, p.hp + 3);
 			p.maxStr += 3;
 			p.str += 3;
-			r.msg("最大HPと　ちからが　3　上がった！", "good");
+			r.msg("最大HPとちからが3　上がった！", "good");
 			return;
 		case 2: {
 			// レベルが 3 上がる
@@ -295,13 +295,13 @@ const gacha = (r: Run): void => {
 			for (const it of p.items)
 				if (defOf(it.kind).cat === "staff")
 					it.charges = Math.min(99, it.charges + 3);
-			r.msg("装備と　杖が　3　強くなった！", "good");
+			r.msg("装備と杖が3　強くなった！", "good");
 			return;
 		}
 		case 4:
 			// この階の 敵が 全滅（経験値は 入らない）。ボスは 残る
 			for (const m of [...f.monsters]) if (!isBoss(m)) r.killMonster(m, false);
-			r.msg("この階の　敵が　いなくなった！　過疎", "good");
+			r.msg("この階の敵がいなくなった！過疎", "good");
 			bossStays(r);
 			return;
 		case 5:
@@ -313,14 +313,14 @@ const gacha = (r: Run): void => {
 				const [kind] = rollKinds(r.rng, itemTableOf(r.s), 1);
 				r.placeItem(r.newItem(kind), m, true);
 			}
-			r.msg("この階の　敵が　道具に　なった！", "good");
+			r.msg("この階の敵が道具になった！", "good");
 			bossStays(r);
 			return;
 		case 6:
 			// この階の 敵が みんな メタルぷゆゆに なる。ボスは ならない
 			for (const m of f.monsters)
 				if (!isBoss(m)) transformMonster(r, m, "metal");
-			r.msg("この階の　敵が　みんな　メタルぷゆゆに　なった！", "good");
+			r.msg("この階の敵がみんなメタルぷゆゆになった！", "good");
 			bossStays(r);
 			return;
 		default: {
@@ -337,8 +337,8 @@ const gacha = (r: Run): void => {
 const raised = (r: Run, it: Item, known: boolean): string => {
 	const t = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 	return known
-		? `${r.kindName(it.kind)}が　強くなった　${t(it.plus - 1)}→${t(it.plus)}`
-		: `${r.name(it)}に　なった`;
+		? `${r.kindName(it.kind)}が強くなった　${t(it.plus - 1)}→${t(it.plus)}`
+		: `${r.name(it)}になった`;
 };
 
 // ───────────────── 読む ─────────────────
@@ -348,12 +348,12 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 	const f = r.f;
 	// 見えない スレ（!skスレ）は 見透し草を 飲んだ 階でしか 読めない（トルネコ1の パルプンテ）
 	if (itemHidden(r.s, it.kind)) {
-		r.msg("見えないので　読めない");
+		r.msg("見えないので読めない");
 		return false;
 	}
 	// アク禁中は スレに 書きこめない（ターンも スレも 減らない）
 	if (p.status.blind > 0) {
-		r.msg("アク禁中は　スレに　書きこめない！", "warn");
+		r.msg("アク禁中はスレに書きこめない！", "warn");
 		return false;
 	}
 	const need = needsTarget(it);
@@ -368,30 +368,30 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 	// 聞かれた時点で 正体はわかる（相手を選ぶスレの「どれに？」と同じ）。やめれば 減らない
 	if (it.kind === "s_escape" && target === undefined && !r.s.returning) {
 		if (identifyKind(r.s, it.kind))
-			r.msg(`${r.kindName(it.kind)}　だった！`, "good");
+			r.msg(`${r.kindName(it.kind)}だった！`, "good");
 		r.emit({ t: "fx", kind: "confirm:escape", pos: { x: p.x, y: p.y } });
 		return false;
 	}
 	consume(r, it);
 	r.se("spell");
-	r.msg(`${r.name(it)}を　読んだ`);
+	r.msg(`${r.name(it)}を読んだ`);
 	if (identifyKind(r.s, it.kind))
-		r.msg(`${r.kindName(it.kind)}　だった！`, "good");
+		r.msg(`${r.kindName(it.kind)}だった！`, "good");
 	switch (it.kind) {
 		case "s_escape":
 			// 持ち帰る品を持っていると 効かない（帰り道は 歩いて のぼる。トルネコ1のリレミトと同じ）
 			if (r.s.returning && r.dungeon.escapeWithGoal) {
 				// 過去ログの底（99階）だけは 品ごと 帰れる
-				r.msg(`${r.heroName}は　品を　かかえて　地上へ　もどった`, "good");
-				r.finish("clear", `${defOf(r.dungeon.goal).name}を　持ち帰った`);
+				r.msg(`${r.heroName}は品をかかえて地上へもどった`, "good");
+				r.finish("clear", `${defOf(r.dungeon.goal).name}を持ち帰った`);
 				break;
 			}
 			if (r.s.returning) {
-				r.msg(`しかし、持ち帰る品が　${r.heroName}を　ひきとめた`);
+				r.msg(`しかし、持ち帰る品が${r.heroName}をひきとめた`);
 				break;
 			}
-			r.msg(`${r.heroName}は　地上へ　もどった`, "good");
-			r.finish("escape", "帰還スレで　地上へ　もどった");
+			r.msg(`${r.heroName}は地上へもどった`, "good");
+			r.finish("escape", "帰還スレで地上へもどった");
 			break;
 		case "s_appraise": {
 			if (!tgt) break;
@@ -402,17 +402,16 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				x.known = true;
 			}
 			r.msg(
-				all ? "持ち物が　ぜんぶ　わかった！" : `${r.name(tgt)}　だと　わかった`,
+				all ? "持ち物がぜんぶわかった！" : `${r.name(tgt)}だとわかった`,
 				"good",
 			);
 			break;
 		}
 		case "s_whet": {
 			const w = r.weapon();
-			if (!w) r.msg("しかし　武器を　持っていなかった");
+			if (!w) r.msg("しかし武器を持っていなかった");
 			// −30 以下と ＋99 以上には 効かない（トルネコ1と 同じ）
-			else if (w.plus <= -30 || w.plus >= 99)
-				r.msg("しかし　何も　起きなかった");
+			else if (w.plus <= -30 || w.plus >= 99) r.msg("しかし何も起きなかった");
 			else {
 				const known = w.known;
 				w.plus++;
@@ -426,9 +425,8 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 		}
 		case "s_temper": {
 			const sh = r.shield();
-			if (!sh) r.msg("しかし　板を　持っていなかった");
-			else if (sh.plus <= -30 || sh.plus >= 99)
-				r.msg("しかし　何も　起きなかった");
+			if (!sh) r.msg("しかし板を持っていなかった");
+			else if (sh.plus <= -30 || sh.plus >= 99) r.msg("しかし何も起きなかった");
 			else {
 				const known = sh.known;
 				sh.plus++;
@@ -448,18 +446,18 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					n++;
 				}
 			if (n) r.se("uncurse");
-			r.msg(n ? "のろいが　とけた" : "何も　起きなかった");
+			r.msg(n ? "のろいがとけた" : "何も起きなかった");
 			break;
 		}
 		case "s_rustproof": {
 			const sh = r.shield();
-			if (!sh) r.msg("しかし　板を　持っていなかった");
+			if (!sh) r.msg("しかし板を持っていなかった");
 			else {
 				sh.rustproof = true;
 				if (sh.cursed) r.se("uncurse");
 				sh.cursed = false;
 				r.se("rustproof");
-				r.msg("板が　錆びなくなった", "good");
+				r.msg("板が錆びなくなった", "good");
 			}
 			break;
 		}
@@ -479,19 +477,19 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				}
 			for (const t of f.traps) t.found = true;
 			f.mapped = true;
-			r.msg("この階の　ようすが　わかった");
+			r.msg("この階のようすがわかった");
 			r.emit({ t: "reveal" });
 			break;
 		}
 		case "s_sense":
 			f.senseMonsters = true;
 			for (const m of f.monsters) if (m.disguise) m.disguise = null;
-			r.msg("敵の　気配が　わかる");
+			r.msg("敵の気配がわかる");
 			r.emit({ t: "reveal" });
 			break;
 		case "s_treasure":
 			f.senseItems = true;
-			r.msg("道具の　ありかが　わかる");
+			r.msg("道具のありかがわかる");
 			r.emit({ t: "reveal" });
 			break;
 		case "s_hold": {
@@ -501,7 +499,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					m.status.paralyze = HOLD;
 					n++;
 				}
-			r.msg(n ? "まわりの　敵が　動かなくなった" : "何も　起きなかった");
+			r.msg(n ? "まわりの敵が動かなくなった" : "何も起きなかった");
 			break;
 		}
 		case "s_blast": {
@@ -514,7 +512,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				pos: { x: p.x, y: p.y },
 				at: targets.map((m) => ({ x: m.x, y: m.y })),
 			});
-			if (!targets.length) r.msg("何も　起きなかった");
+			if (!targets.length) r.msg("何も起きなかった");
 			for (const m of targets) {
 				// ボスを たおして 冒険が 終わったら そこまで
 				if (r.s.end) break;
@@ -528,7 +526,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			break;
 		case "s_ward":
 			// 読んでも 効かない。床に 置くと 効く（run.ts の doDrop）
-			r.msg("何も　起きなかった");
+			r.msg("何も起きなかった");
 			break;
 		case "s_recharge": {
 			// 杖なら 回数が ふえ、スレなら 同じ スレが もう1つ 立つ（次スレ）。ほかは 何も 起きない
@@ -541,25 +539,23 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 				const shown = before !== r.name(tgt);
 				r.msg(
 					shown
-						? `${before.replace(/［\d+］$/, "")}の　回数が　ふえた　［${from}］→［${tgt.charges}］`
-						: `${before}の　回数が　ふえた`,
+						? `${before.replace(/［\d+］$/, "")}の回数がふえた［${from}］→［${tgt.charges}］`
+						: `${before}の回数がふえた`,
 					"good",
 				);
 			} else if (tgt && cat === "scroll") {
 				// 持ち物から 読めば その ぶん 1つ 空くが、床の 次スレを 読んだ ときは 空かない。
 				// 持ち物が いっぱいなら 足もとに 置く
 				const copy = { ...tgt, uid: r.s.nextUid++ };
-				r.msg(`${r.name(tgt)}の　次スレが　立った`, "good");
+				r.msg(`${r.name(tgt)}の次スレが立った`, "good");
 				if (!r.addItem(copy) && r.placeItem(copy, { x: p.x, y: p.y }))
-					r.msg(
-						`持ち物が　いっぱいなので、${r.name(copy)}は　足もとに　置いた`,
-					);
-			} else r.msg("何も　起きなかった");
+					r.msg(`持ち物がいっぱいなので、${r.name(copy)}は足もとに置いた`);
+			} else r.msg("何も起きなかった");
 			break;
 		}
 		case "s_bread": {
 			if (!tgt || isKeyItem(tgt.kind)) {
-				r.msg("何も　起きなかった");
+				r.msg("何も起きなかった");
 				break;
 			}
 			if (r.isEquipped(tgt)) {
@@ -577,7 +573,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			tgt.charges = 0;
 			tgt.count = 1;
 			tgt.known = true;
-			r.msg(`${before}が　ぷゆゆパンに　なった`, "good");
+			r.msg(`${before}がぷゆゆパンになった`, "good");
 			break;
 		}
 		case "s_snare": {
@@ -604,7 +600,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 					// 聖地巡礼スレを 読んだ 階なら、ふえた 罠も 地図に のる
 					found: !!f.mapped,
 				});
-			r.msg("どこかで　カチリと　音がした……　30回くらい", "warn");
+			r.msg("どこかでカチリと音がした……30回くらい", "warn");
 			break;
 		}
 	}
@@ -615,9 +611,9 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 
 const wave = (r: Run, it: Item): boolean => {
 	const p = r.p;
-	r.msg(`${r.name(it)}を　振った`);
+	r.msg(`${r.name(it)}を振った`);
 	if (it.charges <= 0) {
-		r.msg("しかし　何も　起きなかった");
+		r.msg("しかし何も起きなかった");
 		it.known = true;
 		return true;
 	}
@@ -627,7 +623,7 @@ const wave = (r: Run, it: Item): boolean => {
 	const { hit, last } = firstInLine(r, p, p.dir, 99);
 	r.emit({ t: "bolt", from: { x: p.x, y: p.y }, to: last, kind: "staff" });
 	if (!hit) {
-		r.msg("魔法の　弾は　どこかへ　消えた");
+		r.msg("魔法の弾はどこかへ消えた");
 		return true;
 	}
 	// 振っても 正体は わからない（効き目を 見て 当てる。トルネコ1と 同じ）
@@ -700,7 +696,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			if (bossShrugs(m)) return;
 			const p = r.p;
 			const lose = p.hp - Math.ceil(p.hp / 2);
-			if (lose > 0) r.hurtPlayer(lose, "諸刃の杖で　たおれた");
+			if (lose > 0) r.hurtPlayer(lose, "諸刃の杖でたおれた");
 			m.hp = 1;
 			// 炎上案件は その場で 止まる（ダメージでは ないので 爆発は しない。次に なぐれば 爆発）
 			if (
@@ -709,7 +705,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 				!m.fuse
 			) {
 				m.fuse = true;
-				r.msg(`${nm}の　動きが　止まった……　いやな　予感`, "warn");
+				r.msg(`${nm}の動きが止まった……いやな予感`, "warn");
 			}
 			return;
 		}
@@ -737,7 +733,7 @@ export const staffEffect = (r: Run, kind: string, m: Monster): void => {
 			r.removeItem(it);
 			m.carry = it;
 			r.se("steal");
-			r.msg(`${nm}に　${r.name(it)}を　転載された！`, "warn");
+			r.msg(`${nm}に${r.name(it)}を転載された！`, "warn");
 			return;
 		}
 		case "w_totsu": {
@@ -771,11 +767,11 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 	const src = r.findItem(uid);
 	if (!src) return false;
 	if (isKeyItem(src.kind)) {
-		r.msg("これは　手放せない");
+		r.msg("これは手放せない");
 		return false;
 	}
 	if (r.isEquipped(src) && src.cursed) {
-		r.msg(`${r.name(src)}は　のろわれていて　外せない！`, "warn");
+		r.msg(`${r.name(src)}はのろわれていて外せない！`, "warn");
 		return false;
 	}
 	p.dir = dir;
@@ -798,7 +794,7 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 		icon: it.kind,
 	});
 	if (d.cat !== "arrow") {
-		r.msg(`${r.name(it)}を　投げた`);
+		r.msg(`${r.name(it)}を投げた`);
 		ankaHit(r, "throw");
 	}
 	if (!hit) {
@@ -810,7 +806,7 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 	if (!r.rng.chance(HIT_RATE)) {
 		r.se("miss");
 		r.emit({ t: "miss", id: hit.uid, pos: { x: hit.x, y: hit.y } });
-		r.msg(`${nm}には　当たらなかった`);
+		r.msg(`${nm}には当たらなかった`);
 		r.placeItem(it, hit);
 		return true;
 	}

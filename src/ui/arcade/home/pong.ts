@@ -100,7 +100,7 @@ export const playPong = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			hud(
 				g,
 				`${PONG_TEXT.me} ${s.mePts} - ${s.cpuPts} ${PONG_TEXT.cpu}`,
-				s.mePts >= PONG.cpuReadAt ? "名無し　本気" : `先に${PONG.goal}点`,
+				s.mePts >= PONG.cpuReadAt ? "名無し本気" : `先に${PONG.goal}点`,
 			);
 		},
 		over: (s) => s.over,

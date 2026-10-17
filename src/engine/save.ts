@@ -225,7 +225,7 @@ export type RunRecord = {
 type Stats = { runs: number; clears: number; best: number };
 
 /** 終わっていない 冒険を 記録に するときの 死因（たおれた あとの 支給品は 渡さない）。 */
-export const QUIT_CAUSE = "冒険を　やめた";
+export const QUIT_CAUSE = "冒険をやめた";
 
 export const recordFromRun = (s: RunState): RunRecord => {
 	// 終わっていない冒険は渡されないはずだが、渡されても落ちないように

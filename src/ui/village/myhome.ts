@@ -267,7 +267,7 @@ export const homeFacility = (f: Facility): Facility => {
 	if (!room) return f;
 	return {
 		...f,
-		name: m.owned ? "キリコの　家" : f.name,
+		name: m.owned ? "キリコの家" : f.name,
 		room: {
 			...room,
 			look: {

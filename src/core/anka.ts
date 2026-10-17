@@ -35,28 +35,28 @@ export const ANKA_TROLLS = 5;
 export const ANKA_GIFTS = 2;
 
 const ANKA_TEXT: Record<AnkaKind, (need: number) => string> = {
-	herb: () => "草を　1つ　飲む",
-	scroll: () => "スレを　1つ　読む",
-	throw: () => "何か　投げる",
+	herb: () => "草を1つ飲む",
+	scroll: () => "スレを1つ読む",
+	throw: () => "何か投げる",
 	// 食べられるのは パンだけ（草は「飲む」なので 数えない）
-	eat: () => "パンを　1つ　食う",
-	kill: (n) => `敵を　${n}体　たおす`,
+	eat: () => "パンを1つ食う",
+	kill: (n) => `敵を${n}体たおす`,
 	// 眠れば 何でも いい（寝落ち草・罠・眠りの 呪文。Run.sleepPlayer で 数える）
 	sleep: () => "寝る",
 	// 敵の 攻撃が 当たった 回数（なぐる・矢・息。はずれや 罠は 数えない。core/monster.ts）
-	hit: (n) => `攻撃を　${n}回　受ける`,
+	hit: (n) => `攻撃を${n}回受ける`,
 	// 杖を 振った（のこりが 0 で 何も 起きなくても 数える。core/effects.ts）
-	staff: () => "杖を　1回　ふる",
+	staff: () => "杖を1回ふる",
 	// 足元に 置いた（投げる・入れかえるは 数えない。Run.doDrop）
-	drop: () => "道具を　1つ　置く",
+	drop: () => "道具を1つ置く",
 	// 武器・板・指輪を べつの 物に かえた（外すだけ・矢は 数えない。Run.doEquip）
-	equip: () => "装備を　かえる",
+	equip: () => "装備をかえる",
 	// 罠を 踏んだ（動かなくても 数える。罠よけの指輪なら 踏まない。core/traps.ts）
-	trap: () => "罠を　1つ　踏む",
+	trap: () => "罠を1つ踏む",
 	// レベルが 上がった（何段 上がっても 1回。Run.gainExp）
-	level: () => "レベルを　1つ　上げる",
+	level: () => "レベルを1つ上げる",
 	// 「足踏み」の コマンド（眠りで 進む ターンは 数えない。Run.doCommand）
-	rest: (n) => `その場で　${n}回　足踏み`,
+	rest: (n) => `その場で${n}回足踏み`,
 };
 
 /** お題ごとの こなす 回数。 */
@@ -90,7 +90,7 @@ export const scheduleAnka = (
 		f.anka = carried.a;
 		f.anka.due = f.res + carried.left;
 		r.msg(
-			`前スレの　安価は　まだ　生きている：${ankaText(f.anka)}（のこり　${carried.left}レス）`,
+			`前スレの安価はまだ生きている：${ankaText(f.anka)}（のこり　${carried.left}レス）`,
 			"warn",
 		);
 		return;
@@ -206,12 +206,11 @@ export const startAnka = (r: Run, gentle = false): boolean => {
 	f.anka = a;
 	r.se("encounter");
 	r.emit({ t: "anka" });
-	r.msg(`安価が　来た：${ankaText(a)}`, "warn");
-	r.msg(`（${ANKA_DUE}レス　以内に。安価は　絶対）`);
+	r.msg(`安価が来た：${ankaText(a)}`, "warn");
+	r.msg(`（${ANKA_DUE}レス以内に。安価は絶対）`);
 	// はじめて 見る 安価（パン板の 2階で かならず 来る やさしい お題）には、ごほうびと 罰も 1行で
 	// （「絶対」と 言うだけでは、知らない 人には 何が 起きるのか わからなかった）
-	if (gentle)
-		r.msg("（こなせば　スレ民が　道具を　くれる。やぶると　スレが　荒れる）");
+	if (gentle) r.msg("（こなせばスレ民が道具をくれる。やぶるとスレが荒れる）");
 	return true;
 };
 
@@ -223,7 +222,7 @@ export const tickAnka = (r: Run): void => {
 	f.anka = null;
 	r.se("encounter");
 	r.emit({ t: "anka" });
-	r.msg("安価を　守らなかった……　スレが　荒れた！", "warn");
+	r.msg("安価を守らなかった……スレが荒れた！", "warn");
 	r.addRes(ANKA_PENALTY);
 	// 眠っていた 敵も みんな 起きる（置物と、待っている ボスの 深い 眠りは そのまま）
 	let woke = 0;
@@ -232,7 +231,7 @@ export const tickAnka = (r: Run): void => {
 			wakeMonster(r, m);
 			if (m.status.sleep === 0) woke++;
 		}
-	if (woke) r.msg("スレが　荒れて、みんな　目を　さました", "warn");
+	if (woke) r.msg("スレが荒れて、みんな目をさました", "warn");
 	// 荒らし（ふつうは 見えない 所から。どこも 見える 部屋なら 見える 所に）。
 	// ボスが 生きている 階には 湧かない（時間の 湧きと 同じ。ボスとの 戦いに しぼる）
 	let trolls = 0;
@@ -240,8 +239,7 @@ export const tickAnka = (r: Run): void => {
 		const at = randomFloorPos(r, true) ?? randomFloorPos(r, false);
 		if (at && spawnMonster(r, null, at, { awake: true })) trolls++;
 	}
-	if (trolls)
-		r.msg(`荒らしが　${trolls}体　湧いてきた。ID　全部　ちがう`, "warn");
+	if (trolls) r.msg(`荒らしが${trolls}体湧いてきた。ID　全部ちがう`, "warn");
 	// 持ち物を 1つ 持ち去られる（安価を 無視した 罰。大事な 物・装備中の 物は 取らない）
 	const loot = r.p.items.filter(
 		(it) => !isKeyItem(it.kind) && !r.isEquipped(it),
@@ -249,7 +247,7 @@ export const tickAnka = (r: Run): void => {
 	const it = r.rng.pick(loot);
 	if (it) {
 		r.removeItem(it);
-		r.msg(`スレ民が　${r.name(it)}を　お持ち帰り`, "warn");
+		r.msg(`スレ民が${r.name(it)}をお持ち帰り`, "warn");
 	}
 };
 
@@ -262,7 +260,7 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 	r.f.anka = null;
 	r.se("victory");
 	r.emit({ t: "anka" });
-	r.msg("神安価！　スレ民が　足元に　何か　置いていった", "good");
+	r.msg("神安価！スレ民が足元に何か置いていった", "good");
 	// 道具（落ちている 物と 同じ。未識別の 種類は 未識別の まま）
 	for (const kind of rollKinds(r.rng, itemTableOf(r.s), ANKA_GIFTS))
 		r.placeItem(r.newItem(kind), { x: r.p.x, y: r.p.y });

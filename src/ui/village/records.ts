@@ -97,7 +97,7 @@ export const showStory = async (ctx: Ctx, pages: string[]): Promise<void> => {
 	const text = el("div", { class: "story-text" });
 	const box = el("div", { class: "story" }, [
 		text,
-		el("div", { class: "story-tap", text: "タップで　つぎへ" }),
+		el("div", { class: "story-tap", text: "タップでつぎへ" }),
 	]);
 	ctx.ui.appendChild(box);
 	await nextFrame();
@@ -123,7 +123,7 @@ export const escBr = (s: string): string => esc(s).replace(/\n/g, "<br>");
  * 冒険の記録の 札・リプレイの 終わり・記録の 見出し・もらった リプレイの 見出し。
  */
 export const bossHomeLine = (d: DungeonId): string =>
-	`${defOf(dungeonById(d).goal).name}ごと、${BOSS_HOME[d] ?? "入口へ　帰った"}`;
+	`${defOf(dungeonById(d).goal).name}ごと、${BOSS_HOME[d] ?? "入口へ帰った"}`;
 
 /** ボスを たおして 帰った 冒険か（記録・リプレイ）。 */
 export const isBossClear = (r: {
@@ -149,12 +149,12 @@ export const endLine = (
 ): string =>
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
 		isBossClear(r)
-			? `${floorShort(r.dungeon, r.depth)}で　${r.cause}`
+			? `${floorShort(r.dungeon, r.depth)}で${r.cause}`
 			: r.kind === "clear"
-				? `${floorShort(r.dungeon, r.maxDepth)}から　地上へ　もどった`
+				? `${floorShort(r.dungeon, r.maxDepth)}から地上へもどった`
 				: r.kind === "escape"
-					? `${floorShort(r.dungeon, r.depth)}から　帰還スレで　もどった`
-					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で　${r.cause}`
+					? `${floorShort(r.dungeon, r.depth)}から帰還スレでもどった`
+					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で${r.cause}`
 	}`;
 
 /**
@@ -232,9 +232,9 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 				clear && boss
 					? rec.cause
 					: clear
-						? `${defOf(dungeonById(s.dungeon).goal).name}を　持ち帰った`
+						? `${defOf(dungeonById(s.dungeon).goal).name}を持ち帰った`
 						: escaped
-							? "地上へ　もどった"
+							? "地上へもどった"
 							: "放送事故",
 		}),
 		el("p", {
@@ -244,14 +244,14 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 					? `${DUNGEON_NAMES[s.dungeon].short}　${bossHomeLine(s.dungeon)}`
 					: endLine(rec),
 		}),
-		el("p", { class: "runend-nth", text: `${nth}回目の　冒険` }),
+		el("p", { class: "runend-nth", text: `${nth}回目の冒険` }),
 		el("div", { class: "matome-sec" }, [
 			el("div", { class: "matome-title", text: "きろく" }),
 			grid([
 				["レベル", String(rec.lv)],
 				["ターン", String(rec.turn)],
 				["倒した数", String(rec.kills)],
-				["いちばん　遠く", floorShort(rec.dungeon, rec.maxDepth)],
+				["いちばん遠く", floorShort(rec.dungeon, rec.maxDepth)],
 			]),
 		]),
 		el("div", { class: "matome-sec" }, [
@@ -261,14 +261,14 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 				text:
 					clear || escaped
 						? `持ち物（${p.items.length}）`
-						: `現地に　置いてきた　機材（${p.items.length}）`,
+						: `現地に置いてきた機材（${p.items.length}）`,
 			}),
 			items,
 		]),
 	]);
 	const box = el("div", { class: "matome" }, [
 		card,
-		el("div", { class: "matome-tap", text: "タップで　地上へ" }),
+		el("div", { class: "matome-tap", text: "タップで地上へ" }),
 	]);
 	ctx.ui.appendChild(box);
 	await nextFrame();
@@ -309,7 +309,7 @@ export const openRecords = async (
 		for (;;) {
 			const v = await listWindow(
 				ctx,
-				`${title}${total}<p class="dim">まだ　記録が　ありません。<br>まずは　もぐって　みよう。</p>`,
+				`${title}${total}<p class="dim">まだ記録がありません。<br>まずはもぐってみよう。</p>`,
 				[],
 				{ cls, actions: importAction },
 			);
@@ -327,14 +327,14 @@ export const openRecords = async (
 			: Number.NEGATIVE_INFINITY;
 	const note =
 		st.runs > list.length
-			? `<p class="hint">記録は　新しい　${list.length}回ぶんだけ　のこる</p>`
+			? `<p class="hint">記録は新しい　${list.length}回ぶんだけのこる</p>`
 			: "";
 	let start = 0;
 	for (;;) {
 		const rows = list.map((r, i) => ({
 			label: `<b class="rec-kind ${r.kind}">${KIND_LABEL[r.kind]}</b>　${esc(endLine(r))}`,
 			sub: opt.replay && replayOf(r) ? "▶" : "",
-			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン　倒した数${r.kills}`,
+			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン倒した数${r.kills}`,
 			value: String(i),
 		}));
 		const v = await listWindow(ctx, `${title}${total}${note}`, rows, {
@@ -356,7 +356,7 @@ export const openRecords = async (
 			await infoWindow(
 				ctx,
 				"",
-				`<p>${head}</p>${rp ? `<p class="dim">リプレイは　配信会館の　映写機で　見られる</p>` : ""}`,
+				`<p>${head}</p>${rp ? `<p class="dim">リプレイは配信会館の映写機で見られる</p>` : ""}`,
 			);
 			continue;
 		}
@@ -364,14 +364,14 @@ export const openRecords = async (
 			await infoWindow(
 				ctx,
 				"",
-				`<p>${head}</p><p class="dim">この冒険の　リプレイは　のこっていない${r.at < oldestKept ? `<br>（リプレイは　新しい　${REPLAYS_KEEP}回ぶんだけ　のこる）` : ""}</p>`,
+				`<p>${head}</p><p class="dim">この冒険のリプレイはのこっていない${r.at < oldestKept ? `<br>（リプレイは新しい　${REPLAYS_KEEP}回ぶんだけのこる）` : ""}</p>`,
 			);
 			continue;
 		}
 		for (;;) {
 			const pick = await listWindow(ctx, head, [
-				{ label: "リプレイを　見る", value: "play" },
-				{ label: "リプレイを　わたす", value: "share" },
+				{ label: "リプレイを見る", value: "play" },
+				{ label: "リプレイをわたす", value: "share" },
 			]);
 			if (pick === "play") return rp;
 			if (pick !== "share") break;

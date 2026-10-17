@@ -59,7 +59,7 @@ const voiceLabel = (audio: GameAudio): string => {
 const askVoice = async (ctx: Ctx): Promise<void> => {
 	const v = await listWindow(
 		ctx,
-		"ボイスを　ONにすると、はじめに<br>やく45MBの　データを　よみこみます。<br><small>村の　会話を　読み上げます（ロゼ・シヨ）。2回目からは　すぐに　はじまります</small>",
+		"ボイスをONにすると、はじめに<br>やく45MBのデータをよみこみます。<br><small>村の会話を読み上げます（ロゼ・シヨ）。2回目からはすぐにはじまります</small>",
 		[
 			{ label: "ONにする", value: "yes" },
 			{ label: "やめておく", value: "no" },
@@ -91,14 +91,14 @@ const askWipe = async (ctx: Ctx): Promise<void> => {
 	];
 	const v1 = await listWindow(
 		ctx,
-		"セーブデータを　消して<br>はじめから　やりなおしますか？<br><small>村の　育ち・倉庫・図鑑・冒険の記録・リプレイ・中断した　冒険が　ぜんぶ　消える（せっていは　のこる）</small>",
+		"セーブデータを消して<br>はじめからやりなおしますか？<br><small>村の育ち・倉庫・図鑑・冒険の記録・リプレイ・中断した冒険がぜんぶ消える（せっていはのこる）</small>",
 		no,
 		{ start: 1 },
 	);
 	if (v1 !== "yes") return;
 	const v2 = await listWindow(
 		ctx,
-		"ほんとうに　消しますか？<br><small>もとに　もどせません</small>",
+		"ほんとうに消しますか？<br><small>もとにもどせません</small>",
 		no,
 		{ start: 1 },
 	);
@@ -107,7 +107,7 @@ const askWipe = async (ctx: Ctx): Promise<void> => {
 	const q = makeQuiz();
 	const v3 = await listWindow(
 		ctx,
-		`消すなら、問題に　答えて<br>${q.text}　は？`,
+		`消すなら、問題に答えて<br>${q.text}は？`,
 		[
 			...q.options.map((n) => ({ label: String(n), value: String(n) })),
 			{ label: "やめる", value: "no" },
@@ -116,7 +116,7 @@ const askWipe = async (ctx: Ctx): Promise<void> => {
 	);
 	if (v3 === null || v3 === "no") return;
 	if (Number(v3) !== q.answer) {
-		await listWindow(ctx, "ちがう。<br>消すのは　やめておいた。", [
+		await listWindow(ctx, "ちがう。<br>消すのはやめておいた。", [
 			{ label: "もどる", value: "ok" },
 		]);
 		return;
@@ -180,7 +180,7 @@ export const openSettings = async (
 				...(opt.wipe
 					? [
 							{
-								label: "セーブデータを　消す",
+								label: "セーブデータを消す",
 								sub: "はじめから",
 								value: "wipe",
 							},

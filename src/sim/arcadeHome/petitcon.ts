@@ -160,19 +160,19 @@ export const tests: HomeGameTest[] = [
 				const got = errOf(src);
 				ok(got === want, `${src} → ${got}（${want}）`);
 			};
-			e('10 PRINT "A"\n20 PRNT 1', "20行目：わからない　命令");
-			e("10 A=1\n20 B=0\n30 PRINT A/B", "30行目：0で　わった");
-			e('A="X"', "1行目：数と　文字が　まざった");
-			e("GOTO @NAI", "1行目：とび先が　ない");
-			e("10 RETURN", "10行目：GOSUBが　ない　RETURN");
-			e("FOR I=1 TO 3", "1行目：NEXTが　ない　FOR");
-			e("PRINT 1\nNEXT", "2行目：FORが　ない　NEXT");
-			e("DIM A(3)\nA(4)=1", "2行目：配列の　はんいの　外");
-			e("B(1)=2", "1行目：DIMして　いない　配列");
-			e('PRINT "ABC', '1行目：「"」が　とじて　いない');
-			e("PRINT (1+2", "1行目：かっこが　とじて　いない");
-			e("X=RND(1,2)", "1行目：引数の　数が　ちがう");
-			e("@A\nGOSUB @A", "2行目：GOSUBが　深すぎる");
+			e('10 PRINT "A"\n20 PRNT 1', "20行目：わからない命令");
+			e("10 A=1\n20 B=0\n30 PRINT A/B", "30行目：0でわった");
+			e('A="X"', "1行目：数と文字がまざった");
+			e("GOTO @NAI", "1行目：とび先がない");
+			e("10 RETURN", "10行目：GOSUBがないRETURN");
+			e("FOR I=1 TO 3", "1行目：NEXTがないFOR");
+			e("PRINT 1\nNEXT", "2行目：FORがないNEXT");
+			e("DIM A(3)\nA(4)=1", "2行目：配列のはんいの外");
+			e("B(1)=2", "1行目：DIMしていない配列");
+			e('PRINT "ABC', '1行目：「"」がとじていない');
+			e("PRINT (1+2", "1行目：かっこがとじていない");
+			e("X=RND(1,2)", "1行目：引数の数がちがう");
+			e("@A\nGOSUB @A", "2行目：GOSUBが深すぎる");
 		},
 	},
 	{

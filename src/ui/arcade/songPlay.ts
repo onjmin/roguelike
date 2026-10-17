@@ -22,7 +22,7 @@ import { previewStage } from "../village/villageReturn";
 const KEY = "kiriko-roguelike/arcade-songs";
 
 /** 曲の 読みこみを 待つ あいだの 板の 下の 字。 */
-export const SONG_LOADING = "曲を　読みこみ中……";
+export const SONG_LOADING = "曲を読みこみ中……";
 
 export type SongGame = "rhythm" | "taiko";
 
@@ -130,7 +130,7 @@ const pickFromList = async (
 	if (!ok.length) return null;
 	const v = await listWindow(
 		ctx,
-		"どの　曲で　遊ぶ？",
+		"どの曲で遊ぶ？",
 		ok.map((r) => {
 			const best = songBest(game, r.bgm);
 			return {

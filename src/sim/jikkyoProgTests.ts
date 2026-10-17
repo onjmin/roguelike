@@ -29,7 +29,6 @@ import {
 	checkRepeats,
 	fitsWindow,
 	HOSHU_NAMES,
-	longRun,
 	NG_NAMES,
 	playShow,
 	recorder,
@@ -277,7 +276,7 @@ const textsOf = (p: JkPack) => {
 
 each(
 	"P2",
-	"文：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22・会場と 村の 窓 22×2・選ぶ 名前 10、分かち書き、実在の 名前なし、キリコの 候補に「保守」なし、「保守」は 固有名詞の 中だけ、{…} の 埋めのこし なし",
+	"文：レス 12・候補 10・スレタイ・字幕・pin・絵の 字 22・会場と 村の 窓 22×2・選ぶ 名前 10、実在の 名前なし、キリコの 候補に「保守」なし、「保守」は 固有名詞の 中だけ、{…} の 埋めのこし なし",
 	true,
 	(p) => {
 		const { opts, crowd, titles, short, venue } = textsOf(p);
@@ -287,10 +286,6 @@ each(
 			ok(width(t) <= 22, `"${t}" is ${width(t)} wide`);
 		for (const t of venue) fitsWindow(`${p.script.id} venue`, t);
 		ok(width(p.menu) <= 10, `menu "${p.menu}" is ${width(p.menu)}`);
-		for (const t of [...crowd, ...opts]) {
-			const run = longRun(t);
-			ok(run === null, `"${t}": write "${run}" with a full-width space`);
-		}
 		const names = [...HOSHU_NAMES, ...(p.names ?? [])].sort(
 			(a, b) => b.length - a.length,
 		);

@@ -238,7 +238,7 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 		"baton event",
 	);
 	ok(
-		r.s.log.some((l) => l.includes("ゼロは　たおれた")),
+		r.s.log.some((l) => l.includes("ゼロはたおれた")),
 		"log name",
 	);
 	// 中断して 読みなおしても 機体は 同じ
@@ -513,7 +513,7 @@ test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合�
 		["hero_roze", "unlocked"],
 	] as const) {
 		const html = synopsisHtml(cl, [flag]) ?? "";
-		ok(html.includes("仲間の　依頼"), `${st} section`);
+		ok(html.includes("仲間の依頼"), `${st} section`);
 		ok(html.includes(HERO_QUESTS.roze.synopsis[st]), `${st} line`);
 	}
 	const both = synopsisHtml(cl, ["hero_roze", "q_zero"]) ?? "";

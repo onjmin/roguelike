@@ -86,8 +86,8 @@ export const PC_TEXT = {
 	reach: "リーチ！",
 	jackpot: "大当たり！",
 	round: "アタッカー　{n}／{max}",
-	bonusEnd: "{n}発　出た！",
-	heso: "ヘソ　+3",
+	bonusEnd: "{n}発出た！",
+	heso: "ヘソ+3",
 	hits: "当たり",
 } as const;
 

@@ -29,9 +29,9 @@ export const glossaryTier = (stage = loadTown().stage): number =>
 
 /** 辞典の 題（置き場で かわる）。 */
 const TITLES = [
-	"ことばの　辞典",
-	"ことばの　辞典（本屋）",
-	"ことばの　辞典（図書館）",
+	"ことばの辞典",
+	"ことばの辞典（本屋）",
+	"ことばの辞典（図書館）",
 ];
 
 /** 説明の 会話の 窓（data/story/glossary.ts の desc は 窓ごとに 空行で 区切って 書く）。 */
@@ -71,7 +71,7 @@ export const readShelf = async (
 		start = k;
 		const w = words[k];
 		if (!known(w)) {
-			await s.narrate("まだ　行けない　板の　本だ。\n……ひらいても　読めない。");
+			await s.narrate("まだ行けない板の本だ。\n……ひらいても読めない。");
 			continue;
 		}
 		for (const t of descWindows(w.desc)) await s.narrate(t);
@@ -102,7 +102,7 @@ export const openGlossary = async (ctx: Ctx): Promise<void> => {
 					: {
 							label: "？？？",
 							// 板の 名前は 出さない（全体マップでも 開くまでは ？？？）
-							desc: "まだ　行けない　板の　ことば",
+							desc: "まだ行けない板のことば",
 							value: w.id,
 							disabled: true,
 						},

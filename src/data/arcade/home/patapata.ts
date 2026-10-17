@@ -38,7 +38,7 @@ export const PP = {
 
 /** 板の 字。 */
 export const PP_TEXT = {
-	start: "押すと　とびたつ",
+	start: "押すととびたつ",
 	medals: ["銅", "銀", "金", "白金"],
 	medal: "メダル",
 } as const;

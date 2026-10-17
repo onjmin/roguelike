@@ -65,8 +65,8 @@ export const PB_TEXT = {
 	balls: "球",
 	anka: "安価",
 	lane: "次スレ",
-	laneMsg: "次スレ　+500",
-	tate: "スレ立て！　+1000",
+	laneMsg: "次スレ+500",
+	tate: "スレ立て！+1000",
 	lost: "のがした",
 } as const;
 

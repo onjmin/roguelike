@@ -285,13 +285,13 @@ const playCue = async (
 	// 同接の 読みあげ（電池板の 山場）：同点 のこり 1人で 鐘、1位で ファンファーレと 札（山場が わかるように）
 	if (c === "res999") {
 		s.se("chapter");
-		s.toast("同点　のこり　1人");
+		s.toast("同点のこり1人");
 	} else if (c === "chapterEnd") {
 		s.se("chapter");
 		await s.wait(400);
 	} else if (c === "res1000") {
 		s.se("victory");
-		s.toast("★　キリコ　1位　★");
+		s.toast("★キリコ1位★");
 		await s.wait(600);
 	}
 };
@@ -582,7 +582,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 			doneProgressNews(n);
 			s.se("chapter");
 			await s.narrate(
-				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,
+				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるようになった`,
 			);
 			continue;
 		}
@@ -619,7 +619,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 		doneProgressNews(n);
 		s.se("chapter");
 		await s.narrate(
-			`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるように　なった`,
+			`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるようになった`,
 		);
 		await s.look(null);
 	}

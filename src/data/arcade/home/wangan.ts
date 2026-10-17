@@ -58,24 +58,24 @@ export type WnRival = {
 
 export const WN_RIVALS: readonly WnRival[] = [
 	{
-		name: "名無しの　白い　セダン",
-		short: "白い　セダン",
+		name: "名無しの白いセダン",
+		short: "白いセダン",
 		top: 60,
 		gap: 120,
 		extend: 0,
 		block: 0,
 	},
 	{
-		name: "コテハンの　黒い　スポーツ",
-		short: "黒い　スポーツ",
+		name: "コテハンの黒いスポーツ",
+		short: "黒いスポーツ",
 		top: 70,
 		gap: 160,
 		extend: 30,
 		block: 0.3,
 	},
 	{
-		name: "湾岸の　主",
-		short: "湾岸の　主",
+		name: "湾岸の主",
+		short: "湾岸の主",
 		top: 77,
 		gap: 150,
 		extend: 35,
@@ -85,16 +85,16 @@ export const WN_RIVALS: readonly WnRival[] = [
 
 /** 板の 字。 */
 export const WN_TEXT = {
-	ahead: "{name}が　前を　走る",
-	beat: "{name}を　ぬいた！",
+	ahead: "{name}が前を走る",
+	beat: "{name}をぬいた！",
 	slip: "スリップストリーム！",
 	crash: "ぶつけた！",
-	clear: "湾岸の　主を　ぬいた！",
+	clear: "湾岸の主をぬいた！",
 	timeup: "時間ぎれ",
 	extend: "TIME +{n}",
 	to: "まで",
 	kmh: "km/h",
-	note: "タップ：左右　ハンドル　中　アクセル",
+	note: "タップ：左右ハンドル中アクセル",
 } as const;
 
 // ---- 道 ----

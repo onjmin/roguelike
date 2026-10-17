@@ -75,14 +75,14 @@ const BTN: readonly Rect[] = [
 /** 名無しの ひとこと。 */
 const SAY = {
 	koi: "こいこいや！",
-	agari: "ほな　あがりや",
+	agari: "ほなあがりや",
 	meKoi: "強気やな",
 	meAgari: "やられたわ",
 	nagare: "流れやな",
-	hikari: "光　もろたで",
-	block: "それは　やらんで",
-	meHikari: "げっ　光　取られた",
-	next: "次の　月や",
+	hikari: "光もろたで",
+	block: "それはやらんで",
+	meHikari: "げっ光取られた",
+	next: "次の月や",
 } as const;
 
 type View = {
@@ -723,7 +723,7 @@ export const playKoikoi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				const ys = kkYaku(s.side[0].take);
 				txt(
 					g,
-					`役が　できた　${kkPts(s.side[0].take)}点`,
+					`役ができた　${kkPts(s.side[0].take)}点`,
 					95,
 					36,
 					8,
@@ -740,7 +740,7 @@ export const playKoikoi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					"center",
 				);
 				if (s.side[1].koi)
-					txt(g, "あがると　2倍", 95, 58, 7, "#ff9060", "center");
+					txt(g, "あがると2倍", 95, 58, 7, "#ff9060", "center");
 				button(g, BTN[0] as Rect, "あがり", v.ki === 0);
 				button(g, BTN[1] as Rect, "こいこい", v.ki === 1);
 			}
@@ -753,7 +753,7 @@ export const playKoikoi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				const head =
 					w < 0
 						? "流れ"
-						: `${w === 0 ? "キリコ" : "名無し"}の　あがり　${s.roundPts}点`;
+						: `${w === 0 ? "キリコ" : "名無し"}のあがり　${s.roundPts}点`;
 				txt(g, head, 95, 37, 8, w === 0 ? "#ffe060" : "#f4f2ea", "center");
 				if (w >= 0) {
 					const ys = kkYaku(s.side[w === 0 ? 0 : 1].take);
@@ -767,10 +767,10 @@ export const playKoikoi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 						"center",
 					);
 					if (s.side[w === 0 ? 1 : 0].koi)
-						txt(g, "こいこい返しで　2倍", 95, 60, 7, "#ff9060", "center");
+						txt(g, "こいこい返しで2倍", 95, 60, 7, "#ff9060", "center");
 				}
 				if (!kkOver(s) && blink)
-					txt(g, "A／タップで　次の　月へ", 95, 74, 7, "#c8b890", "center");
+					txt(g, "A／タップで次の月へ", 95, 74, 7, "#c8b890", "center");
 			}
 			const turn =
 				s.phase === "end"
@@ -778,10 +778,10 @@ export const playKoikoi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					: s.turn === 0
 						? // キリコの 番は いま 押す ことを 出す（同じ 月が 2枚 ある ときは どちらを 取るか）
 							s.phase === "hand"
-							? "←→　札　A　出す"
+							? "←→札A　出す"
 							: s.phase === "pickHand" || s.phase === "pickFlip"
-								? "どれを　取る？　←→　A"
-								: "キリコの　番"
+								? "どれを取る？←→A"
+								: "キリコの番"
 						: `名無し${".".repeat(Math.floor(clock * 4) % 4)}`;
 			hud(g, `${s.month + 1}／${KK.months}月　${s.pts[0]}対${s.pts[1]}`, turn);
 			juiceDraw(g, v.j, AW, AH);

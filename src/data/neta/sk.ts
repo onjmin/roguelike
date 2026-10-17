@@ -8,7 +8,7 @@ import { SK } from "./text";
 export const SK_STEP_MS = 110;
 
 export const skSentence = (a: number, b: number, c: number): string =>
-	`${SK.who[a]}　が　${SK.where[b]}　で　${SK.did[c]}。`;
+	`${SK.who[a]}が${SK.where[b]}で${SK.did[c]}。`;
 
 /** 縦書きの 3列（右から：だれが・どこで・どうした）。 */
 export const skColumns = (

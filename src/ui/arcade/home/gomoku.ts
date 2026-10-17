@@ -207,16 +207,16 @@ export const playGomoku = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 			const right = s.winner
 				? ""
 				: s.turn === 1
-					? "キリコの　番"
-					: `名無し　考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
-			hud(g, `第${s.lv + 1}局　黒${s.moves}手`, right);
+					? "キリコの番"
+					: `名無し考え中${".".repeat(Math.floor(clock * 4) % 4)}`;
+			hud(g, `第${s.lv + 1}局黒${s.moves}手`, right);
 			txt(g, GM_LV[s.lv], AW - OX / 2, 70, 8, "#f0c040", "center");
 			if (v.total > 0) {
 				txt(g, "勝ち抜き", OX / 2, 96, 8, "#f0c040", "center");
 				txt(g, `${v.total}点`, OX / 2, 106, 8, "#f4f2ea", "center");
 			}
 			if (goesOn(s) && v.endT >= GM.endWait)
-				banner(g, `次は　${GM_LV[s.lv + 1]}　名無し`, "#ffe060");
+				banner(g, `次は${GM_LV[s.lv + 1]}　名無し`, "#ffe060");
 		},
 		over: (v) => v.s.winner !== 0 && !goesOn(v.s) && v.endT >= GM.endWait,
 		score: (v) => v.total + gmScore(v.s),

@@ -48,24 +48,24 @@ export type EventDef = {
 export const EVENTS: readonly EventDef[] = [
 	{
 		id: "pan-march",
-		name: "パン板の　大行進",
+		name: "パン板の大行進",
 		dungeon: "shallow",
 		objective: "boss",
 		need: { cleared: ["shallow"] },
 		start: { on: "clear", chance: 1 / 6 },
 		end: { clears: 1, outings: 4 },
-		news: "パン板の　底で　パン兵長が\n兵を　集めている　らしい",
+		news: "パン板の底でパン兵長が\n兵を集めているらしい",
 	},
 	{
 		id: "bath-steam",
-		name: "風呂板の　湯けむり騒動",
+		name: "風呂板の湯けむり騒動",
 		dungeon: "main",
 		objective: "boss",
 		need: { cleared: ["main"] },
 		// たおれて もどった あとの 気分転換に
 		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 5 },
-		news: "風呂板の　源泉に、\n湯守が　居すわった　らしい",
+		news: "風呂板の源泉に、\n湯守が居すわったらしい",
 	},
 	{
 		id: "kinoko-hunt",
@@ -79,17 +79,17 @@ export const EVENTS: readonly EventDef[] = [
 		// （ほかの イベントと 重なる ふつうの 遊び方なら もっと 少ない）
 		start: { on: "any", everyOutings: 10, chance: 1 / 2 },
 		end: { outings: 3 },
-		news: "きのこ板の　親玉が　昼寝中。\n底の　AAを　拾ってくる　だけで　いい",
+		news: "きのこ板の親玉が昼寝中。\n底のAAを拾ってくるだけでいい",
 	},
 	{
 		id: "festival-rain",
-		name: "お祭りの　雨天順延",
+		name: "お祭りの雨天順延",
 		dungeon: "festival",
 		objective: "fetch",
 		need: { unlocked: ["festival"] },
 		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 4 },
-		news: "雨で　親分マシーは　来ない。\nやぐらに　うちわだけ　落ちている",
+		news: "雨で親分マシーは来ない。\nやぐらにうちわだけ落ちている",
 	},
 ];
 
@@ -139,14 +139,10 @@ const endsIn = (e: EventDef, ev: ActiveEvent, outings: number): string => {
 			? null
 			: Math.max(1, e.end.outings - (outings - ev.since));
 	const untilClear =
-		clears === null
-			? ""
-			: clears === 1
-				? "次の　クリア"
-				: `${clears}回　クリア`;
+		clears === null ? "" : clears === 1 ? "次のクリア" : `${clears}回クリア`;
 	if (left === null) return `${untilClear}まで`;
-	if (clears === null) return `あと　${left}回`;
-	return `${untilClear}か　あと　${left}回`;
+	if (clears === null) return `あと${left}回`;
+	return `${untilClear}かあと${left}回`;
 };
 
 export type ObjectiveInfo = {
@@ -255,9 +251,7 @@ export const bossName = (d: DungeonId): string | null => {
 /** 目的の ひとこと（「〇〇を　持ち帰る」「〇〇を　たおす」）。 */
 export const goalText = (d: DungeonId, o: Objective): string => {
 	const boss = o === "boss" ? bossName(d) : null;
-	return boss
-		? `${boss}を　たおす`
-		: `${defOf(DUNGEONS[d].goal).name}を　持ち帰る`;
+	return boss ? `${boss}をたおす` : `${defOf(DUNGEONS[d].goal).name}を持ち帰る`;
 };
 
 /** 期間限定の ひとこと（「期間限定：きのこ狩り（あと　3回）」。イベントで なければ 空）。 */
@@ -271,4 +265,4 @@ export const eventNewsText = (
 ): readonly string[] =>
 	started
 		? [`期間限定：${e.name}が\nはじまった`, e.news]
-		: [`期間限定の　${e.name}は\nおわった`];
+		: [`期間限定の${e.name}は\nおわった`];

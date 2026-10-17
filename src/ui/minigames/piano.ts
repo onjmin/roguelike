@@ -70,10 +70,9 @@ export const openPiano = (
 				b.classList.toggle("cur", k === cur);
 				b.classList.toggle("next", k === n);
 			});
-			if (!guide.length) info.textContent = "すきに　弾いて　みよう";
-			else if (step >= guide.length) info.textContent = "♪　おしまい";
-			else
-				info.textContent = `光る　鍵盤を　押そう　${step + 1} / ${guide.length}`;
+			if (!guide.length) info.textContent = "すきに弾いてみよう";
+			else if (step >= guide.length) info.textContent = "♪おしまい";
+			else info.textContent = `光る鍵盤を押そう　${step + 1} / ${guide.length}`;
 		};
 		const press = (k: number) => {
 			ctx.audio.pianoNote(PIANO_BASE + k);

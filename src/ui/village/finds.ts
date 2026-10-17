@@ -43,7 +43,7 @@ export const townFind = async (
 	if (!openByFlag(`town_${f.dungeon}`).includes(f.dungeon)) return true;
 	s.se("chapter");
 	await s.narrate(
-		`「${DUNGEON_NAMES[f.dungeon].name}」に\nもぐれるように　なった`,
+		`「${DUNGEON_NAMES[f.dungeon].name}」に\nもぐれるようになった`,
 	);
 	return true;
 };

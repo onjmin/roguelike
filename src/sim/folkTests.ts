@@ -418,7 +418,7 @@ test("F2 ひらがなニキ: 1位から 48位（2位は ぷ の 言いかけ）�
 		hiraEntry(1).join() === [HIRA.pu, HIRA.retract].join(),
 		hiraEntry(1).join(),
 	);
-	ok(HIRA.retract.includes("半濁音は　除外"), "ぷ is not retracted");
+	ok(HIRA.retract.includes("半濁音は除外"), "ぷ is not retracted");
 	ok(hiraEntry(2)[0].startsWith("第2位　ね"), hiraEntry(2)[0]);
 	ok(hiraEntry(2).at(-1) === HIRA.from48, "no 48位から");
 	for (let n = 3; n < 48; n++)
@@ -431,7 +431,7 @@ test("F2 ひらがなニキ: 1位から 48位（2位は ぷ の 言いかけ）�
 		hiraEntry(48)[0] === HIRA.last && hiraEntry(48).at(-1) === HIRA.manyo,
 		hiraEntry(48).join(),
 	);
-	ok(HIRA.last.startsWith("第48位　ひ"), HIRA.last);
+	ok(HIRA.last.startsWith("第48位ひ"), HIRA.last);
 	ok(hiraEntry(49)[0].startsWith(`第${HIRA_BOTTOM}位　う`), hiraEntry(49)[0]);
 	ok(
 		hiraEntry(50)[0].startsWith(`第${HIRA_BOTTOM - 1n}位　ぅ`),
@@ -503,7 +503,7 @@ test("F4 バルス失敗ニキ: 1回目は 初出、あとは 5つを くり返�
 	for (let n = 0; n < 12; n++) {
 		const b = balusBeat(n);
 		for (const l of b.lines.filter((x) => x.sys)) {
-			if (l.text.includes("レベル　不足")) {
+			if (l.text.includes("レベル不足")) {
 				ok(b.lv < 3, `beat ${n}: lv ${b.lv} is enough`);
 				ok(l.text.includes(`（lv:${b.lv}）`), `beat ${n}: ${l.text}`);
 			} else {
@@ -514,7 +514,7 @@ test("F4 バルス失敗ニキ: 1回目は 初出、あとは 5つを くり返�
 				ok(balusLvAfter(b) === b.lv - 1, `beat ${n}: level after`);
 			}
 			// 空飛ぶ鯖と 同じ あけ方
-			ok(l.text.startsWith("禁断呪文　バルス　発動失敗。。"), l.text);
+			ok(l.text.startsWith("禁断呪文バルス発動失敗。。"), l.text);
 		}
 	}
 });

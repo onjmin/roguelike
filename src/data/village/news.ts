@@ -42,7 +42,7 @@ const AROUND: readonly {
 ];
 
 const areaOf = ([x, y]: Cell): string =>
-	y >= 32 ? "浜" : x >= 31 ? "商店街" : "町の　まわり";
+	y >= 32 ? "浜" : x >= 31 ? "商店街" : "町のまわり";
 
 const center = (f: Facility): Cell => {
 	const rows = facilityBlock(f);
@@ -63,7 +63,7 @@ const overlaps = (a: Facility, b: Facility): boolean => {
 };
 
 /** 地区の 並び（カメラが 行ったり 来たり しない 順）。 */
-const AREA_ORDER = ["町の　まわり", "商店街", "浜"];
+const AREA_ORDER = ["町のまわり", "商店街", "浜"];
 
 /**
  * 段 from から to へ 上がる あいだに 建った・建てかわった 建物（地区の 順、地区の 中は 上から・左から）。

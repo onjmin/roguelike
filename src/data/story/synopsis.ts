@@ -15,11 +15,11 @@ import { OPENING } from "../town/town";
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 	// 本筋（目標は 登録者 1位。STORY.md §5）
-	shallow: "初配信の　撮れ高を　取ってくる",
-	kinoko: "切り抜きの　誤解を　といて、撮れ高を　取る",
-	main: "湯けむりコラボで、湯守の　長湯スレを　取る",
-	deep: "町の　主電源を　持ち帰って、大会に　出る",
-	hidden: "いちばん古い　コメントが　しずむ　底",
+	shallow: "初配信の撮れ高を取ってくる",
+	kinoko: "切り抜きの誤解をといて、撮れ高を取る",
+	main: "湯けむりコラボで、湯守の長湯スレを取る",
+	deep: "町の主電源を持ち帰って、大会に出る",
+	hidden: "いちばん古いコメントがしずむ底",
 };
 
 /**
@@ -40,38 +40,38 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 		{
 			at: 2,
 			who: null,
-			text: "壁に、キリコの　顔の　たけのこが　描いてある。",
+			text: "壁に、キリコの顔のたけのこが描いてある。",
 		},
-		{ at: 3, who: "res", text: "キリコって　たけのこ派なん？" },
-		{ at: 4, who: null, text: "底で、親玉が　ふんぞりかえっている。" },
+		{ at: 3, who: "res", text: "キリコってたけのこ派なん？" },
+		{ at: 4, who: null, text: "底で、親玉がふんぞりかえっている。" },
 	],
 	main: [
-		{ at: 3, who: null, text: "湯気の　むこうで、マイクが　ふやけている。" },
-		{ at: 6, who: "nanj", text: "見とるで。湯気で　見えへんけど" },
-		{ at: 8, who: null, text: "湯船の　すみで、だれかが　動画を　切っとる。" },
-		{ at: 10, who: "res", text: "コラボ、湯船が　満員で　草" },
-		{ at: 11, who: "res", text: "コラボ、湯気で　だれも　見えん" },
-		{ at: 13, who: null, text: "源泉の　底が、近い。" },
+		{ at: 3, who: null, text: "湯気のむこうで、マイクがふやけている。" },
+		{ at: 6, who: "nanj", text: "見とるで。湯気で見えへんけど" },
+		{ at: 8, who: null, text: "湯船のすみで、だれかが動画を切っとる。" },
+		{ at: 10, who: "res", text: "コラボ、湯船が満員で草" },
+		{ at: 11, who: "res", text: "コラボ、湯気でだれも見えん" },
+		{ at: 13, who: null, text: "源泉の底が、近い。" },
 	],
 	deep: [
-		{ at: 3, who: null, text: "でんちゃんの　板。ビリビリ　する。" },
-		{ at: 6, who: "res", text: "最近、キリコの　登録者　ふえたな" },
+		{ at: 3, who: null, text: "でんちゃんの板。ビリビリする。" },
+		{ at: 6, who: "res", text: "最近、キリコの登録者ふえたな" },
 		{ at: 9, who: "nanj", text: "見とるで。最後まで" },
-		{ at: 11, who: "res", text: "大会の　日、鯖　もつんか？" },
-		{ at: 13, who: null, text: "壁の　コメントが、上から　ふってくる。" },
-		{ at: 16, who: "nanj", text: "1位　取ったら、切るんやな" },
-		{ at: 19, who: null, text: "いちばん　下に、主電源が　見えた。" },
+		{ at: 11, who: "res", text: "大会の日、鯖もつんか？" },
+		{ at: 13, who: null, text: "壁のコメントが、上からふってくる。" },
+		{ at: 16, who: "nanj", text: "1位取ったら、切るんやな" },
+		{ at: 19, who: null, text: "いちばん下に、主電源が見えた。" },
 	],
 	// 過去ログの底（99階。最終話の あと）。層の 札の 階は よける
 	hidden: [
-		{ at: 3, who: null, text: "古い　コメントは、ここへ　しずむ。" },
-		{ at: 13, who: "res", text: "キリコ、井戸に　降りたんか" },
-		{ at: 25, who: null, text: "毎日の　コメントが、地層に　なっている。" },
-		{ at: 35, who: "res", text: "井戸配信、同接　少なくて　草" },
-		{ at: 45, who: null, text: "どの　層も、「乙」で　はじまる。" },
-		{ at: 66, who: "res", text: "井戸、どこまで　深いんや" },
-		{ at: 85, who: null, text: "下の　ほうで、古い　コメントが　光った。" },
-		{ at: 95, who: null, text: "底に、2005年の　コメントが　ある。" },
+		{ at: 3, who: null, text: "古いコメントは、ここへしずむ。" },
+		{ at: 13, who: "res", text: "キリコ、井戸に降りたんか" },
+		{ at: 25, who: null, text: "毎日のコメントが、地層になっている。" },
+		{ at: 35, who: "res", text: "井戸配信、同接少なくて草" },
+		{ at: 45, who: null, text: "どの層も、「乙」ではじまる。" },
+		{ at: 66, who: "res", text: "井戸、どこまで深いんや" },
+		{ at: 85, who: null, text: "下のほうで、古いコメントが光った。" },
+		{ at: 95, who: null, text: "底に、2005年のコメントがある。" },
 	],
 };
 
@@ -84,8 +84,8 @@ export const diveResLine = (r: DiveRes, hero = "キリコ"): string => {
 };
 
 const RES_HEAD = {
-	res: "村の　スレ",
-	nanj: "やきうの　レス",
+	res: "村のスレ",
+	nanj: "やきうのレス",
 } as const;
 
 /** その 階に 流す 1行（無ければ null）。 */
@@ -104,7 +104,7 @@ export const diveResAt = (
 export const revivedLine = (
 	cleared: readonly DungeonId[] = loadProgress().cleared,
 ): string =>
-	`生き返った　通り：${revivedAreas(cleared).length}／${REVIVE_AREAS.length}`;
+	`生き返った通り：${revivedAreas(cleared).length}／${REVIVE_AREAS.length}`;
 
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */
 export const goalWhy = (
@@ -128,27 +128,27 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("shallow"),
 		title: "パン板",
-		sum: "町に　ダンジョンが　開いて、潜る　配信が　大はやり。いちばん　新しい　キリコは、名前を　おぼえて　もらおうと　登録者　0人から　配信を　はじめた。1人目の　視聴者は、名無しの　やきう。パン板で　初配信を　した。",
+		sum: "町にダンジョンが開いて、潜る配信が大はやり。いちばん新しいキリコは、名前をおぼえてもらおうと登録者0人から配信をはじめた。1人目の視聴者は、名無しのやきう。パン板で初配信をした。",
 	},
 	{
 		done: (c) => c.includes("kinoko"),
 		title: "きのこ板",
-		sum: "きのこ板では「キリコは　たけのこ派」の　切り抜きが　出まわったが、親玉きのにゃんは　登録して　くれた。やきうの　頭の　上には「残機：1」と　出ている。",
+		sum: "きのこ板では「キリコはたけのこ派」の切り抜きが出まわったが、親玉きのにゃんは登録してくれた。やきうの頭の上には「残機：1」と出ている。",
 	},
 	{
 		done: (c) => c.includes("main"),
 		title: "風呂板",
-		sum: "湯けむりコラボで、切り抜き職人は　応援の　つもりの　ぷゆゆだと　わかった。ダンジョンは、視聴者の　コメントが　積もって　できていた。いちばん下の　1つ目は、キリコの　初配信の「見とるで」。大会で　何十万人　来れば、町の　下が　抜ける。キリコは、1位を　とって　配信を　切ると　決めた。",
+		sum: "湯けむりコラボで、切り抜き職人は応援のつもりのぷゆゆだとわかった。ダンジョンは、視聴者のコメントが積もってできていた。いちばん下の1つ目は、キリコの初配信の「見とるで」。大会で何十万人来れば、町の下が抜ける。キリコは、1位をとって配信を切ると決めた。",
 	},
 	{
 		done: (c) => c.includes("deep"),
 		title: "電池板",
-		sum: "5人の　同時配信大会。にぃちぇの　登録で、キリコが　1位に　なった。キリコは　町の　主電源を　落として　配信を　切った。暗い　中、蓄音機が　初配信の「見とるで」を　鳴らした。やきうは、名無しの　ままだった。",
+		sum: "5人の同時配信大会。にぃちぇの登録で、キリコが1位になった。キリコは町の主電源を落として配信を切った。暗い中、蓄音機が初配信の「見とるで」を鳴らした。やきうは、名無しのままだった。",
 	},
 	{
 		done: (c) => c.includes("hidden"),
 		title: "過去ログの底",
-		sum: "井戸の　底で、2005年の　いちばん古い　コメントを　見つけた。「ふぇ…ふぇ……フェニックス！」……フェリスの　はじまりの　声だった。",
+		sum: "井戸の底で、2005年のいちばん古いコメントを見つけた。「ふぇ…ふぇ……フェニックス！」……フェリスのはじまりの声だった。",
 	},
 ];
 
@@ -159,10 +159,10 @@ const mainNext = (
 ): string | null => {
 	if (!c.includes("main"))
 		return open.includes("main")
-			? "風呂板へ。湯守の　長湯スレ"
-			: "きのこ板の　親玉に　登録して　もらうと、風呂板へ　行ける";
-	if (!c.includes("deep")) return "電池板へ。いちばん　下の　主電源";
-	if (!c.includes("hidden")) return "広場の　古井戸から、過去ログの底へ";
+			? "風呂板へ。湯守の長湯スレ"
+			: "きのこ板の親玉に登録してもらうと、風呂板へ行ける";
+	if (!c.includes("deep")) return "電池板へ。いちばん下の主電源";
+	if (!c.includes("hidden")) return "広場の古井戸から、過去ログの底へ";
 	return null;
 };
 
@@ -190,11 +190,11 @@ export const synopsisHtml = (
 		return st === "none" ? [] : [HERO_QUESTS[h].synopsis[st]];
 	});
 	const questHtml = quests.length
-		? `<p><b>仲間の　依頼</b><br>${quests.join("<br>")}</p>`
+		? `<p><b>仲間の依頼</b><br>${quests.join("<br>")}</p>`
 		: "";
 	const next = mainNext(cleared, open);
 	const chapter = (ch: Chapter | null) =>
-		ch ? `<p><b>${ch.title}　まで</b><br>${ch.sum}</p>` : "";
+		ch ? `<p><b>${ch.title}まで</b><br>${ch.sum}</p>` : "";
 	return (
 		`<p class="hint">${revivedLine()}</p>` +
 		chapter(main) +

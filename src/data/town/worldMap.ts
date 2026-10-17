@@ -108,7 +108,7 @@ export type ColonySpot = {
 export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	shallow: {
 		server: "ikura",
-		place: "パン屋の　地下の　窯",
+		place: "パン屋の地下の窯",
 		building: "bakery",
 		route: [
 			[96, 110],
@@ -118,7 +118,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	konamono: {
 		server: "ikura",
-		place: "大阪の　雑居ビル",
+		place: "大阪の雑居ビル",
 		building: "building",
 		route: [
 			[96, 110],
@@ -129,7 +129,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	tropical: {
 		server: "ikura",
-		place: "島の　山",
+		place: "島の山",
 		building: "island",
 		route: [
 			[96, 110],
@@ -142,7 +142,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	festival: {
 		server: "hayabusa",
-		place: "祭りの　やぐら",
+		place: "祭りのやぐら",
 		building: "yagura",
 		route: [
 			[120, 116],
@@ -162,7 +162,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	kinoko: {
 		server: "uni",
-		place: "地下の　菌床",
+		place: "地下の菌床",
 		building: "mushroom",
 		route: [
 			[126, 108],
@@ -173,7 +173,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	// 束音ロゼの 依頼：ボカロ作り避難所（引き受けると 開く。北東の 島、きのこ板の 右下の 宅録スタジオ）
 	vocalo: {
 		server: "uni",
-		place: "避難所の　スタジオ",
+		place: "避難所のスタジオ",
 		building: "studio",
 		route: [
 			[126, 108],
@@ -185,7 +185,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	// 隠し：おんJタウンの 下の 古井戸（開くまで 地図に 出ない）
 	hidden: {
 		server: "hayabusa",
-		place: "おんJタウンの　下の　古井戸",
+		place: "おんJタウンの下の古井戸",
 		building: "well",
 		route: [
 			[106, 138],
@@ -195,7 +195,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	// おーぷぬの おんJ関連板（南の 海の 島）
 	mercury: {
 		server: "open",
-		place: "水星の　観測所",
+		place: "水星の観測所",
 		building: "studio",
 		route: [
 			[110, 142],
@@ -206,7 +206,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	onmu: {
 		server: "open",
-		place: "沈んだ　大陸の　空港",
+		place: "沈んだ大陸の空港",
 		building: "island",
 		route: [
 			[110, 142],
@@ -217,7 +217,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	onkimu: {
 		server: "open",
-		place: "管理部の　ビル",
+		place: "管理部のビル",
 		building: "building",
 		route: [
 			[110, 142],
@@ -228,7 +228,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	inferno: {
 		server: "open",
-		place: "闇の　塔",
+		place: "闇の塔",
 		building: "lighthouse",
 		route: [
 			[110, 142],
@@ -238,7 +238,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	},
 	main: {
 		server: "awabi",
-		place: "銭湯の　地下の　源泉",
+		place: "銭湯の地下の源泉",
 		building: "bathhouse",
 		route: [
 			[124, 142],

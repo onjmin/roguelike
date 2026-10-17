@@ -32,11 +32,11 @@ export const BJ_TEXT = {
 	push: "引き分け",
 	lose: "負け",
 	bust: "バースト",
-	dealerBust: "名無しが　バースト！",
+	dealerBust: "名無しがバースト！",
 	/** 配る 前の 案内。 */
-	howBet: "↑↓で　賭ける　枚数、Aで　配る",
+	howBet: "↑↓で賭ける枚数、Aで配る",
 	/** 配った あとの 案内。 */
-	howPlay: "21に　近づける。こえたら　負け",
+	howPlay: "21に近づける。こえたら負け",
 } as const;
 
 /** 札の 点（A は 1、絵札は 10）。 */

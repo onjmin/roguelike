@@ -39,14 +39,14 @@ export const KG_KIND: Record<
 };
 
 export const KINGYO_TEXT = {
-	torn: "ポイが　破れた",
+	torn: "ポイが破れた",
 	timeUp: "TIME UP",
 	paper: "紙",
-	note: "十字キーで　動く。A か　ポイを　タップで　すくう",
+	note: "十字キーで動く。A かポイをタップですくう",
 	/** 1回で 何匹も すくった とき（{n} は 匹）。 */
-	multi: "{n}匹　まとめて！",
+	multi: "{n}匹まとめて！",
 	/** 紙が 薄く なった。 */
-	thin: "紙が　ふやけてきた",
+	thin: "紙がふやけてきた",
 } as const;
 
 export type KgFish = {

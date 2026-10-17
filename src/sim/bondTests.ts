@@ -267,7 +267,7 @@ test(
 			ok(bondLevel("roze") >= 3, `three loved gifts: ♥${bondLevel("roze")}`);
 			// ♥ が 上がっても「なかよく　なった」とは 知らせない（作者の 指示）
 			ok(
-				!log.some((t) => t.includes("なかよく　なった")),
+				!log.some((t) => t.includes("なかよくなった")),
 				"a bond level-up notice was shown",
 			);
 			ok(
@@ -374,10 +374,13 @@ test(
 				fits(
 					`TRADE_MSG.${k}`,
 					t
-						.replace(/\{(price|have|value|left|net|cash|cost|pl)\}/g, "100,000円")
+						.replace(
+							/\{(price|have|value|left|net|cash|cost|pl)\}/g,
+							"100,000円",
+						)
 						.replace("{name}", STOCKS.joshiki.short)
 						.replace("{text}", "")
-						.replace("{head}", "100,000円が　もどってきた。")
+						.replace("{head}", "100,000円がもどってきた。")
 						.replace("{n}", "100"),
 				);
 		for (const id of STOCK_IDS)
