@@ -1,10 +1,16 @@
 // 寸劇を 演じる（文と きっかけは data/story/skits.ts）。見た 寸劇と、見た 帰りを 村の 印として 別の 保存場所に
-// 残す（保存できなくても この回は 覚えている）。村ぜんぶで 1回の 帰りに 1本まで。
+// 残す（保存できなくても この回は 覚えている）。村ぜんぶで 1回の 帰りに 1本まで（期間限定は べつ）。
 // 建物と 物は ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep）が、
 // 死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
 
 import type { MobId } from "../../data/people/mobs";
-import { SKITS, type Skit, type SkitOn } from "../../data/story/skits";
+import {
+	SKITS,
+	type Skit,
+	type SkitDate,
+	type SkitOn,
+} from "../../data/story/skits";
+import { nowYear, today } from "../../data/town/calendar";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import { loadRecords } from "../../engine/save";
@@ -52,8 +58,22 @@ const returnAt = (): number => loadRecords()[0]?.at ?? 0;
 /** まだ 見て いない 寸劇で、きっかけが 合う もの（この 帰りに もう 見ていれば null）。 */
 const find = (hit: (on: SkitOn) => boolean): Skit | null => {
 	const v = load();
-	if (v.at === returnAt()) return null;
-	return SKITS.find((sk) => !v.seen.includes(sk.key) && hit(sk.on)) ?? null;
+	const busy = v.at === returnAt();
+	return (
+		SKITS.find(
+			(sk) =>
+				!v.seen.includes(sk.key) &&
+				// 期間限定は その 日だけ。見逃すと 二度と 出ないので、この 帰りに もう 見ていても 出す
+				(sk.date ? onDate(sk.date) : !busy) &&
+				hit(sk.on),
+		) ?? null
+	);
+};
+
+/** 今日が その 期間か。 */
+const onDate = (d: SkitDate): boolean => {
+	const t = today();
+	return nowYear() === d.y && t.m === d.m && t.d >= d.d[0] && t.d <= d.d[1];
 };
 
 /** 住人の 声（villageMobs.ts の sayAs）。 */

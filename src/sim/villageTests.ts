@@ -459,6 +459,7 @@ import {
 	deathSkit,
 	forgetSkits,
 	nearSkit,
+	playNearSkit,
 	skitAfterEvent,
 } from "../ui/village/skits";
 import { buildSurface, buildVillage } from "../ui/village/villageEvents";
@@ -8231,7 +8232,7 @@ test("寸劇: every place skit sits on cells Kiriko can walk to, and none sits o
 	const pal = villagePalette(v);
 	for (const sk of SKITS) {
 		const on = sk.on;
-		if (on.k !== "near") continue;
+		if (on.k !== "near" || sk.date) continue;
 		let walk = 0;
 		for (let y: number = on.y[0]; y <= on.y[1]; y++)
 			for (let x: number = on.x[0]; x <= on.x[1]; x++) {
@@ -8277,5 +8278,45 @@ test("寸劇: the empty big room in a dive: only big rooms with no foe inside, e
 		);
 		ok(takeRoomSkit() === null, "no skit after all were seen");
 		forgetRoomSkits();
+	});
+});
+
+test("寸劇: dated skits play only on their day of that year, even after another skit this return, and never again", async () => {
+	const dated = SKITS.filter((x) => x.date);
+	ok(dated.length >= 6, "few dated skits");
+	for (const sk of dated) {
+		const d = sk.date;
+		if (!d) continue;
+		ok(
+			d.d[0] <= d.d[1] && d.d[1] <= new Date(d.y, d.m, 0).getDate(),
+			`${sk.key}: bad days`,
+		);
+		ok(sk.key.includes(String(d.y)), `${sk.key}: the key names the year`);
+	}
+	const at = (date: string, year: string) =>
+		swapLocation(`?date=${date}&year=${year}`);
+	await withStorageAsync(async () => {
+		// 別の 年・別の 日は 出ない
+		let back = at("1031", "2027");
+		ok(nearSkit("village", 19, 22)?.key !== "date_2026_halloween", "2027");
+		back();
+		back = at("1030", "2026");
+		ok(nearSkit("village", 19, 22)?.key !== "date_2026_halloween", "10/30");
+		back();
+		// その 日：ほかの 寸劇を 見た 帰りでも 出て、2回目は ない
+		back = at("1031", "2026");
+		try {
+			await skitAfterEvent(fakeStory().s, {
+				from: "village",
+				to: "f_konbini",
+				thing: "door_f_konbini",
+			});
+			const sk = nearSkit("village", 19, 22);
+			ok(sk?.key === "date_2026_halloween", `on the day: ${sk?.key}`);
+			if (sk) await playNearSkit(fakeStory().s, sk);
+			ok(nearSkit("village", 19, 22)?.date === undefined, "twice");
+		} finally {
+			back();
+		}
 	});
 });

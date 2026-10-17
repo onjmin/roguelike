@@ -4,6 +4,7 @@
 // 1本は 3〜5窓（ふだんの 話しかけより 長い。1回きりなので）。201 の 型：同じ 形で 3段 大きく して、
 // 最後に キリコか 本人が つっこむ（STORY.md「201級の 笑い」）。
 // 地の文で 画面に 見えない 出来事（物が ふえた・人が 来た）を 言わない。話す 人の 口で 言わせる。
+// 期間限定（date）は 年まで 決めた 日だけ 起きて、見逃したら 二度と 出ない。ほかより 先に 選ぶ（並びの いちばん 上）。
 
 import type { Cue } from "../../engine/emote";
 import type { MobId } from "../people/mobs";
@@ -29,7 +30,24 @@ export type SkitOn =
 	/** この 死に方で 帰ってきて、mob に はじめて 話しかけた。 */
 	| { k: "death"; mob: MobId; cause: string };
 
-export type Skit = { key: string; on: SkitOn; lines: readonly SkitLine[] };
+/** 起きる 期間（端末の 日付。y 年 m 月の d[0]〜d[1] 日。data/town/calendar.ts の today・nowYear）。 */
+export type SkitDate = { y: number; m: number; d: readonly [number, number] };
+
+export type Skit = {
+	key: string;
+	on: SkitOn;
+	lines: readonly SkitLine[];
+	/** 期間限定（その 年の その 日だけ。見逃したら 二度と 出ない）。 */
+	date?: SkitDate;
+};
+
+/** 村の どこでも（期間限定の 寸劇の きっかけ：その 日に 村を 1歩 歩いたら）。 */
+const ANYWHERE: SkitOn = {
+	k: "near",
+	map: "village",
+	x: [0, 999],
+	y: [0, 999],
+};
 
 const k = (text: string): SkitLine => ({ who: "kiriko", text });
 const n = (text: string): SkitLine => ({ who: null, text });
@@ -51,8 +69,112 @@ const master = by("マスター");
 const usher = by("係員");
 const dealer = by("ディーラー");
 const banndai = by("番台");
+const nanashi = by("名無し");
 
 export const SKITS: readonly Skit[] = [
+	// ───── 期間限定（その 日に 村を 歩いたら。見逃したら 二度と 出ない） ─────
+	{
+		key: "date_2026_halloween",
+		date: { y: 2026, m: 10, d: [31, 31] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("トリックオアトリート！"),
+			k("……お菓子ないンゴ"),
+			nanashi("じゃあイタズラや。\n今日一日、語尾がンゴになる"),
+			k("……もとからンゴ"),
+			e({ emote: "汗" }, nanashi("……イタズラ失敗や")),
+		],
+	},
+	{
+		key: "date_2026_zorome",
+		date: { y: 2026, m: 11, d: [11, 11] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("今日は11月11日、\nゾロ目の日や"),
+			nanashi("1111ゲットしたやつは、\n願いがかなうらしいで"),
+			e({ gesture: "slump" }, nanashi("……ワイ、1110やった")),
+			k("……おしいンゴ"),
+		],
+	},
+	{
+		key: "date_2026_xmas",
+		date: { y: 2026, m: 12, d: [24, 25] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("ワイの家にも、\nサンタ来るかな"),
+			nanashi("……煙突ないやろ"),
+			nanashi("ほな、保守しとくわ"),
+			k("……サンタは保守じゃ\n来ないンゴ"),
+		],
+	},
+	{
+		key: "date_2026_omisoka",
+		date: { y: 2026, m: 12, d: [31, 31] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("今年最後のレスや"),
+			nanashi("いや、ワイが最後や"),
+			nanashi("ワイや"),
+			k("……年が明けても\n続いてるンゴ"),
+		],
+	},
+	{
+		key: "date_2027_newyear",
+		date: { y: 2027, m: 1, d: [1, 3] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("あけおめ"),
+			nanashi("ことよろ"),
+			nanashi("……去年のスレ、\nまだ1000いってへんで"),
+			k("……今年もよろしくンゴ"),
+		],
+	},
+	{
+		key: "date_2027_neko",
+		date: { y: 2027, m: 2, d: [22, 22] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("今日は猫の日や"),
+			nanashi("ワイも猫になったる"),
+			e({ emote: "♪" }, nanashi("……にゃーん")),
+			k("……語尾はンゴのままンゴ"),
+		],
+	},
+	{
+		key: "date_2027_april",
+		date: { y: 2027, m: 4, d: [1, 1] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("ワイ、今日でおんJ\nやめるわ"),
+			nanashi("ワイも"),
+			nanashi("ワイも"),
+			k("……エイプリルフールンゴ？"),
+			nanashi("……せや。\n明日も来るで"),
+		],
+	},
+	// おんJの 開設日（2012年6月7日。はじめの 日は 20人。STORY.md の 原住民）
+	{
+		key: "date_2027_birthday",
+		date: { y: 2027, m: 6, d: [7, 7] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("今日はおんJが\nできた日や"),
+			nanashi("2012年の6月7日。\nもう15年前や"),
+			nanashi("……最初の日は、\n20人おったらしいで"),
+			k("……いまは、吾輩たちも\nいるンゴ"),
+		],
+	},
+	{
+		key: "date_2027_tanabata",
+		date: { y: 2027, m: 7, d: [7, 7] },
+		on: ANYWHERE,
+		lines: [
+			nanashi("短冊に、\n願いごと書いたで"),
+			nanashi("なんて書いたんや"),
+			nanashi("「スレが落ちませんように」"),
+			k("……保守は自分で\nするンゴ"),
+		],
+	},
 	// ───── 建物に はじめて 入った ─────
 	{
 		key: "enter_konbini",
