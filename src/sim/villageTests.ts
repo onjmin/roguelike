@@ -7537,11 +7537,7 @@ test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏�
 		const { s, log } = fakeStory();
 		await door.run(s);
 		ok(
-			log.some(
-				(l) =>
-					l ===
-					`narrate: ${fill(VILLAGE_MSG.shutWhy, { board: DUNGEON_NAMES.kinoko.short })}`,
-			),
+			log.some((l) => l === `narrate: ${VILLAGE_MSG.shut}`),
 			`no shutter line: ${log.join(" / ")}`,
 		);
 	}

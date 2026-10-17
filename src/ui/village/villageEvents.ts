@@ -69,7 +69,6 @@ import {
 	isRevived,
 	lampsLit,
 	MAIN_BOARDS,
-	reviveAreaOf,
 	revivedBoards,
 	stageOfCleared,
 } from "../../data/town/revival";
@@ -1103,14 +1102,9 @@ const shut = (place: string, v: VillageView, door = true): Script | null => {
 	// 騒ぎで 閉まって いる 所は その わけの 札（data/town/incidents.ts）
 	const why = activeIncidents(v).find((i) => i.shut?.[place])?.shut?.[place];
 	if (!why && isRevived(place, revivedBoards(v))) return null;
-	// どの 板を 持ち帰れば 開くかを 貼り紙で 言う（停電の あいだは 電池板）
-	const area = reviveAreaOf(place);
-	const board = inBlackout(v) ? "deep" : area?.dungeon;
-	const note = board
-		? fill(VILLAGE_MSG.shutWhy, { board: DUNGEON_NAMES[board].short })
-		: VILLAGE_MSG.shut;
+	// 何を すれば 開くかは 言わない（閉まって いる ことだけ）
 	return async (s) => {
-		await s.narrate(why ?? note);
+		await s.narrate(why ?? VILLAGE_MSG.shut);
 		if (door) await s.move("player", "d");
 	};
 };

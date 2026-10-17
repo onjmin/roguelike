@@ -425,8 +425,6 @@ export const ESCAPE_ITEM = {
 export const VILLAGE_MSG = {
 	/** まだ 生き返って いない 所の シャッター（data/town/revival.ts）。 */
 	shut: "シャッターが下りている。\n……だれもいない。",
-	/** 板を 持ち帰ると 開く 所（{board} は 板の 短い 名前）。 */
-	shutWhy: "シャッターに貼り紙。\n『{board}の件が片づくまで休業』",
 	/** きのこ板で 何度も 倒れて、倉庫の 封鎖が 解けた（data/town/incidents.ts の reliefAfter）。 */
 	carryRelief: "倉庫の封鎖が解けた。\nきのこ板にも道具を持ちこめる",
 	board: "広場の掲示板。\n町の知らせがはってある。",
