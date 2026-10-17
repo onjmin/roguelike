@@ -75,7 +75,8 @@
 // | kaiwai       | -19.3（50）    | 50 → 33 | -22.9（測り直した） |
 // | kaiwai2      | -20.7（50）    | 50 → 39 | -22.9（比例） |
 // | kaiwai3      | -21.3（50）    | 50 → 41 | -23.1（測り直した） |
-// （2026-10-17。界隈曲（kaiwai3 は 10-18）。dtm 2.1.34（音源レベルの 正規化 e3562c10 入り）の dev/bgm.html で 測った）
+// | kaiwai4      | -17.7（50）    | 50 → 27 | -23.0（測り直した） |
+// （2026-10-17。界隈曲（kaiwai3・kaiwai4 は 10-18）。dtm 2.1.34（音源レベルの 正規化 e3562c10 入り）の dev/bgm.html で 測った）
 // （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
@@ -128,6 +129,12 @@ import kaiwai2 from "./bgm/kaiwai2.mml?raw";
 // 場面 専用：風呂板の 持ち帰りの 湯温の けんか（data/story/quotes.ts の ENDING。のぼせる「1時間後」で ぷつっと 切る）。
 // ループするので #fadeout は 外した（終わりの C から 頭の B♭m へ もどる）
 import kaiwai3 from "./bgm/kaiwai3.mml?raw";
+// 界隈曲 その4（インスト。dtm の 自動作曲 seed 5。手書きの 音は なく、伴奏と ぶつかる リードの 音は 生成で ずらしてある。
+// 2026-10-18 に 作者の 指示で 別の セッションから もらった）：変ロ短調 140・retro_game・break_openhat
+// （クラビネット・シタール風の charang・シロフォン・16分休符で しゃっくりする 矩形波）。
+// 場面 専用：ずっこけ（data/story/story.ts の パン板の 独立・きのこ板の 胞子。謎の 前ふりで 切る）。
+// ループするので #fadeout は 外した
+import kaiwai4 from "./bgm/kaiwai4.mml?raw";
 import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
@@ -202,4 +209,5 @@ export const bgm: Record<string, string> = {
 	kaiwai,
 	kaiwai2,
 	kaiwai3,
+	kaiwai4,
 };
