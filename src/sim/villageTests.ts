@@ -4432,7 +4432,8 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 				JSON.stringify(got.slice(1, 1 + n)) ===
 					JSON.stringify(BOSS_RETURN[d]) &&
 				got.length ===
-					STORY[d].ending.length +
+					// 寄り道を 持ち帰って いる ときだけの 頁（needCleared）は 数えない
+					STORY[d].ending.filter((p) => !p.needCleared).length +
 						(STORY[d].once?.length ?? 0) +
 						n +
 						(episodeEnd(d) ? 1 : 0),

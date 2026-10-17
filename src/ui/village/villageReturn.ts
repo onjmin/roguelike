@@ -675,7 +675,8 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	const cleared = p.cleared;
 	// 転の 停電（電池板が 開いた 帰り）：1回だけ 知らせる。停電の あいだは 生き返った 知らせも 出さない
 	const dark = inBlackout(p);
-	if (dark && !hasFlag(BLACKOUT_TOLD)) {
+	// 転（tenScript）を 見て いれば 停電は もう 語った
+	if (dark && !hasFlag(BLACKOUT_TOLD) && !hasFlag("ten")) {
 		for (const l of REVIVE_MSG.blackout) await s.narrate(l);
 		addFlag(BLACKOUT_TOLD);
 	}
