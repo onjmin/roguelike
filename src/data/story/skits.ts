@@ -15,7 +15,7 @@ export type SkitLine = Cue & {
 };
 
 export type SkitOn =
-	/** 建物（f_<施設の id>）に はじめて 入った。 */
+	/** 建物（施設は f_<施設の id>、銭湯などの 部屋は data/village/rooms.ts の id）に はじめて 入った。 */
 	| { k: "enter"; map: string }
 	/** 村の 物（イベントの id が この 頭で はじまる）を はじめて 調べた。 */
 	| { k: "look"; thing: string }
@@ -50,6 +50,7 @@ const trainer = by("トレーナー");
 const master = by("マスター");
 const usher = by("係員");
 const dealer = by("ディーラー");
+const banndai = by("番台");
 
 export const SKITS: readonly Skit[] = [
 	// ───── 建物に はじめて 入った ─────
@@ -135,6 +136,17 @@ export const SKITS: readonly Skit[] = [
 			dealer("……お店の、です"),
 			k("……吾輩のは何割ンゴ？"),
 			dealer("それは、回してからの\nお楽しみです"),
+		],
+	},
+	// 銭湯「ゆ」（data/village/rooms.ts の bath。入口の 上に 番台）
+	{
+		key: "enter_bath",
+		on: { k: "enter", map: "bath" },
+		lines: [
+			banndai("いらっしゃい。\nうちの湯は42℃だよ"),
+			banndai("……41℃派のお客さんには、\n41℃って言ってる"),
+			k("……ほんとは何℃ンゴ？"),
+			banndai("……測ったことないねぇ"),
 		],
 	},
 	// ───── 村の 物を はじめて 調べた ─────

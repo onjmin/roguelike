@@ -8104,7 +8104,11 @@ test("寸劇: 3〜5 windows that fit, unique keys, and every trigger points at a
 		});
 		const on = sk.on;
 		if (on.k === "enter")
-			ok(facilityOfMap(on.map) !== undefined, `${sk.key}: no ${on.map}`);
+			ok(
+				facilityOfMap(on.map) !== undefined ||
+					(ROOM_IDS as readonly string[]).includes(on.map),
+				`${sk.key}: no ${on.map}`,
+			);
 		if (on.k === "death") {
 			ok(MOB_IDS.includes(on.mob), `${sk.key}: ${on.mob}`);
 			ok(

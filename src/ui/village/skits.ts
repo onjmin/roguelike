@@ -84,16 +84,14 @@ const play = async (
 	}
 };
 
-/** イベントの あと：建物に 入ったか（地図が f_ に かわった）、物を 調べたか（同じ 地図の まま）。 */
+/** イベントの あと：建物に 入ったか（地図が かわった）、物を 調べたか（同じ 地図の まま）。 */
 export const skitAfterEvent = async (
 	s: Story,
 	o: { from: string; to: string; thing: string },
 ): Promise<boolean> => {
 	const sk =
 		o.to !== o.from
-			? o.to.startsWith("f_")
-				? find((on) => on.k === "enter" && on.map === o.to)
-				: null
+			? find((on) => on.k === "enter" && on.map === o.to)
 			: find((on) => on.k === "look" && o.thing.startsWith(on.thing));
 	if (!sk) return false;
 	await play(s, sk);
