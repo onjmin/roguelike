@@ -54,6 +54,7 @@ import {
 import { MOB_VOICE, VOICE_MODELS } from "../data/people/cast";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/people/guests";
 import { HERO_QUESTS } from "../data/people/heroQuests";
+import { MOB_GAGS } from "../data/people/mobGags";
 import {
 	awayMobs,
 	MOB_IDS,
@@ -3280,6 +3281,13 @@ test("おんJマイナーズ: lines fit the window, one talk is at most 4 window
 		d.react.by?.forEach((b, i) => {
 			texts.push([`${id}.react.by[${i}]`, b.text]);
 		});
+		MOB_GAGS[id].forEach((g, i) => {
+			talk(`${id}.gag[${i}]`, g);
+			ok(
+				g.every((l) => l.who === "mob" || l.who === "kiriko" || l.who === null),
+				`${id}.gag[${i}]: only the mob, Kiriko and the narrator`,
+			);
+		});
 		const idle = typeof d.idle === "string" ? [d.idle] : d.idle;
 		ok(idle.length === 1 || idle.length === 7, `${id}: idle by weekday`);
 		idle.forEach((l, i) => {
@@ -3367,10 +3375,17 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 			`plain chat:\n${c.log.join("\n")}`,
 		);
 		ok(!hasMobNews(id), "「！」 stays after the new talk");
-		// 次は 前の冒険への 反応、そのあと いつもの
+		// 次は 前の冒険への 反応、ボケ（1回の 帰りに 1本）、そのあと いつもの
 		const e = fakeStory();
 		await mobScript(id)(e.s);
 		ok(e.log.join() === plain(reactionOf(d) ?? ""), `reaction: ${e.log}`);
+		const gag = fakeStory();
+		await mobScript(id)(gag.s);
+		ok(
+			seasonalToday(d) !== null ||
+				gag.log[0] === `say null: ${MOB_GAGS[id][0]?.[0]?.text}`,
+			`gag:\n${gag.log.join("\n")}`,
+		);
 		const f = fakeStory();
 		await mobScript(id)(f.s);
 		ok(f.log.join() === plain(idleOf(d)), `idle: ${f.log.join()}`);
@@ -3674,6 +3689,10 @@ test("ぷゆゆ: rpg voice rules (🥺🤪✋ only, one 🥺 at a line end, rare
 				([k, v]): [string, readonly MobLine[]] => [`@${k}`, v ?? []],
 			),
 			...d.chats.map((c): [string, readonly MobLine[]] => [c.key, c.lines]),
+			...MOB_GAGS[id].map((g, i): [string, readonly MobLine[]] => [
+				`gag${i}`,
+				g,
+			]),
 		];
 		if (d.ask)
 			talks.push(
@@ -3887,11 +3906,19 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 			b.log[0] === said(chat("hayai")[0]?.text),
 			`early fall:\n${b.log.join("\n")}`,
 		);
+		// 反応は もう 出さない（ボケが 1本、そのあと いつもの）
 		const b2 = fakeStory();
 		await mobScript("puyu")(b2.s);
 		ok(
-			b2.log.join() === said(seasonalToday(d) ?? idleOf(d)),
+			seasonalToday(d) !== null ||
+				b2.log[0] === said(MOB_GAGS.puyu[0]?.[0]?.text),
 			`the same fall answered twice:\n${b2.log.join("\n")}`,
+		);
+		const b3 = fakeStory();
+		await mobScript("puyu")(b3.s);
+		ok(
+			b3.log.join() === said(seasonalToday(d) ?? idleOf(d)),
+			`idle after the gag:\n${b3.log.join("\n")}`,
 		);
 		// 2回目：下で 会った 子の 話（図鑑に ぷゆゆ）
 		pushRecord({ kind: "dead", cause: "コピペにたおされた", depth: 6 });

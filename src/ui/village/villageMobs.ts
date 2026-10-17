@@ -5,12 +5,14 @@
 //   3. 新しい話（1回の 帰りに 1本。節目 → 雑談（上から。with・when が 合う もの））
 //   4. 期間限定（端末の 日付）
 //   5. 前の冒険への 反応（1回の 帰りに 1回。answersRun の 話を 聞いた 帰りは 出さない）
-//   6. いつもの ひとこと（曜日で かわる子も）。まれに かわりに 小ネタ（data/story/tips.ts。村ぜんぶで 1回の 帰りに 1つまで）
+//   6. ボケ（data/people/mobGags.ts。1回の 帰りに 1本。見た ものは くり返さない）
+//   7. いつもの ひとこと（曜日で かわる子も）。6・7 の かわりに まれに 小ネタ（data/story/tips.ts。村ぜんぶで 1回の 帰りに 1つまで）
 // 会った・見た・聞いた 帰り・1票は 村の 印として 別の 保存場所に 残す（中断セーブ・記録・町には ふれない。
 // 保存できなくても この回は 覚えている）。ダンジョンの 中には 一切 かかわらない。
 
 import { dungeonById } from "../../core/data/dungeons";
 import { MOB_VOICE } from "../../data/people/cast";
+import { MOB_GAGS } from "../../data/people/mobGags";
 import {
 	type Beat,
 	type Cast,
@@ -62,6 +64,10 @@ type MobMemo = {
 	tips: string[];
 	/** 小ネタを 聞いた 帰り（村ぜんぶで 1つ）。 */
 	tipAt?: number;
+	/** 見た ボケの 数（次に 出す 順番）。 */
+	gag: Partial<Record<MobId, number>>;
+	/** ボケを 見た 帰り。 */
+	gagAt: Partial<Record<MobId, number>>;
 };
 
 const empty = (): MobMemo => ({
@@ -72,6 +78,8 @@ const empty = (): MobMemo => ({
 	wrote: false,
 	thanked: false,
 	tips: [],
+	gag: {},
+	gagAt: {},
 });
 
 let memo: MobMemo = empty();
@@ -106,6 +114,8 @@ const load = (): MobMemo => {
 					? o.tips.filter((x): x is string => typeof x === "string")
 					: [],
 				tipAt: typeof o.tipAt === "number" ? o.tipAt : undefined,
+				gag: byMob(o.gag),
+				gagAt: byMob(o.gagAt),
 			};
 		}
 	} catch {
@@ -431,8 +441,31 @@ export const mobScript =
 			}
 		}
 		if (await tip(s, def, at)) return;
-		await sayAs(s, id, idleOf(def));
+		await usual(s, id, def, at);
 	};
+
+/**
+ * ボケ（1回の 帰りに 1人 1本。上から 順に、見た ものは くり返さない）か、いつもの ひとこと。
+ * まだ もぐって いない あいだと すねている あいだは いつもの ひとことだけ。
+ */
+const usual = async (
+	s: Story,
+	id: MobId,
+	def: MobDef,
+	at: number,
+): Promise<void> => {
+	const v = load();
+	const n = v.gag[id] ?? 0;
+	const g = MOB_GAGS[id][n];
+	if (!at || !g || mobSulk(def) || v.gagAt[id] === at) {
+		await sayAs(s, id, idleOf(def));
+		return;
+	}
+	v.gag[id] = n + 1;
+	v.gagAt[id] = at;
+	save(v);
+	await play(s, id, g);
+};
 
 /** その子と 話した 新しい話の 数（はじめまして・節目・雑談。なかよし度の もと。ui/village/bonds.ts）。 */
 export const mobTalkCount = (id: MobId): number => {
