@@ -746,6 +746,7 @@ export class Run {
 					: "祭りだ！野次馬がいっせいにこっちを見た！",
 				"warn",
 			);
+			if (parade?.depth === f.depth && parade.line) this.msg(parade.line);
 		}
 		this.checkBossSeen();
 	}

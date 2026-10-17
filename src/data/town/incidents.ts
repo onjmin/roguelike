@@ -39,7 +39,7 @@ const ISLANDER = "pub:sprites/natsuko.png";
 export const INCIDENTS: readonly Incident[] = [
 	{
 		dungeon: "shallow",
-		seize: "『差し押さえ　パン板』\n……掲示板に、食パンが貼ってある。",
+		seize: "『差し押さえ　パン板』\n封印のかわりに、食パンが貼ってある。",
 		people: [
 			{
 				id: "panhei_a",
@@ -55,7 +55,7 @@ export const INCIDENTS: readonly Incident[] = [
 				sprite: PANHEI,
 				dir: "down",
 				name: "パン兵",
-				lines: ["旗の下は通ってええ。\n……独立国は、心が広いんや。"],
+				lines: ["旗の下は通ってええ。\n独立国は、心が広いんや。"],
 			},
 			{
 				id: "panhei_chief",

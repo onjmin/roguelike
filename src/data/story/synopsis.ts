@@ -35,7 +35,10 @@ export type DiveRes = {
 
 export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	// ── 本筋（STORY.md §4.9）。やきうの 書きこみは 名無しの 1人（潜っている あいだも 筋が 止まらない ように）
-	shallow: [{ at: 2, who: "res", text: "【悲報】パン板、独立を宣言ｗｗｗ" }],
+	shallow: [
+		{ at: 2, who: "res", text: "【悲報】パン板、独立を宣言ｗｗｗ" },
+		{ at: 3, who: "res", text: "独立国の国旗、食パンらしいで" },
+	],
 	kinoko: [
 		{
 			at: 2,

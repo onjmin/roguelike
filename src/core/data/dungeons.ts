@@ -166,7 +166,7 @@ export type Dungeon = {
 	 * かならず 祭りに なる 階（その 板の 山場）。部屋に 集まって いるのは monster だけで、
 	 * 起きると name を 知らせる（パン板の 独立記念パレード）。
 	 */
-	parade?: { depth: number; name: string; monster: string };
+	parade?: { depth: number; name: string; monster: string; line?: string };
 	/** この階より浅い階には罠を置かない。 */
 	trapsFrom: number;
 	/** 1階に 武器を 1本は 置く（入門の 板。core/floor.ts）。 */
@@ -507,7 +507,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					lines: [
 						"先に来て、説教しといたアル",
 						"独立は、書類で申請するアル",
-						"……王さま、泣いてたアル",
+						"王さま、ちょっと泣いてたアル",
 					],
 				},
 				{
@@ -546,7 +546,12 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "needle",
 		houses: null,
 		// 山場：城下町の 手前で パン兵の 行進に 出くわす（とられた 物は たおせば もどる。かわりに パンを 置いていく）
-		parade: { depth: 2, name: "独立記念パレード", monster: "panhei" },
+		parade: {
+			depth: 2,
+			name: "独立記念パレード",
+			monster: "panhei",
+			line: "パン兵「観覧無料や！持ち物は置いてけ」",
+		},
 		trapsFrom: 3,
 		firstWeapon: true,
 		unlockAfter: null,
