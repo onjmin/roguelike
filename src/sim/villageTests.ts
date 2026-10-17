@@ -7402,8 +7402,11 @@ test("生き返る 通り（TOWN.md §0.6）: 表の 所は どれも 町に あ
 		"the main boards",
 	);
 	// 遊びの 輪に 要る 物は はじめから 開いて いる
-	for (const id of ["pier", "go", "imoni", "cafe"])
+	for (const id of ["pier", "imoni", "cafe"])
 		ok(isRevived(id, []), `${id} is shut at the start`);
+	// 寄り道の 遊び場も 人が もどるまで 閉まって いる（碁会所は 広場、マイクラの 島は 商店街と いっしょ）
+	for (const id of ["go", "saba7", "saba_apart"])
+		ok(!isRevived(id, []), `${id} is open at the start`);
 });
 
 test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏むと 札を 読んで 1歩 もどる。屋台の 店番も 出ない。持ち帰れば 開く", async () => {

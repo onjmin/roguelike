@@ -1,7 +1,7 @@
 // 寂れた 町が 板の 話ごとに 生き返る（TOWN.md §0.6。2026-10-17 作者「この 案で 実装して」）。
 // 決まり：その 話の 事件が 町に 残した 爪あとの 所が、その 板の 底の 品を 持ち帰ると 生き返る。
 // 生き返って いない 所は シャッター（扉を 踏むと 1歩 もどる・外の 物も 使えない・通行人も 入らない）。
-// ここに ない 施設は はじめから 開いて いる（港の 桟橋・本館・常識堂・倉庫・喫茶・碁会所・マイクラの 島・芋煮の かまど）。
+// ここに ない 施設は はじめから 開いて いる（港の 桟橋・本館・常識堂・倉庫・喫茶・芋煮の かまど）。
 // DOM も 保存も 使わない（src/sim/revivalTests.ts）。
 
 import type { DungeonId } from "../../core/types";
@@ -43,7 +43,15 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 		dungeon: "shallow",
 		name: "広場",
 		line: "独立宣言の貼り紙がはがされ、\n広場に人がもどってきた。",
-		places: ["clock", "post_city", "library", "bookstore", "music", "fountain"],
+		places: [
+			"clock",
+			"post_city",
+			"library",
+			"bookstore",
+			"music",
+			"fountain",
+			"go",
+		],
 	},
 	{
 		id: "street",
@@ -62,6 +70,9 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 			"famires",
 			"shoken",
 			"bakery",
+			// 沖の マイクラの 島（鯖が また 立って 鯖缶たちが もどる）
+			"saba7",
+			"saba_apart",
 		],
 	},
 	{
