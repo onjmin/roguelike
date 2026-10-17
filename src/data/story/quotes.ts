@@ -521,7 +521,9 @@ export const ENDING: StoryPage[] = [
 		who: null,
 		text: "夜。湯船に、やきうがひとり\n残っていた。",
 		about: "nanj",
-		instead: { who: null, text: "夜。町はしずかだった。" },
+		// 夜の 曲（夜ふかしの板）。かわりの 頁も 同じ 曲
+		bgm: "yofukashi",
+		instead: { who: null, text: "夜。町はしずかだった。", bgm: "yofukashi" },
 	},
 	{ who: "nanj", text: "……今日は、人が多かったな" },
 	{

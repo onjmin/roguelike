@@ -217,9 +217,13 @@ const mobsOf = (pages: readonly StoryPage[]): MobId[] => [
 const mobsHere = (pages: readonly StoryPage[], _v: VillageView): MobId[] =>
 	mobsOf(pages);
 
-/** キリコが 立っている 村の 出口（帰ってきたところ。出口で なければ undefined）。 */
-const inMouth = (s: Story, _d: DungeonId): VillageExit | undefined =>
-	exitAt(s.state.x, s.state.y);
+/** キリコが 立っている 村の 出口（帰ってきたところ。隠しの 板は 村の 中の 井戸。出口で なければ undefined）。 */
+const inMouth = (s: Story, d: DungeonId): VillageExit | undefined => {
+	const e = exitFor(d);
+	return e.cell[0] === s.state.x && e.cell[1] === s.state.y
+		? e
+		: exitAt(s.state.x, s.state.y);
+};
 
 /** 出口の ほうを 向く（村へ もどる 向きの 逆）。 */
 const toward: Record<Dir, Dir> = {
@@ -604,7 +608,9 @@ export const tenScript = async (s: Story): Promise<void> => {
 	for (const p of withoutAway(
 		TEN_NEWS.pages,
 		awayFriends([], loadTown().stage),
-	))
+	)) {
+		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
+		if (p.bgm !== undefined) s.bgm(p.bgm);
 		await playPage(s, p);
 	addFlag("ten");
 };
@@ -624,6 +630,10 @@ export const newsScript = async (s: Story): Promise<void> => {
 			doneProgressNews(n);
 			s.se("chapter");
 			await s.narrate(
+	}
+	// 場面の 曲は ここまで。村の 曲に もどす
+	await s.fadeBgm(300);
+	s.bgm(villageSong());
 				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるようになった`,
 			);
 			continue;

@@ -53,6 +53,7 @@ import {
 } from "../data/minigames/piano";
 import { MOB_VOICE, VOICE_MODELS } from "../data/people/cast";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/people/guests";
+import { HERO_QUESTS } from "../data/people/heroQuests";
 import {
 	MOB_IDS,
 	MOBS,
@@ -5001,6 +5002,63 @@ test("村の 曲: the stage picks it, the gramophone offers only songs heard on 
 		"the old village song cannot be picked",
 	);
 	ok(villageBgm(5, [], null) === "kumori", "no pick does not follow the stage");
+});
+
+test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学コース have their own, other bosses use the shared one", () => {
+	const pages = [
+		...DUNGEON_IDS.flatMap((d) => [
+			...STORY[d].ending,
+			...(STORY[d].again ?? []),
+			...(STORY[d].once ?? []),
+		]),
+		...TEN_NEWS.pages,
+	];
+	const cues = [
+		...pages,
+		...pages.flatMap((p) => (p.instead ? [p.instead] : [])),
+		...Object.values(HERO_QUESTS).flatMap((q) => q.offer),
+	].flatMap((p) => (p.bgm ? [p.bgm] : []));
+	for (const c of cues) ok(c in bgm, `no song ${c}`);
+	const cueOf = (
+		ps: readonly { text: string; bgm?: string | null }[],
+		t: string,
+	) => ps.find((p) => p.text.includes(t))?.bgm;
+	ok(
+		cueOf(STORY.deep.ending, "港は真っ暗") === null,
+		"the dark port is not silent",
+	);
+	ok(
+		cueOf(TEN_NEWS.pages, "いっせいに消えた") === null,
+		"the blackout is not silent",
+	);
+	ok(
+		cueOf(TEN_NEWS.pages, "しゅうりょう") === "deep4",
+		"the headline has no alarm",
+	);
+	ok(
+		cueOf(HERO_QUESTS.zero.offer, "蓄音機を回した") === "deep1",
+		"ゼロ's record",
+	);
+	ok(
+		cueOf(HERO_QUESTS.roze.offer, "あー") === null,
+		"ロゼ's あ is not heard alone",
+	);
+	ok(DUNGEONS.deep.boss?.bgm === "kaiwai", "やきう is not the incident song");
+	for (const d of DUNGEON_IDS)
+		if (d !== "deep")
+			ok(!DUNGEONS[d].boss?.bgm, `${d}: boss leaves the shared song`);
+	ok(
+		DUNGEONS.deep.rests?.find((r) => r.depth === 8)?.bgm === "deq_laundry",
+		"見学コース has the zone song",
+	);
+	for (const d of DUNGEON_IDS)
+		for (const r of DUNGEONS[d].rests ?? [])
+			if (r.bgm) ok(r.bgm in bgm, `${d} ${r.name}: no song ${r.bgm}`);
+	const all = records(7, DUNGEON_IDS).map((r) => r.bgm);
+	ok(
+		all.includes("kaiwai") && all.includes("deq_laundry"),
+		"the gramophone misses the 電池板 songs",
+	);
 });
 
 test("飾り棚: the goal items of the cleared boards (植民地化宣言 and 長湯スレ play on the gramophone)", () => {

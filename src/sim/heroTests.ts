@@ -28,6 +28,7 @@ import {
 } from "../engine/heroes";
 import { forgetProgressMemo, loadProgress, saveProgress } from "../engine/save";
 import { heroQuestScript } from "../ui/village/villageEvents";
+import { villageSong } from "../ui/village/villageMusic";
 import { AUTO_BOT, type BotOpts, botCommand, DEFAULT_BOT } from "./bot";
 import type { TestResult } from "./monsterTests";
 
@@ -396,6 +397,10 @@ const recorder = (picks: number[] = []) => {
 					log.push(`choose: ${opts.join("/")}`);
 					return picks.shift() ?? opts.length - 1;
 				};
+			if (k === "bgm")
+				return (name: string | null) => {
+					log.push(`bgm: ${name}`);
+				};
 			if (k === "then") return undefined;
 			return () => undefined;
 		},
@@ -471,7 +476,13 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 		r = recorder();
 		await heroQuestScript(r.s, "roze");
 		ok(questStage("roze") === "unlocked", "unlocked");
-		ok(r.log.at(-1) === `narrate: ${HERO_QUESTS.roze.unlocked}`, "news");
+		ok(
+			r.log.at(-2) === `narrate: ${HERO_QUESTS.roze.unlocked}`,
+			`news: ${r.log.at(-2)}`,
+		);
+		// 申し出の「あ」は 曲を 止めて 聞かせ、終われば 村の 曲
+		ok(r.log[0] === "bgm: null", `silence first: ${r.log[0]}`);
+		ok(r.log.at(-1) === `bgm: ${villageSong()}`, "back to the village song");
 		ok(unlockedHeroes().join() === "kiriko,roze", "list");
 		ok(chosenHero() === "roze", "remembered choice");
 		// そのあとは ふだんの ひとこと
@@ -499,6 +510,12 @@ test(`依頼: ゼロは どの 板でも ${ZERO_QUEST_DEPTH}階まで 行って 
 		const r = recorder();
 		await heroQuestScript(r.s, "zero");
 		ok(questStage("zero") === "unlocked", "unlocked");
+		// 蓄音機から 掘りかけの穴、終われば 村の 曲
+		ok(
+			r.log[0] === "bgm: deep1" && r.log[1].includes("蓄音機を回した"),
+			`record: ${r.log.slice(0, 2)}`,
+		);
+		ok(r.log.at(-1) === `bgm: ${villageSong()}`, "back to the village song");
 		ok(unlockedHeroes().includes("zero"), "zero");
 	});
 });

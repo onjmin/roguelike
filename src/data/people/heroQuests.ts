@@ -22,11 +22,15 @@ import type { Cue } from "../../engine/emote";
 import type { QuestHero } from "../../engine/heroes";
 import type { Speaker } from "../story/quotes";
 
-/** 話す 人の 行は 感情の 記号・体の 動き（Cue。engine/emote.ts）も 持てる。 */
-export type QuestLine =
+/**
+ * 話す 人の 行は 感情の 記号・体の 動き（Cue。engine/emote.ts）も 持てる。
+ * bgm は その 行から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。場面の あとは 村の 曲に もどす）。
+ */
+export type QuestLine = (
 	| ({ who: Speaker; text: string } & Cue)
 	| { who: null; text: string }
-	| ({ who: "kiriko"; text: string } & Cue);
+	| ({ who: "kiriko"; text: string } & Cue)
+) & { bgm?: string | null };
 
 const say = (who: Speaker, text: string, c?: Cue): QuestLine => ({
 	who,
@@ -95,7 +99,8 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		decline: [say("roze", "……常識アル。\nだれだって、そうするアル")],
 		waiting: [say("roze", "……北東の島の小屋、\nまだあったアル？")],
 		offer: [
-			say("roze", "……あ。\nあー。あ、あ", { emote: "♪" }),
+			// 曲を 止めて、ずれて いない「あ」を 聞かせる
+			{ ...say("roze", "……あ。\nあー。あ、あ", { emote: "♪" }), bgm: null },
 			say("roze", "ずれてないアル。……ふふ", { emote: "花" }),
 			say(
 				"roze",
@@ -144,7 +149,8 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		],
 		waiting: [say("zero", "深い階の声……。\n……あ、いえ、急ぎません")],
 		offer: [
-			nar("蓄音機を回した。\n深い階のざわめき。"),
+			// 蓄音機から 鳴る 曲（掘りかけの穴。小さな 行進で 加わる 決意へ）
+			{ ...nar("蓄音機を回した。\n深い階のざわめき。"), bgm: "deep1" },
 			nar("……だれの声でもなかった。"),
 			say("zero", "…………", { emote: "…" }),
 			say("zero", "きれいでした。\nわたしのじゃ、ないですけど"),

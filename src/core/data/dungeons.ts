@@ -61,6 +61,8 @@ export type BossSpec = {
 	goalName?: string;
 	/** ボスの 階に 着いた ところに 置いて ある 道具と、着いた ときの 1行（先回りした 人の 差し入れ）。 */
 	supply?: { items: readonly string[]; line: string };
+	/** ボスの 曲（data/audio/bgm.ts の 名前。見つけてから たおすまで。無ければ 汎用の ボス曲 BOSS_BGM）。 */
+	bgm?: string;
 };
 
 /** 底の 出来事（目的が event。着くと 品を もらって 入口へ 帰る）。 */
@@ -120,6 +122,8 @@ export type RestFloor = {
 	folk?: SettlementSpec["folk"];
 	/** 着いた 部屋に 置いて ある 道具（売店の パン など。長い 板の 中ほどの 補給）。 */
 	gifts?: readonly string[];
+	/** この 階の 曲（data/audio/bgm.ts の 名前。無ければ 層の 曲）。 */
+	bgm?: string;
 };
 
 export type Dungeon = {
@@ -640,12 +644,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"やきう「昔は遊びで侵略しとっただけやのにな」",
 				"やきう「まだや。盛り上がりが足らん」",
 			],
+			// 町の 騒ぎの 曲（INCIDENT_BGM）の 出どころが やきう：正体を 明かした ところから 動機を 呼びもどす
+			bgm: "kaiwai",
 		},
 		// 見学コース：電池ニキ（ひとりで 電気を 送って きた 最後の 住人）と、先回りした フェリス
 		rests: [
 			{
 				depth: 8,
 				name: "発電所の見学コース",
+				// 深夜の 発電所に ひとり：エレピの さびしい 曲
+				bgm: "deq_laundry",
 				folk: [
 					{
 						name: "電池ニキ",

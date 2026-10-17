@@ -64,6 +64,7 @@ import {
 	type SavedReplay,
 	saveRun,
 } from "../../engine/save";
+import { startFx } from "../../engine/sceneFx";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
@@ -275,14 +276,21 @@ const afterMotion = (ev: GameEvent[], i: number): boolean => {
 
 /**
  * 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。
- * bossShown：ボスを 見つけた 知らせを もう 見せた（その あいだ 生きていれば ボスの 曲）。
+ * bossShown：ボスを 見つけた 知らせを もう 見せた（その あいだ 生きていれば ボスの 曲。板に 専用の 曲が あれば それ）。
+ * 名所の 階に 曲が あれば その 階は それ。
  */
 const floorBgm = (run: Run, bossShown = false): string => {
 	if (run.f.houseAwake) return HOUSE_BGM;
-	if (bossShown && run.boss) return BOSS_BGM;
+	if (bossShown && run.boss) return bossBgm(run);
 	if (run.s.returning) return RETURN_BGM;
-	return zoneFor(run.s.dungeon, run.s.depth).bgm;
+	const rest = run.s.floor.rest
+		? run.dungeon.rests?.find((x) => x.depth === run.s.depth)
+		: undefined;
+	return rest?.bgm ?? zoneFor(run.s.dungeon, run.s.depth).bgm;
 };
+
+/** その 冒険の ボスの 曲（専用の 曲が なければ 汎用の BOSS_BGM）。 */
+const bossBgm = (run: Run): string => run.bossSpec?.bgm ?? BOSS_BGM;
 
 /** 帰り方の 演出の 色（光・暗転）。escort は 送ってもらう ので 暗転は 黒。 */
 const RESCUE_LOOK: Record<RescueKind, { flash: string; fade: string }> = {
@@ -2719,6 +2727,12 @@ export class Play {
 		const shake = kind === "eruption" ? 700 : kind === "geyser" ? 500 : 300;
 		document.body.classList.add("shake");
 		const lift = pd ? { x: pd.tx, y: pd.ty } : null;
+		// 噴火は 場面の 爆発（「ドカーン」と 煙。光と ゆれは ここの もの）。煙は 暗転まで 残す
+		const boom =
+			kind === "eruption"
+				? startFx(this.ctx.ui, "boom", { k, bare: true })
+				: null;
+		if (boom) void wait(2400 * k).then(() => boom.end());
 		await Promise.all([
 			this.flash(look.flash, 260 * k),
 			kind === "eruption" && lift
@@ -3275,7 +3289,7 @@ export class Play {
 			case "boss": {
 				// ボスを 見つけた：始まりの 音 → ボスの 曲。ゲージも ここから（その 行と いっしょに）
 				this.bossShown = true;
-				this.startEncounterBgm(BOSS_BGM);
+				this.startEncounterBgm(bossBgm(this.run));
 				const live = this.liveHud().boss;
 				if (this.hudHold && live)
 					this.hudHold = { ...this.hudHold, boss: live };

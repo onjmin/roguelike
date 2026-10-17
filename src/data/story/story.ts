@@ -232,14 +232,18 @@ const SHALLOW_BASE: readonly StoryPage[] = [
  */
 export const TEN_NEWS = {
 	pages: [
-		n("その夜、町じゅうの明かりが\nいっせいに消えた。"),
+		// 明かりと いっしょに 曲も 消える（無音）。見出しから 警報の 曲（落ちた鯖）
+		{ ...n("その夜、町じゅうの明かりが\nいっせいに消えた。"), bgm: null },
 		s("zero", "停電です！町の電気、\nぜんぶ電池板から来てました", {
 			emote: "!",
 		}),
 		s("roze", "植民地から電気を借りてたアル？\n……払ってないのが常識アル", {
 			emote: "汗",
 		}),
-		n("掲示板に、名無しの見出し。\n『おんJタウンしゅうりょう』"),
+		{
+			...n("掲示板に、名無しの見出し。\n『おんJタウンしゅうりょう』"),
+			bgm: "deep4",
+		},
 		s("shiyo", "また盛ってる。……この見出し、\n毎回同じ人よね"),
 		s("feris", "電池板の人、ひとりで\nがんばってるのかも〜"),
 		k("電池板、充電しに行くンゴ"),
@@ -458,7 +462,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "過去ログの浅瀬",
 		note: "「保守」",
 		theme: "earth",
-		bgm: "deep1",
+		bgm: "piropiro",
 		ambient: "dust",
 	},
 	{
@@ -538,7 +542,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "落ちた鯖",
 		note: "「鯖落ち？」",
 		theme: "cyber",
-		bgm: "deep4",
+		bgm: "deq_volcano",
 		ambient: "data",
 	},
 	{
@@ -587,7 +591,7 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// 隠し：層ごとに かわる（theme・bgm は 層が 無い ときの 予備）
 	hidden: {
 		theme: "earth",
-		bgm: "deep1",
+		bgm: "piropiro",
 		ambient: "dust",
 		zones: HIDDEN_ZONES,
 	},
@@ -664,9 +668,13 @@ export const STORY: Record<
 		],
 		ending: [
 			// 頂点（STORY.md §4.9「明かりの もどる 坂と、盛らない 見出し」）
-			n(
-				"村に帰りつくと、港は真っ暗だった。\n坂の上まで、明かりがひとつもない。",
-			),
+			// 持ち帰りの 明るい 曲を 止める（明かりの 坂まで 無音）
+			{
+				...n(
+					"村に帰りつくと、港は真っ暗だった。\n坂の上まで、明かりがひとつもない。",
+				),
+				bgm: null,
+			},
 			// 明かりの もどる 坂（ui/village/villageReturn.ts の playCue。暗い 町で 生き返った 通りを 順に 見せて、
 			// 明るい 町に 建て直す）
 			{
@@ -709,27 +717,37 @@ export const STORY: Record<
 				se: "arcBest",
 				seRepeat: 5,
 				seGap: 400,
+				// 紙吹雪（やきうの ツッコミまで 降りつづける）
+				fx: "confetti",
 			},
 			{
 				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
 					emote: "!",
 				}),
 				needCleared: "festival",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
 				needCleared: "festival",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "うるさいわ！……草", { emote: "怒" }),
 				needCleared: "festival",
+				fx: "confetti",
 			},
 			// 落差の オチ（201 の 作者が ゲームを 閉じる 型）。停電は 町 → 板 → 鯖ごとへ。転の 盛った 見出しが 本当に なる
 			n("祭りの最中、掲示板に\n管理人の書きこみがついた。"),
 			// 曲が ぷつっと 切れて、無音の まま 暗転と ロールバック
 			{ ...n("『鯖代払い忘れとったわ』"), bgm: null },
-			{ ...n("……町も、板も、画面ごと\nまっくらになった。"), se: "batonDown" },
-			k("……見出しどおりンゴ"),
+			// ぷつっと 暗転（キリコの ひとことまで 真っ黒。翌朝で 明ける）
+			{
+				...n("……町も、板も、画面ごと\nまっくらになった。"),
+				se: "batonDown",
+				fx: "blackout",
+			},
+			{ ...k("……見出しどおりンゴ"), fx: "blackout" },
 			n("翌朝。町は、何事もなかったように\nもとにもどっていた。"),
 			n("掲示板に、見出しがひとつ。\n『【悲報】ワイらの冒険、ロールバック』"),
 			n("その下に、書きこみがひとつ。\n「キリコ生きてて草」"),
@@ -839,9 +857,11 @@ export const STORY: Record<
 		],
 		// 寄り道「残機」②：名無しの 帳簿。残機の 正体は 遺影スレの 書きこみ
 		once: [
+			// 残機の 前ふり：帰り道のハーモニカ（帳簿の 頁）
 			{
 				...n("たこ焼きの包み紙は、\n古い帳簿の切れはしだった。"),
 				se: "read",
+				bgm: "sad",
 			},
 			n("「名無し残機1　やきう」\n「名無し残機1　やきう」……毎年。"),
 			s("roze", "……名無しには、\n残機がふえないアル？", { emote: "!" }),
@@ -889,6 +909,7 @@ export const STORY: Record<
 			{
 				...n("……やきうの頭の上は、\n「残機：1」のままだった。"),
 				unlessCleared: "deep",
+				bgm: "sad",
 			},
 			{
 				...s("zero", "書きこみ、98件。数えました。\n……表示が、動きません", {
@@ -904,20 +925,27 @@ export const STORY: Record<
 				se: "arcBest",
 				seRepeat: 5,
 				seGap: 400,
+				// 紙吹雪（やきうの ツッコミまで 降りつづける）
+				fx: "confetti",
+				// 最終話の 頂点の 曲（明かりの坂）で 回収
+				bgm: "kaiwai2",
 			},
 			{
 				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
 					emote: "!",
 				}),
 				needCleared: "deep",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
 				needCleared: "deep",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "うるさいわ！……草", { emote: "怒" }),
 				needCleared: "deep",
+				fx: "confetti",
 			},
 		],
 	},
@@ -939,7 +967,8 @@ export const STORY: Record<
 			}),
 			s("zero", "いちばん下の層、ですからね"),
 			// 古い レスが 掘り起こされて、スレが 一気に 埋まる（1000 で 書けなくなる しくみと 同じ）
-			n("そのレスに、今日レスがついた。"),
+			// 苦さから 光へ（つづきの原盤）
+			{ ...n("そのレスに、今日レスがついた。"), bgm: "deep6" },
 			nanashi("名無しさん", ">>1　なつかしすぎて草"),
 			n("1時間で、スレは1000まで埋まった。\n……2005年のスレが、2回目の1000。"),
 			// 層の 札「今年もやきうか。草」と おんたこの 帳簿（寄り道「残機」②）を ここで 拾う
@@ -951,6 +980,7 @@ export const STORY: Record<
 				se: "kusa",
 				seRepeat: 3,
 				seGap: 160,
+				fx: "kusa",
 			},
 			k("……>>1、明日も潜るンゴ"),
 		],

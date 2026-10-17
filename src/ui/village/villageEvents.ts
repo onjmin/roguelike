@@ -837,10 +837,12 @@ const playQuestLines = async (
 	s: Story,
 	lines: readonly QuestLine[],
 ): Promise<void> => {
-	for (const l of lines)
+	for (const l of lines) {
+		if (l.bgm !== undefined) s.bgm(l.bgm);
 		if (l.who === null) await s.narrate(l.text);
 		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
 		else await s.say(l.who, l.text, cueOf(l));
+	}
 };
 
 /**
@@ -865,6 +867,11 @@ export const heroQuestScript = async (
 			await join(who);
 		} else s.se("levelup");
 		await s.narrate(q.unlocked);
+		// 申し出の 曲（蓄音機・無音）は ここまで。村の 曲に もどす
+		if (q.offer.some((l) => l.bgm !== undefined)) {
+			await s.fadeBgm(300);
+			s.bgm(villageSong());
+		}
 		return true;
 	}
 	if (stage === "accepted") {

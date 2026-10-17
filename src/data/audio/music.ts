@@ -64,6 +64,10 @@ export const records = (
 			for (const z of look.zones)
 				add(z.bgm, `${DUNGEON_NAMES[d].short}　${z.name}`);
 		else add(look.bgm, DUNGEON_NAMES[d].short);
+		for (const r of DUNGEONS[d].rests ?? [])
+			if (r.bgm) add(r.bgm, `${DUNGEON_NAMES[d].short}　${r.name}`);
+		const boss = DUNGEONS[d].boss?.bgm;
+		if (boss) add(boss, `${DUNGEON_NAMES[d].short}　ボス`);
 	}
 	if (cleared.length > 0) {
 		add(HOUSE_BGM, "祭り");
