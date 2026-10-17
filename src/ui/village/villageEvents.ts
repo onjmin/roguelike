@@ -161,7 +161,7 @@ import { openSettings } from "../settings";
 import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
-import { outsideDisplays } from "./displays";
+import { offDecor, outsideDisplays } from "./displays";
 import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
 import { folkEvent } from "./folk";
@@ -1221,6 +1221,11 @@ export const buildVillage = (
 	const back = returnOf(arrival);
 	const view = back ? sceneView(v, back) : v;
 	const rows = villageRows(view);
+	const stage = layoutStage(view);
+	const boards = revivedBoards(view);
+	const blackout = inBlackout(view);
+	// 電気の 来て いる 所（シャッターの 店と 停電の あいだは 電光表示が 消える）
+	const powered = (place: string) => !blackout && isRevived(place, boards);
 	return {
 		id: "village",
 		name: TOWN_NAME,
@@ -1229,25 +1234,27 @@ export const buildVillage = (
 		rows,
 		// 建物の 影（地面だけ。日の 向きで かわる。ui/village/shadows.ts）
 		ground: shadowGround(view.stage, rows, villagePalette(view)),
-		// 銭湯の 煙突から 湯気・
+		// 開いて いる 銭湯の 煙突から 湯気・
 		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
 		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）・
-		// おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・建物の 看板（ui/village/signboards.ts）・
+		// 開いて いる おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・建物の 看板（ui/village/signboards.ts）・
 		// 線路を 不定期に 走る ぷゆゆ列車（ui/village/puyuTrain.ts）・映画館や 駅の 電光表示（ui/village/displays.ts）
 		decor: joinDecor(
-			chimneySteam(rows),
+			isRevived("bath", boards) ? chimneySteam(rows) : undefined,
 			imoniDecor(imoniArrive()),
 			villageFindGlint(),
-			stockBoardDecor(shokenSign(layoutStage(view))),
-			signboardDecor(layoutStage(view), revivedBoards(view)),
-			outsideDisplays(layoutStage(view)),
+			powered("shoken")
+				? stockBoardDecor(shokenSign(stage))
+				: offDecor(shokenSign(stage), 4, "led"),
+			signboardDecor(stage, boards, blackout),
+			outsideDisplays(stage, powered),
 		),
 		outside: "#1f2a14",
 		// 夜の 明かり：生き返って いない 建物は 窓も 看板も 暗い・街灯は 電池板から（data/town/revival.ts）
 		lights: {
 			unlit: unlitCells(view),
-			lamps: lampsLit(revivedBoards(view)),
-			glow: signboardGlow(layoutStage(view), revivedBoards(view)),
+			lamps: lampsLit(boards),
+			glow: signboardGlow(stage, boards, blackout),
 			// 明かりの 坂で 通りを 1つずつ 灯す（ui/village/villageReturn.ts の playCue）
 			scene: sceneLights(view),
 		},

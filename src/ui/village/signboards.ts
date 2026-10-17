@@ -42,7 +42,7 @@ type Board = {
 	/** 板を おさめる 左右（建物の はば）。 */
 	left: number;
 	right: number;
-	/** 生き返って いない 所の 看板（電気が 来て いない：ネオンの にじみ なし・くすんだ 色）。 */
+	/** 生き返って いない 所の 看板と 停電の ネオン（電気が 来て いない：ネオンの にじみ なし・くすんだ 色）。 */
 	dead: boolean;
 };
 
@@ -200,9 +200,18 @@ const boardImage = (b: Board): HTMLCanvasElement => {
 
 // ───────────────── 場所 ─────────────────
 
+/** 電気が 来て いない 看板か（シャッターの 店。停電の あいだは ネオンの 板も）。 */
+const unpowered = (
+	place: string,
+	look: SignLook,
+	cleared: readonly DungeonId[],
+	blackout: boolean,
+): boolean => !isRevived(place, cleared) || (blackout && !!look.glow);
+
 const facilityBoard = (
 	f: Facility,
 	cleared: readonly DungeonId[],
+	blackout: boolean,
 ): Board | null => {
 	const sign = SIGNS[f.id];
 	if (!sign || f.look.kind !== "grid") return null;
@@ -215,11 +224,12 @@ const facilityBoard = (
 	const col = door
 		? (door[0] + (door2 && door2[1] === door[1] ? door2[0] : door[0])) / 2 + 0.5
 		: w / 2;
-	const dead = !isRevived(f.id, cleared);
+	const look = SIGN_LOOKS[sign.look];
+	const dead = unpowered(f.id, look, cleared, blackout);
 	return {
 		key: `f:${f.id}:${dead}`,
 		text: sign.text,
-		look: SIGN_LOOKS[sign.look],
+		look,
 		cx: (f.at[0] + col) * TILE,
 		// 扉の 上の 壁に かける（扉には かからない）
 		bottom: (f.at[1] + row) * TILE - 1,
@@ -230,16 +240,21 @@ const facilityBoard = (
 };
 
 /** 町の まんなかの 建物の 看板（その 段に 建って いる もの）。 */
-const coreBoards = (stage: number, cleared: readonly DungeonId[]): Board[] =>
+const coreBoards = (
+	stage: number,
+	cleared: readonly DungeonId[],
+	blackout: boolean,
+): Board[] =>
 	CORE_SIGNS.filter(
 		(c) => stage >= c.from && (c.until === undefined || stage < c.until),
 	).map((c) => {
 		const cx = c.at[0] * TILE;
-		const dead = !isRevived(c.id, cleared);
+		const look = SIGN_LOOKS[c.look(stage)];
+		const dead = unpowered(c.id, look, cleared, blackout);
 		return {
 			key: `c:${c.id}:${stage}:${dead}`,
 			text: c.text(stage),
-			look: SIGN_LOOKS[c.look(stage)],
+			look,
 			cx,
 			bottom: c.at[1] * TILE - 1,
 			left: cx - 4 * TILE,
@@ -248,9 +263,15 @@ const coreBoards = (stage: number, cleared: readonly DungeonId[]): Board[] =>
 		};
 	});
 
-const boardsAt = (stage: number, cleared: readonly DungeonId[]): Board[] => [
-	...facilitiesAt(stage).flatMap((f) => facilityBoard(f, cleared) ?? []),
-	...coreBoards(stage, cleared),
+const boardsAt = (
+	stage: number,
+	cleared: readonly DungeonId[],
+	blackout: boolean,
+): Board[] => [
+	...facilitiesAt(stage).flatMap(
+		(f) => facilityBoard(f, cleared, blackout) ?? [],
+	),
+	...coreBoards(stage, cleared, blackout),
 ];
 
 /** 板を 置く 左上（画面の 画素）。 */
@@ -262,12 +283,13 @@ const boardPos = (b: Board, img: HTMLCanvasElement, ox: number, oy: number) => {
 	};
 };
 
-/** その 段の 建物の 看板（生き返って いない 所は 消えた 看板）。 */
+/** その 段の 建物の 看板（生き返って いない 所と 停電の ネオンは 消えた 看板）。 */
 export const signboardDecor = (
 	stage: number,
 	cleared: readonly DungeonId[],
+	blackout = false,
 ): MapDef["decor"] => {
-	const boards = boardsAt(stage, cleared);
+	const boards = boardsAt(stage, cleared, blackout);
 	if (!boards.length) return undefined;
 	return (g, ox, oy) => {
 		loadFonts();
@@ -284,13 +306,14 @@ export const signboardDecor = (
 
 /**
  * 夜の 看板の 光（夜の 色を 重ねた あと、足し算の 中で 呼ぶ。k は 明かりの 強さ 0〜1）。
- * 開いて いる 所の 板だけ 灯る（生き返って いない 所は 電気が 来て いない）。
+ * 開いて いる 所の 板だけ 灯る（生き返って いない 所と 停電の ネオンは 電気が 来て いない）。
  */
 export const signboardGlow = (
 	stage: number,
 	cleared: readonly DungeonId[],
+	blackout = false,
 ): NonNullable<MapDef["lights"]>["glow"] => {
-	const boards = boardsAt(stage, cleared).filter((b) => !b.dead);
+	const boards = boardsAt(stage, cleared, blackout).filter((b) => !b.dead);
 	return (g, ox, oy, k) => {
 		if (k < 0.01) return;
 		const vw = g.canvas.width;
