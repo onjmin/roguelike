@@ -443,8 +443,11 @@ import { villageSong } from "../ui/village/villageMusic";
 import {
 	forgetOpeningMemo,
 	needsOpening,
+	openingNotYet,
 	openingPrepare,
 	openingScript,
+	openingStep,
+	openingWalking,
 } from "../ui/village/villageOpening";
 import {
 	deathScene,
@@ -3479,48 +3482,102 @@ export const runVillageTests = async (): Promise<TestResult[]> => {
 	return out;
 };
 
-test("the very first village: Kiriko walks in from the south road, sets down the phonograph, やきう points at the mouth, the goal — once", async () => {
+test("the very first village: Kiriko climbs the slope and knocks, walks to the plaza herself, the phonograph → headline → パン兵, やきう, the pier — once", async () => {
 	const texts: [string, string][] = [];
+	const text = (t: string | { text: string }) =>
+		typeof t === "string" ? t : t.text;
 	for (const [k, v] of Object.entries(OPENING))
-		v.forEach((t, i) => {
-			texts.push([`OPENING.${k}[${i}]`, t]);
+		(Array.isArray(v) ? v : [v]).forEach((t, i) => {
+			texts.push([`OPENING.${k}[${i}]`, text(t)]);
 		});
 	fitsWindow(texts);
+	const say = (l: { who: string | null; text: string }) =>
+		l.who === "kiriko"
+			? `kiriko voice: ${l.text}`
+			: l.who
+				? `say ${l.who}: ${l.text}`
+				: `narrate: ${l.text}`;
 	await withStorageAsync(async () => {
+		forgetOpeningMemo();
 		setProgress(["shallow"]);
 		ok(needsOpening(), "no opening on the first boot");
-		// 幕が 上がる 前：南の 道の はしに 立ち、蓄音機は まだ 無い
+		// 幕が 上がる 前：坂の 下に 立ち、蓄音機・やきう・パン兵は まだ 無い
 		const a = fakeStory();
 		openingPrepare(a.s);
 		ok(
-			a.log.includes("place player 20,31") && a.log.includes("hide phono"),
+			a.log.includes("place player 20,31") &&
+				a.log.includes("hide phono") &&
+				a.log.includes("hide nanj") &&
+				a.log.includes("hide inc_panhei_chief"),
 			`prepare:\n${a.log.join("\n")}`,
 		);
+		// ①：名のって 坂を 上がり、シャッターを たたく → 貼り紙 → 自分で 歩く
 		await openingScript(a.s);
-		const [bx, by] = VILLAGE_SPOTS.boot;
-		ok(
-			a.s.state.x === bx && a.s.state.y === by,
-			`Kiriko stops at (${a.s.state.x},${a.s.state.y}), not in front of the phonograph`,
-		);
 		ok(
 			inOrder(a.log, [
-				`narrate: ${OPENING.arrive[0]}`,
-				`narrate: ${OPENING.premise[0]}`,
-				`narrate: ${OPENING.fine[0]}`,
+				say(OPENING.climb[0]),
+				"se hit_fist",
+				`narrate: ${OPENING.notice}`,
+				say(OPENING.closed),
+			]) && !a.log.some((l) => l.startsWith("say nanj")),
+			`slope:\n${a.log.join("\n")}`,
+		);
+		ok(openingWalking(), "Kiriko cannot walk after the slope");
+		// 部屋に 出入りして 建てなおしても、坂の 下へ もどされず、①も くり返さない
+		const re = fakeStory({ at: [5, 5] });
+		openingPrepare(re.s);
+		await openingScript(re.s);
+		ok(
+			!re.log.some((l) => l.startsWith("place player")) &&
+				re.log.includes("hide nanj") &&
+				!re.log.some((l) => l.startsWith("kiriko")),
+			`rebuilt while walking:\n${re.log.join("\n")}`,
+		);
+		// ②：広場より 先に 村を 出ようと すると 引きかえす。広場の 外では 何も 起きない
+		const no = fakeStory();
+		await openingNotYet(no.s, "u");
+		ok(
+			no.log.join() === `${say(OPENING.notYet)},move player u`,
+			`exit: ${no.log}`,
+		);
+		ok(openingStep(20, 29) === null, "the scene starts on the slope");
+		// ③④⑤：広場に 入ると
+		const run = openingStep(19, 24);
+		ok(!!run, "nothing happens in the plaza");
+		const b = fakeStory({ at: [19, 24] });
+		await run?.(b.s);
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		ok(
+			b.s.state.x === bx && b.s.state.y === by,
+			`Kiriko stops at (${b.s.state.x},${b.s.state.y}), not in front of the phonograph`,
+		);
+		ok(
+			inOrder(b.log, [
 				"show phono",
-				`narrate: ${OPENING.premise[1]}`,
-				`kiriko voice: ${OPENING.mumble[0]}`,
-				"look nanj",
-				`say nanj: ${OPENING.nanjCall[0]}`,
-				`say nanj: ${OPENING.nanjMouth[1]}`,
-				`kiriko voice: ${OPENING.reply[0]}`,
+				say(OPENING.nobody),
+				"show visitor",
+				`narrate: ${OPENING.headline}`,
+				"hide visitor",
+				"show inc_panhei_chief",
+				`say nanj: ${OPENING.panhei}`,
+				say(OPENING.someone),
+				"show nanj",
+				...OPENING.talk.map(say),
+				"se hit_fist",
+				...OPENING.talk2.map(say),
+				...OPENING.mouth.map((t) => `say nanj: ${t}`),
+				...OPENING.wish.map(say),
 				`look ${VILLAGE_SPOTS.exit.join(",")}`,
 				`narrate: ${OPENING.goal[0]}`,
 				"look kiriko",
 			]),
-			`opening:\n${a.log.join("\n")}`,
+			`plaza:\n${b.log.join("\n")}`,
 		);
 		ok(!needsOpening(), "the opening plays twice");
+		ok(
+			!openingWalking() && !openingStep(19, 24),
+			"the plaza scene plays twice",
+		);
 	});
 	await withStorageAsync(async () => {
 		setProgress(["shallow"]);

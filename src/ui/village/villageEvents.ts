@@ -177,7 +177,14 @@ import { signboardDecor, signboardGlow } from "./signboards";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
 import { chooseRecord, endScene, sceneBgm, villageSong } from "./villageMusic";
-import { needsOpening, openingPrepare, openingScript } from "./villageOpening";
+import {
+	needsOpening,
+	openingNotYet,
+	openingPrepare,
+	openingScript,
+	openingStep,
+	openingWalking,
+} from "./villageOpening";
 import {
 	deathScene,
 	gather,
@@ -568,6 +575,8 @@ const shrineScript: Script = async (s) => {
 const mouthScript =
 	(ctx: Ctx, step: string | null = "d"): Script =>
 	async (s) => {
+		// いちばん 最初の 村で まだ 広場を 見て いない（ui/village/villageOpening.ts）
+		if (openingWalking()) return openingNotYet(s, step);
 		// 行き先（はじめは 筋の 次の 板。筋を 終えたら 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
 		// 過去ログの底は 井戸から なので 地図には 出さない）
 		const pr = loadProgress();
@@ -1173,8 +1182,8 @@ const arrivalScript =
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
 		if (arrival?.kind === "dead") await reliefScript(s);
-		// 持ち物が からっぽなら ぷゆゆが お弁当を 持たせに くる
-		await lunchScript(s);
+		// 持ち物が からっぽなら ぷゆゆが お弁当を 持たせに くる（いちばん 最初の 村では 広場の 場面の 最後に）
+		if (!openingWalking()) await lunchScript(s);
 	};
 
 /**
@@ -1262,6 +1271,8 @@ export const buildVillage = (
 			scene: sceneLights(view),
 		},
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
+		// いちばん 最初の 村：広場に 入ったら 場面（ui/village/villageOpening.ts）
+		onStep: openingStep,
 		crowd: {
 			// 人通りは 生き返った 通りの ぶんだけ（はじめの 寂れた 町は だれも 歩かない。停電の あいだも）
 			stage: stageOfCleared(revivedBoards(view)),

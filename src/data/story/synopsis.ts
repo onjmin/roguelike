@@ -225,7 +225,7 @@ export const synopsisHtml = (
  */
 export const firstGoalHtml = (): string =>
 	`<p class="hint">${revivedLine()}</p>` +
-	`<p><b>はじまり</b><br>${OPENING.nanjMouth.map((l) => l.replaceAll("\n", "")).join("<br>")}</p>` +
+	`<p><b>はじまり</b><br>${OPENING.mouth.map((l) => l.replaceAll("\n", "")).join("<br>")}</p>` +
 	`<p class="hint">つぎ：${OPENING.goal[0].replaceAll("\n", "")}</p>`;
 
 /** いまの 進みの あらすじ（パン板を 持ち帰る 前は はじまりの 目標）。 */

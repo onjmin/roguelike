@@ -1158,6 +1158,12 @@ export class Village {
 		if (touch?.def) {
 			this.clearPath();
 			void this.runEvent(touch.def);
+			return;
+		}
+		const step = this.field?.def.onStep?.(this.player.x, this.player.y);
+		if (step && !this.leaving) {
+			this.clearPath();
+			void this.runScript(step);
 		}
 	}
 

@@ -116,6 +116,11 @@ export type MapDef = {
 	 */
 	onTalkEmpty?: (x: number, y: number) => Script | null;
 	/**
+	 * 操作で 1歩 着いた マスに 踏む イベントが ないとき。スクリプトを かえせば 走らせる
+	 * （いちばん 最初の 村で 広場に 入ったら 場面。ui/village/villageOpening.ts）。null なら 何も しない。
+	 */
+	onStep?: (x: number, y: number) => Script | null;
+	/**
 	 * 十字キーで ぶつかった・タップした 物で A を 待たずに 起きる こと（キリコの 家の ベッドに 寝ころぶ。
 	 * ui/village/myhome.ts）。null なら いつもどおり（ぶつかれば 向くだけ・タップなら 話す）。
 	 */
