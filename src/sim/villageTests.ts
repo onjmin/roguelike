@@ -55,6 +55,7 @@ import { MOB_VOICE, VOICE_MODELS } from "../data/people/cast";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/people/guests";
 import { HERO_QUESTS } from "../data/people/heroQuests";
 import {
+	awayMobs,
 	MOB_IDS,
 	MOBS,
 	type MobCtx,
@@ -882,23 +883,23 @@ test("the village is drawn only from the bundled Base.png and sprites (no CDN ti
 	}
 });
 
-test("おんJタウンには はじめから ライバル 4人・やきう・住人が いる（店の 仕事は しない）", () => {
+test("板を ぜんぶ 持ち帰った おんJタウンには ライバル 4人・やきう・住人が みんな いる（店の 仕事は しない）", () => {
 	const FRIENDS = ["roze", "shiyo", "zero", "feris", "nanj"] as const;
 	const places = villagePlaces({
-		stage: 0,
-		unlocked: ["shallow"],
-		cleared: [],
+		stage: TOWN_STAGES - 1,
+		unlocked: [...DUNGEON_IDS],
+		cleared: [...DUNGEON_IDS],
 	});
 	for (const w of FRIENDS)
 		ok(
 			// シヨは 週末の 夜は メイド喫茶（村の 時計しだい）
 			w === "shiyo" || places.some((p) => p.who === w),
-			`${w} is missing at the start`,
+			`${w} is missing`,
 		);
 	for (const id of MOB_IDS)
 		ok(
 			places.some((p) => p.id === `mob_${id}`),
-			`${id} is not there from the start`,
+			`${id} is not there`,
 		);
 	// 店の 人は ライバルが いた 台の うしろ・倉庫の 窓口・掲示板の そば
 	ok(
@@ -909,26 +910,87 @@ test("おんJタウンには はじめから ライバル 4人・やきう・住
 	);
 });
 
-test("どの 段でも、まだ 越してきていない 仲間は 帰りの 語り・知らせに 出てこない（話さない・名前も 出ない）", async () => {
-	for (let stage = 0; stage < TOWN_STAGES; stage++)
-		await withStorageAsync(async () => {
-			setProgress(["shallow"], [], ["shallow"]);
-			putTown({ stage });
-			const away = awayFriends(["shallow"], stage);
-			const names = away.map((w) => SPEAKERS[w].name);
-			for (const d of DUNGEON_IDS)
-				for (const kind of ["clear", "escape"] as const)
+test("まだ 帰ってきて いない 仲間は 帰りの 語り・知らせに 出てこない（話さない・名前も 出ない）", async () => {
+	// 持ち帰る 順の 一例（前の 板ほど 先）。その 板で 帰ってくる 仲間は 同じ 船で 着くので 語りに 出てよい
+	const order: DungeonId[] = [
+		"shallow",
+		"kinoko",
+		"tropical",
+		"main",
+		"konamono",
+		"festival",
+		"deep",
+	];
+	for (let n = 0; n <= order.length; n++)
+		for (const d of DUNGEON_IDS)
+			for (const kind of ["clear", "escape"] as const)
+				await withStorageAsync(async () => {
+					const before = order.slice(0, n).filter((x) => x !== d);
+					const cleared = kind === "clear" ? [...before, d] : before;
+					setProgress([...before, d], [], cleared);
+					putTown({ stage: stageOfCleared(cleared) });
+					const away = awayFriends(cleared);
+					const names = away.map((w) => SPEAKERS[w].name);
 					for (const p of pagesFor({ kind, dungeon: d, objective: "boss" })) {
 						ok(
 							!(p.who && away.includes(p.who)),
-							`stage ${stage} ${d} ${kind}: ${p.who} speaks before moving in`,
+							`${before.join("+")} ${d} ${kind}: ${p.who} speaks before coming back`,
 						);
 						ok(
-							!names.some((n) => p.text.includes(n)),
-							`stage ${stage} ${d} ${kind}: "${p.text}" names someone not here yet`,
+							!names.some((w) => p.text.includes(w)),
+							`${before.join("+")} ${d} ${kind}: "${p.text}" names someone not back yet`,
 						);
 					}
-		});
+				});
+});
+
+test("みんな 飽きて 出ていった 町：はじめは やきう・ぷゆゆ・原住民 だけ。板を 持ち帰ると 帰ってくる", () => {
+	const view = (cleared: DungeonId[], arriving?: DungeonId): VillageView => ({
+		stage: TOWN_STAGES - 1,
+		unlocked: ["shallow"],
+		cleared,
+		arriving,
+	});
+	const people = (v: VillageView) =>
+		villagePlaces(v)
+			.filter((p) => p.who || p.mob || p.id.startsWith("folk_"))
+			.map((p) => p.who ?? p.mob ?? p.id)
+			.sort();
+	ok(
+		JSON.stringify(people(view([]))) ===
+			JSON.stringify(["nanj", "puyu", "shobon"]),
+		`at the start: ${people(view([]))}`,
+	);
+	ok(
+		hallPlaces(view([])).every((p) => !p.sprite),
+		"the hall has people before パン板",
+	);
+	const pan = people(view(["shallow"]));
+	for (const w of ["roze", "zero", "proto", "ren", "ngoane", "jtleman"])
+		ok(pan.includes(w), `${w} is not back after パン板`);
+	for (const w of ["shiyo", "feris", "rino"])
+		ok(!pan.includes(w), `${w} is back too early`);
+	ok(
+		hallPlaces(view(["shallow"])).some((p) => !!p.sprite),
+		"the hall stays empty after パン板",
+	);
+	// はじめての 持ち帰りの 語り（cleared には まだ 無い）でも、同じ 船の 仲間は 立つ
+	const arriving = people(view([], "shallow"));
+	ok(
+		arriving.includes("roze") && !arriving.includes("ngoane"),
+		`arriving: ${arriving}`,
+	);
+	ok(
+		people(view(["shallow", "kinoko"])).includes("shiyo"),
+		"shiyo is not back after きのこ板",
+	);
+	for (const d of ["tropical", "deep"] as const)
+		ok(
+			people(view(["shallow", "kinoko", d])).includes("feris"),
+			`feris is not back after ${d}`,
+		);
+	ok(awayMobs(DUNGEON_IDS).length === 0, "someone never comes back");
+	ok(awayFriends(DUNGEON_IDS).length === 0, "a rival never comes back");
 });
 
 test("ぷゆゆの お弁当：キリコの となりまで かけてきて ひとこと、持たせて、そのまま そばに いる（持ち物が あれば 来ない）", async () => {
@@ -2261,21 +2323,33 @@ test("喫茶「おんJ」: every talk fits the village window, and the door appe
 			`${w}: no sip lines`,
 		);
 	// おごった 回数で 話が ふえる（3杯・6杯）
-	const base = cafeTalks(CAFE_FROM, {
-		heard: [],
-		treats: {},
-		sentAt: 0,
-	}).length;
-	const three = cafeTalks(CAFE_FROM, {
-		heard: [],
-		treats: { roze: 3 },
-		sentAt: 0,
-	}).length;
-	const six = cafeTalks(CAFE_FROM, {
-		heard: [],
-		treats: { roze: 6 },
-		sentAt: 0,
-	}).length;
+	const base = cafeTalks(
+		CAFE_FROM,
+		{
+			heard: [],
+			treats: {},
+			sentAt: 0,
+		},
+		[],
+	).length;
+	const three = cafeTalks(
+		CAFE_FROM,
+		{
+			heard: [],
+			treats: { roze: 3 },
+			sentAt: 0,
+		},
+		[],
+	).length;
+	const six = cafeTalks(
+		CAFE_FROM,
+		{
+			heard: [],
+			treats: { roze: 6 },
+			sentAt: 0,
+		},
+		[],
+	).length;
 	ok(
 		three === base + 1 && six === base + 2,
 		`treat talks: ${base} → ${three} → ${six}`,
@@ -2819,6 +2893,7 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 		setProgress(
 			["shallow", "kinoko"],
 			[{ dungeon: "kinoko", reason: "relief" }],
+			["shallow"],
 		);
 		const relief = fakeStory();
 		await newsScript(relief.s);
@@ -3222,6 +3297,8 @@ test("住人の 声: 音源の ある子（春音リノ・響化アル）だけ 
 		"only リノ and アル have a voice among the residents",
 	);
 	await withStorageAsync(async () => {
+		// みんな 帰ってきた 町（名前を 呼ぶ 仲間が いないと その 行は とばす）
+		setProgress([...DUNGEON_IDS], [], [...DUNGEON_IDS]);
 		putTown({ stage: 7 });
 		for (const id of MOB_IDS) {
 			const t = fakeStory({ near: ["nanj"] });
@@ -3255,7 +3332,8 @@ const seasonalToday = (d: (typeof MOBS)[keyof typeof MOBS]): string | null => {
 
 test("a mob: hello first, then one new talk per return, then a reaction and the usual line", async () => {
 	await withStorageAsync(async () => {
-		setProgress(["shallow", "main"]);
+		// フェリスは 離島板で 帰ってきて いる
+		setProgress(["shallow", "main"], [], ["tropical"]);
 		putTown({ stage: 7 });
 		const id = "ngoane";
 		const d = MOBS[id];
@@ -3301,7 +3379,7 @@ test("a mob: hello first, then one new talk per return, then a reaction and the 
 			`with feris:\n${g.log.join("\n")}`,
 		);
 		// 長湯スレを 持ち帰ったら 節目が 先
-		setProgress(["shallow", "main"], [], ["shallow", "main"]);
+		setProgress(["shallow", "main"], [], ["shallow", "main", "tropical"]);
 		pushRecord({ kind: "clear", dungeon: "main" });
 		const h = fakeStory();
 		await mobScript(id)(h.s);
@@ -3797,7 +3875,8 @@ test("ぷゆゆ: there from the first visit with the やきう name bar, not a c
 
 test("ぷゆゆ: one new talk per return in array order, mob pairs only when both are near, callbacks after their setup", async () => {
 	await withStorageAsync(async () => {
-		setProgress(["shallow", "main"], [], ["shallow"]);
+		// シヨは きのこ板・フェリスは 離島板で 帰ってきて いる（名前を 呼ぶ 話も 出る）
+		setProgress(["shallow", "main"], [], ["shallow", "kinoko", "tropical"]);
 		putTown({ stage: 7 });
 		setBook(["tousuko", "metal"]);
 		for (const id of MOB_IDS) await mobScript(id)(fakeStory().s);
@@ -4448,7 +4527,11 @@ test("a run end counts the outing and leaves event news; the village reads it on
 
 test("潜った 本人は 迎えない：ロゼが 主人公で 持ち帰ると、迎える 語りに ロゼは 出ない（かわりの 頁か 出さない）", async () => {
 	await withStorageAsync(async () => {
-		setProgress(["shallow", "kinoko", "tropical"]);
+		setProgress(
+			["shallow", "kinoko", "tropical"],
+			[],
+			["shallow", "kinoko", "tropical"],
+		);
 		putTown({ stage: 7 });
 		const a: ReturnArrival = { kind: "clear", dungeon: "tropical" };
 		ok(
@@ -4486,27 +4569,32 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 			first && first.who === null && first.text.startsWith("村に帰りつくと"),
 			`${d}: the ending does not open with the arrival: ${first?.text}`,
 		);
-		// 仲間が みんな 越してきた 町で（まだ 来ていない 仲間の 頁は 出ない）
+		// 仲間が みんな 帰ってきた 町で（まだ 帰って いない 仲間の 頁は 出ない）
+		const cleared: DungeonId[] = ["shallow", "kinoko", "tropical"];
 		let got: readonly StoryPage[] = [];
 		await withStorageAsync(async () => {
+			setProgress([...DUNGEON_IDS], [], cleared);
 			putTown({ stage: 7 });
 			got = pagesFor({ kind: "clear", dungeon: d, objective: "boss" });
 		});
+		// 持ち帰って いる 板しだいの 頁（needCleared・unlessCleared）は その とおりに 数える
+		const shown = (p: StoryPage) =>
+			(!p.needCleared || cleared.includes(p.needCleared)) &&
+			!(p.unlessCleared && cleared.includes(p.unlessCleared));
 		ok(
 			got[0] === first &&
 				JSON.stringify(got.slice(1, 1 + n)) ===
 					JSON.stringify(BOSS_RETURN[d]) &&
 				got.length ===
-					// 寄り道を 持ち帰って いる ときだけの 頁（needCleared）は 数えない
-					STORY[d].ending.filter((p) => !p.needCleared).length +
-						(STORY[d].once?.filter((p) => !p.needCleared).length ?? 0) +
+					STORY[d].ending.filter(shown).length +
+						(STORY[d].once?.filter(shown).length ?? 0) +
 						n +
 						(episodeEnd(d) ? 1 : 0),
 			`${d}: the boss pages are not right after the arrival`,
 		);
 	}
 	await withStorageAsync(async () => {
-		setProgress(["shallow", "kinoko"]);
+		setProgress(["shallow", "kinoko"], [], ["shallow", "kinoko"]);
 		putTown({ stage: 7 });
 		const v = villageView();
 		const a: ReturnArrival = {
@@ -4539,9 +4627,15 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 					JSON.stringify(plain),
 			"a fetch clear got boss pages",
 		);
+		// 帰還スレの 語りは いつもの まま（まだ 帰って いない フェリスの 頁だけ かわる）
+		const back = pagesFor({
+			kind: "escape",
+			dungeon: "kinoko",
+			objective: "boss",
+		});
 		ok(
-			pagesFor({ kind: "escape", dungeon: "kinoko", objective: "boss" }) ===
-				RETURN_PAGES,
+			back.length <= RETURN_PAGES.length &&
+				!back.some((p) => BOSS_RETURN.kinoko?.includes(p)),
 			"an escape from a boss run got boss pages",
 		);
 		const { s, log } = fakeStory({ at: exitFor("kinoko").cell });
@@ -4693,8 +4787,8 @@ test("おんJ 本館の 中: it grows by tier and keeps what the smaller hall ha
 	const kinds = HALL_STAGES.map(
 		(stage) =>
 			new Set(
-				hallPlaces({ stage, unlocked: ["shallow"], cleared: [] }).map((p) =>
-					kindOf(p.id),
+				hallPlaces({ stage, unlocked: ["shallow"], cleared: ["shallow"] }).map(
+					(p) => kindOf(p.id),
 				),
 			),
 	);
@@ -4725,7 +4819,7 @@ test("おんJ 本館の 中: it grows by tier and keeps what the smaller hall ha
 		const people = hallPlaces({
 			stage,
 			unlocked: ["shallow"],
-			cleared: [],
+			cleared: ["shallow"],
 		}).filter((p) => p.sprite);
 		for (const p of people)
 			ok(
@@ -6009,7 +6103,12 @@ test("倉庫・常識堂の 奥: 台の 横の 扉を 踏んで 入る（倉庫�
 		setProgress(["shallow"]);
 		for (const stage of [2, 4, 5, 6, BANK_FROM]) {
 			putTown({ stage });
-			const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
+			// ンゴ姉・ロゼは パン板・シヨは きのこ板で 帰ってきて いる
+			const v: VillageView = {
+				stage,
+				unlocked: ["shallow"],
+				cleared: ["shallow", "kinoko"],
+			};
 			const events = buildVillage(v, {} as Ctx).events ?? [];
 			for (const [id, door] of DOORS) {
 				const ev = events.find((e) => e.id === door);
@@ -6154,71 +6253,86 @@ const layoutTalks = {
 };
 
 test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friends, one always free to sit by, chats have a talk, nobody shares a cell", () => {
-	const sets = new Set<string>();
-	let chats = 0;
-	let nanashi = 0;
-	let all = 0;
-	for (let at = 1000; at < 1200; at++) {
-		const l = cafeLayout(7, at, layoutTalks);
-		ok(
-			JSON.stringify(l) === JSON.stringify(cafeLayout(7, at, layoutTalks)),
-			`${at}: not the same for the same return`,
-		);
-		const friends = l.friends.flatMap((f) =>
-			f.partner && !(MOB_IDS as string[]).includes(f.partner)
-				? [f.who, f.partner]
-				: [f.who],
-		);
-		ok(
-			friends.length >= 2 && new Set(friends).size === friends.length,
-			`${at}: friends ${friends.join(",")}`,
-		);
-		if (friends.length === 5) all++;
-		sets.add([...friends].sort().join(","));
-		ok(
-			l.friends.some((f) => !f.partner),
-			`${at}: nobody has a free seat beside`,
-		);
-		const cells: string[] = [];
-		for (const f of l.friends) {
-			const seat = CAFE_SLOTS[f.slot];
-			ok(seat, `${at}: ${f.who} has no seat`);
-			cells.push(seat.at.join(","));
-			if (!f.partner) continue;
-			chats++;
-			cells.push(seat.kiriko.join(","));
-			const isMob = (MOB_IDS as string[]).includes(f.partner);
+	withStorage(() => {
+		// みんな 帰ってきた 町
+		setProgress([...DUNGEON_IDS], [], [...DUNGEON_IDS]);
+		const sets = new Set<string>();
+		let chats = 0;
+		let nanashi = 0;
+		let all = 0;
+		for (let at = 1000; at < 1200; at++) {
+			const l = cafeLayout(7, at, layoutTalks);
 			ok(
-				isMob
-					? CAFE_MOBS[f.partner as MobId].talks.some(
-							(t) => t.key === f.talk && t.with === f.who,
-						)
-					: CAFE_TALKS.some(
-							(t) =>
-								t.id === f.talk &&
-								t.cast.includes(f.who) &&
-								t.cast.includes(f.partner as Speaker),
-						),
-				`${at}: ${f.who} and ${f.partner} chat about nothing`,
+				JSON.stringify(l) === JSON.stringify(cafeLayout(7, at, layoutTalks)),
+				`${at}: not the same for the same return`,
+			);
+			const friends = l.friends.flatMap((f) =>
+				f.partner && !(MOB_IDS as string[]).includes(f.partner)
+					? [f.who, f.partner]
+					: [f.who],
+			);
+			ok(
+				friends.length >= 2 && new Set(friends).size === friends.length,
+				`${at}: friends ${friends.join(",")}`,
+			);
+			if (friends.length === 5) all++;
+			sets.add([...friends].sort().join(","));
+			ok(
+				l.friends.some((f) => !f.partner),
+				`${at}: nobody has a free seat beside`,
+			);
+			const cells: string[] = [];
+			for (const f of l.friends) {
+				const seat = CAFE_SLOTS[f.slot];
+				ok(seat, `${at}: ${f.who} has no seat`);
+				cells.push(seat.at.join(","));
+				if (!f.partner) continue;
+				chats++;
+				cells.push(seat.kiriko.join(","));
+				const isMob = (MOB_IDS as string[]).includes(f.partner);
+				ok(
+					isMob
+						? CAFE_MOBS[f.partner as MobId].talks.some(
+								(t) => t.key === f.talk && t.with === f.who,
+							)
+						: CAFE_TALKS.some(
+								(t) =>
+									t.id === f.talk &&
+									t.cast.includes(f.who) &&
+									t.cast.includes(f.partner as Speaker),
+							),
+					`${at}: ${f.who} and ${f.partner} chat about nothing`,
+				);
+			}
+			for (const p of l.patrons) {
+				ok(!!MOBS[p.id], `${at}: ${p.id} is not a resident`);
+				cells.push(CAFE_PATRON_SPOTS[p.spot].at.join(","));
+			}
+			for (const n of l.nanashi) {
+				nanashi++;
+				const spot = CAFE_PATRON_SPOTS[n.spot];
+				cells.push(spot.at.join(","));
+				if (n.pair) cells.push(spot.kiriko.join(","));
+			}
+			ok(new Set(cells).size === cells.length, `${at}: two share a cell`);
+		}
+		ok(sets.size > 5, `only ${sets.size} different sets of friends`);
+		ok(
+			chats > 0 && nanashi > 0 && all > 0,
+			`chats ${chats} / nanashi ${nanashi} / all five ${all}`,
+		);
+		// はじめの 町：仲間は 残った やきうだけ。住人は ぷゆゆと 原住民、名無しの 客は まだ いない
+		setProgress(["shallow"]);
+		for (let at = 1000; at < 1050; at++) {
+			const l = cafeLayout(7, at, layoutTalks);
+			ok(
+				l.friends.every((f) => f.who === "nanj" && !f.partner) &&
+					l.patrons.every((p) => p.id === "puyu" || p.id === "shobon") &&
+					!l.nanashi.length,
+				`${at}: the empty town's cafe has ${JSON.stringify(l)}`,
 			);
 		}
-		for (const p of l.patrons) {
-			ok(!!MOBS[p.id], `${at}: ${p.id} is not a resident`);
-			cells.push(CAFE_PATRON_SPOTS[p.spot].at.join(","));
-		}
-		for (const n of l.nanashi) {
-			nanashi++;
-			const spot = CAFE_PATRON_SPOTS[n.spot];
-			cells.push(spot.at.join(","));
-			if (n.pair) cells.push(spot.kiriko.join(","));
-		}
-		ok(new Set(cells).size === cells.length, `${at}: two share a cell`);
-	}
-	ok(sets.size > 5, `only ${sets.size} different sets of friends`);
-	ok(
-		chats > 0 && nanashi > 0 && all > 0,
-		`chats ${chats} / nanashi ${nanashi} / all five ${all}`,
-	);
+	});
 });
 
 test("建物の 中の 文: every line fits the village window, talks are 1〜4 windows, and every resident has cafe lines", () => {

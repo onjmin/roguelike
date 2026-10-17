@@ -1,4 +1,4 @@
-// おんJタウンに 住む おんJマイナーズ（rpg の data/minors.ts の子たち）。みんな はじめから 町に いる。
+// おんJタウンに 住む おんJマイナーズ（rpg の data/minors.ts の子たち）。板の 話が 片づくと 町に 帰ってくる（MOB_BACK）。
 // 春音リノと 響化アル（どちらも おんJ・おーぷん生まれの UTAU。マイナーズでは ないので 人気投票には 出ない）も いる。
 // ぷゆゆ（レスの 文末の 🥺 が 歩きだした子。マイナーズでは ない）は 広場の 下で うろうろ している
 // （名前欄は やきうの 色で rpg の ぷゆゆと 同じ。人気投票には 出ない。下の 敵の ぷゆゆとは べつの子）。
@@ -19,6 +19,7 @@
 // - 期間限定・曜日は 遊んでいる 端末の 日付（data/town/calendar.ts）。
 // ロジックは ui/village/villageMobs.ts、置き場所は data/village/map.ts。
 
+import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { Dir } from "../../engine/types";
 import type { Speaker } from "../story/quotes";
@@ -2981,6 +2982,37 @@ export const MOBS: Record<MobId, MobDef> = {
 };
 
 export const MOB_IDS = Object.keys(MOBS) as MobId[];
+
+/**
+ * 住人が 町に 帰ってくる 板（その 板を 持ち帰ると、生き返った 通りに もどってくる。ここに ない 子は はじめから いる）。
+ * はじめから いるのは ぷゆゆ（🥺。お弁当の 係）と 原住民（2012年から 名無しで 見ている いちばん 古い 住人）だけ。
+ * パン板で 広場に 人が もどる（大使館の パン松・倉庫の ンゴ姉・買い取りの ジェイトルマン・帳簿の ヒナリー・
+ * ゼロの サブ機 プロトと レン など）。きのこ板で 商店街に もどる（店先の 見張りの リノ など）。
+ */
+export const MOB_BACK: Partial<Record<MobId, DungeonId>> = {
+	nichie: "shallow",
+	panmatsu: "shallow",
+	ngoane: "shallow",
+	onchan: "shallow",
+	jtleman: "shallow",
+	proto: "shallow",
+	ren: "shallow",
+	hinary: "shallow",
+	onsu: "kinoko",
+	yayapoji: "kinoko",
+	mujje: "kinoko",
+	asakonro: "kinoko",
+	miaumiau: "kinoko",
+	rino: "kinoko",
+	aru: "kinoko",
+};
+
+/** まだ 町に 帰って きて いない 住人（MOB_BACK の 板を 持ち帰って いない）。 */
+export const awayMobs = (cleared: readonly DungeonId[]): MobId[] =>
+	MOB_IDS.filter((id) => {
+		const back = MOB_BACK[id];
+		return !!back && !cleared.includes(back);
+	});
 
 /**
  * ぷゆゆが お弁当の ぷゆゆパンを 持たせる ときの ひとこと（ui/village/villageReturn.ts の lunchScript。帰りごとに 1つ）。

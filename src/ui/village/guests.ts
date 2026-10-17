@@ -12,7 +12,7 @@ import {
 	STAGE_SINGERS,
 	type StageSinger,
 } from "../../data/people/guests";
-import { MOB_IDS, type MobId } from "../../data/people/mobs";
+import { awayMobs, MOB_IDS, type MobId } from "../../data/people/mobs";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../../data/story/glossary";
 import type { VillageView } from "../../data/village/map";
 import {
@@ -65,7 +65,9 @@ const baseGuests = (v: VillageView, at: number): Guests => {
 	const music = v.stage >= ROOM_FROM.music;
 	const bath = v.stage >= ROOM_FROM.bath;
 	const books = booksRoom(v);
-	const moved = rng.shuffle([...MOB_IDS]);
+	// まだ 町に 帰って きて いない 子は 来ない（data/people/mobs.ts の MOB_BACK）
+	const gone = awayMobs(v.cleared);
+	const moved = rng.shuffle([...MOB_IDS]).filter((id) => !gone.includes(id));
 	const out: Guests = {
 		stage: null,
 		music: [],

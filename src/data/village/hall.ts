@@ -29,7 +29,7 @@ import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { YAJI_WALK } from "../people/cast";
-import { FOLK_WALK } from "./folk";
+import { FOLK_BACK, FOLK_WALK } from "./folk";
 import type { Cell, VillageView } from "./map";
 import { VILLAGE_SPOTS } from "./map";
 import { base, basePx, floor, hallTier, INDOOR, solid } from "./tiles";
@@ -304,9 +304,9 @@ export const hallPlaces = (v: VillageView): HallPlace[] => {
 			out.push({ id: `${id}_${n}`, x, y, trigger: "talk" });
 		});
 	});
-	// 名無し（と 段7 の 野次馬）
+	// 名無し（と 段7 の 野次馬）。みんな 飽きて 出ていったので、広場に 人が もどる パン板までは だれも いない
 	let nanashi = 0;
-	for (const p of PEOPLE[tier]) {
+	for (const p of v.cleared.includes(FOLK_BACK) ? PEOPLE[tier] : []) {
 		if (p.from !== undefined && stage < p.from) continue;
 		const yaji = p.id.startsWith("yaji_");
 		const sprite =

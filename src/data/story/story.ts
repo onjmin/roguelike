@@ -42,26 +42,30 @@ export const playPage = (
 				? st.say(p.who, p.text, cueOf(p))
 				: st.narrate(p.text);
 
-// ───────────────── 村に いない 仲間（まだ 来ていない） ─────────────────
-/** 仲間が 村に 来る 町の 段（みんな はじめから 町に いる。町は はじめから 都市の 姿：TOWN.md §0.1）。 */
-export const FRIEND_FROM: Record<Speaker, number> = {
-	nanj: 0,
-	roze: 0,
-	zero: 0,
-	feris: 0,
-	shiyo: 0,
+// ───────────────── 村に いない 仲間（まだ 帰ってきて いない） ─────────────────
+/**
+ * 仲間が 町に 帰ってくる 板（どれか 1つを 持ち帰ると 帰ってくる。null は はじめから 町に いる）。
+ * みんな 飽きて 出ていった 町に 残ったのは やきうだけ（STORY.md §4.9）。ライバルは よその 板へ 先回りして いて、
+ * その 板の 話が 片づくと キリコと 同じ 船で 帰ってくる：ロゼは パン板で 王に 説教、ゼロは パン兵を 数えに、
+ * シヨは 商店街の メイド喫茶の バイトが もどって、フェリスは 浜の ステージか 電池板の 底から。
+ */
+export const FRIEND_BACK: Record<Speaker, readonly DungeonId[] | null> = {
+	nanj: null,
+	roze: ["shallow"],
+	zero: ["shallow"],
+	shiyo: ["kinoko"],
+	feris: ["tropical", "deep"],
 };
 
 /**
- * 村に いない 仲間（まだ 来ていない：stage が FRIEND_FROM より 前）。だれも 村から 出ていかない。
- * いない 人は 村に 立たず、語り・知らせ・喫茶・起動の札でも 話さない。stage を 省くと いちばん上の 段（みんな 来ている）。
- * cleared は 呼ぶ 側と 形を そろえる ため（いまは 見ない）。
+ * 村に いない 仲間（まだ 帰ってきて いない：FRIEND_BACK の 板を どれも 持ち帰って いない）。一度 帰ったら 出ていかない。
+ * いない 人は 村に 立たず、語り・知らせ・喫茶・起動の札でも 話さない。
  */
-export const awayFriends = (
-	_cleared: readonly DungeonId[],
-	stage = Number.POSITIVE_INFINITY,
-): Speaker[] =>
-	(Object.keys(FRIEND_FROM) as Speaker[]).filter((w) => stage < FRIEND_FROM[w]);
+export const awayFriends = (cleared: readonly DungeonId[]): Speaker[] =>
+	(Object.keys(FRIEND_BACK) as Speaker[]).filter((w) => {
+		const back = FRIEND_BACK[w];
+		return !!back && !back.some((d) => cleared.includes(d));
+	});
 
 /**
  * 文に 村に いない 仲間の 名前が 出てくるか（まだ 越してきていない 人の 話を しない）。
@@ -639,7 +643,10 @@ export const STORY: Record<
 			"階は、1本のスレ。動くたび、レスがつく。\n……1000まで埋まると、次のスレへ。",
 		],
 		ending: [
-			...SHALLOW_BASE,
+			SHALLOW_BASE[0],
+			// ロゼと ゼロは パン板へ 先回りして いた（王に 説教・パン兵を 数えに）。同じ 船で 町に 帰ってくる（FRIEND_BACK）
+			n("同じ船で、パン板から\nロゼとゼロ3機も帰ってきた。"),
+			...SHALLOW_BASE.slice(1),
 			// 独立が 町じゅうに うつる（キリコ → ゼロ 3機 → 町じゅう。ロゼの「書類」で 落とす）
 			k("吾輩も独立するンゴ。\n国旗は、蓄音機ンゴ"),
 			s("nanj", "国民ひとりやんけ"),
@@ -801,6 +808,11 @@ export const STORY: Record<
 		],
 		// 頭の きのこが 町に ひろがる（商店街 → 港まで）。行進の オチで 摘みとられ、寄り道「残機」の 入口へ
 		once: [
+			// 商店街が 生き返って、シヨが メイド喫茶の バイトに もどってくる（FRIEND_BACK）
+			n("メイド喫茶の前に、エプロンの\nシヨが帰ってきていた。"),
+			s("shiyo", "べ、べつに帰ってきたわけじゃ\nないわよ。……バイトよ", {
+				emote: "汗",
+			}),
 			n("キリコの頭のきのこが、\nぽふっと胞子をふいた。"),
 			n("10分後。商店街のシャッターに、\nきのこが生えた。"),
 			s("zero", "128本です！\n……行進と、同じ数です", { emote: "!" }),

@@ -8,7 +8,7 @@
 import { CAST } from "../../data/people/cast";
 import { MOBS, type MobId } from "../../data/people/mobs";
 import type { Speaker } from "../../data/story/quotes";
-import { awayFriends, FRIEND_FROM } from "../../data/story/story";
+import { awayFriends } from "../../data/story/story";
 import {
 	BANDAI,
 	BATH_MEN,
@@ -54,9 +54,9 @@ const shuffled = <T>(list: readonly T[], seed: number): T[] => {
 
 /** この 帰りの 女湯の 人（仲間は 村に いれば みんな、住人は この 帰りに 来ている 子。ui/village/guests.ts）。 */
 export const bathWomen = (v: VillageView, seed: number): BathWoman[] => {
-	const away = awayFriends(v.cleared, v.stage);
+	const away = awayFriends(v.cleared);
 	return [
-		...FRIENDS.filter((w) => v.stage >= FRIEND_FROM[w] && !away.includes(w)),
+		...FRIENDS.filter((w) => !away.includes(w)),
 		...(guestsOf(v, seed).bath.filter((id) => id in BATH_WOMEN) as BathWoman[]),
 	];
 };

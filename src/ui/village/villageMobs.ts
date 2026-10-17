@@ -36,7 +36,6 @@ import {
 	loadBook,
 	loadProgress,
 	loadRecords,
-	loadTown,
 	runStats,
 } from "../../engine/save";
 import { fill, sulkTier } from "./villageTalk";
@@ -166,8 +165,7 @@ const eventOf = (w: Cast): string => (isMob(w) ? `mob_${w}` : w);
 const nearCast = (s: Story, w: Cast): boolean => s.near(eventOf(w), NEAR);
 /** when が 無いか、この 帰りに 合う。 */
 /** 村に いない 仲間（まだ 越してきていない。data/story/story.ts の awayFriends）。 */
-const absent = (): Speaker[] =>
-	awayFriends(loadProgress().cleared, loadTown().stage);
+const absent = (): Speaker[] => awayFriends(loadProgress().cleared);
 
 /** その 行に 村に いない 仲間が 出てくるか（話す・名前を 呼ばれる）。 */
 const absentIn = (l: MobLine, away: readonly Speaker[]): boolean =>

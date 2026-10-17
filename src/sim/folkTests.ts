@@ -676,7 +676,11 @@ test("F6 村: 名無したちは 段1 から（段0 は ぷゆゆと やきう�
 
 test("F8 本館: バルス失敗ニキは レンガ館（段3〜5）と 本館（段6〜7）の すみ。みんなに 届く", () => {
 	for (let stage = 0; stage < TOWN_STAGES; stage++) {
-		const v: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
+		const v: VillageView = {
+			stage,
+			unlocked: ["shallow"],
+			cleared: ["shallow"],
+		};
 		const tier = hallTierOf(v);
 		const places = hallPlaces(v);
 		const b = places.find((p) => p.id === "balus");

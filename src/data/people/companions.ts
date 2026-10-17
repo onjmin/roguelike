@@ -13,7 +13,7 @@ import type { Cue } from "../../engine/emote";
 import type { Speaker } from "../story/quotes";
 import { awayFriends } from "../story/story";
 import { CAST } from "./cast";
-import { MOB_IDS, MOBS, type MobId } from "./mobs";
+import { awayMobs, MOB_IDS, MOBS, type MobId } from "./mobs";
 
 export type EscortRequest = {
 	id: string;
@@ -184,16 +184,17 @@ export const escortById = (
 /** 仲間（Speaker）の 依頼主か（住人なら false）。 */
 const isFriend = (who: GuestId): who is GuestId & Speaker => who in CAST;
 
-/** 依頼主が いま 村に いるか（住人は はじめから いる。仲間は 筋で 留守の ことが ある）。 */
+/** 依頼主が いま 村に いるか（仲間も 住人も、板の 話が 片づいて 帰ってきて から）。 */
 export const requesterHere = (
 	who: GuestId,
 	cleared: readonly DungeonId[],
-	stage: number,
+	_stage: number,
 	_points: number,
 ): boolean =>
 	isFriend(who)
-		? !awayFriends(cleared, stage).includes(who)
-		: MOB_IDS.includes(who as MobId);
+		? !awayFriends(cleared).includes(who)
+		: MOB_IDS.includes(who as MobId) &&
+			!awayMobs(cleared).includes(who as MobId);
 
 /** 掲示板に 出ている 依頼（持ち帰った 板・依頼主が 村に いる・まだ はたして いない。順は ESCORTS）。 */
 export const openEscorts = (

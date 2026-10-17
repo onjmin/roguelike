@@ -123,8 +123,7 @@ export const deathQuote = (seed: number): Quote | null => {
 const bandNow = () => timeBand(nowHour());
 
 /** 村に いない 仲間（まだ 来ていない）。 */
-const away_ = (): Speaker[] =>
-	awayFriends(loadProgress().cleared, loadTown().stage);
+const away_ = (): Speaker[] => awayFriends(loadProgress().cleared);
 
 /**
  * 前の 冒険に 出た 仲間（ロゼ・ゼロ。キリコなら 空）。帰って きた 本人が 自分に「おかえり」・

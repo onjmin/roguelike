@@ -12,8 +12,8 @@
 // - 西に 店の区画（x=1〜8）、まんなかに 小屋（x=12〜15）、東に 倉庫の区画（x=16〜20）。その下が 広場（掲示板・蓄音機）。
 //   売り場は「囲い（y=10。売る人が立つ）＋ 台（y=11）」。キリコは 通り（y=12）から 台ごしに 話しかける。
 //   常識堂の 奥・倉庫の 扉は 台の 横の 細道の 奥（常識堂は 右・倉庫は 左）。踏むと 中へ（data/village/rooms.ts）。
-// - やきうは 小屋の前（12,11）で 大工。人は 町の段と 役目で 立つ（5人とも はじめから いる）。段7 は 野次馬が 3人。
-// - おんJマイナーズ（data/people/mobs.ts）は 町が 育つと 1人ずつ 越してくる。ぷゆゆは 段0 から 広場の 下を うろうろ。
+// - やきうは 町に 残った 名無し。ライバルは 板の 話が 片づくと 帰ってくる（data/story/story.ts の FRIEND_BACK）。段7 は 野次馬が 3人。
+// - おんJマイナーズ（data/people/mobs.ts）は 板を 持ち帰ると 帰ってくる（MOB_BACK）。ぷゆゆと 原住民は はじめから。
 // - 町の まわりも 段で かわる：段2 で 北西の 森に おんJ神社（おみくじ）、
 //   段3 で 池の そばに 音楽室、段5 で 西の 空き地に 喫茶。銭湯は 東の 商店街の 南に いつも ある。
 // - 帰ってきたとき 仲間が 出口の前に 並ぶ マス（lineupSpots）と、町が 育ったとき カメラを 向ける 所（VILLAGE_SPOTS.growth）。
@@ -53,10 +53,11 @@ import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../people/cast";
-import { MOB_IDS, MOBS, type MobId } from "../people/mobs";
+import { awayMobs, MOB_IDS, MOBS, type MobId } from "../people/mobs";
 import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
+import { awayFriends } from "../story/story";
 import { nowHour, today } from "../town/calendar";
 import {
 	activeIncidents,
@@ -74,7 +75,7 @@ import {
 	outdoorId,
 	stampFacilities,
 } from "./facilities";
-import { folkPlaces } from "./folk";
+import { FOLK_BACK, folkPlaces } from "./folk";
 import { ROOM_FROM } from "./rooms";
 import { art, ri } from "./rpgenArt";
 import {
@@ -141,6 +142,11 @@ export type VillageView = {
 	stage: number;
 	unlocked: readonly DungeonId[];
 	cleared: readonly DungeonId[];
+	/**
+	 * いま 持ち帰って きた 板（はじめての 持ち帰りの 語りの あいだ。cleared には まだ 入れない）。
+	 * その 板で 帰ってくる 仲間は 同じ 船で 着いて いるので、語りの 村にも 立つ。
+	 */
+	arriving?: DungeonId;
 };
 
 export type Cell = readonly [x: number, y: number];
@@ -1126,21 +1132,25 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const [x, y] = VILLAGE_SPOTS.shopDoor;
 		out.push({ id: "door_shop", x, y, trigger: "touch" });
 	}
-	// ライバル 4人と やきう（みんな はじめから 町に いる。店の 仕事は しない：TOWN.md §0.4）
-	out.push(friend("roze", VILLAGE_SPOTS.roze));
+	// ライバル 4人と やきう（やきうは はじめから。ライバルは 板の 話が 片づくと 帰ってくる：data/story/story.ts の
+	// FRIEND_BACK。店の 仕事は しない：TOWN.md §0.4）
+	const away = awayFriends(v.arriving ? [...v.cleared, v.arriving] : v.cleared);
+	const here = (w: Speaker) => !away.includes(w);
+	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze));
 	// シヨは 金・土・日の 夜は メイド喫茶で アルバイト（data/people/shiyoShift.ts）
 	if (
+		here("shiyo") &&
 		!(
 			isRevived("maid", revivedBoards(v)) &&
 			shiyoAtMaid(stage, today(), nowHour())
 		)
 	)
 		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo));
-	out.push(friend("zero", VILLAGE_SPOTS.zero));
+	if (here("zero")) out.push(friend("zero", VILLAGE_SPOTS.zero));
 	// やきうは 町に 残った 名無し（家の 前）
 	out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
 	// フェリスは 海の家の ステージ（不死鳥アイドル）
-	out.push(friend("feris", VILLAGE_SPOTS.feris, true));
+	if (here("feris")) out.push(friend("feris", VILLAGE_SPOTS.feris, true));
 	// 施設の 扉（中が ある 施設）と 外に 置く 物（釣り場の 竿・グラウンドの マウンドなど）
 	for (const f of facilitiesAt(stage)) {
 		const d = facilityDoor(f);
@@ -1162,8 +1172,10 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			});
 		}
 	}
-	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
+	// おんJマイナーズ（板の 話が 片づくと 帰ってくる：data/people/mobs.ts の MOB_BACK）
+	const gone = awayMobs(v.cleared);
 	for (const id of MOB_IDS) {
+		if (gone.includes(id)) continue;
 		const d = MOBS[id];
 		out.push({
 			id: `mob_${id}`,
@@ -1190,7 +1202,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			});
 		});
 	// 村の はしの 名無したち（data/village/folk.ts。話し方は ui/village/folk.ts）
-	out.push(...folkPlaces(stage));
+	// （広場に 人が もどる パン板から）
+	if (v.cleared.includes(FOLK_BACK)) out.push(...folkPlaces(stage));
 	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで）と ご近所（持ち帰った あと。data/town/incidents.ts）
 	for (const p of [
 		...activeIncidents(v).flatMap((i) => i.people),

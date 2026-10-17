@@ -15,6 +15,7 @@
 //     y3  森・森・森・供養碑・道・新しい 墓（!okpic）・道
 // どの 人も 道を ふさがない・遠回りに しない・木の 葉や 街灯に かくれない（くぼみ・行き止まり・原っぱ。src/sim/folkTests.ts の F6）。
 
+import type { DungeonId } from "../../core/types";
 import type { Dir } from "../../engine/types";
 import type { Cell, VillagePlace } from "./map";
 
@@ -75,6 +76,9 @@ export const folkSpot = (
 
 /** 名無したちが 来る 段（最序盤の 段0 は ぷゆゆと やきうの 2人だけ）。 */
 export const FOLK_FROM = 1;
+
+/** 名無したちが 町に 帰ってくる 板（広場に 人が もどる パン板。data/village/map.ts の villagePlaces）。 */
+export const FOLK_BACK: DungeonId = "shallow";
 
 /** 村に 置く folk の イベント（id は folk_ で はじまる。ui/village/folk.ts の folkEvent が 話し方を つける）。 */
 export const folkPlaces = (stage: number): VillagePlace[] => {

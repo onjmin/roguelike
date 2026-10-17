@@ -21,6 +21,7 @@
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../../core/town";
 import { type DungeonId, instantClear, type Objective } from "../../core/types";
 import {
+	awayMobs,
 	type MobId,
 	PUYU_LUNCH,
 	PUYU_RELIEF,
@@ -164,13 +165,14 @@ const firstEnding = (a: ReturnArrival, p: Progress): boolean =>
 	a.kind === "clear" && !(p.endings ?? []).includes(a.dungeon);
 
 /**
- * 場面で 村に いない 仲間。はじめての 持ち帰りの 語りは その 板を 持ち帰る 前の 村で 語る
- * （その 板を 持ち帰った 段で 越してくる 人は、まだ いない）。
+ * 場面で 村に いない 仲間。その 板で 帰ってくる 仲間は キリコと 同じ 船で 着くので、
+ * はじめての 持ち帰りの 語りにも 出る（sceneView の arriving）。
  */
 const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
 	const away = awayFriends(
-		firstEnding(a, p) ? p.cleared.filter((d) => d !== a.dungeon) : p.cleared,
-		loadTown().stage,
+		a.kind === "clear" && !p.cleared.includes(a.dungeon)
+			? [...p.cleared, a.dungeon]
+			: p.cleared,
 	);
 	// 潜った 本人（束音ロゼ・解音ゼロ）は 迎える 側に 立たない：自分で 持ち帰った 物を 自分で 迎えない
 	// （2026-10-14 作者が えらんだ。その 人の 頁は かわりの 頁に かわるか 出ない。起動の 札の mute と 同じ）
@@ -186,7 +188,11 @@ const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
  */
 export const sceneView = (v: VillageView, a: ReturnArrival): VillageView =>
 	firstEnding(a, loadProgress()) && !lightsBack.has(a.dungeon)
-		? { ...v, cleared: v.cleared.filter((d) => d !== a.dungeon) }
+		? {
+				...v,
+				cleared: v.cleared.filter((d) => d !== a.dungeon),
+				arriving: a.dungeon,
+			}
 		: v;
 
 /** 語りの とちゅうで 持ち帰った ことに なった 板（明かりの 坂の あとの 電池板。その 先は 持ち帰った 町で 語る）。 */
@@ -232,9 +238,11 @@ const mobsOf = (pages: readonly StoryPage[]): MobId[] => [
 	...new Set(pages.flatMap((p) => (p.mob ? [p.mob] : []))),
 ];
 
-/** 語りで 話す 住人（みんな はじめから 町に いる）。 */
-const mobsHere = (pages: readonly StoryPage[], _v: VillageView): MobId[] =>
-	mobsOf(pages);
+/** 語りで 話す 住人（その 村に 帰ってきて いる 子だけ。data/people/mobs.ts の MOB_BACK）。 */
+const mobsHere = (pages: readonly StoryPage[], v: VillageView): MobId[] => {
+	const gone = awayMobs(v.cleared);
+	return mobsOf(pages).filter((id) => !gone.includes(id));
+};
 
 /** キリコが 立っている 村の 出口（帰ってきたところ。隠しの 板は 村の 中の 井戸。出口で なければ undefined）。 */
 const inMouth = (s: Story, d: DungeonId): VillageExit | undefined => {
@@ -604,7 +612,7 @@ export const tamperScript = async (s: Story): Promise<void> => {
 	const t = loadTamper();
 	if (!t.news) return;
 	const tier = tamperTier(t.n);
-	const away = awayFriends(loadProgress().cleared, loadTown().stage);
+	const away = awayFriends(loadProgress().cleared);
 	const lines = (TAMPER_SCENE[tier] ?? [])
 		.filter((l) => !away.includes(l.who))
 		.slice(0, 3);
@@ -727,7 +735,7 @@ export const tenScript = async (s: Story): Promise<void> => {
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
 	for (const p of withoutAway(
 		TEN_NEWS.pages,
-		awayFriends([], loadTown().stage),
+		awayFriends(loadProgress().cleared),
 	)) {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
@@ -762,7 +770,7 @@ export const tenScript = async (s: Story): Promise<void> => {
  */
 export const newsScript = async (s: Story): Promise<void> => {
 	// まだ 越してきて いない 仲間は 知らせでも 話さない
-	const away = awayFriends(loadProgress().cleared, loadTown().stage);
+	const away = awayFriends(loadProgress().cleared);
 	const news = loadProgress().news;
 	for (const n of news) {
 		// 寄り道の 板：その 板の 名無しが 来て 話す（仲間の ひとことの かわり）

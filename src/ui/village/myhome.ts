@@ -71,7 +71,7 @@ import { OTAKU_GACHA, OTAKU_GOODS } from "../../data/village/otaku";
 import { tatamiSample } from "../../data/village/tatami";
 import { drawRefInCell, loadImage } from "../../engine/assets";
 import type { EventDef, RoamStep, Script, Story } from "../../engine/defs";
-import { loadProgress, loadRecords, loadTown } from "../../engine/save";
+import { loadProgress, loadRecords } from "../../engine/save";
 import { DIR_VEC, type Dir, TILE } from "../../engine/types";
 import { spendYen, walletYen, yen } from "../../engine/wallet";
 import { arcadeScript, loadArcade } from "../arcade/arcade";
@@ -973,7 +973,7 @@ const phone = async (ctx: Ctx, s: Story): Promise<void> => {
 		await s.narrate(fill(HOME_MSG.phoneBye, { name }));
 		return;
 	}
-	const away = awayFriends(loadProgress().cleared, loadTown().stage);
+	const away = awayFriends(loadProgress().cleared);
 	// bondCast は 喫茶で 親しく なった 人を ♥0 でも ふくむので、ここで ♥ を 見なおす
 	const list = bondCast(INVITE_HEARTS).filter(
 		(w) => !away.includes(w as Speaker) && bondLevel(w) >= INVITE_HEARTS,

@@ -180,26 +180,30 @@ test("なぐられる・帰る：キリコの となりに いない 敵は 同�
 test("同行の 依頼：持ち帰った 板だけ 掲示板に 出る。はたした 依頼は 出ない", () => {
 	const all = 1e9;
 	ok(openEscorts([], 7, all, []).length === 0, "requests before any board");
-	const k = openEscorts(["kinoko"], 7, all, []);
+	const k = openEscorts(["shallow", "kinoko"], 7, all, []);
 	ok(
 		k.some((e) => e.id === "roze_kinoko"),
 		"no きのこ板 request",
 	);
 	ok(
-		!openEscorts(["kinoko"], 7, all, ["roze_kinoko"]).some(
+		!openEscorts(["shallow", "kinoko"], 7, all, ["roze_kinoko"]).some(
 			(e) => e.id === "roze_kinoko",
 		),
 		"a done request is still up",
 	);
-	// 依頼主は みんな はじめから 町に いる
+	// 依頼主は 町に 帰ってきて から（ロゼは パン板・フェリスは 離島板で 帰ってくる）
 	ok(
 		openEscorts(["tropical"], 0, 0, []).some((e) => e.who === "feris"),
-		"feris does not ask at the start",
+		"feris does not ask after 離島板",
+	);
+	ok(
+		!openEscorts(["kinoko"], 7, all, []).some((e) => e.who === "roze"),
+		"ロゼ asks before she is back",
 	);
 	// 引き受けた 依頼の 板だけ ついてくる。主人公と 同じ 人は 来ない
 	ok(
-		escortFor("kinoko", "roze_kinoko", ["kinoko"], 7, all, "kiriko")?.who ===
-			"roze",
+		escortFor("kinoko", "roze_kinoko", ["shallow", "kinoko"], 7, all, "kiriko")
+			?.who === "roze",
 		"ロゼ does not come",
 	);
 	ok(
@@ -208,7 +212,14 @@ test("同行の 依頼：持ち帰った 板だけ 掲示板に 出る。はた�
 		"came to another board",
 	);
 	ok(
-		escortFor("kinoko", "roze_kinoko", ["kinoko"], 7, all, "roze") === null,
+		escortFor(
+			"kinoko",
+			"roze_kinoko",
+			["shallow", "kinoko"],
+			7,
+			all,
+			"roze",
+		) === null,
 		"ロゼ came with herself",
 	);
 	ok(

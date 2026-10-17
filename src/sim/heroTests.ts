@@ -487,7 +487,7 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 		ok(chosenHero() === "roze", "remembered choice");
 		// そのあとは ふだんの ひとこと
 		ok(!(await heroQuestScript(recorder().s, "roze")), "normal talk");
-		// ロゼが 片づいたので、3つ 持ち帰って いれば ゼロが 悩む（プロト・レンは はじめから 町に いる）
+		// ロゼが 片づいたので、3つ 持ち帰って いれば ゼロが 悩む（プロト・レンは パン板で 帰ってきて いる）
 		saveProgress({
 			...loadProgress(),
 			cleared: ["shallow", "kinoko", "tropical"],

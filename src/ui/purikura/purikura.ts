@@ -36,7 +36,7 @@ import { awayFriends } from "../../data/story/story";
 import { loadImage } from "../../engine/assets";
 import type { Story } from "../../engine/defs";
 import type { Cue } from "../../engine/emote";
-import { loadProgress, loadTown } from "../../engine/save";
+import { loadProgress } from "../../engine/save";
 import { spendYen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
 import { listWindow } from "../list";
@@ -144,7 +144,7 @@ const preload = (who: readonly Cast[]): Promise<unknown> =>
 
 /** 写る 人（null は やめた）。 */
 const pickCompanions = async (ctx: Ctx, s: Story): Promise<Cast[] | null> => {
-	const away = awayFriends(loadProgress().cleared, loadTown().stage);
+	const away = awayFriends(loadProgress().cleared);
 	const bonds = bondCast(2).filter((w) => !away.includes(w as Speaker));
 	if (!bonds.length) {
 		await s.narrate(PURI_TEXT.none);

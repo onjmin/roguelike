@@ -13,7 +13,7 @@
 // - 喫茶・小屋・銭湯・音楽室・本屋・倉庫・常識堂の 勝手口の 扉は 踏むと 中へ（ui/village/cafe.ts・ui/village/rooms.ts）。
 //   倉庫・常識堂の 扉は 台の 横の 細道の 奥（店番に たのまなくても 入れる）。
 // - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/village/hallEvents.ts）。
-// - おんJマイナーズと ぷゆゆ（みんな はじめから 町に いる）は ui/village/villageMobs.ts。2人に 会うと 掲示板に 人気投票の はり紙。
+// - おんJマイナーズと ぷゆゆ（板を 持ち帰ると 帰ってくる。data/people/mobs.ts の MOB_BACK）は ui/village/villageMobs.ts。2人に 会うと 掲示板に 人気投票の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/village/villageReturn.ts の previewStage）。
 // - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
 //   倉庫・売り → 町が 育つ（場面は ui/village/villageReturn.ts。あずける 一覧だけ ui/village/home.ts）。

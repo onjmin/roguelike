@@ -41,11 +41,18 @@ import {
 import { CAFE_MOBS, type CafeMobTalk } from "../../data/cafe/cafeMobs";
 import { venueLines } from "../../data/jikkyo/text";
 import { CAST } from "../../data/people/cast";
-import { type Cast, MOB_IDS, MOBS, type MobId } from "../../data/people/mobs";
+import {
+	awayMobs,
+	type Cast,
+	MOB_IDS,
+	MOBS,
+	type MobId,
+} from "../../data/people/mobs";
 import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends, playPage } from "../../data/story/story";
 import { today } from "../../data/town/calendar";
 import { ROOM_MSG, ROOM_NAMES } from "../../data/town/rooms";
+import { FOLK_BACK } from "../../data/village/folk";
 import { NANASHI_WALK } from "../../data/village/hall";
 import { npc, sign } from "../../data/village/helpers";
 import { CAFE_FROM, type Cell, type VillageView } from "../../data/village/map";
@@ -185,7 +192,7 @@ const stageNow = (): number => villageView().stage;
 export const cafeTalks = (
 	stage: number,
 	st: CafeState = load(),
-	away: readonly Speaker[] = awayFriends(loadProgress().cleared, stage),
+	away: readonly Speaker[] = awayFriends(loadProgress().cleared),
 ): CafeTalk[] =>
 	[...CAFE_TALKS, ...TREAT_TALKS].filter(
 		(t) =>
@@ -259,7 +266,7 @@ const NANASHI_TABLES = [0, 1];
  * pairTalk は 2人で 話せる 話（無ければ undefined）、mobTalk は 住人が その 仲間と 話せる 店での 話。
  */
 export const cafeLayout = (
-	stage: number,
+	_stage: number,
 	at: number,
 	o: {
 		pairTalk: (a: Speaker, b: Speaker) => string | undefined;
@@ -276,7 +283,7 @@ export const cafeLayout = (
 		return a;
 	};
 	// まだ 越してきて いない 仲間は 店に 来ない
-	const away = awayFriends(loadProgress().cleared, stage);
+	const away = awayFriends(loadProgress().cleared);
 	const all = (Object.keys(SPEAKERS) as Speaker[]).filter(
 		(w) => !away.includes(w),
 	);
@@ -307,7 +314,10 @@ export const cafeLayout = (
 		f.talk = undefined;
 		friends.push({ who: mate, slot: slots[friends.length] });
 	}
-	const moved = shuffle([...MOB_IDS]);
+	// まだ 町に 帰って きて いない 住人は 来ない（data/people/mobs.ts の MOB_BACK）
+	const cleared = loadProgress().cleared;
+	const gone = awayMobs(cleared);
+	const moved = shuffle([...MOB_IDS]).filter((id) => !gone.includes(id));
 	const busy = new Set<MobId>();
 	for (const f of friends) {
 		const free = friends.filter((x) => !x.partner).length;
@@ -319,7 +329,9 @@ export const cafeLayout = (
 		f.talk = o.mobTalk(r, f.who);
 	}
 	const nanashi: CafeLayout["nanashi"] = [];
-	if (rnd() < 0.6)
+	// 名無しの 客は 広場に 人が もどってから（data/village/folk.ts の FOLK_BACK）
+	const town = cleared.includes(FOLK_BACK);
+	if (rnd() < 0.6 && town)
 		nanashi.push({
 			spot: NANASHI_TABLES[Math.floor(rnd() * NANASHI_TABLES.length)],
 			pair: true,
@@ -338,7 +350,7 @@ export const cafeLayout = (
 		.slice(0, count)
 		.map((id, k) => ({ id, spot: spots[k] }));
 	const rest = spots.slice(count);
-	if (rest.length && rnd() < 0.5)
+	if (rest.length && rnd() < 0.5 && town)
 		nanashi.push({
 			spot: rest[0],
 			pair: false,

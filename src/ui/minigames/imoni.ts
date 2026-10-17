@@ -29,7 +29,7 @@ import { loadProgress } from "../../engine/save";
 import { type Dir, TILE } from "../../engine/types";
 import type { Ctx } from "../ctx";
 import { sayAs } from "../village/villageMobs";
-import { previewStage, villageView } from "../village/villageReturn";
+import { previewStage } from "../village/villageReturn";
 import { showDish } from "./eat";
 
 /** 試験で さしかえる もの（年・帰り・段階・保存するか・やきうが いるか・一品の 板）。 */
@@ -51,9 +51,7 @@ const liveEnv = (ctx: Ctx): ImoniEnv => ({
 	at: imoniReturnAt(),
 	phase: imoniPhaseNow(),
 	noSave: noSaveNow(),
-	yakiuHere: !awayFriends(loadProgress().cleared, villageView().stage).includes(
-		"nanj",
-	),
+	yakiuHere: !awayFriends(loadProgress().cleared).includes("nanj"),
 	show: (art, title) => showDish(ctx, art, title),
 });
 
