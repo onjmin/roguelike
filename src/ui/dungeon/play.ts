@@ -41,6 +41,7 @@ import {
 	type Floor,
 	type GameEvent,
 	GUEST_ID,
+	instantClear,
 	PLAYER_ID,
 	type RescueKind,
 	type RunState,
@@ -2463,7 +2464,7 @@ export class Play {
 			: rp.drift
 				? "ここから先は今の版では同じにならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
 				: end
-					? end.kind === "clear" && this.run.objective === "boss"
+					? end.kind === "clear" && instantClear(this.run.objective)
 						? `${esc(end.cause)}<br><small>${bossHomeLine(this.run.s.dungeon)}　${this.run.s.turn}ターン</small>`
 						: end.kind === "clear"
 							? `${defOf(this.run.dungeon.goal).name}を持ち帰った<br><small>${this.run.s.turn}ターン</small>`

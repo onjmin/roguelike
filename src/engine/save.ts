@@ -247,7 +247,9 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		returning: s.returning,
 		seed: s.seed,
 		dungeon: s.dungeon,
-		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
+		...(s.objective && s.objective !== "fetch"
+			? { objective: s.objective }
+			: {}),
 		...(s.cheat ? { cheat: true as const } : {}),
 		...(s.hero === "roze" || s.hero === "zero" ? { hero: s.hero } : {}),
 	};
@@ -1087,7 +1089,8 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (
 		r.objective !== undefined &&
 		r.objective !== "fetch" &&
-		r.objective !== "boss"
+		r.objective !== "boss" &&
+		r.objective !== "event"
 	)
 		return null;
 	if (
@@ -1115,7 +1118,9 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		...(r.hero ? { hero: r.hero } : {}),
 		...(r.guest ? { guest: r.guest } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
-		...(r.objective === "boss" ? { objective: "boss" as const } : {}),
+		...(r.objective && r.objective !== "fetch"
+			? { objective: r.objective }
+			: {}),
 		at: r.at,
 		builds: r.builds,
 		text: r.text,
@@ -1157,7 +1162,9 @@ const addReplay = (s: RunState): void => {
 		...(s.hero ? { hero: s.hero } : {}),
 		...(s.guest ? { guest: { id: s.guest.id, goal: s.guest.goal } } : {}),
 		dungeon: s.dungeon,
-		...(s.objective === "boss" ? { objective: "boss" as const } : {}),
+		...(s.objective && s.objective !== "fetch"
+			? { objective: s.objective }
+			: {}),
 		at: Date.now(),
 		builds: s.builds ?? [],
 		text: s.replay,

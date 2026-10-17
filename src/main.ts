@@ -154,7 +154,11 @@ const devRun = (): Run | null => {
 		`${DEBUG_SEED}${seed ?? newSeed()}`,
 		dungeonById(d ?? undefined).id,
 		[],
-		q.get("objective") === "boss" ? "boss" : "fetch",
+		q.get("objective") === "boss"
+			? "boss"
+			: q.get("objective") === "event"
+				? "event"
+				: "fetch",
 		true,
 		isHeroId(q.get("hero")) ? (q.get("hero") as HeroId) : "kiriko",
 		// 同行者（&guest=zero・feris など。core/guest.ts）

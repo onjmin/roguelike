@@ -4,7 +4,7 @@
 
 import { dungeonById } from "../../core/data/dungeons";
 import { defOf, itemName } from "../../core/item";
-import type { DungeonId, RunState } from "../../core/types";
+import { type DungeonId, instantClear, type RunState } from "../../core/types";
 import { ENDING_BGM } from "../../data/audio/music";
 import { BOSS_HOME, DUNGEON_NAMES } from "../../data/story/story";
 import {
@@ -129,7 +129,7 @@ export const bossHomeLine = (d: DungeonId): string =>
 export const isBossClear = (r: {
 	kind: RunRecord["kind"];
 	objective?: RunRecord["objective"];
-}): boolean => r.kind === "clear" && r.objective === "boss";
+}): boolean => r.kind === "clear" && instantClear(r.objective);
 
 /**
  * 終わり方の1行（倒れた階と理由・持ち帰ったなら いちばん深い階・ボスを たおしたなら その 階と ボス。
@@ -194,7 +194,7 @@ const dateLabel = (at: number): string => {
 export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 	const rec = recordFromRun(s);
 	const clear = rec.kind === "clear";
-	const boss = rec.objective === "boss";
+	const boss = instantClear(rec.objective);
 	const escaped = rec.kind === "escape";
 	addRecord(rec);
 	clearRun();

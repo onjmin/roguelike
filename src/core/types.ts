@@ -28,8 +28,14 @@ export type DungeonId =
 /**
  * 冒険の 目的。fetch：いちばん底の 品を 拾って 入口まで 持ち帰る。
  * boss：いちばん底に いる ボス（品を 持っている）を たおすと、その場で 入口へ 帰れる。
+ * event：いちばん底に 着くと ちょっとした 出来事が あって 品を もらい、その場で 入口へ 帰れる
+ * （core/data/dungeons.ts の event。STORY.md §4.9 の 目的の 型）。
  */
-export type Objective = "fetch" | "boss";
+export type Objective = "fetch" | "boss" | "event";
+
+/** 底で その場で 入口へ 帰る 目的か（ボス・出来事。持ち帰りの 帰り道が ない）。 */
+export const instantClear = (o: Objective | undefined): boolean =>
+	o === "boss" || o === "event";
 
 /**
  * ボスを たおした あと、一瞬で 入口へ 帰る わけ（画面の 演出の 種類）。

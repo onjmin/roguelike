@@ -40,6 +40,7 @@ import {
 	type Dungeon,
 	dungeonById,
 	dungeonOf,
+	type EventSpec,
 } from "./data/dungeons";
 import {
 	HERO_NAME,
@@ -181,6 +182,7 @@ export class Run {
 	): Run {
 		const base = dungeonById(dungeon);
 		const boss = objective === "boss" && !!base.boss;
+		const event = objective === "event" && !!base.event;
 		const rng = Rng.fromSeed(seed);
 		// 底の 深さが かわる 板（おんMu）だけ、はじめに 深さを 引く（ほかの 板は 乱数の 順が 前と 同じ）
 		const floors = base.randomFloors
@@ -251,6 +253,7 @@ export class Run {
 			...(floors !== undefined ? { floors } : {}),
 			// fetch は 書かない（無ければ fetch。前の 版と 同じ 形の まま）
 			...(boss ? { objective: "boss" as const } : {}),
+			...(event ? { objective: "event" as const } : {}),
 			rng: rng.state(),
 			depth: 0,
 			turn: 0,
@@ -368,6 +371,11 @@ export class Run {
 	/** 目的が boss の ときの ボス（その板の data/dungeons.ts の boss。fetch なら null）。 */
 	get bossSpec(): BossSpec | null {
 		return this.objective === "boss" ? (this.dungeon.boss ?? null) : null;
+	}
+
+	/** 目的が event の ときの 底の 出来事（data/dungeons.ts の event。ほかは null）。 */
+	get eventSpec(): EventSpec | null {
+		return this.objective === "event" ? (this.dungeon.event ?? null) : null;
 	}
 
 	/** この階で 生きている ボス（いちばん底で、まだ たおしていない とき。画面の HP の ゲージにも）。 */
@@ -813,6 +821,24 @@ export class Run {
 		// 同行者も キリコの そばに 着く（core/guest.ts）
 		guestEnterFloor(this, first);
 		if (!carried && ankaOnArrival(this)) startAnka(this, true);
+		// 目的が event：底に 着いたら 出来事が あって 入口へ 帰る
+		if (this.eventSpec && depth === this.dungeon.floors && !s.returning)
+			this.eventReached();
+	}
+
+	/**
+	 * 底の 出来事（目的が event）：品を もらって、帰り方の 行を 出して、その場で 冒険を 終える（bossDefeated と 同じ 形）。
+	 */
+	private eventReached(): void {
+		const spec = this.eventSpec;
+		if (!spec || this.s.end) return;
+		const it = this.newItem(this.dungeon.goal);
+		if (!this.addItem(it)) this.p.items.push(it);
+		for (const line of spec.lines)
+			this.msg(line.replaceAll("キリコ", this.heroName));
+		this.msg(`${this.heroName}は${defOf(it.kind).name}をもらった！`, "good");
+		this.emit({ t: "rescue", kind: spec.rescue });
+		this.finish("clear", spec.cause);
 	}
 
 	/** 階段を使う。 */

@@ -46,6 +46,18 @@ export type BossSpec = {
 	cause: string;
 };
 
+/** 底の 出来事（目的が event。着くと 品を もらって 入口へ 帰る）。 */
+export type EventSpec = {
+	/** 目的の 文（全体マップ・行き先えらび。「〜する」）。 */
+	goal: string;
+	/** 帰り方（画面の 演出の 種類）。 */
+	rescue: RescueKind;
+	/** 着いた ときの 行（順に 出す）。 */
+	lines: readonly string[];
+	/** 終わりの 理由（Ending.cause。記録・リプレイの 組み合わせに 使う ので 変えない）。 */
+	cause: string;
+};
+
 /**
  * 名所の 階（長い 板の 一息。STORY.md §4.9 の 場面の 一覧）。敵・罠・道具が なく、地図が はじめから 見える。
  * 合う 板にだけ 置く（作者「全部が 全部に 搭載する ものでは ない」）。1000 の カウントは 進む。
@@ -136,6 +148,8 @@ export type Dungeon = {
 	noCarry?: boolean;
 	/** 名所の 階（RestFloor）。 */
 	rests?: readonly RestFloor[];
+	/** 底の 出来事（目的が event の とき）。 */
+	event?: EventSpec;
 	/**
 	 * スレの 勢い：この ターン数ごとに レスが もう 1つ ふえる（1000 に 早く 近づく。電池板の 時間との 競争：
 	 * STORY.md §4.9）。無ければ 1ターンで 1。
@@ -561,7 +575,18 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
 		id: "konamono",
-		objective: "boss",
+		// たこパの お誘い（STORY.md §4.9）：最上階の たこパ会場に 着けば 帰れる
+		objective: "event",
+		event: {
+			goal: "最上階のたこパに行く",
+			rescue: "escort",
+			lines: [
+				"最上階は、たこパ会場だった。",
+				"粉もん奉行「返しが甘い！」",
+				"たこ焼きを焼いて、入口まで送ってもらった",
+			],
+			cause: "たこパに参加した",
+		},
 		boss: {
 			monster: "boss_takonomin",
 			rescue: "eruption",

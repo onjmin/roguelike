@@ -20,7 +20,7 @@
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../../core/town";
-import type { DungeonId, Objective } from "../../core/types";
+import { type DungeonId, instantClear, type Objective } from "../../core/types";
 import {
 	type MobId,
 	PUYU_LUNCH,
@@ -177,7 +177,7 @@ export const pagesFor = (
 	const away = sceneAway(a, p);
 	if (a.kind !== "clear") return withoutAway(RETURN_PAGES, away);
 	const ending = endingFor(a.dungeon, !firstEnding(a, p), away, p.cleared);
-	const boss = a.objective === "boss" ? (BOSS_RETURN[a.dungeon] ?? []) : [];
+	const boss = instantClear(a.objective) ? (BOSS_RETURN[a.dungeon] ?? []) : [];
 	// 本筋の 話の おわり（はじめて 持ち帰った ときだけ）
 	const end = firstEnding(a, p) ? episodeEnd(a.dungeon) : null;
 	return withoutAway(

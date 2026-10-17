@@ -3322,9 +3322,13 @@ test(
 						`a boss is in the ${other} pool at level ${lv}`,
 					);
 		}
-		// 既定：物語の 品の 板は 持ち帰り、4つの 植民地は ボス
-		for (const d of ["kinoko", "tropical", "konamono", "festival"] as const)
+		// 既定（STORY.md §4.9 の 目的の 型）：きのこ板・離島板・お祭りは ボス、おんたこは 底の 出来事
+		for (const d of ["kinoko", "tropical", "festival"] as const)
 			ok(DUNGEONS[d].objective === "boss", `${d} is not a boss board`);
+		ok(
+			DUNGEONS.konamono.objective === "event",
+			"konamono is not an event board",
+		);
 		for (const d of ["shallow", "main", "deep", "hidden"] as const)
 			ok(DUNGEONS[d].objective === "fetch", `${d} is not a fetch board`);
 		ok(
@@ -4212,5 +4216,36 @@ test(
 		const q = Run.create("rest-floor", "main");
 		q.enterFloor(6, false);
 		ok(!q.s.floor.rest, "floor 6 is a rest floor");
+	},
+);
+
+test(
+	"event",
+	"底の 出来事（目的が event）：底に 着くと 品を もらって その場で 帰る。行は 記録に おさまる",
+	() => {
+		for (const d of DUNGEON_IDS) {
+			const spec = DUNGEONS[d].event;
+			if (!spec) continue;
+			ok(spec.lines.length >= 1, `${d}: no event lines`);
+			const long = spec.lines.filter((l) => [...l].length > 24);
+			ok(!long.length, `${d}: long event lines ${long.join(" / ")}`);
+			ok([...spec.goal].length <= 12, `${d}: goal text ${spec.goal}`);
+		}
+		const r = Run.create("event-floor", "konamono", [], "event");
+		ok(r.objective === "event" && r.eventSpec !== null, "not an event run");
+		r.enterFloor(DUNGEONS.konamono.floors, false);
+		ok(r.s.end?.kind === "clear", `end ${r.s.end?.kind}`);
+		ok(
+			r.p.items.some((it) => it.kind === DUNGEONS.konamono.goal),
+			"the goal item was not given",
+		);
+		ok(
+			!r.s.floor.items.some((x) => x.item.kind === DUNGEONS.konamono.goal),
+			"the goal item lies on the floor",
+		);
+		// ほかの 階では 起きない
+		const q = Run.create("event-floor", "konamono", [], "event");
+		q.enterFloor(DUNGEONS.konamono.floors - 1, false);
+		ok(!q.s.end, "ended before the top");
 	},
 );
