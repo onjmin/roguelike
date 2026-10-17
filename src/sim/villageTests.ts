@@ -2769,12 +2769,16 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 			]),
 			`the 電池板 news is out of order:\n${deep.log.join("\n")}`,
 		);
-		// 10回 たおれて 開いた（救い）：パン板の ネタは シヨが 貼っておく
-		setProgress(["shallow", "main"], [{ dungeon: "main", reason: "relief" }]);
+		// きのこ板で 何度も たおれた（救い）：ゼロが 倉庫の 封鎖を 解く。板は 開かない
+		setProgress(
+			["shallow", "kinoko"],
+			[{ dungeon: "kinoko", reason: "relief" }],
+		);
 		const relief = fakeStory();
 		await newsScript(relief.s);
 		ok(
-			relief.log.includes(`say shiyo: ${UNLOCK_LINES.relief[0].text}`),
+			relief.log.includes(`say zero: ${UNLOCK_LINES.relief[0].text}`) &&
+				relief.log.includes(`narrate: ${VILLAGE_MSG.carryRelief}`),
 			`the relief news is wrong:\n${relief.log.join("\n")}`,
 		);
 	});

@@ -30,6 +30,8 @@ export type Incident = {
 	seize?: string;
 	/** 倉庫に 鍵：引き取った 道具を 持ちこめない（出るときに ゼロが もどす。data/town/town.ts の CARRY_LOCK）。 */
 	lockCarry?: true;
+	/** その 板で これだけ 倒れたら 鍵が 解ける（救い。ゼロが 見かねて 開ける。story.ts の UNLOCK_LINES.relief）。 */
+	reliefAfter?: number;
 };
 
 const PANHEI = "pub:sprites/panhei.png";
@@ -72,6 +74,7 @@ export const INCIDENTS: readonly Incident[] = [
 	{
 		dungeon: "kinoko",
 		lockCarry: true,
+		reliefAfter: 5,
 		people: [
 			{
 				id: "kinonyan_a",
@@ -139,11 +142,17 @@ export const activeIncidents = (v: {
 		(i) => v.unlocked.includes(i.dungeon) && !v.cleared.includes(i.dungeon),
 	);
 
-/** 倉庫に 鍵が かかって いるか（騒ぎの あいだ。ゼロが 見出しを 信じて 閉めた）。 */
+/** 倉庫に 鍵が かかって いるか（騒ぎの あいだ。ゼロが 見出しを 信じて 閉めた。何度も 倒れたら 解ける）。 */
 export const carryLocked = (v: {
 	unlocked: readonly DungeonId[];
 	cleared: readonly DungeonId[];
-}): boolean => activeIncidents(v).some((i) => i.lockCarry);
+	fails?: Partial<Record<DungeonId, number>>;
+}): boolean =>
+	activeIncidents(v).some(
+		(i) =>
+			i.lockCarry &&
+			!(i.reliefAfter && (v.fails?.[i.dungeon] ?? 0) >= i.reliefAfter),
+	);
 
 /** 騒ぎの 人の 村での id。 */
 export const incidentPlaceId = (p: IncidentPerson): string => `inc_${p.id}`;

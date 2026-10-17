@@ -603,9 +603,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		goal: "genban",
 		houses: { from: 5, chance: 1 / 16, early: [6, 8] },
 		trapsFrom: 3,
-		// パン板（3階）から いきなり 14階に ならないよう、きのこ板（5階）を はさむ
+		// パン板（3階）から いきなり 14階に ならないよう、きのこ板（5階）を はさむ。
+		// きのこ板で 倒れつづけた ときの 救いは 倉庫の 封鎖を 解く こと（data/town/incidents.ts の reliefAfter）
 		unlockAfter: "kinoko",
-		reliefAfter: 5,
+		reliefAfter: null,
 		// 湯治：150 → 100（1.5倍）
 		regenStep: 100,
 	},

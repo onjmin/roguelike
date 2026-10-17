@@ -24,6 +24,7 @@ import {
 	type RunState,
 } from "../core/types";
 import { type ActiveEvent, advanceEvents } from "../data/story/objectives";
+import { INCIDENTS } from "../data/town/incidents";
 import { stageOfCleared } from "../data/town/revival";
 import { noteEscortRun } from "./escort";
 import { noteTamper, oddRun, oddTown } from "./tamper";
@@ -580,6 +581,15 @@ export const noteRunEnd = (
 			if (dg.unlockAfter === dungeon && dg.reliefAfter && n >= dg.reliefAfter)
 				unlock(d, "relief");
 		}
+		// 倉庫の 封鎖が 解けた（data/town/incidents.ts の reliefAfter）
+		const lock = INCIDENTS.find((i) => i.dungeon === dungeon && i.reliefAfter);
+		if (
+			lock &&
+			n === lock.reliefAfter &&
+			!p.cleared.includes(dungeon) &&
+			!p.news.some((x) => x.dungeon === dungeon && x.reason === "relief")
+		)
+			p.news.push({ dungeon, reason: "relief" });
 	}
 	const ev = advanceEvents(p, { dungeon, kind, seed: seed ?? "" });
 	p = ev.progress;

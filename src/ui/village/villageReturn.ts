@@ -60,6 +60,7 @@ import {
 	REVIVE_MSG,
 	type StaffLine,
 	TOWN_MSG,
+	VILLAGE_MSG,
 	WAKE_PAGES,
 	WALLET_WHY,
 } from "../../data/town/town";
@@ -122,7 +123,10 @@ export const previewStage = (): number | null => {
  */
 export const villageView = (): VillageView => {
 	const p = loadProgress();
-	const fresh = new Set(p.news.map((n) => n.dungeon));
+	// 救いの 知らせ（倉庫の 封鎖が 解けた）は 板を 開かないので 数えない
+	const fresh = new Set(
+		p.news.filter((n) => n.reason !== "relief").map((n) => n.dungeon),
+	);
 	return {
 		stage: TOWN_STAGES - 1,
 		unlocked: p.unlocked.filter((d) => !fresh.has(d)),
@@ -613,7 +617,7 @@ export const newsScript = async (s: Story): Promise<void> => {
 	const news = loadProgress().news;
 	for (const n of news) {
 		// 寄り道の 板：その 板の 名無しが 来て 話す（仲間の ひとことの かわり）
-		if (UNLOCK_VISIT[n.dungeon]) {
+		if (n.reason !== "relief" && UNLOCK_VISIT[n.dungeon]) {
 			await visitScript(s, n.dungeon);
 			doneProgressNews(n);
 			s.se("chapter");
@@ -655,7 +659,9 @@ export const newsScript = async (s: Story): Promise<void> => {
 		doneProgressNews(n);
 		s.se("chapter");
 		await s.narrate(
-			`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるようになった`,
+			n.reason === "relief"
+				? VILLAGE_MSG.carryRelief
+				: `「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるようになった`,
 		);
 		await s.look(null);
 	}

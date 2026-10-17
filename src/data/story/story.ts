@@ -1092,7 +1092,7 @@ export const BOSS_HOME: Partial<Record<DungeonId, string>> = {
 // ───────────────── 次が開いたとき ─────────────────
 /**
  * 持ち帰って 次のダンジョンが開いたときの ひとこと（ending のあと・記録の札の前に）。
- * relief は きのこ板 で5回 倒れて 本編が開いたとき（きのこ板の ネタは シヨが 貼っておく）。
+ * relief は きのこ板で 5回 倒れて、ゼロが 倉庫の 封鎖を 解いたとき（data/town/incidents.ts の reliefAfter）。
  */
 export const UNLOCK_LINES: Record<
 	"main" | "deep" | "relief" | "colony" | "hidden",
@@ -1114,11 +1114,11 @@ export const UNLOCK_LINES: Record<
 		q("nanj", "最終話や。\n……ワイも、最後まで見とるで"),
 	],
 	relief: [
-		q("shiyo", "きのこ軍に、道を教えといたわ。\n……あなたのためじゃないから", {
+		q("zero", "5回の挑戦、ぜんぶ見てました。\n倉庫、開けます！", {
 			emote: "汗",
 		}),
-		q("zero", "5回の挑戦、ぜんぶ見てました。\n……6回目も、応援します！", {
-			gesture: "hop",
+		q("shiyo", "見出しなんか信じるからよ。\n……あなたのためじゃないから", {
+			emote: "汗",
 		}),
 	],
 	// 隠しの 過去ログの底（おんJタウンの 下の 古井戸）。開くのは 最終話の あと
