@@ -1,12 +1,12 @@
-// 配信会館の 中（村の 崖の 前の 建物。扉を 踏むと 入る）。DOM も 保存も 使わない 組み立てだけ
+// 本館の 中（村の 崖の 前の 建物。扉を 踏むと 入る）。DOM も 保存も 使わない 組み立てだけ
 // （src/sim/villageTests.ts で 形と 歩ける道を 調べる）。スクリプトは ui/village/hallEvents.ts が id ごとに 付ける。
 //
-// 配信会館の 段（hallTier。data/village/tiles.ts）で 広さと 中身が 育つ（前の 段の 物は 残る）：
-//   0 集会所（町の 段0〜2。8×7）   座布団と 長机・壁の スレ（冒険の記録）・配信枠の 予約表・>>1 テンプレ（あそびかた）・
+// 本館の 段（hallTier。data/village/tiles.ts）で 広さと 中身が 育つ（前の 段の 物は 残る）：
+//   0 集会所（町の 段0〜2。8×7）   座布団と 長机・壁の スレ（冒険の記録）・保守の 当番表・>>1 テンプレ（あそびかた）・
 //                                  期間限定の 告知・本棚（ことばの 辞典と 図鑑）・映写機（リプレイ 上映）・長机（ヒナリーの 帳簿）
 //   1 レンガ館（段3〜5。12×9）    ＋ 本棚（図鑑）・飾り棚（持ち帰った 品）・帳簿の 貼り紙・予約表の 前の 名無し・
 //                                  野球の 実況民（虎と 兎）
-//   2 配信会館（段6〜7。16×11）       ＋ 実況モニター（ナイターと 実況スレ）・殿堂の 壁（人気投票の はり紙）と 空いた いす・
+//   2 本館（段6〜7。16×11）       ＋ 実況モニター（ナイターと 実況スレ）・殿堂の 壁（人気投票の はり紙）と 空いた いす・
 //                                  モニターを 見る 名無し・野球の 実況民 6人（段7 は 野次馬と 星も）
 // 部屋は rpg の 屋内と 同じ 形：上に 天井（#）と 壁 2段（H 上段・h 下段）、下の 壁の まんなかに 出口の マット（2マス）。
 // 壁に かけた 物は 壁の 下段の マスに 見えない イベントを 置き、1つ下の 床から 上を 向いて 調べる。
@@ -17,7 +17,7 @@
 // 字（部屋ごとに 自分の パレット。村の 字とは 別）
 //   #  天井   H h  壁（上段・下段。段で 板壁 → 白い 壁 → 石の 壁）   W  上段の 窓
 //   .  床（段で 板 → 板 → 石）   -  金の じゅうたん   D  出口の マット（踏むと 外へ）
-//   K k  壁の スレ（掲示板の 左右）   [ ]  配信枠の 予約表（黒板の 左右）   t  >>1 テンプレ   N  期間限定の 告知
+//   K k  壁の スレ（掲示板の 左右）   [ ]  保守の 当番表（黒板の 左右）   t  >>1 テンプレ   N  期間限定の 告知
 //   $  帳簿の 貼り紙（金貨の 札）   C c  飾り棚（上段・下段。棚と 持ち帰った 品は ui/village/hallEvents.ts の decor が 描く）
 //   M m  実況モニター（左右）   G g  殿堂の 旗（左右）
 //   z  座布団   ( )  長机（左右）   x  みかん箱   B  本棚   F  鉢植え   T  机   n  いす   r  空いた いす（殿堂の となり）
@@ -36,15 +36,15 @@ import { base, basePx, floor, hallTier, INDOOR, solid } from "./tiles";
 
 export type HallTier = 0 | 1 | 2;
 
-/** 地図の 形に 使う 配信会館の 段（町の 段を 0〜7 に 丸めてから）。 */
+/** 地図の 形に 使う 本館の 段（町の 段を 0〜7 に 丸めてから）。 */
 export const hallTierOf = (v: Pick<VillageView, "stage">): HallTier =>
 	hallTier(Math.max(0, Math.min(TOWN_STAGES - 1, Math.floor(v.stage) || 0)));
 
-/** 配信会館の 名前（入ったときの 札。段で かわる）。 */
+/** 本館の 名前（入ったときの 札。段で かわる）。 */
 export const HALL_NAMES: readonly string[] = [
 	"おんJ　集会所",
 	"おんJ　レンガ館",
-	"おんJ　配信会館",
+	"おんJ　本館",
 ];
 
 // ───────────────── 行 ─────────────────
@@ -72,7 +72,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 		"#F........F#",
 		"#####DD#####",
 	],
-	// 配信会館：金の じゅうたんが 実況モニターまで。石の 柱・殿堂の 旗と 空いた いす
+	// 本館：金の じゅうたんが 実況モニターまで。石の 柱・殿堂の 旗と 空いた いす
 	[
 		"################",
 		"#CCCCWWHHCCCCHH#",
@@ -88,7 +88,7 @@ const HALL_ROWS: readonly (readonly string[])[] = [
 	],
 ];
 
-/** 配信会館の 中の 地図（行）。 */
+/** 本館の 中の 地図（行）。 */
 export const hallRows = (tier: HallTier): string[] => [...HALL_ROWS[tier]];
 
 /** 出口の マット（2マス。左が 外の 左の 扉と 対）。 */
@@ -109,7 +109,7 @@ export const hallEntry = (tier: HallTier, i: number): Cell => {
 };
 
 /**
- * 配信会館から 出たときに 立つ 外の マス（入った 扉の 1つ下。下を 向く）。from は 入った 扉の x
+ * 本館から 出たときに 立つ 外の マス（入った 扉の 1つ下。下を 向く）。from は 入った 扉の x
  * （Story の 印 hallFrom。無い・知らない 値なら 右の 扉）。
  */
 export const hallOutside = (from?: unknown): Cell => {
@@ -156,7 +156,7 @@ const HALL_LOOK = [
 ] as const;
 
 /**
- * 配信会館の 中の パレット（rpg の 屋内 INDOOR が 下地。段で 床・壁の 絵が かわる。置く 物は 同じ 字）。
+ * 本館の 中の パレット（rpg の 屋内 INDOOR が 下地。段で 床・壁の 絵が かわる。置く 物は 同じ 字）。
  * t k z C P M G g は 会館では べつの 物（壁に かける 物・座布団・飾り棚・柱）に 上書きする。
  */
 export const hallPalette = (tier: HallTier): Record<string, TileDef> => {
@@ -204,7 +204,7 @@ export const hallPalette = (tier: HallTier): Record<string, TileDef> => {
 
 // ───────────────── 置く 物 ─────────────────
 
-/** 配信会館の 中に 置く イベント（人・壁の 物・出口）。スクリプトは ui/village/hallEvents.ts が id で 付ける。 */
+/** 本館の 中に 置く イベント（人・壁の 物・出口）。スクリプトは ui/village/hallEvents.ts が id で 付ける。 */
 export type HallPlace = {
 	id: string;
 	x: number;
@@ -215,7 +215,7 @@ export type HallPlace = {
 	dir?: Dir;
 };
 
-/** 名無し（配信会館の 中の 人。村の 住人とも 敵とも 別の 絵）。 */
+/** 名無し（本館の 中の 人。村の 住人とも 敵とも 別の 絵）。 */
 export const NANASHI_WALK: readonly string[] = [
 	"sa:xjuotB", // 彡(⭕)(⭕)
 	"sa:qPN3cT", // 赤面J民
@@ -252,7 +252,7 @@ const PEOPLE: readonly (readonly {
 	at: Cell;
 	dir: Dir;
 	from?: number;
-	/** 名無しの 絵の かわり（配信会館の すみの バルス失敗ニキ。data/village/folk.ts）。 */
+	/** 名無しの 絵の かわり（本館の すみの バルス失敗ニキ。data/village/folk.ts）。 */
 	sprite?: string;
 }[])[] = [
 	[],
@@ -284,7 +284,7 @@ const PEOPLE: readonly (readonly {
 	],
 ];
 
-/** 配信会館の 中に 置く イベントの 一覧。 */
+/** 本館の 中に 置く イベントの 一覧。 */
 export const hallPlaces = (v: VillageView): HallPlace[] => {
 	const tier = hallTierOf(v);
 	const stage = Math.floor(v.stage) || 0;
@@ -328,7 +328,7 @@ export const hallPlaces = (v: VillageView): HallPlace[] => {
 
 // ───────────────── 飾り棚 ─────────────────
 
-/** 蓄音機で 鳴らしている 品の 板（初配信の 記念パン・長湯スレ・町の 主電源。棚には 置かない）。 */
+/** 蓄音機で 鳴らしている 品の 板（食パンの 国旗・長湯スレ・町の 主電源。棚には 置かない）。 */
 export const ON_PHONO: readonly DungeonId[] = ["shallow", "main", "deep"];
 
 /** シヨが 倉庫で あずかっている 品の 板（過去ログの底の いちばん古い コメント。棚には 置かない）。 */

@@ -1,4 +1,4 @@
-// ナイター実況（配信会館の 実況モニター）の 文と 組み立て。試合は core/jikkyoYakyu.ts、エンジンは core/jikkyo.ts。
+// ナイター実況（本館の 実況モニター）の 文と 組み立て。試合は core/jikkyoYakyu.ts、エンジンは core/jikkyo.ts。
 // - 文の 決まり：候補レスは ボタン 1行・全角12字まで、スレの 行は 全角18字まで（{nick} は いちばん 長い 6字・{n}=999）、
 //   テロップは 20字まで、村の 窓は 22字 × 2行・1窓、メニューは 12字まで。言葉の あいだは 全角スペース。
 // - 合いの 決まり：◎ は 起きた ことを 名指しする 文、○ は 共通の 相づち 5つだけ、× は 別の 出来事の ◎。
@@ -704,7 +704,7 @@ export const JIKKYO_MSG = {
 	stopped: "スレは{n}で止まった。\n……試合は終わった。",
 } as const;
 
-/** 配信会館の 実況モニターの メニュー。 */
+/** 本館の 実況モニターの メニュー。 */
 export const JIKKYO_MENU = [
 	"実況する",
 	"チャンネルをかえる",
@@ -712,7 +712,7 @@ export const JIKKYO_MENU = [
 	"やめる",
 ] as const;
 
-/** 配信会館の 実況民の 試合後の 1窓（win・lose・other。nanashi_0 は kanso・stopped）。『立てといた』は 使わない。 */
+/** 本館の 実況民の 試合後の 1窓（win・lose・other。nanashi_0 は kanso・stopped）。『立てといた』は 使わない。 */
 export const JIKKYO_AFTER: Readonly<
 	Record<string, Readonly<Record<string, string>>>
 > = {
@@ -788,7 +788,7 @@ export const JK_FEEDBACK = {
 /** 球団の 1字。 */
 export const teamChar = (id: JkTeamId): string => JK_TEAMS[id].char;
 
-/** 1字 → 球団（配信会館の 実況民の 札から）。 */
+/** 1字 → 球団（本館の 実況民の 札から）。 */
 export const teamByChar = (c: string): JkTeamId | null =>
 	JK_TEAM_IDS.find((id) => JK_TEAMS[id].char === c) ?? null;
 

@@ -1,5 +1,5 @@
 // 村（おんJタウン）に 帰ってきたときの 場面（ui/village/village.ts が 村に 入るたびに 走らせる。つなぎは ui/village/villageEvents.ts）。
-// 口から 出る → 仲間が むかえる → 開いた知らせ → 撮れ高の 発表（登録者・店が 開く）→ 持ち帰った物を 倉庫へ・売る。
+// 口から 出る → 仲間が むかえる → 開いた知らせ → 生き返った 通りの 知らせ→ 持ち帰った物を 倉庫へ・売る。
 //
 // - 持ち帰った・帰還スレ：キリコが 口の奥から 出てくると、口の前に 仲間が 並んで 待っている（幕が 上がる前に
 //   並べる。lineUp）。持ち帰りの 語り（STORY[d].ending）か 帰還スレの 語り（RETURN_PAGES）を 村の窓で 話して、
@@ -8,7 +8,6 @@
 // - 開いた知らせ（Progress.news）：本編は 口の前で 見張る やきうが どいて 小屋の前へ、もっとは 板が はずれる。
 //   見せおえてから 1つずつ 消す（途中で 閉じても 次に 開いたとき また 見せる）。知らせの 前は 閉じたまま 描く（villageView）。
 //   期間限定の イベントの 始まり・終わり（Progress.eventNews。data/story/objectives.ts）も そのあとに 1〜2行。
-// - 撮れ高（Town.gain）：ヒナリーが ふえた 登録者を 発表する（倒れて 帰っても。放送事故）。節目に 届けば
 //   「準備中」の シャッターが あがって 店が 開く（TOWN.md §0.1。町は はじめから 都市の 姿）。
 // - 持ち帰った物（Town.pending）：ンゴ姉が 機材倉庫に あずける物を きいて（一覧は ui/village/home.ts の chooseStored）、
 //   のこりを ジェイトルマンが 買い取る（TOWN.md §0.4。ライバルは 店の 仕事を しない）。
@@ -101,7 +100,7 @@ import { deathQuote, fill } from "./villageTalk";
 
 /**
  * 開発用：`?stage=N` で 開いた 店の 段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
- * 保存は 書きかえない（登録者・倉庫・会話は 本当の段のまま）。帰ってきた 持ち物の 精算も しない。
+ * 保存は 書きかえない（倉庫・会話は 本当の段のまま）。帰ってきた 持ち物の 精算も しない。
  */
 export const previewStage = (): number | null => {
 	if (typeof location === "undefined") return null;
@@ -582,7 +581,7 @@ export const deathScene = async (s: Story): Promise<void> => {
 
 // ───────────────── 開いた知らせ ─────────────────
 
-/** 転（STORY.md §5）：風呂板の 語りを 見おえた 帰りに 1回だけ。ダンジョンの 壁の 字は コメントで、いちばん下の 1つ目は 初配信の「見とるで」。 */
+/** 転（STORY.md §4.9）：風呂板の 語りを 見おえた 帰りに 1回だけ。停電と、また 盛った 見出し。 */
 export const tenScript = async (s: Story): Promise<void> => {
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
 	for (const p of withoutAway(

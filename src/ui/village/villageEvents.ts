@@ -319,7 +319,7 @@ export const departTo = async (
 		depositBag();
 		carry = [];
 	}
-	// 配信を はじめると つく 名無しの 視聴者（やきう）の コメント（STORY.md §5）。最終話までは 毎回 同じ
+	// 出かける ときに 港の 掲示板に つく 名無し（やきう）の 書きこみ（STORY.md §4.9）。最終話までは 毎回 同じ
 	// （同じ 一言の くり返しが 頂点の 伏線）。最終話の あとは 潜った 回数で 毎回 ちがう 一言
 	await s.narrate(
 		loadProgress().cleared.includes("deep")

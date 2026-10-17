@@ -2939,7 +2939,7 @@ test(
 				programSlot("cinema", day(w), 6, 2026) === null,
 				`wday ${w}: cinema at stage 6`,
 			);
-			// 配信会館は 毎日 ナイター
+			// 本館は 毎日 ナイター
 			for (const st of [6, 7])
 				ok(
 					programSlot("hall", day(w), st, 2026)?.main.program === "yakyu",

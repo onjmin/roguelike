@@ -8,7 +8,7 @@
 //     building  ふつうの 家（屋根の 棟・軒、壁の 上段・下段。扉は 下段。Base.png の 家・壁・屋根）。字は 自動で 割りふる。
 //     block     自分で 字を 並べる（グラウンド・桟橋など。字と 絵は tiles に）。
 // - clear は 外観の 前に 敷く 地面（森を 開いた 草地・道。地図の 座標で 左上から 右へ）。
-// - 中（room）が あれば 扉を 踏むと 入る。部屋の 形は 配信会館・建物の 中と 同じ（上に 天井と 壁 2段、下に マット 2マス）。
+// - 中（room）が あれば 扉を 踏むと 入る。部屋の 形は 本館・建物の 中と 同じ（上に 天井と 壁 2段、下に マット 2マス）。
 //   家具・小物は RPGEN の 部品（rpgenArt.ts の ri・riCell。rpgen-interior.png）と Base.png。幅の ある 物（台・車）は
 //   riCell で マスごとに、背の 高い 物（冷蔵ケース・ロッカー）は ri で 下から 1本に 切って 上の マスへ はみ出させる。
 // - 外の 物（outdoor）は 地図の マスに 見えない イベントを 置き、そこの 絵を 調べる。fishing・batting は 遊べる 物。
@@ -294,7 +294,7 @@ const CLOCK = base(7, 507);
 
 // ───────────────── 施設 ─────────────────
 
-/** 名無し（配信会館の 中の 人と 同じ 絵。data/village/hall.ts の NANASHI_WALK）。 */
+/** 名無し（本館の 中の 人と 同じ 絵。data/village/hall.ts の NANASHI_WALK）。 */
 const NANASHI = ["sa:xjuotB", "sa:qPN3cT", "sa:C2hS8U", "sa:VaBXqn"] as const;
 
 const C_PIER = "#a8804c";
@@ -1449,7 +1449,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				F: "plant",
 			},
 			lines: {
-				tv: ["壁の大画面。\n配信の画面が映っている。"],
+				tv: ["壁の大画面。\n番組が映っている。"],
 				notice: ["はり紙。\n「1プレイ100円。連コイン禁止」"],
 				shooter: [ARCADE_TEXT.shooter.line],
 				breakout: [ARCADE_TEXT.breakout.line],
@@ -1467,7 +1467,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 				plant: ["観葉植物。\n……鉢にメダルが1枚埋まっている。"],
 				comma: ["コンマの台。画面の時計が、\nミリ秒まで回っている。"],
 			},
-			// 壁の 大画面で 新作発表会・おんJリーグ（麻雀）の 配信（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
+			// 壁の 大画面で 新作発表会・おんJリーグ（麻雀）の 中継（data/jikkyo/packs.ts・ui/jikkyo/jikkyoWatch.ts）、
 			// コンマの 台（スレタイの「コンマ」・0時ちょうど。ui/neta/netaComma.ts）、
 			// 筐体 6台（と 故障中の 1台）と 音ゲーの 台は それぞれ 別の ゲーム（ui/arcade/arcade.ts）
 			plays: {

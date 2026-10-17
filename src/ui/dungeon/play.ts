@@ -3462,11 +3462,11 @@ export class Play {
 				class: "over1000-body",
 				text: falls
 					? isUpBoard(this.run.s.dungeon)
-						? "もう書けないので、上の枠で配信してくださいです。。。"
-						: "もう書けないので、下の枠で配信してくださいです。。。"
+						? "もう書けないので、上のスレに書いてくださいです。。。"
+						: "もう書けないので、下のスレに書いてくださいです。。。"
 					: isUpBoard(this.run.s.dungeon)
-						? "もう書けませんが、上はないので、ここで配信してくださいです。。。"
-						: "もう書けませんが、下はないので、ここで配信してくださいです。。。",
+						? "もう書けませんが、上はないので、ここで書いてくださいです。。。"
+						: "もう書けませんが、下はないので、ここで書いてくださいです。。。",
 			}),
 		]);
 		this.ctx.ui.appendChild(post);
@@ -3533,7 +3533,7 @@ export class Play {
 								? diveResLine(dive, run.heroName)
 								: run.s.depth >= run.dungeon.floors
 									? isUpBoard(run.s.dungeon)
-										? "いちばん上。ランキングもこうありたい"
+										? "いちばん上。スレもこうありたい"
 										: "いちばん底。もう落ちようがない"
 									: "",
 			}),

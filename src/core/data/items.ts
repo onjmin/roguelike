@@ -626,7 +626,7 @@ add({
 });
 
 // ───────── 目的の品（床には出ない） ─────────
-// 本筋の 板の 底で 拾う 撮れ高（STORY.md §5 場面の 一覧）。
+// 本筋の 板の 底で 拾う 品（STORY.md §4.9 場面の 一覧）。
 /** 目的の品の 専用の 絵（ui/art/itemArt.ts → scripts/make-items.mjs で 書き出す）。 */
 const art = (name: string): string => `pub:sprites/items/${name}.png`;
 

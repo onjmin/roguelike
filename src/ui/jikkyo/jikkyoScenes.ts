@@ -1,7 +1,7 @@
 // 台本の 番組の TV（映画館の 実況上映：金曜ロード保守『空飛ぶ鯖』）。ui/jikkyo/jikkyoWatch.ts の 板の 上の キャンバス。
 // 480x270 の 2倍の 下地に 240x135 の 座標で 描く（字が にじまない）。野球の TV（ui/jikkyo/jikkyoYakyuTv.ts）と 同じ 形。
 // - 会場の 枠（cinema）：赤い 幕・まんなかに スクリーン・下に 客の 頭と スマホの 光（金曜は 多く、洪水では みんな 光る）。
-// - 場面（data/jikkyo/sora.ts の SORA_SCENES）：カード（まもなく・予告・おわり）・オープニング（配信会館の 映写機と 1→1000 の 数字 →
+// - 場面（data/jikkyo/sora.ts の SORA_SCENES）：カード（まもなく・予告・おわり）・オープニング（本館の 映写機と 1→1000 の 数字 →
 //   番組ロゴ）・港・連投規制の 嵐・コピペの 群れ と 安価・雲の 上の 鯖（大将が 来る）・CM・山場（◆トリップの 札と「!バルス」の 欄 →
 //   合図ごとに 光る → 白い 光 → マスに 割れて 崩壊 → アク禁）・エンディング（スタッフロール）。字幕は スクリーンの 下に。
 // - 絵は 同梱の 物（sprites/projector.png・copipe.png・enjo.png）と 塗り（ui/village/cinemaDecor.ts の 鯖の 絵）。絵に 出す 文は SORA_ART。
@@ -273,7 +273,7 @@ const drawOp = (g: G, c: Ctx) => {
 		return;
 	}
 	const on = clamp01(c.lt / 800);
-	// 配信会館の 映写機と 光の 筋
+	// 本館の 映写機と 光の 筋
 	if (c.imgs.projector)
 		g.drawImage(c.imgs.projector, 0, 0, 16, 16, 6, 50, 32, 32);
 	else {
