@@ -22,7 +22,13 @@
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME } from "../../core/data/heroes";
 import { CARRY_MAX } from "../../core/town";
-import type { DungeonId, GuestId, Item } from "../../core/types";
+import type {
+	DungeonId,
+	GuestId,
+	GuestSpec,
+	Item,
+	Objective,
+} from "../../core/types";
 import { CAST } from "../../data/people/cast";
 import {
 	ESCORT_MSG,
@@ -45,6 +51,7 @@ import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
 import { isRevived, lampsLit } from "../../data/town/revival";
+import { type Surface, surfaceMapId, surfaceOf } from "../../data/town/surface";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
@@ -63,6 +70,7 @@ import { npc, sign } from "../../data/village/helpers";
 import {
 	layoutStage,
 	unlitCells,
+	VILLAGE_EXITS,
 	VILLAGE_SPOTS,
 	VISITOR_WALK,
 	type VillagePlace,
@@ -330,6 +338,38 @@ export const departTo = async (
 	notePicked(d, false);
 	await hideMsg(s);
 	await travel();
+	const go: Dive = {
+		dungeon: d,
+		carry,
+		objective: goal.objective,
+		...(companion ? { guest: escortSpec(companion) } : {}),
+	};
+	// 板の 小さな 地上（TOWN.md §0.3）に 着いて、入口まで 歩いてから 降りる（data/town/surface.ts）
+	const surf = surfaceOf(d);
+	if (surf) {
+		pendingDive = go;
+		await s.warp(surfaceMapId(d), surf.arrive[0], surf.arrive[1], "up");
+		await s.fadeIn(400);
+		return;
+	}
+	await dive(ctx, s, go);
+};
+
+/** 降りる ときに 持っていく もの（departTo で 決めて、地上が あれば 入口を 踏むまで あずかる）。 */
+type Dive = {
+	dungeon: DungeonId;
+	carry: Item[];
+	objective: Objective;
+	guest?: GuestSpec;
+};
+
+/** 地上に 着いて まだ 降りて いない 冒険（地上の 入口で 使う）。 */
+let pendingDive: Dive | null = null;
+
+/** はじめての 板なら 語りを 見せて、地下へ 降りる。 */
+const dive = async (ctx: Ctx, s: Story, go: Dive): Promise<void> => {
+	const d = go.dungeon;
+	pendingDive = null;
 	// そのダンジョンに はじめて もぐるなら 語りを見せる（見終わってから 覚える。途中で閉じたら 次も はじめから）
 	if (!loadProgress().intro.includes(d)) {
 		void ctx.audio.fadeBgm(500);
@@ -353,11 +393,70 @@ export const departTo = async (
 	s.exit({
 		kind: "new",
 		dungeon: d,
-		carry,
-		objective: goal.objective,
+		carry: go.carry,
+		objective: go.objective,
 		lunch: loadTown().lunch,
-		...(companion ? { guest: escortSpec(companion) } : {}),
+		...(go.guest ? { guest: go.guest } : {}),
 	});
+};
+
+/**
+ * 板の 小さな 地上（1画面。data/town/surface.ts）。入口を 踏むと 降りる・立て札・着いた 道の はしを 踏むと 町へ もどれる。
+ */
+export const buildSurface = (surf: Surface, ctx: Ctx): MapDef => {
+	const d = surf.dungeon;
+	const [bx, by] = surf.back;
+	const [mx, my] = surf.mouth;
+	const [sx, sy] = surf.sign;
+	return {
+		id: surfaceMapId(d),
+		name: surf.name,
+		tiles: surf.tiles,
+		rows: [...surf.rows],
+		outside: "#1f2a14",
+		events: [
+			sign(`surface_sign_${d}`, sx, sy, surf.line),
+			{
+				id: `surface_mouth_${d}`,
+				x: mx,
+				y: my,
+				trigger: "touch",
+				run: async (s) => {
+					// あずけた 冒険が なければ（リプレイから もどった など）いまの 持ち物と 目的で
+					const go =
+						pendingDive?.dungeon === d
+							? pendingDive
+							: {
+									dungeon: d,
+									carry: loadTown().bag,
+									objective: goalsNow()[d].objective,
+								};
+					await dive(ctx, s, go);
+				},
+			},
+			{
+				id: `surface_back_${d}`,
+				x: bx,
+				y: by,
+				trigger: "touch",
+				run: async (s) => {
+					const c = await s.choose(["町へ　もどる", "やめる"], {
+						cancel: 1,
+					});
+					if (c !== 0) {
+						await s.move("player", "u");
+						return;
+					}
+					pendingDive = null;
+					// 港の 桟橋の 先へ（船で 帰ってきた ところ）
+					const [ex, ey] = VILLAGE_EXITS[0].cell;
+					await s.fadeOut(400);
+					await s.warp("village", ex, ey - 1, "up");
+					await s.fadeIn(400);
+				},
+			},
+		],
+	};
 };
 
 /**

@@ -159,6 +159,7 @@ import {
 	ROOM_DOOR_SE,
 	ROOM_MSG,
 } from "../data/town/rooms";
+import { SURFACES, surfaceOf } from "../data/town/surface";
 import {
 	TAMPER_LEDGER,
 	TAMPER_MOB,
@@ -405,7 +406,7 @@ import {
 	planLines,
 	thingLines,
 } from "../ui/village/rooms";
-import { buildVillage } from "../ui/village/villageEvents";
+import { buildSurface, buildVillage } from "../ui/village/villageEvents";
 import {
 	forgetMobMemo,
 	hasMobNews,
@@ -7134,4 +7135,76 @@ test("生き返る 通り: 夜の 明かり。生き返って いない 建物�
 	ok(lampsLit(["deep"]), "lamps off after 電池板");
 	const def = buildVillage(view(["deep"]), {} as Ctx);
 	ok(def.lights?.lamps === true, "the village map does not light the lamps");
+});
+
+test("板の 小さな 地上（TOWN.md §0.3）: 本筋 4つと 離島板・おんたこ・お祭りに あり、着いた マスから 入口・立て札・町へ もどる マスへ 歩ける", () => {
+	for (const d of [
+		"shallow",
+		"kinoko",
+		"main",
+		"deep",
+		"tropical",
+		"konamono",
+		"festival",
+	] as DungeonId[])
+		ok(surfaceOf(d), `${d} has no surface`);
+	ok(!surfaceOf("hidden"), "過去ログの底 has a surface");
+	for (const surf of SURFACES) {
+		const rows = surf.rows.map((r) => [...r]);
+		const W = rows[0].length;
+		ok(
+			rows.every((r) => r.length === W),
+			`${surf.dungeon}: ragged rows`,
+		);
+		for (const r of rows)
+			for (const ch of r)
+				ok(surf.tiles[ch], `${surf.dungeon}: no tile for ${ch}`);
+		const pass = (x: number, y: number) =>
+			!!surf.tiles[rows[y]?.[x] ?? ""]?.passable;
+		const seen = new Set<string>();
+		const queue: (readonly [number, number])[] = [surf.arrive];
+		seen.add(surf.arrive.join());
+		for (let i = 0; i < queue.length; i++) {
+			const [x, y] = queue[i];
+			for (const [nx, ny] of [
+				[x + 1, y],
+				[x - 1, y],
+				[x, y + 1],
+				[x, y - 1],
+			] as const) {
+				if (seen.has(`${nx},${ny}`) || !pass(nx, ny)) continue;
+				seen.add(`${nx},${ny}`);
+				queue.push([nx, ny]);
+			}
+		}
+		ok(
+			seen.has(surf.mouth.join()),
+			`${surf.dungeon}: the entrance is out of reach`,
+		);
+		ok(
+			seen.has(surf.back.join()),
+			`${surf.dungeon}: the way back is out of reach`,
+		);
+		const [sx, sy] = surf.sign;
+		ok(!pass(sx, sy), `${surf.dungeon}: the sign can be walked on`);
+		ok(
+			[
+				[sx + 1, sy],
+				[sx - 1, sy],
+				[sx, sy + 1],
+				[sx, sy - 1],
+			].some((c) => seen.has(c.join())),
+			`${surf.dungeon}: the sign is out of reach`,
+		);
+		const def = buildSurface(surf, {} as Ctx);
+		ok(
+			def.events?.some(
+				(e) =>
+					e.trigger === "touch" &&
+					e.x === surf.mouth[0] &&
+					e.y === surf.mouth[1],
+			),
+			`${surf.dungeon}: the entrance does nothing`,
+		);
+	}
 });

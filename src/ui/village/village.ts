@@ -36,6 +36,7 @@ import {
 	today,
 } from "../../data/town/calendar";
 import { modesHeld, modeText } from "../../data/town/openModes";
+import { type Surface, surfaceOfMap } from "../../data/town/surface";
 import { timeBand } from "../../data/village/crowd";
 import {
 	clockLine,
@@ -91,7 +92,12 @@ import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
 import { buildRoom } from "./rooms";
 import { Crowd } from "./villageCrowd";
-import { buildVillage, departAnywhere, villageMenu } from "./villageEvents";
+import {
+	buildSurface,
+	buildVillage,
+	departAnywhere,
+	villageMenu,
+} from "./villageEvents";
 import { villageView } from "./villageReturn";
 
 /**
@@ -176,7 +182,7 @@ export type Arrival =
 
 type Spot = { x: number; y: number; dir: Dir };
 /** 地図（村・本館・建物の 中・施設の 中 `f_<id>`）。 */
-type MapId = "village" | "hall" | RoomId | `f_${string}`;
+type MapId = "village" | "hall" | RoomId | `f_${string}` | `s_${string}`;
 
 /**
  * 街灯の 光（ドット。内から 3段、いちばん 外は 市松の ディザ。ぼかさない：作者「光表現は ファジーでは なく ドットに」）。
@@ -378,7 +384,9 @@ export class Village {
 									this.ctx,
 									departAnywhere(this.ctx),
 								)
-							: buildVillage(v, this.ctx, { arrival: this.arrival });
+							: surfaceOfMap(this.mapId)
+								? buildSurface(surfaceOfMap(this.mapId) as Surface, this.ctx)
+								: buildVillage(v, this.ctx, { arrival: this.arrival });
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
@@ -429,7 +437,9 @@ export class Village {
 				? map
 				: facilityOfMap(map)
 					? (map as `f_${string}`)
-					: "village";
+					: surfaceOfMap(map)
+						? (map as `s_${string}`)
+						: "village";
 		// 前の 地図の 人・マスを 見ていた カメラは キリコに もどす
 		this.lookAt = null;
 		this.pan = null;
@@ -1453,8 +1463,8 @@ export class Village {
 		});
 		if (this.guideExit && this.mapId === "village")
 			this.drawExitGuide(g, ox, oy, this.scene);
-		// 時間帯の 色（外の 村だけ。人通りと 同じ 時計。data/village/daylight.ts）
-		if (this.mapId === "village") {
+		// 時間帯の 色（外の 村と 板の 地上だけ。人通りと 同じ 時計。data/village/daylight.ts）
+		if (this.mapId === "village" || this.mapId.startsWith("s_")) {
 			// 日付の 日の 出・日の 入りに 合わせて 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
 			const { m, d } = today();
 			const day = daylightAt(
