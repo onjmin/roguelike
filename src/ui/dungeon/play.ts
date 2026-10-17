@@ -3604,6 +3604,7 @@ export class Play {
 				bare: weapon === null,
 				kills,
 				deaths: deathCount(),
+				outings: (loadProgress().outings ?? 0) + 1,
 				depth: s.depth,
 				floors: this.run.dungeon.floors,
 				up: isUpBoard(s.dungeon),

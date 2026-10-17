@@ -19,21 +19,61 @@ export const HEADLINES: Partial<Record<DungeonId, string>> = {
 /** 最終話の あと（鯖代の 払い忘れで ロールバック）の 見出し。 */
 export const ROLLBACK_HEADLINE = "【悲報】ワイらの冒険、ロールバック";
 
-/** 倒れて 帰る たびに 掲示板に ふえる 一行（何回目かで 決まる）。 */
-export const DEATH_LINES: readonly string[] = [
-	"キリコ死んでて草",
-	"また死んどる",
-	"持ち物ぜんぶ落としたらしいで",
-	"死に戻り定期",
-	"ワイなら3階で帰っとるわ",
-	"ぷゆゆパン食べたんか？",
-	"知ってた",
-	"今日の死因はなんや",
+/**
+ * 倒れて 帰る たびに 掲示板に ふえる 一行。倒れた 回数で 段が 上がり、段の 中で 順に まわる
+ * （1〜2回：おもしろがる → 3回〜：慣れる → 10回〜：数える → 30回〜：伝統芸能）。{n} は 回数。
+ */
+export const DEATH_TIERS: readonly {
+	from: number;
+	lines: readonly string[];
+}[] = [
+	{ from: 1, lines: ["キリコ死んでて草", "また死んどる"] },
+	{
+		from: 3,
+		lines: [
+			"持ち物ぜんぶ落としたらしいで",
+			"死に戻り定期",
+			"ワイなら3階で帰っとるわ",
+			"ぷゆゆパン食べたんか？",
+			"知ってた",
+			"今日の死因はなんや",
+		],
+	},
+	{
+		from: 10,
+		lines: [
+			"{n}回目で草",
+			"死亡実況スレ、立てといたで",
+			"もう死ぬ前提で見とる",
+			"広場にキリコの墓、建てよか",
+		],
+	},
+	{
+		from: 30,
+		lines: [
+			"{n}回目。もう伝統芸能や",
+			"死んでへん日のほうがニュース",
+			"残機、ワイより多いやろ",
+			"死ぬのが仕事の人",
+		],
+	},
 ];
 
+/** ぜんぶの 段の 行（窓に 収まるかの 試験用）。 */
+export const DEATH_LINES: readonly string[] = DEATH_TIERS.flatMap(
+	(t) => t.lines,
+);
+
 /** n 回目（1 から）に 倒れて 帰った ときの 一行。 */
-export const deathLine = (n: number): string =>
-	DEATH_LINES[(Math.max(1, Math.floor(n)) - 1) % DEATH_LINES.length];
+export const deathLine = (n: number): string => {
+	const k = Math.max(1, Math.floor(n));
+	const tier =
+		[...DEATH_TIERS].reverse().find((t) => k >= t.from) ?? DEATH_TIERS[0];
+	return tier.lines[(k - tier.from) % tier.lines.length].replaceAll(
+		"{n}",
+		String(k),
+	);
+};
 
 /** 掲示板の 文（村の 窓）。 */
 export const BOARD_NEWS = {

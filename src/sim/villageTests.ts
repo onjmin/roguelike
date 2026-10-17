@@ -148,6 +148,7 @@ import {
 import {
 	BOARD_NEWS,
 	DEATH_LINES,
+	DEATH_TIERS,
 	deathLine,
 	HEADLINES,
 } from "../data/town/headlines";
@@ -6426,6 +6427,7 @@ test("live comments react to the run (low HP first, filler only sometimes) and f
 		bare: false,
 		kills: 2,
 		deaths: 0,
+		outings: 1,
 		depth: 4,
 		floors: 12,
 		up: false,
@@ -6442,6 +6444,10 @@ test("live comments react to the run (low HP first, filler only sometimes) and f
 		{ ...base, up: true, depth: 11 },
 		{ ...base, deaths: 99 },
 		{ ...base, deaths: 4 },
+		{ ...base, deaths: 45 },
+		{ ...base, outings: 5 },
+		{ ...base, outings: 15 },
+		{ ...base, outings: 123 },
 	];
 	for (const x of states)
 		for (let salt = 0; salt < 12; salt++) {
@@ -6452,6 +6458,12 @@ test("live comments react to the run (low HP first, filler only sometimes) and f
 	ok(
 		liveResLine({ ...base, hp: 5, hunger: 5 }, 0)?.includes("HP") ?? false,
 		"low HP is not first",
+	);
+	// 出撃の 回数で つぶやきが かわる
+	ok(
+		liveResLine({ ...base, outings: 1 }, 0) !==
+			liveResLine({ ...base, outings: 50 }, 0),
+		"the filler does not escalate",
 	);
 	// ようすに 合う 行が ない ときは 2階に 1回くらい
 	ok(
@@ -7450,13 +7462,19 @@ test("広場の 掲示板の 名無し（STORY.md §4.9）: 騒ぎの 板には 
 		]);
 	}
 	fitsWindow(texts);
+	// 段が 上がる（1〜2回 → 3回〜 → 10回〜 → 30回〜）。段の 中で まわる。{n} は 回数
 	ok(
-		deathLine(1) === DEATH_LINES[0] &&
-			deathLine(2) === DEATH_LINES[1] &&
-			deathLine(DEATH_LINES.length + 1) === DEATH_LINES[0],
-		"death lines do not cycle",
+		deathLine(1) === "キリコ死んでて草" &&
+			deathLine(2) === "また死んどる" &&
+			deathLine(3) === DEATH_TIERS[1].lines[0] &&
+			deathLine(10) === "10回目で草" &&
+			deathLine(30) === "30回目。もう伝統芸能や" &&
+			deathLine(34) === deathLine(30).replace("30", "34"),
+		"death lines do not escalate",
 	);
-	ok(DEATH_LINES[0] === "キリコ死んでて草", "the first line");
+	for (let n = 1; n < 60; n++)
+		texts.push(["deathLine", fill(BOARD_NEWS.death, { line: deathLine(n) })]);
+	fitsWindow(texts);
 });
 
 test("ご近所（STORY.md §3）: 持ち帰った 板の 人が 1人ずつ 町に 来る。歩ける マスで ほかと 重ならず、行は 村の 窓に 収まる", () => {

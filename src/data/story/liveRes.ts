@@ -15,6 +15,8 @@ export type LiveState = {
 	kills: number;
 	/** これまで 倒れた 回数（どの 板も）。 */
 	deaths: number;
+	/** これまで 出撃した 回数（この 冒険を 入れて）。 */
+	outings: number;
 	depth: number;
 	floors: number;
 	/** 上りの 板（塔・やぐら）。 */
@@ -54,6 +56,14 @@ const POOLS: readonly Pool[] = [
 		lines: ["次、{bottom}やで", "ここまで来たんか"],
 	},
 	{
+		when: (x) => x.deaths >= 30,
+		lines: [
+			"{deaths}回死んだ伝説の人",
+			"死ぬとこ見に来たで",
+			"今日の死に場所はここか",
+		],
+	},
+	{
 		when: (x) => x.deaths >= 10,
 		lines: ["{deaths}回死んどるやつや", "もう常連やな", "今日は何階で死ぬんや"],
 	},
@@ -63,24 +73,42 @@ const POOLS: readonly Pool[] = [
 	},
 ];
 
-/** ようすに 合う 行が ない ときの つぶやき（2階に 1回くらい）。 */
-const FILLER: readonly string[] = [
-	"保守",
-	"ROMっとるで",
-	"今北産業",
-	"このスレ伸びへんな",
-	"見とるで",
-	"はよ潜れ",
+/**
+ * ようすに 合う 行が ない ときの つぶやき（2階に 1回くらい）。出撃の 回数で 段が 上がる
+ * （新入り → また来た → 常連 → 住人）。「見とるで」は どの 段にも（やきうの 口ぐせ。正体の 振り）。
+ */
+const FILLER: readonly { from: number; lines: readonly string[] }[] = [
+	{ from: 1, lines: ["新入りか？", "見とるで", "保守", "今北産業"] },
+	{
+		from: 3,
+		lines: ["また来たんか", "見とるで", "ROMっとるで", "このスレ伸びへんな"],
+	},
+	{
+		from: 10,
+		lines: ["常連やな", "見とるで", "今日も潜っとる", "{outings}回目の出撃や"],
+	},
+	{
+		from: 30,
+		lines: [
+			"もう住人やろ",
+			"見とるで",
+			"出撃{outings}回目。暇なんか",
+			"スレより長生きしとる",
+		],
+	},
 ];
 
 /** salt は 冒険の 種と 階から 作る（同じ 階では 同じ 行）。無ければ null。 */
 export const liveResLine = (x: LiveState, salt: number): string | null => {
 	const pool = POOLS.find((p) => p.when(x));
-	const lines = pool?.lines ?? (salt % 2 === 0 ? FILLER : null);
+	const filler =
+		[...FILLER].reverse().find((f) => x.outings >= f.from) ?? FILLER[0];
+	const lines = pool?.lines ?? (salt % 2 === 0 ? filler.lines : null);
 	if (!lines) return null;
 	const text = lines[salt % lines.length]
 		.replaceAll("{hero}", x.hero)
 		.replaceAll("{deaths}", String(x.deaths))
+		.replaceAll("{outings}", String(x.outings))
 		.replaceAll("{bottom}", x.up ? "てっぺん" : "底");
 	return `村のスレ「${text}」`;
 };
