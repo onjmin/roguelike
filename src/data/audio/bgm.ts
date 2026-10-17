@@ -106,7 +106,7 @@ import ending from "./bgm/ending.mml?raw"; // b312cbafed564277「変ト長調 (G
 import field from "./bgm/field.mml?raw"; // 164e63f5f56643c2「何か」
 import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 // post/1318（AI作曲スレ）の 名無し2rt さんの 4曲（2026-10。title・town などと 同じ 人）。
-// おんJタウン（段5 から。data/audio/music.ts）＝kumori、電池板＝speder2（もとは deq_laundry）、おんたこ＝fukyowa（もとは deq_volcano）、
+// おんJタウン（段5 から。data/audio/music.ts）＝kumori、最終話の あとの おんJタウン（段7）＝speder2（もとは 電池板）、おんたこ＝fukyowa（もとは deq_volcano）、
 // お祭り会場＝kouseki（もとは deep_kisei の 使いまわし）
 // 離島板＝island（もとは deq_sea。2026-10-05 の 5曲目。dtm 2.1.32 の 音色 ep_celesta を 使うので dtm を 上げた）
 import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音
@@ -114,7 +114,7 @@ import inferno from "./bgm/inferno.mml?raw"; // †闇の板† 闇の塔：ニ�
 import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたらテンション上がりそうなサビ」：ニ長調 131・ビブラフォン・チェレスタ・エレピ（前奏 12 小節）
 // 界隈曲（2号兄貴リスペクト、インスト。dtm の 自動作曲 seed 1010 の 伴奏を 組み直し、リードは 手書き。
 // 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ト短調 145・chip_pop・dance。
-// 最終話の あとの おんJタウン（町じゅう 明るい 段7。data/audio/music.ts）。ループするので #fadeout は 外した
+// はげしい 曲なので 電池板（時間との 競争の 最終話）で 鳴らす。ループするので #fadeout は 外した
 import kaiwai from "./bgm/kaiwai.mml?raw";
 import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
