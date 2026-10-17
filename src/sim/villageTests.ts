@@ -2815,8 +2815,8 @@ test("開票: the 電池板 ending plays once and やきう stays; 転 plays onc
 			`やきう's lines in the 開票 are not played:\n${log.join("\n")}`,
 		);
 		ok(
-			log.some((l) => l.includes("★キリコ1位★")),
-			"no 当選 card at the 開票",
+			log.some((l) => l.includes("【朗報】人おった")),
+			"no unpinned headline at the climax",
 		);
 		ok(
 			!!loadProgress().endings?.includes("deep"),
@@ -3940,7 +3940,7 @@ test("boss causes are not rewritten by the old-name renames, and boss records an
 				`${rp.dungeon}: the boss replay lost its record`,
 			);
 		}
-		ok(replays.length === 6, `harness: ${replays.length} boss boards`);
+		ok(replays.length === 7, `harness: ${replays.length} boss boards`);
 	});
 });
 
@@ -4094,7 +4094,7 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		"the march changed きのこ板",
 	);
 	ok(
-		objectiveFor("main", march).objective === "fetch",
+		objectiveFor("main", march).objective === "boss",
 		"the march changed 風呂板",
 	);
 	// きのこ狩り：きのこ板が 持ち帰りに（出撃の 回数だけで 終わる）
@@ -4122,8 +4122,8 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		goalText("shallow", "fetch"),
 	);
 	ok(
-		goalText("deep", "boss") === "町の主電源を持ち帰る",
-		"a board without a boss reads as a boss run",
+		goalText("deep", "boss") === "やきうをたおす",
+		goalText("deep", "boss"),
 	);
 	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);
 	ok(bossName("hidden") === null, "過去ログの底 has a boss");
@@ -4398,15 +4398,6 @@ test("潜った 本人は 迎えない：ロゼが 主人公で 持ち帰ると�
 			`ロゼ greets herself:\n${pages.map((p) => `${p.who}: ${p.text}`).join("\n")}`,
 		);
 		ok(pages.length > 0, "the ending vanished");
-		// 山場（電池板の はじめての 持ち帰り）だけは 全員 そろう
-		setProgress(["shallow", "kinoko", "main", "tropical", "deep"]);
-		pushRecord({ kind: "clear", dungeon: "deep", hero: "roze" });
-		ok(
-			pagesFor({ kind: "clear", dungeon: "deep" }).some(
-				(p) => p.who === "roze",
-			),
-			"ロゼ is missing from the climax",
-		);
 		pushRecord({ kind: "escape", dungeon: "tropical", hero: "zero" });
 		ok(
 			pagesFor({ kind: "escape", dungeon: "tropical" }).every(

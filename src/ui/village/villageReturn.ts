@@ -30,6 +30,7 @@ import {
 import { eventById, eventNewsText } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
 import {
+	ARRIVE_RETURN,
 	awayFriends,
 	BOSS_RETURN,
 	DEPART,
@@ -177,7 +178,13 @@ export const pagesFor = (
 	const away = sceneAway(a, p);
 	if (a.kind !== "clear") return withoutAway(RETURN_PAGES, away);
 	const ending = endingFor(a.dungeon, !firstEnding(a, p), away, p.cleared);
-	const boss = instantClear(a.objective) ? (BOSS_RETURN[a.dungeon] ?? []) : [];
+	// ボスを たおした・底の 出来事・送り届けの 帰り方の 語り
+	const boss =
+		a.objective === "boss"
+			? (BOSS_RETURN[a.dungeon] ?? [])
+			: instantClear(a.objective)
+				? (ARRIVE_RETURN[a.dungeon] ?? [])
+				: [];
 	// 本筋の 話の おわり（はじめて 持ち帰った ときだけ）
 	const end = firstEnding(a, p) ? episodeEnd(a.dungeon) : null;
 	return withoutAway(

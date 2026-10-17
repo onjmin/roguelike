@@ -58,14 +58,14 @@ export const EVENTS: readonly EventDef[] = [
 	},
 	{
 		id: "bath-steam",
-		name: "風呂板の湯けむり騒動",
+		name: "番頭の湯治休み",
 		dungeon: "main",
-		objective: "boss",
+		objective: "fetch",
 		need: { cleared: ["main"] },
 		// たおれて もどった あとの 気分転換に
 		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 5 },
-		news: "風呂板の源泉に、\n湯守が居すわったらしい",
+		news: "風呂板の番頭が、湯治で\n休みをとったらしい",
 	},
 	{
 		id: "kinoko-hunt",

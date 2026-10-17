@@ -2465,7 +2465,7 @@ export class Play {
 				? "ここから先は今の版では同じにならないため、見られません<br><small>（リプレイを残したあとで ゲームの中身が 変わった）</small>"
 				: end
 					? end.kind === "clear" && instantClear(this.run.objective)
-						? `${esc(end.cause)}<br><small>${bossHomeLine(this.run.s.dungeon)}　${this.run.s.turn}ターン</small>`
+						? `${esc(end.cause)}<br><small>${bossHomeLine(this.run.s.dungeon, this.run.objective)}　${this.run.s.turn}ターン</small>`
 						: end.kind === "clear"
 							? `${defOf(this.run.dungeon.goal).name}を持ち帰った<br><small>${this.run.s.turn}ターン</small>`
 							: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}で${esc(end.cause)}`

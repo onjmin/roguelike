@@ -62,6 +62,8 @@ export type EventSpec = {
 	lines: readonly string[];
 	/** 終わりの 理由（Ending.cause。記録・リプレイの 組み合わせに 使う ので 変えない）。 */
 	cause: string;
+	/** どう 帰ったか（冒険の記録の 札で「（品）ごと、〜」）。 */
+	home: string;
 };
 
 /** 送り届ける 人（目的が deliver。はじめから ついてきて、底に 着くと 出来事・品・入口へ）。 */
@@ -474,7 +476,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	main: {
 		id: "main",
-		objective: "fetch",
+		// 42℃派の 番頭と 本気の 勝負（STORY.md §4.9）
+		objective: "boss",
 		rests: [{ depth: 7, name: "露天の源泉", spring: true }],
 		boss: {
 			monster: "boss_ofurou",
@@ -508,10 +511,21 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	deep: {
 		id: "deep",
 		noCarry: true,
+		// 底で 見出しを 盛って いた 名無し（やきう）と 戦う（STORY.md §4.9 の 結）
+		objective: "boss",
+		boss: {
+			monster: "boss_yakiu",
+			rescue: "escort",
+			lines: [
+				"やきうは、見出しを書く手を止めた",
+				"電池ニキが発電機を回しなおした",
+				"明かりの道を、入口まで送ってもらった",
+			],
+			cause: "やきうをたおした",
+		},
 		rests: [{ depth: 10, name: "発電所の見学コース" }],
 		// 時間との 競争：2ターンに 1つ 余分に レスが つく（1000 まで 約 2/3 の 時間）
 		rushEvery: 2,
-		objective: "fetch",
 		// 機械と 回線の 敵が 多い
 		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
 		floors: 20,
@@ -578,6 +592,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"6人に見送られて、ふもとへ降りた",
 			],
 			cause: "島民を送り届けた",
+			home: "島民たちに見送られて帰った",
 		},
 		boss: {
 			monster: "boss_natsuko",
@@ -622,6 +637,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"たこ焼きを焼いて、入口まで送ってもらった",
 			],
 			cause: "たこパに参加した",
+			home: "たこパのあと送ってもらった",
 		},
 		boss: {
 			monster: "boss_takonomin",

@@ -4,7 +4,12 @@
 
 import { dungeonById } from "../../core/data/dungeons";
 import { defOf, itemName } from "../../core/item";
-import { type DungeonId, instantClear, type RunState } from "../../core/types";
+import {
+	type DungeonId,
+	instantClear,
+	type Objective,
+	type RunState,
+} from "../../core/types";
 import { ENDING_BGM } from "../../data/audio/music";
 import { BOSS_HOME, DUNGEON_NAMES } from "../../data/story/story";
 import {
@@ -122,8 +127,17 @@ export const escBr = (s: string): string => esc(s).replace(/\n/g, "<br>");
  * ボスを たおして 帰った ひとこと（「（品）ごと、〜　帰った」。品を 持ち帰った ことも わかるように）。
  * 冒険の記録の 札・リプレイの 終わり・記録の 見出し・もらった リプレイの 見出し。
  */
-export const bossHomeLine = (d: DungeonId): string =>
-	`${defOf(dungeonById(d).goal).name}ごと、${BOSS_HOME[d] ?? "入口へ帰った"}`;
+export const bossHomeLine = (d: DungeonId, o?: Objective): string => {
+	const dg = dungeonById(d);
+	// 底の 出来事・送り届けは その 板の 帰り方（core/data/dungeons.ts の event・deliver の home）
+	const home =
+		o === "event"
+			? dg.event?.home
+			: o === "deliver"
+				? dg.deliver?.home
+				: BOSS_HOME[d];
+	return `${defOf(dg.goal).name}ごと、${home ?? "入口へ帰った"}`;
+};
 
 /** ボスを たおして 帰った 冒険か（記録・リプレイ）。 */
 export const isBossClear = (r: {
@@ -165,7 +179,9 @@ export const recordHead = (
 	r: Parameters<typeof endLine>[0] & Pick<RunRecord, "at" | "lv" | "turn">,
 ): string =>
 	`${esc(endLine(r))}<br><small>${
-		isBossClear(r) ? `${esc(bossHomeLine(r.dungeon ?? "main"))}<br>` : ""
+		isBossClear(r)
+			? `${esc(bossHomeLine(r.dungeon ?? "main", r.objective))}<br>`
+			: ""
 	}${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン</small>`;
 
 /** 記録の一覧の 終わり方の札。 */
@@ -241,7 +257,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 			class: "matome-line runend-cause",
 			text:
 				clear && boss
-					? `${DUNGEON_NAMES[s.dungeon].short}　${bossHomeLine(s.dungeon)}`
+					? `${DUNGEON_NAMES[s.dungeon].short}　${bossHomeLine(s.dungeon, s.objective)}`
 					: endLine(rec),
 		}),
 		el("p", { class: "runend-nth", text: `${nth}回目の冒険` }),

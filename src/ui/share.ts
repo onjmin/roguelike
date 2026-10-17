@@ -32,7 +32,9 @@ export const sharedHead = (rp: SavedReplay): string => {
 			: rp.kind === "escape"
 				? `${floorShort(rp.dungeon, rp.depth)}から帰還スレでもどった`
 				: `${floorShort(rp.dungeon, rp.depth)}で${esc(rp.cause)}`;
-	const home = boss ? `${esc(bossHomeLine(rp.dungeon ?? "main"))}　` : "";
+	const home = boss
+		? `${esc(bossHomeLine(rp.dungeon ?? "main", rp.objective))}　`
+		: "";
 	return `${esc(where)}　${how}<br><small>${home}${rp.turn}ターン</small>`;
 };
 

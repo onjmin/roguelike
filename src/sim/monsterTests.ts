@@ -3223,6 +3223,7 @@ const BOSS_BOARDS: readonly DungeonId[] = [
 	"konamono",
 	"festival",
 	"main",
+	"deep",
 ];
 
 /** ボスに 持たせない とくぎ（逃げる・消える・ふえる・化ける・飛ばす）。 */
@@ -3336,8 +3337,10 @@ test(
 			DUNGEONS.festival.objective === "bring",
 			"festival is not a bring board",
 		);
-		for (const d of ["shallow", "main", "deep", "hidden"] as const)
+		for (const d of ["shallow", "hidden"] as const)
 			ok(DUNGEONS[d].objective === "fetch", `${d} is not a fetch board`);
+		for (const d of ["main", "deep"] as const)
+			ok(DUNGEONS[d].objective === "boss", `${d} is not a boss board`);
 		ok(
 			MONSTER_LIST.filter((m) => m.boss).length === BOSS_BOARDS.length,
 			"a boss is not on any board",
@@ -3365,7 +3368,7 @@ test(
 			"B1 of a boss run differs from the fetch run",
 		);
 		// ボスの いない 板は 持ち帰りの まま
-		const deep = Run.create("boss-create", "deep", [], "boss");
+		const deep = Run.create("boss-create", "hidden", [], "boss");
 		ok(
 			deep.s.objective === undefined && deep.bossSpec === null,
 			"a board without a boss became boss",
@@ -4175,7 +4178,7 @@ test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",
 	() => {
-		ok(MONSTER_LIST.length === 45, `${MONSTER_LIST.length} monsters`);
+		ok(MONSTER_LIST.length === 46, `${MONSTER_LIST.length} monsters`);
 		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
 		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(
@@ -4291,7 +4294,7 @@ test(
 		const top = DUNGEONS.festival.floors;
 		const r = Run.create("bring-run", "festival", [], "bring");
 		const before = r.s.guest;
-	ok(!before, "the boss joined from the start");
+		ok(!before, "the boss joined from the start");
 		r.enterFloor(top, false);
 		ok(r.s.guest?.id === "oyabun" && !r.s.end, `guest ${r.s.guest?.id}`);
 		ok(r.s.returning, "not returning after the boss joined");
@@ -4303,5 +4306,17 @@ test(
 			!r.s.floor.items.some((x) => x.item.kind === DUNGEONS.festival.goal),
 			"the goal item lies on the floor",
 		);
+	},
+);
+
+test(
+	"boss_yakiu",
+	"電池板の ラスボス：まっすぐ ならぶと 盛った 見出しを 投げつける。ほかの 板には 出ない",
+	() => {
+		const r = arena("boss-yakiu");
+		const m = put(r, "boss_yakiu", at(4, 0));
+		const n = holdAndWait(r, m, 40, () => logHas(r, "見出しを投げつけた"));
+		ok(n > 0, "never threw a headline");
+		ok(DUNGEONS.deep.boss?.monster === "boss_yakiu", "not the 電池板 boss");
 	},
 );

@@ -177,8 +177,8 @@ const LOG_LINES = [
 	"ぷゆゆ",
 	"また明日",
 ];
-/** 最終話の あと（電池板を 持ち帰った）に まじる 行（STORY.md §5）。 */
-const WIN_LOG = ["キリコ1位おめ", "配信切るの惜しかったな"] as const;
+/** 最終話の あと（電池板を 持ち帰った）に まじる 行（STORY.md §4.9 の 頂点）。 */
+const WIN_LOG = ["人おったな", "ロールバックされとって草"] as const;
 const WEEK = "日月火水木金土";
 
 const logLine = (r: () => number, won: boolean): string => {
