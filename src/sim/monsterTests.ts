@@ -72,6 +72,7 @@ import {
 	type Objective,
 	PLAYER_ID,
 } from "../core/types";
+import { deathNote } from "../data/story/deathNotes";
 
 // ───────────────── 試験の枠 ─────────────────
 
@@ -4415,5 +4416,63 @@ test(
 			t.s.guest?.id === "feris" && t.objective === "fetch",
 			`${t.s.guest?.id} ${t.objective}`,
 		);
+	},
+);
+
+test(
+	"death_notes",
+	"死因の 一文：どの 死因も「〜で〜した」に 作りかわり、全角 22字に 収まる。同じ 冒険なら 同じ 文",
+	() => {
+		const causes = [
+			...MONSTER_LIST.flatMap((d) => [
+				`${d.name}にたおされた`,
+				...(d.abilities.some((a) => a.k === "knockback")
+					? [`${d.name}に吹きとばされた`]
+					: []),
+				...d.abilities.flatMap((a) =>
+					a.k === "breath" ? [`${d.name}の${a.what ?? "炎"}でたおれた`] : [],
+				),
+			]),
+			"ピッチングマシンの死球でたおれた",
+			"毒ボールマシンの死球でたおれた",
+			"おなかがすいてたおれた",
+			"地雷を踏みぬいてたおれた",
+			"落とし穴に落ちてたおれた",
+			"炎上案件の爆発に巻きこまれた",
+			"チギュリパンにあたった",
+			"荒らし草を飲んだ",
+			"諸刃の杖でたおれた",
+			"冒険をやめた",
+		];
+		const width = (s: string) =>
+			[...s].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
+		const turns = [
+			...Array.from({ length: 60 }, (_, i) => 1 + i * 7),
+			100,
+			5000,
+			9900,
+			12345,
+		];
+		for (const cause of causes)
+			for (const turn of turns)
+				for (const depth of [1, 3]) {
+					const x = {
+						cause,
+						depth,
+						turn,
+						lv: 99,
+						dungeon: "shallow" as const,
+					};
+					const line = deathNote(x);
+					ok(line !== cause, `not rewritten: ${cause}`);
+					ok(width(`B30　${line}`) <= 22, `too wide: ${line}`);
+					ok(deathNote(x) === line, `not stable: ${cause}`);
+				}
+		const puyu = new Set(
+			Array.from({ length: 60 }, (_, t) =>
+				deathNote({ cause: "ぷゆゆにたおされた", depth: 1, turn: t, lv: 9 }),
+			),
+		);
+		ok(puyu.size >= 3, `ぷゆゆ: ${[...puyu].join(" / ")}`);
 	},
 );

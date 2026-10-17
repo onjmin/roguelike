@@ -11,6 +11,7 @@ import {
 	type RunState,
 } from "../../core/types";
 import { ENDING_BGM } from "../../data/audio/music";
+import { deathNote } from "../../data/story/deathNotes";
 import { BOSS_HOME, DUNGEON_NAMES } from "../../data/story/story";
 import {
 	addRecord,
@@ -159,6 +160,8 @@ export const endLine = (
 		| "returning"
 		| "dungeon"
 		| "objective"
+		| "turn"
+		| "lv"
 	>,
 ): string =>
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
@@ -168,7 +171,7 @@ export const endLine = (
 				? `${floorShort(r.dungeon, r.maxDepth)}から地上へもどった`
 				: r.kind === "escape"
 					? `${floorShort(r.dungeon, r.depth)}から帰還スレでもどった`
-					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}で${r.cause}`
+					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}　${deathNote(r)}`
 	}`;
 
 /**

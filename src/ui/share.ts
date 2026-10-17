@@ -3,6 +3,7 @@
 // - 読み込む：貼りつけるか ファイルを 選ぶ。
 // - もらった リプレイを 見るか 聞く。
 
+import { deathNote } from "../data/story/deathNotes";
 import { DUNGEON_NAMES } from "../data/story/story";
 import type { SavedReplay } from "../engine/save";
 import {
@@ -31,7 +32,7 @@ export const sharedHead = (rp: SavedReplay): string => {
 			? "持ち帰った"
 			: rp.kind === "escape"
 				? `${floorShort(rp.dungeon, rp.depth)}から帰還スレでもどった`
-				: `${floorShort(rp.dungeon, rp.depth)}で${esc(rp.cause)}`;
+				: `${floorShort(rp.dungeon, rp.depth)}　${esc(deathNote(rp))}`;
 	const home = boss
 		? `${esc(bossHomeLine(rp.dungeon ?? "main", rp.objective))}　`
 		: "";
