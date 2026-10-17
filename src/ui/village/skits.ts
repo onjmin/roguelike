@@ -7,12 +7,14 @@ import type { MobId } from "../../data/people/mobs";
 import {
 	SKITS,
 	type Skit,
+	type SkitLine,
 	type SkitOn,
 	type SkitWindow,
 } from "../../data/story/skits";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import { loadProgress, loadRecords } from "../../engine/save";
+import { type FxRun, fxRoot, startFx } from "../../engine/sceneFx";
 
 const KEY = "kiriko-roguelike/skits";
 
@@ -95,19 +97,44 @@ const play = async (
 	v.seen.push(sk.key);
 	v.at = returnAt();
 	save(v);
-	for (const l of sk.lines) {
-		const cue = cueOf(l);
-		if (l.who === null) await s.narrate(l.text);
-		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cue);
-		else if (l.who === "mob") {
-			if (mob) await mob.say(s, mob.id, l.text, cue);
-		} else
-			await s.say(null, l.text, {
-				...cue,
-				name: l.who.name,
-				noPortrait: true,
-			});
+	// 爆発などの エフェクト（calm の 窓か 寸劇の 終わりで 消える。地図は こわれないので 消えたら 元通り）
+	let fx: FxRun | null = null;
+	try {
+		for (const l of sk.lines) {
+			if (l.calm && fx) {
+				fx.end();
+				fx = null;
+			}
+			if (l.fx) {
+				fx?.end();
+				if (l.fx === "boom") s.se("explosion");
+				fx = startFx(fxRoot(), l.fx);
+				await fx.ready;
+			}
+			await line(s, l, mob);
+		}
+	} finally {
+		fx?.end();
 	}
+};
+
+/** 1窓。 */
+const line = async (
+	s: Story,
+	l: SkitLine,
+	mob?: { id: MobId; say: MobSay },
+): Promise<void> => {
+	const cue = cueOf(l);
+	if (l.who === null) await s.narrate(l.text);
+	else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cue);
+	else if (l.who === "mob") {
+		if (mob) await mob.say(s, mob.id, l.text, cue);
+	} else
+		await s.say(null, l.text, {
+			...cue,
+			name: l.who.name,
+			noPortrait: true,
+		});
 };
 
 /** イベントの あと：建物に 入ったか（地図が かわった）、物を 調べたか（同じ 地図の まま）。 */

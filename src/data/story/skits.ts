@@ -9,12 +9,17 @@
 
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
+import type { SceneFx } from "../../engine/sceneFx";
 import type { MobId } from "../people/mobs";
 
 /** 1窓。who は キリコ・地の文（null）・その 住人（mob。death だけ）・名前つきの 人（店員 など。立ち絵なし）。 */
 export type SkitLine = Cue & {
 	who: "kiriko" | "mob" | null | { name: string };
 	text: string;
+	/** この 窓の 前に 出す エフェクト（engine/sceneFx.ts。boom は 爆発の 音も）。calm か 寸劇の 終わりまで 残る。 */
+	fx?: SceneFx;
+	/** この 窓の 前に エフェクトを 消す（爆発の あと 元通りに なった ところ）。 */
+	calm?: true;
 };
 
 export type SkitOn =
@@ -72,6 +77,7 @@ const usher = by("係員");
 const dealer = by("ディーラー");
 const banndai = by("番台");
 const nanashi = by("名無し");
+const sensei = by("師範");
 
 export const SKITS: readonly Skit[] = [
 	// ───── 期間限定（話の あいだ だけ。その あいだに 村を 歩いたら。先へ 進むと 二度と 出ない） ─────
@@ -235,6 +241,52 @@ export const SKITS: readonly Skit[] = [
 			banndai("……41℃派のお客さんには、\n41℃って言ってる"),
 			k("……ほんとは何℃ンゴ？"),
 			banndai("……測ったことないねぇ"),
+		],
+	},
+	// ───── 爆発オチ（201 の「困ったら 毎回 同じ 最終手段と 同じ 音」。どの 建物も 最後は ドカーン） ─────
+	// 地図は こわさない。煙が 晴れたら（calm）建物は 元通りで、本人たちも 気に しない
+	{
+		key: "enter_famires",
+		on: { k: "enter", map: "f_famires" },
+		lines: [
+			clerk("ドリンクバーは、\nおかわり自由です"),
+			k("……ぜんぶ混ぜるンゴ"),
+			n("コーラ、メロンソーダ、\nコーヒー、コーンスープ……"),
+			{ ...clerk("混ぜるな危険です！"), fx: "boom" },
+			{ ...n("……ファミレスは、\nなぜか元通りになっていた。"), calm: true },
+		],
+	},
+	{
+		key: "enter_recycle",
+		on: { k: "enter", map: "f_recycle" },
+		lines: [
+			owner("うちは何でも\n直して売るよ"),
+			owner("この扇風機も、\n直したばっかりだ"),
+			n("スイッチを入れた。"),
+			{ ...k("……直ってないンゴ！"), fx: "boom" },
+			{ ...owner("……ほら、\nもう1回直せる"), calm: true },
+		],
+	},
+	{
+		key: "enter_dojo",
+		on: { k: "enter", map: "f_dojo" },
+		lines: [
+			sensei("気合いだ！\n気合いで瓦を割れ！"),
+			sensei("……10枚！"),
+			sensei("……100枚！"),
+			{ ...sensei("……道場ごと！！"), fx: "boom" },
+			{ ...k("……道場、元通りンゴ。\nなんでンゴ"), calm: true },
+		],
+	},
+	{
+		key: "enter_theater",
+		on: { k: "enter", map: "f_theater" },
+		lines: [
+			usher("本日の演目は、\n『爆発オチ』です"),
+			k("……題で\nネタバレしてるンゴ"),
+			{ ...usher("……以上です"), fx: "boom" },
+			{ ...n("劇場は、何事もなかったように\n元通りだった。"), calm: true },
+			k("……オチだけの劇ンゴ"),
 		],
 	},
 	// ───── 村の 物を はじめて 調べた ─────

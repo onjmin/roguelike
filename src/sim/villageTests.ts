@@ -8341,3 +8341,27 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 		);
 	});
 });
+
+test("寸劇: every explosion clears before the skit ends (the building is back to normal), and the boom plays its sound", async () => {
+	const booms = SKITS.filter((sk) => sk.lines.some((l) => l.fx === "boom"));
+	ok(booms.length >= 3, "few explosion gags");
+	for (const sk of booms) {
+		const at = sk.lines.findIndex((l) => l.fx === "boom");
+		ok(
+			sk.lines.slice(at + 1).some((l) => l.calm),
+			`${sk.key}: the smoke never clears`,
+		);
+	}
+	await withStorageAsync(async () => {
+		const a = fakeStory();
+		ok(
+			await skitAfterEvent(a.s, {
+				from: "village",
+				to: "f_theater",
+				thing: "door_f_theater",
+			}),
+			"theater skit",
+		);
+		ok(a.log.includes("se explosion"), `no boom sound: ${a.log.join(" / ")}`);
+	});
+});
