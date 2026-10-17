@@ -109,7 +109,7 @@ export const INCIDENTS: readonly Incident[] = [
 				sprite: ISLANDER,
 				dir: "down",
 				name: "島民",
-				lines: ["島が好きすぎて、島ごと来たで。\n……浜、ええな。"],
+				lines: ["島が好きすぎて、島ごと来たで。\n浜、ええな。"],
 			},
 			{
 				id: "islander_b",

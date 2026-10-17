@@ -65,6 +65,18 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 		{ at: 13, who: "res", text: "てっぺんで、だれか待っとるらしいで" },
 		{ at: 15, who: null, text: "てっぺんに、主電源が見えた。" },
 	],
+	tropical: [
+		{ at: 3, who: null, text: "家が6軒。どの家も、留守だ。" },
+		{ at: 5, who: "res", text: "島民、全員町におるらしいで" },
+	],
+	konamono: [
+		{ at: 4, who: null, text: "階段に、青のりが落ちている。" },
+		{ at: 7, who: "res", text: "怒ってへん。たこ焼きや😡" },
+	],
+	festival: [
+		{ at: 4, who: "res", text: "この祭り、何日目や？" },
+		{ at: 7, who: "res", text: "親分、やぐらで寝とるらしいで" },
+	],
 	// 過去ログの底（99階。最終話の あと）。層の 札の 階は よける
 	hidden: [
 		{ at: 3, who: null, text: "古いレスは、ここへしずむ。" },
