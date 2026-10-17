@@ -4118,7 +4118,7 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		goalText("kinoko", "boss"),
 	);
 	ok(
-		goalText("shallow", "fetch") === "パン板のサイン色紙を持ち帰る",
+		goalText("shallow", "fetch") === "食パンの国旗を持ち帰る",
 		goalText("shallow", "fetch"),
 	);
 	ok(
