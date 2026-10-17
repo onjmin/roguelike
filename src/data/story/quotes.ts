@@ -7,6 +7,7 @@
 import { DUNGEONS } from "../../core/data/dungeons";
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
+import type { SceneFx } from "../../engine/sceneFx";
 import type { MobId } from "../people/mobs";
 
 export type Speaker = "roze" | "shiyo" | "feris" | "zero" | "nanj";
@@ -78,6 +79,11 @@ export type StoryPage = Cue & {
 	se?: string;
 	seRepeat?: number;
 	seGap?: number;
+	/**
+	 * 地の文の 前に 出す 場面の エフェクト（engine/sceneFx.ts。村の 持ち帰りの 語りだけ）。煙・暗転などは 頁の
+	 * あいだ 残り、次の 頁も 同じ fx なら そのまま つづく。付けるのは se と 同じく オチと 山場だけ（STORY.md §0）。
+	 */
+	fx?: SceneFx;
 	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
 	bgm?: string | null;
 };
@@ -504,12 +510,17 @@ export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "源泉が噴きあがった。\n湯けむりで、町まで見えなくなった。",
+		se: "explosion",
+		// 爆発の 煙が そのまま 湯けむり
+		fx: "boom",
 	},
-	{ who: null, text: "……規模が、\nおかしいンゴ", kiriko: "voice" },
+	// 湯けむりの 中で ツッコむ（同じ fx は 煙が 残る）
+	{ who: null, text: "……規模が、\nおかしいンゴ", kiriko: "voice", fx: "boom" },
 	{
 		who: null,
 		text: "……1時間後。町の人はみんな\nのぼせて、浮いていた。",
 		se: "chiin",
+		fx: "chiin",
 	},
 	{
 		who: "roze",

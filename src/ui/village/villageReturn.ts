@@ -97,6 +97,12 @@ import {
 	settleReturn,
 	type Town,
 } from "../../engine/save";
+import {
+	type FxRun,
+	fxRoot,
+	type SceneFx,
+	startFx,
+} from "../../engine/sceneFx";
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { sayAs } from "./villageMobs";
@@ -363,14 +369,26 @@ export const returnScene = async (
 	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const id of here) s.face(`mob_${id}`, "player");
+	// 場面の エフェクト（煙・暗転などは 次の 頁も 同じ fx なら 残す）
+	let fx: { kind: SceneFx; run: FxRun } | null = null;
 	for (const p of pages) {
 		// 場面の 曲（頂点の 場面など。null で 止める）
 		if (p.bgm !== undefined) s.bgm(p.bgm);
 		if (p.cue) await playCue(s, p.cue);
-		await playPageSe(s, p);
+		if (fx && fx.kind !== p.fx) {
+			fx.run.end();
+			fx = null;
+		}
+		const se = playPageSe(s, p);
+		if (p.fx && !fx) {
+			fx = { kind: p.fx, run: startFx(fxRoot(), p.fx) };
+			await fx.run.ready;
+		}
+		await se;
 		if (p.mob) await sayAs(s, p.mob, p.text, cueOf(p));
 		else await playPage(s, p);
 	}
+	fx?.run.end();
 	// 見おえた（一度きりの 語りは 次から 短く）
 	if (a.kind === "clear") noteEnding(a.dungeon);
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲

@@ -64,6 +64,7 @@ import {
 	type SavedReplay,
 	saveRun,
 } from "../../engine/save";
+import { startFx } from "../../engine/sceneFx";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
@@ -2726,6 +2727,12 @@ export class Play {
 		const shake = kind === "eruption" ? 700 : kind === "geyser" ? 500 : 300;
 		document.body.classList.add("shake");
 		const lift = pd ? { x: pd.tx, y: pd.ty } : null;
+		// 噴火は 場面の 爆発（「ドカーン」と 煙。光と ゆれは ここの もの）。煙は 暗転まで 残す
+		const boom =
+			kind === "eruption"
+				? startFx(this.ctx.ui, "boom", { k, bare: true })
+				: null;
+		if (boom) void wait(2400 * k).then(() => boom.end());
 		await Promise.all([
 			this.flash(look.flash, 260 * k),
 			kind === "eruption" && lift

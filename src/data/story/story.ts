@@ -717,27 +717,37 @@ export const STORY: Record<
 				se: "arcBest",
 				seRepeat: 5,
 				seGap: 400,
+				// 紙吹雪（やきうの ツッコミまで 降りつづける）
+				fx: "confetti",
 			},
 			{
 				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
 					emote: "!",
 				}),
 				needCleared: "festival",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
 				needCleared: "festival",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "うるさいわ！……草", { emote: "怒" }),
 				needCleared: "festival",
+				fx: "confetti",
 			},
 			// 落差の オチ（201 の 作者が ゲームを 閉じる 型）。停電は 町 → 板 → 鯖ごとへ。転の 盛った 見出しが 本当に なる
 			n("祭りの最中、掲示板に\n管理人の書きこみがついた。"),
 			// 曲が ぷつっと 切れて、無音の まま 暗転と ロールバック
 			{ ...n("『鯖代払い忘れとったわ』"), bgm: null },
-			{ ...n("……町も、板も、画面ごと\nまっくらになった。"), se: "batonDown" },
-			k("……見出しどおりンゴ"),
+			// ぷつっと 暗転（キリコの ひとことまで 真っ黒。翌朝で 明ける）
+			{
+				...n("……町も、板も、画面ごと\nまっくらになった。"),
+				se: "batonDown",
+				fx: "blackout",
+			},
+			{ ...k("……見出しどおりンゴ"), fx: "blackout" },
 			n("翌朝。町は、何事もなかったように\nもとにもどっていた。"),
 			n("掲示板に、見出しがひとつ。\n『【悲報】ワイらの冒険、ロールバック』"),
 			n("その下に、書きこみがひとつ。\n「キリコ生きてて草」"),
@@ -915,6 +925,8 @@ export const STORY: Record<
 				se: "arcBest",
 				seRepeat: 5,
 				seGap: 400,
+				// 紙吹雪（やきうの ツッコミまで 降りつづける）
+				fx: "confetti",
 				// 最終話の 頂点の 曲（明かりの坂）で 回収
 				bgm: "kaiwai2",
 			},
@@ -923,14 +935,17 @@ export const STORY: Record<
 					emote: "!",
 				}),
 				needCleared: "deep",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
 				needCleared: "deep",
+				fx: "confetti",
 			},
 			{
 				...s("nanj", "うるさいわ！……草", { emote: "怒" }),
 				needCleared: "deep",
+				fx: "confetti",
 			},
 		],
 	},
@@ -965,6 +980,7 @@ export const STORY: Record<
 				se: "kusa",
 				seRepeat: 3,
 				seGap: 160,
+				fx: "kusa",
 			},
 			k("……>>1、明日も潜るンゴ"),
 		],
