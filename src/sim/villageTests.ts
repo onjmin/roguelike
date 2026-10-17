@@ -93,6 +93,7 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../data/story/quotes";
+import { SKITS } from "../data/story/skits";
 import {
 	awayFriends,
 	BOARD_LOOKS,
@@ -216,6 +217,7 @@ import {
 	facilityDoor,
 	facilityEntry,
 	facilityMats,
+	facilityOfMap,
 	facilityOutside,
 	facilityRoomPalette,
 	facilityRoomPlaces,
@@ -436,6 +438,7 @@ import {
 	planLines,
 	thingLines,
 } from "../ui/village/rooms";
+import { deathSkit, forgetSkits, skitAfterEvent } from "../ui/village/skits";
 import { buildSurface, buildVillage } from "../ui/village/villageEvents";
 import {
 	forgetMobMemo,
@@ -1683,6 +1686,7 @@ const swapStorage = (write: boolean): (() => void) => {
 	forgetProgressMemo();
 	forgetHeardMemo();
 	forgetMobMemo();
+	forgetSkits();
 	forgetOpeningMemo();
 	forgetHallMemo();
 	forgetWalletMemo();
@@ -1692,6 +1696,7 @@ const swapStorage = (write: boolean): (() => void) => {
 		forgetProgressMemo();
 		forgetHeardMemo();
 		forgetMobMemo();
+		forgetSkits();
 		forgetOpeningMemo();
 		forgetHallMemo();
 		forgetWalletMemo();
@@ -8043,4 +8048,139 @@ test("立ち聞き: a nearby resident mutters, passers-by pair up, and an open w
 	o.update(50);
 	ok(o.current === null, "stops when the speaker walks away");
 	puyu.x = 13;
+});
+
+// ───────────────── 寸劇（ui/village/skits.ts） ─────────────────
+
+test("寸劇: 3〜5 windows that fit, unique keys, and every trigger points at a real place, thing, resident and cause", () => {
+	const texts: [string, string][] = [];
+	const keys = new Set<string>();
+	const causes = [
+		...Object.values(MONSTERS).map((d) => d.name),
+		"地雷",
+		"落とし穴",
+	];
+	for (const sk of SKITS) {
+		ok(!keys.has(sk.key), `${sk.key}: key used twice`);
+		keys.add(sk.key);
+		ok(
+			sk.lines.length >= 3 && sk.lines.length <= 5,
+			`${sk.key}: ${sk.lines.length} windows`,
+		);
+		sk.lines.forEach((l, i) => {
+			texts.push([`${sk.key}[${i}]`, l.text]);
+		});
+		const on = sk.on;
+		if (on.k === "enter")
+			ok(facilityOfMap(on.map) !== undefined, `${sk.key}: no ${on.map}`);
+		if (on.k === "death") {
+			ok(MOB_IDS.includes(on.mob), `${sk.key}: ${on.mob}`);
+			ok(
+				causes.some((c) => c.includes(on.cause)),
+				`${sk.key}: nothing is called ${on.cause}`,
+			);
+			ok(
+				sk.lines.some((l) => l.who === "mob"),
+				`${sk.key}: the resident never speaks`,
+			);
+		} else
+			ok(
+				sk.lines.every((l) => l.who !== "mob"),
+				`${sk.key}: "mob" only in death skits`,
+			);
+	}
+	fitsWindow(texts);
+});
+
+test("寸劇: entering a building or looking at a thing plays once, at most one per return", async () => {
+	await withStorageAsync(async () => {
+		const a = fakeStory();
+		ok(
+			await skitAfterEvent(a.s, {
+				from: "village",
+				to: "f_konbini",
+				thing: "door_f_konbini",
+			}),
+			"konbini skit",
+		);
+		ok(
+			a.log.some((l) => l.includes("ポイント5倍")),
+			a.log.join("\n"),
+		);
+		// 同じ 帰りは 2本目なし・同じ 寸劇は 2回目なし
+		const b = fakeStory();
+		ok(
+			!(await skitAfterEvent(b.s, {
+				from: "village",
+				to: "village",
+				thing: "shrine",
+			})),
+			"second skit in the same return",
+		);
+		pushRecord({ kind: "escape" });
+		ok(
+			!(await skitAfterEvent(b.s, {
+				from: "village",
+				to: "f_konbini",
+				thing: "door_f_konbini",
+			})),
+			"konbini again",
+		);
+		ok(
+			await skitAfterEvent(b.s, {
+				from: "village",
+				to: "village",
+				thing: "shrine",
+			}),
+			"shrine after a new return",
+		);
+		// 村へ もどる・家に 入る だけでは 出ない
+		pushRecord({ kind: "escape" });
+		ok(
+			!(await skitAfterEvent(b.s, {
+				from: "f_konbini",
+				to: "village",
+				thing: "exit",
+			})),
+			"leaving a building",
+		);
+	});
+});
+
+test("寸劇: a death skit replaces the resident's new talk and reaction once", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"], [], ["shallow", "main"]);
+		putTown({ stage: 7 });
+		const id = "proto";
+		// はじめましてを すませて おく
+		await mobScript(id)(fakeStory().s);
+		pushRecord({ kind: "dead", cause: "コピペにたおされた" });
+		const a = fakeStory();
+		await mobScript(id)(a.s);
+		const sk = SKITS.find((x) => x.key === "death_copipe");
+		ok(
+			a.log.length === sk?.lines.length &&
+				a.log[0]?.endsWith(sk?.lines[0]?.text ?? "?"),
+			`skit:\n${a.log.join("\n")}`,
+		);
+		// 同じ 帰り：反応は もう 出さない（ボケか いつもの）
+		const b = fakeStory();
+		await mobScript(id)(b.s);
+		ok(
+			b.log[0] !== `say null: ${reactionOf(MOBS[id])}`,
+			`reaction after the skit: ${b.log.join("\n")}`,
+		);
+		// 次の 帰りに 同じ 死に方でも 2回目は ない
+		pushRecord({ kind: "dead", cause: "コピペにたおされた" });
+		const c = fakeStory();
+		ok(
+			!(await deathSkit(
+				c.s,
+				id,
+				{ kind: "dead", cause: "コピペにたおされた" },
+				async () => {},
+			)),
+			"the same death skit twice",
+		);
+	});
 });

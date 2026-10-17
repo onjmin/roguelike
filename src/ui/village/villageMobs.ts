@@ -2,7 +2,7 @@
 // 話しかけるたび 次の 順で 1つ（Hades の 帰りごとの 会話に ならう。見た話は くり返さない）：
 //   1. 人気投票で 1票 入れた子の お礼（1回だけ）
 //   2. はじめまして（おんすちゃんは そのあと 書きこむまで 毎回 きく）
-//   3. 新しい話（1回の 帰りに 1本。節目 → 雑談（上から。with・when が 合う もの））
+//   3. 新しい話（1回の 帰りに 1本。ある 死に方の あとの 寸劇（ui/village/skits.ts）→ 節目 → 雑談（上から。with・when が 合う もの））
 //   4. 期間限定（端末の 日付）
 //   5. 前の冒険への 反応（1回の 帰りに 1回。answersRun の 話を 聞いた 帰りは 出さない）
 //   6. ボケ（data/people/mobGags.ts。1回の 帰りに 1本。見た ものは くり返さない）
@@ -40,6 +40,7 @@ import {
 	loadRecords,
 	runStats,
 } from "../../engine/save";
+import { deathSkit } from "./skits";
 import { fill, sulkTier } from "./villageTalk";
 
 /** 仲間が「近くに いる」と みなす 距離（マス。たて・よこ・ななめ の 大きい方）。 */
@@ -403,6 +404,14 @@ export const mobScript =
 		}
 		if (def.ask && !v.wrote) {
 			await ask(s, id, def);
+			return;
+		}
+		// ある 死に方の あとの 寸劇（新しい話と 前の冒険への 反応を かねる。ui/village/skits.ts）
+		if (v.heard[id] !== at && (await deathSkit(s, id, ctxOf(v).last, sayAs))) {
+			const w = load();
+			w.heard[id] = at;
+			w.reacted[id] = at;
+			save(w);
 			return;
 		}
 		if (v.heard[id] !== at) {

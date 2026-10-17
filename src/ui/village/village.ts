@@ -102,6 +102,7 @@ import {
 	sceneLit,
 	sceneSky,
 } from "./sceneSky";
+import { skitAfterEvent } from "./skits";
 import { Crowd } from "./villageCrowd";
 import {
 	buildSurface,
@@ -1801,6 +1802,9 @@ export class Village {
 			await this.runScript(async (s) => {
 				await run(s);
 				if (e.once) this.state.flags[this.flagKey("done", e.id, map)] = true;
+				// 建物に はじめて 入った・物を はじめて 調べた ときの 寸劇（ui/village/skits.ts）
+				if (!this.exitChoice && !this.leaving)
+					await skitAfterEvent(s, { from: map, to: this.mapId, thing: e.id });
 			});
 		} finally {
 			this.talking = null;
