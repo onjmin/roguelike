@@ -104,7 +104,7 @@ import {
 	sceneLit,
 	sceneSky,
 } from "./sceneSky";
-import { skitAfterEvent } from "./skits";
+import { nearSkit, playNearSkit, skitAfterEvent } from "./skits";
 import { Crowd } from "./villageCrowd";
 import {
 	buildSurface,
@@ -1185,6 +1185,15 @@ export class Village {
 		if (step && !this.leaving) {
 			this.clearPath();
 			void this.runScript(step);
+			return;
+		}
+		// ある 場所に はじめて 来た ときの 寸劇（ui/village/skits.ts）
+		const sk = this.leaving
+			? null
+			: nearSkit(this.mapId, this.player.x, this.player.y);
+		if (sk) {
+			this.clearPath();
+			void this.runScript((s) => playNearSkit(s, sk));
 		}
 	}
 

@@ -55,6 +55,7 @@ import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
 import { liveResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
+import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
 import { loadImage } from "../../engine/assets";
 import {
@@ -105,6 +106,7 @@ import {
 	mapTileAt,
 	type Projectile,
 } from "./render";
+import { enteredEmptyBigRoom, ROOM_SKIT_MS, takeRoomSkit } from "./roomSkit";
 import { zoneFor } from "./theme";
 
 /** 安価の のこりが これ 以下で 赤く。 */
@@ -2266,6 +2268,7 @@ export class Play {
 				return ev;
 			}
 			this.save();
+			this.roomSkit(before);
 			// 階段に乗ったら聞く（ダッシュ・タップ移動の途中では聞かない）
 			const moved = before.x !== run.p.x || before.y !== run.p.y;
 			if (
@@ -3670,6 +3673,41 @@ export class Play {
 			salt,
 		);
 		if (live) this.addLog(live, "gloss");
+	}
+
+	/** この 冒険で 大部屋の 寸劇を もう 出した（1回の 冒険に 1本まで）。 */
+	private roomSkitShown = false;
+
+	/**
+	 * 敵の いない 大部屋に 入ったら、村の スレの 寸劇を 少しずつ ログに 流す（data/story/roomSkits.ts）。
+	 * 名所・ボス・集落の 階と 持ち帰る 途中・リプレイでは 出さない。
+	 */
+	private roomSkit(before: { x: number; y: number }): void {
+		const run = this.run;
+		const f = run.f;
+		if (
+			this.rp ||
+			this.roomSkitShown ||
+			run.s.returning ||
+			f.rest ||
+			f.boss !== undefined ||
+			f.folk ||
+			f.props ||
+			!enteredEmptyBigRoom(f.layout, before, run.p, f.monsters)
+		)
+			return;
+		const sk = takeRoomSkit();
+		if (!sk) return;
+		this.roomSkitShown = true;
+		const floor = run.s.floor;
+		void (async () => {
+			for (const [i, text] of sk.lines.entries()) {
+				if (i > 0) await wait(ROOM_SKIT_MS);
+				// 階を かえたら 残りは 流さない
+				if (this.stopped || run.s.floor !== floor || run.s.end) return;
+				this.addLog(roomSkitLine(text, run.heroName), "gloss");
+			}
+		})();
 	}
 
 	private async ending(): Promise<void> {

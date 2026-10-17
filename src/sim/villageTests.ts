@@ -18,8 +18,14 @@ import { join } from "node:path";
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
+import { bigRoomLayout } from "../core/mapgen";
 import { priceOf, STORAGE_CAP, TOWN_STAGES } from "../core/town";
-import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
+import {
+	CAT_ORDER,
+	type DungeonId,
+	type Item,
+	type Monster,
+} from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
 import {
@@ -98,6 +104,7 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../data/story/quotes";
+import { ROOM_SKITS, roomSkitLine } from "../data/story/roomSkits";
 import { SKITS } from "../data/story/skits";
 import {
 	awayFriends,
@@ -371,6 +378,11 @@ import { itemIcon } from "../ui/art/icons";
 import { floorsText } from "../ui/bookView";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/dungeon/floorName";
+import {
+	enteredEmptyBigRoom,
+	forgetRoomSkits,
+	takeRoomSkit,
+} from "../ui/dungeon/roomSkit";
 import { bathLayout } from "../ui/minigames/bath";
 import {
 	applyOutcome,
@@ -443,7 +455,12 @@ import {
 	planLines,
 	thingLines,
 } from "../ui/village/rooms";
-import { deathSkit, forgetSkits, skitAfterEvent } from "../ui/village/skits";
+import {
+	deathSkit,
+	forgetSkits,
+	nearSkit,
+	skitAfterEvent,
+} from "../ui/village/skits";
 import { buildSurface, buildVillage } from "../ui/village/villageEvents";
 import {
 	forgetMobMemo,
@@ -8197,5 +8214,64 @@ test("寸劇: a death skit replaces the resident's new talk and reaction once", 
 			)),
 			"the same death skit twice",
 		);
+	});
+});
+
+test("寸劇: every place skit sits on cells Kiriko can walk to, and none sits on the pier to the boards", () => {
+	const v = {
+		stage: 7,
+		unlocked: [...DUNGEON_IDS],
+		cleared: [...DUNGEON_IDS],
+	};
+	const rows = villageRows(v).map((r) => [...r]);
+	const pal = villagePalette(v);
+	for (const sk of SKITS) {
+		const on = sk.on;
+		if (on.k !== "near") continue;
+		let walk = 0;
+		for (let y: number = on.y[0]; y <= on.y[1]; y++)
+			for (let x: number = on.x[0]; x <= on.x[1]; x++) {
+				const ch = rows[y]?.[x];
+				if (ch && pal[ch]?.passable) walk++;
+				ok(!(x === 20 && y >= 36), `${sk.key}: on the pier`);
+			}
+		ok(walk > 0, `${sk.key}: no walkable cell`);
+	}
+	withStorage(() => {
+		ok(nearSkit("village", 26, 30)?.key === "near_falls", "below the falls");
+		ok(nearSkit("village", 20, 40) === null, "nothing on the pier");
+	});
+});
+
+test("寸劇: the empty big room in a dive: only big rooms with no foe inside, each thread skit once", () => {
+	for (const sk of ROOM_SKITS) {
+		ok(sk.lines.length >= 4 && sk.lines.length <= 5, `${sk.key}: length`);
+		for (const t of sk.lines) {
+			const line = roomSkitLine(t, "キリコ");
+			ok([...line].length <= 24, `${sk.key}: ${line} is over 24`);
+			for (const w of ["草", "定期", "RTA"])
+				ok(!t.includes(w), `${sk.key}: slang ${w}`);
+		}
+	}
+	const big = bigRoomLayout();
+	const outside = { x: 0, y: 0 };
+	const inside = { x: 5, y: 5 };
+	const foe = (x: number, y: number) => ({ hp: 3, x, y }) as unknown as Monster;
+	ok(enteredEmptyBigRoom(big, outside, inside, []), "empty big room");
+	ok(!enteredEmptyBigRoom(big, inside, inside, []), "already inside");
+	ok(!enteredEmptyBigRoom(big, outside, inside, [foe(20, 20)]), "a foe inside");
+	ok(
+		enteredEmptyBigRoom(big, outside, inside, [{ ...foe(20, 20), hp: 0 }]),
+		"a dead foe does not count",
+	);
+	withStorage(() => {
+		forgetRoomSkits();
+		const got = ROOM_SKITS.map(() => takeRoomSkit()?.key);
+		ok(
+			got.join() === ROOM_SKITS.map((x) => x.key).join(),
+			`order: ${got.join()}`,
+		);
+		ok(takeRoomSkit() === null, "no skit after all were seen");
+		forgetRoomSkits();
 	});
 });

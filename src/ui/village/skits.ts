@@ -1,6 +1,7 @@
 // 寸劇を 演じる（文と きっかけは data/story/skits.ts）。見た 寸劇と、見た 帰りを 村の 印として 別の 保存場所に
 // 残す（保存できなくても この回は 覚えている）。村ぜんぶで 1回の 帰りに 1本まで。
-// 建物と 物は ui/village/village.ts の runEvent が、死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
+// 建物と 物は ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep）が、
+// 死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
 
 import type { MobId } from "../../data/people/mobs";
 import { SKITS, type Skit, type SkitOn } from "../../data/story/skits";
@@ -98,6 +99,21 @@ export const skitAfterEvent = async (
 	await play(s, sk);
 	return true;
 };
+
+/** その マスで 起きる、まだ 見て いない 場所の 寸劇（無ければ null。歩く たびに 呼ぶので 見るだけ）。 */
+export const nearSkit = (map: string, x: number, y: number): Skit | null =>
+	find(
+		(on) =>
+			on.k === "near" &&
+			on.map === map &&
+			x >= on.x[0] &&
+			x <= on.x[1] &&
+			y >= on.y[0] &&
+			y <= on.y[1],
+	);
+
+/** 場所の 寸劇を 演じる（nearSkit で 見つけた もの）。 */
+export const playNearSkit = (s: Story, sk: Skit): Promise<void> => play(s, sk);
 
 /** 前の 冒険で その 死に方を して、この 住人に はじめて 話しかけた（演じたら true）。 */
 export const deathSkit = async (
