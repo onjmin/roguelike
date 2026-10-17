@@ -95,6 +95,7 @@ import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
 import { Overhear } from "./overhear";
 import { buildRoom } from "./rooms";
+import { drawShrooms, setShroomTown } from "./sceneShrooms";
 import {
 	BLACKOUT_TINT,
 	outsideNow,
@@ -413,6 +414,9 @@ export class Village {
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
+		setShroomTown(this.mapId === "village" ? v : null, (x, y) =>
+			field.canEnter(x, y),
+		);
 		this.player = new Actor(
 			"player",
 			spot.x,
@@ -1499,6 +1503,8 @@ export class Village {
 		// 向きの ない 絵の 置物は そのまま）
 		for (const a of field.actors)
 			a.visible = a.still || outsideNow(a.id, a.x, a.y);
+		// 地図の きのこ（人の 下。ui/village/sceneShrooms.ts）
+		if (this.mapId === "village") drawShrooms(g, ox, oy);
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		field.drawAbove(g, ox, oy);
@@ -2140,6 +2146,11 @@ export class Village {
 				if (dir) a.dir = dir;
 				if (a === this.player) this.syncState();
 			},
+			wear: (target, prop) => {
+				const a = this.actorFor(target);
+				if (a) a.prop = prop;
+			},
+			spores: (target) => this.actorFor(target)?.puffSpores(),
 			toast: (text) => this.toast(text),
 			rebuild: () => this.rebuild(),
 			warp: (map, x, y, dir) =>

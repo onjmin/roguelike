@@ -80,6 +80,7 @@ import {
 } from "../../data/village/map";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf, type Emote, type Gesture } from "../../engine/emote";
+import type { HeadProp } from "../../engine/headProp";
 import {
 	addFlag,
 	deathCount,
@@ -109,6 +110,7 @@ import {
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { cleanUp } from "./decay";
+import { clearShrooms, endShrooms, sproutShrooms } from "./sceneShrooms";
 import {
 	type SceneLit,
 	sceneOut,
@@ -626,6 +628,13 @@ export const returnScene = async (
 			fx.run.end();
 			fx = null;
 		}
+		if (p.wear !== undefined) s.wear("player", p.wear);
+		if (p.shrooms === null) clearShrooms();
+		else if (p.shrooms) sproutShrooms(p.shrooms, [s.state.x, s.state.y]);
+		if (p.spores) {
+			s.spores("player");
+			await s.wait(500);
+		}
 		const se = playPageSe(s, p);
 		if (p.fx && !fx) {
 			fx = { kind: p.fx, run: startFx(fxRoot(), p.fx) };
@@ -646,6 +655,7 @@ export const returnScene = async (
 		s.fadeOut(300),
 	]);
 	await rebuild(s);
+	endShrooms();
 	homes = new Map();
 	setSceneSky(null);
 	lightsBack.clear();
@@ -713,6 +723,9 @@ export const sendBack = async (s: Story): Promise<void> => {
 
 // ───────────────── 寄り道の 板の 来客 ─────────────────
 
+/** 来客の 頭の 物（UNLOCK_VISIT の 地の文が「頭に きのこが 生えている」と 言う 板）。 */
+const VISITOR_PROP: Partial<Record<DungeonId, HeadProp>> = { kinoko: "kinoko" };
+
 /**
  * 寄り道の 板が 開く：その 板の 名無しが 板の 方角の 村の 口から 歩いてきて、キリコの となりで 板の ようすを
  * 話し、口へ 帰っていく（data/story/story.ts の UNLOCK_VISIT）。キリコが その 口の 前に いれば 先に どく（stepAside）。
@@ -727,6 +740,7 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 	s.set("visitor");
 	s.show("visitor");
 	s.place("visitor", gate[0], gate[1]);
+	s.wear("visitor", VISITOR_PROP[d] ?? null);
 	await s.look("visitor");
 	if (to) {
 		await s.goto("visitor", to[0], to[1], { speed: 1.4 });

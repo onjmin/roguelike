@@ -10,6 +10,7 @@ import {
 } from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
 import { drawEmote, type Emote, type Gesture, gestureAt } from "./emote";
+import { drawHeadProp, type HeadProp, SPORE_MS } from "./headProp";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
 
@@ -66,6 +67,15 @@ export class Actor {
 		this.gesture = g;
 		this.gestureLoop = loop;
 		this.gestureFrom = -1;
+	}
+	/** 頭に のせた 物（engine/headProp.ts。null で のせない）。 */
+	prop: HeadProp | null = null;
+	/** 胞子を ふいた 時刻（-1 は 次の コマから。null は ふいて いない）。 */
+	private puffFrom: number | null = null;
+
+	/** 頭の 物から 胞子を ふく（頭に 物が なければ 何も 出ない）。 */
+	puffSpores(): void {
+		this.puffFrom = -1;
 	}
 	/** 寝ころんで いる ときの 掛け布団（ベッドの 下の マスの 絵。少し 下げた 体の 上に かぶせる）。 */
 	blanket: string | null = null;
@@ -230,6 +240,12 @@ export class Actor {
 			// 読み込み中は小さな影だけ
 			ctx.fillStyle = "rgba(0,0,0,0.3)";
 			ctx.fillRect(px + 4, py + 12, 8, 3);
+		}
+		if (this.prop) {
+			if (this.puffFrom !== null && this.puffFrom < 0) this.puffFrom = time;
+			const puff = this.puffFrom === null ? null : time - this.puffFrom;
+			if (puff !== null && puff >= SPORE_MS) this.puffFrom = null;
+			drawHeadProp(ctx, this.prop, px + gx, py + gy, puff);
 		}
 		if (this.emote !== this.emoteShown || this.emoteFrom < 0) {
 			this.emoteShown = this.emote;

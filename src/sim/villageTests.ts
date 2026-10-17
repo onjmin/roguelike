@@ -2684,6 +2684,12 @@ const fakeStory = (
 			log.push(`place ${id} ${x},${y}`);
 			land(id, x, y, `place ${id} ${x},${y}`);
 		},
+		wear: (id, prop) => {
+			log.push(`wear ${id} ${prop ?? "-"}`);
+		},
+		spores: (id) => {
+			log.push(`spores ${id}`);
+		},
 		toast: (text) => {
 			log.push(`toast ${text}`);
 		},

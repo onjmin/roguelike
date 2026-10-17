@@ -7,6 +7,7 @@
 import { DUNGEONS } from "../../core/data/dungeons";
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
+import type { HeadProp } from "../../engine/headProp";
 import type { SceneFx } from "../../engine/sceneFx";
 import type { MobId } from "../people/mobs";
 
@@ -96,6 +97,18 @@ export type StoryPage = Cue & {
 	 * 語りが 町の 出来事を 言う ときに、その 通りを 映す。
 	 */
 	look?: readonly [number, number] | null;
+	/**
+	 * この 頁から キリコの 頭に のせる 物（engine/headProp.ts。null で おろす。村の 持ち帰りの 語りだけ。場面の おわりに 消える）。
+	 * 文が「頭に きのこが 生えている」と 言う 頁に 付ける。
+	 */
+	wear?: HeadProp | null;
+	/** この 頁で キリコの 頭の 物から 胞子を ふく（文が「胞子を ふいた」と 言う 頁）。 */
+	spores?: boolean;
+	/**
+	 * この 頁で 地図に きのこを 生やす（ui/village/sceneShrooms.ts。street は 商店街の シャッター、port は キリコの まわりの 港。
+	 * null で 摘みとる。村の 持ち帰りの 語りだけ。場面の おわりに 消える）。street は カメラを 商店街へ 向けてから 生やす。
+	 */
+	shrooms?: "street" | "port" | null;
 	/** この 頁で 並んだ 人が みんな キリコに 背を 向ける（ばらばらに なる ギャグ。次に 話す 人が でると また 向きあう）。 */
 	turnAway?: boolean;
 };

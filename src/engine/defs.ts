@@ -12,6 +12,7 @@ import type {
 import type { KirikoMode, Speaker } from "../data/story/quotes";
 import type { CrowdNode, PedCost } from "../data/village/crowd";
 import type { Cue, Emote, Gesture } from "./emote";
+import type { HeadProp } from "./headProp";
 import type { SavedReplay } from "./save";
 import type { Dir } from "./types";
 
@@ -292,6 +293,10 @@ export type Story = {
 	hide(eventId: string): void;
 	/** イベントの位置を変える（見た目だけ。村を建て直すと元に戻る）。 */
 	place(eventId: string, x: number, y: number, dir?: Dir): void;
+	/** 人の 頭に 物を のせる（engine/headProp.ts。null で おろす。村を 建て直すと 消える）。 */
+	wear(target: string, prop: HeadProp | null): void;
+	/** 人の 頭の 物から 胞子を ふく（頭に 物が なければ 何も 出ない）。 */
+	spores(target: string): void;
 	/** 画面の上に 短い知らせ。 */
 	toast(text: string): void;
 	/** 町の段・開いたダンジョンを 読み直して 村を建て直す（キリコは 同じマスのまま）。暗転の中で呼ぶ。 */
