@@ -1,6 +1,7 @@
 // 起動：画面・入力・音を組み立て、歩ける村（おんJタウン）→ 冒険 → 村… を回す。
 // タイトルは 村の上に 重ねる 起動の札（ui/boot.ts）だけ。
 
+import "./devSandbox";
 import { DUNGEON_IDS, dungeonById } from "./core/data/dungeons";
 import "./style.css";
 import { EXP_AT } from "./core/balance";
@@ -12,6 +13,7 @@ import type { GuestId, Item } from "./core/types";
 import { bgm } from "./data/audio/bgm";
 import { sfx } from "./data/audio/sfx";
 import { devEvent } from "./data/story/objectives";
+import { devArrival } from "./devSandbox";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
 import { chosenHero, noteHeroQuests, rollHeroWorries } from "./engine/heroes";
@@ -251,8 +253,8 @@ const loop = async () => {
 	if (import.meta.env.DEV)
 		(window as unknown as { __village: Village }).__village = village;
 	let first = devRun();
-	let boot = !first;
-	let arrival: Arrival = null;
+	let arrival: Arrival = devArrival();
+	let boot = !first && !arrival;
 	// もらった リプレイの リンク（#r=…）で 開いたら、村の前に 見るか 聞く（engine/share.ts）
 	let shared = takeSharedHash();
 	for (;;) {

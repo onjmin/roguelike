@@ -33,6 +33,7 @@ import {
 import { FACILITIES, facilityTiles } from "../data/village/facilities";
 import { villagePalette } from "../data/village/map";
 import { GROUND, SHOP } from "../data/village/tiles";
+import { devArrival } from "../devSandbox";
 import {
 	depositBag,
 	depositItem,
@@ -680,6 +681,36 @@ test("tampered saves still load; only values the game never makes are noted, onc
 		ok(disappointed(runs) === 2, "the friends do not sulk");
 		ok(disappointed(runs + LINGER) === 0, "the friends sulk forever");
 	});
+});
+
+test("開発用の ?sandbox&arrive=: parsed only with sandbox, bad kinds or boards are ignored", () => {
+	const prev = Object.getOwnPropertyDescriptor(globalThis, "location");
+	const at = (search: string) => {
+		Object.defineProperty(globalThis, "location", {
+			value: { search },
+			configurable: true,
+			writable: true,
+		});
+		return devArrival();
+	};
+	try {
+		const a = at("?debug&sandbox&arrive=clear.deep.boss");
+		ok(
+			a?.kind === "clear" && a.dungeon === "deep" && a.objective === "boss",
+			`clear.deep.boss → ${JSON.stringify(a)}`,
+		);
+		const d = at("?debug&sandbox&arrive=dead.kinoko");
+		ok(
+			d?.kind === "dead" && d.dungeon === "kinoko" && !d.objective,
+			`dead.kinoko → ${JSON.stringify(d)}`,
+		);
+		ok(at("?debug&arrive=dead.kinoko") === null, "arrive without sandbox");
+		ok(at("?debug&sandbox&arrive=won.kinoko") === null, "unknown kind");
+		ok(at("?debug&sandbox&arrive=dead.nowhere") === null, "unknown board");
+	} finally {
+		if (prev) Object.defineProperty(globalThis, "location", prev);
+		else delete (globalThis as { location?: unknown }).location;
+	}
 });
 
 export const runTownTests = (): TestResult[] =>

@@ -11,7 +11,11 @@ export type StockEntry = {
 	weight: number;
 };
 
-/** 入荷する 品（重みで 引く）。値段は 買い取りの 5倍ほど（core/town.ts の PRICE）。 */
+/**
+ * 入荷する 品（重みで 引く）。値段は 買い取りの 5倍ほど（core/town.ts の PRICE）。
+ * 1回の 持ち帰りの 売り上げは 4千〜8千円ほど（ボットの sim：パン板 中央値 4,080円・きのこ板 5,845円・本編 8,321円）なので、
+ * 帰るたびに 気軽に 買える 値段。しばるのは 値段では なく 帰りごとに 1品・倉庫の 空き。
+ */
 export const DAILY_STOCK: readonly StockEntry[] = [
 	{ kind: "f_bread", price: 120, weight: 2 },
 	{ kind: "f_large", price: 300, weight: 1 },
