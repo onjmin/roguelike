@@ -34,6 +34,8 @@ const SOLID = 110;
 
 type Board = {
 	key: string;
+	/** 所の id（施設の id・町の まんなかの 建物の id）。 */
+	place: string;
 	text: string;
 	look: SignLook;
 	/** 板の まんなかの x と 下の はしの y（地図の ソース画素）。 */
@@ -228,6 +230,7 @@ const facilityBoard = (
 	const dead = unpowered(f.id, look, cleared, blackout);
 	return {
 		key: `f:${f.id}:${dead}`,
+		place: f.id,
 		text: sign.text,
 		look,
 		cx: (f.at[0] + col) * TILE,
@@ -253,6 +256,7 @@ const coreBoards = (
 		const dead = unpowered(c.id, look, cleared, blackout);
 		return {
 			key: `c:${c.id}:${stage}:${dead}`,
+			place: c.id,
 			text: c.text(stage),
 			look,
 			cx,
@@ -316,11 +320,15 @@ const boardPos = (b: Board, img: HTMLCanvasElement, ox: number, oy: number) => {
 	};
 };
 
-/** その 段の 建物の 看板（生き返って いない 所と 停電の ネオンは 消えた 看板）。 */
+/**
+ * その 段の 建物の 看板（生き返って いない 所と 停電の ネオンは 消えた 看板）。
+ * ruined の 所の 消えた 看板は 片がわの 釘が ぬけて かたむく（半壊。ui/village/decay.ts）。
+ */
 export const signboardDecor = (
 	stage: number,
 	cleared: readonly DungeonId[],
 	blackout = false,
+	ruined: (place: string) => boolean = () => false,
 ): MapDef["decor"] => {
 	const boards = boardsAt(stage, cleared, blackout);
 	if (!boards.length) return undefined;
@@ -332,6 +340,16 @@ export const signboardDecor = (
 			const img = boardImage(b);
 			const { x, y } = boardPos(b, img, ox, oy);
 			if (x + img.width < 0 || x > vw || y + img.height < 0 || y > vh) continue;
+			if (b.dead && ruined(b.place)) {
+				// 左の 釘だけで ぶらさがる
+				g.save();
+				g.imageSmoothingEnabled = false;
+				g.translate(x + 1, y + 1);
+				g.rotate(0.26);
+				g.drawImage(img, -1, -1);
+				g.restore();
+				continue;
+			}
 			g.drawImage(img, x, y);
 		}
 	};

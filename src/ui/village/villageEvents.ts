@@ -161,6 +161,7 @@ import { openSettings } from "../settings";
 import { boardCell, stockBoardDecor } from "../trade/stockBoardDecor";
 import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
+import { decayDecor, signRuined } from "./decay";
 import { offDecor, outsideDisplays } from "./displays";
 import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
@@ -1237,7 +1238,8 @@ export const buildVillage = (
 		// 開いて いる 銭湯の 煙突から 湯気・
 		// 強行開催の 日の 芋煮の 火と 湯気（ui/minigames/imoni.ts。10月の 帰りも ここで 数える）・
 		// 板を 見つける 寄り道の 光る 点（ui/village/finds.ts）・
-		// 開いて いる おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・建物の 看板（ui/village/signboards.ts）・
+		// 開いて いる おんJ証券の 店先の 電光の 株価（ui/trade/stockBoardDecor.ts）・
+		// まだ 生き返って いない 建物の すたれた 姿（ui/village/decay.ts）・建物の 看板（ui/village/signboards.ts）・
 		// 線路を 不定期に 走る ぷゆゆ列車（ui/village/puyuTrain.ts）・映画館や 駅の 電光表示（ui/village/displays.ts）
 		decor: joinDecor(
 			isRevived("bath", boards) ? chimneySteam(rows) : undefined,
@@ -1246,7 +1248,8 @@ export const buildVillage = (
 			powered("shoken")
 				? stockBoardDecor(shokenSign(stage))
 				: offDecor(shokenSign(stage), 4, "led"),
-			signboardDecor(stage, boards, blackout),
+			decayDecor(view),
+			signboardDecor(stage, boards, blackout, signRuined(view)),
 			outsideDisplays(stage, powered),
 		),
 		outside: "#1f2a14",

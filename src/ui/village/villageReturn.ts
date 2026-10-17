@@ -108,6 +108,7 @@ import {
 } from "../../engine/sceneFx";
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
+import { cleanUp } from "./decay";
 import {
 	type SceneLit,
 	sceneOut,
@@ -865,11 +866,19 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	const r = growTown(t);
 	if (!fresh.length && r.to === r.from) return;
 	for (const a of fresh) {
+		// その 通りを 見せて、すたれた 姿（蜘蛛の巣・雑草…）を 片づける（ui/village/decay.ts）
+		const spot = LIGHTS_UP.find((l) => l.area === a.id);
+		if (spot) {
+			await s.look(spot.at);
+			await s.wait(600);
+		}
+		cleanUp(a.id);
 		s.se("townUp");
 		await s.narrate(a.line);
 		await s.narrate(fill(REVIVE_MSG.open, { name: a.name }));
 		t.revived.push(a.id);
 	}
+	if (fresh.length) await s.look(null);
 	saveTown(t);
 	if ((STORAGE_CAP[r.to] ?? 0) > (STORAGE_CAP[r.from] ?? 0))
 		await s.narrate(fill(REVIVE_MSG.storage, { n: STORAGE_CAP[r.to] ?? 0 }));
