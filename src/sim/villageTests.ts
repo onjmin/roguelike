@@ -164,6 +164,7 @@ import {
 	MAIN_BOARDS,
 	REVIVE_AREAS,
 	revivedBoards,
+	stageOfCleared,
 } from "../data/town/revival";
 import {
 	BANK,
@@ -1781,7 +1782,9 @@ test("each friend has one new line per return (「！」), then a short fixed li
 		for (const who of FRIENDS) ok(!hasNews(who), `${who} has two new lines`);
 		// シヨは ライバル：店が 開いても 倉庫番の ひとことは 言わない（倉庫は ンゴ姉）
 		setTown(4, 3000);
-		const shiyo = TITLE_TOWN_QUOTES[4].find((q) => q.who === "shiyo")?.text;
+		const shiyo = TITLE_TOWN_QUOTES[
+			stageOfCleared(loadProgress().cleared)
+		].find((q) => q.who === "shiyo")?.text;
 		ok(
 			talkLine("shiyo") === (shiyo ?? VILLAGE_IDLE.shiyo),
 			"シヨ keeps the storehouse",
@@ -4176,7 +4179,11 @@ test("events start from how a run ended, a need, and a fixed value of the seed (
 			"the march started before パン板 was cleared",
 		);
 		// きのこ狩り：きのこ板に 行けて、出撃が 10の 倍数に なったら 1/2（終わりかたは 問わない）
-		const kin = prog({ unlocked: ["shallow", "kinoko"], outings: 9 });
+		const kin = prog({
+			unlocked: ["shallow", "kinoko"],
+			cleared: ["kinoko"],
+			outings: 9,
+		});
 		const huntHits = SEEDS.filter(
 			(seed) =>
 				advanceEvents(kin, { dungeon: "shallow", kind: "dead", seed }).started
@@ -4275,6 +4282,7 @@ test("events end after their outings or a clear of their own board, and do not s
 		const withKinoko: Progress = {
 			...march(9),
 			unlocked: ["shallow", "main", "kinoko"],
+			cleared: [...march(9).cleared, "kinoko"],
 		};
 		const swapSeed = SEEDS.find(
 			(seed) =>
@@ -4303,7 +4311,7 @@ test("the mushroom hunt stays the exception: きのこ板 is a fetch run in well
 	noRandom(() => {
 		// きのこ狩りしか 起きない とき（ほかの イベントの need を 満たさず、たおれた・帰還スレ だけ）が
 		// いちばん 多く なる。終わった 出撃では また 始まらないので、周期が 短いと かえって ふえる
-		let p = prog({ unlocked: ["shallow", "kinoko"] });
+		let p = prog({ unlocked: ["shallow", "kinoko"], cleared: ["kinoko"] });
 		let fetch = 0;
 		const n = 600;
 		for (let i = 0; i < n; i++) {
@@ -4339,11 +4347,18 @@ test("a run end counts the outing and leaves event news; the village reads it on
 		// 10回目で 始まる（1/2 に 当たる シード）
 		const huntSeed = SEEDS.find(
 			(seed) =>
-				advanceEvents(prog({ unlocked: ["shallow", "kinoko"], outings: 9 }), {
-					dungeon: "kinoko",
-					kind: "clear",
-					seed,
-				}).started?.id === "kinoko-hunt",
+				advanceEvents(
+					prog({
+						unlocked: ["shallow", "kinoko"],
+						cleared: ["kinoko"],
+						outings: 9,
+					}),
+					{
+						dungeon: "kinoko",
+						kind: "clear",
+						seed,
+					},
+				).started?.id === "kinoko-hunt",
 		);
 		noteRunEnd("kinoko", "clear", huntSeed);
 		const p = loadProgress();
@@ -6417,7 +6432,7 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 	}
 	// 本筋の 名無しの レスは やきうと 名乗らない（正体は 電池板の てっぺんで わかる）。その 板を 持ち帰る 前だけ
 	ok(
-		diveResAt("main", 6, ["shallow"])?.who === "res",
+		diveResAt("main", 5, ["shallow"])?.who === "res",
 		"the nanashi line is gone",
 	);
 	for (const d of ["shallow", "kinoko", "main", "deep"] as const)

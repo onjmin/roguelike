@@ -478,7 +478,10 @@ const BATH_HEAD: StoryPage[] = [
 export const ENDING: StoryPage[] = [
 	...BATH_HEAD,
 	// シヨは 湯温に うるさい（STORY.md §4.9）
-	{ who: "shiyo", text: "ぬるいわね。\nあたすは42℃がいいけど" },
+	{
+		who: "shiyo",
+		text: "41.5℃……ちょうどいいじゃない。\nべ、べつにほめてないけど",
+	},
 	{ who: null, text: "ぬるい", nanashi: "湯気の中の42℃派" },
 	{ who: null, text: "熱い", nanashi: "湯気の中の41℃派" },
 	{

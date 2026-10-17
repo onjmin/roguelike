@@ -761,11 +761,11 @@ const M: MonsterDef[] = [
 		sprite: "pub:sprites/ofurou.png",
 		scale: 1.5,
 		boss: true,
-		hp: 110,
+		hp: 95,
 		atk: 10,
 		def: 20,
 		exp: 750,
-		floors: [15, 15],
+		floors: [13, 13],
 		weight: 0,
 		abilities: [
 			{ k: "ranged", rate: 1 / 3, atk: 18, verb: "熱い湯をかけた" },

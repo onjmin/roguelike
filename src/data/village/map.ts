@@ -180,7 +180,7 @@ export const VILLAGE_SPOTS = {
 	roze: [8, 20] as Cell,
 	/** シヨ（ライバル。自宅スタジオの そば）。 */
 	shiyo: [28, 22] as Cell,
-	/** やきう（名無しの 視聴者。家の 前）。 */
+	/** やきう（町に 残った 名無し。家の 前）。 */
 	nanj: (_v: VillageView): Cell => [21, 18],
 	/** 音楽室「ピアノ機能」の 扉（段3 から。週末だけ 踏むと 中へ）。 */
 	musicDoor: [22, 28] as Cell,
@@ -1131,7 +1131,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	)
 		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo));
 	out.push(friend("zero", VILLAGE_SPOTS.zero));
-	// やきうは 名無しの 視聴者（家の 前）
+	// やきうは 町に 残った 名無し（家の 前）
 	out.push(friend("nanj", VILLAGE_SPOTS.nanj(v)));
 	// フェリスは 海の家の ステージ（不死鳥アイドル）
 	out.push(friend("feris", VILLAGE_SPOTS.feris, true));

@@ -1,7 +1,7 @@
-// 本筋（STORY.md §4.9 板を めぐる 話）を 追いやすく する 文。1回の 冒険が 15〜20階と 長く、語りが 入口と
+// 本筋（STORY.md §4.9 板を めぐる 話）を 追いやすく する 文。1回の 冒険が 12〜16階と 長く、語りが 入口と
 // 出口に しか ないので、潜っている あいだに 筋を 忘れやすい。そこで 3つ 足す：
 //   GOAL_WHY：何のために 行くか（全体マップの 札・つよさ・潜った ときの ログ。持ち帰る 前だけ）
-//   DIVE_RES：潜っている 途中に 流れる 1行（視聴者の コメント・やきうの コメント・地の文。下りの とき・持ち帰る 前だけ）
+//   DIVE_RES：潜っている 途中に 流れる 1行（名無しの レス・地の文。下りの とき・持ち帰る 前だけ）
 //   synopsis：これまでの あらすじと 次の 行き先（村の メニュー・ダンジョンの メニュー）
 // どれも 起きた ことを なぞる だけで、先の どんでん返しは 言わない。
 
@@ -24,7 +24,7 @@ export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 
 /**
  * 潜っている 途中に 流れる 1行。at 階に 着いた とき（下り・その 板を まだ 持ち帰って いない ときだけ）。
- * who が "res" なら 視聴者の コメント、"nanj" なら やきう（名無しの 1人目）の コメント、null なら 地の文。
+ * who が "res" なら 名無しの レス、"nanj" なら やきうの レス（正体を 明かした あと）、null なら 地の文。
  * 層の 札（data/story/story.ts の zones の note）と 同じ 階には 置かない。
  */
 export type DiveRes = {
@@ -50,11 +50,11 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 	main: [
 		{ at: 3, who: null, text: "湯気のむこうで、だれかが怒鳴っている。" },
-		{ at: 6, who: "res", text: "【速報】銭湯、陥落" },
+		{ at: 5, who: "res", text: "【速報】銭湯、陥落" },
 		{ at: 8, who: null, text: "湯船のすみに、温度計が3本ささっている。" },
-		{ at: 10, who: "res", text: "42℃派、まだ立てこもっとるで" },
+		{ at: 9, who: "res", text: "42℃派、まだ立てこもっとるで" },
+		{ at: 10, who: "res", text: "籠城3日目。全員ふやけとるらしいで" },
 		{ at: 11, who: "res", text: "41℃でええやろ……" },
-		{ at: 13, who: null, text: "源泉の底が、近い。" },
 	],
 	deep: [
 		{ at: 3, who: null, text: "でんちゃんの板。ビリビリする。" },
@@ -175,7 +175,7 @@ const mainNext = (
 	if (!c.includes("main"))
 		return open.includes("main")
 			? "風呂板へ。湯守の長湯スレ"
-			: "きのこ板の親玉に登録してもらうと、風呂板へ行ける";
+			: "きのこ板の親玉をたおすと、風呂板へ行ける";
 	if (!c.includes("deep")) return "電池板へ。いちばん下の主電源";
 	if (!c.includes("hidden")) return "広場の古井戸から、過去ログの底へ";
 	return null;

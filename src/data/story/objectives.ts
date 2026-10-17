@@ -72,7 +72,8 @@ export const EVENTS: readonly EventDef[] = [
 		name: "きのこ狩り",
 		dungeon: "kinoko",
 		objective: "fetch",
-		need: { unlocked: ["kinoko"] },
+		// 初めての きのこ板は 本筋（プロトの 先回りと 親玉）なので、持ち帰って から
+		need: { cleared: ["kinoko"] },
 		// 結果は 問わない（出撃が 10の 倍数に なったら 1/2）。3回 もぐると 終わる。
 		// 終わった 出撃では また 始まらないので、周期 P ごとに 必ず 始まると 3/P（P=3 だと 3/6）が
 		// 持ち帰りに なる。ボスの 板が ふだんは ボスで あるように、1/2 で 引いて およそ 3/10 に おさえる
@@ -86,7 +87,8 @@ export const EVENTS: readonly EventDef[] = [
 		name: "お祭りの雨天順延",
 		dungeon: "festival",
 		objective: "fetch",
-		need: { unlocked: ["festival"] },
+		// 初めての お祭りは 親分を 連れ帰る 話なので、持ち帰って から
+		need: { cleared: ["festival"] },
 		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 4 },
 		news: "雨で親分マシーは来ない。\nやぐらにうちわだけ落ちている",

@@ -16,15 +16,22 @@ import {
 	CLEAR,
 	DUNGEON_NAMES,
 	FIRST_SHALLOW,
+	type Line,
 	mentionsAway,
 	SHALLOW_DEATH,
 	zankiLine,
 } from "../../data/story/story";
 import { nowHour } from "../../data/town/calendar";
-import { REVIVE_AREAS, revivedAreas } from "../../data/town/revival";
+import {
+	inBlackout,
+	REVIVE_AREAS,
+	revivedAreas,
+	stageOfCleared,
+} from "../../data/town/revival";
 import { TAMPER_LEDGER, TAMPER_TALK, tamperTier } from "../../data/town/tamper";
 import {
 	BAND_IDLE,
+	BLACKOUT_TOWN_QUOTES,
 	ESCAPE_QUOTES,
 	TITLE_TOWN_QUOTES,
 	VILLAGE_IDLE,
@@ -129,6 +136,18 @@ const adventurer = (): Speaker[] => {
 };
 
 /**
+ * いまの 町の 様子の ひとこと（持ち帰った 本筋の 板で 決まる。停電の あいだは 暗い 町）。
+ * 町の 段（loadTown().stage）では なく 進み から 決める（停電・救いで 段と 見た目が ずれない ように）。
+ */
+const townQuotes = (title = false): readonly Line[] => {
+	const p = loadProgress();
+	if (inBlackout(p)) return BLACKOUT_TOWN_QUOTES;
+	const stage = stageOfCleared(p.cleared);
+	// 起動の札は 屋台が 出てから（最初の 寂れた 町では 前の冒険の ひとこと）
+	return title && stage < 1 ? [] : (TITLE_TOWN_QUOTES[stage] ?? []);
+};
+
+/**
  * 起動の札の ひとこと。ちょっと・もっと の たまり（data/story/story.ts）を先に見て、
  * 無ければ 本編の たまり（data/story/quotes.ts の pickQuote）。
  */
@@ -150,10 +169,9 @@ export const titleQuote = (seed: number): Quote | null => {
 	if (!last) return pick(FIRST_SHALLOW, 1);
 	const d = last.dungeon ?? "main";
 	if (last.kind === "escape") return pick(ESCAPE_QUOTES, 4);
-	// ときどき 町の様子の ひとこと（屋台が出てから）
-	const stage = loadTown().stage;
-	if (stage >= 1 && seed % 3 === 0)
-		return pick(TITLE_TOWN_QUOTES[stage] ?? [], 5);
+	// ときどき 町の様子の ひとこと（屋台が出てから。停電の あいだは 暗い 町の ひとこと）
+	const town = townQuotes(true);
+	if (town.length && seed % 3 === 0) return pick(town, 5);
 	if (last.kind === "clear" && d !== "main") return pick(CLEAR[d], 2);
 	if (last.kind === "dead" && d === "shallow" && seed % 2 === 0)
 		return pick(SHALLOW_DEATH, 3);
@@ -285,8 +303,7 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): TalkLine => {
 	if (timed && n % 2 === 1) return { text: timed };
 	const warm = talkHooks.idle(who);
 	if (warm) return { text: warm };
-	const stage = loadTown().stage;
-	const town = (TITLE_TOWN_QUOTES[stage] ?? []).find((x) => x.who === who);
+	const town = townQuotes().find((x) => x.who === who);
 	if (town) return { text: town.text, ...cueOf(town) };
 	// ボイスを オンに しても、ゼロだけは 声が 出ない（音源が まだ 無い）
 	if (who === "zero" && settings.voice)

@@ -4,7 +4,7 @@
 //
 // - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 3階。入門：杖だけ未識別・のろいなし・祭りなし・
 //   罠は B3（底）から。パン松の 縄張りで パンが よく出る。持ち帰るのは「植民地化宣言」。
-// - main：風呂板（おふJ）の 14階。湯治：HP の 自然回復が 1.5倍。
+// - main：風呂板（おふJ）の 12階。湯治：HP の 自然回復が 1.5倍。
 //
 // 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
 // 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town/town.ts の CARRY_REFUSE）。
@@ -445,14 +445,14 @@ const KINOKO_LEVEL: readonly number[] = ramp(5, 5, 2);
 const TROPICAL_TOP = 8;
 const KONAMONO_TOP = 11;
 const FESTIVAL_TOP = 12;
-const MAIN_TOP = 15;
+const MAIN_TOP = 13;
 const DEEP_TOP = 14;
 
 /**
  * 隠しの 99階の 道具の出かた：風呂板の 表で、食べものを ふやした（99階ぶん 歩くので。
  * ぷゆゆパン・片親パン を 倍、飯テロスレも 倍）。
  */
-/** 風呂板の 道具（14階と 長いので 大きな パンを 少し 多く。飢え死にを へらす）。 */
+/** 風呂板の 道具（12階と 長いので 大きな パンを 少し 多く。飢え死にを へらす）。 */
 const BATH_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
 	e.kind === "f_large" ? { ...e, weight: e.weight + 2 } : e,
 );
@@ -592,18 +592,18 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		},
 		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
 		foes: { sabi: 2, neochi: 1.5 },
-		floors: 14,
+		floors: 12,
 		items: BATH_ITEMS,
 		perFloor: [5, 7],
 		// 序盤を ゆるく：曲がりを 2乗に。祭りは B5 から、はじめの 1つは B6〜8 に
-		level: ramp(14, MAIN_TOP, 1.5),
+		level: ramp(12, MAIN_TOP, 1.5),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
 		goal: "genban",
 		houses: { from: 5, chance: 1 / 16, early: [6, 8] },
 		trapsFrom: 3,
-		// パン板（3階）から いきなり 14階に ならないよう、きのこ板（5階）を はさむ。
+		// パン板（3階）から いきなり 12階に ならないよう、きのこ板（5階）を はさむ。
 		// きのこ板で 倒れつづけた ときの 救いは 倉庫の 封鎖を 解く こと（data/town/incidents.ts の reliefAfter）
 		unlockAfter: "kinoko",
 		reliefAfter: null,
