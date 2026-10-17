@@ -326,7 +326,7 @@ export const SHALLOW_LEVEL: readonly number[] = [
 ];
 
 /**
- * 電池板（16階）と 裏の 30階の 板の 道具の出かた（重みの合計 210。本編 ×1.5 から ぷゆゆパン・不食の指輪を抜き、マイナスの品を ふやし、
+ * 電池板（16階）の 道具の出かた（本編 ×1.5 から 不食の指輪を抜き、ぷゆゆパンを 減らし、マイナスの品を ふやし、
  * いちばん強い品は 本編と同じ数のまま）。食べものは 始めの200% ＋ 1100%（1階 433ターン）。
  * スレ（ぷゆゆパン）・草を飲む（+5%）・革の盾で しのぐ。
  */
@@ -408,7 +408,8 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "a_iron", weight: 3 }, // 本編2 × 1.5
 	// 食べもの 23（ぷゆゆパンは 入れない。もっと の 片親パン:チギュリパン ≒ 2:1）
 	// 床の パンは 1階 25% ほど（多いと 始めの 200% と お弁当・パン兵の ぶんが まるまる 余る）
-	{ kind: "f_bread", weight: 13 }, // +50%（2026-10-17：スレが 早く 進む ぶん 多く）
+	{ kind: "f_bread", weight: 13 }, // +50%（スレが 早く 進む ぶん 多く）
+	{ kind: "f_large", weight: 2 }, // 16階 ある ので 大きな パンも 少し
 	{ kind: "f_moldy", weight: 4 }, // +100%（ちから−1・HP−5）
 ];
 
@@ -668,19 +669,29 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 						],
 					},
 				],
-				// 見学コースの 売店の 売れのこり（16階の 中ほどの 補給）
-				gifts: ["f_large", "f_large", "f_bread", "f_bread", "h_heal"],
+				// 見学コースの 売店の 売れのこりと、作業員の 置きわすれ（持ちこめない 板の 中ほどの 補給。のろいなし）
+				gifts: [
+					"f_large",
+					"f_large",
+					"f_bread",
+					"f_bread",
+					"h_heal",
+					"steel",
+					"steelsh",
+				],
 			},
 		],
 		// 時間との 競争：4ターンに 1つ 余分に レスが つく（1000 まで 約 4/5 の 時間）
 		rushEvery: 4,
 		// 機械と 回線の 敵が 多い
-		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
+		// 機械と 回線の 敵（この 板の 強さで 出る ものだけ）。拾い画UFO は 床の 食べものを 持っていくので 少なめ
+		foes: { ksk: 1.5, ufo: 0.5 },
 		floors: 16,
 		items: DEEP_ITEMS,
 		perFloor: [5, 8],
 		// 風呂板と 同じく 序盤を ゆるく（曲がり 1.3）。祭りは B5 から、はじめの 1つは B6〜8 に
-		level: ramp(16, DEEP_TOP, 1.3),
+		// 曲がり 1.6：B12〜15 が 9〜13（自演くん・鋼メンタルが 出る 階の 山を ならす。2026-10-17 の 分析）
+		level: ramp(16, DEEP_TOP, 1.6),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],

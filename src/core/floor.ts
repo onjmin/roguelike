@@ -189,7 +189,10 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			for (const kind of rest.gifts) {
 				if (!spots.length) break;
 				const spot = spots.splice(rng.int(spots.length), 1)[0];
-				f.items.push({ x: spot.x, y: spot.y, item: r.newItem(kind) });
+				// 置きみやげは のろわない
+				const item = r.newItem(kind);
+				item.cursed = false;
+				f.items.push({ x: spot.x, y: spot.y, item });
 			}
 		}
 		if (rest.spring) {
