@@ -229,7 +229,7 @@ const SHALLOW_BASE: readonly StoryPage[] = [
 export const TEN_NEWS = {
 	pages: [
 		n("その夜、町じゅうの明かりが\nいっせいに消えた。"),
-		s("zero", "停電です！……町の電気、\nぜんぶ電池板から来てました", {
+		s("zero", "停電です！町の電気、\nぜんぶ電池板から来てました", {
 			emote: "!",
 		}),
 		s("roze", "植民地から電気を借りてたアル？\n……払ってないのが常識アル", {
@@ -1108,7 +1108,7 @@ export const UNLOCK_LINES: Record<
 	],
 	// 転（tenScript）の すぐ あと。最終話の 板
 	deep: [
-		q("zero", "電池板から、音がします。\n……サブ機たちも、ビリビリしてます", {
+		q("zero", "電池板から、音がします。\nサブ機たちも、ビリビリしてます", {
 			gesture: "shiver",
 		}),
 		q("nanj", "最終話や。\n……ワイも、最後まで見とるで"),
@@ -1225,7 +1225,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 		q("roze", "鯖代は、ちゃんと払うのが\n常識アル"),
 		q("feris", "明かり、きれいだね〜。\n……ロールバックしても、きれい〜"),
 		q("shiyo", "……もう停電させないでよ。\nまっくらで、こわかったんだから"),
-		q("zero", "電池ニキさん、毎日来てます。\n……ゼロ、数えてます"),
+		q("zero", "電池ニキさん、毎日来てます。\n見学者、ゼロが数えてます！"),
 	],
 	kinoko: [
 		q("zero", "きのにゃん、まだ商店街の\nまんなかです。家賃は払ってません"),

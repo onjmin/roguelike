@@ -60,7 +60,7 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 		{ at: 3, who: null, text: "でんちゃんの板。ビリビリする。" },
 		{ at: 5, who: "res", text: "おんJタウン、停電しとるらしいな" },
 		{ at: 7, who: "res", text: "【悲報】おんJタウン、終了か" },
-		{ at: 10, who: "res", text: "鯖、重ない？" },
+		{ at: 10, who: "res", text: "このスレ、伸びるの速すぎん？" },
 		{ at: 11, who: null, text: "電線が、上へ上へとのびている。" },
 		{ at: 13, who: "res", text: "てっぺんで、だれか待っとるらしいで" },
 		{ at: 15, who: null, text: "てっぺんに、主電源が見えた。" },

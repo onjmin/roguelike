@@ -644,6 +644,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 						sprite: "pub:sprites/denchan.png",
 						lines: [
 							"見学者0人や。あんたで1人目や",
+							// 先回りした フェリスへの ツッコミ
+							"そっちの子は柵越えや。数えへん",
 							"売店のパン、持っていき。売れ残りや",
 							"人が来んでも、電気だけは送っとった",
 							"てっぺんで、名無しが待っとるで",
@@ -653,7 +655,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 						name: "フェリス",
 						sprite: "sa:4KtOzD",
 						lines: [
-							"先に来ちゃった〜。また燃えようよ〜",
+							"先に来ちゃった〜。1人目は私〜",
+							"また燃えようよ〜",
 							"消えかけでも、何回でも復活できるよ〜",
 						],
 					},
