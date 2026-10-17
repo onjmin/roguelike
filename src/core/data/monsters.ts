@@ -796,6 +796,57 @@ const M: MonsterDef[] = [
 		desc: "見出しを盛っていた名無し。まっすぐならぶと、盛った見出しを投げつけてくる",
 		flavor: "まだや。盛り上がりが足らん",
 	},
+	// ───────── 手合わせ（core/ambush.ts。ゼロの 挑戦を 受けると 深い 階で 3機が 待ちぶせる） ─────────
+	// 1機ずつは 弱い。止めても ほかが 動いて いれば 再起動する ので、3機を そろえて 削る。絵は 主人公の ゼロと 同じ。
+	// 勝ち（2026-10-18。pnpm sim -- --ambush zero --reach --n 150）：風呂板 79.3%・電池板 82.0%・おんたこ 58.7%（寄り道の 板は 着いた ときの 力が 弱い）。
+	{
+		id: "zero_main",
+		name: "ゼロ",
+		sprite: "pub:sprites/zero_main.png",
+		boss: true,
+		hp: 33,
+		atk: 7,
+		def: 10,
+		exp: 40,
+		floors: [8, 8],
+		weight: 0,
+		abilities: [{ k: "knockback", rate: 1 / 5 }],
+		desc: "解音ゼロのメイン機。ときどき吹きとばす。止めても、のこりの機体が再起動する",
+		flavor: "負けた回数も数えている。勝った回数より、ずっとていねいに",
+	},
+	{
+		id: "zero_proto",
+		name: "プロト",
+		sprite: "sa:KxS5YZ",
+		boss: true,
+		hp: 27,
+		atk: 6,
+		def: 8,
+		exp: 40,
+		floors: [8, 8],
+		weight: 0,
+		abilities: [
+			{ k: "ranged", rate: 1 / 4, atk: 9, verb: "計測ビームを撃った" },
+		],
+		desc: "ゼロのサブ機。まっすぐならぶと、計測ビームを撃ってくる",
+		flavor: "キリコの歩幅を計測中ゼロ。……誤差0.3％ゼロ",
+	},
+	{
+		id: "zero_ren",
+		name: "レン",
+		sprite: "pub:sprites/zero_ren.png",
+		boss: true,
+		hp: 23,
+		atk: 6,
+		def: 7,
+		exp: 40,
+		floors: [8, 8],
+		weight: 0,
+		abilities: [{ k: "fastMove" }],
+		desc: "ゼロのサブ機。倍速で走りまわる",
+		flavor:
+			"アップデートしたら足が速くなった〜！……かわりに何か消えた気がする〜",
+	},
 	{
 		// 書きかえた 中断セーブで もぐると 各階に 1体（ポケダンの カクレオン。core/floor.ts の HUNTER）。表には 出ない
 		id: "sakujonin",

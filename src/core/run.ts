@@ -6,6 +6,14 @@
 // - 乱数はすべて this.rng（状態は中断セーブに入る）。
 
 import {
+	type AmbushId,
+	ambushDown,
+	ambushLead,
+	isAmbushUnit,
+	tickAmbush,
+	wakeAmbush,
+} from "./ambush";
+import {
 	ankaHit,
 	ankaOnArrival,
 	carryAnka,
@@ -182,6 +190,8 @@ export class Run {
 		hero: HeroId = "kiriko",
 		/** 同行の 依頼で ついてくる 同行者（core/guest.ts。乱数は 引かない。いなければ 書かない）。 */
 		guest: GuestSpec | null = null,
+		/** 手合わせの 待ちぶせ（core/ambush.ts。乱数は 引かない。無ければ 書かない）。 */
+		ambush: AmbushId | null = null,
 	): Run {
 		const base = dungeonById(dungeon);
 		const boss = objective === "boss" && !!base.boss;
@@ -285,6 +295,7 @@ export class Run {
 			stats: { maxDepth: 0, itemsUsed: 0 },
 			// キリコは 書かない（前の 版と 同じ 形の まま）
 			...(hero !== "kiriko" ? { hero } : {}),
+			...(ambush ? { ambush } : {}),
 		};
 		const run = new Run(s);
 		run.rng = rng;
@@ -405,6 +416,8 @@ export class Run {
 
 	/** この階で 生きている ボス（いちばん底で、まだ たおしていない とき。画面の HP の ゲージにも）。 */
 	get boss(): Monster | null {
+		// 待ちぶせの 3機は 生きている どれか（ゲージは 1機ずつ）
+		if (this.f?.ambush) return ambushLead(this.f);
 		const uid = this.f?.boss;
 		if (uid === undefined) return null;
 		return this.f.monsters.find((m) => m.uid === uid && m.hp > 0) ?? null;
@@ -770,6 +783,12 @@ export class Run {
 		const engaged = !waiting && dist(m, this.p) <= 1;
 		if (!sees && !engaged) return;
 		f.bossSeen = true;
+		// 待ちぶせ：掛け合いの あと 3機とも 起きる（core/ambush.ts）
+		if (f.ambush) {
+			wakeAmbush(this);
+			this.emit({ t: "boss", id: m.uid });
+			return;
+		}
 		const name = monsterName(this, m);
 		// 大部屋：戦いの 前に 掛け合い（村と 同じ 窓）
 		const arena = f.arena ? this.bossSpec?.arena : undefined;
@@ -914,7 +933,7 @@ export class Run {
 
 	/** 集落の 人に 話す（ぶつかる。時間は 進まない）。key の 人なら 目的が すすむ。 */
 	/** 話す 窓（集落の 人・大部屋の ボス）。キリコの 返事は 主人公が キリコの ときだけ（口ぐせが ンゴなので）。 */
-	private emitTalk(name: string, talk: FolkTalk, voice?: string): void {
+	emitTalk(name: string, talk: FolkTalk, voice?: string): void {
 		const hero = this.heroName;
 		this.emit({
 			t: "talk",
@@ -1435,12 +1454,16 @@ export class Run {
 			// ボスの 声は 録らない（たおすと その場で 帰るので 使い道が ない）
 			if (!d.boss) this.recordVoice(m);
 		}
-		if (giveExp && d.exp > 0) {
+		// 待ちぶせで 起きなおした 機体は 経験値なし（何度も たおして かせげない）
+		const again = !!this.f.ambush?.again.includes(m.uid);
+		if (giveExp && d.exp > 0 && !again) {
 			this.msg(`${d.exp}ポイントの経験値をかせいだ`);
 			this.gainExp(d.exp);
 		}
+		// 待ちぶせの 機体：再起動を 待つか、そろって 止まれば 勝ち（冒険は 続く）
+		if (isAmbushUnit(this.f, m)) ambushDown(this, m);
 		// ボス：経験値と レベルアップの あとに、品を 手に 入れて 入口へ
-		if (d.boss) this.bossDefeated(m);
+		else if (d.boss) this.bossDefeated(m);
 	}
 
 	/**
@@ -1637,6 +1660,7 @@ export class Run {
 		// 状態の時間切れ（敵の番のあと。目を覚ましたら、次はキリコが先に動ける）
 		this.tickStatus();
 		if (this.f !== f) return;
+		tickAmbush(this);
 
 		// 湧き
 		// 過疎の 板（離島）は 間隔が のびる

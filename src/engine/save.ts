@@ -5,6 +5,7 @@
 //   （50回より古い記録が押し出されても、通算は減らない）。
 // - プライベートモード等で保存できなくても遊べるように、読み書きはすべて try/catch。
 
+import { type AmbushId, isAmbushId } from "../core/ambush";
 import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
@@ -1085,6 +1086,8 @@ export type SavedReplay = {
 	hero?: "roze" | "zero";
 	/** 同行の 依頼で ついてきた 同行者と 見たかった 階（いなければ 書かない。core/guest.ts）。 */
 	guest?: GuestSpec;
+	/** 手合わせの 待ちぶせ（core/ambush.ts。無ければ 書かない）。 */
+	ambush?: AmbushId;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -1162,6 +1165,7 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (r.noLunch !== undefined && typeof r.noLunch !== "boolean") return null;
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
+	if (r.ambush !== undefined && !isAmbushId(r.ambush)) return null;
 	if (
 		r.guest !== undefined &&
 		!(
@@ -1178,6 +1182,7 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		...(r.noLunch ? { noLunch: true } : {}),
 		...(r.hero ? { hero: r.hero } : {}),
 		...(r.guest ? { guest: r.guest } : {}),
+		...(r.ambush ? { ambush: r.ambush } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
 		...(r.objective && r.objective !== "fetch"
 			? { objective: r.objective }
@@ -1228,6 +1233,7 @@ const addReplay = (s: RunState): void => {
 				? { guest: { id: s.guest.id, goal: s.guest.goal } }
 				: {}),
 		dungeon: s.dungeon,
+		...(s.ambush ? { ambush: s.ambush } : {}),
 		...(s.objective && s.objective !== "fetch"
 			? { objective: s.objective }
 			: {}),

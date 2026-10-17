@@ -1,5 +1,6 @@
 // 階を作る：形・階段・キリコの位置・道具・モンスター・罠・モンスターハウス。
 
+import { ambushDepth, placeAmbush } from "./ambush";
 import {
 	CARRY_CHANCE,
 	HOUSE_EARLY_BY,
@@ -109,7 +110,9 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	// 名所・集落・大部屋は 手づくりの 地図（core/data/places.ts）
 	if (settle || rest || arena)
 		return buildPlaceFloor(r, depth, settle, rest, arena);
-	const festival = house && !bossFloor;
+	// 手合わせの 待ちぶせ（core/ambush.ts。祭りには しない）
+	const ambushHere = !r.s.returning && ambushDepth(r) === depth;
+	const festival = house && !bossFloor && !ambushHere;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
 		festival &&
@@ -311,6 +314,7 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			f.items.push({ x: spot.x, y: spot.y, item: r.newItem(kind) });
 		}
 	}
+	if (ambushHere) placeAmbush(r, f, stairRoom, start);
 	// 書きかえた 冒険：キリコの いない 部屋に 削除人が 1体（ふつうの 冒険では 乱数を 引かない）
 	if (r.s.cheat) {
 		const at = place(null);

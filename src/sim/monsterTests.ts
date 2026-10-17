@@ -6,6 +6,12 @@
 //   シードが決まっているので、結果は毎回同じ。
 // - 湧きと地震は止める（毎ターン f.turns を 0 に戻す）。
 
+import {
+	AMBUSH,
+	ambushDepth,
+	REBOOT_TURNS,
+	SHUFFLE_EVERY,
+} from "../core/ambush";
 import { ankaText, startAnka } from "../core/anka";
 import {
 	attackPower,
@@ -3345,7 +3351,9 @@ test(
 		for (const d of ["main", "deep"] as const)
 			ok(DUNGEONS[d].objective === "boss", `${d} is not a boss board`);
 		ok(
-			MONSTER_LIST.filter((m) => m.boss).length === BOSS_BOARDS.length,
+			// 待ちぶせの 機体（core/ambush.ts）は 板の ボスでは ない
+			MONSTER_LIST.filter((m) => m.boss && !AMBUSH.zero.units.includes(m.id))
+				.length === BOSS_BOARDS.length,
 			"a boss is not on any board",
 		);
 	},
@@ -4181,7 +4189,7 @@ test(
 	"all",
 	"every monster has a desc, a flavor line and at least one ability",
 	() => {
-		ok(MONSTER_LIST.length === 46, `${MONSTER_LIST.length} monsters`);
+		ok(MONSTER_LIST.length === 49, `${MONSTER_LIST.length} monsters`);
 		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
 		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
 		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(
@@ -4192,6 +4200,108 @@ test(
 			(d) => d.id,
 		);
 		ok(!plain.length, `no ability: ${plain.join(", ")}`);
+	},
+);
+
+// ───────── 手合わせの 待ちぶせ（core/ambush.ts）。ゼロの 3機 ─────────
+
+/** 待ちぶせの 階に 着いた 冒険（キリコは 倒れない。乱数の 階を そのまま 使う）。 */
+const ambushRun = (seed: string): Run => {
+	const r = Run.create(seed, "main", [], "boss", true, "kiriko", null, "zero");
+	r.enterFloor(ambushDepth(r) ?? 0, false);
+	r.p.maxHp = 9999;
+	r.p.hp = 9999;
+	return r;
+};
+const zeroUnits = (r: Run): Monster[] =>
+	r.f.monsters.filter((m) => AMBUSH.zero.units.includes(m.kind));
+/** 1ターン（turn() と ちがい 階の ターンを 進める。再起動・入れ替わりを 見る）。 */
+const tick = (r: Run): GameEvent[] => {
+	r.p.hunger = HUNGER_MAX;
+	r.f.res = 0;
+	r.p.hp = r.p.maxHp;
+	return r.act({ c: "wait" });
+};
+/** 3機を 見つけさせる（となりに 立つ）。 */
+const meetZero = (r: Run): GameEvent[] => {
+	const m = zeroUnits(r)[0];
+	const spot = DIRS8.map((d) => step(m, d)).find((q) => r.isFree(q.x, q.y));
+	ok(spot, "no room next to ゼロ");
+	r.p.x = spot.x;
+	r.p.y = spot.y;
+	return tick(r);
+};
+
+test(
+	"zero_main",
+	"待ちぶせ：挑戦を 受けた 冒険だけ、深い 階の 階段の 部屋で 3機が 眠って 待ち、見つけると 掛け合いの あと そろって 起きる",
+	() => {
+		const plain = Run.create("ambush-0", "main", [], "boss");
+		ok(ambushDepth(plain) === null, "ambush without the challenge");
+		const r = ambushRun("ambush-1");
+		ok(r.s.depth === 8, `depth ${r.s.depth}`);
+		const us = zeroUnits(r);
+		ok(us.length === 3, `${us.length} units`);
+		ok(r.f.house < 0, "a festival on the ambush floor");
+		ok(!r.f.bossSeen, "seen on arrival");
+		const ev = meetZero(r);
+		const talk = ev.findIndex((e) => e.t === "talk");
+		const boss = ev.findIndex((e) => e.t === "boss");
+		ok(talk >= 0 && boss > talk, `talk ${talk} boss ${boss}`);
+		ok(
+			zeroUnits(r).every((m) => m.status.sleep === 0),
+			"a unit still asleep",
+		);
+		ok(r.boss && AMBUSH.zero.units.includes(r.boss.kind), "no gauge");
+	},
+);
+
+test(
+	"zero_proto",
+	"再起動：1機 止めても ほかが 動いて いれば 半分の HP で 起きなおし（経験値なし）、ときどき 2機が 入れ替わる",
+	() => {
+		const r = ambushRun("ambush-2");
+		meetZero(r);
+		const proto = zeroUnits(r).find((m) => m.kind === "zero_proto");
+		ok(proto, "no プロト");
+		r.killMonster(proto, true);
+		ok(!r.s.ambushWon, "won with 2 left");
+		let back: Monster | undefined;
+		let swapped = false;
+		for (let i = 0; i < REBOOT_TURNS + SHUFFLE_EVERY + 2 && !back; i++) {
+			const ev = tick(r);
+			if (ev.filter((e) => e.t === "warp").length === 2) swapped = true;
+			back = zeroUnits(r).find((m) => m.kind === "zero_proto");
+		}
+		ok(back, "プロト never rebooted");
+		ok(back.hp === Math.ceil(back.maxHp / 2), `hp ${back.hp}`);
+		const exp = r.p.exp;
+		r.killMonster(back, true);
+		ok(r.p.exp === exp, "exp from a rebooted unit");
+		for (let i = 0; i < SHUFFLE_EVERY + 1 && !swapped; i++)
+			if (tick(r).filter((e) => e.t === "warp").length === 2) swapped = true;
+		ok(swapped, "never swapped");
+	},
+);
+
+test(
+	"zero_ren",
+	"3機 そろって 止めると 勝ち：冒険は 続き、ボスの 曲と ゲージを 終える。勝った あとは もう 待ちぶせない",
+	() => {
+		const r = ambushRun("ambush-3");
+		meetZero(r);
+		r.ev = [];
+		for (const m of zeroUnits(r)) r.killMonster(m, true);
+		ok(r.s.ambushWon, "not won");
+		ok(!r.s.end, "the run ended");
+		ok(r.boss === null, "gauge left");
+		ok(
+			r.ev.some((e) => e.t === "bossDown") && r.ev.some((e) => e.t === "talk"),
+			"no bossDown or talk",
+		);
+		for (let i = 0; i < REBOOT_TURNS + 2; i++) tick(r);
+		ok(zeroUnits(r).length === 0, "a unit came back after the win");
+		ok(ambushDepth(r) === null, "ambush again");
 	},
 );
 

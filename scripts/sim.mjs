@@ -10,6 +10,7 @@
 //   pnpm sim -- --hero zero       … 主人公（kiriko / roze / zero。既定は kiriko）
 //   pnpm sim -- --auto            … 解音ゼロの オートと 同じ ボット（sim/bot.ts の AUTO_BOT）
 //   pnpm sim -- --auto --no-choke … そこから 通路で 待ちうける 手（chokepoint）だけ 外す（くらべる 用）
+//   pnpm sim -- --ambush zero     … 手合わせの 待ちぶせ（core/ambush.ts。キリコで。勝った 割合を 出す）
 //   pnpm sim -- --reach           … 目的に たどりつくまで 倒れない（底の つり合いを 見る。下の REACH）
 //   pnpm sim -- --reach --lag 3   … --reach で 足す レベルを「その階の 強さ − 3」までに（既定は 下の LAG）
 //   pnpm sim -- --carry steel+3,steelsh+3,h_heal … 倉庫から 持ちこむ 道具（種類+修正値。のろいなし・正体つき。
@@ -43,6 +44,8 @@ const DUNGEON = arg("dungeon", "main");
 const OBJECTIVE = arg("objective", null);
 // 筋で ついてくる 同行者（zero / feris / shobon。core/guest.ts）。無ければ ひとり
 const GUEST = arg("guest", null) ? { id: arg("guest", null), goal: 999 } : null;
+// 手合わせの 待ちぶせ（zero。core/ambush.ts）。無ければ なし
+const AMBUSH = arg("ambush", null);
 // 倉庫から 持ちこむ 道具（kind+plus を カンマで）
 const CARRY = (arg("carry", "") ?? "")
 	.split(",")
@@ -148,6 +151,7 @@ try {
 				true,
 				arg("hero", "kiriko"),
 				GUEST,
+				AMBUSH,
 			),
 		);
 		const lvAt = {};
@@ -213,6 +217,7 @@ try {
 			turnsAt,
 			seen: s.seen.length,
 			hunger: s.player.hunger,
+			ambushWon: !!s.ambushWon,
 		});
 	}
 
@@ -226,6 +231,14 @@ try {
 	console.log(
 		`\n${n}回（${objective}${REACH ? `・目的まで 倒れない・強さ − ${LAG}` : ""}）　クリア ${clears}（${pct(clears)}）　最下層まで ${reached}（${pct(reached)}）　止まった ${stuck}${escapes ? `　帰還 ${escapes}（${pct(escapes)}）` : ""}`,
 	);
+	// 待ちぶせ：見た 冒険の うち 3機を そろって 止めた 割合
+	if (AMBUSH) {
+		const met = results.filter((r) => r.bossSeenAt !== null);
+		const won = met.filter((r) => r.ambushWon).length;
+		console.log(
+			`待ちぶせ（${AMBUSH}）：見た ${met.length}　勝った ${won}（${met.length ? ((won / met.length) * 100).toFixed(1) : "-"}%）`,
+		);
+	}
 	// いちばん底に 着いた 冒険の うち：fetch は 入口まで 帰れた・boss は ボスに 勝った 割合
 	{
 		const got = results.filter((r) => r.depth >= r.floors);

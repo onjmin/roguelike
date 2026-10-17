@@ -3341,6 +3341,13 @@ export class Play {
 					this.hudHold = { ...this.hudHold, boss: live };
 				return;
 			}
+			case "bossDown": {
+				// 待ちぶせの 機体を そろって 止めた：ボスの 曲と ゲージを 終えて 階の 曲に もどす（冒険は 続く）
+				this.bossShown = false;
+				if (this.hudHold) this.hudHold = { ...this.hudHold, boss: null };
+				this.ctx.audio.bgm(floorBgm(this.run, false));
+				return;
+			}
 			case "rescue":
 				this.rescueFx = this.rescueScene(e.kind, e.cheer);
 				return;

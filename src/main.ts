@@ -8,6 +8,7 @@ import { EXP_AT } from "./core/balance";
 import { type HeroId, isHeroId } from "./core/data/heroes";
 import { callHunter } from "./core/floor";
 import { GUESTS } from "./core/guest";
+import { type AmbushId, isAmbushId } from "./core/ambush";
 import { Run } from "./core/run";
 import type { GuestId, Item } from "./core/types";
 import { bgm } from "./data/audio/bgm";
@@ -16,7 +17,12 @@ import { devEvent } from "./data/story/objectives";
 import { devArrival } from "./devSandbox";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
-import { chosenHero, noteHeroQuests, rollHeroWorries } from "./engine/heroes";
+import {
+	chosenHero,
+	noteHeroQuests,
+	questAmbush,
+	rollHeroWorries,
+} from "./engine/heroes";
 import { Input } from "./engine/input";
 import {
 	DEBUG_SEED,
@@ -142,7 +148,7 @@ const newSeed = (): string =>
 /**
  * 開発用：URL で好きな階から始める（pnpm dev か ?debug のときだけ）。
  * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ほかの 板も。`&objective=boss` で いちばん底に ボス。
- * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ。`&guest=zero` で 同行者つき）
+ * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ。`&guest=zero` で 同行者つき。`&ambush=zero` で ゼロの 待ちぶせ）
  */
 const devRun = (): Run | null => {
 	const q = new URLSearchParams(location.search);
@@ -167,6 +173,8 @@ const devRun = (): Run | null => {
 		(q.get("guest") ?? "") in GUESTS
 			? { id: q.get("guest") as GuestId, goal: Number(q.get("goal") ?? 999) }
 			: null,
+		// 手合わせの 待ちぶせ（&ambush=zero。core/ambush.ts）
+		isAmbushId(q.get("ambush")) ? (q.get("ambush") as AmbushId) : null,
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
@@ -194,6 +202,7 @@ const runFor = (
 				!replay.noLunch,
 				replay.hero ?? "kiriko",
 				replay.guest ?? null,
+				replay.ambush ?? null,
 			),
 			replay,
 		};
@@ -222,14 +231,17 @@ const runFor = (
 		// たおれた あとの 支給品（ぷゆゆソード。持ちこめない 板でも 持っていく。倉庫から 持ちこんだ 道具と 同じく
 		// 冒険に 焼きつけて リプレイでも 同じに 始まる）
 		const relief: Item[] = takeRelief() ? [reliefItem()] : [];
+		const hero = chosenHero();
 		const run = Run.create(
 			newSeed(),
 			choice.dungeon,
 			[...carry, ...relief],
 			choice.objective,
 			lunch,
-			chosenHero(),
+			hero,
 			choice.guest ?? null,
+			// ゼロの 挑戦を 受けて いれば 深い 階で 3機が 待ちぶせる（core/ambush.ts）
+			questAmbush(hero),
 		);
 		if (carry.length || relief.length) saveRun(run.s);
 		return { run, replay: undefined };

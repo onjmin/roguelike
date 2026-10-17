@@ -1,5 +1,5 @@
 // 冒険に 出る 主人公の 解放と 選択（村では いつも キリコ）。
-// - 解放：束音ロゼ・解音ゼロは それぞれの 依頼（data/people/heroQuests.ts）を 経て 使える ように なる。
+// - 解放：束音ロゼ・解音ゼロは それぞれの 話（data/people/heroQuests.ts。ロゼは 依頼、ゼロは 挑戦）を 経て 使える ように なる。
 //   進み具合は Progress.flags に 持つ：q_<id>_ask＝悩みを かかえた（話しかけると 悩みを 打ち明ける）、
 //   q_<id>＝依頼を 引き受けた、q_<id>_ok＝依頼の 条件を 満たして 帰った、hero_<id>＝本人から 申し出が あって 使える。
 // - 悩みの 始まり：冒険から 帰る たびに（main.ts の rollHeroWorries）、持ち帰った 板の 数が HERO_GATE に
@@ -8,6 +8,7 @@
 // - 選択：行き先を 決める ところ（ui/village/worldMap.ts）で 切りかえる。localStorage の kiriko-roguelike/hero に
 //   覚えて おき、次に 出る ときも そのまま（使えない 主人公なら キリコ）。
 
+import type { AmbushId } from "../core/ambush";
 import { DUNGEON_IDS, openable } from "../core/data/dungeons";
 import { type HeroId, isHeroId } from "../core/data/heroes";
 import type { RunState } from "../core/types";
@@ -149,19 +150,20 @@ export const unlockedHeroes = (): HeroId[] => [
 	...QUEST_HEROES.filter((h) => hasFlag(questFlag.unlocked(h))),
 ];
 
-/** ゼロの 依頼：この 深さまで 行って 生きて 帰る。 */
-export const ZERO_QUEST_DEPTH = 8;
+/** 挑戦を 受けた あと 潜ると 待ちぶせる（core/ambush.ts）。キリコで 潜る ときだけ。 */
+export const questAmbush = (hero: HeroId): AmbushId | null =>
+	hero === "kiriko" && questStage("zero") === "accepted" ? "zero" : null;
 
 /**
  * 依頼の 条件を 満たしたか（冒険の 終わりに main.ts が 呼ぶ）。
  * ロゼ：ボカロ作り避難所の 底から 忘れ物（原音設定）を 持ち帰る。
- * ゼロ：どこかの 板で ZERO_QUEST_DEPTH 階まで 行って 生きて 帰る（底に 沈んだ 声を 聞きに）。
+ * ゼロ：深い 階で 待ちぶせる 3機を そろって 止める（core/ambush.ts。そのあと 倒れても 勝ちは 残る）。
  * どちらも 引き受けて いる ときだけ。満たしたら q_<id>_ok（村で 話すと 申し出）。
  */
 export const questMet = (h: QuestHero, s: RunState): boolean => {
-	if (!s.end || s.end.kind === "dead") return false;
-	if (h === "roze") return s.dungeon === "vocalo" && s.end.kind === "clear";
-	return s.stats.maxDepth >= ZERO_QUEST_DEPTH;
+	if (!s.end) return false;
+	if (h === "zero") return !!s.ambushWon;
+	return s.dungeon === "vocalo" && s.end.kind === "clear";
 };
 
 export const noteHeroQuests = (s: RunState): QuestHero[] => {

@@ -200,13 +200,13 @@ export const synopsisHtml = (
 ): string | null => {
 	const main = latest(MAIN_CHAPTERS, cleared, flags);
 	if (!main) return null;
-	// 仲間の 依頼（束音ロゼ・解音ゼロ。悩みを かかえて から。data/people/heroQuests.ts）
+	// 仲間に なる 話（束音ロゼの 依頼・解音ゼロの 挑戦。持ちかけられて から。data/people/heroQuests.ts）
 	const quests = QUEST_HEROES.flatMap((h) => {
 		const st = questStage(h, flags);
 		return st === "none" ? [] : [HERO_QUESTS[h].synopsis[st]];
 	});
 	const questHtml = quests.length
-		? `<p><b>仲間の依頼</b><br>${quests.join("<br>")}</p>`
+		? `<p><b>仲間の話</b><br>${quests.join("<br>")}</p>`
 		: "";
 	const next = mainNext(cleared, open);
 	const chapter = (ch: Chapter | null) =>

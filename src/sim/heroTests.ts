@@ -19,12 +19,12 @@ import {
 	chosenHero,
 	forgetHeroMemo,
 	noteHeroQuests,
+	questAmbush,
 	questStage,
 	rollHeroWorries,
 	takeWorryNews,
 	unlockedHeroes,
 	WORRY_SURE,
-	ZERO_QUEST_DEPTH,
 } from "../engine/heroes";
 import { forgetProgressMemo, loadProgress, saveProgress } from "../engine/save";
 import { heroQuestScript } from "../ui/village/villageEvents";
@@ -496,16 +496,20 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 	});
 });
 
-test(`依頼: ゼロは どの 板でも ${ZERO_QUEST_DEPTH}階まで 行って 生きて 帰ると 申し出`, async () => {
+test("挑戦: ゼロの 3機を 深い 階で そろって 止めると 申し出（倒れても 勝ちは 残る。待ちぶせは キリコだけ）", async () => {
 	await withStore(async () => {
 		const p = loadProgress();
 		p.cleared = ["shallow", "kinoko", "tropical"];
 		saveProgress(p);
+		ok(questAmbush("kiriko") === null, "no ambush before the challenge");
 		acceptQuest("zero");
-		noteHeroQuests(ended("main", "dead", 12));
-		noteHeroQuests(ended("main", "escape", ZERO_QUEST_DEPTH - 1));
-		ok(questStage("zero") === "accepted", "not yet");
-		noteHeroQuests(ended("main", "escape", ZERO_QUEST_DEPTH));
+		ok(questAmbush("kiriko") === "zero", "ambush after the challenge");
+		ok(questAmbush("roze") === null, "no ambush for ロゼ");
+		noteHeroQuests(ended("main", "escape", 12));
+		ok(questStage("zero") === "accepted", "deep but no win");
+		const won = ended("main", "dead", 9);
+		won.ambushWon = true;
+		noteHeroQuests(won);
 		ok(questStage("zero") === "done", "done");
 		const r = recorder();
 		await heroQuestScript(r.s, "zero");
@@ -530,7 +534,7 @@ test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合�
 		["hero_roze", "unlocked"],
 	] as const) {
 		const html = synopsisHtml(cl, [flag]) ?? "";
-		ok(html.includes("仲間の依頼"), `${st} section`);
+		ok(html.includes("仲間の話"), `${st} section`);
 		ok(html.includes(HERO_QUESTS.roze.synopsis[st]), `${st} line`);
 	}
 	const both = synopsisHtml(cl, ["hero_roze", "q_zero"]) ?? "";

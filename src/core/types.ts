@@ -3,6 +3,7 @@
 // 状態（RunState）はそのまま JSON にして中断セーブに入れる。
 // マップの配列は保存するときだけ文字列にする（serial.ts）。
 
+import type { AmbushId, FloorAmbush } from "./ambush";
 import type { FolkTalk } from "./data/dungeons";
 import type { PlaceArt } from "./data/places";
 import type { Dir8, Pos } from "./geom";
@@ -413,6 +414,8 @@ export type Floor = {
 	rest?: string;
 	/** ボスの 大部屋（core/data/dungeons.ts の BossSpec.arena）の 名前。 */
 	arena?: string;
+	/** 待ちぶせ（core/ambush.ts。手合わせの 機体が いる 階だけ）。 */
+	ambush?: FloorAmbush;
 	/** 集落の 人（いちばん底の 集落。core/data/dungeons.ts の settlement。立つ マスは 置物と 同じく 通れない）。 */
 	folk?: FloorFolk[];
 	/**
@@ -561,6 +564,10 @@ export type RunState = {
 	guestStart?: GuestSpec;
 	/** 同行の 依頼を はたした 人（見たかった 階に 着いた。あとで guest が かわっても 残す）。 */
 	escortDone?: GuestId;
+	/** 手合わせの 待ちぶせ（core/ambush.ts。村で 挑戦を 受けた ときだけ 書く）。 */
+	ambush?: AmbushId;
+	/** 待ちぶせの 機体を そろって 止めた（帰っても 倒れても 残る）。 */
+	ambushWon?: true;
 };
 
 /** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */
@@ -684,6 +691,8 @@ export type GameEvent =
 	| { t: "goal" }
 	/** ボスを はじめて 見た（目を さました。id は その uid。続く 行で「待ちかまえていた！」）。 */
 	| { t: "boss"; id: number }
+	/** 待ちぶせの 機体を そろって 止めた（ボスの 曲と ゲージを 終える。冒険は 続く）。 */
+	| { t: "bossDown" }
 	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
 	| { t: "rescue"; kind: RescueKind; cheer?: string }
 	/** 集落・名所の 人と 話した（画面は 村と 同じ 窓で 1〜3枚。記録の 行には しない）。 */
