@@ -296,6 +296,8 @@ body.jolt #app {
 
 .portrait {
 	--slot-w: min(var(--app-w) * 0.46, 340px);
+	/* 頭（てっぺん〜あご）の高さ。どのキャラも同じ。細い画面では枠の幅に合わせて小さく */
+	--head: min(var(--layer-h) * 0.33, var(--slot-w) * 0.48);
 	/* 左右の枠のあいだの空きの半分（レイヤーの幅は min(--app-w, 900px)、枠は両端から 2%） */
 	--gap-half: max(0px, min(var(--app-w), 900px) * 0.48 - var(--slot-w));
 	position: absolute;
@@ -369,7 +371,7 @@ body.jolt #app {
 
 /*
  * 余白を切り詰めた全身の立ち絵（canvas）。値は message.ts で測って入れる（data/portraits.ts の顔の位置）。
- * - --head: 頭（てっぺん〜あご）の高さ。どのキャラも同じ。細い画面では枠の幅に合わせて小さく
+ * - --head: 頭（てっぺん〜あご）の高さ（.portrait で 決める）
  * - --ih: canvas の高さ（頭の高さに対する割合）
  * - --it: 頭のてっぺんの canvas の上からの位置（頭の高さに対する割合）
  * - --hx: 枠の中央に合わせる点（顔の真ん中。canvas の幅に対する割合）
@@ -377,7 +379,6 @@ body.jolt #app {
  * 枠より下は .portrait-art の下端で切れる
  */
 .portrait-img {
-	--head: min(var(--layer-h) * 0.33, var(--slot-w) * 0.48);
 	position: absolute;
 	left: calc(var(--ext-l) + var(--slot-w) / 2);
 	top: calc(var(--layer-h) * (0.5 + 0.08) - var(--head) * var(--it, 0));
@@ -401,6 +402,183 @@ body.jolt #app {
 /* 絵の向きと立つ側が合わないときは左右反転して中央を向かせる（--hx は反転後の位置） */
 .portrait-img.flip {
 	transform: translateX(calc(var(--hx, 0.5) * -100%)) scaleX(-1);
+}
+
+/*
+ * 立ち絵の 頭の 横の 感情の 記号（手書き風の SVG。ui/emoteInk.ts）。
+ * 頭の てっぺんは 枠の 上から --layer-h の 8%（.portrait-img）、顔の 真ん中は 枠の 真ん中。
+ * 記号は 顔の 向いている 側（真ん中寄り）の 上の 角に、汗だけ こめかみの 横に 置く。
+ * ぽんと 大きめに 出て おさまり（svg）、記号ごとに ゆれる（.ink-idle）。線は 2枚の ゆらぎを 交互に 出して ふるわせる
+ */
+.portrait-emote {
+	--mk: calc(var(--head) * 0.58);
+	position: absolute;
+	top: calc(var(--layer-h) * 0.08 - var(--mk) * 0.85);
+	width: var(--mk);
+	height: var(--mk);
+	filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+.portrait.left .portrait-emote {
+	left: calc(50% + var(--head) * 0.4);
+}
+.portrait.right .portrait-emote {
+	right: calc(50% + var(--head) * 0.4);
+}
+.portrait-emote.ink-sweat {
+	--mk: calc(var(--head) * 0.4);
+	top: calc(var(--layer-h) * 0.08 + var(--head) * 0.08);
+}
+.portrait.left .portrait-emote.ink-sweat {
+	left: calc(50% + var(--head) * 0.36);
+}
+.portrait.right .portrait-emote.ink-sweat {
+	right: calc(50% + var(--head) * 0.36);
+}
+.portrait-emote .ink-idle,
+.portrait-emote svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+.portrait-emote svg {
+	transform-origin: 40% 85%;
+	animation: ink-pop 0.42s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+.portrait-emote .v1 {
+	visibility: hidden;
+}
+.portrait-emote .v0,
+.portrait-emote .v1 {
+	animation: ink-boil 0.5s steps(1) infinite;
+}
+.portrait-emote .v1 {
+	animation-delay: -0.25s;
+}
+@keyframes ink-pop {
+	0% {
+		transform: scale(0.2) rotate(-16deg);
+		opacity: 0;
+	}
+	55% {
+		transform: scale(1.16) rotate(5deg);
+		opacity: 1;
+	}
+	80% {
+		transform: scale(0.95) rotate(-2deg);
+	}
+	100% {
+		transform: none;
+	}
+}
+@keyframes ink-boil {
+	0% {
+		visibility: visible;
+	}
+	50% {
+		visibility: hidden;
+	}
+}
+.ink-idle {
+	transform-origin: 50% 80%;
+}
+.ink-idle.ink-what {
+	animation: ink-sway 2.2s ease-in-out 0.4s infinite;
+}
+.ink-idle.ink-note {
+	animation: ink-bob 1.4s ease-in-out 0.4s infinite;
+}
+.ink-idle.ink-zzz {
+	animation: ink-float 2.4s ease-in-out 0.4s infinite;
+}
+.ink-idle.ink-heart {
+	animation: ink-beat 0.9s ease-in-out 0.4s infinite;
+}
+.ink-idle.ink-sweat {
+	animation: ink-drip 1.6s ease-in 0.4s infinite;
+}
+.ink-idle.ink-anger {
+	animation: ink-throb 0.6s steps(2) 0.4s infinite;
+}
+.ink-idle.ink-flower {
+	animation: ink-sway 2.6s ease-in-out 0.4s infinite;
+}
+.ink-idle.ink-dots .d0,
+.ink-idle.ink-dots .d1,
+.ink-idle.ink-dots .d2 {
+	animation: ink-dot 0.2s ease-out both;
+}
+.ink-idle.ink-dots .d0 {
+	animation-delay: 0.1s;
+}
+.ink-idle.ink-dots .d1 {
+	animation-delay: 0.45s;
+}
+.ink-idle.ink-dots .d2 {
+	animation-delay: 0.8s;
+}
+@keyframes ink-sway {
+	50% {
+		transform: rotate(-9deg);
+	}
+}
+@keyframes ink-bob {
+	50% {
+		transform: translateY(-10%) rotate(6deg);
+	}
+}
+@keyframes ink-float {
+	50% {
+		transform: translate(5%, -9%) scale(1.06);
+	}
+}
+@keyframes ink-beat {
+	30% {
+		transform: scale(1.14);
+	}
+	60% {
+		transform: scale(0.98);
+	}
+}
+@keyframes ink-drip {
+	0% {
+		transform: translateY(-6%);
+		opacity: 1;
+	}
+	75% {
+		transform: translateY(16%);
+		opacity: 1;
+	}
+	100% {
+		transform: translateY(20%);
+		opacity: 0;
+	}
+}
+@keyframes ink-throb {
+	50% {
+		transform: scale(1.1);
+	}
+}
+@keyframes ink-dot {
+	0% {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	100% {
+		opacity: 1;
+		transform: none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.portrait-emote svg,
+	.portrait-emote .v0,
+	.portrait-emote .v1,
+	.portrait-emote .ink-idle,
+	.portrait-emote .ink-dots .d0,
+	.portrait-emote .ink-dots .d1,
+	.portrait-emote .ink-dots .d2 {
+		animation: none;
+	}
 }
 
 /* 色を反転する（ボツキリコ。キリコの絵のネガ） */

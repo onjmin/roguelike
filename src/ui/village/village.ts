@@ -58,6 +58,7 @@ import type {
 	VillageExit,
 	VState,
 } from "../../engine/defs";
+import type { Emote } from "../../engine/emote";
 import { Actor, Field } from "../../engine/field";
 import { dir4Candidates } from "../../engine/input";
 import {
@@ -1823,6 +1824,8 @@ export class Village {
 			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
 			text: shown,
+			// 立ち絵の 頭の 横にも 手書き風の 記号（村に 立って いない 人でも）
+			emote: opt.emote,
 			onShow:
 				voice && settings.voice
 					? (leadMs) => this.ctx.audio.speak(shown, voice, leadMs)
@@ -1847,13 +1850,18 @@ export class Village {
 	 * キリコの ことば。独白は （　）で かこみ、声なし（村の だれにも 聞こえない）。
 	 * 声（voice。村の 雑談と 喫茶だけ）は （　）が 外れ、rpg と 同じ uc で 読み上げる。立ち絵は 左（rpg と 同じ）。
 	 */
-	private sayKiriko(text: string, mode: KirikoMode): Promise<void> {
+	private sayKiriko(
+		text: string,
+		mode: KirikoMode,
+		emote?: Emote,
+	): Promise<void> {
 		const voice = mode === "voice" ? KIRIKO.voice : undefined;
 		this.msg.overFade(this.fadeEl.style.opacity === "1");
 		return this.msg.show({
 			name: KIRIKO.name,
 			color: KIRIKO.color,
 			text: mode === "think" ? `（${text}）` : text,
+			emote,
 			onShow:
 				voice && settings.voice
 					? (leadMs) => this.ctx.audio.speak(text, voice, leadMs)
@@ -1910,7 +1918,7 @@ export class Village {
 				// キリコの 頭に 感情の 記号・動き（engine/emote.ts）
 				if (cue?.emote) this.player.showEmote(cue.emote, false);
 				if (cue?.gesture) this.player.showGesture(cue.gesture, false);
-				return this.sayKiriko(text, mode);
+				return this.sayKiriko(text, mode, cue?.emote);
 			},
 			choose: async (options, opt) => {
 				await this.beatHold();

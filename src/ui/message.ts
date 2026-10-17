@@ -28,8 +28,10 @@
 import { PORTRAIT_HEAD } from "../data/people/portraits";
 import { publicUrl } from "../engine/assets";
 import type { SpeechStart } from "../engine/audio";
+import type { Emote } from "../engine/emote";
 import type { Input } from "../engine/input";
 import { el } from "./dom";
+import { INK_CLASS, inkEmoteSvg } from "./emoteInk";
 
 type Side = "left" | "right";
 
@@ -255,6 +257,8 @@ export type MessageParams = {
 	color?: string;
 	text: string;
 	portrait?: PortraitSpec | null;
+	/** 話す 人の 立ち絵の 頭の 横に 添える 感情の 記号（手書き風。ui/emoteInk.ts）。立ち絵が 無ければ 出さない。 */
+	emote?: Emote;
 	/**
 	 * 表示と同時に呼ばれる（読み上げ開始。GameAudio.speak の戻り値をそのまま返せる）。
 	 * leadMs は、声にならない出だし（「……」など）を出しきるまでの ms。声はそのぶん遅らせて鳴らす。
@@ -280,6 +284,8 @@ class PortraitSlot {
 	private current: string | null = null;
 	/** 最後にこの枠で話した時刻（どちらの枠を空けるかの判断用）。 */
 	lastSpoke = 0;
+	/** 頭の 横の 感情の 記号（絵を 入れかえても 残す）。 */
+	private markEl: HTMLElement | null = null;
 
 	constructor(parent: HTMLElement, side: Side) {
 		this.side = side;
@@ -291,6 +297,25 @@ class PortraitSlot {
 		return this.current;
 	}
 
+	/** 中身を 入れかえる（感情の 記号は 残す）。 */
+	private put(...nodes: Node[]): void {
+		this.root.replaceChildren(...nodes);
+		if (this.markEl) this.root.append(this.markEl);
+	}
+
+	/** 感情の 記号を 出す（null で 消す）。出す たびに ぽんと 出なおす。 */
+	mark(e: Emote | null): void {
+		this.markEl?.remove();
+		this.markEl = null;
+		if (!e) return;
+		const idle = el("div", { class: `ink-idle ${INK_CLASS[e]}` });
+		idle.innerHTML = inkEmoteSvg(e);
+		this.markEl = el("div", { class: `portrait-emote ${INK_CLASS[e]}` }, [
+			idle,
+		]);
+		this.root.append(this.markEl);
+	}
+
 	set(p: PortraitSpec): void {
 		if (this.current === p.id) return;
 		this.current = p.id;
@@ -300,7 +325,7 @@ class PortraitSlot {
 				el("div", { class: "label", text: `${p.name}\n立ち絵（仮）` }),
 			]);
 			d.style.setProperty("--char", p.color);
-			this.root.replaceChildren(d);
+			this.put(d);
 		};
 		const show = (art: Art | null) => {
 			if (!art) {
@@ -349,7 +374,7 @@ class PortraitSlot {
 			s.setProperty("--fade-from", `${fadeFrom * 100}%`);
 			s.setProperty("--fade-to", `${fadeTo * 100}%`);
 			// 枠より広い絵は、出してよい範囲（.portrait-art）の内側の端でぼかして消す
-			this.root.replaceChildren(el("div", { class: "portrait-art" }, [view]));
+			this.put(el("div", { class: "portrait-art" }, [view]));
 		};
 		if (!p.src) {
 			dummy();
@@ -357,7 +382,7 @@ class PortraitSlot {
 			show(ready.get(p.src) ?? null);
 		} else {
 			// 初めての絵は読み込みを待つ（一瞬ダミーが見えないように、その間は空けておく）
-			this.root.replaceChildren();
+			this.put();
 			const id = p.id;
 			void loadTrimmed(p.src).then((art) => {
 				if (this.current === id) show(art);
@@ -374,6 +399,7 @@ class PortraitSlot {
 		this.current = null;
 		this.lastSpoke = 0;
 		this.root.classList.remove("shown", "dim");
+		this.mark(null);
 		this.root.replaceChildren();
 	}
 }
@@ -466,7 +492,11 @@ export class MessageWindow {
 			slot.lastSpoke = performance.now();
 			slot.dim(false);
 			other.dim(true);
+			slot.mark(p.emote ?? null);
+			other.mark(null);
 		} else {
+			this.left.mark(null);
+			this.right.mark(null);
 			this.left.dim(true);
 			this.right.dim(true);
 		}

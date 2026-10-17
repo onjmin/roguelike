@@ -1,10 +1,12 @@
 // 感情の 記号と 体の 動きの プレビュー（pnpm dev で /dev/emotes.html。ビルドには 入らない）。
-// 上の 段：記号（くりかえし）、下の 段：体の 動き（くりかえし）。?scale=6 で 大きさ。
+// 上の 段：記号（くりかえし）、下の 段：体の 動き（くりかえし）。その 下に 立ち絵の 手書き風の 記号（暗い 地・明るい 地）。?scale=6 で 大きさ。
 
 import { KIRIKO_WALK } from "../src/data/people/cast";
 import { loadImage } from "../src/engine/assets";
 import { drawEmote, EMOTES, GESTURES, gestureAt } from "../src/engine/emote";
 import { drawWalk } from "../src/engine/sprite";
+import { INK_CLASS, inkEmoteSvg } from "../src/ui/emoteInk";
+import "../src/style.css";
 
 const q = new URLSearchParams(location.search);
 const S = Number(q.get("scale") ?? 6);
@@ -47,3 +49,20 @@ const frame = (now: number) => {
 	requestAnimationFrame(frame);
 };
 requestAnimationFrame(frame);
+
+// 立ち絵に 添える 手書き風の 記号（ui/emoteInk.ts）。暗い 地と 明るい 地の 2段
+for (const bg of ["#2a2a3a", "#f4ece0"]) {
+	const row = document.createElement("div");
+	row.style.cssText = `display:flex;gap:12px;padding:12px;background:${bg}`;
+	for (const e of EMOTES) {
+		const m = document.createElement("div");
+		m.className = `portrait-emote ${INK_CLASS[e]}`;
+		m.style.cssText = "position:relative;width:72px;height:72px;top:0";
+		const idle = document.createElement("div");
+		idle.className = `ink-idle ${INK_CLASS[e]}`;
+		idle.innerHTML = inkEmoteSvg(e);
+		m.append(idle);
+		row.append(m);
+	}
+	document.body.append(row);
+}

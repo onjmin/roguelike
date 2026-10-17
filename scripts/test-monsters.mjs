@@ -59,8 +59,12 @@ try {
 	const { runSeasonTests } = await server.ssrLoadModule(
 		"/src/sim/seasonTests.ts",
 	);
+	const { runEmoteInkTests } = await server.ssrLoadModule(
+		"/src/sim/emoteInkTests.ts",
+	);
 	const results = [
 		...runMonsterTests(),
+		...runEmoteInkTests(),
 		...runReplayTests(),
 		...runTownTests(),
 		...(await runVillageTests()),
