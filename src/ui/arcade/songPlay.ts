@@ -12,7 +12,7 @@ import {
 	type SongChart,
 	songChart,
 } from "../../data/arcade/songChart";
-import { records } from "../../data/audio/music";
+import { type Disc, records } from "../../data/audio/music";
 import { devEvent } from "../../data/story/objectives";
 import type { GameAudio } from "../../engine/audio";
 import { loadProgress, loadTown } from "../../engine/save";
@@ -91,7 +91,7 @@ export const chartOf = async (
 	return c;
 };
 
-export type PickedSong = { bgm: string; label: string; chart: SongChart };
+export type PickedSong = Disc & { chart: SongChart };
 
 /** 台ごとの さいごに えらんだ 曲。 */
 const lastPick = new Map<SongGame, PickedSong>();
@@ -135,6 +135,7 @@ const pickFromList = async (
 			const best = songBest(game, r.bgm);
 			return {
 				label: r.label,
+				desc: r.where,
 				sub: `${stars(r.chart)}${best ? `　${best}` : ""}`,
 				value: r.bgm,
 			};

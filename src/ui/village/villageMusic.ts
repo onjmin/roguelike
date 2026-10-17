@@ -80,7 +80,7 @@ export const chooseRecord = async (ctx: Ctx, s: Story): Promise<void> => {
 	const now = settings.villageBgm ? villageSong() : "";
 	const items: ListItem[] = [
 		{ label: "おまかせ（村の育ちにあわせる）", value: "" },
-		...list.map((r) => ({ label: r.label, value: r.bgm })),
+		...list.map((r) => ({ label: r.label, desc: r.where, value: r.bgm })),
 	].map((it) => (it.value === now ? { ...it, sub: "♪" } : it));
 	const v = await listWindow(ctx, "どの曲をかける？", items, {
 		closeLabel: "やめる",

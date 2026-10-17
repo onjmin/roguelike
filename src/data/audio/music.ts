@@ -55,8 +55,51 @@ export const stageBgm = (stage: number): string => {
 	return bgm;
 };
 
-/** 蓄音機で かけられる 曲の 1つ。 */
-export type Disc = { bgm: string; label: string };
+/**
+ * 蓄音機に 出す 曲名。スレに 貼られた 曲は 貼った 人の 題（data/audio/bgm.ts の import の 注）、
+ * 題の ない 曲は ここで つけた。蓄音機で かけられる 曲は みな ここに 書く（ない 曲は 聞いた 所が 曲名に なる）。
+ */
+export const SONG_TITLES: Readonly<Record<string, string>> = {
+	town: "？",
+	kumori: "くもり空をパクったやつ",
+	dungeon: "焼きたての迷路",
+	field2: "もう1つの？",
+	yofukashi: "湯けむりと星",
+	speder2: "Speder2リスペクト",
+	deq_laundry: "乾燥機がまわるあいだ",
+	kaiwai: "界隈曲",
+	deq_strata: "ずれる地層",
+	island: "ゲームで流れてたらテンション上がりそうなサビ",
+	fukyowa: "Aメロ不協和音Bメロで終止させる典型的な構成",
+	kouseki: "鉱石風respect",
+	deep1: "掘りかけの穴",
+	stone: "足音",
+	deep_dat: "掘っても掘っても",
+	field: "何か",
+	deep_matome: "まとめの砂嵐",
+	ruins: "ページをめくる",
+	deep2: "しずかな墓標",
+	deep_hakushi: "水滴の回廊",
+	deep3: "化けた波",
+	deep_kisei: "都節",
+	deq_volcano: "活火山の底",
+	deep_koge: "焦げたにおい",
+	deep5: "名無しの荒野",
+	deep6: "つづきの原盤",
+	shallow3: "ハープの雪",
+	tekitou: "適当歌詞",
+	mercury: "Speder2風",
+	deq_mu: "沈んだ大陸の空港",
+	kimchi: "赤い回線",
+	inferno: "闇の塔",
+	retro2: "修正版",
+	retro: "今回はメロディ手で書いたわ",
+	title: "ゲーム音楽っぽい何か",
+	ending: "変ト長調 (G♭) デュエット",
+};
+
+/** 蓄音機で かけられる 曲の 1つ（label は 曲名、where は 聞いた 所）。 */
+export type Disc = { bgm: string; label: string; where: string };
 
 /**
  * 蓄音機で かけられる 曲（上から 村 → 持ち帰った 板の 順。同じ 曲は 1度だけ）。
@@ -67,8 +110,9 @@ export const records = (
 	cleared: readonly DungeonId[],
 ): Disc[] => {
 	const out: Disc[] = [];
-	const add = (bgm: string, label: string) => {
-		if (!out.some((r) => r.bgm === bgm)) out.push({ bgm, label });
+	const add = (bgm: string, where: string) => {
+		if (!out.some((r) => r.bgm === bgm))
+			out.push({ bgm, label: SONG_TITLES[bgm] ?? where, where });
 	};
 	for (const t of VILLAGE_TIERS)
 		if (stage >= t.from)
