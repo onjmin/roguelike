@@ -50,6 +50,10 @@ export type BossSpec = {
 	 * engine/save.ts の RENAMES の 左の 名前を 含めない）。
 	 */
 	cause: string;
+	/** ボスを 見た ときの 行（正体を 明かす など）。 */
+	intro?: readonly string[];
+	/** 目的の 文で 出す 名前（会う まで 正体を 言わない ボス。無ければ ボスの 名前）。 */
+	goalName?: string;
 };
 
 /** 底の 出来事（目的が event。着くと 品を もらって 入口へ 帰る）。 */
@@ -103,6 +107,8 @@ export type RestFloor = {
 	name: string;
 	/** 源泉（踏むと HP が もどる）を 置く。 */
 	spring?: true;
+	/** 立って いる 人（ぶつかると 話す。SettlementSpec の folk と 同じ）。 */
+	folk?: SettlementSpec["folk"];
 };
 
 export type Dungeon = {
@@ -563,8 +569,41 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"明かりの道を、入口まで送ってもらった",
 			],
 			cause: "やきうをたおした",
+			// 正体を 明かす（STORY.md §4.9 の 転と 結）。見る まで 目的の 文でも 名前を 言わない
+			goalName: "てっぺんの名無し",
+			intro: [
+				"見出しを書いていた名無し……やきうだ。",
+				"やきう「盛ったら人が見に来るやろ」",
+				"やきう「昔は遊びで侵略しとっただけやのにな」",
+				"やきう「まだや。盛り上がりが足らん」",
+			],
 		},
-		rests: [{ depth: 10, name: "発電所の見学コース" }],
+		// 見学コース：電池ニキ（ひとりで 電気を 送って きた 最後の 住人）と、先回りした フェリス
+		rests: [
+			{
+				depth: 10,
+				name: "発電所の見学コース",
+				folk: [
+					{
+						name: "電池ニキ",
+						sprite: "pub:sprites/denchan.png",
+						lines: [
+							"見学者0人や。あんたで1人目や",
+							"人が来んでも、電気だけは送っとった",
+							"てっぺんで、名無しが待っとるで",
+						],
+					},
+					{
+						name: "フェリス",
+						sprite: "sa:4KtOzD",
+						lines: [
+							"先に来ちゃった〜。また燃えようよ〜",
+							"消えかけでも、何回でも復活できるよ〜",
+						],
+					},
+				],
+			},
+		],
 		// 時間との 競争：2ターンに 1つ 余分に レスが つく（1000 まで 約 2/3 の 時間）
 		rushEvery: 2,
 		// 機械と 回線の 敵が 多い

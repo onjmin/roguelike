@@ -4349,3 +4349,24 @@ test(
 		ok(DUNGEONS.deep.boss?.monster === "boss_yakiu", "not the 電池板 boss");
 	},
 );
+
+test(
+	"reveal",
+	"電池板の 正体：目的の 文では 名前を 言わず、ボスを 見ると 明かす。見学コースに 電池ニキ",
+	() => {
+		const spec = DUNGEONS.deep.boss;
+		ok(spec?.goalName && spec.intro?.length, "no reveal on 電池板");
+		for (const l of spec?.intro ?? [])
+			ok([...l].length <= 24, `long intro ${l}`);
+		const r = Run.create("reveal-run", "deep");
+		r.enterFloor(10, false);
+		ok(
+			r.f.rest === "発電所の見学コース" &&
+				!!r.f.folk?.some((x) => x.name === "電池ニキ"),
+			"電池ニキ is not on the tour floor",
+		);
+		for (const fo of r.f.folk ?? [])
+			for (const l of fo.lines)
+				ok([...`${fo.name}「${l}」`].length <= 24, `long folk line ${l}`);
+	},
+);

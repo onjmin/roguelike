@@ -4123,7 +4123,10 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		goalText("shallow", "fetch") === "食パンの国旗を持ち帰る",
 		goalText("shallow", "fetch"),
 	);
-	ok(goalText("deep", "boss") === "やきうをたおす", goalText("deep", "boss"));
+	ok(
+		goalText("deep", "boss") === "てっぺんの名無しをたおす",
+		goalText("deep", "boss"),
+	);
 	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);
 	ok(bossName("hidden") === null, "過去ログの底 has a boss");
 });
@@ -6408,11 +6411,16 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 			ok(!zoneStarts.includes(r.at), `${d} ${r.at}: same floor as a zone sign`);
 		}
 	}
-	// やきうの レスは 開票の あとも 出る（だれも 出ていかない。その 板を 持ち帰る 前だけ）
+	// 本筋の 名無しの レスは やきうと 名乗らない（正体は 電池板の てっぺんで わかる）。その 板を 持ち帰る 前だけ
 	ok(
-		diveResAt("main", 6, ["shallow"])?.who === "nanj",
-		"yakiu writes while he is here",
+		diveResAt("main", 6, ["shallow"])?.who === "res",
+		"the nanashi line is gone",
 	);
+	for (const d of ["shallow", "kinoko", "main", "deep"] as const)
+		ok(
+			!(DIVE_RES[d] ?? []).some((r) => r.who === "nanj"),
+			`${d}: やきう is named before the reveal`,
+		);
 	ok(diveResAt("main", 6, ["main"]) === null, "res after the board is cleared");
 	const mainOnly = synopsisHtml(["shallow"], [], ["shallow", "kinoko"]) ?? "";
 	ok(mainOnly.includes("パン板") && mainOnly.includes("きのこ板"), mainOnly);

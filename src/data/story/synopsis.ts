@@ -35,7 +35,7 @@ export type DiveRes = {
 
 export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	// ── 本筋（STORY.md §4.9）。やきうの 書きこみは 名無しの 1人（潜っている あいだも 筋が 止まらない ように）
-	shallow: [{ at: 2, who: "nanj", text: "独立、盛っといたで" }],
+	shallow: [{ at: 2, who: "res", text: "【悲報】パン板、独立を宣言ｗｗｗ" }],
 	kinoko: [
 		{
 			at: 2,
@@ -47,7 +47,7 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 	main: [
 		{ at: 3, who: null, text: "湯気のむこうで、だれかが怒鳴っている。" },
-		{ at: 6, who: "nanj", text: "見とるで。湯気で見えへんけど" },
+		{ at: 6, who: "res", text: "【速報】銭湯、陥落" },
 		{ at: 8, who: null, text: "湯船のすみに、温度計が3本ささっている。" },
 		{ at: 10, who: "res", text: "42℃派、まだ立てこもっとるで" },
 		{ at: 11, who: "res", text: "41℃でええやろ……" },
@@ -56,11 +56,11 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	deep: [
 		{ at: 3, who: null, text: "でんちゃんの板。ビリビリする。" },
 		{ at: 6, who: "res", text: "おんJタウン、停電しとるらしいな" },
-		{ at: 9, who: "nanj", text: "見とるで。最後まで" },
+		{ at: 9, who: "res", text: "【悲報】おんJタウン、終了か" },
 		{ at: 11, who: "res", text: "鯖、重ない？" },
-		{ at: 13, who: null, text: "電線が、下へ下へとのびている。" },
-		{ at: 16, who: "nanj", text: "まだや。盛り上がりが足らん" },
-		{ at: 19, who: null, text: "いちばん下に、主電源が見えた。" },
+		{ at: 13, who: null, text: "電線が、上へ上へとのびている。" },
+		{ at: 16, who: "res", text: "てっぺんで、だれか待っとるらしいで" },
+		{ at: 19, who: null, text: "てっぺんに、主電源が見えた。" },
 	],
 	// 過去ログの底（99階。最終話の あと）。層の 札の 階は よける
 	hidden: [
@@ -143,7 +143,7 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("deep"),
 		title: "電池板",
-		sum: "電池板の底で、見出しを盛っていた名無しの正体がやきうだとわかった。町に明かりがもどり、板の人たちが祭りに来た。やきうは、盛らない見出しを書いた。……そのあと、鯖代の払い忘れで全部ロールバックした。",
+		sum: "電池板のてっぺんで、見出しを盛っていた名無しの正体がやきうだとわかった。町に明かりがもどり、板の人たちが祭りに来た。やきうは、盛らない見出しを書いた。……そのあと、鯖代の払い忘れで全部ロールバックした。",
 	},
 	{
 		done: (c) => c.includes("hidden"),

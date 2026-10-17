@@ -766,6 +766,9 @@ export class Run {
 			waiting ? `${name}が正座して待ちかまえていた！` : `${name}があらわれた！`,
 			"warn",
 		);
+		// ボスを 見た ときの 行（正体を 明かす など。core/data/dungeons.ts の boss.intro）
+		for (const line of this.bossSpec?.intro ?? [])
+			this.msg(line.replaceAll("キリコ", this.heroName));
 	}
 
 	/** 眠っている敵を起こす判定（入室・となり）。 */

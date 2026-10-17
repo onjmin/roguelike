@@ -174,6 +174,7 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	if (rest) {
 		f.rest = rest.name;
 		revealAll(f);
+		if (rest.folk) placeFolk(r, f, start, { name: rest.name, folk: rest.folk });
 		if (rest.spring) {
 			const spot = rng.pick(
 				freeRoomTiles(r, f, null).filter(
