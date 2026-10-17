@@ -6997,7 +6997,7 @@ test("ヲタショップ「神降臨」: 段7から 建ち、グッズは レジ
 	});
 });
 
-test("おんJ証券（2026-10-15）: 新市街支店は 段4から 窓口・端末・株価ボード、ネットカフェは 段5から ブース、おんJマートの ATM は 入金・出金だけ", () => {
+test("おんJ証券（2026-10-15）: 商店街支店は 段4から 窓口・端末・株価ボード、ネットカフェは 段5から ブース、おんJマートの ATM は 入金・出金だけ", () => {
 	const shoken = facilityById("shoken");
 	ok(shoken?.from === 4, "the branch is not from stage 4");
 	const sp = shoken?.room?.plays ?? {};

@@ -1,5 +1,5 @@
 // 町が 育ったときの「町の お知らせ」（ui/village/villageReturn.ts の stageUp）。町の まんなか（店・小屋・倉庫・本館）は
-// 仲間の ひとことで 知らせるが、新市街・浜・町の まわりに 建った 物は だまって 増えていた（作者の 指示：通知不足）。
+// 仲間の ひとことで 知らせるが、商店街・浜・町の まわりに 建った 物は だまって 増えていた（作者の 指示：通知不足）。
 // 段が 上がった あいだに 建った・建てかわった 建物を 地区ごとに 並べ、カメラで 1つずつ 見せる。DOM も 保存も 使わない。
 
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
@@ -16,7 +16,7 @@ export type TownNews = {
 	name: string;
 	/** カメラを 向ける 所（建物の まんなか）。 */
 	at: Cell;
-	/** 地区（新市街・浜・町の まわり）。 */
+	/** 地区（商店街・浜・町の まわり）。 */
 	area: string;
 	/** 建てかわる 前の 名前（交番 → 警察署 など）。 */
 	was?: string;
@@ -42,7 +42,7 @@ const AROUND: readonly {
 ];
 
 const areaOf = ([x, y]: Cell): string =>
-	x >= 40 ? (y >= 41 ? "港" : "新市街") : y >= 30 ? "浜" : "町の　まわり";
+	y >= 32 ? "浜" : x >= 31 ? "商店街" : "町の　まわり";
 
 const center = (f: Facility): Cell => {
 	const rows = facilityBlock(f);
@@ -63,7 +63,7 @@ const overlaps = (a: Facility, b: Facility): boolean => {
 };
 
 /** 地区の 並び（カメラが 行ったり 来たり しない 順）。 */
-const AREA_ORDER = ["町の　まわり", "浜", "新市街", "港"];
+const AREA_ORDER = ["町の　まわり", "商店街", "浜"];
 
 /**
  * 段 from から to へ 上がる あいだに 建った・建てかわった 建物（地区の 順、地区の 中は 上から・左から）。

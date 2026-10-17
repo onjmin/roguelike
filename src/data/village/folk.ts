@@ -53,7 +53,7 @@ export const FOLK_SPOTS = {
 type FolkWho = keyof typeof FOLK_SPOTS;
 
 /**
- * 段 from から 立つ マスを かえる 人（すぐ 下の マスに 新市街の 街灯が 立ち、頭が 街灯の 上に かくれるので）。
+ * 段 from から 立つ マスを かえる 人（すぐ 下の マスに 街灯が 立ち、頭が 街灯の 上に かくれるので）。
  * ひらがなニキは 図書館の 入口の 西の すみ。
  */
 export const FOLK_MOVES: Partial<

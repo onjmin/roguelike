@@ -1,4 +1,4 @@
-// おんJ証券。端末（家の パソコン・ネットカフェ・新市街支店の 端末）で 株・デイトレ・FX、
+// おんJ証券。端末（家の パソコン・ネットカフェ・商店街支店の 端末）で 株・デイトレ・FX、
 // 支店の 窓口で 口座の 開設と 入金・出金、おんJマートの ATM で 入金・出金（決まりと 文は data/trade/trade.ts）。
 // 株価・持ち株・口座は 別の 保存場所（kiriko-roguelike/stocks）。中断セーブ・記録・町には ふれない。
 // 株価は 冒険から 帰った 回数（runStats().runs）だけ 動く（端末を 開いた ときに まとめて。STOCK_CATCHUP まで）。
@@ -67,7 +67,7 @@ type StockMemo = {
 	hold: Partial<Record<StockId, Holding>>;
 	/** いちばん 新しい ニュース。 */
 	news: StockNews | null;
-	/** 口座を 作ったか（新市街支店の 窓口）。 */
+	/** 口座を 作ったか（商店街支店の 窓口）。 */
 	open: boolean;
 	/** 口座の お金（円）。 */
 	cash: number;
@@ -180,7 +180,7 @@ const moveCash = (d: number): boolean => {
 /** 口座の お金（円）。 */
 export const accountYen = (): number => loadStocks().cash;
 
-/** 口座を 作る（新市街支店の 窓口）。 */
+/** 口座を 作る（商店街支店の 窓口）。 */
 export const openAccount = (): void => {
 	const m = loadStocks();
 	m.open = true;
@@ -235,7 +235,7 @@ const change = (h: readonly number[]): string => {
 	return p === 0 ? "±0%" : `${p > 0 ? "▲" : "▼"}${Math.abs(p).toFixed(1)}%`;
 };
 
-/** 端末（家の パソコン・ネットカフェ・新市街支店の 端末）。口座が なければ 支店を すすめるだけ。 */
+/** 端末（家の パソコン・ネットカフェ・商店街支店の 端末）。口座が なければ 支店を すすめるだけ。 */
 export const tradeTerminal = async (ctx: Ctx, s: Story): Promise<void> => {
 	if (!loadStocks().open) {
 		await s.narrate(TRADE_MSG.noAccount);
@@ -574,7 +574,7 @@ export const atmDesk = async (s: Story): Promise<void> => {
 	await cashDesk(s);
 };
 
-/** 新市街支店の 窓口（口座が なければ 開設、あれば 入金・出金）。 */
+/** 商店街支店の 窓口（口座が なければ 開設、あれば 入金・出金）。 */
 export const shokenWindow = async (s: Story): Promise<void> => {
 	if (loadStocks().open) {
 		await s.narrate(ACCOUNT_MSG.window);
