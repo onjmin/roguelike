@@ -114,8 +114,7 @@ import inferno from "./bgm/inferno.mml?raw"; // †闇の板† 闇の塔：ニ�
 import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたらテンション上がりそうなサビ」：ニ長調 131・ビブラフォン・チェレスタ・エレピ（前奏 12 小節）
 // 界隈曲（2号兄貴リスペクト、インスト。dtm の 自動作曲 seed 1010 の 伴奏を 組み直し、リードは 手書き。
 // 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ト短調 145・chip_pop・dance。
-// はげしい 曲なので きのこ板（きのこ軍の 行進）で 鳴らす。もとの きのこ板の 曲（deq_strata）は 最終話の あとの 町へ。
-// ループするので #fadeout は 外した
+// 過去ログの底 B16〜20「苔むしたスレ跡」で 鳴らす（data/story/story.ts の HIDDEN_ZONES）。ループするので #fadeout は 外した
 import kaiwai from "./bgm/kaiwai.mml?raw";
 import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）

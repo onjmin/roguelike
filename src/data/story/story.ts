@@ -482,7 +482,8 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "苔むしたスレ跡",
 		note: "「ほな、来年も」",
 		theme: "moss",
-		bgm: "field",
+		// 界隈曲（ほかの 板や 層と 重ならない 曲）
+		bgm: "kaiwai",
 		ambient: "spores",
 	},
 	{
@@ -576,7 +577,7 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// もとは 夜の コインランドリー。その 前の retro は 戦闘曲っぽかった）
 	deep: { theme: "cyber", bgm: "speder2", ambient: "data" },
 	// 苔と 胞子。地下の 菌床（曲は ずれる 地層）
-	kinoko: { theme: "moss", bgm: "kaiwai", ambient: "spores" },
+	kinoko: { theme: "moss", bgm: "deq_strata", ambient: "spores" },
 	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく
 	// （曲は ニ長調 131 の ビブラフォン・チェレスタの 明るい サビ。もとは 水底に さす 光＝deq_sea）
 	tropical: { theme: "beach", bgm: "island", ambient: "glitter" },

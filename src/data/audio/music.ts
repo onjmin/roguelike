@@ -25,9 +25,6 @@ const VILLAGE_TIERS: readonly { from: number; bgm: string }[] = [
 	{ from: 0, bgm: "town" },
 	// 店が 建ってから：名無し2rt さんの「くもり空をパクったやつ」（ホ長調 116。矩形波の 主旋律）
 	{ from: 5, bgm: "kumori" },
-	// 最終話の あと（町じゅう 明るい）：「ずれる地層」（イの 空5度 100・ambient_cloud。打楽器なし）。
-	// もとは きのこ板の 曲。板の 曲で いちばん ゆったり して いたので、はげしい 界隈曲と 入れかえた
-	{ from: 7, bgm: "deq_strata" },
 ];
 
 /** その 段の 村の 曲（蓄音機で えらんで いなければ これ）。 */

@@ -4975,11 +4975,9 @@ test("村の 曲: the stage picks it, the gramophone offers only songs heard on 
 		"early village is not town",
 	);
 	ok(
-		stageBgm(5) === "kumori" && stageBgm(6) === "kumori",
+		stageBgm(5) === "kumori" && stageBgm(7) === "kumori",
 		"the shop village is not kumori",
 	);
-	// 最終話の あと（町じゅう 明るい）は ゆったりした deq_strata（はげしい 界隈曲は きのこ板）
-	ok(stageBgm(7) === "deq_strata", "the lit-up town is not deq_strata");
 	ok(
 		records(0, [])
 			.map((r) => r.bgm)
