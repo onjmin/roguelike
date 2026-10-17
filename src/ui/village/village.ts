@@ -109,6 +109,7 @@ import {
 	villageMenu,
 } from "./villageEvents";
 import { clearLinger, endLinger, lingerDone } from "./villageMusic";
+import { openingHoldsGuide } from "./villageOpening";
 import { villageView } from "./villageReturn";
 
 /**
@@ -1504,7 +1505,7 @@ export class Village {
 			y: this.player.y,
 			dir: this.player.dir,
 		});
-		if (this.guideExit && this.mapId === "village")
+		if (this.guideExit && this.mapId === "village" && !openingHoldsGuide())
 			this.drawExitGuide(g, ox, oy, this.scene);
 		// 時間帯の 色（外の 村と 板の 地上だけ。人通りと 同じ 時計。data/village/daylight.ts）
 		if (this.mapId === "village" || this.mapId.startsWith("s_")) {

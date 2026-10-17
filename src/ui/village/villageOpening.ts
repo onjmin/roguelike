@@ -27,6 +27,9 @@ let seenMemo = false;
 /** ①を 見おえて、広場に 入るのを 待って いる（この回だけ。閉じたら ①から）。 */
 let walking = false;
 
+/** 出口の 矢印を 出さない（①〜④。⑤で カメラが 出口を 見せる ときに はじめて 出す）。 */
+let guideHeld = false;
+
 const seen = (): boolean => {
 	try {
 		if (localStorage.getItem(KEY) === "1") return true;
@@ -46,10 +49,14 @@ const markSeen = (): void => {
 	}
 };
 
+/** 出口の 矢印を まだ 出さない（ui/village/village.ts）。 */
+export const openingHoldsGuide = (): boolean => guideHeld;
+
 /** 試験用：この回の 写しを 忘れる。 */
 export const forgetOpeningMemo = (): void => {
 	seenMemo = false;
 	walking = false;
+	guideHeld = false;
 };
 
 /** 最初の 村の 場面を 見せるか（まだ 見ていない・一度も もぐっていない）。 */
@@ -83,6 +90,7 @@ const POSTER = "visitor";
 
 /** 幕が 上がる前に：①から なら 坂の 下に 立つ。②の あいだも ③で 出てくる 人と 物は 隠す。 */
 export const openingPrepare = (s: Story): void => {
+	guideHeld = true;
 	if (!walking) {
 		const [x, y] = OPENING_START;
 		s.place("player", x, y, "up");
@@ -228,6 +236,7 @@ const plazaScript: Script = async (s) => {
 	// やきうが 家の 前へ もどる あいだに、カメラで 南の 桟橋（出口）を 見せて 行き先を 1行
 	await s.wait(0);
 	const back = s.goto("nanj", nx, ny);
+	guideHeld = false;
 	await s.look(VILLAGE_SPOTS.exit);
 	for (const t of OPENING.goal) await s.narrate(t);
 	await s.look(null);
