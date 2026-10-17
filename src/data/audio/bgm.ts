@@ -73,6 +73,7 @@
 // | touhoufu     | -23.2（50）    | 50 → 47 | -23.8    |
 // | yofukashi    | -30.6（20）    | 20 → 45 | -23.6    |
 // | kaiwai       | -19.3（50）    | 50 → 33 | -22.9（測り直した） |
+// | kaiwai2      | -20.7（50）    | 50 → 39 | -22.9（比例） |
 // （2026-10-17。界隈曲。dtm 2.1.34（音源レベルの 正規化 e3562c10 入り）の dev/bgm.html で 測った）
 // （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
@@ -116,6 +117,10 @@ import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたら
 // 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ト短調 145・chip_pop・dance。
 // 過去ログの底 B16〜20「苔むしたスレ跡」で 鳴らす（data/story/story.ts の HIDDEN_ZONES）。ループするので #fadeout は 外した
 import kaiwai from "./bgm/kaiwai.mml?raw";
+// 界隈曲 その2（2号兄貴リスペクト、インスト。dtm の 自動作曲 seed 3021 の 伴奏を 素材に、リードは 手書き。
+// 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ヘ短調 145（最後の サビだけ ト短調へ）・synth_pop・four_clap。
+// 過去ログの底 B81〜90「焦げた回線」で 鳴らす。ループするので #fadeout は 外した（終わりの G から 頭の Fm へ もどる）
+import kaiwai2 from "./bgm/kaiwai2.mml?raw";
 import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
@@ -188,4 +193,5 @@ export const bgm: Record<string, string> = {
 	touhoufu,
 	yofukashi,
 	kaiwai,
+	kaiwai2,
 };

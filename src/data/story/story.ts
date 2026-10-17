@@ -547,7 +547,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "焦げた回線",
 		note: "「見出し、燃やしといたで」",
 		theme: "forge",
-		bgm: "deep_koge",
+		bgm: "kaiwai2",
 		ambient: "embers",
 	},
 	{
