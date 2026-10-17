@@ -176,6 +176,8 @@ const boom = (
 	k: number,
 	still: boolean,
 	bare: boolean,
+	/** 「ドカーン」の 字を 出す（村の 寸劇は 出さない）。 */
+	lettered: boolean,
 ): FxRun => {
 	const L = layer(root, "fx-boom");
 	if (!L) return NONE;
@@ -256,7 +258,7 @@ const boom = (
 		}
 		// 「ドカーン」（ぽんと 大きく 出て、少し 傾いて 残る）
 		const wordEnd = hold + 500 * k;
-		if (t < wordEnd) {
+		if (lettered && t < wordEnd) {
 			const q = Math.min(1, t / pop);
 			const scale = Math.max(
 				1,
@@ -443,14 +445,14 @@ export const fxRoot = (): HTMLElement | null =>
 export const startFx = (
 	root: HTMLElement | null,
 	kind: SceneFx,
-	opt: { k?: number; bare?: boolean; caption?: string } = {},
+	opt: { k?: number; bare?: boolean; caption?: string; word?: boolean } = {},
 ): FxRun => {
 	if (!root || typeof document === "undefined") return NONE;
 	const k = opt.k ?? (settings.speed === "fast" ? 0.6 : 1);
 	const still = stillMotion();
 	switch (kind) {
 		case "boom":
-			return boom(root, k, still, !!opt.bare);
+			return boom(root, k, still, !!opt.bare, opt.word ?? true);
 		case "blackout":
 			return blackout(root);
 		case "chiin":
