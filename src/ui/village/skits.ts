@@ -7,13 +7,12 @@ import type { MobId } from "../../data/people/mobs";
 import {
 	SKITS,
 	type Skit,
-	type SkitDate,
 	type SkitOn,
+	type SkitWindow,
 } from "../../data/story/skits";
-import { nowYear, today } from "../../data/town/calendar";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
-import { loadRecords } from "../../engine/save";
+import { loadProgress, loadRecords } from "../../engine/save";
 
 const KEY = "kiriko-roguelike/skits";
 
@@ -63,17 +62,24 @@ const find = (hit: (on: SkitOn) => boolean): Skit | null => {
 		SKITS.find(
 			(sk) =>
 				!v.seen.includes(sk.key) &&
-				// 期間限定は その 日だけ。見逃すと 二度と 出ないので、この 帰りに もう 見ていても 出す
-				(sk.date ? onDate(sk.date) : !busy) &&
+				// 期間限定は 話の その あいだ だけ。見逃すと 二度と 出ないので、この 帰りに もう 見ていても 出す
+				(sk.window ? inWindow(sk.window) : !busy) &&
 				hit(sk.on),
 		) ?? null
 	);
 };
 
-/** 今日が その 期間か。 */
-const onDate = (d: SkitDate): boolean => {
-	const t = today();
-	return nowYear() === d.y && t.m === d.m && t.d >= d.d[0] && t.d <= d.d[1];
+/**
+ * いま 話の その あいだか（持ち帰った 板で 見る）。はじめての 村（まだ 1度も 帰って いない。
+ * はじまりの 場面の あいだ）では 出さない。
+ */
+const inWindow = (w: SkitWindow): boolean => {
+	if (!returnAt()) return false;
+	const cleared = loadProgress().cleared;
+	return (
+		(!w.after || cleared.includes(w.after)) &&
+		(!w.before || !cleared.includes(w.before))
+	);
 };
 
 /** 住人の 声（villageMobs.ts の sayAs）。 */

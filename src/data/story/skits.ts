@@ -4,8 +4,10 @@
 // 1本は 3〜5窓（ふだんの 話しかけより 長い。1回きりなので）。201 の 型：同じ 形で 3段 大きく して、
 // 最後に キリコか 本人が つっこむ（STORY.md「201級の 笑い」）。
 // 地の文で 画面に 見えない 出来事（物が ふえた・人が 来た）を 言わない。話す 人の 口で 言わせる。
-// 期間限定（date）は 年まで 決めた 日だけ 起きて、見逃したら 二度と 出ない。ほかより 先に 選ぶ（並びの いちばん 上）。
+// 期間限定（window）は 本筋の 話の あいだ だけ 起きて、先へ 進むと 二度と 出ない（現実の 日付には つながない）。
+// ほかより 先に 選ぶ（並びの いちばん 上）。
 
+import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { MobId } from "../people/mobs";
 
@@ -30,18 +32,18 @@ export type SkitOn =
 	/** この 死に方で 帰ってきて、mob に はじめて 話しかけた。 */
 	| { k: "death"; mob: MobId; cause: string };
 
-/** 起きる 期間（端末の 日付。y 年 m 月の d[0]〜d[1] 日。data/town/calendar.ts の today・nowYear）。 */
-export type SkitDate = { y: number; m: number; d: readonly [number, number] };
+/** 起きる あいだ（本筋の 話。after を 持ち帰った あとで、before を まだ 持ち帰って いない とき）。 */
+export type SkitWindow = { after?: DungeonId; before?: DungeonId };
 
 export type Skit = {
 	key: string;
 	on: SkitOn;
 	lines: readonly SkitLine[];
-	/** 期間限定（その 年の その 日だけ。見逃したら 二度と 出ない）。 */
-	date?: SkitDate;
+	/** 期間限定（話の その あいだ だけ。先へ 進むと 二度と 出ない）。 */
+	window?: SkitWindow;
 };
 
-/** 村の どこでも（期間限定の 寸劇の きっかけ：その 日に 村を 1歩 歩いたら）。 */
+/** 村の どこでも（期間限定の 寸劇の きっかけ：その あいだに 村を 1歩 歩いたら）。 */
 const ANYWHERE: SkitOn = {
 	k: "near",
 	map: "village",
@@ -72,107 +74,71 @@ const banndai = by("番台");
 const nanashi = by("名無し");
 
 export const SKITS: readonly Skit[] = [
-	// ───── 期間限定（その 日に 村を 歩いたら。見逃したら 二度と 出ない） ─────
+	// ───── 期間限定（話の あいだ だけ。その あいだに 村を 歩いたら。先へ 進むと 二度と 出ない） ─────
+	// 本筋は パン板（shallow）→ きのこ板（kinoko）→ 風呂板（main）→ 電池板（deep）→ 後日談（hidden）。
+	// 名無しの 口で、いまの 話の ようすに ふれる（STORY.md の 各話の 事件）
 	{
-		key: "date_2026_halloween",
-		date: { y: 2026, m: 10, d: [31, 31] },
+		key: "window_pan",
+		window: { before: "shallow" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("トリックオアトリート！"),
-			k("……お菓子ないンゴ"),
-			nanashi("じゃあイタズラや。\n今日一日、語尾がンゴになる"),
-			k("……もとからンゴ"),
-			e({ emote: "汗" }, nanashi("……イタズラ失敗や")),
+			nanashi("ワイ、パン板って\n行ったことないわ"),
+			nanashi("パンしかないらしいで"),
+			nanashi("……パンしか\nないんか"),
+			nanashi("パンしかないんや"),
+			k("……行けばわかるンゴ"),
 		],
 	},
+	// 第一話の あと：町じゅう 独立して、申請書 1枚で 片づいた
 	{
-		key: "date_2026_zorome",
-		date: { y: 2026, m: 11, d: [11, 11] },
+		key: "window_dokuritsu",
+		window: { after: "shallow", before: "kinoko" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("今日は11月11日、\nゾロ目の日や"),
-			nanashi("1111ゲットしたやつは、\n願いがかなうらしいで"),
-			e({ gesture: "slump" }, nanashi("……ワイ、1110やった")),
-			k("……おしいンゴ"),
+			nanashi("申請書1枚で\n独立できるらしいで"),
+			nanashi("ほな、ワイの家も\n独立や"),
+			nanashi("ワイの部屋も\n独立や"),
+			nanashi("……ワイの机も"),
+			e({ emote: "汗" }, k("……独立しすぎンゴ")),
 		],
 	},
+	// 第二話の あと：きのこの 行進が 港まで 来て、摘んで 片づいた
 	{
-		key: "date_2026_xmas",
-		date: { y: 2026, m: 12, d: [24, 25] },
+		key: "window_kinoko",
+		window: { after: "kinoko", before: "main" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("ワイの家にも、\nサンタ来るかな"),
-			nanashi("……煙突ないやろ"),
-			nanashi("ほな、保守しとくわ"),
-			k("……サンタは保守じゃ\n来ないンゴ"),
+			nanashi("きのこの行進、\nすごかったな"),
+			nanashi("ワイの頭にも\n生えとったで"),
+			nanashi("……まだ生えとるで"),
+			e({ emote: "!", gesture: "startle" }, nanashi("えっ")),
+			k("……冗談ンゴ"),
 		],
 	},
+	// 第三話の あと：銭湯は 42℃派と 41℃派の あいだの 41.5℃に なった
 	{
-		key: "date_2026_omisoka",
-		date: { y: 2026, m: 12, d: [31, 31] },
+		key: "window_onsen",
+		window: { after: "main", before: "deep" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("今年最後のレスや"),
-			nanashi("いや、ワイが最後や"),
-			nanashi("ワイや"),
-			k("……年が明けても\n続いてるンゴ"),
+			nanashi("銭湯、41.5℃で\n落ちついたらしいな"),
+			nanashi("……ワイは43℃派や"),
+			nanashi("ワイは44℃派や"),
+			e({ emote: "怒" }, nanashi("また戦争になるやろ！")),
+			k("……もう潜らないンゴ"),
 		],
 	},
+	// 最終話の あと（後日談の 前）：見出しの 名無しは やきうだった
 	{
-		key: "date_2027_newyear",
-		date: { y: 2027, m: 1, d: [1, 3] },
+		key: "window_midashi",
+		window: { after: "deep", before: "hidden" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("あけおめ"),
-			nanashi("ことよろ"),
-			nanashi("……去年のスレ、\nまだ1000いってへんで"),
-			k("……今年もよろしくンゴ"),
-		],
-	},
-	{
-		key: "date_2027_neko",
-		date: { y: 2027, m: 2, d: [22, 22] },
-		on: ANYWHERE,
-		lines: [
-			nanashi("今日は猫の日や"),
-			nanashi("ワイも猫になったる"),
-			e({ emote: "♪" }, nanashi("……にゃーん")),
-			k("……語尾はンゴのままンゴ"),
-		],
-	},
-	{
-		key: "date_2027_april",
-		date: { y: 2027, m: 4, d: [1, 1] },
-		on: ANYWHERE,
-		lines: [
-			nanashi("ワイ、今日でおんJ\nやめるわ"),
-			nanashi("ワイも"),
-			nanashi("ワイも"),
-			k("……エイプリルフールンゴ？"),
-			nanashi("……せや。\n明日も来るで"),
-		],
-	},
-	// おんJの 開設日（2012年6月7日。はじめの 日は 20人。STORY.md の 原住民）
-	{
-		key: "date_2027_birthday",
-		date: { y: 2027, m: 6, d: [7, 7] },
-		on: ANYWHERE,
-		lines: [
-			nanashi("今日はおんJが\nできた日や"),
-			nanashi("2012年の6月7日。\nもう15年前や"),
-			nanashi("……最初の日は、\n20人おったらしいで"),
-			k("……いまは、吾輩たちも\nいるンゴ"),
-		],
-	},
-	{
-		key: "date_2027_tanabata",
-		date: { y: 2027, m: 7, d: [7, 7] },
-		on: ANYWHERE,
-		lines: [
-			nanashi("短冊に、\n願いごと書いたで"),
-			nanashi("なんて書いたんや"),
-			nanashi("「スレが落ちませんように」"),
-			k("……保守は自分で\nするンゴ"),
+			nanashi("最終話、見たか？"),
+			nanashi("見た。\nまさか、やきうが……"),
+			e({ emote: "怒" }, nanashi("ネタバレすな！")),
+			nanashi("……この町に、\nまだ見とらんやつおるか？"),
+			k("……みんな見てたンゴ"),
 		],
 	},
 	// ───── 建物に はじめて 入った ─────
