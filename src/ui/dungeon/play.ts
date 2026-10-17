@@ -51,11 +51,13 @@ import {
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
 import { heroWalk, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
+import { liveResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
 import { loadImage } from "../../engine/assets";
 import {
 	DEBUG_SEED,
+	deathCount,
 	loadBook,
 	loadProgress,
 	markSeenMonster,
@@ -325,6 +327,8 @@ export class Play {
 	private bossUid: number | null = null;
 	/** 帰り方の 演出（rescue。冒険の記録の 前に 終わるのを 待つ）。 */
 	private rescueFx: Promise<void> | null = null;
+	/** 前の 階に 着いた ときの 倒した 数（実況の「前の 階で 倒した 数」）。 */
+	private killMark = 0;
 	/** 帰還スレで 地上へ もどる ところ（「もどる」を えらんだ。リプレイでは 終わりの 種類で 見る）。 */
 	private escaping = false;
 	/** カメラを 止める（帰り方の 演出で キリコだけ 動かす あいだ）。 */
@@ -3582,6 +3586,32 @@ export class Play {
 		}
 		const r = diveResAt(s.dungeon, s.depth, cleared);
 		if (r) this.addLog(diveResLine(r, this.run.heroName), "gloss");
+		// 決まった 行の ない 階は、村の スレの 実況（いまの ようすに つっこむ。data/story/liveRes.ts）
+		const total = Object.values(s.kills).reduce((a, n) => a + n, 0);
+		const kills = first ? 3 : total - this.killMark;
+		this.killMark = total;
+		if (r || first || s.floor.rest || this.run.boss) return;
+		const p = this.run.p;
+		const weapon = p.weapon;
+		let salt = s.depth * 7919;
+		for (const ch of String(s.seed))
+			salt = (salt * 31 + ch.charCodeAt(0)) >>> 0;
+		const live = liveResLine(
+			{
+				hp: p.hp,
+				maxHp: p.maxHp,
+				hunger: Math.floor(p.hunger / HUNGER_UNIT),
+				bare: weapon === null,
+				kills,
+				deaths: deathCount(),
+				depth: s.depth,
+				floors: this.run.dungeon.floors,
+				up: isUpBoard(s.dungeon),
+				hero: this.run.heroName,
+			},
+			salt,
+		);
+		if (live) this.addLog(live, "gloss");
 	}
 
 	private async ending(): Promise<void> {

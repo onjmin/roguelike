@@ -71,6 +71,7 @@ import {
 	shiyoAtMaid,
 } from "../data/people/shiyoShift";
 import { GLOSSARY } from "../data/story/glossary";
+import { type LiveState, liveResLine } from "../data/story/liveRes";
 import {
 	advanceEvents,
 	bossName,
@@ -6416,6 +6417,48 @@ test("本館の 野球の 本棚: every line fits the village window, each book 
 });
 
 // ───────────────── 裏の 筋を 追う 行（data/story/synopsis.ts） ─────────────────
+
+test("live comments react to the run (low HP first, filler only sometimes) and fit one log line", () => {
+	const base: LiveState = {
+		hp: 30,
+		maxHp: 30,
+		hunger: 80,
+		bare: false,
+		kills: 2,
+		deaths: 0,
+		depth: 4,
+		floors: 12,
+		up: false,
+		hero: "キリコ",
+	};
+	const states: LiveState[] = [
+		base,
+		{ ...base, hp: 5 },
+		{ ...base, hunger: 5 },
+		{ ...base, bare: true },
+		{ ...base, kills: 9 },
+		{ ...base, kills: 0 },
+		{ ...base, depth: 11 },
+		{ ...base, up: true, depth: 11 },
+		{ ...base, deaths: 99 },
+		{ ...base, deaths: 4 },
+	];
+	for (const x of states)
+		for (let salt = 0; salt < 12; salt++) {
+			const line = liveResLine(x, salt);
+			if (line) ok(width(line) <= 24, `too long: ${line}`);
+		}
+	// あぶない ようすが 先
+	ok(
+		liveResLine({ ...base, hp: 5, hunger: 5 }, 0)?.includes("HP") ?? false,
+		"low HP is not first",
+	);
+	// ようすに 合う 行が ない ときは 2階に 1回くらい
+	ok(
+		liveResLine(base, 1) === null && liveResLine(base, 0) !== null,
+		"the filler shows every floor",
+	);
+});
 
 test("story helpers for the hidden route fit the log and the map card, and follow the story order", () => {
 	for (const [d, list] of Object.entries(DIVE_RES)) {
