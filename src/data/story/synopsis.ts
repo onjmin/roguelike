@@ -176,7 +176,7 @@ const mainNext = (
 	if (!c.includes("main"))
 		return open.includes("main")
 			? "風呂板へ。湯守の長湯スレ"
-			: "きのこ板の親玉をたおすと、風呂板へ行ける";
+			: "きのこ板へ。パン板への仕返しの行進を追う";
 	if (!c.includes("deep")) return "電池板へ。いちばん下の主電源";
 	if (!c.includes("hidden")) return "広場の古井戸から、過去ログの底へ";
 	return null;

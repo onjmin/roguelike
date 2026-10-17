@@ -56,6 +56,7 @@ try {
 	);
 	const { runFolkTests } = await server.ssrLoadModule("/src/sim/folkTests.ts");
 	const { runBondTests } = await server.ssrLoadModule("/src/sim/bondTests.ts");
+	const { runHookTests } = await server.ssrLoadModule("/src/sim/hookTests.ts");
 	const { runSeasonTests } = await server.ssrLoadModule(
 		"/src/sim/seasonTests.ts",
 	);
@@ -86,6 +87,7 @@ try {
 		...(await runFolkTests()),
 		...(await runSeasonTests()),
 		...(await runBondTests()),
+		...(await runHookTests()),
 	];
 	for (const t of results)
 		console.log(

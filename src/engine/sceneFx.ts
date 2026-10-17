@@ -16,7 +16,9 @@ export type SceneFx =
 	/** 紙吹雪（上から 降りつづける）。 */
 	| "confetti"
 	/** 草（下から 草が 生えて、ｗが 浮かぶ）。 */
-	| "kusa";
+	| "kusa"
+	/** 回想（セピアと 四すみの 影。止め絵に せず 人は 動く。opt.caption で 左上に「2015年 夏」などの 札）。 */
+	| "memory";
 
 export type FxRun = {
 	/** 見せ場が 出おわった（この あとに 窓を 出す）。 */
@@ -297,6 +299,27 @@ const chiin = (root: HTMLElement, k: number): FxRun => {
 	};
 };
 
+const memory = (root: HTMLElement, k: number, caption?: string): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-memory";
+	if (caption) {
+		const c = document.createElement("span");
+		c.className = "fx-memory-caption";
+		c.textContent = caption;
+		d.appendChild(c);
+	}
+	root.appendChild(d);
+	void d.offsetWidth;
+	d.classList.add("on");
+	return {
+		ready: sleep(500 * k),
+		end: () => {
+			d.classList.remove("on");
+			setTimeout(() => d.remove(), 500);
+		},
+	};
+};
+
 const CONFETTI = [
 	"#ff5a5a",
 	"#ffd23f",
@@ -420,7 +443,7 @@ export const fxRoot = (): HTMLElement | null =>
 export const startFx = (
 	root: HTMLElement | null,
 	kind: SceneFx,
-	opt: { k?: number; bare?: boolean } = {},
+	opt: { k?: number; bare?: boolean; caption?: string } = {},
 ): FxRun => {
 	if (!root || typeof document === "undefined") return NONE;
 	const k = opt.k ?? (settings.speed === "fast" ? 0.6 : 1);
@@ -436,5 +459,7 @@ export const startFx = (
 			return confetti(root, still);
 		case "kusa":
 			return kusa(root, k, still);
+		case "memory":
+			return memory(root, k, opt.caption);
 	}
 };

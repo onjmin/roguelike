@@ -164,6 +164,7 @@ import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { decayDecor, signRuined } from "./decay";
 import { offDecor, outsideDisplays } from "./displays";
+import { kinokoEveDue, kinokoEveScript } from "./episodeHooks";
 import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
 import { folkEvent } from "./folk";
@@ -1186,6 +1187,8 @@ const arrivalScript =
 			await tenScript(s);
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
+		// 第一話 → 第二話の つなぎ（その夜の 場面。ui/village/episodeHooks.ts）
+		if (kinokoEveDue()) await kinokoEveScript(s);
 		await freshHeadlineScript(s);
 		await newsScript(s);
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
