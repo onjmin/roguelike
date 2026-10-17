@@ -462,7 +462,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "過去ログの浅瀬",
 		note: "「保守」",
 		theme: "earth",
-		bgm: "piropiro",
+		bgm: "deep1",
 		ambient: "dust",
 	},
 	{
@@ -591,7 +591,7 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// 隠し：層ごとに かわる（theme・bgm は 層が 無い ときの 予備）
 	hidden: {
 		theme: "earth",
-		bgm: "piropiro",
+		bgm: "deep1",
 		ambient: "dust",
 		zones: HIDDEN_ZONES,
 	},
