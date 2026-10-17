@@ -747,6 +747,7 @@ export const STORY: Record<
 		// 行進の オチと、寄り道「残機」の 入口
 		once: [
 			n("行進は、パン板の独立記念セールで\n買い物をして帰っていったらしい。"),
+			k("128本の行進が、\n……買い物ンゴ？"),
 			s("roze", "仕返しの途中で、\nセールに寄るなアル", {
 				emote: "汗",
 			}),
@@ -1093,7 +1094,7 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 			s("nanj", "焦げくさっ！\n鉄板が噴火でもしたんか？", {
 				gesture: "startle",
 			}),
-			s("roze", "焦げくさいアル。\n鉄板の火加減も常識アル"),
+			s("roze", "焦げくさいアル。\n髪に、ソースついてるアル"),
 		),
 	],
 	deep: [n("電池ニキの明かりの道を通って、\n港まで帰ってきた。")],
@@ -1111,7 +1112,7 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 export const ARRIVE_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	konamono: [
 		n("キリコの髪は、\nソースと青のりのにおいがした。"),
-		s("roze", "たこパに行ってきたアル？\n……お土産も常識アル"),
+		s("roze", "たこパに行ってきたアル？\n……麻婆たこ焼き、作るアル"),
 	],
 	tropical: [
 		n("キリコの服は、\nまだしおからかった。"),
@@ -1271,7 +1272,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 		q("roze", "ロールバックしても、\n麻婆豆腐は減ってたアル"),
 		q("feris", "明かり、きれいだね〜。\n……ロールバックしても、きれい〜"),
 		q("shiyo", "……もう停電させないでよ。\nまっくらで、こわかったんだから"),
-		q("zero", "電池ニキさん、毎日来てます。\n見学者、ゼロが数えてます！"),
+		q("zero", "電池ニキさん、毎日来てます。\n……見学者2人目は、ゼロです"),
 	],
 	kinoko: [
 		q("zero", "きのにゃん、まだ商店街の\nまんなかです。家賃は払ってません"),
@@ -1294,7 +1295,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	hidden: [
 		q("roze", "いちばん古いのがフェリスなのも、\nおんJの常識アル"),
-		q("zero", "古いレス、数えました。\n……1つ目は、フェリスさんです"),
+		q("zero", "いちばん古いレス、\nフェリスさんの声でした"),
 		q("shiyo", "……あのレス、額に入れて\nフェリスにあげたら？"),
 		q("nanj", "古いレスも、消えへん。\n……名無しのやつも、な"),
 	],
@@ -1304,7 +1305,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	onmu: [
 		q("shiyo", "搭乗券、倉庫にしまったわ。\n……いつか使うかもしれないし"),
-		q("roze", "呑気な板も、ええアル。\n……荒らしが来ないのが常識アル"),
+		q("roze", "呑気な板も、ええアル。\n……荒らしも昼寝してたアル"),
 	],
 	onkimu: [
 		q("roze", "キムチ、ぜんぶなくなったアル。\n……また漬けるアル"),
@@ -1317,7 +1318,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 		}),
 	],
 	vocalo: [
-		q("roze", "避難所、まだあったアル。\n……あのころのスレも、常識アル"),
+		q("roze", "避難所、まだあったアル。\n……わたしの書きこみも残ってたアル"),
 		q("shiyo", "ロゼの忘れ物、とどけたの？\n……ふーん、やるじゃない"),
 	],
 };
@@ -1336,7 +1337,7 @@ export const FIRST_SHALLOW: readonly Line[] = [
 /** パン板で倒れたとき（たおれ方の たまりより 前に見る）。 */
 export const SHALLOW_DEATH: readonly Line[] = [
 	q("nanj", "パン板やで？入門の。\n……いや、パン板でも下は下か"),
-	q("roze", "パン板はちいさいアル。\nあわてないのが常識アル"),
+	q("roze", "パン板はちいさいアル。\n……でも底は、ちゃんと底アル"),
 	q("feris", "パン板でも、ころぶよね〜。\n私もよくころぶ〜", {
 		emote: "汗",
 	}),
