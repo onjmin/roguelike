@@ -251,7 +251,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 						? `${defOf(dungeonById(s.dungeon).goal).name}を持ち帰った`
 						: escaped
 							? "地上へもどった"
-							: "放送事故",
+							: "力つきた",
 		}),
 		el("p", {
 			class: "matome-line runend-cause",
@@ -277,7 +277,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 				text:
 					clear || escaped
 						? `持ち物（${p.items.length}）`
-						: `現地に置いてきた機材（${p.items.length}）`,
+						: `板に置いてきた物（${p.items.length}）`,
 			}),
 			items,
 		]),

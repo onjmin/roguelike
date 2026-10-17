@@ -170,7 +170,7 @@ export const ESCORTS: readonly EscortRequest[] = [
 		line: "ゼロも行きます。\n……近くで数えたいんです",
 		lineCue: { emote: "!" },
 		thanks: [
-			"見てきました。\nコメントは、ここに積もるんですね",
+			"見てきました。\nレスは、ここに積もるんですね",
 			"ちゃんと数えました。\n……お礼、です",
 		],
 		reward: 500,

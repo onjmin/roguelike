@@ -124,14 +124,14 @@ export const TOWN_MSG: Record<
 	// はじめて 売った ときだけ（engine/wallet.ts：使える お金 ＝ 売り上げ − 使った 額）
 	wallet: st(
 		"jtleman",
-		"売り上げは、町で使ってかまわんよ。\n……使っても、君の数字はへらない",
+		"売り上げは、町で使ってかまわんよ。\n……使っても、町の通りは閉まらない",
 	),
 	// はじめて あずけた ときだけ（あずけた 物は 正体が わかる。engine/save.ts の known）
 	storeKnown: st(
 		"ngoane",
 		"あずかった物、ラベル貼っといたンゴ。\n……正体、もうわかるンゴねぇ",
 	),
-	storePrompt: st("ngoane", "機材倉庫にあずけるもの、\nえらぶンゴねぇ……"),
+	storePrompt: st("ngoane", "倉庫にあずけるもの、\nえらぶンゴねぇ……"),
 	sellRest: st("jtleman", "のこりはすべて買い取ろう。\n……よろしいかね？"),
 	storeDone: st(
 		"ngoane",
@@ -209,9 +209,9 @@ export const CARRY_CHASE = "ンゴ姉が追いかけてきた。";
 export const REVIVE_MSG = {
 	open: "{name}が生き返った！",
 	/** 倉庫が 広がった（{n} は あずけられる 数）。 */
-	storage: "機材倉庫が広がった。\n{n}つまであずけられる",
+	storage: "倉庫が広がった。\n{n}個まであずけられる",
 	/** 持ちこみが ふえた（{n} は 持ちこめる 数）。 */
-	carry: "機材倉庫から引き取って\n{n}つまで持っていける",
+	carry: "倉庫から引き取って\n{n}個まで持っていける",
 	/** 転の 停電（電池板が 開いた 帰りに 1回。STORY.md §4.9）。 */
 	blackout: [
 		"港に着くと、町が真っ暗だった。\n生き返った通りも、ぜんぶ。",
@@ -463,7 +463,7 @@ export const ZERO_VOICELESS: readonly string[] = [
 
 /** 機材倉庫の 窓口（ンゴ姉に 話しかけると。ui/village/villageEvents.ts の storeDesk）。 */
 export const STORE_DESK = {
-	ask: "機材倉庫のご用ンゴ？\n……ゆっくりえらぶンゴねぇ",
+	ask: "倉庫のご用ンゴ？\n……ゆっくりえらぶンゴねぇ",
 	/** 倉庫の 一覧（引き出す・預ける を えらぶ。ui/village/home.ts の openStorage）。 */
 	withdraw: "倉庫をつかう",
 	talk: "話す",

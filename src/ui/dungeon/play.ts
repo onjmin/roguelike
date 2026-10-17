@@ -3656,7 +3656,7 @@ export class Play {
 		const scene = el("div", { class: "death" }, [
 			el("div", {
 				class: "death-title",
-				text: `${this.run.heroName}、放送事故`,
+				text: `${this.run.heroName}、力つきた`,
 			}),
 			el("div", {
 				class: "death-cause",

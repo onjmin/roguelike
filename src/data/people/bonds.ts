@@ -257,7 +257,7 @@ export const BOND_DEFS: Record<Cast, BondDef> = {
 			],
 		],
 		warm: [
-			"高評価、押しといたで。\n……名無しでな",
+			"保守、しといたで。\n……名無しでな",
 			"今日も帰ってきたな。\n……それだけでええわ",
 		],
 		season: {

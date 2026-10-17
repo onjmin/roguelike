@@ -51,7 +51,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		cast: ["shiyo"],
 		lines: [
 			s("shiyo", "スタジオの鍵？……あたすが\n持ってるわよ。ずっと"),
-			s("shiyo", "固定ファンのコメントは、\nぜんぶノートに写してあるの"),
+			s("shiyo", "常連のレスは、\nぜんぶノートに写してあるの"),
 			s("shiyo", "……だれも来なかった日の\nお茶も、まだ覚えてるわ"),
 			e(
 				{ emote: "汗" },
@@ -66,7 +66,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		lines: [
 			s("feris", "私のくしゃみ、\nなんで出るか知ってる〜？"),
 			s("feris", "だれかがうわさしてると\n出るんだって〜"),
-			s("feris", "……でもコメント欄のうわさは、\nぜんぶやきうくんの話〜"),
+			s("feris", "……でも掲示板のうわさは、\nぜんぶやきうくんの話〜"),
 			n("フェリスは窓の外を見た。"),
 			e(
 				{ gesture: "startle" },
@@ -101,7 +101,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 	},
 	{
 		id: "nanj_1000",
-		title: "毎晩のコメント",
+		title: "毎晩のレス",
 		cast: ["nanj"],
 		lines: [
 			s("nanj", "掲示板はな、毎晩お祭りや。\nみんな書きこみ流してな"),
@@ -179,7 +179,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 			e({ emote: "?" }, s("shiyo", "……「ンゴ」で\n文が終わるってどうなの？")),
 			e(
 				{ emote: "♪" },
-				s("feris", "いいよ〜。\nコメント欄もンゴってなってるもん〜"),
+				s("feris", "いいよ〜。\n掲示板もンゴってなってるもん〜"),
 			),
 			n("キリコは大きくうなずいた。\n……ンゴ、と言った。"),
 		],

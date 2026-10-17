@@ -841,7 +841,7 @@ export class Run {
 			this.msg(
 				this.dungeon.up
 					? "上の階へ押し上げられた。枠移動だ"
-					: "下の階に落ちた。まだ放送事故ではない",
+					: "下の階に落ちた。まだ倒れてはいない",
 			);
 		// 名所の 階（敵の 来ない 一息）
 		if (s.floor.rest) this.msg(`${s.floor.rest}。敵の気配がない`);

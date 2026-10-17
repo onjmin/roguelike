@@ -171,4 +171,4 @@ export const BOOK_MENU = ["ことばの辞典", "モンスター図鑑", "やめ
 export const ON_PHONO_TEXT = "蓄音機で鳴らしている";
 
 /** 飾り棚の 一覧で シヨが 倉庫で あずかっている 品（いちばん古い コメント）の 説明。 */
-export const IN_STORE_TEXT = "ンゴ姉が機材倉庫であずかっている";
+export const IN_STORE_TEXT = "ンゴ姉が倉庫であずかっている";

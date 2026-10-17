@@ -19,7 +19,7 @@ export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 	kinoko: "町を行進していくきのこ軍の、親玉に会う",
 	main: "閉まった銭湯の、立てこもりを片づける",
 	deep: "消えかけの電池板で、町の明かりを取りもどす",
-	hidden: "いちばん古いコメントがしずむ底",
+	hidden: "いちばん古いレスがしずむ底",
 };
 
 /**
@@ -64,14 +64,14 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 	// 過去ログの底（99階。最終話の あと）。層の 札の 階は よける
 	hidden: [
-		{ at: 3, who: null, text: "古いコメントは、ここへしずむ。" },
+		{ at: 3, who: null, text: "古いレスは、ここへしずむ。" },
 		{ at: 13, who: "res", text: "キリコ、井戸に降りたんか" },
-		{ at: 25, who: null, text: "毎日のコメントが、地層になっている。" },
+		{ at: 25, who: null, text: "毎日のレスが、地層になっている。" },
 		{ at: 35, who: "res", text: "井戸の底、だれも来なくて草" },
 		{ at: 45, who: null, text: "どの層も、「乙」ではじまる。" },
 		{ at: 66, who: "res", text: "井戸、どこまで深いんや" },
-		{ at: 85, who: null, text: "下のほうで、古いコメントが光った。" },
-		{ at: 95, who: null, text: "底に、2005年のコメントがある。" },
+		{ at: 85, who: null, text: "下のほうで、古いレスが光った。" },
+		{ at: 95, who: null, text: "底に、2005年のレスがある。" },
 	],
 };
 
@@ -148,7 +148,7 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 	{
 		done: (c) => c.includes("hidden"),
 		title: "過去ログの底",
-		sum: "井戸の底で、2005年のいちばん古いコメントを見つけた。「ふぇ…ふぇ……フェニックス！」……フェリスのはじまりの声だった。",
+		sum: "井戸の底で、2005年のいちばん古いレスを見つけた。「ふぇ…ふぇ……フェニックス！」……フェリスのはじまりの声だった。",
 	},
 ];
 
