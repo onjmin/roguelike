@@ -71,6 +71,10 @@ const baseSong = (): string => {
 	);
 };
 
+/** 騒ぎの あいだに 曲を えらんだ とき（えらんだ 曲は 騒ぎが 片づいてから 鳴る）。 */
+const RECORD_LATER =
+	"外のさわぎで、蓄音機の音がかき消される。\n片づいたら、ゆっくり聞こう。";
+
 /** 蓄音機で 曲を えらぶ（かけられる 曲が 2つ 以上 あるときだけ 聞く）。 */
 export const chooseRecord = async (ctx: Ctx, s: Story): Promise<void> => {
 	const list = records(loadTown().stage, loadProgress().cleared);
@@ -93,4 +97,6 @@ export const chooseRecord = async (ctx: Ctx, s: Story): Promise<void> => {
 	saveSettings({ villageBgm: v || null });
 	clearLinger();
 	s.bgm(villageSong());
+	// 騒ぎの あいだは 騒ぎの 曲の まま（data/audio/music.ts の villageBgm）
+	if (v && villageSong() !== v) await s.narrate(RECORD_LATER);
 };

@@ -3,6 +3,7 @@
 // ■ 村の 曲
 // おんJタウンの 曲は 村の 育ちで かわる（段は data/town/town.ts の STAGE_NAMES）。建物の 中も 村の 曲の まま。
 // 広場の 蓄音機で 好きな 曲に かえられる（えらんだ 曲は 設定 settings.villageBgm。端末ごと）。
+// 町に 騒ぎが ある あいだは えらんだ 曲より 騒ぎの 曲（INCIDENT_BGM）。
 // かけられるのは 村の 曲と、持ち帰った 板で 聞いた 曲（その 板の 階の 曲。ボス・祭り・持ち帰りの 曲も）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
@@ -20,7 +21,7 @@ export const RETURN_BGM = "title";
 export const ENDING_BGM = "ending";
 /**
  * 町に 騒ぎが ある あいだの 村の 曲（data/town/incidents.ts。パン兵の 占領・きのこ軍の 行進 など）。
- * 片づくと いつもの 村の 曲に もどる。蓄音機で 曲を えらんで いれば そちら。界隈曲（場面 専用）。
+ * 片づくと いつもの 村の 曲（蓄音機で えらんだ 曲）に もどる。騒ぎの あいだは 蓄音機で えらんだ 曲より こちら。界隈曲（場面 専用）。
  */
 export const INCIDENT_BGM = "kaiwai";
 
@@ -138,15 +139,15 @@ export const records = (
 	return out;
 };
 
-/** 村で 鳴らす 曲（蓄音機で えらんだ 曲が かけられる うちは それ、なければ 段の 曲）。 */
+/** 村で 鳴らす 曲（騒ぎの あいだは 騒ぎの 曲。ほかは 蓄音機で えらんだ 曲が かけられる うちは それ、なければ 段の 曲）。 */
 export const villageBgm = (
 	stage: number,
 	cleared: readonly DungeonId[],
 	pick: string | null,
 	incident = false,
 ): string =>
-	pick && records(stage, cleared).some((r) => r.bgm === pick)
-		? pick
-		: incident
-			? INCIDENT_BGM
+	incident
+		? INCIDENT_BGM
+		: pick && records(stage, cleared).some((r) => r.bgm === pick)
+			? pick
 			: stageBgm(stage);
