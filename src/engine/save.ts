@@ -19,6 +19,7 @@ import {
 	type DungeonId,
 	type GuestSpec,
 	type Item,
+	OBJECTIVES,
 	type Objective,
 	type RunState,
 } from "../core/types";
@@ -1086,12 +1087,7 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (typeof r.cause !== "string") return null;
 	if (!r.builds.every((b) => typeof b === "string")) return null;
 	if (r.dungeon !== undefined && !DUNGEON_IDS.includes(r.dungeon)) return null;
-	if (
-		r.objective !== undefined &&
-		r.objective !== "fetch" &&
-		r.objective !== "boss" &&
-		r.objective !== "event"
-	)
+	if (r.objective !== undefined && !OBJECTIVES.includes(r.objective))
 		return null;
 	if (
 		r.carry !== undefined &&

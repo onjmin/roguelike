@@ -3322,12 +3322,19 @@ test(
 						`a boss is in the ${other} pool at level ${lv}`,
 					);
 		}
-		// 既定（STORY.md §4.9 の 目的の 型）：きのこ板・離島板・お祭りは ボス、おんたこは 底の 出来事
-		for (const d of ["kinoko", "tropical", "festival"] as const)
-			ok(DUNGEONS[d].objective === "boss", `${d} is not a boss board`);
+		// 既定（STORY.md §4.9 の 目的の 型）：きのこ板は ボス、おんたこは 底の 出来事、離島板は 送り届け、お祭りは 連れ帰り
+		ok(DUNGEONS.kinoko.objective === "boss", "kinoko is not a boss board");
 		ok(
 			DUNGEONS.konamono.objective === "event",
 			"konamono is not an event board",
+		);
+		ok(
+			DUNGEONS.tropical.objective === "deliver",
+			"tropical is not a deliver board",
+		);
+		ok(
+			DUNGEONS.festival.objective === "bring",
+			"festival is not a bring board",
 		);
 		for (const d of ["shallow", "main", "deep", "hidden"] as const)
 			ok(DUNGEONS[d].objective === "fetch", `${d} is not a fetch board`);
@@ -4247,5 +4254,54 @@ test(
 		const q = Run.create("event-floor", "konamono", [], "event");
 		q.enterFloor(DUNGEONS.konamono.floors - 1, false);
 		ok(!q.s.end, "ended before the top");
+	},
+);
+
+test(
+	"deliver",
+	"送り届ける（目的が deliver）：島民が はじめから ついてきて、底に 着くと その場で 帰る。たおれたら ふつうの 持ち帰り",
+	() => {
+		const top = DUNGEONS.tropical.floors;
+		const r = Run.create("deliver-run", "tropical", [], "deliver");
+		ok(r.s.guest?.id === "islander", `guest ${r.s.guest?.id}`);
+		r.enterFloor(1, false);
+		r.enterFloor(top, false);
+		ok(r.s.end?.kind === "clear", `end ${r.s.end?.kind}`);
+		ok(
+			r.s.end?.cause === DUNGEONS.tropical.deliver?.cause,
+			`cause ${r.s.end?.cause}`,
+		);
+		// たおれた 島民：次の 階から 持ち帰りに なり、底に 品が 置かれる
+		const q = Run.create("deliver-run", "tropical", [], "deliver");
+		q.enterFloor(1, false);
+		if (q.s.guest) q.s.guest.down = true;
+		q.enterFloor(top, false);
+		ok(!q.s.end && q.objective === "fetch", `fell guest: ${q.objective}`);
+		ok(
+			q.s.floor.items.some((x) => x.item.kind === DUNGEONS.tropical.goal),
+			"no goal item after the guest fell",
+		);
+	},
+);
+
+test(
+	"bring",
+	"連れ帰る（目的が bring）：底で 親分が 加わり 品を もらって 帰り道",
+	() => {
+		const top = DUNGEONS.festival.floors;
+		const r = Run.create("bring-run", "festival", [], "bring");
+		const before = r.s.guest;
+	ok(!before, "the boss joined from the start");
+		r.enterFloor(top, false);
+		ok(r.s.guest?.id === "oyabun" && !r.s.end, `guest ${r.s.guest?.id}`);
+		ok(r.s.returning, "not returning after the boss joined");
+		ok(
+			r.p.items.some((it) => it.kind === DUNGEONS.festival.goal),
+			"no goal item",
+		);
+		ok(
+			!r.s.floor.items.some((x) => x.item.kind === DUNGEONS.festival.goal),
+			"the goal item lies on the floor",
+		);
 	},
 );

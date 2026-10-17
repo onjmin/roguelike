@@ -143,12 +143,13 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 
 	// いちばん底：目的の品を置く（階段の代わりに。帰り道は上り階段）。ボスの 階は ボスが 持っている
-	// 目的が event の 底は 品を 置かない（着くと もらう：Run.eventReached）
+	// 目的が event・deliver・bring の 底は 品を 置かない（着くと もらう：Run.eventReached・Run.enterFloor）
 	if (
 		depth === r.dungeon.floors &&
 		!r.s.returning &&
 		!bossFloor &&
-		!r.eventSpec
+		!r.eventSpec &&
+		!r.bringSpec
 	) {
 		const spot = rng.pick(
 			freeRoomTiles(r, f, stairRoom).filter(

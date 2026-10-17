@@ -37,6 +37,7 @@ import {
 } from "./balance";
 import {
 	type BossSpec,
+	type BringSpec,
 	type Dungeon,
 	dungeonById,
 	dungeonOf,
@@ -183,6 +184,8 @@ export class Run {
 		const base = dungeonById(dungeon);
 		const boss = objective === "boss" && !!base.boss;
 		const event = objective === "event" && !!base.event;
+		const deliver = objective === "deliver" && !!base.deliver;
+		const bring = objective === "bring" && !!base.bring;
 		const rng = Rng.fromSeed(seed);
 		// 底の 深さが かわる 板（おんMu）だけ、はじめに 深さを 引く（ほかの 板は 乱数の 順が 前と 同じ）
 		const floors = base.randomFloors
@@ -254,6 +257,8 @@ export class Run {
 			// fetch は 書かない（無ければ fetch。前の 版と 同じ 形の まま）
 			...(boss ? { objective: "boss" as const } : {}),
 			...(event ? { objective: "event" as const } : {}),
+			...(deliver ? { objective: "deliver" as const } : {}),
+			...(bring ? { objective: "bring" as const } : {}),
 			rng: rng.state(),
 			depth: 0,
 			turn: 0,
@@ -280,7 +285,10 @@ export class Run {
 		if (lunch) for (const k of dg.start) player.items.push(run.newItem(k));
 		else s.noLunch = true;
 		// 主人公と 同じ 人は 同行者に ならない（同じ 人が 2人 いる ことに なる。村では companions.ts の escortFor が よける）
-		if (guest && guest.id !== hero) s.guest = newGuest(guest);
+		// 送り届ける 人は はじめから ついてくる（底で 満足して 帰らない よう 見たい 階は 底の 先）
+		if (deliver && base.deliver)
+			s.guest = newGuest({ id: base.deliver.guest, goal: dg.floors + 1 });
+		else if (guest && guest.id !== hero) s.guest = newGuest(guest);
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
 			s.carriedIn = carry.map((it) => ({ ...it }));
@@ -373,9 +381,16 @@ export class Run {
 		return this.objective === "boss" ? (this.dungeon.boss ?? null) : null;
 	}
 
-	/** 目的が event の ときの 底の 出来事（data/dungeons.ts の event。ほかは null）。 */
+	/** 目的が event・deliver の ときの 底の 出来事（data/dungeons.ts の event・deliver。ほかは null）。 */
 	get eventSpec(): EventSpec | null {
-		return this.objective === "event" ? (this.dungeon.event ?? null) : null;
+		if (this.objective === "event") return this.dungeon.event ?? null;
+		if (this.objective === "deliver") return this.dungeon.deliver ?? null;
+		return null;
+	}
+
+	/** 目的が bring の ときの 連れ帰る 人（data/dungeons.ts の bring。ほかは null）。 */
+	get bringSpec(): BringSpec | null {
+		return this.objective === "bring" ? (this.dungeon.bring ?? null) : null;
 	}
 
 	/** この階で 生きている ボス（いちばん底で、まだ たおしていない とき。画面の HP の ゲージにも）。 */
@@ -796,6 +811,11 @@ export class Run {
 	/** 階に入る（下りなら depth+1、帰り道なら depth−1）。 */
 	enterFloor(depth: number, fell: boolean): void {
 		const s = this.s;
+		// 送り届ける 人が たおれた：ふつうの 持ち帰りに なる（底に 品が 置かれる）
+		if (s.objective === "deliver" && s.guest?.down) {
+			delete s.objective;
+			this.msg("……底の品を持ち帰ろう");
+		}
 		const carried = carryAnka(s.floor);
 		const first = s.depth === 0;
 		s.depth = depth;
@@ -821,9 +841,20 @@ export class Run {
 		// 同行者も キリコの そばに 着く（core/guest.ts）
 		guestEnterFloor(this, first);
 		if (!carried && ankaOnArrival(this)) startAnka(this, true);
-		// 目的が event：底に 着いたら 出来事が あって 入口へ 帰る
+		// 目的が event・deliver：底に 着いたら 出来事が あって 入口へ 帰る
 		if (this.eventSpec && depth === this.dungeon.floors && !s.returning)
 			this.eventReached();
+		// 目的が bring：底で 人が 加わり、品を もらって 帰り道に なる
+		const bring = this.bringSpec;
+		if (bring && depth === this.dungeon.floors && !s.returning) {
+			for (const line of bring.lines)
+				this.msg(line.replaceAll("キリコ", this.heroName));
+			s.guest = newGuest({ id: bring.guest, goal: Number.MAX_SAFE_INTEGER });
+			guestEnterFloor(this, true);
+			const it = this.newItem(this.dungeon.goal);
+			if (!this.addItem(it)) this.p.items.push(it);
+			this.onAcquire(it);
+		}
 	}
 
 	/**
@@ -859,7 +890,14 @@ export class Run {
 		if (this.s.returning) {
 			const next = this.s.depth - 1;
 			if (next <= 0) {
-				this.finish("clear", `${defOf(this.dungeon.goal).name}を持ち帰った`);
+				// 連れ帰った 人が いっしょなら その 理由（たおれて いれば ふつうの 持ち帰り）
+				const bring = this.bringSpec;
+				this.finish(
+					"clear",
+					bring && this.s.guest && !this.s.guest.down
+						? bring.cause
+						: `${defOf(this.dungeon.goal).name}を持ち帰った`,
+				);
 				return false;
 			}
 			this.enterFloor(next, false);

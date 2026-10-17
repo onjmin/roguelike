@@ -235,8 +235,27 @@ export const escortSpec = (e: EscortRequest): GuestSpec => ({
 });
 
 /** 同行者の 歩行グラ（仲間は 村と 同じ・住人は data/people/mobs.ts の 絵）。 */
+/**
+ * 板の 人（目的が deliver・bring の 同行者。core/data/dungeons.ts）。絵は その 板の 敵の 歩行グラを 借りる。
+ */
+export const STORY_GUESTS: Partial<
+	Record<GuestId, { name: string; sprite: string; color: string }>
+> = {
+	islander: {
+		name: "島民",
+		sprite: "pub:sprites/natsuko.png",
+		color: "#9ad8c8",
+	},
+	oyabun: {
+		name: "祭りの親分",
+		sprite: "pub:sprites/mashii.png",
+		color: "#f0b070",
+	},
+};
+
 export const guestWalk = (id: GuestId): string =>
-	isFriend(id) ? CAST[id].walk : MOBS[id as MobId].sprite;
+	STORY_GUESTS[id]?.sprite ??
+	(isFriend(id) ? CAST[id].walk : MOBS[id as MobId].sprite);
 
 /** 同行者が 話す ときの 名前欄・色・立ち絵（村の 窓と 同じ）。 */
 export const guestVoice = (
@@ -262,6 +281,8 @@ export const guestVoice = (
 				: null,
 		};
 	}
+	const story = STORY_GUESTS[id];
+	if (story) return { name: story.name, color: story.color, portrait: null };
 	const m = MOBS[id as MobId];
 	const color = m.color ?? "#e8e0c8";
 	return {

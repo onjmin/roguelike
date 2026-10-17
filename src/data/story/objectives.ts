@@ -251,6 +251,8 @@ export const bossName = (d: DungeonId): string | null => {
 /** 目的の ひとこと（「〇〇を　持ち帰る」「〇〇を　たおす」）。 */
 export const goalText = (d: DungeonId, o: Objective): string => {
 	if (o === "event") return DUNGEONS[d].event?.goal ?? "底へ行く";
+	if (o === "deliver") return DUNGEONS[d].deliver?.goal ?? "底へ行く";
+	if (o === "bring") return DUNGEONS[d].bring?.goal ?? "底へ行く";
 	const boss = o === "boss" ? bossName(d) : null;
 	return boss ? `${boss}をたおす` : `${defOf(DUNGEONS[d].goal).name}を持ち帰る`;
 };

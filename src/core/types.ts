@@ -28,14 +28,25 @@ export type DungeonId =
 /**
  * 冒険の 目的。fetch：いちばん底の 品を 拾って 入口まで 持ち帰る。
  * boss：いちばん底に いる ボス（品を 持っている）を たおすと、その場で 入口へ 帰れる。
- * event：いちばん底に 着くと ちょっとした 出来事が あって 品を もらい、その場で 入口へ 帰れる
- * （core/data/dungeons.ts の event。STORY.md §4.9 の 目的の 型）。
+ * event：いちばん底に 着くと ちょっとした 出来事が あって 品を もらい、その場で 入口へ 帰れる。
+ * deliver：はじめから ついてくる 人を いちばん底まで 送り届けると、その場で 入口へ 帰れる。
+ * bring：いちばん底で 人が 加わり、入口まで 連れ帰る（持ち帰りと 同じ 帰り道）。
+ * deliver・bring の 人が たおれたら、ふつうの 持ち帰りに なる（同行者は 気軽な おまけ。core/guest.ts）。
+ * （core/data/dungeons.ts の event・deliver・bring。STORY.md §4.9 の 目的の 型）。
  */
-export type Objective = "fetch" | "boss" | "event";
+export type Objective = "fetch" | "boss" | "event" | "deliver" | "bring";
 
-/** 底で その場で 入口へ 帰る 目的か（ボス・出来事。持ち帰りの 帰り道が ない）。 */
+export const OBJECTIVES: readonly Objective[] = [
+	"fetch",
+	"boss",
+	"event",
+	"deliver",
+	"bring",
+];
+
+/** 底で その場で 入口へ 帰る 目的か（ボス・出来事・送り届け。持ち帰りの 帰り道が ない）。 */
 export const instantClear = (o: Objective | undefined): boolean =>
-	o === "boss" || o === "event";
+	o === "boss" || o === "event" || o === "deliver";
 
 /**
  * ボスを たおした あと、一瞬で 入口へ 帰る わけ（画面の 演出の 種類）。
@@ -519,7 +530,10 @@ export type GuestId =
 	// 住人（data/people/mobs.ts）
 	| "panmatsu"
 	| "ngoane"
-	| "nichie";
+	| "nichie"
+	// 板の 人（目的が deliver・bring の とき。絵は data/people/companions.ts の STORY_GUESTS）
+	| "islander"
+	| "oyabun";
 
 export type Guest = {
 	id: GuestId;

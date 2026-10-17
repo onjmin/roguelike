@@ -25,7 +25,13 @@
 // レベルが 低い。底の 強さ（*_TOP）は pnpm sim で クリア率を 見て 決める。
 
 import type { ItemWeight } from "../itemTable";
-import type { DungeonId, ItemCat, Objective, RescueKind } from "../types";
+import type {
+	DungeonId,
+	GuestId,
+	ItemCat,
+	Objective,
+	RescueKind,
+} from "../types";
 import { ITEMS, MAIN_ITEMS } from "./items";
 
 /**
@@ -55,6 +61,20 @@ export type EventSpec = {
 	/** 着いた ときの 行（順に 出す）。 */
 	lines: readonly string[];
 	/** 終わりの 理由（Ending.cause。記録・リプレイの 組み合わせに 使う ので 変えない）。 */
+	cause: string;
+};
+
+/** 送り届ける 人（目的が deliver。はじめから ついてきて、底に 着くと 出来事・品・入口へ）。 */
+export type DeliverSpec = EventSpec & { guest: GuestId };
+
+/** 連れ帰る 人（目的が bring。底で 加わって 品を もらい、帰り道に なる）。 */
+export type BringSpec = {
+	guest: GuestId;
+	/** 目的の 文（「〜する」）。 */
+	goal: string;
+	/** 底で 加わる ときの 行。 */
+	lines: readonly string[];
+	/** 入口に 着いた ときの 終わりの 理由（記録・リプレイの 組み合わせに 使う ので 変えない）。 */
 	cause: string;
 };
 
@@ -150,6 +170,10 @@ export type Dungeon = {
 	rests?: readonly RestFloor[];
 	/** 底の 出来事（目的が event の とき）。 */
 	event?: EventSpec;
+	/** 送り届ける 人（目的が deliver の とき）。 */
+	deliver?: DeliverSpec;
+	/** 連れ帰る 人（目的が bring の とき）。 */
+	bring?: BringSpec;
 	/**
 	 * スレの 勢い：この ターン数ごとに レスが もう 1つ ふえる（1000 に 早く 近づく。電池板の 時間との 競争：
 	 * STORY.md §4.9）。無ければ 1ターンで 1。
@@ -542,7 +566,19 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	tropical: {
 		id: "tropical",
 		noCarry: true,
-		objective: "boss",
+		// 押しかけてきた 島民を 島の 山の てっぺんまで 送り返す（STORY.md §4.9）
+		objective: "deliver",
+		deliver: {
+			guest: "islander",
+			goal: "島民を山の上へ送る",
+			rescue: "escort",
+			lines: [
+				"山の上の集落に着いた。",
+				"島民「……島や。帰ってきた」",
+				"6人に見送られて、ふもとへ降りた",
+			],
+			cause: "島民を送り届けた",
+		},
 		boss: {
 			monster: "boss_natsuko",
 			rescue: "escort",
@@ -619,7 +655,14 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// お祭り会場（おまC）：祭りが よく 出る
 	festival: {
 		id: "festival",
-		objective: "boss",
+		// やぐらから 降りられない 親分を 入口まで 連れ帰る（STORY.md §4.9）
+		objective: "bring",
+		bring: {
+			guest: "oyabun",
+			goal: "親分を連れ帰る",
+			lines: ["やぐらの上に、親分がいた。"],
+			cause: "親分を連れ帰った",
+		},
 		boss: {
 			monster: "boss_mashii",
 			rescue: "escort",
