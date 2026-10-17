@@ -692,8 +692,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			monster: "boss_kinonyan",
 			rescue: "sprout",
 			lines: [
-				"足もとのきのこがぐんぐん伸びだした！",
-				"きのこ民「たけのこより速いやろ」",
+				// 先回りした プロトの 数え（intro の 128本）の オチ
+				"プロト「127本になりました」",
+				"きのこが伸びだした！「たけのこより速いやろ」",
 				"きのこに押し上げられて、地上まで運ばれた",
 			],
 			cause: "親玉きのにゃんをたおした",

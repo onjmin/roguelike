@@ -87,7 +87,7 @@ export const INCIDENTS: readonly Incident[] = [
 				sprite: KINONYAN,
 				dir: "right",
 				name: "きのこ軍",
-				lines: ["行進中や。\n……店先は、ちょっと踏んだ。"],
+				lines: ["行進中や。\n店先は、ちょっとしか踏んでへん。"],
 			},
 			{
 				id: "kinonyan_c",

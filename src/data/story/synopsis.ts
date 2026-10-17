@@ -45,7 +45,7 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 			who: null,
 			text: "壁に、行進の足あとがついている。",
 		},
-		{ at: 3, who: "res", text: "きのこ軍、町を通ったってほんま？" },
+		{ at: 3, who: "res", text: "きのこ軍、道まちがえて戻ってきたで" },
 		{ at: 4, who: null, text: "底で、親玉がふんぞりかえっている。" },
 	],
 	main: [
