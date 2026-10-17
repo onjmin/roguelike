@@ -1138,7 +1138,7 @@ const arrivalScript =
 		s.bgm(villageSong());
 		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）
 		if (previewStage() !== null) return;
-		// 転（STORY.md §5）：風呂板の 語りを 見おえた その 帰りに 1回だけ。電池板が 開く 知らせ（newsScript）より 前
+		// 転（STORY.md §4.9）：風呂板の 語りを 見おえた その 帰りに 1回だけ。電池板が 開く 知らせ（newsScript）より 前
 		if (loadProgress().endings?.includes("main") && !hasFlag("ten"))
 			await tenScript(s);
 		// はじめての 村：前口上と、どこへ 行けば いいか

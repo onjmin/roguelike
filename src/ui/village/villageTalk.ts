@@ -293,7 +293,7 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): TalkLine => {
 	// 時間帯の ひとこと（昼の ほか。いつもの ひとことと 交互：data/town/town.ts の BAND_IDLE）
 	const n = (idleCount.get(who) ?? 0) + 1;
 	idleCount.set(who, n);
-	// 寄り道「残機」（STORY.md §5）：きのこ板の あとは やきうの 頭の 上の 数を 3回に 1回 言う
+	// 寄り道「残機」（STORY.md §4.9）：きのこ板の あとは やきうの 頭の 上の 数を 3回に 1回 言う
 	if (who === "nanj" && n % 3 === 0) {
 		const z = zankiLine(loadProgress().cleared);
 		if (z) return { text: z };

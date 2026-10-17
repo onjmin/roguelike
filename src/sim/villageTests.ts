@@ -2200,9 +2200,8 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	pool("RETURN_PAGES", RETURN_PAGES);
 	for (const [k, v] of Object.entries(UNLOCK_LINES))
 		pool(`UNLOCK_LINES.${k}`, v);
-	TITLE_TOWN_QUOTES.forEach((v, i) => {
+	for (const [i, v] of Object.entries(TITLE_TOWN_QUOTES))
 		pool(`TITLE_TOWN_QUOTES[${i}]`, v);
-	});
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
 	// 生き返った 通りの 知らせ・シャッター（いちばん 長い 名前と 数で）
@@ -2310,7 +2309,7 @@ test("喫茶「おんJ」: every talk fits the village window, and the door appe
 			talksWith("nanj", TOWN_STAGES - 1).length > 0,
 			"no talks with やきう while he is here",
 		);
-		// 開票の あとも やきうは 村に いる（だれも 出ていかない。STORY.md §5）
+		// 最終話の あとも やきうは 村に いる（だれも 出ていかない）
 		setProgress(all, [], all);
 		ok(hasCafeNews(), "やきう's talks give no 「！」 after the 開票");
 		ok(
@@ -2344,7 +2343,7 @@ test("the boot title's quote keeps its two lines on a 320px phone (name and 「�
 	add(SHALLOW_DEATH);
 	add(ESCAPE_QUOTES);
 	for (const d of DUNGEON_IDS) add(CLEAR[d]);
-	for (const ls of TITLE_TOWN_QUOTES) add(ls);
+	for (const ls of Object.values(TITLE_TOWN_QUOTES)) add(ls);
 	// 本編の たまり（data/story/quotes.ts。外へは 出していないので 引いて 集める）
 	const causes = [
 		"おなかがすいてたおれた",
@@ -3375,8 +3374,6 @@ test("おんすちゃん asks until Kiriko writes, and the vote thanks the pick 
 		ok(!t2.log.includes(thx), "thanked twice");
 	});
 });
-
-// ───────────────── 裏シナリオ「全滅の うそ」（STORY.md §5.98） ─────────────────
 
 export const runVillageTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];
@@ -4860,7 +4857,7 @@ test("おんJ 本館の 扉: the door text once per tier, a door sound and a fad
 
 test("演説の 当番表: one speech per return, counted in its own save, nothing else changes", async () => {
 	await withStorageAsync(async () => {
-		// 立候補した その 日から 書ける（STORY.md §5）
+		// パン板を 持ち帰った その 日から 書ける
 		setProgress(["shallow"]);
 		putTown({ stage: 0, points: 10 });
 		const town = localStorage.getItem(TOWN_KEY);
