@@ -80,13 +80,12 @@ export const crowdSize = (
 // ───────────────── 行き先 ─────────────────
 
 /**
- * 行き先の 種類。home 家・work 職場・care 病院・shop 店・food 飲食店・fun 遊び場・hall 配信会館・transit 港（無ければ 出口）・
+ * 行き先の 種類。home 家・work 職場・shop 店・food 飲食店・fun 遊び場・hall 配信会館・transit 港（無ければ 出口）・
  * edge 村の 出口（村の 外に 住む 人・よその 板から 来る 人）・rest 立ちどまる 所・wait 乗り物を 待つ 所。
  */
 export type CrowdKind =
 	| "home"
 	| "work"
-	| "care"
 	| "shop"
 	| "food"
 	| "fun"
@@ -657,7 +656,6 @@ export const PERSONAS: readonly Persona[] = [
 				["shop", "home", 3],
 				["home", "food", 1],
 				["home", "rest", 1],
-				["home", "care", 1],
 				["home", "hall", 1],
 			],
 			evening: [
@@ -701,16 +699,13 @@ export const PERSONAS: readonly Persona[] = [
 		flows: {
 			morning: [
 				["home", "rest", 3],
-				["home", "care", 2],
 			],
 			day: [
 				["home", "rest", 2],
-				["care", "home", 2],
 				["home", "hall", 1],
 				["home", "shop", 1],
 			],
 			evening: [
-				["care", "home", 1],
 				["shop", "home", 1],
 			],
 			night: [["home", "rest", 1]],
