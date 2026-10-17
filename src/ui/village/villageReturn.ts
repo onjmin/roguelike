@@ -79,7 +79,7 @@ import {
 	villagePlaces,
 } from "../../data/village/map";
 import type { Story } from "../../engine/defs";
-import { cueOf } from "../../engine/emote";
+import { type Cue, cueOf, type Emote, type Gesture } from "../../engine/emote";
 import {
 	addFlag,
 	deathCount,
@@ -269,6 +269,12 @@ const toward: Record<Dir, Dir> = {
  */
 const placed = new WeakMap<Story, Cell[]>();
 
+/**
+ * lineUp で 口の 前に 並んだ 人の マス（語りで 前に 出た 人が もどる 所）。並べる 幕の 前と 語りの 場面は
+ * Story が べつなので、Story では なく いちばん 新しい 並びを おぼえる。
+ */
+let homes = new Map<string, Cell>();
+
 /** 場面で 人を 置いた マス。 */
 const takenBy = (s: Story): readonly Cell[] => placed.get(s) ?? [];
 
@@ -306,6 +312,12 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 	});
 	// 新しい 場面：並んだ マスだけ おぼえる（キリコが どく マス・口から 来る 人の 行き先から 外す）
 	placed.set(s, spots.slice(0, cast.length + mobs.length));
+	homes = new Map(
+		[...cast, ...mobs].flatMap((who, i) => {
+			const c = spots[i];
+			return c ? [[who, c] as const] : [];
+		}),
+	);
 	// 停電の 町に 帰る 場面（電池板）：幕が 上がる 前から 暗く、外には 並んだ 人しか いない
 	if (pages[0]?.sky === "dark") {
 		setSceneSky("dark");
@@ -453,6 +465,130 @@ const playPageSe = async (s: Story, p: StoryPage): Promise<void> => {
 	}
 };
 
+// ───────────────── 掛け合いの 立ち回り ─────────────────
+// 並んだ まま 窓だけ 進むと、だれが だれに 言って いるか 見えない（2026-10-18 作者「全員が その場で 動かないから
+// 伝わりにくい」）。話す 人は 1歩 前に 出て、聞く 人と キリコは その人の ほうを 向く。話し手が かわると 前の 人は 下がる。
+
+/** 記号だけ 書いた 行の 体の 動き（gesture を 書いた 行は そのまま）。 */
+const EMOTE_GESTURE: Partial<Record<Emote, Gesture>> = {
+	"!": "startle",
+	"♪": "hop",
+	"♥": "hop",
+	花: "hop",
+	汗: "shiver",
+	怒: "shiver",
+};
+
+/** 頁の 感情（記号に あう 動きを 足す）。 */
+const pageCue = (p: StoryPage): Cue => {
+	const c = cueOf(p);
+	const g = c.gesture ?? (c.emote ? EMOTE_GESTURE[c.emote] : undefined);
+	return g ? { ...c, gesture: g } : c;
+};
+
+/** 頁を 話す 人（村に 立つ イベント ID。地の文・名無し・キリコは null）。 */
+const speakerOf = (p: StoryPage): string | null =>
+	p.mob ? `mob_${p.mob}` : p.kiriko || p.nanashi ? null : p.who;
+
+/** from から to を 見る 向き（たて・よこの 遠い ほう）。 */
+const dirTo = (from: Cell, to: Cell): Dir => {
+	const dx = to[0] - from[0];
+	const dy = to[1] - from[1];
+	if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? "left" : "right";
+	return dy < 0 ? "up" : "down";
+};
+
+const STEP: Record<Dir, "u" | "d" | "l" | "r"> = {
+	up: "u",
+	down: "d",
+	left: "l",
+	right: "r",
+};
+
+/** 掛け合いの 立ち位置（いま 前に 出て いる 人と、みんなの いる マス）。 */
+type Stage = {
+	at: Map<string, Cell>;
+	front: { id: string; dir: Dir } | null;
+	kiriko: Cell;
+	/** キリコの 前の マス（話し手が 寄って いく 先）。 */
+	mark: Cell;
+};
+
+const stageOf = (s: Story, exit: VillageExit): Stage | null => {
+	const h = homes;
+	if (!h.size) return null;
+	const k: Cell = [s.state.x, s.state.y];
+	const v = DIR_V[exit.inward];
+	return {
+		at: new Map(h),
+		front: null,
+		kiriko: k,
+		mark: [k[0] + v[0], k[1] + v[1]],
+	};
+};
+
+const DIR_V: Record<Dir, Cell> = {
+	up: [0, -1],
+	down: [0, 1],
+	left: [-1, 0],
+	right: [1, 0],
+};
+
+const dist = (a: Cell, b: Cell): number =>
+	Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+
+/** 話し手が 前に 出る 1歩（キリコの 前の マスへ 近づく 空いた マス。なければ null）。 */
+const stepOut = (st: Stage, id: string, home: Cell): Dir | null => {
+	const busy = [...st.at.entries()].filter(([w]) => w !== id).map(([, c]) => c);
+	const open = spotsAround(villageView(), 8, home, [...busy, st.kiriko]).filter(
+		(c) => dist(c, home) === 1 && dist(c, st.mark) < dist(home, st.mark),
+	);
+	const to = open.sort((a, b) => dist(a, st.mark) - dist(b, st.mark))[0];
+	return to ? dirTo(home, to) : null;
+};
+
+/** 前に 出て いる 人を 並んだ マスへ 下げる。 */
+const stepBack = async (s: Story, st: Stage): Promise<void> => {
+	const prev = st.front;
+	if (!prev) return;
+	await s.move(prev.id, STEP[toward[prev.dir]], { speed: 1.6 });
+	const ph = homes.get(prev.id);
+	if (ph) st.at.set(prev.id, ph);
+	st.front = null;
+};
+
+/** 話し手を 前に（前の 話し手は 下がる）。聞く 人と キリコは 話し手の ほうを 向く。 */
+const turnTo = async (
+	s: Story,
+	st: Stage,
+	id: string | null,
+): Promise<void> => {
+	if (!id || st.front?.id === id) return;
+	const home = homes.get(id);
+	if (!home) return;
+	// 下がってから 出る（同時だと 同じ マスを とりあって 止まる）
+	await stepBack(s, st);
+	const d = stepOut(st, id, home);
+	if (d) {
+		await s.move(id, STEP[d], { speed: 1.6 });
+		const v = DIR_V[d];
+		st.at.set(id, [home[0] + v[0], home[1] + v[1]]);
+		st.front = { id, dir: d };
+	}
+	const me = st.at.get(id) ?? home;
+	s.face(id, "player");
+	s.face("player", dirTo(st.kiriko, me));
+	for (const [w, c] of st.at) if (w !== id) s.face(w, dirTo(c, me));
+};
+
+/** みんな キリコに 背を 向ける（前に 出て いた 人は 下がってから）。 */
+const turnAway = async (s: Story, st: Stage): Promise<void> => {
+	await stepBack(s, st);
+	for (const [w, c] of st.at) s.face(w, dirTo(st.kiriko, c));
+	// ひとり 残った キリコは こちらを 向く
+	s.face("player", "down");
+};
+
 /** 口から 出てきて、並んだ 仲間が 語りを 話す。暗転の あいだに みんな 持ち場へ もどる。 */
 export const returnScene = async (
 	s: Story,
@@ -470,6 +606,8 @@ export const returnScene = async (
 	await s.move("player", exit.step);
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const id of here) s.face(`mob_${id}`, "player");
+	// 掛け合いの 立ち位置（明かりの 坂で 建て直すと 並びが くずれるので やめる）
+	let stage = stageOf(s, exit);
 	// 場面の エフェクト（煙・暗転などは 次の 頁も 同じ fx なら 残す）
 	let fx: { kind: SceneFx; run: FxRun } | null = null;
 	for (const p of pages) {
@@ -477,7 +615,13 @@ export const returnScene = async (
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		// 場面の 空（明かりの 場面は 夜。ui/village/sceneSky.ts）
 		if (p.sky !== undefined) setSceneSky(p.sky);
-		if (p.cue) await playCue(s, p.cue);
+		if (p.cue) {
+			await playCue(s, p.cue);
+			if (p.cue === "lightsUp") stage = null;
+		}
+		if (p.look !== undefined) await s.look(p.look);
+		if (stage && p.turnAway) await turnAway(s, stage);
+		else if (stage) await turnTo(s, stage, speakerOf(p));
 		if (fx && fx.kind !== p.fx) {
 			fx.run.end();
 			fx = null;
@@ -488,8 +632,8 @@ export const returnScene = async (
 			await fx.run.ready;
 		}
 		await se;
-		if (p.mob) await sayAs(s, p.mob, p.text, cueOf(p));
-		else await playPage(s, p);
+		if (p.mob) await sayAs(s, p.mob, p.text, pageCue(p));
+		else await playPage(s, { ...p, ...pageCue(p) });
 	}
 	fx?.run.end();
 	// 見おえた（一度きりの 語りは 次から 短く）
@@ -502,6 +646,7 @@ export const returnScene = async (
 		s.fadeOut(300),
 	]);
 	await rebuild(s);
+	homes = new Map();
 	setSceneSky(null);
 	lightsBack.clear();
 	s.bgm(villageSong());
