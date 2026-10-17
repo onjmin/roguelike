@@ -11,8 +11,15 @@ const MAID_FROM = 7;
 /** 出る 曜日（0=日〜6=土）と 時（from 時から to 時の 前まで）。 */
 export const SHIYO_SHIFT = { days: [5, 6, 0], from: 17, to: 22 } as const;
 
+/** 場面の あいだ シフトを 休む（話の つなぎの 場面で シヨが 村に 立つ ように。ui/village/episodeHooks.ts）。 */
+let shiftOff = false;
+export const holdShiyoShift = (on: boolean): void => {
+	shiftOff = on;
+};
+
 /** いま シヨが メイド喫茶で 働いて いるか。 */
 export const shiyoAtMaid = (stage: number, t: Today, hour: number): boolean =>
+	!shiftOff &&
 	stage >= MAID_FROM &&
 	(SHIYO_SHIFT.days as readonly number[]).includes(t.w) &&
 	hour >= SHIYO_SHIFT.from &&

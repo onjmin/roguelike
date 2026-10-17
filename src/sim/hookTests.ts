@@ -1,6 +1,7 @@
 // 話の つなぎの 場面（data/story/hooks.ts・ui/village/episodeHooks.ts）の 試験。
 // pnpm test で いっしょに 動く。形は bondTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は H。
 
+import { shiyoAtMaid } from "../data/people/shiyoShift";
 import {
 	BATH_EVE,
 	colonyCard,
@@ -195,6 +196,12 @@ test(
 			ok(said.includes("show visitor"), "the shadow posts again");
 			ok(loadProgress().news.length === 2, "the news stays for newsScript");
 			ok(hasFlag("eve_main") && !bathEveDue(), "only once");
+			// シヨの シフトは 場面の あいだだけ 休み（建て直しは はじめと 翌朝の 2回）、おわれば もとどおり
+			ok(
+				log.filter((l) => l.startsWith("rebuild")).length === 2,
+				"rebuilt for Shiyo and back",
+			);
+			ok(shiyoAtMaid(7, { m: 10, d: 16, w: 5 }, 19), "the shift is back");
 		});
 	},
 );

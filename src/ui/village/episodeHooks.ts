@@ -3,6 +3,7 @@
 // 立ち話で 終わらせない：人が 歩いて 集まる・イメージ図（engine/sceneCard.ts）・回想（sceneFx の memory）・
 // 夜の 行進を カメラで 追う・見出しを 貼る 人影（いちばん 最初の 村の 天丼）。
 
+import { holdShiyoShift } from "../../data/people/shiyoShift";
 import {
 	BATH_EVE,
 	colonyCard,
@@ -288,10 +289,8 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	const [bx, by] = VILLAGE_SPOTS.boot;
 	const [hx, hy] = VILLAGE_SPOTS.bath;
 	const nanjHome = VILLAGE_SPOTS.nanj(villageView());
-	// 湯温に うるさい 役は シヨ。メイド喫茶の バイトで 村に いない 夜は ロゼ（data/people/shiyoShift.ts）
-	const mate: "shiyo" | "roze" = s.near("shiyo", 999) ? "shiyo" : "roze";
-	const homes: Record<string, Cell> = {
-		[mate]: VILLAGE_SPOTS[mate],
+	const homes: Record<"shiyo" | "zero" | "nanj", Cell> = {
+		shiyo: VILLAGE_SPOTS.shiyo,
 		zero: VILLAGE_SPOTS.zero,
 		nanj: nanjHome,
 	};
@@ -300,6 +299,9 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.wait(0);
 	await s.fadeBgm(400);
 	await s.fadeOut(500);
+	// メイド喫茶の シフトの 夜でも、この 場面の あいだは シヨを 村に 立たせる（翌朝 もとに もどす）
+	holdShiyoShift(true);
+	await s.rebuild();
 	setSceneSky("night");
 	s.place("player", bx, by, "down");
 	for (const [w, c] of Object.entries(homes)) s.place(w, c[0], c[1], "down");
@@ -311,9 +313,9 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.goto("zero", bx + 1, by, { speed: 2.4, avoid: true });
 	s.face("zero", "player");
 	await s.say("zero", B.zeroSpore, { emote: "!" });
-	await s.goto(mate, bx - 1, by, { speed: 1.6, avoid: true });
-	s.face(mate, "player");
-	await s.say(mate, mate === "shiyo" ? B.shiyoBath : B.rozeBath, {
+	await s.goto("shiyo", bx - 1, by, { speed: 1.6, avoid: true });
+	s.face("shiyo", "player");
+	await s.say("shiyo", B.shiyoBath, {
 		emote: "汗",
 	});
 	await s.kiriko(B.kirikoGo, "voice", { gesture: "hop" });
@@ -327,11 +329,11 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 			.then(() => s.goto("zero", hx + 1, hy + 2, { speed: 1.4, avoid: true })),
 		s
 			.wait(500)
-			.then(() => s.goto(mate, hx - 1, hy + 2, { speed: 1.4, avoid: true })),
+			.then(() => s.goto("shiyo", hx - 1, hy + 2, { speed: 1.4, avoid: true })),
 	]);
 	s.face("player", "up");
 	s.face("zero", "up");
-	s.face(mate, "up");
+	s.face("shiyo", "up");
 	const shut = INCIDENTS.find((i) => i.dungeon === "main")?.shut?.bath;
 	if (shut) await s.narrate(shut);
 	s.se("bubble");
@@ -352,9 +354,9 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	const card = showCard(root, factionCard(0));
 	s.se("cardFlip");
 	await s.say("zero", B.zeroFaction);
-	card.update(factionCard(1, mate === "roze"));
+	card.update(factionCard(1));
 	s.se("hit_fist");
-	await s.say(mate, mate === "shiyo" ? B.shiyo43 : B.roze40, { emote: "花" });
+	await s.say("shiyo", B.shiyo43, { emote: "花" });
 	await s.kiriko(B.kirikoMore, "voice", { emote: "汗" });
 	card.end();
 	await s.say("zero", B.zeroWhy);
@@ -404,8 +406,10 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.fadeBgm(400);
 	await s.fadeOut(700);
 	setSceneSky(null);
-	for (const [w, c] of Object.entries(homes)) s.place(w, c[0], c[1], "down");
+	// シヨの シフトを もとに もどして 建て直す（シフトの 時間なら メイド喫茶へ）
+	holdShiyoShift(false);
 	s.place("player", ox, oy + 1, "up");
+	await s.rebuild();
 	await s.fadeIn(500);
 	await s.narrate(B.morning);
 	s.bgm(villageSong());

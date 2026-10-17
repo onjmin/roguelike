@@ -107,11 +107,6 @@ export const BATH_EVE = {
 	zeroFaction: "41℃派12人、42℃派12人。\n中立は、0人です",
 	shiyo43: "41℃も42℃も、ぬるいわよ。\n……あたすは、43℃",
 	kirikoMore: "派閥がふえたンゴ！",
-	// シヨが メイド喫茶の バイトで 村に いない 夜（data/people/shiyoShift.ts）は ロゼが 同じ 役
-	rozeBath: "胞子、まきちらすなアル。\n……銭湯で流すのが常識アル",
-	roze40: "41℃も42℃も、まちがいアル。\n……常識は、40℃アル",
-	rozeName: "ロゼ派",
-	shiyoName: "シヨ派",
 	zeroWhy: "けんかのはじまりも、\nログに残ってました",
 	memoryCaption: "3日前",
 	memoryNight: "3日前の夜。掲示板に、\n名無しの書きこみがひとつ。",
@@ -125,22 +120,14 @@ export const BATH_EVE = {
 	morning: "翌朝。",
 } as const;
 
-/**
- * イメージ図③：湯温の 派閥（籠城 3日目）。step 1 で シヨ派（43℃）が 参戦。シヨが いない 夜は ロゼ派（40℃）。
- */
-export const factionCard = (step: 0 | 1, roze = false): CardSpec => ({
+/** イメージ図③：湯温の 派閥（籠城 3日目）。step 1 で シヨ派（43℃）が 参戦。 */
+export const factionCard = (step: 0 | 1): CardSpec => ({
 	title: "イメージ図「湯温戦争」",
 	nodes: [
 		{ label: "41℃派", sub: "12人", aa: "41" },
 		{ label: "銭湯", sub: "籠城3日目", aa: "湯", shake: true },
 		{ label: "42℃派", sub: "12人", sprite: BANTOU },
-		...(step === 1
-			? [
-					roze
-						? { label: BATH_EVE.rozeName, sub: "1人", aa: "40" }
-						: { label: BATH_EVE.shiyoName, sub: "1人", aa: "43" },
-				]
-			: []),
+		...(step === 1 ? [{ label: "シヨ派", sub: "1人", aa: "43" }] : []),
 	],
 	links: [
 		{ label: "押す" },

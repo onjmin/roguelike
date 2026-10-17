@@ -1269,7 +1269,7 @@ export const UNLOCK_LINES: Record<
 	readonly Line[]
 > = {
 	main: [
-		q("nanj", "次は風呂板や。銭湯、閉まっとる。\nのぼせんなよ"),
+		q("nanj", "風呂板は、桟橋から船や。\n……のぼせんなよ"),
 		q(
 			"zero",
 			"風呂板への入口、開きました！\nゼロは、ここで湯温を数えてます！",
