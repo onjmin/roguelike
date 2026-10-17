@@ -5,13 +5,12 @@
 //   synopsis：これまでの あらすじと 次の 行き先（村の メニュー・ダンジョンの メニュー）
 // どれも 起きた ことを なぞる だけで、先の どんでん返しは 言わない。
 
-import { subsText } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import { QUEST_HEROES, questStage } from "../../engine/heroes";
-import { loadProgress, loadTown } from "../../engine/save";
+import { loadProgress } from "../../engine/save";
 import { HERO_QUESTS } from "../people/heroQuests";
+import { REVIVE_AREAS, revivedAreas } from "../town/revival";
 import { OPENING } from "../town/town";
-import { SPEAKERS } from "./quotes";
 
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
@@ -101,52 +100,11 @@ export const diveResAt = (
 	return r;
 };
 
-/** キリコの 登録者の 札（「キリコの　登録者：24人」）。 */
-export const subsLine = (subs: number = loadTown().subs): string =>
-	`キリコの　登録者：${subsText(subs)}人`;
-
-/** ランキングに のる ライバル（STORY.md §5 の 配役）。 */
-export const RIVALS = ["roze", "zero", "shiyo", "feris"] as const;
-export type Rival = (typeof RIVALS)[number];
-
-/** フェリスの 登録者（伸びては 過疎り、また 復活する。もぐった 回数で 上下）。 */
-const FERIS_WAVE: readonly number[] = [800, 26000, 3100, 61000, 1200, 9000];
-
-/**
- * ライバルの 登録者（話が 進むと ふえる。ロゼは 上位の 常識派、ゼロは 3機の 合計、シヨは 少ないが 濃い）。
- */
-export const rivalSubs = (
-	cleared: readonly DungeonId[],
-	runs: number,
-): Record<Rival, number> => {
-	const k = cleared.length;
-	return {
-		roze: 120000 + 20000 * k,
-		zero: 81000 + 15000 * k,
-		shiyo: 4200 + 600 * k,
-		feris: FERIS_WAVE[runs % FERIS_WAVE.length],
-	};
-};
-
-/**
- * ランキング掲示板の 窓（多い 順。2人ずつ 1窓）。同じ 数なら キリコが 上。
- */
-export const rankingWindows = (
-	subs: number,
-	cleared: readonly DungeonId[],
-	runs: number,
-): string[] => {
-	const r = rivalSubs(cleared, runs);
-	const rows = [
-		{ name: "キリコ", n: subs },
-		...RIVALS.map((w) => ({ name: SPEAKERS[w].name, n: r[w] })),
-	].sort((a, b) => b.n - a.n);
-	const lines = rows.map((x, i) => `${i + 1}位　${x.name}　${subsText(x.n)}人`);
-	const out: string[] = [];
-	for (let i = 0; i < lines.length; i += 2)
-		out.push(lines.slice(i, i + 2).join("\n"));
-	return out;
-};
+/** 生き返った 通りの 札（「生き返った　通り：2／7」。data/town/revival.ts）。 */
+export const revivedLine = (
+	cleared: readonly DungeonId[] = loadProgress().cleared,
+): string =>
+	`生き返った　通り：${revivedAreas(cleared).length}／${REVIVE_AREAS.length}`;
 
 /** 持ち帰る 前なら 何のために 行くか（持ち帰った あとは null）。 */
 export const goalWhy = (
@@ -238,7 +196,7 @@ export const synopsisHtml = (
 	const chapter = (ch: Chapter | null) =>
 		ch ? `<p><b>${ch.title}　まで</b><br>${ch.sum}</p>` : "";
 	return (
-		`<p class="hint">${subsLine()}</p>` +
+		`<p class="hint">${revivedLine()}</p>` +
 		chapter(main) +
 		questHtml +
 		(next ? `<p class="hint">つぎ：${next}</p>` : "")
@@ -250,7 +208,7 @@ export const synopsisHtml = (
  * 1回きりで 読みかえせない」）。はじまりの やきうの 言葉（data/town/town.ts の OPENING）を そのまま。
  */
 export const firstGoalHtml = (): string =>
-	`<p class="hint">${subsLine()}</p>` +
+	`<p class="hint">${revivedLine()}</p>` +
 	`<p><b>はじまり</b><br>${OPENING.nanjMouth.map((l) => l.replaceAll("\n", "")).join("<br>")}</p>` +
 	`<p class="hint">つぎ：${OPENING.goal[0].replaceAll("\n", "")}</p>`;
 

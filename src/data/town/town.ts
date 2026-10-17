@@ -205,22 +205,13 @@ export const CARRY_REFUSE: Record<
 export const CARRY_CHASE = "ンゴ姉が　追いかけてきた。";
 
 /**
- * 帰ってきた ときの 撮れ高の 発表（ヒナリー。ui/village/villageReturn.ts の subsScript）。
- * {n} は ふえた 登録者、{subs} は 登録者の 合計。dead は 放送事故（倒れて 帰った）。
+ * 通りが 生き返った 知らせ（ui/village/villageReturn.ts の reviveScript。通りごとの 地の文は data/town/revival.ts）。
+ * {name} は 通りの 名前。storage・carry は 町の 段が 上がった とき。
  */
-export const SUBS_MSG = {
-	gain: st(
-		"hinary",
-		"今回の　撮れ高、登録者　{n}人　増。\n合計　{subs}人です。……以上です",
-	),
-	dead: st("hinary", "放送事故で、登録者　{n}人　増。\n……事故も、データです", {
-		emote: "汗",
-	}),
-	/** 店が 開いた（{subs} は 登録者）。 */
-	open: "登録者　{subs}人。\n「準備中」の　シャッターが　あがった！",
-	/** 開いた 店（{name} は 開いた 店の 1つめ、{n} は 数）。1軒だけなら shopOne。 */
-	shops: "{name}など、\n{n}軒が　店を　開けた。",
-	shopOne: "{name}が\n店を　開けた。",
+export const REVIVE_MSG = {
+	open: "{name}が　生き返った！",
+	/** 倉庫が 広がった（{n} は あずけられる 数）。 */
+	storage: "機材倉庫が　広がった。\n{n}つまで　あずけられる",
 	/** 持ちこみが ふえた（{n} は 持ちこめる 数）。 */
 	carry: "機材倉庫から　引き取って\n{n}つまで　持っていける",
 } as const;
@@ -344,15 +335,13 @@ export const ESCAPE_ITEM = {
  * 村（ui/village/villageEvents.ts）で 物を 調べたときの 地の文と、仲間の 役目の 選択肢。
  * phono は 蓄音機の ようす（まだ 何も → パン板 → 風呂板 → 電池板 を 持ち帰った）。
  * 蓄音機は キリコの マイク 兼 切り抜き機（「声を　ためて、また　鳴らせる機械」）。持ち帰った 配信の 声を 鳴らす。
- * ledger は ヒナリーの 帳簿（{subs} は 登録者数、{next} は 次の 店が 開く 登録者数）。ledgerNone は まだ 0人、
- * ledgerMax は 店が ぜんぶ 開いた、ledgerTop は 最後の 店が 最終話（電池板）待ち。
+ * ledger は ヒナリーの 帳簿（{n} は 生き返った 通りの 数、{left} は 残り）。ledgerNone は まだ 0、
+ * ledgerMax は ぜんぶ 生き返った。
  */
 export const VILLAGE_MSG = {
-	/** まだ 開いて いない 店の シャッター（{subs} は 開く 登録者数。TOWN.md §0.1）。 */
-	shut: "「準備中」の　シャッター。\n「登録者　{subs}人で　開店します」",
-	/** 登録者は 届いて いるが、最終話（電池板）の あとに 開く 店。 */
-	shutTop: "「準備中」の　シャッター。\n「最終話の　あとに　開店します」",
-	board: "ランキング掲示板。\n配信者の　登録者数が　はってある。",
+	/** まだ 生き返って いない 所の シャッター（data/town/revival.ts）。 */
+	shut: "シャッターが　下りている。\n……だれも　いない。",
+	board: "広場の　掲示板。\n町の　知らせが　はってある。",
 	/**
 	 * おんJ 本館の 扉を あけたとき（本館の 段 0 集会所・1 レンガ館・2 本館。村に いるあいだ 段ごとに はじめの 1回）。
 	 * 中は data/town/hall.ts。
@@ -385,10 +374,10 @@ export const VILLAGE_MSG = {
 	/** 過去ログの底から 帰った（井戸から 出てくる）。 */
 	wellUp:
 		"井戸の　底から、縄ばしごを　のぼる　音。\n……{hero}が　顔を　出した。",
-	ledger: "登録者は　{subs}人。次の　店は\n{next}人で　開きます。……以上です",
-	ledgerNone: "登録者は、まだ　0人です。\n……0から　数えるのも、研究です",
-	ledgerMax: "登録者は　{subs}人。\n店は、ぜんぶ　開きました！",
-	ledgerTop: "登録者は　{subs}人。最後の　店は\n最終話の　あとに　開きます",
+	ledger: "生き返った　通りは　{n}つ。\n残りは　{left}つです。……以上です",
+	ledgerNone:
+		"生き返った　通りは、まだ　0です。\n……0から　数えるのも、研究です",
+	ledgerMax: "町の　通りは、\nぜんぶ　生き返りました！",
 	/**
 	 * おんJ神社（段2 から。北西の 森の 奥）。お参りすると おみくじ（1回の 帰りに 1回。2回目は omikujiAgain）。
 	 * 運は 冒険に 効かない（地の文だけ）。

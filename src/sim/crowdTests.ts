@@ -4,6 +4,7 @@ import { MONSTERS } from "../core/data/monsters";
 import { TOWN_STAGES } from "../core/town";
 import { CAST } from "../data/people/cast";
 import { MOBS } from "../data/people/mobs";
+import { REVIVE_AREAS } from "../data/town/revival";
 import {
 	CROWD_SPOTS,
 	type CrowdNode,
@@ -44,10 +45,11 @@ const BANDS: readonly TimeBand[] = [
 	"evening",
 	"night",
 ];
+/** 町が ぜんぶ 生き返った 村（data/town/revival.ts。シャッターの 店には 人が 出入りしない）。 */
 const view = (stage: number): VillageView => ({
 	stage,
 	unlocked: ["shallow", "main", "deep"],
-	cleared: ["shallow", "main"],
+	cleared: REVIVE_AREAS.map((a) => a.dungeon),
 });
 /** 決まった 乱数（試験を くり返しても 同じ 結果）。 */
 const seeded = (seed: number) => {

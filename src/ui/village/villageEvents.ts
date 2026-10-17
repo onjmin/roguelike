@@ -21,7 +21,7 @@
 
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME } from "../../core/data/heroes";
-import { CARRY_MAX, subsText } from "../../core/town";
+import { CARRY_MAX } from "../../core/town";
 import type { DungeonId, GuestId, Item } from "../../core/types";
 import { CAST } from "../../data/people/cast";
 import {
@@ -36,7 +36,6 @@ import {
 } from "../../data/people/companions";
 import { HERO_QUESTS, type QuestLine } from "../../data/people/heroQuests";
 import { BOARD_MENU, type MobId } from "../../data/people/mobs";
-import { LIBRARY_FROM } from "../../data/story/glossary";
 import {
 	type ObjectiveInfo,
 	objectiveFor,
@@ -44,7 +43,8 @@ import {
 } from "../../data/story/objectives";
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
-import { rankingWindows, synopsisNow } from "../../data/story/synopsis";
+import { revivedLine, synopsisNow } from "../../data/story/synopsis";
+import { isRevived } from "../../data/town/revival";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
@@ -61,13 +61,7 @@ import {
 } from "../../data/village/facilities";
 import { npc, sign } from "../../data/village/helpers";
 import {
-	BATH_FROM,
-	CAFE_FROM,
 	layoutStage,
-	MUSIC_FROM,
-	openOf,
-	SHRINE_FROM,
-	subsToOpen,
 	VILLAGE_SPOTS,
 	VISITOR_WALK,
 	type VillagePlace,
@@ -152,11 +146,11 @@ import {
 	type ReturnArrival,
 	reliefScript,
 	returnScene,
+	reviveScript,
 	type StoreChooser,
 	sceneView,
 	sendBack,
 	settleScript,
-	subsScript,
 	tamperScript,
 	tenScript,
 } from "./villageReturn";
@@ -602,19 +596,14 @@ const escortThanksScript = async (s: Story): Promise<void> => {
 };
 
 /**
- * ランキング掲示板：配信者の 登録者数の 順位を 見て、冒険の 記録・人気投票の はり紙（出て いれば）などから えらぶ。
+ * 広場の 掲示板：生き返った 通りの 数を 見て、冒険の 記録・人気投票の はり紙（出て いれば）などから えらぶ。
  */
 const boardScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
 		await s.narrate(VILLAGE_MSG.board);
-		// 登録者数の 順位（キリコと ライバル 4人。data/story/synopsis.ts）
-		for (const w of rankingWindows(
-			loadTown().subs,
-			loadProgress().cleared,
-			loadRecords().length,
-		))
-			await s.narrate(w);
+		// 生き返った 通り（data/town/revival.ts）
+		await s.narrate(revivedLine(loadProgress().cleared));
 		const stage = previewStage() ?? loadTown().stage;
 		// おんJ芋煮会の はり紙（10月だけ。ui/minigames/imoni.ts）
 		const imoni = imoniBoardMenu();
@@ -803,7 +792,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "shrine")
-		return sign(p.id, p.x, p.y, shut(SHRINE_FROM, v, false) ?? shrineScript);
+		return sign(p.id, p.x, p.y, shut("shrine", v, false) ?? shrineScript);
 	// 小屋・銭湯・倉庫・常識堂の 勝手口・喫茶の 扉（踏むと 中へ。前で A でも。ui/village/rooms.ts・ui/village/cafe.ts）
 	// 音楽室「ピアノ機能」の 扉（週末だけ 中へ。ui/village/rooms.ts）
 	if (p.id === "door_music")
@@ -811,14 +800,14 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut(MUSIC_FROM, v) ?? enterMusic,
+			run: shut("music", v) ?? enterMusic,
 		};
 	if (p.id === "door_bath")
 		return {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut(BATH_FROM, v) ?? enterBath,
+			run: shut("bath", v) ?? enterBath,
 		};
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
@@ -832,7 +821,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut(LIBRARY_FROM, v) ?? enterRoom("library"),
+			run: shut("library", v) ?? enterRoom("library"),
 		};
 	// 町が 育つと 建つ 施設の 扉と 外の 物（data/village/facilities.ts・ui/village/facilities.ts）
 	if (p.id.startsWith("door_f_")) {
@@ -842,22 +831,17 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 				...at,
 				trigger: "touch",
 				through: true,
-				run: shut(f.from, v) ?? enterFacility(f),
+				run: shut(f.id, v) ?? enterFacility(f),
 			};
 	}
 	if (p.id.startsWith("fthing_")) {
 		const got = outdoorThingOf(p.id);
 		const t = got?.t;
-		// バス停：ここからも 出かけられる（村の 口と 同じ 流れ。出口を 遠く しない）
-		if (t?.play === "bus")
-			return sign(p.id, p.x, p.y, async (s) => {
-				for (const l of t.lines) await s.narrate(l);
-				await mouthScript(ctx, null)(s);
-			});
 		// 屋台の 店番：見える 人（話すと こちらを 向く。台ごしに 話す）。when が あれば その 日だけ（おんJ芋煮会の 人）
 		// まだ 開いて いない 店の 物は シャッターの 札だけ
-		const closed = got ? shut(got.f.from, v, false) : null;
-		if (got && t?.sprite)
+		const closed = got ? shut(got.f.id, v, false) : null;
+		// シャッターの 店の 店番は 出てこない（人なし）
+		if (got && t?.sprite && !closed)
 			return npc(
 				p.id,
 				p.x,
@@ -877,7 +861,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut(CAFE_FROM, v) ?? enterCafe,
+			run: shut("cafe", v) ?? enterCafe,
 		};
 	if (p.id.startsWith("door_hall_")) {
 		const i = Number(p.id.slice("door_hall_".length));
@@ -909,19 +893,13 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 };
 
 /**
- * まだ 開いて いない 店（段 from が 開いた 段より 上）なら「準備中」の シャッターの 札（扉なら 1歩 もどる）。
- * 開いて いれば null（町は はじめから 都市の 姿で、店は 登録者数で 開く。TOWN.md §0.1）。
+ * まだ 生き返って いない 所（data/town/revival.ts）なら シャッターの 札（扉なら 1歩 もどる）。開いて いれば null。
  */
-const shut = (from: number, v: VillageView, door = true): Script | null =>
-	openOf(v) >= from
+const shut = (place: string, v: VillageView, door = true): Script | null =>
+	isRevived(place, v.cleared)
 		? null
 		: async (s) => {
-				const need = subsToOpen(from);
-				await s.narrate(
-					loadTown().subs >= need
-						? VILLAGE_MSG.shutTop
-						: fill(VILLAGE_MSG.shut, { subs: subsText(need) }),
-				);
+				await s.narrate(VILLAGE_MSG.shut);
 				if (door) await s.move("player", "d");
 			};
 
@@ -993,8 +971,8 @@ const arrivalScript =
 		await escortThanksScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
-		// 撮れ高の 発表（ふえた 登録者。節目なら 店が 開く）→ 持ち帰った 物を 倉庫へ・売る
-		await subsScript(s);
+		// 持ち帰った 板で 通りが 生き返る（data/town/revival.ts）→ 持ち帰った 物を 倉庫へ・売る
+		await reviveScript(s);
 		await settleScript(s, storeChooser(ctx));
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
@@ -1077,8 +1055,8 @@ export const villageMenu = async (ctx: Ctx, _s: Story): Promise<void> => {
 		];
 		const v = await listWindow(
 			ctx,
-			// 登録者数と 手もとの お金（お金は 売り上げが あってから。engine/wallet.ts）
-			`${TOWN_NAME}　登録者　${subsText(loadTown().subs)}人${loadTown().points > 0 ? `　手もと　${yen(walletYen())}` : ""}`,
+			// 手もとの お金（売り上げが あってから。engine/wallet.ts）
+			`${TOWN_NAME}${loadTown().points > 0 ? `　手もと　${yen(walletYen())}` : ""}`,
 			items,
 			{ start },
 		);

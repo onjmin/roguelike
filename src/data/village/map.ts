@@ -48,7 +48,7 @@
 // 16 H*,,,,,,@,,,,@,,,,,,*H  ぷゆゆ 8（うろうろ）
 // 17 HhHhHhHhHhHhHhHhHhHhHh
 
-import { SUB_TIERS, TOWN_STAGES } from "../../core/town";
+import { TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
@@ -58,6 +58,7 @@ import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
 import { nowHour, today } from "../town/calendar";
+import { type CorePlace, isRevived } from "../town/revival";
 import {
 	doorId,
 	facilitiesAt,
@@ -69,6 +70,7 @@ import {
 } from "./facilities";
 import { folkPlaces } from "./folk";
 import { ROOM_FROM } from "./rooms";
+import { art } from "./rpgenArt";
 import {
 	ASPHALT,
 	BANK,
@@ -123,17 +125,13 @@ const TOWN_H = 18;
 /**
  * 村の形を決める物（町の段・開いたダンジョン・持ち帰ったダンジョン）。
  * 町は はじめから 都市の 姿（ui/village/villageReturn.ts の villageView は stage を いちばん上に する）。
- * open は 開いた 店の 段（登録者数で 決まる。core/town.ts の stageOfSubs）。省くと stage と 同じ。
+ * 開いて いる 店は 持ち帰った 板で 決まる（data/town/revival.ts）。
  */
 export type VillageView = {
 	stage: number;
 	unlocked: readonly DungeonId[];
 	cleared: readonly DungeonId[];
-	open?: number;
 };
-
-/** 開いた 店の 段（それより 上の 段の 店は「準備中」）。 */
-export const openOf = (v: VillageView): number => v.open ?? v.stage;
 
 export type Cell = readonly [x: number, y: number];
 
@@ -647,26 +645,6 @@ export const SHRINE_FROM = 2;
 /** 銭湯が 建つ 町の 段（南東。池の 東の 森を 開いた 所）。 */
 export const BATH_FROM = 4;
 
-/** 地図に 字で 描く 店（FACILITIES の ほか）と 開く 段。 */
-const BLOCK_SHOPS: readonly { from: number; name: string }[] = [
-	{ from: SHRINE_FROM, name: "おんJ神社" },
-	{ from: MUSIC_FROM, name: "音楽室" },
-	{ from: BATH_FROM, name: "銭湯" },
-	{ from: CAFE_FROM, name: "喫茶「おんJ」" },
-	{ from: LIBRARY_FROM, name: "図書館" },
-];
-
-/** 段 from → to で 開いた 店の 名前（開く 順）。 */
-export const shopsOpened = (from: number, to: number): string[] =>
-	[...BLOCK_SHOPS, ...facilitiesAt(TOWN_STAGES - 1).filter((f) => f.room)]
-		.filter((x) => x.from > from && x.from <= to)
-		.sort((a, b) => a.from - b.from)
-		.map((x) => x.name);
-
-/** その 段の 店が 開く 登録者数（core/town.ts の SUB_TIERS）。 */
-export const subsToOpen = (from: number): number =>
-	SUB_TIERS.find((t) => t.stage >= from)?.subs ?? 0;
-
 /**
  * おんJ神社（地図の 1, 4 から。字は data/village/tiles.ts の SHRINE）。拝殿の 前に 賽銭箱（3,9。下の 3,10 から 調べる）、
  * 鳥居（3,13。絵は 11〜13 に かかる）を くぐって 下の 空き地（x=7 の 草）へ 抜ける。
@@ -786,9 +764,35 @@ export const villageRows = (v: VillageView): string[] => {
 	coreCity(rows, layoutStage(v));
 	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
 	stampFacilities(rows, layoutStage(v), put);
+	// まだ 生き返って いない 所の 扉は シャッター（data/town/revival.ts。踏むと 札を 読んで 1歩 もどる）
+	for (const c of shutDoors(v)) put(rows, c, SHUTTER_CH);
 	thinStrips(rows, villagePalette(v));
 	return rows;
 };
+
+/** 下りた シャッター（扉の 上に 描く。扉と 同じく 踏める）。 */
+const SHUTTER_CH = "ｼ";
+const SHUTTER: Record<string, TileDef> = {
+	[SHUTTER_CH]: floor("#6a6a72", art("shutter", 1)),
+};
+
+/** 町の まんなかの 建物の 扉（data/town/revival.ts の CorePlace）。 */
+const CORE_DOORS: readonly [CorePlace, Cell][] = [
+	["cafe", VILLAGE_SPOTS.cafeDoor],
+	["music", VILLAGE_SPOTS.musicDoor],
+	["library", VILLAGE_SPOTS.booksDoor],
+	["bath", VILLAGE_SPOTS.bath],
+];
+
+/** シャッターの 下りた 扉の マス。 */
+const shutDoors = (v: VillageView): Cell[] => [
+	...facilitiesAt(layoutStage(v))
+		.filter((f) => !isRevived(f.id, v.cleared))
+		.flatMap((f) =>
+			[facilityDoor(f), facilityDoor2(f)].filter((d): d is Cell => !!d),
+		),
+	...CORE_DOORS.filter(([id]) => !isRevived(id, v.cleared)).map(([, c]) => c),
+];
 
 /** 抜いてよい 木・しげみ・生け垣（森と 町の へり）。 */
 const GREENERY = new Set(["T", "b", "^", "H", "h"]);
@@ -861,6 +865,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...CAFE,
 		...MUSIC,
 		...BOOKS,
+		...SHUTTER,
 		// 道：土 → 石だたみ（段5）→ アスファルト（住宅街＝段6 から）
 		".":
 			stage >= 6
@@ -983,7 +988,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	// ライバル 4人と やきう（みんな はじめから 町に いる。店の 仕事は しない：TOWN.md §0.4）
 	out.push(friend("roze", VILLAGE_SPOTS.roze));
 	// シヨは 金・土・日の 夜は メイド喫茶で アルバイト（data/people/shiyoShift.ts）
-	if (!shiyoAtMaid(stage, today(), nowHour()))
+	if (!(isRevived("maid", v.cleared) && shiyoAtMaid(stage, today(), nowHour())))
 		out.push(friend("shiyo", VILLAGE_SPOTS.shiyo));
 	out.push(friend("zero", VILLAGE_SPOTS.zero));
 	// やきうは 名無しの 視聴者（家の 前）

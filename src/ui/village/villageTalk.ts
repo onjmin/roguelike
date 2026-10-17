@@ -3,7 +3,6 @@
 // ひとことは 前の冒険の結果と 町の段から、仲間の セリフの たまり（data/story/story.ts・data/town/town.ts・data/story/quotes.ts）を引く。
 
 import { DUNGEON_IDS, dungeonById } from "../../core/data/dungeons";
-import { nextTier, subsText, TOWN_STAGES } from "../../core/town";
 import type { DungeonId } from "../../core/types";
 import {
 	pickQuote,
@@ -22,6 +21,7 @@ import {
 	zankiLine,
 } from "../../data/story/story";
 import { nowHour } from "../../data/town/calendar";
+import { REVIVE_AREAS, revivedAreas } from "../../data/town/revival";
 import { TAMPER_LEDGER, TAMPER_TALK, tamperTier } from "../../data/town/tamper";
 import {
 	BAND_IDLE,
@@ -339,21 +339,14 @@ export const fill = (
 ): string =>
 	text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
 
-/** ヒナリーの 帳簿：登録者数と、次の 店が 何人で 開くか（TOWN.md §0.4）。 */
+/** ヒナリーの 帳簿：生き返った 通りの 数と 残り（TOWN.md §0.6）。 */
 export const ledgerLine = (): string => {
 	const t = loadTown();
 	const sulk = sulkTier();
 	if (sulk !== null)
 		return fill(TAMPER_LEDGER[sulk] ?? "", { points: t.points });
-	if (t.stage >= TOWN_STAGES - 1)
-		return fill(VILLAGE_MSG.ledgerMax, { subs: subsText(t.subs) });
-	if (t.subs <= 0) return VILLAGE_MSG.ledgerNone;
-	const next = nextTier(t.subs);
-	// 登録者は 届いて いるが、いちばん上の 段は 電池板を 持ち帰って から（core/town.ts の stageOfSubs）
-	if (next === null)
-		return fill(VILLAGE_MSG.ledgerTop, { subs: subsText(t.subs) });
-	return fill(VILLAGE_MSG.ledger, {
-		subs: subsText(t.subs),
-		next: subsText(next),
-	});
+	const n = revivedAreas(loadProgress().cleared).length;
+	if (n >= REVIVE_AREAS.length) return VILLAGE_MSG.ledgerMax;
+	if (n === 0) return VILLAGE_MSG.ledgerNone;
+	return fill(VILLAGE_MSG.ledger, { n, left: REVIVE_AREAS.length - n });
 };

@@ -9,6 +9,7 @@
 
 import type { TileDef } from "../../engine/defs";
 import { DIR_VEC, type Dir } from "../../engine/types";
+import { isRevived } from "../town/revival";
 import { facilitiesAt, facilityOfDoor } from "./facilities";
 import {
 	type Cell,
@@ -145,6 +146,13 @@ const CORE_DOOR_KIND: Record<string, CrowdKind> = {
 	door_books: "shop",
 	door_bath: "fun",
 };
+/** 町の まんなかの 建物の 扉 → 生き返る 所の id（data/town/revival.ts）。 */
+const CORE_DOOR_PLACE: Record<string, string> = {
+	door_cafe: "cafe",
+	door_music: "music",
+	door_books: "library",
+	door_bath: "bath",
+};
 
 type Spot = {
 	id: string;
@@ -240,6 +248,8 @@ const SPOTS: readonly Spot[] = [
 /** その 地図の 行き先（扉・家・出口・立ちどまる 所）。 */
 export const crowdNodes = (v: VillageView): CrowdNode[] => {
 	const stage = layoutStage(v);
+	// まだ 生き返って いない 所（シャッター）には 人が 出入りしない・立ちどまらない（data/town/revival.ts）
+	const open = (place: string) => isRevived(place, v.cleared);
 	const out: CrowdNode[] = [];
 	for (const p of villagePlaces(v)) {
 		if (p.trigger !== "touch") continue;
@@ -249,7 +259,7 @@ export const crowdNodes = (v: VillageView): CrowdNode[] => {
 		}
 		const f = facilityOfDoor(p.id);
 		const kind = f ? FACILITY_KIND[f.id] : CORE_DOOR_KIND[p.id];
-		if (kind)
+		if (kind && open(f?.id ?? CORE_DOOR_PLACE[p.id] ?? p.id))
 			out.push({
 				id: p.id,
 				at: [p.x, p.y],
@@ -260,7 +270,7 @@ export const crowdNodes = (v: VillageView): CrowdNode[] => {
 	}
 	// 住宅街の 家（入れない 家。表札の 1つ下から 上を 向いて 入る）
 	for (const f of facilitiesAt(stage)) {
-		if (!f.id.startsWith("house_")) continue;
+		if (!f.id.startsWith("house_") || !open(f.id)) continue;
 		const plate = f.outdoor?.[0]?.at;
 		if (plate)
 			out.push({
@@ -272,7 +282,11 @@ export const crowdNodes = (v: VillageView): CrowdNode[] => {
 			});
 	}
 	for (const s of SPOTS)
-		if (stage >= s.from && (s.until === undefined || stage < s.until))
+		if (
+			stage >= s.from &&
+			(s.until === undefined || stage < s.until) &&
+			open(s.id)
+		)
 			out.push({
 				id: `spot_${s.id}`,
 				at: s.at,

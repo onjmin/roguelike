@@ -1,71 +1,17 @@
-// 地上の町（STORY.md §5・TOWN.md §0）。町は はじめから 都市の 姿で、店は「準備中」の シャッター。
-// キリコの 登録者数が 節目に 届くと 店が 開く（SUB_TIERS。開いた 店の まとまりを「段」と 呼ぶ：0〜7）。
+// 地上の町（STORY.md §5・TOWN.md §0）。町は はじめから 都市の 姿で、まだ 生き返って いない 店は シャッター。
+// 町の 段（0〜7）：本筋の 板を 持ち帰ると 上がる（data/town/revival.ts の stageOfCleared）。
+// 店が 開くのは 段では なく、板ごとに 生き返る 通り（同じ revival.ts。TOWN.md §0.6）。
 //
-// - 登録者は 冒険 1回ごとの 撮れ高（subsGain）で ふえる。倒れても 少し ふえる（放送事故も 撮れ高）。
-// - 持ち帰った 物は 買い取り屋で 売る（売上。財布の お金：engine/wallet.ts）。売上は 登録者とは べつ。
+// - 持ち帰った 物は 買い取り屋で 売る（売上。財布の お金：engine/wallet.ts）。
 // - 機材倉庫は はじめから ある。開いた 段で 広がる（STORAGE_CAP）。倉庫の道具を 1〜4個 持ちこめる
 //   （持ちこめない 板は core/data/dungeons.ts の noCarry）。
 // - 倒れたら 持ち物は ぜんぶ なくなる（持ちこんだ道具も）。
-// 状態（登録者・売上・段・倉庫）は engine/save.ts が持つ。ここは 決まりだけ（DOM に触らない。テストできる）。
+// 状態（売上・段・倉庫）は engine/save.ts が持つ。ここは 決まりだけ（DOM に触らない。テストできる）。
 
 import { defOf } from "./item";
 import type { Item } from "./types";
 
 export const TOWN_STAGES = 8;
-
-/**
- * 登録者数の 節目 → 開く 段（その 段までの 店が 開く。TOWN.md §0・STORY.md §5 の 表）。
- * いちばん上（段7）は 変電所（電池板）を 持ち帰ってから（最終話の あと。topOpen）。
- */
-export const SUB_TIERS: readonly { subs: number; stage: number }[] = [
-	{ subs: 0, stage: 0 },
-	{ subs: 10, stage: 3 },
-	{ subs: 100, stage: 5 },
-	{ subs: 1000, stage: 6 },
-	{ subs: 10000, stage: 7 },
-];
-
-/** 登録者数で 開く 段（topOpen が false なら 段6 まで）。 */
-export const stageOfSubs = (subs: number, topOpen = true): number => {
-	let at = 0;
-	for (const t of SUB_TIERS) if (subs >= t.subs) at = t.stage;
-	return topOpen ? at : Math.min(at, TOWN_STAGES - 2);
-};
-
-/** 人数の 書き方（1万から「万」。12万3千 → 12.3万）。 */
-export const subsText = (n: number): string =>
-	n >= 10000
-		? `${Math.floor(n / 1000) / 10}万`.replace(/\.0万$/, "万")
-		: n.toLocaleString("ja-JP");
-
-/** 次の 節目の 登録者数（もう 無ければ null）。 */
-export const nextTier = (subs: number): number | null =>
-	SUB_TIERS.find((t) => t.subs > subs)?.subs ?? null;
-
-/** 1回の 冒険の 撮れ高を 数える もと（engine/save.ts が 冒険の 終わりから 作る）。 */
-export type Take = {
-	kind: "dead" | "clear" | "escape";
-	/** 終わった 階。 */
-	depth: number;
-	/** たおした 数。 */
-	kills: number;
-};
-
-/**
- * 撮れ高（深さ・たおした 数・持ち帰り・帰還・放送事故）。
- * 持ち帰り（目的の品）が いちばん 大きい。倒れても 少し（死に方が 撮れ高に なる）。
- */
-export const takeOf = (x: Take): number =>
-	x.depth * 2 +
-	Math.min(x.kills, 40) +
-	(x.kind === "clear" ? 20 : x.kind === "escape" ? 5 : 3);
-
-/**
- * 1回の 冒険で ふえる 登録者（撮れ高 × 伸び。登録者が 多いほど 見に くる 人も ふえる）。
- * 冒険 1回で 10人（段3）、4回ほどで 100人、10回ほどで 1000人、20回ほどで 1万人。
- */
-export const subsGain = (subs: number, x: Take): number =>
-	Math.max(1, Math.round(takeOf(x) * (1 + subs / 200)));
 
 /** 段 → 倉庫に あずけられる数（機材倉庫は はじめから ある）。 */
 export const STORAGE_CAP: readonly number[] = [3, 3, 3, 5, 10, 20, 40, 60];

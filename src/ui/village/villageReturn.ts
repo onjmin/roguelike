@@ -19,7 +19,7 @@
 //   離れた 人の 声だけが 飛んでくる 掛け合いは しない（そばに いる 人とだけ 話す）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
-import { CARRY_MAX, STORAGE_CAP, subsText, TOWN_STAGES } from "../../core/town";
+import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../../core/town";
 import type { DungeonId, Objective } from "../../core/types";
 import {
 	type MobId,
@@ -44,6 +44,7 @@ import {
 	UNLOCK_VISIT,
 	withoutAway,
 } from "../../data/story/story";
+import { REVIVE_AREAS } from "../../data/town/revival";
 import {
 	TAMPER_NARRATION,
 	TAMPER_SCENE,
@@ -51,8 +52,8 @@ import {
 } from "../../data/town/tamper";
 import {
 	RETURN_PAGES,
+	REVIVE_MSG,
 	type StaffLine,
-	SUBS_MSG,
 	TOWN_MSG,
 	WAKE_PAGES,
 	WALLET_WHY,
@@ -63,7 +64,6 @@ import {
 	exitAt,
 	exitFor,
 	lineupSpots,
-	shopsOpened,
 	spotsAround,
 	VILLAGE_SPOTS,
 	type VillageExit,
@@ -77,12 +77,12 @@ import {
 	doneProgressNews,
 	giveLunch,
 	giveRelief,
+	growTown,
 	hasFlag,
 	loadProgress,
 	loadRecords,
 	loadTown,
 	noteEnding,
-	openShops,
 	type PendingReturn,
 	type Progress,
 	QUIT_CAUSE,
@@ -111,17 +111,14 @@ export const previewStage = (): number | null => {
 };
 
 /**
- * いまの 村（保存から 読む）。町は はじめから 都市の 姿（いちばん上の 段で 描く）、open は 開いた 店の 段。
+ * いまの 村（保存から 読む）。町は はじめから 都市の 姿（いちばん上の 段で 描く）。開いて いる 店は cleared で 決まる（data/town/revival.ts）。
  * 開いた知らせを まだ 見せていない ダンジョンは 閉じたまま 描く（知らせの 場面で やきうが どく・板が はずれる）。
  */
 export const villageView = (): VillageView => {
 	const p = loadProgress();
 	const fresh = new Set(p.news.map((n) => n.dungeon));
-	const t = loadTown();
-	const preview = previewStage();
 	return {
 		stage: TOWN_STAGES - 1,
-		open: preview ?? t.stage,
 		unlocked: p.unlocked.filter((d) => !fresh.has(d)),
 		cleared: [...p.cleared],
 	};
@@ -637,50 +634,35 @@ export const newsScript = async (s: Story): Promise<void> => {
 	}
 };
 
-// ───────────────── 撮れ高と 開いた 店 ─────────────────
+// ───────────────── 生き返った 通り ─────────────────
 
 /** 住人の イベント ID（gather で 呼ぶ）。 */
 const mobEv = (id: MobId): string => `mob_${id}`;
 
 /**
- * 前の 冒険の 撮れ高（ふえた 登録者）を ヒナリーが 発表する（倒れて 帰っても：放送事故）。
- * 節目に 届いたら「準備中」の シャッターが あがって 店が 開く（TOWN.md §0.1。core/town.ts の stageOfSubs）。
+ * 持ち帰った 板で 生き返った 通りを 知らせる（まだ 知らせて いない ぶん。TOWN.md §0.6・data/town/revival.ts）。
+ * 本筋の 板なら 町の 段も 上がり、倉庫が 広がる・持ちこめる 数が ふえる。
  */
-export const subsScript = async (s: Story): Promise<void> => {
+export const reviveScript = async (s: Story): Promise<void> => {
 	const t = loadTown();
-	const g = t.gain;
-	if (!g) return;
-	await gather(s, [mobEv(SUBS_MSG.gain.who)]);
-	const l = g.kind === "dead" ? SUBS_MSG.dead : SUBS_MSG.gain;
-	await sayAs(
-		s,
-		l.who,
-		fill(l.text, { n: subsText(g.n), subs: subsText(t.subs) }),
-		cueOf(l),
+	const cleared = loadProgress().cleared;
+	const fresh = REVIVE_AREAS.filter(
+		(a) => cleared.includes(a.dungeon) && !t.revived.includes(a.id),
 	);
-	t.gain = null;
-	const r = openShops(t);
+	const r = growTown(t);
+	if (!fresh.length && r.to === r.from) return;
+	for (const a of fresh) {
+		s.se("levelup");
+		await s.narrate(a.line);
+		await s.narrate(fill(REVIVE_MSG.open, { name: a.name }));
+		t.revived.push(a.id);
+	}
 	saveTown(t);
-	if (r.to > r.from) await shopsOpen(s, r.from, r.to, t.subs);
-};
-
-/** 店が 開いた 知らせ（開いた 店の 名前と 数・持ちこめる 数）。 */
-const shopsOpen = async (
-	s: Story,
-	from: number,
-	to: number,
-	subs: number,
-): Promise<void> => {
-	s.se("levelup");
-	await s.narrate(fill(SUBS_MSG.open, { subs: subsText(subs) }));
-	const names = shopsOpened(from, to);
-	if (names.length === 1)
-		await s.narrate(fill(SUBS_MSG.shopOne, { name: names[0] }));
-	else if (names.length)
-		await s.narrate(fill(SUBS_MSG.shops, { name: names[0], n: names.length }));
-	const carry = CARRY_MAX[to] ?? 0;
-	if (carry > (CARRY_MAX[from] ?? 0))
-		await s.narrate(fill(SUBS_MSG.carry, { n: carry }));
+	if ((STORAGE_CAP[r.to] ?? 0) > (STORAGE_CAP[r.from] ?? 0))
+		await s.narrate(fill(REVIVE_MSG.storage, { n: STORAGE_CAP[r.to] ?? 0 }));
+	const carry = CARRY_MAX[r.to] ?? 0;
+	if (carry > (CARRY_MAX[r.from] ?? 0))
+		await s.narrate(fill(REVIVE_MSG.carry, { n: carry }));
 };
 
 // ───────────────── 持ち帰った物 ─────────────────

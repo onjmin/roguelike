@@ -114,9 +114,6 @@ import {
 	firstGoalHtml,
 	GOAL_WHY,
 	goalWhy,
-	RIVALS,
-	rankingWindows,
-	rivalSubs,
 	synopsisHtml,
 } from "../data/story/synopsis";
 import {
@@ -147,6 +144,7 @@ import {
 	TOBAN_MENU,
 	YAKYU_SHELF,
 } from "../data/town/hall";
+import { isRevived, MAIN_BOARDS, REVIVE_AREAS } from "../data/town/revival";
 import {
 	BANK,
 	BANK_FROM,
@@ -168,9 +166,9 @@ import {
 	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
+	REVIVE_MSG,
 	STORE_DESK,
 	type StaffLine,
-	SUBS_MSG,
 	TITLE_TOWN_QUOTES,
 	TOWN_MSG,
 	VILLAGE_IDLE,
@@ -178,12 +176,14 @@ import {
 	WAKE_PAGES,
 	ZERO_VOICELESS,
 } from "../data/town/town";
+import { crowdNodes } from "../data/village/crowd";
 import { DINER_IMG, DINER_SIZE } from "../data/village/dinerSheet";
 import {
 	doorId,
 	FACILITIES,
 	facilitiesAt,
 	facilityById,
+	facilityDoor,
 	facilityEntry,
 	facilityMats,
 	facilityOutside,
@@ -1805,22 +1805,21 @@ test("the friends react to how the last run ended", () => {
 	});
 });
 
-test("ヒナリーの 帳簿: 登録者数と、次の 店が 何人で 開くか", () => {
+test("ヒナリーの 帳簿: 生き返った 通りの 数と 残り", () => {
 	withStorage(() => {
 		setTown(0, 0);
-		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "no subscribers");
-		putTown({ stage: 3, subs: 42 });
+		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "no street revived");
+		setProgress([], [], ["shallow", "kinoko"]);
 		ok(
-			ledgerLine().includes("42人") && ledgerLine().includes("100人"),
-			`42: ${ledgerLine()}`,
+			ledgerLine() === fill(VILLAGE_MSG.ledger, { n: 2, left: 5 }),
+			`two streets: ${ledgerLine()}`,
 		);
-		putTown({ stage: TOWN_STAGES - 2, subs: 20000 });
-		ok(
-			ledgerLine() === fill(VILLAGE_MSG.ledgerTop, { subs: "2万" }),
-			`waiting for the final episode: ${ledgerLine()}`,
+		setProgress(
+			[],
+			[],
+			["shallow", "kinoko", "main", "deep", "tropical", "konamono", "festival"],
 		);
-		putTown({ stage: TOWN_STAGES - 1, subs: 20000 });
-		ok(ledgerLine().includes("ぜんぶ"), `the top stage: ${ledgerLine()}`);
+		ok(ledgerLine() === VILLAGE_MSG.ledgerMax, `all: ${ledgerLine()}`);
 	});
 });
 
@@ -2137,18 +2136,18 @@ test("everything the village window reads out fits it (22 full-width × 2 lines)
 	});
 	for (const [k, v] of Object.entries(TOWN_MSG))
 		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
-	// 撮れ高の 発表・開いた 店・準備中の シャッター（いちばん 長い 数と 名前で）
-	for (const [k, v] of Object.entries(SUBS_MSG))
+	// 生き返った 通りの 知らせ・シャッター（いちばん 長い 名前と 数で）
+	for (const [k, v] of Object.entries(REVIVE_MSG))
 		texts.push([
-			`SUBS_MSG.${k}`,
-			fill(typeof v === "string" ? v : v.text, {
-				n: "12.3万",
-				subs: "123.4万",
-				name: "おんJタワー　サウス",
+			`REVIVE_MSG.${k}`,
+			fill(v, {
+				n: 60,
+				name: [...REVIVE_AREAS].sort((a, b) => b.name.length - a.name.length)[0]
+					.name,
 			}),
 		]);
-	for (const k of ["shut", "shutTop"] as const)
-		texts.push([`VILLAGE_MSG.${k}`, fill(VILLAGE_MSG[k], { subs: "1,000" })]);
+	for (const a of REVIVE_AREAS) texts.push([`REVIVE_AREAS.${a.id}`, a.line]);
+	texts.push(["VILLAGE_MSG.shut", VILLAGE_MSG.shut]);
 	DEPART.free.forEach((t, i) => {
 		texts.push([`DEPART.free[${i}]`, t]);
 	});
@@ -2999,8 +2998,7 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 		const other = {
 			points: 1234,
 			stage: 4,
-			subs: 0,
-			gain: null,
+			revived: [],
 			storage: [],
 			bag: [],
 			lunch: false,
@@ -5699,7 +5697,7 @@ test("グラウンドの マウンド: 調べると 文 → 1打席・ホーム�
 	const view: VillageView = {
 		stage: TOWN_STAGES - 1,
 		unlocked: ["shallow"],
-		cleared: [],
+		cleared: REVIVE_AREAS.map((a) => a.dungeon),
 	};
 	const f = FACILITIES.find((x) =>
 		x.outdoor?.some((t) => t.play === "batting"),
@@ -6417,27 +6415,11 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 		heads.length === 1 && heads[0] === "過去ログの底　まで",
 		`summary heads ${heads}`,
 	);
-	// 目標は 登録者数（ダンジョンの 1000 は 時間切れ）。あらすじにも 出る
-	ok(end.includes("登録者"), "no subscriber count in the synopsis");
-	// ランキング掲示板：キリコと ライバル 4人を 多い 順に 2人ずつ。窓に 収まる
-	const rank = rankingWindows(42, ["shallow"], 3);
-	ok(rank.length === 3, `ranking windows ${rank.length}`);
-	const rows = rank.join("\n").split("\n");
+	// 町の 進み（生き返った 通りの 数）が あらすじにも 出る（data/town/revival.ts）
 	ok(
-		rows.length === 1 + RIVALS.length &&
-			rows[rows.length - 1].startsWith("5位　キリコ"),
-		`a new channel is not last:\n${rows.join("\n")}`,
+		end.includes("生き返った　通り"),
+		"no revived-street count in the synopsis",
 	);
-	ok(
-		rankingWindows(1e7, [], 0)[0].startsWith("1位　キリコ"),
-		"a huge channel is not first",
-	);
-	for (const t of rank) ok(width(t.split("\n")[0]) <= 22, t);
-	// フェリスは 伸びては 過疎る（もぐった 回数で 上下）
-	const feris = new Set(
-		Array.from({ length: 6 }, (_, i) => rivalSubs([], i).feris),
-	);
-	ok(feris.size > 2, "フェリス does not rise and fall");
 	ok(
 		zankiLine([]) === null &&
 			zankiLine(["kinoko"])?.includes("残機：1") &&
@@ -6527,7 +6509,7 @@ test("飲食店で 食べる: 店番は セリフ 1つ → 品書き → 注文 
 	const view: VillageView = {
 		stage: TOWN_STAGES - 1,
 		unlocked: ["shallow"],
-		cleared: [],
+		cleared: REVIVE_AREAS.map((a) => a.dungeon),
 	};
 	const village = buildVillage(view, {} as Ctx).events ?? [];
 	for (const [id, m] of Object.entries(EAT_MENUS)) {
@@ -6605,7 +6587,7 @@ test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目
 		const view: VillageView = {
 			stage: TOWN_STAGES - 1,
 			unlocked: ["shallow"],
-			cleared: [],
+			cleared: REVIVE_AREAS.map((a) => a.dungeon),
 		};
 		const f = facilityById("tako");
 		const m = EAT_MENUS.tako;
@@ -7033,4 +7015,74 @@ test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじま
 		`first goal: ${html}`,
 	);
 	ok(!html.includes("\n"), "a raw newline in the html");
+});
+
+test("生き返る 通り（TOWN.md §0.6）: 表の 所は どれも 町に あり 1つの 通りだけ、板は 7つ 別々、本筋 4つは パン → きのこ → 風呂 → 電池", () => {
+	const all = REVIVE_AREAS.flatMap((a) => a.places);
+	ok(new Set(all).size === all.length, "a place revives twice");
+	const core = ["shrine", "music", "bath", "library", "bookstore", "cafe"];
+	for (const id of all)
+		ok(facilityById(id) || core.includes(id), `${id} is not in the town`);
+	const boards = REVIVE_AREAS.map((a) => a.dungeon);
+	ok(new Set(boards).size === boards.length, "two streets for one board");
+	ok(
+		MAIN_BOARDS.join() === "shallow,kinoko,main,deep" &&
+			MAIN_BOARDS.every((d) => boards.includes(d)),
+		"the main boards",
+	);
+	// 遊びの 輪に 要る 物は はじめから 開いて いる
+	for (const id of ["pier", "go", "imoni", "cafe"])
+		ok(isRevived(id, []), `${id} is shut at the start`);
+});
+
+test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏むと 札を 読んで 1歩 もどる。屋台の 店番も 出ない。持ち帰れば 開く", async () => {
+	const shutView: VillageView = {
+		stage: TOWN_STAGES - 1,
+		unlocked: ["shallow"],
+		cleared: [],
+	};
+	const openView: VillageView = {
+		...shutView,
+		cleared: ["kinoko", "konamono"],
+	};
+	const f = facilityById("konbini");
+	const d = f && facilityDoor(f);
+	ok(d, "no konbini door");
+	if (!f || !d) return;
+	const at = (v: VillageView) => [...villageRows(v)[d[1]]][d[0]];
+	ok(at(shutView) === "ｼ", `konbini door is ${at(shutView)} before きのこ板`);
+	ok(at(openView) !== "ｼ", "konbini door is still shut after きのこ板");
+	ok(
+		villagePalette(shutView)["ｼ"]?.passable,
+		"the shutter cannot be stepped on",
+	);
+	const door = (buildVillage(shutView, {} as Ctx).events ?? []).find(
+		(e) => e.id === doorId(f),
+	);
+	ok(door?.run, "the shut door does nothing");
+	if (door?.run) {
+		const { s, log } = fakeStory();
+		await door.run(s);
+		ok(
+			log.some((l) => l === `narrate: ${VILLAGE_MSG.shut}`),
+			`no shutter line: ${log.join(" / ")}`,
+		);
+	}
+	// たこ八の 店番は おんたこを 持ち帰るまで 出ない
+	const tako = facilityById("tako");
+	const keeper = tako?.outdoor?.find((t) => t.sprite);
+	ok(tako && keeper, "no tako keeper");
+	if (!tako || !keeper) return;
+	const sprite = (v: VillageView) =>
+		(buildVillage(v, {} as Ctx).events ?? []).find(
+			(e) => e.id === outdoorId(tako, keeper),
+		)?.sprite;
+	ok(!sprite(shutView), "the tako keeper stands at a shut stall");
+	ok(sprite(openView), "no tako keeper after おんたこ");
+	// 通行人は シャッターの 店に 出入りしない
+	const nodes = (v: VillageView) => crowdNodes(v).map((n) => n.id);
+	ok(
+		!nodes(shutView).includes(doorId(f)) && nodes(openView).includes(doorId(f)),
+		"the crowd walks into a shut shop",
+	);
 });
