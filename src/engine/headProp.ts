@@ -1,7 +1,10 @@
-// 頭に のせる 物（文で「頭に きのこが 生えている」と 言う 人の 頭に、本当に ドット絵で 出す）。
-// - 村・施設の 中の 人（engine/field.ts の Actor.prop）と、地図の 上に 生える きのこ（ui/village/sceneShrooms.ts）。
-// - 絵は engine/emote.ts の 記号と 同じ 作り（# が 色、o が 差し色、s が 柄。まわりを 1px の 縁で かこむ）。
+// 頭に のせる 物（文で「頭に きのこが 生えている」と 言う 人の 頭に、本当に ドット絵で 出す）と 地図の きのこ。
+// - 頭の 物は 装備の 重ね描きと 同じ しくみ（src/ui/art/equipArt.ts の paintEquip が 絵を 描き、
+//   scripts/make-equip.mjs が public/sprites/equip/<種類>.png に 書き出し、src/ui/dungeon/equip.ts の drawEquip が
+//   歩行グラの 上に 重ねる）。村では engine/field.ts の Actor.over に わたす（ui/village/village.ts の wear）。
+// - 地図の 上に 生える きのこ（ui/village/sceneShrooms.ts）は ここの drawShroom で じかに 描く。
 // - 胞子：かさの 上から 粒が ふわっと 舞いあがって ひろがり、消える（Actor.puffSpores）。
+// - 絵の 文字：# が かさ、o が 白い 点、s が 柄。まわりを 1px の 縁で かこむ。
 
 /** 頭に のせる 物。 */
 export type HeadProp =
@@ -11,15 +14,15 @@ export type HeadProp =
 type Glyph = readonly string[];
 
 /** きのこ（大：頭の 上・小：地図の 上で 群れる ぶん）。 */
-const KINOKO: { big: Glyph; small: Glyph } = {
+export const KINOKO: { big: Glyph; small: Glyph } = {
 	big: ["..###..", ".##o##.", "#o####o", "#######", "..sss..", "..sss.."],
 	small: [".###.", "#o##o", "#####", ".sss.", ".sss."],
 };
 
-const CAP = "#d8382c";
-const SPOT = "#fff4e0";
-const STEM = "#f0e2c0";
-const EDGE = "#3a1408";
+export const CAP = "#d8382c";
+export const SPOT = "#fff4e0";
+export const STEM = "#f0e2c0";
+export const EDGE = "#3a1408";
 
 /** 1本の きのこを 描く（x は 絵の 左、bottom は 柄の 下はし。h は 0〜1 の 伸びぐあい。下から 生える）。 */
 export const drawShroom = (
@@ -72,7 +75,7 @@ const SPORES = Array.from({ length: 14 }, (_, i) => {
 });
 
 /** 胞子が ふわっと 出る（cx, cy は かさの 上の まんなか。t は ふきだしてからの 時間）。 */
-const drawSpores = (
+export const drawSpores = (
 	ctx: CanvasRenderingContext2D,
 	cx: number,
 	cy: number,
@@ -92,24 +95,4 @@ const drawSpores = (
 		ctx.fillRect(x, y, p.big ? 2 : 1, p.big ? 2 : 1);
 	}
 	ctx.globalAlpha = 1;
-};
-
-/**
- * 頭の 上に 物を 描く（px, py は キャラの マスの 左上の 画素）。puff は 胞子を ふいてからの 時間（無ければ null）。
- */
-export const drawHeadProp = (
-	ctx: CanvasRenderingContext2D,
-	prop: HeadProp,
-	px: number,
-	py: number,
-	puff: number | null,
-): void => {
-	ctx.save();
-	if (prop === "kinoko") {
-		// ふくと かさが 1px 縮んで もどる
-		const squash = puff !== null && puff < 160 ? 1 : 0;
-		drawShroom(ctx, px + 5, py + 1 + squash, true);
-		if (puff !== null && puff < SPORE_MS) drawSpores(ctx, px + 8, py - 5, puff);
-	}
-	ctx.restore();
 };

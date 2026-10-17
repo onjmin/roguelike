@@ -1,6 +1,8 @@
 // 地図の 上に 生える きのこ（村の 地図。人の 下・地形の 上に 描く。ui/village/village.ts の render）。
 // - 場面の きのこ：きのこ板の 持ち帰りの 語りで「商店街の シャッターに 生えた」「港の 船の 上まで 森に なった」を
 //   本当に 生やす（data/story/quotes.ts の StoryPage.shrooms）。行進が 袋に つめて 帰ると 消える。
+// - 置いていった きのこ：きのこ板が 開く ときの 来客が「きのこを 1本 置いて」帰る（data/story/story.ts の
+//   UNLOCK_VISIT）。その 場に 1本 残り、村を 出るまで 消えない。
 // - 町の きのこ：きのこ板を 持ち帰って 商店街が 生き返った あとは、店の 扉の わきに 少し 残る
 //   （data/town/town.ts の 商店街の ひとこと「きのこ、生えてる〜。……商店街に〜」）。
 // 絵は engine/headProp.ts の drawShroom（頭の きのこと 同じ）。
@@ -41,6 +43,10 @@ let view: VillageView | null = null;
 let land: (x: number, y: number) => boolean = () => true;
 let town: Shroom[] = [];
 let scene: Shroom[] = [];
+/** 置いていった きのこ（来客が 置いて 帰った 1本。村を 出るまで 残る）。 */
+let left: Shroom[] = [];
+/** 置いていった きのこの マス（村の 場面の 旗。"x,y"）。 */
+export const SHROOM_LEFT = "shroomLeft";
 /** 場面の きのこが 消えはじめた 時刻。 */
 let goneAt: number | null = null;
 
@@ -72,10 +78,14 @@ const inCell = (
 export const setShroomTown = (
 	v: VillageView | null,
 	walkable: (x: number, y: number) => boolean = () => true,
+	leftAt?: unknown,
 ): void => {
 	view = v;
 	land = walkable;
 	town = [];
+	left = [];
+	const at = typeof leftAt === "string" ? leftAt.split(",").map(Number) : [];
+	if (v && at.length === 2) dropShroom([at[0], at[1]], 0);
 	if (!v?.cleared.includes("kinoko")) return;
 	if (!loadTown().revived.includes("street")) return;
 	const r = rng(0x5b00);
@@ -120,6 +130,11 @@ export const sproutShrooms = (where: "street" | "port", at: Cell): void => {
 		}
 };
 
+/** その マスに きのこを 1本 置く（地図の 旗 SHROOM_LEFT と いっしょに。at は 生えはじめる 時刻）。 */
+export const dropShroom = (c: Cell, at = performance.now()): void => {
+	left = [{ x: c[0] * TILE + 5, y: c[1] * TILE + TILE - 3, big: true, at }];
+};
+
 /** 場面の きのこを 摘みとる（ちぢんで 消える）。 */
 export const clearShrooms = (): void => {
 	if (scene.length) goneAt = performance.now();
@@ -152,6 +167,7 @@ export const drawShrooms = (
 		drawShroom(g, x, y, s.big, k);
 	};
 	for (const s of town) one(s, 1);
+	for (const s of left) one(s, Math.min(1, (now - s.at) / GROW_MS));
 	for (const s of scene) {
 		const grow = Math.min(1, (now - s.at) / GROW_MS);
 		if (grow <= 0) continue;

@@ -16,6 +16,7 @@
 //   正面：両手とも前。うしろ向き：両手とも体の向こう。横向き：手前の手は前、奥の手はうしろ。
 
 import type { SpriteDir } from "../../core/geom";
+import { CAP, EDGE, KINOKO, SPOT, STEM } from "../../engine/headProp";
 
 // ───────────────── 武器の見た目 ─────────────────
 
@@ -903,9 +904,77 @@ const drawShield = (
 		}
 };
 
+// ───────────────── 頭に のせる 物 ─────────────────
+// 「頭に きのこが 生えている」と 文が 言う 人の 頭（engine/headProp.ts）。いつも 体の 前（over）。
+
+/** 向き・コマごとの 頭の てっぺん（まん中の x と いちばん上の y）。歩行グラを 拡大して 読み取ったもの。 */
+const HEAD_TOP: Record<
+	SpriteDir,
+	[{ x: number; y: number }, { x: number; y: number }]
+> = {
+	up: [
+		{ x: 8, y: 1 },
+		{ x: 7, y: 0 },
+	],
+	right: [
+		{ x: 7, y: 0 },
+		{ x: 8, y: 0 },
+	],
+	down: [
+		{ x: 8, y: 0 },
+		{ x: 7, y: 1 },
+	],
+	left: [
+		{ x: 8, y: 0 },
+		{ x: 7, y: 0 },
+	],
+};
+
+/** 頭の 物の 絵（rows の 1文字が 1ドット。下はしの 行が 頭の てっぺんに 1行 うまる）。 */
+const HEADS: Record<
+	string,
+	{ rows: readonly string[]; pal: Record<string, string>; ink: string }
+> = {
+	kinoko: { rows: KINOKO.big, pal: { "#": CAP, o: SPOT, s: STEM }, ink: EDGE },
+};
+
+/** 頭の 物を 描く（まわりに 暗い ふち）。 */
+const drawHead = (
+	put: Put,
+	kind: string,
+	dir: SpriteDir,
+	frame: number,
+): void => {
+	const h = HEADS[kind];
+	if (!h) return;
+	const top = HEAD_TOP[dir][frame % 2];
+	const w = Math.max(...h.rows.map((r) => r.length));
+	const x0 = top.x - Math.floor(w / 2);
+	const y0 = top.y - h.rows.length + 1;
+	const on = (x: number, y: number): boolean => (h.rows[y]?.[x] ?? ".") !== ".";
+	for (let y = -1; y <= h.rows.length; y++)
+		for (let x = -1; x <= w; x++)
+			if (
+				!on(x, y) &&
+				(on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1))
+			)
+				put(x0 + x, y0 + y, h.ink);
+	h.rows.forEach((row, y) => {
+		for (let x = 0; x < row.length; x++) {
+			const c = h.pal[row[x]];
+			if (c) put(x0 + x, y0 + y, c);
+		}
+	});
+};
+
 // ───────────────── まとめて描く ─────────────────
 
-export type EquipLook = { weapon: string | null; shield: string | null };
+export type EquipLook = {
+	weapon: string | null;
+	shield: string | null;
+	/** 頭に のせる 物（HEADS の 種類）。 */
+	head?: string | null;
+};
 
 /**
  * 装備の layer の側を、キリコのマスを (0,0)〜(15,15) とする座標で put に描く
@@ -919,6 +988,7 @@ export const paintEquip = (
 	layer: "over" | "under",
 	swing = -1,
 ): void => {
+	if (look.head && layer === "over") drawHead(put, look.head, dir, frame);
 	if (!look.weapon && !look.shield) return;
 	const hands = HANDS[dir][frame % 2];
 	// 盾を先に、武器をその上に（同じ側に重なるとき、武器が前）
@@ -952,3 +1022,4 @@ export const paintEquip = (
 /** 見た目の決まっている装備か（プレビュー・検査用）。 */
 export const WEAPON_KINDS = Object.keys(WEAPONS);
 export const SHIELD_KINDS = Object.keys(SHIELDS);
+export const HEAD_KINDS = Object.keys(HEADS);

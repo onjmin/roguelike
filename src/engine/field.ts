@@ -10,7 +10,7 @@ import {
 } from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
 import { drawEmote, type Emote, type Gesture, gestureAt } from "./emote";
-import { drawHeadProp, type HeadProp, SPORE_MS } from "./headProp";
+import { drawSpores, SPORE_MS } from "./headProp";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
 
@@ -68,12 +68,23 @@ export class Actor {
 		this.gestureLoop = loop;
 		this.gestureFrom = -1;
 	}
-	/** 頭に のせた 物（engine/headProp.ts。null で のせない）。 */
-	prop: HeadProp | null = null;
+	/**
+	 * 歩行グラの 上に 重ねる 絵（装備の 重ね描きと 同じ。向きと 足踏みの コマで 絵が かわる。
+	 * 村は 頭の きのこを src/ui/dungeon/equip.ts の drawEquip で わたす。null で 重ねない）。
+	 */
+	over:
+		| ((
+				ctx: CanvasRenderingContext2D,
+				dir: Dir,
+				frame: number,
+				x: number,
+				y: number,
+		  ) => void)
+		| null = null;
 	/** 胞子を ふいた 時刻（-1 は 次の コマから。null は ふいて いない）。 */
 	private puffFrom: number | null = null;
 
-	/** 頭の 物から 胞子を ふく（頭に 物が なければ 何も 出ない）。 */
+	/** 頭の 物から 胞子を ふく（重ねた 絵が なければ 何も 出ない）。 */
 	puffSpores(): void {
 		this.puffFrom = -1;
 	}
@@ -241,11 +252,14 @@ export class Actor {
 			ctx.fillStyle = "rgba(0,0,0,0.3)";
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
-		if (this.prop) {
+		if (this.over) {
+			// ふいた 瞬間は 1px 沈んで もどる
 			if (this.puffFrom !== null && this.puffFrom < 0) this.puffFrom = time;
 			const puff = this.puffFrom === null ? null : time - this.puffFrom;
+			const squash = puff !== null && puff < 160 ? 1 : 0;
+			this.over(ctx, face, frame, px + gx, py + gy + squash);
 			if (puff !== null && puff >= SPORE_MS) this.puffFrom = null;
-			drawHeadProp(ctx, this.prop, px + gx, py + gy, puff);
+			else if (puff !== null) drawSpores(ctx, px + gx + 8, py + gy - 7, puff);
 		}
 		if (this.emote !== this.emoteShown || this.emoteFrom < 0) {
 			this.emoteShown = this.emote;

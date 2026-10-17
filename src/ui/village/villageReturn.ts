@@ -110,7 +110,13 @@ import {
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { cleanUp } from "./decay";
-import { clearShrooms, endShrooms, sproutShrooms } from "./sceneShrooms";
+import {
+	clearShrooms,
+	dropShroom,
+	endShrooms,
+	SHROOM_LEFT,
+	sproutShrooms,
+} from "./sceneShrooms";
 import {
 	type SceneLit,
 	sceneOut,
@@ -752,6 +758,11 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 		// さいごの 地の文（帰っていった）の 前に 口へ 歩いて 帰る
 		if (l.who === null && i === lines.length - 1) {
 			await s.wait(0);
+			// 頭に きのこの 来客は 立って いた 所に きのこを 1本 置いていく（「きのこを1本置いて」）
+			if (VISITOR_PROP[d] === "kinoko" && to) {
+				s.set(SHROOM_LEFT, `${to[0]},${to[1]}`);
+				dropShroom(to);
+			}
 			await s.goto("visitor", gate[0], gate[1], { speed: 1.4 });
 			s.set("visitor", false);
 			s.hide("visitor");

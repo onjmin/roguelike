@@ -88,6 +88,10 @@ try {
 			kind: k,
 			look: { weapon: null, shield: k },
 		})),
+		...art.HEAD_KINDS.map((k) => ({
+			kind: k,
+			look: { weapon: null, shield: null, head: k },
+		})),
 	].filter((j) => !only || only.includes(j.kind));
 	mkdirSync(OUT, { recursive: true });
 	for (const { kind, look } of jobs) {

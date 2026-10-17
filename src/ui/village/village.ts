@@ -87,6 +87,7 @@ import { walletYen, yen } from "../../engine/wallet";
 import { showBootTitle } from "../boot";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
+import { drawEquip, equipSheet } from "../dungeon/equip";
 import type { Hud } from "../dungeon/hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "../message";
 import { buildCafe } from "./cafe";
@@ -95,7 +96,7 @@ import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
 import { Overhear } from "./overhear";
 import { buildRoom } from "./rooms";
-import { drawShrooms, setShroomTown } from "./sceneShrooms";
+import { drawShrooms, SHROOM_LEFT, setShroomTown } from "./sceneShrooms";
 import {
 	BLACKOUT_TINT,
 	outsideNow,
@@ -414,8 +415,10 @@ export class Village {
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
-		setShroomTown(this.mapId === "village" ? v : null, (x, y) =>
-			field.canEnter(x, y),
+		setShroomTown(
+			this.mapId === "village" ? v : null,
+			(x, y) => field.canEnter(x, y),
+			this.state.flags[SHROOM_LEFT],
 		);
 		this.player = new Actor(
 			"player",
@@ -440,6 +443,8 @@ export class Village {
 			...field.actors.map((a) => a.sprite),
 			...(this.crowd ? Crowd.sprites() : []),
 			this.player.sprite,
+			// 頭の きのこ（Story.wear）
+			equipSheet("kinoko"),
 		];
 		await Promise.race([preloadImages(refs.filter(Boolean)), sleep(2500)]);
 		this.updateCamera();
@@ -2148,7 +2153,20 @@ export class Village {
 			},
 			wear: (target, prop) => {
 				const a = this.actorFor(target);
-				if (a) a.prop = prop;
+				if (!a) return;
+				// 装備の 重ね描きと 同じ（public/sprites/equip/<種類>.png を 向きと 足踏みの コマで 重ねる）
+				a.over = prop
+					? (ctx, dir, frame, x, y) =>
+							drawEquip(
+								ctx,
+								{ weapon: null, shield: null, head: prop },
+								dir,
+								frame,
+								x,
+								y,
+								"over",
+							)
+					: null;
 			},
 			spores: (target) => this.actorFor(target)?.puffSpores(),
 			toast: (text) => this.toast(text),

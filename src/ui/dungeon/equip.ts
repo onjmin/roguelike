@@ -1,4 +1,4 @@
-// 装備した武器・盾の透過素材（public/sprites/equip/<種類>.png）を、キリコの歩行グラに重ねる。
+// 装備した武器・盾と 頭に のせる 物（頭の きのこ）の透過素材（public/sprites/equip/<種類>.png）を、歩行グラに重ねる。
 //
 // 素材の並び（1枚 200×320。セルは 40×40 で、キリコの 16×16 のマスはセルの左から12・上から16の所。
 // 刃の先や振りがマスの外へ はみ出すぶん、セルを大きくしてある）：
@@ -10,7 +10,12 @@
 import type { SpriteDir } from "../../core/geom";
 import { getImage } from "../../engine/assets";
 
-export type EquipLook = { weapon: string | null; shield: string | null };
+export type EquipLook = {
+	weapon: string | null;
+	shield: string | null;
+	/** 頭に のせる 物（頭の きのこ など。足踏みの コマで 動く。いつも 体の 前）。 */
+	head?: string | null;
+};
 
 /** セルの大きさと、セルの中のキリコのマスの位置。 */
 export const EQUIP_CELL = 40;
@@ -59,6 +64,7 @@ export const drawEquip = (
 	const parts: [string | null, number][] = [
 		[look.shield, frame % 2],
 		[look.weapon, colOf(frame, swing)],
+		[layer === "over" ? (look.head ?? null) : null, frame % 2],
 	];
 	for (const [kind, col] of parts) {
 		if (!kind) continue;
