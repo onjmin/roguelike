@@ -411,6 +411,8 @@ export type Floor = {
 	boss?: number;
 	/** 名所の 階（長い 板の 一息。敵・罠・道具なし。core/data/dungeons.ts の rests）の 名前。 */
 	rest?: string;
+	/** ボスの 大部屋（core/data/dungeons.ts の BossSpec.arena）の 名前。 */
+	arena?: string;
 	/** 集落の 人（いちばん底の 集落。core/data/dungeons.ts の settlement。立つ マスは 置物と 同じく 通れない）。 */
 	folk?: FloorFolk[];
 	/**

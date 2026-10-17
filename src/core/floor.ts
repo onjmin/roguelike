@@ -12,7 +12,12 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
-import type { RestFloor, SettlementSpec } from "./data/dungeons";
+import type {
+	BossArena,
+	BossSpec,
+	RestFloor,
+	SettlementSpec,
+} from "./data/dungeons";
 import { ITEMS } from "./data/items";
 import { MONSTERS, monstersFor, SWAP_BREADS } from "./data/monsters";
 import { canSee } from "./fov";
@@ -99,8 +104,11 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		depth === r.dungeon.floors && !r.s.returning && !bossFloor
 			? r.dungeon.settlement
 			: undefined;
-	// 名所と 集落は 手づくりの 地図（core/data/places.ts）
-	if (settle || rest) return buildPlaceFloor(r, depth, settle, rest);
+	// ボスが 住む 大部屋（ポケダン風。BossSpec の arena）
+	const arena = bossFloor ? r.bossSpec?.arena : undefined;
+	// 名所・集落・大部屋は 手づくりの 地図（core/data/places.ts）
+	if (settle || rest || arena)
+		return buildPlaceFloor(r, depth, settle, rest, arena);
 	const festival = house && !bossFloor;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
@@ -348,16 +356,21 @@ export const blocks = (
 };
 
 /**
- * 名所の 階・底の 集落を 手づくりの 地図（core/data/places.ts）から 作る。敵・罠は 置かず、地図は はじめから 見える。
- * 人・源泉・道具・階段・着く 所・持ち帰る 品は 地図の 字の 所（形と 置き場所に 乱数は 使わない）。
+ * 名所の 階・底の 集落・ボスの 大部屋を 手づくりの 地図（core/data/places.ts）から 作る。地図は はじめから 見える。
+ * 敵・罠は 置かない（大部屋は B の 所に ボスだけ）。人・源泉・道具・階段・着く 所・持ち帰る 品は 地図の 字の 所
+ * （形と 置き場所に 乱数は 使わない）。
  */
 const buildPlaceFloor = (
 	r: Run,
 	depth: number,
 	settle: SettlementSpec | undefined,
 	rest: RestFloor | undefined,
+	arena?: BossArena,
 ): Floor => {
-	const spec = (settle ?? rest) as SettlementSpec | RestFloor;
+	const spec = (settle ?? rest ?? arena) as
+		| SettlementSpec
+		| RestFloor
+		| BossArena;
 	const map = spec.map;
 	const w = Math.max(...map.rows.map((row) => row.length));
 	const h = map.rows.length;
@@ -410,7 +423,7 @@ const buildPlaceFloor = (
 		senseMonsters: false,
 		senseItems: false,
 		sight: false,
-		rest: spec.name,
+		...(arena ? { arena: arena.name } : { rest: spec.name }),
 		statues: [],
 		props: [],
 	};
@@ -438,7 +451,8 @@ const buildPlaceFloor = (
 	}
 	// 立って いる 人（1〜9 の 所。通れない）
 	f.folk = [];
-	spec.folk?.forEach((who, n) => {
+	const folk = arena ? undefined : (spec as SettlementSpec | RestFloor).folk;
+	folk?.forEach((who, n) => {
 		const spot = at(String(n + 1))[0];
 		if (!spot) return;
 		block(spot.x, spot.y);
@@ -472,6 +486,25 @@ const buildPlaceFloor = (
 	// 源泉
 	for (const spot of at("S"))
 		f.traps.push({ x: spot.x, y: spot.y, kind: "spring", found: true });
+	// 大部屋の ボス（B の 所。見られるまで 眠って 動かない：run.ts の checkBossSeen）と 先回りした 人の 差し入れ（g の 所）
+	if (arena) {
+		const prev = r.s.floor;
+		r.s.floor = f;
+		const spot = at("B")[0];
+		const m =
+			spot &&
+			spawnMonster(r, (r.bossSpec as BossSpec).monster, spot, {
+				sleep: DEEP,
+				single: true,
+			});
+		if (m) f.boss = m.uid;
+		r.s.floor = prev;
+		const spots = at("g");
+		r.bossSpec?.supply?.items.forEach((kind, n) => {
+			const g = spots[n];
+			if (g) f.items.push({ x: g.x, y: g.y, item: r.newItem(kind) });
+		});
+	}
 	revealAll(f);
 	return f;
 };

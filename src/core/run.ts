@@ -771,6 +771,9 @@ export class Run {
 		if (!sees && !engaged) return;
 		f.bossSeen = true;
 		const name = monsterName(this, m);
+		// 大部屋：戦いの 前に 掛け合い（村と 同じ 窓）
+		const arena = f.arena ? this.bossSpec?.arena : undefined;
+		if (arena) this.emitTalk(name, arena.talk);
 		if (waiting) {
 			m.status.sleep = 0;
 			m.status.dormant = false;
@@ -779,7 +782,11 @@ export class Run {
 		}
 		this.emit({ t: "boss", id: m.uid });
 		this.msg(
-			waiting ? `${name}が正座して待ちかまえていた！` : `${name}があらわれた！`,
+			arena
+				? `${name}との勝負だ！`
+				: waiting
+					? `${name}が正座して待ちかまえていた！`
+					: `${name}があらわれた！`,
 			"warn",
 		);
 		// ボスを 見た ときの 行（正体を 明かす など。core/data/dungeons.ts の boss.intro）
@@ -857,6 +864,8 @@ export class Run {
 			);
 		// 名所の 階（敵の 来ない 一息）
 		if (s.floor.rest) this.msg(`${s.floor.rest}。敵の気配がない`);
+		// ボスの 大部屋（湯気の 向こうで ボスが 待つ。戦いは checkBossSeen の 掛け合いから）
+		if (s.floor.arena) this.msg(`${s.floor.arena}に出た`);
 		// ボスの 階の 差し入れ
 		const supply = this.bossSpec?.supply;
 		if (supply && depth === this.dungeon.floors && !s.returning)
@@ -904,15 +913,13 @@ export class Run {
 	}
 
 	/** 集落の 人に 話す（ぶつかる。時間は 進まない）。key の 人なら 目的が すすむ。 */
-	private talkFolk(fo: FloorFolk): void {
-		const talk = fo.talks[fo.said % fo.talks.length];
-		fo.said++;
-		// キリコの 返事は 主人公が キリコの ときだけ（口ぐせが ンゴなので）
+	/** 話す 窓（集落の 人・大部屋の ボス）。キリコの 返事は 主人公が キリコの ときだけ（口ぐせが ンゴなので）。 */
+	private emitTalk(name: string, talk: FolkTalk, voice?: string): void {
 		const hero = this.heroName;
 		this.emit({
 			t: "talk",
-			name: fo.name,
-			...(fo.voice ? { voice: fo.voice } : {}),
+			name,
+			...(voice ? { voice } : {}),
 			talk: talk.flatMap((x): FolkTalk[number][] =>
 				typeof x === "string"
 					? [x.replaceAll("キリコ", hero)]
@@ -921,6 +928,12 @@ export class Run {
 						: [x],
 			),
 		});
+	}
+
+	private talkFolk(fo: FloorFolk): void {
+		const talk = fo.talks[fo.said % fo.talks.length];
+		fo.said++;
+		this.emitTalk(fo.name, talk, fo.voice);
 		if (!fo.key || this.s.end) return;
 		// 送り届ける 人が 底で たおれて いれば ふつうの 持ち帰り（長が 底の 品を 渡す）
 		if (this.s.objective === "deliver" && this.s.guest?.down) {

@@ -220,6 +220,81 @@ test("special floors place every folk, gift, spring and goal, and nothing hostil
 	ok(PLACES.filter((p) => p.spring).length >= 5, "springs missing");
 });
 
+// ボスの 大部屋（BossSpec.arena）：住む・立てこもる ボスだけ（STORY.md §4.9 の ライバル）
+const ARENAS = DUNGEON_IDS.flatMap((id) => {
+	const a = dungeonById(id).boss?.arena;
+	return a ? [{ id, a }] : [];
+});
+
+test("boss arenas: known letters, one room in reach, the boss stands on B, and nothing else hostile", () => {
+	ok(
+		ARENAS.some((x) => x.id === "main"),
+		"the bath hall is missing",
+	);
+	for (const { id, a } of ARENAS) {
+		const known = new Set([..."#. @>gB", ...Object.keys(a.map.legend)]);
+		for (const row of a.map.rows)
+			for (const ch of row) ok(known.has(ch), `${a.name}: unknown "${ch}"`);
+		ok(
+			a.map.rows.every((row) => row.length === a.map.rows[0].length),
+			`${a.name}: rows of different lengths`,
+		);
+		const d = dungeonById(id);
+		const r = Run.create(`arena-test:${a.name}`, id, [], "boss");
+		const f = buildFloor(r, d.floors, false);
+		ok(f.arena === a.name && !f.rest, `${a.name}: not an arena`);
+		const l = f.layout;
+		const got = reach(f, r.p);
+		for (let i = 0; i < l.w * l.h; i++)
+			if (l.tiles[i])
+				ok(
+					got.has(i),
+					`${a.name}: floor cut off at ${i % l.w},${Math.floor(i / l.w)}`,
+				);
+		ok(f.monsters.length === 1, `${a.name}: ${f.monsters.length} monsters`);
+		const b = f.monsters[0];
+		ok(b.uid === f.boss && b.kind === d.boss?.monster, `${a.name}: no boss`);
+		const row = a.map.rows[b.y];
+		ok(row[b.x] === "B", `${a.name}: boss is not on B`);
+		ok(f.traps.length === 0, `${a.name}: traps`);
+		ok(
+			f.seen.every((v, i) => v || !l.tiles[i]),
+			`${a.name}: the map is not revealed`,
+		);
+		// ほかの 目的（期間限定の 持ち帰り）では ふつうの 階
+		const q = Run.create(`arena-test:${a.name}`, id, [], "fetch");
+		ok(!buildFloor(q, d.floors, false).arena, `${a.name}: arena on fetch`);
+	}
+});
+
+test("boss arenas: the talk fits the window and comes before the fight starts", () => {
+	for (const { id, a } of ARENAS) {
+		ok(a.talk.length >= 1 && a.talk.length <= 3, `${a.name}: windows`);
+		ok(typeof a.talk[0] === "string", `${a.name}: opens with キリコ`);
+		for (const x of a.talk) {
+			const text = typeof x === "string" ? x : x.kiriko;
+			const lines = text.split("\n");
+			ok(lines.length <= 2, `${a.name}: 3 lines ${text}`);
+			for (const ln of lines)
+				ok([...ln].length <= 22, `${a.name}: long line ${ln}`);
+		}
+		const r = Run.create(`arena-test:${a.name}`, id, [], "boss");
+		r.enterFloor(dungeonById(id).floors, false);
+		const talk = r.ev.findIndex((e) => e.t === "talk");
+		const boss = r.ev.findIndex((e) => e.t === "boss");
+		ok(talk >= 0 && boss > talk, `${a.name}: talk ${talk} boss ${boss}`);
+		ok(r.f.bossSeen && r.boss?.status.sleep === 0, `${a.name}: boss asleep`);
+		// ロゼ・ゼロで 潜ると キリコの 返事は 出さない
+		const z = Run.create(`arena-test:${a.name}`, id, [], "boss", true, "zero");
+		z.enterFloor(dungeonById(id).floors, false);
+		const zt = z.ev.find((e) => e.t === "talk");
+		ok(
+			zt?.t === "talk" && zt.talk.every((x) => typeof x === "string"),
+			`${a.name}: キリコ answers for ゼロ`,
+		);
+	}
+});
+
 export const runPlaceTests = (): TestResult[] =>
 	CASES.map((c) => {
 		try {

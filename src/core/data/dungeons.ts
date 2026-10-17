@@ -37,6 +37,7 @@ import type {
 } from "../types";
 import { ITEMS, MAIN_ITEMS } from "./items";
 import {
+	BATH_HALL,
 	BATH_SPRING,
 	DENCHI_PLANT_TOUR,
 	FESTIVAL_YAGURA,
@@ -73,6 +74,20 @@ export type BossSpec = {
 	supply?: { items: readonly string[]; line: string };
 	/** ボスの 曲（data/audio/bgm.ts の 名前。見つけてから たおすまで。無ければ 汎用の ボス曲 BOSS_BGM）。 */
 	bgm?: string;
+	/** ボスが 住む・立てこもる 大部屋（無ければ ふつうの 階で 待つ）。 */
+	arena?: BossArena;
+};
+
+/**
+ * ボスの 大部屋（ポケダン風。STORY.md §4.9 の ライバル）。その 場所に 住む・立てこもる ボスだけ。
+ * いちばん底を 手づくりの 地図に して、着くと ボスとの 掛け合いが あって 戦いが 始まる。
+ */
+export type BossArena = {
+	name: string;
+	/** 手づくりの 地図（core/data/places.ts。B が ボスの 立つ 所。g は 差し入れ supply の 置き場）。 */
+	map: PlaceMap;
+	/** 着いた ときの 掛け合い（ボスが 言う。終わると 戦いが 始まる）。 */
+	talk: FolkTalk;
 };
 
 /** 底の 出来事（目的が event。着くと 品を もらって 入口へ 帰る）。 */
@@ -674,6 +689,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"湯柱に押し上げられて、入口までもどった",
 			],
 			cause: "湯守おふ郎くんをたおした",
+			// 42℃派が 立てこもった 銭湯（番頭の 持ち場なので 大部屋で 待つ）。キリコが どっちつかずなのが 火種
+			arena: {
+				name: "銭湯の大浴場",
+				map: BATH_HALL,
+				talk: [
+					"あら、41℃派の方？\nここは42℃の湯でしてよ",
+					{ kiriko: "吾輩、ぬるいのも\n熱いのも入るンゴ" },
+					"どっちつかずが、いちばん\n許せませんの！",
+				],
+			},
 		},
 		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
 		foes: { sabi: 2, neochi: 1.5 },
