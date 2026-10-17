@@ -72,6 +72,8 @@
 // | tekitou      | -25.1（28）    | 28 → 36 | -23.0    |
 // | touhoufu     | -23.2（50）    | 50 → 47 | -23.8    |
 // | yofukashi    | -30.6（20）    | 20 → 45 | -23.6    |
+// | kaiwai       | -19.3（50）    | 50 → 33 | -22.9（測り直した） |
+// （2026-10-17。界隈曲。dtm 2.1.34 の dev/bgm.html で 測った。dtm の 音源の 正規化が 入った 版では 矩形波の 主旋律が 小さく なるので、上げたら 測り直す）
 // （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
@@ -110,6 +112,10 @@ import field2 from "./bgm/field2.mml?raw"; // 789ecdd88cb049f8「？」
 import fukyowa from "./bgm/fukyowa.mml?raw"; // 6367「Aメロ不協和音Bメロで終止させる典型的な構成」：ヘ短調 132・バイオリンと 矩形波の 16分の 分散和音
 import inferno from "./bgm/inferno.mml?raw"; // †闇の板† 闇の塔：ニ短調（和声的） 150・orchestra・8beat（オルガンの 旋律・合唱・弦の 刻み。2026-10-13 書き下ろし）
 import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたらテンション上がりそうなサビ」：ニ長調 131・ビブラフォン・チェレスタ・エレピ（前奏 12 小節）
+// 界隈曲（2号兄貴リスペクト、インスト。dtm の 自動作曲 seed 1010 の 伴奏を 組み直し、リードは 手書き。
+// 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ト短調 145・chip_pop・dance。
+// 最終話の あとの おんJタウン（町じゅう 明るい 段7。data/audio/music.ts）。ループするので #fadeout は 外した
+import kaiwai from "./bgm/kaiwai.mml?raw";
 import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
@@ -181,4 +187,5 @@ export const bgm: Record<string, string> = {
 	tekitou,
 	touhoufu,
 	yofukashi,
+	kaiwai,
 };

@@ -25,6 +25,8 @@ const VILLAGE_TIERS: readonly { from: number; bgm: string }[] = [
 	{ from: 0, bgm: "town" },
 	// 店が 建ってから：名無し2rt さんの「くもり空をパクったやつ」（ホ長調 116。矩形波の 主旋律）
 	{ from: 5, bgm: "kumori" },
+	// 最終話の あと（町じゅう 明るい）：界隈曲（ト短調 145・4つ打ち）
+	{ from: 7, bgm: "kaiwai" },
 ];
 
 /** その 段の 村の 曲（蓄音機で えらんで いなければ これ）。 */
