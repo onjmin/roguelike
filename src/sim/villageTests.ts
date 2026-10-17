@@ -1982,13 +1982,24 @@ test("ヒナリーの 帳簿: 生き返った 通りの 数と 残り", () => {
 		ok(ledgerLine() === VILLAGE_MSG.ledgerNone, "no street revived");
 		setProgress([], [], ["shallow", "kinoko"]);
 		ok(
-			ledgerLine() === fill(VILLAGE_MSG.ledger, { n: 2, left: 5 }),
+			ledgerLine() === fill(VILLAGE_MSG.ledger, { n: 2, left: 8 }),
 			`two streets: ${ledgerLine()}`,
 		);
 		setProgress(
 			[],
 			[],
-			["shallow", "kinoko", "main", "deep", "tropical", "konamono", "festival"],
+			[
+				"shallow",
+				"kinoko",
+				"main",
+				"deep",
+				"tropical",
+				"konamono",
+				"festival",
+				"vocalo",
+				"inferno",
+				"hidden",
+			],
 		);
 		ok(ledgerLine() === VILLAGE_MSG.ledgerMax, `all: ${ledgerLine()}`);
 	});
@@ -7485,6 +7496,16 @@ test("生き返る 通り（TOWN.md §0.6）: 表の 所は どれも 町に あ
 	// 寄り道の 遊び場も 人が もどるまで 閉まって いる（碁会所は 広場、マイクラの 島は 商店街と いっしょ）
 	for (const id of ["go", "saba7", "saba_apart"])
 		ok(!isRevived(id, []), `${id} is open at the start`);
+	// 1つの 板で 開くのは 少しずつ（本筋 4枚を 終えても 寄り道と 過去ログの底の 所は 閉まった まま）
+	for (const a of REVIVE_AREAS)
+		ok(a.places.length <= 9, `${a.name} opens ${a.places.length} at once`);
+	const story: DungeonId[] = ["shallow", "kinoko", "main", "deep"];
+	for (const id of ["music", "otaku", "netcafe", "bushitsu"])
+		ok(!isRevived(id, story), `${id} opens with the main story alone`);
+	ok(
+		isRevived("bushitsu", [...story, "hidden"]),
+		"bushitsu after 過去ログの底",
+	);
 });
 
 test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏むと 札を 読んで 1歩 もどる。屋台の 店番も 出ない。持ち帰れば 開く", async () => {
@@ -8318,5 +8339,29 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 			nearSkit("village", 19, 22)?.key === "window_kinoko",
 			"between きのこ板 and 風呂板",
 		);
+	});
+});
+
+test("寸劇: every explosion clears before the skit ends (the building is back to normal), and the boom plays its sound", async () => {
+	const booms = SKITS.filter((sk) => sk.lines.some((l) => l.fx === "boom"));
+	ok(booms.length >= 3, "few explosion gags");
+	for (const sk of booms) {
+		const at = sk.lines.findIndex((l) => l.fx === "boom");
+		ok(
+			sk.lines.slice(at + 1).some((l) => l.calm),
+			`${sk.key}: the smoke never clears`,
+		);
+	}
+	await withStorageAsync(async () => {
+		const a = fakeStory();
+		ok(
+			await skitAfterEvent(a.s, {
+				from: "village",
+				to: "f_theater",
+				thing: "door_f_theater",
+			}),
+			"theater skit",
+		);
+		ok(a.log.includes("se explosion"), `no boom sound: ${a.log.join(" / ")}`);
 	});
 });
