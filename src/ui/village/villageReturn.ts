@@ -44,6 +44,7 @@ import {
 	UNLOCK_VISIT,
 	withoutAway,
 } from "../../data/story/story";
+import { BOARD_NEWS, deathLine } from "../../data/town/headlines";
 import { inBlackout, REVIVE_AREAS } from "../../data/town/revival";
 import {
 	TAMPER_NARRATION,
@@ -73,6 +74,7 @@ import type { Story } from "../../engine/defs";
 import { cueOf } from "../../engine/emote";
 import {
 	addFlag,
+	deathCount,
 	doneEventNews,
 	doneProgressNews,
 	giveLunch,
@@ -543,6 +545,8 @@ export const deathScene = async (s: Story): Promise<void> => {
 	const seed = Math.floor(last.at / 1000) + last.turn;
 	const q = deathQuote(seed);
 	await s.narrate(WAKE_PAGES[seed % WAKE_PAGES.length]);
+	// 掲示板に 名無しの 一行が ふえる（data/town/headlines.ts。正体は 転で わかる）
+	await s.narrate(fill(BOARD_NEWS.death, { line: deathLine(deathCount()) }));
 	if (!q) return;
 	const [bx, by] = VILLAGE_SPOTS.boot;
 	await s.goto(q.who, bx + 1, by, { speed: 1.6 });

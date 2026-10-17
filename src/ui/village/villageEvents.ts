@@ -50,6 +50,7 @@ import {
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
+import { BOARD_NEWS, deathLine, HEADLINES } from "../../data/town/headlines";
 import {
 	activeIncidents,
 	type IncidentPerson,
@@ -107,6 +108,7 @@ import {
 	addFlag,
 	addRecord,
 	clearRun,
+	deathCount,
 	depositBag,
 	hasFlag,
 	hasRunSave,
@@ -705,11 +707,25 @@ const boardScript =
 	async (s) => {
 		// パン板の 騒ぎの あいだは 差し押さえ（data/town/incidents.ts）
 		const seized = activeIncidents(view).find((i) => i.seize)?.seize;
+		// 名無しの 見出しと、倒れた ときの 一行（data/town/headlines.ts）
+		const news = async () => {
+			for (const i of activeIncidents(view)) {
+				const line = HEADLINES[i.dungeon];
+				if (line) await s.narrate(fill(BOARD_NEWS.headline, { line }));
+			}
+			const deaths = deathCount();
+			if (deaths > 0)
+				await s.narrate(
+					fill(BOARD_NEWS.deathOnBoard, { line: deathLine(deaths) }),
+				);
+		};
 		if (seized) {
 			await s.narrate(seized);
+			await news();
 			return;
 		}
 		await s.narrate(VILLAGE_MSG.board);
+		await news();
 		// 生き返った 通り（data/town/revival.ts）
 		await s.narrate(revivedLine(loadProgress().cleared));
 		const stage = previewStage() ?? loadTown().stage;

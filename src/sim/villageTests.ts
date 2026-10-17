@@ -145,6 +145,12 @@ import {
 	YAKYU_SHELF,
 } from "../data/town/hall";
 import {
+	BOARD_NEWS,
+	DEATH_LINES,
+	deathLine,
+	HEADLINES,
+} from "../data/town/headlines";
+import {
 	activeIncidents,
 	INCIDENTS,
 	incidentPlaceId,
@@ -7325,8 +7331,9 @@ test("町の 騒ぎ（STORY.md §4.9）: 板が 開いて から 持ち帰るま
 		const { s, log } = fakeStory();
 		await board.run(s);
 		const seize = INCIDENTS.find((i) => i.seize)?.seize ?? "";
+		const head = fill(BOARD_NEWS.headline, { line: HEADLINES.shallow ?? "" });
 		ok(
-			log.join("\n") === `narrate: ${seize}`,
+			log.join("\n") === `narrate: ${seize}\nnarrate: ${head}`,
 			`the seized board opened: ${log.join(" / ")}`,
 		);
 	}
@@ -7358,4 +7365,30 @@ test("転の 停電: 電池板が 開いて 持ち帰るまで、生き返った
 			[...villageRows(dark)[d[1]]][d[0]] === "ｼ",
 			"no shutter in the blackout",
 		);
+});
+
+test("広場の 掲示板の 名無し（STORY.md §4.9）: 騒ぎの 板には 見出しが あり、倒れた ときの 一行は 回数で 入れかわる。どれも 村の 窓に 収まる", () => {
+	for (const inc of INCIDENTS)
+		ok(HEADLINES[inc.dungeon], `${inc.dungeon}: no headline`);
+	const texts: [string, string][] = [];
+	for (const [d, line] of Object.entries(HEADLINES))
+		texts.push([
+			`HEADLINES.${d}`,
+			fill(BOARD_NEWS.headline, { line: line ?? "" }),
+		]);
+	for (const line of DEATH_LINES) {
+		texts.push(["BOARD_NEWS.death", fill(BOARD_NEWS.death, { line })]);
+		texts.push([
+			"BOARD_NEWS.deathOnBoard",
+			fill(BOARD_NEWS.deathOnBoard, { line }),
+		]);
+	}
+	fitsWindow(texts);
+	ok(
+		deathLine(1) === DEATH_LINES[0] &&
+			deathLine(2) === DEATH_LINES[1] &&
+			deathLine(DEATH_LINES.length + 1) === DEATH_LINES[0],
+		"death lines do not cycle",
+	);
+	ok(DEATH_LINES[0] === "キリコ死んでて草", "the first line");
 });

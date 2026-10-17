@@ -432,6 +432,10 @@ const isActiveEvent = (x: unknown): x is ActiveEvent => {
 };
 
 /** どこまで開いたか。まだ無ければ、これまでの記録から決める（ダンジョンが1つだったころに遊んだ人は 本編も開いている）。 */
+/** これまで 倒れて 帰った 回数（どの 板でも。広場の 掲示板の 一行：data/town/headlines.ts）。 */
+export const deathCount = (): number =>
+	Object.values(loadProgress().fails).reduce((a, n) => a + (n ?? 0), 0);
+
 export const loadProgress = (): Progress => {
 	try {
 		const raw = readSave(PROGRESS_KEY);
