@@ -92,6 +92,7 @@ import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
 import { buildRoom } from "./rooms";
+import { SCENE_NIGHT_MINUTE, sceneSky } from "./sceneSky";
 import { Crowd } from "./villageCrowd";
 import {
 	buildSurface,
@@ -1469,12 +1470,17 @@ export class Village {
 		// 時間帯の 色（外の 村と 板の 地上だけ。人通りと 同じ 時計。data/village/daylight.ts）
 		if (this.mapId === "village" || this.mapId.startsWith("s_")) {
 			// 日付の 日の 出・日の 入りに 合わせて 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
+			// 明かりの 場面は 時計に かかわらず 夜（ui/village/sceneSky.ts。dark は 明かりも 消す）
 			const { m, d } = today();
-			const day = daylightAt(
-				nowHour() * 60 + nowMinute() + this.clockMs / 1000,
+			const sky = sceneSky();
+			const lit = daylightAt(
+				sky
+					? SCENE_NIGHT_MINUTE
+					: nowHour() * 60 + nowMinute() + this.clockMs / 1000,
 				m,
 				d,
 			);
+			const day = sky === "dark" ? { ...lit, lamp: 0, windows: 0 } : lit;
 			if (day.tint) {
 				g.save();
 				g.globalCompositeOperation = "multiply";

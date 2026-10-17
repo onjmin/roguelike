@@ -86,6 +86,11 @@ export type StoryPage = Cue & {
 	fx?: SceneFx;
 	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
 	bgm?: string | null;
+	/**
+	 * この 頁からの 村の 空（ui/village/sceneSky.ts。村の 時計に かかわらず 夜。dark は 明かりも 消す。null で 時計に もどす。
+	 * 村の 持ち帰りの 語り・転だけ。場面の おわりには 時計に もどる）。
+	 */
+	sky?: "dark" | "night" | null;
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */

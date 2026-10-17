@@ -105,6 +105,7 @@ import {
 } from "../../engine/sceneFx";
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
+import { sceneSky, setSceneSky } from "./sceneSky";
 import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
@@ -334,6 +335,8 @@ const playCue = async (
 		}
 		await s.fadeOut(300);
 		await rebuild(s);
+		// 町の 明かりが もどる（停電の 暗さ → ふつうの 夜）
+		if (sceneSky() === "dark") setSceneSky("night");
 		await s.fadeIn(300);
 		await s.look(null);
 	} else if (c === "chapterEnd") {
@@ -374,6 +377,8 @@ export const returnScene = async (
 	for (const p of pages) {
 		// 場面の 曲（頂点の 場面など。null で 止める）
 		if (p.bgm !== undefined) s.bgm(p.bgm);
+		// 場面の 空（明かりの 場面は 夜。ui/village/sceneSky.ts）
+		if (p.sky !== undefined) setSceneSky(p.sky);
 		if (p.cue) await playCue(s, p.cue);
 		if (fx && fx.kind !== p.fx) {
 			fx.run.end();
@@ -397,6 +402,7 @@ export const returnScene = async (
 		s.fadeOut(300),
 	]);
 	await rebuild(s);
+	setSceneSky(null);
 	s.bgm(villageSong());
 	await s.fadeIn(300);
 };
@@ -622,6 +628,8 @@ export const deathScene = async (s: Story): Promise<void> => {
 
 /** 転（STORY.md §4.9）：風呂板の 語りを 見おえた 帰りに 1回だけ。停電と、また 盛った 見出し。 */
 export const tenScript = async (s: Story): Promise<void> => {
+	// その夜の 場面（村の 時計に かかわらず 夜。明かりが 消える 頁から dark）
+	setSceneSky("night");
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
 	for (const p of withoutAway(
 		TEN_NEWS.pages,
@@ -629,7 +637,13 @@ export const tenScript = async (s: Story): Promise<void> => {
 	)) {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
 		if (p.bgm !== undefined) s.bgm(p.bgm);
+		if (p.sky !== undefined) setSceneSky(p.sky);
 		await playPage(s, p);
+	}
+	// 場面の 曲と 空は ここまで。村の 曲・時計に もどす
+	await s.fadeBgm(300);
+	setSceneSky(null);
+	s.bgm(villageSong());
 	addFlag("ten");
 };
 
@@ -648,10 +662,6 @@ export const newsScript = async (s: Story): Promise<void> => {
 			doneProgressNews(n);
 			s.se("chapter");
 			await s.narrate(
-	}
-	// 場面の 曲は ここまで。村の 曲に もどす
-	await s.fadeBgm(300);
-	s.bgm(villageSong());
 				`「${DUNGEON_NAMES[n.dungeon].name}」に\nもぐれるようになった`,
 			);
 			continue;
@@ -723,7 +733,10 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	const dark = inBlackout(p);
 	// 転（tenScript）を 見て いれば 停電は もう 語った
 	if (dark && !hasFlag(BLACKOUT_TOLD) && !hasFlag("ten")) {
+		// 真っ暗な 町（時計に かかわらず 夜で、明かりも ない）
+		setSceneSky("dark");
 		for (const l of REVIVE_MSG.blackout) await s.narrate(l);
+		setSceneSky(null);
 		addFlag(BLACKOUT_TOLD);
 	}
 	const fresh = dark

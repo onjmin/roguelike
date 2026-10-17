@@ -233,7 +233,11 @@ const SHALLOW_BASE: readonly StoryPage[] = [
 export const TEN_NEWS = {
 	pages: [
 		// 明かりと いっしょに 曲も 消える（無音）。見出しから 警報の 曲（落ちた鯖）
-		{ ...n("その夜、町じゅうの明かりが\nいっせいに消えた。"), bgm: null },
+		{
+			...n("その夜、町じゅうの明かりが\nいっせいに消えた。"),
+			bgm: null,
+			sky: "dark",
+		},
 		s("zero", "停電です！町の電気、\nぜんぶ電池板から来てました", {
 			emote: "!",
 		}),
@@ -674,6 +678,8 @@ export const STORY: Record<
 					"村に帰りつくと、港は真っ暗だった。\n坂の上まで、明かりがひとつもない。",
 				),
 				bgm: null,
+				// 時計に かかわらず 夜。明かりの 坂（lightsUp）で 町の 明かりが もどる
+				sky: "dark",
 			},
 			// 明かりの もどる 坂（ui/village/villageReturn.ts の playCue。暗い 町で 生き返った 通りを 順に 見せて、
 			// 明るい 町に 建て直す）
@@ -748,7 +754,10 @@ export const STORY: Record<
 				fx: "blackout",
 			},
 			{ ...k("……見出しどおりンゴ"), fx: "blackout" },
-			n("翌朝。町は、何事もなかったように\nもとにもどっていた。"),
+			{
+				...n("翌朝。町は、何事もなかったように\nもとにもどっていた。"),
+				sky: null,
+			},
 			n("掲示板に、見出しがひとつ。\n『【悲報】ワイらの冒険、ロールバック』"),
 			n("その下に、書きこみがひとつ。\n「キリコ生きてて草」"),
 		],
