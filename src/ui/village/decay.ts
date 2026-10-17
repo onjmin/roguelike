@@ -421,7 +421,7 @@ const sparkle = (g: G, s: Site, ox: number, oy: number, a: number): void => {
 	g.restore();
 };
 
-/** 1つの 建物の すたれ（地図の ソース画素で、ox・oy を ひいて 描く）。 */
+/** 1つの 建物の 壁と 地面の すたれ（人より 奥。地図の ソース画素で、ox・oy を ひいて 描く）。 */
 const drawSite = (g: G, s: Site, ox: number, oy: number): void => {
 	const r = rngOf(`${s.place}:draw`);
 	const X = s.x * TILE - ox;
@@ -458,9 +458,8 @@ const drawSite = (g: G, s: Site, ox: number, oy: number): void => {
 			banner(g, left ? X + 3 : X + W - 11, bottom - TILE + 1, r);
 		}
 	}
-	if (s.ruin) {
-		roofHole(g, X + Math.floor(W * (0.3 + r() * 0.4)), Y, r);
-		// 崩れた かけら
+	// 半壊の 崩れた かけら
+	if (s.ruin)
 		for (let i = 0; i < 4; i++)
 			dot(
 				g,
@@ -468,17 +467,40 @@ const drawSite = (g: G, s: Site, ox: number, oy: number): void => {
 				bottom + 1 + Math.floor(r() * 4),
 				"#6b5a48",
 			);
-	}
 };
 
-/** 村の 地図：すたれた 建物の 飾り。すたれた 所が なければ 無い。 */
-export const decayDecor = (v: VillageView): MapDef["decor"] => {
+/** 半壊の 屋根の 穴（人より 手前の 屋根に そろえて 上に 描く）。 */
+const drawRoof = (g: G, s: Site, ox: number, oy: number): void => {
+	if (!s.ruin) return;
+	const r = rngOf(`${s.place}:roof`);
+	const W = s.w * TILE;
+	roofHole(
+		g,
+		s.x * TILE - ox + Math.floor(W * (0.3 + r() * 0.4)),
+		s.y * TILE - oy,
+		r,
+	);
+};
+
+/**
+ * 村の 地図：すたれた 建物の 飾り。ground は 壁と 地面の 物（MapDef.ground。人より 奥）、
+ * decor は 屋根の 穴と 片づけの きらきら（MapDef.decor。人より 手前）。すたれた 所が なければ 無い。
+ */
+export const decayLayers = (
+	v: VillageView,
+): { ground: MapDef["ground"]; decor: MapDef["decor"] } => {
 	const sites = sitesOf(v);
-	if (!sites.length) return undefined;
+	if (!sites.length) return { ground: undefined, decor: undefined };
 	const shut = new Set(
 		REVIVE_AREAS.filter((a) => !v.cleared.includes(a.dungeon)).map((a) => a.id),
 	);
-	return (g, ox, oy) => {
+	/** 見えて いる 建物ごとに 濃さ（片づけ中は 1→0）を 添えて 呼ぶ。 */
+	const each = (
+		g: G,
+		ox: number,
+		oy: number,
+		f: (s: Site, a: number) => void,
+	): void => {
 		const vw = g.canvas.width;
 		const vh = g.canvas.height;
 		const now = performance.now();
@@ -492,13 +514,23 @@ export const decayDecor = (v: VillageView): MapDef["decor"] => {
 			if (from !== undefined) {
 				a = 1 - (now - from) / CLEAN_MS;
 				if (a <= 0) continue;
-				sparkle(g, s, ox, oy, a);
 			}
 			g.save();
 			g.globalAlpha = a;
-			drawSite(g, s, ox, oy);
+			f(s, a);
 			g.restore();
 		}
+	};
+	return {
+		ground: (g, ox, oy) => each(g, ox, oy, (s) => drawSite(g, s, ox, oy)),
+		decor: (g, ox, oy) =>
+			each(g, ox, oy, (s, a) => {
+				drawRoof(g, s, ox, oy);
+				if (a < 1) {
+					g.globalAlpha = 1;
+					sparkle(g, s, ox, oy, a);
+				}
+			}),
 	};
 };
 
