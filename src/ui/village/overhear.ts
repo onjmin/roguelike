@@ -4,6 +4,7 @@
 // 同じ 掛け合いは、ほかを ぜんぶ 聞くまで くり返さない（村に いる あいだだけ 覚える）。
 
 import type { MobId } from "../../data/people/mobs";
+import { rgbOf } from "../../data/village/daylight";
 import {
 	CROWD_MUTTERS,
 	CROWD_PAIRS,
@@ -175,8 +176,17 @@ export class Overhear {
 		return true;
 	}
 
-	/** 頭の 上に 描く（ox・oy は カメラ、w は 画面の 幅。夜の 色の あとに 呼ぶ）。 */
-	draw(g: CanvasRenderingContext2D, ox: number, oy: number, w: number): void {
+	/**
+	 * 頭の 上に 描く（ox・oy は カメラ、w は 画面の 幅。夜の 色の あとに 呼ぶ）。tint は 時間帯の 色で、
+	 * 紙の 色に 薄めて かける（夜に 白い まま 浮かないように。字が 読める 明るさは のこす）。
+	 */
+	draw(
+		g: CanvasRenderingContext2D,
+		ox: number,
+		oy: number,
+		w: number,
+		tint: string | null = null,
+	): void {
 		const s = this.shown;
 		if (!s) return;
 		const a = this.time - s.t;
@@ -194,7 +204,7 @@ export class Overhear {
 		const tip = Math.round(s.actor.fy * TILE - oy - 1);
 		const x0 = Math.max(1, Math.min(w - bw - 1, cx - Math.round(bw / 2)));
 		const y0 = tip - 3 - bh;
-		g.fillStyle = "#fffdf4";
+		g.fillStyle = paperOf(tint);
 		g.strokeStyle = "#2a2a33";
 		g.lineWidth = 1;
 		g.beginPath();
@@ -217,6 +227,20 @@ export class Overhear {
 		g.restore();
 	}
 }
+
+/** 吹き出しの 紙の 色（昼）。 */
+const PAPER: readonly [number, number, number] = [255, 253, 244];
+/** 時間帯の 色を 吹き出しに かける 強さ（1 で 地面と 同じ 暗さ）。 */
+const TINT_K = 0.6;
+
+const paperOf = (tint: string | null): string => {
+	if (!tint) return `rgb(${PAPER.join(", ")})`;
+	const t = rgbOf(tint);
+	const rgb = PAPER.map((p, i) =>
+		Math.round(p * (1 - TINT_K * (1 - (t[i] ?? 255) / 255))),
+	);
+	return `rgb(${rgb.join(", ")})`;
+};
 
 const faceTo = (a: Actor, b: Actor): Actor["dir"] => {
 	const dx = b.x - a.x;

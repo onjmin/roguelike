@@ -135,7 +135,7 @@ const keyframes = (rise: number, set: number): [number, Sky][] => [
 	[1440, sky("night")],
 ];
 
-const rgbOf = (c: string | null): [number, number, number] => {
+export const rgbOf = (c: string | null): [number, number, number] => {
 	const m = c?.match(/\d+/g);
 	return m ? [Number(m[0]), Number(m[1]), Number(m[2])] : [255, 255, 255];
 };
