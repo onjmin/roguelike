@@ -115,12 +115,24 @@ export type SettlementSpec = {
 	map: PlaceMap;
 	/** この 階の 曲（data/audio/bgm.ts の 名前。敵の いない 所なので 板の 曲と かえる）。 */
 	bgm: string;
-	folk: readonly {
-		name: string;
-		sprite: string;
-		lines: readonly string[];
-		key?: true;
-	}[];
+	folk: readonly FolkSpec[];
+};
+
+/**
+ * 1回 話す ぶん（村と 同じ 窓で 1〜3枚。1行 全角22字・2行まで）。文字列は その 人、{ kiriko } は キリコの 返事
+ * （201 の 型：大ボケの 直後に 自分で つっこむ。主人公が キリコで ない ときは 出さない）。
+ */
+export type FolkTalk = readonly (string | { kiriko: string })[];
+
+/** 集落・名所に 立って いる 人（ぶつかると 話す）。 */
+export type FolkSpec = {
+	name: string;
+	sprite: string;
+	/** 窓の 立ち絵と 名前の 色（data/people/cast.ts の 仲間・住人の id。無ければ 名前だけ）。 */
+	voice?: string;
+	/** 話す ことの 順（ぶつかる たびに 1つ すすみ、終わると はじめに もどる）。 */
+	talks: readonly FolkTalk[];
+	key?: true;
 };
 
 /**
@@ -524,31 +536,61 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				{
 					name: "パン王",
 					sprite: "pub:sprites/minors_panmatsu.png",
-					lines: [
-						"独立したかっただけや",
-						"国旗は食パンや。文句あるか",
-						"旗は持ってってええ。予備ならある",
-						"弟のパン松が、町で大使をしとる",
+					talks: [
+						[
+							"独立したかっただけや。\n国民は32人。パン兵が31人や",
+							{ kiriko: "のこりの1人は？" },
+							"ワイや",
+						],
+						[
+							"国旗は食パンや。文句あるか",
+							{ kiriko: "……おいしそうンゴ" },
+							"食べたら国際問題やで",
+						],
+						["旗は持ってってええ。\n予備なら、あと8斤ある"],
+						[
+							"弟のパン松が、おんJタウンで\n大使をしとる",
+							{ kiriko: "大使館、どこンゴ？" },
+							"屋台のとなりの1マスや",
+						],
 					],
 				},
 				{
 					name: "ロゼ",
 					sprite: "sa:mHhx69",
-					lines: [
-						"先に来て、説教しといたアル",
-						"独立は、書類で申請するアル",
-						"王さま、ちょっと泣いてたアル",
+					voice: "roze",
+					talks: [
+						["先に来て、説教しといたアル。\n独立は、書類で申請するアル"],
+						[
+							"王さま、ちょっと泣いてたアル",
+							{ kiriko: "説教、何時間したンゴ？" },
+							"3時間アル。……短いほうアル",
+						],
+						["申請書は1枚しかないアル。\n王さまが3回書きなおしたアル"],
 					],
 				},
 				{
 					name: "パン兵",
 					sprite: "pub:sprites/panhei.png",
-					lines: ["ここは城下町や。剣はしまえ", "パン、焼きたてやで"],
+					talks: [
+						[
+							"ここは城下町や。剣はしまえ",
+							{ kiriko: "しまう所がないンゴ" },
+							"……ほな、持っとけ",
+						],
+						["パン、焼きたてやで"],
+					],
 				},
 				{
 					name: "パン兵",
 					sprite: "pub:sprites/panhei.png",
-					lines: ["独立記念セール、やっとるで"],
+					talks: [
+						[
+							"独立記念セール、やっとるで",
+							{ kiriko: "なにが安いンゴ？" },
+							"パンや。……パンしかない",
+						],
+					],
 				},
 			],
 		},
@@ -605,10 +647,19 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					{
 						name: "シヨ",
 						sprite: "sa:y8Kr53",
-						lines: [
-							"べ、べつに先回りしてないわよ",
-							"42℃は熱い。41℃はぬるいわ",
-							"……41.5℃なら、入ってあげる",
+						voice: "shiyo",
+						talks: [
+							[
+								"べ、べつに先回りしてないわよ",
+								{ kiriko: "髪が湯気でしっとりンゴ" },
+								"……3時間前に来ただけよ",
+							],
+							["42℃は熱い。41℃はぬるいわ。\n……41.5℃なら、入ってあげる"],
+							[
+								"温度計、5本持ってきたの",
+								{ kiriko: "多すぎるンゴ" },
+								"5本とも、ちがう数字なのよ！",
+							],
 						],
 					},
 				],
@@ -685,22 +736,35 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					{
 						name: "電池ニキ",
 						sprite: "pub:sprites/denchan.png",
-						lines: [
-							"見学者0人や。あんたで1人目や",
-							// 先回りした フェリスへの ツッコミ
-							"そっちの子は柵越えや。数えへん",
-							"売店のパン、持っていき。売れ残りや",
-							"人が来んでも、電気だけは送っとった",
-							"てっぺんで、名無しが待っとるで",
+						talks: [
+							[
+								"見学者0人や。あんたで1人目や",
+								// 先回りした フェリスへの ツッコミ
+								{ kiriko: "柵の上にも、1人いるンゴ" },
+								"そっちの子は柵越えや。数えへん",
+							],
+							[
+								"売店のパン、持っていき。\n売れ残りや",
+								{ kiriko: "いつのパンンゴ？" },
+								"……電気は腐らんのや",
+							],
+							// 本気の 一言（笑いとの 落差。つっこまない）
+							["人が来んでも、\n電気だけは送っとった"],
+							["てっぺんで、名無しが待っとるで"],
 						],
 					},
 					{
 						name: "フェリス",
 						sprite: "sa:4KtOzD",
-						lines: [
-							"先に来ちゃった〜。1人目は私〜",
-							"また燃えようよ〜",
-							"消えかけでも、何回でも復活できるよ〜",
+						voice: "feris",
+						talks: [
+							[
+								"先に来ちゃった〜。\n1人目は私〜",
+								{ kiriko: "数えてもらえてないンゴ" },
+								"柵の上だから、0.5人〜",
+							],
+							["また燃えようよ〜"],
+							["消えかけでも、\n何回でも復活できるよ〜"],
 						],
 					},
 				],
@@ -797,18 +861,37 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				{
 					name: "島民の長",
 					sprite: "pub:sprites/natsuko.png",
-					lines: ["なんで1人だけ送ってもらっとるんや", "……まあ、おかえり"],
+					talks: [
+						["なんで1人だけ\n送ってもらっとるんや", "……まあ、おかえり"],
+						[
+							"総島民6人。……今日は7人や",
+							{ kiriko: "吾輩は帰るンゴ" },
+							"……6人や",
+						],
+					],
 					key: true,
 				},
 				{
 					name: "島民",
 					sprite: "pub:sprites/natsuko.png",
-					lines: ["先に泳いで帰ってきたで", "浜、また行きたいな"],
+					talks: [
+						[
+							"先に泳いで帰ってきたで",
+							{ kiriko: "送った意味がないンゴ！" },
+							"浜、また行きたいな",
+						],
+					],
 				},
 				{
 					name: "島民",
 					sprite: "pub:sprites/natsuko.png",
-					lines: ["総島民6人や"],
+					talks: [
+						[
+							"総島民6人や",
+							{ kiriko: "さっきも聞いたンゴ" },
+							"大事なことやからな",
+						],
+					],
 				},
 			],
 		},
@@ -869,18 +952,27 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				{
 					name: "粉もん奉行",
 					sprite: "pub:sprites/takonomin.png",
-					lines: ["来たな。返しを見せてみい"],
+					talks: [["来たな。返しを見せてみい"], ["たこパに勝ち負けはない😡"]],
 					key: true,
 				},
 				{
 					name: "たこ民",
 					sprite: "pub:sprites/takonomin.png",
-					lines: ["😡はタコの顔やで", "青のり、かけ放題や"],
+					talks: [
+						["😡はタコの顔やで", { kiriko: "怒ってる顔ンゴ" }, "怒ってへん😡"],
+						["青のり、かけ放題や"],
+					],
 				},
 				{
 					name: "たこ民",
 					sprite: "pub:sprites/takonomin.png",
-					lines: ["招待状、届いたか？"],
+					talks: [
+						[
+							"招待状、届いたか？",
+							{ kiriko: "ポストに入ってたンゴ" },
+							"128通出したからな",
+						],
+					],
 				},
 			],
 		},
@@ -940,18 +1032,31 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				{
 					name: "祭りの親分",
 					sprite: "pub:sprites/mashii.png",
-					lines: ["そこの、手ぇ貸してくれ"],
+					talks: [["そこの、手ぇ貸してくれ"], ["太鼓が、まだ止まらん"]],
 					key: true,
 				},
 				{
 					name: "夜店の人",
 					sprite: "sa:8DXRgk",
-					lines: ["金魚すくい、やってくで", "太鼓、止まらんな"],
+					talks: [
+						[
+							"金魚すくい、やってくで",
+							{ kiriko: "金魚、どこンゴ？" },
+							"……ぜんぶ、すくわれた",
+						],
+						["太鼓、止まらんな"],
+					],
 				},
 				{
 					name: "夜店の人",
 					sprite: "sa:f6k97v",
-					lines: ["わたあめ、焼きそば、ラムネ"],
+					talks: [
+						[
+							"わたあめ、焼きそば、ラムネ",
+							{ kiriko: "どれにするか、迷うンゴ" },
+							"ラムネしか残ってへん",
+						],
+					],
 				},
 			],
 		},

@@ -4366,9 +4366,6 @@ test(
 				!!r.f.folk?.some((x) => x.name === "電池ニキ"),
 			"電池ニキ is not on the tour floor",
 		);
-		for (const fo of r.f.folk ?? [])
-			for (const l of fo.lines)
-				ok([...`${fo.name}「${l}」`].length <= 24, `long folk line ${l}`);
 	},
 );
 

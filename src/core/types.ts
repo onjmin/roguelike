@@ -3,6 +3,7 @@
 // 状態（RunState）はそのまま JSON にして中断セーブに入れる。
 // マップの配列は保存するときだけ文字列にする（serial.ts）。
 
+import type { FolkTalk } from "./data/dungeons";
 import type { PlaceArt } from "./data/places";
 import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
@@ -319,9 +320,12 @@ export type FloorFolk = {
 	y: number;
 	name: string;
 	sprite: string;
-	lines: readonly string[];
+	/** 話す ことの 順（core/data/dungeons.ts の FolkSpec）。 */
+	talks: readonly FolkTalk[];
+	/** 窓の 立ち絵と 名前の 色（仲間・住人の id）。 */
+	voice?: string;
 	key?: true;
-	/** 話した 回数（行を 回す）。 */
+	/** 話した 回数（talks を 回す）。 */
 	said: number;
 };
 
@@ -680,6 +684,8 @@ export type GameEvent =
 	| { t: "boss"; id: number }
 	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
 	| { t: "rescue"; kind: RescueKind; cheer?: string }
+	/** 集落・名所の 人と 話した（画面は 村と 同じ 窓で 1〜3枚。記録の 行には しない）。 */
+	| { t: "talk"; name: string; voice?: string; talk: FolkTalk }
 	/** 解音ゼロが たおれて 次の 機体に バトンタッチした（body は 次の 機体の 番。画面は 絵を かえる）。 */
 	| { t: "baton"; body: number; pos: Pos }
 	| { t: "end" };

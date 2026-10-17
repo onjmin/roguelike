@@ -42,6 +42,7 @@ import {
 	dungeonById,
 	dungeonOf,
 	type EventSpec,
+	type FolkTalk,
 } from "./data/dungeons";
 import {
 	HERO_NAME,
@@ -904,9 +905,22 @@ export class Run {
 
 	/** 集落の 人に 話す（ぶつかる。時間は 進まない）。key の 人なら 目的が すすむ。 */
 	private talkFolk(fo: FloorFolk): void {
-		const line = fo.lines[fo.said % fo.lines.length];
+		const talk = fo.talks[fo.said % fo.talks.length];
 		fo.said++;
-		this.msg(`${fo.name}「${line.replaceAll("キリコ", this.heroName)}」`);
+		// キリコの 返事は 主人公が キリコの ときだけ（口ぐせが ンゴなので）
+		const hero = this.heroName;
+		this.emit({
+			t: "talk",
+			name: fo.name,
+			...(fo.voice ? { voice: fo.voice } : {}),
+			talk: talk.flatMap((x): FolkTalk[number][] =>
+				typeof x === "string"
+					? [x.replaceAll("キリコ", hero)]
+					: this.s.hero
+						? []
+						: [x],
+			),
+		});
 		if (!fo.key || this.s.end) return;
 		// 送り届ける 人が 底で たおれて いれば ふつうの 持ち帰り（長が 底の 品を 渡す）
 		if (this.s.objective === "deliver" && this.s.guest?.down) {

@@ -447,7 +447,8 @@ const buildPlaceFloor = (
 			y: spot.y,
 			name: who.name,
 			sprite: who.sprite,
-			lines: who.lines,
+			talks: who.talks,
+			...(who.voice ? { voice: who.voice } : {}),
 			...(who.key ? { key: true as const } : {}),
 			said: 0,
 		});

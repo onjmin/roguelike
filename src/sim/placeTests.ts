@@ -68,6 +68,35 @@ test("each special floor has its own tune, not the board's dungeon tune", () => 
 	}
 });
 
+test("folk talks fit the window: 1 to 3 windows, 2 lines of 22 at most, retorts only after the folk speaks", () => {
+	for (const id of DUNGEON_IDS) {
+		const d = dungeonById(id);
+		const folk = [
+			...(d.rests ?? []).flatMap((r) => r.folk ?? []),
+			...(d.settlement?.folk ?? []),
+		];
+		for (const fo of folk) {
+			ok(fo.talks.length > 0, `${fo.name}: no talk`);
+			for (const t of fo.talks) {
+				ok(t.length >= 1 && t.length <= 3, `${fo.name}: ${t.length} windows`);
+				ok(typeof t[0] === "string", `${fo.name}: opens with キリコ`);
+				// キリコ 抜きでも 話が つながる（主人公が ロゼ・ゼロの とき）
+				ok(
+					t.filter((x) => typeof x === "string").length >= 1,
+					`${fo.name}: only キリコ`,
+				);
+				for (const x of t) {
+					const text = typeof x === "string" ? x : x.kiriko;
+					const lines = text.split("\n");
+					ok(lines.length <= 2, `${fo.name}: 3 lines ${text}`);
+					for (const l of lines)
+						ok([...l].length <= 22, `${fo.name}: long line ${l}`);
+				}
+			}
+		}
+	}
+});
+
 const build = (
 	p: Place,
 	objective = dungeonById(p.dungeon).objective,

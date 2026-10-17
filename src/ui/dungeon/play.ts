@@ -42,6 +42,7 @@ import {
 	FOLK_ID,
 	type GameEvent,
 	GUEST_ID,
+	type GuestId,
 	instantClear,
 	PLAYER_ID,
 	type RescueKind,
@@ -49,7 +50,7 @@ import {
 	type Trap,
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
-import { heroWalk, ZERO_BODY_WALKS } from "../../data/people/cast";
+import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
 import { liveResLine } from "../../data/story/liveRes";
@@ -1740,6 +1741,36 @@ export class Play {
 		}
 	}
 
+	/** 集落・名所の 人と 話す 窓（core/run.ts の talkFolk。立ち絵は 仲間・住人だけ、キリコの 返事は キリコの 立ち絵）。 */
+	private async talkScene(e: Extract<GameEvent, { t: "talk" }>): Promise<void> {
+		const v = e.voice ? guestVoice(e.voice as GuestId) : null;
+		const kiriko = {
+			name: KIRIKO.name,
+			color: KIRIKO.color,
+			portrait: {
+				id: "kiriko",
+				name: KIRIKO.name,
+				color: KIRIKO.color,
+				src: KIRIKO.portrait,
+				side: "left" as const,
+			},
+		};
+		this.ctx.se("decide");
+		await speak(
+			this.ctx,
+			e.talk.map((x) =>
+				typeof x === "string"
+					? {
+							name: v?.name ?? e.name,
+							color: v?.color ?? "#e8e0c8",
+							text: x,
+							portrait: v?.portrait ?? null,
+						}
+					: { ...kiriko, text: x.kiriko },
+			),
+		);
+	}
+
 	private async menu(p: Promise<MenuAction>): Promise<void> {
 		this.busy = true;
 		let a: MenuAction;
@@ -2850,6 +2881,14 @@ export class Play {
 				await this.logDrained();
 				if (this.stopped) break;
 				await this.batonScene(e.body);
+				i++;
+				continue;
+			}
+			// 集落・名所の 人と 話した：村と 同じ 窓で（リプレイの 早送りでは 出さない）
+			if (e.t === "talk") {
+				await this.logDrained();
+				if (this.stopped) break;
+				if (!(this.rp && fast)) await this.talkScene(e);
 				i++;
 				continue;
 			}
