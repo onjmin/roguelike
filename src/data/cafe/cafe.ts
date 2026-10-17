@@ -576,7 +576,10 @@ export const TREAT_SIPS: Readonly<Record<Speaker, readonly CafeLine[]>> = {
 	],
 };
 
-/** 推したら 聞ける 話（おごった 回数 3・6）。CAFE_TALKS に 入れる。 */
+/**
+ * 推したら 聞ける 話（おごった 回数 3・6）。CAFE_TALKS に 入れる。ライバル 4人は 絆されず、張り合いの オチ
+ * （STORY.md §4.9 の ライバル）。
+ */
 export const TREAT_TALKS: readonly CafeTalk[] = [
 	{
 		id: "nanj_bond1",
@@ -603,24 +606,30 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 	},
 	{
 		id: "roze_bond1",
-		title: "ロゼの店の名前",
+		title: "常識堂の看板",
 		cast: ["roze"],
 		treats: 3,
 		lines: [
-			s("roze", "常識堂の名前、\nだれがつけたか知ってるアル？"),
-			s("roze", "……わたしアル。\n常識がある町にしたかったアル"),
-			s("roze", "常識があれば、人も\nもどってくるアル。……たぶんアル"),
+			s("roze", "常識堂の看板、\n1文字だけまがってるアル"),
+			v("……どの字ンゴ？"),
+			e(
+				{ emote: "汗" },
+				s("roze", "「常」アル。キリコより先に\n書こうとして、あわてたアル"),
+			),
 		],
 	},
 	{
 		id: "roze_bond2",
-		title: "麻婆豆腐のはじまり",
+		title: "麻婆豆腐の辛さ",
 		cast: ["roze"],
 		treats: 6,
 		lines: [
-			s("roze", "麻婆豆腐はね、\n騒ぎが片づいたあとの味アル"),
-			s("roze", "みんなで辛い辛い言いながら\n食べたアル"),
-			s("roze", "……足りる日も、足りない日も、\nひと鍋は作るアル"),
+			s("roze", "麻婆豆腐の辛さ、\nキリコに合わせてないアル"),
+			v("……合わせてほしいンゴ"),
+			e(
+				{ gesture: "spin" },
+				s("roze", "辛くて泣いたら、わたしの\n勝ちアル。……常識アル"),
+			),
 		],
 	},
 	{
@@ -630,13 +639,10 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 		treats: 3,
 		lines: [
 			s("feris", "私、目がいいでしょ〜。\n遠くのスレも見えるの〜"),
-			s(
-				"feris",
-				"よその板の掲示板も見えるよ〜。\n……どこにでもいるね、名無し〜",
-			),
+			s("feris", "キリコが倒れた数も、\nぜんぶ見えてるよ〜"),
 			e(
-				{ emote: "♥" },
-				s("feris", "キリコが行くと、\nちょっとだけ明るくなるの〜"),
+				{ emote: "♪" },
+				s("feris", "私のほうが、1回多く\n復活してるね〜。……勝ち〜"),
 			),
 		],
 	},
@@ -647,8 +653,8 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 		treats: 6,
 		lines: [
 			s("feris", "私、ほんとはもっと\n飛べるんだ〜"),
-			s("feris", "でも飛んでいったら、\nまた消えちゃいそうで〜"),
-			e({ gesture: "startle" }, s("feris", "……だから飛ばないの〜。\nへくちっ")),
+			s("feris", "でも飛ぶと、キリコより\n先に着いちゃうでしょ〜"),
+			e({ gesture: "startle" }, s("feris", "……ハンデだよ〜。\nへくちっ")),
 		],
 	},
 	{
@@ -660,8 +666,8 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 			s("shiyo", "このメイド服？\n……べつにだれかのためじゃないわよ"),
 			s("shiyo", "メイド喫茶のバイトにいいの。\nポケットが多いから"),
 			e(
-				{ emote: "♥" },
-				s("shiyo", "……町のネタ帳、ぜんぶ入るのよ。\nあなたのぶんも"),
+				{ emote: "汗" },
+				s("shiyo", "……あなたの負けた回数、\nぜんぶメモしてあるのよ"),
 			),
 		],
 	},
@@ -675,10 +681,10 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 				"shiyo",
 				"……またぼろぼろで帰ってきて。\n生きてこそだって、言ってるでしょ",
 			),
-			s("shiyo", "スレも人も、生きてれば\nまた書ける。……それだけよ"),
+			s("shiyo", "倒れたまま帰ってこないと、\nあたすの勝ちが決まらないのよ"),
 			e(
 				{ gesture: "nod" },
-				s("shiyo", "だから、倒れても帰ってきなさい。\n……約束よ"),
+				s("shiyo", "だから帰ってきなさい。\n……負かしてあげるから"),
 			),
 		],
 	},
@@ -691,8 +697,8 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 			s("zero", "ゼロのサブ機たち、\nみんな名前があるんです"),
 			s("zero", "プロト、レン、……\nそれから、キリコさん号"),
 			e(
-				{ emote: "汗", gesture: "shake" },
-				s("zero", "……い、いまのなしです！\n帳簿から消してください！"),
+				{ emote: "!" },
+				s("zero", "負かしたら、キリコさんも\nサブ機にする予定です！"),
 			),
 		],
 	},
@@ -705,8 +711,8 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 			s("zero", "ゼロって名前、\nなにもないって意味です"),
 			s("zero", "でも、帳簿のゼロは、\nここから数えるって意味なんです"),
 			e(
-				{ emote: "♥" },
-				s("zero", "……ゼロは、キリコさんの\nおかえりを数えるのが好きです"),
+				{ emote: "!" },
+				s("zero", "キリコさんへの勝ちは、\nまだゼロです。……ここからです"),
 			),
 		],
 	},
