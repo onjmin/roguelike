@@ -59,6 +59,7 @@ import {
 	VILLAGE_EXITS,
 	type VillageView,
 	villagePalette,
+	villagePlaces,
 	villageRows,
 } from "../data/village/map";
 import { ISLE_ROWS } from "../data/village/saba";
@@ -1436,3 +1437,33 @@ export const runSabaTests = async (): Promise<TestResult[]> => {
 	}
 	return out;
 };
+
+test("マイクラ：夜・深夜は 新規と 謎の上級者が 家に 入り、整地厨だけ 外で 整地を つづける", () => {
+	const g = globalThis as { __testHour?: number };
+	const before = g.__testHour;
+	try {
+		const f = fac("saba6");
+		const idOf = (id: string) => {
+			const t = f.outdoor?.find((x) => x.id === id);
+			if (!t) throw new Fail(`no ${id} on saba6`);
+			return outdoorId(f, t);
+		};
+		const here = (hour: number) => {
+			g.__testHour = hour;
+			return new Set(villagePlaces(view(6)).map((p) => p.id));
+		};
+		const day = here(12);
+		const night = here(22);
+		const late = here(2);
+		for (const id of ["shinki", "joukyu"]) {
+			ok(day.has(idOf(id)), `${id} is not out in the day`);
+			ok(!night.has(idOf(id)) && !late.has(idOf(id)), `${id} is out at night`);
+		}
+		ok(
+			night.has(idOf("seichi")) && late.has(idOf("seichi")),
+			"整地厨 went home at night",
+		);
+	} finally {
+		g.__testHour = before;
+	}
+});

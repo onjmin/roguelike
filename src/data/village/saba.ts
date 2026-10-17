@@ -157,6 +157,7 @@ const isleThings = (st: 2 | 3 | 4 | 5 | 6 | 7): OutdoorThing[] => [
 					...thing("seichi", [2, 45], X.seichi[st >= 6 ? 6 : st >= 4 ? 4 : 3]),
 					sprite: "sa:Dz9P3N",
 					dir: "down" as const,
+					// 整地厨は 夜も 整地を つづける（104号室は「ずっと留守」）
 					name: "整地厨",
 				},
 				thing("town", [11, 43], X.town),
@@ -175,6 +176,8 @@ const isleThings = (st: 2 | 3 | 4 | 5 | 6 | 7): OutdoorThing[] => [
 					sprite: "sa:4EaOzr",
 					dir: "up" as const,
 					name: "新規",
+					// 夜は 101号室へ 帰って 寝る
+					dayOnly: true as const,
 				},
 				thing("farm", [3, 46], X.farm),
 				thing("bread", [5, 46], X.bread),
@@ -191,6 +194,7 @@ const isleThings = (st: 2 | 3 | 4 | 5 | 6 | 7): OutdoorThing[] => [
 					sprite: "sa:ohUlqd",
 					dir: "right" as const,
 					name: "謎の上級者",
+					dayOnly: true as const,
 				},
 				thing("tower", [1, 43], X.tower),
 				thing("machine", [1, 46], X.machine),

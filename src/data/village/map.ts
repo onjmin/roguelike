@@ -1055,6 +1055,9 @@ export const VISITOR_WALK = "sa:C2hS8U";
 /** 村に置く イベントの 一覧。 */
 export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	const stage = layoutStage(v);
+	// 夜・深夜（crowd.ts の timeBand の night と late。20時〜翌5時）
+	const hour = nowHour();
+	const night = hour >= 20 || hour < 5;
 	const out: VillagePlace[] = [];
 	// 町の 出口（桟橋の 先の 港。出ると 全体マップで 行き先を 選ぶ）と その 立て札
 	for (const e of VILLAGE_EXITS)
@@ -1143,7 +1146,9 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		const d2 = facilityDoor2(f);
 		if (d2)
 			out.push({ id: doorId(f, true), x: d2[0], y: d2[1], trigger: "touch" });
-		for (const t of f.outdoor ?? [])
+		for (const t of f.outdoor ?? []) {
+			// 夜・深夜は 家に 入る 人（マイクラの 島の 新規 など）
+			if (t.dayOnly && night) continue;
 			out.push({
 				id: outdoorId(f, t),
 				x: t.at[0],
@@ -1152,6 +1157,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 				// 屋台の 店番など 見える 人
 				...(t.sprite ? { sprite: t.sprite, dir: t.dir } : {}),
 			});
+		}
 	}
 	// おんJマイナーズ（町が 育つと 越してくる。ぷゆゆは 段0 から）
 	for (const id of MOB_IDS) {

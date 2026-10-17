@@ -212,6 +212,8 @@ export type OutdoorThing = {
 	dir?: Dir;
 	/** 見える 人の 名前欄。 */
 	name?: string;
+	/** 夜・深夜は 家に 入って いて 外に いない（見える 人だけ。data/village/map.ts の villagePlaces）。 */
+	dayOnly?: true;
 	/**
 	 * 見える 人（sprite あり）が 出る 日だけ（村の 地図の イベントの when。見えない 物には きかない。
 	 * 試験の 置き場所は いつも 出して 調べる。おんJ芋煮会の 人）。
