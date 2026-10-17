@@ -103,6 +103,11 @@ export class Crowd {
 		return this.peds.some((p) => p.actor === a);
 	}
 
+	/** いる 通行人と その 種類（立ち聞きの 吹き出し。ui/village/overhear.ts）。 */
+	walkers(): { actor: Actor; persona: string }[] {
+		return this.peds.map((p) => ({ actor: p.actor, persona: p.persona.id }));
+	}
+
 	get count(): number {
 		return this.peds.length;
 	}

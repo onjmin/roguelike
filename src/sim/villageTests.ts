@@ -281,6 +281,11 @@ import {
 	OTAKU_MSG,
 } from "../data/village/otaku";
 import {
+	CROWD_MUTTERS,
+	CROWD_PAIRS,
+	MOB_MUTTERS,
+} from "../data/village/overhear";
+import {
 	BATH_NOREN_M,
 	BATH_SPOTS,
 	BATH_WALL,
@@ -312,7 +317,7 @@ import {
 import { layRoomTatami, layTatami } from "../data/village/tatami";
 import { CITY, hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
-import { type Actor, Field } from "../engine/field";
+import { Actor, Field } from "../engine/field";
 import {
 	type Cell,
 	FOLLOW_CUT,
@@ -420,6 +425,7 @@ import {
 	saveHome,
 } from "../ui/village/myhome";
 import { spinGacha } from "../ui/village/otaku";
+import { Overhear } from "../ui/village/overhear";
 import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
 import {
 	enterBath,
@@ -7920,4 +7926,121 @@ test("騒ぎの 人と ご近所は、いっしょに 出る どの 組み合わ
 				`${a.p.id} and ${b.p.id} share ${a.p.at}`,
 			);
 		}
+});
+
+// ───────────────── 立ち聞きの 吹き出し（ui/village/overhear.ts） ─────────────────
+
+test("立ち聞き: every bubble fits 10 full-width × 2 lines, no slang, emoji only where the speaker uses it", () => {
+	const all = [
+		...Object.entries(MOB_MUTTERS).flatMap(([id, ts]) =>
+			ts.map((t) => [id, t] as const),
+		),
+		...Object.entries(CROWD_MUTTERS).flatMap(([id, ts]) =>
+			ts.map((t) => [id, t] as const),
+		),
+		...CROWD_PAIRS.map((t) => ["pair", t] as const),
+	];
+	const keys = new Set<string>();
+	for (const [who, t] of all) {
+		ok(!keys.has(t.key), `${t.key}: key used twice`);
+		keys.add(t.key);
+		ok(t.lines.length >= 1 && t.lines.length <= 4, `${t.key}: length`);
+		for (const l of t.lines) {
+			const rows = l.text.split("\n");
+			ok(rows.length <= 2, `${t.key}: ${l.text} has 3 lines`);
+			for (const r of rows)
+				ok([...r].length <= 10, `${t.key}: "${r}" is over 10`);
+			for (const w of ["草", "定期", "RTA"])
+				ok(!l.text.includes(w), `${t.key}: slang ${w}`);
+			const emoji = /\p{Extended_Pictographic}/u.test(l.text);
+			ok(
+				!emoji || who === "puyu" || /ぷゆゆ🥺$/.test(l.text),
+				`${t.key}: emoji`,
+			);
+			ok(who === "pair" || l.by === 0, `${t.key}: a mutter has one speaker`);
+		}
+	}
+	for (const id of MOB_IDS)
+		ok(MOB_MUTTERS[id].length >= 2, `${id}: fewer than 2 mutters`);
+});
+
+test("立ち聞き: a nearby resident mutters, passers-by pair up, and an open window stops it", () => {
+	const kiriko = new Actor("player", 10, 10, "down", "", null);
+	const puyu = new Actor("mob_puyu", 13, 10, "down", "", null);
+	const far = new Actor("mob_onchan", 20, 10, "down", "", null);
+	const a = new Actor("crowd_0", 10, 13, "up", "", null);
+	const b = new Actor("crowd_1", 11, 13, "up", "", null);
+	let actors: Actor[] = [puyu, far];
+	let walkers: { actor: Actor; persona: string }[] = [];
+	let paused = false;
+	const o = new Overhear({
+		actors: () => actors,
+		player: () => kiriko,
+		walkers: () => walkers,
+		paused: () => paused,
+		rng: () => 0,
+	});
+	const run = (ms: number) => {
+		const seen: { id: string; text: string }[] = [];
+		for (let t = 0; t < ms; t += 50) {
+			o.update(50);
+			const c = o.current;
+			if (c && seen.at(-1)?.text !== c.text) seen.push(c);
+		}
+		return seen;
+	};
+	// 遠い おんちゃんは 話さない。ぷゆゆの 独り言が 順に 出て、ほかを 聞くまで くり返さない
+	const first = run(12000);
+	ok(
+		first.length > 0 && first.every((c) => c.id === "mob_puyu"),
+		`puyu: ${JSON.stringify(first)}`,
+	);
+	ok(first[0]?.text === MOB_MUTTERS.puyu[0]?.lines[0]?.text, "first mutter");
+	const more = run(40000);
+	ok(
+		more.some((c) => c.text === MOB_MUTTERS.puyu[1]?.lines[0]?.text),
+		`the next mutter: ${JSON.stringify(more)}`,
+	);
+	// 通行人 2人が 近くで 並ぶと 掛け合う（話す 番が 交互・向かい合う）
+	actors = [a, b];
+	walkers = [
+		{ actor: a, persona: "nanashi" },
+		{ actor: b, persona: "worker" },
+	];
+	o.reset();
+	// 独り言を ひととおり 聞くと 掛け合い（rng 0 は 候補の 先頭から）
+	const pairText = CROWD_PAIRS[0]?.lines.map((l) => l.text) ?? [];
+	let heard: { id: string; text: string }[] = [];
+	for (let i = 0; i < 20 && !heard.some((c) => c.text === pairText[1]); i++)
+		heard = run(15000);
+	const at = heard.findIndex((c) => c.text === pairText[0]);
+	ok(
+		at >= 0 &&
+			heard[at]?.id === "crowd_0" &&
+			heard[at + 1]?.id === "crowd_1" &&
+			heard[at + 1]?.text === pairText[1],
+		`no pair talk: ${JSON.stringify(heard)}`,
+	);
+	ok(
+		a.dir === "right" && b.dir === "left",
+		`face each other: ${a.dir} ${b.dir}`,
+	);
+	// 窓が 開いたら 消えて、閉じても すぐには 出ない
+	o.reset();
+	actors = [puyu];
+	walkers = [];
+	for (let t = 0; t < 10000 && !o.current; t += 50) o.update(50);
+	ok(o.current !== null, "a bubble before the window opens");
+	paused = true;
+	o.update(50);
+	ok(o.current === null, "the window clears the bubble");
+	paused = false;
+	o.update(50);
+	ok(o.current === null, "no bubble right after the window closes");
+	// 話して いる 人が 離れたら やめる
+	for (let t = 0; t < 10000 && !o.current; t += 50) o.update(50);
+	puyu.x = 30;
+	o.update(50);
+	ok(o.current === null, "stops when the speaker walks away");
+	puyu.x = 13;
 });

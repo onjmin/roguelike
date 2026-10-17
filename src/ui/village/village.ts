@@ -93,6 +93,7 @@ import { buildCafe } from "./cafe";
 import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
+import { Overhear } from "./overhear";
 import { buildRoom } from "./rooms";
 import {
 	BLACKOUT_TINT,
@@ -257,6 +258,13 @@ export class Village {
 	private last = 0;
 	/** お金の 出入りの 金額（ui/village/moneyPop.ts）。 */
 	private moneyPops = new MoneyPops();
+	/** 立ち聞きの 吹き出し（ui/village/overhear.ts）。 */
+	private overhear = new Overhear({
+		actors: () => this.field?.actors ?? [],
+		player: () => this.player,
+		walkers: () => this.crowd?.walkers() ?? [],
+		paused: () => !this.idle,
+	});
 	/** 描くときの カメラ（画面の 画素に 丸めた）。 */
 	private camX = 0;
 	private camY = 0;
@@ -417,6 +425,7 @@ export class Village {
 		this.crowd = null;
 		this.refreshActors();
 		this.crowd = def.crowd ? this.makeCrowd(field, def.crowd) : null;
+		this.overhear.reset();
 		this.stepPending = false;
 		this.path = [];
 		this.pathTalk = null;
@@ -706,6 +715,7 @@ export class Village {
 			}
 		}
 		this.crowd?.update(dt);
+		this.overhear.update(dt);
 		if (this.idle && !this.player.moving) this.control();
 		this.updateCamera(dt);
 	}
@@ -1542,6 +1552,7 @@ export class Village {
 			this.drawLights(g, field, rule, ox, oy, day);
 		}
 		// お金の 出入り（頭の 上に ＋／−の 金額。夜の 色を かぶらない よう 最後に）
+		this.overhear.draw(g, ox, oy, this.screen.width);
 		this.moneyPops.draw(
 			g,
 			Math.round(this.player.fx * TILE - ox),
