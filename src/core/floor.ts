@@ -87,7 +87,9 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	// 決まっているが、乱数の 順を 変えないよう ここで 消す）
 	const bossFloor =
 		depth === r.dungeon.floors && !r.s.returning && r.bossSpec !== null;
-	const festival = house && !bossFloor;
+	// 名所の 階（敵・罠・道具なし。地図が 見える）
+	const rest = r.dungeon.rests?.find((x) => x.depth === depth);
+	const festival = house && !bossFloor && !rest;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
 		festival &&
@@ -148,6 +150,23 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			),
 		);
 		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
+	}
+
+	if (rest) {
+		f.rest = rest.name;
+		revealAll(f);
+		if (rest.spring) {
+			const spot = rng.pick(
+				freeRoomTiles(r, f, null).filter(
+					(t) =>
+						(t.x !== start.x || t.y !== start.y) &&
+						(t.x !== f.stairs.x || t.y !== f.stairs.y),
+				),
+			);
+			if (spot)
+				f.traps.push({ x: spot.x, y: spot.y, kind: "spring", found: true });
+		}
+		return f;
 	}
 
 	placeStatues(r, f, start);
@@ -272,6 +291,22 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 	r.s.floor = prevFloor;
 	return f;
+};
+
+/** 地図を ぜんぶ 見える ように する（名所の 階）。 */
+const revealAll = (f: Floor): void => {
+	const l = f.layout;
+	for (let y = 0; y < l.h; y++)
+		for (let x = 0; x < l.w; x++) {
+			if (l.tiles[y * l.w + x] === 0) continue;
+			for (let dy = -1; dy <= 1; dy++)
+				for (let dx = -1; dx <= 1; dx++) {
+					const nx = x + dx;
+					const ny = y + dy;
+					if (nx >= 0 && ny >= 0 && nx < l.w && ny < l.h)
+						f.seen[ny * l.w + nx] = 1;
+				}
+		}
 };
 
 /** 書きかえた 冒険を 追う 敵（ポケダンの カクレオン。data/monsters.ts）。 */

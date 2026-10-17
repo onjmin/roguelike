@@ -4185,3 +4185,32 @@ test("all", "every monster has a trait test", () => {
 	);
 	ok(!missing.length, `untested: ${missing.join(", ")}`);
 });
+
+test(
+	"rest",
+	"名所の 階：敵・罠・道具なしで 地図が 見え、待っても 敵が 湧かない。源泉は HP を もどす",
+	() => {
+		const r = Run.create("rest-floor", "main");
+		r.enterFloor(7, false);
+		const f = r.s.floor;
+		ok(f.rest === "露天の源泉", `rest ${f.rest}`);
+		ok(f.monsters.length === 0 && f.items.length === 0, "foes or items");
+		ok(
+			f.traps.length === 1 && f.traps[0].kind === "spring" && f.traps[0].found,
+			`traps ${f.traps.map((t) => t.kind)}`,
+		);
+		const si = f.stairs.y * f.layout.w + f.stairs.x;
+		ok(f.seen[si] === 1, "the stairs are not shown");
+		for (let i = 0; i < 300 && !r.s.end; i++) turn(r);
+		ok(r.s.floor.monsters.length === 0, "a foe spawned on the rest floor");
+		// 源泉
+		const sp = f.traps[0];
+		r.p.hp = 1;
+		triggerTrap(r, sp);
+		ok(r.p.hp === r.p.maxHp, `hp ${r.p.hp}/${r.p.maxHp}`);
+		// 名所の ない 階は ふつう
+		const q = Run.create("rest-floor", "main");
+		q.enterFloor(6, false);
+		ok(!q.s.floor.rest, "floor 6 is a rest floor");
+	},
+);

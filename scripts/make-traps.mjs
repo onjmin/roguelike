@@ -1,12 +1,13 @@
 // 罠の 絵を 書き出す（node scripts/make-traps.mjs → public/sprites/traps.png）。
 //
-// RPGEN にも Base.png にも 合う 絵が ない 罠だけ ここで 描く。96x16 に 16x16 が 6コマ（左から）：
+// RPGEN にも Base.png にも 合う 絵が ない 罠だけ ここで 描く。112x16 に 16x16 が 7コマ（左から）：
 //   0 トラバサミ（口を 開けた 鉄の あご・まんなかの 踏み板・横の ばね）
 //   1 酸の罠（床に 広がった 緑の 酸の 水たまり・あわ）
 //   2 眠りガスの罠（床の 噴き出し口から 立ちのぼる 紫の ガスと Z）
 //   3 ピッチングマシン（前の 版の 矢の罠。黄色い 機械の ホイールから ボールが 飛びだす）
 //   4 危険球マシン（前の 版の 毒矢の罠。3 の 球が 紫・紫の しずく）
 //   5 転移床（青く 光る 輪）
+//   6 源泉（名所の 階。石の ふちの 湯船と 湯気）
 // 地雷・落とし穴は RPGEN の 絵（src/ui/dungeon/theme.ts の TRAP_ICON）。
 //
 // 依存なし（zlib だけ）。PNG の 書き方は make-anka-trap.mjs と 同じ。
@@ -241,6 +242,34 @@ const WARP = [
 	"................",
 ];
 
+/** 源泉（名所の 階。石の ふちの 湯船と 湯気）。 */
+const SPRING_PALETTE = {
+	s: [120, 116, 108, 255], // ふちの 石
+	d: [84, 80, 74, 255], // 石の かげ
+	w: [64, 156, 200, 255], // 湯
+	l: [150, 214, 236, 255], // 湯の 光
+	v: [236, 244, 248, 200], // 湯気
+};
+
+const SPRING = [
+	"....v.....v.....",
+	"...v.....v......",
+	"....v.....v.....",
+	"................",
+	"...ssssssssss...",
+	"..sswwwwwwwwss..",
+	".sswwllwwwwwwss.",
+	".swwwwwwwllwwws.",
+	".swwllwwwwwwwws.",
+	".swwwwwwwwllwws.",
+	".sswwwwllwwwwss.",
+	"..sswwwwwwwwss..",
+	"...dssssssssd...",
+	"....dddddddd....",
+	"................",
+	"................",
+];
+
 const frames = [
 	[BEAR, BEAR_PALETTE],
 	[ACID, ACID_PALETTE],
@@ -248,6 +277,7 @@ const frames = [
 	[MACHINE, MACHINE_PALETTE],
 	[DANGER, DANGER_PALETTE],
 	[WARP, WARP_PALETTE],
+	[SPRING, SPRING_PALETTE],
 ];
 const W = 16 * frames.length;
 const H = 16;

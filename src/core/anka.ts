@@ -165,9 +165,9 @@ const doable = (r: Run): AnkaKind[] => {
 	return out;
 };
 
-/** 安価の罠を 置ける 階か（帰り道・1階・ボスの 待つ 階には 置かない）。 */
+/** 安価の罠を 置ける 階か（帰り道・1階・ボスの 待つ 階・名所の 階には 置かない）。 */
 export const ankaTrapOk = (r: Run): boolean =>
-	!r.s.returning && r.s.depth >= 2 && !r.boss;
+	!r.s.returning && r.s.depth >= 2 && !r.boss && !r.f.rest;
 
 /** 階に 着いた とたんに 安価が 来る 階か（パン板の 2階。入門の 板で 安価を 1度は 見せる）。 */
 export const ankaOnArrival = (r: Run): boolean =>

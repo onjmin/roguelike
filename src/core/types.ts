@@ -290,7 +290,8 @@ export type TrapKind =
 	| "dart" // 毒矢
 	| "warp" // 転移床
 	| "pit" // 落とし穴
-	| "anka"; // 安価の罠（1回 踏むと 消えて、沈んだ 板（Floor.pressed）が 残る。core/anka.ts）
+	| "anka" // 安価の罠（1回 踏むと 消えて、沈んだ 板（Floor.pressed）が 残る。core/anka.ts）
+	| "spring"; // 源泉（名所の 階だけ。踏むと HP が もどる。罠よけの 指輪でも 効く）
 
 export type Trap = { x: number; y: number; kind: TrapKind; found: boolean };
 
@@ -374,6 +375,8 @@ export type Floor = {
 	pressed?: number[];
 	/** 生きている ボスの uid（目的が boss の いちばん底だけ。たおしたら 消す）。 */
 	boss?: number;
+	/** 名所の 階（長い 板の 一息。敵・罠・道具なし。core/data/dungeons.ts の rests）の 名前。 */
+	rest?: string;
 	/** ボスを 見た（目を さまして 待ちかまえていた。画面の 曲と HP の ゲージ）。 */
 	bossSeen?: true;
 };

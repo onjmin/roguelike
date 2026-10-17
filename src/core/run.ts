@@ -807,6 +807,8 @@ export class Run {
 					? "上の階へ押し上げられた。枠移動だ"
 					: "下の階に落ちた。まだ放送事故ではない",
 			);
+		// 名所の 階（敵の 来ない 一息）
+		if (s.floor.rest) this.msg(`${s.floor.rest}。敵の気配がない`);
 		this.updateVision();
 		// 同行者も キリコの そばに 着く（core/guest.ts）
 		guestEnterFloor(this, first);
@@ -1487,6 +1489,7 @@ export class Run {
 		// ボスが 生きている あいだは 湧かない（ボスとの 戦いに しぼる）
 		if (
 			f.turns % spawnEvery === 0 &&
+			!f.rest &&
 			f.monsters.length < MONSTER_CAP &&
 			!this.boss
 		) {

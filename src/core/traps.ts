@@ -21,11 +21,22 @@ const TRAP_NAME: Record<string, string> = {
 	warp: "転移床",
 	pit: "落とし穴",
 	anka: "安価の罠",
+	spring: "源泉",
 };
 
 export const trapName = (t: Trap): string => TRAP_NAME[t.kind];
 
 export const triggerTrap = (r: Run, t: Trap): void => {
+	// 源泉（名所の 階）：罠では ないので 罠よけの 指輪でも 効く。何度でも
+	if (t.kind === "spring") {
+		const p = r.p;
+		if (p.hp >= p.maxHp) r.msg("源泉につかった。ええ湯や");
+		else {
+			p.hp = p.maxHp;
+			r.msg("源泉につかった。HPがもどった！", "good");
+		}
+		return;
+	}
 	if (r.hasRing("r_trap")) return; // 踏んだことも出ない
 	if (t.kind === "anka") {
 		// かならず 動いて、消える（1回きり。「罠を　踏む」の お題にも 数えない。来た お題が その場で こなせて しまう）。

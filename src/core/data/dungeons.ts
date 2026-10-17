@@ -46,6 +46,17 @@ export type BossSpec = {
 	cause: string;
 };
 
+/**
+ * 名所の 階（長い 板の 一息。STORY.md §4.9 の 場面の 一覧）。敵・罠・道具が なく、地図が はじめから 見える。
+ * 合う 板にだけ 置く（作者「全部が 全部に 搭載する ものでは ない」）。1000 の カウントは 進む。
+ */
+export type RestFloor = {
+	depth: number;
+	name: string;
+	/** 源泉（踏むと HP が もどる）を 置く。 */
+	spring?: true;
+};
+
 export type Dungeon = {
 	id: DungeonId;
 	/**
@@ -123,6 +134,8 @@ export type Dungeon = {
 	secret?: boolean;
 	/** 倉庫の 道具を 持ちこめない（出るときに シヨが 預かる）。 */
 	noCarry?: boolean;
+	/** 名所の 階（RestFloor）。 */
+	rests?: readonly RestFloor[];
 	/**
 	 * スレの 勢い：この ターン数ごとに レスが もう 1つ ふえる（1000 に 早く 近づく。電池板の 時間との 競争：
 	 * STORY.md §4.9）。無ければ 1ターンで 1。
@@ -424,6 +437,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	main: {
 		id: "main",
 		objective: "fetch",
+		rests: [{ depth: 7, name: "露天の源泉", spring: true }],
 		boss: {
 			monster: "boss_ofurou",
 			rescue: "geyser",
@@ -456,6 +470,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	deep: {
 		id: "deep",
 		noCarry: true,
+		rests: [{ depth: 10, name: "発電所の見学コース" }],
 		// 時間との 競争：2ターンに 1つ 余分に レスが つく（1000 まで 約 2/3 の 時間）
 		rushEvery: 2,
 		objective: "fetch",
@@ -613,6 +628,11 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	hidden: {
 		id: "hidden",
 		noCarry: true,
+		rests: [20, 40, 60, 80].map((depth) => ({
+			depth,
+			name: "静かな石室",
+			spring: true as const,
+		})),
 		objective: "fetch",
 		floors: 99,
 		items: HIDDEN_ITEMS,
