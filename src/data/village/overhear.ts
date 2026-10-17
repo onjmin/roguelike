@@ -83,23 +83,52 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 	worker: [
 		solo("worker1", "定時まで、\nあと8時間……"),
 		solo("worker2", "会議の資料、\n家に忘れたンゴ"),
+		solo("worker3", "有給とったで", "……なんで会社に\n来とるんや"),
+		solo(
+			"worker4",
+			"上司に\n「了解です」送った",
+			"……「了解でス」\nになっとった",
+		),
+		solo("worker5", "ネクタイ忘れた", "……スーツも\n忘れた"),
 	],
 	student: [
 		solo("student1", "宿題、\n終わってない"),
 		solo("student2", "テスト、\n範囲どこやっけ"),
+		solo("student3", "テスト、名前だけ\n書いて出した", "……名前は\n合っとった"),
+		solo("student4", "将来の夢は、\nコテハンや"),
+		solo("student5", "早弁した", "……朝ごはんの\n時間に"),
 	],
-	local: [solo("local1", "ええ天気や"), solo("local2", "晩ごはん、\n何にしよ")],
+	local: [
+		solo("local1", "ええ天気や"),
+		solo("local2", "晩ごはん、\n何にしよ"),
+		solo("local3", "晩ごはん、カレーや", "……3日目や"),
+		solo("local4", "回覧板、\n3周しとるで"),
+		solo("local5", "ゴミの日、\nまちがえた", "……1週間"),
+	],
 	elder: [
 		solo("elder1", "どっこいしょ"),
 		solo("elder2", "孫に、\nスレを立てたのよ"),
+		solo("elder3", "わたしの若いころは\nね……", "……あら、\n忘れちゃった"),
+		solo(
+			"elder4",
+			"スマホは、\n孫に教わったのよ",
+			"……いまは孫より\n速く打てるの",
+		),
+		solo("elder5", "今日は\nいい天気ねえ", "……きのうも\n言ったかしら"),
 	],
 	nanashi: [
 		solo("nanashi1", "ンゴ……"),
 		solo("nanashi2", "ワイの書きこみ、\n伸びとるかな", "……伸びとらん"),
+		solo("nanashi3", "1000ゲット、\nねらっとるで", "……いま、2や"),
+		solo("nanashi4", "今日はROMっとこ", "……あっ、\n書きこんでもうた"),
+		solo("nanashi5", "ワイのレス、\nだれか見とる？", "……見とる（自分）"),
 	],
 	dajare: [
 		solo("dajare1", "布団が……", "……いや、\nやめとこ"),
 		solo("dajare2", "アルミ缶の上に……\nあるみかん"),
+		solo("dajare3", "イカは\nいかが？", "……だれも\n聞いとらん"),
+		solo("dajare4", "電話に\nだれも出んわ", "……ほんまに\n出えへん"),
+		solo("dajare5", "コーディネートは\nこうでねえと"),
 	],
 };
 
