@@ -71,15 +71,19 @@ import {
 } from "./facilities";
 import { folkPlaces } from "./folk";
 import { ROOM_FROM } from "./rooms";
-import { art } from "./rpgenArt";
+import { art, ri } from "./rpgenArt";
 import {
 	ASPHALT,
 	BANK,
 	BATH,
 	BEACH,
 	BOOKS,
+	BRICK,
 	base,
+	basePx,
+	big,
 	C_ASPHALT,
+	C_BRICK,
 	C_DIRT,
 	C_GRASS,
 	C_PLAZA,
@@ -674,6 +678,86 @@ const BATH_BLOCK: readonly string[] = [
 	",,,,,,,b",
 ];
 
+/**
+ * 噴水の 小広場（広場の 南の 生け垣を 開けた 先。東の 池の あと。地図の 24, 24 から。広場から だけ 入る 行きどまり：まわりは しげみで とじる）。噴水は 3×3（下の まんなかに 絵）。
+ * パン板を 持ち帰るまで 水が 止まって いる（data/town/revival.ts の fountain。乾いた 絵は scripts/make-fountain.mjs）。
+ */
+const FOUNTAIN_AT: Cell = [24, 24];
+const fountainBlock = (wet: boolean): readonly string[] => [
+	":::::",
+	":::::b",
+	":滝滝滝:b",
+	":滝滝滝:b",
+	`b滝${wet ? "泉" : "涸"}滝bb`,
+];
+
+/**
+ * パン屋（地図の 59, 25 から。商店街の 東の はし。パン松の 店）。中は ない（扉は しまって いる）。
+ * きのこ板を 持ち帰るまで シャッター（data/town/revival.ts の bakery）。
+ */
+const BAKERY_AT: Cell = [59, 25];
+const bakeryBlock = (open: boolean): readonly string[] => [
+	"麦麦麦",
+	"麭麭麭",
+	"焼窓焼",
+	`窯${open ? "扉" : "閉"}窯`,
+];
+
+/** 港の 船着き場の 小屋（地図の 24, 46 から。桟橋の 先の 東。下に 板の 足場）。入れない。 */
+const HARBOR_HUT: readonly (readonly [number, number, string])[] = [
+	[24, 46, "港湾渡"],
+	[24, 47, "湊津浦"],
+	[24, 48, "舟窓舟"],
+	[24, 49, "舟戸舟"],
+	[24, 50, "ははは"],
+	[24, 51, "ははは"],
+];
+
+/** 北の 丘の やぐら広場（地図の 9, 5 から。神社の 東・部室棟の 前の 通りの 下。祭りの やぐらと 太鼓・ちょうちん・石灯籠）。 */
+const YAGURA_PLAZA: readonly (readonly [number, number, string])[] = [
+	[9, 5, "灯櫓楼閣灯,"],
+	[9, 6, "提棚柵架鼓,"],
+];
+
+/** RPGEN の 切妻屋根（3×2）の 1段を 3字に（左から）。 */
+const gable = (
+	chars: string,
+	row: number,
+	color: string,
+	ground: string,
+): Record<string, TileDef> =>
+	Object.fromEntries(
+		[...chars].map((ch, col) => [
+			ch,
+			solid(color, ground, art("jpGable", col, row)),
+		]),
+	);
+const C_PIER = "#a8804c";
+const PIER_FLOOR = base(0, 46);
+
+/** 噴水・パン屋・港の 小屋・やぐらの 絵（村の パレットに まぜる）。 */
+const TOWN_PARTS: Record<string, TileDef> = {
+	滝: solid(C_BRICK, BRICK),
+	泉: big(C_BRICK, BRICK, base(0, 132, 3, 3)),
+	涸: big(C_BRICK, BRICK, "pub:sprites/fountain-dry.png#0,0,48,48"),
+	麦: solid("#8a5a3a", base(1, 82)),
+	麭: solid("#9a6a4a", base(1, 84)),
+	焼: solid("#8a5a4a", base(1, 61)),
+	窓: solid("#8a5a4a", base(1, 61), basePx(48, 1382)),
+	窯: solid("#8a5a4a", base(1, 62)),
+	扉: solid("#8a5a4a", base(1, 62), base(7, 61, 1, 2)),
+	閉: solid("#6a6a72", base(1, 62), art("shutter", 1)),
+	...gable("港湾渡", 0, C_PIER, PIER_FLOOR),
+	...gable("湊津浦", 1, C_PIER, PIER_FLOOR),
+	舟: solid(C_PIER, PIER_FLOOR, base(1, 56)),
+	戸: solid(C_PIER, PIER_FLOOR, base(1, 56), base(7, 55, 1, 2)),
+	...gable("櫓楼閣", 0, C_GRASS, TURF),
+	...gable("棚柵架", 1, C_GRASS, TURF),
+	鼓: solid(C_GRASS, TURF, ri("taiko")),
+	提: solid(C_GRASS, TURF, art("redLamp")),
+	灯: solid(C_GRASS, TURF, art("lanternStone")),
+};
+
 /** 村の 出口（地図の 四方の はし。踏むと 全体マップ）。inward は 村へ もどる 向き。 */
 export type VillageExit = {
 	side: "n" | "s" | "w" | "e";
@@ -765,6 +849,11 @@ export const villageRows = (v: VillageView): string[] => {
 	coreCity(rows, layoutStage(v));
 	// 町が 育つと 建つ 施設（data/village/facilities.ts。浜の 海の家・碁会所・グラウンドなど）
 	stampFacilities(rows, layoutStage(v), put);
+	// 広場の 噴水・商店街の パン屋・港の 小屋・北の 丘の やぐら広場（TOWN.md §0.2）
+	stamp(rows, ...FOUNTAIN_AT, fountainBlock(isRevived("fountain", v.cleared)));
+	stamp(rows, ...BAKERY_AT, bakeryBlock(isRevived("bakery", v.cleared)));
+	for (const [x0, y, line] of [...HARBOR_HUT, ...YAGURA_PLAZA])
+		stamp(rows, x0, y, [line]);
 	// まだ 生き返って いない 所の 扉は シャッター（data/town/revival.ts。踏むと 札を 読んで 1歩 もどる）
 	for (const c of shutDoors(v)) put(rows, c, SHUTTER_CH);
 	thinStrips(rows, villagePalette(v));
@@ -803,6 +892,7 @@ const CORE_RECTS: readonly [CorePlace, number, number, number, number][] = [
 	["library", 2, 20, 4, 3],
 	["bookstore", 3, 20, 3, 3],
 	["cafe", 2, 15, 5, 4],
+	["bakery", ...BAKERY_AT, 3, 4],
 ];
 
 /**
@@ -899,6 +989,7 @@ export const villagePalette = (v: VillageView): Record<string, TileDef> => {
 		...MUSIC,
 		...BOOKS,
 		...SHUTTER,
+		...TOWN_PARTS,
 		// 道：土 → 石だたみ（段5）→ アスファルト（住宅街＝段6 から）
 		".":
 			stage >= 6

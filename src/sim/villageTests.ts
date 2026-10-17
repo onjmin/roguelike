@@ -7028,7 +7028,16 @@ test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじま
 test("生き返る 通り（TOWN.md §0.6）: 表の 所は どれも 町に あり 1つの 通りだけ、板は 7つ 別々、本筋 4つは パン → きのこ → 風呂 → 電池", () => {
 	const all = REVIVE_AREAS.flatMap((a) => a.places);
 	ok(new Set(all).size === all.length, "a place revives twice");
-	const core = ["shrine", "music", "bath", "library", "bookstore", "cafe"];
+	const core = [
+		"shrine",
+		"music",
+		"bath",
+		"library",
+		"bookstore",
+		"cafe",
+		"fountain",
+		"bakery",
+	];
 	for (const id of all)
 		ok(facilityById(id) || core.includes(id), `${id} is not in the town`);
 	const boards = REVIVE_AREAS.map((a) => a.dungeon);
@@ -7205,6 +7214,63 @@ test("板の 小さな 地上（TOWN.md §0.3）: 本筋 4つと 離島板・お
 					e.y === surf.mouth[1],
 			),
 			`${surf.dungeon}: the entrance does nothing`,
+		);
+	}
+});
+
+test("町割り（TOWN.md §0.2）: 広場の 噴水は パン板まで 止まり、パン屋は きのこ板まで シャッター。港の 小屋・やぐら広場も あり、どれも 歩いて 行ける", () => {
+	const view = (cleared: DungeonId[]): VillageView => ({
+		stage: TOWN_STAGES - 1,
+		unlocked: [],
+		cleared,
+	});
+	const has = (v: VillageView, ch: string) =>
+		villageRows(v).some((r) => r.includes(ch));
+	ok(
+		has(view([]), "涸") && !has(view([]), "泉"),
+		"the fountain runs before パン板",
+	);
+	ok(has(view(["shallow"]), "泉"), "the fountain is dry after パン板");
+	ok(
+		has(view([]), "閉") && !has(view([]), "扉"),
+		"the bakery is open before きのこ板",
+	);
+	ok(has(view(["kinoko"]), "扉"), "the bakery is shut after きのこ板");
+	ok(has(view([]), "港") && has(view([]), "鼓"), "no harbor hut or yagura");
+	// 広場から 歩いて、噴水・パン屋の 扉・港の 小屋・やぐらの となりへ
+	const v = view(["shallow", "kinoko"]);
+	const rows = villageRows(v).map((r) => [...r]);
+	const tiles = villagePalette(v);
+	const pass = (x: number, y: number) => !!tiles[rows[y]?.[x] ?? ""]?.passable;
+	const seen = new Set<string>([VILLAGE_SPOTS.boot.join()]);
+	const queue: (readonly [number, number])[] = [VILLAGE_SPOTS.boot];
+	for (let i = 0; i < queue.length; i++) {
+		const [x, y] = queue[i];
+		for (const [nx, ny] of [
+			[x + 1, y],
+			[x - 1, y],
+			[x, y + 1],
+			[x, y - 1],
+		] as const) {
+			if (seen.has(`${nx},${ny}`) || !pass(nx, ny)) continue;
+			seen.add(`${nx},${ny}`);
+			queue.push([nx, ny]);
+		}
+	}
+	const near = (x: number, y: number) =>
+		[
+			[x + 1, y],
+			[x - 1, y],
+			[x, y + 1],
+			[x, y - 1],
+		].some((c) => seen.has(c.join()));
+	for (const ch of ["滝", "扉", "戸", "鼓"]) {
+		const cells = rows.flatMap((r, y) =>
+			r.flatMap((c, x) => (c === ch ? [[x, y] as const] : [])),
+		);
+		ok(
+			cells.some(([x, y]) => near(x, y)),
+			`${ch} is out of reach`,
 		);
 	}
 });

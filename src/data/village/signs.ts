@@ -310,6 +310,14 @@ export const CORE_SIGNS: readonly CoreSign[] = [
 		look: () => "sento",
 		at: [35.5, 26],
 	},
+	// パン屋（商店街の 東の はし。data/village/map.ts の BAKERY_AT）
+	{
+		id: "bakery",
+		from: 0,
+		text: () => "パン屋",
+		look: () => "kissa",
+		at: [60.5, 27],
+	},
 	// 常識堂（屋台から 店に なってから。赤い 屋根の 軒先）
 	{
 		id: "shop",

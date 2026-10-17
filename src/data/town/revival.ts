@@ -25,7 +25,9 @@ export type CorePlace =
 	| "bath"
 	| "library"
 	| "bookstore"
-	| "cafe";
+	| "cafe"
+	| "fountain"
+	| "bakery";
 
 /** 本筋の 板の 順（パン → きのこ → 風呂 → 電池）。 */
 export const MAIN_BOARDS: readonly DungeonId[] = [
@@ -41,7 +43,7 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 		dungeon: "shallow",
 		name: "広場",
 		line: "宣戦布告の　貼り紙が　はがされ、\n広場に　人が　もどってきた。",
-		places: ["clock", "post_city", "library", "bookstore", "music"],
+		places: ["clock", "post_city", "library", "bookstore", "music", "fountain"],
 	},
 	{
 		id: "street",
@@ -59,6 +61,7 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 			"ramen",
 			"famires",
 			"shoken",
+			"bakery",
 		],
 	},
 	{
