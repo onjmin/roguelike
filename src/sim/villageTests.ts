@@ -2847,7 +2847,9 @@ test("開票: the 電池板 ending plays once and やきう stays; 転 plays onc
 		ok(
 			JSON.stringify(pagesFor(a)) ===
 				JSON.stringify([
-					...STORY.deep.ending.filter((p) => !p.needCleared),
+					...STORY.deep.ending.filter(
+						(p) => !p.needCleared && !p.unlessCleared,
+					),
 					episodeEnd("deep"),
 				]),
 			"the 残機 pages show without the side story",
@@ -4458,7 +4460,7 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 				got.length ===
 					// 寄り道を 持ち帰って いる ときだけの 頁（needCleared）は 数えない
 					STORY[d].ending.filter((p) => !p.needCleared).length +
-						(STORY[d].once?.length ?? 0) +
+						(STORY[d].once?.filter((p) => !p.needCleared).length ?? 0) +
 						n +
 						(episodeEnd(d) ? 1 : 0),
 			`${d}: the boss pages are not right after the arrival`,

@@ -110,7 +110,11 @@ export const endingFor = (
 	const { ending, again, once } = STORY[d];
 	// 持ち帰って いない 板の 頁（寄り道「残機」の 最終話の 頁）は 出さない
 	const here = (pages: readonly StoryPage[]) =>
-		pages.filter((p) => !p.needCleared || cleared.includes(p.needCleared));
+		pages.filter(
+			(p) =>
+				(!p.needCleared || cleared.includes(p.needCleared)) &&
+				!(p.unlessCleared && cleared.includes(p.unlessCleared)),
+		);
 	// はじめての ときだけ うしろに 足す 頁（寄り道の 板の 去った 人の レス）
 	const main = here(!seen && once ? [...ending, ...once] : ending);
 	return again && (seen || main.some((p) => gone(p, away) && !p.instead))
@@ -694,6 +698,12 @@ export const STORY: Record<
 				seGap: 180,
 			},
 			{
+				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
+					emote: "!",
+				}),
+				needCleared: "festival",
+			},
+			{
 				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
 				needCleared: "festival",
 			},
@@ -852,11 +862,40 @@ export const STORY: Record<
 			},
 			s("feris", "はい〜、遺影〜。\nやきうくん、成仏して〜", { emote: "♪" }),
 			s("nanj", "生きとるわ！", { emote: "怒" }),
-			n("……やきうの頭の上は、\n「残機：1」のままだった。"),
-			s("zero", "書きこみ、98件。数えました。\n……表示が、動きません", {
-				emote: "?",
-			}),
-			s("nanj", "……名無し、やからな"),
+			// 最終話の 前：名無しには 届かない（最終話の 祭りで 回収）
+			{
+				...n("……やきうの頭の上は、\n「残機：1」のままだった。"),
+				unlessCleared: "deep",
+			},
+			{
+				...s("zero", "書きこみ、98件。数えました。\n……表示が、動きません", {
+					emote: "?",
+				}),
+				unlessCleared: "deep",
+			},
+			{ ...s("nanj", "……名無し、やからな"), unlessCleared: "deep" },
+			// 最終話の あと：正体が バレて いるので、ここで 数が 動く
+			{
+				...n("1UPの音が、鳴りやまない。\n……98回鳴った。「残機：99」"),
+				needCleared: "deep",
+				se: "arcBest",
+				seRepeat: 7,
+				seGap: 180,
+			},
+			{
+				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
+					emote: "!",
+				}),
+				needCleared: "deep",
+			},
+			{
+				...s("nanj", "……みんな、書いとって\nくれたんやな", { emote: "…" }),
+				needCleared: "deep",
+			},
+			{
+				...s("nanj", "うるさいわ！……草", { emote: "怒" }),
+				needCleared: "deep",
+			},
 		],
 	},
 	hidden: {

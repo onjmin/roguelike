@@ -61,6 +61,8 @@ export type StoryPage = Cue & {
 	mob?: MobId;
 	/** この 板を 持ち帰って いる ときだけ 出る 頁（寄り道「残機」を 終えた ときの 最終話の 頁。data/story/story.ts の endingFor）。 */
 	needCleared?: DungeonId;
+	/** この 板を 持ち帰って いない ときだけ 出る 頁（持ち帰る 順で 語りを 分ける。needCleared の 逆）。 */
+	unlessCleared?: DungeonId;
 	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色）。 */
 	nanashi?: string;
 	/** 村の 場面の 合図（ui/village/villageReturn.ts。地の文の 前に 起きる）。 */
