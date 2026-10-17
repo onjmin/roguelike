@@ -3,7 +3,13 @@
 // 立ち話で 終わらせない：人が 歩いて 集まる・イメージ図（engine/sceneCard.ts）・回想（sceneFx の memory）・
 // 夜の 行進を カメラで 追う・見出しを 貼る 人影（いちばん 最初の 村の 天丼）。
 
-import { colonyCard, KINOKO_EVE, routeCard } from "../../data/story/hooks";
+import {
+	BATH_EVE,
+	colonyCard,
+	factionCard,
+	KINOKO_EVE,
+	routeCard,
+} from "../../data/story/hooks";
 import { DUNGEON_NAMES } from "../../data/story/story";
 import { BOARD_NEWS, HEADLINES } from "../../data/town/headlines";
 import {
@@ -254,4 +260,153 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	await visitScript(s, "kinoko");
 	s.se("chapter");
 	await s.narrate(`「${DUNGEON_NAMES.kinoko.name}」に\nもぐれるようになった`);
+};
+
+// ───────────────── 第二話 → 第三話 ─────────────────
+
+const BATH_FLAG = "eve_main";
+
+/** きのこ板を はじめて 持ち帰った 帰り（風呂板が 開く 知らせが まだ 残って いる。救いで 開いた ときは 出さない）。 */
+export const bathEveDue = (): boolean => {
+	const p = loadProgress();
+	return (
+		!hasFlag(BATH_FLAG) &&
+		p.cleared.includes("kinoko") &&
+		!p.cleared.includes("main") &&
+		p.news.some((n) => n.dungeon === "main" && n.reason === "clear")
+	);
+};
+
+/**
+ * 第二話 → 第三話：胞子を 流しに 銭湯へ 歩く → 閉まって 怒鳴り声・湯気が 町を おおう → 湯温戦争の 図（シヨ派が ふえる）
+ * → 3日前の 回想（人影の 書きこみ）→「さあな。名無しやろ」→ 源泉は 風呂板。見出しと 開く 知らせは この あと。
+ */
+export const bathEveScript = async (s: Story): Promise<void> => {
+	addFlag(BATH_FLAG);
+	const B = BATH_EVE;
+	const root = fxRoot();
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	const [hx, hy] = VILLAGE_SPOTS.bath;
+	const nanjHome = VILLAGE_SPOTS.nanj(villageView());
+	// 湯温に うるさい 役は シヨ。メイド喫茶の バイトで 村に いない 夜は ロゼ（data/people/shiyoShift.ts）
+	const mate: "shiyo" | "roze" = s.near("shiyo", 999) ? "shiyo" : "roze";
+	const homes: Record<string, Cell> = {
+		[mate]: VILLAGE_SPOTS[mate],
+		zero: VILLAGE_SPOTS.zero,
+		nanj: nanjHome,
+	};
+
+	// ── その夜：くしゃみで 胞子（主人公が 町を よごす）
+	await s.wait(0);
+	await s.fadeBgm(400);
+	await s.fadeOut(500);
+	setSceneSky("night");
+	s.place("player", bx, by, "down");
+	for (const [w, c] of Object.entries(homes)) s.place(w, c[0], c[1], "down");
+	await s.fadeIn(500);
+	s.bgm("yofukashi");
+	await s.narrate(B.night);
+	s.se("bubble");
+	await s.kiriko(B.sneeze, "voice", { emote: "!", gesture: "hop" });
+	await s.goto("zero", bx + 1, by, { speed: 2.4, avoid: true });
+	s.face("zero", "player");
+	await s.say("zero", B.zeroSpore, { emote: "!" });
+	await s.goto(mate, bx - 1, by, { speed: 1.6, avoid: true });
+	s.face(mate, "player");
+	await s.say(mate, mate === "shiyo" ? B.shiyoBath : B.rozeBath, {
+		emote: "汗",
+	});
+	await s.kiriko(B.kirikoGo, "voice", { gesture: "hop" });
+
+	// ── 銭湯まで 歩く（カメラは キリコ）。閉まって いて、中から 怒鳴り声 → 湯気が 町を おおう
+	await s.wait(0);
+	await Promise.all([
+		s.goto("player", hx, hy + 1, { speed: 1.4, avoid: true }),
+		s
+			.wait(300)
+			.then(() => s.goto("zero", hx + 1, hy + 2, { speed: 1.4, avoid: true })),
+		s
+			.wait(500)
+			.then(() => s.goto(mate, hx - 1, hy + 2, { speed: 1.4, avoid: true })),
+	]);
+	s.face("player", "up");
+	s.face("zero", "up");
+	s.face(mate, "up");
+	const shut = INCIDENTS.find((i) => i.dungeon === "main")?.shut?.bath;
+	if (shut) await s.narrate(shut);
+	s.se("bubble");
+	await as(s, B.name42, B.shout42, "怒");
+	s.se("bubble");
+	await as(s, B.name41, B.shout41, "怒");
+	await s.wait(0);
+	await s.look([hx, hy - 3]);
+	s.se("bubble");
+	s.se("drink");
+	await s.narrate(B.steam);
+	await s.look(null);
+	await s.kiriko(B.kirikoSteam, "voice", { emote: "!" });
+
+	// ── イメージ図：湯温戦争（シヨが 43℃派で 参戦して 派閥が ふえる）
+	s.face("zero", "player");
+	await s.say("zero", B.zeroDraw, { emote: "!" });
+	const card = showCard(root, factionCard(0));
+	s.se("cardFlip");
+	await s.say("zero", B.zeroFaction);
+	card.update(factionCard(1, mate === "roze"));
+	s.se("hit_fist");
+	await s.say(mate, mate === "shiyo" ? B.shiyo43 : B.roze40, { emote: "花" });
+	await s.kiriko(B.kirikoMore, "voice", { emote: "汗" });
+	card.end();
+	await s.say("zero", B.zeroWhy);
+
+	// ── 回想：3日前の 夜、人影が 掲示板に 書きこむ（いちばん 最初の 村・第一話の 夜と 同じ 型）
+	await s.wait(0);
+	await s.fadeBgm(300);
+	const memo = startFx(root, "memory", { caption: B.memoryCaption });
+	s.bgm("sad");
+	const [ox, oy] = VILLAGE_SPOTS.board[1] ?? VILLAGE_SPOTS.board[0];
+	await s.look([ox, oy + 1]);
+	await memo.ready;
+	await s.narrate(B.memoryNight);
+	s.set(POSTER);
+	s.show(POSTER);
+	s.place(POSTER, nanjHome[0], nanjHome[1] + 1);
+	await s.goto(POSTER, ox, oy + 1, { speed: 1.8, avoid: true });
+	s.face(POSTER, "up");
+	s.se("pencil");
+	await as(s, B.memoryPostName, B.memoryPost);
+	await s.goto(POSTER, nanjHome[0], nanjHome[1] + 1, {
+		speed: 2.2,
+		avoid: true,
+	});
+	s.set(POSTER, false);
+	s.hide(POSTER);
+	await s.look([hx, hy]);
+	s.se("pushButton");
+	await s.narrate(B.memorySplit);
+	await s.fadeOut(400);
+	memo.end();
+	await s.look(null, { instant: true });
+	s.bgm("yofukashi");
+	await s.fadeIn(400);
+
+	// ── いまに もどって：同じ 書き方（大きな 問い）→ やきうの「さあな」（第一話の 天丼）→ 源泉は 風呂板
+	await s.say("zero", B.zeroSame, { emote: "?" });
+	await s.goto("nanj", hx + 2, hy + 1, { speed: 2.2, avoid: true });
+	s.face("nanj", "player");
+	s.face("player", "right");
+	await s.say("nanj", B.nanjSame, { emote: "…" });
+	await s.kiriko(B.kirikoWhy, "voice", { emote: "汗" });
+	await s.say("nanj", B.nanjSource);
+
+	// ── 翌朝（この あと 掲示板の 見出し「銭湯陥落」と、風呂板が 開く 知らせ）
+	await s.wait(0);
+	await s.fadeBgm(400);
+	await s.fadeOut(700);
+	setSceneSky(null);
+	for (const [w, c] of Object.entries(homes)) s.place(w, c[0], c[1], "down");
+	s.place("player", ox, oy + 1, "up");
+	await s.fadeIn(500);
+	await s.narrate(B.morning);
+	s.bgm(villageSong());
 };

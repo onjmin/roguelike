@@ -1,10 +1,21 @@
 // 話の つなぎの 場面（data/story/hooks.ts・ui/village/episodeHooks.ts）の 試験。
 // pnpm test で いっしょに 動く。形は bondTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は H。
 
-import { colonyCard, KINOKO_EVE, routeCard } from "../data/story/hooks";
+import {
+	BATH_EVE,
+	colonyCard,
+	factionCard,
+	KINOKO_EVE,
+	routeCard,
+} from "../data/story/hooks";
 import type { Story } from "../engine/defs";
 import { hasFlag, loadProgress, saveProgress } from "../engine/save";
-import { kinokoEveDue, kinokoEveScript } from "../ui/village/episodeHooks";
+import {
+	bathEveDue,
+	bathEveScript,
+	kinokoEveDue,
+	kinokoEveScript,
+} from "../ui/village/episodeHooks";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -126,6 +137,64 @@ test(
 			);
 			ok(!loadProgress().news.length, "the kinoko news is consumed");
 			ok(hasFlag("eve_kinoko") && !kinokoEveDue(), "only once");
+		});
+	},
+);
+
+test(
+	"H3",
+	"第二話 → 第三話の つなぎ：どの 文も 村の 窓に 収まる。湯温戦争の 図は シヨ派で 1つ ふえる",
+	() => {
+		for (const [k, v] of Object.entries(BATH_EVE)) fits(`BATH_EVE.${k}`, v);
+		for (const step of [0, 1] as const) {
+			const spec = factionCard(step);
+			ok(spec.links.length === spec.nodes.length - 1, `${spec.title}: links`);
+			for (const n of spec.nodes)
+				ok(width(n.label) <= 8, `${n.label}: label too wide`);
+		}
+		ok(
+			factionCard(1).nodes.length === factionCard(0).nodes.length + 1,
+			"Shiyo adds a faction",
+		);
+	},
+);
+
+test(
+	"H4",
+	"第二話 → 第三話の つなぎ：きのこ板を 持ち帰った 帰りに 1回だけ（救いで 開いた ときは 出ない）。風呂板の 知らせは 残す",
+	async () => {
+		await withStorage(async () => {
+			saveProgress({
+				...loadProgress(),
+				unlocked: ["shallow", "kinoko", "main"],
+				cleared: ["shallow"],
+				news: [{ dungeon: "main", reason: "relief" }],
+			});
+			ok(!bathEveDue(), "not after the relief");
+			saveProgress({
+				...loadProgress(),
+				unlocked: ["shallow", "kinoko", "main", "tropical"],
+				cleared: ["shallow", "kinoko"],
+				news: [
+					{ dungeon: "main", reason: "clear" },
+					{ dungeon: "tropical", reason: "clear" },
+				],
+			});
+			ok(bathEveDue(), "due after the mushroom board");
+			const { s, log } = fakeStory();
+			await bathEveScript(s);
+			const said = log.join("\n");
+			for (const t of [
+				BATH_EVE.sneeze,
+				BATH_EVE.shiyo43,
+				BATH_EVE.memoryPost,
+				BATH_EVE.nanjSame,
+				BATH_EVE.morning,
+			])
+				ok(said.includes(t), `missing: ${t}\n${said}`);
+			ok(said.includes("show visitor"), "the shadow posts again");
+			ok(loadProgress().news.length === 2, "the news stays for newsScript");
+			ok(hasFlag("eve_main") && !bathEveDue(), "only once");
 		});
 	},
 );

@@ -164,7 +164,12 @@ import { withBond } from "./bonds";
 import { enterCafe } from "./cafe";
 import { decayDecor, signRuined } from "./decay";
 import { offDecor, outsideDisplays } from "./displays";
-import { kinokoEveDue, kinokoEveScript } from "./episodeHooks";
+import {
+	bathEveDue,
+	bathEveScript,
+	kinokoEveDue,
+	kinokoEveScript,
+} from "./episodeHooks";
 import { enterFacility, outdoorScript } from "./facilities";
 import { villageFindGlint } from "./finds";
 import { folkEvent } from "./folk";
@@ -1189,6 +1194,8 @@ const arrivalScript =
 		if (!arrival && needsOpening()) await openingScript(s);
 		// 第一話 → 第二話の つなぎ（その夜の 場面。ui/village/episodeHooks.ts）
 		if (kinokoEveDue()) await kinokoEveScript(s);
+		// 第二話 → 第三話の つなぎ（胞子を 流しに 銭湯へ）
+		if (bathEveDue()) await bathEveScript(s);
 		await freshHeadlineScript(s);
 		await newsScript(s);
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける

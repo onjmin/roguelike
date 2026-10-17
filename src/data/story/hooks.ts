@@ -83,3 +83,69 @@ export const routeCard: CardSpec = {
 	links: [{ label: "徒歩" }, { label: "船" }],
 	note: "1時間前の地図（ゼロ調べ）",
 };
+
+const BANTOU = "sprites/ofurou.png";
+
+/**
+ * 第二話（きのこ板）→ 第三話（風呂板）：胞子を 流しに 銭湯へ 行くと 閉まって いて、湯の 温度で 町が 割れて いる。
+ * 3日前の 回想で、割った のは 名無しの 書きこみ（人影の 天丼。正体は 最終話）。
+ */
+export const BATH_EVE = {
+	// 頭の きのこは 行進が 摘みとった（story.ts の kinoko.once）。胞子だけ 髪に 残る
+	night: "その夜。きのこは摘まれたのに、\n髪に胞子が残っていた。",
+	sneeze: "……はっくしょンゴ！",
+	zeroSpore: "胞子、128個出ました！\n……数えました！",
+	shiyoBath: "胞子、まきちらさないで。\n……お風呂、入ってきなさいよ",
+	kirikoGo: "銭湯、行くンゴ！",
+	shout42: "ぬるいんじゃ！",
+	shout41: "熱いんじゃ！",
+	name42: "湯気の中の42℃派",
+	name41: "湯気の中の41℃派",
+	steam: "煙突から湯気が噴きだして、\n町の上まで広がっていく。",
+	kirikoSteam: "銭湯が、蒸し器に\nなってるンゴ！",
+	zeroDraw: "湯温の派閥、図にしました！\n籠城3日目です！",
+	zeroFaction: "41℃派12人、42℃派12人。\n中立は、0人です",
+	shiyo43: "41℃も42℃も、ぬるいわよ。\n……あたすは、43℃",
+	kirikoMore: "派閥がふえたンゴ！",
+	// シヨが メイド喫茶の バイトで 村に いない 夜（data/people/shiyoShift.ts）は ロゼが 同じ 役
+	rozeBath: "胞子、まきちらすなアル。\n……銭湯で流すのが常識アル",
+	roze40: "41℃も42℃も、まちがいアル。\n……常識は、40℃アル",
+	rozeName: "ロゼ派",
+	shiyoName: "シヨ派",
+	zeroWhy: "けんかのはじまりも、\nログに残ってました",
+	memoryCaption: "3日前",
+	memoryNight: "3日前の夜。掲示板に、\n名無しの書きこみがひとつ。",
+	memoryPost: "銭湯の湯、ぬるすぎて草",
+	memoryPostName: "名無し",
+	memorySplit: "次の朝から、町は湯の温度で\nまっぷたつになった。",
+	zeroSame: "この書きこみ、見出しと\n同じ書き方です。……数えました",
+	nanjSame: "……さあな。名無しやろ",
+	kirikoWhy: "胞子が落ちるまで、\n吾輩は寝られないンゴ",
+	nanjSource: "銭湯の湯は、風呂板の源泉や。\n立てこもりも、源泉のほうやろ",
+	morning: "翌朝。",
+} as const;
+
+/**
+ * イメージ図③：湯温の 派閥（籠城 3日目）。step 1 で シヨ派（43℃）が 参戦。シヨが いない 夜は ロゼ派（40℃）。
+ */
+export const factionCard = (step: 0 | 1, roze = false): CardSpec => ({
+	title: "イメージ図「湯温戦争」",
+	nodes: [
+		{ label: "41℃派", sub: "12人", aa: "41" },
+		{ label: "銭湯", sub: "籠城3日目", aa: "湯", shake: true },
+		{ label: "42℃派", sub: "12人", sprite: BANTOU },
+		...(step === 1
+			? [
+					roze
+						? { label: BATH_EVE.rozeName, sub: "1人", aa: "40" }
+						: { label: BATH_EVE.shiyoName, sub: "1人", aa: "43" },
+				]
+			: []),
+	],
+	links: [
+		{ label: "押す" },
+		{ label: "立てこもる" },
+		...(step === 1 ? [{ label: "参戦" }] : []),
+	],
+	note: "中立 0人（ゼロ調べ）",
+});
