@@ -312,6 +312,18 @@ export type TrapKind =
 
 export type Trap = { x: number; y: number; kind: TrapKind; found: boolean };
 
+/** 集落の 人（ぶつかると 話す。key なら 目的が すすむ：Run.talkFolk）。 */
+export type FloorFolk = {
+	x: number;
+	y: number;
+	name: string;
+	sprite: string;
+	lines: readonly string[];
+	key?: true;
+	/** 話した 回数（行を 回す）。 */
+	said: number;
+};
+
 // ───────────────────────── プレイヤー ─────────────────────────
 
 export type PlayerStatus = {
@@ -394,6 +406,8 @@ export type Floor = {
 	boss?: number;
 	/** 名所の 階（長い 板の 一息。敵・罠・道具なし。core/data/dungeons.ts の rests）の 名前。 */
 	rest?: string;
+	/** 集落の 人（いちばん底の 集落。core/data/dungeons.ts の settlement。立つ マスは 置物と 同じく 通れない）。 */
+	folk?: FloorFolk[];
 	/** ボスを 見た（目を さまして 待ちかまえていた。画面の 曲と HP の ゲージ）。 */
 	bossSeen?: true;
 };
@@ -651,3 +665,5 @@ export type GameEvent =
 export const PLAYER_ID = 0;
 /** 同行者の id（イベントの id。モンスターの uid は 1 から、キリコは 0）。 */
 export const GUEST_ID = -1;
+/** 集落の 人の 画面の id（FOLK_ID − 何人目。イベントは 出さない）。 */
+export const FOLK_ID = -100;

@@ -81,6 +81,20 @@ export type BringSpec = {
 };
 
 /**
+ * いちばん底の 集落（STORY.md §4.9 の 場面の 一覧）。敵・罠が なく、板の 人が 立って いる（ぶつかると 話す）。
+ * key の 人に 話すと 目的が すすむ（event・deliver：その場で 帰る・bring：加わって 帰り道）。
+ */
+export type SettlementSpec = {
+	name: string;
+	folk: readonly {
+		name: string;
+		sprite: string;
+		lines: readonly string[];
+		key?: true;
+	}[];
+};
+
+/**
  * 名所の 階（長い 板の 一息。STORY.md §4.9 の 場面の 一覧）。敵・罠・道具が なく、地図が はじめから 見える。
  * 合う 板にだけ 置く（作者「全部が 全部に 搭載する ものでは ない」）。1000 の カウントは 進む。
  */
@@ -170,6 +184,8 @@ export type Dungeon = {
 	noCarry?: boolean;
 	/** 名所の 階（RestFloor）。 */
 	rests?: readonly RestFloor[];
+	/** いちばん底の 集落（SettlementSpec）。 */
+	settlement?: SettlementSpec;
 	/** 底の 出来事（目的が event の とき）。 */
 	event?: EventSpec;
 	/** 送り届ける 人（目的が deliver の とき）。 */
@@ -447,6 +463,31 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	shallow: {
 		id: "shallow",
 		objective: "fetch",
+		// 底は パン王国の 城下町（板主 パン松。STORY.md §4.9）
+		settlement: {
+			name: "パン王国の城下町",
+			folk: [
+				{
+					name: "パン松",
+					sprite: "pub:sprites/minors_panmatsu.png",
+					lines: [
+						"独立したかっただけや",
+						"国旗は食パンや。文句あるか",
+						"旗は持ってってええ。写しや",
+					],
+				},
+				{
+					name: "パン兵",
+					sprite: "pub:sprites/panhei.png",
+					lines: ["ここは城下町や。剣はしまえ", "パン、焼きたてやで"],
+				},
+				{
+					name: "パン兵",
+					sprite: "pub:sprites/panhei.png",
+					lines: ["独立記念セール、やっとるで"],
+				},
+			],
+		},
 		boss: {
 			monster: "boss_panhei",
 			rescue: "escort",
@@ -582,6 +623,28 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		noCarry: true,
 		// 押しかけてきた 島民を 島の 山の てっぺんまで 送り返す（STORY.md §4.9）
 		objective: "deliver",
+		// てっぺんは 島の 集落。長に 話すと 送り届けた ことに なる
+		settlement: {
+			name: "山の上の集落",
+			folk: [
+				{
+					name: "島民の長",
+					sprite: "pub:sprites/natsuko.png",
+					lines: ["……みんな、おかえり"],
+					key: true,
+				},
+				{
+					name: "島民",
+					sprite: "pub:sprites/natsuko.png",
+					lines: ["島はええで", "浜、また行きたいな"],
+				},
+				{
+					name: "島民",
+					sprite: "pub:sprites/natsuko.png",
+					lines: ["総島民6人や"],
+				},
+			],
+		},
 		deliver: {
 			guest: "islander",
 			goal: "島民を山の上へ送る",
@@ -626,8 +689,29 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
 		id: "konamono",
-		// たこパの お誘い（STORY.md §4.9）：最上階の たこパ会場に 着けば 帰れる
+		// たこパの お誘い（STORY.md §4.9）：最上階の たこパ会場で 粉もん奉行に 話せば 帰れる
 		objective: "event",
+		settlement: {
+			name: "最上階のたこパ会場",
+			folk: [
+				{
+					name: "粉もん奉行",
+					sprite: "pub:sprites/takonomin.png",
+					lines: ["来たな。返しを見せてみい"],
+					key: true,
+				},
+				{
+					name: "たこ民",
+					sprite: "pub:sprites/takonomin.png",
+					lines: ["😡はタコの顔やで", "青のり、かけ放題や"],
+				},
+				{
+					name: "たこ民",
+					sprite: "pub:sprites/takonomin.png",
+					lines: ["招待状、届いたか？"],
+				},
+			],
+		},
 		event: {
 			goal: "最上階のたこパに行く",
 			rescue: "escort",
@@ -673,6 +757,28 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		id: "festival",
 		// やぐらから 降りられない 親分を 入口まで 連れ帰る（STORY.md §4.9）
 		objective: "bring",
+		// てっぺんは やぐら広場と 夜店。親分に 話すと 加わる
+		settlement: {
+			name: "やぐら広場",
+			folk: [
+				{
+					name: "祭りの親分",
+					sprite: "pub:sprites/mashii.png",
+					lines: ["そこの、手ぇ貸してくれ"],
+					key: true,
+				},
+				{
+					name: "夜店の人",
+					sprite: "sa:8DXRgk",
+					lines: ["金魚すくい、やってくで", "太鼓、止まらんな"],
+				},
+				{
+					name: "夜店の人",
+					sprite: "sa:f6k97v",
+					lines: ["わたあめ、焼きそば、ラムネ"],
+				},
+			],
+		},
 		bring: {
 			guest: "oyabun",
 			goal: "親分を連れ帰る",

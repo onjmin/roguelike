@@ -105,6 +105,7 @@ import {
 	DOZE,
 	type DungeonId,
 	type Floor,
+	type FloorFolk,
 	type FloorItem,
 	type GameEvent,
 	type GuestSpec,
@@ -841,20 +842,39 @@ export class Run {
 		// 同行者も キリコの そばに 着く（core/guest.ts）
 		guestEnterFloor(this, first);
 		if (!carried && ankaOnArrival(this)) startAnka(this, true);
-		// 目的が event・deliver：底に 着いたら 出来事が あって 入口へ 帰る
-		if (this.eventSpec && depth === this.dungeon.floors && !s.returning)
+		// 集落の 階：話す 相手の 知らせ（key の 人に 話すと 目的が すすむ：talkFolk）
+		const key = s.floor.folk?.find((x) => x.key);
+		if (key) this.msg(`${key.name}がいる。話しかけてみよう`);
+		// 目的が event・deliver：底に 着いたら 出来事が あって 入口へ 帰る（集落なら key の 人に 話してから）
+		if (this.eventSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.eventReached();
-		// 目的が bring：底で 人が 加わり、品を もらって 帰り道に なる
+		// 目的が bring：底で 人が 加わり、品を もらって 帰り道に なる（集落なら key の 人に 話してから）
+		if (this.bringSpec && depth === this.dungeon.floors && !s.returning && !key)
+			this.bringJoin();
+	}
+
+	/** 目的が bring：底の 人が 加わり、品を もらって 帰り道に なる。 */
+	private bringJoin(): void {
 		const bring = this.bringSpec;
-		if (bring && depth === this.dungeon.floors && !s.returning) {
-			for (const line of bring.lines)
-				this.msg(line.replaceAll("キリコ", this.heroName));
-			s.guest = newGuest({ id: bring.guest, goal: Number.MAX_SAFE_INTEGER });
-			guestEnterFloor(this, true);
-			const it = this.newItem(this.dungeon.goal);
-			if (!this.addItem(it)) this.p.items.push(it);
-			this.onAcquire(it);
-		}
+		if (!bring || this.s.returning) return;
+		for (const line of bring.lines)
+			this.msg(line.replaceAll("キリコ", this.heroName));
+		this.s.guest = newGuest({ id: bring.guest, goal: Number.MAX_SAFE_INTEGER });
+		guestEnterFloor(this, true);
+		const it = this.newItem(this.dungeon.goal);
+		if (!this.addItem(it)) this.p.items.push(it);
+		this.onAcquire(it);
+	}
+
+	/** 集落の 人に 話す（ぶつかる。時間は 進まない）。key の 人なら 目的が すすむ。 */
+	private talkFolk(fo: FloorFolk): void {
+		const line = fo.lines[fo.said % fo.lines.length];
+		fo.said++;
+		this.msg(`${fo.name}「${line.replaceAll("キリコ", this.heroName)}」`);
+		if (!fo.key || this.s.end) return;
+		// 送り届ける 人が たおれて いれば ふつうの 持ち帰り（底の 品を 拾う）
+		if (this.eventSpec) this.eventReached();
+		else if (this.bringSpec) this.bringJoin();
 	}
 
 	/**
@@ -1844,6 +1864,13 @@ export class Run {
 			// 見えない敵には ぶつかって 進めない（時間は進む）
 			this.msg("なにかにぶつかった");
 			return true;
+		}
+		// 集落の 人には ぶつかって 話す（時間は 進まない）
+		const fo = this.f.folk?.find((x) => x.x === to.x && x.y === to.y);
+		if (fo) {
+			this.emit({ t: "turn", id: PLAYER_ID, dir: d, bump: true });
+			this.talkFolk(fo);
+			return false;
 		}
 		if (!this.playerCanStep(p, d)) {
 			this.emit({ t: "turn", id: PLAYER_ID, dir: d, bump: true });

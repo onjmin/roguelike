@@ -168,6 +168,8 @@ export class FloorView {
 		ctx.fillRect(0, 0, this.terrain.width, this.terrain.height);
 		// ただの 置物は 通れないが、床の 上に 立つ 物として 描く（壁の 面は つけない）
 		const statues = new Set(f.statues ?? []);
+		// 集落の 人の マス（通れないが 床の 上に 人が 立つ。人は play.ts が 描く）
+		const folk = new Set((f.folk ?? []).map((x) => x.y * l.w + x.x));
 		const isOpen = (x: number, y: number) =>
 			tileAt(l, x, y) !== T_WALL || statues.has(y * l.w + x);
 		for (let y = 0; y < l.h; y++) {
@@ -179,7 +181,7 @@ export class FloorView {
 					ctx.fillStyle = theme.floorColor;
 					ctx.fillRect(px, py, TILE, TILE);
 					drawRefInCell(ctx, theme.floor, px, py);
-					drawRefInCell(ctx, STATUE_STILL, px, py);
+					if (!folk.has(y * l.w + x)) drawRefInCell(ctx, STATUE_STILL, px, py);
 					continue;
 				}
 				if (t !== T_WALL) {

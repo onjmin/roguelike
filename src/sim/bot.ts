@@ -551,6 +551,21 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			items.find((i) => !r.isEquipped(i) && defOf(i.kind).cat !== "food");
 		if (junk) return { c: "drop", item: junk.uid };
 	}
+	// 集落の key の 人に 話しにいく（目的が event・deliver・bring。core/floor.ts の placeFolk）
+	const key = f.folk?.find((x) => x.key);
+	if (key && !r.s.returning && (r.eventSpec || r.bringSpec)) {
+		if (Math.max(Math.abs(key.x - p.x), Math.abs(key.y - p.y)) <= 1) {
+			const d = dirOf(key.x - p.x, key.y - p.y);
+			if (d !== null && r.cornerOk(p, d)) return { c: "move", dir: d };
+		}
+		const spot = DIRS8.map((d) => step(key, d))
+			.filter((q) => isFloor(f.layout, q.x, q.y))
+			.sort((a, b) => dist(a, p) - dist(b, p))[0];
+		if (spot) {
+			const d = pathStep(r, spot, true);
+			if (d !== null) return { c: "move", dir: d };
+		}
+	}
 	// 見えている道具を拾いにいく
 	if (!r.s.returning && items.length < 20) {
 		const seen = new Set(r.s.seen);

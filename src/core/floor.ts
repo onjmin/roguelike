@@ -12,6 +12,7 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
+import type { SettlementSpec } from "./data/dungeons";
 import { ITEMS } from "./data/items";
 import { MONSTERS, monstersFor, SWAP_BREADS } from "./data/monsters";
 import { canSee } from "./fov";
@@ -89,7 +90,12 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		depth === r.dungeon.floors && !r.s.returning && r.bossSpec !== null;
 	// 名所の 階（敵・罠・道具なし。地図が 見える）
 	const rest = r.dungeon.rests?.find((x) => x.depth === depth);
-	const festival = house && !bossFloor && !rest;
+	// いちばん底の 集落（ボスの 待つ 底では ない とき）
+	const settle =
+		depth === r.dungeon.floors && !r.s.returning && !bossFloor
+			? r.dungeon.settlement
+			: undefined;
+	const festival = house && !bossFloor && !rest && !settle;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
 		festival &&
@@ -159,6 +165,12 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
 	}
 
+	if (settle) {
+		f.rest = settle.name;
+		revealAll(f);
+		placeFolk(r, f, start, settle);
+		return f;
+	}
 	if (rest) {
 		f.rest = rest.name;
 		revealAll(f);
@@ -298,6 +310,53 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 	r.s.floor = prevFloor;
 	return f;
+};
+
+/**
+ * 集落の 人を 立たせる（置物と 同じく 通れない マス。部屋の 内がわで、階段・キリコ・品の となりは 避ける）。
+ */
+const placeFolk = (
+	r: Run,
+	f: Floor,
+	start: Pos,
+	settle: SettlementSpec,
+): void => {
+	const l = f.layout;
+	const near = (a: Pos, b: Pos) =>
+		Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1;
+	const taken: Pos[] = [f.stairs, start, ...f.items];
+	f.statues = [];
+	f.folk = [];
+	for (const who of settle.folk) {
+		const cands = l.rooms
+			.flatMap((room) => roomTiles(room))
+			.filter(
+				(t) =>
+					DIRS8.every((d) => {
+						const q = step(t, d);
+						return (
+							roomAt(l, q.x, q.y) === roomAt(l, t.x, t.y) &&
+							isFloor(l, q.x, q.y)
+						);
+					}) &&
+					isFloor(l, t.x, t.y) &&
+					!taken.some((q) => near(q, t)),
+			);
+		if (!cands.length) break;
+		const at = r.rng.pick(cands);
+		l.tiles[idx(l, at.x, at.y)] = T_WALL;
+		f.statues.push(idx(l, at.x, at.y));
+		f.folk.push({
+			x: at.x,
+			y: at.y,
+			name: who.name,
+			sprite: who.sprite,
+			lines: who.lines,
+			...(who.key ? { key: true as const } : {}),
+			said: 0,
+		});
+		taken.push(at);
+	}
 };
 
 /** 地図を ぜんぶ 見える ように する（名所の 階）。 */

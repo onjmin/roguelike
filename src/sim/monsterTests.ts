@@ -23,6 +23,7 @@ import { staffEffect } from "../core/effects";
 import { callHunter, HUNTER, spawnMonster } from "../core/floor";
 import { canSee } from "../core/fov";
 import {
+	DIRS8,
 	type Dir8,
 	DX,
 	DY,
@@ -30,6 +31,7 @@ import {
 	dist,
 	type Pos,
 	samePos,
+	step,
 } from "../core/geom";
 import { defOf, isKnownKind } from "../core/item";
 import {
@@ -4229,6 +4231,27 @@ test(
 	},
 );
 
+/** 冒険の 終わり（ok の 型の しぼりこみを 避ける）。 */
+const endOf = (r: Run) => r.s.end;
+
+/** 集落の key の 人の となりに 立って ぶつかる（話す）。 */
+const talkKey = (r: Run): void => {
+	const fo = r.f.folk?.find((x) => x.key);
+	ok(fo, "no key person in the settlement");
+	if (!fo) return;
+	for (const d of DIRS8) {
+		const from = step(fo, d);
+		if (!isFloor(r.f.layout, from.x, from.y)) continue;
+		if (r.monsterAt(from.x, from.y) || r.isGuestAt(from.x, from.y)) continue;
+		r.p.x = from.x;
+		r.p.y = from.y;
+		const back = dirOf(fo.x - from.x, fo.y - from.y);
+		if (back !== null) r.act({ c: "move", dir: back });
+		return;
+	}
+	ok(false, "no free cell next to the key person");
+};
+
 test(
 	"event",
 	"底の 出来事（目的が event）：底に 着くと 品を もらって その場で 帰る。行は 記録に おさまる",
@@ -4244,6 +4267,9 @@ test(
 		const r = Run.create("event-floor", "konamono", [], "event");
 		ok(r.objective === "event" && r.eventSpec !== null, "not an event run");
 		r.enterFloor(DUNGEONS.konamono.floors, false);
+		// 最上階は たこパ会場の 集落：着いた だけでは 終わらず、粉もん奉行に 話すと 帰る
+		ok(!endOf(r) && !!r.f.folk?.length, "the settlement is missing");
+		talkKey(r);
 		ok(r.s.end?.kind === "clear", `end ${r.s.end?.kind}`);
 		ok(
 			r.p.items.some((it) => it.kind === DUNGEONS.konamono.goal),
@@ -4269,6 +4295,8 @@ test(
 		ok(r.s.guest?.id === "islander", `guest ${r.s.guest?.id}`);
 		r.enterFloor(1, false);
 		r.enterFloor(top, false);
+		ok(!endOf(r), "ended on arrival");
+		talkKey(r);
 		ok(r.s.end?.kind === "clear", `end ${r.s.end?.kind}`);
 		ok(
 			r.s.end?.cause === DUNGEONS.tropical.deliver?.cause,
@@ -4296,6 +4324,7 @@ test(
 		const before = r.s.guest;
 		ok(!before, "the boss joined from the start");
 		r.enterFloor(top, false);
+		talkKey(r);
 		ok(r.s.guest?.id === "oyabun" && !r.s.end, `guest ${r.s.guest?.id}`);
 		ok(r.s.returning, "not returning after the boss joined");
 		ok(

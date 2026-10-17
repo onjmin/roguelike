@@ -39,6 +39,7 @@ import {
 	type Anka,
 	type Command,
 	type Floor,
+	FOLK_ID,
 	type GameEvent,
 	GUEST_ID,
 	instantClear,
@@ -650,6 +651,10 @@ export class Play {
 		// 同行者（core/guest.ts。たおれた・まだ 立っていない ときは 描かない）
 		const g = guestHere(run);
 		if (g) put(GUEST_ID, guestWalk(g.id), g.x, g.y, g.dir);
+		// 集落の 人（いちばん底の 集落。core/floor.ts の placeFolk）。id は 敵・同行者と かぶらない 負の 数
+		(run.f.folk ?? []).forEach((fo, i) => {
+			put(FOLK_ID - i, fo.sprite, fo.x, fo.y, 4);
+		});
 		for (const m of run.f.monsters) {
 			put(m.uid, monsterSprite(m), m.x, m.y, m.dir);
 			// ボスは 大きく 描く
@@ -851,6 +856,11 @@ export class Play {
 				continue;
 			}
 			if (!live && !warping) continue;
+			// 集落の 人：いつも 見える（集落の 階は 地図が 見えている）
+			if (d.id <= FOLK_ID) {
+				figs.push(d);
+				continue;
+			}
 			// 同行者：キリコから 見える ときだけ
 			if (d.id === GUEST_ID) {
 				if (run.playerSees({ x: d.tx, y: d.ty }, run.p, blind)) figs.push(d);
