@@ -94,7 +94,9 @@ import {
 	layoutStage,
 	unlitCells,
 	VILLAGE_EXITS,
+	VILLAGE_H,
 	VILLAGE_SPOTS,
+	VILLAGE_W,
 	VISITOR_WALK,
 	type VillagePlace,
 	type VillageView,
@@ -102,7 +104,13 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../../data/village/map";
-import type { EventDef, MapDef, Script, Story } from "../../engine/defs";
+import type {
+	EventDef,
+	LightRule,
+	MapDef,
+	Script,
+	Story,
+} from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import {
 	acceptEscort,
@@ -1168,6 +1176,40 @@ const arrivalScript =
 		await lunchScript(s);
 	};
 
+/**
+ * 場面で 一部の 板の 明かりだけ 灯す ときの 決まり（ui/village/sceneSky.ts の sceneLit）。店の 並びと シャッターは
+ * view の まま、窓・看板・街灯だけ boards の 板の ぶん。homes が false なら 灯るのは boards で 開く 建物の 窓だけ
+ * （板に よらない 家の 窓も 消えた まま）。同じ 組は 同じ 決まりを かえす（描く 側が 窓の マスを 覚えなおさない）。
+ */
+const sceneLights = (
+	view: VillageView,
+): ((boards: readonly string[], homes: boolean) => LightRule) => {
+	const memo = new Map<string, LightRule>();
+	const stage = layoutStage(view);
+	const dark = unlitCells(view, []);
+	return (names, homes) => {
+		const boards = names.filter((d): d is DungeonId =>
+			DUNGEON_IDS.includes(d as DungeonId),
+		);
+		const key = `${boards.join()}|${homes}`;
+		const hit = memo.get(key);
+		if (hit) return hit;
+		const off = unlitCells(view, boards);
+		const unlit = new Set<number>(off);
+		// 灯るのは 停電で 消えて いた うち boards で 開く 建物だけ
+		if (!homes)
+			for (let i = 0; i < VILLAGE_W * VILLAGE_H; i++)
+				if (!dark.has(i)) unlit.add(i);
+		const rule: LightRule = {
+			unlit,
+			lamps: lampsLit(boards),
+			glow: signboardGlow(stage, boards),
+		};
+		memo.set(key, rule);
+		return rule;
+	};
+};
+
 /** 村の マップ（町の段・開いたダンジョンから）。 */
 export const buildVillage = (
 	v: VillageView,
@@ -1206,6 +1248,8 @@ export const buildVillage = (
 			unlit: unlitCells(view),
 			lamps: lampsLit(revivedBoards(view)),
 			glow: signboardGlow(layoutStage(view), revivedBoards(view)),
+			// 明かりの 坂で 通りを 1つずつ 灯す（ui/village/villageReturn.ts の playCue）
+			scene: sceneLights(view),
 		},
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
 		crowd: {

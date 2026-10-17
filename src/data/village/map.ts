@@ -908,12 +908,15 @@ const CORE_RECTS: readonly [CorePlace, number, number, number, number][] = [
 
 /**
  * 生き返って いない 建物の マス（y * VILLAGE_W + x）。夜も 窓が 灯らない（ui/village/village.ts の drawLights）。
- * 施設の 外観と 町の まんなかの 建物。
+ * 施設の 外観と 町の まんなかの 建物。boards は 開いて いる と みる 板（省けば 町の いま）。
  */
-export const unlitCells = (v: VillageView): Set<number> => {
+export const unlitCells = (
+	v: VillageView,
+	boards: readonly DungeonId[] = revivedBoards(v),
+): Set<number> => {
 	const out = new Set<number>();
 	for (const f of facilitiesAt(layoutStage(v))) {
-		if (isRevived(f.id, revivedBoards(v))) continue;
+		if (isRevived(f.id, boards)) continue;
 		facilityBlock(f).forEach((line, dy) => {
 			[...line].forEach((ch, dx) => {
 				if (ch !== " ") out.add((f.at[1] + dy) * VILLAGE_W + f.at[0] + dx);
@@ -921,7 +924,7 @@ export const unlitCells = (v: VillageView): Set<number> => {
 		});
 	}
 	for (const [id, x0, y0, w, h] of CORE_RECTS) {
-		if (isRevived(id, revivedBoards(v))) continue;
+		if (isRevived(id, boards)) continue;
 		for (let y = y0; y < y0 + h; y++)
 			for (let x = x0; x < x0 + w; x++) out.add(y * VILLAGE_W + x);
 	}

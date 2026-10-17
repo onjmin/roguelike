@@ -80,6 +80,18 @@ export type EventDef = {
 	run?: Script;
 };
 
+/** 夜の 明かりの 決まり（MapDef の lights）。 */
+export type LightRule = {
+	unlit: ReadonlySet<number>;
+	lamps: boolean;
+	glow?: (
+		g: CanvasRenderingContext2D,
+		ox: number,
+		oy: number,
+		k: number,
+	) => void;
+};
+
 export type MapDef = {
 	id: string;
 	/** 画面に出す地名。 */
@@ -128,16 +140,10 @@ export type MapDef = {
 	/**
 	 * 夜の 明かりの 決まり（村の 地図だけ。ui/village/village.ts の drawLights）。unlit は 窓が 灯らない マス
 	 * （y * 幅 + x。生き返って いない 建物）、lamps は 街灯が 灯るか、glow は 色を 重ねた あとに 足す 看板の 光。
+	 * scene は 場面で 一部の 板の 明かり だけ 灯す ときの 決まり（ui/village/sceneSky.ts の sceneLit）。
 	 */
-	lights?: {
-		unlit: ReadonlySet<number>;
-		lamps: boolean;
-		glow?: (
-			g: CanvasRenderingContext2D,
-			ox: number,
-			oy: number,
-			k: number,
-		) => void;
+	lights?: LightRule & {
+		scene?: (boards: readonly string[], homes: boolean) => LightRule;
 	};
 	/** 地面の すぐ 上に 描く 物（建物の 影など。人や 上の 層より 下。engine/field.ts の drawBelow の あと）。 */
 	ground?: (g: CanvasRenderingContext2D, ox: number, oy: number) => void;

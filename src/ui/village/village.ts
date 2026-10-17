@@ -39,6 +39,7 @@ import { modesHeld, modeText } from "../../data/town/openModes";
 import { type Surface, surfaceOfMap } from "../../data/town/surface";
 import { timeBand } from "../../data/village/crowd";
 import {
+	BAND_NAME,
 	clockLine,
 	daylightAt,
 	lightOf,
@@ -51,6 +52,7 @@ import { preloadImages } from "../../engine/assets";
 import { chipsOwned } from "../../engine/chips";
 import type {
 	EventDef,
+	LightRule,
 	RoamStep,
 	SayOptions,
 	Script,
@@ -92,7 +94,12 @@ import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
 import { buildRoom } from "./rooms";
-import { SCENE_NIGHT_MINUTE, sceneSky } from "./sceneSky";
+import {
+	BLACKOUT_TINT,
+	SCENE_NIGHT_MINUTE,
+	sceneLit,
+	sceneSky,
+} from "./sceneSky";
 import { Crowd } from "./villageCrowd";
 import {
 	buildSurface,
@@ -599,7 +606,10 @@ export class Village {
 			this.clockMs %= 1000;
 		}
 		const h = nowHour();
-		const text = clockLine(h, nowMinute(), timeBand(h));
+		// 明かりの 場面は 夜の 色なので、時刻は 出さず「夜」だけ（ui/village/sceneSky.ts）
+		const text = sceneSky()
+			? BAND_NAME.night
+			: clockLine(h, nowMinute(), timeBand(h));
 		this.tickMoney(dt);
 		if (text === this.clockText) return;
 		this.clockText = text;
@@ -1488,9 +1498,11 @@ export class Village {
 		// 時間帯の 色（外の 村と 板の 地上だけ。人通りと 同じ 時計。data/village/daylight.ts）
 		if (this.mapId === "village" || this.mapId.startsWith("s_")) {
 			// 日付の 日の 出・日の 入りに 合わせて 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
-			// 明かりの 場面は 時計に かかわらず 夜（ui/village/sceneSky.ts。dark は 明かりも 消す）
+			// 明かりの 場面は 時計に かかわらず 夜（ui/village/sceneSky.ts。dark は 明かりも 消す。
+			// 場面で 灯す 明かりが あれば その 板の ぶんだけ 灯す）
 			const { m, d } = today();
 			const sky = sceneSky();
+			const on = sceneLit();
 			const lit = daylightAt(
 				sky
 					? SCENE_NIGHT_MINUTE
@@ -1498,15 +1510,24 @@ export class Village {
 				m,
 				d,
 			);
-			const day = sky === "dark" ? { ...lit, lamp: 0, windows: 0 } : lit;
+			const day = sky === "dark" && !on ? { ...lit, lamp: 0, windows: 0 } : lit;
+			const rule =
+				on && field.def.lights?.scene
+					? field.def.lights.scene(on.boards, on.homes)
+					: field.def.lights;
 			if (day.tint) {
 				g.save();
 				g.globalCompositeOperation = "multiply";
 				g.fillStyle = day.tint;
 				g.fillRect(0, 0, this.screen.width, this.screen.height);
+				// 停電の 夜は もう1段 暗く（明かりの 坂で 灯る 明かりが 浮かぶ）
+				if (sky === "dark") {
+					g.fillStyle = BLACKOUT_TINT;
+					g.fillRect(0, 0, this.screen.width, this.screen.height);
+				}
 				g.restore();
 			}
-			this.drawLights(g, field, ox, oy, day);
+			this.drawLights(g, field, rule, ox, oy, day);
 		}
 		// お金の 出入り（頭の 上に ＋／−の 金額。夜の 色を かぶらない よう 最後に）
 		this.moneyPops.draw(
@@ -1520,6 +1541,7 @@ export class Village {
 	/** 夜の 明かりの マス（地図ごとに 1回 さがす）。 */
 	private lightCells: {
 		field: Field;
+		rule: LightRule | undefined;
 		lamps: [number, number][];
 		windows: [number, number][];
 	} | null = null;
@@ -1528,17 +1550,18 @@ export class Village {
 	private drawLights(
 		g: CanvasRenderingContext2D,
 		field: Field,
+		rule: LightRule | undefined,
 		ox: number,
 		oy: number,
 		k: { lamp: number; windows: number },
 	): void {
 		if (k.lamp < 0.01 && k.windows < 0.01) return;
 		// 生き返って いない 建物の 窓は 灯らない・街灯は 町の 明かり（電池板）から（data/town/revival.ts）
-		const rule = field.def.lights;
-		if (this.lightCells?.field !== field) {
+		if (this.lightCells?.field !== field || this.lightCells.rule !== rule) {
 			const W = field.def.rows[0]?.length ?? 0;
 			this.lightCells = {
 				field,
+				rule,
 				lamps:
 					rule && !rule.lamps
 						? []

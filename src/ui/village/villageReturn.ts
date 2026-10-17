@@ -46,6 +46,7 @@ import {
 } from "../../data/story/story";
 import { BOARD_NEWS, deathLine } from "../../data/town/headlines";
 import {
+	BLACKOUT_BOARD,
 	inBlackout,
 	REVIVE_AREAS,
 	revivedAreas,
@@ -105,7 +106,7 @@ import {
 } from "../../engine/sceneFx";
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
-import { sceneSky, setSceneSky } from "./sceneSky";
+import { type SceneLit, sceneSky, setSceneLit, setSceneSky } from "./sceneSky";
 import { sayAs } from "./villageMobs";
 import { endScene, sceneBgm, villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
@@ -176,9 +177,12 @@ const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
  * 語りの あと 暗転で 建て直すと いまの 村に なる）。
  */
 export const sceneView = (v: VillageView, a: ReturnArrival): VillageView =>
-	firstEnding(a, loadProgress())
+	firstEnding(a, loadProgress()) && !lightsBack.has(a.dungeon)
 		? { ...v, cleared: v.cleared.filter((d) => d !== a.dungeon) }
 		: v;
+
+/** 語りの とちゅうで 持ち帰った ことに なった 板（明かりの 坂の あとの 電池板。その 先は 持ち帰った 町で 語る）。 */
+const lightsBack = new Set<DungeonId>();
 
 /**
  * 村で 話す 語り（品を 持ち帰った ことは 同じ）。ボスなら 持ち帰りの 語りの 1枚目（「村に　帰りつくと、…」の
@@ -319,23 +323,63 @@ const LIGHTS_UP: readonly { area: string; name: string; at: Cell }[] = [
 	{ area: "lights", name: "町じゅうの街灯に明かり", at: [28, 6] },
 ];
 
+/**
+ * 明かりを 灯す（蛍光灯の ように 2回 またたいてから つく。端末の「動きを へらす」では すぐ つく）。
+ * from は いままで 灯って いた 明かり。
+ */
+const flickerOn = async (
+	s: Story,
+	from: SceneLit,
+	to: SceneLit,
+): Promise<void> => {
+	const still =
+		typeof window !== "undefined" &&
+		!!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+	if (!still)
+		for (const [l, ms] of [
+			[to, 70],
+			[from, 90],
+			[to, 50],
+			[from, 140],
+		] as const) {
+			setSceneLit(l);
+			await s.wait(ms);
+		}
+	setSceneLit(to);
+};
+
 const playCue = async (
 	s: Story,
 	c: NonNullable<StoryPage["cue"]>,
 ): Promise<void> => {
 	if (c === "lightsUp") {
-		// 明かりの もどる 坂（STORY.md §4.9 の 頂点）：まだ 暗い 町で、生き返った 通りを 話の 順に 見せる。
-		// 見おえたら 暗転で 電池板を 持ち帰った 町（明るい）に 建て直す
-		const lit = new Set(revivedAreas(loadProgress().cleared).map((a) => a.id));
-		for (const spot of LIGHTS_UP.filter((x) => lit.has(x.area))) {
+		// 明かりの もどる 坂（STORY.md §4.9 の 頂点）：まだ 暗い 町で、生き返った 通りを 話の 順に 見せて、
+		// カメラが 着いた 通りから 窓・看板が 灯る。さいごに 街灯と 家の 窓（電池板）。
+		// 灯りきったら 暗転で 電池板を 持ち帰った 町（シャッターが 開く）に 建て直す
+		const areas = new Map(
+			revivedAreas(loadProgress().cleared).map((a) => [a.id, a] as const),
+		);
+		let on: SceneLit = { boards: [], homes: false };
+		setSceneLit(on);
+		for (const spot of LIGHTS_UP) {
+			const area = areas.get(spot.area);
+			if (!area) continue;
 			await s.look(spot.at);
+			const boards = [...on.boards, area.dungeon];
+			const next = { boards, homes: boards.includes(BLACKOUT_BOARD) };
 			s.se("uncurse");
+			await flickerOn(s, on, next);
+			on = next;
+			// 電池板の 明かり（街灯と 家の 窓）で 町じゅうが 停電の 暗さから ふつうの 夜に
+			if (next.homes && sceneSky() === "dark") setSceneSky("night");
 			s.toast(spot.name);
-			await s.wait(500);
+			await s.wait(700);
 		}
 		await s.fadeOut(300);
+		lightsBack.add(BLACKOUT_BOARD);
 		await rebuild(s);
-		// 町の 明かりが もどる（停電の 暗さ → ふつうの 夜）
+		// 町の 明かりが もどった（停電の 暗さ → ふつうの 夜）
+		setSceneLit(null);
 		if (sceneSky() === "dark") setSceneSky("night");
 		await s.fadeIn(300);
 		await s.look(null);
@@ -405,6 +449,7 @@ export const returnScene = async (
 	]);
 	await rebuild(s);
 	setSceneSky(null);
+	lightsBack.clear();
 	s.bgm(villageSong());
 	await s.fadeIn(300);
 };
@@ -630,8 +675,10 @@ export const deathScene = async (s: Story): Promise<void> => {
 
 /** 転（STORY.md §4.9）：風呂板の 語りを 見おえた 帰りに 1回だけ。停電と、また 盛った 見出し。 */
 export const tenScript = async (s: Story): Promise<void> => {
-	// その夜の 場面（村の 時計に かかわらず 夜。明かりが 消える 頁から dark）
+	// その夜の 場面（村の 時計に かかわらず 夜。明かりが 消える 頁から dark）。
+	// 消える までは 持ち帰った 板の 明かりが 灯って いる（町は もう 停電の 並びで 建って いる）
 	setSceneSky("night");
+	setSceneLit({ boards: loadProgress().cleared, homes: true });
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
 	for (const p of withoutAway(
 		TEN_NEWS.pages,
@@ -640,6 +687,7 @@ export const tenScript = async (s: Story): Promise<void> => {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		if (p.sky !== undefined) setSceneSky(p.sky);
+		if (p.sky === "dark") setSceneLit(null);
 		await playPage(s, p);
 	}
 	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす

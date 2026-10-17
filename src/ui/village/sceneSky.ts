@@ -2,18 +2,40 @@
 // 明かりが 消える・灯る 場面（転の 停電・最終話の 明かりの 坂・停電の 知らせ）で 使う。
 // dark：夜の 色で、街灯も 窓も 灯らない（停電）。night：夜の 色で、明かりは ふだんの 夜と 同じ。null：村の 時計の まま。
 // 色は ui/village/village.ts の 時間帯の 色が 読む。場面の おわりに null に もどす。
+// 夜の あいだ 右上の 時計は 時刻を 出さず「夜」だけ（色と 食いちがわない ように）。
+
+import type { DungeonId } from "../../core/types";
 
 export type SceneSky = "dark" | "night";
+
+/**
+ * 場面で 灯す 明かり（店の 並びは そのまま、窓・看板・街灯だけ boards の 板の ぶん。MapDef の lights.scene）。
+ * homes が false なら 板に よらない 家の 窓も 消えた まま（明かりの 坂で 通りを 1つずつ 灯す あいだ）。
+ */
+export type SceneLit = { boards: readonly DungeonId[]; homes: boolean };
 
 /** 夜に 見せる ときの 村の 時計の 時刻（0時からの 分。夜の 色・明かりが いちばん 落ちついた ころ）。 */
 export const SCENE_NIGHT_MINUTE = 22 * 60;
 
+/** 停電の 夜に 夜の 色へ もう1段 かける 色（multiply）。 */
+export const BLACKOUT_TINT = "rgb(105, 110, 150)";
+
 let sky: SceneSky | null = null;
+let lit: SceneLit | null = null;
 
 /** いまの 場面の 空（null は 村の 時計の まま）。 */
 export const sceneSky = (): SceneSky | null => sky;
 
-/** 場面の 空を かえる（null で 村の 時計に もどす）。 */
+/** 場面の 空を かえる（null で 村の 時計に もどす。灯す 明かりも 消す）。 */
 export const setSceneSky = (s: SceneSky | null): void => {
 	sky = s;
+	if (!s) lit = null;
+};
+
+/** 場面で 灯す 明かり（null は 空の まま：dark なら 消えて、night なら ふだんの 夜）。 */
+export const sceneLit = (): SceneLit | null => lit;
+
+/** 場面で 灯す 明かりを かえる。 */
+export const setSceneLit = (l: SceneLit | null): void => {
+	lit = l;
 };
