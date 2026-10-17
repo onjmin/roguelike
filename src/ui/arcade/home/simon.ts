@@ -95,7 +95,7 @@ export const playSimon = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			if (s.phase !== "input") press = null;
 			for (const e of smStep(s, f.dt, press, rnd)) {
 				if (e.k === "lit" || e.k === "ok") ring(e.pad);
-				else if (e.k === "round") f.se(e.rev ? "jingle" : "arcCoin");
+				else if (e.k === "round") f.se(e.rev ? "combo" : "arcCoin");
 				else if (e.k === "wrong") f.se(e.retry ? "cancel" : "miss");
 			}
 		},

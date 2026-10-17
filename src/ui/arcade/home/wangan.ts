@@ -668,7 +668,7 @@ export const playWangan = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					f.se("cursor");
 					pop(j, CX, VH - 44, `+${WN.overtake}`, "#80c0ff");
 				} else if (e === "beat") {
-					f.se("levelup");
+					f.se("clear");
 					const R0 = WN_RIVALS[ri];
 					if (R0) f.say(WN_TEXT.beat.replace("{name}", R0.name));
 					pop(j, CX, 50, `+${1000 * (ri + 1)}`);

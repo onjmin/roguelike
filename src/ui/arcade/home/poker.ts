@@ -290,7 +290,7 @@ export const playPoker = (
 	/** 演出の おわりに 結果を 出す。 */
 	const finish = (s: PkState, sh: Show, se: (n: string) => void): void => {
 		if (sh.after === "win") {
-			se(s.lastWin >= s.bet * 25 ? "victory" : "levelup");
+			se(s.lastWin >= s.bet * 25 ? "victory" : "payout");
 			flash = `${s.last ? PK_TEXT.hands[s.last] : ""}　${fill(PK_TEXT.win, { n: s.lastWin })}`;
 		} else if (sh.after === "lose") {
 			// 音は さいごに めくった 札で 足りる

@@ -134,7 +134,7 @@ export const playNineball = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			}
 			if (s.points > pts0) pop(j, 104, 60, `+${s.points - pts0}`);
 			if (seen.has("nine")) {
-				f.se("levelup");
+				f.se("clear");
 				j.flash = 0.25;
 			}
 			if (s.rack !== rack && !s.over) f.say(NB_TEXT.next);

@@ -125,7 +125,7 @@ export const playMole = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					quake(j, 3);
 				} else if (e === "whiff") f.se("swing_fist");
 				else if (e === "fever") {
-					f.se("levelup");
+					f.se("combo");
 					f.say(ARCADE_BOARD.moleFever);
 					j.flash = 0.2;
 				}
@@ -401,7 +401,7 @@ export const playSlot = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					f.se("spell");
 					f.say(ARCADE_BOARD.slotReach);
 				} else if (e === "win") {
-					f.se(s.lastWin >= 50 ? "victory" : "levelup");
+					f.se(s.lastWin >= 50 ? "victory" : "payout");
 					f.say(fill(ARCADE_BOARD.slotWin, { n: s.lastWin }));
 					winT = 0.9;
 					burst(j, AW / 2, 74, "#ffe060", Math.min(30, 6 + s.lastWin / 3), 90);

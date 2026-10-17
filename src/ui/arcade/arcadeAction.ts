@@ -255,7 +255,7 @@ export const playBreakout = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					f.se("miss");
 					quake(j, 4);
 				} else if (e === "wave") {
-					f.se("levelup");
+					f.se("clear");
 					j.flash = 0.25;
 					f.say(fill(ARCADE_BOARD.breakoutWave, { n: s.wave }));
 				}

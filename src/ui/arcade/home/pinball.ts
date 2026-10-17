@@ -93,8 +93,8 @@ export const playPinball = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				else if (e === "hoshu") f.se("arcCoin");
 				else if (e === "age") f.se("arcBlock");
 				else if (e === "anka") f.se("cardFlip");
-				else if (e === "tate") f.se("levelup");
-				else if (e === "lane") f.se("jingle");
+				else if (e === "tate") f.se("combo");
+				else if (e === "lane") f.se("correct");
 				else if (e === "launch") f.se("arcShot");
 				else if (e === "drain") f.se("arcCrash");
 			}

@@ -112,7 +112,7 @@ export const playFukkin = async (
 				post(FUKKIN.postDone);
 				post(FUKKIN.postDone2);
 				say(fill(FUKKIN.noteDone, { n: o.reps }));
-				ctx.se("levelup");
+				ctx.se("clear");
 				draw(g, img, o, done, false, posts);
 				await sleep(1500);
 				return { done };

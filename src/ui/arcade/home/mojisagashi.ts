@@ -57,7 +57,7 @@ export const playMojisagashi = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					f.se("cancel");
 					f.say(MOJI_TEXT.note);
 				} else if (e === "found") {
-					f.se("levelup");
+					f.se("correct");
 					f.say(`${MOJI_TEXT.found}　+${msWord(s).length * MS.perChar}`);
 				} else if (e === "miss") {
 					f.se("miss");

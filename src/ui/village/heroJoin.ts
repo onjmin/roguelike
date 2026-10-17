@@ -412,7 +412,7 @@ export const heroJoinScene = async (
 			// 名前が 浮かぶ ところで ファンファーレ
 			if (!fanfare && ms > 2100) {
 				fanfare = true;
-				ctx.se("levelup");
+				ctx.se("join");
 			}
 			draw(ms, dt);
 			if (skip || ms >= END_MS) break;

@@ -94,7 +94,7 @@ export const playComma = async (
 				});
 				until = now + COMMA_GAP_MS;
 				if (isZoro(ms)) {
-					ctx.se("levelup");
+					ctx.se("combo");
 					say(COMMA.zoroNote);
 					for (const t of COMMA.posts.zoro)
 						posts.push({ name: String(no++), body: t });
@@ -166,7 +166,7 @@ export const playZero = async (
 				});
 				posts.push({ name: "3", body: COMMA.posts.zero[j] });
 				say(COMMA.judge[j]);
-				ctx.se(j === "god" || j === "exact" ? "levelup" : "decide");
+				ctx.se(j === "god" || j === "exact" ? "correct" : "decide");
 				draw(g, posts, zeroClock(diff), "");
 				await sleep(1400);
 				return { diff };

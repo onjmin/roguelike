@@ -426,7 +426,7 @@ export const playBomber = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				} else if (e === "kill") f.se("enemyDown");
 				else if (e === "power") f.se("item");
 				else if (e === "dead") f.se("arcCrash");
-				else if (e === "clear" && !s.over) f.se("levelup");
+				else if (e === "clear" && !s.over) f.se("clear");
 				else if (e === "stage") f.se("arcStart");
 			}
 		},

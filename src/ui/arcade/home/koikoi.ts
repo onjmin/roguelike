@@ -441,7 +441,7 @@ const yakuFx = (v: View, f: Fx): void => {
 	if (s.phase === "koi" || (s.phase === "end" && s.roundWin >= 0)) {
 		v.j.flash = 0.25;
 		quake(v.j, 2);
-		f.se("jingle");
+		f.se("combo");
 		const ys = kkYaku(s.side[s.turn].take);
 		pop(v.j, 95, 52, ys.map((y) => y.name).join("　"), "#ffe060");
 	}

@@ -149,7 +149,7 @@ export const playBlackjack = (
 			f.se("victory");
 			flash = `${BJ_TEXT.bj}　${fill(B.gachaWin, { n: r.pay })}`;
 		} else if (e === "win") {
-			f.se("levelup");
+			f.se("payout");
 			flash = `${s.dealerBust ? `${BJ_TEXT.dealerBust}　` : ""}${fill(BJ_TEXT.win, { n: r.pay })}`;
 		} else if (e === "push") {
 			f.se("decide");

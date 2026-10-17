@@ -138,10 +138,15 @@ export type BoardSpec<S> = {
 };
 
 /**
- * 大事な 音を 鳴らした 瞬間に 板を 止める 長さ（ms）。victory は 勝ち・役が そろった、
- * levelup は ステージ・ボーナスの 節目。どの 台でも 同じ 手ざわりに（台ごとに 書かない）。
+ * 大事な 音を 鳴らした 瞬間に 板を 止める 長さ（ms）。victory は 大勝ち・クリア、
+ * clear は 面・局の 節目、combo は 波に のった、payout は 当たり。どの 台でも 同じ 手ざわりに（台ごとに 書かない）。
  */
-const SE_STOP_MS: Record<string, number> = { victory: 160, levelup: 90 };
+const SE_STOP_MS: Record<string, number> = {
+	victory: 160,
+	clear: 90,
+	combo: 90,
+	payout: 90,
+};
 /** 決着（おわり）の 瞬間を 止めて 見せてから おわりの 字を 出す（ms）。 */
 const END_STOP_MS = 280;
 

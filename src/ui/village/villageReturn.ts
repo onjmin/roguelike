@@ -734,7 +734,7 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	const r = growTown(t);
 	if (!fresh.length && r.to === r.from) return;
 	for (const a of fresh) {
-		s.se("levelup");
+		s.se("townUp");
 		await s.narrate(a.line);
 		await s.narrate(fill(REVIVE_MSG.open, { name: a.name }));
 		t.revived.push(a.id);

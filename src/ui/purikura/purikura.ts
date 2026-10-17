@@ -231,7 +231,7 @@ const shootBoard = async (ctx: Ctx, who: Cast[]): Promise<PuriPhoto | null> => {
 			setHint(PURI_TEXT.hintSheet);
 			say(PURI_TEXT.sheet);
 			result = photo();
-			ctx.se("jingle");
+			ctx.se("chime");
 		} else if (next === "count") {
 			setHint(PURI_TEXT.hintCount);
 			say(fill(PURI_TEXT.posing, { pose: PURI_POSES[pose] }));
@@ -470,7 +470,7 @@ const shootBoard = async (ctx: Ctx, who: Cast[]): Promise<PuriPhoto | null> => {
 	/** いまの 段（とじた 関数の 中で 書きかえるので 型を 広げて 読む）。 */
 	const stepNow = (): Step => step;
 	try {
-		ctx.se("ui");
+		ctx.se("decide");
 		say(bgName());
 		while (!done) {
 			const now = await tick();
@@ -534,7 +534,7 @@ const albumBoard = async (ctx: Ctx, list: PuriPhoto[]): Promise<void> => {
 		note();
 	};
 	try {
-		ctx.se("ui");
+		ctx.se("decide");
 		note();
 		for (let open = true; open; ) {
 			await tick();

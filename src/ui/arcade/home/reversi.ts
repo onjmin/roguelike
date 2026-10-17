@@ -159,7 +159,7 @@ export const playReversi = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					v.total += rvScore(v.s);
 					Object.assign(v, fresh(lv + 1));
 					v.endT = 0;
-					f.se("jingle");
+					f.se("clear");
 					f.say(RV_SAY.next[lv] ?? "");
 				}
 				return;

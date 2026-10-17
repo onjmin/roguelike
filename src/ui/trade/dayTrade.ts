@@ -106,7 +106,7 @@ export const playDayTrade = async (
 						Math.random() * (DAY.jumpSize[1] - DAY.jumpSize[0]);
 					k *= up ? 1 + m : 1 / (1 + m);
 					s.flash = { text: up ? DAY_TEXT.jumpUp : DAY_TEXT.jumpDown, t: s.t };
-					f.se(up ? "levelup" : "miss");
+					f.se(up ? "rise" : "drop");
 				}
 				s.price = Math.max(1, s.price * k);
 				s.hist.push(s.price);

@@ -1,5 +1,7 @@
 // 地上の町・帰還スレ・持ちこみ の試験（pnpm test で いっしょに動く）。
 
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
 import { ITEM_LIST } from "../core/data/items";
 import { pickTrapKind } from "../core/floor";
@@ -202,6 +204,35 @@ test("建物の 出入りの 音：どれも 素材が あって 測ってあり
 		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
 	}
 	ok(new Set(names).size >= 4, "every building sounds the same");
+});
+
+test("効果音の 名前：se(…) で 鳴らす 音は どれも 素材が あって 測ってあり、レベルアップの 曲は 迷宮の レベルアップ だけ", () => {
+	const files = (dir: string): string[] =>
+		readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+			d.isDirectory()
+				? files(join(dir, d.name))
+				: d.name.endsWith(".ts")
+					? [join(dir, d.name)]
+					: [],
+		);
+	const uses = new Map<string, string[]>();
+	for (const p of [...files("src/ui"), ...files("src/core")]) {
+		const src = readFileSync(p, "utf8");
+		// se( の 中の 「鳴らす 名前」だけ（三項の 枝・頭の 文字列。=== "tie" の ような 比べる 値は 拾わない）
+		for (const m of src.matchAll(/\bse\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g))
+			for (const n of (m[1] ?? "").matchAll(/(?:^\s*|[?:]\s*)"([A-Za-z_]+)"/g))
+				if (n[1]) uses.set(n[1], [...(uses.get(n[1]) ?? []), p]);
+	}
+	ok(uses.size >= 60, `found ${uses.size} sounds`);
+	for (const [n, at] of uses) {
+		ok(sfx[n], `no sound file for ${n} (${at[0]})`);
+		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
+	}
+	const lv = (uses.get("levelup") ?? []).map((p) => p.replace(/\\/g, "/"));
+	ok(
+		lv.length === 1 && lv[0]?.endsWith("core/run.ts"),
+		`levelup used outside a level-up: ${lv.join(", ")}`,
+	);
 });
 
 test("町の 段：本筋の 板（パン → きのこ → 風呂 → 電池）を 持ち帰ると 0 → 3 → 5 → 6 → 7。寄り道では 上がらない", () => {

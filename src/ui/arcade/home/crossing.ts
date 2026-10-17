@@ -66,7 +66,7 @@ export const playCrossing = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				if (e === "hop") f.se("cursor");
 				else if (e === "goal") f.se("arcCoin");
 				else if (e === "full") {
-					f.se("levelup");
+					f.se("clear");
 					flash = 0.8;
 				} else if (e === "bonus") f.se("item");
 				else if (e === "blocked") f.se("arcBlock");

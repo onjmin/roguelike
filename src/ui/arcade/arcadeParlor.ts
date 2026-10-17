@@ -169,7 +169,7 @@ export const playGacha = (
 									: B.gachaReach;
 					if (top !== "SR") hot = true;
 				} else if (e === "win") {
-					f.se(s.lastWin >= GC_PAY.SSR ? "victory" : "levelup");
+					f.se(s.lastWin >= GC_PAY.SSR ? "victory" : "payout");
 					flash = fill(s.lastWin >= GC_PAY.SR ? B.gachaBig : B.gachaWin, {
 						n: s.lastWin,
 					});
@@ -356,7 +356,7 @@ export const playHighLow = (
 				if (e === "flip") f.se("cardFlip");
 				else if (e === "pick") f.se("cursor");
 				else if (e === "win") {
-					f.se(s.streak >= 5 ? "levelup" : "item");
+					f.se(s.streak >= 5 ? "combo" : "payout");
 					flash = fill(B.hlWin, { n: s.lastMult.toFixed(2) });
 				} else if (e === "push") flash = B.hlPush;
 				else if (e === "lose") {
@@ -364,7 +364,7 @@ export const playHighLow = (
 					flash = B.hlLose;
 				} else if (e === "take") {
 					const n = s.chips - before;
-					f.se(n >= 50 ? "victory" : "levelup");
+					f.se(n >= 50 ? "victory" : "payout");
 					flash = fill(B.hlTook, { n });
 				} else if (e === "bust") flash = B.bust;
 				else if (e === "bet") f.se("arcCoin");
@@ -568,7 +568,7 @@ export const playRoulette = (
 					// 止まる まぎわだけ カチカチ（回り はじめは うるさい）
 					if (s.t > 2.2) f.se("cursor");
 				} else if (e === "win") {
-					f.se(s.lastWin >= rlTotal(s.bets) * 3 ? "victory" : "levelup");
+					f.se(s.lastWin >= rlTotal(s.bets) * 3 ? "victory" : "payout");
 					flash = fill(s.lastWin >= rlTotal(s.bets) * 3 ? B.rlBig : B.rlWin, {
 						n: s.lastWin,
 					});
@@ -821,7 +821,7 @@ export const playGlassSlide = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 				if (e === "release") f.se("decide");
 				else if (e === "stop") {
 					const p = s.last ?? 0;
-					f.se(p === 100 ? (s.combo >= 2 ? "levelup" : "item") : "glass");
+					f.se(p === 100 ? (s.combo >= 2 ? "combo" : "correct") : "glass");
 					f.say(
 						p === 100
 							? s.combo >= 2

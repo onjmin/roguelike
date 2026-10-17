@@ -232,7 +232,7 @@ export const playDigkiriko = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					quake(j, 2);
 				} else if (e === "wobble") f.se("tripOn");
 				else if (e === "crumble") {
-					f.se("impact");
+					f.se("arcBlock");
 					const r = s.rocks.find((r) => r.state === "fall");
 					if (r)
 						pop(

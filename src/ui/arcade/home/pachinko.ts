@@ -157,7 +157,7 @@ export const playPachinko = (
 					show(PC_TEXT.jackpot, 2);
 				} else if (e === "attacker") f.se("item");
 				else if (e === "bonusEnd") {
-					f.se("levelup");
+					f.se("payout");
 					show(fill(PC_TEXT.bonusEnd, { n: s.lastBonus }), 2.5);
 				}
 			}

@@ -61,6 +61,14 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		glass: "rpgen:IQXvTI", // チーン
 		/** 代金を 払う（店・自販機・銭湯・家・株 など。遊びの 台に 入れる ときは arcCoin）。 */
 		pay: "rpgen:FM2G43", // [ツクール]売買
+		/** 賭けや ガチャで 当たって コインが 返ってくる（大勝ちは victory）。 */
+		payout: "rpgen:rIBCz6", // コインの音（マリオ）
+		/** 相場が 跳ね上がった。 */
+		rise: "rpgen:sTJ89N", // 上昇
+		/** 相場が 下がった。 */
+		drop: "rpgen:PLsNO9", // 下降
+		/** 不意の できごと（為替の ショック）。 */
+		alert: "rpgen:SmEIvE", // 発見音
 		// ── ゲームセンターの 筐体（ui/arcade/arcade*.ts）
 		/** メダル・コインを 入れる（どの 台も はじめに。スロットは 回す たび）。 */
 		arcCoin: "rpgen:alktAh", // スロットのコイン投入音
@@ -174,7 +182,26 @@ const byKind: Record<SeKind, Record<string, string>> = {
 	jingle: {
 		/** モンスターハウスを片づけた など。 */
 		victory: "rpgen:tSHy6V", // ﾄﾞﾗｸｴ戦闘終了
+		/** キリコの レベルが 上がった（迷宮だけ。ほかの 節目には 下の 音を 使う）。 */
 		levelup: "rpgen:JrcaUb", // ﾄﾞﾗｸｴﾚﾍﾞﾙｱｯﾌﾟ
+		/** 町が 1段 育った・通りが よみがえった。 */
+		townUp: "rpgen:j9vwuH", // 桃/昇段
+		/** 仲間が 加わった。 */
+		join: "rpgen:CvnSzp", // 桃/ファンファーレ
+		/** 大事な 物を 受けとった（家の 鍵・クレーンの レア景品）。 */
+		keyItem: "rpgen:b0CZFw", // [ポケ]アイテム取得
+		/** 大物を とった（釣り堀）。 */
+		caught: "rpgen:yxcrTx", // [ポケ]捕獲成功
+		/** 遊びの 面・局を 越えた・やりとげた（次の 波・解けた・ライバルを ぬいた・腹筋 おわり）。 */
+		clear: "rpgen:ocdl2r", // [マリオ64]スコア達成
+		/** 当たり・正解（言葉を 見つけた・ジャスト・レーン）。 */
+		correct: "rpgen:WOh0Q7", // [ポケ]クイズo
+		/** 波に のった（連勝・コンボ・フィーバー・役）。 */
+		combo: "rpgen:9UiF46", // 桃/絶好調
+		/** できあがりの 合図（プリクラの シート）。 */
+		chime: "rpgen:th6yCr", // [ツクール]チャイム・ピンポン
+		/** ホームラン（花火と いっしょに）。 */
+		cracker: "rpgen:JDSaUd", // クラッカー
 		/** 力尽きた。 */
 		wipeout: "rpgen:rEaCCP", // [ﾄﾞﾗｸｴ]全滅
 		/** 中断（セーブ）。 */

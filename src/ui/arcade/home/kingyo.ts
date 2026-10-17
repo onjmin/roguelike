@@ -109,7 +109,7 @@ export const playKingyo = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 			if (got && evs.some((e) => e === "catch" || e === "bigCatch")) {
 				pops.push({ x: got.x, y: got.y - 14, s: `+${got.pts}`, t: 0.9 });
 				if (got.n >= 2) {
-					f.se("jingle");
+					f.se("combo");
 					f.say(KINGYO_TEXT.multi.replace("{n}", `${got.n}`));
 				}
 			}

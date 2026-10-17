@@ -1475,7 +1475,7 @@ const fieldScene = async (
 					derby
 						? fill(BATTING.distance, { m: Math.round(bb.dist) })
 						: pickOne(BATTING.hr),
-					"levelup",
+					"cracker",
 					t,
 				);
 			}

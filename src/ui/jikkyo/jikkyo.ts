@@ -486,7 +486,7 @@ export const playJikkyo = async (
 					pk.close();
 					break;
 				case "combo":
-					if (ev.combo === 5 || ev.combo === 10) ctx.se("levelup");
+					if (ev.combo === 5 || ev.combo === 10) ctx.se("combo");
 					break;
 				case "kanso":
 					kansoDone = true;

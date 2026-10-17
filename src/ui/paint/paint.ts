@@ -486,7 +486,7 @@ export const paintEasel = async (ctx: Ctx, s: Story): Promise<void> => {
 	};
 
 	try {
-		ctx.se("ui");
+		ctx.se("decide");
 		status();
 		const t0 = performance.now();
 		for (;;) {

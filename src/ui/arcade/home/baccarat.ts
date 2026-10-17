@@ -126,7 +126,7 @@ export const playBaccarat = (
 							? BC_TEXT.side.tie
 							: fill(BC_TEXT.win, { side: BC_TEXT.side[w] });
 					if (e === "win") {
-						f.se(w === "tie" ? "victory" : "levelup");
+						f.se(w === "tie" ? "victory" : "payout");
 						flash = `${head}　${fill(BC_TEXT.paid, { n: s.lastWin })}`;
 					} else if (e === "push") {
 						f.se("decide");

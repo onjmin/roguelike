@@ -199,7 +199,7 @@ export const playCrane = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					} else if (e === "win" || e === "lucky") {
 						const id = s.won[s.won.length - 1];
 						const P = id ? crPrize(id) : null;
-						f.se(P?.rare ? "levelup" : "jingle");
+						f.se(P?.rare ? "keyItem" : "item");
 						if (P)
 							f.say(
 								e === "lucky"

@@ -143,7 +143,7 @@ export const playFx = async (
 					const m = FX.shock[0] + Math.random() * (FX.shock[1] - FX.shock[0]);
 					s.shockLeft = (Math.random() < 0.5 ? 1 : -1) * m;
 					s.flash = { text: FX_TEXT.shock, t: s.t, ink: "#ffe060" };
-					f.se("levelup");
+					f.se("alert");
 				}
 				if (Math.abs(s.shockLeft) > 0.01) {
 					const part = s.shockLeft * 0.35;

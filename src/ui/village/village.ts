@@ -103,11 +103,13 @@ import { villageView } from "./villageReturn";
 
 /**
  * 節目の 音（台本の s.se）を 鳴らしたら、次の 文まで おく 間（ms）。victory は 完走・勝ち、
- * levelup は 仲間・家・段の ふえる ところ、chapter は 鐘（板が 開く・999）。ほかの 音は 待たない。
+ * townUp は 町が 育つ、join は 仲間が 加わる、keyItem は 家の 鍵、chapter は 鐘（板が 開く・999）。ほかの 音は 待たない。
  */
 const BEAT_SE_MS: Record<string, number> = {
 	victory: 600,
-	levelup: 450,
+	townUp: 450,
+	join: 450,
+	keyItem: 450,
 	chapter: 350,
 };
 /** 1マス歩く ms（rpg は 170。2026-10-13 作者「気持ちよい タイミングに」で 少し 速く）。うろうろする人は この 1.6倍。 */

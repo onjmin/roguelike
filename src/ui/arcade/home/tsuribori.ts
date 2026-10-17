@@ -119,7 +119,7 @@ export const playTsuribori = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				} else if (e === "catch") {
 					const c = s.catches[n0];
 					const big = c && (c.kind === "gold" || c.pts >= 100);
-					f.se(big ? "levelup" : "item");
+					f.se(big ? "caught" : "item");
 					if (c) {
 						pop(j, TB.shoreX + 30, TB.waterY - 14, `+${c.pts}`);
 						burst(

@@ -1214,7 +1214,7 @@ const buy = async (s: Story): Promise<boolean> => {
 	for (const [i, l] of HOME_MSG.contract.entries())
 		if (i === 1) await s.say("nanj", l, { name: "不動産屋" });
 		else await s.narrate(l);
-	s.se("levelup");
+	s.se("keyItem");
 	await s.narrate(HOME_MSG.keys);
 	const m = loadHome();
 	m.owned = true;

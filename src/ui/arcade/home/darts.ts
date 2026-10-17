@@ -142,7 +142,7 @@ export const playDarts = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 					quake(j, 3);
 					f.say(DT_TEXT.bust);
 				} else if (e === "finish") {
-					f.se("levelup");
+					f.se("clear");
 					j.flash = 0.3;
 					f.say(DT_TEXT.finish);
 				} else if (e === "round")

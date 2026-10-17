@@ -865,7 +865,7 @@ export const heroQuestScript = async (
 		if (join) {
 			await hideMsg(s);
 			await join(who);
-		} else s.se("levelup");
+		} else s.se("join");
 		await s.narrate(q.unlocked);
 		// 申し出の 曲（蓄音機・無音）は ここまで。村の 曲に もどす
 		if (q.offer.some((l) => l.bgm !== undefined)) {

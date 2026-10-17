@@ -80,7 +80,7 @@ export const playGrass = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				movedAt = f.clock;
 				if (ev.includes("goal")) {
 					goalAt = f.clock;
-					f.se("levelup");
+					f.se("clear");
 				} else if (ev.includes("merge")) f.se("bubble");
 				else f.se("cursor");
 				// 新しい 段に 届いたら 名を 出す（草草・大草原 までは 出さない）
@@ -88,7 +88,7 @@ export const playGrass = (ctx: UiCtx): Promise<ArcadeResult | null> => {
 				if (best > top) {
 					top = best;
 					if (best >= 32 && !ev.includes("goal")) {
-						f.se("jingle");
+						f.se("combo");
 						f.say(GR_TEXT.grew.replace("{name}", grName(best)));
 					}
 				}

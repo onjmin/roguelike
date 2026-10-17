@@ -89,7 +89,7 @@ export const playGomoku = (ctx: UiCtx): Promise<ArcadeResult | null> =>
 					v.s = gmStart(lv + 1);
 					v.endT = 0;
 					v.cx = v.cy = (GM.n - 1) / 2;
-					f.se("levelup");
+					f.se("clear");
 					f.say(GM_SAY.next[lv] ?? "");
 				}
 				return;

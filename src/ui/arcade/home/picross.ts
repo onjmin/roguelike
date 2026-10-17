@@ -253,7 +253,7 @@ export const playPicross = async (ctx: UiCtx): Promise<ArcadeResult | null> => {
 						const [x, y] = center(cx, cy);
 						pop(j, x, y - 4, PX_TEXT.miss, "#ff5050");
 					} else if (e === "solve") {
-						f.se("levelup");
+						f.se("clear");
 						j.flash = 0.25;
 						const [x, y] = center((w - 1) / 2, (h - 1) / 2);
 						burst(j, x, y, p.ink[Object.keys(p.ink)[0]], 18, 90);
