@@ -1425,7 +1425,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	hidden: [
 		q("roze", "いちばん古いのがフェリスなのも、\nおんJの常識アル"),
 		q("zero", "いちばん古いレス、\nフェリスさんの声でした"),
-		q("shiyo", "……あのレス、額に入れて\nフェリスにあげたら？"),
+		q("shiyo", "……いちばん古いだけで、\nいちばん上手いわけじゃないわよ"),
 		q("nanj", "古いレスも、消えへん。\n……名無しのやつも、な"),
 	],
 	mercury: [
@@ -1438,7 +1438,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	onkimu: [
 		q("roze", "キムチ、ぜんぶなくなったアル。\n……また漬けるアル"),
-		q("zero", "おんキムから勧誘の書きこみ。\n……ゼロは、ここにいます"),
+		q("zero", "おんキムから勧誘の書きこみ。\n……キリコさんには来てません"),
 	],
 	inferno: [
 		q("zero", "魔導書、3ページ読みました。\n……右腕は、まだふつうです"),

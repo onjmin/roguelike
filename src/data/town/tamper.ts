@@ -69,7 +69,7 @@ export const TAMPER_TALK: Record<Speaker, readonly string[]> = {
 	],
 	shiyo: [
 		"その売り上げ、本物よね？\n……あたす、たしかめるわよ",
-		"あなたのことは信じたいの。\n……今はむり",
+		"ずるして勝つなんて、\nあたすの負けより最低よ",
 		"……話しかけないで",
 	],
 	roze: [

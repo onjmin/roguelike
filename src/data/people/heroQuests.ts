@@ -103,7 +103,9 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		offer: [
 			// 曲を 止めて、ずれて いない「あ」を 聞かせる
 			{ ...say("roze", "……あ。\nあー。あ、あ", { emote: "♪" }), bgm: null },
-			say("roze", "ずれてないアル。……ふふ", { emote: "花" }),
+			say("roze", "ずれてないアル。\n……キリコより、いい「あ」アル", {
+				emote: "♪",
+			}),
 			say(
 				"roze",
 				"スレはみんな完走したアル。\n……次スレは、だれも立てなかったアル",
@@ -113,7 +115,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 				gesture: "spin",
 			}),
 			say("roze", "体重ナイから、壁もすり抜けられるアル。\n……常識アル"),
-			say("roze", "今度下へ行くとき、\nわたしも連れていくアル"),
+			say("roze", "今度下へ行くとき、わたしが\n先に行くアル。ついてくるアル"),
 		],
 		unlocked: "ロゼと冒険に出られるようになった。",
 		synopsis: {
