@@ -2,10 +2,12 @@
 // 説明は 動きの 中で、1つずつ（STORY.md §0「世界を 見せる ときは キャラを 動かす」）。文は data/town/town.ts の OPENING。
 // ① 幕あき：キリコが 蓄音機を 引いて 南の 坂を 上がり、シャッターを たたく（貼り紙で 町が 空っぽな わけ）。
 // ② 自分で 歩く：広場に 入るまで（広場より 先に 村を 出ようと すると、キリコが 引きかえす）。
-// ③ 広場に 入ると（onStep）：蓄音機を 置いて 鳴らす → だれも 来ない → 名無しが 見出しを 貼って 走り去る →
-//    パン兵が 行進して きて 広場を 占領（3段）。
-// ④ 見出しの 名無しが 消えた ほうから やきうが 歩いて くる。町の 名・空っぽな わけ・行き先・キリコの 望みを かけあいで。
-// ⑤ やきうが 家の 前へ もどる あいだに カメラで 南の 桟橋（出口）を 見せて 目的を 1行。ぷゆゆが お弁当を 持って くる。
+// ③ 1日目（広場に 入ると。onStep）：蓄音機を 置いて 鳴らす → だれも 来ない → 遠くの 原住民 → やきうが 家から 来て、
+//    町の 名・空っぽな わけ・いま いる 住人・キリコの 望みを かけあいで。
+// ④ 夜：広場で 寝る。暗い 中、名無しが 掲示板に 見出しを 貼って 走り去る。
+// ⑤ 2日目：パン兵が 行進して きて 広場を 占領 → 見出し → やきうが かけて きて、パン板・板の 潜り方・倒れたら を かけあいで。
+//    広場（キリコの ステージ）を 返して ほしいから 行く。
+// ⑥ やきうと 桟橋まで 歩く → ぷゆゆが お弁当を 持って くる → やきうが 見送って 家へ もどる → 目的を 1行。
 // ②の あいだは パン兵・やきう・ぷゆゆ・蓄音機を 隠しておく（部屋に 出入りして 建てなおしても）。
 // 見終わってから 覚える（途中で 閉じたら 次も ①から）。一度でも もぐった人には 出さない。
 
@@ -17,6 +19,8 @@ import { type Cell, VILLAGE_SPOTS } from "../../data/village/map";
 import type { Script, Story } from "../../engine/defs";
 import { cueOf } from "../../engine/emote";
 import { loadProgress, loadRecords } from "../../engine/save";
+import { setSceneSky } from "./sceneSky";
+import { sayAs } from "./villageMobs";
 import { lunchScript, villageView } from "./villageReturn";
 
 const KEY = "kiriko-roguelike/opening";
@@ -106,8 +110,16 @@ export const openingPrepare = (s: Story): void => {
 const line = async (s: Story, l: OpeningLine): Promise<void> => {
 	if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
 	else if (l.who === "nanj") await s.say("nanj", l.text, cueOf(l));
+	else if (l.who === "shobon") await sayAs(s, "shobon", l.text, cueOf(l));
 	else await s.narrate(l.text);
 };
+
+const lines = async (s: Story, ls: readonly OpeningLine[]): Promise<void> => {
+	for (const l of ls) await line(s, l);
+};
+
+/** ⑥で キリコと やきうが 立つ 桟橋の 先（南の 口 VILLAGE_SPOTS.exit の 2つ 上と、その 左）。 */
+const pierAt = (): Cell => [VILLAGE_SPOTS.exit[0], VILLAGE_SPOTS.exit[1] - 2];
 
 /** ①：坂を 上がって シャッターを たたく。そのあと 自分で 歩く。 */
 export const openingScript = async (s: Story): Promise<void> => {
@@ -175,8 +187,35 @@ const plazaScript: Script = async (s) => {
 	await s.wait(500);
 	s.face("player", "down");
 	await line(s, OPENING.nobody);
-	// 名無しが やきうの 家の 前から 走って きて、掲示板に 見出しを 貼って 走り去る
+	// 西の 空き地の 原住民が 聞いて いる（来ない）
+	const [sx, sy] = MOBS.shobon.spot;
+	const [first, ...rest] = OPENING.shobon;
+	s.face("player", "left");
+	if (first) await line(s, first);
+	await s.look([sx, sy]);
+	await lines(s, rest.slice(0, 1));
+	await s.look(null);
+	await lines(s, rest.slice(1));
+	// 1日目：やきうが 家の 前から 歩いて きて、キリコの 左に 立つ
 	const [nx, ny] = VILLAGE_SPOTS.nanj(villageView());
+	s.show("nanj");
+	s.place("nanj", nx, ny, "down");
+	await s.look("nanj");
+	await s.wait(0);
+	await s.goto("nanj", bx - 1, by, { speed: 1.2, avoid: true });
+	s.face("nanj", "player");
+	s.face("player", "left");
+	await s.look(null);
+	await lines(s, OPENING.day1);
+	// 夜：やきうは 家へ。キリコは 蓄音機の 前で 寝る
+	await s.fadeBgm(800);
+	await s.fadeOut(600);
+	setSceneSky("night");
+	s.place("nanj", nx, ny, "down");
+	s.face("player", "down");
+	await s.fadeIn(600);
+	await line(s, OPENING.sleep);
+	// 暗い 中、名無しが やきうの 家の 前から 走って きて、掲示板に 見出しを 貼って 走り去る
 	const [ox, oy] = VILLAGE_SPOTS.board[1] ?? VILLAGE_SPOTS.board[0];
 	s.set(POSTER);
 	s.show(POSTER);
@@ -185,14 +224,16 @@ const plazaScript: Script = async (s) => {
 	s.face(POSTER, "up");
 	s.se("put");
 	await s.wait(300);
-	s.face("player", "left");
-	const away = s.goto(POSTER, nx, ny + 1, { speed: 2.2, avoid: true });
-	await s.narrate(OPENING.headline);
-	await away;
+	await s.goto(POSTER, nx, ny + 1, { speed: 2.2, avoid: true });
 	s.set(POSTER, false);
 	s.hide(POSTER);
-	// パン兵が 坂を 行進して きて 広場を 占領する
+	await s.wait(400);
+	// 2日目：パン兵が 坂を 行進して くる 音で 起きる
+	await s.fadeOut(800);
+	setSceneSky(null);
+	await s.fadeIn(600);
 	s.bgm(INCIDENT_BGM);
+	await line(s, OPENING.wake);
 	const march = PANHEI.map((p, i) => {
 		const id = incidentPlaceId(p);
 		const [mx, my] = MARCH_FROM[i] ?? MARCH_FROM[0];
@@ -202,21 +243,21 @@ const plazaScript: Script = async (s) => {
 			.goto(id, p.at[0], p.at[1], { speed: 0.8, avoid: true })
 			.then(() => s.face(id, p.dir));
 	});
-	s.face("player", "down");
 	await Promise.all(march);
 	const chief = PANHEI[PANHEI.length - 1];
-	if (chief) await s.say("nanj", OPENING.panhei, { name: chief.name });
+	const chiefSay = async (t: string): Promise<void> => {
+		if (chief) await s.say("nanj", t, { name: chief.name });
+	};
+	await chiefSay(OPENING.panhei);
 	await line(s, OPENING.someone);
-	// やきうが 人影の 消えた ほう（家の 前）から 歩いて きて、キリコの 左に 立つ（右は パン兵長）
-	s.show("nanj");
-	s.place("nanj", nx, ny, "down");
-	await s.look("nanj");
-	await s.wait(0);
-	await s.goto("nanj", bx - 1, by, { speed: 1.2, avoid: true });
+	// 夜の うちに 貼られた 見出し
+	s.face("player", "left");
+	await s.narrate(OPENING.headline);
+	// やきうが 家から かけて きて、キリコの 左に 立つ（右は パン兵長）
+	await s.goto("nanj", bx - 1, by, { speed: 1.8, avoid: true });
 	s.face("nanj", "player");
 	s.face("player", "left");
-	await s.look(null);
-	for (const l of OPENING.talk) await line(s, l);
+	await lines(s, OPENING.day2);
 	// パン兵が 掲示板に 差し押さえの 札を 打ちつける（それを 見て キリコが きく）
 	const nailer = PANHEI[0];
 	if (nailer) {
@@ -230,21 +271,34 @@ const plazaScript: Script = async (s) => {
 		s.face(id, nailer.dir);
 		s.face("player", "left");
 	}
-	for (const l of OPENING.talk2) await line(s, l);
+	await lines(s, OPENING.day2b);
+	await chiefSay(OPENING.declare);
+	await lines(s, OPENING.day2c);
 	for (const t of OPENING.mouth) await s.say("nanj", t);
-	for (const l of OPENING.wish) await line(s, l);
-	// やきうが 家の 前へ もどる あいだに、カメラで 南の 桟橋（出口）を 見せて 行き先を 1行
-	await s.wait(0);
-	const back = s.goto("nanj", nx, ny);
+	await lines(s, OPENING.rules);
+	await lines(s, OPENING.wish);
+	// ⑥ やきうと 桟橋まで 歩く（歩きながら 話す）
+	const [qx, qy] = pierAt();
 	guideHeld = false;
-	await s.look(VILLAGE_SPOTS.exit);
-	for (const t of OPENING.goal) await s.narrate(t);
-	await s.look(null);
-	await back;
+	const go = Promise.all([
+		s.goto("player", qx, qy, { speed: 1.1 }),
+		s.goto("nanj", qx - 1, qy, { speed: 1.1, avoid: true }),
+	]);
+	await lines(s, OPENING.walk);
+	await go;
+	s.face("player", "down");
+	s.face("nanj", "player");
 	markSeen();
 	// ぷゆゆが お弁当を 持って かけて くる（はじめての 潜りの 前に）
 	const [px, py] = MOBS.puyu.spot;
 	s.place("mob_puyu", px, py);
 	s.show("mob_puyu");
 	await lunchScript(s);
+	// やきうが 見送って 家へ もどる。行き先を 1行
+	s.face("player", "left");
+	await line(s, OPENING.farewell);
+	const back = s.goto("nanj", nx, ny);
+	s.face("player", "down");
+	for (const t of OPENING.goal) await s.narrate(t);
+	await back;
 };

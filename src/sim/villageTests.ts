@@ -3482,7 +3482,7 @@ export const runVillageTests = async (): Promise<TestResult[]> => {
 	return out;
 };
 
-test("the very first village: Kiriko climbs the slope and knocks, walks to the plaza herself, the phonograph → headline → パン兵, やきう, the pier — once", async () => {
+test("the very first village: Kiriko climbs the slope and knocks, walks to the plaza herself, the phonograph, やきう, a night, パン兵 and the headline, walking to the pier — once", async () => {
 	const texts: [string, string][] = [];
 	const text = (t: string | { text: string }) =>
 		typeof t === "string" ? t : t.text;
@@ -3546,30 +3546,36 @@ test("the very first village: Kiriko climbs the slope and knocks, walks to the p
 		ok(!!run, "nothing happens in the plaza");
 		const b = fakeStory({ at: [19, 24] });
 		await run?.(b.s);
-		const [bx, by] = VILLAGE_SPOTS.boot;
+		const [ex, ey] = VILLAGE_SPOTS.exit;
 		ok(
-			b.s.state.x === bx && b.s.state.y === by,
-			`Kiriko stops at (${b.s.state.x},${b.s.state.y}), not in front of the phonograph`,
+			b.s.state.x === ex && b.s.state.y === ey - 2,
+			`Kiriko stops at (${b.s.state.x},${b.s.state.y}), not on the pier`,
 		);
 		ok(
 			inOrder(b.log, [
 				"show phono",
 				say(OPENING.nobody),
+				"show nanj",
+				...OPENING.day1.map(say),
+				say(OPENING.sleep),
 				"show visitor",
-				`narrate: ${OPENING.headline}`,
 				"hide visitor",
+				say(OPENING.wake),
 				"show inc_panhei_chief",
 				`say nanj: ${OPENING.panhei}`,
 				say(OPENING.someone),
-				"show nanj",
-				...OPENING.talk.map(say),
+				`narrate: ${OPENING.headline}`,
+				...OPENING.day2.map(say),
 				"se hit_fist",
-				...OPENING.talk2.map(say),
+				...OPENING.day2b.map(say),
+				`say nanj: ${OPENING.declare}`,
+				...OPENING.day2c.map(say),
 				...OPENING.mouth.map((t) => `say nanj: ${t}`),
+				...OPENING.rules.map(say),
 				...OPENING.wish.map(say),
-				`look ${VILLAGE_SPOTS.exit.join(",")}`,
+				...OPENING.walk.map(say),
+				say(OPENING.farewell),
 				`narrate: ${OPENING.goal[0]}`,
-				"look kiriko",
 			]),
 			`plaza:\n${b.log.join("\n")}`,
 		);
