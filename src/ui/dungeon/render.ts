@@ -462,6 +462,20 @@ export class FloorView {
 			ctx.globalAlpha = 1;
 		}
 
+		// 手づくりの 地図の 置物の、占める マスより 上へ はみ出した ところ（木の 枝・屋台の 品・像の 頭）は
+		// キャラの 前に 描きなおす（うしろを 歩く キャラが かくれる）
+		for (const p of f.props ?? []) {
+			if (p.walk) continue;
+			ctx.save();
+			ctx.translate(-ox, -oy);
+			ctx.beginPath();
+			ctx.rect(0, 0, l.w * TILE, p.y * TILE);
+			ctx.clip();
+			drawProp(ctx, p);
+			if (p.art.some((a) => a.glow)) drawProp(ctx, p, { time, ox: 0, oy: 0 });
+			ctx.restore();
+		}
+
 		// 倒れた所の墓（上から落ちてきて、少しはねる）
 		if (opts.grave) {
 			const g = opts.grave;
