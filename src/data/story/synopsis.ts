@@ -55,12 +55,12 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 	deep: [
 		{ at: 3, who: null, text: "でんちゃんの板。ビリビリする。" },
-		{ at: 6, who: "res", text: "おんJタウン、停電しとるらしいな" },
-		{ at: 9, who: "res", text: "【悲報】おんJタウン、終了か" },
-		{ at: 11, who: "res", text: "鯖、重ない？" },
-		{ at: 13, who: null, text: "電線が、上へ上へとのびている。" },
-		{ at: 16, who: "res", text: "てっぺんで、だれか待っとるらしいで" },
-		{ at: 19, who: null, text: "てっぺんに、主電源が見えた。" },
+		{ at: 5, who: "res", text: "おんJタウン、停電しとるらしいな" },
+		{ at: 7, who: "res", text: "【悲報】おんJタウン、終了か" },
+		{ at: 10, who: "res", text: "鯖、重ない？" },
+		{ at: 11, who: null, text: "電線が、上へ上へとのびている。" },
+		{ at: 13, who: "res", text: "てっぺんで、だれか待っとるらしいで" },
+		{ at: 15, who: null, text: "てっぺんに、主電源が見えた。" },
 	],
 	// 過去ログの底（99階。最終話の あと）。層の 札の 階は よける
 	hidden: [

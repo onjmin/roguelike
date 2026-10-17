@@ -8,7 +8,7 @@
 //
 // 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
 // 持ちこめず、出るときに シヨが 倉庫へ もどす（わけは data/town/town.ts の CARRY_REFUSE）。
-// - deep：電池板（でんJ。過疎で 謎が多い）の 20階。充電：杖の 回数が 1 多い。
+// - deep：電池板（でんJ。過疎で 謎が多い）の 16階。充電：杖の 回数が 1 多い。
 //   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい。
 //
 // 目的（objective）：物語の 品を 運ぶ 板（パン板・風呂板・電池板・過去ログの底）は 持ち帰り（fetch）、
@@ -43,6 +43,8 @@ export type BossSpec = {
 	monster: string;
 	/** 帰り方（画面の 演出の 種類）。 */
 	rescue: RescueKind;
+	/** escort で かつがれる ときの かけ声（無ければ「わっしょい」）。 */
+	cheer?: string;
 	/** 帰り方の 行（たおして 品を 手に 入れた あと、順に 出す）。 */
 	lines: readonly string[];
 	/**
@@ -54,6 +56,8 @@ export type BossSpec = {
 	intro?: readonly string[];
 	/** 目的の 文で 出す 名前（会う まで 正体を 言わない ボス。無ければ ボスの 名前）。 */
 	goalName?: string;
+	/** ボスの 階に 着いた ところに 置いて ある 道具と、着いた ときの 1行（先回りした 人の 差し入れ）。 */
+	supply?: { items: readonly string[]; line: string };
 };
 
 /** 底の 出来事（目的が event。着くと 品を もらって 入口へ 帰る）。 */
@@ -62,6 +66,8 @@ export type EventSpec = {
 	goal: string;
 	/** 帰り方（画面の 演出の 種類）。 */
 	rescue: RescueKind;
+	/** escort で かつがれる ときの かけ声（無ければ「わっしょい」）。 */
+	cheer?: string;
 	/** 着いた ときの 行（順に 出す）。 */
 	lines: readonly string[];
 	/** 終わりの 理由（Ending.cause。記録・リプレイの 組み合わせに 使う ので 変えない）。 */
@@ -109,6 +115,8 @@ export type RestFloor = {
 	spring?: true;
 	/** 立って いる 人（ぶつかると 話す。SettlementSpec の folk と 同じ）。 */
 	folk?: SettlementSpec["folk"];
+	/** 着いた 部屋に 置いて ある 道具（売店の パン など。長い 板の 中ほどの 補給）。 */
+	gifts?: readonly string[];
 };
 
 export type Dungeon = {
@@ -154,6 +162,11 @@ export type Dungeon = {
 		chance: number;
 		early: readonly [number, number] | null;
 	} | null;
+	/**
+	 * かならず 祭りに なる 階（その 板の 山場）。部屋に 集まって いるのは monster だけで、
+	 * 起きると name を 知らせる（パン板の 独立記念パレード）。
+	 */
+	parade?: { depth: number; name: string; monster: string };
 	/** この階より浅い階には罠を置かない。 */
 	trapsFrom: number;
 	/** 1階に 武器を 1本は 置く（入門の 板。core/floor.ts）。 */
@@ -310,7 +323,7 @@ export const SHALLOW_LEVEL: readonly number[] = [
 ];
 
 /**
- * 電池板（20階）と 裏の 30階の 板の 道具の出かた（重みの合計 210。本編 ×1.5 から ぷゆゆパン・不食の指輪を抜き、マイナスの品を ふやし、
+ * 電池板（16階）と 裏の 30階の 板の 道具の出かた（重みの合計 210。本編 ×1.5 から ぷゆゆパン・不食の指輪を抜き、マイナスの品を ふやし、
  * いちばん強い品は 本編と同じ数のまま）。食べものは 始めの200% ＋ 1100%（1階 433ターン）。
  * スレ（ぷゆゆパン）・草を飲む（+5%）・革の盾で しのぐ。
  */
@@ -390,9 +403,9 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	// 矢 9
 	{ kind: "a_wood", weight: 6 }, // 本編4 × 1.5
 	{ kind: "a_iron", weight: 3 }, // 本編2 × 1.5
-	// 食べもの 17（ぷゆゆパンは 入れない。もっと の 片親パン:チギュリパン ≒ 2:1）
+	// 食べもの 23（ぷゆゆパンは 入れない。もっと の 片親パン:チギュリパン ≒ 2:1）
 	// 床の パンは 1階 25% ほど（多いと 始めの 200% と お弁当・パン兵の ぶんが まるまる 余る）
-	{ kind: "f_bread", weight: 7 }, // +50%
+	{ kind: "f_bread", weight: 13 }, // +50%（2026-10-17：スレが 早く 進む ぶん 多く）
 	{ kind: "f_moldy", weight: 4 }, // +100%（ちから−1・HP−5）
 ];
 
@@ -432,13 +445,18 @@ const KINOKO_LEVEL: readonly number[] = ramp(5, 5, 2);
 const TROPICAL_TOP = 8;
 const KONAMONO_TOP = 11;
 const FESTIVAL_TOP = 12;
-const MAIN_TOP = 16;
-const DEEP_TOP = 22;
+const MAIN_TOP = 15;
+const DEEP_TOP = 14;
 
 /**
  * 隠しの 99階の 道具の出かた：風呂板の 表で、食べものを ふやした（99階ぶん 歩くので。
  * ぷゆゆパン・片親パン を 倍、飯テロスレも 倍）。
  */
+/** 風呂板の 道具（14階と 長いので 大きな パンを 少し 多く。飢え死にを へらす）。 */
+const BATH_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
+	e.kind === "f_large" ? { ...e, weight: e.weight + 2 } : e,
+);
+
 const HIDDEN_ITEMS: readonly ItemWeight[] = MAIN_ITEMS.map((e) =>
 	e.kind === "f_bread" || e.kind === "f_large" || e.kind === "s_bread"
 		? { kind: e.kind, weight: e.weight * 2 }
@@ -484,6 +502,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					],
 				},
 				{
+					name: "ロゼ",
+					sprite: "sa:mHhx69",
+					lines: [
+						"先に来て、説教しといたアル",
+						"独立は、書類で申請するアル",
+						"……王さま、泣いてたアル",
+					],
+				},
+				{
 					name: "パン兵",
 					sprite: "pub:sprites/panhei.png",
 					lines: ["ここは城下町や。剣はしまえ", "パン、焼きたてやで"],
@@ -498,6 +525,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		boss: {
 			monster: "boss_panhei",
 			rescue: "escort",
+			cheer: "えっさ",
 			lines: [
 				"どこからかパン松の号令がひびいた！",
 				"パン兵たちがキリコをかつぎあげた",
@@ -517,6 +545,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		start: ["f_large"],
 		goal: "needle",
 		houses: null,
+		// 山場：城下町の 手前で パン兵の 行進に 出くわす（とられた 物は たおせば もどる。かわりに パンを 置いていく）
+		parade: { depth: 2, name: "独立記念パレード", monster: "panhei" },
 		trapsFrom: 3,
 		firstWeapon: true,
 		unlockAfter: null,
@@ -526,7 +556,25 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		id: "main",
 		// 42℃派の 番頭と 本気の 勝負（STORY.md §4.9）
 		objective: "boss",
-		rests: [{ depth: 7, name: "露天の源泉", spring: true }],
+		// 露天の 源泉：シヨが 先回りして 湯温を 測って いる（ライバルの 先回り）
+		rests: [
+			{
+				depth: 7,
+				name: "露天の源泉",
+				spring: true,
+				folk: [
+					{
+						name: "シヨ",
+						sprite: "sa:y8Kr53",
+						lines: [
+							"べ、べつに先回りしてないわよ",
+							"42℃は熱い。41℃はぬるいわ",
+							"……41.5℃なら、入ってあげる",
+						],
+					},
+				],
+			},
+		],
 		boss: {
 			monster: "boss_ofurou",
 			rescue: "geyser",
@@ -540,10 +588,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 風呂に 入らない 界隈が 湯を ねらう。湯で 眠くなる
 		foes: { sabi: 2, neochi: 1.5 },
 		floors: 14,
-		items: MAIN_ITEMS,
+		items: BATH_ITEMS,
 		perFloor: [5, 7],
 		// 序盤を ゆるく：曲がりを 2乗に。祭りは B5 から、はじめの 1つは B6〜8 に
-		level: ramp(14, MAIN_TOP, 2),
+		level: ramp(14, MAIN_TOP, 1.5),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -564,6 +612,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		boss: {
 			monster: "boss_yakiu",
 			rescue: "escort",
+			cheer: "おつかれ",
 			lines: [
 				"やきうは、見出しを書く手を止めた",
 				"電池ニキが発電機を回しなおした",
@@ -582,7 +631,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 見学コース：電池ニキ（ひとりで 電気を 送って きた 最後の 住人）と、先回りした フェリス
 		rests: [
 			{
-				depth: 10,
+				depth: 8,
 				name: "発電所の見学コース",
 				folk: [
 					{
@@ -590,6 +639,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 						sprite: "pub:sprites/denchan.png",
 						lines: [
 							"見学者0人や。あんたで1人目や",
+							"売店のパン、持っていき。売れ残りや",
 							"人が来んでも、電気だけは送っとった",
 							"てっぺんで、名無しが待っとるで",
 						],
@@ -603,17 +653,19 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 						],
 					},
 				],
+				// 見学コースの 売店の 売れのこり（16階の 中ほどの 補給）
+				gifts: ["f_large", "f_bread", "f_bread", "h_heal"],
 			},
 		],
-		// 時間との 競争：2ターンに 1つ 余分に レスが つく（1000 まで 約 2/3 の 時間）
-		rushEvery: 2,
+		// 時間との 競争：3ターンに 1つ 余分に レスが つく（1000 まで 約 3/4 の 時間）
+		rushEvery: 3,
 		// 機械と 回線の 敵が 多い
 		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },
-		floors: 20,
+		floors: 16,
 		items: DEEP_ITEMS,
 		perFloor: [5, 8],
 		// 風呂板と 同じく 序盤を ゆるく（曲がり 1.3）。祭りは B5 から、はじめの 1つは B6〜8 に
-		level: ramp(20, DEEP_TOP, 1.3),
+		level: ramp(16, DEEP_TOP, 1.3),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
@@ -640,6 +692,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"きのこに押し上げられて、地上まで運ばれた",
 			],
 			cause: "親玉きのにゃんをたおした",
+			// ゼロの サブ機が 先回りして 行進を 数えて いた（ライバルの 先回り。STORY.md §4.9）
+			intro: [
+				"プロト「数えました。行進は128本です」",
+				"プロト「先頭は、あの親玉です」",
+			],
+			// はじめての ボス：着いた 部屋に 薬草（2026-10-17 ボット：底に 着いても 親玉に 勝てるのは 68%）
+			supply: {
+				items: ["h_heal"],
+				line: "足もとにプロトのメモ『親玉は階段の部屋です。薬草をどうぞ』",
+			},
 		},
 		// 胞子で 眠くなり（寝落ち民）、毒きのこ（にょっす牛）が 多い。
 		// 寝落ち民は 少なめ（眠らされて なぐられつづけるのが 序盤で いちばん 理不尽なので）
@@ -689,6 +751,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			guest: "islander",
 			goal: "島民を山の上へ送る",
 			rescue: "escort",
+			cheer: "またやー",
 			lines: [
 				"山の上の集落に着いた。",
 				"島民「……島や。帰ってきた」",
@@ -700,6 +763,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		boss: {
 			monster: "boss_natsuko",
 			rescue: "escort",
+			cheer: "またやー",
 			lines: [
 				"島民たちが小舟で迎えに来た！",
 				"島民6人、全員来た。島がからっぽだ",
@@ -755,6 +819,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		event: {
 			goal: "最上階のたこパに行く",
 			rescue: "escort",
+			cheer: "まいど",
 			lines: [
 				"最上階は、たこパ会場だった。",
 				"粉もん奉行「返しが甘い！」",

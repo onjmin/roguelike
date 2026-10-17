@@ -145,7 +145,7 @@ try {
 				DUNGEON,
 				carryItems,
 				objective,
-				!carryItems.length,
+				true,
 				arg("hero", "kiriko"),
 				GUEST,
 			),

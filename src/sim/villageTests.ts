@@ -3384,7 +3384,7 @@ test("the very first village: Kiriko walks in from the south road, sets down the
 				`kiriko voice: ${OPENING.mumble[0]}`,
 				"look nanj",
 				`say nanj: ${OPENING.nanjCall[0]}`,
-				`say nanj: ${OPENING.nanjMouth[2]}`,
+				`say nanj: ${OPENING.nanjMouth[1]}`,
 				`kiriko voice: ${OPENING.reply[0]}`,
 				`look ${VILLAGE_SPOTS.exit.join(",")}`,
 				`narrate: ${OPENING.goal[0]}`,

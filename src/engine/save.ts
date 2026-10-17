@@ -300,6 +300,10 @@ const RENAMES: readonly (readonly [string, string])[] = [
 	// 2026-10-17：2chの ことばに（コメント → レス）
 	["いちばん古い　コメント", "いちばん古いレス"],
 	["いちばん古いコメント", "いちばん古いレス"],
+	// 2026-10-17：持ち帰る 品の 名前で まだ 会って いない 人の 名前を 言わない
+	["ナツコのヤシの実", "山の上のヤシの実"],
+	["たこのみんのたこ焼き", "屋上のたこ焼き"],
+	["マシーのうちわ", "やぐらのうちわ"],
 	["影に", "透明あぼーんに"],
 	["赤鬼", "顔真っ赤"],
 	["凝視の目", "特定班"],
@@ -912,7 +916,8 @@ export const depositItem = (i: number): void => {
 /** ぷゆゆの お弁当を 持たせる（持ち物が からっぽで まだ もらって いなければ）。持たせたら true。 */
 export const giveLunch = (): boolean => {
 	const t = loadTown();
-	if (t.lunch || t.bag.length) return false;
+	// 倉庫から 引き取った 道具を 持って いても もらえる（持ちこむと 飢えやすく なる 罰に しない。2026-10-17 レビュー）
+	if (t.lunch) return false;
 	t.lunch = true;
 	saveTown(t);
 	return true;

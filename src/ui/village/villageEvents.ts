@@ -67,6 +67,7 @@ import {
 	inBlackout,
 	isRevived,
 	lampsLit,
+	MAIN_BOARDS,
 	reviveAreaOf,
 	revivedBoards,
 	stageOfCleared,
@@ -558,13 +559,18 @@ const shrineScript: Script = async (s) => {
 const mouthScript =
 	(ctx: Ctx, step: string | null = "d"): Script =>
 	async (s) => {
-		// 行き先（はじめは 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
+		// 行き先（はじめは 筋の 次の 板。筋を 終えたら 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
 		// 過去ログの底は 井戸から なので 地図には 出さない）
-		const last = loadProgress().last;
+		const pr = loadProgress();
+		const next = MAIN_BOARDS.find(
+			(b) => pr.unlocked.includes(b) && !pr.cleared.includes(b),
+		);
+		const last = pr.last;
 		let d: DungeonId =
-			last && !DUNGEONS[last].secret && loadProgress().unlocked.includes(last)
+			next ??
+			(last && !DUNGEONS[last].secret && pr.unlocked.includes(last)
 				? last
-				: "shallow";
+				: "shallow");
 		// やめたら 1歩 もどる（バス停は 踏まずに 調べるので もどらない）
 		const back = async () => {
 			if (step) await s.move("player", step);

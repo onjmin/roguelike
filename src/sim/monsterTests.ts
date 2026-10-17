@@ -4359,7 +4359,7 @@ test(
 		for (const l of spec?.intro ?? [])
 			ok([...l].length <= 24, `long intro ${l}`);
 		const r = Run.create("reveal-run", "deep");
-		r.enterFloor(10, false);
+		r.enterFloor(8, false);
 		ok(
 			r.f.rest === "発電所の見学コース" &&
 				!!r.f.folk?.some((x) => x.name === "電池ニキ"),

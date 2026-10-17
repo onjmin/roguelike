@@ -6,7 +6,6 @@
 // - コマンドの短い文字が、どの形でも 元にもどるか。
 
 import { DUNGEONS } from "../core/data/dungeons";
-import { MAIN_ITEMS } from "../core/data/items";
 import { randomFloorPos, spawnMonster } from "../core/floor";
 import { type Dir8, step } from "../core/geom";
 import { defOf, itemTableOf, kindName } from "../core/item";
@@ -179,7 +178,7 @@ test("an old (v1) suspended save loads as the main dungeon", () => {
 	if (!m) return;
 	ok(
 		!itemTableOf(m).some((e) => e.kind === "s_escape") &&
-			tableTotal(itemTableOf(m)) === tableTotal(MAIN_ITEMS) - 3,
+			tableTotal(itemTableOf(m)) === tableTotal(DUNGEONS.main.items) - 3,
 		"the old run can roll 帰還スレ, which has no fake name",
 	);
 	ok(

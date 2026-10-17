@@ -46,7 +46,7 @@ export type Surface = {
 	mouth: Cell;
 	/** 立て札。 */
 	sign: Cell;
-	/** 立て札の 文（仮）。 */
+	/** 立て札の 文。 */
 	line: string;
 };
 
@@ -56,7 +56,7 @@ const FLAG = solid(C_GRASS, TURF, art("banner"));
 const dirt = { ".": floor(C_DIRT, DIRT) };
 const asphalt = { ".": floor(C_ASPHALT, road(0)) };
 
-// 立て札の 文は 仮（シナリオの 作業で 差しかえる。入り方の 事件は STORY.md の 正本から）
+// 立て札の 文（その 板の 事件の 入り口。STORY.md §4.9）
 export const SURFACES: readonly Surface[] = [
 	{
 		dungeon: "shallow",
@@ -89,7 +89,6 @@ export const SURFACES: readonly Surface[] = [
 		back: [6, 11],
 		mouth: [6, 4],
 		sign: [10, 4],
-		// 仮
 		line: "国境の関所。『パン国独立』の旗がゆれている。",
 	},
 	{
@@ -115,7 +114,6 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 3],
 		sign: [10, 4],
-		// 仮
 		line: "きのこの森。ここから行進が出ていったらしい。",
 	},
 	{
@@ -148,8 +146,7 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 4],
 		sign: [10, 5],
-		// 仮
-		line: "銭湯街。おんJタウンの銭湯の湯はここから引いている。",
+		line: "銭湯街。のれんに『42℃以外おことわり』。",
 	},
 	{
 		dungeon: "deep",
@@ -181,7 +178,6 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 3],
 		sign: [10, 4],
-		// 仮
 		line: "発電所の町。町の電気はここから来ている。",
 	},
 	{
@@ -212,7 +208,6 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 3],
 		sign: [9, 4],
-		// 仮
 		line: "島の浜。総島民は6人らしい。",
 	},
 	{
@@ -245,7 +240,6 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 4],
 		sign: [10, 5],
-		// 仮
 		line: "雑居ビルの前。『たこパ会場こちら』のはり紙。",
 	},
 	{
@@ -277,7 +271,6 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 3],
 		sign: [9, 4],
-		// 仮
 		line: "祭りの参道。太鼓の音が鳴りやまない。",
 	},
 ];

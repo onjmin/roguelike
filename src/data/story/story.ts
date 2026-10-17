@@ -288,7 +288,7 @@ export const DUNGEON_NAMES: Record<
 		nick: "でんJ",
 		mascot: "でんちゃん　{+'w'-]",
 		rules: [
-			"過疎で謎が多い植民地。20階",
+			"過疎で謎が多い植民地。16階",
 			"充電：杖の回数が1　多い",
 			"ぜんぶ未識別。ぷゆゆパンは出ない。罠と祭りが多い",
 		],
@@ -1197,7 +1197,7 @@ export const UNLOCK_VISIT: Partial<
 /** 持ち帰ったあと（ダンジョンごと）。 */
 export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	shallow: [
-		q("nanj", "独立、認めたんか。\n……ほな、次は本番やな"),
+		q("nanj", "独立記念に、パンの輸出やと。\n……町じゅう、パンだらけになるで"),
 		q("roze", "パン板でも、下は下アル。\n……おつかれアル"),
 		q("feris", "食パンの旗、おいしそ〜。\n私、目がいいから見えてたよ〜"),
 		q("shiyo", "パン板、でしょ。……ふん。\nま、まあ、よくやったんじゃない", {

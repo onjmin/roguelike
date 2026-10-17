@@ -78,21 +78,24 @@ test("重ならない：ボットで 遊ばせて どの ターンも 同行者�
 
 test("ついてくる：階に 着くと キリコの そばに 立ち、ひとこと。たいてい キリコの 近くに いる", () => {
 	for (const [d, g] of PAIRS) {
-		const r = make("guest-near", d, g);
-		const gs = guestHere(r);
-		ok(gs && dist(gs, r.p) <= 3, `${d}: not beside Kiriko on arrival`);
-		ok(
-			r.s.log.some((l) => l === `${GUESTS[g].name}「${GUESTS[g].first}」`),
-			`${d}: no first line`,
-		);
+		// ワナで とばされると しばらく はなれるので、いくつかの 種で ならす
 		let near = 0;
 		let n = 0;
-		for (let i = 0; i < 1500 && !r.s.end; i++) {
-			r.act(botCommand(r));
-			const h = guestHere(r);
-			if (!h) continue;
-			n++;
-			if (dist(h, r.p) <= 3) near++;
+		for (const seed of ["guest-near", "near-b", "near-c"]) {
+			const r = make(seed, d, g);
+			const gs = guestHere(r);
+			ok(gs && dist(gs, r.p) <= 3, `${d}: not beside Kiriko on arrival`);
+			ok(
+				r.s.log.some((l) => l === `${GUESTS[g].name}「${GUESTS[g].first}」`),
+				`${d}: no first line`,
+			);
+			for (let i = 0; i < 1500 && !r.s.end; i++) {
+				r.act(botCommand(r));
+				const h = guestHere(r);
+				if (!h) continue;
+				n++;
+				if (dist(h, r.p) <= 3) near++;
+			}
 		}
 		ok(!n || near / n > 0.7, `${d}: near only ${near}/${n}`);
 	}

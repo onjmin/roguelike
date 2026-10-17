@@ -2681,9 +2681,12 @@ export class Play {
 	/**
 	 * 帰り方の 演出（帰り方の 最初の 行と いっしょに。表示だけ：冒険の 状態・乱数には 触らない）。
 	 * sprout・geyser・eruption：揺れて 光り、キリコが 押し上げられて 上へ 飛んでいく（カメラは 止める）。
-	 * escort：「わっしょい」と かつがれて はずむ。暗転は 冒険の記録の 前（ending）。
+	 * escort：かけ声（板ごと。無ければ「わっしょい」）と かつがれて はずむ。暗転は 冒険の記録の 前（ending）。
 	 */
-	private async rescueScene(kind: RescueKind): Promise<void> {
+	private async rescueScene(
+		kind: RescueKind,
+		cheer = "わっしょい",
+	): Promise<void> {
 		const pd = this.disp.get(PLAYER_ID);
 		const look = RESCUE_LOOK[kind];
 		const fast = settings.speed === "fast" || !!(this.rp && this.rp.speed >= 4);
@@ -2700,9 +2703,9 @@ export class Play {
 				pd.keys = [{ x, y, t: now }];
 				for (let i = 1; i <= 8; i++)
 					pd.keys.push({ x, y: i % 2 ? y - 0.35 : y, t: now + i * 160 * k });
-				this.pop({ x, y }, "わっしょい", "dup");
+				this.pop({ x, y }, cheer, "dup");
 				void wait(640 * k).then(() => {
-					if (!this.stopped) this.pop({ x, y }, "わっしょい", "dup");
+					if (!this.stopped) this.pop({ x, y }, cheer, "dup");
 				});
 			}
 			await this.flash(look.flash, 200 * k);
@@ -3275,7 +3278,7 @@ export class Play {
 				return;
 			}
 			case "rescue":
-				this.rescueFx = this.rescueScene(e.kind);
+				this.rescueFx = this.rescueScene(e.kind, e.cheer);
 				return;
 			case "baton":
 				// 解音ゼロの バトンタッチ：場面は playEvents が 待って 流す（batonScene）

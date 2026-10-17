@@ -663,7 +663,7 @@ export type GameEvent =
 	/** ボスを はじめて 見た（目を さました。id は その uid。続く 行で「待ちかまえていた！」）。 */
 	| { t: "boss"; id: number }
 	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
-	| { t: "rescue"; kind: RescueKind }
+	| { t: "rescue"; kind: RescueKind; cheer?: string }
 	/** 解音ゼロが たおれて 次の 機体に バトンタッチした（body は 次の 機体の 番。画面は 絵を かえる）。 */
 	| { t: "baton"; body: number; pos: Pos }
 	| { t: "end" };

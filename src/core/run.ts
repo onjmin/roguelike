@@ -206,6 +206,10 @@ export class Run {
 				houses.sort((a, b) => a - b);
 			}
 		}
+		if (dg.parade && !houses.includes(dg.parade.depth)) {
+			houses.push(dg.parade.depth);
+			houses.sort((a, b) => a - b);
+		}
 		// 未識別の名前の割り当て（このダンジョンで出る種類）
 		const fake: Record<string, string> = {};
 		for (const cat of UNIDENTIFIED_CATS) {
@@ -735,7 +739,13 @@ export class Run {
 			}
 			this.emit({ t: "house" });
 			this.se("encounter");
-			this.msg("祭りだ！野次馬がいっせいにこっちを見た！", "warn");
+			const parade = this.dungeon.parade;
+			this.msg(
+				parade?.depth === f.depth
+					? `${parade.name}だ！${MONSTERS[parade.monster].name}がいっせいにこっちを見た！`
+					: "祭りだ！野次馬がいっせいにこっちを見た！",
+				"warn",
+			);
 		}
 		this.checkBossSeen();
 	}
@@ -845,6 +855,10 @@ export class Run {
 			);
 		// 名所の 階（敵の 来ない 一息）
 		if (s.floor.rest) this.msg(`${s.floor.rest}。敵の気配がない`);
+		// ボスの 階の 差し入れ
+		const supply = this.bossSpec?.supply;
+		if (supply && depth === this.dungeon.floors && !s.returning)
+			this.msg(supply.line);
 		this.updateVision();
 		// 同行者も キリコの そばに 着く（core/guest.ts）
 		guestEnterFloor(this, first);
@@ -853,7 +867,8 @@ export class Run {
 		// 話す 相手の 知らせは 目的が すすむ ときだけ（持ち帰りに かわった ときは 出さない）
 		const key = s.floor.folk?.find((x) => x.key);
 		if (key && (this.eventSpec || this.bringSpec))
-			this.msg(`${key.name}がいる。話しかけてみよう`);
+			this.msg(`${key.name}がいる。ぶつかると話せる`);
+		else if (s.floor.folk?.length) this.msg("人がいる。ぶつかると話せる");
 		// 目的が event・deliver：底に 着いたら 出来事が あって 入口へ 帰る（集落なら key の 人に 話してから）
 		if (this.eventSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.eventReached();
@@ -916,7 +931,7 @@ export class Run {
 		for (const line of spec.lines)
 			this.msg(line.replaceAll("キリコ", this.heroName));
 		this.msg(`${this.heroName}は${defOf(it.kind).name}をもらった！`, "good");
-		this.emit({ t: "rescue", kind: spec.rescue });
+		this.emit({ t: "rescue", kind: spec.rescue, cheer: spec.cheer });
 		this.finish("clear", spec.cause);
 	}
 
@@ -1416,7 +1431,7 @@ export class Run {
 		this.msg(`${monsterName(this, m)}は${goal}を落とした`);
 		this.msg(`${this.heroName}は${goal}を手に入れた！`, "good");
 		// 帰り方（画面の 演出は この 出来事から。文は 板ごとに 決まっている）
-		this.emit({ t: "rescue", kind: spec.rescue });
+		this.emit({ t: "rescue", kind: spec.rescue, cheer: spec.cheer });
 		for (const line of spec.lines)
 			this.msg(line.replaceAll("キリコ", this.heroName));
 		this.finish("clear", spec.cause);

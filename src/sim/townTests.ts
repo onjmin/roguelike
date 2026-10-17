@@ -512,7 +512,7 @@ test("ぷゆゆの お弁当：持ち物が からっぽなら もらえて、�
 		ok(!giveLunch(), "lunch given twice");
 		ok(takeLunch() && !loadTown().lunch, "lunch not taken");
 		ok(!takeLunch(), "lunch taken twice");
-		// 倉庫から 引き取った 道具が あれば もらえない
+		// 倉庫から 引き取った 道具が あっても もらえる
 		saveTown({
 			...loadTown(),
 			storage: [
@@ -528,7 +528,7 @@ test("ぷゆゆの お弁当：持ち物が からっぽなら もらえて、�
 			],
 		});
 		withdrawItem(0);
-		ok(!giveLunch(), "lunch given with a full bag");
+		ok(giveLunch(), "no lunch with a carried item");
 	});
 	// お弁当なしで 出た 冒険は 手ぶらで 始まり、リプレイも 手ぶら
 	const bare = Run.create("no-lunch", "main", [], "fetch", false);

@@ -688,7 +688,7 @@ add({
 	id: "yashi",
 	cat: "goal",
 	icon: "sp:NwQNzoN", // RPGEN「ココナッツ　やしのみ」
-	name: "ナツコのヤシの実",
+	name: "山の上のヤシの実",
 	desc: "離島・沖縄板の山の上に引っかかっていたヤシの実。持ち帰ろう",
 	flavor: "ヤッシッシ～。島民は6人。拾ったのは7人目",
 });
@@ -729,7 +729,7 @@ add({
 	id: "takoyaki",
 	cat: "goal",
 	icon: art("takoyaki"),
-	name: "たこのみんのたこ焼き",
+	name: "屋上のたこ焼き",
 	desc: "おんたこの屋上で焼けていた。😡の形をしている。持ち帰ろう",
 	flavor: "怒っているのではない。焼けているだけ",
 });
@@ -737,7 +737,7 @@ add({
 	id: "uchiwa",
 	cat: "goal",
 	icon: "sp:SPpbIcP", // RPGEN「うちわ」
-	name: "マシーのうちわ",
+	name: "やぐらのうちわ",
 	desc: "やぐらの上で、親分があおいでいたうちわ。持ち帰ろう",
 	flavor: "降りてからも、まだあおいでいる",
 });

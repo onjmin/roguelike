@@ -175,6 +175,23 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		f.rest = rest.name;
 		revealAll(f);
 		if (rest.folk) placeFolk(r, f, start, { name: rest.name, folk: rest.folk });
+		if (rest.gifts && !r.s.returning) {
+			const spots = freeRoomTiles(
+				r,
+				f,
+				roomAt(f.layout, start.x, start.y),
+			).filter(
+				(t) =>
+					(t.x !== start.x || t.y !== start.y) &&
+					(t.x !== f.stairs.x || t.y !== f.stairs.y) &&
+					!f.items.some((i) => i.x === t.x && i.y === t.y),
+			);
+			for (const kind of rest.gifts) {
+				if (!spots.length) break;
+				const spot = spots.splice(rng.int(spots.length), 1)[0];
+				f.items.push({ x: spot.x, y: spot.y, item: r.newItem(kind) });
+			}
+		}
 		if (rest.spring) {
 			const spot = rng.pick(
 				freeRoomTiles(r, f, null).filter(
@@ -274,9 +291,12 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		// 部屋の広さの 1/3 まで（ぎゅうぎゅうにしない）
 		const room = rooms[f.house];
 		const hn = Math.min(rng.range(hlo, hhi), Math.floor((room.w * room.h) / 3));
+		// 山場の 祭り（パレード）は 決まった 敵だけ
+		const parade = r.dungeon.parade;
+		const kind = parade?.depth === depth ? parade.monster : null;
 		for (let i = 0; i < hn; i++) {
 			const at = place(f.house);
-			if (at) spawnMonster(r, null, at, { sleep: DOZE, single: true });
+			if (at) spawnMonster(r, kind, at, { sleep: DOZE, single: true });
 		}
 	}
 	// 持たせる札（最初からいるモンスターに1枚ずつ）
@@ -303,6 +323,19 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		const m =
 			at && spawnMonster(r, spec.monster, at, { sleep: DEEP, single: true });
 		if (m) f.boss = m.uid;
+		// 先回りした 人の 差し入れ（着いた 部屋に）
+		const near = freeRoomTiles(r, f, startRoom).filter(
+			(t) =>
+				(t.x !== start.x || t.y !== start.y) &&
+				(t.x !== f.stairs.x || t.y !== f.stairs.y) &&
+				!f.monsters.some((x) => x.x === t.x && x.y === t.y) &&
+				!f.items.some((i) => i.x === t.x && i.y === t.y),
+		);
+		for (const kind of spec.supply?.items ?? []) {
+			if (!near.length) break;
+			const spot = near.splice(rng.int(near.length), 1)[0];
+			f.items.push({ x: spot.x, y: spot.y, item: r.newItem(kind) });
+		}
 	}
 	// 書きかえた 冒険：キリコの いない 部屋に 削除人が 1体（ふつうの 冒険では 乱数を 引かない）
 	if (r.s.cheat) {
