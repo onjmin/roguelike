@@ -125,6 +125,10 @@ export const isRevived = (
 	return !a || cleared.includes(a.dungeon);
 };
 
+/** 街灯が 灯るか（町の 明かり＝電池板を 持ち帰って から。それまで 街灯は 立って いるが 消えて いる）。 */
+export const lampsLit = (cleared: readonly DungeonId[]): boolean =>
+	REVIVE_AREAS.some((a) => a.id === "lights" && cleared.includes(a.dungeon));
+
 /** 持ち帰った 板で 生き返った 通り（表の 順）。 */
 export const revivedAreas = (cleared: readonly DungeonId[]): ReviveArea[] =>
 	REVIVE_AREAS.filter((a) => cleared.includes(a.dungeon));

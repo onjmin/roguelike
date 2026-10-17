@@ -144,7 +144,12 @@ import {
 	TOBAN_MENU,
 	YAKYU_SHELF,
 } from "../data/town/hall";
-import { isRevived, MAIN_BOARDS, REVIVE_AREAS } from "../data/town/revival";
+import {
+	isRevived,
+	lampsLit,
+	MAIN_BOARDS,
+	REVIVE_AREAS,
+} from "../data/town/revival";
 import {
 	BANK,
 	BANK_FROM,
@@ -177,6 +182,7 @@ import {
 	ZERO_VOICELESS,
 } from "../data/town/town";
 import { crowdNodes } from "../data/village/crowd";
+import { lightOf } from "../data/village/daylight";
 import { DINER_IMG, DINER_SIZE } from "../data/village/dinerSheet";
 import {
 	doorId,
@@ -215,6 +221,7 @@ import {
 	exitFor,
 	lineupSpots,
 	spotsAround,
+	unlitCells,
 	VILLAGE_EXITS,
 	VILLAGE_H,
 	VILLAGE_SPOTS,
@@ -7085,4 +7092,46 @@ test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏�
 		!nodes(shutView).includes(doorId(f)) && nodes(openView).includes(doorId(f)),
 		"the crowd walks into a shut shop",
 	);
+});
+
+test("生き返る 通り: 夜の 明かり。生き返って いない 建物は 窓が 灯らず、街灯は 電池板を 持ち帰って から", () => {
+	const view = (cleared: DungeonId[]): VillageView => ({
+		stage: TOWN_STAGES - 1,
+		unlocked: [],
+		cleared,
+	});
+	const W = villageRows(view([]))[0].length;
+	const tiles = villagePalette(view([]));
+	const rows = villageRows(view([])).map((r) => [...r]);
+	const windows = (unlit: Set<number>) => {
+		let lit = 0;
+		let dark = 0;
+		rows.forEach((r, y) => {
+			r.forEach((ch, x) => {
+				if (lightOf(tiles[ch]?.layers ?? []) !== "window") return;
+				if (unlit.has(y * W + x)) dark++;
+				else lit++;
+			});
+		});
+		return { lit, dark };
+	};
+	const konbini = facilityById("konbini");
+	ok(konbini, "no konbini");
+	if (!konbini) return;
+	const cell = konbini.at[1] * W + konbini.at[0];
+	ok(unlitCells(view([])).has(cell), "the shut konbini is lit");
+	ok(!unlitCells(view(["kinoko"])).has(cell), "the open konbini stays dark");
+	const shut = windows(unlitCells(view([])));
+	const all = windows(
+		unlitCells(view([...REVIVE_AREAS.map((a) => a.dungeon)])),
+	);
+	ok(shut.dark > 0, "no dark windows in the run-down town");
+	ok(all.dark === 0, `${all.dark} windows stay dark after every board`);
+	ok(
+		!lampsLit([]) && !lampsLit(["shallow", "kinoko", "main"]),
+		"lamps lit before 電池板",
+	);
+	ok(lampsLit(["deep"]), "lamps off after 電池板");
+	const def = buildVillage(view(["deep"]), {} as Ctx);
+	ok(def.lights?.lamps === true, "the village map does not light the lamps");
 });

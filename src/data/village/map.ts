@@ -62,6 +62,7 @@ import { type CorePlace, isRevived } from "../town/revival";
 import {
 	doorId,
 	facilitiesAt,
+	facilityBlock,
 	facilityDoor,
 	facilityDoor2,
 	facilityTiles,
@@ -793,6 +794,38 @@ const shutDoors = (v: VillageView): Cell[] => [
 		),
 	...CORE_DOORS.filter(([id]) => !isRevived(id, v.cleared)).map(([, c]) => c),
 ];
+
+/** 町の まんなかの 建物の 外観の 四角（x, y, 幅, 高さ。夜の 窓を 消す 範囲）。 */
+const CORE_RECTS: readonly [CorePlace, number, number, number, number][] = [
+	["shrine", 1, 4, 5, 6],
+	["music", 21, 25, 3, 4],
+	["bath", 33, 26, 5, 4],
+	["library", 2, 20, 4, 3],
+	["bookstore", 3, 20, 3, 3],
+	["cafe", 2, 15, 5, 4],
+];
+
+/**
+ * 生き返って いない 建物の マス（y * VILLAGE_W + x）。夜も 窓が 灯らない（ui/village/village.ts の drawLights）。
+ * 施設の 外観と 町の まんなかの 建物。
+ */
+export const unlitCells = (v: VillageView): Set<number> => {
+	const out = new Set<number>();
+	for (const f of facilitiesAt(layoutStage(v))) {
+		if (isRevived(f.id, v.cleared)) continue;
+		facilityBlock(f).forEach((line, dy) => {
+			[...line].forEach((ch, dx) => {
+				if (ch !== " ") out.add((f.at[1] + dy) * VILLAGE_W + f.at[0] + dx);
+			});
+		});
+	}
+	for (const [id, x0, y0, w, h] of CORE_RECTS) {
+		if (isRevived(id, v.cleared)) continue;
+		for (let y = y0; y < y0 + h; y++)
+			for (let x = x0; x < x0 + w; x++) out.add(y * VILLAGE_W + x);
+	}
+	return out;
+};
 
 /** 抜いてよい 木・しげみ・生け垣（森と 町の へり）。 */
 const GREENERY = new Set(["T", "b", "^", "H", "h"]);

@@ -44,7 +44,7 @@ import {
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
-import { isRevived } from "../../data/town/revival";
+import { isRevived, lampsLit } from "../../data/town/revival";
 import {
 	CARRY_CHASE,
 	CARRY_REFUSE,
@@ -62,6 +62,7 @@ import {
 import { npc, sign } from "../../data/village/helpers";
 import {
 	layoutStage,
+	unlitCells,
 	VILLAGE_SPOTS,
 	VISITOR_WALK,
 	type VillagePlace,
@@ -131,7 +132,7 @@ import { previewing } from "./pay";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
 import { shadowGround } from "./shadows";
-import { signboardDecor } from "./signboards";
+import { signboardDecor, signboardGlow } from "./signboards";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
 import { chooseRecord, villageSong } from "./villageMusic";
@@ -1010,10 +1011,16 @@ export const buildVillage = (
 			imoniDecor(imoniArrive()),
 			villageFindGlint(),
 			stockBoardDecor(shokenSign(layoutStage(view))),
-			signboardDecor(layoutStage(view)),
+			signboardDecor(layoutStage(view), view.cleared),
 			outsideDisplays(layoutStage(view)),
 		),
 		outside: "#1f2a14",
+		// 夜の 明かり：生き返って いない 建物は 窓も 看板も 暗い・街灯は 電池板から（data/town/revival.ts）
+		lights: {
+			unlit: unlitCells(view),
+			lamps: lampsLit(view.cleared),
+			glow: signboardGlow(layoutStage(view), view.cleared),
+		},
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
 		crowd: {
 			stage: layoutStage(view),

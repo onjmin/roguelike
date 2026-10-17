@@ -1496,12 +1496,21 @@ export class Village {
 		k: { lamp: number; windows: number },
 	): void {
 		if (k.lamp < 0.01 && k.windows < 0.01) return;
-		if (this.lightCells?.field !== field)
+		// 生き返って いない 建物の 窓は 灯らない・街灯は 町の 明かり（電池板）から（data/town/revival.ts）
+		const rule = field.def.lights;
+		if (this.lightCells?.field !== field) {
+			const W = field.def.rows[0]?.length ?? 0;
 			this.lightCells = {
 				field,
-				lamps: field.cellsWhere((t) => lightOf(t.layers) === "lamp"),
-				windows: field.cellsWhere((t) => lightOf(t.layers) === "window"),
+				lamps:
+					rule && !rule.lamps
+						? []
+						: field.cellsWhere((t) => lightOf(t.layers) === "lamp"),
+				windows: field
+					.cellsWhere((t) => lightOf(t.layers) === "window")
+					.filter(([x, y]) => !rule?.unlit.has(y * W + x)),
 			};
+		}
 		const { lamps, windows } = this.lightCells;
 		const W = this.screen.width;
 		const H = this.screen.height;
@@ -1518,6 +1527,8 @@ export class Village {
 			if (!seen(px, py, TILE)) continue;
 			g.fillRect(px + 4, py + 4, TILE - 8, TILE - 7);
 		}
+		// 開いて いる 店の 看板（ui/village/signboards.ts の signboardGlow）
+		rule?.glow?.(g, ox, oy, Math.max(k.lamp, k.windows));
 		// 街灯：頭（1マス 上）の まわりに 段の ついた 丸い 光（ドット。ぼかさない：作者「光表現は ファジーでは なく
 		// ドットに」）。内から 3段、いちばん 外の 段は 市松（ディザ）。1画素ずつ 行で 塗る
 		// うつりかわりの あいだは 強さが 少しずつ かわるので 20段に まるめる（絵は 段ごとに 1枚）

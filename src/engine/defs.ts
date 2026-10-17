@@ -125,6 +125,20 @@ export type MapDef = {
 		t: number,
 		me?: { x: number; y: number; dir: Dir },
 	) => void;
+	/**
+	 * 夜の 明かりの 決まり（村の 地図だけ。ui/village/village.ts の drawLights）。unlit は 窓が 灯らない マス
+	 * （y * 幅 + x。生き返って いない 建物）、lamps は 街灯が 灯るか、glow は 色を 重ねた あとに 足す 看板の 光。
+	 */
+	lights?: {
+		unlit: ReadonlySet<number>;
+		lamps: boolean;
+		glow?: (
+			g: CanvasRenderingContext2D,
+			ox: number,
+			oy: number,
+			k: number,
+		) => void;
+	};
 	/** 地面の すぐ 上に 描く 物（建物の 影など。人や 上の 層より 下。engine/field.ts の drawBelow の あと）。 */
 	ground?: (g: CanvasRenderingContext2D, ox: number, oy: number) => void;
 };

@@ -6,6 +6,8 @@
 // 書体は Google Fonts から 看板の 字だけ 読みこむ（text= で しぼる）。読めるまでは DotGothic16 で 描いて、
 // 読めたら 描きなおす。
 
+import type { DungeonId } from "../../core/types";
+import { isRevived } from "../../data/town/revival";
 import {
 	type Facility,
 	facilitiesAt,
@@ -40,6 +42,8 @@ type Board = {
 	/** 板を おさめる 左右（建物の はば）。 */
 	left: number;
 	right: number;
+	/** 生き返って いない 所の 看板（電気が 来て いない：ネオンの にじみ なし・くすんだ 色）。 */
+	dead: boolean;
 };
 
 // ───────────────── 書体 ─────────────────
@@ -139,6 +143,7 @@ const renderBoard = (
 	text: string,
 	look: SignLook,
 	maxW: number,
+	dead = false,
 ): HTMLCanvasElement => {
 	const probe = document.createElement("canvas").getContext("2d");
 	let px = FONT_PX;
@@ -167,7 +172,7 @@ const renderBoard = (
 	g.fillRect(0, 0, 1, H);
 	g.fillRect(w - 1, 0, 1, H);
 	const mask = textMask(text, fontOf(look, px), w, w - 6);
-	const halo = look.outline ?? look.glow;
+	const halo = dead ? look.outline : (look.outline ?? look.glow);
 	if (halo) {
 		const ring = tinted(mask, halo);
 		g.save();
@@ -176,13 +181,18 @@ const renderBoard = (
 		g.restore();
 	}
 	g.drawImage(tinted(mask, look.ink), 0, 0);
+	if (dead) {
+		g.globalCompositeOperation = "source-atop";
+		g.fillStyle = "rgba(24, 24, 32, 0.5)";
+		g.fillRect(0, 0, c.width, c.height);
+	}
 	return c;
 };
 
 const boardImage = (b: Board): HTMLCanvasElement => {
 	let img = cache.get(b.key);
 	if (!img) {
-		img = renderBoard(b.text, b.look, b.right - b.left);
+		img = renderBoard(b.text, b.look, b.right - b.left, b.dead);
 		cache.set(b.key, img);
 	}
 	return img;
@@ -190,7 +200,10 @@ const boardImage = (b: Board): HTMLCanvasElement => {
 
 // ───────────────── 場所 ─────────────────
 
-const facilityBoard = (f: Facility): Board | null => {
+const facilityBoard = (
+	f: Facility,
+	cleared: readonly DungeonId[],
+): Board | null => {
 	const sign = SIGNS[f.id];
 	if (!sign || f.look.kind !== "grid") return null;
 	const rows = f.look.rows;
@@ -202,8 +215,9 @@ const facilityBoard = (f: Facility): Board | null => {
 	const col = door
 		? (door[0] + (door2 && door2[1] === door[1] ? door2[0] : door[0])) / 2 + 0.5
 		: w / 2;
+	const dead = !isRevived(f.id, cleared);
 	return {
-		key: `f:${f.id}`,
+		key: `f:${f.id}:${dead}`,
 		text: sign.text,
 		look: SIGN_LOOKS[sign.look],
 		cx: (f.at[0] + col) * TILE,
@@ -211,32 +225,49 @@ const facilityBoard = (f: Facility): Board | null => {
 		bottom: (f.at[1] + row) * TILE - 1,
 		left: f.at[0] * TILE,
 		right: (f.at[0] + w) * TILE,
+		dead,
 	};
 };
 
 /** 町の まんなかの 建物の 看板（その 段に 建って いる もの）。 */
-const coreBoards = (stage: number): Board[] =>
+const coreBoards = (stage: number, cleared: readonly DungeonId[]): Board[] =>
 	CORE_SIGNS.filter(
 		(c) => stage >= c.from && (c.until === undefined || stage < c.until),
 	).map((c) => {
 		const cx = c.at[0] * TILE;
+		const dead = !isRevived(c.id, cleared);
 		return {
-			key: `c:${c.id}:${stage}`,
+			key: `c:${c.id}:${stage}:${dead}`,
 			text: c.text(stage),
 			look: SIGN_LOOKS[c.look(stage)],
 			cx,
 			bottom: c.at[1] * TILE - 1,
 			left: cx - 4 * TILE,
 			right: cx + 4 * TILE,
+			dead,
 		};
 	});
 
-/** その 段の 建物の 看板。 */
-export const signboardDecor = (stage: number): MapDef["decor"] => {
-	const boards = [
-		...facilitiesAt(stage).flatMap((f) => facilityBoard(f) ?? []),
-		...coreBoards(stage),
-	];
+const boardsAt = (stage: number, cleared: readonly DungeonId[]): Board[] => [
+	...facilitiesAt(stage).flatMap((f) => facilityBoard(f, cleared) ?? []),
+	...coreBoards(stage, cleared),
+];
+
+/** 板を 置く 左上（画面の 画素）。 */
+const boardPos = (b: Board, img: HTMLCanvasElement, ox: number, oy: number) => {
+	const w = img.width - 1;
+	return {
+		x: Math.round(Math.max(b.left, Math.min(b.right - w, b.cx - w / 2)) - ox),
+		y: b.bottom - H - oy,
+	};
+};
+
+/** その 段の 建物の 看板（生き返って いない 所は 消えた 看板）。 */
+export const signboardDecor = (
+	stage: number,
+	cleared: readonly DungeonId[],
+): MapDef["decor"] => {
+	const boards = boardsAt(stage, cleared);
 	if (!boards.length) return undefined;
 	return (g, ox, oy) => {
 		loadFonts();
@@ -244,13 +275,34 @@ export const signboardDecor = (stage: number): MapDef["decor"] => {
 		const vh = g.canvas.height;
 		for (const b of boards) {
 			const img = boardImage(b);
-			const w = img.width - 1;
-			const x = Math.round(
-				Math.max(b.left, Math.min(b.right - w, b.cx - w / 2)) - ox,
-			);
-			const y = b.bottom - H - oy;
+			const { x, y } = boardPos(b, img, ox, oy);
 			if (x + img.width < 0 || x > vw || y + img.height < 0 || y > vh) continue;
 			g.drawImage(img, x, y);
 		}
+	};
+};
+
+/**
+ * 夜の 看板の 光（夜の 色を 重ねた あと、足し算の 中で 呼ぶ。k は 明かりの 強さ 0〜1）。
+ * 開いて いる 所の 板だけ 灯る（生き返って いない 所は 電気が 来て いない）。
+ */
+export const signboardGlow = (
+	stage: number,
+	cleared: readonly DungeonId[],
+): NonNullable<MapDef["lights"]>["glow"] => {
+	const boards = boardsAt(stage, cleared).filter((b) => !b.dead);
+	return (g, ox, oy, k) => {
+		if (k < 0.01) return;
+		const vw = g.canvas.width;
+		const vh = g.canvas.height;
+		g.save();
+		g.globalAlpha = 0.45 * k;
+		for (const b of boards) {
+			const img = boardImage(b);
+			const { x, y } = boardPos(b, img, ox, oy);
+			if (x + img.width < 0 || x > vw || y + img.height < 0 || y > vh) continue;
+			g.drawImage(img, x, y);
+		}
+		g.restore();
 	};
 };
