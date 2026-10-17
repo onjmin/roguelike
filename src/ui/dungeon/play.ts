@@ -51,7 +51,7 @@ import {
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
 import { heroWalk, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
-import { deathNote } from "../../data/story/deathNotes";
+import { deathNote, deathSpecial } from "../../data/story/deathNotes";
 import { liveResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
@@ -59,6 +59,7 @@ import { loadImage } from "../../engine/assets";
 import {
 	DEBUG_SEED,
 	deathCount,
+	deathPast,
 	loadBook,
 	loadProgress,
 	markSeenMonster,
@@ -2491,7 +2492,7 @@ export class Play {
 						? `${esc(end.cause)}<br><small>${bossHomeLine(this.run.s.dungeon, this.run.objective)}　${this.run.s.turn}ターン</small>`
 						: end.kind === "clear"
 							? `${defOf(this.run.dungeon.goal).name}を持ち帰った<br><small>${this.run.s.turn}ターン</small>`
-							: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}　${esc(deathNote({ ...end, lv: this.run.p.lv, dungeon: this.run.s.dungeon }))}`
+							: `${this.run.s.returning ? "帰り道の　" : ""}${floorShort(this.run.s.dungeon, end.depth)}　${esc(deathSpecial(this.run.s) ?? deathNote({ ...end, lv: this.run.p.lv, dungeon: this.run.s.dungeon }))}`
 					: `記録はここまで<br><small>（${floorShort(this.run.s.dungeon, r.depth)}で${esc(r.cause)}）</small>`;
 		const card = el("div", { class: "replay-end" }, [
 			el("div", { class: "rp-end-title", text: "リプレイおわり" }),
@@ -3709,7 +3710,7 @@ export class Play {
 			}),
 			el("div", {
 				class: "death-cause",
-				text: `${end.depth === 0 ? "" : `${run.s.returning ? "帰り道の　" : ""}${floorLong(run.s.dungeon, end.depth).replace("　", "")}　`}${deathNote({ ...end, lv: run.p.lv, dungeon: run.s.dungeon })}`,
+				text: `${end.depth === 0 ? "" : `${run.s.returning ? "帰り道の　" : ""}${floorLong(run.s.dungeon, end.depth).replace("　", "")}　`}${deathSpecial(run.s, this.rp ? {} : deathPast(run.s)) ?? deathNote({ ...end, lv: run.p.lv, dungeon: run.s.dungeon })}`,
 			}),
 		]);
 		this.ctx.ui.appendChild(scene);

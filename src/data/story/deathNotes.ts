@@ -3,8 +3,10 @@
 // （replayMatches が 死因の 文字で 結ぶ ので、残す 文字は 変えない）。どれに なるかは 死因・ターン・階で 決まる（乱数は 引かない）。
 // 階の 名前は 呼ぶ 側が 前に 足す（「B3　」）。1行 全角 22字 まで。
 
-import { MONSTER_LIST } from "../../core/data/monsters";
-import type { DungeonId } from "../../core/types";
+import { DUNGEONS } from "../../core/data/dungeons";
+import { MONSTER_LIST, MONSTERS } from "../../core/data/monsters";
+import { defOf, isKnownKind } from "../../core/item";
+import type { DungeonId, RunState } from "../../core/types";
 
 export type DeathCtx = {
 	cause: string;
@@ -188,4 +190,98 @@ export const deathNote = (x: DeathCtx): string => {
 		return one(BY_MONSTER[m] ?? GENERIC, { m });
 	}
 	return x.cause;
+};
+
+// ───────────────── めずらしい たおれ方 ─────────────────
+// たおれた ときの 冒険の ようす（RunState）から 見つける 1つきりの 一文。あれば ふつうの 一文より 先に 出す。
+// 記録には この 文を そのまま 残す（RunRecord.note。リプレイには 残さない）。上から 順に 見る。
+
+/** 前の 冒険から わかる こと（記録を 読む 側が 渡す。リプレイでは 渡さない）。 */
+export type DeathPast = {
+	/** この 板の ボスを 前に たおした ことが ある。 */
+	bossBeaten?: boolean;
+};
+
+const near = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+	Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+
+/** めずらしい たおれ方の 一文（無ければ null）。 */
+export const deathSpecial = (
+	s: RunState,
+	past: DeathPast = {},
+): string | null => {
+	const end = s.end;
+	if (end?.kind !== "dead") return null;
+	const c = end.cause.replaceAll("　", "");
+	if (c === "冒険をやめた") return null;
+	const p = s.player;
+	const f = s.floor;
+	const dg = DUNGEONS[s.dungeon];
+	const fell = c.startsWith("落とし穴");
+	const starved = c.startsWith("おなかが");
+	const killer = c.match(
+		/^(.+?)(?:にたおされた|の.+でたおれた|に吹きとばされた)$/,
+	)?.[1];
+	const of = (kind: string) => p.items.filter((it) => it.kind === kind).length;
+	const ring = p.items.find((it) => it.uid === p.ring)?.kind;
+	const goalName = defOf(dg.goal).name;
+
+	const boss = dg.boss && MONSTERS[dg.boss.monster]?.name;
+	if (boss && killer === boss && past.bossBeaten)
+		return `${boss}にリベンジされた`;
+	if (f.monsters.some((m) => m.kind === "ufo" && m.carry?.kind === dg.goal))
+		return `${[...goalName].length <= 8 ? goalName : "目当ての品"}は拾い画UFOが持っている`;
+	if (killer === "釣り" && ring === "r_trap")
+		return "◆釣られないを着けて釣られた";
+	if (starved && ring === "r_hunger") return "◆大食いを外さずに餓死した";
+	const kd = killer && MONSTER_LIST.find((d) => d.name === killer);
+	const slain = kd ? (s.kills[kd.id] ?? 0) : 0;
+	if (kd && slain >= 10)
+		return kd.name.length <= 5 && slain < 100
+			? `${kd.name}を${slain}体たおして${slain + 1}体目に負けた`
+			: `${slain + 1}体目の${kd.name}に負けた`;
+	if (starved) {
+		const food = p.items.find((it) => defOf(it.kind).cat === "food");
+		if (food) {
+			const n = of(food.kind);
+			const name = defOf(food.kind).name;
+			return n >= 3
+				? `${name}を${n}個持って餓死した`
+				: `${name}を持ったまま餓死した`;
+		}
+		const swapper = f.monsters.find((m) => m.kind === "panhei" && m.swapped);
+		if (swapper) return "パンと引きかえた持ち物ごと餓死した";
+	}
+	// 正体を 知らない まま 持っていた ときだけ（知っていて 読まないのは よく ある）
+	if (of("s_escape") && !isKnownKind(s, "s_escape"))
+		return "読まなかった巻物が帰還スレだった";
+	if (f.res >= 990) return `あと${1000 - f.res}レスでdat落ちに逃げこめた`;
+	if (s.returning && end.depth === 1)
+		return goalName.length <= 6
+			? `${goalName}を抱えて地上の手前で散った`
+			: "地上の1つ手前で品ごと散った";
+	if (!s.returning && s.objective !== "boss") {
+		const goal = f.items.find(
+			(fi) => fi.item.kind === dg.goal && near(fi, p) <= 1,
+		);
+		if (goal) return `${goalName}まであと1歩だった`;
+	}
+	if (starved && p.status.sleep > 0) return "寝たまま餓死した";
+	const herbs = of("h_heal");
+	if (herbs >= 5) return `草を${herbs}つ残して散った`;
+	if (!fell && near(f.stairs, p) === 0)
+		return dg.up
+			? "階段に立ったまま上らなかった"
+			: "階段に立ったまま降りなかった";
+	if (!fell && end.depth > 1 && f.turns <= 1)
+		return `着いて${f.turns}ターンで散った`;
+	if (end.depth >= 3 && Object.values(s.kills).every((n) => !n))
+		return "1体もたおさずにここまで来た";
+	if (end.depth >= 4 && s.stats.itemsUsed === 0)
+		return "道具を1つも使わずに散った";
+	if (p.lv === 1 && end.depth >= 4) return "Lv1のまま、ここまでは来た";
+	if (p.weapon === null && p.shield === null && end.depth >= 7)
+		return "素手と私服でここまで来た";
+	if (!fell && near(f.stairs, p) === 1) return "階段まであと1歩だった";
+	return null;
 };

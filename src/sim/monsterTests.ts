@@ -72,7 +72,7 @@ import {
 	type Objective,
 	PLAYER_ID,
 } from "../core/types";
-import { deathNote } from "../data/story/deathNotes";
+import { deathNote, deathSpecial } from "../data/story/deathNotes";
 
 // ───────────────── 試験の枠 ─────────────────
 
@@ -4474,5 +4474,111 @@ test(
 			),
 		);
 		ok(puyu.size >= 3, `ぷゆゆ: ${[...puyu].join(" / ")}`);
+	},
+);
+
+test(
+	"death_special",
+	"めずらしい たおれ方：階段の となり・飢えて パンを 持っていた・帰還スレを 読まずに・ボスに リベンジされた は 1つきりの 文。どれも 22字に 収まる",
+	() => {
+		const dead = (cause: string, tweak: (r: Run) => void = () => {}) => {
+			const r = arena("death-special");
+			r.s.depth = 3;
+			r.s.floor.turns = 50;
+			r.s.kills = { tousuko: 1 };
+			r.s.stats.itemsUsed = 1;
+			r.s.player.items = [];
+			r.s.floor.stairs = { x: r.p.x + 5, y: r.p.y };
+			tweak(r);
+			r.s.end = { kind: "dead", cause, depth: r.s.depth, turn: r.s.turn };
+			return r.s;
+		};
+		const item = (kind: string) => ({
+			uid: 900,
+			kind,
+			plus: 0,
+			cursed: false,
+			charges: 0,
+			known: true,
+			count: 1,
+		});
+		ok(deathSpecial(dead("ぷゆゆにたおされた")) === null, "plain death");
+		const cases: [string, ReturnType<typeof dead>, string][] = [
+			[
+				"stairs",
+				dead("ぷゆゆにたおされた", (r) => {
+					r.s.floor.stairs = { x: r.p.x + 1, y: r.p.y };
+				}),
+				"階段まであと1歩だった",
+			],
+			[
+				"food",
+				dead("おなかがすいてたおれた", (r) => {
+					r.s.player.items = [item("f_bread")];
+				}),
+				"片親パンを持ったまま餓死した",
+			],
+			[
+				"escape",
+				dead("ぷゆゆにたおされた", (r) => {
+					r.s.player.items = [item("s_escape")];
+				}),
+				"",
+			],
+			[
+				"boss",
+				dead(
+					`${MONSTERS[DUNGEONS.main.boss?.monster ?? ""]?.name}にたおされた`,
+				),
+				"",
+			],
+		];
+		for (const [what, s, want] of cases.slice(0, 2))
+			ok(deathSpecial(s) === want, `${what}: ${deathSpecial(s)}`);
+		ok(
+			deathSpecial(cases[2][1])?.includes("帰還スレ") ?? false,
+			`escape: ${deathSpecial(cases[2][1])}`,
+		);
+		ok(deathSpecial(cases[3][1]) === null, "boss, never beaten");
+		ok(
+			deathSpecial(cases[3][1], { bossBeaten: true })?.endsWith(
+				"にリベンジされた",
+			) ?? false,
+			`boss: ${deathSpecial(cases[3][1], { bossBeaten: true })}`,
+		);
+		const width = (s: string) =>
+			[...s].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
+		const lines = cases.map(
+			([, s]) => deathSpecial(s, { bossBeaten: true }) ?? "",
+		);
+		// 板ごとの 品の 名前・敵の 名前で いちばん 長く なる 文
+		for (const d of DUNGEON_IDS) {
+			const goal = DUNGEONS[d].goal;
+			const r = arena(`death-special-${d}`, bigRoomLayout(), CENTER, d);
+			r.s.end = {
+				kind: "dead",
+				cause: "ぷゆゆにたおされた",
+				depth: 1,
+				turn: 9,
+			};
+			put(r, "ufo", at(3, 0)).carry = item(goal);
+			lines.push(deathSpecial(r.s) ?? "");
+			r.s.floor.monsters = [];
+			r.s.returning = true;
+			lines.push(deathSpecial(r.s) ?? "");
+		}
+		for (const m of MONSTER_LIST) {
+			const r = arena("death-special-kills");
+			r.s.kills = { [m.id]: 999 };
+			r.s.end = {
+				kind: "dead",
+				cause: `${m.name}にたおされた`,
+				depth: 3,
+				turn: 9,
+			};
+			lines.push(deathSpecial(r.s) ?? "");
+		}
+		for (const line of lines)
+			ok(width(`B30　${line}`) <= 22, `too wide: ${line}`);
 	},
 );

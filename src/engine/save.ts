@@ -23,6 +23,7 @@ import {
 	type Objective,
 	type RunState,
 } from "../core/types";
+import { type DeathPast, deathSpecial } from "../data/story/deathNotes";
 import { type ActiveEvent, advanceEvents } from "../data/story/objectives";
 import { INCIDENTS } from "../data/town/incidents";
 import { stageOfCleared } from "../data/town/revival";
@@ -222,6 +223,8 @@ export type RunRecord = {
 	cheat?: true;
 	/** 冒険に 出た 主人公（キリコなら 書かない。帰りの ひとことで 本人に ねぎらわせない。ui/village/villageTalk.ts）。 */
 	hero?: "roze" | "zero";
+	/** めずらしい たおれ方の 一文（data/story/deathNotes.ts の deathSpecial。無ければ 書かない）。 */
+	note?: string;
 };
 
 type Stats = { runs: number; clears: number; best: number };
@@ -237,6 +240,7 @@ export const recordFromRun = (s: RunState): RunRecord => {
 		depth: s.depth,
 		turn: s.turn,
 	};
+	const note = deathSpecial(s, deathPast(s));
 	return {
 		at: Date.now(),
 		kind: end.kind,
@@ -254,8 +258,20 @@ export const recordFromRun = (s: RunState): RunRecord => {
 			: {}),
 		...(s.cheat ? { cheat: true as const } : {}),
 		...(s.hero === "roze" || s.hero === "zero" ? { hero: s.hero } : {}),
+		...(note ? { note } : {}),
 	};
 };
+
+/** 記録から わかる 前の 冒険（同じ 冒険の 記録は 数えない。何度 呼んでも 同じ）。 */
+export const deathPast = (s: RunState): DeathPast => ({
+	bossBeaten: loadRecords().some(
+		(r) =>
+			r.seed !== s.seed &&
+			(r.dungeon ?? "main") === s.dungeon &&
+			r.kind === "clear" &&
+			r.objective === "boss",
+	),
+});
 
 const isRecord = (r: unknown): r is RunRecord => {
 	if (!r || typeof r !== "object") return false;

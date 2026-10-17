@@ -162,6 +162,7 @@ export const endLine = (
 		| "objective"
 		| "turn"
 		| "lv"
+		| "note"
 	>,
 ): string =>
 	`${DUNGEON_NAMES[r.dungeon ?? "main"].short}　${
@@ -171,7 +172,7 @@ export const endLine = (
 				? `${floorShort(r.dungeon, r.maxDepth)}から地上へもどった`
 				: r.kind === "escape"
 					? `${floorShort(r.dungeon, r.depth)}から帰還スレでもどった`
-					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}　${deathNote(r)}`
+					: `${r.returning ? "帰り道の　" : ""}${floorShort(r.dungeon, r.depth)}　${r.note ?? deathNote(r)}`
 	}`;
 
 /**
