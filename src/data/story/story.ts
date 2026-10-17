@@ -574,9 +574,9 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	main: { theme: "crystal", bgm: "field2", ambient: "snow" },
 	// 回路の 床（漏電の 火花）。過疎の 板なので 落ちついた 曲（嬰ハ短調 110。エレピ・ビブラフォン・シンセベースが 回路に 合う。
 	// もとは 夜の コインランドリー。その 前の retro は 戦闘曲っぽかった）
-	deep: { theme: "cyber", bgm: "kaiwai", ambient: "data" },
+	deep: { theme: "cyber", bgm: "speder2", ambient: "data" },
 	// 苔と 胞子。地下の 菌床（曲は ずれる 地層）
-	kinoko: { theme: "moss", bgm: "deq_strata", ambient: "spores" },
+	kinoko: { theme: "moss", bgm: "kaiwai", ambient: "spores" },
 	// 砂浜と 南国の 緑（水晶の 洞窟では 島に 見えないので）。水の しずく
 	// （曲は ニ長調 131 の ビブラフォン・チェレスタの 明るい サビ。もとは 水底に さす 光＝deq_sea）
 	tropical: { theme: "beach", bgm: "island", ambient: "glitter" },
