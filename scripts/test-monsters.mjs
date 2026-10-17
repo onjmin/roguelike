@@ -63,6 +63,9 @@ try {
 		"/src/sim/emoteInkTests.ts",
 	);
 	const { runSignTests } = await server.ssrLoadModule("/src/sim/signTests.ts");
+	const { runPlaceTests } = await server.ssrLoadModule(
+		"/src/sim/placeTests.ts",
+	);
 	const results = [
 		...runMonsterTests(),
 		...runEmoteInkTests(),
@@ -73,6 +76,7 @@ try {
 		...(await runJikkyoProgTests()),
 		...runCrowdTests(),
 		...runSignTests(),
+		...runPlaceTests(),
 		...(await runSabaTests()),
 		...(await runNetaTests()),
 		...(await runArcadeTests()),

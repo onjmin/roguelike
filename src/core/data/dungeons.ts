@@ -4,7 +4,7 @@
 //
 // - shallow：パン板（ぱんJ。いちばん 栄えた 植民地）の 4階。入門：杖だけ未識別・のろいなし・
 //   祭りは B3 の 独立記念パレードだけ・罠は B3 から。パン松の 縄張りで パンが よく出る。
-//   底（B4）は 敵の いない パン王国の 城下町で、持ち帰るのは 食パンの 国旗。
+//   底（B4）は 敵の いない パン王国の 城下町で、持ち帰るのは 食パンの 国旗。戦う 階は B1〜B3。
 // - main：風呂板（おふJ）の 12階。湯治：HP の 自然回復が 1.5倍。
 //
 // 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
@@ -36,6 +36,16 @@ import type {
 	RescueKind,
 } from "../types";
 import { ITEMS, MAIN_ITEMS } from "./items";
+import {
+	BATH_SPRING,
+	DENCHI_PLANT_TOUR,
+	FESTIVAL_YAGURA,
+	HIDDEN_STONE_ROOM,
+	ISLAND_HAMLET,
+	PAN_CASTLE_TOWN,
+	type PlaceMap,
+	TAKO_ROOFTOP,
+} from "./places";
 
 /**
  * 目的が boss の ときの いちばん底：ボスと、たおした あとに 一瞬で 入口へ 帰る わけ。
@@ -101,6 +111,10 @@ export type BringSpec = {
  */
 export type SettlementSpec = {
 	name: string;
+	/** 手づくりの 地図（core/data/places.ts。人は 1〜9 の 所に 立つ）。 */
+	map: PlaceMap;
+	/** この 階の 曲（data/audio/bgm.ts の 名前。敵の いない 所なので 板の 曲と かえる）。 */
+	bgm: string;
 	folk: readonly {
 		name: string;
 		sprite: string;
@@ -116,14 +130,14 @@ export type SettlementSpec = {
 export type RestFloor = {
 	depth: number;
 	name: string;
-	/** 源泉（踏むと HP が もどる）を 置く。 */
-	spring?: true;
+	/** 手づくりの 地図（core/data/places.ts。源泉は S、人は 1〜9、道具は g の 所）。 */
+	map: PlaceMap;
 	/** 立って いる 人（ぶつかると 話す。SettlementSpec の folk と 同じ）。 */
 	folk?: SettlementSpec["folk"];
 	/** 着いた 部屋に 置いて ある 道具（売店の パン など。長い 板の 中ほどの 補給）。 */
 	gifts?: readonly string[];
-	/** この 階の 曲（data/audio/bgm.ts の 名前。無ければ 層の 曲）。 */
-	bgm?: string;
+	/** この 階の 曲（data/audio/bgm.ts の 名前。敵の いない 所なので 層の 曲と かえる）。 */
+	bgm: string;
 };
 
 export type Dungeon = {
@@ -503,6 +517,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 底は パン王国の 城下町（板主 パン松。STORY.md §4.9）
 		settlement: {
 			name: "パン王国の城下町",
+			map: PAN_CASTLE_TOWN,
+			// 独立ごっこの 曲（村の パン板の 独立の 場面と 同じ 動機）
+			bgm: "kaiwai4",
 			folk: [
 				{
 					name: "パン王",
@@ -581,7 +598,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			{
 				depth: 7,
 				name: "露天の源泉",
-				spring: true,
+				map: BATH_SPRING,
+				// 湯に つかって ほっとする 曲
+				bgm: "yofukashi",
 				folk: [
 					{
 						name: "シヨ",
@@ -659,6 +678,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			{
 				depth: 8,
 				name: "発電所の見学コース",
+				map: DENCHI_PLANT_TOUR,
 				// 深夜の 発電所に ひとり：エレピの さびしい 曲
 				bgm: "deq_laundry",
 				folk: [
@@ -770,6 +790,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// てっぺんは 島の 集落。長に 話すと 送り届けた ことに なる
 		settlement: {
 			name: "山の上の集落",
+			map: ISLAND_HAMLET,
+			// 島の 暮らしの のどかな 曲
+			bgm: "kumori",
 			folk: [
 				{
 					name: "島民の長",
@@ -839,6 +862,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		objective: "event",
 		settlement: {
 			name: "最上階のたこパ会場",
+			map: TAKO_ROOFTOP,
+			// 屋上の 夜市みたいな にぎわい
+			bgm: "kimchi",
 			folk: [
 				{
 					name: "粉もん奉行",
@@ -907,6 +933,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// てっぺんは やぐら広場と 夜店。親分に 話すと 加わる
 		settlement: {
 			name: "やぐら広場",
+			map: FESTIVAL_YAGURA,
+			// 板の 曲（やぐらの太鼓）から、広場の ざわざわに かえる
+			bgm: "piropiro",
 			folk: [
 				{
 					name: "祭りの親分",
@@ -971,7 +1000,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		rests: [20, 40, 60, 80].map((depth) => ({
 			depth,
 			name: "静かな石室",
-			spring: true as const,
+			map: HIDDEN_STONE_ROOM,
+			// 雪の ように 静かな 回想の 曲
+			bgm: "shallow3",
 		})),
 		objective: "fetch",
 		floors: 99,

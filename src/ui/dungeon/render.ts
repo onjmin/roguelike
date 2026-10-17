@@ -11,8 +11,9 @@ import { forEachVisible } from "../../core/fov";
 import { type Dir8, spriteDir } from "../../core/geom";
 import { itemHidden } from "../../core/item";
 import { T_WALL, tileAt } from "../../core/mapgen";
-import type { Floor, RunState, Trap } from "../../core/types";
+import type { Floor, FloorProp, RunState, Trap } from "../../core/types";
 import {
+	cropOf,
 	drawRefInCell,
 	getImage,
 	onImageLoaded,
@@ -117,6 +118,73 @@ export type Projectile = {
 	ball?: boolean;
 };
 
+/**
+ * 手づくりの 地図の 置物を 描く（core/data/places.ts）。敷物は マスごと、ほかは 占める マスの 下の 中ほどに 合わせ、
+ * 絵ごとに scale 倍・lift だけ 上へ（上へ はみ出してよい）。
+ */
+const drawProp = (
+	ctx: CanvasRenderingContext2D,
+	p: FloorProp,
+	/** 光る 絵だけを 明るさ を 足して 重ねる（毎コマ。time は ミリ秒、ox・oy は 画面の 左上）。 */
+	glow?: { time: number; ox: number; oy: number },
+): void => {
+	for (const a of p.art) {
+		if (glow && !a.glow) continue;
+		const img = getImage(a.ref);
+		if (!img) continue;
+		const c = cropOf(a.ref) ?? { sx: 0, sy: 0, sw: img.width, sh: img.height };
+		const k = a.scale ?? 1;
+		const dw = Math.round(c.sw * k);
+		const dh = Math.round(c.sh * k);
+		ctx.save();
+		if (a.filter) ctx.filter = a.filter;
+		if (glow && a.glow) {
+			// ゆっくり 明るく なって もどる：まわりに 光の 輪、絵にも 明るさを 足す
+			const t =
+				((glow.time + (a.glow.phase ?? 0)) % a.glow.period) / a.glow.period;
+			const k = 0.5 - 0.5 * Math.cos(t * 2 * Math.PI);
+			ctx.globalCompositeOperation = "lighter";
+			ctx.translate(-glow.ox, -glow.oy);
+			const cx = p.x * TILE + (p.w * TILE) / 2;
+			const cy = (p.y + p.h) * TILE - dh / 2 - (a.lift ?? 0);
+			const rad = Math.max(dw, dh) * (0.6 + 0.25 * k);
+			const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+			halo.addColorStop(0, `rgba(${a.glow.color},${0.65 * k})`);
+			halo.addColorStop(1, `rgba(${a.glow.color},0)`);
+			ctx.fillStyle = halo;
+			ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+			ctx.globalAlpha = 0.4 * k;
+		}
+		if (p.walk)
+			for (let y = p.y; y < p.y + p.h; y++)
+				for (let x = p.x; x < p.x + p.w; x++)
+					ctx.drawImage(
+						img,
+						c.sx,
+						c.sy,
+						c.sw,
+						c.sh,
+						x * TILE,
+						y * TILE,
+						TILE,
+						TILE,
+					);
+		else
+			ctx.drawImage(
+				img,
+				c.sx,
+				c.sy,
+				c.sw,
+				c.sh,
+				Math.round(p.x * TILE + (p.w * TILE - dw) / 2),
+				(p.y + p.h) * TILE - dh - (a.lift ?? 0),
+				dw,
+				dh,
+			);
+		ctx.restore();
+	}
+};
+
 export class FloorView {
 	private terrain: HTMLCanvasElement | null = null;
 	private terrainFloor: Floor | null = null;
@@ -151,9 +219,13 @@ export class FloorView {
 		const theme = themeFor(s.dungeon, f.depth);
 		this.theme = theme;
 		this.terrainUrls = new Set(
-			[theme.floor, STATUE_STILL, ...theme.wallLower, ...theme.wallUpper].map(
-				resolveRef,
-			),
+			[
+				theme.floor,
+				STATUE_STILL,
+				...theme.wallLower,
+				...theme.wallUpper,
+				...(f.props ?? []).flatMap((p) => p.art.map((a) => a.ref)),
+			].map(resolveRef),
 		);
 		if (!this.terrain || this.terrainFloor !== f) {
 			this.terrain = document.createElement("canvas");
@@ -168,8 +240,12 @@ export class FloorView {
 		ctx.fillRect(0, 0, this.terrain.width, this.terrain.height);
 		// ただの 置物は 通れないが、床の 上に 立つ 物として 描く（壁の 面は つけない）
 		const statues = new Set(f.statues ?? []);
-		// 集落の 人の マス（通れないが 床の 上に 人が 立つ。人は play.ts が 描く）
+		// 集落の 人の マス（通れないが 床の 上に 人が 立つ。人は play.ts が 描く）と 手づくりの 地図の 置物の マス
+		// （置物の 絵は あとで 重ねる）
 		const folk = new Set((f.folk ?? []).map((x) => x.y * l.w + x.x));
+		for (const p of f.props ?? [])
+			for (let y = p.y; y < p.y + p.h; y++)
+				for (let x = p.x; x < p.x + p.w; x++) folk.add(y * l.w + x);
 		const isOpen = (x: number, y: number) =>
 			tileAt(l, x, y) !== T_WALL || statues.has(y * l.w + x);
 		for (let y = 0; y < l.h; y++) {
@@ -202,6 +278,11 @@ export class FloorView {
 				}
 			}
 		}
+		// 手づくりの 地図の 置物：敷物が 先、ほかは 下の はしが 上の 物から（手前の 物が 奥の 物に 重なる）
+		const props = [...(f.props ?? [])].sort(
+			(a, b) => Number(!a.walk) - Number(!b.walk) || a.y + a.h - (b.y + b.h),
+		);
+		for (const p of props) drawProp(ctx, p);
 		this.dirty = false;
 	}
 
@@ -233,6 +314,9 @@ export class FloorView {
 		const ox = Math.round(camX);
 		const oy = Math.round(camY);
 		if (this.terrain) ctx.drawImage(this.terrain, -ox, -oy);
+		// 手づくりの 地図の 光る 置物（水晶・発電炉）
+		for (const p of f.props ?? [])
+			if (p.art.some((a) => a.glow)) drawProp(ctx, p, { time, ox, oy });
 
 		// 見えているマス
 		const visible = new Uint8Array(l.w * l.h);

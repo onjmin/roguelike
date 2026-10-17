@@ -3,6 +3,7 @@
 // 状態（RunState）はそのまま JSON にして中断セーブに入れる。
 // マップの配列は保存するときだけ文字列にする（serial.ts）。
 
+import type { PlaceArt } from "./data/places";
 import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
 import type { RngState } from "./rng";
@@ -408,8 +409,23 @@ export type Floor = {
 	rest?: string;
 	/** 集落の 人（いちばん底の 集落。core/data/dungeons.ts の settlement。立つ マスは 置物と 同じく 通れない）。 */
 	folk?: FloorFolk[];
+	/**
+	 * 手づくりの 地図の 置物（名所の 階・底の 集落。core/data/places.ts）。x, y は 左上、w, h は 占める マス。
+	 * walk で なければ 占める マスは 置物（statues）と 同じく 通れない。
+	 */
+	props?: FloorProp[];
 	/** ボスを 見た（目を さまして 待ちかまえていた。画面の 曲と HP の ゲージ）。 */
 	bossSeen?: true;
+};
+
+/** 手づくりの 地図の 置物 1つ（Floor.props）。 */
+export type FloorProp = {
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	art: readonly PlaceArt[];
+	walk?: true;
 };
 
 // ───────────────────────── 冒険（1回の挑戦） ─────────────────────────

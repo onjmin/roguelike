@@ -12,7 +12,7 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
-import type { SettlementSpec } from "./data/dungeons";
+import type { RestFloor, SettlementSpec } from "./data/dungeons";
 import { ITEMS } from "./data/items";
 import { MONSTERS, monstersFor, SWAP_BREADS } from "./data/monsters";
 import { canSee } from "./fov";
@@ -25,8 +25,10 @@ import {
 	houseShapeLayout,
 	idx,
 	isFloor,
+	type Layout,
 	roomAt,
 	roomTiles,
+	T_ROOM,
 	T_WALL,
 } from "./mapgen";
 import type { Run } from "./run";
@@ -34,6 +36,8 @@ import {
 	DEEP,
 	DOZE,
 	type Floor,
+	type FloorFolk,
+	type FloorProp,
 	type Item,
 	type Monster,
 	type MonsterDef,
@@ -95,7 +99,9 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		depth === r.dungeon.floors && !r.s.returning && !bossFloor
 			? r.dungeon.settlement
 			: undefined;
-	const festival = house && !bossFloor && !rest && !settle;
+	// 名所と 集落は 手づくりの 地図（core/data/places.ts）
+	if (settle || rest) return buildPlaceFloor(r, depth, settle, rest);
+	const festival = house && !bossFloor;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
 		festival &&
@@ -163,50 +169,6 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 			),
 		);
 		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
-	}
-
-	if (settle) {
-		f.rest = settle.name;
-		revealAll(f);
-		placeFolk(r, f, start, settle);
-		return f;
-	}
-	if (rest) {
-		f.rest = rest.name;
-		revealAll(f);
-		if (rest.folk) placeFolk(r, f, start, { name: rest.name, folk: rest.folk });
-		if (rest.gifts && !r.s.returning) {
-			const spots = freeRoomTiles(
-				r,
-				f,
-				roomAt(f.layout, start.x, start.y),
-			).filter(
-				(t) =>
-					(t.x !== start.x || t.y !== start.y) &&
-					(t.x !== f.stairs.x || t.y !== f.stairs.y) &&
-					!f.items.some((i) => i.x === t.x && i.y === t.y),
-			);
-			for (const kind of rest.gifts) {
-				if (!spots.length) break;
-				const spot = spots.splice(rng.int(spots.length), 1)[0];
-				// 置きみやげは のろわない
-				const item = r.newItem(kind);
-				item.cursed = false;
-				f.items.push({ x: spot.x, y: spot.y, item });
-			}
-		}
-		if (rest.spring) {
-			const spot = rng.pick(
-				freeRoomTiles(r, f, null).filter(
-					(t) =>
-						(t.x !== start.x || t.y !== start.y) &&
-						(t.x !== f.stairs.x || t.y !== f.stairs.y),
-				),
-			);
-			if (spot)
-				f.traps.push({ x: spot.x, y: spot.y, kind: "spring", found: true });
-		}
-		return f;
 	}
 
 	placeStatues(r, f, start);
@@ -350,51 +312,167 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	return f;
 };
 
+/** 同じ 字の マスを つながった かたまりごとの 長方形に まとめる（巨大な 置物。かたまりは 長方形に 描く こと）。 */
+export const blocks = (
+	cells: readonly Pos[],
+): { x: number; y: number; w: number; h: number }[] => {
+	const left = new Set(cells.map((c) => `${c.x},${c.y}`));
+	const out: { x: number; y: number; w: number; h: number }[] = [];
+	for (const c of cells) {
+		if (!left.has(`${c.x},${c.y}`)) continue;
+		const group: Pos[] = [];
+		const todo = [c];
+		left.delete(`${c.x},${c.y}`);
+		while (todo.length) {
+			const p = todo.pop() as Pos;
+			group.push(p);
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1],
+			]) {
+				const k = `${p.x + dx},${p.y + dy}`;
+				if (!left.has(k)) continue;
+				left.delete(k);
+				todo.push({ x: p.x + dx, y: p.y + dy });
+			}
+		}
+		const xs = group.map((p) => p.x);
+		const ys = group.map((p) => p.y);
+		const x = Math.min(...xs);
+		const y = Math.min(...ys);
+		out.push({ x, y, w: Math.max(...xs) - x + 1, h: Math.max(...ys) - y + 1 });
+	}
+	return out;
+};
+
 /**
- * 集落の 人を 立たせる（置物と 同じく 通れない マス。部屋の 内がわで、階段・キリコ・品の となりは 避ける）。
+ * 名所の 階・底の 集落を 手づくりの 地図（core/data/places.ts）から 作る。敵・罠は 置かず、地図は はじめから 見える。
+ * 人・源泉・道具・階段・着く 所・持ち帰る 品は 地図の 字の 所（形と 置き場所に 乱数は 使わない）。
  */
-const placeFolk = (
+const buildPlaceFloor = (
 	r: Run,
-	f: Floor,
-	start: Pos,
-	settle: SettlementSpec,
-): void => {
-	const l = f.layout;
-	const near = (a: Pos, b: Pos) =>
-		Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) <= 1;
-	const taken: Pos[] = [f.stairs, start, ...f.items];
-	f.statues = [];
+	depth: number,
+	settle: SettlementSpec | undefined,
+	rest: RestFloor | undefined,
+): Floor => {
+	const spec = (settle ?? rest) as SettlementSpec | RestFloor;
+	const map = spec.map;
+	const w = Math.max(...map.rows.map((row) => row.length));
+	const h = map.rows.length;
+	const layout: Layout = {
+		w,
+		h,
+		tiles: new Uint8Array(w * h),
+		roomOf: new Int16Array(w * h).fill(-1),
+		rooms: [],
+	};
+	const at = (ch: string): Pos[] => {
+		const out: Pos[] = [];
+		map.rows.forEach((row, y) => {
+			for (let x = 0; x < row.length; x++)
+				if (row[x] === ch) out.push({ x, y });
+		});
+		return out;
+	};
+	// 床（壁と 外の ほかは ぜんぶ 1つの 部屋）
+	let x0 = w;
+	let y0 = h;
+	let x1 = -1;
+	let y1 = -1;
+	map.rows.forEach((row, y) => {
+		for (let x = 0; x < row.length; x++) {
+			if (row[x] === "#" || row[x] === " ") continue;
+			layout.tiles[idx(layout, x, y)] = T_ROOM;
+			layout.roomOf[idx(layout, x, y)] = 0;
+			x0 = Math.min(x0, x);
+			y0 = Math.min(y0, y);
+			x1 = Math.max(x1, x);
+			y1 = Math.max(y1, y);
+		}
+	});
+	layout.rooms.push({ id: 0, x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 });
+	const f: Floor = {
+		depth,
+		layout,
+		stairs: at(">")[0],
+		items: [],
+		traps: [],
+		monsters: [],
+		seen: new Uint8Array(w * h),
+		wards: [],
+		house: -1,
+		houseAwake: false,
+		turns: 0,
+		res: 0,
+		resWarned: 0,
+		senseMonsters: false,
+		senseItems: false,
+		sight: false,
+		rest: spec.name,
+		statues: [],
+		props: [],
+	};
+	const start = at("@")[0];
+	r.p.x = start.x;
+	r.p.y = start.y;
+	const block = (x: number, y: number) => {
+		layout.tiles[idx(layout, x, y)] = T_WALL;
+		(f.statues as number[]).push(idx(layout, x, y));
+	};
+	// 置物
+	for (const [ch, prop] of Object.entries(map.legend)) {
+		const cells = at(ch);
+		if (!cells.length) continue;
+		const groups = prop.big
+			? blocks(cells)
+			: cells.map((c) => ({ ...c, w: 1, h: 1 }));
+		for (const g of groups)
+			(f.props as FloorProp[]).push({
+				...g,
+				art: prop.art,
+				...(prop.walk ? { walk: true as const } : {}),
+			});
+		if (!prop.walk) for (const c of cells) block(c.x, c.y);
+	}
+	// 立って いる 人（1〜9 の 所。通れない）
 	f.folk = [];
-	for (const who of settle.folk) {
-		const cands = l.rooms
-			.flatMap((room) => roomTiles(room))
-			.filter(
-				(t) =>
-					DIRS8.every((d) => {
-						const q = step(t, d);
-						return (
-							roomAt(l, q.x, q.y) === roomAt(l, t.x, t.y) &&
-							isFloor(l, q.x, q.y)
-						);
-					}) &&
-					isFloor(l, t.x, t.y) &&
-					!taken.some((q) => near(q, t)),
-			);
-		if (!cands.length) break;
-		const at = r.rng.pick(cands);
-		l.tiles[idx(l, at.x, at.y)] = T_WALL;
-		f.statues.push(idx(l, at.x, at.y));
-		f.folk.push({
-			x: at.x,
-			y: at.y,
+	spec.folk?.forEach((who, n) => {
+		const spot = at(String(n + 1))[0];
+		if (!spot) return;
+		block(spot.x, spot.y);
+		(f.folk as FloorFolk[]).push({
+			x: spot.x,
+			y: spot.y,
 			name: who.name,
 			sprite: who.sprite,
 			lines: who.lines,
 			...(who.key ? { key: true as const } : {}),
 			said: 0,
 		});
-		taken.push(at);
+	});
+	// 持ち帰る 品（fetch の 底。目的が event・deliver・bring の 底は 着くと もらう）
+	if (settle && depth === r.dungeon.floors && !r.eventSpec && !r.bringSpec) {
+		const spot = at("*")[0];
+		f.items.push({ x: spot.x, y: spot.y, item: r.newItem(r.dungeon.goal) });
 	}
+	// 置きみやげ（帰り道は 置かない。のろわない）
+	if (rest?.gifts && !r.s.returning) {
+		const spots = at("g");
+		rest.gifts.forEach((kind, n) => {
+			const spot = spots[n];
+			if (!spot) return;
+			const item = r.newItem(kind);
+			item.cursed = false;
+			f.items.push({ x: spot.x, y: spot.y, item });
+		});
+	}
+	// 源泉
+	for (const spot of at("S"))
+		f.traps.push({ x: spot.x, y: spot.y, kind: "spring", found: true });
+	revealAll(f);
+	return f;
 };
 
 /** 地図を ぜんぶ 見える ように する（名所の 階）。 */

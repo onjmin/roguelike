@@ -279,16 +279,18 @@ const afterMotion = (ev: GameEvent[], i: number): boolean => {
 /**
  * 階ごとの BGM（層ごとに変わる。帰り道は原盤を持ち帰る曲）。
  * bossShown：ボスを 見つけた 知らせを もう 見せた（その あいだ 生きていれば ボスの 曲。板に 専用の 曲が あれば それ）。
- * 名所の 階に 曲が あれば その 階は それ。
+ * 名所の 階・底の 集落は その 所の 曲。
  */
 const floorBgm = (run: Run, bossShown = false): string => {
 	if (run.f.houseAwake) return HOUSE_BGM;
 	if (bossShown && run.boss) return bossBgm(run);
 	if (run.s.returning) return RETURN_BGM;
-	const rest = run.s.floor.rest
-		? run.dungeon.rests?.find((x) => x.depth === run.s.depth)
+	// 名所の 階・底の 集落（敵の いない 所）は その 所の 曲
+	const place = run.s.floor.rest
+		? (run.dungeon.rests?.find((x) => x.depth === run.s.depth) ??
+			(run.s.depth === run.dungeon.floors ? run.dungeon.settlement : undefined))
 		: undefined;
-	return rest?.bgm ?? zoneFor(run.s.dungeon, run.s.depth).bgm;
+	return place?.bgm ?? zoneFor(run.s.dungeon, run.s.depth).bgm;
 };
 
 /** その 冒険の ボスの 曲（専用の 曲が なければ 汎用の BOSS_BGM）。 */
