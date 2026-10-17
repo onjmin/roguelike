@@ -3,13 +3,20 @@
 //   scripts/make-equip.mjs が public/sprites/equip/<種類>.png に 書き出し、src/ui/dungeon/equip.ts の drawEquip が
 //   歩行グラの 上に 重ねる）。村では engine/field.ts の Actor.over に わたす（ui/village/village.ts の wear）。
 // - 地図の 上に 生える きのこ（ui/village/sceneShrooms.ts）は ここの drawShroom で じかに 描く。
+// - 湯気：絵では なく、頭から ゆらゆら 立ちのぼる 粒（Actor.aura。drawSteam）。
 // - 胞子：かさの 上から 粒が ふわっと 舞いあがって ひろがり、消える（Actor.puffSpores）。
 // - 絵の 文字：# が かさ、o が 白い 点、s が 柄。まわりを 1px の 縁で かこむ。
 
 /** 頭に のせる 物。 */
 export type HeadProp =
 	/** 赤い かさに 白い 点の きのこ（きのこ板）。 */
-	"kinoko";
+	| "kinoko"
+	/** 服に ついた パンくず（パン板の ボスに かつがれて 帰った）。 */
+	| "crumbs"
+	/** 髪に ついた ソースと マヨ（こなもん板の 鉄板から 帰った）。 */
+	| "sauce"
+	/** 髪から 立ちのぼる 湯気（風呂板の 湯柱で 飛んで 帰った。絵では なく 動く 粒。drawSteam）。 */
+	| "steam";
 
 type Glyph = readonly string[];
 
@@ -93,6 +100,29 @@ export const drawSpores = (
 		ctx.fillRect(x + 1, y + 1, 1, 1);
 		ctx.fillStyle = p.color;
 		ctx.fillRect(x, y, p.big ? 2 : 1, p.big ? 2 : 1);
+	}
+	ctx.globalAlpha = 1;
+};
+
+/**
+ * 頭から 湯気が ゆらゆら 立ちのぼる（cx は 頭の まんなか、top は 頭の てっぺん。t は 時刻）。
+ * 3すじが ずれて 上り、ゆれながら うすれる。
+ */
+export const drawSteam = (
+	ctx: CanvasRenderingContext2D,
+	cx: number,
+	top: number,
+	t: number,
+): void => {
+	const PERIOD = 1500;
+	for (let i = 0; i < 3; i++) {
+		const k = (t / PERIOD + i / 3) % 1;
+		const x = Math.round(cx - 4 + i * 4 + Math.sin(k * Math.PI * 2 + i) * 1.5);
+		const y = Math.round(top + 1 - k * 10);
+		ctx.globalAlpha = Math.min(1, k * 4, (1 - k) * 2) * 0.85;
+		ctx.fillStyle = "#ffffff";
+		ctx.fillRect(x, y, 1, 2);
+		ctx.fillRect(x + (k < 0.5 ? 1 : -1), y - 2, 1, 2);
 	}
 	ctx.globalAlpha = 1;
 };

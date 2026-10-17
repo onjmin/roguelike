@@ -740,6 +740,7 @@ export const STORY: Record<
 			},
 			{
 				...n("1UPの音が、鳴りやまない。\n……98回鳴った。「残機：99」"),
+				zanki: 99,
 				needCleared: "festival",
 				se: "arcBest",
 				seRepeat: 5,
@@ -859,6 +860,7 @@ export const STORY: Record<
 			// ずっこけの 曲を 切って、残機の 前ふりは 無音
 			{
 				...n("やきうの頭の上に、小さく\n「残機：1」と出ていた。"),
+				zanki: 1,
 				bgm: null,
 			},
 			{ ...k("……その数字、\nなにンゴ？"), about: "nanj" },
@@ -994,6 +996,7 @@ export const STORY: Record<
 			// 最終話の あと：正体が バレて いるので、ここで 数が 動く
 			{
 				...n("1UPの音が、鳴りやまない。\n……98回鳴った。「残機：99」"),
+				zanki: 99,
 				needCleared: "deep",
 				se: "arcBest",
 				seRepeat: 5,
@@ -1185,7 +1188,7 @@ export const STORY: Record<
  */
 export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	shallow: [
-		n("キリコの服に、\nパンくずがいっぱいついていた。"),
+		{ ...n("キリコの服に、\nパンくずがいっぱいついていた。"), wear: "crumbs" },
 		sOr(
 			s("nanj", "パン兵にかつがれて帰ってきたんか。\n出前やんけ"),
 			s("shiyo", "パンくずだらけじゃない。\nは、はらってあげるわよ", {
@@ -1194,7 +1197,7 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 		),
 	],
 	main: [
-		n("キリコの髪から、\nまだ湯気が立ちのぼっていた。"),
+		{ ...n("キリコの髪から、\nまだ湯気が立ちのぼっていた。"), wear: "steam" },
 		s("roze", "湯柱で飛んできたアル？\n湯冷めする前に着がえるアル", {
 			emote: "?",
 		}),
@@ -1212,7 +1215,7 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 		}),
 	],
 	konamono: [
-		n("キリコの髪は、\nソースと焦げのにおいがした。"),
+		{ ...n("キリコの髪は、\nソースと焦げのにおいがした。"), wear: "sauce" },
 		sOr(
 			s("nanj", "焦げくさっ！\n鉄板が噴火でもしたんか？", {
 				gesture: "startle",

@@ -115,6 +115,7 @@ import {
 import { clearLinger, endLinger, lingerDone } from "./villageMusic";
 import { openingHoldsGuide } from "./villageOpening";
 import { villageView } from "./villageReturn";
+import { drawZanki, setZankiTown } from "./zankiTag";
 
 /**
  * 節目の 音（台本の s.se）を 鳴らしたら、次の 文まで おく 間（ms）。victory は 完走・勝ち、
@@ -415,6 +416,7 @@ export class Village {
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
+		setZankiTown(v.cleared);
 		setShroomTown(
 			this.mapId === "village" ? v : null,
 			(x, y) => field.canEnter(x, y),
@@ -443,8 +445,8 @@ export class Village {
 			...field.actors.map((a) => a.sprite),
 			...(this.crowd ? Crowd.sprites() : []),
 			this.player.sprite,
-			// 頭の きのこ（Story.wear）
-			equipSheet("kinoko"),
+			// 頭の きのこ・服の パンくず・髪の ソース（Story.wear）
+			...(["kinoko", "crumbs", "sauce"] as const).map(equipSheet),
 		];
 		await Promise.race([preloadImages(refs.filter(Boolean)), sleep(2500)]);
 		this.updateCamera();
@@ -1521,6 +1523,8 @@ export class Village {
 		if (this.mapId === "village") drawShrooms(g, ox, oy);
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
+		// やきうの 頭の 上の「残機：1」（ui/village/zankiTag.ts）
+		drawZanki(g, field.actor("nanj"), ox, oy);
 		field.drawAbove(g, ox, oy);
 		// 掲示板・木などの 裏に ほとんど隠れた 人は 薄く見せる（キリコも 村の人も）。
 		// 向きの ない 絵（置物・看板）は 地形の 一部なので 透かさない
@@ -1539,6 +1543,7 @@ export class Village {
 		if (this.guideExit && this.mapId === "village" && !openingHoldsGuide())
 			this.drawExitGuide(g, ox, oy, this.scene);
 		// 時間帯の 色（外の 村と 板の 地上だけ。人通りと 同じ 時計。data/village/daylight.ts）
+		let tint: string | null = null;
 		if (this.mapId === "village" || this.mapId.startsWith("s_")) {
 			// 日付の 日の 出・日の 入りに 合わせて 少しずつ 色を うつす（data/village/daylight.ts の daylightAt。秒の 端数も 足す）
 			// 明かりの 場面は 時計に かかわらず 夜（ui/village/sceneSky.ts。dark は 明かりも 消す。
@@ -1558,6 +1563,7 @@ export class Village {
 				on && field.def.lights?.scene
 					? field.def.lights.scene(on.boards, on.homes)
 					: field.def.lights;
+			tint = day.tint;
 			if (day.tint) {
 				g.save();
 				g.globalCompositeOperation = "multiply";
@@ -1572,8 +1578,9 @@ export class Village {
 			}
 			this.drawLights(g, field, rule, ox, oy, day);
 		}
-		// お金の 出入り（頭の 上に ＋／−の 金額。夜の 色を かぶらない よう 最後に）
-		this.overhear.draw(g, ox, oy, this.screen.width);
+		// 吹き出しと お金の 出入り（頭の 上に ＋／−の 金額）は 夜の 色を かぶらない よう 最後に。
+		// 吹き出しは 字が 読める ぶんだけ 時間帯の 色を 薄めて 重ねる
+		this.overhear.draw(g, ox, oy, this.screen.width, tint);
 		this.moneyPops.draw(
 			g,
 			Math.round(this.player.fx * TILE - ox),
@@ -2163,19 +2170,22 @@ export class Village {
 			wear: (target, prop) => {
 				const a = this.actorFor(target);
 				if (!a) return;
-				// 装備の 重ね描きと 同じ（public/sprites/equip/<種類>.png を 向きと 足踏みの コマで 重ねる）
-				a.over = prop
-					? (ctx, dir, frame, x, y) =>
-							drawEquip(
-								ctx,
-								{ weapon: null, shield: null, head: prop },
-								dir,
-								frame,
-								x,
-								y,
-								"over",
-							)
-					: null;
+				// 湯気は 動く 粒、ほかは 装備の 重ね描きと 同じ（public/sprites/equip/<種類>.png を 向きと
+				// 足踏みの コマで 重ねる）
+				a.aura = prop === "steam" ? "steam" : null;
+				a.over =
+					prop && prop !== "steam"
+						? (ctx, dir, frame, x, y) =>
+								drawEquip(
+									ctx,
+									{ weapon: null, shield: null, head: prop },
+									dir,
+									frame,
+									x,
+									y,
+									"over",
+								)
+						: null;
 			},
 			spores: (target) => this.actorFor(target)?.puffSpores(),
 			toast: (text) => this.toast(text),

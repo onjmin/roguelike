@@ -128,6 +128,7 @@ import {
 import { sayAs } from "./villageMobs";
 import { endScene, sceneBgm, villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
+import { setZankiScene } from "./zankiTag";
 
 /**
  * 開発用：`?stage=N` で 開いた 店の 段だけ 差しかえる（pnpm dev か ?debug のときだけ）。
@@ -618,7 +619,17 @@ export const returnScene = async (
 	let stage = stageOf(s, exit);
 	// 場面の エフェクト（煙・暗転などは 次の 頁も 同じ fx なら 残す）
 	let fx: { kind: SceneFx; run: FxRun } | null = null;
+	// どう 帰って きたかの 姿（服の パンくず・髪の 湯気・ソース）は 着いた ときから
+	const look =
+		a.kind === "clear" && a.objective === "boss"
+			? BOSS_RETURN[a.dungeon]?.find((p) => p.wear)?.wear
+			: undefined;
+	if (look) s.wear("player", look);
+	// 残機の 数が 出る・かわる 頁までは 前の 数（1 は まだ 出さない・99 は まだ 1）
+	const zanki = pages.find((p) => p.zanki !== undefined)?.zanki;
+	if (zanki !== undefined) setZankiScene(zanki === 99 ? 1 : null);
 	for (const p of pages) {
+		if (p.zanki !== undefined) setZankiScene(p.zanki);
 		// 場面の 曲（頂点の 場面など。null で 止める）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		// 場面の 空（明かりの 場面は 夜。ui/village/sceneSky.ts）
@@ -662,6 +673,7 @@ export const returnScene = async (
 	]);
 	await rebuild(s);
 	endShrooms();
+	setZankiScene(undefined);
 	homes = new Map();
 	setSceneSky(null);
 	lightsBack.clear();

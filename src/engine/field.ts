@@ -10,7 +10,7 @@ import {
 } from "./assets";
 import type { EventDef, MapDef, TileDef } from "./defs";
 import { drawEmote, type Emote, type Gesture, gestureAt } from "./emote";
-import { drawSpores, SPORE_MS } from "./headProp";
+import { drawSpores, drawSteam, SPORE_MS } from "./headProp";
 import { drawWalk, isWalkRef, stepFrame } from "./sprite";
 import { DIR_VEC, type Dir, TILE } from "./types";
 
@@ -81,6 +81,8 @@ export class Actor {
 				y: number,
 		  ) => void)
 		| null = null;
+	/** 頭から 立ちのぼる 湯気（engine/headProp.ts の drawSteam。null で 出さない）。 */
+	aura: "steam" | null = null;
 	/** 胞子を ふいた 時刻（-1 は 次の コマから。null は ふいて いない）。 */
 	private puffFrom: number | null = null;
 
@@ -261,6 +263,7 @@ export class Actor {
 			if (puff !== null && puff >= SPORE_MS) this.puffFrom = null;
 			else if (puff !== null) drawSpores(ctx, px + gx + 8, py + gy - 7, puff);
 		}
+		if (this.aura === "steam") drawSteam(ctx, px + gx + 8, py + gy, time);
 		if (this.emote !== this.emoteShown || this.emoteFrom < 0) {
 			this.emoteShown = this.emote;
 			this.emoteFrom = time;

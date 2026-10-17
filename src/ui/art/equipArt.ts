@@ -904,8 +904,9 @@ const drawShield = (
 		}
 };
 
-// ───────────────── 頭に のせる 物 ─────────────────
-// 「頭に きのこが 生えている」と 文が 言う 人の 頭（engine/headProp.ts）。いつも 体の 前（over）。
+// ───────────────── 頭に のせる 物・体に つく 物 ─────────────────
+// 文が「頭に きのこが 生えている」「服に パンくず」「髪に ソース」と 言う 人の 姿（engine/headProp.ts）。
+// いつも 体の 前（over）。
 
 /** 向き・コマごとの 頭の てっぺん（まん中の x と いちばん上の y）。歩行グラを 拡大して 読み取ったもの。 */
 const HEAD_TOP: Record<
@@ -930,15 +931,57 @@ const HEAD_TOP: Record<
 	],
 };
 
-/** 頭の 物の 絵（rows の 1文字が 1ドット。下はしの 行が 頭の てっぺんに 1行 うまる）。 */
+/**
+ * 頭に のせる 物・体に つく 物の 絵（rows の 1文字が 1ドット。'.' は 透明、ほかは pal の 色）。
+ * (dx, dy) は 絵の 左上の、頭の てっぺん（HEAD_TOP）からの ずれ。ink が あれば まわりに 暗い ふち。
+ */
 const HEADS: Record<
 	string,
-	{ rows: readonly string[]; pal: Record<string, string>; ink: string }
+	{
+		rows: readonly string[];
+		pal: Record<string, string>;
+		ink?: string;
+		dx: number;
+		dy: number;
+	}
 > = {
-	kinoko: { rows: KINOKO.big, pal: { "#": CAP, o: SPOT, s: STEM }, ink: EDGE },
+	// きのこ（下はしの 行が 頭の てっぺんに 1行 うまる）
+	kinoko: {
+		rows: KINOKO.big,
+		pal: { "#": CAP, o: SPOT, s: STEM },
+		ink: EDGE,
+		dx: -3,
+		dy: 1 - KINOKO.big.length,
+	},
+	// 服に ついた パンくず（パン板の ボスに かつがれて 帰った。肩から すその あたり）
+	crumbs: {
+		// o が くず、c が その 影（1粒 2ドット）
+		rows: [
+			"..oo...o..",
+			"..cc...c..",
+			"o....oo...",
+			"c....cc..o",
+			"...o.....c",
+			"...c..oo..",
+			".oo...cc..",
+			".cc..o....",
+			".....c....",
+		],
+		pal: { o: "#ffe0a0", c: "#a8682a" },
+		dx: -5,
+		dy: 6,
+	},
+	// 髪に ついた ソースと マヨ（こなもん板の 鉄板から 帰った）
+	sauce: {
+		// m が マヨ、s が ソース、h が ソースの 照り（たれて 落ちる）
+		rows: [".m.mm.m.", ".ssssss.", "s.shss.s", "..s..s.."],
+		pal: { s: "#7a3412", h: "#c8682a", m: "#fff6dc" },
+		dx: -4,
+		dy: 1,
+	},
 };
 
-/** 頭の 物を 描く（まわりに 暗い ふち）。 */
+/** 頭の 物を 描く。 */
 const drawHead = (
 	put: Put,
 	kind: string,
@@ -949,16 +992,17 @@ const drawHead = (
 	if (!h) return;
 	const top = HEAD_TOP[dir][frame % 2];
 	const w = Math.max(...h.rows.map((r) => r.length));
-	const x0 = top.x - Math.floor(w / 2);
-	const y0 = top.y - h.rows.length + 1;
+	const x0 = top.x + h.dx;
+	const y0 = top.y + h.dy;
 	const on = (x: number, y: number): boolean => (h.rows[y]?.[x] ?? ".") !== ".";
-	for (let y = -1; y <= h.rows.length; y++)
-		for (let x = -1; x <= w; x++)
-			if (
-				!on(x, y) &&
-				(on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1))
-			)
-				put(x0 + x, y0 + y, h.ink);
+	if (h.ink)
+		for (let y = -1; y <= h.rows.length; y++)
+			for (let x = -1; x <= w; x++)
+				if (
+					!on(x, y) &&
+					(on(x - 1, y) || on(x + 1, y) || on(x, y - 1) || on(x, y + 1))
+				)
+					put(x0 + x, y0 + y, h.ink);
 	h.rows.forEach((row, y) => {
 		for (let x = 0; x < row.length; x++) {
 			const c = h.pal[row[x]];
