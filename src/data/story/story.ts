@@ -482,8 +482,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "苔むしたスレ跡",
 		note: "「ほな、来年も」",
 		theme: "moss",
-		// 界隈曲（ほかの 板や 層と 重ならない 曲）
-		bgm: "kaiwai",
+		bgm: "field",
 		ambient: "spores",
 	},
 	{
@@ -547,7 +546,7 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 		name: "焦げた回線",
 		note: "「見出し、燃やしといたで」",
 		theme: "forge",
-		bgm: "kaiwai2",
+		bgm: "deep_koge",
 		ambient: "embers",
 	},
 	{
@@ -675,6 +674,8 @@ export const STORY: Record<
 					"キリコが坂を上がると、生き返った\n通りに、明かりがひとつずつともった。",
 				),
 				cue: "lightsUp",
+				// 場面の 曲（界隈曲その2。最後の サビで 全音 上がる）。鯖代の 書きこみで 止める
+				bgm: "kaiwai2",
 			},
 			// 広場の 祭り：来る 人は 持ち帰った 板で きまる（本筋の 3つは かならず）
 			n("広場に、板の人たちが集まってきた。\nパン兵、きのこ軍、42℃の番頭。"),
@@ -725,7 +726,8 @@ export const STORY: Record<
 			},
 			// 落差の オチ（201 の 作者が ゲームを 閉じる 型）。停電は 町 → 板 → 鯖ごとへ。転の 盛った 見出しが 本当に なる
 			n("祭りの最中、掲示板に\n管理人の書きこみがついた。"),
-			n("『鯖代払い忘れとったわ』"),
+			// 曲が ぷつっと 切れて、無音の まま 暗転と ロールバック
+			{ ...n("『鯖代払い忘れとったわ』"), bgm: null },
 			{ ...n("……町も、板も、画面ごと\nまっくらになった。"), se: "batonDown" },
 			k("……見出しどおりンゴ"),
 			n("翌朝。町は、何事もなかったように\nもとにもどっていた。"),

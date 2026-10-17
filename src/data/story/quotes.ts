@@ -78,6 +78,8 @@ export type StoryPage = Cue & {
 	se?: string;
 	seRepeat?: number;
 	seGap?: number;
+	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
+	bgm?: string | null;
 };
 
 /** 前の冒険の結果（null は まだ一度も もぐっていない）。 */

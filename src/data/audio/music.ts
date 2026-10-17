@@ -18,6 +18,11 @@ export const BOSS_BGM = "retro";
 export const RETURN_BGM = "title";
 /** 持ち帰った ときの 曲（終わりの 札）。 */
 export const ENDING_BGM = "ending";
+/**
+ * 町に 騒ぎが ある あいだの 村の 曲（data/town/incidents.ts。パン兵の 占領・きのこ軍の 行進 など）。
+ * 片づくと いつもの 村の 曲に もどる。蓄音機で 曲を えらんで いれば そちら。界隈曲（場面 専用）。
+ */
+export const INCIDENT_BGM = "kaiwai";
 
 /** 村の 曲（from の 段から。町が 育つと 明るい 曲に）。 */
 const VILLAGE_TIERS: readonly { from: number; bgm: string }[] = [
@@ -74,7 +79,10 @@ export const villageBgm = (
 	stage: number,
 	cleared: readonly DungeonId[],
 	pick: string | null,
+	incident = false,
 ): string =>
 	pick && records(stage, cleared).some((r) => r.bgm === pick)
 		? pick
-		: stageBgm(stage);
+		: incident
+			? INCIDENT_BGM
+			: stageBgm(stage);

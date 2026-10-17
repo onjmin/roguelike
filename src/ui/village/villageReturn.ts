@@ -360,6 +360,8 @@ export const returnScene = async (
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const id of here) s.face(`mob_${id}`, "player");
 	for (const p of pages) {
+		// 場面の 曲（頂点の 場面など。null で 止める）
+		if (p.bgm !== undefined) s.bgm(p.bgm);
 		if (p.cue) await playCue(s, p.cue);
 		await playPageSe(s, p);
 		if (p.mob) await sayAs(s, p.mob, p.text, cueOf(p));

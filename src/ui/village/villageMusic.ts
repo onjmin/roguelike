@@ -1,15 +1,23 @@
 // 村の 曲（data/audio/music.ts）を 保存と 設定から 引く・広場の 蓄音機で えらぶ。
 
 import { records, villageBgm } from "../../data/audio/music";
+import { activeIncidents } from "../../data/town/incidents";
 import type { Story } from "../../engine/defs";
 import { loadProgress, loadTown } from "../../engine/save";
 import { saveSettings, settings } from "../../engine/settings";
 import type { Ctx } from "../ctx";
 import { type ListItem, listWindow } from "../list";
 
-/** いま 村で 鳴らす 曲。 */
-export const villageSong = (): string =>
-	villageBgm(loadTown().stage, loadProgress().cleared, settings.villageBgm);
+/** いま 村で 鳴らす 曲（町に 騒ぎが あれば 騒ぎの 曲）。 */
+export const villageSong = (): string => {
+	const p = loadProgress();
+	return villageBgm(
+		loadTown().stage,
+		p.cleared,
+		settings.villageBgm,
+		activeIncidents(p).length > 0,
+	);
+};
 
 /** 蓄音機で 曲を えらぶ（かけられる 曲が 2つ 以上 あるときだけ 聞く）。 */
 export const chooseRecord = async (ctx: Ctx, s: Story): Promise<void> => {
