@@ -2,7 +2,8 @@
 // 2026-10-18 作者「蜘蛛の巣をはっているとか、ボロボロになっているとか、半壊しているとかで無人感を演出した方がいい」。
 // 建物ごとに 所の id で 2〜3 種を えらぶ（町じゅう 同じ すたれ方に しない）：
 //   蜘蛛の巣（扉と 角）・雑草（壁の 足もと）・ごみ（扉の 前）・さび（壁の すじと はがれ）・壁の ひび・やぶれた 垂れ幕、
-//   いくつかの 所は 半壊（屋根の へりの 穴と 落ちかけた 看板。看板は ui/village/signboards.ts）。
+//   散らばった 瓦礫。いくつかの 所は 半壊（屋根から 壁まで 崩れた 角・その 下の 瓦礫の 山と まわりに 飛んだ 瓦礫・
+//   窓に 打ちつけた 板・落ちかけた 看板。看板は ui/village/signboards.ts）。
 // 停電で 閉まった 通りは すたれない（一時の 休み）。持ち帰った 板の 通りは 生き返りの 知らせ（villageReturn.ts の
 // reviveScript）で cleanUp を 呼ぶと きらきら しながら 消える。それまでは 持ち帰った あとも すたれた まま。
 // 絵は 1ソース画素ずつ 塗る（ドット絵の 地図に そろえる）。
@@ -29,7 +30,14 @@ import { TILE } from "../../engine/types";
 
 type Cell = readonly [number, number];
 
-type Kind = "cobweb" | "weeds" | "litter" | "rust" | "cracks" | "banner";
+type Kind =
+	| "cobweb"
+	| "weeds"
+	| "litter"
+	| "rust"
+	| "cracks"
+	| "banner"
+	| "rubble";
 
 /** すたれた 建物（マスの 四角と 扉）。 */
 type Site = {
@@ -51,6 +59,7 @@ const KINDS: readonly Kind[] = [
 	"rust",
 	"cracks",
 	"banner",
+	"rubble",
 ];
 
 /** 所の id から 決まる 数（FNV-1a）。 */
@@ -387,21 +396,169 @@ const banner = (g: G, x: number, y: number, r: () => number): void => {
 	dot(g, x, y - 1, "#2a2420");
 };
 
-/** 半壊の 屋根の へり（上の はしに 穴。cx は 穴の まんなか）。 */
-const roofHole = (g: G, cx: number, y: number, r: () => number): void => {
-	const w = 9 + Math.floor(r() * 5);
-	for (let i = 0; i < w; i++) {
-		const d = Math.round(
-			3 + Math.sin((i / (w - 1)) * Math.PI) * 5 + (r() < 0.4 ? 1 : 0),
+const STONE = [
+	["#8a8478", "#b4ad9f", "#4e4a42"],
+	["#9a5a42", "#c07a5a", "#5e3424"],
+	["#7a7670", "#a29d94", "#45423d"],
+] as const;
+
+/** 瓦礫の かたまり 1つ（左上が (x, y)。上と 左が 明るく、下と 右が 暗い）。 */
+const chunk = (
+	g: G,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	r: () => number,
+): void => {
+	const [base, hi, lo] = STONE[
+		Math.floor(r() * STONE.length)
+	] as (typeof STONE)[number];
+	g.fillStyle = base;
+	g.fillRect(x, y, w, h);
+	g.fillStyle = hi;
+	g.fillRect(x, y, w - 1, 1);
+	g.fillStyle = lo;
+	g.fillRect(x + 1, y + h - 1, w - 1, 1);
+	g.fillRect(x + w - 1, y + 1, 1, h - 1);
+	// 欠けた 角
+	if (w > 2 && r() < 0.5) g.clearRect(x + (r() < 0.5 ? 0 : w - 1), y, 1, 1);
+};
+
+/** 折れた 板きれ（斜め）。 */
+const plank = (g: G, x: number, y: number, r: () => number): void => {
+	const len = 6 + Math.floor(r() * 6);
+	const up = r() < 0.5 ? -1 : 1;
+	line(g, x, y, x + len, y + up * Math.floor(len / 3), "#8a6844");
+	line(g, x, y + 1, x + len, y + 1 + up * Math.floor(len / 3), "#5a4430");
+};
+
+/** 地面に 散らばる 瓦礫（cx, y の まわり、ひろさ spread）。 */
+const rubble = (
+	g: G,
+	cx: number,
+	y: number,
+	spread: number,
+	n: number,
+	r: () => number,
+): void => {
+	for (let i = 0; i < n; i++) {
+		const big = r() < 0.45;
+		chunk(
+			g,
+			Math.round(cx + (r() * 2 - 1) * spread),
+			Math.round(y + r() * spread * 0.5),
+			big ? 3 + Math.floor(r() * 3) : 2,
+			big ? 2 + Math.floor(r() * 2) : 2,
+			r,
 		);
-		const x = cx - Math.floor(w / 2) + i;
-		g.fillStyle = "#16110d";
-		g.fillRect(x, y, 1, d);
-		// 折れた 板の はし
-		dot(g, x, y + d, i % 3 === 0 ? "#6b5640" : "#3a2e24");
 	}
-	// 折れて つき出た 垂木
-	line(g, cx - 2, y + 2, cx + 1, y + 7, "#7a6248");
+};
+
+/** 崩れた 角の 下に 積もった 瓦礫の 山（cx が 山の まんなか、y が 地面）。 */
+const rubblePile = (g: G, cx: number, y: number, r: () => number): void => {
+	// 奥から 手前へ、すそ ひろがりに 積む
+	for (let row = 0; row < 5; row++) {
+		const half = 4 + row * 3;
+		const n = 3 + row * 2;
+		for (let i = 0; i < n; i++)
+			chunk(
+				g,
+				Math.round(cx - half + r() * half * 2 - 2),
+				y - 7 + row * 2 + Math.floor(r() * 2),
+				3 + Math.floor(r() * 4),
+				2 + Math.floor(r() * 3),
+				r,
+			);
+	}
+	plank(g, cx - 8, y - 3, r);
+	if (r() < 0.6) plank(g, cx + 1, y, r);
+};
+
+/** 窓や 扉に 打ちつけた 板（×の 字。左上 (x, y)・ひろさ w）。 */
+const boards = (g: G, x: number, y: number, w: number): void => {
+	for (const [y0, y1] of [
+		[0, w - 3],
+		[w - 3, 0],
+	] as const) {
+		line(g, x, y + y0, x + w, y + y1, "#8a6844");
+		line(g, x, y + y0 + 1, x + w, y + y1 + 1, "#5a4430");
+	}
+	dot(g, x + 1, y + 1, "#2a2420");
+	dot(g, x + w - 1, y + 1, "#2a2420");
+};
+
+/**
+ * 半壊の 崩れた 角（屋根から 壁の 上まで 大きく 欠けて 中が 見える）。
+ * left で 左上か 右上、(x, y) は 建物の 左上、w は 幅、h は 欠ける 高さ。
+ */
+const collapsedCorner = (
+	g: G,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	left: boolean,
+	r: () => number,
+): void => {
+	const cw = Math.min(w - 6, Math.round(TILE * (1 + r() * 0.6)));
+	// 欠けの へり：角から 斜めに 下りる ぎざぎざ（行ごとの 欠けの 幅）
+	const edge: number[] = [];
+	for (let i = 0; i < h; i++) {
+		const t = i / (h - 1);
+		edge.push(
+			Math.max(
+				0,
+				Math.round(
+					cw * (1 - t * t) + (r() < 0.5 ? -1 : 1) * (1 + Math.floor(r() * 2)),
+				),
+			),
+		);
+	}
+	for (let i = 0; i < h; i++) {
+		const n = edge[i] as number;
+		if (n <= 0) continue;
+		const sx = left ? x : x + w - n;
+		// 抜けた 中（奥が 暗い）
+		g.fillStyle =
+			i < h / 3 ? "#1a1410" : i < (h * 2) / 3 ? "#271f19" : "#352a22";
+		g.fillRect(sx, y + i, n, 1);
+		// 折れた へり（明るい 断面）
+		dot(g, left ? x + n : x + w - n - 1, y + i, i % 2 ? "#a29d94" : "#7a7670");
+	}
+	// 中に 見える 折れた 梁と 垂れた 電線
+	const bx = left ? x : x + w;
+	const d = left ? 1 : -1;
+	line(g, bx, y + 5, bx + d * Math.round(cw * 0.8), y + 9, "#7a6248");
+	line(g, bx, y + 6, bx + d * Math.round(cw * 0.8), y + 10, "#4a3a2a");
+	line(
+		g,
+		bx + d * 3,
+		y + Math.round(h * 0.45),
+		bx + d * Math.round(cw * 0.5),
+		y + Math.round(h * 0.3),
+		"#7a6248",
+	);
+	for (let i = 0; i < 6; i++)
+		dot(
+			g,
+			bx + d * (2 + i),
+			y + 3 + Math.round(Math.sin(i / 2) * 2) + i,
+			"#202020",
+		);
+	// 欠けの へりに ひっかかった かけら
+	for (let i = Math.floor(h * 0.4); i < h; i += 3) {
+		const n = edge[i] as number;
+		if (n < 4) continue;
+		chunk(
+			g,
+			left ? x + n - 4 : x + w - n + 1,
+			y + i - 1,
+			3 + Math.floor(r() * 2),
+			2,
+			r,
+		);
+	}
 };
 
 /** 片づけの きらきら（a は 残りの 濃さ 1→0）。 */
@@ -456,35 +613,50 @@ const drawSite = (g: G, s: Site, ox: number, oy: number): void => {
 		} else if (k === "banner") {
 			const left = r() < 0.5;
 			banner(g, left ? X + 3 : X + W - 11, bottom - TILE + 1, r);
+		} else if (k === "rubble") {
+			rubble(g, X + W / 2, bottom + 2, W / 2 + 4, 4 + Math.floor(W / TILE), r);
 		}
 	}
-	// 半壊の 崩れた かけら
-	if (s.ruin)
-		for (let i = 0; i < 4; i++)
-			dot(
-				g,
-				X + 3 + Math.floor(r() * (W - 6)),
-				bottom + 1 + Math.floor(r() * 4),
-				"#6b5a48",
-			);
+	if (!s.ruin) return;
+	// 半壊：崩れた 角の 下に 瓦礫の 山、まわりに 飛んだ 瓦礫、窓に 打ちつけた 板
+	const left = ruinLeft(s.place);
+	rubblePile(g, left ? X + 8 : X + W - 8, bottom + 3, r);
+	rubble(
+		g,
+		X + W / 2,
+		bottom + 1,
+		W / 2 + TILE,
+		8 + Math.floor(W / TILE) * 2,
+		r,
+	);
+	rubble(g, left ? X - 6 : X + W + 6, bottom - 4, 6, 4, r);
+	if (s.h >= 2) boards(g, left ? X + W - 14 : X + 4, wallTop + 3, 10);
 };
 
-/** 半壊の 屋根の 穴（人より 手前の 屋根に そろえて 上に 描く）。 */
+/** 半壊の 崩れた 角が 左か（地面の 瓦礫の 山と 屋根の 欠けを そろえる）。 */
+const ruinLeft = (place: string): boolean =>
+	(hashOf(`${place}:side`) & 1) === 0;
+
+/** 半壊の 崩れた 角（人より 手前の 屋根に そろえて 上に 描く）。 */
 const drawRoof = (g: G, s: Site, ox: number, oy: number): void => {
 	if (!s.ruin) return;
 	const r = rngOf(`${s.place}:roof`);
-	const W = s.w * TILE;
-	roofHole(
+	// 屋根から 壁の 上の 段の なかばまで 欠ける
+	const h = Math.max(TILE, Math.round((s.h - 1.4) * TILE));
+	collapsedCorner(
 		g,
-		s.x * TILE - ox + Math.floor(W * (0.3 + r() * 0.4)),
+		s.x * TILE - ox,
 		s.y * TILE - oy,
+		s.w * TILE,
+		h,
+		ruinLeft(s.place),
 		r,
 	);
 };
 
 /**
  * 村の 地図：すたれた 建物の 飾り。ground は 壁と 地面の 物（MapDef.ground。人より 奥）、
- * decor は 屋根の 穴と 片づけの きらきら（MapDef.decor。人より 手前）。すたれた 所が なければ 無い。
+ * decor は 崩れた 角と 片づけの きらきら（MapDef.decor。人より 手前）。すたれた 所が なければ 無い。
  */
 export const decayLayers = (
 	v: VillageView,
