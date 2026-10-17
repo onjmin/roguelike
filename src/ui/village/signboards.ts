@@ -274,6 +274,39 @@ const boardsAt = (
 	...coreBoards(stage, cleared, blackout),
 ];
 
+/**
+ * その 段の 施設の 看板の 四角（地図の ソース画素。幅は 字に よるので 建物の はば いっぱいと みる）。
+ * 電光表示と 重ならない ことを 試験で 見る。
+ */
+export const facilitySignRects = (stage: number) =>
+	facilitiesAt(stage).flatMap((f) => {
+		const b = facilityBoard(f, [], false);
+		return b
+			? [
+					{
+						facility: f.id,
+						x0: b.left,
+						x1: b.right,
+						y0: b.bottom - H,
+						y1: b.bottom,
+					},
+				]
+			: [];
+	});
+
+/** その 段の 町の まんなかの 建物の 看板の 四角（幅は 字の 数から 見つもる）。煙突と 重ならない ことを 試験で 見る。 */
+export const coreSignRects = (stage: number) =>
+	coreBoards(stage, [], false).map((b) => {
+		const w = Math.min(b.right - b.left, [...b.text].length * FONT_PX + 8);
+		return {
+			place: b.key,
+			x0: b.cx - w / 2,
+			x1: b.cx + w / 2,
+			y0: b.bottom - H,
+			y1: b.bottom,
+		};
+	});
+
 /** 板を 置く 左上（画面の 画素）。 */
 const boardPos = (b: Board, img: HTMLCanvasElement, ox: number, oy: number) => {
 	const w = img.width - 1;

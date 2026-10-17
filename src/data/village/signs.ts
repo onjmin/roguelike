@@ -242,9 +242,10 @@ export const SIGNS: Record<string, SignDef> = {
 	izakaya: { text: "居酒屋草", look: "yakisugi" },
 	maid: { text: "メイドの土産", look: "maid" },
 	bushitsu: { text: "部室棟", look: "plate" },
-	shoken: { text: "おんJ証券", look: "plate" },
+	// 証券と ネットカフェは 屋根の へりに かける（扉の 上の 行は 電光の 株価と 案内の 面）
+	shoken: { text: "おんJ証券", look: "plate", row: 2 },
 	bank: { text: "おんJ銀行", look: "plate" },
-	netcafe: { text: "ROM専", look: "neonBlue" },
+	netcafe: { text: "ROM専", look: "neonBlue", row: 1 },
 };
 
 /**
@@ -308,7 +309,8 @@ export const CORE_SIGNS: readonly CoreSign[] = [
 		from: 4,
 		text: () => "銭湯ゆ",
 		look: () => "sento",
-		at: [35.5, 26],
+		// 入口の 上の 軒（煙突と 湯気より 下）
+		at: [35.5, 28],
 	},
 	// パン屋（商店街の 東の はし。data/village/map.ts の BAKERY_AT）
 	{

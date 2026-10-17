@@ -458,10 +458,10 @@ export const FINANCE_FACILITIES: readonly Facility[] = [
 		name: "ネットカフェ「ROM専」",
 		from: 5,
 		at: NETCAFE_AT,
-		// 平らな 屋根の へり・灰色の 壁・電光の 看板・自動ドア（3段の 小さな 店）
+		// 平らな 屋根の へり（看板を かける）・灰色の 壁・電光の 看板・自動ドア（3段の 小さな 店）
 		look: {
 			kind: "grid",
-			rows: ["[~=]", "g12h", "iDIj"],
+			rows: ["[==]", "g12h", "iDIj"],
 			door: "D",
 			keys: {
 				...ROOF,

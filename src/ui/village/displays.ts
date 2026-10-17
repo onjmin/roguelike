@@ -169,6 +169,39 @@ export const tickerDecor = (
 	};
 };
 
+/** 画面の 四角（地図の ソース画素。左端が cell、横 tiles マス）。看板と 重ならない ことを 試験で 見る。 */
+export const faceRect = (
+	cell: Cell,
+	tiles: number,
+	face: DisplayFace,
+): { x0: number; y0: number; x1: number; y1: number } => {
+	const f = FACES[face];
+	const x0 = cell[0] * TILE + f.x;
+	const y0 = cell[1] * TILE + f.y;
+	return { x0, y0, x1: x0 + tiles * TILE - f.x - f.padR, y1: y0 + f.h };
+};
+
+/** 村の 地図：その 段の 建物の 外の 電光表示の 四角（施設の id と）。 */
+export const outsideDisplayRects = (stage: number) => {
+	const built = facilitiesAt(stage);
+	return DISPLAYS.filter((d) => d.where === "outside").flatMap((d) => {
+		const f = built.find((x) => x.id === d.facility);
+		if (f?.look.kind !== "grid") return [];
+		const c = keyCell(f.look.rows, d.key);
+		if (!c) return [];
+		return [
+			{
+				facility: f.id,
+				...faceRect(
+					[f.at[0] + c[0], f.at[1] + c[1]],
+					[...d.key].length,
+					d.face,
+				),
+			},
+		];
+	});
+};
+
 /** 消えた 画面（左端が cell、横 tiles マス。字を 映さず 地だけ）。cell が 無ければ 無い。 */
 export const offDecor = (
 	cell: Cell | null,
