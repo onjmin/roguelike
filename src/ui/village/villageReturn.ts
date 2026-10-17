@@ -530,7 +530,9 @@ export const reliefScript = async (
 	roll = Math.random(),
 ): Promise<void> => {
 	const last = loadRecords()[0];
-	if (last?.kind !== "dead" || last.cause === QUIT_CAUSE) return;
+	// 古い 記録の「冒険を　やめた」（全角空白 あり）も やめた 冒険
+	if (last?.kind !== "dead" || last.cause.replaceAll("　", "") === QUIT_CAUSE)
+		return;
 	if (!giveRelief(last.at, roll)) return;
 	const [to] = freeAround(s, 1);
 	if (to) {

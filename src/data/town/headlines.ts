@@ -5,7 +5,7 @@
 
 import type { DungeonId } from "../../core/types";
 
-/** 板 → 名無しの 見出し（本筋の 順に 雑に なる。最後は「せんせんふこく」だけ）。 */
+/** 板 → 名無しの 見出し（本筋の 順に 雑に なる。最後は かっこも 漢字も ない）。 */
 export const HEADLINES: Partial<Record<DungeonId, string>> = {
 	shallow: "【悲報】パン板、独立を宣言",
 	kinoko: "【速報】きのこ軍上陸ｗｗｗ",
@@ -13,8 +13,11 @@ export const HEADLINES: Partial<Record<DungeonId, string>> = {
 	konamono: "【悲報】おんたこ宣戦布告か😡",
 	main: "【ｿｸﾎｳ】銭湯陥落",
 	festival: "太鼓とまらん",
-	deep: "せんせんふこく",
+	deep: "おんJタウンしゅうりょう",
 };
+
+/** 最終話の あと（鯖代の 払い忘れで ロールバック）の 見出し。 */
+export const ROLLBACK_HEADLINE = "【悲報】ワイらの冒険、ロールバック";
 
 /** 倒れて 帰る たびに 掲示板に ふえる 一行（何回目かで 決まる）。 */
 export const DEATH_LINES: readonly string[] = [

@@ -50,7 +50,12 @@ import {
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
-import { BOARD_NEWS, deathLine, HEADLINES } from "../../data/town/headlines";
+import {
+	BOARD_NEWS,
+	deathLine,
+	HEADLINES,
+	ROLLBACK_HEADLINE,
+} from "../../data/town/headlines";
 import {
 	activeIncidents,
 	activeVisitors,
@@ -63,6 +68,7 @@ import { type Surface, surfaceMapId, surfaceOf } from "../../data/town/surface";
 import {
 	CARRY_CHASE,
 	CARRY_LOCK,
+	CARRY_LOCK_CHASE,
 	CARRY_REFUSE,
 	STORE_DESK,
 	TOWN_MSG,
@@ -314,7 +320,7 @@ export const departTo = async (
 			? CARRY_LOCK
 			: undefined;
 	if (carry.length && refuse) {
-		await s.narrate(CARRY_CHASE);
+		await s.narrate(DUNGEONS[d].noCarry ? CARRY_CHASE : CARRY_LOCK_CHASE);
 		await sayAs(s, refuse.who, refuse.text, cueOf(refuse));
 		depositBag();
 		carry = [];
@@ -716,10 +722,15 @@ const boardScript =
 		const seized = activeIncidents(view).find((i) => i.seize)?.seize;
 		// 名無しの 見出しと、倒れた ときの 一行（data/town/headlines.ts）
 		const news = async () => {
-			for (const i of activeIncidents(view)) {
-				const line = HEADLINES[i.dungeon];
-				if (line) await s.narrate(fill(BOARD_NEWS.headline, { line }));
-			}
+			// 開いて いて まだ 持ち帰って いない 板の 見出し（新しい 2本）。最終話の あとは ロールバックの 見出し
+			const open = view.unlocked.filter(
+				(d) => !view.cleared.includes(d) && HEADLINES[d],
+			);
+			const lines = view.cleared.includes("deep")
+				? [ROLLBACK_HEADLINE]
+				: open.slice(-2).map((d) => HEADLINES[d] ?? "");
+			for (const line of lines)
+				await s.narrate(fill(BOARD_NEWS.headline, { line }));
 			const deaths = deathCount();
 			if (deaths > 0)
 				await s.narrate(
@@ -734,7 +745,8 @@ const boardScript =
 		await s.narrate(VILLAGE_MSG.board);
 		await news();
 		// 生き返った 通り（data/town/revival.ts）
-		await s.narrate(revivedLine(loadProgress().cleared));
+		// 停電の あいだは 0（data/town/revival.ts の revivedBoards）
+		await s.narrate(revivedLine(revivedBoards(view)));
 		const stage = previewStage() ?? loadTown().stage;
 		// おんJ芋煮会の はり紙（10月だけ。ui/minigames/imoni.ts）
 		const imoni = imoniBoardMenu();

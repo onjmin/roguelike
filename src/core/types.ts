@@ -532,6 +532,13 @@ export type RunState = {
 	 * （前の 版の 中断セーブ・リプレイ・parity の 基準が そのまま 通るように）。
 	 */
 	guest?: Guest;
+	/**
+	 * はじめに 村が 渡した 同行者（リプレイで 同じに 始める。冒険の 途中で guest が かわる 目的 bring の ため。
+	 * 渡して いない 冒険では 書かない）。
+	 */
+	guestStart?: GuestSpec;
+	/** 同行の 依頼を はたした 人（見たかった 階に 着いた。あとで guest が かわっても 残す）。 */
+	escortDone?: GuestId;
 };
 
 /** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */

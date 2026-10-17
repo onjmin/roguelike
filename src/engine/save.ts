@@ -111,7 +111,7 @@ export const saveRun = (s: RunState): void => {
 		if (s.end.kind !== "dead") addPendingReturn(s);
 		noteRunEnd(s.dungeon, s.end.kind, s.seed);
 		// 同行の 依頼（見たかった 階まで 連れていけたら、次に 村へ 入ると お礼。engine/escort.ts）
-		noteEscortRun(s.guest);
+		noteEscortRun(s.escortDone ? { id: s.escortDone, done: true } : s.guest);
 		return;
 	}
 	const text = serializeRun(s);
@@ -294,7 +294,8 @@ const RENAMES: readonly (readonly [string, string])[] = [
 	["ばくだん", "炎上案件"],
 	["ゴーレム", "論破厨"],
 	["ばけ札", "釣り"],
-	// 2026-10-17：パン板の 目的は 広場の 旗を 取り返す（STORY.md §4.9）
+	// 2026-10-17：パン板の 目的は 広場の 旗を 取り返す（STORY.md §4.9）。全角空白の ある 古い 綴りも
+	["パン板の　サイン色紙", "食パンの国旗"],
 	["パン板のサイン色紙", "食パンの国旗"],
 	["影に", "透明あぼーんに"],
 	["赤鬼", "顔真っ赤"],
@@ -1158,7 +1159,12 @@ const addReplay = (s: RunState): void => {
 		carry: s.carriedIn,
 		...(s.noLunch ? { noLunch: true } : {}),
 		...(s.hero ? { hero: s.hero } : {}),
-		...(s.guest ? { guest: { id: s.guest.id, goal: s.guest.goal } } : {}),
+		// はじめの 同行者（bring で 途中から 加わった 人は 入れない。送り届けの 人は 目的から 作られる）
+		...(s.guestStart
+			? { guest: s.guestStart }
+			: s.guest && s.objective !== "bring" && s.objective !== "deliver"
+				? { guest: { id: s.guest.id, goal: s.guest.goal } }
+				: {}),
 		dungeon: s.dungeon,
 		...(s.objective && s.objective !== "fetch"
 			? { objective: s.objective }

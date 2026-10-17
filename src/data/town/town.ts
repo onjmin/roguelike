@@ -197,6 +197,9 @@ export const CARRY_REFUSE: Record<
 	),
 };
 
+/** 倉庫封鎖の とき（プロトが 追いかけて くる。CARRY_LOCK）。 */
+export const CARRY_LOCK_CHASE = "プロトが追いかけてきた。";
+
 export const CARRY_CHASE = "ンゴ姉が追いかけてきた。";
 
 /**

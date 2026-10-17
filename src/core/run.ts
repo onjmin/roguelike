@@ -84,7 +84,7 @@ import {
 	kindName,
 	rollItem,
 } from "./item";
-import { isFloor, roomAt, T_WALL, tileAt } from "./mapgen";
+import { isFloor, roomAt, T_ROOM, T_WALL, tileAt } from "./mapgen";
 import {
 	isBoss,
 	mdef,
@@ -185,7 +185,8 @@ export class Run {
 		const base = dungeonById(dungeon);
 		const boss = objective === "boss" && !!base.boss;
 		const event = objective === "event" && !!base.event;
-		const deliver = objective === "deliver" && !!base.deliver;
+		// 依頼の 同行者を 連れて いく ときは 送り届けに しない（同行者は 1人。ふつうの 持ち帰り）
+		const deliver = objective === "deliver" && !!base.deliver && !guest;
 		const bring = objective === "bring" && !!base.bring;
 		const rng = Rng.fromSeed(seed);
 		// 底の 深さが かわる 板（おんMu）だけ、はじめに 深さを 引く（ほかの 板は 乱数の 順が 前と 同じ）
@@ -289,7 +290,10 @@ export class Run {
 		// 送り届ける 人は はじめから ついてくる（底で 満足して 帰らない よう 見たい 階は 底の 先）
 		if (deliver && base.deliver)
 			s.guest = newGuest({ id: base.deliver.guest, goal: dg.floors + 1 });
-		else if (guest && guest.id !== hero) s.guest = newGuest(guest);
+		else if (guest && guest.id !== hero) {
+			s.guest = newGuest(guest);
+			s.guestStart = { id: guest.id, goal: guest.goal };
+		}
 		// 倉庫から持ちこんだ道具（乱数は引かない。番号だけ この冒険のものに。種類は わかっている）
 		if (carry.length) {
 			s.carriedIn = carry.map((it) => ({ ...it }));
@@ -846,8 +850,10 @@ export class Run {
 		guestEnterFloor(this, first);
 		if (!carried && ankaOnArrival(this)) startAnka(this, true);
 		// 集落の 階：話す 相手の 知らせ（key の 人に 話すと 目的が すすむ：talkFolk）
+		// 話す 相手の 知らせは 目的が すすむ ときだけ（持ち帰りに かわった ときは 出さない）
 		const key = s.floor.folk?.find((x) => x.key);
-		if (key) this.msg(`${key.name}がいる。話しかけてみよう`);
+		if (key && (this.eventSpec || this.bringSpec))
+			this.msg(`${key.name}がいる。話しかけてみよう`);
 		// 目的が event・deliver：底に 着いたら 出来事が あって 入口へ 帰る（集落なら key の 人に 話してから）
 		if (this.eventSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.eventReached();
@@ -862,6 +868,17 @@ export class Run {
 		if (!bring || this.s.returning) return;
 		for (const line of bring.lines)
 			this.msg(line.replaceAll("キリコ", this.heroName));
+		// 依頼の 同行者が もう 見たかった 階に 着いて いれば、はたした ことを 残す（guest は 親分に かわる）
+		if (this.s.guest?.done) this.s.escortDone = this.s.guest.id;
+		// 集落に 立って いた 親分は 加わるので その マスから いなく なる
+		const key = this.f.folk?.find((x) => x.key);
+		if (key) {
+			const l = this.f.layout;
+			const i = key.y * l.w + key.x;
+			l.tiles[i] = T_ROOM;
+			this.f.statues = (this.f.statues ?? []).filter((x) => x !== i);
+			this.f.folk = (this.f.folk ?? []).filter((x) => x !== key);
+		}
 		this.s.guest = newGuest({ id: bring.guest, goal: Number.MAX_SAFE_INTEGER });
 		guestEnterFloor(this, true);
 		const it = this.newItem(this.dungeon.goal);
@@ -875,7 +892,15 @@ export class Run {
 		fo.said++;
 		this.msg(`${fo.name}「${line.replaceAll("キリコ", this.heroName)}」`);
 		if (!fo.key || this.s.end) return;
-		// 送り届ける 人が たおれて いれば ふつうの 持ち帰り（底の 品を 拾う）
+		// 送り届ける 人が 底で たおれて いれば ふつうの 持ち帰り（長が 底の 品を 渡す）
+		if (this.s.objective === "deliver" && this.s.guest?.down) {
+			delete this.s.objective;
+			const it = this.newItem(this.dungeon.goal);
+			if (!this.addItem(it)) this.p.items.push(it);
+			this.msg("……底の品を持ち帰ろう");
+			this.onAcquire(it);
+			return;
+		}
 		if (this.eventSpec) this.eventReached();
 		else if (this.bringSpec) this.bringJoin();
 	}

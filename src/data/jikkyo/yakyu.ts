@@ -674,7 +674,7 @@ export const JK_TELOP = {
 	relief: "ピッチャー交代　{nick}",
 	reliefN: "ピッチャー交代",
 	pinch: "代打　{nick}",
-	pinchN: "代打名無し",
+	pinchN: "代打　名無し",
 	defsub: "守備固め　{nick}",
 	walkin: "押し出し",
 	request: "リクエスト……判定くつがえる",

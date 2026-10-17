@@ -4370,3 +4370,50 @@ test(
 				ok([...`${fo.name}「${l}」`].length <= 24, `long folk line ${l}`);
 	},
 );
+
+test(
+	"bring-escort",
+	"連れ帰りの 板で 依頼の 同行者が 見たかった 階に 着いて いれば、親分が 加わっても はたした ことが 残り、リプレイは はじめの 同行者で 始まる",
+	() => {
+		const r = Run.create(
+			"bring-escort",
+			"festival",
+			[],
+			"bring",
+			true,
+			"kiriko",
+			{
+				id: "nichie",
+				goal: 6,
+			},
+		);
+		ok(r.s.guestStart?.id === "nichie", `start ${r.s.guestStart?.id}`);
+		r.enterFloor(6, false);
+		ok(r.s.guest?.done === true, "nichie did not reach her floor");
+		r.enterFloor(DUNGEONS.festival.floors, false);
+		talkKey(r);
+		ok(r.s.guest?.id === "oyabun", `guest ${r.s.guest?.id}`);
+		ok(r.s.escortDone === "nichie", `escortDone ${r.s.escortDone}`);
+		ok(
+			!r.f.folk?.some((x) => x.key),
+			"the 親分 stays on the floor after joining",
+		);
+		// 送り届けの 板に 依頼の 同行者を 連れて いくと ふつうの 持ち帰り
+		const t = Run.create(
+			"deliver-escort",
+			"tropical",
+			[],
+			"deliver",
+			true,
+			"kiriko",
+			{
+				id: "feris",
+				goal: 6,
+			},
+		);
+		ok(
+			t.s.guest?.id === "feris" && t.objective === "fetch",
+			`${t.s.guest?.id} ${t.objective}`,
+		);
+	},
+);

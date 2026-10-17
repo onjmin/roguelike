@@ -192,7 +192,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 	{
 		dungeon: "main",
 		id: "visit_bantou",
-		at: [36, 17],
+		at: [39, 17],
 		sprite: "pub:sprites/ofurou.png",
 		dir: "down",
 		name: "42℃の番頭",

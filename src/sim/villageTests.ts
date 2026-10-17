@@ -7484,3 +7484,42 @@ test("騒ぎの 人・ご近所は 道を ふさがない：どの 騒ぎの 村
 		"all cleared",
 	);
 });
+
+/**
+ * y を 持ち帰るには x を 持ち帰って いる はずか（unlockAfter を たどる。倒れて 開く 板（reliefAfter）は
+ * すぐ 前の 板を 持ち帰らなくても 開くので、その 1段は 数えない）。
+ */
+const mustClear = (y: DungeonId, x: DungeonId): boolean => {
+	let d: DungeonId | null = y;
+	while (d) {
+		const dg: (typeof DUNGEONS)[DungeonId] = DUNGEONS[d];
+		const prev: DungeonId | null = dg.unlockAfter;
+		if (!prev) return false;
+		if (prev === x && !dg.reliefAfter) return true;
+		d = prev;
+	}
+	return false;
+};
+
+test("騒ぎの 人と ご近所は、いっしょに 出る どの 組み合わせでも 同じ マスに 立たない", () => {
+	const people = [
+		...INCIDENTS.flatMap((i) =>
+			i.people.map((p) => ({ d: i.dungeon, p, visitor: false })),
+		),
+		...VISITORS.map((p) => ({ d: p.dungeon, p, visitor: true })),
+	];
+	for (const a of people)
+		for (const b of people) {
+			if (a === b) continue;
+			if (a.visitor !== b.visitor) {
+				const inc = a.visitor ? b : a;
+				const vis = a.visitor ? a : b;
+				// 同じ 板（持ち帰る 前と あと）・騒ぎの 板を 持ち帰らないと 開かない 板の ご近所とは 同時に 出ない
+				if (inc.d === vis.d || mustClear(vis.d, inc.d)) continue;
+			}
+			ok(
+				a.p.at[0] !== b.p.at[0] || a.p.at[1] !== b.p.at[1],
+				`${a.p.id} and ${b.p.id} share ${a.p.at}`,
+			);
+		}
+});

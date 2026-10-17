@@ -85,6 +85,11 @@ export const scheduleAnka = (
 ): void => {
 	const f = r.f;
 	f.anka = null;
+	// 名所・集落の 階には 敵が 来ないので、持ちこした 安価は ここで 流れる（荒らしも 来ない）
+	if (carried && f.rest) {
+		r.msg("前スレの安価は、この階で流れた");
+		return;
+	}
 	if (carried) {
 		// 同じ 物を 使う（画面は 物が かわったときだけ「安価が　来た」の レスを 出す）
 		f.anka = carried.a;
