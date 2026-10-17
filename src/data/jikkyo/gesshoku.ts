@@ -523,9 +523,7 @@ const isEclipseNight = (t: Today): boolean => t.d === 15;
 const BENCH_LINES: DayLines = [
 	{
 		when: isEclipseNight,
-		lines: [
-			"浜の　平たい　岩。\n今夜は　皆既月食。空が　よく　見える。",
-		],
+		lines: ["浜の　平たい　岩。\n今夜は　皆既月食。空が　よく　見える。"],
 	},
 ];
 

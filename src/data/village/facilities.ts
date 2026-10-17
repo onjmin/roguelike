@@ -2,9 +2,9 @@
 // 中の 部屋・調べる 物・中の 人・外の 物（釣り場など）が そろう。DOM も 保存も 使わない
 // （スクリプトは ui/village/facilities.ts、試験は src/sim/villageTests.ts）。
 //
-// - 建つ 段（from）から、建てかえの 段（until）の 前まで 立つ（交番 → 警察署 のように 同じ 所で 建てかわる）。
+// - 建つ 段（from）から、建てかえの 段（until）の 前まで 立つ（同じ 所で 建てかわる 物も ある）。
 // - 外観は 3つの 書き方：
-//     grid      絵を マスごとに 並べる（店・役所・家・車。RPGEN の 部品＝rpgenArt.ts の art() と Base.png）。字は 自動で 割りふる。
+//     grid      絵を マスごとに 並べる（店・家。RPGEN の 部品＝rpgenArt.ts の art() と Base.png）。字は 自動で 割りふる。
 //     building  ふつうの 家（屋根の 棟・軒、壁の 上段・下段。扉は 下段。Base.png の 家・壁・屋根）。字は 自動で 割りふる。
 //     block     自分で 字を 並べる（グラウンド・桟橋など。字と 絵は tiles に）。
 // - clear は 外観の 前に 敷く 地面（森を 開いた 草地・道。地図の 座標で 左上から 右へ）。
@@ -106,7 +106,7 @@ export type GridLook = {
 	floor?: string;
 	/** 台の キー（並べた 字。向こうの 人・物に 台ごしに 話しかけられる。屋台の 台）。 */
 	counter?: string;
-	/** 影を 落とすか（省くと 落とす。車・バス停は false）。 */
+	/** 影を 落とすか（省くと 落とす）。 */
 	shadow?: boolean;
 };
 
@@ -155,13 +155,10 @@ export type FacilityRoom = {
 	lines: Record<string, readonly string[]>;
 	people?: readonly FacilityPerson[];
 	/**
-	 * 調べると 遊べる 物（物の id → 遊び。駅の 改札＝電車で どの 板へも 出かけられる・ファミレスの
+	 * 調べると 遊べる 物（物の id → 遊び。ファミレスの
 	 * ドリンクバー＝1杯 注いで その場で 飲む・飲食店の 券売機＝品書き。ui/minigames/eat.ts・
 	 * jikkyo＝その 場所の 実況の 番組を 見る。data/jikkyo/schedule.ts・ui/jikkyo/jikkyoWatch.ts・
-	 * debate＝討論会（模擬議会の カンペ係）・kiben＝見分け方の はり紙・minutes＝模擬議会の 議事録。ui/minigames/debate.ts・
-	 * gikai＝議会の 日の 議会中継（見るだけ。ほかの 日は 文だけ。ui/jikkyo/jikkyoGikai.ts）・
 	 * bushitsu＝部室棟の 遊び（ui/bushitsu/bushitsu.ts）・saba＝マイクラの 部屋の 物（ui/saba/saba.ts）・
-	 * dosukoi＝どすこいポイントの 照会（町役場の 窓口・市役所の 住民課。ui/minigames/dosukoi.ts）・
 	 * arcade＝ゲームセンターの 筐体（物の 名前が ゲームの 名前。data/arcade/types.ts・ui/arcade/arcade.ts。
 	 * カジノの 換金所は 物の 名前 cashier。ui/arcade/casinoChips.ts）・
 	 * NetaPlay＝ネタスレの 遊び（data/neta/types.ts・ui/neta/neta.ts））。
@@ -251,7 +248,7 @@ const look = (
 	low: string,
 	wallColor: string,
 ): RoomLook => ({ floor, floorColor, up, low, wallColor });
-/** 白い 壁と 腰の 幅木（Base.png 507・508 行。コンビニ・交番・病院・警察署・港湾事務所）。 */
+/** 白い 壁と 腰の 幅木（Base.png 507・508 行。コンビニ）。 */
 const MODERN_UP = base(0, 507);
 const MODERN_LOW = base(0, 508);
 
@@ -261,22 +258,12 @@ const LOOKS = {
 	// 畳（Base.png 434〜436 行）と 和室の 壁（碁会所）
 	tatami: look(base(0, 436), "#b8b878", base(1, 57), base(1, 58), "#8a6a3a"),
 	konbini: look(ri("flWhite"), "#e4e4e0", MODERN_UP, MODERN_LOW, "#e8e8e4"),
-	koban: look(base(3, 48), "#9a9a9a", MODERN_UP, MODERN_LOW, "#e8e8e4"),
-	// 水色の タイル（診療所・総合病院）
-	clinic: look(ri("flBlue"), "#c8e0f0", MODERN_UP, MODERN_LOW, "#e8e8e4"),
-	// 灰色の タイル（警察署・港湾事務所）
-	office: look(ri("flGrey"), "#b0b0b0", MODERN_UP, MODERN_LOW, "#e8e8e4"),
 	dojo: look(base(0, 46), "#b8905a", base(1, 57), base(1, 58), "#8a6a3a"),
 	// 濃い 板の 床と しっくいの 壁（質屋）
 	wafu: look(base(0, 47), "#5a4030", base(1, 57), base(1, 58), "#8a6a3a"),
 	wood: look(base(0, 46), "#b8905a", base(1, 73), base(1, 74), "#9a7a4a"),
-	plank: look(base(0, 46), "#b8905a", base(1, 55), base(1, 56), "#6a4a2a"),
-	// 灰色の 壁と コンクリートの 床（ガレージ・整備工場）
-	garage: look(base(3, 46), "#9a9a9a", base(1, 69), base(1, 70), "#a8a8a8"),
-	arcade: look(ri("flRed"), "#a03018", base(1, 69), base(1, 70), "#a8a8a8"),
 	gym: look(base(4, 48), "#4a4a4a", base(1, 63), base(1, 64), "#d8d8d8"),
 	bar: look(base(0, 47), "#5a4030", base(1, 61), base(1, 62), "#a84a3a"),
-	court: look(base(0, 47), "#5a4030", base(1, 55), base(1, 56), "#6a4a2a"),
 	// 映画館：黒い 幕の 壁（Base.png 358〜360 行の 黒い カーテン）
 	cinema: look(base(4, 48), "#3a3a3a", base(3, 359), base(3, 360), "#202020"),
 	theater: look(base(0, 47), "#5a4030", base(1, 61), base(1, 62), "#a84a3a"),
@@ -735,7 +722,6 @@ const BASE_FACILITIES: readonly Facility[] = [
 		name: "グラウンド",
 		from: 3,
 		at: [31, 2],
-		// 新市街が できる（段4）までは 森を 開いた 道。そのあとは 北の 通りの 車線
 		clear: [[31, 10, ",,,.,,,,", 4]],
 		look: {
 			kind: "block",
@@ -1174,7 +1160,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			],
 		},
 	},
-	// ── 住宅街（段6）：新市街の 空いた 区画に 家が 並ぶ。都市（段7）で 役所や 盛り場に 建てかわる
+	// ── 分譲住宅（段6〜。北の 丘）
 	// 赤い 寄棟・桃色の カーテンの 窓・郵便受け
 	house(
 		"house_a",
@@ -2539,7 +2525,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			],
 		},
 	},
-	// ── 自販機（浜の 海の家の 横・バス停の 横。調べると 飲み物が 出る。コンビニと ゲームセンターの 自販機は 外観の 中）
+	// ── 自販機（浜の 海の家の 横。調べると 飲み物が 出る。コンビニと ゲームセンターの 自販機は 外観の 中）
 	vending("vend_beach", [11, 35], 0, 2, "sand"),
 	fixture(
 		"post_city",
@@ -2566,21 +2552,15 @@ const BASE_FACILITIES: readonly Facility[] = [
 	...EATERIES,
 	// ── マイクラ（data/village/saba.ts。南西の 海の 島。段2〜）
 	...SABA_FACILITIES,
-	// ── 部室棟（data/village/bushitsu.ts。新市街の 北の はし。段4〜）
+	// ── 部室棟（data/village/bushitsu.ts。北西の 丘。段4〜）
 	...BUSHITSU_FACILITIES,
 	// ── 季節の 行事（data/village/season.ts。浜の すみの 芋煮の かまど）
 	...SEASON_FACILITIES,
 	// ── ヲタショップ「神降臨」（data/village/otaku.ts。盛り場の 劇場と カジノの あいだ。段7〜）
 	...OTAKU_FACILITIES,
-	// ── おんJ証券 新市街支店（段4〜）・ネットカフェ「ROM専」（段5〜）（data/village/finance.ts）
+	// ── おんJ証券 商店街支店（段4〜）・ネットカフェ「ROM専」（段5〜）（data/village/finance.ts）
 	...FINANCE_FACILITIES,
 ];
-
-/**
- * 都市（段7）で ふえる 集合住宅（縦の 通りを 1本に した あとの 空き地。北の 中庭 y=9〜12 の 扉は 下の 芝 y=13、
- * 緑道 x=63〜69 の タワマンは 大通りの 歩道、マンションは 南の 中庭へ 出る）。中は もとの 建物と 同じ 間取り。
- */
-const MORE_HOUSING: readonly Facility[] = [];
 
 /**
  * 港から 山へ 上がる 町（TOWN.md §0.2）に 置きなおした 施設の 左上。扉・外の 物・地面も 同じだけ ずらす。
@@ -2642,10 +2622,7 @@ const moveTo = (f: Facility, to: Cell): Facility => {
 };
 
 /** 町に 立つ 施設（色ちがいの 集合住宅は うしろ）。 */
-export const FACILITIES: readonly Facility[] = [
-	...BASE_FACILITIES,
-	...MORE_HOUSING,
-]
+export const FACILITIES: readonly Facility[] = [...BASE_FACILITIES]
 	.map((f) => (MOVED[f.id] ? moveTo(f, MOVED[f.id]) : f))
 	.map((f) => (KEEP_UP[f.id] ? { ...f, until: undefined } : f));
 
@@ -2809,7 +2786,7 @@ export const facilityTiles = (): Record<string, TileDef> => {
 
 /**
  * 建物の 影（マス単位。光は 左上から：建物の 右がわの 地面に、軒から 足もとまで）。ふつうの 家と 絵を 並べた
- * 外観（車・バス停は 落とさない。block の 外観＝グラウンド・港なども 影なし）。ui/village/shadows.ts の shadowGround が 描く。
+ * 外観（block の 外観＝グラウンド・港なども 影なし）。ui/village/shadows.ts の shadowGround が 描く。
  * 絵を 並べた 外観は 右はしの 同じ 行を まとめて 1本ずつ（コンビニの 自販機のような 出っぱりにも 影）。
  */
 export const facilityShadows = (

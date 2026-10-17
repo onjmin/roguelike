@@ -1,5 +1,5 @@
 // 実況の エンジン（純粋。DOM・保存・Math.random・data/ の import は なし）。
-// 配信会館の ナイター実況（野球）と、あとで 足す 台本の 番組（映画館の 金曜ロード保守・劇場の 紅白・議会中継）が
+// 配信会館の ナイター実況（野球）と、あとで 足す 台本の 番組（映画館の 金曜ロード保守・劇場の 紅白）が
 // 同じ「スレの 経済」を 使う：予算・書きこみの 波・コンボ・998 で 止める・1000 と 次スレ・勢い・行の 書き手。
 //
 // - 時間割（JkTimeline）は 番組ごとの 組み立て役が 作る（野球は data/jikkyo/yakyu.ts の yakyuTimeline）。
@@ -12,7 +12,7 @@
 //   台本の 番組は compileScript() で 時間割に する（区切り・窓・Cue・目立つ 書きこみ・鯖が 重い・スレタイの かえ）。
 //   劇場の 紅白は 答えない ことが 正解の 窓（timeoutFit：除夜の 鐘で 黙る）と、キリコの 名前欄
 //   （0時までは 番組の 時計「新年まで＠…」、山場の あとは Cue の names＝おみくじ）を 使う。
-//   interactive:false（議会中継）は 見るだけの 番組：窓も 当番も 持たず、目立つ 書きこみ（議長・住人の 2行）を
+//   interactive:false は 見るだけの 番組：窓も 当番も 持たず、目立つ 書きこみ（議長・住人の 2行）を
 //   時刻どおりに 出して ヤジを まぜる。B 1回で 閉じる。早送りは UI が dt を のばす。
 //   blocking の 窓の timeoutFit は 型だけ 置き、使えば jkStart が 投げる。
 //
@@ -232,7 +232,7 @@ export type JkRules = {
 	/** 見るだけで 窓の かわりに 置く 間。 */
 	readonly watchHold: number;
 	readonly windowMode: "blocking" | "overlay";
-	/** false＝見るだけの 番組（議会中継。窓・当番なし、B 1回で 閉じる）。 */
+	/** false＝見るだけの 番組（窓・当番なし、B 1回で 閉じる）。 */
 	readonly interactive: boolean;
 	/** ここで ふつうの 行を 止める（998）。 */
 	readonly hold: number;
@@ -663,7 +663,7 @@ const guard = (tl: JkTimeline, rules: JkRules): void => {
 	};
 	const overlay = rules.windowMode === "overlay";
 	if (tl.overlays.length && !overlay) no("overlay windows in blocking mode");
-	// 見るだけの 番組（議会中継）は 窓も 当番も 持たない
+	// 見るだけの 番組は 窓も 当番も 持たない
 	if (
 		!rules.interactive &&
 		(tl.overlays.length || tl.segs.some((s) => s.win) || rules.duty)
@@ -1899,7 +1899,7 @@ export const jkStep = (st: JkSt, dt: number, input?: JkInput): JkEv[] => {
 	}
 	const d = Math.max(0, dt);
 	if (input && "quit" in input) {
-		// 見るだけ・見るだけの 番組（議会中継）は B 1回で 閉じる
+		// 見るだけ・見るだけの 番組は B 1回で 閉じる
 		if (
 			st.opt.watch ||
 			!st.rules.interactive ||

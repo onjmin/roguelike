@@ -68,15 +68,6 @@ export const SIGN_LOOKS = {
 		edge: "#7a1610",
 		ink: "#ffe27a",
 	},
-	/** だいだいの 板に 白い 字（牛丼）。 */
-	donburi: {
-		font: "fude",
-		bg: "#e8761a",
-		top: "#ff9a40",
-		edge: "#9a4a0c",
-		ink: "#ffffff",
-		outline: "#7a3008",
-	},
 	/** 桃色の 板（メイド喫茶）。 */
 	maid: {
 		font: "pop",
@@ -85,14 +76,6 @@ export const SIGN_LOOKS = {
 		edge: "#c0507e",
 		ink: "#ffffff",
 		outline: "#a02858",
-	},
-	/** 黄色の 板に 赤い 字（バーガー）。 */
-	burger: {
-		font: "pop",
-		bg: "#ffcc33",
-		top: "#ffe48a",
-		edge: "#c08a10",
-		ink: "#c8281e",
 	},
 	/** だいだいの 板（ファミレス）。 */
 	famires: {
@@ -153,14 +136,6 @@ export const SIGN_LOOKS = {
 		edge: "#0e0e0e",
 		ink: "#ff7a2a",
 	},
-	/** 黄色の 地に 黒い 字（整備工場）。 */
-	garage: {
-		font: "brand",
-		bg: "#e8c020",
-		top: "#ffe060",
-		edge: "#9a7a08",
-		ink: "#222222",
-	},
 	/** 夜の 店の ネオン（桃色）。 */
 	neonPink: {
 		font: "neon",
@@ -186,14 +161,6 @@ export const SIGN_LOOKS = {
 		top: "#e0b878",
 		edge: "#8a6430",
 		ink: "#2a1a0a",
-	},
-	/** ホワイトボードに 青い マジック（シェアハウス）。 */
-	whiteboard: {
-		font: "hand",
-		bg: "#f4f4f0",
-		top: "#ffffff",
-		edge: "#a0a4a8",
-		ink: "#2050a0",
 	},
 	/** 住まいの 表札（クリーム色）。 */
 	home: {
@@ -268,39 +235,16 @@ export const SIGNS: Record<string, SignDef> = {
 	restaurant: { text: "1000", look: "marine" },
 	ramen: { text: "麺屋　乙", look: "chuka" },
 	famires: { text: "ドリンクバー", look: "famires" },
-	corpo: { text: "おんJ荘", look: "home" },
-	mansion: { text: "メゾン・ド・おんJ", look: "home" },
 	myhome: { text: "おんJヶ丘", look: "home" },
-	danchi: { text: "おんJヶ丘団地", look: "plate" },
-	tower: { text: "おんJタワー", look: "plate" },
-	police: { text: "警察署", look: "plate" },
-	hospital: { text: "おんJ総合病院", look: "plate" },
-	firestation: { text: "消防署", look: "plate" },
-	court: { text: "地方裁判所", look: "plate" },
-	repair: { text: "整備工場", look: "garage" },
 	theater: { text: "おんJ劇場", look: "theater" },
-	harbor: { text: "港湾事務所", look: "plate" },
-	factory: { text: "工場", look: "plate" },
-	power: { text: "発電所", look: "plate" },
-	hills: { text: "おんJヒルズ", look: "plate" },
-	zakkyo: { text: "雑居ビル", look: "plate" },
 	tako: { text: "たこ八", look: "chuka" },
 	soba: { text: "2げと", look: "shiraki" },
-	gyudon: { text: "つゆだく", look: "donburi" },
 	izakaya: { text: "居酒屋　草", look: "yakisugi" },
-	sushi: { text: "寿司　鯖", look: "shiraki" },
-	chuka: { text: "中華　炎上", look: "chuka" },
-	burger: { text: "ワイバーガー", look: "burger" },
 	maid: { text: "メイドの土産", look: "maid" },
-	cityhall: { text: "おんJ市役所", look: "plate" },
 	bushitsu: { text: "部室棟", look: "plate" },
 	shoken: { text: "おんJ証券", look: "plate" },
 	bank: { text: "おんJ銀行", look: "plate" },
 	netcafe: { text: "ROM専", look: "neonBlue" },
-	sharehouse: { text: "スレ立て荘", look: "whiteboard" },
-	heights: { text: "ハイツおんJ", look: "home" },
-	mansion2: { text: "メゾンII", look: "home" },
-	tower2: { text: "タワーサウス", look: "plate" },
 };
 
 /**

@@ -22,9 +22,9 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		door: "rpgen:8gPREU", // ﾄﾞﾗｸｴ扉
 		/** 木の 扉（小屋・喫茶・バー・海の家 など）。 */
 		doorWood: "rpgen:wUHfmk", // RPGEN 扉を開ける音1（木）
-		/** 重い 金属の 扉（交番・警察・裁判所・役場・金庫 など）。 */
+		/** 重い 金属の 扉（銀行・金庫 など）。 */
 		doorSteel: "rpgen:HMyV1k", // RPGEN 扉を開ける音2（鉄）
-		/** 自動ドア（コンビニ・病院・駅・映画館 など）。 */
+		/** 自動ドア（コンビニ・映画館 など）。 */
 		autoDoor: "rpgen:FVgGfX", // 自動ドア
 		/** 引き戸（のれんの 店・銭湯・碁会所・道場）。 */
 		slideDoor: "rpgen:xGCo1O", // [チョコレート☆]ガラララッ

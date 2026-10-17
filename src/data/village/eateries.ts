@@ -5,11 +5,9 @@
 //
 //   段2 たこ焼き屋台「たこ八」（浜。桟橋の 東。中は なく、台ごしに 店番）
 //   段3 立ち食いそば「2げと」（北の 峠の 道の 西）
-//   段4 麺屋「乙」（facilities.ts。線路の 東の 南の 区画）
-//   段5 牛丼「つゆだく」（新市街の 北の 通りの 突きあたり。縦の 通りの 北）
+//   段4 麺屋「乙」（facilities.ts。東の 商店街の 南の 並び）
 //   段6 居酒屋「草」（浜の 西。海の家と 桟橋の あいだ）
-//   段7 寿司「鯖」・中華「炎上」（港の 岸壁。クレーンの 北）
-//   段6 バーガー「ワイバーガー」・段7 メイド喫茶「メイドの土産」（新市街の 緑道の 中庭。data/village/diners.ts）
+//   段7 メイド喫茶「メイドの土産」（東の 商店街。data/village/diners.ts）
 //
 // 絵は RPGEN の 部品（rpgenArt.ts の art・ri・riCell。scripts/pack-rpgen.mjs）と 同梱の Base.png。
 // ここからは facilities.ts の 値を 読まない（facilities.ts が ここを 読むので、まわりこむと 読みこみの 順で こわれる）。
@@ -389,6 +387,6 @@ export const EATERIES: readonly Facility[] = [
 			},
 		],
 	},
-	// ── バーガー「ワイバーガー」（段6）・メイド喫茶「メイドの土産」（段7）。新市街の 中庭（data/village/diners.ts）
+	// ── メイド喫茶「メイドの土産」（段7）。東の 商店街（data/village/diners.ts）
 	...DINERS,
 ];
