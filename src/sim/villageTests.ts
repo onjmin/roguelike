@@ -7092,7 +7092,11 @@ test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏�
 		const { s, log } = fakeStory();
 		await door.run(s);
 		ok(
-			log.some((l) => l === `narrate: ${VILLAGE_MSG.shut}`),
+			log.some(
+				(l) =>
+					l ===
+					`narrate: ${fill(VILLAGE_MSG.shutWhy, { board: DUNGEON_NAMES.kinoko.short })}`,
+			),
 			`no shutter line: ${log.join(" / ")}`,
 		);
 	}
@@ -7328,11 +7332,12 @@ test("町の 騒ぎ（STORY.md §4.9）: 板が 開いて から 持ち帰るま
 	ok(board?.run, "no plaza board");
 	if (board?.run) {
 		const { s, log } = fakeStory();
-		await board.run(s);
+		// 差し押さえでも 記録の 窓まで 進む（試験には 画面が ないので そこで 止まる）
+		await board.run(s).catch(() => {});
 		const seize = INCIDENTS.find((i) => i.seize)?.seize ?? "";
 		const head = fill(BOARD_NEWS.headline, { line: HEADLINES.shallow ?? "" });
 		ok(
-			log.join("\n") === `narrate: ${seize}\nnarrate: ${head}`,
+			log.slice(0, 2).join("\n") === `narrate: ${seize}\nnarrate: ${head}`,
 			`the seized board opened: ${log.join(" / ")}`,
 		);
 	}

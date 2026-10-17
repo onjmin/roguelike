@@ -15,7 +15,7 @@ import { OPENING } from "../town/town";
 /** 何のために 行くか（目的の 品の 先に ある もの）。持ち帰る 前だけ 出す。 */
 export const GOAL_WHY: Partial<Record<DungeonId, string>> = {
 	// 本筋（STORY.md §4.9）
-	shallow: "広場を占領したパン板の、国旗を取り返す",
+	shallow: "独立したパン板の、食パンの国旗を持ち帰る",
 	kinoko: "町を行進していくきのこ軍の、親玉に会う",
 	main: "閉まった銭湯の、立てこもりを片づける",
 	deep: "消えかけの電池板で、町の明かりを取りもどす",

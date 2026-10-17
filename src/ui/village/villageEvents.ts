@@ -63,7 +63,14 @@ import {
 	type IncidentPerson,
 	incidentPlaceId,
 } from "../../data/town/incidents";
-import { isRevived, lampsLit, revivedBoards } from "../../data/town/revival";
+import {
+	inBlackout,
+	isRevived,
+	lampsLit,
+	reviveAreaOf,
+	revivedBoards,
+	stageOfCleared,
+} from "../../data/town/revival";
 import { type Surface, surfaceMapId, surfaceOf } from "../../data/town/surface";
 import {
 	CARRY_CHASE,
@@ -737,12 +744,8 @@ const boardScript =
 					fill(BOARD_NEWS.deathOnBoard, { line: deathLine(deaths) }),
 				);
 		};
-		if (seized) {
-			await s.narrate(seized);
-			await news();
-			return;
-		}
-		await s.narrate(VILLAGE_MSG.board);
+		// 差し押さえでも 見出しは 読めるし、冒険の 記録・あらすじ・せっていも 選べる
+		await s.narrate(seized ?? VILLAGE_MSG.board);
 		await news();
 		// 生き返った 通り（data/town/revival.ts）
 		// 停電の あいだは 0（data/town/revival.ts の revivedBoards）
@@ -1056,8 +1059,14 @@ const shut = (place: string, v: VillageView, door = true): Script | null => {
 	// 騒ぎで 閉まって いる 所は その わけの 札（data/town/incidents.ts）
 	const why = activeIncidents(v).find((i) => i.shut?.[place])?.shut?.[place];
 	if (!why && isRevived(place, revivedBoards(v))) return null;
+	// どの 板を 持ち帰れば 開くかを 貼り紙で 言う（停電の あいだは 電池板）
+	const area = reviveAreaOf(place);
+	const board = inBlackout(v) ? "deep" : area?.dungeon;
+	const note = board
+		? fill(VILLAGE_MSG.shutWhy, { board: DUNGEON_NAMES[board].short })
+		: VILLAGE_MSG.shut;
 	return async (s) => {
-		await s.narrate(why ?? VILLAGE_MSG.shut);
+		await s.narrate(why ?? note);
 		if (door) await s.move("player", "d");
 	};
 };
@@ -1187,7 +1196,8 @@ export const buildVillage = (
 		},
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
 		crowd: {
-			stage: layoutStage(view),
+			// 人通りは 生き返った 通りの ぶんだけ（はじめの 寂れた 町は だれも 歩かない。停電の あいだも）
+			stage: stageOfCleared(revivedBoards(view)),
 			nodes: crowdNodes(view),
 			cost: villagePedCost(view),
 		},

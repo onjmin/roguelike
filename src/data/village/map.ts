@@ -1167,8 +1167,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			mob: id,
 		});
 	}
-	// 祭り（段7）：野次馬が うろうろ している
-	if (stage >= 7)
+	// 祭り（最終話の あと。よその 板から 見に 来た 野次馬が うろうろ している）
+	if (stage >= 7 && v.cleared.includes("deep"))
 		VILLAGE_SPOTS.yaji.forEach(([x, y], i) => {
 			out.push({
 				id: `yaji_${i}`,

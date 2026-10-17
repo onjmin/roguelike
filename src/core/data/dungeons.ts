@@ -474,12 +474,13 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			name: "パン王国の城下町",
 			folk: [
 				{
-					name: "パン松",
+					name: "パン王",
 					sprite: "pub:sprites/minors_panmatsu.png",
 					lines: [
 						"独立したかっただけや",
 						"国旗は食パンや。文句あるか",
-						"旗は持ってってええ。写しや",
+						"旗は持ってってええ。予備ならある",
+						"弟のパン松が、町で大使をしとる",
 					],
 				},
 				{
