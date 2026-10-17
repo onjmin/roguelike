@@ -706,6 +706,8 @@ export type Town = {
 	relief?: true;
 	/** 支給品を くれた たおれの 記録の 時刻（同じ たおれで 二度 もらわない）。 */
 	reliefAt?: number;
+	/** おんJマートの 今日の 入荷を 買った 帰り（記録の 数。同じ 帰りに 二度 買わない。data/town/stock.ts）。 */
+	stockAt?: number;
 	/** 帰りごとの 売り上げ（古い順。SALES_KEEP 件まで。ゼロの 帳簿の グラフ：ui/village/home.ts の openSales）。 */
 	sales: Sale[];
 	/** まだ決めていない 持ち帰り。 */
@@ -761,6 +763,7 @@ export const loadTown = (): Town => {
 				// 書いて いる ときだけ（無い ときの 形は 前の 版と 同じ）
 				...(o.relief === true ? { relief: true as const } : {}),
 				...(typeof o.reliefAt === "number" ? { reliefAt: o.reliefAt } : {}),
+				...(typeof o.stockAt === "number" ? { stockAt: o.stockAt } : {}),
 				sales: Array.isArray(o.sales) ? o.sales.filter(isSale) : [],
 				pending:
 					pend && isDungeon(pend.dungeon) && Array.isArray(pend.items)
@@ -931,6 +934,31 @@ export const giveLunch = (): boolean => {
 	t.lunch = true;
 	saveTown(t);
 	return true;
+};
+
+/**
+ * おんJマートの 今日の 入荷を 買って 倉庫へ（at は 帰りの 番号）。"ok"・同じ 帰りに もう 買った・倉庫が いっぱい。
+ * お金は 呼ぶ 側が 払う（払えたら これを 呼ぶ）。
+ */
+export const stockToStorage = (
+	kind: string,
+	at: number,
+): "ok" | "sold" | "full" => {
+	const t = loadTown();
+	if (t.stockAt === at) return "sold";
+	if (t.storage.length >= (STORAGE_CAP[t.stage] ?? 0)) return "full";
+	t.storage.push({
+		uid: 0,
+		kind,
+		plus: 0,
+		cursed: false,
+		charges: 0,
+		known: true,
+		count: 1,
+	});
+	t.stockAt = at;
+	saveTown(t);
+	return "ok";
 };
 
 /** 支給品（ぷゆゆソード）の 種類。 */

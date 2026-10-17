@@ -18,7 +18,7 @@ import { join } from "node:path";
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
-import { priceOf, TOWN_STAGES } from "../core/town";
+import { priceOf, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import { CAT_ORDER, type DungeonId, type Item } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
@@ -177,6 +177,7 @@ import {
 	ROOM_DOOR_SE,
 	ROOM_MSG,
 } from "../data/town/rooms";
+import { DAILY_STOCK, stockFor } from "../data/town/stock";
 import { SURFACES, surfaceOf } from "../data/town/surface";
 import {
 	TAMPER_LEDGER,
@@ -342,6 +343,7 @@ import {
 	saveTown,
 	sortStorage,
 	stashRelief,
+	stockToStorage,
 	type Town,
 	takeRelief,
 	toReplay,
@@ -1685,6 +1687,45 @@ const setTown = (stage: number, points: number): void =>
 		"kiriko-roguelike/town",
 		JSON.stringify({ points, stage, storage: [], pending: null, returned: [] }),
 	);
+
+test("今日の入荷: one food item per return, same item on the same return, into the storehouse once", () => {
+	// 食べものだけ（倉庫の 道具は 正体つきなので、薬草などは 売らない）
+	ok(
+		DAILY_STOCK.every((e) => defOf(e.kind).cat === "food"),
+		"stock that is not food",
+	);
+	ok(
+		stockFor(7).kind === stockFor(7).kind,
+		"the stock changes on the same return",
+	);
+	ok(
+		new Set(Array.from({ length: 30 }, (_, i) => stockFor(i).kind)).size > 1,
+		"the stock never changes",
+	);
+	withStorage(() => {
+		setTown(3, 0);
+		ok(stockToStorage("f_bread", 5) === "ok", "could not buy");
+		ok(
+			loadTown().storage.some((it) => it.kind === "f_bread" && it.known),
+			"not in the storehouse",
+		);
+		ok(stockToStorage("f_bread", 5) === "sold", "bought twice on one return");
+		ok(
+			stockToStorage("f_bread", 6) === "ok",
+			"could not buy on the next return",
+		);
+		// 倉庫が いっぱいなら 買えない
+		const t = loadTown();
+		t.storage = Array.from({ length: STORAGE_CAP[t.stage] ?? 0 }, () => ({
+			...t.storage[0],
+		}));
+		saveTown(t);
+		ok(
+			stockToStorage("f_bread", 7) === "full",
+			"bought into a full storehouse",
+		);
+	});
+});
 
 test("時間帯の ひとこと：昼の ほかは いつもの ひとことと 交互。どれも 村の 窓に 収まる", () => {
 	withStorage(() => {

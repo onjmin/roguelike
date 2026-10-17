@@ -12,6 +12,8 @@
 // どれも 寄り道で、強さにも 冒険にも 何も 効かない（くれる 物は 飾りと 思い出、お年玉は 財布）。
 // 保存は 別の 場所（kiriko-roguelike/bonds）。中断セーブ・記録・町には ふれない。
 
+import { defOf } from "../../core/item";
+import { STORAGE_CAP } from "../../core/town";
 import {
 	BIRTHDAY_MUL,
 	BOND_DEFS,
@@ -35,6 +37,7 @@ import { SPEAKERS, type Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { nowYear, season, today } from "../../data/town/calendar";
 import { BOND_GUIDE, byHeading } from "../../data/town/guides";
+import { STOCK_MSG, stockFor } from "../../data/town/stock";
 import type { Script, Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import {
@@ -43,6 +46,7 @@ import {
 	loadProgress,
 	loadRecords,
 	loadTown,
+	stockToStorage,
 } from "../../engine/save";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
 import type { Ctx } from "../ctx";
@@ -381,11 +385,38 @@ export const giftShelf = async (ctx: Ctx, s: Story): Promise<void> => {
 		for (const p of BOND_MSG.shelfHelp) await s.narrate(p);
 		if (!previewing()) addFlag(GIFT_TOLD);
 	}
-	const n = await s.choose([...BOND_MSG.shelfMenu], { cancel: 3 });
-	if (n === 0) await buyGift(ctx, s);
-	else if (n === 1) await bondBook(ctx, s);
+	const n = await s.choose([...BOND_MSG.shelfMenu], { cancel: 4 });
+	// 今日の 入荷（町の お金を 潜る 準備に。data/town/stock.ts）
+	if (n === 0) await buyStock(s);
+	else if (n === 1) await buyGift(ctx, s);
+	else if (n === 2) await bondBook(ctx, s);
 	// なかよし度の しくみ（いつでも 読める。data/town/guides.ts。あそびかたの「町の　しくみ」と 同じ）
-	else if (n === 2) await readGuide(s, byHeading(BOND_GUIDE));
+	else if (n === 3) await readGuide(s, byHeading(BOND_GUIDE));
+};
+
+/** 今日の 入荷を 買う（帰りごとに 1品。買った 物は 倉庫へ）。 */
+const buyStock = async (s: Story): Promise<void> => {
+	const at = loadRecords().length;
+	const t = loadTown();
+	if ((STORAGE_CAP[t.stage] ?? 0) <= 0) {
+		await s.narrate(STOCK_MSG.noStorage);
+		return;
+	}
+	if (t.stockAt === at) {
+		await s.narrate(STOCK_MSG.soldOut);
+		return;
+	}
+	const e = stockFor(at);
+	const item = defOf(e.kind).name;
+	await s.narrate(fill(STOCK_MSG.offer, { item, price: yen(e.price) }));
+	if ((await s.choose([...STOCK_MSG.menu], { cancel: 1 })) !== 0) return;
+	if (t.storage.length >= (STORAGE_CAP[t.stage] ?? 0)) {
+		await s.narrate(STOCK_MSG.full);
+		return;
+	}
+	if (!(await payOrShort(s, e.price))) return;
+	stockToStorage(e.kind, at);
+	await s.narrate(fill(STOCK_MSG.bought, { item }));
 };
 
 const buyGift = async (ctx: Ctx, s: Story): Promise<void> => {
