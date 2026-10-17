@@ -34,6 +34,7 @@ export const SCENE_BGM_SEC: Readonly<Record<string, number>> = {
 	deep4: 38,
 	sad: 129,
 	kaiwai2: 132,
+	kaiwai3: 119,
 	deep6: 55,
 	deep1: 45,
 };

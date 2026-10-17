@@ -74,7 +74,8 @@
 // | yofukashi    | -30.6（20）    | 20 → 45 | -23.6    |
 // | kaiwai       | -19.3（50）    | 50 → 33 | -22.9（測り直した） |
 // | kaiwai2      | -20.7（50）    | 50 → 39 | -22.9（比例） |
-// （2026-10-17。界隈曲。dtm 2.1.34（音源レベルの 正規化 e3562c10 入り）の dev/bgm.html で 測った）
+// | kaiwai3      | -21.3（50）    | 50 → 41 | -23.1（測り直した） |
+// （2026-10-17。界隈曲（kaiwai3 は 10-18）。dtm 2.1.34（音源レベルの 正規化 e3562c10 入り）の dev/bgm.html で 測った）
 // （2026-10-13。おーぷぬの 4板の 曲。測り方は 上と 同じ dev/bgm.html を headless Chrome で）
 // 軽量モード（内蔵シンセ）は音色が違うので少しずれる。
 // BGM の音量を 100 にすると +8 dB で、dungeon・field2 はピークが 0 dBFS 前後になり dtm のリミッタがかかる。
@@ -122,6 +123,11 @@ import kaiwai from "./bgm/kaiwai.mml?raw";
 // 場面 専用：最終話の 頂点（明かりの 坂 → 祭り。data/story/story.ts の 電池板の ending。鯖代の 書きこみで 止める）。
 // ループするので #fadeout は 外した（終わりの G から 頭の Fm へ もどる）
 import kaiwai2 from "./bgm/kaiwai2.mml?raw";
+// 界隈曲 その3（インスト。dtm の 自動作曲 seed 3027 の 伴奏に、リードは 手書き。
+// 2026-10-18 に 作者の 指示で 別の セッションから もらった）：変ロ短調 145（最後の サビだけ ハ短調へ）・synth_pop・dance。
+// 場面 専用：風呂板の 持ち帰りの 湯温の けんか（data/story/quotes.ts の ENDING。のぼせる「1時間後」で ぷつっと 切る）。
+// ループするので #fadeout は 外した（終わりの C から 頭の B♭m へ もどる）
+import kaiwai3 from "./bgm/kaiwai3.mml?raw";
 import kimchi from "./bgm/kimchi.mml?raw"; // post/1340 b2692a066ce241e0：131・chip_pop（界隈「回線」の 型。矩形波と バイオリン）→ おんキム
 import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変ニ長調 145・synth_pop・dance（シンセブラスの 主旋律）
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
@@ -195,4 +201,5 @@ export const bgm: Record<string, string> = {
 	yofukashi,
 	kaiwai,
 	kaiwai2,
+	kaiwai3,
 };

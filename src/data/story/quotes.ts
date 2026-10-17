@@ -492,10 +492,11 @@ const BATH_HEAD: StoryPage[] = [
 
 export const ENDING: StoryPage[] = [
 	...BATH_HEAD,
-	// シヨは 湯温に うるさい（STORY.md §4.9）
+	// シヨは 湯温に うるさい（STORY.md §4.9）。ここから 湯温の けんかの 曲（界隈曲その3。のぼせる 窓で 切る）
 	{
 		who: "shiyo",
 		text: "41.5℃……ちょうどいいじゃない。\nべ、べつにほめてないけど",
+		bgm: "kaiwai3",
 	},
 	{ who: null, text: "ぬるい", nanashi: "湯気の中の42℃派" },
 	{ who: null, text: "熱い", nanashi: "湯気の中の41℃派" },
@@ -521,11 +522,13 @@ export const ENDING: StoryPage[] = [
 	},
 	// 湯けむりの 中で ツッコむ（同じ fx は 煙が 残る）
 	{ who: null, text: "……規模が、\nおかしいンゴ", kiriko: "voice", fx: "boom" },
+	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）
 	{
 		who: null,
 		text: "……1時間後。町の人はみんな\nのぼせて、浮いていた。",
 		se: "chiin",
 		fx: "chiin",
+		bgm: null,
 	},
 	{
 		who: "roze",
