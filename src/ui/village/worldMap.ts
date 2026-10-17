@@ -438,6 +438,8 @@ export class MapView {
 	goals: Partial<Record<DungeonId, ObjectiveInfo>> = {};
 	/** 倉庫から 持ちこめる 数（0 なら 札に 持ちこみを 出さない）。 */
 	carryMax = 0;
+	/** 倉庫が 封鎖中（きのこ板の 騒ぎ。data/town/incidents.ts の carryLocked）。 */
+	locked = false;
 
 	constructor(ctx: Ctx, title: string) {
 		this.canvas = el("canvas", { class: "wm-canvas" });
@@ -643,7 +645,7 @@ export class MapView {
 				// 決まり（未識別など）と 倉庫の 道具の 持ちこみ（倉庫が 建ってから）
 				`<div class="wm-desc">${n.rules[2] ?? ""}</div>` +
 				(this.carryMax > 0
-					? `<div class="wm-carry${dg.noCarry ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った道具はシヨが預かる）" : `できる（${this.carryMax}つまで）`}</div>`
+					? `<div class="wm-carry${dg.noCarry || this.locked ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った道具はンゴ姉が預かる）" : this.locked ? "できない（倉庫はゼロが封鎖中）" : `できる（${this.carryMax}つまで）`}</div>`
 					: "")
 			: `<div class="wm-name">？？？</div><div class="wm-desc">${this.howToOpen(d)}</div>`;
 	}
@@ -688,6 +690,7 @@ export const openWorldMap = (
 		cleared: DungeonId[];
 		goals?: Partial<Record<DungeonId, ObjectiveInfo>>;
 		carryMax?: number;
+		locked?: boolean;
 	},
 ): MapView => {
 	const v = new MapView(ctx, "どの植民地へ？");
@@ -695,6 +698,7 @@ export const openWorldMap = (
 	v.cleared = o.cleared;
 	v.goals = o.goals ?? {};
 	v.carryMax = o.carryMax ?? 0;
+	v.locked = o.locked ?? false;
 	ctx.ui.classList.add("wm-keep");
 	void v.show();
 	return v;

@@ -161,6 +161,15 @@ export const TOWN_MSG: Record<
 };
 
 /**
+ * きのこ板の 騒ぎの あいだ、ゼロ（サブ機 プロト）が 見出しを 信じて 倉庫に 鍵を かける（data/town/incidents.ts の lockCarry）。
+ * 引き取った 道具を 持って 出ると 追いかけてきて もどす。
+ */
+export const CARRY_LOCK = st(
+	"proto",
+	"見出しを見ました！きのこ軍対策で\n倉庫は封鎖です。返してください！",
+);
+
+/**
  * 持ちこめない 板（core/data/dungeons.ts の noCarry）へ 出るとき、引き取った 道具を ンゴ姉が 倉庫へ もどす わけ。
  * 全体マップの 札にも「持ちこみ：できない」と 出る。
  */

@@ -124,6 +124,11 @@ export type Dungeon = {
 	/** 倉庫の 道具を 持ちこめない（出るときに シヨが 預かる）。 */
 	noCarry?: boolean;
 	/**
+	 * スレの 勢い：この ターン数ごとに レスが もう 1つ ふえる（1000 に 早く 近づく。電池板の 時間との 競争：
+	 * STORY.md §4.9）。無ければ 1ターンで 1。
+	 */
+	rushEvery?: number;
+	/**
 	 * 上りの 植民地（塔・やぐら・山）。階は 上へ 数え、帰り道は 降りる。中の 動きは 下りと 同じで、
 	 * 文と 見せかただけ 逆（depth が 大きいほど 高い）。
 	 */
@@ -451,6 +456,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	deep: {
 		id: "deep",
 		noCarry: true,
+		// 時間との 競争：2ターンに 1つ 余分に レスが つく（1000 まで 約 2/3 の 時間）
+		rushEvery: 2,
 		objective: "fetch",
 		// 機械と 回線の 敵が 多い
 		foes: { ksk: 1.5, ninpo: 1.5, ufo: 1.5, mojibake: 1.3, kage: 1.3 },

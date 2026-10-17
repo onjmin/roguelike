@@ -28,6 +28,8 @@ export type Incident = {
 	shut?: Readonly<Record<string, string>>;
 	/** 広場の 掲示板を 差し押さえる 札。 */
 	seize?: string;
+	/** 倉庫に 鍵：引き取った 道具を 持ちこめない（出るときに ゼロが もどす。data/town/town.ts の CARRY_LOCK）。 */
+	lockCarry?: true;
 };
 
 const PANHEI = "pub:sprites/panhei.png";
@@ -69,6 +71,7 @@ export const INCIDENTS: readonly Incident[] = [
 	},
 	{
 		dungeon: "kinoko",
+		lockCarry: true,
 		people: [
 			{
 				id: "kinonyan_a",
@@ -135,6 +138,12 @@ export const activeIncidents = (v: {
 	INCIDENTS.filter(
 		(i) => v.unlocked.includes(i.dungeon) && !v.cleared.includes(i.dungeon),
 	);
+
+/** 倉庫に 鍵が かかって いるか（騒ぎの あいだ。ゼロが 見出しを 信じて 閉めた）。 */
+export const carryLocked = (v: {
+	unlocked: readonly DungeonId[];
+	cleared: readonly DungeonId[];
+}): boolean => activeIncidents(v).some((i) => i.lockCarry);
 
 /** 騒ぎの 人の 村での id。 */
 export const incidentPlaceId = (p: IncidentPerson): string => `inc_${p.id}`;

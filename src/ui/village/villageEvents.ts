@@ -53,6 +53,7 @@ import { revivedLine, synopsisNow } from "../../data/story/synopsis";
 import { BOARD_NEWS, deathLine, HEADLINES } from "../../data/town/headlines";
 import {
 	activeIncidents,
+	carryLocked,
 	type IncidentPerson,
 	incidentPlaceId,
 } from "../../data/town/incidents";
@@ -60,6 +61,7 @@ import { isRevived, lampsLit, revivedBoards } from "../../data/town/revival";
 import { type Surface, surfaceMapId, surfaceOf } from "../../data/town/surface";
 import {
 	CARRY_CHASE,
+	CARRY_LOCK,
 	CARRY_REFUSE,
 	STORE_DESK,
 	TOWN_MSG,
@@ -304,9 +306,12 @@ export const departTo = async (
 	// 村で 倉庫から 引き取った 道具を 持っていく（取り出すのは main.ts）。持ちこめない 板なら
 	// シヨが 追いかけてきて 倉庫へ もどす（わけは data/town/town.ts の CARRY_REFUSE。全体マップの 札にも 出る）
 	let carry: Item[] = loadTown().bag;
+	// きのこ板の 騒ぎの あいだは ゼロが 倉庫に 鍵（data/town/incidents.ts の lockCarry）
 	const refuse = DUNGEONS[d].noCarry
 		? CARRY_REFUSE[d as keyof typeof CARRY_REFUSE]
-		: undefined;
+		: carryLocked(loadProgress())
+			? CARRY_LOCK
+			: undefined;
 	if (carry.length && refuse) {
 		await s.narrate(CARRY_CHASE);
 		await sayAs(s, refuse.who, refuse.text, cueOf(refuse));
@@ -562,6 +567,7 @@ const mouthScript =
 			cleared,
 			goals,
 			carryMax: CARRY_MAX[loadTown().stage] ?? 0,
+			locked: carryLocked(loadProgress()),
 		});
 		const quit = async () => {
 			await hideMsg(s);

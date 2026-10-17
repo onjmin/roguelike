@@ -1495,7 +1495,11 @@ export class Run {
 		}
 
 		// レス（1ターンで 1。祭りの 最中は 勢いで もう1）。1000 で dat落ち
-		f.res += 1 + (this.festivalRush() ? 1 : 0);
+		const rush = dungeonById(this.s.dungeon).rushEvery;
+		f.res +=
+			1 +
+			(this.festivalRush() ? 1 : 0) +
+			(rush && f.turns % rush === 0 ? 1 : 0);
 		tickAnka(this);
 		if (this.checkRes()) return;
 		this.updateVision();
