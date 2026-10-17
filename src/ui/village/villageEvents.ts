@@ -55,6 +55,7 @@ import {
 	deathLine,
 	HEADLINES,
 	ROLLBACK_HEADLINE,
+	UNLOCK_HEADLINES,
 } from "../../data/town/headlines";
 import {
 	activeIncidents,
@@ -1138,6 +1139,23 @@ const returnOf = (a: Arrival): ReturnArrival | null =>
 		: null;
 
 /**
+ * 本筋の 板が 開いた 帰り：開く 知らせ（newsScript）の 前に、掲示板を 見せて 次の 事件の 見出し
+ * （data/town/headlines.ts の UNLOCK_HEADLINES）。知らせは newsScript が 消すので ここでは 読むだけ。
+ */
+const freshHeadlineScript = async (s: Story): Promise<void> => {
+	const lines = loadProgress()
+		.news.filter((n) => UNLOCK_HEADLINES.includes(n.dungeon))
+		.flatMap((n) => HEADLINES[n.dungeon] ?? []);
+	if (!lines.length) return;
+	await s.look(VILLAGE_SPOTS.board[0]);
+	for (const line of lines) {
+		s.se("read");
+		await s.narrate(fill(BOARD_NEWS.fresh, { line }));
+	}
+	await s.look(null);
+};
+
+/**
  * 帰ってきたとき（村に入るたび。ui/village/villageReturn.ts）。持ち帰った・帰還スレなら 口から 出て 仲間の 語り、
  * それから 開いた知らせと 持ち帰った物の 倉庫・売り（どちらも 保存から。決める前に 閉じていても ここで 続きから）。
  */
@@ -1168,6 +1186,7 @@ const arrivalScript =
 			await tenScript(s);
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
+		await freshHeadlineScript(s);
 		await newsScript(s);
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
 		const worry = takeWorryNews();

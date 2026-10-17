@@ -16,6 +16,12 @@ export const HEADLINES: Partial<Record<DungeonId, string>> = {
 	deep: "おんJタウンしゅうりょう",
 };
 
+/**
+ * 本筋の 板が 開いた 帰りに 掲示板へ 貼られる 見出し（話の 解決の あとに 次の 事件を 告げる。いちばん 最初の 村の
+ * 見出しと 同じ 型）。電池板は 転（story.ts の TEN_NEWS）が 見出しを 出すので 入れない。
+ */
+export const UNLOCK_HEADLINES: readonly DungeonId[] = ["kinoko", "main"];
+
 /** 最終話の あと（鯖代の 払い忘れで ロールバック）の 見出し。 */
 export const ROLLBACK_HEADLINE = "【悲報】ワイらの冒険、ロールバック";
 
@@ -79,6 +85,8 @@ export const deathLine = (n: number): string => {
 export const BOARD_NEWS = {
 	/** 見出し（{line} は 見出し）。 */
 	headline: "名無しのスレが立っている。\n『{line}』",
+	/** 本筋の 板が 開いた 帰り（{line} は 見出し。town.ts の OPENING.headline と 同じ 書き出し）。 */
+	fresh: "掲示板に、貼りたての見出し。\n『{line}』",
 	/** 倒れた 帰りに 1回（{line} は 一行）。 */
 	death: "広場の掲示板に、書きこみがふえた。\n「{line}」",
 	/** 掲示板を 調べた とき（{line} は いちばん 新しい 一行）。 */

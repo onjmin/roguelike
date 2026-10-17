@@ -153,6 +153,7 @@ import {
 	DEATH_TIERS,
 	deathLine,
 	HEADLINES,
+	UNLOCK_HEADLINES,
 } from "../data/town/headlines";
 import {
 	activeIncidents,
@@ -7732,6 +7733,13 @@ test("広場の 掲示板の 名無し（STORY.md §4.9）: 騒ぎの 板には 
 			`HEADLINES.${d}`,
 			fill(BOARD_NEWS.headline, { line: line ?? "" }),
 		]);
+	for (const d of UNLOCK_HEADLINES) {
+		ok(HEADLINES[d], `UNLOCK_HEADLINES.${d}: no headline`);
+		texts.push([
+			`BOARD_NEWS.fresh ${d}`,
+			fill(BOARD_NEWS.fresh, { line: HEADLINES[d] ?? "" }),
+		]);
+	}
 	for (const line of DEATH_LINES) {
 		texts.push(["BOARD_NEWS.death", fill(BOARD_NEWS.death, { line })]);
 		texts.push([
