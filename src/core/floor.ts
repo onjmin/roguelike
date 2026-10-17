@@ -287,16 +287,17 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		if (at) spawnMonster(r, null, at, {});
 	}
 	if (f.house >= 0) {
+		// 山場の 祭り（パレード）は 決まった 敵だけ
+		const parade = r.dungeon.parade?.depth === depth ? r.dungeon.parade : null;
+		const kind = parade ? parade.monster : null;
 		const [hlo, hhi] =
-			r.levelAt(f.depth) <= HOUSE_EARLY_BY
+			parade?.count ??
+			(r.levelAt(f.depth) <= HOUSE_EARLY_BY
 				? HOUSE_MONSTERS_EARLY
-				: HOUSE_MONSTERS;
+				: HOUSE_MONSTERS);
 		// 部屋の広さの 1/3 まで（ぎゅうぎゅうにしない）
 		const room = rooms[f.house];
 		const hn = Math.min(rng.range(hlo, hhi), Math.floor((room.w * room.h) / 3));
-		// 山場の 祭り（パレード）は 決まった 敵だけ
-		const parade = r.dungeon.parade;
-		const kind = parade?.depth === depth ? parade.monster : null;
 		for (let i = 0; i < hn; i++) {
 			const at = place(f.house);
 			if (at) spawnMonster(r, kind, at, { sleep: DOZE, single: true });

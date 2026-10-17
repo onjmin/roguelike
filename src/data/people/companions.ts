@@ -46,7 +46,7 @@ export const ESCORTS: readonly EscortRequest[] = [
 		id: "panmatsu_pan",
 		who: "panmatsu",
 		board: "shallow",
-		goal: 3,
+		goal: 4,
 		title: "本家の視察",
 		ask: [
 			"パン板の本家を\n視察したい",

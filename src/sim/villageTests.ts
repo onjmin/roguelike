@@ -7364,7 +7364,7 @@ test("おんJ証券（2026-10-15）: 商店街支店は 段4から 窓口・端�
 	}
 });
 
-test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじまりの 目標（パン板の 3階）を 読みかえせる", () => {
+test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじまりの 目標（パン板の 4階）を 読みかえせる", () => {
 	ok(
 		synopsisHtml([], []) === null,
 		"the story summary starts before the first clear",
@@ -7373,7 +7373,7 @@ test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじま
 	ok(
 		html.includes("はじまり") &&
 			html.includes("パン板") &&
-			html.includes("3階"),
+			html.includes("4階"),
 		`first goal: ${html}`,
 	);
 	ok(!html.includes("\n"), "a raw newline in the html");
