@@ -213,7 +213,7 @@ export const SURFACES: readonly Surface[] = [
 	{
 		dungeon: "konamono",
 		name: "おんたこ雑居ビルの前",
-		// 大阪の 雑居ビル（扉が 入口）。たこパ会場の 看板
+		// 大阪の 雑居ビル（扉が 入口）。招待の はり紙（たこパだと わかるのは 最上階）
 		rows: [
 			"bbbbbbbbbbbbbbb",
 			"b,,,,zzCzz,,,,b",
@@ -240,7 +240,7 @@ export const SURFACES: readonly Surface[] = [
 		back: [7, 11],
 		mouth: [7, 4],
 		sign: [10, 5],
-		line: "雑居ビルの前。『たこパ会場こちら』のはり紙。",
+		line: "雑居ビルの前。『最上階へ来い😡』のはり紙。",
 	},
 	{
 		dungeon: "festival",

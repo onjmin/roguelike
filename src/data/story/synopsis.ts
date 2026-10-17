@@ -67,11 +67,11 @@ export const DIVE_RES: Partial<Record<DungeonId, readonly DiveRes[]>> = {
 	],
 	tropical: [
 		{ at: 3, who: null, text: "家が6軒。どの家も、留守だ。" },
-		{ at: 5, who: "res", text: "島民、全員町におるらしいで" },
+		{ at: 5, who: "res", text: "島民、泳いで帰ったらしいで" },
 	],
 	konamono: [
 		{ at: 4, who: null, text: "階段に、青のりが落ちている。" },
-		{ at: 7, who: "res", text: "怒ってへん。たこ焼きや😡" },
+		{ at: 7, who: "res", text: "最上階、なんか焼いとる音するで" },
 	],
 	festival: [
 		{ at: 4, who: "res", text: "この祭り、何日目や？" },

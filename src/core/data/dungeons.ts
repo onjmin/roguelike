@@ -748,13 +748,13 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				{
 					name: "島民の長",
 					sprite: "pub:sprites/natsuko.png",
-					lines: ["……みんな、おかえり"],
+					lines: ["なんで1人だけ送ってもらっとるんや", "……まあ、おかえり"],
 					key: true,
 				},
 				{
 					name: "島民",
 					sprite: "pub:sprites/natsuko.png",
-					lines: ["島はええで", "浜、また行きたいな"],
+					lines: ["先に泳いで帰ってきたで", "浜、また行きたいな"],
 				},
 				{
 					name: "島民",
@@ -770,7 +770,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			cheer: "またやー",
 			lines: [
 				"山の上の集落に着いた。",
-				"島民「……島や。帰ってきた」",
+				"ほかの5人は、先に泳いで帰っていた",
 				"6人に見送られて、ふもとへ降りた",
 			],
 			cause: "島民を送り届けた",
@@ -833,12 +833,12 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 		},
 		event: {
-			goal: "最上階のたこパに行く",
+			goal: "最上階の招待に応じる",
 			rescue: "escort",
 			cheer: "まいど",
 			lines: [
 				"最上階は、たこパ会場だった。",
-				"粉もん奉行「返しが甘い！」",
+				"粉もん奉行「同点や。たこパに勝ち負けはない😡」",
 				"たこ焼きを焼いて、入口まで送ってもらった",
 			],
 			cause: "たこパに参加した",
@@ -903,7 +903,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		bring: {
 			guest: "oyabun",
 			goal: "親分を連れ帰る",
-			lines: ["やぐらの上に、親分がいた。"],
+			lines: [
+				"やぐらの上に、親分がいた。",
+				"親分「降りたら、祭りが終わってまうやろ」",
+			],
 			cause: "親分を連れ帰った",
 		},
 		boss: {
