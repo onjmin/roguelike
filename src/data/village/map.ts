@@ -58,7 +58,11 @@ import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
 import { nowHour, today } from "../town/calendar";
-import { activeIncidents, incidentPlaceId } from "../town/incidents";
+import {
+	activeIncidents,
+	activeVisitors,
+	incidentPlaceId,
+} from "../town/incidents";
 import { type CorePlace, isRevived, revivedBoards } from "../town/revival";
 import {
 	doorId,
@@ -1178,17 +1182,19 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 		});
 	// 村の はしの 名無したち（data/village/folk.ts。話し方は ui/village/folk.ts）
 	out.push(...folkPlaces(stage));
-	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで。data/town/incidents.ts）
-	for (const inc of activeIncidents(v))
-		for (const p of inc.people)
-			out.push({
-				id: incidentPlaceId(p),
-				x: p.at[0],
-				y: p.at[1],
-				trigger: "talk",
-				sprite: p.sprite,
-				dir: p.dir,
-			});
+	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで）と ご近所（持ち帰った あと。data/town/incidents.ts）
+	for (const p of [
+		...activeIncidents(v).flatMap((i) => i.people),
+		...activeVisitors(v),
+	])
+		out.push({
+			id: incidentPlaceId(p),
+			x: p.at[0],
+			y: p.at[1],
+			trigger: "talk",
+			sprite: p.sprite,
+			dir: p.dir,
+		});
 	return out;
 };
 

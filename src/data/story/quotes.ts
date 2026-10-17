@@ -64,10 +64,8 @@ export type StoryPage = Cue & {
 	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色）。 */
 	nanashi?: string;
 	/** 村の 場面の 合図（ui/village/villageReturn.ts。地の文の 前に 起きる）。 */
-	cue?: /** 大会の のこり 1人（鐘と 札）。 */
-		| "res999"
-		/** キリコ 1位（ファンファーレと 札）。 */
-		| "res1000"
+	cue?: /** 明かりの もどる 坂（最終話の 頂点。生き返った 通りを 順に 見せて、明るい 町に 建て直す）。 */
+		| "lightsUp"
 		/** 本筋の 話の おわり（data/story/story.ts の episodeEnd。章の 音）。 */
 		| "chapterEnd";
 	/**

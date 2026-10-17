@@ -152,8 +152,10 @@ import {
 } from "../data/town/headlines";
 import {
 	activeIncidents,
+	activeVisitors,
 	INCIDENTS,
 	incidentPlaceId,
+	VISITORS,
 } from "../data/town/incidents";
 import {
 	inBlackout,
@@ -4121,10 +4123,7 @@ test("objectives: colonies default to boss, story boards to fetch, and an event 
 		goalText("shallow", "fetch") === "食パンの国旗を持ち帰る",
 		goalText("shallow", "fetch"),
 	);
-	ok(
-		goalText("deep", "boss") === "やきうをたおす",
-		goalText("deep", "boss"),
-	);
+	ok(goalText("deep", "boss") === "やきうをたおす", goalText("deep", "boss"));
 	ok(bossName("tropical") === "怒れるナツコ", `${bossName("tropical")}`);
 	ok(bossName("hidden") === null, "過去ログの底 has a boss");
 });
@@ -7382,4 +7381,97 @@ test("広場の 掲示板の 名無し（STORY.md §4.9）: 騒ぎの 板には 
 		"death lines do not cycle",
 	);
 	ok(DEATH_LINES[0] === "キリコ死んでて草", "the first line");
+});
+
+test("ご近所（STORY.md §3）: 持ち帰った 板の 人が 1人ずつ 町に 来る。歩ける マスで ほかと 重ならず、行は 村の 窓に 収まる", () => {
+	const all: VillageView = {
+		stage: TOWN_STAGES - 1,
+		unlocked: [...DUNGEON_IDS],
+		cleared: [...DUNGEON_IDS],
+	};
+	const none: VillageView = { ...all, cleared: [] };
+	const rows = villageRows(all).map((r) => [...r]);
+	const pal = villagePalette(all);
+	const places = villagePlaces(all);
+	ok(activeVisitors(none).length === 0, "visitors before any clear");
+	ok(
+		new Set(VISITORS.map((p) => p.dungeon)).size === VISITORS.length,
+		"two visitors from one board",
+	);
+	for (const p of VISITORS) {
+		const id = incidentPlaceId(p);
+		ok(
+			places.some((q) => q.id === id),
+			`${id} is not in town`,
+		);
+		ok(pal[rows[p.at[1]][p.at[0]]]?.passable, `${id} stands on a wall`);
+		ok(
+			places.filter((q) => q.x === p.at[0] && q.y === p.at[1]).length === 1,
+			`${id} shares a cell`,
+		);
+		fitsWindow(p.lines.map((l) => [id, l]));
+	}
+});
+
+test("騒ぎの 人・ご近所は 道を ふさがない：どの 騒ぎの 村でも、ぜんぶ 持ち帰った 村でも、起きる 所から 扉・出口と 話せる 人に 届く", () => {
+	const check = (v: VillageView, where: string) => {
+		const rows = villageRows(v).map((r) => [...r]);
+		const pal = villagePalette(v);
+		const places = villagePlaces(v);
+		const blocked = new Set(
+			places.filter((p) => p.sprite).map((p) => `${p.x},${p.y}`),
+		);
+		const pass = (x: number, y: number) =>
+			!!pal[rows[y]?.[x] ?? ""]?.passable && !blocked.has(`${x},${y}`);
+		const seen = new Set<string>();
+		const [bx, by] = VILLAGE_SPOTS.boot;
+		const q: [number, number][] = [[bx, by]];
+		seen.add(`${bx},${by}`);
+		while (q.length) {
+			const [x, y] = q.shift() as [number, number];
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1],
+			]) {
+				const k = `${x + dx},${y + dy}`;
+				if (seen.has(k) || !pass(x + dx, y + dy)) continue;
+				seen.add(k);
+				q.push([x + dx, y + dy]);
+			}
+		}
+		const near = (x: number, y: number) =>
+			[
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1],
+			].some(([dx, dy]) => seen.has(`${x + dx},${y + dy}`));
+		for (const p of places) {
+			if (
+				!p.id.startsWith("inc_") &&
+				!p.id.startsWith("door_") &&
+				!p.id.startsWith("exit")
+			)
+				continue;
+			ok(
+				seen.has(`${p.x},${p.y}`) || near(p.x, p.y),
+				`${where}: ${p.id} cannot be reached`,
+			);
+		}
+	};
+	for (const inc of INCIDENTS)
+		check(
+			{ stage: TOWN_STAGES - 1, unlocked: [inc.dungeon], cleared: [] },
+			inc.dungeon,
+		);
+	check(
+		{
+			stage: TOWN_STAGES - 1,
+			unlocked: [...DUNGEON_IDS],
+			cleared: [...DUNGEON_IDS],
+		},
+		"all cleared",
+	);
 });

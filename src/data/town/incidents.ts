@@ -105,7 +105,7 @@ export const INCIDENTS: readonly Incident[] = [
 		people: [
 			{
 				id: "islander_a",
-				at: [9, 36],
+				at: [29, 33],
 				sprite: ISLANDER,
 				dir: "down",
 				name: "島民",
@@ -147,3 +147,79 @@ export const carryLocked = (v: {
 
 /** 騒ぎの 人の 村での id。 */
 export const incidentPlaceId = (p: IncidentPerson): string => `inc_${p.id}`;
+
+/**
+ * ご近所（STORY.md §3 の 一文「町と 板を ご近所に もどす」）：板を 持ち帰った あと、その 板の 人が 1人 町に 遊びに 来る。
+ * 立つ マスは 騒ぎの 人と 同じ（騒ぎは 持ち帰るまで、ご近所は 持ち帰った あとなので かさならない）。
+ */
+export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
+	{
+		dungeon: "shallow",
+		id: "visit_panhei",
+		at: [17, 20],
+		sprite: PANHEI,
+		dir: "down",
+		name: "パン兵",
+		lines: ["独立記念のパン、\n町にも卸しとるで"],
+	},
+	{
+		dungeon: "kinoko",
+		id: "visit_kinonyan",
+		at: [42, 17],
+		sprite: KINONYAN,
+		dir: "down",
+		name: "きのこ軍",
+		lines: ["[ｷ・Д・ﾉ]商店街、\n近道に便利や"],
+	},
+	{
+		dungeon: "tropical",
+		id: "visit_islander",
+		at: [31, 34],
+		sprite: ISLANDER,
+		dir: "down",
+		name: "島民",
+		lines: ["浜に支店出したで。\n島の物産や"],
+	},
+	{
+		dungeon: "konamono",
+		id: "visit_tako",
+		at: [48, 17],
+		sprite: "pub:sprites/takonomin.png",
+		dir: "down",
+		name: "たこ民",
+		lines: ["😡は、タコの顔やで"],
+	},
+	{
+		dungeon: "main",
+		id: "visit_bantou",
+		at: [36, 17],
+		sprite: "pub:sprites/ofurou.png",
+		dir: "down",
+		name: "42℃の番頭",
+		lines: ["41.5℃、町の銭湯にも\n伝えといたわ"],
+	},
+	{
+		dungeon: "festival",
+		id: "visit_oyabun",
+		at: [20, 22],
+		sprite: "pub:sprites/mashii.png",
+		dir: "up",
+		name: "祭りの親分",
+		lines: ["次の祭りも、町でやろか"],
+	},
+	{
+		dungeon: "deep",
+		id: "visit_denchi",
+		at: [20, 20],
+		sprite: "pub:sprites/denchan.png",
+		dir: "down",
+		name: "電池ニキ",
+		lines: ["電気は送っとる。\n……人、おるな"],
+	},
+];
+
+/** 町に 来て いる ご近所（持ち帰った 板の 人）。 */
+export const activeVisitors = (v: {
+	cleared: readonly DungeonId[];
+}): (IncidentPerson & { dungeon: DungeonId })[] =>
+	VISITORS.filter((p) => v.cleared.includes(p.dungeon));

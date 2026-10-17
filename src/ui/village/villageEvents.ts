@@ -53,6 +53,7 @@ import { revivedLine, synopsisNow } from "../../data/story/synopsis";
 import { BOARD_NEWS, deathLine, HEADLINES } from "../../data/town/headlines";
 import {
 	activeIncidents,
+	activeVisitors,
 	carryLocked,
 	type IncidentPerson,
 	incidentPlaceId,
@@ -1051,9 +1052,9 @@ const shut = (place: string, v: VillageView, door = true): Script | null => {
 
 /** 騒ぎの 人（村での id から）。 */
 const incidentPerson = (id: string, v: VillageView): IncidentPerson | null =>
-	activeIncidents(v)
-		.flatMap((i) => i.people)
-		.find((p) => incidentPlaceId(p) === id) ?? null;
+	[...activeIncidents(v).flatMap((i) => i.people), ...activeVisitors(v)].find(
+		(p) => incidentPlaceId(p) === id,
+	) ?? null;
 
 /**
  * 村の窓で あずける物を えらぶ（一覧は ui/village/home.ts。のこりを 売るかは ロゼが 村の窓で きく。

@@ -287,21 +287,36 @@ const stepAside = async (
 };
 
 /** 語りの 合図（data/story/quotes.ts の StoryPage.cue）を 起こす。 */
+/** 明かりの もどる 坂で カメラを 向ける 所（話の 順。STORY.md §4.9 の 頂点）。 */
+const LIGHTS_UP: readonly { name: string; at: Cell }[] = [
+	{ name: "広場に明かり", at: [20, 21] },
+	{ name: "商店街に明かり", at: [45, 17] },
+	{ name: "銭湯に明かり", at: [36, 27] },
+	{ name: "浜に明かり", at: [12, 34] },
+	{ name: "たこ八に明かり", at: [22, 32] },
+	{ name: "丘の神社に明かり", at: [4, 9] },
+];
+
 const playCue = async (
 	s: Story,
 	c: NonNullable<StoryPage["cue"]>,
 ): Promise<void> => {
-	// 同接の 読みあげ（電池板の 山場）：同点 のこり 1人で 鐘、1位で ファンファーレと 札（山場が わかるように）
-	if (c === "res999") {
-		s.se("chapter");
-		s.toast("同点のこり1人");
+	if (c === "lightsUp") {
+		// 明かりの もどる 坂（STORY.md §4.9 の 頂点）：まだ 暗い 町で、生き返った 通りを 話の 順に 見せる。
+		// 見おえたら 暗転で 電池板を 持ち帰った 町（明るい）に 建て直す
+		for (const spot of LIGHTS_UP) {
+			await s.look(spot.at);
+			s.se("uncurse");
+			s.toast(spot.name);
+			await s.wait(500);
+		}
+		await s.fadeOut(300);
+		await rebuild(s);
+		await s.fadeIn(300);
+		await s.look(null);
 	} else if (c === "chapterEnd") {
 		s.se("chapter");
 		await s.wait(400);
-	} else if (c === "res1000") {
-		s.se("victory");
-		s.toast("★キリコ1位★");
-		await s.wait(600);
 	}
 };
 
