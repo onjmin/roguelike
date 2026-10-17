@@ -220,7 +220,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				e({ emote: "!", gesture: "hop" }, m("……へんじ、きたゆ！🥺")),
 				c("nanj", "……草。ぷゆテストかいな"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("まち、ぴかぴかゆ🥺"),
 				m("みだし、やきうだったの？\n……ぼくちん、しってたゆ🥺"),
@@ -688,7 +688,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("キリコは首をかしげた。"),
 				m("……日曜日だったことにするニィ"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("停電の夜、町が日曜日\nみたいにしずかだったニィ"),
 				n("キリコはうなずいた。"),
@@ -987,7 +987,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				),
 				c("feris", "え〜？となりはキリコだよ〜"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("弟から、電話があったンゴねぇ……"),
 				m("「1人目はワイや」って、\n3回も言ってたンゴねぇ"),
@@ -1150,7 +1150,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("……もうひとこと、\n書きこんでくださる？"),
 				n("キリコはひとこと書いた。\n……「ンゴ」"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("明かり、おめでとう。\n掲示板でおんSの宣伝、たのむわよぉ"),
 				n("おんすちゃんはハンカチで、\nそっと目をおさえた。"),
@@ -1303,7 +1303,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("おんちゃんは小石を\nひとつキリコにわたした。"),
 				m("……一軍の小石だおん"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("町の明かり、おめでとうだおん"),
 				n("おんちゃんは大きな石を\n広場のすみに置いた。"),
@@ -1461,7 +1461,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("ヤヤポジはすこし考えて、\nちいさく手をたたいた。"),
 				e({ gesture: "nod" }, m("……持ち帰って、いいんだ")),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("41℃と42℃、1℃差なんだ……。\nほとんど引き分けなんだ"),
 				n("ヤヤポジはほっとした顔で\n空を見た。"),
@@ -1595,7 +1595,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				e({ emote: "!", gesture: "hop" }, m("ホゲェ！")),
 				n("ムッジェは長湯スレの湯気を、\nふしぎそうにかいでいる。"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				n("ムッジェの頭のプロペラが、\n掲示板の1番上へ回った。"),
 				e({ emote: "♪" }, m("ホゲェ！")),
@@ -1703,7 +1703,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 		milestones: {
 			main: [m("長湯スレ？うちは\nお風呂より焚き火がいいもん！")],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("明かりのお祝いに、\n焚き火するもん"),
 				m("……ガスの元栓は、\n閉めたもん"),
@@ -1791,7 +1791,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 		milestones: {
 			main: [m("長湯スレを持ち帰ったか。\n……湯あたりはしなかったかね")],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("見事な幕引きだった。\n鯖代でロールバックとはな"),
 				m("主役どの、コーヒーでも\nどうかね"),
@@ -1886,7 +1886,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 		milestones: {
 			main: [m("長湯スレ、侵略しそこねたぷ。\n……のぼせたぷ")],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("掲示板は侵略しそこねたぷ"),
 				e({ emote: "汗" }, m("……つぎは、キリコの倉庫を\n侵略してもいいぷ？")),
@@ -1980,7 +1980,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("リノは軍帽のつばを、\nすこしだけ下げた。"),
 				m("……よくやった。\n会話は以上だ"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("停電の夜を見た。……最後、\n町がまっくらになった"),
 				n("リノは敬礼して、\nすこしだけ口もとをゆるめた。"),
@@ -2168,7 +2168,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("ぼくもいつか、\nあんな音になれるかな……"),
 				n("キリコはうなずいた。"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				e({ gesture: "hop" }, m("先輩！町の明かり、\nつけたんですね！")),
 				m("盛らない見出し、見ました。\n……ログ、100回読みます"),
@@ -2329,7 +2329,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("プロトの目の青いマークが、\n一度だけ光った。"),
 				e({ emote: "花" }, m("……これがうれしい、か。\n学習したゼロ")),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("町の明かりを記録したゼロ"),
 				e(
@@ -2537,7 +2537,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				n("キリコは首をふった。"),
 				m("……だよね。次の更新で\n歌えるようになる！"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("レンね、また更新されたの！\n停電モードがついた！"),
 				e({ emote: "?" }, m("……もう使わないね？")),
@@ -2737,7 +2737,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("……みなさん、のぼせている\n模様です"),
 				m("これで発表を終わりたいと\n思います"),
 			],
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("停電の調査結果を発表します"),
 				m("……キリコさんが、\n電池板から帰った模様です"),
@@ -2904,7 +2904,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			e({ emote: "…" }, m("……それ、なんJの呼び方だから")),
 		],
 		milestones: {
-			// 最終話の あと（STORY.md §5）
+			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("町に明かりがついたんだ。\n……2012年から見てて、初めて見た"),
 				m("……まあ、いいけど。\nつぎの枠も、ここにいるよ"),

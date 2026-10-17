@@ -93,6 +93,37 @@ export const EVENTS: readonly EventDef[] = [
 		end: { clears: 1, outings: 4 },
 		news: "雨で親分マシーは来ない。\nやぐらにうちわだけ落ちている",
 	},
+	// 寄り道の 板の ボスとの 再戦（持ち帰った あと。ふだんの 目的は 送り届け・たこパ・連れ帰り）
+	{
+		id: "natsuko-angry",
+		name: "ナツコの逆襲",
+		dungeon: "tropical",
+		objective: "boss",
+		need: { cleared: ["tropical"] },
+		start: { on: "clear", chance: 1 / 6 },
+		end: { clears: 1, outings: 4 },
+		news: "島の山の上で、ナツコが\n自由研究を荒らされて怒っている",
+	},
+	{
+		id: "tako-rematch",
+		name: "大たこのみんの再戦",
+		dungeon: "konamono",
+		objective: "boss",
+		need: { cleared: ["konamono"] },
+		start: { on: "clear", chance: 1 / 6 },
+		end: { clears: 1, outings: 4 },
+		news: "おんたこの屋上で、大たこのみんが\n鉄板を温めているらしい😡",
+	},
+	{
+		id: "mashii-encore",
+		name: "親分のアンコール",
+		dungeon: "festival",
+		objective: "boss",
+		need: { cleared: ["festival"] },
+		start: { on: "clear", chance: 1 / 6 },
+		end: { clears: 1, outings: 4 },
+		news: "親分がまたやぐらに登った。\n「アンコールや！」",
+	},
 ];
 
 const EVENT_BY_ID: Readonly<Record<string, EventDef>> = Object.fromEntries(
