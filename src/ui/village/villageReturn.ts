@@ -75,6 +75,7 @@ import {
 	VILLAGE_SPOTS,
 	type VillageExit,
 	type VillageView,
+	villagePlaces,
 } from "../../data/village/map";
 import type { Story } from "../../engine/defs";
 import { cueOf } from "../../engine/emote";
@@ -106,7 +107,14 @@ import {
 } from "../../engine/sceneFx";
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
-import { type SceneLit, sceneSky, setSceneLit, setSceneSky } from "./sceneSky";
+import {
+	type SceneLit,
+	sceneOut,
+	sceneSky,
+	setSceneLit,
+	setSceneOut,
+	setSceneSky,
+} from "./sceneSky";
 import { sayAs } from "./villageMobs";
 import { endScene, sceneBgm, villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
@@ -289,6 +297,11 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 	});
 	// 新しい 場面：並んだ マスだけ おぼえる（キリコが どく マス・口から 来る 人の 行き先から 外す）
 	placed.set(s, spots.slice(0, cast.length + mobs.length));
+	// 停電の 町に 帰る 場面（電池板）：幕が 上がる 前から 暗く、外には 並んだ 人しか いない
+	if (pages[0]?.sky === "dark") {
+		setSceneSky("dark");
+		setSceneOut({ keep: new Set([...cast, ...mobs]), near: [], all: false });
+	}
 };
 
 /**
@@ -348,6 +361,33 @@ const flickerOn = async (
 	setSceneLit(to);
 };
 
+/**
+ * 明かりの 坂の あとの 祭り（暗転の 中で）：キリコと 場面に 出る 人（keep）を 広場へ、まわりに 町の 人と
+ * よその 板から 来た 人（住人・名無し・野次馬・ご近所）を 集める。場面だけ（おわりの 建て直しで 持ち場へ もどる）。
+ */
+const festivalGather = (s: Story, keep: readonly string[]): void => {
+	const plaza = LIGHTS_UP[0].at;
+	const [px, py] = freeAround(s, 1, plaza)[0] ?? plaza;
+	s.place("player", px, py, "down");
+	take(s, [[px, py]]);
+	const guests = villagePlaces(villageView())
+		.filter(
+			(p) =>
+				!!p.sprite &&
+				/^(mob_|folk_|yaji_|inc_)/.test(p.id) &&
+				!keep.includes(p.id),
+		)
+		.map((p) => p.id);
+	const who = [...keep, ...guests];
+	const cells = freeAround(s, who.length, [px, py]);
+	who.forEach((id, i) => {
+		const c = cells[i];
+		if (c) s.place(id, c[0], c[1]);
+	});
+	take(s, cells);
+	for (const id of who) s.face(id, "player");
+};
+
 const playCue = async (
 	s: Story,
 	c: NonNullable<StoryPage["cue"]>,
@@ -370,17 +410,22 @@ const playCue = async (
 			s.se("uncurse");
 			await flickerOn(s, on, next);
 			on = next;
-			// 電池板の 明かり（街灯と 家の 窓）で 町じゅうが 停電の 暗さから ふつうの 夜に
+			// 灯った 通りに 人が もどる。電池板の 明かり（街灯と 家の 窓）で 町じゅうが 停電の 暗さから ふつうの 夜に
+			const o = sceneOut();
+			if (o) setSceneOut({ ...o, near: [...o.near, spot.at], all: next.homes });
 			if (next.homes && sceneSky() === "dark") setSceneSky("night");
 			s.toast(spot.name);
 			await s.wait(700);
 		}
 		await s.fadeOut(300);
 		lightsBack.add(BLACKOUT_BOARD);
+		const keep = [...(sceneOut()?.keep ?? [])];
 		await rebuild(s);
-		// 町の 明かりが もどった（停電の 暗さ → ふつうの 夜）
+		// 町の 明かりが もどった（停電の 暗さ → ふつうの 夜）。祭りの 頁は 広場で
 		setSceneLit(null);
+		setSceneOut(null);
 		if (sceneSky() === "dark") setSceneSky("night");
+		festivalGather(s, keep);
 		await s.fadeIn(300);
 		await s.look(null);
 	} else if (c === "chapterEnd") {
@@ -687,7 +732,21 @@ export const tenScript = async (s: Story): Promise<void> => {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		if (p.sky !== undefined) setSceneSky(p.sky);
-		if (p.sky === "dark") setSceneLit(null);
+		// 明かりが 消えたら 外には 集まった 仲間と 話す 人だけ
+		if (p.sky === "dark") {
+			setSceneLit(null);
+			setSceneOut({
+				keep: new Set([
+					"zero",
+					"roze",
+					"feris",
+					"nanj",
+					...castOf(TEN_NEWS.pages),
+				]),
+				near: [],
+				all: false,
+			});
+		}
 		await playPage(s, p);
 	}
 	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす
@@ -785,6 +844,7 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	if (dark && !hasFlag(BLACKOUT_TOLD) && !hasFlag("ten")) {
 		// 真っ暗な 町（時計に かかわらず 夜で、明かりも ない）
 		setSceneSky("dark");
+		setSceneOut({ keep: new Set(), near: [], all: false });
 		for (const l of REVIVE_MSG.blackout) await s.narrate(l);
 		setSceneSky(null);
 		addFlag(BLACKOUT_TOLD);

@@ -96,6 +96,7 @@ import { MoneyPops } from "./moneyPop";
 import { buildRoom } from "./rooms";
 import {
 	BLACKOUT_TINT,
+	outsideNow,
 	SCENE_NIGHT_MINUTE,
 	sceneLit,
 	sceneSky,
@@ -1476,6 +1477,10 @@ export class Village {
 				TILE - 3,
 			);
 		}
+		// 停電の 場面は 場面に 出る 人と 明かりの 灯った 所の 人だけ 外に（ui/village/sceneSky.ts。見えない 人は 道も ふさがない。
+		// 向きの ない 絵の 置物は そのまま）
+		for (const a of field.actors)
+			a.visible = a.still || outsideNow(a.id, a.x, a.y);
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		field.drawAbove(g, ox, oy);
