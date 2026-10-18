@@ -181,6 +181,13 @@ export const plainMml = (mml: string): string =>
 		.join("\n")
 		.trim();
 
+/** 曲の 速さ（MML の はじめの t。無ければ 120）。レコードの 箱の コマ送りを 拍に 合わせる ため。 */
+export const songBpm = (mml: string): number => {
+	const m = /(?:^|[^A-Za-z])t(\d+)/.exec(plainMml(mml));
+	const t = m ? Number(m[1]) : 0;
+	return t > 0 ? t : 120;
+};
+
 /** レコードの 箱の 絵（ui/village/jukebox.ts）：曲で かわる。 */
 export type SongArt = "kiriko" | "sake";
 /** 鮭が 出る 曲：名無し2rt さんの 曲（鮭は その 人の MV「無題の夜」の 顔。うんJレゼ post/1340）。 */

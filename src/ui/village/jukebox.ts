@@ -4,13 +4,20 @@
 // - 左に その 曲の 顔（名無し2rt さんの 自作ドット絵。うんJレゼ post/1340。曲で かわる：data/audio/music.ts の songArt。
 //   名無し2rt さんの 曲は 鮭、ほかは キリコ。鳴って いる あいだ キリコは 腕を 上げて 歌い、鮭は ゆれながら 拍で はねて、
 //   音符が のぼる。止まって いれば キリコは 立って 息を し、鮭は じっと している）、右に 手（かける／とめる・
+// - コマ送りは 曲の 拍に 合わせる（うんJレゼの MV と 同じ 決まり：キリコは 8コマで 1拍、鮭は 8コマで 1小節）。
+//   拍は 鳴って いる 位置（engine/audio.ts の bgmStep。1拍＝48 ステップ）から。鳴らせない ときは MML の t から 時計で。
 //   つぎへ・まえへ・くりかえし・MMLをコピー・もどる）、下に「番号：曲名」の 札（鳴って いれば ♪）。
 // - MMLをコピー：その 曲の MML（data/audio/bgm/*.mml の 字 その まま）を クリップボードへ（dtm に 貼って 聞ける）。
 // - 十字キーの 上下で 手を えらんで A。左右で 曲を 送る。B で もどる。タップは 手の ボタン。
 // - くりかえし「しない」は 1回 鳴りおわったら 次の 曲へ（箱の 並びを 順に 聞ける）。「する」は その 曲を ループ。
 
 import { bgm as BGM_MML } from "../../data/audio/bgm";
-import { jukeboxTracks, plainMml, songArt } from "../../data/audio/music";
+import {
+	jukeboxTracks,
+	plainMml,
+	songArt,
+	songBpm,
+} from "../../data/audio/music";
 import { JUKEBOX_MSG } from "../../data/village/myhome";
 import { getImage, loadImage } from "../../engine/assets";
 import { loadProgress, loadTown } from "../../engine/save";
@@ -21,20 +28,27 @@ import { tick } from "../minigames/minigameBoard";
 
 /** 絵の 大きさ（ソース画素。CSS で 引きのばす）。 */
 const W = 160;
-const H = 100;
+const H = 116;
 /** 床の 高さ（下から）。 */
-const FLOOR = 12;
+const FLOOR = 10;
+/** ドットの 倍率（64 の コマを 128 に）。 */
+const SCALE = 2;
+/** 1拍の ステップ（dtm。1小節＝192）。 */
+const STEPS_PER_BEAT = 48;
+/** コマの 中の 足もと・鮭の 下の 端（ソース画素。シートを 測った 値）。 */
+const KIRIKO_FEET = 55;
+const SAKE_BOTTOM = 41;
 /**
  * キリコの ドット（名無し2rt さん。うんJレゼ post/1340 の「自作ドット絵」）。64x64 の 8コマ × 3段：
- * 0 立って 息を する・1 口を あけて 歌う・2 腕を 上げて 歌う。もとは 左向きなので、右の 手の ほうを 向くよう 左右 反転して 描く。
+ * 0 立って 息を する・1 口を あけて 歌う・2 腕を 上げて 歌う。左向きの まま 描く（キリコは 左右 非対称なので 反転しない）。
  */
 const KIRIKO_SHEET = "pub:sprites/jukebox_kiriko.png";
 /** 鮭の ドット（同じ 投稿。64x64 の 8コマ：ゆれる）。 */
 const SAKE_SHEET = "pub:sprites/jukebox_sake.png";
 const CELL = 64;
 const FRAMES = 8;
-/** 拍（ms）。はねる・足踏み・音符の 出る 間。 */
-const BEAT_MS = 250;
+/** 止まって いる ときの キリコの 息の 1コマ（ms）。 */
+const IDLE_MS = 400;
 /** 音符が のぼり きる まで（ms）。 */
 const NOTE_MS = 1400;
 
@@ -89,6 +103,12 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 		/** 札の 下の 行に 出す 知らせ（コピーした など。where の かわりに しばらく）。 */
 		let flash: string | null = null;
 		let flashToken = 0;
+		/** いまの 曲の 1拍の 秒（MML の t から。鳴らせない ときの 時計用）。 */
+		let secPerBeat = 0.5;
+		/** 鳴って いる 位置の 見はり（止まったままなら 時計で 拍を 刻む）。 */
+		let lastStep = -1;
+		let lastStepAt = 0;
+		let clockFrom = 0;
 
 		const box = el("div", { class: "jukebox window" });
 		box.appendChild(
@@ -142,7 +162,11 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			const track = list[cur];
 			if (!track) return;
 			playing = true;
+			secPerBeat = 60 / songBpm(BGM_MML[track.bgm] ?? "");
+			lastStep = -1;
 			render();
+			// 音が 出ない（ミュート・BGM 切）：絵だけ MML の 速さで 動かす（次の 曲へは 進まない）
+			if (!audio.bgmEnabled) return;
 			await audio.fadeBgm(120);
 			if (t !== token) return;
 			if (loop) {
@@ -231,13 +255,27 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 		) => {
 			const img = getImage(ref);
 			if (!img || !g) return;
+			const d = CELL * SCALE;
 			g.save();
 			if (flip) {
-				g.translate(x + CELL, y);
+				g.translate(x + d, y);
 				g.scale(-1, 1);
 			} else g.translate(x, y);
-			g.drawImage(img, col * CELL, row * CELL, CELL, CELL, 0, 0, CELL, CELL);
+			g.drawImage(img, col * CELL, row * CELL, CELL, CELL, 0, 0, d, d);
 			g.restore();
+		};
+		/**
+		 * いま 何拍目か（小数）。鳴って いる 位置から。位置が 1秒 動かなければ（ミュート・BGM 切）MML の 速さで 時計から。
+		 */
+		const beatsNow = (now: number): number => {
+			const st = audio.bgmStep;
+			if (st !== lastStep) {
+				lastStep = st;
+				lastStepAt = now;
+				clockFrom = now;
+			}
+			if (now - lastStepAt < 1000) return st / STEPS_PER_BEAT;
+			return st / STEPS_PER_BEAT + (now - clockFrom) / 1000 / secPerBeat;
 		};
 		const draw = (now: number) => {
 			if (!g) return;
@@ -247,25 +285,27 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			g.fillRect(0, 0, W, H);
 			g.fillStyle = "#2a1c48";
 			g.fillRect(0, H - FLOOR, W, FLOOR);
-			const beat = (now % BEAT_MS) / BEAT_MS;
-			const ground = H - FLOOR - CELL + 8;
-			const x = (W - CELL) / 2;
+			const beats = playing ? beatsNow(now) : 0;
+			const inBeat = beats - Math.floor(beats);
+			const x = (W - CELL * SCALE) / 2;
+			const floor = H - FLOOR;
 			if (songArt(list[cur]?.bgm ?? "") === "sake") {
-				// 鮭（鳴って いれば ゆれながら 拍で はねる。止まって いれば じっと）
-				const frame = playing ? Math.floor(now / 120) % FRAMES : 0;
-				const hop = playing ? Math.round(Math.sin(beat * Math.PI) * 12) : 0;
-				cell(SAKE_SHEET, frame, 0, x, ground + 12 - hop);
+				// 鮭：8コマで 1小節（MV と 同じ）。拍ごとに はねる。止まって いれば 0コマ目で じっと
+				const frame = playing ? Math.floor(beats * 2) % FRAMES : 0;
+				const hop = playing ? Math.round(Math.sin(inBeat * Math.PI) * 14) : 0;
+				cell(SAKE_SHEET, frame, 0, x, floor - SAKE_BOTTOM * SCALE - hop);
 			} else {
-				// キリコ（鳴って いれば 腕を 上げて 歌う コマを 拍で 送り、止まって いれば ゆっくり 息）
+				// キリコ：8コマで 1拍（MV と 同じ）。4小節に 1小節は 口だけで 歌う 段。止まって いれば ゆっくり 息
 				const frame = playing
-					? Math.floor(now / BEAT_MS) % FRAMES
-					: Math.floor(now / 400) % FRAMES;
-				cell(KIRIKO_SHEET, frame, playing ? 2 : 0, x, ground, true);
+					? Math.floor(beats * FRAMES) % FRAMES
+					: Math.floor(now / IDLE_MS) % FRAMES;
+				const row = !playing ? 0 : Math.floor(beats / 4) % 4 === 3 ? 1 : 2;
+				cell(KIRIKO_SHEET, frame, row, x, floor - KIRIKO_FEET * SCALE);
 			}
-			if (playing && now - lastNote >= BEAT_MS * 2) {
+			if (playing && inBeat < 0.5 && now - lastNote >= secPerBeat * 1000) {
 				lastNote = now;
 				notes.push({
-					x: W / 2 + (Math.random() - 0.5) * 90,
+					x: W / 2 + (Math.random() - 0.5) * 100,
 					at: now,
 					glyph: Math.random() < 0.5 ? "♪" : "♫",
 				});
@@ -284,7 +324,7 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 				g.fillText(
 					n.glyph,
 					n.x + Math.sin(k * Math.PI * 2) * 4,
-					H - 40 - k * 50,
+					H - 40 - k * 60,
 				);
 			}
 			g.globalAlpha = 1;

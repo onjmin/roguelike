@@ -33,6 +33,7 @@ import {
 	plainMml,
 	records,
 	songArt,
+	songBpm,
 	stageBgm,
 } from "../data/audio/music";
 import { sfx } from "../data/audio/sfx";
@@ -5530,6 +5531,17 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 			box.some((r) => songArt(r.bgm) === "kiriko"),
 		"the record box never changes its face",
 	);
+	// コマ送りの 拍：MML の t（ヘッダの #t0inst などは 読まない）
+	ok(
+		songBpm(bgm.kaiwai) === 145 &&
+			songBpm(bgm.kumori) === 116 &&
+			songBpm("@0 o4 cdef") === 120,
+		`the record box reads the wrong tempo: ${songBpm(bgm.kaiwai)} ${songBpm(bgm.kumori)}`,
+	);
+	for (const [name, mml] of Object.entries(bgm)) {
+		const t = songBpm(mml);
+		ok(t >= 40 && t <= 300, `${name}: odd tempo ${t}`);
+	}
 	// MMLをコピー：dtm 独自の 宣言（#名前=値・#end;）は 外す。音符は 残る（@0 の トラックから 始まる）
 	for (const [name, mml] of Object.entries(bgm)) {
 		const p = plainMml(mml);

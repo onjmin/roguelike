@@ -317,6 +317,16 @@ export class GameAudio {
 		return this.bgmName;
 	}
 
+	/** 鳴っている 曲の 位置（dtm の ステップ。1小節＝192。レコードの 箱の コマ送り：ui/village/jukebox.ts）。 */
+	get bgmStep(): number {
+		return this.bgmLastStep;
+	}
+
+	/** 曲を 鳴らせる 設定か（ミュート・BGM 切 でない）。 */
+	get bgmEnabled(): boolean {
+		return this.canPlayBgm();
+	}
+
 	private studio(): Promise<DtmStudio> {
 		const ctx = this.ctx;
 		if (!ctx) return Promise.reject(new Error("audio locked"));
@@ -675,6 +685,7 @@ export class GameAudio {
 	async playOnce(name: string): Promise<boolean> {
 		this.stopBgmPlayback();
 		this.bgmName = null;
+		this.bgmLastStep = 0;
 		const mml = this.bgmData[name];
 		const ctx = this.ctx;
 		if (!mml || !ctx || !this.canPlayBgm()) return false;
