@@ -5536,7 +5536,8 @@ test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学�
 		cueOf(HERO_QUESTS.roze.offer, "あー") === null,
 		"ロゼ's あ is not heard alone",
 	);
-	ok(DUNGEONS.deep.boss?.bgm === "kaiwai", "やきう is not the incident song");
+	// やきうの 正体は 山場の 専用曲（盛られた見出し。BGM.md）
+	ok(DUNGEONS.deep.boss?.bgm === "lastboss", "やきう has no last-boss song");
 	for (const d of DUNGEON_IDS)
 		if (d !== "deep")
 			ok(!DUNGEONS[d].boss?.bgm, `${d}: boss leaves the shared song`);
@@ -5549,7 +5550,7 @@ test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学�
 			if (r.bgm) ok(r.bgm in bgm, `${d} ${r.name}: no song ${r.bgm}`);
 	const all = records(7, DUNGEON_IDS).map((r) => r.bgm);
 	ok(
-		all.includes("kaiwai") && all.includes("deq_laundry"),
+		all.includes("lastboss") && all.includes("deq_laundry"),
 		"the gramophone misses the 電池板 songs",
 	);
 });

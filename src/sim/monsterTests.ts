@@ -3500,7 +3500,8 @@ test(
 		ok(seen.length === 1 && seen[0].id === b.uid, "no boss event on sight");
 		ok(r.f.bossSeen === true, "bossSeen was not saved");
 		ok(now(b).status.sleep === 0, "still asleep after being seen");
-		ok(saw(ev, "待ちかまえていた"), "no line when it was seen");
+		// 本気の 掛け合い（BossSpec.talk）の ある ボスは「〜との勝負だ！」
+		ok(saw(ev, "勝負だ"), "no line when it was seen");
 		// 以後は ふつうに 動く（もう 知らせない）
 		let moved = 0;
 		waitTurns(r, 6, (e) => {
@@ -3534,7 +3535,7 @@ test(
 			"the fight did not start on the hit",
 		);
 		ok(
-			saw(first, "あらわれた") && !saw(first, "待ちかまえていた"),
+			saw(first, "勝負だ") && !saw(first, "待ちかまえていた"),
 			"an awake boss was said to lie in wait",
 		);
 		ok(count(first, "attack", b.uid) === 1, "the boss did not hit back");
@@ -3574,7 +3575,7 @@ test(
 			"no boss event on sight",
 		);
 		ok(
-			saw(ev, "あらわれた") && !saw(ev, "待ちかまえていた"),
+			saw(ev, "勝負だ") && !saw(ev, "待ちかまえていた"),
 			"an awake boss was said to lie in wait",
 		);
 		ok(count(ev, "attack", b.uid) === 1, "the awake boss got a wake-up rest");
@@ -4501,9 +4502,17 @@ test(
 	"電池板の 正体：目的の 文では 名前を 言わず、ボスを 見ると 明かす。見学コースに 電池ニキ",
 	() => {
 		const spec = DUNGEONS.deep.boss;
-		ok(spec?.goalName && spec.intro?.length, "no reveal on 電池板");
-		for (const l of spec?.intro ?? [])
-			ok([...l].length <= 24, `long intro ${l}`);
+		// 正体は 窓の 掛け合い（talk。立ち絵は やきう）で 明かす。記録の 行（intro）では 言わない
+		ok(
+			spec?.goalName && spec.talk?.length && !spec.intro,
+			"no reveal on 電池板",
+		);
+		ok(spec?.voice === "nanj", "reveal without やきう's portrait");
+		ok(spec?.bgm === "lastboss", "reveal without the last-boss song");
+		ok(
+			spec?.talk?.some((x) => typeof x === "string" && x.includes("見出し")),
+			"the reveal does not mention the headlines",
+		);
 		const r = Run.create("reveal-run", "deep");
 		r.enterFloor(8, false);
 		ok(

@@ -700,8 +700,11 @@ export type GameEvent =
 	| { t: "bossDown" }
 	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
 	| { t: "rescue"; kind: RescueKind; cheer?: string }
-	/** 集落・名所の 人と 話した（画面は 村と 同じ 窓で 1〜3枚。記録の 行には しない）。 */
-	| { t: "talk"; name: string; voice?: string; talk: FolkTalk }
+	/**
+	 * 集落・名所の 人と 話した（画面は 村と 同じ 窓で 1〜3枚。記録の 行には しない）。
+	 * hush は 話す 前に 階の 曲を 止める（ボスの 本気の 掛け合い。STORY.md §0「シリアスは 音を 変えて」）。
+	 */
+	| { t: "talk"; name: string; voice?: string; talk: FolkTalk; hush?: boolean }
 	/** 解音ゼロが たおれて 次の 機体に バトンタッチした（body は 次の 機体の 番。画面は 絵を かえる）。 */
 	| { t: "baton"; body: number; pos: Pos }
 	| { t: "end" };

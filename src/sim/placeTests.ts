@@ -8,7 +8,7 @@ import { blocks, buildFloor } from "../core/floor";
 import { DIRS8, type Pos, step } from "../core/geom";
 import { idx, isFloor } from "../core/mapgen";
 import { Run } from "../core/run";
-import type { DungeonId, Floor } from "../core/types";
+import type { DungeonId, Floor, GameEvent } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { REST_SKITS, restSkitsAt } from "../data/story/restSkits";
 import { BOARD_LOOKS } from "../data/story/story";
@@ -299,6 +299,54 @@ test("boss arenas: the talk fits the window and comes before the fight starts", 
 			zt?.t === "talk" && zt.talk.every((x) => typeof x === "string"),
 			`${a.name}: キリコ answers for ゼロ`,
 		);
+	}
+});
+
+// 本気の 相手の 掛け合い（BossSpec.talk。大部屋の ない ボスも 窓で 話す。STORY.md §0「シリアスは 本気の 相手の 一言」）
+const TALK_BOSSES = DUNGEON_IDS.flatMap((id) => {
+	const b = dungeonById(id).boss;
+	return b?.talk ? [{ id, b, talk: b.talk }] : [];
+});
+test("boss talks: every boss opens with a straight talk that fits the window, hushes the song, and comes before the fight", () => {
+	// 本筋の ボスの 板は 全部（大部屋の 番頭は arena.talk）。寄り道の 板の ボスは 目的が boss で ない ので なくてよい
+	for (const id of DUNGEON_IDS) {
+		const d = dungeonById(id);
+		if (d.boss && d.objective === "boss")
+			ok(d.boss.talk || d.boss.arena, `${id}: boss without a talk`);
+	}
+	ok(TALK_BOSSES.length >= 3, "few boss talks");
+	for (const { id, b, talk } of TALK_BOSSES) {
+		ok(talk.length >= 3 && talk.length <= 7, `${id}: windows ${talk.length}`);
+		ok(typeof talk[0] === "string", `${id}: opens with キリコ`);
+		// 最後は 相手の 脅しか キリコの 返事（笑いで 落とさない：！の 連打・草・ンゴの ボケ なし）
+		for (const x of talk) {
+			const text = typeof x === "string" ? x : x.kiriko;
+			const lines = text.split("\n");
+			ok(lines.length <= 2, `${id}: 3 lines ${text}`);
+			for (const ln of lines)
+				ok([...ln].length <= 22, `${id}: long line ${ln}`);
+			ok(!text.includes("！"), `${id}: shouting in a straight talk ${text}`);
+		}
+		if (b.arena) continue;
+		// 大部屋の ない ボス：ふつうの 階で 見つけた ときに 窓 → 戦い（ボスを 起こして となりに 置き、1手 待つ）
+		const r = Run.create(`talk-test:${id}`, id, [], "boss");
+		r.enterFloor(dungeonById(id).floors, false);
+		const all: GameEvent[] = [...r.ev];
+		for (let i = 0; i < 20 && !all.some((e) => e.t === "talk"); i++) {
+			const m = r.boss;
+			if (!m || r.s.end) break;
+			m.status.sleep = 0;
+			m.status.dormant = false;
+			m.x = r.p.x + 1;
+			m.y = r.p.y;
+			all.push(...r.act({ c: "wait" }));
+		}
+		const te = all.find((e) => e.t === "talk");
+		ok(te?.t === "talk" && te.hush, `${id}: talk without hush`);
+		const ti = all.findIndex((e) => e.t === "talk");
+		const bi = all.findIndex((e) => e.t === "boss");
+		ok(ti >= 0 && bi > ti, `${id}: talk ${ti} boss ${bi}`);
+		ok(r.f.bossSeen, `${id}: boss not seen`);
 	}
 });
 

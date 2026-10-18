@@ -1878,6 +1878,8 @@ export class Play {
 	/** 集落・名所の 人と 話す 窓（core/run.ts の talkFolk。立ち絵は 仲間・住人だけ、キリコの 返事は キリコの 立ち絵）。 */
 	private async talkScene(e: Extract<GameEvent, { t: "talk" }>): Promise<void> {
 		const v = e.voice ? guestVoice(e.voice as GuestId) : null;
+		// ボスの 本気の 掛け合い：階の 曲を 止めて 話す（戦いは 始まりの 音から ボスの 曲）
+		if (e.hush) this.ctx.audio.bgm(null);
 		const kiriko = {
 			name: KIRIKO.name,
 			color: KIRIKO.color,

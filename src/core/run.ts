@@ -808,9 +808,11 @@ export class Run {
 			return;
 		}
 		const name = monsterName(this, m);
-		// 大部屋：戦いの 前に 掛け合い（村と 同じ 窓）
+		// 戦いの 前の 掛け合い（村と 同じ 窓。大部屋の ボスは arena.talk、ほかは boss.talk）。本気の 一場面なので
+		// 階の 曲を 止めて 話す（hush。STORY.md §0「シリアスは 音を 変えて」）
 		const arena = f.arena ? this.bossSpec?.arena : undefined;
-		if (arena) this.emitTalk(name, arena.talk);
+		const talk = arena?.talk ?? this.bossSpec?.talk;
+		if (talk) this.emitTalk(name, talk, this.bossSpec?.voice, true);
 		if (waiting) {
 			m.status.sleep = 0;
 			m.status.dormant = false;
@@ -819,7 +821,7 @@ export class Run {
 		}
 		this.emit({ t: "boss", id: m.uid });
 		this.msg(
-			arena
+			talk
 				? `${name}との勝負だ！`
 				: waiting
 					? `${name}が正座して待ちかまえていた！`
@@ -954,12 +956,13 @@ export class Run {
 
 	/** 集落の 人に 話す（ぶつかる。時間は 進まない）。key の 人なら 目的が すすむ。 */
 	/** 話す 窓（集落の 人・大部屋の ボス）。キリコの 返事は 主人公が キリコの ときだけ（口ぐせが ンゴなので）。 */
-	emitTalk(name: string, talk: FolkTalk, voice?: string): void {
+	emitTalk(name: string, talk: FolkTalk, voice?: string, hush = false): void {
 		const hero = this.heroName;
 		this.emit({
 			t: "talk",
 			name,
 			...(voice ? { voice } : {}),
+			...(hush ? { hush: true } : {}),
 			talk: talk.flatMap((x): FolkTalk[number][] =>
 				typeof x === "string"
 					? [x.replaceAll("キリコ", hero)]
