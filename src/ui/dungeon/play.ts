@@ -1816,12 +1816,19 @@ export class Play {
 				.filter((it) => !held0.has(it.uid))
 				.map((it) => defOf(it.kind).cat),
 		);
+		const audio = this.ctx.audio;
 		let shown = false;
 		for (const cat of cats) {
 			const pages = PICK_GUIDE[cat];
 			const flag = pickGuideFlag(cat);
 			if (!pages || hasFlag(flag)) continue;
 			addFlag(flag);
+			// 曲を 止めて 専用の 音（祭り・ボスの 曲を 待って いる 途中なら、それも やめて 読んだ あとに 鳴らす）
+			if (!shown) {
+				clearTimeout(this.houseBgmTimer);
+				audio.bgm(null);
+			}
+			audio.se("guide");
 			shown = true;
 			await speak(
 				this.ctx,
@@ -1833,6 +1840,7 @@ export class Play {
 			);
 		}
 		if (!shown) return;
+		if (!this.stopped) audio.bgm(floorBgm(this.run, this.bossShown));
 		this.swallowInput();
 		this.walkHalt = true;
 		this.restHalt = true;

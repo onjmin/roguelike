@@ -221,5 +221,6 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	served: ["wMSfsJ", -11.7, -2.9, -13.3, 0.216, 60, 1810, 1410], // jingle → -25.0
 	arcStart: ["2GAYAx", -5, -0.1, -20, 0.1, 0, 560, 470], // jingle → -25.0
 	arcBest: ["VvhXOb", -7.2, -2.2, -17.8, 0.129, 30, 830, 710], // jingle → -25.0
+	guide: ["PhBNN2", -11.3, -10.3, -13.7, 0.207, 0, 800, 420], // jingle → -25.0
 };
 // </loudness:se>

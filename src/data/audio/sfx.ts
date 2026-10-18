@@ -214,6 +214,8 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		arcStart: "rpgen:2GAYAx", // 魔界村-スタート
 		/** 筐体の ハイスコアを こえた。 */
 		arcBest: "rpgen:VvhXOb", // [マリオ]1UP
+		/** 道具の なかまを はじめて 拾った ときの 手ほどき（村の スレの 書きこみ。BGM を 止めて 鳴らす）。 */
+		guide: "rpgen:PhBNN2", // [マリオRPG]情報
 	},
 };
 
