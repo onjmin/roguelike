@@ -285,9 +285,7 @@ export const SKITS: readonly Skit[] = [
 			k("ぜんぶ混ぜるンゴ"),
 			n("コーラ、メロンソーダ、\nコーヒー、コーンスープ……"),
 			clerk("混ぜるな危険です！"),
-			n("キリコは飲みほした。"),
-			k("……うまいンゴ"),
-			{ ...clerk("……新メニューに、\nのせときます"), fx: "kusa" },
+			{ ...k("飲んだら、\nうまいンゴ！"), fx: "kusa" },
 		],
 	},
 	{
@@ -306,8 +304,7 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "enter", map: "f_dojo" },
 		lines: [
 			sensei("気合いだ！\n気合いで瓦を割れ！"),
-			sensei("10枚！"),
-			sensei("100枚！"),
+			sensei("10枚！\n100枚！"),
 			sensei("道場ごと！！"),
 			{ ...n("瓦は、1枚も割れなかった。"), fx: "chiin" },
 			{ ...sensei("……よし。\n次は1枚からな"), calm: true },
@@ -345,7 +342,6 @@ export const SKITS: readonly Skit[] = [
 			boss("作戦その2を発表する"),
 			member("どうせまた、\nこの家を爆破するんでしょ"),
 			boss("せえへん。\n今回は、となりの家や"),
-			k("人の家ンゴ！！"),
 			member("……となり、\nうちの実家ですけど"),
 			{ ...boss("……作戦は、中止や"), fx: "chiin" },
 		],

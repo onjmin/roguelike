@@ -8560,7 +8560,8 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 
 test("寸劇: every explosion clears before the skit ends (the building is back to normal), and the boom plays its sound", async () => {
 	const booms = SKITS.filter((sk) => sk.lines.some((l) => l.fx === "boom"));
-	ok(booms.length >= 3, "few explosion gags");
+	// 爆発は リサイクル屋と 秘密結社の 1回目だけ（多すぎると 天丼が すりきれる）
+	ok(booms.length >= 1 && booms.length <= 2, "explosion gags: 1〜2");
 	for (const sk of booms) {
 		const at = sk.lines.findIndex((l) => l.fx === "boom");
 		ok(
@@ -8573,10 +8574,10 @@ test("寸劇: every explosion clears before the skit ends (the building is back 
 		ok(
 			await skitAfterEvent(a.s, {
 				from: "village",
-				to: "f_theater",
-				thing: "door_f_theater",
+				to: "f_recycle",
+				thing: "door_f_recycle",
 			}),
-			"theater skit",
+			"recycle skit",
 		);
 		ok(a.log.includes("se explosion"), `no boom sound: ${a.log.join(" / ")}`);
 	});
