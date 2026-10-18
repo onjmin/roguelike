@@ -523,24 +523,17 @@ const BATH_HEAD: StoryPage[] = [
 	{ who: "nanj", text: "温度計使え！", emote: "怒" },
 ];
 
-/** 第三話：湯柱（銭湯 → 雲 → 宇宙）。 */
+/** 第三話：湯の 温度が うつる（銭湯 → 町の 蛇口 → 港の 海）。 */
 const steamCard = (step: 0 | 1): CardSpec => ({
-	title: "イメージ図「湯柱」",
+	title: "イメージ図「41.5℃の行き先」",
 	nodes: [
 		{ label: "銭湯", sub: "追いだき\n連打", aa: "湯", shake: true },
-		{ label: "雲の上", sub: "湯けむり", aa: "雲" },
+		{ label: "町の蛇口", sub: "ぜんぶ\n41.5℃", aa: "町" },
 		...(step === 1
-			? [
-					{
-						label: "宇宙",
-						sub: "衛星3つ\nゆでた",
-						aa: "星",
-						shake: true,
-					},
-				]
+			? [{ label: "港の海", sub: "41.5℃\n魚が入浴", aa: "海", shake: true }]
 			: []),
 	],
-	links: [{ label: "噴く" }, ...(step === 1 ? [{ label: "つきぬける" }] : [])],
+	links: [{ label: "噴く" }, ...(step === 1 ? [{ label: "流れこむ" }] : [])],
 	note: "ゼロ調べ（湯温計を3本つないで）",
 });
 
@@ -554,10 +547,6 @@ export const ENDING: StoryPage[] = [
 	},
 	{ who: null, text: "ぬるい！", nanashi: "湯気の中の42℃派" },
 	{ who: null, text: "熱い！", nanashi: "湯気の中の41℃派" },
-	{
-		who: null,
-		text: "そのうち、また湯の温度で\nもめはじめた。",
-	},
 	// 主人公が 解決の つもりで 最悪の 手（追いだきの 連打）→ 直後に 自己ツッコミ。シヨと ロゼも 暴走
 	{
 		who: null,
@@ -573,33 +562,29 @@ export const ENDING: StoryPage[] = [
 		seGap: 100,
 	},
 	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "!" },
-	// 規模が ふくらむ（銭湯 → 雲の 上 → 宇宙）
+	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）
 	{
 		who: null,
-		text: "源泉が噴きあがった。\n湯柱が、雲をつきぬけた。",
+		text: "源泉が噴きあがって、町じゅうの\n蛇口から41.5℃のお湯が出た。",
 		se: "explosion",
 		// 爆発の 煙が そのまま 湯けむり
 		fx: "boom",
 		card: steamCard(0),
 	},
 	{
+		who: "zero",
+		text: "ゼロ3機の冷却水まで41.5℃！\n全機、湯あたりです！",
+		emote: "汗",
+		gesture: "shiver",
+		fx: "boom",
+	},
+	{
 		who: "shiyo",
-		text: "43℃！ちょうどいいじゃない！\nあたす、入ってくる！",
+		text: "台所でお風呂に入れるじゃない！\nあたす、43℃にしてくる！",
 		gesture: "hop",
 		fx: "boom",
 	},
-	{
-		who: null,
-		text: "シヨは湯柱に飛びこんで、\n空へのぼっていった。",
-		fx: "boom",
-	},
 	{ who: null, text: "規模が、\nおかしいンゴ！", kiriko: "voice", fx: "boom" },
-	{
-		who: null,
-		text: "湯柱は宇宙までのびて、\n人工衛星を3つゆでた。",
-		fx: "boom",
-		card: steamCard(1),
-	},
 	{ who: "roze", text: "止めるアル！！", emote: "怒" },
 	{
 		who: null,
@@ -610,16 +595,22 @@ export const ENDING: StoryPage[] = [
 	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）
 	{
 		who: null,
-		text: "1時間後。町の人はみんな、\nのぼせて空に浮いていた。",
+		text: "1時間後。港の海が41.5℃になり、\n魚が肩までつかっていた。",
 		se: "chiin",
 		fx: "chiin",
 		bgm: null,
+		card: steamCard(1),
+	},
+	{
+		who: "feris",
+		text: "お魚さん、のぼせてる〜！\nタオル、頭にのせてる〜！",
+		gesture: "hop",
 		card: null,
 	},
 	// 見出しの 名無しの 前ぶれ：見出しが 早すぎる。やきうは 湯船に しずんで ごまかす
 	{
 		who: null,
-		text: "掲示板に、もう見出しが貼られていた。\n『【悲報】キリコ、宇宙をゆでる』",
+		text: "掲示板に、もう見出しが貼られていた。\n『【悲報】キリコ、海をわかす』",
 		se: "read",
 	},
 	{
@@ -636,12 +627,15 @@ export const ENDING: StoryPage[] = [
 			text: "見出しのインク、まだ\nかわいてません！",
 		},
 	},
-	// 答えの かわりに 泡（ツッコミは 入れない）
+	// 答えに ならない 言いわけで 切る（ツッコミは 入れない）
 	{
-		who: null,
-		text: "やきうは湯に顔までしずんだ。\nぶくぶく、泡だけがのぼってくる。",
-		about: "nanj",
-		instead: { who: null, text: "湯船から、ぶくぶく\n泡だけがのぼってくる。" },
+		who: "nanj",
+		text: "ワイはいま、潜水の練習中や！\n話しかけんな！ぶくぶく！",
+		emote: "汗",
+		instead: {
+			who: "zero",
+			text: "湯船から、ぶくぶく\n泡だけがのぼってきます！",
+		},
 	},
 ];
 
@@ -652,7 +646,7 @@ export const ENDING_AGAIN: StoryPage[] = [
 	{ who: null, text: "蓄音機に、長湯スレの\n湯の音がまた1枚ふえた。" },
 	{
 		who: "zero",
-		text: "湯温、41.5℃のままです！\n人工衛星は、まだゆだってます！",
+		text: "港の海、まだ41.5℃です！\n魚がまだ肩までつかってます！",
 		emote: "!",
 	},
 ];

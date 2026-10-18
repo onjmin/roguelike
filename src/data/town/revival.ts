@@ -42,14 +42,16 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 		id: "plaza",
 		dungeon: "shallow",
 		name: "広場",
-		line: "独立宣言の貼り紙がはがされ、\n広場に人がなだれこんできた！",
+		// 第一話の 国境線（story.ts の パン板）は 消えない
+		line: "広場に人がなだれこんできた！\nチョークの国境線は、消えない！",
 		places: ["clock", "post_city", "library", "bookstore", "fountain", "go"],
 	},
 	{
 		id: "street",
 		dungeon: "kinoko",
 		name: "商店街",
-		line: "踏まれた商店街のシャッターが、\nドミノみたいに全部あがった！",
+		// 第二話の 胞子（story.ts の きのこ板）。行進は 看板の しめじを 摘まなかった
+		line: "商店街のシャッターが全部あがった！\n看板は、しめじのまま！",
 		places: [
 			"konbini",
 			"arcade",
@@ -66,14 +68,16 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 		id: "bath",
 		dungeon: "main",
 		name: "銭湯の並び",
-		line: "銭湯のえんとつから湯けむり！\nのれんが空まで舞いあがった！",
+		// 第三話の 追いだき（quotes.ts の ENDING）で わいた 港の 海は もどらない
+		line: "銭湯のえんとつから湯けむり！\n港の海も、まだ41.5℃！",
 		places: ["bath", "bank", "shoken", "dojo", "gym", "theater"],
 	},
 	{
 		id: "lights",
 		dungeon: "deep",
 		name: "町の明かり",
-		line: "町じゅうの街灯がともった！\n宇宙から見えるくらい明るい！",
+		// 転の 停電で 逆に 回った 家電（story.ts の TEN_NEWS）が もどる。電池ニキの「電気足らんわ」
+		line: "町じゅうの街灯がともった！\n電気代の請求書も、とどいた！",
 		places: [
 			"bar",
 			"cinema",
@@ -90,21 +94,24 @@ export const REVIVE_AREAS: readonly ReviveArea[] = [
 		id: "beach",
 		dungeon: "tropical",
 		name: "浜",
-		line: "浜のテントが片づいて、\n海の家が全力で店をあけた！",
+		// 島が 泳いで 港に 突っこんだ（story.ts の 離島）
+		line: "海の家が全力で店をあけた！\n浜に、島が泳いだ跡がのこってる！",
 		places: ["umi", "vend_beach", "restaurant"],
 	},
 	{
 		id: "tako",
 		dungeon: "konamono",
 		name: "たこ八",
-		line: "屋台からソースのにおい！\n浜の居酒屋にも、のれんが出た！",
+		// 193か国ぶんを 焦がした 鉄板（story.ts の おんたこ）
+		line: "屋台からソースのにおい！\n鉄板に、193か国ぶんの焦げあと！",
 		places: ["tako", "izakaya"],
 	},
 	{
 		id: "shrine",
 		dungeon: "festival",
 		name: "丘の神社",
-		line: "丘の神社にちょうちんがともり、\n音楽室まで祭りばやしがひびく！",
+		// キリコと ブラジルの 太鼓の 口論（story.ts の お祭り）は まだ 続いて いる
+		line: "丘の神社にちょうちんがともった！\n地面の下から、まだサンバ！",
 		places: ["shrine", "soba", "music"],
 	},
 	// ここから 下は 寄り道の 板（町の 施設の 出来事で 開く）と 過去ログの底。本筋を 終えても 閉まった まま

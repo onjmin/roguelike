@@ -55,6 +55,7 @@ import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
 import {
+	afterHeadline,
 	BOARD_NEWS,
 	deathLine,
 	HEADLINES,
@@ -778,6 +779,11 @@ const boardScript =
 				: open.slice(-2).map((d) => HEADLINES[d] ?? "");
 			for (const line of lines)
 				await s.narrate(fill(BOARD_NEWS.headline, { line }));
+			// 持ち帰りの 語りで 貼られた キリコの やらかしの 見出し（最終話の あとは ロールバックの 見出しだけ）
+			const after = view.cleared.includes("deep")
+				? null
+				: afterHeadline(view.cleared);
+			if (after) await s.narrate(fill(BOARD_NEWS.after, { line: after }));
 			const deaths = deathCount();
 			if (deaths > 0)
 				await s.narrate(

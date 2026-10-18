@@ -22,6 +22,26 @@ export const HEADLINES: Partial<Record<DungeonId, string>> = {
  */
 export const UNLOCK_HEADLINES: readonly DungeonId[] = ["kinoko", "main"];
 
+/**
+ * 持ち帰りの 語りで 貼られた 翌朝の 見出し（キリコの やらかし）。持ち帰った あとも 掲示板に 残る（いちばん 新しく
+ * 持ち帰った 板の 1本。語りの 見出しと 一字も ちがわない：src/sim/villageTests.ts）。最終話は ROLLBACK_HEADLINE。
+ */
+export const AFTER_HEADLINES: Partial<Record<DungeonId, string>> = {
+	shallow: "【悲報】キリコ、日本を割る",
+	kinoko: "【悲報】キリコ、町じゅうを苗床にする",
+	main: "【悲報】キリコ、海をわかす",
+	tropical: "【悲報】キリコ、日本の形をかえる",
+	konamono: "【悲報】キリコ、世界を怒らせる😡",
+	festival: "【悲報】キリコ、ブラジルと太鼓で口論",
+};
+
+/** 掲示板に 残って いる 翌朝の 見出し（持ち帰った 順で いちばん 新しい 1本。無ければ null）。 */
+export const afterHeadline = (cleared: readonly DungeonId[]): string | null =>
+	[...cleared]
+		.reverse()
+		.map((d) => AFTER_HEADLINES[d])
+		.find((l) => l !== undefined) ?? null;
+
 /** 最終話の あと（鯖代の 払い忘れで ロールバック）の 見出し。 */
 export const ROLLBACK_HEADLINE = "【悲報】ワイらの冒険、ロールバック";
 
@@ -87,6 +107,8 @@ export const BOARD_NEWS = {
 	headline: "名無しのスレが立っている。\n『{line}』",
 	/** 本筋の 板が 開いた 帰り（{line} は 見出し。town.ts の OPENING.headline と 同じ 書き出し）。 */
 	fresh: "掲示板に、貼りたての見出し。\n『{line}』",
+	/** 持ち帰った 板の 翌朝の 見出し（{line} は AFTER_HEADLINES）。 */
+	after: "はがれかけの見出しも、まだある。\n『{line}』",
 	/** 倒れた 帰りに 1回（{line} は 一行）。 */
 	death: "広場の掲示板に、書きこみがふえた。\n「{line}」",
 	/** 掲示板を 調べた とき（{line} は いちばん 新しい 一行）。 */

@@ -162,6 +162,7 @@ import {
 	YAKYU_SHELF,
 } from "../data/town/hall";
 import {
+	AFTER_HEADLINES,
 	BOARD_NEWS,
 	DEATH_LINES,
 	DEATH_TIERS,
@@ -7811,6 +7812,20 @@ test("転の 停電: 電池板が 開いて 持ち帰るまで、生き返った
 			[...villageRows(dark)[d[1]]][d[0]] === "ｼ",
 			"no shutter in the blackout",
 		);
+});
+
+test("翌朝の 見出し（STORY.md §0 言う ことと 見える もの）: 掲示板に 残る 見出しは、その 板の 持ち帰りの 語りの 見出しと 一字も ちがわない", () => {
+	const texts: [string, string][] = [];
+	for (const [d, line] of Object.entries(AFTER_HEADLINES)) {
+		const { ending, once } = STORY[d as DungeonId];
+		const said = [...ending, ...(once ?? [])].map((p) => p.text).join("\n");
+		ok(said.includes(`『${line}』`), `${d}: 語りに 『${line}』 が ない`);
+		texts.push([
+			`AFTER_HEADLINES.${d}`,
+			fill(BOARD_NEWS.after, { line: line ?? "" }),
+		]);
+	}
+	fitsWindow(texts);
 });
 
 test("広場の 掲示板の 名無し（STORY.md §4.9）: 騒ぎの 板には 見出しが あり、倒れた ときの 一行は 回数で 入れかわる。どれも 村の 窓に 収まる", () => {
