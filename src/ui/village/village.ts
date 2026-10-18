@@ -295,10 +295,10 @@ export class Village {
 	private pan: { x: number; y: number; t: number; ms: number } | null = null;
 	/** 入ったときの 場面の 最中（歩かない・うろうろ しない）。 */
 	private scene = false;
-	private running = false;
-	private rafId = 0;
 	/** 帰りの 寸劇の 最中（通行人を 出さない。寸劇の おわりの 建て直しで 町に 置く）。 */
 	private skit = false;
+	private running = false;
+	private rafId = 0;
 	private arrival: Arrival = null;
 	/** 村を出ると 決まった（いちばん外の スクリプトが 終わったら 出る）。 */
 	private exitChoice: VillageExit | null = null;
@@ -350,9 +350,9 @@ export class Village {
 			advanceClock(RETURN_HOURS * 60);
 		// 持ち帰りの 寸劇は 朝（村の 時計に かかわらず。場面の おわりに 時計へ：ui/village/villageReturn.ts の returnScene）
 		if (k === "clear" || k === "escape") setSceneSky(skitSky());
+		this.skit = k === "clear" || k === "escape";
 		// 起動の札の うしろでは 村が 動いている（うろうろ する。場面は 札を 閉じてから）
 		this.scene = !o.boot;
-		this.skit = k === "clear" || k === "escape";
 		this.lookAt = null;
 		this.pan = null;
 		this.fadeEl.style.transition = "none";
@@ -483,9 +483,9 @@ export class Village {
 
 	/** 町の段・開いたダンジョンを 読み直して 建て直す（キリコは 同じマスのまま）。暗転の中で呼ぶ。 */
 	async rebuild(): Promise<void> {
+		this.skit = false;
 		await this.build({
 			x: this.player.x,
-		this.skit = false;
 			y: this.player.y,
 			dir: this.player.dir,
 		});
@@ -604,9 +604,9 @@ export class Village {
 			// 窓が 開いている あいだ（会話・選択肢）と、帰りの 寸劇・知らせの 場面の あいだは 歩きださない
 			// （場面の 人の 走り・カメラの 間に 通行人が 横切らない。出てくる 人も 止める）
 			paused: () => this.ctx.input.busy || this.leaving || this.scene,
+			hidden: () => this.skit,
 			target: () => this.pathTalk,
 			talk: (persona, line) => async (s) => {
-			hidden: () => this.skit,
 				await s.say("nanj", line, { name: persona.label });
 			},
 		});
@@ -1842,11 +1842,11 @@ export class Village {
 				await enter(s);
 			} finally {
 				this.scene = false;
+				this.skit = false;
 			}
 		});
 	}
 
-				this.skit = false;
 	/** 条件を満たした 自動イベントを 始める。 */
 	private checkAuto(): void {
 		const field = this.field;
