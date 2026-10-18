@@ -569,10 +569,10 @@ export type RunState = {
 	escortDone?: GuestId;
 	/** 手合わせの 待ちぶせ（core/ambush.ts。村で 挑戦を 受けた ときだけ 書く）。 */
 	ambush?: AmbushId;
-	/** 待ちぶせの 機体を そろって 止めた（帰っても 倒れても 残る）。 */
-	ambushWon?: true;
 	/** 競争（core/race.ts。村で 挑戦を 受けた ときだけ 書く）。 */
 	race?: RaceId;
+	/** 待ちぶせの 機体を そろって 止めた（帰っても 倒れても 残る）。 */
+	ambushWon?: true;
 };
 
 /** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */

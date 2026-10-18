@@ -724,8 +724,8 @@ export class Play {
 			}
 		}
 		this.noteSeen();
-		this.updateCamera();
 		this.closeMapInBigRoom();
+		this.updateCamera();
 		this.updateStatus();
 		if (this.mapOn) {
 			// ワープの 出来事までは ワープ前の 見え方で（draw と 同じ）。使う 演出の あいだは 使う 前
