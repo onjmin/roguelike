@@ -5,6 +5,8 @@
 // 岸の 草は field.png の 緑で、村の 芝（Base.png）と 色が ちがうので 透明に ぬく
 // （下に 芝を 敷いて 重ねる。data/village/tiles.ts の POND）。
 //
+// 湯だまり（ダンジョンの 湯気の 立つ 池。ui/dungeon/render.ts）は 同じ 岸で、水だけ 白く にごらせた pond-onsen.png。
+//
 // 依存なし（zlib だけ）。PNG の 読み書きは make-metal-puyu.mjs と 同じ。
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -139,3 +141,18 @@ for (let y = 0; y < H; y++) {
 	}
 }
 writeFileSync(join(ROOT, "public/assets/rpg-reze/pond.png"), encodePng(W, H, out));
+
+// 湯だまり：水の 青を 白く にごった 湯に（岸の 茶色は そのまま）
+const MILKY = new Map([
+	["0,73,145", [176, 206, 204]],
+	["0,91,182", [196, 222, 218]],
+	["0,109,218", [214, 234, 230]],
+	["113,184,255", [232, 244, 240]],
+	["170,212,255", [250, 252, 246]],
+]);
+const onsen = Buffer.from(out);
+for (let o = 0; o < onsen.length; o += 4) {
+	const to = MILKY.get(`${onsen[o]},${onsen[o + 1]},${onsen[o + 2]}`);
+	if (to) onsen.set(to, o);
+}
+writeFileSync(join(ROOT, "public/assets/rpg-reze/pond-onsen.png"), encodePng(W, H, onsen));

@@ -330,19 +330,40 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 };
 
 /**
- * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）。道具・罠・敵・階段の ない 部屋の 床に。
+ * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）。道具・罠・敵・階段の ない 部屋の 床に、小さな 池
+ * （1x1〜3x2。ふさがる マスが あれば 1マスに）を かず だけ。
  * 乱数は 冒険の 種と 階から 別に 作る（階の 作りの 乱数の 順を 変えない。記録の 再生が ずれないように）。
  */
+const POOL_SHAPES: readonly [number, number][] = [
+	[1, 1],
+	[2, 1],
+	[1, 2],
+	[2, 2],
+	[2, 2],
+	[3, 2],
+];
 const placePools = (r: Run, f: Floor): void => {
 	const span = r.dungeon.pools;
 	if (!span) return;
 	const rng = Rng.fromSeed(`${r.s.seed}:pools:${f.depth}`);
-	const spots = freeRoomTiles(r, f, null);
+	const w = f.layout.w;
+	const free = new Set(freeRoomTiles(r, f, null).map((t) => t.y * w + t.x));
 	const n = rng.range(span[0], span[1]);
 	const pools: number[] = [];
-	for (let i = 0; i < n && spots.length; i++) {
-		const t = spots.splice(rng.int(spots.length), 1)[0];
-		pools.push(t.y * f.layout.w + t.x);
+	for (let k = 0; k < n && free.size; k++) {
+		const list = [...free];
+		const at = list[rng.int(list.length)];
+		const [pw, ph] = rng.pick(POOL_SHAPES);
+		const cells: number[] = [];
+		for (let dy = 0; dy < ph; dy++)
+			for (let dx = 0; dx < pw; dx++) cells.push(at + dy * w + dx);
+		// 部屋の はしを こえる・ふさがる マスが あれば 1マス
+		const fits =
+			(at % w) + pw <= w && cells.every((i) => free.has(i));
+		for (const i of fits ? cells : [at]) {
+			pools.push(i);
+			free.delete(i);
+		}
 	}
 	f.pools = pools;
 };
