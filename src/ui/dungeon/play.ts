@@ -712,6 +712,7 @@ export class Play {
 		}
 		this.noteSeen();
 		this.updateCamera();
+		this.closeMapInBigRoom();
 		this.updateStatus();
 		if (this.mapOn) {
 			// ワープの 出来事までは ワープ前の 見え方で（draw と 同じ）。使う 演出の あいだは 使う 前
@@ -1709,6 +1710,22 @@ export class Play {
 	}
 
 	private toggleMap(): void {
+	/** 地図を 閉じるか 見た 階（階が 変わった ときだけ 見る）。 */
+	private mapFloor: unknown = null;
+
+	/** 敵の いない（ボスは のぞく）大部屋に 来たら 地図を 閉じる（ひと目で 見わたせるので 地図が じゃま）。 */
+	private closeMapInBigRoom(): void {
+		const f = this.run.f;
+		if (f === this.mapFloor) return;
+		this.mapFloor = f;
+		if (!this.mapOn || f.layout.rooms.length !== 1) return;
+		if (f.monsters.some((m) => m.uid !== f.boss)) return;
+		this.mapOn = false;
+		this.mapKey = null;
+		this.mapEl.classList.remove("shown");
+		this.ctx.input.fieldHoldEnabled = true;
+	}
+
 		this.mapOn = !this.mapOn;
 		this.mapKey = null;
 		this.mapEl.classList.toggle("shown", this.mapOn);
