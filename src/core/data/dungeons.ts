@@ -783,7 +783,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 坑道：深くなるほど 長い 坑（横長・縦長の 中部屋）と 入り組んだ 通路が ふえる
 		layouts: [
 			{ to: 4, shapes: { grid: 3, hall: 1 } },
-			{ shapes: { grid: 4, hall: 2, vhall: 1, maze: 1 } },
+			{ shapes: { grid: 4, hall: 2, vhall: 1, twin: 1, broad: 1, maze: 1 } },
 		],
 		// 42℃派の 番頭と 本気の 勝負（STORY.md §4.9）
 		objective: "boss",
@@ -870,10 +870,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	deep: {
 		id: "deep",
-		// 鉄塔：格子（小部屋だらけ）と 吹き抜け（縦長の 中部屋）。上るほど 多い
+		// 鉄塔：格子（小部屋だらけ）と 吹き抜け・はしご（縦長の 中部屋）。上るほど 多い
 		layouts: [
 			{ to: 4, shapes: { grid: 3, dense: 1 } },
-			{ shapes: { grid: 3, dense: 2, vhall: 2, ring: 1 } },
+			{ shapes: { grid: 3, dense: 2, vhall: 2, ladder: 2, elbow: 1, ring: 1 } },
 		],
 		noCarry: true,
 		// 底で 14年 町を 盛り上げて きた 名無し（やきう）と 戦う（STORY.md §4.9 の 結）
@@ -1015,8 +1015,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// きのこ板（パン板の 植民地。植民地の 植民地）：草が 多く、当たり外れも 大きい
 	kinoko: {
 		id: "kinoko",
-		// きのこ：菌輪（まん中が 壁で ぐるりと 回る）が よく 出る
-		layouts: [{ shapes: { grid: 3, ring: 2 } }],
+		// きのこ：菌輪（まん中が 壁で ぐるりと 回る）が よく 出る。斜めの 帯は 菌糸
+		layouts: [{ shapes: { grid: 3, ring: 2, band: 1 } }],
 		objective: "boss",
 		boss: {
 			monster: "boss_kinonyan",
@@ -1086,8 +1086,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 離島・沖縄板（総島民 6人）：過疎。敵も 道具も 少ない
 	tropical: {
 		id: "tropical",
-		// 島：小さな 部屋が ぽつぽつ、あいだの 道が 長い
-		layouts: [{ shapes: { isles: 3, grid: 2 } }],
+		// 島：小さな 部屋が ぽつぽつ、あいだの 道が 長い。斜めの 帯は 砂州
+		layouts: [{ shapes: { isles: 3, grid: 1, band: 1 } }],
 		noCarry: true,
 		// 押しかけてきた 島民を 島の 山の てっぺんまで 送り返す（STORY.md §4.9）
 		objective: "deliver",
@@ -1181,8 +1181,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
 		id: "konamono",
-		// 雑居ビル：小部屋だらけの 階と、廊下（横長の 中部屋）の 階
-		layouts: [{ shapes: { grid: 3, dense: 2, hall: 1 } }],
+		// 雑居ビル：小部屋だらけの 階と、廊下（横長の 中部屋）の 階、ロビー（広場）の 階
+		layouts: [{ shapes: { grid: 2, dense: 2, hall: 1, twin: 1, plaza: 1 } }],
 		// たこパの お誘い（STORY.md §4.9）：最上階の たこパ会場で 粉もん奉行に 話せば 帰れる
 		objective: "event",
 		settlement: {
@@ -1262,8 +1262,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// お祭り会場（おまC）：祭りが よく 出る
 	festival: {
 		id: "festival",
-		// 祭り：露店の ならぶ 参道（横長の 中部屋）が 多い。やぐらの まわりを 回る 階も
-		layouts: [{ shapes: { hall: 3, grid: 2, ring: 1 } }],
+		// 祭り：露店の ならぶ 参道（横長の 中部屋・2列）が 多い。やぐらの 広場と、まわりを 回る 階も
+		layouts: [{ shapes: { hall: 3, twin: 1, plaza: 2, grid: 1, ring: 1 } }],
 		// やぐらから 降りられない 親分を 入口まで 連れ帰る（STORY.md §4.9）
 		objective: "bring",
 		// てっぺんは やぐら広場と 夜店。親分に 話すと 加わる
@@ -1349,9 +1349,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 石室は 長い 部屋、埋もれた dat は 菌輪と 通路だらけ、苔むした スレ跡は 小部屋と 島、底は なんでも
 		layouts: [
 			{ to: 20, shapes: { grid: 1 } },
-			{ to: 40, shapes: { grid: 2, hall: 1, vhall: 1 } },
-			{ to: 60, shapes: { grid: 1, ring: 1, maze: 1 } },
-			{ to: 80, shapes: { grid: 1, dense: 1, isles: 1 } },
+			{ to: 40, shapes: { grid: 2, hall: 1, vhall: 1, twin: 1, ladder: 1 } },
+			{ to: 60, shapes: { grid: 1, ring: 1, maze: 1, band: 1, elbow: 1 } },
+			{ to: 80, shapes: { grid: 1, dense: 1, isles: 1, plaza: 1, broad: 1 } },
 			{
 				shapes: {
 					grid: 2,
@@ -1361,6 +1361,12 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					isles: 1,
 					ring: 1,
 					maze: 1,
+					twin: 1,
+					ladder: 1,
+					elbow: 1,
+					plaza: 1,
+					band: 1,
+					broad: 1,
 				},
 			},
 		],
@@ -1393,8 +1399,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：コピペが 多い
 	vocalo: {
 		id: "vocalo",
-		// 避難所：隠れる 通路が 多く、部屋は 小さい
-		layouts: [{ shapes: { grid: 2, maze: 2, dense: 1 } }],
+		// 避難所：隠れる 通路が 多く、部屋は 小さい。L字の 曲がり角も
+		layouts: [{ shapes: { grid: 2, maze: 2, dense: 1, elbow: 1 } }],
 		objective: "fetch",
 		hidden: true,
 		foes: { copipe: 2.5 },
@@ -1428,8 +1434,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 6階・1階に 8〜10個・祭りと ふつうの 罠は 無し（安価の罠は どの 板とも 同じ：core/anka.ts）・敵は 8割5分（顔ぶれは 本筋なみ）
 	mercury: {
 		id: "mercury",
-		// ほのぼの：広い 通り（横長の 中部屋）に 置き土産が ころがる
-		layouts: [{ shapes: { grid: 2, hall: 2 } }],
+		// ほのぼの：広い 通り（横長の 中部屋）や 広場・広間に 置き土産が ころがる
+		layouts: [{ shapes: { grid: 2, hall: 2, plaza: 1, broad: 1 } }],
 		objective: "fetch",
 		floors: 6,
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
@@ -1453,8 +1459,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 潜るたびに 7〜17階から 決まる（randomFloors。強さは 底が n階なら 本編の n+1階ぶんまで）
 	onmu: {
 		id: "onmu",
-		// 沈んだ 大陸：島と 環礁（菌輪の 形）
-		layouts: [{ shapes: { isles: 3, ring: 2, grid: 2 } }],
+		// 沈んだ 大陸：島と 環礁（菌輪の 形）と 砂州（斜めの 帯）
+		layouts: [{ shapes: { isles: 3, ring: 2, band: 2, grid: 1 } }],
 		objective: "fetch",
 		foes: { hitodama: 2, funamushi: 2, kaso: 1.5, ninja: 0 },
 		floors: 17,
@@ -1484,8 +1490,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// --carry steel+2,steelsh+2,h_heal,h_heal,f_bread で クリア 13%。持ちこみ なしの ボットは 1階で ほぼ 倒れる）
 	onkimu: {
 		id: "onkimu",
-		// 最前線：塹壕（通路だらけ）と 小部屋の 陣地
-		layouts: [{ shapes: { grid: 3, dense: 2, maze: 2 } }],
+		// 最前線：塹壕（通路だらけ・縦に 2本）と 小部屋の 陣地
+		layouts: [{ shapes: { grid: 2, dense: 2, maze: 2, ladder: 1 } }],
 		objective: "fetch",
 		foes: { eye: 2, ninja: 2, yuki: 1.5, copipe: 1.5 },
 		floors: 10,
@@ -1510,8 +1516,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 闇の 塔：上るほど 吹き抜け（縦長の 中部屋）・格子・通路だらけが ふえ、3×3 は 消える
 		layouts: [
 			{ to: 10, shapes: { grid: 3, vhall: 1 } },
-			{ to: 30, shapes: { grid: 2, vhall: 2, dense: 1, maze: 1 } },
-			{ shapes: { vhall: 2, dense: 2, maze: 2, ring: 1 } },
+			{ to: 30, shapes: { grid: 2, vhall: 2, ladder: 1, dense: 1, maze: 1 } },
+			{ shapes: { vhall: 2, ladder: 2, dense: 2, maze: 2, elbow: 1, ring: 1 } },
 		],
 		objective: "fetch",
 		noCarry: true,

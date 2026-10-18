@@ -14,6 +14,12 @@
 // - isles：3×2 の 広い 区画に 小さな 部屋が ぽつぽつ。通路が 長い（島）
 // - ring：まん中の 区画が 壁で、まわりを ぐるりと 回る（菌輪）
 // - maze：交差点が 多く 部屋は 小さい。輪も 多い（通路だらけ）
+// - twin：上と 下の 行を ぶち抜いた 横長の 部屋が 2本。あいだに 小さな 部屋（露店の 2列）
+// - ladder：左と 右の 列を ぶち抜いた 縦長の 部屋が 2本。あいだに 小さな 部屋（はしご）
+// - elbow：横長と 縦長を L字に（角は 4つの うち どれか）
+// - plaza：4×3 の まん中 2区画を 合わせた 広場（大部屋）。まわりに 小部屋
+// - band：3×3 から 向かいあう 角を 2つ 抜いた、斜めに 走る 帯
+// - broad：3×2 の 広い 区画に 大きめの 部屋（広間が 2段）
 
 import type { Rng } from "./rng";
 
@@ -50,7 +56,13 @@ export type LayoutKind =
 	| "dense"
 	| "isles"
 	| "ring"
-	| "maze";
+	| "maze"
+	| "twin"
+	| "ladder"
+	| "elbow"
+	| "plaza"
+	| "band"
+	| "broad";
 
 export const LAYOUT_KINDS: readonly LayoutKind[] = [
 	"grid",
@@ -60,6 +72,12 @@ export const LAYOUT_KINDS: readonly LayoutKind[] = [
 	"isles",
 	"ring",
 	"maze",
+	"twin",
+	"ladder",
+	"elbow",
+	"plaza",
+	"band",
+	"broad",
 ];
 
 /**
@@ -93,8 +111,8 @@ type Slot = {
 	r0: number;
 	c1: number;
 	r1: number;
-	/** 長い 部屋：この 向きに 区画の ほとんどを 使う。 */
-	long?: "x" | "y";
+	/** 長い 部屋：この 向きに 区画の ほとんどを 使う（xy は 両方：広場）。 */
+	long?: "x" | "y" | "xy";
 };
 
 type Cell = {
@@ -306,6 +324,93 @@ const specOf = (rng: Rng, kind: LayoutKind): Spec => {
 				loops: 0.6,
 				roomMax: { w: 9, h: 5 },
 			};
+		case "twin":
+			return {
+				cols: 3,
+				rows: 3,
+				slots: [
+					...gridSlots(3, 3, (_, r) => r !== 1),
+					{ c0: 0, r0: 0, c1: 2, r1: 0, long: "x" },
+					{ c0: 0, r0: 2, c1: 2, r1: 2, long: "x" },
+				],
+				junctions: [0, 2],
+				minRooms: 3,
+				loops: 0.4,
+				roomMax: { w: 10, h: 7 },
+			};
+		case "ladder":
+			return {
+				cols: 3,
+				rows: 3,
+				slots: [
+					...gridSlots(3, 3, (c) => c !== 1),
+					{ c0: 0, r0: 0, c1: 0, r1: 2, long: "y" },
+					{ c0: 2, r0: 0, c1: 2, r1: 2, long: "y" },
+				],
+				junctions: [0, 2],
+				minRooms: 3,
+				loops: 0.4,
+				roomMax: { w: 10, h: 7 },
+			};
+		case "elbow": {
+			// 縦長は 左か 右の 列、横長は 上か 下の 行（残りの 2列ぶん）
+			const col = rng.pick([0, 2]);
+			const row = rng.pick([0, 2]);
+			const c0 = col === 0 ? 1 : 0;
+			return {
+				cols: 3,
+				rows: 3,
+				slots: [
+					...gridSlots(3, 3, (c, r) => c === col || r === row),
+					{ c0: col, r0: 0, c1: col, r1: 2, long: "y" },
+					{ c0, r0: row, c1: c0 + 1, r1: row, long: "x" },
+				],
+				junctions: [0, 1],
+				minRooms: 4,
+				loops: 0.3,
+				roomMax: normal,
+			};
+		}
+		case "plaza":
+			return {
+				cols: 4,
+				rows: 3,
+				slots: [
+					...gridSlots(4, 3, (c, r) => r === 1 && (c === 1 || c === 2)),
+					{ c0: 1, r0: 1, c1: 2, r1: 1, long: "xy" },
+				],
+				junctions: [1, 3],
+				minRooms: 6,
+				loops: 0.35,
+				roomMax: { w: 10, h: 7 },
+			};
+		case "band": {
+			// 右上と 左下か、左上と 右下を 抜く
+			const flip = rng.chance(0.5);
+			return {
+				cols: 3,
+				rows: 3,
+				slots: gridSlots(3, 3, (c, r) =>
+					flip
+						? (c === 0 && r === 0) || (c === 2 && r === 2)
+						: (c === 2 && r === 0) || (c === 0 && r === 2),
+				),
+				junctions: [0, 2],
+				minRooms: 4,
+				loops: 0.3,
+				roomMax: normal,
+			};
+		}
+		case "broad":
+			return {
+				cols: 3,
+				rows: 2,
+				slots: gridSlots(3, 2),
+				junctions: [0, 1],
+				minRooms: 4,
+				loops: 0.3,
+				roomMax: { w: 12, h: 9 },
+			};
 		default:
 			return {
 				cols: 3,
@@ -373,6 +478,10 @@ const generateOnce = (rng: Rng, kind: LayoutKind): Layout => {
 		} else if (slot.long === "y") {
 			h = rng.range(Math.ceil(sh * 0.75), maxH);
 			w = rng.range(4, Math.min(9, maxW));
+		} else if (slot.long === "xy") {
+			// 広場：どちらにも 区画の 6割 以上（大部屋に なる）
+			w = rng.range(Math.ceil(sw * 0.6), maxW);
+			h = rng.range(Math.min(maxH, Math.max(3, Math.ceil(sh * 0.6))), maxH);
 		} else {
 			const capW = Math.min(spec.roomMax.w, maxW);
 			const capH = Math.min(spec.roomMax.h, maxH);
