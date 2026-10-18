@@ -1,7 +1,8 @@
 // 競争（加入前の 張り合い。STORY.md §4.9 の ライバル）。いまは 束音ロゼだけ：
 // ロゼの 挑戦（engine/heroes.ts）を 受けて キリコが ボカロ作り避難所へ 潜ると、ロゼも 壁を 抜けて 先に 潜る。
-// - 1階：キリコの となりに ロゼが 立ち、キリコが 動くと 壁を 抜けて 階段まで まっすぐ 走る（1ターンに DASH マス。
-//   追いつけない）。階段に 着くと 先に 降りて いなく なる。
+// - 1階：キリコの となりの 階段に いちばん 近い マスに ロゼが 立ち、キリコが 動く たびに 壁を 抜けて 階段へ
+//   まっすぐ DASH マス 進む。床しか 歩けない キリコより いつも 1マス 近いので、倍速でも 追いつけない。
+//   階段に 着くと 先に 降りて いなく なる。
 // - 2階から 底の 手前までは 出さない（村の スレにも 流さない）。
 // - いちばん底では 先に 着いた ロゼが 原音設定の となりに 立ちつくして いる（体重 0 で 持ち上がらない）。
 //   着くと 掛け合い、ぶつかると 話す。キリコが 拾うと ロゼは 壁の 向こうへ 帰る。
@@ -17,8 +18,8 @@ export type RaceId = "roze";
 
 export const isRaceId = (x: unknown): x is RaceId => x === "roze";
 
-/** 1階の ロゼが 1ターンに 進む マス（キリコの 倍。壁も 抜けるので 追いつけない）。 */
-export const DASH = 2;
+/** 1階の ロゼが キリコの 1回の 行動ごとに 進む マス（壁を 抜けて まっすぐ なので 1マスでも 追いつけない）。 */
+export const DASH = 1;
 
 type RaceSpec = {
 	/** 競争の 板。 */
@@ -97,7 +98,7 @@ const folkOf = (
 
 /**
  * ロゼを 立たせる（core/floor.ts の buildFloor。品を 置いて 置物を 置いた あと）。
- * 1階：キリコの となりの 床（通れる。走りだすと 壁も 抜ける）。
+ * 1階：キリコの となりで 階段に いちばん 近い マス（壁の 中や 階段の 上でも。いちばん 外の 壁は のぞく）。
  * 底：原音設定の となりで、まわりが ぜんぶ 同じ 部屋の 床の マス（通路を ふさがない）。無ければ 立たない。
  */
 export const placeRival = (r: Run, f: Floor, start: Pos): void => {
@@ -109,9 +110,11 @@ export const placeRival = (r: Run, f: Floor, start: Pos): void => {
 		f.items.some((i) => i.x === x && i.y === y) ||
 		(start.x === x && start.y === y);
 	if (f.depth === 1 && f.depth < r.dungeon.floors) {
-		const spot = DIRS8.map((d) => step(start, d)).find(
-			(t) => isFloor(l, t.x, t.y) && !taken(t.x, t.y),
-		);
+		const far = (t: Pos) =>
+			Math.max(Math.abs(t.x - f.stairs.x), Math.abs(t.y - f.stairs.y));
+		const spot = DIRS8.map((d) => step(start, d))
+			.filter((t) => t.x > 0 && t.y > 0 && t.x < l.w - 1 && t.y < l.h - 1)
+			.reduce<Pos | null>((a, t) => (!a || far(t) < far(a) ? t : a), null);
 		if (spot)
 			f.folk = [
 				...(f.folk ?? []),

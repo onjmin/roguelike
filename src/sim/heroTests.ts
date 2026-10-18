@@ -636,6 +636,11 @@ test("競争: 1階では ロゼが キリコの となりから 壁を 抜けて
 		);
 		const far = (p: Pos) =>
 			Math.max(Math.abs(p.x - r.f.stairs.x), Math.abs(p.y - r.f.stairs.y));
+		// キリコより 階段に 1マス 近い 所から 走りだす（1マスずつでも 追いつけない）
+		ok(
+			far(roze) === far(r.p) - 1,
+			`${seed}: ロゼ starts no closer than キリコ`,
+		);
 		r.ev = [];
 		let talked = false;
 		let turns = 0;
