@@ -11,7 +11,8 @@ import type { DungeonId } from "../../core/types";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import type { PictureSpec } from "../../engine/sceneCard";
-import { art, ri } from "../village/rpgenArt";
+import { CAST } from "../people/cast";
+import { art } from "../village/rpgenArt";
 import { base } from "../village/tiles";
 import { boardOf, boardPicture, itemPicture, propPicture } from "./pictures";
 import {
@@ -249,9 +250,6 @@ const GRIDDLE: PictureSpec = {
 	...propPicture(art("stallPole", 1), "たこ八の鉄板"),
 	note: "193か国ぶん、まっ黒",
 };
-
-/** 寄り道祭り：丘の やぐら広場の 太鼓（data/village/map.ts の 鼓）。 */
-const HILL_DRUM = propPicture(ri("taiko"), "丘の太鼓");
 
 /** 最終話：掲示板に 出た 管理人の 書きこみ（見出しでは なく 書きこみ）。 */
 const ADMIN_POST = boardPicture("鯖代払い忘れとったわ", "管理人の書きこみ");
@@ -820,11 +818,15 @@ export const STORY: Record<
 				card: null,
 			},
 			// やきうが 亡命して いる あいだに、ロゼは 通りへ 走って 申請書を 取りに いく
+			// やきうは 東へ 走って 亡命（見出しの 頁で もどって くる）
 			{
 				...s("nanj", "ワイ、大阪国に亡命や！\nビザ代はパンくずで払うで！", {
 					gesture: "hop",
 				}),
-				go: [{ who: "roze", to: [20, 18], speed: 3 }],
+				go: [
+					{ who: "roze", to: [20, 18], speed: 3 },
+					{ who: "nanj", to: [26, 21], speed: 3, face: "right" },
+				],
 			},
 			{
 				...s("roze", "申請書を取ってきたアル！\nこれで日本はもとどおりアル！", {
@@ -834,8 +836,12 @@ export const STORY: Record<
 				// 持ってきた 紙の 実物（蓄音機に かけて 割れるまで 出して おく）
 				card: APPLICATION,
 			},
-			// 主人公が 最悪の 手を 打つ（申請書を レコードと まちがえる）→ 直後に 自己ツッコミ
-			k("それ、レコードンゴ？\nかけてみるンゴ！", { gesture: "hop" }),
+			// 主人公が 最悪の 手を 打つ（申請書を レコードと まちがえる）→ 直後に 自己ツッコミ。
+			// 蓄音機（VILLAGE_SPOTS.phono 19,21）の 前まで 走って から かける
+			{
+				...k("それ、レコードンゴ？\nかけてみるンゴ！", { gesture: "hop" }),
+				go: [{ who: "kiriko", to: [19, 22], speed: 3, face: "up" }],
+			},
 			{
 				...n("キリコが申請書を蓄音機にかけると、\n紙は粉々にくだけた。"),
 				se: "glassBreak",
@@ -855,6 +861,8 @@ export const STORY: Record<
 				look: [15.5, 21],
 				card: boardOf("『【悲報】キリコ、日本を割る』"),
 				bgm: null,
+				// 亡命した やきうが もどって くる（この あと「さあな。名無しやろ」）
+				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},
 			{ ...k("盛ってないンゴ！\n本当に割ったンゴ！"), look: null, card: null },
 			k("あの見出し、\nだれが書いたンゴ？"),
@@ -1129,8 +1137,23 @@ export const STORY: Record<
 			s("roze", "立派に育ってるアル……\nはっ、感心してる場合じゃないアル！", {
 				emote: "怒",
 			}),
-			n("そこへ行進が、パン板の手前で\nくるりと向きをかえて帰ってきた。"),
-			nanashi("きのこ軍", "仲間が町じゅうにおる！\nみんな、行進に入れたる！"),
+			// 行進は 港から 桟橋を 上がって きて、キリコの 手前に 列で 止まる（ui/village/sceneMarks.ts の march。
+			// 場面の おわりまで 桟橋に いる）
+			{
+				...n("そこへ行進が、パン板の手前で\nくるりと向きをかえて帰ってきた。"),
+				look: [20, 49],
+				mark: "march",
+				se: "hit_club",
+				seRepeat: 4,
+				seGap: 220,
+			},
+			{
+				...nanashi(
+					"きのこ軍",
+					"仲間が町じゅうにおる！\nみんな、行進に入れたる！",
+				),
+				look: null,
+			},
 			// 主人公が 最悪の 手（行進曲で 先導）→ 町の 人ごと 行進
 			k("吾輩が、行進曲で\n先導するンゴ！", { gesture: "hop" }),
 			{
@@ -1426,17 +1449,30 @@ export const STORY: Record<
 		],
 		// 寄り道「残機」②：名無しの 帳簿。残機の 正体は 遺影スレの 書きこみ
 		once: [
+			// 包み紙の 帳簿と その うらの 走り書きは 実物の 絵（文が 読んで いる 字）
 			{
 				...n("たこ焼きの包み紙は、古い帳簿。\n「名無し残機1　やきう」が毎年。"),
 				se: "read",
-				card: null,
+				// 紙は 1行 10字まで（それより 長いと 折り返して 読めない）
+				card: itemPicture("takoyaki", "包み紙（古い帳簿）", {
+					text: "名無し残機1　やきう\n名無し残機1　やきう\n名無し残機1　やきう",
+				}),
 			},
 			s("roze", "名無しには、\n残機がふえないアル！？", { emote: "!" }),
 			s("nanj", "せや！名前がないと、\nだれの残機かわからんのや！"),
-			n("帳簿のうらに、走り書き。\n「残機は、遺影スレの書きこみの数」"),
-			s("zero", "遺影スレ……みんなで\nやきうさんを殺すスレ、ですね！", {
-				emote: "!",
-			}),
+			{
+				...n("帳簿のうらに、走り書き。\n「残機は、遺影スレの書きこみの数」"),
+				se: "read",
+				card: itemPicture("takoyaki", "帳簿のうら（走り書き）", {
+					text: "残機は、\n遺影スレの書きこみの数",
+				}),
+			},
+			{
+				...s("zero", "遺影スレ……みんなで\nやきうさんを殺すスレ、ですね！", {
+					emote: "!",
+				}),
+				card: null,
+			},
 			s("nanj", "物騒に言うな！\n昔は毎日殺されとったわ！", { emote: "怒" }),
 		],
 	},
@@ -1485,7 +1521,8 @@ export const STORY: Record<
 			// 解決の つもりで キリコが たたき返す。地面の 下の サンバは 町に 残る（data/town/revival.ts の 丘の 神社）。
 			// 親分の 次の 祭りの ひとことは 結の 伏線
 			k("吾輩も、たたくンゴ！", { gesture: "hop" }),
-			// 丘の やぐら広場の 太鼓の 前（13,7。太鼓は 13,6）へ 場面を うつして 連打。絵は その 太鼓
+			// 丘の やぐら広場の 太鼓の 前（13,7。太鼓は 13,6）へ 場面を うつして 連打。太鼓は 画面に 映って いるので
+			// 拡大図は 出さない
 			{
 				...n("キリコはうちわの柄で、\n町の太鼓を連打した。"),
 				se: "hit_club",
@@ -1493,7 +1530,6 @@ export const STORY: Record<
 				seGap: 110,
 				cut: [13, 7],
 				go: [{ who: "kiriko", to: [13, 7], face: "up" }],
-				card: HILL_DRUM,
 			},
 			{
 				...s("shiyo", "あたすの耳、まだ\nドンドン鳴ってるわよ！", {
@@ -1503,12 +1539,14 @@ export const STORY: Record<
 				go: [{ who: "shiyo", to: "kiriko", speed: 3 }],
 			},
 			// 音の 段（太鼓 → 地球の 裏 → 町の 窓ガラス）は 図で なく、太鼓の 音・ゼロの 走り・窓ガラスの 通りを 映す カメラで 見せる
+			// 地面の 下の サンバは 太鼓の 足もとの ♪（ui/village/sceneMarks.ts の samba。町に 残る 絵と 同じ）
 			{
 				...n("1時間後。地面の下から、\nサンバの太鼓が返ってきた。"),
 				skip: true,
 				se: "hit_club",
 				seRepeat: 4,
 				seGap: 160,
+				mark: "samba",
 			},
 			{
 				...s("zero", "発信元、ブラジルです！\n地球の裏から、返事です！", {
@@ -1560,13 +1598,22 @@ export const STORY: Record<
 					text: "今夜\nやきうの遺影祭り",
 				}),
 			},
+			// フェリスの 書いた 遺影（やきうの 歩行グラの 1コマ目を 額に）
 			{
 				...s("feris", "はい〜、遺影〜。\nやきうくん、成仏して〜", {
 					emote: "♪",
 				}),
-				card: null,
+				card: {
+					...propPicture(
+						`${CAST.nanj.walk}#0,0,16,16`,
+						"やきうの遺影",
+						undefined,
+						6,
+					),
+					note: "本人は生きている",
+				},
 			},
-			s("nanj", "生きとるわ！", { emote: "怒" }),
+			{ ...s("nanj", "生きとるわ！", { emote: "怒" }), card: null },
 			// 最終話の 前：名無しには 届かない（最終話の 祭りで 回収）
 			{
 				...n("やきうの頭の上は、\n「残機：1」のままだった。"),

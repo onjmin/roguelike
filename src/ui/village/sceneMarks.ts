@@ -8,6 +8,8 @@
 //   boats     … 首脳の 舟（おんたこの 語り「各国の首脳が、たこ焼き器をかかえて上陸してきた」）
 //   bread     … パン兵が 並べた 独立記念の パン（第一話の つなぎ）
 //   flag      … きのこ板に 立った 食パンの 旗（第一話の つなぎの 回想。「食べてもうた」で takeMark）
+//   samba     … 地面の 下の サンバ（お祭りの 語り「地面の下から、サンバの太鼓が返ってきた」。町に 残る ♪ と 同じ 絵）
+//   march     … きのこ軍の 行進（きのこ板の 語り「行進が、くるりと向きをかえて帰ってきた」。港から 桟橋を 上がる）
 // - 町に 残る 物（生き返った 通りの 文。data/town/revival.ts の 知らせの あとから）：
 //   銭湯の 並び「銭湯のえんとつから湯けむり！港の海も、まだ41.5℃！」→ 屋根の 湯気・海の 湯気
 //   たこ八「鉄板に、193か国ぶんの焦げあと！」→ 鉄板の 焦げ
@@ -92,6 +94,15 @@ const rng = (seed: number) => {
 /** 丘の やぐら広場の 太鼓の 足もと（太鼓は 13,6。data/village/map.ts の YAGURA_PLAZA）。サンバは ここから 立ちのぼる。 */
 const DRUM_FOOT: Cell = [13, 7];
 
+/** きのこ軍の 歩行グラ（data/town/incidents.ts の 行進の 人と 同じ）。 */
+const MARCH_ART = "pub:sprites/kinonyan.png";
+/** 行進の 列（桟橋の 列 x=20。先頭から 止まる マス。港の 出口 20,51 まで）。 */
+const MARCH_X = 20;
+const MARCH_STOP_Y: readonly number[] = [47, 48, 49, 50, 51];
+/** 歩きはじめる 所（画面の 下の 海の 外）と、着くまでの 長さ（ms）。 */
+const MARCH_FROM_Y = 56;
+const MARCH_MS = 2400;
+
 /** 場面の 物（出した 時刻・しまいはじめた 時刻）。 */
 const scene = new Map<SceneMark, { at: number; gone: number | null }>();
 /** 町に 残る 物。 */
@@ -126,6 +137,7 @@ export const putMark = (m: SceneMark): void => {
 		for (const r of [BOAT_ART, TAKOYAKI_ART, ...LEADERS]) void loadImage(r);
 	if (m === "bottles" && typeof Image !== "undefined")
 		void loadImage(BOTTLE_ART);
+	if (m === "march" && typeof Image !== "undefined") void loadImage(MARCH_ART);
 	const now = scene.get(m);
 	if (!now || now.gone !== null)
 		scene.set(m, { at: performance.now(), gone: null });
@@ -370,6 +382,24 @@ const bottles = (
 	});
 };
 
+/** きのこ軍の 行進（港から 桟橋を 1列で 上がって きて、先頭から 止まる。歩く あいだは 足踏み）。 */
+const march = (
+	g: CanvasRenderingContext2D,
+	ox: number,
+	oy: number,
+	since: number,
+	t: number,
+): void => {
+	MARCH_STOP_Y.forEach((stopY, i) => {
+		const k = Math.max(0, Math.min(1, (since - i * 260) / MARCH_MS));
+		if (k <= 0) return;
+		const y = MARCH_FROM_Y + (stopY - MARCH_FROM_Y) * k;
+		const x = Math.round(MARCH_X * TILE - ox);
+		const py = Math.round(y * TILE - oy);
+		drawWalk(g, MARCH_ART, "up", k < 1 ? Math.floor(t / 220) % 2 : 0, x, py);
+	});
+};
+
 /** 独立記念の パン（地面に 3つ）。 */
 const bread = (g: CanvasRenderingContext2D, ox: number, oy: number): void => {
 	const [x, y] = px(BREAD_AT, ox, oy);
@@ -426,6 +456,8 @@ export const drawMarksBelow = (
 	if (bt) bottles(g, ox, oy, now - bt.at, now);
 	const b = scene.get("boats");
 	if (b) boats(g, ox, oy, now - b.at, now);
+	const mc = scene.get("march");
+	if (mc) march(g, ox, oy, now - mc.at, now);
 	if (scene.has("bread")) bread(g, ox, oy);
 	if (scene.has("flag")) flag(g, ox, oy);
 };
@@ -445,8 +477,8 @@ export const drawMarksAbove = (
 			steam(g, x, y, now, { n: 26, rise: 120, w: 60, size: 6, seed: 1 });
 		else steam(g, x, y, now, { n: 8, rise: 34, w: 16, size: 3, seed: 1 });
 	}
-	// 地面の 下の サンバ（お祭りの 語りの あと ずっと）：太鼓の 足もとから ♪ が 立ちのぼる
-	if (town.samba)
+	// 地面の 下の サンバ（お祭りの 語りの あいだと、その あと ずっと）：太鼓の 足もとから ♪ が 立ちのぼる
+	if (town.samba || scene.has("samba"))
 		drawEmote(
 			g,
 			"♪",
