@@ -28,7 +28,11 @@ import {
 	RELIEF_NOTE,
 } from "../../data/people/mobs";
 import { eventById, eventNewsText } from "../../data/story/objectives";
-import type { SceneWalk, Speaker } from "../../data/story/quotes";
+import {
+	type SceneWalk,
+	SPEAKERS,
+	type Speaker,
+} from "../../data/story/quotes";
 import {
 	ARRIVE_RETURN,
 	awayFriends,
@@ -281,14 +285,29 @@ const castOf = (pages: readonly StoryPage[]): Speaker[] => [
 	...new Set(pages.flatMap((p) => (p.who ? [p.who] : []))),
 ];
 
-/** 語りで 口を はさむ 住人（data/people/mobs.ts。出てくる順）。 */
+/** 走る 人（StoryPage.go の who）が 住人か（仲間・キリコ・みんな でない）。 */
+const walkMob = (who: SceneWalk["who"]): MobId | null =>
+	who === "kiriko" || who === "all" || who in SPEAKERS ? null : (who as MobId);
+
+/** 語りで 口を はさむ・走る 住人（data/people/mobs.ts。出てくる順）。 */
 const mobsOf = (pages: readonly StoryPage[]): MobId[] => [
-	...new Set(pages.flatMap((p) => (p.mob ? [p.mob] : []))),
+	...new Set(
+		pages.flatMap((p) => [
+			...(p.mob ? [p.mob] : []),
+			...(p.go ?? []).flatMap((w) => {
+				const m = walkMob(w.who);
+				return m ? [m] : [];
+			}),
+		]),
+	),
 ];
 
-/** 語りで 話す 住人（その 村に 帰ってきて いる 子だけ。data/people/mobs.ts の MOB_BACK）。 */
+/**
+ * 語りで 話す・走る 住人（その 村に 帰ってきて いる 子だけ。data/people/mobs.ts の MOB_BACK。はじめての
+ * 持ち帰りの 語りなら、同じ 船で 着いた ゼロの サブ機も：ZERO_UNITS）。
+ */
 const mobsHere = (pages: readonly StoryPage[], v: VillageView): MobId[] => {
-	const gone = awayMobs(v.cleared);
+	const gone = awayMobs(v.cleared, v.arriving);
 	return mobsOf(pages).filter((id) => !gone.includes(id));
 };
 
@@ -734,7 +753,11 @@ const runWalks = async (
 	st: Stage | null,
 ): Promise<void> => {
 	if (st) await stepBack(s, st);
-	const idOf = (w: SceneWalk["who"]): string => (w === "kiriko" ? "player" : w);
+	const idOf = (w: SceneWalk["who"]): string => {
+		if (w === "kiriko") return "player";
+		const m = walkMob(w);
+		return m ? `mob_${m}` : w;
+	};
 	/** id が 行く 空いた マス（自分の いる マスは 空いて いる ことに する）。 */
 	// キリコの 行き先（ほかの 人は そこにも 立たない）
 	let kGoal: Cell | null = null;

@@ -3161,11 +3161,25 @@ export const MOB_BACK: Partial<Record<MobId, DungeonId>> = {
 	aru: "kinoko",
 };
 
-/** まだ 町に 帰って きて いない 住人（MOB_BACK の 板を 持ち帰って いない）。 */
-export const awayMobs = (cleared: readonly DungeonId[]): MobId[] =>
+/**
+ * ゼロの サブ機（メインさん＝仲間の zero と 同じ 船で 着く）。はじめての 持ち帰りの 語り（VillageView.arriving）の
+ * あいだも 町に 立ち、寸劇で 3機 そろって 集団行動する（ゼロを「3機」と 呼ぶのは 3機が 画面で 動く ときだけ：
+ * 2026-10-18 作者）。ほかの もどる 住人は 生き返った 通りの 知らせの あと。
+ */
+export const ZERO_UNITS: readonly MobId[] = ["proto", "ren"];
+
+/**
+ * まだ 町に 帰って きて いない 住人（MOB_BACK の 板を 持ち帰って いない）。arriving は 持ち帰りの 語りの
+ * あいだの 板（その 板で 帰る ゼロの サブ機だけは 同じ 船で 着いて いる）。
+ */
+export const awayMobs = (
+	cleared: readonly DungeonId[],
+	arriving: readonly DungeonId[] = [],
+): MobId[] =>
 	MOB_IDS.filter((id) => {
 		const back = MOB_BACK[id];
-		return !!back && !cleared.includes(back);
+		if (!back || cleared.includes(back)) return false;
+		return !(ZERO_UNITS.includes(id) && arriving.includes(back));
 	});
 
 /**

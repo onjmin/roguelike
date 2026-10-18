@@ -716,8 +716,9 @@ export const STORY: Record<
 		],
 		ending: [
 			SHALLOW_BASE[0],
-			// ロゼと ゼロは パン板へ 先回りして いた（王に 説教・パン兵を 数えに）。同じ 船で 町に 帰ってくる（FRIEND_BACK）
-			k("ロゼとゼロも、パン板から\n同じ船で帰ってきたンゴ！"),
+			// ロゼと ゼロは パン板へ 先回りして いた（王に 説教・パン兵を 数えに）。同じ 船で 町に 帰ってくる（FRIEND_BACK）。
+			// ゼロの サブ機 プロト・レンも 同じ 船（data/people/mobs.ts の ZERO_UNITS）：口の 前に 3機 並んで いる
+			k("ロゼとゼロ3機も、パン板から\n同じ船で帰ってきたンゴ！"),
 			...SHALLOW_BASE.slice(1),
 			// 独立は 制度の 方へ ふくらむ（国境線 → 入国審査 → 通貨 → 日本 47か国 → 申請書）。場所を 大きく するより、
 			// 制度が 1枚ずつ ふえる。ロゼの 申請書で 片づく はずが、キリコが 蓄音機に かけて 割る（解決の つもりで 悪化）。
@@ -736,19 +737,29 @@ export const STORY: Record<
 				chalk: true,
 				go: [{ who: "kiriko", to: [15, 22], speed: 1.4, face: "right" }],
 			},
+			// ゼロは 3機（メインさん・プロト・レン）で 線に かけよって、3機で ひっぱりあう（画面に 3機 いる ときだけ
+			// 「3機」と 言う：2026-10-18 作者）
 			{
-				...s("zero", "その線、ゼロもほしいです！\n半分ください！", {
+				...s("zero", "その線、ゼロもほしいです！\n3機ぶん、ほしいです！", {
 					gesture: "hop",
 				}),
-				go: [{ who: "zero", to: "kiriko" }],
+				go: [
+					{ who: "zero", to: "kiriko" },
+					{ who: "proto", to: "kiriko" },
+					{ who: "ren", to: "kiriko" },
+				],
 			},
 			{
-				...n("ゼロが国境線をひっぱって、\n線ごと転がりまわった。"),
+				...n("ゼロ3機が、国境線を\nひっぱりあって転がりまわった。"),
 				se: "hit_fist",
 				seRepeat: 3,
-				go: [{ who: "zero", route: "rrllllrr", speed: 3 }],
+				go: [
+					{ who: "zero", route: "rrllllrr", speed: 3 },
+					{ who: "proto", route: "llrrrrll", speed: 3 },
+					{ who: "ren", route: "ddlluurr", speed: 3 },
+				],
 			},
-			s("roze", "ひとりで内戦するなアル！", { emote: "怒" }),
+			s("roze", "3機で内戦するなアル！", { emote: "怒" }),
 			// ロゼは 広場の 反対の はしへ 走って 自分の 国を 建てる。やきうが 追いかけて ツッコむ
 			{
 				...s("roze", "……やっぱり、わたしも独立アル！\n麻婆共和国アル！", {

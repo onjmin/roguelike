@@ -148,12 +148,13 @@ export type StoryPage = Cue & {
 
 /**
  * 語りの 頁で 走らせる 1人（StoryPage.go）。who の all は キリコが to へ、ほかの 仲間・住人が その まわりへ。
+ * 住人（MobId。ゼロの サブ機 プロト・レン など）も 走らせられる：語りに 出る 住人は 口の 前に 並ぶ。
  * - to … その マスの そばの 空いた マスへ（kiriko なら キリコの となり）。
  * - route … Story.move の 道（"lrlr" など）。元の マスへ もどる しぐさ だけ（転げまわる・おどる・地団駄）。
- * 場面に いない 仲間は 動かない。speed は 歩きの 何倍か（既定 2.2。走る）。
+ * 場面に いない 仲間・住人は 動かない。speed は 歩きの 何倍か（既定 2.2。走る）。
  */
 export type SceneWalk = {
-	who: Speaker | "kiriko" | "all";
+	who: Speaker | MobId | "kiriko" | "all";
 	to?: readonly [number, number] | "kiriko";
 	route?: string;
 	speed?: number;

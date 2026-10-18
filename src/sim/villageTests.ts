@@ -80,6 +80,7 @@ import {
 	RELIEF_NOTE,
 	SENKYO,
 	squareOut,
+	ZERO_UNITS,
 } from "../data/people/mobs";
 import {
 	SHIYO_MAID_AT,
@@ -458,8 +459,6 @@ import {
 import { spinGacha } from "../ui/village/otaku";
 import { Overhear } from "../ui/village/overhear";
 import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
-import { CHALK_LINE } from "../ui/village/sceneChalk";
-import { skitSky } from "../ui/village/sceneSky";
 import {
 	enterBath,
 	enterMusic,
@@ -469,6 +468,8 @@ import {
 	planLines,
 	thingLines,
 } from "../ui/village/rooms";
+import { CHALK_LINE } from "../ui/village/sceneChalk";
+import { skitSky } from "../ui/village/sceneSky";
 import {
 	deathSkit,
 	forgetSkits,
@@ -508,8 +509,8 @@ import {
 	lunchScript,
 	newsScript,
 	pagesFor,
-	releaseReveal,
 	type ReturnArrival,
+	releaseReveal,
 	reliefScript,
 	returnScene,
 	type StoreChooser,
@@ -8155,6 +8156,14 @@ test("寸劇の あとの 町（2026-10-18）: ご近所・もどる 住人・�
 		!ids(v([], ["shallow"])).some((i) => i === "mob_ngoane"),
 		"a returning mob is back before the announcement",
 	);
+	// ゼロの サブ機（プロト・レン）だけは 同じ 船で 着いて いる：寸劇の 3機の 集団行動に 出る
+	for (const id of ZERO_UNITS) {
+		ok(
+			ids(v([], ["shallow"])).includes(`mob_${id}`),
+			`${id} is not on the boat during the skit`,
+		);
+		ok(!ids(v([])).includes(`mob_${id}`), `${id} is in town before パン板`);
+	}
 	withStorage(() => {
 		saveProgress({
 			...loadProgress(),
@@ -8192,16 +8201,25 @@ test("寸劇の あとの 町（2026-10-18）: ご近所・もどる 住人・�
 			);
 		}
 	}
-	// 寸劇に 出る ゼロは メインさん 1機だけ：3機と 言わない（2026-10-18 作者）
-	const pages = [
+	// 寸劇の ゼロを 3機と 言うのは、その 語りに プロト・レンが 出て（go で 走って）3機で 集団行動する ときだけ
+	// （2026-10-18 作者「3機が 集団行動して いるなら 違和感ない」）。語りに 出る 住人は 口の 前から 並ぶので、
+	// その 語りの どの 頁でも 3機が 画面に いる
+	const trio = (pages: readonly StoryPage[]): boolean =>
+		ZERO_UNITS.every((id) =>
+			pages.some((p) => p.go?.some((w) => w.who === id)),
+		);
+	const scenes: (readonly StoryPage[])[] = [
 		...DUNGEON_IDS.flatMap((d) => [
-			...STORY[d].ending,
-			...(STORY[d].again ?? []),
-			...(STORY[d].once ?? []),
+			STORY[d].ending,
+			STORY[d].again ?? [],
+			STORY[d].once ?? [],
 		]),
-		...TEN_NEWS.pages,
+		TEN_NEWS.pages,
 	];
-	for (const p of pages) ok(!p.text.includes("3機"), `寸劇で 3機: ${p.text}`);
+	for (const sc of scenes)
+		if (!trio(sc))
+			for (const p of sc) ok(!p.text.includes("3機"), `寸劇で 3機: ${p.text}`);
+	ok(trio(STORY.shallow.ending), "パン板の 寸劇に 3機が 出ない");
 	for (const t of [...Object.values(KINOKO_EVE), ...Object.values(BATH_EVE)])
 		ok(!t.includes("3機"), `つなぎで 3機: ${t}`);
 });
