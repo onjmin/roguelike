@@ -57,46 +57,66 @@ export const stageBgm = (stage: number): string => {
 };
 
 /**
- * 蓄音機に 出す 曲名。スレに 貼られた 曲は 貼った 人の 題（data/audio/bgm.ts の import の 注）、
- * 題の ない 曲は ここで つけた。蓄音機で かけられる 曲は みな ここに 書く（ない 曲は 聞いた 所が 曲名に なる）。
+ * 曲の 正式な 題（蓄音機の 曲名）。ゲームで 鳴る 曲は みな ここに 書く。
+ * スレに 貼られた ときの 題（「？」「何か」など）は data/audio/bgm.ts の import の 注に 残して ある。
+ * ここに ない 曲は 蓄音機で 聞いた 所が 曲名に なる。
  */
 export const SONG_TITLES: Readonly<Record<string, string>> = {
-	town: "？",
-	kumori: "くもり空をパクったやつ",
+	// 村
+	town: "おんJタウンの朝",
+	kumori: "くもりのち商店街",
+	kaiwai: "町内で騒ぎ",
+	// 板の 曲
 	dungeon: "焼きたての迷路",
-	field2: "もう1つの？",
-	yofukashi: "湯けむりと星",
-	speder2: "Speder2リスペクト",
-	deq_laundry: "乾燥機がまわるあいだ",
-	kaiwai: "界隈曲",
-	deq_strata: "ずれる地層",
-	island: "ゲームで流れてたらテンション上がりそうなサビ",
-	fukyowa: "Aメロ不協和音Bメロで終止させる典型的な構成",
-	kouseki: "鉱石風respect",
+	field2: "源泉の通り道",
+	speder2: "過疎の回路",
+	deq_laundry: "見学者ゼロ人",
+	deq_strata: "ずれる菌床",
+	island: "島に着いたらサビ",
+	fukyowa: "鉄板の不協和音",
+	kouseki: "提灯ダンス",
+	piropiro: "ﾋﾟﾛﾋﾟﾛ夜店",
+	tekitou: "歌詞は適当",
+	mercury: "水星の名無し",
+	deq_mu: "沈んだ大陸の空港",
+	kimchi: "赤い回線",
+	inferno: "†闇の塔†",
+	// ログの底の 層
 	deep1: "掘りかけの穴",
-	stone: "足音",
+	stone: "石室の足音",
 	deep_dat: "掘っても掘っても",
-	field: "何か",
+	field: "苔とスレ跡",
 	deep_matome: "まとめの砂嵐",
-	ruins: "ページをめくる",
-	deep2: "しずかな墓標",
-	deep_hakushi: "水滴の回廊",
-	deep3: "化けた波",
-	deep_kisei: "都節",
-	deq_volcano: "活火山の底",
+	ruins: "ページをめくる音",
+	deep2: "凍った書庫",
+	deep_hakushi: "白紙に落ちる水滴",
+	deep3: "文字化けの波",
+	deep_kisei: "書けない檻",
+	deq_volcano: "鯖の熱暴走",
 	deep_koge: "焦げたにおい",
 	deep5: "名無しの荒野",
 	deep6: "つづきの原盤",
 	shallow3: "ハープの雪",
-	tekitou: "適当歌詞",
-	mercury: "Speder2風",
-	deq_mu: "沈んだ大陸の空港",
-	kimchi: "赤い回線",
-	inferno: "闇の塔",
-	retro2: "修正版",
-	retro: "今回はメロディ手で書いたわ",
-	title: "ゲーム音楽っぽい何か",
-	ending: "変ト長調 (G♭) デュエット",
+	// 休み所・ボス・祭り・持ち帰り
+	yofukashi: "湯けむりと星",
+	lastboss: "見出しを盛るな",
+	retro: "手書きの決戦",
+	retro2: "祭り会場はここですか",
+	title: "原盤を持ち帰れ",
+	ending: "ほな、また次スレで",
+	// 場面と 実況の 曲
+	kaiwai2: "明かりの坂",
+	kaiwai3: "湯温戦争",
+	kaiwai4: "独立ごっこ",
+	deep4: "しゅうりょうのお知らせ",
+	sad: "あの夏のスレ",
+	battle: "名無しの小競り合い",
+	boss: "歌のない決戦",
+	tense: "荒ぶるスレ",
+	white: "あぼーんの白野",
+	deq_sea: "水底にさす光",
+	deq_ice: "薄氷の回廊",
+	touhoufu: "だらだら弾幕",
 };
 
 /** 蓄音機で かけられる 曲の 1つ（label は 曲名、where は 聞いた 所）。 */
