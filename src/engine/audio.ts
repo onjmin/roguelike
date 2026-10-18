@@ -667,6 +667,43 @@ export class GameAudio {
 		};
 	}
 
+	/**
+	 * レコードの 箱（ui/village/jukebox.ts）：曲を 頭から 1回だけ 鳴らす。鳴りおわったら true。
+	 * 途中で ほかの 曲に かわった・止めた・鳴らせない（ミュート・BGM 切）なら false。
+	 * 止めた あとは 曲名を 忘れる（次の bgm() は 頭から）。
+	 */
+	async playOnce(name: string): Promise<boolean> {
+		this.stopBgmPlayback();
+		this.bgmName = null;
+		const mml = this.bgmData[name];
+		const ctx = this.ctx;
+		if (!mml || !ctx || !this.canPlayBgm()) return false;
+		const token = this.bgmToken;
+		const bus = settings.bgm === "hq" ? null : ctx.createGain();
+		bus?.connect(ctx.destination);
+		const pb = await this.startMml(
+			mml,
+			false,
+			undefined,
+			token,
+			bus ?? undefined,
+		);
+		if (!pb || token !== this.bgmToken) {
+			if (pb) this.dispose(pb);
+			if (bus) releaseBus(bus);
+			return false;
+		}
+		this.bgmPlayback = pb;
+		this.bgmBus = bus;
+		while (pb.isPlaying()) {
+			await sleep(250);
+			if (this.bgmPlayback !== pb) return false;
+		}
+		if (this.bgmPlayback !== pb) return false;
+		this.stopBgmPlayback();
+		return true;
+	}
+
 	// ───────────────── ピアノ（音楽室。ui/minigames/piano.ts） ─────────────────
 
 	/**

@@ -9,6 +9,7 @@
 // 保存は kiriko-roguelike/myhome だけ（段の 下見 ?stage=・?event= の あいだは 書かない）。強さ・道具・段には ふれない。
 
 import { DUNGEON_IDS } from "../../core/data/dungeons";
+import { JUKEBOX_AFTER } from "../../data/audio/music";
 import { CAST } from "../../data/people/cast";
 import { type Cast, MOBS } from "../../data/people/mobs";
 import { devEvent } from "../../data/story/objectives";
@@ -86,6 +87,7 @@ import { petitcon } from "../petitcon/petitcon";
 import { tradeTerminal } from "../trade/trade";
 import { bondCast, bondLevel, heartsOf, keepsakeList } from "./bonds";
 import { trophyGlint } from "./finds";
+import { openJukebox } from "./jukebox";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -695,6 +697,19 @@ export const homeThing =
 		if (BED_FURNITURE.includes(kind)) {
 			const g = await s.choose([...HOME_MSG.bedMenu], { cancel: 3 });
 			if (g === 0) await lieDown(ctx, s, m, kind);
+			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
+			return;
+		}
+		// レコードの 箱：蓄音機で ためた 曲を かける（最終話を 持ち帰って から。ui/village/jukebox.ts）
+		if (kind === "records") {
+			if (!loadProgress().cleared.includes(JUKEBOX_AFTER)) {
+				await s.narrate(HOME_MSG.recordsWait);
+				const n = await s.choose([...HOME_MSG.thingMenu], { cancel: 2 });
+				if (n !== 2) await moveOrStore(s, m, kind, n);
+				return;
+			}
+			const g = await s.choose([...HOME_MSG.recordsMenu], { cancel: 3 });
+			if (g === 0) await openJukebox(ctx);
 			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
 			return;
 		}

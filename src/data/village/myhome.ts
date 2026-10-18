@@ -369,7 +369,8 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 	records: {
 		name: "レコードの箱",
 		cells: [[ri("records")]],
-		line: "レコードの箱。\n蓄音機で聞いた曲もある。",
+		// 最終話を 持ち帰って から かけられる（data/audio/music.ts の JUKEBOX_AFTER。ui/village/jukebox.ts）
+		line: "レコードの箱。\n蓄音機でためた曲が入っている。",
 	},
 	game: {
 		name: "ゲーム機",
@@ -1345,6 +1346,10 @@ export const HOME_MSG = {
 	bedMenu: ["寝ころぶ", "動かす", "片づける", "そのまま"],
 	/** 遊べる 家具を 調べた あと。 */
 	gameMenu: ["遊ぶ", "動かす", "片づける", "そのまま"],
+	/** レコードの 箱：まだ 最終話を 持ち帰って いない（蓄音機は 町の 話を ためて いる 途中）。 */
+	recordsWait:
+		"蓄音機が、まだためている途中。\n針を下ろすのは、話がすんでから。",
+	recordsMenu: ["かける", "動かす", "片づける", "そのまま"],
 	pcMenu: [
 		"遊ぶ",
 		"BASIC",
@@ -1387,4 +1392,19 @@ export const HOME_MSG = {
 	phoneBye: "{name}は帰っていった。",
 	phoneMenu: ["帰ってもらう", "そのまま"],
 	phoneHere: "{name}が来ている。",
+} as const;
+
+/** レコードの 箱の 窓（ui/village/jukebox.ts）の 字。手は 上から 順。 */
+export const JUKEBOX_MSG = {
+	title: "レコードの箱",
+	play: "かける",
+	stop: "とめる",
+	next: "つぎへ",
+	prev: "まえへ",
+	loop: "くりかえし",
+	loopOn: "する",
+	loopOff: "しない",
+	back: "もどる",
+	/** 下の 札（{n} は 番号、{title} は 曲名）。 */
+	track: "{n}：{title}",
 } as const;

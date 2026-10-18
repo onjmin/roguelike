@@ -5053,3 +5053,103 @@ body.jolt #app {
 	image-rendering: pixelated;
 	border: 1px solid #888;
 }
+
+/* ───────── キリコの 家の レコードの 箱（ui/village/jukebox.ts） ───────── */
+
+.jukebox {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: min(92vw, 360px);
+	padding: 8px 8px 10px;
+	z-index: 30;
+	display: grid;
+	grid-template-columns: 1fr auto;
+	grid-template-areas:
+		"title title"
+		"stage menu"
+		"bar bar";
+	gap: 6px 8px;
+	user-select: none;
+	touch-action: none;
+}
+
+.jukebox-title {
+	grid-area: title;
+	font-size: 14px;
+	text-align: center;
+	color: var(--win-fg, #f4f2ea);
+}
+
+.jukebox-stage {
+	grid-area: stage;
+	width: 100%;
+	align-self: center;
+	image-rendering: pixelated;
+	border: 2px solid #000;
+	background: #1a1030;
+}
+
+.jukebox-menu {
+	grid-area: menu;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 2px;
+	min-width: 8.5em;
+}
+
+.jukebox-cmd {
+	position: relative;
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 4px 8px 4px 18px;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	font-size: 15px;
+	text-align: left;
+	cursor: pointer;
+}
+
+.jukebox-cmd.cur {
+	color: #ffe060;
+}
+
+.jukebox-cmd.cur::before {
+	content: "▶";
+	position: absolute;
+	left: 2px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 11px;
+}
+
+.jukebox-cmd small {
+	font-size: 13px;
+	opacity: 0.85;
+}
+
+.jukebox-bar {
+	grid-area: bar;
+	min-height: 1.6em;
+	padding: 6px 10px;
+	border: 2px solid var(--win-border);
+	border-radius: 6px;
+	background: rgba(0, 0, 0, 0.25);
+	font-size: 15px;
+	text-align: center;
+}
+
+.jukebox-bar small {
+	display: block;
+	font-size: 11px;
+	opacity: 0.7;
+}
+
+.jukebox-bar .note {
+	color: #ffe060;
+}

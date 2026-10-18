@@ -28,7 +28,7 @@ import {
 } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
-import { records, stageBgm } from "../data/audio/music";
+import { jukeboxTracks, records, stageBgm } from "../data/audio/music";
 import { sfx } from "../data/audio/sfx";
 import {
 	CAFE_DRINKS,
@@ -286,6 +286,7 @@ import {
 	HOME_MAX,
 	HOME_MSG,
 	homeRows,
+	JUKEBOX_MSG,
 	layoutOk,
 	MOVE_IN_GIFT,
 	NOT_SOLD,
@@ -2110,6 +2111,11 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 			texts.push([`HOME_MSG.${k}`, t]);
 	for (const [id, f] of Object.entries(FURNITURE))
 		texts.push([`furniture ${id}`, f.line]);
+	for (const [k, v] of Object.entries(JUKEBOX_MSG))
+		texts.push([
+			`JUKEBOX_MSG.${k}`,
+			v.replace("{n}", "12").replace("{title}", "おんJタウンしゅうりょう！？"),
+		]);
 	for (const g of [MOVE_IN_GIFT, ...HOME_GIFTS, ...RESIDENT_GIFTS]) {
 		texts.push([`gift ${g.id}`, g.note]);
 		texts.push([
@@ -5479,6 +5485,31 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 		records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.shallow.bgm) &&
 			!records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.deep.bgm),
 		"a board's song is offered before it is cleared",
+	);
+	// レコードの 箱（最終話の あと）：聞いた 曲 ＋ 寸劇の 曲。どれも 実在し、同じ 曲は 1度
+	const box = jukeboxTracks(7, DUNGEON_IDS);
+	for (const r of box) ok(r.bgm in bgm, `${r.label}: no song ${r.bgm}`);
+	ok(
+		new Set(box.map((r) => r.bgm)).size === box.length,
+		"the record box lists a song twice",
+	);
+	ok(
+		box.length > all.length &&
+			box.some((r) => r.bgm === "kaiwai2") &&
+			box.some((r) => r.bgm === "deep6"),
+		"the record box misses the scene songs",
+	);
+	const main = jukeboxTracks(7, ["shallow", "kinoko", "main", "deep"]);
+	ok(
+		main.some((r) => r.bgm === "kaiwai2") &&
+			main.some((r) => r.bgm === "kaiwai") &&
+			!main.some((r) => r.bgm === "deep6") &&
+			!main.some((r) => r.bgm === "sad"),
+		"a scene song is offered before its board is cleared",
+	);
+	ok(
+		box.every((r) => r.label && r.where),
+		"a record box track has no title or place",
 	);
 });
 

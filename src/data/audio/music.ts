@@ -147,3 +147,39 @@ export const records = (
 	}
 	return out;
 };
+
+// ■ レコードの 箱（キリコの 家。ui/village/jukebox.ts）
+// 最終話（電池板）を 持ち帰って から、聞いた 曲を 家で かけられる。曲は 箱の 窓の あいだだけ 鳴る。
+
+/** レコードの 箱が 開く 板（これを 持ち帰って から）。 */
+export const JUKEBOX_AFTER: DungeonId = "deep";
+
+/** 寸劇で 鳴った 曲（records に 無い もの）。need は その 寸劇を 見た 板（持ち帰って から）。 */
+const SCENE_DISCS: readonly { bgm: string; where: string; need?: DungeonId }[] =
+	[
+		{ bgm: INCIDENT_BGM, where: "パン兵の行進" },
+		{ bgm: "kaiwai4", where: "パン板の独立", need: "shallow" },
+		{ bgm: "kaiwai3", where: "湯温のけんか", need: "main" },
+		{ bgm: "deep4", where: "停電の夜", need: "main" },
+		{ bgm: "kaiwai2", where: "明かりの坂", need: "deep" },
+		{ bgm: "sad", where: "おんたこの帳簿", need: "konamono" },
+		{ bgm: "deep6", where: "後日談", need: "hidden" },
+	];
+
+/** レコードの 箱で かけられる 曲（聞いた 曲 ＋ 寸劇の 曲。番号は この 並びの 1から）。 */
+export const jukeboxTracks = (
+	stage: number,
+	cleared: readonly DungeonId[],
+): Disc[] => {
+	const out = records(stage, cleared);
+	for (const d of SCENE_DISCS) {
+		if (d.need && !cleared.includes(d.need)) continue;
+		if (out.some((r) => r.bgm === d.bgm)) continue;
+		out.push({
+			bgm: d.bgm,
+			label: SONG_TITLES[d.bgm] ?? d.where,
+			where: d.where,
+		});
+	}
+	return out;
+};
