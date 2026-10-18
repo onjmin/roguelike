@@ -379,6 +379,23 @@ export class FloorView {
 		const props = [...(f.props ?? [])].sort(
 			(a, b) => Number(!a.walk) - Number(!b.walk) || a.y + a.h - (b.y + b.h),
 		);
+		// 立って いる 置物の 足もとに 影（縦に つぶした だ円）
+		ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+		for (const p of props) {
+			if (p.walk) continue;
+			const rx = Math.max(5, p.w * TILE * 0.4);
+			ctx.beginPath();
+			ctx.ellipse(
+				p.x * TILE + (p.w * TILE) / 2,
+				(p.y + p.h) * TILE - 2,
+				rx,
+				Math.max(2, rx * 0.3),
+				0,
+				0,
+				Math.PI * 2,
+			);
+			ctx.fill();
+		}
 		for (const p of props) drawProp(ctx, p);
 		const pools = new Set(f.pools ?? []);
 		for (const i of pools) drawPool(ctx, pools, l.w, i);
@@ -744,7 +761,10 @@ export class FloorView {
 			screen.height,
 		);
 
-		// 霧：見たことのない所は黒、今は見えない所は暗く
+		// 霧：見たことのない所は黒、今は見えない所は暗く。置物の マス（通れないが 床の 上に 立つ 物）は 床と 同じに
+		// （壁の 暗さを かけると、上へ はみ出して 描きなおした 部分との あいだで 四角く 切れる）
+		const onFloor = new Set(f.statues ?? []);
+		const isWall = (i: number) => l.tiles[i] === T_WALL && !onFloor.has(i);
 		for (let y = Math.max(0, Math.floor(oy / TILE)); y < l.h; y++) {
 			const py = y * TILE - oy;
 			if (py > screen.height) break;
@@ -754,7 +774,7 @@ export class FloorView {
 				const i = y * l.w + x;
 				if (visible[i]) {
 					// 見えている 壁も 少し 暗く（床と 岩の 絵が 似た 板でも、通路の 続く 向きが 読めるように）
-					if (l.tiles[i] === T_WALL) {
+					if (isWall(i)) {
 						ctx.fillStyle = VISIBLE_WALL_SHADE;
 						ctx.fillRect(px, py, TILE, TILE);
 					}
@@ -766,7 +786,7 @@ export class FloorView {
 					continue;
 				}
 				// 覚えている 所：床は 霧を うすく、壁は もっと 暗く（歩ける 所が 一目で わかるように）
-				const wall = l.tiles[i] === T_WALL;
+				const wall = isWall(i);
 				ctx.fillStyle = theme.fog;
 				ctx.globalAlpha = wall ? 1 : 0.7;
 				ctx.fillRect(px, py, TILE, TILE);
