@@ -8,9 +8,10 @@ import { DUNGEONS } from "../../core/data/dungeons";
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { HeadProp } from "../../engine/headProp";
-import type { CardSpec } from "../../engine/sceneCard";
+import type { AnyCard, CardSpec } from "../../engine/sceneCard";
 import type { SceneFx } from "../../engine/sceneFx";
 import type { MobId } from "../people/mobs";
+import { boardOf } from "./pictures";
 
 export type Speaker = "roze" | "shiyo" | "feris" | "zero" | "nanj";
 
@@ -122,10 +123,11 @@ export type StoryPage = Cue & {
 	 */
 	standAt?: readonly [number, number];
 	/**
-	 * この 頁から 出す イメージ図（engine/sceneCard.ts。騒ぎの 規模の 図など。前の 図が あれば 入れかえる。null で しまう。
+	 * この 頁から 出す 絵（engine/sceneCard.ts。文に 出てきた 物の 実物の 絵（掲示板の 見出し・品の 書きこみ：
+	 * data/story/pictures.ts）か、騒ぎの 規模の 段の 図。前の 絵が あれば 入れかえる。null で しまう。
 	 * 村の 持ち帰りの 語り・転だけ。場面の おわりに しまう）。
 	 */
-	card?: CardSpec | null;
+	card?: AnyCard | null;
 	/** この 頁で 並んだ 人が みんな キリコに 背を 向ける（ばらばらに なる ギャグ。次に 話す 人が でると また 向きあう）。 */
 	turnAway?: boolean;
 	/**
@@ -531,24 +533,34 @@ export const INTRO: string[] = [
 ];
 
 // ───────────────── 長湯スレを　持ち帰ったあと ─────────────────
-/** 2回目からは 頭の 5枚（湯温の もめごとと 夜の 湯船は 1回だけ）。 */
+/**
+ * 第三話の 頭の 5枚。カメラは 銭湯（やきうは もう 湯船。口の 前には 並ばず 銭湯の 前で 待つ）→ 場面を 銭湯の 前へ
+ * うつして、ゼロが 湯船へ 走る。
+ */
 const BATH_HEAD: StoryPage[] = [
 	{
 		who: null,
 		text: "村に帰りつくと、\n銭湯ののれんが上がっていた。",
+		look: [36, 27],
 	},
-	{ who: "nanj", text: "おっそ！一番風呂、\nもう入っとるで！" },
+	{
+		who: "nanj",
+		text: "おっそ！一番風呂、\nもう入っとるで！",
+		standAt: [35, 30],
+	},
 	{
 		who: null,
 		text: "湯船に町の人がずらり。\n湯気で、だれがだれだかわからない。",
+		cut: [35, 30],
 	},
-	// ボケ（ゼロ）→ ツッコミ（やきう）
+	// ボケ（ゼロ）→ ツッコミ（やきう）。ゼロは 湯船（のれん）へ かけよって 3機で 舐める
 	{
 		who: "zero",
 		text: "湯船の温度、41.5℃です！\n3機で舐めて測りました！",
 		emote: "!",
+		go: [{ who: "zero", to: [35, 30], speed: 3, face: "up" }],
 	},
-	{ who: "nanj", text: "温度計使え！", emote: "怒" },
+	{ who: "nanj", text: "舐めるな！", emote: "怒" },
 ];
 
 /** 第三話：湯の 温度が うつる（銭湯 → 町の 蛇口 → 港の 海）。 */
@@ -572,8 +584,15 @@ export const ENDING: StoryPage[] = [
 		who: "shiyo",
 		text: "41.5℃？ちょうどいいじゃない！\nべ、べつにほめてないけど！",
 		bgm: "kaiwai3",
+		go: [{ who: "shiyo", to: "kiriko", speed: 3 }],
 	},
-	{ who: null, text: "ぬるい！", nanashi: "湯気の中の42℃派" },
+	// 湯気の 中（カメラは 銭湯の 奥）
+	{
+		who: null,
+		text: "ぬるい！",
+		nanashi: "湯気の中の42℃派",
+		look: [36, 27],
+	},
 	{ who: null, text: "熱い！", nanashi: "湯気の中の41℃派" },
 	// 主人公が 解決の つもりで 最悪の 手（追いだきの 連打）→ 直後に 自己ツッコミ。シヨと ロゼも 暴走
 	{
@@ -581,16 +600,20 @@ export const ENDING: StoryPage[] = [
 		text: "吾輩が、ちょうどいい温度に\nするンゴ！",
 		kiriko: "voice",
 		gesture: "hop",
+		look: null,
 	},
+	// のれんの 前（追いだきの ボタン）へ 走って、その場で 連打（地団駄）
 	{
 		who: null,
 		text: "キリコは追いだきのボタンを、\n両手で連打した。",
 		se: "pushButton",
 		seRepeat: 8,
 		seGap: 100,
+		go: [{ who: "kiriko", to: [35, 30], speed: 3, face: "up" }],
 	},
 	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "!" },
-	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）
+	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）。
+	// カメラは 商店街（町じゅうの 蛇口）
 	{
 		who: null,
 		text: "源泉が噴きあがって、町じゅうの\n蛇口から41.5℃のお湯が出た。",
@@ -598,6 +621,7 @@ export const ENDING: StoryPage[] = [
 		// 爆発の 煙が そのまま 湯けむり
 		fx: "boom",
 		card: steamCard(0),
+		look: [45, 17],
 	},
 	{
 		who: "zero",
@@ -605,22 +629,38 @@ export const ENDING: StoryPage[] = [
 		emote: "汗",
 		gesture: "shiver",
 		fx: "boom",
+		look: null,
+		go: [{ who: "zero", route: "lrlr", speed: 3 }],
 	},
+	// シヨは 自宅の 台所へ 走って いく（カメラが ついていく）
 	{
 		who: "shiyo",
 		text: "台所でお風呂に入れるじゃない！\nあたす、43℃にしてくる！",
 		gesture: "hop",
 		fx: "boom",
+		go: [{ who: "shiyo", to: [28, 22], speed: 3, follow: true }],
 	},
-	{ who: null, text: "規模が、\nおかしいンゴ！", kiriko: "voice", fx: "boom" },
-	{ who: "roze", text: "止めるアル！！", emote: "怒" },
+	{
+		who: null,
+		text: "規模が、\nおかしいンゴ！",
+		kiriko: "voice",
+		fx: "boom",
+		look: null,
+	},
+	{
+		who: "roze",
+		text: "止めるアル！！",
+		emote: "怒",
+		go: [{ who: "roze", to: "kiriko", speed: 3 }],
+	},
 	{
 		who: null,
 		text: "ロゼはボタンを止めようとして、\n「強」に押しこんだ。",
 		se: "pushButton",
+		go: [{ who: "roze", route: "udud", speed: 3 }],
 	},
 	{ who: "roze", text: "逆だったアル！！", emote: "汗", gesture: "shiver" },
-	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）
+	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）。場面を 港へ うつす（海が 湯）
 	{
 		who: null,
 		text: "1時間後。港の海が41.5℃になり、\n魚が肩までつかっていた。",
@@ -628,23 +668,38 @@ export const ENDING: StoryPage[] = [
 		fx: "chiin",
 		bgm: null,
 		card: steamCard(1),
+		cut: [20, 45],
 	},
+	// フェリスは 桟橋の 先へ 走って 魚を 見る（カメラが ついていく）。フェリスが まだ 町に いない（離島板・電池板の 前）
+	// ときは ゼロ（かわりが ないと 語りごと 2回目の 短い 語りに なる：story.ts の endingFor）
 	{
 		who: "feris",
 		text: "お魚さん、のぼせてる〜！\nタオル、頭にのせてる〜！",
 		gesture: "hop",
 		card: null,
+		go: [{ who: "feris", to: [23, 50], speed: 3, face: "down", follow: true }],
+		instead: {
+			who: "zero",
+			text: "魚が、頭にタオルをのせてます！\n3機で数えて、全部です！",
+			emote: "!",
+			card: null,
+			go: [{ who: "zero", to: [23, 50], speed: 3, face: "down", follow: true }],
+		},
 	},
-	// 見出しの 名無しの 前ぶれ：見出しが 早すぎる。やきうは 湯船に しずんで ごまかす
+	// 見出しの 名無しの 前ぶれ：見出しが 早すぎる。場面を 掲示板へ うつして、貼られた 見出しの 絵。
+	// やきうは 湯船へ 走って もどって ごまかす
 	{
 		who: null,
 		text: "掲示板に、もう見出しが貼られていた。\n『【悲報】キリコ、海をわかす』",
 		se: "read",
+		cut: [16, 22],
+		card: boardOf("『【悲報】キリコ、海をわかす』"),
 	},
 	{
 		who: null,
 		text: "見出し、早すぎるンゴ！\nだれが貼ったンゴ！？",
 		kiriko: "voice",
+		card: null,
 	},
 	{
 		who: "feris",
@@ -660,6 +715,7 @@ export const ENDING: StoryPage[] = [
 		who: "nanj",
 		text: "ワイはいま、潜水の練習中や！\n話しかけんな！ぶくぶく！",
 		emote: "汗",
+		go: [{ who: "nanj", to: [35, 30], speed: 3, follow: true }],
 		instead: {
 			who: "zero",
 			text: "湯船から、ぶくぶく\n泡だけがのぼってきます！",
@@ -676,5 +732,7 @@ export const ENDING_AGAIN: StoryPage[] = [
 		who: "zero",
 		text: "港の海、まだ41.5℃です！\n魚がまだ肩までつかってます！",
 		emote: "!",
+		look: [21, 48],
+		go: [{ who: "zero", to: "kiriko", speed: 3 }],
 	},
 ];

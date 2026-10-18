@@ -10,7 +10,14 @@ import { idx, isFloor } from "../core/mapgen";
 import { Run } from "../core/run";
 import type { DungeonId, Floor } from "../core/types";
 import { bgm } from "../data/audio/bgm";
+import { REST_SKITS, restSkitsAt } from "../data/story/restSkits";
 import { BOARD_LOOKS } from "../data/story/story";
+import {
+	forgetRestSkits,
+	restBeside,
+	restPath,
+	takeRestSkit,
+} from "../ui/dungeon/restSkit";
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
@@ -293,6 +300,96 @@ test("boss arenas: the talk fits the window and comes before the fight starts", 
 			`${a.name}: キリコ answers for ゼロ`,
 		);
 	}
+});
+
+// 敵の いない 階の 寸劇（data/story/restSkits.ts・ui/dungeon/restSkit.ts）
+test("rest skits: 2+ per place with folk, people and cells exist, every walk has a path and gets home, windows fit, each once", () => {
+	const keys = new Set<string>();
+	for (const sk of REST_SKITS) {
+		ok(!keys.has(sk.key), `${sk.key}: twice`);
+		keys.add(sk.key);
+		const p = PLACES.find((x) => x.name === sk.place);
+		ok(p, `${sk.key}: no place ${sk.place}`);
+		if (!p) continue;
+		const r = Run.create(
+			`rest-skit-test:${p.name}`,
+			p.dungeon,
+			[],
+			dungeonById(p.dungeon).objective,
+		);
+		const f = buildFloor(r, p.depth, false);
+		const l = f.layout;
+		const hero: Pos = { x: r.p.x, y: r.p.y };
+		const home = (who: number | "kiriko"): Pos | undefined =>
+			who === "kiriko" ? hero : f.folk?.[who];
+		const pos = new Map<number | "kiriko", Pos>();
+		const at = (who: number | "kiriko"): Pos | undefined =>
+			pos.get(who) ?? home(who);
+		let windows = 0;
+		for (const st of sk.steps) {
+			if (typeof st.who === "number")
+				ok(f.folk?.[st.who], `${sk.key}: no folk ${st.who}`);
+			if (typeof st.look === "number")
+				ok(f.folk?.[st.look], `${sk.key}: look at no folk ${st.look}`);
+			else if (st.look)
+				ok(
+					st.look[0] >= 0 &&
+						st.look[0] < l.w &&
+						st.look[1] >= 0 &&
+						st.look[1] < l.h,
+					`${sk.key}: look outside ${st.look}`,
+				);
+			for (const w of st.go ?? []) {
+				const from = at(w.who);
+				const h = home(w.who);
+				ok(from && h, `${sk.key}: walk of nobody ${w.who}`);
+				if (!from || !h) continue;
+				const to =
+					w.to === "home"
+						? h
+						: w.to === "kiriko"
+							? restBeside(f, at("kiriko") ?? hero, [])
+							: { x: w.to[0], y: w.to[1] };
+				ok(to, `${sk.key}: ${w.who} has nowhere beside キリコ`);
+				if (!to) continue;
+				ok(
+					restPath(f, from, to, []),
+					`${sk.key}: ${w.who} has no path ${from.x},${from.y} → ${to.x},${to.y}`,
+				);
+				pos.set(w.who, to);
+			}
+			if (st.text !== undefined) {
+				windows++;
+				const text = st.text.replaceAll("{hero}", "キリコ");
+				const lines = text.split("\n");
+				ok(lines.length <= 2, `${sk.key}: 3 lines ${text}`);
+				for (const line of lines)
+					ok([...line].length <= 22, `${sk.key}: long line ${line}`);
+			}
+		}
+		ok(windows >= 3 && windows <= 12, `${sk.key}: ${windows} windows`);
+		// おわりに みんな 元の 所へ もどれる（ui/dungeon/play.ts の sceneHome）
+		for (const [who, q] of pos) {
+			const h = home(who);
+			ok(h && restPath(f, q, h, []), `${sk.key}: ${who} cannot get home`);
+		}
+	}
+	for (const p of PLACES)
+		if (p.folk > 0)
+			ok(restSkitsAt(p.name).length >= 2, `${p.name}: fewer than 2 skits`);
+	// ロゼと ゼロの 導入は パン王国の 城下町の 1本目（はじめて 会う 所）
+	ok(
+		restSkitsAt("パン王国の城下町")[0]?.key === "castle_rivals",
+		"the rivals' introduction is not the first castle skit",
+	);
+	// 見た ものは 二度 出ない
+	forgetRestSkits();
+	const a = takeRestSkit("露天の源泉")?.key;
+	const b = takeRestSkit("露天の源泉")?.key;
+	ok(a && b && a !== b, `the spring skits repeat: ${a} ${b}`);
+	ok(takeRestSkit("露天の源泉") === null, "a third spring skit");
+	ok(takeRestSkit("ない所") === null, "a skit for an unknown place");
+	forgetRestSkits();
 });
 
 export const runPlaceTests = (): TestResult[] =>

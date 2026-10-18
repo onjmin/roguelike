@@ -2023,6 +2023,62 @@ body.jolt #app {
 	opacity: 0.8;
 }
 
+/* 実物の 絵（engine/sceneCard.ts の PictureSpec）：拡大した 絵の 上に 紙を 重ねる。絵と 紙は 同じ 升に 置いて
+   大きい ほうに 合わせる（見出しの 紙は 掲示板より 横に 広い） */
+.scene-card.picture .scene-pic {
+	display: inline-grid;
+	justify-items: center;
+	align-items: center;
+	margin: 2px auto 0;
+	min-width: 100%;
+}
+
+.scene-pic-art,
+.scene-paper {
+	grid-area: 1 / 1;
+}
+
+.scene-pic-art {
+	image-rendering: pixelated;
+	display: block;
+	border: 2px solid #3a2a14;
+	background: #e4d6b4;
+}
+
+.scene-paper {
+	position: relative;
+	max-width: 14em;
+	padding: 6px 10px 5px;
+	background: #fffaf0;
+	color: #3a2a14;
+	border: 2px solid #3a2a14;
+	box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+	font-size: 13px;
+	line-height: 1.3;
+	text-align: center;
+	white-space: pre-line;
+	transform: rotate(-3deg);
+}
+
+/* 画びょう */
+.scene-paper::before {
+	content: "";
+	position: absolute;
+	top: -5px;
+	left: 50%;
+	width: 8px;
+	height: 8px;
+	margin-left: -4px;
+	border-radius: 50%;
+	background: #c8281e;
+	border: 1px solid #3a2a14;
+}
+
+.scene-paper.strike {
+	text-decoration: line-through;
+	text-decoration-thickness: 2px;
+}
+
 .toast {
 	position: absolute;
 	top: calc(58px + var(--safe-t));

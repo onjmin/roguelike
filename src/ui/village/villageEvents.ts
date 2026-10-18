@@ -51,6 +51,7 @@ import {
 	objectiveFor,
 	withDevEvent,
 } from "../../data/story/objectives";
+import { boardPicture } from "../../data/story/pictures";
 import type { Speaker } from "../../data/story/quotes";
 import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
@@ -153,6 +154,8 @@ import {
 	noteRunEnd,
 	recordFromRun,
 } from "../../engine/save";
+import { type CardRun, showCard } from "../../engine/sceneCard";
+import { fxRoot } from "../../engine/sceneFx";
 import { TILE } from "../../engine/types";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
 import { runSaveLabel } from "../boot";
@@ -1197,10 +1200,15 @@ const freshHeadlineScript = async (s: Story): Promise<void> => {
 		.flatMap((n) => HEADLINES[n.dungeon] ?? []);
 	if (!lines.length) return;
 	await s.look(VILLAGE_SPOTS.board[0]);
+	// 貼って ある 見出しの 実物の 絵（data/story/pictures.ts）
+	let card: CardRun | null = null;
 	for (const line of lines) {
 		s.se("read");
+		if (card) card.update(boardPicture(line));
+		else card = showCard(fxRoot(), boardPicture(line));
 		await s.narrate(fill(BOARD_NEWS.fresh, { line }));
 	}
+	card?.end();
 	await s.look(null);
 };
 

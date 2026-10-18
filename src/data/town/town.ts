@@ -65,10 +65,13 @@ export const RETURN_PAGES: readonly StoryPage[] = [
 	n(
 		"スレを読むと、体がふわりとあがった。\n気がつくと、見なれた入口に立っていた。",
 	),
-	// 何度も 見る 場面なので 2人まで。おかえりは ぷゆゆ（TOWN.md §0.4）
-	s("nanj", "はっや。……なんや、その顔。\nスレ、途中で抜けたんか", {
-		emote: "?",
-	}),
+	// 何度も 見る 場面なので 2人まで。おかえりは ぷゆゆ（TOWN.md §0.4）。やきうは 顔を 見に かけよる
+	{
+		...s("nanj", "はっや。……なんや、その顔。\nスレ、途中で抜けたんか", {
+			emote: "?",
+		}),
+		go: [{ who: "nanj", to: "kiriko", speed: 3 }],
+	},
 	{
 		who: null,
 		mob: "puyu",
@@ -370,8 +373,8 @@ export const OPENING = {
 		oy("……見出しに、\nそう書いとったやろ", { emote: "汗" }),
 	],
 	/**
-	 * 見出しとは（イメージ図「見出し」と いっしょに。知らない 新入りに やきうが 言う）。
-	 * 1枚目で 図を 出し、midashiNext で 図に 行き先を 足す（ui/village/villageOpening.ts）。
+	 * 見出しとは（知らない 新入りに やきうが 言う）。言って いる あいだ カメラは 掲示板で、貼って ある 見出しの
+	 * 実物の 絵（data/story/pictures.ts の boardPicture）を 出す。midashiNext は 行き先（ui/village/villageOpening.ts）。
 	 */
 	midashi: [
 		ok("見出しって、なにンゴ？", { emote: "?" }),

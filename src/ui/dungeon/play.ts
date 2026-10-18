@@ -57,6 +57,7 @@ import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
 import { heroRivalResLine, liveResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
+import type { RestStep, RestWalk } from "../../data/story/restSkits";
 import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
 import { loadImage } from "../../engine/assets";
@@ -70,6 +71,7 @@ import {
 	type SavedReplay,
 	saveRun,
 } from "../../engine/save";
+import { type CardRun, showCard } from "../../engine/sceneCard";
 import { startFx } from "../../engine/sceneFx";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
@@ -108,6 +110,7 @@ import {
 	mapTileAt,
 	type Projectile,
 } from "./render";
+import { restBeside, restPath, takeRestSkit } from "./restSkit";
 import { enteredEmptyBigRoom, ROOM_SKIT_MS, takeRoomSkit } from "./roomSkit";
 import { zoneFor } from "./theme";
 
@@ -350,6 +353,16 @@ export class Play {
 	private escaping = false;
 	/** カメラを 止める（帰り方の 演出で キリコだけ 動かす あいだ）。 */
 	private camFreeze = false;
+	/** 名所の 寸劇で カメラを 向けて いる マス（null で 主人公。restSkit）。 */
+	private camLook: Pos | null = null;
+	/** カメラを ゆっくり 寄せる（寸劇で 向けた・もどす あいだ。着いたら 止める）。 */
+	private camSmooth = false;
+	/**
+	 * 名所の 寸劇で 走らせて いる 人の 見た目の 所（folk の 番 → マスと 向き。冒険の 状態は 動かさない。
+	 * 寸劇の おわりに 消す）。主人公は scenePlayer。
+	 */
+	private sceneFolk = new Map<number, { x: number; y: number; dir: Dir8 }>();
+	private scenePlayer: { x: number; y: number; dir: Dir8 } | null = null;
 	/**
 	 * 解音ゼロの バトンタッチの あいだの キリコ（＝ゼロ）の 見え方（たおれた 機体の 絵・見えぐあい・沈み。
 	 * 状態は もう 次の 機体なので、演出が 終わるまで 前の 機体を 描く。batonScene）。
@@ -677,7 +690,16 @@ export class Play {
 				d.fy = y;
 			}
 		};
-		put(PLAYER_ID, heroWalk(run.s), run.p.x, run.p.y, run.p.dir);
+		// 名所の 寸劇で 走って いる あいだは その 見た目の 所（restSkit）
+		const sp = this.scenePlayer;
+		put(
+			PLAYER_ID,
+			heroWalk(run.s),
+			sp?.x ?? run.p.x,
+			sp?.y ?? run.p.y,
+			sp?.dir ?? run.p.dir,
+			sp ? SCENE_STEP_MS : 0,
+		);
 		// 同行者（core/guest.ts。たおれた・まだ 立っていない ときは 描かない）
 		const g = guestHere(run);
 		if (g) put(GUEST_ID, guestWalk(g.id), g.x, g.y, g.dir);
@@ -685,7 +707,15 @@ export class Play {
 		// 1階で 階段へ 走る 競争の ロゼ（core/race.ts）は すべらせる
 		const dash = raceOf(run) && run.s.depth === 1 ? rivalOn(run) : undefined;
 		(run.f.folk ?? []).forEach((fo, i) => {
-			put(FOLK_ID - i, fo.sprite, fo.x, fo.y, 4, fo === dash ? 220 : 0);
+			const sc = this.sceneFolk.get(i);
+			put(
+				FOLK_ID - i,
+				fo.sprite,
+				sc?.x ?? fo.x,
+				sc?.y ?? fo.y,
+				sc?.dir ?? 4,
+				sc ? SCENE_STEP_MS : fo === dash ? 220 : 0,
+			);
 		});
 		for (const m of run.f.monsters) {
 			put(m.uid, monsterSprite(m), m.x, m.y, m.dir);
@@ -809,8 +839,18 @@ export class Play {
 			: 260;
 		const hCss = sc.height * cssPerSrc;
 		const centerCss = topCss + Math.max(40, hCss - topCss - bottomCss) / 2;
-		const cx = pd.fx * TILE + TILE / 2 - sc.width / 2;
-		const cy = pd.fy * TILE + TILE / 2 - centerCss / cssPerSrc;
+		// 名所の 寸劇で 向けた マス（restSkit）か 主人公
+		const at = this.camLook ?? { x: pd.fx, y: pd.fy };
+		const cx = at.x * TILE + TILE / 2 - sc.width / 2;
+		const cy = at.y * TILE + TILE / 2 - centerCss / cssPerSrc;
+		if (this.camSmooth) {
+			// ゆっくり 寄せる（1コマに 残りの 1/8。着いたら ふつうの 追いかけに もどる）
+			this.camX += (cx - this.camX) / 8;
+			this.camY += (cy - this.camY) / 8;
+			if (Math.abs(cx - this.camX) + Math.abs(cy - this.camY) < 0.5)
+				this.camSmooth = false;
+			return;
+		}
 		this.camX = sc.snap(cx);
 		this.camY = sc.snap(cy);
 	}
@@ -3269,6 +3309,8 @@ export class Play {
 					break;
 				case "floor":
 					await this.floorCard(false);
+					// 敵の いない 階（名所・集落）の 寸劇（data/story/restSkits.ts）
+					await this.restSkit();
 					break;
 				case "house":
 					this.startHouseBgm();
@@ -3727,6 +3769,176 @@ export class Play {
 			salt,
 		);
 		if (live) this.addLog(live, "gloss");
+	}
+
+	// ───────────────── 名所の 階・集落の 寸劇 ─────────────────
+	// 敵の いない 階に 着いたら、そこに 立って いる 人が 走り、カメラが 向き、窓で 掛け合う（data/story/restSkits.ts）。
+	// 見た目だけ：人の 走りは sceneFolk・scenePlayer の 見た目の 所で（冒険の 状態・乱数には 触らない）、
+	// おわりに みんな 元の 所へ もどす。下りだけ・主人公が キリコの ときだけ・リプレイでは 出さない。
+
+	/** 寸劇で 走らせて いる 人の いま の 見た目の 所。 */
+	private scenePos(who: number | "kiriko"): Pos | null {
+		const run = this.run;
+		if (who === "kiriko") return this.scenePlayer ?? { x: run.p.x, y: run.p.y };
+		const sc = this.sceneFolk.get(who);
+		if (sc) return sc;
+		const fo = run.f.folk?.[who];
+		return fo ? { x: fo.x, y: fo.y } : null;
+	}
+
+	/** 寸劇で 走らせる 1人（1歩ずつ すべらせる。道が なければ その場）。 */
+	private async sceneWalk(w: RestWalk): Promise<void> {
+		const run = this.run;
+		const f = run.f;
+		const from = this.scenePos(w.who);
+		if (!from) return;
+		const others: Pos[] = [];
+		for (const id of [...(f.folk?.keys() ?? []), "kiriko" as const])
+			if (id !== w.who) {
+				const p = this.scenePos(id);
+				if (p) others.push(p);
+			}
+		const g = guestHere(run);
+		if (g) others.push({ x: g.x, y: g.y });
+		const home =
+			w.who === "kiriko"
+				? { x: run.p.x, y: run.p.y }
+				: (f.folk?.[w.who] ?? from);
+		const to: Pos | null =
+			w.to === "home"
+				? { x: home.x, y: home.y }
+				: w.to === "kiriko"
+					? restBeside(f, this.scenePos("kiriko") ?? home, others)
+					: { x: w.to[0], y: w.to[1] };
+		if (!to) return;
+		const path = restPath(f, from, to, others);
+		if (!path) return;
+		for (let i = 1; i < path.length; i++) {
+			if (this.stopped) return;
+			const p = path[i];
+			const q = path[i - 1];
+			this.scenePut(w.who, p.x, p.y, dirOf(p.x - q.x, p.y - q.y) ?? 4);
+			await wait(SCENE_STEP_MS);
+		}
+		// 着いたら 主人公の ほうを 向く（主人公は 行き先の ほうを 向いた まま）
+		if (w.who !== "kiriko") {
+			const k = this.scenePos("kiriko");
+			if (k && (k.x !== to.x || k.y !== to.y))
+				this.scenePut(w.who, to.x, to.y, dirOf(k.x - to.x, k.y - to.y) ?? 4);
+		}
+	}
+
+	private scenePut(who: number | "kiriko", x: number, y: number, dir: Dir8) {
+		if (who === "kiriko") this.scenePlayer = { x, y, dir };
+		else this.sceneFolk.set(who, { x, y, dir });
+		this.syncDisp();
+	}
+
+	/** 寸劇の カメラ（人の 番・マス・null で 主人公）。ゆっくり 寄って いく あいだを 少し 待つ。 */
+	private async sceneLook(look: RestStep["look"]): Promise<void> {
+		const at =
+			look === null || look === undefined
+				? null
+				: typeof look === "number"
+					? this.scenePos(look)
+					: { x: look[0], y: look[1] };
+		this.camLook = at;
+		this.camSmooth = true;
+		await wait(at ? 450 : 300);
+	}
+
+	/** 寸劇の 窓（話す 人の 名前と 立ち絵は 集落の 人と 同じ。キリコの 返事は キリコの 立ち絵）。 */
+	private async sceneSay(st: RestStep): Promise<void> {
+		const run = this.run;
+		const text = (st.text ?? "").replaceAll("{hero}", run.heroName);
+		if (st.who === "kiriko") {
+			await speak(this.ctx, [
+				{
+					name: KIRIKO.name,
+					color: KIRIKO.color,
+					text,
+					portrait: {
+						id: "kiriko",
+						name: KIRIKO.name,
+						color: KIRIKO.color,
+						src: KIRIKO.portrait,
+						side: "left",
+					},
+				},
+			]);
+			return;
+		}
+		if (st.who === undefined) {
+			await speak(this.ctx, [{ text }]);
+			return;
+		}
+		const fo = run.f.folk?.[st.who];
+		if (!fo) return;
+		const v = fo.voice ? guestVoice(fo.voice as GuestId) : null;
+		await speak(this.ctx, [
+			{
+				name: v?.name ?? fo.name,
+				color: v?.color ?? "#e8e0c8",
+				text,
+				portrait: v?.portrait ?? null,
+			},
+		]);
+	}
+
+	/** 寸劇の おわり：走った 人を 元の 所へ（歩いて）もどし、見た目の 所を 消す。 */
+	private async sceneHome(): Promise<void> {
+		const back: RestWalk[] = [...this.sceneFolk.keys()].map((who) => ({
+			who,
+			to: "home",
+		}));
+		if (this.scenePlayer) back.push({ who: "kiriko", to: "home" });
+		await Promise.all(back.map((w) => this.sceneWalk(w)));
+		this.sceneFolk.clear();
+		this.scenePlayer = null;
+		this.syncDisp();
+	}
+
+	/** 敵の いない 階（名所・集落）に 着いた ときの 寸劇。 */
+	private async restSkit(): Promise<void> {
+		const run = this.run;
+		const f = run.f;
+		if (
+			this.rp ||
+			this.stopped ||
+			run.s.end ||
+			run.s.returning ||
+			// 主人公が キリコで ない ときは 出さない（キリコの 返事が 筋）
+			run.s.hero ||
+			!f.rest
+		)
+			return;
+		const sk = takeRestSkit(f.rest);
+		if (!sk) return;
+		const wasBusy = this.busy;
+		this.busy = true;
+		let card: CardRun | null = null;
+		try {
+			for (const st of sk.steps) {
+				if (this.stopped || run.s.end) return;
+				if (st.look !== undefined) await this.sceneLook(st.look);
+				if (st.go) await Promise.all(st.go.map((w) => this.sceneWalk(w)));
+				if (st.card !== undefined) {
+					if (st.card === null) {
+						card?.end();
+						card = null;
+					} else if (card) card.update(st.card);
+					else card = showCard(this.ctx.ui, st.card);
+				}
+				if (st.se) this.ctx.se(st.se);
+				if (st.text !== undefined) await this.sceneSay(st);
+			}
+		} finally {
+			card?.end();
+			await this.sceneHome();
+			this.camLook = null;
+			this.camSmooth = true;
+			this.busy = wasBusy;
+		}
 	}
 
 	/** この 冒険で 大部屋の 寸劇を もう 出した（1回の 冒険に 1本まで）。 */
@@ -4234,6 +4446,9 @@ const waitOrSkip = (ms: number, after: number): Promise<void> =>
 
 /** 1コマ（60fps）の長さ。 */
 const FRAME_MS = 17;
+
+/** 名所の 寸劇で 人が 1歩 すべる ms（restSkit）。 */
+const SCENE_STEP_MS = 150;
 
 const wait = (ms: number): Promise<void> =>
 	new Promise((r) => setTimeout(r, Math.max(0, ms)));

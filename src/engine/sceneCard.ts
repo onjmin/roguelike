@@ -1,9 +1,32 @@
-// イメージ図：場面の 上に 出す、説明の 絵（板どうしの つながり・近道の 地図 など）。
-// - 横 1列の 札（絵と 名前）を 矢印で つなぐ。矢印には 一言と、取り消しの 判（「独立」など）。
-// - 見た目だけ（保存・乱数に さわらない）。画面の ない ところ（シミュレーション）では 何も しない。
-// - 絵は public/ の 歩行グラの 1コマ目（下向き。16×16）か、文字（AA）。
+// イメージ図：場面の 上に 出す 絵。2つの 形が ある。
+// - 実物の 絵（PictureSpec）：台詞に 出てきた 物・所の 拡大図（広場の まとめ掲示板に 見出しの 紙が 貼って ある、
+//   搭乗券の はしの 印、案内板の 字）。「見出し」と 言われても どこに どう ついて いる 物か 分からないので、その 絵を
+//   出す（2026-10-18 作者「どういうところについている見出しか画像をもってこい」）。仕組みの 説明の 矢印図には しない。
+// - 札と 矢印（CardSpec）：騒ぎの 規模の 段（町 → 日本 → 世界）を 横 1列の 札で。矢印には 一言と、取り消しの 判。
+// - どちらも 見た目だけ（保存・乱数に さわらない）。画面の ない ところ（シミュレーション）では 何も しない。
+// - 札の 絵は public/ の 歩行グラの 1コマ目（下向き。16×16）か、文字（AA）。実物の 絵は engine/assets.ts の 参照
+//   （切り出し つき）を 何倍かに して 描く。
 
-import { publicUrl } from "./assets";
+import { cropOf, loadImage, publicUrl } from "./assets";
+
+/** 実物の 絵（拡大図）。 */
+export type PictureSpec = {
+	kind: "picture";
+	title: string;
+	/** 絵（engine/assets.ts の 参照。`#sx,sy,sw,sh` の 切り出し 可）。 */
+	art: string;
+	/** 倍率（既定 4）。 */
+	scale?: number;
+	/** 絵の 上に 貼って ある 紙（見出し・はり紙・書きこみ。改行 可）。strike は 書いて 消した あと。 */
+	paper?: { text: string; strike?: boolean };
+	/** 右下の 注。 */
+	note?: string;
+};
+
+export type AnyCard = CardSpec | PictureSpec;
+
+export const isPicture = (s: AnyCard): s is PictureSpec =>
+	"kind" in s && s.kind === "picture";
 
 export type CardNode = {
 	label: string;
@@ -33,8 +56,8 @@ export type CardSpec = {
 };
 
 export type CardRun = {
-	/** 中身を 入れかえる（判を 押す・ゆらす など）。 */
-	update(spec: CardSpec): void;
+	/** 中身を 入れかえる（判を 押す・ゆらす・紙を 書きかえる など）。 */
+	update(spec: AnyCard): void;
 	end(): void;
 };
 
@@ -58,8 +81,49 @@ const art = (n: CardNode): HTMLElement => {
 	return a;
 };
 
-const fill = (box: HTMLElement, spec: CardSpec): void => {
+/** 実物の 絵：切り出した 絵を scale 倍の canvas に 描き、その 上に 紙を 重ねる。 */
+const fillPicture = (box: HTMLElement, spec: PictureSpec): void => {
 	box.replaceChildren();
+	box.classList.add("picture");
+	box.appendChild(el("scene-card-title", spec.title));
+	const pic = el("scene-pic");
+	const scale = spec.scale ?? 4;
+	const canvas = document.createElement("canvas");
+	canvas.className = "scene-pic-art";
+	pic.appendChild(canvas);
+	void loadImage(spec.art).then((img) => {
+		if (!img || !canvas.isConnected) return;
+		const c = cropOf(spec.art) ?? {
+			sx: 0,
+			sy: 0,
+			sw: img.width,
+			sh: img.height,
+		};
+		canvas.width = c.sw * scale;
+		canvas.height = c.sh * scale;
+		const g = canvas.getContext("2d");
+		if (!g) return;
+		g.imageSmoothingEnabled = false;
+		g.drawImage(img, c.sx, c.sy, c.sw, c.sh, 0, 0, c.sw * scale, c.sh * scale);
+	});
+	if (spec.paper) {
+		const paper = el(
+			`scene-paper${spec.paper.strike ? " strike" : ""}`,
+			spec.paper.text,
+		);
+		pic.appendChild(paper);
+	}
+	box.appendChild(pic);
+	if (spec.note) box.appendChild(el("scene-card-note", spec.note));
+};
+
+const fill = (box: HTMLElement, spec: AnyCard): void => {
+	if (isPicture(spec)) {
+		fillPicture(box, spec);
+		return;
+	}
+	box.replaceChildren();
+	box.classList.remove("picture");
 	box.appendChild(el("scene-card-title", spec.title));
 	const row = el("scene-card-row");
 	spec.nodes.forEach((n, i) => {
@@ -81,7 +145,7 @@ const fill = (box: HTMLElement, spec: CardSpec): void => {
 };
 
 /** イメージ図を 出す（root は 画面の 上の 層 #ui。sceneFx.ts の fxRoot）。 */
-export const showCard = (root: HTMLElement | null, spec: CardSpec): CardRun => {
+export const showCard = (root: HTMLElement | null, spec: AnyCard): CardRun => {
 	if (!root || typeof document === "undefined") return NONE;
 	const box = el("scene-card");
 	fill(box, spec);

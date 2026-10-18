@@ -72,28 +72,6 @@ export const colonyCard = (step: 0 | 1 | 2): CardSpec => ({
 	note: "ゼロ調べ（3機）",
 });
 
-/**
- * イメージ図「見出し」（いちばん 最初の 村。やきうが 新入りの キリコに 言う）。名無しが 貼る → 町が 騒ぐ。
- * step 1 で 行き先（見出しの 板へ 潜る）を 足す。
- */
-export const midashiCard = (step: 0 | 1): CardSpec => ({
-	title: "イメージ図「見出し」",
-	nodes: [
-		{ label: "名無し", sub: "夜中に\nこっそり", aa: "？" },
-		{
-			label: "見出し",
-			sub: "【悲報】パン板、\n独立を宣言",
-			aa: "報",
-			shake: true,
-		},
-		step === 0
-			? { label: "町の人", sub: "読んで\n大騒ぎ", aa: "！" }
-			: { label: "次の行き先", sub: "見出しの板\n（パン板）", sprite: PANHEI },
-	],
-	links: [{ label: "貼る（盛る）" }, { label: step === 0 ? "読む" : "行く" }],
-	note: "やきう調べ（地面に棒で）",
-});
-
 /** イメージ図②：きのこ板から パン板への 近道（1時間前の 地図）。 */
 export const routeCard: CardSpec = {
 	title: "イメージ図「近道」",

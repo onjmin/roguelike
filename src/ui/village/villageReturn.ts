@@ -675,17 +675,20 @@ const cutTo = async (s: Story, at: Cell, st: Stage | null): Promise<void> => {
 	await s.fadeOut(250);
 	if (st) st.front = null;
 	const ids = [...homes.keys()];
-	placed.set(s, []);
-	const k = spotsAround(villageView(), 1, at, [])[0] ?? at;
+	// いま 人の 立って いる マスは さける（置く 順で 一瞬でも 重ならない ように。町の どこかで 待って いた 人の
+	// マスへ 先に 置いた 人が 乗り、その 人が どいた ときに その マスを 空いた ことに して しまった）
+	const now = [...homes.values()];
+	const k = spotsAround(villageView(), 1, at, now)[0] ?? at;
 	s.place("player", k[0], k[1], "down");
-	placed.set(s, [k]);
-	const cells = freeAround(s, ids.length, k);
+	const cells = spotsAround(villageView(), ids.length, k, [k, ...now]);
+	placed.set(s, [k, ...cells.slice(0, ids.length)]);
 	ids.forEach((id, i) => {
 		const c = cells[i];
 		if (!c) return;
 		s.place(id, c[0], c[1]);
 		s.face(id, "player");
-		moved(s, st, id, c);
+		homes.set(id, c);
+		st?.at.set(id, c);
 	});
 	moved(s, st, "player", k);
 	await s.look(null, { instant: true });

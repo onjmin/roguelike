@@ -99,6 +99,7 @@ import {
 	goalText,
 	objectiveFor,
 } from "../data/story/objectives";
+import { headlineIn } from "../data/story/pictures";
 import {
 	type KirikoMode,
 	pickQuote,
@@ -117,6 +118,7 @@ import {
 	CLEAR,
 	DEPART,
 	DUNGEON_NAMES,
+	endingFor,
 	episodeEnd,
 	FIRST_SHALLOW,
 	SHALLOW_DEATH,
@@ -378,6 +380,7 @@ import {
 	takeRelief,
 	toReplay,
 } from "../engine/save";
+import { isPicture } from "../engine/sceneCard";
 import { isWalkRef } from "../engine/sprite";
 import { DIR_VEC, type Dir } from "../engine/types";
 import { forgetWalletMemo, walletYen, yen } from "../engine/wallet";
@@ -8073,6 +8076,49 @@ test("転の 停電: 電池板が 開いて 持ち帰るまで、生き返った
 			[...villageRows(dark)[d[1]]][d[0]] === "ｼ",
 			"no shutter in the blackout",
 		);
+});
+
+test("本筋の 持ち帰りの 語り: 本筋の 順に 持ち帰ると、はじめての 語りは 短い 2回目の 語り（again）に 落ちない（いない 仲間の 頁には かわりが ある）", () => {
+	const order: DungeonId[] = ["shallow", "kinoko", "main", "deep", "hidden"];
+	for (const [i, d] of order.entries()) {
+		const cleared = order.slice(0, i + 1);
+		const away = awayFriends(cleared);
+		const pages = endingFor(d, false, away, cleared);
+		const again = STORY[d].again;
+		ok(
+			!again || pages !== again,
+			`${d}: the first ending falls back to the short one (away: ${away.join()})`,
+		);
+	}
+});
+
+test("見出しの 絵（図＝実物の 絵）: 語りが 掲示板の 見出しを 言う 頁は 掲示板の 絵を そえ、紙の 字は 見出しと 同じ。仕組みの 矢印図「見出し」は ない", () => {
+	const pages = [
+		...DUNGEON_IDS.flatMap((d) => [
+			...STORY[d].ending,
+			...(STORY[d].again ?? []),
+			...(STORY[d].once ?? []),
+		]),
+		...TEN_NEWS.pages,
+	];
+	let n = 0;
+	for (const p of pages) {
+		const h = headlineIn(p.text);
+		if (p.card && !isPicture(p.card))
+			ok(!p.card.title.includes("見出し"), `矢印図で 見出しを 説明: ${p.text}`);
+		if (!h || !p.text.includes("掲示板")) continue;
+		n++;
+		ok(
+			p.card && isPicture(p.card) && p.card.paper?.text === h,
+			`見出しの 頁に 掲示板の 絵が ない・字が ちがう: ${p.text}`,
+		);
+	}
+	ok(n >= 8, `見出しの 頁が 少ない: ${n}`);
+	// 冒頭の 見出しも 同じ 絵
+	ok(
+		headlineIn(OPENING.headline) === HEADLINES.shallow,
+		"冒頭の 見出しが パン板の 見出しと ちがう",
+	);
 });
 
 test("翌朝の 見出し（STORY.md §0 言う ことと 見える もの）: 掲示板に 残る 見出しは、その 板の 持ち帰りの 語りの 見出しと 一字も ちがわない", () => {

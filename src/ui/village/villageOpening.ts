@@ -13,7 +13,8 @@
 
 import { INCIDENT_BGM, stageBgm } from "../../data/audio/music";
 import { MOBS } from "../../data/people/mobs";
-import { midashiCard } from "../../data/story/hooks";
+import { boardPicture } from "../../data/story/pictures";
+import { HEADLINES } from "../../data/town/headlines";
 import { INCIDENTS, incidentPlaceId } from "../../data/town/incidents";
 import { OPENING, type OpeningLine } from "../../data/town/town";
 import { type Cell, VILLAGE_SPOTS } from "../../data/village/map";
@@ -253,9 +254,12 @@ const plazaScript: Script = async (s) => {
 	};
 	await chiefSay(OPENING.panhei);
 	await line(s, OPENING.someone);
-	// 夜の うちに 貼られた 見出し
+	// 夜の うちに 貼られた 見出し（掲示板の 実物の 絵：見出しが どこに どう 貼って ある 物か 見せる）
 	s.face("player", "left");
+	const headline = showCard(fxRoot(), boardPicture(HEADLINES.shallow ?? ""));
+	s.se("read");
 	await s.narrate(OPENING.headline);
+	headline.end();
 	// やきうが 家から かけて きて、キリコの 左に 立つ（右は パン兵長）
 	await s.goto("nanj", bx - 1, by, { speed: 1.8, avoid: true });
 	s.face("nanj", "player");
@@ -274,14 +278,16 @@ const plazaScript: Script = async (s) => {
 		s.face(id, nailer.dir);
 		s.face("player", "left");
 	}
-	// 見出しとは（イメージ図。地面に 棒で 描く）
-	const card = showCard(fxRoot(), midashiCard(0));
-	s.se("cardFlip");
+	// 見出しとは：やきうが 掲示板を 指さして 言う（カメラは 掲示板。絵は 貼って ある 見出しの 実物。
+	// 仕組みの 矢印図には しない：2026-10-18 作者「どういうところについている見出しか画像をもってこい」）
+	await s.look(VILLAGE_SPOTS.board[0]);
+	s.face("nanj", "up");
+	const card = showCard(fxRoot(), boardPicture(HEADLINES.shallow ?? ""));
 	await lines(s, OPENING.midashi);
-	card.update(midashiCard(1));
-	s.se("cardFlip");
-	await lines(s, OPENING.midashiNext);
 	card.end();
+	await s.look(null);
+	s.face("nanj", "player");
+	await lines(s, OPENING.midashiNext);
 	await lines(s, OPENING.day2b);
 	await chiefSay(OPENING.declare);
 	await lines(s, OPENING.day2c);
