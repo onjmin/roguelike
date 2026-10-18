@@ -165,6 +165,55 @@ const drawPool = (
 	}
 };
 
+/** 光の 輪の 明るさの 段（コマ送り。0 は 消えて いる）。 */
+const GLOW_STEPS = 4;
+const glowHalos = new Map<string, HTMLCanvasElement>();
+
+/**
+ * ドット絵の 光の 輪：内から 3段の 濃さで 塗り、いちばん 外の 段は 市松に 間引く。
+ * 段ごとに 半径も 明るさも 変わるので、コマ送りの アニメに なる。
+ */
+const glowHalo = (
+	color: string,
+	rad: number,
+	step: number,
+): HTMLCanvasElement => {
+	const key = `${color}|${rad}|${step}`;
+	const hit = glowHalos.get(key);
+	if (hit) return hit;
+	const [r, g, b] = color.split(",").map(Number);
+	const size = rad * 2;
+	const cv = document.createElement("canvas");
+	cv.width = size;
+	cv.height = size;
+	const g2 = cv.getContext("2d");
+	if (g2) {
+		const img = g2.createImageData(size, size);
+		const k = step / GLOW_STEPS;
+		for (let y = 0; y < size; y++)
+			for (let x = 0; x < size; x++) {
+				const d = Math.hypot(x + 0.5 - rad, y + 0.5 - rad) / rad;
+				const a =
+					d < 0.4
+						? 0.55
+						: d < 0.7
+							? 0.32
+							: d < 1 && (x + y) % 2 === 0
+								? 0.2
+								: 0;
+				if (!a) continue;
+				const o = (y * size + x) * 4;
+				img.data[o] = r;
+				img.data[o + 1] = g;
+				img.data[o + 2] = b;
+				img.data[o + 3] = Math.round(255 * a * k);
+			}
+		g2.putImageData(img, 0, 0);
+	}
+	glowHalos.set(key, cv);
+	return cv;
+};
+
 /**
  * 手づくりの 地図の 置物を 描く（core/data/places.ts）。敷物は マスごと、ほかは 占める マスの 下の 中ほどに 合わせ、
  * 絵ごとに scale 倍・lift だけ 上へ（上へ はみ出してよい）。
@@ -186,20 +235,20 @@ const drawProp = (
 		ctx.save();
 		if (a.filter) ctx.filter = a.filter;
 		if (glow && a.glow) {
-			// ゆっくり 明るく なって もどる：まわりに 光の 輪、絵にも 明るさを 足す
+			// 明るく なって もどるのを コマ送りで：まわりに ドットの 光の 輪、絵にも 明るさを 足す
 			const t =
 				((glow.time + (a.glow.phase ?? 0)) % a.glow.period) / a.glow.period;
-			const k = 0.5 - 0.5 * Math.cos(t * 2 * Math.PI);
+			const step = Math.round(
+				(0.5 - 0.5 * Math.cos(t * 2 * Math.PI)) * GLOW_STEPS,
+			);
+			const k = step / GLOW_STEPS;
 			ctx.globalCompositeOperation = "lighter";
 			ctx.translate(-glow.ox, -glow.oy);
-			const cx = p.x * TILE + (p.w * TILE) / 2;
-			const cy = (p.y + p.h) * TILE - dh / 2 - (a.lift ?? 0);
-			const rad = Math.max(dw, dh) * (0.6 + 0.25 * k);
-			const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
-			halo.addColorStop(0, `rgba(${a.glow.color},${0.65 * k})`);
-			halo.addColorStop(1, `rgba(${a.glow.color},0)`);
-			ctx.fillStyle = halo;
-			ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+			const cx = Math.round(p.x * TILE + (p.w * TILE) / 2);
+			const cy = Math.round((p.y + p.h) * TILE - dh / 2 - (a.lift ?? 0));
+			const rad = Math.round(Math.max(dw, dh) * (0.6 + 0.06 * step));
+			if (step)
+				ctx.drawImage(glowHalo(a.glow.color, rad, step), cx - rad, cy - rad);
 			ctx.globalAlpha = 0.4 * k;
 		}
 		if (p.walk)
