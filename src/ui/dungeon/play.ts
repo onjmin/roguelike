@@ -3082,6 +3082,15 @@ export class Play {
 					i++;
 					continue;
 				}
+				// 眠る 音は、眠らせた 行（呪文を となえた・草を 飲んだ）と その 音が 出てから
+				if (
+					next?.t === "sleep" &&
+					prev &&
+					(prev.t === "msg" || LEAD.has(prev.t))
+				) {
+					await this.logDrained();
+					if (this.stopped) break;
+				}
 			}
 			// 行の あとの 動き（飲んだ・読んだ の あとの 敵の 攻撃・傷・ワープ など）は、前の 行が 出てから。
 			// 道具の 効き目（行と 音）より 先に 敵が 動いて 見えないように。
