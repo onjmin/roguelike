@@ -205,7 +205,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "theme",
 				with: "zero",
 				lines: [
-					c("zero", "わたしたちのテーマ、\nおぼえてますか！？"),
+					c("zero", "わたしたちのテーマ、\nおぼえてますか？"),
 					m("「AIと人は手を\n取り合っていけるのか」ゼロ"),
 					e({ emote: "!" }, c("zero", "……キリコさん、\n腕ずもうしましょう！")),
 					n("キリコが手をさしだすと、\nプロトも上から重ねた。2対1。"),
@@ -283,7 +283,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					c("zero", "マスターさんとお話する\n台本を、10ページ書きました！"),
 					m("メインさん、長い！\nレンなら「やっほー」でいける"),
-					e({ gesture: "nod" }, c("zero", "「やっほー」！\nメモしました！")),
+					e({ gesture: "nod" }, c("zero", "……「やっほー」。\nメモしました")),
 					n("マスターはひげをなでて、\n「やっほーですぞ」と言った。"),
 				],
 			},
@@ -554,9 +554,9 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "hitori",
 				with: "zero",
 				lines: [
-					c("zero", "おんすちゃんさん、\n今日もおひとりですか！？"),
+					c("zero", "おんすちゃんさん、\n今日もおひとりですか？"),
 					m("……ひとりでも来るのが、\nおんSの民よぉ"),
-					c("zero", "おんSの民、いま何人ですか！\n数えます！"),
+					c("zero", "おんSの民は、\nいま何人……"),
 					e({ emote: "怒" }, m("……聞かないでくださる？")),
 				],
 			},

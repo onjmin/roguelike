@@ -956,7 +956,7 @@ export const STORY: Record<
 				fx: "confetti",
 			},
 			{
-				...s("zero", "書きこみ98件！正体がバレて、\n宛先が通りました！", {
+				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
 					emote: "!",
 				}),
 				needCleared: "festival",
@@ -1694,7 +1694,7 @@ export const STORY: Record<
 				bgm: "kaiwai2",
 			},
 			{
-				...s("zero", "書きこみ98件！正体がバレて、\n宛先が通りました！", {
+				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
 					emote: "!",
 				}),
 				needCleared: "deep",
@@ -1749,7 +1749,7 @@ export const STORY: Record<
 				go: [{ who: "feris", to: "kiriko", speed: 3 }],
 			},
 			{
-				...s("zero", "いちばん下の層ですからね！\n99階、数えました！"),
+				...s("zero", "いちばん下の層、ですからね"),
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
 			},
 			// 古い レスが 掘り起こされて、スレが 一気に 埋まる（1000 で 書けなくなる しくみと 同じ）
@@ -2535,7 +2535,7 @@ export const UNLOCK_LINES: Record<
 	],
 	// 転（tenScript）の すぐ あと。最終話の 板
 	deep: [
-		q("zero", "電池板から、音がします！\nサブ機たちも、ビリビリしてます！", {
+		q("zero", "電池板から、音がします。\nサブ機たちも、ビリビリしてます", {
 			gesture: "shiver",
 		}),
 		q("nanj", "最終話や！\nワイは最後まで見とるで！"),
