@@ -12,10 +12,12 @@
 //   銭湯の 並び「銭湯のえんとつから湯けむり！港の海も、まだ41.5℃！」→ 屋根の 湯気・海の 湯気
 //   たこ八「鉄板に、193か国ぶんの焦げあと！」→ 鉄板の 焦げ
 //   浜「浜に、島が泳いだ跡がのこってる！」→ 砂浜の 跡
+//   丘の 神社「地面の下から、まだサンバ！」→ やぐら広場の 太鼓の 足もとから 立ちのぼる ♪（engine/emote.ts の 記号）
 
 import type { SceneMark } from "../../data/story/quotes";
 import type { VillageView } from "../../data/village/map";
 import { drawRefInCell, getImage, loadImage } from "../../engine/assets";
+import { drawEmote } from "../../engine/emote";
 import { loadTown } from "../../engine/save";
 import { drawWalk } from "../../engine/sprite";
 import { TILE } from "../../engine/types";
@@ -87,10 +89,13 @@ const rng = (seed: number) => {
 	};
 };
 
+/** 丘の やぐら広場の 太鼓の 足もと（太鼓は 13,6。data/village/map.ts の YAGURA_PLAZA）。サンバは ここから 立ちのぼる。 */
+const DRUM_FOOT: Cell = [13, 7];
+
 /** 場面の 物（出した 時刻・しまいはじめた 時刻）。 */
 const scene = new Map<SceneMark, { at: number; gone: number | null }>();
 /** 町に 残る 物。 */
-let town = { steam: false, scorch: false, trail: false };
+let town = { steam: false, scorch: false, trail: false, samba: false };
 /** 湯気の 立つ 海の マス。 */
 let seaCells: Cell[] = [];
 
@@ -104,6 +109,7 @@ export const setMarksTown = (
 		steam: !!v?.cleared.includes("main") && revived.includes("bath"),
 		scorch: !!v?.cleared.includes("konamono") && revived.includes("tako"),
 		trail: !!v?.cleared.includes("tropical") && revived.includes("beach"),
+		samba: !!v?.cleared.includes("festival") && revived.includes("shrine"),
 	};
 	const r = rng(0x41_5);
 	seaCells = [];
@@ -401,6 +407,16 @@ export const drawMarksAbove = (
 			steam(g, x, y, now, { n: 26, rise: 120, w: 60, size: 6, seed: 1 });
 		else steam(g, x, y, now, { n: 8, rise: 34, w: 16, size: 3, seed: 1 });
 	}
+	// 地面の 下の サンバ（お祭りの 語りの あと ずっと）：太鼓の 足もとから ♪ が 立ちのぼる
+	if (town.samba)
+		drawEmote(
+			g,
+			"♪",
+			DRUM_FOOT[0] * TILE - 6 - ox,
+			DRUM_FOOT[1] * TILE + 2 - oy,
+			now,
+			true,
+		);
 	// 焦げた 鉄板から 細い 煙（鉄板の 絵が もともと 黒いので、焦げは 煙で 見せる）
 	if (town.scorch) {
 		const x = GRIDDLE_AT[0] * TILE + 7 - ox;

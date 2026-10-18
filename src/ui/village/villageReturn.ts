@@ -28,6 +28,7 @@ import {
 	RELIEF_NOTE,
 } from "../../data/people/mobs";
 import { eventById, eventNewsText } from "../../data/story/objectives";
+import { itemPicture } from "../../data/story/pictures";
 import {
 	type SceneWalk,
 	SPEAKERS,
@@ -1347,6 +1348,28 @@ export const blackoutScript = async (s: Story): Promise<void> => {
  * 通りごとに 知らせて 建て直す（店が 開き、人が なだれこむ）。停電の あいだは 生き返った 知らせを 出さない。
  * 本筋の 板なら 町の 段も 上がり、倉庫が 広がる・持ちこめる 数が ふえる。
  */
+/** 電池板の 通りの 知らせ「電気代の請求書も、とどいた！」：とどいた 請求書の 絵（文の あいだ 出す）。 */
+const POWER_BILL = itemPicture(
+	"memo",
+	"電気代の請求書",
+	{ text: "電気代　請求書\n宛：おんJタウン" },
+	"電池板より",
+);
+
+/**
+ * 丘の 神社の 通りの 知らせ「地面の下から、まだサンバ！」：太鼓の 拍子（ms の 間）を 文の うしろで 鳴らす。
+ * 町には ♪ が 残る（sceneMarks）。Story.wait は 窓を 閉じるので 使わない（文が 消える）。
+ */
+const SAMBA_BEATS = [0, 180, 180, 270, 180, 180, 270] as const;
+const samba = (s: Story): void => {
+	void (async () => {
+		for (const gap of SAMBA_BEATS) {
+			await new Promise((r) => setTimeout(r, gap));
+			s.se("hit_club");
+		}
+	})();
+};
+
 export const reviveScript = async (s: Story): Promise<void> => {
 	const t = loadTown();
 	const p = loadProgress();
@@ -1371,7 +1394,11 @@ export const reviveScript = async (s: Story): Promise<void> => {
 		releaseReveal(a.dungeon);
 		await rebuild(s);
 		s.se("townUp");
+		// 文に 出てきた 物：請求書は 絵で、サンバは 太鼓の 音で（♪ は 建て直した 町に 残って いる）
+		const card = a.id === "lights" ? showCard(fxRoot(), POWER_BILL) : null;
+		if (a.id === "shrine") samba(s);
 		await s.narrate(a.line);
+		card?.end();
 		await s.narrate(fill(REVIVE_MSG.open, { name: a.name }));
 	}
 	if (fresh.length) await s.look(null);
