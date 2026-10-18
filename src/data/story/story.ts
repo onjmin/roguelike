@@ -346,7 +346,7 @@ export const TEN_NEWS = {
 			look: null,
 			card: null,
 		},
-		s("feris", "電池板の人、電気代を\n請求しに来るかも〜！"),
+		s("feris", "電池板の人、電気代を\n請求しに来るよ〜。私、払えない〜"),
 		k("電池板、充電しに行くンゴ！"),
 		s("nanj", "おう！停電で\nナイター見れんしな！", { emote: "怒" }),
 	],
@@ -956,7 +956,7 @@ export const STORY: Record<
 				fx: "confetti",
 			},
 			{
-				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
+				...s("zero", "書きこみ98件！正体がバレて、\n宛先が通りました！", {
 					emote: "!",
 				}),
 				needCleared: "festival",
@@ -1242,7 +1242,7 @@ export const STORY: Record<
 				"feris",
 				"村に帰りつくと、\n潮のにおいがついてきた。",
 			),
-			s("feris", "ヤシの実〜！ねえ、\n耳にあてたら波の音する〜？", {
+			s("feris", "ヤシの実〜。耳にあてても、\nどうせ波の音だけだよ〜", {
 				gesture: "hop",
 			}),
 			{
@@ -1273,7 +1273,9 @@ export const STORY: Record<
 				look: [24, 51],
 			},
 			{
-				...s("feris", "島がクロールしてる〜！\n速い〜！", { gesture: "hop" }),
+				...s("feris", "島がクロールしてる〜！\n絶対、止まれないやつ〜！", {
+					gesture: "hop",
+				}),
 				look: null,
 			},
 			// みんなで 桟橋を 浜まで 逃げる（キリコに カメラが ついていく）
@@ -1323,13 +1325,9 @@ export const STORY: Record<
 			// 島は 沖へ もどる（町の 地図は かわらない）。日本地図だけ 書きかわった まま
 			sOr(
 				{
-					...s(
-						"feris",
-						"島、バックで帰ってく〜！\n地図だけ、書きかわったまま〜！",
-						{
-							gesture: "hop",
-						},
-					),
+					...s("feris", "島、バックで帰ってく〜。\n……地図は、もう戻らない〜", {
+						gesture: "hop",
+					}),
 					unmark: "island",
 				},
 				{
@@ -1351,9 +1349,13 @@ export const STORY: Record<
 				card: iconPicture("yashi", "ヤシの実（うら）", { text: "1UP" }),
 			},
 			{
-				...s("feris", "それ、ナツコちゃんの字〜。\n夏休みの自由研究だよ〜", {
-					emote: "汗",
-				}),
+				...s(
+					"feris",
+					"それ、ナツコちゃんの字〜。\n1UPなんて、この世にないよ〜",
+					{
+						emote: "汗",
+					},
+				),
 				card: null,
 			},
 			s("nanj", "にせもんか！草"),
@@ -1692,7 +1694,7 @@ export const STORY: Record<
 				bgm: "kaiwai2",
 			},
 			{
-				...s("zero", "書きこみ98件。正体がバレて、\n宛先が通ったみたいです", {
+				...s("zero", "書きこみ98件！正体がバレて、\n宛先が通りました！", {
 					emote: "!",
 				}),
 				needCleared: "deep",
@@ -1741,13 +1743,13 @@ export const STORY: Record<
 			n("町でいちばん古い\nレスだった。"),
 			// 自分の 声を 聞いて フェリスが かけよる
 			{
-				...s("feris", "私の、はじまりの声〜！\n思ったより、かすれてる〜！", {
+				...s("feris", "私の、はじまりの声〜。\n……最初から、かすれてた〜", {
 					emote: "…",
 				}),
 				go: [{ who: "feris", to: "kiriko", speed: 3 }],
 			},
 			{
-				...s("zero", "いちばん下の層、ですからね"),
+				...s("zero", "いちばん下の層ですからね！\n99階、数えました！"),
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
 			},
 			// 古い レスが 掘り起こされて、スレが 一気に 埋まる（1000 で 書けなくなる しくみと 同じ）
@@ -1824,9 +1826,13 @@ export const STORY: Record<
 			},
 			// 浜へ 場面を うつす
 			{
-				...s("feris", "水星のかけら〜？\nちいさいのに、あっつ〜い！", {
-					emote: "花",
-				}),
+				...s(
+					"feris",
+					"水星のかけら〜？ちいさいのに\nあっつ〜い。私、燃えちゃう〜",
+					{
+						emote: "花",
+					},
+				),
 				standAt: [12, 36],
 				cut: [12, 37],
 			},
@@ -1859,7 +1865,7 @@ export const STORY: Record<
 			{
 				...s(
 					"feris",
-					"夜の浜が、昼みたいに明るい〜！\nステージ、24時間営業〜！",
+					"夜の浜が、昼みたいに明るい〜。\n客ゼロが、24時間見えちゃう〜",
 					{
 						gesture: "hop",
 					},
@@ -1909,7 +1915,9 @@ export const STORY: Record<
 				sky: "dark",
 			},
 			sOr(
-				s("feris", "真っ暗〜！私が燃えて\n照らそうか〜？", { gesture: "hop" }),
+				s("feris", "真っ暗〜。……私、燃えるくらい\nしか役に立たない〜", {
+					gesture: "hop",
+				}),
 				s("zero", "ゼロが、ランプに\nなります！", { emote: "汗" }),
 			),
 			{
@@ -2439,9 +2447,13 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 	tropical: [
 		n("キリコの服は、\nまだしおからかった。"),
 		{
-			...s("feris", "島の人たちに送ってもらったの〜？\nいいな〜、小舟〜！", {
-				emote: "♪",
-			}),
+			...s(
+				"feris",
+				"島の人たちに送ってもらったの〜？\n私なら、途中で沈んでる〜",
+				{
+					emote: "♪",
+				},
+			),
 			go: [{ who: "feris", to: "kiriko", speed: 3 }],
 		},
 	],
@@ -2488,7 +2500,7 @@ export const ARRIVE_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 		{
 			...s(
 				"feris",
-				"島の人たち、ちゃんと帰れた〜？\n浜、広すぎて走りほうだい〜！",
+				"島の人たち、ちゃんと帰れた〜？\n浜、広すぎて私ひとりだよ〜",
 				{
 					emote: "♪",
 				},
@@ -2531,7 +2543,7 @@ export const UNLOCK_LINES: Record<
 	],
 	// 転（tenScript）の すぐ あと。最終話の 板
 	deep: [
-		q("zero", "電池板から、音がします。\nサブ機たちも、ビリビリしてます", {
+		q("zero", "電池板から、音がします！\nサブ機たちも、ビリビリしてます！", {
 			gesture: "shiver",
 		}),
 		q("nanj", "最終話や！\nワイは最後まで見とるで！"),
@@ -2647,7 +2659,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	shallow: [
 		q("nanj", "日本、まだ47か国やで！\n大阪国のパスポート作ったわ！"),
 		q("roze", "パン板の底、わたしは\n3時間前に着いてたアル"),
-		q("feris", "食パンの旗、おいしそ〜。\n私、目がいいから見えてたよ〜"),
+		q("feris", "食パンの旗、見えてたよ〜。\n私は、見てるだけだったけど〜"),
 		q("shiyo", "パン板、でしょ。ふん！\nあたすなら、もっと早かったわ！", {
 			emote: "汗",
 		}),
@@ -2659,7 +2671,9 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	main: [
 		q("nanj", "41.5℃、ええ湯やったな！\n港の海までお湯やったけどな！"),
 		q("roze", "おかえりアル。蓄音機、\nずっとまわってるアル"),
-		q("feris", "長湯スレ、もう1回きこ〜。\nあと100回だけ〜！", { emote: "♪" }),
+		q("feris", "長湯スレ、もう1回きこ〜。\n……100回きいたら、飽きる〜", {
+			emote: "♪",
+		}),
 		q("shiyo", "41.5℃、あたすが先に\n言ったんだから"),
 		q(
 			"zero",
@@ -2670,7 +2684,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	deep: [
 		q("nanj", "今日の見出しは、盛らんとく！\nたぶんな！"),
 		q("roze", "ロールバックしても、\n麻婆豆腐は減ってたアル"),
-		q("feris", "明かり、きれいだね〜。\nロールバックしても、まぶしい〜！"),
+		q("feris", "明かり、きれいだね〜。\n……どうせまた、消えるけど〜"),
 		q("shiyo", "もう停電させないでよ！\nべ、べつにこわくなかったけど！"),
 		q("zero", "電池ニキさん、毎日来てます！\n見学者2人目は、ゼロです！"),
 	],
@@ -2680,7 +2694,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 		q("nanj", "植民地の植民地や。\nどっちがえらいねん", { emote: "怒" }),
 	],
 	tropical: [
-		q("feris", "島、まだ港のとなりにいる〜。\n居心地いいみたい〜！", {
+		q("feris", "島、まだ港のとなりにいる〜。\n……私より、人気あるよ〜", {
 			emote: "♪",
 		}),
 		q("roze", "島民が7人になったアル！\nキリコも数えたアル！"),
@@ -2702,7 +2716,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 		q("nanj", "古いレスも消えへん！\nワイの黒歴史もな！"),
 	],
 	mercury: [
-		q("feris", "水星の板、のんびりしてたね〜。\nまた行こ〜！"),
+		q("feris", "水星の板、のんびりしてたね〜。\n私には、まぶしすぎた〜"),
 		q("zero", "かけら、まだ光ってます！\nまぶしくて3機とも寝不足です！"),
 		q("nanj", "夜中の2時のデーゲーム、\n9回裏まで見てもうたわ！"),
 	],
@@ -2718,7 +2732,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	inferno: [
 		q("zero", "魔導書、3ページ読みました！\n右腕は、まだふつうです！"),
-		q("feris", "†キリコ†って書くと、\nかっこいいね〜！ふふ〜", {
+		q("feris", "†フェリス†って書いても〜、\nどうせ燃えるだけだよ〜", {
 			emote: "♪",
 		}),
 		q("shiyo", "†シヨ†って書かないでよ！\nべ、べつに嫌いじゃないけど！"),
@@ -2734,7 +2748,7 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 export const FIRST_SHALLOW: readonly Line[] = [
 	q("nanj", "パン板やで。おんJ民お断りや！\nほな、見とるで！"),
 	q("roze", "パン板の王さまには、\nロゼが先に説教しとくアル"),
-	q("feris", "どこかの板で、先に\n燃えて待ってるね〜", { emote: "♪" }),
+	q("feris", "どこかの板で、先に\n燃え尽きて待ってるね〜", { emote: "♪" }),
 	q("shiyo", "あなたより先に、どこかの\n底で待っててあげるわよ"),
 	q("zero", "ゼロも先回りして、先に\n数えておきます！負けません！", {
 		gesture: "hop",
@@ -2745,7 +2759,7 @@ export const FIRST_SHALLOW: readonly Line[] = [
 export const SHALLOW_DEATH: readonly Line[] = [
 	q("nanj", "パン板やで！？入門の！\nいや、パン板でも下は下か！"),
 	q("roze", "パン板はちいさいアル！\nでも底は、ちゃんと底アル！"),
-	q("feris", "パン板でも、ころぶよね〜。\n私もよくころぶ〜", {
+	q("feris", "パン板でも、ころぶよね〜。\n私、立ってる時間のほうが短い〜", {
 		emote: "汗",
 	}),
 	q("shiyo", "杖は、ふるまでわからないの！\n教えてあげたんだからね！"),

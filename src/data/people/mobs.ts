@@ -384,7 +384,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("かくれんぼちよう。\nぷゆゆわど〜こだ？🥺"),
 					n("ぷゆゆはその場で、\n目をぎゅっとつむった。"),
-					c("zero", "ゼロのカメラには、\nまる見えです"),
+					c("zero", "ゼロのカメラには、\nまる見えです！"),
 					e({ emote: "!", gesture: "hop" }, m("……ここ！🥺")),
 				],
 			},
