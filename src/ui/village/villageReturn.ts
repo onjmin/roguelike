@@ -28,7 +28,7 @@ import {
 	RELIEF_NOTE,
 } from "../../data/people/mobs";
 import { eventById, eventNewsText } from "../../data/story/objectives";
-import type { Speaker } from "../../data/story/quotes";
+import type { SceneWalk, Speaker } from "../../data/story/quotes";
 import {
 	ARRIVE_RETURN,
 	awayFriends,
@@ -640,6 +640,138 @@ const turnAway = async (s: Story, st: Stage): Promise<void> => {
 	s.face("player", "down");
 };
 
+// ───────────────── 場面を うつす・走らせる ─────────────────
+// 口の 前で 並んだ まま 窓だけ 進むと、語りが 町の 出来事を 言っても 場面が 一歩も 動かない（2026-10-18 作者
+// 「カメラ移動や キリコを 動かしたり キャラを 縦横無尽に」）。StoryPage.cut で 所を かえ、go で 走らせる。
+
+/** 場面で 置いた 人の マスを 入れかえる（old を 外して now を おぼえる）。 */
+const retake = (s: Story, old: Cell | undefined, now: Cell): void => {
+	const rest = takenBy(s).filter(
+		(c) => !old || c[0] !== old[0] || c[1] !== old[1],
+	);
+	placed.set(s, [...rest, now]);
+};
+
+/** 場面に 出て いる 人の いま いる マス（並び・場面の うつし・走りで かわる）。 */
+const posOf = (s: Story, id: string): Cell | undefined =>
+	id === "player" ? [s.state.x, s.state.y] : homes.get(id);
+
+/** 動いた 人の マスを 掛け合いの 立ち位置にも 書く（話し手は 新しい マスから 前に 出る）。 */
+const moved = (s: Story, st: Stage | null, id: string, c: Cell): void => {
+	if (id === "player") {
+		if (st) {
+			st.kiriko = c;
+			st.mark = c;
+		}
+		return;
+	}
+	retake(s, homes.get(id), c);
+	homes.set(id, c);
+	st?.at.set(id, c);
+};
+
+/** 暗転して 場面を at の そばへ うつす（場面に 出て いる 人も みんな）。 */
+const cutTo = async (s: Story, at: Cell, st: Stage | null): Promise<void> => {
+	await s.fadeOut(250);
+	if (st) st.front = null;
+	const ids = [...homes.keys()];
+	placed.set(s, []);
+	const k = spotsAround(villageView(), 1, at, [])[0] ?? at;
+	s.place("player", k[0], k[1], "down");
+	placed.set(s, [k]);
+	const cells = freeAround(s, ids.length, k);
+	ids.forEach((id, i) => {
+		const c = cells[i];
+		if (!c) return;
+		s.place(id, c[0], c[1]);
+		s.face(id, "player");
+		moved(s, st, id, c);
+	});
+	moved(s, st, "player", k);
+	await s.look(null, { instant: true });
+	await s.fadeIn(250);
+};
+
+/** 語りの 頁の 人を 走らせる（StoryPage.go。ならべた 分は 同時に）。 */
+const runWalks = async (
+	s: Story,
+	walks: readonly SceneWalk[],
+	st: Stage | null,
+): Promise<void> => {
+	if (st) await stepBack(s, st);
+	const idOf = (w: SceneWalk["who"]): string => (w === "kiriko" ? "player" : w);
+	/** id が 行く 空いた マス（自分の いる マスは 空いて いる ことに する）。 */
+	// キリコの 行き先（ほかの 人は そこにも 立たない）
+	let kGoal: Cell | null = null;
+	const spotFor = (
+		id: string,
+		to: Cell,
+		also: readonly Cell[],
+	): Cell | null => {
+		const me = posOf(s, id);
+		const busy = takenBy(s).filter((c) => !same(me, c));
+		const kiriko: Cell[] =
+			id === "player"
+				? []
+				: [[s.state.x, s.state.y], ...(kGoal ? [kGoal] : [])];
+		return (
+			spotsAround(villageView(), 1, to, [...busy, ...kiriko, ...also])[0] ??
+			null
+		);
+	};
+	const jobs: Promise<void>[] = [];
+	const go = (id: string, c: Cell, w: SceneWalk): void => {
+		const speed = w.speed ?? 2.2;
+		jobs.push(
+			(async () => {
+				if (w.follow && id !== "player") await s.look(id);
+				await s.goto(id, c[0], c[1], { speed });
+				if (w.face) s.face(id, w.face);
+				else if (id !== "player") s.face(id, "player");
+			})(),
+		);
+		if (id === "player") kGoal = c;
+		moved(s, st, id, c);
+	};
+	for (const w of walks) {
+		if (w.who === "all") {
+			if (!w.to || w.to === "kiriko") continue;
+			const k = spotFor("player", w.to, []);
+			if (!k) continue;
+			go("player", k, w);
+			const ids = [...homes.keys()];
+			const cells = spotsAround(villageView(), ids.length, k, [
+				...takenBy(s).filter((c) => !ids.some((id) => same(homes.get(id), c))),
+				[s.state.x, s.state.y],
+				k,
+			]);
+			ids.forEach((id, i) => {
+				const c = cells[i];
+				if (c) go(id, c, { ...w, face: undefined });
+			});
+			continue;
+		}
+		const id = idOf(w.who);
+		if (id !== "player" && !homes.has(id)) continue;
+		if (w.route) {
+			const speed = w.speed ?? 2.2;
+			// 元の マスへ もどる しぐさなので、人や 物で 止まって ずれない ように すりぬける
+			jobs.push(s.move(id, w.route, { speed, through: true }));
+			continue;
+		}
+		if (!w.to) continue;
+		const target =
+			w.to === "kiriko"
+				? spotFor(id, [s.state.x, s.state.y], [[s.state.x, s.state.y]])
+				: spotFor(id, w.to, []);
+		if (target) go(id, target, w);
+	}
+	await Promise.all(jobs);
+};
+
+const same = (a: Cell | undefined, b: Cell): boolean =>
+	!!a && a[0] === b[0] && a[1] === b[1];
+
 /** 口から 出てきて、並んだ 仲間が 語りを 話す。暗転の あいだに みんな 持ち場へ もどる。 */
 export const returnScene = async (
 	s: Story,
@@ -655,6 +787,7 @@ export const returnScene = async (
 	s.se("stairs");
 	s.show("player");
 	await s.move("player", exit.step);
+	const back: Cell = [s.state.x, s.state.y];
 	for (const who of castOf(pages)) s.face(who, "player");
 	for (const id of here) s.face(`mob_${id}`, "player");
 	// 掛け合いの 立ち位置（明かりの 坂で 建て直すと 並びが くずれるので やめる）
@@ -683,7 +816,14 @@ export const returnScene = async (
 			await playCue(s, p.cue);
 			if (p.cue === "lightsUp") stage = null;
 		}
+		if (p.cut) await cutTo(s, p.cut, stage);
 		if (p.look !== undefined) await s.look(p.look);
+		// 走る 頁は 走りながら 音（線を 引く 音・足音）
+		let se: Promise<void> | null = null;
+		if (p.go) {
+			se = playPageSe(s, p);
+			await runWalks(s, p.go, stage);
+		}
 		if (stage && p.turnAway) await turnAway(s, stage);
 		else if (stage) await turnTo(s, stage, speakerOf(p));
 		if (fx && fx.kind !== p.fx) {
@@ -697,7 +837,7 @@ export const returnScene = async (
 			s.spores("player");
 			await s.wait(500);
 		}
-		const se = playPageSe(s, p);
+		se ??= playPageSe(s, p);
 		if (p.fx && !fx) {
 			fx = { kind: p.fx, run: startFx(fxRoot(), p.fx) };
 			await fx.run.ready;
@@ -717,6 +857,9 @@ export const returnScene = async (
 		a.kind === "clear" && !lingering ? s.fadeBgm(300) : Promise.resolve(),
 		s.fadeOut(300),
 	]);
+	// 場面を うつした・走った キリコは 帰りついた マスへ（あとの 知らせの 場面は 口の 前で 起きる）
+	if (s.state.x !== back[0] || s.state.y !== back[1])
+		s.place("player", back[0], back[1], exit.inward);
 	await rebuild(s);
 	endShrooms();
 	setZankiScene(undefined);

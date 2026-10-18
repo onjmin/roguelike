@@ -8653,3 +8653,44 @@ test("寸劇: every explosion clears before the skit ends (the building is back 
 		ok(a.log.includes("se explosion"), `no boom sound: ${a.log.join(" / ")}`);
 	});
 });
+
+test("持ち帰りの 語り: 場面を うつす マス（cut）と 走る 行き先（go の to）は、そこの すぐ そばに 立てる", () => {
+	const v = villageView();
+	const near = (c: readonly [number, number]): boolean => {
+		const [to] = spotsAround(v, 1, c);
+		return !!to && Math.abs(to[0] - c[0]) + Math.abs(to[1] - c[1]) <= 2;
+	};
+	let n = 0;
+	for (const [d, st] of Object.entries(STORY))
+		for (const p of [...st.ending, ...(st.once ?? []), ...(st.again ?? [])]) {
+			if (p.cut) {
+				n++;
+				ok(near(p.cut), `${d}: cut ${p.cut} は 立てる マスから 遠い`);
+			}
+			for (const w of p.go ?? []) {
+				ok(!!w.to !== !!w.route, `${d}: go は to か route の どちらか 1つ`);
+				if (w.route) {
+					const dx = [...w.route].reduce(
+						(a, c) => a + (c === "r" ? 1 : c === "l" ? -1 : 0),
+						0,
+					);
+					const dy = [...w.route].reduce(
+						(a, c) => a + (c === "d" ? 1 : c === "u" ? -1 : 0),
+						0,
+					);
+					ok(
+						dx === 0 && dy === 0,
+						`${d}: route ${w.route} は 元の マスに もどらない`,
+					);
+				}
+				if (Array.isArray(w.to)) {
+					n++;
+					ok(
+						near(w.to as readonly [number, number]),
+						`${d}: go ${w.to} は 立てる マスから 遠い`,
+					);
+				}
+			}
+		}
+	ok(n >= 8, "場面を うつす・走る 頁が 少ない");
+});
