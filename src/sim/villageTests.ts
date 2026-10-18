@@ -6964,8 +6964,15 @@ test("live comments react to the run (low HP first, filler only sometimes) and f
 		floors: 12,
 		up: false,
 		hero: "キリコ",
+		dungeon: "main",
+		puyu: false,
 	};
 	const states: LiveState[] = [
+		...(Object.keys(DUNGEONS) as DungeonId[]).map((dungeon) => ({
+			...base,
+			dungeon,
+		})),
+		{ ...base, puyu: true },
 		base,
 		{ ...base, hp: 5 },
 		{ ...base, hunger: 5 },
@@ -6982,7 +6989,7 @@ test("live comments react to the run (low HP first, filler only sometimes) and f
 		{ ...base, outings: 123 },
 	];
 	for (const x of states)
-		for (let salt = 0; salt < 12; salt++) {
+		for (let salt = 0; salt < 400; salt++) {
 			const line = liveResLine(x, salt);
 			if (line) ok(width(line) <= 24, `too long: ${line}`);
 		}
@@ -6997,11 +7004,22 @@ test("live comments react to the run (low HP first, filler only sometimes) and f
 			liveResLine({ ...base, outings: 50 }, 0),
 		"the filler does not escalate",
 	);
-	// ようすに 合う 行が ない ときは 2階に 1回くらい
-	ok(
-		liveResLine(base, 1) === null && liveResLine(base, 0) !== null,
-		"the filler shows every floor",
-	);
+	// 出る 割合：ようすに 合う 行が ない ときは 4階に 1回くらい、瀕死は 2階に 1回くらい
+	const rate = (x: LiveState): number => {
+		let n = 0;
+		for (let salt = 0; salt < 1200; salt++)
+			if (liveResLine(x, salt * 7919 + 13) !== null) n++;
+		return n / 1200;
+	};
+	const quiet = rate(base);
+	ok(quiet > 0.15 && quiet < 0.35, `filler rate ${quiet}`);
+	const dying = rate({ ...base, hp: 5 });
+	ok(dying > 0.4 && dying < 0.6, `low HP rate ${dying}`);
+	// ぷゆゆ がらみは ひと言だけ
+	for (let salt = 0; salt < 40; salt++) {
+		const line = liveResLine({ ...base, puyu: true }, salt);
+		ok(line === null || /^村のスレ「うゆ/.test(line), `puyu: ${line}`);
+	}
 });
 
 test("story helpers for the hidden route fit the log and the map card, and follow the story order", () => {

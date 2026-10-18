@@ -3716,6 +3716,13 @@ export class Play {
 				floors: this.run.dungeon.floors,
 				up: isUpBoard(s.dungeon),
 				hero: this.run.heroName,
+				dungeon: s.dungeon,
+				puyu:
+					this.run.weapon()?.kind === "puyusword" ||
+					p.items.some((it) => it.kind === "f_large") ||
+					this.run.f.monsters.some(
+						(m) => m.kind === "tousuko" || m.kind === "metal",
+					),
 			},
 			salt,
 		);
