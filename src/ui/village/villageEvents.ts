@@ -194,7 +194,7 @@ import { shadowGround } from "./shadows";
 import { signboardDecor, signboardGlow } from "./signboards";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
-import { chooseRecord, endScene, sceneBgm, villageSong } from "./villageMusic";
+import { endScene, sceneBgm, villageSong } from "./villageMusic";
 import {
 	needsOpening,
 	openingNotYet,
@@ -939,9 +939,9 @@ export const heroQuestScript = async (
 			await join(who);
 		} else s.se("join");
 		await s.narrate(q.unlocked);
-		// 申し出の 曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。無音なら 村の 曲に もどす
-		if (q.offer.some((l) => l.bgm !== undefined)) {
-			if (!endScene()) await s.fadeBgm(300);
+		// 申し出の 曲は ここまで。村の 曲に もどす
+		if (endScene()) {
+			await s.fadeBgm(300);
 			s.bgm(villageSong());
 		}
 		return true;
@@ -962,21 +962,18 @@ export const heroQuestScript = async (
 	return true;
 };
 
-/** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。そのあと 村の 曲を えらべる（ui/village/villageMusic.ts）。 */
-const phonoScript =
-	(ctx: Ctx): Script =>
-	async (s) => {
-		const p = loadProgress();
-		const i = p.cleared.includes("deep")
-			? 3
-			: p.cleared.includes("main")
-				? 2
-				: p.cleared.includes("shallow")
-					? 1
-					: 0;
-		await s.narrate(VILLAGE_MSG.phono[i]);
-		await chooseRecord(ctx, s);
-	};
+/** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。 */
+const phonoScript = (): Script => async (s) => {
+	const p = loadProgress();
+	const i = p.cleared.includes("deep")
+		? 3
+		: p.cleared.includes("main")
+			? 2
+			: p.cleared.includes("shallow")
+				? 1
+				: 0;
+	await s.narrate(VILLAGE_MSG.phono[i]);
+};
 
 /** 置き場所に スクリプトを付けて イベントにする（v は 描いている 村。本館の 段を 絵と 合わせる）。 */
 const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
@@ -1029,7 +1026,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 	}
 	if (p.id.startsWith("board_"))
 		return sign(p.id, p.x, p.y, boardScript(ctx, v));
-	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(ctx), p.sprite);
+	if (p.id === "phono") return sign(p.id, p.x, p.y, phonoScript(), p.sprite);
 	if (p.id === "well") return sign(p.id, p.x, p.y, wellScript(ctx));
 	if (p.id === "shrine")
 		return sign(p.id, p.x, p.y, shut("shrine", v, false) ?? shrineScript);

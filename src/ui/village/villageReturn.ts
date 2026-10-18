@@ -935,11 +935,10 @@ export const returnScene = async (
 		if (firstEnding(a, loadProgress())) holdReveal(a.dungeon);
 		noteEnding(a.dungeon);
 	}
-	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲。場面の 曲が 鳴って いれば 1周 おわるまで そのまま
-	// （villageSong が その 曲を かえす。ui/village/villageMusic.ts の 余韻）
-	const lingering = endScene();
+	// 持ち帰りの 曲（ending）と 寸劇の 曲は ここまで。明けたら 村の曲
+	const scened = endScene();
 	await Promise.all([
-		a.kind === "clear" && !lingering ? s.fadeBgm(300) : Promise.resolve(),
+		a.kind === "clear" || scened ? s.fadeBgm(300) : Promise.resolve(),
 		s.fadeOut(300),
 	]);
 	// 場面を うつした・走った キリコは 帰りついた マスへ（あとの 知らせの 場面は 口の 前で 起きる）
@@ -1249,8 +1248,9 @@ export const tenScript = async (s: Story): Promise<void> => {
 		fx?.end();
 	}
 	card.end();
-	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす
-	if (!endScene()) await s.fadeBgm(300);
+	// 場面の 空と 曲は ここまで。村の 曲に もどす
+	endScene();
+	await s.fadeBgm(300);
 	addFlag("ten");
 	// 電池板を 持ち帰るまで 町は 停電の 夜の まま
 	setSceneSky(null);

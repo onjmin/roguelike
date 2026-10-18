@@ -1,5 +1,5 @@
 // 音ゲーの 曲（ゲームセンターの「おんJビート」・キリコの 家の「おんJ太鼓」）。譜面は data/arcade/songChart.ts。
-// - 曲は 町で 聞いた 曲（広場の 蓄音機で かけられる 曲と 同じ。data/audio/music.ts の records）から えらぶ。
+// - 曲は 町で 聞いた 曲（data/audio/music.ts の records）から えらぶ。
 // - MML は dtm の parseMML で 音符に 読みかえる（dtm は 重いので 要る ときに 読む。engine/audio.ts と 同じ 物）。
 // - 時計は 曲の 鳴っている 位置（engine/audio.ts の playChartSong）。押した 時刻も 曲の 秒に なおして 判定する。
 //   音が 出せない（ミュート・BGM 切）ときは 板の 時計で 回す（札は 同じ）。

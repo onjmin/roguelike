@@ -2,8 +2,10 @@
 //
 // ■ 村の 曲
 // おんJタウンの 曲は 村の 育ちで かわる（段は data/town/town.ts の STAGE_NAMES）。建物の 中も 村の 曲の まま。
-// 広場の 蓄音機で 好きな 曲に かえられる（えらんだ 曲は 設定 settings.villageBgm。端末ごと）。
-// かけられるのは 村の 曲と、持ち帰った 板で 聞いた 曲（その 板の 階の 曲。ボス・祭り・持ち帰りの 曲も）。
+// 村で 鳴る 曲は プレイヤーが えらべない。寸劇の 曲は 寸劇の あいだだけ（ui/village/villageMusic.ts）。
+//
+// ■ 聞いた 曲
+// 村の 曲と、持ち帰った 板で 聞いた 曲（その 板の 階の 曲。ボス・祭り・持ち帰りの 曲も）。音ゲーの 曲の 一覧（records）。
 
 import { DUNGEON_IDS, DUNGEONS } from "../../core/data/dungeons";
 import type { DungeonId } from "../../core/types";
@@ -24,22 +26,6 @@ export const ENDING_BGM = "ending";
  */
 export const INCIDENT_BGM = "kaiwai";
 
-/**
- * 村の 語りで 鳴らす 場面の 曲と、その 1周の 長さ（秒）。場面が 短くても、場面の あとも 村で
- * 1周 おわるまで 鳴らしつづけ、それから 村の 曲へ もどす（ui/village/villageMusic.ts の 余韻）。
- * 長さは MML の いちばん 遅い 音の 終わり（dtm の parseMML。4分音符＝48 ステップ）を テンポで 割った 値。
- */
-export const SCENE_BGM_SEC: Readonly<Record<string, number>> = {
-	yofukashi: 91,
-	deep4: 38,
-	sad: 129,
-	kaiwai2: 132,
-	kaiwai3: 119,
-	kaiwai4: 89,
-	deep6: 55,
-	deep1: 45,
-};
-
 /** 村の 曲（from の 段から。町が 育つと 明るい 曲に）。 */
 const VILLAGE_TIERS: readonly { from: number; bgm: string }[] = [
 	// 名無し2rt さんの「？」
@@ -48,7 +34,7 @@ const VILLAGE_TIERS: readonly { from: number; bgm: string }[] = [
 	{ from: 5, bgm: "kumori" },
 ];
 
-/** その 段の 村の 曲（蓄音機で えらんで いなければ これ）。 */
+/** その 段の 村の 曲。 */
 export const stageBgm = (stage: number): string => {
 	let bgm = VILLAGE_TIERS[0].bgm;
 	for (const t of VILLAGE_TIERS) if (stage >= t.from) bgm = t.bgm;
@@ -56,12 +42,12 @@ export const stageBgm = (stage: number): string => {
 };
 
 /**
- * 曲の 正式な 題（蓄音機の 曲名）。ゲームで 鳴る 曲は みな ここに 書く。
+ * 曲の 正式な 題（音ゲーの 曲名）。ゲームで 鳴る 曲は みな ここに 書く。
  * 題の つけかたは ポケダン空の サントラの 型：板と 層の 曲は その 場所の 名前を ひらがなで
  * （ログの底の 層は data/story/story.ts の HIDDEN_ZONES の 名前と そろえる）、場面の 曲は
  * 短い ひとこと（「！」で 締める）。カタカナ語と 2ch の 語（dat・スレ）は そのまま。
  * スレに 貼られた ときの 題（「？」「何か」など）は data/audio/bgm.ts の import の 注に 残して ある。
- * ここに ない 曲は 蓄音機で 聞いた 所が 曲名に なる。
+ * ここに ない 曲は 聞いた 所が 曲名に なる。
  */
 export const SONG_TITLES: Readonly<Record<string, string>> = {
 	// 村
@@ -122,11 +108,11 @@ export const SONG_TITLES: Readonly<Record<string, string>> = {
 	touhoufu: "だらだらしょとう",
 };
 
-/** 蓄音機で かけられる 曲の 1つ（label は 曲名、where は 聞いた 所）。 */
+/** 聞いた 曲の 1つ（label は 曲名、where は 聞いた 所）。 */
 export type Disc = { bgm: string; label: string; where: string };
 
 /**
- * 蓄音機で かけられる 曲（上から 村 → 持ち帰った 板の 順。同じ 曲は 1度だけ）。
+ * 聞いた 曲（上から 村 → 持ち帰った 板の 順。同じ 曲は 1度だけ）。
  * stage は 町の 段、cleared は 持ち帰った 板。
  */
 export const records = (
@@ -161,13 +147,3 @@ export const records = (
 	}
 	return out;
 };
-
-/** 村で 鳴らす 曲（蓄音機で えらんだ 曲が かけられる うちは それ、なければ 段の 曲）。 */
-export const villageBgm = (
-	stage: number,
-	cleared: readonly DungeonId[],
-	pick: string | null,
-): string =>
-	pick && records(stage, cleared).some((r) => r.bgm === pick)
-		? pick
-		: stageBgm(stage);

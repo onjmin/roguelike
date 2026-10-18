@@ -28,7 +28,7 @@ import {
 } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
-import { records, stageBgm, villageBgm } from "../data/audio/music";
+import { records, stageBgm } from "../data/audio/music";
 import { sfx } from "../data/audio/sfx";
 import {
 	CAFE_DRINKS,
@@ -5454,7 +5454,7 @@ test("おんJ 本館の 下見（?stage=・?event=）: 「保守」 is kept for 
 	});
 });
 
-test("村の 曲: the stage picks it, the gramophone offers only songs heard on cleared boards, and a pick not on it falls back", () => {
+test("村の 曲: the stage picks it; the song list holds only songs heard on cleared boards", () => {
 	ok(
 		stageBgm(0) === "town" && stageBgm(4) === "town",
 		"early village is not town",
@@ -5473,19 +5473,13 @@ test("村の 曲: the stage picks it, the gramophone offers only songs heard on 
 	for (const r of all) ok(r.bgm in bgm, `${r.label}: no song ${r.bgm}`);
 	ok(
 		new Set(all.map((r) => r.bgm)).size === all.length,
-		"the gramophone lists a song twice",
+		"the song list has a song twice",
 	);
 	ok(
 		records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.shallow.bgm) &&
 			!records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.deep.bgm),
 		"a board's song is offered before it is cleared",
 	);
-	ok(villageBgm(5, [], "deq_ice") === "kumori", "an unheard pick plays");
-	ok(
-		villageBgm(5, [], "town") === "town",
-		"the old village song cannot be picked",
-	);
-	ok(villageBgm(5, [], null) === "kumori", "no pick does not follow the stage");
 });
 
 test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学コース have their own, other bosses use the shared one", () => {
