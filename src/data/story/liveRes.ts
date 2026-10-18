@@ -112,3 +112,34 @@ export const liveResLine = (x: LiveState, salt: number): string | null => {
 		.replaceAll("{bottom}", x.up ? "てっぺん" : "底");
 	return `村のスレ「${text}」`;
 };
+
+/**
+ * 競争の 相手の 進み具合（core/race.ts。ロゼの 挑戦を 受けた 冒険）。決まった 筋の 行や ふだんの 実況の かわりに 毎階 出す。
+ * rival は キリコが いまの 階に いる ときの 相手の 階、before は 1つ 上の 階に いた ときの 相手の 階。
+ */
+export const raceResLine = (
+	name: string,
+	rival: number,
+	before: number,
+	floors: number,
+	salt: number,
+): string => {
+	const lines =
+		rival < floors
+			? [
+					"{name}もう{n}階やって",
+					"{name}、壁抜けて{n}階や",
+					"{name}{n}階。はやすぎやろ",
+				]
+			: before < floors
+				? ["{name}、もう底に着いたらしいで", "{name}底や。勝負ありか？"]
+				: [
+						"{name}、底から動かんらしい",
+						"{name}まだ底や。なんで帰らんのや",
+						"{name}底で立っとるだけらしい",
+					];
+	const text = lines[salt % lines.length]
+		.replaceAll("{name}", name)
+		.replaceAll("{n}", String(rival));
+	return `村のスレ「${text}」`;
+};

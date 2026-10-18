@@ -1,7 +1,7 @@
 // 冒険に 出る 主人公の 解放と 選択（村では いつも キリコ）。
-// - 解放：束音ロゼ・解音ゼロは それぞれの 話（data/people/heroQuests.ts。ロゼは 依頼、ゼロは 挑戦）を 経て 使える ように なる。
-//   進み具合は Progress.flags に 持つ：q_<id>_ask＝悩みを かかえた（話しかけると 悩みを 打ち明ける）、
-//   q_<id>＝依頼を 引き受けた、q_<id>_ok＝依頼の 条件を 満たして 帰った、hero_<id>＝本人から 申し出が あって 使える。
+// - 解放：束音ロゼ・解音ゼロは それぞれの 話（data/people/heroQuests.ts。ロゼは 競争、ゼロは 手合わせ）を 経て 使える ように なる。
+//   進み具合は Progress.flags に 持つ：q_<id>_ask＝持ちかける 気で いる（話しかけると 挑戦を 出す）、
+//   q_<id>＝挑戦を 受けた、q_<id>_ok＝勝負が 片づいて 帰った、hero_<id>＝本人から 申し出が あって 使える。
 // - 悩みの 始まり：冒険から 帰る たびに（main.ts の rollHeroWorries）、持ち帰った 板の 数が HERO_GATE に
 //   届いて いれば（ゼロは サブ機の プロト・レンも 村に 来てから。ZERO_SUBS_STEP） WORRY_CHANCE で 悩みを かかえる（はずれ つづきでも WORRY_SURE 回目には 必ず）。悩みは
 //   1人ずつ（片方の 依頼が 片づくまで もう 片方は 悩まない）。かかえた 帰りに 村で ひとこと 知らせる。
@@ -11,6 +11,7 @@
 import type { AmbushId } from "../core/ambush";
 import { DUNGEON_IDS, openable } from "../core/data/dungeons";
 import { type HeroId, isHeroId } from "../core/data/heroes";
+import type { RaceId } from "../core/race";
 import type { RunState } from "../core/types";
 import { addFlag, hasFlag, loadProgress, saveProgress } from "./save";
 
@@ -128,7 +129,7 @@ export const takeWorryNews = (): QuestHero | null => {
 };
 
 /**
- * 依頼を 引き受ける。ロゼの 依頼は ボカロ作り避難所が 開く（知らせは 出さない：ロゼが 場所を 言う）。
+ * 挑戦を 受ける。ロゼの 競争は ボカロ作り避難所が 開く（知らせは 出さない：ロゼが 場所を 言う）。
  */
 export const acceptQuest = (h: QuestHero): void => {
 	addFlag(questFlag.accepted(h));
@@ -154,9 +155,13 @@ export const unlockedHeroes = (): HeroId[] => [
 export const questAmbush = (hero: HeroId): AmbushId | null =>
 	hero === "kiriko" && questStage("zero") === "accepted" ? "zero" : null;
 
+/** 挑戦を 受けた あと 潜ると ロゼも 潜る（core/race.ts。ボカロ作り避難所だけ）。キリコで 潜る ときだけ。 */
+export const questRace = (hero: HeroId): RaceId | null =>
+	hero === "kiriko" && questStage("roze") === "accepted" ? "roze" : null;
+
 /**
  * 依頼の 条件を 満たしたか（冒険の 終わりに main.ts が 呼ぶ）。
- * ロゼ：ボカロ作り避難所の 底から 忘れ物（原音設定）を 持ち帰る。
+ * ロゼ：ボカロ作り避難所の 底で ロゼが 持ち上げられずに いる 原音設定を 持ち帰る（競争の 勝ち負けは うやむや）。
  * ゼロ：深い 階で 待ちぶせる 3機を そろって 止める（core/ambush.ts。そのあと 倒れても 勝ちは 残る）。
  * どちらも 引き受けて いる ときだけ。満たしたら q_<id>_ok（村で 話すと 申し出）。
  */

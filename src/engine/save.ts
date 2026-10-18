@@ -12,6 +12,7 @@ import { MONSTERS } from "../core/data/monsters";
 import { FAKE_NAMES, OLD_FAKE_NAMES } from "../core/data/names";
 import { GUESTS } from "../core/guest";
 import { defOf } from "../core/item";
+import { isRaceId, type RaceId } from "../core/race";
 import { migrateRun } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { CARRY_MAX, priceOf, STORAGE_CAP } from "../core/town";
@@ -1088,6 +1089,8 @@ export type SavedReplay = {
 	guest?: GuestSpec;
 	/** 手合わせの 待ちぶせ（core/ambush.ts。無ければ 書かない）。 */
 	ambush?: AmbushId;
+	/** 競争（core/race.ts。無ければ 書かない）。 */
+	race?: RaceId;
 	/** 終わった時刻（ms）。 */
 	at: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 2つ以上）。 */
@@ -1166,6 +1169,7 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 	if (r.hero !== undefined && r.hero !== "roze" && r.hero !== "zero")
 		return null;
 	if (r.ambush !== undefined && !isAmbushId(r.ambush)) return null;
+	if (r.race !== undefined && !isRaceId(r.race)) return null;
 	if (
 		r.guest !== undefined &&
 		!(
@@ -1183,6 +1187,7 @@ export const toReplay = (o: unknown): SavedReplay | null => {
 		...(r.hero ? { hero: r.hero } : {}),
 		...(r.guest ? { guest: r.guest } : {}),
 		...(r.ambush ? { ambush: r.ambush } : {}),
+		...(r.race ? { race: r.race } : {}),
 		...(r.dungeon ? { dungeon: r.dungeon } : {}),
 		...(r.objective && r.objective !== "fetch"
 			? { objective: r.objective }
@@ -1234,6 +1239,7 @@ const addReplay = (s: RunState): void => {
 				: {}),
 		dungeon: s.dungeon,
 		...(s.ambush ? { ambush: s.ambush } : {}),
+		...(s.race ? { race: s.race } : {}),
 		...(s.objective && s.objective !== "fetch"
 			? { objective: s.objective }
 			: {}),

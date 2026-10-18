@@ -4,11 +4,12 @@
 import "./devSandbox";
 import { DUNGEON_IDS, dungeonById } from "./core/data/dungeons";
 import "./style.css";
+import { type AmbushId, isAmbushId } from "./core/ambush";
 import { EXP_AT } from "./core/balance";
 import { type HeroId, isHeroId } from "./core/data/heroes";
 import { callHunter } from "./core/floor";
 import { GUESTS } from "./core/guest";
-import { type AmbushId, isAmbushId } from "./core/ambush";
+import { isRaceId, type RaceId } from "./core/race";
 import { Run } from "./core/run";
 import type { GuestId, Item } from "./core/types";
 import { bgm } from "./data/audio/bgm";
@@ -21,6 +22,7 @@ import {
 	chosenHero,
 	noteHeroQuests,
 	questAmbush,
+	questRace,
 	rollHeroWorries,
 } from "./engine/heroes";
 import { Input } from "./engine/input";
@@ -148,7 +150,8 @@ const newSeed = (): string =>
 /**
  * 開発用：URL で好きな階から始める（pnpm dev か ?debug のときだけ）。
  * 例 `?seed=abc&depth=12&lv=10`（`&dungeon=deep` で ほかの 板も。`&objective=boss` で いちばん底に ボス。
- * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ。`&guest=zero` で 同行者つき。`&ambush=zero` で ゼロの 待ちぶせ）
+ * `&hero=roze`・`&hero=zero` で 束音ロゼ・解音ゼロ。`&guest=zero` で 同行者つき。`&ambush=zero` で ゼロの 待ちぶせ。
+ * `&dungeon=vocalo&race=roze` で ロゼとの 競争）
  */
 const devRun = (): Run | null => {
 	const q = new URLSearchParams(location.search);
@@ -175,6 +178,8 @@ const devRun = (): Run | null => {
 			: null,
 		// 手合わせの 待ちぶせ（&ambush=zero。core/ambush.ts）
 		isAmbushId(q.get("ambush")) ? (q.get("ambush") as AmbushId) : null,
+		// 競争（&race=roze。core/race.ts）
+		isRaceId(q.get("race")) ? (q.get("race") as RaceId) : null,
 	);
 	const lv = Number(q.get("lv") ?? 0);
 	if (lv > 1) run.gainExp(EXP_AT[Math.min(EXP_AT.length, lv) - 1]);
@@ -203,6 +208,7 @@ const runFor = (
 				replay.hero ?? "kiriko",
 				replay.guest ?? null,
 				replay.ambush ?? null,
+				replay.race ?? null,
 			),
 			replay,
 		};
@@ -242,6 +248,8 @@ const runFor = (
 			choice.guest ?? null,
 			// ゼロの 挑戦を 受けて いれば 深い 階で 3機が 待ちぶせる（core/ambush.ts）
 			questAmbush(hero),
+			// ロゼの 挑戦を 受けて いれば ボカロ作り避難所で ロゼも 潜る（core/race.ts）
+			questRace(hero),
 		);
 		if (carry.length || relief.length) saveRun(run.s);
 		return { run, replay: undefined };

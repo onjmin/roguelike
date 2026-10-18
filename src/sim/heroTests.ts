@@ -6,11 +6,13 @@ import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
 import { roomExits, T_WALL, tileAt } from "../core/mapgen";
+import { RACE, rivalDepth } from "../core/race";
 import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import type { RunState } from "../core/types";
 import { HERO_QUESTS } from "../data/people/heroQuests";
+import { raceResLine } from "../data/story/liveRes";
 import { synopsisHtml } from "../data/story/synopsis";
 import type { Story } from "../engine/defs";
 import {
@@ -20,6 +22,7 @@ import {
 	forgetHeroMemo,
 	noteHeroQuests,
 	questAmbush,
+	questRace,
 	questStage,
 	rollHeroWorries,
 	takeWorryNews,
@@ -445,7 +448,7 @@ test("悩み: パン板の あと もう 少し 先から、帰る たびに 1/3
 	});
 });
 
-test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰る → 申し出 → ロゼを 選べる", async () => {
+test("競争: 挑戦 → 受ける → 避難所が 開く → 持ち帰る → 申し出 → ロゼを 選べる", async () => {
 	await withStore(async () => {
 		const p = loadProgress();
 		p.cleared = ["shallow", "kinoko"];
@@ -456,10 +459,13 @@ test("依頼: 悩み → 引き受ける → 避難所が 開く → 持ち帰�
 		ok(await heroQuestScript(r.s, "roze"), "worry");
 		ok(questStage("roze") === "asked", "declined");
 		ok(!loadProgress().unlocked.includes("vocalo"), "not yet open");
-		// 引き受ける → ボカロ作り避難所が 開く
+		ok(questRace("kiriko") === null, "no race before the challenge");
+		// 受けて立つ → ボカロ作り避難所が 開く（キリコで 潜ると ロゼも 潜る）
 		r = recorder([0]);
 		await heroQuestScript(r.s, "roze");
 		ok(questStage("roze") === "accepted", "accepted");
+		ok(questRace("kiriko") === "roze", "race after the challenge");
+		ok(questRace("zero") === null, "no race for ゼロ");
 		ok(loadProgress().unlocked.includes("vocalo"), "vocalo opens");
 		ok(DUNGEONS.vocalo.goal === "oto_ini", "the goal is roze's setting");
 		ok(DUNGEONS.vocalo.hidden, "vocalo shows before the quest");
@@ -524,6 +530,123 @@ test("挑戦: ゼロの 3機を 深い 階で そろって 止めると 申し�
 	});
 });
 
+// ───────── 競争（core/race.ts）。ロゼの 挑戦を 受けた 冒険 ─────────
+
+/** 避難所の 底に 着いた 冒険。 */
+const raceRun = (seed: string, race = true): Run => {
+	const r = Run.create(
+		seed,
+		"vocalo",
+		[],
+		"fetch",
+		true,
+		"kiriko",
+		null,
+		null,
+		race ? "roze" : null,
+	);
+	r.ev = [];
+	r.enterFloor(r.dungeon.floors, false);
+	return r;
+};
+
+test("競争: 底では 先に 着いた ロゼが 原音設定の となりに 立ちつくし、着くと 掛け合い。拾うと 壁の 向こうへ 帰る", () => {
+	ok(
+		!Run.create(
+			"race-x",
+			"main",
+			[],
+			"fetch",
+			true,
+			"kiriko",
+			null,
+			null,
+			"roze",
+		).s.race,
+		"race on another board",
+	);
+	const plain = raceRun("race-0", false);
+	ok(!plain.f.folk?.length, "ロゼ without the challenge");
+	for (const seed of ["race-1", "race-2", "race-3", "race-4"]) {
+		const r = raceRun(seed);
+		ok(r.s.race === "roze", `${seed}: race`);
+		const goal = r.f.items.find((x) => x.item.kind === "oto_ini");
+		if (!goal) throw new Fail(`${seed}: no goal`);
+		const roze = r.f.folk?.find((x) => x.name === "ロゼ");
+		if (!roze) throw new Fail(`${seed}: no ロゼ`);
+		ok(
+			Math.max(Math.abs(roze.x - goal.x), Math.abs(roze.y - goal.y)) === 1,
+			`${seed}: ロゼ is not next to the setting`,
+		);
+		ok(
+			(r.f.statues ?? []).includes(roze.y * r.f.layout.w + roze.x),
+			`${seed}: ロゼ can be walked through`,
+		);
+		const talk = r.ev.find((e) => e.t === "talk");
+		ok(
+			talk?.t === "talk" &&
+				talk.name === "ロゼ" &&
+				talk.talk.length === RACE.roze.arrive.length,
+			`${seed}: no arrival talk`,
+		);
+		// 拾う：掛け合いの あと ロゼは いなく なり、帰り道に なる
+		r.ev = [];
+		r.p.x = goal.x;
+		r.p.y = goal.y;
+		r.afterStep(false);
+		ok(r.s.returning, `${seed}: not returning`);
+		ok(
+			r.ev.some(
+				(e) =>
+					e.t === "talk" &&
+					e.talk.length === RACE.roze.carried.length &&
+					e.talk[0] === RACE.roze.carried[0],
+			),
+			`${seed}: no carried talk`,
+		);
+		ok(!r.f.folk?.some((x) => x.name === "ロゼ"), `${seed}: ロゼ stays`);
+		ok(
+			!(r.f.statues ?? []).includes(roze.y * r.f.layout.w + roze.x),
+			`${seed}: ロゼ's tile stays blocked`,
+		);
+		// 中断セーブを はさんでも 競争は 残る
+		ok(deserializeRun(serializeRun(r.s)).race === "roze", `${seed}: save`);
+	}
+});
+
+test("競争: 村の スレに ロゼの 進み具合（先に 底へ 着き、そのあと 動かない）。1行に 収まる", () => {
+	const floors = DUNGEONS.vocalo.floors;
+	const seen: string[] = [];
+	for (let d = 1; d < floors; d++) {
+		const at = rivalDepth("roze", d, floors);
+		ok(at > d && at <= floors, `depth ${d}: ロゼ at ${at}`);
+		for (let salt = 0; salt < 6; salt++) {
+			const line = raceResLine(
+				"ロゼ",
+				at,
+				rivalDepth("roze", d - 1, floors),
+				floors,
+				salt,
+			);
+			ok(width(line) <= 24, `too long: ${line}`);
+			ok(!line.includes("{"), `left a slot: ${line}`);
+			seen.push(line);
+		}
+	}
+	ok(
+		seen.some((l) => l.includes("5階")),
+		"never on the 5th floor",
+	);
+	ok(
+		seen.some((l) => l.includes("着いた")),
+		"never reached the bottom",
+	);
+	ok(
+		seen.some((l) => l.includes("動かん")),
+		"never stuck",
+	);
+});
+
 test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合ごとの 1行）", () => {
 	const cl = ["shallow", "kinoko"] as RunState["dungeon"][];
 	ok(!(synopsisHtml(cl, []) ?? "").includes("仲間の"), "before worry");
@@ -553,6 +676,11 @@ test("文: 依頼の 窓は 22×2、ボタンは 9字", () => {
 		fits(`${h}.hint`, q.hint);
 		for (const m of q.menu) ok(width(m) <= 9, `${h} menu ${m}`);
 	}
+	// 底の 掛け合い（core/race.ts。ダンジョンの 窓も 村と 同じ）
+	for (const [id, sp] of Object.entries(RACE))
+		for (const talk of [sp.arrive, sp.carried, ...sp.stuck])
+			for (const l of talk)
+				fits(`race.${id}`, typeof l === "string" ? l : l.kiriko);
 });
 
 export const runHeroTests = async (): Promise<TestResult[]> => {

@@ -200,7 +200,7 @@ export const synopsisHtml = (
 ): string | null => {
 	const main = latest(MAIN_CHAPTERS, cleared, flags);
 	if (!main) return null;
-	// 仲間に なる 話（束音ロゼの 依頼・解音ゼロの 挑戦。持ちかけられて から。data/people/heroQuests.ts）
+	// 仲間に なる 話（束音ロゼの 競争・解音ゼロの 手合わせ。持ちかけられて から。data/people/heroQuests.ts）
 	const quests = QUEST_HEROES.flatMap((h) => {
 		const st = questStage(h, flags);
 		return st === "none" ? [] : [HERO_QUESTS[h].synopsis[st]];

@@ -228,7 +228,7 @@ export type Dungeon = {
 	/** このダンジョンを持ち帰ると開く（null ははじめから開いている。unlockFlag だけ あれば その 旗で 開く）。 */
 	unlockAfter: DungeonId | null;
 	/**
-	 * 開くには この 旗（Progress.flags）も 要る（ボカロ作り避難所：ロゼの 依頼）。
+	 * 開くには この 旗（Progress.flags）も 要る（ボカロ作り避難所：ロゼの 競争）。
 	 * unlockAfter が なければ 旗 だけで 開く（町の 寄り道で 見つける 板：data/town/finds.ts）。
 	 */
 	unlockFlag?: string;
@@ -1155,8 +1155,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		escapeWithGoal: true,
 		secret: true,
 	},
-	// ボカロ作り避難所：束音ロゼの 依頼（engine/heroes.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
-	// 逃げこんだ 避難所。底に ロゼの 忘れ物（原音設定）が 残って いる。依頼を 引き受けると 開く（知らせは
+	// ボカロ作り避難所：束音ロゼの 競争（engine/heroes.ts・core/race.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
+	// 逃げこんだ 避難所。底に ロゼの 原音設定が 残って いる。挑戦を 受けると 開く（知らせは
 	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：文字化けが 多い
 	vocalo: {
 		id: "vocalo",

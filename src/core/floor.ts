@@ -37,6 +37,7 @@ import {
 	T_ROOM,
 	T_WALL,
 } from "./mapgen";
+import { placeRival } from "./race";
 import type { Run } from "./run";
 import {
 	DEEP,
@@ -183,6 +184,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 
 	placeStatues(r, f, start);
+	// 競争：底で 先に 着いた ロゼが 品の となりに 立つ（core/race.ts。乱数は 引かない）
+	placeRival(r, f, start);
 
 	// 道具（トルネコ1と同じく 表から引く。帰り道は 何も置かない）。モンスターハウスがあれば半分以上をハウスの中へ
 	let nItems = 0;

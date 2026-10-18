@@ -33,6 +33,7 @@ import {
 	posing,
 	restLook,
 } from "../../core/monster";
+import { RACE, raceOf, rivalDepth } from "../../core/race";
 import { digest, parseReplay, type ReplayStep } from "../../core/replay";
 import { Run } from "../../core/run";
 import {
@@ -53,7 +54,7 @@ import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
 import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
-import { liveResLine } from "../../data/story/liveRes";
+import { liveResLine, raceResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
 import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
@@ -3674,6 +3675,23 @@ export class Play {
 		const total = Object.values(s.kills).reduce((a, n) => a + n, 0);
 		const kills = first ? 3 : total - this.killMark;
 		this.killMark = total;
+		// 競争の 相手の 進み具合（core/race.ts。底では 相手が 立って いるので 出さない）
+		const race = raceOf(this.run);
+		const floors = this.run.dungeon.floors;
+		if (race) {
+			if (s.depth >= floors) return;
+			this.addLog(
+				raceResLine(
+					RACE[race].name,
+					rivalDepth(race, s.depth, floors),
+					rivalDepth(race, s.depth - 1, floors),
+					floors,
+					s.depth + 1,
+				),
+				"gloss",
+			);
+			return;
+		}
 		if (r || first || s.floor.rest || this.run.boss) return;
 		const p = this.run.p;
 		const weapon = p.weapon;

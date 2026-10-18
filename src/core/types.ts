@@ -8,6 +8,7 @@ import type { FolkTalk } from "./data/dungeons";
 import type { PlaceArt } from "./data/places";
 import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
+import type { RaceId } from "./race";
 import type { RngState } from "./rng";
 
 /** ダンジョン＝おんJの 植民地（data/dungeons.ts）。 */
@@ -20,7 +21,7 @@ export type DungeonId =
 	| "konamono"
 	| "festival"
 	| "hidden"
-	// 束音ロゼの 依頼：ボカロ作り避難所（engine/heroes.ts）
+	// 束音ロゼの 競争：ボカロ作り避難所（engine/heroes.ts）
 	| "vocalo"
 	// おーぷぬ（だれでも 立てられる 板）の おんJ関連板（2026-10-13 作者：「おーぷんの 史実に 基づいて 増やせ」）
 	| "mercury"
@@ -568,6 +569,8 @@ export type RunState = {
 	ambush?: AmbushId;
 	/** 待ちぶせの 機体を そろって 止めた（帰っても 倒れても 残る）。 */
 	ambushWon?: true;
+	/** 競争（core/race.ts。村で 挑戦を 受けた ときだけ 書く）。 */
+	race?: RaceId;
 };
 
 /** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */

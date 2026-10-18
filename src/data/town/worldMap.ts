@@ -170,7 +170,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 			[160, 78],
 		],
 	},
-	// 束音ロゼの 依頼：ボカロ作り避難所（引き受けると 開く。北東の 島、きのこ板の 右下の 宅録スタジオ）
+	// 束音ロゼの 競争：ボカロ作り避難所（挑戦を 受けると 開く。北東の 島、きのこ板の 右下の 宅録スタジオ）
 	vocalo: {
 		server: "uni",
 		place: "避難所のスタジオ",

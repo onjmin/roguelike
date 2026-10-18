@@ -104,6 +104,7 @@ import {
 	restLook,
 	wakeMonster,
 } from "./monster";
+import { RACE, type RaceId, raceArrive, raceCarried } from "./race";
 import { recordCmd } from "./replay";
 import { Rng } from "./rng";
 import { triggerTrap } from "./traps";
@@ -192,6 +193,8 @@ export class Run {
 		guest: GuestSpec | null = null,
 		/** 手合わせの 待ちぶせ（core/ambush.ts。乱数は 引かない。無ければ 書かない）。 */
 		ambush: AmbushId | null = null,
+		/** 競争（core/race.ts。乱数は 引かない。ほかの 板や 無ければ 書かない）。 */
+		race: RaceId | null = null,
 	): Run {
 		const base = dungeonById(dungeon);
 		const boss = objective === "boss" && !!base.boss;
@@ -296,6 +299,7 @@ export class Run {
 			// キリコは 書かない（前の 版と 同じ 形の まま）
 			...(hero !== "kiriko" ? { hero } : {}),
 			...(ambush ? { ambush } : {}),
+			...(race && RACE[race].dungeon === dungeon ? { race } : {}),
 		};
 		const run = new Run(s);
 		run.rng = rng;
@@ -905,6 +909,8 @@ export class Run {
 		// 目的が bring：底で 人が 加わり、品を もらって 帰り道に なる（集落なら key の 人に 話してから）
 		if (this.bringSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.bringJoin();
+		// 競争：底で 先に 着いて いた ロゼとの 掛け合い（core/race.ts）
+		raceArrive(this);
 	}
 
 	/** 目的が bring：底の 人が 加わり、品を もらって 帰り道に なる。 */
@@ -2087,6 +2093,8 @@ export class Run {
 				`${defOf(it.kind).name}を手に入れた！階段が${this.dungeon.up ? "下り" : "上り"}向きに変わった`,
 				"good",
 			);
+			// 競争：立ちつくして いた ロゼは 運ぶのを まかせて 帰る（core/race.ts）
+			raceCarried(this);
 		}
 	}
 
