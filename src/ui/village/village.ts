@@ -25,7 +25,7 @@
 
 import { type Dir8, DX, DY, isDiagonal } from "../../core/geom";
 import type { DungeonId, Objective } from "../../core/types";
-import { CAST, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
+import { CAST, heroWalk, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
 import {
 	advanceClock,
@@ -62,6 +62,7 @@ import type {
 } from "../../engine/defs";
 import type { Emote } from "../../engine/emote";
 import { Actor, Field } from "../../engine/field";
+import { chosenHero } from "../../engine/heroes";
 import { dir4Candidates } from "../../engine/input";
 import {
 	findRoute,
@@ -449,12 +450,13 @@ export class Village {
 			this.mapId === "village" ? villageSceneView(v, this.arrival) : null;
 		const seaRows = marked ? villageRows(marked) : [];
 		setMarksTown(marked, (x, y) => seaRows[y]?.[x] === "う");
+		// 板の 地上（入口まで 歩く 所）では 選んだ 探索者の 絵。村の 中は いつも キリコ
 		this.player = new Actor(
 			"player",
 			spot.x,
 			spot.y,
 			spot.dir,
-			KIRIKO_WALK,
+			surfaceOfMap(this.mapId) ? heroWalk({ hero: chosenHero() }) : KIRIKO_WALK,
 			null,
 		);
 		this.player.through = false;
