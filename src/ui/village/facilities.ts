@@ -80,6 +80,7 @@ import {
 } from "./myhome";
 import { otakuPlay } from "./otaku";
 import { payOrShort } from "./pay";
+import { staffGag } from "./staffGags";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
 
@@ -373,20 +374,26 @@ export const buildFacility = (
 						: shiyoShift && who.id === "maid_milk"
 							? SHIYO_MAID_MILK
 							: (staffLines(f.id, who.id, today()) ?? who.lines);
+					// 寸劇（1回の 帰りに 1本。ui/village/staffGags.ts）：いつもの ひとことの かわり。店番は そのあと 店の 窓
+					const gag = !once && (await staffGag(s, f.id, who.id, who.name));
 					// 店番：セリフを 1つ → 品書き（ui/minigames/eat.ts）
 					if (who.play === "eat")
-						await keeperTalk(ctx, s, f.id, who.name, lines);
+						await (gag
+							? eatAt(ctx, s, f.id)
+							: keeperTalk(ctx, s, f.id, who.name, lines));
 					else if (isShopKeeper(who.play)) {
 						// 売り場の 店員：セリフを 1つ（話す たびに 次）→ 店の 窓
-						const key = `shopTalk:${f.id}`;
-						const i = Number(s.flag(key) ?? 0);
-						s.set(key, i + 1);
-						const l = lines[i % lines.length];
-						if (l) await s.say("nanj", l, { name: who.name });
+						if (!gag) {
+							const key = `shopTalk:${f.id}`;
+							const i = Number(s.flag(key) ?? 0);
+							s.set(key, i + 1);
+							const l = lines[i % lines.length];
+							if (l) await s.say("nanj", l, { name: who.name });
+						}
 						if (who.play === "giftshop") await giftShelf(ctx, s);
 						else if (who.play === "furnshop") await furnitureShop(ctx, s);
 						else await otakuPlay(ctx, s, "register");
-					} else
+					} else if (!gag)
 						for (const l of lines) await s.say("nanj", l, { name: who.name });
 					// カジノの 換金所の 受付：ひとこと → 換金所の 窓（ui/arcade/casinoChips.ts）
 					if (who.play === "cashier") await arcadePlay(ctx, s, "cashier");

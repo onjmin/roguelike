@@ -334,6 +334,7 @@ import {
 	RPGEN_IMG,
 	RPGEN_SIZE,
 } from "../data/village/rpgenArt";
+import { STAFF_GAGS, type StaffGagLine } from "../data/village/staffGags";
 import { layRoomTatami, layTatami } from "../data/village/tatami";
 import { CITY, hallTier } from "../data/village/tiles";
 import type { SayOptions, Story, TileDef, VState } from "../engine/defs";
@@ -468,6 +469,7 @@ import {
 	playNearSkit,
 	skitAfterEvent,
 } from "../ui/village/skits";
+import { forgetStaffGags } from "../ui/village/staffGags";
 import { buildSurface, buildVillage } from "../ui/village/villageEvents";
 import {
 	forgetMobMemo,
@@ -3283,6 +3285,75 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 });
 
 // ───────────────── おんJマイナーズ（ui/village/villageMobs.ts） ─────────────────
+
+test("施設の 人の 寸劇: every key is a facility person, 2–3 windows that fit, the last window is not narration", () => {
+	const people = new Set(
+		FACILITIES.flatMap((f) =>
+			(f.room?.people ?? []).map((p) => `${f.id}/${p.id}`),
+		),
+	);
+	const texts: [string, string][] = [];
+	for (const [key, gags] of Object.entries(STAFF_GAGS)) {
+		ok(people.has(key), `${key}: no such facility person`);
+		gags.forEach((g, i) => {
+			ok(g.length >= 2 && g.length <= 3, `${key}[${i}]: ${g.length} windows`);
+			ok(g.at(-1)?.who !== null, `${key}[${i}]: ends on narration`);
+			g.forEach((l, j) => {
+				texts.push([`${key}[${i}][${j}]`, l.text]);
+			});
+		});
+	}
+	fitsWindow(texts);
+});
+
+test("施設の 人の 寸劇: none before the first dive, one per return in order instead of the usual line, never twice", async () => {
+	await withStorageAsync(async () => {
+		forgetStaffGags();
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: [],
+		};
+		const f = facilityById("konbini");
+		const who = f?.room?.people?.find((p) => p.id === "konbini_clerk");
+		const ev = f
+			? (buildFacility(f, view, {} as Ctx).events ?? []).find(
+					(e) => e.id === who?.id,
+				)
+			: undefined;
+		const gags = STAFF_GAGS["konbini/konbini_clerk"] ?? [];
+		ok(ev?.run && who && gags.length >= 2, "no konbini clerk");
+		if (!ev?.run || !who) return;
+		const shown = (l: StaffGagLine) =>
+			l.who === "staff"
+				? `say nanj: ${l.text}`
+				: l.who === "kiriko"
+					? `kiriko voice: ${l.text}`
+					: `narrate: ${l.text}`;
+		const { s, log } = fakeStory({});
+		const talk = async () => {
+			log.length = 0;
+			await ev.run?.(s);
+			return [...log];
+		};
+		// まだ もぐって いない：いつもの ひとこと
+		ok(
+			!(await talk()).includes(shown(gags[0][0])),
+			"a gag before the first dive",
+		);
+		pushRecord({});
+		const first = await talk();
+		ok(
+			inOrder(first, gags[0].map(shown)) &&
+				!first.includes(`say nanj: ${who.lines[1]}`),
+			`first gag:\n${first.join("\n")}`,
+		);
+		// 同じ 帰りは もう 出ない
+		ok(!(await talk()).includes(shown(gags[1][0])), "two gags in one return");
+		pushRecord({});
+		ok(inOrder(await talk(), gags[1].map(shown)), "the second gag next return");
+	});
+});
 
 test("おんJマイナーズ: lines fit the window, one talk is at most 4 windows, companions only chime in", () => {
 	const texts: [string, string][] = [];
