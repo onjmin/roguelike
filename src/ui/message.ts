@@ -424,6 +424,8 @@ export class MessageWindow {
 	private artEl: HTMLElement | null = null;
 	/** 送りを 待っている 文の 数（0 なら 窓を タップしても 送らない）。 */
 	private waits = 0;
+	/** 感情の 記号の ついた 文を 出すとき（添え音。GameAudio.emoteSe）。立ち絵が 無くても 呼ぶ。 */
+	onEmote?: (e: Emote) => void;
 
 	constructor(
 		root: HTMLElement,
@@ -483,6 +485,7 @@ export class MessageWindow {
 
 	show(p: MessageParams): Promise<void> {
 		this.win.classList.add("shown");
+		if (p.emote) this.onEmote?.(p.emote);
 		this.nameEl.textContent = p.name ?? "";
 		this.nameEl.style.display = p.name ? "" : "none";
 		this.nameEl.style.setProperty("--char", p.color ?? "#fff");

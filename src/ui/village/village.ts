@@ -313,6 +313,8 @@ export class Village {
 			() => TEXT_MS,
 			() => ctx.audio.seSettled(),
 		);
+		// 感情の 記号の 添え音（間引きは audio.ts の emoteSe）
+		this.msg.onEmote = (e) => ctx.audio.emoteSe(e);
 		this.choice = new ChoiceWindow(ctx.ui, ctx.input, () => ctx.audio.seHeld);
 		this.fadeEl = el("div", { class: "fade" });
 		this.toastEl = el("div", { class: "toast" });

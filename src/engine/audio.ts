@@ -29,9 +29,11 @@ import {
 	SE_WAIT,
 	voiceGain,
 } from "../data/audio/loudness";
+import { EMOTE_SE } from "../data/audio/sfx";
 import { VOICE_MODELS } from "../data/people/cast";
 import { soundUrl } from "./assets";
 import type { VoiceDef } from "./defs";
+import type { Emote } from "./emote";
 import { onSettingsChange, settings } from "./settings";
 
 type Dtm = typeof import("@onjmin/dtm");
@@ -67,6 +69,11 @@ const seWaitMs = (name: string): number => SE_LOUDNESS[name]?.[7] ?? 0;
 /** 効果音の頭の無音（ms。鳴り始めの 10 ms 手前まで とばす）。 */
 const seLeadMs = (name: string): number =>
 	Math.max(0, (SE_LOUDNESS[name]?.[5] ?? 0) - 10);
+
+/** 感情の 添え音を 続けて 鳴らさない 間（ms。早送りで 文を とばしても 鳴りつづけない）。 */
+const EMOTE_SE_GAP_MS = 1500;
+/** 同じ 記号の 添え音を また 鳴らすまでの 間（ms。汗・！が 何行も 続く 会話で 毎回 鳴らない）。 */
+const EMOTE_SE_SAME_MS = 8000;
 
 /** 1半音の ピッチ（dtm の units は 1/372オクターブ。12平均律の 1半音 = 31）。 */
 const PIANO_UNITS_PER_SEMITONE = 31;
@@ -212,6 +219,8 @@ export class GameAudio {
 	private seCache = new Map<string, Promise<AudioBuffer | null>>();
 	/** 長い効果音が鳴り終わる時刻（AudioContext の時計。重ね鳴らし防止）。 */
 	private seEnds = new Map<string, number>();
+	/** 感情の 添え音を 記号ごとに 最後に 鳴らした 時刻（performance.now。emoteSe の 間引き）。 */
+	private emoteSeAt = new Map<Emote, number>();
 	/** 区切り待ちが終わる時刻（performance.now の時計）。 */
 	private holdUntil = 0;
 	/**
@@ -731,7 +740,24 @@ export class GameAudio {
 		return !settings.mute && settings.seVolume > 0;
 	}
 
-	se(name: string): void {
+	/**
+	 * 感情の 記号の 添え音（data/audio/sfx.ts の EMOTE_SE）。会話の たびに 出るので 間引く：
+	 * 前の 添え音から EMOTE_SE_GAP_MS の 間と、同じ 記号が EMOTE_SE_SAME_MS の 間に また 出たときは 鳴らさない。
+	 * 区切り待ちも しない（文の 送りを 止めない）。
+	 */
+	emoteSe(e: Emote): void {
+		const name = EMOTE_SE[e];
+		if (!name) return;
+		const now = performance.now();
+		const last = this.emoteSeAt.get(e) ?? -Infinity;
+		const any = Math.max(-Infinity, ...this.emoteSeAt.values());
+		if (now - any < EMOTE_SE_GAP_MS || now - last < EMOTE_SE_SAME_MS) return;
+		this.emoteSeAt.set(e, now);
+		this.se(name, false);
+	}
+
+	/** settle が false なら 区切り待ちに しない（読みこみ中も 待たない）。 */
+	se(name: string, settle = true): void {
 		if (!this.seAudible() || !this.ctx || !this.seGain) return;
 		const ctx = this.ctx;
 		const gain = this.seGain;
@@ -739,7 +765,7 @@ export class GameAudio {
 		if (!p) return;
 		const t0 = performance.now();
 		const pending = { until: t0 + SE_LATE_MS };
-		this.sePending.add(pending);
+		if (settle) this.sePending.add(pending);
 		void p.then((buf) => {
 			this.sePending.delete(pending);
 			// 読み込みに時間がかかりすぎたら鳴らさない（ずれた音は邪魔）
@@ -761,7 +787,7 @@ export class GameAudio {
 			const lead = seLeadMs(name);
 			src.start(0, lead / 1000);
 			// 実際に鳴り始めた音だけ、本体が鳴り終わるまで次へ進めない（待ちは ファイルの頭から数えてあるので、とばした分を引く）
-			this.hold(Math.max(0, seWaitMs(name) - lead));
+			if (settle) this.hold(Math.max(0, seWaitMs(name) - lead));
 		});
 	}
 

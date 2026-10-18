@@ -11,7 +11,7 @@
 //   効果音の音量 100 で true peak が上限を超えない・範囲（SE_DB_RANGE）に収まるように抑える。
 // - 鳴り始め・鳴り終わり = 有音（上と同じ -50 dBFS）の最初と最後の 10 ms。
 // - 待つ ms = K 特性（BS.1770）のエネルギーの累計が SE_WAIT.share（85 %）に届く 10 ms の終わり。
-//   上限は SE_WAIT.maxMs（jingle は jingleMaxMs）、ui は 0（data/audio/loudness.ts の ■ waitMs）。
+//   上限は SE_WAIT.maxMs（jingle は jingleMaxMs）、ui・emote は 0（data/audio/loudness.ts の ■ waitMs）。
 //
 // 使い方: pnpm loudness [--fresh] [--cache <dir>] [--dry-run]
 //   --fresh    キャッシュがあっても取り直す
@@ -314,7 +314,7 @@ for (const [name, ref] of Object.entries(sfx)) {
 	db = round(db) || 0; // -0 を 0 に
 	// 音の本体が鳴り終わるまで待つ（メニューの音は待たない。長い音は上限で打ち切る）
 	const waitMs =
-		kind === "ui"
+		kind === "ui" || kind === "emote"
 			? 0
 			: Math.min(
 					kind === "jingle" ? SE_WAIT.jingleMaxMs : SE_WAIT.maxMs,

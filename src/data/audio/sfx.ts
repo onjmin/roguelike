@@ -5,6 +5,7 @@
 // （測るまでは、既定の音量で 0.3 倍のまま鳴り、区切り待ちもしない）。
 // 毎ターン鳴る音（足音など）は置かない（ダッシュの邪魔。鳴らすなら ui 区分＝待ちなしにする）。
 
+import type { Emote } from "../../engine/emote";
 import type { SeKind } from "./loudness";
 
 const byKind: Record<SeKind, Record<string, string>> = {
@@ -14,6 +15,26 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		decide: "rpgen:GklUsK", // ﾄﾞﾗｸｴｶｰｿﾙ
 		/** キャンセル・「それはできない」。 */
 		cancel: "rpgen:uZc2MS", // キャンセル
+	},
+	/**
+	 * 感情の 記号（engine/emote.ts）の 添え音。会話の たびに 鳴るので ui より 小さく、短く、待たない。
+	 * 鳴らす 間引きは engine/audio.ts の emoteSe。
+	 */
+	emote: {
+		/** ！ おどろき・気づき。 */
+		emoteBang: "rpgen:j8uwLx", // 反応音
+		/** ？ ふしぎ・まよい（上がって 下がる 短い ぴぴぴ）。 */
+		emoteQuestion: "rpgen:A0BsRk", // 質問
+		/** ♪ ごきげん（のぼる 分散和音）。 */
+		emoteNote: "rpgen:rlDCFo", // [マリオRPG]いいもの
+		/** ♥ すき（ちゅっ）。 */
+		emoteHeart: "rpgen:FZyGqb", // kiss
+		/** 汗 あせり（しずくの ぽちゃん）。 */
+		emoteSweat: "rpgen:aCOtzT", // 水音
+		/** 怒 いらいら（ぶっ）。 */
+		emoteAnger: "rpgen:vsXmNp", // buzz
+		/** 花 しあわせ（きらきら 降りる 鈴）。 */
+		emoteFlower: "rpgen:VDnXCJ", // chimes
 	},
 	/** 移動・拾う・回復。 */
 	field: {
@@ -217,6 +238,17 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** 道具の なかまを はじめて 拾った ときの 手ほどき（村の スレの 書きこみ。BGM を 止めて 鳴らす）。 */
 		guide: "rpgen:PhBNN2", // [マリオRPG]情報
 	},
+};
+
+/** 感情の 記号ごとの 添え音（emote 区分の 名前）。「…」と 眠りの「z」は 音を 足さない（だまる・ねむる 記号）。 */
+export const EMOTE_SE: Partial<Record<Emote, string>> = {
+	"!": "emoteBang",
+	"?": "emoteQuestion",
+	"♪": "emoteNote",
+	"♥": "emoteHeart",
+	汗: "emoteSweat",
+	怒: "emoteAnger",
+	花: "emoteFlower",
 };
 
 export const sfx: Record<string, string> = Object.fromEntries(

@@ -13,7 +13,7 @@ import { isRaceId, type RaceId } from "./core/race";
 import { Run } from "./core/run";
 import type { GuestId, Item } from "./core/types";
 import { bgm } from "./data/audio/bgm";
-import { sfx } from "./data/audio/sfx";
+import { EMOTE_SE, sfx } from "./data/audio/sfx";
 import { devEvent } from "./data/story/objectives";
 import { devArrival } from "./devSandbox";
 import { GameAudio } from "./engine/audio";
@@ -82,6 +82,8 @@ input.onAnyInput = () => {
 			"spell",
 			"levelup",
 			"chapter",
+			// 感情の 添え音（会話の 1行目から 鳴る。読みこみ 待ちで 落ちると 記号だけ 出る）
+			...Object.values(EMOTE_SE),
 		]);
 };
 
