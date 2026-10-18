@@ -101,6 +101,7 @@ import {
 	settleReturn,
 	type Town,
 } from "../../engine/save";
+import { type CardRun, showCard } from "../../engine/sceneCard";
 import {
 	type FxRun,
 	fxRoot,
@@ -667,7 +668,10 @@ export const returnScene = async (
 	// 残機の 数が 出る・かわる 頁までは 前の 数（1 は まだ 出さない・99 は まだ 1）
 	const zanki = pages.find((p) => p.zanki !== undefined)?.zanki;
 	if (zanki !== undefined) setZankiScene(zanki === 99 ? 1 : null);
+	// イメージ図（騒ぎの 規模。頁を またいで 残り、入れかえる）
+	const card = pageCards();
 	for (const p of pages) {
+		card.show(p);
 		if (p.zanki !== undefined) setZankiScene(p.zanki);
 		// 場面の 曲（頂点の 場面など。null で 止める）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
@@ -701,6 +705,7 @@ export const returnScene = async (
 		else await playPage(s, { ...p, ...pageCue(p) });
 	}
 	fx?.run.end();
+	card.end();
 	// 見おえた（一度きりの 語りは 次から 短く）
 	if (a.kind === "clear") noteEnding(a.dungeon);
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲。場面の 曲が 鳴って いれば 1周 おわるまで そのまま
@@ -946,10 +951,30 @@ export const deathScene = async (s: Story): Promise<void> => {
 	await s.fadeIn(300);
 };
 
+/** 語りの 頁の イメージ図（StoryPage.card）。出す・入れかえる ときは めくる 音。 */
+const pageCards = (): { show(p: StoryPage): void; end(): void } => {
+	let run: CardRun | null = null;
+	return {
+		show: (p) => {
+			if (p.card === undefined) return;
+			if (p.card === null) {
+				run?.end();
+				run = null;
+			} else if (run) run.update(p.card);
+			else run = showCard(fxRoot(), p.card);
+		},
+		end: () => {
+			run?.end();
+			run = null;
+		},
+	};
+};
+
 // ───────────────── 開いた知らせ ─────────────────
 
 /** 転（STORY.md §4.9）：風呂板の 語りを 見おえた 帰りに 1回だけ。停電と、また 盛った 見出し。 */
 export const tenScript = async (s: Story): Promise<void> => {
+	const card = pageCards();
 	// その夜の 場面（村の 時計に かかわらず 夜。明かりが 消える 頁から dark）。
 	// 消える までは 持ち帰った 板の 明かりが 灯って いる（町は もう 停電の 並びで 建って いる）
 	const on: SceneLit = { boards: loadProgress().cleared, homes: true };
@@ -981,8 +1006,10 @@ export const tenScript = async (s: Story): Promise<void> => {
 		// 暗い 町で 映した 所には、外に 出てきた 人が いる（さけんだ 銭湯・見出しを 見に きた 掲示板）
 		const o = sceneOut();
 		if (o && p.look) setSceneOut({ ...o, near: [...o.near, p.look] });
+		card.show(p);
 		await playPage(s, { ...p, ...pageCue(p) });
 	}
+	card.end();
 	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす
 	if (!endScene()) await s.fadeBgm(300);
 	addFlag("ten");

@@ -207,7 +207,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		sprite: ISLANDER,
 		dir: "down",
 		name: "島民",
-		lines: ["浜に支店出したで。\n島の物産や"],
+		lines: ["島ごと泳いできたで！\n港のとなり、ええ立地や"],
 	},
 	{
 		dungeon: "konamono",
@@ -243,7 +243,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		sprite: "pub:sprites/denchan.png",
 		dir: "down",
 		name: "電池ニキ",
-		lines: ["電気は送っとる。\n……人、おるな"],
+		lines: ["人、多すぎや！\n電気が足らんわ！"],
 	},
 ];
 

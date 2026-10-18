@@ -13,12 +13,15 @@
 
 import { INCIDENT_BGM, stageBgm } from "../../data/audio/music";
 import { MOBS } from "../../data/people/mobs";
+import { midashiCard } from "../../data/story/hooks";
 import { INCIDENTS, incidentPlaceId } from "../../data/town/incidents";
 import { OPENING, type OpeningLine } from "../../data/town/town";
 import { type Cell, VILLAGE_SPOTS } from "../../data/village/map";
 import type { Script, Story } from "../../engine/defs";
 import { cueOf } from "../../engine/emote";
 import { loadProgress, loadRecords } from "../../engine/save";
+import { showCard } from "../../engine/sceneCard";
+import { fxRoot } from "../../engine/sceneFx";
 import { setSceneSky } from "./sceneSky";
 import { sayAs } from "./villageMobs";
 import { lunchScript, villageView } from "./villageReturn";
@@ -271,6 +274,14 @@ const plazaScript: Script = async (s) => {
 		s.face(id, nailer.dir);
 		s.face("player", "left");
 	}
+	// 見出しとは（イメージ図。地面に 棒で 描く）
+	const card = showCard(fxRoot(), midashiCard(0));
+	s.se("cardFlip");
+	await lines(s, OPENING.midashi);
+	card.update(midashiCard(1));
+	s.se("cardFlip");
+	await lines(s, OPENING.midashiNext);
+	card.end();
 	await lines(s, OPENING.day2b);
 	await chiefSay(OPENING.declare);
 	await lines(s, OPENING.day2c);

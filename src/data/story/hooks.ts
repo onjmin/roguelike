@@ -12,35 +12,35 @@ const KINONYAN = "sprites/kinonyan.png";
 export const KINOKO_EVE = {
 	night: "その夜。広場でパン兵が、\n独立記念のパンを並べていた。",
 	panheiSell: "独立記念のパンや。\n町にも卸したるで",
-	rozeAsk: "……パン板が独立したら、\nパン板の植民地はどうなるアル？",
-	panheiBlank: "……植民地？",
+	rozeAsk: "パン板が独立したら、\nパン板の植民地はどうなるアル？",
+	panheiBlank: "植民地？",
 	kirikoAsk: "植民地の植民地ンゴ？",
 	zeroDraw: "図にしました！\n3機で、5秒で！",
 	zeroChain: "パン板は、おんJの植民地。\nきのこ板は、パン板の植民地です",
-	zeroCut: "今日、上が独立しました。\n……下は、そのままです",
+	zeroCut: "今日、上が独立しました。\n下は、そのままです",
 	kirikoLeft: "下だけ、置いてけぼりンゴ",
-	panheiForgot: "……そういや、そんなんも\nおったな",
+	panheiForgot: "そういや、そんなんも\nおったな",
 	nanjTsukkomi: "おったな、やないで",
 	nanjHistory: "きのこ板はな、ずっと\n仕返しの機会を待っとったんや",
 	memoryCaption: "2015年　夏",
 	memoryCame: "2015年の夏。パン兵が、\nきのこ板に乗りこんできた。",
 	memoryFlag: "食パンの旗が、1本立った。",
 	memoryPanhei: "今日からここは、\nパン板の植民地や",
-	memoryKinoko: "……いつか、\n仕返ししたるからな",
+	memoryKinoko: "いつか、\n仕返ししたるからな",
 	memoryPanhei2: "旗は食パンや。\n食べたらあかんで",
-	memoryKinoko2: "……食べてもうた",
+	memoryKinoko2: "食べてもうた",
 	memoryNanj: "それから11年。\n恨みだけ、熟成しとる",
-	nanjOmen: "親が独立して、子は置いてけぼりか。\n……ひと騒ぎ、ありそうやな",
+	nanjOmen: "親が独立して、子は置いてけぼりか。\nひと騒ぎ、ありそうやな",
 	zeroRoute: "きのこ板からパン板への\n近道も、図にしました！",
-	kirikoEmpty: "……町が、空き地に\nなってるンゴ",
-	rozeMap: "1時間、国民0人だったアル。\n……地図に載ったアル",
-	kirikoCause: "……吾輩の独立の\nせいンゴ！？",
+	kirikoEmpty: "町が、空き地に\nなってるンゴ",
+	rozeMap: "1時間、国民0人だったアル。\n地図に載ったアル",
+	kirikoCause: "吾輩の独立の\nせいンゴ！？",
 	nanjSleep: "まあ、通るだけやろ。\n寝とけ寝とけ",
-	sleep: "……むにゃ。\nお客、いっぱいンゴ……",
+	sleep: "むにゃ。\nお客、いっぱいンゴ……",
 	march: "夜ふけ。港から、小さな足音が\n坂を上がってきた。",
-	zeroCount: "足音、128です！\n……3人しか見えません",
+	zeroCount: "足音、128です！\n3人しか見えません",
 	kinokoStep: "店先は、ちょっとしか\n踏んでへん",
-	sleep2: "……むにゃ。お客、\nほんとにいっぱいンゴ……",
+	sleep2: "むにゃ。お客、\nほんとにいっぱいンゴ……",
 	morning: "翌朝。",
 	/** 盛った 見出しへの つっこみ（見えたのは 3人）。 */
 	kirikoHeadline: "上陸って……\n3人ンゴ",
@@ -72,6 +72,28 @@ export const colonyCard = (step: 0 | 1 | 2): CardSpec => ({
 	note: "ゼロ調べ（3機）",
 });
 
+/**
+ * イメージ図「見出し」（いちばん 最初の 村。やきうが 新入りの キリコに 言う）。名無しが 貼る → 町が 騒ぐ。
+ * step 1 で 行き先（見出しの 板へ 潜る）を 足す。
+ */
+export const midashiCard = (step: 0 | 1): CardSpec => ({
+	title: "イメージ図「見出し」",
+	nodes: [
+		{ label: "名無し", sub: "夜中に\nこっそり", aa: "？" },
+		{
+			label: "見出し",
+			sub: "【悲報】パン板、\n独立を宣言",
+			aa: "報",
+			shake: true,
+		},
+		step === 0
+			? { label: "町の人", sub: "読んで\n大騒ぎ", aa: "！" }
+			: { label: "次の行き先", sub: "見出しの板\n（パン板）", sprite: PANHEI },
+	],
+	links: [{ label: "貼る（盛る）" }, { label: step === 0 ? "読む" : "行く" }],
+	note: "やきう調べ（地面に棒で）",
+});
+
 /** イメージ図②：きのこ板から パン板への 近道（1時間前の 地図）。 */
 export const routeCard: CardSpec = {
 	title: "イメージ図「近道」",
@@ -93,9 +115,9 @@ const BANTOU = "sprites/ofurou.png";
 export const BATH_EVE = {
 	// 頭の きのこは 行進が 摘みとった（story.ts の kinoko.once）。胞子だけ 髪に 残る
 	night: "その夜。きのこは摘まれたのに、\n髪に胞子が残っていた。",
-	sneeze: "……はっくしょンゴ！",
-	zeroSpore: "胞子、128個出ました！\n……数えました！",
-	shiyoBath: "胞子、まきちらさないで。\n……お風呂、入ってきなさいよ",
+	sneeze: "はっくしょンゴ！",
+	zeroSpore: "胞子、128個出ました！\n数えました！",
+	shiyoBath: "胞子、まきちらさないで。\nお風呂、入ってきなさいよ",
 	kirikoGo: "銭湯、行くンゴ！",
 	shout42: "ぬるいんじゃ！",
 	shout41: "熱いんじゃ！",
@@ -105,7 +127,7 @@ export const BATH_EVE = {
 	kirikoSteam: "銭湯が、蒸し器に\nなってるンゴ！",
 	zeroDraw: "湯温の派閥、図にしました！\n籠城3日目です！",
 	zeroFaction: "41℃派12人、42℃派12人。\n中立は、0人です",
-	shiyo43: "41℃も42℃も、ぬるいわよ。\n……あたすは、43℃",
+	shiyo43: "41℃も42℃も、ぬるいわよ。\nあたすは、43℃",
 	kirikoMore: "派閥がふえたンゴ！",
 	zeroWhy: "けんかのはじまりも、\nログに残ってました",
 	memoryCaption: "3日前",
@@ -113,8 +135,8 @@ export const BATH_EVE = {
 	memoryPost: "銭湯の湯、ぬるすぎて草",
 	memoryPostName: "名無し",
 	memorySplit: "次の朝から、町は湯の温度で\nまっぷたつになった。",
-	zeroSame: "この書きこみ、見出しと\n同じ書き方です。……数えました",
-	nanjSame: "……さあな。名無しやろ",
+	zeroSame: "この書きこみ、見出しと\n同じ書き方です。数えました",
+	nanjSame: "さあな。名無しやろ",
 	kirikoWhy: "胞子が落ちるまで、\n吾輩は寝られないンゴ",
 	nanjSource: "銭湯の湯は、風呂板の源泉や。\n立てこもりも、源泉のほうやろ",
 	morning: "翌朝。",
