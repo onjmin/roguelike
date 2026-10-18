@@ -3714,6 +3714,7 @@ export class Play {
 				hunger: Math.floor(p.hunger / HUNGER_UNIT),
 				bare: weapon === null,
 				kills,
+				runKills: total,
 				deaths: deathCount(),
 				outings: (loadProgress().outings ?? 0) + 1,
 				depth: s.depth,
