@@ -1,6 +1,8 @@
 // 話の つなぎの 場面（STORY.md §4.9）。本筋の 話を 持ち帰った その 帰りに 1回だけ、話の 解決から 次の 板の 事件と
 // 謎へ つなぐ（演出は ui/village/episodeHooks.ts）。どの 行も 村の 窓（全角 22字・2行）に 収める。
 // 201 の 型：説明は 動きの 中で・聞く 側が つっこむ・主人公が 原因・天丼（人影の 見出し・寝言・ゼロの 数える）。
+// ここの 札と 矢印の 図（CardSpec）は、語りの 説明では なく ゼロが その場で 描いて 見せる 図（台詞「図にしました！」）。
+// 持ち帰りの 語りの 段の 図は 実物の 絵に かえた（STORY.md §0「図は 実物の 絵」）が、人が 自分で 描く 図は 小道具なので 残す。
 
 import type { CardSpec } from "../../engine/sceneCard";
 
@@ -15,7 +17,7 @@ export const KINOKO_EVE = {
 	rozeAsk: "パン板が独立したら、\nパン板の植民地はどうなるアル？",
 	panheiBlank: "植民地？",
 	kirikoAsk: "植民地の植民地ンゴ？",
-	zeroDraw: "図にしました！\n3機で、5秒で！",
+	zeroDraw: "図にしました！\n5秒で！",
 	zeroChain: "パン板は、おんJの植民地。\nきのこ板は、パン板の植民地です",
 	zeroCut: "今日、上が独立しました。\n下は、そのままです",
 	kirikoLeft: "下だけ、置いてけぼりンゴ",
@@ -52,7 +54,7 @@ export const KINOKO_EVE = {
 	panheiName: "パン兵",
 } as const;
 
-/** イメージ図①：植民地の 植民地（ゼロ調べ）。step 1 で 上が 独立、2 で 下が ゆれる。 */
+/** ゼロが 描く 図①：植民地の 植民地（zeroDraw「図にしました！」の 図。残す）。step 1 で 上が 独立、2 で 下が ゆれる。 */
 export const colonyCard = (step: 0 | 1 | 2): CardSpec => ({
 	title: "イメージ図「植民地の植民地」",
 	nodes: [
@@ -69,10 +71,10 @@ export const colonyCard = (step: 0 | 1 | 2): CardSpec => ({
 		{ label: "植民", cut: step >= 1 ? "独立" : undefined },
 		{ label: "植民" },
 	],
-	note: "ゼロ調べ（3機）",
+	note: "ゼロ調べ",
 });
 
-/** イメージ図②：きのこ板から パン板への 近道（1時間前の 地図）。 */
+/** ゼロが 描く 図②：きのこ板から パン板への 近道（zeroRoute「近道も、図にしました！」の 1時間前の 地図。残す）。 */
 export const routeCard: CardSpec = {
 	title: "イメージ図「近道」",
 	nodes: [
@@ -120,7 +122,7 @@ export const BATH_EVE = {
 	morning: "翌朝。",
 } as const;
 
-/** イメージ図③：湯温の 派閥（籠城 3日目）。step 1 で シヨ派（43℃）が 参戦。 */
+/** ゼロが 描く 図③：湯温の 派閥（zeroDraw「湯温の派閥、図にしました！」の 図。残す）。step 1 で シヨ派（43℃）が 参戦。 */
 export const factionCard = (step: 0 | 1): CardSpec => ({
 	title: "イメージ図「湯温戦争」",
 	nodes: [

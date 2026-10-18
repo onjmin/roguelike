@@ -88,6 +88,7 @@ import {
 	shiyoAtMaid,
 } from "../data/people/shiyoShift";
 import { GLOSSARY } from "../data/story/glossary";
+import { BATH_EVE, KINOKO_EVE } from "../data/story/hooks";
 import { type LiveState, liveResLine } from "../data/story/liveRes";
 import {
 	advanceEvents,
@@ -372,6 +373,7 @@ import {
 	type RunRecord,
 	replayMatches,
 	type SavedReplay,
+	saveProgress,
 	saveTown,
 	sortStorage,
 	stashRelief,
@@ -456,6 +458,8 @@ import {
 import { spinGacha } from "../ui/village/otaku";
 import { Overhear } from "../ui/village/overhear";
 import { bossHomeLine, endLine, recordHead } from "../ui/village/records";
+import { CHALK_LINE } from "../ui/village/sceneChalk";
+import { skitSky } from "../ui/village/sceneSky";
 import {
 	enterBath,
 	enterMusic,
@@ -497,11 +501,14 @@ import {
 } from "../ui/village/villageOpening";
 import {
 	deathScene,
+	forgetReveal,
 	gather,
+	holdReveal,
 	lineUp,
 	lunchScript,
 	newsScript,
 	pagesFor,
+	releaseReveal,
 	type ReturnArrival,
 	reliefScript,
 	returnScene,
@@ -998,7 +1005,7 @@ test("みんな 飽きて 出ていった 町：はじめは やきう・ぷゆ�
 		stage: TOWN_STAGES - 1,
 		unlocked: ["shallow"],
 		cleared,
-		arriving,
+		...(arriving ? { arriving: [arriving] } : {}),
 	});
 	const people = (v: VillageView) =>
 		villagePlaces(v)
@@ -1725,6 +1732,7 @@ const swapStorage = (write: boolean): (() => void) => {
 	forgetOpeningMemo();
 	forgetHallMemo();
 	forgetWalletMemo();
+	forgetReveal();
 	return () => {
 		if (prev) Object.defineProperty(globalThis, "localStorage", prev);
 		else delete (globalThis as { localStorage?: unknown }).localStorage;
@@ -1734,6 +1742,7 @@ const swapStorage = (write: boolean): (() => void) => {
 		forgetSkits();
 		forgetOpeningMemo();
 		forgetHallMemo();
+		forgetReveal();
 		forgetWalletMemo();
 	};
 };
@@ -8104,8 +8113,8 @@ test("見出しの 絵（図＝実物の 絵）: 語りが 掲示板の 見出�
 	let n = 0;
 	for (const p of pages) {
 		const h = headlineIn(p.text);
-		if (p.card && !isPicture(p.card))
-			ok(!p.card.title.includes("見出し"), `矢印図で 見出しを 説明: ${p.text}`);
+		// 語りの 絵は 実物の 絵だけ（騒ぎの 規模の 段は 台詞と 人の 動きで 見せる。札と 矢印の 図は つなぎの ゼロが 描く 図だけ）
+		if (p.card) ok(isPicture(p.card), `語りに 札と 矢印の 図: ${p.text}`);
 		if (!h || !p.text.includes("掲示板")) continue;
 		n++;
 		ok(
@@ -8119,6 +8128,82 @@ test("見出しの 絵（図＝実物の 絵）: 語りが 掲示板の 見出�
 		headlineIn(OPENING.headline) === HEADLINES.shallow,
 		"冒頭の 見出しが パン板の 見出しと ちがう",
 	);
+});
+
+test("寸劇の あとの 町（2026-10-18）: ご近所・もどる 住人・通りは 生き返った 知らせの あと。寸劇は 朝。チョークの 国境線は 広場の 通れる マス。寸劇の ゼロは 1機", () => {
+	const v = (cleared: DungeonId[], arriving?: DungeonId[]): VillageView => ({
+		stage: TOWN_STAGES - 1,
+		unlocked: ["shallow", "kinoko"],
+		cleared,
+		...(arriving ? { arriving } : {}),
+	});
+	const ids = (x: VillageView) => villagePlaces(x).map((p) => p.id);
+	// ご近所は 持ち帰りの 語りの あいだ（arriving）は まだ 来ない。騒ぎの 人は もう 帰って いる
+	ok(
+		!ids(v([], ["shallow"])).some((i) => i.startsWith("inc_visit")),
+		"a visitor comes during the skit",
+	);
+	ok(
+		!ids(v([], ["shallow"])).some((i) => i.startsWith("inc_panhei")),
+		"the incident people stay during the skit",
+	);
+	ok(
+		ids(v(["shallow"])).some((i) => i.startsWith("inc_visit")),
+		"no visitor after the plaza revived",
+	);
+	ok(
+		!ids(v([], ["shallow"])).some((i) => i === "mob_ngoane"),
+		"a returning mob is back before the announcement",
+	);
+	withStorage(() => {
+		saveProgress({
+			...loadProgress(),
+			unlocked: ["shallow", "kinoko"],
+			cleared: ["shallow"],
+			endings: ["shallow"],
+		});
+		holdReveal("shallow");
+		const before = sceneView(villageView());
+		ok(
+			!!before.arriving?.includes("shallow") &&
+				!before.cleared.includes("shallow"),
+			"the plaza is revived before the announcement",
+		);
+		releaseReveal("shallow");
+		const after = sceneView(villageView());
+		ok(
+			!after.arriving && after.cleared.includes("shallow"),
+			"the plaza stays unrevived after the announcement",
+		);
+		ok(skitSky() === "morning", "the skit is not in the morning");
+	});
+	// チョークの 国境線：その 頁で 引き、線の マスは どの 段でも 通れる 広場
+	const page = STORY.shallow.ending.find((p) => p.text.includes("チョーク"));
+	ok(!!page?.chalk, "the chalk line page does not draw the line");
+	for (let stage = 0; stage < TOWN_STAGES; stage++) {
+		const x: VillageView = { stage, unlocked: ["shallow"], cleared: [] };
+		const row = [...(villageRows(x)[CHALK_LINE.y] ?? "")];
+		const pal = villagePalette(x);
+		for (let cx = CHALK_LINE.x0; cx <= CHALK_LINE.x1; cx++) {
+			const ch = row[cx];
+			ok(
+				!!ch && !!pal[ch]?.passable,
+				`stage ${stage}: the chalk line crosses ${ch} at ${cx},${CHALK_LINE.y}`,
+			);
+		}
+	}
+	// 寸劇に 出る ゼロは メインさん 1機だけ：3機と 言わない（2026-10-18 作者）
+	const pages = [
+		...DUNGEON_IDS.flatMap((d) => [
+			...STORY[d].ending,
+			...(STORY[d].again ?? []),
+			...(STORY[d].once ?? []),
+		]),
+		...TEN_NEWS.pages,
+	];
+	for (const p of pages) ok(!p.text.includes("3機"), `寸劇で 3機: ${p.text}`);
+	for (const t of [...Object.values(KINOKO_EVE), ...Object.values(BATH_EVE)])
+		ok(!t.includes("3機"), `つなぎで 3機: ${t}`);
 });
 
 test("翌朝の 見出し（STORY.md §0 言う ことと 見える もの）: 掲示板に 残る 見出しは、その 板の 持ち帰りの 語りの 見出しと 一字も ちがわない", () => {

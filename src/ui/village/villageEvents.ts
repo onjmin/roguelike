@@ -204,6 +204,7 @@ import {
 	openingWalking,
 } from "./villageOpening";
 import {
+	blackoutScript,
 	deathScene,
 	gather,
 	lineUp,
@@ -1241,6 +1242,9 @@ const arrivalScript =
 		s.bgm(villageSong());
 		// 段の 下見（?stage=N）では 知らせも 精算も しない（保存を 書きかえない）
 		if (previewStage() !== null) return;
+		// 持ち帰った 板で 通りが 生き返る（data/town/revival.ts）。寸劇の すぐ あと：それまで 通り・住人・ご近所は
+		// 町に 出ない（villageReturn.ts の sceneView）ので、その夜の つなぎの 場面は 生き返った 町で 起きる
+		await reviveScript(s);
 		// 転（STORY.md §4.9）：風呂板の 語りを 見おえた その 帰りに 1回だけ。電池板が 開く 知らせ（newsScript）より 前
 		if (loadProgress().endings?.includes("main") && !hasFlag("ten"))
 			await tenScript(s);
@@ -1259,8 +1263,8 @@ const arrivalScript =
 		await escortThanksScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
-		// 持ち帰った 板で 通りが 生き返る（data/town/revival.ts）→ 持ち帰った 物を 倉庫へ・売る
-		await reviveScript(s);
+		// 転の 停電を 知らせで 知る（転を 見て いなければ）→ 持ち帰った 物を 倉庫へ・売る
+		await blackoutScript(s);
 		await settleScript(s, storeChooser(ctx));
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
@@ -1303,6 +1307,15 @@ const sceneLights = (
 	};
 };
 
+/**
+ * 村に 見える 姿の 村（はじめての 持ち帰りの 語りの あいだと、生き返った 通りの 知らせの 前は、その 板を まだ 持ち帰って
+ * いない 村。ui/village/villageReturn.ts の sceneView）。
+ */
+export const villageSceneView = (
+	v: VillageView,
+	arrival: Arrival,
+): VillageView => sceneView(v, returnOf(arrival) ?? undefined);
+
 /** 村の マップ（町の段・開いたダンジョンから）。 */
 export const buildVillage = (
 	v: VillageView,
@@ -1310,9 +1323,8 @@ export const buildVillage = (
 	opt: { arrival?: Arrival } = {},
 ): MapDef => {
 	const arrival = opt.arrival ?? null;
-	// はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村
 	const back = returnOf(arrival);
-	const view = back ? sceneView(v, back) : v;
+	const view = villageSceneView(v, arrival);
 	const rows = villageRows(view);
 	const stage = layoutStage(view);
 	const boards = revivedBoards(view);

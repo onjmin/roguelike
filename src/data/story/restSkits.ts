@@ -91,7 +91,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: 4, to: "kiriko" }],
 				se: "decide",
 			}),
-			say(4, "解音ゼロ、3機です！\n{hero}さんの蓄音機、数えに来ました！"),
+			say(4, "解音ゼロです！\n{hero}さんの蓄音機、数えに来ました！"),
 			k("パン兵を数えに\n来たんじゃないンゴ？"),
 			say(4, "パン兵は、ついでです！", {
 				go: [

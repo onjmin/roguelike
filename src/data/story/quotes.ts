@@ -8,7 +8,7 @@ import { DUNGEONS } from "../../core/data/dungeons";
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { HeadProp } from "../../engine/headProp";
-import type { AnyCard, CardSpec } from "../../engine/sceneCard";
+import type { AnyCard } from "../../engine/sceneCard";
 import type { SceneFx } from "../../engine/sceneFx";
 import type { MobId } from "../people/mobs";
 import { boardOf } from "./pictures";
@@ -90,10 +90,13 @@ export type StoryPage = Cue & {
 	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
 	bgm?: string | null;
 	/**
-	 * この 頁からの 村の 空（ui/village/sceneSky.ts。村の 時計に かかわらず 夜。dark は 明かりも 消す。null で 時計に もどす。
-	 * 村の 持ち帰りの 語り・転だけ。場面の おわりには 時計に もどる）。
+	 * この 頁からの 村の 空（ui/village/sceneSky.ts。村の 時計に かかわらず 夜。dark は 明かりも 消す。null で 寸劇の 空
+	 * （朝。停電の 町なら 暗い まま）に もどす。村の 持ち帰りの 語り・転だけ。持ち帰りの 語りは 頁が 言わなければ 朝で、
+	 * 場面の おわりに 時計に もどる）。
 	 */
 	sky?: "dark" | "night" | null;
+	/** この 頁で 広場に チョークの 国境線を 引く（ui/village/sceneChalk.ts。キリコが 走りだす ときから 伸びる）。 */
+	chalk?: boolean;
 	/**
 	 * この 頁の 前に カメラを 向ける マス（村の 持ち帰りの 語りだけ。null で キリコに もどす）。
 	 * 語りが 町の 出来事を 言う ときに、その 通りを 映す。
@@ -123,9 +126,9 @@ export type StoryPage = Cue & {
 	 */
 	standAt?: readonly [number, number];
 	/**
-	 * この 頁から 出す 絵（engine/sceneCard.ts。文に 出てきた 物の 実物の 絵（掲示板の 見出し・品の 書きこみ：
-	 * data/story/pictures.ts）か、騒ぎの 規模の 段の 図。前の 絵が あれば 入れかえる。null で しまう。
-	 * 村の 持ち帰りの 語り・転だけ。場面の おわりに しまう）。
+	 * この 頁から 出す 絵（engine/sceneCard.ts。文に 出てきた 物の 実物の 絵：掲示板の 見出し・品の 書きこみ・
+	 * 立て札・鉄板・太鼓（data/story/pictures.ts）。騒ぎの 規模の 段は 図に せず、台詞と go・look・cut で 見せる。
+	 * 前の 絵が あれば 入れかえる。null で しまう。村の 持ち帰りの 語り・転だけ。場面の おわりに しまう）。
 	 */
 	card?: AnyCard | null;
 	/** この 頁で 並んだ 人が みんな キリコに 背を 向ける（ばらばらに なる ギャグ。次に 話す 人が でると また 向きあう）。 */
@@ -553,29 +556,15 @@ const BATH_HEAD: StoryPage[] = [
 		text: "湯船に町の人がずらり。\n湯気で、だれがだれだかわからない。",
 		cut: [35, 30],
 	},
-	// ボケ（ゼロ）→ ツッコミ（やきう）。ゼロは 湯船（のれん）へ かけよって 3機で 舐める
+	// ボケ（ゼロ）→ ツッコミ（やきう）。ゼロは 湯船（のれん）へ かけよって 舐める
 	{
 		who: "zero",
-		text: "湯船の温度、41.5℃です！\n3機で舐めて測りました！",
+		text: "湯船の温度、41.5℃です！\n舐めて測りました！",
 		emote: "!",
 		go: [{ who: "zero", to: [35, 30], speed: 3, face: "up" }],
 	},
 	{ who: "nanj", text: "舐めるな！", emote: "怒" },
 ];
-
-/** 第三話：湯の 温度が うつる（銭湯 → 町の 蛇口 → 港の 海）。 */
-const steamCard = (step: 0 | 1): CardSpec => ({
-	title: "イメージ図「41.5℃の行き先」",
-	nodes: [
-		{ label: "銭湯", sub: "追いだき\n連打", aa: "湯", shake: true },
-		{ label: "町の蛇口", sub: "ぜんぶ\n41.5℃", aa: "町" },
-		...(step === 1
-			? [{ label: "港の海", sub: "41.5℃\n魚が入浴", aa: "海", shake: true }]
-			: []),
-	],
-	links: [{ label: "噴く" }, ...(step === 1 ? [{ label: "流れこむ" }] : [])],
-	note: "ゼロ調べ（湯温計を3本つないで）",
-});
 
 export const ENDING: StoryPage[] = [
 	...BATH_HEAD,
@@ -613,19 +602,18 @@ export const ENDING: StoryPage[] = [
 	},
 	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "!" },
 	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）。
-	// カメラは 商店街（町じゅうの 蛇口）
+	// 温度の 段は 図で なく、商店街（町じゅうの 蛇口）→ 港（海）へ 動く カメラと 湯けむりで 見せる
 	{
 		who: null,
 		text: "源泉が噴きあがって、町じゅうの\n蛇口から41.5℃のお湯が出た。",
 		se: "explosion",
 		// 爆発の 煙が そのまま 湯けむり
 		fx: "boom",
-		card: steamCard(0),
 		look: [45, 17],
 	},
 	{
 		who: "zero",
-		text: "ゼロ3機の冷却水まで41.5℃！\n全機、湯あたりです！",
+		text: "ゼロの冷却水まで41.5℃！\n湯あたりです！",
 		emote: "汗",
 		gesture: "shiver",
 		fx: "boom",
@@ -667,7 +655,6 @@ export const ENDING: StoryPage[] = [
 		se: "chiin",
 		fx: "chiin",
 		bgm: null,
-		card: steamCard(1),
 		cut: [20, 45],
 	},
 	// フェリスは 桟橋の 先へ 走って 魚を 見る（カメラが ついていく）。フェリスが まだ 町に いない（離島板・電池板の 前）
@@ -680,7 +667,7 @@ export const ENDING: StoryPage[] = [
 		go: [{ who: "feris", to: [23, 50], speed: 3, face: "down", follow: true }],
 		instead: {
 			who: "zero",
-			text: "魚が、頭にタオルをのせてます！\n3機で数えて、全部です！",
+			text: "魚が、頭にタオルをのせてます！\n数えました、全部です！",
 			emote: "!",
 			card: null,
 			go: [{ who: "zero", to: [23, 50], speed: 3, face: "down", follow: true }],

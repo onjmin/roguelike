@@ -111,6 +111,7 @@ import {
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { cleanUp } from "./decay";
+import { drawChalkLine, endChalk } from "./sceneChalk";
 import {
 	clearShrooms,
 	dropShroom,
@@ -127,6 +128,7 @@ import {
 	setSceneOut,
 	setSceneSky,
 	setTownSky,
+	skitSky,
 	townSkyNow,
 } from "./sceneSky";
 import { mobsOutNow, sayAs } from "./villageMobs";
@@ -199,17 +201,47 @@ const sceneAway = (a: ReturnArrival, p: Progress): Speaker[] => {
 };
 
 /**
- * 帰ってきた 場面の 村（はじめての 持ち帰りの 語りの あいだは、その 板を まだ 持ち帰って いない 村。
- * 語りの あと 暗転で 建て直すと いまの 村に なる）。
+ * 寸劇を 見おえたが、生き返った 通りの 知らせ（reviveScript）が まだの 板（この 起動の あいだ）。その 板の 通り・もどる
+ * 住人・ご近所は 知らせの あとで 町に 出る（2026-10-18 作者「寸劇の 時点で 新規流入者や 修復建物が 反映されて いる」
+ * → 寸劇が 終わってから）。明かりの 坂で 建て直した 電池板（lightsBack）は 知らせの 前でも 持ち帰った 町。
  */
-export const sceneView = (v: VillageView, a: ReturnArrival): VillageView =>
-	firstEnding(a, loadProgress()) && !lightsBack.has(a.dungeon)
+const pendingReveal = new Set<DungeonId>();
+
+/** 知らせまで その 板を 町に 出さない（returnScene の おわり。試験からも 呼ぶ）。 */
+export const holdReveal = (d: DungeonId): void => {
+	if (!lightsBack.has(d) && REVIVE_AREAS.some((a) => a.dungeon === d))
+		pendingReveal.add(d);
+};
+
+/** 知らせた（reviveScript）。 */
+export const releaseReveal = (d: DungeonId): void => {
+	pendingReveal.delete(d);
+};
+
+/** 試験の あいだの 入れものを もどす（src/sim/villageTests.ts の swapStorage）。 */
+export const forgetReveal = (): void => {
+	pendingReveal.clear();
+};
+
+/**
+ * 帰ってきた 場面の 村（はじめての 持ち帰りの 語りの あいだと、生き返った 知らせの 前は、その 板を まだ 持ち帰って
+ * いない 村。同じ 船の 仲間だけ 立つ：arriving）。知らせの あと 建て直すと いまの 村に なる。
+ */
+export const sceneView = (v: VillageView, a?: ReturnArrival): VillageView => {
+	const first =
+		a && firstEnding(a, loadProgress()) && !lightsBack.has(a.dungeon)
+			? [a.dungeon]
+			: [];
+	const pending = v.cleared.filter((d) => pendingReveal.has(d));
+	const arriving = [...new Set([...pending, ...first])];
+	return arriving.length
 		? {
 				...v,
-				cleared: v.cleared.filter((d) => d !== a.dungeon),
-				arriving: a.dungeon,
+				cleared: v.cleared.filter((d) => !arriving.includes(d)),
+				arriving,
 			}
 		: v;
+};
 
 /** 語りの とちゅうで 持ち帰った ことに なった 板（明かりの 坂の あとの 電池板。その 先は 持ち帰った 町で 語る）。 */
 const lightsBack = new Set<DungeonId>();
@@ -813,14 +845,16 @@ export const returnScene = async (
 		if (p.zanki !== undefined) setZankiScene(p.zanki);
 		// 場面の 曲（頂点の 場面など。null で 止める）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
-		// 場面の 空（明かりの 場面は 夜。ui/village/sceneSky.ts）
-		if (p.sky !== undefined) setSceneSky(p.sky);
+		// 場面の 空（明かりの 場面は 夜。null は 寸劇の 空＝朝に もどす。ui/village/sceneSky.ts）
+		if (p.sky !== undefined) setSceneSky(p.sky ?? skitSky());
 		if (p.cue) {
 			await playCue(s, p.cue);
 			if (p.cue === "lightsUp") stage = null;
 		}
 		if (p.cut) await cutTo(s, p.cut, stage);
 		if (p.look !== undefined) await s.look(p.look);
+		// 広場の チョークの 国境線（キリコが 走りだすと 伸びる）
+		if (p.chalk) drawChalkLine();
 		// 走る 頁は 走りながら 音（線を 引く 音・足音）
 		let se: Promise<void> | null = null;
 		if (p.go) {
@@ -851,8 +885,11 @@ export const returnScene = async (
 	}
 	fx?.run.end();
 	card.end();
-	// 見おえた（一度きりの 語りは 次から 短く）
-	if (a.kind === "clear") noteEnding(a.dungeon);
+	// 見おえた（一度きりの 語りは 次から 短く）。はじめてなら、通りが 生き返る 知らせ（reviveScript）まで 町に 出さない
+	if (a.kind === "clear") {
+		if (firstEnding(a, loadProgress())) holdReveal(a.dungeon);
+		noteEnding(a.dungeon);
+	}
 	// 持ち帰りの 曲（ending）は ここまで。明けたら 村の曲。場面の 曲が 鳴って いれば 1周 おわるまで そのまま
 	// （villageSong が その 曲を かえす。ui/village/villageMusic.ts の 余韻）
 	const lingering = endScene();
@@ -865,6 +902,7 @@ export const returnScene = async (
 		s.place("player", back[0], back[1], exit.inward);
 	await rebuild(s);
 	endShrooms();
+	endChalk();
 	setZankiScene(undefined);
 	homes = new Map();
 	setSceneSky(null);
@@ -1242,26 +1280,31 @@ export const newsScript = async (s: Story): Promise<void> => {
 const mobEv = (id: MobId): string => `mob_${id}`;
 
 /**
+ * 転の 停電（電池板が 開いた 帰り）を 1回だけ 知らせる（開く 知らせの あと）。転（tenScript）を 見て いれば もう 語った。
+ */
+export const blackoutScript = async (s: Story): Promise<void> => {
+	const p = loadProgress();
+	if (!inBlackout(p) || hasFlag(BLACKOUT_TOLD) || hasFlag("ten")) return;
+	// 真っ暗な 町（時計に かかわらず 夜で、明かりも ない）
+	setSceneSky("dark");
+	setSceneOut({ keep: new Set(), near: [], all: false });
+	for (const l of REVIVE_MSG.blackout) await s.narrate(l);
+	addFlag(BLACKOUT_TOLD);
+	setSceneSky(null);
+	setTownSky(townSkyNow());
+};
+
+/**
  * 持ち帰った 板で 生き返った 通りを 知らせる（まだ 知らせて いない ぶん。TOWN.md §0.6・data/town/revival.ts）。
+ * 持ち帰りの 寸劇の すぐ あと：知らせるまで その 通りは すたれた まま、もどる 住人・ご近所も 町に いない（sceneView）。
+ * 通りごとに 知らせて 建て直す（店が 開き、人が なだれこむ）。停電の あいだは 生き返った 知らせを 出さない。
  * 本筋の 板なら 町の 段も 上がり、倉庫が 広がる・持ちこめる 数が ふえる。
  */
 export const reviveScript = async (s: Story): Promise<void> => {
 	const t = loadTown();
 	const p = loadProgress();
 	const cleared = p.cleared;
-	// 転の 停電（電池板が 開いた 帰り）：1回だけ 知らせる。停電の あいだは 生き返った 知らせも 出さない
-	const dark = inBlackout(p);
-	// 転（tenScript）を 見て いれば 停電は もう 語った
-	if (dark && !hasFlag(BLACKOUT_TOLD) && !hasFlag("ten")) {
-		// 真っ暗な 町（時計に かかわらず 夜で、明かりも ない）
-		setSceneSky("dark");
-		setSceneOut({ keep: new Set(), near: [], all: false });
-		for (const l of REVIVE_MSG.blackout) await s.narrate(l);
-		addFlag(BLACKOUT_TOLD);
-		setSceneSky(null);
-		setTownSky(townSkyNow());
-	}
-	const fresh = dark
+	const fresh = inBlackout(p)
 		? []
 		: REVIVE_AREAS.filter(
 				(a) => cleared.includes(a.dungeon) && !t.revived.includes(a.id),
@@ -1269,17 +1312,20 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	const r = growTown(t);
 	if (!fresh.length && r.to === r.from) return;
 	for (const a of fresh) {
-		// その 通りを 見せて、すたれた 姿（蜘蛛の巣・雑草…）を 片づける（ui/village/decay.ts）
+		// その 通りを 見せて、すたれた 姿（蜘蛛の巣・雑草…）を 片づけ、生き返った 通りに 建て直す（ui/village/decay.ts）
 		const spot = LIGHTS_UP.find((l) => l.area === a.id);
 		if (spot) {
 			await s.look(spot.at);
 			await s.wait(600);
 		}
 		cleanUp(a.id);
+		t.revived.push(a.id);
+		saveTown(t);
+		releaseReveal(a.dungeon);
+		await rebuild(s);
 		s.se("townUp");
 		await s.narrate(a.line);
 		await s.narrate(fill(REVIVE_MSG.open, { name: a.name }));
-		t.revived.push(a.id);
 	}
 	if (fresh.length) await s.look(null);
 	saveTown(t);

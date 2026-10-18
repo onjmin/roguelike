@@ -9,8 +9,10 @@
 import type { DungeonId } from "../../core/types";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
-import type { CardSpec, PictureSpec } from "../../engine/sceneCard";
-import { boardOf, itemPicture } from "./pictures";
+import type { PictureSpec } from "../../engine/sceneCard";
+import { art, ri } from "../village/rpgenArt";
+import { base } from "../village/tiles";
+import { boardOf, boardPicture, itemPicture, propPicture } from "./pictures";
 import {
 	ENDING,
 	ENDING_AGAIN,
@@ -225,130 +227,33 @@ const nanashi = (name: string, text: string): StoryPage => ({
 	text,
 	nanashi: name,
 });
-// ───────────────── 騒ぎの 規模の イメージ図 ─────────────────
-// 毎話の 騒ぎは 話ごとに ちがう 方へ ふくらむ（パン板＝制度・きのこ板＝生き物・風呂板＝温度・電池板＝電気。STORY.md §0）。その 段を 図で 見せる。
-const KINONYAN = "sprites/kinonyan.png";
+// ───────────────── 台詞に 出てきた 物の 実物の 絵 ─────────────────
+// 騒ぎの 規模の 段（町 → 日本 → 世界）は 札と 矢印の 図で なく、台詞と 人の 動き（go・look・cut・turnAway）で 見せる
+// （STORY.md §0「図は 実物の 絵」。2026-10-18 作者「どういう ところに ついている 見出しか 画像を もってこい」）。
+// 絵に するのは 文に 出てきた 物だけ：広場の 立て札・たこ焼きの 舟の 字・屋台の 鉄板・丘の 太鼓・掲示板の 書きこみ。
 
-/** 第一話：独立の 飛び火（キリコ → 町 → 日本）。 */
-const independenceCard = (step: 0 | 1): CardSpec => ({
-	title: "イメージ図「独立の飛び火」",
-	nodes: [
-		{ label: "キリコ", sub: "国民1人", aa: "吾" },
-		{ label: "おんJタウン", sub: "国民0人", aa: "町", shake: step === 0 },
-		...(step === 1
-			? [{ label: "日本", sub: "47か国", aa: "日", shake: true }]
-			: []),
-	],
-	links: [{ label: "うつる" }, ...(step === 1 ? [{ label: "飛び火" }] : [])],
-	note: "ゼロ調べ（国境線つき）",
-});
-
-/**
- * 第二話：胞子の 旅（キリコの 頭 → 看板 → 町の 人）。step 1 で 町の 人ごと 行進、step 2 で 行進が 世界 1周して 頭の
- * きのこを 摘む（図は 3枚まで：せまい 画面で はみ出さない）。
- */
-const sporeCard = (step: 0 | 1 | 2): CardSpec => ({
-	title: "イメージ図「胞子の旅」",
-	nodes: [
-		step === 0
-			? { label: "キリコの頭", sub: "苗床", aa: "吾" }
-			: { label: "キリコ", sub: "行進曲", aa: "吾" },
-		step === 0
-			? { label: "商店街", sub: "看板しめじ", aa: "町" }
-			: { label: "町の人", sub: "頭にきのこ", aa: "人" },
-		step === 0
-			? { label: "町の人", sub: "頭にエリンギ", aa: "人", shake: true }
-			: {
-					label: "きのこ軍",
-					sub: step === 1 ? "1万3千本" : "世界1周\n40分",
-					sprite: KINONYAN,
-					shake: step === 1,
-				},
-	],
-	links: [
-		{ label: step === 0 ? "胞子" : "かける" },
-		{ label: step === 0 ? "扇風機" : step === 1 ? "行進" : "摘む" },
-	],
-	note: "ゼロ調べ（3機で頭数を数えて）",
-});
-
-/** 寄り道おんたこ：キリコの 招待状（😡つき）が 世界へ。 */
-const inviteCard: CardSpec = {
-	title: "イメージ図「招待状」",
-	nodes: [
-		{ label: "キリコ", sub: "招待状😡", aa: "吾" },
-		{ label: "世界193か国", sub: "ぜんぶ\n宣戦布告", aa: "球", shake: true },
-		{ label: "首脳", sub: "たこ焼き器\nもって上陸", aa: "😡" },
-	],
-	links: [{ label: "送る" }, { label: "上陸" }],
-	note: "ゼロ調べ",
+/** 第一話：広場に 立った 入国審査の 立て札（道の わきの 立て札と 同じ 絵。data/village/tiles.ts の i）。 */
+const CUSTOMS_SIGN: PictureSpec = {
+	...propPicture(base(5, 37, 1, 2), "広場の立て札", { text: "入国審査" }),
+	note: "広場だけで43か所（ゼロ調べ）",
 };
 
-/** 寄り道おんたこ：首脳の たこパ（鉄板の 焦げあとは 屋台に 残る）。 */
-const takoCard: CardSpec = {
-	title: "イメージ図「たこパ外交」",
-	nodes: [
-		{ label: "首脳193人", sub: "たこ焼き器\nもって", aa: "😡" },
-		{ label: "屋台の鉄板", sub: "火力最大", aa: "鉄" },
-		{ label: "たこ焼き", sub: "193か国ぶん\nまっ黒", aa: "焦", shake: true },
-	],
-	links: [{ label: "焼く" }, { label: "焦げる" }],
-	note: "ゼロ調べ（毎年来るそうです）",
-};
-
-/** 寄り道沖縄：島の 引っ越し（step 1 で 島は 帰って、日本地図だけ 書きかわった まま）。 */
-const islandCard = (step: 0 | 1): CardSpec => ({
-	title: "イメージ図「島の引っ越し」",
-	nodes: [
-		{ label: "離島", sub: "島民6人", aa: "島" },
-		{ label: "港", sub: "半分が島", aa: "港", shake: step === 0 },
-		{
-			label: "日本地図",
-			sub: step === 0 ? "形がかわる" : "書きかわった\nまま",
-			aa: "日",
-			shake: step === 1,
-		},
-	],
-	links: [
-		step === 0 ? { label: "クロール" } : { label: "バック", cut: "帰宅" },
-		{ label: "書きかえ" },
-	],
-	note: "ゼロ調べ（国土地理院から電話つき）",
+/** 寄り道おんたこ：たこ焼きの 舟の 底に 書いて ある 粉もん奉行の 字。 */
+const BOAT_NOTE = itemPicture("takoyaki", "たこ焼きの舟の底", {
+	text: "次の招待状も、末尾に😡",
 });
 
-/** 寄り道祭り：町の 太鼓が 地球の 裏まで（step 1 で ブラジルと たたきあい、町の 窓ガラスが 鳴る）。 */
-const drumCard = (step: 0 | 1): CardSpec => ({
-	title: "イメージ図「太鼓の行き先」",
-	nodes:
-		step === 0
-			? [
-					{ label: "町の太鼓", sub: "キリコ連打", aa: "鼓" },
-					{ label: "地球のまんなか", sub: "つきぬける", aa: "球" },
-					{ label: "ブラジル", sub: "サンバで返事", aa: "伯", shake: true },
-				]
-			: [
-					{ label: "キリコ", sub: "たたき返す", aa: "吾" },
-					{ label: "ブラジル", sub: "たたき返す", aa: "伯", shake: true },
-					{ label: "町の窓ガラス", sub: "サンバの拍子", aa: "窓", shake: true },
-				],
-	links:
-		step === 0
-			? [{ label: "ドンドン" }, { label: "ドンドン" }]
-			: [{ label: "口論" }, { label: "ひびく" }],
-	note: "ゼロ調べ（地球の裏まで計りました）",
-});
-
-/** 最終話：鯖代の 払い忘れで 画面ごと まっくら。 */
-const serverCard: CardSpec = {
-	title: "イメージ図「停電の広がり」",
-	nodes: [
-		{ label: "管理人", sub: "鯖代\n払い忘れ", aa: "管" },
-		{ label: "鯖", sub: "止まる", aa: "鯖", shake: true },
-		{ label: "町・板・宇宙", sub: "まっくら", aa: "宇", shake: true },
-	],
-	links: [{ label: "忘れる" }, { label: "ぜんぶ落ちる" }],
-	note: "ゼロ調べ（3機で電気代を計算して）",
+/** 寄り道おんたこ：たこ八の 鉄板（屋台の 柱の 右。data/village/eateries.ts と 同じ 絵）。焦げあとは 町に 残る。 */
+const GRIDDLE: PictureSpec = {
+	...propPicture(art("stallPole", 1), "たこ八の鉄板"),
+	note: "193か国ぶん、まっ黒",
 };
+
+/** 寄り道祭り：丘の やぐら広場の 太鼓（data/village/map.ts の 鼓）。 */
+const HILL_DRUM = propPicture(ri("taiko"), "丘の太鼓");
+
+/** 最終話：掲示板に 出た 管理人の 書きこみ（見出しでは なく 書きこみ）。 */
+const ADMIN_POST = boardPicture("鯖代払い忘れとったわ", "管理人の書きこみ");
 
 /** 後日談：いちばん 古い レス（品の 絵）に 書いて ある 字。 */
 const oldThread = (paper: string): PictureSpec =>
@@ -360,7 +265,7 @@ const SHALLOW_BASE: readonly StoryPage[] = [
 	{ ...n("村に帰りつくと、広場の旗が\nおろされていた。"), look: [20, 21] },
 	// 迎えの 掛け合いは 2〜3人まで（だれが だれか 知らない 人が 流し読み しないように）。ボケ（ゼロ）→ ツッコミ（ロゼ）
 	{
-		...s("zero", "パン兵さん、帰りました！\n3機で手をふって見送りました！", {
+		...s("zero", "パン兵さん、帰りました！\n両手をふって見送りました！", {
 			emote: "!",
 		}),
 		look: null,
@@ -812,7 +717,7 @@ export const STORY: Record<
 		ending: [
 			SHALLOW_BASE[0],
 			// ロゼと ゼロは パン板へ 先回りして いた（王に 説教・パン兵を 数えに）。同じ 船で 町に 帰ってくる（FRIEND_BACK）
-			k("ロゼとゼロ3機も、パン板から\n同じ船で帰ってきたンゴ！"),
+			k("ロゼとゼロも、パン板から\n同じ船で帰ってきたンゴ！"),
 			...SHALLOW_BASE.slice(1),
 			// 独立は 制度の 方へ ふくらむ（国境線 → 入国審査 → 通貨 → 日本 47か国 → 申請書）。場所を 大きく するより、
 			// 制度が 1枚ずつ ふえる。ロゼの 申請書で 片づく はずが、キリコが 蓄音機に かけて 割る（解決の つもりで 悪化）。
@@ -822,27 +727,28 @@ export const STORY: Record<
 				...k("吾輩も独立するンゴ！\n国旗は、蓄音機ンゴ！", { gesture: "hop" }),
 				bgm: "kaiwai4",
 			},
-			// 広場へ 場面を うつして、キリコが 線を 引きながら 横に 走る
+			// 広場へ 場面を うつして、キリコが 線を 引きながら 横に 走る（線は 地図に 描く：ui/village/sceneChalk.ts）
 			{
 				...n("キリコは広場のまんなかに、\nチョークで国境線を引いた。"),
 				se: "pencil",
 				seRepeat: 4,
 				cut: [20, 22],
+				chalk: true,
 				go: [{ who: "kiriko", to: [15, 22], speed: 1.4, face: "right" }],
 			},
 			{
-				...s("zero", "その線、ゼロもほしいです！\n3機ぶん、ほしいです！", {
+				...s("zero", "その線、ゼロもほしいです！\n半分ください！", {
 					gesture: "hop",
 				}),
 				go: [{ who: "zero", to: "kiriko" }],
 			},
 			{
-				...n("ゼロ3機が、国境線を\nひっぱりあって転がりまわった。"),
+				...n("ゼロが国境線をひっぱって、\n線ごと転がりまわった。"),
 				se: "hit_fist",
 				seRepeat: 3,
 				go: [{ who: "zero", route: "rrllllrr", speed: 3 }],
 			},
-			s("roze", "3機で内戦するなアル！", { emote: "怒" }),
+			s("roze", "ひとりで内戦するなアル！", { emote: "怒" }),
 			// ロゼは 広場の 反対の はしへ 走って 自分の 国を 建てる。やきうが 追いかけて ツッコむ
 			{
 				...s("roze", "……やっぱり、わたしも独立アル！\n麻婆共和国アル！", {
@@ -854,11 +760,12 @@ export const STORY: Record<
 				...s("nanj", "ツッコミ役が独立すんな！", { emote: "怒" }),
 				go: [{ who: "nanj", to: [24, 21], face: "right" }],
 			},
-			// 1時間後の 止め絵（国民 0人）。カメラは シャッターの 通り
+			// 1時間後の 止め絵（国民 0人）。みんな 背を 向けて 独立。カメラは シャッターの 通り、絵は 広場の 入国審査の 立て札
 			{
 				...n("1時間後。店も人もみんな独立。\n国民0人、入国審査だけ43か所。"),
 				fx: "chiin",
-				card: independenceCard(0),
+				turnAway: true,
+				card: CUSTOMS_SIGN,
 				look: [45, 17],
 			},
 			{
@@ -872,10 +779,10 @@ export const STORY: Record<
 				emote: "!",
 			}),
 			k("吾輩の服、パンくずで\n大金持ちンゴ！", { gesture: "hop" }),
+			// 日本 47か国は 数の 段（絵に できる 物が ない）：台詞と、つづく やきうの 亡命で 見せる
 			{
 				...n("翌朝。独立は県境をこえて、\n日本は47の国にわかれていた。"),
-				se: "cardFlip",
-				card: independenceCard(1),
+				card: null,
 			},
 			// やきうが 亡命して いる あいだに、ロゼは 通りへ 走って 申請書を 取りに いく
 			{
@@ -1017,18 +924,22 @@ export const STORY: Record<
 			},
 			// 落差の オチ（201 の 作者が ゲームを 閉じる 型）。停電は 町 → 板 → 鯖ごとへ。転の 盛った 見出しが 本当に なる。
 			// 曲が ぷつっと 切れて、無音の まま 暗転と ロールバック
+			// カメラは 掲示板、絵は 貼られた 管理人の 書きこみ
 			{
 				...n("祭りの最中、管理人の書きこみ。\n『鯖代払い忘れとったわ』"),
 				bgm: null,
 				fx: "confetti",
-				card: serverCard,
+				look: [15.5, 21],
+				card: ADMIN_POST,
 			},
-			s("nanj", "管理人、おったんかい！", { emote: "!" }),
-			// ぷつっと 暗転（キリコの ひとことまで 真っ黒。翌朝で 明ける）。本筋で 宇宙まで 行くのは ここだけ
+			{ ...s("nanj", "管理人、おったんかい！", { emote: "!" }), look: null },
+			// ぷつっと 暗転（キリコの ひとことまで 真っ黒。翌朝で 明ける）。本筋で 宇宙まで 行くのは ここだけ。
+			// 停電の 広がり（町 → 板 → 宇宙）は 図で なく 暗転 その もので 見せる
 			{
 				...n("町も、板も、宇宙も、画面ごと\nまっくらになった。"),
 				se: "batonDown",
 				fx: "blackout",
+				card: null,
 			},
 			{ ...k("見出しどおりンゴ！！"), fx: "blackout" },
 			// まっくらの 中で キリコが 最終手段（鯖代を ぷゆゆパンで 払う）。それで 本当に もどる
@@ -1037,7 +948,6 @@ export const STORY: Record<
 				...n("キリコがぷゆゆパンを1個送ると、\n翌朝、町はもとにもどっていた。"),
 				se: "pay",
 				sky: null,
-				card: null,
 			},
 			k("パンで払えたンゴ！？", { emote: "!" }),
 			{
@@ -1167,10 +1077,10 @@ export const STORY: Record<
 				}),
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
 			},
+			// 生き物の 段（頭 → 看板 → 町の 人 → 行進 → 世界 1周）は 図で なく、胞子・地図の きのこ・みんなの 行進で 見せる
 			{
 				...n("胞子は風にのって、こんどは\n町の人の頭に生えた。"),
 				spores: true,
-				card: sporeCard(0),
 			},
 			s("nanj", "ワイの頭、エリンギや！\n帽子かぶれへん！", { emote: "怒" }),
 			s("roze", "人に生やすなアル！！", { emote: "怒" }),
@@ -1181,7 +1091,6 @@ export const STORY: Record<
 			{
 				...n("キリコが行進曲をかけると、町の人が\nきのこごと行進しはじめた。"),
 				se: "pushButton",
-				card: sporeCard(1),
 				// 桟橋を みんなで 行って もどる
 				go: [
 					{ who: "kiriko", route: "uuuDddd", speed: 1.6 },
@@ -1200,7 +1109,6 @@ export const STORY: Record<
 				wear: null,
 				// 場面の 森は 消える。商店街の 扉の わきの きのこは 残る（ui/village/sceneShrooms.ts）
 				shrooms: null,
-				card: sporeCard(2),
 			},
 			nanashi("きのこ軍", "40分で1周や！\n看板のしめじは、おまけや！"),
 			{
@@ -1271,8 +1179,8 @@ export const STORY: Record<
 				...n("島は止まりきれずに、\n港へ突っこんだ。"),
 				se: "explosion",
 				fx: "boom",
+				// 地形の 段（島 → 港 → 日本地図）は 図で なく、港を 映す カメラと 爆発で 見せる（島の 絵は 町に ない）
 				look: [21, 48],
-				card: islandCard(0),
 			},
 			{ ...k("港が、半分\n島になったンゴ！！", { emote: "!" }), look: null },
 			s("roze", "島民6人、\n泳ぎがうまいアル！", {
@@ -1306,7 +1214,6 @@ export const STORY: Record<
 							gesture: "hop",
 						},
 					),
-					card: islandCard(1),
 				},
 				{
 					...s(
@@ -1316,7 +1223,6 @@ export const STORY: Record<
 							emote: "!",
 						},
 					),
-					card: islandCard(1),
 				},
 			),
 		],
@@ -1357,15 +1263,19 @@ export const STORY: Record<
 			// 招待状の 😡（怒って いるのでは なく たこ焼きの 顔）。紙は 舟の 底（once の 包み紙＝帳簿とは べつ）。
 			// キリコが まねして 世界へ 出す → 193か国が 宣戦布告と 受けとる → 首脳が たこ焼き器で 上陸 →
 			// キリコが お手本の つもりで 全部 焦がす（町 → 世界。丸く 収めず 見出しで 追い打ち）
-			n("舟の底に、粉もん奉行の字。\n「次の招待状も、末尾に😡」"),
-			k("吾輩も、招待状を\n出すンゴ😡", { gesture: "hop" }),
-			// 外交の 方から 料理の 方へ（招待状 → 宣戦布告 → 首脳の たこパ → 焦げ）。焦げあとは 屋台の 鉄板に 残る
+			// 絵は 舟の 底の 字
+			{
+				...n("舟の底に、粉もん奉行の字。\n「次の招待状も、末尾に😡」"),
+				card: BOAT_NOTE,
+			},
+			{ ...k("吾輩も、招待状を\n出すンゴ😡", { gesture: "hop" }), card: null },
+			// 外交の 方から 料理の 方へ（招待状 → 宣戦布告 → 首脳の たこパ → 焦げ）。焦げあとは 屋台の 鉄板に 残る。
+			// 193通は 数の 段：台詞と、首脳の 上陸（みんなで 沖を 見る）で 見せる
 			{
 				...n(
 					"キリコが招待状を世界じゅうに送ると、\n返事は193通。ぜんぶ宣戦布告。",
 				),
 				se: "pencil",
-				card: inviteCard,
 			},
 			s("nanj", "😡のせいやんけ！", { emote: "怒" }),
 			// みんなで 船着き場の はしへ 出て 沖を 見る
@@ -1381,25 +1291,22 @@ export const STORY: Record<
 				look: null,
 			},
 			k("吾輩が、焼き方の\nお手本を見せるンゴ！", { gesture: "hop" }),
-			// 浜の 屋台（たこ八）へ 場面を うつす。キリコが 鉄板の 前へ 走る。焦げあとは 屋台の 鉄板に 残る
+			// 浜の 屋台（たこ八）へ 場面を うつす。キリコが 鉄板の 前へ 走る。絵は その 鉄板（焦げあとは 町に 残る）
 			{
 				...n(
 					"キリコが鉄板の火を最大にすると、\n193か国ぶんのたこ焼きが火を噴いた。",
 				),
 				se: "explosion",
 				fx: "boom",
-				card: null,
 				cut: [22, 33],
+				card: GRIDDLE,
 			},
 			k("焼きすぎたンゴ！！", { emote: "!" }),
 			{
 				...s("nanj", "😡の顔のまま、\nまっ黒やんけ！", { emote: "怒" }),
 				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},
-			{
-				...nanashi("首脳たち", "焦げたけど、うまかったで😡\n毎年来るで😡"),
-				card: takoCard,
-			},
+			nanashi("首脳たち", "焦げたけど、うまかったで😡\n毎年来るで😡"),
 			{
 				...n(
 					"掲示板に、見出しがひとつ。\n『【悲報】キリコ、世界を怒らせる😡』",
@@ -1468,7 +1375,7 @@ export const STORY: Record<
 			// 解決の つもりで キリコが たたき返す。地面の 下の サンバは 町に 残る（data/town/revival.ts の 丘の 神社）。
 			// 親分の 次の 祭りの ひとことは 結の 伏線
 			k("吾輩も、たたくンゴ！", { gesture: "hop" }),
-			// 丘の やぐら広場の 太鼓の 前（13,7。太鼓は 13,6）へ 場面を うつして 連打
+			// 丘の やぐら広場の 太鼓の 前（13,7。太鼓は 13,6）へ 場面を うつして 連打。絵は その 太鼓
 			{
 				...n("キリコはうちわの柄で、\n町の太鼓を連打した。"),
 				se: "hit_club",
@@ -1476,6 +1383,7 @@ export const STORY: Record<
 				seGap: 110,
 				cut: [13, 7],
 				go: [{ who: "kiriko", to: [13, 7], face: "up" }],
+				card: HILL_DRUM,
 			},
 			{
 				...s("shiyo", "あたすの耳、まだ\nドンドン鳴ってるわよ！", {
@@ -1484,12 +1392,12 @@ export const STORY: Record<
 				}),
 				go: [{ who: "shiyo", to: "kiriko", speed: 3 }],
 			},
+			// 音の 段（太鼓 → 地球の 裏 → 町の 窓ガラス）は 図で なく、太鼓の 音・ゼロの 走り・窓ガラスの 通りを 映す カメラで 見せる
 			{
 				...n("1時間後。地面の下から、\nサンバの太鼓が返ってきた。"),
 				se: "hit_club",
 				seRepeat: 4,
 				seGap: 160,
-				card: drumCard(0),
 			},
 			{
 				...s("zero", "発信元、ブラジルです！\n地球の裏から、返事です！", {
@@ -1504,7 +1412,6 @@ export const STORY: Record<
 				seRepeat: 6,
 				seGap: 90,
 				fx: "confetti",
-				card: drumCard(1),
 			},
 			// 町の 通りの 窓ガラスを 映す
 			{
@@ -1706,7 +1613,7 @@ export const STORY: Record<
 				}),
 			},
 			{
-				...s("zero", "かけら、まぶしすぎて\nゼロ3機とも寝られません！", {
+				...s("zero", "かけら、まぶしすぎて\nゼロ、寝られません！", {
 					emote: "汗",
 				}),
 				card: null,

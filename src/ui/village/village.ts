@@ -96,14 +96,17 @@ import { buildHall } from "./hallEvents";
 import { MoneyPops } from "./moneyPop";
 import { Overhear } from "./overhear";
 import { buildRoom } from "./rooms";
+import { drawChalk, setChalkTown } from "./sceneChalk";
 import { drawShrooms, SHROOM_LEFT, setShroomTown } from "./sceneShrooms";
 import {
 	BLACKOUT_TINT,
 	outsideNow,
-	SCENE_NIGHT_MINUTE,
 	sceneLit,
+	sceneMinute,
 	sceneSky,
+	setSceneSky,
 	setTownSky,
+	skitSky,
 	townSkyNow,
 } from "./sceneSky";
 import { nearSkit, playNearSkit, skitAfterEvent } from "./skits";
@@ -113,6 +116,7 @@ import {
 	buildVillage,
 	departAnywhere,
 	villageMenu,
+	villageSceneView,
 } from "./villageEvents";
 import { clearLinger, endLinger, lingerDone } from "./villageMusic";
 import { openingHoldsGuide } from "./villageOpening";
@@ -336,6 +340,8 @@ export class Village {
 		const k = o.arrival?.kind;
 		if (k === "clear" || k === "escape" || k === "dead")
 			advanceClock(RETURN_HOURS * 60);
+		// 持ち帰りの 寸劇は 朝（村の 時計に かかわらず。場面の おわりに 時計へ：ui/village/villageReturn.ts の returnScene）
+		if (k === "clear" || k === "escape") setSceneSky(skitSky());
 		// 起動の札の うしろでは 村が 動いている（うろうろ する。場面は 札を 閉じてから）
 		this.scene = !o.boot;
 		this.lookAt = null;
@@ -425,6 +431,10 @@ export class Village {
 			this.mapId === "village" ? v : null,
 			(x, y) => field.canEnter(x, y),
 			this.state.flags[SHROOM_LEFT],
+		);
+		// 広場の チョークの 国境線（パン板の 広場が 生き返ってから。ui/village/sceneChalk.ts）
+		setChalkTown(
+			this.mapId === "village" ? villageSceneView(v, this.arrival) : null,
 		);
 		this.player = new Actor(
 			"player",
@@ -633,9 +643,10 @@ export class Village {
 			this.clockMs %= 1000;
 		}
 		const h = nowHour();
-		// 明かりの 場面は 夜の 色なので、時刻は 出さず「夜」だけ（ui/village/sceneSky.ts）
-		const text = sceneSky()
-			? BAND_NAME.night
+		// 場面の 空の あいだは 時刻を 出さず「夜」「朝」だけ（ui/village/sceneSky.ts。色と 食いちがわない ように）
+		const sky = sceneSky();
+		const text = sky
+			? BAND_NAME[sky === "morning" ? "morning" : "night"]
 			: clockLine(h, nowMinute(), timeBand(h));
 		this.tickMoney(dt);
 		if (text === this.clockText) return;
@@ -1523,8 +1534,11 @@ export class Village {
 		// 向きの ない 絵の 置物は そのまま）
 		for (const a of field.actors)
 			a.visible = a.still || outsideNow(a.id, a.x, a.y);
-		// 地図の きのこ（人の 下。ui/village/sceneShrooms.ts）
-		if (this.mapId === "village") drawShrooms(g, ox, oy);
+		// 広場の チョークの 国境線・地図の きのこ（人の 下。ui/village/sceneChalk.ts・sceneShrooms.ts）
+		if (this.mapId === "village") {
+			drawChalk(g, ox, oy);
+			drawShrooms(g, ox, oy);
+		}
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		// やきうの 頭の 上の「残機：1」（ui/village/zankiTag.ts）
@@ -1557,7 +1571,7 @@ export class Village {
 			const on = sceneLit();
 			const lit = daylightAt(
 				sky
-					? SCENE_NIGHT_MINUTE
+					? sceneMinute(sky)
 					: nowHour() * 60 + nowMinute() + this.clockMs / 1000,
 				m,
 				d,

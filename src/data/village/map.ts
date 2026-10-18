@@ -150,10 +150,11 @@ export type VillageView = {
 	unlocked: readonly DungeonId[];
 	cleared: readonly DungeonId[];
 	/**
-	 * いま 持ち帰って きた 板（はじめての 持ち帰りの 語りの あいだ。cleared には まだ 入れない）。
-	 * その 板で 帰ってくる 仲間は 同じ 船で 着いて いるので、語りの 村にも 立つ。
+	 * 持ち帰ったが、まだ 町に 出して いない 板（はじめての 持ち帰りの 語りの あいだと、生き返った 通りの 知らせの 前。
+	 * cleared には 入れない：ui/village/villageReturn.ts の sceneView）。その 板で 帰ってくる 仲間は 同じ 船で 着いて
+	 * いるので 立つ。騒ぎの 人は もう 帰って いる。通り・もどる 住人・ご近所は 知らせの あと。
 	 */
-	arriving?: DungeonId;
+	arriving?: readonly DungeonId[];
 	/**
 	 * この 帰りに 広場に いない 住人（施設に 行っている 子・出かけている 子。ui/village/villageMobs.ts の mobsOutNow）。
 	 * 無ければ みんな いる。
@@ -1149,7 +1150,9 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	}
 	// ライバル 4人と やきう（やきうは はじめから。ライバルは 板の 話が 片づくと 帰ってくる：data/story/story.ts の
 	// FRIEND_BACK。店の 仕事は しない：TOWN.md §0.4）
-	const away = awayFriends(v.arriving ? [...v.cleared, v.arriving] : v.cleared);
+	const away = awayFriends(
+		v.arriving ? [...v.cleared, ...v.arriving] : v.cleared,
+	);
 	const here = (w: Speaker) => !away.includes(w);
 	if (here("roze")) out.push(friend("roze", VILLAGE_SPOTS.roze));
 	// シヨは 金・土・日の 夜は メイド喫茶で アルバイト（data/people/shiyoShift.ts）
@@ -1222,13 +1225,14 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	// （広場に 人が もどる パン板から）
 	if (v.cleared.includes(FOLK_BACK)) out.push(...folkPlaces(stage));
 	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで）と ご近所（持ち帰った あと。data/town/incidents.ts）。
-	// 持ち帰りの 語りの あいだ（arriving）は もう 片づいた 騒ぎ：騒ぎの 人は 帰って、ご近所が 来て いる
+	// 持ち帰りの 語りの あいだ（arriving）は もう 片づいた 騒ぎ：騒ぎの 人は 帰って いる。ご近所が 来るのは
+	// 生き返った 通りの 知らせの あと（寸劇の 時点では まだ 来ない）
 	const settled = v.arriving
-		? { ...v, cleared: [...v.cleared, v.arriving] }
+		? { ...v, cleared: [...v.cleared, ...v.arriving] }
 		: v;
 	for (const p of [
 		...activeIncidents(settled).flatMap((i) => i.people),
-		...activeVisitors(settled),
+		...activeVisitors(v),
 	])
 		out.push({
 			id: incidentPlaceId(p),
