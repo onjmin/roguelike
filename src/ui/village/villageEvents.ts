@@ -634,8 +634,13 @@ const mouthScript =
 	async (s) => {
 		// いちばん 最初の 村で まだ 広場を 見て いない（ui/village/villageOpening.ts）
 		if (openingWalking()) return openingNotYet(s, step);
-		// 帰りの 2幕目（その夜の 場面・開いた 知らせ）を まだ 見て いなければ、出る 前に そちら
-		if (storyHeld) await resumeStory(s);
+		// 帰りの 2幕目（その夜の 場面・開いた 知らせ）を まだ 見て いなければ、出る 前に そちら。
+		// 場面で キリコが 広場へ うつって いたら（その夜の 場面）そこで おわり（出口は 踏みなおす）
+		if (storyHeld) {
+			await resumeStory(s);
+			const [ex, ey] = VILLAGE_EXITS[0].cell;
+			if (s.state.x !== ex || s.state.y !== ey) return;
+		}
 		// 行き先（はじめは 筋の 次の 板。筋を 終えたら 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
 		// 過去ログの底は 井戸から なので 地図には 出さない）
 		const pr = loadProgress();

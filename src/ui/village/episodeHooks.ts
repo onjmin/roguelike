@@ -204,7 +204,9 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	await s.fadeIn(600);
 	await s.kiriko(T.sleep, "voice");
 
-	// 港から 行進が 坂を 上がって 商店街へ（カメラは 先頭を 追う）
+	// 港から 行進が 坂を 上がって 商店街へ（カメラは 先頭を 追う）。桟橋は 1列なので 先頭（町に いちばん 近い 人）から
+	// 歩きだし、うしろの 人は 前の 人の 道を そのまま 歩く（前の 人を よける 道（avoid）は 1列の 桟橋では 見つからず、
+	// 2人が 桟橋に 残って 港を ふさいだ）。道が なかった 人も 持ち場に 立たせる
 	const [ex, ey] = VILLAGE_SPOTS.exit;
 	army.forEach((k, i) => {
 		s.show(k.id);
@@ -217,9 +219,9 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	if (head) void s.look(head.id);
 	await Promise.all(
 		army.map(async (k, i) => {
-			await s.wait(i * 350);
-			await s.goto(k.id, k.at[0], k.at[1], { speed: 1.4, avoid: true });
-			s.face(k.id, k.dir);
+			await s.wait((army.length - 1 - i) * 350);
+			await s.goto(k.id, k.at[0], k.at[1], { speed: 1.4 });
+			s.place(k.id, k.at[0], k.at[1], k.dir);
 		}),
 	);
 	await s.say("zero", T.zeroCount, { emote: "!" });
