@@ -254,15 +254,16 @@ export class Actor {
 			ctx.fillStyle = "rgba(0,0,0,0.3)";
 			ctx.fillRect(px + 4, py + 12, 8, 3);
 		}
+		// 胞子は 頭の 物が なくても ふく（きのこを 摘んだ あと 髪に 残った 胞子の くしゃみ）
+		if (this.puffFrom !== null && this.puffFrom < 0) this.puffFrom = time;
+		const puff = this.puffFrom === null ? null : time - this.puffFrom;
 		if (this.over) {
 			// ふいた 瞬間は 1px 沈んで もどる
-			if (this.puffFrom !== null && this.puffFrom < 0) this.puffFrom = time;
-			const puff = this.puffFrom === null ? null : time - this.puffFrom;
 			const squash = puff !== null && puff < 160 ? 1 : 0;
 			this.over(ctx, face, frame, px + gx, py + gy + squash);
-			if (puff !== null && puff >= SPORE_MS) this.puffFrom = null;
-			else if (puff !== null) drawSpores(ctx, px + gx + 8, py + gy - 7, puff);
 		}
+		if (puff !== null && puff >= SPORE_MS) this.puffFrom = null;
+		else if (puff !== null) drawSpores(ctx, px + gx + 8, py + gy - 7, puff);
 		if (this.aura === "steam") drawSteam(ctx, px + gx + 8, py + gy, time);
 		if (this.emote !== this.emoteShown || this.emoteFrom < 0) {
 			this.emoteShown = this.emote;

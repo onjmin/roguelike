@@ -2839,7 +2839,7 @@ export class Play {
 		const shake = kind === "eruption" ? 700 : kind === "geyser" ? 500 : 300;
 		document.body.classList.add("shake");
 		const lift = pd ? { x: pd.tx, y: pd.ty } : null;
-		// 噴火は 場面の 爆発（「ドカーン」と 煙。光と ゆれは ここの もの）。煙は 暗転まで 残す
+		// 噴火は 場面の 爆発（火の玉と 煙。光と ゆれは ここの もの）。煙は 暗転まで 残す
 		const boom =
 			kind === "eruption"
 				? startFx(this.ctx.ui, "boom", { k, bare: true })

@@ -108,7 +108,7 @@ const play = async (
 			if (l.fx) {
 				fx?.end();
 				if (l.fx === "boom") s.se("explosion");
-				fx = startFx(fxRoot(), l.fx, { word: false });
+				fx = startFx(fxRoot(), l.fx);
 				await fx.ready;
 			}
 			await line(s, l, mob);

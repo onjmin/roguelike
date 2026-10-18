@@ -6,6 +6,7 @@
 // 筋は STORY.md §4.9「おんJの 板を めぐる 話」。キリコも 会話に 加わる（吾輩・ンゴ。望みは 台詞で 言う）。
 // 1行は全角22字・2行まで。笑いが 先、シリアスは 落差で（STORY.md §0）。
 
+import { ITEMS } from "../../core/data/items";
 import type { DungeonId } from "../../core/types";
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
@@ -254,6 +255,23 @@ const HILL_DRUM = propPicture(ri("taiko"), "丘の太鼓");
 
 /** 最終話：掲示板に 出た 管理人の 書きこみ（見出しでは なく 書きこみ）。 */
 const ADMIN_POST = boardPicture("鯖代払い忘れとったわ", "管理人の書きこみ");
+
+/** 第一話：ロゼが 取ってきた 日本に 1枚の 申請書（キリコが 蓄音機に かけて 割る）。 */
+const APPLICATION = itemPicture("memo", "ロゼが取ってきた申請書", {
+	text: "独立とりけし申請書\n（日本に1枚）",
+});
+
+/** 品の 絵（core/data/items.ts の icon。持ち帰った 品が 文に 出てきた とき）。 */
+const iconPicture = (
+	id: string,
+	title: string,
+	paper?: PictureSpec["paper"],
+): PictureSpec => propPicture(ITEMS[id]?.icon ?? "", title, paper);
+
+/** 寄り道 離島：ヤシの実の 中の ナツコの 手紙。 */
+const NATSUKO_LETTER = itemPicture("memo", "ヤシの実の中の手紙", {
+	text: "島民6人、全員ぶじに\n帰りました　ナツコ",
+});
 
 /** 後日談：いちばん 古い レス（品の 絵）に 書いて ある 字。 */
 const oldThread = (paper: string): PictureSpec =>
@@ -774,6 +792,7 @@ export const STORY: Record<
 			// 1時間後の 止め絵（国民 0人）。みんな 背を 向けて 独立。カメラは シャッターの 通り、絵は 広場の 入国審査の 立て札
 			{
 				...n("1時間後。店も人もみんな独立。\n国民0人、入国審査だけ43か所。"),
+				skip: true,
 				fx: "chiin",
 				turnAway: true,
 				card: CUSTOMS_SIGN,
@@ -789,10 +808,15 @@ export const STORY: Record<
 			s("zero", "ゼロ、お金も刷りました！\n1キリコ＝パンくず1粒です！", {
 				emote: "!",
 			}),
-			k("吾輩の服、パンくずで\n大金持ちンゴ！", { gesture: "hop" }),
+			// 服に パンくずを つけて 見せる（BOSS_RETURN で もう ついて いれば そのまま）
+			{
+				...k("吾輩の服、パンくずで\n大金持ちンゴ！", { gesture: "hop" }),
+				wear: "crumbs",
+			},
 			// 日本 47か国は 数の 段（絵に できる 物が ない）：台詞と、つづく やきうの 亡命で 見せる
 			{
 				...n("翌朝。独立は県境をこえて、\n日本は47の国にわかれていた。"),
+				skip: true,
 				card: null,
 			},
 			// やきうが 亡命して いる あいだに、ロゼは 通りへ 走って 申請書を 取りに いく
@@ -807,6 +831,8 @@ export const STORY: Record<
 					emote: "!",
 				}),
 				go: [{ who: "roze", to: "kiriko", speed: 3 }],
+				// 持ってきた 紙の 実物（蓄音機に かけて 割れるまで 出して おく）
+				card: APPLICATION,
 			},
 			// 主人公が 最悪の 手を 打つ（申請書を レコードと まちがえる）→ 直後に 自己ツッコミ
 			k("それ、レコードンゴ？\nかけてみるンゴ！", { gesture: "hop" }),
@@ -814,6 +840,7 @@ export const STORY: Record<
 				...n("キリコが申請書を蓄音機にかけると、\n紙は粉々にくだけた。"),
 				se: "glassBreak",
 				fx: "chiin",
+				card: null,
 			},
 			k("吾輩、日本を割ったンゴ！！", { emote: "!" }),
 			s("roze", "日本に1枚しかない紙アル！！", {
@@ -957,6 +984,7 @@ export const STORY: Record<
 			{ ...k("吾輩が、鯖代を\n払ってくるンゴ！"), fx: "blackout" },
 			{
 				...n("キリコがぷゆゆパンを1個送ると、\n翌朝、町はもとにもどっていた。"),
+				skip: true,
 				se: "pay",
 				sky: null,
 			},
@@ -1003,8 +1031,9 @@ export const STORY: Record<
 				emote: "!",
 			}),
 			k("数えんでええンゴ！"),
+			// 商店街は 生き返りの 知らせまで シャッターが おりた まま（ご近所の きのにゃんも まだ 来て いない）
 			{
-				...n("商店街のまんなかで、\nきのにゃんがふんぞりかえっていた。"),
+				...n("商店街は、シャッターが\nぜんぶおりたままだった。"),
 				look: [42, 17],
 			},
 			{
@@ -1092,6 +1121,7 @@ export const STORY: Record<
 			{
 				...n("胞子は風にのって、こんどは\n町の人の頭に生えた。"),
 				spores: true,
+				wearAll: "kinoko",
 			},
 			s("nanj", "ワイの頭、エリンギや！\n帽子かぶれへん！", { emote: "怒" }),
 			s("roze", "人に生やすなアル！！", { emote: "怒" }),
@@ -1118,6 +1148,7 @@ export const STORY: Record<
 					"行進は世界を1周して帰ってきて、\n人の頭のきのこだけ摘んでいった。",
 				),
 				wear: null,
+				wearAll: null,
 				// 場面の 森は 消える。商店街の 扉の わきの きのこは 残る（ui/village/sceneShrooms.ts）
 				shrooms: null,
 			},
@@ -1159,20 +1190,29 @@ export const STORY: Record<
 			s("feris", "ヤシの実〜！ねえ、\n耳にあてたら波の音する〜？", {
 				gesture: "hop",
 			}),
-			n("キリコはヤシの実を蓄音機に\nのせてみた。回らない。"),
+			{
+				...n("キリコはヤシの実を蓄音機に\nのせてみた。回らない。"),
+				card: iconPicture("yashi", "ヤシの実"),
+			},
 			s("roze", "回すより、\n割って飲むのが常識アル！"),
-			// 総島民 6人（分母 6）
-			n("割ると、中からナツコの手紙。\n「島民6人、全員ぶじに帰りました」"),
+			// 総島民 6人（分母 6）。絵は 中から 出た 手紙
+			{
+				...n("割ると、中からナツコの手紙。\n「島民6人、全員ぶじに帰りました」"),
+				se: "read",
+				card: NATSUKO_LETTER,
+			},
 			s("zero", "生還率、100％です！\n分母は6です！", { emote: "!" }),
 			// 島が 好きすぎて 町に 来たかった（板の 事情）。キリコが 呼ぶ → 島が 泳いで 港に 突っこむ → 日本の 形が かわる
 			// キリコは 船着き場の はしへ 走って 沖に 呼びかける
 			{
 				...k("島ごと来たらええンゴ！\n港、空いてるンゴ！", { gesture: "hop" }),
+				card: null,
 				go: [{ who: "kiriko", to: [23, 50], face: "down" }],
 			},
 			// 夜の 沖（カメラは 海の ほう）
 			{
 				...n("その夜、沖でゴゴゴと地鳴り。\n島が、泳ぎはじめた。"),
+				skip: true,
 				se: "bubble",
 				sky: "night",
 				look: [24, 51],
@@ -1190,10 +1230,17 @@ export const STORY: Record<
 				...n("島は止まりきれずに、\n港へ突っこんだ。"),
 				se: "explosion",
 				fx: "boom",
-				// 地形の 段（島 → 港 → 日本地図）は 図で なく、港を 映す カメラと 爆発で 見せる（島の 絵は 町に ない）
-				look: [21, 48],
+				// 地形の 段（島 → 港 → 日本地図）は 図で なく、港を 映す カメラと 爆発と、港に 突っこんだ 島
+				// （ui/village/sceneMarks.ts）で 見せる
+				look: [26, 47],
+				mark: "island",
 			},
-			{ ...k("港が、半分\n島になったンゴ！！", { emote: "!" }), look: null },
+			// みんなで 桟橋の 港の 前へ 見に 行く（島が 見える 所）
+			{
+				...k("港が、半分\n島になったンゴ！！", { emote: "!" }),
+				look: null,
+				go: [{ who: "all", to: [24, 42], speed: 3, face: "right" }],
+			},
 			s("roze", "島民6人、\n泳ぎがうまいアル！", {
 				emote: "怒",
 				gesture: "shiver",
@@ -1225,6 +1272,7 @@ export const STORY: Record<
 							gesture: "hop",
 						},
 					),
+					unmark: "island",
 				},
 				{
 					...s(
@@ -1234,15 +1282,22 @@ export const STORY: Record<
 							emote: "!",
 						},
 					),
+					unmark: "island",
 				},
 			),
 		],
 		// 寄り道「残機」①：1UP は にせもの（ナツコの 自由研究）
 		once: [
-			{ ...n("ヤシの実に、マジックで\n「1UP」と書いてあった。"), card: null },
-			s("feris", "それ、ナツコちゃんの字〜。\n夏休みの自由研究だよ〜", {
-				emote: "汗",
-			}),
+			{
+				...n("ヤシの実に、マジックで\n「1UP」と書いてあった。"),
+				card: iconPicture("yashi", "ヤシの実（うら）", { text: "1UP" }),
+			},
+			{
+				...s("feris", "それ、ナツコちゃんの字〜。\n夏休みの自由研究だよ〜", {
+					emote: "汗",
+				}),
+				card: null,
+			},
 			s("nanj", "にせもんか！草"),
 			{
 				...k("残機って、どうやったら\nふえるンゴ？", { emote: "?" }),
@@ -1281,19 +1336,36 @@ export const STORY: Record<
 			},
 			{ ...k("吾輩も、招待状を\n出すンゴ😡", { gesture: "hop" }), card: null },
 			// 外交の 方から 料理の 方へ（招待状 → 宣戦布告 → 首脳の たこパ → 焦げ）。焦げあとは 屋台の 鉄板に 残る。
-			// 193通は 数の 段：台詞と、首脳の 上陸（みんなで 沖を 見る）で 見せる
+			// 193通は 数の 段：ビンを 流す キリコ・返事の 手紙・首脳の 舟（ui/village/sceneMarks.ts）で 見せる
+			// 招待状を 出す 手の 動き：桟橋の 先へ 走って、ビンに つめて 海へ 流す
 			{
-				...n(
-					"キリコが招待状を世界じゅうに送ると、\n返事は193通。ぜんぶ宣戦布告。",
-				),
-				se: "pencil",
+				...n("キリコは招待状を193本のビンにつめて、\n海へ流した。"),
+				se: "bubble",
+				seRepeat: 4,
+				seGap: 160,
+				go: [{ who: "kiriko", to: [21, 50], speed: 3, face: "down" }],
+				// 流した ビンが 沖へ（ui/village/sceneMarks.ts。3日後で しまう）
+				mark: "bottles",
 			},
-			s("nanj", "😡のせいやんけ！", { emote: "怒" }),
+			// 時間を とばして、返って きた 手紙の 実物
+			{
+				...n("3日後。ビンの返事が193通、\nぜんぶ宣戦布告だった。"),
+				skip: true,
+				unmark: "bottles",
+				se: "read",
+				card: itemPicture("memo", "ビンの返事（193通）", {
+					text: "宣戦布告😡",
+				}),
+			},
+			{ ...s("nanj", "😡のせいやんけ！", { emote: "怒" }), card: null },
 			// みんなで 船着き場の はしへ 出て 沖を 見る
 			{
 				...n("翌日。各国の首脳が、\nたこ焼き器をかかえて上陸してきた。"),
+				skip: true,
 				go: [{ who: "all", to: [21, 51], face: "down" }],
 				look: [21, 51],
+				// 桟橋の 両わきに 首脳の 舟（ui/village/sceneMarks.ts）
+				mark: "boats",
 			},
 			{
 				...s("roze", "戦争じゃなくて、\nたこパしに来たアル！？", {
@@ -1380,8 +1452,16 @@ export const STORY: Record<
 				emote: "怒",
 			}),
 			// うちわの 表に 親分の 字（あおぐ／煽る。once の「裏」の 字とは べつ。見出しの 名無しの 前ぶれ）
-			n("うちわの表に、親分の字。\n「祭りも見出しも、あおったもん勝ち」"),
-			s("shiyo", "あおるの意味が、ちがうわよ！", { emote: "怒" }),
+			{
+				...n("うちわの表に、親分の字。\n「祭りも見出しも、あおったもん勝ち」"),
+				card: iconPicture("uchiwa", "親分のうちわ（表）", {
+					text: "祭りも見出しも、\nあおったもん勝ち",
+				}),
+			},
+			{
+				...s("shiyo", "あおるの意味が、ちがうわよ！", { emote: "怒" }),
+				card: null,
+			},
 			// 音の 方へ ふくらむ（太鼓 → 地面を つきぬけて ブラジル → 地球の 裏と 太鼓で 口論 → 町の 窓ガラスが サンバ）。
 			// 解決の つもりで キリコが たたき返す。地面の 下の サンバは 町に 残る（data/town/revival.ts の 丘の 神社）。
 			// 親分の 次の 祭りの ひとことは 結の 伏線
@@ -1406,6 +1486,7 @@ export const STORY: Record<
 			// 音の 段（太鼓 → 地球の 裏 → 町の 窓ガラス）は 図で なく、太鼓の 音・ゼロの 走り・窓ガラスの 通りを 映す カメラで 見せる
 			{
 				...n("1時間後。地面の下から、\nサンバの太鼓が返ってきた。"),
+				skip: true,
 				se: "hit_club",
 				seRepeat: 4,
 				seGap: 160,
@@ -1453,9 +1534,19 @@ export const STORY: Record<
 				...n(
 					"うちわの裏に「今夜やきうの遺影祭り」。\nその夜、村じゅうで遺影を書いた。",
 				),
+				skip: true,
+				sky: "night",
 				se: "pencil",
+				card: iconPicture("uchiwa", "親分のうちわ（裏）", {
+					text: "今夜\nやきうの遺影祭り",
+				}),
 			},
-			s("feris", "はい〜、遺影〜。\nやきうくん、成仏して〜", { emote: "♪" }),
+			{
+				...s("feris", "はい〜、遺影〜。\nやきうくん、成仏して〜", {
+					emote: "♪",
+				}),
+				card: null,
+			},
 			s("nanj", "生きとるわ！", { emote: "怒" }),
 			// 最終話の 前：名無しには 届かない（最終話の 祭りで 回収）
 			{
@@ -1595,13 +1686,17 @@ export const STORY: Record<
 		],
 		ending: [
 			// カメラは 浜の ステージ（フェリスは そこで 空を 見て いる）
+			// 帰りついたのは 夜（文が「夜空」「夜の浜」と 言う。寸劇の 朝に しない）
 			{
-				...nAbout(
-					"村に帰りつくと、\nフェリスが空を見上げていた。",
-					"feris",
-					"村に帰りつくと、\n夜空がすこし明るかった。",
-				),
+				...n("村に帰りつくと、\nフェリスが空を見上げていた。"),
+				about: "feris",
+				sky: "night",
 				look: [12, 34],
+				instead: {
+					...n("村に帰りつくと、\n夜空がすこし明るかった。"),
+					sky: "night",
+					look: [12, 34],
+				},
 			},
 			// 浜へ 場面を うつす
 			{
@@ -1713,11 +1808,16 @@ export const STORY: Record<
 			"キリコは蓄音機をかかえた。\n「おんキムに来ませんか？」の声がする。",
 		],
 		ending: [
-			nAbout(
-				"村に帰りつくと、\nロゼが壺のふたをあけた。",
-				"roze",
-				"村に帰りつくと、\n壺から辛いにおいがした。",
-			),
+			// 壺の 実物（ふたを あけた ところ）
+			{
+				...n("村に帰りつくと、\nロゼが壺のふたをあけた。"),
+				about: "roze",
+				card: itemPicture("kimchi", "おんキムのキムチ壺"),
+				instead: {
+					...n("村に帰りつくと、\n壺から辛いにおいがした。"),
+					card: itemPicture("kimchi", "おんキムのキムチ壺"),
+				},
+			},
 			{
 				...s("roze", "いい漬かりぐあいアル！\n麻婆豆腐にのせるアル！", {
 					emote: "♪",
@@ -2050,7 +2150,11 @@ export const UNLOCK_LINES: Record<
  * 名無しは 1人で 来て キリコとだけ 話す（離れた 仲間は 出てこない）。
  */
 export const UNLOCK_VISIT: Partial<
-	Record<DungeonId, readonly { who: "visitor" | null; text: string }[]>
+	Record<
+		DungeonId,
+		/** se は その 窓の 前に 鳴らす 音（文が 音を 言う 行。「太鼓の音がちかづいてくる」）。 */
+		readonly { who: "visitor" | null; text: string; se?: string }[]
+	>
 > = {
 	kinoko: [
 		{
@@ -2099,7 +2203,11 @@ export const UNLOCK_VISIT: Partial<
 		},
 	],
 	festival: [
-		{ who: null, text: "村の口から、太鼓の音が\nちかづいてくる。" },
+		{
+			who: null,
+			se: "hit_club",
+			text: "村の口から、太鼓の音が\nちかづいてくる。",
+		},
 		{ who: "visitor", text: "祭りや祭りや！\nお祭り会場から来たで" },
 		{
 			who: "visitor",

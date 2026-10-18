@@ -8131,6 +8131,24 @@ test("見出しの 絵（図＝実物の 絵）: 語りが 掲示板の 見出�
 	);
 });
 
+test("時間が とぶ 頁（2026-10-18）: 地の文が「翌日。」「1時間後。」「その夜、」と 言う 頁は 暗転して 明ける（skip・cut）。窓だけ 進めない", () => {
+	const pages = DUNGEON_IDS.flatMap((d) => [
+		...STORY[d].ending,
+		...(STORY[d].again ?? []),
+		...(STORY[d].once ?? []),
+		...(BOSS_RETURN[d] ?? []),
+	]).flatMap((p) => (p.instead ? [p, p.instead] : [p]));
+	const jump = /翌日|翌朝|\d+時間後|\d+日後|その夜|夜ふけ/;
+	let n = 0;
+	for (const p of pages) {
+		// 地の文だけ（台詞の「40分で1周や」は 時間を とばさない）
+		if (p.who || p.kiriko || p.nanashi || p.mob || !jump.test(p.text)) continue;
+		n++;
+		ok(!!(p.skip || p.cut), `時間が とぶのに 場面が かわらない: ${p.text}`);
+	}
+	ok(n >= 8, `時間が とぶ 頁が 少ない: ${n}`);
+});
+
 test("寸劇の あとの 町（2026-10-18）: ご近所・もどる 住人・通りは 生き返った 知らせの あと。寸劇は 朝。チョークの 国境線は 広場の 通れる マス。寸劇の ゼロは 1機", () => {
 	const v = (cleared: DungeonId[], arriving?: DungeonId[]): VillageView => ({
 		stage: TOWN_STAGES - 1,

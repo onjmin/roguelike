@@ -7,7 +7,7 @@ import { settings } from "./settings";
 
 /** 場面の エフェクト。 */
 export type SceneFx =
-	/** 爆発（白い 光・ゆれ・ギザギザの 火の玉と「ドカーン」。煙は 頁の あいだ 残る）。 */
+	/** 爆発（白い 光・ゆれ・ギザギザの 火の玉。字は 出さない。煙は 頁の あいだ 残る）。 */
 	| "boom"
 	/** ぷつっと 暗転（溶かさずに 一瞬で 真っ黒。窓だけ 見える。明けも 一瞬）。 */
 	| "blackout"
@@ -176,8 +176,6 @@ const boom = (
 	k: number,
 	still: boolean,
 	bare: boolean,
-	/** 「ドカーン」の 字を 出す（村の 寸劇は 出さない）。 */
-	lettered: boolean,
 ): FxRun => {
 	const L = layer(root, "fx-boom");
 	if (!L) return NONE;
@@ -186,7 +184,6 @@ const boom = (
 	const cy = L.h * 0.42;
 	const R = Math.min(L.w, L.h) * 0.36;
 	const jag = Array.from({ length: 11 }, () => 0.75 + r() * 0.45);
-	const word = dotWord("ドカーン", "#ffe14a", "#3a1408");
 	// 煙（火の玉が はじけた あと 広がって、頁の あいだ ただよう）
 	const puffs = Array.from({ length: still ? 12 : 22 }, () => {
 		const a = r() * Math.PI * 2;
@@ -255,23 +252,6 @@ const boom = (
 			star(g, cx, cy, size * 0.46, 9, 0.6, turn + 0.3, jag);
 			g.fillStyle = "#fffbe0";
 			dotDisc(g, cx, cy, size * 0.16);
-		}
-		// 「ドカーン」（ぽんと 大きく 出て、少し 傾いて 残る）
-		const wordEnd = hold + 500 * k;
-		if (lettered && t < wordEnd) {
-			const q = Math.min(1, t / pop);
-			const scale = Math.max(
-				1,
-				Math.round((q < 1 ? 3 : 2) * (L.w > 200 ? 1.5 : 1)),
-			);
-			const ww = word.width * scale;
-			const wh = word.height * scale;
-			g.save();
-			g.globalAlpha = t > hold ? Math.max(0, 1 - (t - hold) / (500 * k)) : 1;
-			g.translate(Math.round(cx), Math.round(cy - R * 0.15));
-			g.rotate(-0.12);
-			g.drawImage(word, Math.round(-ww / 2), Math.round(-wh / 2), ww, wh);
-			g.restore();
 		}
 		return ending === null || ending < fade;
 	});
@@ -445,14 +425,14 @@ export const fxRoot = (): HTMLElement | null =>
 export const startFx = (
 	root: HTMLElement | null,
 	kind: SceneFx,
-	opt: { k?: number; bare?: boolean; caption?: string; word?: boolean } = {},
+	opt: { k?: number; bare?: boolean; caption?: string } = {},
 ): FxRun => {
 	if (!root || typeof document === "undefined") return NONE;
 	const k = opt.k ?? (settings.speed === "fast" ? 0.6 : 1);
 	const still = stillMotion();
 	switch (kind) {
 		case "boom":
-			return boom(root, k, still, !!opt.bare, opt.word ?? true);
+			return boom(root, k, still, !!opt.bare);
 		case "blackout":
 			return blackout(root);
 		case "chiin":

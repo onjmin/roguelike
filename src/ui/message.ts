@@ -259,6 +259,8 @@ export type MessageParams = {
 	portrait?: PortraitSpec | null;
 	/** 話す 人の 立ち絵の 頭の 横に 添える 感情の 記号（手書き風。ui/emoteInk.ts）。立ち絵が 無ければ 出さない。 */
 	emote?: Emote;
+	/** 立ち絵の ない 窓（地の文・名無し）で、出て いる 立ち絵を 下げる（村の 場面：地図の 出来事を 隠さない）。 */
+	clearPortraits?: boolean;
 	/**
 	 * 表示と同時に呼ばれる（読み上げ開始。GameAudio.speak の戻り値をそのまま返せる）。
 	 * leadMs は、声にならない出だし（「……」など）を出しきるまでの ms。声はそのぶん遅らせて鳴らす。
@@ -494,6 +496,9 @@ export class MessageWindow {
 			other.dim(true);
 			slot.mark(p.emote ?? null);
 			other.mark(null);
+		} else if (p.clearPortraits) {
+			this.left.clear();
+			this.right.clear();
 		} else {
 			this.left.mark(null);
 			this.right.mark(null);

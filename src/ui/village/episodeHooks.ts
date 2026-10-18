@@ -28,6 +28,7 @@ import {
 } from "../../engine/save";
 import { showCard } from "../../engine/sceneCard";
 import { fxRoot, startFx } from "../../engine/sceneFx";
+import { endMarks, putMark, takeMark } from "./sceneMarks";
 import { setSceneSky } from "./sceneSky";
 import { villageSong } from "./villageMusic";
 import { villageView, visitScript } from "./villageReturn";
@@ -108,6 +109,8 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	if (pan) {
 		s.face(pan.id, "right");
 		s.face("player", "left");
+		// 地の文の「パンを並べていた」：パン兵の 前に 独立記念の パン（ui/village/sceneMarks.ts。翌朝まで）
+		putMark("bread");
 		s.se("put");
 		await as(s, T.panheiName, T.panheiSell);
 	}
@@ -159,11 +162,13 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 		await s.goto(pan.id, lead.at[0], lead.at[1] + 1, { speed: 1.2 });
 		s.face(pan.id, "up");
 		s.se("put");
+		putMark("flag");
 		await s.narrate(T.memoryFlag);
 		await as(s, T.panheiName, T.memoryPanhei);
 		await kinoko(s, T.memoryKinoko, "怒");
 		await as(s, T.panheiName, T.memoryPanhei2);
 		s.se("eat");
+		takeMark("flag");
 		await kinoko(s, T.memoryKinoko2, "汗");
 	}
 	// 回想の 語りは 声だけ（立ち絵で 回想の 町を 隠さない）
@@ -248,6 +253,7 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	await s.fadeBgm(400);
 	await s.fadeOut(700);
 	setSceneSky(null);
+	endMarks();
 	s.place("player", ox, oy + 1, "up");
 	await s.fadeIn(500);
 	await s.narrate(T.morning);
@@ -309,6 +315,8 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	s.bgm("yofukashi");
 	await s.narrate(B.night);
 	s.se("bubble");
+	// 髪に 残った 胞子を くしゃみで ふく（地の文の「髪に胞子が残っていた」）
+	s.spores("player");
 	await s.kiriko(B.sneeze, "voice", { emote: "!", gesture: "hop" });
 	await s.goto("zero", bx + 1, by, { speed: 2.4, avoid: true });
 	s.face("zero", "player");
@@ -342,6 +350,8 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await as(s, B.name41, B.shout41, "怒");
 	await s.wait(0);
 	await s.look([hx, hy - 3]);
+	// 屋根から 町の 上まで 広がる 湯気（ui/village/sceneMarks.ts。翌朝まで）
+	putMark("bathSteam");
 	s.se("bubble");
 	s.se("drink");
 	await s.narrate(B.steam);
@@ -406,6 +416,7 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.fadeBgm(400);
 	await s.fadeOut(700);
 	setSceneSky(null);
+	endMarks();
 	// シヨの シフトを もとに もどして 建て直す（シフトの 時間なら メイド喫茶へ）
 	holdShiyoShift(false);
 	s.place("player", ox, oy + 1, "up");

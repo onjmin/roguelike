@@ -116,6 +116,7 @@ import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { cleanUp } from "./decay";
 import { drawChalkLine, endChalk } from "./sceneChalk";
+import { endMarks, putMark, takeMark } from "./sceneMarks";
 import {
 	clearShrooms,
 	dropShroom,
@@ -868,8 +869,17 @@ export const returnScene = async (
 		if (p.zanki !== undefined) setZankiScene(p.zanki);
 		// 場面の 曲（頂点の 場面など。null で 止める）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
+		// 時間が とぶ（「翌日。」「1時間後。」）：暗転して、暗い うちに 空・人を かえて 明ける
+		if (p.skip) {
+			if (stage) await stepBack(s, stage);
+			await s.fadeOut(400);
+		}
 		// 場面の 空（明かりの 場面は 夜。null は 寸劇の 空＝朝に もどす。ui/village/sceneSky.ts）
 		if (p.sky !== undefined) setSceneSky(p.sky ?? skitSky());
+		if (p.skip && !p.cut) {
+			await s.wait(300);
+			await s.fadeIn(400);
+		}
 		if (p.cue) {
 			await playCue(s, p.cue);
 			if (p.cue === "lightsUp") stage = null;
@@ -891,6 +901,12 @@ export const returnScene = async (
 			fx = null;
 		}
 		if (p.wear !== undefined) s.wear("player", p.wear);
+		// 場面に 出て いる みんなの 頭（「町の人の頭に生えた」）
+		if (p.wearAll !== undefined)
+			for (const id of homes.keys()) s.wear(id, p.wearAll);
+		// 語りが 言った 物を 地図に（島・舟・湯気。ui/village/sceneMarks.ts）
+		if (p.unmark) takeMark(p.unmark);
+		if (p.mark) putMark(p.mark);
 		if (p.shrooms === null) clearShrooms();
 		else if (p.shrooms) sproutShrooms(p.shrooms, [s.state.x, s.state.y]);
 		if (p.spores) {
@@ -926,6 +942,7 @@ export const returnScene = async (
 	await rebuild(s);
 	endShrooms();
 	endChalk();
+	endMarks();
 	setZankiScene(undefined);
 	homes = new Map();
 	setSceneSky(null);
@@ -1032,6 +1049,8 @@ export const visitScript = async (s: Story, d: DungeonId): Promise<void> => {
 			s.set("visitor", false);
 			s.hide("visitor");
 		}
+		// 文が 言う 音（ちかづいて くる 太鼓）
+		if (l.se) s.se(l.se);
 		if (l.who === "visitor") await s.say("nanj", l.text, { name: "名無し" });
 		else await s.narrate(l.text);
 	}
@@ -1216,7 +1235,12 @@ export const tenScript = async (s: Story): Promise<void> => {
 		const o = sceneOut();
 		if (o && p.look) setSceneOut({ ...o, near: [...o.near, p.look] });
 		card.show(p);
+		// 豆電球が はじける 音と 暗転（文が 言う 音と 光。頁の あいだだけ）
+		const fx = p.fx ? startFx(fxRoot(), p.fx) : null;
+		await fx?.ready;
+		await playPageSe(s, p);
 		await playPage(s, { ...p, ...pageCue(p) });
+		fx?.end();
 	}
 	card.end();
 	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす

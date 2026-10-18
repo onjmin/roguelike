@@ -46,7 +46,7 @@ import {
 	windowLit,
 } from "../../data/village/daylight";
 import { type Facility, facilityOfMap } from "../../data/village/facilities";
-import { exitFor, VILLAGE_SPOTS } from "../../data/village/map";
+import { exitFor, VILLAGE_SPOTS, villageRows } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
 import { preloadImages } from "../../engine/assets";
 import { chipsOwned } from "../../engine/chips";
@@ -97,6 +97,7 @@ import { MoneyPops } from "./moneyPop";
 import { Overhear } from "./overhear";
 import { buildRoom } from "./rooms";
 import { drawChalk, setChalkTown } from "./sceneChalk";
+import { drawMarksAbove, drawMarksBelow, setMarksTown } from "./sceneMarks";
 import { drawShrooms, SHROOM_LEFT, setShroomTown } from "./sceneShrooms";
 import {
 	BLACKOUT_TINT,
@@ -436,6 +437,11 @@ export class Village {
 		setChalkTown(
 			this.mapId === "village" ? villageSceneView(v, this.arrival) : null,
 		);
+		// 生き返った 通りに 残る 物（銭湯の 湯けむり・鉄板の 焦げ・島の 跡。ui/village/sceneMarks.ts）
+		const marked =
+			this.mapId === "village" ? villageSceneView(v, this.arrival) : null;
+		const seaRows = marked ? villageRows(marked) : [];
+		setMarksTown(marked, (x, y) => seaRows[y]?.[x] === "う");
 		this.player = new Actor(
 			"player",
 			spot.x,
@@ -585,8 +591,9 @@ export class Village {
 				const w = today().w;
 				return { hour: nowHour(), weekend: w === 0 || w === 6 };
 			},
-			// 窓が 開いている あいだ（会話・選択肢）は 歩きださない
-			paused: () => this.ctx.input.busy || this.leaving,
+			// 窓が 開いている あいだ（会話・選択肢）と、帰りの 寸劇・知らせの 場面の あいだは 歩きださない
+			// （場面の 人の 走り・カメラの 間に 通行人が 横切らない。出てくる 人も 止める）
+			paused: () => this.ctx.input.busy || this.leaving || this.scene,
 			target: () => this.pathTalk,
 			talk: (persona, line) => async (s) => {
 				await s.say("nanj", line, { name: persona.label });
@@ -1538,12 +1545,15 @@ export class Village {
 		if (this.mapId === "village") {
 			drawChalk(g, ox, oy);
 			drawShrooms(g, ox, oy);
+			drawMarksBelow(g, ox, oy);
 		}
 		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		// やきうの 頭の 上の「残機：1」（ui/village/zankiTag.ts）
 		drawZanki(g, field.actor("nanj"), ox, oy);
 		field.drawAbove(g, ox, oy);
+		// 屋根と 海から 立つ 湯気（ui/village/sceneMarks.ts）
+		if (this.mapId === "village") drawMarksAbove(g, ox, oy);
 		// 掲示板・木などの 裏に ほとんど隠れた 人は 薄く見せる（キリコも 村の人も）。
 		// 向きの ない 絵（置物・看板）は 地形の 一部なので 透かさない
 		field.drawHidden(
@@ -1942,6 +1952,8 @@ export class Village {
 		// 暗転した ままの 文は 幕の 上に（幕の 下だと 真っ暗な まま 送りを 待つ だけに なる）
 		this.msg.overFade(this.fadeEl.style.opacity === "1");
 		return this.msg.show({
+			// 場面の 地の文・名無しの 窓では 立ち絵を 下げる（語りが 言う 島・舟・湯気を 立ち絵で 隠さない）
+			clearPortraits: this.scene,
 			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
 			text: shown,
