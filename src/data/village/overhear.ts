@@ -80,7 +80,8 @@ export const MOB_MUTTERS: Record<MobId, readonly Overheard[]> = {
 
 /**
  * 通行人の 独り言（種類ごと。data/village/crowd.ts の PERSONAS の id）。1つめは 静かな ひとこと、
- * あとは 201 の 型：同じ 形で 3段 大きく して、最後に 大声の 自己ツッコミ（「！」）。嘘には 本気の 数字。
+ * あとは 201 の 型：同じ 形で 3段 大きく して、最後に 1行の ツッコミ。ツッコミは「ありえない」の 指摘で なく、
+ * 例え・嘆き・皮肉・ノリ・寄り添い・執着を まぜる（STORY.md「ツッコミの 着眼点と 型」）。嘘には 本気の 数字。
  */
 export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 	worker: [
@@ -90,20 +91,20 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"コンビニ\n行ってくるわ",
 			"……ついでに銀行",
 			"……ついでに転職",
-			"ついでの規模\nちゃうやろ！",
+			"……帰りに\nからあげクン",
 		),
 		solo(
 			"worker3",
 			"ワイの会社、\n社員3万人や",
 			"……2万9999人が\n有給中や",
-			"回っとらんやろ！",
+			"残り1人がワイ\nなんが一番こわい",
 		),
 		solo(
 			"worker4",
 			"ネクタイ忘れた",
 			"……スーツも\n忘れた",
 			"……会社も\n忘れた",
-			"どこ向かっとんねん！",
+			"もう出勤やなくて\n家出や！",
 		),
 	],
 	student: [
@@ -112,19 +113,19 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"student2",
 			"遅刻や！パン\nくわえて走る",
 			"……食パン1斤\nくわえてもうた",
-			"あご外れるわ！",
+			"これは恋やなくて\n事故や！",
 		),
 		solo(
 			"student3",
 			"テスト0点やった",
 			"……先生も\n解けへんかった",
-			"問題がおかしい\nやろ！",
+			"先生と\nおそろいや！",
 		),
 		solo(
 			"student4",
 			"放課後、\n屋上で決闘や",
 			"……相手は\n校長や",
-			"勝てるかい！",
+			"賭けとるのは\n内申点や！",
 		),
 	],
 	local: [
@@ -133,7 +134,7 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"local2",
 			"ちょっとそこまで\n散歩してくる",
 			"……気づいたら\nとなりの板や",
-			"どこまで\n歩いとんねん！",
+			"ええ運動に\nなったわ",
 		),
 		solo(
 			"local3",
@@ -157,7 +158,7 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"朝の散歩で、\n5キロ歩いたの",
 			"……帰りは\n50キロ",
 			"……板を3つ\nこえたわ",
-			"散歩ちゃう\nわよ！",
+			"これはもう\n遠征ね！",
 		),
 		solo(
 			"elder3",
@@ -179,7 +180,7 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"nanashi3",
 			"ワイ、伝説の\n名無しや",
 			"……伝説すぎて\nだれも知らん",
-			"ただの名無し\nやんけ！",
+			"……ワイも\n知らん",
 		),
 		solo(
 			"nanashi4",
@@ -195,7 +196,7 @@ export const CROWD_MUTTERS: Record<string, readonly Overheard[]> = {
 			"アルミ缶の上に\nあるみかん",
 			"……の上に\nあるミカン農家",
 			"……の上に\nある農協",
-			"重いわ！",
+			"みかん、もう\n見えへんわ！",
 		),
 		solo(
 			"dajare3",
@@ -220,14 +221,14 @@ export const CROWD_PAIRS: readonly Overheard[] = [
 		"試合、見たか？",
 		"見た。\n9回裏逆転や",
 		"打ったのワイや",
-		"客席にも\nおらんかったやろ！",
+		"バット持って\nテレビの前か",
 	),
 	pair(
 		"p_shop",
 		"ここ、何の店や？",
 		"知らん",
 		"……ワイが\n店主や",
-		"把握しとけや！",
+		"ほな何売っとるか\n一緒に見よか",
 	),
 	pair("p_hara", "腹減ったンゴ", "さっき\n食うてたやろ", "あれは前菜や"),
 	pair("p_hoshu", "保守", "保守", "……保守"),
@@ -237,7 +238,7 @@ export const CROWD_PAIRS: readonly Overheard[] = [
 		"スレ立てたで",
 		"何のスレや",
 		"スレを立てる\nスレや",
-		"終わらんやろ！",
+		"ほな、それを\n立てるスレ立てる",
 	),
 	pair(
 		"p_kiriko",
@@ -260,20 +261,20 @@ export const CROWD_PAIRS: readonly Overheard[] = [
 		"ワイ、魔法\n使えるで",
 		"嘘つけ",
 		"……いま、\n時間止めとる",
-		"動いとるやろ！",
+		"ほな今のうちに\nワイ帰るわ",
 	),
 	pair(
 		"p_owari",
 		"今日、世界が\n終わるらしいで",
 		"マジか",
 		"……ワイの\nバイトの話や",
-		"規模ちっさ！",
+		"ほな今日は\nワイがおごる",
 	),
 	pair(
 		"p_kaiten",
 		"あの店、今日で\n開店100周年や",
 		"先週できた店やろ",
 		"……1日を1年で\n数えとる",
-		"盛りすぎや！",
+		"ほな来週は\n107周年やな",
 	),
 ];
