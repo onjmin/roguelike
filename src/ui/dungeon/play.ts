@@ -57,6 +57,7 @@ import {
 	type Trap,
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
+import { HIT_SE } from "../../data/audio/sfx";
 import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
@@ -4010,6 +4011,9 @@ export class Play {
 	private async sceneSay(st: RestStep): Promise<void> {
 		const run = this.run;
 		const text = (st.text ?? "").replaceAll("{hero}", run.heroName);
+		// 見せ場の 間と ツッコミの 音（村の 寸劇の Cue.pause・Cue.hit と 同じ。engine/emote.ts）
+		if (st.pause) await new Promise((r) => setTimeout(r, st.pause));
+		if (st.hit) this.ctx.audio.se(HIT_SE[st.hit]);
 		if (st.who === "kiriko") {
 			await speak(this.ctx, [
 				{
