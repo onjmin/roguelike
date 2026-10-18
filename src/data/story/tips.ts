@@ -68,7 +68,7 @@ export const TIPS: readonly Tip[] = [
 	},
 	// ───── 隠し要素の うわさ（見つける 前に ほのめかす） ─────
 	{
-		// core/data/monsters.ts の metal（ダメージは 1まで・HP3・忍法帖の実を 落とす）
+		// core/data/monsters.ts の metal（当たれば ダメージは 必ず 1・HP3・忍法帖の実を 落とす）
 		key: "metal_rumor",
 		lines: [
 			"「深い階にまれに、ぴかぴかの\nぷゆゆが出るらしい」",

@@ -1229,6 +1229,7 @@ export class Run {
 			this.se(this.weaponSound().swing);
 			this.emit({ t: "miss", id: m.uid, pos: { x: m.x, y: m.y } });
 			this.msg(`${this.heroName}の攻撃ははずれた`);
+			this.metalWarp(m);
 			return;
 		}
 		const w = this.weapon();
@@ -1274,6 +1275,18 @@ export class Run {
 		m.status.slow = 0;
 	}
 
+	/** メタルは 攻撃されると（はずれても）どこかへ ワープする。封印されていれば 逃げない。 */
+	metalWarp(m: Monster): void {
+		if (m.status.sealed || !mdef(m).abilities.some((a) => a.k === "metal"))
+			return;
+		const to = randomFloorPos(this, true);
+		if (!to) return;
+		this.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
+		m.x = to.x;
+		m.y = to.y;
+		this.msg(`${monsterName(this, m)}はどこかへ逃げた`);
+	}
+
 	/** キレやすい 敵（顔真っ赤）が キレる。「おんJ民」の 姿から 顔真っ赤に 変わる。 */
 	snap(m: Monster): void {
 		if (m.status.sealed || m.enraged) return;
@@ -1294,7 +1307,8 @@ export class Run {
 	): boolean {
 		const d = mdef(m);
 		const sealed = m.status.sealed;
-		if (d.abilities.some((a) => a.k === "metal")) amount = Math.min(amount, 1);
+		// メタル：当たれば 何でも 1（トルネコ1の はぐれメタル）
+		if (d.abilities.some((a) => a.k === "metal")) amount = 1;
 		// かたい鎧：なぐる攻撃は半分（杖・投げた物・爆発は そのまま）
 		if (by === "hit" && !sealed && d.abilities.some((a) => a.k === "armor")) {
 			amount = Math.max(1, Math.ceil(amount / 2));
@@ -1349,15 +1363,7 @@ export class Run {
 			for (const a of d.abilities) {
 				if (m.status.sealed) break;
 				if (a.k === "split" && this.rng.chance(a.rate)) this.splitMonster(m);
-				if (a.k === "metal") {
-					const to = randomFloorPos(this, true);
-					if (to) {
-						this.emit({ t: "warp", id: m.uid, from: { x: m.x, y: m.y }, to });
-						m.x = to.x;
-						m.y = to.y;
-						this.msg(`${nm}はどこかへ逃げた`);
-					}
-				}
+				if (a.k === "metal") this.metalWarp(m);
 				// 盗んで 逃げている 転載ガモは、なぐられても 1/2 で また 飛ぶ（トルネコ1の ベビーサタン）
 				if (
 					a.k === "steal" &&

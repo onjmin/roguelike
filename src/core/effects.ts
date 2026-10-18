@@ -808,6 +808,7 @@ export const throwItem = (r: Run, uid: number, dir: Dir8): boolean => {
 		r.emit({ t: "miss", id: hit.uid, pos: { x: hit.x, y: hit.y } });
 		r.msg(`${nm}には当たらなかった`);
 		r.placeItem(it, hit);
+		r.metalWarp(hit);
 		return true;
 	}
 	wakeMonster(r, hit, true);

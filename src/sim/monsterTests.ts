@@ -1085,20 +1085,54 @@ for (const kind of ["leather", "mirror", "rustproof"]) {
 
 // ───────────────── メタルぷゆゆ（metal） ─────────────────
 
-test("metal", "damage capped at 1; warps out of sight when hit", () => {
+test("metal", "any hit deals exactly 1; warps out of sight when hit", () => {
 	const r = arena("metal", hideoutLayout(), HIDE_AT);
 	const m = put(r, "metal", at(1, 0, HIDE_AT));
 	m.maxHp = 10;
 	m.hp = 10;
-	for (const by of ["hit", "throw", "magic"] as const) {
+	for (const [by, amount] of [
+		["hit", 50],
+		["throw", 50],
+		["magic", 50],
+		["throw", 0],
+	] as const) {
 		const from = { x: m.x, y: m.y };
 		r.ev = [];
-		const d = dealt(r, m, 50, by);
-		ok(d === 1, `${by} 50 dealt ${d}`);
+		const d = dealt(r, m, amount, by);
+		ok(d === 1, `${by} ${amount} dealt ${d}`);
 		ok(count(r.ev, "warp", m.uid) === 1, `did not warp after ${by}`);
 		ok(m.x !== from.x || m.y !== from.y, `still in place after ${by}`);
 		ok(!canSee(r.f.layout, m, r.p), `warped into view after ${by}`);
 	}
+});
+
+test("metal", "warps even when a swing or a throw misses", () => {
+	const r = arena("metal-miss", hideoutLayout(), HIDE_AT);
+	const m = put(r, "metal", at(1, 0, HIDE_AT));
+	const missed = { attack: 0, throw: 0 };
+	for (let i = 0; i < 200 && (!missed.attack || !missed.throw); i++) {
+		for (const c of ["attack", "throw"] as const) {
+			const to = at(1, 0, HIDE_AT);
+			m.x = to.x;
+			m.y = to.y;
+			m.maxHp = 999;
+			m.hp = 999;
+			r.p.hp = r.p.maxHp;
+			const ev = turn(
+				r,
+				c === "attack"
+					? { c, dir: 2 }
+					: { c, item: give(r, "club").uid, dir: 2 },
+			);
+			if (!ev.some((e) => e.t === "miss" && e.id === m.uid)) continue;
+			missed[c]++;
+			ok(
+				ev.some((e) => e.t === "warp" && e.id === m.uid),
+				`did not warp after a missed ${c}`,
+			);
+		}
+	}
+	ok(missed.attack > 0 && missed.throw > 0, `never missed: ${missed}`);
 });
 
 test(
