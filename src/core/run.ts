@@ -1177,7 +1177,7 @@ export class Run {
 			// 何段上がっても音は1回（続けて鳴るとうるさい）
 			this.se("levelup");
 			this.emit({ t: "levelup", lv: p.lv, hp: p.hp, maxHp: p.maxHp });
-			this.msg(`レベルが${p.lv}に上がった！実感はない`, "good");
+			this.msg(`レベルが${p.lv}に上がった！`, "good");
 			ankaHit(this, "level");
 		}
 	}
@@ -1192,7 +1192,7 @@ export class Run {
 		p.maxHp = Math.max(1, p.maxHp - g);
 		p.hp = Math.min(p.hp, p.maxHp);
 		this.se("debuff");
-		this.msg(`レベルが${p.lv}に下がった。思い出も少し消えた`, "warn");
+		this.msg(`レベルが${p.lv}に下がった。`, "warn");
 	}
 
 	// ───────────────── 戦闘 ─────────────────
