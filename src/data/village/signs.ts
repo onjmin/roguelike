@@ -41,6 +41,8 @@ export type SignLook = {
 	ink: string;
 	outline?: string;
 	glow?: string;
+	/** 夜に 灯る 看板か（電気の 看板・ネオン・劇場の 看板。木の 板・表札・金属の プレートは 灯らない）。 */
+	lit?: boolean;
 };
 
 export const SIGN_LOOKS = {
@@ -71,6 +73,7 @@ export const SIGN_LOOKS = {
 	/** 桃色の 板（メイド喫茶）。 */
 	maid: {
 		font: "pop",
+		lit: true,
 		bg: "#ff8ab8",
 		top: "#ffc0d8",
 		edge: "#c0507e",
@@ -80,6 +83,7 @@ export const SIGN_LOOKS = {
 	/** だいだいの 板（ファミレス）。 */
 	famires: {
 		font: "pop",
+		lit: true,
 		bg: "#ff8c3a",
 		top: "#ffb070",
 		edge: "#b05418",
@@ -89,6 +93,7 @@ export const SIGN_LOOKS = {
 	/** 夜の 遊び場（ゲーセン）。 */
 	arcade: {
 		font: "pop",
+		lit: true,
 		bg: "#2a1a4a",
 		top: "#3e2a6a",
 		edge: "#140a28",
@@ -123,6 +128,7 @@ export const SIGN_LOOKS = {
 	/** 青い 帯に 白い 字（コンビニ）。 */
 	konbini: {
 		font: "brand",
+		lit: true,
 		bg: "#2a6ad0",
 		top: "#5a92f0",
 		edge: "#163e80",
@@ -131,6 +137,7 @@ export const SIGN_LOOKS = {
 	/** 黒地に だいだい（ジム）。 */
 	gym: {
 		font: "brand",
+		lit: true,
 		bg: "#222222",
 		top: "#3a3a3a",
 		edge: "#0e0e0e",
@@ -139,6 +146,7 @@ export const SIGN_LOOKS = {
 	/** 夜の 店の ネオン（桃色）。 */
 	neonPink: {
 		font: "neon",
+		lit: true,
 		bg: "#140c1e",
 		top: "#241834",
 		edge: "#08040e",
@@ -148,6 +156,7 @@ export const SIGN_LOOKS = {
 	/** ネオン（水色。ネットカフェ）。 */
 	neonBlue: {
 		font: "neon",
+		lit: true,
 		bg: "#0c1420",
 		top: "#182436",
 		edge: "#04080e",
@@ -197,6 +206,7 @@ export const SIGN_LOOKS = {
 	/** 赤い ビロードに 金（劇場）。 */
 	theater: {
 		font: "wa",
+		lit: true,
 		bg: "#8a1a22",
 		top: "#b02a34",
 		edge: "#4a0c10",

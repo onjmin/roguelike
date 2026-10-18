@@ -357,14 +357,17 @@ export const signboardDecor = (
 
 /**
  * 夜の 看板の 光（夜の 色を 重ねた あと、足し算の 中で 呼ぶ。k は 明かりの 強さ 0〜1）。
- * 開いて いる 所の 板だけ 灯る（生き返って いない 所と 停電の ネオンは 電気が 来て いない）。
+ * 開いて いる 所の 電気の 看板だけ 灯る（生き返って いない 所と 停電の ネオンは 電気が 来て いない。
+ * 木の 板・表札・プレートは look.lit が 無いので 灯らない）。
  */
 export const signboardGlow = (
 	stage: number,
 	cleared: readonly DungeonId[],
 	blackout = false,
 ): NonNullable<MapDef["lights"]>["glow"] => {
-	const boards = boardsAt(stage, cleared, blackout).filter((b) => !b.dead);
+	const boards = boardsAt(stage, cleared, blackout).filter(
+		(b) => !b.dead && b.look.lit,
+	);
 	return (g, ox, oy, k) => {
 		if (k < 0.01) return;
 		const vw = g.canvas.width;
