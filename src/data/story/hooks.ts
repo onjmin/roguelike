@@ -108,7 +108,8 @@ export const BATH_EVE = {
 	zeroDraw: "湯温の派閥、図にしました！\n籠城3日目です！",
 	zeroFaction: "41℃派12人、42℃派12人。\n中立は、0人です",
 	shiyo43: "41℃も42℃も、ぬるいわよ。\nあたすは、43℃",
-	kirikoMore: "派閥がふえたンゴ！",
+	// 皮肉の 型：いちばん 熱いのは 湯でなく シヨ
+	kirikoMore: "ぬるいって言うほうが、\nいちばん熱いンゴ",
 	zeroWhy: "けんかのはじまりも、\nログに残ってました",
 	memoryCaption: "3日前",
 	memoryNight: "3日前の夜。掲示板に、\n名無しの書きこみがひとつ。",

@@ -122,7 +122,10 @@ export const SKITS: readonly Skit[] = [
 			nanashi("ワイの頭にも\n生えとったで！"),
 			nanashi("ワイのは、まだ生えとる。\nもう3メートルや"),
 			e({ emote: "怒" }, nanashi("抜けや！\n電線にからまっとるやろ！")),
-			e({ gesture: "shake" }, k("町のインフラまで\nきのこンゴ！")),
+			e(
+				{ emote: "汗" },
+				k("電線のきのこは、吾輩のせいじゃ\nないンゴ……たぶんンゴ"),
+			),
 		],
 	},
 	// 第三話の あと〜最終話：電池板が 開いて 町は 停電（data/town/revival.ts の inBlackout）
@@ -134,7 +137,10 @@ export const SKITS: readonly Skit[] = [
 			nanashi("停電、まだ直らんな！\nほな、自転車こいで発電や！"),
 			nanashi("ワイも！ワイも！\n町じゅうで1000台や！"),
 			nanashi("……1000台こいで、\n豆電球1個ついたで！"),
-			e({ gesture: "shake" }, k("効率が悪すぎるンゴ！")),
+			e(
+				{ gesture: "shake" },
+				k("1000人で豆電球1個って、\n町の人、全員運動不足ンゴ！"),
+			),
 			e({ gesture: "hop" }, k("電池板に行って\n根っこから直すンゴ！")),
 		],
 	},
@@ -239,7 +245,10 @@ export const SKITS: readonly Skit[] = [
 			master("いらっしゃい。\n次スレへようこそや"),
 			master("前スレの客は、\nもう帰ったで"),
 			master("前々スレの客は、\nまだ来とらん"),
-			e({ emote: "?" }, k("順番が逆ンゴ！")),
+			e(
+				{ gesture: "hop" },
+				k("じゃあ吾輩は、次々スレの\n客ンゴ！先に来すぎたンゴ！"),
+			),
 		],
 	},
 	{
