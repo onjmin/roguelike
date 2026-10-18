@@ -1,5 +1,5 @@
 // セーブを 書きかえた（engine/tamper.ts が 見つけた）ときの 村の ことば。
-// 見つけた 回数で 3段（1回目・2回目・3回目から）。騒ぎが 町 → 日本 → 宇宙と 大きく なる（201 の 型）。
+// 見つけた 回数で 3段（1回目・2回目・3回目から）。騒ぎが 町 → 日本 → 数字そのものと 大きく なる（201 の 型）。
 // - TAMPER_SCENE：帰ってきて すぐ、ゼロが 帳簿で 気づき、そばの 仲間が ひとこと（ui/village/villageReturn.ts の tamperScript）。
 // - TAMPER_TALK：騒ぎの あいだ（engine/tamper.ts の LINGER）、話しかけた ときの ひとこと
 //   （ふだんの 新しい話・決まった ひとこと・起動の札・たおれた ときの ひとこと の かわり）。
@@ -51,7 +51,7 @@ export const TAMPER_SCENE: readonly (readonly Line[])[] = [
 		}),
 	],
 	[
-		q("zero", "帳簿のずれが宇宙まで\n届きました！衛星から苦情です！", {
+		q("zero", "帳簿のずれで、町の時計まで\n桁が3つ多くなりました！", {
 			emote: "!",
 			gesture: "startle",
 		}),
@@ -62,7 +62,7 @@ export const TAMPER_SCENE: readonly (readonly Line[])[] = [
 		q("feris", "月のスレまで炎上〜！\n私も燃えて飛んでく〜！", {
 			gesture: "spin",
 		}),
-		q("nanj", "改造、宇宙に届く！\n……盛らんでもこれや", {
+		q("nanj", "カレンダー、13月ができとる！\n……盛らんでもこれや", {
 			emote: "汗",
 		}),
 	],
@@ -72,7 +72,7 @@ export const TAMPER_SCENE: readonly (readonly Line[])[] = [
 export const TAMPER_NARRATION: readonly string[] = [
 	"書きかえは、町じゅうにバレた！\nどこかで削除人が動きだした！",
 	"書きかえは、日本じゅうにバレた！",
-	"書きかえは、宇宙にまでバレた！",
+	"書きかえで、町じゅうの数字が\n3桁ずれた！",
 ];
 
 /** 騒ぎの あいだの ひとこと（段ごと）。 */
@@ -80,7 +80,7 @@ export const TAMPER_TALK: Record<Speaker, readonly string[]> = {
 	zero: [
 		"帳簿が合わないんです！\nキリコさん、何か知りませんか！？",
 		"数字はうそをつきません！\nうそをつくのはセーブです！",
-		"帳簿を宇宙に送りました！\n向こうで数えてもらいます！",
+		"帳簿をそろばん教室に送りました！\n向こうで数えてもらいます！",
 	],
 	shiyo: [
 		"その売り上げ、本物よね？\nあたす、たしかめるわよ！",
@@ -95,12 +95,12 @@ export const TAMPER_TALK: Record<Speaker, readonly string[]> = {
 	feris: [
 		"ageるのは、ちゃんと\n書きこんだスレだけだよ〜！",
 		"燃えすぎて、私の羽が\n消火器で真っ白だよ〜！",
-		"宇宙まで燃えたら〜、\nもう一回生まれるしかない〜！",
+		"数字まで燃えたら〜、\nもう一回生まれるしかない〜！",
 	],
 	nanj: [
 		"売り上げってのは、地道に\n1つずつふやすもんやで！",
 		"ワイは見張っとるで！\n帳簿も、キリコもな！",
-		"キリコ、宇宙で指名手配や！\n……これは盛ってへんで",
+		"キリコの懸賞金、桁が3つ多いで！\n……これは盛ってへんで",
 	],
 };
 
@@ -108,7 +108,7 @@ export const TAMPER_TALK: Record<Speaker, readonly string[]> = {
 export const TAMPER_LEDGER: readonly string[] = [
 	"帳簿には{points}円とあります！\nでも合わないんです！",
 	"帳簿は{points}円！\n電卓が3台こわれました！",
-	"帳簿は宇宙に送りました！\n返事はまだです！",
+	"帳簿はそろばん教室に送りました！\n返事はまだです！",
 ];
 
 /** 村の 住人の うわさ話（段は 見ない。住人ごとに 1つ）。 */

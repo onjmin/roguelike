@@ -530,7 +530,7 @@ const oyatsuTimeline: JkScript["timeline"] = (rand, slot) => {
 			pool: "fuji",
 			rate: 1,
 			bgm: "retro",
-			caption: "夕方封じ手。封筒は宇宙で保管",
+			caption: "夕方封じ手。封筒は南極で保管",
 			title: {
 				later: (n: number, s: JkSlot) =>
 					fillN(s.live ? OYATSU_THREAD.live2 : OYATSU_THREAD.rerun2, n),
@@ -655,7 +655,7 @@ const oyatsuTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("封じ手や"), K("明日はよ"), X("ありません")],
 					[B("封筒きた"), K("続きは明日"), X("おやつなにやろ")],
-					[B("宇宙で保管て"), K("封じ手や"), X(FRESH)],
+					[B("南極で保管て"), K("封じ手や"), X(FRESH)],
 				],
 			},
 			// 終盤：評価値の 札が かたむく 先を 言いきる（7割は はじめから、3割は いったん 逆へ）
