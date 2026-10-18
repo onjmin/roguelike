@@ -88,6 +88,7 @@ import {
 	TOWN_NAME,
 	VILLAGE_MSG,
 } from "../../data/town/town";
+import { COLONY_SPOTS } from "../../data/town/worldMap";
 import { crowdNodes, villagePedCost } from "../../data/village/crowd";
 import {
 	facilitiesAt,
@@ -152,6 +153,7 @@ import {
 	noteRunEnd,
 	recordFromRun,
 } from "../../engine/save";
+import { TILE } from "../../engine/types";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
 import { runSaveLabel } from "../boot";
 import type { Ctx } from "../ctx";
@@ -217,7 +219,7 @@ import {
 	tenScript,
 } from "./villageReturn";
 import { DUNGEON_DESC, fill, talkQuote } from "./villageTalk";
-import { openWorldMap, pickColony, travelTo } from "./worldMap";
+import { drawBuilding, openWorldMap, pickColony, travelTo } from "./worldMap";
 
 /** 開いた 植民地の 札（名前・通称・階の数・持ち帰ったら ★、2行目に 板の 決まり）。口と 立て札で 読む。 */
 const signText = (d: DungeonId): string =>
@@ -467,12 +469,30 @@ export const buildSurface = (surf: Surface, ctx: Ctx): MapDef => {
 	const [bx, by] = surf.back;
 	const [mx, my] = surf.mouth;
 	const [sx, sy] = surf.sign;
+	const w = surf.rows[0].length * TILE;
+	const h = surf.rows.length * TILE;
 	return {
 		id: surfaceMapId(d),
 		name: surf.name,
 		tiles: surf.tiles,
 		rows: [...surf.rows],
 		outside: "#1f2a14",
+		// 入口の 建物：全体マップと 同じ 絵を 4倍で（足もとの まん中が 入口の マス。地図の 外へは はみ出さない）
+		ground: (g, ox, oy) => {
+			g.save();
+			g.beginPath();
+			g.rect(-ox, -oy, w, h);
+			g.clip();
+			drawBuilding(
+				g,
+				COLONY_SPOTS[d].building,
+				(mx + 0.5) * TILE - ox,
+				(my + 1) * TILE - oy,
+				4,
+				performance.now(),
+			);
+			g.restore();
+		},
 		events: [
 			sign(`surface_sign_${d}`, sx, sy, surf.line),
 			{
