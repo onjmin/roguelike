@@ -10,6 +10,7 @@
 //   flag      … きのこ板に 立った 食パンの 旗（第一話の つなぎの 回想。「食べてもうた」で takeMark）
 //   samba     … 地面の 下の サンバ（お祭りの 語り「地面の下から、サンバの太鼓が返ってきた」。町に 残る ♪ と 同じ 絵）
 //   march     … きのこ軍の 行進（きのこ板の 語り「行進が、くるりと向きをかえて帰ってきた」。港から 桟橋を 上がる）
+//   flood     … 水没（おんMu の 語り「足もとから水が上がってきた」「海抜マイナス3メートル」。画面の 下から 水。takeMark で 引く）
 // - 町に 残る 物（生き返った 通りの 文。data/town/revival.ts の 知らせの あとから）：
 //   銭湯の 並び「銭湯のえんとつから湯けむり！港の海も、まだ41.5℃！」→ 屋根の 湯気・海の 湯気
 //   たこ八「鉄板に、193か国ぶんの焦げあと！」→ 鉄板の 焦げ
@@ -74,6 +75,11 @@ const TRAIL: readonly Cell[] = [
 ];
 /** 海の 湯気を 立てる 所（桟橋の まわりの 海）。 */
 const SEA_BOX = { x0: 10, x1: 40, y0: 37, y1: 51 } as const;
+
+/** 水が 上がる・引く 長さ（ms）と、画面の 高さの どこまで 来るか（0〜1）。 */
+const FLOOD_IN_MS = 1800;
+const FLOOD_OUT_MS = 1400;
+const FLOOD_TOP = 0.6;
 
 /** 島が 寄る・帰る 長さ（ms）。 */
 const ISLAND_IN_MS = 700;
@@ -147,7 +153,7 @@ export const putMark = (m: SceneMark): void => {
 export const takeMark = (m: SceneMark): void => {
 	const now = scene.get(m);
 	if (!now) return;
-	if (m === "island") now.gone = performance.now();
+	if (m === "island" || m === "flood") now.gone = performance.now();
 	else scene.delete(m);
 };
 
@@ -400,6 +406,36 @@ const march = (
 	});
 };
 
+/** 水没（画面の 下から 青い 水が 上がって くる。k は 水位 0〜1。波がしらは ゆれる）。 */
+const flood = (g: CanvasRenderingContext2D, k: number, t: number): void => {
+	// 村は 拡大して 描く（g に 変換が かかって いる）ので、見えて いる 範囲は 変換から 出す
+	const m = g.getTransform();
+	const x0 = -m.e / m.a;
+	const y0 = -m.f / m.d;
+	const w = g.canvas.width / m.a;
+	const h = g.canvas.height / m.d;
+	const bottom = y0 + h;
+	const level = bottom - h * FLOOD_TOP * k;
+	const top = (x: number) => level + Math.sin(x / 18 + t / 260) * 3;
+	g.save();
+	g.fillStyle = "rgba(40, 110, 210, 0.45)";
+	g.beginPath();
+	g.moveTo(x0, bottom);
+	for (let x = x0; x <= x0 + w + 8; x += 8) g.lineTo(x, top(x));
+	g.lineTo(x0 + w, bottom);
+	g.closePath();
+	g.fill();
+	g.strokeStyle = "rgba(255, 255, 255, 0.6)";
+	g.lineWidth = 2;
+	g.beginPath();
+	for (let x = x0; x <= x0 + w + 8; x += 8) {
+		if (x === x0) g.moveTo(x, top(x));
+		else g.lineTo(x, top(x));
+	}
+	g.stroke();
+	g.restore();
+};
+
 /** 独立記念の パン（地面に 3つ）。 */
 const bread = (g: CanvasRenderingContext2D, ox: number, oy: number): void => {
 	const [x, y] = px(BREAD_AT, ox, oy);
@@ -449,8 +485,8 @@ export const drawMarksBelow = (
 			isl.gone !== null
 				? 1 - (now - isl.gone) / ISLAND_OUT_MS
 				: Math.min(1, (now - isl.at) / ISLAND_IN_MS);
-		if (k <= 0) scene.delete("island");
-		else island(g, ox, oy, k, now);
+		if (isl.gone !== null && k <= 0) scene.delete("island");
+		else if (k > 0) island(g, ox, oy, k, now);
 	}
 	const bt = scene.get("bottles");
 	if (bt) bottles(g, ox, oy, now - bt.at, now);
@@ -499,6 +535,17 @@ export const drawMarksAbove = (
 			seed: 3,
 			rgb: "70, 64, 60",
 		});
+	}
+	// 水没（人も 建物も 水の 下に 見える ように、いちばん 上に 描く）
+	const fl = scene.get("flood");
+	if (fl) {
+		const k =
+			fl.gone !== null
+				? 1 - (now - fl.gone) / FLOOD_OUT_MS
+				: Math.min(1, (now - fl.at) / FLOOD_IN_MS);
+		// 出した 直後の 1コマ目は k=0 に なりうる（同じ 時刻）。消すのは 引ききった ときだけ
+		if (fl.gone !== null && k <= 0) scene.delete("flood");
+		else if (k > 0) flood(g, k, now);
 	}
 	const sea = scene.has("seaSteam");
 	if (sea || town.steam) {

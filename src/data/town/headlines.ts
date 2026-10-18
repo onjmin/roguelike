@@ -33,6 +33,11 @@ export const AFTER_HEADLINES: Partial<Record<DungeonId, string>> = {
 	tropical: "【悲報】キリコ、日本の形をかえる",
 	konamono: "【悲報】キリコ、世界を怒らせる😡",
 	festival: "【悲報】キリコ、ブラジルと太鼓で口論",
+	// おーぷぬの 板（寄り道）も 同じ 型で 追い打ち
+	mercury: "【悲報】キリコ、夜を昼にする",
+	onmu: "【悲報】キリコ、町を3メートル沈める",
+	onkimu: "【悲報】キリコ、おんキム管理部に就任",
+	inferno: "†【悲報】キリコ、町を闇に堕とす†",
 };
 
 /** 掲示板に 残って いる 翌朝の 見出し（持ち帰った 順で いちばん 新しい 1本。無ければ null）。 */
