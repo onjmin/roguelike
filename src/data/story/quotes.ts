@@ -533,7 +533,7 @@ const steamCard = (step: 0 | 1): CardSpec => ({
 			? [
 					{
 						label: "宇宙",
-						sub: "ステーションが\nのぼせる",
+						sub: "衛星3つ\nゆでた",
 						aa: "星",
 						shake: true,
 					},
@@ -558,15 +558,22 @@ export const ENDING: StoryPage[] = [
 		who: null,
 		text: "そのうち、また湯の温度で\nもめはじめた。",
 	},
+	// 主人公が 解決の つもりで 最悪の 手（追いだきの 連打）→ 直後に 自己ツッコミ。シヨと ロゼも 暴走
 	{
 		who: null,
-		text: "追いだきのボタンが、\n連打された。",
-		se: "pushButton",
-		seRepeat: 6,
-		seGap: 120,
+		text: "吾輩が、ちょうどいい温度に\nするンゴ！",
+		kiriko: "voice",
+		gesture: "hop",
 	},
-	{ who: null, text: "押してたの、吾輩ンゴ！", kiriko: "voice" },
-	// 規模が ふくらむ（銭湯 → 雲の 上 → 宇宙。主人公が 原因）
+	{
+		who: null,
+		text: "キリコは追いだきのボタンを、\n両手で連打した。",
+		se: "pushButton",
+		seRepeat: 8,
+		seGap: 100,
+	},
+	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "!" },
+	// 規模が ふくらむ（銭湯 → 雲の 上 → 宇宙）
 	{
 		who: null,
 		text: "源泉が噴きあがった。\n湯柱が、雲をつきぬけた。",
@@ -575,39 +582,44 @@ export const ENDING: StoryPage[] = [
 		fx: "boom",
 		card: steamCard(0),
 	},
-	// 湯けむりの 中で ツッコむ（同じ fx は 煙が 残る）
+	{
+		who: "shiyo",
+		text: "43℃！ちょうどいいじゃない！\nあたす、入ってくる！",
+		gesture: "hop",
+		fx: "boom",
+	},
+	{
+		who: null,
+		text: "シヨは湯柱に飛びこんで、\n空へのぼっていった。",
+		fx: "boom",
+	},
 	{ who: null, text: "規模が、\nおかしいンゴ！", kiriko: "voice", fx: "boom" },
 	{
 		who: null,
-		text: "湯柱はそのまま、\n宇宙まで届いた。",
+		text: "湯柱は宇宙までのびて、\n人工衛星を3つゆでた。",
 		fx: "boom",
 		card: steamCard(1),
 	},
+	{ who: "roze", text: "止めるアル！！", emote: "怒" },
 	{
-		who: "zero",
-		text: "宇宙ステーションから通信です！\n『湯加減が熱い』だそうです！",
-		emote: "!",
+		who: null,
+		text: "ロゼはボタンを止めようとして、\n「強」に押しこんだ。",
+		se: "pushButton",
 	},
-	{ who: "shiyo", text: "宇宙でも、43℃が\nいちばんよ！", emote: "怒" },
-	{ who: "nanj", text: "宇宙で湯温もめんな！", emote: "怒" },
+	{ who: "roze", text: "逆だったアル！！", emote: "汗", gesture: "shiver" },
 	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）
 	{
 		who: null,
-		text: "1時間後。町の人も宇宙飛行士も、\nみんなのぼせて浮いていた。",
+		text: "1時間後。町の人はみんな、\nのぼせて空に浮いていた。",
 		se: "chiin",
 		fx: "chiin",
 		bgm: null,
 		card: null,
 	},
-	{
-		who: "roze",
-		text: "決着したのに、\nなんで宇宙までもめるアル！",
-		emote: "怒",
-	},
 	// 見出しの 名無しの 前ぶれ：見出しが 早すぎる。やきうは 湯船に しずんで ごまかす
 	{
 		who: null,
-		text: "掲示板に、もう見出しが貼られていた。\n『【ｿｸﾎｳ】宇宙、のぼせる』",
+		text: "掲示板に、もう見出しが貼られていた。\n『【悲報】キリコ、宇宙をゆでる』",
 		se: "read",
 	},
 	{
@@ -640,7 +652,7 @@ export const ENDING_AGAIN: StoryPage[] = [
 	{ who: null, text: "蓄音機に、長湯スレの\n湯の音がまた1枚ふえた。" },
 	{
 		who: "zero",
-		text: "湯温、41.5℃のままです！\n宇宙のほうは、まだ熱いそうです！",
+		text: "湯温、41.5℃のままです！\n人工衛星は、まだゆだってます！",
 		emote: "!",
 	},
 ];
