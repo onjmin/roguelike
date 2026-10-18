@@ -57,14 +57,21 @@ import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
 import { heroRivalResLine, liveResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
+import {
+	PICK_GUIDE,
+	PICK_GUIDE_NAME,
+	pickGuideFlag,
+} from "../../data/story/pickGuide";
 import type { RestStep, RestWalk } from "../../data/story/restSkits";
 import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
 import { loadImage } from "../../engine/assets";
 import {
+	addFlag,
 	DEBUG_SEED,
 	deathCount,
 	deathPast,
+	hasFlag,
 	loadBook,
 	loadProgress,
 	markSeenMonster,
@@ -1713,6 +1720,11 @@ export class Play {
 					await this.talkGuest();
 					return;
 				}
+				// 正面に 集落・休みの 階の 人が いれば、ぶつかったのと 同じく 話しかける（時間は 進まない）
+				if (run.f.folk?.some((x) => x.x === front.x && x.y === front.y)) {
+					await this.exec({ c: "move", dir: d });
+					return;
+				}
 				await this.exec({ c: "attack", dir: d });
 				return;
 			}
@@ -1793,6 +1805,39 @@ export class Play {
 
 	/** この 冒険で 同行者に 話しかけた 回数（ふだんの 話を 回す。画面だけ：記録に 残さない）。 */
 	private guestTalks = 0;
+
+	/**
+	 * 道具の なかまを はじめて 拾ったら、村の スレの 名無しが 使い方を 書きこむ（data/story/pickGuide.ts）。
+	 * どの 板でも なかま ごとに 一度きり（旗に 残す）。読んだ あとは 押しっぱなしの 歩きを 止める。
+	 */
+	private async pickGuide(held0: ReadonlySet<number>): Promise<void> {
+		const cats = new Set(
+			this.run.p.items
+				.filter((it) => !held0.has(it.uid))
+				.map((it) => defOf(it.kind).cat),
+		);
+		let shown = false;
+		for (const cat of cats) {
+			const pages = PICK_GUIDE[cat];
+			const flag = pickGuideFlag(cat);
+			if (!pages || hasFlag(flag)) continue;
+			addFlag(flag);
+			shown = true;
+			await speak(
+				this.ctx,
+				pages.map((text) => ({
+					name: PICK_GUIDE_NAME,
+					color: "#e8e0c8",
+					text: text.replaceAll("{hero}", this.run.heroName),
+				})),
+			);
+		}
+		if (!shown) return;
+		this.swallowInput();
+		this.walkHalt = true;
+		this.restHalt = true;
+		this.travel = null;
+	}
 
 	/** 同行者に 話しかける（core/guest.ts の guestChat。時間は 進まない）。 */
 	private async talkGuest(): Promise<void> {
@@ -2190,6 +2235,8 @@ export class Play {
 				: undefined;
 		const turn0 = run.s.turn;
 		const floor0 = run.s.floor;
+		// この act で 持ち物に 入った 道具を 見る（はじめて 拾った なかまの 手ほどき）
+		const held0 = new Set(run.p.items.map((i) => i.uid));
 		// ワープしたら、ワープの 出来事までは この 写しで 見せる（preWarp）
 		const seen0 = run.f.seen.slice();
 		const traps0 = run.f.traps.map((t) => ({ ...t }));
@@ -2342,6 +2389,7 @@ export class Play {
 				return ev;
 			}
 			this.save();
+			if (!this.rp && !this.auto) await this.pickGuide(held0);
 			this.roomSkit(before);
 			// 階段に乗ったら聞く（ダッシュ・タップ移動の途中では聞かない）
 			const moved = before.x !== run.p.x || before.y !== run.p.y;
