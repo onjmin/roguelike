@@ -129,7 +129,7 @@ import {
 	setTownSky,
 	townSkyNow,
 } from "./sceneSky";
-import { sayAs } from "./villageMobs";
+import { mobsOutNow, sayAs } from "./villageMobs";
 import { endScene, sceneBgm, villageSong } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
 import { setZankiScene } from "./zankiTag";
@@ -158,11 +158,13 @@ export const villageView = (): VillageView => {
 	const fresh = new Set(
 		p.news.filter((n) => n.reason !== "relief").map((n) => n.dungeon),
 	);
-	return {
+	const v: VillageView = {
 		stage: TOWN_STAGES - 1,
 		unlocked: p.unlocked.filter((d) => !fresh.has(d)),
 		cleared: [...p.cleared],
 	};
+	// この 帰りに 広場に いない 住人（施設に 行っている 子・出かけている 子。帰りごとに 1回 決める）
+	return { ...v, mobsOut: mobsOutNow(v) };
 };
 
 // ───────────────── 口から 出てくる ─────────────────

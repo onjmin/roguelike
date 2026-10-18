@@ -14,6 +14,7 @@ import { dungeonById } from "../../core/data/dungeons";
 import { MOB_VOICE } from "../../data/people/cast";
 import { MOB_GAGS } from "../../data/people/mobGags";
 import {
+	awayMobs,
 	type Beat,
 	type Cast,
 	type Milestone,
@@ -25,6 +26,7 @@ import {
 	type MobId,
 	type MobLine,
 	SENKYO,
+	squareOut,
 } from "../../data/people/mobs";
 import type { Speaker } from "../../data/story/quotes";
 import { awayFriends, mentionsAway } from "../../data/story/story";
@@ -32,6 +34,7 @@ import { TIP_CHANCE, TIP_LEAD, TIPS } from "../../data/story/tips";
 import { season, today } from "../../data/town/calendar";
 import { rawModes } from "../../data/town/openModes";
 import { TAMPER_MOB } from "../../data/town/tamper";
+import type { VillageView } from "../../data/village/map";
 import type { Script, Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import {
@@ -40,6 +43,7 @@ import {
 	loadRecords,
 	runStats,
 } from "../../engine/save";
+import { guestsOf } from "./guests";
 import { deathSkit } from "./skits";
 import { fill, sulkTier } from "./villageTalk";
 
@@ -69,6 +73,8 @@ type MobMemo = {
 	gag: Partial<Record<MobId, number>>;
 	/** ボケを 見た 帰り。 */
 	gagAt: Partial<Record<MobId, number>>;
+	/** この 帰りに 広場に いない 子（帰りごとに 1回 決めて、建て直しても 読みなおしても かわらない）。 */
+	out?: { at: number; ids: MobId[] };
 };
 
 const empty = (): MobMemo => ({
@@ -117,6 +123,17 @@ const load = (): MobMemo => {
 				tipAt: typeof o.tipAt === "number" ? o.tipAt : undefined,
 				gag: byMob(o.gag),
 				gagAt: byMob(o.gagAt),
+				...(o.out &&
+				typeof o.out === "object" &&
+				typeof (o.out as { at?: unknown }).at === "number" &&
+				Array.isArray((o.out as { ids?: unknown }).ids)
+					? {
+							out: {
+								at: (o.out as { at: number }).at,
+								ids: (o.out as { ids: unknown[] }).ids.filter(isMob),
+							},
+						}
+					: {}),
 			};
 		}
 	} catch {
@@ -487,6 +504,34 @@ export const mobTalkCount = (id: MobId): number => {
 
 /** 会った 子。 */
 export const metMobs = (): MobId[] => [...load().met];
+
+/**
+ * この 帰りに 広場に いない 住人（帰りごとに 顔ぶれが かわる。2026-10-18 作者「冒険から帰る度に 表示するキャラを 再抽選」）。
+ * 施設に 行っている 子（ui/village/guests.ts の guestsOf：音楽室・本屋・銭湯）と、出かけている 子
+ * （data/people/mobs.ts の squareOut）。会っていない 子と 新しい話の ある 子は 広場に 残る（Hades の 帰りごとの
+ * 会話に ならう：話の ある 子は 見つかる 所に いる）。帰りごとに 1回 決めて 村の 印に 残す（建て直しても
+ * 読みなおしても 同じ 顔ぶれ。話を 聞いた あとで 消えない）。まだ もぐって いなければ みんな いる。
+ */
+export const mobsOutNow = (v: VillageView): MobId[] => {
+	const at = returnAt();
+	if (!at) return [];
+	const m = load();
+	if (m.out?.at === at) return [...m.out.ids];
+	const g = guestsOf(v, at);
+	const away = [
+		...g.music,
+		...g.books,
+		...g.bath,
+		...(g.stage ? [g.stage] : []),
+	];
+	const gone = awayMobs(v.cleared);
+	const here = MOB_IDS.filter((id) => !gone.includes(id));
+	const ids = squareOut(here, at, away).filter(
+		(id) => m.met.includes(id) && !hasMobNews(id),
+	);
+	save({ ...m, out: { at, ids } });
+	return ids;
+};
 
 /** この 帰りに もう 新しい話を 聞いたか（会って いなければ true）。 */
 export const mobHeardNow = (id: MobId): boolean => {

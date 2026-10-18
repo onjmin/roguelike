@@ -97,6 +97,7 @@ import {
 import { npc, sign } from "../../data/village/helpers";
 import {
 	layoutStage,
+	roamCells,
 	unlitCells,
 	VILLAGE_EXITS,
 	VILLAGE_H,
@@ -109,6 +110,7 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../../data/village/map";
+import { gaitRange, mobRoam } from "../../data/village/mobGait";
 import type {
 	EventDef,
 	LightRule,
@@ -976,6 +978,17 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		};
 	if (p.exit) return sign(p.id, p.x, p.y, exitSignScript);
 	if (p.mob) {
+		const dir = p.dir ?? "down";
+		// 性格ごとの 歩き方（data/village/mobGait.ts。持ち場から 歩いて よい マスの 中で 動く）
+		const roam = p.gait
+			? mobRoam(
+					p.mob,
+					p.gait,
+					[p.x, p.y],
+					dir,
+					roamCells(v, [p.x, p.y], gaitRange(p.gait)),
+				)
+			: undefined;
 		return npc(
 			p.id,
 			p.x,
@@ -984,10 +997,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			p.mob === "ngoane"
 				? storeDesk(ctx, withBond(p.mob, mobScript(p.mob)))
 				: withBond(p.mob, mobScript(p.mob)),
-			{
-				dir: p.dir,
-				wander: p.wander,
-			},
+			{ dir, wander: p.wander, roam },
 		);
 	}
 	if (p.id.startsWith("board_"))

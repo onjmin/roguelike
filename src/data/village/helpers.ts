@@ -43,6 +43,8 @@ export const npc = (
 		name?: string;
 		dir?: Dir;
 		wander?: boolean;
+		/** 自分で 次に する ことを 決めて 動く（住人の 歩き方：data/village/mobGait.ts）。 */
+		roam?: EventDef["roam"];
 		when?: EventDef["when"];
 	} = {},
 ): EventDef => ({
@@ -53,6 +55,7 @@ export const npc = (
 	dir: opt.dir ?? "down",
 	trigger: "talk",
 	wander: opt.wander,
+	roam: opt.roam,
 	when: opt.when,
 	run:
 		typeof talk === "function"

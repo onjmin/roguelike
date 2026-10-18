@@ -17,8 +17,12 @@
 //   answersRun の 話は その 帰りの 反応を かねる（同じ 冒険に 2回 ふれない）。雑談は 上から 順に 出る。
 // - beat は 窓の 前の 小さな しぐさ（窓には 数えない。歩くのは 家の まわり 2マスの 中だけ）。
 // - 期間限定・曜日は 遊んでいる 端末の 日付（data/town/calendar.ts）。
+// - 広場では 性格で 歩き方が ちがう（gait。data/village/mobGait.ts）。帰りごとに 広場の 顔ぶれが かわる：
+//   施設に 行っている 子（ui/village/guests.ts）と 出かけている 子（squareOut）は 広場に いない。
+//   会っていない 子・新しい話の ある 子は 広場に 残る（ui/village/villageMobs.ts の mobsOutNow）。
 // ロジックは ui/village/villageMobs.ts、置き場所は data/village/map.ts。
 
+import { Rng } from "../../core/rng";
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { Dir } from "../../engine/types";
@@ -106,14 +110,21 @@ export type MobChat = {
 	lines: MobLine[];
 };
 
+/** 住人の 歩き方（MobDef.gait）。 */
+export type MobGait = "look" | "pace" | "stroll" | "run";
+
 export type MobDef = {
 	name: string;
 	/** 歩行グラ（RPGEN 形式）。 */
 	sprite: string;
 	spot: readonly [number, number];
 	dir: Dir;
-	/** 家の まわり 2マスを うろうろ する。 */
-	wander?: boolean;
+	/**
+	 * 歩き方（性格で きまる。無ければ 持ち場に 立ちっぱなし：店番・見張り・すわっている 子）。
+	 * look は その場で きょろきょろ、pace は 持ち場の まわり 2マスを うろうろ、stroll は 広場を のんびり
+	 * 歩きまわる、run は 広場を せかせか 走りまわる（data/village/mobGait.ts）。
+	 */
+	gait?: MobGait;
 	/**
 	 * 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。
 	 * 人の 子（リノ・アル）だけ。マスコット（ぷゆゆ・おんJwiki の 顔文字の マイナーズ）は やきうと 同じく 立ち絵なし。
@@ -198,7 +209,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: PUYU_WALK,
 		spot: [17, 23],
 		dir: "down",
-		wander: true,
+		gait: "pace",
 		voice: "nanj",
 		noVote: true,
 		meet: [
@@ -704,12 +715,13 @@ export const MOBS: Record<MobId, MobDef> = {
 		thx: [],
 	},
 
-	// 日曜日の子。広場に いる
+	// 日曜日の子。広場に いる（日曜日が 来ないか そわそわ きょろきょろ）
 	nichie: {
 		name: "にぃちぇ",
 		sprite: "pub:sprites/minors_nichie.png",
 		spot: [22, 20],
 		dir: "left",
+		gait: "look",
 		meet: [
 			e({ emote: "!", gesture: "startle" }, m("あ！今日日曜日だ……")),
 			n("にぃちぇはゆびをおって、\nしばらくかぞえていた。"),
@@ -1195,12 +1207,13 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 	},
 
-	// だれも 来ない おんS の お嬢さま。崖の下の すみっこに いる
+	// だれも 来ない おんS の お嬢さま。崖の下の すみっこに いる（だれか 来ないか きょろきょろ）
 	onsu: {
 		name: "おんすちゃん",
 		sprite: "pub:sprites/minors_onsu.png",
 		spot: [29, 12],
 		dir: "left",
+		gait: "look",
 		meet: [
 			n("村のすみっこで、だれかが\nハンカチをかみしめている。"),
 			e({ emote: "怒" }, m("何でおんSにはだれも\n来ないのよぉー！")),
@@ -1380,12 +1393,13 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 	},
 
-	// 一軍（人気投票の 殿堂入り）。広場の まんなかに いる。今日の おんちゃんは 曜日で かわる
+	// 一軍（人気投票の 殿堂入り）。広場の まんなかを のんびり 歩きまわる。今日の おんちゃんは 曜日で かわる
 	onchan: {
 		name: "おんちゃん",
 		sprite: "sa:oLrlUq",
 		spot: [21, 22],
 		dir: "down",
+		gait: "stroll",
 		noVote: true,
 		meet: [
 			m("キリコちゃん、はじめましてだおん"),
@@ -1549,12 +1563,13 @@ export const MOBS: Record<MobId, MobDef> = {
 		thx: [],
 	},
 
-	// ひかえめな ポジハメ。5割が 好き。広場の 西の はしに いる
+	// ひかえめな ポジハメ。5割が 好き。広場の 西の はしを ひかえめに うろうろ
 	yayapoji: {
 		name: "ヤヤポジ",
 		sprite: "pub:sprites/minors_yayapoji.png",
 		spot: [11, 22],
 		dir: "right",
+		gait: "pace",
 		meet: [
 			m("引き分けになりそうな\n試合が好きなんだ"),
 			n("キリコは首をかしげた。"),
@@ -1697,6 +1712,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		color: "#e0584a",
 		spot: [23, 23],
 		dir: "down",
+		gait: "pace",
 		meet: [
 			n("赤い毛むくじゃらが、\nこちらを見上げた。"),
 			m("ホゲェ"),
@@ -1802,13 +1818,14 @@ export const MOBS: Record<MobId, MobDef> = {
 		],
 	},
 	// 朝コンロ ( ,,Ծ‸Ծ,,)（二軍。火の 色の 髪の わがままな 子。一人称は うち・「〜だもん！」・口癖は「よく焼けた？」）。
-	// ロゼの スタジオの そばに いる
+	// ロゼの スタジオの そばを せかせか 走りまわる
 	asakonro: {
 		name: "朝コンロ",
 		sprite: "pub:sprites/minors_asakonro.png",
 		color: "#ff8a4a",
 		spot: [10, 20],
 		dir: "right",
+		gait: "run",
 		meet: [
 			e({ emote: "!" }, m("うち、朝コンロだもん！\n……よく焼けた？")),
 			n("朝コンロの髪の先で、\n小さな火がゆれている。"),
@@ -1994,6 +2011,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		color: "#e4e4f0",
 		spot: [15, 23],
 		dir: "right",
+		gait: "run",
 		meet: [
 			e({ emote: "!", gesture: "hop" }, m("おんJを侵略するぷ！")),
 			n("紙袋の服を着たエルフが、\n胸をはっている。"),
@@ -2256,7 +2274,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 響化アル（ひびか アル。おーぷん2ch 有志の UTAU。18歳・9月9日生まれ・177cm・長めの マッシュ・科学部）。
 	// 2026/09 に 声が できたばかりの いちばん 新しい子で、キリコの チームに 作ってもらった「2人目」。
 	// キリコを 先輩と 呼び、動画を 見てもらいたくて しかたない。つぎは MIMI の「サイエンス」を 歌う つもり。
-	// 広場の 西の はしに 立つ。
+	// 広場の 西の はしを 元気に 走りまわる。
 	// 音源（dtm の hibika_aru）が あるので、ボイスが ON なら しゃべる。マイナーズでは ないので 人気投票には 出ない
 	aru: {
 		name: "アル",
@@ -2264,6 +2282,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "pub:sprites/aru.png",
 		spot: [12, 20],
 		dir: "down",
+		gait: "run",
 		color: "#8fd694",
 		noVote: true,
 		meet: [
@@ -2424,7 +2443,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 解音ゼロの サブ機 HeBc-0（通称 プロト。公式の「AI生成された プロトタイプ」）。メインさん（data/people/cast.ts の zero）と 同じ 顔。
 	// 感情は まだ うすいが 学習中。語尾は「〜ゼロ」、冷徹で 論理的、好物は 味噌汁、哲学が 趣味、決め台詞は
 	//「感情に 振り回される ことは ない。」。オリジナルが いる・悪いやつに 作られた、という うわさ（真相は 不明）。
-	// 歩行グラは RPGEN「解音ゼロ - HeBc-0（通称: プロト）」。掲示板の 左に いる
+	// 歩行グラは RPGEN「解音ゼロ - HeBc-0（通称: プロト）」。掲示板の 左に 立って、まわりを 観察（計測）している
 	// （ゼロの 依頼は プロト・レンが そろってから：engine/heroes.ts の questOpen）。
 	// マイナーズでは ないので 人気投票には 出ない
 	proto: {
@@ -2434,6 +2453,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "sa:KxS5YZ",
 		spot: [13, 22],
 		dir: "right",
+		gait: "look",
 		color: "#9ab8d8",
 		noVote: true,
 		meet: [
@@ -2631,7 +2651,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	},
 	// 解音ゼロの サブ機 XQxS-0（通称 レン。公式の「マッドサイエンティストに 作られた・度々 アップデートされている」）。
 	// 絵は ステージの 子（先が 青い 金髪・金の 角・黒い 手袋と 脚の よろい・マイク）。明るくて 目立ちたがり、一人称は レン。
-	// 歩行グラは プロトの 絵を 塗りかえた もの（scripts/make-zero.mjs）。広場の 東に いる。
+	// 歩行グラは プロトの 絵を 塗りかえた もの（scripts/make-zero.mjs）。広場の 東を 鼻歌まじりに 歩きまわる。
 	// マイナーズでは ないので 人気投票には 出ない
 	ren: {
 		name: "レン",
@@ -2640,6 +2660,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		sprite: "pub:sprites/zero_ren.png",
 		spot: [25, 20],
 		dir: "down",
+		gait: "stroll",
 		color: "#e0b040",
 		noVote: true,
 		meet: [
@@ -3146,6 +3167,37 @@ export const awayMobs = (cleared: readonly DungeonId[]): MobId[] =>
 		const back = MOB_BACK[id];
 		return !!back && !cleared.includes(back);
 	});
+
+/**
+ * 広場を 離れない 住人：お弁当と 寸劇の ぷゆゆ・倉庫の ンゴ姉・買い取りの ジェイトルマン・帳簿の ヒナリー
+ * （いないと 倉庫・売る・生き返った 通りの 知らせの 場面が 回らない）。
+ */
+export const MOB_STAY: readonly MobId[] = [
+	"puyu",
+	"ngoane",
+	"jtleman",
+	"hinary",
+];
+
+/** 施設に 行って いなくても 広場から 出かけている 割合（帰りごとに 抽選）。 */
+export const OUT_RATE = 0.2;
+
+/**
+ * この 帰りに 広場に いない 住人（町に いる ids の うち。away は 施設に 行っている 子：ui/village/guests.ts）。
+ * 残りは at（帰りの 時刻）で 抽選して OUT_RATE だけ 出かける。MOB_STAY は いつも いる。
+ * 会っていない 子・新しい話の ある 子を 残すのは 呼ぶ側（ui/village/villageMobs.ts の mobsOutNow）。
+ */
+export const squareOut = (
+	ids: readonly MobId[],
+	at: number,
+	away: readonly MobId[],
+): MobId[] => {
+	const rng = Rng.fromSeed(`square:${at}`);
+	return ids.filter(
+		(id) =>
+			!MOB_STAY.includes(id) && (away.includes(id) || rng.chance(OUT_RATE)),
+	);
+};
 
 /**
  * ぷゆゆが お弁当の ぷゆゆパンを 持たせる ときの ひとこと（ui/village/villageReturn.ts の lunchScript。帰りごとに 1つ）。

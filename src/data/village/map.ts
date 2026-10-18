@@ -53,7 +53,13 @@ import type { DungeonId } from "../../core/types";
 import type { TileDef } from "../../engine/defs";
 import type { Dir } from "../../engine/types";
 import { CAST, YAJI_WALK } from "../people/cast";
-import { awayMobs, MOB_IDS, MOBS, type MobId } from "../people/mobs";
+import {
+	awayMobs,
+	MOB_IDS,
+	MOBS,
+	type MobGait,
+	type MobId,
+} from "../people/mobs";
 import { shiyoAtMaid } from "../people/shiyoShift";
 import { BOOKSTORE_FROM, LIBRARY_FROM } from "../story/glossary";
 import type { Speaker } from "../story/quotes";
@@ -76,6 +82,7 @@ import {
 	stampFacilities,
 } from "./facilities";
 import { FOLK_BACK, folkPlaces } from "./folk";
+import { gaitMoves } from "./mobGait";
 import { ROOM_FROM } from "./rooms";
 import { art, ri } from "./rpgenArt";
 import {
@@ -147,6 +154,11 @@ export type VillageView = {
 	 * その 板で 帰ってくる 仲間は 同じ 船で 着いて いるので、語りの 村にも 立つ。
 	 */
 	arriving?: DungeonId;
+	/**
+	 * この 帰りに 広場に いない 住人（施設に 行っている 子・出かけている 子。ui/village/villageMobs.ts の mobsOutNow）。
+	 * 無ければ みんな いる。
+	 */
+	mobsOut?: readonly MobId[];
 };
 
 export type Cell = readonly [x: number, y: number];
@@ -1038,7 +1050,10 @@ export type VillagePlace = {
 	/** 見た目（無ければ 見えない イベント。タイルの絵を そのまま 調べる）。 */
 	sprite?: string;
 	dir?: Dir;
+	/** 持ち場を 離れて 歩く（村の 道さがし・押しのけが 見る）。 */
 	wander?: boolean;
+	/** 住人の 歩き方（data/village/mobGait.ts。ui/village/villageEvents.ts が roam に する）。 */
+	gait?: MobGait;
 	/** 仲間なら その人。 */
 	who?: Speaker;
 	/** 村の 出口か その 立て札。 */
@@ -1172,10 +1187,11 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			});
 		}
 	}
-	// おんJマイナーズ（板の 話が 片づくと 帰ってくる：data/people/mobs.ts の MOB_BACK）
+	// おんJマイナーズ（板の 話が 片づくと 帰ってくる：data/people/mobs.ts の MOB_BACK）。
+	// この 帰りに 施設に 行っている 子・出かけている 子は 広場に いない（mobsOut）
 	const gone = awayMobs(v.cleared);
 	for (const id of MOB_IDS) {
-		if (gone.includes(id)) continue;
+		if (gone.includes(id) || v.mobsOut?.includes(id)) continue;
 		const d = MOBS[id];
 		out.push({
 			id: `mob_${id}`,
@@ -1184,7 +1200,8 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 			trigger: "talk",
 			sprite: d.sprite,
 			dir: d.dir,
-			wander: d.wander,
+			wander: gaitMoves(d.gait),
+			gait: d.gait,
 			mob: id,
 		});
 	}
@@ -1304,6 +1321,34 @@ export const spotsAround = (
 		.ring(at)
 		.filter((c) => t.vacant(c) && open.has(cellKey(c)) && !isTaken(taken, c))
 		.slice(0, n);
+};
+
+/** 村ごとの 地図を 引く道具（住人 1人ずつ 引きなおさない。地図は 村が 建つ あいだ かわらない）。 */
+const roamTools = new WeakMap<VillageView, ReturnType<typeof spotTools>>();
+
+/**
+ * 住人が 持ち場 home から r マス（たて・よこの 大きい方）の 中で 歩いて よい マス（data/village/mobGait.ts の mobRoam）。
+ * 人や 看板の いない 通れる マスで、持ち場から 歩いて 行ける 所。起きる所（蓄音機の 前）には 立たない。
+ * 持ち場 自身は 入れない（roam は 持ち場へ べつに もどる）。
+ */
+export const roamCells = (v: VillageView, home: Cell, r: number): Cell[] => {
+	if (r <= 0) return [];
+	let t = roamTools.get(v);
+	if (!t) {
+		t = spotTools(v);
+		roamTools.set(v, t);
+	}
+	const open = t.reach(home);
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	const out: Cell[] = [];
+	for (let dy = -r; dy <= r; dy++)
+		for (let dx = -r; dx <= r; dx++) {
+			if (!dx && !dy) continue;
+			const c: Cell = [home[0] + dx, home[1] + dy];
+			if (c[0] === bx && c[1] === by) continue;
+			if (t.vacant(c) && open.has(cellKey(c))) out.push(c);
+		}
+	return out;
 };
 
 /**

@@ -69,14 +69,17 @@ import { MOB_GAGS } from "../data/people/mobGags";
 import {
 	awayMobs,
 	MOB_IDS,
+	MOB_STAY,
 	MOBS,
 	type MobCtx,
 	type MobId,
 	type MobLine,
+	OUT_RATE,
 	PUYU_LUNCH,
 	PUYU_RELIEF,
 	RELIEF_NOTE,
 	SENKYO,
+	squareOut,
 } from "../data/people/mobs";
 import {
 	SHIYO_MAID_AT,
@@ -259,6 +262,7 @@ import {
 	coreShadows,
 	exitFor,
 	lineupSpots,
+	roamCells,
 	spotsAround,
 	unlitCells,
 	VILLAGE_EXITS,
@@ -270,6 +274,7 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
+import { gaitMoves, gaitRange, mobRoam } from "../data/village/mobGait";
 import {
 	canPlace,
 	cellLayers,
@@ -469,6 +474,7 @@ import {
 	hasMobNews,
 	idleOf,
 	mobScript,
+	mobsOutNow,
 	reactionOf,
 	senkyoOpen,
 	senkyoScript,
@@ -3900,7 +3906,7 @@ test("ぷゆゆ・マイナーズ: small moves are few,come before the mob's own
 			// 家の まわり 2マスの 中（うろうろの 範囲。外へ 出ると 建て直すまで もどれない）
 			const [x, y] = bt.to;
 			ok(
-				!!d.wander &&
+				gaitRange(d.gait) >= 2 &&
 					Math.abs(x - d.spot[0]) <= 2 &&
 					Math.abs(y - d.spot[1]) <= 2,
 				`${id}.${where}: (${x},${y}) is outside the wander box`,
@@ -3922,6 +3928,172 @@ test("ぷゆゆ・マイナーズ: small moves are few,come before the mob's own
 		}
 	}
 	ok(n <= 4, `${n} small moves (4 at most)`);
+});
+
+// ───────────────── 住人の 歩き方と 広場の 顔ぶれ（data/village/mobGait.ts・data/people/mobs.ts の squareOut） ─────────────────
+
+/** 決まった 乱数（試験を くり返しても 同じ）。 */
+const seededRng = (seed: number) => {
+	let s = seed;
+	return () => {
+		s = (s * 16807) % 2147483647;
+		return s / 2147483647;
+	};
+};
+
+test("住人の 歩き方: movers have room around home on every stage, look-only mobs never leave, steps stay in range", () => {
+	for (const v of VIEWS) {
+		const s = survey(v);
+		for (const id of MOB_IDS) {
+			const d = MOBS[id];
+			const r = gaitRange(d.gait);
+			const cells = roamCells(v, d.spot, r);
+			if (!r) {
+				ok(!cells.length && !gaitMoves(d.gait), `${id}: a still mob roams`);
+				continue;
+			}
+			ok(cells.length >= 3, `${label(v)} ${id}: only ${cells.length} cells`);
+			for (const [x, y] of cells) {
+				ok(
+					Math.max(Math.abs(x - d.spot[0]), Math.abs(y - d.spot[1])) <= r,
+					`${id}: (${x},${y}) is out of range`,
+				);
+				ok(!!s.tile(x, y)?.passable, `${label(v)} ${id}: (${x},${y}) wall`);
+				ok(
+					!s.places.some(
+						(p) =>
+							p.x === x && p.y === y && (p.sprite || p.trigger === "touch"),
+					),
+					`${label(v)} ${id}: (${x},${y}) is taken`,
+				);
+				ok(
+					!(x === VILLAGE_SPOTS.boot[0] && y === VILLAGE_SPOTS.boot[1]),
+					`${id}: onto the boot spot`,
+				);
+			}
+		}
+	}
+	const v = VIEWS[VIEWS.length - 1];
+	for (const id of MOB_IDS) {
+		const d = MOBS[id];
+		if (!d.gait) continue;
+		const cells = roamCells(v, d.spot, gaitRange(d.gait));
+		const roam = mobRoam(id, d.gait, d.spot, d.dir, cells, seededRng(7));
+		let at = { x: d.spot[0], y: d.spot[1] };
+		let moved = 0;
+		let home = 0;
+		for (let i = 0; i < 60; i++) {
+			const st = roam(at);
+			ok(st.wait > 0, `${id}: wait ${st.wait}`);
+			if (d.gait === "look") {
+				ok(!st.to && !!st.face, `${id}: a look mob walks`);
+				continue;
+			}
+			const to = st.to;
+			ok(!!to, `${id}: no destination`);
+			if (!to) continue;
+			const atHome = to[0] === d.spot[0] && to[1] === d.spot[1];
+			ok(
+				atHome || cells.some((c) => c[0] === to[0] && c[1] === to[1]),
+				`${id}: (${to.join(",")}) is not a roam cell`,
+			);
+			// 持ち場へ もどったら いつもの 向き
+			if (atHome) {
+				ok(st.face === d.dir, `${id}: home but facing ${st.face}`);
+				home++;
+			} else moved++;
+			at = { x: to[0], y: to[1] };
+		}
+		if (d.gait !== "look")
+			ok(moved >= 30 && home >= 3, `${id}: moved ${moved}, home ${home}`);
+	}
+});
+
+test("広場の 顔ぶれ: the same return rolls the same, staff stay, facility guests leave, about a fifth of the rest go out", () => {
+	const once = squareOut(MOB_IDS, 1234, []).join();
+	const twice = squareOut(MOB_IDS, 1234, []).join();
+	ok(once === twice, "the same return rolled twice differently");
+	const rest = MOB_IDS.filter((id) => !MOB_STAY.includes(id) && id !== "ren");
+	let out = 0;
+	for (let at = 1; at <= 400; at++) {
+		const o = squareOut(MOB_IDS, at, ["ren", "hinary"]);
+		ok(!o.some((id) => MOB_STAY.includes(id)), `${at}: staff out`);
+		ok(o.includes("ren"), `${at}: a guest is still in the square`);
+		out += o.filter((id) => id !== "ren").length;
+	}
+	const rate = out / (400 * rest.length);
+	ok(Math.abs(rate - OUT_RATE) < 0.04, `out rate ${rate.toFixed(2)}`);
+	const places = villagePlaces({
+		stage: TOWN_STAGES - 1,
+		unlocked: [...DUNGEON_IDS],
+		cleared: [...DUNGEON_IDS],
+		mobsOut: ["ren", "onchan"],
+	});
+	ok(
+		!places.some((p) => p.mob === "ren" || p.mob === "onchan") &&
+			places.some((p) => p.mob === "nichie"),
+		"mobsOut is not honoured",
+	);
+});
+
+test("広場の 顔ぶれ: decided once per return and kept; unmet mobs and mobs with news stay", async () => {
+	await withStorageAsync(async () => {
+		forgetMobMemo();
+		setProgress([...DUNGEON_IDS], [], [...DUNGEON_IDS]);
+		putTown({ stage: TOWN_STAGES - 1 });
+		// まだ もぐって いない：みんな いる
+		ok(!villageView().mobsOut?.length, "out before the first run");
+		pushRecord({});
+		const v = villageView();
+		// だれにも 会っていない：みんな いる
+		ok(!mobsOutNow(v).length, "unmet mobs went out");
+		// みんなに 会って、話も ぜんぶ 聞いた
+		const seen = MOB_IDS.flatMap((id) => [
+			...["shallow", "main", "deep", "runs10"].map((ms) => `${id}:@${ms}`),
+			...MOBS[id].chats.map((c) => `${id}:${c.key}`),
+		]);
+		localStorage.setItem(
+			"kiriko-roguelike/mobs",
+			JSON.stringify({ met: MOB_IDS, seen, wrote: true }),
+		);
+		forgetMobMemo();
+		let first: MobId[] = [];
+		for (let i = 0; i < 6 && !first.length; i++) {
+			pushRecord({});
+			first = mobsOutNow(villageView());
+		}
+		ok(first.length > 0, "nobody ever goes out");
+		ok(!first.some((id) => MOB_STAY.includes(id)), "staff went out");
+		ok(
+			first.join() === mobsOutNow(villageView()).join() &&
+				villageView().mobsOut?.join() === first.join(),
+			"the roster changed within one return",
+		);
+		// 読みなおしても（この回の 写しを 忘れても）同じ
+		forgetMobMemo();
+		ok(
+			first.join() === mobsOutNow(villageView()).join(),
+			"the roster was lost on reload",
+		);
+		// 出かけた 子に 新しい話が できても、この 帰りは そのまま（次の 帰りからは 広場に 残る）
+		const who = first[0];
+		localStorage.setItem(
+			"kiriko-roguelike/mobs",
+			JSON.stringify({
+				met: MOB_IDS,
+				seen: seen.filter((k) => !k.startsWith(`${who}:`)),
+				wrote: true,
+				out: { at: loadRecords()[0]?.at, ids: first },
+			}),
+		);
+		forgetMobMemo();
+		ok(hasMobNews(who), `${who} has no news`);
+		ok(mobsOutNow(villageView()).includes(who), `${who} came back mid-return`);
+		for (let i = 0; i < 8; i++) {
+			pushRecord({});
+			ok(!mobsOutNow(villageView()).includes(who), `${who} went out with news`);
+		}
+	});
 });
 
 test("ぷゆゆ: there from the first visit with the やきう name bar, not a candidate, answers the last run once", async () => {
