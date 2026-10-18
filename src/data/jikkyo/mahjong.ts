@@ -286,14 +286,14 @@ export const MAHJONG_POOLS = {
 		"ラスからトップ",
 	],
 	iv: [
-		"泣ける",
-		"ええ話や",
+		"月！？",
+		"規模おかしい",
 		"8888",
 		"おめでとう",
 		"ええ顔",
 		"しびれた",
 		"ナイストップ",
-		"ありがとう",
+		"雀荘が宇宙",
 	],
 	next: ["たのしみ", "また見るで", "次も見る", "次はだれや", "はよ次"],
 	hansei: [
@@ -588,6 +588,16 @@ const mahjongTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "result",
 			pool: "iv",
 			rate: 1,
+			caption: "勝利者インタビュー",
+			// インタビューで 話が ふくらむ（勝因は 月の 牌 → 全国の 雀荘へ）
+			posts: [
+				{ at: 2500, who: "nanashi", text: "勝者「勝因は、月で拾った牌です」" },
+				{
+					at: 6000,
+					who: "nanashi",
+					text: "【速報】月の牌、全国の雀荘で品切れ",
+				},
+			],
 			data: { phase: "iv" } satisfies MahjongData,
 		},
 		{
@@ -733,9 +743,9 @@ const mahjongTimeline: JkScript["timeline"] = (rand, slot) => {
 				at: 116000,
 				boo: "boo",
 				sets: [
-					[B("泣ける"), K("ええ話や"), X("押すんか")],
+					[B("月！？"), K("規模おかしい"), X("押すんか")],
 					[B("8888"), K("おめでとう"), X("ダマか")],
-					[B("ええ話や"), K("泣ける"), X("親満や")],
+					[B("規模おかしい"), K("おめでとう"), X("親満や")],
 				],
 			},
 			{

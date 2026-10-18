@@ -281,9 +281,10 @@ export const OYATSU_POOLS = {
 		"1日目乙",
 		"どっちが封じた？",
 		"続きは明日",
-		"夕方か",
+		"金庫ごと運ぶな",
 		"なに書いたんや",
-		"ええ勝負",
+		"封筒が成層圏",
+		"ロケット出たぞ",
 	],
 	shuban: [
 		"秒読みや",
@@ -294,7 +295,7 @@ export const OYATSU_POOLS = {
 		"逆転あるで",
 		"息止めた",
 		"はやい",
-		"見えへん",
+		"封筒が帰還した",
 		"ドキドキ",
 	],
 	toryo: [
@@ -528,8 +529,8 @@ const oyatsuTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "fuji",
 			pool: "fuji",
 			rate: 1,
-			bgm: "sad",
-			caption: "夕方封じ手",
+			bgm: "retro",
+			caption: "夕方封じ手。封筒は宇宙で保管",
 			title: {
 				later: (n: number, s: JkSlot) =>
 					fillN(s.live ? OYATSU_THREAD.live2 : OYATSU_THREAD.rerun2, n),
@@ -654,7 +655,7 @@ const oyatsuTimeline: JkScript["timeline"] = (rand, slot) => {
 				sets: [
 					[B("封じ手や"), K("明日はよ"), X("ありません")],
 					[B("封筒きた"), K("続きは明日"), X("おやつなにやろ")],
-					[B("封じ手や"), K("1日目乙"), X(FRESH)],
+					[B("宇宙で保管て"), K("封じ手や"), X(FRESH)],
 				],
 			},
 			// 終盤：評価値の 札が かたむく 先を 言いきる（7割は はじめから、3割は いったん 逆へ）

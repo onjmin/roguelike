@@ -275,7 +275,7 @@ export const EKIDEN_POOLS = {
 	tsunagi: [
 		"つながった",
 		"ようやった",
-		"泣ける",
+		"襷が光っとる",
 		"おんJ大ようやった",
 		"ギリギリや",
 		"ええもん見た",
@@ -284,16 +284,17 @@ export const EKIDEN_POOLS = {
 		"よう走った",
 		"心臓に悪い",
 	],
+	// 白い 襷は 目立ちすぎて 話が 国・宇宙へ ふくらむ（走った 人は 笑わない。笑うのは 襷の 白さ）
 	shiro: [
 		"白い襷や",
 		"よう走った",
-		"泣ける",
-		"あと少しやった",
-		"無念",
-		"また来年",
+		"白すぎる",
+		"逆に目立つ",
+		"ヘリが追っとる",
+		"白さで視聴率",
 		"胸張れ",
 		"ええ走りやった",
-		"おんJ大来年や",
+		"衛星から見える",
 		"拍手",
 	],
 	goal: [
@@ -316,11 +317,11 @@ export const EKIDEN_POOLS = {
 		"8888",
 		"ええチームや",
 		"紙ふぶきや",
-		"泣ける",
 		"監督飛んどる",
-		"おめ",
+		"監督落ちてこん",
+		"監督が成層圏",
 	],
-	preview: ["たのしみ", "もう来年か", "あしたも見る", "正月終わる"],
+	preview: ["たのしみ", "監督まだ飛んどる", "あしたも見る", "もう来年か"],
 	hansei: [
 		"乙",
 		"おつかれ",
@@ -329,7 +330,7 @@ export const EKIDEN_POOLS = {
 		"反省会や",
 		"寒かった",
 		"雑煮食う",
-		"ええ正月やった",
+		"監督着地した",
 		"二度寝する",
 		"ええレースや",
 	],
@@ -554,17 +555,31 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 			scene: "chukei",
 			pool: arrive ? "tsunagi" : "shiro",
 			rate: 1.2,
-			bgm: arrive ? "title" : "sad",
+			bgm: arrive ? "title" : "battle",
 			stall: 1200,
 			caption: arrive ? "おんJ大襷をつないだ" : "おんJ大白い襷でスタート",
-			posts: [
-				{
-					at: 1500,
-					who: "nanashi",
-					text: arrive ? "おんJ大、間に合った！" : "おんJ大、繰り上げ……",
-					pin: 2500,
-				},
-			],
+			posts: arrive
+				? [
+						{
+							at: 1500,
+							who: "nanashi",
+							text: "おんJ大、間に合った！",
+							pin: 2500,
+						},
+					]
+				: [
+						{
+							at: 1500,
+							who: "nanashi",
+							text: "おんJ大、白い襷で再出発！",
+							pin: 2500,
+						},
+						{
+							at: 5500,
+							who: "nanashi",
+							text: "白すぎて報道ヘリ3機が追跡",
+						},
+					],
 			data: {
 				phase: "after",
 				arrive,
@@ -619,14 +634,14 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 			];
 	const after = arrive
 		? [
-				[B("つながった"), K("泣ける"), X("見えへん")],
+				[B("つながった"), K("心臓に悪い"), X("見えへん")],
 				[B("ようやった"), K("鳥肌"), X(EKIDEN_WORDS.miss)],
-				[B("泣ける"), K("ギリギリや"), X("号砲や")],
+				[B("セーフや"), K("ギリギリや"), X("号砲や")],
 			]
 		: [
-				[B("よう走った"), K("泣ける"), X(EKIDEN_WORDS.arrive)],
-				[B("白い襷や"), K("無念や"), X("見えた！")],
-				[B("泣ける"), K("また来年"), X("ナイスリレー")],
+				[B("よう走った"), K("胸張れ"), X(EKIDEN_WORDS.arrive)],
+				[B("白い襷や"), K("逆に目立つ"), X("見えた！")],
+				[B("白すぎる"), K("ヘリ来とる"), X("ナイスリレー")],
 			];
 	const other = EKIDEN_ART.yusho[1 - leg];
 	return {
@@ -720,7 +735,7 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 				boo: "boo",
 				sets: [
 					[B("胴上げや"), K("おめでとう"), X("見えへん")],
-					[B("おめでとう"), K("強かった"), X("給水や")],
+					[B("監督飛んどる"), K("おめでとう"), X("給水や")],
 					[B(yusho), K("胴上げや"), X(other)],
 				],
 			},
@@ -752,7 +767,7 @@ const ekidenTimeline: JkScript["timeline"] = (rand, slot) => {
 				praise: EKIDEN_THREAD.praise,
 				cross: arrive
 					? { gap: "次スレでつなげ", fresh: "新スレでつないだ！" }
-					: { gap: "次スレで見とどけろ", fresh: "新スレで繰り上げ……" },
+					: { gap: "次スレで見とどけろ", fresh: "新スレで繰り上げ！" },
 				names: EKIDEN_NAMES,
 			},
 		],

@@ -260,16 +260,17 @@ export const SHINSAKU_POOLS = {
 		"新キャラやん",
 		"どう見ても人",
 	],
+	// 延期の 理由で 話が ふくらむ（作りながら 埋め立てすぎて 国土が 広がる → 地図 → 国連）
 	owabi: [
 		"知ってた",
 		"またか",
 		"待つで",
-		"ええんやで",
-		"ゆっくり作って",
+		"理由どうなっとる",
+		"国土増えとる",
 		"頭さげとる",
-		"延期は定番",
-		"去年も聞いた",
-		"まだかかるんか",
+		"地図買い直しや",
+		"国連案件で草",
+		"埋め立てすぎ",
 		"パズルまだ？",
 	],
 	motto: [
@@ -311,7 +312,7 @@ export const SHINSAKU_POOLS = {
 		"蓄音機や",
 		"ほんまに出るんか",
 		"本人見とる？",
-		"泣ける",
+		"鯖が燃えとる",
 		"8888",
 		"これは買う",
 	],
@@ -369,6 +370,9 @@ export const SHINSAKU_THREAD = {
 	crossGap: "次スレできたあああ",
 	crossFresh: "新スレで間に合った",
 	owabiPin: "【お詫び】『埋め立てパズル』延期",
+	/** 延期の 理由（お詫びの あとの 速報 2本）。 */
+	owabiWhy: "理由：試しに埋め立てたら日本が広がった",
+	owabiUn: "【速報】国連が埋め立てパズルを審議",
 	kirikoPin: "【速報】蓄音キリコ新作制作中",
 	quit: "もう一度Bで出る",
 } as const;
@@ -484,9 +488,13 @@ const shinsakuTimeline: JkScript["timeline"] = (rand) => {
 			scene: "host",
 			pool: "owabi",
 			rate: 1,
-			bgm: "sad",
+			bgm: "battle",
 			caption: "広報からお知らせ",
 			pin: SHINSAKU_THREAD.owabiPin,
+			posts: [
+				{ at: 5000, who: "nanashi", text: SHINSAKU_THREAD.owabiWhy },
+				{ at: 8500, who: "nanashi", text: SHINSAKU_THREAD.owabiUn },
+			],
 			data: { phase: "owabi" } satisfies ShinsakuData,
 		},
 		{
@@ -612,7 +620,7 @@ const shinsakuTimeline: JkScript["timeline"] = (rand) => {
 				boo: "booLate",
 				sets: [
 					[B("待ってた"), K("ほんまか"), X("延期かよ")],
-					[B("ありがとう"), K("泣ける"), X("画質ええな")],
+					[B("本人おるやん"), K("鯖が重い"), X("画質ええな")],
 					[B("神発表会"), K("ええやん"), X("リマスターかよ")],
 				],
 			},
