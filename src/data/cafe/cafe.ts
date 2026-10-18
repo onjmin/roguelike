@@ -70,7 +70,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 			n("フェリスは窓の外を見た。"),
 			e(
 				{ gesture: "startle" },
-				s("feris", "……へくちっ。\n……どうせ、悪いうわさ〜"),
+				s("feris", "……へくちっ。\nあ、いまのキリコ〜？"),
 			),
 		],
 	},
@@ -147,12 +147,12 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		lines: [
 			e(
 				{ emote: "♪" },
-				s("feris", "ゼロちゃん、飛べる〜？\n私はちょっと。すぐ落ちるけど〜"),
+				s("feris", "ゼロちゃん、飛べる〜？\n私はちょっとだけ飛べるよ〜"),
 			),
 			s("zero", "ゼロは飛べません！\nレンなら、次の更新で飛べます！"),
 			e(
 				{ gesture: "hop" },
-				s("feris", "じゃあ私が先に飛んで〜、\n途中で落ちてるね〜"),
+				s("feris", "じゃあ私が先に、植民地まで\n飛んでいくね〜"),
 			),
 			s("zero", "ゼロは上から、キリコさんが\n迷った回数を数えます！"),
 		],
@@ -179,7 +179,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 			e({ emote: "?" }, s("shiyo", "……「ンゴ」で\n文が終わるってどうなの？")),
 			e(
 				{ emote: "♪" },
-				s("feris", "いいよ〜。私の名前は、\n掲示板にも出てこないし〜"),
+				s("feris", "いいよ〜。\n掲示板もンゴってなってるもん〜"),
 			),
 			n("キリコは大きくうなずいた。\n……ンゴ、と言った。"),
 		],
@@ -223,7 +223,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 			s("nanj", "……それは、すまんかったな"),
 			e(
 				{ emote: "花" },
-				s("feris", "いいの〜。とられてからも、\n毎日ちゃんと過疎ってるから〜"),
+				s("feris", "いいの〜。とられてから、\n毎日ちがう日になったから〜"),
 			),
 			s("nanj", "……せやな。\nそれが、いちばんええわ"),
 		],
@@ -300,7 +300,7 @@ export const CAFE_TALKS: readonly CafeTalk[] = [
 		lines: [
 			s("nanj", "ほな、祭りのタイトル、\n決めよか"),
 			s("roze", "「常識で攻略」でいいアル。\n常識アル"),
-			e({ emote: "♪" }, s("feris", "「毎日過疎」が\nいい〜")),
+			e({ emote: "♪" }, s("feris", "「毎日復活」が\nいい〜")),
 			e(
 				{ emote: "汗" },
 				s("shiyo", "……「固定ファン限定」。\nな、なによ。案を出しただけよ"),
@@ -338,10 +338,7 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		who: "feris",
 		lines: [
 			s("feris", "草スムージー〜？\n名前がもう笑ってるよね〜"),
-			e(
-				{ emote: "♪" },
-				s("feris", "……おいしい〜。私の人気より、\n草のほうが生えてる〜"),
-			),
+			e({ emote: "♪" }, s("feris", "……おいしい〜。\n草に草が生える味〜")),
 		],
 	},
 	h_greater: {
@@ -389,9 +386,9 @@ export const CAFE_DRINKS: Readonly<Record<string, CafeDrink>> = {
 		lines: [
 			e(
 				{ emote: "!", gesture: "hop" },
-				s("feris", "レアだ〜。……私には、\nもったいない〜"),
+				s("feris", "レアだ〜！\n……レベルが上がる味〜"),
 			),
-			s("feris", "……いいの〜？私、明日には\n過疎ってるかもなのに〜"),
+			s("feris", "……いいの〜？\nレアなのに〜、ありがと〜"),
 		],
 	},
 	h_swift: {
@@ -519,11 +516,11 @@ export const TREAT_REACTIONS: Readonly<
 		[
 			e(
 				{ gesture: "hop" },
-				s("feris", "わ〜、{drink}〜。私に〜？\n……なにか裏があるよね〜"),
+				s("feris", "わ〜、{drink}〜！\n私に〜？ありがと〜"),
 			),
 		],
 		[s("feris", "また〜？……へくちっ。\nうわさされてる気がする〜")],
-		[s("feris", "おごられた数で、私の勝ち〜。\n……勝っても、過疎るけど〜")],
+		[s("feris", "おごられた数で、\n私の勝ち〜。……飲んじゃうけど〜")],
 	],
 	shiyo: [
 		[
@@ -572,8 +569,8 @@ export const TREAT_SIPS: Readonly<Record<Speaker, readonly CafeLine[]>> = {
 	// 草スムージー・忍法帖スムージー・お花畑ハーブティー
 	feris: [
 		s("feris", "ん〜、おいし〜。でも私、\n草の味がするほうが好き〜"),
-		s("feris", "ふわ〜。……うれしいと、\nあとがこわい〜"),
-		s("feris", "おいし〜。……レアな草は、\n私には一生来ない〜"),
+		s("feris", "ふわ〜。……お花のにおいが\nしたら、もっとうれしいな〜"),
+		s("feris", "おいし〜。……レアな草の\nスムージー、いつか飲みたいな〜"),
 	],
 	// 寝落ちミルク・荒らしカクテル
 	shiyo: [
@@ -655,7 +652,7 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 			s("feris", "キリコが倒れた数も、\nぜんぶ見えてるよ〜"),
 			e(
 				{ emote: "♪" },
-				s("feris", "私のほうが、1回多く\n復活してる〜。1回多く消えた〜"),
+				s("feris", "私のほうが、1回多く\n復活してるね〜。……勝ち〜"),
 			),
 		],
 	},
@@ -665,7 +662,7 @@ export const TREAT_TALKS: readonly CafeTalk[] = [
 		cast: ["feris"],
 		treats: 6,
 		lines: [
-			s("feris", "私、ほんとはもっと\n飛べるんだ〜。……たぶん〜"),
+			s("feris", "私、ほんとはもっと\n飛べるんだ〜"),
 			s("feris", "でも飛ぶと、キリコより\n先に着いちゃうでしょ〜"),
 			e({ gesture: "startle" }, s("feris", "……ハンデだよ〜。\nへくちっ")),
 		],

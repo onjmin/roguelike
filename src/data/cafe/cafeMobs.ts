@@ -405,7 +405,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					c("feris", "ぷゆゆ〜、なにのむ〜？"),
 					m("おはなばたけのおちゃ🥺\nふるさとのにおいすゆの"),
-					e({ emote: "花" }, c("feris", "……私の花畑は、\nぜんぶ燃えた〜")),
+					e({ emote: "花" }, c("feris", "……いっしょにぽわぽわ\nしよ〜")),
 				],
 			},
 			{
@@ -513,7 +513,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 						{ emote: "♥", gesture: "shiver" },
 						m("フェ、フェリスちゃんと\n同じものンゴねぇ……！"),
 					),
-					c("feris", "私、たのんでも〜、\nたぶん来ない〜"),
+					c("feris", "私、まだなにも\nたのんでないよ〜"),
 					e({ emote: "汗" }, m("……わたしもまだンゴねぇ……")),
 				],
 			},

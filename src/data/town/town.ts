@@ -246,7 +246,7 @@ export const TITLE_TOWN_QUOTES: Readonly<Record<number, readonly Line[]>> = {
 	// 商店街（きのこ板）
 	5: [
 		q("roze", "商店街、開いたアル。\n……グッズ、売ってもいいアル"),
-		q("feris", "きのこ、生えてる〜。\n……私の頭にも、そのうち〜", {
+		q("feris", "きのこ、生えてる〜。\n……商店街に〜", {
 			gesture: "hop",
 		}),
 		q("nanj", "商店街か。……古参ヅラ、\nしてええんかな"),
@@ -271,7 +271,7 @@ export const TITLE_TOWN_QUOTES: Readonly<Record<number, readonly Line[]>> = {
 export const BLACKOUT_TOWN_QUOTES: readonly Line[] = [
 	q("nanj", "停電でナイター見れへん。\n……ラジオで聞いとるわ"),
 	q("roze", "まっくらアル。\n麻婆豆腐、冷めるアル"),
-	q("feris", "暗いと、私の炎しか見えない〜。\n……それも、もうすぐ消える〜", {
+	q("feris", "暗いと、私の炎が\nよく見えるね〜", {
 		emote: "♪",
 	}),
 	q("shiyo", "べ、べつにこわくないわよ。\n……あなたより先に慣れたわ", {
@@ -284,7 +284,7 @@ export const BLACKOUT_TOWN_QUOTES: readonly Line[] = [
 export const ESCAPE_QUOTES: readonly Line[] = [
 	q("nanj", "途中であがってきたんか。\n……ええで。ええで"),
 	q("shiyo", "逃げたんでしょ。\n……あたすは逃げないけど"),
-	q("feris", "スレでageられたの〜？\n私はsageられてばっかり〜", {
+	q("feris", "スレでageられたの〜？\n私のageと、どっちが速い〜？", {
 		emote: "?",
 	}),
 	q("roze", "途中で帰るのも、常識アル。\n……荷物は、ちゃんと売るアル"),
