@@ -103,6 +103,8 @@ import {
 	SCENE_NIGHT_MINUTE,
 	sceneLit,
 	sceneSky,
+	setTownSky,
+	townSkyNow,
 } from "./sceneSky";
 import { nearSkit, playNearSkit, skitAfterEvent } from "./skits";
 import { Crowd } from "./villageCrowd";
@@ -413,6 +415,8 @@ export class Village {
 							: surfaceOfMap(this.mapId)
 								? buildSurface(surfaceOfMap(this.mapId) as Surface, this.ctx)
 								: buildVillage(v, this.ctx, { arrival: this.arrival });
+		// 停電の あいだは 町じゅう 明かりの ない 夜（ui/village/sceneSky.ts）
+		setTownSky(this.mapId === "village" ? townSkyNow() : null);
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;

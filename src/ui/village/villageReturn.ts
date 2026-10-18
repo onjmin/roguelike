@@ -118,12 +118,15 @@ import {
 	sproutShrooms,
 } from "./sceneShrooms";
 import {
+	BLACKOUT_TOLD,
 	type SceneLit,
 	sceneOut,
 	sceneSky,
 	setSceneLit,
 	setSceneOut,
 	setSceneSky,
+	setTownSky,
+	townSkyNow,
 } from "./sceneSky";
 import { sayAs } from "./villageMobs";
 import { endScene, sceneBgm, villageSong } from "./villageMusic";
@@ -310,27 +313,38 @@ export const lineUp = (s: Story, a: ReturnArrival, v: VillageView): void => {
 	const exit = inMouth(s, a.dungeon);
 	if (!exit) return;
 	const pages = pagesFor(a);
-	const cast = castOf(pages);
+	// 町の どこかで 待って いる 仲間（StoryPage.standAt。語りが 言う 所に 立つ。口の 前には 並ばない）
+	const away = new Map(
+		pages.flatMap((p) => (p.standAt && p.who ? [[p.who, p.standAt]] : [])),
+	);
+	const cast = castOf(pages).filter((w) => !away.has(w));
 	// 口を はさむ 住人が 村に いれば、仲間の あとに 並ぶ（遠くから 声だけ 飛ばさない）
 	const mobs = mobsHere(pages, v).map((id) => `mob_${id}`);
-	const spots = lineupSpots(v, cast.length + mobs.length, exit);
+	const line = [...cast, ...mobs];
+	const spots = lineupSpots(v, line.length, exit);
 	s.hide("player");
-	[...cast, ...mobs].forEach((who, i) => {
+	line.forEach((who, i) => {
 		const c = spots[i];
 		if (c) s.place(who, c[0], c[1], toward[exit.inward]);
 	});
-	// 新しい 場面：並んだ マスだけ おぼえる（キリコが どく マス・口から 来る 人の 行き先から 外す）
-	placed.set(s, spots.slice(0, cast.length + mobs.length));
 	homes = new Map(
-		[...cast, ...mobs].flatMap((who, i) => {
+		line.flatMap((who, i) => {
 			const c = spots[i];
 			return c ? [[who, c] as const] : [];
 		}),
 	);
+	for (const [who, at] of away) {
+		const c = spotsAround(v, 1, at, [...homes.values()])[0];
+		if (!c) continue;
+		s.place(who, c[0], c[1], "down");
+		homes.set(who, c);
+	}
+	// 新しい 場面：置いた マスだけ おぼえる（キリコが どく マス・口から 来る 人の 行き先から 外す）
+	placed.set(s, [...homes.values()]);
 	// 停電の 町に 帰る 場面（電池板）：幕が 上がる 前から 暗く、外には 並んだ 人しか いない
 	if (pages[0]?.sky === "dark") {
 		setSceneSky("dark");
-		setSceneOut({ keep: new Set([...cast, ...mobs]), near: [], all: false });
+		setSceneOut({ keep: new Set(homes.keys()), near: [], all: false });
 	}
 };
 
@@ -389,6 +403,31 @@ const flickerOn = async (
 			await s.wait(ms);
 		}
 	setSceneLit(to);
+};
+
+/**
+ * 停電（転）：灯った 夜から 2回 またたいて 明かりの ない 夜（dark）へ。端末の「動きを へらす」では すぐ 消える。
+ */
+const flickerOff = async (s: Story, on: SceneLit): Promise<void> => {
+	const still =
+		typeof window !== "undefined" &&
+		!!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+	const lit = (yes: boolean) => {
+		setSceneSky(yes ? "night" : "dark");
+		setSceneLit(yes ? on : null);
+	};
+	if (!still)
+		for (const [yes, ms] of [
+			[false, 80],
+			[true, 120],
+			[false, 60],
+			[true, 200],
+		] as const) {
+			lit(yes);
+			await s.wait(ms);
+		}
+	lit(false);
+	await s.wait(500);
 };
 
 /**
@@ -913,38 +952,44 @@ export const deathScene = async (s: Story): Promise<void> => {
 export const tenScript = async (s: Story): Promise<void> => {
 	// その夜の 場面（村の 時計に かかわらず 夜。明かりが 消える 頁から dark）。
 	// 消える までは 持ち帰った 板の 明かりが 灯って いる（町は もう 停電の 並びで 建って いる）
+	const on: SceneLit = { boards: loadProgress().cleared, homes: true };
 	setSceneSky("night");
-	setSceneLit({ boards: loadProgress().cleared, homes: true });
+	setSceneLit(on);
 	await gather(s, ["zero", "roze", "feris", "nanj"]);
+	// 外に 残る 人（集まった 仲間と 話す 人）
+	const keep = new Set([
+		"zero",
+		"roze",
+		"feris",
+		"nanj",
+		...castOf(TEN_NEWS.pages),
+	]);
 	for (const p of withoutAway(
 		TEN_NEWS.pages,
 		awayFriends(loadProgress().cleared),
 	)) {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
-		if (p.sky !== undefined) setSceneSky(p.sky);
-		// 明かりが 消えたら 外には 集まった 仲間と 話す 人だけ
+		// 語りが 言う 所を 映す（灯った 広場 → 消える → 暗い 銭湯・掲示板 → 仲間の もとへ）
+		if (p.look !== undefined) await s.look(p.look);
 		if (p.sky === "dark") {
-			setSceneLit(null);
-			setSceneOut({
-				keep: new Set([
-					"zero",
-					"roze",
-					"feris",
-					"nanj",
-					...castOf(TEN_NEWS.pages),
-				]),
-				near: [],
-				all: false,
-			});
-		}
-		await playPage(s, p);
+			// 映した 通りで 明かりが またたいて、町じゅう いっせいに 消える。外の 人は 家に 入る
+			s.se("batonDown");
+			await flickerOff(s, on);
+			setSceneOut({ keep, near: [], all: false });
+		} else if (p.sky !== undefined) setSceneSky(p.sky);
+		// 暗い 町で 映した 所には、外に 出てきた 人が いる（さけんだ 銭湯・見出しを 見に きた 掲示板）
+		const o = sceneOut();
+		if (o && p.look) setSceneOut({ ...o, near: [...o.near, p.look] });
+		await playPage(s, { ...p, ...pageCue(p) });
 	}
 	// 場面の 空は ここまで。曲は 1周 おわるまで 余韻（ui/village/villageMusic.ts）。なければ 村の 曲に もどす
 	if (!endScene()) await s.fadeBgm(300);
-	setSceneSky(null);
-	s.bgm(villageSong());
 	addFlag("ten");
+	// 電池板を 持ち帰るまで 町は 停電の 夜の まま
+	setSceneSky(null);
+	setTownSky(townSkyNow());
+	s.bgm(villageSong());
 };
 
 /**
@@ -1037,8 +1082,9 @@ export const reviveScript = async (s: Story): Promise<void> => {
 		setSceneSky("dark");
 		setSceneOut({ keep: new Set(), near: [], all: false });
 		for (const l of REVIVE_MSG.blackout) await s.narrate(l);
-		setSceneSky(null);
 		addFlag(BLACKOUT_TOLD);
+		setSceneSky(null);
+		setTownSky(townSkyNow());
 	}
 	const fresh = dark
 		? []
@@ -1068,9 +1114,6 @@ export const reviveScript = async (s: Story): Promise<void> => {
 	if (carry > (CARRY_MAX[r.from] ?? 0))
 		await s.narrate(fill(REVIVE_MSG.carry, { n: carry }));
 };
-
-/** 停電を 知らせた（Progress.flags）。 */
-const BLACKOUT_TOLD = "toldBlackout";
 
 // ───────────────── 持ち帰った物 ─────────────────
 

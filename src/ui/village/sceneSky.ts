@@ -6,6 +6,8 @@
 // 停電の あいだは 外に 人が いない（sceneOut。場面に 出る 人だけ 残す。明かりが 灯った 通りから 人が もどる）。
 
 import type { DungeonId } from "../../core/types";
+import { inBlackout } from "../../data/town/revival";
+import { hasFlag, loadProgress } from "../../engine/save";
 
 export type SceneSky = "dark" | "night";
 
@@ -37,11 +39,30 @@ const OUT_R = 9;
 let sky: SceneSky | null = null;
 let lit: SceneLit | null = null;
 let out: SceneOut | null = null;
+/** 場面の 外の 町の 空（停電の あいだは ずっと dark。村を 組み立てる たびに townSkyNow で きめる）。 */
+let town: SceneSky | null = null;
 
-/** いまの 場面の 空（null は 村の 時計の まま）。 */
-export const sceneSky = (): SceneSky | null => sky;
+/** 停電を 語った（Progress.flags。転を 見ずに 停電の 知らせで 知った とき）。 */
+export const BLACKOUT_TOLD = "toldBlackout";
 
-/** 場面の 空を かえる（null で 村の 時計に もどす。灯す 明かりも 消す）。 */
+/**
+ * 町の 空（場面の 外）。停電（data/town/revival.ts の inBlackout）を 語ってから 電池板を 持ち帰るまでは、
+ * 時計に かかわらず 明かりの ない 夜（昼の 停電は 見ても わからない）。語る 前（転の 前の 語り）は 時計の まま。
+ */
+export const townSkyNow = (): SceneSky | null =>
+	inBlackout(loadProgress()) && (hasFlag("ten") || hasFlag(BLACKOUT_TOLD))
+		? "dark"
+		: null;
+
+/** 町の 空を きめる（村の 地図を 組み立てる とき。ほかの 地図では null）。 */
+export const setTownSky = (s: SceneSky | null): void => {
+	town = s;
+};
+
+/** いまの 空（場面の 空、なければ 町の 空。null は 村の 時計の まま）。 */
+export const sceneSky = (): SceneSky | null => sky ?? town;
+
+/** 場面の 空を かえる（null で 町の 空に もどす。灯す 明かりも 消す）。 */
 export const setSceneSky = (s: SceneSky | null): void => {
 	sky = s;
 	if (s) return;

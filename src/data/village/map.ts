@@ -1204,10 +1204,14 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	// 村の はしの 名無したち（data/village/folk.ts。話し方は ui/village/folk.ts）
 	// （広場に 人が もどる パン板から）
 	if (v.cleared.includes(FOLK_BACK)) out.push(...folkPlaces(stage));
-	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで）と ご近所（持ち帰った あと。data/town/incidents.ts）
+	// 町の 騒ぎの 人（板が 開いて から 持ち帰るまで）と ご近所（持ち帰った あと。data/town/incidents.ts）。
+	// 持ち帰りの 語りの あいだ（arriving）は もう 片づいた 騒ぎ：騒ぎの 人は 帰って、ご近所が 来て いる
+	const settled = v.arriving
+		? { ...v, cleared: [...v.cleared, v.arriving] }
+		: v;
 	for (const p of [
-		...activeIncidents(v).flatMap((i) => i.people),
-		...activeVisitors(v),
+		...activeIncidents(settled).flatMap((i) => i.people),
+		...activeVisitors(settled),
 	])
 		out.push({
 			id: incidentPlaceId(p),
