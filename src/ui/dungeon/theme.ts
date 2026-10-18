@@ -278,7 +278,7 @@ export const TRAP_ICON: Record<TrapKind, string> = {
 	warp: "pub:sprites/traps.png#80,0,16,16", // 青く 光る 輪（scripts/make-traps.mjs）
 	pit: "sp:87bRbg", // RPGEN「落とし穴」
 	anka: "pub:sprites/anka_trap.png#0,0,16,16", // >> の 踏み板（scripts/make-anka-trap.mjs）
-	spring: "pub:sprites/traps.png#96,0,16,16", // 源泉の 湯船（名所の 階。scripts/make-traps.mjs）
+	spring: "pub:sprites/traps.png#96,0,16,16", // 源泉（画面では 湯だまり＝Floor.pools として 描く。型を そろえる ための 絵。scripts/make-traps.mjs）
 };
 
 /** 踏んだ あとの 安価の罠（沈んで >> が 赤く 光る。Floor.pressed）。 */

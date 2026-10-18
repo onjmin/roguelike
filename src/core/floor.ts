@@ -548,11 +548,11 @@ const buildPlaceFloor = (
 			f.items.push({ x: spot.x, y: spot.y, item });
 		});
 	}
-	// 源泉
+	// 源泉（S の かたまりが 1つの 池に 見える。どの マスに つかっても HP が もどる）と 湯だまり（o。見た目だけ）。
+	// どちらも 通れる
 	for (const spot of at("S"))
 		f.traps.push({ x: spot.x, y: spot.y, kind: "spring", found: true });
-	// 湯だまり（見た目だけ。通れる）
-	const pools = at("o").map((p) => idx(layout, p.x, p.y));
+	const pools = [...at("S"), ...at("o")].map((p) => idx(layout, p.x, p.y));
 	if (pools.length) f.pools = pools;
 	// 大部屋の ボス（B の 所。見られるまで 眠って 動かない：run.ts の checkBossSeen）と 先回りした 人の 差し入れ（g の 所）
 	if (arena) {

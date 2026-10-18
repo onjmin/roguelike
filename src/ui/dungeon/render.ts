@@ -489,6 +489,8 @@ export class FloorView {
 		// 見つけた罠
 		for (const t of opts.traps ?? f.traps) {
 			if (!t.found || !f.seen[t.y * l.w + t.x]) continue;
+			// 源泉は 湯だまり（Floor.pools）として 描く
+			if (t.kind === "spring") continue;
 			drawRefInCell(ctx, TRAP_ICON[t.kind], t.x * TILE - ox, t.y * TILE - oy);
 		}
 		// 結界
