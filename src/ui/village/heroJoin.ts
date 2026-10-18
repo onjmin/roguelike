@@ -45,7 +45,7 @@ const JOINERS: Record<Exclude<HeroId, "kiriko">, Joiner> = {
 	roze: {
 		name: "束音ロゼ",
 		reading: "TABANE  ROZE",
-		lines: ["壁の中を歩く。", "……常識アル。"],
+		lines: ["壁の中を、先に歩く。", "……運ぶのは、キリコ。"],
 		glow: "#ff6f91",
 		portraits: ["portraits/roze.png"],
 		walk: heroWalk({ hero: "roze" }),
@@ -53,7 +53,7 @@ const JOINERS: Record<Exclude<HeroId, "kiriko">, Joiner> = {
 	zero: {
 		name: "解音ゼロ",
 		reading: "TOKINE  ZERO",
-		lines: ["VHz8-0・HeBc-0・XQxS-0", "3体でひとり。"],
+		lines: ["VHz8-0・HeBc-0・XQxS-0", "3体で、0.33敗ずつ。"],
 		glow: "#5cc8f0",
 		portraits: [
 			"portraits/zero.png",

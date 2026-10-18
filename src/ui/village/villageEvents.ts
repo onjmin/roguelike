@@ -40,7 +40,11 @@ import {
 	requesterName,
 	speakerOf,
 } from "../../data/people/companions";
-import { HERO_QUESTS, type QuestLine } from "../../data/people/heroQuests";
+import {
+	HERO_QUESTS,
+	type QuestLine,
+	questText,
+} from "../../data/people/heroQuests";
 import { BOARD_MENU, type MobId } from "../../data/people/mobs";
 import {
 	type ObjectiveInfo,
@@ -867,11 +871,14 @@ const playQuestLines = async (
 	s: Story,
 	lines: readonly QuestLine[],
 ): Promise<void> => {
+	// 倒れて 運ばれた 回数（ロゼの 数える 距離。見える 状態と 合わせる）
+	const deaths = deathCount();
 	for (const l of lines) {
 		if (l.bgm !== undefined) sceneBgm(s, l.bgm);
-		if (l.who === null) await s.narrate(l.text);
-		else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cueOf(l));
-		else await s.say(l.who, l.text, cueOf(l));
+		const text = questText(l, deaths);
+		if (l.who === null) await s.narrate(text);
+		else if (l.who === "kiriko") await s.kiriko(text, "voice", cueOf(l));
+		else await s.say(l.who, text, cueOf(l));
 	}
 };
 

@@ -7,6 +7,7 @@
 // 乱数は 待ちぶせの ある 冒険でだけ 引く（ほかの 冒険の 乱数の 順は かわらない）。
 
 import type { FolkTalk } from "./data/dungeons";
+import { MONSTERS } from "./data/monsters";
 import { freeRoomTiles, spawnMonster } from "./floor";
 import { DIRS8, type Pos, step } from "./geom";
 import { monsterName } from "./monster";
@@ -35,13 +36,13 @@ export const AMBUSH: Record<AmbushId, AmbushSpec> = {
 		voice: "zero",
 		intro: [
 			"お待ちしてました、キリコさん！\nここで数えて3時間です",
-			{ kiriko: "なんの用ンゴ？" },
-			"その蓄音機、いただきます！\n……3機で、勝負です！",
+			{ kiriko: "1機、寝てるンゴ" },
+			"スリープモードです。\n……3機で、勝負です！",
 		],
 		won: [
-			"……3機とも、停止しました",
-			{ kiriko: "蓄音機はあげないンゴ" },
-			"……今日のところは、\n負けを1つ数えておきます",
+			"……3機とも、停止しました。\n負けは1つです",
+			"3機なので、\n1機あたり0.33敗です",
+			{ kiriko: "割るなンゴ！" },
 		],
 	},
 };
@@ -62,7 +63,18 @@ export type FloorAmbush = {
 	again: number[];
 	/** 次に 入れ替わる ターン（見つけてから）。 */
 	shuffleAt?: number;
+	/** 起きなおした 回数（天丼：1回目・2回目と 言って、3回目は アップデートで 起きない）。 */
+	reboots?: number;
+	/** 入れ替わった（はじめの 1回だけ キリコが つっこむ）。 */
+	shuffled?: true;
 };
+
+/** 起きなおす ときの ひとこと（回数ごと。最後の 1つで 起きなく なる）。{name} は 機体。 */
+export const REBOOT_LINES: readonly string[] = [
+	"{name}「再起動、1回目です！」",
+	"{name}「2回目。……想定内です」",
+	"{name}「アップデート中です。残り4時間」",
+];
 
 /** この 冒険で 待ちぶせる 階（無ければ null）。 */
 export const ambushDepth = (r: Run): number | null => {
@@ -130,6 +142,8 @@ export const wakeAmbush = (r: Run): void => {
 		}
 	f.ambush.shuffleAt = f.turns + SHUFFLE_EVERY;
 	r.msg(`${spec.name}の3機が待ちぶせていた！`, "warn");
+	// 戦いの 音を 録る（勝った あとで ゼロに 聞かせる：data/people/heroQuests.ts の offer）
+	r.msg("蓄音機が、ひとりでに回りだした");
 };
 
 /**
@@ -165,6 +179,15 @@ export const tickAmbush = (r: Run): void => {
 		if (!lead) break;
 		const at = DIRS8.map((d) => step(lead, d)).find((q) => r.isFree(q.x, q.y));
 		if (!at) continue;
+		a.reboots = (a.reboots ?? 0) + 1;
+		const say = REBOOT_LINES[Math.min(a.reboots, REBOOT_LINES.length) - 1];
+		const name = MONSTERS[job.kind]?.name ?? "";
+		// 3回目は アップデートが はじまって 起きない（そのまま 止まった まま）
+		if (a.reboots >= REBOOT_LINES.length) {
+			a.reboot = a.reboot.filter((x) => x !== job);
+			r.msg(say.replaceAll("{name}", name));
+			continue;
+		}
 		const m = spawnMonster(r, job.kind, at, { awake: true, single: true });
 		if (!m) continue;
 		a.reboot = a.reboot.filter((x) => x !== job);
@@ -173,6 +196,8 @@ export const tickAmbush = (r: Run): void => {
 		a.again.push(m.uid);
 		r.emit({ t: "appear", id: m.uid, pos: { x: m.x, y: m.y }, from: lead });
 		r.msg(`${monsterName(r, m)}が再起動した！`, "warn");
+		r.msg(say.replaceAll("{name}", name));
+		if (a.reboots === 1) r.msg("キリコ「ゾンビかンゴ！」");
 	}
 	// 入れ替わり
 	if (a.shuffleAt === undefined || f.turns < a.shuffleAt) return;
@@ -190,4 +215,8 @@ export const tickAmbush = (r: Run): void => {
 	r.emit({ t: "warp", id: x.uid, from: px, to: py });
 	r.emit({ t: "warp", id: y.uid, from: py, to: px });
 	r.msg(`${monsterName(r, x)}と${monsterName(r, y)}が入れ替わった`);
+	if (!a.shuffled) {
+		a.shuffled = true;
+		r.msg("キリコ「どっちがどっちンゴ！」");
+	}
 };

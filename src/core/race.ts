@@ -39,18 +39,23 @@ export const RACE: Record<RaceId, RaceSpec> = {
 		voice: "roze",
 		sprite: "sa:mHhx69",
 		pace: 2,
+		// 嘘に 本気の 数字（3.2KB と 0キロ）→ ぶつかると 大声の ツッコミ → 村で 決着（data/story/story.ts）
 		arrive: [
 			"……おそいアル。\nわたしが先に着いたアル",
 			{ kiriko: "なんで持って帰らないンゴ？" },
-			"……持ち上がらないアル。\n体重ナイから、ナイアル",
+			"原音設定は3.2KBアル。\nわたしは0キロアル。……持てないアル",
 		],
 		stuck: [
-			["見てないで、はやく持つアル。\n……着いたのは、わたしが先アル"],
-			["押しても引いても、\n1ミリも動かないアル"],
+			[
+				"見てないで、はやく持つアル",
+				{ kiriko: "設定ファイルに負けてるンゴ！" },
+				"……3.2KBは、重いアル",
+			],
+			["着いたのは、わたしが先アル。\n……持つのは、キリコが先アル"],
 		],
 		carried: [
 			"……運ぶのは、まかせるアル。\n勝ち負けは村で決めるアル",
-			{ kiriko: "（それ、うやむやになるンゴ）" },
+			{ kiriko: "それ、うやむやにする\n気まんまんンゴ！" },
 		],
 		leave: "ロゼは壁をすり抜けて、先に帰っていった",
 	},
@@ -63,6 +68,13 @@ export const raceOf = (r: Run): RaceId | null =>
 /** キリコが depth 階に いる ときの ロゼの 階（底で 止まる）。 */
 export const rivalDepth = (id: RaceId, depth: number, floors: number): number =>
 	Math.min(floors, 1 + depth * RACE[id].pace);
+
+/** ロゼが 底に 着いた ときの キリコの 階（村の スレの 勝利宣言が 何階 つづいたか を 数える）。 */
+export const rivalArrival = (id: RaceId, floors: number): number => {
+	let d = 0;
+	while (rivalDepth(id, d, floors) < floors) d++;
+	return d;
+};
 
 /**
  * 底に ロゼを 立たせる（core/floor.ts の buildFloor。品を 置いて 置物を 置いた あと）。

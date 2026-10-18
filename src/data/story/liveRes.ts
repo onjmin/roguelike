@@ -13,6 +13,8 @@ export type LiveState = {
 	bare: boolean;
 	/** 前の 階で 倒した 数。 */
 	kills: number;
+	/** この 冒険で 倒した 数（どの 階も）。 */
+	runKills: number;
 	/** これまで 倒れた 回数（どの 板も）。 */
 	deaths: number;
 	/** これまで 出撃した 回数（この 冒険を 入れて）。 */
@@ -47,8 +49,9 @@ const POOLS: readonly Pool[] = [
 		when: (x) => x.kills >= 6,
 		lines: ["無双しとるやん", "虐殺で草", "敵がかわいそうや"],
 	},
+	// 階段を すぐ 見つけた だけの 階では 言わない（ここまで 1匹も 倒して いない ときだけ）
 	{
-		when: (x) => x.kills === 0 && x.depth >= 3,
+		when: (x) => x.runKills === 0 && x.depth >= 4,
 		lines: ["敵から逃げとるだけで草", "平和主義者か？"],
 	},
 	{
@@ -114,8 +117,34 @@ export const liveResLine = (x: LiveState, salt: number): string | null => {
 };
 
 /**
+ * 加入した あとも 内心は ライバル（STORY.md §4.9）：ロゼ・ゼロで 潜りはじめると、村の スレが キリコと くらべる。
+ * キリコは 村に 残る（主人公の 交代）。
+ */
+export const HERO_RIVAL_RES: Readonly<
+	Record<"roze" | "zero", readonly string[]>
+> = {
+	roze: [
+		"ロゼ出撃。キリコより先に底いく気や",
+		"ロゼ出撃。キリコは運ばれる練習中",
+	],
+	zero: [
+		"ゼロ3機出撃。キリコの記録数えとる",
+		"ゼロ出撃。1機0.33敗を返しにいく",
+	],
+};
+
+export const heroRivalResLine = (
+	hero: "roze" | "zero",
+	salt: number,
+): string => {
+	const lines = HERO_RIVAL_RES[hero];
+	return `村のスレ「${lines[salt % lines.length]}」`;
+};
+
+/**
  * 競争の 相手の 進み具合（core/race.ts。ロゼの 挑戦を 受けた 冒険）。決まった 筋の 行や ふだんの 実況の かわりに 毎階 出す。
  * rival は キリコが いまの 階に いる ときの 相手の 階、before は 1つ 上の 階に いた ときの 相手の 階。
+ * 相手が 底で 待って いる あいだは salt に 着いて から 何階めかを わたす（1 から。勝利宣言スレが 進む）。
  */
 export const raceResLine = (
 	name: string,
@@ -132,13 +161,18 @@ export const raceResLine = (
 					"{name}{n}階。はやすぎやろ",
 				]
 			: before < floors
-				? ["{name}、もう底に着いたらしいで", "{name}底や。勝負ありか？"]
-				: [
-						"{name}、底から動かんらしい",
-						"{name}まだ底や。なんで帰らんのや",
-						"{name}底で立っとるだけらしい",
+				? ["{name}、底で勝利宣言スレ立てとる"]
+				: // 底に 着いて から 何階め（salt）で 1つずつ 進む。3つ目で ずらす（底で 動けない オチを 先に 言わない）
+					[
+						"{name}の勝利宣言スレ、まだ1レスや",
+						"勝利宣言スレ1レス目「たすけて」",
+						"勝利宣言スレ2レス目も「たすけて」",
 					];
-	const text = lines[salt % lines.length]
+	const text = lines[
+		before < floors || rival < floors
+			? salt % lines.length
+			: Math.min(Math.max(salt, 1), lines.length) - 1
+	]
 		.replaceAll("{name}", name)
 		.replaceAll("{n}", String(rival));
 	return `村のスレ「${text}」`;

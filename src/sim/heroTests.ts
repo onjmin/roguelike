@@ -11,7 +11,7 @@ import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import type { RunState } from "../core/types";
-import { HERO_QUESTS } from "../data/people/heroQuests";
+import { CARRY_KM, HERO_QUESTS, questText } from "../data/people/heroQuests";
 import { raceResLine } from "../data/story/liveRes";
 import { synopsisHtml } from "../data/story/synopsis";
 import type { Story } from "../engine/defs";
@@ -614,7 +614,7 @@ test("競争: 底では 先に 着いた ロゼが 原音設定の となりに 
 	}
 });
 
-test("競争: 村の スレに ロゼの 進み具合（先に 底へ 着き、そのあと 動かない）。1行に 収まる", () => {
+test("競争: 村の スレに ロゼの 進み具合（先に 底へ 着いて 勝利宣言、そのあと「たすけて」）。1行に 収まる", () => {
 	const floors = DUNGEONS.vocalo.floors;
 	const seen: string[] = [];
 	for (let d = 1; d < floors; d++) {
@@ -638,13 +638,50 @@ test("競争: 村の スレに ロゼの 進み具合（先に 底へ 着き、�
 		"never on the 5th floor",
 	);
 	ok(
-		seen.some((l) => l.includes("着いた")),
+		seen.some((l) => l.includes("勝利宣言スレ立て")),
 		"never reached the bottom",
 	);
 	ok(
-		seen.some((l) => l.includes("動かん")),
+		seen.some((l) => l.includes("たすけて")),
 		"never stuck",
 	);
+});
+
+test("持ちかけ: ロゼは 運ばれた 本当の 回数と のべの 距離を 言う（0回なら 別の 文）。ゼロと 型を 分ける", () => {
+	const lines = HERO_QUESTS.roze.worry;
+	const at3 = lines.map((l) => questText(l, 3)).join("|");
+	ok(
+		at3.includes("通算3回") &&
+			at3.includes(`のべ${(3 * CARRY_KM).toFixed(1)}キロ`),
+		at3,
+	);
+	const at0 = lines.map((l) => questText(l, 0)).join("|");
+	ok(!at0.includes("通算0回") && !at0.includes("{"), at0);
+	for (const h of ["roze", "zero"] as const)
+		for (const part of [
+			"worry",
+			"accept",
+			"decline",
+			"waiting",
+			"offer",
+		] as const)
+			for (const l of HERO_QUESTS[h][part])
+				for (const t of [questText(l, 0), questText(l, 12)])
+					for (const ln of t.split("\n"))
+						ok(width(ln) <= 22, `${h}.${part}: long line ${ln}`);
+	// 2人の 型を 分ける：ようす・えらぶ 字・受けた ときの 1窓目
+	ok(HERO_QUESTS.roze.hint !== HERO_QUESTS.zero.hint, "same hint");
+	ok(HERO_QUESTS.roze.menu[0] !== HERO_QUESTS.zero.menu[0], "same menu");
+	ok(
+		HERO_QUESTS.roze.accept[0].text !== HERO_QUESTS.zero.accept[0].text,
+		"same accept",
+	);
+	// 潜るのは 交代（キリコは 村に 残る）なので「いっしょに 潜る」とは 言わない
+	for (const h of ["roze", "zero"] as const)
+		ok(
+			!HERO_QUESTS[h].offer.some((l) => l.text.includes("いっしょに")),
+			`${h}: いっしょに潜る`,
+		);
 });
 
 test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合ごとの 1行）", () => {

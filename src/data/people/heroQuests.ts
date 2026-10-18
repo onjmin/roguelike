@@ -20,7 +20,8 @@
 //   投票で ゼロに（イッチは ユリに 入れた）。誕生日 7月0日。キャッチ「ゼロから生まれる無限の歌声」。声は
 //   ボイスネキの 収録を「4分の1くらい もらってる」ところで 止まった。メイン機と サブ機は web会議で メンテナンスしあう。
 //   → 足りない 声を ためたくて キリコの 蓄音機を ねらい、深い 階で 3機で 待ちぶせる（core/ambush.ts）。負けて
-//   聞いた 深い 階の 声は だれの 声でも なかった。負けは 認めない まま、キリコの 負けを 数えに ついてくる。
+//   聞いた 録音は ぜんぶ キリコの「ンゴ」。負けは 1機あたり 0.33敗と 割って、交代で 潜る 側に 回る。
+// 2人の 笑いの 形は 分ける：ロゼは 運ばれた 距離（本当の 倒れた 回数 × 4.2キロ）、ゼロは 割り算（4分の1・0.33敗）。
 
 import type { Cue } from "../../engine/emote";
 import type { QuestHero } from "../../engine/heroes";
@@ -34,11 +35,39 @@ export type QuestLine = (
 	| ({ who: Speaker; text: string } & Cue)
 	| { who: null; text: string }
 	| ({ who: "kiriko"; text: string } & Cue)
-) & { bgm?: string | null };
+) & {
+	bgm?: string | null;
+	/** まだ 1回も 倒れて いない ときの 文（text の {n}・{km} が 0 に なる 行だけ）。 */
+	none?: string;
+};
+
+/** 運ばれて 村まで もどる 道のり（キロ。ロゼの 数える 距離）。 */
+export const CARRY_KM = 4.2;
+
+/**
+ * 行の 文（{n}＝これまで 倒れて 運ばれた 回数、{km}＝のべの 距離。0 回なら none）。
+ * 見える 状態と 合わせる：数は engine/save.ts の deathCount。
+ */
+export const questText = (l: QuestLine, deaths: number): string =>
+	(deaths === 0 && l.none ? l.none : l.text)
+		.replaceAll("{n}", String(deaths))
+		.replaceAll("{km}", (deaths * CARRY_KM).toFixed(1));
 
 const say = (who: Speaker, text: string, c?: Cue): QuestLine => ({
 	who,
 	text,
+	...c,
+});
+/** 倒れた 回数で かわる 行（0 回なら none）。 */
+const sayN = (
+	who: Speaker,
+	text: string,
+	none: string,
+	c?: Cue,
+): QuestLine => ({
+	who,
+	text,
+	none,
 	...c,
 });
 const nar = (text: string): QuestLine => ({ who: null, text });
@@ -76,22 +105,28 @@ export type HeroQuestText = {
 
 export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 	roze: {
-		hint: "ロゼが店先で腕を組んで、\nキリコの帰りを数えている。",
+		hint: "ロゼが店先で、そろばんを\nはじいている。",
 		worry: [
-			say("roze", "キリコ。また運ばれてきたアル？\n……今月で何回目アル", {
-				emote: "怒",
-			}),
-			say("roze", "倒れて、運ばれて、また潜る。\n……非常識アル"),
-			say("roze", "北東の島に、むかしわたしが\nいた避難所があるアル"),
-			say("roze", "奥に先に着いたほうが常識アル。\n……競争アル", {
+			sayN(
+				"roze",
+				"キリコ。運ばれてきた回数、\n通算{n}回アル",
+				"キリコ。まだ1回も運ばれて\nないアル？……あやしいアル",
+				{ emote: "怒" },
+			),
+			sayN(
+				"roze",
+				"1回で村まで4.2キロアル。\nのべ{km}キロ運ばれてるアル",
+				"常識なら、もう3回は\n運ばれてるころアル",
+			),
+			kiriko("数えないでほしいンゴ！", { gesture: "shake" }),
+			say("roze", "北東の避難所の奥に、先に\n着いたほうが常識アル。競争アル", {
 				gesture: "startle",
 			}),
 		],
 		menu: ["受けて立つ", "ことわる"],
 		accept: [
-			kiriko("……受けて立つンゴ", { gesture: "nod" }),
-			say("roze", "わたしは壁をすり抜けるアル。\n……ハンデはやらんアル"),
-			say("roze", "キリコが出たら、わたしも出るアル。\n底で待ってるアル"),
+			kiriko("常識で勝つンゴ", { gesture: "nod" }),
+			say("roze", "わたしは壁をすり抜けるアル。\n……ハンデは4.2キロアル"),
 		],
 		decline: [
 			say("roze", "逃げるのも常識アル。\n……わたしの不戦勝アル", {
@@ -102,25 +137,15 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			say("roze", "北東の島の避難所アル。\n……キリコが出たら、わたしも出るアル"),
 		],
 		offer: [
-			// 曲を 止めて、ずれて いない「あ」を 聞かせる（勝ち負けは 帰った ときの 場面で うやむや：data/story/story.ts）
+			// 曲を 止めて、ずれて いない「あ」を 聞かせる（本気は ここ 1つ。勝ち負けは 帰った ときの 場面で うやむや）
 			{ ...say("roze", "……あ。\nあー。あ、あ", { emote: "♪" }), bgm: null },
-			say("roze", "ずれてないアル。\n……キリコより、いい「あ」アル", {
+			say("roze", "……ずれてないアル。キリコの\n「ンゴ」より、いい「あ」アル", {
 				emote: "♪",
 			}),
-			say(
-				"roze",
-				"スレはみんな完走したアル。\n……次スレは、だれも立てなかったアル",
-			),
-			say("roze", "でも外で、知らない人が\nわたしで歌を作ってくれたアル"),
-			kiriko("（勝負は、どうなったンゴ）"),
-			say(
-				"roze",
-				"勝負はおあずけアル。次から\nいっしょに潜って、白黒つけるアル",
-				{
-					gesture: "spin",
-				},
-			),
-			say("roze", "わたしが先に着いて、キリコが\n運ぶアル。……常識アル"),
+			// 潜るのは 交代（主人公を 切りかえる。キリコは 村に 残る）
+			say("roze", "次からはわたしが潜るアル。\nキリコは村で運ばれる練習アル", {
+				gesture: "spin",
+			}),
 		],
 		unlocked: "ロゼと冒険に出られるようになった。",
 		synopsis: {
@@ -128,45 +153,46 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			accepted:
 				"ロゼと競争。北東の島のボカロ作り避難所の奥に、先に着いたほうが常識。",
 			done: "底で立ちつくすロゼの原音設定を運んで帰った。勝ち負けは、うやむや。",
-			unlocked: "ロゼが冒険に加わった。……勝負は、まだついていない。",
+			unlocked: "ロゼが冒険に加わった。勝ち負けは、うやむやのまま。",
 		},
 	},
 	zero: {
-		hint: "ゼロが広場で、キリコの蓄音機を\nじっと数えている。",
+		hint: "ゼロが広場で、蓄音機の\n設計図を3枚描いている。",
 		worry: [
 			say("zero", "キリコさん！その蓄音機、\n声がためられるんですよね", {
 				emote: "!",
 				gesture: "startle",
 			}),
-			say("zero", "わたし、ロゼさんの反対に\n作られたんです。黒髪は金髪に"),
-			say("zero", "声は、録りはじめて4分の1で\n止まったままなんです"),
-			say("zero", "その蓄音機があれば、のこりの\n4分の3がためられます"),
-			say("zero", "なので、勝負です！\n3機で、いただきにいきます", {
+			say("zero", "ゼロの声、録れたのは\n4分の1なんです"),
+			say("zero", "のこり4分の3、いただきます。\n……3機で、4分の3ずつです", {
 				gesture: "hop",
 			}),
+			kiriko("計算がおかしいンゴ！", { emote: "!" }),
 		],
-		menu: ["受けて立つ", "ことわる"],
+		// 受けると 3対1 の 待ちぶせ（core/ambush.ts）
+		menu: ["3対1は卑怯ンゴ", "ことわる"],
 		accept: [
-			kiriko("……受けて立つンゴ", { gesture: "nod" }),
-			say("zero", "深い階で待ってます！\n……3機で、先回りして", { emote: "!" }),
-			say("zero", "勝ったら、蓄音機はゼロの\nものです。……数えましたから"),
+			say("zero", "卑怯でも3機です！\n深い階で待ってます", { emote: "!" }),
+			say("zero", "勝ったら蓄音機は、\n1機3分の1ずつです"),
 		],
 		decline: [
-			say("zero", "……逃げた回数、\n1と数えておきます", { gesture: "slump" }),
+			say("zero", "3機とも、待機モードに\nもどります。……3分だけ", {
+				gesture: "slump",
+			}),
 		],
-		waiting: [say("zero", "深い階で、3機で待ってます。\n……いつでもどうぞ")],
+		waiting: [
+			say("zero", "深い階で、3機で待ってます。\n……プロトは、もう寝ました"),
+		],
 		offer: [
-			// 勝った 階で 録った ざわめきを 聞かせる（掘りかけの穴。小さな 行進で 加わる 決意へ）
-			{ ...nar("蓄音機を回した。\n深い階のざわめき。"), bgm: "deep1" },
-			nar("……だれの声でもなかった。"),
-			say("zero", "…………", { emote: "…" }),
-			say("zero", "……わたしの声じゃ、\nないですね"),
-			say("zero", "名前の投票で、イッチさんは\n「ユリ」に入れたんですって"),
-			say("zero", "でも、ゼロになりました。\n……ゼロから数える名前です"),
-			say("zero", "負けは1つ。……でも、\nゼロはまだ認めてません", {
+			// 待ちぶせの 戦いで ひとりでに 回った 蓄音機（core/ambush.ts の wakeAmbush）を 聞かせる
+			{ ...nar("蓄音機を回した。\n深い階の戦いの音。"), bgm: "deep1" },
+			nar("「ンゴ」「ンゴ」「ンゴ」……"),
+			say("zero", "ぜんぶキリコさんの声です。\n……4分の4、キリコさんです", {
 				emote: "汗",
 			}),
-			say("zero", "次からいっしょに潜って、\nキリコさんの負けを数えます！", {
+			// 本気は 1行だけ
+			say("zero", "……ゼロの声は、\nまだ4分の1です", { emote: "…" }),
+			say("zero", "次からはゼロが潜ります。\nキリコさんより先に、4分の4です", {
 				gesture: "nod",
 			}),
 		],
@@ -176,8 +202,8 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 				"ゼロが蓄音機をねらって、3機で勝負を挑んできた。声は4分の1で止まったまま。",
 			accepted:
 				"ゼロの挑戦を受けた。深い階（風呂板なら8階）で、3機が待ちぶせている。",
-			done: "ゼロの3機をそろって止めた。ゼロがなにか言いたそうにしている。",
-			unlocked: "ゼロが冒険に加わった。……負けは、まだ認めていない。",
+			done: "ゼロの3機をそろって止めた。蓄音機が、なにかを録っていた。",
+			unlocked: "ゼロが冒険に加わった。帳簿では、まだ1機0.33敗。",
 		},
 	},
 };

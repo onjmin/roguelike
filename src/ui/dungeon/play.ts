@@ -33,7 +33,7 @@ import {
 	posing,
 	restLook,
 } from "../../core/monster";
-import { RACE, raceOf, rivalDepth } from "../../core/race";
+import { RACE, raceOf, rivalArrival, rivalDepth } from "../../core/race";
 import { digest, parseReplay, type ReplayStep } from "../../core/replay";
 import { Run } from "../../core/run";
 import {
@@ -54,7 +54,11 @@ import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
 import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
-import { liveResLine, raceResLine } from "../../data/story/liveRes";
+import {
+	heroRivalResLine,
+	liveResLine,
+	raceResLine,
+} from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
 import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
@@ -3669,6 +3673,9 @@ export class Play {
 			this.addLog(`目的：${goalText(s.dungeon, this.run.objective)}`);
 			this.addLog(why, "gloss");
 		}
+		// ロゼ・ゼロで 潜りはじめ：村の スレが キリコと くらべる（加入した あとも ライバル）
+		if (first && s.depth <= 1 && s.hero)
+			this.addLog(heroRivalResLine(s.hero, s.seed.length), "gloss");
 		const r = diveResAt(s.dungeon, s.depth, cleared);
 		if (r) this.addLog(diveResLine(r, this.run.heroName), "gloss");
 		// 決まった 行の ない 階は、村の スレの 実況（いまの ようすに つっこむ。data/story/liveRes.ts）
@@ -3686,7 +3693,9 @@ export class Play {
 					rivalDepth(race, s.depth, floors),
 					rivalDepth(race, s.depth - 1, floors),
 					floors,
-					s.depth + 1,
+					rivalDepth(race, s.depth - 1, floors) < floors
+						? s.depth + 1
+						: s.depth - rivalArrival(race, floors),
 				),
 				"gloss",
 			);
