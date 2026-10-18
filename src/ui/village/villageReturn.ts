@@ -5,6 +5,7 @@
 //   並べる。lineUp）。持ち帰りの 語り（STORY[d].ending）か 帰還スレの 語り（RETURN_PAGES）を 村の窓で 話して、
 //   暗転の あいだに 持ち場へ もどる（囲いの中の ロゼ・シヨは 歩いては 帰れない）。語りは 保存しない（閉じたら それきり）。
 //   ボスを たおして 一瞬で 帰ったときは、着いた 語り（ending の 1枚目）の あとに どう 帰ったかの 1〜2枚（BOSS_RETURN[d]）。
+//   最終話（電池板）を はじめて 持ち帰ったときは「完」の あとに スタッフロール（data/story/staffRoll.ts）。
 // - 開いた知らせ（Progress.news）：本編は 口の前で 見張る やきうが どいて 小屋の前へ、もっとは 板が はずれる。
 //   見せおえてから 1つずつ 消す（途中で 閉じても 次に 開いたとき また 見せる）。知らせの 前は 閉じたまま 描く（villageView）。
 //   期間限定の イベントの 始まり・終わり（Progress.eventNews。data/story/objectives.ts）も そのあとに 1〜2行。
@@ -34,6 +35,11 @@ import {
 	SPEAKERS,
 	type Speaker,
 } from "../../data/story/quotes";
+import {
+	STAFF_AFTER,
+	STAFF_ROLL,
+	STAFF_TITLE,
+} from "../../data/story/staffRoll";
 import {
 	ARRIVE_RETURN,
 	awayFriends,
@@ -113,6 +119,7 @@ import {
 	type SceneFx,
 	startFx,
 } from "../../engine/sceneFx";
+import { rollStaff } from "../../engine/staffRoll";
 import { doneTamperNews, loadTamper } from "../../engine/tamper";
 import type { Dir } from "../../engine/types";
 import { cleanUp } from "./decay";
@@ -930,6 +937,16 @@ export const returnScene = async (
 	}
 	fx?.run.end();
 	card.end();
+	// 最終話を はじめて 持ち帰った：「完」の あとに スタッフロール（幕は 暗転して 建て直す まで 残す）
+	let closeRoll: (() => void) | null = null;
+	if (a.dungeon === "deep" && firstEnding(a, loadProgress())) {
+		sceneBgm(s, "title");
+		closeRoll = await rollStaff(fxRoot(), {
+			blocks: STAFF_ROLL,
+			title: STAFF_TITLE,
+			after: STAFF_AFTER,
+		});
+	}
 	// 見おえた（一度きりの 語りは 次から 短く）。はじめてなら、通りが 生き返る 知らせ（reviveScript）まで 町に 出さない
 	if (a.kind === "clear") {
 		if (firstEnding(a, loadProgress())) holdReveal(a.dungeon);
@@ -941,6 +958,7 @@ export const returnScene = async (
 		a.kind === "clear" || scened ? s.fadeBgm(300) : Promise.resolve(),
 		s.fadeOut(300),
 	]);
+	closeRoll?.();
 	// 場面を うつした・走った キリコは 帰りついた マスへ（あとの 知らせの 場面は 口の 前で 起きる）
 	if (s.state.x !== back[0] || s.state.y !== back[1])
 		s.place("player", back[0], back[1], exit.inward);

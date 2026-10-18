@@ -1846,6 +1846,73 @@ body.jolt #app {
 	z-index: 51;
 }
 
+/* スタッフロール（engine/staffRoll.ts）：暗転の 幕と 窓の 上。押して いる あいだ 速く 流れる */
+#ui > .staff-roll {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	background: #000;
+	color: #f3ecd8;
+	opacity: 0;
+	transition: opacity 0.6s;
+	z-index: 53;
+	text-align: center;
+	user-select: none;
+}
+
+#ui > .staff-roll.on {
+	opacity: 1;
+}
+
+.staff-roll-list {
+	position: absolute;
+	left: 16px;
+	right: 16px;
+	top: 0;
+}
+
+.staff-roll-block {
+	margin-bottom: 44px;
+}
+
+.staff-roll-role {
+	color: #f5d142;
+	font-size: 13px;
+	margin-bottom: 6px;
+}
+
+.staff-roll-name {
+	font-size: 17px;
+	line-height: 1.6;
+}
+
+.staff-roll-end {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	padding: 0 16px;
+	opacity: 0;
+	transition: opacity 1.2s;
+}
+
+.staff-roll-end.on {
+	opacity: 1;
+}
+
+.staff-roll-title {
+	font-size: 26px;
+	letter-spacing: 0.08em;
+}
+
+.staff-roll-after {
+	font-size: 14px;
+	color: #b8b0a0;
+}
+
 /* 場面の エフェクト（engine/sceneFx.ts）。地図の 上、立ち絵と 窓の 下。粗い ドットを にじませずに 広げる */
 #ui > .scene-fx {
 	position: absolute;
