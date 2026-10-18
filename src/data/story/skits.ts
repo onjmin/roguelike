@@ -146,7 +146,7 @@ export const SKITS: readonly Skit[] = [
 			e({ gesture: "hop" }, k("電池板に行って\n根っこから直すンゴ！")),
 		],
 	},
-	// 最終話の あと（後日談の 前）：見出しの 名無しは やきうだった
+	// 最終話の あと（後日談の 前）：てっぺんに いたのは やきうだった
 	{
 		key: "window_midashi",
 		window: { after: "deep", before: "hidden" },

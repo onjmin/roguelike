@@ -3598,9 +3598,7 @@ test(
 		r.p.y = 16;
 		const first = turn(r);
 		ok(
-			!r.f.bossSeen &&
-				!evs(first, "boss").length &&
-				!evs(first, "talk").length,
+			!r.f.bossSeen && !evs(first, "boss").length && !evs(first, "talk").length,
 			"the sleeping boss talked",
 		);
 		let ev: GameEvent[] = [];
@@ -4518,12 +4516,12 @@ test(
 
 test(
 	"boss_yakiu",
-	"電池板の ラスボス：まっすぐ ならぶと 盛った 見出しを 投げつける。ほかの 板には 出ない",
+	"電池板の ラスボス：まっすぐ ならぶと 盛った レスを 投げつける。ほかの 板には 出ない",
 	() => {
 		const r = arena("boss-yakiu");
 		const m = put(r, "boss_yakiu", at(4, 0));
-		const n = holdAndWait(r, m, 40, () => logHas(r, "見出しを投げつけた"));
-		ok(n > 0, "never threw a headline");
+		const n = holdAndWait(r, m, 40, () => logHas(r, "レスを投げつけた"));
+		ok(n > 0, "never threw a post");
 		ok(DUNGEONS.deep.boss?.monster === "boss_yakiu", "not the 電池板 boss");
 	},
 );
@@ -4540,9 +4538,16 @@ test(
 		);
 		ok(spec?.voice === "nanj", "reveal without やきう's portrait");
 		ok(spec?.bgm === "lastboss", "reveal without the last-boss song");
+		// 2026-10-19：見出しの 正体の 線は やめた。本気の 窓は「14年 ひとりで 盛り上げてきた」ライバルの 理由
 		ok(
-			spec?.talk?.some((x) => typeof x === "string" && x.includes("見出し")),
-			"the reveal does not mention the headlines",
+			spec?.talk?.some(
+				(x) => typeof x === "string" && x.includes("盛り上げてきた"),
+			),
+			"the talk does not give やきう's reason",
+		);
+		ok(
+			!spec?.talk?.some((x) => typeof x === "string" && x.includes("見出し")),
+			"the talk still mentions the headlines",
 		);
 		const r = Run.create("reveal-run", "deep");
 		r.enterFloor(8, false);

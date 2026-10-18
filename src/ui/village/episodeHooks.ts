@@ -12,7 +12,6 @@ import {
 	routeCard,
 } from "../../data/story/hooks";
 import { DUNGEON_NAMES } from "../../data/story/story";
-import { BOARD_NEWS, HEADLINES } from "../../data/town/headlines";
 import {
 	INCIDENTS,
 	incidentPlaceId,
@@ -32,7 +31,6 @@ import { endMarks, putMark, takeMark } from "./sceneMarks";
 import { setSceneSky } from "./sceneSky";
 import { villageSong } from "./villageMusic";
 import { villageView, visitScript } from "./villageReturn";
-import { fill } from "./villageTalk";
 
 type Cell = readonly [number, number];
 
@@ -232,38 +230,20 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 		s.face(head.id, head.dir);
 	}
 
-	// 人影が やきうの 家の 前から 来て、掲示板に 見出しを 貼って 走り去る（天丼）
-	const [ox, oy] = VILLAGE_SPOTS.board[1] ?? VILLAGE_SPOTS.board[0];
-	await s.wait(0);
-	await s.look([ox, oy + 1]);
-	s.set(POSTER);
-	s.show(POSTER);
-	s.place(POSTER, nanjHome[0], nanjHome[1] + 1);
-	await s.goto(POSTER, ox, oy + 1, { speed: 1.8, avoid: true });
-	s.face(POSTER, "up");
-	s.se("put");
-	await s.wait(300);
-	await s.goto(POSTER, nanjHome[0], nanjHome[1] + 1, {
-		speed: 2.2,
-		avoid: true,
-	});
-	s.set(POSTER, false);
-	s.hide(POSTER);
 	await s.look(null);
 	await s.kiriko(T.sleep2, "voice");
 
-	// ── 翌朝：盛った 見出しを 読んで つっこみ、自分で 追うと 決める → はぐれた 1人 →「もぐれる」
+	// ── 翌朝：踏まれた 商店街（行進の 3人が 立って いる）を 見て つっこみ、自分で 追うと 決める → はぐれた 1人 →「もぐれる」
 	await s.fadeBgm(400);
 	await s.fadeOut(700);
 	setSceneSky("morning");
 	endMarks();
-	s.place("player", ox, oy + 1, "up");
+	s.place("player", bx, by, "right");
 	await s.fadeIn(500);
 	await s.narrate(T.morning);
 	s.bgm(villageSong());
-	await s.look([ox, oy]);
-	s.se("read");
-	await s.narrate(fill(BOARD_NEWS.fresh, { line: HEADLINES.kinoko ?? "" }));
+	const street = army[1] ?? army[0];
+	if (street) await s.look([street.at[0], street.at[1]]);
 	await s.kiriko(T.kirikoHeadline, "voice", { emote: "冷" });
 	await s.look(null);
 	await s.kiriko(T.kirikoGo, "voice");
@@ -385,17 +365,15 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.look([ox, oy + 1]);
 	await memo.ready;
 	await s.narrate(B.memoryNight);
+	// 名無しは 広場の 東から 来て、書いて、東へ 帰る（だれかは 言わない：2026-10-19 に 正体の 線を やめた）
 	s.set(POSTER);
 	s.show(POSTER);
-	s.place(POSTER, nanjHome[0], nanjHome[1] + 1);
+	s.place(POSTER, ox + 6, oy + 1);
 	await s.goto(POSTER, ox, oy + 1, { speed: 1.8, avoid: true });
 	s.face(POSTER, "up");
 	s.se("pencil");
 	await as(s, B.memoryPostName, B.memoryPost);
-	await s.goto(POSTER, nanjHome[0], nanjHome[1] + 1, {
-		speed: 2.2,
-		avoid: true,
-	});
+	await s.goto(POSTER, ox + 6, oy + 1, { speed: 2.2, avoid: true });
 	s.set(POSTER, false);
 	s.hide(POSTER);
 	await s.look([hx, hy]);

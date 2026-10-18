@@ -1,4 +1,4 @@
-// スタッフロール（最終話「盛らない見出し」を はじめて 持ち帰った ときの 語りの あと。ui/village/villageReturn.ts の returnScene）。
+// スタッフロール（最終話「盛るまでもない」を はじめて 持ち帰った ときの 語りの あと。ui/village/villageReturn.ts の returnScene）。
 // 前半は 町の 配役（役は 最終話の 祭りに 来た 人と 町の 人）、後半は README.md の「クレジット」と 同じ 中身。
 // README の クレジットを 書きかえたら ここも 合わせる。やきうは 名乗らない（STORY.md §4.9「……名無しの　や」）ので 見出しは 名無し。
 // 締めは 後日談（古井戸の 板。底に フェリスの 生まれの レスが 眠る）への 音だけ（STORY.md「最終話 → 後日談は 古井戸の 音で 足りる」）。
@@ -14,7 +14,7 @@ export const STAFF_ROLL: readonly StaffBlock[] = [
 		role: "共演",
 		names: ["束音ロゼ", "革命シヨ", "解音ゼロ（プロト・レン）", "フェリス"],
 	},
-	{ role: "見出し", names: ["名無し"] },
+	{ role: "書きこみ", names: ["名無し"] },
 	{ role: "パン", names: ["ぷゆゆ"] },
 	{ role: "倉庫", names: ["ンゴ姉"] },
 	{ role: "買い取り", names: ["ジェイトルマン"] },

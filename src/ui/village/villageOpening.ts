@@ -15,16 +15,12 @@
 
 import { INCIDENT_BGM, stageBgm } from "../../data/audio/music";
 import { MOBS } from "../../data/people/mobs";
-import { boardPicture } from "../../data/story/pictures";
-import { HEADLINES } from "../../data/town/headlines";
 import { INCIDENTS, incidentPlaceId } from "../../data/town/incidents";
 import { OPENING, type OpeningLine } from "../../data/town/town";
 import { type Cell, VILLAGE_SPOTS } from "../../data/village/map";
 import type { Script, Story } from "../../engine/defs";
 import { cueOf } from "../../engine/emote";
 import { loadProgress, loadRecords } from "../../engine/save";
-import { showCard } from "../../engine/sceneCard";
-import { fxRoot } from "../../engine/sceneFx";
 import { setSceneSky } from "./sceneSky";
 import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
@@ -95,9 +91,6 @@ const MARCH_FROM: readonly Cell[] = [
 	[19, 25],
 	[20, 25],
 ];
-
-/** 見出しを 貼りに くる 名無し（村の 来客の 人。やきうの 家の 前から 来て、もどって 消える）。 */
-const POSTER = "visitor";
 
 /** 幕が 上がる前に：①から なら 坂の 下に 立つ。②の あいだも ③で 出てくる 人と 物は 隠す。 */
 export const openingPrepare = (s: Story): void => {
@@ -223,19 +216,7 @@ const plazaScript: Script = async (s) => {
 	s.face("player", "down");
 	await s.fadeIn(600);
 	await line(s, OPENING.sleep);
-	// 暗い 中、名無しが やきうの 家の 前から 走って きて、掲示板に 見出しを 貼って 走り去る
-	const [ox, oy] = VILLAGE_SPOTS.board[1] ?? VILLAGE_SPOTS.board[0];
-	s.set(POSTER);
-	s.show(POSTER);
-	s.place(POSTER, nx, ny + 1);
-	await s.goto(POSTER, ox, oy + 1, { speed: 1.8, avoid: true });
-	s.face(POSTER, "up");
-	s.se("put");
-	await s.wait(300);
-	await s.goto(POSTER, nx, ny + 1, { speed: 2.2, avoid: true });
-	s.set(POSTER, false);
-	s.hide(POSTER);
-	await s.wait(400);
+	await s.wait(700);
 	// 2日目の 朝：パン兵が 坂を 行進して くる 音で 起きる
 	await s.fadeOut(800);
 	setSceneSky("morning");
@@ -258,12 +239,7 @@ const plazaScript: Script = async (s) => {
 	};
 	await chiefSay(OPENING.panhei);
 	await line(s, OPENING.someone);
-	// 夜の うちに 貼られた 見出し（掲示板の 実物の 絵：見出しが どこに どう 貼って ある 物か 見せる）
 	s.face("player", "left");
-	const headline = showCard(fxRoot(), boardPicture(HEADLINES.shallow ?? ""));
-	s.se("read");
-	await s.narrate(OPENING.headline);
-	headline.end();
 	// やきうが 家から かけて きて、キリコの 左に 立つ（右は パン兵長）
 	await s.goto("nanj", bx - 1, by, { speed: 1.8, avoid: true });
 	s.face("nanj", "player");
@@ -282,13 +258,10 @@ const plazaScript: Script = async (s) => {
 		s.face(id, nailer.dir);
 		s.face("player", "left");
 	}
-	// 見出しとは：やきうが 掲示板を 指さして 言う（カメラは 掲示板。絵は 貼って ある 見出しの 実物。
-	// 仕組みの 矢印図には しない：2026-10-18 作者「どういうところについている見出しか画像をもってこい」）
+	// 騒ぎの 元へ 行く きまり：やきうが 差し押さえられた 掲示板を 指さして 言う（カメラは 掲示板）
 	await s.look(VILLAGE_SPOTS.board[0]);
 	s.face("nanj", "up");
-	const card = showCard(fxRoot(), boardPicture(HEADLINES.shallow ?? ""));
 	await lines(s, OPENING.midashi);
-	card.end();
 	await s.look(null);
 	s.face("nanj", "player");
 	await lines(s, OPENING.midashiNext);

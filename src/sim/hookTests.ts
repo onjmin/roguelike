@@ -107,7 +107,7 @@ test(
 
 test(
 	"H2",
-	"第一話 → 第二話の つなぎ：パン板を 持ち帰った 帰りに 1回だけ。回想・図・行進・人影の 見出しを 通って 翌朝で おわる",
+	"第一話 → 第二話の つなぎ：パン板を 持ち帰った 帰りに 1回だけ。回想・図・行進を 通って 翌朝で おわる",
 	async () => {
 		await withStorage(async () => {
 			saveProgress({
@@ -128,8 +128,8 @@ test(
 				KINOKO_EVE.morning,
 			])
 				ok(said.includes(t), `missing: ${t}\n${said}`);
-			ok(said.includes("show visitor"), "the shadow posts a headline");
-			ok(said.includes("きのこ軍上陸"), "the morning headline");
+			// 見出しを 貼る 人影は 2026-10-19 に やめた（行き先は 町の 騒ぎ そのもの）
+			ok(!said.includes("見出し"), "the morning still reads a headline");
 			// きのこ板の 知らせは この 場面が 引きうける（はぐれた 名無し →「もぐれる」）
 			ok(
 				said.indexOf(KINOKO_EVE.kirikoGo) <

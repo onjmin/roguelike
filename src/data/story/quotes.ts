@@ -729,7 +729,7 @@ export const ENDING: StoryPage[] = [
 			go: [{ who: "zero", to: [23, 50], speed: 3, face: "down", follow: true }],
 		},
 	},
-	// 見出しの 名無しの 前ぶれ：見出しが 早すぎる。場面を 掲示板へ うつして、貼られた 見出しの 絵。
+	// 書きこみが 早すぎる（やきうは 町の 名無しの ひとり）。場面を 掲示板へ うつして、書きこみの 絵。
 	// やきうは 湯船へ 走って もどって ごまかす
 	// メタ：魚は 画面に 出ない（湯気だけ）
 	{
@@ -740,14 +740,14 @@ export const ENDING: StoryPage[] = [
 	},
 	{
 		who: null,
-		text: "掲示板に、もう見出しが貼られていた。\n『【悲報】キリコ、海をわかす』",
+		text: "掲示板に、もう書きこみがあった。\n『【悲報】キリコ、海をわかす』",
 		se: "read",
 		cut: [16, 22],
 		card: boardOf("『【悲報】キリコ、海をわかす』"),
 	},
 	{
 		who: null,
-		text: "見出し、早すぎるンゴ！\nだれが貼ったンゴ！？",
+		text: "書くの、早すぎるンゴ！\nだれが書いたンゴ！？",
 		kiriko: "voice",
 		card: null,
 	},
@@ -757,7 +757,7 @@ export const ENDING: StoryPage[] = [
 		about: "nanj",
 		instead: {
 			who: "zero",
-			text: "見出しのインク、まだ\nかわいてません！",
+			text: "書きこみのインク、まだ\nかわいてません！",
 		},
 	},
 	// 答えに ならない 言いわけで 切る（ツッコミは 入れない）

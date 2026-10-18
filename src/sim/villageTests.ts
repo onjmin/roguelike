@@ -176,8 +176,6 @@ import {
 	DEATH_LINES,
 	DEATH_TIERS,
 	deathLine,
-	HEADLINES,
-	UNLOCK_HEADLINES,
 } from "../data/town/headlines";
 import {
 	activeIncidents,
@@ -3024,8 +3022,8 @@ test("開票: the 電池板 ending plays once and やきう stays; 転 plays onc
 			`やきう's lines in the 開票 are not played:\n${log.join("\n")}`,
 		);
 		ok(
-			log.some((l) => l.includes("【朗報】人おった")),
-			"no unpinned headline at the climax",
+			log.some((l) => l.includes("盛るまでもないわ")),
+			"no 盛るまでもない at the climax",
 		);
 		ok(
 			!!loadProgress().endings?.includes("deep"),
@@ -3720,13 +3718,10 @@ test("the very first village: Kiriko climbs the slope and knocks, walks to the p
 				"show nanj",
 				...OPENING.day1.map(say),
 				say(OPENING.sleep),
-				"show visitor",
-				"hide visitor",
 				say(OPENING.wake),
 				"show inc_panhei_chief",
 				`say nanj: ${OPENING.panhei}`,
 				say(OPENING.someone),
-				`narrate: ${OPENING.headline}`,
 				...OPENING.day2.map(say),
 				"se hit_fist",
 				...OPENING.day2b.map(say),
@@ -5595,8 +5590,8 @@ test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学�
 		"the blackout is not silent",
 	);
 	ok(
-		cueOf(TEN_NEWS.pages, "しゅうりょう") === "deep4",
-		"the headline has no alarm",
+		cueOf(TEN_NEWS.pages, "もどらなかった") === "deep4",
+		"the dead streets have no alarm",
 	);
 	ok(
 		cueOf(HERO_QUESTS.zero.offer, "蓄音機を回した") === "deep1",
@@ -8119,9 +8114,10 @@ test("町の 騒ぎ（STORY.md §4.9）: 板が 開いて から 持ち帰るま
 		// 差し押さえでも 記録の 窓まで 進む（試験には 画面が ないので そこで 止まる）
 		await board.run(s).catch(() => {});
 		const seize = INCIDENTS.find((i) => i.seize)?.seize ?? "";
-		const head = fill(BOARD_NEWS.headline, { line: HEADLINES.shallow ?? "" });
+		// 予告の 見出しは 2026-10-19 に やめた：差し押さえの 文の あと、見出しは 読まない
 		ok(
-			log.slice(0, 2).join("\n") === `narrate: ${seize}\nnarrate: ${head}`,
+			log[0] === `narrate: ${seize}` &&
+				!log.some((l) => l.includes("独立を宣言")),
 			`the seized board opened: ${log.join(" / ")}`,
 		);
 	}
@@ -8190,12 +8186,7 @@ test("見出しの 絵（図＝実物の 絵）: 語りが 掲示板の 見出�
 			`見出しの 頁に 掲示板の 絵が ない・字が ちがう: ${p.text}`,
 		);
 	}
-	ok(n >= 8, `見出しの 頁が 少ない: ${n}`);
-	// 冒頭の 見出しも 同じ 絵
-	ok(
-		headlineIn(OPENING.headline) === HEADLINES.shallow,
-		"冒頭の 見出しが パン板の 見出しと ちがう",
-	);
+	ok(n >= 8, `書きこみの 頁が 少ない: ${n}`);
 });
 
 test("時間が とぶ 頁（2026-10-18）: 地の文が「翌日。」「1時間後。」「その夜、」と 言う 頁は 暗転して 明ける（skip・cut）。窓だけ 進めない", () => {
@@ -8323,22 +8314,8 @@ test("翌朝の 見出し（STORY.md §0 言う ことと 見える もの）: �
 	fitsWindow(texts);
 });
 
-test("広場の 掲示板の 名無し（STORY.md §4.9）: 騒ぎの 板には 見出しが あり、倒れた ときの 一行は 回数で 入れかわる。どれも 村の 窓に 収まる", () => {
-	for (const inc of INCIDENTS)
-		ok(HEADLINES[inc.dungeon], `${inc.dungeon}: no headline`);
+test("広場の 掲示板の 名無し（STORY.md §4.9）: 倒れた ときの 一行は 回数で 入れかわる。どれも 村の 窓に 収まる（予告の 見出しは 2026-10-19 に やめた）", () => {
 	const texts: [string, string][] = [];
-	for (const [d, line] of Object.entries(HEADLINES))
-		texts.push([
-			`HEADLINES.${d}`,
-			fill(BOARD_NEWS.headline, { line: line ?? "" }),
-		]);
-	for (const d of UNLOCK_HEADLINES) {
-		ok(HEADLINES[d], `UNLOCK_HEADLINES.${d}: no headline`);
-		texts.push([
-			`BOARD_NEWS.fresh ${d}`,
-			fill(BOARD_NEWS.fresh, { line: HEADLINES[d] ?? "" }),
-		]);
-	}
 	for (const line of DEATH_LINES) {
 		texts.push(["BOARD_NEWS.death", fill(BOARD_NEWS.death, { line })]);
 		texts.push([

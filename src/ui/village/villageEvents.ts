@@ -53,7 +53,6 @@ import {
 	objectiveFor,
 	withDevEvent,
 } from "../../data/story/objectives";
-import { boardPicture } from "../../data/story/pictures";
 import type { Speaker } from "../../data/story/quotes";
 import {
 	CONTINUE_CALL,
@@ -67,9 +66,7 @@ import {
 	afterHeadline,
 	BOARD_NEWS,
 	deathLine,
-	HEADLINES,
 	ROLLBACK_HEADLINE,
-	UNLOCK_HEADLINES,
 } from "../../data/town/headlines";
 import {
 	activeIncidents,
@@ -162,8 +159,6 @@ import {
 	noteRunEnd,
 	recordFromRun,
 } from "../../engine/save";
-import { type CardRun, showCard } from "../../engine/sceneCard";
-import { fxRoot } from "../../engine/sceneFx";
 import { TILE } from "../../engine/types";
 import { earnYen, walletYen, yen } from "../../engine/wallet";
 import { runSaveLabel } from "../boot";
@@ -815,20 +810,11 @@ const boardScript =
 	async (s) => {
 		// パン板の 騒ぎの あいだは 差し押さえ（data/town/incidents.ts）
 		const seized = activeIncidents(view).find((i) => i.seize)?.seize;
-		// 名無しの 見出しと、倒れた ときの 一行（data/town/headlines.ts）
+		// 名無しの 書きこみと、倒れた ときの 一行（data/town/headlines.ts）
 		const news = async () => {
-			// 開いて いて まだ 持ち帰って いない 板の 見出し（新しい 2本）。最終話の あとは ロールバックの 見出し
-			const open = view.unlocked.filter(
-				(d) => !view.cleared.includes(d) && HEADLINES[d],
-			);
-			const lines = view.cleared.includes("deep")
-				? [ROLLBACK_HEADLINE]
-				: open.slice(-2).map((d) => HEADLINES[d] ?? "");
-			for (const line of lines)
-				await s.narrate(fill(BOARD_NEWS.headline, { line }));
-			// 持ち帰りの 語りで 貼られた キリコの やらかしの 見出し（最終話の あとは ロールバックの 見出しだけ）
+			// 持ち帰りの 語りで 書かれた キリコの やらかし（最終話の あとは ロールバックの 一行）
 			const after = view.cleared.includes("deep")
-				? null
+				? ROLLBACK_HEADLINE
 				: afterHeadline(view.cleared);
 			if (after) await s.narrate(fill(BOARD_NEWS.after, { line: after }));
 			const deaths = deathCount();
@@ -1211,28 +1197,6 @@ const returnOf = (a: Arrival): ReturnArrival | null =>
 		: null;
 
 /**
- * 本筋の 板が 開いた 帰り：開く 知らせ（newsScript）の 前に、掲示板を 見せて 次の 事件の 見出し
- * （data/town/headlines.ts の UNLOCK_HEADLINES）。知らせは newsScript が 消すので ここでは 読むだけ。
- */
-const freshHeadlineScript = async (s: Story): Promise<void> => {
-	const lines = loadProgress()
-		.news.filter((n) => UNLOCK_HEADLINES.includes(n.dungeon))
-		.flatMap((n) => HEADLINES[n.dungeon] ?? []);
-	if (!lines.length) return;
-	await s.look(VILLAGE_SPOTS.board[0]);
-	// 貼って ある 見出しの 実物の 絵（data/story/pictures.ts）
-	let card: CardRun | null = null;
-	for (const line of lines) {
-		s.se("read");
-		if (card) card.update(boardPicture(line));
-		else card = showCard(fxRoot(), boardPicture(line));
-		await s.narrate(fill(BOARD_NEWS.fresh, { line }));
-	}
-	card?.end();
-	await s.look(null);
-};
-
-/**
  * 帰りの 2幕目を 待って いる（1幕目の 倉庫・売りの あと、キリコが 蓄音機の 前に 来るまで。この 起動の あいだだけ：
  * 閉じて 開き直したら 村に 入った ときに 続きから）。
  */
@@ -1262,7 +1226,6 @@ const continueScript = async (s: Story): Promise<void> => {
 	if (kinokoEveDue()) await kinokoEveScript(s);
 	// 第二話 → 第三話の つなぎ（胞子を 流しに 銭湯へ）
 	if (bathEveDue()) await bathEveScript(s);
-	await freshHeadlineScript(s);
 	await newsScript(s);
 	await blackoutScript(s);
 };
