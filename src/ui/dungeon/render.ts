@@ -103,6 +103,8 @@ export type Figure = {
 	scale?: number;
 	/** 半透明（束音ロゼの すり抜けが ON の あいだ。見えぐあい 0〜1。無ければ 1）。 */
 	ghost?: number;
+	/** 霧の 上に 描く（壁を 抜けて 走る 競争の ロゼ。見たことの ない 所でも 見える。core/race.ts）。 */
+	overFog?: true;
 };
 
 /** 飛んでいるもの（投げた道具・杖の光）。 */
@@ -546,7 +548,7 @@ export class FloorView {
 		// キャラ（奥から）
 		const sorted = [...figures].sort((a, b) => a.fy - b.fy);
 		for (const g of sorted) {
-			if (g.fade >= 1) continue;
+			if (g.fade >= 1 || g.overFog) continue;
 			if (time < g.flashUntil && Math.floor(time / 60) % 2 === 0) continue;
 			const lx = g.lunge * 5;
 			const dx = [0, 1, 1, 1, 0, -1, -1, -1][g.dir] * lx;
@@ -796,6 +798,19 @@ export class FloorView {
 					ctx.fillRect(px, py, TILE, TILE);
 				}
 			}
+		}
+
+		// 霧の 上に 描く キャラ（壁を 抜けて 走る 競争の ロゼ）
+		for (const g of sorted) {
+			if (!g.overFog) continue;
+			const x = Math.round(g.fx * TILE - ox);
+			const y = Math.round(g.fy * TILE - oy);
+			ctx.globalAlpha = g.ghost ?? 1;
+			const frame = stepFrame(time + ((g.id * 97) % 400), false);
+			if (isWalkRef(g.sprite))
+				drawWalk(ctx, g.sprite, spriteDir(g.dir), frame, x, y, 1);
+			else drawRefInCell(ctx, g.sprite, x, y);
+			ctx.globalAlpha = 1;
 		}
 
 		// 飛んでいるもの

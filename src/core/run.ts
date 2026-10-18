@@ -104,7 +104,14 @@ import {
 	restLook,
 	wakeMonster,
 } from "./monster";
-import { RACE, type RaceId, raceArrive, raceCarried } from "./race";
+import {
+	RACE,
+	type RaceId,
+	raceArrive,
+	raceCarried,
+	raceOf,
+	tickRace,
+} from "./race";
 import { recordCmd } from "./replay";
 import { Rng } from "./rng";
 import { triggerTrap } from "./traps";
@@ -902,7 +909,8 @@ export class Run {
 		const key = s.floor.folk?.find((x) => x.key);
 		if (key && (this.eventSpec || this.bringSpec))
 			this.msg(`${key.name}がいる。ぶつかると話せる`);
-		else if (s.floor.folk?.length) this.msg("人がいる。ぶつかると話せる");
+		else if (s.floor.folk?.length && !raceOf(this))
+			this.msg("人がいる。ぶつかると話せる");
 		// 目的が event・deliver：底に 着いたら 出来事が あって 入口へ 帰る（集落なら key の 人に 話してから）
 		if (this.eventSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.eventReached();
@@ -1673,6 +1681,8 @@ export class Run {
 		this.tickStatus();
 		if (this.f !== f) return;
 		tickAmbush(this);
+		// 競争：1階の ロゼは 壁を 抜けて 階段へ 走る（core/race.ts）
+		tickRace(this);
 
 		// 湧き
 		// 過疎の 板（離島）は 間隔が のびる

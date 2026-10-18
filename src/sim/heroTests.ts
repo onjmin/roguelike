@@ -6,13 +6,12 @@ import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
 import { roomExits, T_WALL, tileAt } from "../core/mapgen";
-import { RACE, rivalDepth } from "../core/race";
+import { DASH, RACE, rivalOn } from "../core/race";
 import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import type { RunState } from "../core/types";
 import { CARRY_KM, HERO_QUESTS, questText } from "../data/people/heroQuests";
-import { raceResLine } from "../data/story/liveRes";
 import { synopsisHtml } from "../data/story/synopsis";
 import type { Story } from "../engine/defs";
 import {
@@ -614,37 +613,53 @@ test("競争: 底では 先に 着いた ロゼが 原音設定の となりに 
 	}
 });
 
-test("競争: 村の スレに ロゼの 進み具合（先に 底へ 着いて 勝利宣言、そのあと「たすけて」）。1行に 収まる", () => {
-	const floors = DUNGEONS.vocalo.floors;
-	const seen: string[] = [];
-	for (let d = 1; d < floors; d++) {
-		const at = rivalDepth("roze", d, floors);
-		ok(at > d && at <= floors, `depth ${d}: ロゼ at ${at}`);
-		for (let salt = 0; salt < 6; salt++) {
-			const line = raceResLine(
-				"ロゼ",
-				at,
-				rivalDepth("roze", d - 1, floors),
-				floors,
-				salt,
-			);
-			ok(width(line) <= 24, `too long: ${line}`);
-			ok(!line.includes("{"), `left a slot: ${line}`);
-			seen.push(line);
+test("競争: 1階では ロゼが キリコの となりから 壁を 抜けて 階段へ 走り（追いつけない）、先に 降りる。2階から 底の 手前までは いない", () => {
+	const plain = Run.create("race-d0", "vocalo");
+	ok(!plain.f.folk?.length, "ロゼ on B1 without the challenge");
+	for (const seed of ["race-d1", "race-d2", "race-d3"]) {
+		const r = Run.create(
+			seed,
+			"vocalo",
+			[],
+			"fetch",
+			true,
+			"kiriko",
+			null,
+			null,
+			"roze",
+		);
+		const roze = rivalOn(r);
+		if (!roze) throw new Fail(`${seed}: no ロゼ on B1`);
+		ok(
+			Math.max(Math.abs(roze.x - r.p.x), Math.abs(roze.y - r.p.y)) === 1,
+			`${seed}: ロゼ is not next to キリコ`,
+		);
+		const far = (p: Pos) =>
+			Math.max(Math.abs(p.x - r.f.stairs.x), Math.abs(p.y - r.f.stairs.y));
+		r.ev = [];
+		let talked = false;
+		let turns = 0;
+		while (rivalOn(r) && turns < 200) {
+			const before = far(roze);
+			r.p.hunger = HUNGER_MAX;
+			r.f.monsters = [];
+			r.act({ c: "wait" });
+			turns++;
+			if (r.ev.some((e) => e.t === "talk" && e.name === "ロゼ")) talked = true;
+			if (rivalOn(r))
+				ok(
+					far(roze) <= Math.max(0, before - DASH) || far(roze) === 0,
+					`${seed}: too slow`,
+				);
+		}
+		ok(!rivalOn(r), `${seed}: ロゼ never went down`);
+		ok(talked, `${seed}: no start talk`);
+		// 2階から 底の 手前までは いない
+		for (let d = 2; d < r.dungeon.floors; d++) {
+			r.enterFloor(d, false);
+			ok(!rivalOn(r), `${seed}: ロゼ on B${d}`);
 		}
 	}
-	ok(
-		seen.some((l) => l.includes("5階")),
-		"never on the 5th floor",
-	);
-	ok(
-		seen.some((l) => l.includes("勝利宣言スレ立て")),
-		"never reached the bottom",
-	);
-	ok(
-		seen.some((l) => l.includes("たすけて")),
-		"never stuck",
-	);
 });
 
 test("持ちかけ: ロゼは 運ばれた 本当の 回数と のべの 距離を 言う（0回なら 別の 文）。ゼロと 型を 分ける", () => {

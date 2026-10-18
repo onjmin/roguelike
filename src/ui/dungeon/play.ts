@@ -33,7 +33,7 @@ import {
 	posing,
 	restLook,
 } from "../../core/monster";
-import { RACE, raceOf, rivalArrival, rivalDepth } from "../../core/race";
+import { raceOf, rivalOn } from "../../core/race";
 import { digest, parseReplay, type ReplayStep } from "../../core/replay";
 import { Run } from "../../core/run";
 import {
@@ -55,11 +55,7 @@ import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
 import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
-import {
-	heroRivalResLine,
-	liveResLine,
-	raceResLine,
-} from "../../data/story/liveRes";
+import { heroRivalResLine, liveResLine } from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
 import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
@@ -640,6 +636,8 @@ export class Play {
 			x: number,
 			y: number,
 			dir: Dir8,
+			/** 動いたら この ms で すべらせる（無ければ その場へ）。 */
+			glide = 0,
 		) => {
 			keep.add(id);
 			const d = this.disp.get(id);
@@ -664,7 +662,14 @@ export class Play {
 			}
 			d.sprite = sprite;
 			d.dir = dir;
-			if (d.tx !== x || d.ty !== y) {
+			if ((d.tx !== x || d.ty !== y) && glide > 0) {
+				d.keys = [
+					{ x: d.fx, y: d.fy, t: now },
+					{ x, y, t: now + glide },
+				];
+				d.tx = x;
+				d.ty = y;
+			} else if (d.tx !== x || d.ty !== y) {
 				d.tx = x;
 				d.ty = y;
 				d.keys = [{ x, y, t: now }];
@@ -677,8 +682,10 @@ export class Play {
 		const g = guestHere(run);
 		if (g) put(GUEST_ID, guestWalk(g.id), g.x, g.y, g.dir);
 		// 集落の 人（いちばん底の 集落。core/floor.ts の placeFolk）。id は 敵・同行者と かぶらない 負の 数
+		// 1階で 階段へ 走る 競争の ロゼ（core/race.ts）は すべらせる
+		const dash = raceOf(run) && run.s.depth === 1 ? rivalOn(run) : undefined;
 		(run.f.folk ?? []).forEach((fo, i) => {
-			put(FOLK_ID - i, fo.sprite, fo.x, fo.y, 4);
+			put(FOLK_ID - i, fo.sprite, fo.x, fo.y, 4, fo === dash ? 220 : 0);
 		});
 		for (const m of run.f.monsters) {
 			put(m.uid, monsterSprite(m), m.x, m.y, m.dir);
@@ -882,9 +889,13 @@ export class Play {
 				continue;
 			}
 			if (!live && !warping) continue;
-			// 集落の 人：いつも 見える（集落の 階は 地図が 見えている）
+			// 集落の 人：いつも 見える（集落の 階は 地図が 見えている）。1階を 走る 競争の ロゼは 壁の 中でも 霧の 上に
 			if (d.id <= FOLK_ID) {
-				figs.push(d);
+				const racing =
+					raceOf(run) &&
+					run.s.depth === 1 &&
+					run.f.folk?.[FOLK_ID - d.id] === rivalOn(run);
+				figs.push(racing ? { ...d, overFog: true, ghost: 0.75 } : d);
 				continue;
 			}
 			// 同行者：キリコから 見える ときだけ
@@ -3683,25 +3694,8 @@ export class Play {
 		const total = Object.values(s.kills).reduce((a, n) => a + n, 0);
 		const kills = first ? 3 : total - this.killMark;
 		this.killMark = total;
-		// 競争の 相手の 進み具合（core/race.ts。底では 相手が 立って いるので 出さない）
-		const race = raceOf(this.run);
-		const floors = this.run.dungeon.floors;
-		if (race) {
-			if (s.depth >= floors) return;
-			this.addLog(
-				raceResLine(
-					RACE[race].name,
-					rivalDepth(race, s.depth, floors),
-					rivalDepth(race, s.depth - 1, floors),
-					floors,
-					rivalDepth(race, s.depth - 1, floors) < floors
-						? s.depth + 1
-						: s.depth - rivalArrival(race, floors),
-				),
-				"gloss",
-			);
-			return;
-		}
+		// 競争（core/race.ts）：ロゼの 進み具合は 出さない。底は ロゼとの 掛け合いが あるので 実況も 止める
+		if (raceOf(this.run) && s.depth >= this.run.dungeon.floors) return;
 		if (r || first || s.floor.rest || this.run.boss) return;
 		const p = this.run.p;
 		const weapon = p.weapon;
