@@ -1714,7 +1714,6 @@ export class Play {
 		}
 	}
 
-	private toggleMap(): void {
 	/** 地図を 閉じるか 見た 階（階が 変わった ときだけ 見る）。 */
 	private mapFloor: unknown = null;
 
@@ -1731,6 +1730,7 @@ export class Play {
 		this.ctx.input.fieldHoldEnabled = true;
 	}
 
+	private toggleMap(): void {
 		this.mapOn = !this.mapOn;
 		this.mapKey = null;
 		this.mapEl.classList.toggle("shown", this.mapOn);
