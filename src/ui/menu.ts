@@ -233,7 +233,8 @@ export const openMainMenu = async (ctx: Ctx, run: Run): Promise<MenuAction> => {
 			{ label: "足元", sub: footHint(run), value: "foot" },
 			{
 				label: "蓄音機",
-				sub: run.s.voice ? (MONSTERS[run.s.voice]?.name ?? "") : "なし",
+				// 敵の 名前は 長いと 列が くずれるので 数だけ（名前は 開いた 窓の 題に 出る）
+				sub: run.s.voice ? "1/1" : "0/1",
 				value: "voice",
 			},
 			{ label: "つよさ", sub: `Lv${run.p.lv}`, value: "status" },

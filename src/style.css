@@ -1112,6 +1112,10 @@ body.jolt #app {
 	font-size: 11px;
 }
 
+.menu-grid .menu-item > span:first-child {
+	white-space: nowrap;
+}
+
 .menu-grid .menu-item.cur::before {
 	left: 6px;
 	font-size: 10px;
