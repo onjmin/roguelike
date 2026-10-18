@@ -336,6 +336,12 @@ const ramp = (n: number, top: number, curve = RAMP_CURVE): number[] =>
 				: Math.round(1 + (top - 1) * ((i - 1) / (n - 1)) ** curve),
 	);
 
+/**
+ * 寄り道の 板の 曲がり。寄り道には 板だけの 敵（きのにゃん・おふ郎くん など、同じ 強さの 階の 顔ぶれより 1段 強い）も
+ * ボスも いないので、本筋の 2乗より 早く 上げて 敵の 強さを 本筋に そろえる。
+ */
+const SIDE_CURVE = 1.5;
+
 /** 1階が 本編の from階ぶんで 始まる ramp（おんキム：1階から 敵が 強い）。底は top。 */
 const rampFrom = (n: number, from: number, top: number, curve = 1): number[] =>
 	ramp(n, top - from + 1, curve).map((v, i) => (i === 0 ? 0 : v + from - 1));
@@ -1335,16 +1341,16 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	// ボカロ作り避難所：束音ロゼの 競争（engine/heroes.ts・core/race.ts）。ボカロ制作スレが 荒らされた とき、ロゼが 一時
 	// 逃げこんだ 避難所。底に ロゼの 原音設定が 残って いる。挑戦を 受けると 開く（知らせは
-	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：文字化けが 多い
+	// 積まない：engine/heroes.ts の acceptQuest が 直に 開き、ロゼが 場所を 言う）。荒らしが 追いかけて きて いる：コピペが 多い
 	vocalo: {
 		id: "vocalo",
 		objective: "fetch",
 		hidden: true,
-		foes: { mojibake: 2 },
+		foes: { copipe: 2.5 },
 		floors: 6,
 		items: VOCALO_ITEMS,
 		perFloor: [4, 6],
-		level: ramp(6, 7, 2),
+		level: ramp(6, 7, SIDE_CURVE),
 		unidentified: ["herb", "staff"],
 		curses: false,
 		start: ["f_large"],
@@ -1368,15 +1374,14 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	//
 	// なんでも実況（マーキュリー）：「おんJに 飽きた 方」の ほのぼの 板（デフォルトネーム 水星の名無し）。
 	// ほのぼの なので 自然回復が はやく、荒らしは 来ない。水星の 名無しが 置いていった 物が 床に 多い 宝の 板：
-	// 6階・1階に 8〜10個・祭りと ふつうの 罠は 無し（安価の罠は どの 板とも 同じ：core/anka.ts）・敵は 7割
+	// 6階・1階に 8〜10個・祭りと ふつうの 罠は 無し（安価の罠は どの 板とも 同じ：core/anka.ts）・敵は 8割5分（顔ぶれは 本筋なみ）
 	mercury: {
 		id: "mercury",
 		objective: "fetch",
-		foes: { tousuko: 2, kaso: 1.5, oni: 0, ninja: 0, fallen: 0 },
 		floors: 6,
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
 		perFloor: [8, 10],
-		level: ramp(6, 7, 2),
+		level: ramp(6, 9, SIDE_CURVE),
 		unidentified: ["staff"],
 		curses: false,
 		start: ["f_large"],
@@ -1388,7 +1393,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		unlockFlag: "town_mercury",
 		reliefAfter: null,
 		regenStep: 100,
-		sparse: 0.7,
+		sparse: 0.85,
 	},
 	// なんでも実況（ムー大陸）＝おんMu：「呑気な おんJを 求めて 作られた 板」（デフォルトネーム ムーミン谷の名無し）。
 	// 「相変わらず 廃墟やのぅ」の 過疎。沈んだ 大陸へ 潜る。大陸の 沈みかたが 毎回 ちがうので、底の 深さは
@@ -1398,10 +1403,14 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		objective: "fetch",
 		foes: { hitodama: 2, funamushi: 2, kaso: 1.5, ninja: 0 },
 		floors: 17,
-		randomFloors: { min: 7, max: 17, level: (n) => ramp(n, n + 1, 2) },
+		randomFloors: {
+			min: 7,
+			max: 17,
+			level: (n) => ramp(n, n + 1, SIDE_CURVE),
+		},
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
 		perFloor: [4, 6],
-		level: ramp(17, 18, 2),
+		level: ramp(17, 18, SIDE_CURVE),
 		unidentified: ["herb", "scroll", "staff"],
 		curses: true,
 		start: ["f_large"],
@@ -1453,7 +1462,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				: e,
 		),
 		perFloor: [5, 7],
-		level: ramp(50, 32, 1.3),
+		level: ramp(50, 32, 1),
 		unidentified: ALL_UNIDENTIFIED,
 		curses: true,
 		start: ["f_large"],
