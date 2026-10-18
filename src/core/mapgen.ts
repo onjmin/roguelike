@@ -1,9 +1,19 @@
-// 階の形を作る（トルネコ1・ローグと同じ「3×3 の区画に部屋か通路の交差点」）。
+// 階の形を作る（ローグ系の「区画に部屋か通路の交差点」）。
 //
-// - 区画ごとに部屋（明るい長方形）か、通路の交差点（1マス）を置く。
+// - 地図を 区画（cols×rows）に 切り、区画ごとに部屋（明るい長方形）か、通路の交差点（1マス）を置く。
+// - いくつかの 区画を つなげて 1つの 長い 部屋に する ことも ある（横長の 中部屋・縦長の 中部屋）。
 // - となりあう区画を、全体がつながる木 ＋ いくつかの輪 で結ぶ。
 // - 通路は部屋の壁の外側1マス（入口）から出て、区画のあいだで曲がって相手の入口へ。
 // 通路が部屋を突っ切らないよう、曲がる位置は2つの部屋のあいだに取る。
+//
+// 形の 種類（LayoutKind）は 板と 階で ちがう（core/data/dungeons.ts の layouts。core/floor.ts が 引く）：
+// - grid：3×3 の 区画（ローグ・トルネコ1と 同じ。既定）
+// - hall：まん中の 行を ぶち抜いた 横長の 中部屋。上下に ふつうの 部屋（ポケダンに よく ある 形）
+// - vhall：まん中の 列を ぶち抜いた 縦長の 中部屋（塔の 吹き抜け）
+// - dense：4×3 の 小さな 部屋が たくさん（雑居ビル・鉄塔の 格子）
+// - isles：3×2 の 広い 区画に 小さな 部屋が ぽつぽつ。通路が 長い（島）
+// - ring：まん中の 区画が 壁で、まわりを ぐるりと 回る（菌輪）
+// - maze：交差点が 多く 部屋は 小さい。輪も 多い（通路だらけ）
 
 import type { Rng } from "./rng";
 
@@ -32,17 +42,82 @@ export type Layout = {
 
 export const MAP_W = 54;
 export const MAP_H = 33;
-const COLS = 3;
-const ROWS = 3;
+
+export type LayoutKind =
+	| "grid"
+	| "hall"
+	| "vhall"
+	| "dense"
+	| "isles"
+	| "ring"
+	| "maze";
+
+export const LAYOUT_KINDS: readonly LayoutKind[] = [
+	"grid",
+	"hall",
+	"vhall",
+	"dense",
+	"isles",
+	"ring",
+	"maze",
+];
+
+/**
+ * 板ごとの 形の 出かた：depth が from〜to（無ければ 全部）の 階で、shapes の 重みで 引く。
+ * 最初に 合う 行を 使う。合う 行が 無ければ grid。
+ */
+export type LayoutRule = {
+	from?: number;
+	to?: number;
+	shapes: Readonly<Partial<Record<LayoutKind, number>>>;
+};
+
+/** その 階の 形を 引く（乱数は 合う 行が ある ときだけ 1回）。 */
+export const pickLayoutKind = (
+	rng: Rng,
+	rules: readonly LayoutRule[] | undefined,
+	depth: number,
+): LayoutKind => {
+	const rule = rules?.find(
+		(r) => depth >= (r.from ?? 1) && depth <= (r.to ?? Number.MAX_VALUE),
+	);
+	if (!rule) return "grid";
+	const kinds = LAYOUT_KINDS.filter((k) => (rule.shapes[k] ?? 0) > 0);
+	if (!kinds.length) return "grid";
+	return rng.weighted(kinds, (k) => rule.shapes[k] ?? 0);
+};
+
+/** 区画（grid の マス目で 左上〜右下。長い 部屋は いくつかの マス目を またぐ）。 */
+type Slot = {
+	c0: number;
+	r0: number;
+	c1: number;
+	r1: number;
+	/** 長い 部屋：この 向きに 区画の ほとんどを 使う。 */
+	long?: "x" | "y";
+};
 
 type Cell = {
-	col: number;
-	row: number;
+	slot: Slot;
 	/** 部屋なら Room、交差点なら null。 */
 	room: Room | null;
 	/** 交差点の位置。 */
 	jx: number;
 	jy: number;
+};
+
+/** 形の 作りかた。 */
+type Spec = {
+	cols: number;
+	rows: number;
+	slots: Slot[];
+	/** 交差点に する 区画の 数（1×1 の 区画だけ。部屋が minRooms を 切らない 範囲で）。 */
+	junctions: readonly [number, number];
+	minRooms: number;
+	/** 木に 足して 輪を 作る 辺の 率。 */
+	loops: number;
+	/** ふつうの 部屋の 大きさの 上限（区画に 収まる 範囲で）。 */
+	roomMax: { w: number; h: number };
 };
 
 export const idx = (l: { w: number }, x: number, y: number): number =>
@@ -144,82 +219,200 @@ const hasWideCorridor = (l: Layout): boolean => {
 	return false;
 };
 
+/** cols×rows の 1×1 の 区画（skip の 区画は 抜く）。 */
+const gridSlots = (
+	cols: number,
+	rows: number,
+	skip: (c: number, r: number) => boolean = () => false,
+): Slot[] => {
+	const out: Slot[] = [];
+	for (let r = 0; r < rows; r++)
+		for (let c = 0; c < cols; c++)
+			if (!skip(c, r)) out.push({ c0: c, r0: r, c1: c, r1: r });
+	return out;
+};
+
+/** 形の 種類 → 作りかた（hall・vhall は ぶち抜く 行・列を 引く：まん中が 多め）。 */
+const specOf = (rng: Rng, kind: LayoutKind): Spec => {
+	const normal = { w: 14, h: 7 };
+	switch (kind) {
+		case "hall": {
+			const row = rng.pick([0, 1, 1, 2]);
+			return {
+				cols: 3,
+				rows: 3,
+				slots: [
+					...gridSlots(3, 3, (_, r) => r === row),
+					{ c0: 0, r0: row, c1: 2, r1: row, long: "x" },
+				],
+				junctions: [0, 2],
+				minRooms: 4,
+				loops: 0.3,
+				roomMax: normal,
+			};
+		}
+		case "vhall": {
+			const col = rng.pick([0, 1, 1, 2]);
+			return {
+				cols: 3,
+				rows: 3,
+				slots: [
+					...gridSlots(3, 3, (c) => c === col),
+					{ c0: col, r0: 0, c1: col, r1: 2, long: "y" },
+				],
+				junctions: [0, 2],
+				minRooms: 4,
+				loops: 0.3,
+				roomMax: normal,
+			};
+		}
+		case "dense":
+			return {
+				cols: 4,
+				rows: 3,
+				slots: gridSlots(4, 3),
+				junctions: [1, 4],
+				minRooms: 8,
+				loops: 0.35,
+				roomMax: { w: 10, h: 7 },
+			};
+		case "isles":
+			return {
+				cols: 3,
+				rows: 2,
+				slots: gridSlots(3, 2),
+				junctions: [1, 2],
+				minRooms: 4,
+				loops: 0.2,
+				roomMax: { w: 8, h: 6 },
+			};
+		case "ring":
+			return {
+				cols: 3,
+				rows: 3,
+				slots: gridSlots(3, 3, (c, r) => c === 1 && r === 1),
+				junctions: [0, 2],
+				minRooms: 5,
+				loops: 0.5,
+				roomMax: normal,
+			};
+		case "maze":
+			return {
+				cols: 3,
+				rows: 3,
+				slots: gridSlots(3, 3),
+				junctions: [3, 4],
+				minRooms: 4,
+				loops: 0.6,
+				roomMax: { w: 9, h: 5 },
+			};
+		default:
+			return {
+				cols: 3,
+				rows: 3,
+				slots: gridSlots(3, 3),
+				junctions: [0, 3],
+				minRooms: 5,
+				loops: 0.3,
+				roomMax: normal,
+			};
+	}
+};
+
 /**
- * ふつうの階を作る。部屋は最低 minRooms 個。
+ * ふつうの階を作る（kind は 形の 種類。既定は grid）。
  * 通路が 並んで 太い かたまりに なった 形は 作りなおす。
  */
-export const generateLayout = (
-	rng: Rng,
-	opts: { minRooms?: number; junctions?: number } = {},
-): Layout => {
-	let l = generateOnce(rng, opts);
+export const generateLayout = (rng: Rng, kind: LayoutKind = "grid"): Layout => {
+	let l = generateOnce(rng, kind);
 	for (let i = 0; i < 50 && hasWideCorridor(l); i++)
-		l = generateOnce(rng, opts);
+		l = generateOnce(rng, kind);
 	return l;
 };
 
-const generateOnce = (
-	rng: Rng,
-	opts: { minRooms?: number; junctions?: number },
-): Layout => {
+const generateOnce = (rng: Rng, kind: LayoutKind): Layout => {
 	const W = MAP_W;
 	const H = MAP_H;
 	const l = emptyLayout(W, H);
+	const spec = specOf(rng, kind);
 	// 外周1マスは必ず壁
-	const cw = Math.floor((W - 2) / COLS);
-	const ch = Math.floor((H - 2) / ROWS);
-	const cells: Cell[] = [];
-	const total = COLS * ROWS;
-	// 交差点にする区画（部屋が少なくなりすぎない範囲で）
-	const minRooms = opts.minRooms ?? 5;
+	const cw = Math.floor((W - 2) / spec.cols);
+	const ch = Math.floor((H - 2) / spec.rows);
+	const slots = spec.slots;
+	// 交差点にする区画（1×1 だけ。部屋が少なくなりすぎない範囲で）
+	const singles = slots.map((_, i) => i).filter((i) => !slots[i].long);
 	const junctionCount = Math.min(
-		total - minRooms,
-		opts.junctions ?? rng.range(0, 3),
+		slots.length - spec.minRooms,
+		singles.length,
+		rng.range(spec.junctions[0], spec.junctions[1]),
 	);
 	const junctionSet = new Set(
-		rng.shuffle([...Array(total).keys()]).slice(0, junctionCount),
+		rng.shuffle([...singles]).slice(0, Math.max(0, junctionCount)),
 	);
-	for (let row = 0; row < ROWS; row++) {
-		for (let col = 0; col < COLS; col++) {
-			const i = row * COLS + col;
-			const ox = 1 + col * cw;
-			const oy = 1 + row * ch;
-			if (junctionSet.has(i)) {
-				cells.push({
-					col,
-					row,
-					room: null,
-					jx: ox + rng.range(2, cw - 3),
-					jy: oy + rng.range(2, ch - 3),
-				});
-				continue;
-			}
-			// 部屋：区画の中に、まわり1マス以上の余白（通路が回れる）を残す
-			const maxW = cw - 3;
-			const maxH = ch - 3;
-			const w = rng.range(Math.min(4, maxW), maxW);
-			const h = rng.range(Math.min(3, maxH), maxH);
-			const x = ox + 1 + rng.int(cw - 2 - w);
-			const y = oy + 1 + rng.int(ch - 2 - h);
-			const room: Room = { id: l.rooms.length, x, y, w, h };
-			l.rooms.push(room);
-			carveRoom(l, room);
-			cells.push({ col, row, room, jx: 0, jy: 0 });
+	const cells: Cell[] = slots.map((slot, i) => {
+		const ox = 1 + slot.c0 * cw;
+		const oy = 1 + slot.r0 * ch;
+		const sw = (slot.c1 - slot.c0 + 1) * cw;
+		const sh = (slot.r1 - slot.r0 + 1) * ch;
+		if (junctionSet.has(i))
+			return {
+				slot,
+				room: null,
+				jx: ox + rng.range(2, sw - 3),
+				jy: oy + rng.range(2, sh - 3),
+			};
+		// 部屋：区画の中に、まわり1マス以上の余白（通路が回れる）を残す
+		const maxW = sw - 3;
+		const maxH = sh - 3;
+		let w: number;
+		let h: number;
+		if (slot.long === "x") {
+			// 横長：区画の 幅の 3/4 以上（どの 列にも かかる）。高さは 大部屋（BIG_ROOM）に ならない 6 まで
+			w = rng.range(Math.ceil(sw * 0.75), maxW);
+			h = rng.range(3, Math.min(6, maxH));
+		} else if (slot.long === "y") {
+			h = rng.range(Math.ceil(sh * 0.75), maxH);
+			w = rng.range(4, Math.min(9, maxW));
+		} else {
+			const capW = Math.min(spec.roomMax.w, maxW);
+			const capH = Math.min(spec.roomMax.h, maxH);
+			w = rng.range(Math.min(4, capW), capW);
+			h = rng.range(Math.min(3, capH), capH);
 		}
-	}
+		const x = ox + 1 + rng.int(sw - 2 - w);
+		const y = oy + 1 + rng.int(sh - 2 - h);
+		const room: Room = { id: l.rooms.length, x, y, w, h };
+		l.rooms.push(room);
+		carveRoom(l, room);
+		return { slot, room, jx: 0, jy: 0 };
+	});
 
-	// となりあう区画の辺（右・下）
-	type Edge = { a: number; b: number; horiz: boolean };
+	// となりあう区画の辺（a が 左/上、b が 右/下。span は 接している 行/列の 範囲）
+	type Edge = { a: number; b: number; horiz: boolean; span: [number, number] };
 	const edges: Edge[] = [];
-	for (let row = 0; row < ROWS; row++)
-		for (let col = 0; col < COLS; col++) {
-			const i = row * COLS + col;
-			if (col + 1 < COLS) edges.push({ a: i, b: i + 1, horiz: true });
-			if (row + 1 < ROWS) edges.push({ a: i, b: i + COLS, horiz: false });
+	for (let i = 0; i < slots.length; i++)
+		for (let j = 0; j < slots.length; j++) {
+			if (i === j) continue;
+			const s = slots[i];
+			const t = slots[j];
+			if (s.c1 + 1 === t.c0 && s.r0 <= t.r1 && t.r0 <= s.r1)
+				edges.push({
+					a: i,
+					b: j,
+					horiz: true,
+					span: [Math.max(s.r0, t.r0), Math.min(s.r1, t.r1)],
+				});
+			if (s.r1 + 1 === t.r0 && s.c0 <= t.c1 && t.c0 <= s.c1)
+				edges.push({
+					a: i,
+					b: j,
+					horiz: false,
+					span: [Math.max(s.c0, t.c0), Math.min(s.c1, t.c1)],
+				});
 		}
 	rng.shuffle(edges);
 	// 木（Kruskal）＋ 残りの辺をいくつか足して輪を作る
-	const parent = [...Array(total).keys()];
+	const parent = [...Array(slots.length).keys()];
 	const find = (x: number): number => {
 		while (parent[x] !== x) {
 			parent[x] = parent[parent[x]];
@@ -237,9 +430,15 @@ const generateOnce = (
 			chosen.push(e);
 		} else rest.push(e);
 	}
-	for (const e of rest) if (rng.chance(0.3)) chosen.push(e);
+	for (const e of rest) if (rng.chance(spec.loops)) chosen.push(e);
 
-	for (const e of chosen) connect(l, rng, cells[e.a], cells[e.b], e.horiz);
+	for (const e of chosen) {
+		// 接している 行/列の 画素の 範囲（長い 部屋は この 範囲の 中で 入口を 取る）
+		const [lo, hi] = e.horiz
+			? [1 + e.span[0] * ch, 1 + (e.span[1] + 1) * ch - 1]
+			: [1 + e.span[0] * cw, 1 + (e.span[1] + 1) * cw - 1];
+		connect(l, rng, cells[e.a], cells[e.b], e.horiz, [lo, hi]);
+	}
 
 	// 行き止まりの交差点（つながりが1本だけ）はそのまま残す（トルネコにもある）
 	return l;
@@ -249,35 +448,62 @@ const generateOnce = (
 const midpoint = (rng: Rng, lo: number, hi: number): number =>
 	hi - lo >= 2 ? lo + 1 + rng.int(hi - lo - 1) : lo;
 
-/** 区画 a（左/上）と b（右/下）を通路で結ぶ。 */
+/** from〜to（部屋の 幅）の うち、できれば lo〜hi（接している 区画）の 中から 1つ。外れていれば 近い 端。 */
+const pickIn = (
+	rng: Rng,
+	from: number,
+	to: number,
+	lo: number,
+	hi: number,
+): number => {
+	const a = Math.max(from, lo);
+	const b = Math.min(to, hi);
+	if (a <= b) return rng.range(a, b);
+	return to < lo ? to : from;
+};
+
+/**
+ * 区画 a（左/上）と b（右/下）を通路で結ぶ。span は 接している 行（horiz）か 列の 画素の 範囲
+ * （無ければ 部屋の どこからでも）。
+ */
 const connect = (
 	l: Layout,
 	rng: Rng,
 	a: Cell,
 	b: Cell,
 	horiz: boolean,
+	span: [number, number] = [0, Number.MAX_SAFE_INTEGER],
 ): void => {
+	const [lo, hi] = span;
 	if (horiz) {
 		// a の右の入口 → b の左の入口
 		const ax = a.room ? a.room.x + a.room.w : a.jx;
-		const ay = a.room ? a.room.y + rng.int(a.room.h) : a.jy;
+		const ay = a.room
+			? pickIn(rng, a.room.y, a.room.y + a.room.h - 1, lo, hi)
+			: a.jy;
 		const bx = b.room ? b.room.x - 1 : b.jx;
-		const by = b.room ? b.room.y + rng.int(b.room.h) : b.jy;
-		const lo = Math.min(ax, bx);
-		const hi = Math.max(ax, bx);
+		const by = b.room
+			? pickIn(rng, b.room.y, b.room.y + b.room.h - 1, lo, hi)
+			: b.jy;
+		const xlo = Math.min(ax, bx);
+		const xhi = Math.max(ax, bx);
 		// 部屋の壁ぞいを這わないよう、なるべく両端を避けて曲がる
-		const mx = midpoint(rng, lo, hi);
+		const mx = midpoint(rng, xlo, xhi);
 		carveLine(l, ax, ay, mx, ay);
 		carveLine(l, mx, ay, mx, by);
 		carveLine(l, mx, by, bx, by);
 	} else {
-		const ax = a.room ? a.room.x + rng.int(a.room.w) : a.jx;
+		const ax = a.room
+			? pickIn(rng, a.room.x, a.room.x + a.room.w - 1, lo, hi)
+			: a.jx;
 		const ay = a.room ? a.room.y + a.room.h : a.jy;
-		const bx = b.room ? b.room.x + rng.int(b.room.w) : b.jx;
+		const bx = b.room
+			? pickIn(rng, b.room.x, b.room.x + b.room.w - 1, lo, hi)
+			: b.jx;
 		const by = b.room ? b.room.y - 1 : b.jy;
-		const lo = Math.min(ay, by);
-		const hi = Math.max(ay, by);
-		const my = midpoint(rng, lo, hi);
+		const ylo = Math.min(ay, by);
+		const yhi = Math.max(ay, by);
+		const my = midpoint(rng, ylo, yhi);
 		carveLine(l, ax, ay, ax, my);
 		carveLine(l, ax, my, bx, my);
 		carveLine(l, bx, my, bx, by);
@@ -327,7 +553,12 @@ export const houseShapeLayout = (rng: Rng, shape: HouseShape): Layout => {
 			const room: Room = { id: l.rooms.length, x, y, w, h };
 			l.rooms.push(room);
 			carveRoom(l, room);
-			return { col, row, room, jx: 0, jy: 0 };
+			return {
+				slot: { c0: col, r0: row, c1: col, r1: row },
+				room,
+				jx: 0,
+				jy: 0,
+			};
 		}),
 	);
 	if (shape === "split2") connect(l, rng, cells[0][0], cells[0][1], true);

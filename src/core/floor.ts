@@ -32,6 +32,7 @@ import {
 	idx,
 	isFloor,
 	type Layout,
+	pickLayoutKind,
 	roomAt,
 	roomTiles,
 	T_ROOM,
@@ -122,7 +123,10 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		rng.chance(HOUSE_SHAPE_CHANCE)
 			? rng.pick<HouseShape>(["big", "split2", "split4"])
 			: null;
-	const layout = shape ? houseShapeLayout(rng, shape) : generateLayout(rng);
+	// ふつうの 階の 形は 板と 階で ちがう（core/data/dungeons.ts の layouts。core/mapgen.ts の LayoutKind）
+	const layout = shape
+		? houseShapeLayout(rng, shape)
+		: generateLayout(rng, pickLayoutKind(rng, r.dungeon.layouts, depth));
 	const rooms = layout.rooms;
 	const f: Floor = {
 		depth,
