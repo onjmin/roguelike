@@ -294,6 +294,8 @@ export class Village {
 	private scene = false;
 	private running = false;
 	private rafId = 0;
+	/** 帰りの 寸劇の 最中（通行人を 出さない。寸劇の おわりの 建て直しで 町に 置く）。 */
+	private skit = false;
 	private arrival: Arrival = null;
 	/** 村を出ると 決まった（いちばん外の スクリプトが 終わったら 出る）。 */
 	private exitChoice: VillageExit | null = null;
@@ -347,6 +349,7 @@ export class Village {
 		if (k === "clear" || k === "escape") setSceneSky(skitSky());
 		// 起動の札の うしろでは 村が 動いている（うろうろ する。場面は 札を 閉じてから）
 		this.scene = !o.boot;
+		this.skit = k === "clear" || k === "escape";
 		this.lookAt = null;
 		this.pan = null;
 		this.fadeEl.style.transition = "none";
@@ -478,6 +481,7 @@ export class Village {
 	async rebuild(): Promise<void> {
 		await this.build({
 			x: this.player.x,
+		this.skit = false;
 			y: this.player.y,
 			dir: this.player.dir,
 		});
@@ -598,6 +602,7 @@ export class Village {
 			paused: () => this.ctx.input.busy || this.leaving || this.scene,
 			target: () => this.pathTalk,
 			talk: (persona, line) => async (s) => {
+			hidden: () => this.skit,
 				await s.say("nanj", line, { name: persona.label });
 			},
 		});
@@ -1835,6 +1840,7 @@ export class Village {
 		});
 	}
 
+				this.skit = false;
 	/** 条件を満たした 自動イベントを 始める。 */
 	private checkAuto(): void {
 		const field = this.field;

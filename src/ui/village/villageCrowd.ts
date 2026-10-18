@@ -5,6 +5,7 @@
 // - 通行人は すりぬけられる（through）：キリコも 場面の 人も ふさがない。通行人の ほうは 人の いる マスへ 入らず 待つ。
 //   待ちが 長いと よけて 道を 引きなおし、それでも だめなら すりぬける。キリコが 重なったら 横へ 1歩 よける。
 // - 窓（会話・選択肢）が 開いている あいだと、村に 着いた 場面（帰りの 寸劇・知らせ）の あいだは 歩きださない。キリコが 話しかけに 向かっている 人は 待つ。
+//   帰りの 寸劇の あいだは だれも 出さない（寸劇の おわりの 暗転で 建て直す ときに 置く）。
 // - 時間帯（深夜・朝・昼・夕方・夜）は 1分ごとに 見なおす（人の 数と 流れが かわる）。
 
 import {
@@ -66,6 +67,8 @@ export type CrowdHost = {
 	clock: () => { hour: number; weekend: boolean };
 	/** 歩きださない（窓が 開いている・村を 出る）。 */
 	paused: () => boolean;
+	/** だれも 出さない（帰りの 寸劇。明けたら 建て直しで 置く）。 */
+	hidden: () => boolean;
 	/** キリコが 話しかけに 向かっている 相手（その 人は 待つ）。 */
 	target: () => Actor | null;
 	/** 話しかけた ときの スクリプト（1窓）。 */
@@ -90,7 +93,7 @@ export class Crowd {
 		const c = h.clock();
 		this.band = timeBand(c.hour);
 		this.weekend = c.weekend;
-		this.populate();
+		if (!h.hidden()) this.populate();
 	}
 
 	/** 通行人の 歩行グラ（入る 前に 先読みする）。 */
@@ -250,7 +253,7 @@ export class Crowd {
 			this.band = timeBand(c.hour);
 			this.weekend = c.weekend;
 		}
-		if (this.h.paused()) return;
+		if (this.h.paused() || this.h.hidden()) return;
 		const target = this.h.target();
 		for (const p of [...this.peds]) {
 			const a = p.actor;
