@@ -51,6 +51,8 @@ import {
 	dungeonOf,
 	type EventSpec,
 	type FolkTalk,
+	type HeroLine,
+	type HeroReply,
 } from "./data/dungeons";
 import {
 	HERO_NAME,
@@ -640,12 +642,16 @@ export class Run {
 		);
 	}
 
-	/** 主人公が (x, y) に 入れる 地形か（ロゼは いちばん 外を のぞく 壁も。置物は だめ）。 */
+	/**
+	 * 主人公が (x, y) に 入れる 地形か（ロゼは いちばん 外を のぞく 壁も。置物は だめ。
+	 * ただし 敵の いない 階＝名所・集落は 置物も ぬける：壁が 外わくだけで、ほかに ぬける 物が ないので）。
+	 */
 	playerCanEnter(x: number, y: number): boolean {
 		const l = this.f.layout;
 		if (isFloor(l, x, y)) return true;
 		if (!this.phasing) return false;
 		if (x < 1 || y < 1 || x > l.w - 2 || y > l.h - 2) return false;
+		if (this.f.rest) return true;
 		return !(this.f.statues ?? []).includes(y * l.w + x);
 	}
 
@@ -829,8 +835,11 @@ export class Run {
 			"warn",
 		);
 		// ボスを 見た ときの 行（正体を 明かす など。core/data/dungeons.ts の boss.intro）
-		for (const line of this.bossSpec?.intro ?? [])
-			this.msg(line.replaceAll("キリコ", this.heroName));
+		const intro = this.bossSpec
+			? (this.bossSpec.asHero?.[this.hero]?.intro ?? this.bossSpec.intro)
+			: undefined;
+		for (const line of intro ?? [])
+			this.msg(this.heroText(line));
 	}
 
 	/** 眠っている敵を起こす判定（入室・となり）。 */
@@ -908,7 +917,11 @@ export class Run {
 		// ボスの 階の 差し入れ
 		const supply = this.bossSpec?.supply;
 		if (supply && depth === this.dungeon.floors && !s.returning)
-			this.msg(supply.line);
+			this.msg(
+				this.heroText(
+					this.bossSpec?.asHero?.[this.hero]?.supplyLine ?? supply.line,
+				),
+			);
 		this.updateVision();
 		// 同行者も キリコの そばに 着く（core/guest.ts）
 		guestEnterFloor(this, first);
@@ -935,7 +948,7 @@ export class Run {
 		const bring = this.bringSpec;
 		if (!bring || this.s.returning) return;
 		for (const line of bring.lines)
-			this.msg(line.replaceAll("キリコ", this.heroName));
+			this.msg(this.heroText(line));
 		// 依頼の 同行者が もう 見たかった 階に 着いて いれば、はたした ことを 残す（guest は 親分に かわる）
 		if (this.s.guest?.done) this.s.escortDone = this.s.guest.id;
 		// 集落に 立って いた 親分は 加わるので その マスから いなく なる
@@ -955,22 +968,47 @@ export class Run {
 	}
 
 	/** 集落の 人に 話す（ぶつかる。時間は 進まない）。key の 人なら 目的が すすむ。 */
-	/** 話す 窓（集落の 人・大部屋の ボス）。キリコの 返事は 主人公が キリコの ときだけ（口ぐせが ンゴなので）。 */
+	/**
+	 * 話す 窓（集落の 人・大部屋の ボス）。返事は いまの 主人公の ぶん（data/dungeons.ts の HeroReply）。
+	 * いまの 主人公の 返事が ない 所で 窓を 打ち切る（返事を 受けた 落ちだけ 残らない ように）。
+	 */
 	emitTalk(name: string, talk: FolkTalk, voice?: string, hush = false): void {
-		const hero = this.heroName;
+		const out: (string | HeroLine)[] = [];
+		for (const x of talk) {
+			if (typeof x === "string") {
+				out.push(this.heroText(x));
+				continue;
+			}
+			const reply = this.heroReply(x);
+			if (reply === null) break;
+			out.push(reply);
+		}
 		this.emit({
 			t: "talk",
 			name,
 			...(voice ? { voice } : {}),
 			...(hush ? { hush: true } : {}),
-			talk: talk.flatMap((x): FolkTalk[number][] =>
-				typeof x === "string"
-					? [x.replaceAll("キリコ", hero)]
-					: this.s.hero
-						? []
-						: [x],
-			),
+			talk: out,
 		});
+	}
+
+	/** 文の {hero} を いまの 主人公の 名前に（「キリコ」と 書いた 所は キリコの こと なので そのまま）。 */
+	heroText(text: string): string {
+		return text.replaceAll("{hero}", this.heroName);
+	}
+
+	/** いまの 主人公の 返事（無ければ null）。 */
+	private heroReply(x: HeroReply): HeroLine | null {
+		if (this.hero === "kiriko") return { reply: x.kiriko };
+		if (this.hero === "roze")
+			return x.roze === undefined ? null : { reply: x.roze, voice: "roze" };
+		const body = this.s.body ?? 0;
+		const z = x.zero;
+		if (z === undefined) return null;
+		return {
+			reply: typeof z === "string" ? z : (z[body] ?? z[0]),
+			voice: ZERO_BODIES[body]?.voice ?? "zero",
+		};
 	}
 
 	private talkFolk(fo: FloorFolk): void {
@@ -1000,7 +1038,7 @@ export class Run {
 		const it = this.newItem(this.dungeon.goal);
 		if (!this.addItem(it)) this.p.items.push(it);
 		for (const line of spec.lines)
-			this.msg(line.replaceAll("キリコ", this.heroName));
+			this.msg(this.heroText(line));
 		this.msg(`${this.heroName}は${defOf(it.kind).name}をもらった！`, "good");
 		this.emit({ t: "rescue", kind: spec.rescue, cheer: spec.cheer });
 		this.finish("clear", spec.cause);
@@ -1513,8 +1551,8 @@ export class Run {
 		this.msg(`${this.heroName}は${goal}を手に入れた！`, "good");
 		// 帰り方（画面の 演出は この 出来事から。文は 板ごとに 決まっている）
 		this.emit({ t: "rescue", kind: spec.rescue, cheer: spec.cheer });
-		for (const line of spec.lines)
-			this.msg(line.replaceAll("キリコ", this.heroName));
+		for (const line of spec.asHero?.[this.hero]?.lines ?? spec.lines)
+			this.msg(this.heroText(line));
 		this.finish("clear", spec.cause);
 	}
 

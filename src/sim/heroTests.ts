@@ -126,6 +126,27 @@ test("ロゼ: 壁に 入れる（キリコは 入れない）、いちばん 外
 	ok(!r.playerCanEnter(1, 0), "outer row");
 });
 
+test("ロゼ: 敵の いない 階（名所）では 置物も すり抜ける", () => {
+	const r = Run.create("hero-rest", "main", [], "fetch", true, "roze");
+	const rest = DUNGEONS.main.rests?.[0];
+	ok(rest, "main has a rest floor");
+	r.enterFloor(rest?.depth ?? 0, false);
+	ok(r.f.rest, "on the rest floor");
+	const l = r.f.layout;
+	const at = (r.f.statues ?? []).find((i) => {
+		const x = i % l.w;
+		const y = Math.floor(i / l.w);
+		return x > 0 && y > 0 && x < l.w - 1 && y < l.h - 1;
+	});
+	ok(at !== undefined, "rest floor has a prop inside");
+	const x = (at ?? 0) % l.w;
+	const y = Math.floor((at ?? 0) / l.w);
+	ok(!r.playerCanEnter(x, y), "off: prop blocks");
+	r.s.phase = true;
+	ok(r.playerCanEnter(x, y), "on: roze walks into the prop");
+	ok(!r.playerCanEnter(0, 1), "outer wall still blocks");
+});
+
 test("ロゼ: 壁の 中では 1ターンごとに おなかが 5% 減る（床では ふつう）、帰り道でも 減る", () => {
 	const r = quiet(Run.create("hero-b", "shallow", [], "fetch", true, "roze"));
 	r.s.phase = true;
