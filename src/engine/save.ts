@@ -809,7 +809,20 @@ export const loadTown = (): Town => {
 	};
 };
 
+/** 町の 売り上げが ふえた ことを 知らせる 先（財布の 出入り。engine/wallet.ts）。d は ふえた 額。 */
+const pointsListeners = new Set<(d: number) => void>();
+
+/** 売り上げが ふえたら 聞く（持ち帰りを 売った ときなど。やめる 関数を 返す）。 */
+export const onTownPointsGain = (fn: (d: number) => void): (() => void) => {
+	pointsListeners.add(fn);
+	return () => pointsListeners.delete(fn);
+};
+
 export const saveTown = (t: Town): void => {
+	if (pointsListeners.size) {
+		const d = t.points - loadTown().points;
+		if (d > 0) for (const fn of pointsListeners) fn(d);
+	}
 	try {
 		localStorage.setItem(TOWN_KEY, JSON.stringify(t));
 	} catch {

@@ -6,7 +6,7 @@
 // - カジノの 換金（earnYen）は 使った 額を へらす（2026-10-14 作者：「お金を 賭けない 方針は 撤廃」）。
 //   勝てば 使った 額は マイナスに なる（売り上げより 多く 持てる）。町の 段・住人は 売り上げの まま。
 
-import { loadTown } from "./save";
+import { loadTown, onTownPointsGain } from "./save";
 
 const KEY = "kiriko-roguelike/wallet";
 
@@ -26,6 +26,9 @@ export const onWalletChange = (fn: (d: number) => void): (() => void) => {
 const tell = (d: number): void => {
 	for (const fn of listeners) fn(d);
 };
+
+// 売り上げが ふえれば 使える お金も ふえる（持ち帰りを 売った ときなど）
+onTownPointsGain((d) => tell(d));
 
 const load = (): WalletMemo => {
 	if (memo) return { ...memo };

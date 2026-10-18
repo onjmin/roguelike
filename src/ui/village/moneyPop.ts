@@ -1,9 +1,12 @@
 // お金の 出入りを キリコの 頭の 上に 出す（2026-10-15 作者：「金銭の 授受が 発生したら プレイヤーの 上部に
 // プラスか マイナスかの 金額の フェードイン・アウトを 出したい」）。
-// 財布（engine/wallet.ts）が 動く たびに 1つ。ふわっと 出て 少し 上がって 消える。続けて 動いたら 上に 積む。
+// 財布（engine/wallet.ts）が 動く たびに 1つ。払った とき（−）も、持ち帰りを 売るなどで もらった とき（＋）も。
+// ふわっと 出て 少し 上がって 消える。続けて 動いたら 上に 積む。
+// 字は 美咲ゴシックの 点（ui/misakiDots.ts）。白っぽい 字に 黒っぽい 縁で、＋は 黄み・−は 赤みを ほんのり。
 
 import { TILE } from "../../engine/types";
 import { onWalletChange } from "../../engine/wallet";
+import { drawMisaki, MISAKI_H } from "../misakiDots";
 
 /** 出て いる 長さ（ms）。はじめの FADE_IN で 出て、おわりの FADE_OUT で 消える。 */
 const LIFE = 1600;
@@ -14,8 +17,8 @@ const RISE = 8;
 /** 同時に 出す 数（それより 多ければ 古い 方から 消す）。 */
 const MAX = 3;
 
-const PLUS = "#ffe066";
-const MINUS = "#ff8a8a";
+const PLUS = "#fff4c0";
+const MINUS = "#ffd8d8";
 
 type Pop = { d: number; t: number };
 
@@ -41,21 +44,15 @@ export class MoneyPops {
 		this.pops = this.pops.filter((p) => time - p.t < LIFE);
 		if (!this.pops.length) return;
 		g.save();
-		g.font = "8px 'DotGothic16', monospace";
-		g.textAlign = "center";
-		g.textBaseline = "bottom";
 		const n = this.pops.length;
 		for (const [i, p] of this.pops.entries()) {
 			const a = time - p.t;
 			const alpha = Math.min(1, a / FADE_IN, (LIFE - a) / FADE_OUT);
-			const x = Math.round(px + TILE / 2);
-			const y = Math.round(py - 2 - (RISE * a) / LIFE - (n - 1 - i) * 9);
+			const y =
+				py - 3 - MISAKI_H - (RISE * a) / LIFE - (n - 1 - i) * (MISAKI_H + 3);
 			const text = `${p.d > 0 ? "+" : "−"}${Math.abs(p.d).toLocaleString("ja-JP")}円`;
 			g.globalAlpha = Math.max(0, alpha);
-			g.fillStyle = "rgba(0,0,0,0.75)";
-			g.fillText(text, x + 1, y + 1);
-			g.fillStyle = p.d > 0 ? PLUS : MINUS;
-			g.fillText(text, x, y);
+			drawMisaki(g, text, px + TILE / 2, y, p.d > 0 ? PLUS : MINUS);
 		}
 		g.restore();
 	}
