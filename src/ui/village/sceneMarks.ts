@@ -229,7 +229,52 @@ const trail = (g: CanvasRenderingContext2D, ox: number, oy: number): void => {
 	g.restore();
 };
 
-/** 港に 突っこんだ 島（砂・草・ヤシの 木・白い 波）。k は 寄りぐあい（0 は 沖・1 は 港）。 */
+/** ドットの 楕円（1px の 横の 帯で 塗る。x, y は 整数の 中心）。 */
+const dotOval = (
+	g: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	rx: number,
+	ry: number,
+): void => {
+	for (let dy = -ry; dy <= ry; dy++) {
+		const half = Math.round(rx * Math.sqrt(1 - (dy / (ry + 0.5)) ** 2));
+		g.fillRect(x - half, y + dy, half * 2 + 1, 1);
+	}
+};
+
+/** ヤシの 木の ドット絵（下の まんなかが 根もと。G 濃い 葉・g 明るい 葉・t 幹・T 幹の 影・c 実）。 */
+const PALM: readonly string[] = [
+	"..........ggg............",
+	".....gggggGGGggggg.......",
+	"...ggGGGGGGgGGGGGGgg.....",
+	"..gGGGGg..gGGg..gGGGGg...",
+	".gGGg....gGcGGg....gGGg..",
+	"gGG.....gGccc.Gg.....gGg.",
+	"GG.....gG..tT..Gg......Gg",
+	"G......G...tT...G.......G",
+	"...........TT............",
+	"............tT...........",
+	"............TT...........",
+	"............tT...........",
+	"............TT...........",
+	"...........tT............",
+	"...........TT............",
+	"...........tT............",
+	"...........TT............",
+	"..........ttTT...........",
+];
+/** 幹の 根もとの 列（PALM の 最後の 行）。 */
+const PALM_FOOT = 11;
+const PALM_INK: Record<string, string> = {
+	G: "#2f7d32",
+	g: "#5aa83c",
+	t: "#9a6a34",
+	T: "#5e3c1a",
+	c: "#6b4a22",
+};
+
+/** 港に 突っこんだ 島（ドット絵。白い 波・砂・草・ヤシの 木）。k は 寄りぐあい（0 は 沖・1 は 港）。 */
 const island = (
 	g: CanvasRenderingContext2D,
 	ox: number,
@@ -237,49 +282,42 @@ const island = (
 	k: number,
 	t: number,
 ): void => {
-	const [cx0, cy] = px(ISLAND_AT, ox, oy);
-	const cx = cx0 + (1 - k) * 120;
+	// 地図の ドットに そろえる（場所は 整数の px で 決めてから カメラを 引く）
+	const cx = Math.round(ISLAND_AT[0] * TILE + TILE / 2 + (1 - k) * 120) - ox;
+	const cy = Math.round(ISLAND_AT[1] * TILE + TILE / 2) - oy;
 	g.save();
 	g.globalAlpha = Math.min(1, k * 1.5);
-	// 白い 波
-	g.fillStyle = "rgba(255, 255, 255, 0.8)";
-	g.beginPath();
-	g.ellipse(cx, cy + 2, 46 + Math.sin(t / 200) * 2, 26, 0, 0, Math.PI * 2);
-	g.fill();
-	// 砂
+	// 白い 波（ふちが 2こまで ふくらむ）
+	const surf = Math.floor(t / 220) % 2;
+	g.fillStyle = "#ffffff";
+	dotOval(g, cx, cy + 2, 46 + surf * 2, 26);
+	g.fillStyle = "#cfeaf2";
+	dotOval(g, cx, cy + 3, 43, 23);
+	// 砂（下に 影の 縁）
+	g.fillStyle = "#b8955a";
+	dotOval(g, cx, cy + 1, 42, 22);
 	g.fillStyle = "#e8cf8e";
-	g.beginPath();
-	g.ellipse(cx, cy, 42, 22, 0, 0, Math.PI * 2);
-	g.fill();
-	g.strokeStyle = "#b8955a";
-	g.lineWidth = 2;
-	g.stroke();
-	// 草
+	dotOval(g, cx, cy - 1, 41, 20);
+	g.fillStyle = "#f6e3b0";
+	dotOval(g, cx - 10, cy - 8, 20, 8);
+	// 草（下に 濃い 縁、上に 光）
+	g.fillStyle = "#33722a";
+	dotOval(g, cx - 6, cy - 2, 22, 11);
 	g.fillStyle = "#4f9a3c";
-	g.beginPath();
-	g.ellipse(cx - 6, cy - 3, 22, 11, 0, 0, Math.PI * 2);
-	g.fill();
-	// ヤシの 木
-	g.strokeStyle = "#7a5228";
-	g.lineWidth = 3;
-	g.beginPath();
-	g.moveTo(cx + 8, cy + 2);
-	g.quadraticCurveTo(cx + 12, cy - 14, cx + 6, cy - 26);
-	g.stroke();
-	g.fillStyle = "#2f7d32";
-	for (const a of [-2.6, -1.9, -1.2, -0.5, 0.2]) {
-		g.beginPath();
-		g.ellipse(
-			cx + 6 + Math.cos(a) * 9,
-			cy - 26 + Math.sin(a) * 5 + 3,
-			10,
-			3,
-			a,
-			0,
-			Math.PI * 2,
-		);
-		g.fill();
-	}
+	dotOval(g, cx - 6, cy - 4, 21, 9);
+	g.fillStyle = "#73bf52";
+	dotOval(g, cx - 12, cy - 8, 9, 3);
+	// ヤシの 木（根もとが 草の 右はし）
+	const bx = cx + 8 - PALM_FOOT;
+	const by = cy + 2 - PALM.length;
+	PALM.forEach((row, y) => {
+		for (let x = 0; x < row.length; x++) {
+			const ink = PALM_INK[row[x]];
+			if (!ink) continue;
+			g.fillStyle = ink;
+			g.fillRect(bx + x, by + y, 1, 1);
+		}
+	});
 	g.restore();
 };
 

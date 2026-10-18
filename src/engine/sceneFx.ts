@@ -27,8 +27,9 @@ export type FxRun = {
 	end(): void;
 };
 
-/** 1ドットの 大きさ（CSS px）。 */
+/** 1ドットの 大きさ（CSS px。爆発は BOOM_PX で 粗く する）。 */
 const PX = 3;
+const BOOM_PX = 6;
 
 const NONE: FxRun = { ready: Promise.resolve(), end: () => {} };
 
@@ -102,7 +103,10 @@ const dotDisc = (
 	}
 };
 
-/** ギザギザの 火の玉（角の 数 n、内の 半径は 外の rin 倍）。 */
+/**
+ * ギザギザの 火の玉（角の 数 n、内の 半径は 外の rin 倍）。
+ * 1ドットずつ 中か 外かを 決めて 横の 帯で 塗る（縁を ぼかさない）。
+ */
 const star = (
 	g: CanvasRenderingContext2D,
 	cx: number,
@@ -113,17 +117,32 @@ const star = (
 	turn: number,
 	jag: readonly number[],
 ): void => {
-	g.beginPath();
-	for (let i = 0; i < n * 2; i++) {
-		const a = turn + (i / (n * 2)) * Math.PI * 2;
-		const rad = i % 2 === 0 ? r * jag[(i / 2) % jag.length] : r * rin;
-		const x = Math.round(cx + Math.cos(a) * rad);
-		const y = Math.round(cy + Math.sin(a) * rad);
-		if (i === 0) g.moveTo(x, y);
-		else g.lineTo(x, y);
+	const step = Math.PI / n;
+	const tip = (i: number): number => {
+		const j = ((i % (n * 2)) + n * 2) % (n * 2);
+		return j % 2 === 0 ? jag[(j / 2) % jag.length] : rin;
+	};
+	const x0 = Math.round(cx);
+	const y0 = Math.round(cy);
+	const R = Math.ceil(r * Math.max(...jag, rin));
+	for (let y = -R; y <= R; y++) {
+		let run: number | null = null;
+		for (let x = -R; x <= R + 1; x++) {
+			let inside = false;
+			if (x <= R) {
+				const d = Math.hypot(x, y);
+				const a = (Math.atan2(y, x) - turn) / step;
+				const i = Math.floor(a);
+				const f = a - i;
+				inside = d <= r * (tip(i) * (1 - f) + tip(i + 1) * f);
+			}
+			if (inside && run === null) run = x;
+			else if (!inside && run !== null) {
+				g.fillRect(x0 + run, y0 + y, x - run, 1);
+				run = null;
+			}
+		}
 	}
-	g.closePath();
-	g.fill();
 };
 
 type Layer = {
@@ -133,14 +152,14 @@ type Layer = {
 	h: number;
 };
 
-const layer = (root: HTMLElement, cls: string): Layer | null => {
+const layer = (root: HTMLElement, cls: string, px = PX): Layer | null => {
 	const cv = document.createElement("canvas");
 	cv.className = `scene-fx ${cls}`;
 	root.appendChild(cv);
 	// 大きさは 置いてから 測る（層いっぱいに 広がった 大きさ）
 	const box = cv.getBoundingClientRect();
-	const w = Math.max(1, Math.ceil(box.width / PX));
-	const h = Math.max(1, Math.ceil(box.height / PX));
+	const w = Math.max(1, Math.ceil(box.width / px));
+	const h = Math.max(1, Math.ceil(box.height / px));
 	cv.width = w;
 	cv.height = h;
 	const g = cv.getContext("2d");
@@ -177,7 +196,7 @@ const boom = (
 	still: boolean,
 	bare: boolean,
 ): FxRun => {
-	const L = layer(root, "fx-boom");
+	const L = layer(root, "fx-boom", BOOM_PX);
 	if (!L) return NONE;
 	const r = rng(0xb00);
 	const cx = L.w / 2;
@@ -228,8 +247,8 @@ const boom = (
 			sg.clearRect(0, 0, L.w, L.h);
 			for (const pass of [0, 1])
 				for (const p of puffs) {
-					const x = p.x + p.vx * drift * 14;
-					const y = p.y + p.vy * drift * 10;
+					const x = p.x + p.vx * drift * 7;
+					const y = p.y + p.vy * drift * 5;
 					const rr = p.r * grow;
 					sg.fillStyle = pass === 0 ? "#9d978e" : p.shade;
 					if (pass === 0) dotDisc(sg, x, y, rr);
