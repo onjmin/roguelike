@@ -33,6 +33,8 @@ export type SkitOn =
 			map: string;
 			x: readonly [number, number];
 			y: readonly [number, number];
+			/** 話の もと（噴水・池・海）の マス。あれば キリコが そちらを 向き、カメラも 向く（ui/village/skits.ts）。 */
+			face?: readonly [number, number];
 	  }
 	/** この 死に方で 帰ってきて、mob に はじめて 話しかけた。 */
 	| { k: "death"; mob: MobId; cause: string };
@@ -396,7 +398,7 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "near_fountain",
 		window: { after: "shallow" },
-		on: { k: "near", map: "village", x: [23, 30], y: [29, 30] },
+		on: { k: "near", map: "village", x: [23, 30], y: [29, 30], face: [25, 25] },
 		lines: [
 			k("噴水ンゴ"),
 			k("打たれたら、吾輩も\n強くなれるンゴ？"),
@@ -407,7 +409,7 @@ export const SKITS: readonly Skit[] = [
 	// 広場の 南の 池の ほとり（キリコの 頭には 蓄音機の ラッパ）
 	{
 		key: "near_pond",
-		on: { k: "near", map: "village", x: [10, 17], y: [30, 31] },
+		on: { k: "near", map: "village", x: [10, 17], y: [30, 31], face: [13, 27] },
 		lines: [
 			k("池ンゴ！"),
 			n("水面に、キリコの顔が\nうつっている。"),
@@ -419,7 +421,7 @@ export const SKITS: readonly Skit[] = [
 	// 浜の 東の はし（桟橋からは 遠い）
 	{
 		key: "near_beach",
-		on: { k: "near", map: "village", x: [40, 62], y: [33, 36] },
+		on: { k: "near", map: "village", x: [40, 62], y: [33, 36], face: [50, 38] },
 		lines: [
 			k("海ンゴ"),
 			e({ gesture: "hop" }, k("全部の板を\n回るンゴーー！！")),

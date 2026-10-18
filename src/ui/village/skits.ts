@@ -97,6 +97,24 @@ const play = async (
 	v.seen.push(sk.key);
 	v.at = returnAt();
 	save(v);
+	// 場所の 寸劇は、話の もと（噴水・池・海）の ほうを キリコが 向き、カメラも そちらへ（2026-10-19 作者
+	// 「事が 起きている 方向に プレイヤーを 向かせる」）。おわりに カメラは キリコへ もどす
+	const face = sk.on.k === "near" ? sk.on.face : undefined;
+	if (face) {
+		const dx = face[0] - s.state.x;
+		const dy = face[1] - s.state.y;
+		s.face(
+			"player",
+			Math.abs(dx) >= Math.abs(dy)
+				? dx < 0
+					? "left"
+					: "right"
+				: dy < 0
+					? "up"
+					: "down",
+		);
+		await s.look(face);
+	}
 	// 爆発などの エフェクト（calm の 窓か 寸劇の 終わりで 消える。地図は こわれないので 消えたら 元通り）
 	let fx: FxRun | null = null;
 	try {
@@ -115,6 +133,7 @@ const play = async (
 		}
 	} finally {
 		fx?.end();
+		if (face) await s.look(null);
 	}
 };
 
