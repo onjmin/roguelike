@@ -482,20 +482,6 @@ export class FloorView {
 				ctx.fill();
 			}
 		}
-		// 湯だまりの 湯気（銭湯の 煙突と 同じ ドットの もや。見えて いる マスだけ。となりどうしで ずらす）
-		const steamT = frameOf(time);
-		for (const i of f.pools ?? []) {
-			if (!visible[i]) continue;
-			const x = (i % l.w) * TILE - ox + TILE / 2;
-			const y = Math.floor(i / l.w) * TILE - oy + TILE / 2;
-			const phase = (i * 0.618) % 1;
-			for (let k = 0; k < 2; k++)
-				puff(ctx, x, y, (steamT / 2800 + phase + k / 2) % 1, phase + k * 0.37, {
-					rise: TILE * 1.6,
-					size: 3,
-					alpha: 0.8,
-				});
-		}
 		// 踏んだ あとの 安価の罠（罠の 下に。同じ マスに あとから 罠が ふえても 罠が 見える）
 		for (const i of f.pressed ?? []) {
 			if (!f.seen[i]) continue;
@@ -612,6 +598,22 @@ export class FloorView {
 			drawProp(ctx, p);
 			if (p.art.some((a) => a.glow)) drawProp(ctx, p, { time, ox: 0, oy: 0 });
 			ctx.restore();
+		}
+
+		// 湯だまりの 湯気（銭湯の 煙突と 同じ ドットの もや。見えて いる マスだけ。となりどうしで ずらす）。
+		// キャラより 前に 描く（湯の 中を 歩く キリコに 湯気が かかる）
+		const steamT = frameOf(time);
+		for (const i of f.pools ?? []) {
+			if (!visible[i]) continue;
+			const x = (i % l.w) * TILE - ox + TILE / 2;
+			const y = Math.floor(i / l.w) * TILE - oy + TILE / 2;
+			const phase = (i * 0.618) % 1;
+			for (let k = 0; k < 2; k++)
+				puff(ctx, x, y, (steamT / 2800 + phase + k / 2) % 1, phase + k * 0.37, {
+					rise: TILE * 1.6,
+					size: 3,
+					alpha: 0.8,
+				});
 		}
 
 		// 倒れた所の墓（上から落ちてきて、少しはねる）
