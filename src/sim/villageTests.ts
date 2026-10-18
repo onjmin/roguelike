@@ -18,7 +18,7 @@ import { join } from "node:path";
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
-import { bigRoomLayout } from "../core/mapgen";
+import { bigRoomLayout, enteredEmptyBigRoom } from "../core/mapgen";
 import { priceOf, STORAGE_CAP, TOWN_STAGES } from "../core/town";
 import {
 	CAT_ORDER,
@@ -391,11 +391,7 @@ import { itemIcon } from "../ui/art/icons";
 import { floorsText } from "../ui/bookView";
 import type { Ctx } from "../ui/ctx";
 import { floorShort } from "../ui/dungeon/floorName";
-import {
-	enteredEmptyBigRoom,
-	forgetRoomSkits,
-	takeRoomSkit,
-} from "../ui/dungeon/roomSkit";
+import { forgetRoomSkits, takeRoomSkit } from "../ui/dungeon/roomSkit";
 import { bathLayout } from "../ui/minigames/bath";
 import {
 	applyOutcome,

@@ -25,7 +25,12 @@ import {
 } from "../../core/geom";
 import { guestChat, guestFloorLine, guestHere } from "../../core/guest";
 import { defOf, itemHidden } from "../../core/item";
-import { isFloor, roomAt, T_CORR } from "../../core/mapgen";
+import {
+	enteredEmptyBigRoom,
+	isFloor,
+	roomAt,
+	T_CORR,
+} from "../../core/mapgen";
 import {
 	mdef,
 	monsterName,
@@ -118,7 +123,7 @@ import {
 	type Projectile,
 } from "./render";
 import { restBeside, restPath, takeRestSkit } from "./restSkit";
-import { enteredEmptyBigRoom, ROOM_SKIT_MS, takeRoomSkit } from "./roomSkit";
+import { ROOM_SKIT_MS, takeRoomSkit } from "./roomSkit";
 import { zoneFor } from "./theme";
 
 /** 安価の のこりが これ 以下で 赤く。 */

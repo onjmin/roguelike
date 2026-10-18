@@ -60,6 +60,35 @@ export const isFloor = (l: Layout, x: number, y: number): boolean =>
 export const roomAt = (l: Layout, x: number, y: number): number =>
 	inBounds(l, x, y) ? l.roomOf[idx(l, x, y)] : -1;
 
+/** 大部屋と みなす 床の 大きさ（ふつうの 部屋は いちばん 広くて 15x8）。 */
+export const BIG_ROOM = { w: 12, h: 7 } as const;
+
+/**
+ * その マスが 敵の いない 大部屋の 中か。部屋の 中の 敵は 見えて いなくても 数える
+ * （入った とたんに 寝ていた 敵が 見えて 「だれもおらん」が うそに ならないように）。
+ */
+export const inEmptyBigRoom = (
+	l: Layout,
+	at: { x: number; y: number },
+	monsters: readonly { hp: number; x: number; y: number }[],
+): boolean => {
+	const id = roomAt(l, at.x, at.y);
+	if (id < 0) return false;
+	const r = l.rooms.find((x) => x.id === id);
+	if (!r || r.w < BIG_ROOM.w || r.h < BIG_ROOM.h) return false;
+	return !monsters.some((m) => m.hp > 0 && roomAt(l, m.x, m.y) === id);
+};
+
+/** 前の マスから この マスへ 動いて、敵の いない 大部屋に 入ったか。 */
+export const enteredEmptyBigRoom = (
+	l: Layout,
+	from: { x: number; y: number },
+	to: { x: number; y: number },
+	monsters: readonly { hp: number; x: number; y: number }[],
+): boolean =>
+	roomAt(l, to.x, to.y) !== roomAt(l, from.x, from.y) &&
+	inEmptyBigRoom(l, to, monsters);
+
 const emptyLayout = (w: number, h: number): Layout => ({
 	w,
 	h,

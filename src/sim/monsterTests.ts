@@ -4724,3 +4724,38 @@ test(
 			ok(width(`B30　${line}`) <= 22, `too wide: ${line}`);
 	},
 );
+
+// ───────────────── 敵の いない 大部屋で 一息 ─────────────────
+
+/** 東に 大部屋、西から 通路（x=5〜9、y=8）。 */
+const calmLayout = (): Layout =>
+	dig(
+		makeLayout([{ x: 10, y: 5, w: 20, h: 10 }]),
+		{ x: 5, y: 8 },
+		{ x: 9, y: 8 },
+	);
+
+test(
+	"calm",
+	"stepping into an empty big room clears アク禁 and まどわし",
+	() => {
+		const r = arena("calm", calmLayout(), { x: 9, y: 8 });
+		r.p.status.blind = 50;
+		r.p.status.daze = 50;
+		r.p.status.fast = 50;
+		turn(r, { c: "move", dir: 2 });
+		ok(r.p.x === 10, `harness: did not step in ${pp(r.p)}`);
+		ok(r.p.status.blind === 0, `still blind ${r.p.status.blind}`);
+		ok(r.p.status.daze === 0, `still dazed ${r.p.status.daze}`);
+		ok(r.p.status.fast > 0, "a good status was cleared too");
+	},
+);
+
+test("calm", "a big room with a foe inside does not clear アク禁", () => {
+	const r = arena("calm-foe", calmLayout(), { x: 9, y: 8 });
+	r.p.status.blind = 50;
+	put(r, "tousuko", { x: 28, y: 13 }, { sleep: 999 });
+	turn(r, { c: "move", dir: 2 });
+	ok(r.p.x === 10, `harness: did not step in ${pp(r.p)}`);
+	ok(r.p.status.blind > 0, "blindness was cleared with a foe in the room");
+});

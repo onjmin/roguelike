@@ -93,7 +93,14 @@ import {
 	kindName,
 	rollItem,
 } from "./item";
-import { isFloor, roomAt, T_ROOM, T_WALL, tileAt } from "./mapgen";
+import {
+	enteredEmptyBigRoom,
+	isFloor,
+	roomAt,
+	T_ROOM,
+	T_WALL,
+	tileAt,
+} from "./mapgen";
 import {
 	isBoss,
 	mdef,
@@ -2005,7 +2012,30 @@ export class Run {
 		this.emit({ t: "move", id: PLAYER_ID, from, to, dir: d });
 		if (swap) swapWithGuest(this, from, to, d);
 		this.afterStep(noPickup);
+		if (enteredEmptyBigRoom(this.f.layout, from, p, this.f.monsters))
+			this.calmDown();
 		return true;
+	}
+
+	/** 敵の いない 大部屋で 一息ついて、アク禁・混乱・まどわしが とける。 */
+	private calmDown(): void {
+		const st = this.p.status;
+		if (st.blind <= 0 && st.confuse <= 0 && st.daze <= 0) return;
+		this.msg("だれもいない大部屋で一息ついた", "good");
+		if (st.confuse > 0) {
+			st.confuse = 0;
+			this.msg("混乱がとけた");
+		}
+		if (st.daze > 0) {
+			st.daze = 0;
+			this.msg("まどわしがとけた。お花畑はしおれた");
+		}
+		if (st.blind > 0) {
+			st.blind = 0;
+			this.emit({ t: "look" });
+			this.msg("アク禁がとけた！また書きこめる");
+			this.updateVision();
+		}
 	}
 
 	/** 1歩動いたあと（拾う・罠）。 */
