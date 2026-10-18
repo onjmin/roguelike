@@ -25,6 +25,7 @@
 
 import { type Dir8, DX, DY, isDiagonal } from "../../core/geom";
 import type { DungeonId, Objective } from "../../core/types";
+import { HIT_SE } from "../../data/audio/sfx";
 import { CAST, heroWalk, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
 import {
@@ -60,7 +61,7 @@ import type {
 	VillageExit,
 	VState,
 } from "../../engine/defs";
-import type { Emote } from "../../engine/emote";
+import type { Emote, Gesture, Hit } from "../../engine/emote";
 import { Actor, Field } from "../../engine/field";
 import { chosenHero } from "../../engine/heroes";
 import { dir4Candidates } from "../../engine/input";
@@ -2023,6 +2024,33 @@ export class Village {
 		if (left > 0) await sleep(left);
 	}
 
+	/**
+	 * 行の 間（pause）と ツッコミの 音（hit。engine/emote.ts）。間は 前の 窓を 閉じて 黙る。音は 窓の 前に 鳴り、
+	 * 突かれた 人（target。"player" は キリコ。null なら だれも）が びくっと する。ずっこけ（zukko）は 場に いる
+	 * 仲間も いっしょに 沈む。
+	 */
+	private async beatAndHit(
+		c: { pause?: number; hit?: Hit } | undefined,
+		target: string | null,
+	): Promise<void> {
+		if (c?.pause) {
+			this.msg.close();
+			await sleep(c.pause);
+		}
+		if (!c?.hit) return;
+		this.ctx.audio.se(HIT_SE[c.hit]);
+		const g: Gesture = c.hit === "zukko" ? "slump" : "startle";
+		if (c.hit === "zukko") {
+			for (const a of this.field?.actors ?? [])
+				if (a.visible && !a.still) a.showGesture(g, false);
+			this.player.showGesture(g, false);
+			return;
+		}
+		if (c.hit === "sting") return;
+		if (target === "player") this.player.showGesture(g, false);
+		else if (target) this.actorFor(target)?.showGesture(g, false);
+	}
+
 	/** Story API（イベントの スクリプトから 使う 命令）。 */
 	private readonly story: Story = this.makeStory();
 
@@ -2034,6 +2062,8 @@ export class Village {
 			},
 			say: async (who, text, opt) => {
 				await this.beatHold();
+				// 見せ場の 間と ツッコミの 音（突かれるのは キリコ）
+				await this.beatAndHit(opt, "player");
 				// 名前を かえた 声（住人・来客）は 声の 持ち主が 話す 人では ないので 見ない
 				if (who && !opt?.name) await this.showSpeaker(who);
 				return this.say(who, text, opt);
@@ -2044,6 +2074,8 @@ export class Village {
 			},
 			kiriko: async (text, mode, cue) => {
 				await this.beatHold();
+				// 見せ場の 間と ツッコミの 音（キリコが 突く 相手は 話しかけて いる 人）
+				await this.beatAndHit(cue, this.talking?.id ?? null);
 				// キリコの 頭に 感情の 記号・動き（engine/emote.ts）
 				if (cue?.emote) this.player.showEmote(cue.emote, false);
 				if (cue?.gesture) this.player.showGesture(cue.gesture, false);

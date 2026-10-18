@@ -606,7 +606,7 @@ const BATH_HEAD: StoryPage[] = [
 		emote: "!",
 		go: [{ who: "zero", to: [35, 30], speed: 3, face: "up" }],
 	},
-	{ who: "nanj", text: "舐めるな！", emote: "怒" },
+	{ who: "nanj", text: "舐めるな！", emote: "驚", hit: "whack" },
 ];
 
 export const ENDING: StoryPage[] = [
@@ -643,7 +643,15 @@ export const ENDING: StoryPage[] = [
 		seGap: 100,
 		go: [{ who: "kiriko", to: [35, 30], speed: 3, face: "up" }],
 	},
-	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "!" },
+	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "冷" },
+	// 暴力系ヒロイン：シヨが 先に 手を 出す（間を おいて げんこつ）
+	{
+		who: "shiyo",
+		text: "押しすぎよ！！",
+		emote: "驚",
+		hit: "punch",
+		pause: 400,
+	},
 	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）。
 	// 温度の 段は 図で なく、商店街（町じゅうの 蛇口）→ 港（海）へ 動く カメラと 湯けむりで 見せる
 	{
@@ -674,6 +682,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "規模が、\nおかしいンゴ！",
+		emote: "驚",
 		kiriko: "voice",
 		fx: "boom",
 		look: null,
@@ -690,7 +699,7 @@ export const ENDING: StoryPage[] = [
 		se: "pushButton",
 		go: [{ who: "roze", route: "udud", speed: 3 }],
 	},
-	{ who: "roze", text: "逆だったアル！！", emote: "汗", gesture: "shiver" },
+	{ who: "roze", text: "逆だったアル！！", emote: "青", hit: "sting" },
 	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）。場面を 港へ うつす（海が 湯）
 	{
 		who: null,
@@ -720,6 +729,13 @@ export const ENDING: StoryPage[] = [
 	},
 	// 見出しの 名無しの 前ぶれ：見出しが 早すぎる。場面を 掲示板へ うつして、貼られた 見出しの 絵。
 	// やきうは 湯船へ 走って もどって ごまかす
+	// メタ：魚は 画面に 出ない（湯気だけ）
+	{
+		who: "zero",
+		text: "魚は画面に出ません！\n想像でおぎなってください！",
+		emote: "得",
+		look: null,
+	},
 	{
 		who: null,
 		text: "掲示板に、もう見出しが貼られていた。\n『【悲報】キリコ、海をわかす』",

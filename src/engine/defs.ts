@@ -11,7 +11,7 @@ import type {
 } from "../core/types";
 import type { KirikoMode, Speaker } from "../data/story/quotes";
 import type { CrowdNode, PedCost } from "../data/village/crowd";
-import type { Cue, Emote, Gesture } from "./emote";
+import type { Cue, Emote, Gesture, Hit } from "./emote";
 import type { HeadProp } from "./headProp";
 import type { SavedReplay } from "./save";
 import type { Dir } from "./types";
@@ -200,6 +200,10 @@ export type SayOptions = {
 	emote?: Emote;
 	/** 話す 人の 体の 動き（ぴょんぴょん・ぶるぶる……。engine/emote.ts）。 */
 	gesture?: Gesture;
+	/** 窓の 前に おく 間（ms。前の 窓を 閉じて 黙る。見せ場の ツッコミの 前に）。 */
+	pause?: number;
+	/** ツッコミの 音（engine/emote.ts の Hit。窓の 前に 鳴り、突かれた 人が びくっと する）。 */
+	hit?: Hit;
 	/** 記号・動きを 出す 人（地図の 人の id。省くと who、名前を かえた 声なら 話しかけた 相手）。 */
 	speaker?: string;
 };

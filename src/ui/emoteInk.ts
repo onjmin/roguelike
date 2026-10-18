@@ -34,6 +34,10 @@ export const INK_CLASS: Record<Emote, string> = {
 	汗: "ink-sweat",
 	怒: "ink-anger",
 	花: "ink-flower",
+	得: "ink-smug",
+	青: "ink-pale",
+	冷: "ink-cold",
+	驚: "ink-burst",
 };
 
 /** 種から 決まる 乱数（毎回 同じ 絵に なるように）。 */
@@ -399,7 +403,115 @@ const SHAPES: Record<Emote, (r: Rand) => Part[]> = {
 	},
 	// 大きい 花と 小さい 花
 	花: () => [...flower(27, 37, 21, 0.3), ...flower(51, 13, 10.5, 1.1)],
+	// きらん：4つ星（大）と 4つ星（小）、まんなかに つや
+	得: () => [
+		{ kind: "blob", color: "#ffd23c", pts: star4(28, 34, 24, 6, 0) },
+		{ kind: "blob", color: "#ffd23c", pts: star4(52, 12, 9, 2.5, 15) },
+		{ kind: "light", pts: ellipse(28, 34, 3.6, 3.6, 0, 8) },
+	],
+	// 青ざめ：額から 垂れる 青い たて線 3本（長さが ちがう。下へ 細く）
+	青: (r) =>
+		[
+			[16, 40],
+			[32, 50],
+			[48, 44],
+		].map(([x, len]) => ({
+			kind: "blob" as const,
+			color: "#5a7cff",
+			pts: ribbon(
+				densify(
+					[
+						[x, 6],
+						[x + 1, len],
+					],
+					4,
+				),
+				6,
+				r,
+				0.9,
+				0.3,
+			),
+		})),
+	// 冷や汗：青い たて線 2本と しずく（右下）
+	冷: (r) => [
+		...[
+			[14, 34],
+			[26, 28],
+		].map(([x, len]) => ({
+			kind: "blob" as const,
+			color: "#5a7cff",
+			pts: ribbon(
+				densify(
+					[
+						[x, 6],
+						[x + 1, len],
+					],
+					4,
+				),
+				5,
+				r,
+				0.9,
+				0.3,
+			),
+		})),
+		{
+			kind: "blob",
+			color: "#6cc0ff",
+			pts: [
+				...Array.from({ length: 13 }, (_, i) => {
+					const a = ((-38 + (i / 12) * 256) * Math.PI) / 180;
+					return [46 + Math.cos(a) * 11, 44 + Math.sin(a) * 11] as const;
+				}),
+				[46, 16] as const,
+			],
+		},
+		{ kind: "light", pts: ellipse(41, 43, 2.2, 4.6, 18, 8) },
+	],
+	// ツッコミの 驚き：ギザギザの ふきだし（白）に 墨の「!!」
+	驚: (r) => [
+		{
+			kind: "blob",
+			color: "#fff6e8",
+			pts: Array.from({ length: 20 }, (_, i) => {
+				const a = (i / 20) * Math.PI * 2 - Math.PI / 2;
+				const k = i % 2 ? 19 + r() * 2 : 29 + r() * 2;
+				return [32 + Math.cos(a) * k, 32 + Math.sin(a) * k] as const;
+			}),
+		},
+		...[25, 39].flatMap((x) => [
+			{
+				kind: "ink" as const,
+				pts: ribbon(
+					densify(
+						[
+							[x - 1, 16],
+							[x + 1, 36],
+						],
+						4,
+					),
+					5.5,
+					r,
+					0.9,
+					0.45,
+				),
+			},
+			{ kind: "ink" as const, pts: ellipse(x + 1, 44, 3, 2.8, 0, 8) },
+		]),
+	],
 };
+
+/** 4つ星（中心 x,y・外の 半径 R・内の 半径 r・deg 度 かたむける）。 */
+const star4 = (x: number, y: number, R: number, r: number, deg: number): P[] =>
+	rot(
+		Array.from({ length: 8 }, (_, i) => {
+			const a = (i / 8) * Math.PI * 2 - Math.PI / 2;
+			const k = i % 2 ? r : R;
+			return [x + Math.cos(a) * k, y + Math.sin(a) * k] as const;
+		}),
+		deg,
+		x,
+		y,
+	);
 
 /** 1枚（種 seed で ゆらす）。部品ごとに 墨の 影 → 色の 面と 墨の ふち（影と 面は べつに ゆらして ずらす）。 */
 const variant = (e: Emote, seed: number, cls: string): string => {

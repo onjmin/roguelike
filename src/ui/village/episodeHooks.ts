@@ -142,7 +142,7 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	await s.goto("nanj", bx, by - 2, { speed: 1.8, avoid: true });
 	s.face("nanj", "down");
 	s.face("player", "up");
-	await s.say("nanj", T.nanjTsukkomi, { emote: "汗" });
+	await s.say("nanj", T.nanjTsukkomi, { emote: "驚", hit: "slap" });
 	await s.say("nanj", T.nanjHistory, { emote: "…" });
 
 	// ── 回想：2015年の 夏、きのこ板に 食パンの 旗（人は 動く。立ち絵を しまって 町を 見せる）
@@ -264,7 +264,7 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	await s.look([ox, oy]);
 	s.se("read");
 	await s.narrate(fill(BOARD_NEWS.fresh, { line: HEADLINES.kinoko ?? "" }));
-	await s.kiriko(T.kirikoHeadline, "voice", { emote: "汗" });
+	await s.kiriko(T.kirikoHeadline, "voice", { emote: "冷" });
 	await s.look(null);
 	await s.kiriko(T.kirikoGo, "voice");
 	await visitScript(s, "kinoko");
@@ -372,7 +372,7 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	card.update(factionCard(1));
 	s.se("hit_fist");
 	await s.say("shiyo", B.shiyo43, { emote: "花" });
-	await s.kiriko(B.kirikoMore, "voice", { emote: "汗" });
+	await s.kiriko(B.kirikoMore, "voice", { hit: "slap" });
 	card.end();
 	await s.say("zero", B.zeroWhy);
 

@@ -130,6 +130,10 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	emoteSweat: ["aCOtzT", -12.9, -3.6, -20.1, 0.099, 330, 710, 0], // emote → -33.0
 	emoteAnger: ["vsXmNp", -12.5, -0.4, -20.5, 0.094, 0, 180, 0], // emote → -33.0
 	emoteFlower: ["VDnXCJ", -15.3, -6.5, -17.7, 0.13, 0, 720, 0], // emote → -33.0
+	emoteSmug: ["sTJ89N", -15.7, -7.5, -17.3, 0.136, 0, 1250, 0], // emote → -33.0
+	emotePale: ["BgVj0r", -9.9, -0.6, -23.1, 0.07, 0, 2470, 0], // emote → -33.0
+	emoteCold: ["aCOtzT", -12.9, -3.6, -20.1, 0.099, 330, 710, 0], // emote → -33.0
+	emoteBurst: ["j8uwLx", -10.5, -0.6, -22.5, 0.075, 0, 420, 0], // emote → -33.0
 	door: ["8gPREU", -17.7, -13.3, -5.3, 0.543, 0, 640, 450], // field → -23.0
 	doorWood: ["wUHfmk", -17.7, -1.4, -5.3, 0.543, 330, 860, 810], // field → -23.0
 	doorSteel: ["HMyV1k", -18.1, -0.1, -5.4, 0.537, 350, 890, 490], // field → -23.5（ピーク上限）
@@ -174,6 +178,8 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	miss: ["AeNs0l", -11.3, -6, -9.7, 0.327, 60, 270, 230], // battle → -21.0
 	spell: ["wGCfnC", -17.4, -15.7, -3.6, 0.661, 50, 760, 660], // battle → -21.0
 	enemyDown: ["DApPoE", -10.9, -3, -10.1, 0.313, 0, 1480, 640], // battle → -21.0
+	hitSlap: ["Qy7A0i", -13.4, -1.2, -7.6, 0.417, 0, 490, 250], // battle → -21.0
+	hitSting: ["LR6pVk", -12.7, -2.5, -8.3, 0.385, 320, 2440, 1200], // battle → -21.0
 	flee: ["FTCG4H", -14.9, -9.9, -6.1, 0.495, 30, 490, 370], // battle → -21.0
 	steal: ["cAauAI", -10, -5.4, -11, 0.282, 0, 940, 530], // battle → -21.0
 	fire: ["HyTVhK", -10.9, -2.3, -10.1, 0.313, 50, 1820, 1000], // battle → -21.0

@@ -590,6 +590,10 @@ const EMOTE_GESTURE: Partial<Record<Emote, Gesture>> = {
 	花: "hop",
 	汗: "shiver",
 	怒: "shiver",
+	得: "hop",
+	青: "slump",
+	冷: "shiver",
+	驚: "startle",
 };
 
 /** 頁の 感情（記号に あう 動きを 足す）。 */

@@ -5,7 +5,7 @@
 // （測るまでは、既定の音量で 0.3 倍のまま鳴り、区切り待ちもしない）。
 // 毎ターン鳴る音（足音など）は置かない（ダッシュの邪魔。鳴らすなら ui 区分＝待ちなしにする）。
 
-import type { Emote } from "../../engine/emote";
+import type { Emote, Hit } from "../../engine/emote";
 import type { SeKind } from "./loudness";
 
 const byKind: Record<SeKind, Record<string, string>> = {
@@ -35,6 +35,14 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		emoteAnger: "rpgen:vsXmNp", // buzz
 		/** 花 しあわせ（きらきら 降りる 鈴）。 */
 		emoteFlower: "rpgen:VDnXCJ", // chimes
+		/** 得 得意気（きらん。上がる 音）。 */
+		emoteSmug: "rpgen:sTJ89N", // 上昇
+		/** 青 青ざめ（ずーん）。 */
+		emotePale: "rpgen:BgVj0r", // ショック音
+		/** 冷 冷や汗（しずくの ぽちゃん。汗と 同じ）。 */
+		emoteCold: "rpgen:aCOtzT", // 水音
+		/** 驚 ツッコミの 驚き（反応音。ふつうは hit の 音と いっしょに 鳴る）。 */
+		emoteBurst: "rpgen:j8uwLx", // 反応音
 	},
 	/** 移動・拾う・回復。 */
 	field: {
@@ -128,6 +136,11 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		spell: "rpgen:wGCfnC", // ﾄﾞﾗｸｴ呪文
 		/** 敵をたおした。 */
 		enemyDown: "rpgen:DApPoE", // 撃破音
+		// ── ツッコミの 音（engine/emote.ts の Hit。行に hit を 書くと 窓の 前に 鳴る。BGM の 上に 聞こえる 大きさ）
+		/** ぺしっ（軽く はたく。例え・皮肉・寄り添い）。 */
+		hitSlap: "rpgen:Qy7A0i", // 拍子木
+		/** デデドン（青ざめる 受け手・ガーン）。 */
+		hitSting: "rpgen:LR6pVk", // デデドン！
 		/** 逃げる・吹き飛ばす。 */
 		flee: "rpgen:FTCG4H", // 逃走
 		/** 道具を 盗まれた（盗んだ 敵が 逃げていく）。 */
@@ -249,6 +262,22 @@ export const EMOTE_SE: Partial<Record<Emote, string>> = {
 	汗: "emoteSweat",
 	怒: "emoteAnger",
 	花: "emoteFlower",
+	得: "emoteSmug",
+	青: "emotePale",
+	冷: "emoteCold",
+	驚: "emoteBurst",
+};
+
+/**
+ * ツッコミの 音（engine/emote.ts の Hit → 効果音の 名前）。whack・punch・zukko は 戦いの 音の 使いまわし
+ * （ハンマー・げんこつ・落ちる）。
+ */
+export const HIT_SE: Record<Hit, string> = {
+	slap: "hitSlap",
+	whack: "hit_club",
+	punch: "hit_fist",
+	sting: "hitSting",
+	zukko: "fall",
 };
 
 export const sfx: Record<string, string> = Object.fromEntries(
