@@ -2,7 +2,8 @@
 // 語りが「やきうの 頭の 上に、小さく『残機：1』と 出ていた」と 言うので、本当に 頭の 上に 小さく 出す。
 // - きのこ板を 持ち帰ってから 1。最終話の あとは、遺影祭り（お祭り会場）を 持ち帰って いれば 99。
 // - 持ち帰りの 語りで 数が 出る・かわる 頁（StoryPage.zanki）までは、前の 数の まま（先に 見えて しまわない）。
-// 字は お金の 出入り（ui/village/moneyPop.ts）と 同じ 8px の DotGothic16 に 影。
+// 字は 8px の DotGothic16（これより 小さいと 漢字が つぶれる）。白に 近い 字に 黒い 縁、
+// コロンは 半角に して 幅を つめる。
 
 import type { DungeonId } from "../../core/types";
 import type { Actor } from "../../engine/field";
@@ -30,7 +31,18 @@ export const setZankiScene = (n: number | null | undefined): void => {
 	scene = n;
 };
 
-const COLOR = "#9ff07a";
+const AROUND = [
+	[-1, -1],
+	[0, -1],
+	[1, -1],
+	[-1, 0],
+	[1, 0],
+	[-1, 1],
+	[0, 1],
+	[1, 1],
+] as const;
+const INK = "#f4f4ec";
+const EDGE = "#141414";
 
 /** やきうの 頭の 上に 描く（a は やきう。いなければ 何も しない）。 */
 export const drawZanki = (
@@ -43,14 +55,15 @@ export const drawZanki = (
 	if (n === null || !a || !a.visible || !a.sprite) return;
 	const x = Math.round(a.fx * TILE - ox + TILE / 2);
 	const y = Math.round(a.fy * TILE - oy - 3);
-	const text = `残機：${n}`;
+	const text = `残機:${n}`;
 	g.save();
 	g.font = "8px 'DotGothic16', monospace";
 	g.textAlign = "center";
 	g.textBaseline = "bottom";
-	g.fillStyle = "rgba(0,0,0,0.75)";
-	g.fillText(text, x + 1, y + 1);
-	g.fillStyle = COLOR;
+	// 縁は 8方向に 1px ずらして 塗る（strokeText だと 小さい 漢字の 中が つぶれる）
+	g.fillStyle = EDGE;
+	for (const [dx, dy] of AROUND) g.fillText(text, x + dx, y + dy);
+	g.fillStyle = INK;
 	g.fillText(text, x, y);
 	g.restore();
 };
