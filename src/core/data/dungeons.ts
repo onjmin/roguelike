@@ -727,7 +727,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 湯治：150 → 100（1.5倍）
 		regenStep: 100,
 		// 源泉の 通る 硫黄の 坑道：あちこちに 湯が わいて いる
-		pools: [2, 4],
+		pools: [1, 3],
 	},
 	deep: {
 		id: "deep",

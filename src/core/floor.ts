@@ -330,41 +330,58 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 };
 
 /**
- * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）。道具・罠・敵・階段の ない 部屋の 床に、小さな 池
- * （1x1〜3x2。ふさがる マスが あれば 1マスに）を かず だけ。
+ * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）。ひと目で 温泉と わかる 広さの 池（3x2〜5x3。大きい 池は
+ * 角を ときどき 欠く）を、部屋の 中ほど（まわり 1マスも 同じ 部屋の 床）の、道具・罠・敵・階段の ない 床に かず だけ。
+ * 入らなければ 場所と 形を 引きなおし、それでも だめなら 置かない。
  * 乱数は 冒険の 種と 階から 別に 作る（階の 作りの 乱数の 順を 変えない。記録の 再生が ずれないように）。
  */
 const POOL_SHAPES: readonly [number, number][] = [
-	[1, 1],
-	[2, 1],
-	[1, 2],
-	[2, 2],
-	[2, 2],
 	[3, 2],
+	[2, 3],
+	[3, 3],
+	[4, 2],
+	[4, 3],
+	[5, 3],
 ];
 const placePools = (r: Run, f: Floor): void => {
 	const span = r.dungeon.pools;
 	if (!span) return;
 	const rng = Rng.fromSeed(`${r.s.seed}:pools:${f.depth}`);
-	const w = f.layout.w;
+	const l = f.layout;
+	const w = l.w;
 	const free = new Set(freeRoomTiles(r, f, null).map((t) => t.y * w + t.x));
 	const n = rng.range(span[0], span[1]);
 	const pools: number[] = [];
-	for (let k = 0; k < n && free.size; k++) {
-		const list = [...free];
-		const at = list[rng.int(list.length)];
-		const [pw, ph] = rng.pick(POOL_SHAPES);
-		const cells: number[] = [];
-		for (let dy = 0; dy < ph; dy++)
-			for (let dx = 0; dx < pw; dx++) cells.push(at + dy * w + dx);
-		// 部屋の はしを こえる・ふさがる マスが あれば 1マス
-		const fits =
-			(at % w) + pw <= w && cells.every((i) => free.has(i));
-		for (const i of fits ? cells : [at]) {
-			pools.push(i);
-			free.delete(i);
+	for (let k = 0; k < n; k++)
+		for (let tries = 0; tries < 30 && free.size; tries++) {
+			const list = [...free];
+			const at = list[rng.int(list.length)];
+			const [pw, ph] = rng.pick(POOL_SHAPES);
+			const x0 = at % w;
+			const y0 = Math.floor(at / w);
+			const room = roomAt(l, x0, y0);
+			// 池と まわり 1マスが 同じ 部屋の 床（通路の 口や 壁ぎわを ふさがない）
+			let inside = room >= 0;
+			for (let y = y0 - 1; inside && y <= y0 + ph; y++)
+				for (let x = x0 - 1; inside && x <= x0 + pw; x++)
+					inside = roomAt(l, x, y) === room;
+			if (!inside) continue;
+			const cells: number[] = [];
+			const big = pw >= 3 && ph >= 3;
+			for (let dy = 0; dy < ph; dy++)
+				for (let dx = 0; dx < pw; dx++) {
+					const corner =
+						(dx === 0 || dx === pw - 1) && (dy === 0 || dy === ph - 1);
+					if (big && corner && rng.chance(0.5)) continue;
+					cells.push(at + dy * w + dx);
+				}
+			if (!cells.every((i) => free.has(i))) continue;
+			for (const i of cells) {
+				pools.push(i);
+				free.delete(i);
+			}
+			break;
 		}
-	}
 	f.pools = pools;
 };
 
