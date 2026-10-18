@@ -326,7 +326,7 @@ export const TEN_NEWS = {
 		{
 			...n("キリコはハンドルを全力で回した。\n豆電球が1個ついて、はじけた。"),
 			se: "glassBreak",
-			fx: "boom",
+			fx: "blackout",
 		},
 		// 停電は 電気の 方へ ふくらむ（明かり → 家電が 逆回り → 時計が 昨日へ。最終話で 鯖ごと 暗転して 回収）
 		s("zero", "冷蔵庫が牛乳を温めてます！\n時計は、昨日にもどってます！", {
@@ -783,8 +783,7 @@ export const STORY: Record<
 			k("吾輩の服、パンくずで\n大金持ちンゴ！", { gesture: "hop" }),
 			{
 				...n("翌朝。独立は県境をこえて、\n日本は47の国にわかれていた。"),
-				fx: "boom",
-				se: "explosion",
+				se: "cardFlip",
 				card: independenceCard(1),
 			},
 			s("nanj", "ワイ、大阪国に亡命や！\nビザ代はパンくずで払うで！", {
@@ -798,7 +797,7 @@ export const STORY: Record<
 			{
 				...n("キリコが申請書を蓄音機にかけると、\n紙は粉々にくだけた。"),
 				se: "glassBreak",
-				fx: "boom",
+				fx: "chiin",
 			},
 			k("吾輩、日本を割ったンゴ！！", { emote: "!" }),
 			s("roze", "日本に1枚しかない紙アル！！", {
@@ -1098,8 +1097,7 @@ export const STORY: Record<
 			k("島ごと来たらええンゴ！\n港、空いてるンゴ！", { gesture: "hop" }),
 			{
 				...n("その夜、沖でゴゴゴと地鳴り。\n島が、泳ぎはじめた。"),
-				se: "explosion",
-				fx: "boom",
+				se: "bubble",
 			},
 			s("feris", "島がクロールしてる〜！\n速い〜！", { gesture: "hop" }),
 			{
@@ -1178,8 +1176,6 @@ export const STORY: Record<
 			s("nanj", "😡のせいやんけ！", { emote: "怒" }),
 			{
 				...n("翌日。各国の首脳が、\nたこ焼き器をかかえて上陸してきた。"),
-				se: "explosion",
-				fx: "boom",
 			},
 			s("roze", "戦争じゃなくて、\nたこパしに来たアル！？", { emote: "!" }),
 			k("吾輩が、焼き方の\nお手本を見せるンゴ！", { gesture: "hop" }),
@@ -1253,7 +1249,9 @@ export const STORY: Record<
 			}),
 			{
 				...n("1時間後。地面の下から、\nサンバの太鼓が返ってきた。"),
-				fx: "boom",
+				se: "hit_club",
+				seRepeat: 4,
+				seGap: 160,
 			},
 			s("zero", "発信元、ブラジルです！\n地球の裏から、返事です！", {
 				emote: "!",
@@ -1264,7 +1262,7 @@ export const STORY: Record<
 				se: "hit_club",
 				seRepeat: 6,
 				seGap: 90,
-				fx: "boom",
+				fx: "confetti",
 			},
 			s("shiyo", "町じゅうの窓ガラスが、\nサンバの拍子で鳴ってるわよ！", {
 				emote: "怒",
