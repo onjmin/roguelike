@@ -156,6 +156,8 @@ const LOG_GAP_MS = { normal: 350, fast: 180, replay: 40 } as const;
 const HURRY = 0.3;
 /** 先行入力が あるときの ログの 間（読めないほど 速くは しない）。 */
 const HURRY_LOG_GAP_MS = 120;
+/** 取っておいた 行（logHeld）を、立ち止まって いる ときに 1行ずつ 送る 間（ms）。 */
+const LOG_HELD_IDLE_MS = 1600;
 /** 祭り（モンスターハウス）に 入ったとき 止めて 見せる 間（ms）。 */
 const HOUSE_PAUSE_MS = 900;
 /**
@@ -200,7 +202,7 @@ type Disp = Figure & {
  */
 type LogEntry = {
 	text?: string;
-	tone?: "warn" | "good";
+	tone?: "warn" | "good" | "gloss";
 	fast: boolean;
 	with?: (() => void)[];
 };
@@ -395,6 +397,12 @@ export class Play {
 	 * （待つと 行が 出るたびに 次の 1歩が つっかかった）。
 	 */
 	private logQueue: LogEntry[] = [];
+	/**
+	 * 1つの act で 窓に 入りきらない ほど 出た 行の 残り（ボスの 前口上など）。キリコが 1手 進むたびに 1行ずつ、
+	 * 立ち止まって いても LOG_HELD_IDLE_MS ごとに 1行ずつ 窓へ 送る（一度に 流れて 読めないように）。
+	 */
+	private logHeld: LogEntry[] = [];
+	private logHeldTimer = 0;
 	/** ログが ぜんぶ 出るのを 待っている もの（logDrained）。 */
 	private drainWaiters: (() => void)[] = [];
 	private logTimer = 0;
@@ -601,6 +609,7 @@ export class Play {
 		this.stopped = true;
 		clearTimeout(this.houseBgmTimer);
 		this.logQueue = [];
+		this.dropHeld();
 		clearTimeout(this.logTimer);
 		this.resetShown();
 		this.ctx.input.fieldHoldEnabled = true;
@@ -1169,7 +1178,7 @@ export class Play {
 			if (q.text !== undefined) {
 				const lines = this.logQueue.filter((x) => x.text !== undefined).length;
 				const base =
-					q.fast || lines > 3
+					q.fast || lines > this.logKeep()
 						? LOG_GAP_MS.replay
 						: settings.speed === "fast"
 							? LOG_GAP_MS.fast
@@ -1185,7 +1194,7 @@ export class Play {
 			if (q.text !== undefined) {
 				this.addLog(q.text, q.tone);
 				// はじめて 出た 2ch の ことばには 1度だけ 説明の 1行（リプレイでは 出さない・覚えない）
-				const gloss = this.rp ? null : glossFor(q.text);
+				const gloss = this.rp || q.tone === "gloss" ? null : glossFor(q.text);
 				if (gloss) this.addLog(gloss, "gloss");
 				this.lastLogAt = performance.now();
 			}
@@ -1194,6 +1203,63 @@ export class Play {
 		const ws = this.drainWaiters;
 		this.drainWaiters = [];
 		for (const w of ws) w();
+	}
+
+	/** ログの 窓に 残す 行数：縦に 余裕のある画面（スマホの縦持ち など）は 4行、ほかは 3行。 */
+	private logKeep(): number {
+		return window.innerHeight >= 640 ? 4 : 3;
+	}
+
+	/**
+	 * 行を 出す 列に 入れる。まだ 出ていない 行で 窓が うまって いれば（または holding）取っておく（logHeld）。
+	 * 取っておいたら true（同じ ひとまとまりの 残りの 行も 後ろへ 回して 順番を 守るため、次に holding で 渡す）。
+	 * 前から 取っておいた 行が あっても、窓が あいていれば 新しい 行は すぐ 出す（戦いの 行を 待たせない）。
+	 */
+	private pushLog(entry: LogEntry, holding: boolean): boolean {
+		const queued = this.logQueue.filter((x) => x.text !== undefined).length;
+		if (!this.rp && (holding || queued >= this.logKeep())) {
+			const first = !this.logHeld.length;
+			this.logHeld.push(entry);
+			if (first)
+				this.logHeldTimer = window.setTimeout(
+					() => this.releaseHeld(),
+					LOG_HELD_IDLE_MS,
+				);
+			return true;
+		}
+		this.logQueue.push(entry);
+		this.pumpLog();
+		return false;
+	}
+
+	/** 取っておいた 行（logHeld）を 1行 窓へ 送る。残りが あれば 立ち止まって いても 間を あけて 続ける。 */
+	private releaseHeld(): void {
+		clearTimeout(this.logHeldTimer);
+		if (!this.logHeld.length) return;
+		// まだ 出ていない 行で 窓が うまって いれば 今は 送らない（送ると 間が つまって 一度に 流れる）
+		const queued = this.logQueue.filter((x) => x.text !== undefined).length;
+		if (queued < this.logKeep()) {
+			this.logQueue.push(this.logHeld.shift() as LogEntry);
+			this.pumpLog();
+		}
+		if (this.logHeld.length)
+			this.logHeldTimer = window.setTimeout(
+				() => this.releaseHeld(),
+				LOG_HELD_IDLE_MS,
+			);
+	}
+
+	/** 取っておいた 行を ぜんぶ ふつうの 間で 出しきるまで 待つ（冒険の 終わりの 前）。 */
+	private async drainHeld(): Promise<void> {
+		while (this.logHeld.length && !this.stopped) {
+			this.releaseHeld();
+			await this.logDrained();
+		}
+	}
+
+	private dropHeld(): void {
+		this.logHeld = [];
+		clearTimeout(this.logHeldTimer);
 	}
 
 	/** まだ 出していない ログが ぜんぶ 出たら fn（無ければ すぐ）。待たない。 */
@@ -1238,8 +1304,7 @@ export class Play {
 			text,
 		});
 		this.logEl.appendChild(line);
-		// 残す行数：縦に 余裕のある画面（スマホの縦持ち など）は 4行、ほかは 3行
-		const keep = window.innerHeight >= 640 ? 4 : 3;
+		const keep = this.logKeep();
 		const lines = [...this.logEl.children];
 		for (const l of lines.slice(0, Math.max(0, lines.length - keep)))
 			l.remove();
@@ -2345,6 +2410,8 @@ export class Play {
 				if (using) await this.useAnim(using.kind);
 				if (!this.preUseUntil) this.preUse = null;
 			}
+			// 1手 進んだら、取っておいた 行を 1行 送る（この act の 行より 先に）
+			if (run.s.turn !== turn0) this.releaseHeld();
 			await this.playEvents(ev, fast);
 			if (this.stopped) return ev;
 			// 倒したら、演出中に 押しておいた 次の 攻撃は 捨てる（相手の いない 空振りに ならないように）
@@ -2626,6 +2693,7 @@ export class Play {
 			// とばした あいだに 見つけた ボス（出来事は 流さないので、曲と ゲージは 今の 状態から）
 			this.bossShown = !!(run.boss && run.f.bossSeen);
 			this.logQueue = [];
+			this.dropHeld();
 			clearTimeout(this.logTimer);
 			this.resetShown();
 			this.logEl.innerHTML = "";
@@ -2987,6 +3055,8 @@ export class Play {
 		const stepMs = (fast ? 45 : 95) * (settings.speed === "fast" ? 0.7 : 1);
 		let i = 0;
 		let combat = false;
+		// この act の 行を 窓に 入りきらずに 取っておきはじめた（logHeld）
+		let holding = false;
 		// 行に つける 知らせ（音・回復・レベル・目的の品）。次の 行が 出るときに いっしょに 出す
 		let onLine: (() => void)[] = [];
 		// ボスが たおれた（この act の 中）。勝ちの 音（bossDown）が 鳴るので、たおした 音と レベルアップの 音は 鳴らさない
@@ -3174,15 +3244,18 @@ export class Play {
 							);
 						});
 					}
-					// 前の行から 間を空けて 1行ずつ 出す（読めるように。待つのは ログだけで、次の 1歩は 待たない）
-					this.logQueue.push({
-						text: e.text,
-						tone: e.tone,
-						fast,
-						with: onLine.length ? onLine : undefined,
-					});
-					onLine = [];
-					this.pumpLog();
+					// 前の行から 間を空けて 1行ずつ 出す（読めるように。待つのは ログだけで、次の 1歩は 待たない）。
+					// 窓に 入りきらない ぶん（ボスの 前口上など）は 取っておいて、1手ごとに 1行ずつ（logHeld）
+					{
+						const entry: LogEntry = {
+							text: e.text,
+							tone: e.tone,
+							fast,
+							with: onLine.length ? onLine : undefined,
+						};
+						onLine = [];
+						holding = this.pushLog(entry, holding);
+					}
 					break;
 				case "se":
 					this.showNotice(e);
@@ -3804,15 +3877,20 @@ export class Play {
 		if (this.rp || s.returning) return;
 		const cleared = loadProgress().cleared;
 		const why = goalWhy(s.dungeon, cleared);
+		// 一度に 4行 出ると 窓（3〜4行）から はじめの 行が すぐ 押し出されるので、ほかの 行と 同じ 列で 1行ずつ
+		let holding = false;
+		const put = (text: string, tone?: "gloss") => {
+			holding = this.pushLog({ text, tone, fast: false }, holding);
+		};
 		if (first && why) {
-			this.addLog(`目的：${goalText(s.dungeon, this.run.objective)}`);
-			this.addLog(why, "gloss");
+			put(`目的：${goalText(s.dungeon, this.run.objective)}`);
+			put(why, "gloss");
 		}
 		// ロゼ・ゼロで 潜りはじめ：村の スレが キリコと くらべる（加入した あとも ライバル）
 		if (first && s.depth <= 1 && s.hero)
-			this.addLog(heroRivalResLine(s.hero, s.seed.length), "gloss");
+			put(heroRivalResLine(s.hero, s.seed.length), "gloss");
 		const r = diveResAt(s.dungeon, s.depth, cleared);
-		if (r) this.addLog(diveResLine(r, this.run.heroName), "gloss");
+		if (r) put(diveResLine(r, this.run.heroName), "gloss");
 		// 決まった 行の ない 階は、村の スレの 実況（いまの ようすに つっこむ。data/story/liveRes.ts）
 		const total = Object.values(s.kills).reduce((a, n) => a + n, 0);
 		const kills = first ? 3 : total - this.killMark;
@@ -3849,7 +3927,7 @@ export class Play {
 			},
 			salt,
 		);
-		if (live) this.addLog(live, "gloss");
+		if (live) put(live, "gloss");
 	}
 
 	// ───────────────── 名所の 階・集落の 寸劇 ─────────────────
@@ -4062,6 +4140,9 @@ export class Play {
 	private async ending(): Promise<void> {
 		const s = this.run.s;
 		this.busy = true;
+		// 取っておいた 行（logHeld）は もう 1手 進まないので、ここで ふつうの 間で 出しきる
+		await this.drainHeld();
+		if (this.stopped) return;
 		if (s.end?.kind === "dead") await this.deathScene();
 		else if (s.end?.kind === "clear" && this.run.bossSpec) {
 			// ボスを たおして 帰る：帰り方の 行と 演出（その 行で 始まる）が 終わるのを 待って、その 色で 暗転
