@@ -21,6 +21,8 @@ export type ZeroBody = {
 	model: string;
 	/** 通称（ログの 名前）。 */
 	name: string;
+	/** 窓の 立ち絵と 名前の 色（data/people/cast.ts の id）。 */
+	voice: string;
 	hp: number;
 	str: number;
 };
@@ -30,9 +32,27 @@ export type ZeroBody = {
  * （HP 10・9・11、ちから 6・6・5。キリコは 15・8）。
  */
 export const ZERO_BODIES: readonly ZeroBody[] = [
-	{ model: "VHz8-0", name: "ゼロ", hp: START_HP - 5, str: START_STR - 2 },
-	{ model: "HeBc-0", name: "プロト", hp: START_HP - 6, str: START_STR - 2 },
-	{ model: "XQxS-0", name: "レン", hp: START_HP - 4, str: START_STR - 3 },
+	{
+		model: "VHz8-0",
+		name: "ゼロ",
+		voice: "zero",
+		hp: START_HP - 5,
+		str: START_STR - 2,
+	},
+	{
+		model: "HeBc-0",
+		name: "プロト",
+		voice: "proto",
+		hp: START_HP - 6,
+		str: START_STR - 2,
+	},
+	{
+		model: "XQxS-0",
+		name: "レン",
+		voice: "ren",
+		hp: START_HP - 4,
+		str: START_STR - 3,
+	},
 ];
 
 export const HERO_NAME: Record<HeroId, string> = {

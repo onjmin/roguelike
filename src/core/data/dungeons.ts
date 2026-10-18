@@ -35,6 +35,7 @@ import type {
 	Objective,
 	RescueKind,
 } from "../types";
+import type { HeroId } from "./heroes";
 import { ITEMS, MAIN_ITEMS } from "./items";
 import {
 	BATH_HALL,
@@ -69,7 +70,7 @@ export type BossSpec = {
 	/**
 	 * ボスを 見た ときの 掛け合い（村と 同じ 窓。大部屋の ボスは arena.talk）。本気の 一場面：階の 曲を 止めて、
 	 * 笑いを 入れずに 相手の 理由と 脅しを 言わせ、戦いへ（STORY.md §0「シリアスは 本気の 相手の 一言」）。
-	 * キリコの 返事は 主人公が キリコの ときだけ。1行 全角 22字・2行まで。
+	 * 主人公の 返事は ロゼ・ゼロの ぶんも 書く（無いと その 返事の 前で 窓が 切れる）。1行 全角 22字・2行まで。
 	 */
 	talk?: FolkTalk;
 	/** 掛け合いの 窓の 立ち絵と 名前の 色（data/people/cast.ts の 仲間の id。やきうなど）。 */
@@ -84,6 +85,17 @@ export type BossSpec = {
 	bgm?: string;
 	/** ボスが 住む・立てこもる 大部屋（無ければ ふつうの 階で 待つ）。 */
 	arena?: BossArena;
+	/** その 主人公で 潜った ときに かえる 行（先回りした 人が 主人公の 本人の とき など）。 */
+	asHero?: Partial<
+		Record<
+			HeroId,
+			{
+				intro?: readonly string[];
+				lines?: readonly string[];
+				supplyLine?: string;
+			}
+		>
+	>;
 };
 
 /**
@@ -142,10 +154,24 @@ export type SettlementSpec = {
 };
 
 /**
- * 1回 話す ぶん（村と 同じ 窓で 1〜3枚。1行 全角22字・2行まで）。文字列は その 人、{ kiriko } は キリコの 返事
- * （201 の 型：大ボケの 直後に 自分で つっこむ。主人公が キリコで ない ときは 出さない）。
+ * 主人公の 返事（201 の 型：大ボケの 直後に 自分で つっこむ）。kiriko は キリコ（ンゴ）、roze は 束音ロゼ（アル）、
+ * zero は 解音ゼロ（1つなら どの 機体も 同じ。3つなら メイン・プロト・レンの 順に いまの 機体の ぶん）。
+ * いまの 主人公の 返事が なければ、その 窓は 返事の 前で 打ち切る（返事を 受けた 落ちが 宙に 浮かない ように：core/run.ts の emitTalk）。
  */
-export type FolkTalk = readonly (string | { kiriko: string })[];
+export type HeroReply = {
+	kiriko: string;
+	roze?: string;
+	zero?: string | readonly [string, string, string];
+};
+
+/**
+ * 1回 話す ぶん（村と 同じ 窓で 1〜3枚。1行 全角22字・2行まで）。文字列は その 人、HeroReply は 主人公の 返事。
+ * 文字列の {hero} は いまの 主人公の 名前（ゼロは いまの 機体）。「キリコ」と 書いた 所は 主人公が だれでも キリコの こと。
+ */
+export type FolkTalk = readonly (string | HeroReply)[];
+
+/** 主人公の 返事を 出す 形（ダンジョンの talk の 出来事。voice は 窓の 立ち絵：無ければ キリコ）。 */
+export type HeroLine = { reply: string; voice?: string };
 
 /** 集落・名所に 立って いる 人（ぶつかると 話す）。 */
 export type FolkSpec = {
@@ -156,6 +182,8 @@ export type FolkSpec = {
 	/** 話す ことの 順（ぶつかる たびに 1つ すすみ、終わると はじめに もどる）。 */
 	talks: readonly FolkTalk[];
 	key?: true;
+	/** 主人公の 本人（その 主人公で 潜った ときは 立たない。同じ 人が 2人 いる ことに なる）。 */
+	self?: HeroId;
 };
 
 /**
@@ -584,9 +612,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					name: "ロゼ",
 					sprite: "sa:mHhx69",
 					voice: "roze",
+					self: "roze",
 					talks: [
 						[
-							"わたしが先に着いたアル。\nキリコは2番アル",
+							"わたしが先に着いたアル。\n{hero}は2番アル",
 							{ kiriko: "競争してたンゴ？" },
 							"いつも競争アル。常識アル",
 						],
@@ -627,6 +656,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					name: "ゼロ",
 					sprite: "pub:sprites/zero_main.png",
 					voice: "zero",
+					self: "zero",
 					talks: [
 						[
 							"パン兵、31人です！\n3機で、93回数えました！",
@@ -646,6 +676,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					name: "プロト",
 					sprite: "sa:KxS5YZ",
 					voice: "proto",
+					self: "zero",
 					talks: [
 						[
 							"パン兵の歩幅、平均41cmゼロ。\n食パンの耳と同じ長さゼロ",
@@ -663,6 +694,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 					name: "レン",
 					sprite: "pub:sprites/zero_ren.png",
 					voice: "ren",
+					self: "zero",
 					talks: [
 						[
 							"ここの国歌、2番からパンなの！\nレン、もう覚えた〜♪",
@@ -684,7 +716,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			cheer: "えっさ",
 			lines: [
 				"どこからかパン松の号令がひびいた！",
-				"パン兵たちがキリコをかつぎあげた",
+				"パン兵たちが{hero}をかつぎあげた",
 				"「おんJ民は帰れ！」入口まで運び出された",
 			],
 			cause: "パン兵長をたおした",
@@ -694,7 +726,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"おんJ民か。……旗は、おろさん",
 				"12年前、みんなで旗を立てた。\nみんな飽きて帰った。ワイらは残った",
 				"残ったもんの板や。\n独立は、遊びやない",
-				{ kiriko: "……広場は、返してほしいンゴ" },
+				{
+					kiriko: "……広場は、返してほしいンゴ",
+					roze: "広場は、みんなの物アル。\n……返すのが常識アル",
+					zero: [
+						"広場の人数、ずっと0人です。\n……返してください",
+						"広場の利用者、0人ゼロ。\n……返却を求めるゼロ",
+						"広場で歌えないの、\nさびしいよ〜。……返して",
+					],
+				},
 				"ほな、取り返してみい",
 			],
 		},
@@ -773,7 +813,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				map: BATH_HALL,
 				talk: [
 					"あら、41℃派の方？\nここは42℃の湯でしてよ",
-					{ kiriko: "吾輩、ぬるいのも\n熱いのも入るンゴ" },
+					{
+						kiriko: "吾輩、ぬるいのも\n熱いのも入るンゴ",
+						roze: "ぬるいのも熱いのも、\n入るのが常識アル",
+						zero: [
+							"41℃も42℃も、\nどっちも記録します",
+							"41℃も42℃も、\n等しく計測するゼロ",
+							"どっちのお湯でも、\nいい声が響くよ〜♪",
+						],
+					},
 					// 3枚目は 脅し（本気の 相手。笑いで 落とさない）
 					"どっちつかずが、いちばん\n許せませんの。源泉ごと、沈めます",
 				],
@@ -824,12 +872,20 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			// 笑いは 負けた あとの lines（「【悲報】ワイ、負ける。盛れんわ」）で もどる
 			talk: [
 				"……来たか。\n見出しは、ぜんぶワイや",
-				{ kiriko: "……なんでンゴ" },
+				{
+					kiriko: "……なんでンゴ",
+					roze: "……なんでアル",
+					zero: ["……なぜですか", "……理由を求めるゼロ", "……なんで〜？"],
+				},
 				"盛らんと、だれも見に来んかった。\n14年、ずっとや",
 				"「キリコ死んでて草」も、ワイや。\nあれは本音や",
 				"昔は、遊びで侵略しとっただけや。\nいまは、見出しで侵略しとる",
 				"まだ足らん。もっと大きい騒ぎが要る。\n……どけ",
-				{ kiriko: "どかないンゴ" },
+				{
+					kiriko: "どかないンゴ",
+					roze: "どかないアル",
+					zero: ["どきません", "どかないゼロ", "どかないよ〜"],
+				},
 			],
 			voice: "nanj",
 			// 山場の 専用の ボス曲（盛られた見出し。BGM.md：悲壮・決戦）。掛け合いは 無音、始まりの 音から この 曲
@@ -863,7 +919,15 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 							// 本気の 1枚（止めたら 町が 消える）→ キリコ → 落ち（201 の 型：本気の あとに 落とす）
 							[
 								"人が来んでも、電気だけは送っとった。\n止めたら、町が消えるからや",
-								{ kiriko: "えらいンゴ！" },
+								{
+									kiriko: "えらいンゴ！",
+									roze: "えらいアル！常識アル",
+									zero: [
+										"えらいです！記録します！",
+										"えらいゼロ。記録するゼロ",
+										"えらいね〜！",
+									],
+								},
 								"電気代は、\nだれも払っとらん！",
 							],
 							["てっぺんで、名無しが待っとるで"],
@@ -939,18 +1003,38 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			talk: [
 				"[ｷ・Д・ﾉ]　11年、待っとった",
 				"パン板は、ワイらを忘れた。\n町は、ワイらを通り道にした",
-				{ kiriko: "……町を空き地にしたのは、\n吾輩ンゴ" },
+				{
+					kiriko: "……町を空き地にしたのは、\n吾輩ンゴ",
+					roze: "空き地にしたのは、キリコアル。\n……わたしも見てたアル",
+					zero: [
+						"空き地になった町、\nゼロも見てました",
+						"空き地になった町、\n記録済みゼロ",
+						"空き地になった町、\nレンも見てたよ〜",
+					],
+				},
 				"ほな、お前も通り道や",
 			],
 			// ゼロの サブ機が 先回りして 行進を 数えて いた（ライバルの 先回り。STORY.md §4.9）。本気の 掛け合いの 直後に 落とす
 			intro: [
 				"プロト「数えました。行進は128本です」",
-				"プロト「先に着いたのはゼロ。キリコさんは2番です」",
+				"プロト「先に着いたのはゼロ。{hero}さんは2番です」",
 			],
 			// はじめての ボス：着いた 部屋に 薬草（2026-10-17 ボット：底に 着いても 親玉に 勝てるのは 68%）
 			supply: {
 				items: ["h_heal"],
 				line: "足もとにプロトのメモ『先に数えました。薬草は数えたあまりです』",
+			},
+			// ゼロで 潜ると 先回りする 人は いない（数えるのは 主人公の 本人）
+			asHero: {
+				zero: {
+					intro: ["{hero}は行進を数えた。128本"],
+					lines: [
+						"数えなおすと、127本になっていた",
+						"きのこが伸びだした！「たけのこより速いやろ」",
+						"きのこに押し上げられて、地上まで運ばれた",
+					],
+					supplyLine: "足もとに薬草が落ちていた",
+				},
 			},
 		},
 		// 胞子で 眠くなり（寝落ち民）、毒きのこ（にょっす牛）が 多い。

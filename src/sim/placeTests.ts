@@ -2,7 +2,7 @@
 // （pnpm test で いっしょに 動く）。字が 表に あること・床が 1つに つながる こと（ワープで 閉じこめられない）・
 // 人と 話せて 階段・品・源泉に 歩いて 行ける こと・敵や 罠が 無い こと を 見る。
 
-import { DUNGEON_IDS, dungeonById } from "../core/data/dungeons";
+import { DUNGEON_IDS, dungeonById, type FolkTalk } from "../core/data/dungeons";
 import type { PlaceMap } from "../core/data/places";
 import { blocks, buildFloor } from "../core/floor";
 import { DIRS8, type Pos, step } from "../core/geom";
@@ -21,6 +21,20 @@ import {
 import type { TestResult } from "./monsterTests";
 
 class Fail extends Error {}
+
+/** 窓の 1枚の 文（返事は キリコ・ロゼ・ゼロの 3機 ぶん 全部）。 */
+const textsOf = (x: FolkTalk[number]): string[] =>
+	typeof x === "string"
+		? [x]
+		: [
+				x.kiriko,
+				...(x.roze === undefined ? [] : [x.roze]),
+				...(x.zero === undefined
+					? []
+					: typeof x.zero === "string"
+						? [x.zero]
+						: x.zero),
+			];
 const ok = (cond: unknown, why: string): void => {
 	if (!cond) throw new Fail(why);
 };
@@ -92,8 +106,7 @@ test("folk talks fit the window: 1 to 3 windows, 2 lines of 22 at most, retorts 
 					t.filter((x) => typeof x === "string").length >= 1,
 					`${fo.name}: only キリコ`,
 				);
-				for (const x of t) {
-					const text = typeof x === "string" ? x : x.kiriko;
+				for (const text of t.flatMap(textsOf)) {
 					const lines = text.split("\n");
 					ok(lines.length <= 2, `${fo.name}: 3 lines ${text}`);
 					for (const l of lines)
@@ -278,8 +291,7 @@ test("boss arenas: the talk fits the window and comes before the fight starts", 
 	for (const { id, a } of ARENAS) {
 		ok(a.talk.length >= 1 && a.talk.length <= 3, `${a.name}: windows`);
 		ok(typeof a.talk[0] === "string", `${a.name}: opens with キリコ`);
-		for (const x of a.talk) {
-			const text = typeof x === "string" ? x : x.kiriko;
+		for (const text of a.talk.flatMap(textsOf)) {
 			const lines = text.split("\n");
 			ok(lines.length <= 2, `${a.name}: 3 lines ${text}`);
 			for (const ln of lines)
@@ -296,8 +308,10 @@ test("boss arenas: the talk fits the window and comes before the fight starts", 
 		z.enterFloor(dungeonById(id).floors, false);
 		const zt = z.ev.find((e) => e.t === "talk");
 		ok(
-			zt?.t === "talk" && zt.talk.every((x) => typeof x === "string"),
-			`${a.name}: キリコ answers for ゼロ`,
+			zt?.t === "talk" &&
+				zt.talk.length === a.talk.length &&
+				zt.talk.every((x) => typeof x === "string" || x.voice === "zero"),
+			`${a.name}: ゼロ does not answer in its own voice`,
 		);
 	}
 });
@@ -319,14 +333,17 @@ test("boss talks: every boss opens with a straight talk that fits the window, hu
 		ok(talk.length >= 3 && talk.length <= 7, `${id}: windows ${talk.length}`);
 		ok(typeof talk[0] === "string", `${id}: opens with キリコ`);
 		// 最後は 相手の 脅しか キリコの 返事（笑いで 落とさない：！の 連打・草・ンゴの ボケ なし）
-		for (const x of talk) {
-			const text = typeof x === "string" ? x : x.kiriko;
+		for (const text of talk.flatMap(textsOf)) {
 			const lines = text.split("\n");
 			ok(lines.length <= 2, `${id}: 3 lines ${text}`);
 			for (const ln of lines)
 				ok([...ln].length <= 22, `${id}: long line ${ln}`);
 			ok(!text.includes("！"), `${id}: shouting in a straight talk ${text}`);
 		}
+		// 本気の 掛け合いは ロゼ・ゼロでも 切れない（どの 返事にも 2人の ぶん）
+		for (const x of [...talk, ...(b.arena?.talk ?? [])])
+			if (typeof x !== "string")
+				ok(x.roze && x.zero, `${id}: no reply for ロゼ・ゼロ ${x.kiriko}`);
 		if (b.arena) continue;
 		// 大部屋の ない ボス：ふつうの 階で 見つけた ときに 窓 → 戦い（ボスを 起こして となりに 置き、1手 待つ）
 		const r = Run.create(`talk-test:${id}`, id, [], "boss");
@@ -351,6 +368,75 @@ test("boss talks: every boss opens with a straight talk that fits the window, hu
 });
 
 // 敵の いない 階の 寸劇（data/story/restSkits.ts・ui/dungeon/restSkit.ts）
+test("as ロゼ・ゼロ: the hero is not on the floor twice, talks cut before a missing reply, and only {hero} becomes the hero's name", () => {
+	// 本人は 立たない（パン板の 集落の ロゼ・ゼロ 3機）
+	for (const p of PLACES) {
+		const spec = dungeonById(p.dungeon);
+		const folk = [
+			...(spec.rests?.find((x) => x.name === p.name)?.folk ?? []),
+			...(spec.settlement?.name === p.name ? spec.settlement.folk : []),
+		];
+		for (const hero of ["roze", "zero"] as const) {
+			const r = Run.create(
+				`self-test:${p.name}`,
+				p.dungeon,
+				[],
+				spec.objective,
+				true,
+				hero,
+			);
+			const f = buildFloor(r, p.depth, false);
+			const names = (f.folk ?? []).map((x) => x.name);
+			ok(
+				names.length === folk.filter((x) => x.self !== hero).length,
+				`${p.name}: ${hero} folk ${names.join("・")}`,
+			);
+			for (const fo of folk.filter((x) => x.self === hero))
+				ok(!names.includes(fo.name), `${p.name}: ${fo.name} twice as ${hero}`);
+		}
+	}
+	ok(
+		dungeonById("shallow").settlement?.folk.some((x) => x.self === "zero"),
+		"no ゼロ in パン板",
+	);
+	// 返事が ない 窓は 返事の 前で 切れる・{hero} だけ 名前に
+	const r = Run.create("talk-cut", "shallow", [], "boss", true, "roze");
+	r.ev = [];
+	r.emitTalk("パン王", ["{hero}、キリコ", { kiriko: "ンゴ" }, "落ち"]);
+	const t = r.ev.find((e) => e.t === "talk");
+	ok(
+		t?.t === "talk" && t.talk.length === 1 && t.talk[0] === "ロゼ、キリコ",
+		`cut ${JSON.stringify(t)}`,
+	);
+	// ゼロは いまの 機体の 返事と 立ち絵
+	const z = Run.create("talk-zero", "shallow", [], "boss", true, "zero");
+	z.s.body = 1;
+	z.ev = [];
+	z.emitTalk("x", ["a", { kiriko: "ンゴ", zero: ["1", "2", "3"] }]);
+	const zt = z.ev.find((e) => e.t === "talk");
+	ok(
+		zt?.t === "talk" &&
+			typeof zt.talk[1] === "object" &&
+			zt.talk[1].reply === "2" &&
+			zt.talk[1].voice === "proto",
+		`zero body ${JSON.stringify(zt)}`,
+	);
+	// きのこ板：ゼロで 潜ると 先回りの プロトは 出ない
+	const k = dungeonById("kinoko").boss;
+	for (const l of [
+		...(k?.asHero?.zero?.intro ?? []),
+		...(k?.asHero?.zero?.lines ?? []),
+		k?.asHero?.zero?.supplyLine ?? "",
+	])
+		ok(!l.includes("プロト"), `kinoko as ゼロ: ${l}`);
+	// 名前の 差し替えの 残り：「キリコ」を 主人公の 意味で 使う 文は {hero} に
+	for (const id of DUNGEON_IDS) {
+		const b = dungeonById(id).boss;
+		for (const l of [...(b?.lines ?? []), ...(b?.intro ?? [])])
+			ok(!/キリコ[をがはに]/.test(l), `${id}: キリコ for the hero ${l}`);
+	}
+});
+
 test("rest skits: 2+ per place with folk, people and cells exist, every walk has a path and gets home, windows fit, each once", () => {
 	const keys = new Set<string>();
 	for (const sk of REST_SKITS) {

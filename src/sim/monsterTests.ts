@@ -3908,7 +3908,7 @@ test(
 			const exp = msgs.findIndex((t) => t.includes("経験値"));
 			ok(exp >= 0 && exp < got, `${d}: the goal came before the exp`);
 			ok(
-				spec.lines.every((l, i) => msgs[got + 1 + i] === l),
+				spec.lines.every((l, i) => msgs[got + 1 + i] === r.heroText(l)),
 				`${d}: rescue lines ${msgs.slice(got + 1).join(" / ")}`,
 			);
 			const afterRescue = ev

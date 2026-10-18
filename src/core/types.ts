@@ -4,7 +4,7 @@
 // マップの配列は保存するときだけ文字列にする（serial.ts）。
 
 import type { AmbushId, FloorAmbush } from "./ambush";
-import type { FolkTalk } from "./data/dungeons";
+import type { FolkTalk, HeroLine } from "./data/dungeons";
 import type { PlaceArt } from "./data/places";
 import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
@@ -703,8 +703,15 @@ export type GameEvent =
 	/**
 	 * 集落・名所の 人と 話した（画面は 村と 同じ 窓で 1〜3枚。記録の 行には しない）。
 	 * hush は 話す 前に 階の 曲を 止める（ボスの 本気の 掛け合い。STORY.md §0「シリアスは 音を 変えて」）。
+	 * talk は いまの 主人公に 合わせた 後（{hero} を 名前に、返事は いまの 主人公の ぶんだけ）。
 	 */
-	| { t: "talk"; name: string; voice?: string; talk: FolkTalk; hush?: boolean }
+	| {
+			t: "talk";
+			name: string;
+			voice?: string;
+			talk: readonly (string | HeroLine)[];
+			hush?: boolean;
+	  }
 	/** 解音ゼロが たおれて 次の 機体に バトンタッチした（body は 次の 機体の 番。画面は 絵を かえる）。 */
 	| { t: "baton"; body: number; pos: Pos }
 	| { t: "end" };

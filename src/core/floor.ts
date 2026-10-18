@@ -519,7 +519,8 @@ const buildPlaceFloor = (
 	const folk = arena ? undefined : (spec as SettlementSpec | RestFloor).folk;
 	folk?.forEach((who, n) => {
 		const spot = at(String(n + 1))[0];
-		if (!spot) return;
+		// 主人公の 本人は 立たない（その 所は ただの 床）
+		if (!spot || who.self === r.hero) return;
 		block(spot.x, spot.y);
 		(f.folk as FloorFolk[]).push({
 			x: spot.x,

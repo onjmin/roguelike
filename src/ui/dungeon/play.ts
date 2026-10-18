@@ -1875,7 +1875,7 @@ export class Play {
 		}
 	}
 
-	/** 集落・名所の 人と 話す 窓（core/run.ts の talkFolk。立ち絵は 仲間・住人だけ、キリコの 返事は キリコの 立ち絵）。 */
+	/** 集落・名所の 人と 話す 窓（core/run.ts の talkFolk。立ち絵は 仲間・住人だけ、主人公の 返事は 主人公の 立ち絵）。 */
 	private async talkScene(e: Extract<GameEvent, { t: "talk" }>): Promise<void> {
 		const v = e.voice ? guestVoice(e.voice as GuestId) : null;
 		// ボスの 本気の 掛け合い：階の 曲を 止めて 話す（戦いは 始まりの 音から ボスの 曲）
@@ -1891,6 +1891,15 @@ export class Play {
 				side: "left" as const,
 			},
 		};
+		// ロゼ・ゼロの 返事は その 人の 立ち絵（キリコと 同じく 左）
+		const heroOf = (voice: string) => {
+			const h = guestVoice(voice as GuestId);
+			return {
+				name: h.name,
+				color: h.color,
+				portrait: h.portrait ? { ...h.portrait, side: "left" as const } : null,
+			};
+		};
 		this.ctx.se("decide");
 		await speak(
 			this.ctx,
@@ -1902,7 +1911,7 @@ export class Play {
 							text: x,
 							portrait: v?.portrait ?? null,
 						}
-					: { ...kiriko, text: x.kiriko },
+					: { ...(x.voice ? heroOf(x.voice) : kiriko), text: x.reply },
 			),
 		);
 	}

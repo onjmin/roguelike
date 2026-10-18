@@ -279,7 +279,7 @@ export const GUEST_TALK: Record<GuestId, GuestTalk> = {
 
 /**
  * 同行者の 文の「キリコ」を いまの 主人公の 名前に（束音ロゼ・解音ゼロで 潜って いる ときに「キリコさん」と
- * 呼ばない。同行者の 文の キリコは どれも 呼びかけ・相手の こと。core/run.ts の ボスの 帰り方の 文と 同じ）。
+ * 呼ばない。同行者の 文の キリコは どれも 呼びかけ・相手の こと。ダンジョンの 文は {hero} と 書く：core/run.ts の heroText）。
  */
 const toHero = (r: Run, text: string): string =>
 	text.replaceAll("キリコ", r.heroName);
