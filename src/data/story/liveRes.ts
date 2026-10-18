@@ -35,19 +35,25 @@ type Pool = {
 const POOLS: readonly Pool[] = [
 	{
 		when: (x) => x.hp * 4 <= x.maxHp,
-		lines: ["{hero}、HP赤いで", "瀕死で草", "はよ草食え", "死ぬぞ定期"],
+		lines: [
+			"{hero}、HP赤いで！",
+			"瀕死で草",
+			"はよ草食え！",
+			"死ぬぞ定期",
+			"救急車呼んだで！村から！",
+		],
 	},
 	{
 		when: (x) => x.hunger <= 15,
-		lines: ["腹の音、ここまで聞こえる", "パン拾え定期", "餓死RTAか？"],
+		lines: ["腹の音、村まで聞こえる！", "パン拾え定期", "餓死RTAか？"],
 	},
 	{
 		when: (x) => x.bare,
-		lines: ["素手で潜るやつおる？", "武器どこやったんや"],
+		lines: ["素手で潜るやつおる！？", "武器どこやったんや！"],
 	},
 	{
 		when: (x) => x.kills >= 6,
-		lines: ["無双しとるやん", "虐殺で草", "敵がかわいそうや"],
+		lines: ["無双しとるやん！", "虐殺で草", "敵が労基に駆けこんどる"],
 	},
 	// 階段を すぐ 見つけた だけの 階では 言わない（ここまで 1匹も 倒して いない ときだけ）
 	{
@@ -56,7 +62,7 @@ const POOLS: readonly Pool[] = [
 	},
 	{
 		when: (x) => x.depth === x.floors - 1,
-		lines: ["次、{bottom}やで", "ここまで来たんか"],
+		lines: ["次、{bottom}やで！", "ここまで来たんか！"],
 	},
 	{
 		when: (x) => x.deaths >= 30,
@@ -68,7 +74,11 @@ const POOLS: readonly Pool[] = [
 	},
 	{
 		when: (x) => x.deaths >= 10,
-		lines: ["{deaths}回死んどるやつや", "もう常連やな", "今日は何階で死ぬんや"],
+		lines: [
+			"{deaths}回死んどるやつや！",
+			"もう常連やな",
+			"今日は何階で死ぬんや",
+		],
 	},
 	{
 		when: (x) => x.deaths >= 3,
@@ -84,7 +94,7 @@ const FILLER: readonly { from: number; lines: readonly string[] }[] = [
 	{ from: 1, lines: ["新入りか？", "見とるで", "保守", "今北産業"] },
 	{
 		from: 3,
-		lines: ["また来たんか", "見とるで", "ROMっとるで", "このスレ伸びへんな"],
+		lines: ["また来たんか", "見とるで", "ROMっとるで", "実況で保守したるわ"],
 	},
 	{
 		from: 10,

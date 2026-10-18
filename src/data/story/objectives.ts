@@ -54,7 +54,7 @@ export const EVENTS: readonly EventDef[] = [
 		need: { cleared: ["shallow"] },
 		start: { on: "clear", chance: 1 / 6 },
 		end: { clears: 1, outings: 4 },
-		news: "パン板の底でパン兵長が\n兵を集めているらしい",
+		news: "パン板の底でパン兵長が\n兵を1万人集めているらしい！",
 	},
 	{
 		id: "bath-steam",
@@ -65,7 +65,7 @@ export const EVENTS: readonly EventDef[] = [
 		// たおれて もどった あとの 気分転換に
 		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 5 },
-		news: "風呂板の番頭が、湯治で\n休みをとったらしい",
+		news: "風呂板の番頭が、湯治で\n休みをとった！銭湯の番頭なのに！",
 	},
 	{
 		id: "kinoko-hunt",
@@ -80,7 +80,7 @@ export const EVENTS: readonly EventDef[] = [
 		// （ほかの イベントと 重なる ふつうの 遊び方なら もっと 少ない）
 		start: { on: "any", everyOutings: 10, chance: 1 / 2 },
 		end: { outings: 3 },
-		news: "きのこ板の親玉が昼寝中。\n底のAAを拾ってくるだけでいい",
+		news: "きのこ板の親玉が昼寝中！\nいびきで底のAAがゆれている！",
 	},
 	{
 		id: "festival-rain",
@@ -91,7 +91,7 @@ export const EVENTS: readonly EventDef[] = [
 		need: { cleared: ["festival"] },
 		start: { on: "dead", chance: 1 / 8 },
 		end: { clears: 1, outings: 4 },
-		news: "雨で親分マシーは来ない。\nやぐらにうちわだけ落ちている",
+		news: "雨で親分マシーは来ない！\nやぐらにうちわだけ落ちている！",
 	},
 	// 寄り道の 板の ボスとの 再戦（持ち帰った あと。ふだんの 目的は 送り届け・たこパ・連れ帰り）
 	{
@@ -102,7 +102,7 @@ export const EVENTS: readonly EventDef[] = [
 		need: { cleared: ["tropical"] },
 		start: { on: "clear", chance: 1 / 6 },
 		end: { clears: 1, outings: 4 },
-		news: "島の山の上で、ナツコが\n自由研究を荒らされて怒っている",
+		news: "島の山の上で、ナツコが\n自由研究を荒らされて大噴火！",
 	},
 	{
 		id: "tako-rematch",
@@ -112,7 +112,7 @@ export const EVENTS: readonly EventDef[] = [
 		need: { cleared: ["konamono"] },
 		start: { on: "clear", chance: 1 / 6 },
 		end: { clears: 1, outings: 4 },
-		news: "おんたこの屋上で、大たこのみんが\n鉄板を温めているらしい😡",
+		news: "おんたこの屋上で、大たこのみんが\n鉄板を1000℃に温めている😡",
 	},
 	{
 		id: "mashii-encore",
@@ -122,7 +122,7 @@ export const EVENTS: readonly EventDef[] = [
 		need: { cleared: ["festival"] },
 		start: { on: "clear", chance: 1 / 6 },
 		end: { clears: 1, outings: 4 },
-		news: "親分がまたやぐらに登った。\n「アンコールや！」",
+		news: "親分がまたやぐらに登った！\n「アンコールや！100回や！」",
 	},
 ];
 

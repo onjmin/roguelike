@@ -44,7 +44,7 @@ const BY_MONSTER: Record<string, readonly string[]> = {
 	炎上案件: ["炎上案件の火消しでいちばん燃えた"],
 	論破厨: ["論破厨に議論ぬきで論破された"],
 	忍法帖エラー: ["「忍法帖が破損しました」の1行で死んだ"],
-	かまってちゃん: ["かまってちゃんに看取ってもらえた"],
+	かまってちゃん: ["かまってちゃんに看取られて実況された"],
 	釣り: ["釣りに釣られて「乙」と言われた"],
 	透明あぼーん: ["NGにした透明あぼーんで死んだ"],
 	顔真っ赤: ["顔真っ赤に負けてこっちが真っ赤"],
@@ -276,12 +276,12 @@ export const deathSpecial = (
 	if (!fell && end.depth > 1 && f.turns <= 1)
 		return `着いて${f.turns}ターンで散った`;
 	if (end.depth >= 3 && Object.values(s.kills).every((n) => !n))
-		return "1体もたおさずにここまで来た";
+		return "1体もたおさず平和的にやられた";
 	if (end.depth >= 4 && s.stats.itemsUsed === 0)
 		return "道具を1つも使わずに散った";
-	if (p.lv === 1 && end.depth >= 4) return "Lv1のまま、ここまでは来た";
+	if (p.lv === 1 && end.depth >= 4) return "Lv1で来てLv1のまま散った";
 	if (p.weapon === null && p.shield === null && end.depth >= 7)
-		return "素手と私服でここまで来た";
+		return "素手と私服で来て私服で散った";
 	if (!fell && near(f.stairs, p) === 1) return "階段まであと1歩だった";
 	return null;
 };
