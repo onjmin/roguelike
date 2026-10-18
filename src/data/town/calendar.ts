@@ -63,6 +63,11 @@ export const advanceClock = (minutes: number): void => {
 	}
 };
 
+/** 村の 時計を その 時刻（0時からの 分）に する（場面の 空：ui/village/sceneSky.ts）。 */
+export const setClock = (minute: number): void => {
+	advanceClock(minute - loadClock() + DAY_MIN);
+};
+
 /** 村の 時計の 分（0〜59）。 */
 export const nowMinute = (): number => loadClock() % 60;
 

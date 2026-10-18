@@ -1362,6 +1362,8 @@ export const STORY: Record<
 			{
 				...n("翌日。各国の首脳が、\nたこ焼き器をかかえて上陸してきた。"),
 				skip: true,
+				// 上陸と たこパは 昼（村の 時計も 昼から すすむ）
+				sky: "day",
 				go: [{ who: "all", to: [21, 51], face: "down" }],
 				look: [21, 51],
 				// 桟橋の 両わきに 首脳の 舟（ui/village/sceneMarks.ts）

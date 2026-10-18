@@ -97,9 +97,10 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	// 見出し・はぐれた 名無し・「もぐれる」は 翌朝に ここで 見せる）
 	const news = loadProgress().news.find((n) => n.dungeon === "kinoko");
 	if (news) doneProgressNews(news);
+	// 夜に してから 建て直す（村の 時計も 夜。通りの 人も 夜の 数）
+	setSceneSky("night");
 	await s.rebuild();
 	for (const k of army) s.hide(k.id);
-	setSceneSky("night");
 	s.place("player", bx, by, "left");
 	for (const [w, c] of Object.entries(homes)) s.place(w, c[0], c[1], "down");
 	await s.fadeIn(500);
@@ -252,7 +253,7 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	// ── 翌朝：盛った 見出しを 読んで つっこみ、自分で 追うと 決める → はぐれた 1人 →「もぐれる」
 	await s.fadeBgm(400);
 	await s.fadeOut(700);
-	setSceneSky(null);
+	setSceneSky("morning");
 	endMarks();
 	s.place("player", ox, oy + 1, "up");
 	await s.fadeIn(500);
@@ -267,6 +268,8 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	await visitScript(s, "kinoko");
 	s.se("chapter");
 	await s.narrate(`「${DUNGEON_NAMES.kinoko.name}」に\nもぐれるようになった`);
+	// 朝の 時計で 村に もどる
+	setSceneSky(null);
 };
 
 // ───────────────── 第二話 → 第三話 ─────────────────
@@ -307,8 +310,8 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.fadeOut(500);
 	// メイド喫茶の シフトの 夜でも、この 場面の あいだは シヨを 村に 立たせる（翌朝 もとに もどす）
 	holdShiyoShift(true);
-	await s.rebuild();
 	setSceneSky("night");
+	await s.rebuild();
 	s.place("player", bx, by, "down");
 	for (const [w, c] of Object.entries(homes)) s.place(w, c[0], c[1], "down");
 	await s.fadeIn(500);
@@ -415,7 +418,7 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.wait(0);
 	await s.fadeBgm(400);
 	await s.fadeOut(700);
-	setSceneSky(null);
+	setSceneSky("morning");
 	endMarks();
 	// シヨの シフトを もとに もどして 建て直す（シフトの 時間なら メイド喫茶へ）
 	holdShiyoShift(false);
@@ -424,4 +427,6 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.fadeIn(500);
 	await s.narrate(B.morning);
 	s.bgm(villageSong());
+	// 朝の 時計で 村に もどる（この あとの 見出し・開く 知らせも 朝）
+	setSceneSky(null);
 };

@@ -90,11 +90,11 @@ export type StoryPage = Cue & {
 	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
 	bgm?: string | null;
 	/**
-	 * この 頁からの 村の 空（ui/village/sceneSky.ts。村の 時計に かかわらず 夜。dark は 明かりも 消す。null で 寸劇の 空
-	 * （朝。停電の 町なら 暗い まま）に もどす。村の 持ち帰りの 語り・転だけ。持ち帰りの 語りは 頁が 言わなければ 朝で、
-	 * 場面の おわりに 時計に もどる）。
+	 * この 頁からの 村の 空（ui/village/sceneSky.ts。村の 時計に かかわらず その 時間帯。dark は 夜で 明かりも 消す。
+	 * null で 寸劇の 空（朝。停電の 町なら 暗い まま。停電の 町では 昼・夕方も 暗い まま）に もどす。村の 持ち帰りの 語り・
+	 * 転だけ。持ち帰りの 語りは 頁が 言わなければ 朝で、場面の おわりに 村の 時計が その 時間帯から すすむ）。
 	 */
-	sky?: "dark" | "night" | null;
+	sky?: "dark" | "night" | "morning" | "day" | "evening" | null;
 	/** この 頁で 広場に チョークの 国境線を 引く（ui/village/sceneChalk.ts。キリコが 走りだす ときから 伸びる）。 */
 	chalk?: boolean;
 	/**

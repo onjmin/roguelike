@@ -108,6 +108,8 @@ import {
 	setSceneSky,
 	setTownSky,
 	skitSky,
+	skyBand,
+	skyPinned,
 	townSkyNow,
 } from "./sceneSky";
 import { nearSkit, playNearSkit, skitAfterEvent } from "./skits";
@@ -651,7 +653,9 @@ export class Village {
 	/** 村の 時計の 端数（ms。現実の 1秒で 1分 すすむ。data/town/calendar.ts）。 */
 	private clockMs = 0;
 	private tickClock(dt: number): void {
-		this.clockMs += dt;
+		// 場面の 空の あいだは 時計を 止める（解けたら その 時刻から すすむ。ui/village/sceneSky.ts）
+		if (skyPinned()) this.clockMs = 0;
+		else this.clockMs += dt;
 		if (this.clockMs >= 1000) {
 			advanceClock(Math.floor(this.clockMs / 1000));
 			this.clockMs %= 1000;
@@ -660,7 +664,7 @@ export class Village {
 		// 場面の 空の あいだは 時刻を 出さず「夜」「朝」だけ（ui/village/sceneSky.ts。色と 食いちがわない ように）
 		const sky = sceneSky();
 		const text = sky
-			? BAND_NAME[sky === "morning" ? "morning" : "night"]
+			? BAND_NAME[skyBand(sky)]
 			: clockLine(h, nowMinute(), timeBand(h));
 		this.tickMoney(dt);
 		if (text === this.clockText) return;

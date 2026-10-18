@@ -20,6 +20,7 @@ import { triggerTrap } from "../core/traps";
 import type { Item, RunState } from "../core/types";
 import { SE_LOUDNESS } from "../data/audio/loudness";
 import { sfx } from "../data/audio/sfx";
+import { advanceClock, nowHour, nowMinute, today } from "../data/town/calendar";
 import { stageOfCleared } from "../data/town/revival";
 import { ROOM_DOOR_SE } from "../data/town/rooms";
 import { timeBand } from "../data/village/crowd";
@@ -29,6 +30,7 @@ import {
 	clockLine,
 	daylightAt,
 	lightOf,
+	rgbOf,
 	sunTimes,
 	windowLit,
 } from "../data/village/daylight";
@@ -66,6 +68,7 @@ import {
 	LINGER,
 	loadTamper,
 } from "../engine/tamper";
+import { sceneMinute, setSceneSky, skyPinned } from "../ui/village/sceneSky";
 import { botCommand } from "./bot";
 import type { TestResult } from "./monsterTests";
 
@@ -741,6 +744,40 @@ test("開発用の ?sandbox&arrive=: parsed only with sandbox, bad kinds or boar
 	} finally {
 		if (prev) Object.defineProperty(globalThis, "location", prev);
 		else delete (globalThis as { location?: unknown }).location;
+	}
+});
+
+test("場面の 空を きめると 村の 時計も その 時刻に なり、解くと そこから すすむ", () => {
+	const g = globalThis as { __testHour?: number };
+	const hour = g.__testHour;
+	delete g.__testHour;
+	try {
+		advanceClock(3 * 60 + 17);
+		setSceneSky("night");
+		ok(nowHour() === 22 && nowMinute() === 0, `night ${nowHour()}`);
+		ok(skyPinned(), "the scene sky is not pinned");
+		setSceneSky("morning");
+		ok(nowHour() === 8, `morning ${nowHour()}`);
+		setSceneSky("day");
+		ok(nowHour() === 12, `day ${nowHour()}`);
+		setSceneSky("evening");
+		// 夕方の 色の いちばん 濃い ころ（節目の すぐ あと。数 段階 しか ずれない）
+		const { m, d } = today();
+		const tint = daylightAt(sceneMinute("evening"), m, d).tint;
+		const want = rgbOf(BAND_TINT.evening);
+		ok(
+			rgbOf(tint).every((v, i) => Math.abs(v - (want[i] ?? 0)) <= 4),
+			`the evening sky is ${tint}`,
+		);
+		setSceneSky("morning");
+		setSceneSky(null);
+		ok(!skyPinned(), "the scene sky stays pinned");
+		ok(nowHour() === 8, `released at ${nowHour()}`);
+		advanceClock(90);
+		ok(nowHour() === 9 && nowMinute() === 30, "the clock does not resume");
+	} finally {
+		setSceneSky(null);
+		if (hour !== undefined) g.__testHour = hour;
 	}
 });
 

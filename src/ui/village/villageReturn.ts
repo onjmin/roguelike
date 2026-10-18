@@ -875,8 +875,13 @@ export const returnScene = async (
 			if (stage) await stepBack(s, stage);
 			await s.fadeOut(400);
 		}
-		// 場面の 空（明かりの 場面は 夜。null は 寸劇の 空＝朝に もどす。ui/village/sceneSky.ts）
-		if (p.sky !== undefined) setSceneSky(p.sky ?? skitSky());
+		// 場面の 空（明かりの 場面は 夜。null は 寸劇の 空＝朝に もどす。停電の 町は 昼・夕方でも 暗い まま。ui/village/sceneSky.ts）
+		if (p.sky !== undefined)
+			setSceneSky(
+				p.sky === "dark" || p.sky === "night" || (p.sky && !townSkyNow())
+					? p.sky
+					: skitSky(),
+			);
 		if (p.skip && !p.cut) {
 			await s.wait(300);
 			await s.fadeIn(400);

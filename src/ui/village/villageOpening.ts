@@ -4,6 +4,8 @@
 // ② 自分で 歩く：広場に 入るまで（広場より 先に 村を 出ようと すると、キリコが 引きかえす）。
 // ③ 1日目（広場に 入ると。onStep）：蓄音機を 置いて 鳴らす → だれも 来ない → 遠くの 原住民 → やきうが 家から 来て、
 //    町の 名・空っぽな わけ・いま いる 住人・キリコの 望みを かけあいで。
+// 空は 場面で きめる（ui/village/sceneSky.ts）：①〜③は 夕方（やきうの「暗なってきた」）、④は 夜、⑤⑥は 2日目の 朝。
+// 見おえると 村の 時計は 2日目の 朝から すすむ。
 // ④ 夜：広場で 寝る。暗い 中、名無しが 掲示板に 見出しを 貼って 走り去る。
 // ⑤ 2日目：パン兵が 行進して きて 広場を 占領 → 見出し → やきうが かけて きて、パン板・板の 潜り方・倒れたら を かけあいで。
 //    広場（キリコの ステージ）を 返して ほしいから 行く。
@@ -128,8 +130,9 @@ const pierAt = (): Cell => [VILLAGE_SPOTS.exit[0], VILLAGE_SPOTS.exit[1] - 2];
 /** ①：坂を 上がって シャッターを たたく。そのあと 自分で 歩く。 */
 export const openingScript = async (s: Story): Promise<void> => {
 	if (walking) return;
-	// だれも いない 町（曲なし）
+	// だれも いない 夕方の 町（曲なし）
 	s.bgm(null);
+	setSceneSky("evening");
 	const [sx, sy] = OPENING_START;
 	const [fx, fy] = SHUTTER_FRONT;
 	// 歩きながら 名のる（窓を 出して いる あいだも 歩く）
@@ -232,9 +235,9 @@ const plazaScript: Script = async (s) => {
 	s.set(POSTER, false);
 	s.hide(POSTER);
 	await s.wait(400);
-	// 2日目：パン兵が 坂を 行進して くる 音で 起きる
+	// 2日目の 朝：パン兵が 坂を 行進して くる 音で 起きる
 	await s.fadeOut(800);
-	setSceneSky(null);
+	setSceneSky("morning");
 	await s.fadeIn(600);
 	s.bgm(INCIDENT_BGM);
 	await line(s, OPENING.wake);
@@ -318,4 +321,6 @@ const plazaScript: Script = async (s) => {
 	s.face("player", "down");
 	for (const t of OPENING.goal) await s.narrate(t);
 	await back;
+	// 村の 時計は 2日目の 朝から
+	setSceneSky(null);
 };
