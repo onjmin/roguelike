@@ -416,6 +416,8 @@ export const departTo = async (
 		await s.fadeIn(400);
 		return;
 	}
+	// 地上の ない 板は 着いた 札の あと すぐ 建物に 入る（井戸は 降りる 音を もう 鳴らした）
+	if (d !== "hidden") s.se("stairs");
 	await dive(ctx, s, go);
 };
 
@@ -513,6 +515,7 @@ export const buildSurface = (surf: Surface, ctx: Ctx): MapDef => {
 									carry: loadTown().bag,
 									objective: goalsNow()[d].objective,
 								};
+					s.se("stairs");
 					await dive(ctx, s, go);
 				},
 			},

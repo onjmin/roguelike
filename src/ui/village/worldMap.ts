@@ -1004,7 +1004,6 @@ const arrivalCard = async (ctx: Ctx, d: DungeonId): Promise<void> => {
 	requestAnimationFrame(paint);
 	await nextFrame();
 	card.classList.add("shown");
-	ctx.se("stairs");
 	await new Promise<void>((resolve) => {
 		let done = false;
 		const end = () => {
