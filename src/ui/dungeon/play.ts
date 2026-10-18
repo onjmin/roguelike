@@ -45,6 +45,7 @@ import {
 	GUEST_ID,
 	type GuestId,
 	instantClear,
+	type Monster,
 	PLAYER_ID,
 	type RescueKind,
 	type RunState,
@@ -3875,20 +3876,12 @@ export class Play {
 			return true;
 		const p = run.p;
 		if (run.itemAt(p.x, p.y) || this.onUsableStairs()) return true;
-		const vis = run.f.monsters.filter(
-			(m) => run.monsterVisible(m) && !m.disguise && !posing(m),
-		).length;
+		const vis = run.f.monsters.filter((m) => this.inSight(m)).length;
 		if (!tapped && vis > before.monsters) return true;
 		// タップの 自動移動は、見えている敵が となりに 来たら 止まる（先に なぐられないように）
 		if (
 			tapped &&
-			run.f.monsters.some(
-				(m) =>
-					run.monsterVisible(m) &&
-					!m.disguise &&
-					!posing(m) &&
-					dist(m, p) === 1,
-			)
+			run.f.monsters.some((m) => this.inSight(m) && dist(m, p) === 1)
 		)
 			return true;
 		// 敵に ねらわれた（なぐられた・撃たれた）ら止まる。はずれても止まる
@@ -3908,12 +3901,21 @@ export class Play {
 		return false;
 	}
 
+	/**
+	 * 走るのを 止める 敵か：目で 見えている（視界の 中の）敵だけ。
+	 * 気配スレで 位置が わかっているだけの 遠くの 敵（画面の 外・別の 部屋）では 止まらない
+	 */
+	private inSight(m: Monster): boolean {
+		const run = this.run;
+		return (
+			run.monsterVisible(m) && run.playerSees(m) && !m.disguise && !posing(m)
+		);
+	}
+
 	private snapshot(): { monsters: number; room: number } {
 		const run = this.run;
 		return {
-			monsters: run.f.monsters.filter(
-				(m) => run.monsterVisible(m) && !m.disguise && !posing(m),
-			).length,
+			monsters: run.f.monsters.filter((m) => this.inSight(m)).length,
 			room: roomAt(run.f.layout, run.p.x, run.p.y),
 		};
 	}
