@@ -3584,6 +3584,37 @@ test(
 
 test(
 	"boss",
+	"put to sleep out of sight: it does not talk in its sleep, the meeting waits until it wakes",
+	() => {
+		const { r, b } = bossArena("boss-slept", "kinoko", {
+			layout: hideoutLayout(),
+			start: HIDE_AT,
+			pos: { x: 46, y: 16 },
+			opts: { sleep: DEEP },
+		});
+		staffEffect(r, "w_sleep", b);
+		ok(b.status.sleep > 0 && b.status.sleep < DEEP, "harness: not dozing");
+		r.p.x = 45;
+		r.p.y = 16;
+		const first = turn(r);
+		ok(
+			!r.f.bossSeen &&
+				!evs(first, "boss").length &&
+				!evs(first, "talk").length,
+			"the sleeping boss talked",
+		);
+		let ev: GameEvent[] = [];
+		for (let i = 0; i < 10 && !r.f.bossSeen; i++) ev = turn(r);
+		ok(b.status.sleep === 0 && r.f.bossSeen === true, "never met after waking");
+		ok(
+			evs(ev, "boss").length === 1 && evs(ev, "talk").length === 1,
+			"no talk after waking",
+		);
+	},
+);
+
+test(
+	"boss",
 	"no new anka on the boss floor; an ignored one leaves the sleeping boss asleep and brings no trolls",
 	() => {
 		// いちばん底に 着いても 安価は 来ない（ボスの ない 持ち帰りの 底には 来る ことが ある）

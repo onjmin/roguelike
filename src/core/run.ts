@@ -794,7 +794,8 @@ export class Run {
 	 * - 待っている（はじめの 深い 眠りの）ボスは、キリコの 目に 入った とき 目を さまして 待ちかまえる。
 	 *   それまでは 眠って 動かない（気配スレで 居場所が わかった・目が 見えない まま となりに 来た だけ では 起きない）。
 	 * - 見る 前に もう 起きていた（杖・矢・投げた 物が 見えない 所で 当たった、目が 見えない まま なぐった）
-	 *   ボスは、見えたか となりに 来た ときに「あらわれた」だけ。眠らせ直した ぶんを 起こさない・寝起きの 1手も やらない。
+	 *   ボスは、見えたか となりに 来た ときに「あらわれた」だけ。寝起きの 1手も やらない。
+	 *   見る 前に 杖や草で 眠らされた ボスは、その 眠りが 切れてから 出会う（眠った まま 話さない）。
 	 * 見た ことは 階に 残す（中断して 続けても 画面の 曲と ゲージが もどる）。
 	 */
 	private checkBossSeen(): void {
@@ -803,6 +804,8 @@ export class Run {
 		const m = this.boss;
 		if (!m) return;
 		const waiting = m.status.sleep >= DEEP || !!m.status.dormant;
+		// 杖や草で 眠らされた ボスは 寝言を 言わない。目を さましてから 出会う
+		if (!waiting && m.status.sleep > 0) return;
 		const sees = this.p.status.blind <= 0 && this.playerSees(m);
 		const engaged = !waiting && dist(m, this.p) <= 1;
 		if (!sees && !engaged) return;
