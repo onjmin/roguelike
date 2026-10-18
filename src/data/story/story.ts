@@ -2147,6 +2147,16 @@ export const UNLOCK_LINES: Record<
 };
 
 /**
+ * 帰りの 1幕目の 終わり（倉庫へ あずけ・売った あと）：話の 続き（その夜の 場面・開く 知らせ）が ある 帰りに、
+ * やきうが 集まる 所を 言う。キリコが 蓄音機の 前に 来ると 2幕目（ui/village/villageEvents.ts の resumeStory）。
+ * やきうは いつも 村に いる（FRIEND_BACK）。
+ */
+export const CONTINUE_CALL: Line = q(
+	"nanj",
+	"荷ほどきがすんだら、蓄音機の前に集合や！\n……続きの話は、それからやで",
+);
+
+/**
  * 寄り道の 植民地が 開く ときの 小さな 出来事：その 板の 名無しが 村の 口から 歩いてきて、キリコに 板の ようすを
  * 話し、帰っていく（ui/village/villageReturn.ts の visitScript）。who が "visitor" は その 名無し、null は 地の文。
  * 名無しは 1人で 来て キリコとだけ 話す（離れた 仲間は 出てこない）。

@@ -1,5 +1,7 @@
 // 村（おんJタウン）に 帰ってきたときの 場面（ui/village/village.ts が 村に 入るたびに 走らせる。つなぎは ui/village/villageEvents.ts）。
-// 口から 出る → 仲間が むかえる → 開いた知らせ → 生き返った 通りの 知らせ→ 持ち帰った物を 倉庫へ・売る。
+// 2幕（並びは ui/village/villageEvents.ts の arrivalScript）：
+//   1幕目（朝）口から 出る → 仲間が むかえる → 生き返った 通りの 知らせ → 持ち帰った物を 倉庫へ・売る → 村を 歩ける。
+//   2幕目（キリコが 蓄音機の 前に 来ると）その夜の 場面 → 見出し → 開いた知らせ → 停電の 知らせ。
 //
 // - 持ち帰った・帰還スレ：キリコが 口の奥から 出てくると、口の前に 仲間が 並んで 待っている（幕が 上がる前に
 //   並べる。lineUp）。持ち帰りの 語り（STORY[d].ending）か 帰還スレの 語り（RETURN_PAGES）を 村の窓で 話して、
@@ -1223,6 +1225,10 @@ const pageCards = (): { show(p: StoryPage): void; end(): void } => {
 
 // ───────────────── 開いた知らせ ─────────────────
 
+/** 転（tenScript）が まだか（風呂板の 語りを 見おえた あと 1回だけ）。 */
+export const tenDue = (): boolean =>
+	!!loadProgress().endings?.includes("main") && !hasFlag("ten");
+
 /** 転（STORY.md §4.9）：風呂板の 語りを 見おえた 帰りに 1回だけ。停電と、また 盛った 見出し。 */
 export const tenScript = async (s: Story): Promise<void> => {
 	const card = pageCards();
@@ -1353,9 +1359,13 @@ const mobEv = (id: MobId): string => `mob_${id}`;
 /**
  * 転の 停電（電池板が 開いた 帰り）を 1回だけ 知らせる（開く 知らせの あと）。転（tenScript）を 見て いれば もう 語った。
  */
-export const blackoutScript = async (s: Story): Promise<void> => {
+export const blackoutDue = (): boolean => {
 	const p = loadProgress();
-	if (!inBlackout(p) || hasFlag(BLACKOUT_TOLD) || hasFlag("ten")) return;
+	return inBlackout(p) && !hasFlag(BLACKOUT_TOLD) && !hasFlag("ten");
+};
+
+export const blackoutScript = async (s: Story): Promise<void> => {
+	if (!blackoutDue()) return;
 	// 真っ暗な 町（時計に かかわらず 夜で、明かりも ない）
 	setSceneSky("dark");
 	setSceneOut({ keep: new Set(), near: [], all: false });

@@ -15,8 +15,10 @@
 // - おんJ 本館の 扉（2マス）は 踏むと（前で A でも）中の 地図へ（ui/village/hallEvents.ts）。
 // - おんJマイナーズと ぷゆゆ（板を 持ち帰ると 帰ってくる。data/people/mobs.ts の MOB_BACK）は ui/village/villageMobs.ts。2人に 会うと 掲示板に 人気投票の はり紙。
 // - 開発用の 段の 下見（?stage=N）は 描く段だけ かえる（ui/village/villageReturn.ts の previewStage）。
-// - 帰ってきたとき（prepare・onEnter）：口の前に 仲間が 並んで むかえる → 開いた知らせ → 持ち帰った物の
-//   倉庫・売り → 町が 育つ（場面は ui/village/villageReturn.ts。あずける 一覧だけ ui/village/home.ts）。
+// - 帰ってきたとき（prepare・onEnter）は 2幕：1幕目は 口の前に 仲間が 並んで むかえる → 町が 育つ → 持ち帰った物の
+//   倉庫・売り で 一区切り（村を 歩ける）。話の 続き（その夜の 場面・見出し・開いた知らせ）が あれば やきうが
+//   「蓄音機の 前に 集合」と 言い、キリコが 蓄音機の 前に 来る（踏む・調べる）か 港から 出ようと すると 2幕目
+//   （resumeStory）。場面は ui/village/villageReturn.ts、あずける 一覧だけ ui/village/home.ts。
 // - いちばん最初（一度も もぐっていない）は 前口上と 行き先の 場面（ui/village/villageOpening.ts）。
 
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
@@ -53,7 +55,13 @@ import {
 } from "../../data/story/objectives";
 import { boardPicture } from "../../data/story/pictures";
 import type { Speaker } from "../../data/story/quotes";
-import { DEPART, DUNGEON_NAMES, EPISODES, STORY } from "../../data/story/story";
+import {
+	CONTINUE_CALL,
+	DEPART,
+	DUNGEON_NAMES,
+	EPISODES,
+	STORY,
+} from "../../data/story/story";
 import { revivedLine, synopsisNow } from "../../data/story/synopsis";
 import {
 	afterHeadline,
@@ -205,6 +213,7 @@ import {
 	openingWalking,
 } from "./villageOpening";
 import {
+	blackoutDue,
 	blackoutScript,
 	deathScene,
 	gather,
@@ -221,6 +230,7 @@ import {
 	sendBack,
 	settleScript,
 	tamperScript,
+	tenDue,
 	tenScript,
 } from "./villageReturn";
 import { DUNGEON_DESC, fill, talkQuote } from "./villageTalk";
@@ -624,6 +634,8 @@ const mouthScript =
 	async (s) => {
 		// いちばん 最初の 村で まだ 広場を 見て いない（ui/village/villageOpening.ts）
 		if (openingWalking()) return openingNotYet(s, step);
+		// 帰りの 2幕目（その夜の 場面・開いた 知らせ）を まだ 見て いなければ、出る 前に そちら
+		if (storyHeld) await resumeStory(s);
 		// 行き先（はじめは 筋の 次の 板。筋を 終えたら 前に 行った 板。無ければ パン板。全体マップで ほかの 板も 選べる。
 		// 過去ログの底は 井戸から なので 地図には 出さない）
 		const pr = loadProgress();
@@ -963,8 +975,9 @@ export const heroQuestScript = async (
 	return true;
 };
 
-/** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。 */
+/** 蓄音機（まだ 何も → パン板 → 風呂板 → 電池板 の レスを 鳴らす）。2幕目を 待って いれば そちら。 */
 const phonoScript = (): Script => async (s) => {
+	if (storyHeld) return resumeStory(s);
 	const p = loadProgress();
 	const i = p.cleared.includes("deep")
 		? 3
@@ -1215,12 +1228,64 @@ const freshHeadlineScript = async (s: Story): Promise<void> => {
 };
 
 /**
+ * 帰りの 2幕目を 待って いる（1幕目の 倉庫・売りの あと、キリコが 蓄音機の 前に 来るまで。この 起動の あいだだけ：
+ * 閉じて 開き直したら 村に 入った ときに 続きから）。
+ */
+let storyHeld = false;
+
+/** 話の 続き（2幕目）が あるか：その夜の 場面・見出しと 開いた 知らせ・期間限定の 知らせ・停電の 知らせ。 */
+const continueDue = (): boolean => {
+	const p = loadProgress();
+	return (
+		tenDue() ||
+		kinokoEveDue() ||
+		bathEveDue() ||
+		p.news.length > 0 ||
+		(p.eventNews ?? []).length > 0 ||
+		blackoutDue()
+	);
+};
+
+/**
+ * 2幕目：転（STORY.md §4.9）→ 話の つなぎ（その夜の 場面。ui/village/episodeHooks.ts）→ 見出し → 開いた 知らせ →
+ * 転を 見て いなければ 停電の 知らせ。どれも 保存から 決まる（見せおえて から 消す）ので、閉じて 開き直しても 続きから。
+ */
+const continueScript = async (s: Story): Promise<void> => {
+	// 転：風呂板の 語りを 見おえた その 帰りに 1回だけ。電池板が 開く 知らせ（newsScript）より 前
+	if (tenDue()) await tenScript(s);
+	// 第一話 → 第二話の つなぎ
+	if (kinokoEveDue()) await kinokoEveScript(s);
+	// 第二話 → 第三話の つなぎ（胞子を 流しに 銭湯へ）
+	if (bathEveDue()) await bathEveScript(s);
+	await freshHeadlineScript(s);
+	await newsScript(s);
+	await blackoutScript(s);
+};
+
+/** 待って いた 2幕目を 流す（蓄音機の 前に 来た・調べた・港から 出ようと した）。 */
+const resumeStory = async (s: Story): Promise<void> => {
+	storyHeld = false;
+	await continueScript(s);
+	await sendBack(s);
+};
+
+/** 蓄音機の となりの マスを 踏んだら 2幕目（ui/village/village.ts の onStep）。 */
+const continueStep = (x: number, y: number): Script | null => {
+	if (!storyHeld) return null;
+	const [px, py] = VILLAGE_SPOTS.phono;
+	return Math.abs(x - px) <= 1 && Math.abs(y - py) <= 1 ? resumeStory : null;
+};
+
+/**
  * 帰ってきたとき（村に入るたび。ui/village/villageReturn.ts）。持ち帰った・帰還スレなら 口から 出て 仲間の 語り、
- * それから 開いた知らせと 持ち帰った物の 倉庫・売り（どちらも 保存から。決める前に 閉じていても ここで 続きから）。
+ * 町が 育ち、持ち帰った物の 倉庫・売り（保存から。決める前に 閉じていても ここで 続きから）で 1幕目は 終わり。
+ * 話の 続きが あれば やきうが 集まる 所を 言って、2幕目は キリコが 蓄音機の 前に 来てから（resumeStory）。
+ * 持ち帰り・帰還スレ でない 入り方（起動・たおれた）は 一息に（2幕目も 続けて）。
  */
 const arrivalScript =
 	(ctx: Ctx, arrival: Arrival): Script =>
 	async (s) => {
+		storyHeld = false;
 		if (arrival?.kind === "replay") return;
 		const back = returnOf(arrival);
 		// 過去ログの底からは 井戸を のぼって 出てくる（立つのは 井戸の すぐ 下。data/village/map.ts の exitFor）
@@ -1243,17 +1308,10 @@ const arrivalScript =
 		// 持ち帰った 板で 通りが 生き返る（data/town/revival.ts）。寸劇の すぐ あと：それまで 通り・住人・ご近所は
 		// 町に 出ない（villageReturn.ts の sceneView）ので、その夜の つなぎの 場面は 生き返った 町で 起きる
 		await reviveScript(s);
-		// 転（STORY.md §4.9）：風呂板の 語りを 見おえた その 帰りに 1回だけ。電池板が 開く 知らせ（newsScript）より 前
-		if (loadProgress().endings?.includes("main") && !hasFlag("ten"))
-			await tenScript(s);
 		// はじめての 村：前口上と、どこへ 行けば いいか
 		if (!arrival && needsOpening()) await openingScript(s);
-		// 第一話 → 第二話の つなぎ（その夜の 場面。ui/village/episodeHooks.ts）
-		if (kinokoEveDue()) await kinokoEveScript(s);
-		// 第二話 → 第三話の つなぎ（胞子を 流しに 銭湯へ）
-		if (bathEveDue()) await bathEveScript(s);
-		await freshHeadlineScript(s);
-		await newsScript(s);
+		// 持ち帰り・帰還スレ でなければ 話の 続きも ここで
+		if (!back) await continueScript(s);
 		// 仲間が 悩みを かかえた（帰る たびに 引く）：ようすだけ 見せる。話しかけると 打ち明ける
 		const worry = takeWorryNews();
 		if (worry) await s.narrate(HERO_QUESTS[worry].hint);
@@ -1261,9 +1319,14 @@ const arrivalScript =
 		await escortThanksScript(s);
 		// セーブを 書きかえたのが 見つかっていれば、仲間が 気づく（engine/tamper.ts）
 		await tamperScript(s);
-		// 転の 停電を 知らせで 知る（転を 見て いなければ）→ 持ち帰った 物を 倉庫へ・売る
-		await blackoutScript(s);
+		// 持ち帰った 物を 倉庫へ・売る
 		await settleScript(s, storeChooser(ctx));
+		// 1幕目の 終わり：話の 続きが あれば、やきうが 集まる 所を 言う（2幕目は 蓄音機の 前で）
+		if (back && continueDue()) {
+			await gather(s, [CONTINUE_CALL.who]);
+			await s.say(CONTINUE_CALL.who, CONTINUE_CALL.text, cueOf(CONTINUE_CALL));
+			storyHeld = true;
+		}
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）
 		if (arrival?.kind === "dead") await reliefScript(s);
@@ -1376,7 +1439,8 @@ export const buildVillage = (
 		},
 		// 街の 人通り（町の 段で ふえ、時刻で 流れが かわる。ui/village/villageCrowd.ts）
 		// いちばん 最初の 村：広場に 入ったら 場面（ui/village/villageOpening.ts）
-		onStep: openingStep,
+		// 帰りの 2幕目：蓄音機の 前（となりの マス）に 来たら（resumeStory）
+		onStep: (x, y) => openingStep(x, y) ?? continueStep(x, y),
 		crowd: {
 			// 人通りは 生き返った 通りの ぶんだけ（はじめの 寂れた 町は だれも 歩かない。停電の あいだも）
 			stage: stageOfCleared(revivedBoards(view)),
