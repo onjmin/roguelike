@@ -166,6 +166,37 @@ const SCENE_DISCS: readonly { bgm: string; where: string; need?: DungeonId }[] =
 		{ bgm: "deep6", where: "後日談", need: "hidden" },
 	];
 
+/**
+ * MML から @onjmin/dtm 独自の 宣言を 外す（レコードの 箱の「MMLをコピー」。ほかの MML の 再生環境に 貼れる 字に）。
+ * 宣言は `#名前=値`（値は 次の #・;・行末・トラックの @0 まで）と、終わりの `#end;`。
+ * 外した あとの 行頭・行末の 空白と、頭の ; は 落とし、空行は 1つに まとめる。
+ */
+export const plainMml = (mml: string): string =>
+	mml
+		.replace(/#end;?/g, "")
+		.replace(/#[A-Za-z0-9]+=(?:[^#;\r\n@]|@(?!\d))*/g, "")
+		.split(/\r?\n/)
+		.map((l) => l.trim().replace(/^;+/, ""))
+		.filter((l, i, a) => l !== "" || (i > 0 && a[i - 1] !== ""))
+		.join("\n")
+		.trim();
+
+/** レコードの 箱の 絵（ui/village/jukebox.ts）：曲で かわる。 */
+export type SongArt = "kiriko" | "sake";
+/** 鮭が 出る 曲：名無し2rt さんの 曲（鮭は その 人の MV「無題の夜」の 顔。うんJレゼ post/1340）。 */
+const SAKE_SONGS: ReadonlySet<string> = new Set([
+	"town",
+	"kumori",
+	"title",
+	"speder2",
+	"fukyowa",
+	"kouseki",
+	"island",
+]);
+/** その 曲の 顔（名無し2rt さんの 曲は 鮭、ほかは キリコ）。 */
+export const songArt = (bgm: string): SongArt =>
+	SAKE_SONGS.has(bgm) ? "sake" : "kiriko";
+
 /** レコードの 箱で かけられる 曲（聞いた 曲 ＋ 寸劇の 曲。番号は この 並びの 1から）。 */
 export const jukeboxTracks = (
 	stage: number,

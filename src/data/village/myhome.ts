@@ -1404,6 +1404,10 @@ export const JUKEBOX_MSG = {
 	loop: "くりかえし",
 	loopOn: "する",
 	loopOff: "しない",
+	/** その 曲の MML（data/audio/bgm/*.mml の 字）を クリップボードへ。 */
+	copy: "MMLをコピー",
+	copied: "MMLをコピーした",
+	copyFail: "コピーできなかった",
 	back: "もどる",
 	/** 下の 札（{n} は 番号、{title} は 曲名）。 */
 	track: "{n}：{title}",

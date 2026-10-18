@@ -28,7 +28,13 @@ import {
 } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
-import { jukeboxTracks, records, stageBgm } from "../data/audio/music";
+import {
+	jukeboxTracks,
+	plainMml,
+	records,
+	songArt,
+	stageBgm,
+} from "../data/audio/music";
 import { sfx } from "../data/audio/sfx";
 import {
 	CAFE_DRINKS,
@@ -5511,6 +5517,27 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 		box.every((r) => r.label && r.where),
 		"a record box track has no title or place",
 	);
+	// 箱の 絵：名無し2rt さんの 曲は 鮭、ほかは キリコ
+	ok(
+		songArt("kumori") === "sake" &&
+			songArt("town") === "sake" &&
+			songArt("retro") === "kiriko" &&
+			songArt("kaiwai2") === "kiriko",
+		"the record box shows the wrong face",
+	);
+	ok(
+		box.some((r) => songArt(r.bgm) === "sake") &&
+			box.some((r) => songArt(r.bgm) === "kiriko"),
+		"the record box never changes its face",
+	);
+	// MMLをコピー：dtm 独自の 宣言（#名前=値・#end;）は 外す。音符は 残る（@0 の トラックから 始まる）
+	for (const [name, mml] of Object.entries(bgm)) {
+		const p = plainMml(mml);
+		ok(
+			!p.includes("#") && p.startsWith("@") && p.length > mml.length * 0.5,
+			`${name}: the copied MML keeps dtm declarations or loses notes`,
+		);
+	}
 });
 
 test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学コース have their own, other bosses use the shared one", () => {
