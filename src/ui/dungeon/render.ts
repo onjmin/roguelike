@@ -9,7 +9,7 @@ import { dungeonOf } from "../../core/data/dungeons";
 import { MONSTERS } from "../../core/data/monsters";
 import { forEachVisible } from "../../core/fov";
 import { type Dir8, spriteDir } from "../../core/geom";
-import { itemHidden } from "../../core/item";
+import { isKeyItem, itemHidden } from "../../core/item";
 import { T_WALL, tileAt } from "../../core/mapgen";
 import type { Floor, FloorProp, RunState, Trap } from "../../core/types";
 import {
@@ -24,6 +24,7 @@ import type { Screen } from "../../engine/screen";
 import { drawWalk, isWalkRef, stepFrame } from "../../engine/sprite";
 import { frameOf, puff } from "../../engine/steam";
 import { TILE } from "../../engine/types";
+import { cellGlint } from "../village/finds";
 import { drawEquip, type EquipLook } from "./equip";
 import { isUpBoard } from "./floorName";
 import {
@@ -539,6 +540,9 @@ export class FloorView {
 				fi.x * TILE - ox,
 				fi.y * TILE - oy,
 			);
+			// 持ち帰る 品は マイハウスの 飾った 品と 同じ 光る 点で 目立たせる（こちらは 絶えず 光る）
+			if (isKeyItem(fi.item.kind))
+				cellGlint(ctx, fi.x * TILE - ox, fi.y * TILE - oy, time);
 		}
 
 		// 化けている敵（道具の見た目で描く）
