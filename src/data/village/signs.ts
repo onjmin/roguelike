@@ -229,6 +229,8 @@ export type SignDef = {
 	look: SignLookId;
 	/** 板を かける 行（外観の 上から。この 行の すぐ 上に かける。省くと 扉の 行、扉が 無ければ いちばん 下の 行）。 */
 	row?: number;
+	/** キリコの 家を 買った あとの 字（表札）。 */
+	owned?: string;
 };
 
 /** 施設の 看板（施設の id → 看板）。 */
@@ -245,7 +247,7 @@ export const SIGNS: Record<string, SignDef> = {
 	restaurant: { text: "1000", look: "marine" },
 	ramen: { text: "麺屋乙", look: "chuka" },
 	famires: { text: "ドリンクバー", look: "famires" },
-	myhome: { text: "おんJヶ丘", look: "home" },
+	myhome: { text: "おんJヶ丘", look: "home", owned: "キリコ" },
 	theater: { text: "おんJ劇場", look: "theater" },
 	tako: { text: "たこ八", look: "chuka" },
 	soba: { text: "2げと", look: "shiraki" },
@@ -350,7 +352,7 @@ export const CORE_SIGNS: readonly CoreSign[] = [
 /** 看板に 出る 字（書体を 読みこむ ときの 字の 一覧。町の 段で かわる 字も ぜんぶ）。 */
 export const signChars = (): string => {
 	const all = [
-		...Object.values(SIGNS).map((s) => s.text),
+		...Object.values(SIGNS).map((s) => s.text + (s.owned ?? "")),
 		...CORE_SIGNS.flatMap((c) =>
 			Array.from({ length: 8 }, (_, stage) => c.text(stage)),
 		),

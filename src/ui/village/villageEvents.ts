@@ -187,6 +187,7 @@ import { folkEvent } from "./folk";
 import { enterHall } from "./hallEvents";
 import { heroJoinScene } from "./heroJoin";
 import { chooseStored, openBag, openStorage } from "./home";
+import { loadHome } from "./myhome";
 import { previewing } from "./pay";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
@@ -1355,7 +1356,13 @@ export const buildVillage = (
 				? stockBoardDecor(shokenSign(stage))
 				: offDecor(shokenSign(stage), 4, "led"),
 			decay.decor,
-			signboardDecor(stage, boards, blackout, signRuined(view)),
+			signboardDecor(
+				stage,
+				boards,
+				blackout,
+				signRuined(view),
+				loadHome().owned,
+			),
 			outsideDisplays(stage, powered),
 		),
 		outside: "#1f2a14",

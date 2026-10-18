@@ -214,6 +214,7 @@ const facilityBoard = (
 	f: Facility,
 	cleared: readonly DungeonId[],
 	blackout: boolean,
+	owned = false,
 ): Board | null => {
 	const sign = SIGNS[f.id];
 	if (!sign || f.look.kind !== "grid") return null;
@@ -228,10 +229,11 @@ const facilityBoard = (
 		: w / 2;
 	const look = SIGN_LOOKS[sign.look];
 	const dead = unpowered(f.id, look, cleared, blackout);
+	const text = (owned && sign.owned) || sign.text;
 	return {
-		key: `f:${f.id}:${dead}`,
+		key: `f:${f.id}:${text}:${dead}`,
 		place: f.id,
-		text: sign.text,
+		text,
 		look,
 		cx: (f.at[0] + col) * TILE,
 		// 扉の 上の 壁に かける（扉には かからない）
@@ -271,9 +273,10 @@ const boardsAt = (
 	stage: number,
 	cleared: readonly DungeonId[],
 	blackout: boolean,
+	owned = false,
 ): Board[] => [
 	...facilitiesAt(stage).flatMap(
-		(f) => facilityBoard(f, cleared, blackout) ?? [],
+		(f) => facilityBoard(f, cleared, blackout, owned) ?? [],
 	),
 	...coreBoards(stage, cleared, blackout),
 ];
@@ -323,14 +326,16 @@ const boardPos = (b: Board, img: HTMLCanvasElement, ox: number, oy: number) => {
 /**
  * その 段の 建物の 看板（生き返って いない 所と 停電の ネオンは 消えた 看板）。
  * ruined の 所の 消えた 看板は 片がわの 釘が ぬけて かたむく（半壊。ui/village/decay.ts）。
+ * owned なら キリコの 家の 表札は 名前（SignDef.owned）。
  */
 export const signboardDecor = (
 	stage: number,
 	cleared: readonly DungeonId[],
 	blackout = false,
 	ruined: (place: string) => boolean = () => false,
+	owned = false,
 ): MapDef["decor"] => {
-	const boards = boardsAt(stage, cleared, blackout);
+	const boards = boardsAt(stage, cleared, blackout, owned);
 	if (!boards.length) return undefined;
 	return (g, ox, oy) => {
 		loadFonts();
