@@ -266,17 +266,31 @@ export const drawBuilding = (
 			r(-1, -3, 2, 3, "#201010");
 			break;
 		case "bathhouse": {
-			// 銭湯（のれんと 湯気）
+			// 銭湯（のれんと 煙突。煙突から 湯気が もくもく）
+			r(4, -22, 3, 9, "#8a5a48");
+			r(4, -22, 3, 1, "#5a3a30");
 			r(-9, -12, 18, 2, "#3a4a6a");
 			r(-8, -14, 16, 2, "#4a5a7a");
 			r(-8, -10, 16, 10, "#d8cfb8");
 			r(-4, -9, 8, 3, "#3060c0");
 			r(-1, -9, 1, 3, "#1a3a80");
 			r(-2, -5, 4, 5, "#2a2018");
+			if (dark) break;
+			// 湯気の 玉：煙突の 口から 上って ふくらみ、風下（右）へ 流れて うすれる
+			for (let i = 0; i < 5; i++) {
+				const k = (t / 2600 + i / 5) % 1;
+				const rad = 1 + k * 3;
+				const cx = 5.5 + k * 7 + Math.sin(k * 6 + i) * 1.2;
+				const cy = -23 - k * 14;
+				g.globalAlpha = Math.min(1, k * 5, (1 - k) * 1.6) * 0.75;
+				r(cx - rad, cy - rad / 2, rad * 2, rad, "#ffffff");
+				r(cx - rad / 2, cy - rad, rad, rad * 2, "#ffffff");
+			}
+			g.globalAlpha = 1;
+			// 屋根から 立つ 湯気
 			const up = Math.floor(t / 300) % 3;
 			r(-5, -17 - up, 1, 2, "rgba(255,255,255,0.8)");
 			r(0, -18 - ((up + 1) % 3), 1, 2, "rgba(255,255,255,0.8)");
-			r(5, -17 - ((up + 2) % 3), 1, 2, "rgba(255,255,255,0.8)");
 			break;
 		}
 		case "pylon":

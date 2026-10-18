@@ -38,6 +38,7 @@ import {
 	T_WALL,
 } from "./mapgen";
 import { placeRival } from "./race";
+import { Rng } from "./rng";
 import type { Run } from "./run";
 import {
 	DEEP,
@@ -318,6 +319,7 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		}
 	}
 	if (ambushHere) placeAmbush(r, f, stairRoom, start);
+	placePools(r, f);
 	// 書きかえた 冒険：キリコの いない 部屋に 削除人が 1体（ふつうの 冒険では 乱数を 引かない）
 	if (r.s.cheat) {
 		const at = place(null);
@@ -325,6 +327,24 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 	r.s.floor = prevFloor;
 	return f;
+};
+
+/**
+ * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）。道具・罠・敵・階段の ない 部屋の 床に。
+ * 乱数は 冒険の 種と 階から 別に 作る（階の 作りの 乱数の 順を 変えない。記録の 再生が ずれないように）。
+ */
+const placePools = (r: Run, f: Floor): void => {
+	const span = r.dungeon.pools;
+	if (!span) return;
+	const rng = Rng.fromSeed(`${r.s.seed}:pools:${f.depth}`);
+	const spots = freeRoomTiles(r, f, null);
+	const n = rng.range(span[0], span[1]);
+	const pools: number[] = [];
+	for (let i = 0; i < n && spots.length; i++) {
+		const t = spots.splice(rng.int(spots.length), 1)[0];
+		pools.push(t.y * f.layout.w + t.x);
+	}
+	f.pools = pools;
 };
 
 /** 同じ 字の マスを つながった かたまりごとの 長方形に まとめる（巨大な 置物。かたまりは 長方形に 描く こと）。 */
@@ -493,6 +513,9 @@ const buildPlaceFloor = (
 	// 源泉
 	for (const spot of at("S"))
 		f.traps.push({ x: spot.x, y: spot.y, kind: "spring", found: true });
+	// 湯だまり（見た目だけ。通れる）
+	const pools = at("o").map((p) => idx(layout, p.x, p.y));
+	if (pools.length) f.pools = pools;
 	// 大部屋の ボス（B の 所。見られるまで 眠って 動かない：run.ts の checkBossSeen）と 先回りした 人の 差し入れ（g の 所）
 	if (arena) {
 		const prev = r.s.floor;

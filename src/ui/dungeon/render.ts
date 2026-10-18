@@ -20,6 +20,7 @@ import {
 	resolveRef,
 } from "../../engine/assets";
 import { drawSleepZ } from "../../engine/emote";
+import { drawSteam } from "../../engine/headProp";
 import type { Screen } from "../../engine/screen";
 import { drawWalk, isWalkRef, stepFrame } from "../../engine/sprite";
 import { TILE } from "../../engine/types";
@@ -116,6 +117,37 @@ export type Projectile = {
 	blast?: { r: number; k: number };
 	/** 野球の ボール（装備して 投げる ボール・ボールを 投げる 敵・ピッチングマシン）。回りながら 飛ぶ。 */
 	ball?: boolean;
+};
+
+/** 湯だまり（Floor.pools）の 1マス：岩の ふちに 白く にごった 湯（硫黄の 湯の 花）。px, py は マスの 左上。 */
+const drawPool = (ctx: CanvasRenderingContext2D, px: number, py: number): void => {
+	// 行ごとの [左, 幅]（14 × 10 の だ円）
+	const rows: [number, number][] = [
+		[5, 6],
+		[3, 10],
+		[2, 12],
+		[1, 14],
+		[1, 14],
+		[1, 14],
+		[1, 14],
+		[2, 12],
+		[3, 10],
+		[5, 6],
+	];
+	const top = py + 4;
+	rows.forEach(([x, w], i) => {
+		ctx.fillStyle = "#5a4a30";
+		ctx.fillRect(px + x, top + i, w, 1);
+		if (i === 0 || i === rows.length - 1) return;
+		ctx.fillStyle = i < 3 ? "#b8ecec" : "#7cc8cc";
+		ctx.fillRect(px + x + 1, top + i, w - 2, 1);
+	});
+	// 湯の 花と 光
+	ctx.fillStyle = "#f0f8e0";
+	ctx.fillRect(px + 4, top + 4, 2, 1);
+	ctx.fillRect(px + 10, top + 6, 1, 1);
+	ctx.fillStyle = "#e8e070";
+	ctx.fillRect(px + 7, top + 7, 2, 1);
 };
 
 /**
@@ -283,6 +315,8 @@ export class FloorView {
 			(a, b) => Number(!a.walk) - Number(!b.walk) || a.y + a.h - (b.y + b.h),
 		);
 		for (const p of props) drawProp(ctx, p);
+		for (const i of f.pools ?? [])
+			drawPool(ctx, (i % l.w) * TILE, Math.floor(i / l.w) * TILE);
 		this.dirty = false;
 	}
 
@@ -362,6 +396,14 @@ export class FloorView {
 				ctx.closePath();
 				ctx.fill();
 			}
+		}
+		// 湯だまりの 湯気（見えて いる マスだけ。となりどうしで ずらす）
+		for (const i of f.pools ?? []) {
+			if (!visible[i]) continue;
+			const x = (i % l.w) * TILE - ox;
+			const y = Math.floor(i / l.w) * TILE - oy;
+			drawSteam(ctx, x + 8, y + 6, time + i * 389);
+			drawSteam(ctx, x + 5, y + 3, time + i * 389 + 700);
 		}
 		// 踏んだ あとの 安価の罠（罠の 下に。同じ マスに あとから 罠が ふえても 罠が 見える）
 		for (const i of f.pressed ?? []) {

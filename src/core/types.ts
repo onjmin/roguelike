@@ -409,6 +409,8 @@ export type Floor = {
 	statues?: number[];
 	/** 踏んだ あとの 安価の罠（見た目だけ。idx）。罠は 消えて、沈んだ 踏み板が 残る。 */
 	pressed?: number[];
+	/** 湯気の 立つ 湯だまり（見た目だけ。通れる。idx）。風呂板の 階と 名所の 地図の o（core/floor.ts）。 */
+	pools?: number[];
 	/** 生きている ボスの uid（目的が boss の いちばん底だけ。たおしたら 消す）。 */
 	boss?: number;
 	/** 名所の 階（長い 板の 一息。敵・罠・道具なし。core/data/dungeons.ts の rests）の 名前。 */

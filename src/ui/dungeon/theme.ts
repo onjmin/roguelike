@@ -108,6 +108,18 @@ const GOLD: Theme = {
 	fog: "rgba(6, 4, 2, 0.58)",
 };
 
+/** 硫黄の 坑道（黄色い 岩。風呂板：源泉の 通り道）。金と 同じ 絵で、闇と 霧を 硫黄の 色に。 */
+const SULFUR: Theme = {
+	name: "sulfur",
+	floor: cut(0, 168),
+	stairs: cut(0, 163),
+	wallUpper: walls(177),
+	wallLower: walls(178),
+	dark: "#0c0a02",
+	floorColor: "#8a7a20",
+	fog: "rgba(8, 7, 0, 0.58)",
+};
+
 /** 石組み（灰色。本編の 2つめの層。トルネコ1の 石組みのダンジョン）。 */
 const STONE: Theme = {
 	name: "stone",
@@ -214,6 +226,7 @@ const THEMES: Record<ThemeName, Theme> = {
 	cyber: CYBER,
 	lava: LAVA,
 	gold: GOLD,
+	sulfur: SULFUR,
 };
 
 /** 植民地ごとの 見た目と 曲（板ごとに 1つ。全フロア 同じ。data/story/story.ts の BOARD_LOOKS）。 */

@@ -441,7 +441,8 @@ export type ThemeName =
 	| "crystal"
 	| "cyber"
 	| "lava"
-	| "gold";
+	| "gold"
+	| "sulfur";
 
 /** 植民地の 見た目と 曲（板ごとに 1つ。全フロア 同じ。ui/dungeon/theme.ts が 読む）。 */
 export type BoardLook = {
@@ -585,8 +586,8 @@ const HIDDEN_ZONES: readonly ZoneSpec[] = [
 export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 	// 焼き色の 土。はじめの 曲
 	shallow: { theme: "earth", bgm: "dungeon", ambient: "dust" },
-	// 湯気の 立つ 青白い 石
-	main: { theme: "crystal", bgm: "field2", ambient: "snow" },
+	// 硫黄の 黄色い 坑道（源泉の 通り道。湯気が ただよう）
+	main: { theme: "sulfur", bgm: "field2", ambient: "snow" },
 	// 回路の 床（漏電の 火花）。過疎の 板なので 落ちついた 曲（嬰ハ短調 110。エレピ・ビブラフォン・シンセベースが 回路に 合う。
 	// もとは 夜の コインランドリー。その 前の retro は 戦闘曲っぽかった）
 	deep: { theme: "cyber", bgm: "speder2", ambient: "data" },

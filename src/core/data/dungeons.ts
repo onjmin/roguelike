@@ -242,6 +242,8 @@ export type Dungeon = {
 	charge?: number;
 	/** 過疎：はじめから いる 敵の 数と 湧く 間隔に かける 数（0.5 なら 半分・間隔は 倍）。 */
 	sparse?: number;
+	/** 1階に わく 湯だまりの 数（見た目だけ。core/floor.ts の placePools）。 */
+	pools?: [number, number];
 	/**
 	 * 敵の 出やすさ（id → 重みに かける 数。0 は 出ない）。板の 気風に 合う 敵を 多めに。
 	 * その板だけの 敵は data/monsters.ts の board。
@@ -724,6 +726,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		reliefAfter: null,
 		// 湯治：150 → 100（1.5倍）
 		regenStep: 100,
+		// 源泉の 通る 硫黄の 坑道：あちこちに 湯が わいて いる
+		pools: [2, 4],
 	},
 	deep: {
 		id: "deep",

@@ -128,7 +128,7 @@ test("every special floor uses only known letters, and each block of a big prop 
 	ok(PLACES.length >= 7, `only ${PLACES.length} special floors`);
 	for (const p of PLACES) {
 		const known = new Set([
-			..."#. @>*Sg123456789",
+			..."#. @>*Sgo123456789",
 			...Object.keys(p.map.legend),
 		]);
 		for (const row of p.map.rows)
@@ -216,8 +216,8 @@ test("special floors place every folk, gift, spring and goal, and nothing hostil
 			`${p.name}: no goal when fetch`,
 		);
 	}
-	// 源泉の ある 名所（露天の 源泉・静かな 石室）
-	ok(PLACES.filter((p) => p.spring).length >= 5, "springs missing");
+	// 源泉の ある 名所（静かな 石室 4つ）
+	ok(PLACES.filter((p) => p.spring).length >= 4, "springs missing");
 });
 
 // ボスの 大部屋（BossSpec.arena）：住む・立てこもる ボスだけ（STORY.md §4.9 の ライバル）

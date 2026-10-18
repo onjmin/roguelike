@@ -4315,26 +4315,27 @@ test("all", "every monster has a trait test", () => {
 
 test(
 	"rest",
-	"名所の 階：敵・罠・道具なしで 地図が 見え、待っても 敵が 湧かない。源泉は HP を もどす",
+	"名所の 階：敵・罠・道具なしで 地図が 見え、待っても 敵が 湧かない。湯だまりが わく。源泉は HP を もどす",
 	() => {
 		const r = Run.create("rest-floor", "main");
 		r.enterFloor(7, false);
 		const f = r.s.floor;
 		ok(f.rest === "露天の源泉", `rest ${f.rest}`);
 		ok(f.monsters.length === 0 && f.items.length === 0, "foes or items");
-		ok(
-			f.traps.length === 1 && f.traps[0].kind === "spring" && f.traps[0].found,
-			`traps ${f.traps.map((t) => t.kind)}`,
-		);
+		ok(f.traps.length === 0, `traps ${f.traps.map((t) => t.kind)}`);
+		ok((f.pools?.length ?? 0) > 0, "no hot pools");
 		const si = f.stairs.y * f.layout.w + f.stairs.x;
 		ok(f.seen[si] === 1, "the stairs are not shown");
 		for (let i = 0; i < 300 && !r.s.end; i++) turn(r);
 		ok(r.s.floor.monsters.length === 0, "a foe spawned on the rest floor");
-		// 源泉
-		const sp = f.traps[0];
-		r.p.hp = 1;
-		triggerTrap(r, sp);
-		ok(r.p.hp === r.p.maxHp, `hp ${r.p.hp}/${r.p.maxHp}`);
+		// 源泉（過去ログの底の 石室）
+		const h = Run.create("rest-floor", "hidden");
+		h.enterFloor(20, false);
+		const sp = h.s.floor.traps[0];
+		ok(sp?.kind === "spring" && sp.found, "no spring in the stone room");
+		h.p.hp = 1;
+		triggerTrap(h, sp);
+		ok(h.p.hp === h.p.maxHp, `hp ${h.p.hp}/${h.p.maxHp}`);
 		// 名所の ない 階は ふつう
 		const q = Run.create("rest-floor", "main");
 		q.enterFloor(6, false);
