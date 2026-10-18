@@ -20,9 +20,9 @@ import {
 	resolveRef,
 } from "../../engine/assets";
 import { drawSleepZ } from "../../engine/emote";
-import { drawSteam } from "../../engine/headProp";
 import type { Screen } from "../../engine/screen";
 import { drawWalk, isWalkRef, stepFrame } from "../../engine/sprite";
+import { frameOf, puff } from "../../engine/steam";
 import { TILE } from "../../engine/types";
 import { drawEquip, type EquipLook } from "./equip";
 import { isUpBoard } from "./floorName";
@@ -413,12 +413,19 @@ export class FloorView {
 				ctx.fill();
 			}
 		}
-		// 湯だまりの 湯気（見えて いる マスだけ。となりどうしで ずらす）
+		// 湯だまりの 湯気（銭湯の 煙突と 同じ ドットの もや。見えて いる マスだけ。となりどうしで ずらす）
+		const steamT = frameOf(time);
 		for (const i of f.pools ?? []) {
 			if (!visible[i]) continue;
-			const x = (i % l.w) * TILE - ox;
-			const y = Math.floor(i / l.w) * TILE - oy;
-			drawSteam(ctx, x + 8, y + 6, time + i * 389);
+			const x = (i % l.w) * TILE - ox + TILE / 2;
+			const y = Math.floor(i / l.w) * TILE - oy + TILE / 2;
+			const phase = (i * 0.618) % 1;
+			for (let k = 0; k < 2; k++)
+				puff(ctx, x, y, (steamT / 2800 + phase + k / 2) % 1, phase + k * 0.37, {
+					rise: TILE * 1.6,
+					size: 3,
+					alpha: 0.8,
+				});
 		}
 		// 踏んだ あとの 安価の罠（罠の 下に。同じ マスに あとから 罠が ふえても 罠が 見える）
 		for (const i of f.pressed ?? []) {
