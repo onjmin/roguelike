@@ -27,6 +27,7 @@ import { showCard } from "../../engine/sceneCard";
 import { fxRoot } from "../../engine/sceneFx";
 import { setSceneSky } from "./sceneSky";
 import { sayAs } from "./villageMobs";
+import { villageSong } from "./villageMusic";
 import { lunchScript, villageView } from "./villageReturn";
 
 const KEY = "kiriko-roguelike/opening";
@@ -321,6 +322,8 @@ const plazaScript: Script = async (s) => {
 	s.face("player", "down");
 	for (const t of OPENING.goal) await s.narrate(t);
 	await back;
-	// 村の 時計は 2日目の 朝から
+	// 村の 時計は 2日目の 朝から。行進の 曲（騒ぎの 寸劇の 曲）は ここまで
 	setSceneSky(null);
+	await s.fadeBgm(600);
+	s.bgm(villageSong());
 };

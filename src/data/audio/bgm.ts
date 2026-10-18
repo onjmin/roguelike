@@ -117,7 +117,7 @@ import inferno from "./bgm/inferno.mml?raw"; // †闇の板† 闇の塔：ニ�
 import island from "./bgm/island.mml?raw"; // 6395「ゲームで流れてたらテンション上がりそうなサビ」：ニ長調 131・ビブラフォン・チェレスタ・エレピ（前奏 12 小節）
 // 界隈曲（2号兄貴リスペクト、インスト。dtm の 自動作曲 seed 1010 の 伴奏を 組み直し、リードは 手書き。
 // 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ト短調 145・chip_pop・dance。
-// 場面 専用：町に 騒ぎが ある あいだの 村の 曲（data/audio/music.ts の INCIDENT_BGM）。ループするので #fadeout は 外した
+// 場面 専用：騒ぎの 寸劇の 曲（data/audio/music.ts の INCIDENT_BGM。パン兵の 行進 など）。ループするので #fadeout は 外した
 import kaiwai from "./bgm/kaiwai.mml?raw";
 // 界隈曲 その2（2号兄貴リスペクト、インスト。dtm の 自動作曲 seed 3021 の 伴奏を 素材に、リードは 手書き。
 // 2026-10-17 に 作者の 指示で 別の セッションから もらった）：ヘ短調 145（最後の サビだけ ト短調へ）・synth_pop・four_clap。

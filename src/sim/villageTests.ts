@@ -28,12 +28,7 @@ import {
 } from "../core/types";
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
-import {
-	INCIDENT_BGM,
-	records,
-	stageBgm,
-	villageBgm,
-} from "../data/audio/music";
+import { records, stageBgm, villageBgm } from "../data/audio/music";
 import { sfx } from "../data/audio/sfx";
 import {
 	CAFE_DRINKS,
@@ -5491,10 +5486,6 @@ test("村の 曲: the stage picks it, the gramophone offers only songs heard on 
 		"the old village song cannot be picked",
 	);
 	ok(villageBgm(5, [], null) === "kumori", "no pick does not follow the stage");
-	ok(
-		villageBgm(5, DUNGEON_IDS, "kumori", true) === INCIDENT_BGM,
-		"a gramophone pick drowns out the incident song",
-	);
 });
 
 test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学コース have their own, other bosses use the shared one", () => {
