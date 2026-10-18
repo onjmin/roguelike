@@ -3613,6 +3613,32 @@ test(
 
 test(
 	"boss",
+	"met while waiting: its Z goes out (stir) before the talk window, not after",
+	() => {
+		const { r, b } = bossArena("boss-wake-first", "kinoko", {
+			layout: hideoutLayout(),
+			start: HIDE_AT,
+			pos: { x: 46, y: 16 },
+			opts: { sleep: DEEP },
+		});
+		turn(r); // 見えない 所で 1手（様子の 記録を 始める）
+		ok(!r.f.bossSeen, "harness: met from the hideout");
+		r.p.x = 45;
+		r.p.y = 16;
+		const ev = turn(r);
+		const woke = ev.findIndex(
+			(e) => e.t === "stir" && e.id === b.uid && !e.asleep,
+		);
+		const talk = ev.findIndex((e) => e.t === "talk");
+		const boss = ev.findIndex((e) => e.t === "boss");
+		ok(talk >= 0 && boss > talk, `talk ${talk} boss ${boss}`);
+		ok(woke >= 0, "no stir event when the boss woke");
+		ok(woke < talk, `it talked (${talk}) before its Z went out (${woke})`);
+	},
+);
+
+test(
+	"boss",
 	"no new anka on the boss floor; an ignored one leaves the sleeping boss asleep and brings no trolls",
 	() => {
 		// いちばん底に 着いても 安価は 来ない（ボスの ない 持ち帰りの 底には 来る ことが ある）
@@ -4316,6 +4342,13 @@ test(
 			zeroUnits(r).every((m) => m.status.sleep === 0),
 			"a unit still asleep",
 		);
+		// 3機とも 掛け合いの 窓より 前に Z が 消える（寝たまま 話さない）
+		for (const m of zeroUnits(r)) {
+			const woke = ev.findIndex(
+				(e) => e.t === "stir" && e.id === m.uid && !e.asleep,
+			);
+			ok(woke >= 0 && woke < talk, `${m.kind}: stir ${woke}, talk ${talk}`);
+		}
 		ok(r.boss && AMBUSH.zero.units.includes(r.boss.kind), "no gauge");
 	},
 );

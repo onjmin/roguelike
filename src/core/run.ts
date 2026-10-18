@@ -817,17 +817,18 @@ export class Run {
 			return;
 		}
 		const name = monsterName(this, m);
-		// 戦いの 前の 掛け合い（村と 同じ 窓。大部屋の ボスは arena.talk、ほかは boss.talk）。本気の 一場面なので
-		// 階の 曲を 止めて 話す（hush。STORY.md §0「シリアスは 音を 変えて」）
-		const arena = f.arena ? this.bossSpec?.arena : undefined;
-		const talk = arena?.talk ?? this.bossSpec?.talk;
-		if (talk) this.emitTalk(name, talk, this.bossSpec?.voice, true);
+		// 先に 目を さます（掛け合いの 窓より 前に Z が 消える。寝たまま 話さない）
 		if (waiting) {
 			m.status.sleep = 0;
 			m.status.dormant = false;
 			// 目を さました ターンは まだ 動かない（ほかの 寝起きと 同じ）
 			this.graceAfterWake(m);
 		}
+		// 戦いの 前の 掛け合い（村と 同じ 窓。大部屋の ボスは arena.talk、ほかは boss.talk）。本気の 一場面なので
+		// 階の 曲を 止めて 話す（hush。STORY.md §0「シリアスは 音を 変えて」）
+		const arena = f.arena ? this.bossSpec?.arena : undefined;
+		const talk = arena?.talk ?? this.bossSpec?.talk;
+		if (talk) this.emitTalk(name, talk, this.bossSpec?.voice, true);
 		this.emit({ t: "boss", id: m.uid });
 		this.msg(
 			talk

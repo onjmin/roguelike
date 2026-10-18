@@ -133,13 +133,14 @@ export const wakeAmbush = (r: Run): void => {
 	const f = r.f;
 	if (!f.ambush) return;
 	const spec = AMBUSH[f.ambush.id];
-	r.emitTalk(spec.name, spec.intro, spec.voice);
+	// 先に 3機とも 目を さます（掛け合いの 窓より 前に Z が 消える。寝たまま 話さない）
 	for (const m of f.monsters)
 		if (isAmbushUnit(f, m)) {
 			m.status.sleep = 0;
 			m.status.dormant = false;
 			m.nextAt = Math.max(m.nextAt, r.p.nextAt + 2);
 		}
+	r.emitTalk(spec.name, spec.intro, spec.voice);
 	f.ambush.shuffleAt = f.turns + SHUFFLE_EVERY;
 	r.msg(`${spec.name}の3機が待ちぶせていた！`, "warn");
 	// 戦いの 音を 録る（勝った あとで ゼロに 聞かせる：data/people/heroQuests.ts の offer）
