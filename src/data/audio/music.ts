@@ -169,17 +169,20 @@ const SCENE_DISCS: readonly { bgm: string; where: string; need?: DungeonId }[] =
 /**
  * MML から @onjmin/dtm 独自の 宣言を 外す（レコードの 箱の「MMLをコピー」。ほかの MML の 再生環境に 貼れる 字に）。
  * 宣言は `#名前=値`（値は 次の #・;・行末・トラックの @0 まで）と、終わりの `#end;`。
- * 外した あとの 行頭・行末の 空白と、頭の ; は 落とし、空行は 1つに まとめる。
+ * 歌声の トラック（`@@番号 声の名前 … かなの歌詞;`。dtm の 歌声合成）も 丸ごと 外す。
+ * 残った 演奏の トラック（`@番号 …`。; で 区切られて いる）は dtm の DAW の「MML生成」と 同じく
+ * 1トラック 1行に して `;` で 閉じる（詰めて ある 曲は 1行に なって いるので 開く）。
  */
 export const plainMml = (mml: string): string =>
 	mml
 		.replace(/#end;?/g, "")
+		.replace(/@@[^;]*;?/g, "")
 		.replace(/#[A-Za-z0-9]+=(?:[^#;\r\n@]|@(?!\d))*/g, "")
-		.split(/\r?\n/)
-		.map((l) => l.trim().replace(/^;+/, ""))
-		.filter((l, i, a) => l !== "" || (i > 0 && a[i - 1] !== ""))
-		.join("\n")
-		.trim();
+		.split(";")
+		.map((t) => t.replace(/\s+/g, " ").trim())
+		.filter((t) => t !== "")
+		.map((t) => `${t};`)
+		.join("\n");
 
 /** 曲の 速さ（MML の はじめの t。無ければ 120）。レコードの 箱の コマ送りを 拍に 合わせる ため。 */
 export const songBpm = (mml: string): number => {

@@ -5546,9 +5546,24 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 	for (const [name, mml] of Object.entries(bgm)) {
 		const p = plainMml(mml);
 		ok(
-			!p.includes("#") && p.startsWith("@") && p.length > mml.length * 0.5,
+			!p.includes("#") &&
+				!p.includes("@@") &&
+				p.startsWith("@") &&
+				p.length > mml.length * 0.5,
 			`${name}: the copied MML keeps dtm declarations or loses notes`,
 		);
+		// 1トラック 1行（@番号 で 始まり ; で 終わる。dtm の「MML生成」と 同じ 並び）
+		const lines = p.split("\n");
+		ok(
+			lines.length >= 2 && lines.every((l) => /^@\d+ ?.*;$/.test(l)),
+			`${name}: a copied line is not one track: ${lines.find((l) => !/^@\d+ ?.*;$/.test(l))?.slice(0, 40)}`,
+		);
+		// 歌声の トラックを 外しても 演奏の トラックは 残る
+		if (mml.includes("@@"))
+			ok(
+				/(^|;|\n)@\d/.test(p) && !/[ぁ-ん]{4}/.test(p),
+				`${name}: lyrics survive or the music is gone`,
+			);
 	}
 });
 
