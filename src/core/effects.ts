@@ -110,7 +110,7 @@ const eat = (r: Run, it: Item): boolean => {
 		if (!r.hasRing("r_purity") && r.p.str > 1) {
 			r.p.str--;
 			r.se("debuff");
-			r.msg("ちからが1　下がった", "warn");
+			r.msg("おなかをこわした。ちからが1　下がった", "warn");
 		}
 		r.hurtPlayer(5, "チギュリパンにあたった");
 	}
@@ -183,7 +183,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_blind":
 			p.status.blind = 50;
 			r.se("debuff");
-			r.msg("アク禁された！何も見えない！", "warn");
+			r.msg("アク禁された！画面が真っ白だ", "warn");
 			break;
 		case "h_blink":
 			r.warpPlayer();
@@ -191,7 +191,7 @@ const drink = (r: Run, it: Item): boolean => {
 		case "h_reel":
 			p.status.confuse = 10;
 			r.se("debuff");
-			r.msg("安価が止まらない……足が勝手に動く", "warn");
+			r.msg(`${r.heroName}は混乱した！安価が止まらない……`, "warn");
 			break;
 		case "h_daze":
 			p.status.daze = 50;

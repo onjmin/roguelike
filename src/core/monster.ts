@@ -996,7 +996,7 @@ const purgePlayer = (r: Run, m: Monster): void => {
 	can.push(() => {
 		p.status.blind = Math.max(p.status.blind, 10);
 		r.emit({ t: "look" });
-		r.msg("アク禁された！何も見えない！", "warn");
+		r.msg("アク禁された！画面が真っ白だ", "warn");
 	});
 	r.se("debuff");
 	r.rng.pick(can)();
