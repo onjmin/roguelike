@@ -3437,6 +3437,12 @@ body.jolt #app {
 	color: #9fe6ff;
 }
 
+/* ゼロの 3機が 待つ 階（挑戦を 受けて いる あいだ。ui/village/worldMap.ts の ambushNote） */
+.wm-ambush {
+	font-size: 12px;
+	color: #ffc86a;
+}
+
 .wm-bubble small.wm-limited {
 	color: #9fe6ff;
 }

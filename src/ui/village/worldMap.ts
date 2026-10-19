@@ -5,6 +5,7 @@
 // 絵は 小さな キャンバス（MAP_W × MAP_H）に 画素で 描いて、CSS で 引きのばす（ぼかさない）。
 // 島の 形は はじめに 1回だけ 描いて しまっておく。建物は ここの drawBuilding が 矩形で 描く ドット絵。
 
+import { ambushFloorsOf } from "../../core/ambush";
 import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../../core/data/dungeons";
 import { HERO_NAME, type HeroId } from "../../core/data/heroes";
 import type { DungeonId } from "../../core/types";
@@ -26,12 +27,17 @@ import {
 	VILLAGE_PT,
 } from "../../data/town/worldMap";
 import { loadImage } from "../../engine/assets";
-import { chooseHero, chosenHero, unlockedHeroes } from "../../engine/heroes";
+import {
+	chooseHero,
+	chosenHero,
+	questStage,
+	unlockedHeroes,
+} from "../../engine/heroes";
 import { drawWalk, stepFrame } from "../../engine/sprite";
 import type { Dir } from "../../engine/types";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
-import { isUpBoard } from "../dungeon/floorName";
+import { floorShort, isUpBoard } from "../dungeon/floorName";
 import { ChoiceWindow } from "../message";
 import { DUNGEON_DESC } from "./villageTalk";
 
@@ -655,6 +661,7 @@ export class MapView {
 							? `<div class="wm-desc">${goalWhy(d, this.cleared)}</div>`
 							: "")
 					: "") +
+				ambushNote(d) +
 				`<div class="wm-desc">${DUNGEON_DESC[d]}</div>` +
 				// 決まり（未識別など）と 倉庫の 道具の 持ちこみ（倉庫が 建ってから）
 				`<div class="wm-desc">${n.rules[2] ?? ""}</div>` +
@@ -680,6 +687,27 @@ export class MapView {
 		return `${name}を持ち帰ると開く${relief}`;
 	}
 }
+
+/**
+ * ゼロの 挑戦を 受けて いる あいだ、その 板の どの 階で 3機が 待つか（core/ambush.ts。浅い 板には 来ない・
+ * キリコで 潜った ときだけ）。受けて いなければ 空。
+ */
+const ambushNote = (d: DungeonId): string => {
+	if (questStage("zero") !== "accepted") return "";
+	const fs = ambushFloorsOf(d);
+	const at =
+		fs.length > 1
+			? `${floorShort(d, fs[0])}〜${floorShort(d, fs[fs.length - 1])}`
+			: fs.length
+				? floorShort(d, fs[0])
+				: "";
+	const text = !at
+		? "この板には来ない（浅い）"
+		: chosenHero() === "kiriko"
+			? `${at}で待ちぶせ`
+			: `キリコで潜ると${at}で待ちぶせ`;
+	return `<div class="wm-ambush">ゼロの3機：${text}</div>`;
+};
 
 /** 次の 描画か 50ms（ペインが 隠れて rAF が 止まっても 進むように）。 */
 const tick = (): Promise<void> =>

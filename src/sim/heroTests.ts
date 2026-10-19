@@ -1,5 +1,6 @@
 // 冒険に 出る 主人公（束音ロゼ・解音ゼロ。core/data/heroes.ts・engine/heroes.ts・data/people/heroQuests.ts）の 試験（pnpm test）。
 
+import { ambushFloorsOf } from "../core/ambush";
 import { HUNGER_MAX, START_HP, START_STR } from "../core/balance";
 import { DUNGEONS } from "../core/data/dungeons";
 import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
@@ -548,6 +549,25 @@ test("挑戦: ゼロの 3機を 深い 階で そろって 止めると 申し�
 		ok(r.log.at(-1) === `bgm: ${villageSong()}`, "back to the village song");
 		ok(unlockedHeroes().includes("zero"), "zero");
 	});
+});
+
+test("挑戦: ゼロの 3機が 待つ 階は 板ごとに きまり（地図の 札・あらすじ）、浅い 板には 来ない", () => {
+	const at = (d: Parameters<typeof ambushFloorsOf>[0]) =>
+		ambushFloorsOf(d).join(",");
+	ok(at("main") === "8", `風呂板 ${at("main")}`);
+	ok(at("festival") === "8", `お祭り ${at("festival")}`);
+	ok(at("konamono") === "8", `おんたこ ${at("konamono")}`);
+	ok(at("deep") === "10", `電池板 ${at("deep")}`);
+	for (const d of ["shallow", "kinoko", "tropical", "vocalo"] as const)
+		ok(at(d) === "", `${d} has an ambush floor ${at(d)}`);
+	// おんMu は 底の 深さで かわる（7階の ときは 来ない）
+	ok(ambushFloorsOf("onmu").length > 1, "おんMu has one floor");
+	// あらすじの 例が 本当の 階と 合う
+	const line = HERO_QUESTS.zero.synopsis.accepted;
+	ok(
+		line.includes("風呂板・お祭りなら8階") && line.includes("キリコで潜ると"),
+		"the synopsis does not say where or who",
+	);
 });
 
 // ───────── 競争（core/race.ts）。ロゼの 挑戦を 受けた 冒険 ─────────

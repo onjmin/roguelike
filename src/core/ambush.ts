@@ -1,18 +1,19 @@
 // 待ちぶせ（ダンジョンの 中の 手合わせ。STORY.md §4.9 の ライバル）。いまは 解音ゼロの 3機だけ：
-// ゼロの 挑戦（engine/heroes.ts）を 受けて キリコが 潜ると、深い 階（本編の 7階ぶんの 強さ。風呂板なら 8階）の 階段の 部屋で 3機が 待つ。
+// ゼロの 挑戦（engine/heroes.ts）を 受けて キリコが 潜ると、本編の 7階ぶんの 強さに 届く 最初の 階（風呂板・お祭りなら 8階。
+// 板ごとの 階は ambushFloorsOf で 全体マップの 札にも 出す）の 階段の 部屋で 3機が 待つ。浅い 板（パン板・きのこ板・離島・ボカロ）には 来ない。
 // - 3機は たがいに 再起動しあう（史実：メイン機と サブ機は web会議で メンテナンスしあう）。1機 止めても、
 //   ほかが 動いて いれば REBOOT_TURNS で 起きなおす（HP 半分・経験値なし）。
 // - 戦いの あいだ SHUFFLE_EVERY ターンごとに 2機が 入れ替わる。
 // - 3機 そろって 止まると 勝ち（RunState.ambushWon）。帰っても 倒れても 勝ちは 残る。
 // 乱数は 待ちぶせの ある 冒険でだけ 引く（ほかの 冒険の 乱数の 順は かわらない）。
 
-import type { FolkTalk } from "./data/dungeons";
+import { type Dungeon, dungeonById, type FolkTalk } from "./data/dungeons";
 import { MONSTERS } from "./data/monsters";
 import { freeRoomTiles, spawnMonster } from "./floor";
 import { DIRS8, type Pos, step } from "./geom";
 import { monsterName } from "./monster";
 import type { Run } from "./run";
-import { DEEP, type Floor, type Monster } from "./types";
+import { DEEP, type DungeonId, type Floor, type Monster } from "./types";
 
 export type AmbushId = "zero";
 
@@ -76,17 +77,39 @@ export const REBOOT_LINES: readonly string[] = [
 	"{name}「アップデート中です。残り4時間」",
 ];
 
-/** この 冒険で 待ちぶせる 階（無ければ null）。 */
-export const ambushDepth = (r: Run): number | null => {
-	if (!r.s.ambush || r.s.ambushWon) return null;
-	for (let d = 1; d < r.dungeon.floors; d++)
+/** その 板で 待ちぶせる 階（強さが AMBUSH_LEVEL に 届かない 浅い 板は null）。 */
+export const ambushFloorOf = (dg: Dungeon): number | null => {
+	const l = dg.level;
+	for (let d = 1; d < dg.floors; d++)
 		if (
-			r.levelAt(d) >= AMBUSH_LEVEL &&
-			!r.dungeon.rests?.some((x) => x.depth === d)
+			l[Math.max(1, Math.min(l.length - 1, d))] >= AMBUSH_LEVEL &&
+			!dg.rests?.some((x) => x.depth === d)
 		)
 			return d;
 	return null;
 };
+
+/** 板ごとの 待ちぶせの 階（全体マップの 札。おんMu は 底の 深さで かわるので 幅）。 */
+export const ambushFloorsOf = (id: DungeonId): number[] => {
+	const dg = dungeonById(id);
+	const rf = dg.randomFloors;
+	const all = rf
+		? Array.from({ length: rf.max - rf.min + 1 }, (_, i) =>
+				ambushFloorOf({
+					...dg,
+					floors: rf.min + i,
+					level: rf.level(rf.min + i),
+				}),
+			)
+		: [ambushFloorOf(dg)];
+	return [...new Set(all.filter((x): x is number => x !== null))].sort(
+		(a, b) => a - b,
+	);
+};
+
+/** この 冒険で 待ちぶせる 階（無ければ null）。 */
+export const ambushDepth = (r: Run): number | null =>
+	!r.s.ambush || r.s.ambushWon ? null : ambushFloorOf(r.dungeon);
 
 export const isAmbushUnit = (f: Floor, m: Monster): boolean =>
 	!!f.ambush && AMBUSH[f.ambush.id].units.includes(m.kind);

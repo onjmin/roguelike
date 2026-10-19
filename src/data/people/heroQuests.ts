@@ -186,7 +186,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		// 受けると 3対1 の 待ちぶせ（core/ambush.ts）
 		menu: ["3対1は卑怯ンゴ", "ことわる"],
 		accept: [
-			say("zero", "卑怯でも3機です！\n深い階で待ってます", { emote: "!" }),
+			say("zero", "卑怯でも3機です！\n板の奥の階で待ってます", { emote: "!" }),
 			say("zero", "勝ったら蓄音機は、\n1機3分の1ずつです"),
 		],
 		decline: [
@@ -195,7 +195,9 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			}),
 		],
 		waiting: [
-			say("zero", "深い階で、3機で待ってます！\nプロトは、もう寝ました"),
+			say("zero", "奥の階で、3機で待ってます！\nプロトは、もう寝ました"),
+			// 待つ 階は 板ごとに ちがう（core/ambush.ts の ambushFloorsOf。全体マップの 札に 出る）
+			say("zero", "浅い板には行きません！\n地図の札に、階を書いておきました"),
 		],
 		offer: [
 			// 待ちぶせの 戦いで ひとりでに 回った 蓄音機（core/ambush.ts の wakeAmbush）を 聞かせる。
@@ -218,7 +220,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			asked:
 				"ゼロが蓄音機をねらって、3機で勝負を挑んできた。声は4分の1で止まったまま。",
 			accepted:
-				"ゼロの挑戦を受けた。深い階（風呂板なら8階）で、3機が待ちぶせている。",
+				"ゼロの挑戦を受けた。キリコで潜ると、板の奥の階（風呂板・お祭りなら8階）で3機が待ちぶせている。浅い板には来ない。",
 			done: "ゼロの3機をそろって止めた。蓄音機が、なにかを録っていた。",
 			unlocked: "ゼロが冒険に加わった。帳簿では、まだ1機0.33敗。",
 		},
