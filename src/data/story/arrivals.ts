@@ -1,4 +1,6 @@
-// 越してくる 住人の 場面（動かすのは ui/village/arrivals.ts）。板を 持ち帰った あとの 帰りに、町を 1歩 歩くと 起きる。
+// 越してくる 住人の 場面（動かすのは ui/village/arrivals.ts）。板を 持ち帰った あとで、町はずれの その 場所（at）に
+// 来ると 起きる。港と 広場を むすぶ 本筋の 道から 外れた 行き止まりに 置く（2026-10-19 作者「隅々まで 調べる 人が
+// 見られる イベント」）。来なければ 越してこない。
 // 越してくる 子が キリコの そばまで 歩いて きて、自己紹介 → 201 の 型の ドタバタ（町 → 日本 → 宇宙と 大きく して、
 // 最後に キリコが つっこむ）→ 持ち場へ 歩いて いく。見おえるまで その 子は 町に いない（data/people/mobs.ts の awayMobs）。
 // 帰りの 2幕目（続きの 場面）を 待つ あいだは 起きない（ui/village/skits.ts の holdSkits と 同じ）。
@@ -34,6 +36,12 @@ export type Arrival = {
 	after: DungeonId;
 	/** 越してくる 子（歩いて くる 順）。 */
 	mobs: readonly MobId[];
+	/** 起きる 所（村の 地図の この 四角に 来たら。x・y の はしを 含む）と、キリコが 向く 話の もとの マス。 */
+	at: {
+		x: readonly [number, number];
+		y: readonly [number, number];
+		face: readonly [number, number];
+	};
 	lines: readonly ArrivalLine[];
 };
 
@@ -57,6 +65,8 @@ export const ARRIVALS: readonly Arrival[] = [
 		key: "arrive_matome",
 		after: "kinoko",
 		mobs: ["kankei", "nanmame", "sappy"],
+		// 北東の 住宅街の 奥の 空き地（家の 並びの 東の 行き止まり）
+		at: { x: [57, 61], y: [8, 10], face: [61, 9] },
 		lines: [
 			n("ノートパソコンをかかえた\n女の子が3人、歩いてきた。"),
 			e(
@@ -89,6 +99,8 @@ export const ARRIVALS: readonly Arrival[] = [
 		key: "arrive_chupa",
 		after: "main",
 		mobs: ["chupa"],
+		// 北西の 神社の 下の 空き地
+		at: { x: [1, 7], y: [10, 11], face: [3, 9] },
 		lines: [
 			n("金色のたて巻きの\nお嬢さまが、歩いてきた。"),
 			chupa("ごきげんよう。ニュー速VIPの\nフランソワ・チュパカブラですわ"),
@@ -116,6 +128,8 @@ export const ARRIVALS: readonly Arrival[] = [
 		key: "arrive_den",
 		after: "deep",
 		mobs: ["den"],
+		// 南西の 鯖（サーバー）の 並びの 西の はし（電源の そば）
+		at: { x: [0, 4], y: [44, 44], face: [1, 43] },
 		lines: [
 			n("ゴム手袋をした\nツインテールの子が、歩いてきた。"),
 			e({ gesture: "hop" }, den("見学コースの案内係、\nデンちゃんです！")),

@@ -1,6 +1,6 @@
 // 越してくる 住人の 場面を 演じる（文と きっかけは data/story/arrivals.ts）。見た 場面は 別の 保存場所に 残す
 // （保存できなくても この回は 覚えている）。見おえるまで その 子は 町に いない（data/people/mobs.ts の setIntroSeen）。
-// 町を 1歩 歩いた あと（ui/village/village.ts の afterStep）に、場所の 寸劇より 先に 見る。
+// その 場所に 来た あと（ui/village/village.ts の afterStep）に、場所の 寸劇より 先に 見る。
 
 import { MOBS, type MobId, setIntroSeen } from "../../data/people/mobs";
 import { ARRIVALS, type Arrival } from "../../data/story/arrivals";
@@ -47,15 +47,18 @@ export const forgetArrivals = (): void => {
 
 setIntroSeen((key) => load().includes(key));
 
-/** いま 起きる 場面（無ければ null。歩く たびに 呼ぶので 見るだけ）。まだ 1度も 帰って いない 村では 起きない。 */
-export const dueArrival = (map: string): Arrival | null => {
-	if (map !== "village" || skitsHeld() || !loadRecords()[0]) return null;
-	const seen = load();
-	const cleared = loadProgress().cleared;
-	return (
-		ARRIVALS.find((a) => !seen.includes(a.key) && cleared.includes(a.after)) ??
-		null
+/** その マスで 起きる 場面（無ければ null。歩く たびに 呼ぶので 見るだけ）。まだ 1度も 帰って いない 村では 起きない。 */
+export const dueArrival = (
+	map: string,
+	x: number,
+	y: number,
+): Arrival | null => {
+	if (map !== "village" || skitsHeld()) return null;
+	const a = ARRIVALS.find(
+		(a) => x >= a.at.x[0] && x <= a.at.x[1] && y >= a.at.y[0] && y <= a.at.y[1],
 	);
+	if (!a || !loadRecords()[0] || load().includes(a.key)) return null;
+	return loadProgress().cleared.includes(a.after) ? a : null;
 };
 
 /** 向かい合う 向き（from から to を 見る）。 */
@@ -86,6 +89,8 @@ export const playArrival = async (s: Story, a: Arrival): Promise<void> => {
 		s.place(`mob_${id}`, at[0], at[1], toward(at, me));
 	});
 	await s.fadeIn(300);
+	// 話の もと（家の 並び・神社・鯖）の ほうを 一度 見せてから
+	s.face("player", toward(me, a.at.face));
 	await Promise.all(
 		ids.map((id, i) => {
 			const to = talk[i];

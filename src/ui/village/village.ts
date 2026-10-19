@@ -1210,8 +1210,10 @@ export class Village {
 			void this.runScript(step);
 			return;
 		}
-		// 越してくる 住人の 場面（ui/village/arrivals.ts。場所の 寸劇より 先）
-		const arrival = this.leaving ? null : dueArrival(this.mapId);
+		// 町はずれで 越してくる 住人に 会う 場面（ui/village/arrivals.ts。場所の 寸劇より 先）
+		const arrival = this.leaving
+			? null
+			: dueArrival(this.mapId, this.player.x, this.player.y);
 		if (arrival) {
 			this.clearPath();
 			void this.runScript((s) => playArrival(s, arrival));

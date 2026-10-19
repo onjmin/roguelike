@@ -8672,6 +8672,41 @@ test("越してくる 場面: lines fit, only newcomers speak, Kiriko lands a ts
 		}
 	}
 	fitsWindow(texts);
+	// 町はずれ：歩ける マスが あり、桟橋（口への 道）でも 広場（蓄音機の 前）の そばでも ない
+	const v = {
+		stage: 7,
+		unlocked: [...DUNGEON_IDS],
+		cleared: [...DUNGEON_IDS],
+	};
+	const rows = villageRows(v).map((r) => [...r]);
+	const pal = villagePalette(v);
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	for (const a of ARRIVALS) {
+		let walk = 0;
+		for (let y: number = a.at.y[0]; y <= a.at.y[1]; y++)
+			for (let x: number = a.at.x[0]; x <= a.at.x[1]; x++) {
+				const ch = rows[y]?.[x];
+				if (ch && pal[ch]?.passable) walk++;
+				ok(!(x === 20 && y >= 36), `${a.key}: on the pier`);
+				ok(
+					Math.abs(x - bx) + Math.abs(y - by) >= 15,
+					`${a.key}: ${x},${y} is near the plaza`,
+				);
+			}
+		ok(walk > 0, `${a.key}: no walkable cell`);
+		// 場所の 寸劇（噴水・池・海辺）とは 2マス 以上 はなす（村の どこでもの 期間限定は 場所を 持たない）
+		for (const sk of SKITS) {
+			const on = sk.on;
+			if (on.k !== "near" || on.x[1] >= 999) continue;
+			ok(
+				a.at.x[1] + 2 < on.x[0] ||
+					on.x[1] + 2 < a.at.x[0] ||
+					a.at.y[1] + 2 < on.y[0] ||
+					on.y[1] + 2 < a.at.y[0],
+				`${a.key}: next to ${sk.key}`,
+			);
+		}
+	}
 	const newcomers = ARRIVALS.flatMap((a) => a.mobs);
 	try {
 		setIntroSeen(() => false);
