@@ -586,6 +586,9 @@ export type GuestId =
 	| "panmatsu"
 	| "ngoane"
 	| "nichie"
+	| "rino"
+	| "aru"
+	| "hinary"
 	// 板の 人（目的が deliver・bring の とき。絵は data/people/companions.ts の STORY_GUESTS）
 	| "islander"
 	| "oyabun";

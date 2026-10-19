@@ -3054,13 +3054,18 @@ test("開票: the 電池板 ending plays once and やきう stays; 転 plays onc
 			JSON.stringify(pagesFor(a)) === JSON.stringify(STORY.deep.again),
 			"the 開票 plays again",
 		);
-		// 寄り道「残機」を 終えて いなければ、数字が 跳ねる 頁は 出ない
+		// 寄り道「残機」を 終えて いなければ、数字が 跳ねる 頁は 出ない。まだ 帰って きて いない 住人（きのこ板で 帰る
+		// アル・リノ・ミャウミャウ）の 頁も 出ない（villageReturn.ts の withoutMobsAway）
 		put(["shallow", "main", "deep"], ["shallow", "main"]);
+		const gone = awayMobs(["shallow", "main", "deep"]);
 		ok(
 			JSON.stringify(pagesFor(a)) ===
 				JSON.stringify([
 					...STORY.deep.ending.filter(
-						(p) => !p.needCleared && !p.unlessCleared,
+						(p) =>
+							!p.needCleared &&
+							!p.unlessCleared &&
+							(!p.mob || !gone.includes(p.mob)),
 					),
 					episodeEnd("deep"),
 				]),
@@ -5066,9 +5071,11 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 				...pages.map((p) =>
 					p.kiriko
 						? `kiriko ${p.kiriko}: ${p.text}`
-						: p.who || p.nanashi
-							? `say ${p.who ?? "nanj"}: ${p.text}`
-							: `narrate: ${p.text}`,
+						: p.mob
+							? `say ${MOBS[p.mob].voice ?? null}: ${p.text}`
+							: p.who || p.nanashi
+								? `say ${p.who ?? "nanj"}: ${p.text}`
+								: `narrate: ${p.text}`,
 				),
 				"fadeOut",
 				`bgm ${villageSong()}`,

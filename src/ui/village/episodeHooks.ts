@@ -3,6 +3,7 @@
 // 立ち話で 終わらせない：人が 歩いて 集まる・イメージ図（engine/sceneCard.ts）・回想（sceneFx の memory）・
 // 夜の 行進を カメラで 追う・見出しを 貼る 人影（いちばん 最初の 村の 天丼）。
 
+import { MOBS, type MobId } from "../../data/people/mobs";
 import { holdShiyoShift } from "../../data/people/shiyoShift";
 import {
 	BATH_EVE,
@@ -29,10 +30,31 @@ import { showCard } from "../../engine/sceneCard";
 import { fxRoot, startFx } from "../../engine/sceneFx";
 import { endMarks, putMark, takeMark } from "./sceneMarks";
 import { setSceneSky } from "./sceneSky";
+import { sayAs } from "./villageMobs";
 import { villageSong } from "./villageMusic";
 import { villageView, visitScript } from "./villageReturn";
 
 type Cell = readonly [number, number];
+
+/**
+ * 住人（data/people/mobs.ts）が 口を はさむ：町に 立って いれば キリコの となり（dx, dy）へ 来て 話し、話し おえたら
+ * 持ち場へ もどる（住人は 遠くから 声だけ 飛ばさない。いなければ 何も 出さない）。
+ */
+const mobAside = async (
+	s: Story,
+	id: MobId,
+	at: Cell,
+	talk: () => Promise<void>,
+): Promise<void> => {
+	const ev = `mob_${id}`;
+	if (!s.near(ev, 99)) return;
+	await s.goto(ev, at[0], at[1], { speed: 2.4, avoid: true });
+	s.face(ev, "player");
+	await talk();
+	const home = MOBS[id].spot;
+	await s.goto(ev, home[0], home[1], { speed: 2.4, avoid: true });
+	s.face(ev, MOBS[id].dir);
+};
 
 const EVE_FLAG = "eve_kinoko";
 
@@ -246,6 +268,12 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	if (street) await s.look([street.at[0], street.at[1]]);
 	await s.kiriko(T.kirikoHeadline, "voice", { emote: "冷" });
 	await s.look(null);
+	// ヒナリーの 発表（見れば わかる 被害の 研究）→ 締めて 持ち場へ
+	await mobAside(s, "hinary", [bx + 1, by], async () => {
+		await sayAs(s, "hinary", T.hinaryStreet, { emote: "得" });
+		await s.kiriko(T.kirikoObvious, "voice", { hit: "slap" });
+		await sayAs(s, "hinary", T.hinaryEnd);
+	});
 	await s.kiriko(T.kirikoGo, "voice");
 	await visitScript(s, "kinoko");
 	s.se("chapter");
@@ -354,6 +382,12 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	await s.say("shiyo", B.shiyo43, { emote: "花" });
 	await s.kiriko(B.kirikoMore, "voice", { hit: "slap" });
 	card.end();
+	// 科学部の アルが 湯気を 測って、答え（41.5℃）を 先に 言う → シヨに 殴られる（暴力系ヒロイン）
+	await mobAside(s, "aru", [hx + 2, hy + 2], async () => {
+		await sayAs(s, "aru", B.aruMeasure, { emote: "!", gesture: "hop" });
+		await s.say("shiyo", B.shiyoNurui, { emote: "怒", hit: "punch" });
+		await sayAs(s, "aru", B.aruHit, { emote: "汗" });
+	});
 	await s.say("zero", B.zeroWhy);
 
 	// ── 回想：3日前の 夜、人影が 掲示板に 書きこむ（いちばん 最初の 村・第一話の 夜と 同じ 型）

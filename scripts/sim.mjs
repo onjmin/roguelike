@@ -5,7 +5,7 @@
 //   pnpm sim -- --seed abc   … 1回だけ（ログつき）
 //   pnpm sim -- --quiet      … 表だけ
 //   pnpm sim -- --dungeon shallow … ダンジョン（shallow / main / deep / kinoko / tropical / konamono / festival / hidden / opunu。既定は main）
-//   pnpm sim -- --guest zero      … 同行者を 連れて（zero / feris / shobon。core/guest.ts）
+//   pnpm sim -- --guest zero      … 同行者を 連れて（zero / feris / roze / shiyo / panmatsu / ngoane / nichie / rino / aru / hinary。core/guest.ts）
 //   pnpm sim -- --objective boss  … 目的（fetch / boss。既定は そのダンジョンの 既定。boss の ない 板は fetch）
 //   pnpm sim -- --hero zero       … 主人公（kiriko / roze / zero。既定は kiriko）
 //   pnpm sim -- --auto            … 解音ゼロの オートと 同じ ボット（sim/bot.ts の AUTO_BOT）
@@ -42,7 +42,7 @@ const REACH = args.includes("--reach");
 const DUNGEON = arg("dungeon", "main");
 // 目的（fetch / boss）。無ければ その板の 既定
 const OBJECTIVE = arg("objective", null);
-// 筋で ついてくる 同行者（zero / feris / shobon。core/guest.ts）。無ければ ひとり
+// 筋で ついてくる 同行者（core/guest.ts の GUESTS の id）。無ければ ひとり
 const GUEST = arg("guest", null) ? { id: arg("guest", null), goal: 999 } : null;
 // 手合わせの 待ちぶせ（zero。core/ambush.ts）。無ければ なし
 const AMBUSH = arg("ambush", null);

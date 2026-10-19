@@ -1192,7 +1192,7 @@ export const villagePlaces = (v: VillageView): VillagePlace[] => {
 	}
 	// おんJマイナーズ（板の 話が 片づくと 帰ってくる：data/people/mobs.ts の MOB_BACK）。
 	// この 帰りに 施設に 行っている 子・出かけている 子は 広場に いない（mobsOut）。
-	// 持ち帰りの 語りの あいだ（arriving）は、ゼロの サブ機だけ 同じ 船で 着いて いる（ZERO_UNITS）
+	// 持ち帰りの 語りの あいだ（arriving）は、同じ 船の 子だけ 着いて いる（data/people/mobs.ts の SAME_BOAT）
 	const gone = awayMobs(v.cleared, v.arriving);
 	for (const id of MOB_IDS) {
 		if (gone.includes(id) || v.mobsOut?.includes(id)) continue;
