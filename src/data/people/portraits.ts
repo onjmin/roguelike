@@ -24,4 +24,5 @@ export const PORTRAIT_HEAD: Record<string, PortraitHead> = {
 	"portraits/zero_proto.png": { x: 518, top: 95, chin: 300 },
 	"portraits/zero_ren.png": { x: 505, top: 95, chin: 320 },
 	"portraits/hinary.png": { x: 522, top: 10, chin: 215 },
+	"portraits/miaumiau.png": { x: 565, top: 150, chin: 362 },
 };

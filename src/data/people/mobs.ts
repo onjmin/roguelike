@@ -135,7 +135,8 @@ export type MobDef = {
 	gait?: MobGait;
 	/**
 	 * 立ち絵（public/ からの パス。まだ 描いていなければ 「立ち絵（仮）」の ダミーが 出る。ART_TODO.md）。
-	 * 人の 子（リノ・アル）だけ。マスコット（ぷゆゆ・おんJwiki の 顔文字の マイナーズ）は やきうと 同じく 立ち絵なし。
+	 * 人の 子（リノ・アル）と、作者が 描いた ミャウミャウ。ほかの マスコット（ぷゆゆ・おんJwiki の 顔文字の マイナーズ）は
+	 * やきうと 同じく 立ち絵なし。
 	 */
 	portrait?: string;
 	/** 名前欄に 出す 名前（無ければ name。解音ゼロの サブ機は 型番つき）。 */
@@ -2015,6 +2016,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 口癖の「ぷゆゆ🥺」だけ 絵文字を つかう（ぷゆゆの 決まり：🥺 は 行の 終わりに 1つ）
 	miaumiau: {
 		name: "ミャウミャウ",
+		portrait: "portraits/miaumiau.png",
 		sprite: "sa:9rHFwB",
 		color: "#e4e4f0",
 		spot: [15, 23],
