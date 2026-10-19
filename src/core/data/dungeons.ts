@@ -225,6 +225,12 @@ export type Dungeon = {
 		max: number;
 		level: (n: number) => readonly number[];
 	};
+	/**
+	 * 持ち帰った 品の 買い取りの 倍率（無ければ 1）。むずかしい 板ほど 高い（倒れる 悔しさに 見合う ように）。
+	 * お祭り会場だけ「お祭り価格」で 飛びぬけて 高い（2026-10-19 作者「特定の ダンジョン 1つだけ 突出して 稼げる」）。
+	 * 目安は scripts/sales-sim.mjs の「平均(全体)」（倒れた 回も 0円で 数える）。
+	 */
+	sale?: number;
 	/** 道具の出かた（重み。合計は 1回の冒険で 出る数の 目安）。 */
 	items: readonly ItemWeight[];
 	/** 1つの階に 置く 道具の数（祭りの階は houseItems を 足す）。 */
@@ -780,6 +786,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	main: {
 		id: "main",
+		sale: 2,
 		// 坑道：深くなるほど 長い 坑（横長・縦長の 中部屋）と 入り組んだ 通路が ふえる
 		layouts: [
 			{ to: 4, shapes: { grid: 3, hall: 1 } },
@@ -870,6 +877,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	},
 	deep: {
 		id: "deep",
+		sale: 4,
 		// 鉄塔：格子（小部屋だらけ）と 吹き抜け・はしご（縦長の 中部屋）。上るほど 多い
 		layouts: [
 			{ to: 4, shapes: { grid: 3, dense: 1 } },
@@ -1181,6 +1189,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// おんたこ（レスの 末尾に 😡 が つく 板）：どの 敵も 怒りっぽい
 	konamono: {
 		id: "konamono",
+		sale: 1.75,
 		// 雑居ビル：小部屋だらけの 階と、廊下（横長の 中部屋）の 階、ロビー（広場）の 階
 		layouts: [{ shapes: { grid: 2, dense: 2, hall: 1, twin: 1, plaza: 1 } }],
 		// たこパの お誘い（STORY.md §4.9）：最上階の たこパ会場で 粉もん奉行に 話せば 帰れる
@@ -1262,6 +1271,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// お祭り会場（おまC）：祭りが よく 出る
 	festival: {
 		id: "festival",
+		sale: 3.5,
 		// 祭り：露店の ならぶ 参道（横長の 中部屋・2列）が 多い。やぐらの 広場と、まわりを 回る 階も
 		layouts: [{ shapes: { hall: 3, twin: 1, plaza: 2, grid: 1, ring: 1 } }],
 		// やぐらから 降りられない 親分を 入口まで 連れ帰る（STORY.md §4.9）
@@ -1345,6 +1355,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// （data/story/story.ts の BOARD_LOOKS の zones）。いちばん底の「蓄音キリコのうた」を 持ったまま 帰還スレで 帰れる
 	hidden: {
 		id: "hidden",
+		sale: 3,
 		// 層ごとに 形が かわる（見た目の 層は data/story/story.ts の HIDDEN_ZONES）：浅瀬は 3×3 だけ、
 		// 石室は 長い 部屋、埋もれた dat は 菌輪と 通路だらけ、苔むした スレ跡は 小部屋と 島、底は なんでも
 		layouts: [
@@ -1459,6 +1470,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 潜るたびに 7〜17階から 決まる（randomFloors。強さは 底が n階なら 本編の n+1階ぶんまで）
 	onmu: {
 		id: "onmu",
+		sale: 3.5,
 		// 沈んだ 大陸：島と 環礁（菌輪の 形）と 砂州（斜めの 帯）
 		layouts: [{ shapes: { isles: 3, ring: 2, band: 2, grid: 1 } }],
 		objective: "fetch",
@@ -1490,6 +1502,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// --carry steel+2,steelsh+2,h_heal,h_heal,f_bread で クリア 13%。持ちこみ なしの ボットは 1階で ほぼ 倒れる）
 	onkimu: {
 		id: "onkimu",
+		sale: 4,
 		// 最前線：塹壕（通路だらけ・縦に 2本）と 小部屋の 陣地
 		layouts: [{ shapes: { grid: 2, dense: 2, maze: 2, ladder: 1 } }],
 		objective: "fetch",
@@ -1513,6 +1526,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 	// 寄り道の ハードコア：闇の 塔を 50階 上る。倉庫の 道具は 持ちこめない（闇の 試練は 身ひとつで）
 	inferno: {
 		id: "inferno",
+		sale: 3,
 		// 闇の 塔：上るほど 吹き抜け（縦長の 中部屋）・格子・通路だらけが ふえ、3×3 は 消える
 		layouts: [
 			{ to: 10, shapes: { grid: 3, vhall: 1 } },
@@ -1591,6 +1605,9 @@ const sized = new Map<string, Dungeon>();
  * 冒険の ダンジョン（底の 深さが かわる 板は その 冒険で 引いた 階の 数と 強さ に した もの）。
  * floors が 無い・かわらない 板は dungeonById と 同じ。
  */
+/** 持ち帰った 品の 買い取りの 倍率（Dungeon.sale）。 */
+export const saleRate = (d: DungeonId): number => dungeonById(d).sale ?? 1;
+
 export const dungeonOf = (s: {
 	dungeon: DungeonId;
 	floors?: number;

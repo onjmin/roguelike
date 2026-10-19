@@ -15,7 +15,12 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
+import {
+	DUNGEON_IDS,
+	DUNGEONS,
+	floorsLabel,
+	saleRate,
+} from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
 import { bigRoomLayout, enteredEmptyBigRoom } from "../core/mapgen";
@@ -3200,7 +3205,8 @@ test("settling in the village: ンゴ姉 stores, ジェイトルマン buys the 
 		putTown({
 			stage: 4,
 			points: 1000,
-			pending: pending("escape", [keep, sell]),
+			// パン板は 買い取りの 倍率 1（倍率の ある 板は 下の テスト）
+			pending: pending("escape", [keep, sell], "shallow"),
 		});
 		let asked = 0;
 		const { s, log } = fakeStory();
@@ -3233,6 +3239,40 @@ test("settling in the village: ンゴ姉 stores, ジェイトルマン buys the 
 			`a rival worked the shop:\n${log.join("\n")}`,
 		);
 		ok(loadTown().stage === 4, "selling opened shops");
+	});
+});
+
+test("harder boards buy higher, and only the festival stands out", async () => {
+	// 倍率は 板の むずかしさ順（パン板 1・本編より 深層）、お祭り会場は 同じくらいの 板より 飛びぬける
+	ok(saleRate("shallow") === 1, "the starter board has a sale bonus");
+	ok(saleRate("main") > 1, "the main board has no sale bonus");
+	ok(saleRate("deep") > saleRate("main"), "deep buys lower than main");
+	ok(
+		saleRate("festival") >= 1.5 * saleRate("konamono"),
+		"the festival does not stand out",
+	);
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "main"], [], ["shallow"]);
+		const sell = item(2, "h_heal");
+		putTown({
+			stage: 4,
+			points: 1000,
+			pending: pending("escape", [sell], "festival"),
+		});
+		const { s, log } = fakeStory();
+		await settleScript(s, chooser([]));
+		const got = Math.round(priceOf(sell) * saleRate("festival"));
+		ok(loadTown().points === 1000 + got, `points: ${loadTown().points}`);
+		ok(
+			inOrder(log, [
+				staffSay(TOWN_MSG.saleFestival, {
+					board: DUNGEON_NAMES.festival.short,
+					rate: saleRate("festival"),
+				}),
+				staffSay(TOWN_MSG.sold, { points: got }),
+			]),
+			`no festival price line:\n${log.join("\n")}`,
+		);
 	});
 });
 

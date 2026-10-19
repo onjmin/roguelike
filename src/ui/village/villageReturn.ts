@@ -21,6 +21,7 @@
 //   離れた 人の 声だけが 飛んでくる 掛け合いは しない（そばに いる 人とだけ 話す）。
 // DOM を 使わない（Story だけ）ので、src/sim/villageTests.ts で 仮の Story を 渡して 試せる。
 
+import { saleRate } from "../../core/data/dungeons";
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../../core/town";
 import { type DungeonId, instantClear, type Objective } from "../../core/types";
 import {
@@ -1507,6 +1508,16 @@ export const settleScript = async (
 		}
 	}
 	if (r.sold > 0) {
+		// 買い取りの 倍率が ある 板は、その 板の 品を はじめて 売る ときだけ ひとこと
+		const rate = saleRate(pend.dungeon);
+		const rateFlag = `sale-told-${pend.dungeon}`;
+		if (rate > 1 && !hasFlag(rateFlag)) {
+			await say(
+				pend.dungeon === "festival" ? TOWN_MSG.saleFestival : TOWN_MSG.saleUp,
+				{ board: DUNGEON_NAMES[pend.dungeon].short, rate },
+			);
+			addFlag(rateFlag);
+		}
 		await say(TOWN_MSG.sold, { points: r.sold });
 		// 売り上げが 財布にも なる ことと、町で 使って いい わけを はじめの 1回だけ
 		if (!hasFlag(WALLET_TOLD)) {

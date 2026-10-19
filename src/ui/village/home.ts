@@ -3,6 +3,7 @@
 // トルネコ1で ネネが 持ち帰った道具を売り、店が大きくなるのに あたる（会話・売り・町の 建て直しは
 // 村の中。ui/village/villageReturn.ts）。町では 道具を 見てもらえるので、ここでは 本当の名前で出す。
 
+import { saleRate } from "../../core/data/dungeons";
 import { CAT_NAME } from "../../core/data/items";
 import { defOf } from "../../core/item";
 import { CARRY_MAX, priceOf, STORAGE_CAP } from "../../core/town";
@@ -59,7 +60,7 @@ export const chooseStored = async (
 		const room = cap - t.storage.length - chosen.size;
 		const rows: ListItem[] = pend.items.map((it) => ({
 			label: `${chosen.has(it.uid) ? "✓　" : ""}${esc(townItemName(it))}`,
-			sub: `${priceOf(it)}`,
+			sub: `${Math.round(priceOf(it) * saleRate(pend.dungeon))}`,
 			value: String(it.uid),
 			disabled: !chosen.has(it.uid) && room <= 0,
 		}));

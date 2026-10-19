@@ -6,7 +6,12 @@
 // - プライベートモード等で保存できなくても遊べるように、読み書きはすべて try/catch。
 
 import { type AmbushId, isAmbushId } from "../core/ambush";
-import { DUNGEON_IDS, DUNGEONS, openable } from "../core/data/dungeons";
+import {
+	DUNGEON_IDS,
+	DUNGEONS,
+	openable,
+	saleRate,
+} from "../core/data/dungeons";
 import { ITEMS } from "../core/data/items";
 import { MONSTERS } from "../core/data/monsters";
 import { FAKE_NAMES, OLD_FAKE_NAMES } from "../core/data/names";
@@ -878,6 +883,8 @@ export const settleReturn = (
 			t.storage.push({ ...it, known: true });
 		else sold += priceOf(it);
 	}
+	// 板の 買い取りの 倍率（むずかしい 板・お祭り会場ほど 高い）
+	sold = Math.round(sold * saleRate(pend.dungeon));
 	t.points += sold;
 	t.pending = null;
 	t.sales = [

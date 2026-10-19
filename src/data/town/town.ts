@@ -121,6 +121,8 @@ export const TOWN_MSG: Record<
 	| "bagEmpty"
 	| "salesEmpty"
 	| "wallet"
+	| "saleUp"
+	| "saleFestival"
 	| "storeKnown",
 	StaffLine
 > = {
@@ -157,6 +159,18 @@ export const TOWN_MSG: Record<
 	sold: st("jtleman", "ふむ。{points}円で買い取ろう。\n……悪くない目利きだ", {
 		emote: "♪",
 	}),
+	// 買い取りの 倍率が ある 板の 品を はじめて 売る とき（{board} 板の 短い 名前・{rate} 倍率）
+	saleUp: st(
+		"jtleman",
+		"{board}の品か。……よく生きて帰った。\n{rate}倍で買い取ろう",
+	),
+	saleFestival: st(
+		"jtleman",
+		"お祭り会場の品かね。\n……お祭り価格、{rate}倍だ",
+		{
+			emote: "♪",
+		},
+	),
 	soldNothing: st("jtleman", "手ぶらかね。\n……では、コーヒーでもどうかね"),
 	carryDone: st("ngoane", "なくしたらだめンゴねぇ。\n……ちゃんと持って帰るンゴ"),
 	salesEmpty: st("hinary", "グラフは、次の売り上げから\nつけます。……以上です"),

@@ -30,7 +30,7 @@ try {
 		await server.ssrLoadModule("/src/sim/bot.ts");
 	const { priceOf } = await server.ssrLoadModule("/src/core/town.ts");
 	const { defOf } = await server.ssrLoadModule("/src/core/item.ts");
-	const { DUNGEON_IDS } = await server.ssrLoadModule(
+	const { DUNGEON_IDS, saleRate } = await server.ssrLoadModule(
 		"/src/core/data/dungeons.ts",
 	);
 	const pct = (a) => {
@@ -51,7 +51,7 @@ try {
 				end === "clear" || end === "escape"
 					? run.s.player.items
 							.filter((it) => defOf(it.kind).cat !== "goal")
-							.reduce((a, it) => a + priceOf(it), 0)
+							.reduce((a, it) => a + priceOf(it), 0) * saleRate(d)
 					: 0;
 			all.push(sold);
 			if (end === "clear" || end === "escape") back.push(sold);
