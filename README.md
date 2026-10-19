@@ -221,8 +221,10 @@ pnpm dev
 
 - 蓄音キリコ © おーぷん2ちゃんねる有志（音声: 野良 / キャラクター: 釣りンゴ / ロゴ: ロゴ太郎） https://suzuhete.wixsite.com/home
 - 束音ロゼ（音声: 面倒ミル / キャラクター: wQ8G） https://tabaneroze.ninja-web.net/
-- 革命シヨ © おんJ／おーぷん2ちゃんねる有志の創作キャラ https://kakumeisiyo.my.canva.site/ （このゲームの歩行グラ・立ち絵は仮の自作）
-- 解音ゼロ © おんJ／おーぷん2ちゃんねる有志の創作キャラ https://zero-tokine-test.my.canva.site/ （このゲームの歩行グラ・立ち絵は仮の自作）
+- 革命シヨ © おんJ／おーぷん2ちゃんねる有志の創作キャラ（なんでも実況J の安価スレ生まれ） https://kakumeisiyo.my.canva.site/ （このゲームの歩行グラ・立ち絵は仮の自作）
+- 解音ゼロ © おんJ／おーぷん2ちゃんねる有志の創作キャラ（メイン機 メインさんの 絵は 手描き、サブ機 プロト・レンは AI生成：公式サイトの 表記） https://zero-tokine-test.my.canva.site/ （このゲームの歩行グラ・立ち絵は仮の自作）
+- 春音リノ © おんJ／おーぷん2ちゃんねる有志（なんでも実況J の安価スレで 作った ONJLOID） https://harunerino.vercel.app/ （このゲームの歩行グラは仮の自作）
+- 響化アル（音声: アルトカ / キャラクター: しと ほか / ロゴ: ロゴ太郎） https://hibikaaru.wixsite.com/aruofficial （このゲームの歩行グラは仮の自作）
 - フェリス・やきう: なんJ・おんJ のみんな
 - 原案・ディレクター・キャラクターイラスト・音楽: このゲームの作者
 - シナリオ・ゲームデザイン・プログラム・デバッグ: Claude Code（Claude Opus 5.5・Claude Fable 5.1）
