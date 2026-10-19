@@ -437,11 +437,16 @@ export type Floor = {
 	bossSeen?: true;
 };
 
-/** 板の 装飾 1つ（Floor.decor。北の 壁ぎわ）。x, y の マスの 下の 中ほどに 絵を 合わせる。 */
+/**
+ * 板の 装飾 1つ（Floor.decor。北の 壁ぎわ）。x, y から 横 w マス（既定 1）の 下の 中ほどに 絵を 合わせる。
+ * hang は 真上の 壁の 面に かけて 描く。
+ */
 export type FloorDecor = {
 	x: number;
 	y: number;
+	w?: 2;
 	art: readonly PlaceArt[];
+	hang?: true;
 };
 
 /** 手づくりの 地図の 置物 1つ（Floor.props）。 */

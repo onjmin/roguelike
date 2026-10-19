@@ -2,6 +2,7 @@
 // （pnpm test で いっしょに 動く）。字が 表に あること・床が 1つに つながる こと（ワープで 閉じこめられない）・
 // 人と 話せて 階段・品・源泉に 歩いて 行ける こと・敵や 罠が 無い こと を 見る。
 
+import { BOARD_DECOR } from "../core/data/decor";
 import { DUNGEON_IDS, dungeonById, type FolkTalk } from "../core/data/dungeons";
 import type { PlaceMap } from "../core/data/places";
 import { blocks, buildFloor } from "../core/floor";
@@ -74,6 +75,36 @@ const PLACES: Place[] = DUNGEON_IDS.flatMap((id) => {
 			spring: false,
 		});
 	return out;
+});
+
+test("board decor: hung on the wall, 2 tiles wide, or 2 tiles tall (never a 1-tile thing on the floor), and only by the north wall", () => {
+	// 1マスの 物が 床に あると 道具と まちがえる（core/data/decor.ts）
+	for (const id of DUNGEON_IDS) {
+		const set = BOARD_DECOR[id];
+		for (const k of set.kinds) {
+			if (k.hang || k.w === 2) continue;
+			const tall = Math.max(
+				...k.art.map((a) => {
+					const h = Number(a.ref.split("#")[1]?.split(",")[3] ?? 16);
+					return h * (a.scale ?? 1);
+				}),
+			);
+			if (tall < 32)
+				throw new Fail(
+					`${id}: ${k.art[0].ref} stands on the floor at ${tall}px`,
+				);
+		}
+		for (let n = 0; n < 6; n++) {
+			const f = Run.create(`decor-${id}-${n}`, id).f;
+			const l = f.layout;
+			for (const d of f.decor ?? [])
+				for (let dx = 0; dx < (d.w ?? 1); dx++)
+					if (!isFloor(l, d.x + dx, d.y) || isFloor(l, d.x + dx, d.y - 1))
+						throw new Fail(
+							`${id}: decor at ${d.x + dx},${d.y} is not by a north wall`,
+						);
+		}
+	}
 });
 
 test("each special floor has its own tune, not the board's dungeon tune", () => {

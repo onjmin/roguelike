@@ -405,15 +405,17 @@ export class FloorView {
 		for (const p of props) drawProp(ctx, p);
 		const pools = new Set(f.pools ?? []);
 		for (const i of pools) drawPool(ctx, pools, l.w, i, f.poolArt);
-		// 板の 装飾（core/data/decor.ts）：足もとに 影。上の 行から（壁ぎわの 背の 高い 物が 奥に なる）
-		const decor = [...(f.decor ?? [])].sort((a, b) => a.y - b.y);
+		// 板の 装飾（core/data/decor.ts）：立てる 物は 足もとに 影、かける 物は 真上の 壁の 面に
+		const decor = f.decor ?? [];
 		ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
 		for (const d of decor) {
+			if (d.hang) continue;
+			const dw = d.w ?? 1;
 			ctx.beginPath();
 			ctx.ellipse(
-				d.x * TILE + TILE / 2,
+				(d.x + dw / 2) * TILE,
 				(d.y + 1) * TILE - 2,
-				5,
+				5 * dw,
 				2,
 				0,
 				0,
@@ -422,7 +424,13 @@ export class FloorView {
 			ctx.fill();
 		}
 		for (const d of decor)
-			drawProp(ctx, { x: d.x, y: d.y, w: 1, h: 1, art: d.art });
+			drawProp(ctx, {
+				x: d.x,
+				y: d.hang ? d.y - 1 : d.y,
+				w: d.w ?? 1,
+				h: 1,
+				art: d.art,
+			});
 		this.dirty = false;
 	}
 

@@ -398,7 +398,8 @@ const placePools = (r: Run, f: Floor): void => {
 
 /**
  * 板の 装飾（見た目だけ。core/data/decor.ts）を 部屋の 北の 壁ぎわ（真上が 壁の 床）に 散らす。
- * 道具・敵・階段・水たまり・置物の ない マスに 置き、となり あう 8マスには 重ねて 置かない。
+ * 道具・敵・階段・水たまり・置物の ない マスに 置き（横 2マスの 物は 2マスとも）、まわりの マスには 重ねて 置かない。
+ * かける 物（hang）は その マスの 真上の 壁の 面に 描く。
  * 罠は よけない（装飾の ある マスが 安全と わからない ように）。乱数は 湯だまりと 同じく 階の 作りと 別。
  */
 const placeDecor = (r: Run, f: Floor): void => {
@@ -420,6 +421,7 @@ const placeDecor = (r: Run, f: Floor): void => {
 			if (tileAt(l, t.x, t.y - 1) === T_WALL && !statues.has(up))
 				wallSpots.push(t);
 		}
+	const spotKeys = new Set(wallSpots.map((t) => t.y * w + t.x));
 	const total = set.kinds.reduce((n, k) => n + (k.weight ?? 1), 0);
 	const n = rng.range(set.count[0], set.count[1]);
 	const out: FloorDecor[] = [];
@@ -430,12 +432,26 @@ const placeDecor = (r: Run, f: Floor): void => {
 				roll -= d.weight ?? 1;
 				return roll < 0;
 			}) ?? set.kinds[0];
-		const spots = wallSpots.filter((t) => !taken.has(t.y * w + t.x));
+		const span = kind.w ?? 1;
+		const spots = wallSpots.filter((t) => {
+			for (let dx = 0; dx < span; dx++) {
+				const i = t.y * w + t.x + dx;
+				if (taken.has(i) || !spotKeys.has(i)) return false;
+			}
+			return true;
+		});
 		if (!spots.length) continue;
 		const at = rng.pick(spots);
 		for (let dy = -1; dy <= 1; dy++)
-			for (let dx = -1; dx <= 1; dx++) taken.add((at.y + dy) * w + at.x + dx);
-		out.push({ x: at.x, y: at.y, art: kind.art });
+			for (let dx = -1; dx <= span; dx++)
+				taken.add((at.y + dy) * w + at.x + dx);
+		out.push({
+			x: at.x,
+			y: at.y,
+			art: kind.art,
+			...(kind.w === 2 ? { w: 2 as const } : {}),
+			...(kind.hang ? { hang: true as const } : {}),
+		});
 	}
 	if (out.length) f.decor = out;
 };
