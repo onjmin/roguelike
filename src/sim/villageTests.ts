@@ -7242,7 +7242,7 @@ test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓�
 	const texts: [string, string][] = [];
 	for (const [id, m] of Object.entries(EAT_MENUS)) {
 		ok(facilityById(id), `${id}: a menu without a facility`);
-		for (const k of ["again", "free", "no"] as const)
+		for (const k of ["again", "no"] as const)
 			texts.push([`${id}.${k}`, m[k]]);
 		ok(
 			m.dishes.length >= 3 && m.dishes.length <= 6,
@@ -7310,84 +7310,88 @@ test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓�
 	}
 });
 
-test("飲食店で 食べる: 店番は セリフ 1つ → 品書き → 注文 → チーン → 食べる 音と 地の文 → 1回目だけ お代は ええ、食べた あとは again・やめたら no、券売機は 文の あと 品書き", async () => {
-	const view: VillageView = {
-		stage: TOWN_STAGES - 1,
-		unlocked: ["shallow"],
-		cleared: REVIVE_AREAS.map((a) => a.dungeon),
-	};
-	const village = buildVillage(view, {} as Ctx).events ?? [];
-	for (const [id, m] of Object.entries(EAT_MENUS)) {
-		const f = facilityById(id);
-		if (!f) continue;
-		const room = f.room ? (buildFacility(f, view, {} as Ctx).events ?? []) : [];
-		const person = f.room?.people?.find((p) => p.play === "eat");
-		const stall = f.outdoor?.find((t) => t.play === "eat" && t.sprite);
-		const who = person ?? stall;
-		const ev = person
-			? room.find((e) => e.id === person.id)
-			: stall && village.find((e) => e.id === outdoorId(f, stall));
-		ok(who && ev?.run, `${id}: no keeper to talk to`);
-		if (!who || !ev?.run) continue;
-		const menu = `choose ${[...m.dishes.map(dishLabel), "やめる"].join("/")}`;
-		const d = m.dishes[0];
-		const { s, log } = fakeStory({ pick: 0 });
-		await ev.run(s);
-		ok(
-			inOrder(log, [
-				`say nanj: ${who.lines[0]}`,
-				menu,
-				`say nanj: ${fill(m.order, { dish: d.name })}`,
-				"se glass",
-				"se eat",
-				...d.eat.map((t) => `narrate: ${t}`),
-				`say nanj: ${m.free}`,
-			]),
-			`${id}: the first meal:\n${log.join("\n")}`,
-		);
-		// 2回目は again（お代の 話は もう しない）
-		log.length = 0;
-		await ev.run(s);
-		ok(
-			inOrder(log, [`say nanj: ${m.again}`, menu]) &&
-				!log.includes(`say nanj: ${m.free}`),
-			`${id}: talking again:\n${log.join("\n")}`,
-		);
-		// やめる
-		const quit = fakeStory({ pick: m.dishes.length });
-		await ev.run(quit.s);
-		ok(
-			inOrder(quit.log, [menu, `say nanj: ${m.no}`]) &&
-				!quit.log.includes("se eat"),
-			`${id}: leaving without eating:\n${quit.log.join("\n")}`,
-		);
-		// 券売機（部屋の plays）は 調べた 文の あと すぐ 品書き
-		for (const [kind, play] of Object.entries(f.room?.plays ?? {})) {
-			if (play !== "eat") continue;
-			const t = room.find((e) => e.id === `${kind}_0`);
-			ok(t?.run, `${id}: no ${kind} to read`);
-			if (!t?.run) continue;
-			const r = fakeStory({ pick: 0 });
-			await t.run(r.s);
-			ok(
-				inOrder(r.log, [
-					...(f.room?.lines[kind] ?? []).map((l) => `narrate: ${l}`),
-					menu,
-					"se eat",
-				]),
-				`${id}: the ${kind}:\n${r.log.join("\n")}`,
-			);
-		}
-	}
-});
-
 /** 町の 売り上げ（財布の 元。engine/wallet.ts）を 置く。使った 額は 消さない。 */
 const setTownYen = (points: number): void => {
 	setTown(TOWN_STAGES - 1, points);
 	forgetWalletMemo();
 };
 
-test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目から 品の 値段、足りなければ 店番が 断る", async () => {
+test("飲食店で 食べる: 店番は セリフ 1つ → 品書き → 注文 → チーン → 食べる 音と 地の文、食べた あとは again・やめたら no、券売機は 文の あと 品書き", async () => {
+	await withStorageAsync(async () => {
+		setTownYen(1_000_000);
+		const view: VillageView = {
+			stage: TOWN_STAGES - 1,
+			unlocked: ["shallow"],
+			cleared: REVIVE_AREAS.map((a) => a.dungeon),
+		};
+		const village = buildVillage(view, {} as Ctx).events ?? [];
+		for (const [id, m] of Object.entries(EAT_MENUS)) {
+			const f = facilityById(id);
+			if (!f) continue;
+			const room = f.room
+				? (buildFacility(f, view, {} as Ctx).events ?? [])
+				: [];
+			const person = f.room?.people?.find((p) => p.play === "eat");
+			const stall = f.outdoor?.find((t) => t.play === "eat" && t.sprite);
+			const who = person ?? stall;
+			const ev = person
+				? room.find((e) => e.id === person.id)
+				: stall && village.find((e) => e.id === outdoorId(f, stall));
+			ok(who && ev?.run, `${id}: no keeper to talk to`);
+			if (!who || !ev?.run) continue;
+			const menu = `choose ${[...m.dishes.map(dishLabel), "やめる"].join("/")}`;
+			const d = m.dishes[0];
+			const { s, log } = fakeStory({ pick: 0 });
+			await ev.run(s);
+			ok(
+				inOrder(log, [
+					`say nanj: ${who.lines[0]}`,
+					menu,
+					`say nanj: ${fill(m.order, { dish: d.name })}`,
+					"se glass",
+					"se eat",
+					...d.eat.map((t) => `narrate: ${t}`),
+				]),
+				`${id}: the first meal:\n${log.join("\n")}`,
+			);
+			// 2回目は again
+			log.length = 0;
+			await ev.run(s);
+			ok(
+				inOrder(log, [`say nanj: ${m.again}`, menu]),
+				`${id}: talking again:\n${log.join("\n")}`,
+			);
+			// やめる
+			const quit = fakeStory({ pick: m.dishes.length });
+			await ev.run(quit.s);
+			ok(
+				inOrder(quit.log, [menu, `say nanj: ${m.no}`]) &&
+					!quit.log.includes("se eat"),
+				`${id}: leaving without eating:\n${quit.log.join("\n")}`,
+			);
+			// 券売機（部屋の plays）は 調べた 文の あと すぐ 品書き
+			for (const [kind, play] of Object.entries(f.room?.plays ?? {})) {
+				if (play !== "eat") continue;
+				const t = room.find((e) => e.id === `${kind}_0`);
+				ok(t?.run, `${id}: no ${kind} to read`);
+				if (!t?.run) continue;
+				const r = fakeStory({ pick: 0 });
+				await t.run(r.s);
+				ok(
+					inOrder(r.log, [
+						...(f.room?.lines[kind] ?? []).map((l) => `narrate: ${l}`),
+						menu,
+						"se eat",
+					]),
+					`${id}: the ${kind}:\n${r.log.join("\n")}`,
+				);
+			}
+		}
+		forgetWalletMemo();
+	});
+});
+
+test("有料の 寄り道（2026-10-14）: 飲食店は 1回目から 品の 値段、足りなければ 店番が 断る", async () => {
 	await withStorageAsync(async () => {
 		const view: VillageView = {
 			stage: TOWN_STAGES - 1,
@@ -7408,26 +7412,18 @@ test("有料の 寄り道（2026-10-14）: 飲食店は 1回目 タダ・2回目
 		const d = m.dishes[0];
 		setTownYen(d.price + 100);
 		const { s, log } = fakeStory({ pick: 0 });
-		// 1回目：払わない（お代は ええ）
-		await ev.run(s);
-		ok(
-			!log.includes("se pay") && log.includes(`say nanj: ${m.free}`),
-			`free:\n${log.join("\n")}`,
-		);
-		ok(walletYen() === d.price + 100, `wallet ${walletYen()}`);
-		// 2回目：注文の 前に 払う
-		log.length = 0;
+		// 1回目から 注文の 前に 払う
 		await ev.run(s);
 		ok(
 			inOrder(log, [
 				"se pay",
 				`say nanj: ${fill(m.order, { dish: d.name })}`,
 				"se eat",
-			]) && !log.includes(`say nanj: ${m.free}`),
+			]),
 			`paid:\n${log.join("\n")}`,
 		);
 		ok(walletYen() === 100, `wallet ${walletYen()}`);
-		// 3回目：足りない（何も 出ない）
+		// 2回目：足りない（何も 出ない）
 		log.length = 0;
 		await ev.run(s);
 		ok(
@@ -7463,9 +7459,7 @@ test("居酒屋の ツケ（2026-10-14）: 足りなければ ツケに でき�
 		const d = m.dishes[0];
 		setTownYen(0);
 		const { s, log } = fakeStory({ pick: 0 });
-		await ev.run(s); // 1回目は タダ
-		// 2回目：お金が ない → ツケに する
-		log.length = 0;
+		// お金が ない → ツケに する
 		await ev.run(s);
 		ok(
 			inOrder(log, [

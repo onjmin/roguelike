@@ -2,8 +2,7 @@
 // （麺屋「乙」は data/village/facilities.ts）。キーは 施設の id。
 // 村の 窓と 同じ 決まり：1行は 全角22字・2行まで。キリコも 話してよい（吾輩・ンゴ）。
 // 食べても 何も 持ちこまない（満腹度・道具・強さ・記録には ふれない）。
-// 村に いる あいだの 店ごとの 1回目は 店番が「お代は　ええ」（町が 育ったのは キリコの おかげ）。
-// 2回目からは 品の 値段を キリコの 財布から 払う（2026-10-14 作者：「他の 有料に して いい」。
+// 品の 値段を キリコの 財布から 払う（2026-10-14 作者：「他の 有料に して いい」。
 // 1回の 冒険で 数千円 稼ぐ ので、町の 飲食店くらいの 値段）。足りなければ 店番の short で 断られる。
 import type { Emote, Gesture } from "../../engine/emote";
 import { diner } from "../village/dinerSheet";
@@ -11,7 +10,7 @@ import { food } from "../village/rpgenArt";
 
 /**
  * 品（選択肢の 名前・出てきた 一品の 絵・食べる 窓。cold は 冷たい 品＝湯気を 出さない）。
- * price は 円（2回目からの お代）。品書きは「名前　値段」で、長い 名前は label（品書きだけの 短い 名前）。
+ * price は 円（お代）。品書きは「名前　値段」で、長い 名前は label（品書きだけの 短い 名前）。
  */
 export type Dish = {
 	name: string;
@@ -34,11 +33,9 @@ export type EatMenu = {
 	again: string;
 	/** 注文を 受けた ひとこと（{dish}）。 */
 	order: string;
-	/** 食べおわった あと（村に いる あいだ 1回目だけ。お代は いらない わけ）。 */
-	free: string;
 	/** やめた とき。 */
 	no: string;
-	/** 2回目から お金が 足りない とき（{price} は その 品の 値段）。 */
+	/** お金が 足りない とき（{price} は その 品の 値段）。 */
 	short: string;
 	/** ツケが きく 店（居酒屋「草」だけ。2026-10-14 作者：「居酒屋は ツケも できる ように」。ui/minigames/eat.ts）。 */
 	tab?: EatTab;
@@ -73,7 +70,6 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		keeper: "屋台の兄ちゃん",
 		again: "まだ食うんか！\nええ食いっぷりや！",
 		order: "{dish}、まいど！\n熱いから気ぃつけや！",
-		free: "お代？ええてええて！\n町がにぎやかなんはあんたのおかげや",
 		no: "ほな、また焼きたて食べに来てや！",
 		short: "{price}や！……あれ、たりへんな！\nまた稼いでおいで！",
 		dishes: [
@@ -112,7 +108,6 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		keeper: "店主",
 		again: "おかわりか！\n若いのはええな！",
 		order: "{dish}、一丁！\nはい、お待ち！（3秒）",
-		free: "お代はええ！\nこの峠をにぎやかにしてくれた礼や",
 		no: "ほな、いってらっしゃい！\n気ぃつけてな！",
 		short: "{price}や！……足りんな！\nまた峠を越えるときにな",
 		dishes: [
@@ -154,7 +149,6 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		keeper: "店主",
 		again: "まだいくんか！\nええ根性や！",
 		order: "{dish}、あいよ！\nチャッ、チャッ（湯切りの音）",
-		free: "お代はええ！\n町が育つと客もふえる。礼や！",
 		no: "乙！\n（また来いや、の意味）",
 		short: "{price}や！……足りんな！\n稼いでから来いや！",
 		dishes: [
@@ -195,7 +189,6 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		keeper: "大将",
 		again: "まだいけるんか！\n草！",
 		order: "{dish}、あいよ！\nへい、お待ち！",
-		free: "お代？ええて！\n町のために潜っとる子から取れるかい",
 		no: "ほなまたな！\n次は虎が勝っとるとき来てや！",
 		short: "{price}や！……足りんがな！\nツケももういっぱいや",
 		tab: {
@@ -252,7 +245,6 @@ export const EAT_MENUS: Record<string, EatMenu> = {
 		keeper: "メイドのここあ",
 		again: "まだ召しあがるんですか？\nここあ、うれしいです♪",
 		order: "{dish}、かしこまりました♪\n少々お待ちくださいませ",
-		free: "お代はいただけません。\nこの町のお嬢さまですもの",
 		no: "いってらっしゃいませ、\nお嬢さま！",
 		short: "{price}でございます！\nあら、お財布が過疎ってますね♪",
 		dishes: [

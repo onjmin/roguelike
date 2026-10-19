@@ -4,8 +4,8 @@
 // - 券売機（部屋の plays:"eat"）は 調べた 文の あと すぐ 品書き（受けるのは 店番）。
 // - 選ぶ → 店番の ひとこと（メイド喫茶は おまじない＝品の magic。頭に ♥）→ チーン → 出てきた 一品（板に 大きく。湯気が のぼる・冷たい 品は のぼらない。
 //   1.2秒か A／タップ）→ 食べる 音 →
-//   地の文 1〜2窓。村に いる あいだの 店ごとの 1回目だけ、食べた あとに 店番の「お代は　ええ」。
-// - 2回目からは 品の 値段（品書きに「名前　値段」）を 注文の 前に 払う（チャリン）。足りなければ 店番の short で
+//   地の文 1〜2窓。
+// - 品の 値段（品書きに「名前　値段」）を 注文の 前に 払う（チャリン）。足りなければ 店番の short で
 //   断られて 何も 出ない（2026-10-14 作者：「他の 有料に して いい」。財布は engine/wallet.ts）。
 // - 居酒屋「草」だけ ツケが きく（作者：「居酒屋は ツケも できる ように」「足りても ツケが 選べる ように」）：
 //   払える ときは「払う／ツケ／やめる」、足りなければ「ツケに　しとこか？」で
@@ -196,35 +196,33 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	}
 	const d = m.dishes[k];
 	const ate = `eat:${id}`;
-	// 1回目は お代 なし（食べた あとに free）。2回目からは 注文の 前に 払う。
+	// 注文の 前に 払う。
 	// ツケが きく 店（居酒屋）は 足りても 足りなくても ツケに できる（上限 TAB_CAP。2026-10-14 作者：「足りても ツケが 選べる ように」）
-	if (s.flag(ate)) {
-		const t = m.tab;
-		const price = yen(d.price);
-		const owe = t ? loadTab() : 0;
-		const canTab = !!t && owe + d.price <= TAB_CAP;
-		const canPay = walletYen() >= d.price;
-		if (t && canTab) {
-			// 払える とき：払う／ツケ／やめる、払えない とき：ツケ／やめる
-			await keeperSay(s, m.keeper, fill(canPay ? t.choice : t.ask, { price }));
-			const opts = canPay
-				? [...t.choiceMenu.map((x) => fill(x, { price }))]
-				: [...t.menu];
-			const c = await s.choose(opts, { cancel: opts.length - 1 });
-			const tab = canPay ? c === 1 : c === 0;
-			if (c === opts.length - 1 || c < 0) {
-				await keeperSay(s, m.keeper, m.no);
-				return;
-			}
-			if (tab) {
-				saveTab(owe + d.price);
-				await keeperSay(s, m.keeper, fill(t.put, { tab: yen(owe + d.price) }));
-			} else pay(s, d.price);
-		} else if (!pay(s, d.price)) {
-			const line = t ? fill(t.full, { tab: yen(owe) }) : m.short;
-			await keeperSay(s, m.keeper, fill(line, { price }));
+	const t = m.tab;
+	const price = yen(d.price);
+	const tabNow = t ? loadTab() : 0;
+	const canTab = !!t && tabNow + d.price <= TAB_CAP;
+	const canPay = walletYen() >= d.price;
+	if (t && canTab) {
+		// 払える とき：払う／ツケ／やめる、払えない とき：ツケ／やめる
+		await keeperSay(s, m.keeper, fill(canPay ? t.choice : t.ask, { price }));
+		const opts = canPay
+			? [...t.choiceMenu.map((x) => fill(x, { price }))]
+			: [...t.menu];
+		const c = await s.choose(opts, { cancel: opts.length - 1 });
+		const tab = canPay ? c === 1 : c === 0;
+		if (c === opts.length - 1 || c < 0) {
+			await keeperSay(s, m.keeper, m.no);
 			return;
 		}
+		if (tab) {
+			saveTab(tabNow + d.price);
+			await keeperSay(s, m.keeper, fill(t.put, { tab: yen(tabNow + d.price) }));
+		} else pay(s, d.price);
+	} else if (!pay(s, d.price)) {
+		const line = t ? fill(t.full, { tab: yen(tabNow) }) : m.short;
+		await keeperSay(s, m.keeper, fill(line, { price }));
+		return;
 	}
 	await keeperSay(s, m.keeper, fill(m.order, { dish: d.name }));
 	// おまじない（メイド喫茶。店番の 頭に ♥ など）
@@ -239,10 +237,7 @@ export const eatAt = async (ctx: Ctx, s: Story, id: string): Promise<void> => {
 	if (d.art) await showDish(ctx, d.art, d.name, d.cold);
 	s.se("eat");
 	for (const t of d.eat) await s.narrate(t);
-	if (!s.flag(ate)) {
-		s.set(ate);
-		await keeperSay(s, m.keeper, m.free);
-	}
+	s.set(ate);
 };
 
 /** 店番に 話す（セリフを 1つ → 品書き。食べた あとは again）。lines は 中の 人・屋台の 外の 物の セリフ。 */
