@@ -11,10 +11,13 @@ import {
 	crowdLine,
 	crowdNodes,
 	crowdSize,
+	NARROW_RUN,
+	narrowDepth,
 	PERSONAS,
 	pedRoute,
 	pickTrip,
 	type TimeBand,
+	TURN_COST,
 	timeBand,
 	villagePedCost,
 } from "../data/village/crowd";
@@ -27,6 +30,7 @@ import {
 	villageRows,
 } from "../data/village/map";
 import { Actor, type Field } from "../engine/field";
+import { DIR_VEC, type Dir } from "../engine/types";
 import { Crowd } from "../ui/village/villageCrowd";
 import type { TestResult } from "./monsterTests";
 
@@ -342,6 +346,150 @@ test("キリコと 重なった 人は 横へ よけ、話しかけに 来る �
 	ok(
 		!(a.x === player.x && a.y === player.y) || !field.actors.includes(a),
 		"the passer-by stays on Kiriko",
+	);
+});
+
+test("細道：桟橋の 先の 港の 出口からは 出てくるが、そこへ 向かう 人は いない（すれちがえずに 詰まらない）", () => {
+	const v = view(7);
+	const nodes = crowdNodes(v);
+	const exit = nodes.find((n) => n.kind === "edge");
+	ok(exit?.outOnly, "the harbor exit at the end of the pier is a goal");
+	// 細道の 先には 出てくる 所しか ない（立ちどまる 所・向かう 扉は ない）
+	const depth = narrowDepth(VILLAGE_W, VILLAGE_H, villagePedCost(v), [19, 22]);
+	const d = (x: number, y: number) => depth[y * VILLAGE_W + x];
+	ok(d(20, 50) >= NARROW_RUN, `the pier is only ${d(20, 50)} deep`);
+	// 町の なかは 細道に ならない（本館の 扉の 前・広場）
+	const hall = nodes.find((n) => n.kind === "hall");
+	ok(
+		d(19, 22) === 0 && hall && d(hall.at[0], hall.at[1] + 1) === 0,
+		"the plaza counts as narrow",
+	);
+	for (const n of nodes)
+		if (!n.enter)
+			ok(
+				d(n.at[0], n.at[1]) < NARROW_RUN,
+				`${n.id} stands at the end of a narrow path`,
+			);
+	// どの 段・時間帯でも 細道の 先へは 向かわず、だれかは 歩く
+	const rng = seeded(7);
+	for (let stage = 2; stage < TOWN_STAGES; stage++) {
+		const ns = crowdNodes(view(stage));
+		for (const b of BANDS)
+			for (let i = 0; i < 200; i++) {
+				const t = pickTrip(rng, ns, b, false);
+				ok(t, `stage ${stage} ${b}: nobody walks`);
+				ok(!t?.to.outOnly, `stage ${stage} ${b}: someone heads to ${t?.to.id}`);
+			}
+	}
+	// 朝の 都市を 3分：桟橋（x=20, y=43〜48）を 下る 人は いない
+	const field = fakeField(v);
+	const player = new Actor("player", 19, 22, "down", "", null);
+	const crowd = new Crowd(
+		{
+			field,
+			nodes,
+			cost: villagePedCost(v),
+			stage: layoutStage(v),
+			player,
+			clock: () => ({ hour: 8, weekend: false }),
+			paused: () => false,
+			hidden: () => false,
+			target: () => null,
+			talk: () => async () => {},
+		},
+		seeded(3),
+	);
+	const pier = (a: Actor) => a.x === 20 && a.y >= 43 && a.y <= 48;
+	let up = 0;
+	for (let t = 0; t < 180_000; t += 50) {
+		const was = new Map(field.actors.map((a) => [a, a.y] as const));
+		for (const a of field.actors) a.update(50);
+		crowd.update(50);
+		for (const a of field.actors) {
+			const y0 = was.get(a);
+			if (y0 === undefined || !pier(a)) continue;
+			ok(a.y <= y0, `${a.id} walks down the pier at ${a.x},${a.y}`);
+			if (a.y < y0) up++;
+		}
+	}
+	ok(up > 0, "nobody comes up from the harbor");
+});
+
+test("道さがし：見こみつきでも いちばん 近い 道（曲がる ぶんも 入れて）を かえし、道の ない 所は null", () => {
+	const v = view(7);
+	const cost = villagePedCost(v);
+	/** 道の 歩きにくさ（曲がる ぶんも。着く マスは 1）。 */
+	const costOf = (from: [number, number], to: [number, number], r: Dir[]) => {
+		let [x, y] = from;
+		let sum = 0;
+		r.forEach((d, i) => {
+			x += DIR_VEC[d].dx;
+			y += DIR_VEC[d].dy;
+			sum += x === to[0] && y === to[1] ? 1 : cost(x, y);
+			if (i > 0 && d !== r[i - 1]) sum += TURN_COST;
+		});
+		return { sum, end: [x, y].join(",") };
+	};
+	/** くらべる ための ふつうの 道さがし（向きつきの ダイクストラ。来た 道は すぐ もどらない）。 */
+	const DIRS: Dir[] = ["up", "right", "down", "left"];
+	const slow = (from: [number, number], to: [number, number]): number => {
+		const key = (x: number, y: number, d: number) => `${x},${y},${d}`;
+		const dist = new Map<string, number>();
+		const open: [number, number, number, number][] = [];
+		for (let d = 0; d < 4; d++) {
+			const x = from[0] + DIR_VEC[DIRS[d]].dx;
+			const y = from[1] + DIR_VEC[DIRS[d]].dy;
+			const c = x === to[0] && y === to[1] ? 1 : cost(x, y);
+			if (Number.isFinite(c)) {
+				dist.set(key(x, y, d), c);
+				open.push([c, x, y, d]);
+			}
+		}
+		while (open.length) {
+			open.sort((a, b) => a[0] - b[0]);
+			const [g, x, y, din] = open.shift() as [number, number, number, number];
+			if (g > (dist.get(key(x, y, din)) ?? Number.POSITIVE_INFINITY)) continue;
+			if (x === to[0] && y === to[1]) return g;
+			for (let d = 0; d < 4; d++) {
+				if ((d + 2) % 4 === din) continue;
+				const nx = x + DIR_VEC[DIRS[d]].dx;
+				const ny = y + DIR_VEC[DIRS[d]].dy;
+				const c = nx === to[0] && ny === to[1] ? 1 : cost(nx, ny);
+				if (!Number.isFinite(c)) continue;
+				const nd = g + c + (d === din ? 0 : TURN_COST);
+				if (nd < (dist.get(key(nx, ny, d)) ?? Number.POSITIVE_INFINITY)) {
+					dist.set(key(nx, ny, d), nd);
+					open.push([nd, nx, ny, d]);
+				}
+			}
+		}
+		return Number.POSITIVE_INFINITY;
+	};
+	const nodes = crowdNodes(v);
+	const rng = seeded(19);
+	for (let i = 0; i < 24; i++) {
+		const a = nodes[Math.floor(rng() * nodes.length)].at as [number, number];
+		const b = nodes[Math.floor(rng() * nodes.length)].at as [number, number];
+		if (a.join() === b.join()) continue;
+		const r = pedRoute(VILLAGE_W, VILLAGE_H, cost, a, b);
+		const want = slow(a, b);
+		if (!Number.isFinite(want)) {
+			ok(r === null, `${a}→${b}: a route through walls`);
+			continue;
+		}
+		ok(r, `${a}→${b}: no route`);
+		if (!r) continue;
+		const got = costOf(a, b, r);
+		ok(got.end === b.join(","), `${a}→${b}: ends at ${got.end}`);
+		ok(
+			Math.abs(got.sum - want) < 1e-6,
+			`${a}→${b}: cost ${got.sum.toFixed(2)}, best ${want.toFixed(2)}`,
+		);
+	}
+	// 海の まんなか（行けない 所）
+	ok(
+		pedRoute(VILLAGE_W, VILLAGE_H, cost, [19, 22], [0, 51]) === null,
+		"a route into the sea",
 	);
 });
 

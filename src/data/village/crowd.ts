@@ -2,8 +2,9 @@
 //
 // 町の 段で 人が ふえ（殺風景の 村は だれも 来ない → 都市は にぎわう）、村の 時計で 流れが かわる
 // （朝は 家や 駅から 職場へ・昼は 店と 散歩・夕方は 帰り道・夜は 盛り場だけ・深夜は 無人〜都市で まばら。週末は 遊びに 出る）。
-// 人は 扉・家・港の 桟橋から 出てきて、別の 扉・家・桟橋へ 歩いて 入る（消える）。掲示板・ベンチなどでは
-// しばらく 立ちどまって、また 歩きだす。
+// 人は 扉・家・港の 桟橋から 出てきて、別の 扉・家へ 歩いて 入る（消える）。掲示板・ベンチなどでは
+// しばらく 立ちどまって、また 歩きだす。1列の 細道の 先（桟橋の 先の 港の 出口）からは 出てくるが、そこへは
+// 向かわない（細道は 出てくる 向きの 一方通行。NARROW_RUN）。
 // 歩くのは 歩道・広場・村の 道（車道は 横断歩道で わたる。電柱などを よける ときだけ 1歩 はみ出す）。
 // 動かすのは ui/village/villageCrowd.ts（キリコも 村の 人も ふさがない）。話しかけると 1窓。強さには 効かない。
 
@@ -14,6 +15,9 @@ import { facilitiesAt, facilityOfDoor } from "./facilities";
 import {
 	type Cell,
 	layoutStage,
+	VILLAGE_H,
+	VILLAGE_SPOTS,
+	VILLAGE_W,
 	type VillageView,
 	villagePalette,
 	villagePlaces,
@@ -108,6 +112,11 @@ export type CrowdNode = {
 	board?: boolean;
 	/** 施設の 扉なら その 施設（data/village/facilities.ts の id）か 町の まんなかの 扉の id。 */
 	place?: string;
+	/**
+	 * 細道の 先（桟橋の 先の 港の 出口など。NARROW_RUN）：ここからは 人が 出てくるが、ここへ 向かう 人は 出さない
+	 * （細道は 出てくる 向きの 一方通行。向かいあうと すれちがえずに 詰まる）。
+	 */
+	outOnly?: true;
 };
 
 /** 施設の 扉の 行き先（data/village/facilities.ts の id。のっていない 施設には 人は 入らない）。 */
@@ -244,8 +253,35 @@ const SPOTS: readonly Spot[] = [
 	},
 ];
 
-/** その 地図の 行き先（扉・家・出口・立ちどまる 所）。 */
+/**
+ * その 地図の 行き先（扉・家・出口・立ちどまる 所）。細道の 先の 扉・出口は 出てくるだけ（outOnly）、
+ * 細道の 先の 立ちどまる 所は 出さない。
+ */
 export const crowdNodes = (v: VillageView): CrowdNode[] => {
+	const depth = pedMapOf(v).depth;
+	const at = (x: number, y: number) =>
+		x < 0 || y < 0 || x >= VILLAGE_W || y >= VILLAGE_H
+			? -1
+			: depth[y * VILLAGE_W + x];
+	/** 広場から そこまでの 細道の 深さ（扉は 通れない マスなので、となりの 歩ける マスの いちばん 浅い 所）。 */
+	const reach = (n: CrowdNode): number => {
+		const [x, y] = n.at;
+		if (!n.enter) return at(x, y);
+		const ds = [at(x + 1, y), at(x - 1, y), at(x, y + 1), at(x, y - 1)].filter(
+			(d) => d >= 0,
+		);
+		return ds.length ? Math.min(...ds) : 0;
+	};
+	const out: CrowdNode[] = [];
+	for (const n of allNodes(v)) {
+		if (reach(n) < NARROW_RUN) out.push(n);
+		else if (n.enter) out.push({ ...n, outOnly: true });
+	}
+	return out;
+};
+
+/** 地図の 行き先 ぜんぶ（細道を 見る 前）。 */
+const allNodes = (v: VillageView): CrowdNode[] => {
 	const stage = layoutStage(v);
 	// まだ 生き返って いない 所（シャッター）には 人が 出入りしない・立ちどまらない（data/town/revival.ts）
 	const open = (place: string) => isRevived(place, revivedBoards(v));
@@ -310,7 +346,7 @@ export type PedCost = (x: number, y: number) => number;
 const ROADWAY = new Set(["ゑ", "ヴ", "ろ", "ゐ", "ら", "り", "ヰ", "ヱ"]);
 const ROAD_COST = 1.8;
 /** 曲がる たびに 足す（同じ 長さなら まっすぐな 道を えらぶ。広場を ジグザグに 歩かない）。 */
-const TURN_COST = 0.6;
+export const TURN_COST = 0.6;
 
 /**
  * 通行人の 歩きにくさ。通れない 地形と 置物（walls）は 通れない。車道は ほぼ 歩かない・
@@ -347,8 +383,22 @@ export const pedCost = (
 const DIRS: readonly Dir[] = ["up", "right", "down", "left"];
 
 /**
+ * 道さがしの 下書き（呼ぶ たびに 作りなおさない。町では 1秒に 何回も 引くので ごみを 出さない）。
+ * mark が gen と 同じ 状態だけが この 回の dist・prev。
+ */
+const scratch = {
+	n: 0,
+	dist: new Float64Array(0),
+	prev: new Int32Array(0),
+	mark: new Uint32Array(0),
+	gen: 0,
+	hd: new Float64Array(1024),
+	hs: new Int32Array(1024),
+};
+
+/**
  * from から to への 道（歩きにくさの 和が いちばん 小さい。曲がるのは 少なめ）。to は 通れない マス（扉・出口）でも 着ける。
- * 道が なければ null。
+ * 道が なければ null。1歩は かならず 1 以上 かかるので、残りの 縦横の マス数を 見こみに した A*。
  */
 export const pedRoute = (
 	w: number,
@@ -359,43 +409,60 @@ export const pedRoute = (
 ): Dir[] | null => {
 	if (sx === tx && sy === ty) return [];
 	const n = w * h * 4;
-	const dist = new Float64Array(n).fill(Number.POSITIVE_INFINITY);
-	const prev = new Int32Array(n).fill(-1);
-	// 小さい 順の ヒープ（距離と 状態を 別の 型つき 配列に。組を 作らない ので 速い）
-	let cap = 1024;
-	let hd = new Float64Array(cap);
-	let hs = new Int32Array(cap);
+	const S = scratch;
+	if (S.n < n) {
+		S.n = n;
+		S.dist = new Float64Array(n);
+		S.prev = new Int32Array(n);
+		S.mark = new Uint32Array(n);
+		S.gen = 0;
+	}
+	S.gen = (S.gen + 1) >>> 0;
+	if (S.gen === 0) {
+		S.mark.fill(0);
+		S.gen = 1;
+	}
+	const { dist, prev, mark } = S;
+	const gen = S.gen;
+	/** その 状態の いままでの いちばん 小さい 道のり（まだ なら 無限）。 */
+	const best = (s: number) =>
+		mark[s] === gen ? dist[s] : Number.POSITIVE_INFINITY;
+	const rest = (x: number, y: number) => Math.abs(x - tx) + Math.abs(y - ty);
+	// 小さい 順の ヒープ（見こみ込みの 道のりと 状態を 別の 型つき 配列に。組を 作らない ので 速い）
 	let size = 0;
-	const push = (d: number, s: number) => {
-		if (size === cap) {
-			cap *= 2;
-			const nd = new Float64Array(cap);
-			const ns = new Int32Array(cap);
-			nd.set(hd);
-			ns.set(hs);
-			hd = nd;
-			hs = ns;
+	const push = (f: number, s: number) => {
+		if (size === S.hd.length) {
+			const nd = new Float64Array(size * 2);
+			const ns = new Int32Array(size * 2);
+			nd.set(S.hd);
+			ns.set(S.hs);
+			S.hd = nd;
+			S.hs = ns;
 		}
+		const hd = S.hd;
+		const hs = S.hs;
 		let i = size++;
 		while (i > 0) {
 			const p = (i - 1) >> 1;
-			if (hd[p] <= d) break;
+			if (hd[p] <= f) break;
 			hd[i] = hd[p];
 			hs[i] = hs[p];
 			i = p;
 		}
-		hd[i] = d;
+		hd[i] = f;
 		hs[i] = s;
 	};
-	/** いちばん 小さい 状態を 取り出す（距離は popD に）。空なら -1。 */
-	let popD = 0;
+	/** いちばん 小さい 状態を 取り出す（見こみ込みの 道のりは popF に）。空なら -1。 */
+	let popF = 0;
 	const pop = (): number => {
 		if (!size) return -1;
+		const hd = S.hd;
+		const hs = S.hs;
 		const top = hs[0];
-		popD = hd[0];
+		popF = hd[0];
 		size--;
 		if (size) {
-			const d = hd[size];
+			const f = hd[size];
 			const s = hs[size];
 			let i = 0;
 			for (;;) {
@@ -403,12 +470,12 @@ export const pedRoute = (
 				if (l >= size) break;
 				const r = l + 1;
 				const m = r < size && hd[r] < hd[l] ? r : l;
-				if (hd[m] >= d) break;
+				if (hd[m] >= f) break;
 				hd[i] = hd[m];
 				hs[i] = hs[m];
 				i = m;
 			}
-			hd[i] = d;
+			hd[i] = f;
 			hs[i] = s;
 		}
 		return top;
@@ -422,18 +489,21 @@ export const pedRoute = (
 		const c = goal ? 1 : cost(nx, ny);
 		if (!Number.isFinite(c)) continue;
 		const s = state(nx, ny, d);
-		if (c < dist[s]) {
+		if (c < best(s)) {
+			mark[s] = gen;
 			dist[s] = c;
-			push(c, s);
+			prev[s] = -1;
+			push(c + rest(nx, ny), s);
 		}
 	}
 	let found = -1;
 	for (let s = pop(); s >= 0; s = pop()) {
-		const d0 = popD;
-		if (d0 > dist[s]) continue;
 		const cell = s >> 2;
 		const x = cell % w;
 		const y = (cell - x) / w;
+		const d0 = dist[s];
+		// 後から もっと 近い 道で 入れなおした 状態の 古い 札
+		if (popF > d0 + rest(x, y)) continue;
 		if (x === tx && y === ty) {
 			found = s;
 			break;
@@ -450,10 +520,11 @@ export const pedRoute = (
 			if (!Number.isFinite(c)) continue;
 			const nd = d0 + c + (d === din ? 0 : TURN_COST);
 			const ns = state(nx, ny, d);
-			if (nd < dist[ns]) {
+			if (nd < best(ns)) {
+				mark[ns] = gen;
 				dist[ns] = nd;
 				prev[ns] = s;
-				push(nd, ns);
+				push(nd + rest(nx, ny), ns);
 			}
 		}
 	}
@@ -464,16 +535,124 @@ export const pedRoute = (
 };
 
 /** 村の 地図の 歩きにくさ（試験と 同じ 作り方。置物と 扉・出口は 通れない。endpoints は 着ける）。 */
-export const villagePedCost = (v: VillageView): PedCost => {
+export const villagePedCost = (v: VillageView): PedCost => pedMapOf(v).cost;
+
+/** 村ごとの 歩きにくさと 細道の 深さ（村が 建つ あいだ 地図は かわらない。行き先と 道で 2回 作らない）。 */
+const pedMaps = new WeakMap<
+	VillageView,
+	{ cost: PedCost; depth: Int32Array }
+>();
+
+const pedMapOf = (v: VillageView): { cost: PedCost; depth: Int32Array } => {
+	const hit = pedMaps.get(v);
+	if (hit) return hit;
 	const places = villagePlaces(v);
 	const walls = new Set(
 		places
 			.filter((p) => p.trigger === "touch" || !!p.sprite)
 			.map((p) => `${p.x},${p.y}`),
 	);
-	return pedCost(villageRows(v), villagePalette(v), layoutStage(v), (x, y) =>
-		walls.has(`${x},${y}`),
+	const cost = pedCost(
+		villageRows(v),
+		villagePalette(v),
+		layoutStage(v),
+		(x, y) => walls.has(`${x},${y}`),
 	);
+	const m = {
+		cost,
+		depth: narrowDepth(VILLAGE_W, VILLAGE_H, cost, VILLAGE_SPOTS.boot),
+	};
+	pedMaps.set(v, m);
+	return m;
+};
+
+// ───────────────── 細道 ─────────────────
+
+/**
+ * 1列でしか 歩けず よけ道も ない 細道（桟橋の 先など）が 広場から これだけ 続いた 先は、人の 行き先に しない
+ * （向かいあうと すれちがえずに 詰まる）。そこの 扉・出口から 出てくる 人は 出す（出てくる 向きの 一方通行）。
+ */
+export const NARROW_RUN = 4;
+
+const N4: readonly (readonly [number, number])[] = [
+	[1, 0],
+	[-1, 0],
+	[0, 1],
+	[0, -1],
+];
+
+/**
+ * 細道の 深さ：広場（hub）から その マスまでに 通る「1列の 細道」の マス数（いちばん 少ない 道すじで）。
+ * 細道は 歩ける マスで 左右か 上下が ともに 歩けず、しかも ふさぐと 町が 切れる マス（よけ道の ある 路地は 数えない）。
+ * 歩けない マス・広場から 行けない マスは -1。
+ */
+export const narrowDepth = (
+	w: number,
+	h: number,
+	cost: PedCost,
+	[hx, hy]: Cell,
+): Int32Array => {
+	const n = w * h;
+	const depth = new Int32Array(n).fill(-1);
+	const ok = (x: number, y: number) => Number.isFinite(cost(x, y));
+	if (!ok(hx, hy)) return depth;
+	// ふさぐと 町が 切れる マス（切断点。再帰しない 深さ優先）
+	const disc = new Int32Array(n).fill(-1);
+	const low = new Int32Array(n);
+	const cut = new Uint8Array(n);
+	const root = hy * w + hx;
+	let t = 0;
+	let kids = 0;
+	disc[root] = low[root] = t++;
+	// [マス, 親, 次に 見る となり]
+	const st: [number, number, number][] = [[root, -1, 0]];
+	while (st.length) {
+		const top = st[st.length - 1];
+		const [u, par] = top;
+		if (top[2] < 4) {
+			const [dx, dy] = N4[top[2]++];
+			const x = (u % w) + dx;
+			const y = Math.floor(u / w) + dy;
+			if (!ok(x, y)) continue;
+			const v = y * w + x;
+			if (disc[v] < 0) {
+				disc[v] = low[v] = t++;
+				if (u === root) kids++;
+				st.push([v, u, 0]);
+			} else if (v !== par) low[u] = Math.min(low[u], disc[v]);
+			continue;
+		}
+		st.pop();
+		if (par < 0) continue;
+		low[par] = Math.min(low[par], low[u]);
+		if (par !== root && low[u] >= disc[par]) cut[par] = 1;
+	}
+	if (kids > 1) cut[root] = 1;
+	const single = (x: number, y: number) =>
+		(!ok(x - 1, y) && !ok(x + 1, y)) || (!ok(x, y - 1) && !ok(x, y + 1));
+	// 細道の マスだけ 1 足す 幅優先（0-1 BFS）
+	const far = 1 << 29;
+	const best = new Int32Array(n).fill(far);
+	best[root] = 0;
+	const dq: number[] = [root];
+	while (dq.length) {
+		const c = dq.shift() as number;
+		const cx = c % w;
+		const cy = Math.floor(c / w);
+		for (const [dx, dy] of N4) {
+			const x = cx + dx;
+			const y = cy + dy;
+			if (!ok(x, y)) continue;
+			const j = y * w + x;
+			const step = cut[j] && single(x, y) ? 1 : 0;
+			if (best[c] + step >= best[j]) continue;
+			best[j] = best[c] + step;
+			if (step) dq.push(j);
+			else dq.unshift(j);
+		}
+	}
+	for (let i = 0; i < n; i++) if (best[i] < far) depth[i] = best[i];
+	return depth;
 };
 
 // ───────────────── 歩く 人 ─────────────────
@@ -859,6 +1038,10 @@ const nodesOf = (nodes: readonly CrowdNode[], kind: CrowdKind): CrowdNode[] => {
 	return nodes.filter((n) => n.kind === "edge");
 };
 
+/** 向かって よい 所（細道の 先は 出てくる だけ）。 */
+const goals = (nodes: readonly CrowdNode[], kind: CrowdKind): CrowdNode[] =>
+	nodesOf(nodes, kind).filter((n) => !n.outOnly);
+
 const pickW = <T>(
 	rng: () => number,
 	xs: readonly (readonly [T, number])[],
@@ -884,7 +1067,7 @@ const flowsFor = (
 ): Flow[] =>
 	p.flows[band].filter(([a, b]) => {
 		// 出る 所と ちがう 行き先が いる（出口が 1つなら 出口から 出口へは 歩かない）
-		const tos = nodesOf(nodes, b);
+		const tos = goals(nodes, b);
 		return nodesOf(nodes, a).some(
 			(n) => n.enter && tos.some((t) => t.id !== n.id),
 		);
@@ -921,10 +1104,10 @@ export const pickTrip = (
 		persona,
 		flow[0],
 		nodesOf(nodes, flow[0]).filter(
-			(n) => n.enter && nodesOf(nodes, flow[1]).some((t) => t.id !== n.id),
+			(n) => n.enter && goals(nodes, flow[1]).some((t) => t.id !== n.id),
 		),
 	);
-	const tos = nodesOf(nodes, flow[1]).filter((n) => n.id !== from.id);
+	const tos = goals(nodes, flow[1]).filter((n) => n.id !== from.id);
 	if (!tos.length) return null;
 	return { persona, from, to: pickNode(rng, persona, flow[1], tos) };
 };
@@ -941,8 +1124,8 @@ export const pickNext = (
 		.map(([, b, w]) => [b, w] as const)
 		.filter(([b]) => b !== "rest" && b !== "wait");
 	const kind = pickW(rng, kinds) ?? "edge";
-	const tos = nodesOf(nodes, kind).filter((n) => n.id !== here.id && n.enter);
-	const any = nodes.filter((n) => n.enter && n.id !== here.id);
+	const tos = goals(nodes, kind).filter((n) => n.id !== here.id && n.enter);
+	const any = nodes.filter((n) => n.enter && !n.outOnly && n.id !== here.id);
 	return tos.length
 		? pickNode(rng, persona, kind, tos)
 		: any.length

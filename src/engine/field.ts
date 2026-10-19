@@ -474,12 +474,20 @@ export class Field {
 					break;
 				}
 		if (!near) return false;
-		const s = this.probe ?? document.createElement("canvas");
-		this.probe = s;
-		s.width = PROBE_W;
-		s.height = PROBE_H;
+		// 画用紙は 1枚を 使いまわす（大きさを 入れなおすと 毎回 作りなおしに なる）
+		let s = this.probe;
+		if (!s) {
+			s = document.createElement("canvas");
+			s.width = PROBE_W;
+			s.height = PROBE_H;
+			this.probe = s;
+		}
 		const sx = s.getContext("2d", { willReadFrequently: true });
 		if (!sx) return false;
+		sx.setTransform(1, 0, 0, 1, 0, 0);
+		sx.globalAlpha = 1;
+		sx.globalCompositeOperation = "source-over";
+		sx.clearRect(0, 0, PROBE_W, PROBE_H);
 		// マスの左上が (TILE, PROBE_H - TILE) に来るように描く
 		const bx = Math.round(a.fx * TILE) - TILE;
 		const by = Math.round(a.fy * TILE) - (PROBE_H - TILE);
@@ -542,12 +550,13 @@ export class Field {
 			y1 = Math.max(y1, py + TILE);
 		}
 		if (x0 > x1) return;
-		// 画面の実画素で描く（カメラは実画素単位で動くので、上の層とずれない）
+		// 画面の実画素で描く（カメラは実画素単位で動くので、上の層とずれない）。画面の 外は 切る
 		const m = ctx.getTransform();
-		const dx = Math.floor(m.a * x0 + m.e);
-		const dy = Math.floor(m.d * y0 + m.f);
-		const w = Math.ceil(m.a * (x1 - x0)) + 1;
-		const h = Math.ceil(m.d * (y1 - y0)) + 1;
+		const dx = Math.max(0, Math.floor(m.a * x0 + m.e));
+		const dy = Math.max(0, Math.floor(m.d * y0 + m.f));
+		const w = Math.min(ctx.canvas.width, Math.ceil(m.a * x1 + m.e) + 1) - dx;
+		const h = Math.min(ctx.canvas.height, Math.ceil(m.d * y1 + m.f) + 1) - dy;
+		if (w <= 0 || h <= 0) return;
 		const g = this.ghost ?? document.createElement("canvas");
 		this.ghost = g;
 		if (g.width < w) g.width = w;

@@ -71,15 +71,17 @@ export const skitsHeld = (): boolean => held;
 /** まだ 見て いない 寸劇で、きっかけが 合う もの（この 帰りに もう 見ていれば null。2幕目を 待つ あいだも null）。 */
 const find = (hit: (on: SkitOn) => boolean): Skit | null => {
 	if (held) return null;
+	// きっかけ（場所・物）を 先に 見る（1歩ごとに 呼ばれる。保存を 読むのは 合う ものが あった ときだけ）
+	const near = SKITS.filter((sk) => hit(sk.on));
+	if (!near.length) return null;
 	const v = load();
 	const busy = v.at === returnAt();
 	return (
-		SKITS.find(
+		near.find(
 			(sk) =>
 				!v.seen.includes(sk.key) &&
 				// 期間限定は 話の その あいだ だけ。見逃すと 二度と 出ないので、この 帰りに もう 見ていても 出す
-				(sk.window ? inWindow(sk.window) : !busy) &&
-				hit(sk.on),
+				(sk.window ? inWindow(sk.window) : !busy),
 		) ?? null
 	);
 };

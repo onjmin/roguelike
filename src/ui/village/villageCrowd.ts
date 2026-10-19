@@ -3,7 +3,9 @@
 // - 人は 扉・家・村の 出口から 出てきて、行き先で 中へ 入る（消える）。立ちどまる 所では しばらく 立って、また 歩きだす
 //   （バス停・タクシー乗り場は 乗って いく）。へったら 間を おいて 次の 人が 出てくる。村に 入った ときは 道の 途中にも 置く。
 // - 通行人は すりぬけられる（through）：キリコも 場面の 人も ふさがない。通行人の ほうは 人の いる マスへ 入らず 待つ。
-//   待ちが 長いと よけて 道を 引きなおし、それでも だめなら すりぬける。キリコが 重なったら 横へ 1歩 よける。
+//   待ちが 長いと よけて 道を 引きなおし、それでも だめなら すりぬける。通行人どうしが 向かいあったら すぐ よけ、
+//   1列の 細道では よけ道を さがさずに すりぬける。走って いる キリコは 見えて いる マスだけ ふさぐ。
+//   キリコが 重なって 立ちどまったら 横へ 1歩 よける。
 // - 窓（会話・選択肢）が 開いている あいだと、村に 着いた 場面（帰りの 寸劇・知らせ）の あいだは 歩きださない。キリコが 話しかけに 向かっている 人は 待つ。
 //   帰りの 寸劇の あいだは だれも 出さない（寸劇の おわりの 暗転で 建て直す ときに 置く）。
 // - 時間帯（深夜・朝・昼・夕方・夜）は 1分ごとに 見なおす（人の 数と 流れが かわる）。
@@ -32,6 +34,12 @@ const PREFIX = "crowd_";
 const REROUTE_MS = 900;
 /** これだけ 待っても 動けなければ すりぬける（細道で 向かいあった とき）。 */
 const PASS_MS = 2600;
+/** 通行人どうしが 向かいあったら これだけで よける（道を 引きなおす）。 */
+const FACE_MS = 150;
+/** 1列の 細道で 通行人どうしが 向かいあったら これだけで すりぬける（よけ道は ない）。 */
+const SQUEEZE_MS = 450;
+/** キリコが これだけ 立ちどまって から 重なった 人を よけさせる（走って いる あいだの 1コマの 止まりでは よけない）。 */
+const SIDESTEP_MS = 150;
 /** 次の 人が 出てくるまでの 間（ms）。 */
 const SPAWN_MS: readonly [number, number] = [500, 1600];
 /** 時間帯を 見なおす 間（ms）。 */
@@ -82,6 +90,8 @@ export class Crowd {
 	private peds: Ped[] = [];
 	private seq = 0;
 	private spawnIn = 0;
+	/** キリコが 立ちどまって いる ms。 */
+	private stillMs = 0;
 	private bandIn = BAND_MS;
 	private band: TimeBand;
 	private weekend: boolean;
@@ -209,10 +219,17 @@ export class Crowd {
 		return pedRoute(f.w, f.h, cost, from, to);
 	}
 
+	/** キリコが ふさぐ マス（歩いて いる あいだは 見えて いる マスだけ。行き先の マスは ふさがない）。 */
+	private meAt(x: number, y: number): boolean {
+		const me = this.h.player;
+		return me.moving
+			? Math.round(me.fx) === x && Math.round(me.fy) === y
+			: me.x === x && me.y === y;
+	}
+
 	/** そのマスに キリコか 見える 人（通行人も）が いるか（self は のぞく）。 */
 	private busy(x: number, y: number, self?: Actor): boolean {
-		const me = this.h.player;
-		if (me.x === x && me.y === y) return true;
+		if (this.meAt(x, y)) return true;
 		return this.h.field.actors.some(
 			(a) =>
 				a !== self &&
@@ -236,7 +253,9 @@ export class Crowd {
 		const mark = (x: number, y: number) => {
 			if (inside(x, y)) grid[y * w + x] = 1;
 		};
-		mark(this.h.player.x, this.h.player.y);
+		const me = this.h.player;
+		if (me.moving) mark(Math.round(me.fx), Math.round(me.fy));
+		else mark(me.x, me.y);
 		for (const a of f.actors) {
 			if (a === self || !a.visible || !a.sprite) continue;
 			mark(a.x, a.y);
@@ -254,6 +273,8 @@ export class Crowd {
 			this.weekend = c.weekend;
 		}
 		if (this.h.paused() || this.h.hidden()) return;
+		const me = this.h.player;
+		this.stillMs = me.moving ? 0 : this.stillMs + dt;
 		const target = this.h.target();
 		for (const p of [...this.peds]) {
 			const a = p.actor;
@@ -265,9 +286,13 @@ export class Crowd {
 			}
 			// 話しかけに 来る キリコを 待つ
 			if (a === target) continue;
-			// キリコが 重なったら 横へ よける
-			const me = this.h.player;
-			if (!me.moving && me.x === a.x && me.y === a.y && this.sidestep(p))
+			// キリコが 重なって 立ちどまったら 横へ よける
+			if (
+				this.stillMs >= SIDESTEP_MS &&
+				me.x === a.x &&
+				me.y === a.y &&
+				this.sidestep(p)
+			)
 				continue;
 			if (p.stay > 0) {
 				p.stay -= dt;
@@ -307,14 +332,21 @@ export class Crowd {
 		// 行き先が 扉なら、扉の 上に だれか いても 入っていく（重なるのは 一瞬）
 		if (this.busy(nx, ny, a) && !(last && p.to.enter)) {
 			p.blocked += dt;
-			if (p.blocked >= REROUTE_MS && !p.rerouted) {
+			// 向かいあった 通行人（こちらへ 来る）：ひらけた 所では すぐ よけ、1列の 細道では すりぬける
+			const facing = this.facing(a, d, nx, ny);
+			const narrow = facing && this.narrow(a.x, a.y);
+			if (
+				!narrow &&
+				!p.rerouted &&
+				p.blocked >= (facing ? FACE_MS : REROUTE_MS)
+			) {
 				p.rerouted = true;
 				const r = this.route([a.x, a.y], p.to.at, this.busyGrid(a));
 				if (r?.length) p.route = r;
 				else a.dir = d;
 				return;
 			}
-			if (p.blocked < PASS_MS) {
+			if (p.blocked < (narrow ? SQUEEZE_MS : PASS_MS)) {
 				a.dir = d;
 				return;
 			}
@@ -323,6 +355,29 @@ export class Crowd {
 		p.blocked = 0;
 		p.rerouted = false;
 		void a.walk(d, p.ms);
+	}
+
+	/** d へ 進む a の 前（nx, ny）に、こちらへ 向かって くる 通行人が いるか。 */
+	private facing(a: Actor, d: Dir, nx: number, ny: number): boolean {
+		const back = DIR_VEC[d];
+		return this.peds.some((q) => {
+			const b = q.actor;
+			if (b === a || b.x !== nx || b.y !== ny || b.moving) return false;
+			const next = q.route[0];
+			return (
+				!!next && DIR_VEC[next].dx === -back.dx && DIR_VEC[next].dy === -back.dy
+			);
+		});
+	}
+
+	/** 1列でしか 歩けない マスか（左右か 上下が ともに 歩けない。よけ道を さがしても むだ）。 */
+	private narrow(x: number, y: number): boolean {
+		const open = (cx: number, cy: number) =>
+			Number.isFinite(this.h.cost(cx, cy));
+		return (
+			(!open(x - 1, y) && !open(x + 1, y)) ||
+			(!open(x, y - 1) && !open(x, y + 1))
+		);
 	}
 
 	/** 立ちどまる 所に もう だれか 立っているか・向かっているか（1つの 所に 1人：重ならない）。 */

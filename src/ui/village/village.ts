@@ -158,6 +158,8 @@ const TEXT_MS = 24;
 const SEEN_MARGIN = 2;
 /** カメラが ついていく 人を 道の 先へ とばす 暗転の ms（片道）。 */
 const CUT_FADE_MS = 200;
+/** 画面の はしから これだけ（マス）外の 人・物まで 描く（大きな 絵・頭の 上の 記号が 画面に はみ出す ぶん）。 */
+const DRAW_MARGIN = 6;
 /** 停電の 屋内の 暗さ（multiply。キリコから 離れた ところの 色）。 */
 const INDOOR_BLACKOUT = "rgb(46, 48, 78)";
 /** 道の ない すきまを 弧を えがいて とびこえるのは これだけ（マス）まで（台・キリコの 1マス ごし）。 */
@@ -1562,7 +1564,17 @@ export class Village {
 			drawShrooms(g, ox, oy);
 			drawMarksBelow(g, ox, oy);
 		}
-		const actors = [...field.actors, this.player].sort((a, b) => a.fy - b.fy);
+		// 画面の 外の 人・物は 描かない（町には 150 ほど いる。大きな 絵・吹き出しが はみ出す ぶん まわりも 描く）
+		const sw = this.screen.width;
+		const sh = this.screen.height;
+		const m = DRAW_MARGIN * TILE;
+		const actors = [...field.actors, this.player]
+			.filter((a) => {
+				const px = a.fx * TILE - ox;
+				const py = a.fy * TILE - oy;
+				return px > -m && px < sw + m && py > -m && py < sh + m;
+			})
+			.sort((a, b) => a.fy - b.fy);
 		for (const a of actors) a.draw(g, ox, oy, this.time);
 		// やきうの 頭の 上の「残機：1」（ui/village/zankiTag.ts）
 		drawZanki(g, field.actor("nanj"), ox, oy);

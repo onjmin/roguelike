@@ -71,48 +71,66 @@ export const shadowGround = (
 ): MapDef["ground"] => {
 	const segs = segments(stage, rows, pal);
 	if (!segs.length) return undefined;
-	// 地面（歩ける マス）の 形（地図の 座標。1度だけ 作る）
-	// （はじめて 描く ときに 作る。試験の node には Path2D が ない）
-	let ground: Path2D | null = null;
+	const mw = Math.max(...rows.map((r) => [...r].length)) * TILE;
+	const mh = rows.length * TILE;
+	// 影の 層（地図 1枚ぶん。日の 向き・長さ・濃さが かわった ときだけ 描きなおす。毎コマ 地面の 形で 切りぬくと 重い）
+	// （はじめて 描く ときに 作る。試験の node には 画用紙が ない）
+	let layer: HTMLCanvasElement | null = null;
+	let drawn = "";
 	return (g, ox, oy) => {
 		const sun = sunAt(nowHour() * 60 + nowMinute());
 		if (sun.alpha <= 0 || sun.w <= 0) return;
-		if (!ground) {
-			const p = new Path2D();
-			rows.forEach((r, y) => {
-				[...r].forEach((c, x) => {
-					if (pal[c]?.passable) p.rect(x * TILE, y * TILE, TILE, TILE);
-				});
-			});
-			ground = p;
+		const key = `${sun.side},${sun.w},${sun.alpha.toFixed(3)}`;
+		if (!layer) {
+			layer = document.createElement("canvas");
+			layer.width = mw;
+			layer.height = mh;
 		}
-		const W = g.canvas.width;
-		const H = g.canvas.height;
-		g.save();
-		g.translate(-ox, -oy);
-		g.clip(ground);
-		g.fillStyle = `rgba(${SHADE.join(", ")}, ${sun.alpha})`;
-		const w = sun.w;
-		// 足もとで 閉じる 高さ（横の 長さの 4割）
-		const drop = Math.max(1, Math.round(w * 0.4));
-		for (const s of segs) {
-			const edge = sun.side > 0 ? s.right * TILE : s.left * TILE;
-			const top = s.top * TILE;
-			const bottom = s.bottom * TILE;
-			// 画面の 外は 描かない
-			const lo = Math.min(edge, edge + sun.side * w);
-			if (lo - ox > W || lo + w - ox < 0) continue;
-			if (top - oy > H || bottom + drop - oy < 0) continue;
-			for (let py = top; py < bottom + drop; py++) {
-				// 建物の 側から 測った 内がわ・外がわ（画素）
-				const inner =
-					py < bottom ? 0 : Math.round(((py - bottom + 1) * w) / drop);
-				const outer = Math.min(w, py - top + 1);
-				if (outer <= inner) continue;
-				const x = sun.side > 0 ? edge + inner : edge - outer;
-				g.fillRect(x, py, outer - inner, 1);
-			}
+		if (key !== drawn) {
+			drawn = key;
+			paintShadows(layer, rows, pal, segs, sun);
 		}
-		g.restore();
+		g.drawImage(layer, -ox, -oy);
 	};
+};
+
+/** 影の 層を 描く（歩ける マスの 形で 切りぬいて、1画素ずつの 行で 平行四辺形を 塗る）。 */
+const paintShadows = (
+	layer: HTMLCanvasElement,
+	rows: readonly string[],
+	pal: Record<string, TileDef>,
+	segs: readonly Seg[],
+	sun: { side: -1 | 1; w: number; alpha: number },
+): void => {
+	const g = layer.getContext("2d");
+	if (!g) return;
+	g.clearRect(0, 0, layer.width, layer.height);
+	// 地面（歩ける マス）の 形
+	const ground = new Path2D();
+	rows.forEach((r, y) => {
+		[...r].forEach((c, x) => {
+			if (pal[c]?.passable) ground.rect(x * TILE, y * TILE, TILE, TILE);
+		});
+	});
+	g.save();
+	g.clip(ground);
+	g.fillStyle = `rgba(${SHADE.join(", ")}, ${sun.alpha})`;
+	const w = sun.w;
+	// 足もとで 閉じる 高さ（横の 長さの 4割）
+	const drop = Math.max(1, Math.round(w * 0.4));
+	for (const s of segs) {
+		const edge = sun.side > 0 ? s.right * TILE : s.left * TILE;
+		const top = s.top * TILE;
+		const bottom = s.bottom * TILE;
+		for (let py = top; py < bottom + drop; py++) {
+			// 建物の 側から 測った 内がわ・外がわ（画素）
+			const inner =
+				py < bottom ? 0 : Math.round(((py - bottom + 1) * w) / drop);
+			const outer = Math.min(w, py - top + 1);
+			if (outer <= inner) continue;
+			const x = sun.side > 0 ? edge + inner : edge - outer;
+			g.fillRect(x, py, outer - inner, 1);
+		}
+	}
+	g.restore();
 };
