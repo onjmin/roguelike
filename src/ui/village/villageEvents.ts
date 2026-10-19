@@ -196,6 +196,7 @@ import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
 import { shadowGround } from "./shadows";
 import { signboardDecor, signboardGlow } from "./signboards";
+import { holdSkits } from "./skits";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
 import { endScene, sceneBgm, villageSong } from "./villageMusic";
@@ -1202,6 +1203,12 @@ const returnOf = (a: Arrival): ReturnArrival | null =>
  */
 let storyHeld = false;
 
+/** 2幕目を 待つ・待ち おわる。待つ あいだは 場所・建物・物・死に方の 寸劇も 止める（ui/village/skits.ts）。 */
+const holdStory = (v: boolean): void => {
+	storyHeld = v;
+	holdSkits(v);
+};
+
 /** 話の 続き（2幕目）が あるか：その夜の 場面・見出しと 開いた 知らせ・期間限定の 知らせ・停電の 知らせ。 */
 const continueDue = (): boolean => {
 	const p = loadProgress();
@@ -1232,7 +1239,7 @@ const continueScript = async (s: Story): Promise<void> => {
 
 /** 待って いた 2幕目を 流す（蓄音機の 前に 来た・調べた・港から 出ようと した）。 */
 const resumeStory = async (s: Story): Promise<void> => {
-	storyHeld = false;
+	holdStory(false);
 	await continueScript(s);
 	await sendBack(s);
 };
@@ -1253,7 +1260,7 @@ const continueStep = (x: number, y: number): Script | null => {
 const arrivalScript =
 	(ctx: Ctx, arrival: Arrival): Script =>
 	async (s) => {
-		storyHeld = false;
+		holdStory(false);
 		if (arrival?.kind === "replay") return;
 		const back = returnOf(arrival);
 		// 過去ログの底からは 井戸を のぼって 出てくる（立つのは 井戸の すぐ 下。data/village/map.ts の exitFor）
@@ -1293,7 +1300,7 @@ const arrivalScript =
 		if (back && continueDue()) {
 			await gather(s, [CONTINUE_CALL.who]);
 			await s.say(CONTINUE_CALL.who, CONTINUE_CALL.text, cueOf(CONTINUE_CALL));
-			storyHeld = true;
+			holdStory(true);
 		}
 		await sendBack(s);
 		// たおれて もどったら ぷゆゆが ぷゆゆソードを 持たせに くる（二重に 渡さない）

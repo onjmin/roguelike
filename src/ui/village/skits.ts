@@ -2,6 +2,7 @@
 // 残す（保存できなくても この回は 覚えている）。村ぜんぶで 1回の 帰りに 1本まで（期間限定は べつ）。
 // 建物と 物は ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep）が、
 // 死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
+// 帰りの 2幕目（続きの 寸劇）を 待って いる あいだは どの 寸劇も 出さない（holdSkits。先に 見せると 話の 前後が 合わない）。
 
 import type { MobId } from "../../data/people/mobs";
 import {
@@ -56,8 +57,17 @@ export const forgetSkits = (): void => {
 
 const returnAt = (): number => loadRecords()[0]?.at ?? 0;
 
-/** まだ 見て いない 寸劇で、きっかけが 合う もの（この 帰りに もう 見ていれば null）。 */
+/** 帰りの 2幕目を 待って いる（ui/village/villageEvents.ts の storyHeld）。その あいだ 寸劇は 起きない。 */
+let held = false;
+
+/** 2幕目を 待つ あいだ 寸劇を 止める／もどす（2幕目を 見おえてから その 場所・物で また 起きる）。 */
+export const holdSkits = (v: boolean): void => {
+	held = v;
+};
+
+/** まだ 見て いない 寸劇で、きっかけが 合う もの（この 帰りに もう 見ていれば null。2幕目を 待つ あいだも null）。 */
 const find = (hit: (on: SkitOn) => boolean): Skit | null => {
+	if (held) return null;
 	const v = load();
 	const busy = v.at === returnAt();
 	return (
