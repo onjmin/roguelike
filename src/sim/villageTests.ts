@@ -5581,7 +5581,7 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 			!records(5, ["shallow"]).some((r) => r.bgm === BOARD_LOOKS.deep.bgm),
 		"a board's song is offered before it is cleared",
 	);
-	// レコードの 箱（最終話の あと）：聞いた 曲 ＋ 寸劇の 曲。どれも 実在し、同じ 曲は 1度
+	// ラジカセ（最終話の あと）：聞いた 曲 ＋ 寸劇の 曲。どれも 実在し、同じ 曲は 1度
 	const box = jukeboxTracks(7, DUNGEON_IDS);
 	for (const r of box) ok(r.bgm in bgm, `${r.label}: no song ${r.bgm}`);
 	ok(

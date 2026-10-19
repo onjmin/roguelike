@@ -367,10 +367,10 @@ const BASE_FURNITURE: Record<BaseFurnitureId, Furniture> = {
 		line: "冷蔵庫。\n中は麦茶だけ。",
 	},
 	records: {
-		name: "レコードの箱",
-		cells: [[ri("records")]],
+		name: "ラジカセ",
+		cells: [[ri("radioTop")]],
 		// 最終話を 持ち帰って から かけられる（data/audio/music.ts の JUKEBOX_AFTER。ui/village/jukebox.ts）
-		line: "レコードの箱。\n蓄音機でためた曲が入っている。",
+		line: "ラジカセ。\n蓄音機でためた曲をテープにうつしてある。",
 	},
 	game: {
 		name: "ゲーム機",
@@ -557,7 +557,7 @@ export const BED_FURNITURE: readonly FurnitureId[] = [
  * 平均 4千円ほど。node scripts/sales-sim.mjs の「平均(全体)」）：小物は 潜り 半分、ふつうの 家具は 1〜2回、
  * 大物は 3〜4回、いちばん 高い 物でも 6回ほど。
  * 調べると 何か できる 家具（遊ぶ・描く・曲を かける・パソコン）は 使って ほしいので 安め
- * （2026-10-19 作者）：レコードの箱・イーゼルは 1,000円、ノートパソコンは 1,500円、遊ぶ 家具は 潜り 1回ぶんまで。
+ * （2026-10-19 作者）：ラジカセ・イーゼルは 1,000円、ノートパソコンは 1,500円、遊ぶ 家具は 潜り 1回ぶんまで。
  */
 export const FURNITURE_PRICE: Record<BaseFurnitureId, number> = {
 	bed: 6000,
@@ -1349,9 +1349,9 @@ export const HOME_MSG = {
 	bedMenu: ["寝ころぶ", "動かす", "片づける", "そのまま"],
 	/** 遊べる 家具を 調べた あと。 */
 	gameMenu: ["遊ぶ", "動かす", "片づける", "そのまま"],
-	/** レコードの 箱：まだ 最終話を 持ち帰って いない（蓄音機は 町の 話を ためて いる 途中）。 */
+	/** ラジカセ：まだ 最終話を 持ち帰って いない（蓄音機は 町の 話を ためて いる 途中）。 */
 	recordsWait:
-		"蓄音機が、まだためている途中。\n針を下ろすのは、話がすんでから。",
+		"蓄音機が、まだためている途中。\nテープにうつすのは、話がすんでから。",
 	recordsMenu: ["かける", "動かす", "片づける", "そのまま"],
 	pcMenu: [
 		"遊ぶ",
@@ -1397,9 +1397,9 @@ export const HOME_MSG = {
 	phoneHere: "{name}が来ている。",
 } as const;
 
-/** レコードの 箱の 窓（ui/village/jukebox.ts）の 字。手は 上から 順。 */
+/** ラジカセの 窓（ui/village/jukebox.ts）の 字。手は 上から 順。 */
 export const JUKEBOX_MSG = {
-	title: "レコードの箱",
+	title: "ラジカセ",
 	play: "かける",
 	stop: "とめる",
 	next: "つぎへ",

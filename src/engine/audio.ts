@@ -317,7 +317,7 @@ export class GameAudio {
 		return this.bgmName;
 	}
 
-	/** 鳴っている 曲の 位置（dtm の ステップ。1小節＝192。レコードの 箱の コマ送り：ui/village/jukebox.ts）。 */
+	/** 鳴っている 曲の 位置（dtm の ステップ。1小節＝192。ラジカセの コマ送り：ui/village/jukebox.ts）。 */
 	get bgmStep(): number {
 		return this.bgmLastStep;
 	}
@@ -678,14 +678,14 @@ export class GameAudio {
 	}
 
 	/**
-	 * レコードの 箱（ui/village/jukebox.ts）：曲を 頭から 1回だけ 鳴らす。鳴りおわったら true。
+	 * ラジカセ（ui/village/jukebox.ts）：曲を fromStep から 終わりまで 1回だけ 鳴らす。鳴りおわったら true。
 	 * 途中で ほかの 曲に かわった・止めた・鳴らせない（ミュート・BGM 切）なら false。
 	 * 止めた あとは 曲名を 忘れる（次の bgm() は 頭から）。
 	 */
-	async playOnce(name: string): Promise<boolean> {
+	async playOnce(name: string, fromStep = 0): Promise<boolean> {
 		this.stopBgmPlayback();
 		this.bgmName = null;
-		this.bgmLastStep = 0;
+		this.bgmLastStep = fromStep;
 		const mml = this.bgmData[name];
 		const ctx = this.ctx;
 		if (!mml || !ctx || !this.canPlayBgm()) return false;
@@ -695,7 +695,7 @@ export class GameAudio {
 		const pb = await this.startMml(
 			mml,
 			false,
-			undefined,
+			fromStep || undefined,
 			token,
 			bus ?? undefined,
 		);
@@ -706,13 +706,19 @@ export class GameAudio {
 		}
 		this.bgmPlayback = pb;
 		this.bgmBus = bus;
+		// 鳴りおわりを こまめに 見る（くりかえしの 継ぎ目を 短く）
 		while (pb.isPlaying()) {
-			await sleep(250);
+			await sleep(50);
 			if (this.bgmPlayback !== pb) return false;
 		}
 		if (this.bgmPlayback !== pb) return false;
 		this.stopBgmPlayback();
 		return true;
+	}
+
+	/** 曲の 2周目の 始まり（ステップ）。前奏の ある 曲は 前奏を 飛ばす（ループの 曲と 同じ。hasIntro）。 */
+	loopStep(name: string): number {
+		return hasIntro(this.bgmData[name] ?? "") ? 4 * 192 : 0;
 	}
 
 	// ───────────────── ピアノ（音楽室。ui/minigames/piano.ts） ─────────────────

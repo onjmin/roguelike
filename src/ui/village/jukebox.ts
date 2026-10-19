@@ -1,4 +1,4 @@
-// キリコの 家の レコードの 箱（data/village/myhome.ts の FURNITURE.records）：蓄音機で ためた 曲を かける 窓。
+// キリコの 家の ラジカセ（data/village/myhome.ts の FURNITURE.records）：蓄音機で ためた 曲を かける 窓。
 // 最終話（電池板）を 持ち帰って から（data/audio/music.ts の JUKEBOX_AFTER・jukeboxTracks）。
 // 曲は この 窓の あいだだけ 鳴り、閉じると もとの 曲に もどる（村の 曲を プレイヤーが かえる 機能は 置かない。BGM.md）。
 // - 左に その 曲の 顔（名無し2rt さんの 自作ドット絵。うんJレゼ post/1340。曲で かわる：data/audio/music.ts の songArt。
@@ -9,7 +9,8 @@
 //   つぎへ・まえへ・くりかえし・MMLをコピー・もどる）、下に「番号：曲名」の 札（鳴って いれば ♪）。
 // - MMLをコピー：その 曲の MML を クリップボードへ。dtm 独自の 所（#宣言・#end;・@@ の 歌声トラック）は 外す（data/audio/music.ts の plainMml）。
 // - 十字キーの 上下で 手を えらんで A。左右で 曲を 送る。B で もどる。タップは 手の ボタン。
-// - くりかえし「しない」は 1回 鳴りおわったら 次の 曲へ（箱の 並びを 順に 聞ける）。「する」は その 曲を ループ。
+// - くりかえし「しない」は 1回 鳴りおわったら 次の 曲へ（箱の 並びを 順に 聞ける）。「する」は 鳴りおわったら その 曲を
+//   もう 1周（前奏の ある 曲は 前奏を 飛ばす）。切りかえても 鳴って いる 位置は そのまま（鳴りおわった ときに 見る）。
 
 import { bgm as BGM_MML } from "../../data/audio/bgm";
 import {
@@ -87,7 +88,7 @@ type Note = { x: number; at: number; glyph: string };
 const fill = (t: string, v: Record<string, string | number>): string =>
 	t.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ""));
 
-/** レコードの 箱の 窓を 開く。閉じると もとの 曲に もどして 解決。 */
+/** ラジカセの 窓を 開く。閉じると もとの 曲に もどして 解決。 */
 export const openJukebox = (ctx: Ctx): Promise<void> =>
 	new Promise((resolve) => {
 		const audio = ctx.audio;
@@ -157,7 +158,8 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 		};
 
 		// ── 鳴らす ──
-		const play = async (): Promise<void> => {
+		/** from は 鳴らしはじめる ステップ（0 なら 頭から。前の 曲を 絞って から）。 */
+		const play = async (from = 0): Promise<void> => {
 			const t = ++token;
 			const track = list[cur];
 			if (!track) return;
@@ -167,18 +169,21 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			render();
 			// 音が 出ない（ミュート・BGM 切）：絵だけ MML の 速さで 動かす（次の 曲へは 進まない）
 			if (!audio.bgmEnabled) return;
-			await audio.fadeBgm(120);
-			if (t !== token) return;
-			if (loop) {
-				audio.bgm(track.bgm);
-				return;
+			if (!from) {
+				await audio.fadeBgm(120);
+				if (t !== token) return;
 			}
-			const ended = await audio.playOnce(track.bgm);
+			const ended = await audio.playOnce(track.bgm, from);
 			if (t !== token) return;
 			if (!ended) {
 				// 鳴らせない（ミュート・BGM 切）
 				playing = false;
 				render();
+				return;
+			}
+			// くりかえしは 鳴りおわった ときに 見る（途中で 切りかえても 鳴って いる 位置は そのまま）
+			if (loop) {
+				void play(audio.loopStep(track.bgm));
 				return;
 			}
 			cur = (cur + 1) % list.length;
@@ -211,9 +216,7 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			if (c === "loop") {
 				loop = !loop;
 				ctx.se("cursor");
-				// 鳴って いる 曲は かけなおす（ループの 有無を 曲の 鳴らし方に 反映する）
-				if (playing) void play();
-				else render();
+				render();
 				return;
 			}
 			if (c === "copy") {

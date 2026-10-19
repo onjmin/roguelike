@@ -148,10 +148,10 @@ export const records = (
 	return out;
 };
 
-// ■ レコードの 箱（キリコの 家。ui/village/jukebox.ts）
+// ■ ラジカセ（キリコの 家。ui/village/jukebox.ts）
 // 最終話（電池板）を 持ち帰って から、聞いた 曲を 家で かけられる。曲は 箱の 窓の あいだだけ 鳴る。
 
-/** レコードの 箱が 開く 板（これを 持ち帰って から）。 */
+/** ラジカセが 開く 板（これを 持ち帰って から）。 */
 export const JUKEBOX_AFTER: DungeonId = "deep";
 
 /** 寸劇で 鳴った 曲（records に 無い もの）。need は その 寸劇を 見た 板（持ち帰って から）。 */
@@ -167,7 +167,7 @@ const SCENE_DISCS: readonly { bgm: string; where: string; need?: DungeonId }[] =
 	];
 
 /**
- * MML から @onjmin/dtm 独自の 宣言を 外す（レコードの 箱の「MMLをコピー」。ほかの MML の 再生環境に 貼れる 字に）。
+ * MML から @onjmin/dtm 独自の 宣言を 外す（ラジカセの「MMLをコピー」。ほかの MML の 再生環境に 貼れる 字に）。
  * 宣言は `#名前=値`（値は 次の #・;・行末・トラックの @0 まで）と、終わりの `#end;`。
  * 歌声の トラック（`@@番号 声の名前 … かなの歌詞;`。dtm の 歌声合成）も 丸ごと 外す。
  * 残った 演奏の トラック（`@番号 …`。; で 区切られて いる）は dtm の DAW の「MML生成」と 同じく
@@ -184,14 +184,14 @@ export const plainMml = (mml: string): string =>
 		.map((t) => `${t};`)
 		.join("\n");
 
-/** 曲の 速さ（MML の はじめの t。無ければ 120）。レコードの 箱の コマ送りを 拍に 合わせる ため。 */
+/** 曲の 速さ（MML の はじめの t。無ければ 120）。ラジカセの コマ送りを 拍に 合わせる ため。 */
 export const songBpm = (mml: string): number => {
 	const m = /(?:^|[^A-Za-z])t(\d+)/.exec(plainMml(mml));
 	const t = m ? Number(m[1]) : 0;
 	return t > 0 ? t : 120;
 };
 
-/** レコードの 箱の 絵（ui/village/jukebox.ts）：曲で かわる。 */
+/** ラジカセの 絵（ui/village/jukebox.ts）：曲で かわる。 */
 export type SongArt = "kiriko" | "sake";
 /** 鮭が 出る 曲：名無し2rt さんの 曲（鮭は その 人の MV「無題の夜」の 顔。うんJレゼ post/1340）。 */
 const SAKE_SONGS: ReadonlySet<string> = new Set([
@@ -207,7 +207,7 @@ const SAKE_SONGS: ReadonlySet<string> = new Set([
 export const songArt = (bgm: string): SongArt =>
 	SAKE_SONGS.has(bgm) ? "sake" : "kiriko";
 
-/** レコードの 箱で かけられる 曲（聞いた 曲 ＋ 寸劇の 曲。番号は この 並びの 1から）。 */
+/** ラジカセで かけられる 曲（聞いた 曲 ＋ 寸劇の 曲。番号は この 並びの 1から）。 */
 export const jukeboxTracks = (
 	stage: number,
 	cleared: readonly DungeonId[],

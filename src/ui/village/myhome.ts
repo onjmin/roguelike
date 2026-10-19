@@ -700,7 +700,7 @@ export const homeThing =
 			else if (g === 1 || g === 2) await moveOrStore(s, m, kind, g - 1);
 			return;
 		}
-		// レコードの 箱：蓄音機で ためた 曲を かける（最終話を 持ち帰って から。ui/village/jukebox.ts）
+		// ラジカセ：蓄音機で ためた 曲を かける（最終話を 持ち帰って から。ui/village/jukebox.ts）
 		if (kind === "records") {
 			if (!loadProgress().cleared.includes(JUKEBOX_AFTER)) {
 				await s.narrate(HOME_MSG.recordsWait);
