@@ -4353,8 +4353,12 @@ export class Play {
 				dir = ways[0];
 			}
 			const from = { x: run.p.x, y: run.p.y };
+			// 行き先に 品が あれば、乗った ところで 止まる（拾うと 床から 消えるので 先に 見る）
+			const to = step(run.p, dir);
+			const onItem = !!run.itemAt(to.x, to.y);
 			const ev = await this.exec({ c: "move", dir }, true);
 			if (!ev.length || this.shouldStop(snap, ev, true, tapped)) break;
+			if (onItem && run.p.x === to.x && run.p.y === to.y) break;
 			// 階段の となりに 来たら 止まる（通りすぎて 見のがさない）
 			const near = this.besideStairs();
 			if (near && !nearStairs) break;
