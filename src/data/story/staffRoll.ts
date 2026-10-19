@@ -12,7 +12,12 @@ export const STAFF_ROLL: readonly StaffBlock[] = [
 	{ role: "主演", names: ["蓄音キリコ"] },
 	{
 		role: "共演",
-		names: ["束音ロゼ", "革命シヨ", "解音ゼロ（プロト・レン）", "フェリス"],
+		names: [
+			"束音ロゼ",
+			"革命シヨ",
+			"解音ゼロ（メインさん・プロト・レン）",
+			"フェリス",
+		],
 	},
 	{ role: "書きこみ", names: ["名無し"] },
 	{ role: "パン", names: ["ぷゆゆ"] },
@@ -44,7 +49,10 @@ export const STAFF_ROLL: readonly StaffBlock[] = [
 	},
 	{
 		role: "シナリオ・ゲームデザイン",
-		names: ["プログラム・デバッグ", "Claude Code（Claude Opus 5.5）"],
+		names: [
+			"プログラム・デバッグ",
+			"Claude Code（Claude Opus 5.5・Claude Fable 5.1）",
+		],
 	},
 	{ role: "素材提供", names: ["RPGEN（rpgen-search）"] },
 	{ role: "音楽・音声合成", names: ["@onjmin/dtm", "koe UtauTTS"] },

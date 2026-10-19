@@ -225,7 +225,7 @@ pnpm dev
 - 解音ゼロ © おんJ／おーぷん2ちゃんねる有志の創作キャラ https://zero-tokine-test.my.canva.site/ （このゲームの歩行グラ・立ち絵は仮の自作）
 - フェリス・やきう: なんJ・おんJ のみんな
 - 原案・ディレクター・キャラクターイラスト・音楽: このゲームの作者
-- シナリオ・ゲームデザイン・プログラム・デバッグ: Claude Code（Claude Opus 5.5）
+- シナリオ・ゲームデザイン・プログラム・デバッグ: Claude Code（Claude Opus 5.5・Claude Fable 5.1）
 - 素材提供（歩行グラ・マップチップ・墓・効果音・建物と 街の 部品・施設の 家具・飲食店の 料理・1打席の 人と 効果）: RPGEN（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
 - 音楽・音声合成: [@onjmin/dtm](https://github.com/onjmin/dtm)・koe UtauTTS
 - フォント: DotGothic16（SIL Open Font License）
