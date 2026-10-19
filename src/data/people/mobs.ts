@@ -1,5 +1,7 @@
 // おんJタウンに 住む おんJマイナーズ（rpg の data/minors.ts の子たち）。板の 話が 片づくと 町に 帰ってくる（MOB_BACK）。
 // 春音リノと 響化アル（どちらも おんJ・おーぷん生まれの UTAU。マイナーズでは ないので 人気投票には 出ない）も いる。
+// 板を 持ち帰った あとに 越してくる 子（デンちゃん・まとめ三人娘・フランソワ）は、その 場面
+// （data/story/arrivals.ts）を 見おえてから 町に いる。
 // ぷゆゆ（レスの 文末の 🥺 が 歩きだした子。マイナーズでは ない）は 広場の 下で うろうろ している
 // （名前欄は やきうの 色で rpg の ぷゆゆと 同じ。人気投票には 出ない。下の 敵の ぷゆゆとは べつの子）。
 // 話すのは 本人（名前欄だけ）・地の文・近くに いる 仲間。キリコも ふつうに 会話に 加わる
@@ -26,6 +28,7 @@ import { Rng } from "../../core/rng";
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { Dir } from "../../engine/types";
+import { ARRIVALS } from "../story/arrivals";
 import type { Speaker } from "../story/quotes";
 import type { Season, Today } from "../town/calendar";
 import { PUYU_WALK } from "./cast";
@@ -47,7 +50,12 @@ export type MobId =
 	| "proto"
 	| "ren"
 	| "hinary"
-	| "shobon";
+	| "shobon"
+	| "den"
+	| "chupa"
+	| "kankei"
+	| "nanmame"
+	| "sappy";
 
 /** 村で 口を きく だれか（仲間か、ほかの子）。 */
 export type Cast = Speaker | MobId;
@@ -3133,6 +3141,364 @@ export const MOBS: Record<MobId, MobDef> = {
 		idle: "(´・ω・｀)　のんびりいこうよ",
 		thx: [],
 	},
+	// ───── 越してくる 子（data/story/arrivals.ts の 場面を 見おえると 町に 出る） ─────
+	// デンちゃん ξﾊ,ﾟ oﾟﾉiξ（おんJwiki「でんちゃん＆デンちゃん」）。電池板の マスコット。体の 中で いつも 発電して いて、
+	// 人に 感電しない ように ゴム手袋を して いる ツインテール。電池板の でんちゃん {+'w'-] に つきまとわれて いる。
+	// フェリススレで 絵が たくさん 描かれた。電池板の 見学コースの 案内係で、電池板を 持ち帰ると 越してくる。
+	// 南の 通り（銀行・道場の 前）に 住む。マイナーズでは ないので 人気投票には 出ない。声なし
+	den: {
+		name: "デンちゃん",
+		sprite: "sa:nfxqra",
+		spot: [45, 32],
+		dir: "down",
+		gait: "pace",
+		color: "#f0d050",
+		noVote: true,
+		meet: [
+			m("改めまして、デンちゃんです！\n手袋は、もうはずしません"),
+			e({ emote: "汗" }, m("……さっきの髪、\nもどりました？")),
+			k("まだ逆立ってるンゴ"),
+		],
+		milestones: {
+			runs10: [
+				m("10回ももぐったんですね！\nぜんぶ見学したかったなぁ"),
+				e({ gesture: "hop" }, m("こんど、案内させてください！")),
+			],
+		},
+		chats: [
+			{
+				key: "gloves",
+				lines: [
+					m("この手袋、3枚重ねです。\n1枚だと相手が光るので"),
+					e({ emote: "得" }, m("2枚でも光ります！")),
+					e({ emote: "驚", hit: "slap" }, k("3枚目しか\n働いてないンゴ！")),
+				],
+			},
+			{
+				key: "denchan",
+				lines: [
+					m("電池板のでんちゃんたち、\nまだ追いかけてくるんです"),
+					m("{+'w'-]って顔で、\n漏電しながら"),
+					e({ emote: "冷" }, k("町まで来たら\nどうするンゴ")),
+				],
+			},
+			{
+				key: "feris",
+				with: "feris",
+				lines: [
+					m("フェリスさん！電池板の\nお絵かきスレで、よく……"),
+					c("feris", "私もデンちゃん描いたよ〜。\n燃えてたけど〜"),
+					e(
+						{ emote: "驚", gesture: "shake" },
+						m("燃やさないでください！\n電池は燃えると危ないです！"),
+					),
+				],
+			},
+			{
+				key: "denki",
+				lines: [
+					m("町の明かりは、わたしと\n電池ニキさんで半分ずつです"),
+					k("電気代は？ンゴ"),
+					e({ emote: "得" }, m("だれも払ってません！")),
+				],
+			},
+		],
+		season: {
+			newyear: "あけましておめでとう！\n初日の出より明るくします",
+			halloween: "かぼちゃのランタン、\nぜんぶ点灯しときました！",
+			xmas: "イルミネーション、\nぜんぶわたしがつけます！",
+		},
+		react: {
+			dead: "たおれちゃったんですか！\n充電しましょう！",
+			deep: "深くまで行ったんですね！\n電波、とどきました？",
+			clear: "持ち帰ったんですね！\nおめでとうございます！",
+			escape: "スレで帰ってきたんですね！\n賢い選択です！",
+			starve: "おなかすいたんですか！\n……電気、食べます？",
+		},
+		idle: "今日も発電中です！\n手袋、はずしませんよ",
+		thx: [],
+	},
+	// 関係ない部ちゃん（おんJwiki「なんJやきう関係ない部＠おんJ」）。2014年から おんJを まとめる 古参の まとめブログの
+	// 看板娘。「管理人が 痴呆」と 言われつづけて 痴呆の 女の子に 擬人化された（同人誌まで 出た）。野球スレは
+	// まとめないが 野球選手の ネタスレは まとめる・同じ 定期スレを 1日に 何本も まとめる・最初の 記事は 若鷹弁
+	// （「おんJは若鷹弁ば使おうバイ！」）なので 博多弁で 話す。なんまめちゃんに 好かれて いる（関まめ）。
+	// まとめ三人娘は オタクの 店の 通りに 住む。マイナーズでは ないので 人気投票には 出ない。声なし
+	kankei: {
+		name: "関係ない部ちゃん",
+		sprite: "sa:fyZ9J4",
+		spot: [55, 17],
+		dir: "down",
+		gait: "stroll",
+		color: "#f0a0c8",
+		noVote: true,
+		meet: [
+			m("関係ない部ちゃんばい！\n野球以外なら、なんでもまとめる"),
+			c("nanj", "野球はまとめへんのかい！"),
+			e({ emote: "得" }, m("野球選手のネタスレは\nまとめるばい！")),
+		],
+		milestones: {
+			runs10: [
+				m("「キリコ、もぐる」の記事、\n10本目ばい！"),
+				m("……ぜんぶ同じタイトルばい"),
+			],
+		},
+		chats: [
+			{
+				key: "teiki",
+				lines: [
+					m("同じタイトルの定期スレ、\n今日は3本まとめたばい"),
+					k("同じ記事が3本ンゴ？"),
+					e({ emote: "得" }, m("4本目もあるばい！")),
+				],
+			},
+			{
+				key: "iro",
+				lines: [
+					m("「関係ない部はこの色で」\nってレスが、よく来るばい"),
+					m("赤とか、青とか、\nきらきらとか"),
+					e({ emote: "?" }, m("……きらきらって、\n何色ばい？")),
+				],
+			},
+			{
+				key: "nanmame",
+				with: "nanmame",
+				lines: [
+					m("なんまめちゃん、\nいつもうちの記事ば見とる"),
+					c("nanmame", "【青字】見てます"),
+					e({ emote: "汗" }, m("……毎日、\nぜんぶ見とるばい")),
+				],
+			},
+			{
+				key: "chihou",
+				lines: [
+					m("みんな、うちのこと\n「痴呆」って呼ぶばい"),
+					e({ emote: "?" }, m("……ところで、\nここどこやったっけ")),
+					e({ emote: "驚", hit: "slap" }, k("呼ばれる理由が\nいま出たンゴ！")),
+				],
+			},
+		],
+		season: {
+			newyear: "あけおめばい！\n「【定期】あけおめ」まとめるよ",
+			april: "エイプリルフールの記事、\n毎年同じのを出すばい",
+			xmas: "メリクリばい！\nクリスマスの定期スレも",
+		},
+		react: {
+			dead: "たおれたと？\n記事にしとくばい",
+			deep: "深くまで行ったと？\n「【朗報】」でまとめるばい",
+			clear: "持ち帰ったと！\n「【速報】」でまとめるばい",
+			escape: "スレで帰ったと？\nそれも記事にするばい",
+			starve: "おなかすいてたおれたと？\n……「【悲報】」ばい",
+		},
+		idle: "今日も定期スレ、\nまとめるばい！",
+		thx: [],
+	},
+	// なんまめちゃん（おんJwiki「なんまめ」）。2016年に できた おんJだけの まとめブログの 看板娘。どんな 無茶振りにも
+	// 応えるが、管理人は 何も 書かない（言葉を つかわない 質問に 青字なら YES・赤字なら NO で だけ 答える）。
+	// コメントは いつも 0件。関係ない部が 好き。ゆっくりの 動画も 出している。台詞は ぜんぶ【青字】【赤字】で 答える
+	nanmame: {
+		name: "なんまめちゃん",
+		sprite: "sa:3FDWkp",
+		spot: [57, 17],
+		dir: "down",
+		gait: "look",
+		color: "#80d0b8",
+		noVote: true,
+		meet: [
+			m("【青字】なんまめです"),
+			e({ emote: "?" }, k("ふつうにしゃべらないンゴ？")),
+			m("【赤字】しゃべりません"),
+		],
+		milestones: {
+			runs10: [m("【青字】10回もぐった記事、\nまとめました（コメント0件）")],
+		},
+		chats: [
+			{
+				key: "comment",
+				lines: [
+					m("【青字】記事を書きました"),
+					k("コメントは何件ンゴ？"),
+					e({ emote: "…" }, m("【赤字】0件です")),
+				],
+			},
+			{
+				key: "muchaburi",
+				lines: [
+					m("【青字】無茶振り、\nなんでも受けます"),
+					k("じゃあ、いま何か\nしゃべるンゴ"),
+					e({ emote: "冷" }, m("【赤字】それは無理です")),
+				],
+			},
+			{
+				key: "kankei",
+				with: "kankei",
+				lines: [
+					c("kankei", "なんまめちゃん、\nうちのこと好きと？"),
+					e({ emote: "♥" }, m("【青字】")),
+					n("……青字しか、\n書いてなかった。"),
+				],
+			},
+			{
+				key: "youtube",
+				lines: [
+					m("【青字】動画も\nはじめました"),
+					k("再生数は？ンゴ"),
+					e({ emote: "…" }, m("【赤字】聞かないでください")),
+				],
+			},
+		],
+		season: {
+			newyear: "【青字】あけまして\nおめでとうございます",
+			valentine: "【赤字】チョコは\n0個です（コメントも0件）",
+			xmas: "【青字】メリークリスマス",
+		},
+		react: {
+			dead: "【赤字】たおれました",
+			deep: "【青字】深くまで\n行きました",
+			clear: "【青字】持ち帰りました。\nまとめておきます",
+			escape: "【青字】スレで\n帰ってきました",
+			starve: "【赤字】ごはんは\n食べましたか",
+		},
+		idle: "【青字】まとめ中です",
+		thx: [],
+	},
+	// サッピー（おんJwiki「さっぱりピーマン」）。2017年に できた まとめブログの マスコット。ピーマンの 擬人化か 妖精で、
+	// さっぱりした 性格・中身が 無い（体の 中が ピーマン）・影が うすい。ほかの 管理人キャラに よく 焼かれたり
+	// 食べられたり して いる。名前は「さっぱりピーマン（さっぱり わからない）」から
+	sappy: {
+		name: "サッピー",
+		sprite: "sa:OQhJcd",
+		spot: [56, 18],
+		dir: "down",
+		color: "#88c060",
+		noVote: true,
+		meet: [
+			m("サッピーだよ。さっぱり\nしてるって、よく言われる"),
+			m("あと、影がうすいって"),
+			e({ emote: "?" }, k("……いま、だれか\nいたンゴ？")),
+		],
+		milestones: {
+			runs10: [
+				m("10回もぐったんだ。\nさっぱり"),
+				e({ emote: "?" }, k("どういう感想ンゴ？")),
+			],
+		},
+		chats: [
+			{
+				key: "nakami",
+				lines: [
+					m("わたし、体の中が\nピーマンなんだ"),
+					m("つまり中身がない。\nさっぱり"),
+					e({ emote: "驚" }, k("こわいことを\nさっぱり言うなンゴ！")),
+				],
+			},
+			{
+				key: "yakareru",
+				lines: [
+					m("ほかの管理人さんに、\nよく焼かれるんだよね"),
+					e({ emote: "冷" }, m("……あと、食べられる")),
+					k("ピーマンの宿命ンゴ……"),
+				],
+			},
+			{
+				key: "wakewakame",
+				lines: [
+					m("「さっぱりピーマン」って、\nさっぱりわからないって意味"),
+					e({ emote: "?" }, k("……で、どういう\n意味ンゴ？")),
+					m("さっぱり"),
+				],
+			},
+		],
+		season: {
+			newyear: "あけおめ。\nことしも、さっぱり",
+			halloween: "仮装？ピーマンの\nままでいいよ",
+			xmas: "メリクリ。\n……焼かないでね",
+		},
+		react: {
+			dead: "たおれたんだ。\n……さっぱり",
+			deep: "深くまで行ったんだ。\nさっぱり、すごい",
+			clear: "持ち帰ったんだ。\nさっぱりした顔だね",
+			escape: "スレで帰ったんだ。\nさっぱりしてるね",
+			starve: "おなかすいたの？\n……わたしは食べないでね",
+		},
+		idle: "……さっぱり",
+		thx: [],
+	},
+	// フランソワ・チュパカブラ ζ 'ヮ')ζ（Vikipedia「フランソワ・チュパカブラ」）。ニュー速VIP の コテハン。滋賀在住。
+	// レスバトルを 優雅に 見せる ために お嬢さま口調に なった。ローソンの バイト。好敵手は かさのぼん。全レスする。
+	// 板とは かかわりが ないので 町の 出来事で 越してくる。コンビニの 前に 住む。人気投票には 出ない。声なし
+	chupa: {
+		name: "フランソワ",
+		label: "フランソワ・チュパカブラ",
+		sprite: "sa:NWRzkK",
+		spot: [34, 17],
+		dir: "down",
+		gait: "look",
+		color: "#e8c870",
+		noVote: true,
+		meet: [
+			m("改めまして、ごきげんよう。\nフランソワですわ　ζ 'ヮ')ζ"),
+			m("さきほどの「もういいンゴ」に、\nお返事にまいりましたの"),
+			e({ emote: "冷" }, k("まだ返事してたンゴ！？")),
+		],
+		milestones: {
+			runs10: [
+				m("10回もぐりましたのね。\n10回ぶん、お返事しますわ"),
+				e({ emote: "冷" }, k("1回でいいンゴ")),
+			],
+		},
+		chats: [
+			{
+				key: "baito",
+				lines: [
+					m("コンビニのバイトは、\nもう長いんですのよ"),
+					m("からあげの揚げかたなら、\nだれにも負けませんわ"),
+					e({ emote: "?" }, k("お嬢さまの仕事ンゴ？")),
+				],
+			},
+			{
+				key: "onsu",
+				with: "onsu",
+				lines: [
+					c("onsu", "フランソワさん！？\n本物よぉ！？"),
+					m("ごきげんよう、おんすさま。\nおんSのスレも拝見しましたわ"),
+					e(
+						{ emote: "!", gesture: "hop" },
+						c("onsu", "全レスの人が\n来たわぁーっ！"),
+					),
+				],
+			},
+			{
+				key: "shiga",
+				lines: [
+					m("滋賀には、琵琶湖が\nございますの"),
+					m("湖のさざなみにも、\n毎朝お返事しておりますわ"),
+					e({ emote: "冷" }, k("湖は返事を\n待ってないンゴ")),
+				],
+			},
+			{
+				key: "kasanobon",
+				lines: [
+					m("好敵手がおりますの。\nかさのぼん、という方ですわ"),
+					m("いつかこの町で、\nレスバトルを……"),
+					e({ emote: "得" }, m("優雅に、勝ちますわ！")),
+				],
+			},
+		],
+		season: {
+			newyear: "あけましておめでとう\nございますわ。全レスで",
+			valentine: "チョコのお返事は、\n3倍にしてお返ししますわ",
+			xmas: "メリークリスマス。\nサンタさまにもお返事ですわ",
+		},
+		react: {
+			dead: "まあ、たおれましたの？\nおつかれさまですわ",
+			deep: "深くまで行きましたのね。\n優雅ですわ",
+			clear: "持ち帰りましたのね。\nお見事ですわ！",
+			escape: "スレで帰りましたの。\n優雅な撤退ですわ",
+			starve: "おなかがすいて……？\nからあげ、揚げますわ",
+		},
+		idle: "ごきげんよう。\n全レス、いたしますわ",
+		thx: [],
+	},
 };
 
 export const MOB_IDS = Object.keys(MOBS) as MobId[];
@@ -3159,6 +3525,11 @@ export const MOB_BACK: Partial<Record<MobId, DungeonId>> = {
 	miaumiau: "kinoko",
 	rino: "kinoko",
 	aru: "kinoko",
+	kankei: "kinoko",
+	nanmame: "kinoko",
+	sappy: "kinoko",
+	chupa: "main",
+	den: "deep",
 };
 
 /**
@@ -3169,6 +3540,22 @@ export const MOB_BACK: Partial<Record<MobId, DungeonId>> = {
 export const ZERO_UNITS: readonly MobId[] = ["proto", "ren"];
 
 /**
+ * 越してくる 子（data/story/arrivals.ts の 場面で 町に 来る）は、その 場面を 見おえるまで 町に いない。
+ * 見たかは 保存に ある ので、村（ui/village/arrivals.ts）が 見かたを わたす（data は 保存を 読まない）。
+ * わたされる まで（試し）は みんな 見た ことに する。
+ */
+let introSeen: (key: string) => boolean = () => true;
+
+export const setIntroSeen = (f: (key: string) => boolean): void => {
+	introSeen = f;
+};
+
+const introduced = (id: MobId): boolean => {
+	const a = ARRIVALS.find((x) => x.mobs.includes(id));
+	return !a || introSeen(a.key);
+};
+
+/**
  * まだ 町に 帰って きて いない 住人（MOB_BACK の 板を 持ち帰って いない）。arriving は 持ち帰りの 語りの
  * あいだの 板（その 板で 帰る ゼロの サブ機だけは 同じ 船で 着いて いる）。
  */
@@ -3177,6 +3564,7 @@ export const awayMobs = (
 	arriving: readonly DungeonId[] = [],
 ): MobId[] =>
 	MOB_IDS.filter((id) => {
+		if (!introduced(id)) return true;
 		const back = MOB_BACK[id];
 		if (!back || cleared.includes(back)) return false;
 		return !(ZERO_UNITS.includes(id) && arriving.includes(back));

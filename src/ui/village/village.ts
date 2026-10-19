@@ -92,6 +92,7 @@ import { el, nextFrame } from "../dom";
 import { drawEquip, equipSheet } from "../dungeon/equip";
 import type { Hud } from "../dungeon/hud";
 import { ChoiceWindow, MessageWindow, type PortraitSpec } from "../message";
+import { dueArrival, playArrival } from "./arrivals";
 import { buildCafe } from "./cafe";
 import { buildFacility } from "./facilities";
 import { buildHall } from "./hallEvents";
@@ -1207,6 +1208,13 @@ export class Village {
 		if (step && !this.leaving) {
 			this.clearPath();
 			void this.runScript(step);
+			return;
+		}
+		// 越してくる 住人の 場面（ui/village/arrivals.ts。場所の 寸劇より 先）
+		const arrival = this.leaving ? null : dueArrival(this.mapId);
+		if (arrival) {
+			this.clearPath();
+			void this.runScript((s) => playArrival(s, arrival));
 			return;
 		}
 		// ある 場所に はじめて 来た ときの 寸劇（ui/village/skits.ts）

@@ -75,6 +75,7 @@ import { HERO_QUESTS } from "../data/people/heroQuests";
 import { MOB_GAGS } from "../data/people/mobGags";
 import {
 	awayMobs,
+	MOB_BACK,
 	MOB_IDS,
 	MOB_STAY,
 	MOBS,
@@ -86,6 +87,7 @@ import {
 	PUYU_RELIEF,
 	RELIEF_NOTE,
 	SENKYO,
+	setIntroSeen,
 	squareOut,
 	ZERO_UNITS,
 } from "../data/people/mobs";
@@ -118,6 +120,7 @@ import {
 	type Speaker,
 } from "../data/story/quotes";
 import { ROOM_SKITS, roomSkitLine } from "../data/story/roomSkits";
+import { ARRIVALS } from "../data/story/arrivals";
 import { SKITS } from "../data/story/skits";
 import {
 	awayFriends,
@@ -8636,6 +8639,57 @@ test("立ち聞き: a nearby resident mutters, passers-by pair up, and an open w
 	o.update(50);
 	ok(o.current === null, "stops when the speaker walks away");
 	puyu.x = 13;
+});
+
+// ───────────────── 越してくる 場面（ui/village/arrivals.ts） ─────────────────
+
+test("越してくる 場面: lines fit, only newcomers speak, Kiriko lands a tsukkomi, and newcomers stay away until their scene is seen", () => {
+	const texts: [string, string][] = [];
+	const keys = new Set<string>();
+	for (const a of ARRIVALS) {
+		ok(!keys.has(a.key), `${a.key}: key used twice`);
+		keys.add(a.key);
+		a.lines.forEach((l, i) => {
+			texts.push([`${a.key}[${i}]`, l.text]);
+			ok(
+				l.who === null || l.who === "kiriko" || a.mobs.includes(l.who),
+				`${a.key}[${i}]: ${l.who} is not arriving`,
+			);
+		});
+		ok(
+			a.lines.some((l) => l.who === "kiriko" && l.hit),
+			`${a.key}: no tsukkomi`,
+		);
+		for (const id of a.mobs) {
+			ok(
+				MOB_BACK[id] === a.after,
+				`${a.key}: ${id} comes with ${MOB_BACK[id]}`,
+			);
+			ok(
+				a.lines.some((l) => l.who === id),
+				`${a.key}: ${id} never introduces herself`,
+			);
+		}
+	}
+	fitsWindow(texts);
+	const newcomers = ARRIVALS.flatMap((a) => a.mobs);
+	try {
+		setIntroSeen(() => false);
+		const away = awayMobs(DUNGEON_IDS);
+		ok(
+			away.length === newcomers.length &&
+				newcomers.every((id) => away.includes(id)),
+			`away before any scene: ${away.join()}`,
+		);
+		setIntroSeen((key) => key === "arrive_den");
+		ok(
+			!awayMobs(DUNGEON_IDS).includes("den") &&
+				awayMobs(DUNGEON_IDS).includes("chupa"),
+			"デンちゃん is in town after her scene, フランソワ is not",
+		);
+	} finally {
+		setIntroSeen(() => true);
+	}
 });
 
 // ───────────────── 寸劇（ui/village/skits.ts） ─────────────────

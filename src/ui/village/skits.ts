@@ -65,6 +65,9 @@ export const holdSkits = (v: boolean): void => {
 	held = v;
 };
 
+/** 2幕目を 待って いるか（越してくる 場面も 止める：ui/village/arrivals.ts）。 */
+export const skitsHeld = (): boolean => held;
+
 /** まだ 見て いない 寸劇で、きっかけが 合う もの（この 帰りに もう 見ていれば null。2幕目を 待つ あいだも null）。 */
 const find = (hit: (on: SkitOn) => boolean): Skit | null => {
 	if (held) return null;

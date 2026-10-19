@@ -76,6 +76,20 @@ export const MOB_MUTTERS: Record<MobId, readonly Overheard[]> = {
 		solo("hinary2", "本日も、\n平和な模様です"),
 	],
 	shobon: [solo("shobon1", "(´・ω・｀)"), solo("shobon2", "のんびり……")],
+	den: [
+		solo("den1", "今日も発電、\n絶好調です！"),
+		solo("den2", "手袋、ちょっと\nかゆいなぁ"),
+	],
+	chupa: [
+		solo("chupa1", "ごきげんよう……", "……お返事ですわ"),
+		solo("chupa2", "バイトのシフト、\nあしたは早番ですわ"),
+	],
+	kankei: [
+		solo("kankei1", "今日の記事、\nまだかな"),
+		solo("kankei2", "……なんの記事\nまとめとったっけ"),
+	],
+	nanmame: [solo("nanmame1", "【青字】"), solo("nanmame2", "【赤字】")],
+	sappy: [solo("sappy1", "……さっぱり"), solo("sappy2", "焼かれませんように")],
 };
 
 /**
