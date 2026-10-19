@@ -2101,12 +2101,11 @@ export const MOBS: Record<MobId, MobDef> = {
 		dir: "right",
 		color: "#bdb76b",
 		noVote: true,
-		// 名乗りは きのこ板の 持ち帰りの 語り（data/story/story.ts の kinoko.once。同じ 船で 着いた）で すませて いる
 		meet: [
 			n("道ばたに、軍服の女が\n直立不動で立っている。"),
-			m("……船で会ったな。\n2回目の自己紹介は、しない"),
+			m("……春音リノ。伊勢から来た。\nDIOと呼べ"),
 			n("キリコはうなずいた。\nリノはそれきりだまった。"),
-			e({ emote: "…" }, c("nanj", "1回目も、ワイより\n短かったで")),
+			e({ emote: "…" }, c("nanj", "ワイより短い\n自己紹介やな")),
 		],
 		milestones: {
 			main: [
@@ -2286,13 +2285,12 @@ export const MOBS: Record<MobId, MobDef> = {
 		gait: "run",
 		color: "#8fd694",
 		noVote: true,
-		// 名乗りは きのこ板の 持ち帰りの 語り（data/story/story.ts の kinoko.once。同じ 船で 着いた）で すませて いる
 		meet: [
 			e(
 				{ emote: "!", gesture: "hop" },
-				m("先輩！船のアルです！\n町でも、よろしくお願いします！"),
+				m("あっ、キリコ先輩！本物だ……！\n響化アルです！"),
 			),
-			m("動画、見てくれましたか？\n……まだ、1本も上げてません"),
+			m("先輩のチームに作って\nもらった、2人目です！"),
 			n("キリコはすこし考えて、\nちいさくうなずいた。"),
 		],
 		milestones: {
@@ -3144,7 +3142,6 @@ export const MOB_IDS = Object.keys(MOBS) as MobId[];
  * はじめから いるのは ぷゆゆ（🥺。お弁当の 係）と 原住民（2012年から 名無しで 見ている いちばん 古い 住人）だけ。
  * パン板で 広場に 人が もどる（大使館の パン松・倉庫の ンゴ姉・買い取りの ジェイトルマン・帳簿の ヒナリー・
  * ゼロの サブ機 プロトと レン など）。きのこ板で 商店街に もどる（店先の 見張りの リノ など）。
- * ヒナリー・アル・リノは 板へ 先回り して いて、キリコと 同じ 船で 着く（SAME_BOAT。導入は 持ち帰りの 語りで）。
  */
 export const MOB_BACK: Partial<Record<MobId, DungeonId>> = {
 	nichie: "shallow",
@@ -3172,20 +3169,8 @@ export const MOB_BACK: Partial<Record<MobId, DungeonId>> = {
 export const ZERO_UNITS: readonly MobId[] = ["proto", "ren"];
 
 /**
- * キリコと 同じ 船で 着く 住人（はじめての 持ち帰りの 語りの あいだも 町に 立ち、語りに 口を はさむ）。ゼロの サブ機の
- * ほか、板へ 先回り して いた 子（STORY.md §4.9「住人の 出番」）：ヒナリーは パン板の 城下町で 独立を 研究し、
- * アルは きのこ板で 行進を 撮り、リノは きのこ板の 門番を して いた。ほかの もどる 住人は 生き返った 通りの 知らせの あと。
- */
-export const SAME_BOAT: readonly MobId[] = [
-	...ZERO_UNITS,
-	"hinary",
-	"aru",
-	"rino",
-];
-
-/**
  * まだ 町に 帰って きて いない 住人（MOB_BACK の 板を 持ち帰って いない）。arriving は 持ち帰りの 語りの
- * あいだの 板（その 板で 帰る 住人の うち、同じ 船の 子（SAME_BOAT）だけは もう 着いて いる）。
+ * あいだの 板（その 板で 帰る ゼロの サブ機だけは 同じ 船で 着いて いる）。
  */
 export const awayMobs = (
 	cleared: readonly DungeonId[],
@@ -3194,7 +3179,7 @@ export const awayMobs = (
 	MOB_IDS.filter((id) => {
 		const back = MOB_BACK[id];
 		if (!back || cleared.includes(back)) return false;
-		return !(SAME_BOAT.includes(id) && arriving.includes(back));
+		return !(ZERO_UNITS.includes(id) && arriving.includes(back));
 	});
 
 /**

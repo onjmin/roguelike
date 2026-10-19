@@ -673,15 +673,6 @@ export const ENDING: StoryPage[] = [
 		look: null,
 		go: [{ who: "zero", route: "lrlr", speed: 3 }],
 	},
-	// 住人も 巻きこまれる（リノの ハムスターが 先に 温泉に。ui/village/villageReturn.ts が sayAs で 出す）
-	{
-		who: null,
-		mob: "rino",
-		text: "……DIOのハムスターが、蛇口の湯で\n温泉につかっている",
-		emote: "…",
-		fx: "boom",
-	},
-	{ who: null, mob: "rino", text: "……先に入られた。\n以上だ", fx: "boom" },
 	// シヨは 自宅の 台所へ 走って いく（カメラが ついていく）
 	{
 		who: "shiyo",
@@ -711,20 +702,6 @@ export const ENDING: StoryPage[] = [
 		go: [{ who: "roze", route: "udud", speed: 3 }],
 	},
 	{ who: "roze", text: "逆だったアル！！", emote: "青", hit: "sting" },
-	// 後輩は 見出しより 先に 題を つける（アルの 動画の 天丼。見出しは この あと「海をわかす」）
-	{
-		who: null,
-		mob: "aru",
-		text: "先輩！町じゅうの蛇口が41.5℃！\n動画のタイトルは「先輩、町をわかす」！",
-		emote: "!",
-		gesture: "hop",
-	},
-	{
-		who: null,
-		text: "吾輩の名前で、\n題をつけるなンゴ！",
-		kiriko: "voice",
-		hit: "slap",
-	},
 	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）。場面を 港へ うつす（海が 湯）
 	{
 		who: null,
@@ -793,30 +770,6 @@ export const ENDING: StoryPage[] = [
 			who: "zero",
 			text: "湯船から、ぶくぶく\n泡だけがのぼってきます！",
 		},
-	},
-	// ヒナリーの 発表の 天丼（第一話 チョーク → 第二話 胞子 → 第三話 追いだき → 最終話で キリコさん。data/story/story.ts）
-	{
-		who: null,
-		mob: "hinary",
-		text: "今回の騒ぎを研究しました。\n原因は、追いだきの模様です",
-		emote: "得",
-	},
-	{
-		who: null,
-		text: "……追いだきを押したの、\n吾輩ンゴ",
-		kiriko: "voice",
-		emote: "汗",
-	},
-	{
-		who: null,
-		mob: "hinary",
-		text: "……これで発表を\n終わりたいと思います",
-	},
-	{
-		who: "roze",
-		text: "ボタンを押した人を\n発表するのが常識アル！",
-		emote: "驚",
-		hit: "whack",
 	},
 ];
 

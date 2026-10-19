@@ -156,62 +156,6 @@ export const ESCORTS: readonly EscortRequest[] = [
 		thanksCue: { emote: "♪" },
 		reward: 400,
 	},
-	// 住人の 依頼（STORY.md §4.9「住人の 出番」）：リノは やぐらで 歌う 下見、アルは 源泉で 動画の ロケ、
-	// ヒナリーは 井戸の 底（裏の 板。石室まで）の 研究
-	{
-		id: "rino_yagura",
-		who: "rino",
-		board: "festival",
-		goal: 6,
-		title: "ライブの下見",
-		ask: ["やぐらで、歌う。\n……下見だ", "ついてこい。\nギャラは、あとで払え"],
-		join: "リノが、コッペパンをかついでついてきた。",
-		line: "……行くぞ。\n会話は以上だ",
-		lineCue: { emote: "…" },
-		thanks: [
-			"……下見は、終わった。\nやぐらは、高かった",
-			"ギャラだ。\n……おまえから取るのは、次だ",
-		],
-		reward: 300,
-	},
-	{
-		id: "aru_spring",
-		who: "aru",
-		board: "main",
-		goal: 7,
-		title: "源泉で動画のロケ",
-		ask: [
-			"先輩！露天の源泉で、\n動画のロケがしたいんです！",
-			"7階まで、いっしょに\n来てください！撮りますから！",
-		],
-		join: "アルがカメラをかまえてついてきた。",
-		line: "ロケ、行きます！\n先輩、カメラ目線で！",
-		lineCue: { emote: "!", gesture: "hop" },
-		thanks: [
-			"源泉の動画、撮れました！\n再生数……あ、先輩が見て2です！",
-			"お礼です！\n……再生数が伸びたら、倍にします！",
-		],
-		thanksCue: { emote: "♥" },
-		reward: 300,
-	},
-	{
-		id: "hinary_well",
-		who: "hinary",
-		board: "hidden",
-		goal: 20,
-		title: "井戸の底の研究",
-		ask: [
-			"井戸の底を、研究したいと\n思います",
-			"20階まで、ごいっしょ\nいただけますか。……研究です",
-		],
-		join: "ヒナリーが研究ノートをかかえてついてきた。",
-		line: "研究を、はじめます",
-		thanks: [
-			"井戸の底を研究しました。\n……古い模様です",
-			"これで発表を終わりたいと\n思います。……お礼です",
-		],
-		reward: 500,
-	},
 	{
 		id: "zero_tower",
 		who: "zero",

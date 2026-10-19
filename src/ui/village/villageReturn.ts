@@ -249,20 +249,13 @@ export const sceneView = (v: VillageView, a?: ReturnArrival): VillageView => {
 			: [];
 	const pending = v.cleared.filter((d) => pendingReveal.has(d));
 	const arriving = [...new Set([...pending, ...first])];
-	// 語りで 口を はさむ・走る 住人は、この 帰りに 施設へ 行って いても 広場に いる（遠くから 声だけ 飛ばさない）
-	const talking = a ? mobsOf(pagesFor(a)) : [];
-	const mobsOut = v.mobsOut?.filter((id) => !talking.includes(id));
-	const w =
-		mobsOut && mobsOut.length !== (v.mobsOut?.length ?? 0)
-			? { ...v, mobsOut }
-			: v;
 	return arriving.length
 		? {
-				...w,
-				cleared: w.cleared.filter((d) => !arriving.includes(d)),
+				...v,
+				cleared: v.cleared.filter((d) => !arriving.includes(d)),
 				arriving,
 			}
-		: w;
+		: v;
 };
 
 /** 語りの とちゅうで 持ち帰った ことに なった 板（明かりの 坂の あとの 電池板。その 先は 持ち帰った 町で 語る）。 */
@@ -278,8 +271,7 @@ export const pagesFor = (
 	p: Progress = loadProgress(),
 ): readonly StoryPage[] => {
 	const away = sceneAway(a, p);
-	if (a.kind !== "clear")
-		return withoutMobsAway(withoutAway(RETURN_PAGES, away), a, p);
+	if (a.kind !== "clear") return withoutAway(RETURN_PAGES, away);
 	const ending = endingFor(a.dungeon, !firstEnding(a, p), away, p.cleared);
 	// ボスを たおした・底の 出来事・送り届けの 帰り方の 語り
 	const boss =
@@ -290,35 +282,13 @@ export const pagesFor = (
 				: [];
 	// 本筋の 話の おわり（はじめて 持ち帰った ときだけ）
 	const end = firstEnding(a, p) ? episodeEnd(a.dungeon) : null;
-	return withoutMobsAway(
-		withoutAway(
-			[
-				...(boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending),
-				...(end ? [end] : []),
-			],
-			away,
-		),
-		a,
-		p,
+	return withoutAway(
+		[
+			...(boss.length ? [ending[0], ...boss, ...ending.slice(1)] : ending),
+			...(end ? [end] : []),
+		],
+		away,
 	);
-};
-
-/**
- * 語りで 口を はさむ 住人（StoryPage.mob）の 頁は、その 子が 町に いる ときだけ（まだ 帰って きて いない 子の 声を
- * 遠くから 飛ばさない）。はじめての 持ち帰りの 語りなら、その 板で 帰る 子の うち 同じ 船の 子（SAME_BOAT）だけ いる。
- */
-const withoutMobsAway = (
-	pages: readonly StoryPage[],
-	a: ReturnArrival,
-	p: Progress,
-): readonly StoryPage[] => {
-	const first = firstEnding(a, p);
-	const cleared =
-		a.kind === "clear" && !first && !p.cleared.includes(a.dungeon)
-			? [...p.cleared, a.dungeon]
-			: p.cleared.filter((d) => !first || d !== a.dungeon);
-	const gone = awayMobs(cleared, first ? [a.dungeon] : []);
-	return pages.filter((q) => !q.mob || !gone.includes(q.mob));
 };
 
 /** 語りで 話す 仲間（出てくる順）。 */
@@ -1271,12 +1241,7 @@ export const tenScript = async (s: Story): Promise<void> => {
 	const on: SceneLit = { boards: loadProgress().cleared, homes: true };
 	setSceneSky("night");
 	setSceneLit(on);
-	// 口を はさむ 住人（町に いる 子だけ）も 呼ぶ
-	const gone = awayMobs(loadProgress().cleared);
-	const mobs = mobsOf(TEN_NEWS.pages)
-		.filter((id) => !gone.includes(id))
-		.map((id) => `mob_${id}`);
-	await gather(s, ["zero", "roze", "feris", "nanj", ...mobs]);
+	await gather(s, ["zero", "roze", "feris", "nanj"]);
 	// 外に 残る 人（集まった 仲間と 話す 人）
 	const keep = new Set([
 		"zero",
@@ -1284,12 +1249,11 @@ export const tenScript = async (s: Story): Promise<void> => {
 		"feris",
 		"nanj",
 		...castOf(TEN_NEWS.pages),
-		...mobs,
 	]);
 	for (const p of withoutAway(
 		TEN_NEWS.pages,
 		awayFriends(loadProgress().cleared),
-	).filter((q) => !q.mob || !gone.includes(q.mob))) {
+	)) {
 		// 停電の 無音と 見出しの 曲（data/story/story.ts の TEN_NEWS）
 		if (p.bgm !== undefined) sceneBgm(s, p.bgm);
 		// 語りが 言う 所を 映す（灯った 広場 → 消える → 暗い 銭湯・掲示板 → 仲間の もとへ）
@@ -1308,8 +1272,7 @@ export const tenScript = async (s: Story): Promise<void> => {
 		const fx = p.fx ? startFx(fxRoot(), p.fx) : null;
 		await fx?.ready;
 		await playPageSe(s, p);
-		if (p.mob) await sayAs(s, p.mob, p.text, pageCue(p));
-		else await playPage(s, { ...p, ...pageCue(p) });
+		await playPage(s, { ...p, ...pageCue(p) });
 		fx?.end();
 	}
 	card.end();
