@@ -1,11 +1,13 @@
 // キリコの 家の「画家の　キャンバス」で 描く 絵の 決まり（板と 保存は ui/paint/paint.ts）。
-// - 絵は 32x32 の 点。1点は 16色の 絵の具の 番号（0〜15。0 が 白＝消しゴムの 色）。
-// - 保存は 1枚だけ。番号を 16進の 1字ずつ（1024字）に して JSON に 入れる（encodePicture／decodePicture）。
+// - 絵は 10x7 の 点（イーゼルの 白い 布と 同じ 大きさ。家具に 縮めずに そのまま 貼る）。
+//   1点は 16色の 絵の具の 番号（0〜15。0 が 白＝消しゴムの 色）。
+// - 保存は 1枚だけ。番号を 16進の 1字ずつ（70字）に して JSON に 入れる（encodePicture／decodePicture）。
 // - 塗りつぶし（floodFill）・左右反転（flipPicture）・元に戻す（UndoStack。20手まで）。
 // ここは DOM も 保存も 使わない（src/sim/arcadeHome/paint.ts で 試す）。
 
-/** 絵の 1辺の 点の 数。 */
-export const PAINT_SIZE = 32;
+/** 絵の 横と 縦の 点の 数（home-games.png 32,0 の イーゼルの 布 x3〜12・y2〜8）。 */
+export const PAINT_W = 10;
+export const PAINT_H = 7;
 /** 元に戻せる 手の 数。 */
 export const PAINT_UNDO = 20;
 /** 消しゴムの 色（白）。 */
@@ -31,14 +33,14 @@ export const PAINT_COLORS: readonly string[] = [
 	"#c8c8c8",
 ];
 
-/** 絵（PAINT_SIZE × PAINT_SIZE の 番号。左上から 横へ）。 */
+/** 絵（PAINT_W × PAINT_H の 番号。左上から 横へ）。 */
 export type Picture = Uint8Array;
 
 export const blankPicture = (): Picture =>
-	new Uint8Array(PAINT_SIZE * PAINT_SIZE).fill(PAINT_BLANK);
+	new Uint8Array(PAINT_W * PAINT_H).fill(PAINT_BLANK);
 
 const inside = (x: number, y: number) =>
-	x >= 0 && y >= 0 && x < PAINT_SIZE && y < PAINT_SIZE;
+	x >= 0 && y >= 0 && x < PAINT_W && y < PAINT_H;
 
 /** 1点を 塗る（外なら 何も しない）。変わったら true。 */
 export const setPixel = (
@@ -48,14 +50,14 @@ export const setPixel = (
 	c: number,
 ): boolean => {
 	if (!inside(x, y)) return false;
-	const i = y * PAINT_SIZE + x;
+	const i = y * PAINT_W + x;
 	if (p[i] === c) return false;
 	p[i] = c;
 	return true;
 };
 
 export const pixelAt = (p: Picture, x: number, y: number): number =>
-	inside(x, y) ? p[y * PAINT_SIZE + x] : PAINT_BLANK;
+	inside(x, y) ? p[y * PAINT_W + x] : PAINT_BLANK;
 
 /** (x0,y0) から (x1,y1) まで 線を 引く（指で すばやく なぞっても とぎれない）。変わったら true。 */
 export const drawLine = (
@@ -100,24 +102,24 @@ export const floodFill = (
 	if (!inside(x, y)) return false;
 	const from = pixelAt(p, x, y);
 	if (from === c) return false;
-	const stack = [y * PAINT_SIZE + x];
+	const stack = [y * PAINT_W + x];
 	while (stack.length) {
 		const i = stack.pop() as number;
 		if (p[i] !== from) continue;
 		p[i] = c;
-		const px = i % PAINT_SIZE;
+		const px = i % PAINT_W;
 		if (px > 0) stack.push(i - 1);
-		if (px < PAINT_SIZE - 1) stack.push(i + 1);
-		if (i >= PAINT_SIZE) stack.push(i - PAINT_SIZE);
-		if (i < PAINT_SIZE * (PAINT_SIZE - 1)) stack.push(i + PAINT_SIZE);
+		if (px < PAINT_W - 1) stack.push(i + 1);
+		if (i >= PAINT_W) stack.push(i - PAINT_W);
+		if (i < PAINT_W * (PAINT_H - 1)) stack.push(i + PAINT_W);
 	}
 	return true;
 };
 
 /** 左右を 反転する。 */
 export const flipPicture = (p: Picture): void => {
-	for (let y = 0; y < PAINT_SIZE; y++) {
-		const row = p.subarray(y * PAINT_SIZE, (y + 1) * PAINT_SIZE);
+	for (let y = 0; y < PAINT_H; y++) {
+		const row = p.subarray(y * PAINT_W, (y + 1) * PAINT_W);
 		row.reverse();
 	}
 };
@@ -132,8 +134,7 @@ export const encodePicture = (p: Picture): string =>
 
 /** 保存の 字から もどす（長さ・字が おかしければ null）。 */
 export const decodePicture = (s: unknown): Picture | null => {
-	if (typeof s !== "string" || s.length !== PAINT_SIZE * PAINT_SIZE)
-		return null;
+	if (typeof s !== "string" || s.length !== PAINT_W * PAINT_H) return null;
 	if (!/^[0-9a-f]+$/.test(s)) return null;
 	const p = new Uint8Array(s.length);
 	for (let i = 0; i < s.length; i++) p[i] = Number.parseInt(s[i], 16);

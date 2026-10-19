@@ -1,11 +1,11 @@
 // キリコの 家の「画家の　キャンバス」で 絵を 描く 板（決まりは data/paint/paint.ts）。
-// - 左に 32x32 の 絵（4倍）。右に 16色の 絵の具（4列 × 4段）と 道具の ボタン（2列 × 4段）。
+// - 左に 10x7 の 絵（12倍）。右に 16色の 絵の具（4列 × 4段）と 道具の ボタン（2列 × 4段）。
 // - 十字キー：カーソル（くり返し）。絵の 右はしの 先へ 出ると 絵の具・道具の 上を 動く。A で 塗る・選ぶ。
 //   A（Z・Enter・Space）を 押した まま 動くと 線に なる（キーを 離すまで 1手。keydown／keyup を じかに 見る）。
 // - 指・マウス：押して なぞると 描ける（pointermove を 押して いる あいだ 聞く）。絵の具・道具は タップ。
 // - B を 2回（または「おわる」）で「保存する／保存しない／描きつづける」。
 // - 保存は 1枚だけ：localStorage の kiriko-roguelike/paint（開発の ?stage= ・?event= では 書かない）。
-//   保存した 絵は いつも イーゼルの 布に 縮めて 描く（engine/assets.ts の rt:easel を 描き直す）。
+//   保存した 絵は イーゼルの 布に 1点＝1画素で そのまま 貼る（engine/assets.ts の rt:easel を 描き直す）。
 
 import {
 	blankPicture,
@@ -17,9 +17,10 @@ import {
 	isBlank,
 	PAINT_BLANK,
 	PAINT_COLORS,
-	PAINT_SIZE,
+	PAINT_H,
 	PAINT_TEXT,
 	PAINT_TOOLS,
+	PAINT_W,
 	type PaintTool,
 	type Picture,
 	pixelAt,
@@ -47,7 +48,7 @@ const loadPicture = (): Picture => {
 	if (memo) return memo.slice();
 	try {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? "null");
-		const p = raw && raw.v === 1 ? decodePicture(raw.px) : null;
+		const p = raw && raw.v === 2 ? decodePicture(raw.px) : null;
 		if (p) return p;
 	} catch {
 		// 読めない ときは まっしろ
@@ -59,7 +60,7 @@ const savePicture = (p: Picture): void => {
 	memo = p.slice();
 	if (previewing()) return;
 	try {
-		localStorage.setItem(KEY, JSON.stringify({ v: 1, px: encodePicture(p) }));
+		localStorage.setItem(KEY, JSON.stringify({ v: 2, px: encodePicture(p) }));
 	} catch {
 		// 保存できなくても この回は memo で 覚えている
 	}
@@ -71,17 +72,17 @@ const savePicture = (p: Picture): void => {
 const EASEL_SPRITE = "pub:sprites/home-games.png#32,0,16,16";
 /** 家の マスが 指す 実行中の 絵（data/village/myhome.ts の easel）。 */
 const EASEL_REF = "rt:easel";
-/** イーゼルの 白い 布（16x16 の 中の x3〜12・y2〜8）。 */
-const FACE = { x: 3, y: 2, w: 10, h: 7 } as const;
+/** イーゼルの 白い 布の 左上（16x16 の 中の x3・y2。大きさは 絵と 同じ PAINT_W × PAINT_H）。 */
+const FACE = { x: 3, y: 2 } as const;
 
 /** 絵を 1倍の キャンバスに 描く。 */
 const pictureCanvas = (p: Picture): HTMLCanvasElement => {
 	const c = document.createElement("canvas");
-	c.width = PAINT_SIZE;
-	c.height = PAINT_SIZE;
+	c.width = PAINT_W;
+	c.height = PAINT_H;
 	const g = c.getContext("2d");
 	if (!g) return c;
-	const img = g.createImageData(PAINT_SIZE, PAINT_SIZE);
+	const img = g.createImageData(PAINT_W, PAINT_H);
 	for (let i = 0; i < p.length; i++) {
 		const hex = PAINT_COLORS[p[i]] ?? "#ffffff";
 		img.data[i * 4] = Number.parseInt(hex.slice(1, 3), 16);
@@ -95,7 +96,7 @@ const pictureCanvas = (p: Picture): HTMLCanvasElement => {
 
 let easel: HTMLCanvasElement | null = null;
 
-/** イーゼルの マスの 絵を 描き直す（保存した 絵を 布に 縮めて 重ねる）。 */
+/** イーゼルの マスの 絵を 描き直す（保存した 絵を 布に 重ねる）。 */
 const refreshEasel = async (): Promise<void> => {
 	if (typeof document === "undefined") return;
 	easel ??= document.createElement("canvas");
@@ -108,12 +109,7 @@ const refreshEasel = async (): Promise<void> => {
 		g.imageSmoothingEnabled = false;
 		drawRefInCell(g, EASEL_SPRITE, 0, 0);
 		const p = loadPicture();
-		if (!isBlank(p)) {
-			// 32 → 10x7 に 縮める（にじませて 色を まぜる。点を 間引くより 絵に 見える）
-			g.imageSmoothingEnabled = true;
-			g.imageSmoothingQuality = "high";
-			g.drawImage(pictureCanvas(p), FACE.x, FACE.y, FACE.w, FACE.h);
-		}
+		if (!isBlank(p)) g.drawImage(pictureCanvas(p), FACE.x, FACE.y);
 	}
 	setRuntimeImage(EASEL_REF, easel);
 };
@@ -124,9 +120,9 @@ void refreshEasel();
 // ───────────────── 板の 形 ─────────────────
 
 /** 絵の 1点の 大きさ（板の 画素）と 左上。 */
-const Z = 4;
-const CX = 8;
-const CY = 11;
+const Z = 12;
+const CX = 12;
+const CY = 33;
 /** 絵の具の 欄（4列 × 4段）。 */
 const PAL = { x: 146, y: 11, w: 20, h: 14, gx: 22, gy: 16, cols: 4 } as const;
 /** 道具の 欄（2列 × 4段）。 */
@@ -151,7 +147,7 @@ const sideRect = (c: number, r: number): [number, number, number, number] =>
 const hit = (tx: number, ty: number): Cur | null => {
 	const x = Math.floor((tx - CX) / Z);
 	const y = Math.floor((ty - CY) / Z);
-	if (x >= 0 && y >= 0 && x < PAINT_SIZE && y < PAINT_SIZE)
+	if (x >= 0 && y >= 0 && x < PAINT_W && y < PAINT_H)
 		return { at: "pic", x, y };
 	for (let r = 0; r < PAL_ROWS + TOOL_ROWS; r++)
 		for (let c = 0; c < sideCols(r); c++) {
@@ -187,7 +183,7 @@ export const paintEasel = async (ctx: Ctx, s: Story): Promise<void> => {
 	const undo = new UndoStack();
 	let color = 1;
 	let tool: PaintTool = "pen";
-	let cur: Cur = { at: "pic", x: PAINT_SIZE / 2, y: PAINT_SIZE / 2 };
+	let cur: Cur = { at: "pic", x: PAINT_W >> 1, y: PAINT_H >> 1 };
 	let dirty = false;
 	/** 窓（全消し・おわり）を 出して いる あいだは 板の 入力を 捨てる。 */
 	let busy = false;
@@ -287,12 +283,12 @@ export const paintEasel = async (ctx: Ctx, s: Story): Promise<void> => {
 	const move = (dx: number, dy: number) => {
 		if (cur.at === "pic") {
 			const x = cur.x + dx;
-			const y = Math.max(0, Math.min(PAINT_SIZE - 1, cur.y + dy));
-			if (x >= PAINT_SIZE) {
+			const y = Math.max(0, Math.min(PAINT_H - 1, cur.y + dy));
+			if (x >= PAINT_W) {
 				// 絵の 右はしの 先は 右の 欄
 				const r = Math.min(
 					PAL_ROWS + TOOL_ROWS - 1,
-					Math.floor((y * (PAL_ROWS + TOOL_ROWS)) / PAINT_SIZE),
+					Math.floor((y * (PAL_ROWS + TOOL_ROWS)) / PAINT_H),
 				);
 				cur = { at: "side", c: 0, r };
 				last = null;
@@ -310,10 +306,10 @@ export const paintEasel = async (ctx: Ctx, s: Story): Promise<void> => {
 			if (c < 0) {
 				cur = {
 					at: "pic",
-					x: PAINT_SIZE - 1,
+					x: PAINT_W - 1,
 					y: Math.min(
-						PAINT_SIZE - 1,
-						Math.floor(((r + 0.5) * PAINT_SIZE) / (PAL_ROWS + TOOL_ROWS)),
+						PAINT_H - 1,
+						Math.floor(((r + 0.5) * PAINT_H) / (PAL_ROWS + TOOL_ROWS)),
 					),
 				};
 				ctx.se("cursor");
@@ -385,8 +381,8 @@ export const paintEasel = async (ctx: Ctx, s: Story): Promise<void> => {
 	const onMove = (e: PointerEvent) => {
 		if (!dragging || busy) return;
 		const [tx, ty] = toBoard(e);
-		const x = Math.max(0, Math.min(PAINT_SIZE - 1, Math.floor((tx - CX) / Z)));
-		const y = Math.max(0, Math.min(PAINT_SIZE - 1, Math.floor((ty - CY) / Z)));
+		const x = Math.max(0, Math.min(PAINT_W - 1, Math.floor((tx - CX) / Z)));
+		const y = Math.max(0, Math.min(PAINT_H - 1, Math.floor((ty - CY) / Z)));
 		cur = { at: "pic", x, y };
 		useAt(x, y, true);
 	};
@@ -405,9 +401,9 @@ export const paintEasel = async (ctx: Ctx, s: Story): Promise<void> => {
 		g.fillRect(0, 0, BW, BH);
 		// 絵
 		g.fillStyle = "#2a1c10";
-		g.fillRect(CX - 2, CY - 2, PAINT_SIZE * Z + 4, PAINT_SIZE * Z + 4);
-		for (let y = 0; y < PAINT_SIZE; y++)
-			for (let x = 0; x < PAINT_SIZE; x++) {
+		g.fillRect(CX - 2, CY - 2, PAINT_W * Z + 4, PAINT_H * Z + 4);
+		for (let y = 0; y < PAINT_H; y++)
+			for (let x = 0; x < PAINT_W; x++) {
 				g.fillStyle = PAINT_COLORS[pixelAt(pic, x, y)];
 				g.fillRect(CX + x * Z, CY + y * Z, Z, Z);
 			}
