@@ -27,7 +27,11 @@ export const runSaveLabel = (s: RunState | null): string =>
 		? `${DUNGEON_NAMES[s.dungeon]?.short ?? ""}　${floorShort(s.dungeon, s.depth)}　Lv${s.player.lv}${s.returning ? "　帰り道" : ""}`
 		: "中断した冒険";
 
-export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
+/** blackout：札を 閉じる 前に 画面を 黒く する（はじめての 場面は 黒から 幕を 上げる）。 */
+export const showBootTitle = (
+	ctx: Ctx,
+	blackout?: (c: BootChoice) => Promise<void> | null,
+): Promise<BootChoice> =>
 	new Promise((resolve) => {
 		ctx.audio.bgm("title");
 		const quote = titleQuote(Date.now() % 1e9);
@@ -120,7 +124,9 @@ export const showBootTitle = (ctx: Ctx): Promise<BootChoice> =>
 			pop();
 			root.classList.add("leaving");
 			void ctx.audio.fadeBgm(500);
+			const dark = blackout?.(c);
 			await sleep(500);
+			await dark;
 			root.remove();
 			resolve(c);
 		};

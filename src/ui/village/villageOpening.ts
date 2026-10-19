@@ -37,6 +37,9 @@ let walking = false;
 /** 出口の 矢印を 出さない（①〜④。⑤で カメラが 出口を 見せる ときに はじめて 出す）。 */
 let guideHeld = false;
 
+/** ①を 黒から 幕を 上げる（ready：起動の札を 黒へ 閉じて よい／dark：黒く した。ui/village/village.ts）。 */
+let curtain: "ready" | "dark" | null = null;
+
 const seen = (): boolean => {
 	try {
 		if (localStorage.getItem(KEY) === "1") return true;
@@ -59,11 +62,19 @@ const markSeen = (): void => {
 /** 出口の 矢印を まだ 出さない（ui/village/village.ts）。 */
 export const openingHoldsGuide = (): boolean => guideHeld;
 
+/** 起動の札を 黒へ 閉じるか（①の 前）。true なら 黒く した ことに する。 */
+export const openingBlackout = (): boolean => {
+	if (curtain !== "ready") return false;
+	curtain = "dark";
+	return true;
+};
+
 /** 試験用：この回の 写しを 忘れる。 */
 export const forgetOpeningMemo = (): void => {
 	seenMemo = false;
 	walking = false;
 	guideHeld = false;
+	curtain = null;
 };
 
 /** 最初の 村の 場面を 見せるか（まだ 見ていない・一度も もぐっていない）。 */
@@ -98,6 +109,9 @@ export const openingPrepare = (s: Story): void => {
 	if (!walking) {
 		const [x, y] = OPENING_START;
 		s.place("player", x, y, "up");
+		// 起動の札の うしろの 村も 夕方に
+		setSceneSky("evening");
+		curtain = "ready";
 	}
 	s.hide("phono");
 	s.hide("nanj");
@@ -127,6 +141,12 @@ export const openingScript = async (s: Story): Promise<void> => {
 	// だれも いない 夕方の 町（曲なし）
 	s.bgm(null);
 	setSceneSky("evening");
+	const dark = curtain === "dark";
+	curtain = null;
+	if (dark) {
+		await s.wait(400);
+		await s.fadeIn(1200);
+	}
 	const [sx, sy] = OPENING_START;
 	const [fx, fy] = SHUTTER_FRONT;
 	// 歩きながら 名のる（窓を 出して いる あいだも 歩く）

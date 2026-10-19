@@ -123,7 +123,7 @@ import {
 	villageMenu,
 	villageSceneView,
 } from "./villageEvents";
-import { openingHoldsGuide } from "./villageOpening";
+import { openingBlackout, openingHoldsGuide } from "./villageOpening";
 import { villageView } from "./villageReturn";
 import { drawZanki, setZankiTown } from "./zankiTag";
 
@@ -377,7 +377,9 @@ export class Village {
 			// 起動の札の うしろで 村が 動いている。札を 閉じるまで ボタンは 出さない
 			this.hud.root.classList.add("hidden");
 			void this.fadeIn(600);
-			const c = await showBootTitle(this.ctx);
+			const c = await showBootTitle(this.ctx, (c) =>
+				c.kind === "start" && openingBlackout() ? this.fadeOut(500) : null,
+			);
 			this.scene = true;
 			if (c.kind === "continue") {
 				await this.leave({ kind: "continue", state: c.state });
