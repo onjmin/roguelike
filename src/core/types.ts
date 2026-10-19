@@ -409,8 +409,13 @@ export type Floor = {
 	statues?: number[];
 	/** 踏んだ あとの 安価の罠（見た目だけ。idx）。罠は 消えて、沈んだ 踏み板が 残る。 */
 	pressed?: number[];
-	/** 湯気の 立つ 湯だまり（見た目だけ。通れる。idx）。風呂板の 階と 名所の 地図の o（core/floor.ts）。 */
+	/**
+	 * 湯気の 立つ 湯だまり（見た目だけ。通れる。idx）。風呂板の 階と 名所の 地図の o（core/floor.ts）。
+	 * ほかの 板では poolArt の 色の 水たまり。
+	 */
 	pools?: number[];
+	/** 水たまりの 岸の 絵（無ければ 湯だまり。core/data/decor.ts の liquid）。湯気は 湯だまりだけ。 */
+	poolArt?: string;
 	/** 板の 装飾（見た目だけ。通れる。core/data/decor.ts・core/floor.ts の placeDecor）。 */
 	decor?: FloorDecor[];
 	/** 生きている ボスの uid（目的が boss の いちばん底だけ。たおしたら 消す）。 */
@@ -432,12 +437,11 @@ export type Floor = {
 	bossSeen?: true;
 };
 
-/** 板の 装飾 1つ（Floor.decor）。x, y の マスの 下の 中ほどに 絵を 合わせる。 */
+/** 板の 装飾 1つ（Floor.decor。北の 壁ぎわ）。x, y の マスの 下の 中ほどに 絵を 合わせる。 */
 export type FloorDecor = {
 	x: number;
 	y: number;
 	art: readonly PlaceArt[];
-	flat?: true;
 };
 
 /** 手づくりの 地図の 置物 1つ（Floor.props）。 */

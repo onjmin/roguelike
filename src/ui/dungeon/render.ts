@@ -134,9 +134,11 @@ const drawPool = (
 	pools: ReadonlySet<number>,
 	w: number,
 	i: number,
+	/** 岸の 絵（Floor.poolArt。無ければ 湯だまり）。 */
+	ref = ONSEN_POND,
 ): void => {
-	const img = getImage(ONSEN_POND);
-	const c = cropOf(ONSEN_POND);
+	const img = getImage(ref);
+	const c = cropOf(ref);
 	if (!img || !c) return;
 	const x = i % w;
 	const y = Math.floor(i / w);
@@ -324,7 +326,7 @@ export class FloorView {
 				...theme.wallLower,
 				...theme.wallUpper,
 				...(f.props ?? []).flatMap((p) => p.art.map((a) => a.ref)),
-				...(f.pools?.length ? [ONSEN_POND] : []),
+				...(f.pools?.length ? [f.poolArt ?? ONSEN_POND] : []),
 				...(f.decor ?? []).flatMap((d) => d.art.map((a) => a.ref)),
 			].map(resolveRef),
 		);
@@ -402,12 +404,11 @@ export class FloorView {
 		}
 		for (const p of props) drawProp(ctx, p);
 		const pools = new Set(f.pools ?? []);
-		for (const i of pools) drawPool(ctx, pools, l.w, i);
-		// 板の 装飾（core/data/decor.ts）：立つ 物には 足もとの 影。上の 行から（壁ぎわの 背の 高い 物が 奥に なる）
+		for (const i of pools) drawPool(ctx, pools, l.w, i, f.poolArt);
+		// 板の 装飾（core/data/decor.ts）：足もとに 影。上の 行から（壁ぎわの 背の 高い 物が 奥に なる）
 		const decor = [...(f.decor ?? [])].sort((a, b) => a.y - b.y);
 		ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
 		for (const d of decor) {
-			if (d.flat) continue;
 			ctx.beginPath();
 			ctx.ellipse(
 				d.x * TILE + TILE / 2,
@@ -620,10 +621,10 @@ export class FloorView {
 			ctx.restore();
 		}
 
-		// 湯だまりの 湯気（銭湯の 煙突と 同じ ドットの もや。見えて いる マスだけ。となりどうしで ずらす）。
+		// 湯だまりの 湯気（銭湯の 煙突と 同じ ドットの もや。見えて いる マスだけ。となりどうしで ずらす。ほかの 板の 水たまりは 立たない）。
 		// キャラより 前に 描く（湯の 中を 歩く キリコに 湯気が かかる）
 		const steamT = frameOf(time);
-		for (const i of f.pools ?? []) {
+		for (const i of f.poolArt ? [] : (f.pools ?? [])) {
 			if (!visible[i]) continue;
 			const x = (i % l.w) * TILE - ox + TILE / 2;
 			const y = Math.floor(i / l.w) * TILE - oy + TILE / 2;

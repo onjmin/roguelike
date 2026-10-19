@@ -338,7 +338,8 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 };
 
 /**
- * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）。ひと目で 温泉と わかる 広さの 池（3x2〜5x3。大きい 池は
+ * 湯気の 立つ 湯だまり（見た目だけ。DungeonDef.pools）と、ほかの 板の 水たまり（core/data/decor.ts の liquid。
+ * Floor.poolArt に 岸の 絵）。ひと目で 池と わかる 広さ（3x2〜5x3。大きい 池は
  * 角を ときどき 欠く）を、部屋の 中ほど（まわり 1マスも 同じ 部屋の 床）の、道具・罠・敵・階段の ない 床に かず だけ。
  * 入らなければ 場所と 形を 引きなおし、それでも だめなら 置かない。
  * 乱数は 冒険の 種と 階から 別に 作る（階の 作りの 乱数の 順を 変えない。記録の 再生が ずれないように）。
@@ -352,7 +353,8 @@ const POOL_SHAPES: readonly [number, number][] = [
 	[5, 3],
 ];
 const placePools = (r: Run, f: Floor): void => {
-	const span = r.dungeon.pools;
+	const liquid = BOARD_DECOR[r.dungeon.id]?.liquid;
+	const span = r.dungeon.pools ?? liquid?.count;
 	if (!span) return;
 	const rng = Rng.fromSeed(`${r.s.seed}:pools:${f.depth}`);
 	const l = f.layout;
@@ -391,11 +393,12 @@ const placePools = (r: Run, f: Floor): void => {
 			break;
 		}
 	f.pools = pools;
+	if (!r.dungeon.pools && liquid && pools.length) f.poolArt = liquid.pond;
 };
 
 /**
- * 板の 装飾（見た目だけ。core/data/decor.ts）を 部屋に 散らす。wall の 物は 真上が 壁の 床、ほかは まわり 4マスも
- * 同じ 部屋の 床の 所。道具・敵・階段・湯だまり・置物の ない マスに 置き、となり あう 8マスには 重ねて 置かない。
+ * 板の 装飾（見た目だけ。core/data/decor.ts）を 部屋の 北の 壁ぎわ（真上が 壁の 床）に 散らす。
+ * 道具・敵・階段・水たまり・置物の ない マスに 置き、となり あう 8マスには 重ねて 置かない。
  * 罠は よけない（装飾の ある マスが 安全と わからない ように）。乱数は 湯だまりと 同じく 階の 作りと 別。
  */
 const placeDecor = (r: Run, f: Floor): void => {
@@ -410,22 +413,13 @@ const placeDecor = (r: Run, f: Floor): void => {
 	for (const it of f.items) taken.add(it.y * w + it.x);
 	for (const m of f.monsters) taken.add(m.y * w + m.x);
 	const wallSpots: Pos[] = [];
-	const innerSpots: Pos[] = [];
-	l.rooms.forEach((room, id) => {
+	for (const room of l.rooms)
 		for (const t of roomTiles(room)) {
 			if (!isFloor(l, t.x, t.y)) continue;
 			const up = (t.y - 1) * w + t.x;
 			if (tileAt(l, t.x, t.y - 1) === T_WALL && !statues.has(up))
 				wallSpots.push(t);
-			if (
-				roomAt(l, t.x - 1, t.y) === id &&
-				roomAt(l, t.x + 1, t.y) === id &&
-				roomAt(l, t.x, t.y - 1) === id &&
-				roomAt(l, t.x, t.y + 1) === id
-			)
-				innerSpots.push(t);
 		}
-	});
 	const total = set.kinds.reduce((n, k) => n + (k.weight ?? 1), 0);
 	const n = rng.range(set.count[0], set.count[1]);
 	const out: FloorDecor[] = [];
@@ -436,19 +430,12 @@ const placeDecor = (r: Run, f: Floor): void => {
 				roll -= d.weight ?? 1;
 				return roll < 0;
 			}) ?? set.kinds[0];
-		const spots = (kind.wall ? wallSpots : innerSpots).filter(
-			(t) => !taken.has(t.y * w + t.x),
-		);
+		const spots = wallSpots.filter((t) => !taken.has(t.y * w + t.x));
 		if (!spots.length) continue;
 		const at = rng.pick(spots);
 		for (let dy = -1; dy <= 1; dy++)
 			for (let dx = -1; dx <= 1; dx++) taken.add((at.y + dy) * w + at.x + dx);
-		out.push({
-			x: at.x,
-			y: at.y,
-			art: kind.art,
-			...(kind.flat ? { flat: true as const } : {}),
-		});
+		out.push({ x: at.x, y: at.y, art: kind.art });
 	}
 	if (out.length) f.decor = out;
 };

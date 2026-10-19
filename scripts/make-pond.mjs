@@ -7,6 +7,8 @@
 //
 // 湯だまり（ダンジョンの 湯気の 立つ 池。ui/dungeon/render.ts）は 同じ 岸で、水だけ 白く にごらせた pond-onsen.png。
 //
+// 板ごとの 水たまり（はちみつ・電解液・水銀 など）も 同じ 岸で 水の 色だけ かえた pond-<名前>.png。
+//
 // 依存なし（zlib だけ）。PNG の 読み書きは make-metal-puyu.mjs と 同じ。
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -86,7 +88,8 @@ const decodePng = (buf) => {
 		p += 12 + len;
 	}
 	const chans = { 2: 3, 3: 1, 6: 4 }[ctype];
-	if (!chans || (ctype !== 3 && depth !== 8)) throw new Error(`色の形 ${ctype}/${depth} は読めません`);
+	if (!chans || (ctype !== 3 && depth !== 8))
+		throw new Error(`色の形 ${ctype}/${depth} は読めません`);
 	const bpp = Math.max(1, (chans * depth) >> 3);
 	const stride = Math.ceil((w * chans * depth) / 8);
 	const raw = inflateSync(Buffer.concat(idat));
@@ -111,7 +114,9 @@ const decodePng = (buf) => {
 			const o = (y * w + x) * 4;
 			if (ctype === 3) {
 				const per = 8 / depth;
-				const idx = (line[Math.floor(x / per)] >> (8 - depth * ((x % per) + 1))) & ((1 << depth) - 1);
+				const idx =
+					(line[Math.floor(x / per)] >> (8 - depth * ((x % per) + 1))) &
+					((1 << depth) - 1);
 				plte.copy(rgba, o, idx * 3, idx * 3 + 3);
 				rgba[o + 3] = trns && idx < trns.length ? trns[idx] : 255;
 			} else if (ctype === 2) {
@@ -126,7 +131,9 @@ const decodePng = (buf) => {
 // ───────────────── 切り出し ─────────────────
 
 const ROOT = join(HERE, "..");
-const src = decodePng(readFileSync(join(ROOT, "public/assets/rpg-reze/field.png")));
+const src = decodePng(
+	readFileSync(join(ROOT, "public/assets/rpg-reze/field.png")),
+);
 const GRASS = new Set(["145,218,72", "121,182,60", "97,145,48"]);
 const W = 16;
 const H = 80;
@@ -140,7 +147,10 @@ for (let y = 0; y < H; y++) {
 		out.set(px, o);
 	}
 }
-writeFileSync(join(ROOT, "public/assets/rpg-reze/pond.png"), encodePng(W, H, out));
+writeFileSync(
+	join(ROOT, "public/assets/rpg-reze/pond.png"),
+	encodePng(W, H, out),
+);
 
 // 湯だまり：水の 青を 白く にごった 湯に（岸の 茶色は そのまま）
 const MILKY = new Map([
@@ -155,4 +165,118 @@ for (let o = 0; o < onsen.length; o += 4) {
 	const to = MILKY.get(`${onsen[o]},${onsen[o + 1]},${onsen[o + 2]}`);
 	if (to) onsen.set(to, o);
 }
-writeFileSync(join(ROOT, "public/assets/rpg-reze/pond-onsen.png"), encodePng(W, H, onsen));
+writeFileSync(
+	join(ROOT, "public/assets/rpg-reze/pond-onsen.png"),
+	encodePng(W, H, onsen),
+);
+
+// 板ごとの 水たまり（core/data/decor.ts の liquid）：水の 5段の 青を、暗い 順に その 液の 5色に（岸は そのまま）
+const SHADES = [
+	"0,73,145",
+	"0,91,182",
+	"0,109,218",
+	"113,184,255",
+	"170,212,255",
+];
+const LIQUIDS = {
+	// パン板：はちみつ
+	honey: [
+		[150, 82, 12],
+		[190, 110, 20],
+		[222, 146, 34],
+		[246, 188, 70],
+		[255, 226, 140],
+	],
+	// 電池板：漏れた 電解液
+	acid: [
+		[40, 110, 20],
+		[70, 150, 30],
+		[110, 196, 40],
+		[170, 232, 80],
+		[220, 255, 150],
+	],
+	// きのこ板：胞子の 沼
+	spore: [
+		[70, 30, 100],
+		[96, 44, 130],
+		[126, 64, 160],
+		[168, 110, 200],
+		[212, 170, 232],
+	],
+	// 離島板：潮だまり
+	tide: [
+		[0, 110, 130],
+		[0, 140, 160],
+		[20, 176, 190],
+		[100, 220, 220],
+		[180, 245, 240],
+	],
+	// おんたこ：ソース
+	sauce: [
+		[46, 20, 8],
+		[64, 30, 12],
+		[86, 42, 18],
+		[120, 64, 30],
+		[168, 104, 60],
+	],
+	// 過去ログの底：墨
+	ink: [
+		[10, 10, 18],
+		[20, 20, 32],
+		[32, 32, 48],
+		[60, 60, 84],
+		[100, 100, 130],
+	],
+	// ボカロ作り避難所：ミク色の 電子の 水
+	miku: [
+		[0, 100, 100],
+		[10, 136, 132],
+		[30, 170, 160],
+		[80, 210, 196],
+		[160, 240, 228],
+	],
+	// マーキュリー：水銀
+	mercury: [
+		[90, 96, 106],
+		[124, 130, 140],
+		[160, 166, 176],
+		[200, 206, 214],
+		[236, 240, 246],
+	],
+	// おんMu：沈む 大陸の 海水
+	sea: [
+		[0, 30, 90],
+		[0, 46, 120],
+		[10, 66, 150],
+		[50, 110, 190],
+		[110, 160, 220],
+	],
+	// おんキム：キムチの 汁
+	kimchi: [
+		[130, 20, 10],
+		[170, 36, 14],
+		[206, 60, 24],
+		[236, 104, 50],
+		[255, 160, 110],
+	],
+	// †闇の板†：血の池
+	blood: [
+		[60, 0, 6],
+		[90, 4, 12],
+		[120, 10, 20],
+		[156, 30, 40],
+		[196, 70, 80],
+	],
+};
+for (const [name, colors] of Object.entries(LIQUIDS)) {
+	const map = new Map(SHADES.map((s, k) => [s, colors[k]]));
+	const img = Buffer.from(out);
+	for (let o = 0; o < img.length; o += 4) {
+		const to = map.get(`${img[o]},${img[o + 1]},${img[o + 2]}`);
+		if (to) img.set(to, o);
+	}
+	writeFileSync(
+		join(ROOT, `public/assets/rpg-reze/pond-${name}.png`),
+		encodePng(W, H, img),
+	);
+}
