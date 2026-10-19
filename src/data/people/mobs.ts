@@ -1042,7 +1042,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// やきうの 姉。フェリスの となりを ねらっている。広場の はしで 機材倉庫を あずかる
 	ngoane: {
 		name: "ンゴ姉",
-		sprite: "pub:sprites/minors_ngoane.png",
+		sprite: "sa:wtHfn7",
 		spot: [27, 17],
 		dir: "down",
 		meet: [
@@ -2007,7 +2007,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	// 口癖の「ぷゆゆ🥺」だけ 絵文字を つかう（ぷゆゆの 決まり：🥺 は 行の 終わりに 1つ）
 	miaumiau: {
 		name: "ミャウミャウ",
-		sprite: "pub:sprites/minors_miaumiau.png",
+		sprite: "sa:9rHFwB",
 		color: "#e4e4f0",
 		spot: [15, 23],
 		dir: "right",
@@ -2096,7 +2096,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	rino: {
 		name: "リノ",
 		portrait: "portraits/rino.png",
-		sprite: "pub:sprites/rino.png",
+		sprite: "sa:u1p2rp",
 		spot: [18, 16],
 		dir: "right",
 		color: "#bdb76b",
@@ -2279,7 +2279,7 @@ export const MOBS: Record<MobId, MobDef> = {
 	aru: {
 		name: "アル",
 		portrait: "portraits/aru.png",
-		sprite: "pub:sprites/aru.png",
+		sprite: "sa:MwrneU",
 		spot: [12, 20],
 		dir: "down",
 		gait: "run",

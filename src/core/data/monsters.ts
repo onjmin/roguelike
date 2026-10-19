@@ -581,7 +581,7 @@ const M: MonsterDef[] = [
 	{
 		id: "denchan",
 		name: "でんちゃん",
-		sprite: "pub:sprites/denchan.png",
+		sprite: "sa:pm3kvS",
 		hp: 28,
 		atk: 10,
 		def: 8,
@@ -614,7 +614,7 @@ const M: MonsterDef[] = [
 	{
 		id: "takonomin",
 		name: "たこのみん",
-		sprite: "pub:sprites/takonomin.png",
+		sprite: "sa:pmnkIf",
 		hp: 22,
 		atk: 8,
 		def: 6,
@@ -721,7 +721,7 @@ const M: MonsterDef[] = [
 	{
 		id: "boss_takonomin",
 		name: "大たこのみん",
-		sprite: "pub:sprites/takonomin.png",
+		sprite: "sa:pmnkIf",
 		scale: 1.5,
 		boss: true,
 		hp: 85,

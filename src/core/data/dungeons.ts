@@ -938,7 +938,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				folk: [
 					{
 						name: "電池ニキ",
-						sprite: "pub:sprites/denchan.png",
+						sprite: "sa:pm3kvS",
 						talks: [
 							[
 								"見学者0人や。あんたで1人目や",
@@ -1202,13 +1202,13 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			folk: [
 				{
 					name: "粉もん奉行",
-					sprite: "pub:sprites/takonomin.png",
+					sprite: "sa:pmnkIf",
 					talks: [["来たな。返しを見せてみい"], ["たこパに勝ち負けはない😡"]],
 					key: true,
 				},
 				{
 					name: "たこ民",
-					sprite: "pub:sprites/takonomin.png",
+					sprite: "sa:pmnkIf",
 					talks: [
 						["😡はタコの顔やで", { kiriko: "怒ってる顔ンゴ" }, "怒ってへん😡"],
 						["青のり、かけ放題や"],
@@ -1216,7 +1216,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				},
 				{
 					name: "たこ民",
-					sprite: "pub:sprites/takonomin.png",
+					sprite: "sa:pmnkIf",
 					talks: [
 						[
 							"招待状、届いたか？",
