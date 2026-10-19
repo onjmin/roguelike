@@ -28,6 +28,7 @@
 		"pnpm": "10.17.1"
 	},
 	"dependencies": {
+		"@onjmin/chord-parser": "1.1.1",
 		"@onjmin/dtm": "2.1.34"
 	},
 	"devDependencies": {

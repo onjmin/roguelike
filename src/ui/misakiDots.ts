@@ -45,6 +45,25 @@ const GLYPH: Readonly<Record<string, readonly string[]>> = {
 	"7": ["...", "xxx", "..x", ".x.", ".x.", ".x.", "..."],
 	"8": ["...", ".x.", "x.x", ".x.", "x.x", ".x.", "..."],
 	"9": ["...", ".x.", "x.x", ".xx", "..x", "xx.", "..."],
+	// コード名（ラジカセの 札。ui/village/jukebox.ts）：数と 同じ 高さで 手で 打った 点
+	A: ["...", ".x.", "x.x", "xxx", "x.x", "x.x", "..."],
+	B: ["...", "xx.", "x.x", "xx.", "x.x", "xx.", "..."],
+	C: ["...", ".xx", "x..", "x..", "x..", ".xx", "..."],
+	D: ["...", "xx.", "x.x", "x.x", "x.x", "xx.", "..."],
+	E: ["...", "xxx", "x..", "xx.", "x..", "xxx", "..."],
+	F: ["...", "xxx", "x..", "xx.", "x..", "x..", "..."],
+	G: ["...", ".xx", "x..", "x.x", "x.x", ".xx", "..."],
+	M: [".....", "x...x", "xx.xx", "x.x.x", "x...x", "x...x", "....."],
+	a: ["...", "...", ".xx", "x.x", "x.x", ".xx", "..."],
+	b: ["...", "x..", "x..", "xx.", "x.x", "xx.", "..."],
+	d: ["...", "..x", "..x", ".xx", "x.x", ".xx", "..."],
+	g: ["...", "...", ".xx", "x.x", ".xx", "..x", "xx."],
+	i: [".", "x", ".", "x", "x", "x", "."],
+	m: [".....", ".....", "xxxx.", "x.x.x", "x.x.x", "x.x.x", "....."],
+	s: ["...", "...", ".xx", "x..", "..x", "xx.", "..."],
+	u: ["...", "...", "x.x", "x.x", "x.x", ".xx", "..."],
+	"#": [".....", ".x.x.", "xxxxx", ".x.x.", "xxxxx", ".x.x.", "....."],
+	"/": ["...", "..x", "..x", ".x.", "x..", "x..", "..."],
 };
 /** 字の 高さ（px）。 */
 export const MISAKI_H = 7;
@@ -94,14 +113,28 @@ const picOf = (text: string, ink: string): HTMLCanvasElement => {
 	return c;
 };
 
-/** 真ん中が cx、上が y に なるよう 描く（ink は 字の 色。透明度は g.globalAlpha で）。 */
+/**
+ * 真ん中が cx、上が y に なるよう 描く（ink は 字の 色。透明度は g.globalAlpha で）。
+ * scale は 点の 大きさ（整数。g.imageSmoothingEnabled を 切って おく）。
+ */
 export const drawMisaki = (
 	g: CanvasRenderingContext2D,
 	text: string,
 	cx: number,
 	y: number,
 	ink: string,
+	scale = 1,
 ): void => {
 	const c = picOf(text, ink);
-	g.drawImage(c, Math.round(cx - (c.width - 2) / 2) - 1, Math.round(y) - 1);
+	g.drawImage(
+		c,
+		Math.round(cx - ((c.width - 2) * scale) / 2) - scale,
+		Math.round(y) - scale,
+		c.width * scale,
+		c.height * scale,
+	);
 };
+
+/** 字の 幅（px。縁を 除く）。 */
+export const misakiWidth = (text: string, scale = 1): number =>
+	dotsOf(text).w * scale;

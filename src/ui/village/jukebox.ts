@@ -3,16 +3,23 @@
 // 曲は この 窓の あいだだけ 鳴り、閉じると もとの 曲に もどる（村の 曲を プレイヤーが かえる 機能は 置かない。BGM.md）。
 // - 左に その 曲の 顔（名無し2rt さんの 自作ドット絵。うんJレゼ post/1340。曲で かわる：data/audio/music.ts の songArt。
 //   名無し2rt さんの 曲は 鮭、ほかは キリコ。鳴って いる あいだ キリコは 腕を 上げて 歌い、鮭は ゆれながら 拍で はねて、
-//   音符が のぼる。止まって いれば キリコは 立って 息を し、鮭は じっと している）、右に 手（かける／とめる・
+//   音符が のぼる。止まって いれば キリコは 立って 息を し、鮭は じっと している）、その 右に コード進行の 札、
+//   右に 手（かける／とめる・つぎへ・まえへ・くりかえし・MMLをコピー・もどる）、下に「番号：曲名」の 札（鳴って いれば ♪）。
 // - コマ送りは 曲の 拍に 合わせる（うんJレゼの MV と 同じ 決まり：キリコは 8コマで 1拍、鮭は 8コマで 1小節）。
 //   拍は 鳴って いる 位置（engine/audio.ts の bgmStep。1拍＝48 ステップ）から。鳴らせない ときは MML の t から 時計で。
-//   つぎへ・まえへ・くりかえし・MMLをコピー・もどる）、下に「番号：曲名」の 札（鳴って いれば ♪）。
+// - コード進行の 札：MML から 推定した 進行（data/audio/chords.ts）。いまの コードを 大きく（変わった 拍で はねる）、
+//   上に 1つ前、下に 次の 2つ。字は 点で 打った 字（ui/misakiDots.ts）。止まって いれば 頭の 進行を 薄く。
 // - MMLをコピー：その 曲の MML を クリップボードへ。dtm 独自の 所（#宣言・#end;・@@ の 歌声トラック）は 外す（data/audio/music.ts の plainMml）。
 // - 十字キーの 上下で 手を えらんで A。左右で 曲を 送る。B で もどる。タップは 手の ボタン。
 // - くりかえし「しない」は 1回 鳴りおわったら 次の 曲へ（箱の 並びを 順に 聞ける）。「する」は 鳴りおわったら その 曲を
 //   もう 1周（前奏の ある 曲は 前奏を 飛ばす）。切りかえても 鳴って いる 位置は そのまま（鳴りおわった ときに 見る）。
 
 import { bgm as BGM_MML } from "../../data/audio/bgm";
+import {
+	type ChordStep,
+	chordIndexAt,
+	songChords,
+} from "../../data/audio/chords";
 import {
 	jukeboxTracks,
 	plainMml,
@@ -26,10 +33,17 @@ import type { Ctx } from "../ctx";
 import { el } from "../dom";
 import { markOpened, onTap } from "../list";
 import { tick } from "../minigames/minigameBoard";
+import { drawMisaki, MISAKI_H, misakiWidth } from "../misakiDots";
 
-/** 絵の 大きさ（ソース画素。CSS で 引きのばす）。 */
-const W = 160;
+/** 絵の 大きさ（ソース画素。CSS で 引きのばす）。左 STAGE_W が 顔、残りが コード進行の 札。 */
+const W = 240;
 const H = 116;
+const STAGE_W = 136;
+/** コード進行の 札（ソース画素）。 */
+const CHORD_X = STAGE_W;
+const CHORD_Y = 8;
+const CHORD_W = W - STAGE_W - 6;
+const CHORD_H = H - 16;
 /** 床の 高さ（下から）。 */
 const FLOOR = 10;
 /** ドットの 倍率（64 の コマを 128 に）。 */
@@ -290,7 +304,7 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			g.fillRect(0, H - FLOOR, W, FLOOR);
 			const beats = playing ? beatsNow(now) : 0;
 			const inBeat = beats - Math.floor(beats);
-			const x = (W - CELL * SCALE) / 2;
+			const x = (STAGE_W - CELL * SCALE) / 2;
 			const floor = H - FLOOR;
 			if (songArt(list[cur]?.bgm ?? "") === "sake") {
 				// 鮭：8コマで 1小節（MV と 同じ）。拍ごとに はねる。止まって いれば 0コマ目で じっと
@@ -308,7 +322,7 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			if (playing && inBeat < 0.5 && now - lastNote >= secPerBeat * 1000) {
 				lastNote = now;
 				notes.push({
-					x: W / 2 + (Math.random() - 0.5) * 100,
+					x: STAGE_W / 2 + (Math.random() - 0.5) * 100,
 					at: now,
 					glyph: Math.random() < 0.5 ? "♪" : "♫",
 				});
@@ -329,6 +343,68 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 					n.x + Math.sin(k * Math.PI * 2) * 4,
 					H - 40 - k * 60,
 				);
+			}
+			g.globalAlpha = 1;
+			drawChords(beats);
+		};
+
+		// ── コード進行の 札（顔の 右） ──
+		let chords: readonly ChordStep[] = [];
+		/** chords が どの 曲の ものか（曲が かわったら 数えなおす）。 */
+		let chordsOf: string | null = null;
+		const drawChords = (beats: number) => {
+			if (!g) return;
+			const name = list[cur]?.bgm ?? null;
+			if (name !== chordsOf) {
+				chordsOf = name;
+				chords = [];
+				if (name)
+					void songChords(BGM_MML[name] ?? "").then((c) => {
+						if (chordsOf === name) chords = c;
+					});
+			}
+			g.fillStyle = "#120a24";
+			g.fillRect(CHORD_X, CHORD_Y, CHORD_W, CHORD_H);
+			g.fillStyle = "#3a2a60";
+			g.fillRect(CHORD_X, CHORD_Y, CHORD_W, 1);
+			g.fillRect(CHORD_X, CHORD_Y + CHORD_H - 1, CHORD_W, 1);
+			g.fillRect(CHORD_X, CHORD_Y, 1, CHORD_H);
+			g.fillRect(CHORD_X + CHORD_W - 1, CHORD_Y, 1, CHORD_H);
+			if (!chords.length) return;
+			const cx = CHORD_X + CHORD_W / 2;
+			const bar = beats / 4;
+			// 止まって いれば 頭の 進行を 薄く（いまの コードは 無い）
+			const i = playing ? chordIndexAt(chords, bar) : -1;
+			const label = (k: number) => chords[k]?.label ?? "";
+			/** 札の 幅に 入る いちばん 大きな 点（want 倍まで）で、mid を 真ん中の 高さに 描く。 */
+			const put = (
+				text: string,
+				mid: number,
+				want: number,
+				ink: string,
+			): void => {
+				let s = want;
+				while (s > 1 && misakiWidth(text, s) > CHORD_W - 8) s--;
+				drawMisaki(g, text, cx, mid - (MISAKI_H * s) / 2, ink, s);
+			};
+			const prev = label(i - 1);
+			if (prev) put(prev, CHORD_Y + 13, 2, "#7a6aa0");
+			const now = chords[i];
+			if (now) {
+				// 変わった 拍で 1拍の 4分の1 だけ はねる
+				const hop = (bar - now.bar) * 4 < 0.25 ? 3 : 0;
+				put(now.label, CHORD_Y + 40 - hop, 3, "#ffe060");
+			}
+			g.globalAlpha = playing ? 1 : 0.6;
+			for (let k = 1; k <= 2; k++) {
+				const next = label(i + k);
+				if (next)
+					put(
+						next,
+						CHORD_Y + 67 + (k - 1) * 20,
+						2,
+						k === 1 ? "#d8d0f0" : "#9a8cc0",
+					);
 			}
 			g.globalAlpha = 1;
 		};

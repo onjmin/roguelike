@@ -5138,14 +5138,14 @@ body.jolt #app {
 	border: 1px solid #888;
 }
 
-/* ───────── キリコの 家の レコードの 箱（ui/village/jukebox.ts） ───────── */
+/* ───────── キリコの 家の ラジカセ（ui/village/jukebox.ts） ───────── */
 
 .jukebox {
 	position: absolute;
 	left: 50%;
 	top: 50%;
 	transform: translate(-50%, -50%);
-	width: min(92vw, 360px);
+	width: min(94vw, 440px);
 	padding: 8px 8px 10px;
 	z-index: 30;
 	display: grid;
