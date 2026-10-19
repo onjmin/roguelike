@@ -70,12 +70,14 @@ import {
 	PIANO_MENU,
 } from "../data/minigames/piano";
 import { MOB_VOICE, VOICE_MODELS } from "../data/people/cast";
+import { FOLK_BLACKOUT } from "../data/people/folk";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/people/guests";
 import { HERO_QUESTS } from "../data/people/heroQuests";
 import { MOB_GAGS } from "../data/people/mobGags";
 import {
 	awayMobs,
 	MOB_BACK,
+	MOB_BLACKOUT,
 	MOB_IDS,
 	MOB_STAY,
 	MOBS,
@@ -97,6 +99,7 @@ import {
 	SHIYO_MAID_MILK,
 	shiyoAtMaid,
 } from "../data/people/shiyoShift";
+import { ARRIVALS } from "../data/story/arrivals";
 import { GLOSSARY } from "../data/story/glossary";
 import { BATH_EVE, KINOKO_EVE } from "../data/story/hooks";
 import { type LiveState, liveResLine } from "../data/story/liveRes";
@@ -120,7 +123,6 @@ import {
 	type Speaker,
 } from "../data/story/quotes";
 import { ROOM_SKITS, roomSkitLine } from "../data/story/roomSkits";
-import { ARRIVALS } from "../data/story/arrivals";
 import { SKITS } from "../data/story/skits";
 import {
 	awayFriends,
@@ -221,6 +223,7 @@ import {
 } from "../data/town/tamper";
 import {
 	BAND_IDLE,
+	BLACKOUT_TALK,
 	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
@@ -2050,6 +2053,37 @@ const fitsWindow = (texts: readonly [string, string][]): void => {
 			ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide`);
 	}
 };
+
+test("停電: 仲間・住人・名無し・ご近所・本館の 停電の ひとことは どれも 村の 窓に 収まる", () => {
+	fitsWindow([
+		...Object.entries(BLACKOUT_TALK).flatMap(([w, ls]) =>
+			ls.map((l, i): [string, string] => [`BLACKOUT_TALK.${w}[${i}]`, l.text]),
+		),
+		...Object.entries(MOB_BLACKOUT).map(([id, t]): [string, string] => [
+			`MOB_BLACKOUT.${id}`,
+			t,
+		]),
+		...Object.entries(FOLK_BLACKOUT).map(([k, t]): [string, string] => [
+			`FOLK_BLACKOUT.${k}`,
+			t,
+		]),
+		...VISITORS.map((p): [string, string] => [
+			`VISITORS.${p.id}.blackout`,
+			p.blackout ?? "",
+		]),
+		["HALL_MSG.monitorDark", HALL_MSG.monitorDark],
+		...HALL_MSG.projectorDark.map((t, i): [string, string] => [
+			`HALL_MSG.projectorDark[${i}]`,
+			t,
+		]),
+		...HALL_MSG.blackoutPeople.flatMap((ls, i) =>
+			ls.map((t): [string, string] => [`HALL_MSG.blackoutPeople[${i}]`, t]),
+		),
+	]);
+	// ご近所は みんな 停電の ひとことを 持つ（停電の あいだ 町に いる）
+	for (const p of VISITORS)
+		if (p.dungeon !== "deep") ok(!!p.blackout, `${p.id} has no blackout line`);
+});
 
 test("畳: 横・縦の 1畳と 半畳で 敷き、4枚の 角は 1点に 集まらない（部屋の 畳も）", () => {
 	const check = (where: string, laid: (string | null)[][]) => {
@@ -7285,8 +7319,7 @@ test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓�
 	const texts: [string, string][] = [];
 	for (const [id, m] of Object.entries(EAT_MENUS)) {
 		ok(facilityById(id), `${id}: a menu without a facility`);
-		for (const k of ["again", "no"] as const)
-			texts.push([`${id}.${k}`, m[k]]);
+		for (const k of ["again", "no"] as const) texts.push([`${id}.${k}`, m[k]]);
 		ok(
 			m.dishes.length >= 3 && m.dishes.length <= 6,
 			`${id}: ${m.dishes.length} dishes`,

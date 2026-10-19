@@ -104,6 +104,7 @@ import { drawMarksAbove, drawMarksBelow, setMarksTown } from "./sceneMarks";
 import { drawShrooms, SHROOM_LEFT, setShroomTown } from "./sceneShrooms";
 import {
 	BLACKOUT_TINT,
+	blackoutShown,
 	outsideNow,
 	sceneLit,
 	sceneMinute,
@@ -157,6 +158,8 @@ const TEXT_MS = 24;
 const SEEN_MARGIN = 2;
 /** カメラが ついていく 人を 道の 先へ とばす 暗転の ms（片道）。 */
 const CUT_FADE_MS = 200;
+/** 停電の 屋内の 暗さ（multiply。キリコから 離れた ところの 色）。 */
+const INDOOR_BLACKOUT = "rgb(46, 48, 78)";
 /** 道の ない すきまを 弧を えがいて とびこえるのは これだけ（マス）まで（台・キリコの 1マス ごし）。 */
 const HOP_JUMP = 2;
 /** とびこえる のに かける ms（これより 短くは しない。歩く 速さで 1マス ぶんずつ）。 */
@@ -269,6 +272,8 @@ export class Village {
 	private marker: { x: number; y: number; t: number } | null = null;
 	/** まだ 1度も もぐっていない（村の 出口に 矢印を 出す。はじめての 人が 出口を さがさないように）。 */
 	private guideExit = false;
+	/** 停電の あいだの 町の 屋内（本館・小屋など。電気が 来ないので 暗く、キリコの 手もとだけ 見える）。 */
+	private indoorDark = false;
 	private time = 0;
 	private last = 0;
 	/** お金の 出入りの 金額（ui/village/moneyPop.ts）。 */
@@ -435,6 +440,8 @@ export class Village {
 								: buildVillage(v, this.ctx, { arrival: this.arrival });
 		// 停電の あいだは 町じゅう 明かりの ない 夜（ui/village/sceneSky.ts）
 		setTownSky(this.mapId === "village" ? townSkyNow() : null);
+		this.indoorDark =
+			this.mapId !== "village" && !surfaceOfMap(this.mapId) && blackoutShown();
 		this.field?.dispose();
 		const field = new Field(def);
 		this.field = field;
@@ -1613,6 +1620,19 @@ export class Village {
 				g.restore();
 			}
 			this.drawLights(g, field, rule, ox, oy, day);
+		} else if (this.indoorDark) {
+			// 停電の 屋内：明かりの ない 部屋（キリコの まわりだけ うっすら 見える）
+			const px = this.player.fx * TILE - ox + TILE / 2;
+			const py = this.player.fy * TILE - oy + TILE / 2;
+			const grad = g.createRadialGradient(px, py, TILE, px, py, TILE * 5);
+			grad.addColorStop(0, "rgb(200, 196, 210)");
+			grad.addColorStop(1, INDOOR_BLACKOUT);
+			g.save();
+			g.globalCompositeOperation = "multiply";
+			g.fillStyle = grad;
+			g.fillRect(0, 0, this.screen.width, this.screen.height);
+			g.restore();
+			tint = INDOOR_BLACKOUT;
 		}
 		// 吹き出しと お金の 出入り（頭の 上に ＋／−の 金額）は 夜の 色を かぶらない よう 最後に。
 		// 吹き出しは 字が 読める ぶんだけ 時間帯の 色を 薄めて 重ねる

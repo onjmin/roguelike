@@ -42,6 +42,7 @@ import {
 	requesterName,
 	speakerOf,
 } from "../../data/people/companions";
+import { FOLK_BLACKOUT, FOLK_NAMES } from "../../data/people/folk";
 import {
 	HERO_QUESTS,
 	type QuestLine,
@@ -194,6 +195,7 @@ import { loadHome } from "./myhome";
 import { previewing } from "./pay";
 import { escBr, openRecords, showStory } from "./records";
 import { enterBath, enterMusic, enterRoom } from "./rooms";
+import { blackoutShown } from "./sceneSky";
 import { shadowGround } from "./shadows";
 import { signboardDecor, signboardGlow } from "./signboards";
 import { holdSkits } from "./skits";
@@ -1131,7 +1133,25 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 		);
 	}
 	// 村の はしの 名無したちと 機能の 墓場（data/village/folk.ts・ui/village/folk.ts）
-	if (p.id.startsWith("folk_")) return folkEvent(p, v);
+	if (p.id.startsWith("folk_")) {
+		const ev = folkEvent(p, v);
+		const k = p.id.slice("folk_".length);
+		if (!ev.run || !(k in FOLK_BLACKOUT)) return ev;
+		const run = ev.run;
+		const line = FOLK_BLACKOUT[k as keyof typeof FOLK_BLACKOUT];
+		// 停電の あいだは 停電の 話（モフちゃんは 地の文）
+		return {
+			...ev,
+			run: async (s) => {
+				if (!blackoutShown()) return run(s);
+				if (k === "mofu") await s.narrate(line);
+				else
+					await s.say("nanj", line, {
+						name: FOLK_NAMES[k as keyof typeof FOLK_NAMES],
+					});
+			},
+		};
+	}
 	// 町の 騒ぎの 人（data/town/incidents.ts）
 	const inc = incidentPerson(p.id, v);
 	if (inc && p.sprite)
@@ -1141,7 +1161,9 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			p.y,
 			p.sprite,
 			async (s) => {
-				for (const l of inc.lines) await s.say("nanj", l, { name: inc.name });
+				const lines =
+					blackoutShown() && inc.blackout ? [inc.blackout] : inc.lines;
+				for (const l of lines) await s.say("nanj", l, { name: inc.name });
 			},
 			{ dir: p.dir },
 		);

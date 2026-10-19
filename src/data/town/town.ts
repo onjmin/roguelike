@@ -294,6 +294,45 @@ export const BLACKOUT_TOWN_QUOTES: readonly Line[] = [
 	q("zero", "暗くて、数えにくいです。\nサブ機の目、光らせてます"),
 ];
 
+/**
+ * 停電の あいだに 村で 話しかけた ときの 仲間の ひとこと（話す たびに 順に。BLACKOUT_TOWN_QUOTES の ほかに 2つずつ）。
+ * 停電の あいだは 新しい話・時間帯の ひとことより 先に 出す（ui/village/villageTalk.ts の talkQuote）。
+ */
+export const BLACKOUT_TALK: Record<Speaker, readonly Line[]> = {
+	nanj: [
+		q("nanj", "町の電気、電池板やったとはな。\n……単三で動いとったんか"),
+		q("nanj", "暗うて掲示板が読めへん。\n……指でなぞって読んどる", {
+			emote: "汗",
+		}),
+	],
+	roze: [
+		q("roze", "冷蔵庫が止まったアル。\n豆腐、いま食べるしかないアル", {
+			emote: "汗",
+		}),
+		q("roze", "停電でも店番は常識アル。\n……お客さん、見えないアル"),
+	],
+	feris: [
+		q("feris", "停電の夜は、星がよく見えるよ〜。\n……目がいいから〜"),
+		q("feris", "私、明かりになろうか〜？\n……町ごと燃えるけど〜", {
+			gesture: "hop",
+		}),
+	],
+	shiyo: [
+		q("shiyo", "お湯がわかせないじゃない！\n41.5℃、どうするのよ", {
+			emote: "怒",
+		}),
+		q("shiyo", "暗くてほこりが見えないわ。\n……はいた気がしないじゃない"),
+	],
+	zero: [
+		q("zero", "停電でも、ゼロは動けます！\n……充電、あと12%です", {
+			emote: "汗",
+		}),
+		q("zero", "町の明かり、数えました！\n0です！ゼロだけに！", {
+			gesture: "hop",
+		}),
+	],
+};
+
 /** 前の冒険が 帰還スレで 終わったときの 起動の札・村の ひとこと。 */
 export const ESCAPE_QUOTES: readonly Line[] = [
 	q("nanj", "途中であがってきたんか。\n……ええで。ええで"),

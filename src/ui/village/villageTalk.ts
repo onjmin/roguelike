@@ -31,6 +31,7 @@ import {
 import { TAMPER_LEDGER, TAMPER_TALK, tamperTier } from "../../data/town/tamper";
 import {
 	BAND_IDLE,
+	BLACKOUT_TALK,
 	BLACKOUT_TOWN_QUOTES,
 	ESCAPE_QUOTES,
 	TITLE_TOWN_QUOTES,
@@ -48,6 +49,7 @@ import {
 } from "../../engine/save";
 import { settings } from "../../engine/settings";
 import { disappointed } from "../../engine/tamper";
+import { blackoutShown } from "./sceneSky";
 
 /**
  * セーブを 書きかえた あと、仲間が がっかり している 段（data/town/tamper.ts。していなければ null）。
@@ -312,9 +314,26 @@ const idleLine = (who: Speaker, o: { gate?: boolean }): TalkLine => {
 	return { text: VILLAGE_IDLE[who] };
 };
 
-/** まだ 聞いていない 新しい ひとことが あるか。 */
+/** 停電の ひとことを 言った 回数（話す たびに 次の ひとことへ。ページを 閉じれば 消える）。 */
+const blackoutCount = new Map<Speaker, number>();
+
+/** 停電の あいだの ひとこと（町の様子の ひとことと BLACKOUT_TALK を 順に）。 */
+const blackoutLine = (who: Speaker): TalkLine | null => {
+	const pool = [
+		...BLACKOUT_TOWN_QUOTES.filter((x) => x.who === who),
+		...BLACKOUT_TALK[who],
+	];
+	if (!pool.length) return null;
+	const n = blackoutCount.get(who) ?? 0;
+	blackoutCount.set(who, n + 1);
+	const l = pool[n % pool.length];
+	return { text: l.text, ...cueOf(l) };
+};
+
+/** まだ 聞いていない 新しい ひとことが あるか（停電の あいだは 停電の 話が 先なので 無い）。 */
 export const hasNews = (who: Speaker): boolean =>
 	sulkTier() === null &&
+	!blackoutShown() &&
 	loadHeard()[who] !== returnAt() &&
 	reaction(who) !== null;
 
@@ -330,6 +349,11 @@ export const talkQuote = (
 	const sulk = sulkTier();
 	if (sulk !== null)
 		return { text: TAMPER_TALK[who][sulk] ?? VILLAGE_IDLE[who] };
+	// 停電の あいだは 停電の 話（新しい話は 聞いた ことに しない。明かりが もどってから 聞ける）
+	if (blackoutShown()) {
+		const l = blackoutLine(who);
+		if (l) return l;
+	}
 	const at = returnAt();
 	const heard = loadHeard();
 	if (heard[who] !== at) {

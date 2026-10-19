@@ -19,6 +19,8 @@ export type IncidentPerson = {
 	name: string;
 	/** 話すと 1つ（帰りで 入れかわる 必要は ない。全角 22字・2行まで）。 */
 	lines: readonly string[];
+	/** 停電の あいだに 話しかけた とき（無ければ lines）。 */
+	blackout?: string;
 };
 
 export type Incident = {
@@ -190,6 +192,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		dir: "down",
 		name: "パン兵",
 		lines: ["独立記念のパン、\n町にも卸しとるで"],
+		blackout: "停電でもパンは焼けへん。\n……生地のまま卸しとる",
 	},
 	{
 		dungeon: "kinoko",
@@ -199,6 +202,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		dir: "down",
 		name: "きのこ軍",
 		lines: ["[ｷ・Д・ﾉ]商店街、\n近道に便利や"],
+		blackout: "[ｷ・Д・ﾉ]まっくらで、\nきのこが光っとるで",
 	},
 	{
 		dungeon: "tropical",
@@ -208,6 +212,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		dir: "down",
 		name: "島民",
 		lines: ["島ごと泳いできたで！\n港のとなり、ええ立地や"],
+		blackout: "停電か。島はもともと\n電気なんか来てへんで",
 	},
 	{
 		dungeon: "konamono",
@@ -217,6 +222,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		dir: "down",
 		name: "たこ民",
 		lines: ["😡は、タコの顔やで"],
+		blackout: "停電でたこ焼き器が冷えた😡",
 	},
 	{
 		dungeon: "main",
@@ -226,6 +232,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		dir: "down",
 		name: "42℃の番頭",
 		lines: ["41.5℃、町の銭湯にも\n伝えといたわ"],
+		blackout: "停電で湯がぬるなる！\n42℃が、42℃が……！",
 	},
 	{
 		dungeon: "festival",
@@ -235,6 +242,7 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		dir: "up",
 		name: "祭りの親分",
 		lines: ["次の祭りも、町でやろか"],
+		blackout: "まっくらやな。\n……ちょうちんの出番や",
 	},
 	{
 		dungeon: "deep",

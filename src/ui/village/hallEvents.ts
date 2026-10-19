@@ -78,6 +78,7 @@ import { balusScript } from "./folk";
 import { openGlossary } from "./glossary";
 import { openSales } from "./home";
 import { openRecords } from "./records";
+import { blackoutShown } from "./sceneSky";
 import { senkyoOpen, senkyoScript } from "./villageMobs";
 import { previewStage } from "./villageReturn";
 import { fill, ledgerLine } from "./villageTalk";
@@ -339,7 +340,11 @@ const ledgerScript =
 const projectorScript =
 	(ctx: Ctx): Script =>
 	async (s) => {
-		await s.narrate(HALL_MSG.projector);
+		// 停電の あいだは 手回しで 回す
+		for (const t of blackoutShown()
+			? HALL_MSG.projectorDark
+			: [HALL_MSG.projector])
+			await s.narrate(t);
 		await records(ctx, s, true);
 	};
 
@@ -392,6 +397,12 @@ const yakyuShelf: Script = async (s) => {
 
 /** 名無し・野次馬の 台詞。 */
 const peopleLines = (id: string): readonly string[] => {
+	// 停電の あいだは だれに 話しかけても 停電の 話（id の 字で 1つ 引く）
+	if (blackoutShown()) {
+		const all = HALL_MSG.blackoutPeople;
+		const n = [...id].reduce((a, c) => a + c.charCodeAt(0), 0);
+		return all[n % all.length] ?? [];
+	}
 	if (id === "nanashi_toban") return HALL_MSG.toban_nanashi;
 	if (id.startsWith("jikkyo_"))
 		return JIKKYO[id.slice("jikkyo_".length)]?.lines ?? [];
@@ -458,7 +469,12 @@ const eventFor = (ctx: Ctx, p: HallPlace, tier: HallTier): EventDef => {
 		case "desk":
 			return sign(p.id, p.x, p.y, ledgerScript(ctx, "desk"));
 		case "monitor":
-			return sign(p.id, p.x, p.y, hallMonitor(ctx));
+			return sign(
+				p.id,
+				p.x,
+				p.y,
+				blackoutShown() ? HALL_MSG.monitorDark : hallMonitor(ctx),
+			);
 		case "dendo":
 			return sign(p.id, p.x, p.y, dendoScript);
 		case "chair":
@@ -530,7 +546,10 @@ const shelfDecor = (
  * 実況モニターの 画面（ナイターの 中継と、右から 左へ 流れる 実況の 書きこみ）。壁の M の マスに かかる
  * 大きな 画面の 絵（Base.png の 0,485 の 2×2）の ガラスの ところだけ 描く。本館の 段で なければ 無い。
  */
-const monitorDecor = (rows: readonly string[]): MapDef["decor"] => {
+const monitorDecor = (
+	rows: readonly string[],
+	off: boolean,
+): MapDef["decor"] => {
 	const my = rows.findIndex((r) => r.includes("M"));
 	if (my < 0) return undefined;
 	const mx = [...rows[my]].indexOf("M");
@@ -546,6 +565,16 @@ const monitorDecor = (rows: readonly string[]): MapDef["decor"] => {
 		g.beginPath();
 		g.rect(x, y, W, H);
 		g.clip();
+		// 停電の あいだは 消えた 黒い 画面（ガラスの 照りだけ）
+		if (off) {
+			g.fillStyle = "#0b0d12";
+			g.fillRect(x, y, W, H);
+			g.fillStyle = "#262b36";
+			g.fillRect(x + 2, y + 2, 5, 1);
+			g.fillRect(x + 2, y + 3, 2, 1);
+			g.restore();
+			return;
+		}
 		// 夜の 球場（空・照明・芝・内野）
 		g.fillStyle = "#10241a";
 		g.fillRect(x, y, W, H);
@@ -572,9 +601,10 @@ const monitorDecor = (rows: readonly string[]): MapDef["decor"] => {
 export const buildHall = (v: VillageView, ctx: Ctx): MapDef => {
 	const tier = hallTierOf(v);
 	const rows = hallRows(tier);
-	const decor = [shelfDecor(tier, v.cleared), monitorDecor(rows)].filter(
-		(d) => !!d,
-	);
+	const decor = [
+		shelfDecor(tier, v.cleared),
+		monitorDecor(rows, blackoutShown()),
+	].filter((d) => !!d);
 	return {
 		id: "hall",
 		name: HALL_NAMES[tier] ?? HALL_NAMES[0],

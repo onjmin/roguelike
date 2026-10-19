@@ -81,6 +81,9 @@ export const townSkyNow = (): SceneSky | null =>
 		? "dark"
 		: null;
 
+/** 町が 停電で 暗い（語ってから 電池板を 持ち帰るまで）。話しかけると みんな 停電の 話を する。 */
+export const blackoutShown = (): boolean => townSkyNow() === "dark";
+
 /** 町の 空を きめる（村の 地図を 組み立てる とき。ほかの 地図では null）。 */
 export const setTownSky = (s: SceneSky | null): void => {
 	town = s;

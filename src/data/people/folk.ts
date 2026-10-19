@@ -32,6 +32,14 @@ export const FOLK_NAMES = {
 	idea: "人工無能ニキ",
 } as const;
 
+/** 停電の あいだに 話しかけた ときの ひとこと（mofu は 地の文。ui/village/villageEvents.ts）。 */
+export const FOLK_BLACKOUT = {
+	hira: "停電や。……ひらがなで\n「ていでん」て書くんやで",
+	nazo: "なぞなぞ！町がまっくらな\nわけは？……停電だ！",
+	odoru: "まっくらでも踊るよ♪\n……宝石だから、ちょっと光る",
+	mofu: "モフちゃんは暗がりで丸くなっている。\n……目だけ光っている。",
+} as const;
+
 /** バルス失敗ニキの 名前欄（忍法帖の レベルを 出す）。 */
 export const balusName = (lv: number): string => `■忍法帖【Lv=${lv}】`;
 

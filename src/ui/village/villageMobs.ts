@@ -18,6 +18,7 @@ import {
 	type Beat,
 	type Cast,
 	type Milestone,
+	MOB_BLACKOUT,
 	MOB_IDS,
 	MOBS,
 	type MobChat,
@@ -44,6 +45,7 @@ import {
 	runStats,
 } from "../../engine/save";
 import { guestsOf } from "./guests";
+import { blackoutShown } from "./sceneSky";
 import { deathSkit } from "./skits";
 import { fill, sulkTier } from "./villageTalk";
 
@@ -404,6 +406,11 @@ export const mobScript =
 		const def = MOBS[id];
 		const at = returnAt();
 		const v = load();
+		// 停電の あいだは 会った ことの ある 子は みんな 停電の 話（ほかの 話は 明かりが もどってから）
+		if (blackoutShown() && v.met.includes(id)) {
+			await sayAs(s, id, MOB_BLACKOUT[id]);
+			return;
+		}
 		if (v.vote === id && !v.thanked && def.thx.length) {
 			v.thanked = true;
 			save(v);
