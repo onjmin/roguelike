@@ -325,6 +325,7 @@ export class FloorView {
 				...theme.wallUpper,
 				...(f.props ?? []).flatMap((p) => p.art.map((a) => a.ref)),
 				...(f.pools?.length ? [ONSEN_POND] : []),
+				...(f.decor ?? []).flatMap((d) => d.art.map((a) => a.ref)),
 			].map(resolveRef),
 		);
 		if (!this.terrain || this.terrainFloor !== f) {
@@ -402,6 +403,25 @@ export class FloorView {
 		for (const p of props) drawProp(ctx, p);
 		const pools = new Set(f.pools ?? []);
 		for (const i of pools) drawPool(ctx, pools, l.w, i);
+		// 板の 装飾（core/data/decor.ts）：立つ 物には 足もとの 影。上の 行から（壁ぎわの 背の 高い 物が 奥に なる）
+		const decor = [...(f.decor ?? [])].sort((a, b) => a.y - b.y);
+		ctx.fillStyle = "rgba(0, 0, 0, 0.28)";
+		for (const d of decor) {
+			if (d.flat) continue;
+			ctx.beginPath();
+			ctx.ellipse(
+				d.x * TILE + TILE / 2,
+				(d.y + 1) * TILE - 2,
+				5,
+				2,
+				0,
+				0,
+				Math.PI * 2,
+			);
+			ctx.fill();
+		}
+		for (const d of decor)
+			drawProp(ctx, { x: d.x, y: d.y, w: 1, h: 1, art: d.art });
 		this.dirty = false;
 	}
 

@@ -411,6 +411,8 @@ export type Floor = {
 	pressed?: number[];
 	/** 湯気の 立つ 湯だまり（見た目だけ。通れる。idx）。風呂板の 階と 名所の 地図の o（core/floor.ts）。 */
 	pools?: number[];
+	/** 板の 装飾（見た目だけ。通れる。core/data/decor.ts・core/floor.ts の placeDecor）。 */
+	decor?: FloorDecor[];
 	/** 生きている ボスの uid（目的が boss の いちばん底だけ。たおしたら 消す）。 */
 	boss?: number;
 	/** 名所の 階（長い 板の 一息。敵・罠・道具なし。core/data/dungeons.ts の rests）の 名前。 */
@@ -428,6 +430,14 @@ export type Floor = {
 	props?: FloorProp[];
 	/** ボスを 見た（目を さまして 待ちかまえていた。画面の 曲と HP の ゲージ）。 */
 	bossSeen?: true;
+};
+
+/** 板の 装飾 1つ（Floor.decor）。x, y の マスの 下の 中ほどに 絵を 合わせる。 */
+export type FloorDecor = {
+	x: number;
+	y: number;
+	art: readonly PlaceArt[];
+	flat?: true;
 };
 
 /** 手づくりの 地図の 置物 1つ（Floor.props）。 */

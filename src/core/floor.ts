@@ -13,6 +13,7 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
+import { BOARD_DECOR } from "./data/decor";
 import type {
 	BossArena,
 	BossSpec,
@@ -37,6 +38,7 @@ import {
 	roomTiles,
 	T_ROOM,
 	T_WALL,
+	tileAt,
 } from "./mapgen";
 import { placeRival } from "./race";
 import { Rng } from "./rng";
@@ -45,6 +47,7 @@ import {
 	DEEP,
 	DOZE,
 	type Floor,
+	type FloorDecor,
 	type FloorFolk,
 	type FloorProp,
 	type Item,
@@ -324,6 +327,7 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	}
 	if (ambushHere) placeAmbush(r, f, stairRoom, start);
 	placePools(r, f);
+	placeDecor(r, f);
 	// 書きかえた 冒険：キリコの いない 部屋に 削除人が 1体（ふつうの 冒険では 乱数を 引かない）
 	if (r.s.cheat) {
 		const at = place(null);
@@ -387,6 +391,66 @@ const placePools = (r: Run, f: Floor): void => {
 			break;
 		}
 	f.pools = pools;
+};
+
+/**
+ * 板の 装飾（見た目だけ。core/data/decor.ts）を 部屋に 散らす。wall の 物は 真上が 壁の 床、ほかは まわり 4マスも
+ * 同じ 部屋の 床の 所。道具・敵・階段・湯だまり・置物の ない マスに 置き、となり あう 8マスには 重ねて 置かない。
+ * 罠は よけない（装飾の ある マスが 安全と わからない ように）。乱数は 湯だまりと 同じく 階の 作りと 別。
+ */
+const placeDecor = (r: Run, f: Floor): void => {
+	const set = BOARD_DECOR[r.dungeon.id];
+	if (!set) return;
+	const rng = Rng.fromSeed(`${r.s.seed}:decor:${f.depth}`);
+	const l = f.layout;
+	const w = l.w;
+	const statues = new Set(f.statues ?? []);
+	const taken = new Set<number>([...(f.pools ?? []), ...statues]);
+	taken.add(f.stairs.y * w + f.stairs.x);
+	for (const it of f.items) taken.add(it.y * w + it.x);
+	for (const m of f.monsters) taken.add(m.y * w + m.x);
+	const wallSpots: Pos[] = [];
+	const innerSpots: Pos[] = [];
+	l.rooms.forEach((room, id) => {
+		for (const t of roomTiles(room)) {
+			if (!isFloor(l, t.x, t.y)) continue;
+			const up = (t.y - 1) * w + t.x;
+			if (tileAt(l, t.x, t.y - 1) === T_WALL && !statues.has(up))
+				wallSpots.push(t);
+			if (
+				roomAt(l, t.x - 1, t.y) === id &&
+				roomAt(l, t.x + 1, t.y) === id &&
+				roomAt(l, t.x, t.y - 1) === id &&
+				roomAt(l, t.x, t.y + 1) === id
+			)
+				innerSpots.push(t);
+		}
+	});
+	const total = set.kinds.reduce((n, k) => n + (k.weight ?? 1), 0);
+	const n = rng.range(set.count[0], set.count[1]);
+	const out: FloorDecor[] = [];
+	for (let k = 0; k < n; k++) {
+		let roll = rng.int(total);
+		const kind =
+			set.kinds.find((d) => {
+				roll -= d.weight ?? 1;
+				return roll < 0;
+			}) ?? set.kinds[0];
+		const spots = (kind.wall ? wallSpots : innerSpots).filter(
+			(t) => !taken.has(t.y * w + t.x),
+		);
+		if (!spots.length) continue;
+		const at = rng.pick(spots);
+		for (let dy = -1; dy <= 1; dy++)
+			for (let dx = -1; dx <= 1; dx++) taken.add((at.y + dy) * w + at.x + dx);
+		out.push({
+			x: at.x,
+			y: at.y,
+			art: kind.art,
+			...(kind.flat ? { flat: true as const } : {}),
+		});
+	}
+	if (out.length) f.decor = out;
 };
 
 /** 同じ 字の マスを つながった かたまりごとの 長方形に まとめる（巨大な 置物。かたまりは 長方形に 描く こと）。 */
