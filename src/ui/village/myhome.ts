@@ -17,6 +17,11 @@ import type { Speaker } from "../../data/story/quotes";
 import { awayFriends } from "../../data/story/story";
 import { HOME_GUIDE } from "../../data/town/guides";
 import type { Facility } from "../../data/village/facilities";
+import {
+	FURN_SALE_MSG,
+	offLabel,
+	salePrice,
+} from "../../data/village/furnSale";
 import type { Cell } from "../../data/village/map";
 import {
 	type BaseFurnitureId,
@@ -87,6 +92,7 @@ import { petitcon } from "../petitcon/petitcon";
 import { tradeTerminal } from "../trade/trade";
 import { bondCast, bondLevel, heartsOf, keepsakeList } from "./bonds";
 import { trophyGlint } from "./finds";
+import { currentSale } from "./furnSale";
 import { openJukebox } from "./jukebox";
 import { previewStage } from "./villageReturn";
 import { fill } from "./villageTalk";
@@ -415,20 +421,26 @@ const furnList = async (
 	ids: readonly FurnitureId[],
 	item: (id: FurnitureId) => ListItem,
 	start?: FurnitureId,
+	/** セール品（あれば「セール」の 札を 足し、「すべて」では 頭に 並べる）。 */
+	sale: readonly FurnitureId[] = [],
 ): Promise<FurnitureId | null> => {
+	if (sale.length) ids = [...sale, ...ids.filter((id) => !sale.includes(id))];
 	const tabs = [
 		{ label: "すべて", value: "all" },
+		...(sale.length ? [{ label: FURN_SALE_MSG.tab, value: "sale" }] : []),
 		...FURNITURE_CATEGORIES.filter((c) =>
 			ids.some((id) => furnitureCategory(id) === c.id),
 		).map((c) => ({ label: c.name, value: c.id as string })),
 	];
 	if (!tabs.some((t) => t.value === furnTab)) furnTab = "all";
-	if (start && furnTab !== "all" && furnitureCategory(start) !== furnTab)
-		furnTab = "all";
+	const inTab = (id: FurnitureId): boolean =>
+		furnTab === "all" ||
+		(furnTab === "sale"
+			? sale.includes(id)
+			: furnitureCategory(id) === furnTab);
+	if (start && !inTab(start)) furnTab = "all";
 	for (;;) {
-		const shown = ids.filter(
-			(id) => furnTab === "all" || furnitureCategory(id) === furnTab,
-		);
+		const shown = ids.filter(inTab);
 		const v = await listWindow(ctx, title, shown.map(item), {
 			closeLabel: "やめる",
 			start: start ? Math.max(0, shown.indexOf(start)) : 0,
@@ -884,6 +896,8 @@ export type FurnShop = {
 	who: string;
 	/** 売る 家具（値段は FURNITURE_PRICE）。 */
 	ids: readonly BaseFurnitureId[];
+	/** 帰るたびに 特選品を セールする（ui/village/furnSale.ts）。 */
+	sale?: boolean;
 	msg: {
 		shop: string;
 		shopTitle: string;
@@ -902,6 +916,7 @@ const RECYCLE_SHOP: FurnShop = {
 			!OTAKU_GOODS.includes(id) &&
 			!OTAKU_GACHA.includes(id),
 	),
+	sale: true,
 	msg: HOME_MSG,
 };
 
@@ -921,9 +936,34 @@ export const furnitureShop = async (
 		return;
 	}
 	await s.say("nanj", msg.shop, who);
+	const saleNow = () => {
+		const m = loadHome();
+		return shop.sale
+			? currentSale(shop.ids, (id) => owns(m, id), previewing())
+			: [];
+	};
+	const first = saleNow();
+	if (first.length) {
+		const top = first.reduce((a, b) => (b.off > a.off ? b : a));
+		await s.say(
+			"nanj",
+			fill(FURN_SALE_MSG.hello, {
+				name: furnName(top.id),
+				off: offLabel(top.off),
+			}),
+			who,
+		);
+	}
 	let start: FurnitureId | undefined;
 	for (;;) {
 		const m = loadHome();
+		const sale = saleNow();
+		const offOf = (id: FurnitureId) => sale.find((it) => it.id === id)?.off;
+		const priceOf = (id: FurnitureId): number => {
+			const p = FURNITURE_PRICE[id as BaseFurnitureId];
+			const off = offOf(id);
+			return off ? salePrice(p, off) : p;
+		};
 		// 底の 品（goal_〜）は 売らない：持ち帰ると 届く
 		const ids = shop.ids.filter((id) => !owns(m, id));
 		if (!ids.length) {
@@ -936,19 +976,28 @@ export const furnitureShop = async (
 			ctx,
 			`${msg.shopTitle}<br><small>手もと　${yen(have)}</small>`,
 			ids,
-			(id) => ({
-				label: furnName(id),
-				sub: yen(FURNITURE_PRICE[id as BaseFurnitureId]),
-				value: id,
-				icon: furnIcon(id),
-				disabled: FURNITURE_PRICE[id as BaseFurnitureId] > have,
-			}),
+			(id) => {
+				const off = offOf(id);
+				return {
+					label: furnName(id),
+					sub: off
+						? `<s>${yen(FURNITURE_PRICE[id as BaseFurnitureId])}</s> ${yen(priceOf(id))}`
+						: yen(priceOf(id)),
+					desc: off
+						? fill(FURN_SALE_MSG.row, { off: offLabel(off) })
+						: undefined,
+					value: id,
+					icon: furnIcon(id),
+					disabled: priceOf(id) > have,
+				};
+			},
 			start,
+			sale.map((it) => it.id),
 		);
 		if (!v || !ids.includes(v as BaseFurnitureId)) return;
 		const id = v as BaseFurnitureId;
 		start = id;
-		const price = FURNITURE_PRICE[id];
+		const price = priceOf(id);
 		await s.narrate(
 			fill(HOME_MSG.shopAsk, { name: furnName(id), price: yen(price) }),
 		);
