@@ -92,6 +92,17 @@ const SNEERS: readonly string[] = [
 	"てやんでいｗ",
 ];
 
+/** 冷笑を 食らった ときの 感想。本気を 出すのが 恥ずかしくなって 力が 抜ける、の 筋で そろえる（SNEERS と 数を ずらして 組み合わせを 散らす）。 */
+const SNEERED: readonly string[] = [
+	"本気を出すのが恥ずかしくなった",
+	"なんか冷めた",
+	"マジになるのがダサく思えてきた",
+	"急に素に戻ってしまった",
+	"必死なのが恥ずかしくなった",
+	"熱が冷めた",
+	"振りあげた手が止まった",
+];
+
 /** 削除人（purge）の ひとこと（乱数は 使わない：ターンで 選ぶ）。 */
 const PURGE_LINES: readonly string[] = [
 	"規約違反を確認しました",
@@ -876,7 +887,10 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			}
 			p.str--;
 			r.se("debuff");
-			r.msg("ちからが1　下がった。なんかはずかしい", "warn");
+			r.msg(
+				`ちからが1　下がった。${SNEERED[r.s.turn % SNEERED.length]}`,
+				"warn",
+			);
 			return;
 		case "drainLv":
 			r.msg(`${nm}「忍法帖が破損しました」`);
