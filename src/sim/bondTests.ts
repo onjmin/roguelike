@@ -296,9 +296,9 @@ test(
 
 test(
 	"B5",
-	"stock prices drift neither up nor down on average, and never reach 0",
+	"stock prices rise by about their growth on average (sweeter than real), and never reach 0",
 	() => {
-		// はじめの 値から 1歩ずつ（何歩も つなげると 複利で ゆれが 大きい）。1歩の 倍率の 平均が 1
+		// はじめの 値から 1歩ずつ（何歩も つなげると 複利で ゆれが 大きい）。1歩の 倍率の 平均が 1＋growth ほど（上げに 寄る ニュースの ぶん 少し 上）
 		const p = startPrices();
 		const sum: Record<string, number> = {};
 		const N = 4000;
@@ -311,7 +311,11 @@ test(
 		}
 		for (const id of STOCK_IDS) {
 			const mean = (sum[id] ?? 0) / N;
-			ok(Math.abs(mean - 1) < 0.03, `${id}: mean step ×${mean.toFixed(4)}`);
+			const g = STOCKS[id].growth;
+			ok(
+				mean > 1 && Math.abs(mean - 1 - g) < 0.03,
+				`${id}: mean step ×${mean.toFixed(4)}`,
+			);
 		}
 	},
 );
@@ -469,14 +473,14 @@ test(
 			ok(walletYen() === w + 5000, "withdraw did not reach the wallet");
 		});
 		await withStorage(async (store) => {
-			setPoints(store, 20000);
+			setPoints(store, 15 * HOME_MONTHLY);
 			ok(prepayLoan(12) === 0, "prepaid without a house");
 			const h = loadHome();
 			h.owned = true;
 			h.late = 2;
 			saveHome(h, false);
 			ok(prepayLoan(12) === 12, "prepay failed");
-			ok(walletYen() === 20000 - 12 * HOME_MONTHLY, "prepay cost");
+			ok(walletYen() === 3 * HOME_MONTHLY, "prepay cost");
 			ok(loadHome().paid === 12 && loadHome().late === 0, "late not cleared");
 			ok(prepayLoan(12) === 0, "prepaid beyond the wallet");
 			const done = loadHome();

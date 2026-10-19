@@ -98,9 +98,11 @@ export const playDayTrade = async (
 			while (s.t >= s.next && s.hist.length < SLOTS) {
 				s.next += DAY.tick;
 				if (Math.random() < DAY.tick / DAY.regime) s.trend = -s.trend;
-				let k = Math.exp(gauss(Math.random) * DAY.vol + s.trend * DAY.drift);
+				let k = Math.exp(
+					gauss(Math.random) * DAY.vol + s.trend * DAY.drift + DAY.bias,
+				);
 				if (Math.random() < DAY.jump * DAY.tick) {
-					const up = Math.random() < 0.5;
+					const up = Math.random() < DAY.jumpUp;
 					const m =
 						DAY.jumpSize[0] +
 						Math.random() * (DAY.jumpSize[1] - DAY.jumpSize[0]);

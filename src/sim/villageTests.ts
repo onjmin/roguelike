@@ -2163,7 +2163,7 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 			`${id}: ${sources.filter((x) => x === id).length} sources`,
 		);
 		ok(
-			(FURNITURE_PRICE[id as keyof typeof FURNITURE_PRICE] ?? 0) >= 5000,
+			(FURNITURE_PRICE[id as keyof typeof FURNITURE_PRICE] ?? 0) >= 1000,
 			`${id}: no price`,
 		);
 	}

@@ -2,6 +2,8 @@
 // 「FX は ハイレバ・ロスカットも 入れると 没入感 上がりそう」）。
 // - 株：村の 店の 株（STOCKS）を 1株から 買って 持ち、売る。値は 冒険から 帰る たびに 1回 動く（priceStep）。
 //   ニュースが 出た 銘柄は 大きく 動く。配当の ある 銘柄は 帰る たびに 持ち株に 応じて 少し 入る。
+// - 利回りは 現実より 甘め（2026-10-19 作者「ゲームなので 現実の 利益率より 甘めに」）：株は 平均で 帰り 1回 2%ほど
+//   上がり（20回 持てば 1.5倍ほど）、デイトレは 材料が 上げに 寄り、FX は 流れが 長く 続く（読めば 勝ちやすい）。
 // - デイトレ：銘柄を 1つ えらんで 元手を 入れ、場（60秒）の あいだに 買って 売る（ui/trade/dayTrade.ts）。
 // - FX：ドル円。レバレッジ（1〜1000倍）と 証拠金を えらび、買い・売りで 持って 決済（ui/trade/fx.ts）。
 //   証拠金維持率が LOSSCUT を 下まわると 強制決済（ロスカット）。急な 動きで 証拠金より 負けても ゼロカット（口座は マイナスに しない）。
@@ -31,6 +33,8 @@ export type StockDef = {
 	vol: number;
 	/** 1回の 帰りの 配当（株価に 対する 割合）。 */
 	dividend?: number;
+	/** 1回の 帰りの 上がり（平均の 割合）。ゲームなので 現実より 甘い（年 7% → 帰り 1回で 1〜2%）。 */
+	growth: number;
 	/** 説明（一覧の 2行目）。 */
 	note: string;
 	/** 上げの ニュース・下げの ニュース。 */
@@ -44,7 +48,8 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "常識堂",
 		start: 820,
 		vol: 0.04,
-		dividend: 0.003,
+		dividend: 0.005,
+		growth: 0.012,
 		note: "ロゼの店。麻婆豆腐は毎日同じ味",
 		up: ["常識堂、麻婆豆腐の\n冷凍版が品切れ続出"],
 		down: ["常識堂、花椒の仕入れ値が\n高騰。……辛さはそのまま"],
@@ -54,6 +59,7 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "ぷゆゆ",
 		start: 340,
 		vol: 0.09,
+		growth: 0.022,
 		note: "ぬいぐるみ。当たるとでかい",
 		up: ["ぷゆゆトイズ、金のぷゆゆ\nぬいぐるみが海外で大人気"],
 		down: ["ぷゆゆトイズ、新作が\n「顔がちがう」と炎上"],
@@ -63,7 +69,8 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "パン松",
 		start: 610,
 		vol: 0.05,
-		dividend: 0.002,
+		dividend: 0.004,
+		growth: 0.012,
 		note: "六枚切りの食パン。手堅い",
 		up: ["パン松製パン、麻婆食パンが\nコンビニで定番入り"],
 		down: ["パン松製パン、八枚切りと\n六枚切りの袋をまちがえる"],
@@ -73,7 +80,8 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "保守電",
 		start: 1500,
 		vol: 0.02,
-		dividend: 0.005,
+		dividend: 0.008,
+		growth: 0.008,
 		note: "村の電気。ほとんど動かない",
 		up: ["保守電力、発電所の点検が\n予定より早く終わる"],
 		down: ["保守電力、送電線に\nカラスの巣。一時停電"],
@@ -83,6 +91,7 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "ゼロ会計",
 		start: 950,
 		vol: 0.07,
+		growth: 0.02,
 		note: "帳簿のソフト。新しもの好き向け",
 		up: ["ゼロ会計、帳簿ソフトの\n新版が好評。「数えるのが楽」"],
 		down: ["ゼロ会計、新版にバグ。\n「おかえり」がゼロになる"],
@@ -92,6 +101,7 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "球団",
 		start: 480,
 		vol: 0.1,
+		growth: 0.022,
 		note: "勝てば上がる。負ければ……",
 		up: ["おんJ球団、10連勝。\nファンの実況スレが1000"],
 		down: ["おんJ球団、10連敗。\n実況スレがお通夜"],
@@ -101,6 +111,7 @@ export const STOCKS: Record<StockId, StockDef> = {
 		short: "ンゴ",
 		start: 12,
 		vol: 0.3,
+		growth: 0.04,
 		note: "仮想通貨。だれも中身を知らない",
 		up: ["ンゴ、なぜか急騰。\n「ガチホ勝利」の書きこみ"],
 		down: ["ンゴ、なぜか暴落。\n「養分乙」の書きこみ"],
@@ -113,6 +124,8 @@ export const STOCK_IDS = Object.keys(STOCKS) as StockId[];
 export const STOCK_FLOOR = 1;
 /** ニュースの 出る 帰りの 割合と、出た ときの 動き（割合）。 */
 export const NEWS_CHANCE = 0.6;
+/** ニュースが 上げに なる 割合（甘め）。 */
+export const NEWS_UP = 0.6;
 export const NEWS_MOVE = [0.12, 0.3] as const;
 /** 履歴に 残す 帰りの 数（グラフ）。 */
 export const STOCK_HISTORY = 24;
@@ -151,14 +164,14 @@ export const priceStep = (
 	const out = { ...prices };
 	for (const id of STOCK_IDS) {
 		const d = STOCKS[id];
-		// 平均が 0 に なる よう −vol²/2 を 足す（長く 持っても 増えも 減りも しない）
-		const k = Math.exp(gauss(r) * d.vol - (d.vol * d.vol) / 2);
+		// ゆれの 平均は 0（−vol²/2）、そこに growth の ぶん 上がる
+		const k = Math.exp(gauss(r) * d.vol - (d.vol * d.vol) / 2 + d.growth);
 		out[id] = Math.max(STOCK_FLOOR, Math.round(prices[id] * k));
 	}
 	let news: StockNews | null = null;
 	if (r() < NEWS_CHANCE) {
 		const id = STOCK_IDS[Math.floor(r() * STOCK_IDS.length)] ?? "puyu";
-		const up = r() < 0.5;
+		const up = r() < NEWS_UP;
 		const m = NEWS_MOVE[0] + r() * (NEWS_MOVE[1] - NEWS_MOVE[0]);
 		out[id] = Math.max(
 			STOCK_FLOOR,
@@ -192,6 +205,9 @@ export const DAY = {
 	/** 材料（急な 動き）の 出る 割合（1秒あたり）と 幅。 */
 	jump: 0.03,
 	jumpSize: [0.03, 0.08] as const,
+	/** 材料が 上げに なる 割合と、場の 地合い（1tick あたりの 割合）。どちらも 甘め。 */
+	jumpUp: 0.6,
+	bias: 0.00003,
 	/** 1回の 売買の 手数料（円）。 */
 	fee: 50,
 	/** 元手の えらびかた（円）。 */
@@ -208,8 +224,9 @@ export const FX = {
 	tick: 0.2,
 	/** 1tick の ゆれ（円）。 */
 	vol: 0.018,
-	regime: 10,
-	drift: 0.0015,
+	/** 流れが 長く・強めに 続く（読めば 勝てる。甘め）。 */
+	regime: 12,
+	drift: 0.0018,
 	/** 指標発表（雇用統計）：場の なかほどで 1回、大きく 動く（円）。 */
 	shock: [0.6, 1.8] as const,
 	/** 指標の 出る 秒（の 幅）。 */

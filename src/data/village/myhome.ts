@@ -27,9 +27,9 @@ export const MYHOME_FROM = 4;
 /** ローンの 月数（35年）。帰るたびに 1か月 返す。 */
 export const LOAN_MONTHS = 35 * 12;
 /** 契約の ときの 頭金（円）。 */
-export const HOME_DOWN = 20000;
-/** 帰るたびの 返済（円。財布から 引き落とし。足りなければ 滞納）。 */
-export const HOME_MONTHLY = 1500;
+export const HOME_DOWN = 10000;
+/** 帰るたびの 返済（円。財布から 引き落とし。足りなければ 滞納）。潜り 1回の 売り上げの 1割ほど。 */
+export const HOME_MONTHLY = 500;
 
 // ───────────────── 家具 ─────────────────
 
@@ -553,71 +553,72 @@ export const BED_FURNITURE: readonly FurnitureId[] = [
 ];
 
 /**
- * リサイクルショップの レジで 買う ときの 値段（円）。本編に 関係ない 物なので 高め
- * （1回の 冒険の 売り上げは 数千円。node scripts/sales-sim.mjs）。
+ * リサイクルショップの レジで 買う ときの 値段（円）。目安は 潜り 1回の 売り上げ（倒れた 回も 0円で 数えて
+ * 平均 4千円ほど。node scripts/sales-sim.mjs の「平均(全体)」）：小物は 潜り 半分、ふつうの 家具は 1〜2回、
+ * 大物は 3〜4回、いちばん 高い 物でも 6回ほど。
  */
 export const FURNITURE_PRICE: Record<BaseFurnitureId, number> = {
-	bed: 20000,
-	bedBeige: 12000,
-	bedCream: 16000,
-	bedRed: 48000,
-	table: 8000,
-	crt: 6000,
-	bonsai: 12000,
-	coffee: 15000,
-	sofa: 40000,
-	shelf: 25000,
-	shelfDark: 30000,
-	tv: 60000,
-	tvTall: 35000,
-	tank: 45000,
-	guitar: 30000,
-	fridge: 30000,
-	records: 18000,
-	game: 50000,
-	tansu: 28000,
-	chair: 10000,
-	safe: 80000,
-	dumbbell: 9000,
+	bed: 6000,
+	bedBeige: 3500,
+	bedCream: 5000,
+	bedRed: 14500,
+	table: 2500,
+	crt: 2000,
+	bonsai: 3500,
+	coffee: 4500,
+	sofa: 12000,
+	shelf: 7500,
+	shelfDark: 9000,
+	tv: 18000,
+	tvTall: 10500,
+	tank: 13500,
+	guitar: 9000,
+	fridge: 9000,
+	records: 5500,
+	game: 15000,
+	tansu: 8500,
+	chair: 3000,
+	safe: 24000,
+	dumbbell: 2500,
 	// ゲームの 家具は 売っていない（できごとで もらう：EVENT_GIFTS）
 	platformer: 99999,
 	bomberbox: 99999,
 	// 遊べる 家具（リサイクルショップで 売る）
-	cabSnake: 38000,
-	cabStack: 42000,
-	cabCross: 36000,
-	goban: 14000,
-	shogiban: 12000,
-	laptop: 32000,
-	desktopPc: 45000,
-	taiko: 22000,
-	turntable: 26000,
-	crtGame: 18000,
-	barrel: 9000,
-	kingyoBucket: 7000,
-	pinball: 48000,
-	danmakuCab: 40000,
-	mojiBook: 6000,
-	puyuPlush: 5000,
-	gamingPc: 55000,
-	easel: 14000,
-	cabResu: 40000,
-	pickaxe: 15000,
-	handheld: 12000,
-	reversiBoard: 9000,
-	hanafuda: 8000,
-	picrossNote: 5000,
-	crateBox: 6000,
-	billiards: 60000,
-	dartboard: 11000,
-	fishingRod: 10000,
+	cabSnake: 11500,
+	cabStack: 12500,
+	cabCross: 11000,
+	goban: 4000,
+	shogiban: 3500,
+	laptop: 9500,
+	desktopPc: 13500,
+	taiko: 6500,
+	turntable: 8000,
+	crtGame: 5500,
+	barrel: 2500,
+	kingyoBucket: 2000,
+	pinball: 14500,
+	danmakuCab: 12000,
+	mojiBook: 2000,
+	puyuPlush: 1500,
+	gamingPc: 16500,
+	easel: 4000,
+	cabResu: 12000,
+	pickaxe: 4500,
+	handheld: 3500,
+	reversiBoard: 2500,
+	hanafuda: 2500,
+	picrossNote: 1500,
+	crateBox: 2000,
+	billiards: 18000,
+	dartboard: 3500,
+	fishingRod: 3000,
 	// ヲタショップ「神降臨」の レジで 売る（data/village/otaku.ts の OTAKU_GOODS。リサイクルショップでは 売らない）
-	figZero: 9800,
-	figRino: 9800,
-	figAru: 9800,
-	otakuTapestry: 6800,
-	doujinShelf: 14800,
-	figureCase: 29800,
+	figZero: 2980,
+	figRino: 2980,
+	figAru: 2980,
+	otakuTapestry: 1980,
+	doujinShelf: 3980,
+	figureCase: 8980,
 	// ガチャの 景品（1回 500円。OTAKU_GACHA。店では 売らない）
 	acstZero: 99999,
 	acstRen: 99999,
