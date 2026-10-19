@@ -24,7 +24,7 @@ import type { MobId } from "../people/mobs";
 export type ArrivalLine = Cue & {
 	who: "kiriko" | null | MobId;
 	text: string;
-	/** この 窓の 前に 出す エフェクト（engine/sceneFx.ts。calm か 場面の 終わりまで 残る）。 */
+	/** この 窓の 前に 出す エフェクト（engine/sceneFx.ts。calm か 場面の 終わりまで 残る。爆発の 煙は その 前に ひとりでに 晴れる）。 */
 	fx?: SceneFx;
 	/** この 窓の 前に エフェクトを 消す。 */
 	calm?: true;

@@ -7,7 +7,7 @@ import { settings } from "./settings";
 
 /** 場面の エフェクト。 */
 export type SceneFx =
-	/** 爆発（白い 光・ゆれ・ギザギザの 火の玉。字は 出さない。煙は 頁の あいだ 残る）。 */
+	/** 爆発（白い 光・ゆれ・ギザギザの 火の玉。字は 出さない。煙は 少し ただよって ひとりでに 晴れる）。 */
 	| "boom"
 	/** ぷつっと 暗転（溶かさずに 一瞬で 真っ黒。窓だけ 見える。明けも 一瞬）。 */
 	| "blackout"
@@ -203,7 +203,7 @@ const boom = (
 	const cy = L.h * 0.42;
 	const R = Math.min(L.w, L.h) * 0.36;
 	const jag = Array.from({ length: 11 }, () => 0.75 + r() * 0.45);
-	// 煙（火の玉が はじけた あと 広がって、頁の あいだ ただよう）
+	// 煙（火の玉が はじけた あと 広がって、少し ただよって 晴れる）
 	const puffs = Array.from({ length: still ? 12 : 22 }, () => {
 		const a = r() * Math.PI * 2;
 		const d = r() * R * 0.9;
@@ -223,13 +223,17 @@ const boom = (
 	const pop = 180 * k;
 	const hold = 650 * k;
 	const fade = 400;
+	// 煙は 火の玉の あと これだけ ただよって、clear で 晴れる（窓を 送らなくても 消える。end() は 早めるだけ）
+	const linger = 1100 * k;
+	const clear = 600 * k;
 	if (!bare && !still) {
 		document.body.classList.add("shake");
 		setTimeout(() => document.body.classList.remove("shake"), 420 * k);
 	}
 	const end = animate(L, (t, ending) => {
 		const g = L.g;
-		const out = ending === null ? 1 : Math.max(0, 1 - ending / fade);
+		const gone = 1 - Math.min(1, Math.max(0, t - hold - linger) / clear);
+		const out = gone * (ending === null ? 1 : Math.max(0, 1 - ending / fade));
 		// 白い 光（最初の 2こま）
 		if (!bare && t < 90 * k) {
 			g.fillStyle = still ? "rgba(255,255,255,0.35)" : "#fff";
@@ -272,7 +276,7 @@ const boom = (
 			g.fillStyle = "#fffbe0";
 			dotDisc(g, cx, cy, size * 0.16);
 		}
-		return ending === null || ending < fade;
+		return out > 0;
 	});
 	return { ready: sleep(hold), end };
 };

@@ -16,7 +16,7 @@ import type { MobId } from "../people/mobs";
 export type SkitLine = Cue & {
 	who: "kiriko" | "mob" | null | { name: string };
 	text: string;
-	/** この 窓の 前に 出す エフェクト（engine/sceneFx.ts。boom は 爆発の 音も）。calm か 寸劇の 終わりまで 残る。 */
+	/** この 窓の 前に 出す エフェクト（engine/sceneFx.ts。boom は 爆発の 音も）。calm か 寸劇の 終わりまで 残る（爆発の 煙は その 前に ひとりでに 晴れる）。 */
 	fx?: SceneFx;
 	/** この 窓の 前に エフェクトを 消す（爆発の あと 元通りに なった ところ）。 */
 	calm?: true;

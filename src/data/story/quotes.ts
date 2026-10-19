@@ -83,8 +83,9 @@ export type StoryPage = Cue & {
 	seRepeat?: number;
 	seGap?: number;
 	/**
-	 * 地の文の 前に 出す 場面の エフェクト（engine/sceneFx.ts。村の 持ち帰りの 語りだけ）。煙・暗転などは 頁の
-	 * あいだ 残り、次の 頁も 同じ fx なら そのまま つづく。付けるのは se と 同じく オチと 山場だけ（STORY.md §0）。
+	 * 地の文の 前に 出す 場面の エフェクト（engine/sceneFx.ts。村の 持ち帰りの 語りだけ）。暗転・紙吹雪などは 頁の
+	 * あいだ 残り、次の 頁も 同じ fx なら そのまま つづく。爆発の 煙は ひとりでに 晴れる。付けるのは se と 同じく
+	 * オチと 山場だけ（STORY.md §0）。
 	 */
 	fx?: SceneFx;
 	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
@@ -660,7 +661,6 @@ export const ENDING: StoryPage[] = [
 		who: null,
 		text: "源泉が噴きあがって、町じゅうの\n蛇口から41.5℃のお湯が出た。",
 		se: "explosion",
-		// 爆発の 煙が そのまま 湯けむり
 		fx: "boom",
 		look: [45, 17],
 	},
@@ -669,7 +669,6 @@ export const ENDING: StoryPage[] = [
 		text: "ゼロの冷却水まで41.5℃！\n湯あたりです！",
 		emote: "汗",
 		gesture: "shiver",
-		fx: "boom",
 		look: null,
 		go: [{ who: "zero", route: "lrlr", speed: 3 }],
 	},
@@ -678,7 +677,6 @@ export const ENDING: StoryPage[] = [
 		who: "shiyo",
 		text: "台所でお風呂に入れるじゃない！\nあたす、43℃にしてくる！",
 		gesture: "hop",
-		fx: "boom",
 		go: [{ who: "shiyo", to: [28, 22], speed: 3, follow: true }],
 	},
 	{
@@ -686,7 +684,6 @@ export const ENDING: StoryPage[] = [
 		text: "規模が、\nおかしいンゴ！",
 		emote: "驚",
 		kiriko: "voice",
-		fx: "boom",
 		look: null,
 	},
 	{

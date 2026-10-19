@@ -866,7 +866,7 @@ export const returnScene = async (
 	for (const id of here) s.face(`mob_${id}`, "player");
 	// 掛け合いの 立ち位置（明かりの 坂で 建て直すと 並びが くずれるので やめる）
 	let stage = stageOf(s, exit);
-	// 場面の エフェクト（煙・暗転などは 次の 頁も 同じ fx なら 残す）
+	// 場面の エフェクト（暗転・紙吹雪などは 次の 頁も 同じ fx なら 残す。爆発の 煙は ひとりでに 晴れる）
 	let fx: { kind: SceneFx; run: FxRun } | null = null;
 	// どう 帰って きたかの 姿（服の パンくず・髪の 湯気・ソース）は 着いた ときから
 	const look =
@@ -888,6 +888,11 @@ export const returnScene = async (
 		if (p.skip) {
 			if (stage) await stepBack(s, stage);
 			await s.fadeOut(400);
+		}
+		// 前の 頁の 煙・暗転は、カメラを 動かす・走る 前に 消す（時間が とぶ 頁は 暗転の 幕の 下で）
+		if (fx && fx.kind !== p.fx) {
+			fx.run.end();
+			fx = null;
 		}
 		// 場面の 空（明かりの 場面は 夜。null は 寸劇の 空＝朝に もどす。停電の 町は 昼・夕方でも 暗い まま。ui/village/sceneSky.ts）
 		if (p.sky !== undefined)
@@ -916,10 +921,6 @@ export const returnScene = async (
 		}
 		if (stage && p.turnAway) await turnAway(s, stage);
 		else if (stage) await turnTo(s, stage, speakerOf(p));
-		if (fx && fx.kind !== p.fx) {
-			fx.run.end();
-			fx = null;
-		}
 		if (p.wear !== undefined) s.wear("player", p.wear);
 		// 場面に 出て いる みんなの 頭（「町の人の頭に生えた」）
 		if (p.wearAll !== undefined)
