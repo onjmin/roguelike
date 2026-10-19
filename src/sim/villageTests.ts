@@ -2969,6 +2969,22 @@ test("unlock news: shown at the exit, a closed tab shows it again", async () => 
 			]),
 			`the 電池板 news is out of order:\n${deep.log.join("\n")}`,
 		);
+		// 過去ログの底：出口ではなく 広場の 古井戸を 見せる
+		setProgress(
+			["shallow", "kinoko", "main", "deep", "hidden"],
+			[{ dungeon: "hidden", reason: "clear" }],
+			["shallow", "kinoko", "main", "deep"],
+		);
+		const hidden = fakeStory();
+		await newsScript(hidden.s);
+		ok(
+			inOrder(hidden.log, [
+				...UNLOCK_LINES.hidden.map((l) => `say ${l.who}: ${l.text}`),
+				`look ${VILLAGE_SPOTS.well.join(",")}`,
+				`narrate: 「${DUNGEON_NAMES.hidden.name}」に\nもぐれるようになった`,
+			]) && !hidden.log.includes(exit),
+			`the 過去ログの底 news does not show the well:\n${hidden.log.join("\n")}`,
+		);
 		// きのこ板で 何度も たおれた（救い）：ゼロが 倉庫の 封鎖を 解く。板は 開かない
 		setProgress(
 			["shallow", "kinoko"],

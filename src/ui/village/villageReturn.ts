@@ -1288,7 +1288,7 @@ export const tenScript = async (s: Story): Promise<void> => {
 
 /**
  * 次のダンジョンが 開いた 知らせ（持ち帰った・何度も たおれた）。開く口を 見て 仲間が 話し、
- * 村の 出口を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
+ * 降りる 所（村の 出口・過去ログの底は 古井戸）を 見て 仲間が 話し、「〜に もぐれるように なった」（村の 見た目は 変わらない）。
  */
 export const newsScript = async (s: Story): Promise<void> => {
 	// まだ 越してきて いない 仲間は 知らせでも 話さない
@@ -1322,18 +1322,20 @@ export const newsScript = async (s: Story): Promise<void> => {
 			s,
 			lines.map((l) => l.who),
 		);
-		// 村の 出口の 方を 見る（行き先は 出口から 全体マップで 選ぶ）。出口が キリコから 遠ければ
-		// （たおれて 蓄音機の 前に いる relief など）そばの 仲間が 話しおえてから 出口を 見せて「もぐれる」の 1行
-		// （見せてから すぐ もどって 話すと、出口が 一瞬しか 映らなかった）
-		const [ex, ey] = VILLAGE_SPOTS.exit;
+		// 降りる 所を 見る：ふつうは 村の 出口（行き先は 出口から 全体マップで 選ぶ）、過去ログの底は 広場の 古井戸。
+		// そこが キリコから 遠ければ（たおれて 蓄音機の 前に いる relief など）そばの 仲間が 話しおえてから
+		// 見せて「もぐれる」の 1行（見せてから すぐ もどって 話すと、一瞬しか 映らなかった）
+		const spot =
+			n.dungeon === "hidden" ? VILLAGE_SPOTS.well : VILLAGE_SPOTS.exit;
+		const [ex, ey] = spot;
 		const far =
 			Math.max(Math.abs(s.state.x - ex), Math.abs(s.state.y - ey)) > 3;
-		if (!far) await s.look(VILLAGE_SPOTS.exit);
+		if (!far) await s.look(spot);
 		for (const l of lines) await s.say(l.who, l.text, cueOf(l));
 		if (far) {
-			// 立ち絵が 出口を 隠さないように 窓を しまってから
+			// 立ち絵が 見せる 所を 隠さないように 窓を しまってから
 			await s.wait(0);
-			await s.look(VILLAGE_SPOTS.exit);
+			await s.look(spot);
 		}
 		doneProgressNews(n);
 		s.se("chapter");
