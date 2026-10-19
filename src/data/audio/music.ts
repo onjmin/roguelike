@@ -207,7 +207,7 @@ const SAKE_SONGS: ReadonlySet<string> = new Set([
 export const songArt = (bgm: string): SongArt =>
 	SAKE_SONGS.has(bgm) ? "sake" : "kiriko";
 
-/** ラジカセで かけられる 曲（聞いた 曲 ＋ 寸劇の 曲。番号は この 並びの 1から）。 */
+/** ラジカセで かけられる 曲（聞いた 曲 ＋ 寸劇の 曲。番号は jukeboxSlots）。 */
 export const jukeboxTracks = (
 	stage: number,
 	cleared: readonly DungeonId[],
@@ -223,4 +223,25 @@ export const jukeboxTracks = (
 		});
 	}
 	return out;
+};
+
+/**
+ * ラジカセの 番号の 並び（町が 育ちきって 板を ぜんぶ 持ち帰った ときの jukeboxTracks の 並び）。
+ * 番号は ここの 1から。どの 曲も いつかは 聞けるので、欠番は いつか 埋まる。
+ */
+export const jukeboxCatalog = (): string[] =>
+	jukeboxTracks(STAGE_NAMES.length - 1, DUNGEON_IDS).map((d) => d.bgm);
+
+/** ラジカセの 1行（id は 番号。disc が null なら まだ 聞いて いない 曲＝欠番「番号：？？？」で かけられない）。 */
+export type JukeboxSlot = { id: number; disc: Disc | null };
+
+export const jukeboxSlots = (
+	stage: number,
+	cleared: readonly DungeonId[],
+): JukeboxSlot[] => {
+	const got = jukeboxTracks(stage, cleared);
+	return jukeboxCatalog().map((bgm, i) => ({
+		id: i + 1,
+		disc: got.find((d) => d.bgm === bgm) ?? null,
+	}));
 };

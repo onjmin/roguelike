@@ -1415,4 +1415,7 @@ export const JUKEBOX_MSG = {
 	back: "もどる",
 	/** 下の 札（{n} は 番号、{title} は 曲名）。 */
 	track: "{n}：{title}",
+	/** まだ 聞いて いない 曲（欠番）の 曲名と 2行目。 */
+	unknown: "？？？",
+	unknownWhere: "まだ聞いていない曲",
 } as const;

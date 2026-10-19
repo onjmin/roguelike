@@ -34,6 +34,7 @@ import {
 import { bgm } from "../data/audio/bgm";
 import { SE_LOUDNESS } from "../data/audio/loudness";
 import {
+	jukeboxSlots,
 	jukeboxTracks,
 	plainMml,
 	records,
@@ -5605,6 +5606,34 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 	ok(
 		box.every((r) => r.label && r.where),
 		"a record box track has no title or place",
+	);
+	// ラジカセの 番号：曲ごとに きまる（ぜんぶ 聞いた ときの 並び）。まだ 聞いて いない 曲は 欠番で、いつかは 埋まる
+	const full = jukeboxSlots(7, DUNGEON_IDS);
+	ok(
+		full.every((x, i) => x.id === i + 1 && x.disc) &&
+			new Set(full.map((x) => x.disc?.bgm)).size === full.length,
+		"a ラジカセ number stays a gap even when everything is cleared",
+	);
+	const few = jukeboxSlots(7, ["shallow", "kinoko", "main", "deep"]);
+	const idOf = (xs: typeof few, b: string) =>
+		xs.find((x) => x.disc?.bgm === b)?.id;
+	ok(
+		few.length === full.length &&
+			idOf(few, "retro2") === idOf(full, "retro2") &&
+			idOf(few, "kaiwai2") === idOf(full, "kaiwai2") &&
+			few.some((x) => !x.disc) &&
+			!few.some((x) => x.disc?.bgm === "island" || x.disc?.bgm === "deep6"),
+		"ラジカセ numbers shift with clears, or an unheard song is offered",
+	);
+	ok(
+		main.every((r) => few.some((x) => x.disc?.bgm === r.bgm)),
+		"a heard song has no ラジカセ number",
+	);
+	ok(
+		!jukeboxSlots(0, ["shallow", "kinoko", "main", "deep"]).find(
+			(x) => full[x.id - 1]?.disc?.bgm === "kumori",
+		)?.disc,
+		"the 町 song of a later stage is offered before the town grows",
 	);
 	// 箱の 絵：名無し2rt さんの 曲は 鮭、ほかは キリコ
 	ok(
