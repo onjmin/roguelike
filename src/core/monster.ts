@@ -49,12 +49,19 @@ export const restLook = (m: Monster): { asleep: boolean; posing: boolean } => ({
 	posing: posing(m),
 });
 
-/** まどわされているときの 敵の呼び名（みんな 自分の姿に 見えて 見分けが つかない）。 */
-const DAZED_NAME = "なにか";
+/** 見分けが つかない ときの 敵の呼び名（まどわし：みんな 自分の姿に 見える。アク禁：何も 見えない）。 */
+const HIDDEN_NAME = "なにか";
 
-/** 記録に出す 敵の名前（まどわされているときは 伏せる）。 */
+/**
+ * 記録に出す 敵の名前。まどわされているときと、アク禁で 何も 見えないときは 伏せる
+ * （名乗って 勝負が 始まった ボスは アク禁でも 名前で 呼ぶ）。
+ */
 export const seenName = (r: Run, m: Monster): string =>
-	r.p.status.daze > 0 ? DAZED_NAME : looks(m).name;
+	namesHidden(r, m) ? HIDDEN_NAME : looks(m).name;
+
+const namesHidden = (r: Run, m: Monster): boolean =>
+	r.p.status.daze > 0 ||
+	(r.p.status.blind > 0 && !(r.f.bossSeen && mdef(m).boss));
 
 /** いまの 見た目（呼び名と 絵）。キレる 前の 顔真っ赤は やきうの 絵の「おんJ民」。 */
 const looks = (m: Monster): { name: string; sprite: string } => {
@@ -65,11 +72,9 @@ const looks = (m: Monster): { name: string; sprite: string } => {
 /** いまの 絵。 */
 export const monsterSprite = (m: Monster): string => looks(m).sprite;
 
-/** 呼び名（化けているときは道具の名前。まどわされているときは 伏せる）。 */
+/** 呼び名（化けているときは道具の名前。まどわされている・アク禁のときは 伏せる）。 */
 export const monsterName = (r: Run, m: Monster): string =>
-	m.disguise && !(r.p.status.daze > 0)
-		? r.kindName(m.disguise)
-		: seenName(r, m);
+	m.disguise && !namesHidden(r, m) ? r.kindName(m.disguise) : seenName(r, m);
 
 /**
  * にょっす牛（poison）の 冷笑。真剣な 相手を 上から 茶化して、ちからを そぐ。

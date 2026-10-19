@@ -2335,6 +2335,7 @@ test("herb", "h_blind: even an adjacent monster is not visible", () => {
 	ok(r.monsterVisible(m), "harness: not visible before");
 	turn(r, { c: "use", item: give(r, "h_blind").uid });
 	ok(!r.monsterVisible(now(m)), "an adjacent monster was visible while blind");
+	ok(monsterName(r, now(m)) === "なにか", `name shown: ${monsterName(r, m)}`);
 });
 
 test("scroll", "s_blast from a room's entrance hits the whole room", () => {
