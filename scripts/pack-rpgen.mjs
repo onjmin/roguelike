@@ -313,8 +313,10 @@ const GROUPS = {
 // 1つの 物は 1つの 群（2x2 の 棚・4x2 の 車も 1つ）。並べ方は 外観と 同じ（群の 順に、上から 最初に 入る 所へ）。
 //   ids    部品の 並び（行ごと）
 //   op     加工（外観の 群と 同じ。ids の ときだけ）
-//   lift   台の 上に のせる 小物は 何px 上へ ずらして 詰める（下の すき間を 台の 天板に 合わせる。上に 出た 分は 切れる）
-//   base   同梱の Base.png の [列, 行, 幅, 高さ] を 切って 詰める（台の 上の 家電など。lift と 組む）
+//   lift   台の 上に のせる 小物は 何px 上へ ずらして 詰める（下の すき間を 台の 天板に 合わせる）。
+//          1マスの 物で ずらすと 上が 切れる ときは、上に 1マス 足した 1x2 に する（ri は 上へ はみ出して 描く）
+//   base   同梱の Base.png の [列, 行, 幅, 高さ] を 切って 詰める（台の 上の 家電など。lift と 組む。
+//          行は 0.5 などの はしたでも よい：マスの 境に またがって 描かれた 絵）
 //   parts  部品を 重ねて 1マスに（[id か Base.png の [列, 行], 右へ dx, 下から 上へ dy, 倍率]。倍率は 最近傍で 縮める）
 // コメントは 出どころ（セットの 番号: その 中の 番号。「105#35」は セット 105 の 35 番）。
 const ROOM_PIECES = {
@@ -544,14 +546,14 @@ const ROOM_PIECES = {
 	dumbbells: { parts: [[[2, 108], 0, 0], [[0, 342], 1, 7, 0.5], [[0, 342], 8, 7, 0.5], [[1, 342], 4, 9, 0.5]] },
 	// 105#36 17#30 17#29
 	shogiban: { parts: [["MWXnQk", 0, 0], ["Pcu3NWE", 3, 8, 0.5], ["bkPZxC", 8, 6, 0.5]] },
-	// Base.png
-	laptop: { base: [4, 396], lift: 5 },
+	// Base.png（2マスに またがって 描かれて いるので 半マス ずらして 切る）
+	laptop: { base: [4, 395.5] },
 	// Base.png
 	kettleBase: { base: [6, 138], lift: 5 },
-	// Base.png
-	phone: { base: [5, 394], lift: 4 },
-	// Base.png
-	riceCooker: { base: [0, 396], lift: 4 },
+	// Base.png（上はしが 1つ 上の マスに 出て いる）
+	phone: { base: [5, 393, 1, 2], lift: 4 },
+	// Base.png（2マスに またがって 描かれて いるので 半マス ずらして 切る）
+	riceCooker: { base: [0, 395.5], lift: 3 },
 	// Base.png
 	coffeeMaker: { base: [6, 394], lift: 3 },
 	// ── ファミレス（窓ぎわの ボックス席・ドリンクバー）
@@ -1342,7 +1344,7 @@ const packAtlas = (groups, size, draw) => {
 	return { cells, atlas };
 };
 
-/** 部品の 並び（行ごと）を 1枚に（lift px 上へ ずらす。上に 出た 分は 切れる）。 */
+/** 部品の 並び（行ごと）を 1枚に（lift px 上へ ずらす）。 */
 const drawIds = (rows, w, h, lift = 0) => {
 	const img = blank(w * CELL, h * CELL);
 	rows.forEach((row, y) => {
@@ -1381,20 +1383,36 @@ const seat = (img) => {
 };
 const modern = packAtlas(GROUPS, groupSize, drawGroup);
 const food = packAtlas(FOOD, groupSize, (g, w, h) => seat(drawGroup(g, w, h)));
+const roomShape = (p) => {
+	if (p.base) return [p.base[2] ?? 1, p.base[3] ?? 1];
+	if (p.drawn) return p.size ?? [1, 1];
+	if (p.parts) return [1, 1];
+	return [Math.max(...p.ids.map((r) => r.length)), p.ids.length];
+};
+/** lift で ずらすと 上が 切れる 1マスの 物（上に 1マス 足す）。2マス 以上の 物は 切れたら 止める。 */
+const liftGrows = (p) => {
+	if (!p.lift || p.drawn || p.parts) return false;
+	const [w, h] = roomShape(p);
+	const src = p.base ? baseCut(...p.base) : drawIds(p.ids, w, h);
+	let cut = false;
+	for (let y = 0; y < p.lift && !cut; y++)
+		for (let x = 0; x < src.w && !cut; x++) cut = src.rgba[(y * src.w + x) * 4 + 3] > 0;
+	if (cut && w * h > 1) throw new Error(`lift で 上が 切れる（${w}x${h}）`);
+	return cut;
+};
 const room = packAtlas(
 	ROOM_PIECES,
 	(p) => {
-		if (p.base) return [p.base[2] ?? 1, p.base[3] ?? 1];
-		if (p.drawn) return p.size ?? [1, 1];
-		if (p.parts) return [1, 1];
-		return [Math.max(...p.ids.map((r) => r.length)), p.ids.length];
+		const [w, h] = roomShape(p);
+		return [w, h + (liftGrows(p) ? 1 : 0)];
 	},
 	(p, w, h) => {
-		if (p.ids) return applyOp(drawIds(p.ids, w, h, p.lift), p.op);
+		const grow = liftGrows(p) ? 1 : 0;
+		if (p.ids) return applyOp(drawIds(grow ? [[], ...p.ids] : p.ids, w, h, p.lift), p.op);
 		if (p.drawn) return DRAWN[p.drawn]();
 		const img = blank(w * CELL, h * CELL);
 		if (p.base) {
-			paste(img, baseCut(...p.base), 0, -(p.lift ?? 0));
+			paste(img, baseCut(...p.base), 0, grow * CELL - (p.lift ?? 0));
 			return img;
 		}
 		// 部品を 重ねる（下はしを マスの 下から dy 上に そろえる）
