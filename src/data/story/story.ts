@@ -525,6 +525,7 @@ export type ThemeName =
 	| "white"
 	| "beach"
 	| "lattice"
+	| "miku"
 	| "forge"
 	| "moss"
 	| "crystal"
@@ -696,8 +697,8 @@ export const BOARD_LOOKS: Record<DungeonId, BoardLook> = {
 		ambient: "dust",
 		zones: HIDDEN_ZONES,
 	},
-	// ボカロ作り避難所：荒らしの あとの 静かな 避難所（電子の 格子）
-	vocalo: { theme: "lattice", bgm: "tekitou", ambient: "data" },
+	// ボカロ作り避難所：荒らしの あとの 静かな 避難所（ミク色の 電子の 格子）
+	vocalo: { theme: "miku", bgm: "tekitou", ambient: "miku" },
 	// 水星の 名無しの 板：青白い 水晶と 氷の 曲
 	mercury: { theme: "crystal", bgm: "mercury", ambient: "glitter" },
 	// 沈んだ ムー大陸：水底の 遺跡（水底に さす 光）

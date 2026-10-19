@@ -8,6 +8,7 @@
 // 湯だまり（ダンジョンの 湯気の 立つ 池。ui/dungeon/render.ts）は 同じ 岸で、水だけ 白く にごらせた pond-onsen.png。
 //
 // 板ごとの 水たまり（はちみつ・電解液・水銀 など）も 同じ 岸で 水の 色だけ かえた pond-<名前>.png。
+// 床に 土の 色が 合わない 板は 岸の 色も かえる（SHORES。ミク色の 水は 灰色の 岸）。
 //
 // 依存なし（zlib だけ）。PNG の 読み書きは make-metal-puyu.mjs と 同じ。
 
@@ -229,11 +230,11 @@ const LIQUIDS = {
 	],
 	// ボカロ作り避難所：ミク色の 電子の 水
 	miku: [
-		[0, 100, 100],
-		[10, 136, 132],
-		[30, 170, 160],
-		[80, 210, 196],
-		[160, 240, 228],
+		[12, 92, 96],
+		[22, 140, 136],
+		[57, 197, 187],
+		[134, 206, 203],
+		[214, 246, 242],
 	],
 	// マーキュリー：水銀
 	mercury: [
@@ -268,8 +269,20 @@ const LIQUIDS = {
 		[196, 70, 80],
 	],
 };
+// 岸の 茶色（暗い 順）を かえる 液だけ：その 板の 床に 合わせた 色
+const SHORES = {
+	// ボカロ作り避難所：炭色の 床に 合う 銀灰色の ふち
+	miku: {
+		"109,72,36": [43, 47, 50],
+		"145,97,48": [90, 95, 99],
+		"182,121,60": [190, 200, 209],
+	},
+};
 for (const [name, colors] of Object.entries(LIQUIDS)) {
-	const map = new Map(SHADES.map((s, k) => [s, colors[k]]));
+	const map = new Map([
+		...SHADES.map((s, k) => [s, colors[k]]),
+		...Object.entries(SHORES[name] ?? {}),
+	]);
 	const img = Buffer.from(out);
 	for (let o = 0; o < img.length; o += 4) {
 		const to = map.get(`${img[o]},${img[o + 1]},${img[o + 2]}`);

@@ -180,6 +180,23 @@ const LATTICE: Theme = {
 	fog: "rgba(8, 2, 8, 0.62)",
 };
 
+/** 初音ミクの 色の シート（scripts/make-miku-tiles.mjs。電脳の 紫の マスを 塗りかえた 物）。 */
+const MIKU_SHEET = "pub:assets/rpg-reze/dungeon-miku.png";
+const mikuCut = (c: number, r: number): string =>
+	`${MIKU_SHEET}#${c * 16},${r * 16},16,16`;
+
+/** ミク色の 電子の 格子（炭色の 床に 青緑の 線、銀灰色の 壁に 桃色の 石。ボカロ作り避難所）。 */
+const MIKU: Theme = {
+	name: "miku",
+	floor: mikuCut(0, 0),
+	stairs: mikuCut(1, 0),
+	wallUpper: [0, 1, 2, 3, 4, 5].map((x) => mikuCut(x, 1)),
+	wallLower: [0, 1, 2, 3, 4, 5].map((x) => mikuCut(x, 2)),
+	dark: "#0a0e10",
+	floorColor: "#2a3a3d",
+	fog: "rgba(2, 8, 10, 0.6)",
+};
+
 /** 焦げ（灰色の床に 赤い壁。もっと の 焦げた回線）。 */
 const FORGE: Theme = {
 	name: "forge",
@@ -199,7 +216,8 @@ export type Ambient =
 	| "snow"
 	| "data"
 	| "embers"
-	| "glitter";
+	| "glitter"
+	| "miku";
 
 /** 植民地の 見た目と 曲（last は いちばん 底の 階）。 */
 export type Zone = {
@@ -220,6 +238,7 @@ const THEMES: Record<ThemeName, Theme> = {
 	white: WHITE,
 	beach: BEACH,
 	lattice: LATTICE,
+	miku: MIKU,
 	forge: FORGE,
 	moss: MOSS,
 	crystal: CRYSTAL,

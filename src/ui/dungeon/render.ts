@@ -1080,6 +1080,12 @@ const drawAmbient = (
 				a = Math.floor(sec * 6 + i * 0.7) % 3 === 0 ? 0.15 : 0.55;
 				color = i % 3 === 0 ? "#6fe6ff" : "#b58cff";
 				break;
+			case "miku":
+				// data と 同じ 流れる 線を ミクの 青緑で（4本に 1本は 桃色）
+				y += sec * (28 + r3 * 30);
+				a = Math.floor(sec * 6 + i * 0.7) % 3 === 0 ? 0.15 : 0.55;
+				color = i % 4 === 0 ? "#ff6699" : i % 2 ? "#39c5bb" : "#86cecb";
+				break;
 			case "embers":
 				y -= sec * (12 + r3 * 14);
 				x += Math.sin(sec * 1.7 + i * 2.1) * 5;
@@ -1097,7 +1103,7 @@ const drawAmbient = (
 		const py = Math.round(wrap(y - oy, h));
 		ctx.globalAlpha = Math.min(1, a);
 		ctx.fillStyle = color;
-		if (kind === "data") ctx.fillRect(px, py, 1, 3);
+		if (kind === "data" || kind === "miku") ctx.fillRect(px, py, 1, 3);
 		else if (kind === "glitter") {
 			ctx.fillRect(px, py - 1, 1, 3);
 			ctx.fillRect(px - 1, py, 3, 1);

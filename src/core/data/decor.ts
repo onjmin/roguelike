@@ -149,7 +149,7 @@ export const BOARD_DECOR: Readonly<Record<DungeonId, DecorSet>> = {
 		],
 		liquid: pond("ink"),
 	},
-	// ボカロ作り避難所：ピアノ、壁に ギターと レコード。ミク色の 水
+	// ボカロ作り避難所：ピアノ、壁に パソコンと エレキ・アコギ。ミク色の 水
 	vocalo: {
 		count: [3, 6],
 		kinds: [

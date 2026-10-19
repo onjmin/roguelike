@@ -93,7 +93,8 @@ export type BuildingKind =
 	| "yagura"
 	| "well"
 	| "lighthouse"
-	| "studio";
+	| "studio"
+	| "takuroku";
 
 export type ColonySpot = {
 	/** 置かれている サーバー。 */
@@ -174,7 +175,7 @@ export const COLONY_SPOTS: Record<DungeonId, ColonySpot> = {
 	vocalo: {
 		server: "uni",
 		place: "避難所のスタジオ",
-		building: "studio",
+		building: "takuroku",
 		route: [
 			[126, 108],
 			[148, 88],
