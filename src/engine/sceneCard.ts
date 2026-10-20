@@ -107,6 +107,8 @@ const fillPicture = (box: HTMLElement, spec: PictureSpec): void => {
 		if (!g) return;
 		g.imageSmoothingEnabled = false;
 		g.drawImage(img, c.sx, c.sy, c.sw, c.sh, 0, 0, c.sw * scale, c.sh * scale);
+		// 絵が 来てから 幅が 決まる
+		if (box.parentElement) fit(box, box.parentElement);
 	});
 	if (spec.paper) {
 		const paper = el(
@@ -146,16 +148,30 @@ const fill = (box: HTMLElement, spec: AnyCard): void => {
 	if (spec.note) box.appendChild(el("scene-card-note", spec.note));
 };
 
+/**
+ * 画面の 幅に 収まらない 図（札が 4枚 並ぶ 湯温戦争 など。スマホ縦）は、縮めて 収める（--fit。左右 16px ずつ あける）。
+ * 字を 折り返すと 札の 並びが くずれるので、並びは そのままで 図ごと 縮める。
+ */
+const fit = (box: HTMLElement, root: HTMLElement): void => {
+	const room = root.clientWidth - 32;
+	const w = box.offsetWidth;
+	box.style.setProperty("--fit", w > room && w > 0 ? String(room / w) : "1");
+};
+
 /** イメージ図を 出す（root は 画面の 上の 層 #ui。sceneFx.ts の fxRoot）。 */
 export const showCard = (root: HTMLElement | null, spec: AnyCard): CardRun => {
 	if (!root || typeof document === "undefined") return NONE;
 	const box = el("scene-card");
 	fill(box, spec);
 	root.appendChild(box);
+	fit(box, root);
 	void box.offsetWidth;
 	box.classList.add("on");
 	return {
-		update: (s) => fill(box, s),
+		update: (s) => {
+			fill(box, s);
+			fit(box, root);
+		},
 		end: () => {
 			box.classList.remove("on");
 			setTimeout(() => box.remove(), 250);

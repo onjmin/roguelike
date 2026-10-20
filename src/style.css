@@ -2016,8 +2016,9 @@ body.jolt #app {
 	position: absolute;
 	left: 50%;
 	top: 38%;
-	transform: translate(-50%, -50%) scale(0.9);
-	max-width: calc(100% - 32px);
+	/* --fit：幅に 収まらない 図（札が 4枚 など）を 縮める 率（engine/sceneCard.ts の fit） */
+	transform: translate(-50%, -50%) scale(calc(var(--fit, 1) * 0.9));
+	width: max-content;
 	padding: 8px 14px 12px;
 	background: #f6ecd2;
 	color: #3a2a14;
@@ -2033,7 +2034,7 @@ body.jolt #app {
 
 #ui > .scene-card.on {
 	opacity: 1;
-	transform: translate(-50%, -50%) scale(1);
+	transform: translate(-50%, -50%) scale(var(--fit, 1));
 }
 
 .scene-card-title {
