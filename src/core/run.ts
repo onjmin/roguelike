@@ -148,6 +148,13 @@ import {
 export const SAVE_VERSION = 2;
 
 /**
+ * ボスとの 戦いが 始まる、画面に 映る 範囲（キリコから 横・縦の マス数）。
+ * 画面は キリコを まんなかに 映し、スマホ縦で 横 11マス・スマホ横で 縦 8マスほど 見える。
+ * どの 画面でも 映る 広さに しておく（画面の 大きさで 決めると リプレイが ずれる）。
+ */
+export const BOSS_VIEW = { x: 5, y: 4 } as const;
+
+/**
  * 古い版の中断セーブを 今の形にそろえる（読めなければ null）。
  * v1：ダンジョンが1つだったころ → 本編（main）。
  */
@@ -790,7 +797,7 @@ export class Run {
 
 	/**
 	 * ボスとの 戦いが 始まったか（1回だけ。{t:"boss"} で 画面の 曲と ゲージが 始まる）。
-	 * - 待っている（はじめの 深い 眠りの）ボスは、キリコの 目に 入った とき 目を さまして 待ちかまえる。
+	 * - 待っている（はじめの 深い 眠りの）ボスは、キリコの 目に 入って 画面に 映った（BOSS_VIEW）とき 目を さまして 待ちかまえる。
 	 *   それまでは 眠って 動かない（気配スレで 居場所が わかった・目が 見えない まま となりに 来た だけ では 起きない）。
 	 * - 見る 前に もう 起きていた（杖・矢・投げた 物が 見えない 所で 当たった、目が 見えない まま なぐった）
 	 *   ボスは、見えたか となりに 来た ときに「あらわれた」だけ。寝起きの 1手も やらない。
@@ -805,7 +812,12 @@ export class Run {
 		const waiting = m.status.sleep >= DEEP || !!m.status.dormant;
 		// 杖や草で 眠らされた ボスは 寝言を 言わない。目を さましてから 出会う
 		if (!waiting && m.status.sleep > 0) return;
-		const sees = this.p.status.blind <= 0 && this.playerSees(m);
+		// 広い 大部屋では 見通せても 画面の 外に いる ことが ある。画面に 映ってから 始める
+		const sees =
+			this.p.status.blind <= 0 &&
+			Math.abs(m.x - this.p.x) <= BOSS_VIEW.x &&
+			Math.abs(m.y - this.p.y) <= BOSS_VIEW.y &&
+			this.playerSees(m);
 		const engaged = !waiting && dist(m, this.p) <= 1;
 		if (!sees && !engaged) return;
 		f.bossSeen = true;

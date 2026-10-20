@@ -61,7 +61,7 @@ import {
 	transformMonster,
 	wakeMonster,
 } from "../core/monster";
-import { Run } from "../core/run";
+import { BOSS_VIEW, Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
 import { priceOf } from "../core/town";
 import { triggerTrap } from "../core/traps";
@@ -3486,6 +3486,29 @@ test(
 		});
 		ok(events === 0, "the boss event came twice");
 		ok(moved > 0, "the boss did not move after waking");
+	},
+);
+
+test(
+	"boss",
+	"in a wide room the fight waits until the boss is on screen (BOSS_VIEW), not just in line of sight",
+	() => {
+		const { r, b } = bossArena("boss-offscreen", "kinoko", {
+			pos: at(BOSS_VIEW.x + 3, 0),
+			opts: { sleep: DEEP },
+		});
+		ok(r.playerSees(b), "harness: the boss is out of sight");
+		const first = turn(r);
+		ok(
+			!r.f.bossSeen && !evs(first, "boss").length && b.status.sleep === DEEP,
+			"the fight started off screen",
+		);
+		r.p.x = b.x - BOSS_VIEW.x;
+		const ev = turn(r);
+		ok(
+			r.f.bossSeen === true && evs(ev, "boss").length === 1,
+			"not met on screen",
+		);
 	},
 );
 

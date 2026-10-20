@@ -207,6 +207,21 @@ const dateLabel = (at: number): string => {
 };
 
 /**
+ * 持ち物が 多くて 札が 画面に 収まらない（スマホ）ときは、はみ出す ぶんを 後ろから 省いて「…ほか N個」に する
+ * （下の「タップで地上へ」まで 1画面で 見えるように）。
+ */
+const fitItems = (box: HTMLElement, items: HTMLElement): void => {
+	const rows = [...items.children];
+	let cut = 0;
+	const more = el("span", { class: "runend-none" });
+	while (box.scrollHeight > box.clientHeight && rows.length > 1) {
+		rows.pop()?.remove();
+		more.textContent = `…ほか${++cut}個`;
+		if (cut === 1) items.appendChild(more);
+	}
+};
+
+/**
  * 倒れた・持ち帰ったあとの「冒険の記録」の札（全画面。トルネコ1の 冒険の記録の 画面）。
  * 記録を足して中断セーブを消すのは、札を出す前にやる（見ている間にタブを閉じても残るように）。
  * 持ち帰りの 語りと 開いた知らせは、札を 閉じたあと 村の中で 仲間が 話す（ui/village/villageReturn.ts）。
@@ -291,6 +306,7 @@ export const showRunEnd = async (ctx: Ctx, s: RunState): Promise<void> => {
 		el("div", { class: "matome-tap", text: "タップで地上へ" }),
 	]);
 	ctx.ui.appendChild(box);
+	fitItems(box, items);
 	await nextFrame();
 	box.classList.add("shown");
 	await waitClose(ctx, box, 800, box);
