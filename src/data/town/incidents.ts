@@ -251,7 +251,8 @@ export const VISITORS: readonly (IncidentPerson & { dungeon: DungeonId })[] = [
 		sprite: "sa:pm3kvS",
 		dir: "down",
 		name: "電池ニキ",
-		lines: ["人、多すぎや！\n電気が足らんわ！"],
+		// 持ちネタ：いつも ネガティブ（「どうせ」で 先に 悪いほうを 言う）
+		lines: ["人、多すぎや。どうせ明日には\nみんな帰るんや"],
 	},
 ];
 

@@ -629,13 +629,18 @@ export const ENDING: StoryPage[] = [
 		look: [36, 27],
 	},
 	{ who: null, text: "熱い！", nanashi: "湯気の中の41℃派" },
-	// 主人公が 解決の つもりで 最悪の 手（追いだきの 連打）→ 直後に 自己ツッコミ。シヨと ロゼも 暴走
+	// 「押すなよ」の 型：シヨが 止めて、キリコが うなずいて 連打する（悪手を 本人に 予告させない）
+	{
+		who: "shiyo",
+		text: "その追いだきボタン、\nぜったい押さないでよ！",
+		emote: "怒",
+		look: null,
+	},
 	{
 		who: null,
-		text: "吾輩が、ちょうどいい温度に\nするンゴ！",
+		text: "……わかったンゴ",
 		kiriko: "voice",
-		gesture: "hop",
-		look: null,
+		gesture: "nod",
 	},
 	// のれんの 前（追いだきの ボタン）へ 走って、その場で 連打（地団駄）
 	{
@@ -646,15 +651,15 @@ export const ENDING: StoryPage[] = [
 		seGap: 100,
 		go: [{ who: "kiriko", to: [35, 30], speed: 3, face: "up" }],
 	},
-	{ who: null, text: "押しすぎたンゴ！", kiriko: "voice", emote: "冷" },
 	// 暴力系ヒロイン：シヨが 先に 手を 出す（間を おいて げんこつ）
 	{
 		who: "shiyo",
-		text: "押しすぎよ！！",
+		text: "押すなって言ったでしょ！！",
 		emote: "驚",
 		hit: "punch",
 		pause: 400,
 	},
+	{ who: null, text: "フリだと思ったンゴ……", kiriko: "voice", emote: "青" },
 	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）。
 	// 温度の 段は 図で なく、商店街（町じゅうの 蛇口）→ 港（海）へ 動く カメラと 湯けむりで 見せる
 	{
@@ -681,14 +686,15 @@ export const ENDING: StoryPage[] = [
 	},
 	{
 		who: null,
-		text: "規模が、\nおかしいンゴ！",
-		emote: "驚",
+		text: "吾輩、温泉を\n掘り当てたンゴ！",
+		emote: "得",
 		kiriko: "voice",
 		look: null,
 	},
+	// ロゼの 持ちネタ：言い切った 常識が、押したら かわる
 	{
 		who: "roze",
-		text: "止めるアル！！",
+		text: "止めるアル！ボタンは、\n押したら止まるのが常識アル！",
 		emote: "怒",
 		go: [{ who: "roze", to: "kiriko", speed: 3 }],
 	},
@@ -698,7 +704,12 @@ export const ENDING: StoryPage[] = [
 		se: "pushButton",
 		go: [{ who: "roze", route: "udud", speed: 3 }],
 	},
-	{ who: "roze", text: "逆だったアル！！", emote: "青", hit: "sting" },
+	{
+		who: "roze",
+		text: "……押したら強になるのが、\n今日から常識アル",
+		emote: "青",
+		hit: "sting",
+	},
 	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）。場面を 港へ うつす（海が 湯）
 	{
 		who: null,
@@ -729,11 +740,26 @@ export const ENDING: StoryPage[] = [
 	// 書きこみが 早すぎる（やきうは 町の 名無しの ひとり）。場面を 掲示板へ うつして、書きこみの 絵。
 	// やきうは 湯船へ 走って もどって ごまかす
 	// メタ：魚は 画面に 出ない（湯気だけ）
+	// フェリスの 持ちネタ：やきう（湯船の 中）の 出題に、斜め上の 答え
+	{
+		who: "nanj",
+		text: "問題や。魚が肩まで\nつかっとる。肩はどこや？",
+		about: "feris",
+		look: null,
+	},
+	{ who: "feris", text: "えら〜。\nえらそうに、つかってる〜", emote: "♪" },
+	// ゼロの 持ちネタ：3機で 数える → プロトが 訂正（魚は 画面に 出ない：湯気だけ）
 	{
 		who: "zero",
-		text: "魚は画面に出ません！\n想像でおぎなってください！",
+		text: "のぼせた魚、1万匹です！\n数えました！",
 		emote: "得",
 		look: null,
+	},
+	{
+		who: null,
+		mob: "proto",
+		text: "訂正ゼロ。数えたのは湯気ゼロ。\n魚は画面に出ないゼロ",
+		pause: 400,
 	},
 	{
 		who: null,

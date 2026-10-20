@@ -937,6 +937,7 @@ export const heroQuestScript = async (
 	const q = HERO_QUESTS[who];
 	const stage = questStage(who);
 	if (stage === "unlocked") return false;
+		else if (l.who === "mob") await sayAs(s, l.mob, text, cueOf(l));
 	if (stage === "done") {
 		await playQuestLines(s, q.offer);
 		unlockHero(who);

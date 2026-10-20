@@ -161,6 +161,10 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: 4, to: "kiriko" }],
 				look: null,
 			}),
+			// ゼロの 持ちネタ：サブ機の プロトが 数を 訂正する
+			say(5, "訂正ゼロ。1番も1。\nいきなり『パン』ゼロ", {
+				go: [{ who: 5, to: "kiriko" }],
+			}),
 			k("ほぼ君が代ンゴ", { hit: "slap" }),
 			say(1, "独立した国の国歌は、\n3時間の説教アル。わたしが歌うアル", {
 				go: [{ who: 1, to: [17, 6] }],
@@ -237,7 +241,8 @@ export const REST_SKITS: readonly RestSkit[] = [
 					text: "本日の見学者\n0人",
 				}),
 			}),
-			say(0, "見学者1人目、入場や！\n数字、書きかえるで", {
+			// 電池ニキの 持ちネタ：いつも ネガティブ（「どうせ」で 先に 悪いほうを 言う）
+			say(0, "見学者や……どうせ、\nすぐ帰るんやろ。書いとくけど", {
 				go: [{ who: 0, to: [6, 10] }],
 				look: null,
 				se: "pencil",
@@ -270,7 +275,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: 0, to: "kiriko" }],
 			}),
 			k("町ンゴ？"),
-			say(0, "せや。人がおらんでも、\nずっと町へ送っとった"),
+			say(0, "せや。どうせ、だれも\nおらん町へ送っとった"),
 			say(0, "請求書も、ずっと送っとった。\nぜんぶ、宛先不明でもどってきた"),
 			k("宛先、どこにしたンゴ？"),
 			say(0, "「おんJ」や。\nほな、とどかんわな"),

@@ -551,21 +551,27 @@ test("挑戦: ゼロの 3機を 深い 階で そろって 止めると 申し�
 	});
 });
 
-test("挑戦: ゼロの 3機が 待つ 階は 板ごとに きまり（地図の 札・あらすじ）、浅い 板には 来ない", () => {
+test("挑戦: ゼロの 3機が 待つ 階は 板ごとに きまり（地図の 札・あらすじ）、どの 板でも 浅い 階（2階から）", () => {
 	const at = (d: Parameters<typeof ambushFloorsOf>[0]) =>
 		ambushFloorsOf(d).join(",");
-	ok(at("main") === "8", `風呂板 ${at("main")}`);
-	ok(at("festival") === "8", `お祭り ${at("festival")}`);
-	ok(at("konamono") === "8", `おんたこ ${at("konamono")}`);
-	ok(at("deep") === "10", `電池板 ${at("deep")}`);
-	for (const d of ["shallow", "kinoko", "tropical", "vocalo"] as const)
-		ok(at(d) === "", `${d} has an ambush floor ${at(d)}`);
-	// おんMu は 底の 深さで かわる（7階の ときは 来ない）
+	ok(at("shallow") === "3", `パン板 ${at("shallow")}`);
+	ok(at("main") === "4", `風呂板 ${at("main")}`);
+	ok(at("deep") === "5", `電池板 ${at("deep")}`);
+	for (const d of Object.keys(DUNGEONS) as (keyof typeof DUNGEONS)[]) {
+		const fs = ambushFloorsOf(d);
+		ok(fs.length > 0, `${d} has no ambush floor`);
+		ok(
+			fs.every((x) => x >= 2 && x <= 6),
+			`${d} ambush floor ${fs}`,
+		);
+	}
+	// おんMu は 底の 深さで かわる
 	ok(ambushFloorsOf("onmu").length > 1, "おんMu has one floor");
 	// あらすじの 例が 本当の 階と 合う
 	const line = HERO_QUESTS.zero.synopsis.accepted;
 	ok(
-		line.includes("風呂板・お祭りなら8階") && line.includes("キリコで潜ると"),
+		line.includes("パン板なら3階・風呂板なら4階") &&
+			line.includes("キリコで潜ると"),
 		"the synopsis does not say where or who",
 	);
 });

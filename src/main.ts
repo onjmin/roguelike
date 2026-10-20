@@ -248,7 +248,7 @@ const runFor = (
 			lunch,
 			hero,
 			choice.guest ?? null,
-			// ゼロの 挑戦を 受けて いれば 深い 階で 3機が 待ちぶせる（core/ambush.ts）
+			// ゼロの 挑戦を 受けて いれば 浅い 階で 3機が 待ちぶせる（core/ambush.ts）
 			questAmbush(hero),
 			// ロゼの 挑戦を 受けて いれば ボカロ作り避難所で ロゼも 潜る（core/race.ts）
 			questRace(hero),

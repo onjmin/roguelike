@@ -5144,9 +5144,11 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 				...pages.map((p) =>
 					p.kiriko
 						? `kiriko ${p.kiriko}: ${p.text}`
-						: p.who || p.nanashi
-							? `say ${p.who ?? "nanj"}: ${p.text}`
-							: `narrate: ${p.text}`,
+						: p.mob
+							? `say null: ${p.text}`
+							: p.who || p.nanashi
+								? `say ${p.who ?? "nanj"}: ${p.text}`
+								: `narrate: ${p.text}`,
 				),
 				"fadeOut",
 				`bgm ${villageSong()}`,

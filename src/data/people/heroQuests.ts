@@ -20,7 +20,7 @@
 //   中華→和風・かつら→髪 多め）、「ロゼを 広める ために AIから 作られた アンドロイド」。名前は「解音ユリ」との
 //   投票で ゼロに（イッチは ユリに 入れた）。誕生日 7月0日。キャッチ「ゼロから生まれる無限の歌声」。声は
 //   ボイスネキの 収録を「4分の1くらい もらってる」ところで 止まった。メイン機と サブ機は web会議で メンテナンスしあう。
-//   → 足りない 声を ためたくて キリコの 蓄音機を ねらい、深い 階で 3機で 待ちぶせる（core/ambush.ts）。負けて
+//   → 足りない 声を ためたくて キリコの 蓄音機を ねらい、浅い 階で 3機で 待ちぶせる（core/ambush.ts）。負けて
 //   聞いた 録音は ぜんぶ キリコの「ンゴ」。3機で 流して 4分の12と 言い張り、負けは 1機あたり 0.33敗と 割って、
 //   交代で 潜る 側に 回る。
 // 2人の 笑いの 形は 分ける：ロゼは 運ばれた 距離（本当の 倒れた 回数 × 4.2キロ）、ゼロは 割り算（4分の1・0.33敗）。
@@ -28,6 +28,7 @@
 import type { Cue } from "../../engine/emote";
 import type { QuestHero } from "../../engine/heroes";
 import type { Speaker } from "../story/quotes";
+import type { MobId } from "./mobs";
 
 /**
  * 話す 人の 行は 感情の 記号・体の 動き（Cue。engine/emote.ts）も 持てる。
@@ -37,6 +38,8 @@ export type QuestLine = (
 	| ({ who: Speaker; text: string } & Cue)
 	| { who: null; text: string }
 	| ({ who: "kiriko"; text: string } & Cue)
+	/** 住人の 声（ゼロの サブ機 プロトの 訂正。ui/village/villageMobs.ts の sayAs）。 */
+	| ({ who: "mob"; mob: MobId; text: string } & Cue)
 ) & {
 	bgm?: string | null;
 	/** まだ 1回も 倒れて いない ときの 文（text の {n}・{km} が 0 に なる 行だけ）。 */
@@ -75,6 +78,13 @@ const sayN = (
 const nar = (text: string): QuestLine => ({ who: null, text });
 const kiriko = (text: string, c?: Cue): QuestLine => ({
 	who: "kiriko",
+	text,
+	...c,
+});
+/** プロトの 訂正（ゼロの 持ちネタ：3機で 数える → サブ機が 数を 訂正する。STORY.md のライバル節）。 */
+const proto = (text: string, c?: Cue): QuestLine => ({
+	who: "mob",
+	mob: "proto",
 	text,
 	...c,
 });
@@ -154,7 +164,9 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 				emote: "♪",
 			}),
 			nar("ロゼの「あ」は村をこえ、\n隣の板の窓ガラスを割った。"),
-			kiriko("音量の常識が\nないンゴ！", { emote: "汗" }),
+			// 持ちネタ：言い切った 常識が、割れた あとで かわる
+			say("roze", "……窓ガラスは、割れるのが\n常識アル", { emote: "得" }),
+			kiriko("隣の板に、\n謝りに行くンゴ！", { emote: "汗" }),
 			// 潜るのは 交代（主人公を 切りかえる。キリコは 村に 残る）
 			say("roze", "次からはわたしが潜るアル。\nキリコは村で運ばれる練習アル", {
 				gesture: "spin",
@@ -181,12 +193,13 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			say("zero", "のこり4分の3、いただきます。\n……3機で、4分の3ずつです", {
 				gesture: "hop",
 			}),
-			kiriko("計算がおかしいンゴ！", { emote: "!" }),
+			proto("訂正ゼロ。3機で4分の3ずつは、\n4分の9ゼロ", { pause: 400 }),
+			kiriko("蓄音機、1台しか\nないンゴ！", { emote: "驚", hit: "slap" }),
 		],
 		// 受けると 3対1 の 待ちぶせ（core/ambush.ts）
 		menu: ["3対1は卑怯ンゴ", "ことわる"],
 		accept: [
-			say("zero", "卑怯でも3機です！\n板の奥の階で待ってます", { emote: "!" }),
+			say("zero", "卑怯でも3機です！\n板の浅い階で待ってます", { emote: "!" }),
 			say("zero", "勝ったら蓄音機は、\n1機3分の1ずつです"),
 		],
 		decline: [
@@ -195,14 +208,14 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			}),
 		],
 		waiting: [
-			say("zero", "奥の階で、3機で待ってます！\nプロトは、もう寝ました"),
+			say("zero", "浅い階で、3機で待ってます！\nプロトは、もう寝ました"),
 			// 待つ 階は 板ごとに ちがう（core/ambush.ts の ambushFloorsOf。全体マップの 札に 出る）
-			say("zero", "浅い板には行きません！\n地図の札に、階を書いておきました"),
+			say("zero", "どの板でも待ってます！\n地図の札に、階を書いておきました"),
 		],
 		offer: [
 			// 待ちぶせの 戦いで ひとりでに 回った 蓄音機（core/ambush.ts の wakeAmbush）を 聞かせる。
 			// 録れて いたのは キリコの 声だけ。ゼロは それを 3機で 流して 4分の12に 増やそうと する
-			{ ...nar("蓄音機を回した。\n深い階の戦いの音。"), bgm: "deep1" },
+			{ ...nar("蓄音機を回した。\n3対1の戦いの音。"), bgm: "deep1" },
 			nar("「ンゴ」「ンゴ」「ンゴ」\n「ンゴ」「ンゴ」「ンゴ」！"),
 			say("zero", "ぜんぶキリコさんの声です！\n4分の4、キリコさんです！", {
 				emote: "汗",
@@ -210,7 +223,8 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			say("zero", "これを3機で流せば、\n4分の12キリコさんです！", {
 				emote: "!",
 			}),
-			kiriko("村が吾輩の声で\n埋まるンゴ！", { emote: "汗" }),
+			proto("訂正ゼロ。約分して、\n3キリコゼロ", { pause: 400 }),
+			kiriko("3人もいらないンゴ！", { emote: "驚", hit: "slap" }),
 			say("zero", "次からはゼロが潜ります！\n4分の4ぶん、ゼロの声をためます", {
 				gesture: "nod",
 			}),
@@ -220,7 +234,7 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			asked:
 				"ゼロが蓄音機をねらって、3機で勝負を挑んできた。声は4分の1で止まったまま。",
 			accepted:
-				"ゼロの挑戦を受けた。キリコで潜ると、板の奥の階（風呂板・お祭りなら8階）で3機が待ちぶせている。浅い板には来ない。",
+				"ゼロの挑戦を受けた。キリコで潜ると、板の浅い階（パン板なら3階・風呂板なら4階）で3機が待ちぶせている。",
 			done: "ゼロの3機をそろって止めた。蓄音機が、なにかを録っていた。",
 			unlocked: "ゼロが冒険に加わった。帳簿では、まだ1機0.33敗。",
 		},

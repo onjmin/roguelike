@@ -1,6 +1,6 @@
 // 待ちぶせ（ダンジョンの 中の 手合わせ。STORY.md §4.9 の ライバル）。いまは 解音ゼロの 3機だけ：
-// ゼロの 挑戦（engine/heroes.ts）を 受けて キリコが 潜ると、本編の 7階ぶんの 強さに 届く 最初の 階（風呂板・お祭りなら 8階。
-// 板ごとの 階は ambushFloorsOf で 全体マップの 札にも 出す）の 階段の 部屋で 3機が 待つ。浅い 板（パン板・きのこ板・離島・ボカロ）には 来ない。
+// ゼロの 挑戦（engine/heroes.ts）を 受けて キリコが 潜ると、本編の 3階ぶんの 強さに 届く 最初の 階（パン板なら 3階・風呂板なら 4階。
+// 2階より 浅くは しない。板ごとの 階は ambushFloorsOf で 全体マップの 札にも 出す）の 階段の 部屋で 3機が 待つ。どの 板にも 来る。
 // - 3機は たがいに 再起動しあう（史実：メイン機と サブ機は web会議で メンテナンスしあう）。1機 止めても、
 //   ほかが 動いて いれば REBOOT_TURNS で 起きなおす（HP 半分・経験値なし）。
 // - 戦いの あいだ SHUFFLE_EVERY ターンごとに 2機が 入れ替わる。
@@ -48,8 +48,8 @@ export const AMBUSH: Record<AmbushId, AmbushSpec> = {
 	},
 };
 
-/** 待ちぶせの 階：本編の この 階ぶんの 強さに 届く 最初の 階（板ごとに 深さが ちがう。名所の 階と いちばん底は とばす）。 */
-export const AMBUSH_LEVEL = 7;
+/** 待ちぶせの 階：本編の この 階ぶんの 強さに 届く 最初の 階（板ごとに 深さが ちがう。1階・名所の 階・いちばん底は とばす）。 */
+export const AMBUSH_LEVEL = 3;
 /** 止まった 機体が 起きなおすまでの ターン。 */
 export const REBOOT_TURNS = 6;
 /** 2機が 入れ替わる 間（ターン）。 */
@@ -77,10 +77,10 @@ export const REBOOT_LINES: readonly string[] = [
 	"{name}「アップデート中です。残り4時間」",
 ];
 
-/** その 板で 待ちぶせる 階（強さが AMBUSH_LEVEL に 届かない 浅い 板は null）。 */
+/** その 板で 待ちぶせる 階（強さが AMBUSH_LEVEL に 届かない 板は null）。着いて すぐに ならない よう 2階から。 */
 export const ambushFloorOf = (dg: Dungeon): number | null => {
 	const l = dg.level;
-	for (let d = 1; d < dg.floors; d++)
+	for (let d = 2; d < dg.floors; d++)
 		if (
 			l[Math.max(1, Math.min(l.length - 1, d))] >= AMBUSH_LEVEL &&
 			!dg.rests?.some((x) => x.depth === d)

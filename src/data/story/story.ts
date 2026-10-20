@@ -778,10 +778,11 @@ export const STORY: Record<
 					{ who: "ren", route: "ddlluurr", speed: 3 },
 				],
 			},
-			s("roze", "3機で内戦するなアル！", { emote: "驚", hit: "whack" }),
+			// ロゼの 持ちネタ：「〜が常識アル」と 言い切ると、あとで 常識の ほうが 都合よく かわる（STORY.md のライバル節）
+			s("roze", "内戦も独立も、\n非常識アル！", { emote: "驚", hit: "whack" }),
 			// ロゼは 広場の 反対の はしへ 走って 自分の 国を 建てる。やきうが 追いかけて ツッコむ
 			{
-				...s("roze", "……やっぱり、わたしも独立アル！\n麻婆共和国アル！", {
+				...s("roze", "……独立は、今日から常識アル！\n麻婆共和国アル！", {
 					gesture: "spin",
 				}),
 				go: [{ who: "roze", to: [25, 21], face: "down" }],
@@ -804,6 +805,14 @@ export const STORY: Record<
 					emote: "冷",
 				}),
 				look: null,
+			},
+			// ゼロの 持ちネタ：3機で 数える → サブ機が 数を 訂正する（STORY.md のライバル節）
+			s("zero", "入国審査、43か所です！\n3機で数えました！", { emote: "得" }),
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。44か所。\nロゼの共和国のぶんゼロ",
+				pause: 400,
 			},
 			// 通貨が できる（制度の 次の 段）
 			s("zero", "ゼロ、お金も刷りました！\n1キリコ＝パンくず1粒です！", {
@@ -853,7 +862,7 @@ export const STORY: Record<
 			},
 			k("吾輩、日本を割ったンゴ！！", { emote: "青", hit: "sting" }),
 			// ツッコミは 人を 突く（紙を 見て かける 人は キリコだけ）
-			s("roze", "申請書が回ると思ったのは、\n世界でキリコだけアル！！", {
+			s("roze", "紙は、回らないアル！！", {
 				emote: "驚",
 				hit: "whack",
 				pause: 600,
@@ -870,10 +879,10 @@ export const STORY: Record<
 			},
 			{ ...k("盛ってないンゴ！\n本当に割ったンゴ！"), look: null, card: null },
 			k("だれが書いたンゴ？"),
-			// 町の 人口は 3人（やきう・ぷゆゆ・原住民）
-			s("nanj", "町の人やろ。\n……3人しかおらんけどな", {
-				emote: "汗",
-			}),
+			// 書いたのは やきう（言いわけの 天丼の 1回目。第三話は インクまみれ：quotes.ts の ENDING）
+			s("nanj", "知らん。", { emote: "冷" }),
+			k("手、チョークの粉まみれンゴ"),
+			s("nanj", "これは、パンくずや！", { emote: "汗", pause: 400 }),
 		],
 		again: SHALLOW_BASE,
 	},
@@ -926,7 +935,8 @@ export const STORY: Record<
 				se: "hit_club",
 				seRepeat: 3,
 			},
-			nanashi("電池ニキ", "人おったら\nおったで困るわ！"),
+			// 電池ニキの 持ちネタ：いつも ネガティブ（「どうせ」で 先に 悪いほうを 言う）
+			nanashi("電池ニキ", "人が来た……どうせ、\nワイの電気が足らんのや"),
 			// やきうが 人ごみを かきわけて 掲示板へ（カメラも ついていく）。14年 盛って きた 人が、はじめて 書かない
 			{
 				...n("やきうは掲示板の前で、チョークを\n持ったまま止まった。"),
@@ -965,6 +975,13 @@ export const STORY: Record<
 				),
 				needCleared: "festival",
 				fx: "confetti",
+			},
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。99件。1件は\n本人の自演で、無効ゼロ",
+				needCleared: "festival",
+				pause: 400,
 			},
 			{
 				...s("nanj", "98回も殺されとったんかい！\nワイの命、回数券か！", {
@@ -1143,7 +1160,11 @@ export const STORY: Record<
 				shrooms: "port",
 				go: [{ who: "kiriko", to: [20, 45], face: "down" }],
 			},
-			k("抜くほどふえるンゴ！！", { emote: "驚" }),
+			k("吾輩、農家の才能\nあるンゴ！", { emote: "得" }),
+			s("shiyo", "才能の使い方が逆よ！！", {
+				emote: "驚",
+				hit: "punch",
+			}),
 			{
 				...s("zero", "ゼロ、扇風機で\n胞子をふきとばします！", {
 					gesture: "spin",
@@ -1157,11 +1178,9 @@ export const STORY: Record<
 				wearAll: "kinoko",
 			},
 			s("nanj", "ワイの頭、エリンギや！\n帽子かぶれへん！", { emote: "怒" }),
-			// ノリの 型：いちど 感心して から もどる（ツッコミ役も ボケる）
-			s("roze", "立派に育ってるアル……\nはっ、感心してる場合じゃないアル！", {
-				emote: "驚",
-				hit: "slap",
-			}),
+			// ロゼの 持ちネタ：言い切った 常識が、自分の 頭に 生えたら かわる
+			s("roze", "頭にきのこは、\n非常識アル！", { emote: "怒" }),
+			s("roze", "……似合うなら、\n常識アル", { emote: "花", pause: 400 }),
 			// 行進は 港から 桟橋を 上がって きて、キリコの 手前に 列で 止まる（ui/village/sceneMarks.ts の march。
 			// 場面の おわりまで 桟橋に いる）
 			{
@@ -1193,11 +1212,17 @@ export const STORY: Record<
 				],
 			},
 			s("zero", "行進、128本から\n1万3千本になりました！", { emote: "!" }),
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。1万3千と1本。\nキリコの頭のぶんゼロ",
+			},
 			// メタ：画面に 描けない 数を その場の 人が 言う（桟橋の 行進は 5本：ui/village/sceneMarks.ts）
 			s("zero", "1万3千本は描けないので、\n画面には5本で表しています！", {
 				emote: "得",
 			}),
-			k("町の人まで\n行進してるンゴ！！", { emote: "驚" }),
+			s("nanj", "なんでワイ、\n行進しとんねん！", { emote: "驚" }),
+			s("nanj", "……楽しいからや！", { gesture: "hop", pause: 400 }),
 			// 頭の きのこは 摘まれる（キリコのも）。看板の しめじは 残る
 			{
 				...n(
@@ -1253,7 +1278,7 @@ export const STORY: Record<
 				...n("キリコはヤシの実を蓄音機に\nのせてみた。回らない。"),
 				card: iconPicture("yashi", "ヤシの実"),
 			},
-			s("roze", "回すより、\n割って飲むのが常識アル！"),
+			s("roze", "回すより、\n割って飲むアル！"),
 			// 総島民 6人（分母 6）。絵は 中から 出た 手紙
 			{
 				...n("割ると、中からナツコの手紙。\n「島民6人、全員ぶじに帰りました」"),
@@ -1261,6 +1286,12 @@ export const STORY: Record<
 				card: NATSUKO_LETTER,
 			},
 			s("zero", "生還率、100％です！\n分母は6です！", { emote: "!" }),
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。分母は7。\nナツコが自分を数えてないゼロ",
+				pause: 400,
+			},
 			// 島が 好きすぎて 町に 来たかった（板の 事情）。キリコが 呼ぶ → 島が 泳いで 港に 突っこむ → 日本の 形が かわる
 			// キリコは 船着き場の はしへ 走って 沖に 呼びかける
 			{
@@ -1282,6 +1313,12 @@ export const STORY: Record<
 				}),
 				look: null,
 			},
+			// フェリスの 持ちネタ：やきうの 出題に、斜め上の 答え（おんJwiki の「フェリスの お勉強」）
+			{
+				...s("nanj", "問題や。島が時速30キロなら、\n港まで何分や？"),
+				about: "feris",
+			},
+			s("feris", "港が逃げたら、\n追いつかれません〜", { emote: "♪" }),
 			// みんなで 桟橋を 浜まで 逃げる（キリコに カメラが ついていく）
 			{
 				...k("こっちに来るンゴ！！\n逃げるンゴ！！", { emote: "!" }),
@@ -1298,7 +1335,7 @@ export const STORY: Record<
 			},
 			// みんなで 桟橋の 港の 前へ 見に 行く（島が 見える 所）
 			{
-				...k("港が、半分\n島になったンゴ！！", { emote: "!" }),
+				...k("港に、島が\n縦列駐車したンゴ！", { emote: "得" }),
 				look: null,
 				go: [{ who: "all", to: [24, 42], speed: 3, face: "right" }],
 			},
@@ -1349,6 +1386,11 @@ export const STORY: Record<
 					unmark: "island",
 				},
 			),
+			// ロゼの 持ちネタ：さっきの「ターンが 常識」が、島に 合わせて かわる
+			s("roze", "……バックで帰るのが、\n泳ぎの常識アル", {
+				emote: "得",
+				pause: 400,
+			}),
 		],
 		// 寄り道「残機」①：1UP は にせもの（ナツコの 自由研究）
 		once: [
@@ -1447,9 +1489,13 @@ export const STORY: Record<
 				look: null,
 			},
 			// メタ：首脳の 舟は 4そう（ui/village/sceneMarks.ts の BOATS）
-			s("zero", "193か国の首脳、画面には\n4人しか映りません！", {
-				emote: "得",
-			}),
+			s("zero", "首脳、193人です！\n数えました！", { emote: "得" }),
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。画面には、\n4人しか映ってないゼロ",
+				pause: 400,
+			},
 			k("吾輩が、焼き方の\nお手本を見せるンゴ！", { gesture: "hop" }),
 			// 浜の 屋台（たこ八）へ 場面を うつす。キリコが 鉄板の 前へ 走る。絵は その 鉄板（焦げあとは 町に 残る）
 			{
@@ -1598,10 +1644,16 @@ export const STORY: Record<
 				mark: "samba",
 			},
 			{
-				...s("zero", "発信元、ブラジルです！\n地球の裏から、返事です！", {
+				...s("zero", "発信元、ブラジルです！\n太鼓、1分に300回です！", {
 					emote: "!",
 				}),
 				go: [{ who: "zero", route: "lrlr", speed: 3 }],
+			},
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。301回。\n1回は、シヨのげんこつゼロ",
+				pause: 400,
 			},
 			k("返事するンゴ！\nもっと強くたたくンゴ！", { gesture: "hop" }),
 			{
@@ -1750,7 +1802,7 @@ export const STORY: Record<
 				...nanashi("名無しさん", "ふぇ…ふぇ……フェニックス！"),
 				card: oldThread("ふぇ…ふぇ……\nフェニックス！"),
 			},
-			n("町でいちばん古い\nレスだった。"),
+			k("吾輩より、\n先輩ンゴ！", { emote: "驚" }),
 			// 自分の 声を 聞いて フェリスが かけよる
 			{
 				...s("feris", "私の、はじまりの声〜！\n思ったより、かすれてる〜！", {
@@ -1759,8 +1811,14 @@ export const STORY: Record<
 				go: [{ who: "feris", to: "kiriko", speed: 3 }],
 			},
 			{
-				...s("zero", "いちばん下の層、ですからね"),
+				...s("zero", "21年ものです！\n数えました！", { emote: "得" }),
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
+			},
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。20年と10か月。\nワインなら、まだ若いゼロ",
+				pause: 400,
 			},
 			// 古い レスが 掘り起こされて、スレが 一気に 埋まる（1000 で 書けなくなる しくみと 同じ）
 			// 苦さから 光へ（つづきの原盤）
@@ -1787,9 +1845,12 @@ export const STORY: Record<
 				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},
 			// 2回目の 1000 → 2回目の 命日（寄り道「残機」の 天丼）
-			s("feris", "じゃあ今日は、やきうくんの\n2回目の命日〜！ケーキ出す〜？", {
-				gesture: "hop",
-			}),
+			// フェリスの 持ちネタ：やきうの 出題に、斜め上の 答え
+			{
+				...s("nanj", "問題や。命日が2回ある人は、\nなにがもらえる？"),
+				about: "feris",
+			},
+			s("feris", "ケーキが2個〜", { gesture: "hop", pause: 400 }),
 			s("nanj", "命日にケーキ出すな！", { emote: "怒", hit: "slap" }),
 			// 「草が　生えた」を そのまま 音に する（草の 音を 3つ）。カメラは 広場
 			{
@@ -1892,7 +1953,12 @@ export const STORY: Record<
 				}),
 				look: null,
 			},
-			k("浜だけのつもりが、\n町ごと朝ンゴ！", { emote: "!" }),
+			k("吾輩、朝を作ったンゴ！\n神ンゴ！", { emote: "得", gesture: "hop" }),
+			{
+				...s("nanj", "問題や。夜中の2時が昼なら、\n昼の2時は何や？"),
+				about: "feris",
+			},
+			s("feris", "おやつ〜", { emote: "♪", pause: 400 }),
 			// 明るさは 海を こえて 水星の 板まで。だれも 怒らない 板の 返事（実物の 絵）
 			{
 				...n("翌日。明るさは海をこえて、\n水星の板まで届いた。レスがひとつ。"),
@@ -1903,15 +1969,17 @@ export const STORY: Record<
 				}),
 			},
 			{
-				...s(
-					"zero",
-					"水星の人、まぶしくても怒りません！\nゼロは、3日寝てません！",
-					{
-						emote: "汗",
-					},
-				),
+				...s("zero", "水星からのレス、1件です！\n数えました！", {
+					emote: "!",
+				}),
 				card: null,
 				go: [{ who: "zero", route: "rrllllrr", speed: 3 }],
+			},
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。0.5件。\n半分は、寝言ゼロ",
+				pause: 400,
 			},
 			// 主人公が 最悪の 手（かけらを ラッパで ふさぐ）→ 夜より 暗く → 自己ツッコミ
 			k("吾輩が、かけらをラッパで\nふさぐンゴ！", { gesture: "hop" }),
@@ -1927,7 +1995,7 @@ export const STORY: Record<
 				s("zero", "ゼロが、ランプに\nなります！", { emote: "汗" }),
 			),
 			{
-				...k("夜にもどすだけで、\nよかったンゴ！", { emote: "冷" }),
+				...k("半分ふさいだら、\nちょうど夜ンゴ", { emote: "得" }),
 				sky: "night",
 			},
 			// 翌朝の 書きこみで 追い打ち（場面を 掲示板へ うつす。夜の まま）
@@ -2053,7 +2121,8 @@ export const STORY: Record<
 				s("shiyo", "あたすの家、1階が\n水族館になったわよ！", { emote: "怒" }),
 				s("zero", "サブ機が2機とも、\n浮いてます！", { emote: "汗" }),
 			),
-			k("住民登録で、\n町ごと海の底ンゴ！", { emote: "!" }),
+			k("吾輩、登録1番だから\n市長ンゴ？", { emote: "得" }),
+			s("shiyo", "海の底の市長よ！！", { emote: "驚", hit: "whack" }),
 			// 登録を 消すと 水が 引く（絵は 消した 搭乗券）
 			{
 				...k("登録を、消すンゴ！"),
@@ -2079,23 +2148,14 @@ export const STORY: Record<
 				look: [15.5, 21],
 				card: boardOf("『【悲報】キリコ、町を3メートル沈める』"),
 			},
-			sOr(
-				{
-					...s("shiyo", "海の底の人に、町まで\n連れていかれるとこだったわ！", {
-						emote: "驚",
-						hit: "whack",
-					}),
-					look: null,
-					card: null,
-				},
-				{
-					...s("roze", "海抜0メートルでも、\n呑気に沈んでるアル", {
-						emote: "汗",
-					}),
-					look: null,
-					card: null,
-				},
-			),
+			// ロゼの 持ちネタ：「書いたら 沈むのが 常識」が、浮いた あとで かわる（はじめから 知って いた ことに する）
+			{
+				...s("roze", "消したら浮くのも、常識アル。\nはじめから知ってたアル", {
+					emote: "得",
+				}),
+				look: null,
+				card: null,
+			},
 		],
 	},
 	onkimu: {
@@ -2149,9 +2209,13 @@ export const STORY: Record<
 				go: [{ who: "kiriko", to: [19, 22], speed: 3, face: "up" }],
 			},
 			{
-				...s("roze", "蓄音機の前は、家じゃないアル。\n住所は「広場」アル", {
-					emote: "汗",
-				}),
+				...s(
+					"roze",
+					"勧誘に乗るのは非常識アル。\n蓄音機の前の住所は「広場」アル",
+					{
+						emote: "汗",
+					},
+				),
 				go: [{ who: "roze", to: "kiriko", speed: 3 }],
 			},
 			// 勧誘の 方へ ふくらむ（キリコ → 町じゅう → ロゼまで → 管理部33）。主人公が 最悪の 手：勧誘の 紙を 蓄音機で 流す
@@ -2170,11 +2234,14 @@ export const STORY: Record<
 			},
 			nanashi("銭湯の客", "おんキムに\n来ませんか？"),
 			// ツッコミ役も 勧誘に 回る
+			// ロゼの 持ちネタ：勧誘に 乗るのは 非常識の はずが、する 側なら 常識に かわる
 			{
-				...s("roze", "麻婆キムチに\n来ませんか？", { emote: "♪" }),
+				...s("roze", "勧誘する側なら、常識アル！\n麻婆キムチに来ませんか？", {
+					emote: "♪",
+				}),
 				look: null,
 			},
-			k("ロゼまで勧誘してるンゴ！", { emote: "驚", hit: "slap" }),
+			k("……行くンゴ", { emote: "花", pause: 400 }),
 			// 翌朝、壺の 底の 紙が 書きかわって いる（キリコが 管理部33）
 			{
 				...n("翌朝。壺の底の紙が、\n書きかわっていた。"),
@@ -2195,9 +2262,13 @@ export const STORY: Record<
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
 			},
 			{
-				...k("勧誘される側だったのに、\nする側のトップンゴ！？", {
-					emote: "!",
-				}),
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。町ぜんぶ引く1。\nやきうは勧誘されてないゼロ",
+				pause: 400,
+			},
+			{
+				...k("名刺、刷るンゴ！", { emote: "得", gesture: "hop" }),
 				card: null,
 			},
 			// おんJ民は 植民地に する 側だった（§1）のに、町ごと よその 植民地に
@@ -2288,6 +2359,12 @@ export const STORY: Record<
 				fx: "blackout",
 			},
 			s("zero", "3秒、数えました！\n闇、短いです！", { emote: "得" }),
+			{
+				who: null,
+				mob: "proto",
+				text: "訂正ゼロ。2.9秒ゼロ",
+				pause: 400,
+			},
 			// 町の 人が 右腕を 押さえて 背を 向ける
 			{
 				...nanashi("商店街の人", "うっ……右腕が……"),
@@ -2299,7 +2376,7 @@ export const STORY: Record<
 				look: [36, 27],
 			},
 			{
-				...k("町の人まで、\n右腕を押さえてるンゴ！", { emote: "!" }),
+				...k("うっ……吾輩の\n右腕も……", { emote: "青", gesture: "shiver" }),
 				look: null,
 			},
 			// 翌朝の 書きこみまで † つき（絵は 掲示板）
@@ -2313,7 +2390,7 @@ export const STORY: Record<
 				card: boardOf("『†【悲報】キリコ、町を闇に堕とす†』"),
 			},
 			{
-				...k("書きこみまで、\n邪気眼ンゴ！", { emote: "冷" }),
+				...k("†盛ってないンゴ†", { emote: "冷" }),
 				look: null,
 				card: null,
 			},
@@ -2332,7 +2409,10 @@ export const STORY: Record<
 				card: null,
 				go: [{ who: "nanj", to: [21, 19], speed: 3, follow: true }],
 			},
-			{ ...k("逃げ足だけ、名無し級ンゴ", { hit: "slap" }), look: null },
+			{
+				...k("ワイ以外のワイ、\n足が速いンゴ", { hit: "slap" }),
+				look: null,
+			},
 		],
 	},
 	// 束音ロゼの 競争：ボカロ作り避難所（engine/heroes.ts・core/race.ts）
@@ -2394,10 +2474,18 @@ export const STORY: Record<
 			s("roze", "帰ったのも、\nわたしが先アル！", { emote: "怒" }),
 			k("帰りの船、\nいっしょだったンゴ", { hit: "slap" }),
 			s("roze", "……船の、前のほうに\n座ってたアル", { emote: "冷" }),
+			// もう 1行。きまりの 書きたしが 名前だけに なって 落ちる（ロゼの 持ちネタの 原型）
 			{
-				...n(
-					"キリコは原音設定をロゼにわたした。\n勝ち負けは、うやむやになった。",
-				),
+				...n("ロゼは、はり紙に\nもう1行書きたした。"),
+				se: "pencil",
+				card: itemPicture("memo", "避難所の底のはり紙", {
+					text: "先に取ったら勝ち\n→着いたら勝ち\n→先に帰ったら勝ち\n→ロゼの勝ち",
+				}),
+			},
+			k("名前を書いただけンゴ！", { emote: "驚", hit: "slap", pause: 400 }),
+			s("roze", "書いたもん勝ちが、\n常識アル", { emote: "得" }),
+			{
+				...n("キリコは原音設定をロゼにわたした。"),
 				se: "pay",
 				card: null,
 			},

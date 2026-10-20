@@ -4302,12 +4302,12 @@ const meetZero = (r: Run): GameEvent[] => {
 
 test(
 	"zero_main",
-	"待ちぶせ：挑戦を 受けた 冒険だけ、深い 階の 階段の 部屋で 3機が 眠って 待ち、見つけると 掛け合いの あと そろって 起きる",
+	"待ちぶせ：挑戦を 受けた 冒険だけ、浅い 階の 階段の 部屋で 3機が 眠って 待ち、見つけると 掛け合いの あと そろって 起きる",
 	() => {
 		const plain = Run.create("ambush-0", "main", [], "boss");
 		ok(ambushDepth(plain) === null, "ambush without the challenge");
 		const r = ambushRun("ambush-1");
-		ok(r.s.depth === 8, `depth ${r.s.depth}`);
+		ok(r.s.depth === 4, `depth ${r.s.depth}`);
 		const us = zeroUnits(r);
 		ok(us.length === 3, `${us.length} units`);
 		ok(r.f.house < 0, "a festival on the ambush floor");
