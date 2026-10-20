@@ -8847,7 +8847,7 @@ test("寸劇: entering a building or looking at a thing plays once, at most one 
 			"konbini skit",
 		);
 		ok(
-			a.log.some((l) => l.includes("ポイント5倍")),
+			a.log.some((l) => l.includes("温めますか")),
 			a.log.join("\n"),
 		);
 		// 同じ 帰りは 2本目なし・同じ 寸劇は 2回目なし

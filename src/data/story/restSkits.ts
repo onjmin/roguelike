@@ -112,7 +112,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 				],
 			}),
 			// ロゼが 王の 前に もどって くる
-			say(0, "ロゼはん、もどってきた……\n説教、まだ続くんか……", { look: 0 }),
+			say(0, "ロゼはん、もどってきた……\nパン、化石になってもうた", { look: 0 }),
 		],
 	},
 	{
@@ -130,8 +130,11 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(1, "値段が独立しても、\n常識は独立しないアル！", {
 				go: [{ who: 1, to: "kiriko" }],
 			}),
-			say(0, "ワイの国の常識は、\nワイが決める！……パンや！", { look: 0 }),
-			k("国の常識が、パン1個ンゴ", {
+			say(0, "独立したら、物価も独立や。\n明日からパン1個につき2個", {
+				look: 0,
+			}),
+			k("インフレンゴ！", {
+				hit: "slap",
 				look: null,
 				go: [
 					{ who: 1, to: "home" },
@@ -211,11 +214,13 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: 0, to: "kiriko" }],
 			}),
 			k("3時間前から、\n入りたかったンゴ？"),
-			say(0, "ち、ちがうわよ！\n温度を測りたかっただけ！", {
-				go: [
-					{ who: 0, to: "home" },
-					{ who: "kiriko", to: "home" },
-				],
+			// 暴力系ヒロイン：図星を 突かれて 手が 出る。キリコは 桶の 中へ（行き先は 置物でも 着ける。ui/dungeon/restSkit.ts）
+			say(0, "入りたいなら、\n入れてあげるわよ！", { hit: "punch" }),
+			k("（桶の中から）……\n41.5℃ンゴ", {
+				go: [{ who: "kiriko", to: [24, 5] }],
+				look: [24, 5],
+				se: "bubble",
+				pause: 500,
 			}),
 		],
 	},
@@ -254,7 +259,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 				}),
 				go: [{ who: 0, to: "home" }],
 			}),
-			say(1, "ひど〜い！", { card: null }),
+			say(1, "じゃあ、燃えてない半分で\n2回入場する〜", { card: null }),
 		],
 	},
 	{
@@ -267,7 +272,8 @@ export const REST_SKITS: readonly RestSkit[] = [
 			k("町ンゴ？"),
 			say(0, "せや。人がおらんでも、\nずっと町へ送っとった"),
 			say(0, "請求書も、ずっと送っとった。\nぜんぶ、宛先不明でもどってきた"),
-			k("返送料のほうが\n高いンゴ"),
+			k("宛先、どこにしたンゴ？"),
+			say(0, "「おんJ」や。\nほな、とどかんわな"),
 			say(1, "私宛てのは、\n燃やしちゃった〜！", { look: 1 }),
 			say(0, "お前のは、燃えるゴミや！", {
 				look: null,
@@ -307,11 +313,13 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(1, "ヤシの葉なら、\nいくらでもある", {
 				go: [{ who: 1, to: [8, 4] }],
 			}),
-			say(0, "御利益は半分。\nヤシの実は、3倍とれる", {
+			say(0, "御利益も半分や。\n願いも半分だけ叶う", {
 				go: [{ who: 0, to: [10, 4] }],
 			}),
-			k("差し引き、プラスンゴ", { look: null }),
-			say(0, "島では、それを豊作と呼ぶ", {
+			say(2, "去年「雨よ降れ」て願ったら、\n「雨よ」で止まった"),
+			k("……どうなったンゴ？", { look: null }),
+			say(0, "雨に、名前がついた", {
+				pause: 500,
 				go: [
 					{ who: 0, to: "home" },
 					{ who: 1, to: "home" },
@@ -356,8 +364,9 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(1, "ソースも、かけ放題や😡", { go: [{ who: 1, to: "kiriko" }] }),
 			n("{hero}の頭に、青のりと\nソースがかかった。", { se: "bubble" }),
 			k("吾輩は、たこ焼き\nじゃないンゴ！"),
-			say(0, "かけ放題は、かける側の\n自由やで😡", { look: 0 }),
-			k("この板、客に\n青のりをかけるンゴ", {
+			say(0, "ほな、ひっくり返すで😡", { look: 0 }),
+			n("{hero}は、千枚通しで\nひっくり返された。", {
+				hit: "whack",
 				look: null,
 				go: [
 					{ who: 1, to: "home" },
@@ -409,9 +418,13 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			say(2, "輪に、2人や"),
 			k("吾輩が、3人目ンゴ！", { go: [{ who: "kiriko", to: [14, 8] }] }),
-			say(0, "やぐらの上から見ると、\n3人は、点や", { look: 0 }),
-			say(2, "点でも、踊るんや", {
-				look: null,
+			say(0, "やぐらから見たら、点や。\n衛星から見たら、もっと点や", {
+				look: 0,
+			}),
+			say(2, "宇宙から見たら？", { look: null }),
+			say(0, "……地球が、踊っとる", {
+				pause: 500,
+				look: 0,
 				go: [
 					{ who: 1, to: "home" },
 					{ who: 2, to: "home" },
@@ -432,7 +445,15 @@ export const REST_SKITS: readonly RestSkit[] = [
 				look: [2, 3],
 				card: propPicture(STATUE, "古い石像", { text: "保守" }),
 			}),
-			k("石になっても、\n保守してるンゴ", { card: null, look: null }),
+			k("……あげ"),
+			n("石像が、少し浮いた。", {
+				card: {
+					...propPicture(STATUE, "古い石像", { text: "保守" }),
+					note: "台座から1センチ浮いた",
+				},
+				pause: 500,
+			}),
+			k("浮いたンゴ！？", { hit: "slap", card: null, look: null }),
 		],
 	},
 	{
@@ -458,7 +479,15 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			k("1ゲットンゴ？"),
 			n("2005年の1ゲットだった。\n2は、まだ来ていない。"),
-			k("20年、2を待ってるンゴ", { card: null, look: null }),
+			k("2ゲットンゴ！", { card: null }),
+			n("台座の字が、\n「1乙」に変わった。", {
+				pause: 500,
+				card: propPicture(STATUE, "古い石像", { text: "1乙" }),
+			}),
+			k("……20年で、乙られたンゴ", {
+				card: null,
+				look: null,
+			}),
 		],
 	},
 ];

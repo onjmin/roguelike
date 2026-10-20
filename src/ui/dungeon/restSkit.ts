@@ -1,6 +1,7 @@
 // 敵の いない 階（名所・集落）の 寸劇（文は data/story/restSkits.ts。演出は ui/dungeon/play.ts の restSkit）。
 // - どれを 見たかを 別の 保存場所に 残す（保存できなくても この回は 覚えている）。所ごとに 並びの 順で 1本ずつ。
 // - 走る 道は 階の 床だけで 決める（人の 立つ マスは 通れる ことに する。置物・壁は 通れない）。見た目だけ。
+//   行き先だけは 置物・壁でも よい（桶に 入る・台に のぼる。となりの 床から 1歩 ふみこむ）。
 
 import type { Pos } from "../../core/geom";
 import { idx, T_WALL } from "../../core/mapgen";
@@ -62,6 +63,7 @@ const open = (
 /**
  * from から to までの 道（4方向。両はしを ふくむ。無ければ null）。
  * 人の 立つ マス（folk）は 通れる。avoid は 通らない マス（主人公・同行者・ほかの 人の いま いる 所）。
+ * 行き先（to）は 置物・壁でも 着ける（となりの 床から 1歩 ふみこむ。桶に 入る など）。
  */
 export const restPath = (
 	f: Floor,
@@ -76,7 +78,7 @@ export const restPath = (
 			.filter((p) => p.x !== to.x || p.y !== to.y)
 			.map((p) => idx(l, p.x, p.y)),
 	);
-	if (!open(f, to.x, to.y, folkCells, bad)) return null;
+	if (to.x < 0 || to.y < 0 || to.x >= l.w || to.y >= l.h) return null;
 	const start = idx(l, from.x, from.y);
 	const goal = idx(l, to.x, to.y);
 	const prev = new Map<number, number>([[start, -1]]);
@@ -94,8 +96,9 @@ export const restPath = (
 		] as const) {
 			const nx = x + dx;
 			const ny = y + dy;
-			if (!open(f, nx, ny, folkCells, bad)) continue;
+			if (nx < 0 || ny < 0 || nx >= l.w || ny >= l.h) continue;
 			const j = idx(l, nx, ny);
+			if (j !== goal && !open(f, nx, ny, folkCells, bad)) continue;
 			if (prev.has(j)) continue;
 			prev.set(j, i);
 			queue.push(j);
