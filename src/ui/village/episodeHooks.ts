@@ -9,7 +9,6 @@ import {
 	colonyCard,
 	factionCard,
 	KINOKO_EVE,
-	routeCard,
 } from "../../data/story/hooks";
 import { DUNGEON_NAMES } from "../../data/story/story";
 import {
@@ -74,7 +73,7 @@ const as = (
 const kinoko = (s: Story, text: string, emote?: "怒" | "汗") =>
 	as(s, T.kinokoName, `${T.kinokoFace}${text}`, emote);
 
-/** 第一話 → 第二話：その夜の 広場・イメージ図・2015年の 回想・近道の 図・夜の 行進・人影の 見出し。 */
+/** 第一話 → 第二話：その夜の 広場・イメージ図・2015年の 回想・夜の 行進・人影の 見出し。 */
 export const kinokoEveScript = async (s: Story): Promise<void> => {
 	addFlag(EVE_FLAG);
 	const root = fxRoot();
@@ -180,16 +179,8 @@ export const kinokoEveScript = async (s: Story): Promise<void> => {
 	s.bgm("yofukashi");
 	await s.fadeIn(400);
 
-	// ── いまに もどって：前ぶれと、近道の 図（町が 空き地に 見えた わけ＝キリコの 独立ごっこ）
+	// ── いまに もどって：前ぶれ（キリコの 独立ごっこは 持ち帰りの 語りで 見せたので くり返さない）
 	await s.say("nanj", T.nanjOmen, { emote: "…" });
-	s.face("zero", "player");
-	await s.say("zero", T.zeroRoute, { emote: "!" });
-	const route = showCard(root, routeCard);
-	s.se("cardFlip");
-	await s.kiriko(T.kirikoEmpty, "voice", { emote: "?" });
-	await s.say("roze", T.rozeMap, { emote: "汗" });
-	await s.kiriko(T.kirikoCause, "voice", { emote: "!" });
-	route.end();
 	await s.say("nanj", T.nanjSleep);
 
 	// ── 夜ふけ：みんな 家へ。キリコは 蓄音機の 前で 寝る（いちばん 最初の 村の 寝言の 天丼）

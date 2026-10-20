@@ -7,7 +7,6 @@ import {
 	colonyCard,
 	factionCard,
 	KINOKO_EVE,
-	routeCard,
 } from "../data/story/hooks";
 import type { Story } from "../engine/defs";
 import { hasFlag, loadProgress, saveProgress } from "../engine/save";
@@ -96,7 +95,6 @@ test(
 			colonyCard(0),
 			colonyCard(1),
 			colonyCard(2),
-			routeCard,
 		]) {
 			ok(spec.links.length === spec.nodes.length - 1, `${spec.title}: links`);
 			for (const n of spec.nodes)
@@ -123,7 +121,7 @@ test(
 			for (const t of [
 				KINOKO_EVE.night,
 				KINOKO_EVE.memoryFlag,
-				KINOKO_EVE.kirikoCause,
+				KINOKO_EVE.nanjOmen,
 				KINOKO_EVE.march,
 				KINOKO_EVE.morning,
 			])

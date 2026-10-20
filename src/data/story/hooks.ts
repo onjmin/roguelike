@@ -33,11 +33,7 @@ export const KINOKO_EVE = {
 	memoryKinoko2: "食べてもうた",
 	memoryNanj: "それから11年。\n恨みだけ、熟成しとる",
 	nanjOmen: "親が独立して、子は置いてけぼりか。\nひと騒ぎ、ありそうやな",
-	zeroRoute: "きのこ板からパン板への\n近道も、図にしました！",
-	kirikoEmpty: "町が、空き地に\nなってるンゴ",
-	rozeMap: "1時間、国民0人だったアル。\n地図に載ったアル",
-	kirikoCause: "吾輩の独立の\nせいンゴ！？",
-	nanjSleep: "まあ、通るだけやろ。\n寝とけ寝とけ",
+	nanjSleep: "まあ、今夜はもう\n寝とけ寝とけ",
 	sleep: "むにゃ。\nお客、いっぱいンゴ……",
 	march: "夜ふけ。港から、小さな足音が\n坂を上がってきた。",
 	zeroCount: "足音、128です！\n3人しか見えません",
@@ -73,18 +69,6 @@ export const colonyCard = (step: 0 | 1 | 2): CardSpec => ({
 	],
 	note: "ゼロ調べ",
 });
-
-/** ゼロが 描く 図②：きのこ板から パン板への 近道（zeroRoute「近道も、図にしました！」の 1時間前の 地図。残す）。 */
-export const routeCard: CardSpec = {
-	title: "イメージ図「近道」",
-	nodes: [
-		{ label: "きのこ板", sprite: KINONYAN },
-		{ label: "おんJタウン", sub: "国民0人\n（空き地）", aa: "町" },
-		{ label: "パン板", sprite: PANHEI },
-	],
-	links: [{ label: "徒歩" }, { label: "船" }],
-	note: "1時間前の地図（ゼロ調べ）",
-};
 
 const BANTOU = "sprites/ofurou.png";
 
