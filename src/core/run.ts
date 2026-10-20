@@ -40,7 +40,6 @@ import {
 	RES_WARN,
 	rollDamage,
 	SPAWN_EVERY,
-	VOICE_FREEZE,
 	WAKE_CHANCE,
 } from "./balance";
 import {
@@ -1451,46 +1450,6 @@ export class Run {
 		return false;
 	}
 
-	// ───────────────── 蓄音機 ─────────────────
-
-	/**
-	 * たおした 敵の 声を 蓄音機に 録る（1つだけ。前の 声は 上書き）。
-	 * 記録に 出すのは 蓄音機が 空の ときだけ（毎回 出すと 読みとばされる。いま 何が 入っているかは メニューの 蓄音機に 出る）。
-	 */
-	private recordVoice(m: Monster): void {
-		if (this.s.voice === m.kind) return;
-		const was = this.s.voice;
-		this.s.voice = m.kind;
-		if (!was) this.msg(`${mdef(m).name}の声を録った（無断）`);
-	}
-
-	/**
-	 * 録った 声を 再生する。見えている 同じ 種類の 敵は、自分の 声を 聞かされて 固まる
-	 * （VOICE_FREEZE ターン）。声は 消える。
-	 */
-	private playVoice(): boolean {
-		const kind = this.s.voice;
-		if (!kind) {
-			this.msg("蓄音機に何も録っていない。ハンドルが空回り");
-			return false;
-		}
-		this.s.voice = null;
-		const name = MONSTERS[kind]?.name ?? "だれか";
-		this.se("spell");
-		this.emit({ t: "fx", kind: "voice", pos: { x: this.p.x, y: this.p.y } });
-		this.msg(`蓄音機から　${name}の声が流れた`);
-		let n = 0;
-		for (const m of this.f.monsters) {
-			if (m.kind !== kind || !this.monsterVisible(m)) continue;
-			if (m.disguise) m.disguise = null;
-			m.status.paralyze = Math.max(m.status.paralyze, VOICE_FREEZE);
-			n++;
-		}
-		if (n) this.msg(`${name}は自分の声を聞かされて固まった！`, "good");
-		else this.msg("しかしだれも聞いていなかった");
-		return true;
-	}
-
 	/** burnt：爆発で たおれた（持っていた 道具も 落とす 道具も 燃える。トルネコ1の 爆風で 消え去る）。 */
 	killMonster(m: Monster, giveExp: boolean, burnt = false): void {
 		const d = mdef(m);
@@ -1520,8 +1479,6 @@ export class Run {
 		}
 		if (giveExp) {
 			ankaHit(this, "kill");
-			// ボスの 声は 録らない（たおすと その場で 帰るので 使い道が ない）
-			if (!d.boss) this.recordVoice(m);
 		}
 		// 待ちぶせで 起きなおした 機体は 経験値なし（何度も たおして かせげない）
 		const again = !!this.f.ambush?.again.includes(m.uid);
@@ -1914,8 +1871,6 @@ export class Run {
 			case "sort":
 				this.sortItems();
 				return false;
-			case "play":
-				return this.playVoice();
 			case "phase":
 				this.togglePhase();
 				return false;

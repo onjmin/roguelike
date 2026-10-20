@@ -559,8 +559,6 @@ export type RunState = {
 	replayN?: number;
 	/** 遊んだ版（ゲームの中身の版。中断をはさんで版が変わったら 足していく。UI が入れる）。 */
 	builds?: string[];
-	/** 蓄音機に 録った 声（最後に たおした 敵の 種類。再生すると 消える）。 */
-	voice?: string | null;
 	/** ぷゆゆの お弁当（始めの持ち物）を 持たずに 出た（リプレイで 同じに 始めるため）。 */
 	noLunch?: boolean;
 	/** 倉庫から持ちこんだ道具（はじめの形。リレミトならぬ 帰還スレで持ち帰った道具を、次の冒険へ。リプレイで同じに始めるため）。 */
@@ -648,7 +646,6 @@ export type Command =
 	| { c: "stairs" }
 	| { c: "sort" }
 	| { c: "shoot" }
-	| { c: "play" }
 	/** 束音ロゼの すり抜けの ON／OFF（時間は 進まない）。 */
 	| { c: "phase" }
 	| { c: "name"; kind: string; text: string };

@@ -169,7 +169,7 @@ export const openSettings = async (
 				},
 				{
 					label: "小さいボタン",
-					sub: settings.minis ? "表示（向き・足元・地図）" : "かくす",
+					sub: settings.minis ? "表示（向き・足元）" : "かくす",
 					value: "minis",
 				},
 				{

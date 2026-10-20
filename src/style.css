@@ -1447,6 +1447,9 @@ body.jolt #app {
  */
 .hud.village .status,
 .hud.village .minis,
+.hud.village .map-btn,
+.hud.hidden .map-btn,
+.hud.replay .map-btn,
 .hud.village.has-arrow .btn-shoot,
 .hud.village .pad-rest {
 	display: none;
@@ -1483,6 +1486,12 @@ body.jolt #app {
 .minis > .mini,
 .top-btns > .icon-btn {
 	pointer-events: auto;
+}
+
+/* ダンジョンの ステータス行は 押せる（つよさの 窓） */
+.hud:not(.village):not(.hidden):not(.replay):not(.modal) > .status {
+	pointer-events: auto;
+	cursor: pointer;
 }
 
 /* 8方向の十字キー。矢印は中心から回して並べる（--d × 45°） */
@@ -1693,7 +1702,7 @@ body.jolt #app {
 	right: calc(10px + var(--safe-r));
 	bottom: calc(144px + var(--safe-b));
 	display: grid;
-	grid-template-columns: repeat(3, 52px);
+	grid-template-columns: repeat(2, 52px);
 	gap: 6px;
 }
 
@@ -1754,6 +1763,23 @@ body.jolt #app {
 
 .icon-btn.off {
 	border-color: var(--danger);
+}
+
+.icon-btn.map-btn {
+	font-size: 13px;
+	letter-spacing: -0.03em;
+	padding: 0;
+}
+
+.hud.map-open .map-btn {
+	border-color: var(--accent);
+	color: var(--accent);
+	background: rgba(255, 207, 74, 0.18);
+}
+
+.hud.modal .map-btn {
+	opacity: 0;
+	pointer-events: none;
 }
 
 /* ───────── ダメージの数字・地図 ───────── */
@@ -2902,7 +2928,7 @@ body.jolt #app {
 }
 
 .narrow .minis {
-	grid-template-columns: repeat(3, 46px);
+	grid-template-columns: repeat(2, 46px);
 }
 
 /* ───────── menus (agent) ───────── */

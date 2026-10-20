@@ -5,8 +5,10 @@
 // - 足踏みは 十字キーの まん中を 長押し（トルネコの A＋B 押しっぱなし。押さえているあいだ 続ける）
 // - ダッシュは 十字キーの 押しっぱなしで 足りる（歩きつづける）。キーボードでは Shift＋方向
 // - 斜め固定は キーボードの R だけ（十字キーは 8方向）
-// - 向きは A が となりの 敵へ 自動で 向くので ふだんは 要らない。小さいボタン（向き・足元・地図）は
+// - 向きは A が となりの 敵へ 自動で 向くので ふだんは 要らない。小さいボタン（向き・足元）は
 //   せっていで 出せる（向きは 押しながら十字キー。すぐ離せば 次の1回ぶん）
+// - 地図は 右上の ボタンで いつでも 開け閉めできる（メニューを はさむと わずらわしい）
+// - 左上の ステータス行を 押すと つよさの 窓（メニューを はさまずに）
 // - 階段の上でだけ「階段」ボタンが 出る（聞かれたのを 閉じても 降りられるように）
 // - PC（マウスの ある 画面）では ボタンの すみに キーを 小さく 出す（engine/input.ts の キーと 同じ）
 
@@ -51,7 +53,9 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	const small = (label: string, cls: string) =>
 		el("button", { class: `mini ${cls}`, html: label });
 	const foot = small("足元", "mini-foot");
-	const map = small("地図", "mini-map");
+	// 地図の 開け閉め（ミュートの となり。ダンジョンだけ）
+	const map = el("button", { class: "icon-btn map-btn", text: "地図" });
+	map.title = "地図の 表示を 切りかえる";
 	const turn = small("向き", "mini-turn toggle");
 	const mute = el("button", { class: "icon-btn mute-btn" });
 	mute.title = "BGM・効果音のミュート";
@@ -66,8 +70,8 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 		money,
 		pad,
 		el("div", { class: "ab" }, [b, shoot, phase, auto, a]),
-		el("div", { class: "minis" }, [turn, foot, map]),
-		el("div", { class: "top-btns" }, [mute]),
+		el("div", { class: "minis" }, [turn, foot]),
+		el("div", { class: "top-btns" }, [map, mute]),
 	]);
 	root.appendChild(hud);
 	// PC の キー（CSS で マウスの ある 画面だけ 見せる）
@@ -91,6 +95,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	input.bindButton(auto, "phase");
 	input.bindButton(foot, "foot");
 	input.bindButton(map, "map");
+	input.bindButton(status, "status");
 	input.bindHold(turn, "turn");
 	mute.addEventListener("pointerdown", (e) => {
 		e.preventDefault();

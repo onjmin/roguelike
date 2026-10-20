@@ -2946,32 +2946,6 @@ test(
 
 test(
 	"floor",
-	"gramophone: a kill records its voice; playing it freezes the same kind in sight only",
-	() => {
-		const r = arena("voice");
-		const first = put(r, "tousuko", { x: CENTER.x, y: CENTER.y - 1 });
-		first.hp = 1;
-		for (let k = 0; k < 20 && first.hp > 0; k++)
-			turn(r, { c: "attack", dir: 0 });
-		ok(first.hp <= 0, "harness: could not kill the first one");
-		ok(r.s.voice === "tousuko", `no voice recorded (${r.s.voice})`);
-		const a = put(r, "tousuko", { x: CENTER.x + 4, y: CENTER.y });
-		const b = put(r, "tousuko", { x: CENTER.x - 4, y: CENTER.y + 2 });
-		const other = put(r, "hitodama", { x: CENTER.x, y: CENTER.y + 4 });
-		turn(r, { c: "play" });
-		ok(r.s.voice === null, "the voice was not used up");
-		ok(
-			a.status.paralyze > 0 && b.status.paralyze > 0,
-			"the same kind did not freeze",
-		);
-		ok(other.status.paralyze === 0, "another kind froze too");
-		const ev = r.act({ c: "play" });
-		ok(!ev.some((e) => e.t === "fx"), "played an empty gramophone");
-	},
-);
-
-test(
-	"floor",
 	"chase: the one behind a diagonal pair steps aside and comes around instead of standing still",
 	() => {
 		const r = arena("diag-pair");
@@ -3890,26 +3864,6 @@ test(
 				!DUNGEONS[d].items.some((e) => e.kind === "puyusword"),
 				`${d} drops the sword`,
 			);
-	},
-);
-
-test(
-	"boss",
-	"felling it keeps the voice in the gramophone (ROM専 taken home from a boss board: STORY.md §5.98)",
-	() => {
-		for (const d of BOSS_BOARDS) {
-			const { r, b } = bossArena(`boss-voice-${d}`, d, { pos: at(1, 0) });
-			r.s.voice = "funamushi";
-			b.hp = 1;
-			const dir = dirOf(1, 0) as Dir8;
-			for (let i = 0; i < 20 && !r.s.end; i++) {
-				b.x = r.p.x + 1;
-				b.y = r.p.y;
-				r.act({ c: "attack", dir });
-			}
-			ok(r.s.end?.kind === "clear", `${d}: ended as ${r.s.end?.kind}`);
-			ok(r.s.voice === "funamushi", `${d}: the voice became ${r.s.voice}`);
-		}
 	},
 );
 

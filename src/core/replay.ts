@@ -50,8 +50,6 @@ export const encodeCmd = (c: Command): string => {
 			return "o";
 		case "shoot":
 			return "f";
-		case "play":
-			return "v";
 		case "phase":
 			return "P";
 		case "name":
@@ -109,8 +107,6 @@ const decodeRaw = (t: string): Command | null => {
 			return rest === "" ? { c: "sort" } : null;
 		case "f":
 			return rest === "" ? { c: "shoot" } : null;
-		case "v":
-			return rest === "" ? { c: "play" } : null;
 		case "P":
 			return rest === "" ? { c: "phase" } : null;
 		case "n": {

@@ -83,7 +83,6 @@ test("encode/decode round-trips every command shape", () => {
 		{ c: "attack", dir: 0 },
 		{ c: "turn", dir: 5 },
 		{ c: "wait" },
-		{ c: "play" },
 		{ c: "pickup" },
 		{ c: "use", item: 12 },
 		{ c: "use", item: 12, target: 40 },

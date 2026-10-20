@@ -103,6 +103,9 @@ import {
 	openMainMenu,
 	pickItem,
 } from "../menu";
+
+const NONE_ACTION: MenuAction = { kind: "none" };
+
 import { openSettings } from "../settings";
 import { glossFor } from "../village/glossary";
 import { bossHomeLine, showRunEnd } from "../village/records";
@@ -125,6 +128,7 @@ import {
 } from "./render";
 import { restBeside, restPath, takeRestSkit } from "./restSkit";
 import { ROOM_SKIT_MS, takeRoomSkit } from "./roomSkit";
+import { openStatus } from "./statusView";
 import { zoneFor } from "./theme";
 
 /** 安価の のこりが これ 以下で 赤く。 */
@@ -1821,16 +1825,16 @@ export class Play {
 			case "map":
 				this.toggleMap();
 				return;
+			case "status":
+				// 左上の ステータス行を 押した：つよさの 窓（時間は 進まない）
+				await this.menu(openStatus(this.ctx, run).then(() => NONE_ACTION));
+				return;
 			case "stairs":
 				if (run.onStairs()) await this.exec({ c: "stairs" });
 				return;
 			case "sort":
 				// 持ち物の 整理（PC の O キー。時間は 進まない）
 				if (run.p.items.length > 1) await this.exec({ c: "sort" });
-				return;
-			case "voice":
-				// 蓄音機の 再生（録っていなければ ひとこと だけ）
-				await this.exec({ c: "play" });
 				return;
 			case "phase":
 				// 束音ロゼの すり抜けの ON／OFF（時間は 進まない）。解音ゼロは オートの ON／OFF
@@ -1862,6 +1866,7 @@ export class Play {
 		this.mapOn = false;
 		this.mapKey = null;
 		this.mapEl.classList.remove("shown");
+		this.hud.root.classList.remove("map-open");
 		this.ctx.input.fieldHoldEnabled = true;
 	}
 
@@ -1869,6 +1874,7 @@ export class Play {
 		this.mapOn = !this.mapOn;
 		this.mapKey = null;
 		this.mapEl.classList.toggle("shown", this.mapOn);
+		this.hud.root.classList.toggle("map-open", this.mapOn);
 		// 地図を開いているあいだは 画面を押さえても 歩かない（ゆっくり押しても タップになる）
 		this.ctx.input.fieldHoldEnabled = !this.mapOn;
 		this.ctx.se("cursor");
@@ -3437,9 +3443,6 @@ export class Play {
 						]);
 					} else if (e.kind === "explosion")
 						await this.flash("rgba(255,160,60,0.6)", 220);
-					// 蓄音機の 再生：画面が 一瞬 セピアに
-					else if (e.kind === "voice")
-						await this.flash("rgba(200,160,90,0.35)", fast ? 80 : 260);
 					// 敵の 特技：使った 敵が 光り、画面に その色。音の 区切りまで 待ってから 効き目の 行へ
 					else if (e.kind.startsWith("skill:")) {
 						const [color, label] = SKILL_LOOK[e.kind.slice(6)] ?? [
