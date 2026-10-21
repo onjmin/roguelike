@@ -1112,6 +1112,16 @@ const drawAmbient = (
 	ctx.globalAlpha = 1;
 };
 
+/** 地図の 線の 色（床の 色が 明るい 板は 紺、ほかは null＝白）。 */
+const mapLineOf = (floor: string): [number, number, number] | null => {
+	const r = Number.parseInt(floor.slice(1, 3), 16);
+	const g = Number.parseInt(floor.slice(3, 5), 16);
+	const b = Number.parseInt(floor.slice(5, 7), 16);
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55
+		? [20, 36, 110]
+		: null;
+};
+
 /** 全体の地図（見たことのある所だけ）。画面の上に半透明で重ねる。 */
 /** 地図の升目（デバイス画素）：1マスの大きさと 左上の位置。描くのも タップを マスに直すのも これで。 */
 /** 階の 使っている 範囲（壁でない マスを かこむ 四角）。地図は ここに 合わせて 大きく 描く。 */
@@ -1193,6 +1203,8 @@ export const drawMap = (
 		hideItems?: ReadonlySet<number>;
 		/** DrawOpts.traps と 同じ。 */
 		traps?: readonly Trap[];
+		/** 主人公の 点を 消している 間（点滅の 消えている 方）。 */
+		blinkOff?: boolean;
 	},
 ): void => {
 	const f = s.floor;
@@ -1206,15 +1218,33 @@ export const drawMap = (
 	if (!ctx) return;
 	// 画面は 暗くしない（トルネコ・シレンと 同じく、地図だけ うっすら 重ねる。まわりの 敵・床も 見える）
 	ctx.clearRect(0, 0, w, h);
+	// 地形は 塗らずに 壁との さかいを 線で 描く。線の 色は 板の 床の 明るさで（明るい 床なら 紺、暗い 床なら 白）。
+	// 紺の 線は 暗い 壁の 上では 沈むので、通れる 所を 白く うすく 敷いて 紙の ように する
+	const line = mapLineOf(themeFor(s.dungeon, f.depth).floorColor);
+	const [lr, lg, lb] = line ?? [255, 255, 255];
+	const open = (x: number, y: number): boolean => {
+		if (x < 0 || y < 0 || x >= l.w || y >= l.h) return false;
+		const i = y * l.w + x;
+		return f.statues?.includes(i) || l.tiles[i] !== T_WALL;
+	};
+	const lw = Math.max(1, Math.round(cell / 5));
+	ctx.fillStyle = line
+		? "rgba(255, 255, 255, 0.4)"
+		: "rgba(255, 255, 255, 0.12)";
+	for (let y = 0; y < l.h; y++)
+		for (let x = 0; x < l.w; x++)
+			if (f.seen[y * l.w + x] && open(x, y))
+				ctx.fillRect(mx + x * cell, my + y * cell, cell, cell);
+	ctx.fillStyle = `rgba(${lr}, ${lg}, ${lb}, 0.9)`;
 	for (let y = 0; y < l.h; y++)
 		for (let x = 0; x < l.w; x++) {
-			const i = y * l.w + x;
-			if (!f.seen[i]) continue;
-			const t = f.statues?.includes(i) ? 1 : l.tiles[i];
-			if (t === T_WALL) continue;
-			ctx.fillStyle =
-				t === 1 ? "rgba(90, 140, 255, 0.55)" : "rgba(120, 160, 255, 0.4)";
-			ctx.fillRect(mx + x * cell, my + y * cell, cell, cell);
+			if (!f.seen[y * l.w + x] || !open(x, y)) continue;
+			const px = mx + x * cell;
+			const py = my + y * cell;
+			if (!open(x, y - 1)) ctx.fillRect(px - lw, py - lw, cell + lw * 2, lw);
+			if (!open(x, y + 1)) ctx.fillRect(px - lw, py + cell, cell + lw * 2, lw);
+			if (!open(x - 1, y)) ctx.fillRect(px - lw, py - lw, lw, cell + lw * 2);
+			if (!open(x + 1, y)) ctx.fillRect(px + cell, py - lw, lw, cell + lw * 2);
 		}
 	// 印は 暗い ふちで かこむ（明るい 床の 上でも 見えるように）
 	const dot = (x: number, y: number, color: string, shrink = 0) => {
@@ -1244,7 +1274,7 @@ export const drawMap = (
 		)
 			dot(fi.x, fi.y, "#5ff0ff", Math.floor(cell / 4));
 	for (const m of opt.visibleMonsters) dot(m.x, m.y, "#ff5060");
-	dot(s.player.x, s.player.y, "#ffcf4a");
+	if (!opt.blinkOff) dot(s.player.x, s.player.y, "#ffcf4a");
 	if (opt.resume) {
 		ctx.strokeStyle = "rgba(255, 207, 74, 0.9)";
 		ctx.lineWidth = Math.max(1, cell / 4);

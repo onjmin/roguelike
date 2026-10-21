@@ -796,8 +796,10 @@ export class Play {
 			const pd = this.disp.get(PLAYER_ID);
 			const pre = !this.preUse && this.preWarp && pd ? this.preWarp : null;
 			const eye = pre && pd ? { x: pd.tx, y: pd.ty } : run.p;
-			// 地図は 動かない 絵なので、中身が 変わった ときだけ 描き直す（毎コマ 描くと 重い）
+			// 地図は 中身が 変わった ときと 主人公の 点が 点滅する ときだけ 描き直す（毎コマ 描くと 重い）
+			const blinkOff = Math.floor(performance.now() / 350) % 2 === 1;
 			const key = [
+				blinkOff,
 				run,
 				run.s.turn,
 				run.f,
@@ -837,6 +839,7 @@ export class Play {
 				visibleMonsters: vis,
 				mark: this.mapMark,
 				resume: this.lastTravel,
+				blinkOff,
 			});
 		}
 	}
