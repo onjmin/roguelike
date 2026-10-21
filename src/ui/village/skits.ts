@@ -15,7 +15,7 @@ import {
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import { loadProgress, loadRecords } from "../../engine/save";
-import { type FxRun, fxRoot, startFx } from "../../engine/sceneFx";
+import { FX_SE, type FxRun, fxRoot, startFx } from "../../engine/sceneFx";
 
 const KEY = "kiriko-roguelike/skits";
 
@@ -140,8 +140,9 @@ const play = async (
 			}
 			if (l.fx) {
 				fx?.end();
-				if (l.fx === "boom") s.se("explosion");
-				fx = startFx(fxRoot(), l.fx);
+				const se = l.fx === "boom" ? "explosion" : FX_SE[l.fx];
+				if (se) s.se(se);
+				fx = startFx(fxRoot(), l.fx, { caption: l.caption });
 				await fx.ready;
 			}
 			await line(s, l, mob);

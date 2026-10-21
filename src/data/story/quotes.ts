@@ -88,6 +88,8 @@ export type StoryPage = Cue & {
 	 * オチと 山場だけ（STORY.md §0）。
 	 */
 	fx?: SceneFx;
+	/** fx の 字（止め絵の 名札・予告編の 大きな 字・回想の 年の 札）。 */
+	caption?: string;
 	/** この 頁から 鳴らす 曲（data/audio/bgm.ts の 名前。null で 止める。村の 持ち帰りの 語りだけ。場面 専用の 曲）。 */
 	bgm?: string | null;
 	/**

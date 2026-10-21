@@ -11,6 +11,7 @@
 
 import type { Hit } from "../../engine/emote";
 import type { AnyCard } from "../../engine/sceneCard";
+import type { SceneFx } from "../../engine/sceneFx";
 import { propPicture } from "./pictures";
 
 /** 走る 1人。who は folk の 番（地図の 1〜9 → 0〜8）か キリコ。to は 地図の マス・キリコの となり・元の 所。 */
@@ -36,6 +37,10 @@ export type RestStep = {
 	pause?: number;
 	/** ツッコミの 音（engine/emote.ts の Hit。窓の 前に 鳴る）。 */
 	hit?: Hit;
+	/** 場面の エフェクト（engine/sceneFx.ts。スロー・止め絵・爆発を 背に など。続く 歩も 同じ fx なら 残る）。 */
+	fx?: SceneFx;
+	/** fx の 字（止め絵の 名札・予告編の 大きな 字）。 */
+	caption?: string;
 };
 
 export type RestSkit = {

@@ -115,7 +115,7 @@ export type SeLoudness = readonly [
 
 // <loudness:se> ここから下は pnpm loudness（scripts/measure-loudness.mjs）が書き換える。手で直さない。
 /**
- * 効果音ごとの実測と補正（2026-10-18、ffmpeg 8.0 の ebur128）。
+ * 効果音ごとの実測と補正（2026-10-20、ffmpeg 8.0 の ebur128）。
  * [素材 id, L, true peak, 補正 dB, 倍率, 鳴り始め ms, 鳴り終わり ms, 待つ ms]。
  * 行末は「区分 → 既定の設定での L」。
  */
@@ -170,6 +170,9 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	chiin: ["Wb0Nzr", -6.2, -1.4, -16.8, 0.145, 230, 3220, 1200], // field → -23.0
 	kusa: ["1oU7sv", -18.3, -4.1, -4.7, 0.582, 0, 350, 210], // field → -23.0
 	pencil: ["ZDkMVz", -38.3, -28.4, 12, 3.981, 130, 1630, 1200], // field → -26.3（補正の範囲の端）
+	slowIn: ["SKcIq6", -15.6, -9.3, -7.4, 0.427, 0, 700, 430], // field → -23.0
+	timeStop: ["eOS6BV", -19.8, -9.2, -3.2, 0.692, 100, 2650, 1200], // field → -23.0
+	trailerHit: ["YMkEEw", -15.7, -8.9, -7.3, 0.432, 0, 800, 440], // field → -23.0
 	encounter: ["qm03Mw", -19.2, -9.2, -1.8, 0.813, 360, 2390, 1200], // battle → -21.0
 	attackStart: ["n0fqek", -10.3, -3.6, -10.7, 0.292, 40, 290, 240], // battle → -21.0
 	attack: ["7JKd21", -5.9, -0.7, -15.1, 0.176, 20, 210, 180], // battle → -21.0

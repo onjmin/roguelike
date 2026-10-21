@@ -117,6 +117,8 @@ import {
 } from "../../engine/save";
 import { type CardRun, showCard } from "../../engine/sceneCard";
 import {
+	FX_BEFORE_WALK,
+	FX_SE,
 	type FxRun,
 	fxRoot,
 	type SceneFx,
@@ -569,6 +571,14 @@ const playCue = async (
 	}
 };
 
+/** 頁の エフェクトを 始める（添えの 効果音・名札や 予告の 字＝caption も）。 */
+const startPageFx = (s: Story, p: StoryPage): FxRun => {
+	const kind = p.fx as SceneFx;
+	const se = FX_SE[kind];
+	if (se && se !== p.se) s.se(se);
+	return startFx(fxRoot(), kind, { caption: p.caption });
+};
+
 /** 語りの 頁の 効果音（StoryPage.se）。seRepeat が あれば seGap ずつ あけて 重ねる（連打・鳴りやまない 音）。 */
 const playPageSe = async (s: Story, p: StoryPage): Promise<void> => {
 	if (!p.se) return;
@@ -913,6 +923,11 @@ export const returnScene = async (
 		if (p.look !== undefined) await s.look(p.look);
 		// 広場の チョークの 国境線（キリコが 走りだすと 伸びる）
 		if (p.chalk) drawChalkLine();
+		// スロー・爆発を 背に・予告編は 歩く 前に 始める（engine/sceneFx.ts の FX_BEFORE_WALK）
+		if (p.fx && !fx && FX_BEFORE_WALK.includes(p.fx)) {
+			fx = { kind: p.fx, run: startPageFx(s, p) };
+			await fx.run.ready;
+		}
 		// 走る 頁は 走りながら 音（線を 引く 音・足音）
 		let se: Promise<void> | null = null;
 		if (p.go) {
@@ -936,7 +951,7 @@ export const returnScene = async (
 		}
 		se ??= playPageSe(s, p);
 		if (p.fx && !fx) {
-			fx = { kind: p.fx, run: startFx(fxRoot(), p.fx) };
+			fx = { kind: p.fx, run: startPageFx(s, p) };
 			await fx.run.ready;
 		}
 		await se;

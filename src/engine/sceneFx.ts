@@ -3,6 +3,7 @@
 // - 見た目だけ（冒険の 乱数・状態・リプレイには さわらない。ゆらぎは 自前の 乱数）。
 // - 端末の「動きを へらす」（prefers-reduced-motion）では ゆれと 白い 光を やめ、粒を へらす。速さ「はやい」は 短く する。
 
+import { setSceneSlow } from "./sceneTime";
 import { settings } from "./settings";
 
 /** 場面の エフェクト。 */
@@ -18,7 +19,39 @@ export type SceneFx =
 	/** 草（下から 草が 生えて、ｗが 浮かぶ）。 */
 	| "kusa"
 	/** 回想（セピアと 四すみの 影。止め絵に せず 人は 動く。opt.caption で 左上に「2015年 夏」などの 札）。 */
-	| "memory";
+	| "memory"
+	/**
+	 * スローモーション（上下に 黒い 帯・色が 少し 冷える。場面の 時間が SLOW 倍：人の 歩き・しぐさ。engine/sceneTime.ts）。
+	 * 歩きだす 前に 始まる（FX_BEFORE_WALK）。
+	 */
+	| "slowmo"
+	/**
+	 * 止め絵の 決めポーズ（時間停止の 音・白い 光・集中線。人も 記号も 止まる。opt.caption で 左下に 名札）。
+	 * 歩いた あと（ポーズを 決めた ところ）で 止める。
+	 */
+	| "freeze"
+	/** 予告編（黒い 画面の まんなかに 大きな 字＝opt.caption。窓は その 下で 語る）。 */
+	| "trailer"
+	/** 爆発を 背に 歩く（画面の 上の ほうで 爆発・上下の 帯・スロー。歩きだす 前に 始まる）。 */
+	| "blast";
+
+/** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
+export const FX_BEFORE_WALK: readonly SceneFx[] = [
+	"slowmo",
+	"blast",
+	"trailer",
+];
+
+/** エフェクトに 添える 効果音（data/audio/sfx.ts。呼ぶ 側が 鳴らす）。 */
+export const FX_SE: Partial<Record<SceneFx, string>> = {
+	slowmo: "slowIn",
+	freeze: "timeStop",
+	trailer: "trailerHit",
+	blast: "explosion",
+};
+
+/** スローモーションの 速さ（場面の 時間の 倍率）。 */
+export const SLOW = 0.3;
 
 export type FxRun = {
 	/** 見せ場が 出おわった（この あとに 窓を 出す）。 */
@@ -195,12 +228,14 @@ const boom = (
 	k: number,
 	still: boolean,
 	bare: boolean,
+	/** 画面の 上の ほう（爆発を 背に 歩く 人の うしろ）。 */
+	high = false,
 ): FxRun => {
 	const L = layer(root, "fx-boom", BOOM_PX);
 	if (!L) return NONE;
 	const r = rng(0xb00);
 	const cx = L.w / 2;
-	const cy = L.h * 0.42;
+	const cy = L.h * (high ? 0.24 : 0.42);
 	const R = Math.min(L.w, L.h) * 0.36;
 	const jag = Array.from({ length: 11 }, () => 0.75 + r() * 0.45);
 	// 煙（火の玉が はじけた あと 広がって、少し ただよって 晴れる）
@@ -437,6 +472,83 @@ const kusa = (root: HTMLElement, k: number, still: boolean): FxRun => {
 	return { ready: sleep(400 * k), end };
 };
 
+/** 上下の 黒い 帯と 冷えた 色（スロー・爆発を 背に）。場面の 時間を SLOW 倍に して、end で もどす。 */
+const slowmo = (root: HTMLElement, k: number): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-slowmo";
+	root.appendChild(d);
+	void d.offsetWidth;
+	d.classList.add("on");
+	setSceneSlow(SLOW);
+	return {
+		ready: sleep(350 * k),
+		end: () => {
+			setSceneSlow(1);
+			d.classList.remove("on");
+			setTimeout(() => d.remove(), 350);
+		},
+	};
+};
+
+/** 止め絵：白い 光 → 色の 濃い 止め絵に 集中線、左下に 名札。人も 記号も 止まる。 */
+const freeze = (root: HTMLElement, k: number, caption?: string): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-freeze";
+	const lines = document.createElement("div");
+	lines.className = "fx-freeze-lines";
+	d.appendChild(lines);
+	if (caption) {
+		const c = document.createElement("span");
+		c.className = "fx-freeze-caption";
+		c.textContent = caption;
+		d.appendChild(c);
+	}
+	root.appendChild(d);
+	void d.offsetWidth;
+	d.classList.add("on");
+	setSceneSlow(0);
+	return {
+		ready: sleep(450 * k),
+		end: () => {
+			setSceneSlow(1);
+			d.remove();
+		},
+	};
+};
+
+/** 予告編：黒い 画面の まんなかに 大きな 字。 */
+const trailer = (root: HTMLElement, k: number, caption?: string): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-trailer";
+	const c = document.createElement("span");
+	c.className = "fx-trailer-caption";
+	c.textContent = caption ?? "";
+	d.appendChild(c);
+	root.appendChild(d);
+	void d.offsetWidth;
+	d.classList.add("on");
+	return {
+		ready: sleep(900 * k),
+		end: () => {
+			d.classList.remove("on");
+			setTimeout(() => d.remove(), 400);
+		},
+	};
+};
+
+/** 爆発を 背に：上の ほうで 爆発（白い 光なし）と スローの 帯。爆発を 待たずに 歩きだす。 */
+const blast = (root: HTMLElement, k: number, still: boolean): FxRun => {
+	const s = slowmo(root, k);
+	const b = boom(root, k, still, true, true);
+	return {
+		ready: s.ready,
+		end: () => {
+			b.end();
+			s.end();
+		},
+	};
+};
+
 /** 画面の 上の 層（#ui。画面の ない シミュレーションでは null）。 */
 export const fxRoot = (): HTMLElement | null =>
 	typeof document === "undefined" ? null : document.getElementById("ui");
@@ -466,5 +578,13 @@ export const startFx = (
 			return kusa(root, k, still);
 		case "memory":
 			return memory(root, k, opt.caption);
+		case "slowmo":
+			return slowmo(root, k);
+		case "freeze":
+			return freeze(root, k, opt.caption);
+		case "trailer":
+			return trailer(root, k, opt.caption);
+		case "blast":
+			return blast(root, k, still);
 	}
 };

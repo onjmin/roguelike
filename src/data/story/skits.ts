@@ -18,6 +18,8 @@ export type SkitLine = Cue & {
 	text: string;
 	/** この 窓の 前に 出す エフェクト（engine/sceneFx.ts。boom は 爆発の 音も）。calm か 寸劇の 終わりまで 残る（爆発の 煙は その 前に ひとりでに 晴れる）。 */
 	fx?: SceneFx;
+	/** fx の 字（止め絵の 名札・予告編の 大きな 字）。 */
+	caption?: string;
 	/** この 窓の 前に エフェクトを 消す（爆発の あと 元通りに なった ところ）。 */
 	calm?: true;
 };

@@ -85,7 +85,14 @@ import {
 	saveRun,
 } from "../../engine/save";
 import { type CardRun, showCard } from "../../engine/sceneCard";
-import { startFx } from "../../engine/sceneFx";
+import {
+	FX_BEFORE_WALK,
+	FX_SE,
+	type FxRun,
+	type SceneFx,
+	startFx,
+} from "../../engine/sceneFx";
+import { sceneSlow } from "../../engine/sceneTime";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import { TILE } from "../../engine/types";
@@ -724,7 +731,7 @@ export class Play {
 			sp?.x ?? run.p.x,
 			sp?.y ?? run.p.y,
 			sp?.dir ?? run.p.dir,
-			sp ? SCENE_STEP_MS : 0,
+			sp ? sceneStepMs() : 0,
 		);
 		// 同行者（core/guest.ts。たおれた・まだ 立っていない ときは 描かない）
 		const g = guestHere(run);
@@ -740,7 +747,7 @@ export class Play {
 				sc?.x ?? fo.x,
 				sc?.y ?? fo.y,
 				sc?.dir ?? 4,
-				sc ? SCENE_STEP_MS : fo === dash ? 220 : 0,
+				sc ? sceneStepMs() : fo === dash ? 220 : 0,
 			);
 		});
 		for (const m of run.f.monsters) {
@@ -3977,7 +3984,7 @@ export class Play {
 			const p = path[i];
 			const q = path[i - 1];
 			this.scenePut(w.who, p.x, p.y, dirOf(p.x - q.x, p.y - q.y) ?? 4);
-			await wait(SCENE_STEP_MS);
+			await wait(sceneStepMs());
 		}
 		// 着いたら 主人公の ほうを 向く（主人公は 行き先の ほうを 向いた まま）
 		if (w.who !== "kiriko") {
@@ -4079,11 +4086,31 @@ export class Play {
 		const wasBusy = this.busy;
 		this.busy = true;
 		let card: CardRun | null = null;
+		// 場面の エフェクト（スロー・止め絵・爆発 など。続く 歩も 同じ fx なら 残す）
+		const on: { fx: { kind: SceneFx; run: FxRun } | null } = { fx: null };
+		const startStepFx = async (st: RestStep): Promise<void> => {
+			if (!st.fx || on.fx) return;
+			const se = FX_SE[st.fx];
+			if (se) this.ctx.se(se);
+			const fx = {
+				kind: st.fx,
+				run: startFx(this.ctx.ui, st.fx, { caption: st.caption }),
+			};
+			on.fx = fx;
+			await fx.run.ready;
+		};
 		try {
 			for (const st of sk.steps) {
 				if (this.stopped || run.s.end) return;
+				if (on.fx && on.fx.kind !== st.fx) {
+					on.fx.run.end();
+					on.fx = null;
+				}
 				if (st.look !== undefined) await this.sceneLook(st.look);
+				// スロー・爆発を 背に は 歩く 前に（engine/sceneFx.ts の FX_BEFORE_WALK）
+				if (st.fx && FX_BEFORE_WALK.includes(st.fx)) await startStepFx(st);
 				if (st.go) await Promise.all(st.go.map((w) => this.sceneWalk(w)));
+				await startStepFx(st);
 				if (st.card !== undefined) {
 					if (st.card === null) {
 						card?.end();
@@ -4096,6 +4123,7 @@ export class Play {
 			}
 		} finally {
 			card?.end();
+			on.fx?.run.end();
 			await this.sceneHome();
 			this.camLook = null;
 			this.camSmooth = true;
@@ -4618,6 +4646,9 @@ const FRAME_MS = 17;
 
 /** 名所の 寸劇で 人が 1歩 すべる ms（restSkit）。 */
 const SCENE_STEP_MS = 150;
+
+/** スローモーションの あいだは ゆっくり（engine/sceneTime.ts。止め絵でも 0.2 倍で 歩ききる）。 */
+const sceneStepMs = (): number => SCENE_STEP_MS / Math.max(0.2, sceneSlow());
 
 const wait = (ms: number): Promise<void> =>
 	new Promise((r) => setTimeout(r, Math.max(0, ms)));

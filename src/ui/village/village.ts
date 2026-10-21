@@ -75,6 +75,7 @@ import {
 	walkRoute,
 } from "../../engine/longWalk";
 import { loadProgress } from "../../engine/save";
+import { sceneSlow } from "../../engine/sceneTime";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
 import {
@@ -633,7 +634,8 @@ export class Village {
 
 	private frame(t: number): void {
 		if (!this.running) return;
-		const dt = Math.min(50, t - this.last);
+		// 場面の スローモーション・止め絵（engine/sceneTime.ts。人の 歩き・しぐさ・記号が ゆっくりに なる）
+		const dt = Math.min(50, t - this.last) * sceneSlow();
 		this.last = t;
 		this.time += dt;
 		this.update(dt);

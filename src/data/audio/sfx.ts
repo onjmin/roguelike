@@ -120,6 +120,13 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		kusa: "rpgen:1oU7sv", // [Minecraft]草1
 		/** 鉛筆で 書く（怪文書・遺影）。 */
 		pencil: "rpgen:ZDkMVz", // writing_pencil
+		// 映画の 演出（engine/sceneFx.ts の FX_SE）
+		/** スローモーションに 入る。 */
+		slowIn: "rpgen:SKcIq6", // 予告中
+		/** 止め絵の 決めポーズ（時が 止まる）。 */
+		timeStop: "rpgen:eOS6BV", // [DIO]時間停止SE
+		/** 予告編の 字が 出る（どーん）。 */
+		trailerHit: "rpgen:YMkEEw", // 予告大
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {
