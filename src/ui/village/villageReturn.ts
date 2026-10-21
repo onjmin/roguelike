@@ -24,6 +24,7 @@
 import { saleRate } from "../../core/data/dungeons";
 import { CARRY_MAX, STORAGE_CAP, TOWN_STAGES } from "../../core/town";
 import { type DungeonId, instantClear, type Objective } from "../../core/types";
+import { KIRIKO } from "../../data/people/cast";
 import {
 	awayMobs,
 	type MobId,
@@ -576,7 +577,14 @@ const startPageFx = (s: Story, p: StoryPage): FxRun => {
 	const kind = p.fx as SceneFx;
 	const se = FX_SE[kind];
 	if (se && se !== p.se) s.se(se);
-	return startFx(fxRoot(), kind, { caption: p.caption });
+	// 温め・自主規制は キリコの 上（カメラが 動いても 追う）
+	const onKiriko = kind === "heat" || kind === "mosaic";
+	return startFx(fxRoot(), kind, {
+		caption: p.caption,
+		...(onKiriko
+			? { track: () => s.cellPoint?.(s.state.x, s.state.y) ?? null }
+			: {}),
+	});
 };
 
 /** 語りの 頁の 効果音（StoryPage.se）。seRepeat が あれば seGap ずつ あけて 重ねる（連打・鳴りやまない 音）。 */
@@ -955,6 +963,9 @@ export const returnScene = async (
 			await fx.run.ready;
 		}
 		await se;
+		// 顔の カットイン（キリコの 驚きの 顔。ひとりでに 消える）
+		if (p.cutin)
+			await startFx(fxRoot(), "cutin", { art: KIRIKO.portrait }).ready;
 		if (p.mob) await sayAs(s, p.mob, p.text, pageCue(p));
 		else await playPage(s, { ...p, ...pageCue(p) });
 	}

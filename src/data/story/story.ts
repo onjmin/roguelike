@@ -43,10 +43,13 @@ export const playPage = (
 	p.kiriko
 		? st.kiriko(p.text, p.kiriko, cueOf(p))
 		: p.nanashi
-			? st.say("nanj", p.text, { name: p.nanashi })
+			? st.say("nanj", p.text, { ...cueOf(p), name: p.nanashi })
 			: p.who
 				? st.say(p.who, p.text, cueOf(p))
-				: st.narrate(p.text);
+				: // 畳みかけ（auto）の 地の文は 押さずに 送る
+					p.auto
+					? st.say(null, p.text, cueOf(p))
+					: st.narrate(p.text);
 
 // ───────────────── 村に いない 仲間（まだ 帰ってきて いない） ─────────────────
 /**
