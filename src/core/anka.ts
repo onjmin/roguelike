@@ -252,6 +252,7 @@ export const tickAnka = (r: Run): void => {
 	const it = r.rng.pick(loot);
 	if (it) {
 		r.removeItem(it);
+		r.se("steal");
 		r.msg(`スレ民が${r.name(it)}をお持ち帰り`, "warn");
 	}
 };
