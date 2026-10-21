@@ -7,6 +7,7 @@ import { DUNGEON_IDS, DUNGEONS, floorsLabel } from "../core/data/dungeons";
 import { GAME_GUIDES } from "../data/arcade/guides";
 import { DUNGEON_NAMES } from "../data/story/story";
 import { type Guide, TOWN_GUIDES } from "../data/town/guides";
+import { loadProgress } from "../engine/save";
 import type { Ctx } from "./ctx";
 import { explain } from "./explain";
 import { infoWindow, listWindow } from "./list";
@@ -102,7 +103,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 					"敵をタップ",
 					"となりまで歩く（となりなら向いて、もう一度でこうげき）",
 				],
-				["キリコをタップ", "足元をしらべる"],
+				["主人公をタップ", "足元をしらべる"],
 				["十字キーのまん中", "タップで1回足踏み（長押しでつづける）"],
 			]) +
 			`<p class="hint">足踏みは敵が見えたり傷ついたらいったん止まる（指をはなしてもう一度）。<br>せっていで十字キーをかくしたり（画面をおさえて歩ける）、小さいボタン（向き・足元）を出したりできる。<br>右上の「地図」で地図を開け閉めでき、左上のステータスを押すと「つよさ」が開く。</p>`,
@@ -126,7 +127,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 				["LB", "押している間斜め固定"],
 				["X", "足元"],
 				["RB", "装備したボールを投げる"],
-				["RT", "すり抜けのON／OFF（束音ロゼ）"],
+				["RT", "すり抜けのON／OFF（束音ロゼ）・オートのON／OFF（解音ゼロ）"],
 				["START", "メニュー"],
 				["BACK", "地図"],
 			]),
@@ -164,7 +165,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 				["T", "投げる"],
 				["Q", "装備したボールを投げる"],
 				["C", "持ち物を整理"],
-				["O", "すり抜けのON／OFF（束音ロゼ）"],
+				["O", "すり抜けのON／OFF（束音ロゼ）・オートのON／OFF（解音ゼロ）"],
 				["I", "もちもの（すぐ開く）"],
 			]),
 	},
@@ -197,9 +198,9 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 			]) +
 			h("毎回はじめから") +
 			lines([
-				"レベルは毎回1から。持ち物はぷゆゆパン1つだけ（村に帰って持ち物がからっぽなら、ぷゆゆが持たせてくれる）。",
+				"レベルは毎回1から。持ち物はぷゆゆパン1つだけ（村に帰るたび、まだ持っていなければぷゆゆが持たせてくれる）。",
 				"倉庫が建つと、村で引き取った道具も持っていける（持ちこめない板は全体マップの札に出る）。",
-				"草・スレ・トリップ・杖は、はじめは名前がわからない（未識別）。使うか有識者スレで正体がわかる。持ち帰って倉庫にあずけてもわかる。",
+				"草・スレ・トリップ・杖は、はじめは名前がわからない（未識別）。草とスレは使えば正体がわかる。杖とトリップは効き目を見て当てるか、有識者スレで。持ち帰って倉庫にあずけてもわかる。",
 				"のろわれた装備ははずせない。",
 				"罠はふむまで見えない。",
 			]) +
@@ -216,21 +217,25 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 		value: "boards",
 		label: "植民地",
 		sub: "行き先の板",
-		html:
-			h("植民地") +
-			lines([
-				"ダンジョンはおんJの植民地（よその板）。港の桟橋で行き先をえらぶ。",
-				"板ごとに階の数と決まりがちがう。入口の立て札で読める。",
-			]) +
-			// 隠しの 板は のせない（見つけてからの お楽しみ）
-			DUNGEON_IDS.filter((d) => !DUNGEONS[d].secret)
-				.map(
-					(d) =>
-						h(
-							`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${floorsLabel(d)}階`,
-						) + lines([...DUNGEON_NAMES[d].rules]),
-				)
-				.join(""),
+		// 開いた 板だけ（開く 前の 板・隠しの 板は のせない。見つけてからの お楽しみ）。開くたびに かわるので 開く ときに 作る
+		get html() {
+			const open = loadProgress().unlocked;
+			return (
+				h("植民地") +
+				lines([
+					"ダンジョンはおんJの植民地（よその板）。港の桟橋で行き先をえらぶ。",
+					"板ごとに階の数と決まりがちがう。港の全体マップの札で読める。",
+				]) +
+				DUNGEON_IDS.filter((d) => !DUNGEONS[d].secret && open.includes(d))
+					.map(
+						(d) =>
+							h(
+								`${DUNGEON_NAMES[d].name}（${DUNGEON_NAMES[d].nick}）　${floorsLabel(d)}階`,
+							) + lines([...DUNGEON_NAMES[d].rules]),
+					)
+					.join("")
+			);
+		},
 	},
 	{
 		value: "thread",
@@ -245,7 +250,7 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 			]) +
 			h("安価") +
 			lines([
-				"ときどきスレのだれかからお題が来る。これが安価（「>>123　が草を1つ飲む」＝いまのレス番のキリコに「草を飲め」）。安価は絶対。",
+				"ときどきスレのだれかからお題が来る。これが安価（「>>123　が草を1つ飲む」＝いまのレス番の主人公に「草を飲め」）。安価は絶対。",
 				"お題は草を飲む・スレを読む・何か投げる・パンを食う・敵をたおす・寝る・攻撃を受ける・杖をふる・道具を置く・装備をかえる・罠を踏む・レベルを上げる・足踏み。持ち物でできるものしか来ない。",
 				"草は「飲む」なので食ったことにならない。寝るは罠や呪文で眠ってもいい。攻撃は当たったものだけ数える。",
 				"罠は動かなくても踏めばいい。装備は外すだけではだめ。足踏みは眠っているあいだは数えない。",
@@ -260,15 +265,15 @@ const PAGES: { value: string; label: string; sub: string; html: string }[] = [
 		html:
 			h("帰り道") +
 			lines([
-				"いちばん底で目的の品（風呂板なら「長湯スレ」）を拾うと、階段が上り向きになる。",
+				"いちばん奥（上りの板ならてっぺん）で目的の品（パン板なら「食パンの国旗」）を拾うと、階段が帰る向き（下りの板なら上り、上りの板なら下り）になる。",
 				"帰りの階には何も落ちていない。行きで集めた道具でのぼりきろう。",
 				"帰り道では満腹度はへらない（持ち帰る品で胸がいっぱい）。",
+				"帰り道でも、1000レスで埋まったり落とし穴に落ちたりすると、下の階へ落ちる。",
 				"地上までもどれば、冒険はおしまい。",
 			]),
 	},
 	{
 		value: "boss",
-				"帰り道でも、1000レスで埋まったり落とし穴に落ちたりすると、下の階へ落ちる。",
 		label: "ボス",
 		sub: "いちばん底で待つ",
 		html:

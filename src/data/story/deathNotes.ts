@@ -107,6 +107,8 @@ const FIXED: Record<string, readonly string[]> = {
 		"炎上案件の延焼で燃えつきた",
 	],
 	チギュリパンにあたった: ["カビたパンを残さず食べて力つきた"],
+	// 荒らし草（HP 1 で 耐える）・諸刃の杖（HP の 半分を 切り上げて 残す）では いまは たおれないので この 2つは 出ない
+	// （core/effects.ts）。hurtPlayer に 死因として 渡して いるので、決まりが かわった ときの ために 文は 残す
 	荒らし草を飲んだ: ["荒らし草の一気飲みで散った"],
 	諸刃の杖でたおれた: ["自分で振った諸刃の杖で散った"],
 	冒険をやめた: ["そっ閉じで冒険をやめた"],
@@ -266,8 +268,9 @@ export const deathSpecial = (
 	if (starved && p.status.sleep > 0) return "寝たまま餓死した";
 	const herbs = of("h_heal");
 	if (herbs >= 5) return `草を${herbs}つ残して散った`;
+	// 帰り道は 階段の 向きが 逆（下りの 板なら 上り）
 	if (!fell && near(f.stairs, p) === 0)
-		return dg.up
+		return !!dg.up !== s.returning
 			? "階段に立ったまま上らなかった"
 			: "階段に立ったまま降りなかった";
 	if (!fell && end.depth > 1 && f.turns <= 1)

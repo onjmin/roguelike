@@ -21,7 +21,7 @@ import type {
 	SettlementSpec,
 } from "./data/dungeons";
 import { ITEMS } from "./data/items";
-import { MONSTERS, monstersFor, SWAP_BREADS } from "./data/monsters";
+import { MONSTERS, monstersFor, onBoard, SWAP_BREADS } from "./data/monsters";
 import { canSee } from "./fov";
 import { DIRS8, type Pos, step } from "./geom";
 import { itemTableOf } from "./item";
@@ -727,6 +727,36 @@ const placeStatues = (r: Run, f: Floor, start: Pos): void => {
 	}
 };
 
+/**
+ * その 階で 湧く 敵の 顔ぶれ。本編の 何階ぶんか（表は もっと の 30階まで。それより 深い 階は 30階の 顔ぶれ）で 引き、
+ * 板ごとの 出やすさ（data/dungeons.ts の foes。0 は 出ない）を かける。foes で 多めに した 敵が その 板の
+ * 強さの 範囲では どの 階でも 出ない ときは、1階から 出す（寄り道の 板の 気風：おんたこの 顔真っ赤など。本筋の 板の foes は 強さの 範囲の 敵だけ：
+ * src/sim/monsterTests.ts）。外から 足す 敵は うしろに 並べる（足さない 板の 乱数の 順は かわらない）。
+ */
+export const foeTable = (r: Run): MonsterDef[] => {
+	const foes = r.dungeon.foes ?? {};
+	const here = monstersFor(
+		Math.max(1, Math.min(30, r.levelAt(r.f.depth))),
+		r.s.dungeon,
+	);
+	// 板の どの 階の 強さでも 出ない 敵だけ 足す（強さの 範囲で 出る 敵は ふつうに その 階から：本筋の 板は かわらない）
+	const lv = r.dungeon.level.slice(1).map((l) => Math.max(1, Math.min(30, l)));
+	const lo = Math.min(...lv);
+	const hi = Math.max(...lv);
+	const extra = Object.entries(foes)
+		.filter(([id, w]) => w > 0 && !here.some((m) => m.id === id))
+		.map(([id]) => MONSTERS[id])
+		.filter(
+			(m): m is MonsterDef =>
+				!!m &&
+				!m.boss &&
+				!m.hunter &&
+				onBoard(m, r.s.dungeon) &&
+				(m.floors[1] < lo || m.floors[0] > hi),
+		);
+	return [...here, ...extra].filter((m) => (foes[m.id] ?? 1) > 0);
+};
+
 /** モンスターを出す。kind が null なら その階の表から選ぶ。 */
 export const spawnMonster = (
 	r: Run,
@@ -739,13 +769,8 @@ export const spawnMonster = (
 	let def: MonsterDef | undefined;
 	if (kind) def = MONSTERS[kind];
 	else {
-		// 敵の顔ぶれは 本編の何階ぶんか で引く（表は もっと の 30階まで。それより深い階は30階の顔ぶれ）
-		// 板ごとの 出やすさ（data/dungeons.ts の foes。0 は 出ない）
 		const foes = r.dungeon.foes ?? {};
-		const list = monstersFor(
-			Math.max(1, Math.min(30, r.levelAt(f.depth))),
-			r.s.dungeon,
-		).filter((m) => (foes[m.id] ?? 1) > 0);
+		const list = foeTable(r);
 		if (!list.length) return null;
 		def = rng.weighted(list, (m) => m.weight * (foes[m.id] ?? 1));
 	}

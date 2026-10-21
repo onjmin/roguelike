@@ -108,7 +108,7 @@ export const TIPS: readonly Tip[] = [
 		key: "well",
 		when: (_, unlocked) => !unlocked.includes("hidden"),
 		lines: [
-			"「広場の古井戸、底が見えないって。\n電池板の底まで行けばわかるとか」",
+			"「広場の古井戸、底が見えないって。\n電池板のてっぺんまで行けばわかるとか」",
 		],
 	},
 ];

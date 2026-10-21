@@ -139,6 +139,7 @@ import {
 	chooseHero,
 	chosenHero,
 	type QuestHero,
+	questFlag,
 	questStage,
 	takeWorryNews,
 	unlockedHeroes,
@@ -352,8 +353,24 @@ export const suspendedFirst = async (
  */
 export const goalsNow = (): Record<DungeonId, ObjectiveInfo> => {
 	const prog = withDevEvent(loadProgress());
+	const town = loadTown();
+	const accepted = loadEscort().accepted;
 	return Object.fromEntries(
-		DUNGEON_IDS.map((x) => [x, objectiveFor(x, prog)]),
+		DUNGEON_IDS.map((x) => {
+			const g = objectiveFor(x, prog);
+			// 依頼の 同行者を 連れて いく 板は 送り届けに しない（core/run.ts の Run.create と 同じ。全体マップの 札も そろえる）
+			const guest =
+				g.objective === "deliver" &&
+				!!escortFor(
+					x,
+					accepted,
+					prog.cleared,
+					previewStage() ?? town.stage,
+					town.points,
+					chosenHero(),
+				);
+			return [x, guest ? { objective: "fetch" } : g];
+		}),
 	) as Record<DungeonId, ObjectiveInfo>;
 };
 
@@ -920,6 +937,7 @@ const playQuestLines = async (
 		const text = questText(l, deaths);
 		if (l.who === null) await s.narrate(text);
 		else if (l.who === "kiriko") await s.kiriko(text, "voice", cueOf(l));
+		else if (l.who === "mob") await sayAs(s, l.mob, text, cueOf(l));
 		else await s.say(l.who, text, cueOf(l));
 	}
 };
@@ -937,7 +955,6 @@ export const heroQuestScript = async (
 	const q = HERO_QUESTS[who];
 	const stage = questStage(who);
 	if (stage === "unlocked") return false;
-		else if (l.who === "mob") await sayAs(s, l.mob, text, cueOf(l));
 	if (stage === "done") {
 		await playQuestLines(s, q.offer);
 		unlockHero(who);
@@ -961,6 +978,8 @@ export const heroQuestScript = async (
 	// 悩みを かかえて いなければ ふだんの ひとこと（帰る たびに 引く。engine/heroes.ts の rollHeroWorries）
 	if (stage !== "asked") return false;
 	await playQuestLines(s, q.worry);
+	// 聞いた（あらすじに 持ちかけの 1行が 出る。data/story/synopsis.ts）
+	addFlag(questFlag.heard(who));
 	if ((await s.choose([...q.menu], { cancel: 1 })) !== 0) {
 		await playQuestLines(s, q.decline);
 		return true;

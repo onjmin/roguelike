@@ -754,13 +754,18 @@ test("持ちかけ: ロゼは 運ばれた 本当の 回数と のべの 距離�
 test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合ごとの 1行）", () => {
 	const cl = ["shallow", "kinoko"] as RunState["dungeon"][];
 	ok(!(synopsisHtml(cl, []) ?? "").includes("仲間の"), "before worry");
+	// 悩みの 旗は 帰りの 抽選で 立つ。本人の 打ち明け話を 聞く までは 持ちかけの 1行を 出さない
+	ok(
+		!(synopsisHtml(cl, ["q_roze_ask"]) ?? "").includes("仲間の"),
+		"asked line before hearing the worry",
+	);
 	for (const [flag, st] of [
-		["q_roze_ask", "asked"],
+		["q_roze_ask,q_roze_heard", "asked"],
 		["q_roze", "accepted"],
 		["q_roze_ok", "done"],
 		["hero_roze", "unlocked"],
 	] as const) {
-		const html = synopsisHtml(cl, [flag]) ?? "";
+		const html = synopsisHtml(cl, flag.split(",")) ?? "";
 		ok(html.includes("仲間の話"), `${st} section`);
 		ok(html.includes(HERO_QUESTS.roze.synopsis[st]), `${st} line`);
 	}

@@ -7,10 +7,10 @@
 //   底（B4）は 敵の いない パン王国の 城下町で、持ち帰るのは 食パンの 国旗。戦う 階は B1〜B3。
 // - main：風呂板（おふJ）の 12階。湯治：HP の 自然回復が 1.5倍。
 //
-// 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底）へは
+// 倉庫から 村で 引き取った 道具は たいていの 板へ 持ちこめる。noCarry の 板（電池板・離島板・過去ログの底・†闇の板†）へは
 // 持ちこめず、出るときに ンゴ姉が 倉庫へ もどす（わけは data/town/town.ts の CARRY_REFUSE）。
 // - deep：電池板（でんJ。過疎で 謎が多い）の 16階の 鉄塔。充電：杖の 回数が 1 多い。
-//   ぜんぶ未識別・ぷゆゆパンと不食の指輪は出ない・罠が多い・祭りが出やすい・スレが 早く 埋まる。
+//   ぜんぶ未識別・不食の指輪は出ない・ぷゆゆパンは 少し・祭りが出やすい・スレが 早く 埋まる（罠の 数は 本編と 同じ 決まり）。
 //   8階は 発電所の 見学コース（敵なし）。てっぺんで 町を 盛り上げて きた 名無し（やきう）と 戦う。
 //
 // 目的（objective）は 板ごとに 筋に 合わせる：持ち帰り（fetch：パン板・過去ログの底）、底の ボスを たおす
@@ -380,7 +380,7 @@ export const SHALLOW_ITEMS: readonly ItemWeight[] = [
 	{ kind: "leather", weight: 1 }, // 防御2。おなかが へりにくい。もっと深い迷宮で要る知恵を ここで見せる
 	{ kind: "bronze", weight: 2 }, // 防御3。ありふれた盾
 	{ kind: "mirror", weight: 1 }, // 防御5。錆びない
-	{ kind: "scale", weight: 2 }, // 防御4。にょっす牛（レベル4〜）・毒矢の罠（レベル4〜）の ちから下げを防ぐ、を教える
+	{ kind: "scale", weight: 2 }, // 防御4。にょっす牛（レベル4〜）の ちから下げを防ぐ、を教える（毒入りの デッドボールは 防がない：トルネコ1の うろこの盾）
 	{ kind: "steelsh", weight: 1 }, // 防御6。鋼鉄の盾の位置。いちばん強い盾で 1枚だけ
 	// 矢 5（ちょっと は 矢が多め：7.8%）
 	{ kind: "a_wood", weight: 3 }, // 寝落ち民・ゾンJ民を 離れて削る
@@ -448,7 +448,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	// 盾 14
 	{ kind: "leather", weight: 3 }, // おなかが半分。もっと の命綱（もっと の盾の 20%）
 	{ kind: "bronze", weight: 3 }, // ありふれた盾
-	{ kind: "scale", weight: 2 }, // 毒で ちからを下げられない（毒草8・チギュリパン5 の迷宮で 価値が上がる）
+	{ kind: "scale", weight: 2 }, // 敵の 毒攻撃で ちからを下げられない（毒草・チギュリパンは 防がない：トルネコ1の うろこの盾）
 	{ kind: "mirror", weight: 2 }, // 錆びない。風呂キャンセル界隈（レベル8〜15）・錆びの罠 対策
 	{ kind: "steelsh", weight: 2 }, // 防御6。本編1 × 1.5 を切り上げ
 	{ kind: "fireward", weight: 1 }, // ワイバーンの炎が半分。深い階で強いので 1枚のまま
@@ -457,7 +457,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "r_might", weight: 3 }, // もっと で いちばん多い指輪の1つ。のろいなら −3 なので 当たりとは かぎらない
 	{ kind: "r_hunger", weight: 3 }, // 本編1 → 3（もっと の ハラペコ は 指輪で いちばん多い）。食べものを HP に 変える（回復も 2倍）。のろわれて外せないと 食べものが半分の価値
 	{ kind: "r_clamor", weight: 2 }, // マイナス（ザメハ）。本編1 → 2
-	{ kind: "r_trap", weight: 1 }, // 罠7〜9の階で 強すぎるので 1つだけ（もっと でも 13/256 と少ない）
+	{ kind: "r_trap", weight: 1 }, // 罠が 多い 深い 階で 強すぎるので 1つだけ（もっと でも 13/256 と少ない）
 	{ kind: "r_awake", weight: 1 }, // 本編と同じ
 	{ kind: "r_purity", weight: 1 }, // 本編と同じ（解毒草・うろこの盾が ほかにある）
 	{ kind: "r_stealth", weight: 1 }, // 祭りが多い迷宮で 強い（もっと の とうぞく 11/256）。1つだけ
@@ -477,14 +477,14 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	{ kind: "h_sleep", weight: 5 }, // 飲めば マイナス。本編3 → 5
 	{ kind: "h_antidote", weight: 6 }, // 毒草8・チギュリパン5・にょっす牛・毒矢の罠 が 多いので 本編3 → 6
 	{ kind: "h_fire", weight: 2 }, // もっと では 消えた 火炎草。1つ減らして 本編より まれに
-	{ kind: "h_sight", weight: 3 }, // 罠7〜9 と 透明あぼーん（見えない。レベル15〜）に。本編2 → 3
+	{ kind: "h_sight", weight: 3 }, // 罠と 透明あぼーん（見えない。レベル15〜）に。本編2 → 3
 	// スレ 58（未識別）
 	{ kind: "s_appraise", weight: 12 }, // 本編8 × 1.5。マイナスの品が多いぶん 階あたりは 本編と同じに保つ
 	{ kind: "s_whet", weight: 5 }, // 30階ぶんの 装備の育ち。本編3 × 1.5 を切り上げ
 	{ kind: "s_temper", weight: 5 }, // 同じ
 	{ kind: "s_uncurse", weight: 4 }, // 指輪・装備が ふえ、のろいの数も ふえるので 本編2 → 4
 	{ kind: "s_rustproof", weight: 1 }, // もっと では 消えた メッキ。1枚だけ
-	{ kind: "s_map", weight: 6 }, // 罠7〜9 を見せる。本編3 → 6
+	{ kind: "s_map", weight: 6 }, // 罠を見せる。本編3 → 6
 	{ kind: "s_sense", weight: 2 }, // もっと では 消えた 地獄耳。本編と同じ2枚（階あたり 2/3）
 	{ kind: "s_treasure", weight: 2 }, // もっと では 消えた 千里眼。本編と同じ2枚
 	{ kind: "s_hold", weight: 5 }, // 本編3 × 1.5 を切り上げ（もっと にも ある）
@@ -512,7 +512,7 @@ export const DEEP_ITEMS: readonly ItemWeight[] = [
 	// 矢 9
 	{ kind: "a_wood", weight: 6 }, // 本編4 × 1.5
 	{ kind: "a_iron", weight: 3 }, // 本編2 × 1.5
-	// 食べもの 23（ぷゆゆパンは 入れない。もっと の 片親パン:チギュリパン ≒ 2:1）
+	// 食べもの 19（ぷゆゆパンは 少しだけ。もっと の 片親パン:チギュリパン ≒ 3:1）
 	// 床の パンは 1階 25% ほど（多いと 始めの 200% と お弁当・パン兵の ぶんが まるまる 余る）
 	{ kind: "f_bread", weight: 13 }, // +50%（スレが 早く 進む ぶん 多く）
 	{ kind: "f_large", weight: 2 }, // 16階 ある ので 大きな パンも 少し
@@ -1280,7 +1280,9 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			cause: "大たこのみんをたおした",
 		},
 		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ。怒りの レスで スレが あがりつづけるので、dat落ちの霊は 出ない
-		// （1階から 怒るので、素手の Lv1 で 3発 かかる 霊が 怒って 2回ずつ なぐり、1階で 倒れる 冒険が 19% あった → 5%。2026-10-04 ボット）
+		// （1階から 怒るので、素手の Lv1 で 3発 かかる 霊が 怒って 2回ずつ なぐり、1階で 倒れる 冒険が 19% あった → 5%。2026-10-04 ボット）。
+		// 顔真っ赤たちは 本編の 20階より 深い 強さだが、寄り道の 板なので 1階から 出す（core/floor.ts の foeTable。2026-10-20 作者：
+		// 「出す方に倒して。本筋以外の ダンジョンは あまり バランス 考えなくて よい」）
 		foes: { oni: 3, ninja: 1.5, fallen: 1.5, hitodama: 0 },
 		floors: 10,
 		items: MAIN_ITEMS,
@@ -1363,7 +1365,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "祭りの親分マシーをたおした",
 		},
-		// 野次馬（コピペ）・群れ（VIPPER）・炎上
+		// 野次馬（コピペ）・群れ（VIPPER）・炎上。VIPPER・炎上案件は 本編の 13階より 深い 強さだが、寄り道の 板なので 1階から 出す
 		foes: { copipe: 2, yuki: 2, bomb: 2 },
 		floors: 10,
 		items: MAIN_ITEMS,
@@ -1536,6 +1538,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 最前線：塹壕（通路だらけ・縦に 2本）と 小部屋の 陣地
 		layouts: [{ shapes: { grid: 2, dense: 2, maze: 2, ladder: 1 } }],
 		objective: "fetch",
+		// 公安（特定班）・連投荒らし・VIPPER は 本編の 13階より 深い 強さだが、寄り道の 板なので 1階から 出す
 		foes: { eye: 2, ninja: 2, yuki: 1.5, copipe: 1.5 },
 		floors: 10,
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),

@@ -718,7 +718,7 @@ export type Town = {
 	 */
 	bag: Item[];
 	/**
-	 * ぷゆゆの お弁当（ぷゆゆパン）を もらって いる。村に 帰って 持ち物（bag）が からっぽなら ぷゆゆが 持たせる
+	 * ぷゆゆの お弁当（ぷゆゆパン）を もらって いる。村に 帰って まだ もらって いなければ ぷゆゆが 持たせる
 	 * （ui/village/villageReturn.ts の lunchScript）。出るときに 持っていく（持ちこめない 板でも。倉庫の 道具とは べつ）。
 	 */
 	lunch: boolean;
@@ -964,7 +964,7 @@ export const depositItem = (i: number): void => {
 	saveTown(t);
 };
 
-/** ぷゆゆの お弁当を 持たせる（持ち物が からっぽで まだ もらって いなければ）。持たせたら true。 */
+/** ぷゆゆの お弁当を 持たせる（まだ もらって いなければ。倉庫の 道具を 持って いても）。持たせたら true。 */
 export const giveLunch = (): boolean => {
 	const t = loadTown();
 	// 倉庫から 引き取った 道具を 持って いても もらえる（持ちこむと 飢えやすく なる 罰に しない。2026-10-17 レビュー）

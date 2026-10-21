@@ -208,7 +208,7 @@ export class Run {
 		dungeon: DungeonId = "main",
 		carry: readonly Item[] = [],
 		objective: Objective = "fetch",
-		/** ぷゆゆの お弁当（始めの持ち物）を 持って 出るか（村で 引き取った 道具が あると もらえない）。 */
+		/** ぷゆゆの お弁当（始めの持ち物）を 持って 出るか（村に 帰るたび、まだ 持って いなければ もらえる：engine/save.ts の giveLunch）。 */
 		lunch = true,
 		/** 冒険に 出る 主人公（core/data/heroes.ts。乱数は 引かない）。 */
 		hero: HeroId = "kiriko",
@@ -948,12 +948,12 @@ export class Run {
 		if (this.eventSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.eventReached();
 		// 目的が bring：底で 人が 加わり、品を もらって 帰り道に なる（集落なら key の 人に 話してから）
-		// 見せ場の 階：着いた ときの 掛け合いと 映画の 演出（core/setpiece.ts）
-		arriveSetPiece(this);
 		if (this.bringSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.bringJoin();
 		// 競争：底で 先に 着いて いた ロゼとの 掛け合い（core/race.ts）
 		raceArrive(this);
+		// 見せ場の 階：着いた ときの 掛け合いと 映画の 演出（core/setpiece.ts）
+		arriveSetPiece(this);
 	}
 
 	/** 目的が bring：底の 人が 加わり、品を もらって 帰り道に なる。 */
@@ -1066,12 +1066,12 @@ export class Run {
 				this.dungeon.up
 					? "これより上へは行けないようだ"
 					: "これより下へは行けないようだ",
-		// 鯖落ち寸前の 階から 脱出した（core/setpiece.ts）
-		leaveSetPiece(this);
 			);
 			return false;
 		}
 		this.se("stairs");
+		// 鯖落ち寸前の 階から 脱出した（core/setpiece.ts）
+		leaveSetPiece(this);
 		if (this.s.returning) {
 			const next = this.s.depth - 1;
 			if (next <= 0) {
@@ -1670,8 +1670,6 @@ export class Run {
 				if (
 					!next ||
 					m.nextAt < next.nextAt ||
-		// 見せ場：籠城の 波・脱出の 加速・潜入の 見張り（core/setpiece.ts）
-		tickSetPiece(this);
 					(m.nextAt === next.nextAt && m.uid < next.uid)
 				)
 					next = m;
@@ -1689,6 +1687,8 @@ export class Run {
 		this.tickStatus();
 		if (this.f !== f) return;
 		tickAmbush(this);
+		// 見せ場：籠城の 波・脱出の 加速・潜入の 見張り（core/setpiece.ts）
+		tickSetPiece(this);
 		// 競争：1階の ロゼは 壁を 抜けて 階段へ 走る（core/race.ts）
 		tickRace(this);
 

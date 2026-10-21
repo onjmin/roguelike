@@ -6,7 +6,7 @@
 // どれも 起きた ことを なぞる だけで、先の どんでん返しは 言わない。
 
 import type { DungeonId } from "../../core/types";
-import { QUEST_HEROES, questStage } from "../../engine/heroes";
+import { QUEST_HEROES, questFlag, questStage } from "../../engine/heroes";
 import { loadProgress } from "../../engine/save";
 import { HERO_QUESTS } from "../people/heroQuests";
 import { REVIVE_AREAS, revivedAreas } from "../town/revival";
@@ -137,7 +137,19 @@ type Chapter = {
 	done: (c: readonly DungeonId[], f: readonly string[]) => boolean;
 	title: string;
 	sum: string;
+	/**
+	 * 持ち帰った あとの 場面（帰りの 2幕目）を まだ 見て いない ときの 要約（seen が false の あいだ）。
+	 * 見て いない 場面の ことを 先に 書かない。
+	 */
+	before?: { seen: (f: readonly string[]) => boolean; sum: string };
 };
+
+/**
+ * 転の 停電を 見た・知った（ui/village/villageReturn.ts の tenScript が「ten」、転を 見ずに 停電の 知らせで
+ * 知った ときは ui/village/sceneSky.ts の BLACKOUT_TOLD）。
+ */
+const blackoutSeen = (f: readonly string[]): boolean =>
+	f.includes("ten") || f.includes("toldBlackout");
 
 /** 本筋の 章（起きた 順）。 */
 const MAIN_CHAPTERS: readonly Chapter[] = [
@@ -155,6 +167,11 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 		done: (c) => c.includes("main"),
 		title: "風呂板",
 		sum: "銭湯を閉めたのは、42℃派の立てこもりだった。決着は41.5℃。なのにキリコが追いだきを連打して源泉が噴き、町じゅうの蛇口から41.5℃のお湯が出た。ロゼが「強」に押しこんで、港の海まで41.5℃になった。その夜、町じゅうが停電した。町の電気は、ずっと電池板から来ていた。生き返った通りまで、ぜんぶ消えた。",
+		// 停電は 転（帰りの 2幕目）で 見せる。見る までは 海が わいた ところまで
+		before: {
+			seen: blackoutSeen,
+			sum: "銭湯を閉めたのは、42℃派の立てこもりだった。決着は41.5℃。なのにキリコが追いだきを連打して源泉が噴き、町じゅうの蛇口から41.5℃のお湯が出た。ロゼが「強」に押しこんで、港の海まで41.5℃になった。",
+		},
 	},
 	{
 		done: (c) => c.includes("deep"),
@@ -168,17 +185,27 @@ const MAIN_CHAPTERS: readonly Chapter[] = [
 	},
 ];
 
-/** 本筋の 次の 行き先。 */
+/** 次の 行き先が 開いた 知らせを まだ 見て いない（帰りの 2幕目を 待つ あいだ）ときの「つぎ：」。 */
+export const NEXT_HELD = "蓄音機の前へ。やきうが続きの話をする";
+
+/**
+ * 本筋の 次の 行き先。その 板が 開いた 知らせ（Progress.news）が まだ 残って いれば、行き先は 2幕目の 場面
+ * （第一話→第二話の つなぎ・第二話→第三話の つなぎ・転の あとの 知らせ）で 語るので 先に 書かない。
+ */
 const mainNext = (
 	c: readonly DungeonId[],
 	open: readonly DungeonId[],
+	news: readonly DungeonId[],
 ): string | null => {
+	const to = (d: DungeonId, text: string) =>
+		news.includes(d) ? NEXT_HELD : text;
 	if (!c.includes("main"))
 		return open.includes("main")
-			? "風呂板へ。湯守の長湯スレ"
-			: "きのこ板へ。パン板への仕返しの行進を追う";
-	if (!c.includes("deep")) return "電池板へ。いちばん下の主電源";
-	if (!c.includes("hidden")) return "広場の古井戸から、過去ログの底へ";
+			? to("main", "風呂板へ。湯守の長湯スレ")
+			: to("kinoko", "きのこ板へ。パン板への仕返しの行進を追う");
+	if (!c.includes("deep")) return to("deep", "電池板へ。鉄塔のてっぺんの主電源");
+	if (!c.includes("hidden"))
+		return to("hidden", "広場の古井戸から、過去ログの底へ");
 	return null;
 };
 
@@ -191,26 +218,34 @@ const latest = (
 
 /**
  * あらすじの 中身（パン板を 持ち帰る 前は null）。生き返った 通りの 数・本筋の 要約・仲間の 依頼・「つぎ：」の 行き先。
- * open は 開いている 板（風呂板は きのこ板で 5回 倒れても 開く）。
+ * open は 開いている 板（前の 版の 記録では きのこ板を 持ち帰らずに 風呂板が 開いて いる ことが ある）。
+ * news は 開いた 知らせを まだ 見て いない 板（Progress.news。帰りの 2幕目で 見せる）。
+ * 見て いない 場面（2幕目・仲間の 打ち明け話）の ことは 書かない。
  */
 export const synopsisHtml = (
 	cleared: readonly DungeonId[],
 	flags: readonly string[],
 	open: readonly DungeonId[] = cleared,
+	news: readonly DungeonId[] = [],
 ): string | null => {
 	const main = latest(MAIN_CHAPTERS, cleared, flags);
 	if (!main) return null;
-	// 仲間に なる 話（束音ロゼの 競争・解音ゼロの 手合わせ。持ちかけられて から。data/people/heroQuests.ts）
+	// 仲間に なる 話（束音ロゼの 競争・解音ゼロの 手合わせ。data/people/heroQuests.ts）。持ちかけの 1行は
+	// 本人の 打ち明け話を 聞いて から（悩みの 旗は 帰りの 抽選で 立つ。聞く 前は 村の ようすしか 見えて いない）
 	const quests = QUEST_HEROES.flatMap((h) => {
 		const st = questStage(h, flags);
-		return st === "none" ? [] : [HERO_QUESTS[h].synopsis[st]];
+		if (st === "none") return [];
+		if (st === "asked" && !flags.includes(questFlag.heard(h))) return [];
+		return [HERO_QUESTS[h].synopsis[st]];
 	});
 	const questHtml = quests.length
 		? `<p><b>仲間の話</b><br>${quests.join("<br>")}</p>`
 		: "";
-	const next = mainNext(cleared, open);
+	const next = mainNext(cleared, open, news);
 	const chapter = (ch: Chapter | null) =>
-		ch ? `<p><b>${ch.title}まで</b><br>${ch.sum}</p>` : "";
+		ch
+			? `<p><b>${ch.title}まで</b><br>${ch.before && !ch.before.seen(flags) ? ch.before.sum : ch.sum}</p>`
+			: "";
 	return (
 		`<p class="hint">${revivedLine()}</p>` +
 		chapter(main) +
@@ -231,5 +266,12 @@ export const firstGoalHtml = (): string =>
 /** いまの 進みの あらすじ（パン板を 持ち帰る 前は はじまりの 目標）。 */
 export const synopsisNow = (): string => {
 	const p = loadProgress();
-	return synopsisHtml(p.cleared, p.flags ?? [], p.unlocked) ?? firstGoalHtml();
+	return (
+		synopsisHtml(
+			p.cleared,
+			p.flags ?? [],
+			p.unlocked,
+			p.news.map((n) => n.dungeon),
+		) ?? firstGoalHtml()
+	);
 };

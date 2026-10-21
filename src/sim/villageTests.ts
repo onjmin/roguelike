@@ -151,6 +151,7 @@ import {
 	firstGoalHtml,
 	GOAL_WHY,
 	goalWhy,
+	NEXT_HELD,
 	synopsisHtml,
 } from "../data/story/synopsis";
 import {
@@ -1827,14 +1828,11 @@ test("今日の入荷: one food item per return, same item on the same return, i
 		DAILY_STOCK.every((e) => defOf(e.kind).cat === "food"),
 		"stock that is not food",
 	);
-	ok(
-		stockFor(7).kind === stockFor(7).kind,
-		"the stock changes on the same return",
-	);
-	ok(
-		new Set(Array.from({ length: 30 }, (_, i) => stockFor(i).kind)).size > 1,
-		"the stock never changes",
-	);
+	// 30回ぶんの 入荷を 2度 引く：同じ 帰りの 回なら 同じ 品（乱数で 引かない）、回が かわれば かわる
+	const stocks = () => Array.from({ length: 30 }, (_, i) => stockFor(i).kind);
+	const once = stocks();
+	ok(once.join() === stocks().join(), "the stock changes on the same return");
+	ok(new Set(once).size > 1, "the stock never changes");
 	withStorage(() => {
 		setTown(3, 0);
 		ok(stockToStorage("f_bread", 5) === "ok", "could not buy");
@@ -5141,6 +5139,7 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 		ok(
 			inOrder(log, [
 				"show player",
+				// 住人の 声（mob。sayAs）は 仲間で ない 声（say null）
 				...pages.map((p) =>
 					p.kiriko
 						? `kiriko ${p.kiriko}: ${p.text}`
@@ -7344,6 +7343,56 @@ test("story helpers for the hidden route fit the log and the map card, and follo
 		!(synopsisHtml(["shallow", "main"], []) ?? "").includes("／1000"),
 		"the synopsis still counts toward 1000",
 	);
+});
+
+test("あらすじ: 帰りの 2幕目（その夜の 場面・転・開いた 知らせ）を 見る 前に 先の 話を 書かない", () => {
+	// パン板の あと：きのこ板の 知らせ（第一話→第二話の つなぎ）が 残って いる あいだは 仕返しの 話を 書かない
+	const eve =
+		synopsisHtml(["shallow"], [], ["shallow", "kinoko"], ["kinoko"]) ?? "";
+	ok(eve.includes(`つぎ：${NEXT_HELD}`) && !eve.includes("仕返し"), eve);
+	// きのこ板の あと：風呂板の 知らせ（第二話→第三話の つなぎ）の 前
+	const bath =
+		synopsisHtml(
+			["shallow", "kinoko"],
+			[],
+			["shallow", "kinoko", "main"],
+			["main"],
+		) ?? "";
+	ok(bath.includes(`つぎ：${NEXT_HELD}`) && !bath.includes("長湯"), bath);
+	// 風呂板の あと：転を 見る までは 停電も 電池板も 書かない
+	const cl = ["shallow", "kinoko", "main"] as const;
+	const ten = synopsisHtml([...cl], [], [...cl, "deep"], ["deep"]) ?? "";
+	ok(
+		!ten.includes("停電") &&
+			!ten.includes("電池板") &&
+			ten.includes("41.5℃になった。") &&
+			ten.includes(`つぎ：${NEXT_HELD}`),
+		ten,
+	);
+	// 転を 見た あと（知らせは まだ）・知らせも 見た あと
+	const told = synopsisHtml([...cl], ["ten"], [...cl, "deep"], ["deep"]) ?? "";
+	ok(told.includes("停電") && told.includes(`つぎ：${NEXT_HELD}`), told);
+	const after = synopsisHtml([...cl], ["ten"], [...cl, "deep"]) ?? "";
+	ok(after.includes("停電") && after.includes("つぎ：電池板へ"), after);
+	// 転を 見ずに 停電の 知らせで 知った（前の 版の 記録）
+	ok(
+		(synopsisHtml([...cl], ["toldBlackout"]) ?? "").includes("停電"),
+		"blackout told without the ten scene",
+	);
+	// 電池板の あと：古井戸の 知らせの 前
+	const deep = [...cl, "deep"] as const;
+	const well =
+		synopsisHtml([...deep], ["ten"], [...deep, "hidden"], ["hidden"]) ?? "";
+	ok(well.includes(`つぎ：${NEXT_HELD}`) && !well.includes("古井戸"), well);
+	// 寄り道の 板の 知らせは 本筋の「つぎ：」を 止めない
+	const side =
+		synopsisHtml(
+			["shallow", "kinoko"],
+			[],
+			["shallow", "kinoko", "main"],
+			["tropical"],
+		) ?? "";
+	ok(side.includes("つぎ：風呂板へ"), side);
 });
 
 test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓に 収まる・絵は まとめた 品の 絵・品書きの ある 店には 店番が いて、店番の いる 店には 品書きが ある", () => {

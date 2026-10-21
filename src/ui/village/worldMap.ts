@@ -685,8 +685,12 @@ export class MapView {
 					: "") +
 				ambushNote(d) +
 				`<div class="wm-desc">${DUNGEON_DESC[d]}</div>` +
-				// 決まり（未識別など）と 倉庫の 道具の 持ちこみ（倉庫が 建ってから）
-				`<div class="wm-desc">${n.rules[2] ?? ""}</div>` +
+				// 決まり（未識別など。1行目は 名前と 階、2行目は 上の DUNGEON_DESC。3行目から ぜんぶ）と
+				// 倉庫の 道具の 持ちこみ（倉庫が 建ってから）
+				n.rules
+					.slice(2)
+					.map((l) => `<div class="wm-desc">${l}</div>`)
+					.join("") +
 				(this.carryMax > 0
 					? `<div class="wm-carry${dg.noCarry || this.locked ? " no" : ""}">持ちこみ：${dg.noCarry ? "できない（引き取った道具はンゴ姉が預かる）" : this.locked ? "できない（倉庫はゼロが封鎖中）" : `できる（${this.carryMax}つまで）`}</div>`
 					: "")

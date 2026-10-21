@@ -26,7 +26,7 @@ import {
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTER_LIST, MONSTERS, monstersFor } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
-import { callHunter, HUNTER, spawnMonster } from "../core/floor";
+import { callHunter, foeTable, HUNTER, spawnMonster } from "../core/floor";
 import { canSee } from "../core/fov";
 import {
 	DIRS8,
@@ -4843,3 +4843,43 @@ test("calm", "a big room with a foe inside does not clear アク禁", () => {
 	ok(r.p.x === 10, `harness: did not step in ${pp(r.p)}`);
 	ok(r.p.status.blind > 0, "blindness was cleared with a foe in the room");
 });
+
+test(
+	"board",
+	"foes: favoured foes spawn — within the strength on story boards, from floor 1 on side boards",
+	() => {
+		// 板ごとの 出やすさ（data/dungeons.ts の foes）。本筋の 板は 強さの 範囲の 敵だけ 多めに する（つり合いを 崩さない）。
+		// 寄り道の 板は 強さの 外の 敵でも 1階から 出す（core/floor.ts の foeTable。2026-10-20 作者：「出す方に倒して」）
+		const story: readonly string[] = [
+			"shallow",
+			"kinoko",
+			"main",
+			"deep",
+			"hidden",
+		];
+		for (const d of DUNGEON_IDS) {
+			const dg = DUNGEONS[d];
+			const levels = dg.level.slice(1);
+			const r = Run.create(`foes-${d}`, d);
+			const table = foeTable(r).map((m) => m.id);
+			for (const [id, w] of Object.entries(dg.foes ?? {})) {
+				ok(!!MONSTERS[id], `${d}: unknown foe ${id}`);
+				if (w <= 0) {
+					ok(!table.includes(id), `${d}: ${id} is weighted 0 but spawns`);
+					continue;
+				}
+				const inRange = levels.some((l) =>
+					monstersFor(l, d).some((m) => m.id === id),
+				);
+				if (story.includes(d))
+					ok(inRange, `${d}: ${id} is outside the story board's strength`);
+				// 寄り道の 板：強さの 範囲で 出る 敵は その 階から、範囲の 外の 敵は 1階から
+				else
+					ok(
+						inRange || table.includes(id),
+						`${d}: ${id} never spawns on the board`,
+					);
+			}
+		}
+	},
+);

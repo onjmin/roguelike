@@ -22,6 +22,8 @@ export type QuestStage = "none" | "asked" | "accepted" | "done" | "unlocked";
 
 export const questFlag = {
 	asked: (h: QuestHero) => `q_${h}_ask`,
+	/** 本人の 打ち明け話（worry）を 聞いた（あらすじの 持ちかけの 1行は ここから。data/story/synopsis.ts）。 */
+	heard: (h: QuestHero) => `q_${h}_heard`,
 	accepted: (h: QuestHero) => `q_${h}`,
 	done: (h: QuestHero) => `q_${h}_ok`,
 	unlocked: (h: QuestHero) => `hero_${h}`,
