@@ -172,6 +172,8 @@ const HURRY_LOG_GAP_MS = 120;
 const LOG_HELD_IDLE_MS = 1600;
 /** 祭り（モンスターハウス）に 入ったとき 止めて 見せる 間（ms）。 */
 const HOUSE_PAUSE_MS = 900;
+/** 眠っている 1ターンの 間（ms）。敵が 1歩ずつ 寄ってくるのが 見える 長さ。 */
+const DOZE_MS = 600;
 /**
  * 画面を 止める 演出（hitStop）の 長さ（ms）。大事な ところほど 長く。
  * kill：キリコの 1撃で 倒した・hurt：最大HPの 2割 以上の 痛手・danger：HPが 4分の1を 切った・
@@ -3502,8 +3504,9 @@ export class Play {
 					}
 					break;
 				case "doze":
-					// 眠っている 1ターンごとに 区切る（敵の 動きが 1ターンずつ 見えるように）
-					if (!fast) await this.beat(260 * speed);
+					// 眠っている 1ターンごとに 区切る（敵の 動きが 1ターンずつ 見えるように）。
+					// 先行入力でも つめない（眠っている あいだは 何も できないので、ボタンを 押しても 見せる）
+					if (!fast) await wait(DOZE_MS * speed);
 					break;
 				case "cine": {
 					// 見せ場の 映画の 演出（core/setpiece.ts）。記録の 再生・はやい では 出さない
