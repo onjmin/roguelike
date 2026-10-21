@@ -72,7 +72,7 @@ const PILLAR = one(b(2, 129, 1, 3));
 const BREAD = b(6, 139);
 /** 屋台の 台（3マス）。上に 品を 並べる。 */
 const stall = (...goods: string[]): PlaceProp =>
-	big({ ref: i(3, 5, 3, 1) }, ...goods.map((ref) => ({ ref, lift: 8 })));
+	big({ ref: i(4, 5, 3, 1) }, ...goods.map((ref) => ({ ref, lift: 8 })));
 
 /**
  * パン板の 底：パン王国の 城下町。北に 城、まんなかに 噴水、西に パン王の 銅像。
@@ -287,7 +287,7 @@ export const TAKO_ROOFTOP: PlaceMap = {
 		c: LANTERN,
 		// 巨大たこ焼きの 看板（4倍）
 		A: big(
-			{ ref: i(3, 5, 3, 1), scale: 4 / 3 },
+			{ ref: i(4, 5, 3, 1), scale: 4 / 3 },
 			{ ref: "pub:sprites/items/takoyaki.png", scale: 4, lift: 10 },
 		),
 		// たこ焼き器の 長机
