@@ -371,16 +371,17 @@ export class GameAudio {
 
 	/**
 	 * 曲を切り替える。同じ曲なら続けて鳴らす。null で止める。
+	 * fromStep から鳴らす（止めた曲を続きから：bgmStep を覚えておいて渡す）。
 	 * fadeBgm・fadeOutJingle で絞った出口は、次に鳴らすときに戻す。
 	 */
-	bgm(name: string | null): void {
+	bgm(name: string | null, fromStep = 0): void {
 		if (
 			name === this.bgmName &&
 			(this.bgmPlayback?.isPlaying() || !this.canPlayBgm())
 		)
 			return;
 		this.bgmName = name;
-		this.restartBgm(0);
+		this.restartBgm(fromStep);
 	}
 
 	/**

@@ -1905,6 +1905,8 @@ export class Play {
 		);
 		const audio = this.ctx.audio;
 		let shown = false;
+		// 止めた 曲と 位置（読んだ あと 同じ 曲なら 続きから 鳴らす）
+		const paused = { name: audio.currentBgm, step: audio.bgmStep };
 		for (const cat of cats) {
 			const pages = PICK_GUIDE[cat];
 			const flag = pickGuideFlag(cat);
@@ -1927,7 +1929,10 @@ export class Play {
 			);
 		}
 		if (!shown) return;
-		if (!this.stopped) audio.bgm(floorBgm(this.run, this.bossShown));
+		if (!this.stopped) {
+			const next = floorBgm(this.run, this.bossShown);
+			audio.bgm(next, next === paused.name ? paused.step : 0);
+		}
 		this.swallowInput();
 		this.walkHalt = true;
 		this.restHalt = true;
