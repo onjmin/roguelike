@@ -74,7 +74,8 @@ export type FloorAmbush = {
 export const REBOOT_LINES: readonly string[] = [
 	"{name}「再起動、1回目です！」",
 	"{name}「2回目。……想定内です」",
-	"{name}「アップデート中です。残り4時間」",
+	// 倒しても 起きあがる 追跡者の 型（決めゼリフは 自分たちの 言葉で）
+	"{name}「アップデート中です。……終わったら、また来ます」",
 ];
 
 /** その 板で 待ちぶせる 階（強さが AMBUSH_LEVEL に 届かない 板は null）。着いて すぐに ならない よう 2階から。 */

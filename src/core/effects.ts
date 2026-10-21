@@ -55,6 +55,28 @@ export const needsTarget = (it: Item): boolean => TARGET_KINDS.has(it.kind);
 export const canTarget = (it: Item, x: Item): boolean =>
 	x.uid !== it.uid && !isKeyItem(x.kind);
 
+/** この 階の ようすが わかる（地図スレ・潜入の 見取り図。core/setpiece.ts）。床と 罠が 地図に 載る。 */
+export const revealFloor = (r: Run): void => {
+	const f = r.f;
+	const l = f.layout;
+	for (let y = 0; y < l.h; y++)
+		for (let x = 0; x < l.w; x++) {
+			const i = y * l.w + x;
+			if (l.tiles[i] !== 0) {
+				f.seen[i] = 1;
+				for (const d of DIRS8) {
+					const n = step({ x, y }, d);
+					if (n.x >= 0 && n.y >= 0 && n.x < l.w && n.y < l.h)
+						f.seen[n.y * l.w + n.x] = 1;
+				}
+			}
+		}
+	for (const t of f.traps) t.found = true;
+	f.mapped = true;
+	r.msg("この階のようすがわかった");
+	r.emit({ t: "reveal" });
+};
+
 /** 使う（食べる・飲む・読む・振る・装備する）。時間が進んだら true。 */
 export const useItem = (r: Run, uid: number, target?: number): boolean => {
 	const it = r.findItem(uid);
@@ -462,23 +484,7 @@ const read = (r: Run, it: Item, target?: number): boolean => {
 			break;
 		}
 		case "s_map": {
-			const l = f.layout;
-			for (let y = 0; y < l.h; y++)
-				for (let x = 0; x < l.w; x++) {
-					const i = y * l.w + x;
-					if (l.tiles[i] !== 0) {
-						f.seen[i] = 1;
-						for (const d of DIRS8) {
-							const n = step({ x, y }, d);
-							if (n.x >= 0 && n.y >= 0 && n.x < l.w && n.y < l.h)
-								f.seen[n.y * l.w + n.x] = 1;
-						}
-					}
-				}
-			for (const t of f.traps) t.found = true;
-			f.mapped = true;
-			r.msg("この階のようすがわかった");
-			r.emit({ t: "reveal" });
+			revealFloor(r);
 			break;
 		}
 		case "s_sense":

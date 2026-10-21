@@ -218,6 +218,8 @@ try {
 			seen: s.seen.length,
 			hunger: s.player.hunger,
 			ambushWon: !!s.ambushWon,
+			pieces: s.pieces ?? [],
+			piecesWon: s.piecesWon ?? [],
 		});
 	}
 
@@ -238,6 +240,19 @@ try {
 		console.log(
 			`待ちぶせ（${AMBUSH}）：見た ${met.length}　勝った ${won}（${met.length ? ((won / met.length) * 100).toFixed(1) : "-"}%）`,
 		);
+	}
+	// 見せ場（core/setpiece.ts）：階ごとに 着いた 冒険と 果たした 冒険
+	{
+		const depths = [...new Set(results.flatMap((r) => r.pieces))].sort(
+			(a, b) => a - b,
+		);
+		for (const d of depths) {
+			const met = results.filter((r) => r.pieces.includes(d)).length;
+			const won = results.filter((r) => r.piecesWon.includes(d)).length;
+			console.log(
+				`見せ場 ${d}階：着いた ${met}　果たした ${won}（${((won / met) * 100).toFixed(1)}%）`,
+			);
+		}
 	}
 	// いちばん底に 着いた 冒険の うち：fetch は 入口まで 帰れた・boss は ボスに 勝った 割合
 	{

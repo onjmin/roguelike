@@ -518,6 +518,8 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	const leave =
 		!boss &&
 		(r.s.returning ||
+			// 鯖落ち寸前の 階（core/setpiece.ts の escape）は 出口へ 走る
+			(f.setpiece?.kind === "escape" && !f.setpiece.done) ||
 			(opts.stairsWhenSeen === true && stairsSeen(r)) ||
 			f.turns > opts.floorTurnLimit ||
 			(opts.leaveWhenNoItems && unseenItems(r) === 0 && !frontierExists(r)));

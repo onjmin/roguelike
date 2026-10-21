@@ -10,6 +10,7 @@ import type { Dir8, Pos } from "./geom";
 import type { Layout } from "./mapgen";
 import type { RaceId } from "./race";
 import type { RngState } from "./rng";
+import type { FloorSetPiece } from "./setpiece";
 
 /** ダンジョン＝おんJの 植民地（data/dungeons.ts）。 */
 export type DungeonId =
@@ -426,6 +427,8 @@ export type Floor = {
 	arena?: string;
 	/** 待ちぶせ（core/ambush.ts。手合わせの 機体が いる 階だけ）。 */
 	ambush?: FloorAmbush;
+	/** 見せ場（core/setpiece.ts。籠城・脱出・潜入の 階だけ）。 */
+	setpiece?: FloorSetPiece;
 	/** 集落の 人（いちばん底の 集落。core/data/dungeons.ts の settlement。立つ マスは 置物と 同じく 通れない）。 */
 	folk?: FloorFolk[];
 	/**
@@ -590,6 +593,10 @@ export type RunState = {
 	race?: RaceId;
 	/** 待ちぶせの 機体を そろって 止めた（帰っても 倒れても 残る）。 */
 	ambushWon?: true;
+	/** 見せ場を もう 置いた 階（core/setpiece.ts。落ちて また 来ても 1回の 冒険に 1度きり）。 */
+	pieces?: number[];
+	/** 見せ場を 果たした 階（守りきった・脱出した・見つからずに 盗んだ）。 */
+	piecesWon?: number[];
 };
 
 /** 同行者（筋で 決まる ゲスト。育たない・命令しない・持ち物なし。core/guest.ts）。 */
@@ -714,6 +721,16 @@ export type GameEvent =
 	| { t: "boss"; id: number }
 	/** 待ちぶせの 機体を そろって 止めた（ボスの 曲と ゲージを 終える。冒険は 続く）。 */
 	| { t: "bossDown" }
+	/**
+	 * 見せ場の 映画の 演出（core/setpiece.ts。画面は engine/sceneFx.ts の その fx を ms だけ 出す。caption は 字）。
+	 * 見た目だけ（記録の 再生・速さ「はやい」では 出さない）。
+	 */
+	| {
+			t: "cine";
+			fx: "slowmo" | "freeze" | "trailer" | "blast";
+			caption?: string;
+			ms: number;
+	  }
 	/** ボスを たおして、入口へ 帰る（kind は 帰り方。続く 行が その わけ。このあと end）。 */
 	| { t: "rescue"; kind: RescueKind; cheer?: string }
 	/**

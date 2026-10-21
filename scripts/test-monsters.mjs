@@ -67,8 +67,12 @@ try {
 	const { runPlaceTests } = await server.ssrLoadModule(
 		"/src/sim/placeTests.ts",
 	);
+	const { runSetPieceTests } = await server.ssrLoadModule(
+		"/src/sim/setpieceTests.ts",
+	);
 	const results = [
 		...runMonsterTests(),
+		...runSetPieceTests(),
 		...runEmoteInkTests(),
 		...runReplayTests(),
 		...runTownTests(),

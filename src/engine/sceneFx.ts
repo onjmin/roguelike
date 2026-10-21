@@ -32,7 +32,7 @@ export type SceneFx =
 	| "freeze"
 	/** 予告編（黒い 画面の まんなかに 大きな 字＝opt.caption。窓は その 下で 語る）。 */
 	| "trailer"
-	/** 爆発を 背に 歩く（画面の 上の ほうで 爆発・上下の 帯・スロー。歩きだす 前に 始まる）。 */
+	/** 爆発を 背に 歩く（背中の 側＝画面の 下の ほうで 爆発・上下の 帯・スロー。歩きだす 前に 始まる）。 */
 	| "blast";
 
 /** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
@@ -228,14 +228,14 @@ const boom = (
 	k: number,
 	still: boolean,
 	bare: boolean,
-	/** 画面の 上の ほう（爆発を 背に 歩く 人の うしろ）。 */
-	high = false,
+	/** 画面の 下の ほう（港から 町へ 上がる 人の 背中の 側。爆発を 背に 歩く）。 */
+	behind = false,
 ): FxRun => {
 	const L = layer(root, "fx-boom", BOOM_PX);
 	if (!L) return NONE;
 	const r = rng(0xb00);
 	const cx = L.w / 2;
-	const cy = L.h * (high ? 0.24 : 0.42);
+	const cy = L.h * (behind ? 0.74 : 0.42);
 	const R = Math.min(L.w, L.h) * 0.36;
 	const jag = Array.from({ length: 11 }, () => 0.75 + r() * 0.45);
 	// 煙（火の玉が はじけた あと 広がって、少し ただよって 晴れる）

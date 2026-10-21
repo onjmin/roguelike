@@ -122,6 +122,7 @@ import {
 } from "./race";
 import { recordCmd } from "./replay";
 import { Rng } from "./rng";
+import { arriveSetPiece, leaveSetPiece, tickSetPiece } from "./setpiece";
 import { triggerTrap } from "./traps";
 import {
 	CAT_ORDER,
@@ -951,6 +952,8 @@ export class Run {
 		if (this.eventSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.eventReached();
 		// 目的が bring：底で 人が 加わり、品を もらって 帰り道に なる（集落なら key の 人に 話してから）
+		// 見せ場の 階：着いた ときの 掛け合いと 映画の 演出（core/setpiece.ts）
+		arriveSetPiece(this);
 		if (this.bringSpec && depth === this.dungeon.floors && !s.returning && !key)
 			this.bringJoin();
 		// 競争：底で 先に 着いて いた ロゼとの 掛け合い（core/race.ts）
@@ -1067,6 +1070,8 @@ export class Run {
 				this.dungeon.up
 					? "これより上へは行けないようだ"
 					: "これより下へは行けないようだ",
+		// 鯖落ち寸前の 階から 脱出した（core/setpiece.ts）
+		leaveSetPiece(this);
 			);
 			return false;
 		}
@@ -1682,6 +1687,8 @@ export class Run {
 				if (
 					!next ||
 					m.nextAt < next.nextAt ||
+		// 見せ場：籠城の 波・脱出の 加速・潜入の 見張り（core/setpiece.ts）
+		tickSetPiece(this);
 					(m.nextAt === next.nextAt && m.uid < next.uid)
 				)
 					next = m;

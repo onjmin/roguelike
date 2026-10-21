@@ -43,6 +43,7 @@ import {
 import { placeRival } from "./race";
 import { Rng } from "./rng";
 import type { Run } from "./run";
+import { placeSetPiece, setPieceAt } from "./setpiece";
 import {
 	DEEP,
 	DOZE,
@@ -118,7 +119,9 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		return buildPlaceFloor(r, depth, settle, rest, arena);
 	// 手合わせの 待ちぶせ（core/ambush.ts。祭りには しない）
 	const ambushHere = !r.s.returning && ambushDepth(r) === depth;
-	const festival = house && !bossFloor && !ambushHere;
+	// 見せ場の 階（core/setpiece.ts。祭りには しない）
+	const piece = setPieceAt(r, depth);
+	const festival = house && !bossFloor && !ambushHere && !piece;
 	// 祭りの階は ときどき 大部屋・二分割・四分割（トルネコ1と 同じ。ふつうの階は 乱数を 引かない）
 	const shape: HouseShape | null =
 		festival &&
@@ -326,6 +329,7 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 		}
 	}
 	if (ambushHere) placeAmbush(r, f, stairRoom, start);
+	if (piece) placeSetPiece(r, f, piece);
 	placePools(r, f);
 	placeDecor(r, f);
 	// 書きかえた 冒険：キリコの いない 部屋に 削除人が 1体（ふつうの 冒険では 乱数を 引かない）

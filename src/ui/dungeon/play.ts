@@ -3500,6 +3500,17 @@ export class Play {
 					// 眠っている 1ターンごとに 区切る（敵の 動きが 1ターンずつ 見えるように）
 					if (!fast) await this.beat(260 * speed);
 					break;
+				case "cine": {
+					// 見せ場の 映画の 演出（core/setpiece.ts）。記録の 再生・はやい では 出さない
+					if (fast || this.rp) break;
+					const se = FX_SE[e.fx];
+					if (se) this.ctx.se(se);
+					const fx = startFx(this.ctx.ui, e.fx, { caption: e.caption });
+					await fx.ready;
+					await wait(e.ms * speed);
+					fx.end();
+					break;
+				}
 				case "quake":
 					document.body.classList.add("shake");
 					await wait(e.level >= 3 ? 700 : 400);
