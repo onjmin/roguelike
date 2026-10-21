@@ -206,6 +206,8 @@ export type SayOptions = {
 	hit?: Hit;
 	/** 記号・動きを 出す 人（地図の 人の id。省くと who、名前を かえた 声なら 話しかけた 相手）。 */
 	speaker?: string;
+	/** 畳みかけ（ms。字を 一度に 出し、押さなくても 送る。engine/emote.ts の Cue.auto）。 */
+	auto?: number;
 };
 
 /** roam の 1つの こと（行き先・着いて 向く 向き・記号・いる 長さ・歩く 遅さ・きょろきょろ）。 */
@@ -233,6 +235,8 @@ export type Story = {
 	 * voice は 声（村の 雑談と 喫茶だけ。uc で 読み上げる）。data/story/quotes.ts の KirikoMode。
 	 */
 	kiriko(text: string, mode: KirikoMode, cue?: Cue): Promise<void>;
+	/** 地図の マスの まんなかが 画面の どこか（#ui の 左上から 数えた CSS 画素。爆発を 家の 上に 出す など）。 */
+	cellPoint?(x: number, y: number): { x: number; y: number } | null;
 	/** 地の文。 */
 	narrate(text: string): Promise<void>;
 	/** 選択肢。選ばれた番号を返す（cancel があれば B・外のタップで その番号。start は はじめの カーソル）。 */

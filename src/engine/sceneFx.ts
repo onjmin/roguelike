@@ -3,6 +3,7 @@
 // - 見た目だけ（冒険の 乱数・状態・リプレイには さわらない。ゆらぎは 自前の 乱数）。
 // - 端末の「動きを へらす」（prefers-reduced-motion）では ゆれと 白い 光を やめ、粒を へらす。速さ「はやい」は 短く する。
 
+import { publicUrl } from "./assets";
 import { setSceneSlow } from "./sceneTime";
 import { settings } from "./settings";
 
@@ -33,7 +34,14 @@ export type SceneFx =
 	/** 予告編（黒い 画面の まんなかに 大きな 字＝opt.caption。窓は その 下で 語る）。 */
 	| "trailer"
 	/** 爆発を 背に 歩く（背中の 側＝画面の 下の ほうで 爆発・上下の 帯・スロー。歩きだす 前に 始まる）。 */
-	| "blast";
+	| "blast"
+	/**
+	 * 顔の カットイン（ツッコミ・驚きの 瞬間に、集中線の 帯に 立ち絵の 顔を 大きく 一瞬。opt.art は 立ち絵）。
+	 * ひとりでに 消える（じーさんの「顔で 笑わせる」。2026-10-21）。
+	 */
+	| "cutin"
+	/** 温められる（画面が 赤く 脈うち、まんなかから 湯気が のぼる。電子レンジの 中）。 */
+	| "heat";
 
 /** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
 export const FX_BEFORE_WALK: readonly SceneFx[] = [
@@ -48,6 +56,7 @@ export const FX_SE: Partial<Record<SceneFx, string>> = {
 	freeze: "timeStop",
 	trailer: "trailerHit",
 	blast: "explosion",
+	heat: "chiin",
 };
 
 /** スローモーションの 速さ（場面の 時間の 倍率）。 */
@@ -230,12 +239,14 @@ const boom = (
 	bare: boolean,
 	/** 画面の 下の ほう（港から 町へ 上がる 人の 背中の 側。爆発を 背に 歩く）。 */
 	behind = false,
+	/** 爆発する 所（#ui の CSS 画素。家の 上 など）。無ければ 画面の まんなか。 */
+	at?: { x: number; y: number },
 ): FxRun => {
 	const L = layer(root, "fx-boom", BOOM_PX);
 	if (!L) return NONE;
 	const r = rng(0xb00);
-	const cx = L.w / 2;
-	const cy = L.h * (behind ? 0.74 : 0.42);
+	const cx = at ? at.x / BOOM_PX : L.w / 2;
+	const cy = at ? at.y / BOOM_PX : L.h * (behind ? 0.74 : 0.42);
 	const R = Math.min(L.w, L.h) * 0.36;
 	const jag = Array.from({ length: 11 }, () => 0.75 + r() * 0.45);
 	// 煙（火の玉が はじけた あと 広がって、少し ただよって 晴れる）
@@ -549,6 +560,68 @@ const blast = (root: HTMLElement, k: number, still: boolean): FxRun => {
 	};
 };
 
+/** 顔の カットイン：集中線の 帯が 右から 入り、立ち絵の 顔を 大きく。ひとりでに 消える。 */
+const cutin = (root: HTMLElement, k: number, art?: string): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-cutin";
+	const band = document.createElement("div");
+	band.className = "fx-cutin-band";
+	if (art) {
+		const img = document.createElement("img");
+		img.className = "fx-cutin-face";
+		img.src = publicUrl(art);
+		band.appendChild(img);
+	}
+	d.appendChild(band);
+	root.appendChild(d);
+	void d.offsetWidth;
+	d.classList.add("on");
+	const gone = window.setTimeout(() => d.remove(), 900 * k);
+	return {
+		ready: sleep(380 * k),
+		end: () => {
+			window.clearTimeout(gone);
+			d.remove();
+		},
+	};
+};
+
+/** 温められる：画面が 赤く 脈うち、まんなか（キリコ）から 湯気が のぼる。 */
+const heat = (root: HTMLElement, k: number, still: boolean): FxRun => {
+	const L = layer(root, "fx-heat");
+	if (!L) return NONE;
+	const r = rng(0x4ea7);
+	const cx = L.w / 2;
+	const cy = L.h * 0.45;
+	const puffs = Array.from({ length: still ? 6 : 16 }, () => ({
+		x: cx + (r() - 0.5) * 30,
+		at: r() * 900,
+		r: 3 + r() * 4,
+		sway: r() * Math.PI * 2,
+	}));
+	const fade = 400;
+	const end = animate(L, (t, ending) => {
+		const g = L.g;
+		const out = ending === null ? 1 : Math.max(0, 1 - ending / fade);
+		// 電子レンジの 中：赤い 光が 脈うつ
+		const pulse = 0.18 + 0.12 * Math.sin(t / 90);
+		g.fillStyle = `rgba(255,80,20,${pulse * out})`;
+		g.fillRect(0, 0, L.w, L.h);
+		g.fillStyle = `rgba(255,255,255,${0.8 * out})`;
+		for (const p of puffs) {
+			const life = ((t - p.at) % 1100) / 1100;
+			if (t < p.at) continue;
+			const y = cy - life * 60;
+			const x = p.x + Math.sin(life * 6 + p.sway) * 4;
+			g.globalAlpha = (1 - life) * out;
+			dotDisc(g, x, y, p.r * (0.6 + life));
+		}
+		g.globalAlpha = 1;
+		return ending === null || ending < fade;
+	});
+	return { ready: sleep(500 * k), end };
+};
+
 /** 画面の 上の 層（#ui。画面の ない シミュレーションでは null）。 */
 export const fxRoot = (): HTMLElement | null =>
 	typeof document === "undefined" ? null : document.getElementById("ui");
@@ -560,14 +633,24 @@ export const fxRoot = (): HTMLElement | null =>
 export const startFx = (
 	root: HTMLElement | null,
 	kind: SceneFx,
-	opt: { k?: number; bare?: boolean; caption?: string } = {},
+	opt: {
+		k?: number;
+		bare?: boolean;
+		caption?: string;
+		art?: string;
+		at?: { x: number; y: number };
+	} = {},
 ): FxRun => {
 	if (!root || typeof document === "undefined") return NONE;
 	const k = opt.k ?? (settings.speed === "fast" ? 0.6 : 1);
 	const still = stillMotion();
 	switch (kind) {
+		case "cutin":
+			return cutin(root, k, opt.art);
+		case "heat":
+			return heat(root, k, still);
 		case "boom":
-			return boom(root, k, still, !!opt.bare);
+			return boom(root, k, still, !!opt.bare, false, opt.at);
 		case "blackout":
 			return blackout(root);
 		case "chiin":

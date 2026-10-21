@@ -2002,6 +2002,7 @@ export class Village {
 			text: shown,
 			// 立ち絵の 頭の 横にも 手書き風の 記号（村に 立って いない 人でも）
 			emote: opt.emote,
+			autoMs: opt.auto,
 			onShow:
 				voice && settings.voice
 					? (leadMs) => this.ctx.audio.speak(shown, voice, leadMs)
@@ -2030,6 +2031,7 @@ export class Village {
 		text: string,
 		mode: KirikoMode,
 		emote?: Emote,
+		auto?: number,
 	): Promise<void> {
 		const voice = mode === "voice" ? KIRIKO.voice : undefined;
 		this.msg.overFade(this.fadeEl.style.opacity === "1");
@@ -2038,6 +2040,7 @@ export class Village {
 			color: KIRIKO.color,
 			text: mode === "think" ? `（${text}）` : text,
 			emote,
+			autoMs: auto,
 			onShow:
 				voice && settings.voice
 					? (leadMs) => this.ctx.audio.speak(text, voice, leadMs)
@@ -2118,6 +2121,15 @@ export class Village {
 				await this.beatHold();
 				return this.say(null, text);
 			},
+			cellPoint: (x, y) => {
+				const k = this.screen.tileCss / TILE;
+				const c = this.screen.canvas.getBoundingClientRect();
+				const ui = this.ctx.ui.getBoundingClientRect();
+				return {
+					x: c.left - ui.left + (x * TILE + TILE / 2 - this.camX) * k,
+					y: c.top - ui.top + (y * TILE + TILE / 2 - this.camY) * k,
+				};
+			},
 			kiriko: async (text, mode, cue) => {
 				await this.beatHold();
 				// 見せ場の 間と ツッコミの 音（キリコが 突く 相手は 話しかけて いる 人）
@@ -2125,7 +2137,7 @@ export class Village {
 				// キリコの 頭に 感情の 記号・動き（engine/emote.ts）
 				if (cue?.emote) this.player.showEmote(cue.emote, false);
 				if (cue?.gesture) this.player.showGesture(cue.gesture, false);
-				return this.sayKiriko(text, mode, cue?.emote);
+				return this.sayKiriko(text, mode, cue?.emote, cue?.auto);
 			},
 			choose: async (options, opt) => {
 				await this.beatHold();

@@ -2096,6 +2096,59 @@ body.jolt #app {
 	box-shadow: 4px 4px 0 #111;
 }
 
+/* 顔の カットイン：斜めの 帯に 集中線、立ち絵の 顔を 大きく（右から 入って ひとりでに 消える） */
+#ui > .scene-fx.fx-cutin {
+	overflow: hidden;
+}
+
+.fx-cutin-band {
+	position: absolute;
+	left: -10%;
+	right: -10%;
+	top: 30%;
+	height: 26%;
+	transform: rotate(-6deg) translateX(110%);
+	background:
+		repeating-linear-gradient(
+			90deg,
+			transparent 0 18px,
+			rgba(255, 255, 255, 0.55) 18px 21px
+		),
+		#ffd23f;
+	border-top: 4px solid #111;
+	border-bottom: 4px solid #111;
+	overflow: hidden;
+}
+
+#ui > .scene-fx.fx-cutin.on .fx-cutin-band {
+	animation: fx-cutin-in 0.9s steps(12) forwards;
+}
+
+@keyframes fx-cutin-in {
+	0% {
+		transform: rotate(-6deg) translateX(110%);
+	}
+	15% {
+		transform: rotate(-6deg) translateX(0);
+	}
+	85% {
+		transform: rotate(-6deg) translateX(-3%);
+	}
+	100% {
+		transform: rotate(-6deg) translateX(-120%);
+	}
+}
+
+.fx-cutin-face {
+	position: absolute;
+	left: 2%;
+	top: -28%;
+	height: 300%;
+	image-rendering: pixelated;
+	transform: rotate(6deg);
+	filter: contrast(1.3);
+}
+
 /* 予告編：黒い 画面の まんなかに 大きな 字（窓は 前に 出る） */
 #ui > .scene-fx.fx-trailer {
 	display: flex;

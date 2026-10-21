@@ -8853,10 +8853,9 @@ test("寸劇: 3〜5 windows that fit, unique keys, and every trigger points at a
 	for (const sk of SKITS) {
 		ok(!keys.has(sk.key), `${sk.key}: key used twice`);
 		keys.add(sk.key);
-		ok(
-			sk.lines.length >= 3 && sk.lines.length <= 5,
-			`${sk.key}: ${sk.lines.length} windows`,
-		);
+		// 押して 送る 窓だけ 数える（畳みかけ＝auto は 押さずに 流れる。字の ない 行は 動きだけ）
+		const windows = sk.lines.filter((l) => l.text && !l.auto).length;
+		ok(windows >= 3 && windows <= 5, `${sk.key}: ${windows} windows`);
 		sk.lines.forEach((l, i) => {
 			texts.push([`${sk.key}[${i}]`, l.text]);
 		});

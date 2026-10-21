@@ -4,6 +4,7 @@
 // 死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
 // 帰りの 2幕目（続きの 寸劇）を 待って いる あいだは どの 寸劇も 出さない（holdSkits。先に 見せると 話の 前後が 合わない）。
 
+import { KIRIKO } from "../../data/people/cast";
 import type { MobId } from "../../data/people/mobs";
 import {
 	SKITS,
@@ -138,19 +139,44 @@ const play = async (
 				fx.end();
 				fx = null;
 			}
+			// カメラを 向ける（爆発する 家・物の ほう。null で キリコへ）
+			if (l.look !== undefined) await s.look(l.look);
 			if (l.fx) {
 				fx?.end();
 				const se = l.fx === "boom" ? "explosion" : FX_SE[l.fx];
 				if (se) s.se(se);
-				fx = startFx(fxRoot(), l.fx, { caption: l.caption });
+				const at = l.fxAt
+					? (s.cellPoint?.(l.fxAt[0], l.fxAt[1]) ?? undefined)
+					: undefined;
+				fx = startFx(fxRoot(), l.fx, { caption: l.caption, at });
 				await fx.ready;
 			}
-			await line(s, l, mob);
+			if (l.se) s.se(l.se);
+			// 吹っとぶ（殴られた・爆風。速く すべって 回る）
+			if (l.fling) await fling(s, l.fling);
+			// 顔の カットイン（キリコの 驚きの 顔。ひとりでに 消える）
+			if (l.cutin)
+				await startFx(fxRoot(), "cutin", { art: KIRIKO.portrait }).ready;
+			if (l.text) await line(s, l, mob);
 		}
 	} finally {
 		fx?.end();
-		if (face) await s.look(null);
+		if (face || sk.lines.some((l) => l.look)) await s.look(null);
 	}
+};
+
+/** キリコが 吹っとぶ（すべって 回り、画面が ゆれる。行けない マスなら 近い 所まで）。 */
+const fling = async (
+	s: Story,
+	to: readonly [number, number],
+): Promise<void> => {
+	// 画面の ない 試験（src/sim）では ゆらさない
+	const body = typeof document === "undefined" ? null : document.body;
+	body?.classList.add("shake");
+	const go = s.goto("player", to[0], to[1], { speed: 7, noWarp: true });
+	s.face("player", "down");
+	await go;
+	body?.classList.remove("shake");
 };
 
 /** 1窓。 */
@@ -160,7 +186,8 @@ const line = async (
 	mob?: { id: MobId; say: MobSay },
 ): Promise<void> => {
 	const cue = cueOf(l);
-	if (l.who === null) await s.narrate(l.text);
+	if (l.who === null)
+		await (cue.auto ? s.say(null, l.text, cue) : s.narrate(l.text));
 	else if (l.who === "kiriko") await s.kiriko(l.text, "voice", cue);
 	else if (l.who === "mob") {
 		if (mob) await mob.say(s, mob.id, l.text, cue);

@@ -536,6 +536,11 @@ export type Cue = {
 	gesture?: Gesture;
 	pause?: number;
 	hit?: Hit;
+	/**
+	 * 畳みかけ（ms）：字を 一度に 出し、押さなくても この ms で 次の 窓へ 送る（201 の 速さ。ボケの 連打）。
+	 * 2026-10-21 作者「201 や でんじゃらすじーさんの 面白さ」。
+	 */
+	auto?: number;
 };
 
 /** 行から 感情だけ 取りだす（Story.say の opt に わたす。無ければ 空。どの 形の 行でも 受ける）。 */
@@ -546,5 +551,6 @@ export const cueOf = (line: object): Cue => {
 		...(c.gesture ? { gesture: c.gesture } : {}),
 		...(c.pause ? { pause: c.pause } : {}),
 		...(c.hit ? { hit: c.hit } : {}),
+		...(c.auto ? { auto: c.auto } : {}),
 	};
 };

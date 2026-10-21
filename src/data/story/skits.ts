@@ -22,6 +22,16 @@ export type SkitLine = Cue & {
 	caption?: string;
 	/** この 窓の 前に エフェクトを 消す（爆発の あと 元通りに なった ところ）。 */
 	calm?: true;
+	/** この 窓の 前に カメラを 向ける マス（null で キリコへ）。 */
+	look?: readonly [number, number] | null;
+	/** fx を 出す 地図の マス（爆発する 家の 上 など。無ければ 画面の まんなか）。 */
+	fxAt?: readonly [number, number];
+	/** この 窓の 前に 鳴らす 効果音（data/audio/sfx.ts）。 */
+	se?: string;
+	/** この 窓の 前に キリコが その マスまで 吹っとぶ（速く すべり、画面が ゆれる）。 */
+	fling?: readonly [number, number];
+	/** この 窓の 前に キリコの 顔の カットイン（驚き・ツッコミの 瞬間）。 */
+	cutin?: true;
 };
 
 export type SkitOn =
@@ -183,12 +193,26 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_konbini",
 		on: { k: "enter", map: "f_konbini" },
+		// 201 の 速さ（2026-10-21 試作）：温められるのは 画面で（赤く 脈うち 湯気）、ツッコミは 顔の カットイン、
+		// 店員の 決まり文句は 押さなくても 畳みかけ、最後は チンの 音で 店の 奥まで 吹っとぶ
 		lines: [
 			clerk("いらっしゃいませー。\n温めますか？"),
 			k("まだなにも\n持ってないンゴ"),
 			clerk("温めますね"),
-			e({ emote: "驚", hit: "slap" }, k("吾輩を温めたンゴ！？")),
-			e({ pause: 400 }, clerk("袋、おつけしますか？")),
+			{
+				...e({ emote: "驚", hit: "slap" }, k("吾輩を温めたンゴ！？")),
+				fx: "heat",
+				cutin: true,
+			},
+			e({ auto: 450 }, clerk("袋、おつけしますか？")),
+			e({ auto: 450 }, clerk("お箸、おつけしますか？")),
+			e({ auto: 450 }, clerk("レシートも温めますか？")),
+			e({ auto: 450 }, clerk("お客さまも、もう一度\n温めますか？")),
+			{
+				...e({ auto: 1200 }, clerk("ありがとうございましたー")),
+				se: "chiin",
+				fling: [12, 7],
+			},
 		],
 	},
 	// 何を 売って いるか わからない 質屋（店主も わかって いない）。売られた ことより 値段に 怒る
@@ -358,8 +382,16 @@ export const SKITS: readonly Skit[] = [
 			boss("作戦を発表する。\n今夜、おんJの全スレを1000にする"),
 			member("それ、毎晩だれかが\nやっとることですやん"),
 			boss("……作戦変更や。\nまず、この家を爆破する"),
-			{ ...e({ emote: "驚" }, k("自分の家ンゴ！？")), fx: "boom" },
-			{ ...boss("……作戦は、成功や"), calm: true },
+			{
+				...e({ emote: "驚", hit: "whack" }, k("自分の家ンゴ！？")),
+				cutin: true,
+			},
+			// 爆発は 家の 上で（カメラを 家へ）、爆風で キリコは 下の 路地まで 吹っとぶ（2026-10-21 試作）
+			{ who: null, text: "", fx: "boom", fxAt: [60, 5], fling: [56, 16] },
+			e({ auto: 500 }, member("ゲホッ")),
+			e({ auto: 500 }, member("ゲホゲホッ")),
+			e({ auto: 700 }, member("首領、髪が……")),
+			{ ...e({ pause: 500 }, boss("……作戦は、成功や")), calm: true },
 		],
 	},
 	{

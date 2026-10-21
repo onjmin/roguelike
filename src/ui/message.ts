@@ -266,6 +266,8 @@ export type MessageParams = {
 	 * leadMs は、声にならない出だし（「……」など）を出しきるまでの ms。声はそのぶん遅らせて鳴らす。
 	 */
 	onShow?: (leadMs: number) => ShowHook | undefined;
+	/** 畳みかけ：字を 一度に 出し、押さなくても この ms で 送る（engine/emote.ts の Cue.auto）。 */
+	autoMs?: number;
 };
 
 /** {@link MessageParams.onShow} の戻り値。 */
@@ -537,6 +539,8 @@ export class MessageWindow {
 			let queued = false;
 			/** 送る（窓の 押しの 受け手が 入る）。 */
 			let advance = () => {};
+			/** 送った（畳みかけの 時計と 押しが 重なっても 1度だけ）。 */
+			let sent = false;
 			/** 文字送りを始めた（声の頭を待ち終えた）。 */
 			let typing = false;
 			/**
@@ -565,6 +569,11 @@ export class MessageWindow {
 					readyAt = performance.now();
 					this.nextEl.classList.add("shown");
 					if (queued) advance();
+					// 畳みかけ：押さなくても 送る
+					else if (p.autoMs)
+						window.setTimeout(() => {
+							if (token === this.showToken && !sent) advance();
+						}, p.autoMs);
 				});
 			};
 			/**
@@ -611,7 +620,9 @@ export class MessageWindow {
 				window.clearTimeout(timer);
 				tick();
 			};
-			if (!voice) {
+			// 畳みかけは 字を 一度に 出す
+			if (p.autoMs) finish();
+			else if (!voice) {
 				startTyping();
 			} else {
 				// 声の頭まで文字送りを待たせる（名前と立ち絵はもう出ている）。待たせすぎない
@@ -665,6 +676,8 @@ export class MessageWindow {
 				advance();
 			});
 			advance = () => {
+				if (sent) return;
+				sent = true;
 				pop();
 				this.waits--;
 				stop?.();
