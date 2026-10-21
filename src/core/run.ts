@@ -919,12 +919,8 @@ export class Run {
 		for (const m of s.floor.monsters) m.nextAt = s.time;
 		scheduleAnka(this, carried);
 		this.emit({ t: "floor", depth, up: s.returning });
-		if (fell)
-			this.msg(
-				this.dungeon.up
-					? "上の階へ押し上げられた。枠移動だ"
-					: "下の階に落ちた。まだ倒れてはいない",
-			);
+		// 下りの 板で 下へ 落ちた（落とし穴・1000レス）。上りの 板で 落ちた ときは pitFall が 言う
+		if (fell) this.msg("下の階に落ちた。まだ倒れてはいない");
 		// 名所の 階（敵の 来ない 一息）
 		if (s.floor.rest) this.msg(`${s.floor.rest}。敵の気配がない`);
 		// ボスの 大部屋（湯気の 向こうで ボスが 待つ。戦いは checkBossSeen の 掛け合いから）
@@ -1116,19 +1112,6 @@ export class Run {
 		this.enterFloor(this.s.depth - 1, false);
 		this.msg("下の階に落ちた。のぼったぶんがパー");
 		return true;
-	}
-
-	/** dat落ちで 次の階へ（下りの 板は 下、上りの 板は 上）。 */
-	fallDown(): void {
-		if (this.s.depth >= this.dungeon.floors) {
-			this.msg(
-				this.dungeon.up
-					? "しかしこれより上はなかった"
-					: "しかしこれより下はなかった",
-			);
-			return;
-		}
-		this.enterFloor(this.s.depth + 1, true);
 	}
 
 	// ───────────────── 終わり ─────────────────
@@ -1769,13 +1752,9 @@ export class Run {
 			return false;
 		}
 		this.msg("このスレッドは1000を超えました。", "warn");
-		this.msg(
-			this.dungeon.up
-				? "もう書けないので、上の階へ押し出される……"
-				: "もう書けないので、下の階へ落ちる……",
-			"warn",
-		);
-		this.fallDown();
+		// 落とし穴と 同じく いつも 下の 階へ（上りの 板でも・帰り道でも。2026-10-20 作者）
+		this.msg("もう書けないので、下の階へ落ちる……", "warn");
+		this.pitFall();
 		return true;
 	}
 

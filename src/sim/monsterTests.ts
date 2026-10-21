@@ -2554,6 +2554,34 @@ test(
 
 test(
 	"floor",
+	"thread: 1000 res always drops to the floor below, like a pit (up boards and the way back too)",
+	() => {
+		// 落とし穴と 同じ 扱い（2026-10-20 作者）：上りの 板では 1つ 下（のぼった ぶんが パー）、帰り道でも 下へ
+		const fill = (r: Run) => {
+			r.f.res = 999;
+			r.p.hunger = HUNGER_MAX;
+			r.act({ c: "wait" });
+		};
+		const up = Run.create("res-up", "deep");
+		up.enterFloor(3, false);
+		fill(up);
+		ok(up.s.depth === 2, `up board: not one floor below (depth ${up.s.depth})`);
+		const back = Run.create("res-back", "main");
+		back.s.returning = true;
+		back.enterFloor(3, false);
+		fill(back);
+		ok(
+			back.s.depth === 4,
+			`way back: not one floor below (depth ${back.s.depth})`,
+		);
+		const top = Run.create("res-top", "deep");
+		fill(top);
+		ok(top.s.depth === 1, `up board 1F: moved (depth ${top.s.depth})`);
+	},
+);
+
+test(
+	"floor",
 	"anka: its trap brings it once and vanishes; doing it gives 2 items (unidentified stay so), ignoring it adds res, wakes the floor, 5 trolls and takes an item",
 	() => {
 		const r = arena("anka");
