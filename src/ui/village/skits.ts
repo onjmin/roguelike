@@ -145,8 +145,9 @@ const play = async (
 				fx?.end();
 				const se = l.fx === "boom" ? "explosion" : FX_SE[l.fx];
 				if (se) s.se(se);
-				// 出す 所：fxAt の マス（家の 上）、温めは キリコの 上。カメラが 動いても その 所を 追う
-				const cell = l.fxAt ?? (l.fx === "heat" ? null : undefined);
+				// 出す 所：fxAt の マス（家の 上）、温め・自主規制は キリコの 上。カメラが 動いても その 所を 追う
+				const cell =
+					l.fxAt ?? (l.fx === "heat" || l.fx === "mosaic" ? null : undefined);
 				const track =
 					cell === undefined
 						? undefined

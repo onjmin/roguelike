@@ -41,7 +41,11 @@ export type SceneFx =
 	 */
 	| "cutin"
 	/** 温められる（画面が 赤く 脈うち、まんなかから 湯気が のぼる。電子レンジの 中）。 */
-	| "heat";
+	| "heat"
+	/** たおれた（画面が 暗く 赤く なり、まんなかに 大きな 字＝opt.caption。すぐ 起きあがる 前の 一瞬。じーさんの「すぐ 死ぬ」）。 */
+	| "ko"
+	/** 自主規制（服が 飛んだ 人を モザイクの 札で 隠す。opt.track の 人の 上）。 */
+	| "mosaic";
 
 /** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
 export const FX_BEFORE_WALK: readonly SceneFx[] = [
@@ -57,6 +61,7 @@ export const FX_SE: Partial<Record<SceneFx, string>> = {
 	trailer: "trailerHit",
 	blast: "explosion",
 	heat: "chiin",
+	ko: "hitSting",
 };
 
 /** スローモーションの 速さ（場面の 時間の 倍率）。 */
@@ -651,6 +656,58 @@ const heat = (
 	return { ready: sleep(500 * k), end };
 };
 
+/** たおれた：画面が 暗く 赤く なり、まんなかに 大きな 字。 */
+const ko = (root: HTMLElement, k: number, caption?: string): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-ko";
+	const c = document.createElement("span");
+	c.className = "fx-ko-caption";
+	c.textContent = caption ?? "";
+	d.appendChild(c);
+	root.appendChild(d);
+	void d.offsetWidth;
+	d.classList.add("on");
+	return {
+		ready: sleep(500 * k),
+		end: () => {
+			d.classList.remove("on");
+			setTimeout(() => d.remove(), 250);
+		},
+	};
+};
+
+/** 自主規制：人の 上に モザイクの 札（服が 飛んだ）。カメラが 動いたら 追う。 */
+const mosaic = (
+	root: HTMLElement,
+	track?: () => { x: number; y: number } | null,
+): FxRun => {
+	const d = document.createElement("div");
+	d.className = "scene-fx fx-mosaic";
+	const box = document.createElement("div");
+	box.className = "fx-mosaic-box";
+	const cap = document.createElement("span");
+	cap.textContent = "自主規制";
+	box.appendChild(cap);
+	d.appendChild(box);
+	root.appendChild(d);
+	let alive = true;
+	const place = () => {
+		if (!alive) return;
+		const p = track?.();
+		box.style.left = `${p ? p.x : root.clientWidth / 2}px`;
+		box.style.top = `${p ? p.y : root.clientHeight / 2}px`;
+		requestAnimationFrame(place);
+	};
+	place();
+	return {
+		ready: sleep(200),
+		end: () => {
+			alive = false;
+			d.remove();
+		},
+	};
+};
+
 /** 画面の 上の 層（#ui。画面の ない シミュレーションでは null）。 */
 export const fxRoot = (): HTMLElement | null =>
 	typeof document === "undefined" ? null : document.getElementById("ui");
@@ -680,6 +737,10 @@ export const startFx = (
 			return cutin(root, k, opt.art);
 		case "heat":
 			return heat(root, k, still, opt.track);
+		case "ko":
+			return ko(root, k, opt.caption);
+		case "mosaic":
+			return mosaic(root, opt.track);
 		case "boom":
 			return boom(
 				root,
