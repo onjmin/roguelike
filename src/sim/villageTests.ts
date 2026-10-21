@@ -2892,7 +2892,10 @@ test("coming back: friends wait at the mouth, Kiriko steps out, they speak the e
 									? `say ${MOBS[p.mob].voice ?? null}: ${p.text}`
 									: p.nanashi
 										? `say nanj: ${p.text}`
-										: `narrate: ${p.text}`,
+										: // 畳みかけ（auto）の 地の文は 押さずに 送る 窓（say null）
+											p.auto
+											? `say null: ${p.text}`
+											: `narrate: ${p.text}`,
 					),
 					"fadeOut",
 					"rebuild",
@@ -5143,7 +5146,7 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 				...pages.map((p) =>
 					p.kiriko
 						? `kiriko ${p.kiriko}: ${p.text}`
-						: p.mob
+						: p.mob || (!p.who && !p.nanashi && p.auto)
 							? `say null: ${p.text}`
 							: p.who || p.nanashi
 								? `say ${p.who ?? "nanj"}: ${p.text}`
