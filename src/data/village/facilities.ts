@@ -805,7 +805,8 @@ const BASE_FACILITIES: readonly Facility[] = [
 		},
 		door: "おんJマート。\n入店のチャイムが鳴った。",
 		doorSe: "autoDoor",
-		// 中：奥の 壁に 飲み物の 冷蔵ケース、まんなかに 棚 2列、入口の 左に レジ（店員は 台の うしろ）、
+		// 中：奥の 壁に 飲み物の 冷蔵ケース・ホットスナック・コーヒーマシン（背が 高いので 前の 通路から 調べる。
+		// 店員の いる 台の うしろには 置かない）、まんなかに 棚 2列、入口の 左に レジ（店員は 台の うしろ）、
 		// 右の 奥に コピー機・ATM・お手洗い、右に アイスの ケース、入口の そばに 分別の ゴミ箱と 雑誌
 		room: {
 			look: LOOKS.konbini,
@@ -813,9 +814,9 @@ const BASE_FACILITIES: readonly Facility[] = [
 				"##############",
 				"#HHpHHpHQHHgH#",
 				"#hhhhhhhhhmhd#",
-				"#RRRRRyY.c.P.#",
+				"#RRRRRyYCc.P.#",
 				"#............#",
-				"#CoOSTST.STiI#",
+				"#ooOSTST.STiI#",
 				"#...stst.st..#",
 				"#[=].........#",
 				"#......MN.bBv#",
@@ -855,7 +856,7 @@ const BASE_FACILITIES: readonly Facility[] = [
 			}),
 			things: {
 				R: "fridge",
-				Q: "clock",
+				// 時計（Q）は 飾り：真下の 床に コーヒーマシンが あるので 調べられない（一言は コーヒーの 2枚目）
 				m: "notice",
 				d: "toilet",
 				c: "copier",
@@ -882,7 +883,6 @@ const BASE_FACILITIES: readonly Facility[] = [
 					"冷蔵ケース。\nラムネ・麦茶・エナドリがならぶ。",
 					"いちばん下の段に「おんJ水」。\n……ラベルが手書きだ。",
 				],
-				clock: ["時計。\n……5分進めてある。"],
 				notice: ["はり紙。\n「24時間営業。保守も24時間」"],
 				toilet: [
 					"お手洗い。\n「使用中」の札がかかっている。",
@@ -890,7 +890,10 @@ const BASE_FACILITIES: readonly Facility[] = [
 				],
 				copier: ["コピー機。\n……スレのまとめを刷ったあと。"],
 				atm: [ACCOUNT_MSG.atm],
-				coffee: ["コーヒーマシン。\n「S　100円。Lは気持ち」"],
+				coffee: [
+					"コーヒーマシン。\n「S　100円。Lは気持ち」",
+					"上の時計は、5分進めてある。\n抽出が遅いぶんらしい。",
+				],
 				hot: ["ホットスナックのケース。\n「おんJチキ」が1つだけ残っている。"],
 				shelf: [
 					"棚。\nカップ麺と、のり弁と、電池。",
