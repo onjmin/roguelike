@@ -2139,6 +2139,20 @@ body.jolt #app {
 	}
 }
 
+.fx-cutin-mark {
+	position: absolute;
+	right: 12%;
+	top: 6%;
+	color: #e8241c;
+	font-size: 64px;
+	font-weight: 900;
+	line-height: 1;
+	transform: rotate(10deg);
+	text-shadow:
+		3px 3px 0 #111,
+		-2px -2px 0 #fff;
+}
+
 .fx-cutin-face {
 	position: absolute;
 	left: 2%;

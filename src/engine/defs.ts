@@ -237,6 +237,8 @@ export type Story = {
 	kiriko(text: string, mode: KirikoMode, cue?: Cue): Promise<void>;
 	/** 地図の マスの まんなかが 画面の どこか（#ui の 左上から 数えた CSS 画素。爆発を 家の 上に 出す など）。 */
 	cellPoint?(x: number, y: number): { x: number; y: number } | null;
+	/** キリコから 歩いて 行ける、max 歩 以内で いちばん 遠い マス（吹っとぶ 先。無ければ null）。 */
+	farCell?(max: number): [number, number] | null;
 	/** 地の文。 */
 	narrate(text: string): Promise<void>;
 	/** 選択肢。選ばれた番号を返す（cancel があれば B・外のタップで その番号。start は はじめの カーソル）。 */

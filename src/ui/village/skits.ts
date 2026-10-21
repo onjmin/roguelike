@@ -145,15 +145,25 @@ const play = async (
 				fx?.end();
 				const se = l.fx === "boom" ? "explosion" : FX_SE[l.fx];
 				if (se) s.se(se);
-				const at = l.fxAt
-					? (s.cellPoint?.(l.fxAt[0], l.fxAt[1]) ?? undefined)
-					: undefined;
-				fx = startFx(fxRoot(), l.fx, { caption: l.caption, at });
+				// 出す 所：fxAt の マス（家の 上）、温めは キリコの 上。カメラが 動いても その 所を 追う
+				const cell = l.fxAt ?? (l.fx === "heat" ? null : undefined);
+				const track =
+					cell === undefined
+						? undefined
+						: () =>
+								s.cellPoint?.(
+									cell ? cell[0] : s.state.x,
+									cell ? cell[1] : s.state.y,
+								) ?? null;
+				fx = startFx(fxRoot(), l.fx, { caption: l.caption, track });
 				await fx.ready;
 			}
 			if (l.se) s.se(l.se);
-			// 吹っとぶ（殴られた・爆風。速く すべって 回る）
-			if (l.fling) await fling(s, l.fling);
+			// 吹っとぶ（殴られた・爆風。速く すべって 回る）。far は 歩いて 行ける いちばん 遠い 所
+			if (l.fling) {
+				const to = l.fling === "far" ? s.farCell?.(7) : l.fling;
+				if (to) await fling(s, to);
+			}
 			// 顔の カットイン（キリコの 驚きの 顔。ひとりでに 消える）
 			if (l.cutin)
 				await startFx(fxRoot(), "cutin", { art: KIRIKO.portrait }).ready;

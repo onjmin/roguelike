@@ -29,7 +29,7 @@ export type SkitLine = Cue & {
 	/** この 窓の 前に 鳴らす 効果音（data/audio/sfx.ts）。 */
 	se?: string;
 	/** この 窓の 前に キリコが その マスまで 吹っとぶ（速く すべり、画面が ゆれる）。 */
-	fling?: readonly [number, number];
+	fling?: readonly [number, number] | "far";
 	/** この 窓の 前に キリコの 顔の カットイン（驚き・ツッコミの 瞬間）。 */
 	cutin?: true;
 };
@@ -177,6 +177,10 @@ export const SKITS: readonly Skit[] = [
 			e({ emote: "怒", hit: "whack", pause: 400 }, nanashi("ネタバレすな！！")),
 		],
 	},
+	// ───── 建物に はじめて 入った（2026-10-21 作者「文字だけで なく 演出を 使って 店舗を 改善」） ─────
+	// 見せ方の 道具（engine/sceneFx.ts・ui/village/skits.ts）：auto＝押さずに 畳みかけ、cutin＝キリコの 顔の カットイン、
+	// freeze＝止め絵と 名札（値札・看板）、fling＝吹っとぶ、heat＝温められる、slowmo＝スロー、trailer＝予告編。
+	// freeze の あとに fling を 置かない（止め絵の あいだは 人が 動かない）。
 	// 銭湯（開くのは 風呂板を 持ち帰って から。決着は 41.5℃。どっちの 派も 出禁）
 	{
 		key: "enter_bath",
@@ -185,15 +189,14 @@ export const SKITS: readonly Skit[] = [
 			banndai("いらっしゃい！\nうちの湯は41.5℃や！"),
 			e({ gesture: "hop" }, k("決着したンゴ！")),
 			banndai("せや。42℃派も41℃派も、\nどっちも出禁にした"),
-			banndai("客は、0人や"),
-			e({ emote: "得", pause: 400 }, banndai("平和やろ？")),
+			{ ...banndai("客は、0人や"), fx: "freeze", caption: "本日の客　0人" },
+			{ ...e({ emote: "得", pause: 400 }, banndai("平和やろ？")), calm: true },
 		],
 	},
-	// ───── 建物に はじめて 入った ─────
 	{
 		key: "enter_konbini",
 		on: { k: "enter", map: "f_konbini" },
-		// 201 の 速さ（2026-10-21 試作）：温められるのは 画面で（赤く 脈うち 湯気）、ツッコミは 顔の カットイン、
+		// 温められるのは 画面で（赤く 脈うち キリコから 湯気）、ツッコミは 顔の カットイン、
 		// 店員の 決まり文句は 押さなくても 畳みかけ、最後は チンの 音で 店の 奥まで 吹っとぶ
 		lines: [
 			clerk("いらっしゃいませー。\n温めますか？"),
@@ -215,7 +218,7 @@ export const SKITS: readonly Skit[] = [
 			},
 		],
 	},
-	// 何を 売って いるか わからない 質屋（店主も わかって いない）。売られた ことより 値段に 怒る
+	// 何を 売って いるか わからない 質屋（店主も わかって いない）。キリコに 値札。売られた ことより 値段に 怒る
 	{
 		key: "enter_pawn",
 		on: { k: "enter", map: "f_pawn" },
@@ -224,10 +227,16 @@ export const SKITS: readonly Skit[] = [
 			k("なにを売ってるンゴ？"),
 			owner("……それは、\nワイにもわからん"),
 			owner("ちなみに、あんたも売り物や。\n30円"),
-			e({ emote: "驚", hit: "whack", pause: 400 }, k("安いンゴ！！")),
+			// 言われた あとで 止め絵の 値札（先に 札を 出して 落ちを ばらさない）
+			{
+				...e({ emote: "驚", hit: "whack", pause: 400 }, k("安いンゴ！！")),
+				fx: "freeze",
+				caption: "蓄音キリコ　30円",
+				cutin: true,
+			},
 		],
 	},
-	// 質屋の 金庫（中で なにか 鳴いて いる）：中の 人が 真顔
+	// 質屋の 金庫（中で なにか 鳴いて いる）：中の 人が 真顔で 注文を 足す
 	{
 		key: "look_pawn_safe",
 		on: { k: "look", thing: "safe", map: "f_pawn" },
@@ -235,8 +244,9 @@ export const SKITS: readonly Skit[] = [
 			k("鳴いてる金庫、\n開けてみるンゴ"),
 			e({ emote: "!" }, owner("あかん！")),
 			e({ pause: 400 }, safeMan("……閉めてもろて")),
-			e({ gesture: "startle" }, k("だれンゴ！？")),
+			{ ...e({ emote: "驚", hit: "slap" }, k("だれンゴ！？")), cutin: true },
 			owner("質に入っとる、\nとなりのおっさんや"),
+			e({ auto: 900 }, safeMan("……あと、電気も\n消してもろて")),
 		],
 	},
 	// 海上レストラン「1000」：客は 2人なのに 満席（2人で 全席を 予約して、1卓ずつ 回って いる）
@@ -247,34 +257,49 @@ export const SKITS: readonly Skit[] = [
 			waiter("いらっしゃいませ。\n本日は満席でございます"),
 			k("お客さん、\n2人しかいないンゴ"),
 			waiter("はい。あちらの2名さまが、\n全席ご予約です"),
-			guest("（となりの席へ移って）\nここも、ワイらの席や"),
+			e({ auto: 400 }, guest("ここも、ワイらの席や")),
+			e({ auto: 400 }, guest("ここもや")),
+			e({ auto: 400 }, guest("ここもや")),
+			e({ auto: 400 }, guest("ここもや")),
 			e({ pause: 400 }, waiter("本日、48卓目でございます")),
 		],
 	},
-	// 連コインの 先は 両替機だった
+	// 連コインの 先は 両替機だった（ちゃりんは 音と 畳みかけで、正体は 止め絵の 札で）
 	{
 		key: "enter_arcade",
 		on: { k: "enter", map: "f_arcade" },
 		lines: [
 			nanashi("連コインは、\n男の美学や"),
-			nanashi("（ちゃりん）（ちゃりん）\n（ちゃりん）（ちゃりん）"),
+			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
+			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
+			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
+			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
 			nanashi("……まだ始まらんな"),
 			e({ pause: 400 }, clerk("お客さま、そちらは\n両替機です")),
-			e({ emote: "冷" }, nanashi("……美学や")),
+			// 言われた あとで 止め絵（連コインの 相手の 札）
+			{
+				...e({ emote: "冷" }, nanashi("……美学や")),
+				fx: "freeze",
+				caption: "連コインの相手：両替機",
+			},
 		],
 	},
+	// しゃがむ ところは スローで、sage と 言われて 止まる
 	{
 		key: "enter_gym",
 		on: { k: "enter", map: "f_gym" },
 		lines: [
 			trainer("ようこそageジムへ！\nまずはスクワットや！"),
-			trainer("しゃがんで……"),
+			{ ...trainer("しゃがんで……"), fx: "slowmo" },
 			k("……立たないンゴ？"),
-			e({ emote: "冷", pause: 400 }, trainer("sageや")),
-			e({ hit: "whack" }, k("ジムで下がらないでンゴ！")),
+			{ ...e({ emote: "冷", pause: 400 }, trainer("sageや")), calm: true },
+			{
+				...e({ emote: "驚", hit: "whack" }, k("ジムで下がらないでンゴ！")),
+				cutin: true,
+			},
 		],
 	},
-	// 1000杯目で 店ごと 次スレへ（暗転して また 同じ あいさつ）
+	// 1000杯目で 店ごと 次スレへ（暗転して また 同じ あいさつ。ツッコミの あとも まだ 飲む）
 	{
 		key: "enter_bar",
 		on: { k: "enter", map: "f_bar" },
@@ -283,21 +308,32 @@ export const SKITS: readonly Skit[] = [
 			master("1000杯目が出たら、\n店ごと次スレや"),
 			{ ...nanashi("（ごくっ）……1000杯目"), fx: "blackout" },
 			{ ...master("いらっしゃい。\n次スレへようこそや"), calm: true },
-			e({ emote: "驚", hit: "slap" }, k("吾輩、まだ座っても\nないンゴ！")),
+			{
+				...e({ emote: "驚", hit: "slap" }, k("吾輩、まだ座っても\nないンゴ！")),
+				cutin: true,
+			},
+			{ ...e({ auto: 900 }, nanashi("（ごくっ）")), fx: "blackout" },
 		],
 	},
-	// 何を 言われても「乙」で 返す 店（出てくるのは おつゆだけ）
+	// 何を 言われても「乙」で 返す 店（乙の 連打。出てくるのは おつゆだけ）
 	{
 		key: "enter_ramen",
 		on: { k: "enter", map: "f_ramen" },
 		lines: [
 			owner("へいらっしゃい！\n麺のかたさは？"),
 			k("ふつうンゴ"),
-			e({ emote: "!" }, owner("乙！")),
-			e({ emote: "驚" }, k("スープしか\n入ってないンゴ！")),
-			e({ emote: "得", pause: 400 }, owner("乙（おつゆ）一丁！")),
+			e({ auto: 350, emote: "!" }, owner("乙！")),
+			e({ auto: 350 }, owner("乙！")),
+			e({ auto: 350 }, owner("乙！")),
+			{ ...e({ emote: "驚" }, k("スープしか\n入ってないンゴ！")), cutin: true },
+			{
+				...e({ emote: "得", pause: 400 }, owner("乙（おつゆ）一丁！")),
+				fx: "freeze",
+				caption: "おつゆ　一丁",
+			},
 		],
 	},
+	// 2009年からの 上映：客席じゅうから シーッ
 	{
 		key: "enter_cinema",
 		on: { k: "enter", map: "f_cinema" },
@@ -306,7 +342,9 @@ export const SKITS: readonly Skit[] = [
 			usher("上映時間は、\nおよそ3年です"),
 			e({ gesture: "shake" }, k("長いンゴ！")),
 			usher("なお、いま上映中の回は、\n2009年からです"),
-			e({ pause: 400 }, guest("（ヒゲの名無し）\n……シーッ")),
+			e({ pause: 400, auto: 500 }, guest("（ヒゲの名無し）\n……シーッ")),
+			e({ auto: 400 }, guest("（もっとヒゲの名無し）\nシーッ")),
+			e({ auto: 900 }, guest("（ヒゲしか見えない名無し）\nシーーーッ")),
 		],
 	},
 	{
@@ -316,7 +354,15 @@ export const SKITS: readonly Skit[] = [
 			dealer("いらっしゃいませ。\n当店の勝率は、5割です"),
 			dealer("……お店の、です"),
 			dealer("なお、常連さまは通算\n3勝1万2千敗です"),
-			e({ emote: "得", pause: 400 }, regular("あと1万1997勝で、\nトントンや")),
+			// 言われた あとで 常連の 止め絵（得意顔の 名札）
+			{
+				...e(
+					{ emote: "得", pause: 400 },
+					regular("あと1万1997勝で、\nトントンや"),
+				),
+				fx: "freeze",
+				caption: "常連　3勝　1万2千敗",
+			},
 		],
 	},
 	// ───── 建物の オチ（爆発は 直しては 爆発させる リサイクル屋と 秘密結社の 1回目だけ。ほかは 暗転・チーン・草で 落とす） ─────
@@ -328,11 +374,15 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			clerk("ドリンクバーは、\nおかわり自由です"),
 			k("ぜんぶ混ぜるンゴ"),
-			manager("（グラスの中から）\nごぼごぼ……"),
-			e({ emote: "驚", hit: "slap" }, k("店長が入ってるンゴ！？")),
+			{ ...manager("（グラスの中から）\nごぼごぼ……"), se: "bubble" },
+			{
+				...e({ emote: "驚", hit: "slap" }, k("店長が入ってるンゴ！？")),
+				cutin: true,
+			},
 			e({ pause: 400 }, clerk("店長は、追加料金です")),
 		],
 	},
+	// 爆発で キリコは 店の 奥まで 吹っとぶ
 	{
 		key: "enter_recycle",
 		on: { k: "enter", map: "f_recycle" },
@@ -340,16 +390,17 @@ export const SKITS: readonly Skit[] = [
 			owner("うちは何でも\n直して売るよ"),
 			owner("直したやつは、\nだいたい爆発するけどな"),
 			e({ gesture: "shake" }, k("売っちゃだめンゴ！")),
-			{ ...owner("……ほら、いま1台"), fx: "boom" },
+			{ ...owner("……ほら、いま1台"), fx: "boom", fling: "far" },
 			{ ...owner("（アフロで）よし。\nワイも直せる"), calm: true },
 		],
 	},
+	// 見本の 一撃は スローで、割れたのは 拳
 	{
 		key: "enter_dojo",
 		on: { k: "enter", map: "f_dojo" },
 		lines: [
 			sensei("気合いだ！\n気合いで瓦を割れ！"),
-			sensei("見本を見せる！\nちぇすとーーっ！！"),
+			{ ...sensei("見本を見せる！\nちぇすとーーっ！！"), fx: "slowmo" },
 			{
 				...e({ emote: "冷", pause: 400 }, sensei("……拳が、割れた")),
 				fx: "chiin",
@@ -360,13 +411,17 @@ export const SKITS: readonly Skit[] = [
 			},
 		],
 	},
-	// 台本は「暗転」の 1行だけ。2回公演で もう一度 暗転
+	// 演目は 予告編で 大きく。台本は「暗転」の 1行だけ。2回公演で もう一度 暗転
 	{
 		key: "enter_theater",
 		on: { k: "enter", map: "f_theater" },
 		lines: [
-			actor("本日の演目は、\n『やきう物語』！"),
-			actor("……なんやけど、\n台本が1行しかない"),
+			{
+				...actor("本日の演目は、\n『やきう物語』！"),
+				fx: "trailer",
+				caption: "やきう物語",
+			},
+			{ ...actor("……なんやけど、\n台本が1行しかない"), calm: true },
 			{ ...actor("『暗転』"), fx: "blackout" },
 			{ ...actor("本日は、2回公演です"), calm: true },
 			{ ...e({ pause: 400 }, actor("『暗転』")), fx: "blackout" },

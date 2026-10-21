@@ -241,6 +241,8 @@ const boom = (
 	behind = false,
 	/** 爆発する 所（#ui の CSS 画素。家の 上 など）。無ければ 画面の まんなか。 */
 	at?: { x: number; y: number },
+	/** その 所の いまの 画面の 位置（カメラが 動いたら 追う）。 */
+	track?: () => { x: number; y: number } | null,
 ): FxRun => {
 	const L = layer(root, "fx-boom", BOOM_PX);
 	if (!L) return NONE;
@@ -276,7 +278,7 @@ const boom = (
 		document.body.classList.add("shake");
 		setTimeout(() => document.body.classList.remove("shake"), 420 * k);
 	}
-	const end = animate(L, (t, ending) => {
+	const frame: Frame = (t, ending) => {
 		const g = L.g;
 		const gone = 1 - Math.min(1, Math.max(0, t - hold - linger) / clear);
 		const out = gone * (ending === null ? 1 : Math.max(0, 1 - ending / fade));
@@ -323,6 +325,19 @@ const boom = (
 			dotDisc(g, cx, cy, size * 0.16);
 		}
 		return out > 0;
+	};
+	// 地図の 所に 出した 爆発は、カメラが 動いても その 所に 残る（煙が 家から ずれない）
+	const end = animate(L, (t, ending) => {
+		const p = track?.();
+		if (!p) return frame(t, ending);
+		L.g.save();
+		L.g.translate(
+			Math.round(p.x / BOOM_PX - cx),
+			Math.round(p.y / BOOM_PX - cy),
+		);
+		const go = frame(t, ending);
+		L.g.restore();
+		return go;
 	});
 	return { ready: sleep(hold), end };
 };
@@ -572,6 +587,11 @@ const cutin = (root: HTMLElement, k: number, art?: string): FxRun => {
 		img.src = publicUrl(art);
 		band.appendChild(img);
 	}
+	// 驚きの 印（立ち絵は ふだんの 顔なので、帯に 大きな「！！」を 重ねる）
+	const mark = document.createElement("span");
+	mark.className = "fx-cutin-mark";
+	mark.textContent = "！！";
+	band.appendChild(mark);
 	d.appendChild(band);
 	root.appendChild(d);
 	void d.offsetWidth;
@@ -587,14 +607,22 @@ const cutin = (root: HTMLElement, k: number, art?: string): FxRun => {
 };
 
 /** 温められる：画面が 赤く 脈うち、まんなか（キリコ）から 湯気が のぼる。 */
-const heat = (root: HTMLElement, k: number, still: boolean): FxRun => {
+const heat = (
+	root: HTMLElement,
+	k: number,
+	still: boolean,
+	/** 温められる 人の 画面の 位置（#ui の CSS 画素。湯気は ここから）。無ければ 画面の まんなか。 */
+	track?: () => { x: number; y: number } | null,
+): FxRun => {
 	const L = layer(root, "fx-heat");
 	if (!L) return NONE;
 	const r = rng(0x4ea7);
-	const cx = L.w / 2;
-	const cy = L.h * 0.45;
+	const at = () => {
+		const p = track?.();
+		return p ? { x: p.x / PX, y: p.y / PX } : { x: L.w / 2, y: L.h * 0.45 };
+	};
 	const puffs = Array.from({ length: still ? 6 : 16 }, () => ({
-		x: cx + (r() - 0.5) * 30,
+		x: (r() - 0.5) * 12,
 		at: r() * 900,
 		r: 3 + r() * 4,
 		sway: r() * Math.PI * 2,
@@ -608,11 +636,12 @@ const heat = (root: HTMLElement, k: number, still: boolean): FxRun => {
 		g.fillStyle = `rgba(255,80,20,${pulse * out})`;
 		g.fillRect(0, 0, L.w, L.h);
 		g.fillStyle = `rgba(255,255,255,${0.8 * out})`;
+		const o = at();
 		for (const p of puffs) {
 			const life = ((t - p.at) % 1100) / 1100;
 			if (t < p.at) continue;
-			const y = cy - life * 60;
-			const x = p.x + Math.sin(life * 6 + p.sway) * 4;
+			const y = o.y - 6 - life * 40;
+			const x = o.x + p.x + Math.sin(life * 6 + p.sway) * 4;
 			g.globalAlpha = (1 - life) * out;
 			dotDisc(g, x, y, p.r * (0.6 + life));
 		}
@@ -639,6 +668,8 @@ export const startFx = (
 		caption?: string;
 		art?: string;
 		at?: { x: number; y: number };
+		/** at の いまの 位置（カメラが 動いたら 追う。爆発・温め）。 */
+		track?: () => { x: number; y: number } | null;
 	} = {},
 ): FxRun => {
 	if (!root || typeof document === "undefined") return NONE;
@@ -648,9 +679,17 @@ export const startFx = (
 		case "cutin":
 			return cutin(root, k, opt.art);
 		case "heat":
-			return heat(root, k, still);
+			return heat(root, k, still, opt.track);
 		case "boom":
-			return boom(root, k, still, !!opt.bare, false, opt.at);
+			return boom(
+				root,
+				k,
+				still,
+				!!opt.bare,
+				false,
+				opt.at ?? opt.track?.() ?? undefined,
+				opt.track,
+			);
 		case "blackout":
 			return blackout(root);
 		case "chiin":

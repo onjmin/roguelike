@@ -59,6 +59,7 @@ import type {
 	Script,
 	Story,
 	VillageExit,
+	VoiceDef,
 	VState,
 } from "../../engine/defs";
 import type { Emote, Gesture, Hit } from "../../engine/emote";
@@ -165,6 +166,9 @@ const DRAW_MARGIN = 6;
 const INDOOR_BLACKOUT = "rgb(46, 48, 78)";
 /** 道の ない すきまを 弧を えがいて とびこえるのは これだけ（マス）まで（台・キリコの 1マス ごし）。 */
 const HOP_JUMP = 2;
+/** 叫ぶ 声（ツッコミ）：怒りの 声で 勢いよく。声が 無ければ そのまま。 */
+const shoutIf = (v: VoiceDef | undefined, on: boolean): VoiceDef | undefined =>
+	v && on ? { ...v, emotion: "angry", style: "lively" } : v;
 /** とびこえる のに かける ms（これより 短くは しない。歩く 速さで 1マス ぶんずつ）。 */
 const JUMP_MS = 320;
 
@@ -1982,7 +1986,8 @@ export class Village {
 		const shown = mode ? modeText(text, mode) : text;
 		// 声の ある 人（data/people/cast.ts の voice・MOB_VOICE）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
 		// 絵文字は 読み上げの 側で 落とす（engine/audio.ts）
-		const voice = opt.tts ?? c?.voice;
+		// ツッコミ（hit の ある 行）は 叫ぶ（怒りの 声で 勢いよく）
+		const voice = shoutIf(opt.tts ?? c?.voice, !!opt.hit);
 		// 感情の 記号・体の 動き（engine/emote.ts）：話す 人の 頭に。名前を かえた 声（住人・来客）は 話しかけた 相手
 		if (opt.emote || opt.gesture) {
 			const who2 = opt.speaker ?? (who && !opt.name ? who : this.talking?.id);
@@ -2032,8 +2037,9 @@ export class Village {
 		mode: KirikoMode,
 		emote?: Emote,
 		auto?: number,
+		shout = false,
 	): Promise<void> {
-		const voice = mode === "voice" ? KIRIKO.voice : undefined;
+		const voice = mode === "voice" ? shoutIf(KIRIKO.voice, shout) : undefined;
 		this.msg.overFade(this.fadeEl.style.opacity === "1");
 		return this.msg.show({
 			name: KIRIKO.name,
@@ -2130,6 +2136,33 @@ export class Village {
 					y: c.top - ui.top + (y * TILE + TILE / 2 - this.camY) * k,
 				};
 			},
+			farCell: (max) => {
+				// キリコの 立つ マスから 4方向に 歩ける マスを 広げ、max 歩 以内で いちばん 遠い 所
+				const p = this.player;
+				const seen = new Set([`${p.x},${p.y}`]);
+				let ring: [number, number][] = [[p.x, p.y]];
+				let far: [number, number] | null = null;
+				for (let d = 1; d <= max && ring.length; d++) {
+					const next: [number, number][] = [];
+					for (const [x, y] of ring)
+						for (const [dx, dy] of [
+							[1, 0],
+							[-1, 0],
+							[0, 1],
+							[0, -1],
+						] as const) {
+							const nx = x + dx;
+							const ny = y + dy;
+							const key = `${nx},${ny}`;
+							if (seen.has(key) || !this.freeFor(p, nx, ny)) continue;
+							seen.add(key);
+							next.push([nx, ny]);
+						}
+					if (next.length) far = next[next.length - 1];
+					ring = next;
+				}
+				return far;
+			},
 			kiriko: async (text, mode, cue) => {
 				await this.beatHold();
 				// 見せ場の 間と ツッコミの 音（キリコが 突く 相手は 話しかけて いる 人）
@@ -2137,7 +2170,7 @@ export class Village {
 				// キリコの 頭に 感情の 記号・動き（engine/emote.ts）
 				if (cue?.emote) this.player.showEmote(cue.emote, false);
 				if (cue?.gesture) this.player.showGesture(cue.gesture, false);
-				return this.sayKiriko(text, mode, cue?.emote, cue?.auto);
+				return this.sayKiriko(text, mode, cue?.emote, cue?.auto, !!cue?.hit);
 			},
 			choose: async (options, opt) => {
 				await this.beatHold();
