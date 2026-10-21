@@ -6,8 +6,8 @@
 //   音符が のぼる。止まって いれば キリコは 立って 息を し、鮭は じっと している）、その 右に コード進行の 札、
 //   右に 手（かける／とめる・つぎへ・まえへ・くりかえし・MMLをコピー・もどる）、下に「番号：曲名」の 札（鳴って いれば ♪）。
 // - 番号は 曲ごとに きまって いる（data/audio/music.ts の jukeboxSlots：ぜんぶ 聞いた ときの 並びの 1から）。
-//   まだ 聞いて いない 曲は 欠番で「番号：？？？」。送れば 札は 出るが、かけられない・コピーできない（絵は 立った まま、
-//   コード進行も 出さない）。かけて いる まま 欠番へ 送ると 音を 絞り、次に 聞いた 曲へ 送れば また 鳴る。
+//   まだ 聞いて いない 曲は 欠番。つぎへ・まえへ・鳴りおわった あとの 送りは 欠番を とばして、次の 聞いた 曲まで 進む
+//   （聞いた 曲が 1つも なければ 欠番の 札「番号：？？？」だけ 出て、かけられない・コピーできない）。
 // - コマ送りは 曲の 拍に 合わせる（うんJレゼの MV と 同じ 決まり：キリコは 8コマで 1拍、鮭は 8コマで 1小節）。
 //   拍は 鳴って いる 位置（engine/audio.ts の bgmStep。1拍＝48 ステップ）から。鳴らせない ときは MML の t から 時計で。
 // - コード進行の 札：MML から 推定した 進行（data/audio/chords.ts）。いまの コードを 大きく（変わった 拍で はねる）、
@@ -127,8 +127,10 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			slots.findIndex((s) => s.disc),
 		);
 		let sel = 0;
-		/** かけて いる（欠番の 行では 音は 絞って いるが、送れば また 鳴る）。 */
+		/** かけて いる。 */
 		let playing = false;
+		/** かけた 曲の 音が 鳴りはじめた（絵と コード進行は ここから 動く）。 */
+		let started = false;
 		let loop = false;
 		/** 鳴らしの 世代（止める・送ると 進む。古い 鳴らしの 続きを 捨てる）。 */
 		let token = 0;
@@ -199,16 +201,26 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			const track = disc();
 			if (!track) return;
 			playing = true;
+			// 絵と コード進行は 音が 鳴りはじめてから（前の 曲を 絞る・読みこむ あいだは 止めて おく）。
+			// くりかえしの 2周目（from が ある）は 続きなので 止めない
+			if (!from) started = false;
 			secPerBeat = 60 / songBpm(BGM_MML[track.bgm] ?? "");
 			lastStep = -1;
 			render();
 			// 音が 出ない（ミュート・BGM 切）：絵だけ MML の 速さで 動かす（次の 曲へは 進まない）
-			if (!audio.bgmEnabled) return;
+			if (!audio.bgmEnabled) {
+				started = true;
+				return;
+			}
 			if (!from) {
 				await audio.fadeBgm(120);
 				if (t !== token) return;
 			}
-			const ended = await audio.playOnce(track.bgm, from);
+			const ended = await audio.playOnce(track.bgm, from, () => {
+				if (t !== token) return;
+				started = true;
+				lastStep = -1;
+			});
 			if (t !== token) return;
 			if (!ended) {
 				// 鳴らせない（ミュート・BGM 切）
@@ -230,17 +242,19 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			render();
 			await audio.fadeBgm(200);
 		};
-		const step = (d: number) => {
+		/** つぎへ・まえへ：まだ 聞いて いない 曲（欠番）は とばして、聞いた 曲まで 送る（鳴りおわった あとの 送りと 同じ）。 */
+		const step = (d: 1 | -1) => {
 			if (!slots.length) return;
-			cur = (cur + d + slots.length) % slots.length;
+			const to = nextOpen(cur, d);
+			if (to === cur && slots[cur]?.disc) {
+				// 聞いた 曲が ほかに ない
+				ctx.se("cancel");
+				return;
+			}
+			cur = to;
 			ctx.se("cursor");
 			if (playing && disc()) void play();
-			else if (playing) {
-				// 欠番：音を 絞って 待つ（次に 聞いた 曲へ 送れば また 鳴る）
-				token++;
-				render();
-				void audio.fadeBgm(200);
-			} else render();
+			else render();
 		};
 		const run = async (c: Cmd): Promise<void> => {
 			if (closed) return;
@@ -332,8 +346,8 @@ export const openJukebox = (ctx: Ctx): Promise<void> =>
 			g.fillRect(0, 0, W, H);
 			g.fillStyle = "#2a1c48";
 			g.fillRect(0, H - FLOOR, W, FLOOR);
-			// 欠番の 行は 鳴って いない ときと 同じ 絵（曲の 顔も 進行も 出さない）
-			const sounding = playing && !!disc();
+			// 鳴りはじめる まで・欠番の 行は 鳴って いない ときと 同じ 絵（曲の 顔も 進行も 動かさない）
+			const sounding = playing && started && !!disc();
 			const beats = sounding ? beatsNow(now) : 0;
 			const inBeat = beats - Math.floor(beats);
 			const x = (STAGE_W - CELL * SCALE) / 2;

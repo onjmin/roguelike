@@ -682,7 +682,12 @@ export class GameAudio {
 	 * 途中で ほかの 曲に かわった・止めた・鳴らせない（ミュート・BGM 切）なら false。
 	 * 止めた あとは 曲名を 忘れる（次の bgm() は 頭から）。
 	 */
-	async playOnce(name: string, fromStep = 0): Promise<boolean> {
+	async playOnce(
+		name: string,
+		fromStep = 0,
+		/** 音が 鳴りはじめた（読みこみの あと。ラジカセの 絵と コード進行は ここから 動く）。 */
+		onStart?: () => void,
+	): Promise<boolean> {
 		this.stopBgmPlayback();
 		this.bgmName = null;
 		this.bgmLastStep = fromStep;
@@ -706,6 +711,7 @@ export class GameAudio {
 		}
 		this.bgmPlayback = pb;
 		this.bgmBus = bus;
+		onStart?.();
 		// 鳴りおわりを こまめに 見る（くりかえしの 継ぎ目を 短く）
 		while (pb.isPlaying()) {
 			await sleep(50);
