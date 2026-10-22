@@ -436,17 +436,17 @@ const stepAside = async (
 
 /** 語りの 合図（data/story/quotes.ts の StoryPage.cue）を 起こす。 */
 /**
- * 明かりの もどる 坂で カメラを 向ける 所（話の 順。STORY.md §4.9 の 頂点）。area は 生き返る 通り
+ * 明かりの もどる 坂で カメラを 向ける 所（話の 順。人の 集まる 広場は 祭りの 場なので 最後。STORY.md §4.9 の 頂点）。area は 生き返る 通り
  * （data/town/revival.ts）。持ち帰った 板の 通りだけ 回る。
  */
 const LIGHTS_UP: readonly { area: string; name: string; at: Cell }[] = [
-	{ area: "plaza", name: "広場に明かり", at: [20, 21] },
 	{ area: "street", name: "商店街に明かり", at: [45, 17] },
 	{ area: "bath", name: "銭湯に明かり", at: [36, 27] },
 	{ area: "beach", name: "浜に明かり", at: [12, 34] },
 	{ area: "tako", name: "たこ八に明かり", at: [22, 32] },
 	{ area: "shrine", name: "丘の神社に明かり", at: [4, 9] },
 	{ area: "lights", name: "町じゅうの街灯に明かり", at: [28, 6] },
+	{ area: "plaza", name: "広場に明かり", at: [20, 21] },
 ];
 
 /**
@@ -504,7 +504,7 @@ const flickerOff = async (s: Story, on: SceneLit): Promise<void> => {
  * よその 板から 来た 人（住人・名無し・野次馬・ご近所）を 集める。場面だけ（おわりの 建て直しで 持ち場へ もどる）。
  */
 const festivalGather = (s: Story, keep: readonly string[]): void => {
-	const plaza = LIGHTS_UP[0].at;
+	const plaza = LIGHTS_UP.find((l) => l.area === "plaza")?.at ?? [20, 21];
 	const [px, py] = freeAround(s, 1, plaza)[0] ?? plaza;
 	s.place("player", px, py, "down");
 	take(s, [[px, py]]);
@@ -532,7 +532,7 @@ const playCue = async (
 ): Promise<void> => {
 	if (c === "lightsUp") {
 		// 明かりの もどる 坂（STORY.md §4.9 の 頂点）：まだ 暗い 町で、生き返った 通りを 話の 順に 見せて、
-		// カメラが 着いた 通りから 窓・看板が 灯る。さいごに 街灯と 家の 窓（電池板）。
+		// カメラが 着いた 通りから 窓・看板が 灯る。街灯と 家の 窓（電池板）の あと、さいごに 人の 集まる 広場。
 		// 灯りきったら 暗転で 電池板を 持ち帰った 町（シャッターが 開く）に 建て直す
 		const areas = new Map(
 			revivedAreas(loadProgress().cleared).map((a) => [a.id, a] as const),
