@@ -226,7 +226,7 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			nanashi("ワイの家も、\n独立したで"),
 			nanashi("ワイの消しゴムは、\n国連に加盟したで"),
-			e({ emote: "驚", hit: "slap" }, k("独立しすぎンゴ！")),
+			e({ emote: "驚", hit: "slap" }, k("町長の許可なく、\n独立しすぎンゴ！")),
 			nanashi("ほんで、さっき消しゴムに\n宣戦布告された"),
 			{
 				...e({ auto: 1300 }, n("名無しは、消された。")),
@@ -277,6 +277,11 @@ export const SKITS: readonly Skit[] = [
 				cutin: true,
 			},
 			e({ pause: 400 }, kinoko("わたしです")),
+			// 総統（成り上がりの 2段目）は きのこの ほうを 軍に 入れる
+			e(
+				{ emote: "得", auto: 1200 },
+				k("ほな、きのこのほうを\n総統軍に入れるンゴ"),
+			),
 			e({ auto: 900 }, kinoko("この人は、もう\n抜いてええで")),
 			{
 				...e({ auto: 1300 }, n("名無しが、抜けた。")),
@@ -305,7 +310,7 @@ export const SKITS: readonly Skit[] = [
 		stage: { cast: { 名無し: "x_nanashi" } },
 		lines: [
 			nanashi("停電や！\nだれか、発電してくれ！"),
-			e({ gesture: "spin" }, k("吾輩が、蓄音機を\n回すンゴ！")),
+			e({ gesture: "spin" }, k("皇帝みずから、\n蓄音機を回すンゴ！")),
 			{
 				...e({ pause: 300 }, nanashi("\n……豆電球、ついたで！")),
 				fx: "bulb",
@@ -317,10 +322,7 @@ export const SKITS: readonly Skit[] = [
 				fx: "blackout",
 			},
 			{
-				...e(
-					{ emote: "冷", pause: 400 },
-					nanashi("……キリコ、\n朝まで回しとけ"),
-				),
+				...e({ emote: "冷", pause: 400 }, nanashi("……皇帝、\n朝まで回しとけ")),
 				calm: true,
 			},
 			{
@@ -332,7 +334,7 @@ export const SKITS: readonly Skit[] = [
 			},
 		],
 	},
-	// 最終話の あと（後日談の 前）：てっぺんに いたのは やきうだった。出て いた キリコが いちばん ネタバレで、
+	// 最終話の あと（後日談の 前）：皇帝は 鯖代で 差し押さえ（STORY.md §4.9「成り上がりと 転落」）。本人が いちばん ネタバレで、
 	// 殴られた あとは 殴りあいに なる。映画館の 前に 来たら、出て きた 名無し 2人が 話して いる
 	{
 		key: "window_midashi",
@@ -357,9 +359,9 @@ export const SKITS: readonly Skit[] = [
 		stage: { cast: { 名無し: "x_a" } },
 		lines: [
 			nanashi("最終話、見たか？"),
-			nanashi("見た。\nまさか、やきうが……"),
+			nanashi("見た。まさか、皇帝が\n差し押さえ……"),
 			e({ emote: "怒", hit: "punch" }, nanashi("ネタバレすな！")),
-			k("吾輩、最終話に\n出てたンゴ"),
+			k("吾輩、その\n元皇帝ンゴ"),
 			{
 				...e(
 					{ emote: "怒", hit: "whack", pause: 400 },
