@@ -47,7 +47,9 @@ export type SceneFx =
 	/** 自主規制（服が 飛んだ 人を モザイクの 札で 隠す。opt.track の 人の 上）。 */
 	| "mosaic"
 	/** 豆電球（opt.track の 人の 頭の 上に ともる。暗い 町を ぼんやり 照らす）。 */
-	| "bulb";
+	| "bulb"
+	/** 火（fxAt の マス・opt.track から 炎が 立つ。厨房の 鍋など）。 */
+	| "fire";
 
 /** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
 export const FX_BEFORE_WALK: readonly SceneFx[] = [
@@ -706,6 +708,50 @@ const bulb = (
 	return { ready: sleep(450), end };
 };
 
+/** 火：マス（鍋・コンロ）から 炎が ゆらゆら 立つ。カメラが 動いたら 追う。 */
+const fire = (
+	root: HTMLElement,
+	still: boolean,
+	track?: () => { x: number; y: number } | null,
+): FxRun => {
+	const L = layer(root, "fx-fire");
+	if (!L) return NONE;
+	const r = rng(0xf13e);
+	const tongues = Array.from({ length: 7 }, (_, i) => ({
+		x: (i - 3) * 2.2,
+		h: 6 + r() * 6,
+		ph: r() * Math.PI * 2,
+	}));
+	const fade = 300;
+	const end = animate(L, (t, ending) => {
+		const g = L.g;
+		const out = ending === null ? 1 : Math.max(0, 1 - ending / fade);
+		const p = track?.();
+		const o = p ? { x: p.x / PX, y: p.y / PX } : { x: L.w / 2, y: L.h * 0.45 };
+		// 燃え上がる（はじめの 300ms で 背が のびる）
+		const grow = Math.min(1, t / 300);
+		g.globalAlpha = out;
+		for (const q of tongues) {
+			const sway = still ? 0 : Math.sin(t / 80 + q.ph) * 1.5;
+			const h = q.h * grow * (still ? 1 : 0.8 + 0.2 * Math.sin(t / 60 + q.ph));
+			for (let k = 0; k < h; k++) {
+				const w = Math.max(1, Math.round((1 - k / h) * 3));
+				g.fillStyle =
+					k < h * 0.35 ? "#fff2a0" : k < h * 0.7 ? "#ffa030" : "#e84020";
+				g.fillRect(
+					Math.round(o.x + q.x + sway * (k / h)) - Math.floor(w / 2),
+					Math.round(o.y + 4 - k),
+					w,
+					1,
+				);
+			}
+		}
+		g.globalAlpha = 1;
+		return ending === null || ending < fade;
+	});
+	return { ready: sleep(350), end };
+};
+
 /** たおれた：画面が 暗く 赤く なり、まんなかに 大きな 字。 */
 const ko = (root: HTMLElement, k: number, caption?: string): FxRun => {
 	const d = document.createElement("div");
@@ -793,6 +839,8 @@ export const startFx = (
 			return mosaic(root, opt.track);
 		case "bulb":
 			return bulb(root, still, opt.track);
+		case "fire":
+			return fire(root, still, opt.track);
 		case "boom":
 			return boom(
 				root,

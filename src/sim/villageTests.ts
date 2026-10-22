@@ -9109,7 +9109,11 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 		setProgress(["shallow"], [], []);
 		ok(nearSkit("village", 19, 22) === null, "before the first return");
 		pushRecord({ kind: "dead" });
-		ok(nearSkit("village", 19, 22)?.key === "window_pan", "before パン板");
+		ok(
+			nearSkit("village", 8, 20)?.key === "window_pan" &&
+				nearSkit("village", 19, 22) === null,
+			"before パン板: only by the 原住民",
+		);
 		// パン板を 持ち帰ったら パン板の 前の 寸劇は もう 出ない（見逃した）
 		setProgress(["shallow", "kinoko"], [], ["shallow"]);
 		ok(
@@ -9143,6 +9147,25 @@ test("寸劇: Kiriko's stage spot is a floor cell of that room, and every cast a
 		const st = sk.stage;
 		if (!st) continue;
 		const on = sk.on;
+		// 村の 寸劇（場面の 人と 住人だけ。部屋の 立ち位置は ない）
+		if (
+			!st.at &&
+			!st.walk &&
+			(on.k === "near" ||
+				on.k === "death" ||
+				!("map" in on) ||
+				on.map === "village" ||
+				on.map === undefined)
+		) {
+			const extras = new Set((sk.extras ?? []).map((x) => x.id));
+			for (const id of Object.values(st.cast ?? {}))
+				ok(
+					extras.has(id) ||
+						(id.startsWith("mob_") && MOB_IDS.includes(id.slice(4) as MobId)),
+					`${sk.key}: ${id} is neither an extra nor a resident`,
+				);
+			continue;
+		}
 		const map =
 			on.k === "enter" || on.k === "buy"
 				? on.map
@@ -9154,13 +9177,15 @@ test("寸劇: Kiriko's stage spot is a floor cell of that room, and every cast a
 		const f = FACILITIES.find((x) => facilityMapId(x) === map);
 		const rows = f ? facilityRoomRows(f) : roomRows(map as RoomId);
 		const tiles = f ? facilityRoomPalette(f) : roomPalette(map as RoomId);
-		const people = new Set(
-			f
+		// 地図の 人と 場面だけの 人（寸劇の 名無し・客）
+		const people = new Set([
+			...(f
 				? (f.room?.people ?? []).map((p) => p.id)
 				: map === "bath"
 					? ["bandai"]
-					: [],
-		);
+					: []),
+			...(sk.extras ?? []).map((x) => x.id),
+		]);
 		const floor = (c: readonly [number, number]): boolean =>
 			!!tiles[[...(rows[c[1]] ?? "")][c[0]] ?? ""]?.passable;
 		if (st.at) {
@@ -9187,6 +9212,32 @@ test("寸劇: Kiriko's stage spot is a floor cell of that room, and every cast a
 				SKITS.some((x) => x.key === sk.follows),
 				`${sk.key}: follows ${sk.follows}`,
 			);
+});
+
+test("寸劇: every named speaker stands on screen (a map person or a scene extra), unless the line says where the hidden voice comes from", () => {
+	// 見えない 声で よいのは 中に いる 人（金庫の 中・グラスの 中）と、どこから かを 言う 声（下から・上から・床の 下から）
+	const hiddenVoice = (text: string): boolean =>
+		/^（(下から|上から|床の下から|グラスの中から|キリコの上で)）/.test(text);
+	const offScreen = new Set(["金庫の中の人"]);
+	for (const sk of SKITS) {
+		const cast = sk.stage?.cast ?? {};
+		const extras = new Set((sk.extras ?? []).map((x) => x.id));
+		for (const id of Object.values(cast))
+			if (id.startsWith("x_"))
+				ok(extras.has(id), `${sk.key}: ${id} is cast but not an extra`);
+		for (const l of sk.lines) {
+			for (const id of [l.show ?? []].flat())
+				ok(extras.has(id), `${sk.key}: shows ${id}, which is not an extra`);
+			if (l.hide?.startsWith("x_"))
+				ok(extras.has(l.hide), `${sk.key}: hides ${l.hide}`);
+			if (!l.who || typeof l.who !== "object") continue;
+			const name = l.who.name;
+			ok(
+				!!cast[name] || offScreen.has(name) || hiddenVoice(l.text),
+				`${sk.key}: ${name}「${l.text.split("\n")[0]}」 is not on screen`,
+			);
+		}
+	}
 });
 
 test("寸劇: a skit with a chance is decided once per return (not on every step), and comes on some returns but not all", () => {

@@ -9,6 +9,7 @@ import type { MobId } from "../../data/people/mobs";
 import {
 	SKITS,
 	type Skit,
+	type SkitExtra,
 	type SkitLine,
 	type SkitOn,
 	type SkitWindow,
@@ -17,6 +18,7 @@ import type { Story } from "../../engine/defs";
 import { type Cue, cueOf } from "../../engine/emote";
 import { loadProgress, loadRecords } from "../../engine/save";
 import { FX_SE, type FxRun, fxRoot, startFx } from "../../engine/sceneFx";
+import type { Dir } from "../../engine/types";
 
 const KEY = "kiriko-roguelike/skits";
 
@@ -152,22 +154,51 @@ const play = async (
 	// 「事が 起きている 方向に プレイヤーを 向かせる」）。おわりに カメラは キリコへ もどす
 	const face = sk.on.k === "near" ? sk.on.face : undefined;
 	if (face) {
-		const dx = face[0] - s.state.x;
-		const dy = face[1] - s.state.y;
-		s.face(
-			"player",
-			Math.abs(dx) >= Math.abs(dy)
-				? dx < 0
-					? "left"
-					: "right"
-				: dy < 0
-					? "up"
-					: "down",
-		);
+		s.face("player", dirTo(s.state.x, s.state.y, face));
 		await s.look(face);
 	}
+	// 場面だけの 人（話す 人を 画面に 出す）。そばの マスは 先に まとめて 決める（キリコが 吹っとんでも 動かない）
+	const extras = sk.extras ?? [];
+	const home: readonly [number, number] = [s.state.x, s.state.y];
+	const near = s.freeNear?.(extras.filter((x) => x.at === "near").length) ?? [];
+	const cellOf = new Map<string, readonly [number, number]>();
+	for (const x of extras)
+		cellOf.set(
+			x.id,
+			x.at === "kiriko"
+				? home
+				: x.at === "near"
+					? (near.shift() ?? home)
+					: x.at,
+		);
+	const bring = async (x: SkitExtra): Promise<void> => {
+		const at = cellOf.get(x.id) ?? home;
+		const dir = x.face ?? dirTo(at[0], at[1], home);
+		const from =
+			x.come === "walk"
+				? (s.farCell?.(4) ?? at)
+				: Array.isArray(x.come)
+					? (x.come as readonly [number, number])
+					: null;
+		if (x.come === "drop") {
+			// 上から 落ちて くる（3マス 上から 1マスずつ）
+			for (let k = 4; k > 0; k--) {
+				s.extra?.(x.id, x.sprite, at[0], at[1] - k, "down");
+				if (x.wear) s.wear(x.id, x.wear);
+				await s.wait(45);
+			}
+		}
+		s.extra?.(x.id, x.sprite, from?.[0] ?? at[0], from?.[1] ?? at[1], dir);
+		if (x.wear) s.wear(x.id, x.wear);
+		if (from && (from[0] !== at[0] || from[1] !== at[1])) {
+			await s.goto(x.id, at[0], at[1], { noWarp: true });
+			s.face(x.id, dir);
+		}
+	};
+	await Promise.all(extras.filter((x) => !x.later).map(bring));
 	// 爆発などの エフェクト（calm の 窓か 寸劇の 終わりで 消える。地図は こわれないので 消えたら 元通り）
 	let fx: FxRun | null = null;
+	let put = false;
 	try {
 		for (const l of sk.lines) {
 			if (l.calm && fx) {
@@ -176,24 +207,34 @@ const play = async (
 			}
 			// カメラを 向ける（爆発する 家・物の ほう。null で キリコへ）
 			if (l.look !== undefined) await s.look(l.look);
+			if (l.show)
+				await Promise.all(
+					(typeof l.show === "string" ? [l.show] : l.show).map(async (id) => {
+						const x = extras.find((e) => e.id === id);
+						if (x && !hidden.includes(id)) await bring(x);
+						else s.show(id);
+					}),
+				);
 			if (l.fx) {
 				fx?.end();
 				const se = l.fx === "boom" ? "explosion" : FX_SE[l.fx];
 				if (se) s.se(se);
-				// 出す 所：fxAt の マス（家の 上）、温め・自主規制・豆電球は キリコの 上。カメラが 動いても その 所を 追う
-				const cell =
-					l.fxAt ??
-					(l.fx === "heat" || l.fx === "mosaic" || l.fx === "bulb"
-						? null
-						: undefined);
+				// 出す 所：fxAt の マス（家の 上）か 人（歩いても 追う）、温め・自主規制・豆電球は キリコの 上
+				const at = l.fxAt === "mob" && mob ? `mob_${mob.id}` : l.fxAt;
+				const cell = (): readonly [number, number] | null =>
+					typeof at === "string"
+						? (s.posOf?.(at) ?? null)
+						: (at ?? [s.state.x, s.state.y]);
 				const track =
-					cell === undefined
+					at === undefined &&
+					l.fx !== "heat" &&
+					l.fx !== "mosaic" &&
+					l.fx !== "bulb"
 						? undefined
-						: () =>
-								s.cellPoint?.(
-									cell ? cell[0] : s.state.x,
-									cell ? cell[1] : s.state.y,
-								) ?? null;
+						: () => {
+								const c = cell();
+								return c ? (s.cellPoint?.(c[0], c[1]) ?? null) : null;
+							};
 				fx = startFx(fxRoot(), l.fx, { caption: l.caption, track });
 				await fx.ready;
 			}
@@ -202,6 +243,11 @@ const play = async (
 			if (l.fling) {
 				const to = l.fling === "far" ? s.farCell?.(7) : l.fling;
 				if (to) await fling(s, to);
+			}
+			// 歩いて 入れない 所（海・池）へ
+			if (l.put) {
+				s.place("player", l.put[0], l.put[1]);
+				put = true;
 			}
 			// 顔の カットイン（キリコの 驚きの 顔。ひとりでに 消える）
 			if (l.cutin)
@@ -213,8 +259,12 @@ const play = async (
 			if (l.text) await line(s, l, mob, cast);
 		}
 	} finally {
+		// 場面の 人を 帰す・キリコを もどす 前に、最後の 窓を 閉じる（窓が 残った まま 人が 消えない ように）
+		if (extras.length || hidden.length || put) await s.wait(300);
 		fx?.end();
+		for (const x of extras) s.dropExtra?.(x.id);
 		for (const id of hidden) s.show(id);
+		if (put) s.place("player", home[0], home[1]);
 		if (face || sk.lines.some((l) => l.look)) await s.look(null);
 		// 持ち場へ 来た 人は もとの 所へ
 		await Promise.all(
@@ -224,6 +274,19 @@ const play = async (
 			}),
 		);
 	}
+};
+
+/** (x, y) から c を 見る 向き。 */
+const dirTo = (x: number, y: number, c: readonly [number, number]): Dir => {
+	const dx = c[0] - x;
+	const dy = c[1] - y;
+	return Math.abs(dx) >= Math.abs(dy)
+		? dx < 0
+			? "left"
+			: "right"
+		: dy < 0
+			? "up"
+			: "down";
 };
 
 /** キリコが 吹っとぶ（すべって 回り、画面が ゆれる。行けない マスなら 近い 所まで）。 */

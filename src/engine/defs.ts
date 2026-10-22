@@ -239,6 +239,16 @@ export type Story = {
 	cellPoint?(x: number, y: number): { x: number; y: number } | null;
 	/** キリコから 歩いて 行ける、max 歩 以内で いちばん 遠い マス（吹っとぶ 先。無ければ null）。 */
 	farCell?(max: number): [number, number] | null;
+	/** キリコから 歩いて 行ける、人の いない マス（近い 順に n 個。キリコの マスは 入れない）。 */
+	freeNear?(n: number): [number, number][];
+	/** 人（イベント ID か "player"）の いる マス（いなければ null）。 */
+	posOf?(id: string): [number, number] | null;
+	/**
+	 * 場面だけの 人を 出す（寸劇の 名無し など。地図の イベントでは ないので 話しかけられず、通りぬけられる）。
+	 * 同じ id なら 置きなおす。dropExtra か 地図を 移ると 消える。show・hide・goto・place・face が きく。
+	 */
+	extra?(id: string, sprite: string, x: number, y: number, dir?: Dir): void;
+	dropExtra?(id: string): void;
 	/** 地の文。 */
 	narrate(text: string): Promise<void>;
 	/** 選択肢。選ばれた番号を返す（cancel があれば B・外のタップで その番号。start は はじめの カーソル）。 */

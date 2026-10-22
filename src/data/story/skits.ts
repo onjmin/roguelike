@@ -12,9 +12,11 @@
 
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
+import type { HeadProp } from "../../engine/headProp";
 import type { SceneFx } from "../../engine/sceneFx";
 import type { Dir } from "../../engine/types";
 import type { MobId } from "../people/mobs";
+import { NANASHI_WALK } from "../village/hall";
 
 /** 1窓。who は キリコ・地の文（null）・その 住人（mob。death だけ）・名前つきの 人（店員 など。立ち絵なし）。 */
 export type SkitLine = Cue & {
@@ -28,16 +30,40 @@ export type SkitLine = Cue & {
 	calm?: true;
 	/** この 窓の 前に カメラを 向ける マス（null で キリコへ）。 */
 	look?: readonly [number, number] | null;
-	/** fx を 出す 地図の マス（爆発する 家の 上 など。無ければ 画面の まんなか）。 */
-	fxAt?: readonly [number, number];
+	/** fx を 出す 所：地図の マス（爆発する 家の 上 など）か 人の id（"mob" は その 住人。歩いても 追う）。無ければ 画面の まんなか。 */
+	fxAt?: readonly [number, number] | string;
 	/** この 窓の 前に 鳴らす 効果音（data/audio/sfx.ts）。 */
 	se?: string;
 	/** この 窓の 前に キリコが その マスまで 吹っとぶ（速く すべり、画面が ゆれる）。 */
 	fling?: readonly [number, number] | "far";
 	/** この 窓の 前に キリコの 顔の カットイン（驚き・ツッコミの 瞬間）。 */
 	cutin?: true;
-	/** この 窓の 前に 地図の 人（ID）を 消す（床の 下へ 沈んだ など。寸劇の 終わりに もどる）。 */
+	/** この 窓の 前に 地図の 人・場面の 人（ID）を 消す（床の 下へ 沈んだ など。"player" は キリコ。寸劇の 終わりに もどる）。 */
 	hide?: string;
+	/** この 窓の 前に 場面の 人（SkitExtra の id。いくつでも いっしょに）を 出す（later の 人。来かたは come）。消した 人なら その場に もどる。 */
+	show?: string | readonly string[];
+	/** この 窓の 前に キリコを その マスへ 置く（海・池の 中 など 歩いて 入れない 所。終わりに もとの マスへ）。 */
+	put?: readonly [number, number];
+};
+
+/**
+ * 場面だけの 人（寸劇の 名無し・客・おまわりさん など。台詞で 話す 人は 画面に 出す）。
+ * 寸劇の あいだだけ いて、終わると 消える。話しかけられない。
+ */
+export type SkitExtra = {
+	id: string;
+	/** 歩行グラ（sa: など）。 */
+	sprite: string;
+	/** 立つ マス。"near" は キリコの そばの あいた マス（村の どこでも 起きる 寸劇）、"kiriko" は キリコの マスに 重なる。 */
+	at: readonly [number, number] | "near" | "kiriko";
+	/** 向き（無ければ キリコの ほう）。 */
+	face?: Dir;
+	/** はじめは いない（窓の show で 出る）。 */
+	later?: true;
+	/** 出る ときの 来かた：walk＝少し はなれた 所から 歩いて くる・drop＝上から 落ちて くる・マス＝そこから 歩いて くる。無ければ その場に。 */
+	come?: "walk" | "drop" | readonly [number, number];
+	/** 頭の 物（頭に きのこ）。 */
+	wear?: HeadProp;
 };
 
 export type SkitOn =
@@ -90,6 +116,8 @@ export type Skit = {
 	/** この 寸劇を 見た あとでだけ 起きる（つづきもの）。 */
 	follows?: string;
 	stage?: SkitStage;
+	/** 場面だけの 人（話す 人を 画面に 出す。名前は stage.cast で つなぐ）。 */
+	extras?: readonly SkitExtra[];
 };
 
 /** 村の どこでも（期間限定の 寸劇の きっかけ：その あいだに 村を 1歩 歩いたら）。 */
@@ -133,17 +161,38 @@ const guest = by("客");
 const manager = by("店長");
 const regular = by("常連");
 const spirit = by("池の精");
+const police = by("おまわりさん");
+
+/** 場面に 出す 名無し（本館の 名無しと 同じ 絵）。 */
+const NANASHI_A = NANASHI_WALK[0];
+const NANASHI_B = NANASHI_WALK[3];
+/** きのこ（町の 事件の きのこ軍と 同じ 絵）。 */
+const KINOKO = "pub:sprites/kinonyan.png";
+/** 秘密結社の 首領と 構成員（家の 前に 出て きて いる）。 */
+const KESSHA: readonly SkitExtra[] = [
+	{ id: "x_boss", sprite: "sa:pMxknZ", at: "near" },
+	{ id: "x_member", sprite: "sa:RMEetu", at: "near" },
+];
+/** そばに 歩いて くる 名無し（村の どこでも 起きる 寸劇の 話し手）。 */
+const walkIn = (id: string, sprite = NANASHI_A): SkitExtra => ({
+	id,
+	sprite,
+	at: "near",
+	come: "walk",
+});
 
 export const SKITS: readonly Skit[] = [
 	// ───── 期間限定（話の あいだ だけ。その あいだに 村を 歩いたら。先へ 進むと 二度と 出ない） ─────
 	// 本筋は パン板（shallow）→ きのこ板（kinoko）→ 風呂板（main）→ 電池板（deep）→ 後日談（hidden）。
 	// いまの 話の ようすに ふれる（STORY.md の 各話の 事件。町の 人数・停電と 食いちがわない 人に 言わせる）。
 	// 毒（2026-10-21 作者）：ボケは 真顔で 押し通し、状況が 壊れるまで やめない。キリコは ときどき 一緒に 狂う
-	// パン板の 前：町には やきう・ぷゆゆ・原住民 だけで、広場は パン兵に 占領されて いる。原住民は もう 寝返り、キリコを 確保する
+	// パン板の 前：町には やきう・ぷゆゆ・原住民 だけで、広場は パン兵に 占領されて いる。原住民は もう 寝返り、キリコを 確保する。
+	// 話すのは 西の 空き地に すわって いる 原住民（data/people/mobs.ts の shobon）：その そばに 来たら
 	{
 		key: "window_pan",
 		window: { before: "shallow" },
-		on: ANYWHERE,
+		on: { k: "near", map: "village", x: [6, 10], y: [19, 23], face: [8, 21] },
+		stage: { cast: { 原住民: "mob_shobon" } },
 		lines: [
 			native("広場、パン兵に\n占領されちゃったね！"),
 			native("でもね、毎朝パンが配られるし、\n税金もパンで払えるよ！"),
@@ -167,18 +216,22 @@ export const SKITS: readonly Skit[] = [
 		key: "window_dokuritsu",
 		window: { after: "shallow", before: "kinoko" },
 		on: ANYWHERE,
+		extras: [walkIn("x_nanashi")],
+		stage: { cast: { 名無し: "x_nanashi" } },
 		lines: [
 			nanashi("ワイの家も、\n独立したで"),
 			nanashi("ワイの消しゴムは、\n国連に加盟したで"),
 			e({ emote: "驚", hit: "slap" }, k("独立しすぎンゴ！")),
 			nanashi("ほんで、さっき消しゴムに\n宣戦布告された"),
 			{
-				...e({ auto: 1300 }, n("名無しは、消しゴムに\n消された。")),
+				...e({ auto: 1300 }, n("名無しは、消された。")),
+				hide: "x_nanashi",
 				fx: "ko",
 				caption: "名無しは　消された",
 			},
 			{
-				...e({ auto: 1100 }, nanashi("（むくり）……\n書きなおしたで")),
+				...e({ auto: 1100 }, nanashi("……書きなおしたで")),
+				show: "x_nanashi",
 				calm: true,
 			},
 		],
@@ -188,6 +241,14 @@ export const SKITS: readonly Skit[] = [
 		key: "window_kinoko",
 		window: { after: "kinoko", before: "main" },
 		on: ANYWHERE,
+		// 頭に きのこの 名無し。抜けると きのこ（きのこ軍の 絵）が となりに 立つ
+		extras: [
+			{ ...walkIn("x_nanashi"), wear: "kinoko" },
+			{ id: "x_kinoko", sprite: KINOKO, at: "near", later: true },
+			// 抜かれて 起きあがった 名無し（頭に もう きのこは ない）
+			{ id: "x_nanashi2", sprite: NANASHI_A, at: "near", later: true },
+		],
+		stage: { cast: { 名無し: "x_nanashi", きのこ: "x_nanashi" } },
 		lines: [
 			nanashi("頭のきのこ、\nまだ抜けへんねん"),
 			nanashi("医者に見せたら、\nきのこのほうを診察された"),
@@ -200,11 +261,14 @@ export const SKITS: readonly Skit[] = [
 			e({ auto: 900 }, kinoko("この人は、もう\n抜いてええで")),
 			{
 				...e({ auto: 1300 }, n("名無しが、抜けた。")),
+				hide: "x_nanashi",
+				show: "x_kinoko",
 				fx: "ko",
 				caption: "名無しは　抜かれた",
 			},
 			{
 				...e({ auto: 1100 }, nanashi("（むくり）……\n付き添いに、もどるわ")),
+				show: "x_nanashi2",
 				calm: true,
 			},
 		],
@@ -212,28 +276,30 @@ export const SKITS: readonly Skit[] = [
 	// 第三話の あと〜最終話：電池板が 開いて 町は 停電（data/town/revival.ts の inBlackout）。
 	// 停電の 夜（story.ts の TEN_NEWS）で キリコが 蓄音機で 豆電球を 割った 天丼。割った キリコが 朝まで 回させられる。
 	// 見える ものだけで 運ぶ：暗い 町（停電の 空）・回る キリコ・頭の 上に ともる 豆電球（fx の bulb）・割れる 音と 暗転。
-	// 名無しは 暗がりの 声。画面に 無い 物（自転車・発電機）や 数（町じゅうで 何台）は 言わない
+	// 名無しは 暗い 中を 歩いて くる。画面に 無い 物（自転車・発電機）や 数（町じゅうで 何台）は 言わない
 	{
 		key: "window_teiden",
 		window: { after: "main", before: "deep" },
 		on: ANYWHERE,
+		extras: [walkIn("x_nanashi")],
+		stage: { cast: { 名無し: "x_nanashi" } },
 		lines: [
-			nanashi("（暗がりから）停電や！\nだれか、発電してくれ！"),
+			nanashi("停電や！\nだれか、発電してくれ！"),
 			e({ gesture: "spin" }, k("吾輩が、蓄音機を\n回すンゴ！")),
 			{
-				...e({ pause: 300 }, nanashi("（暗がりから）\n……豆電球、ついたで！")),
+				...e({ pause: 300 }, nanashi("\n……豆電球、ついたで！")),
 				fx: "bulb",
 			},
 			e({ gesture: "spin", auto: 700 }, k("もっと回すンゴ！")),
 			{
-				...nanashi("（暗がりから）あっ"),
+				...nanashi("あっ"),
 				se: "glassBreak",
 				fx: "blackout",
 			},
 			{
 				...e(
 					{ emote: "冷", pause: 400 },
-					nanashi("（暗がりから）……キリコ、\n朝まで回しとけ"),
+					nanashi("……キリコ、\n朝まで回しとけ"),
 				),
 				calm: true,
 			},
@@ -247,11 +313,13 @@ export const SKITS: readonly Skit[] = [
 		],
 	},
 	// 最終話の あと（後日談の 前）：てっぺんに いたのは やきうだった。出て いた キリコが いちばん ネタバレで、
-	// 殴られた あとは 町じゅうで 殴りあいに なる
+	// 殴られた あとは 殴りあいに なる（歩いて きた 名無し 2人）
 	{
 		key: "window_midashi",
 		window: { after: "deep", before: "hidden" },
 		on: ANYWHERE,
+		extras: [walkIn("x_a"), walkIn("x_b", NANASHI_B)],
+		stage: { cast: { 名無し: "x_a" } },
 		lines: [
 			nanashi("最終話、見たか？"),
 			nanashi("見た。\nまさか、やきうが……"),
@@ -327,9 +395,22 @@ export const SKITS: readonly Skit[] = [
 	// 何を 売って いるか わからない 質屋：キリコに 値札、その場で 客が 買って 運んで いく
 	{
 		key: "enter_pawn",
+		extras: [
+			{
+				id: "x_guest",
+				sprite: NANASHI_B,
+				at: [5, 6],
+				come: [4, 7],
+				later: true,
+			},
+		],
 		on: { k: "enter", map: "f_pawn" },
 		chance: 0.5,
-		stage: { at: [6, 6], face: "up", cast: { 店主: "pawn_owner" } },
+		stage: {
+			at: [6, 6],
+			face: "up",
+			cast: { 店主: "pawn_owner", 客: "x_guest" },
+		},
 		lines: [
 			owner("いらっしゃい。\nうちはなんでも売っとるで"),
 			k("なにを売ってるンゴ？"),
@@ -340,7 +421,11 @@ export const SKITS: readonly Skit[] = [
 				caption: "蓄音キリコ　30円",
 				cutin: true,
 			},
-			{ ...e({ auto: 700 }, guest("これください")), calm: true },
+			{
+				...e({ auto: 700 }, guest("これください")),
+				show: "x_guest",
+				calm: true,
+			},
 			{ ...e({ auto: 1200 }, owner("まいど")), fling: "far" },
 		],
 	},
@@ -385,11 +470,20 @@ export const SKITS: readonly Skit[] = [
 	// （格ゲーの 名無しが 両替機の 前へ 歩いて いき、キリコも その となりへ）
 	{
 		key: "buy_arcade",
+		extras: [
+			{
+				id: "x_clerk",
+				sprite: NANASHI_WALK[1],
+				at: [2, 10],
+				come: [8, 10],
+				later: true,
+			},
+		],
 		on: { k: "buy", map: "f_arcade" },
 		stage: {
 			at: [1, 10],
 			face: "up",
-			cast: { 名無し: "arcade_a" },
+			cast: { 名無し: "arcade_a", 店員: "x_clerk" },
 			walk: [
 				{
 					id: "arcade_a",
@@ -405,7 +499,10 @@ export const SKITS: readonly Skit[] = [
 			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
 			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
 			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
-			e({ pause: 400 }, clerk("お客さま、そちらは\n両替機です")),
+			{
+				...e({ pause: 400 }, clerk("お客さま、そちらは\n両替機です")),
+				show: "x_clerk",
+			},
 			{
 				...e({ emote: "冷" }, nanashi("……知っとる。美学や")),
 				fx: "freeze",
@@ -441,9 +538,15 @@ export const SKITS: readonly Skit[] = [
 	// 1000杯目で 店ごと 次スレへ（暗転して また 同じ あいさつ）。キリコも 1001杯目を 飲む
 	{
 		key: "enter_bar",
+		// カウンターで 飲んで いる 名無し
+		extras: [{ id: "x_nanashi", sprite: NANASHI_A, at: [2, 5], face: "up" }],
 		on: { k: "enter", map: "f_bar" },
 		// 座る 前（カウンターの 椅子の うしろ）
-		stage: { at: [3, 6], face: "up", cast: { マスター: "bar_master" } },
+		stage: {
+			at: [3, 6],
+			face: "up",
+			cast: { マスター: "bar_master", 名無し: "x_nanashi" },
+		},
 		lines: [
 			master("いらっしゃい。\n次スレへようこそや"),
 			master("1000杯目が出たら、\n店ごと次スレや"),
@@ -471,7 +574,12 @@ export const SKITS: readonly Skit[] = [
 			{ ...e({ emote: "驚" }, k("スープしか\n入ってないンゴ！")), cutin: true },
 			e({ emote: "得", pause: 400 }, owner("乙（おつゆ）一丁！")),
 			{
-				...e({ auto: 900 }, n("厨房から火が出て、\nキリコに燃えうつった。")),
+				...e({ auto: 800 }, n("厨房の鍋から、火が出た。")),
+				fx: "fire",
+				fxAt: [1, 4],
+			},
+			{
+				...e({ auto: 900 }, n("火は、キリコに燃えうつった。")),
 				fx: "heat",
 				fling: "far",
 			},
@@ -483,19 +591,42 @@ export const SKITS: readonly Skit[] = [
 		key: "enter_cinema",
 		on: { k: "enter", map: "f_cinema" },
 		chance: 0.5,
-		stage: { at: [2, 3], face: "left", cast: { 係員: "cinema_staff" } },
+		stage: {
+			at: [2, 3],
+			face: "left",
+			cast: { 係員: "cinema_staff", 客: "x_g3" },
+		},
+		// 客席（スクリーンの ほうを 向いて すわって いる）
+		extras: [
+			{ id: "x_g1", sprite: NANASHI_A, at: [3, 4], face: "up", later: true },
+			{ id: "x_g2", sprite: NANASHI_B, at: [5, 5], face: "up", later: true },
+			{
+				id: "x_g3",
+				sprite: NANASHI_WALK[2],
+				at: [3, 7],
+				face: "up",
+				later: true,
+			},
+		],
 		lines: [
 			usher("本日の上映は、\nスレ1本まるごとです"),
 			usher("上映時間は、\nおよそ3年です"),
 			e({ gesture: "shake" }, k("長いンゴ！")),
 			usher("なお、いま上映中の回は、\n2009年からです"),
-			e({ pause: 400, auto: 500 }, guest("（ヒゲの名無し）\n……シーッ")),
-			e({ auto: 400 }, guest("（もっとヒゲの名無し）\nシーッ")),
+			{
+				...e({ pause: 400, auto: 500 }, guest("（ヒゲの名無し）\n……シーッ")),
+				show: "x_g1",
+			},
+			{
+				...e({ auto: 400 }, guest("（もっとヒゲの名無し）\nシーッ")),
+				show: "x_g2",
+			},
 			{
 				...e(
 					{ auto: 1000 },
 					guest("（ヒゲしか見えない名無し）\nシーーーッ！！"),
 				),
+				show: "x_g3",
 				hit: "punch",
 				fling: "far",
 			},
@@ -506,7 +637,12 @@ export const SKITS: readonly Skit[] = [
 		key: "enter_casino",
 		on: { k: "enter", map: "f_casino" },
 		chance: 0.5,
-		stage: { at: [4, 6], face: "up", cast: { ディーラー: "casino_dealer" } },
+		stage: {
+			at: [4, 6],
+			face: "up",
+			cast: { ディーラー: "casino_dealer", 常連: "x_regular" },
+		},
+		extras: [{ id: "x_regular", sprite: NANASHI_B, at: [5, 5], face: "left" }],
 		lines: [
 			dealer("いらっしゃいませ。\n当店の勝率は、5割です"),
 			dealer("……お店の、です"),
@@ -559,6 +695,8 @@ export const SKITS: readonly Skit[] = [
 			{
 				...e({ auto: 800 }, owner("……ほら、いま1台")),
 				fx: "boom",
+				// 爆発するのは 店の まんなかの ブラウン管
+				fxAt: [7, 4],
 				fling: "far",
 			},
 			{
@@ -623,6 +761,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "look_kessha",
 		on: { k: "look", thing: "fthing_house_b" },
+		extras: KESSHA,
+		stage: { cast: { 首領: "x_boss", 構成員: "x_member" } },
 		lines: [
 			boss("作戦を発表する。\n今夜、おんJの全スレを1000にする"),
 			member("それ、毎晩だれかが\nやっとることですやん"),
@@ -642,6 +782,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "look_kessha2",
 		on: { k: "look", thing: "fthing_house_b" },
+		extras: KESSHA,
+		stage: { cast: { 首領: "x_boss", 構成員: "x_member" } },
 		lines: [
 			boss("作戦その2を発表する"),
 			member("どうせまた、\nこの家を爆破するんでしょ"),
@@ -658,6 +800,17 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "look_shrine",
 		on: { k: "look", thing: "shrine" },
+		extras: [
+			{ id: "x_r1", sprite: NANASHI_A, at: "near", come: "drop", later: true },
+			{ id: "x_r2", sprite: NANASHI_B, at: "near", come: "drop", later: true },
+			{
+				id: "x_r3",
+				sprite: NANASHI_WALK[2],
+				at: "kiriko",
+				come: "drop",
+				later: true,
+			},
+		],
 		lines: [
 			e({ gesture: "startle" }, k("見られてる気がするンゴ！\n……そこンゴ！")),
 			n("だれもいない。"),
@@ -667,6 +820,7 @@ export const SKITS: readonly Skit[] = [
 			e({ auto: 400 }, nanashi("（上から）ワイも")),
 			{
 				...e({ auto: 1300, hit: "zukko" }, n("名無しが、ぜんぶ降ってきた。")),
+				show: ["x_r1", "x_r2", "x_r3"],
 				fx: "ko",
 				caption: "キリコは　つぶれた",
 			},
@@ -737,15 +891,32 @@ export const SKITS: readonly Skit[] = [
 		key: "near_pond",
 		chance: 0.5,
 		on: { k: "near", map: "village", x: [10, 17], y: [30, 31], face: [13, 27] },
+		// 池の 精（池に つかった おっさん）
+		extras: [
+			{
+				id: "x_spirit",
+				sprite: "sa:lPbiIr",
+				at: [13, 28],
+				face: "down",
+				later: true,
+			},
+		],
+		stage: { cast: { 池の精: "x_spirit" } },
 		lines: [
 			k("池ンゴ！"),
-			spirit("おぬしが落としたのは、\n金の蓄音機か？銀か？"),
+			{
+				...spirit("おぬしが落としたのは、\n金の蓄音機か？銀か？"),
+				show: "x_spirit",
+				se: "bubble",
+			},
 			k("なにも落としてないンゴ"),
 			e({ pause: 400 }, spirit("では、おぬしを沈めて、\n正直かどうか確かめる")),
 			{ ...e({ emote: "青", hit: "sting" }, k("魔女裁判ンゴ！")), cutin: true },
 			{
 				...e({ auto: 1300 }, spirit("沈めます")),
 				se: "bubble",
+				put: [13, 29],
+				hide: "player",
 				fx: "ko",
 				caption: "キリコは　沈んだ",
 			},
@@ -760,6 +931,8 @@ export const SKITS: readonly Skit[] = [
 		key: "near_beach",
 		chance: 0.5,
 		on: { k: "near", map: "village", x: [40, 62], y: [33, 36], face: [50, 38] },
+		extras: [{ id: "x_swim", sprite: "sa:bOmZ55", at: [50, 39], face: "up" }],
+		stage: { cast: { 名無し: "x_swim" } },
 		lines: [
 			e({ gesture: "hop" }, k("全部の板を\n回るンゴーー！！")),
 			nanashi("（沖から）うるさい！\nこっちは遠泳中や！"),
@@ -768,7 +941,7 @@ export const SKITS: readonly Skit[] = [
 			{
 				...e({ auto: 900 }, k("……吾輩も、\n泳ぐンゴ")),
 				se: "bubble",
-				fling: "far",
+				put: [49, 38],
 			},
 			e({ auto: 1200 }, nanashi("（沖から）……ついてくんな")),
 		],
@@ -783,7 +956,12 @@ export const SKITS: readonly Skit[] = [
 			k("焼けたンゴ。\nこんがりンゴ"),
 			e({ emote: "汗" }, m("……うちより\n焼けてるもん……")),
 			e({ emote: "得" }, m("うちも踏んでくるもん！\n負けないもん！")),
-			{ ...e({ auto: 900 }, n("どかーん。")), se: "explosion", fx: "heat" },
+			{
+				...e({ auto: 900 }, n("どかーん。")),
+				se: "explosion",
+				fx: "heat",
+				fxAt: "mob",
+			},
 			e({ auto: 1200, emote: "花" }, m("……こんがり、だもん")),
 		],
 	},
@@ -802,7 +980,11 @@ export const SKITS: readonly Skit[] = [
 				),
 				cutin: true,
 			},
-			{ ...e({ auto: 900 }, m("では、再現します")), se: "fall", fling: "far" },
+			{
+				...e({ auto: 900 }, m("では、再現します")),
+				se: "fall",
+				hide: "player",
+			},
 			e({ auto: 1200 }, m("再現は、成功した模様です")),
 		],
 	},
@@ -885,6 +1067,16 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "death_nenchaku",
 		on: { k: "death", mob: "ngoane", cause: "粘着アンチ" },
+		extras: [
+			{
+				id: "x_police",
+				sprite: "sa:3TLWSw",
+				at: "near",
+				come: "walk",
+				later: true,
+			},
+		],
+		stage: { cast: { おまわりさん: "x_police" } },
 		lines: [
 			m("粘着アンチに\nやられたンゴねぇ……"),
 			m("粘着は、愛がないと\nだめンゴねぇ"),
@@ -893,7 +1085,10 @@ export const SKITS: readonly Skit[] = [
 				{ emote: "♥", pause: 400 },
 				m("愛があれば、通報されても\n平気ンゴねぇ"),
 			),
-			e({ auto: 900 }, by("おまわりさん")("ちょっと、\n署まで来てもらおか")),
+			{
+				...e({ auto: 900 }, police("ちょっと、\n署まで来てもらおか")),
+				show: "x_police",
+			},
 			e({ auto: 1200, emote: "♥" }, m("……署まで、\n愛ンゴねぇ")),
 		],
 	},

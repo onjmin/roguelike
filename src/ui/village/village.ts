@@ -596,11 +596,16 @@ export class Village {
 					new Actor(e.id, e.x, e.y, e.dir ?? "down", e.sprite ?? "", e),
 			);
 		}
-		// 街の 通行人は 地図の イベントでは ないので そのまま 残す
+		// 街の 通行人と 場面だけの 人（寸劇の 名無し）は 地図の イベントでは ないので そのまま 残す
 		const crowd = this.crowd;
 		if (crowd) keep.push(...field.actors.filter((a) => crowd.owns(a)));
+		keep.push(...field.actors.filter((a) => this.extras.get(a.id) === a));
 		field.actors = keep;
 	}
+
+	/** 場面だけの 人（Story の extra。地図を 移れば 地図ごと 消える）。 */
+	private extras = new Map<string, Actor>();
+	private extrasHidden = new Set<string>();
 
 	/** 街の 人通り（data/village/crowd.ts の 流れで 人を 歩かせる。ui/village/villageCrowd.ts）。 */
 	private makeCrowd(
@@ -1562,8 +1567,10 @@ export class Village {
 		}
 		// 停電の 場面は 場面に 出る 人と 明かりの 灯った 所の 人だけ 外に（ui/village/sceneSky.ts。見えない 人は 道も ふさがない。
 		// 向きの ない 絵の 置物は そのまま）
+		// 場面だけの 人で 消した 人（寸劇の Story.hide）は 消した まま
 		for (const a of field.actors)
-			a.visible = a.still || outsideNow(a.id, a.x, a.y);
+			a.visible =
+				(a.still || outsideNow(a.id, a.x, a.y)) && !this.extrasHidden.has(a.id);
 		// 広場の チョークの 国境線・地図の きのこ（人の 下。ui/village/sceneChalk.ts・sceneShrooms.ts）
 		if (this.mapId === "village") {
 			drawChalk(g, ox, oy);
@@ -2308,9 +2315,68 @@ export class Village {
 					) <= r
 				);
 			},
+			freeNear: (n) => {
+				// キリコの 立つ マスから 4方向に 歩ける マスを 広げ、近い 順に（場面だけの 人が いる マスは とばす）
+				const p = this.player;
+				const taken = new Set(
+					[...this.extras.values()]
+						.filter((a) => a.visible)
+						.map((a) => `${a.x},${a.y}`),
+				);
+				const seen = new Set([`${p.x},${p.y}`]);
+				let ring: [number, number][] = [[p.x, p.y]];
+				const out: [number, number][] = [];
+				for (let d = 1; d <= 6 && ring.length && out.length < n; d++) {
+					const next: [number, number][] = [];
+					for (const [x, y] of ring)
+						for (const [dx, dy] of [
+							[1, 0],
+							[-1, 0],
+							[0, 1],
+							[0, -1],
+						] as const) {
+							const nx = x + dx;
+							const ny = y + dy;
+							const key = `${nx},${ny}`;
+							if (seen.has(key) || !this.freeFor(p, nx, ny)) continue;
+							seen.add(key);
+							next.push([nx, ny]);
+							if (!taken.has(key)) out.push([nx, ny]);
+						}
+					ring = next;
+				}
+				return out.slice(0, n);
+			},
+			posOf: (id) => {
+				const a = this.actorFor(id);
+				return a ? [a.x, a.y] : null;
+			},
+			extra: (id, sprite, x, y, dir) => {
+				const field = this.field;
+				if (!field) return;
+				const old = this.extras.get(id);
+				if (old) field.actors = field.actors.filter((a) => a !== old);
+				const a = new Actor(id, x, y, dir ?? "down", sprite, null);
+				a.through = true;
+				this.extras.set(id, a);
+				this.extrasHidden.delete(id);
+				field.actors.push(a);
+			},
+			dropExtra: (id) => {
+				const a = this.extras.get(id);
+				if (!a) return;
+				this.extras.delete(id);
+				this.extrasHidden.delete(id);
+				if (this.field)
+					this.field.actors = this.field.actors.filter((b) => b !== a);
+			},
 			show: (id) => {
 				if (id === "player") {
 					this.player.visible = true;
+					return;
+				}
+				if (this.extras.has(id)) {
+					this.extrasHidden.delete(id);
 					return;
 				}
 				delete this.state.flags[this.flagKey("hide", id)];
@@ -2319,6 +2385,10 @@ export class Village {
 			hide: (id) => {
 				if (id === "player") {
 					this.player.visible = false;
+					return;
+				}
+				if (this.extras.has(id)) {
+					this.extrasHidden.add(id);
 					return;
 				}
 				this.state.flags[this.flagKey("hide", id)] = true;
