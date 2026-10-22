@@ -2324,9 +2324,11 @@ test(
 test("herb", "h_daze: a monster it hits keeps fleeing", () => {
 	const r = arena("daze-throw");
 	const m = put(r, "tousuko", at(1, 0));
+	delete r.s.ids.known.h_daze;
 	for (let i = 0; i < 10 && !m.fleeing; i++)
 		turn(r, { c: "throw", item: give(r, "h_daze").uid, dir: 2 });
 	ok(!!m.fleeing, "the herb never made it flee");
+	ok(!r.s.ids.known.h_daze, "throwing the herb identified it");
 	for (let i = 0; i < 20; i++) turn(r);
 	ok(!!now(m).fleeing && dist(m, r.p) > 1, "the monster stopped fleeing");
 });
