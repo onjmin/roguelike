@@ -49,6 +49,7 @@ import {
 import { type Facility, facilityOfMap } from "../../data/village/facilities";
 import { exitFor, VILLAGE_SPOTS, villageRows } from "../../data/village/map";
 import { isRoom, type RoomId } from "../../data/village/rooms";
+import { devSpot } from "../../devScenes";
 import { preloadImages } from "../../engine/assets";
 import { chipsOwned } from "../../engine/chips";
 import type {
@@ -416,7 +417,8 @@ export class Village {
 		const [bx, by] = VILLAGE_SPOTS.boot;
 		// 起きたとき・倒れて もどったときは 蓄音機の前（トルネコが 家で 目をさますように）
 		const boot: Spot = { x: bx, y: by, dir: "up" };
-		if (!a) return boot;
+		// 場面の 再生（devScenes.ts）：寸劇・越してくる 人の 起きる 所の そばから
+		if (!a) return devSpot() ?? boot;
 		// 植民地の 方角の 出口から 入ってくる（onEnter で 1歩 村へ）
 		if (a.kind === "clear" || a.kind === "escape") {
 			const e = exitFor(a.dungeon);

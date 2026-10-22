@@ -13,6 +13,7 @@ import { isRaceId, type RaceId } from "./core/race";
 import { Run } from "./core/run";
 import type { GuestId, Item } from "./core/types";
 import { bgm } from "./data/audio/bgm";
+import { ENDING_BGM } from "./data/audio/music";
 import { EMOTE_SE, sfx } from "./data/audio/sfx";
 import { devEvent } from "./data/story/objectives";
 import { devArrival } from "./devSandbox";
@@ -277,6 +278,9 @@ const loop = async () => {
 		(window as unknown as { __village: Village }).__village = village;
 	let first = devRun();
 	let arrival: Arrival = devArrival();
+	// 場面の 再生（devScenes.ts）は 終わりの 札（ui/village/records.ts）を とばすので、札の 曲を ここで 鳴らす
+	// （持ち帰りの 語りは その 曲の まま 始まる。鍵が 開く 前でも 曲名を 覚えて、最初の 入力で 鳴る）
+	if (arrival?.kind === "clear") audio.bgm(ENDING_BGM);
 	let boot = !first && !arrival;
 	// もらった リプレイの リンク（#r=…）で 開いたら、村の前に 見るか 聞く（engine/share.ts）
 	let shared = takeSharedHash();

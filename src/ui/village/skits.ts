@@ -71,8 +71,21 @@ export const holdSkits = (v: boolean): void => {
 /** 2幕目を 待って いるか（越してくる 場面も 止める：ui/village/arrivals.ts）。 */
 export const skitsHeld = (): boolean => held;
 
+/** 場面の 再生（devScenes.ts）で えらんだ 寸劇（きっかけに ふれたら 1回 かならず 起きる）。 */
+let forced: string | null = null;
+
+export const forceSkit = (key: string | null): void => {
+	forced = key;
+};
+
 /** まだ 見て いない 寸劇で、きっかけが 合う もの（この 帰りに もう 見ていれば null。2幕目を 待つ あいだも null）。 */
 const find = (hit: (on: SkitOn) => boolean): Skit | null => {
+	if (forced) {
+		const sk = SKITS.find((x) => x.key === forced);
+		if (!sk || !hit(sk.on)) return null;
+		forced = null;
+		return sk;
+	}
 	if (held) return null;
 	// きっかけ（場所・物）を 先に 見る（1歩ごとに 呼ばれる。保存を 読むのは 合う ものが あった ときだけ）
 	const near = SKITS.filter((sk) => hit(sk.on));
@@ -376,9 +389,13 @@ export const deathSkit = async (
 	last: { kind: string; cause: string } | null,
 	say: MobSay,
 ): Promise<boolean> => {
-	if (last?.kind !== "dead") return false;
+	// 場面の 再生では 前の 死に方を 問わない
+	if (last?.kind !== "dead" && !forced) return false;
 	const sk = find(
-		(on) => on.k === "death" && on.mob === mob && last.cause.includes(on.cause),
+		(on) =>
+			on.k === "death" &&
+			on.mob === mob &&
+			(!!forced || !!last?.cause.includes(on.cause)),
 	);
 	if (!sk) return false;
 	await play(s, sk, { id: mob, say });
