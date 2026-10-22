@@ -985,6 +985,8 @@ export class Village {
 				return;
 			}
 		}
+		// ダッシュ中は 人を すりぬける
+		for (const d of tries) if (this.dashThrough(d)) return;
 		// うろうろ 歩いている 人（お弁当の ぷゆゆ・フェリス など）が ふさいで いれば、2回 続けて 押すか
 		// 長押しで 入れかわって 通る。1回 押した だけなら 向かい合う（そのまま A で 話せる）
 		const first = tries[0];
@@ -998,6 +1000,33 @@ export class Village {
 		if (this.blockedAt === at) return;
 		this.blockedAt = at;
 		this.bumpFront();
+	}
+
+	/**
+	 * ダッシュ中、d の 先を ふさいで いるのが 人（歩行グラの キャラ）だけなら、その 向こうの
+	 * 空いた マスまで 一気に 走りぬける（人の マスで 止まらない）。物・壁は すりぬけない。走ったら true。
+	 */
+	private dashThrough(d: Dir): boolean {
+		const field = this.field;
+		if (!field || this.scriptDepth > 0 || this.scene) return false;
+		if (!this.ctx.input.mods().dash) return false;
+		const v = DIR_VEC[d];
+		let x = this.player.x + v.dx;
+		let y = this.player.y + v.dy;
+		let n = 1;
+		for (; n <= 4; n++, x += v.dx, y += v.dy) {
+			if (!field.tileAt(x, y).passable) return false;
+			const a = field.blockerAt(x, y, this.player);
+			if (!a) break;
+			if (!a.sprite || a.still) return false;
+		}
+		if (n > 4) return false;
+		this.bump = null;
+		this.blockedAt = null;
+		this.player.dir = d;
+		this.stepPending = true;
+		void this.player.walk(d, WALK_MS / DASH_SPEED, n);
+		return true;
 	}
 
 	/**

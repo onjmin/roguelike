@@ -133,26 +133,27 @@ export class Actor {
 		return this.tween !== null;
 	}
 
-	/** 1マス動く（通行判定は呼ぶ側）。着いたら解決する。 */
-	walk(dir: Dir, msPerTile: number): Promise<void> {
+	/** 1マス（tiles マス）まっすぐ 動く（通行判定は呼ぶ側）。着いたら解決する。 */
+	walk(dir: Dir, msPerTile: number, tiles = 1): Promise<void> {
 		const v = DIR_VEC[dir];
 		this.dir = dir;
+		const dur = msPerTile * tiles;
 		return new Promise((resolve) => {
 			this.tween = {
 				fromX: this.x,
 				fromY: this.y,
 				t: Math.min(this.carry, msPerTile / 2),
-				dur: msPerTile,
+				dur,
 				resolve,
 				lift: 0,
 			};
 			this.carry = 0;
-			this.x += v.dx;
-			this.y += v.dy;
+			this.x += v.dx * tiles;
+			this.y += v.dy * tiles;
 			// 回した 時間の ぶん もう 進んだ 所に 描く（この コマの 描画は 歩きだした あと）
-			const k = this.tween.t / msPerTile;
-			this.fx = this.tween.fromX + v.dx * k;
-			this.fy = this.tween.fromY + v.dy * k;
+			const k = this.tween.t / dur;
+			this.fx = this.tween.fromX + v.dx * tiles * k;
+			this.fy = this.tween.fromY + v.dy * tiles * k;
 		});
 	}
 
