@@ -16,6 +16,7 @@ import { bgm } from "./data/audio/bgm";
 import { EMOTE_SE, sfx } from "./data/audio/sfx";
 import { devEvent } from "./data/story/objectives";
 import { devArrival } from "./devSandbox";
+import { sceneMenu } from "./devScenes";
 import { GameAudio } from "./engine/audio";
 import type { VillageExit } from "./engine/defs";
 import {
@@ -353,4 +354,5 @@ window.addEventListener("hashchange", () => {
 	if (location.hash.startsWith("#r=")) location.reload();
 });
 
-void loop();
+// ?debug&scene：場面の 一覧（えらぶまで ゲームは 始めない）
+if (!sceneMenu()) void loop();
