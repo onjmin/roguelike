@@ -1296,8 +1296,15 @@ export const tenScript = async (s: Story): Promise<void> => {
 		const o = sceneOut();
 		if (o && p.look) setSceneOut({ ...o, near: [...o.near, p.look] });
 		card.show(p);
-		// 豆電球が はじける 音と 暗転（文が 言う 音と 光。頁の あいだだけ）
-		const fx = p.fx ? startFx(fxRoot(), p.fx) : null;
+		// 豆電球が ともる・はじける 音と 暗転（文が 言う 音と 光。頁の あいだだけ）。豆電球は キリコの 頭の 上
+		const fx = p.fx
+			? startFx(fxRoot(), p.fx, {
+					track:
+						p.fx === "bulb"
+							? () => s.cellPoint?.(s.state.x, s.state.y) ?? null
+							: undefined,
+				})
+			: null;
 		await fx?.ready;
 		await playPageSe(s, p);
 		await playPage(s, { ...p, ...pageCue(p) });

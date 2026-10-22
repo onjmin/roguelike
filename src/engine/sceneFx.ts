@@ -45,7 +45,9 @@ export type SceneFx =
 	/** たおれた（画面が 暗く 赤く なり、まんなかに 大きな 字＝opt.caption。すぐ 起きあがる 前の 一瞬。じーさんの「すぐ 死ぬ」）。 */
 	| "ko"
 	/** 自主規制（服が 飛んだ 人を モザイクの 札で 隠す。opt.track の 人の 上）。 */
-	| "mosaic";
+	| "mosaic"
+	/** 豆電球（opt.track の 人の 頭の 上に ともる。暗い 町を ぼんやり 照らす）。 */
+	| "bulb";
 
 /** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
 export const FX_BEFORE_WALK: readonly SceneFx[] = [
@@ -656,6 +658,54 @@ const heat = (
 	return { ready: sleep(500 * k), end };
 };
 
+/** 豆電球：人の 頭の 上に 小さな 電球が ともり、まわりが ぼんやり 明るい。カメラが 動いたら 追う。 */
+const bulb = (
+	root: HTMLElement,
+	still: boolean,
+	/** 電球を 灯す 人の 画面の 位置（#ui の CSS 画素）。無ければ 画面の まんなか。 */
+	track?: () => { x: number; y: number } | null,
+): FxRun => {
+	const L = layer(root, "fx-bulb");
+	if (!L) return NONE;
+	const at = () => {
+		const p = track?.();
+		return p ? { x: p.x / PX, y: p.y / PX } : { x: L.w / 2, y: L.h * 0.45 };
+	};
+	const fade = 250;
+	const end = animate(L, (t, ending) => {
+		const g = L.g;
+		const out = ending === null ? 1 : Math.max(0, 1 - ending / fade);
+		// ともる 瞬間に 2度 またたいて から 落ちつく（止まった 絵の 設定では またたかない）
+		const on = still || t > 360 || Math.floor(t / 90) % 2 === 1 ? 1 : 0.25;
+		const o = at();
+		const x = Math.round(o.x);
+		const y = Math.round(o.y) - 13;
+		// まわりの 明かり（暗い 町に ぼんやり）
+		const flick = still ? 1 : 0.9 + 0.1 * Math.sin(t / 70);
+		for (const [r, a] of [
+			[16, 0.1],
+			[10, 0.16],
+			[6, 0.24],
+		] as const) {
+			g.fillStyle = `rgba(255,230,140,${a * on * flick * out})`;
+			dotDisc(g, x, y, r);
+		}
+		// ガラスの 玉と 口金
+		g.globalAlpha = out;
+		g.fillStyle = on === 1 ? "#fff6c0" : "#a8a088";
+		dotDisc(g, x, y, 3);
+		g.fillStyle = on === 1 ? "#ffd84a" : "#80785c";
+		g.fillRect(x - 1, y - 1, 2, 2);
+		g.fillStyle = "#8a8a92";
+		g.fillRect(x - 2, y + 3, 4, 2);
+		g.fillStyle = "#5a5a62";
+		g.fillRect(x - 1, y + 5, 2, 1);
+		g.globalAlpha = 1;
+		return ending === null || ending < fade;
+	});
+	return { ready: sleep(450), end };
+};
+
 /** たおれた：画面が 暗く 赤く なり、まんなかに 大きな 字。 */
 const ko = (root: HTMLElement, k: number, caption?: string): FxRun => {
 	const d = document.createElement("div");
@@ -741,6 +791,8 @@ export const startFx = (
 			return ko(root, k, opt.caption);
 		case "mosaic":
 			return mosaic(root, opt.track);
+		case "bulb":
+			return bulb(root, still, opt.track);
 		case "boom":
 			return boom(
 				root,

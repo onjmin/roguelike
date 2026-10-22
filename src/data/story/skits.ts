@@ -210,22 +210,40 @@ export const SKITS: readonly Skit[] = [
 		],
 	},
 	// 第三話の あと〜最終話：電池板が 開いて 町は 停電（data/town/revival.ts の inBlackout）。
-	// 停電の 夜（story.ts の TEN_NEWS）で キリコが 蓄音機で 豆電球を 割った 天丼。割った キリコが 1000台ぶん こがされる
+	// 停電の 夜（story.ts の TEN_NEWS）で キリコが 蓄音機で 豆電球を 割った 天丼。割った キリコが 朝まで 回させられる。
+	// 見える ものだけで 運ぶ：暗い 町（停電の 空）・回る キリコ・頭の 上に ともる 豆電球（fx の bulb）・割れる 音と 暗転。
+	// 名無しは 暗がりの 声。画面に 無い 物（自転車・発電機）や 数（町じゅうで 何台）は 言わない
 	{
 		key: "window_teiden",
 		window: { after: "main", before: "deep" },
 		on: ANYWHERE,
 		lines: [
-			nanashi("停電や！町じゅうで1000台、\n自転車こいで発電や！"),
-			nanashi("（ぜぇ……ぜぇ……）\n……豆電球1個、ついたで！"),
-			e({ gesture: "hop" }, k("吾輩も手伝うンゴ！\n蓄音機を回すンゴ！")),
-			{ ...nanashi("あっ"), fx: "blackout" },
+			nanashi("（暗がりから）停電や！\nだれか、発電してくれ！"),
+			e({ gesture: "spin" }, k("吾輩が、蓄音機を\n回すンゴ！")),
 			{
-				...e({ emote: "冷" }, nanashi("……キリコ、1000台ぶん\nお前がこげ")),
+				...e({ pause: 300 }, nanashi("（暗がりから）\n……豆電球、ついたで！")),
+				fx: "bulb",
+			},
+			e({ gesture: "spin", auto: 700 }, k("もっと回すンゴ！")),
+			{
+				...nanashi("（暗がりから）あっ"),
+				se: "glassBreak",
+				fx: "blackout",
+			},
+			{
+				...e(
+					{ emote: "冷", pause: 400 },
+					nanashi("（暗がりから）……キリコ、\n朝まで回しとけ"),
+				),
 				calm: true,
 			},
-			e({ auto: 900 }, n("キリコは、1000台ぶんこいだ。")),
-			e({ auto: 1200, emote: "花" }, k("（ぜぇ……）\n……豆電球、ついたンゴ")),
+			{
+				...e(
+					{ gesture: "spin", auto: 1300 },
+					k("（ぐるぐる）……豆電球、\nもう1個ついたンゴ"),
+				),
+				fx: "bulb",
+			},
 		],
 	},
 	// 最終話の あと（後日談の 前）：てっぺんに いたのは やきうだった。出て いた キリコが いちばん ネタバレで、
