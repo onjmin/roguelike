@@ -16,6 +16,8 @@ import { art } from "../village/rpgenArt";
 import { base } from "../village/tiles";
 import { boardOf, boardPicture, itemPicture, propPicture } from "./pictures";
 import {
+	ANCHORS,
+	type Anchor,
 	ENDING,
 	ENDING_AGAIN,
 	INTRO,
@@ -38,18 +40,25 @@ export const playPage = (
 		text: string;
 		kiriko?: KirikoMode;
 		nanashi?: string;
+		anchor?: Anchor;
 	} & Cue,
 ): Promise<void> =>
 	p.kiriko
 		? st.kiriko(p.text, p.kiriko, cueOf(p))
-		: p.nanashi
-			? st.say("nanj", p.text, { ...cueOf(p), name: p.nanashi })
-			: p.who
-				? st.say(p.who, p.text, cueOf(p))
-				: // 畳みかけ（auto）の 地の文は 押さずに 送る
-					p.auto
-					? st.say(null, p.text, cueOf(p))
-					: st.narrate(p.text);
+		: p.anchor
+			? st.say(null, p.text, {
+					...cueOf(p),
+					...ANCHORS[p.anchor],
+					noPortrait: true,
+				})
+			: p.nanashi
+				? st.say("nanj", p.text, { ...cueOf(p), name: p.nanashi })
+				: p.who
+					? st.say(p.who, p.text, cueOf(p))
+					: // 畳みかけ（auto）の 地の文は 押さずに 送る
+						p.auto
+						? st.say(null, p.text, cueOf(p))
+						: st.narrate(p.text);
 
 // ───────────────── 村に いない 仲間（まだ 帰ってきて いない） ─────────────────
 /**
@@ -196,6 +205,13 @@ export const zankiLine = (cleared: readonly DungeonId[]): string | null =>
 /** c は 話す 人の 感情の 記号・体の 動き（engine/emote.ts。話す 人が 村に 立って いる ときだけ 見える）。 */
 const q = (who: Speaker, text: string, c?: Cue): Line => ({ who, text, ...c });
 const n = (text: string): StoryPage => ({ who: null, text });
+/** ジャンルの 声の 語り手（実況・ニュース …。quotes.ts の ANCHORS）。 */
+const a = (anchor: Anchor, text: string, c?: Cue): StoryPage => ({
+	who: null,
+	text,
+	anchor,
+	...c,
+});
 const s = (who: Speaker, text: string, c?: Cue): StoryPage => ({
 	who,
 	text,
@@ -811,9 +827,10 @@ export const STORY: Record<
 				...s("nanj", "ツッコミ役が独立すんな！", { emote: "驚", hit: "slap" }),
 				go: [{ who: "nanj", to: [24, 21], face: "right" }],
 			},
-			// 1時間後の 止め絵（国民 0人）。みんな 背を 向けて 独立。カメラは シャッターの 通り、絵は 広場の 入国審査の 立て札
+			// 1時間後の 止め絵（国民 0人）。みんな 背を 向けて 独立。カメラは シャッターの 通り、絵は 広場の 入国審査の 立て札。
+			// 語りは ニュースの 声（ジャンルの 声の 語り手：quotes.ts の ANCHORS）
 			{
-				...n("1時間後。店も人もみんな独立。\n国民0人、入国審査だけ43か所。"),
+				...a("news", "臨時ニュースです。町は1時間で\n全員独立。国民は0人です"),
 				skip: true,
 				fx: "chiin",
 				turnAway: true,
@@ -844,8 +861,12 @@ export const STORY: Record<
 				wear: "crumbs",
 			},
 			// 日本 47か国は 数の 段（絵に できる 物が ない）：台詞と、つづく やきうの 亡命で 見せる
+			// ニュースは 何が 起きても 同じ 調子で 次へ 行く
 			{
-				...n("翌朝。独立は県境をこえて、\n日本は47の国にわかれていた。"),
+				...a(
+					"news",
+					"翌朝のニュースです。日本は\n47の国にわかれました。次はお天気",
+				),
 				skip: true,
 				card: null,
 			},
@@ -907,10 +928,8 @@ export const STORY: Record<
 				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},
 			{ ...k("盛ってないンゴ！\n本当に割ったンゴ！"), look: null, card: null },
-			k("だれが書いたンゴ？"),
-			// 書いたのは やきう（言いわけの 天丼の 1回目。第三話は インクまみれ：quotes.ts の ENDING）
-			s("nanj", "知らん。", { emote: "冷" }),
-			k("手、チョークの粉まみれンゴ"),
+			// 書いたのは やきう（言いわけの 天丼の 1回目。第三話は インクまみれ：quotes.ts の ENDING）。問いつめずに 手だけ 見て、言いわけ 1行で 切る
+			k("やきう、手がチョークの\n粉まみれンゴ"),
 			s("nanj", "これは、パンくずや！", { emote: "汗", pause: 400 }),
 		],
 		again: SHALLOW_BASE,
@@ -986,8 +1005,9 @@ export const STORY: Record<
 				...nanashi("親分", "ほな、遺影祭りや！\nみんな、やきうを書け！"),
 				needCleared: "festival",
 			},
+			// 実況の 声（ジャンルの 声の 語り手）
 			{
-				...n("遺影が1枚ふえるたびに、1UP。\n98回鳴った。「残機：99」"),
+				...a("live", "1UP！1UP！止まりません！\n98回目！残機、99です！"),
 				zanki: 99,
 				needCleared: "festival",
 				se: "arcBest",
@@ -1006,13 +1026,6 @@ export const STORY: Record<
 				),
 				needCleared: "festival",
 				fx: "confetti",
-			},
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。99件。1件は\n本人の自演で、無効ゼロ",
-				needCleared: "festival",
-				pause: 400,
 			},
 			{
 				...s("nanj", "98回も殺されとったんかい！\nワイの命、回数券か！", {
@@ -1063,8 +1076,9 @@ export const STORY: Record<
 				fx: "blackout",
 			},
 			{ ...k("吾輩が、鯖代を\n払ってくるンゴ！"), fx: "blackout" },
+			// 朝の ニュースは 宇宙の 停電も ふつうの 調子で 読む
 			{
-				...n("キリコがぷゆゆパンを1個送ると、\n翌朝、町はもとにもどっていた。"),
+				...a("news", "朝のニュースです。宇宙の停電は、\nパン1個で復旧しました"),
 				skip: true,
 				se: "pay",
 				sky: null,
@@ -1169,8 +1183,9 @@ export const STORY: Record<
 			// 胞子は 生き物の 方へ ふくらむ（キリコの 頭 → 商店街の 看板 → 町の 人の 頭 → 町の 人ごと 行進）。生える 所が
 			// 物から 人に かわる。キリコが 抜くと ふえ、ゼロが 扇風機で 人へ 飛ばし、キリコの 行進曲で 町の 人が 行進に
 			// 組みこまれる。行進は 世界を 1周して 人の 頭の きのこだけ 摘む。看板の しめじは 残る（data/town/revival.ts）
+			// 胞子の 段は 自然ドキュメンタリーの 声（ジャンルの 声の 語り手）
 			{
-				...n("キリコの頭から胞子がぽふっ。\n10分後、商店街の看板がしめじに。"),
+				...a("doc", "胞子は、わずか10分で\n商店街の看板をしめじに変えた"),
 				spores: true,
 				look: [45, 17],
 				shrooms: "street",
@@ -1204,7 +1219,7 @@ export const STORY: Record<
 			},
 			// 生き物の 段（頭 → 看板 → 町の 人 → 行進 → 世界 1周）は 図で なく、胞子・地図の きのこ・みんなの 行進で 見せる
 			{
-				...n("胞子は風にのって、こんどは\n町の人の頭に生えた。"),
+				...a("doc", "胞子は風に乗り、新たな宿主を\nさがした。……町の人の頭だ。"),
 				spores: true,
 				wearAll: "kinoko",
 			},
@@ -1243,11 +1258,6 @@ export const STORY: Record<
 				],
 			},
 			s("zero", "行進、128本から\n1万3千本になりました！", { emote: "!" }),
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。1万3千と1本。\nキリコの頭のぶんゼロ",
-			},
 			// メタ：画面に 描けない 数を その場の 人が 言う（桟橋の 行進は 5本：ui/village/sceneMarks.ts）
 			s("zero", "1万3千本は描けないので、\n画面には5本で表しています！", {
 				emote: "得",
@@ -1326,12 +1336,6 @@ export const STORY: Record<
 				card: NATSUKO_LETTER,
 			},
 			s("zero", "生還率、100％です！\n分母は6です！", { emote: "!" }),
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。分母は7。\nナツコが自分を数えてないゼロ",
-				pause: 400,
-			},
 			// 島が 好きすぎて 町に 来たかった（板の 事情）。キリコが 呼ぶ → 島が 泳いで 港に 突っこむ → 日本の 形が かわる
 			// キリコは 船着き場の はしへ 走って 沖に 呼びかける
 			{
@@ -1339,24 +1343,22 @@ export const STORY: Record<
 				card: null,
 				go: [{ who: "kiriko", to: [23, 50], face: "down" }],
 			},
-			// 夜の 沖（カメラは 海の ほう）
+			// 夜の 沖（カメラは 海の ほう）。島が 泳ぐ 段は 水泳の 実況の 声（ジャンルの 声の 語り手）
 			{
-				...n("その夜、沖でゴゴゴと地鳴り。\n島が、泳ぎはじめた。"),
+				...a(
+					"live",
+					"その夜、沖の島が泳ぎだした！\nフォームはクロール！速い！",
+				),
 				skip: true,
 				se: "bubble",
 				sky: "night",
 				look: [24, 51],
 			},
-			{
-				...s("feris", "島がクロールしてる〜！\n速い〜！", {
-					gesture: "hop",
-				}),
-				look: null,
-			},
 			// フェリスの 持ちネタ：やきうの 出題に、斜め上の 答え（おんJwiki の「フェリスの お勉強」）
 			{
 				...s("nanj", "問題や。島が時速30キロなら、\n港まで何分や？"),
 				about: "feris",
+				look: null,
 			},
 			s("feris", "港が逃げたら、\n追いつかれません〜", { emote: "♪" }),
 			// みんなで 桟橋を 浜まで 逃げる（キリコに カメラが ついていく）
@@ -1365,7 +1367,7 @@ export const STORY: Record<
 				go: [{ who: "all", to: [20, 34], speed: 3 }],
 			},
 			{
-				...n("島は止まりきれずに、\n港へ突っこんだ。"),
+				...a("live", "止まらない！止まらない！\n島、港にゴールイン！"),
 				se: "explosion",
 				fx: "boom",
 				// 地形の 段（島 → 港 → 日本地図）は 図で なく、港を 映す カメラと 爆発と、港に 突っこんだ 島
@@ -1515,7 +1517,10 @@ export const STORY: Record<
 			},
 			// みんなで 船着き場の はしへ 出て 沖を 見る
 			{
-				...n("翌日。各国の首脳が、\nたこ焼き器をかかえて上陸してきた。"),
+				...a(
+					"news",
+					"翌日のニュースです。各国首脳が\nたこ焼き器を持って上陸しました",
+				),
 				skip: true,
 				// 上陸と たこパは 昼（村の 時計も 昼から すすむ）
 				sky: "day",
@@ -1541,22 +1546,18 @@ export const STORY: Record<
 			k("吾輩が、焼き方の\nお手本を見せるンゴ！", { gesture: "hop" }),
 			// 浜の 屋台（たこ八）へ 場面を うつす。キリコが 鉄板の 前へ 走る。絵は その 鉄板（焦げあとは 町に 残る）
 			{
-				...n(
-					"キリコが鉄板の火を最大にすると、\n193か国ぶんのたこ焼きが火を噴いた。",
+				// 焼く 段は 料理番組の 声（ジャンルの 声の 語り手）
+				...a(
+					"cooking",
+					"火加減は最大。193か国ぶんを\n一気に焼きます。……火が出ました",
 				),
 				se: "explosion",
 				fx: "boom",
 				cut: [22, 33],
 				card: GRIDDLE,
 			},
+			// ツッコミは 入れない（ボケを 放って おく）。首脳が 真顔で 受ける
 			k("焼きすぎたンゴ！！", { emote: "冷" }),
-			{
-				...s("nanj", "😡の顔のまま、\nまっ黒やんけ！", {
-					emote: "驚",
-					hit: "whack",
-				}),
-				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
-			},
 			nanashi("首脳たち", "焦げたけど、うまかったで😡\n毎年来るで😡"),
 			// 毒（2026-10-21）：お返しに キリコも 焼かれる。キリコは 焼かれて 満足する（一緒に 狂う）
 			{
@@ -1640,11 +1641,6 @@ export const STORY: Record<
 				emote: "怒",
 			}),
 			// うちわの 表に 親分の 字（あおぐ／煽る。once の「裏」の 字とは べつ）
-			// 暴力系ヒロイン：口より 先に 手が 出る
-			s("shiyo", "顔にあてないでよ！\n前髪がくずれるでしょ！", {
-				emote: "怒",
-				hit: "punch",
-			}),
 			{
 				...n(
 					"うちわの表に、親分の字。\n「祭りも書きこみも、あおったもん勝ち」",
@@ -1674,18 +1670,14 @@ export const STORY: Record<
 				cut: [13, 7],
 				go: [{ who: "kiriko", to: [13, 7], face: "up" }],
 			},
-			{
-				...s("shiyo", "あたすの耳、まだ\nドンドン鳴ってるわよ！", {
-					emote: "怒",
-					gesture: "shiver",
-					hit: "punch",
-				}),
-				go: [{ who: "shiyo", to: "kiriko", speed: 3 }],
-			},
 			// 音の 段（太鼓 → 地球の 裏 → 町の 窓ガラス）は 図で なく、太鼓の 音・ゼロの 走り・窓ガラスの 通りを 映す カメラで 見せる
-			// 地面の 下の サンバは 太鼓の 足もとの ♪（ui/village/sceneMarks.ts の samba。町に 残る 絵と 同じ）
+			// 地面の 下の サンバは 太鼓の 足もとの ♪（ui/village/sceneMarks.ts の samba。町に 残る 絵と 同じ）。
+			// 語りは ニュース → 実況と 乗りかわる（ジャンルの 声の 語り手）
 			{
-				...n("1時間後。地面の下から、\nサンバの太鼓が返ってきた。"),
+				...a(
+					"news",
+					"臨時ニュースです。地面の下から\nサンバの太鼓が返ってきました",
+				),
 				skip: true,
 				se: "hit_club",
 				seRepeat: 4,
@@ -1698,15 +1690,9 @@ export const STORY: Record<
 				}),
 				go: [{ who: "zero", route: "lrlr", speed: 3 }],
 			},
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。301回。\n1回は、シヨのげんこつゼロ",
-				pause: 400,
-			},
 			k("返事するンゴ！\nもっと強くたたくンゴ！", { gesture: "hop" }),
 			{
-				...n("キリコがたたき返すと、\nブラジルもたたき返してきた。"),
+				...a("live", "キリコ打つ！ブラジル返す！\nキリコ打つ！ブラジル返す！"),
 				se: "hit_club",
 				seRepeat: 6,
 				seGap: 90,
@@ -1801,7 +1787,7 @@ export const STORY: Record<
 			},
 			// 最終話の あと：祭りで みんなが やきうの 名前を 呼んだ あとなので、ここで 数が 動く
 			{
-				...n("1UPの音が、鳴りやまない。\n98回鳴った。「残機：99」"),
+				...a("live", "1UP！1UP！止まりません！\n98回目！残機、99です！"),
 				zanki: 99,
 				needCleared: "deep",
 				se: "arcBest",
@@ -1875,12 +1861,6 @@ export const STORY: Record<
 				...s("zero", "21年ものです！\n数えました！", { emote: "得" }),
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
 			},
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。20年と10か月。\nワインなら、まだ若いゼロ",
-				pause: 400,
-			},
 			// 古い レスが 掘り起こされて、スレが 一気に 埋まる（1000 で 書けなくなる しくみと 同じ）
 			// 苦さから 光へ（つづきの原盤）
 			{ ...n("そのレスに、今日レスがついた。"), bgm: "deep6" },
@@ -1889,9 +1869,8 @@ export const STORY: Record<
 				card: oldThread(">>1　なつかしすぎて草"),
 			},
 			{
-				...n(
-					"1時間で、スレは1000まで埋まった。\n2005年のスレが、2回目の1000！",
-				),
+				// 実況の 声（ジャンルの 声の 語り手）
+				...a("live", "1時間で1000到達！2005年の\nスレ、まさかの2回目の1000！"),
 				card: oldThread("1000\n（2回目）"),
 				// 1000 まで 埋まる 勢いで 3人が 右往左往
 				go: [
@@ -1912,8 +1891,7 @@ export const STORY: Record<
 				about: "feris",
 			},
 			s("feris", "ケーキが2個〜", { gesture: "hop", pause: 400 }),
-			s("nanj", "命日にケーキ出すな！", { emote: "怒", hit: "slap" }),
-			// 「草が　生えた」を そのまま 音に する（草の 音を 3つ）。カメラは 広場
+			// ツッコミは 入れず、広場の 草で 受ける。「草が　生えた」を そのまま 音に する（草の 音を 3つ）。カメラは 広場
 			{
 				...n("広場じゅうで、草が生えた。"),
 				se: "kusa",
@@ -2002,7 +1980,11 @@ export const STORY: Record<
 			},
 			// 明るさは 坂を 上がって 町じゅうへ（カメラは 広場）
 			{
-				...n("10分後。明るさは坂を上がって、\n町じゅうが昼になった。"),
+				// 天気予報の 声（ジャンルの 声の 語り手）
+				...a(
+					"weather",
+					"お天気です。町は夜中の2時ですが\n快晴。日差しに注意しましょう",
+				),
 				skip: true,
 				look: [20, 21],
 			},
@@ -2042,12 +2024,6 @@ export const STORY: Record<
 				}),
 				card: null,
 				go: [{ who: "zero", route: "rrllllrr", speed: 3 }],
-			},
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。0.5件。\n半分は、寝言ゼロ",
-				pause: 400,
 			},
 			// 主人公が 最悪の 手（かけらを ラッパで ふさぐ）→ 夜より 暗く → 自己ツッコミ
 			k("吾輩が、かけらをラッパで\nふさぐンゴ！", { gesture: "hop" }),
@@ -2190,8 +2166,7 @@ export const STORY: Record<
 				s("zero", "サブ機が2機とも、\n浮いてます！", { emote: "汗" }),
 			),
 			k("吾輩、登録1番だから\n市長ンゴ？", { emote: "得" }),
-			s("shiyo", "海の底の市長よ！！", { emote: "驚", hit: "whack" }),
-			// 毒（2026-10-21）：空港は 真顔で 市長を いちばん 深く 沈める
+			// 毒（2026-10-21）：ツッコまずに、空港が 真顔で 市長を いちばん 深く 沈める
 			{
 				...nanashi("おんMu国際空港", "なお、市長さまは\nいちばん深く沈みます"),
 				auto: 900,
@@ -2231,7 +2206,7 @@ export const STORY: Record<
 				}),
 			},
 			{
-				...n("水が引いた。翌朝、町は\n海抜0メートルにもどっていた。"),
+				...a("news", "朝のニュースです。町の海抜は、\n0メートルにもどりました"),
 				skip: true,
 				unmark: "flood",
 				se: "bubble",
@@ -2462,12 +2437,6 @@ export const STORY: Record<
 				fx: "blackout",
 			},
 			s("zero", "3秒、数えました！\n闇、短いです！", { emote: "得" }),
-			{
-				who: null,
-				mob: "proto",
-				text: "訂正ゼロ。2.9秒ゼロ",
-				pause: 400,
-			},
 			// 毒（2026-10-21）：闇は 3秒で キリコの 服だけ 持って いった（自主規制の 札で 隠す）
 			{
 				...n("光がもどると、キリコの服だけ\n闇にのまれていた。"),

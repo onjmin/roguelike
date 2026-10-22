@@ -24,6 +24,21 @@ export const SPEAKERS: Record<Speaker, { name: string; color: string }> = {
 	nanj: { name: "やきう", color: "#f5d142" },
 };
 
+/**
+ * ジャンルの 声の 語り手（STORY.md「201級の 笑い」の 動画で 確かめた こと）。地の文を 実況・ニュース・番組の
+ * 口調で 言い、その ジャンルの 決まり文句で 笑いを とる。名前欄と 色だけ かわる（立ち絵・声なし）。
+ */
+export type Anchor = "news" | "live" | "weather" | "doc" | "cooking" | "show";
+
+export const ANCHORS: Record<Anchor, { name: string; color: string }> = {
+	news: { name: "ニュース", color: "#9ec9ff" },
+	live: { name: "実況", color: "#ffb347" },
+	weather: { name: "お天気", color: "#8fe3c9" },
+	doc: { name: "ナレーション", color: "#d9c7a7" },
+	cooking: { name: "料理番組", color: "#ffa6c9" },
+	show: { name: "検証番組", color: "#ff7a59" },
+};
+
 /** 時間帯（data/village/crowd.ts の TimeBand と 同じ。型だけ）。 */
 export type QuoteBand = "late" | "morning" | "day" | "evening" | "night";
 
@@ -69,6 +84,8 @@ export type StoryPage = Cue & {
 	unlessCleared?: DungeonId;
 	/** 名無しの 1窓（who は null に しておく。名前欄だけ この 名前で、色は やきうの 黄色）。 */
 	nanashi?: string;
+	/** ジャンルの 声の 語り手（who は null に しておく。ANCHORS の 名前と 色で 出す）。 */
+	anchor?: Anchor;
 	/** 村の 場面の 合図（ui/village/villageReturn.ts。地の文の 前に 起きる）。 */
 	cue?: /** 明かりの もどる 坂（最終話の 頂点。生き返った 通りを 順に 見せて、明るい 町に 建て直す）。 */
 		| "lightsUp"
@@ -663,12 +680,33 @@ export const ENDING: StoryPage[] = [
 		hit: "punch",
 		pause: 400,
 	},
-	{ who: null, text: "フリだと思ったンゴ……", kiriko: "voice", emote: "青" },
-	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）。
-	// 温度の 段は 図で なく、商店街（町じゅうの 蛇口）→ 港（海）へ 動く カメラと 湯けむりで 見せる
+	// 言いわけの 独り言（201：ひとりの 暴走を 長く 聞かせる）。押さずに 畳みかけて、最後の 1枚で 止まる
 	{
 		who: null,
-		text: "源泉が噴きあがって、町じゅうの\n蛇口から41.5℃のお湯が出た。",
+		text: "フリだと思ったンゴ。押すなと\n言われたら押すのが、礼儀ンゴ",
+		kiriko: "voice",
+		emote: "青",
+		auto: 1300,
+	},
+	{
+		who: null,
+		text: "それに追いだきは、湯を守る\nボタンンゴ。つまり吾輩は湯の味方",
+		kiriko: "voice",
+		auto: 1300,
+	},
+	{
+		who: null,
+		text: "悪いのはボタンンゴ。\n吾輩は、おかしくないンゴ",
+		kiriko: "voice",
+		emote: "得",
+	},
+	// 温度の 方へ ふくらむ（銭湯 → 町の 水道 → 港の 海）。港の 海は 41.5℃の まま 残る（data/town/revival.ts の 銭湯の 並び）。
+	// 温度の 段は 図で なく、商店街（町じゅうの 蛇口）→ 港（海）へ 動く カメラと 湯けむりで 見せる
+	// 語りは ジャンルの 声（ANCHORS）：天気予報 → 港の 中継と 番組が 乗りかわる
+	{
+		who: null,
+		anchor: "weather",
+		text: "お天気です。町はくもりときどき\nお湯。蛇口は、41.5℃でしょう",
 		se: "explosion",
 		fx: "boom",
 		look: [45, 17],
@@ -717,7 +755,8 @@ export const ENDING: StoryPage[] = [
 	// けんかの 曲を ぷつっと 切って、無音で ちーん（笑いの 間。BGM.md §1）。場面を 港へ うつす（海が 湯）
 	{
 		who: null,
-		text: "1時間後。港の海が41.5℃になり、\n魚が肩までつかっていた。",
+		anchor: "news",
+		text: "現場の港です。海水温41.5℃、\n魚が肩までつかっています",
 		se: "chiin",
 		fx: "chiin",
 		bgm: null,
@@ -743,7 +782,6 @@ export const ENDING: StoryPage[] = [
 	},
 	// 書きこみが 早すぎる（やきうは 町の 名無しの ひとり）。場面を 掲示板へ うつして、書きこみの 絵。
 	// やきうは 湯船へ 走って もどって ごまかす
-	// メタ：魚は 画面に 出ない（湯気だけ）
 	// フェリスの 持ちネタ：やきう（湯船の 中）の 出題に、斜め上の 答え
 	{
 		who: "nanj",
@@ -752,19 +790,6 @@ export const ENDING: StoryPage[] = [
 		look: null,
 	},
 	{ who: "feris", text: "えら〜。\nえらそうに、つかってる〜", emote: "♪" },
-	// ゼロの 持ちネタ：3機で 数える → プロトが 訂正（魚は 画面に 出ない：湯気だけ）
-	{
-		who: "zero",
-		text: "のぼせた魚、1万匹です！\n数えました！",
-		emote: "得",
-		look: null,
-	},
-	{
-		who: null,
-		mob: "proto",
-		text: "訂正ゼロ。数えたのは湯気ゼロ。\n魚は画面に出ないゼロ",
-		pause: 400,
-	},
 	{
 		who: null,
 		text: "掲示板に、もう書きこみがあった。\n『【悲報】キリコ、海をわかす』",
