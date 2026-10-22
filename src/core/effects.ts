@@ -279,6 +279,7 @@ const gacha = (r: Run): void => {
 	const canFall = !r.s.returning && r.s.depth < r.dungeon.floors;
 	const roll = r.rng.int(canFall ? 8 : 7);
 	r.msg("!sk ……サイコロが転がった");
+	r.emit({ t: "sk", face: roll, fall: canFall });
 	switch (roll) {
 		case 0:
 			// 全快（HP・ちから・満腹度）

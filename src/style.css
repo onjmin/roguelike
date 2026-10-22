@@ -2564,6 +2564,18 @@ body.jolt #app {
 	color: #555;
 }
 
+/* !skスレの サイコロ（ドット絵の 窓。ui/dungeon/skFx.ts） */
+.sk-fx {
+	position: absolute;
+	left: 50%;
+	top: 30%;
+	transform: translate(-50%, -50%);
+	image-rendering: pixelated;
+	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+	z-index: 55;
+	pointer-events: none;
+}
+
 /* ───────── リプレイ ───────── */
 
 .replay-bar {

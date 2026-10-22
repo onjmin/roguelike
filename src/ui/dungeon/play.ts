@@ -141,6 +141,7 @@ import {
 } from "./render";
 import { restBeside, restPath, takeRestSkit } from "./restSkit";
 import { ROOM_SKIT_MS, takeRoomSkit } from "./roomSkit";
+import { type SkFace, startSk } from "./skFx";
 import { openStatus } from "./statusView";
 import { zoneFor } from "./theme";
 
@@ -283,6 +284,33 @@ const LEAD = new Set<GameEvent["t"]>([
 	"rescue",
 	"look",
 ]);
+
+/**
+ * !skスレの 目（並びは core/effects.ts の gacha の 目の 番号）。short は 盤の 字（4字まで）、long は 止まった あとの 字、
+ * color は 止まった ときの 画面の 光、jolt は 画面を ゆらす 目（敵が 消える・化ける）。
+ */
+const SK_FACE: readonly (SkFace & { jolt?: true })[] = [
+	{ short: "全回復", long: "全回復", color: "rgba(90,230,120,0.45)" },
+	{ short: "能力↑", long: "最大HPとちから", color: "rgba(110,190,255,0.45)" },
+	{ short: "Lv＋3", long: "レベル＋3", color: "rgba(255,220,90,0.5)" },
+	{ short: "装備↑", long: "装備と杖＋3", color: "rgba(255,160,60,0.45)" },
+	{ short: "全滅", long: "過疎", color: "rgba(255,255,255,0.6)", jolt: true },
+	{
+		short: "道具化",
+		long: "敵が道具に",
+		color: "rgba(255,210,80,0.5)",
+		jolt: true,
+	},
+	{
+		short: "メタル",
+		long: "敵がメタルに",
+		color: "rgba(210,220,235,0.6)",
+		jolt: true,
+	},
+	{ short: "5階先", long: "5階先へ", color: "rgba(20,10,40,0.55)" },
+];
+/** 落ちる 目。 */
+const SK_FALL = 7;
 
 /** ev[i] の となり（step = -1 前・1 後ろ）の 出来事。敵の 様子（stir）は とばす。 */
 const besideOf = (
@@ -3138,6 +3166,15 @@ export class Play {
 				i++;
 				continue;
 			}
+			// !skスレの サイコロ：「サイコロが転がった」の 行が 出てから 目の 盤を 回して 止め、
+			// 止まってから 効き目（行・回復・全滅・落ちる）。リプレイの 早送りでは 出さない
+			if (e.t === "sk") {
+				await this.logDrained();
+				if (this.stopped) break;
+				if (!(this.rp && fast)) await this.skRoll(e.face, e.fall, fast);
+				i++;
+				continue;
+			}
 			// 集落・名所の 人と 話した：村と 同じ 窓で（リプレイの 早送りでは 出さない）
 			if (e.t === "talk") {
 				await this.logDrained();
@@ -3800,6 +3837,47 @@ export class Play {
 		post.classList.remove("shown");
 		await wait(300);
 		post.remove();
+	}
+
+	/**
+	 * !skスレ：ドット絵の 窓（ui/dungeon/skFx.ts）で サイコロが 転がり、8つの 目の 盤を 明かりが ぐるぐる 回って、
+	 * だんだん おそく なって 出た 目で 止まる（止まる 目は core が 決めて いる。見た目だけ）。止まったら 火花と
+	 * 目ごとの 色の 光。落ちられない 階では 落ちる 目を 消して おく。押せば つめる（beat）。
+	 */
+	private async skRoll(
+		face: number,
+		fall: boolean,
+		fast: boolean,
+	): Promise<void> {
+		const hurry = fast || settings.speed === "fast";
+		const ring = [0, 1, 2, 3, 4, 5, 6, 7].filter((f) => fall || f !== SK_FALL);
+		const fx = startSk(this.ctx.ui, SK_FACE, (f) => !ring.includes(f));
+		try {
+			this.ctx.se("mix");
+			await this.beat(hurry ? 150 : 300);
+			// 何周か 回って 出た 目で 止まる（はじめは 速く、最後の 数こまは ゆっくり）
+			const hops = (hurry ? 1 : 2) * ring.length + ring.indexOf(face) + 1;
+			for (let h = 0; h < hops && !this.stopped; h++) {
+				fx.light(ring[h % ring.length]);
+				const p = h / Math.max(1, hops - 1);
+				if (p > 0.6) this.ctx.se("cursor");
+				await this.beat((45 + 260 * p ** 3) * (hurry ? 0.5 : 1));
+			}
+			if (this.stopped) return;
+			const look = SK_FACE[face];
+			fx.land(face);
+			this.ctx.se(face === SK_FALL ? "chiin" : "correct");
+			if (face === SK_FALL) {
+				document.body.classList.add("shake");
+				setTimeout(() => document.body.classList.remove("shake"), 400);
+			} else if (look.jolt) this.jolt();
+			await Promise.all([
+				this.flash(look.color, hurry ? 140 : 260),
+				this.beat(hurry ? 550 : 1100),
+			]);
+		} finally {
+			fx.end();
+		}
 	}
 
 	/** 階の札（〇階）。 */

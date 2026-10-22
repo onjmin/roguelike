@@ -712,6 +712,11 @@ export type GameEvent =
 			sprite: string;
 	  }
 	| { t: "quake"; level: number }
+	/**
+	 * !skスレの サイコロ（face は 出た 目 0〜7。並びは core/effects.ts の gacha。fall＝落ちる 目も 入っていた）。
+	 * 画面は 目の 盤を 回して 止める（見た目だけ。続く 行と 出来事が 効き目）。
+	 */
+	| { t: "sk"; face: number; fall: boolean }
 	/** 地図に 載る ことが わかった（聖地巡礼スレ・ヲチスレ・発掘スレ。地図を 閉じていれば 画面が ひとこと 添える）。 */
 	| { t: "reveal" }
 	/** キリコの 見た目が 変わった（アク禁・装備を はがされた など。画面は 続く 行で 追いつく）。 */
