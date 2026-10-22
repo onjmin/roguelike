@@ -613,7 +613,7 @@ const BATH_HEAD: StoryPage[] = [
 	},
 	{
 		who: "nanj",
-		text: "おっそ！一番風呂、\nもう入っとるで！",
+		text: "おっそ！総統さまの一番風呂、\nもう入っとるで！",
 		standAt: [35, 30],
 	},
 	// 「湯気で」：屋根から 町の 上まで 湯気（ui/village/sceneMarks.ts の bathSteam。場面の おわりまで）
@@ -799,6 +799,31 @@ export const ENDING: StoryPage[] = [
 		look: null,
 	},
 	{ who: "feris", text: "えら〜。\nえらそうに、つかってる〜", emote: "♪" },
+	// 成り上がりの 3段目（STORY.md §4.9「成り上がりと 転落」）：海ごと 温泉に して 入湯料を 取り、湯船で 即位する。
+	// 演出は 本気（止め絵の 決めポーズ）、題材は くだらない
+	{
+		who: null,
+		text: "港の海、まるごと入湯料を\nとるンゴ。国が建つンゴ",
+		kiriko: "voice",
+		emote: "得",
+		look: null,
+	},
+	{
+		who: null,
+		anchor: "news",
+		text: "速報です。総統キリコが、湯船で\n皇帝に即位しました",
+		se: "townUp",
+		fx: "freeze",
+		caption: "皇帝キリコ　即位",
+		cut: [35, 30],
+		go: [{ who: "kiriko", to: [35, 30], speed: 3, face: "down" }],
+	},
+	{
+		who: "shiyo",
+		text: "湯船で即位しないで！\n湯がにごるでしょ！",
+		emote: "怒",
+		hit: "punch",
+	},
 	{
 		who: null,
 		text: "掲示板に、もう書きこみがあった。\n『【悲報】キリコ、海をわかす』",

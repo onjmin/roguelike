@@ -31,8 +31,8 @@ export const afterHeadline = (cleared: readonly DungeonId[]): string | null =>
 		.map((d) => AFTER_HEADLINES[d])
 		.find((l) => l !== undefined) ?? null;
 
-/** 最終話の あと（鯖代の 払い忘れで ロールバック）の 見出し。 */
-export const ROLLBACK_HEADLINE = "【悲報】ワイらの冒険、ロールバック";
+/** 最終話の あと（鯖代の 払い忘れで 帝国ごと 差し押さえ。STORY.md §4.9「成り上がりと 転落」）の 見出し。 */
+export const ROLLBACK_HEADLINE = "【悲報】キリコ帝国、鯖代で差し押さえ";
 
 /**
  * 倒れて 帰る たびに 掲示板に ふえる 一行。倒れた 回数で 段が 上がり、段の 中で 順に まわる

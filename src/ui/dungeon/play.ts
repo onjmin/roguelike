@@ -72,6 +72,7 @@ import {
 	PICK_GUIDE_NAME,
 	pickGuideFlag,
 } from "../../data/story/pickGuide";
+import { kirikoLabel } from "../../data/story/rank";
 import type { RestStep, RestWalk } from "../../data/story/restSkits";
 import { roomSkitLine } from "../../data/story/roomSkits";
 import { diveResAt, diveResLine, goalWhy } from "../../data/story/synopsis";
@@ -1984,11 +1985,11 @@ export class Play {
 		// ボスの 本気の 掛け合い：階の 曲を 止めて 話す（戦いは 始まりの 音から ボスの 曲）
 		if (e.hush) this.ctx.audio.bgm(null);
 		const kiriko = {
-			name: KIRIKO.name,
+			name: kirikoLabel(),
 			color: KIRIKO.color,
 			portrait: {
 				id: "kiriko",
-				name: KIRIKO.name,
+				name: kirikoLabel(),
 				color: KIRIKO.color,
 				src: KIRIKO.portrait,
 				side: "left" as const,
@@ -4071,12 +4072,12 @@ export class Play {
 		if (st.who === "kiriko") {
 			await speak(this.ctx, [
 				{
-					name: KIRIKO.name,
+					name: kirikoLabel(),
 					color: KIRIKO.color,
 					text,
 					portrait: {
 						id: "kiriko",
-						name: KIRIKO.name,
+						name: kirikoLabel(),
 						color: KIRIKO.color,
 						src: KIRIKO.portrait,
 						side: "left",

@@ -28,6 +28,7 @@ import type { DungeonId, Objective } from "../../core/types";
 import { HIT_SE } from "../../data/audio/sfx";
 import { CAST, heroWalk, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
+import { kirikoLabel } from "../../data/story/rank";
 import {
 	advanceClock,
 	nowHour,
@@ -2098,7 +2099,7 @@ export class Village {
 		const voice = mode === "voice" ? shoutIf(KIRIKO.voice, shout) : undefined;
 		this.msg.overFade(this.fadeEl.style.opacity === "1");
 		return this.msg.show({
-			name: KIRIKO.name,
+			name: kirikoLabel(),
 			color: KIRIKO.color,
 			text: mode === "think" ? `（${text}）` : text,
 			emote,
@@ -2109,7 +2110,7 @@ export class Village {
 					: undefined,
 			portrait: {
 				id: "kiriko",
-				name: KIRIKO.name,
+				name: kirikoLabel(),
 				color: KIRIKO.color,
 				src: KIRIKO.portrait,
 				side: "left",

@@ -185,7 +185,7 @@ const LOG_LINES = [
 	"また明日",
 ];
 /** 最終話の あと（電池板を 持ち帰った）に まじる 行（STORY.md §4.9 の 頂点）。 */
-const WIN_LOG = ["人おったな", "ロールバックされとって草"] as const;
+const WIN_LOG = ["人おったな", "帝国、差し押さえで草"] as const;
 const WEEK = "日月火水木金土";
 
 const logLine = (r: () => number, won: boolean): string => {
