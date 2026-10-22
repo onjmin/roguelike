@@ -274,6 +274,26 @@ const BOARD_MISC: Record<DungeonId, readonly string[]> = {
 	],
 };
 
+/**
+ * HPが 4分の1を 切った 1撃の 直後（階に 1回。ui/dungeon/play.ts）。いちばん 張りつめた 瞬間に 村の スレが
+ * ゆるめる（STORY.md「笑いの 理論から 見た 201」の 緊張の緩和）。応援・煽り・関係ない 話を まぜる。
+ */
+const PINCH: readonly string[] = [
+	"あっ（察し）",
+	"{hero}、HP赤いで！",
+	"BGMがもう葬式や",
+	"ワイ見てられん、実況して",
+	"ここで草食えたら伝説や",
+	"遺影の準備はできとる",
+	"スレの勢い急に上がっとる",
+	"逃げろ！いや戦え！いや逃げろ！",
+	"晩飯できたけどそれどころやない",
+	"まだいける（震え声）",
+];
+
+export const pinchResLine = (hero: string, salt: number): string =>
+	`村のスレ「${PINCH[salt % PINCH.length].replaceAll("{hero}", hero)}」`;
+
 /** salt は 冒険の 種と 階から 作る（同じ 階では 同じ 行）。無ければ null。 */
 export const liveResLine = (x: LiveState, salt: number): string | null => {
 	// 出るか どうかと どの 行かを 別の 桁から 取る（どちらも salt の 剰余だと かたよる）

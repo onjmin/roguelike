@@ -320,7 +320,8 @@ test("boss arenas: known letters, one room in reach, the boss stands on B, and n
 
 test("boss arenas: the talk fits the window and comes before the fight starts", () => {
 	for (const { id, a } of ARENAS) {
-		ok(a.talk.length >= 1 && a.talk.length <= 3, `${a.name}: windows`);
+		// 本気の 場面は 脅しを 具体的に 言う ぶん 長め（STORY.md「笑いの 理論から 見た 201」）
+		ok(a.talk.length >= 1 && a.talk.length <= 6, `${a.name}: windows`);
 		ok(typeof a.talk[0] === "string", `${a.name}: opens with キリコ`);
 		for (const text of a.talk.flatMap(textsOf)) {
 			const lines = text.split("\n");
@@ -361,7 +362,7 @@ test("boss talks: every boss opens with a straight talk that fits the window, hu
 	}
 	ok(TALK_BOSSES.length >= 3, "few boss talks");
 	for (const { id, b, talk } of TALK_BOSSES) {
-		ok(talk.length >= 3 && talk.length <= 7, `${id}: windows ${talk.length}`);
+		ok(talk.length >= 3 && talk.length <= 10, `${id}: windows ${talk.length}`);
 		ok(typeof talk[0] === "string", `${id}: opens with キリコ`);
 		// 最後は 相手の 脅しか キリコの 返事（笑いで 落とさない：！の 連打・草・ンゴの ボケ なし）
 		for (const text of talk.flatMap(textsOf)) {

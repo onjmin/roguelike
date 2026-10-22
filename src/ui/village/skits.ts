@@ -232,17 +232,14 @@ const play = async (
 				fx?.end();
 				const se = l.fx === "boom" ? "explosion" : FX_SE[l.fx];
 				if (se) s.se(se);
-				// 出す 所：fxAt の マス（家の 上）か 人（歩いても 追う）、温め・自主規制・豆電球は キリコの 上
+				// 出す 所：fxAt の マス（家の 上）か 人（歩いても 追う）、温め・豆電球は キリコの 上
 				const at = l.fxAt === "mob" && mob ? `mob_${mob.id}` : l.fxAt;
 				const cell = (): readonly [number, number] | null =>
 					typeof at === "string"
 						? (s.posOf?.(at) ?? null)
 						: (at ?? [s.state.x, s.state.y]);
 				const track =
-					at === undefined &&
-					l.fx !== "heat" &&
-					l.fx !== "mosaic" &&
-					l.fx !== "bulb"
+					at === undefined && l.fx !== "heat" && l.fx !== "bulb"
 						? undefined
 						: () => {
 								const c = cell();

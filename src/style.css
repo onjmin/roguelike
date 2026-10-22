@@ -2192,29 +2192,6 @@ body.jolt #app {
 	text-shadow: 3px 3px 0 #800;
 }
 
-/* 自主規制：服が 飛んだ 人を 隠す モザイクの 札（人の 上に 置く。translate で まんなか合わせ） */
-.fx-mosaic-box {
-	position: absolute;
-	width: 56px;
-	height: 64px;
-	transform: translate(-50%, -60%);
-	background:
-		repeating-conic-gradient(#e9c3a6 0 25%, #c99a7e 0 50%) 0 0 / 14px 14px;
-	border: 2px solid #111;
-	display: flex;
-	align-items: flex-end;
-	justify-content: center;
-}
-
-.fx-mosaic-box span {
-	margin-bottom: -20px;
-	padding: 0 4px;
-	background: #111;
-	color: #fff;
-	font-size: 11px;
-	white-space: nowrap;
-}
-
 /* 予告編：黒い 画面の まんなかに 大きな 字（窓は 前に 出る） */
 #ui > .scene-fx.fx-trailer {
 	display: flex;

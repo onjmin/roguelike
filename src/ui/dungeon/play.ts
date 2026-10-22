@@ -61,7 +61,11 @@ import { HIT_SE } from "../../data/audio/sfx";
 import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
-import { heroRivalResLine, liveResLine } from "../../data/story/liveRes";
+import {
+	heroRivalResLine,
+	liveResLine,
+	pinchResLine,
+} from "../../data/story/liveRes";
 import { goalText } from "../../data/story/objectives";
 import {
 	PICK_GUIDE,
@@ -381,6 +385,8 @@ export class Play {
 	private rescueFx: Promise<void> | null = null;
 	/** 前の 階に 着いた ときの 倒した 数（実況の「前の 階で 倒した 数」）。 */
 	private killMark = 0;
+	/** 張りつめた 実況（pinchResLine）を 出した 階。 */
+	private pinchDepth = -1;
 	/** 帰還スレで 地上へ もどる ところ（「もどる」を えらんだ。リプレイでは 終わりの 種類で 見る）。 */
 	private escaping = false;
 	/** カメラを 止める（帰り方の 演出で キリコだけ 動かす あいだ）。 */
@@ -3346,6 +3352,18 @@ export class Play {
 						e.hp + e.amount > quarter;
 					// 倒れる 1撃：白く 光って いちばん 長く 止める（何に やられたかを 見る 間）
 					const down = e.id === PLAYER_ID && e.hp === 0;
+					// 張りつめた 瞬間に 村の スレが ゆるめる（階に 1回。見た目だけ：リプレイでは 出さない）
+					if (danger && !this.rp && this.pinchDepth !== this.run.s.depth) {
+						this.pinchDepth = this.run.s.depth;
+						this.pushLog(
+							{
+								text: pinchResLine(this.run.heroName, this.run.s.turn),
+								tone: "gloss",
+								fast: false,
+							},
+							false,
+						);
+					}
 					if (down && !(this.rp && fast)) {
 						void this.flash("rgba(255,255,255,0.5)", 200);
 						await this.hitStop(STOP_MS.down);

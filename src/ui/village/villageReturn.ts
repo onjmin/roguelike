@@ -577,8 +577,8 @@ const startPageFx = (s: Story, p: StoryPage): FxRun => {
 	const kind = p.fx as SceneFx;
 	const se = FX_SE[kind];
 	if (se && se !== p.se) s.se(se);
-	// 温め・自主規制は キリコの 上（カメラが 動いても 追う）
-	const onKiriko = kind === "heat" || kind === "mosaic";
+	// 温めは キリコの 上（カメラが 動いても 追う）
+	const onKiriko = kind === "heat";
 	return startFx(fxRoot(), kind, {
 		caption: p.caption,
 		...(onKiriko
