@@ -747,7 +747,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"12年前、みんなで旗を立てた。\nみんな飽きて帰った。ワイらは残った",
 				"残ったもんの板や。\n独立は、遊びやない",
 				{
-					kiriko: "……広場は、返してほしいンゴ",
+					kiriko: "……旗も広場も、ほしいンゴ",
 					roze: "広場は、みんなの物アル。\n……返すのが常識アル",
 					zero: [
 						"広場の人数、ずっと0人です。\n……返してください",
@@ -843,7 +843,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				talk: [
 					"あら、41℃派の方？\nここは42℃の湯でしてよ",
 					{
-						kiriko: "吾輩、ぬるいのも\n熱いのも入るンゴ",
+						kiriko: "源泉ごと、吾輩が\nもらいにきたンゴ",
 						roze: "ぬるいのも熱いのも、\n入るのが常識アル",
 						zero: [
 							"41℃も42℃も、\nどっちも記録します",
@@ -910,7 +910,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			talk: [
 				"……来たか。\nこの町は、14年ワイが盛り上げてきた",
 				{
-					kiriko: "……ひとりでンゴ？",
+					kiriko: "その町は、もう\n吾輩の帝国ンゴ",
 					roze: "……ひとりでアル？",
 					zero: [
 						"……ひとりで、ですか",
@@ -924,7 +924,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"町の明かりは、ぜんぶワイの\nスイッチひとつや",
 				"主電源は、わたさん。\n……どけ",
 				{
-					kiriko: "どかないンゴ",
+					kiriko: "主電源ごと、\n吾輩がもらうンゴ",
 					roze: "どかないアル",
 					zero: ["どきません", "どかないゼロ", "どかないよ〜"],
 				},
@@ -1079,7 +1079,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 				"パン板は、ワイらを忘れた。\n町は、ワイらを通り道にした",
 				"町の通りに、胞子をまいた。\n春には、だれも歩けへん",
 				{
-					kiriko: "……町を空き地にしたのは、\n吾輩ンゴ",
+					kiriko: "その行進、ぜんぶ\n吾輩の軍にほしいンゴ",
 					roze: "空き地にしたのは、キリコアル。\n……わたしも見てたアル",
 					zero: [
 						"空き地になった町、\nゼロも見てました",

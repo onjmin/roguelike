@@ -43,7 +43,7 @@ export const KINOKO_EVE = {
 	/** 翌朝、踏まれた 商店街を 見て（行進は 3人）。 */
 	kirikoHeadline: "3人で、商店街ぜんぶ\n閉めさせたンゴ！？",
 	/** 行く 理由は キリコの ことばで（STORY.md §0「世界を 見せる」10）。 */
-	kirikoGo: "パン板とけんかになる前に、\n吾輩が追いかけるンゴ",
+	kirikoGo: "あの行進、吾輩の軍に\nほしいンゴ。追いかけるンゴ",
 	/** きのこ軍の 名前欄（顔は [ｷ・Д・ﾉ]。行の 頭に 付ける）。 */
 	kinokoName: "きのこ軍",
 	kinokoFace: "[ｷ・Д・ﾉ]",
@@ -102,7 +102,7 @@ export const BATH_EVE = {
 	memorySplit: "次の朝から、町は湯の温度で\nまっぷたつになった。",
 	zeroSame: "この1行で、町が\nまっぷたつです。数えました",
 	nanjSame: "一言で割れる町も、\nどうかと思うで",
-	kirikoWhy: "胞子が落ちるまで、\n吾輩は寝られないンゴ",
+	kirikoWhy: "湯で割れた町なら、湯を\nにぎった者の勝ちンゴ",
 	nanjSource: "銭湯の湯は、風呂板の源泉や。\n立てこもりも、源泉のほうやろ",
 	morning: "翌朝。",
 } as const;

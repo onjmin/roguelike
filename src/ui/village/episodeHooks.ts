@@ -382,7 +382,7 @@ export const bathEveScript = async (s: Story): Promise<void> => {
 	s.face("nanj", "player");
 	s.face("player", "right");
 	await s.say("nanj", B.nanjSame, { emote: "…" });
-	await s.kiriko(B.kirikoWhy, "voice", { emote: "汗" });
+	await s.kiriko(B.kirikoWhy, "voice", { emote: "得" });
 	await s.say("nanj", B.nanjSource);
 
 	// ── 翌朝（この あと 掲示板の 見出し「銭湯陥落」と、風呂板が 開く 知らせ）
