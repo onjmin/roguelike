@@ -1,6 +1,9 @@
 // 寸劇（きっかけつきで 1回きり。動かすのは ui/village/skits.ts）。
-// きっかけは 4つ：建物に はじめて 入った（enter）・物を はじめて 調べた（look）・ある 場所に はじめて 来た（near）・
-// ある 死に方で 帰ってきて その 住人に はじめて 話しかけた（death。前の冒険への 反応を かねる）。村ぜんぶで 1回の 帰りに 1本まで。
+// きっかけは 5つ：建物に 入った（enter）・物を 調べた（look）・ある 場所に 来た（near）・
+// ある 死に方で 帰ってきて その 住人に はじめて 話しかけた（death。前の冒険への 反応を かねる）・その 店で 払った（buy）。
+// 踏めば かならず 起きる ものに しない（2026-10-22 作者）：見こみ（chance。帰りごとに 1度 決める）・
+// つづきもの（follows）・期間限定（window）を 重ねる。村ぜんぶで 1回の 帰りに 1本まで。
+// 立ち位置（stage）：話す 相手が 地図に 立って いる なら、キリコは その 前へ 歩いて から 始める（入口で 遠くの 店員と 話さない）。
 // 1本は 3〜5窓（ふだんの 話しかけより 長い。1回きりなので）。201 の 型：同じ 形で 3段 大きく して、
 // 最後に キリコか 本人が つっこむ（STORY.md「201級の 笑い」）。
 // 地の文で 画面に 見えない 出来事（物が ふえた・人が 来た）を 言わない。話す 人の 口で 言わせる。
@@ -10,6 +13,7 @@
 import type { DungeonId } from "../../core/types";
 import type { Cue } from "../../engine/emote";
 import type { SceneFx } from "../../engine/sceneFx";
+import type { Dir } from "../../engine/types";
 import type { MobId } from "../people/mobs";
 
 /** 1窓。who は キリコ・地の文（null）・その 住人（mob。death だけ）・名前つきの 人（店員 など。立ち絵なし）。 */
@@ -32,6 +36,8 @@ export type SkitLine = Cue & {
 	fling?: readonly [number, number] | "far";
 	/** この 窓の 前に キリコの 顔の カットイン（驚き・ツッコミの 瞬間）。 */
 	cutin?: true;
+	/** この 窓の 前に 地図の 人（ID）を 消す（床の 下へ 沈んだ など。寸劇の 終わりに もどる）。 */
+	hide?: string;
 };
 
 export type SkitOn =
@@ -49,10 +55,29 @@ export type SkitOn =
 			face?: readonly [number, number];
 	  }
 	/** この 死に方で 帰ってきて、mob に はじめて 話しかけた。 */
-	| { k: "death"; mob: MobId; cause: string };
+	| { k: "death"; mob: MobId; cause: string }
+	/** その 地図で お金を 払った（買った・遊んだ）。thing が あれば その 人・物（イベントの id の 頭）で 払った ときだけ。 */
+	| { k: "buy"; map: string; thing?: string };
 
 /** 起きる あいだ（本筋の 話。after を 持ち帰った あとで、before を まだ 持ち帰って いない とき）。 */
 export type SkitWindow = { after?: DungeonId; before?: DungeonId };
+
+/** 寸劇の 立ち位置（話す 相手の 前へ キリコが 歩いて から 始める）。 */
+export type SkitStage = {
+	/** キリコが 立つ マスと 向き（無ければ その 場で。調べた 物・払った 物の 前に もう 立って いる とき）。 */
+	at?: readonly [number, number];
+	face?: Dir;
+	/** 名前つきの 人の 窓の 記号・動きを 出す 地図の 人（名前 → イベントの id）。 */
+	cast?: Readonly<Record<string, string>>;
+	/** 寸劇の 前に 持ち場へ 歩く 人（終わったら home へ もどる）。 */
+	walk?: readonly {
+		id: string;
+		to: readonly [number, number];
+		face: Dir;
+		home: readonly [number, number];
+		homeFace: Dir;
+	}[];
+};
 
 export type Skit = {
 	key: string;
@@ -60,6 +85,11 @@ export type Skit = {
 	lines: readonly SkitLine[];
 	/** 期間限定（話の その あいだ だけ。先へ 進むと 二度と 出ない）。 */
 	window?: SkitWindow;
+	/** 起きる 見こみ（0〜1）。1回の 帰りに 1度 だけ 決める（はずれた 帰りは きっかけを 踏んでも 起きない。次の 帰りに また 決める）。 */
+	chance?: number;
+	/** この 寸劇を 見た あとでだけ 起きる（つづきもの）。 */
+	follows?: string;
+	stage?: SkitStage;
 };
 
 /** 村の どこでも（期間限定の 寸劇の きっかけ：その あいだに 村を 1歩 歩いたら）。 */
@@ -231,6 +261,7 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_bath",
 		on: { k: "enter", map: "bath" },
+		stage: { at: [8, 13], face: "up", cast: { 番台: "bandai" } },
 		lines: [
 			banndai("いらっしゃい！\nうちの湯は41.5℃や！"),
 			e({ gesture: "hop" }, k("決着したンゴ！")),
@@ -244,13 +275,15 @@ export const SKITS: readonly Skit[] = [
 			},
 		],
 	},
-	// 温められて、こんがり たおれても、店員は 真顔で 接客を 続ける。キリコは 起きて 袋を もらう（一緒に 狂う）
+	// レジで 贈り物を 買った あと。温められて、こんがり たおれても、店員は 真顔で 接客を 続ける。
+	// キリコは 起きて 袋を もらう（一緒に 狂う）
 	{
-		key: "enter_konbini",
-		on: { k: "enter", map: "f_konbini" },
+		key: "buy_konbini",
+		on: { k: "buy", map: "f_konbini", thing: "konbini_clerk" },
+		stage: { at: [2, 8], face: "up", cast: { 店員: "konbini_clerk" } },
 		lines: [
-			clerk("いらっしゃいませー。\n温めますか？"),
-			k("まだなにも\n持ってないンゴ"),
+			clerk("お買い上げ、ありがとう\nございますー。温めますか？"),
+			k("それ、プレゼントンゴ"),
 			clerk("温めますね"),
 			{
 				...e({ emote: "驚", hit: "slap" }, k("吾輩を温めたンゴ！？")),
@@ -277,6 +310,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_pawn",
 		on: { k: "enter", map: "f_pawn" },
+		chance: 0.5,
+		stage: { at: [6, 6], face: "up", cast: { 店主: "pawn_owner" } },
 		lines: [
 			owner("いらっしゃい。\nうちはなんでも売っとるで"),
 			k("なにを売ってるンゴ？"),
@@ -295,6 +330,9 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "look_pawn_safe",
 		on: { k: "look", thing: "safe", map: "f_pawn" },
+		// 店主に「なんでも売っとる」と 聞いた あと
+		follows: "enter_pawn",
+		stage: { at: [10, 4], face: "up", cast: { 店主: "pawn_owner" } },
 		lines: [
 			k("鳴いてる金庫、\n開けてみるンゴ"),
 			e({ emote: "!" }, owner("あかん！")),
@@ -308,6 +346,12 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_restaurant",
 		on: { k: "enter", map: "f_restaurant" },
+		chance: 0.5,
+		stage: {
+			at: [9, 7],
+			face: "up",
+			cast: { 給仕: "rest_waiter", 客: "rest_guest_b" },
+		},
 		lines: [
 			waiter("いらっしゃいませ。\n本日は満席でございます"),
 			k("お客さん、\n2人しかいないンゴ"),
@@ -319,10 +363,25 @@ export const SKITS: readonly Skit[] = [
 			e({ auto: 1100, gesture: "hop" }, k("……ここは、\n吾輩の席ンゴ")),
 		],
 	},
-	// 連コインの 先は 両替機。言われても やめない。キリコも 美学に 乗る
+	// 1回 遊んだ あと。連コインの 先は 両替機。言われても やめない。キリコも 美学に 乗る
+	// （格ゲーの 名無しが 両替機の 前へ 歩いて いき、キリコも その となりへ）
 	{
-		key: "enter_arcade",
-		on: { k: "enter", map: "f_arcade" },
+		key: "buy_arcade",
+		on: { k: "buy", map: "f_arcade" },
+		stage: {
+			at: [1, 10],
+			face: "up",
+			cast: { 名無し: "arcade_a" },
+			walk: [
+				{
+					id: "arcade_a",
+					to: [2, 9],
+					face: "left",
+					home: [6, 4],
+					homeFace: "left",
+				},
+			],
+		},
 		lines: [
 			nanashi("連コインは、\n男の美学や"),
 			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
@@ -343,6 +402,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_gym",
 		on: { k: "enter", map: "f_gym" },
+		chance: 0.5,
+		stage: { at: [4, 5], face: "right", cast: { トレーナー: "gym_trainer" } },
 		lines: [
 			trainer("ようこそageジムへ！\nまずはスクワットや！"),
 			{ ...trainer("しゃがんで……"), fx: "slowmo" },
@@ -350,6 +411,7 @@ export const SKITS: readonly Skit[] = [
 			{
 				...e({ auto: 800 }, n("トレーナーは、床の下へ\n沈んでいった。")),
 				se: "fall",
+				hide: "gym_trainer",
 			},
 			e({ auto: 1000 }, trainer("（床の下から）\n……そのまま、あと100回")),
 			{
@@ -362,6 +424,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_bar",
 		on: { k: "enter", map: "f_bar" },
+		// 座る 前（カウンターの 椅子の うしろ）
+		stage: { at: [3, 6], face: "up", cast: { マスター: "bar_master" } },
 		lines: [
 			master("いらっしゃい。\n次スレへようこそや"),
 			master("1000杯目が出たら、\n店ごと次スレや"),
@@ -378,6 +442,9 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_ramen",
 		on: { k: "enter", map: "f_ramen" },
+		chance: 0.5,
+		// カウンターの 席で 頼む
+		stage: { at: [4, 6], face: "up", cast: { 店主: "ramen_master" } },
 		lines: [
 			owner("へいらっしゃい！\n麺のかたさは？"),
 			k("ふつうンゴ"),
@@ -397,6 +464,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_cinema",
 		on: { k: "enter", map: "f_cinema" },
+		chance: 0.5,
+		stage: { at: [2, 3], face: "left", cast: { 係員: "cinema_staff" } },
 		lines: [
 			usher("本日の上映は、\nスレ1本まるごとです"),
 			usher("上映時間は、\nおよそ3年です"),
@@ -418,6 +487,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_casino",
 		on: { k: "enter", map: "f_casino" },
+		chance: 0.5,
+		stage: { at: [4, 6], face: "up", cast: { ディーラー: "casino_dealer" } },
 		lines: [
 			dealer("いらっしゃいませ。\n当店の勝率は、5割です"),
 			dealer("……お店の、です"),
@@ -440,13 +511,14 @@ export const SKITS: readonly Skit[] = [
 	// ───── 建物の オチ（爆発は 直しては 爆発させる リサイクル屋と 秘密結社の 1回目だけ。ほかは 暗転・チーン・草で 落とす） ─────
 	// 地図は こわさない。煙が 晴れたら（calm）建物は 元通りで、本人たちも 気に しない。元通りに なった ことは
 	// 言わない（見れば わかる）。
-	// ドリンクバーに 店長。キリコは 払って おかわりする（一緒に 狂う）
+	// ドリンクバーで 1杯 飲んだ あと。ドリンクバーに 店長。キリコは 払って おかわりする（一緒に 狂う）
 	{
-		key: "enter_famires",
-		on: { k: "enter", map: "f_famires" },
+		key: "buy_famires",
+		on: { k: "buy", map: "f_famires", thing: "drinkbar" },
+		stage: { cast: { 店員: "famires_clerk" } },
 		lines: [
 			clerk("ドリンクバーは、\nおかわり自由です"),
-			k("ぜんぶ混ぜるンゴ"),
+			k("つぎは、ぜんぶ混ぜるンゴ"),
 			{ ...manager("（グラスの中から）\nごぼごぼ……"), se: "bubble" },
 			{
 				...e({ emote: "驚", hit: "slap" }, k("店長が入ってるンゴ！？")),
@@ -460,6 +532,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_recycle",
 		on: { k: "enter", map: "f_recycle" },
+		chance: 0.5,
+		stage: { at: [9, 8], face: "up", cast: { 店主: "recycle_clerk" } },
 		lines: [
 			owner("うちは何でも\n直して売るよ"),
 			owner("直したやつは、\nだいたい爆発するけどな"),
@@ -482,6 +556,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_dojo",
 		on: { k: "enter", map: "f_dojo" },
+		chance: 0.5,
+		stage: { at: [5, 6], face: "up", cast: { 師範: "dojo_master" } },
 		lines: [
 			sensei("気合いだ！\n気合いで瓦を割れ！"),
 			{ ...sensei("見本を見せる！\nちぇすとーーっ！！"), fx: "slowmo" },
@@ -508,6 +584,8 @@ export const SKITS: readonly Skit[] = [
 	{
 		key: "enter_theater",
 		on: { k: "enter", map: "f_theater" },
+		// 客席の 前から 舞台を 見る
+		stage: { at: [6, 6], face: "up", cast: { 役者: "theater_actor" } },
 		lines: [
 			{
 				...actor("本日の演目は、\n『やきう物語』！"),
@@ -595,12 +673,14 @@ export const SKITS: readonly Skit[] = [
 			),
 		],
 	},
-	// 自販機の 下には 名無しが 住んで いる。キリコは 家賃を 払って しまう（一緒に 狂う）
+	// 道ばたの 自販機で 買った あと（おつりが 下へ 転がる）。自販機の 下には 名無しが 住んで いる。
+	// キリコは 家賃を 払って しまう（一緒に 狂う）
 	{
-		key: "look_vend",
-		on: { k: "look", thing: "fthing_vend" },
+		key: "buy_vend",
+		on: { k: "buy", map: "village", thing: "fthing_vend" },
+		chance: 0.5,
 		lines: [
-			k("自販機の下に、\nなにか光ってるンゴ"),
+			k("おつりが、自販機の下に\n転がったンゴ"),
 			k("……手、とどかないンゴ"),
 			e({ pause: 400 }, nanashi("（下から）とったらあかん。\nワイの家や")),
 			e({ emote: "驚", hit: "slap" }, k("住んでるンゴ！？")),
@@ -613,6 +693,7 @@ export const SKITS: readonly Skit[] = [
 	// 広場の 南東の 噴水（パン板の あとから 水が 出る）。下から 打たれて、キリコは 打ち上がる
 	{
 		key: "near_fountain",
+		chance: 0.5,
 		window: { after: "shallow" },
 		on: { k: "near", map: "village", x: [23, 30], y: [29, 30], face: [25, 25] },
 		lines: [
@@ -636,6 +717,7 @@ export const SKITS: readonly Skit[] = [
 	// 広場の 南の 池の ほとり：池の 精の 話の 裏返し。本当に 沈めて、浮いて こないので 正直者に される
 	{
 		key: "near_pond",
+		chance: 0.5,
 		on: { k: "near", map: "village", x: [10, 17], y: [30, 31], face: [13, 27] },
 		lines: [
 			k("池ンゴ！"),
@@ -658,6 +740,7 @@ export const SKITS: readonly Skit[] = [
 	// 浜の 東の はし（桟橋からは 遠い）。沖に 遠泳中の 名無し。キリコも 泳ぎだす（一緒に 狂う）
 	{
 		key: "near_beach",
+		chance: 0.5,
 		on: { k: "near", map: "village", x: [40, 62], y: [33, 36], face: [50, 38] },
 		lines: [
 			e({ gesture: "hop" }, k("全部の板を\n回るンゴーー！！")),

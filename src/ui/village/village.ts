@@ -87,7 +87,7 @@ import {
 	sleep,
 	TILE,
 } from "../../engine/types";
-import { walletYen, yen } from "../../engine/wallet";
+import { onWalletChange, walletYen, yen } from "../../engine/wallet";
 import { showBootTitle } from "../boot";
 import type { Ctx } from "../ctx";
 import { el, nextFrame } from "../dom";
@@ -1900,15 +1900,30 @@ export class Village {
 		// 扉で 地図が かわっても、印は 始めた 地図に つける
 		const map = this.mapId;
 		this.talking = e;
+		// この イベントの あいだに 払ったか（買った あとの 寸劇）
+		let paid = false;
+		const off = onWalletChange((d) => {
+			if (d < 0) paid = true;
+		});
 		try {
 			await this.runScript(async (s) => {
-				await run(s);
+				try {
+					await run(s);
+				} finally {
+					off();
+				}
 				if (e.once) this.state.flags[this.flagKey("done", e.id, map)] = true;
-				// 建物に はじめて 入った・物を はじめて 調べた ときの 寸劇（ui/village/skits.ts）
+				// 建物に 入った・物を 調べた・払った ときの 寸劇（ui/village/skits.ts）
 				if (!this.exitChoice && !this.leaving)
-					await skitAfterEvent(s, { from: map, to: this.mapId, thing: e.id });
+					await skitAfterEvent(s, {
+						from: map,
+						to: this.mapId,
+						thing: e.id,
+						paid,
+					});
 			});
 		} finally {
+			off();
 			this.talking = null;
 		}
 	}

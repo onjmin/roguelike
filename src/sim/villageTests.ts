@@ -249,6 +249,7 @@ import {
 	facilityById,
 	facilityDoor,
 	facilityEntry,
+	facilityMapId,
 	facilityMats,
 	facilityOfMap,
 	facilityOutside,
@@ -486,6 +487,7 @@ import {
 	nearSkit,
 	playNearSkit,
 	skitAfterEvent,
+	sureSkits,
 } from "../ui/village/skits";
 import { forgetStaffGags } from "../ui/village/staffGags";
 import { buildSurface, buildVillage } from "../ui/village/villageEvents";
@@ -8863,12 +8865,24 @@ test("寸劇: 3〜5 windows that fit, unique keys, and every trigger points at a
 			texts.push([`${sk.key}[${i}]`, l.text]);
 		});
 		const on = sk.on;
-		if (on.k === "enter")
+		if (on.k === "enter" || on.k === "buy")
 			ok(
 				facilityOfMap(on.map) !== undefined ||
-					(ROOM_IDS as readonly string[]).includes(on.map),
+					(ROOM_IDS as readonly string[]).includes(on.map) ||
+					(on.k === "buy" && on.map === "village"),
 				`${sk.key}: no ${on.map}`,
 			);
+		// 払う 所：店員（売る 人）・払って 使う 物（ドリンクバー・自販機）
+		if (on.k === "buy" && on.thing) {
+			const f = facilityOfMap(on.map);
+			const thing = on.thing;
+			ok(
+				!!f?.room?.people?.some((p) => p.id === thing && p.play) ||
+					!!f?.room?.plays?.[thing] ||
+					(on.map === "village" && thing === "fthing_vend"),
+				`${sk.key}: nobody takes money at ${thing}`,
+			);
+		}
 		if (on.k === "death") {
 			ok(MOB_IDS.includes(on.mob), `${sk.key}: ${on.mob}`);
 			ok(
@@ -8888,14 +8902,41 @@ test("寸劇: 3〜5 windows that fit, unique keys, and every trigger points at a
 	fitsWindow(texts);
 });
 
-test("寸劇: entering a building or looking at a thing plays once, at most one per return", async () => {
+test("寸劇: buying, entering a building or looking at a thing plays once, at most one per return", async () => {
 	await withStorageAsync(async () => {
+		// コンビニは 入った だけ・店員と 話した だけでは 出ない。レジで 払った あと
 		const a = fakeStory();
 		ok(
-			await skitAfterEvent(a.s, {
+			!(await skitAfterEvent(a.s, {
 				from: "village",
 				to: "f_konbini",
 				thing: "door_f_konbini",
+			})),
+			"konbini on entering",
+		);
+		ok(
+			!(await skitAfterEvent(a.s, {
+				from: "f_konbini",
+				to: "f_konbini",
+				thing: "konbini_clerk",
+			})),
+			"konbini without paying",
+		);
+		ok(
+			!(await skitAfterEvent(a.s, {
+				from: "f_konbini",
+				to: "f_konbini",
+				thing: "atm_0",
+				paid: true,
+			})),
+			"konbini after the ATM",
+		);
+		ok(
+			await skitAfterEvent(a.s, {
+				from: "f_konbini",
+				to: "f_konbini",
+				thing: "konbini_clerk",
+				paid: true,
 			}),
 			"konbini skit",
 		);
@@ -8916,9 +8957,10 @@ test("寸劇: entering a building or looking at a thing plays once, at most one 
 		pushRecord({ kind: "escape" });
 		ok(
 			!(await skitAfterEvent(b.s, {
-				from: "village",
+				from: "f_konbini",
 				to: "f_konbini",
-				thing: "door_f_konbini",
+				thing: "konbini_clerk",
+				paid: true,
 			})),
 			"konbini again",
 		);
@@ -9076,9 +9118,10 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 		);
 		// ほかの 寸劇を 見た 帰りでも 出て、2回目は ない
 		await skitAfterEvent(fakeStory().s, {
-			from: "village",
+			from: "f_konbini",
 			to: "f_konbini",
-			thing: "door_f_konbini",
+			thing: "konbini_clerk",
+			paid: true,
 		});
 		const sk = nearSkit("village", 19, 22);
 		ok(sk?.key === "window_dokuritsu", `after another skit: ${sk?.key}`);
@@ -9094,6 +9137,76 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 	});
 });
 
+test("寸劇: Kiriko's stage spot is a floor cell of that room, and every cast and walker stands in it", () => {
+	let n = 0;
+	for (const sk of SKITS) {
+		const st = sk.stage;
+		if (!st) continue;
+		const on = sk.on;
+		const map =
+			on.k === "enter" || on.k === "buy"
+				? on.map
+				: on.k === "look"
+					? on.map
+					: undefined;
+		ok(map, `${sk.key}: a stage needs its map`);
+		if (!map) continue;
+		const f = FACILITIES.find((x) => facilityMapId(x) === map);
+		const rows = f ? facilityRoomRows(f) : roomRows(map as RoomId);
+		const tiles = f ? facilityRoomPalette(f) : roomPalette(map as RoomId);
+		const people = new Set(
+			f
+				? (f.room?.people ?? []).map((p) => p.id)
+				: map === "bath"
+					? ["bandai"]
+					: [],
+		);
+		const floor = (c: readonly [number, number]): boolean =>
+			!!tiles[[...(rows[c[1]] ?? "")][c[0]] ?? ""]?.passable;
+		if (st.at) {
+			n++;
+			ok(floor(st.at), `${sk.key}: Kiriko's spot ${st.at} is not floor`);
+		}
+		for (const id of Object.values(st.cast ?? {}))
+			ok(people.has(id), `${sk.key}: ${id} is not in ${map}`);
+		for (const w of st.walk ?? []) {
+			ok(people.has(w.id), `${sk.key}: ${w.id} is not in ${map}`);
+			ok(floor(w.to), `${sk.key}: ${w.id} walks to a wall`);
+			const home = f?.room?.people?.find((p) => p.id === w.id)?.at;
+			ok(
+				home?.[0] === w.home[0] && home?.[1] === w.home[1],
+				`${sk.key}: ${w.id} goes home to ${w.home}, not ${home}`,
+			);
+		}
+	}
+	ok(n >= 10, `few staged skits: ${n}`);
+	// つづきものは 先の 寸劇が ある
+	for (const sk of SKITS)
+		if (sk.follows)
+			ok(
+				SKITS.some((x) => x.key === sk.follows),
+				`${sk.key}: follows ${sk.follows}`,
+			);
+});
+
+test("寸劇: a skit with a chance is decided once per return (not on every step), and comes on some returns but not all", () => {
+	withStorage(() => {
+		// 期間限定（村の どこでも）が 先に 選ばれない よう、本筋は ぜんぶ 持ち帰った あと
+		setProgress([...DUNGEON_IDS], [], [...DUNGEON_IDS]);
+		let hit = 0;
+		for (let i = 0; i < 40; i++) {
+			forgetSkits();
+			localStorage.removeItem("kiriko-roguelike/skits");
+			pushRecord({ kind: "escape" });
+			const a = nearSkit("village", 13, 31)?.key === "near_pond";
+			const b = nearSkit("village", 14, 31)?.key === "near_pond";
+			ok(a === b, "the same return, another step");
+			if (a) hit++;
+		}
+		ok(hit > 5 && hit < 35, `pond on ${hit}/40 returns`);
+	});
+});
+
 test("寸劇: every explosion clears before the skit ends (the building is back to normal), and the boom plays its sound", async () => {
 	const booms = SKITS.filter((sk) => sk.lines.some((l) => l.fx === "boom"));
 	// 爆発は リサイクル屋と 秘密結社の 1回目だけ（多すぎると 天丼が すりきれる）
@@ -9106,6 +9219,7 @@ test("寸劇: every explosion clears before the skit ends (the building is back 
 		);
 	}
 	await withStorageAsync(async () => {
+		sureSkits(true);
 		const a = fakeStory();
 		ok(
 			await skitAfterEvent(a.s, {
@@ -9116,6 +9230,7 @@ test("寸劇: every explosion clears before the skit ends (the building is back 
 			"recycle skit",
 		);
 		ok(a.log.includes("se explosion"), `no boom sound: ${a.log.join(" / ")}`);
+		sureSkits(false);
 	});
 });
 

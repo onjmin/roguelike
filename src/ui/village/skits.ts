@@ -1,6 +1,6 @@
 // 寸劇を 演じる（文と きっかけは data/story/skits.ts）。見た 寸劇と、見た 帰りを 村の 印として 別の 保存場所に
 // 残す（保存できなくても この回は 覚えている）。村ぜんぶで 1回の 帰りに 1本まで（期間限定は べつ）。
-// 建物と 物は ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep）が、
+// 建物・物・払った ことは ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep）が、
 // 死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
 // 帰りの 2幕目（続きの 寸劇）を 待って いる あいだは どの 寸劇も 出さない（holdSkits。先に 見せると 話の 前後が 合わない）。
 
@@ -81,10 +81,32 @@ const find = (hit: (on: SkitOn) => boolean): Skit | null => {
 		near.find(
 			(sk) =>
 				!v.seen.includes(sk.key) &&
+				(!sk.follows || v.seen.includes(sk.follows)) &&
+				rolled(sk) &&
 				// 期間限定は 話の その あいだ だけ。見逃すと 二度と 出ないので、この 帰りに もう 見ていても 出す
 				(sk.window ? inWindow(sk.window) : !busy),
 		) ?? null
 	);
+};
+
+let sure = false;
+
+/** 試験用：見こみ（chance）を いつも 当たりに する。 */
+export const sureSkits = (v: boolean): void => {
+	sure = v;
+};
+
+/**
+ * 見こみ（chance）に 当たったか。帰りと 寸劇の 鍵で 決まる（同じ 帰りの うちは 何度 踏んでも 同じ 答え。
+ * 冒険の 乱数には さわらない）。
+ */
+const rolled = (sk: Skit): boolean => {
+	if (sk.chance === undefined || sure) return true;
+	let h = 2166136261 ^ returnAt();
+	for (const c of sk.key) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+	h = Math.imul(h ^ (h >>> 15), 2246822507);
+	h ^= h >>> 13;
+	return (h >>> 0) / 4294967296 < sk.chance;
 };
 
 /**
@@ -113,6 +135,19 @@ const play = async (
 	v.seen.push(sk.key);
 	v.at = returnAt();
 	save(v);
+	// 立ち位置：持ち場へ 歩く 人と いっしょに、キリコは 話す 相手の 前へ
+	const st = sk.stage;
+	const walks = (st?.walk ?? []).map(async (w) => {
+		await s.goto(w.id, w.to[0], w.to[1]);
+		s.face(w.id, w.face);
+	});
+	if (st?.at) {
+		await s.goto("player", st.at[0], st.at[1]);
+		if (st.face) s.face("player", st.face);
+	}
+	await Promise.all(walks);
+	const cast = st?.cast;
+	const hidden: string[] = [];
 	// 場所の 寸劇は、話の もと（噴水・池・海）の ほうを キリコが 向き、カメラも そちらへ（2026-10-19 作者
 	// 「事が 起きている 方向に プレイヤーを 向かせる」）。おわりに カメラは キリコへ もどす
 	const face = sk.on.k === "near" ? sk.on.face : undefined;
@@ -168,11 +203,23 @@ const play = async (
 			// 顔の カットイン（キリコの 驚きの 顔。ひとりでに 消える）
 			if (l.cutin)
 				await startFx(fxRoot(), "cutin", { art: KIRIKO.portrait }).ready;
-			if (l.text) await line(s, l, mob);
+			if (l.hide) {
+				s.hide(l.hide);
+				hidden.push(l.hide);
+			}
+			if (l.text) await line(s, l, mob, cast);
 		}
 	} finally {
 		fx?.end();
+		for (const id of hidden) s.show(id);
 		if (face || sk.lines.some((l) => l.look)) await s.look(null);
+		// 持ち場へ 来た 人は もとの 所へ
+		await Promise.all(
+			(st?.walk ?? []).map(async (w) => {
+				await s.goto(w.id, w.home[0], w.home[1]);
+				s.face(w.id, w.homeFace);
+			}),
+		);
 	}
 };
 
@@ -195,6 +242,7 @@ const line = async (
 	s: Story,
 	l: SkitLine,
 	mob?: { id: MobId; say: MobSay },
+	cast?: Readonly<Record<string, string>>,
 ): Promise<void> => {
 	const cue = cueOf(l);
 	if (l.who === null)
@@ -207,23 +255,34 @@ const line = async (
 			...cue,
 			name: l.who.name,
 			noPortrait: true,
+			// 地図に 立って いる 人なら 記号・動きは その 人の 頭に
+			speaker: cast?.[l.who.name],
 		});
 };
 
-/** イベントの あと：建物に 入ったか（地図が かわった）、物を 調べたか（同じ 地図の まま）。 */
+/** イベントの あと：払ったか（paid）、建物に 入ったか（地図が かわった）、物を 調べたか（同じ 地図の まま）。 */
 export const skitAfterEvent = async (
 	s: Story,
-	o: { from: string; to: string; thing: string },
+	o: { from: string; to: string; thing: string; paid?: boolean },
 ): Promise<boolean> => {
+	const bought = o.paid
+		? find(
+				(on) =>
+					on.k === "buy" &&
+					on.map === o.to &&
+					(!on.thing || o.thing.startsWith(on.thing)),
+			)
+		: null;
 	const sk =
-		o.to !== o.from
+		bought ??
+		(o.to !== o.from
 			? find((on) => on.k === "enter" && on.map === o.to)
 			: find(
 					(on) =>
 						on.k === "look" &&
 						o.thing.startsWith(on.thing) &&
 						(!on.map || on.map === o.to),
-				);
+				));
 	if (!sk) return false;
 	await play(s, sk);
 	return true;
