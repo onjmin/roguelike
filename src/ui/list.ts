@@ -8,6 +8,7 @@
 import type { Input, Key } from "../engine/input";
 import { el } from "./dom";
 import { OPEN_WAIT_MS, REPEAT_MS } from "./message";
+import { uiIcon } from "./uiIcon";
 
 export type UiCtx = {
 	ui: HTMLElement;
@@ -119,8 +120,8 @@ export const paginate = (
 const makePager = (onFlip: ((d: -1 | 1) => void) | null): HTMLElement => {
 	const label = el("span", { class: "menu-pager-label" });
 	if (!onFlip) return el("div", { class: "menu-pager" }, [label]);
-	const prev = el("button", { class: "menu-pager-btn", text: "◀" });
-	const next = el("button", { class: "menu-pager-btn", text: "▶" });
+	const prev = el("button", { class: "menu-pager-btn", html: uiIcon("left") });
+	const next = el("button", { class: "menu-pager-btn", html: uiIcon("right") });
 	for (const [b, d] of [
 		[prev, -1],
 		[next, 1],

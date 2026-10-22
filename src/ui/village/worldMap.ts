@@ -845,9 +845,9 @@ export const pickColony = async (
 		r.k === "spot"
 			? spotLabel(r.d)
 			: r.k === "prev"
-				? "◀まえのページ"
+				? "まえのページ"
 				: r.k === "next"
-					? "つぎのページ▶"
+					? "つぎのページ"
 					: r.k === "hero"
 						? heroLabel()
 						: r.k === "blank"

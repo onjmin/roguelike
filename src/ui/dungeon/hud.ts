@@ -19,6 +19,7 @@ import {
 	settings,
 } from "../../engine/settings";
 import { el } from "../dom";
+import { uiIcon } from "../uiIcon";
 
 export type Hud = {
 	root: HTMLElement;
@@ -112,7 +113,7 @@ export const mountHud = (root: HTMLElement, input: Input): Hud => {
 	syncToggles();
 
 	const sync = () => {
-		mute.textContent = settings.mute ? "🔇" : "🔊";
+		mute.innerHTML = uiIcon(settings.mute ? "mute" : "sound");
 		mute.classList.toggle("off", settings.mute);
 		hud.classList.toggle("no-pad", !settings.pad);
 		hud.classList.toggle("pad-right", settings.padSide === "right");

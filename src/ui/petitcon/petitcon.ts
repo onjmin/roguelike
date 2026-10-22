@@ -31,6 +31,7 @@ import { el } from "../dom";
 import { markOpened, onTap } from "../list";
 import { board, tick } from "../minigames/minigameBoard";
 import { crisp, type G, twoB, txt } from "../neta/netaBoard";
+import { uiIcon } from "../uiIcon";
 import { previewStage } from "../village/villageReturn";
 
 const KEY = "kiriko-roguelike/basic";
@@ -487,7 +488,7 @@ const runProgram = async (
 	window.addEventListener("pointercancel", onUp);
 	b.canvas.addEventListener("pointerdown", onCanvasDown);
 	const padBtn = (label: string, bit: number): HTMLButtonElement => {
-		const btn = el("button", { class: "petitcon-key", text: label });
+		const btn = el("button", { class: "petitcon-key", html: label });
 		const on = (e: PointerEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
@@ -509,10 +510,10 @@ const runProgram = async (
 	};
 	b.root.insertBefore(
 		el("div", { class: "petitcon-pad" }, [
-			padBtn("◀", 4),
-			padBtn("▲", 1),
-			padBtn("▼", 2),
-			padBtn("▶", 8),
+			padBtn(uiIcon("left"), 4),
+			padBtn(uiIcon("up"), 1),
+			padBtn(uiIcon("down"), 2),
+			padBtn(uiIcon("right"), 8),
 			padBtn("A", 16),
 			padBtn(T.stop, 0),
 		]),

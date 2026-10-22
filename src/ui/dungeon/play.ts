@@ -118,6 +118,7 @@ import {
 const NONE_ACTION: MenuAction = { kind: "none" };
 
 import { openSettings } from "../settings";
+import { uiIcon } from "../uiIcon";
 import { glossFor } from "../village/glossary";
 import { bossHomeLine, showRunEnd } from "../village/records";
 import {
@@ -2590,8 +2591,8 @@ export class Play {
 		if (!rp) return;
 		this.hud.root.classList.add("replay");
 		this.ctx.ui.classList.add("replaying");
-		const btn = (cls: string, text: string, fn: () => void) => {
-			const b = el("button", { class: `rp-btn ${cls}`, text });
+		const btn = (cls: string, html: string, fn: () => void) => {
+			const b = el("button", { class: `rp-btn ${cls}`, html });
 			b.addEventListener("pointerdown", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
@@ -2607,7 +2608,7 @@ export class Play {
 			]),
 			el("div", { class: "rp-prog" }, [el("i")]),
 			el("div", { class: "rp-btns" }, [
-				btn("rp-play", "⏸", () => this.replayToggle()),
+				btn("rp-play", uiIcon("pause"), () => this.replayToggle()),
 				btn("rp-speed", "×1", () => this.replaySpeed(1)),
 				btn("rp-next", "次の階へ", () => this.replayRequestSkip()),
 				btn("rp-quit", "やめる", () => void this.replayQuit()),
@@ -2622,7 +2623,7 @@ export class Play {
 		const rp = this.rp;
 		if (!rp?.bar) return;
 		const q = (c: string) => rp.bar?.querySelector(c) as HTMLElement;
-		q(".rp-play").textContent = rp.paused ? "▶" : "⏸";
+		q(".rp-play").innerHTML = uiIcon(rp.paused ? "play" : "pause");
 		q(".rp-speed").textContent = `×${rp.speed}`;
 		q(".rp-where").textContent =
 			`${floorShort(this.run.s.dungeon, this.run.s.depth)}　${this.run.s.turn}ターン`;

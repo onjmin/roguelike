@@ -31,6 +31,7 @@ import { el, nextFrame } from "../dom";
 import { floorShort } from "../dungeon/floorName";
 import { infoWindow, listWindow } from "../list";
 import { importWindow, shareWindow } from "../share";
+import { uiIcon } from "../uiIcon";
 import { villageSong } from "./villageMusic";
 
 /** HTML に埋めこむ文字の逃がし。 */
@@ -369,7 +370,7 @@ export const openRecords = async (
 	for (;;) {
 		const rows = list.map((r, i) => ({
 			label: `<b class="rec-kind ${r.kind}">${KIND_LABEL[r.kind]}</b>　${esc(endLine(r))}`,
-			sub: opt.replay && replayOf(r) ? "▶" : "",
+			sub: opt.replay && replayOf(r) ? uiIcon("play") : "",
 			desc: `${dateLabel(r.at)}　Lv${r.lv}　${r.turn}ターン倒した数${r.kills}`,
 			value: String(i),
 		}));

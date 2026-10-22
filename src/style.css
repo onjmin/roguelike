@@ -3,6 +3,8 @@
 
 :root {
 	--bg: #0d0a16;
+	/* 一覧の カーソル（▶ の ドット絵。ui/uiIcon.ts の right と 同じ） */
+	--ico-cursor: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 4 7%27 shape-rendering=%27crispEdges%27%3E%3Cpath d=%27M0 0h1v1h-1zM0 1h2v1h-2zM0 2h3v1h-3zM0 3h4v1h-4zM0 4h3v1h-3zM0 5h2v1h-2zM0 6h1v1h-1z%27/%3E%3C/svg%3E");
 	--win-bg: rgba(12, 10, 28, 0.9);
 	--win-border: #f4f1ff;
 	--text: #fbf8ff;
@@ -81,7 +83,7 @@ button {
 /*
  * ゲームの中身は必ず「見えている箱」の中だけに置く。
  * inset: 0 だと position: fixed の基準がバーの裏まで広がる画面があり、
- * そこに乗った右上の 🔇・☰ が隠れてタッチできなくなる
+ * そこに乗った右上の 音・地図 の ボタンが隠れてタッチできなくなる
  */
 #app {
 	position: fixed;
@@ -937,7 +939,11 @@ body.jolt #app {
 
 .choice-item.cur::before,
 .menu-item.cur::before {
-	content: "▶";
+	content: "";
+	width: 8px;
+	height: 14px;
+	background: currentColor;
+	mask: var(--ico-cursor) center / 100% 100% no-repeat;
 	position: absolute;
 	left: 8px;
 	font-size: 12px;
@@ -1763,6 +1769,23 @@ body.jolt #app {
 
 .icon-btn.off {
 	border-color: var(--danger);
+}
+
+/* ボタンの しるし（ui/uiIcon.ts の ドット絵） */
+.ui-ico {
+	display: inline-block;
+	vertical-align: middle;
+	flex: none;
+}
+
+.icon-btn .ui-ico {
+	display: block;
+	margin: auto;
+}
+
+.title-foot .ui-ico {
+	vertical-align: -1px;
+	margin-left: 2px;
 }
 
 .icon-btn.map-btn {
@@ -3500,7 +3523,7 @@ body.jolt #app {
 	overflow-wrap: anywhere;
 }
 
-/* とても背の低い縦持ちでは、副題が右上の 🔊 の下にもぐるので消す */
+/* とても背の低い縦持ちでは、副題が右上の 音の ボタンの下にもぐるので消す */
 @media (max-height: 520px) and (orientation: portrait) {
 	.title-sub {
 		display: none;
@@ -4202,7 +4225,11 @@ body.jolt #app {
 }
 
 .jk-pick.cur::before {
-	content: "▶";
+	content: "";
+	width: 8px;
+	height: 14px;
+	background: currentColor;
+	mask: var(--ico-cursor) center / 100% 100% no-repeat;
 	position: absolute;
 	left: 8px;
 	top: 50%;
@@ -5443,7 +5470,11 @@ body.jolt #app {
 }
 
 .jukebox-cmd.cur::before {
-	content: "▶";
+	content: "";
+	width: 8px;
+	height: 14px;
+	background: currentColor;
+	mask: var(--ico-cursor) center / 100% 100% no-repeat;
 	position: absolute;
 	left: 2px;
 	top: 50%;

@@ -14,6 +14,7 @@ import type { Ctx } from "./ctx";
 import { el } from "./dom";
 import { floorShort } from "./dungeon/floorName";
 import { infoWindow, onTap } from "./list";
+import { uiIcon } from "./uiIcon";
 import { esc, escBr } from "./village/records";
 import { titleQuote } from "./village/villageTalk";
 
@@ -60,7 +61,7 @@ export const showBootTitle = (
 			buttons,
 			el("div", {
 				class: "title-foot",
-				text: "1歩1ターンのローグライク／音は右上の🔊",
+				html: `1歩1ターンのローグライク／音は右上の${uiIcon("sound", 1)}`,
 			}),
 		]);
 		ctx.ui.appendChild(root);
