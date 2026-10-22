@@ -1,6 +1,6 @@
 // 寸劇を 演じる（文と きっかけは data/story/skits.ts）。見た 寸劇と、見た 帰りを 村の 印として 別の 保存場所に
 // 残す（保存できなくても この回は 覚えている）。村ぜんぶで 1回の 帰りに 1本まで（期間限定は べつ）。
-// 建物・物・払った ことは ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep）が、
+// 建物・物・払った ことは ui/village/village.ts の runEvent が、場所は 同じく 歩いた あと（afterStep の stepSkit）が、
 // 死に方は ui/village/villageMobs.ts の mobScript が 呼ぶ。
 // 帰りの 2幕目（続きの 寸劇）を 待って いる あいだは どの 寸劇も 出さない（holdSkits。先に 見せると 話の 前後が 合わない）。
 
@@ -283,6 +283,7 @@ const play = async (
 				s.face(w.id, w.homeFace);
 			}),
 		);
+		quietSkits();
 	}
 };
 
@@ -366,17 +367,47 @@ export const skitAfterEvent = async (
 
 /** その マスで 起きる、まだ 見て いない 場所の 寸劇（無ければ null。歩く たびに 呼ぶので 見るだけ）。 */
 export const nearSkit = (map: string, x: number, y: number): Skit | null =>
-	find(
-		(on) =>
-			on.k === "near" &&
-			on.map === map &&
-			x >= on.x[0] &&
-			x <= on.x[1] &&
-			y >= on.y[0] &&
-			y <= on.y[1],
-	);
+	find((on) => on.k === "near" && on.map === map && inZone(on, x, y));
 
-/** 場所の 寸劇を 演じる（nearSkit で 見つけた もの）。 */
+/** 寸劇・越してくる 場面の あと、場所の 寸劇を 出さない 歩数（終わった とたんに 次が 始まらない）。 */
+const QUIET_STEPS = 12;
+
+/** 前の 1歩（場所の 寸劇は 外から その 四角へ 入った ときだけ 起きる）。 */
+let last: { map: string; x: number; y: number } | null = null;
+let quiet = 0;
+
+/** 場面が 終わった：しばらく 場所の 寸劇を 出さず、前の 1歩も 忘れる（吹っとんだ 先・置かれた 先では 起きない）。 */
+export const quietSkits = (steps = QUIET_STEPS): void => {
+	quiet = steps;
+	last = null;
+};
+
+const inZone = (on: SkitOn, x: number, y: number): boolean =>
+	on.k === "near" &&
+	x >= on.x[0] &&
+	x <= on.x[1] &&
+	y >= on.y[0] &&
+	y <= on.y[1];
+
+/**
+ * 1歩 歩いた：外から 場所の 寸劇の 四角へ 入ったら その 寸劇（無ければ null）。四角の 中で 始まった 歩き
+ * （建物から 出た・場面で 置かれた）や、場面の あとの しばらくは 起きない。
+ */
+export const stepSkit = (map: string, x: number, y: number): Skit | null => {
+	const was = last;
+	last = { map, x, y };
+	if (forced) return nearSkit(map, x, y);
+	if (quiet > 0) {
+		quiet--;
+		return null;
+	}
+	const sk = nearSkit(map, x, y);
+	if (!sk || !was || was.map !== map || inZone(sk.on, was.x, was.y))
+		return null;
+	return sk;
+};
+
+/** 場所の 寸劇を 演じる（stepSkit で 見つけた もの）。 */
 export const playNearSkit = (s: Story, sk: Skit): Promise<void> => play(s, sk);
 
 /** 前の 冒険で その 死に方を して、この 住人に はじめて 話しかけた（演じたら true）。 */

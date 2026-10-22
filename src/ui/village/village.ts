@@ -119,7 +119,7 @@ import {
 	skyPinned,
 	townSkyNow,
 } from "./sceneSky";
-import { nearSkit, playNearSkit, skitAfterEvent } from "./skits";
+import { playNearSkit, quietSkits, skitAfterEvent, stepSkit } from "./skits";
 import { Crowd } from "./villageCrowd";
 import {
 	buildSurface,
@@ -1238,13 +1238,16 @@ export class Village {
 			: dueArrival(this.mapId, this.player.x, this.player.y);
 		if (arrival) {
 			this.clearPath();
-			void this.runScript((s) => playArrival(s, arrival));
+			void this.runScript(async (s) => {
+				await playArrival(s, arrival);
+				quietSkits();
+			});
 			return;
 		}
-		// ある 場所に はじめて 来た ときの 寸劇（ui/village/skits.ts）
+		// ある 場所に 外から 入った ときの 寸劇（ui/village/skits.ts）
 		const sk = this.leaving
 			? null
-			: nearSkit(this.mapId, this.player.x, this.player.y);
+			: stepSkit(this.mapId, this.player.x, this.player.y);
 		if (sk) {
 			this.clearPath();
 			void this.runScript((s) => playNearSkit(s, sk));

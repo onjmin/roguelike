@@ -245,8 +245,6 @@ const skitCue = (sk: Skit): { hint: string; spot: string | null } => {
 			hint: `${MOBS[on.mob].name}に話しかける（本物では「${on.cause}」で倒れたあと）`,
 			spot: null,
 		};
-	// 村の どこでも（期間限定）
-	if (on.x[1] >= 999) return { hint: "村を1歩歩く", spot: null };
 	const x = Math.floor((on.x[0] + on.x[1]) / 2);
 	const y = Math.floor((on.y[0] + on.y[1]) / 2);
 	return {

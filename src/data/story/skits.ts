@@ -1,5 +1,5 @@
 // 寸劇（きっかけつきで 1回きり。動かすのは ui/village/skits.ts）。
-// きっかけは 5つ：建物に 入った（enter）・物を 調べた（look）・ある 場所に 来た（near）・
+// きっかけは 5つ：建物に 入った（enter）・物を 調べた（look）・ある 場所へ 外から 入った（near）・
 // ある 死に方で 帰ってきて その 住人に はじめて 話しかけた（death。前の冒険への 反応を かねる）・その 店で 払った（buy）。
 // 踏めば かならず 起きる ものに しない（2026-10-22 作者）：見こみ（chance。帰りごとに 1度 決める）・
 // つづきもの（follows）・期間限定（window）を 重ねる。村ぜんぶで 1回の 帰りに 1本まで。
@@ -71,7 +71,10 @@ export type SkitOn =
 	| { k: "enter"; map: string }
 	/** 物（イベントの id が この 頭で はじまる）を はじめて 調べた。map が あれば その 地図の 物だけ（部屋の 物は「safe_0」など）。 */
 	| { k: "look"; thing: string; map?: string }
-	/** 地図（map）の この 四角（x・y の はしを 含む）に はじめて 来た。口への 道（桟橋）には 置かない。 */
+	/**
+	 * 地図（map）の この 四角（x・y の はしを 含む）へ 外から 入った（中で 始まった 歩き・場面の あと しばらくは
+	 * 起きない：ui/village/skits.ts の stepSkit）。口への 道（桟橋）・広場・店の 扉の 前には 置かない。
+	 */
 	| {
 			k: "near";
 			map: string;
@@ -120,14 +123,6 @@ export type Skit = {
 	extras?: readonly SkitExtra[];
 };
 
-/** 村の どこでも（期間限定の 寸劇の きっかけ：その あいだに 村を 1歩 歩いたら）。 */
-const ANYWHERE: SkitOn = {
-	k: "near",
-	map: "village",
-	x: [0, 999],
-	y: [0, 999],
-};
-
 const k = (text: string): SkitLine => ({ who: "kiriko", text });
 const n = (text: string): SkitLine => ({ who: null, text });
 const m = (text: string): SkitLine => ({ who: "mob", text });
@@ -173,7 +168,7 @@ const KESSHA: readonly SkitExtra[] = [
 	{ id: "x_boss", sprite: "sa:pMxknZ", at: "near" },
 	{ id: "x_member", sprite: "sa:RMEetu", at: "near" },
 ];
-/** そばに 歩いて くる 名無し（村の どこでも 起きる 寸劇の 話し手）。 */
+/** そばに 歩いて くる 名無し（話し手）。 */
 const walkIn = (id: string, sprite = NANASHI_A): SkitExtra => ({
 	id,
 	sprite,
@@ -182,7 +177,8 @@ const walkIn = (id: string, sprite = NANASHI_A): SkitExtra => ({
 });
 
 export const SKITS: readonly Skit[] = [
-	// ───── 期間限定（話の あいだ だけ。その あいだに 村を 歩いたら。先へ 進むと 二度と 出ない） ─────
+	// ───── 期間限定（話の あいだ だけ。その あいだに 決まった 場所へ 来たら。先へ 進むと 二度と 出ない） ─────
+	// 場所は 広場（帰りの 場面）から はなし、たがいに・越してくる 場面とも 2マス 以上 はなす。店の 扉の 前は 含めない
 	// 本筋は パン板（shallow）→ きのこ板（kinoko）→ 風呂板（main）→ 電池板（deep）→ 後日談（hidden）。
 	// いまの 話の ようすに ふれる（STORY.md の 各話の 事件。町の 人数・停電と 食いちがわない 人に 言わせる）。
 	// 毒（2026-10-21 作者）：ボケは 真顔で 押し通し、状況が 壊れるまで やめない。キリコは ときどき 一緒に 狂う
@@ -211,12 +207,21 @@ export const SKITS: readonly Skit[] = [
 			e({ auto: 1200, emote: "花" }, k("（もぐもぐ）……吾輩も、\n志願するンゴ")),
 		],
 	},
-	// 第一話の あと：町じゅう 独立した。消しゴムが 攻めて きて、名無しは 消されて、書きなおされる
+	// 第一話の あと：町じゅう 独立した。消しゴムが 攻めて きて、名無しは 消されて、書きなおされる。
+	// 北東の 家並み（表札の 家 house_a）の 前の 通りに 来たら、その 家の 名無しが 出て くる
 	{
 		key: "window_dokuritsu",
 		window: { after: "shallow", before: "kinoko" },
-		on: ANYWHERE,
-		extras: [walkIn("x_nanashi")],
+		on: { k: "near", map: "village", x: [51, 54], y: [8, 9], face: [55, 8] },
+		extras: [
+			{
+				id: "x_nanashi",
+				sprite: NANASHI_A,
+				at: [55, 8],
+				face: "left",
+				come: [57, 9],
+			},
+		],
 		stage: { cast: { 名無し: "x_nanashi" } },
 		lines: [
 			nanashi("ワイの家も、\n独立したで"),
@@ -236,15 +241,29 @@ export const SKITS: readonly Skit[] = [
 			},
 		],
 	},
-	// 第二話の あと：頭に 生えた きのこの ほうが 本体。名無しは 抜かれて、付き添いに もどる
+	// 第二話の あと：頭に 生えた きのこの ほうが 本体。名無しは 抜かれて、付き添いに もどる。
+	// 北の 森の 出口（そば屋と 家の あいだの 通り）に 来たら、森から 出て くる
 	{
 		key: "window_kinoko",
 		window: { after: "kinoko", before: "main" },
-		on: ANYWHERE,
-		// 頭に きのこの 名無し。抜けると きのこ（きのこ軍の 絵）が となりに 立つ
+		on: { k: "near", map: "village", x: [24, 28], y: [6, 6], face: [26, 5] },
+		// 頭に きのこの 名無し。抜けると きのこ（きのこ軍の 絵）が その 場に 立つ
 		extras: [
-			{ ...walkIn("x_nanashi"), wear: "kinoko" },
-			{ id: "x_kinoko", sprite: KINOKO, at: "near", later: true },
+			{
+				id: "x_nanashi",
+				sprite: NANASHI_A,
+				at: [26, 5],
+				face: "down",
+				come: [26, 3],
+				wear: "kinoko",
+			},
+			{
+				id: "x_kinoko",
+				sprite: KINOKO,
+				at: [26, 5],
+				face: "down",
+				later: true,
+			},
 			// 抜かれて 起きあがった 名無し（頭に もう きのこは ない）
 			{ id: "x_nanashi2", sprite: NANASHI_A, at: "near", later: true },
 		],
@@ -276,11 +295,12 @@ export const SKITS: readonly Skit[] = [
 	// 第三話の あと〜最終話：電池板が 開いて 町は 停電（data/town/revival.ts の inBlackout）。
 	// 停電の 夜（story.ts の TEN_NEWS）で キリコが 蓄音機で 豆電球を 割った 天丼。割った キリコが 朝まで 回させられる。
 	// 見える ものだけで 運ぶ：暗い 町（停電の 空）・回る キリコ・頭の 上に ともる 豆電球（fx の bulb）・割れる 音と 暗転。
-	// 名無しは 暗い 中を 歩いて くる。画面に 無い 物（自転車・発電機）や 数（町じゅうで 何台）は 言わない
+	// 名無しは 暗い 中を 歩いて くる。画面に 無い 物（自転車・発電機）や 数（町じゅうで 何台）は 言わない。
+	// 店の ならぶ 東の 大通り（明かりが 消えて いちばん 困る 所）に 来たら
 	{
 		key: "window_teiden",
 		window: { after: "main", before: "deep" },
-		on: ANYWHERE,
+		on: { k: "near", map: "village", x: [44, 48], y: [18, 19] },
 		extras: [walkIn("x_nanashi")],
 		stage: { cast: { 名無し: "x_nanashi" } },
 		lines: [
@@ -313,12 +333,27 @@ export const SKITS: readonly Skit[] = [
 		],
 	},
 	// 最終話の あと（後日談の 前）：てっぺんに いたのは やきうだった。出て いた キリコが いちばん ネタバレで、
-	// 殴られた あとは 殴りあいに なる（歩いて きた 名無し 2人）
+	// 殴られた あとは 殴りあいに なる。映画館の 前に 来たら、出て きた 名無し 2人が 話して いる
 	{
 		key: "window_midashi",
 		window: { after: "deep", before: "hidden" },
-		on: ANYWHERE,
-		extras: [walkIn("x_a"), walkIn("x_b", NANASHI_B)],
+		on: { k: "near", map: "village", x: [51, 56], y: [18, 19], face: [53, 17] },
+		extras: [
+			{
+				id: "x_a",
+				sprite: NANASHI_A,
+				at: [52, 17],
+				face: "right",
+				come: [53, 16],
+			},
+			{
+				id: "x_b",
+				sprite: NANASHI_B,
+				at: [54, 17],
+				face: "left",
+				come: [55, 16],
+			},
+		],
 		stage: { cast: { 名無し: "x_a" } },
 		lines: [
 			nanashi("最終話、見たか？"),
@@ -865,7 +900,7 @@ export const SKITS: readonly Skit[] = [
 			e({ auto: 1200 }, nanashi("（下から）まいど。\n……ほな、あんたも住み")),
 		],
 	},
-	// ───── ある 場所に はじめて 来た ─────
+	// ───── ある 場所へ 外から 入った ─────
 	// 広場の 南東の 噴水（パン板の あとから 水が 出る）。下から 打たれて、キリコは 打ち上がる
 	{
 		key: "near_fountain",

@@ -486,7 +486,9 @@ import {
 	forgetSkits,
 	nearSkit,
 	playNearSkit,
+	quietSkits,
 	skitAfterEvent,
+	stepSkit,
 	sureSkits,
 } from "../ui/village/skits";
 import { forgetStaffGags } from "../ui/village/staffGags";
@@ -8812,10 +8814,10 @@ test("越してくる 場面: lines fit, only newcomers speak, Kiriko lands a ts
 				);
 			}
 		ok(walk > 0, `${a.key}: no walkable cell`);
-		// 場所の 寸劇（噴水・池・海辺）とは 2マス 以上 はなす（村の どこでもの 期間限定は 場所を 持たない）
+		// 場所の 寸劇とは 2マス 以上 はなす
 		for (const sk of SKITS) {
 			const on = sk.on;
-			if (on.k !== "near" || on.x[1] >= 999) continue;
+			if (on.k !== "near") continue;
 			ok(
 				a.at.x[1] + 2 < on.x[0] ||
 					on.x[1] + 2 < a.at.x[0] ||
@@ -9031,18 +9033,61 @@ test("寸劇: every place skit sits on cells Kiriko can walk to, and none sits o
 	};
 	const rows = villageRows(v).map((r) => [...r]);
 	const pal = villagePalette(v);
+	const [bx, by] = VILLAGE_SPOTS.boot;
+	const doors = new Set(
+		villagePlaces(v)
+			.filter((p) => p.id.startsWith("door_"))
+			.map((p) => `${p.x},${p.y + 1}`),
+	);
 	for (const sk of SKITS) {
 		const on = sk.on;
-		// 村の どこでも（期間限定の きっかけ）は 見ない
-		if (on.k !== "near" || on.x[1] >= 999) continue;
+		if (on.k !== "near") continue;
 		let walk = 0;
 		for (let y: number = on.y[0]; y <= on.y[1]; y++)
 			for (let x: number = on.x[0]; x <= on.x[1]; x++) {
 				const ch = rows[y]?.[x];
 				if (ch && pal[ch]?.passable) walk++;
 				ok(!(x === 20 && y >= 36), `${sk.key}: on the pier`);
+				// 帰りの 場面（広場）の すぐ あとに 起きない
+				ok(
+					Math.abs(x - bx) + Math.abs(y - by) >= 8,
+					`${sk.key}: ${x},${y} is near the plaza`,
+				);
+				// 建物から 出た とたんに 起きない
+				ok(!doors.has(`${x},${y}`), `${sk.key}: ${x},${y} is a door front`);
 			}
 		ok(walk > 0, `${sk.key}: no walkable cell`);
+		// 場面の 人は 四角の 外（キリコと 重ならない）。歩いて 来る 人の 道は 歩ける 所（池の 精は 水の 中）
+		for (const x of sk.extras ?? []) {
+			const come = Array.isArray(x.come)
+				? (x.come as readonly [number, number])
+				: null;
+			for (const c of [x.at, come]) {
+				if (!Array.isArray(c)) continue;
+				const [cx, cy] = c as readonly [number, number];
+				if (come)
+					ok(
+						!!pal[rows[cy]?.[cx] ?? ""]?.passable,
+						`${sk.key}: ${c} is a wall`,
+					);
+				ok(
+					!(cx >= on.x[0] && cx <= on.x[1] && cy >= on.y[0] && cy <= on.y[1]),
+					`${sk.key}: ${x.id} stands in the trigger`,
+				);
+			}
+		}
+		// ほかの 場所の 寸劇と 2マス 以上 はなす（終わって 歩きだした とたんに 次が 起きない）
+		for (const o of SKITS) {
+			const p = o.on;
+			if (o === sk || p.k !== "near") continue;
+			ok(
+				on.x[1] + 2 < p.x[0] ||
+					p.x[1] + 2 < on.x[0] ||
+					on.y[1] + 2 < p.y[0] ||
+					p.y[1] + 2 < on.y[0],
+				`${sk.key}: next to ${o.key}`,
+			);
+		}
 	}
 	withStorage(() => {
 		// 噴水は パン板の あと（水が 出てから）
@@ -9050,16 +9095,12 @@ test("寸劇: every place skit sits on cells Kiriko can walk to, and none sits o
 		setProgress(["shallow"], [], ["shallow"]);
 		pushRecord({ kind: "escape" });
 		forgetSkits();
+		sureSkits(true);
 		const at = nearSkit("village", 26, 30)?.key;
-		ok(
-			at === "near_fountain" || at === "window_dokuritsu",
-			`the fountain: ${at}`,
-		);
+		sureSkits(false);
+		ok(at === "near_fountain", `the fountain: ${at}`);
 		const pier = nearSkit("village", 20, 40);
-		ok(
-			!pier || (pier.on.k === "near" && pier.on.x[1] >= 999),
-			`a place skit on the pier: ${pier?.key}`,
-		);
+		ok(!pier, `a place skit on the pier: ${pier?.key}`);
 	});
 });
 
@@ -9107,17 +9148,17 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 	await withStorageAsync(async () => {
 		// まだ 1度も 帰って いない（はじまりの 場面）では 出ない
 		setProgress(["shallow"], [], []);
-		ok(nearSkit("village", 19, 22) === null, "before the first return");
+		ok(nearSkit("village", 8, 20) === null, "before the first return");
 		pushRecord({ kind: "dead" });
 		ok(
 			nearSkit("village", 8, 20)?.key === "window_pan" &&
-				nearSkit("village", 19, 22) === null,
+				nearSkit("village", 52, 8) === null,
 			"before パン板: only by the 原住民",
 		);
 		// パン板を 持ち帰ったら パン板の 前の 寸劇は もう 出ない（見逃した）
 		setProgress(["shallow", "kinoko"], [], ["shallow"]);
 		ok(
-			nearSkit("village", 19, 22)?.key === "window_dokuritsu",
+			nearSkit("village", 52, 8)?.key === "window_dokuritsu",
 			"between パン板 and きのこ板",
 		);
 		// ほかの 寸劇を 見た 帰りでも 出て、2回目は ない
@@ -9127,17 +9168,46 @@ test("寸劇: limited-time skits play only between their story clears (never on 
 			thing: "konbini_clerk",
 			paid: true,
 		});
-		const sk = nearSkit("village", 19, 22);
+		const sk = nearSkit("village", 52, 8);
 		ok(sk?.key === "window_dokuritsu", `after another skit: ${sk?.key}`);
 		if (sk) await playNearSkit(fakeStory().s, sk);
-		ok(nearSkit("village", 19, 22) === null, "twice");
+		ok(nearSkit("village", 52, 8) === null, "twice");
 		// 先へ 進むと 次の あいだの もの だけ
 		setProgress(["shallow", "kinoko", "main"], [], ["shallow", "kinoko"]);
 		pushRecord({ kind: "escape" });
 		ok(
-			nearSkit("village", 19, 22)?.key === "window_kinoko",
+			nearSkit("village", 26, 6)?.key === "window_kinoko",
 			"between きのこ板 and 風呂板",
 		);
+	});
+});
+
+test("寸劇: a place skit starts only on a step into its area from outside, and never right after another scene", async () => {
+	await withStorageAsync(async () => {
+		setProgress(["shallow", "kinoko"], [], ["shallow"]);
+		pushRecord({ kind: "escape" });
+		forgetSkits();
+		quietSkits(0);
+		// 四角の 中で 始まった 歩き（建物から 出た・置かれた）では 起きない
+		ok(stepSkit("village", 52, 8) === null, "the first step");
+		ok(stepSkit("village", 53, 8) === null, "inside to inside");
+		ok(stepSkit("village", 50, 8) === null, "outside");
+		const sk = stepSkit("village", 51, 8);
+		ok(sk?.key === "window_dokuritsu", `stepping in: ${sk?.key}`);
+		// 別の 地図（建物）から 出た 1歩でも 起きない
+		ok(stepSkit("f_pawn", 2, 2) === null, "in a building");
+		ok(stepSkit("village", 51, 8) === null, "out of a building");
+		// 場面の あと しばらくは 外から 入っても 起きない
+		quietSkits();
+		let early = false;
+		for (let i = 0; i < 6; i++) {
+			early ||= stepSkit("village", 50, 8) !== null;
+			early ||= stepSkit("village", 51, 8) !== null;
+		}
+		ok(!early, "right after a scene");
+		ok(stepSkit("village", 50, 8) === null, "outside");
+		ok(stepSkit("village", 51, 8) !== null, "after the quiet steps");
+		quietSkits(0);
 	});
 });
 
