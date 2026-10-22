@@ -168,6 +168,8 @@ const LOG_GAP_MS = { normal: 350, fast: 180, replay: 40 } as const;
 const HURRY = 0.3;
 /** 先行入力が あるときの ログの 間（読めないほど 速くは しない）。 */
 const HURRY_LOG_GAP_MS = 120;
+/** 演出が 明けたとき、これより 前に 押した 入力は 捨てる（ms。明ける 直前の 先行入力だけ 残す）。 */
+const BUFFER_MS = 250;
 /** 取っておいた 行（logHeld）を、立ち止まって いる ときに 1行ずつ 送る 間（ms）。 */
 const LOG_HELD_IDLE_MS = 1600;
 /** 祭り（モンスターハウス）に 入ったとき 止めて 見せる 間（ms）。 */
@@ -362,6 +364,8 @@ export class Play {
 	private camX = 0;
 	private camY = 0;
 	private busy = false;
+	/** 前の コマで busy だった（明けた コマを 見分ける）。 */
+	private wasBusy = false;
 	/** キリコが 眠っていると 見せる（sleep の 出来事を 流している あいだ）。 */
 	private sleepShown = false;
 	/** 祭り・ボスの 曲を 始める 予約（始まりの 音が 鳴り終わるのを 待つ）。 */
@@ -768,6 +772,9 @@ export class Play {
 
 	private update(t: number): void {
 		// 先に入力を見る（押しっぱなしの次の1歩を、この絵から動かしはじめる）
+		// 演出が 明けた コマ：明ける 直前に 押した ものだけ 先行入力に する
+		if (this.wasBusy && !this.busy) this.ctx.input.dropStale(BUFFER_MS);
+		this.wasBusy = this.busy;
 		if (!this.busy) {
 			if (this.rp) this.replayTick(t);
 			else this.control(t);

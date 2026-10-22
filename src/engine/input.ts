@@ -308,6 +308,10 @@ export class Input {
 	private dirSince = 0;
 	/** 押したが まだ使っていない向き（すぐ離しても1歩は進めるように）。 */
 	private pendingDir: Dir8 | null = null;
+	/** pendingDir を 入れた 時刻。 */
+	private pendingDirAt = 0;
+	/** fieldQueue に 入れた 時刻。 */
+	private fieldQueueAt = 0;
 	/** 斜めの片方を離した時刻。 */
 	private releasedAt = 0;
 	/** 画面（マップ）を押さえている指。held は 押さえて歩くのに 使ったか。 */
@@ -401,8 +405,10 @@ export class Input {
 				this.keysHeld.set(e.code, d);
 				if (this.bKey) this.bKey.used = true;
 				// メニューが開いているあいだの向きは、閉じたあとの1歩にしない
-				if (!e.repeat && !this.handlers.length)
+				if (!e.repeat && !this.handlers.length) {
 					this.pendingDir = this.heldDir();
+					this.pendingDirAt = performance.now();
+				}
 				this.press(toDir4(d), e.repeat);
 				return;
 			}
@@ -526,7 +532,21 @@ export class Input {
 		const isDir =
 			key === "up" || key === "down" || key === "left" || key === "right";
 		// 先に押せるのは 1つだけ（演出中の 連打を ためこむと、敵を 倒した あとも 空振りを 続けてしまう）
-		if (!repeat && !isDir) this.fieldQueue = [key];
+		if (!repeat && !isDir) {
+			this.fieldQueue = [key];
+			this.fieldQueueAt = performance.now();
+		}
+	}
+
+	/**
+	 * 先に押した 入力のうち、ms より 前に 押したものを 捨てる（演出が 明けた とき）。
+	 * 長い 演出の 途中で 押した キーが、明けた とたんに 勝手に 出ないように。
+	 * 明ける 直前に 押したものは 先行入力として 残す。
+	 */
+	dropStale(ms: number): void {
+		const old = performance.now() - ms;
+		if (this.fieldQueueAt < old) this.fieldQueue = [];
+		if (this.pendingDirAt < old) this.pendingDir = null;
 	}
 
 	/**
@@ -687,7 +707,10 @@ export class Input {
 				this.padDir = dir;
 				if (dir !== null) {
 					usedDir = true;
-					if (!this.handlers.length) this.pendingDir = dir;
+					if (!this.handlers.length) {
+						this.pendingDir = dir;
+						this.pendingDirAt = performance.now();
+					}
 					this.press(toDir4(dir));
 				}
 				el.dataset.dir = dir === null ? "" : String(dir);
