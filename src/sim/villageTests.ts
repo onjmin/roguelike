@@ -8331,8 +8331,9 @@ test("本筋の 持ち帰りの 語り: 本筋の 順に 持ち帰ると、は�
 		const away = awayFriends(cleared);
 		const pages = endingFor(d, false, away, cleared);
 		const again = STORY[d].again;
+		// endingFor は again を 絞りこんで 新しい 配列で 返すので、配列ではなく 長さで くらべる（はじめての 語りの ほうが 長い）
 		ok(
-			!again || pages !== again,
+			!again || pages.length > again.length,
 			`${d}: the first ending falls back to the short one (away: ${away.join()})`,
 		);
 	}

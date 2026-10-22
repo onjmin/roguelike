@@ -804,8 +804,19 @@ export const ENDING: StoryPage[] = [
 		text: "問題や。魚が肩まで\nつかっとる。肩はどこや？",
 		about: "feris",
 		look: null,
+		// フェリスが まだ 町に いない（離島板・電池板の 前）ときは、出題の かわりに やきうが ひとりで ぼやく
+		instead: {
+			who: "nanj",
+			text: "魚が肩までつかっとる。\n……魚に肩、あったか？",
+			look: null,
+		},
 	},
-	{ who: "feris", text: "えら〜。\nえらそうに、つかってる〜", emote: "♪" },
+	{
+		who: "feris",
+		text: "えら〜。\nえらそうに、つかってる〜",
+		emote: "♪",
+		instead: { who: "zero", text: "えらまでです！\n数えました！", emote: "得" },
+	},
 	// 成り上がりの 3段目（STORY.md §4.9「成り上がりと 転落」）：海ごと 温泉に して 入湯料を 取り、湯船で 即位する。
 	// 演出は 本気（止め絵の 決めポーズ）、題材は くだらない
 	{
