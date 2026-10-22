@@ -3,6 +3,8 @@
 import { ambushDepth, placeAmbush } from "./ambush";
 import {
 	CARRY_CHANCE,
+	FLOOR_ITEMS_MIN,
+	HELD_ITEM_SHIFT,
 	HOUSE_EARLY_BY,
 	HOUSE_ITEMS,
 	HOUSE_MIN_AREA,
@@ -198,10 +200,20 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	// 競争：底で 先に 着いた ロゼが 品の となりに 立つ（core/race.ts。乱数は 引かない）
 	placeRival(r, f, start);
 
-	// 道具（トルネコ1と同じく 表から引く。帰り道は 何も置かない）。モンスターハウスがあれば半分以上をハウスの中へ
+	// 道具（トルネコ1と同じく 表から引く。帰り道は 何も置かない）。モンスターハウスがあれば半分以上をハウスの中へ。
+	// ふつうの 分は 降りた ときの 持ち物の 数で 足し引きする（少ないと 多め・多いと 少なめ。祭りの 分は そのまま）。
+	// 1階は だれでも 持ち物が 始めの 分だけなので 足し引きしない
 	let nItems = 0;
 	if (!r.s.returning) {
-		nItems = rng.range(r.dungeon.perFloor[0], r.dungeon.perFloor[1]);
+		const held = r.p.items.length;
+		const shift =
+			depth === 1
+				? 0
+				: (HELD_ITEM_SHIFT.find((s) => held <= s.at)?.add ?? 0);
+		nItems = Math.max(
+			FLOOR_ITEMS_MIN,
+			rng.range(r.dungeon.perFloor[0], r.dungeon.perFloor[1]) + shift,
+		);
 		if (f.house >= 0) nItems += rng.range(HOUSE_ITEMS[0], HOUSE_ITEMS[1]);
 	}
 	const table = itemTableOf(r.s);

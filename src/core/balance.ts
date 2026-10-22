@@ -74,6 +74,19 @@ export const THROW_RANGE = 10;
 /** モンスターハウス（祭り）の階に 足す 道具の数（トルネコ1の 祭りは 10〜15個で、およそ 1/4 が ゴールド）。 */
 export const HOUSE_ITEMS: [number, number] = [4, 8];
 
+/**
+ * 階に 降りた ときの 持ち物の 数で、その階に 置く 道具（ふつうの 分）を 足し引きする。
+ * 上から 順に 見て、持ち物が at 個 以下なら add 個（どれにも 当たらなければ 0）。祭りの 分・差し入れ・底の 品は そのまま。
+ */
+export const HELD_ITEM_SHIFT: readonly { at: number; add: number }[] = [
+	{ at: 3, add: 2 },
+	{ at: 7, add: 1 },
+	{ at: 15, add: 0 },
+	{ at: INVENTORY_MAX, add: -1 },
+];
+/** 足し引きした あとの ふつうの 道具の 下限。 */
+export const FLOOR_ITEMS_MIN = 2;
+
 /** 最初に置くモンスターの数。 */
 export const INITIAL_MONSTERS: [number, number] = [5, 7];
 /** モンスターハウスの追加の数（浅い階は少なめ。HOUSE_EARLY_BY の階まで）。 */

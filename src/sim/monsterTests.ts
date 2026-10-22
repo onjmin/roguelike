@@ -1166,7 +1166,9 @@ test(
 		thief.carry = r.newItem("h_heal");
 		const far = put(r, "tousuko", at(3, 0));
 		const hp = r.p.hp;
-		triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "mine", found: false });
+		// 罠は 動かない ことも あるので、動くまで 踏む
+		for (let i = 0; i < 20 && r.p.hp === hp; i++)
+			triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "mine", found: false });
 		ok(!r.f.monsters.includes(m), "the metal next to the mine survived");
 		ok(!r.f.monsters.includes(thief), "the thief next to the mine survived");
 		ok(r.f.monsters.includes(far), "a monster 3 tiles away was caught");
@@ -2680,7 +2682,8 @@ test(
 		);
 		// 寝る：眠りの 罠でも 数える
 		r.f.anka = { kind: "sleep", need: 1, done: 0, due: 500 };
-		triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "sleep", found: false });
+		for (let i = 0; i < 20 && r.p.status.sleep === 0; i++)
+			triggerTrap(r, { x: r.p.x, y: r.p.y, kind: "sleep", found: false });
 		ok(r.p.status.sleep > 0, "harness: the sleep trap did not fire");
 		ok(!r.f.anka, "falling asleep on a trap did not clear the sleep anka");
 		// 攻撃を 3回 受ける：はずれは 数えない。当たった 3回目で 神安価
