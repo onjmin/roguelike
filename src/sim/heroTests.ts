@@ -422,9 +422,11 @@ const recorder = (picks: number[] = []) => {
 					return picks.shift() ?? opts.length - 1;
 				};
 			if (k === "bgm")
-				return (name: string | null) => {
-					log.push(`bgm: ${name}`);
+				return (name: string | null, from?: number) => {
+					log.push(from ? `bgm: ${name} @${from}` : `bgm: ${name}`);
 				};
+			// 村の 曲が 途中まで 鳴って いる
+			if (k === "bgmAt") return () => ({ name: villageSong(), step: 777 });
 			if (k === "then") return undefined;
 			return () => undefined;
 		},
@@ -507,9 +509,12 @@ test("競争: 挑戦 → 受ける → 避難所が 開く → 持ち帰る → 
 			r.log.at(-2) === `narrate: ${HERO_QUESTS.roze.unlocked}`,
 			`news: ${r.log.at(-2)}`,
 		);
-		// 申し出の「あ」は 曲を 止めて 聞かせ、終われば 村の 曲
+		// 申し出の「あ」は 曲を 止めて 聞かせ、終われば 村の 曲を 止めた 位置から
 		ok(r.log[0] === "bgm: null", `silence first: ${r.log[0]}`);
-		ok(r.log.at(-1) === `bgm: ${villageSong()}`, "back to the village song");
+		ok(
+			r.log.at(-1) === `bgm: ${villageSong()} @777`,
+			`back to the village song where it stopped: ${r.log.at(-1)}`,
+		);
 		ok(unlockedHeroes().join() === "kiriko,roze", "list");
 		ok(chosenHero() === "roze", "remembered choice");
 		// そのあとは ふだんの ひとこと

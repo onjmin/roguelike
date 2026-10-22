@@ -202,7 +202,12 @@ import { signboardDecor, signboardGlow } from "./signboards";
 import { holdSkits } from "./skits";
 import type { Arrival } from "./village";
 import { mobScript, sayAs, senkyoOpen, senkyoScript } from "./villageMobs";
-import { endScene, sceneBgm, villageSong } from "./villageMusic";
+import {
+	backToVillageSong,
+	endScene,
+	sceneBgm,
+	villageSong,
+} from "./villageMusic";
 import {
 	needsOpening,
 	openingNotYet,
@@ -967,7 +972,7 @@ export const heroQuestScript = async (
 		// 申し出の 曲は ここまで。村の 曲に もどす
 		if (endScene()) {
 			await s.fadeBgm(300);
-			s.bgm(villageSong());
+			backToVillageSong(s);
 		}
 		return true;
 	}

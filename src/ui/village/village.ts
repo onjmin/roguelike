@@ -2215,7 +2215,11 @@ export class Village {
 			},
 			fadeOut: (ms) => this.fadeOut(ms),
 			fadeIn: (ms) => this.fadeIn(ms),
-			bgm: (name) => this.ctx.audio.bgm(name),
+			bgm: (name, fromStep) => this.ctx.audio.bgm(name, fromStep),
+			bgmAt: () => ({
+				name: this.ctx.audio.currentBgm,
+				step: this.ctx.audio.bgmStep,
+			}),
 			fadeBgm: (ms) => this.ctx.audio.fadeBgm(ms),
 			preloadSe: (names) => this.ctx.audio.preloadSe(names),
 			se: (name) => {

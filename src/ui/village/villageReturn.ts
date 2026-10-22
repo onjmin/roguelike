@@ -151,7 +151,7 @@ import {
 	townSkyNow,
 } from "./sceneSky";
 import { mobsOutNow, sayAs } from "./villageMobs";
-import { endScene, sceneBgm, villageSong } from "./villageMusic";
+import { backToVillageSong, endScene, sceneBgm } from "./villageMusic";
 import { deathQuote, fill } from "./villageTalk";
 import { setZankiScene } from "./zankiTag";
 
@@ -1004,7 +1004,7 @@ export const returnScene = async (
 	homes = new Map();
 	setSceneSky(null);
 	lightsBack.clear();
-	s.bgm(villageSong());
+	backToVillageSong(s);
 	await s.fadeIn(300);
 };
 
@@ -1318,7 +1318,7 @@ export const tenScript = async (s: Story): Promise<void> => {
 	// 電池板を 持ち帰るまで 町は 停電の 夜の まま
 	setSceneSky(null);
 	setTownSky(townSkyNow());
-	s.bgm(villageSong());
+	backToVillageSong(s);
 };
 
 /**

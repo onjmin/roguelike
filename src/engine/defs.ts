@@ -261,8 +261,10 @@ export type Story = {
 	/** 暗転する（会話の窓と 立ち絵は 先に 片付ける）。 */
 	fadeOut(ms?: number): Promise<void>;
 	fadeIn(ms?: number): Promise<void>;
-	/** BGM を切り替える（null で止める）。 */
-	bgm(name: string | null): void;
+	/** BGM を切り替える（null で止める）。fromStep から鳴らす（止めた曲を続きから）。 */
+	bgm(name: string | null, fromStep?: number): void;
+	/** 鳴っている BGM と位置（ステップ）。止める前に読む（止めた曲を続きから鳴らすため）。 */
+	bgmAt?(): { name: string | null; step: number };
 	/** 鳴っている BGM を ms かけて 絞って 止める。 */
 	fadeBgm(ms: number): Promise<void>;
 	/** 効果音（data/audio/sfx.ts の名前）。 */
