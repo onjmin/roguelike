@@ -251,8 +251,8 @@ test("海外ミームの 音（2026-10-23 作者「ゲームの 効果音には 
 	ok(memes.length >= 25, `${memes.length} meme sounds`);
 	for (const n of memes)
 		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
-	// しくみの 側は 名前で 呼ばない（倒れる 直前の ジョジョ・時間とびの 札は 演出なので よい）
-	const staged = new Set(["toBeContinued", "fewMomentsLater"]);
+	// しくみの 側は 名前で 呼ばない（時間とびの 札は 語りの 演出なので よい。ジョジョの 引きは 場面エフェクト）
+	const staged = new Set(["fewMomentsLater"]);
 	for (const p of [...files("src/core"), ...files("src/ui")]) {
 		const src = readFileSync(p, "utf8");
 		for (const n of memes)

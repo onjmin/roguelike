@@ -4367,9 +4367,7 @@ export class Play {
 		const run = this.run;
 		const end = run.s.end;
 		if (!end) return;
-		void this.ctx.audio.fadeBgm(300);
-		await this.toBeContinued();
-		if (this.stopped) return;
+		void this.ctx.audio.fadeBgm(600);
 		const pd = this.disp.get(PLAYER_ID);
 		await wait(250);
 		if (pd) {
@@ -4405,37 +4403,6 @@ export class Play {
 		this.ctx.input.clearField();
 		this.ctx.input.takeDirPress();
 		scene.remove();
-	}
-
-	/**
-	 * 力尽きる 一撃の あと：ジョジョの 引き（2026-10-23 作者「こりゃもう死んだなって 画面の 直前で」）。
-	 * 曲が 流れだし、TBC_FREEZE_MS で 画面が セピアの 止め絵に なって、左下に「To Be Continued」の 矢印。
-	 * 止め絵は その 時の 画面の 写し（ゲームは 動いた まま 下で 待つ）。タップ・キーで 先へ。
-	 */
-	private async toBeContinued(): Promise<void> {
-		const audio = this.ctx.audio;
-		audio.se("toBeContinued", false);
-		await waitOrSkip(TBC_FREEZE_MS, 400);
-		if (this.stopped) return audio.stopSe("toBeContinued", 200);
-		const src = this.screen.canvas;
-		const snap = document.createElement("canvas");
-		snap.width = src.width;
-		snap.height = src.height;
-		snap.getContext("2d")?.drawImage(src, 0, 0);
-		const freeze = el("div", { class: "tbc" }, [
-			snap,
-			el("div", { class: "tbc-arrow" }, [
-				el("span", { text: "To Be Continued" }),
-			]),
-		]);
-		this.ctx.ui.appendChild(freeze);
-		await nextFrame();
-		freeze.classList.add("shown");
-		await waitOrSkip(TBC_HOLD_MS, 500);
-		audio.stopSe("toBeContinued", 500);
-		freeze.classList.add("leaving");
-		await wait(350);
-		freeze.remove();
 	}
 
 	// ───────────────── ダッシュ・タップ移動 ─────────────────
@@ -4797,11 +4764,6 @@ const overheadPose = (u: UseFx, t: number) => {
 const GRAVE_DROP_MS = 600;
 
 /** ms たつか、after ms より後に 画面に触れる・キーを押すまで待つ。 */
-/** 倒れて ジョジョの 曲が 流れだしてから 止め絵に なるまで（ms。曲の ギターが 盛りあがる ところ）。 */
-const TBC_FREEZE_MS = 2800;
-/** 止め絵と 矢印を 見せる 長さ（ms）。 */
-const TBC_HOLD_MS = 3000;
-
 const waitOrSkip = (ms: number, after: number): Promise<void> =>
 	new Promise((resolve) => {
 		let done = false;

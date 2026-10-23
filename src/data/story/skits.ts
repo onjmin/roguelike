@@ -415,7 +415,7 @@ export const SKITS: readonly Skit[] = [
 			},
 			e({ auto: 450 }, clerk("袋、おつけしますか？")),
 			e({ auto: 450 }, clerk("お箸、おつけしますか？")),
-			e({ auto: 500 }, clerk("もう1分、温めますね")),
+			{ ...e({ auto: 500 }, clerk("もう1分、温めますね")), fx: "tbc" },
 			{
 				...e({ auto: 1300 }, n("キリコは、こんがりたおれた。")),
 				se: "chiin",
@@ -777,7 +777,12 @@ export const SKITS: readonly Skit[] = [
 				...e({ emote: "冷", pause: 400 }, sensei("……拳が、割れた")),
 				fx: "chiin",
 			},
-			{ ...e({ auto: 700 }, sensei("頭でいく！")), se: "hit_fist", calm: true },
+			{
+				...e({ auto: 700 }, sensei("頭でいく！")),
+				fx: "tbc",
+				se: "hit_fist",
+				calm: true,
+			},
 			{
 				...e({ auto: 1300 }, n("ゴッ。")),
 				fx: "ko",
@@ -1051,6 +1056,7 @@ export const SKITS: readonly Skit[] = [
 			},
 			{
 				...e({ auto: 900 }, m("では、再現します")),
+				fx: "tbc",
 				se: "fall",
 				hide: "player",
 			},

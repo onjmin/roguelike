@@ -2741,7 +2741,7 @@ body.jolt #app {
 	word-break: keep-all;
 }
 
-/* ───────── 倒れる 直前の ジョジョの 引き（ui/dungeon/play.ts の toBeContinued） ───────── */
+/* ───────── ジョジョの 引き（寸劇の 場面エフェクト "tbc"。engine/sceneFx.ts） ───────── */
 
 .tbc {
 	position: absolute;

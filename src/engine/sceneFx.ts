@@ -47,7 +47,13 @@ export type SceneFx =
 	/** 豆電球（opt.track の 人の 頭の 上に ともる。暗い 町を ぼんやり 照らす）。 */
 	| "bulb"
 	/** 火（fxAt の マス・opt.track から 炎が 立つ。厨房の 鍋など）。 */
-	| "fire";
+	| "fire"
+	/**
+	 * ジョジョの 引き（To Be Continued。2026-10-23 作者「寸劇に 仕込む。こりゃもう死んだなって 画面の 直前で」）。
+	 * 曲が 流れだし、TBC_LEAD_MS で 画面が セピアの 止め絵に なって 左下に 矢印。TBC_HOLD_MS 見せて 消え、
+	 * それから 窓（と その 行の 吹っとび）。やられる 直前の 行に 付ける。
+	 */
+	| "tbc";
 
 /** 歩く 前に 始める エフェクト（スローの 中を 歩く・爆発を 背に 歩く・予告編の 黒の 上で 語る）。 */
 export const FX_BEFORE_WALK: readonly SceneFx[] = [
@@ -64,7 +70,13 @@ export const FX_SE: Partial<Record<SceneFx, string>> = {
 	blast: "explosion",
 	heat: "chiin",
 	ko: "hitSting",
+	tbc: "toBeContinued",
 };
+
+/** ジョジョの 引き：曲が 流れだしてから 止め絵に なるまで（ms。ギターが 盛りあがる ところ）。 */
+const TBC_LEAD_MS = 2800;
+/** ジョジョの 引き：止め絵と 矢印を 見せる 長さ（ms）。 */
+const TBC_HOLD_MS = 2600;
 
 /** スローモーションの 速さ（場面の 時間の 倍率）。 */
 export const SLOW = 0.3;
@@ -833,5 +845,43 @@ export const startFx = (
 			return trailer(root, k, opt.caption);
 		case "blast":
 			return blast(root, k, still);
+		case "tbc":
+			return tbc(root);
 	}
+};
+
+/** ジョジョの 引き（"tbc"）。止め絵は その 時の 画面（#screen）の 写し。 */
+const tbc = (root: HTMLElement): FxRun => {
+	const d = document.createElement("div");
+	d.className = "tbc";
+	let gone = false;
+	const end = () => {
+		gone = true;
+		d.remove();
+	};
+	const ready = (async () => {
+		await sleep(TBC_LEAD_MS);
+		if (gone) return;
+		const src = document.getElementById("screen");
+		const snap = document.createElement("canvas");
+		if (src instanceof HTMLCanvasElement) {
+			snap.width = src.width;
+			snap.height = src.height;
+			snap.getContext("2d")?.drawImage(src, 0, 0);
+		}
+		const arrow = document.createElement("div");
+		arrow.className = "tbc-arrow";
+		const label = document.createElement("span");
+		label.textContent = "To Be Continued";
+		arrow.appendChild(label);
+		d.append(snap, arrow);
+		root.appendChild(d);
+		void d.offsetWidth;
+		d.classList.add("shown");
+		await sleep(TBC_HOLD_MS);
+		d.classList.add("leaving");
+		await sleep(300);
+		d.remove();
+	})();
+	return { ready, end };
 };

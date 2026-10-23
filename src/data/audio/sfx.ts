@@ -315,7 +315,7 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		cracker: "rpgen:JDSaUd", // クラッカー
 		/** 力尽きた。 */
 		wipeout: "rpgen:rEaCCP", // [ﾄﾞﾗｸｴ]全滅
-		/** 力尽きる 一撃の あと（ジョジョの 止め絵と 矢印。ui/dungeon/play.ts の toBeContinued）。 */
+		/** ジョジョの 引き（寸劇の 場面エフェクト "tbc"。engine/sceneFx.ts。曲は 止め絵が 消える ころに 終わる）。 */
 		toBeContinued: M("to-be-continued"), // To be Continued (jojo)
 		/** 中断（セーブ）。 */
 		save: "rpgen:jVOw87", // [自然癒]セーブ

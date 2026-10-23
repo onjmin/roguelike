@@ -285,12 +285,12 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	wipeout: ["rEaCCP", -10.7, -5.8, -14.3, 0.193, 560, 6690, 1500], // jingle → -25.0
 	toBeContinued: [
 		"meme/to-be-continued",
-		-12.4,
+		-12.7,
 		-0.8,
-		-12.6,
-		0.234,
+		-12.3,
+		0.243,
 		20,
-		9690,
+		6180,
 		1500,
 	], // jingle → -25.0
 	save: ["jVOw87", -10.4, -0.3, -14.6, 0.186, 90, 3730, 1100], // jingle → -25.0
