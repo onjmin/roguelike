@@ -158,7 +158,7 @@ export const GLOSSARY: readonly Word[] = [
 	{
 		id: "ksk",
 		word: "ksk",
-		desc: "「加速」のローマ字の頭。\nスレをはやく進めようとする書きこみ。\n\n「kskst」は「加速します」。",
+		desc: "「加速」のローマ字の頭。\nスレをはやく進めようとする書きこみ。\n\n「kskst」は「加速した」。",
 		hint: /ksk/,
 		gloss: "（ksk＝加速。スレをはやめる）",
 		tier: 0,
