@@ -91,11 +91,7 @@ test(
 	"第一話 → 第二話の つなぎ：どの 文も 村の 窓に 収まる。イメージ図の 札も 短い",
 	() => {
 		for (const [k, v] of Object.entries(KINOKO_EVE)) fits(`KINOKO_EVE.${k}`, v);
-		for (const spec of [
-			colonyCard(0),
-			colonyCard(1),
-			colonyCard(2),
-		]) {
+		for (const spec of [colonyCard(0), colonyCard(1), colonyCard(2)]) {
 			ok(spec.links.length === spec.nodes.length - 1, `${spec.title}: links`);
 			for (const n of spec.nodes)
 				ok(width(n.label) <= 8, `${n.label}: label too wide`);

@@ -207,9 +207,7 @@ export const buildFloor = (r: Run, depth: number, house: boolean): Floor => {
 	if (!r.s.returning) {
 		const held = r.p.items.length;
 		const shift =
-			depth === 1
-				? 0
-				: (HELD_ITEM_SHIFT.find((s) => held <= s.at)?.add ?? 0);
+			depth === 1 ? 0 : (HELD_ITEM_SHIFT.find((s) => held <= s.at)?.add ?? 0);
 		nItems = Math.max(
 			FLOOR_ITEMS_MIN,
 			rng.range(r.dungeon.perFloor[0], r.dungeon.perFloor[1]) + shift,
