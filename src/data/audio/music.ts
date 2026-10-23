@@ -16,7 +16,7 @@ import { STAGE_NAMES } from "../town/town";
 export const HOUSE_BGM = "retro2";
 /** ボスの 曲（見つけてから たおすまで）。名無し155さんの 曲（もとは 電池板で 鳴らしていた 戦闘曲っぽい 方）。 */
 export const BOSS_BGM = "retro";
-/** 持ち帰る 帰り道の 曲（原盤を 持ち帰る 曲。タイトルと 同じ）。 */
+/** 持ち帰る 帰り道の 曲（原盤を 持ち帰る 曲）。 */
 export const RETURN_BGM = "title";
 /** 持ち帰った ときの 曲（終わりの 札）。 */
 export const ENDING_BGM = "ending";

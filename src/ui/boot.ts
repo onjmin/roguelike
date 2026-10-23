@@ -24,11 +24,10 @@ export const runSaveLabel = (s: RunState | null): string =>
 		? `${DUNGEON_NAMES[s.dungeon]?.short ?? ""}　${floorShort(s.dungeon, s.depth)}　Lv${s.player.lv}${s.returning ? "　帰り道" : ""}`
 		: "中断した冒険";
 
-/** ロゴ：ドット文字に ルビ。 */
+/** ロゴ：板の 看板（「板」は 赤い 判）。ルビつき。 */
 const TITLE_LOGO =
-	'<span class="title-logo-pre"><ruby>蓄音<rt>チクオン</rt></ruby>キリコの</span>' +
-	'<span class="title-logo-main"><ruby>板<rt>イタ</rt></ruby>めぐり</span>' +
-	`<span class="title-logo-en">KIRIKO'S BOARD TOUR</span>`;
+	'<span class="title-logo-pre"><ruby>蓄音<rt>チクネ</rt></ruby>キリコの</span>' +
+	'<span class="title-logo-main"><ruby><span class="title-logo-ita">板</span><rt>イタ</rt></ruby>めぐり</span>';
 
 /** blackout：札を 閉じる 前に 画面を 黒く する（はじめての 場面は 黒から 幕を 上げる）。 */
 export const showBootTitle = (
@@ -36,7 +35,7 @@ export const showBootTitle = (
 	blackout?: (c: BootChoice) => Promise<void> | null,
 ): Promise<BootChoice> =>
 	new Promise((resolve) => {
-		ctx.audio.bgm("title");
+		ctx.audio.bgm("opening");
 		const buttons = el("div", { class: "title-buttons" });
 		const art = el("img", { class: "title-art" });
 		art.src = "title.png";

@@ -2896,10 +2896,12 @@ body.jolt #app {
 
 /* ───────── タイトル（起動の札。ui/boot.ts） ───────── */
 
-/* 一枚絵を 画面の 長い辺に あわせた 正方形で 敷く（短い辺は はみ出して 切れる）。
-   顔に かからないよう、ロゴは 胸元から 下、その下に 選択肢。 */
+/* 一枚絵を 画面の 短い辺に あわせた 正方形で まん中に 置き、まわりは 絵と 同じ 石壁で 埋める。
+   縦長：上に ロゴ、下に 選択肢（絵の 上下の 壁）。横に 広い：左に ロゴ、右に 選択肢。
+   正方形に 近い：ロゴと 選択肢を 絵の 下の方に 重ねる。 */
 .title {
-	--sq: max(var(--app-w), var(--app-h));
+	--sq: min(var(--app-w), var(--app-h));
+	--px: max(2px, calc(var(--sq) / 200));
 	position: absolute;
 	inset: 0;
 	z-index: 19;
@@ -2907,12 +2909,20 @@ body.jolt #app {
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-end;
-	gap: clamp(16px, var(--app-h) * 0.05, 40px);
-	padding: calc(24px + var(--safe-t)) calc(16px + var(--safe-r))
-		calc(28px + var(--safe-b)) calc(16px + var(--safe-l));
+	gap: clamp(12px, var(--app-h) * 0.04, 32px);
+	padding: calc(20px + var(--safe-t)) calc(16px + var(--safe-r))
+		calc(24px + var(--safe-b)) calc(16px + var(--safe-l));
 	text-align: center;
 	overflow: hidden;
-	background: #07060c;
+	background:
+		radial-gradient(
+			circle at 50% 50%,
+			transparent calc(var(--sq) * 0.5),
+			rgba(4, 3, 8, 0.75) calc(var(--sq) * 1.1)
+		),
+		url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' shape-rendering='crispEdges'%3E%3Crect width='32' height='32' fill='%23272330'/%3E%3Crect y='2' width='32' height='1' fill='%23353040'/%3E%3Crect y='18' width='32' height='1' fill='%23353040'/%3E%3Crect x='6' y='9' width='2' height='1' fill='%231f1b26'/%3E%3Crect x='24' y='25' width='3' height='1' fill='%231f1b26'/%3E%3Crect width='32' height='2' fill='%23110f16'/%3E%3Crect y='16' width='32' height='2' fill='%23110f16'/%3E%3Crect width='2' height='16' fill='%23110f16'/%3E%3Crect x='16' y='16' width='2' height='16' fill='%23110f16'/%3E%3C/svg%3E")
+		0 0 / 64px 64px #272330;
+	image-rendering: pixelated;
 	transition: opacity 0.5s;
 }
 
@@ -2927,40 +2937,64 @@ body.jolt #app {
 	pointer-events: none;
 }
 
+/* 絵の ふち：壁に はめこんだ 額（ぼかさない 段の 影） */
 .title > .title-art {
 	position: absolute;
-	/* 横長で 上下が 切れるときは、顔が 残るよう 下を 多めに 切る */
 	left: calc((var(--app-w) - var(--sq)) / 2);
-	top: calc((var(--app-h) - var(--sq)) * 0.2);
+	top: calc((var(--app-h) - var(--sq)) / 2);
 	width: var(--sq);
 	height: var(--sq);
 	max-width: none;
 	image-rendering: pixelated;
 	pointer-events: none;
 	user-select: none;
+	box-shadow:
+		0 0 0 var(--px) #0a0810,
+		0 0 0 calc(var(--px) * 2) #6a5a48,
+		0 0 0 calc(var(--px) * 3) #0a0810;
 }
 
-/* ロゴ：白い ドット文字に 角ばった 黒ふち（ぼかさない 影を 1px ずつ 重ねる） */
+/* ロゴ：板（いた）の 看板。木の 板に ドット文字、「板」だけ 赤い 判 */
 .title-logo {
-	--px: max(2px, calc(var(--sq) / 400));
+	--logo: clamp(28px, var(--sq) * 0.08, 64px);
 	margin: 0;
+	padding: calc(var(--logo) * 0.42) calc(var(--logo) * 0.36)
+		calc(var(--logo) * 0.22);
 	font-weight: normal;
+	font-size: var(--logo);
 	line-height: 1;
-	color: #fff;
+	color: #fff4dc;
 	word-break: keep-all;
 	-webkit-font-smoothing: none;
-	text-shadow:
-		var(--px) 0 0 #1a1030,
-		calc(var(--px) * -1) 0 0 #1a1030,
-		0 var(--px) 0 #1a1030,
-		0 calc(var(--px) * -1) 0 #1a1030,
-		var(--px) var(--px) 0 #1a1030,
-		calc(var(--px) * -1) var(--px) 0 #1a1030,
-		var(--px) calc(var(--px) * -1) 0 #1a1030,
-		calc(var(--px) * -1) calc(var(--px) * -1) 0 #1a1030,
-		0 calc(var(--px) * 3) 0 #1a1030,
-		var(--px) calc(var(--px) * 3) 0 #1a1030,
-		calc(var(--px) * -1) calc(var(--px) * 3) 0 #1a1030;
+	text-shadow: var(--px) var(--px) 0 #2a160a;
+	background: repeating-linear-gradient(
+		#7a5232 0 calc(var(--logo) * 0.5),
+		#5e3c22 calc(var(--logo) * 0.5) calc(var(--logo) * 0.5 + var(--px))
+	);
+	box-shadow:
+		0 0 0 var(--px) #1a0e06,
+		0 0 0 calc(var(--px) * 2) #b08a54,
+		0 0 0 calc(var(--px) * 3) #1a0e06,
+		calc(var(--px) * 3) calc(var(--px) * 5) 0 calc(var(--px) * 2)
+		rgba(0, 0, 0, 0.55);
+	transform: rotate(-2deg);
+}
+
+/* 四すみの 釘 */
+.title-logo::before {
+	content: "";
+	position: absolute;
+	inset: calc(var(--px) * 3);
+	pointer-events: none;
+	background:
+		linear-gradient(#d8d0c0, #d8d0c0) 0 0 / calc(var(--px) * 2)
+		calc(var(--px) * 2) no-repeat,
+		linear-gradient(#d8d0c0, #d8d0c0) 100% 0 / calc(var(--px) * 2)
+		calc(var(--px) * 2) no-repeat,
+		linear-gradient(#d8d0c0, #d8d0c0) 0 100% / calc(var(--px) * 2)
+		calc(var(--px) * 2) no-repeat,
+		linear-gradient(#d8d0c0, #d8d0c0) 100% 100% / calc(var(--px) * 2)
+		calc(var(--px) * 2) no-repeat;
 }
 
 .title-logo ruby {
@@ -2968,34 +3002,36 @@ body.jolt #app {
 }
 
 .title-logo rt {
-	font-size: 0.36em;
-	letter-spacing: 0.1em;
-	line-height: 1.2;
-	color: #fff;
+	font-size: 0.4em;
+	letter-spacing: 0.15em;
+	line-height: 1.3;
 }
 
 .title-logo-pre {
 	display: block;
-	font-size: clamp(24px, var(--app-w) * 0.075, 44px);
-	letter-spacing: 0.08em;
-	margin-bottom: 4px;
+	font-size: 0.46em;
+	text-align: left;
+	letter-spacing: 0.06em;
 }
 
 .title-logo-main {
-	display: block;
-	font-size: clamp(56px, var(--app-w) * 0.19, 120px);
+	display: flex;
+	align-items: flex-end;
+	gap: 0.12em;
+	margin-top: 0.08em;
 	letter-spacing: 0.04em;
-	padding-bottom: 8px;
-	border-bottom: var(--px) solid #fff;
-	box-shadow: 0 var(--px) 0 #1a1030;
 }
 
-.title-logo-en {
-	display: block;
-	margin-top: 8px;
-	font-size: clamp(13px, var(--app-w) * 0.04, 24px);
-	letter-spacing: 0.18em;
-	margin-right: -0.18em;
+/* 「板」の 赤い 判 */
+.title-logo-ita {
+	display: inline-block;
+	padding: 0.06em 0.08em 0.02em;
+	color: #fff;
+	background: #b8322a;
+	box-shadow:
+		0 0 0 var(--px) #4a0e0a,
+		inset 0 calc(var(--px) * -1) 0 #7a1a14;
+	transform: rotate(4deg);
 }
 
 /* 選択肢：ドットの 札 */
@@ -3055,27 +3091,42 @@ body.jolt #app {
 	}
 }
 
-/* 横持ち：左に ロゴ、右に 選択肢 */
-.short-landscape .title {
-	flex-direction: row;
-	justify-content: space-around;
-	align-items: center;
+/* 縦長：絵の 上下に 壁が 広く 残るので、上に ロゴ、下に 選択肢 */
+@media (max-aspect-ratio: 4 / 5) {
+	.title {
+		justify-content: space-between;
+		/* 左上の 時刻・財布の 札に かからないように */
+		padding-top: calc(52px + var(--safe-t));
+	}
+
+	.title-logo {
+		--logo: clamp(
+			28px,
+			min(var(--app-w) * 0.13, (var(--app-h) - var(--app-w)) * 0.2),
+			80px
+		);
+	}
 }
 
-.short-landscape .title-logo-pre {
-	font-size: clamp(18px, var(--app-h) * 0.08, 36px);
-}
+/* 横に 広い：絵の 左右の 壁に ロゴと 選択肢 */
+@media (min-aspect-ratio: 3 / 2) {
+	.title {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+	}
 
-.short-landscape .title-logo-main {
-	font-size: clamp(40px, var(--app-h) * 0.2, 100px);
-}
+	.title-logo {
+		--logo: clamp(
+			24px,
+			min(var(--app-h) * 0.13, (var(--app-w) - var(--app-h)) * 0.085),
+			80px
+		);
+	}
 
-.short-landscape .title-logo-en {
-	font-size: clamp(11px, var(--app-h) * 0.04, 20px);
-}
-
-.short-landscape .title-buttons {
-	width: min(260px, 42%);
+	.title-buttons {
+		width: min(260px, (var(--app-w) - var(--app-h)) / 2 - 24px);
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

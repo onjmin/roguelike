@@ -72,6 +72,7 @@
 // | tekitou      | -25.1（28）    | 28 → 36 | -23.0    |
 // | touhoufu     | -23.2（50）    | 50 → 47 | -23.8    |
 // | yofukashi    | -30.6（20）    | 20 → 45 | -23.6    |
+// | opening      | -29.2（24）    | 24 → 49 | -23.0（比例。2026-10-23） |
 // | kaiwai       | -19.3（50）    | 50 → 33 | -22.9（測り直した） |
 // | kaiwai2      | -20.7（50）    | 50 → 39 | -22.9（比例） |
 // | kaiwai3      | -21.3（50）    | 50 → 41 | -23.1（測り直した） |
@@ -140,6 +141,7 @@ import kouseki from "./bgm/kouseki.mml?raw"; // 6371「鉱石風respect」：変
 import kumori from "./bgm/kumori.mml?raw"; // 6365「くもり空をパクったやつ」：ホ長調 116・retro_game（矩形波の 主旋律・クラビネットの 裏打ち）
 import lastboss from "./bgm/lastboss.mml?raw"; // e2aae8c7641b40ab「短調バイオリン」
 import mercury from "./bgm/mercury.mml?raw"; // post/1318 の >>22 16eab4aec9bf4699「Speder2風」：118・ep_celesta（ビブラフォン・チェレスタ・オルゴール）→ マーキュリー
+import opening from "./bgm/opening.mml?raw"; // タイトルの 曲：ニ短調 100・retro_game・8beat（矩形波の 旋律・チェレスタの 分散和音。2026-10-23 書き下ろし）
 import piropiro from "./bgm/piropiro.mml?raw"; // post/1318 の >>15 b3fc594fb9954004「ﾋﾟﾛﾋﾟﾛﾋﾟﾛﾋﾟﾛﾋﾟの部分がいいらしい」：acoustic・dance → ひまわり諸島
 import retro from "./bgm/retro.mml?raw"; // post/1316 の >>9 30b7932c9e1a4102「今回はメロディ手で書いたわ。正直こっちのが好き」
 import retro2 from "./bgm/retro2.mml?raw"; // post/4891 a91d232600e24c6a「修正版。オクターブ計算ミスってメロディがガタガタやったの直した」
@@ -161,6 +163,7 @@ import yofukashi from "./bgm/yofukashi.mml?raw"; // よふかし諸島 夜ふか
 
 export const bgm: Record<string, string> = {
 	title,
+	opening,
 	town,
 	field,
 	field2,
