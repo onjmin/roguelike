@@ -26,7 +26,13 @@ import {
 import { DUNGEON_IDS, DUNGEONS } from "../core/data/dungeons";
 import { MONSTER_LIST, MONSTERS, monstersFor } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
-import { callHunter, foeTable, HUNTER, spawnMonster } from "../core/floor";
+import {
+	callHunter,
+	foeTable,
+	HUNTER,
+	spawnMonster,
+	strongFrom,
+} from "../core/floor";
 import { canSee } from "../core/fov";
 import {
 	DIRS8,
@@ -4851,10 +4857,11 @@ test("calm", "a big room with a foe inside does not clear アク禁", () => {
 
 test(
 	"board",
-	"foes: favoured foes spawn — within the strength on story boards, from floor 1 on side boards",
+	"foes: favoured foes spawn — within the strength on story boards, outside it late on side boards",
 	() => {
 		// 板ごとの 出やすさ（data/dungeons.ts の foes）。本筋の 板は 強さの 範囲の 敵だけ 多めに する（つり合いを 崩さない）。
-		// 寄り道の 板は 強さの 外の 敵でも 1階から 出す（core/floor.ts の foeTable。2026-10-20 作者：「出す方に倒して」）
+		// 寄り道の 板は 強さの 外の 敵でも 出す（core/floor.ts の foeTable。2026-10-20 作者：「出す方に倒して」）。
+		// 板より 強い 敵は 終わりの 3分の1 から（1階には 出ない）
 		const story: readonly string[] = [
 			"shallow",
 			"kinoko",
@@ -4867,6 +4874,10 @@ test(
 			const levels = dg.level.slice(1);
 			const r = Run.create(`foes-${d}`, d);
 			const table = foeTable(r).map((m) => m.id);
+			r.s.depth = strongFrom(dg.floors);
+			r.f.depth = r.s.depth;
+			const late = foeTable(r).map((m) => m.id);
+			const hi = Math.max(...levels.map((l) => Math.max(1, Math.min(30, l))));
 			for (const [id, w] of Object.entries(dg.foes ?? {})) {
 				ok(!!MONSTERS[id], `${d}: unknown foe ${id}`);
 				if (w <= 0) {
@@ -4878,12 +4889,18 @@ test(
 				);
 				if (story.includes(d))
 					ok(inRange, `${d}: ${id} is outside the story board's strength`);
-				// 寄り道の 板：強さの 範囲で 出る 敵は その 階から、範囲の 外の 敵は 1階から
-				else
+				// 寄り道の 板：強さの 範囲で 出る 敵は その 階から、弱い 敵は 1階から、強い 敵は 終わりの 3分の1 から
+				else {
+					const strong = MONSTERS[id].floors[0] > hi;
 					ok(
-						inRange || table.includes(id),
+						inRange || (strong ? late : table).includes(id),
 						`${d}: ${id} never spawns on the board`,
 					);
+					ok(
+						inRange || !strong || !table.includes(id),
+						`${d}: ${id} is stronger than the board but spawns on floor 1`,
+					);
+				}
 			}
 		}
 	},
