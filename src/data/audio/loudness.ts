@@ -23,6 +23,7 @@
 // | 効果音 battle          | -21  | +2  | 戦闘の音。BGM の上に聞こえるように           |
 // | 効果音 impact          | -19  | +4  | 会心の一撃・爆発。いちばん目立たせる         |
 // | 効果音 jingle          | -25  | -2  | 短い曲。鳴るあいだ BGM を絞るので、ひとりで目立つ。レベルアップ・1UP が うるさいと 言われて 3 dB 下げた |
+// | 効果音 meme            | -26  | -3  | 寸劇の 海外ミームの 音。会話の 上で 何度も 鳴るので 戦いの 音より 5 dB 下げる（2026-10-23 作者「うるさい」） |
 //
 // ■ 効果音の測り方（L）
 // 3 秒より短い音が多く、I（ゲート付きの平均）は 400 ms より短い音では出ないので、
@@ -56,6 +57,7 @@ export const SE_TARGET = {
 	battle: -21,
 	impact: -19,
 	jingle: -25,
+	meme: -26,
 } as const;
 
 export type SeKind = keyof typeof SE_TARGET;
@@ -193,37 +195,6 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	enemyDown: ["DApPoE", -10.9, -3, -10.1, 0.313, 0, 1480, 640], // battle → -21.0
 	hitSlap: ["Qy7A0i", -13.4, -1.2, -7.6, 0.417, 0, 490, 250], // battle → -21.0
 	hitSting: ["LR6pVk", -12.7, -2.5, -8.3, 0.385, 320, 2440, 1200], // battle → -21.0
-	hitBoom: ["meme/vine-boom", -8, -0.4, -13, 0.224, 80, 1240, 900], // battle → -21.0
-	hitBruh: ["meme/bruh", -8.5, -2.7, -12.5, 0.237, 20, 550, 390], // battle → -21.0
-	hitHuh: ["meme/huh-cat", -2.7, 2.5, -18.3, 0.122, 290, 680, 550], // battle → -21.0
-	hitScratch: ["meme/record-scratch", -10.1, -0.5, -10.9, 0.285, 20, 730, 550], // battle → -21.0
-	hitBong: ["meme/taco-bell", -9.2, -3.2, -11.8, 0.257, 80, 1800, 750], // battle → -21.0
-	hitDun: ["meme/dun-dun-dun", -7.2, 0.4, -13.8, 0.204, 60, 4070, 1200], // battle → -21.0
-	memeOmg: ["meme/omg", -1.6, 0.2, -19.4, 0.107, 280, 2130, 1200], // battle → -21.0
-	memeFahhh: ["meme/fahhh", -9.1, -1.5, -11.9, 0.254, 100, 2010, 650], // battle → -21.0
-	memeAughhh: ["meme/aughhh", -2.9, 0.7, -18.1, 0.124, 420, 3280, 1200], // battle → -21.0
-	memeOof: ["meme/oof", -16.2, -10.4, -4.8, 0.575, 520, 830, 690], // battle → -21.0
-	memeHurt: ["meme/mc-hurt", -14.9, -3.4, -6.1, 0.495, 20, 360, 220], // battle → -21.0
-	memeShocked: ["meme/shocked", -8.9, -0.9, -12.1, 0.248, 90, 1230, 900], // battle → -21.0
-	memeWow: ["meme/anime-wow", -11.6, -4.5, -9.4, 0.339, 170, 3740, 1200], // battle → -21.0
-	memeYippee: ["meme/yippee", -13.2, -7.9, -7.8, 0.407, 30, 840, 650], // battle → -21.0
-	memeNope: ["meme/nope", -14.9, -0.9, -6.1, 0.495, 10, 360, 190], // battle → -21.0
-	memeGetOut: ["meme/get-out", -12.5, -5, -8.5, 0.376, 70, 1030, 890], // battle → -21.0
-	memeHeeHee: ["meme/hee-hee", -15.5, -8.3, -5.5, 0.531, 500, 1420, 990], // battle → -21.0
-	memeError: ["meme/xp-error", -8.2, -0.8, -12.8, 0.229, 80, 890, 350], // battle → -21.0
-	memeSocialCredit: [
-		"meme/social-credit",
-		-4.2,
-		-1.8,
-		-16.8,
-		0.145,
-		270,
-		2060,
-		1200,
-	], // battle → -21.0
-	memePay: ["meme/apple-pay", -22.6, -11.9, 1.6, 1.202, 50, 660, 300], // battle → -21.0
-	memeDing: ["meme/ding", -11.6, -6.6, -9.4, 0.339, 140, 1320, 480], // battle → -21.0
-	memeSnore: ["meme/snore", -9, -1.4, -12, 0.251, 150, 1970, 1200], // battle → -21.0
 	flee: ["FTCG4H", -14.9, -9.9, -6.1, 0.495, 30, 490, 370], // battle → -21.0
 	steal: ["cAauAI", -10, -5.4, -11, 0.282, 0, 940, 530], // battle → -21.0
 	fire: ["HyTVhK", -10.9, -2.3, -10.1, 0.313, 50, 1820, 1000], // battle → -21.0
@@ -261,6 +232,43 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	batonDown: ["0JNThb", -15.3, -8.9, -5.7, 0.519, 10, 280, 220], // battle → -21.0
 	batonUp: ["0JDT7S", -12.9, -9.5, -8.1, 0.394, 10, 1170, 920], // battle → -21.0
 	arcCrash: ["YHEG4T", -12.6, -6.7, -8.4, 0.38, 0, 1360, 630], // battle → -21.0
+	hitBoom: ["meme/vine-boom", -8, -0.4, -18, 0.126, 80, 1240, 900], // meme → -26.0
+	hitBruh: ["meme/bruh", -8.5, -2.7, -17.5, 0.133, 20, 550, 390], // meme → -26.0
+	hitHuh: ["meme/huh-cat", -2.7, 2.5, -23.3, 0.068, 290, 680, 550], // meme → -26.0
+	hitScratch: ["meme/record-scratch", -10.1, -0.5, -15.9, 0.16, 20, 730, 550], // meme → -26.0
+	hitBong: ["meme/taco-bell", -9.2, -3.2, -16.8, 0.145, 80, 1800, 750], // meme → -26.0
+	hitDun: ["meme/dun-dun-dun", -5.6, 1.7, -20.4, 0.095, 60, 2790, 1200], // meme → -26.0
+	memeOmg: ["meme/omg", -9.5, -7.6, -16.5, 0.15, 280, 1910, 1200], // meme → -26.0
+	memeFahhh: ["meme/fahhh", -9.1, -1.5, -16.9, 0.143, 100, 2010, 650], // meme → -26.0
+	memeAughhh: ["meme/aughhh", -2.9, 0.7, -23.1, 0.07, 420, 3280, 1200], // meme → -26.0
+	memeOof: ["meme/oof", -16.2, -10.4, -9.8, 0.324, 520, 830, 690], // meme → -26.0
+	memeHurt: ["meme/mc-hurt", -14.9, -3.4, -11.1, 0.279, 20, 360, 220], // meme → -26.0
+	memeShocked: ["meme/shocked", -8.9, -0.9, -17.1, 0.14, 90, 1230, 900], // meme → -26.0
+	memeWow: ["meme/anime-wow", -8.6, -1.3, -17.4, 0.135, 170, 2350, 1200], // meme → -26.0
+	memeYippee: ["meme/yippee", -13.2, -7.9, -12.8, 0.229, 30, 840, 650], // meme → -26.0
+	memeNope: ["meme/nope", -14.9, -0.9, -11.1, 0.279, 10, 360, 190], // meme → -26.0
+	memeGetOut: ["meme/get-out", -12.5, -5, -13.5, 0.211, 70, 1030, 890], // meme → -26.0
+	memeHeeHee: ["meme/hee-hee", -15.5, -8.3, -10.5, 0.299, 500, 1420, 990], // meme → -26.0
+	memeError: ["meme/xp-error", -8.2, -0.8, -17.8, 0.129, 80, 890, 350], // meme → -26.0
+	memeSocialCredit: [
+		"meme/social-credit",
+		-4.2,
+		-1.8,
+		-21.8,
+		0.081,
+		270,
+		2060,
+		1200,
+	], // meme → -26.0
+	memePay: ["meme/apple-pay", -22.6, -11.9, -3.4, 0.676, 50, 660, 300], // meme → -26.0
+	memeDing: ["meme/ding", -11.6, -6.6, -14.4, 0.191, 140, 1320, 480], // meme → -26.0
+	memeSnore: ["meme/snore", -9, -1.4, -17, 0.141, 150, 1970, 1200], // meme → -26.0
+	memeReveal: ["meme/among-us", -15.1, -2.1, -10.9, 0.285, 210, 2550, 1200], // meme → -26.0
+	memeYay: ["meme/kids-yay", -10.8, -2.5, -15.2, 0.174, 230, 2190, 1200], // meme → -26.0
+	memeHallelujah: ["meme/hallelujah", -6.6, -0.1, -19.4, 0.107, 60, 1860, 1200], // meme → -26.0
+	memeCoffin: ["meme/coffin-dance", -2.3, 4.2, -23.7, 0.065, 10, 3200, 1200], // meme → -26.0
+	memeGalaxy: ["meme/galaxy", -7.6, -4.1, -18.4, 0.12, 240, 3200, 1200], // meme → -26.0
+	memeShutdown: ["meme/xp-shutdown", -14.1, -5.5, -11.9, 0.254, 20, 2870, 1180], // meme → -26.0
 	critical: ["3xdWAT", -12.7, -7.8, -6.3, 0.484, 0, 430, 360], // impact → -19.0
 	explosion: ["HydVaH", -6.6, -0.4, -12.4, 0.24, 120, 1580, 990], // impact → -19.0
 	victory: ["tSHy6V", -13.7, -7.8, -11.3, 0.272, 20, 1540, 970], // jingle → -25.0
@@ -285,12 +293,6 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 		9690,
 		1500,
 	], // jingle → -25.0
-	memeReveal: ["meme/among-us", -16.3, -3.9, -8.7, 0.367, 210, 4200, 1500], // jingle → -25.0
-	memeYay: ["meme/kids-yay", -9.3, -2.1, -15.7, 0.164, 230, 4220, 1500], // jingle → -25.0
-	memeHallelujah: ["meme/hallelujah", -6.6, -0.1, -18.4, 0.12, 60, 1860, 1350], // jingle → -25.0
-	memeCoffin: ["meme/coffin-dance", -5, 1.4, -20, 0.1, 10, 5830, 1500], // jingle → -25.0
-	memeGalaxy: ["meme/galaxy", 0.5, 3.9, -24, 0.063, 240, 3200, 1500], // jingle → -23.5（補正の範囲の端）
-	memeShutdown: ["meme/xp-shutdown", -14.1, -5.5, -10.9, 0.285, 20, 2870, 1180], // jingle → -25.0
 	save: ["jVOw87", -10.4, -0.3, -14.6, 0.186, 90, 3730, 1100], // jingle → -25.0
 	chapter: ["thHyyN", -7.7, -2, -17.3, 0.136, 50, 1220, 410], // jingle → -25.0
 	served: ["wMSfsJ", -11.7, -2.9, -13.3, 0.216, 60, 1810, 1410], // jingle → -25.0

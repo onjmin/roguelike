@@ -561,7 +561,8 @@ export type Cue = {
 	pause?: number;
 	hit?: Hit;
 	/**
-	 * 海外ミームの 音（data/audio/sfx.ts の meme〜。2026-10-23 作者「寸劇に 多用する」）。窓の 前に、hit と 同じ 時に 鳴る。
+	 * 海外ミームの 音（data/audio/sfx.ts の meme〜。2026-10-23 作者「寸劇に 多用する」）。窓の 前に 鳴る。
+	 * ただし 反応の 音（data/audio/sfx.ts の SE_AFTER）は 台詞が 出きってから 鳴る。
 	 * ツッコミで ない ところ（地の文・ボケ・やらかしの 瞬間）に 添える。ツッコミの 音は hit の boom・bruh など。
 	 */
 	meme?: string;

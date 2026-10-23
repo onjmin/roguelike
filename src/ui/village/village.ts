@@ -25,7 +25,7 @@
 
 import { type Dir8, DX, DY, isDiagonal } from "../../core/geom";
 import type { DungeonId, Objective } from "../../core/types";
-import { HIT_SE } from "../../data/audio/sfx";
+import { HIT_SE, SE_AFTER } from "../../data/audio/sfx";
 import { CAST, heroWalk, KIRIKO, KIRIKO_WALK } from "../../data/people/cast";
 import type { KirikoMode, Speaker } from "../../data/story/quotes";
 import { kirikoLabel } from "../../data/story/rank";
@@ -2065,6 +2065,7 @@ export class Village {
 			// 立ち絵の 頭の 横にも 手書き風の 記号（村に 立って いない 人でも）
 			emote: opt.emote,
 			autoMs: opt.auto,
+			onDone: this.takeAfter(),
 			onShow:
 				voice && settings.voice
 					? (leadMs) => this.ctx.audio.speak(shown, voice, leadMs)
@@ -2104,6 +2105,7 @@ export class Village {
 			text: mode === "think" ? `（${text}）` : text,
 			emote,
 			autoMs: auto,
+			onDone: this.takeAfter(),
 			onShow:
 				voice && settings.voice
 					? (leadMs) => this.ctx.audio.speak(text, voice, leadMs)
@@ -2137,8 +2139,8 @@ export class Village {
 	}
 
 	/**
-	 * 行の 間（pause）と ツッコミの 音（hit。engine/emote.ts）。間は 前の 窓を 閉じて 黙る。音は 窓の 前に 鳴り、
-	 * 突かれた 人（target。"player" は キリコ。null なら だれも）が びくっと する。ずっこけ（zukko）は 場に いる
+	 * 行の 間（pause）と ツッコミの 音（hit。engine/emote.ts）。間は 前の 窓を 閉じて 黙る。音は 窓の 前に 鳴り（反応の 音 SE_AFTER は
+	 * 台詞が 出きってから）、突かれた 人（target。"player" は キリコ。null なら だれも）が びくっと する。ずっこけ（zukko）は 場に いる
 	 * 仲間も いっしょに 沈む。
 	 */
 	private async beatAndHit(
@@ -2149,17 +2151,41 @@ export class Village {
 			this.msg.close();
 			await sleep(c.pause);
 		}
-		if (c?.meme) this.ctx.audio.se(c.meme);
-		if (!c?.hit) return;
-		this.ctx.audio.se(HIT_SE[c.hit]);
-		const g: Gesture = c.hit === "zukko" ? "slump" : "startle";
-		if (c.hit === "zukko") {
+		// 反応の 音（SE_AFTER。vine boom・bruh・Huh など）は 台詞が 出きってから 鳴らす（次の 窓の onDone）
+		const later: (() => void)[] = [];
+		const play = (name: string, then?: () => void) => {
+			const run = () => {
+				this.ctx.audio.se(name);
+				then?.();
+			};
+			if (SE_AFTER.has(name)) later.push(run);
+			else run();
+		};
+		if (c?.meme) play(c.meme);
+		const hit = c?.hit;
+		if (hit) play(HIT_SE[hit], () => this.flinch(hit, target));
+		this.after = later.length ? () => later.forEach((f) => f()) : null;
+	}
+
+	/** 台詞の あとに 鳴らす 反応の 音（beatAndHit が 決め、次の 窓が 出きった ときに 鳴らす）。 */
+	private after: (() => void) | null = null;
+
+	private takeAfter(): (() => void) | undefined {
+		const f = this.after;
+		this.after = null;
+		return f ?? undefined;
+	}
+
+	/** ツッコミの 音で 突かれた 人が びくっと する（ずっこけは みんな 沈む）。 */
+	private flinch(hit: Hit, target: string | null): void {
+		const g: Gesture = hit === "zukko" ? "slump" : "startle";
+		if (hit === "zukko") {
 			for (const a of this.field?.actors ?? [])
 				if (a.visible && !a.still) a.showGesture(g, false);
 			this.player.showGesture(g, false);
 			return;
 		}
-		if (c.hit === "sting") return;
+		if (hit === "sting") return;
 		if (target === "player") this.player.showGesture(g, false);
 		else if (target) this.actorFor(target)?.showGesture(g, false);
 	}

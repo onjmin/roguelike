@@ -268,6 +268,8 @@ export type MessageParams = {
 	onShow?: (leadMs: number) => ShowHook | undefined;
 	/** 畳みかけ：字を 一度に 出し、押さなくても この ms で 送る（engine/emote.ts の Cue.auto）。 */
 	autoMs?: number;
+	/** 文が 出きった ときに 呼ばれる（台詞の あとに 鳴らす 反応の 音。data/audio/sfx.ts の SE_AFTER）。 */
+	onDone?: () => void;
 };
 
 /** {@link MessageParams.onShow} の戻り値。 */
@@ -561,6 +563,7 @@ export class MessageWindow {
 				doneAt = performance.now();
 				window.clearTimeout(timer);
 				this.textEl.textContent = p.text;
+				p.onDone?.();
 				// 鳴らしたばかりの効果音の本体が鳴り終わってから ▼ を出して送れるようにする
 				// （すぐ送ると次の効果音が畳みかけて重なる）
 				void this.settled().then(() => {

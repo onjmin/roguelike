@@ -90,7 +90,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(0, "もう3時間や……\nパン、かたくなってまう……", { look: 0 }),
 			// ロゼが {hero} に 気づいて 走って くる
 			say(1, "おそいアル。わたしは束音ロゼ。\n3時間前に着いて、説教中アル", {
-				se: "memeReveal",
 				go: [{ who: 1, to: "kiriko" }],
 				look: null,
 			}),
@@ -102,7 +101,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 				se: "decide",
 			}),
 			say(5, "32人目は、パン兵では\nないゼロ。31人に訂正ゼロ", {
-				se: "memeError",
 				go: [{ who: 5, to: "kiriko" }],
 			}),
 			say(6, "レンも数えたよ〜！31人！\n観客は、{hero}で1人目♪", {
@@ -111,7 +109,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(4, "解音ゼロです！3機で、\n{hero}さんの蓄音機を数えに来ました！"),
 			k("パン兵を数えに\n来たんじゃないンゴ？"),
 			say(4, "パン兵は、ついでです！", {
-				hit: "bruh",
 				go: [
 					{ who: 4, to: "home" },
 					{ who: 5, to: "home" },
@@ -121,7 +118,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			// ロゼが 王の 前に もどって くる
 			say(0, "ロゼはん、もどってきた……\nパン、化石になってもうた", {
-				se: "memeOmg",
 				look: 0,
 			}),
 		],
@@ -132,7 +128,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 		steps: [
 			n("独立記念セール、2日目。"),
 			say(2, "全品、パン1個につき\nパン1個や！", {
-				se: "memeWow",
 				go: [{ who: 2, to: "kiriko" }],
 			}),
 			k("……定価ンゴ", { pause: 500, hit: "bruh" }),
@@ -143,7 +138,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: 1, to: "kiriko" }],
 			}),
 			say(0, "独立したら、物価も独立や。\n明日からパン1個につき2個", {
-				se: "memePay",
 				look: 0,
 			}),
 			k("インフレンゴ！", {
@@ -176,7 +170,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			// ゼロの 持ちネタ：サブ機の プロトが 数を 訂正する
 			say(5, "訂正ゼロ。1番も1。\nいきなり『パン』ゼロ", {
-				se: "memeDing",
 				go: [{ who: 5, to: "kiriko" }],
 			}),
 			k("ほぼ君が代ンゴ", { hit: "bruh" }),
@@ -202,7 +195,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 		steps: [
 			say(0, "温度計5本、ぜんぶ\nちがう数字なのよ！", { look: 0 }),
 			say(0, "41.3、41.6、41.5、42.0。\n……5本目は、湯に落としたわ", {
-				se: "memeFahhh",
 				go: [{ who: 0, to: "kiriko" }],
 				look: null,
 			}),
@@ -229,7 +221,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: "kiriko", to: [22, 6] }],
 				look: null,
 			}),
-			n("桶のふちまで、\n3メートルあった。", { hit: "dun" }),
+			n("桶のふちまで、\n3メートルあった。"),
 			say(0, "はしご、ないわよ。\n3時間前に、確かめたわ", {
 				go: [{ who: 0, to: "kiriko" }],
 			}),
@@ -274,7 +266,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 					text: "本日の見学者\n1.5人",
 				}),
 			}),
-			k("半分、燃えてるンゴ", { hit: "bruh" }),
+			k("半分、燃えてるンゴ", { hit: "slap" }),
 			say(0, "燃えとる分は、\n切り捨てや", {
 				card: propPicture(TOUR_SIGN, "見学コースの案内板", {
 					text: "本日の見学者\n1人（0.5は切り捨て）",
@@ -282,7 +274,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 				go: [{ who: 0, to: "home" }],
 			}),
 			say(1, "じゃあ、燃えてない半分で\n2回入場する〜", {
-				se: "memeHeeHee",
 				card: null,
 			}),
 		],
@@ -298,7 +289,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(0, "せや。どうせ、だれも\nおらん町へ送っとった"),
 			say(0, "請求書も、ずっと送っとった。\nぜんぶ、宛先不明でもどってきた"),
 			k("宛先、どこにしたンゴ？"),
-			say(0, "「おんJ」や。\nほな、とどかんわな", { hit: "bruh" }),
+			say(0, "「おんJ」や。\nほな、とどかんわな"),
 			say(1, "私宛てのは、\n燃やしちゃった〜！", { look: 1 }),
 			say(0, "お前のは、燃えるゴミや！", {
 				look: null,
@@ -315,12 +306,11 @@ export const REST_SKITS: readonly RestSkit[] = [
 			n("集落では、人数を\n数えなおしていた。"),
 			say(1, "1、2、……", { go: [{ who: 1, to: "kiriko" }] }),
 			say(2, "3、4、……", { go: [{ who: 2, to: "kiriko" }] }),
-			say(0, "……7人や。1人多い", { se: "memeShocked", look: 0 }),
+			say(0, "……7人や。1人多い", { look: 0 }),
 			k("吾輩ンゴ", { look: null }),
-			say(0, "ほな6人や。……あれ、5人か？", { se: "memeError" }),
+			say(0, "ほな6人や。……あれ、5人か？"),
 			say(1, "長、自分を数えてへん"),
 			say(0, "総島民6人！\n大事なことやから、毎回言う", {
-				se: "memeYay",
 				go: [
 					{ who: 1, to: "home" },
 					{ who: 2, to: "home" },
@@ -363,7 +353,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 		steps: [
 			n("屋上は、たこパ会場だった。\n鉄板が、9台。", { look: [14, 4] }),
 			say(1, "招待状128通、来たのは\n{hero}1人や😡", {
-				hit: "bong",
 				go: [{ who: 1, to: "kiriko" }],
 				look: null,
 			}),
@@ -414,7 +403,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			say(2, "ラムネの中に\n泳いどったで", { go: [{ who: 2, to: "kiriko" }] }),
 			k("ラムネ、飲めないンゴ"),
-			say(2, "金魚入りは、100円増しや", { se: "memePay" }),
+			say(2, "金魚入りは、100円増しや"),
 			say(0, "太鼓が止まらんのに、\n金魚の話するな！", { look: 0 }),
 			say(1, "太鼓、親分がたたいとるんや"),
 			say(0, "ワイか！", {
@@ -446,7 +435,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			say(2, "輪に、2人や"),
 			k("吾輩が、3人目ンゴ！", {
-				se: "memeYippee",
 				go: [{ who: "kiriko", to: [14, 8] }],
 			}),
 			say(0, "やぐらから見たら、点や。\n衛星から見たら、もっと点や", {
@@ -479,7 +467,6 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			k("……あげ"),
 			n("石像が、少し浮いた。", {
-				se: "memeWow",
 				card: {
 					...propPicture(STATUE, "古い石像", { text: "保守" }),
 					note: "台座から1センチ浮いた",
@@ -512,7 +499,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 			}),
 			k("1ゲットンゴ？"),
 			n("2005年の1ゲットだった。\n2は、まだ来ていない。"),
-			k("2ゲットンゴ！", { se: "memeYippee", card: null }),
+			k("2ゲットンゴ！", { card: null }),
 			n("台座の字が、\n「1乙」に変わった。", {
 				se: "memeCoffin",
 				pause: 500,

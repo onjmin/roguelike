@@ -57,7 +57,7 @@ import {
 	type Trap,
 } from "../../core/types";
 import { BOSS_BGM, HOUSE_BGM, RETURN_BGM } from "../../data/audio/music";
-import { HIT_SE } from "../../data/audio/sfx";
+import { HIT_SE, SE_AFTER } from "../../data/audio/sfx";
 import { heroWalk, KIRIKO, ZERO_BODY_WALKS } from "../../data/people/cast";
 import { guestVoice, guestWalk } from "../../data/people/companions";
 import { deathNote, deathSpecial } from "../../data/story/deathNotes";
@@ -4146,10 +4146,22 @@ export class Play {
 		const text = (st.text ?? "").replaceAll("{hero}", run.heroName);
 		// 見せ場の 間と ツッコミの 音（村の 寸劇の Cue.pause・Cue.hit と 同じ。engine/emote.ts）
 		if (st.pause) await new Promise((r) => setTimeout(r, st.pause));
-		if (st.hit) this.ctx.audio.se(HIT_SE[st.hit]);
+		// 反応の 音（vine boom・bruh など。data/audio/sfx.ts の SE_AFTER）は 台詞が 出きってから
+		const later = [
+			st.hit ? HIT_SE[st.hit] : null,
+			st.se && SE_AFTER.has(st.se) ? st.se : null,
+		].filter((n): n is string => !!n);
+		for (const n of later.filter((n) => !SE_AFTER.has(n))) this.ctx.audio.se(n);
+		const after = later.filter((n) => SE_AFTER.has(n));
+		const onDone = after.length
+			? () => {
+					for (const n of after) this.ctx.audio.se(n);
+				}
+			: undefined;
 		if (st.who === "kiriko") {
 			await speak(this.ctx, [
 				{
+					onDone,
 					name: kirikoLabel(),
 					color: KIRIKO.color,
 					text,
@@ -4165,7 +4177,7 @@ export class Play {
 			return;
 		}
 		if (st.who === undefined) {
-			await speak(this.ctx, [{ text }]);
+			await speak(this.ctx, [{ text, onDone }]);
 			return;
 		}
 		const fo = run.f.folk?.[st.who];
@@ -4177,6 +4189,7 @@ export class Play {
 				color: v?.color ?? "#e8e0c8",
 				text,
 				portrait: v?.portrait ?? null,
+				onDone,
 			},
 		]);
 	}
@@ -4245,7 +4258,9 @@ export class Play {
 					} else if (card) card.update(st.card);
 					else card = showCard(this.ctx.ui, st.card);
 				}
-				if (st.se) this.ctx.se(st.se);
+				// 反応の 音（SE_AFTER）は 台詞が 出きってから（sceneSay）
+				if (st.se && (st.text === undefined || !SE_AFTER.has(st.se)))
+					this.ctx.se(st.se);
 				if (st.text !== undefined) await this.sceneSay(st);
 			}
 		} finally {

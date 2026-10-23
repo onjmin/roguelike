@@ -156,52 +156,6 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		hitSlap: "rpgen:Qy7A0i", // 拍子木
 		/** デデドン（青ざめる 受け手・ガーン）。 */
 		hitSting: "rpgen:LR6pVk", // デデドン！
-		// ── 寸劇の ミームの 音（ツッコミの hit。engine/emote.ts の Hit）
-		/** ドゥーン（言いきった ひとことの 直後・とんでもない 一文の あと）。 */
-		hitBoom: M("vine-boom"), // VINE BOOM
-		/** ブラ…（あきれる。力の ぬけた 一言）。 */
-		hitBruh: M("bruh"), // BRUH
-		/** ハァ？（わけが わからない 聞きかえし）。 */
-		hitHuh: M("huh-cat"), // Huh Cat
-		/** キュッ（話の 腰を 折る・待った）。 */
-		hitScratch: M("record-scratch"), // Record scratch
-		/** ボーン（重い オチ）。 */
-		hitBong: M("taco-bell"), // Taco Bell Bong
-		/** ダン・ダン・ダーン（とんでもない 真相）。 */
-		hitDun: M("dun-dun-dun"), // dun dun dunnn
-		// ── 寸劇の ミームの 音（行の se。地の文・台詞に 添える）
-		/** 大げさな「オーマイガー」（やらかしに 気づいた）。 */
-		memeOmg: M("omg"), // ooohhh my goood
-		/** 絶叫「ファーーー」（やらかした 瞬間）。 */
-		memeFahhh: M("fahhh"), // FAHHHH
-		/** 「アァァァーッ」（落ちる・飛ばされる・逃げる）。 */
-		memeAughhh: M("aughhh"), // AUGHHHHH
-		/** 「ウッ」（Roblox。やられた・ぶつかった）。 */
-		memeOof: M("oof"), // ROBLOX oof
-		/** マイクラの ダメージ音（小さく 痛い）。 */
-		memeHurt: M("mc-hurt"), // Minecraft Hurt
-		/** 「えっ！？」（不意を つかれる）。 */
-		memeShocked: M("shocked"), // Shocked sound
-		/** アニメ声の「わぁ〜お」（感心・ありがたみの ない 驚き）。 */
-		memeWow: M("anime-wow"), // Anime Wow
-		/** 「イッピー！」（ささやかな 喜び）。 */
-		memeYippee: M("yippee"), // yippee
-		/** 「ノープ」（きっぱり 断る・こばむ）。 */
-		memeNope: M("nope"), // nope.avi
-		/** 「出ていけ！」（追いだす）。 */
-		memeGetOut: M("get-out"), // Tuco: GET OUT
-		/** 「ヒーヒー！」（いたずら・してやったり）。 */
-		memeHeeHee: M("hee-hee"), // Michael Jackson Hee Hee
-		/** Windows XP の エラー音（話が 通じない・頭が 止まる）。 */
-		memeError: M("xp-error"), // Windows XP Error
-		/** 社会信用 −999 の サイレン（大失点）。 */
-		memeSocialCredit: M("social-credit"), // -999 Social Credit Siren
-		/** Apple Pay の 支払い音（お金が 動く）。 */
-		memePay: M("apple-pay"), // Apple Pay
-		/** 「チーン」（できあがり・ひらめき）。 */
-		memeDing: M("ding"), // ding
-		/** いびき（寝る・寝てる）。 */
-		memeSnore: M("snore"), // Snore mimimimimimi
 		/** 逃げる・吹き飛ばす。 */
 		flee: "rpgen:FTCG4H", // 逃走
 		/** 道具を 盗まれた（盗んだ 敵が 逃げていく）。 */
@@ -267,6 +221,68 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** 筐体の 自機が やられた・ぶつかった（シューティング）。 */
 		arcCrash: "rpgen:YHEG4T", // 自機爆発音1
 	},
+	/**
+	 * 寸劇の 海外ミームの 音（行の hit・meme。engine/emote.ts）。会話の 上で 何度も 鳴るので、戦いの 音より
+	 * 小さく する（2026-10-23 作者「うるさい」）。SE_AFTER の 音は 台詞が 出きってから 鳴る。
+	 */
+	meme: {
+		/** ドゥーン（言いきった ひとことの 直後・とんでもない 一文の あと）。 */
+		hitBoom: M("vine-boom"), // VINE BOOM
+		/** ブラ…（あきれる。力の ぬけた 一言）。 */
+		hitBruh: M("bruh"), // BRUH
+		/** ハァ？（わけが わからない 聞きかえし）。 */
+		hitHuh: M("huh-cat"), // Huh Cat
+		/** キュッ（話の 腰を 折る・待った）。 */
+		hitScratch: M("record-scratch"), // Record scratch
+		/** ボーン（重い オチ）。 */
+		hitBong: M("taco-bell"), // Taco Bell Bong
+		/** ダン・ダン・ダーン（とんでもない 真相）。 */
+		hitDun: M("dun-dun-dun"), // dun dun dunnn
+		/** 大げさな「オーマイガー」（やらかしに 気づいた）。 */
+		memeOmg: M("omg"), // ooohhh my goood
+		/** 絶叫「ファーーー」（やらかした 瞬間）。 */
+		memeFahhh: M("fahhh"), // FAHHHH
+		/** 「アァァァーッ」（落ちる・飛ばされる・逃げる）。 */
+		memeAughhh: M("aughhh"), // AUGHHHHH
+		/** 「ウッ」（Roblox。やられた・ぶつかった）。 */
+		memeOof: M("oof"), // ROBLOX oof
+		/** マイクラの ダメージ音（小さく 痛い）。 */
+		memeHurt: M("mc-hurt"), // Minecraft Hurt
+		/** 「えっ！？」（不意を つかれる）。 */
+		memeShocked: M("shocked"), // Shocked sound
+		/** アニメ声の「わぁ〜お」（感心・ありがたみの ない 驚き）。 */
+		memeWow: M("anime-wow"), // Anime Wow
+		/** 「イッピー！」（ささやかな 喜び）。 */
+		memeYippee: M("yippee"), // yippee
+		/** 「ノープ」（きっぱり 断る・こばむ）。 */
+		memeNope: M("nope"), // nope.avi
+		/** 「出ていけ！」（追いだす）。 */
+		memeGetOut: M("get-out"), // Tuco: GET OUT
+		/** 「ヒーヒー！」（いたずら・してやったり）。 */
+		memeHeeHee: M("hee-hee"), // Michael Jackson Hee Hee
+		/** Windows XP の エラー音（話が 通じない・頭が 止まる）。 */
+		memeError: M("xp-error"), // Windows XP Error
+		/** 社会信用 −999 の サイレン（大失点）。 */
+		memeSocialCredit: M("social-credit"), // -999 Social Credit Siren
+		/** Apple Pay の 支払い音（お金が 動く）。 */
+		memePay: M("apple-pay"), // Apple Pay
+		/** 「チーン」（できあがり・ひらめき）。 */
+		memeDing: M("ding"), // ding
+		/** いびき（寝る・寝てる）。 */
+		memeSnore: M("snore"), // Snore mimimimimimi
+		/** 役職発表（低く した。SE_RATE。正体・役目が 明かされる）。 */
+		memeReveal: M("among-us"), // Among Us role reveal
+		/** 子どもたちの「イェーイ」（歓声）。 */
+		memeYay: M("kids-yay"), // Kids saying yay
+		/** 「ハレルヤ〜」（救われた・ありがたい）。 */
+		memeHallelujah: M("hallelujah"), // Hallelujah
+		/** 棺桶ダンス（おしまい・お葬式）。 */
+		memeCoffin: M("coffin-dance"), // Coffin Dance
+		/** 宇宙へ 飛んでいく（スケールが 宇宙まで 行った）。 */
+		memeGalaxy: M("galaxy"), // Galaxy meme
+		/** Windows XP の 終了音（止まる・寝落ち・閉店）。 */
+		memeShutdown: M("xp-shutdown"), // Windows XP shutdown
+	},
 	/** いちばん目立たせる音。 */
 	impact: {
 		critical: "rpgen:3xdWAT", // [ﾄﾞﾗｸｴ3]会心の一撃
@@ -301,19 +317,6 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		wipeout: "rpgen:rEaCCP", // [ﾄﾞﾗｸｴ]全滅
 		/** 力尽きる 一撃の あと（ジョジョの 止め絵と 矢印。ui/dungeon/play.ts の toBeContinued）。 */
 		toBeContinued: M("to-be-continued"), // To be Continued (jojo)
-		// ── 寸劇の ミームの 音（行の se。長めの 音・短い 曲）
-		/** 役職発表（低く した。SE_RATE。正体・役目が 明かされる）。 */
-		memeReveal: M("among-us"), // Among Us role reveal
-		/** 子どもたちの「イェーイ」（歓声）。 */
-		memeYay: M("kids-yay"), // Kids saying yay
-		/** 「ハレルヤ〜」（救われた・ありがたい）。 */
-		memeHallelujah: M("hallelujah"), // Hallelujah
-		/** 棺桶ダンス（おしまい・お葬式）。 */
-		memeCoffin: M("coffin-dance"), // Coffin Dance
-		/** 宇宙へ 飛んでいく（スケールが 宇宙まで 行った）。 */
-		memeGalaxy: M("galaxy"), // Galaxy meme
-		/** Windows XP の 終了音（止まる・寝落ち・閉店）。 */
-		memeShutdown: M("xp-shutdown"), // Windows XP shutdown
 		/** 中断（セーブ）。 */
 		save: "rpgen:jVOw87", // [自然癒]セーブ
 		/** 新しい階に着いた（システム音らしいチャイム）。 */
@@ -361,6 +364,21 @@ export const HIT_SE: Record<Hit, string> = {
 	bong: "hitBong",
 	dun: "hitDun",
 };
+
+/**
+ * 台詞が 出きってから 鳴らす 反応の 音（ui/village/village.ts の beatAndHit）。言った ことへの 反応なので、
+ * 窓の 前に 鳴らすと ボケより 先に 聞こえて しまう（2026-10-23 作者「使い方が ところどころ 間違えている」）。
+ */
+export const SE_AFTER: ReadonlySet<string> = new Set([
+	"hitBoom",
+	"hitBruh",
+	"hitHuh",
+	"hitBong",
+	"memeWow",
+	"memeYay",
+	"memeCoffin",
+	"memeSocialCredit",
+]);
 
 /** 高さを かえて 鳴らす 音（再生の 速さの 倍率。1 より 小さいと 低く・ゆっくり）。 */
 export const SE_RATE: Record<string, number> = {
