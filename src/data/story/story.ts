@@ -847,6 +847,7 @@ export const STORY: Record<
 			{
 				...a("news", "臨時ニュースです。町は1時間で\n全員独立。国民は0人です"),
 				skip: true,
+				later: true,
 				fx: "chiin",
 				turnAway: true,
 				card: CUSTOMS_SIGN,
@@ -1471,7 +1472,7 @@ export const STORY: Record<
 			{
 				...s("nanj", "国土地理院から、\n電話きとるで！", {
 					emote: "青",
-					hit: "sting",
+					hit: "dun",
 				}),
 				look: null,
 				card: null,
@@ -1782,6 +1783,7 @@ export const STORY: Record<
 			{
 				...n("1時間後。足の下から、\nドン、と何かが返事をした。"),
 				skip: true,
+				later: true,
 				se: "hit_club",
 				seRepeat: 4,
 				seGap: 160,
@@ -2481,7 +2483,7 @@ export const STORY: Record<
 			{
 				...s("nanj", "おんJタウンが、よその\n植民地になってもうた！", {
 					emote: "青",
-					hit: "sting",
+					hit: "dun",
 				}),
 				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},

@@ -29,9 +29,9 @@ import {
 	SE_WAIT,
 	voiceGain,
 } from "../data/audio/loudness";
-import { EMOTE_SE } from "../data/audio/sfx";
+import { EMOTE_SE, SE_RATE } from "../data/audio/sfx";
 import { VOICE_MODELS } from "../data/people/cast";
-import { soundUrl } from "./assets";
+import { resolveRef, soundUrl } from "./assets";
 import type { VoiceDef } from "./defs";
 import type { Emote } from "./emote";
 import { onSettingsChange, settings } from "./settings";
@@ -776,7 +776,9 @@ export class GameAudio {
 		if (!ctx || !ref) return null;
 		let p = this.seCache.get(name);
 		if (!p) {
-			const url = ref.startsWith("rpgen:") ? soundUrl(ref.slice(6)) : ref;
+			const url = ref.startsWith("rpgen:")
+				? soundUrl(ref.slice(6))
+				: resolveRef(ref);
 			p = fetch(url)
 				.then((r) =>
 					r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status}`)),
@@ -843,13 +845,35 @@ export class GameAudio {
 			const level = ctx.createGain();
 			level.gain.value = seLevel(name);
 			src.connect(level).connect(gain);
-			src.onended = () => level.disconnect();
+			this.seLive.set(name, level);
+			src.onended = () => {
+				level.disconnect();
+				if (this.seLive.get(name) === level) this.seLive.delete(name);
+			};
+			// 音の 高さを かえる 音（data/audio/sfx.ts の SE_RATE。速さも 同じ 倍率で かわる）
+			const rate = SE_RATE[name] ?? 1;
+			src.playbackRate.value = rate;
 			// 頭の無音は とばす（押してから 鳴るまでが おそく感じないように）
 			const lead = seLeadMs(name);
 			src.start(0, lead / 1000);
 			// 実際に鳴り始めた音だけ、本体が鳴り終わるまで次へ進めない（待ちは ファイルの頭から数えてあるので、とばした分を引く）
-			if (settle) this.hold(Math.max(0, seWaitMs(name) - lead));
+			if (settle) this.hold(Math.max(0, (seWaitMs(name) - lead) / rate));
 		});
+	}
+
+	/** 鳴って いる 効果音（name ごとに 最後の 1つ）の 音量。stopSe で しぼる。 */
+	private seLive = new Map<string, GainNode>();
+
+	/** 鳴って いる 効果音を ms かけて しぼって 止める（場面の 切りかえで 長い 音を 切る）。 */
+	stopSe(name: string, ms = 300): void {
+		const level = this.seLive.get(name);
+		const ctx = this.ctx;
+		if (!level || !ctx) return;
+		this.seLive.delete(name);
+		this.seEnds.delete(name);
+		const t = ctx.currentTime;
+		level.gain.setValueAtTime(level.gain.value, t);
+		level.gain.linearRampToValueAtTime(0, t + ms / 1000);
 	}
 
 	/** 今から ms の間を区切り待ちにする（前の待ちが長ければそちら）。 */

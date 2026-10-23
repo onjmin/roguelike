@@ -128,7 +128,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(2, "全品、パン1個につき\nパン1個や！", {
 				go: [{ who: 2, to: "kiriko" }],
 			}),
-			k("……定価ンゴ", { pause: 500, hit: "slap" }),
+			k("……定価ンゴ", { pause: 500, hit: "bruh" }),
 			say(3, "独立したら、値段も\n独立するんや！", {
 				go: [{ who: 3, to: "kiriko" }],
 			}),
@@ -170,7 +170,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 			say(5, "訂正ゼロ。1番も1。\nいきなり『パン』ゼロ", {
 				go: [{ who: 5, to: "kiriko" }],
 			}),
-			k("ほぼ君が代ンゴ", { hit: "slap" }),
+			k("ほぼ君が代ンゴ", { hit: "bruh" }),
 			say(1, "独立した国の国歌は、\n3時間の説教アル。わたしが歌うアル", {
 				go: [{ who: 1, to: [17, 6] }],
 			}),
@@ -262,7 +262,7 @@ export const REST_SKITS: readonly RestSkit[] = [
 					text: "本日の見学者\n1.5人",
 				}),
 			}),
-			k("半分、燃えてるンゴ", { hit: "slap" }),
+			k("半分、燃えてるンゴ", { hit: "bruh" }),
 			say(0, "燃えとる分は、\n切り捨てや", {
 				card: propPicture(TOUR_SIGN, "見学コースの案内板", {
 					text: "本日の見学者\n1人（0.5は切り捨て）",

@@ -515,8 +515,26 @@ export const gestureAt = (
  * - punch … どすっ（げんこつ）。暴力系（シヨ・ロゼが 手を 出す）
  * - sting … デデドン。青ざめる 受け手・ガーン
  * - zukko … ずこーっ。ボケに 力負けして 全員 こける
+ * 海外ミームの 音（2026-10-23 作者が 選んだ もの）：
+ * - boom    … ドゥーン（Vine boom）。とんでもない 一文・言いきった 直後
+ * - bruh    … ブラ…。力の ぬけた あきれ
+ * - huh     … ハァ？（猫）。わけが わからない ときの 聞きかえし
+ * - scratch … レコードの 針とび。話の 腰を 折る・待った
+ * - bong    … ボーン（Taco Bell）。重い オチ
+ * - dun     … ダン・ダン・ダーン。とんでもない 真相
  */
-export type Hit = "slap" | "whack" | "punch" | "sting" | "zukko";
+export type Hit =
+	| "slap"
+	| "whack"
+	| "punch"
+	| "sting"
+	| "zukko"
+	| "boom"
+	| "bruh"
+	| "huh"
+	| "scratch"
+	| "bong"
+	| "dun";
 
 export const HITS: readonly Hit[] = [
 	"slap",
@@ -524,6 +542,12 @@ export const HITS: readonly Hit[] = [
 	"punch",
 	"sting",
 	"zukko",
+	"boom",
+	"bruh",
+	"huh",
+	"scratch",
+	"bong",
+	"dun",
 ];
 
 /**

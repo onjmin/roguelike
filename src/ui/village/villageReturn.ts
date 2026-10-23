@@ -96,6 +96,7 @@ import {
 import type { Story } from "../../engine/defs";
 import { type Cue, cueOf, type Emote, type Gesture } from "../../engine/emote";
 import type { HeadProp } from "../../engine/headProp";
+import { showLaterCard } from "../../engine/laterCard";
 import {
 	addFlag,
 	deathCount,
@@ -905,7 +906,14 @@ export const returnScene = async (
 		// 時間が とぶ（「翌日。」「1時間後。」）：暗転して、暗い うちに 空・人を かえて 明ける
 		if (p.skip) {
 			if (stage) await stepBack(s, stage);
-			await s.fadeOut(400);
+			// すこしだけ とぶ（「1時間後。」）：スポンジ・ボブの 札で 覆って、その 下で 暗転
+			if (p.later) {
+				const card = showLaterCard(fxRoot());
+				s.se("fewMomentsLater");
+				await card.shown;
+				await s.fadeOut(1);
+				await card.done;
+			} else await s.fadeOut(400);
 		}
 		// 前の 頁の 煙・暗転は、カメラを 動かす・走る 前に 消す（時間が とぶ 頁は 暗転の 幕の 下で）
 		if (fx && fx.kind !== p.fx) {

@@ -1098,7 +1098,7 @@ export const BOND_DEFS: Record<Cast, BondDef> = {
 				me("うち、はじめは\nなんJをまとめとったばい"),
 				me("それから、おんJに\n引っ越してきたと"),
 				me("……あれ、どっちが先やったっけ"),
-				e({ emote: "驚", hit: "slap" }, k("いま言ったンゴ！")),
+				e({ emote: "驚", hit: "scratch" }, k("いま言ったンゴ！")),
 			],
 			[
 				me("うちの同人誌、\n出たことあるばい"),

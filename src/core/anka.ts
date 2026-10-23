@@ -264,7 +264,7 @@ export const ankaHit = (r: Run, kind: AnkaKind): void => {
 	a.done++;
 	if (a.done < a.need) return;
 	r.f.anka = null;
-	r.se("victory");
+	r.se("ankaYay");
 	r.emit({ t: "anka" });
 	r.msg("神安価！スレ民が足元に何か置いていった", "good");
 	// 道具（落ちている 物と 同じ。未識別の 種類は 未識別の まま）

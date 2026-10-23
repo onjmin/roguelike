@@ -477,7 +477,7 @@ export const SKITS: readonly Skit[] = [
 			k("鳴いてる金庫、\n開けてみるンゴ"),
 			e({ emote: "!" }, owner("あかん！")),
 			e({ pause: 400 }, safeMan("……閉めてもろて")),
-			{ ...e({ emote: "驚", hit: "slap" }, k("だれンゴ！？")), cutin: true },
+			{ ...e({ emote: "驚", hit: "huh" }, k("だれンゴ！？")), cutin: true },
 			owner("質に入っとる、となりの\nおっさんや。流れたら、売る"),
 			e({ auto: 900 }, safeMan("……あと、電気も\n消してもろて")),
 		],
@@ -590,7 +590,10 @@ export const SKITS: readonly Skit[] = [
 			{ ...nanashi("（ごくっ）……1000杯目"), fx: "blackout" },
 			{ ...master("いらっしゃい。\n次スレへようこそや"), calm: true },
 			{
-				...e({ emote: "驚", hit: "slap" }, k("吾輩、まだ座っても\nないンゴ！")),
+				...e(
+					{ emote: "驚", hit: "scratch" },
+					k("吾輩、まだ座っても\nないンゴ！"),
+				),
 				cutin: true,
 			},
 			{ ...e({ auto: 1000 }, k("（ごくっ）……1001杯目ンゴ")), fx: "blackout" },
@@ -712,7 +715,7 @@ export const SKITS: readonly Skit[] = [
 			k("つぎは、ぜんぶ混ぜるンゴ"),
 			{ ...manager("（グラスの中から）\nごぼごぼ……"), se: "bubble" },
 			{
-				...e({ emote: "驚", hit: "slap" }, k("店長が入ってるンゴ！？")),
+				...e({ emote: "驚", hit: "huh" }, k("店長が入ってるンゴ！？")),
 				cutin: true,
 			},
 			e({ pause: 400 }, clerk("店長は、追加料金です")),
@@ -896,7 +899,7 @@ export const SKITS: readonly Skit[] = [
 			k("おつりが、自販機の下に\n転がったンゴ"),
 			k("……手、とどかないンゴ"),
 			e({ pause: 400 }, nanashi("（下から）とったらあかん。\nワイの家や")),
-			e({ emote: "驚", hit: "slap" }, k("住んでるンゴ！？")),
+			e({ emote: "驚", hit: "huh" }, k("住んでるンゴ！？")),
 			nanashi("（下から）家賃、10円や"),
 			{ ...e({ auto: 800 }, k("……はい、10円ンゴ")), se: "arcCoin" },
 			e({ auto: 1200 }, nanashi("（下から）まいど。\n……ほな、あんたも住み")),
@@ -1058,7 +1061,7 @@ export const SKITS: readonly Skit[] = [
 				m("ぼく、ピッチャーのほうを\n応援してたんだ"),
 			),
 			{
-				...e({ emote: "青", hit: "sting" }, k("味方が\nいなかったンゴ！")),
+				...e({ emote: "青", hit: "bong" }, k("味方が\nいなかったンゴ！")),
 				cutin: true,
 			},
 			{

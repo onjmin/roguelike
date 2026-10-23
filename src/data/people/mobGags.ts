@@ -444,7 +444,7 @@ export const MOB_GAGS: Record<MobId, readonly MobLine[][]> = {
 	den: [
 		[
 			m("手袋、ちょっとだけ\nはずしてみますね"),
-			e({ hit: "sting" }, n("……町の街灯が、ぜんぶついた。")),
+			e({ hit: "boom" }, n("……町の街灯が、ぜんぶついた。")),
 			k("昼ンゴ！"),
 		],
 		[

@@ -1,4 +1,5 @@
-// 効果音。RPGEN の mp3（rpgen-search の CDN を id で直リンク）。
+// 効果音。RPGEN の mp3（rpgen-search の CDN を id で直リンク）と、海外ミームの 音（pub:assets/se/meme。myinstants から 落とした もの。
+// 長い 音は 頭だけ 切り出して ある。出どころは README の クレジット）。
 // 多くは unj-reze の DQ プリセット（components/game-presets/dq.ts）と同じ素材（蓄音キリコの大冒険と共通）。
 // 括弧内は RPGEN 上の素材名。
 // 区分ごとに大きさの目標がある（data/audio/loudness.ts）。足したり替えたりしたら pnpm loudness で測り直す
@@ -7,6 +8,9 @@
 
 import type { Emote, Hit } from "../../engine/emote";
 import type { SeKind } from "./loudness";
+
+/** 海外ミームの 音（public/assets/se/meme）。 */
+const M = (name: string) => `pub:assets/se/meme/${name}.mp3`;
 
 const byKind: Record<SeKind, Record<string, string>> = {
 	/** メニューの操作音。何度も鳴るので控えめ。待たない。 */
@@ -89,15 +93,15 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** グラスを 置く。 */
 		glass: "rpgen:IQXvTI", // チーン
 		/** 代金を 払う（店・自販機・銭湯・家・株 など。遊びの 台に 入れる ときは arcCoin）。 */
-		pay: "rpgen:FM2G43", // [ツクール]売買
+		pay: M("apple-pay"), // Apple Pay
 		/** 賭けや ガチャで 当たって コインが 返ってくる（大勝ちは victory）。 */
-		payout: "rpgen:rIBCz6", // コインの音（マリオ）
+		payout: M("anime-wow"), // Anime Wow
 		/** 相場が 跳ね上がった。 */
 		rise: "rpgen:sTJ89N", // 上昇
 		/** 相場が 下がった。 */
 		drop: "rpgen:PLsNO9", // 下降
 		/** 不意の できごと（為替の ショック）。 */
-		alert: "rpgen:SmEIvE", // 発見音
+		alert: M("shocked"), // Shocked sound
 		// ── ゲームセンターの 筐体（ui/arcade/arcade*.ts）
 		/** メダル・コインを 入れる（どの 台も はじめに。スロットは 回す たび）。 */
 		arcCoin: "rpgen:alktAh", // スロットのコイン投入音
@@ -127,10 +131,12 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		timeStop: "rpgen:eOS6BV", // [DIO]時間停止SE
 		/** 予告編の 字が 出る（どーん）。 */
 		trailerHit: "rpgen:YMkEEw", // 予告大
+		/** 時間が すこし とぶ（「1時間後。」の 頁。スポンジ・ボブの 字幕の 札と いっしょに。ui/village/laterCard.ts）。 */
+		fewMomentsLater: M("few-moments-later"), // A Few Moments Later
 	},
 	/** 戦闘の音（罠の炎・電撃も）。 */
 	battle: {
-		/** モンスターハウスに入った。 */
+		/** ボス・安価・筐体の 敵の 出番。 */
 		encounter: "rpgen:qm03Mw", // [ﾄﾞﾗｸｴ6]エンカウント
 		attackStart: "rpgen:n0fqek", // ﾄﾞﾗｸｴ攻撃時
 		/** プレイヤーの攻撃が当たった。 */
@@ -148,6 +154,18 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		hitSlap: "rpgen:Qy7A0i", // 拍子木
 		/** デデドン（青ざめる 受け手・ガーン）。 */
 		hitSting: "rpgen:LR6pVk", // デデドン！
+		/** ドゥーン（言いきった ひとことの 直後・とんでもない 一文の あと）。 */
+		hitBoom: M("vine-boom"), // VINE BOOM
+		/** ブラ…（あきれる。力の ぬけた 一言）。 */
+		hitBruh: M("bruh"), // BRUH
+		/** ハァ？（わけが わからない 質問の ツッコミ）。 */
+		hitHuh: M("huh-cat"), // Huh Cat
+		/** キュッ（話の 腰を 折る・待った）。 */
+		hitScratch: M("record-scratch"), // Record scratch
+		/** ボーン（重い オチ）。 */
+		hitBong: M("taco-bell"), // Taco Bell Bong
+		/** ダン・ダン・ダーン（とんでもない 真相）。 */
+		hitDun: M("dun-dun-dun"), // dun dun dunnn
 		/** 逃げる・吹き飛ばす。 */
 		flee: "rpgen:FTCG4H", // 逃走
 		/** 道具を 盗まれた（盗んだ 敵が 逃げていく）。 */
@@ -156,13 +174,29 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		shock: "rpgen:usF2l8",
 		/** トラばさみに はさまれた（ネ申マイクの 当たる 音とは 別に。同じだと 抜けた あとも 鳴って 聞こえる）。 */
 		bearTrap: "rpgen:Q1CAWo", // 噛みつく音
+		/** 迷宮の トラばさみを 踏んだ（はさまれて 叫ぶ）。 */
+		bearTrapScream: M("fahhh"), // FAHHHH
+		/** 落とし穴に 落ちた（落ちながら 叫ぶ）。 */
+		pitScream: M("aughhh"), // AUGHHHHH
+		/** 罠の デッドボールが 当たった・落とし穴の 着地。 */
+		ballHit: M("mc-hurt"), // Minecraft Hurt
+		/** 敵に 道具を 盗まれた（迷宮）。 */
+		heeHee: M("hee-hee"), // Michael Jackson Hee Hee
+		/** まどわされた 敵が 逃げだす。 */
+		getOut: M("get-out"), // Tuco: GET OUT
 		// ── キリコに かかる 悪い 状態（トルネコ1のように 音でも わかるように）
 		/** 眠った（眠りガスの罠・眠り草・眠りの呪文）。 */
 		sleep: "rpgen:Adwsg4", // [ツクール]催眠
+		/** キリコが 眠った（迷宮。いびき）。 */
+		snore: M("snore"), // Snore mimimimimimi
 		/** のろわれた装備を 身につけた・外せない。 */
 		curse: "rpgen:WiZ0AR", // [ツクール]デバフ
+		/** のろわれた 装備を 身につけた・装備が のろわれた（迷宮）。 */
+		curseOn: M("omg"), // ooohhh my goood
+		/** のろわれていて 外せない。 */
+		curseStuck: M("nope"), // nope.avi
 		/** のろいが とけた（のろい解きスレ・ほかの スレで のろいが 消えた）。 */
-		uncurse: "rpgen:FMcGao", // [ツクール]聖2
+		uncurse: M("hallelujah"), // Hallelujah
 		/** 延命スレで 板が 錆びなくなった。 */
 		rustproof: "rpgen:jVuw6M", // [ツクール]バフ
 		/** 腹筋スレで 武器が ＋1（武器が きたえられた。作者の 指示：専用の 音）。 */
@@ -195,19 +229,19 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** にょっす牛の 冷笑（ちから−1）。 */
 		skill_poison: "rpgen:2RJYrq", // [ツクール]ブザー・ブブー
 		/** 忍法帖エラー（レベル−1）。 */
-		skill_drainLv: "rpgen:h9iBuH", // XP致命的なエラー
+		skill_drainLv: M("social-credit"), // -999 Social Credit Siren
 		/** 文字化け（最大HP／最大ちから−）。 */
-		skill_drainMax: "rpgen:2QAYI6", // ホラー電子音
+		skill_drainMax: M("xp-error"), // Windows XP Error
 		/** 風吹けば名無し（ワープさせる）。 */
-		skill_warpPlayer: "rpgen:Ye4E4T", // [ツクール]風系
+		skill_warpPlayer: M("galaxy"), // Galaxy meme
 		/** 論破厨・パン兵長・祭りの親分マシー（2マス 吹きとばす）。 */
-		skill_knockback: "rpgen:W7Z0Eh", // 倒れる/ぶつかる音
+		skill_knockback: M("oof"), // ROBLOX oof
 		/** 削除人（装備を はがす ほか）。 */
 		skill_purge: "rpgen:miex8X", // ﾄﾞﾗｸｴ冒険の書が消えた
 		/** 粘着アンチ（装備を のろう）。 */
 		skill_curse: "rpgen:86GRZP", // 桃/呪い
 		/** 解音ゼロの 機体が 止まった（バトンタッチの はじめ。ui/dungeon/play.ts の batonScene）。 */
-		batonDown: "rpgen:0JNThb", // [ポケ]PC終了
+		batonDown: M("xp-shutdown"), // Windows XP shutdown
 		/** 解音ゼロの 次の 機体が 起動した（バトンタッチ）。 */
 		batonUp: "rpgen:0JDT7S", // [ポケ]PC起動
 		/** 筐体の 自機が やられた・ぶつかった（シューティング）。 */
@@ -232,11 +266,11 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		/** 大事な 物を 受けとった（家の 鍵・クレーンの レア景品）。 */
 		keyItem: "rpgen:b0CZFw", // [ポケ]アイテム取得
 		/** 大物を とった（釣り堀）。 */
-		caught: "rpgen:yxcrTx", // [ポケ]捕獲成功
+		caught: M("yippee"), // yippee
 		/** 遊びの 面・局を 越えた・やりとげた（次の 波・解けた・ライバルを ぬいた・腹筋 おわり）。 */
 		clear: "rpgen:ocdl2r", // [マリオ64]スコア達成
 		/** 当たり・正解（言葉を 見つけた・ジャスト・レーン）。 */
-		correct: "rpgen:WOh0Q7", // [ポケ]クイズo
+		correct: M("ding"), // ding
 		/** 波に のった（連勝・コンボ・フィーバー・役）。 */
 		combo: "rpgen:9UiF46", // 桃/絶好調
 		/** できあがりの 合図（プリクラの シート）。 */
@@ -245,6 +279,14 @@ const byKind: Record<SeKind, Record<string, string>> = {
 		cracker: "rpgen:JDSaUd", // クラッカー
 		/** 力尽きた。 */
 		wipeout: "rpgen:rEaCCP", // [ﾄﾞﾗｸｴ]全滅
+		/** 力尽きる 一撃の あと（ジョジョの 止め絵と 矢印。ui/dungeon/play.ts の deathScene）。 */
+		toBeContinued: M("to-be-continued"), // To be Continued (jojo)
+		/** 墓が 落ちて きた（力つきた）。 */
+		coffinDance: M("coffin-dance"), // Coffin Dance
+		/** モンスターハウスに 入った（低く した 役職発表。SE_RATE）。 */
+		houseReveal: M("among-us"), // Among Us role reveal
+		/** 安価を こなした（スレ民の 歓声）。 */
+		ankaYay: M("kids-yay"), // Kids saying yay
 		/** 中断（セーブ）。 */
 		save: "rpgen:jVOw87", // [自然癒]セーブ
 		/** 新しい階に着いた（システム音らしいチャイム）。 */
@@ -285,6 +327,17 @@ export const HIT_SE: Record<Hit, string> = {
 	punch: "hit_fist",
 	sting: "hitSting",
 	zukko: "fall",
+	boom: "hitBoom",
+	bruh: "hitBruh",
+	huh: "hitHuh",
+	scratch: "hitScratch",
+	bong: "hitBong",
+	dun: "hitDun",
+};
+
+/** 高さを かえて 鳴らす 音（再生の 速さの 倍率。1 より 小さいと 低く・ゆっくり）。 */
+export const SE_RATE: Record<string, number> = {
+	houseReveal: 0.85,
 };
 
 export const sfx: Record<string, string> = Object.fromEntries(

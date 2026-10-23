@@ -783,7 +783,7 @@ export class Run {
 				}
 			}
 			this.emit({ t: "house" });
-			this.se("encounter");
+			this.se("houseReveal");
 			const parade = this.dungeon.parade;
 			this.msg(
 				parade?.depth === f.depth
@@ -1764,7 +1764,7 @@ export class Run {
 	 */
 	sleepPlayer(turns: number): void {
 		this.p.status.sleep = turns;
-		this.se("sleep");
+		this.se("snore");
 		this.emit({ t: "sleep", id: PLAYER_ID, on: true });
 		// 安価「寝る」（寝落ち草・罠・眠りの 呪文の どれでも）
 		ankaHit(this, "sleep");
@@ -2148,7 +2148,7 @@ export class Run {
 		}
 		if (this.isEquipped(it) && it.cursed) {
 			this.msg(`${this.name(it)}はのろわれていて外せない！`, "warn");
-			this.se("curse");
+			this.se("curseStuck");
 			return false;
 		}
 		if (
@@ -2189,7 +2189,7 @@ export class Run {
 		}
 		if (this.isEquipped(it) && it.cursed) {
 			this.msg(`${this.name(it)}はのろわれていて外せない！`, "warn");
-			this.se("curse");
+			this.se("curseStuck");
 			return false;
 		}
 		this.removeItem(it);
@@ -2225,7 +2225,7 @@ export class Run {
 		const cur = this.findItem(p[slot] ?? -1);
 		if (cur?.cursed) {
 			this.msg(`${this.name(cur)}はのろわれていて外せない！`, "warn");
-			this.se("curse");
+			this.se("curseStuck");
 			return false;
 		}
 		if (slot === "ring") {
@@ -2246,7 +2246,7 @@ export class Run {
 		if (it.cursed) {
 			it.known = true;
 			this.msg("のろわれていた！もう外せない", "warn");
-			this.se("curse");
+			this.se("curseOn");
 		} else this.se(slot === "ring" ? "tripOn" : "equip");
 		// 安価「装備を　かえる」（矢は 数えない）
 		if (slot !== "arrow") ankaHit(this, "equip");
@@ -2258,7 +2258,7 @@ export class Run {
 		if (!it || !this.isEquipped(it)) return false;
 		if (it.cursed) {
 			this.msg(`${this.name(it)}はのろわれていて外せない！`, "warn");
-			this.se("curse");
+			this.se("curseStuck");
 			return false;
 		}
 		if (this.p.ring === it.uid) {

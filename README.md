@@ -223,6 +223,7 @@ pnpm dev
 - 原案・ディレクター・キャラクターイラスト・音楽: このゲームの作者
 - シナリオ・ゲームデザイン・プログラム・デバッグ: Claude Code（Claude Opus 5.5・Claude Fable 5.1）
 - 素材提供（歩行グラ・マップチップ・墓・効果音・建物と 街の 部品・施設の 家具・飲食店の 料理・1打席の 人と 効果）: RPGEN（rpgen-search） / キリコの歩行グラ: https://i.imgur.com/hNXnQHv.png
+- 海外ミームの 効果音（public/assets/se/meme。ooohhh my goood・Vine boom・BRUH・Anime Wow・Taco Bell Bong・ROBLOX oof・Among Us role reveal・Windows XP の エラーと 終了・dun dun dunnn・Huh Cat・To Be Continued・A Few Moments Later・Record scratch・Minecraft Hurt・Shocked・yippee・AUGHHHH・Social Credit Siren・nope.avi・Hee Hee・Kids yay・Hallelujah・Coffin Dance・GET OUT・Galaxy・Snore・Apple Pay・ding・FAHHHH）: Myinstants（https://www.myinstants.com/）。それぞれの 権利は 元の 作品の 持ち主に あります
 - 音楽・音声合成: [@onjmin/dtm](https://github.com/onjmin/dtm)・koe UtauTTS
 - フォント: DotGothic16（SIL Open Font License）
 - ローグライクの基本（満腹度・未識別・モンスターハウスなど）は『トルネコの大冒険 不思議のダンジョン』（チュンソフト）ほかの ローグライクを参考にしています。名前や絵は使っていません。

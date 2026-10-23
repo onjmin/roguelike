@@ -277,11 +277,15 @@ const byId = new Map();
 const rows = [];
 let failed = 0;
 for (const [name, ref] of Object.entries(sfx)) {
-	if (!ref.startsWith("rpgen:")) {
+	// public/ に 置いた 音（pub:assets/se/meme/… 海外ミームの 音）は その ファイルを 測る
+	const local = ref.startsWith("pub:") ? join(ROOT, "public", ref.slice(4)) : null;
+	if (!local && !ref.startsWith("rpgen:")) {
 		console.warn(`${name}: RPGEN の素材ではないので測りません（${ref}）`);
 		continue;
 	}
-	const id = ref.slice(6);
+	const id = local
+		? ref.slice(4).replace(/^assets\/se\/|\.mp3$/g, "")
+		: ref.slice(6);
 	const kind = sfxKind[name];
 	const target = SE_TARGET[kind];
 	if (target === undefined) {
@@ -290,7 +294,8 @@ for (const [name, ref] of Object.entries(sfx)) {
 		continue;
 	}
 	try {
-		if (!byId.has(id)) byId.set(id, measure(await fetchSound(id)));
+		if (!byId.has(id))
+			byId.set(id, measure(local ?? (await fetchSound(id))));
 	} catch (e) {
 		console.error(`${name}: ${e.message}`);
 		failed++;
