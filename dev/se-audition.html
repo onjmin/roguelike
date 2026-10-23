@@ -5,615 +5,113 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>ミーム効果音の試聴（開発用）</title>
 		<style>
-			body { margin: 0; padding: 8px 16px 80px; background: #222; color: #ddd; font: 13px sans-serif; }
-			h2 { font-size: 15px; margin: 18px 0 6px; border-bottom: 1px solid #555; }
-			ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 4px 12px; }
-			li { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
-			li.on .t { color: #ffd54a; font-weight: bold; }
+			body { margin: 0; padding: 8px 16px 200px; background: #222; color: #ddd; font: 13px sans-serif; }
+			ul { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 2px 16px; }
+			li { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #333; }
+			label { cursor: pointer; }
+			small { color: #999; }
+			li.on .t { color: #ffd54a; }
 			li.playing .play { background: #4a8; }
 			button { padding: 4px 8px; }
-			small { color: #888; }
-			a { color: #8af; }
-			#bar { position: fixed; left: 0; right: 0; bottom: 0; background: #111; padding: 8px 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-			textarea { width: 100%; height: 120px; background: #111; color: #ddd; }
+			#bar { position: fixed; left: 0; right: 0; bottom: 0; background: #111; padding: 8px 16px; border-top: 1px solid #444; }
+			#bar .row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+			textarea { width: 100%; height: 110px; background: #000; color: #ddd; box-sizing: border-box; }
 		</style>
 	</head>
 	<body>
-		<p>▶ で鳴らす（もう一度押すと止まる）。採用したい音にチェックを入れて、下の「選んだ音をコピー」を押してチャットに貼ってください。チェックはこのブラウザに残ります。</p>
-		<p>音は myinstants から直接鳴らしています（試聴用。採用した音だけダウンロードしてゲームに入れます）。音量: <input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"></p>
-		<section><h2>大ゴケ（罠・即死・アイテムを壊す）</h2><ul><li data-id="0-0" data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-bro-oh-hell-nah-man.mp3" data-title="oh my god bro oh hell nah man" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">oh my god bro oh hell nah man</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/oh-my-god-bro-oh-hell-nah-man-42939/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-1" data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-meme.mp3" data-title="Oh My God Meme" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Oh My God Meme</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/oh-my-god-meme-88573/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-2" data-mp3="https://www.myinstants.com/media/sounds/omgwow.mp3" data-title="oh my god, wow!" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">oh my god, wow!</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/oh-my-god-wow-47646/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-3" data-mp3="https://www.myinstants.com/media/sounds/oooh-my-god-vine-mp3cut.mp3" data-title="OOOH MY GOD" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">OOOH MY GOD</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/oooh-my-god-13045/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-4" data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-anime.mp3" data-title="Oh my god anime" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Oh my god anime</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/oh-my-god-anime-19082/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-5" data-mp3="https://www.myinstants.com/media/sounds/1738-song.mp3" data-title="1738 song" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">1738 song</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/1738-song-25210/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-6" data-mp3="https://www.myinstants.com/media/sounds/what-the-hell-speed-up.mp3" data-title="what the hell (speed up)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">what the hell (speed up)</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/what-the-hell-speed-up-14372/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-7" data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-bro-ah-hell-nah.mp3" data-title="oh my god bro ah hell nah" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">oh my god bro ah hell nah</span></label>
-<small>検索語: oh my god</small> <a href="https://www.myinstants.com/en/instant/oh-my-god-bro-ah-hell-nah-13310/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-8" data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-my-shayla.mp3" data-title="oh my god my shayla" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">oh my god my shayla</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/oh-my-god-my-shayla-48788/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-9" data-mp3="https://www.myinstants.com/media/sounds/sexy-ooh-la-la.mp3" data-title="Sexy Ooh La La" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sexy Ooh La La</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/sexy-ooh-la-la-11312/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-10" data-mp3="https://www.myinstants.com/media/sounds/ooohhh-my-goood.mp3" data-title="ooohhh my goood" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">ooohhh my goood</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/ooohhh-my-goood-92526/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-11" data-mp3="https://www.myinstants.com/media/sounds/ohhh-my-god-sound-effect_ORadGcV.mp3" data-title="Ohhhmygod" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Ohhhmygod</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/ohhhmygod-74/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-12" data-mp3="https://www.myinstants.com/media/sounds/1980sgamer-oh-my-god_uCdPO05.mp3" data-title="1980sGamer OH MY GOD" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">1980sGamer OH MY GOD</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/1980sgamer-oh-my-god-12016/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-13" data-mp3="https://www.myinstants.com/media/sounds/hmpf-stomp.mp3" data-title="hmpf (stomp)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">hmpf (stomp)</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/hmpf-stomp-20451/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-14" data-mp3="https://www.myinstants.com/media/sounds/oh-my_BJMUw68.mp3" data-title="OhMy" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">OhMy</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/ohmy-98875/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-15" data-mp3="https://www.myinstants.com/media/sounds/it-has-come-to-my-youtube-channel.mp3" data-title="It Has Come To My YouTube Channel" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">It Has Come To My YouTube Channel</span></label>
-<small>検索語: ohmy</small> <a href="https://www.myinstants.com/en/instant/it-has-come-to-my-youtube-channel-17353/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-16" data-mp3="https://www.myinstants.com/media/sounds/wait-wait-wait-what-the-hell-legend-sound.mp3" data-title="Wait wait wait what the hell legend sound" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Wait wait wait what the hell legend sound</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/wait-wait-wait-what-the-hell-legend-sound-65445/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-17" data-mp3="https://www.myinstants.com/media/sounds/what-the-hell-meme-sound-effect.mp3" data-title="What The Hell Meme Sound Effect" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">What The Hell Meme Sound Effect</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/what-the-hell-meme-sound-effect-95969/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-18" data-mp3="https://www.myinstants.com/media/sounds/boi-what-da-hell-boi.mp3" data-title="Boi what the hell boi" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Boi what the hell boi</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/boi-what-the-hell-boi-63354/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-19" data-mp3="https://www.myinstants.com/media/sounds/what-the-hell-goofy-ahh-slv-sounds.mp3" data-title="what the hell goofy ahh (slv_sounds)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">what the hell goofy ahh (slv_sounds)</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/what-the-hell-goofy-ahh-slv-sounds-49542/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-20" data-mp3="https://www.myinstants.com/media/sounds/boi-what-da-hell-boi-sound-effect_sstnVvi.mp3" data-title="BOI WHAT THE HELL BRUH" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">BOI WHAT THE HELL BRUH</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/boi-what-the-hell-bruh-54895/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-21" data-mp3="https://www.myinstants.com/media/sounds/whatthehell_qrePvEr.mp3" data-title="what the hell is even that" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">what the hell is even that</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/what-the-hell-is-even-that-89302/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-22" data-mp3="https://www.myinstants.com/media/sounds/what-the-hell-are-you-talking-about.mp3" data-title="What the hell are you talking about" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">What the hell are you talking about</span></label>
-<small>検索語: what the hell</small> <a href="https://www.myinstants.com/en/instant/what-the-hell-are-you-talking-about-41137/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-23" data-mp3="https://www.myinstants.com/media/sounds/charles-leclerc-scream-noooo.mp3" data-title="Charles Leclerc Scream NOOOO" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Charles Leclerc Scream NOOOO</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/charles-leclerc-scream-noooo-90896/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-24" data-mp3="https://www.myinstants.com/media/sounds/nooo-la-polizia.mp3" data-title="Nooo la polizia" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Nooo la polizia</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/nooo-la-polizia-36556/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-25" data-mp3="https://www.myinstants.com/media/sounds/wtf-nooo.mp3" data-title="WTF nooo....." data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">WTF nooo.....</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/wtf-nooo-67847/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-26" data-mp3="https://www.myinstants.com/media/sounds/plants-vs.mp3" data-title="Plants VS. Zombies NOOOOOOO" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Plants VS. Zombies NOOOOOOO</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/plants-vs-zombies-nooooooo-23874/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-27" data-mp3="https://www.myinstants.com/media/sounds/nooo-god-0.mp3" data-title="Nooo god!" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Nooo god!</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/nooo-god-26800/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-28" data-mp3="https://www.myinstants.com/media/sounds/cuantooooo.mp3" data-title="Cuantooooo" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Cuantooooo</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/cuantooooo-14219/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-29" data-mp3="https://www.myinstants.com/media/sounds/mario-ohhh-nooo.mp3" data-title="Mario - Ohhh Nooo!" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Mario - Ohhh Nooo!</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/mario-ohhh-nooo-24097/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-30" data-mp3="https://www.myinstants.com/media/sounds/ooooh-nooo2.mp3" data-title="OOOOH NOOO!!! Joseph Joestar" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">OOOOH NOOO!!! Joseph Joestar</span></label>
-<small>検索語: nooo</small> <a href="https://www.myinstants.com/en/instant/ooooh-nooo-joseph-joestar/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-31" data-mp3="https://www.myinstants.com/media/sounds/emotional-damage-meme.mp3" data-title="Emotional Damage Meme" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Emotional Damage Meme</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/emotional-damage-meme-74555/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-32" data-mp3="https://www.myinstants.com/media/sounds/emotional-damage_svaNMfN.mp3" data-title="Emotional_Damage" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Emotional_Damage</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/emotional-damage-99808/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-33" data-mp3="https://www.myinstants.com/media/sounds/emotional-damage-meme_ZeX8ITi.mp3" data-title="Emotional damage (Meme)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Emotional damage (Meme)</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/emotional-damage-meme-91997/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-34" data-mp3="https://www.myinstants.com/media/sounds/emotional-damage-steven-he.mp3" data-title="EMOTIONAL DAMAGE! - Steven He" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">EMOTIONAL DAMAGE! - Steven He</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/emotional-damage-steven-he-18512/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-35" data-mp3="https://www.myinstants.com/media/sounds/emotional-damage-x-pompeii.mp3" data-title="Emotional Damage x Pompeii" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Emotional Damage x Pompeii</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/emotional-damage-x-pompeii-9493/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-36" data-mp3="https://www.myinstants.com/media/sounds/emotional-damage_HpCBAhR.mp3" data-title="Emotional Damage!" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Emotional Damage!</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/emotional-damage-17870/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-37" data-mp3="https://www.myinstants.com/media/sounds/but-if-you-close-your-eyes-emotional-damage.mp3" data-title="but if you close your eyes emotional damage" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">but if you close your eyes emotional damage</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/but-if-you-close-your-eyes-emotional-damage-10897/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-38" data-mp3="https://www.myinstants.com/media/sounds/violent-mother.mp3" data-title="Violent Mother" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Violent Mother</span></label>
-<small>検索語: emotional damage</small> <a href="https://www.myinstants.com/en/instant/violent-mother-95628/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-39" data-mp3="https://www.myinstants.com/media/sounds/gta-v-death-sound-effect-102.mp3" data-title="GTA V - Wasted" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">GTA V - Wasted</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/gta-v-wasted/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-40" data-mp3="https://www.myinstants.com/media/sounds/gta-v-wasted-death-sound.mp3" data-title="GTA V Wasted (Death Sound)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">GTA V Wasted (Death Sound)</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/gta-v-wasted-death-sound-8038/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-41" data-mp3="https://www.myinstants.com/media/sounds/cut_y2mate_Ooa5JNV.mp3" data-title="Windows XP Green Screen Error" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows XP Green Screen Error</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/windows-xp-green-screen-error-9833/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-42" data-mp3="https://www.myinstants.com/media/sounds/wasted_2.mp3" data-title="GTA 5 - WASTED" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">GTA 5 - WASTED</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/gta-5-wasted-51876/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-43" data-mp3="https://www.myinstants.com/media/sounds/grand-theft-auto-v-wasted.mp3" data-title="GTA V Wasted Sound Effect" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">GTA V Wasted Sound Effect</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/gta-v-wasted-sound-effect-18669/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-44" data-mp3="https://www.myinstants.com/media/sounds/police-sound-with-getout-for-mogged-edits.mp3" data-title="Police sound with getout (for mogged edits)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Police sound with getout (for mogged edits)</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/police-sound-with-getout-for-mogged-edits-42086/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-45" data-mp3="https://www.myinstants.com/media/sounds/wasted-gta-5.mp3" data-title="WASTED (GTA 5)" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">WASTED (GTA 5)</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/wasted-gta-5-31897/" target="_blank" rel="noopener">ページ</a></li><li data-id="0-46" data-mp3="https://www.myinstants.com/media/sounds/gta-5-wasted-custom-sound-effect.mp3" data-title="GTA 5 Wasted Custom Sound Effect" data-group="大ゴケ（罠・即死・アイテムを壊す）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">GTA 5 Wasted Custom Sound Effect</span></label>
-<small>検索語: wasted</small> <a href="https://www.myinstants.com/en/instant/gta-5-wasted-custom-sound-effect-18099/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-<section><h2>ツッコミ・オチ</h2><ul><li data-id="1-0" data-mp3="https://www.myinstants.com/media/sounds/vine-boom.mp3" data-title="VINE BOOM SOUND" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">VINE BOOM SOUND</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/vine-boom-sound-70972/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-1" data-mp3="https://www.myinstants.com/media/sounds/bruh-sound-effect_WstdzdM.mp3" data-title="BRUH sound effect!" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">BRUH sound effect!</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/bruh-sound-effect-26614/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-2" data-mp3="https://www.myinstants.com/media/sounds/omg-bruh-oh-hell-nah.mp3" data-title="omg bruh oh hell nah" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">omg bruh oh hell nah</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/omg-bruh-oh-hell-nah-1993/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-3" data-mp3="https://www.myinstants.com/media/sounds/vine-boom-sound-effect-full.mp3" data-title="vine boom sound effect full" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">vine boom sound effect full</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/vine-boom-sound-effect-full-16880/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-4" data-mp3="https://www.myinstants.com/media/sounds/vine-boom-bass-boost-sound-effect.mp3" data-title="vine boom bass boost sound effect" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">vine boom bass boost sound effect</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/vine-boom-bass-boost-sound-effect-68900/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-5" data-mp3="https://www.myinstants.com/media/sounds/vine_boom_sound_effect_longer_verison_for_real_read_description_pleaseyoutubetomp4.mp3" data-title="Vine Boom (Longer)" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Vine Boom (Longer)</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/vine-boom-longer-22911/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-6" data-mp3="https://www.myinstants.com/media/sounds/vine-boom-sound-meme.mp3" data-title="vine boom sound meme" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">vine boom sound meme</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/vine-boom-sound-meme-28885/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-7" data-mp3="https://www.myinstants.com/media/sounds/bing-chilling_fcdGgUc.mp3" data-title="bing chilling" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">bing chilling</span></label>
-<small>検索語: vine boom</small> <a href="https://www.myinstants.com/en/instant/bing-chilling-44511/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-8" data-mp3="https://www.myinstants.com/media/sounds/movie_1.mp3" data-title="BRUH" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">BRUH</span></label>
-<small>検索語: bruh</small> <a href="https://www.myinstants.com/en/instant/bruh/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-9" data-mp3="https://www.myinstants.com/media/sounds/yeah-boiii-i-i-i.mp3" data-title="yeah boiii i i i" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">yeah boiii i i i</span></label>
-<small>検索語: bruh</small> <a href="https://www.myinstants.com/en/instant/yeah-boiii-i-i-i-58469/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-10" data-mp3="https://www.myinstants.com/media/sounds/the-ting-goes-bark-fart.mp3" data-title="The Ting Goes Bark Fart" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">The Ting Goes Bark Fart</span></label>
-<small>検索語: bruh</small> <a href="https://www.myinstants.com/en/instant/the-ting-goes-bark-fart-44855/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-11" data-mp3="https://www.myinstants.com/media/sounds/movie_1_C2K5NH0.mp3" data-title="Bruh meme" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Bruh meme</span></label>
-<small>検索語: bruh</small> <a href="https://www.myinstants.com/en/instant/bruh-meme-44087/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-12" data-mp3="https://www.myinstants.com/media/sounds/minecraft-train-whistle-cave-sound.mp3" data-title="Minecraft Train Whistle" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Minecraft Train Whistle</span></label>
-<small>検索語: bruh</small> <a href="https://www.myinstants.com/en/instant/minecraft-train-whistle-61990/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-13" data-mp3="https://www.myinstants.com/media/sounds/the-rock-meme-sound-effect.mp3" data-title="the rock meme sound effect" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">the rock meme sound effect</span></label>
-<small>検索語: bruh</small> <a href="https://www.myinstants.com/en/instant/the-rock-meme-sound-effect-61388/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-14" data-mp3="https://www.myinstants.com/media/sounds/roblox-explosion-sound.mp3" data-title="Roblox Explosion Sound" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Roblox Explosion Sound</span></label>
-<small>検索語: boom</small> <a href="https://www.myinstants.com/en/instant/roblox-explosion-sound-48524/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-15" data-mp3="https://www.myinstants.com/media/sounds/loud-explosion.mp3" data-title="Loud Explosion" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Loud Explosion</span></label>
-<small>検索語: boom</small> <a href="https://www.myinstants.com/en/instant/loud-explosion-68511/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-16" data-mp3="https://www.myinstants.com/media/sounds/cinematicboom.mp3" data-title="Cinematic Boom" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Cinematic Boom</span></label>
-<small>検索語: boom</small> <a href="https://www.myinstants.com/en/instant/cinematic-boom/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-17" data-mp3="https://www.myinstants.com/media/sounds/taco-bell-bong-sfx.mp3" data-title="Taco Bell Bong" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Taco Bell Bong</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/taco-bell-bong-42481/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-18" data-mp3="https://www.myinstants.com/media/sounds/death-bong.mp3" data-title="Death Bong" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Death Bong</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/death-bong-30415/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-19" data-mp3="https://www.myinstants.com/media/sounds/tmppuweus60.mp3" data-title="Taco bell ding" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Taco bell ding</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/taco-bell-ding-90689/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-20" data-mp3="https://www.myinstants.com/media/sounds/taco-bell.mp3" data-title="LOUD Taco Bell Bong" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">LOUD Taco Bell Bong</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/loud-taco-bell-bong-25174/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-21" data-mp3="https://www.myinstants.com/media/sounds/taco-bell-bass-boosted.mp3" data-title="Taco bell bass boosted" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Taco bell bass boosted</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/taco-bell-bass-boosted-62820/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-22" data-mp3="https://www.myinstants.com/media/sounds/tacobellsound.mp3" data-title="TacoBellSound" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">TacoBellSound</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/tacobellsound-94551/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-23" data-mp3="https://www.myinstants.com/media/sounds/yo-quiero-taco-bell.mp3" data-title="Yo quiero Taco Bell" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Yo quiero Taco Bell</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/yo-quiero-taco-bell-77062/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-24" data-mp3="https://www.myinstants.com/media/sounds/win-xpshwn-tacobell-2000-current_Gpos04S.mp3" data-title="Win⊞XPˢʰᵘᵗᵈᵒʷⁿ ᵇᵘᵗTACO࿄BELL (2000-current)" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Win⊞XPˢʰᵘᵗᵈᵒʷⁿ ᵇᵘᵗTACO࿄BELL (2000-current)</span></label>
-<small>検索語: taco bell</small> <a href="https://www.myinstants.com/en/instant/win-xpshwn-tacobell-2000-current-38426/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-25" data-mp3="https://www.myinstants.com/media/sounds/metal-pipe-clang.mp3" data-title="Metal pipe clang" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Metal pipe clang</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/metal-pipe-clang-80894/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-26" data-mp3="https://www.myinstants.com/media/sounds/jixaw-metal-pipe-falling-sound.mp3" data-title="jixaw metal pipe falling sound" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">jixaw metal pipe falling sound</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/jixaw-metal-pipe-falling-sound-28270/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-27" data-mp3="https://www.myinstants.com/media/sounds/metal-pipe-falling-sound-effect.mp3" data-title="Metal Pipe Falling Sound Effect" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Metal Pipe Falling Sound Effect</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/metal-pipe-falling-sound-effect-7737/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-28" data-mp3="https://www.myinstants.com/media/sounds/metal-pipe-sound.mp3" data-title="Metal pipe sound" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Metal pipe sound</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/metal-pipe-sound-9430/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-29" data-mp3="https://www.myinstants.com/media/sounds/metal-pipe-fall-meme.mp3" data-title="metal pipe fall meme" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">metal pipe fall meme</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/metal-pipe-fall-meme-44856/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-30" data-mp3="https://www.myinstants.com/media/sounds/metal-pipe-go-bonk.mp3" data-title="metal pipe go bonk" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">metal pipe go bonk</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/metal-pipe-go-bonk-75930/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-31" data-mp3="https://www.myinstants.com/media/sounds/zheleznaia-palka-padaet-metal-pipe-falling.mp3" data-title="Железная палка падает (metal pipe falling)" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Железная палка падает (metal pipe falling)</span></label>
-<small>検索語: metal pipe</small> <a href="https://www.myinstants.com/en/instant/zheleznaia-palka-padaet-metal-pipe-falling-4860/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-32" data-mp3="https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3" data-title="Anime Wow" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Anime Wow</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/anime-wow/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-33" data-mp3="https://www.myinstants.com/media/sounds/anime-wow-sound-effect-mp3cut.mp3" data-title="Wow Anime meme" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Wow Anime meme</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/wow-anime-meme-55752/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-34" data-mp3="https://www.myinstants.com/media/sounds/wow-anime-voice-accent.mp3" data-title="&quot;Wow!&quot; (anime voice accent)" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">&quot;Wow!&quot; (anime voice accent)</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/wow-anime-voice-accent-54170/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-35" data-mp3="https://www.myinstants.com/media/sounds/kc78v26_1_OgNAnGO.mp3" data-title="Congratulation! ANIMEEEEE" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Congratulation! ANIMEEEEE</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/congratulation-animeeeee-88477/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-36" data-mp3="https://www.myinstants.com/media/sounds/woah-cute-anime-voice-magicalmysticva.mp3" data-title="&quot;Woah!&quot;(Cute Anime Voice)~MagicalMysticVA" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">&quot;Woah!&quot;(Cute Anime Voice)~MagicalMysticVA</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/woah-cute-anime-voice-magicalmysticva-13271/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-37" data-mp3="https://www.myinstants.com/media/sounds/anime-wow_UBX3JJM.mp3" data-title="anime WOWWW" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">anime WOWWW</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/anime-wowww-58782/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-38" data-mp3="https://www.myinstants.com/media/sounds/wow-anime-effect.mp3" data-title="Wow (anime effect)" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Wow (anime effect)</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/wow-anime-effect-91612/" target="_blank" rel="noopener">ページ</a></li><li data-id="1-39" data-mp3="https://www.myinstants.com/media/sounds/wow_17.mp3" data-title="Anime Wow (No background)" data-group="ツッコミ・オチ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Anime Wow (No background)</span></label>
-<small>検索語: anime wow</small> <a href="https://www.myinstants.com/en/instant/anime-wow-no-background/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-<section><h2>気まずい・スベった</h2><ul><li data-id="2-0" data-mp3="https://www.myinstants.com/media/sounds/crickets-chirping.mp3" data-title="Crickets Chirping" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crickets Chirping</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/crickets-chirping/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-1" data-mp3="https://www.myinstants.com/media/sounds/crickets.swf.mp3" data-title="Crickets" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crickets</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/crickets/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-2" data-mp3="https://www.myinstants.com/media/sounds/awkward-cricket-sound-effect_YK6dDJG.mp3" data-title="Awkward Crickets" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward Crickets</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/awkward-crickets-18144/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-3" data-mp3="https://www.myinstants.com/media/sounds/awkward-silence-crickets-chirping-meme.mp3" data-title="Awkward silence crickets chirping meme" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward silence crickets chirping meme</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/awkward-silence-crickets-chirping-meme-64000/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-4" data-mp3="https://www.myinstants.com/media/sounds/crickets_rTR0dym.mp3" data-title="Crickets sounds" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crickets sounds</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/crickets-sounds-65497/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-5" data-mp3="https://www.myinstants.com/media/sounds/crowd-crickets-deltarune.mp3" data-title="Crowd Crickets - (Deltarune)" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crowd Crickets - (Deltarune)</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/crowd-crickets-deltarune-80449/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-6" data-mp3="https://www.myinstants.com/media/sounds/crickets-sfx_eHFoiZt.mp3" data-title="Crickets SFX" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crickets SFX</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/crickets-sfx-39736/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-7" data-mp3="https://www.myinstants.com/media/sounds/crickets-grilos.mp3" data-title="Crickets (grilos)" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crickets (grilos)</span></label>
-<small>検索語: crickets</small> <a href="https://www.myinstants.com/en/instant/crickets-grilos-49072/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-8" data-mp3="https://www.myinstants.com/media/sounds/awkward-cricket-sound-effect.mp3" data-title="Awkward cricket" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward cricket</span></label>
-<small>検索語: awkward</small> <a href="https://www.myinstants.com/en/instant/awkward-cricket-74642/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-9" data-mp3="https://www.myinstants.com/media/sounds/awkward-moment.mp3" data-title="Awkward Moment" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward Moment</span></label>
-<small>検索語: awkward</small> <a href="https://www.myinstants.com/en/instant/awkward-moment-64361/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-10" data-mp3="https://www.myinstants.com/media/sounds/awkward-pause-anime-sounds.mp3" data-title="Awkward Pause (Anime Sounds)" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward Pause (Anime Sounds)</span></label>
-<small>検索語: awkward</small> <a href="https://www.myinstants.com/en/instant/awkward-pause-anime-sounds-3397/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-11" data-mp3="https://www.myinstants.com/media/sounds/awkward-cricket-silence.mp3" data-title="Awkward - Cricket Silence" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward - Cricket Silence</span></label>
-<small>検索語: awkward</small> <a href="https://www.myinstants.com/en/instant/awkward-cricket-silence-27956/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-12" data-mp3="https://www.myinstants.com/media/sounds/awkward-naruto-moment.mp3" data-title="awkward naruto moment" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">awkward naruto moment</span></label>
-<small>検索語: awkward</small> <a href="https://www.myinstants.com/en/instant/awkward-naruto-moment-93766/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-13" data-mp3="https://www.myinstants.com/media/sounds/awkward-crow-silence.mp3" data-title="Awkward - Crow Silence" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Awkward - Crow Silence</span></label>
-<small>検索語: awkward</small> <a href="https://www.myinstants.com/en/instant/awkward-crow-silence-3556/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-14" data-mp3="https://www.myinstants.com/media/sounds/sadtrombone.swf.mp3" data-title="Sad Trombone" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Trombone</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-15" data-mp3="https://www.myinstants.com/media/sounds/sad-trombone-sound-effect-wah-wah-wah-fail-sound-fail-horns.mp3" data-title="sad trombone fail horn" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">sad trombone fail horn</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone-fail-horn-16152/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-16" data-mp3="https://www.myinstants.com/media/sounds/sad-trombone-mario.mp3" data-title="SAD TROMBONE MARIOsr" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">SAD TROMBONE MARIOsr</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone-mariosr-79671/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-17" data-mp3="https://www.myinstants.com/media/sounds/sad-trombone-gaming-sound-effect-hd.mp3" data-title="Sad Trombone gaming" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Trombone gaming</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone-gaming-89043/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-18" data-mp3="https://www.myinstants.com/media/sounds/sad_trombone_-_gaming_sound_effect_hd_aqwYeGU.mp3" data-title="Sad Trombone Cartoon" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Trombone Cartoon</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone-cartoon-89656/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-19" data-mp3="https://www.myinstants.com/media/sounds/sad-trombone-meme-sfx.mp3" data-title="sad trombone meme sfx" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">sad trombone meme sfx</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone-meme-sfx-52264/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-20" data-mp3="https://www.myinstants.com/media/sounds/sad-trombone-fortnite.mp3" data-title="Sad Trombone - Fortnite" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Trombone - Fortnite</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/sad-trombone-fortnite-9902/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-21" data-mp3="https://www.myinstants.com/media/sounds/misc_soundboard_sad_bone.mp3" data-title="Dota Sad Trombone" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Dota Sad Trombone</span></label>
-<small>検索語: sad trombone</small> <a href="https://www.myinstants.com/en/instant/dota-sad-trombone-70107/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-22" data-mp3="https://www.myinstants.com/media/sounds/curb-your-enthusiasm.mp3" data-title="Curb Your Enthusiasm" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Curb Your Enthusiasm</span></label>
-<small>検索語: curb your enthusiasm</small> <a href="https://www.myinstants.com/en/instant/curb-your-enthusiasm-26943/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-23" data-mp3="https://www.myinstants.com/media/sounds/curb-your-enthusiasm-theme-audiotrimmer.mp3" data-title="Curb your enthusiasm:oofwe" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Curb your enthusiasm:oofwe</span></label>
-<small>検索語: curb your enthusiasm</small> <a href="https://www.myinstants.com/en/instant/curb-your-enthusiasm-oofwe-15959/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-24" data-mp3="https://www.myinstants.com/media/sounds/itp-curb-your-enthusiasm.mp3" data-title="ITP Curb Your Enthusiasm" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">ITP Curb Your Enthusiasm</span></label>
-<small>検索語: curb your enthusiasm</small> <a href="https://www.myinstants.com/en/instant/itp-curb-your-enthusiasm-69292/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-25" data-mp3="https://www.myinstants.com/media/sounds/curb-your-enthusiasm-online-audio-converter.mp3" data-title="curb your enthusiasms" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">curb your enthusiasms</span></label>
-<small>検索語: curb your enthusiasm</small> <a href="https://www.myinstants.com/en/instant/curb-your-enthusiasms-27393/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-26" data-mp3="https://www.myinstants.com/media/sounds/erro.mp3" data-title="Windows XP Error" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows XP Error</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-xp-error/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-27" data-mp3="https://www.myinstants.com/media/sounds/windows-10-error-sound.mp3" data-title="Windows 10 Error Sound" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows 10 Error Sound</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-10-error-sound-69419/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-28" data-mp3="https://www.myinstants.com/media/sounds/windows-error-sound_9PcNR0C.mp3" data-title="Windows Error Sound" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows Error Sound</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-error-sound-33529/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-29" data-mp3="https://www.myinstants.com/media/sounds/windows-xp-error-song-edited-by-dj-cobaltsteel-77.mp3" data-title="Windows XP ERROR Song" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows XP ERROR Song</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-xp-error-song-27130/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-30" data-mp3="https://www.myinstants.com/media/sounds/windows-xp-critical-error-full-version.mp3" data-title="Windows XP Critical Error (Full Version)" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows XP Critical Error (Full Version)</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-xp-critical-error-full-version-77264/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-31" data-mp3="https://www.myinstants.com/media/sounds/windows-11-error-sound.mp3" data-title="Windows 11 error sound" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows 11 error sound</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-11-error-sound-46671/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-32" data-mp3="https://www.myinstants.com/media/sounds/musica_1.mp3" data-title="Windows XP error music" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Windows XP error music</span></label>
-<small>検索語: windows error</small> <a href="https://www.myinstants.com/en/instant/windows-xp-error-music/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-33" data-mp3="https://www.myinstants.com/media/sounds/android-sound-effect-meme_tcbuori.mp3" data-title="Android Notification Bass Boosted" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Android Notification Bass Boosted</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/android-notification-bass-boosted-62501/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-34" data-mp3="https://www.myinstants.com/media/sounds/android-notifications-pixie-dust.mp3" data-title="Android Notifications - Pixie Dust" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Android Notifications - Pixie Dust</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/android-notifications-pixie-dust-56038/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-35" data-mp3="https://www.myinstants.com/media/sounds/message-received_kJCKziQ.mp3" data-title="Message Received" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Message Received</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/message-received-71965/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-36" data-mp3="https://www.myinstants.com/media/sounds/android-notification.mp3" data-title="android notification  :)" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">android notification  :)</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/android-notification-12192/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-37" data-mp3="https://www.myinstants.com/media/sounds/google-alerta-de-terremoto.mp3" data-title="Google Alerta de terremoto" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Google Alerta de terremoto</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/google-alerta-de-terremoto-83266/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-38" data-mp3="https://www.myinstants.com/media/sounds/old-phone-ring.mp3" data-title="Old Phone Ring" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Old Phone Ring</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/old-phone-ring-37666/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-39" data-mp3="https://www.myinstants.com/media/sounds/sms-squeez.mp3" data-title="SMS Squeez" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">SMS Squeez</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/sms-squeez-64163/" target="_blank" rel="noopener">ページ</a></li><li data-id="2-40" data-mp3="https://www.myinstants.com/media/sounds/tethys.mp3" data-title="Tethys" data-group="気まずい・スベった">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Tethys</span></label>
-<small>検索語: android notification</small> <a href="https://www.myinstants.com/en/instant/tethys-77170/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-<section><h2>続く・場面転換</h2><ul><li data-id="3-0" data-mp3="https://www.myinstants.com/media/sounds/untitled_1071.mp3" data-title="To be Continued (jojo)" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">To be Continued (jojo)</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/to-be-continued-jojo/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-1" data-mp3="https://www.myinstants.com/media/sounds/to-be-continued-short-roundabout.mp3" data-title="To Be Continued (Short) | Roundabout" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">To Be Continued (Short) | Roundabout</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/to-be-continued-short-roundabout-88137/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-2" data-mp3="https://www.myinstants.com/media/sounds/to-be-continued-meme.mp3" data-title="To Be Continued MEME!" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">To Be Continued MEME!</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/to-be-continued-meme-60733/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-3" data-mp3="https://www.myinstants.com/media/sounds/2to-be-continued.mp3" data-title="to be continued jojo  bizzarre" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">to be continued jojo  bizzarre</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/to-be-continued-jojo-bizzarre/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-4" data-mp3="https://www.myinstants.com/media/sounds/roundabout-jojos-bizarre-adventures.mp3" data-title="Roundabout JOJO'S BIZARRE ADVENTURES" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Roundabout JOJO'S BIZARRE ADVENTURES</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/roundabout-jojos-bizarre-adventures-23163/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-5" data-mp3="https://www.myinstants.com/media/sounds/to-be-continued-jojo-ost.mp3" data-title="to be continued jojo ost" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">to be continued jojo ost</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/to-be-continued-jojo-ost-68781/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-6" data-mp3="https://www.myinstants.com/media/sounds/untitled_1071_us4Q8hw.mp3" data-title="To Be Continued 2020" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">To Be Continued 2020</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/to-be-continued-2020-45719/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-7" data-mp3="https://www.myinstants.com/media/sounds/yes-roundabout.mp3" data-title="&lt;- To Be Continued" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">&lt;- To Be Continued</span></label>
-<small>検索語: to be continued</small> <a href="https://www.myinstants.com/en/instant/-to-be-continued/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-8" data-mp3="https://www.myinstants.com/media/sounds/record-scratch-2.mp3" data-title="wut" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">wut</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/wut/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-9" data-mp3="https://www.myinstants.com/media/sounds/record-scratch_1.mp3" data-title="Record scratch sound effect" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Record scratch sound effect</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/record-scratch-sound-effect/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-10" data-mp3="https://www.myinstants.com/media/sounds/record-scratch.mp3" data-title="Record Scratch" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Record Scratch</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/record-scratch/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-11" data-mp3="https://www.myinstants.com/media/sounds/record-scratch-clean.mp3" data-title="record scratch *CLEAN*" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">record scratch *CLEAN*</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/record-scratch-clean-12972/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-12" data-mp3="https://www.myinstants.com/media/sounds/record-scratch_u0nwDyU.mp3" data-title="THE record scratch" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">THE record scratch</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/the-record-scratch-87071/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-13" data-mp3="https://www.myinstants.com/media/sounds/record-scratch_iHoP6I8.mp3" data-title="Record scratch funny" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Record scratch funny</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/record-scratch-funny-72203/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-14" data-mp3="https://www.myinstants.com/media/sounds/kizclub-tees-record-scratch.mp3" data-title="Kizclub: Tee’s record scratch" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Kizclub: Tee’s record scratch</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/kizclub-tees-record-scratch-72728/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-15" data-mp3="https://www.myinstants.com/media/sounds/record-scratch-2_Eug9i1R.mp3" data-title="Record Scratch WUT" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Record Scratch WUT</span></label>
-<small>検索語: record scratch</small> <a href="https://www.myinstants.com/en/instant/record-scratch-wut-66376/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-16" data-mp3="https://www.myinstants.com/media/sounds/directed-by-robert-b_voI2Z4T.mp3" data-title="Directed by Robert B Weide" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Directed by Robert B Weide</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/directed-by-robert-b-weide-451/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-17" data-mp3="https://www.myinstants.com/media/sounds/directed-by-michael-bay.mp3" data-title="Directed By Michael Bay" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Directed By Michael Bay</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/directed-by-michael-bay-14493/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-18" data-mp3="https://www.myinstants.com/media/sounds/i-feel-like-you-dont-love-me-as-much-as-i-do.mp3" data-title="I feel like you dont love me as much as I do :(" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">I feel like you dont love me as much as I do :(</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/i-feel-like-you-dont-love-me-as-much-as-i-do-54083/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-19" data-mp3="https://www.myinstants.com/media/sounds/directed-by-robert-b-weide-theme-meme.mp3" data-title="Directed by Robert B. Weide- theme meme" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Directed by Robert B. Weide- theme meme</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/directed-by-robert-b-weide-theme-meme-87226/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-20" data-mp3="https://www.myinstants.com/media/sounds/nice-date.mp3" data-title="Nice Date" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Nice Date</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/nice-date-34754/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-21" data-mp3="https://www.myinstants.com/media/sounds/directed-by-michael-bay-meme.mp3" data-title="Directed By Michael Bay Meme" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Directed By Michael Bay Meme</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/directed-by-michael-bay-meme-19195/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-22" data-mp3="https://www.myinstants.com/media/sounds/directed-by-robert-b_5GFxtG6.mp3" data-title="directed by Robert B. Weide" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">directed by Robert B. Weide</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/directed-by-robert-b-weide-97744/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-23" data-mp3="https://www.myinstants.com/media/sounds/directed-by-robert-b-weide-meme-full.mp3" data-title="Directed by Robert B Weide Meme full" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Directed by Robert B Weide Meme full</span></label>
-<small>検索語: directed by</small> <a href="https://www.myinstants.com/en/instant/directed-by-robert-b-weide-meme-full-30300/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-24" data-mp3="https://www.myinstants.com/media/sounds/spongebob-fail.mp3" data-title="SpongeBob Fail" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">SpongeBob Fail</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/spongebob-fail-11236/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-25" data-mp3="https://www.myinstants.com/media/sounds/spongebob-boowomp.mp3" data-title="spongebob boowomp" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">spongebob boowomp</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/spongebob-boowomp-96031/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-26" data-mp3="https://www.myinstants.com/media/sounds/spongebob-sad-song.mp3" data-title="spongebob sad song" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">spongebob sad song</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/spongebob-sad-song-94002/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-27" data-mp3="https://www.myinstants.com/media/sounds/bo-womp.mp3" data-title="Bo-womp" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Bo-womp</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/bo-womp-19861/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-28" data-mp3="https://www.myinstants.com/media/sounds/spongebob-dolphin-censor.mp3" data-title="Dolphin Censor" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Dolphin Censor</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/dolphin-censor/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-29" data-mp3="https://www.myinstants.com/media/sounds/cartoon-mr-krab-walking.mp3" data-title="Cartoon Mr. Krab Walking" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Cartoon Mr. Krab Walking</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/cartoon-mr-krab-walking-54475/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-30" data-mp3="https://www.myinstants.com/media/sounds/spongebob-walk.mp3" data-title="spongebob walk" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">spongebob walk</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/spongebob-walk-63063/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-31" data-mp3="https://www.myinstants.com/media/sounds/sponge-stank-noise.mp3" data-title="Sponge Stank Noise" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sponge Stank Noise</span></label>
-<small>検索語: spongebob</small> <a href="https://www.myinstants.com/en/instant/sponge-stank-noise-17565/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-32" data-mp3="https://www.myinstants.com/media/sounds/dun-dun-dun-sound-effect-brass_8nFBccR.mp3" data-title="dun dun dunnnnnnnn" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">dun dun dunnnnnnnn</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/dun-dun-dunnnnnnnn-68584/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-33" data-mp3="https://www.myinstants.com/media/sounds/dun_dun_1.mp3" data-title="Law and Order DUN DUN" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Law and Order DUN DUN</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/law-and-order-dun-dun/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-34" data-mp3="https://www.myinstants.com/media/sounds/church-bells-meme.mp3" data-title="Church Bells Meme" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Church Bells Meme</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/church-bells-meme-77069/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-35" data-mp3="https://www.myinstants.com/media/sounds/son-dun-moustique.mp3" data-title="Son d'un Moustique" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Son d'un Moustique</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/son-dun-moustique-84394/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-36" data-mp3="https://www.myinstants.com/media/sounds/dun_dun_dun.mp3" data-title="Dun dun duuun" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Dun dun duuun</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/dun-dun-duuun/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-37" data-mp3="https://www.myinstants.com/media/sounds/81211466_808590029615878_4790478785875513061_n-online-audio-converter.mp3" data-title="Japanese YOOOOOO" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Japanese YOOOOOO</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/japanese-yoooooo-66519/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-38" data-mp3="https://www.myinstants.com/media/sounds/terminator-2-sound.mp3" data-title="terminator 2 dundundundundun" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">terminator 2 dundundundundun</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/terminator-2-dundundundundun-7/" target="_blank" rel="noopener">ページ</a></li><li data-id="3-39" data-mp3="https://www.myinstants.com/media/sounds/law-order-sound-effect-hq-download-link_50EIJOi.mp3" data-title="Law &amp; Order Sound" data-group="続く・場面転換">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Law &amp; Order Sound</span></label>
-<small>検索語: dun dun dun</small> <a href="https://www.myinstants.com/en/instant/law-order-sound-64710/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-<section><h2>しょうもない勝ち・盛り上げ</h2><ul><li data-id="4-0" data-mp3="https://www.myinstants.com/media/sounds/dj-airhorn-sound-effect-kingbeatz_1.mp3" data-title="DJ Airhorn" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">DJ Airhorn</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/dj-airhorn/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-1" data-mp3="https://www.myinstants.com/media/sounds/veryloudairhorn.mp3" data-title="VERY LOUD AIRHORN" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">VERY LOUD AIRHORN</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/very-loud-airhorn/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-2" data-mp3="https://www.myinstants.com/media/sounds/dj-airhorn-sound-effect.mp3" data-title="Airhorn DJ" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Airhorn DJ</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/airhorn-dj-93406/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-3" data-mp3="https://www.myinstants.com/media/sounds/airhorn.mp3" data-title="MLG Airhorn" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG Airhorn</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/mlg-airhorn/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-4" data-mp3="https://www.myinstants.com/media/sounds/mlg-horns-sound-effect.mp3" data-title="MLG Air Horn -_-" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG Air Horn -_-</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/mlg-air-horn-_-/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-5" data-mp3="https://www.myinstants.com/media/sounds/airhorn_QlBB6XN.mp3" data-title="MLG AIRHORN! :D" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG AIRHORN! :D</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/mlg-airhorn-d-88238/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-6" data-mp3="https://www.myinstants.com/media/sounds/airhorn_1.mp3" data-title="airhorn" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">airhorn</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/airhorn/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-7" data-mp3="https://www.myinstants.com/media/sounds/airhorn-lethal-company.mp3" data-title="AirHorn - Lethal Company" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">AirHorn - Lethal Company</span></label>
-<small>検索語: airhorn</small> <a href="https://www.myinstants.com/en/instant/airhorn-lethal-company-86355/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-8" data-mp3="https://www.myinstants.com/media/sounds/mlg-airhorn.mp3" data-title="MLG AIR HORN!!!!!!!!!!!" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG AIR HORN!!!!!!!!!!!</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/mlg-air-horn/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-9" data-mp3="https://www.myinstants.com/media/sounds/discord-nofications.mp3" data-title="discord nofications" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">discord nofications</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/discord-nofications-95780/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-10" data-mp3="https://www.myinstants.com/media/sounds/wow-mlg-sound-effect.mp3" data-title="WOW (MLG)" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">WOW (MLG)</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/wow-mlg/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-11" data-mp3="https://www.myinstants.com/media/sounds/mlg-gun-shot-sound-effect.mp3" data-title="MLG Gun Shot" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG Gun Shot</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/mlg-gun-shot-84381/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-12" data-mp3="https://www.myinstants.com/media/sounds/mlg-sniper.mp3" data-title="B2Q - MLG Sniper" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">B2Q - MLG Sniper</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/b2q-mlg-sniper-36508/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-13" data-mp3="https://www.myinstants.com/media/sounds/swaggityswagger.mp3" data-title="MLG PWNAGE" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG PWNAGE</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/mlg-pwnage/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-14" data-mp3="https://www.myinstants.com/media/sounds/my-hope-will-never-die-mlg.mp3" data-title="My Hope Will Never Die MLG" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">My Hope Will Never Die MLG</span></label>
-<small>検索語: mlg</small> <a href="https://www.myinstants.com/en/instant/my-hope-will-never-die-mlg-509/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-15" data-mp3="https://www.myinstants.com/media/sounds/wow-kya-ladka-hai-very-handsome-boy.mp3" data-title="Wow kya ladka hai very handsome boy" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Wow kya ladka hai very handsome boy</span></label>
-<small>検索語: wow</small> <a href="https://www.myinstants.com/en/instant/wow-kya-ladka-hai-very-handsome-boy-34512/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-16" data-mp3="https://www.myinstants.com/media/sounds/le-fart-de-simon.mp3" data-title="Le fart de Simon" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Le fart de Simon</span></label>
-<small>検索語: wow</small> <a href="https://www.myinstants.com/en/instant/le-fart-de-simon-67307/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-17" data-mp3="https://www.myinstants.com/media/sounds/wow_2.mp3" data-title="WOW! (Happy - Fairy Tail)" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">WOW! (Happy - Fairy Tail)</span></label>
-<small>検索語: wow</small> <a href="https://www.myinstants.com/en/instant/wow-happy-fairy-tail/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-18" data-mp3="https://www.myinstants.com/media/sounds/roblox-wow.mp3" data-title="roblox wow" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">roblox wow</span></label>
-<small>検索語: wow</small> <a href="https://www.myinstants.com/en/instant/roblox-wow-19124/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-19" data-mp3="https://www.myinstants.com/media/sounds/kids-saying-yay-sound-effect_3.mp3" data-title="YAAAAAAAAY" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">YAAAAAAAAY</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/yaaaaaaaay/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-20" data-mp3="https://www.myinstants.com/media/sounds/crowd_small_chil_ec049202_9klCwI6.mp3" data-title="FNAF Yay Children" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FNAF Yay Children</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/fnaf-yay-children-61698/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-21" data-mp3="https://www.myinstants.com/media/sounds/children-yaysound-effect.mp3" data-title="YAAAYY CHILDREN!!!!" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">YAAAYY CHILDREN!!!!</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/yaaayy-children-34718/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-22" data-mp3="https://www.myinstants.com/media/sounds/yay-roblox.mp3" data-title="yay roblox" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">yay roblox</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/yay-roblox-27467/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-23" data-mp3="https://www.myinstants.com/media/sounds/kids-saying-yay-sound-effect_xryiS4g.mp3" data-title="Kids saying yay" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Kids saying yay</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/kids-saying-yay-21988/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-24" data-mp3="https://www.myinstants.com/media/sounds/kids-cheering-sound-effect.mp3" data-title="Kids Cheering YAY" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Kids Cheering YAY</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/kids-cheering-yay/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-25" data-mp3="https://www.myinstants.com/media/sounds/yey.mp3" data-title="yey" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">yey</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/yey-74031/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-26" data-mp3="https://www.myinstants.com/media/sounds/crowd-cheer-and-applause.mp3" data-title="Crowd Cheer and Applause" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Crowd Cheer and Applause</span></label>
-<small>検索語: yay</small> <a href="https://www.myinstants.com/en/instant/crowd-cheer-and-applause-79125/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-27" data-mp3="https://www.myinstants.com/media/sounds/hallelujahshort.swf.mp3" data-title="Hallelujah" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Hallelujah</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/hallelujah/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-28" data-mp3="https://www.myinstants.com/media/sounds/worms-holy-hand-grenade-hallelujah-audio-clip.mp3" data-title="Worms - Holy Hand Grenade" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Worms - Holy Hand Grenade</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/worms-holy-hand-grenade-54717/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-29" data-mp3="https://www.myinstants.com/media/sounds/hallelujah-sound-effect_1.mp3" data-title="hallelujah x3" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">hallelujah x3</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/hallelujah-x3/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-30" data-mp3="https://www.myinstants.com/media/sounds/hallelujah-meme.mp3" data-title="Hallelujah meme" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Hallelujah meme</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/hallelujah-meme-22248/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-31" data-mp3="https://www.myinstants.com/media/sounds/holygrenade.mp3" data-title="Holy Grenade" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Holy Grenade</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/holy-grenade/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-32" data-mp3="https://www.myinstants.com/media/sounds/hallelujah-praise-the-lord-thank-you-jesus.mp3" data-title="Hallelujah Praise the lORD tHANK YOU JESUS" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Hallelujah Praise the lORD tHANK YOU JESUS</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/hallelujah-praise-the-lord-thank-you-jesus-13576/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-33" data-mp3="https://www.myinstants.com/media/sounds/hallelujah-organ.mp3" data-title="Hallelujah Organ" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Hallelujah Organ</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/hallelujah-organ-55523/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-34" data-mp3="https://www.myinstants.com/media/sounds/halleujai-sound.mp3" data-title="Hallelujah Chorus Sound Effect" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Hallelujah Chorus Sound Effect</span></label>
-<small>検索語: hallelujah</small> <a href="https://www.myinstants.com/en/instant/hallelujah-chorus-sound-effect-80588/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-35" data-mp3="https://www.myinstants.com/media/sounds/announcer_kill_triple_01.mp3" data-title="Dota - Triple kill" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Dota - Triple kill</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/dota-triple-kill/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-36" data-mp3="https://www.myinstants.com/media/sounds/triple-kill.mp3" data-title="CS - Triple Kill" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">CS - Triple Kill</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/cs-triple-kill/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-37" data-mp3="https://www.myinstants.com/media/sounds/mlbb-triple-kill.mp3" data-title="MLBB Triple Kill" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLBB Triple Kill</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/mlbb-triple-kill-46835/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-38" data-mp3="https://www.myinstants.com/media/sounds/mlg-intevention-triple-kill.mp3" data-title="MLG INTERVENTION TRIPLE KILL" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MLG INTERVENTION TRIPLE KILL</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/mlg-intervention-triple-kill/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-39" data-mp3="https://www.myinstants.com/media/sounds/halo-reach-triple-kill.mp3" data-title="halo reach triple kill" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">halo reach triple kill</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/halo-reach-triple-kill-6146/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-40" data-mp3="https://www.myinstants.com/media/sounds/triple-kill-lol.mp3" data-title="Triple Kill LoL" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Triple Kill LoL</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/triple-kill-lol/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-41" data-mp3="https://www.myinstants.com/media/sounds/league-of-legends-penta-kill-4.mp3" data-title="League of Legends - Penta Kill 4" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">League of Legends - Penta Kill 4</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/league-of-legends-penta-kill-4-58376/" target="_blank" rel="noopener">ページ</a></li><li data-id="4-42" data-mp3="https://www.myinstants.com/media/sounds/league-of-legends-double-kill-2.mp3" data-title="League of Legends - Double Kill 2" data-group="しょうもない勝ち・盛り上げ">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">League of Legends - Double Kill 2</span></label>
-<small>検索語: triple kill</small> <a href="https://www.myinstants.com/en/instant/league-of-legends-double-kill-2-9644/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-<section><h2>悲しみ（ギャグ）</h2><ul><li data-id="5-0" data-mp3="https://www.myinstants.com/media/sounds/tf_nemesis.mp3" data-title="Sad Violin (the meme one)" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Violin (the meme one)</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/sad-violin-the-meme-one/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-1" data-mp3="https://www.myinstants.com/media/sounds/meme-violin-sad-violin.mp3" data-title="meme violin (sad violin)" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">meme violin (sad violin)</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/meme-violin-sad-violin-1460/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-2" data-mp3="https://www.myinstants.com/media/sounds/export_4.mp3" data-title="Sad violin (14sec)" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad violin (14sec)</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/sad-violin-14sec/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-3" data-mp3="https://www.myinstants.com/media/sounds/sad-violin.mp3" data-title="Sad Violin" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Violin</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/sad-violin/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-4" data-mp3="https://www.myinstants.com/media/sounds/sad-hamster-violin-meme.mp3" data-title="Sad Hamster Violin Meme" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Hamster Violin Meme</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/sad-hamster-violin-meme-71037/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-5" data-mp3="https://www.myinstants.com/media/sounds/sad-violin_guTFcJc.mp3" data-title="Sad Violin Song" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad Violin Song</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/sad-violin-song-67067/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-6" data-mp3="https://www.myinstants.com/media/sounds/sad-violin_ubqugrt_HkxJKK5.mp3" data-title="Sad violin (meme)" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Sad violin (meme)</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/sad-violin-meme-39288/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-7" data-mp3="https://www.myinstants.com/media/sounds/ayasa-the-reason-why.mp3" data-title="Ayasa - The reason why" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Ayasa - The reason why</span></label>
-<small>検索語: sad violin</small> <a href="https://www.myinstants.com/en/instant/ayasa-the-reason-why-8537/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-8" data-mp3="https://www.myinstants.com/media/sounds/sad-meow-song.mp3" data-title="sad meow song" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">sad meow song</span></label>
-<small>検索語: sad</small> <a href="https://www.myinstants.com/en/instant/sad-meow-song-88771/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-9" data-mp3="https://www.myinstants.com/media/sounds/tmpauxfo4ff.mp3" data-title="sad music indian" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">sad music indian</span></label>
-<small>検索語: sad</small> <a href="https://www.myinstants.com/en/instant/sad-music-indian-15435/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-10" data-mp3="https://www.myinstants.com/media/sounds/naruto-sad-music-instant.mp3" data-title="Naruto Sad Song" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Naruto Sad Song</span></label>
-<small>検索語: sad</small> <a href="https://www.myinstants.com/en/instant/naruto-sad-song-72430/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-11" data-mp3="https://www.myinstants.com/media/sounds/y2mate-mp3cut_sRzY6rh.mp3" data-title="Coffin Dance Meme" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Coffin Dance Meme</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/coffin-dance-meme-31063/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-12" data-mp3="https://www.myinstants.com/media/sounds/vicetone-tony-igy-astronomia-2014-audiotrimmer.mp3" data-title="coffin dance" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">coffin dance</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/coffin-dance-5236/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-13" data-mp3="https://www.myinstants.com/media/sounds/hq-coffin-dance-funeral-vicetone-tony-igy-astronomia.mp3" data-title="HQ Coffin Dance, Funeral" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">HQ Coffin Dance, Funeral</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/hq-coffin-dance-funeral-43283/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-14" data-mp3="https://www.myinstants.com/media/sounds/whatsapp-audio-2020-05-18-at-14.mp3" data-title="Coffin Dance !" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Coffin Dance !</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/coffin-dance-96271/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-15" data-mp3="https://www.myinstants.com/media/sounds/coffin-dance-roblox-oof-version-meme-song-128-kbps-audiotrimmer_AD0qT1x.mp3" data-title="Oof coffin dance" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Oof coffin dance</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/oof-coffin-dance-95537/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-16" data-mp3="https://www.myinstants.com/media/sounds/astronomia_hBO3e8P.mp3" data-title="Astronomia(coffin dance)" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Astronomia(coffin dance)</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/astronomia-coffin-dance-34869/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-17" data-mp3="https://www.myinstants.com/media/sounds/bem-te-vi-meme-do-caixao-coffin-dance-47.mp3" data-title="Bem te vi meme do caixão coffin dance #47" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Bem te vi meme do caixão coffin dance #47</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/bem-te-vi-meme-do-caixao-coffin-dance-47-5350/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-18" data-mp3="https://www.myinstants.com/media/sounds/coffin-dance-sound-effect.mp3" data-title="COFFIN DANCE SOUND EFFECT" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">COFFIN DANCE SOUND EFFECT</span></label>
-<small>検索語: coffin dance</small> <a href="https://www.myinstants.com/en/instant/coffin-dance-sound-effect-81980/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-19" data-mp3="https://www.myinstants.com/media/sounds/titanic-flute-fail.mp3" data-title="Titanic flute fail" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic flute fail</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-flute-fail-95915/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-20" data-mp3="https://www.myinstants.com/media/sounds/ontiva_RzrOcZY.mp3" data-title="Titanic Emotional Flute" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic Emotional Flute</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-emotional-flute-65044/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-21" data-mp3="https://www.myinstants.com/media/sounds/titanic-flute-bad.mp3" data-title="TITANIC FLUTE BAD !" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">TITANIC FLUTE BAD !</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-flute-bad-76897/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-22" data-mp3="https://www.myinstants.com/media/sounds/1f4f74e0-b650-11e8-af60-53c4298d7617.mp3" data-title="Titanic flute song" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic flute song</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-flute-song-22063/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-23" data-mp3="https://www.myinstants.com/media/sounds/titanic-flute-sad.mp3" data-title="Titanic Flute Sad" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic Flute Sad</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-flute-sad-13541/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-24" data-mp3="https://www.myinstants.com/media/sounds/titanicsuoneria2.mp3" data-title="Titanic real flute" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic real flute</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-real-flute/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-25" data-mp3="https://www.myinstants.com/media/sounds/1f4f74e0-b650-11e8-af60-53c4298d7617_rq5rzZw.mp3" data-title="Titanic flute song short" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic flute song short</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-flute-song-short-48788/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-26" data-mp3="https://www.myinstants.com/media/sounds/titanic-flute_d0nkKls.mp3" data-title="Titanic flute" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Titanic flute</span></label>
-<small>検索語: titanic flute</small> <a href="https://www.myinstants.com/en/instant/titanic-flute-87239/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-27" data-mp3="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3" data-title="ROBLOX oof" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">ROBLOX oof</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/roblox-oof/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-28" data-mp3="https://www.myinstants.com/media/sounds/minecraft_hit_soundmp3converter.mp3" data-title="Minecraft Damage" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Minecraft Damage</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/minecraft-damage-6455/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-29" data-mp3="https://www.myinstants.com/media/sounds/steve-old-hurt-sound_XKZxUk4.mp3" data-title="oof minecraft" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">oof minecraft</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/oof-minecraft-61039/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-30" data-mp3="https://www.myinstants.com/media/sounds/ouch_AKigkiF.mp3" data-title="Ouch!" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Ouch!</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/ouch-14943/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-31" data-mp3="https://www.myinstants.com/media/sounds/sm64_mario_oof.mp3" data-title="MARIO OOF" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">MARIO OOF</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/mario-oof/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-32" data-mp3="https://www.myinstants.com/media/sounds/quintiple-pound.mp3" data-title="Quintiple Pound" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Quintiple Pound</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/quintiple-pound-9023/" target="_blank" rel="noopener">ページ</a></li><li data-id="5-33" data-mp3="https://www.myinstants.com/media/sounds/oof-button.mp3" data-title="Oof Button" data-group="悲しみ（ギャグ）">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Oof Button</span></label>
-<small>検索語: oof</small> <a href="https://www.myinstants.com/en/instant/oof-button-88775/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-<section><h2>驚き・ヤバい</h2><ul><li data-id="6-0" data-mp3="https://www.myinstants.com/media/sounds/fbi-open-up_dwLhIFf.mp3" data-title="FBI OPEN UP (with explosion)" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FBI OPEN UP (with explosion)</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-with-explosion-491/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-1" data-mp3="https://www.myinstants.com/media/sounds/fbi-open-up-sfx.mp3" data-title="FBI open UP" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FBI open UP</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-3322/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-2" data-mp3="https://www.myinstants.com/media/sounds/fbi-open-up-explosion.mp3" data-title="FBI open UP. (with explosion)" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FBI open UP. (with explosion)</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-with-explosion-234/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-3" data-mp3="https://www.myinstants.com/media/sounds/fbi-fbi-open-up.mp3" data-title="FBI OPEN UP!" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FBI OPEN UP!</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-38094/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-4" data-mp3="https://www.myinstants.com/media/sounds/fbi-open-the-door-mp3cut_HBG6xhi.mp3" data-title="fbı open up" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">fbı open up</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-97163/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-5" data-mp3="https://www.myinstants.com/media/sounds/fbi-open-up-bassboost.mp3" data-title="FBI open up (bassboost)" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FBI open up (bassboost)</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-bassboost-95782/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-6" data-mp3="https://www.myinstants.com/media/sounds/fbi-open-up_1dqFhtZ.mp3" data-title="FBI OPEN UP meme full" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">FBI OPEN UP meme full</span></label>
-<small>検索語: fbi open up</small> <a href="https://www.myinstants.com/en/instant/fbi-open-up-meme-full-88197/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-7" data-mp3="https://www.myinstants.com/media/sounds/huh_37bAoRo.mp3" data-title="asian meme huh?" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">asian meme huh?</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/asian-meme-huh-49043/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-8" data-mp3="https://www.myinstants.com/media/sounds/ceeday-huh-sound-effect.mp3" data-title="Huh? Ceeday" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Huh? Ceeday</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/huh-ceeday-65118/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-9" data-mp3="https://www.myinstants.com/media/sounds/metal-gear-alert-sound-effect_XKoHReZ.mp3" data-title="metal gear alert sound effect" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">metal gear alert sound effect</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/metal-gear-alert-sound-effect-82026/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-10" data-mp3="https://www.myinstants.com/media/sounds/huh-cat.mp3" data-title="Huh Cat" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Huh Cat</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/huh-cat-21280/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-11" data-mp3="https://www.myinstants.com/media/sounds/huh-cat-meme.mp3" data-title="HUH? Cat meme" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">HUH? Cat meme</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/huh-cat-meme-88154/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-12" data-mp3="https://www.myinstants.com/media/sounds/confused-cross-eyed-kitten-meme.mp3" data-title="Confused cross eyed kitten meme" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Confused cross eyed kitten meme</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/confused-cross-eyed-kitten-meme-28555/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-13" data-mp3="https://www.myinstants.com/media/sounds/huh-roblox.mp3" data-title="huh (roblox)" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">huh (roblox)</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/huh-roblox-4923/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-14" data-mp3="https://www.myinstants.com/media/sounds/huh-meme.mp3" data-title="huh sound" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">huh sound</span></label>
-<small>検索語: huh</small> <a href="https://www.myinstants.com/en/instant/huh-sound-60515/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-15" data-mp3="https://www.myinstants.com/media/sounds/what-a-good-boy.mp3" data-title="What a good boy" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">What a good boy</span></label>
-<small>検索語: what</small> <a href="https://www.myinstants.com/en/instant/what-a-good-boy-58925/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-16" data-mp3="https://www.myinstants.com/media/sounds/cartoonslip.mp3" data-title="Cartoon Slip" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Cartoon Slip</span></label>
-<small>検索語: what</small> <a href="https://www.myinstants.com/en/instant/cartoon-slip-89839/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-17" data-mp3="https://www.myinstants.com/media/sounds/what-bottom-text-meme-sanctuary-guardian-sound-effect-hd.mp3" data-title="'What' Bottom Text Meme (Sanctuary Guardian) - S" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">'What' Bottom Text Meme (Sanctuary Guardian) - S</span></label>
-<small>検索語: what</small> <a href="https://www.myinstants.com/en/instant/what-bottom-text-meme-sanctuary-guardian-s-24591/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-18" data-mp3="https://www.myinstants.com/media/sounds/yt1s_wU4BGgD.mp3" data-title="what da dog doin" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">what da dog doin</span></label>
-<small>検索語: what</small> <a href="https://www.myinstants.com/en/instant/what-da-dog-doin-35890/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-19" data-mp3="https://www.myinstants.com/media/sounds/divine-steal-an-egg.mp3" data-title="Divine steal an egg" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Divine steal an egg</span></label>
-<small>検索語: what</small> <a href="https://www.myinstants.com/en/instant/divine-steal-an-egg-16737/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-20" data-mp3="https://www.myinstants.com/media/sounds/what_JOcN7Y8.mp3" data-title="'What'meme" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">'What'meme</span></label>
-<small>検索語: what</small> <a href="https://www.myinstants.com/en/instant/whatmeme-95954/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-21" data-mp3="https://www.myinstants.com/media/sounds/among-us-role-reveal-sound.mp3" data-title="Among Us role reveal sound" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Among Us role reveal sound</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/among-us-role-reveal-sound-34956/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-22" data-mp3="https://www.myinstants.com/media/sounds/among.mp3" data-title="Among us" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Among us</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/among-us-35001/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-23" data-mp3="https://www.myinstants.com/media/sounds/stationary-kill_gDwMUvN.mp3" data-title="Imposter Kill (Among Us)" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Imposter Kill (Among Us)</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/imposter-kill-among-us-22684/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-24" data-mp3="https://www.myinstants.com/media/sounds/among-us-roundstart.mp3" data-title="Among us Roundstart" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Among us Roundstart</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/among-us-roundstart-17570/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-25" data-mp3="https://www.myinstants.com/media/sounds/trollface-smile.mp3" data-title="trollface smile" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">trollface smile</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/trollface-smile-21535/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-26" data-mp3="https://www.myinstants.com/media/sounds/among-us-role-reveal-sound-effect.mp3" data-title="among us role reveal sound effect" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">among us role reveal sound effect</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/among-us-role-reveal-sound-effect-3925/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-27" data-mp3="https://www.myinstants.com/media/sounds/guy-yelling-among-us-sound-effect.mp3" data-title="AMOGUS SCREAMING" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">AMOGUS SCREAMING</span></label>
-<small>検索語: among us</small> <a href="https://www.myinstants.com/en/instant/amogus-screaming-61412/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-28" data-mp3="https://www.myinstants.com/media/sounds/discord-notification.mp3" data-title="Discord Notification" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Discord Notification</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/discord-notification-38119/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-29" data-mp3="https://www.myinstants.com/media/sounds/discord-call-sound.mp3" data-title="discord call" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">discord call</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/discord-call-44910/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-30" data-mp3="https://www.myinstants.com/media/sounds/outro-song_oqu8zAg.mp3" data-title="outro song" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">outro song</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/outro-song-77850/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-31" data-mp3="https://www.myinstants.com/media/sounds/drip-goku-meme-song-original-dragon-ball-super-music-clash-of-gods-in-description.mp3" data-title="goku drip" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">goku drip</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/goku-drip-99617/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-32" data-mp3="https://www.myinstants.com/media/sounds/discord-leave-noise.mp3" data-title="Discord Leave Noise" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Discord Leave Noise</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/discord-leave-noise-46083/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-33" data-mp3="https://www.myinstants.com/media/sounds/yt1s_nYWSz5R.mp3" data-title="discord join call" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">discord join call</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/discord-join-call-94215/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-34" data-mp3="https://www.myinstants.com/media/sounds/discord-call-sound_tvxg95l.mp3" data-title="Discord Calling" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Discord Calling</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/discord-calling-8030/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-35" data-mp3="https://www.myinstants.com/media/sounds/lack-of-a-father-figure.mp3" data-title="lack of a father figure?" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">lack of a father figure?</span></label>
-<small>検索語: discord</small> <a href="https://www.myinstants.com/en/instant/lack-of-a-father-figure-49559/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-36" data-mp3="https://www.myinstants.com/media/sounds/bonk_7zPAD7C.mp3" data-title="bonk doge" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">bonk doge</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/bonk-doge-81934/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-37" data-mp3="https://www.myinstants.com/media/sounds/bonk_BEtiM8g.mp3" data-title="Doge bonk" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Doge bonk</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/doge-bonk-84044/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-38" data-mp3="https://www.myinstants.com/media/sounds/goofy-bonk.mp3" data-title="Goofy Bonk" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Goofy Bonk</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/goofy-bonk-92184/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-39" data-mp3="https://www.myinstants.com/media/sounds/bamboo-hit-anime-bonk-sound.mp3" data-title="Bamboo Hit (Anime Bonk Sound)" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Bamboo Hit (Anime Bonk Sound)</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/bamboo-hit-anime-bonk-sound-33222/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-40" data-mp3="https://www.myinstants.com/media/sounds/cartoon-bonk.mp3" data-title="Cartoon bonk" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Cartoon bonk</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/cartoon-bonk-87493/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-41" data-mp3="https://www.myinstants.com/media/sounds/improved-bonk-sound.mp3" data-title="improved bonk sound" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">improved bonk sound</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/improved-bonk-sound-74563/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-42" data-mp3="https://www.myinstants.com/media/sounds/tf2-heavy-pan-effect.mp3" data-title="TF2 Heavy pan effect" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">TF2 Heavy pan effect</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/tf2-heavy-pan-effect-43704/" target="_blank" rel="noopener">ページ</a></li><li data-id="6-43" data-mp3="https://www.myinstants.com/media/sounds/scout_specialcompleted03_2.mp3" data-title="Scout Bonk" data-group="驚き・ヤバい">
-<button class="play">▶</button><label><input type="checkbox"> <span class="t">Scout Bonk</span></label>
-<small>検索語: bonk</small> <a href="https://www.myinstants.com/en/instant/scout-bonk/" target="_blank" rel="noopener">ページ</a></li></ul></section>
-		<h2>選んだ音</h2>
-		<textarea id="out" readonly></textarea>
-		<div id="bar"><span id="count">0 個選択</span><button id="copy">選んだ音をコピー</button><button id="stop">止める</button><button id="clear">チェックを全部外す</button></div>
+		<p>ネットで有名なミーム効果音を 84 個抜き出しました（myinstants の人気上位と定番）。▶ で鳴らします（もう一度押すと止まる）。<br>
+		採用したい音にチェックを入れて、下の「コピー」でまとめてチャットに貼ってください。用途はこちらで考えます。チェックはこのブラウザに残ります。
+		音量: <input id="vol" type="range" min="0" max="1" step="0.05" value="0.5"></p>
+		<ul><li data-mp3="https://www.myinstants.com/media/sounds/ooohhh-my-goood.mp3" data-title="ooohhh my goood"><button class="play">▶</button><label><input type="checkbox"> <b class="t">ooohhh my goood</b> <small>大げさな「オーマイガー」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/vine-boom.mp3" data-title="VINE BOOM SOUND"><button class="play">▶</button><label><input type="checkbox"> <b class="t">VINE BOOM SOUND</b> <small>ドゥーン。決め顔や発言の直後に鳴らす定番</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/movie_1.mp3" data-title="BRUH"><button class="play">▶</button><label><input type="checkbox"> <b class="t">BRUH</b> <small>低い声の「ブラ…」。呆れ</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/wrong-answer-sound-effect.mp3" data-title="Buzzer"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Buzzer</b> <small>クイズの不正解ブザー</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/anime-wow-sound-effect.mp3" data-title="Anime Wow"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Anime Wow</b> <small>アニメ声の「わぁ〜お」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/discord-notification.mp3" data-title="Discord Notification"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Discord Notification</b> <small>Discord の通知音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/taco-bell-bong-sfx.mp3" data-title="Taco Bell Bong"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Taco Bell Bong</b> <small>重い「ボーン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/mlg-airhorn.mp3" data-title="MLG AIR HORN"><button class="play">▶</button><label><input type="checkbox"> <b class="t">MLG AIR HORN</b> <small>ゲーム実況の盛り上げエアホーン</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3" data-title="ROBLOX oof"><button class="play">▶</button><label><input type="checkbox"> <b class="t">ROBLOX oof</b> <small>Roblox の死亡音「ウッ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/spongebob-fail.mp3" data-title="SpongeBob Fail"><button class="play">▶</button><label><input type="checkbox"> <b class="t">SpongeBob Fail</b> <small>スポンジ・ボブの失敗ジングル</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/fahhhhhhhhhhhhhh.mp3" data-title="FAHHHHHHHHHHHHHH"><button class="play">▶</button><label><input type="checkbox"> <b class="t">FAHHHHHHHHHHHHHH</b> <small>絶叫「ファーーー」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/tf_nemesis.mp3" data-title="Sad Violin"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Sad Violin</b> <small>わざとらしい悲しいバイオリン</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/rizz-sound-effect.mp3" data-title="rizz sound effect"><button class="play">▶</button><label><input type="checkbox"> <b class="t">rizz sound effect</b> <small>キメ顔の「ブゥン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/censor-beep-1.mp3" data-title="Censor Beep"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Censor Beep</b> <small>放送禁止のピー音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/among-us-role-reveal-sound.mp3" data-title="Among Us role reveal"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Among Us role reveal</b> <small>Among Us の役職発表</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/metal-pipe-clang.mp3" data-title="Metal pipe clang"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Metal pipe clang</b> <small>鉄パイプが落ちる「カーン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/jixaw-metal-pipe-falling-sound.mp3" data-title="jixaw metal pipe falling"><button class="play">▶</button><label><input type="checkbox"> <b class="t">jixaw metal pipe falling</b> <small>鉄パイプ（反響つき大音量版）</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/tmp_7901-951678082.mp3" data-title="Death sound (Fortnite)"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Death sound (Fortnite)</b> <small>Fortnite のダウン音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/emotional-damage-meme.mp3" data-title="Emotional Damage"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Emotional Damage</b> <small>「エモーショナル・ダメージ！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/erro.mp3" data-title="Windows XP Error"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Windows XP Error</b> <small>Windows XP のエラー音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/preview_4.mp3" data-title="windows xp shutdown"><button class="play">▶</button><label><input type="checkbox"> <b class="t">windows xp shutdown</b> <small>Windows XP のシャットダウン音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/bone-crack.mp3" data-title="Bone Crack"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Bone Crack</b> <small>骨が折れる「ボキッ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/tindeck_1.mp3" data-title="Metal Gear Solid Alert"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Metal Gear Solid Alert</b> <small>メタルギアの「！」発見音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/the-price-is-right-losing-horn.mp3" data-title="Price is Right Losing Horn"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Price is Right Losing Horn</b> <small>ハズレのトランペット「パッパラパ〜」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/shutup.swf.mp3" data-title="Shut up!"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Shut up!</b> <small>「シャラップ！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/undertakers-bell_2UwFCIe.mp3" data-title="The Undertaker Bell"><button class="play">▶</button><label><input type="checkbox"> <b class="t">The Undertaker Bell</b> <small>アンダーテイカー入場の鐘</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/punch-gaming-sound-effect-hd_RzlG1GE.mp3" data-title="Punch Sound"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Punch Sound</b> <small>ゲームっぽいパンチ音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-bro-oh-hell-nah-man.mp3" data-title="oh my god bro oh hell nah man"><button class="play">▶</button><label><input type="checkbox"> <b class="t">oh my god bro oh hell nah man</b> <small>「オーマイガー…いや無理無理」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/oh-my-god-meme.mp3" data-title="Oh My God Meme"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Oh My God Meme</b> <small>定番の「オーマイガー」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/dun-dun-dun-sound-effect-brass_8nFBccR.mp3" data-title="dun dun dunnnnnnnn"><button class="play">▶</button><label><input type="checkbox"> <b class="t">dun dun dunnnnnnnn</b> <small>ドラマチックな「ダン・ダン・ダーン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/dun_dun_1.mp3" data-title="Law and Order DUN DUN"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Law and Order DUN DUN</b> <small>刑事ドラマの「ドゥン・ドゥン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/ceeday-huh-sound-effect.mp3" data-title="Huh? Ceeday"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Huh? Ceeday</b> <small>高い声の「は？」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/huh-cat.mp3" data-title="Huh Cat"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Huh Cat</b> <small>猫の「ハァ？」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/untitled_1071.mp3" data-title="To be Continued (jojo)"><button class="play">▶</button><label><input type="checkbox"> <b class="t">To be Continued (jojo)</b> <small>ジョジョの「To Be Continued」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/a-few-moments-later-hd.mp3" data-title="A Few Moments Later"><button class="play">▶</button><label><input type="checkbox"> <b class="t">A Few Moments Later</b> <small>スポンジ・ボブの「数分後」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/directed-by-robert-b_voI2Z4T.mp3" data-title="Directed by Robert B. Weide"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Directed by Robert B. Weide</b> <small>台無しエンドのクレジット曲</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/curb-your-enthusiasm.mp3" data-title="Curb Your Enthusiasm"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Curb Your Enthusiasm</b> <small>気まずいオチの曲</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/record-scratch-2.mp3" data-title="Record scratch (wut)"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Record scratch (wut)</b> <small>レコードの針飛び「キュッ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/five-nights-at-freddys-full-scream-sound_2.mp3" data-title="FNAF Jumpscare"><button class="play">▶</button><label><input type="checkbox"> <b class="t">FNAF Jumpscare</b> <small>FNAF のびっくり絶叫</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/maro-jump-sound-effect_1.mp3" data-title="Mario Jump"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Mario Jump</b> <small>マリオのジャンプ音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/super-mario-death-sound-sound-effect.mp3" data-title="Super Mario Death"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Super Mario Death</b> <small>マリオのミス音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/sadtrombone.swf.mp3" data-title="Sad Trombone"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Sad Trombone</b> <small>「ワ・ワ・ワ・ワ〜ン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/downer_noise.mp3" data-title="Womp Womp Womp"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Womp Womp Womp</b> <small>がっかりの「ワンワンワーン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/spongebob-boowomp.mp3" data-title="spongebob boowomp"><button class="play">▶</button><label><input type="checkbox"> <b class="t">spongebob boowomp</b> <small>スポンジ・ボブの「ブーウォンプ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/fbi-open-up-sfx.mp3" data-title="FBI open UP"><button class="play">▶</button><label><input type="checkbox"> <b class="t">FBI open UP</b> <small>「FBIだ、開けろ！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/oh-no-no-no-no-laugh.mp3" data-title="oh no no no laugh"><button class="play">▶</button><label><input type="checkbox"> <b class="t">oh no no no laugh</b> <small>「オーノーノーノー」と笑う</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/run-vine-sound-effect.mp3" data-title="RUN vine"><button class="play">▶</button><label><input type="checkbox"> <b class="t">RUN vine</b> <small>「RUN!」と叫ぶ</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/classic_hurt.mp3" data-title="Minecraft Hurt"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Minecraft Hurt</b> <small>マイクラのダメージ音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/shocked-sound-effect.mp3" data-title="Shocked sound"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Shocked sound</b> <small>「えっ！？」の効果音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/nooo.swf.mp3" data-title="Noooo!"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Noooo!</b> <small>「ノーーー！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/darth-vader-says-noooooo.mp3" data-title="Darth Vader noooo"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Darth Vader noooo</b> <small>ベイダーの「ノォォォ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/obi-wan-hello-there.mp3" data-title="Hello there (Obi-Wan)"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Hello there (Obi-Wan)</b> <small>オビ＝ワンの「やあ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/yippee-tbh.mp3" data-title="yippee tbh"><button class="play">▶</button><label><input type="checkbox"> <b class="t">yippee tbh</b> <small>「イッピー！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/lego-breaking.mp3" data-title="lego breaking"><button class="play">▶</button><label><input type="checkbox"> <b class="t">lego breaking</b> <small>レゴが崩れる音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/lego-yoda-death-sound-effect.mp3" data-title="Lego Yoda Death"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Lego Yoda Death</b> <small>レゴ・ヨーダのやられ声</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/aughhhhh-aughhhhh.mp3" data-title="AUGHHHHH"><button class="play">▶</button><label><input type="checkbox"> <b class="t">AUGHHHHH</b> <small>「アァァァーッ」と絶叫</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/999-social-credit-siren.mp3" data-title="-999 Social Credit Siren"><button class="play">▶</button><label><input type="checkbox"> <b class="t">-999 Social Credit Siren</b> <small>「社会信用 -999」のサイレン</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/engineer_no01.mp3" data-title="nope.avi"><button class="play">▶</button><label><input type="checkbox"> <b class="t">nope.avi</b> <small>TF2 エンジニアの「Nope」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/yeet-sound-effect.mp3" data-title="YEET"><button class="play">▶</button><label><input type="checkbox"> <b class="t">YEET</b> <small>投げるときの「イート！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/crickets.swf.mp3" data-title="Crickets"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Crickets</b> <small>コオロギ（シーン…）</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/studio-audience-awwww-sound-fx.mp3" data-title="Aww"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Aww</b> <small>観客の「あぁ〜」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/michael-jackson-hee-hee.mp3" data-title="Michael Jackson Hee Hee"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Michael Jackson Hee Hee</b> <small>「ヒーヒー！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/gta-v-death-sound-effect-102.mp3" data-title="GTA V Wasted"><button class="play">▶</button><label><input type="checkbox"> <b class="t">GTA V Wasted</b> <small>GTA の「WASTED」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/6_1Njp68r.mp3" data-title="Owen Wilson Wow"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Owen Wilson Wow</b> <small>オーウェン・ウィルソンの「ワォ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/kids-saying-yay-sound-effect_xryiS4g.mp3" data-title="Kids saying yay"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Kids saying yay</b> <small>子どもたちの「イェーイ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/hallelujahshort.swf.mp3" data-title="Hallelujah"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Hallelujah</b> <small>「ハレルヤ〜」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/titanic-flute-fail.mp3" data-title="Titanic flute fail"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Titanic flute fail</b> <small>ヘタなタイタニックのリコーダー</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/y2mate-mp3cut_sRzY6rh.mp3" data-title="Coffin Dance"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Coffin Dance</b> <small>棺桶ダンス</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/bonk_7zPAD7C.mp3" data-title="bonk doge"><button class="play">▶</button><label><input type="checkbox"> <b class="t">bonk doge</b> <small>犬の「ボンク」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/bamboo-hit-anime-bonk-sound.mp3" data-title="Anime bonk (bamboo)"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Anime bonk (bamboo)</b> <small>アニメの竹で叩く「ぽこっ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/tuco-get-out.mp3" data-title="Tuco: GET OUT"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Tuco: GET OUT</b> <small>「出ていけ！」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/galaxy-meme.mp3" data-title="Galaxy meme"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Galaxy meme</b> <small>宇宙に飛んでいくような音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/baby-laughing-meme.mp3" data-title="baby laughing meme"><button class="play">▶</button><label><input type="checkbox"> <b class="t">baby laughing meme</b> <small>赤ちゃんの笑い声</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/cat-laugh-meme-1.mp3" data-title="cat laugh meme"><button class="play">▶</button><label><input type="checkbox"> <b class="t">cat laugh meme</b> <small>猫の笑い声</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/rehehehe.mp3" data-title="Rehehehe"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Rehehehe</b> <small>「レヘヘヘ」と笑う</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/snore-mimimimimimi.mp3" data-title="Snore mimimimimimi"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Snore mimimimimimi</b> <small>いびき「ミミミミ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/chicken-on-tree-screaming.mp3" data-title="Chicken on tree screaming"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Chicken on tree screaming</b> <small>木の上で叫ぶニワトリ</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/bababooey-sound-effect.mp3" data-title="Baba Booey"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Baba Booey</b> <small>「ババブーイ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/smoke-detector-beep.mp3" data-title="Smoke Detector Beep"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Smoke Detector Beep</b> <small>火災報知器のピッ</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/applepay.mp3" data-title="Apple Pay"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Apple Pay</b> <small>Apple Pay の支払い完了音</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/ding-sound-effect_2.mp3" data-title="ding sound effect"><button class="play">▶</button><label><input type="checkbox"> <b class="t">ding sound effect</b> <small>「チーン」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/crazy-realistic-knocking-sound-troll-twitch-streamers_small.mp3" data-title="Door Knocking"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Door Knocking</b> <small>リアルなノック音（配信者ドッキリ）</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/crack_the_whip.mp3" data-title="Whip"><button class="play">▶</button><label><input type="checkbox"> <b class="t">Whip</b> <small>ムチの「ピシッ」</small></label></li>
+<li data-mp3="https://www.myinstants.com/media/sounds/outro-song_oqu8zAg.mp3" data-title="outro song"><button class="play">▶</button><label><input type="checkbox"> <b class="t">outro song</b> <small>動画の締めの定番曲</small></label></li></ul>
+		<div id="bar"><div class="row"><span id="count">0 個</span><button id="copy">コピー</button><button id="stop">止める</button><button id="clear">全部外す</button></div><textarea id="out" readonly></textarea></div>
 		<script>
-			const KEY = "se-audition-checked";
-			const load = () => { try { return new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch { return new Set(); } };
-			const save = (s) => { try { localStorage.setItem(KEY, JSON.stringify([...s])); } catch {} };
-			const checked = load();
+			const KEY = "se-audition-v2";
+			let checked = new Set();
+			try { checked = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch {}
+			const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...checked])); } catch {} };
 			const audio = new Audio();
 			let cur = null;
 			const vol = document.getElementById("vol");
@@ -624,14 +122,14 @@
 			const lis = [...document.querySelectorAll("li")];
 			const refresh = () => {
 				const sel = lis.filter((li) => checked.has(li.dataset.mp3));
-				document.getElementById("count").textContent = sel.length + " 個選択";
-				document.getElementById("out").value = sel.map((li) => "- [" + li.dataset.group + "] " + li.dataset.title + " " + li.dataset.mp3).join("\n");
+				for (const li of lis) li.classList.toggle("on", checked.has(li.dataset.mp3));
+				document.getElementById("count").textContent = sel.length + " 個";
+				document.getElementById("out").value = sel.map((li) => "- " + li.dataset.title + " " + li.dataset.mp3).join("\n");
 			};
 			for (const li of lis) {
 				const box = li.querySelector("input");
 				box.checked = checked.has(li.dataset.mp3);
-				li.classList.toggle("on", box.checked);
-				box.onchange = () => { box.checked ? checked.add(li.dataset.mp3) : checked.delete(li.dataset.mp3); li.classList.toggle("on", box.checked); save(checked); refresh(); };
+				box.onchange = () => { box.checked ? checked.add(li.dataset.mp3) : checked.delete(li.dataset.mp3); save(); refresh(); };
 				li.querySelector(".play").onclick = () => {
 					if (cur === li) return stop();
 					stop(); cur = li; li.classList.add("playing");
@@ -640,7 +138,7 @@
 			}
 			document.getElementById("stop").onclick = stop;
 			document.getElementById("copy").onclick = () => { const t = document.getElementById("out"); t.select(); navigator.clipboard?.writeText(t.value).catch(() => document.execCommand("copy")); };
-			document.getElementById("clear").onclick = () => { checked.clear(); save(checked); for (const li of lis) { li.querySelector("input").checked = false; li.classList.remove("on"); } refresh(); };
+			document.getElementById("clear").onclick = () => { checked.clear(); save(); for (const li of lis) li.querySelector("input").checked = false; refresh(); };
 			refresh();
 		</script>
 	</body>
