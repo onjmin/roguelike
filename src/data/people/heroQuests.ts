@@ -130,13 +130,13 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 				"1回で村まで4.2キロアル。\nのべ{km}キロ運ばれてるアル",
 				"常識なら、もう3回は\n運ばれてるころアル",
 			),
-			kiriko("数えないでほしいンゴ！", { gesture: "shake" }),
+			kiriko("数えないでほしいンゴ！", { gesture: "shake", hit: "boom" }),
 			// 賞品は ロゼ自身の 原音設定（取り戻したいとは 言わない。加入の「ずれてないアル」の 前振り）
 			say("roze", "北東の避難所の奥に、わたしの\n原音設定が置いてあるアル"),
 			say("roze", "先に手に取ったほうが常識アル。\n競争アル", {
 				gesture: "startle",
 			}),
-			kiriko("自分の忘れ物を\n賭けるンゴ？", { emote: "?" }),
+			kiriko("自分の忘れ物を\n賭けるンゴ？", { emote: "?", hit: "huh" }),
 			say(
 				"roze",
 				"忘れ物じゃないアル、賞品アル。\nないと「あ」が半音ずれるだけアル",
@@ -166,10 +166,11 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			nar("ロゼの「あ」は村をこえ、\n隣の板の窓ガラスを割った。"),
 			// 持ちネタ：言い切った 常識が、割れた あとで かわる
 			say("roze", "……窓ガラスは、割れるのが\n常識アル", { emote: "得" }),
-			kiriko("隣の板に、\n謝りに行くンゴ！", { emote: "汗" }),
+			kiriko("隣の板に、\n謝りに行くンゴ！", { emote: "汗", hit: "whack" }),
 			// 潜るのは 交代（主人公を 切りかえる。キリコは 村に 残る）
 			say("roze", "次からはわたしが潜るアル。\nキリコは村で運ばれる練習アル", {
 				gesture: "spin",
+				meme: "memeHeeHee",
 			}),
 		],
 		unlocked: "ロゼと冒険に出られるようになった。",
@@ -193,7 +194,10 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			say("zero", "のこり4分の3、いただきます。\n……3機で、4分の3ずつです", {
 				gesture: "hop",
 			}),
-			proto("訂正ゼロ。3機で4分の3ずつは、\n4分の9ゼロ", { pause: 400 }),
+			proto("訂正ゼロ。3機で4分の3ずつは、\n4分の9ゼロ", {
+				pause: 400,
+				meme: "memeError",
+			}),
 			kiriko("蓄音機、1台しか\nないンゴ！", { emote: "驚", hit: "slap" }),
 		],
 		// 受けると 3対1 の 待ちぶせ（core/ambush.ts）
@@ -205,10 +209,13 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 		decline: [
 			say("zero", "3機とも、待機モードに\nもどります！3分だけ！", {
 				gesture: "slump",
+				meme: "memeShutdown",
 			}),
 		],
 		waiting: [
-			say("zero", "浅い階で、3機で待ってます！\nプロトは、もう寝ました"),
+			say("zero", "浅い階で、3機で待ってます！\nプロトは、もう寝ました", {
+				meme: "memeSnore",
+			}),
 			// 待つ 階は 板ごとに ちがう（core/ambush.ts の ambushFloorsOf。全体マップの 札に 出る）
 			say("zero", "どの板でも待ってます！\n地図の札に、階を書いておきました"),
 		],
@@ -219,11 +226,15 @@ export const HERO_QUESTS: Record<QuestHero, HeroQuestText> = {
 			nar("「ンゴ」「ンゴ」「ンゴ」\n「ンゴ」「ンゴ」「ンゴ」！"),
 			say("zero", "ぜんぶキリコさんの声です！\n4分の4、キリコさんです！", {
 				emote: "汗",
+				hit: "dun",
 			}),
 			say("zero", "これを3機で流せば、\n4分の12キリコさんです！", {
 				emote: "!",
 			}),
-			proto("訂正ゼロ。約分して、\n3キリコゼロ", { pause: 400 }),
+			proto("訂正ゼロ。約分して、\n3キリコゼロ", {
+				pause: 400,
+				meme: "memeDing",
+			}),
 			kiriko("3人もいらないンゴ！", { emote: "驚", hit: "slap" }),
 			say("zero", "次からはゼロが潜ります！\n4分の4ぶん、ゼロの声をためます", {
 				gesture: "nod",

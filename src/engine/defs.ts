@@ -204,6 +204,8 @@ export type SayOptions = {
 	pause?: number;
 	/** ツッコミの 音（engine/emote.ts の Hit。窓の 前に 鳴り、突かれた 人が びくっと する）。 */
 	hit?: Hit;
+	/** 海外ミームの 音（data/audio/sfx.ts の meme〜。engine/emote.ts の Cue.meme）。 */
+	meme?: string;
 	/** 記号・動きを 出す 人（地図の 人の id。省くと who、名前を かえた 声なら 話しかけた 相手）。 */
 	speaker?: string;
 	/** 畳みかけ（ms。字を 一度に 出し、押さなくても 送る。engine/emote.ts の Cue.auto）。 */

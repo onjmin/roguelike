@@ -238,6 +238,42 @@ test("効果音の 名前：se(…) で 鳴らす 音は どれも 素材が あ
 	);
 });
 
+test("海外ミームの 音（2026-10-23 作者「ゲームの 効果音には 採用せず 寸劇に 多用する」）：寸劇の 行の meme・hit・se だけで 鳴らし、迷宮・村の しくみ（src/core・src/ui）では 鳴らさない", () => {
+	const files = (dir: string): string[] =>
+		readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
+			d.isDirectory()
+				? files(join(dir, d.name))
+				: d.name.endsWith(".ts")
+					? [join(dir, d.name)]
+					: [],
+		);
+	const memes = Object.keys(sfx).filter((n) => sfx[n]?.includes("/se/meme/"));
+	ok(memes.length >= 25, `${memes.length} meme sounds`);
+	for (const n of memes)
+		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
+	// しくみの 側は 名前で 呼ばない（倒れる 直前の ジョジョ・時間とびの 札は 演出なので よい）
+	const staged = new Set(["toBeContinued", "fewMomentsLater"]);
+	for (const p of [...files("src/core"), ...files("src/ui")]) {
+		const src = readFileSync(p, "utf8");
+		for (const n of memes)
+			if (!staged.has(n))
+				ok(!src.includes(`"${n}"`), `${n} is used by the game itself (${p})`);
+	}
+	// 寸劇の 行に 書いた meme は どれも ミームの 音
+	let used = 0;
+	for (const p of files("src/data")) {
+		const src = readFileSync(p, "utf8");
+		for (const m of src.matchAll(/\bmeme: "([A-Za-z_]+)"/g)) {
+			used++;
+			ok(
+				memes.includes(m[1] ?? ""),
+				`meme "${m[1]}" is not a meme sound (${p})`,
+			);
+		}
+	}
+	ok(used >= 30, `only ${used} lines use a meme sound`);
+});
+
 test("町の 段：本筋の 板（パン → きのこ → 風呂 → 電池）を 持ち帰ると 0 → 3 → 5 → 6 → 7。寄り道では 上がらない", () => {
 	ok(stageOfCleared([]) === 0, "stage before any board");
 	ok(stageOfCleared(["shallow"]) === 3, "パン板");

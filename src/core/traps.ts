@@ -69,7 +69,7 @@ const fireTrap = (r: Run, t: Trap): void => {
 	switch (t.kind) {
 		case "bear":
 			p.status.trapped = 5;
-			r.se("bearTrapScream");
+			r.se("bearTrap");
 			r.msg("足をはさまれた！トラはしつこい", "warn");
 			return;
 		case "acid": {
@@ -133,7 +133,7 @@ const fireTrap = (r: Run, t: Trap): void => {
 				to: { x: p.x, y: p.y },
 				kind: "ball",
 			});
-			r.se("ballHit");
+			r.se("damage");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			r.msg(
 				`${t.kind === "dart" ? "毒入りのデッドボール！" : "デッドボール！"}　${dmg}のダメージ`,
@@ -152,11 +152,11 @@ const fireTrap = (r: Run, t: Trap): void => {
 		case "pit": {
 			// トルネコ1と 同じ：1つ 下の 階へ 落ちて 7〜8の ダメージ（盾で へる）。落ちた 先で ダメージを 言う。
 			// 上りの 板（塔・やぐら・山）では 1つ 前の 階へ 落ちる（のぼった ぶんが もどる。1階なら 下は ない）
-			r.se("pitScream");
+			r.se("fall");
 			const dmg = rollDamage(8, r.playerDef(), r.dmgRoll());
 			r.msg("落とし穴に落ちた！");
 			if (!r.pitFall()) return;
-			r.se("ballHit");
+			r.se("damage");
 			r.msg(`着地は0点。${dmg}のダメージを受けた`);
 			r.hurtPlayer(dmg, "落とし穴に落ちてたおれた");
 			return;

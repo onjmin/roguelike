@@ -904,7 +904,7 @@ const herbOnMonster = (
 			// まどわされた敵は ずっと逃げる（トルネコ1の まどわし草）。ボスは 逃げない
 			if (bossShrugs(m)) return;
 			m.fleeing = true;
-			r.se("getOut");
+			r.se("flee");
 			return;
 		case "h_sleep":
 			m.status.sleep = 5;

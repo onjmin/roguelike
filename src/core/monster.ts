@@ -784,7 +784,7 @@ export const meleePlayer = (r: Run, m: Monster): void => {
 				r.removeItem(it);
 				m.carry = it;
 				m.fleeing = true;
-				r.se("heeHee");
+				r.se("steal");
 				r.msg(`${nm}は${r.name(it)}を${st.verb ?? "盗んだ"}！`, "warn");
 				if (st.quip) r.msg(st.quip);
 				const to = randomAway(r, m);
@@ -954,7 +954,7 @@ const useSkill = (r: Run, m: Monster, a: Skill): void => {
 			const it = r.rng.pick(eq);
 			it.cursed = true;
 			it.known = true;
-			r.se("curseOn");
+			r.se("curse");
 			r.msg(`${r.name(it)}がのろわれた！`, "warn");
 			return;
 		}

@@ -2142,13 +2142,14 @@ export class Village {
 	 * 仲間も いっしょに 沈む。
 	 */
 	private async beatAndHit(
-		c: { pause?: number; hit?: Hit } | undefined,
+		c: { pause?: number; hit?: Hit; meme?: string } | undefined,
 		target: string | null,
 	): Promise<void> {
 		if (c?.pause) {
 			this.msg.close();
 			await sleep(c.pause);
 		}
+		if (c?.meme) this.ctx.audio.se(c.meme);
 		if (!c?.hit) return;
 		this.ctx.audio.se(HIT_SE[c.hit]);
 		const g: Gesture = c.hit === "zukko" ? "slump" : "startle";

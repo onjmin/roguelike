@@ -78,9 +78,15 @@ export const ARRIVALS: readonly Arrival[] = [
 			e({ emote: "?" }, k("まとめブログの人ンゴ？\n何しに来たンゴ？")),
 			kankei("この町、まとめに来たばい！\nまず「キリコ、歩く」"),
 			kankei("つぎ「キリコ、また歩く」\n「【定期】キリコ、歩く」"),
-			e({ emote: "得" }, kankei("今日だけで\n300本まとめたばい！")),
+			e(
+				{ meme: "memeWow", emote: "得" },
+				kankei("今日だけで\n300本まとめたばい！"),
+			),
 			nanmame("【青字】日本じゅうの\nまとめに転載しました"),
-			nanmame("【青字】宇宙版も\n作りました（コメント0件）"),
+			e(
+				{ hit: "bruh" },
+				nanmame("【青字】宇宙版も\n作りました（コメント0件）"),
+			),
 			e({ emote: "驚", hit: "slap" }, k("歩いただけで\n記事にしないでンゴ！")),
 			kankei("記念に、サッピーば\n焼いてお祝いするばい！"),
 			e(
@@ -91,7 +97,7 @@ export const ARRIVALS: readonly Arrival[] = [
 				{ emote: "驚", hit: "whack", pause: 400 },
 				k("まとめる前に\n消火するンゴ！！"),
 			),
-			sappy("……さっぱりピーマン、\nわけわかめ"),
+			e({ hit: "bruh" }, sappy("……さっぱりピーマン、\nわけわかめ")),
 		],
 	},
 	// 風呂板の あと：滋賀から 全レスしに 来た お嬢さま。返事の 相手が キリコ → 町の 看板 → 海 → 宇宙と ふえる
@@ -111,7 +117,7 @@ export const ARRIVALS: readonly Arrival[] = [
 			chupa("町の看板の皆さまにも、\n1枚ずつお返事ですわ！"),
 			chupa("波の音さまの\n「ザザーン」にも、お返事ですわ！"),
 			e(
-				{ emote: "得" },
+				{ meme: "memeGalaxy", emote: "得" },
 				chupa("宇宙の皆さまの\n137億年ぶんにも、お返事ですわ！"),
 			),
 			e(
@@ -120,7 +126,7 @@ export const ARRIVALS: readonly Arrival[] = [
 			),
 			chupa("それでは、コンビニの\nバイトがありますの"),
 			chupa("……あら、いまのツッコミにも\nお返事しなくては！"),
-			e({ emote: "冷" }, k("もういいンゴ……")),
+			e({ hit: "bruh", emote: "冷" }, k("もういいンゴ……")),
 		],
 	},
 	// 電池板の あと：見学コースの 案内係が 越してくる。握手の ために 手袋を とったら 町・日本・宇宙まで 送電する
@@ -138,10 +144,19 @@ export const ARRIVALS: readonly Arrival[] = [
 			den("はじめましての握手を……\nあ、手袋とりますね"),
 			e({ emote: "驚", hit: "boom" }, n("キリコの髪が、\nぜんぶ逆立った。")),
 			den("あっ、うれしくて\n町じゅうに送電しちゃいました"),
-			den("ついでに日本の電気も、\nぜんぶまかなっときました"),
-			e({ emote: "得" }, den("宇宙ステーションにも、\nおすそわけです！")),
+			e(
+				{ meme: "memeWow" },
+				den("ついでに日本の電気も、\nぜんぶまかなっときました"),
+			),
+			e(
+				{ meme: "memeGalaxy", emote: "得" },
+				den("宇宙ステーションにも、\nおすそわけです！"),
+			),
 			e({ emote: "驚", hit: "whack", pause: 400 }, k("手袋はめるンゴ！！")),
-			den("はーい！電気代は、\nだれも払ってないですけど！"),
+			e(
+				{ meme: "memeSocialCredit" },
+				den("はーい！電気代は、\nだれも払ってないですけど！"),
+			),
 		],
 	},
 ];

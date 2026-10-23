@@ -204,7 +204,7 @@ export const zankiLine = (cleared: readonly DungeonId[]): string | null =>
 
 /** c は 話す 人の 感情の 記号・体の 動き（engine/emote.ts。話す 人が 村に 立って いる ときだけ 見える）。 */
 const q = (who: Speaker, text: string, c?: Cue): Line => ({ who, text, ...c });
-const n = (text: string): StoryPage => ({ who: null, text });
+const n = (text: string, c?: Cue): StoryPage => ({ who: null, text, ...c });
 /** ジャンルの 声の 語り手（実況・ニュース …。quotes.ts の ANCHORS）。 */
 const a = (anchor: Anchor, text: string, c?: Cue): StoryPage => ({
 	who: null,
@@ -338,17 +338,21 @@ export const TEN_NEWS = {
 			look: null,
 		},
 		s("zero", "停電です！町の電気、\nぜんぶ電池板から来てました！", {
+			hit: "dun",
 			emote: "!",
 		}),
 		k("吾輩が、蓄音機で\n発電するンゴ！", { gesture: "hop" }),
 		// 豆電球は キリコの 頭の 上に ともって（fx の bulb）、次の 頁で 割れる 音と 暗転
 		{
-			...n("キリコはハンドルを全力で回した。\n豆電球が1個、ついた。"),
+			...n("キリコはハンドルを全力で回した。\n豆電球が1個、ついた。", {
+				meme: "memeDing",
+			}),
 			fx: "bulb",
 		},
 		{ ...n("……はじけた。"), se: "glassBreak", fx: "blackout" },
 		// 停電は 電気の 方へ ふくらむ（明かり → 家電が 逆回り → 時計が 昨日へ。最終話で 鯖ごと 暗転して 回収）
 		s("zero", "冷蔵庫が牛乳を温めてます！\n時計は、昨日にもどってます！", {
+			meme: "memeError",
 			emote: "!",
 		}),
 		k("家電が逆回りンゴ！？\n吾輩のせいンゴ！？", { emote: "!" }),
@@ -357,7 +361,11 @@ export const TEN_NEWS = {
 			hit: "slap",
 		}),
 		// 毒（2026-10-21）：キリコも 一緒に 狂う（ツッコまずに 乗る）
-		k("……吾輩も、\nムーンウォークするンゴ", { gesture: "spin", auto: 1100 }),
+		k("……吾輩も、\nムーンウォークするンゴ", {
+			meme: "memeHeeHee",
+			gesture: "spin",
+			auto: 1100,
+		}),
 		// 生き返った 通りが ぜんぶ 消えた（成果が 一度 消える）。ここから 警報の 曲（落ちた鯖）
 		{
 			...n("明かりは、もどらなかった。\n生き返った通りも、ぜんぶ暗い。"),
@@ -370,9 +378,15 @@ export const TEN_NEWS = {
 			}),
 			look: null,
 		},
-		s("feris", "電池板の人、電気代を\n請求しに来るかも〜！"),
+		s("feris", "電池板の人、電気代を\n請求しに来るかも〜！", {
+			meme: "memePay",
+		}),
 		// 成り上がり：電気も 帝国の ものに する（STORY.md §4.9「成り上がりと 転落」）
-		k("電池板ごと、吾輩の\n帝国にするンゴ！", { emote: "得", gesture: "hop" }),
+		k("電池板ごと、吾輩の\n帝国にするンゴ！", {
+			hit: "boom",
+			emote: "得",
+			gesture: "hop",
+		}),
 		// 反旗の 前ぶれ（電池板の てっぺんで 待つ）：叫ばない
 		{
 			...s("nanj", "……皇帝さまの町も、電気が\nないと、ただの暗がりやな", {
@@ -781,7 +795,10 @@ export const STORY: Record<
 			// ここから ずっこけの 曲（界隈曲その4）。翌朝の 書きこみで 切る
 			{
 				// 成り上がりの 1段目（STORY.md §4.9「成り上がりと 転落」）：独立 ついでに 自分で 町長を 名乗る
-				...k("吾輩も独立するンゴ！\n町長は、吾輩ンゴ！", { gesture: "hop" }),
+				...k("吾輩も独立するンゴ！\n町長は、吾輩ンゴ！", {
+					hit: "boom",
+					gesture: "hop",
+				}),
 				bgm: "kaiwai4",
 			},
 			// 広場へ 場面を うつして、キリコが 線を 引きながら 横に 走る（線は 地図に 描く：ui/village/sceneChalk.ts）
@@ -816,7 +833,11 @@ export const STORY: Record<
 				],
 			},
 			// 毒（2026-10-21）：内戦の まま 3機が それぞれ 建国して しまう（押さずに 畳みかけ）
-			s("zero", "ゼロ国、建国です！", { emote: "!", auto: 450 }),
+			s("zero", "ゼロ国、建国です！", {
+				meme: "memeYay",
+				emote: "!",
+				auto: 450,
+			}),
 			{
 				who: null,
 				mob: "proto",
@@ -834,6 +855,7 @@ export const STORY: Record<
 			// ロゼは 広場の 反対の はしへ 走って 自分の 国を 建てる。やきうが 追いかけて ツッコむ
 			{
 				...s("roze", "……独立は、今日から常識アル！\n麻婆共和国アル！", {
+					hit: "boom",
 					gesture: "spin",
 				}),
 				go: [{ who: "roze", to: [25, 21], face: "down" }],
@@ -855,12 +877,16 @@ export const STORY: Record<
 			},
 			{
 				...s("nanj", "パン1個買うのに、\nパスポート3回見せたわ！", {
+					hit: "bruh",
 					emote: "冷",
 				}),
 				look: null,
 			},
 			// ゼロの 持ちネタ：3機で 数える → サブ機が 数を 訂正する（STORY.md のライバル節）
-			s("zero", "入国審査、43か所です！\n3機で数えました！", { emote: "得" }),
+			s("zero", "入国審査、43か所です！\n3機で数えました！", {
+				meme: "memeWow",
+				emote: "得",
+			}),
 			{
 				who: null,
 				mob: "proto",
@@ -869,11 +895,15 @@ export const STORY: Record<
 			},
 			// 通貨が できる（制度の 次の 段）
 			s("zero", "ゼロ、お金も刷りました！\n1キリコ＝パンくず1粒です！", {
+				meme: "memePay",
 				emote: "!",
 			}),
 			// 服に パンくずを つけて 見せる（BOSS_RETURN で もう ついて いれば そのまま）
 			{
-				...k("吾輩の服、パンくずで\n大金持ちンゴ！", { gesture: "hop" }),
+				...k("吾輩の服、パンくずで\n大金持ちンゴ！", {
+					meme: "memeYippee",
+					gesture: "hop",
+				}),
 				wear: "crumbs",
 			},
 			// 日本 47か国は 数の 段（絵に できる 物が ない）：台詞と、つづく やきうの 亡命で 見せる
@@ -890,6 +920,7 @@ export const STORY: Record<
 			// やきうは 東へ 走って 亡命（書きこみの 頁で もどって くる）
 			{
 				...s("nanj", "ワイ、大阪国に亡命や！\nビザ代はパンくずで払うで！", {
+					meme: "memeAughhh",
 					gesture: "hop",
 				}),
 				go: [
@@ -929,7 +960,10 @@ export const STORY: Record<
 				card: null,
 			},
 			{
-				...k("日本は割れたけど、\n吾輩は町長のままンゴ", { emote: "得" }),
+				...k("日本は割れたけど、\n吾輩は町長のままンゴ", {
+					meme: "memeHeeHee",
+					emote: "得",
+				}),
 				cutin: true,
 			},
 			// ツッコミは 人を 突く（わざとの 人は キリコだけ）。ロゼは 口より 先に 手が 出て、キリコは 倒れる
@@ -956,8 +990,12 @@ export const STORY: Record<
 			},
 			{ ...k("盛ってないンゴ！\n本当に割ったンゴ！"), look: null, card: null },
 			// 書いたのは やきう（言いわけの 天丼の 1回目。第三話は インクまみれ：quotes.ts の ENDING）。問いつめずに 手だけ 見て、言いわけ 1行で 切る
-			k("やきう、手がチョークの\n粉まみれンゴ"),
-			s("nanj", "これは、パンくずや！", { emote: "汗", pause: 400 }),
+			k("やきう、手がチョークの\n粉まみれンゴ", { hit: "dun" }),
+			s("nanj", "これは、パンくずや！", {
+				hit: "bruh",
+				emote: "汗",
+				pause: 400,
+			}),
 		],
 		again: SHALLOW_BASE,
 	},
@@ -995,8 +1033,14 @@ export const STORY: Record<
 				bgm: "kaiwai2",
 			},
 			// 成り上がりの てっぺん：宇宙まで 帝国の 明かり。祭りは 皇帝の 記念
-			a("news", "皇帝キリコの明かり、宇宙まで。\n今夜は記念の祭りです"),
-			k("宇宙も、吾輩の領土ンゴ！", { emote: "得", gesture: "hop" }),
+			a("news", "皇帝キリコの明かり、宇宙まで。\n今夜は記念の祭りです", {
+				meme: "memeGalaxy",
+			}),
+			k("宇宙も、吾輩の領土ンゴ！", {
+				hit: "boom",
+				emote: "得",
+				gesture: "hop",
+			}),
 			// 広場の 祭り：来る 人は 持ち帰った 板で きまる（本筋の 3つは かならず）。寄り道の 人は 自分で しゃべる
 			nanashi(
 				"パン兵",
@@ -1026,6 +1070,7 @@ export const STORY: Record<
 			{ ...k("書かないンゴ？", { emote: "?" }), look: null },
 			{
 				...s("nanj", "……盛るまでもないわ！\n見てみい、この人の数！", {
+					meme: "memeYay",
 					gesture: "hop",
 					pause: 600,
 				}),
@@ -1074,7 +1119,9 @@ export const STORY: Record<
 			// 曲が ぷつっと 切れて、無音の まま 暗転と 差し押さえ
 			// カメラは 掲示板、絵は 貼られた 管理人の 書きこみ
 			{
-				...n("祭りの最中、管理人の書きこみ。\n『鯖代払い忘れとったわ』"),
+				...n("祭りの最中、管理人の書きこみ。\n『鯖代払い忘れとったわ』", {
+					hit: "dun",
+				}),
 				bgm: null,
 				fx: "confetti",
 				look: [15.5, 21],
@@ -1096,7 +1143,10 @@ export const STORY: Record<
 				fx: "blackout",
 				card: null,
 			},
-			{ ...k("鯖ごとンゴ！！", { emote: "青" }), fx: "blackout" },
+			{
+				...k("鯖ごとンゴ！！", { meme: "memeFahhh", emote: "青" }),
+				fx: "blackout",
+			},
 			// まっくらの 中は 叫ばない（緊張を 解かない）。鯖ごと 消えたら 14年も 消える。
 			// キリコが 最終手段（鯖代を ぷゆゆパンで 払う）。それで 本当に もどるのが 緩和
 			{
@@ -1116,7 +1166,11 @@ export const STORY: Record<
 				pause: 600,
 			},
 			// 転落（STORY.md §4.9「成り上がりと 転落」）：金庫は 空。朝の ニュースは 帝国の 差し押さえも ふつうの 調子で 読む
-			{ ...n("金庫には、ぷゆゆパンが1個。"), fx: "blackout", pause: 900 },
+			{
+				...n("金庫には、ぷゆゆパンが1個。", { hit: "bong" }),
+				fx: "blackout",
+				pause: 900,
+			},
 			{
 				...a(
 					"news",
@@ -1126,7 +1180,9 @@ export const STORY: Record<
 				se: "pay",
 				sky: null,
 			},
-			a("news", "皇帝の肩書きも、没収です。\n続いてお天気です"),
+			a("news", "皇帝の肩書きも、没収です。\n続いてお天気です", {
+				meme: "memeSocialCredit",
+			}),
 			{ ...k("……吾輩、なんにも\nなくなったンゴ", { emote: "…" }), pause: 900 },
 			// 拾われる（元の 相棒の 運送屋に 拾われる 型）。しんみりは ゲーム 全体で ここ 1つ。最後は 1行で 崩す
 			{
@@ -1218,7 +1274,7 @@ export const STORY: Record<
 			// シヨの 導入（2026-10-18 作者「導入なしに 唐突に 表れる」）：キリコは 知らない 人（STORY.md §0 の 3）。
 			// 場面を 喫茶の 前へ うつして、シヨは バイトの 手を 止めずに 名乗る（説明は 動きの 中で）。UTAU組の 先輩で、
 			// 湯の 温度に うるさい（第三話の 前ふり）
-			{ ...k("……どなたンゴ？", { emote: "?" }), cut: [32, 20] },
+			{ ...k("……どなたンゴ？", { hit: "huh", emote: "?" }), cut: [32, 20] },
 			{
 				...s(
 					"shiyo",
@@ -1243,7 +1299,9 @@ export const STORY: Record<
 			// 組みこまれる。行進は 世界を 1周して 人の 頭の きのこだけ 摘む。看板の しめじは 残る（data/town/revival.ts）
 			// 胞子の 段は 自然ドキュメンタリーの 声（ジャンルの 声の 語り手）
 			{
-				...a("doc", "胞子は、わずか10分で\n商店街の看板をしめじに変えた"),
+				...a("doc", "胞子は、わずか10分で\n商店街の看板をしめじに変えた", {
+					hit: "dun",
+				}),
 				spores: true,
 				look: [45, 17],
 				shrooms: "street",
@@ -1264,7 +1322,7 @@ export const STORY: Record<
 				shrooms: "port",
 				go: [{ who: "kiriko", to: [20, 45], face: "down" }],
 			},
-			k("吾輩、農家の才能\nあるンゴ！", { emote: "得" }),
+			k("吾輩、農家の才能\nあるンゴ！", { meme: "memeWow", emote: "得" }),
 			s("shiyo", "才能の使い方が逆よ！！", {
 				emote: "驚",
 				hit: "punch",
@@ -1277,14 +1335,25 @@ export const STORY: Record<
 			},
 			// 生き物の 段（頭 → 看板 → 町の 人 → 行進 → 世界 1周）は 図で なく、胞子・地図の きのこ・みんなの 行進で 見せる
 			{
-				...a("doc", "胞子は風に乗り、新たな宿主を\nさがした。……町の人の頭だ。"),
+				...a(
+					"doc",
+					"胞子は風に乗り、新たな宿主を\nさがした。……町の人の頭だ。",
+					{ meme: "memeShocked" },
+				),
 				spores: true,
 				wearAll: "kinoko",
 			},
-			s("nanj", "ワイの頭、エリンギや！\n帽子かぶれへん！", { emote: "怒" }),
+			s("nanj", "ワイの頭、エリンギや！\n帽子かぶれへん！", {
+				meme: "memeOmg",
+				emote: "怒",
+			}),
 			// ロゼの 持ちネタ：言い切った 常識が、自分の 頭に 生えたら かわる
 			s("roze", "頭にきのこは、\n非常識アル！", { emote: "怒" }),
-			s("roze", "……似合うなら、\n常識アル", { emote: "花", pause: 400 }),
+			s("roze", "……似合うなら、\n常識アル", {
+				hit: "bruh",
+				emote: "花",
+				pause: 400,
+			}),
 			// 行進は 港から 桟橋を 上がって きて、キリコの 手前に 列で 止まる（ui/village/sceneMarks.ts の march。
 			// 場面の おわりまで 桟橋に いる）
 			// 緊張：ずっこけの 曲を 止めて、足音だけで 行進が もどって くる。きのこ軍は 叫ばずに 脅す
@@ -1305,10 +1374,11 @@ export const STORY: Record<
 				look: null,
 				pause: 700,
 			},
-			{ ...k("……全員ンゴ？", { emote: "…" }), pause: 600 },
+			{ ...k("……全員ンゴ？", { hit: "huh", emote: "…" }), pause: 600 },
 			// 主人公が 最悪の 手：きのこ軍ごと 自分の 軍に して 総統を 名乗る（成り上がりの 2段目）→ 町の 人ごと 行進。
 			// 曲が もどって ゆるむ
 			k("ほな、この軍は吾輩がもらうンゴ！\n今日から総統ンゴ！", {
+				hit: "boom",
 				gesture: "hop",
 			}),
 			{
@@ -1323,13 +1393,21 @@ export const STORY: Record<
 					{ who: "nanj", route: "uuuDddd", speed: 1.6 },
 				],
 			},
-			s("zero", "行進、128本から\n1万3千本になりました！", { emote: "!" }),
+			s("zero", "行進、128本から\n1万3千本になりました！", {
+				meme: "memeYay",
+				emote: "!",
+			}),
 			// メタ：画面に 描けない 数を その場の 人が 言う（桟橋の 行進は 5本：ui/village/sceneMarks.ts）
 			s("zero", "1万3千本は描けないので、\n画面には5本で表しています！", {
+				hit: "bruh",
 				emote: "得",
 			}),
 			s("nanj", "なんでワイ、\n行進しとんねん！", { emote: "驚" }),
-			s("nanj", "……楽しいからや！", { gesture: "hop", pause: 400 }),
+			s("nanj", "……楽しいからや！", {
+				meme: "memeYippee",
+				gesture: "hop",
+				pause: 400,
+			}),
 			// 頭の きのこは 摘まれる（キリコのも）。看板の しめじは 残る
 			{
 				// 総統の 軍事パレードを ニュースの 声で
@@ -1393,7 +1471,9 @@ export const STORY: Record<
 				gesture: "hop",
 			}),
 			{
-				...n("キリコはヤシの実を蓄音機に\nのせてみた。回らない。"),
+				...n("キリコはヤシの実を蓄音機に\nのせてみた。回らない。", {
+					meme: "memeError",
+				}),
 				card: iconPicture("yashi", "ヤシの実"),
 			},
 			s("roze", "回すより、\n割って飲むアル！"),
@@ -1403,7 +1483,10 @@ export const STORY: Record<
 				se: "read",
 				card: NATSUKO_LETTER,
 			},
-			s("zero", "生還率、100％です！\n分母は6です！", { emote: "!" }),
+			s("zero", "生還率、100％です！\n分母は6です！", {
+				meme: "memeYay",
+				emote: "!",
+			}),
 			// 島が 好きすぎて 町に 来たかった（板の 事情）。キリコが 呼ぶ → 島が 泳いで 港に 突っこむ → 日本の 形が かわる
 			// キリコは 船着き場の はしへ 走って 沖に 呼びかける
 			{
@@ -1423,7 +1506,9 @@ export const STORY: Record<
 				pause: 600,
 			},
 			{
-				...a("live", "沖の島が泳ぎだした！\nフォームはクロール！速い！"),
+				...a("live", "沖の島が泳ぎだした！\nフォームはクロール！速い！", {
+					hit: "dun",
+				}),
 				pause: 900,
 			},
 			// フェリスの 持ちネタ：やきうの 出題に、斜め上の 答え（おんJwiki の「フェリスの お勉強」）
@@ -1432,10 +1517,16 @@ export const STORY: Record<
 				about: "feris",
 				look: null,
 			},
-			s("feris", "港が逃げたら、\n追いつかれません〜", { emote: "♪" }),
+			s("feris", "港が逃げたら、\n追いつかれません〜", {
+				hit: "huh",
+				emote: "♪",
+			}),
 			// みんなで 桟橋を 浜まで 逃げる（キリコに カメラが ついていく）
 			{
-				...k("こっちに来るンゴ！！\n逃げるンゴ！！", { emote: "!" }),
+				...k("こっちに来るンゴ！！\n逃げるンゴ！！", {
+					meme: "memeAughhh",
+					emote: "!",
+				}),
 				go: [{ who: "all", to: [20, 34], speed: 3 }],
 			},
 			{
@@ -1450,7 +1541,10 @@ export const STORY: Record<
 			},
 			// みんなで 桟橋の 港の 前へ 見に 行く（島が 見える 所）
 			{
-				...k("港に、島が\n縦列駐車したンゴ！", { emote: "得" }),
+				...k("港に、島が\n縦列駐車したンゴ！", {
+					meme: "memeDing",
+					emote: "得",
+				}),
 				look: null,
 				go: [{ who: "all", to: [24, 42], speed: 3, face: "right" }],
 			},
@@ -1509,6 +1603,7 @@ export const STORY: Record<
 			),
 			// ロゼの 持ちネタ：さっきの「ターンが 常識」が、島に 合わせて かわる
 			s("roze", "……バックで帰るのが、\n泳ぎの常識アル", {
+				hit: "bruh",
 				emote: "得",
 				pause: 400,
 			}),
@@ -1521,11 +1616,12 @@ export const STORY: Record<
 			},
 			{
 				...s("feris", "それ、ナツコちゃんの字〜。\n夏休みの自由研究だよ〜", {
+					meme: "memeReveal",
 					emote: "汗",
 				}),
 				card: null,
 			},
-			s("nanj", "にせもんか！草"),
+			s("nanj", "にせもんか！草", { meme: "memeOof" }),
 			{
 				...k("残機って、どうやったら\nふえるンゴ？", { emote: "?" }),
 				about: "nanj",
@@ -1576,7 +1672,13 @@ export const STORY: Record<
 				...n("舟の底に、粉もん奉行の字。\n「次の招待状も、末尾に😡」"),
 				card: BOAT_NOTE,
 			},
-			{ ...k("吾輩も、招待状を\n出すンゴ😡", { gesture: "hop" }), card: null },
+			{
+				...k("吾輩も、招待状を\n出すンゴ😡", {
+					meme: "memeHeeHee",
+					gesture: "hop",
+				}),
+				card: null,
+			},
 			// 外交の 方から 料理の 方へ（招待状 → 宣戦布告 → 首脳の たこパ → 焦げ）。焦げあとは 屋台の 鉄板に 残る。
 			// 193通は 数の 段：ビンを 流す キリコ・返事の 手紙・首脳の 舟（ui/village/sceneMarks.ts）で 見せる
 			// 招待状を 出す 手の 動き：桟橋の 先へ 走って、ビンに つめて 海へ 流す
@@ -1611,7 +1713,9 @@ export const STORY: Record<
 			},
 			// みんなで 船着き場の はしへ 出て 沖を 見る。緊張：曲を 止めて、193か国の 船と 大砲
 			{
-				...n("翌日。沖に、各国の船。\n筒の口は、ぜんぶ町を向いていた。"),
+				...n("翌日。沖に、各国の船。\n筒の口は、ぜんぶ町を向いていた。", {
+					hit: "dun",
+				}),
 				skip: true,
 				// 上陸と たこパは 昼（村の 時計も 昼から すすむ）
 				sky: "day",
@@ -1624,7 +1728,9 @@ export const STORY: Record<
 			},
 			{ ...k("……これが、戦争ンゴ", { emote: "…" }), pause: 900 },
 			// ニュースの 声で ゆるめる（大砲に 見えたのは たこ焼き器）
-			a("news", "速報です。大砲に見えたのは、\nすべてたこ焼き器でした"),
+			a("news", "速報です。大砲に見えたのは、\nすべてたこ焼き器でした", {
+				hit: "bong",
+			}),
 			{
 				...s("roze", "戦争じゃなくて、\nたこパしに来たアル！？", {
 					emote: "驚",
@@ -1654,10 +1760,13 @@ export const STORY: Record<
 				card: GRIDDLE,
 			},
 			// ツッコミは 入れない（ボケを 放って おく）。首脳が 真顔で 受ける
-			k("焼きすぎたンゴ！！", { emote: "冷" }),
+			k("焼きすぎたンゴ！！", { meme: "memeOmg", emote: "冷" }),
 			nanashi("首脳たち", "焦げたけど、うまかったで😡\n毎年来るで😡"),
 			// 成り上がり：たこパの 席で、勝手に 連合の 議長に おさまる
-			k("ほな、たこ焼き連合の\n議長は吾輩ンゴ", { emote: "得" }),
+			k("ほな、たこ焼き連合の\n議長は吾輩ンゴ", {
+				meme: "memeYippee",
+				emote: "得",
+			}),
 			// 毒（2026-10-21）：お返しに キリコも 焼かれる。キリコは 焼かれて 満足する（一緒に 狂う）
 			{
 				...nanashi("首脳たち", "お礼に、キリコも\n焼いといたで😡"),
@@ -1676,6 +1785,7 @@ export const STORY: Record<
 			// 193か国ぶんの 麻婆の 皿を さがして ロゼが 右往左往
 			{
 				...s("roze", "毎年来るアル！？\n麻婆の皿が、193枚足りないアル！", {
+					meme: "memeShocked",
 					emote: "!",
 				}),
 				look: null,
@@ -1705,12 +1815,13 @@ export const STORY: Record<
 			},
 			{
 				...s("zero", "遺影スレ……みんなで\nやきうさんを殺すスレ、ですね！", {
+					hit: "dun",
 					emote: "!",
 				}),
 				card: null,
 			},
 			// 締めは へん（STORY.md「サゲ」）：ツッコミを 待たずに、ゼロが 善意で 殺しに いく
-			{ ...s("nanj", "……", { emote: "冷" }), pause: 600 },
+			{ ...s("nanj", "……", { hit: "bruh", emote: "冷" }), pause: 600 },
 			{
 				...s("zero", "ゼロも、今夜1回\n書きこんでおきますね！", {
 					emote: "得",
@@ -1794,6 +1905,7 @@ export const STORY: Record<
 			{ ...k("……地面の下に、\nだれかいるンゴ", { emote: "…" }), pause: 900 },
 			{
 				...s("zero", "発信元、ブラジルです！\n太鼓、1分に300回です！", {
+					meme: "memeReveal",
 					emote: "!",
 				}),
 				go: [{ who: "zero", route: "lrlr", speed: 3 }],
@@ -1830,6 +1942,7 @@ export const STORY: Record<
 			{
 				// 成り上がり：太鼓の 届く 所までが 縄張り
 				...k("口論じゃないンゴ！外交ンゴ！\n地球の裏まで、吾輩の縄張りンゴ", {
+					hit: "boom",
 					emote: "得",
 				}),
 				look: null,
@@ -1869,6 +1982,7 @@ export const STORY: Record<
 			// フェリスの 書いた 遺影（やきうの 歩行グラの 1コマ目を 額に）
 			{
 				...s("feris", "はい〜、遺影〜。\nやきうくん、成仏して〜", {
+					meme: "memeCoffin",
 					emote: "♪",
 				}),
 				card: {
@@ -1881,10 +1995,15 @@ export const STORY: Record<
 					note: "本人は生きている",
 				},
 			},
-			{ ...s("nanj", "生きとるわ！", { emote: "怒" }), card: null },
+			{
+				...s("nanj", "生きとるわ！", { hit: "scratch", emote: "怒" }),
+				card: null,
+			},
 			// 最終話の 前：名無しには 届かない（最終話の 祭りで 回収）
 			{
-				...n("やきうの頭の上は、\n「残機：1」のままだった。"),
+				...n("やきうの頭の上は、\n「残機：1」のままだった。", {
+					meme: "memeError",
+				}),
 				unlessCleared: "deep",
 			},
 			{
@@ -1961,7 +2080,7 @@ export const STORY: Record<
 				...nanashi("名無しさん", "ふぇ…ふぇ……フェニックス！"),
 				card: oldThread("ふぇ…ふぇ……\nフェニックス！"),
 			},
-			k("吾輩より、\n先輩ンゴ！", { emote: "驚" }),
+			k("吾輩より、\n先輩ンゴ！", { meme: "memeShocked", emote: "驚" }),
 			// 自分の 声を 聞いて フェリスが かけよる
 			{
 				...s("feris", "私の、はじまりの声〜！\n思ったより、かすれてる〜！", {
@@ -1970,7 +2089,10 @@ export const STORY: Record<
 				go: [{ who: "feris", to: "kiriko", speed: 3 }],
 			},
 			{
-				...s("zero", "21年ものです！\n数えました！", { emote: "得" }),
+				...s("zero", "21年ものです！\n数えました！", {
+					meme: "memeWow",
+					emote: "得",
+				}),
 				go: [{ who: "zero", to: "kiriko", speed: 3 }],
 			},
 			// 古い レスが 掘り起こされて、スレが 一気に 埋まる（1000 で 書けなくなる しくみと 同じ）
@@ -1982,7 +2104,9 @@ export const STORY: Record<
 			},
 			{
 				// 実況の 声（ジャンルの 声の 語り手）
-				...a("live", "1時間で1000到達！2005年の\nスレ、まさかの2回目の1000！"),
+				...a("live", "1時間で1000到達！2005年の\nスレ、まさかの2回目の1000！", {
+					meme: "memeYay",
+				}),
 				card: oldThread("1000\n（2回目）"),
 				// 1000 まで 埋まる 勢いで 3人が 右往左往
 				go: [
@@ -1993,7 +2117,10 @@ export const STORY: Record<
 			// 層の 札「今年もやきうか。草」と おんたこの 帳簿（寄り道「残機」②）を ここで 拾う
 			{ ...n("その下に、2012年の帳簿。\n「名無し残機1　やきう」"), card: null },
 			{
-				...s("nanj", "そんな昔から、\nワイ死んどったんかい！", { emote: "汗" }),
+				...s("nanj", "そんな昔から、\nワイ死んどったんかい！", {
+					meme: "memeOof",
+					emote: "汗",
+				}),
 				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},
 			// 2回目の 1000 → 2回目の 命日（寄り道「残機」の 天丼）
@@ -2002,7 +2129,7 @@ export const STORY: Record<
 				...s("nanj", "問題や。命日が2回ある人は、\nなにがもらえる？"),
 				about: "feris",
 			},
-			s("feris", "ケーキが2個〜", { gesture: "hop", pause: 400 }),
+			s("feris", "ケーキが2個〜", { hit: "bong", gesture: "hop", pause: 400 }),
 			// ツッコミは 入れず、広場の 草で 受ける。「草が　生えた」を そのまま 音に する（草の 音を 3つ）。カメラは 広場
 			{
 				...n("広場じゅうで、草が生えた。"),
@@ -2050,6 +2177,7 @@ export const STORY: Record<
 			// 浜へ 場面を うつす
 			{
 				...s("feris", "水星のかけら〜？\nちいさいのに、あっつ〜い！", {
+					meme: "memeHurt",
 					emote: "花",
 				}),
 				standAt: [12, 36],
@@ -2116,12 +2244,16 @@ export const STORY: Record<
 				}),
 				look: null,
 			},
-			k("吾輩、朝を作ったンゴ！\n神ンゴ！", { emote: "得", gesture: "hop" }),
+			k("吾輩、朝を作ったンゴ！\n神ンゴ！", {
+				meme: "memeHallelujah",
+				emote: "得",
+				gesture: "hop",
+			}),
 			{
 				...s("nanj", "問題や。夜中の2時が昼なら、\n昼の2時は何や？"),
 				about: "feris",
 			},
-			s("feris", "おやつ〜", { emote: "♪", pause: 400 }),
+			s("feris", "おやつ〜", { hit: "bruh", emote: "♪", pause: 400 }),
 			// 明るさは 海を こえて 水星の 板まで。だれも 怒らない 板の 返事（実物の 絵）
 			{
 				...n("翌日。明るさは海をこえて、\n水星の板まで届いた。レスがひとつ。"),
@@ -2133,6 +2265,7 @@ export const STORY: Record<
 			},
 			{
 				...s("zero", "水星からのレス、1件です！\n数えました！", {
+					meme: "memeDing",
 					emote: "!",
 				}),
 				card: null,
@@ -2255,6 +2388,7 @@ export const STORY: Record<
 			},
 			// 主人公が 最悪の 手（搭乗券を 回して みんなを 登録させる）
 			k("ひとりで沈むのはいやンゴ！\nみんなも登録するンゴ！", {
+				meme: "memeHeeHee",
 				gesture: "hop",
 			}),
 			{
@@ -2283,8 +2417,14 @@ export const STORY: Record<
 				bgm: "kaiwai4",
 			},
 			sOr(
-				s("shiyo", "あたすの家、1階が\n水族館になったわよ！", { emote: "怒" }),
-				s("zero", "サブ機が2機とも、\n浮いてます！", { emote: "汗" }),
+				s("shiyo", "あたすの家、1階が\n水族館になったわよ！", {
+					meme: "memeOmg",
+					emote: "怒",
+				}),
+				s("zero", "サブ機が2機とも、\n浮いてます！", {
+					meme: "memeWow",
+					emote: "汗",
+				}),
 			),
 			k("吾輩、登録1番だから\n市長ンゴ？", { emote: "得" }),
 			// 毒（2026-10-21）：ツッコまずに、空港が 真顔で 市長を いちばん 深く 沈める
@@ -2345,6 +2485,7 @@ export const STORY: Record<
 			// ロゼの 持ちネタ：「書いたら 沈むのが 常識」が、浮いた あとで かわる（はじめから 知って いた ことに する）
 			{
 				...s("roze", "消したら浮くのも、常識アル。\nはじめから知ってたアル", {
+					hit: "bruh",
 					emote: "得",
 				}),
 				look: null,
@@ -2415,7 +2556,10 @@ export const STORY: Record<
 				go: [{ who: "roze", to: "kiriko", speed: 3 }],
 			},
 			// 勧誘の 方へ ふくらむ（キリコ → 町じゅう → ロゼまで → 管理部33）。主人公が 最悪の 手：勧誘の 紙を 蓄音機で 流す
-			k("住所がないなら、吾輩が\n勧誘する側に回るンゴ！", { gesture: "hop" }),
+			k("住所がないなら、吾輩が\n勧誘する側に回るンゴ！", {
+				hit: "boom",
+				gesture: "hop",
+			}),
 			{
 				...n(
 					"キリコは勧誘の紙を蓄音機にかけた。\n「来ませんか？」が町じゅうに流れた。",
@@ -2441,12 +2585,13 @@ export const STORY: Record<
 			// ロゼの 持ちネタ：勧誘に 乗るのは 非常識の はずが、する 側なら 常識に かわる
 			{
 				...s("roze", "勧誘する側なら、常識アル！\n麻婆キムチに来ませんか？", {
+					hit: "scratch",
 					emote: "♪",
 				}),
 				bgm: "kaiwai4",
 				look: null,
 			},
-			k("……行くンゴ", { emote: "花", pause: 400 }),
+			k("……行くンゴ", { hit: "bong", emote: "花", pause: 400 }),
 			// 翌朝、壺の 底の 紙が 書きかわって いる（キリコが 管理部33）
 			{
 				...n("翌朝。壺の底の紙が、\n書きかわっていた。"),
@@ -2474,6 +2619,7 @@ export const STORY: Record<
 			},
 			{
 				...k("肩書きが、またふえたンゴ！\n名刺、刷るンゴ！", {
+					meme: "memeYippee",
 					emote: "得",
 					gesture: "hop",
 				}),
@@ -2523,7 +2669,9 @@ export const STORY: Record<
 			),
 			// ゼロは 右腕を かかげて 広場を 回る
 			{
-				...s("zero", "「†我が右腕に封じられし……†」\nゼロ、右腕はふつうです！"),
+				...s("zero", "「†我が右腕に封じられし……†」\nゼロ、右腕はふつうです！", {
+					hit: "bruh",
+				}),
 				go: [{ who: "zero", route: "rrddlluu", speed: 3 }],
 				card: itemPicture("grimoire", "†漆黒の魔導書†", {
 					text: "†我が右腕に\n封じられし……†",
@@ -2569,9 +2717,12 @@ export const STORY: Record<
 				bgm: null,
 				pause: 900,
 			},
-			s("zero", "3秒、数えました！\n闇、短いです！", { emote: "得" }),
+			s("zero", "3秒、数えました！\n闇、短いです！", {
+				meme: "memeWow",
+				emote: "得",
+			}),
 			// 毒：闇は 3秒で キリコの 影だけ 持って いった
-			n("光がもどると、キリコの影だけ\n闇にのまれていた。"),
+			n("光がもどると、キリコの影だけ\n闇にのまれていた。", { hit: "dun" }),
 			{
 				...k("†吾輩の影、\n封印されたンゴ†", { emote: "青", hit: "sting" }),
 				cutin: true,
@@ -2587,7 +2738,11 @@ export const STORY: Record<
 				look: [36, 27],
 			},
 			{
-				...k("うっ……吾輩の\n右腕も……", { emote: "青", gesture: "shiver" }),
+				...k("うっ……吾輩の\n右腕も……", {
+					meme: "memeHurt",
+					emote: "青",
+					gesture: "shiver",
+				}),
 				look: null,
 			},
 			// 翌朝の 書きこみまで † つき（絵は 掲示板）
@@ -2606,7 +2761,9 @@ export const STORY: Record<
 				card: null,
 			},
 			{
-				...n("魔導書のさいごのページには、\n「ワイ」と書いて消したあと。"),
+				...n("魔導書のさいごのページには、\n「ワイ」と書いて消したあと。", {
+					meme: "memeReveal",
+				}),
 				card: itemPicture("grimoire", "†漆黒の魔導書†（さいごのページ）", {
 					text: "ワイ",
 					strike: true,
@@ -2687,7 +2844,10 @@ export const STORY: Record<
 			},
 			s("roze", "帰ったのも、\nわたしが先アル！", { emote: "怒" }),
 			k("帰りの船、\nいっしょだったンゴ", { hit: "slap" }),
-			s("roze", "……船の、前のほうに\n座ってたアル", { emote: "冷" }),
+			s("roze", "……船の、前のほうに\n座ってたアル", {
+				hit: "bruh",
+				emote: "冷",
+			}),
 			// もう 1行。きまりの 書きたしが 名前だけに なって 落ちる（ロゼの 持ちネタの 原型）
 			{
 				...n("ロゼは、はり紙に\nもう1行書きたした。"),
@@ -2707,7 +2867,11 @@ export const STORY: Record<
 				}),
 			},
 			{
-				...s("roze", "消しゴムも、\n常識アル", { emote: "冷", auto: 1200 }),
+				...s("roze", "消しゴムも、\n常識アル", {
+					meme: "memeHeeHee",
+					emote: "冷",
+					auto: 1200,
+				}),
 				se: "pencil",
 				card: itemPicture("memo", "避難所の底のはり紙", {
 					text: "先に取ったら勝ち\n→着いたら勝ち\n→先に帰ったら勝ち\n→ロゼの勝ち",
@@ -2734,7 +2898,9 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 		{ ...n("キリコの服に、\nパンくずがいっぱいついていた。"), wear: "crumbs" },
 		sOr(
 			{
-				...s("nanj", "パン兵にかつがれて帰ってきたんか。\n出前やんけ"),
+				...s("nanj", "パン兵にかつがれて帰ってきたんか。\n出前やんけ", {
+					hit: "bruh",
+				}),
 				go: [{ who: "nanj", to: "kiriko", speed: 3 }],
 			},
 			{
@@ -2753,6 +2919,7 @@ export const BOSS_RETURN: Partial<Record<DungeonId, readonly StoryPage[]>> = {
 		{ ...n("キリコの髪から、\nまだ湯気が立ちのぼっていた。"), wear: "steam" },
 		{
 			...s("roze", "湯柱で飛んできたアル！？\nわたしは歩いて帰ったアル！", {
+				meme: "memeWow",
 				emote: "?",
 			}),
 			go: [{ who: "roze", to: "kiriko", speed: 3 }],
@@ -3028,9 +3195,12 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	konamono: [
 		q("nanj", "世界たこパ、焦げとったで😡\nあ、勝手についた！", {
+			meme: "memeError",
 			emote: "汗",
 		}),
-		q("roze", "麻婆豆腐にたこ、\n入れてみたアル！大失敗アル！"),
+		q("roze", "麻婆豆腐にたこ、\n入れてみたアル！大失敗アル！", {
+			meme: "memeOof",
+		}),
 	],
 	festival: [
 		q("shiyo", "うちわ、あたすがあずかってるわ。\n使ってはないわよ！"),
@@ -3044,13 +3214,17 @@ export const CLEAR: Record<DungeonId, readonly Line[]> = {
 	],
 	mercury: [
 		q("feris", "水星の板、のんびりしてたね〜。\nまた行こ〜！"),
-		q("zero", "かけら、まだ光ってます！\nまぶしくて3機とも寝不足です！"),
+		q("zero", "かけら、まだ光ってます！\nまぶしくて3機とも寝不足です！", {
+			meme: "memeSnore",
+		}),
 		q("nanj", "夜中の2時のデーゲーム、\n9回裏まで見てもうたわ！"),
 	],
 	onmu: [
 		q("shiyo", "搭乗券、倉庫にしまったわ！\nいつか使うかもしれないし！"),
 		q("roze", "呑気な板も、ええアル！\n荒らしも昼寝してたアル！"),
-		q("nanj", "町が沈んだ夜、ワイの家だけ\n2階で助かったわ！"),
+		q("nanj", "町が沈んだ夜、ワイの家だけ\n2階で助かったわ！", {
+			meme: "memeHallelujah",
+		}),
 	],
 	onkimu: [
 		q("roze", "キムチ、ぜんぶなくなったアル！\nまた漬けるアル！"),
@@ -3090,5 +3264,7 @@ export const SHALLOW_DEATH: readonly Line[] = [
 		emote: "汗",
 	}),
 	q("shiyo", "杖は、ふるまでわからないの！\n教えてあげたんだからね！"),
-	q("zero", "パン板のログ、読みました！\n短いので、3機で3秒です！"),
+	q("zero", "パン板のログ、読みました！\n短いので、3機で3秒です！", {
+		meme: "memeDing",
+	}),
 ];

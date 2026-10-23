@@ -155,11 +155,11 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	mix: ["M7lnrK", -14.4, -5.1, -8.6, 0.372, 0, 1830, 1200], // field → -23.0
 	bubble: ["RSetbN", -9.5, -4.7, -13.5, 0.211, 0, 490, 230], // field → -23.0
 	glass: ["IQXvTI", -10.8, -2, -12.2, 0.245, 30, 1640, 780], // field → -23.0
-	pay: ["meme/apple-pay", -22.6, -11.9, -0.4, 0.955, 50, 660, 300], // field → -23.0
-	payout: ["meme/anime-wow", -11.6, -4.5, -11.4, 0.269, 170, 3740, 1200], // field → -23.0
+	pay: ["FM2G43", -13.9, -0.4, -9.1, 0.351, 50, 630, 430], // field → -23.0
+	payout: ["rIBCz6", -12.1, -6.5, -10.9, 0.285, 190, 1040, 690], // field → -23.0
 	rise: ["sTJ89N", -15.7, -7.5, -7.3, 0.432, 0, 1250, 830], // field → -23.0
 	drop: ["PLsNO9", -15.3, -7.9, -7.7, 0.412, 0, 1300, 800], // field → -23.0
-	alert: ["meme/shocked", -8.9, -0.9, -14.1, 0.197, 90, 1230, 900], // field → -23.0
+	alert: ["SmEIvE", -10.3, -3, -12.7, 0.232, 80, 1010, 420], // field → -23.0
 	arcCoin: ["alktAh", -9.8, 0.2, -13.2, 0.219, 10, 740, 360], // field → -23.0
 	arcShot: ["95bF44", -9.9, -4.3, -13.1, 0.221, 0, 270, 230], // field → -23.0
 	arcBlock: ["wsdfpV", -4.5, 3.9, -18.5, 0.119, 0, 700, 450], // field → -23.0
@@ -199,22 +199,39 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	hitScratch: ["meme/record-scratch", -10.1, -0.5, -10.9, 0.285, 20, 730, 550], // battle → -21.0
 	hitBong: ["meme/taco-bell", -9.2, -3.2, -11.8, 0.257, 80, 1800, 750], // battle → -21.0
 	hitDun: ["meme/dun-dun-dun", -7.2, 0.4, -13.8, 0.204, 60, 4070, 1200], // battle → -21.0
+	memeOmg: ["meme/omg", -1.6, 0.2, -19.4, 0.107, 280, 2130, 1200], // battle → -21.0
+	memeFahhh: ["meme/fahhh", -9.1, -1.5, -11.9, 0.254, 100, 2010, 650], // battle → -21.0
+	memeAughhh: ["meme/aughhh", -2.9, 0.7, -18.1, 0.124, 420, 3280, 1200], // battle → -21.0
+	memeOof: ["meme/oof", -16.2, -10.4, -4.8, 0.575, 520, 830, 690], // battle → -21.0
+	memeHurt: ["meme/mc-hurt", -14.9, -3.4, -6.1, 0.495, 20, 360, 220], // battle → -21.0
+	memeShocked: ["meme/shocked", -8.9, -0.9, -12.1, 0.248, 90, 1230, 900], // battle → -21.0
+	memeWow: ["meme/anime-wow", -11.6, -4.5, -9.4, 0.339, 170, 3740, 1200], // battle → -21.0
+	memeYippee: ["meme/yippee", -13.2, -7.9, -7.8, 0.407, 30, 840, 650], // battle → -21.0
+	memeNope: ["meme/nope", -14.9, -0.9, -6.1, 0.495, 10, 360, 190], // battle → -21.0
+	memeGetOut: ["meme/get-out", -12.5, -5, -8.5, 0.376, 70, 1030, 890], // battle → -21.0
+	memeHeeHee: ["meme/hee-hee", -15.5, -8.3, -5.5, 0.531, 500, 1420, 990], // battle → -21.0
+	memeError: ["meme/xp-error", -8.2, -0.8, -12.8, 0.229, 80, 890, 350], // battle → -21.0
+	memeSocialCredit: [
+		"meme/social-credit",
+		-4.2,
+		-1.8,
+		-16.8,
+		0.145,
+		270,
+		2060,
+		1200,
+	], // battle → -21.0
+	memePay: ["meme/apple-pay", -22.6, -11.9, 1.6, 1.202, 50, 660, 300], // battle → -21.0
+	memeDing: ["meme/ding", -11.6, -6.6, -9.4, 0.339, 140, 1320, 480], // battle → -21.0
+	memeSnore: ["meme/snore", -9, -1.4, -12, 0.251, 150, 1970, 1200], // battle → -21.0
 	flee: ["FTCG4H", -14.9, -9.9, -6.1, 0.495, 30, 490, 370], // battle → -21.0
 	steal: ["cAauAI", -10, -5.4, -11, 0.282, 0, 940, 530], // battle → -21.0
 	fire: ["HyTVhK", -10.9, -2.3, -10.1, 0.313, 50, 1820, 1000], // battle → -21.0
 	shock: ["usF2l8", -9.9, -2.1, -11.1, 0.279, 10, 2180, 440], // battle → -21.0
 	bearTrap: ["Q1CAWo", -15.2, -0.4, -5.8, 0.513, 70, 480, 360], // battle → -21.0
-	bearTrapScream: ["meme/fahhh", -9.1, -1.5, -11.9, 0.254, 100, 2010, 650], // battle → -21.0
-	pitScream: ["meme/aughhh", -2.9, 0.7, -18.1, 0.124, 420, 3280, 1200], // battle → -21.0
-	ballHit: ["meme/mc-hurt", -14.9, -3.4, -6.1, 0.495, 20, 360, 220], // battle → -21.0
-	heeHee: ["meme/hee-hee", -15.5, -8.3, -5.5, 0.531, 500, 1420, 990], // battle → -21.0
-	getOut: ["meme/get-out", -12.5, -5, -8.5, 0.376, 70, 1030, 890], // battle → -21.0
 	sleep: ["Adwsg4", -6.4, -0.3, -14.6, 0.186, 80, 1420, 710], // battle → -21.0
-	snore: ["meme/snore", -9, -1.4, -12, 0.251, 150, 1970, 1200], // battle → -21.0
 	curse: ["WiZ0AR", -9, -0.1, -12, 0.251, 20, 1720, 450], // battle → -21.0
-	curseOn: ["meme/omg", -1.6, 0.2, -19.4, 0.107, 280, 2130, 1200], // battle → -21.0
-	curseStuck: ["meme/nope", -14.9, -0.9, -6.1, 0.495, 10, 360, 190], // battle → -21.0
-	uncurse: ["meme/hallelujah", -6.6, -0.1, -14.4, 0.191, 60, 1860, 1200], // battle → -21.0
+	uncurse: ["FMcGao", -6.5, 0.9, -14.5, 0.188, 50, 1330, 600], // battle → -21.0
 	rustproof: ["jVuw6M", -10.8, -0.6, -10.2, 0.309, 50, 1110, 370], // battle → -21.0
 	whet: ["pMekYY", -7.7, 2.5, -13.3, 0.216, 0, 1140, 820], // battle → -21.0
 	temper: ["VocXum", -16.9, -7.1, -4.1, 0.624, 10, 470, 180], // battle → -21.0
@@ -235,22 +252,13 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	hit_mic: ["mL4xt3", -16.8, -6.8, -4.2, 0.617, 0, 510, 280], // battle → -21.0
 	enemyMiss: ["DUvPmQ", -20.8, -16.6, -0.2, 0.977, 10, 240, 190], // battle → -21.0
 	skill_poison: ["2RJYrq", -8.4, -3.2, -12.6, 0.234, 40, 380, 310], // battle → -21.0
-	skill_drainLv: [
-		"meme/social-credit",
-		-4.2,
-		-1.8,
-		-16.8,
-		0.145,
-		270,
-		2060,
-		1200,
-	], // battle → -21.0
-	skill_drainMax: ["meme/xp-error", -8.2, -0.8, -12.8, 0.229, 80, 890, 350], // battle → -21.0
-	skill_warpPlayer: ["meme/galaxy", 0.5, 3.9, -21.5, 0.084, 240, 3200, 1200], // battle → -21.0
-	skill_knockback: ["meme/oof", -16.2, -10.4, -4.8, 0.575, 520, 830, 690], // battle → -21.0
+	skill_drainLv: ["h9iBuH", -9.1, -0.5, -11.9, 0.254, 0, 780, 280], // battle → -21.0
+	skill_drainMax: ["2QAYI6", -7.1, -0.7, -13.9, 0.202, 0, 1290, 1200], // battle → -21.0
+	skill_warpPlayer: ["Ye4E4T", -6.6, 1.2, -14.4, 0.191, 60, 1640, 990], // battle → -21.0
+	skill_knockback: ["W7Z0Eh", -16, -4.9, -5, 0.562, 340, 550, 440], // battle → -21.0
 	skill_purge: ["miex8X", -11.6, -3.6, -9.4, 0.339, 0, 2240, 1200], // battle → -21.0
 	skill_curse: ["86GRZP", -4.3, 1.1, -16.7, 0.146, 80, 4190, 1200], // battle → -21.0
-	batonDown: ["meme/xp-shutdown", -14.1, -5.5, -6.9, 0.452, 20, 2870, 1180], // battle → -21.0
+	batonDown: ["0JNThb", -15.3, -8.9, -5.7, 0.519, 10, 280, 220], // battle → -21.0
 	batonUp: ["0JDT7S", -12.9, -9.5, -8.1, 0.394, 10, 1170, 920], // battle → -21.0
 	arcCrash: ["YHEG4T", -12.6, -6.7, -8.4, 0.38, 0, 1360, 630], // battle → -21.0
 	critical: ["3xdWAT", -12.7, -7.8, -6.3, 0.484, 0, 430, 360], // impact → -19.0
@@ -260,9 +268,9 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 	townUp: ["j9vwuH", -6.8, 1.5, -18.2, 0.123, 50, 4210, 1500], // jingle → -25.0
 	join: ["CvnSzp", -6.3, 1.4, -18.7, 0.116, 40, 3120, 1500], // jingle → -25.0
 	keyItem: ["b0CZFw", -12.7, -4.1, -12.3, 0.243, 10, 2410, 1500], // jingle → -25.0
-	caught: ["meme/yippee", -13.2, -7.9, -11.8, 0.257, 30, 840, 650], // jingle → -25.0
+	caught: ["yxcrTx", -11.5, -4.7, -13.5, 0.211, 10, 3110, 1500], // jingle → -25.0
 	clear: ["ocdl2r", -13.6, -4.1, -11.4, 0.269, 0, 2530, 1500], // jingle → -25.0
-	correct: ["meme/ding", -11.6, -6.6, -13.4, 0.214, 140, 1320, 480], // jingle → -25.0
+	correct: ["WOh0Q7", -15.2, -8, -9.8, 0.324, 10, 250, 130], // jingle → -25.0
 	combo: ["9UiF46", -10.4, -6.5, -14.6, 0.186, 10, 850, 690], // jingle → -25.0
 	chime: ["th6yCr", -9, -0.4, -16, 0.158, 20, 790, 590], // jingle → -25.0
 	cracker: ["JDSaUd", -6.2, 3.5, -18.8, 0.115, 0, 1510, 840], // jingle → -25.0
@@ -277,9 +285,12 @@ export const SE_LOUDNESS: Record<string, SeLoudness> = {
 		9690,
 		1500,
 	], // jingle → -25.0
-	coffinDance: ["meme/coffin-dance", -5, 1.4, -20, 0.1, 10, 5830, 1500], // jingle → -25.0
-	houseReveal: ["meme/among-us", -16.3, -3.9, -8.7, 0.367, 210, 4200, 1500], // jingle → -25.0
-	ankaYay: ["meme/kids-yay", -9.3, -2.1, -15.7, 0.164, 230, 4220, 1500], // jingle → -25.0
+	memeReveal: ["meme/among-us", -16.3, -3.9, -8.7, 0.367, 210, 4200, 1500], // jingle → -25.0
+	memeYay: ["meme/kids-yay", -9.3, -2.1, -15.7, 0.164, 230, 4220, 1500], // jingle → -25.0
+	memeHallelujah: ["meme/hallelujah", -6.6, -0.1, -18.4, 0.12, 60, 1860, 1350], // jingle → -25.0
+	memeCoffin: ["meme/coffin-dance", -5, 1.4, -20, 0.1, 10, 5830, 1500], // jingle → -25.0
+	memeGalaxy: ["meme/galaxy", 0.5, 3.9, -24, 0.063, 240, 3200, 1500], // jingle → -23.5（補正の範囲の端）
+	memeShutdown: ["meme/xp-shutdown", -14.1, -5.5, -10.9, 0.285, 20, 2870, 1180], // jingle → -25.0
 	save: ["jVOw87", -10.4, -0.3, -14.6, 0.186, 90, 3730, 1100], // jingle → -25.0
 	chapter: ["thHyyN", -7.7, -2, -17.3, 0.136, 50, 1220, 410], // jingle → -25.0
 	served: ["wMSfsJ", -11.7, -2.9, -13.3, 0.216, 60, 1810, 1410], // jingle → -25.0

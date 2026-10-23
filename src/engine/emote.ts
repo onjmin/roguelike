@@ -561,6 +561,11 @@ export type Cue = {
 	pause?: number;
 	hit?: Hit;
 	/**
+	 * 海外ミームの 音（data/audio/sfx.ts の meme〜。2026-10-23 作者「寸劇に 多用する」）。窓の 前に、hit と 同じ 時に 鳴る。
+	 * ツッコミで ない ところ（地の文・ボケ・やらかしの 瞬間）に 添える。ツッコミの 音は hit の boom・bruh など。
+	 */
+	meme?: string;
+	/**
 	 * 畳みかけ（ms）：字を 一度に 出し、押さなくても この ms で 次の 窓へ 送る（201 の 速さ。ボケの 連打）。
 	 * 2026-10-21 作者「201 や でんじゃらすじーさんの 面白さ」。
 	 */
@@ -575,6 +580,7 @@ export const cueOf = (line: object): Cue => {
 		...(c.gesture ? { gesture: c.gesture } : {}),
 		...(c.pause ? { pause: c.pause } : {}),
 		...(c.hit ? { hit: c.hit } : {}),
+		...(c.meme ? { meme: c.meme } : {}),
 		...(c.auto ? { auto: c.auto } : {}),
 	};
 };

@@ -192,14 +192,14 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			native("広場、パン兵に\n占領されちゃったね！"),
 			native("でもね、毎朝パンが配られるし、\n税金もパンで払えるよ！"),
-			native("ぼく、きのうパン兵に\n志願したよ！"),
+			e({ meme: "memeYippee" }, native("ぼく、きのうパン兵に\n志願したよ！")),
 			{
 				...e({ emote: "驚", hit: "slap" }, k("寝返りが早いンゴ！")),
 				cutin: true,
 			},
 			{
 				...e(
-					{ auto: 800, hit: "punch" },
+					{ meme: "memeReveal", auto: 800, hit: "punch" },
 					native("隊長命令だよ。\nキリコ、確保！"),
 				),
 				fling: "far",
@@ -225,7 +225,7 @@ export const SKITS: readonly Skit[] = [
 		stage: { cast: { 名無し: "x_nanashi" } },
 		lines: [
 			nanashi("ワイの家も、\n独立したで"),
-			nanashi("ワイの消しゴムは、\n国連に加盟したで"),
+			e({ meme: "memeWow" }, nanashi("ワイの消しゴムは、\n国連に加盟したで")),
 			e({ emote: "驚", hit: "slap" }, k("町長の許可なく、\n独立しすぎンゴ！")),
 			nanashi("ほんで、さっき消しゴムに\n宣戦布告された"),
 			{
@@ -276,7 +276,7 @@ export const SKITS: readonly Skit[] = [
 				...e({ emote: "驚", hit: "whack" }, k("本体はどっちンゴ！？")),
 				cutin: true,
 			},
-			e({ pause: 400 }, kinoko("わたしです")),
+			e({ meme: "memeReveal", pause: 400 }, kinoko("わたしです")),
 			// 総統（成り上がりの 2段目）は きのこの ほうを 軍に 入れる
 			e(
 				{ emote: "得", auto: 1200 },
@@ -312,7 +312,10 @@ export const SKITS: readonly Skit[] = [
 			nanashi("停電や！\nだれか、発電してくれ！"),
 			e({ gesture: "spin" }, k("皇帝みずから、\n蓄音機を回すンゴ！")),
 			{
-				...e({ pause: 300 }, nanashi("\n……豆電球、ついたで！")),
+				...e(
+					{ meme: "memeDing", pause: 300 },
+					nanashi("\n……豆電球、ついたで！"),
+				),
 				fx: "bulb",
 			},
 			e({ gesture: "spin", auto: 700 }, k("もっと回すンゴ！")),
@@ -361,7 +364,7 @@ export const SKITS: readonly Skit[] = [
 			nanashi("最終話、見たか？"),
 			nanashi("見た。まさか、皇帝が\n差し押さえ……"),
 			e({ emote: "怒", hit: "punch" }, nanashi("ネタバレすな！")),
-			k("吾輩、その\n元皇帝ンゴ"),
+			e({ meme: "memeReveal" }, k("吾輩、その\n元皇帝ンゴ")),
 			{
 				...e(
 					{ emote: "怒", hit: "whack", pause: 400 },
@@ -371,7 +374,7 @@ export const SKITS: readonly Skit[] = [
 			},
 			e({ auto: 500, hit: "punch" }, nanashi("いま、言うたな！")),
 			e({ auto: 500, hit: "punch" }, nanashi("お前もや！")),
-			e({ auto: 1100 }, nanashi("……で、最終話どうなったん")),
+			e({ hit: "bruh", auto: 1100 }, nanashi("……で、最終話どうなったん")),
 		],
 	},
 	// ───── 建物に はじめて 入った（2026-10-21 作者「文字だけで なく 演出を 使って 店舗を 改善」） ─────
@@ -415,7 +418,7 @@ export const SKITS: readonly Skit[] = [
 			},
 			e({ auto: 450 }, clerk("袋、おつけしますか？")),
 			e({ auto: 450 }, clerk("お箸、おつけしますか？")),
-			e({ auto: 500 }, clerk("もう1分、温めますね")),
+			e({ meme: "memeDing", auto: 500 }, clerk("もう1分、温めますね")),
 			{
 				...e({ auto: 1300 }, n("キリコは、こんがりたおれた。")),
 				se: "chiin",
@@ -423,7 +426,7 @@ export const SKITS: readonly Skit[] = [
 				caption: "キリコは　たおれた",
 			},
 			{
-				...e({ pause: 600 }, clerk("……袋、\nおつけしますか？")),
+				...e({ hit: "bruh", pause: 600 }, clerk("……袋、\nおつけしますか？")),
 				calm: true,
 			},
 			e({ gesture: "hop", auto: 1100 }, k("（むくり）\n……つけるンゴ")),
@@ -459,11 +462,14 @@ export const SKITS: readonly Skit[] = [
 				cutin: true,
 			},
 			{
-				...e({ auto: 700 }, guest("これください")),
+				...e({ meme: "memePay", auto: 700 }, guest("これください")),
 				show: "x_guest",
 				calm: true,
 			},
-			{ ...e({ auto: 1200 }, owner("まいど")), fling: "far" },
+			{
+				...e({ meme: "memeAughhh", auto: 1200 }, owner("まいど")),
+				fling: "far",
+			},
 		],
 	},
 	// 質屋の 金庫（中で なにか 鳴いて いる）：中の 人が 真顔で 注文を 足し、店主は 真顔で 売る 気で いる
@@ -479,7 +485,10 @@ export const SKITS: readonly Skit[] = [
 			e({ pause: 400 }, safeMan("……閉めてもろて")),
 			{ ...e({ emote: "驚", hit: "huh" }, k("だれンゴ！？")), cutin: true },
 			owner("質に入っとる、となりの\nおっさんや。流れたら、売る"),
-			e({ auto: 900 }, safeMan("……あと、電気も\n消してもろて")),
+			e(
+				{ meme: "memeShutdown", auto: 900 },
+				safeMan("……あと、電気も\n消してもろて"),
+			),
 		],
 	},
 	// 海上レストラン「1000」：2人で 全席を 回り、キリコの 席まで 取る。キリコも 席を 取りに 回る
@@ -498,7 +507,10 @@ export const SKITS: readonly Skit[] = [
 			waiter("はい。あちらの2名さまが、\n全席ご予約です"),
 			e({ auto: 400 }, guest("ここも、ワイらの席や")),
 			e({ auto: 400 }, guest("ここもや")),
-			{ ...e({ auto: 700 }, guest("そこもや")), fling: "far" },
+			{
+				...e({ meme: "memeGetOut", auto: 700 }, guest("そこもや")),
+				fling: "far",
+			},
 			e({ pause: 400 }, waiter("本日、49卓目でございます")),
 			e({ auto: 1100, gesture: "hop" }, k("……ここは、\n吾輩の席ンゴ")),
 		],
@@ -537,7 +549,10 @@ export const SKITS: readonly Skit[] = [
 			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
 			{ ...e({ auto: 300 }, nanashi("（ちゃりん）")), se: "arcCoin" },
 			{
-				...e({ pause: 400 }, clerk("お客さま、そちらは\n両替機です")),
+				...e(
+					{ hit: "scratch", pause: 400 },
+					clerk("お客さま、そちらは\n両替機です"),
+				),
 				show: "x_clerk",
 			},
 			{
@@ -587,7 +602,10 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			master("いらっしゃい。\n次スレへようこそや"),
 			master("1000杯目が出たら、\n店ごと次スレや"),
-			{ ...nanashi("（ごくっ）……1000杯目"), fx: "blackout" },
+			{
+				...e({ meme: "memeDing" }, nanashi("（ごくっ）……1000杯目")),
+				fx: "blackout",
+			},
 			{ ...master("いらっしゃい。\n次スレへようこそや"), calm: true },
 			{
 				...e(
@@ -612,9 +630,9 @@ export const SKITS: readonly Skit[] = [
 			e({ auto: 350, emote: "!" }, owner("乙！")),
 			e({ auto: 350 }, owner("乙！")),
 			{ ...e({ emote: "驚" }, k("スープしか\n入ってないンゴ！")), cutin: true },
-			e({ emote: "得", pause: 400 }, owner("乙（おつゆ）一丁！")),
+			e({ hit: "bong", emote: "得", pause: 400 }, owner("乙（おつゆ）一丁！")),
 			{
-				...e({ auto: 800 }, n("厨房の鍋から、火が出た。")),
+				...e({ meme: "memeFahhh", auto: 800 }, n("厨房の鍋から、火が出た。")),
 				fx: "fire",
 				fxAt: [1, 4],
 			},
@@ -652,7 +670,10 @@ export const SKITS: readonly Skit[] = [
 			usher("本日の上映は、\nスレ1本まるごとです"),
 			usher("上映時間は、\nおよそ3年です"),
 			e({ gesture: "shake" }, k("長いンゴ！")),
-			usher("なお、いま上映中の回は、\n2009年からです"),
+			e(
+				{ meme: "memeShocked" },
+				usher("なお、いま上映中の回は、\n2009年からです"),
+			),
 			{
 				...e({ pause: 400, auto: 500 }, guest("（ヒゲの名無し）\n……シーッ")),
 				show: "x_g1",
@@ -686,7 +707,10 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			dealer("いらっしゃいませ。\n当店の勝率は、5割です"),
 			dealer("……お店の、です"),
-			dealer("なお、常連さまは通算\n3勝1万2千敗です"),
+			e(
+				{ meme: "memeSocialCredit" },
+				dealer("なお、常連さまは通算\n3勝1万2千敗です"),
+			),
 			{
 				...e(
 					{ emote: "得", pause: 400 },
@@ -696,10 +720,13 @@ export const SKITS: readonly Skit[] = [
 				caption: "常連　3勝　1万2千敗",
 			},
 			{
-				...e({ auto: 900 }, dealer("お支払いは、\n来世でけっこうです")),
+				...e(
+					{ meme: "memePay", auto: 900 },
+					dealer("お支払いは、\n来世でけっこうです"),
+				),
 				calm: true,
 			},
-			e({ auto: 1200 }, regular("来世のぶんも、\nもう借りとる")),
+			e({ hit: "bong", auto: 1200 }, regular("来世のぶんも、\nもう借りとる")),
 		],
 	},
 	// ───── 建物の オチ（爆発は 直しては 爆発させる リサイクル屋と 秘密結社の 1回目だけ。ほかは 暗転・チーン・草で 落とす） ─────
@@ -718,8 +745,11 @@ export const SKITS: readonly Skit[] = [
 				...e({ emote: "驚", hit: "huh" }, k("店長が入ってるンゴ！？")),
 				cutin: true,
 			},
-			e({ pause: 400 }, clerk("店長は、追加料金です")),
-			e({ auto: 1100, emote: "花" }, k("……払うンゴ。\nおかわりンゴ")),
+			e({ hit: "bruh", pause: 400 }, clerk("店長は、追加料金です")),
+			e(
+				{ meme: "memePay", auto: 1100, emote: "花" },
+				k("……払うンゴ。\nおかわりンゴ"),
+			),
 		],
 	},
 	// 爆発で キリコは 店の 奥まで 吹っとび、髪が アフロに。店主は その 頭も 直して 売る
@@ -730,7 +760,7 @@ export const SKITS: readonly Skit[] = [
 		stage: { at: [9, 8], face: "up", cast: { 店主: "recycle_clerk" } },
 		lines: [
 			owner("うちは何でも\n直して売るよ"),
-			owner("直したやつは、\nだいたい爆発するけどな"),
+			e({ hit: "boom" }, owner("直したやつは、\nだいたい爆発するけどな")),
 			e({ gesture: "shake" }, k("売っちゃだめンゴ！")),
 			{
 				...e({ auto: 800 }, owner("……ほら、いま1台")),
@@ -747,7 +777,7 @@ export const SKITS: readonly Skit[] = [
 				calm: true,
 			},
 			e(
-				{ pause: 400 },
+				{ meme: "memeHeeHee", pause: 400 },
 				owner("（アフロで）おそろいやな。\nその頭も、直して売るよ"),
 			),
 		],
@@ -762,7 +792,10 @@ export const SKITS: readonly Skit[] = [
 			sensei("気合いだ！\n気合いで瓦を割れ！"),
 			{ ...sensei("見本を見せる！\nちぇすとーーっ！！"), fx: "slowmo" },
 			{
-				...e({ emote: "冷", pause: 400 }, sensei("……拳が、割れた")),
+				...e(
+					{ meme: "memeOof", emote: "冷", pause: 400 },
+					sensei("……拳が、割れた"),
+				),
 				fx: "chiin",
 			},
 			{ ...e({ auto: 700 }, sensei("頭でいく！")), se: "hit_fist", calm: true },
@@ -773,7 +806,7 @@ export const SKITS: readonly Skit[] = [
 			},
 			{
 				...e(
-					{ emote: "得", pause: 500 },
+					{ hit: "bruh", emote: "得", pause: 500 },
 					sensei("（むくり）……よし。\n次は1枚からな"),
 				),
 				calm: true,
@@ -792,11 +825,18 @@ export const SKITS: readonly Skit[] = [
 				fx: "trailer",
 				caption: "やきう物語",
 			},
-			{ ...actor("……なんやけど、\n台本が1行しかない"), calm: true },
+			{
+				...e({ hit: "huh" }, actor("……なんやけど、\n台本が1行しかない")),
+				calm: true,
+			},
 			{ ...actor("『暗転』"), fx: "blackout" },
 			{ ...actor("本日は、2回公演です"), calm: true },
 			{ ...e({ pause: 400, auto: 900 }, actor("『暗転』")), fx: "blackout" },
-			{ ...e({ auto: 1100 }, k("『暗転』ンゴ")), calm: true, fx: "blackout" },
+			{
+				...e({ meme: "memeShutdown", auto: 1100 }, k("『暗転』ンゴ")),
+				calm: true,
+				fx: "blackout",
+			},
 		],
 	},
 	// ───── 村の 物を はじめて 調べた ─────
@@ -809,8 +849,8 @@ export const SKITS: readonly Skit[] = [
 		stage: { cast: { 首領: "x_boss", 構成員: "x_member" } },
 		lines: [
 			boss("作戦を発表する。\n今夜、おんJの全スレを1000にする"),
-			member("それ、毎晩だれかが\nやっとることですやん"),
-			boss("……作戦変更や。\nまず、この家を爆破する"),
+			e({ hit: "bruh" }, member("それ、毎晩だれかが\nやっとることですやん")),
+			e({ hit: "dun" }, boss("……作戦変更や。\nまず、この家を爆破する")),
 			{
 				...e({ emote: "驚", hit: "whack" }, k("自分の家ンゴ！？")),
 				cutin: true,
@@ -819,8 +859,11 @@ export const SKITS: readonly Skit[] = [
 			{ who: null, text: "", fx: "boom", fxAt: [60, 5], fling: [56, 16] },
 			e({ auto: 500 }, member("ゲホッ")),
 			e({ auto: 500 }, member("ゲホゲホッ")),
-			e({ auto: 700 }, member("首領、髪が……")),
-			{ ...e({ pause: 500 }, boss("……作戦は、成功や")), calm: true },
+			e({ meme: "memeOmg", auto: 700 }, member("首領、髪が……")),
+			{
+				...e({ meme: "memeYay", pause: 500 }, boss("……作戦は、成功や")),
+				calm: true,
+			},
 		],
 	},
 	{
@@ -832,12 +875,12 @@ export const SKITS: readonly Skit[] = [
 			boss("作戦その2を発表する"),
 			member("どうせまた、\nこの家を爆破するんでしょ"),
 			boss("せえへん。\n今回は、となりの家や"),
-			member("……となり、\nうちの実家ですけど"),
+			e({ hit: "dun" }, member("……となり、\nうちの実家ですけど")),
 			{
 				...e({ emote: "冷", pause: 600 }, boss("せやから、選んだんや")),
 				fx: "chiin",
 			},
-			e({ auto: 1200 }, member("……おかんに、\n電話してきます")),
+			e({ hit: "bruh", auto: 1200 }, member("……おかんに、\n電話してきます")),
 		],
 	},
 	// ROM専の 神さまは 上に いた（1人では ない）。天井から 降って きて、キリコは つぶれる
@@ -859,7 +902,7 @@ export const SKITS: readonly Skit[] = [
 			e({ gesture: "startle" }, k("見られてる気がするンゴ！\n……そこンゴ！")),
 			n("だれもいない。"),
 			k("……上ンゴ！"),
-			nanashi("（上から）……バレたか"),
+			e({ meme: "memeReveal" }, nanashi("（上から）……バレたか")),
 			e({ auto: 400 }, nanashi("（上から）ワイも")),
 			e({ auto: 400 }, nanashi("（上から）ワイも")),
 			{
@@ -869,7 +912,10 @@ export const SKITS: readonly Skit[] = [
 				caption: "キリコは　つぶれた",
 			},
 			{
-				...e({ auto: 1100 }, nanashi("（キリコの上で）\n……ROMっとるだけや")),
+				...e(
+					{ hit: "bruh", auto: 1100 },
+					nanashi("（キリコの上で）\n……ROMっとるだけや"),
+				),
 				calm: true,
 			},
 		],
@@ -882,7 +928,7 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			k("おーい、ンゴー！"),
 			n("底から、少し遅れて\n「おーい」と返ってきた。"),
-			n("もう少し遅れて、\n「……ふぇ」と聞こえた。"),
+			e({ meme: "memeShocked" }, n("もう少し遅れて、\n「……ふぇ」と聞こえた。")),
 			e(
 				{ emote: "?", gesture: "startle" },
 				k("いまの、吾輩の声じゃ\nないンゴ！？"),
@@ -902,7 +948,10 @@ export const SKITS: readonly Skit[] = [
 			e({ emote: "驚", hit: "huh" }, k("住んでるンゴ！？")),
 			nanashi("（下から）家賃、10円や"),
 			{ ...e({ auto: 800 }, k("……はい、10円ンゴ")), se: "arcCoin" },
-			e({ auto: 1200 }, nanashi("（下から）まいど。\n……ほな、あんたも住み")),
+			e(
+				{ meme: "memeHeeHee", auto: 1200 },
+				nanashi("（下から）まいど。\n……ほな、あんたも住み"),
+			),
 		],
 	},
 	// ───── ある 場所へ 外から 入った ─────
@@ -915,7 +964,7 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			k("噴水ンゴ"),
 			k("打たれたら、吾輩も\n強くなれるンゴ？"),
-			n("……噴水は、\n下から打ってくる。"),
+			e({ hit: "dun" }, n("……噴水は、\n下から打ってくる。")),
 			{
 				...e({ auto: 700 }, n("噴水が、キリコを\n打ち上げた。")),
 				se: "bubble",
@@ -953,7 +1002,7 @@ export const SKITS: readonly Skit[] = [
 				show: "x_spirit",
 				se: "bubble",
 			},
-			k("なにも落としてないンゴ"),
+			e({ meme: "memeNope" }, k("なにも落としてないンゴ")),
 			e({ pause: 400 }, spirit("では、おぬしを沈めて、\n正直かどうか確かめる")),
 			{ ...e({ emote: "青", hit: "sting" }, k("魔女裁判ンゴ！")), cutin: true },
 			{
@@ -965,7 +1014,10 @@ export const SKITS: readonly Skit[] = [
 				caption: "キリコは　沈んだ",
 			},
 			{
-				...e({ auto: 1100 }, spirit("……浮いてこない。\n正直者じゃ")),
+				...e(
+					{ meme: "memeHallelujah", auto: 1100 },
+					spirit("……浮いてこない。\n正直者じゃ"),
+				),
 				calm: true,
 			},
 		],
@@ -981,13 +1033,16 @@ export const SKITS: readonly Skit[] = [
 			e({ gesture: "hop" }, k("全部の板を\n回るンゴーー！！")),
 			nanashi("（沖から）うるさい！\nこっちは遠泳中や！"),
 			e({ emote: "驚" }, k("沖に人いたンゴ！？")),
-			e({ pause: 400 }, nanashi("（沖から）ハワイまで、\nあと6000キロや")),
+			e(
+				{ meme: "memeWow", pause: 400 },
+				nanashi("（沖から）ハワイまで、\nあと6000キロや"),
+			),
 			{
 				...e({ auto: 900 }, k("……吾輩も、\n泳ぐンゴ")),
 				se: "bubble",
 				put: [49, 38],
 			},
-			e({ auto: 1200 }, nanashi("（沖から）……ついてくんな")),
+			e({ meme: "memeNope", auto: 1200 }, nanashi("（沖から）……ついてくんな")),
 		],
 	},
 	// ───── ある 死に方で 帰ってきた ─────
@@ -1006,7 +1061,10 @@ export const SKITS: readonly Skit[] = [
 				fx: "heat",
 				fxAt: "mob",
 			},
-			e({ auto: 1200, emote: "花" }, m("……こんがり、だもん")),
+			e(
+				{ meme: "memeYippee", auto: 1200, emote: "花" },
+				m("……こんがり、だもん"),
+			),
 		],
 	},
 	// 落とし穴 → ひなりー：真顔で 発表を 続け、再現まで する
@@ -1015,7 +1073,7 @@ export const SKITS: readonly Skit[] = [
 		on: { k: "death", mob: "hinary", cause: "落とし穴" },
 		lines: [
 			m("落とし穴の調査結果を\n発表します"),
-			m("穴は、下に向かって\nあいている模様です"),
+			e({ hit: "bruh" }, m("穴は、下に向かって\nあいている模様です")),
 			m("落ちた人は、下に向かって\n落ちた模様です"),
 			{
 				...e(
@@ -1029,7 +1087,7 @@ export const SKITS: readonly Skit[] = [
 				se: "fall",
 				hide: "player",
 			},
-			e({ auto: 1200 }, m("再現は、成功した模様です")),
+			e({ meme: "memeYay", auto: 1200 }, m("再現は、成功した模様です")),
 		],
 	},
 	// 自演くん → おんす：中身も わたくし。自演の 声が 増えて いく
@@ -1041,12 +1099,12 @@ export const SKITS: readonly Skit[] = [
 			m("あの子、わたくしの板にも\n毎日来るのよぉ！"),
 			e({ gesture: "shake" }, k("それ、ほぼ\n自演くんの板ンゴ！")),
 			e(
-				{ emote: "得", pause: 400 },
+				{ meme: "memeReveal", emote: "得", pause: 400 },
 				m("ちなみに自演くんの中身も、\nわたくしよぉ"),
 			),
 			e({ auto: 500 }, m("（自演くんの声で）\nせやせや")),
 			e({ auto: 500 }, m("（もう1人の自演くんの声で）\nせやせや")),
-			e({ auto: 1100 }, m("……多数決で、\nわたくしの勝ちよぉ")),
+			e({ meme: "memeYay", auto: 1100 }, m("……多数決で、\nわたくしの勝ちよぉ")),
 		],
 	},
 	// ピッチャー → ややポジ：ピッチャーの 味方だった うえに、自分も 投げて くる
@@ -1066,7 +1124,7 @@ export const SKITS: readonly Skit[] = [
 			},
 			{
 				...e(
-					{ auto: 1000, hit: "punch" },
+					{ meme: "memeReveal", auto: 1000, hit: "punch" },
 					m("いまから、ぼくも\nピッチャーなんだ"),
 				),
 				fling: "far",
@@ -1084,7 +1142,10 @@ export const SKITS: readonly Skit[] = [
 			e({ emote: "驚", hit: "slap" }, k("3回言ったンゴ！")),
 			e({ emote: "青", pause: 400 }, k("3回言ったンゴ！")),
 			e({ auto: 500 }, k("3回言ったンゴ！")),
-			e({ auto: 1100 }, m("……感染を、記録したゼロ\n感染を、記録したゼロ")),
+			e(
+				{ meme: "memeError", auto: 1100 },
+				m("……感染を、記録したゼロ\n感染を、記録したゼロ"),
+			),
 		],
 	},
 	// 置物 → ショボン：本気で 動いたら、たおれる
@@ -1102,7 +1163,10 @@ export const SKITS: readonly Skit[] = [
 				caption: "ショボンは　たおれた",
 			},
 			{
-				...e({ auto: 1100 }, m("(´・ω・｀)（むくり）\n……置物にもどるよ")),
+				...e(
+					{ meme: "memeShutdown", auto: 1100 },
+					m("(´・ω・｀)（むくり）\n……置物にもどるよ"),
+				),
 				calm: true,
 			},
 		],
@@ -1124,13 +1188,16 @@ export const SKITS: readonly Skit[] = [
 		lines: [
 			m("粘着アンチに\nやられたンゴねぇ……"),
 			m("粘着は、愛がないと\nだめンゴねぇ"),
-			k("……実感こもってるンゴ"),
+			e({ hit: "bruh" }, k("……実感こもってるンゴ")),
 			e(
 				{ emote: "♥", pause: 400 },
 				m("愛があれば、通報されても\n平気ンゴねぇ"),
 			),
 			{
-				...e({ auto: 900 }, police("ちょっと、\n署まで来てもらおか")),
+				...e(
+					{ meme: "memeSocialCredit", auto: 900 },
+					police("ちょっと、\n署まで来てもらおか"),
+				),
 				show: "x_police",
 			},
 			e({ auto: 1200, emote: "♥" }, m("……署まで、\n愛ンゴねぇ")),
