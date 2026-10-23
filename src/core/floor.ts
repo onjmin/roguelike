@@ -737,26 +737,20 @@ const placeStatues = (r: Run, f: Floor, start: Pos): void => {
 	}
 };
 
+/** foes で 足す 敵が その 階の 強さから 離れて よい 階数。これより 強い／弱い 敵は 出さない。 */
+export const FOE_GAP = 3;
+
 /**
  * その 階で 湧く 敵の 顔ぶれ。本編の 何階ぶんか（表は もっと の 30階まで。それより 深い 階は 30階の 顔ぶれ）で 引き、
  * 板ごとの 出やすさ（data/dungeons.ts の foes。0 は 出ない）を かける。foes で 多めに した 敵が その 板の
- * 強さの 範囲では どの 階でも 出ない ときも 出す（寄り道の 板の 気風：おんたこの 顔真っ赤など。本筋の 板の foes は 強さの 範囲の 敵だけ：
- * src/sim/monsterTests.ts）。板より 弱い 敵は 1階から、板より 強い 敵は 終わりの 3分の1の 階から（STRONG_FROM）。
- * 外から 足す 敵は うしろに 並べる（足さない 板の 乱数の 順は かわらない）。
+ * 強さの 範囲では どの 階でも 出ない ときは、その 階の 強さから FOE_GAP 以内の 階だけ 出す（お祭りの VIPPER など。
+ * 本筋の 板の foes は 強さの 範囲の 敵だけ：src/sim/monsterTests.ts）。外から 足す 敵は うしろに 並べる
+ * （足さない 板の 乱数の 順は かわらない）。
  */
-/**
- * 板より 強い 敵（foes で 足した 敵）が 出はじめる 階：終わりの 3分の1（10階の 板は 8階から）。
- * 1階から 出すと、おんたこは 素手の Lv1 が 顔真っ赤（本編20階ぶん）に 1階で 98% 倒れた（pnpm sim）。
- */
-export const strongFrom = (floors: number): number =>
-	floors - Math.floor(floors / 3) + 1;
-
 export const foeTable = (r: Run): MonsterDef[] => {
 	const foes = r.dungeon.foes ?? {};
-	const here = monstersFor(
-		Math.max(1, Math.min(30, r.levelAt(r.f.depth))),
-		r.s.dungeon,
-	);
+	const level = Math.max(1, Math.min(30, r.levelAt(r.f.depth)));
+	const here = monstersFor(level, r.s.dungeon);
 	// 板の どの 階の 強さでも 出ない 敵だけ 足す（強さの 範囲で 出る 敵は ふつうに その 階から：本筋の 板は かわらない）
 	const lv = r.dungeon.level.slice(1).map((l) => Math.max(1, Math.min(30, l)));
 	const lo = Math.min(...lv);
@@ -770,8 +764,9 @@ export const foeTable = (r: Run): MonsterDef[] => {
 				!m.boss &&
 				!m.hunter &&
 				onBoard(m, r.s.dungeon) &&
-				(m.floors[1] < lo ||
-					(m.floors[0] > hi && r.f.depth >= strongFrom(r.dungeon.floors))),
+				(m.floors[1] < lo || m.floors[0] > hi) &&
+				m.floors[0] - FOE_GAP <= level &&
+				level <= m.floors[1] + FOE_GAP,
 		);
 	return [...here, ...extra].filter((m) => (foes[m.id] ?? 1) > 0);
 };

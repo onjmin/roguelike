@@ -28,10 +28,10 @@ import { MONSTER_LIST, MONSTERS, monstersFor } from "../core/data/monsters";
 import { staffEffect } from "../core/effects";
 import {
 	callHunter,
+	FOE_GAP,
 	foeTable,
 	HUNTER,
 	spawnMonster,
-	strongFrom,
 } from "../core/floor";
 import { canSee } from "../core/fov";
 import {
@@ -4857,11 +4857,11 @@ test("calm", "a big room with a foe inside does not clear アク禁", () => {
 
 test(
 	"board",
-	"foes: favoured foes spawn — within the strength on story boards, outside it late on side boards",
+	"foes: favoured foes spawn — within the strength on story boards, never far from the floor's strength",
 	() => {
 		// 板ごとの 出やすさ（data/dungeons.ts の foes）。本筋の 板は 強さの 範囲の 敵だけ 多めに する（つり合いを 崩さない）。
-		// 寄り道の 板は 強さの 外の 敵でも 出す（core/floor.ts の foeTable。2026-10-20 作者：「出す方に倒して」）。
-		// 板より 強い 敵は 終わりの 3分の1 から（1階には 出ない）
+		// 寄り道の 板は 強さの 外の 敵でも、その 階の 強さから FOE_GAP 以内なら 出す（core/floor.ts の foeTable）。
+		// foes に 書いた 敵は どこかの 階で 出る（離れすぎて 出ない 敵は 書かない）
 		const story: readonly string[] = [
 			"shallow",
 			"kinoko",
@@ -4873,15 +4873,23 @@ test(
 			const dg = DUNGEONS[d];
 			const levels = dg.level.slice(1);
 			const r = Run.create(`foes-${d}`, d);
-			const table = foeTable(r).map((m) => m.id);
-			r.s.depth = strongFrom(dg.floors);
-			r.f.depth = r.s.depth;
-			const late = foeTable(r).map((m) => m.id);
-			const hi = Math.max(...levels.map((l) => Math.max(1, Math.min(30, l))));
+			const spawned = new Set<string>();
+			for (let depth = 1; depth <= dg.floors; depth++) {
+				r.s.depth = depth;
+				r.f.depth = depth;
+				const level = Math.max(1, Math.min(30, r.levelAt(depth)));
+				for (const m of foeTable(r)) {
+					spawned.add(m.id);
+					ok(
+						m.floors[0] - FOE_GAP <= level && level <= m.floors[1] + FOE_GAP,
+						`${d} ${depth}F: ${m.id} (${m.floors}) is far from strength ${level}`,
+					);
+				}
+			}
 			for (const [id, w] of Object.entries(dg.foes ?? {})) {
 				ok(!!MONSTERS[id], `${d}: unknown foe ${id}`);
 				if (w <= 0) {
-					ok(!table.includes(id), `${d}: ${id} is weighted 0 but spawns`);
+					ok(!spawned.has(id), `${d}: ${id} is weighted 0 but spawns`);
 					continue;
 				}
 				const inRange = levels.some((l) =>
@@ -4889,18 +4897,7 @@ test(
 				);
 				if (story.includes(d))
 					ok(inRange, `${d}: ${id} is outside the story board's strength`);
-				// 寄り道の 板：強さの 範囲で 出る 敵は その 階から、弱い 敵は 1階から、強い 敵は 終わりの 3分の1 から
-				else {
-					const strong = MONSTERS[id].floors[0] > hi;
-					ok(
-						inRange || (strong ? late : table).includes(id),
-						`${d}: ${id} never spawns on the board`,
-					);
-					ok(
-						inRange || !strong || !table.includes(id),
-						`${d}: ${id} is stronger than the board but spawns on floor 1`,
-					);
-				}
+				else ok(spawned.has(id), `${d}: ${id} never spawns on the board`);
 			}
 		}
 	},

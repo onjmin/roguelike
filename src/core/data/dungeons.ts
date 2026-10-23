@@ -1288,11 +1288,10 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "大たこのみんをたおした",
 		},
-		// 😡の 板：顔真っ赤・連投荒らし・粘着アンチ。怒りの レスで スレが あがりつづけるので、dat落ちの霊は 出ない
+		// 😡の 板：怒りの レスで スレが あがりつづけるので、dat落ちの霊は 出ない
 		// （1階から 怒るので、素手の Lv1 で 3発 かかる 霊が 怒って 2回ずつ なぐり、1階で 倒れる 冒険が 19% あった → 5%。2026-10-04 ボット）。
-		// 顔真っ赤たちは 本編の 20階より 深い 強さだが、寄り道の 板なので 出す（2026-10-20 作者：「出す方に倒して」）。
-		// 1階からは 理不尽なので 8階から（core/floor.ts の strongFrom。2026-10-23 作者）
-		foes: { oni: 3, ninja: 1.5, fallen: 1.5, hitodama: 0 },
+		// 顔真っ赤（本編の 20階より 深い 強さ）は 板の 強さから 離れすぎるので 出さない（core/floor.ts の FOE_GAP）
+		foes: { hitodama: 0 },
 		floors: 10,
 		items: MAIN_ITEMS,
 		perFloor: [5, 7],
@@ -1374,7 +1373,7 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 			],
 			cause: "祭りの親分マシーをたおした",
 		},
-		// 野次馬（コピペ）・群れ（VIPPER）・炎上。VIPPER・炎上案件は 本編の 13階より 深い 強さだが、寄り道の 板なので 1階から 出す
+		// 野次馬（コピペ）・群れ（VIPPER）・炎上。VIPPER・炎上案件は 本編の 13階より 深い 強さなので、板の 強さが 10階ぶん以上の 9・10階だけ（core/floor.ts の FOE_GAP）
 		foes: { copipe: 2, yuki: 2, bomb: 2 },
 		floors: 10,
 		items: MAIN_ITEMS,
@@ -1547,8 +1546,8 @@ export const DUNGEONS: Record<DungeonId, Dungeon> = {
 		// 最前線：塹壕（通路だらけ・縦に 2本）と 小部屋の 陣地
 		layouts: [{ shapes: { grid: 2, dense: 2, maze: 2, ladder: 1 } }],
 		objective: "fetch",
-		// 公安（特定班）・連投荒らし・VIPPER は 本編の 13階より 深い 強さだが、寄り道の 板なので 1階から 出す
-		foes: { eye: 2, ninja: 2, yuki: 1.5, copipe: 1.5 },
+		// VIPPER は 本編の 13階より 深い 強さなので、板の 強さが 10階ぶん以上の 階から（core/floor.ts の FOE_GAP）
+		foes: { yuki: 1.5, copipe: 1.5 },
 		floors: 10,
 		items: MAIN_ITEMS.filter((e) => e.kind !== "s_escape"),
 		perFloor: [6, 8],
