@@ -674,11 +674,13 @@ export const ENDING: StoryPage[] = [
 	{
 		who: "shiyo",
 		text: "……その追いだきボタン、\nぜったいに押さないで",
+		hit: "dun",
 		emote: "…",
 	},
 	{
 		who: null,
 		text: "……わかったンゴ",
+		meme: "memeHeeHee",
 		kiriko: "voice",
 		gesture: "nod",
 		pause: 900,
@@ -718,6 +720,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "悪いのはボタンンゴ。\n吾輩は、おかしくないンゴ",
+		hit: "boom",
 		kiriko: "voice",
 		emote: "得",
 	},
@@ -735,6 +738,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: "zero",
 		text: "ゼロの冷却水まで41.5℃！\n湯あたりです！",
+		meme: "memeShutdown",
 		emote: "汗",
 		gesture: "shiver",
 		look: null,
@@ -750,6 +754,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "吾輩、温泉を\n掘り当てたンゴ！",
+		meme: "memeYippee",
 		emote: "得",
 		kiriko: "voice",
 		look: null,
@@ -807,6 +812,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: "nanj",
 		text: "問題や。魚が肩まで\nつかっとる。肩はどこや？",
+		hit: "huh",
 		about: "feris",
 		look: null,
 		// フェリスが まだ 町に いない（離島板・電池板の 前）ときは、出題の かわりに やきうが ひとりで ぼやく
@@ -819,6 +825,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: "feris",
 		text: "えら〜。\nえらそうに、つかってる〜",
+		hit: "bruh",
 		emote: "♪",
 		instead: { who: "zero", text: "えらまでです！\n数えました！", emote: "得" },
 	},
@@ -827,6 +834,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: null,
 		text: "港の海、まるごと入湯料を\nとるンゴ。国が建つンゴ",
+		meme: "memePay",
 		kiriko: "voice",
 		emote: "得",
 		look: null,
@@ -863,6 +871,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: "feris",
 		text: "やきうくん、ずっと湯船に\nいたのに、手がインクまみれ〜",
+		hit: "dun",
 		about: "nanj",
 		instead: {
 			who: "zero",
@@ -892,6 +901,7 @@ export const ENDING: StoryPage[] = [
 	{
 		who: "nanj",
 		text: "（ぷかー）\n……書いてへんで",
+		hit: "bruh",
 		auto: 1300,
 	},
 ];

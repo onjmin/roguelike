@@ -46,7 +46,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					m("マスターに味噌汁を\n注文したゼロ"),
 					n("マスターはしばらく考えて、\nくるくるまわりだした。"),
 					e(
-						{ emote: "…" },
+						{ hit: "bruh", emote: "…" },
 						m("出てきたのは草の汁ゼロ。\n……味噌汁と判定するゼロ"),
 					),
 				],
@@ -88,9 +88,12 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "arashi",
 				lines: [
 					m("荒らしカクテルを\n飲んでみたゼロ"),
-					n("プロトの目の青いマークが、\nちかちか点滅している。"),
 					e(
-						{ gesture: "shiver" },
+						{ meme: "memeError" },
+						n("プロトの目の青いマークが、\nちかちか点滅している。"),
+					),
+					e(
+						{ hit: "bruh", gesture: "shiver" },
 						m("感情に振り回される\nことはない。……ないゼロ"),
 					),
 				],
@@ -106,7 +109,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					),
 					e({ emote: "…" }, m("……席は、もう\nここにあるゼロ")),
 					c("zero", "はい！なので、となりの\n席も、そのとなりも！"),
-					n("まわりの席がぜんぶ、\nゼロの上着でうまっていた。"),
+					e(
+						{ meme: "memeWow" },
+						n("まわりの席がぜんぶ、\nゼロの上着でうまっていた。"),
+					),
 				],
 			},
 			{
@@ -140,7 +146,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					n("プロトは壁の絵を\nしばらく見ていた。"),
 					m("「AI絵師さんおる？」と聞いて、\n返ってきたのはサイトのURLゼロ"),
 					e(
-						{ emote: "汗" },
+						{ meme: "memeReveal", emote: "汗" },
 						m("自分で出せ、と。\n……出したら、プロトが出たゼロ"),
 					),
 				],
@@ -153,7 +159,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					c("roze", "……プロト、さっきからなんで\nわたしをじろじろ見るアル"),
 					m("答え合わせゼロ。黒髪は金髪、\n中華は和風。……束ねるは、解く"),
 					c("roze", "……反転しても、麻婆豆腐は\n好きになるのが常識アル"),
-					e({ emote: "…" }, m("……味噌汁ゼロ")),
+					e({ hit: "bong", emote: "…" }, m("……味噌汁ゼロ")),
 				],
 			},
 			{
@@ -228,7 +234,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 						m("ピアノあるじゃん！\nレンのライブ会場、決定！"),
 					),
 					n("レンが鍵盤をたたくと、\nひとつだけ音がぬけた。"),
-					e({ emote: "汗" }, m("……いまの、アレンジ！\nそういう曲なの！")),
+					e(
+						{ hit: "bruh", emote: "汗" },
+						m("……いまの、アレンジ！\nそういう曲なの！"),
+					),
 				],
 			},
 			{
@@ -256,7 +265,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("あの時計、0時で\n止まってるでしょ"),
 					m("レンも更新中は、\nずっと0時表示なの！"),
-					n("キリコはレンの顔を見た。\n目がくるくるまわっていた。"),
+					e(
+						{ meme: "memeError" },
+						n("キリコはレンの顔を見た。\n目がくるくるまわっていた。"),
+					),
 				],
 			},
 			{
@@ -273,7 +285,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("プロトって、なに飲んでも\n「味噌汁ゼロ」って言うの"),
 					c("proto", "……味噌汁を基準に、\n評価しているだけゼロ"),
-					e({ emote: "!" }, m("基準がしょっぱい！")),
+					e({ hit: "boom", emote: "!" }, m("基準がしょっぱい！")),
 				],
 			},
 			{
@@ -284,7 +296,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					c("zero", "マスターさんとお話する\n台本を、10ページ書きました！"),
 					m("メインさん、長い！\nレンなら「やっほー」でいける"),
 					e({ gesture: "nod" }, c("zero", "……「やっほー」。\nメモしました")),
-					n("マスターはひげをなでて、\n「やっほーですぞ」と言った。"),
+					e(
+						{ meme: "memeWow" },
+						n("マスターはひげをなでて、\n「やっほーですぞ」と言った。"),
+					),
 				],
 			},
 			{
@@ -354,7 +369,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "sns",
 				lines: [
 					m("公式のプロフィール、\n「某SNSで産まれた」でしょ"),
-					e({ emote: "♪" }, m("その某SNS、おんJ！\n……ひみつだよ")),
+					e(
+						{ meme: "memeReveal", emote: "♪" },
+						m("その某SNS、おんJ！\n……ひみつだよ"),
+					),
 				],
 			},
 			{
@@ -368,7 +386,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					),
 					c("roze", "……その節、どこかで\n聞いたことがあるアル"),
 					e(
-						{ emote: "汗", gesture: "startle" },
+						{ meme: "memeShocked", emote: "汗", gesture: "startle" },
 						m("バレた！ロゼさんの\n「アルアル・ナイナイ」の替え歌！"),
 					),
 					c("roze", "常識はアル！モラルはナイ！\n……反転なのにそっくりアル"),
@@ -388,7 +406,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("ねおちミルク、のんだゆ🥺"),
 					n("ぷゆゆはテーブルにほっぺを\nつけたまま、うごかない。"),
-					e({ emote: "z" }, m("……ねてないゆ🥺")),
+					e({ meme: "memeSnore", emote: "z" }, m("……ねてないゆ🥺")),
 				],
 			},
 			{
@@ -450,7 +468,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "e",
 				lines: [
 					m("あの絵のスレ、\nきっと日曜日ニィ"),
-					n("キリコがのぞくと、\n日付は水曜日だった。"),
+					e({ hit: "bruh" }, n("キリコがのぞくと、\n日付は水曜日だった。")),
 					e({ emote: "花" }, m("……にぎやかな日は、ぜんぶ\n日曜日に見えるニィ")),
 				],
 			},
@@ -466,7 +484,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "kurukuru",
 				lines: [
 					m("マスターのまねを\nしてみた"),
-					n("パン松はくるくるまわって、\n耳からたおれた。"),
+					e(
+						{ meme: "memeOof" },
+						n("パン松はくるくるまわって、\n耳からたおれた。"),
+					),
 					e({ emote: "汗" }, m("……ふらつく。\n六枚切りにはむかない")),
 				],
 			},
@@ -476,7 +497,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					c("nanj", "燃料投下ショット、パンに\nかけたらどうなるんや"),
 					e({ emote: "…" }, m("……トーストになる")),
-					n("パン松のはしが、\nすこしこげていた。"),
+					e({ meme: "memeHurt" }, n("パン松のはしが、\nすこしこげていた。")),
 				],
 			},
 			{
@@ -530,7 +551,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "piano",
 				lines: [
 					m("ピアノでフェリスちゃんに\n一曲ひくンゴねぇ……"),
-					n("ンゴ姉がひくと、いちばん\n大事な音が鳴らなかった。"),
+					e(
+						{ hit: "bong" },
+						n("ンゴ姉がひくと、いちばん\n大事な音が鳴らなかった。"),
+					),
 					e({ gesture: "slump" }, m("……道のりはけわしい\nンゴねぇ……")),
 				],
 			},
@@ -546,7 +570,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "kocha",
 				lines: [
 					m("ここ、お紅茶は\nないのかしらぁ"),
-					n("マスターは草を一本、\nそっとさしだした。"),
+					e({ hit: "bruh" }, n("マスターは草を一本、\nそっとさしだした。")),
 					m("……ハーブティーで\nがまんしてあげるわぁ"),
 				],
 			},
@@ -598,7 +622,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("時計が0時で\n止まってるおん"),
 					m("0はまるいおん。\n……だから止まったおん"),
-					n("だれも反論しなかった。"),
+					e({ hit: "bruh" }, n("だれも反論しなかった。")),
 				],
 			},
 			{
@@ -620,7 +644,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 					c("puyu", "おんちゃん、なにのんでゆ？🥺"),
 					m("寝落ちミルク、だおん"),
 					e({ emote: "♥" }, c("puyu", "ぼくちんも……🥺")),
-					n("ふたりはならんで、\nまるくねむった。"),
+					e({ meme: "memeSnore" }, n("ふたりはならんで、\nまるくねむった。")),
 				],
 			},
 		],
@@ -674,7 +698,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					c("feris", "ムッジェ、ストローで\n飲むんだよ〜"),
 					e({ emote: "?" }, m("ホゲェ？")),
-					n("ストローはプロペラに\nからまった。"),
+					e({ meme: "memeOof" }, n("ストローはプロペラに\nからまった。")),
 				],
 			},
 		],
@@ -689,8 +713,8 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "toast",
 				lines: [
 					e({ emote: "!" }, m("トースト、うちが\n焼いてあげるもん！")),
-					n("マスターがあわてて\n窓をあけた。"),
-					m("……よく焼けた？"),
+					e({ meme: "memeShocked" }, n("マスターがあわてて\n窓をあけた。")),
+					e({ hit: "bruh" }, m("……よく焼けた？")),
 				],
 			},
 			{
@@ -713,7 +737,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("ここのコーヒーは、\nマスターのブレンドだそうだ"),
 					n("マスターはくるくるまわって、\nグラスに草を入れた。"),
-					e({ gesture: "nod" }, m("……ブレンドとは奥が深い")),
+					e({ hit: "bruh", gesture: "nod" }, m("……ブレンドとは奥が深い")),
 				],
 			},
 			{
@@ -743,7 +767,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "piano",
 				lines: [
 					m("鳴らない鍵盤、\nミャウミャウが侵略したぷ"),
-					e({ emote: "汗" }, m("……うそぷ。\nはじめから鳴らないぷ")),
+					e(
+						{ hit: "bong", emote: "汗" },
+						m("……うそぷ。\nはじめから鳴らないぷ"),
+					),
 				],
 			},
 		],
@@ -766,7 +793,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "piano",
 				lines: [
 					n("リノがピアノの前に\n座った。"),
-					m("……一曲だけだ。\n金は、あとで払え"),
+					e({ meme: "memePay" }, m("……一曲だけだ。\n金は、あとで払え")),
 					n("鳴らない鍵盤のところで、\nリノは声で音をうめた。"),
 				],
 			},
@@ -793,7 +820,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 						{ emote: "汗", gesture: "startle" },
 						c("aru", "……え、ぼくが\n払うんですか！？"),
 					),
-					m("……割引はする"),
+					e({ hit: "bruh" }, m("……割引はする")),
 				],
 			},
 			{
@@ -838,7 +865,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("マスターの回転、毎分\n何回か数えてたんです"),
 					n("アルはノートを見せた。\nページがぐるぐるの線だった。"),
-					e({ gesture: "spin" }, m("……数えてるうちに、\nぼくが目を回しました")),
+					e(
+						{ meme: "memeOof", gesture: "spin" },
+						m("……数えてるうちに、\nぼくが目を回しました"),
+					),
 				],
 			},
 			{
@@ -854,7 +884,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("水分補給レモネードで、\nレモン電池を作りました"),
 					n("テーブルの豆電球が、\nぼんやりついた。"),
-					e({ emote: "汗" }, m("……先輩、飲む前に\n見てほしかったんです！")),
+					e(
+						{ meme: "memeOmg", emote: "汗" },
+						m("……先輩、飲む前に\n見てほしかったんです！"),
+					),
 				],
 			},
 			{
@@ -863,7 +896,10 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					c("ren", "アル！ピアノで\n「サイエンス」ひいてあげる！"),
 					e({ emote: "!", gesture: "hop" }, m("ほんとですか！")),
-					n("鳴らない鍵盤は、サビの\nいちばん高い音だった。"),
+					e(
+						{ hit: "dun" },
+						n("鳴らない鍵盤は、サビの\nいちばん高い音だった。"),
+					),
 					m("……科学では説明できない\n不具合です"),
 				],
 			},
@@ -913,7 +949,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("ぼくの声、「チーズすぎる」\nって言われたことがあって"),
 					m("作った人は、「ブルーチーズ\n大好き」って返したんです"),
-					n("マスターがだまって、\nチーズの小皿を置いた。"),
+					e({ hit: "bruh" }, n("マスターがだまって、\nチーズの小皿を置いた。")),
 				],
 			},
 			{
@@ -947,7 +983,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					n("ヒナリーはグラスの氷を\n数えている。"),
 					m("……7個の模様です"),
-					m("これで発表を終わりたいと\n思います"),
+					e({ meme: "memeShutdown" }, m("これで発表を終わりたいと\n思います")),
 				],
 			},
 			{
@@ -956,7 +992,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					n("ヒナリーが柱時計を\nじっと見ている。"),
 					m("この時計は、0時の\n模様です"),
-					m("……ずっと、0時の模様です"),
+					e({ hit: "bruh" }, m("……ずっと、0時の模様です")),
 				],
 			},
 			{
@@ -1024,8 +1060,8 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "kettle",
 				lines: [
 					m("お湯、わかしましょうか？\n指で"),
-					e({ emote: "驚" }, k("指でンゴ！？")),
-					e({ emote: "得" }, m("3秒です！")),
+					e({ hit: "huh", emote: "驚" }, k("指でンゴ！？")),
+					e({ meme: "memeDing", emote: "得" }, m("3秒です！")),
 				],
 			},
 		],
@@ -1057,7 +1093,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				lines: [
 					m("「【朗報】喫茶店、ある」\nって記事、まとめたばい"),
 					e({ emote: "?" }, k("それ記事ンゴ？")),
-					e({ emote: "得" }, m("今日3本目ばい！")),
+					e({ hit: "bruh", emote: "得" }, m("今日3本目ばい！")),
 				],
 			},
 		],
@@ -1088,7 +1124,7 @@ export const CAFE_MOBS: Record<MobId, CafeMob> = {
 				key: "seat",
 				lines: [
 					m("この店に来ると、\nよく席に座られちゃう"),
-					e({ emote: "冷" }, m("……わたしが\n座ってるのに")),
+					e({ hit: "dun", emote: "冷" }, m("……わたしが\n座ってるのに")),
 					k("影がうすすぎるンゴ……"),
 				],
 			},
