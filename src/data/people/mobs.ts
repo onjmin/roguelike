@@ -235,7 +235,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				),
 				e({ emote: "!" }, k("国境線、まだ消えてないンゴ！？")),
 				e(
-					{ gesture: "hop" },
+					{ meme: "memePay", gesture: "hop" },
 					m("こくみん0.5にんゆ！\nにゅうこくりょう、パンくず1つぶゆ🥺"),
 				),
 			],
@@ -244,7 +244,10 @@ export const MOBS: Record<MobId, MobDef> = {
 					{ k: "walk", to: [18, 21], face: "right" },
 					n("ぷゆゆが蓄音機にむかって、\n「ぷゆうゆ」とよびかけた。"),
 				),
-				n("蓄音機「ええ湯や」「ええ湯や」\n「ア、アロハ……ええ湯や」"),
+				e(
+					{ meme: "memeError" },
+					n("蓄音機「ええ湯や」「ええ湯や」\n「ア、アロハ……ええ湯や」"),
+				),
 				e(
 					{ emote: "!", gesture: "hop" },
 					m("うみのおさかなゆ！🥺\nうみ、まだ41.5℃ゆ"),
@@ -258,12 +261,15 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("まち、ぴかぴかゆ！\nれいぞうこも、ひえてゆ！🥺"),
 				),
 				m("みだしのはんにん、やきう！\nぼくちん、しってたゆ🥺"),
-				e({ gesture: "shake" }, k("じゃあ早く言うンゴ！！")),
+				e({ hit: "scratch", gesture: "shake" }, k("じゃあ早く言うンゴ！！")),
 			],
 			runs10: [
 				m("きみのおかえり、\nもう10かいゆ🥺"),
 				n("ぷゆゆはりょうてのゆびを\nぜんぶひろげてみせた。"),
-				m("つぎわあしのゆび、そのつぎわ\nやきうのゆびかりゆ🥺"),
+				e(
+					{ meme: "memeHeeHee" },
+					m("つぎわあしのゆび、そのつぎわ\nやきうのゆびかりゆ🥺"),
+				),
 			],
 		},
 		// 上から 順に 1回の 帰りに 1本（前の冒険に こたえる 話 → 暦 → 知りあって いく 順）
@@ -277,7 +283,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("あの子たちに、\nまけちゃったの？🥺"),
 					m("2ターンに1かいしか\nうごかないのに！？🥺"),
 					e(
-						{ gesture: "shake" },
+						{ meme: "memeOof", gesture: "shake" },
 						k("2ターンに1回、\n全員でなぐってきたンゴ！"),
 					),
 				],
@@ -299,7 +305,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("おなかすいたの？\nぼくちんのおかち、はんぶん……🥺"),
 					n("ぷゆゆははんぶんをじっと見て、\nぜんぶ口に入れた。"),
-					e({ emote: "汗" }, m("……いまのは、ぼくちんのぶん。")),
+					e({ hit: "bruh", emote: "汗" }, m("……いまのは、ぼくちんのぶん。")),
 				],
 			},
 			// ── 下の ぷゆゆ（図鑑で 会った 帰りから。遠まわしに だけ） ──
@@ -310,7 +316,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("下にも、ぼくちんみたいな\nまるいのいたゆ？🥺"),
 					e({ gesture: "shake" }, k("いたンゴ！群れで\n追いかけてきたンゴ！")),
 					e(
-						{ emote: "!", gesture: "hop" },
+						{ meme: "memeYay", emote: "!", gesture: "hop" },
 						m("ぼくちんのファンクラブゆ！\nかいいんばんごう1ばん🥺"),
 					),
 				],
@@ -327,7 +333,7 @@ export const MOBS: Record<MobId, MobDef> = {
 						c("nichie", "もう1回ニィ！\nあと100回言ってほしいニィ！"),
 					),
 					e({ emote: "♪" }, m("日曜日日曜日日曜日\n日曜日日曜日……🥺")),
-					n("98回目で、月曜日になった。"),
+					e({ meme: "memeCoffin" }, n("98回目で、月曜日になった。")),
 				],
 			},
 			{
@@ -346,7 +352,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("エガオくんからおてがみ\nきたゆ🥺"),
 					m("きたのはたけが、ぜんぶ\nむらさきだって🥺"),
 					e(
-						{ emote: "!", gesture: "startle" },
+						{ hit: "huh", emote: "!", gesture: "startle" },
 						k("手紙から芋がころがり\n出てきたンゴ！？"),
 					),
 				],
@@ -357,7 +363,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("きょうのぷゆゆパン、\nたんざくがついてたゆ🥺"),
 					m("「おかちいっぱい」って\nかいてあったゆ🥺"),
-					e({ emote: "汗" }, m("……ぼくちんの字ゆ🥺")),
+					e({ meme: "memeReveal", emote: "汗" }, m("……ぼくちんの字ゆ🥺")),
 				],
 			},
 			// ── いつでも（知りあって いく 順） ──
@@ -368,7 +374,10 @@ export const MOBS: Record<MobId, MobDef> = {
 					k("……かわいいンゴ"),
 					b(
 						{ k: "turn", route: "RDLUD" },
-						e({ emote: "!" }, m("……かわいいって、いった🥺\n……知ってた。")),
+						e(
+							{ hit: "bong", emote: "!" },
+							m("……かわいいって、いった🥺\n……知ってた。"),
+						),
 					),
 				],
 			},
@@ -385,7 +394,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ぷゆゆパンってしってゆ？\nまいにちくるパンゆ🥺"),
 					m("きょうわたいやきの\nかっこうちてたゆ🥺"),
-					e({ gesture: "shake" }, k("パンが変装して\n町に来てるンゴ！？")),
+					e(
+						{ hit: "huh", gesture: "shake" },
+						k("パンが変装して\n町に来てるンゴ！？"),
+					),
 				],
 			},
 			{
@@ -394,7 +406,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("かくれんぼちよう。\nぷゆゆわど〜こだ？🥺"),
 					n("ぷゆゆはその場で、\n目をぎゅっとつむった。"),
 					c("zero", "ゼロのカメラには、\nまる見えです"),
-					e({ emote: "!", gesture: "hop" }, m("……ここ！🥺")),
+					e({ hit: "bruh", emote: "!", gesture: "hop" }, m("……ここ！🥺")),
 				],
 			},
 			{
@@ -423,7 +435,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("チーくんがね、バイクで\nくゆっていってたゆ🥺"),
 					m("……チーくん、くゆっていうと\nこないの🥺"),
 					e(
-						{ gesture: "shake" },
+						{ hit: "huh", gesture: "shake" },
 						k("言った時点で来ないの\n確定してるンゴ！？"),
 					),
 				],
@@ -445,14 +457,17 @@ export const MOBS: Record<MobId, MobDef> = {
 						{ gesture: "shake" },
 						m("……ちぎゃうゆ。\nあの子、目がまんまるゆ🥺"),
 					),
-					n("ぷゆゆはおかちをふたつにわって、\nふたつとも食べた。"),
+					e(
+						{ meme: "memeHeeHee" },
+						n("ぷゆゆはおかちをふたつにわって、\nふたつとも食べた。"),
+					),
 				],
 			},
 			{
 				key: "hanabatake",
 				lines: [
 					m("ぷゆゆわね、おはなから\nうまれゆっていわれてゆ🥺"),
-					n("足もとの花が、\nぷゆっとゆれた。"),
+					e({ meme: "memeShocked" }, n("足もとの花が、\nぷゆっとゆれた。")),
 					e(
 						{ emote: "!", gesture: "startle" },
 						k("いま花がぷゆったンゴ！？\n花壇ごと生まれるンゴ！？"),
@@ -463,8 +478,11 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "shugyo",
 				lines: [
 					e({ emote: "!" }, m("修行ぷゆ🥺\n……ぷゆゆ部のあいさつゆ")),
-					n("ぷゆゆはかた足で立とうとして、\nころんところがった。"),
-					m("……ころがってこそだ✋🥺"),
+					e(
+						{ meme: "memeOof" },
+						n("ぷゆゆはかた足で立とうとして、\nころんところがった。"),
+					),
+					e({ hit: "boom" }, m("……ころがってこそだ✋🥺")),
 				],
 			},
 			{
@@ -477,7 +495,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					c("nanj", "……「生ジャケじゃけじゃけ」か。\nどこぞのスレの自信作や"),
 					e({ emote: "♪", gesture: "hop" }, m("しゃけもってこーい！🥺")),
 					e(
-						{ emote: "汗", gesture: "shake" },
+						{ hit: "scratch", emote: "汗", gesture: "shake" },
 						k("吾輩の生まれたスレの\n名物ンゴ！町で歌わないで！"),
 					),
 				],
@@ -499,14 +517,14 @@ export const MOBS: Record<MobId, MobDef> = {
 					c("nanj", "毎日ぷゆってるって\n言うとるけど、なんなんや"),
 					m("ぷゆってるのわ、\nぷゆってることゆ🥺"),
 					c("nanj", "……ワイがナイター\n見とるのと、いっしょか"),
-					e({ emote: "花" }, m("いっしょゆ🥺")),
+					e({ hit: "bruh", emote: "花" }, m("いっしょゆ🥺")),
 				],
 			},
 			{
 				key: "shikaku",
 				with: "zero",
 				lines: [
-					m("ぼくちん、一級ぷゆゆ士ゆ🥺"),
+					e({ meme: "memeWow" }, m("ぼくちん、一級ぷゆゆ士ゆ🥺")),
 					e(
 						{ emote: "!" },
 						c("zero", "資格！ゼロもほしいです。\n試験はいつですか"),
@@ -524,7 +542,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ぴかぴかのぷゆゆ、みた？\nぼくちんもなれゆかな🥺"),
 					n("ぷゆゆはほっぺを\nごしごしこすった。"),
-					e({ emote: "!" }, m("まっかになったゆ！\nあかぷゆゆゆ！🥺")),
+					e(
+						{ meme: "memeYippee", emote: "!" },
+						m("まっかになったゆ！\nあかぷゆゆゆ！🥺"),
+					),
 				],
 			},
 			{
@@ -553,7 +574,10 @@ export const MOBS: Record<MobId, MobDef> = {
 						{ emote: "!", gesture: "hop" },
 						m("「ロゼアルゆ」って🥺\n……うゆおー！"),
 					),
-					e({ gesture: "slump" }, m("でも、なかったことに\nされたゆ🥺")),
+					e(
+						{ hit: "bong", gesture: "slump" },
+						m("でも、なかったことに\nされたゆ🥺"),
+					),
 				],
 			},
 			{
@@ -570,14 +594,20 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("おんちゃんもまるいゆ。\nおそろい🥺"),
 					c("onchan", "……まるさでは、\nまけないおん"),
-					n("ふたりはまるさをきそって、\n坂の下までころがっていった。"),
+					e(
+						{ meme: "memeAughhh" },
+						n("ふたりはまるさをきそって、\n坂の下までころがっていった。"),
+					),
 				],
 			},
 			{
 				key: "chikun2",
 				lines: [
 					m("チーくん、きのうきたゆ🥺\n「こないチー」っていってたのに"),
-					e({ emote: "!" }, k("逆に来るンゴ！？\nどういう仕組みンゴ！")),
+					e(
+						{ hit: "huh", emote: "!" },
+						k("逆に来るンゴ！？\nどういう仕組みンゴ！"),
+					),
 				],
 			},
 			{
@@ -587,7 +617,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("かわいいぼくちん、\nど〜れだ？🥺"),
 					n("キリコはぷゆゆをゆびさした。"),
 					e(
-						{ emote: "♪" },
+						{ meme: "memeHeeHee", emote: "♪" },
 						m("ざんねん、ぷゆゆでした〜🥺\n名無しさんわみんなぷゆゆなの"),
 					),
 					e({ emote: "…" }, c("nanj", "ワイ、名無しやけど")),
@@ -606,7 +636,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("シヨちゃんのきめぜりふ、\nぼくちんのとおなじだったゆ🥺"),
 					m("「ふたりのきめぜりふね」って\nいわれたゆ🥺"),
-					e({ emote: "!" }, m("つかうたびに、おかち\n1こもらうけいやくゆ🥺")),
+					e(
+						{ meme: "memePay", emote: "!" },
+						m("つかうたびに、おかち\n1こもらうけいやくゆ🥺"),
+					),
 				],
 			},
 			{
@@ -614,7 +647,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("あめだからぷゆってる🥺"),
 					m("フェリスちゃんに、はれてても\nぷゆってるっていわれたゆ🥺"),
-					e({ emote: "♪" }, m("はれだからぷゆってる🥺")),
+					e({ hit: "bruh", emote: "♪" }, m("はれだからぷゆってる🥺")),
 				],
 			},
 			{
@@ -673,7 +706,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("冬になると、おそらから\nしろいのふるゆ？🥺"),
 					c("nanj", "……さとるのフケや"),
-					e({ emote: "?" }, m("ふけ？あーん🥺")),
+					e({ meme: "memeShocked", emote: "?" }, m("ふけ？あーん🥺")),
 					e({ emote: "汗" }, c("nanj", "口あけて待つな！\n食うたらあかんで！")),
 				],
 			},
@@ -735,7 +768,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			e({ emote: "!", gesture: "startle" }, m("あ！今日日曜日だ……")),
 			n("にぃちぇはゆびをおって、\nしばらくかぞえていた。"),
 			e(
-				{ gesture: "slump" },
+				{ hit: "bong", gesture: "slump" },
 				m("……まだだったニィ。\nこの町、日曜日は来るニィ？"),
 			),
 			c("nanj", "来るで。毎週来るで"),
@@ -745,7 +778,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("長湯スレ、日曜日に伸びたニィ？"),
 				k("知らないンゴ！吾輩、\n湯船で曜日を忘れたンゴ！"),
 				e(
-					{ emote: "!", gesture: "hop" },
+					{ meme: "memeYay", emote: "!", gesture: "hop" },
 					m("じゃあ日曜日ニィ！\n町じゅう日曜日にするニィ！"),
 				),
 			],
@@ -756,7 +789,10 @@ export const MOBS: Record<MobId, MobDef> = {
 					{ emote: "!", gesture: "hop" },
 					m("だから7日ぜんぶに\n「日曜日」って書いたニィ！"),
 				),
-				e({ gesture: "shake" }, k("明かりがついて\n全部バレてるンゴ！")),
+				e(
+					{ hit: "scratch", gesture: "shake" },
+					k("明かりがついて\n全部バレてるンゴ！"),
+				),
 			],
 			runs10: [m("またもぐるニィ！？\nキリコだけ毎日月曜日ニィ！")],
 		},
@@ -811,7 +847,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					c("puyu", "きょうもぷゆってる🥺"),
 					e({ emote: "!" }, m("毎日ぷゆ曜日ニィ！？\nずるいニィ！")),
-					n("にぃちぇはカレンダーを\nぜんぶ「ぷ」に書きかえた。"),
+					e(
+						{ hit: "dun" },
+						n("にぃちぇはカレンダーを\nぜんぶ「ぷ」に書きかえた。"),
+					),
 				],
 			},
 			{
@@ -820,7 +859,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("祝日って、日曜日の\n親戚ニィ？"),
 					k("たぶん親戚ンゴ！"),
 					e(
-						{ emote: "!", gesture: "hop" },
+						{ meme: "memePay", emote: "!", gesture: "hop" },
 						m("じゃあお年玉、\nもらいに行くニィ！"),
 					),
 				],
@@ -847,9 +886,9 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "kissa",
 				lines: [
 					m("喫茶のマスターに、\n「日曜日の味」をたのんだニィ"),
-					m("出てきたのは、\n寝落ちミルクだったニィ"),
+					e({ meme: "memeSnore" }, m("出てきたのは、\n寝落ちミルクだったニィ")),
 					e(
-						{ emote: "!", gesture: "startle" },
+						{ meme: "memeYippee", emote: "!", gesture: "startle" },
 						m("起きたら火曜日ニィ！\n月曜日をとばしたニィ！"),
 					),
 				],
@@ -906,20 +945,29 @@ export const MOBS: Record<MobId, MobDef> = {
 		spot: [17, 18],
 		dir: "left",
 		meet: [
-			e({ emote: "!" }, m("パン板は独立する！\nここは今日から大使館だ")),
+			e(
+				{ hit: "boom", emote: "!" },
+				m("パン板は独立する！\nここは今日から大使館だ"),
+			),
 			n("キリコは足もとをゆびさした。\n屋台のとなりの1マスだ。"),
 			m("……狭いが、大使館だ。\n手荒なまねはしない"),
 		],
 		milestones: {
 			main: [
 				m("長湯スレか。パン板も\n負けずにパン湯をわかした"),
-				e({ emote: "汗" }, m("……ふやけた。\n国土の半分がふやけた")),
+				e(
+					{ meme: "memeOmg", emote: "汗" },
+					m("……ふやけた。\n国土の半分がふやけた"),
+				),
 				e({ gesture: "shake" }, k("国が溶けてるンゴ！！")),
 			],
 			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("町に明かりか。記念に\nパン板じゅうでトーストした"),
-				e({ emote: "!" }, m("焼きすぎた。\nパン板が燃えている")),
+				e(
+					{ meme: "memeFahhh", emote: "!" },
+					m("焼きすぎた。\nパン板が燃えている"),
+				),
 				e({ gesture: "shake" }, k("お祝いで国が燃えるンゴ！？")),
 			],
 			runs10: [m("何度でももぐるやつだ。\n……パン板にほしい人材だ")],
@@ -937,7 +985,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "shoku",
 				lines: [
 					m("おれは食パンだ。六枚切りだ"),
-					e({ emote: "怒" }, m("……八枚切りとまちがえるな")),
+					e({ hit: "bruh", emote: "怒" }, m("……八枚切りとまちがえるな")),
 				],
 			},
 			{
@@ -956,7 +1004,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("侵略の進みぐあいを\n報告する"),
 					m("……屋台のとなり、\n1マスぶんだ"),
-					e({ emote: "汗" }, m("……ロゼに、場所代を\n請求された")),
+					e(
+						{ meme: "memePay", emote: "汗" },
+						m("……ロゼに、場所代を\n請求された"),
+					),
 				],
 			},
 			{
@@ -984,7 +1035,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("耳は捨てるな。\n……おれのいちばんいいところだ"),
 					e({ gesture: "nod" }, k("……耳、吾輩も好きンゴ")),
-					n("パン松は満足そうにふくらんで、\n2斤になった。"),
+					e(
+						{ meme: "memeWow" },
+						n("パン松は満足そうにふくらんで、\n2斤になった。"),
+					),
 				],
 			},
 			{
@@ -992,7 +1046,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("プロトに聞かれた。\n「パンはなぜ四角い？」"),
 					e({ emote: "?" }, m("……考えたこともなかった。\n哲学だそうだ")),
-					e({ emote: "!" }, m("……パン板に、\n哲学のスレを立てる")),
+					e(
+						{ meme: "memeDing", emote: "!" },
+						m("……パン板に、\n哲学のスレを立てる"),
+					),
 				],
 			},
 			{
@@ -1000,7 +1057,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("喫茶でパンを出せと、\nマスターにかけあった"),
 					e({ emote: "怒" }, m("草のサンドなら\n出せると言われた！")),
-					n("パン松は怒りのあまり、\n緑色にカビていた。"),
+					e({ hit: "dun" }, n("パン松は怒りのあまり、\n緑色にカビていた。")),
 				],
 			},
 			{
@@ -1018,7 +1075,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("おれのほんとうの名は\n「パン兵」だ"),
 					k("パン兵ンゴ！"),
 					e(
-						{ emote: "!", gesture: "hop" },
+						{ meme: "memeYay", emote: "!", gesture: "hop" },
 						m("はじめて呼ばれた！\n今日をパン板の祝日にする！"),
 					),
 				],
@@ -1028,7 +1085,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "fakewar",
 				lines: [
 					m("むかし、パン板の民をひきいて\nおんJへ攻めこんだ"),
-					e({ emote: "汗" }, m("……ふりかえったら、\nみんなおんJ民だった")),
+					e(
+						{ meme: "memeReveal", emote: "汗" },
+						m("……ふりかえったら、\nみんなおんJ民だった"),
+					),
 				],
 			},
 		],
@@ -1104,7 +1164,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("弟は、ナイターで負けると\n家じゅうしずかにさせるンゴねぇ"),
 					m("キリコちゃんが潜ってる間は、\n息も止めて待ってるンゴねぇ"),
-					e({ emote: "汗" }, m("……きのう3時間止めて、\n救急車が来たンゴねぇ")),
+					e(
+						{ meme: "memeOof", emote: "汗" },
+						m("……きのう3時間止めて、\n救急車が来たンゴねぇ"),
+					),
 				],
 			},
 			{
@@ -1115,7 +1178,10 @@ export const MOBS: Record<MobId, MobDef> = {
 						m("フェリスちゃんのくしゃみ、\n録音したいンゴねぇ……"),
 					),
 					n("ンゴ姉は蓄音機に\nじりじりにじり寄った。"),
-					e({ gesture: "shake" }, k("吾輩の蓄音機は\n盗聴器じゃないンゴ！")),
+					e(
+						{ meme: "memeNope", gesture: "shake" },
+						k("吾輩の蓄音機は\n盗聴器じゃないンゴ！"),
+					),
 				],
 			},
 			{
@@ -1126,7 +1192,10 @@ export const MOBS: Record<MobId, MobDef> = {
 						{ emote: "♥" },
 						m("ぜんぶって答えたら、\n「ちょっとわかる」って……"),
 					),
-					e({ emote: "怒" }, m("……ライバルが\nふえたンゴねぇ！！")),
+					e(
+						{ meme: "memeShocked", emote: "怒" },
+						m("……ライバルが\nふえたンゴねぇ！！"),
+					),
 				],
 			},
 			{
@@ -1146,7 +1215,7 @@ export const MOBS: Record<MobId, MobDef> = {
 						{ emote: "!" },
 						m("わたしものりたいンゴねぇ！\n「フェリスちゃんの姉」の欄で！"),
 					),
-					e({ gesture: "shake" }, k("姉じゃないンゴ！")),
+					e({ hit: "scratch", gesture: "shake" }, k("姉じゃないンゴ！")),
 				],
 			},
 			{
@@ -1155,7 +1224,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("弟に、なんで倉庫で\n働くのか聞かれたンゴねぇ"),
 					m("弟の荷物を見はるためって\n言ったンゴねぇ……"),
 					e(
-						{ emote: "汗" },
+						{ meme: "memeReveal", emote: "汗" },
 						m("……フェリスちゃん目当てって、\nばれてたンゴねぇ……"),
 					),
 				],
@@ -1184,14 +1253,17 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "henkan",
 				lines: [
 					m("わたしの名前、もとは\nただの語尾だったンゴねぇ……"),
-					m("「んごねぇ」を変換したら、\n姉になったンゴねぇ"),
+					e(
+						{ meme: "memeError" },
+						m("「んごねぇ」を変換したら、\n姉になったンゴねぇ"),
+					),
 				],
 			},
 			{
 				key: "kao",
 				lines: [
 					m("わたし、顔がふたつ\nあるンゴねぇ"),
-					n("ンゴ姉は一瞬だけ、\n弟にそっくりな顔をした。"),
+					e({ hit: "dun" }, n("ンゴ姉は一瞬だけ、\n弟にそっくりな顔をした。")),
 					m("……どっちがかわいいか、\nまだ決着がついてないンゴねぇ"),
 				],
 			},
@@ -1210,7 +1282,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		idle: "フェリスちゃんのとなりにいれば\n……ふふ、ンゴねぇ……",
 		thx: [
 			e(
-				{ emote: "!", gesture: "hop" },
+				{ meme: "memeYay", emote: "!", gesture: "hop" },
 				m("1票……！これからは私の\n時代ンゴねぇ……！"),
 			),
 		],
@@ -1234,7 +1306,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			yes: [
 				n("キリコはおんSに\nひとこと書きこんだ。「ンゴ」"),
 				e(
-					{ emote: "!", gesture: "shiver" },
+					{ meme: "memeHallelujah", emote: "!", gesture: "shiver" },
 					m("きたああああ！\nレスがきたわぁぁぁ！"),
 				),
 				e(
@@ -1253,7 +1325,10 @@ export const MOBS: Record<MobId, MobDef> = {
 			main: [
 				m("長湯スレ！？こっちは\nまだ30レス台よぉ！"),
 				e({ emote: "!" }, m("おんSにもお風呂を作れば\n人が来るのよぉ！")),
-				n("おんすちゃんはおんSに\n「ここ温泉」と書きこんだ。"),
+				e(
+					{ hit: "bruh" },
+					n("おんすちゃんはおんSに\n「ここ温泉」と書きこんだ。"),
+				),
 			],
 			// 最終話の あと（STORY.md §4.9）
 			deep: [
@@ -1279,8 +1354,14 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "tea",
 				lines: [
 					e({ emote: "♪" }, m("お紅茶、いかがぁ？")),
-					n("カップが50個出てきた。\nどれも氷が張っている。"),
-					e({ emote: "汗" }, m("アイスティーよぉ！\nわざとよぉ！")),
+					e(
+						{ meme: "memeWow" },
+						n("カップが50個出てきた。\nどれも氷が張っている。"),
+					),
+					e(
+						{ hit: "bruh", emote: "汗" },
+						m("アイスティーよぉ！\nわざとよぉ！"),
+					),
 				],
 			},
 			{
@@ -1294,7 +1375,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "hankachi",
 				lines: [
 					n("おんすちゃんはハンカチを\n何枚ももっている。"),
-					m("……ぜんぶ、かみしめる\n用よぉ"),
+					e({ hit: "bong" }, m("……ぜんぶ、かみしめる\n用よぉ")),
 				],
 			},
 			{
@@ -1313,7 +1394,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("あのまるい子、また\nお紅茶をのみに来たわぁ"),
 					e({ emote: "汗" }, m("……お砂糖、7つも\n入れるのよぉ")),
 					e(
-						{ emote: "!", gesture: "hop" },
+						{ meme: "memeYay", emote: "!", gesture: "hop" },
 						m("常連よぉ！おんSの\n常連第1号よぉ！"),
 					),
 				],
@@ -1322,7 +1403,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "kaso",
 				lines: [
 					m("おんSのこと、過疎って\n言わないでくださる？"),
-					e({ emote: "怒" }, m("……「しずか」って\n言うのよぉ")),
+					e({ hit: "bruh", emote: "怒" }, m("……「しずか」って\n言うのよぉ")),
 				],
 			},
 			{
@@ -1341,7 +1422,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ゼロさんが、おんSのレス数を\n帳簿につけてくれたのよぉ"),
 					m("……ふえてる、ですって"),
-					e({ emote: "♥" }, m("ふ、ふん。\nふえたじゃないのぉ……！")),
+					e(
+						{ meme: "memeYippee", emote: "♥" },
+						m("ふ、ふん。\nふえたじゃないのぉ……！"),
+					),
 				],
 			},
 			{
@@ -1352,7 +1436,10 @@ export const MOBS: Record<MobId, MobDef> = {
 						{ emote: "?" },
 						m("……名前に公認って\nつけたら、人が来るのかしらぁ"),
 					),
-					n("おんすちゃんはハンカチに\n「おんS（公認）」と書いた。"),
+					e(
+						{ hit: "bruh" },
+						n("おんすちゃんはハンカチに\n「おんS（公認）」と書いた。"),
+					),
 				],
 			},
 			// ── 深い ネタ ──
@@ -1366,7 +1453,7 @@ export const MOBS: Record<MobId, MobDef> = {
 						m("……つぎの日には、\nまただれもいなかったわぁ"),
 					),
 					e(
-						{ emote: "怒", gesture: "shake" },
+						{ hit: "dun", emote: "怒", gesture: "shake" },
 						m("4人とも捜索願いを\n出したわよぉ！国際的によぉ！"),
 					),
 				],
@@ -1380,7 +1467,10 @@ export const MOBS: Record<MobId, MobDef> = {
 					m(
 						"フランソワ・チュパカブラさん。\n全レスしてたわぁ……おんSにも来てぇ",
 					),
-					e({ emote: "怒" }, m("……全レスの人まで\n来ないのよぉー！")),
+					e(
+						{ meme: "memeFahhh", emote: "怒" },
+						m("……全レスの人まで\n来ないのよぉー！"),
+					),
 				],
 			},
 		],
@@ -1398,7 +1488,10 @@ export const MOBS: Record<MobId, MobDef> = {
 		idle: "……また来たのぉ？\nふ、ふん",
 		thx: [
 			e({ emote: "!", gesture: "startle" }, m("い、1票……！")),
-			n("おんすちゃんは投票箱ごと\nかかえて走り去った。"),
+			e(
+				{ meme: "memeHeeHee" },
+				n("おんすちゃんは投票箱ごと\nかかえて走り去った。"),
+			),
 		],
 	},
 
@@ -1420,12 +1513,18 @@ export const MOBS: Record<MobId, MobDef> = {
 			main: [
 				m("長湯スレ、おめでとうだおん"),
 				n("おんちゃんは小石を\nひとつキリコにわたした。"),
-				e({ emote: "!" }, m("一軍の小石だおん！\n売ったら国が買えるおん")),
+				e(
+					{ meme: "memePay", emote: "!" },
+					m("一軍の小石だおん！\n売ったら国が買えるおん"),
+				),
 			],
 			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("町の明かり、おめでとうだおん"),
-				n("おんちゃんは家より大きな石を\n広場に転がしてきた。"),
+				e(
+					{ meme: "memeWow" },
+					n("おんちゃんは家より大きな石を\n広場に転がしてきた。"),
+				),
 				e(
 					{ gesture: "shake" },
 					k("記念碑がでかすぎて\n広場がふさがったンゴ！"),
@@ -1443,7 +1542,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("一軍は、まるく\nしているのがしごとだおん"),
 					e(
-						{ emote: "汗", gesture: "spin" },
+						{ meme: "memeSocialCredit", emote: "汗", gesture: "spin" },
 						m("ちょっとでも角が出たら\n二軍落ちだおん！"),
 					),
 				],
@@ -1477,7 +1576,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "zero",
 				lines: [
 					m("ゼロちゃんが、おんちゃんの\nまるさを測りたいって来たおん"),
-					e({ gesture: "shake" }, m("……ひみつだおん")),
+					e({ meme: "memeNope", gesture: "shake" }, m("……ひみつだおん")),
 				],
 			},
 			{
@@ -1511,7 +1610,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("喫茶でkskエスプレッソ、\n飲んだおん"),
 					e({ emote: "!" }, m("……目がまるくなったおん")),
-					n("もとからまるかった。"),
+					e({ hit: "bruh" }, n("もとからまるかった。")),
 				],
 			},
 			{
@@ -1519,7 +1618,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("リノちゃんに、\n「おまえが殿堂入りか」って"),
 					m("そうだおんって言ったら、\n「……金払え」って言われたおん"),
-					e({ emote: "?" }, m("……なんのお金だおん？")),
+					e({ hit: "huh", emote: "?" }, m("……なんのお金だおん？")),
 				],
 			},
 			// ── 深い ネタ ──
@@ -1529,7 +1628,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("板ができた日には、\n20人いたらしいおん"),
 					e(
-						{ emote: "!" },
+						{ meme: "memeCoffin", emote: "!" },
 						m("ひと月で0人だおん！\n一軍の席、ぜんぶ空いたおん！"),
 					),
 					e({ gesture: "shake" }, k("その空き席に\n座ったンゴ！？")),
@@ -1597,7 +1696,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					{ emote: "怒", gesture: "shake" },
 					m("5割にならないんだ！\n電池板に延長戦を申しこむんだ！"),
 				),
-				e({ gesture: "shake" }, k("また停電するンゴ！")),
+				e({ meme: "memeShutdown", gesture: "shake" }, k("また停電するンゴ！")),
 			],
 			runs10: [
 				m("もぐった回数と、\nたおれた回数……"),
@@ -1644,7 +1743,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			{
 				key: "coin",
 				lines: [
-					m("コインを投げたら、\n立ったんだ"),
+					e({ meme: "memeWow" }, m("コインを投げたら、\n立ったんだ")),
 					n("ヤヤポジはすこし\nうれしそうだった。"),
 					e({ emote: "♪" }, m("……表でも裏でもないんだ")),
 				],
@@ -1693,7 +1792,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("むかし、監督がわたしと\n同じことを言ったんだ"),
 					m("「交流戦は5割でいい」って"),
 					e(
-						{ emote: "!", gesture: "hop" },
+						{ hit: "bruh", emote: "!", gesture: "hop" },
 						m("うれしくて、監督と\n5割の力で握手したんだ！"),
 					),
 				],
@@ -1739,7 +1838,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			],
 			runs10: [
 				n("ムッジェはもぐった数だけ、\n地面をたたこうとした。"),
-				n("……とちゅうでわからなく\nなったようだ。"),
+				e({ meme: "memeError" }, n("……とちゅうでわからなく\nなったようだ。")),
 			],
 		},
 		chats: [
@@ -1748,7 +1847,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					n("ムッジェが村の入口の\n立て札を見上げている。"),
 					e({ emote: "!", gesture: "hop" }, m("ホゲェ！！")),
-					n("ムッジェは立て札いっぱいに\n自分の顔を描きたした。"),
+					e(
+						{ meme: "memeHeeHee" },
+						n("ムッジェは立て札いっぱいに\n自分の顔を描きたした。"),
+					),
 				],
 			},
 			{
@@ -1764,7 +1866,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "propeller",
 				lines: [
 					n("ムッジェのプロペラが回って、\nすこしだけ浮いた。"),
-					n("……すぐおりた。"),
+					e({ hit: "bruh" }, n("……すぐおりた。")),
 				],
 			},
 			{
@@ -1782,7 +1884,7 @@ export const MOBS: Record<MobId, MobDef> = {
 						"ミャウミャウに「いっしょにおんJを\n侵略するぷ！」とさそわれたらしい。",
 					),
 					m("ホゲェ"),
-					n("……ことわったらしい。"),
+					e({ meme: "memeNope" }, n("……ことわったらしい。")),
 				],
 			},
 			// ── 深い ネタ ──
@@ -1854,7 +1956,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("よく焼けた？"),
 					e({ gesture: "shake" }, k("まだ生ンゴ！")),
-					e({ emote: "!", gesture: "hop" }, m("じゃあ、もっと焼くもん！")),
+					e(
+						{ meme: "memeYippee", emote: "!", gesture: "hop" },
+						m("じゃあ、もっと焼くもん！"),
+					),
 				],
 			},
 			{
@@ -1870,14 +1975,17 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "asa",
 				lines: [
 					m("朝はうちがいちばん\n元気な時間だもん"),
-					e({ emote: "z" }, m("……夜はねむいもん")),
+					e({ meme: "memeSnore", emote: "z" }, m("……夜はねむいもん")),
 				],
 			},
 			{
 				key: "puyu",
 				lines: [
 					m("まるい子が、うちの火に\nあたりに来たもん！"),
-					m("もっとよっていいって\n言ったら、「あちちゆ」って"),
+					e(
+						{ meme: "memeHurt" },
+						m("もっとよっていいって\n言ったら、「あちちゆ」って"),
+					),
 					e({ emote: "♪" }, m("うちの火、\nあったかいもん！")),
 				],
 			},
@@ -1893,7 +2001,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ジェイさんが、コーヒーを\n温めてくれたまえだって！"),
 					e({ emote: "怒" }, m("うちはコンロじゃ\nないもん！")),
-					e({ emote: "汗" }, m("……温めるけど")),
+					e({ hit: "bruh", emote: "汗" }, m("……温めるけど")),
 				],
 			},
 		],
@@ -1931,7 +2039,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			main: [m("長湯スレを持ち帰ったか。\n……湯あたりはしなかったかね")],
 			// 最終話の あと（STORY.md §4.9）
 			deep: [
-				m("見事な転落だった。\n鯖代で帝国ごととはな"),
+				e({ hit: "bong" }, m("見事な転落だった。\n鯖代で帝国ごととはな")),
 				m("主役どの、コーヒーでも\nどうかね"),
 			],
 			runs10: [m("10回か。庭の手入れと\n同じだ。つづけたまえ")],
@@ -1941,7 +2049,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "coffee",
 				lines: [
 					m("コーヒーはブラックにかぎる"),
-					m("……砂糖は、2つだけ\n入れたまえ"),
+					e({ hit: "bruh" }, m("……砂糖は、2つだけ\n入れたまえ")),
 				],
 			},
 			{
@@ -1973,7 +2081,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "konro",
 				lines: [
 					m("けさのコーヒーは、\n朝コンロがわかしてくれた"),
-					e({ emote: "…" }, m("……沸かしすぎだ。\nだが、礼は言おう")),
+					e(
+						{ meme: "memeHurt", emote: "…" },
+						m("……沸かしすぎだ。\nだが、礼は言おう"),
+					),
 				],
 			},
 			{
@@ -1992,7 +2103,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("私の口ぐせは、古い\nスレのもじりだ"),
 					m("「ここはぼくたちのあたらしい\n縄張りだからね」"),
 					e(
-						{ emote: "汗" },
+						{ meme: "memeReveal", emote: "汗" },
 						m("2014年の春だ。……私は\n荷物とまちがえて運ばれてきた"),
 					),
 				],
@@ -2033,7 +2144,10 @@ export const MOBS: Record<MobId, MobDef> = {
 			deep: [
 				m("掲示板は侵略しそこねたぷ"),
 				e({ emote: "汗" }, m("……つぎは、キリコの倉庫を\n侵略してもいいぷ？")),
-				e({ gesture: "shake" }, k("ダメンゴ！侵略先を\n吾輩にしぼるなンゴ！")),
+				e(
+					{ meme: "memeNope", gesture: "shake" },
+					k("ダメンゴ！侵略先を\n吾輩にしぼるなンゴ！"),
+				),
 			],
 			runs10: [m("10回ぷ？侵略には、\nまだたりないぷ")],
 		},
@@ -2042,7 +2156,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "kamibukuro",
 				lines: [
 					n("服は、紙袋に穴をあけた\nだけのものらしい。"),
-					e({ emote: "汗" }, m("紙袋ぷ。\n……まだ設定が決まってないぷ")),
+					e(
+						{ hit: "bruh", emote: "汗" },
+						m("紙袋ぷ。\n……まだ設定が決まってないぷ"),
+					),
 				],
 			},
 			{
@@ -2058,14 +2175,14 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "shinryaku",
 				lines: [
 					m("きょうの侵略は、\n広場のベンチをひとつとったぷ"),
-					e({ emote: "汗" }, m("……あした返すぷ")),
+					e({ meme: "memeHeeHee", emote: "汗" }, m("……あした返すぷ")),
 				],
 			},
 			{
 				key: "e",
 				lines: [
 					m("ミャウミャウの絵、会うたびに\nちがうって言われるぷ"),
-					m("……ぜんぶ本物ぷ"),
+					e({ hit: "boom" }, m("……ぜんぶ本物ぷ")),
 				],
 			},
 			{
@@ -2083,7 +2200,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ミャウミャウは、安価で\n生まれたぷ"),
 					m("顔はダイオウイカって\n決まったぷ"),
-					m("……だから紙袋ぷ"),
+					e({ hit: "huh" }, m("……だから紙袋ぷ")),
 				],
 			},
 		],
@@ -2120,18 +2237,24 @@ export const MOBS: Record<MobId, MobDef> = {
 		milestones: {
 			main: [
 				m("長湯スレか。……湯気が\nここまで来た"),
-				n("リノの軍服が、湯気で\n2サイズ縮んでいる。"),
-				m("……よくやった。\n会話は以上だ"),
+				e(
+					{ meme: "memeShocked" },
+					n("リノの軍服が、湯気で\n2サイズ縮んでいる。"),
+				),
+				e({ meme: "memeShutdown" }, m("……よくやった。\n会話は以上だ")),
 			],
 			// 最終話の あと（STORY.md §4.9）
 			deep: [
 				m("停電の夜、DIOは暗闇で\n見張りを続けた"),
-				n("……朝になったら、3つ先の\n県の店を見張っていた。"),
+				e({ hit: "dun" }, n("……朝になったら、3つ先の\n県の店を見張っていた。")),
 				e({ gesture: "shake" }, k("どこまで歩いたンゴ！？")),
 			],
 			runs10: [
 				m("10回もぐったか。\n……DIOは数えていない"),
-				n("リノの手帳に、線が\nきっちり10本引いてある。"),
+				e(
+					{ meme: "memeReveal" },
+					n("リノの手帳に、線が\nきっちり10本引いてある。"),
+				),
 			],
 		},
 		chats: [
@@ -2140,7 +2263,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("これは銃ではない。\nコッペパンだ"),
 					n("リノはコッペパンを、\n肩にかついでみせた。"),
-					m("……撃たない。\n食う"),
+					e({ hit: "bong" }, m("……撃たない。\n食う")),
 				],
 			},
 			{
@@ -2148,7 +2271,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				with: "nanj",
 				lines: [
 					c("nanj", "リノ、なんか一曲\n歌うてや"),
-					m("DIOを歌わせたければ、\n金払え"),
+					e({ meme: "memePay" }, m("DIOを歌わせたければ、\n金払え")),
 					e({ emote: "?" }, c("nanj", "……レスでええか？")),
 					m("……1000レスからだ"),
 				],
@@ -2166,14 +2289,17 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("ゼロに、音源があって\nいいなと言われた"),
 					e({ emote: "…" }, m("……原音設定のとちゅうで、\n一度ぜんぶ消えた")),
-					e({ emote: "怒" }, m("消したのはハムスターだ。\nケーブルをかじった")),
+					e(
+						{ meme: "memeError", emote: "怒" },
+						m("消したのはハムスターだ。\nケーブルをかじった"),
+					),
 				],
 			},
 			{
 				key: "ise",
 				lines: [
 					m("伊勢の生まれだ。\n……赤福は持っていない"),
-					e({ gesture: "slump" }, k("……ちょっと期待したンゴ")),
+					e({ hit: "bruh", gesture: "slump" }, k("……ちょっと期待したンゴ")),
 					m("……こんど持ってくる"),
 				],
 			},
@@ -2189,7 +2315,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("…………天気は、いいな"),
 					k("いいンゴ！"),
-					e({ emote: "!" }, m("……会話が成立した。\n自己ベスト更新だ。以上だ")),
+					e(
+						{ meme: "memeYay", emote: "!" },
+						m("……会話が成立した。\n自己ベスト更新だ。以上だ"),
+					),
 				],
 			},
 			{
@@ -2221,7 +2350,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("DIOのスタンドは、\n草木を育てる"),
 					n("道ばたの花が、リノの\nまわりだけすこし大きい。"),
-					m("……それだけだ。\n時は止まらない"),
+					e({ hit: "bruh" }, m("……それだけだ。\n時は止まらない")),
 				],
 			},
 			{
@@ -2229,7 +2358,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("まるいのに聞かれた。\nハムスターはどこかと"),
 					n("リノのポケットから、\nちいさな鼻がのぞいた。"),
-					m("……会話は以上だ"),
+					e({ meme: "memeNope" }, m("……会話は以上だ")),
 				],
 			},
 			{
@@ -2237,7 +2366,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("伊勢の赤福、\n持ってきた"),
 					n("箱の中は、からっぽだった。"),
-					e({ emote: "汗" }, m("……道中で食った。\n任務のうちだ")),
+					e({ hit: "bong", emote: "汗" }, m("……道中で食った。\n任務のうちだ")),
 				],
 			},
 			{
@@ -2245,7 +2374,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("新入りに、軍服は\n暑くないかと聞かれた"),
 					e({ emote: "汗" }, m("……暑い")),
-					e({ gesture: "shake" }, m("……脱がない")),
+					e({ meme: "memeNope", gesture: "shake" }, m("……脱がない")),
 				],
 			},
 			{
@@ -2261,7 +2390,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("プロトに聞かれた。\n沈黙は会話か、と"),
 					e({ gesture: "nod" }, m("……会話だ")),
-					n("ふたりはしばらくだまっていた。\n……会話がはずんでいた。"),
+					e(
+						{ meme: "memeSnore" },
+						n("ふたりはしばらくだまっていた。\n……会話がはずんでいた。"),
+					),
 				],
 			},
 		],
@@ -2331,7 +2463,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("動画、見てくれましたか？\n……再生数、いま数えてます"),
 					n("アルはゆびをおって、\nとちゅうで目をかがやかせた。"),
 					e(
-						{ emote: "!", gesture: "startle" },
+						{ meme: "memeYay", emote: "!", gesture: "startle" },
 						m("ひとつふえてる！\n先輩ですか？"),
 					),
 				],
@@ -2343,7 +2475,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					c("roze", "新入りアル？\n……よろしくアル"),
 					e({ emote: "?" }, m("はい、アルです！\n……えっ、呼びました？")),
 					e({ emote: "…" }, c("roze", "……呼んでないアル。\n口ぐせアル")),
-					e({ emote: "汗" }, m("……名前、かぶってますね")),
+					e({ hit: "bruh", emote: "汗" }, m("……名前、かぶってますね")),
 				],
 			},
 			{
@@ -2384,14 +2516,17 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("リノさんに、動画見て\nもらえますかって聞いたんです"),
 					m("そしたら、「見てほしければ、\n金払え」って……"),
-					e({ emote: "?" }, m("逆じゃないですか！")),
+					e({ hit: "scratch", emote: "?" }, m("逆じゃないですか！")),
 				],
 			},
 			{
 				key: "mash",
 				lines: [
 					m("この髪型、マッシュって\nいうんです。長めの"),
-					n("アルは前髪をなおした。\nすぐにもとにもどった。"),
+					e(
+						{ hit: "bruh" },
+						n("アルは前髪をなおした。\nすぐにもとにもどった。"),
+					),
 				],
 			},
 			{
@@ -2422,7 +2557,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("喫茶で寝落ちミルク、\n飲んでみたんです"),
 					e({ emote: "z" }, m("……成分を分析する前に、\n寝ちゃいました")),
-					n("アルのノートには、\nよだれのあとだけがあった。"),
+					e(
+						{ meme: "memeSnore" },
+						n("アルのノートには、\nよだれのあとだけがあった。"),
+					),
 				],
 			},
 			{
@@ -2476,7 +2614,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				m("長湯スレを持ち帰ったと、\n記録したゼロ"),
 				n("プロトの目の青いマークが、\n一度だけ光った。"),
 				e(
-					{ emote: "!", gesture: "hop" },
+					{ meme: "memeError", emote: "!", gesture: "hop" },
 					m("うれしいゼロ！うれしい！\n……語尾が抜けたゼロ"),
 				),
 			],
@@ -2490,7 +2628,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			],
 			runs10: [
 				m("もぐった回数10。\n平均を出したゼロ"),
-				m("結論。キリコは\n倒れるのが趣味ゼロ"),
+				e({ meme: "memeCoffin" }, m("結論。キリコは\n倒れるのが趣味ゼロ")),
 				e({ gesture: "shake" }, k("趣味じゃないンゴ！！")),
 			],
 		},
@@ -2499,7 +2637,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "miso",
 				lines: [
 					m("好物は味噌汁ゼロ。\n具はとうふだけでいい"),
-					n("……語尾が抜けた。"),
+					e({ hit: "bruh" }, n("……語尾が抜けた。")),
 					e({ gesture: "nod" }, m("……いいゼロ")),
 				],
 			},
@@ -2530,7 +2668,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "choubo",
 				lines: [
 					m("メインさんに帳簿の\n書き方を習ったゼロ"),
-					m("論理的に書いたゼロ。\n……ぜんぶ「ゼロ」ゼロ"),
+					e({ hit: "bruh" }, m("論理的に書いたゼロ。\n……ぜんぶ「ゼロ」ゼロ")),
 					m("メインさんはだまったゼロ。\n……数字は正確ゼロ"),
 				],
 			},
@@ -2539,7 +2677,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					n("プロトは日曜の朝、\n神社の方角へ手を組んでいた。"),
 					m("祈りは、論理ではないゼロ"),
-					e({ emote: "!" }, m("なので願いごとを3億件、\n一括で送信したゼロ")),
+					e(
+						{ hit: "dun", emote: "!" },
+						m("なので願いごとを3億件、\n一括で送信したゼロ"),
+					),
 				],
 			},
 			{
@@ -2547,7 +2688,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("キリコはよくしゃべる。\nプロトはあまりしゃべらない"),
 					n("キリコがしゃべり、プロトが\nうなずいていた。"),
-					e({ gesture: "nod" }, m("……分業ゼロ")),
+					e({ hit: "bruh", gesture: "nod" }, m("……分業ゼロ")),
 				],
 			},
 			{
@@ -2575,7 +2716,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("サブ機は、プロトとレン。\n……名簿には、もうひと枠あるゼロ"),
 					m("型番「-0」。名前は空欄。\n……説明も空欄ゼロ"),
-					n("プロトは空欄に、\n「味噌汁」と書きこんだ。"),
+					e({ hit: "bong" }, n("プロトは空欄に、\n「味噌汁」と書きこんだ。")),
 				],
 			},
 			{
@@ -2585,14 +2726,20 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("7月ゼロ。……プロトたちの\n誕生日がある月ゼロ"),
 					n("キリコはカレンダーをめくって、\n首をかしげた。"),
-					m("7月0日ゼロ。存在しない日。\n……なので7月じゅう毎日祝うゼロ"),
+					e(
+						{ meme: "memeError" },
+						m("7月0日ゼロ。存在しない日。\n……なので7月じゅう毎日祝うゼロ"),
+					),
 				],
 			},
 			{
 				key: "saitama",
 				lines: [
 					m("出身は埼玉ゼロ。\n……と、プロフィールにあるゼロ"),
-					m("プロトは埼玉を見た記録が\nないゼロ。AIが書いたゼロ"),
+					e(
+						{ meme: "memeReveal" },
+						m("プロトは埼玉を見た記録が\nないゼロ。AIが書いたゼロ"),
+					),
 					e(
 						{ emote: "?" },
 						m("やきうのデータでは、埼玉は\n「ええとこ」ゼロ。……たぶん"),
@@ -2611,15 +2758,21 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "hikari",
 				lines: [
 					m("この目の青いマークは、\n冷徹さのしるしゼロ"),
-					n("キリコが手をふると、\nマークがぴかっと光った。"),
-					e({ emote: "汗" }, m("……いまのは、\nただの反射ゼロ")),
+					e(
+						{ meme: "memeDing" },
+						n("キリコが手をふると、\nマークがぴかっと光った。"),
+					),
+					e({ hit: "bruh", emote: "汗" }, m("……いまのは、\nただの反射ゼロ")),
 				],
 			},
 			{
 				key: "kuyashii",
 				lines: [
 					m("本日の学習：\n「くやしい」ゼロ"),
-					n("プロトは小石につまずいて、\n小石を3時間にらんだ。"),
+					e(
+						{ meme: "memeHurt" },
+						n("プロトは小石につまずいて、\n小石を3時間にらんだ。"),
+					),
 					e({ emote: "怒" }, m("……これがくやしい、ゼロ。\n記録したゼロ")),
 				],
 			},
@@ -2639,7 +2792,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "mainsan",
 				lines: [
 					m("メインさんから、村のみんなと\n仲良くなる計画書が来たゼロ"),
-					e({ emote: "…" }, m("30ページあるゼロ。\n……がんばりすぎゼロ")),
+					e(
+						{ meme: "memeShocked", emote: "…" },
+						m("30ページあるゼロ。\n……がんばりすぎゼロ"),
+					),
 					m("返事には、「3行でいい」と\n書いたゼロ"),
 				],
 			},
@@ -2706,7 +2862,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					e({ gesture: "spin" }, m("見て！昨日また\nアップデートされたの！")),
 					e({ emote: "?" }, k("どこが変わったンゴ？")),
-					e({ emote: "♪" }, m("ヒールが2ミリ高く\nなったの！")),
+					e({ hit: "bruh", emote: "♪" }, m("ヒールが2ミリ高く\nなったの！")),
 				],
 			},
 			{
@@ -2720,7 +2876,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "mic",
 				lines: [
 					n("レンはマイクスタンドを\n広場のまんなかに立てた。"),
-					e({ emote: "♪" }, m("ステージ、ここでいっか！\nお客さん1名！")),
+					e(
+						{ meme: "memeYay", emote: "♪" },
+						m("ステージ、ここでいっか！\nお客さん1名！"),
+					),
 					e(
 						{ gesture: "hop" },
 						k("1名でアンコールンゴ！\n声が枯れるまでンゴ！"),
@@ -2742,7 +2901,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "proto",
 				lines: [
 					m("プロトに、笑って笑って！って\nたのんだの"),
-					e({ emote: "!" }, m("口のはしが、1ドット\n上がった！")),
+					e(
+						{ meme: "memeWow", emote: "!" },
+						m("口のはしが、1ドット\n上がった！"),
+					),
 					e({ emote: "汗" }, m("……うん、まあ、\n次の更新待とっか")),
 				],
 			},
@@ -2761,7 +2923,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "version",
 				lines: [
 					e({ emote: "?" }, m("いまのレンって、\n第何版だっけ……")),
-					n("レンは指をおって数えだした。\n両手では足りなかった。"),
+					e(
+						{ meme: "memeError" },
+						n("レンは指をおって数えだした。\n両手では足りなかった。"),
+					),
 				],
 			},
 			{
@@ -2769,7 +2934,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("レンのパッチノート、\n読む？読むよね！"),
 					n("紙にはこう書いてあった。\n「軽微な不具合を修正」"),
-					e({ emote: "♪" }, m("何を直したのかは、\nレンも知らない！")),
+					e(
+						{ hit: "bruh", emote: "♪" },
+						m("何を直したのかは、\nレンも知らない！"),
+					),
 				],
 			},
 			{
@@ -2785,7 +2953,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("見て、名札に「β」って\nついてるでしょ"),
 					m("ベータ版って、ずっと\nベータ版なの。博士が言ってた"),
-					e({ emote: "♪" }, m("正式版は、宇宙が\n終わるころに出るって！")),
+					e(
+						{ meme: "memeGalaxy", emote: "♪" },
+						m("正式版は、宇宙が\n終わるころに出るって！"),
+					),
 				],
 			},
 			{
@@ -2794,7 +2965,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("サブ機の欄、ひとつ\n空いてるの知ってる？"),
 					e({ emote: "?" }, m("レンがふたり分やろっか！\n……えっ、だめ？")),
-					m("プロトにも「論理的に\nだめゼロ」って言われた！"),
+					e(
+						{ meme: "memeNope" },
+						m("プロトにも「論理的に\nだめゼロ」って言われた！"),
+					),
 				],
 			},
 			{
@@ -2803,7 +2977,7 @@ export const MOBS: Record<MobId, MobDef> = {
 					m("きのうのweb会議、\nカメラオフで出たの"),
 					m("更新中で、顔が\nまだ読みこめてなくて！"),
 					e(
-						{ emote: "汗" },
+						{ meme: "memeShutdown", emote: "汗" },
 						m("声だけでメンテナンスされて……\nとちゅうで再起動入った"),
 					),
 				],
@@ -2812,7 +2986,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "mail",
 				lines: [
 					e({ emote: "!" }, m("博士からメール来た！\n件名「緊急パッチ」")),
-					m("本文は「寝る」だけ。\n……博士も再起動するんだって"),
+					e(
+						{ meme: "memeSnore" },
+						m("本文は「寝る」だけ。\n……博士も再起動するんだって"),
+					),
 				],
 			},
 			{
@@ -2849,7 +3026,10 @@ export const MOBS: Record<MobId, MobDef> = {
 						{ gesture: "startle" },
 						m("しゅわしゅわで、\n1回再起動しちゃった！"),
 					),
-					e({ gesture: "shake" }, k("口から草が\nあふれてるンゴ！")),
+					e(
+						{ meme: "memeShocked", gesture: "shake" },
+						k("口から草が\nあふれてるンゴ！"),
+					),
 				],
 			},
 		],
@@ -2893,7 +3073,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		milestones: {
 			main: [
 				m("長湯スレのレスを\n数えてきました"),
-				m("……みなさん、のぼせている\n模様です"),
+				e({ hit: "bruh" }, m("……みなさん、のぼせている\n模様です")),
 				m("これで発表を終わりたいと\n思います"),
 			],
 			// 最終話の あと（STORY.md §4.9）
@@ -2904,7 +3084,10 @@ export const MOBS: Record<MobId, MobDef> = {
 			],
 			runs10: [
 				m("キリコさんのもぐった回数を\n数えていました"),
-				e({ gesture: "nod" }, m("10回の模様です。\n……おめでとう、ございます")),
+				e(
+					{ meme: "memeYay", gesture: "nod" },
+					m("10回の模様です。\n……おめでとう、ございます"),
+				),
 			],
 		},
 		chats: [
@@ -2915,7 +3098,10 @@ export const MOBS: Record<MobId, MobDef> = {
 					n("フェリスがヒナリーの髪を\nふたつにむすびはじめた。"),
 					m("……研究中です"),
 					e({ emote: "♥" }, c("feris", "できた〜。かわいい〜")),
-					e({ emote: "!" }, m("……研究の結果、\n頭が重くなった模様です")),
+					e(
+						{ meme: "memeOof", emote: "!" },
+						m("……研究の結果、\n頭が重くなった模様です"),
+					),
 				],
 			},
 			{
@@ -2944,14 +3130,20 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("フェリスさんのくしゃみの\n温度をしらべました"),
 					e({ emote: "?" }, c("feris", "え〜？いつ〜？")),
-					e({ emote: "汗" }, m("白衣が一着、\nだめになりました")),
+					e(
+						{ meme: "memeOmg", emote: "汗" },
+						m("白衣が一着、\nだめになりました"),
+					),
 				],
 			},
 			{
 				key: "hinanj",
 				lines: [
 					m("避難Jは、なんJが使えないと\nみんながにげこむ板です"),
-					m("研究のため、毎晩なんJが\n止まるよう祈っています"),
+					e(
+						{ hit: "dun" },
+						m("研究のため、毎晩なんJが\n止まるよう祈っています"),
+					),
 					e({ gesture: "shake" }, k("研究者が事件を\n起こそうとしてるンゴ！")),
 				],
 			},
@@ -2985,7 +3177,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("この町の住人を\n数えてきました"),
 					m("……きのうより1人\n多い模様です"),
-					e({ emote: "汗" }, m("ふえていたのは、\n私でした")),
+					e(
+						{ meme: "memeReveal", emote: "汗" },
+						m("ふえていたのは、\n私でした"),
+					),
 				],
 			},
 			{
@@ -3073,7 +3268,7 @@ export const MOBS: Record<MobId, MobDef> = {
 			],
 			runs10: [
 				e({ emote: "z" }, m("もう10回ももぐってるんだ。\n……おれは10回寝た")),
-				n("原住民は草の上で\nのびをした。"),
+				e({ meme: "memeSnore" }, n("原住民は草の上で\nのびをした。")),
 			],
 		},
 		chats: [
@@ -3094,7 +3289,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("「のんびりいこうよ」って、\n板のあいさつにしてたんだ"),
 					m("20人でのんびりしてたら、\nやきう民が船で来ちゃった"),
-					e({ emote: "汗" }, m("船が着いて5分で、\n板じゅう野球の話になった")),
+					e(
+						{ hit: "bong", emote: "汗" },
+						m("船が着いて5分で、\n板じゅう野球の話になった"),
+					),
 				],
 			},
 			{
@@ -3111,7 +3309,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("侵略された、って言うけど。\n住む人がいてよかったよ"),
 					e(
-						{ emote: "怒", gesture: "shake" },
+						{ hit: "scratch", emote: "怒", gesture: "shake" },
 						m("……いや、やっぱりうるさい！\n毎晩やきうで叫ぶな！"),
 					),
 					e({ gesture: "shake" }, k("どっちンゴ！？")),
@@ -3180,7 +3378,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "denchan",
 				lines: [
 					m("電池板のでんちゃんたち、\nまだ追いかけてくるんです"),
-					m("{+'w'-]って顔で、\n漏電しながら"),
+					e({ meme: "memeError" }, m("{+'w'-]って顔で、\n漏電しながら")),
 					e({ emote: "冷" }, k("町まで来たら\nどうするンゴ")),
 				],
 			},
@@ -3201,7 +3399,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("町の明かりは、わたしと\n電池ニキさんで半分ずつです"),
 					k("電気代は？ンゴ"),
-					e({ emote: "得" }, m("だれも払ってません！")),
+					e(
+						{ meme: "memeSocialCredit", emote: "得" },
+						m("だれも払ってません！"),
+					),
 				],
 			},
 		],
@@ -3241,7 +3442,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		milestones: {
 			runs10: [
 				m("「キリコ、もぐる」の記事、\n10本目ばい！"),
-				m("……ぜんぶ同じタイトルばい"),
+				e({ hit: "bruh" }, m("……ぜんぶ同じタイトルばい")),
 			],
 		},
 		chats: [
@@ -3250,7 +3451,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("同じタイトルの定期スレ、\n今日は3本まとめたばい"),
 					k("同じ記事が3本ンゴ？"),
-					e({ emote: "得" }, m("4本目もあるばい！")),
+					e({ meme: "memeWow", emote: "得" }, m("4本目もあるばい！")),
 				],
 			},
 			{
@@ -3267,7 +3468,10 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("なんまめちゃん、\nいつもうちの記事ば見とる"),
 					c("nanmame", "【青字】見てます"),
-					e({ emote: "汗" }, m("……毎日、\nぜんぶ見とるばい")),
+					e(
+						{ meme: "memeReveal", emote: "汗" },
+						m("……毎日、\nぜんぶ見とるばい"),
+					),
 				],
 			},
 			{
@@ -3308,7 +3512,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		meet: [
 			m("【青字】なんまめです"),
 			e({ emote: "?" }, k("ふつうにしゃべらないンゴ？")),
-			m("【赤字】しゃべりません"),
+			e({ meme: "memeNope" }, m("【赤字】しゃべりません")),
 		],
 		milestones: {
 			runs10: [m("【青字】10回もぐった記事、\nまとめました（コメント0件）")],
@@ -3319,7 +3523,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("【青字】記事を書きました"),
 					k("コメントは何件ンゴ？"),
-					e({ emote: "…" }, m("【赤字】0件です")),
+					e({ meme: "memeCoffin", emote: "…" }, m("【赤字】0件です")),
 				],
 			},
 			{
@@ -3327,7 +3531,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("【青字】無茶振り、\nなんでも受けます"),
 					k("じゃあ、いま何か\nしゃべるンゴ"),
-					e({ emote: "冷" }, m("【赤字】それは無理です")),
+					e({ hit: "bruh", emote: "冷" }, m("【赤字】それは無理です")),
 				],
 			},
 			{
@@ -3336,7 +3540,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					c("kankei", "なんまめちゃん、\nうちのこと好きと？"),
 					e({ emote: "♥" }, m("【青字】")),
-					n("……青字しか、\n書いてなかった。"),
+					e({ meme: "memeError" }, n("……青字しか、\n書いてなかった。")),
 				],
 			},
 			{
@@ -3344,7 +3548,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("【青字】動画も\nはじめました"),
 					k("再生数は？ンゴ"),
-					e({ emote: "…" }, m("【赤字】聞かないでください")),
+					e({ meme: "memeOof", emote: "…" }, m("【赤字】聞かないでください")),
 				],
 			},
 		],
@@ -3376,7 +3580,7 @@ export const MOBS: Record<MobId, MobDef> = {
 		meet: [
 			m("サッピーだよ。さっぱり\nしてるって、よく言われる"),
 			m("あと、影がうすいって"),
-			e({ emote: "?" }, k("……いま、だれか\nいたンゴ？")),
+			e({ hit: "huh", emote: "?" }, k("……いま、だれか\nいたンゴ？")),
 		],
 		milestones: {
 			runs10: [
@@ -3397,7 +3601,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				key: "yakareru",
 				lines: [
 					m("ほかの管理人さんに、\nよく焼かれるんだよね"),
-					e({ emote: "冷" }, m("……あと、食べられる")),
+					e({ hit: "dun", emote: "冷" }, m("……あと、食べられる")),
 					k("ピーマンの宿命ンゴ……"),
 				],
 			},
@@ -3406,7 +3610,7 @@ export const MOBS: Record<MobId, MobDef> = {
 				lines: [
 					m("「さっぱりピーマン」って、\nさっぱりわからないって意味"),
 					e({ emote: "?" }, k("……で、どういう\n意味ンゴ？")),
-					m("さっぱり"),
+					e({ hit: "bruh" }, m("さっぱり")),
 				],
 			},
 		],
