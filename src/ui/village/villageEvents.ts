@@ -1208,7 +1208,7 @@ const shut = (
 	place: string,
 	v: VillageView,
 	door = true,
-	doorMessage = VILLAGE_MSG.shut,
+	doorMessage: string = VILLAGE_MSG.shut,
 ): Script | null => {
 	// 騒ぎで 閉まって いる 所は その わけの 札（data/town/incidents.ts）
 	const why = activeIncidents(v).find((i) => i.shut?.[place])?.shut?.[place];
