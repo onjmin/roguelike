@@ -121,7 +121,16 @@ const doable = (r: Run): AnkaKind[] => {
 	if (has("herb")) out.push("herb", "herb");
 	if (has("scroll")) out.push("scroll", "scroll");
 	if (has("food")) out.push("eat");
-	if (r.p.items.some((it) => defOf(it.kind).cat !== "goal")) out.push("throw");
+	// 投げる：矢は 投げても 数えない（core/effects.ts の throwItem）ので、矢 以外の 手放せる 物が あるとき
+	if (
+		r.p.items.some(
+			(it) =>
+				!isKeyItem(it.kind) &&
+				defOf(it.kind).cat !== "arrow" &&
+				!(r.isEquipped(it) && it.cursed),
+		)
+	)
+		out.push("throw");
 	// 寝る：自分で 寝られる とき だけ（正体の わかった 寝落ち草を 持っていて、起きる指輪を はめていない）。
 	// 罠や 呪文でも 数えるが、それだけでは 運まかせなので 出さない
 	if (

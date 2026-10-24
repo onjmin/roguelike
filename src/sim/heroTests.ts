@@ -233,10 +233,7 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 		"order",
 	);
 	for (const b of ZERO_BODIES)
-		ok(
-			b.hp < START_HP && b.str < START_STR,
-			`${b.model} is clearly weaker`,
-		);
+		ok(b.hp < START_HP && b.str < START_STR, `${b.model} is clearly weaker`);
 	const r = quiet(Run.create("hero-z", "shallow", [], "fetch", true, "zero"));
 	ok(
 		r.p.maxHp === ZERO_BODIES[0]?.hp && r.p.str === ZERO_BODIES[0]?.str,
@@ -297,6 +294,55 @@ test("ゼロ: オートは 階段を 見たら 降りる（階を 見つくす�
 		full += leaveTurns(DEFAULT_BOT);
 	}
 	ok(auto * 2 < full, `auto ${auto} vs full ${full}`);
+});
+
+test("ゼロ: オートは 床に 置いた 避難所スレを 拾いに もどらない", () => {
+	const r = quiet(Run.create("ward-0", "main", [], "fetch", true, "zero"));
+	const l = r.f.layout;
+	let spot: { at: Pos; ward: Pos; stairs: Pos } | null = null;
+	for (const room of l.rooms) {
+		if (room.w < 5 || room.h < 3) continue;
+		const at = {
+			x: room.x + Math.floor(room.w / 2),
+			y: room.y + Math.floor(room.h / 2),
+		};
+		const ward = { x: at.x - 1, y: at.y };
+		const stairs = { x: at.x + 1, y: at.y };
+		if (
+			tileAt(l, ward.x, ward.y) !== T_WALL &&
+			tileAt(l, stairs.x, stairs.y) !== T_WALL
+		) {
+			spot = { at, ward, stairs };
+			break;
+		}
+	}
+	if (!spot) throw new Fail("no room with floor on both sides");
+	place(r, spot.at);
+	r.f.seen.fill(1);
+	const it = r.newItem("s_ward");
+	r.f.items.push({ x: spot.ward.x, y: spot.ward.y, item: it });
+	r.f.wards.push(spot.ward.y * l.w + spot.ward.x);
+	r.s.seen.push(it.uid);
+	r.f.stairs = spot.stairs;
+	const cmd = botCommand(r, DEFAULT_BOT);
+	const to = cmd.c === "move" ? step(r.p, cmd.dir) : null;
+	ok(
+		to !== null && to.x === spot.stairs.x && to.y === spot.stairs.y,
+		`the bot went for the ward (${JSON.stringify(cmd)})`,
+	);
+});
+
+test("ゼロ: オートは 安価の「何か投げる」に 矢 ではなく 物を 投げて こなす", () => {
+	const r = quiet(Run.create("anka-throw", "main", [], "fetch", true, "zero"));
+	const arrow = r.newItem("a_wood");
+	const food = r.newItem("f_bread");
+	r.p.items = [arrow, food];
+	r.f.anka = { kind: "throw", need: 1, done: 0, due: r.f.res + 100 };
+	const cmd = botCommand(r, AUTO_BOT);
+	ok(cmd.c === "throw", `did not throw (${JSON.stringify(cmd)})`);
+	ok(cmd.c === "throw" && cmd.item === food.uid, "threw the arrow");
+	r.act(cmd);
+	ok(!r.f.anka, "the throw did not clear the anka");
 });
 
 test("ゼロ: オートは 部屋で 2体に はさまれたら 入口（通路）へ 下がって 待つ（1体なら そのまま なぐる）", () => {

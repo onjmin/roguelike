@@ -9,7 +9,7 @@ import { HUNGER_UNIT } from "../core/balance";
 import { needsTarget } from "../core/effects";
 import { roomsSeenFrom } from "../core/fov";
 import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
-import { defOf, isKnownKind, itemHidden } from "../core/item";
+import { defOf, isKeyItem, isKnownKind, itemHidden } from "../core/item";
 import { isFloor, roomAt, roomExits } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
@@ -400,10 +400,23 @@ const decide = (r: Run, opts: BotOpts): Command => {
 							})()
 						: anka.kind === "throw"
 							? (() => {
+									// 矢は 投げても 安価に 数えない（core/effects.ts の throwItem は
+									// 矢だけ ankaHit を 呼ばない）。物を 投げる お題には 矢 以外を 使う
 									const t =
-										pick("arrow") ??
+										pick("herb", (i) => known(i) && BAD_HERBS.has(i.kind)) ??
 										pick("weapon", (i) => i.kind === "club") ??
-										pick("herb", (i) => known(i) && BAD_HERBS.has(i.kind));
+										items.find(
+											(i) =>
+												!isKeyItem(i.kind) &&
+												defOf(i.kind).cat !== "arrow" &&
+												!r.isEquipped(i),
+										) ??
+										items.find(
+											(i) =>
+												!isKeyItem(i.kind) &&
+												defOf(i.kind).cat !== "arrow" &&
+												!(r.isEquipped(i) && i.cursed),
+										);
 									return t ? { c: "throw", item: t.uid, dir: p.dir } : null;
 								})()
 							: anka.kind === "sleep"
@@ -573,6 +586,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 				(fi) =>
 					seen.has(fi.item.uid) &&
 					!(fi.x === p.x && fi.y === p.y) &&
+					// 床に 置いた 避難所スレは 拾えない（拾いにいくと その上に 乗っては
+					// 「はりついていて拾えない」を くり返す）
+					!r.isWardItem(fi) &&
 					// 捨てた（捨てる）はずの 正体のわかった悪い草は 拾いにいかない（拾う・捨てるを くり返さない）
 					!(BAD_HERBS.has(fi.item.kind) && known(fi.item)) &&
 					(!bottomNow || bossMode || fi.item.kind === r.dungeon.goal),
