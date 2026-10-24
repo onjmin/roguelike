@@ -1,6 +1,6 @@
 const INK = {
-	青字: "#58baff",
-	赤字: "#ff7373",
+	"青字": "#58baff",
+	"赤字": "#ff7373",
 } as const;
 
 export type DialogueInk = {

@@ -81,6 +81,7 @@ import { loadProgress } from "../../engine/save";
 import { sceneSlow } from "../../engine/sceneTime";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
+import { dialogueInk } from "../dialogueInk";
 import {
 	clamp,
 	DIR_VEC,
@@ -92,7 +93,6 @@ import {
 import { onWalletChange, walletYen, yen } from "../../engine/wallet";
 import { showBootTitle } from "../boot";
 import type { Ctx } from "../ctx";
-import { dialogueInk } from "../dialogueInk";
 import { el, nextFrame } from "../dom";
 import { drawEquip, equipSheet } from "../dungeon/equip";
 import type { Hud } from "../dungeon/hud";
@@ -2164,13 +2164,10 @@ export class Village {
 			if (SE_AFTER.has(name)) later.push(run);
 			else run();
 		};
+		if (c?.meme) play(c.meme);
 		const hit = c?.hit;
 		if (hit) play(HIT_SE[hit], () => this.flinch(hit, target));
-		this.after = later.length
-			? () => {
-					for (const f of later) f();
-				}
-			: null;
+		this.after = later.length ? () => later.forEach((f) => f()) : null;
 	}
 
 	/** 台詞の あとに 鳴らす 反応の 音（beatAndHit が 決め、次の 窓が 出きった ときに 鳴らす）。 */
