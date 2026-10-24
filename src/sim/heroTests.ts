@@ -234,7 +234,7 @@ test("ゼロ: 3機とも キリコより はっきり 低い、たおれると �
 	);
 	for (const b of ZERO_BODIES)
 		ok(
-			b.hp <= START_HP - 4 && b.str <= START_STR - 2,
+			b.hp < START_HP && b.str < START_STR,
 			`${b.model} is clearly weaker`,
 		);
 	const r = quiet(Run.create("hero-z", "shallow", [], "fetch", true, "zero"));

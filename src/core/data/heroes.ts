@@ -29,29 +29,29 @@ export type ZeroBody = {
 
 /**
  * 解音ゼロの 機体（たおれた 順に 次へ）。残機が ある ぶん、どの 機体も キリコより はっきり 弱い
- * （HP 10・9・11、ちから 6・6・5。キリコは 15・8）。
+ * （HP 12・11・13、ちから 7・7・6。キリコは 15・8）。
  */
 export const ZERO_BODIES: readonly ZeroBody[] = [
 	{
 		model: "VHz8-0",
 		name: "ゼロ",
 		voice: "zero",
-		hp: START_HP - 5,
-		str: START_STR - 2,
+		hp: START_HP - 3,
+		str: START_STR - 1,
 	},
 	{
 		model: "HeBc-0",
 		name: "プロト",
 		voice: "proto",
-		hp: START_HP - 6,
-		str: START_STR - 2,
+		hp: START_HP - 4,
+		str: START_STR - 1,
 	},
 	{
 		model: "XQxS-0",
 		name: "レン",
 		voice: "ren",
-		hp: START_HP - 4,
-		str: START_STR - 3,
+		hp: START_HP - 2,
+		str: START_STR - 2,
 	},
 ];
 
