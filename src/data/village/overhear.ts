@@ -88,7 +88,10 @@ export const MOB_MUTTERS: Record<MobId, readonly Overheard[]> = {
 		solo("kankei1", "今日の記事、\nまだかな"),
 		solo("kankei2", "……なんの記事\nまとめとったっけ"),
 	],
-	nanmame: [solo("nanmame1", "【青字】"), solo("nanmame2", "【赤字】")],
+	nanmame: [
+		solo("nanmame1", "【青字】まとめ中です"),
+		solo("nanmame2", "【赤字】コメントは0件です"),
+	],
 	sappy: [solo("sappy1", "……さっぱり"), solo("sappy2", "焼かれませんように")],
 };
 

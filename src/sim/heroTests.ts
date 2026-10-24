@@ -399,7 +399,7 @@ test("ゼロ: 炎上案件は 爆風圏の 外から 矢で攻撃する", () => 
 	m.hp = 30;
 	r.damageMonster(m, 1, "hit");
 	const arrow = r.newItem("a_wood");
-	r.p.items.push(arrow);
+	r.p.items = [arrow];
 	r.p.dir = 2;
 	const cmd = botCommand(r, AUTO_BOT);
 	ok(
@@ -489,6 +489,100 @@ test("ゼロ: 装備済みの武器・盾より弱い予備を捨てる", () => 
 	ok(
 		second.c === "drop" && second.item === spareShield.uid,
 		`did not discard the spare shield (${JSON.stringify(second)})`,
+	);
+});
+
+test("ゼロ: 装備中と同じ強さのぬるぽ棒+1を拾い直さない", () => {
+	const r = quiet(
+		Run.create("auto-duplicate-club", "main", [], "fetch", true, "zero"),
+	);
+	const row = floorRow(r, 3);
+	if (!row) throw new Fail("no open row for duplicate clubs");
+	place(r, { x: row.x + 1, y: row.y });
+	r.f.seen.fill(1);
+	const equipped = r.newItem("club");
+	equipped.plus = 1;
+	equipped.known = true;
+	const dropped = r.newItem("club");
+	dropped.plus = 1;
+	dropped.known = true;
+	r.p.items = [equipped];
+	r.p.weapon = equipped.uid;
+	r.f.items.push({ x: row.x + 2, y: row.y, item: dropped });
+	r.s.seen.push(dropped.uid);
+	r.f.stairs = { x: row.x, y: row.y };
+	const cmd = botCommand(r, AUTO_BOT);
+	ok(
+		cmd.c === "move" &&
+			step(r.p, cmd.dir).x === r.f.stairs.x &&
+			step(r.p, cmd.dir).y === r.f.stairs.y,
+		`went back for the duplicate (${JSON.stringify(cmd)})`,
+	);
+});
+
+test("ゼロ: 自分で捨てた道具を離れたあとに拾い直さない", () => {
+	const r = quiet(
+		Run.create("auto-forget-drop", "main", [], "fetch", true, "zero"),
+	);
+	const row = floorRow(r, 3);
+	if (!row) throw new Fail("no open row for a dropped item");
+	place(r, { x: row.x + 1, y: row.y });
+	r.f.seen.fill(1);
+	r.f.stairs = row;
+	const arrow = r.newItem("a_wood");
+	r.p.items = [arrow];
+	r.s.seen.push(arrow.uid);
+	r.f.anka = { kind: "drop", need: 1, done: 0, due: r.f.res + 100 };
+	const drop = botCommand(r, AUTO_BOT);
+	ok(
+		drop.c === "drop" && drop.item === arrow.uid,
+		`did not drop the item (${JSON.stringify(drop)})`,
+	);
+	r.act(drop);
+	place(r, row);
+	const next = botCommand(r, AUTO_BOT);
+	ok(
+		!(
+			next.c === "move" &&
+			step(r.p, next.dir).x === row.x + 1 &&
+			step(r.p, next.dir).y === row.y
+		),
+		`went back for its own item (${JSON.stringify(next)})`,
+	);
+});
+
+test("ゼロ: 投げて床に落ちた道具も拾い直さない", () => {
+	const r = quiet(
+		Run.create("auto-forget-throw", "main", [], "fetch", true, "zero"),
+	);
+	const row = floorRow(r, 3);
+	if (!row) throw new Fail("no open row for a thrown item");
+	place(r, { x: row.x + 1, y: row.y });
+	r.f.seen.fill(1);
+	r.f.stairs = row;
+	const food = r.newItem("f_bread");
+	r.p.items = [food];
+	r.s.seen.push(food.uid);
+	r.p.dir = 2;
+	r.f.anka = { kind: "throw", need: 1, done: 0, due: r.f.res + 100 };
+	const thrown = botCommand(r, AUTO_BOT);
+	ok(
+		thrown.c === "throw" && thrown.item === food.uid,
+		`did not throw the item (${JSON.stringify(thrown)})`,
+	);
+	r.act(thrown);
+	const dropped = r.f.items.find((fi) => fi.item.uid === food.uid);
+	ok(dropped, "the throw did not miss");
+	place(r, row);
+	const next = botCommand(r, AUTO_BOT);
+	ok(
+		!(
+			dropped &&
+			next.c === "move" &&
+			step(r.p, next.dir).x === dropped.x &&
+			step(r.p, next.dir).y === dropped.y
+		),
+		`went back for its own thrown item (${JSON.stringify(next)})`,
 	);
 });
 

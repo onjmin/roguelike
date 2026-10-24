@@ -166,9 +166,38 @@ const itemScore = (it: Item): number => {
 	return 0;
 };
 
+const redundantGear = (
+	r: Run,
+	item: Item,
+	slot: "weapon" | "shield",
+): boolean => {
+	const equipped = slot === "weapon" ? r.weapon() : r.shield();
+	return (
+		equipped !== null &&
+		item.uid !== equipped.uid &&
+		defOf(item.kind).cat === slot &&
+		itemScore(item) <= itemScore(equipped)
+	);
+};
+
+const forgottenItems = new WeakMap<object, Set<number>>();
+
 /** ボットの次のコマンド。 */
 export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 	const cmd = decide(r, opts);
+	if (cmd.c === "drop" || cmd.c === "throw") {
+		const item = r.findItem(cmd.item);
+		if (item && !(r.isEquipped(item) && item.cursed)) {
+			let forgotten = forgottenItems.get(r.f);
+			if (!forgotten) {
+				forgotten = new Set();
+				forgottenItems.set(r.f, forgotten);
+			}
+			const splitArrow =
+				cmd.c === "throw" && defOf(item.kind).cat === "arrow" && item.count > 1;
+			forgotten.add(splitArrow ? r.s.nextUid : item.uid);
+		}
+	}
 	// 敵の方へ歩いても 向くだけ（見えない敵には ぶつかるだけ）なので、道をふさぐ敵は なぐる。
 	// 見えない敵も なぐる（人なら「なにかに　ぶつかった」のあと A を押す。ボットは その1手を省く）
 	if (cmd.c === "move") {
@@ -556,15 +585,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		!f.wards.includes(p.y * f.layout.w + p.x);
 	if (canDropGear) {
 		for (const slot of ["weapon", "shield"] as const) {
-			const cur = slot === "weapon" ? r.weapon() : r.shield();
-			if (!cur) continue;
-			const extra = items.find(
-				(i) =>
-					i !== cur &&
-					defOf(i.kind).cat === slot &&
-					!(i.known && i.cursed) &&
-					itemScore(i) <= itemScore(cur),
-			);
+			const extra = items.find((i) => redundantGear(r, i, slot));
 			if (extra) return { c: "drop", item: extra.uid };
 		}
 	}
@@ -694,8 +715,15 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					// 床に 置いた 避難所スレは 拾えない（拾いにいくと その上に 乗っては
 					// 「はりついていて拾えない」を くり返す）
 					!r.isWardItem(fi) &&
+					!(forgottenItems.get(f)?.has(fi.item.uid) ?? false) &&
 					// 捨てた（捨てる）はずの 正体のわかった悪い草は 拾いにいかない（拾う・捨てるを くり返さない）
 					!(BAD_HERBS.has(fi.item.kind) && known(fi.item)) &&
+					!(
+						(defOf(fi.item.kind).cat === "weapon" &&
+							redundantGear(r, fi.item, "weapon")) ||
+						(defOf(fi.item.kind).cat === "shield" &&
+							redundantGear(r, fi.item, "shield"))
+					) &&
 					(!bottomNow || bossMode || fi.item.kind === r.dungeon.goal),
 			)
 			.sort((a, b) => dist(a, p) - dist(b, p))[0];

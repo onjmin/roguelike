@@ -339,6 +339,7 @@ import { forgetWalletMemo, walletYen, yen } from "../engine/wallet";
 import { itemIcon } from "../ui/art/icons";
 import { floorsText } from "../ui/bookView";
 import type { Ctx } from "../ui/ctx";
+import { dialogueInk } from "../ui/dialogueInk";
 import { floorShort } from "../ui/dungeon/floorName";
 import { forgetRoomSkits, takeRoomSkit } from "../ui/dungeon/roomSkit";
 import { bathLayout } from "../ui/minigames/bath";
@@ -7844,6 +7845,19 @@ test("騒ぎの 人と ご近所は、いっしょに 出る どの 組み合わ
 });
 
 // ───────────────── 立ち聞きの 吹き出し（ui/village/overhear.ts） ─────────────────
+
+test("立ち聞き: なんまめちゃんの青字・赤字は本文も色付きで表示する", () => {
+	const blue = dialogueInk(MOB_MUTTERS.nanmame[0]?.lines[0]?.text ?? "");
+	const red = dialogueInk(MOB_MUTTERS.nanmame[1]?.lines[0]?.text ?? "");
+	ok(
+		blue.text === "まとめ中です" && blue.color === "#58baff",
+		`blue message: ${JSON.stringify(blue)}`,
+	);
+	ok(
+		red.text === "コメントは0件です" && red.color === "#ff7373",
+		`red message: ${JSON.stringify(red)}`,
+	);
+});
 
 test("立ち聞き: a nearby resident mutters, passers-by pair up, and an open window stops it", () => {
 	const kiriko = new Actor("player", 10, 10, "down", "", null);
