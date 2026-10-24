@@ -19,6 +19,9 @@
 			"complexity": {
 				"useLiteralKeys": "off"
 			},
+			"correctness": {
+				"useHookAtTopLevel": "off"
+			},
 			"style": {
 				"noDescendingSpecificity": "off"
 			}

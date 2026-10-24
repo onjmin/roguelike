@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 /**
@@ -30,6 +31,7 @@ const coreVersion = (): string => {
 export default defineConfig({
 	base: process.env.GITHUB_PAGES ? "/roguelike/" : "/",
 	plugins: [
+		react(),
 		{
 			// 開発中に src/core を直したら 設定を読み直す（__CORE_VERSION__ を今の中身に合わせる）
 			name: "core-version-restart",

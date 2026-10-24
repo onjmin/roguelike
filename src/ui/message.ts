@@ -30,8 +30,8 @@ import { publicUrl } from "../engine/assets";
 import type { SpeechStart } from "../engine/audio";
 import type { Emote } from "../engine/emote";
 import type { Input } from "../engine/input";
-import { el } from "./dom";
 import { dialogueInk } from "./dialogueInk";
+import { el } from "./dom";
 import { INK_CLASS, inkEmoteSvg } from "./emoteInk";
 
 type Side = "left" | "right";
