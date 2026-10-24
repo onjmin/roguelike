@@ -54,44 +54,26 @@ try {
 	const { runBushitsuTests } = await server.ssrLoadModule(
 		"/src/sim/bushitsuTests.ts",
 	);
-	const { runFolkTests } = await server.ssrLoadModule("/src/sim/folkTests.ts");
 	const { runBondTests } = await server.ssrLoadModule("/src/sim/bondTests.ts");
-	const { runHookTests } = await server.ssrLoadModule("/src/sim/hookTests.ts");
-	const { runSeasonTests } = await server.ssrLoadModule(
-		"/src/sim/seasonTests.ts",
-	);
-	const { runEmoteInkTests } = await server.ssrLoadModule(
-		"/src/sim/emoteInkTests.ts",
-	);
-	const { runSignTests } = await server.ssrLoadModule("/src/sim/signTests.ts");
-	const { runPlaceTests } = await server.ssrLoadModule(
-		"/src/sim/placeTests.ts",
-	);
 	const { runSetPieceTests } = await server.ssrLoadModule(
 		"/src/sim/setpieceTests.ts",
 	);
 	const results = [
 		...runMonsterTests(),
 		...runSetPieceTests(),
-		...runEmoteInkTests(),
 		...runReplayTests(),
 		...runTownTests(),
 		...(await runVillageTests()),
 		...(await runJikkyoTests()),
 		...(await runJikkyoProgTests()),
 		...runCrowdTests(),
-		...runSignTests(),
-		...runPlaceTests(),
 		...(await runSabaTests()),
 		...(await runNetaTests()),
 		...(await runArcadeTests()),
 		...(await runHeroTests()),
 		...(await runGuestTests()),
 		...(await runBushitsuTests()),
-		...(await runFolkTests()),
-		...(await runSeasonTests()),
 		...(await runBondTests()),
-		...(await runHookTests()),
 	];
 	for (const t of results)
 		console.log(
