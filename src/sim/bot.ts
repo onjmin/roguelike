@@ -8,12 +8,20 @@
 import { HUNGER_UNIT } from "../core/balance";
 import { needsTarget } from "../core/effects";
 import { roomsSeenFrom } from "../core/fov";
-import { DIRS8, type Dir8, dirOf, dist, type Pos, step } from "../core/geom";
+import {
+	DIRS8,
+	type Dir8,
+	dirOf,
+	dist,
+	opposite,
+	type Pos,
+	step,
+} from "../core/geom";
 import { defOf, isKeyItem, isKnownKind, itemHidden } from "../core/item";
 import { isFloor, roomAt, roomExits } from "../core/mapgen";
 import { mdef } from "../core/monster";
 import type { Run } from "../core/run";
-import type { Command, Item } from "../core/types";
+import { type Command, type Item, PLAYER_ID } from "../core/types";
 
 const BAD_HERBS = new Set([
 	"h_poison",
@@ -82,6 +90,7 @@ const pathStepVia = (
 	const w = l.w;
 	const start = r.p.y * w + r.p.x;
 	const goal = to.y * w + to.x;
+	const fusedBombs = f.monsters.filter((m) => m.fuse && r.monsterVisible(m));
 	const prev = new Int32Array(l.w * l.h).fill(-2);
 	prev[start] = -1;
 	const q = [start];
@@ -100,6 +109,7 @@ const pathStepVia = (
 			if (prev[ni] !== -2) continue;
 			if (!f.seen[ni] && ni !== goal) continue;
 			if (!r.cornerOk({ x, y }, d)) continue;
+			if (fusedBombs.some((m) => dist(n, m) <= 2)) continue;
 			if (avoidTraps && traps.has(ni) && ni !== goal) continue;
 			if (avoidMonsters && r.monsterAt(n.x, n.y) && ni !== goal) continue;
 			prev[ni] = i;
@@ -164,7 +174,13 @@ export const botCommand = (r: Run, opts: BotOpts = DEFAULT_BOT): Command => {
 	if (cmd.c === "move") {
 		const to = step(r.p, cmd.dir);
 		const m = r.monsterAt(to.x, to.y);
-		if (m && !m.disguise && r.cornerOk(r.p, cmd.dir))
+		if (
+			m &&
+			!m.disguise &&
+			!m.fuse &&
+			!m.retreating &&
+			r.cornerOk(r.p, cmd.dir)
+		)
 			return { c: "attack", dir: cmd.dir };
 	}
 	return cmd;
@@ -175,11 +191,36 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	const f = r.f;
 	const items = p.items;
 	const visible = f.monsters.filter((m) => r.monsterVisible(m) && !m.disguise);
+	const fusedBombs = visible.filter((m) => m.fuse);
 	const awake = (m: (typeof visible)[number]) =>
 		m.status.sleep === 0 && !m.status.dormant && m.status.paralyze === 0;
+	let invisibleAttacker: {
+		m: (typeof f.monsters)[number];
+		dir: Dir8;
+	} | null = null;
+	if (r.ev.some((e) => e.t === "hurt" && e.id === PLAYER_ID)) {
+		for (const e of r.ev) {
+			if (e.t !== "attack") continue;
+			const m = f.monsters.find((foe) => foe.uid === e.id);
+			if (
+				!m ||
+				r.monsterVisible(m) ||
+				!mdef(m).abilities.some((a) => a.k === "invisible")
+			)
+				continue;
+			const dir = opposite(e.dir);
+			const at = step(p, dir);
+			if (r.monsterAt(at.x, at.y) === m) {
+				invisibleAttacker = { m, dir };
+				break;
+			}
+		}
+	}
 	const hunting = p.hp / p.maxHp > 0.7;
 	const adjacent = visible.filter(
 		(m) =>
+			!m.fuse &&
+			!m.retreating &&
 			dist(m, p) === 1 &&
 			(awake(m) ||
 				(hunting &&
@@ -194,9 +235,39 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			awake(m) &&
 			dist(m, p) <= 4 &&
 			!m.retreating &&
+			!m.fuse &&
 			!mdef(m).abilities.some((a) => a.k === "shy" || a.k === "grab"),
 	);
 	const hpRate = p.hp / p.maxHp;
+	if (fusedBombs.length) {
+		const danger = (at: Pos) => ({
+			bombs: fusedBombs.filter((m) => dist(m, at) <= 2).length,
+			distance: fusedBombs.reduce((n, m) => n + dist(m, at), 0),
+		});
+		const here = danger(p);
+		if (here.bombs > 0) {
+			const traps = new Set(
+				f.traps.filter((t) => t.found).map((t) => t.y * f.layout.w + t.x),
+			);
+			const retreatStep = DIRS8.map((dir) => step(p, dir))
+				.map((at, index) => ({ at, dir: DIRS8[index], score: danger(at) }))
+				.filter(
+					({ at, dir, score }) =>
+						r.canStepTerrain(p, dir) &&
+						r.cornerOk(p, dir) &&
+						!r.monsterAt(at.x, at.y) &&
+						!traps.has(at.y * f.layout.w + at.x) &&
+						(score.bombs < here.bombs ||
+							(score.bombs === here.bombs && score.distance > here.distance)),
+				)
+				.sort(
+					(a, b) =>
+						a.score.bombs - b.score.bombs ||
+						b.score.distance - a.score.distance,
+				)[0];
+			return retreatStep ? { c: "move", dir: retreatStep.dir } : { c: "wait" };
+		}
+	}
 	const known = (it: Item) => isKnownKind(r.s, it.kind);
 	// アク禁中・見えない スレは 読めない（ターンが 進まず、同じ 手を くり返して 止まって いた）
 	const readable = (it: Item) =>
@@ -210,10 +281,13 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			items.find((i) => i.kind === "h_greater" && known(i)) ??
 			items.find((i) => i.kind === "h_heal" && known(i));
 		if (heal) return { c: "use", item: heal.uid };
-		if (adjacent.length) {
+		if (adjacent.length || invisibleAttacker) {
 			// 逃げる手：跳び草・転送の杖・眠りの杖
-			const m = adjacent[0];
-			const dir = dirOf(m.x - p.x, m.y - p.y) as Dir8;
+			const dir =
+				adjacent[0] !== undefined
+					? (dirOf(adjacent[0].x - p.x, adjacent[0].y - p.y) as Dir8)
+					: invisibleAttacker?.dir;
+			if (dir === undefined) return { c: "wait" };
 			const blink = items.find((i) => i.kind === "h_blink" && known(i));
 			if (blink) return { c: "use", item: blink.uid };
 			const staff = items.find(
@@ -245,14 +319,25 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			}
 		}
 	}
+	if (invisibleAttacker) {
+		if (opts.chokepoint && exposure(r, p) >= 3) {
+			const c = chokeStep(r, [invisibleAttacker.m, ...threats], 3);
+			if (c) {
+				setHold(r, c.to);
+				return { c: "move", dir: c.dir };
+			}
+		}
+		return { c: "attack", dir: invisibleAttacker.dir };
+	}
 	// 遠くの敵に矢を撃つ
 	const arrow = items.find((i) => defOf(i.kind).cat === "arrow");
 	if (arrow && !adjacent.length) {
-		for (const m of threats) {
+		for (const m of [...threats, ...fusedBombs]) {
 			const dx = m.x - p.x;
 			const dy = m.y - p.y;
 			if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) continue;
 			if (dist(m, p) < 2) continue;
+			if (m.fuse && dist(m, p) <= 2) continue;
 			const dir = dirOf(dx, dy) as Dir8;
 			return faceAnd(dir, { c: "throw", item: arrow.uid, dir });
 		}
@@ -465,6 +550,24 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		if (better && (!cur || itemScore(better) > itemScore(cur)))
 			return { c: "equip", item: better.uid };
 	}
+	const canDropGear =
+		!r.itemAt(p.x, p.y) &&
+		!r.onStairs() &&
+		!f.wards.includes(p.y * f.layout.w + p.x);
+	if (canDropGear) {
+		for (const slot of ["weapon", "shield"] as const) {
+			const cur = slot === "weapon" ? r.weapon() : r.shield();
+			if (!cur) continue;
+			const extra = items.find(
+				(i) =>
+					i !== cur &&
+					defOf(i.kind).cat === slot &&
+					!(i.known && i.cursed) &&
+					itemScore(i) <= itemScore(cur),
+			);
+			if (extra) return { c: "drop", item: extra.uid };
+		}
+	}
 	if (!r.ring()) {
 		const ring = items.find(
 			(i) =>
@@ -521,6 +624,8 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	const target = visible
 		.filter(
 			(m) =>
+				!m.fuse &&
+				!m.retreating &&
 				!mdef(m).abilities.some((a) => a.k === "metal" || a.k === "shy") &&
 				!m.status.dormant &&
 				(m.status.sleep === 0 ||
@@ -639,7 +744,10 @@ const decide = (r: Run, opts: BotOpts): Command => {
 	}
 	// どこへも行けない：ランダムに歩く
 	const dirs = DIRS8.filter(
-		(d) => r.canStepTerrain(p, d) && !r.monsterAt(step(p, d).x, step(p, d).y),
+		(d) =>
+			r.canStepTerrain(p, d) &&
+			!r.monsterAt(step(p, d).x, step(p, d).y) &&
+			!fusedBombs.some((m) => dist(step(p, d), m) <= 2),
 	);
 	if (dirs.length)
 		return { c: "move", dir: dirs[(r.s.turn * 7) % dirs.length] };

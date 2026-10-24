@@ -6,12 +6,12 @@ import { DUNGEONS } from "../core/data/dungeons";
 import { WALL_HUNGER, ZERO_BODIES } from "../core/data/heroes";
 import { spawnMonster } from "../core/floor";
 import { DIRS8, type Dir8, isDiagonal, type Pos, step } from "../core/geom";
-import { roomExits, T_WALL, tileAt } from "../core/mapgen";
+import { isFloor, roomExits, T_WALL, tileAt } from "../core/mapgen";
 import { DASH, RACE, rivalOn } from "../core/race";
 import { decodeCmd, encodeCmd } from "../core/replay";
 import { Run } from "../core/run";
 import { deserializeRun, serializeRun } from "../core/serial";
-import type { RunState } from "../core/types";
+import { PLAYER_ID, type RunState } from "../core/types";
 import { CARRY_KM, HERO_QUESTS, questText } from "../data/people/heroQuests";
 import { synopsisHtml } from "../data/story/synopsis";
 import type { Story } from "../engine/defs";
@@ -82,6 +82,21 @@ const wallBeside = (r: Run): { from: Pos; d: Dir8; to: Pos } => {
 const place = (r: Run, at: Pos): void => {
 	r.p.x = at.x;
 	r.p.y = at.y;
+};
+
+const floorRow = (r: Run, length: number): Pos | null => {
+	const { w, h } = r.f.layout;
+	const statues = new Set(r.f.statues ?? []);
+	for (let y = 1; y < h - 1; y++)
+		for (let x = 1; x <= w - length - 1; x++)
+			if (
+				Array.from({ length }, (_, i) => y * w + x + i).every(
+					(i) =>
+						isFloor(r.f.layout, i % w, Math.floor(i / w)) && !statues.has(i),
+				)
+			)
+				return { x, y };
+	return null;
 };
 
 // ───────────────── 束音ロゼ ─────────────────
@@ -337,6 +352,144 @@ test("ゼロ: オートは 安価の「何か投げる」に 矢 ではなく �
 	ok(cmd.c === "throw" && cmd.item === food.uid, "threw the arrow");
 	r.act(cmd);
 	ok(!r.f.anka, "the throw did not clear the anka");
+});
+
+test("ゼロ: 動きの止まった 炎上案件を なぐらず、爆風圏から はなれる", () => {
+	const r = quiet(
+		Run.create("auto-bomb-escape", "main", [], "fetch", true, "zero"),
+	);
+	const row = floorRow(r, 3);
+	if (!row) throw new Fail("no open row for a bomb");
+	const player = { x: row.x + 1, y: row.y };
+	place(r, player);
+	r.f.seen.fill(1);
+	const m = spawnMonster(
+		r,
+		"bomb",
+		{ x: row.x + 2, y: row.y },
+		{ awake: true },
+	);
+	if (!m) throw new Fail("could not spawn a bomb");
+	m.hp = 30;
+	r.damageMonster(m, 1, "hit");
+	ok(m.fuse, "the bomb did not stop");
+	const cmd = botCommand(r, AUTO_BOT);
+	ok(cmd.c !== "attack", `attacked the fused bomb (${JSON.stringify(cmd)})`);
+	ok(cmd.c === "move", `did not escape (${JSON.stringify(cmd)})`);
+	r.act(cmd);
+	ok(r.p.hp === r.p.maxHp, `the bomb damaged the player (${r.p.hp})`);
+	ok(r.f.monsters.includes(m), "the bomb exploded");
+});
+
+test("ゼロ: 炎上案件は 爆風圏の 外から 矢で攻撃する", () => {
+	const r = quiet(
+		Run.create("auto-bomb-arrow", "main", [], "fetch", true, "zero"),
+	);
+	const row = floorRow(r, 4);
+	if (!row) throw new Fail("no open row for a ranged bomb attack");
+	place(r, row);
+	r.f.seen.fill(1);
+	const m = spawnMonster(
+		r,
+		"bomb",
+		{ x: row.x + 3, y: row.y },
+		{ awake: true },
+	);
+	if (!m) throw new Fail("could not spawn a bomb");
+	m.hp = 30;
+	r.damageMonster(m, 1, "hit");
+	const arrow = r.newItem("a_wood");
+	r.p.items.push(arrow);
+	r.p.dir = 2;
+	const cmd = botCommand(r, AUTO_BOT);
+	ok(
+		cmd.c === "throw" && cmd.item === arrow.uid && cmd.dir === 2,
+		`did not shoot the fused bomb from range (${JSON.stringify(cmd)})`,
+	);
+});
+
+test("ゼロ: 逃げている 自演くんを 追いかけず、なぐらない", () => {
+	const r = quiet(
+		Run.create("auto-chimera", "main", [], "fetch", true, "zero"),
+	);
+	const row = floorRow(r, 2);
+	if (!row) throw new Fail("no open row for a chimera");
+	place(r, row);
+	r.f.seen.fill(1);
+	const m = spawnMonster(
+		r,
+		"chimera",
+		{ x: row.x + 1, y: row.y },
+		{ awake: true },
+	);
+	if (!m) throw new Fail("could not spawn a chimera");
+	m.retreating = true;
+	const cmd = botCommand(r, AUTO_BOT);
+	ok(
+		cmd.c !== "attack" &&
+			!(
+				cmd.c === "move" &&
+				step(r.p, cmd.dir).x === m.x &&
+				step(r.p, cmd.dir).y === m.y
+			),
+		`chased the retreating chimera (${JSON.stringify(cmd)})`,
+	);
+});
+
+test("ゼロ: 透明あぼーんに 攻撃されたら 小道へ下がるか、見えない位置をなぐる", () => {
+	const r = quiet(Run.create("auto-kage", "main", [], "fetch", true, "zero"));
+	const row = floorRow(r, 2);
+	if (!row) throw new Fail("no open row for a kage");
+	place(r, { x: row.x + 1, y: row.y });
+	r.f.seen.fill(1);
+	const m = spawnMonster(r, "kage", row, { awake: true });
+	if (!m) throw new Fail("could not spawn a kage");
+	r.ev = [
+		{ t: "attack", id: m.uid, dir: 2 },
+		{ t: "hurt", id: PLAYER_ID, pos: { x: r.p.x, y: r.p.y }, amount: 1 },
+	];
+	const cmd = botCommand(r, AUTO_BOT);
+	ok(
+		(cmd.c === "move" && r.canStepTerrain(r.p, cmd.dir)) ||
+			(cmd.c === "attack" && cmd.dir === 6),
+		`ignored the invisible attacker (${JSON.stringify(cmd)})`,
+	);
+	if (cmd.c === "move") {
+		const to = step(r.p, cmd.dir);
+		const exposure = DIRS8.filter((d) => {
+			const next = step(to, d);
+			return isFloor(r.f.layout, next.x, next.y) && r.cornerOk(to, d);
+		}).length;
+		ok(exposure <= 2, `did not move into a narrow passage (${exposure})`);
+	}
+});
+
+test("ゼロ: 装備済みの武器・盾より弱い予備を捨てる", () => {
+	const r = quiet(
+		Run.create("auto-extra-gear", "main", [], "fetch", true, "zero"),
+	);
+	const weapon = r.newItem("copper");
+	const spareWeapon = r.newItem("club");
+	const shield = r.newItem("steelsh");
+	const spareShield = r.newItem("leather");
+	r.p.items = [weapon, spareWeapon, shield, spareShield];
+	r.p.weapon = weapon.uid;
+	r.p.shield = shield.uid;
+	const first = botCommand(r, AUTO_BOT);
+	ok(
+		first.c === "drop" && first.item === spareWeapon.uid,
+		`did not discard the spare weapon (${JSON.stringify(first)})`,
+	);
+	r.act(first);
+	let second = botCommand(r, AUTO_BOT);
+	if (second.c === "move") {
+		r.act(second);
+		second = botCommand(r, AUTO_BOT);
+	}
+	ok(
+		second.c === "drop" && second.item === spareShield.uid,
+		`did not discard the spare shield (${JSON.stringify(second)})`,
+	);
 });
 
 test("ゼロ: オートは 部屋で 2体に はさまれたら 入口（通路）へ 下がって 待つ（1体なら そのまま なぐる）", () => {
