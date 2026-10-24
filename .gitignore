@@ -154,3 +154,5 @@ build/
 .claude/*
 # ただし settings.json だけは無視しない（追跡する）
 !.claude/settings.json
+
+tmp
