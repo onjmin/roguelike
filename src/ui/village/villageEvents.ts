@@ -104,6 +104,7 @@ import {
 } from "../../data/village/facilities";
 import { npc, sign } from "../../data/village/helpers";
 import {
+	isShutterDoor,
 	layoutStage,
 	roamCells,
 	unlitCells,
@@ -1009,7 +1010,12 @@ const phonoScript = (): Script => async (s) => {
 };
 
 /** 置き場所に スクリプトを付けて イベントにする（v は 描いている 村。本館の 段を 絵と 合わせる）。 */
-const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
+const eventFor = (
+	ctx: Ctx,
+	p: VillagePlace,
+	v: VillageView,
+	rows: readonly string[],
+): EventDef => {
 	const at = { id: p.id, x: p.x, y: p.y };
 	if (p.who) {
 		const who = p.who;
@@ -1070,14 +1076,14 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut("music", v) ?? enterMusic,
+			run: shutDoor("music", v, rows, p.x, p.y) ?? enterMusic,
 		};
 	if (p.id === "door_bath")
 		return {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut("bath", v) ?? enterBath,
+			run: shutDoor("bath", v, rows, p.x, p.y) ?? enterBath,
 		};
 	if (p.id === "door_hut")
 		return { ...at, trigger: "touch", through: true, run: enterRoom("hut") };
@@ -1091,7 +1097,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut("library", v) ?? enterRoom("library"),
+			run: shutDoor("library", v, rows, p.x, p.y) ?? enterRoom("library"),
 		};
 	// 町が 育つと 建つ 施設の 扉と 外の 物（data/village/facilities.ts・ui/village/facilities.ts）
 	if (p.id.startsWith("door_f_")) {
@@ -1101,7 +1107,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 				...at,
 				trigger: "touch",
 				through: true,
-				run: shut(f.id, v) ?? enterFacility(f),
+				run: shutDoor(f.id, v, rows, p.x, p.y) ?? enterFacility(f),
 			};
 	}
 	if (p.id.startsWith("fthing_")) {
@@ -1131,7 +1137,7 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 			...at,
 			trigger: "touch",
 			through: true,
-			run: shut("cafe", v) ?? enterCafe,
+			run: shutDoor("cafe", v, rows, p.x, p.y) ?? enterCafe,
 		};
 	if (p.id.startsWith("door_hall_")) {
 		const i = Number(p.id.slice("door_hall_".length));
@@ -1196,18 +1202,37 @@ const eventFor = (ctx: Ctx, p: VillagePlace, v: VillageView): EventDef => {
 };
 
 /**
- * まだ 生き返って いない 所（data/town/revival.ts）なら シャッターの 札（扉なら 1歩 もどる）。開いて いれば null。
+ * まだ 生き返って いない 所（data/town/revival.ts）なら 閉鎖の 文（扉なら 1歩 もどる）。開いて いれば null。
  */
-const shut = (place: string, v: VillageView, door = true): Script | null => {
+const shut = (
+	place: string,
+	v: VillageView,
+	door = true,
+	doorMessage = VILLAGE_MSG.shut,
+): Script | null => {
 	// 騒ぎで 閉まって いる 所は その わけの 札（data/town/incidents.ts）
 	const why = activeIncidents(v).find((i) => i.shut?.[place])?.shut?.[place];
 	if (!why && isRevived(place, revivedBoards(v))) return null;
 	// 何を すれば 開くかは 言わない（閉まって いる ことだけ）
 	return async (s) => {
-		await s.narrate(why ?? VILLAGE_MSG.shut);
+		await s.narrate(why ?? doorMessage);
 		if (door) await s.move("player", "d");
 	};
 };
+
+const shutDoor = (
+	place: string,
+	v: VillageView,
+	rows: readonly string[],
+	x: number,
+	y: number,
+): Script | null =>
+	shut(
+		place,
+		v,
+		true,
+		isShutterDoor(rows, x, y) ? VILLAGE_MSG.shut : VILLAGE_MSG.doorShut,
+	);
 
 /** 騒ぎの 人（村での id から）。 */
 const incidentPerson = (id: string, v: VillageView): IncidentPerson | null =>
@@ -1470,7 +1495,7 @@ export const buildVillage = (
 			cost: villagePedCost(view),
 		},
 		events: [
-			...villagePlaces(view).map((p) => eventFor(ctx, p, view)),
+			...villagePlaces(view).map((p) => eventFor(ctx, p, view, rows)),
 			// マイクラの 豚と 夜の 匠（ui/saba/saba.ts）
 			...sabaEvents(view),
 			// 寄り道の 板が 開く ときの 来客（旗 visitor の あいだだけ 村に いる。ui/village/villageReturn.ts の visitScript）

@@ -223,6 +223,7 @@ import {
 	CAFE_FROM,
 	coreShadows,
 	exitFor,
+	isShutterDoor,
 	lineupSpots,
 	roamCells,
 	spotsAround,
@@ -7241,7 +7242,12 @@ test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏�
 	if (!f || !d) return;
 	const at = (v: VillageView) => [...villageRows(v)[d[1]]][d[0]];
 	ok(at(shutView) === "ｼ", `konbini door is ${at(shutView)} before きのこ板`);
+	ok(isShutterDoor(villageRows(shutView), d[0], d[1]), "shutter not detected");
 	ok(at(openView) !== "ｼ", "konbini door is still shut after きのこ板");
+	ok(
+		!isShutterDoor(villageRows(openView), d[0], d[1]),
+		"an open door is detected as a shutter",
+	);
 	ok(
 		villagePalette(shutView)["ｼ"]?.passable,
 		"the shutter cannot be stepped on",

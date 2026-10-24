@@ -894,6 +894,13 @@ const SHUTTER: Record<string, TileDef> = {
 	[SHUTTER_CH]: floor("#6a6a72", art("shutter", 1)),
 };
 
+/** 指定した 入口が シャッターか。 */
+export const isShutterDoor = (
+	rows: readonly string[],
+	x: number,
+	y: number,
+): boolean => Array.from(rows[y] ?? "")[x] === SHUTTER_CH;
+
 /** 町の まんなかの 建物の 扉（data/town/revival.ts の CorePlace）。 */
 const CORE_DOORS: readonly [CorePlace, Cell][] = [
 	["cafe", VILLAGE_SPOTS.cafeDoor],
