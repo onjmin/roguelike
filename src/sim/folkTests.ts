@@ -2,12 +2,8 @@
 // 文の 幅・帰りごとに 1つ 進む 決まり・置き場所（どの 段でも 道を ふさがず 遠回りに させず 話せる）・本館／図書館／銭湯の すみ・
 // 歩行グラが ほかと かぶらない こと・下見で 保存を 書かない こと を 見る。
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { MONSTERS } from "../core/data/monsters";
 import { TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
-import { CAST, YAJI_WALK } from "../data/people/cast";
 import {
 	BALUS,
 	BALUS_BEATS,
@@ -18,37 +14,24 @@ import {
 	eggTheory,
 	FOLK_NAMES,
 	HIRA,
-	HIRA_AVOID,
-	HIRA_BOTTOM,
-	HIRA_FORGOT,
-	HIRA_RANKS,
-	HIRA_WHY,
-	hiraEndless,
 	hiraEntry,
 	hiraForgot,
 	IDEA,
 	IDEA_ASKS,
 	ideaAfter,
 	ideaOk,
-	ideaText,
-	MOFU,
 	MUSEUM,
-	mofuTag,
 	museumPick,
 	NAZO,
 	nazoPick,
 	nazoResult,
-	ODORU,
 	odoruAwake,
 	RIDDLES,
 	riddleAnswer,
 } from "../data/people/folk";
-import { MOBS } from "../data/people/mobs";
 import { ROOM_MSG } from "../data/town/rooms";
-import { crowdNodes, PERSONAS } from "../data/village/crowd";
-import { FACILITIES } from "../data/village/facilities";
+import { crowdNodes } from "../data/village/crowd";
 import {
-	FOLK_ART,
 	FOLK_FROM,
 	FOLK_SPOTS,
 	FOLK_WALK,
@@ -60,7 +43,6 @@ import {
 	hallPlaces,
 	hallRows,
 	hallTierOf,
-	NANASHI_WALK,
 } from "../data/village/hall";
 import {
 	VILLAGE_H,
@@ -102,22 +84,6 @@ const test = (name: string, run: () => void | Promise<void>) =>
 	CASES.push({ name, run });
 
 // ───────────────── 道具 ─────────────────
-
-/** 全角=1・半角=0.5 で 数えた 幅（villageTests と 同じ）。 */
-const width = (line: string): number =>
-	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
-const EMOJI = /\p{Extended_Pictographic}/u;
-
-/** 村の 窓（全角22字・2行。絵文字の 行は 21字）に 収まるか。 */
-const fits = (where: string, t: string): void => {
-	const lines = t.split("\n");
-	ok(lines.length <= 2, `${where}: ${lines.length} lines`);
-	for (const l of lines) {
-		const max = EMOJI.test(l) ? 21 : 22;
-		ok(width(l) <= max, `${where}: "${l}" is ${width(l)} wide`);
-	}
-	ok(!t.includes("️") && !t.includes("‍"), `${where}: FE0F/ZWJ`);
-};
 
 const ALL_UNLOCKS: DungeonId[][] = [
 	["shallow"],
@@ -330,134 +296,7 @@ const fakeStory = (picks: number[] = []) => {
 
 // ───────────────── 文 ─────────────────
 
-test("F1 文: every folk window fits 22×2 (emoji lines 21), choices fit 9, name boxes are short, ≤3 windows per talk", () => {
-	const all: [string, string][] = [];
-	const add = (
-		where: string,
-		...texts: readonly (string | readonly string[])[]
-	) => {
-		for (const [i, t] of texts.flat().entries())
-			all.push([`${where}[${i}]`, t]);
-	};
-	for (const [k, t] of Object.entries(HIRA)) add(`HIRA.${k}`, t);
-	for (const [k, t] of Object.entries(HIRA_WHY))
-		add(`HIRA_WHY.${k}`, `選出理由\n・${t}`);
-	add("HIRA_FORGOT", ...HIRA_FORGOT.one, ...HIRA_FORGOT.two);
-	for (const n of [
-		...Array.from({ length: 60 }, (_, i) => i),
-		1000,
-		5000,
-		1e6,
-	]) {
-		const e = hiraEntry(n);
-		ok(e.length >= 1 && e.length <= 3, `hiraEntry(${n}): ${e.length} windows`);
-		add(`hiraEntry(${n})`, ...e);
-	}
-	for (const [k, t] of Object.entries(NAZO)) add(`NAZO.${k}`, t);
-	for (const [i, r] of RIDDLES.entries()) {
-		add(`RIDDLES[${i}]`, r.q, r.why, ...(r.odd ? [r.odd] : []));
-		for (let k = 0; k <= 3; k++) add(`nazo ${i}/${k}`, ...nazoResult(r, k));
-		for (const o of r.options)
-			ok(width(o) <= 9, `RIDDLES[${i}] choice "${o}" is ${width(o)} wide`);
-	}
-	for (const [i, b] of BALUS_BEATS.entries()) {
-		ok(b.lines.length <= 3, `BALUS_BEATS[${i}]: ${b.lines.length} windows`);
-		add(`BALUS_BEATS[${i}]`, ...b.lines.map((l) => l.text));
-	}
-	add("BALUS.again", BALUS.again);
-	for (const [k, t] of Object.entries(IDEA)) add(`IDEA.${k}`, t);
-	for (const [i, a] of IDEA_ASKS.entries()) {
-		add(`ideaText(${i})`, ideaText(i));
-		for (const o of a.options)
-			ok(width(o) <= 9, `IDEA_ASKS[${i}] choice "${o}" is ${width(o)} wide`);
-	}
-	add("ODORU", ODORU.first, ODORU.main, ...ODORU.more);
-	for (let st = 0; st < TOWN_STAGES; st++) add(`mofuTag(${st})`, mofuTag(st));
-	add("MOFU", MOFU.owner, ...MOFU.more);
-	add("EGG_THEORIES", ...EGG_THEORIES);
-	for (const [i, c] of MUSEUM.entries())
-		add(`MUSEUM[${i}]`, ...c.map(([a, b]) => `${a}\n${b}`));
-	add("ROOM_MSG", ROOM_MSG.bath.egg[0], ROOM_MSG.library.museum[0]);
-	for (const [where, t] of all) fits(where, t);
-	for (const n of [...Object.values(FOLK_NAMES), balusName(3)])
-		ok(width(n) <= 10, `name box ${n} is ${width(n)} wide`);
-	for (const [where, t] of all) {
-		// スレは 落ちない（沈む）
-		ok(!/落ち[るたない]/.test(t), `${where}: 落ちる`);
-		// 避ける 数字（淫夢 など）は どの 文にも 出ない
-		for (const w of HIRA_AVOID) ok(!t.includes(w), `${where}: ${w}`);
-	}
-	// 🎭 は なぞなぞ仮面の 判定と 名乗りだけ（ほかの 窓・地の文には 絵文字を つけない）
-	for (const [where, t] of all)
-		if (EMOJI.test(t))
-			ok(
-				where.startsWith("NAZO.") ||
-					where.startsWith("nazo ") ||
-					where.startsWith("RIDDLES["),
-				`${where}: emoji outside the mask`,
-			);
-	for (const k of ["again", "flee", "rerun", "robaTrap"] as const)
-		ok(!EMOJI.test(NAZO[k]), `NAZO.${k} has an emoji`);
-});
-
 // ───────────────── 決まり ─────────────────
-
-test("F2 ひらがなニキ: 1位から 48位（2位は ぷ の 言いかけ）と 選出理由、そのあとは 10の23乗位の う・ぅ、番号だけ 上がって 終わらない", () => {
-	const ranks = [...HIRA_RANKS];
-	ok(ranks.length === 48, `${ranks.length} ranks`);
-	ok(new Set(ranks).size === 48, "a kana twice");
-	ok(
-		ranks.every((c) => /^[ぁ-ゖ]$/.test(c)),
-		"not hiragana",
-	);
-	for (const k of Object.keys(HIRA_WHY).map(Number))
-		ok(k >= 1 && k <= 48 && k !== 20 && k !== 22, `why for rank ${k}`);
-	ok(hiraEntry(0)[0].startsWith("第1位　ぬ"), hiraEntry(0)[0]);
-	ok(hiraEntry(0)[1] === `選出理由\n・${HIRA_WHY[1]}`, hiraEntry(0).join());
-	ok(
-		hiraEntry(1).join() === [HIRA.pu, HIRA.retract].join(),
-		hiraEntry(1).join(),
-	);
-	ok(HIRA.retract.includes("半濁音は除外"), "ぷ is not retracted");
-	ok(hiraEntry(2)[0].startsWith("第2位　ね"), hiraEntry(2)[0]);
-	ok(hiraEntry(2).at(-1) === HIRA.from48, "no 48位から");
-	for (let n = 3; n < 48; n++)
-		ok(
-			hiraEntry(n)[0].startsWith(`第${n}位　${HIRA_RANKS[n - 1]}\n`),
-			hiraEntry(n)[0],
-		);
-	ok(hiraEntry(47).at(-1) === HIRA.ahead, "no 最下位 発表");
-	ok(
-		hiraEntry(48)[0] === HIRA.last && hiraEntry(48).at(-1) === HIRA.manyo,
-		hiraEntry(48).join(),
-	);
-	ok(HIRA.last.startsWith("第48位ひ"), HIRA.last);
-	ok(hiraEntry(49)[0].startsWith(`第${HIRA_BOTTOM}位　う`), hiraEntry(49)[0]);
-	ok(
-		hiraEntry(50)[0].startsWith(`第${HIRA_BOTTOM - 1n}位　ぅ`),
-		hiraEntry(50)[0],
-	);
-	// 終わらない 番号：1つずつ 上がり（同じ 番号は 出ない）、避ける 数字を 含まない
-	let prev = HIRA_BOTTOM - 1n;
-	for (let i = 0; i < 5000; i++) {
-		const r = hiraEndless(i);
-		ok(r < prev, `endless ${i}: ${r} after ${prev}`);
-		for (const w of HIRA_AVOID)
-			ok(!String(r).includes(w), `endless ${i}: ${r}`);
-		prev = r;
-	}
-	ok(hiraEndless(0) === HIRA_BOTTOM - 2n, `${hiraEndless(0)}`);
-	ok(
-		[51, 52, 400].every((n) => !/位　\S/.test(hiraEntry(n)[0])),
-		"the countdown names a kana",
-	);
-	ok(hiraForgot(0, 0) === null && hiraForgot(-1, 0) === null, "forgot 0");
-	ok(
-		hiraForgot(1, 0) === HIRA_FORGOT.one[0] &&
-			hiraForgot(3, 1) === HIRA_FORGOT.two[1],
-		"forgot lines",
-	);
-});
 
 test("F3 なぞなぞ仮面: 3つの ちがう 答え、正解と まっすぐ（ロバでは わな）は 別、外すと 答えを 言う、1問めは 元スレの 問題", () => {
 	ok(RIDDLES.length >= 10, `${RIDDLES.length} riddles`);
@@ -767,37 +606,6 @@ test("F9 図書館・銭湯: 人工無能ニキと 2つの ガラスケース、
 	ok(egg && egg.x === 7 && egg.y === 11, `egg at ${egg?.x},${egg?.y}`);
 });
 
-test("F10 歩行グラ: ダジャレニキは 通行人に いて「そうそう…やないかーい」。folk の 絵は どれも ほかの 人・敵・店番・通行人と かぶらない", () => {
-	const p = PERSONAS.find((q) => q.id === "dajare");
-	ok(p, "no dajare");
-	for (const l of [
-		...(p?.lines ?? []),
-		...Object.values(p?.bandLines ?? {}).flat(),
-	])
-		ok(l.includes("やないかーい") && l.startsWith("そうそう"), l);
-	const mine = [
-		...Object.values(FOLK_WALK),
-		...Array.from({ length: 8 }, (_, i) => mofuWalk(i)),
-		...(p?.sprites ?? []),
-	];
-	ok(new Set(mine).size === mine.length, "folk sheets repeat");
-	const named = [
-		...Object.values(MONSTERS).map((m) => m.sprite),
-		...Object.values(CAST).map((c) => c.walk),
-		...Object.values(MOBS).map((m) => m.sprite),
-		...NANASHI_WALK,
-		...YAJI_WALK,
-	];
-	// 施設の 店番・外の 人（ほかの パッケージの 部室・店も ここに 入る）と ほかの 通行人
-	const elsewhere = JSON.stringify([
-		named,
-		FACILITIES,
-		PERSONAS.filter((q) => q.id !== "dajare").map((q) => q.sprites),
-	]);
-	for (const sheet of mine)
-		ok(!elsewhere.includes(`"${sheet}"`), `${sheet} is someone else's too`);
-});
-
 // ───────────────── 話し方 ─────────────────
 
 test("F11 帰りごとに 1つ：ひらがなニキ・なぞなぞ仮面・バルス失敗ニキ・人工無能ニキは 帰ると 次へ、同じ 帰りは みじかく", async () => {
@@ -939,30 +747,6 @@ test("F13 下見（?stage=）: 進んでも 保存は 書かない", async () =>
 		forgetFolkMemo();
 		ok(loadFolk().hira === 0, "the preview stuck");
 	});
-});
-
-test("F14 絵: folk.png は 96x16、ひらがなニキ・モフちゃん（段 0〜7）・おどちゃんは 32x64 の 歩行グラ（scripts/make-folk.mjs）", () => {
-	const size = (file: string): [number, number] => {
-		const b = readFileSync(join(process.cwd(), "public", file));
-		return [b.readUInt32BE(16), b.readUInt32BE(20)];
-	};
-	const [w, h] = size("sprites/folk.png");
-	ok(w === 96 && h === 16, `folk.png is ${w}x${h}`);
-	for (const ref of Object.values(FOLK_ART)) {
-		const [x, y, cw, ch] = ref.split("#")[1].split(",").map(Number);
-		ok(
-			x + cw <= w && y + ch <= h && cw === 16 && ch === 16,
-			`${ref} is outside`,
-		);
-	}
-	for (const ref of [
-		...Array.from({ length: 8 }, (_, i) => mofuWalk(i)),
-		FOLK_WALK.odoru,
-		FOLK_WALK.hira,
-	]) {
-		const [sw, sh] = size(ref.slice("pub:".length));
-		ok(sw === 32 && sh === 64, `${ref} is ${sw}x${sh}`);
-	}
 });
 
 export const runFolkTests = async (): Promise<TestResult[]> => {

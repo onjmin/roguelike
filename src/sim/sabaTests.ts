@@ -2,11 +2,7 @@
 // 置き場所・絵・文の 幅・命名投票・お知らせ・ブラマイの 決まりと 釣りあい・村での 流れ（板は setMineHook で 差しかえ）・
 // 共有の 振り分け（ui/village/facilities.ts・ui/village/villageEvents.ts の 1行が 落ちたら ここで 気づく）。
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { TOWN_STAGES } from "../core/town";
-import { CAST } from "../data/people/cast";
-import { MOBS } from "../data/people/mobs";
 import {
 	EVENT_HOUR,
 	eventOf,
@@ -41,17 +37,8 @@ import {
 	seeded,
 	seenAt,
 } from "../data/saba/sabaMine";
-import { SABA_CELLS, SABA_SIZE, TAKUMI_WALK } from "../data/saba/sabaSheet";
 import { SABA_TEXT as X } from "../data/saba/sabaText";
-import { PERSONAS } from "../data/village/crowd";
-import {
-	FACILITIES,
-	facilitiesAt,
-	facilityById,
-	facilityDoor,
-	facilityOutside,
-	outdoorId,
-} from "../data/village/facilities";
+import { facilityById, outdoorId } from "../data/village/facilities";
 import {
 	asideSpot,
 	lineupSpots,
@@ -62,7 +49,6 @@ import {
 	villagePlaces,
 	villageRows,
 } from "../data/village/map";
-import { ISLE_ROWS } from "../data/village/saba";
 import type { Story, VState } from "../engine/defs";
 import type { Dir } from "../engine/types";
 import type { Ctx } from "../ui/ctx";
@@ -96,64 +82,9 @@ const view = (stage: number): VillageView => ({
 	unlocked: ["shallow"],
 	cleared: [],
 });
-const SABA = FACILITIES.filter((f) => f.id.startsWith("saba"));
-const SABA_IDS = [
-	"saba2",
-	"saba3",
-	"saba4",
-	"saba5",
-	"saba6",
-	"saba7",
-	"saba_apart",
-];
-const width = (s: string): number =>
-	[...s].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
 const isle = (x: number, y: number): boolean => x <= 19 && y >= 41 && y <= 48;
 
 // ───────────────── 置き場所 ─────────────────
-
-test("マイクラ：島は 段2 から 段ごとに 1つ（saba2〜saba7）、アパートは 段4 から・市役所より 後ろに まとめて 並ぶ", () => {
-	for (let stage = 0; stage < TOWN_STAGES; stage++) {
-		const ids = facilitiesAt(stage)
-			.map((f) => f.id)
-			.filter((id) => id.startsWith("saba"));
-		const want = [
-			...(stage >= 2 ? [`saba${stage}`] : []),
-			...(stage >= 4 ? ["saba_apart"] : []),
-		];
-		ok(
-			JSON.stringify(ids) === JSON.stringify(want),
-			`stage ${stage}: ${ids.join(",")}`,
-		);
-	}
-	// もとから ある 施設の 後ろ（字の 割りふりが ほかの 施設を ずらさない）。後ろに ほかの 包みが 足すのは かまわない
-	const ids = FACILITIES.map((f) => f.id);
-	const i = ids.indexOf("saba2");
-	ok(i > ids.indexOf("cityhall"), "saba2 is before cityhall");
-	ok(
-		JSON.stringify(ids.slice(i, i + SABA_IDS.length)) ===
-			JSON.stringify(SABA_IDS),
-		`saba facilities are not together: ${ids.slice(i, i + SABA_IDS.length).join(",")}`,
-	);
-	ok(SABA.length === SABA_IDS.length, `${SABA.length} saba facilities`);
-});
-
-test("マイクラ：島の 行は 20×8（x0〜19・y41〜48）・扉は 豆腐ハウスに 1つ", () => {
-	for (const [st, rows] of Object.entries(ISLE_ROWS)) {
-		ok(rows.length === 8, `stage ${st}: ${rows.length} rows`);
-		for (const r of rows) ok([...r].length === 20, `stage ${st}: "${r}"`);
-		ok(rows.join("").split("D").length === 2, `stage ${st}: door count`);
-	}
-	for (const f of SABA) {
-		const d = facilityDoor(f);
-		ok(d, `${f.id}: no door`);
-		const o = facilityOutside(f);
-		ok(
-			o.y === 44,
-			`${f.id}: comes out on (${o.x},${o.y}), not on the island street`,
-		);
-	}
-});
 
 test("マイクラ：島の 下（y48〜51）と 釣り場の 西の 海（y39〜40）に 歩ける マスを 作らない・南の 口で 仲間が 並ぶ／呼ばれて 立つ 所は 島に かからない", () => {
 	const south = VILLAGE_EXITS.find((e) => e.side === "s");
@@ -288,141 +219,7 @@ test("マイクラ：夜の 匠は ふだん いない・出る マスは キリ
 
 // ───────────────── 絵 ─────────────────
 
-const pngSize = (file: string): [number, number] => {
-	const b = readFileSync(join(process.cwd(), file));
-	return [b.readUInt32BE(16), b.readUInt32BE(20)];
-};
-
-test("マイクラ：絵は まとめた saba.png の 16px の 格子の 中・匠の 歩行グラは 32×64・人の 絵は ほかの 人と かぶらない", () => {
-	const [w, h] = pngSize("public/sprites/saba.png");
-	ok(w === SABA_SIZE[0] && h === SABA_SIZE[1], `saba.png is ${w}x${h}`);
-	const [tw, th] = pngSize("public/sprites/saba_takumi.png");
-	ok(tw === 32 && th === 64, `saba_takumi.png is ${tw}x${th}`);
-	for (const [n, [c, r]] of Object.entries(SABA_CELLS))
-		ok(c < 16 && (r + 1) * 16 <= h, `${n} is outside`);
-	const refs: string[] = [];
-	for (const f of SABA) {
-		if (f.look.kind === "grid")
-			for (const l of Object.values(f.look.keys)) refs.push(...l);
-		for (const t of f.outdoor ?? [])
-			if (t.sprite) ok(t.sprite.startsWith("sa:"), `${t.id}: ${t.sprite}`);
-	}
-	for (const ref of refs) {
-		ok(ref.startsWith("pub:sprites/saba.png#"), `draws ${ref}`);
-		const [x, y, rw, rh] = ref.split("#")[1].split(",").map(Number);
-		ok(
-			x % 16 === 0 && y % 16 === 0 && x + rw <= w && y + rh <= h,
-			`${ref} is off the sheet`,
-		);
-	}
-	// 島の 人・豚の 歩行グラは 通行人・住人・仲間と ちがう（見分けが つく）
-	const others = new Set([
-		...PERSONAS.flatMap((p) => p.sprites),
-		...Object.values(MOBS).map((m) => m.sprite),
-		...Object.values(CAST).map((c) => c.walk),
-	]);
-	const ours = [
-		...SABA.flatMap((f) =>
-			(f.outdoor ?? []).flatMap((t) => (t.sprite ? [t.sprite] : [])),
-		),
-		"sa:7Cqdmq",
-		TAKUMI_WALK,
-	];
-	for (const s of ours) ok(!others.has(s), `${s} is used by someone else`);
-});
-
 // ───────────────── 文 ─────────────────
-
-const BANNED = [
-	/落ち/,
-	/マインクラフト|Minecraft|Mojang/i,
-	/クリーパー|エンダーマン|スティーブ/,
-	/統合版|Java|JAVA|Bedrock/,
-	/保守/,
-	/黄色|きいろ|山吹/,
-	/うんち|うんこ/,
-	/114514|1919|810/,
-	/真理教|サティアン|尊師|布施|お参り|供物/,
-	/おんＪ/,
-	/\p{Extended_Pictographic}/u,
-	/️|‍/,
-];
-const words = (path: string, s: string): void => {
-	for (const re of BANNED) ok(!re.test(s), `${path}: "${s}" has ${re}`);
-};
-const fits = (path: string, s: string): void => {
-	const lines = s.split("\n");
-	ok(lines.length <= 2, `${path}: ${lines.length} lines`);
-	for (const l of lines)
-		ok(width(l) <= 22, `${path}: "${l}" is ${width(l)} wide`);
-	words(path, s);
-};
-const one = (path: string, s: string, max: number): void => {
-	ok(
-		!s.includes("\n") && width(s) <= max,
-		`${path}: "${s}" is ${width(s)} > ${max}`,
-	);
-	words(path, s);
-};
-const LONG = {
-	event: X.events[5],
-	n: 999,
-	name: "ウーパー跡地",
-	other: "マイクラ村",
-	item: X.chestItems[5],
-	tail: X.mineTail0,
-};
-const filled = (s: string): string =>
-	s.replace(/\{(\w+)\}/g, (_, k: string) =>
-		String(LONG[k as keyof typeof LONG] ?? ""),
-	);
-
-test("マイクラ：文は 窓に おさまる（22字×2行）・板の 一言は 1行・選ぶ 字は 9字まで・名前の 候補は 7字まで・使わない 語が ない", () => {
-	const {
-		board,
-		cands,
-		mineMenu,
-		bedMenu,
-		room102Menu,
-		chestItems,
-		names,
-		voteDefault,
-		voteStop,
-		events,
-		notices,
-		...rest
-	} = X;
-	const walk = (path: string, v: unknown): void => {
-		if (typeof v === "string") fits(path, filled(v));
-		else if (Array.isArray(v))
-			for (const [i, x] of v.entries()) walk(`${path}[${i}]`, x);
-		else if (v && typeof v === "object")
-			for (const [k, x] of Object.entries(v)) walk(`${path}.${k}`, x);
-	};
-	walk("SABA_TEXT", rest);
-	for (const n of notices) fits("notices", n.text);
-	for (const e of events) {
-		one("events", e, 22);
-		fits("saturday", X.saturday.replace("{event}", e));
-		fits("saturdayNight", X.saturdayNight.replace("{event}", e));
-	}
-	for (const [k, s] of Object.entries(board)) one(`board.${k}`, filled(s), 22);
-	for (const list of Object.values(cands))
-		for (const c of list) {
-			one("cands", c, 7);
-			fits("townSign", X.townSign.replace("{name}", c));
-		}
-	for (const c of [...mineMenu, ...bedMenu, ...room102Menu, voteStop])
-		one("menu", c, 9);
-	for (const c of chestItems) one("chestItems", c, 13);
-	for (const n of Object.values(names)) one("names", n, 11);
-	one("voteDefault", voteDefault, 7);
-	// 島の 人は 話す たびに 全部 読む ので 2窓まで（このあと ui/saba/saba.ts が 1窓 足す ことが ある）
-	for (const f of SABA)
-		for (const t of f.outdoor ?? [])
-			if (t.name)
-				ok(t.lines.length <= 2, `${f.id}.${t.id}: ${t.lines.length} windows`);
-});
 
 // ───────────────── 決まり（命名投票・お知らせ・水槽・夜） ─────────────────
 

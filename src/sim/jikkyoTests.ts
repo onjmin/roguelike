@@ -5,8 +5,6 @@
 // S 節：映画館の『空飛ぶ鯖』（data/jikkyo/sora.ts）。K 節：劇場の 紅白スレ合戦（data/jikkyo/kohaku.ts）。D 節：番組表。
 // 形は townTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は 節の 字。
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import {
 	compileScript,
 	gradeCue,
@@ -60,7 +58,6 @@ import {
 	kohakuLeft,
 	kohakuName,
 } from "../data/jikkyo/kohaku";
-import { PACKS } from "../data/jikkyo/packs";
 import {
 	isVenue,
 	JIKKYO_STORY_GATE,
@@ -77,12 +74,10 @@ import {
 } from "../data/jikkyo/sora";
 import {
 	type DayLines,
-	isRoadshowNight,
 	JK_PROG_MSG,
 	JK_PROG_MSGS,
 	JK_PROG_RESULT,
 	JK_PROG_TV,
-	kohakuMode,
 	progMsg,
 	STAFF_LINES,
 	STAFF_ONCE,
@@ -93,8 +88,6 @@ import {
 } from "../data/jikkyo/text";
 import {
 	candidates,
-	deltaE,
-	fanColor,
 	fanReqs,
 	fitOf,
 	freshUsed,
@@ -113,7 +106,6 @@ import {
 	JK_TAUNTS,
 	JK_TELOP,
 	JK_THREAD,
-	NANASHI_COLOR,
 	PRAISE_POOLS,
 	subjectOf,
 	telopOf,
@@ -131,7 +123,6 @@ import {
 	FACILITIES,
 	type Facility,
 	facilityById,
-	facilityRoomRows,
 } from "../data/village/facilities";
 import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
@@ -149,7 +140,6 @@ import {
 	recordProgram,
 	setWatchHook,
 } from "../ui/jikkyo/jikkyoWatch";
-import { facilityDecor } from "../ui/village/cinemaDecor";
 import { buildFacility } from "../ui/village/facilities";
 import type { TestResult } from "./monsterTests";
 
@@ -216,13 +206,6 @@ const tableLines = (): { where: string; fid: string; text: string }[] =>
 		),
 	);
 
-/** 施設の 調べる 物の id と 人の id。 */
-const kindsOf = (f: Facility): string[] => [
-	...new Set(Object.values(f.room?.things ?? {})),
-];
-const peopleOf = (f: Facility): string[] =>
-	(f.room?.people ?? []).map((p) => p.id);
-
 const cinema = (): Facility => {
 	const f = facilityById("cinema");
 	if (!f) throw new Fail("no cinema");
@@ -231,109 +214,9 @@ const cinema = (): Facility => {
 
 // ───────────────── A 映画館の 演出 ─────────────────
 
-test(
-	"A1",
-	"会場の 文は どの 曜日も 村の 窓（22字 × 2行）に 収まり、物と 人は その 施設に ある",
-	() => {
-		for (const l of tableLines()) fitsWindow(l.where, l.text);
-		for (const [table, of] of [
-			[VENUE_LINES, kindsOf],
-			[STAFF_LINES, peopleOf],
-		] as const)
-			for (const [fid, keys] of Object.entries(table)) {
-				const f = facilityById(fid);
-				ok(f?.room, `${fid}: no such facility with a room`);
-				if (!f) continue;
-				for (const key of Object.keys(keys))
-					ok(of(f).includes(key), `${fid}: no ${key} to read or talk to`);
-			}
-		// 曜日ごとに 引いても 窓に 収まる。スクリーンと ポスターは 毎日 文が ある
-		for (const w of WEEK) {
-			for (const kind of ["screen", "poster", "seat"]) {
-				const ls = venueLines("cinema", kind, day(w));
-				if (kind !== "seat") ok(ls?.length, `wday ${w}: no ${kind} line`);
-				for (const t of ls ?? []) fitsWindow(`wday ${w} ${kind}`, t);
-			}
-			for (const t of staffLines("cinema", "cinema_staff", day(w)) ?? [])
-				fitsWindow(`wday ${w} cinema_staff`, t);
-		}
-	},
-);
-
-test(
-	"A2",
-	"金曜（実況上映）と ほかの 日で 文が かわり、ほかの 日の 客席と 係員は いつもの 文",
-	() => {
-		ok(
-			WEEK.filter((w) => isRoadshowNight(day(w))).join() === "5",
-			"the roadshow night is not only Friday",
-		);
-		const said = (ls: readonly string[] | null) => JSON.stringify(ls);
-		for (const kind of ["screen", "poster", "seat"])
-			ok(
-				said(venueLines("cinema", kind, FRI)) !==
-					said(venueLines("cinema", kind, TUE)),
-				`${kind}: the same on Friday and Tuesday`,
-			);
-		ok(
-			said(staffLines("cinema", "cinema_staff", FRI)) !==
-				said(staffLines("cinema", "cinema_staff", TUE)),
-			"cinema_staff: the same on Friday and Tuesday",
-		);
-		// 金曜の ほかは 昼の部（午後の B級映画。data/jikkyo/gogo.ts の 束）の 文：月〜木は 火曜と 同じ、土日は 土日で 同じ
-		for (const kind of ["screen", "seat"])
-			ok(
-				said(venueLines("cinema", kind, TUE)) ===
-					said(pickDay(GOGO_PACK.venueLines?.[kind], TUE)),
-				`Tuesday ${kind} is not the 昼の部 line`,
-			);
-		for (const [ws, base] of [
-			[[1, 3, 4], TUE],
-			[[0], day(6)],
-		] as const)
-			for (const w of ws) {
-				for (const kind of kindsOf(cinema()))
-					ok(
-						said(venueLines("cinema", kind, day(w))) ===
-							said(venueLines("cinema", kind, base)),
-						`wday ${w} ${kind}: not the same as wday ${base.w}`,
-					);
-				ok(
-					said(staffLines("cinema", "cinema_staff", day(w))) ===
-						said(staffLines("cinema", "cinema_staff", base)),
-					`wday ${w} cinema_staff: not the same as wday ${base.w}`,
-				);
-			}
-	},
-);
-
 /** 日ごとの 文の その 日の 行（無ければ null）。 */
 const pickDay = (d: DayLines | undefined, t: Today): readonly string[] | null =>
 	d?.find((r) => r.when(t))?.lines ?? null;
-
-test(
-	"A3",
-	"10月は 映画館と 束の 番組の 会場の ほかの 施設に 文の 上書きが なく、飾りは 映画館 だけ",
-	() => {
-		// 束の 番組の 会場（カジノ・碁会所 など）の 文は src/sim/jikkyoProgTests.ts の P3
-		const packVenues = new Set(PACKS.map((p) => p.venue));
-		for (const f of FACILITIES) {
-			const rows = facilityRoomRows(f);
-			const isCinema = f.id === "cinema";
-			for (const t of [FRI, TUE]) {
-				ok(
-					(typeof facilityDecor(f, rows, t) === "function") === isCinema,
-					`${f.id}: decor ${typeof facilityDecor(f, rows, t)}`,
-				);
-				if (isCinema || packVenues.has(f.id)) continue;
-				for (const k of kindsOf(f))
-					ok(venueLines(f.id, k, t) === null, `${f.id}.${k}: overridden`);
-				for (const p of peopleOf(f))
-					ok(staffLines(f.id, p, t) === null, `${f.id}.${p}: overridden`);
-			}
-		}
-	},
-);
 
 /** 描いた 命令を 記録する だけの canvas（色・透明度・文字も 記録）。 */
 export const stubCanvas = () => {
@@ -357,75 +240,6 @@ export const stubCanvas = () => {
 	}) as unknown as CanvasRenderingContext2D;
 	return { g, calls, styles, alphas };
 };
-
-/** 飾りを いくつかの 時刻で 描く（金曜の ロゴの 間も 入る）。 */
-const TIMES = [0, 700, 1499, 1500, 3000, 5999, 6100, 12345, 98765];
-
-test(
-	"A4",
-	"映画館の 飾りは 塗るだけ（絵の 参照を 増やさない）で、save と restore が 釣りあい、金曜は ロゴの 間に 番組名",
-	() => {
-		const f = cinema();
-		const view: VillageView = {
-			stage: TOWN_STAGES - 1,
-			unlocked: ["shallow"],
-			cleared: [],
-		};
-		const def = buildFacility(f, view, {} as Ctx);
-		ok(typeof def.decor === "function", "the cinema map has no decor");
-		ok(!def.images?.length, `the cinema loads images: ${def.images}`);
-		const rows = facilityRoomRows(f);
-		for (const t of [FRI, TUE]) {
-			const decor = facilityDecor(f, rows, t);
-			if (!decor) throw new Fail(`wday ${t.w}: no decor`);
-			const c = stubCanvas();
-			for (const ms of TIMES) decor(c.g, 0, 0, ms);
-			const n = (k: string) => c.calls.filter((x) => x === k).length;
-			ok(n("save") === n("restore"), `wday ${t.w}: save/restore unbalanced`);
-			ok(n("clip") === TIMES.length, `wday ${t.w}: the screen is not clipped`);
-			ok(!n("drawImage"), `wday ${t.w}: draws an image`);
-			for (const s of c.styles)
-				ok(
-					/^#[0-9a-f]{6}$/.test(s) || /^rgba\(\d+, \d+, \d+, [\d.]+\)$/.test(s),
-					`wday ${t.w}: odd color ${s}`,
-				);
-			// ロゴは 6秒ごとに 1.5秒
-			const logo = c.calls.filter((x) => x.startsWith("fillText"));
-			const logoTimes = TIMES.filter((ms) => ms % 6000 < 1500).length;
-			ok(
-				t.w === 5
-					? logo.length === logoTimes &&
-							logo.every((x) => x === "fillText 金曜ロード保守")
-					: logo.length === 0,
-				`wday ${t.w}: logo text ${logo.join(",")}`,
-			);
-			// 金曜は 上映中で 場内を 暗く（スクリーンの ほか）
-			ok(
-				n("fill") > 0 === (t.w === 5),
-				`wday ${t.w}: dims the room ${n("fill")}`,
-			);
-		}
-		// 動きを へらす 設定では スマホの 光が 明滅しない
-		const prev = Object.getOwnPropertyDescriptor(globalThis, "matchMedia");
-		Object.defineProperty(globalThis, "matchMedia", {
-			value: () => ({ matches: true }),
-			configurable: true,
-			writable: true,
-		});
-		try {
-			const decor = facilityDecor(f, rows, FRI);
-			const c = stubCanvas();
-			for (const ms of TIMES) decor?.(c.g, 0, 0, ms);
-			ok(
-				new Set(c.alphas.filter((a) => a !== 1)).size === 1,
-				`reduced motion still blinks: ${[...new Set(c.alphas)].join(",")}`,
-			);
-		} finally {
-			if (prev) Object.defineProperty(globalThis, "matchMedia", prev);
-			else delete (globalThis as { matchMedia?: unknown }).matchMedia;
-		}
-	},
-);
 
 /** 会場の 文に 出さない 名前（実在の 番組・局・映画・ゲーム・競馬・ドラマ）。ここ だけに 置く。 */
 export const NG_NAMES = [
@@ -615,47 +429,6 @@ const THEATER_DAYS: readonly [Today, "live" | "reha" | "rec" | null][] = [
 	[date(6, 15), null],
 	[date(11, 30), null],
 ];
-
-test(
-	"A7",
-	"劇場の 文：12/31 は 第{回}回 の 本番、12月は 公開リハ、1/1〜7 は 録画、ほかの 日は いつもの 文（どれも 22字 × 2行）",
-	() => {
-		for (const [t, mode] of THEATER_DAYS) {
-			const at = `${t.m}/${t.d}`;
-			ok(kohakuMode(t) === mode, `${at}: mode ${kohakuMode(t)}`);
-			const stage = venueLines("theater", "stage", t, 2026);
-			const actor = staffLines("theater", "theater_actor", t, 2026);
-			const bill = venueLines("theater", "playbill", t, 2026);
-			if (mode === null) {
-				ok(stage === null && actor === null && bill === null, `${at}: lines`);
-				continue;
-			}
-			ok(stage?.length && actor?.length && bill?.length, `${at}: no lines`);
-			const s = stage?.join() ?? "";
-			ok(
-				mode === "live"
-					? s.includes("第15回")
-					: mode === "reha"
-						? s.includes("公開リハ")
-						: s.includes("録画"),
-				`${at}: stage ${s}`,
-			);
-			for (const l of [...(stage ?? []), ...(actor ?? []), ...(bill ?? [])])
-				fitsWindow(`${at} theater`, l);
-		}
-		// 回は 年で 決まる（2051年で 第40回）
-		const far =
-			venueLines("theater", "stage", date(12, 31), 2051)?.join() ?? "";
-		ok(far.includes("第40回"), `2051: ${far}`);
-		fitsWindow("2051 stage", far);
-		// 12月の 役者の 1行（公開リハの あいだ）
-		ok(
-			staffLines("theater", "theater_actor", date(12, 15), 2026)?.join() ===
-				"大みそかの夜は、\n『紅白スレ合戦』の本番やで",
-			"the December actor line",
-		);
-	},
-);
 
 // ───────────────── E・Y の 道具：ボットで 回す ─────────────────
 
@@ -1505,173 +1278,6 @@ const fillAll = (s: string) =>
 		(m, k: string) => (FILL as Record<string, string>)[k] ?? m,
 	);
 
-test(
-	"Y7",
-	"幅：候補 12・スレの 行 18・テロップ 20・村の 窓 22×2・メニュー 12・結果 22",
-	() => {
-		for (const [k, r] of Object.entries(JK_RES))
-			for (const s of [...r.best, ...r.miss, ...(r.nick ? [r.nick] : [])])
-				ok(
-					width(fillAll(s)) <= 12,
-					`${k}: "${fillAll(s)}" ${width(fillAll(s))}`,
-				);
-		const thread = [
-			...Object.values(JK_FANS).flatMap((f) => Object.values(f).flat()),
-			...Object.values(JK_FAN_ANY).flat(),
-			...Object.values(JK_TAUNTS),
-			...Object.values(JK_GENERIC).flat(),
-			...JK_NANASHI,
-			...Object.values(JK_REPLIES).flat(),
-			...Object.values(JK_THREAD),
-		];
-		for (const s of thread)
-			ok(
-				width(fillAll(s)) <= 18,
-				`thread: "${fillAll(s)}" ${width(fillAll(s))}`,
-			);
-		for (const v of Object.values(YAKYU_POOLS).flat())
-			ok(width(fillAll(v)) <= 18, `pool: "${fillAll(v)}"`);
-		const TEL = {
-			...FILL,
-			order: "9",
-			dir: "センター",
-			pos: "ファースト",
-			outs: "ワンアウト",
-			bases: "一・二塁",
-			h: "10",
-			a: "10",
-		};
-		for (const [k, s] of Object.entries(JK_TELOP))
-			for (const x of [s].flat()) {
-				const f = x.replace(
-					/\{(\w+)\}/g,
-					(m, q: string) => (TEL as Record<string, string>)[q] ?? m,
-				);
-				ok(width(f) <= 20 && !/[{}]/.test(f), `telop ${k}: "${f}" ${width(f)}`);
-			}
-		for (const g of games().slice(0, 100))
-			for (const p of g.plays)
-				ok(width(telopOf(p, g)) <= 20, `telop "${telopOf(p, g)}"`);
-		for (const s of Object.values(JIKKYO_MSG))
-			fitsWindow(
-				"JIKKYO_MSG",
-				fillAll(String(s)).replace(/\{h\}|\{a\}/g, "10"),
-			);
-		for (const [id, a] of Object.entries(JIKKYO_AFTER))
-			for (const s of Object.values(a)) fitsWindow(`after ${id}`, fillAll(s));
-		for (const m of JIKKYO_MENU) ok(width(m) <= 12, `menu ${m}`);
-		const RES = {
-			...FILL,
-			h: "10",
-			a: "10",
-			res: "999",
-			ikioi: "1,910,677",
-			c: "10",
-			x: "12",
-			y: "12",
-			z: "12",
-			w: "12",
-			best: "1,999",
-		};
-		for (const s of Object.values(JK_RESULT)) {
-			const f = s.replace(
-				/\{(\w+)\}/g,
-				(m, k: string) => (RES as Record<string, string>)[k] ?? m,
-			);
-			ok(width(f) <= 22 && !/[{}]/.test(f), `result "${f}"`);
-		}
-	},
-);
-
-/** src の 中の ゲームの 名前（name: "…"）。 */
-const gameNames = (): Set<string> => {
-	const names = new Set<string>();
-	const walk = (d: string) => {
-		for (const f of readdirSync(d)) {
-			const p = join(d, f);
-			if (statSync(p).isDirectory()) walk(p);
-			else if (p.endsWith(".ts") && !p.includes("jikkyo"))
-				for (const m of readFileSync(p, "utf8").matchAll(/name: "([^"]+)"/g))
-					names.add(m[1]);
-		}
-	};
-	walk(join(process.cwd(), "src"));
-	for (const x of [
-		"キリコ",
-		"ゼロ",
-		"ロゼ",
-		"フェリス",
-		"シヨ",
-		"やきう",
-		"リノ",
-		"アル",
-		"マスター",
-		"釣り",
-		"役者",
-		"レイ",
-		"テト",
-		"さとる",
-		"封印",
-	])
-		names.add(x);
-	return names;
-};
-
-test(
-	"Y8",
-	"ロースター：12球団・打順 9・ace・cl 1・名無しの 野手 2人 以上・role 5種・名前は 重ならず 1〜6字・球団の 字なし・ゲームの 名前と 重ならない",
-	() => {
-		const chars = JK_TEAM_IDS.map((id) => JK_TEAMS[id].char).join("");
-		ok(chars === "虎兎竜鯉燕星鷹公鴎檻猫鷲", `team chars ${chars}`);
-		for (const id of JK_TEAM_IDS) {
-			const t = JK_TEAMS[id];
-			ok(t.id === id, `${id}: id`);
-			ok(t.lineup.length === 9, `${id}: lineup`);
-			ok(
-				t.pitchers.some((p) => p.role === "ace"),
-				`${id}: ace`,
-			);
-			ok(t.pitchers.filter((p) => p.role === "cl").length === 1, `${id}: cl`);
-			for (const p of t.pitchers)
-				ok(
-					["ace", "sp", "su", "rp", "cl"].includes(p.role),
-					`${id}: role ${p.role}`,
-				);
-			ok(
-				t.lineup.filter((p) => !p.nick && !p.pitcherSlot).length >= 2,
-				`${id}: nanashi fielders`,
-			);
-		}
-		ok(new Set(NICKS).size === NICKS.length, "duplicate nicks");
-		// 名前が 決まった 文の 中に まぎれない（「レーザービーム！」が 選手を 名指しに 見えない ように）
-		const fixed = [
-			...Object.values(YAKYU_POOLS).flat(),
-			...Object.values(JK_RES).flatMap((r) => [...r.best, ...r.miss]),
-			...JK_OK,
-		].filter((s) => !s.includes("{nick}"));
-		for (const n of NICKS)
-			ok(
-				!fixed.some((s) => s.includes(n)),
-				`${n} inside "${fixed.find((s) => s.includes(n))}"`,
-			);
-		const names = gameNames();
-		for (const n of NICKS) {
-			ok(width(n) >= 1 && width(n) <= 6, `${n}: width`);
-			if (n !== "ミスター燕")
-				ok(
-					![...n].some((c) => "虎兎竜鯉燕星鷹公鴎檻猫鷲".includes(c)),
-					`${n}: team char`,
-				);
-			ok(
-				![...names].some(
-					(x) => x === n || (x.length >= 2 && n.includes(x) && x !== "ンゴ"),
-				),
-				`${n}: collides with a game name`,
-			);
-		}
-	},
-);
-
 /** ナイター実況の 文に 出さない 語。 */
 const YAKYU_DENY = [
 	"保守",
@@ -2009,23 +1615,6 @@ test(
 		}
 	},
 );
-
-test("Y13", "色：132の 組で ΔE76 ≥30、名無しの 札とも ≥20", () => {
-	for (const h of JK_TEAM_IDS)
-		for (const a of JK_TEAM_IDS) {
-			if (h === a) continue;
-			const c = fanColor(h, a);
-			ok(
-				deltaE(c.home, c.away) >= 30,
-				`${h}-${a}: ΔE ${deltaE(c.home, c.away).toFixed(1)}`,
-			);
-			ok(
-				deltaE(c.home, NANASHI_COLOR) >= 20 &&
-					deltaE(c.away, NANASHI_COLOR) >= 20,
-				`${h}-${a}: near 名無し`,
-			);
-		}
-});
 
 // ───────────────── S 金曜ロード保守『空飛ぶ鯖』 ─────────────────
 

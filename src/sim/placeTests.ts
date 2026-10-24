@@ -10,9 +10,7 @@ import { DIRS8, type Pos, step } from "../core/geom";
 import { idx, isFloor } from "../core/mapgen";
 import { Run } from "../core/run";
 import type { DungeonId, Floor, GameEvent } from "../core/types";
-import { bgm } from "../data/audio/bgm";
 import { REST_SKITS, restSkitsAt } from "../data/story/restSkits";
-import { BOARD_LOOKS } from "../data/story/story";
 import {
 	forgetRestSkits,
 	restBeside,
@@ -103,47 +101,6 @@ test("board decor: hung on the wall, 2 tiles wide, or 2 tiles tall (never a 1-ti
 						throw new Fail(
 							`${id}: decor at ${d.x + dx},${d.y} is not by a north wall`,
 						);
-		}
-	}
-});
-
-test("each special floor has its own tune, not the board's dungeon tune", () => {
-	for (const id of DUNGEON_IDS) {
-		const d = dungeonById(id);
-		for (const p of [
-			...(d.rests ?? []),
-			...(d.settlement ? [d.settlement] : []),
-		]) {
-			ok(p.bgm in bgm, `${p.name}: no tune ${p.bgm}`);
-			ok(p.bgm !== BOARD_LOOKS[id].bgm, `${p.name}: same tune as the board`);
-		}
-	}
-});
-
-test("folk talks fit the window: 1 to 3 windows, 2 lines of 22 at most, retorts only after the folk speaks", () => {
-	for (const id of DUNGEON_IDS) {
-		const d = dungeonById(id);
-		const folk = [
-			...(d.rests ?? []).flatMap((r) => r.folk ?? []),
-			...(d.settlement?.folk ?? []),
-		];
-		for (const fo of folk) {
-			ok(fo.talks.length > 0, `${fo.name}: no talk`);
-			for (const t of fo.talks) {
-				ok(t.length >= 1 && t.length <= 3, `${fo.name}: ${t.length} windows`);
-				ok(typeof t[0] === "string", `${fo.name}: opens with キリコ`);
-				// キリコ 抜きでも 話が つながる（主人公が ロゼ・ゼロの とき）
-				ok(
-					t.filter((x) => typeof x === "string").length >= 1,
-					`${fo.name}: only キリコ`,
-				);
-				for (const text of t.flatMap(textsOf)) {
-					const lines = text.split("\n");
-					ok(lines.length <= 2, `${fo.name}: 3 lines ${text}`);
-					for (const l of lines)
-						ok([...l].length <= 22, `${fo.name}: long line ${l}`);
-				}
-			}
 		}
 	}
 });

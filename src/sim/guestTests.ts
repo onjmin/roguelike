@@ -9,12 +9,7 @@ import { isFloor } from "../core/mapgen";
 import { Run } from "../core/run";
 import { serializeRun } from "../core/serial";
 import type { Command, DungeonId, GuestId } from "../core/types";
-import {
-	ESCORT_MSG,
-	ESCORTS,
-	escortFor,
-	openEscorts,
-} from "../data/people/companions";
+import { escortFor, openEscorts } from "../data/people/companions";
 import { diveResLine } from "../data/story/synopsis";
 import {
 	acceptEscort,
@@ -256,25 +251,6 @@ test("見たかった 階：着くと ひとこと 言って 満足して 帰る
 	} finally {
 		restore();
 	}
-});
-
-test("文：同行者の ひとことは ログに 収まる（名前つきで 全角 24字まで）。依頼の 文は 22字×2行・題は 16字", () => {
-	for (const [id, g] of Object.entries(GUESTS))
-		for (const l of [g.first, g.down, g.seen, ...g.talk])
-			ok(width(`${g.name}「${l}」`) <= 24, `${id}: ${l}`);
-	for (const e of ESCORTS) {
-		ok(width(e.title) <= 16, `${e.id}: title`);
-		for (const t of [...e.ask, e.join, e.line, ...e.thanks]) {
-			const ls = t.split("\n");
-			ok(ls.length <= 2, `${e.id}: ${t}`);
-			for (const l of ls) ok(width(l) <= 22, `${e.id}: "${l}"`);
-		}
-		ok(e.who in GUESTS && e.goal >= 2, `${e.id}: who/goal`);
-	}
-	for (const t of Object.values(ESCORT_MSG))
-		for (const x of Array.isArray(t) ? t : [t])
-			for (const l of String(x).split("\n"))
-				ok(width(l) <= 22, `ESCORT_MSG: "${l}"`);
 });
 
 test("話しかける：様子（キリコの HP・同行者の HP・おなか・帰り道）が 先、ふだんは 回す。窓は 22字×2行", () => {

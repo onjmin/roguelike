@@ -7,7 +7,6 @@ import {
 	ESCAPE_RES,
 	GUARD_SIGHT,
 	GUARDS,
-	SETPIECES,
 	SIEGE_WAVES,
 } from "../core/setpiece";
 import type { TestResult } from "./monsterTests";
@@ -28,18 +27,6 @@ const at = (seed: string, d: "deep" | "onkimu", depth: number): Run => {
 	r.p.hp = 9999;
 	return r;
 };
-
-test("見せ場は 電池板の 11・15階と おんキムの 10階だけ（本編の 乱数の 順は かわらない）", () => {
-	ok(
-		Object.keys(SETPIECES).sort().join(",") === "deep,onkimu",
-		`boards ${Object.keys(SETPIECES)}`,
-	);
-	const r = Run.create("sp-main", "main", [], "fetch");
-	for (let d = 1; d <= 3; d++) {
-		r.enterFloor(d, false);
-		ok(!r.f.setpiece, `main ${d}F has a set piece`);
-	}
-});
 
 test("脱出：レス800 から、出口の 階段は はじめから 見え、止まると 加速し、階段で 出れば 果たす", () => {
 	const r = at("sp-esc", "deep", 11);

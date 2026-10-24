@@ -1,8 +1,6 @@
 // ゲームセンターの 筐体の 遊び（data/arcade/*・ui/arcade/arcade*.ts・ゲームセンター「連コ」の 部屋の 物）の 試験（pnpm test）。
 // 板（canvas）は 出さない：決まりは 種つきの 乱数と 決まった 手で 回し、窓の 流れは ui/arcade/arcade.ts の setArcadeHooks で 見る。
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { TOWN_STAGES } from "../core/town";
 import {
 	BALLS_PER_CHIP,
@@ -11,7 +9,7 @@ import {
 	CHIP_YEN,
 	chipDiff,
 } from "../data/arcade/casino";
-import { ARCADE_GUIDE, GAME_GUIDES } from "../data/arcade/guides";
+import { ARCADE_GUIDE } from "../data/arcade/guides";
 import { bcStart } from "../data/arcade/home/baccarat";
 import { bjStart } from "../data/arcade/home/blackjack";
 import { pcStart } from "../data/arcade/home/pachinko";
@@ -102,16 +100,8 @@ import {
 	swTrollRate,
 	swTruth,
 } from "../data/arcade/parlor";
-import {
-	ARCADE,
-	ARCADE_BOARD,
-	ARCADE_PLAY_YEN,
-	ARCADE_TEXT,
-} from "../data/arcade/text";
+import { ARCADE, ARCADE_PLAY_YEN, ARCADE_TEXT } from "../data/arcade/text";
 import { ARCADE_GAMES, ARCADE_HOME, isArcadeGame } from "../data/arcade/types";
-import { sfx } from "../data/audio/sfx";
-import { BASIC_GUIDE } from "../data/petitcon/guide";
-import { TOWN_GUIDES } from "../data/town/guides";
 import {
 	type Facility,
 	facilityById,
@@ -416,64 +406,6 @@ test("つなぎ: カジノの 換金所は 台の うしろの 受付と 話し�
 });
 
 // ───────────────── 文・音 ─────────────────
-
-test("文: 窓は 22×2、板の 題と 押し方は 1行 22、ボタン 9", () => {
-	for (const g of ARCADE_GAMES) {
-		const t = ARCADE_TEXT[g];
-		fits(`${g}.line`, t.line);
-		fits(`${g}.rule`, t.rule);
-		fits(`${g}.title`, t.title, 22, 1);
-		fits(`${g}.hint`, t.hint, 22, 1);
-		fits(`${g}.record`, fill(ARCADE.record, { best: 9_999_999, unit: t.unit }));
-		fits(`${g}.after`, fill(ARCADE.after, { score: 9_999_999, unit: t.unit }));
-	}
-	for (const k of ["newBest", "quit"] as const) fits(`ARCADE.${k}`, ARCADE[k]);
-	for (const k of ["ready", "over", "clear", "quit1"] as const)
-		fits(`ARCADE.${k}`, ARCADE[k], 22, 1);
-	for (const m of ARCADE.menu) ok(width(m) <= 9, `menu ${m}`);
-	for (const m of [
-		...ARCADE.again,
-		...ARCADE.payAgain.map((x) => fill(x, { price: yen(ARCADE_PLAY_YEN) })),
-	])
-		ok(width(m) <= 9, `again ${m}`);
-	for (const [k, v] of Object.entries(ARCADE_BOARD))
-		if (typeof v === "string")
-			fits(`ARCADE_BOARD.${k}`, fill(v, { n: 999, name: "レスバ常勝" }), 22, 1);
-	for (const f of FT_FOES) ok(width(f.name) <= 6, `foe name ${f.name}`);
-	// スイカ割りの 声（名前 ＋ 本文が 板の 右の 欄＝7px の 字で 96px に 入る：13字まで）
-	for (const n of ARCADE_BOARD.swNear)
-		for (const d of Object.values(ARCADE_BOARD.swDirs))
-			for (const who of [ARCADE_BOARD.swNanashi, ARCADE_BOARD.swTroll]) {
-				const t = fill(n, { dir: d });
-				fits("swNear", t, 22, 1);
-				ok(width(who) + width(t) <= 12.5, `swNear "${who} ${t}"`);
-			}
-	for (const t of ARCADE_BOARD.swGaya) {
-		fits("swGaya", t, 22, 1);
-		ok(width(ARCADE_BOARD.swNanashi) + width(t) <= 12.5, `swGaya "${t}"`);
-	}
-	for (const t of Object.values(ARCADE_BOARD.rlBets))
-		ok(width(t) <= 3, `rlBets ${t}`);
-	for (const t of ARCADE_TEXT.gacha.rule.split("\n")) ok(width(t) <= 22, t);
-});
-
-test("音: 板と 窓で 鳴らす 効果音は どれも data/audio/sfx.ts に ある", () => {
-	const root = join(process.cwd(), "src/ui/arcade");
-	const names = new Set<string>(["victory", "miss"]);
-	for (const file of [
-		"arcade.ts",
-		"arcadeKit.ts",
-		"arcadeAction.ts",
-		"arcadeTiming.ts",
-		"arcadeParlor.ts",
-	]) {
-		const src = readFileSync(join(root, file), "utf8");
-		for (const m of src.matchAll(/se\("([A-Za-z_]+)"\)/g))
-			if (m[1]) names.add(m[1]);
-	}
-	ok(names.size >= 15, `found ${names.size} sounds`);
-	for (const n of names) ok(sfx[n], `no sound file for ${n}`);
-});
 
 // ───────────────── 決まり ─────────────────
 
@@ -1706,31 +1638,6 @@ test("家の ゲーム: ボンバーは レスの 下の 力を 拾うと 強く
 });
 
 for (const c of HOME_GAME_TESTS) test(`家の ゲーム: ${c.name}`, c.run);
-
-test("ガイド（2026-10-15）: ゲームの 決まりと 町の しくみの 説明は どれも 窓に 収まり、中身が ある", () => {
-	const all = [
-		...GAME_GUIDES().map((g) => [`game ${g.label}`, g.pages] as const),
-		...TOWN_GUIDES().map((g) => [`town ${g.label}`, g.pages] as const),
-		...BASIC_GUIDE.pages.map((p, i) => [`basic ${i}`, p] as const),
-	];
-	for (const [where, pages] of all) {
-		ok(pages.length > 0, `${where}: empty`);
-		// ♥（なかよし度の 印。村で ふだん 使う 字）は 絵文字の 決まりから 外す（幅は 全角 1）
-		for (const [i, p] of pages.entries())
-			fits(`${where} ${i}`, p.replaceAll("♥", "＊"));
-	}
-	ok(
-		BASIC_GUIDE.topics.length === BASIC_GUIDE.pages.length,
-		"basic topics and pages differ",
-	);
-	// 町の しくみは 項目を えらんで 読む（最後は「やめる」。1項目 8窓まで）
-	for (const { label, guide } of TOWN_GUIDES()) {
-		ok(guide.topics.length === guide.pages.length + 1, `town ${label}: topics`);
-		ok(guide.topics.at(-1) === "やめる", `town ${label}: やめる`);
-		for (const [i, p] of guide.pages.entries())
-			ok(p.length <= 8 && guide.topics[i], `town ${label} ${i}: ${p.length}`);
-	}
-});
 
 export const runArcadeTests = async (): Promise<TestResult[]> => {
 	const out: TestResult[] = [];

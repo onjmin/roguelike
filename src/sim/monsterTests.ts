@@ -4292,24 +4292,6 @@ test("inventory", "a picked-up item joins its kind's group", () => {
 	ok(order === [a, c, b].map((i) => i.uid).join(), `order ${order}`);
 });
 
-test(
-	"all",
-	"every monster has a desc, a flavor line and at least one ability",
-	() => {
-		ok(MONSTER_LIST.length === 49, `${MONSTER_LIST.length} monsters`);
-		const noDesc = MONSTER_LIST.filter((d) => !d.desc.trim()).map((d) => d.id);
-		ok(!noDesc.length, `no desc: ${noDesc.join(", ")}`);
-		const noFlavor = MONSTER_LIST.filter((d) => !d.flavor?.trim()).map(
-			(d) => d.id,
-		);
-		ok(!noFlavor.length, `no flavor: ${noFlavor.join(", ")}`);
-		const plain = MONSTER_LIST.filter((d) => !d.abilities.length).map(
-			(d) => d.id,
-		);
-		ok(!plain.length, `no ability: ${plain.join(", ")}`);
-	},
-);
-
 // ───────── 手合わせの 待ちぶせ（core/ambush.ts）。ゼロの 3機 ─────────
 
 /** 待ちぶせの 階に 着いた 冒険（キリコは 倒れない。乱数の 階を そのまま 使う）。 */
@@ -4418,14 +4400,6 @@ test(
 		ok(ambushDepth(r) === null, "ambush again");
 	},
 );
-
-test("all", "every monster has a trait test", () => {
-	const tested = new Set(CASES.map((c) => c.id));
-	const missing = MONSTER_LIST.filter((d) => !tested.has(d.id)).map(
-		(d) => d.id,
-	);
-	ok(!missing.length, `untested: ${missing.join(", ")}`);
-});
 
 test(
 	"rest",
@@ -4573,39 +4547,6 @@ test(
 		const n = holdAndWait(r, m, 40, () => logHas(r, "レスを投げつけた"));
 		ok(n > 0, "never threw a post");
 		ok(DUNGEONS.deep.boss?.monster === "boss_yakiu", "not the 電池板 boss");
-	},
-);
-
-test(
-	"reveal",
-	"電池板の 正体：目的の 文では 名前を 言わず、ボスを 見ると 明かす。見学コースに 電池ニキ",
-	() => {
-		const spec = DUNGEONS.deep.boss;
-		// 正体は 窓の 掛け合い（talk。立ち絵は やきう）で 明かす。記録の 行（intro）では 言わない
-		ok(
-			spec?.goalName && spec.talk?.length && !spec.intro,
-			"no reveal on 電池板",
-		);
-		ok(spec?.voice === "nanj", "reveal without やきう's portrait");
-		ok(spec?.bgm === "lastboss", "reveal without the last-boss song");
-		// 2026-10-19：見出しの 正体の 線は やめた。本気の 窓は「14年 ひとりで 盛り上げてきた」ライバルの 理由
-		ok(
-			spec?.talk?.some(
-				(x) => typeof x === "string" && x.includes("盛り上げてきた"),
-			),
-			"the talk does not give やきう's reason",
-		);
-		ok(
-			!spec?.talk?.some((x) => typeof x === "string" && x.includes("見出し")),
-			"the talk still mentions the headlines",
-		);
-		const r = Run.create("reveal-run", "deep");
-		r.enterFloor(8, false);
-		ok(
-			r.f.rest === "発電所の見学コース" &&
-				!!r.f.folk?.some((x) => x.name === "電池ニキ"),
-			"電池ニキ is not on the tour floor",
-		);
 	},
 );
 

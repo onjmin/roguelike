@@ -13,14 +13,7 @@
 // - おんJ 本館（data/village/hall.ts・ui/village/hallEvents.ts）：外観の 幅・扉、中の 形と 歩ける道（段ごと）、
 //   扉で 入って 出たら 入った 扉の 前、保守の 当番表の 数、期間限定の 告知、飾り棚の 中身、段の 上がる 場面
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import {
-	DUNGEON_IDS,
-	DUNGEONS,
-	floorsLabel,
-	saleRate,
-} from "../core/data/dungeons";
+import { DUNGEON_IDS, DUNGEONS, saleRate } from "../core/data/dungeons";
 import { MONSTERS } from "../core/data/monsters";
 import { defOf } from "../core/item";
 import { bigRoomLayout, enteredEmptyBigRoom } from "../core/mapgen";
@@ -32,7 +25,6 @@ import {
 	type Monster,
 } from "../core/types";
 import { bgm } from "../data/audio/bgm";
-import { SE_LOUDNESS } from "../data/audio/loudness";
 import {
 	jukeboxSlots,
 	jukeboxTracks,
@@ -42,28 +34,16 @@ import {
 	songBpm,
 	stageBgm,
 } from "../data/audio/music";
-import { sfx } from "../data/audio/sfx";
 import {
 	CAFE_DRINKS,
-	CAFE_GREET,
 	CAFE_TALKS,
-	CHAT_MSG,
 	GLASS_CHOICES,
 	MASTER_MSG,
-	NANASHI_CAFE,
-	SEAT_MSG,
 	TREAT_REACTIONS,
 	TREAT_SIPS,
 	TREAT_TALKS,
 } from "../data/cafe/cafe";
 import { CAFE_MOBS } from "../data/cafe/cafeMobs";
-import {
-	BB_FX,
-	BB_POSE,
-	BB_SHEET,
-	BB_SPR,
-} from "../data/minigames/baseballSheet";
-import { BATTING } from "../data/minigames/batting";
 import {
 	guideKeys,
 	PIANO_DONE,
@@ -71,14 +51,11 @@ import {
 	PIANO_MENU,
 } from "../data/minigames/piano";
 import { MOB_VOICE, VOICE_MODELS } from "../data/people/cast";
-import { FOLK_BLACKOUT } from "../data/people/folk";
 import { BOOKS_GUESTS, MUSIC_GUESTS, STAGE_LINES } from "../data/people/guests";
-import { HERO_QUESTS } from "../data/people/heroQuests";
 import { MOB_GAGS } from "../data/people/mobGags";
 import {
 	awayMobs,
 	MOB_BACK,
-	MOB_BLACKOUT,
 	MOB_IDS,
 	MOB_STAY,
 	MOBS,
@@ -101,7 +78,6 @@ import {
 	shiyoAtMaid,
 } from "../data/people/shiyoShift";
 import { ARRIVALS } from "../data/story/arrivals";
-import { GLOSSARY } from "../data/story/glossary";
 import { BATH_EVE, KINOKO_EVE } from "../data/story/hooks";
 import { type LiveState, liveResLine } from "../data/story/liveRes";
 import {
@@ -118,8 +94,6 @@ import { headlineIn } from "../data/story/pictures";
 import {
 	type KirikoMode,
 	pickQuote,
-	type Quote,
-	type QuoteContext,
 	SPEAKERS,
 	type Speaker,
 } from "../data/story/quotes";
@@ -130,13 +104,10 @@ import {
 	BOARD_LOOKS,
 	BOSS_HOME,
 	BOSS_RETURN,
-	CLEAR,
 	DEPART,
 	DUNGEON_NAMES,
 	endingFor,
 	episodeEnd,
-	FIRST_SHALLOW,
-	SHALLOW_DEATH,
 	STORY,
 	type StoryPage,
 	TEN_NEWS,
@@ -167,23 +138,14 @@ import { EAT_MENUS, TAB_CAP } from "../data/town/eateries";
 import {
 	DRINK_BAR,
 	DRINK_BAR_YEN,
-	FISHING,
 	GROUND_BAT,
 	PAY_SHORT,
 	VEND_YEN,
 	VENDING,
 } from "../data/town/facilities";
 import { TOWN_FINDS } from "../data/town/finds";
+import { HALL_MSG, TOBAN_MENU } from "../data/town/hall";
 import {
-	HALL_MSG,
-	IN_STORE_TEXT,
-	JIKKYO,
-	ON_PHONO_TEXT,
-	TOBAN_MENU,
-	YAKYU_SHELF,
-} from "../data/town/hall";
-import {
-	AFTER_HEADLINES,
 	BOARD_NEWS,
 	DEATH_LINES,
 	DEATH_TIERS,
@@ -200,7 +162,6 @@ import {
 	inBlackout,
 	isRevived,
 	lampsLit,
-	MAIN_BOARDS,
 	REVIVE_AREAS,
 	revivedBoards,
 	stageOfCleared,
@@ -217,19 +178,9 @@ import {
 import { DAILY_STOCK, stockFor } from "../data/town/stock";
 import { SURFACES, surfaceOf } from "../data/town/surface";
 import {
-	TAMPER_LEDGER,
-	TAMPER_MOB,
-	TAMPER_NARRATION,
-	TAMPER_SCENE,
-	TAMPER_TALK,
-} from "../data/town/tamper";
-import {
 	BAND_IDLE,
-	BLACKOUT_TALK,
-	ESCAPE_QUOTES,
 	OPENING,
 	RETURN_PAGES,
-	REVIVE_MSG,
 	STORE_DESK,
 	type StaffLine,
 	TITLE_TOWN_QUOTES,
@@ -237,11 +188,9 @@ import {
 	VILLAGE_IDLE,
 	VILLAGE_MSG,
 	WAKE_PAGES,
-	ZERO_VOICELESS,
 } from "../data/town/town";
 import { crowdNodes } from "../data/village/crowd";
 import { lightOf } from "../data/village/daylight";
-import { DINER_IMG, DINER_SIZE } from "../data/village/dinerSheet";
 import {
 	doorId,
 	FACILITIES,
@@ -249,14 +198,11 @@ import {
 	facilityById,
 	facilityDoor,
 	facilityEntry,
-	facilityMapId,
 	facilityMats,
-	facilityOfMap,
 	facilityOutside,
 	facilityRoomPalette,
 	facilityRoomPlaces,
 	facilityRoomRows,
-	facilityTiles,
 	outdoorId,
 	outdoorThingOf,
 } from "../data/village/facilities";
@@ -269,9 +215,7 @@ import {
 	hallPlaces,
 	hallRows,
 	hallTierOf,
-	IN_STORE,
 	NANASHI_WALK,
-	ON_PHONO,
 	shelfSlots,
 } from "../data/village/hall";
 import {
@@ -319,11 +263,7 @@ import {
 	OTAKU_GOODS,
 	OTAKU_MSG,
 } from "../data/village/otaku";
-import {
-	CROWD_MUTTERS,
-	CROWD_PAIRS,
-	MOB_MUTTERS,
-} from "../data/village/overhear";
+import { CROWD_PAIRS, MOB_MUTTERS } from "../data/village/overhear";
 import {
 	BATH_NOREN_M,
 	BATH_SPOTS,
@@ -346,13 +286,6 @@ import {
 	roomPlaces,
 	roomRows,
 } from "../data/village/rooms";
-import {
-	FOOD_IMG,
-	FOOD_SIZE,
-	RPGEN_CELLS,
-	RPGEN_IMG,
-	RPGEN_SIZE,
-} from "../data/village/rpgenArt";
 import { STAFF_GAGS, type StaffGagLine } from "../data/village/staffGags";
 import { layRoomTatami, layTatami } from "../data/village/tatami";
 import { CITY, hallTier } from "../data/village/tiles";
@@ -445,7 +378,6 @@ import {
 } from "../ui/village/cafe";
 import { buildFacility, outdoorScript } from "../ui/village/facilities";
 import { townFind } from "../ui/village/finds";
-import { descWindows } from "../ui/village/glossary";
 import { BATH_GUESTS, booksRoom, guestsOf } from "../ui/village/guests";
 import {
 	buildHall,
@@ -457,7 +389,6 @@ import {
 	noticeScript,
 	noticeTexts,
 	shelfLine,
-	shelfRows,
 	tobanScript,
 	trophies,
 } from "../ui/village/hallEvents";
@@ -476,7 +407,6 @@ import {
 	enterRoom,
 	isWeekend,
 	leaveRoom,
-	planLines,
 	thingLines,
 } from "../ui/village/rooms";
 import { CHALK_LINE } from "../ui/village/sceneChalk";
@@ -536,7 +466,6 @@ import {
 	villageView,
 } from "../ui/village/villageReturn";
 import {
-	DUNGEON_DESC,
 	fill,
 	forgetHeardMemo,
 	hasNews,
@@ -940,17 +869,6 @@ test("町の 中心（段6〜7）：住宅街は 路側帯・電柱・マンホ�
 				tiles[at(rows, x, y)]?.passable,
 				`stage ${stage}: (${x},${y}) is blocked`,
 			);
-	}
-});
-
-test("the village is drawn only from the bundled Base.png and sprites (no CDN tiles)", () => {
-	for (const v of VIEWS) {
-		const tiles = villagePalette(v);
-		for (const ch of new Set(villageRows(v).join(""))) {
-			const t = tiles[ch];
-			for (const ref of [...(t?.layers ?? []), ...(t?.above ?? [])])
-				ok(ref.startsWith("pub:"), `${label(v)}: "${ch}" draws ${ref}`);
-		}
 	}
 });
 
@@ -2057,37 +1975,6 @@ const fitsWindow = (texts: readonly [string, string][]): void => {
 	}
 };
 
-test("停電: 仲間・住人・名無し・ご近所・本館の 停電の ひとことは どれも 村の 窓に 収まる", () => {
-	fitsWindow([
-		...Object.entries(BLACKOUT_TALK).flatMap(([w, ls]) =>
-			ls.map((l, i): [string, string] => [`BLACKOUT_TALK.${w}[${i}]`, l.text]),
-		),
-		...Object.entries(MOB_BLACKOUT).map(([id, t]): [string, string] => [
-			`MOB_BLACKOUT.${id}`,
-			t,
-		]),
-		...Object.entries(FOLK_BLACKOUT).map(([k, t]): [string, string] => [
-			`FOLK_BLACKOUT.${k}`,
-			t,
-		]),
-		...VISITORS.map((p): [string, string] => [
-			`VISITORS.${p.id}.blackout`,
-			p.blackout ?? "",
-		]),
-		["HALL_MSG.monitorDark", HALL_MSG.monitorDark],
-		...HALL_MSG.projectorDark.map((t, i): [string, string] => [
-			`HALL_MSG.projectorDark[${i}]`,
-			t,
-		]),
-		...HALL_MSG.blackoutPeople.flatMap((ls, i) =>
-			ls.map((t): [string, string] => [`HALL_MSG.blackoutPeople[${i}]`, t]),
-		),
-	]);
-	// ご近所は みんな 停電の ひとことを 持つ（停電の あいだ 町に いる）
-	for (const p of VISITORS)
-		if (p.dungeon !== "deep") ok(!!p.blackout, `${p.id} has no blackout line`);
-});
-
 test("畳: 横・縦の 1畳と 半畳で 敷き、4枚の 角は 1点に 集まらない（部屋の 畳も）", () => {
 	const check = (where: string, laid: (string | null)[][]) => {
 		const id: number[][] = laid.map((r) => r.map(() => 0));
@@ -2276,143 +2163,6 @@ test("キリコの 家: 文は 窓に 収まり、家具は 床に 置けて 通
 	ok(placed.length <= HOME_MAX, "more than HOME_MAX");
 });
 
-test("セーブの 書きかえ: every line fits the village window, every friend has a line for each tier", () => {
-	const texts: [string, string][] = [];
-	TAMPER_SCENE.forEach((ls, t) => {
-		ls.forEach((l, i) => {
-			texts.push([`TAMPER_SCENE[${t}][${i}]`, l.text]);
-		});
-	});
-	TAMPER_NARRATION.forEach((v, i) => {
-		texts.push([`TAMPER_NARRATION[${i}]`, v]);
-	});
-	for (const [w, ls] of Object.entries(TAMPER_TALK)) {
-		ok(ls.length === TAMPER_SCENE.length, `${w}: ${ls.length} tiers`);
-		ls.forEach((v, i) => {
-			texts.push([`TAMPER_TALK.${w}[${i}]`, v]);
-		});
-	}
-	TAMPER_LEDGER.forEach((v, i) => {
-		texts.push([`TAMPER_LEDGER[${i}]`, v.replace("{points}", "9999999")]);
-	});
-	TAMPER_MOB.forEach((v, i) => {
-		texts.push([`TAMPER_MOB[${i}]`, v]);
-	});
-	fitsWindow(texts);
-	for (const w of Object.keys(SPEAKERS))
-		ok(w in TAMPER_TALK, `${w} has no tamper lines`);
-});
-
-test("new village lines fit the message window (22 full-width × 2 lines)", () => {
-	const texts: [string, string][] = [];
-	for (const [k, v] of Object.entries(VILLAGE_MSG))
-		for (const t of Array.isArray(v) ? v : [v])
-			texts.push([
-				`VILLAGE_MSG.${k}`,
-				String(t).replace("{points}", "99999").replace("{rest}", "99999"),
-			]);
-	for (const [k, v] of Object.entries(VILLAGE_IDLE))
-		texts.push([`VILLAGE_IDLE.${k}`, v]);
-	ZERO_VOICELESS.forEach((v, i) => {
-		texts.push([`ZERO_VOICELESS[${i}]`, v]);
-	});
-	fitsWindow(texts);
-});
-
-test("story page sounds exist, are measured, and repeat sanely", () => {
-	const pages = [
-		...DUNGEON_IDS.flatMap((d) => [
-			...STORY[d].ending,
-			...(STORY[d].again ?? []),
-			...(STORY[d].once ?? []),
-		]),
-		...Object.values(BOSS_RETURN).flatMap((ps) => ps ?? []),
-		...RETURN_PAGES,
-		...TEN_NEWS.pages,
-	];
-	const all = [
-		...pages,
-		...pages.flatMap((p) => (p.instead ? [p.instead] : [])),
-	];
-	ok(
-		all.some((p) => p.se),
-		"no story page has a sound (the check would pass vacuously)",
-	);
-	for (const p of all) {
-		if (!p.se) {
-			ok(!p.seRepeat && !p.seGap, `"${p.text}": seRepeat/seGap without se`);
-			continue;
-		}
-		ok(sfx[p.se], `"${p.text}": no sound file for ${p.se}`);
-		ok(SE_LOUDNESS[p.se], `${p.se} is not measured (pnpm loudness)`);
-		const n = p.seRepeat ?? 1;
-		ok(Number.isInteger(n) && n >= 1 && n <= 12, `"${p.text}": seRepeat ${n}`);
-	}
-});
-
-test("everything the village window reads out fits it (22 full-width × 2 lines)", () => {
-	const texts: [string, string][] = [];
-	const pool = (where: string, ls: readonly Shown[]) =>
-		ls.forEach((l, i) => {
-			texts.push([`${where}[${i}]`, shown(l)]);
-		});
-	for (const d of DUNGEON_IDS) {
-		// 口・立て札の 札（ui/village/villageEvents.ts の signText。★つきが いちばん長い）と、開き方（同じく hintText）
-		texts.push([
-			`sign ${d}`,
-			`「${DUNGEON_NAMES[d].name}」　${floorsLabel(d)}階★\n${DUNGEON_DESC[d]}`,
-		]);
-		for (const [i, l] of (UNLOCK_VISIT[d] ?? []).entries())
-			texts.push([`UNLOCK_VISIT.${d}[${i}]`, l.text]);
-		pool(`CLEAR.${d}`, CLEAR[d]);
-		pool(`STORY.${d}.ending`, STORY[d].ending);
-		pool(`STORY.${d}.again`, STORY[d].again ?? []);
-		pool(`STORY.${d}.once`, STORY[d].once ?? []);
-	}
-	// 村に いない 人の かわりの 頁
-	const standIns = [
-		...DUNGEON_IDS.flatMap((d) => STORY[d].ending),
-		...Object.values(BOSS_RETURN).flatMap((ps) => ps ?? []),
-		...RETURN_PAGES,
-	].flatMap((p) => (p.instead ? [p.instead] : []));
-	pool("instead", standIns);
-	pool("FIRST_SHALLOW", FIRST_SHALLOW);
-	pool("SHALLOW_DEATH", SHALLOW_DEATH);
-	pool("ESCAPE_QUOTES", ESCAPE_QUOTES);
-	pool("RETURN_PAGES", RETURN_PAGES);
-	for (const [k, v] of Object.entries(UNLOCK_LINES))
-		pool(`UNLOCK_LINES.${k}`, v);
-	for (const [i, v] of Object.entries(TITLE_TOWN_QUOTES))
-		pool(`TITLE_TOWN_QUOTES[${i}]`, v);
-	for (const [k, v] of Object.entries(TOWN_MSG))
-		texts.push([`TOWN_MSG.${k}`, fill(v.text, { points: 99999, n: 4 })]);
-	// 生き返った 通りの 知らせ・シャッター（いちばん 長い 名前と 数で）
-	for (const [k, v] of Object.entries(REVIVE_MSG))
-		for (const t of typeof v === "string" ? [v] : v)
-			texts.push([
-				`REVIVE_MSG.${k}`,
-				fill(t, {
-					n: 60,
-					name: [...REVIVE_AREAS].sort(
-						(a, b) => b.name.length - a.name.length,
-					)[0].name,
-				}),
-			]);
-	for (const a of REVIVE_AREAS) texts.push([`REVIVE_AREAS.${a.id}`, a.line]);
-	texts.push(["VILLAGE_MSG.shut", VILLAGE_MSG.shut]);
-	DEPART.free.forEach((t, i) => {
-		texts.push([`DEPART.free[${i}]`, t]);
-	});
-	texts.push(["DEPART.nanj", DEPART.nanj]);
-	// 裏の 2段目の 転と 結の あと（ui/village/villageReturn.ts の wrapScript・kusaScript）
-	pool("TEN_NEWS.pages", TEN_NEWS.pages);
-	pool(
-		"DEPART.free",
-		DEPART.free.map((text) => ({ who: "nanj", text })),
-	);
-	fitsWindow(texts);
-});
-
 test("喫茶「おんJ」: every talk fits the village window, and the door appears from its stage and can be reached", () => {
 	// {drink} は いちばん 長い 一杯の 名前で 測る
 	const longest = Object.values(CAFE_DRINKS)
@@ -2524,58 +2274,6 @@ test("喫茶「おんJ」: every talk fits the village window, and the door appe
 				s.reachable(door.x, door.y),
 				`${label(v)}: cannot reach the cafe door`,
 			);
-	}
-});
-
-test("the boot title's quote keeps its two lines on a 320px phone (name and 「」 included)", () => {
-	// 起動の札の ひとことは「名前「1行目」…「2行目」」の形。13px の字で 幅は 320px の画面で 280px（全角 21.5字）
-	const quotes = new Map<string, Quote>();
-	const add = (ls: readonly Quote[]) => {
-		for (const q of ls) quotes.set(q.text, q);
-	};
-	add(FIRST_SHALLOW);
-	add(SHALLOW_DEATH);
-	add(ESCAPE_QUOTES);
-	for (const d of DUNGEON_IDS) add(CLEAR[d]);
-	for (const ls of Object.values(TITLE_TOWN_QUOTES)) add(ls);
-	// 本編の たまり（data/story/quotes.ts。外へは 出していないので 引いて 集める）
-	const causes = [
-		"おなかがすいてたおれた",
-		"荒らし草",
-		"爆発",
-		"寝落ち民",
-		"コピペ",
-		"忍法帖",
-		"転載ガモ",
-		"ワイ バーン",
-		"かまってちゃん",
-		"ゾンJ民",
-		"文字化け",
-		"ぷゆゆ",
-		"とうすこ",
-		"罠",
-	];
-	const contexts: QuoteContext[] = [null];
-	for (const kind of ["dead", "clear", "escape"] as const)
-		for (const depth of [1, 8, 15])
-			for (const cause of causes)
-				for (const runs of [1, 12])
-					for (const clears of [0, 3])
-						contexts.push({ kind, depth, cause, runs, clears });
-	const whos = [undefined, ...(Object.keys(SPEAKERS) as Speaker[])];
-	for (const c of contexts)
-		for (const who of whos)
-			for (let seed = 0; seed < 64; seed++) {
-				const q = pickQuote(c, seed, who);
-				if (q) quotes.set(q.text, q);
-			}
-	for (const q of quotes.values()) {
-		const lines = q.text.split("\n");
-		const first = `${SPEAKERS[q.who].name}「${lines[0]}`;
-		const last = `${lines[lines.length - 1]}」`;
-		ok(lines.length <= 2, `${q.who}: ${lines.length} lines`);
-		for (const l of lines.length > 1 ? [first, last] : [`${first}」`])
-			ok(width(l) <= 21.5, `${q.who}: "${l}" is ${width(l)} wide`);
 	}
 });
 
@@ -3399,26 +3097,6 @@ test("settling keeps its guards: another tab, a closed tab, a full storehouse, n
 });
 
 // ───────────────── おんJマイナーズ（ui/village/villageMobs.ts） ─────────────────
-
-test("施設の 人の 寸劇: every key is a facility person, 2–3 windows that fit, the last window is not narration", () => {
-	const people = new Set(
-		FACILITIES.flatMap((f) =>
-			(f.room?.people ?? []).map((p) => `${f.id}/${p.id}`),
-		),
-	);
-	const texts: [string, string][] = [];
-	for (const [key, gags] of Object.entries(STAFF_GAGS)) {
-		ok(people.has(key), `${key}: no such facility person`);
-		gags.forEach((g, i) => {
-			ok(g.length >= 2 && g.length <= 3, `${key}[${i}]: ${g.length} windows`);
-			ok(g.at(-1)?.who !== null, `${key}[${i}]: ends on narration`);
-			g.forEach((l, j) => {
-				texts.push([`${key}[${i}][${j}]`, l.text]);
-			});
-		});
-	}
-	fitsWindow(texts);
-});
 
 test("施設の 人の 寸劇: none before the first dive, one per return in order instead of the usual line, never twice", async () => {
 	await withStorageAsync(async () => {
@@ -5164,27 +4842,6 @@ test("boss wins come home: the arrival, then how they got back, then the rest of
 	});
 });
 
-test("the objective's new village texts fit the message window (22 full-width × 2 lines)", () => {
-	const texts: [string, string][] = [];
-	for (const [d, pages] of Object.entries(BOSS_RETURN))
-		(pages ?? []).forEach((p, i) => {
-			texts.push([`BOSS_RETURN.${d}[${i}]`, p.text]);
-		});
-	for (const e of EVENTS)
-		for (const started of [true, false])
-			eventNewsText(e, started).forEach((t, i) => {
-				texts.push([`event ${e.id} ${started}[${i}]`, t]);
-			});
-	fitsWindow(texts);
-	// 地図の 札の 目的の 行（1行に 収める。スマホの 札は 全角22字くらい）
-	for (const d of DUNGEON_IDS)
-		for (const o of ["fetch", "boss"] as const)
-			ok(
-				width(`目的：${goalText(d, o)}`) <= 22,
-				`${d} ${o}: 目的：${goalText(d, o)}`,
-			);
-});
-
 // ───────────────── おんJ 本館（data/village/hall.ts・ui/village/hallEvents.ts） ─────────────────
 
 /** 本館の 中を 引く 道具（外の 扉 i から 入った マスから）。 */
@@ -5692,93 +5349,6 @@ test("村の 曲: the stage picks it; the song list holds only songs heard on cl
 	}
 });
 
-test("場面の 曲: scene cues name real songs, the 電池板 boss and 見学コース have their own, other bosses use the shared one", () => {
-	const pages = [
-		...DUNGEON_IDS.flatMap((d) => [
-			...STORY[d].ending,
-			...(STORY[d].again ?? []),
-			...(STORY[d].once ?? []),
-		]),
-		...TEN_NEWS.pages,
-	];
-	const cues = [
-		...pages,
-		...pages.flatMap((p) => (p.instead ? [p.instead] : [])),
-		...Object.values(HERO_QUESTS).flatMap((q) => q.offer),
-	].flatMap((p) => (p.bgm ? [p.bgm] : []));
-	for (const c of cues) ok(c in bgm, `no song ${c}`);
-	const cueOf = (
-		ps: readonly { text: string; bgm?: string | null }[],
-		t: string,
-	) => ps.find((p) => p.text.includes(t))?.bgm;
-	ok(
-		cueOf(STORY.deep.ending, "港は真っ暗") === null,
-		"the dark port is not silent",
-	);
-	ok(
-		cueOf(TEN_NEWS.pages, "いっせいに消えた") === null,
-		"the blackout is not silent",
-	);
-	ok(
-		cueOf(TEN_NEWS.pages, "もどらなかった") === "deep4",
-		"the dead streets have no alarm",
-	);
-	ok(
-		cueOf(HERO_QUESTS.zero.offer, "蓄音機を回した") === "deep1",
-		"ゼロ's record",
-	);
-	ok(
-		cueOf(HERO_QUESTS.roze.offer, "あー") === null,
-		"ロゼ's あ is not heard alone",
-	);
-	// やきうの 正体は 山場の 専用曲（盛られた見出し。BGM.md）
-	ok(DUNGEONS.deep.boss?.bgm === "lastboss", "やきう has no last-boss song");
-	for (const d of DUNGEON_IDS)
-		if (d !== "deep")
-			ok(!DUNGEONS[d].boss?.bgm, `${d}: boss leaves the shared song`);
-	ok(
-		DUNGEONS.deep.rests?.find((r) => r.depth === 8)?.bgm === "deq_laundry",
-		"見学コース has the zone song",
-	);
-	for (const d of DUNGEON_IDS)
-		for (const r of DUNGEONS[d].rests ?? [])
-			if (r.bgm) ok(r.bgm in bgm, `${d} ${r.name}: no song ${r.bgm}`);
-	const all = records(7, DUNGEON_IDS).map((r) => r.bgm);
-	ok(
-		all.includes("lastboss") && all.includes("deq_laundry"),
-		"the gramophone misses the 電池板 songs",
-	);
-});
-
-test("飾り棚: the goal items of the cleared boards (植民地化宣言 and 長湯スレ play on the gramophone)", () => {
-	const rows = shelfRows(["kinoko", "shallow", "main"]);
-	ok(
-		rows.map((r) => r.d).join() === "shallow,main,kinoko",
-		`order: ${rows.map((r) => r.d)}`,
-	);
-	for (const r of rows) {
-		const item = defOf(DUNGEONS[r.d].goal);
-		ok(
-			r.name === item.name && r.board === DUNGEON_NAMES[r.d].name,
-			`${r.d}: ${r.name} / ${r.board}`,
-		);
-		ok(
-			r.desc ===
-				(ON_PHONO.includes(r.d)
-					? ON_PHONO_TEXT
-					: IN_STORE.includes(r.d)
-						? IN_STORE_TEXT
-						: item.flavor),
-			`${r.d}: ${r.desc}`,
-		);
-	}
-	ok(shelfRows([]).length === 0, "an empty shelf has rows");
-	ok(
-		trophies(["shallow", "main", "hidden", "kinoko"]).join() === "kinoko",
-		`trophies: ${trophies(["shallow", "main", "hidden", "kinoko"])}`,
-	);
-});
-
 test("飾り棚: what is said matches what is drawn (only the records on the gramophone → the shelf is empty), and its pictures are loaded before the hall fades in", () => {
 	const cases: [DungeonId[], string][] = [
 		[[], HALL_MSG.shelfEmpty],
@@ -5809,33 +5379,6 @@ test("飾り棚: what is said matches what is drawn (only the records on the gra
 			ok(!!imgs?.includes(ref), `stage ${stage}: ${d} (${ref}) not preloaded`);
 		}
 	}
-});
-
-test("おんJ 本館: every line fits the village window (22 full-width × 2 lines, 1〜3 windows)", () => {
-	const texts: [string, string][] = [];
-	const add = (where: string, v: unknown) => {
-		if (typeof v === "string")
-			texts.push([where, fill(v, { n: 999, name: "風呂板の湯けむり騒動" })]);
-		else if (Array.isArray(v))
-			v.forEach((x, i) => {
-				add(`${where}[${i}]`, x);
-			});
-	};
-	for (const [k, v] of Object.entries(HALL_MSG))
-		if (k !== "noticeGoal") add(`HALL_MSG.${k}`, v);
-	for (const [k, j] of Object.entries(JIKKYO)) add(`JIKKYO.${k}`, j.lines);
-	fitsWindow(texts);
-	for (const ls of [
-		HALL_MSG.toban_nanashi,
-		...HALL_MSG.watch,
-		...HALL_MSG.yaji,
-		...Object.values(JIKKYO).map((j) => j.lines),
-	])
-		ok(
-			ls.length >= 1 && ls.length <= 3,
-			`a hall talk has ${ls.length} windows`,
-		);
-	ok(HALL_MSG.monitor.length <= 3, "the monitor talks too long");
 });
 
 // ───────────────── 建物の 中（喫茶・小屋・常識堂の 奥・倉庫。data/village/rooms.ts・ui/village/rooms.ts・ui/village/cafe.ts） ─────────────────
@@ -6109,117 +5652,6 @@ test("施設の 外: doors and outdoor things stand from their stage, Kiriko rea
 				`${outdoorId(f, t)} finds ${got ? outdoorId(got.f, got.t) : "nothing"}`,
 			);
 		}
-});
-
-test("施設の 外観（絵を 並べた 形）: 字は キーだけ・扉は 1つ・RPGEN の 絵は まとめた 絵の 群の 中・字は ほかの パレットに 上書き されない", () => {
-	// まとめた 絵（rpgen-modern.png）の どの マスが どの 群か
-	const owner = new Map<string, string>();
-	for (const [name, [c, r, w, h]] of Object.entries(RPGEN_CELLS))
-		for (let y = r; y < r + h; y++)
-			for (let x = c; x < c + w; x++) owner.set(`${x},${y}`, name);
-	for (const f of FACILITIES) {
-		const g = f.look;
-		if (g.kind !== "grid") continue;
-		const keys = Object.keys(g.keys);
-		ok(keys.length <= 96, `${f.id}: ${keys.length} keys`);
-		for (const [y, r] of g.rows.entries())
-			for (const k of r)
-				ok(k === " " || k in g.keys, `${f.id}: row ${y} has "${k}"`);
-		if (g.door) {
-			const n = g.rows.join("").split(g.door).length - 1;
-			ok(n === 1, `${f.id}: the door key "${g.door}" is on ${n} cells`);
-		}
-		for (const [k, layers] of Object.entries(g.keys)) {
-			ok(layers.length > 0, `${f.id}: "${k}" draws nothing`);
-			for (const ref of layers) {
-				if (!ref.startsWith(`${RPGEN_IMG}#`)) continue;
-				const [x, y, w, h] = ref.split("#")[1].split(",").map(Number);
-				ok(
-					x % 16 === 0 && y % 16 === 0 && w % 16 === 0 && h % 16 === 0,
-					`${f.id}: "${k}" cuts ${ref} off the grid`,
-				);
-				ok(
-					x + w <= RPGEN_SIZE[0] && y + h <= RPGEN_SIZE[1],
-					`${f.id}: "${k}" cuts ${ref} outside the art`,
-				);
-				// 切る マスは みな 1つの 群の 中（となりの 群に はみ出さない）
-				const groups = new Set<string | undefined>();
-				for (let cy = y / 16; cy < (y + h) / 16; cy++)
-					for (let cx = x / 16; cx < (x + w) / 16; cx++)
-						groups.add(owner.get(`${cx},${cy}`));
-				ok(
-					groups.size === 1 && !groups.has(undefined),
-					`${f.id}: "${k}" cuts ${ref} across ${[...groups].join("/")}`,
-				);
-			}
-		}
-	}
-	const tiles = facilityTiles();
-	for (let stage = 0; stage < TOWN_STAGES; stage++) {
-		const pal = villagePalette({ stage, unlocked: ["shallow"], cleared: [] });
-		for (const [ch, t] of Object.entries(tiles))
-			ok(
-				JSON.stringify(pal[ch]) === JSON.stringify(t),
-				`stage ${stage}: facility "${ch}" is drawn as another tile`,
-			);
-	}
-});
-
-test("施設の 文: every line fits the village window", () => {
-	const texts: [string, string][] = [];
-	for (const f of FACILITIES) {
-		if (f.door) texts.push([`${f.id} door`, f.door]);
-		for (const [k, ls] of Object.entries(f.room?.lines ?? {}))
-			for (const t of ls) texts.push([`${f.id}.${k}`, t]);
-		for (const p of f.room?.people ?? [])
-			for (const t of p.lines) texts.push([`${f.id}.${p.id}`, t]);
-		for (const t of f.outdoor ?? [])
-			for (const l of t.lines) texts.push([`${f.id}.${t.id}`, l]);
-	}
-	for (const t of [FISHING.cast, ...FISHING.catches])
-		texts.push(["fishing", t]);
-	for (const t of [
-		GROUND_BAT.hr,
-		GROUND_BAT.hit,
-		GROUND_BAT.walk,
-		GROUND_BAT.out,
-		GROUND_BAT.popout,
-		GROUND_BAT.derbyRule,
-		fill(GROUND_BAT.derbyEnd, { n: 10, best: 10 }),
-		fill(GROUND_BAT.derbyBest, { n: 10, best: 10 }),
-	])
-		texts.push(["bat", t]);
-	// 1打席の 板の 下の 1行（1行だけ・22字まで）と 帯（13字まで）
-	const vars = { p: "原住民", kind: "ストレート……？", kmh: 151, m: 135 };
-	const notes: [string, string][] = [];
-	const collect = (where: string, v: unknown): void => {
-		if (typeof v === "string") notes.push([where, v]);
-		else if (Array.isArray(v))
-			v.forEach((x, i) => {
-				collect(`${where}[${i}]`, x);
-			});
-		else if (v && typeof v === "object")
-			for (const [k, x] of Object.entries(v))
-				if (k !== "banner") collect(`${where}.${k}`, x);
-	};
-	collect("BATTING", BATTING);
-	ok(notes.length >= 30, `only ${notes.length} batting notes`);
-	for (const [where, n] of notes) {
-		const t = fill(n, vars);
-		ok(!t.includes("\n"), `${where}: more than 1 line`);
-		ok(width(t) <= 22, `${where}: "${t}" is ${width(t)} wide`);
-	}
-	for (const [k, b] of Object.entries(BATTING.banner)) {
-		const t = fill(b, { n: 10 });
-		ok(width(t) <= 13, `BATTING.banner.${k}: "${t}" is ${width(t)} wide`);
-	}
-	for (const drink of VENDING.drinks)
-		texts.push(["vending", fill(VENDING.got, { drink })]);
-	texts.push(["vending", VENDING.drank]);
-	for (const drink of DRINK_BAR.drinks)
-		texts.push(["drink bar", fill(DRINK_BAR.got, { drink })]);
-	texts.push(["drink bar", DRINK_BAR.drank]);
-	fitsWindow(texts);
 });
 
 // ───────── 1打席（ui/minigames/batting.ts。板は 画面が 要るので、決まりの 純粋な 関数と 絵の 置き場を 調べる） ─────────
@@ -6545,50 +5977,6 @@ test("グラウンドの マウンド: 調べると 文 → 1打席・ホーム�
 			]),
 		`the mound:\n${log.join("\n")}`,
 	);
-});
-
-test("1打席: the sprite sheet is 1024x432, every cell fits on it and none overlap", () => {
-	ok(BB_SHEET.startsWith("pub:"), `${BB_SHEET} is not bundled`);
-	const png = readFileSync(join(process.cwd(), "public", BB_SHEET.slice(4)));
-	ok(png.toString("ascii", 12, 16) === "IHDR", "not a PNG");
-	const W = png.readUInt32BE(16);
-	const H = png.readUInt32BE(20);
-	ok(W === 1024 && H === 432, `the sheet is ${W}x${H}`);
-	const cells = Object.entries(BB_SPR).map(([k, c]) => ({
-		k,
-		x0: c.x,
-		y0: c.y,
-		x1: c.x + c.w * c.n,
-		y1: c.y + c.h,
-	}));
-	for (const c of cells)
-		ok(
-			c.x0 >= 0 && c.y0 >= 0 && c.x1 <= W && c.y1 <= H,
-			`${c.k} runs off the sheet`,
-		);
-	for (let i = 0; i < cells.length; i++)
-		for (let j = i + 1; j < cells.length; j++) {
-			const a = cells[i];
-			const b = cells[j];
-			ok(
-				a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0,
-				`${a.k} overlaps ${b.k}`,
-			);
-		}
-	for (const k of [
-		"walkKiriko",
-		"walkGen",
-		"walkYakiu",
-		"walkNanashi",
-	] as const)
-		ok(
-			BB_SPR[k].w === 32 && BB_SPR[k].h === 64,
-			`${k} is not a 32x64 walk sheet`,
-		);
-	for (const [k, i] of Object.entries(BB_POSE))
-		ok(i < BB_SPR.pose.n, `pose ${k} is past the poses`);
-	for (const [k, i] of Object.entries(BB_FX))
-		ok(i < BB_SPR.fx.n, `fx ${k} is past the effects`);
 });
 
 test("建物の 扉: every building door is stepped on from its stage, and every room lets Kiriko out onto the road below its door", () => {
@@ -6930,61 +6318,6 @@ test("喫茶の 客: drawn per return (same return → same seats), 2〜5 friend
 	});
 });
 
-test("建物の 中の 文: every line fits the village window, talks are 1〜4 windows, and every resident has cafe lines", () => {
-	const longest = Object.values(CAFE_DRINKS)
-		.map((d) => d.name)
-		.sort((x, y) => y.length - x.length)[0];
-	const texts: [string, string][] = [];
-	for (const [room, table] of Object.entries(ROOM_MSG))
-		for (const [k, v] of Object.entries(table))
-			for (const t of v)
-				texts.push([`ROOM_MSG.${room}.${k}`, fill(t, { next: "倉庫Part2" })]);
-	for (const t of planLines(0)) texts.push(["plan", t]);
-	for (const [k, v] of Object.entries(BANK.msg))
-		for (const t of v) texts.push([`BANK.msg.${k}`, t]);
-	texts.push(["bank door", BANK.door]);
-	for (const [k, t] of Object.entries(ROOM_DOOR)) texts.push([`door ${k}`, t]);
-	for (const [k, t] of Object.entries(MASTER_MSG))
-		texts.push([
-			`master ${k}`,
-			fill(t, { herb: "水分補給の草", drink: longest, name: "おんすちゃん" }),
-		]);
-	for (const [k, t] of Object.entries(SEAT_MSG))
-		texts.push([`seat ${k}`, fill(t, { name: "フェリス" })]);
-	for (const [k, ls] of Object.entries(CAFE_GREET))
-		for (const t of ls) texts.push([`greet ${k}`, t]);
-	for (const t of Object.values(CHAT_MSG))
-		texts.push(["chat", fill(t, { a: "おんすちゃん", b: "フェリス" })]);
-	for (const ls of NANASHI_CAFE.pair)
-		for (const t of ls) texts.push(["nanashi", t]);
-	for (const t of NANASHI_CAFE.solo) texts.push(["nanashi", t]);
-	for (const [k, d] of Object.entries(CAFE_DRINKS))
-		texts.push([`taste ${k}`, d.taste]);
-	for (const id of MOB_IDS) {
-		const c = CAFE_MOBS[id];
-		ok(
-			c.hello && c.idle && c.sip && c.treat.includes("{drink}"),
-			`${id}: cafe lines missing`,
-		);
-		texts.push([`${id} hello`, c.hello], [`${id} idle`, c.idle]);
-		texts.push([`${id} sip`, c.sip]);
-		texts.push([`${id} treat`, fill(c.treat, { drink: longest })]);
-		ok(c.talks.length > 0, `${id}: no cafe talks`);
-		ok(
-			new Set(c.talks.map((t) => t.key)).size === c.talks.length,
-			`${id}: two cafe talks share a key`,
-		);
-		for (const t of c.talks) {
-			ok(
-				t.lines.length >= 1 && t.lines.length <= 4,
-				`${id}:${t.key} is ${t.lines.length} windows`,
-			);
-			for (const l of t.lines) texts.push([`${id}:${t.key}`, l.text]);
-		}
-	}
-	fitsWindow(texts);
-});
-
 test("音楽室「ピアノ機能」: open only on weekends (a weekday note steps her back), the ending song after the main record, and its lines fit", async () => {
 	for (const [wday, open] of [
 		[2, false],
@@ -7208,22 +6541,6 @@ test("施設の 客: residents visit one facility per return, the same return ke
 	);
 });
 
-test("ことばの 辞典: every explanation is written as village windows (22 full-width × 2 lines, 1〜4 windows)", () => {
-	for (const w of GLOSSARY) {
-		const wins = descWindows(w.desc);
-		ok(wins.length >= 1 && wins.length <= 4, `${w.id}: ${wins.length} windows`);
-		fitsWindow(wins.map((t, i): [string, string] => [`${w.id} ${i}`, t]));
-	}
-});
-
-test("本館の 野球の 本棚: every line fits the village window, each book is 1〜2 windows", () => {
-	fitsWindow([["yakyu", YAKYU_SHELF.line]]);
-	for (const b of YAKYU_SHELF.books) {
-		ok(b.text.length >= 1 && b.text.length <= 2, `${b.title}: too long`);
-		fitsWindow(b.text.map((t): [string, string] => [b.title, t]));
-	}
-});
-
 // ───────────────── 裏の 筋を 追う 行（data/story/synopsis.ts） ─────────────────
 
 test("live comments react to the run (low HP first, filler only sometimes) and fit one log line", () => {
@@ -7400,77 +6717,6 @@ test("あらすじ: 帰りの 2幕目（その夜の 場面・転・開いた �
 			["tropical"],
 		) ?? "";
 	ok(side.includes("つぎ：風呂板へ"), side);
-});
-
-test("飲食店の 品書き: 店ごとに 3〜6品・どの 文も 村の 窓に 収まる・絵は まとめた 品の 絵・品書きの ある 店には 店番が いて、店番の いる 店には 品書きが ある", () => {
-	const texts: [string, string][] = [];
-	for (const [id, m] of Object.entries(EAT_MENUS)) {
-		ok(facilityById(id), `${id}: a menu without a facility`);
-		for (const k of ["again", "no"] as const) texts.push([`${id}.${k}`, m[k]]);
-		ok(
-			m.dishes.length >= 3 && m.dishes.length <= 6,
-			`${id}: ${m.dishes.length} dishes`,
-		);
-		for (const d of m.dishes) {
-			ok(width(d.name) <= 9, `${id}: "${d.name}" is too long for a choice`);
-			// 品書きは「名前　値段」（長い 名前は label）
-			ok(
-				width(dishLabel(d)) <= 9,
-				`${id}: "${dishLabel(d)}" is too long for a choice`,
-			);
-			ok(
-				Number.isInteger(d.price) && d.price >= 100 && d.price <= 3000,
-				`${id}.${d.name}: price ${d.price}`,
-			);
-			texts.push([
-				`${id}.short(${d.name})`,
-				fill(m.short, { price: yen(d.price) }),
-			]);
-			ok(
-				d.eat.length >= 1 && d.eat.length <= 2,
-				`${id}.${d.name}: ${d.eat.length} windows`,
-			);
-			if (d.art) {
-				// まとめた 品の 絵（RPGEN の rpgen-food.png か、手描きの diner.png。scripts/make-diner.mjs）
-				const sheets: [string, readonly [number, number]][] = [
-					[FOOD_IMG, FOOD_SIZE],
-					[DINER_IMG, DINER_SIZE],
-				];
-				const sheet = sheets.find(([img]) => d.art?.startsWith(`${img}#`));
-				ok(!!sheet, `${id}.${d.name}: ${d.art}`);
-				const size = sheet?.[1] ?? [0, 0];
-				const [x, y, w, h] = d.art.split("#")[1].split(",").map(Number);
-				ok(
-					w === 16 && h === 16 && x + w <= size[0] && y + h <= size[1],
-					`${id}.${d.name}: cuts ${d.art} outside the art`,
-				);
-			}
-			// おまじない（メイド喫茶）も 村の 窓に 収まる
-			for (const c of d.magic ?? [])
-				texts.push([`${id}.magic(${d.name})`, c.text]);
-			texts.push([`${id}.order(${d.name})`, fill(m.order, { dish: d.name })]);
-			for (const t of d.eat) texts.push([`${id}.eat(${d.name})`, t]);
-		}
-	}
-	fitsWindow(texts);
-	for (const f of FACILITIES) {
-		const keeper =
-			(f.room?.people ?? []).some((p) => p.play === "eat") ||
-			(f.outdoor ?? []).some((t) => t.play === "eat" && t.sprite);
-		const eats =
-			keeper ||
-			Object.values(f.room?.plays ?? {}).includes("eat") ||
-			(f.outdoor ?? []).some((t) => t.play === "eat");
-		ok(eats === !!EAT_MENUS[f.id], `${f.id}: eat plays and menu disagree`);
-		ok(!eats || keeper, `${f.id}: a menu but nobody to take the order`);
-		// 見える 外の 人（屋台の 店番）は 歩行グラと 名前欄つき
-		for (const t of f.outdoor ?? [])
-			if (t.sprite)
-				ok(
-					isWalkRef(t.sprite) && !!t.name,
-					`${f.id}.${t.id}: a visible keeper needs a walk sprite and a name`,
-				);
-	}
 });
 
 /** 町の 売り上げ（財布の 元。engine/wallet.ts）を 置く。使った 額は 消さない。 */
@@ -7979,46 +7225,6 @@ test("あらすじ（2026-10-15）: パン板を 持ち帰る 前も、はじま
 	ok(!html.includes("\n"), "a raw newline in the html");
 });
 
-test("生き返る 通り（TOWN.md §0.6）: 表の 所は どれも 町に あり 1つの 通りだけ、板は 7つ 別々、本筋 4つは パン → きのこ → 風呂 → 電池", () => {
-	const all = REVIVE_AREAS.flatMap((a) => a.places);
-	ok(new Set(all).size === all.length, "a place revives twice");
-	const core = [
-		"shrine",
-		"music",
-		"bath",
-		"library",
-		"bookstore",
-		"cafe",
-		"fountain",
-		"bakery",
-	];
-	for (const id of all)
-		ok(facilityById(id) || core.includes(id), `${id} is not in the town`);
-	const boards = REVIVE_AREAS.map((a) => a.dungeon);
-	ok(new Set(boards).size === boards.length, "two streets for one board");
-	ok(
-		MAIN_BOARDS.join() === "shallow,kinoko,main,deep" &&
-			MAIN_BOARDS.every((d) => boards.includes(d)),
-		"the main boards",
-	);
-	// 遊びの 輪に 要る 物は はじめから 開いて いる
-	for (const id of ["pier", "imoni", "cafe"])
-		ok(isRevived(id, []), `${id} is shut at the start`);
-	// 寄り道の 遊び場も 人が もどるまで 閉まって いる（碁会所は 広場、マイクラの 島は 商店街と いっしょ）
-	for (const id of ["go", "saba7", "saba_apart"])
-		ok(!isRevived(id, []), `${id} is open at the start`);
-	// 1つの 板で 開くのは 少しずつ（本筋 4枚を 終えても 寄り道と 過去ログの底の 所は 閉まった まま）
-	for (const a of REVIVE_AREAS)
-		ok(a.places.length <= 9, `${a.name} opens ${a.places.length} at once`);
-	const story: DungeonId[] = ["shallow", "kinoko", "main", "deep"];
-	for (const id of ["music", "otaku", "netcafe", "bushitsu"])
-		ok(!isRevived(id, story), `${id} opens with the main story alone`);
-	ok(
-		isRevived("bushitsu", [...story, "hidden"]),
-		"bushitsu after 過去ログの底",
-	);
-});
-
 test("生き返る 通り: 持ち帰る 前は 扉が シャッターで、踏むと 札を 読んで 1歩 もどる。屋台の 店番も 出ない。持ち帰れば 開く", async () => {
 	const shutView: VillageView = {
 		stage: TOWN_STAGES - 1,
@@ -8474,20 +7680,6 @@ test("寸劇の あとの 町（2026-10-18）: ご近所・もどる 住人・�
 		ok(!t.includes("3機"), `つなぎで 3機: ${t}`);
 });
 
-test("翌朝の 見出し（STORY.md §0 言う ことと 見える もの）: 掲示板に 残る 見出しは、その 板の 持ち帰りの 語りの 見出しと 一字も ちがわない", () => {
-	const texts: [string, string][] = [];
-	for (const [d, line] of Object.entries(AFTER_HEADLINES)) {
-		const { ending, once } = STORY[d as DungeonId];
-		const said = [...ending, ...(once ?? [])].map((p) => p.text).join("\n");
-		ok(said.includes(`『${line}』`), `${d}: 語りに 『${line}』 が ない`);
-		texts.push([
-			`AFTER_HEADLINES.${d}`,
-			fill(BOARD_NEWS.after, { line: line ?? "" }),
-		]);
-	}
-	fitsWindow(texts);
-});
-
 test("広場の 掲示板の 名無し（STORY.md §4.9）: 倒れた ときの 一行は 回数で 入れかわる。どれも 村の 窓に 収まる（予告の 見出しは 2026-10-19 に やめた）", () => {
 	const texts: [string, string][] = [];
 	for (const line of DEATH_LINES) {
@@ -8646,40 +7838,6 @@ test("騒ぎの 人と ご近所は、いっしょに 出る どの 組み合わ
 });
 
 // ───────────────── 立ち聞きの 吹き出し（ui/village/overhear.ts） ─────────────────
-
-test("立ち聞き: every bubble fits 10 full-width × 2 lines, no slang, emoji only where the speaker uses it", () => {
-	const all = [
-		...Object.entries(MOB_MUTTERS).flatMap(([id, ts]) =>
-			ts.map((t) => [id, t] as const),
-		),
-		...Object.entries(CROWD_MUTTERS).flatMap(([id, ts]) =>
-			ts.map((t) => [id, t] as const),
-		),
-		...CROWD_PAIRS.map((t) => ["pair", t] as const),
-	];
-	const keys = new Set<string>();
-	for (const [who, t] of all) {
-		ok(!keys.has(t.key), `${t.key}: key used twice`);
-		keys.add(t.key);
-		ok(t.lines.length >= 1 && t.lines.length <= 4, `${t.key}: length`);
-		for (const l of t.lines) {
-			const rows = l.text.split("\n");
-			ok(rows.length <= 2, `${t.key}: ${l.text} has 3 lines`);
-			for (const r of rows)
-				ok([...r].length <= 10, `${t.key}: "${r}" is over 10`);
-			for (const w of ["草", "定期", "RTA"])
-				ok(!l.text.includes(w), `${t.key}: slang ${w}`);
-			const emoji = /\p{Extended_Pictographic}/u.test(l.text);
-			ok(
-				!emoji || who === "puyu" || /ぷゆゆ🥺$/.test(l.text),
-				`${t.key}: emoji`,
-			);
-			ok(who === "pair" || l.by === 0, `${t.key}: a mutter has one speaker`);
-		}
-	}
-	for (const id of MOB_IDS)
-		ok(MOB_MUTTERS[id].length >= 2, `${id}: fewer than 2 mutters`);
-});
 
 test("立ち聞き: a nearby resident mutters, passers-by pair up, and an open window stops it", () => {
 	const kiriko = new Actor("player", 10, 10, "down", "", null);
@@ -8849,61 +8007,6 @@ test("越してくる 場面: lines fit, only newcomers speak, Kiriko lands a ts
 });
 
 // ───────────────── 寸劇（ui/village/skits.ts） ─────────────────
-
-test("寸劇: 3〜5 windows that fit, unique keys, and every trigger points at a real place, thing, resident and cause", () => {
-	const texts: [string, string][] = [];
-	const keys = new Set<string>();
-	const causes = [
-		...Object.values(MONSTERS).map((d) => d.name),
-		"地雷",
-		"落とし穴",
-	];
-	for (const sk of SKITS) {
-		ok(!keys.has(sk.key), `${sk.key}: key used twice`);
-		keys.add(sk.key);
-		// 押して 送る 窓だけ 数える（畳みかけ＝auto は 押さずに 流れる。字の ない 行は 動きだけ）
-		const windows = sk.lines.filter((l) => l.text && !l.auto).length;
-		ok(windows >= 3 && windows <= 5, `${sk.key}: ${windows} windows`);
-		sk.lines.forEach((l, i) => {
-			texts.push([`${sk.key}[${i}]`, l.text]);
-		});
-		const on = sk.on;
-		if (on.k === "enter" || on.k === "buy")
-			ok(
-				facilityOfMap(on.map) !== undefined ||
-					(ROOM_IDS as readonly string[]).includes(on.map) ||
-					(on.k === "buy" && on.map === "village"),
-				`${sk.key}: no ${on.map}`,
-			);
-		// 払う 所：店員（売る 人）・払って 使う 物（ドリンクバー・自販機）
-		if (on.k === "buy" && on.thing) {
-			const f = facilityOfMap(on.map);
-			const thing = on.thing;
-			ok(
-				!!f?.room?.people?.some((p) => p.id === thing && p.play) ||
-					!!f?.room?.plays?.[thing] ||
-					(on.map === "village" && thing === "fthing_vend"),
-				`${sk.key}: nobody takes money at ${thing}`,
-			);
-		}
-		if (on.k === "death") {
-			ok(MOB_IDS.includes(on.mob), `${sk.key}: ${on.mob}`);
-			ok(
-				causes.some((c) => c.includes(on.cause)),
-				`${sk.key}: nothing is called ${on.cause}`,
-			);
-			ok(
-				sk.lines.some((l) => l.who === "mob"),
-				`${sk.key}: the resident never speaks`,
-			);
-		} else
-			ok(
-				sk.lines.every((l) => l.who !== "mob"),
-				`${sk.key}: "mob" only in death skits`,
-			);
-	}
-	fitsWindow(texts);
-});
 
 test("寸劇: buying, entering a building or looking at a thing plays once, at most one per return", async () => {
 	await withStorageAsync(async () => {
@@ -9210,105 +8313,6 @@ test("寸劇: a place skit starts only on a step into its area from outside, and
 		ok(stepSkit("village", 51, 8) !== null, "after the quiet steps");
 		quietSkits(0);
 	});
-});
-
-test("寸劇: Kiriko's stage spot is a floor cell of that room, and every cast and walker stands in it", () => {
-	let n = 0;
-	for (const sk of SKITS) {
-		const st = sk.stage;
-		if (!st) continue;
-		const on = sk.on;
-		// 村の 寸劇（場面の 人と 住人だけ。部屋の 立ち位置は ない）
-		if (
-			!st.at &&
-			!st.walk &&
-			(on.k === "near" ||
-				on.k === "death" ||
-				!("map" in on) ||
-				on.map === "village" ||
-				on.map === undefined)
-		) {
-			const extras = new Set((sk.extras ?? []).map((x) => x.id));
-			for (const id of Object.values(st.cast ?? {}))
-				ok(
-					extras.has(id) ||
-						(id.startsWith("mob_") && MOB_IDS.includes(id.slice(4) as MobId)),
-					`${sk.key}: ${id} is neither an extra nor a resident`,
-				);
-			continue;
-		}
-		const map =
-			on.k === "enter" || on.k === "buy"
-				? on.map
-				: on.k === "look"
-					? on.map
-					: undefined;
-		ok(map, `${sk.key}: a stage needs its map`);
-		if (!map) continue;
-		const f = FACILITIES.find((x) => facilityMapId(x) === map);
-		const rows = f ? facilityRoomRows(f) : roomRows(map as RoomId);
-		const tiles = f ? facilityRoomPalette(f) : roomPalette(map as RoomId);
-		// 地図の 人と 場面だけの 人（寸劇の 名無し・客）
-		const people = new Set([
-			...(f
-				? (f.room?.people ?? []).map((p) => p.id)
-				: map === "bath"
-					? ["bandai"]
-					: []),
-			...(sk.extras ?? []).map((x) => x.id),
-		]);
-		const floor = (c: readonly [number, number]): boolean =>
-			!!tiles[[...(rows[c[1]] ?? "")][c[0]] ?? ""]?.passable;
-		if (st.at) {
-			n++;
-			ok(floor(st.at), `${sk.key}: Kiriko's spot ${st.at} is not floor`);
-		}
-		for (const id of Object.values(st.cast ?? {}))
-			ok(people.has(id), `${sk.key}: ${id} is not in ${map}`);
-		for (const w of st.walk ?? []) {
-			ok(people.has(w.id), `${sk.key}: ${w.id} is not in ${map}`);
-			ok(floor(w.to), `${sk.key}: ${w.id} walks to a wall`);
-			const home = f?.room?.people?.find((p) => p.id === w.id)?.at;
-			ok(
-				home?.[0] === w.home[0] && home?.[1] === w.home[1],
-				`${sk.key}: ${w.id} goes home to ${w.home}, not ${home}`,
-			);
-		}
-	}
-	ok(n >= 10, `few staged skits: ${n}`);
-	// つづきものは 先の 寸劇が ある
-	for (const sk of SKITS)
-		if (sk.follows)
-			ok(
-				SKITS.some((x) => x.key === sk.follows),
-				`${sk.key}: follows ${sk.follows}`,
-			);
-});
-
-test("寸劇: every named speaker stands on screen (a map person or a scene extra), unless the line says where the hidden voice comes from", () => {
-	// 見えない 声で よいのは 中に いる 人（金庫の 中・グラスの 中）と、どこから かを 言う 声（下から・上から・床の 下から）
-	const hiddenVoice = (text: string): boolean =>
-		/^（(下から|上から|床の下から|グラスの中から|キリコの上で)）/.test(text);
-	const offScreen = new Set(["金庫の中の人"]);
-	for (const sk of SKITS) {
-		const cast = sk.stage?.cast ?? {};
-		const extras = new Set((sk.extras ?? []).map((x) => x.id));
-		for (const id of Object.values(cast))
-			if (id.startsWith("x_"))
-				ok(extras.has(id), `${sk.key}: ${id} is cast but not an extra`);
-		for (const l of sk.lines) {
-			for (const id of [l.show ?? []].flat())
-				ok(extras.has(id), `${sk.key}: shows ${id}, which is not an extra`);
-			if (l.hide?.startsWith("x_"))
-				ok(extras.has(l.hide), `${sk.key}: hides ${l.hide}`);
-			if (!l.who || typeof l.who !== "object") continue;
-			const name = l.who.name;
-			ok(
-				!!cast[name] || offScreen.has(name) || hiddenVoice(l.text),
-				`${sk.key}: ${name}「${l.text.split("\n")[0]}」 is not on screen`,
-			);
-		}
-	}
 });
 
 test("寸劇: a skit with a chance is decided once per return (not on every step), and comes on some returns but not all", () => {

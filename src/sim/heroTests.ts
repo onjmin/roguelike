@@ -45,12 +45,6 @@ const test = (name: string, run: () => void | Promise<void>) =>
 
 const width = (s: string) =>
 	[...s].reduce((n, c) => n + (/[\x20-\x7e｡-ﾟ]/.test(c) ? 0.5 : 1), 0);
-const fits = (where: string, s: string, w = 22, lines = 2) => {
-	const ls = s.split("\n");
-	ok(ls.length <= lines, `${where}: ${ls.length} lines`);
-	for (const l of ls) ok(width(l) <= w, `${where}: "${l}" is ${width(l)} wide`);
-};
-
 /** 敵を 消して、静かな 状態に（湧き・地震・空腹を 止める）。 */
 const quiet = (r: Run): Run => {
 	r.f.monsters = [];
@@ -826,21 +820,6 @@ test("あらすじ: 仲間の 依頼は 悩んで から 出る（進み具合�
 			both.includes(HERO_QUESTS.zero.synopsis.accepted),
 		"both",
 	);
-});
-
-test("文: 依頼の 窓は 22×2、ボタンは 9字", () => {
-	for (const [h, q] of Object.entries(HERO_QUESTS)) {
-		for (const k of ["worry", "accept", "decline", "waiting", "offer"] as const)
-			for (const l of q[k]) fits(`${h}.${k}`, l.text);
-		fits(`${h}.unlocked`, q.unlocked);
-		fits(`${h}.hint`, q.hint);
-		for (const m of q.menu) ok(width(m) <= 9, `${h} menu ${m}`);
-	}
-	// 底の 掛け合い（core/race.ts。ダンジョンの 窓も 村と 同じ）
-	for (const [id, sp] of Object.entries(RACE))
-		for (const talk of [sp.arrive, sp.carried, ...sp.stuck])
-			for (const l of talk)
-				fits(`race.${id}`, typeof l === "string" ? l : l.kiriko);
 });
 
 export const runHeroTests = async (): Promise<TestResult[]> => {

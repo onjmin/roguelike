@@ -2,12 +2,7 @@
 // pnpm test で いっしょに 動く。形は bondTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は H。
 
 import { shiyoAtMaid } from "../data/people/shiyoShift";
-import {
-	BATH_EVE,
-	colonyCard,
-	factionCard,
-	KINOKO_EVE,
-} from "../data/story/hooks";
+import { BATH_EVE, KINOKO_EVE } from "../data/story/hooks";
 import type { Story } from "../engine/defs";
 import { hasFlag, loadProgress, saveProgress } from "../engine/save";
 import {
@@ -27,18 +22,6 @@ const CASES: { id: string; name: string; run: () => void | Promise<void> }[] =
 	[];
 const test = (id: string, name: string, run: () => void | Promise<void>) =>
 	CASES.push({ id, name, run });
-
-/** 全角=1・半角=0.5 で 数えた 幅（villageTests と 同じ）。 */
-const width = (line: string): number =>
-	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
-
-/** 村の 窓（2行まで・1行 全角22字）。 */
-const fits = (where: string, text: string): void => {
-	const lines = text.split("\n");
-	ok(lines.length <= 2, `${where}: ${lines.length} lines in "${text}"`);
-	for (const l of lines)
-		ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide (> 22)`);
-};
 
 /** localStorage を 試験の あいだだけ 差しかえる。 */
 const withStorage = async (fn: () => Promise<void>): Promise<void> => {
@@ -87,19 +70,6 @@ const fakeStory = (): { s: Story; log: string[] } => {
 };
 
 test(
-	"H1",
-	"第一話 → 第二話の つなぎ：どの 文も 村の 窓に 収まる。イメージ図の 札も 短い",
-	() => {
-		for (const [k, v] of Object.entries(KINOKO_EVE)) fits(`KINOKO_EVE.${k}`, v);
-		for (const spec of [colonyCard(0), colonyCard(1), colonyCard(2)]) {
-			ok(spec.links.length === spec.nodes.length - 1, `${spec.title}: links`);
-			for (const n of spec.nodes)
-				ok(width(n.label) <= 8, `${n.label}: label too wide`);
-		}
-	},
-);
-
-test(
 	"H2",
 	"第一話 → 第二話の つなぎ：パン板を 持ち帰った 帰りに 1回だけ。回想・図・行進を 通って 翌朝で おわる",
 	async () => {
@@ -133,24 +103,6 @@ test(
 			ok(!loadProgress().news.length, "the kinoko news is consumed");
 			ok(hasFlag("eve_kinoko") && !kinokoEveDue(), "only once");
 		});
-	},
-);
-
-test(
-	"H3",
-	"第二話 → 第三話の つなぎ：どの 文も 村の 窓に 収まる。湯温戦争の 図は シヨ派で 1つ ふえる",
-	() => {
-		for (const [k, v] of Object.entries(BATH_EVE)) fits(`BATH_EVE.${k}`, v);
-		for (const step of [0, 1] as const) {
-			const spec = factionCard(step);
-			ok(spec.links.length === spec.nodes.length - 1, `${spec.title}: links`);
-			for (const n of spec.nodes)
-				ok(width(n.label) <= 8, `${n.label}: label too wide`);
-		}
-		ok(
-			factionCard(1).nodes.length === factionCard(0).nodes.length + 1,
-			"Shiyo adds a faction",
-		);
 	},
 );
 

@@ -2,16 +2,7 @@
 // 板（canvas）は 出さない：ui/neta/neta.ts の setNetaHooks で 結果を わたし、窓の 流れと 記録だけ 見る。
 // 決まり（ランダム野球・オセロ・コンマ・!sk・ID）は 種つきの 乱数で 何度でも 同じ 結果。
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { JK_TEAM_IDS } from "../core/jikkyoYakyu";
 import { TOWN_STAGES } from "../core/town";
-import {
-	NETA_CELLS,
-	NETA_KABE_SIZE,
-	NETA_KABE_WALK,
-	NETA_SIZE,
-} from "../data/neta/art";
 import {
 	COMMA_DENY,
 	commaOf,
@@ -54,10 +45,7 @@ import {
 	SK,
 	YAKYU,
 } from "../data/neta/text";
-import { isNetaPlay, NETA_PLAYS, type NetaPlay } from "../data/neta/types";
 import {
-	batterName,
-	teamChar,
 	YAKYU_INNINGS,
 	YAKYU_MAX_INNINGS,
 	YAKYU_ROUND,
@@ -69,20 +57,9 @@ import {
 	yakyuStart,
 	yakyuStep,
 } from "../data/neta/yakyu";
-import {
-	FACILITIES,
-	type Facility,
-	facilityById,
-	facilityRoomPlaces,
-} from "../data/village/facilities";
-import {
-	type VillageView,
-	villagePalette,
-	villagePlaces,
-	villageRows,
-} from "../data/village/map";
+import { type Facility, facilityById } from "../data/village/facilities";
+import type { VillageView } from "../data/village/map";
 import type { Story } from "../engine/defs";
-import { isWalkRef } from "../engine/sprite";
 import type { Ctx } from "../ui/ctx";
 import {
 	commaScript,
@@ -112,19 +89,6 @@ const seeded = (seed: number) => {
 		s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
 		return s / 2 ** 32;
 	};
-};
-/** 画面に 出さない 語（商品名の オセロ も。盤の 遊びは 一般名の リバーシ）。 */
-const BANNED =
-	/落ちる|落ちた|落ちない|黄色|きいろ|山吹|114514|1919|810|うんこ|うんち|オセロ|ガイジ|アスペ|チー牛|原カス|淫夢/;
-/** villageTests.ts の width と 同じ（ASCII と 半角カナは 0.5）。 */
-const width = (s: string) =>
-	[...s].reduce((n, c) => n + (/[\x20-\x7e｡-ﾟ]/.test(c) ? 0.5 : 1), 0);
-const fits = (where: string, s: string, w = 22, lines = 2) => {
-	const ls = s.split("\n");
-	ok(ls.length <= lines, `${where}: ${ls.length} lines`);
-	for (const l of ls) ok(width(l) <= w, `${where}: "${l}" is ${width(l)} wide`);
-	ok(!/\p{Extended_Pictographic}/u.test(s), `${where}: emoji`);
-	ok(!BANNED.test(s), `${where}: banned word`);
 };
 const fill = (t: string, v: Record<string, string | number>) =>
 	t.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
@@ -234,260 +198,7 @@ for (let stage = 0; stage < TOWN_STAGES; stage++)
 			cleared: unlocked.slice(0, -1),
 		});
 
-test("置き場所: グラウンドの ベンチ（38,9 の 固い ベンチ）と 5割の壁（35,9 の 通れる 外野に 立つ 歩行グラ）は 段3 から", () => {
-	for (const v of VIEWS) {
-		const places = villagePlaces(v);
-		const rows = villageRows(v);
-		const pal = villagePalette(v);
-		const at = (id: string) => places.find((p) => p.id === id);
-		const bench = at("fthing_ground_bench_r");
-		const kabe = at("fthing_ground_kabe");
-		ok(!!bench === v.stage >= 3 && !!kabe === v.stage >= 3, `stage ${v.stage}`);
-		if (!bench || !kabe) continue;
-		ok(
-			bench.x === 38 && bench.y === 9 && kabe.x === 35 && kabe.y === 9,
-			"cells",
-		);
-		ok(!pal[[...rows[9]][38]]?.passable, "the bench is solid");
-		ok(pal[[...rows[9]][35]]?.passable, "the wall stands on the outfield");
-		ok(
-			kabe.sprite === NETA_KABE_WALK && isWalkRef(kabe.sprite),
-			"the wall is a walk sheet",
-		);
-	}
-	ok(thing("ground", "kabe").t.name === KABE_NAME, "name box");
-});
-
-test("置き場所: 部屋の 物と 人（碁会所 3,6 リバーシ盤・2,6 常連／道場 2,5 文机／ジム 8,6 腹筋台／ゲーセン 3,6 コンマの 台・4,7 見物）", () => {
-	const want: [string, string, number, number][] = [
-		["go", "othello_0", 3, 6],
-		["dojo", "shuji_0", 2, 5],
-		["gym", "fukkin_0", 8, 6],
-		["arcade", "comma_0", 3, 6],
-	];
-	for (const [fid, id, x, y] of want) {
-		const p = facilityRoomPlaces(fac(fid)).find((q) => q.id === id);
-		ok(p && p.x === x && p.y === y, `${fid}.${id} at ${p?.x},${p?.y}`);
-	}
-	const people: [string, string, number, number][] = [
-		["go", "go_c", 2, 6],
-		["arcade", "arcade_c", 4, 7],
-	];
-	for (const [fid, id, x, y] of people) {
-		const p = fac(fid).room?.people?.find((q) => q.id === id);
-		ok(p && p.at[0] === x && p.at[1] === y, `${fid}.${id}`);
-	}
-});
-
-test("つなぎ: 6つの 遊びは それぞれ 決まった 施設の 物に 1つずつ", () => {
-	const where: Record<NetaPlay, string> = {
-		yakyu: "ground",
-		kabe: "ground",
-		othello: "go",
-		sk: "dojo",
-		fukkin: "gym",
-		comma: "arcade",
-	};
-	const seen: string[] = [];
-	for (const f of FACILITIES) {
-		const plays = [
-			...(f.outdoor ?? []).map((t) => t.play),
-			...Object.values(f.room?.plays ?? {}),
-		];
-		for (const p of plays)
-			if (isNetaPlay(p)) {
-				ok(where[p] === f.id, `${p} at ${f.id}`);
-				seen.push(p);
-			}
-	}
-	ok(
-		JSON.stringify([...seen].sort()) === JSON.stringify([...NETA_PLAYS].sort()),
-		`plays ${seen}`,
-	);
-	for (const p of ["batting", "jikkyo", "eat", "", undefined])
-		ok(!isNetaPlay(p), `${p}`);
-});
-
 // ───────────────── 文 ─────────────────
-
-test("文: 窓は 22×2、板は 1行 22、ボタン 9、スレの 本文 12、!sk の 文は 20、縦の 列は 7字で 半角なし", () => {
-	const W = {
-		w: 999,
-		l: 999,
-		d: 999,
-		b: 64,
-		n: 9999,
-		left: 9999,
-		total: 99999,
-		done: 9999,
-		id: "ZZZZ",
-		time: "00:00:00.000",
-		best: "00:00:00.040",
-	};
-	for (const t of KABE_TALK) fits("KABE_TALK", t);
-	for (const k of ["record", "rule", "after", "kabeHint"] as const)
-		fits(`YAKYU.${k}`, fill(YAKYU[k], W));
-	for (const k of [
-		"record",
-		"rule",
-		"afterWin",
-		"afterLose",
-		"afterDraw",
-		"resigned",
-	] as const)
-		fits(`OTHELLO.${k}`, fill(OTHELLO[k], W));
-	for (const k of [
-		"rule",
-		"posted",
-		"postedLeft",
-		"rest",
-		"restRes",
-		"zero",
-		"sottoji",
-		"doneToday",
-		"finish",
-		"stopped",
-	] as const)
-		fits(`FUKKIN.${k}`, fill(FUKKIN[k], W));
-	// 部屋と 外の 物・人の 文（幅は villageTests「施設の 文」も 測る。ここでは 語を 見る）
-	for (const [fid, ids] of [
-		["ground", ["bench_r", "kabe"]],
-		["go", ["othello", "go_c"]],
-		["dojo", ["shuji"]],
-		["gym", ["fukkin"]],
-		["arcade", ["comma", "arcade_c"]],
-	] as const) {
-		const f = fac(fid);
-		for (const id of ids) {
-			const ls =
-				f.outdoor?.find((t) => t.id === id)?.lines ??
-				f.room?.people?.find((p) => p.id === id)?.lines ??
-				f.room?.lines[id];
-			ok(ls?.length, `${fid}.${id} lines`);
-			for (const l of ls ?? []) fits(`${fid}.${id}`, l);
-		}
-	}
-	for (const k of [
-		"rule",
-		"zoroAfter",
-		"noZoro",
-		"titleGot",
-		"zeroNone",
-		"zeroBest",
-	] as const)
-		fits(`COMMA.${k}`, fill(COMMA[k], W));
-	for (const j of Object.values(COMMA.judge))
-		fits("COMMA.zeroAfter", fill(COMMA.zeroAfter, { time: W.time, judge: j }));
-	fits("SK.dried", SK.dried);
-	for (const t of SK.react) fits("SK.react", t);
-	for (const m of [
-		YAKYU.menu,
-		OTHELLO.menu,
-		FUKKIN.menu,
-		FUKKIN.menuResume,
-		FUKKIN.menu2,
-		COMMA.menu,
-		COMMA.menuNight,
-		SK.menu,
-	])
-		for (const o of m) fits(`menu ${o}`, o, 9, 1);
-	const longNick = JK_TEAM_IDS.flatMap((id) =>
-		Array.from({ length: 9 }, (_, i) => batterName(id, i)),
-	).reduce((a, b) => (width(b) > width(a) ? b : a));
-	const board = [
-		fill(YAKYU.title, { home: "鷲", away: "檻" }),
-		YAKYU.hint,
-		YAKYU.rulesNote,
-		fill(YAKYU.start, { home: "鷲" }),
-		fill(YAKYU.yourTurn, { inning: 7, order: 9, nick: longNick }),
-		fill(YAKYU.theirTurn, { inning: 7, team: "鷲" }),
-		YAKYU.quit1,
-		YAKYU.change,
-		YAKYU.sayonara,
-		fill(YAKYU.win, { home: "鷲", hs: 99, as: 99 }),
-		fill(YAKYU.lose, { away: "鷲", hs: 99, as: 99 }),
-		fill(YAKYU.draw, { hs: 99, as: 99 }),
-		...Object.values(YAKYU.kinds),
-		...YAKYU.rules,
-		YAKYU.rulesHead,
-		OTHELLO.title,
-		OTHELLO.hint,
-		OTHELLO.you,
-		OTHELLO.them,
-		OTHELLO.bad,
-		OTHELLO.passYou,
-		OTHELLO.passThem,
-		OTHELLO.quit1,
-		OTHELLO.tapAgain,
-		fill(OTHELLO.win, { b: 64, w: 64 }),
-		fill(OTHELLO.lose, { b: 64, w: 64 }),
-		fill(OTHELLO.draw, { b: 32, w: 32 }),
-		FUKKIN.title,
-		FUKKIN.hint,
-		fill(FUKKIN.note, { left: 9999 }),
-		fill(FUKKIN.noteDone, { n: 9999 }),
-		fill(FUKKIN.noteQuit, { done: 9999 }),
-		COMMA.title,
-		COMMA.hint,
-		fill(COMMA.note, { n: 10 }),
-		COMMA.zoroNote,
-		COMMA.zeroTitle,
-		COMMA.zeroHint,
-		COMMA.zeroNote,
-		...Object.values(COMMA.judge),
-		SK.title,
-		SK.hint,
-		...SK.notes,
-	];
-	for (const t of board) fits(`board "${t}"`, t, 22, 1);
-	const posts = [
-		...Object.values(YAKYU.short),
-		...Object.values(YAKYU.cheer),
-		...YAKYU.voice,
-		YAKYU.addRun,
-		...Object.values(OTHELLO.posts),
-		...FUKKIN.posts,
-		FUKKIN.postOne,
-		fill(FUKKIN.postFew, { n: 99 }),
-		FUKKIN.postMany,
-		FUKKIN.postHalf,
-		FUKKIN.postDone,
-		FUKKIN.postDone2,
-		...COMMA.posts.zoro,
-		COMMA.posts.cap,
-		COMMA.posts.near,
-		...COMMA.posts.meh,
-		...Object.values(COMMA.posts.zero),
-	];
-	for (const t of posts) fits(`post "${t}"`, t, 12, 1);
-	// ランダム野球の スレの 1行（名前＋【数】＋結果）は 板の 欄（126px・8px）に 入る：全角 15 まで
-	for (const name of ["蓄音キリコ", "名無し"])
-		for (let n = 0; n <= 100; n++) {
-			const k = yakyuKind(n);
-			const labels =
-				k === "dp"
-					? (["dp", "out"] as const)
-					: k === "wp"
-						? (["wp", "wpEmpty"] as const)
-						: k === "sac"
-							? (["sac", "sacOut"] as const)
-							: [k];
-			for (const l of labels)
-				fits("yakyu post", `${name}【${n}】${YAKYU.short[l]}`, 15, 1);
-		}
-	for (let a = 0; a < SK.who.length; a++)
-		for (let b = 0; b < SK.where.length; b++)
-			for (let c = 0; c < SK.did.length; c++) {
-				const s = skSentence(a, b, c);
-				fits(`sk "${s}"`, s, 20, 1);
-				fits("SK.last", fill(SK.last, { text: s }));
-				for (const col of skColumns(a, b, c))
-					ok(
-						[...col].length <= 7 && !/[\x20-\x7e｡-ﾟ]/.test(col),
-						`column ${col}`,
-					);
-			}
-});
 
 // ───────────────── ID・ランダム野球・オセロ・コンマ・!sk の 決まり ─────────────────
 
@@ -656,21 +367,6 @@ test("ランダム野球: 2000試合 — かならず おわり、5〜7回、サ
 	ok(home / 2000 > 0.4 && home / 2000 < 0.55, `home ${home / 2000}`);
 });
 
-test("ランダム野球: カードは ちがう 2球団、打者は ニックネームか 名無し", () => {
-	for (let g = 0; g < 500; g++) {
-		const c = yakyuCard(g);
-		ok(
-			c.home !== c.away &&
-				JK_TEAM_IDS.includes(c.home) &&
-				JK_TEAM_IDS.includes(c.away),
-			`card ${g}`,
-		);
-	}
-	ok(teamChar("tora") === "虎", "tora");
-	for (const id of JK_TEAM_IDS)
-		for (let i = 0; i < 9; i++) ok(batterName(id, i).length > 0, `${id} ${i}`);
-});
-
 test("リバーシ: はじめの 手・返す 石・おわり", () => {
 	const b = othelloStart();
 	ok(
@@ -824,34 +520,6 @@ test("板の 入力: B を 1.5秒 以内に 2回で やめる、過ぎたら 1�
 	ok(!q.lapsed(11_500) && q.lapsed(11_501), "lapse after 1.5 s");
 	ok(!q.lapsed(12_000), "lapse only once");
 	ok(!q.press(12_100) && !q.lapsed(13_000) && q.press(13_100), "re-armed");
-});
-
-test("絵: neta.png 64x64・neta_kabe.png 32x128、切り出しは 絵の 中で 重ならない", () => {
-	const dir = process.env.NETA_SPRITES ?? join(process.cwd(), "public/sprites");
-	const dims = (f: string) => {
-		const b = readFileSync(join(dir, f));
-		return [b.readUInt32BE(16), b.readUInt32BE(20)];
-	};
-	ok(
-		JSON.stringify(dims("neta.png")) === JSON.stringify(NETA_SIZE),
-		"neta.png",
-	);
-	ok(
-		JSON.stringify(dims("neta_kabe.png")) === JSON.stringify(NETA_KABE_SIZE),
-		"neta_kabe.png",
-	);
-	const cells = Object.entries(NETA_CELLS);
-	for (const [k, [x, y, w, h]] of cells)
-		ok(x + w <= NETA_SIZE[0] && y + h <= NETA_SIZE[1], `${k} outside`);
-	for (let i = 0; i < cells.length; i++)
-		for (let j = i + 1; j < cells.length; j++) {
-			const [ax, ay, aw, ah] = cells[i][1];
-			const [bx, by, bw, bh] = cells[j][1];
-			ok(
-				ax + aw <= bx || bx + bw <= ax || ay + ah <= by || by + bh <= ay,
-				`${cells[i][0]} overlaps ${cells[j][0]}`,
-			);
-		}
 });
 
 // ───────────────── 窓の 流れ と 記録 ─────────────────

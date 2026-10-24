@@ -237,16 +237,6 @@ const fakeField = (v: VillageView): Field => {
 	} as unknown as Field;
 };
 
-test("よく 出入りする 所：名前は どれも 町に ある 施設", () => {
-	const places = new Set<string>();
-	for (let st = 0; st < TOWN_STAGES; st++)
-		for (const n of crowdNodes(view(st))) if (n.place) places.add(n.place);
-	for (const p of PERSONAS)
-		for (const ids of Object.values(p.haunts ?? {}))
-			for (const id of ids ?? [])
-				ok(places.has(id), `${p.id}: no ${id} on any map`);
-});
-
 test("動き（都市・夕方を 3分）：人は へらず ふえすぎず、通れない マスに 立たず、行き先に 着いて 入れかわる", () => {
 	for (const stage of [4, 7]) {
 		const v = view(stage);

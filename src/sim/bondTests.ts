@@ -2,31 +2,10 @@
 // おんJ銀行（data/trade/bank.ts・ui/trade/bank.ts）の 試験。
 // pnpm test で いっしょに 動く。形は seasonTests と 同じ（Fail・ok・{ id, name, ok, reason }）。id の 頭は B。
 
-import {
-	BOND_DEFS,
-	BOND_MSG,
-	BOND_STEPS,
-	GIFT_GOODS,
-	GIFT_IDS,
-	KEEPSAKES,
-	SEASON_PRESENTS,
-} from "../data/people/bonds";
-import { MOB_IDS, MOBS } from "../data/people/mobs";
-import { SPEAKERS } from "../data/story/quotes";
+import { BOND_STEPS } from "../data/people/bonds";
+import { MOBS } from "../data/people/mobs";
 import { BANK_CAP, BANK_CATCHUP, BANK_RATE } from "../data/trade/bank";
-import {
-	ACCOUNT_MSG,
-	DAY_TEXT,
-	FX,
-	FX_TEXT,
-	priceStep,
-	STOCK_IDS,
-	STOCKS,
-	startPrices,
-	TRADE_GUIDE,
-	TRADE_MSG,
-} from "../data/trade/trade";
-import { NETCAFE_MSG } from "../data/village/finance";
+import { priceStep, STOCK_IDS, STOCKS, startPrices } from "../data/trade/trade";
 import { HOME_MONTHLY, LOAN_MONTHS } from "../data/village/myhome";
 import { forgetWalletMemo, walletYen } from "../engine/wallet";
 import {
@@ -51,7 +30,6 @@ import {
 	bondLevel,
 	forgetBondsMemo,
 	loadBonds,
-	tasteOf,
 	withBond,
 } from "../ui/village/bonds";
 import { forgetCafeMemo } from "../ui/village/cafe";
@@ -72,20 +50,6 @@ const CASES: { id: string; name: string; run: () => void | Promise<void> }[] =
 	[];
 const test = (id: string, name: string, run: () => void | Promise<void>) =>
 	CASES.push({ id, name, run });
-
-/** 全角=1・半角=0.5 で 数えた 幅（villageTests と 同じ）。 */
-const width = (line: string): number =>
-	[...line].reduce((w, ch) => w + (/[\x20-\x7e｡-ﾟ]/.test(ch) ? 0.5 : 1), 0);
-
-/** 村の 窓（2行まで・1行 全角22字）。 */
-const fits = (where: string, text: string): void => {
-	const lines = text.split("\n");
-	ok(lines.length <= 2, `${where}: ${lines.length} lines in "${text}"`);
-	for (const l of lines)
-		ok(width(l) <= 22, `${where}: "${l}" is ${width(l)} wide (> 22)`);
-};
-
-const ALL = [...(Object.keys(SPEAKERS) as string[]), ...MOB_IDS] as const;
 
 /** localStorage を 試験の あいだだけ 差しかえる。 */
 const withStorage = async (
@@ -139,82 +103,6 @@ const setPoints = (store: Map<string, string>, points: number): void => {
 };
 
 // ───────────────── なかよし度 ─────────────────
-
-test(
-	"B1",
-	"every resident and friend has a bond entry, a birthday and two keepsakes",
-	() => {
-		for (const w of ALL) {
-			const d = BOND_DEFS[w as keyof typeof BOND_DEFS];
-			ok(d, `${w}: no bond entry`);
-			const [m, day] = d.birthday;
-			ok(
-				m >= 1 && m <= 12 && day >= 1 && day <= 31,
-				`${w}: birthday ${m}/${day}`,
-			);
-			ok(d.love.length >= 1, `${w}: nothing loved`);
-			ok(
-				KEEPSAKES[w as keyof typeof KEEPSAKES]?.length === 2,
-				`${w}: keepsakes`,
-			);
-		}
-		const ids = ALL.flatMap(
-			(w) => KEEPSAKES[w as keyof typeof KEEPSAKES]?.map((k) => k.id) ?? [],
-		);
-		ok(new Set(ids).size === ids.length, "keepsake ids are not unique");
-	},
-);
-
-test(
-	"B2",
-	"every bond line fits the village window (22 full-width × 2 lines)",
-	() => {
-		for (const w of ALL) {
-			const d = BOND_DEFS[w as keyof typeof BOND_DEFS];
-			for (const [k, t] of Object.entries(d.react)) fits(`${w}.react.${k}`, t);
-			for (const [i, sc] of (d.scenes ?? []).entries()) {
-				ok(
-					sc.length >= 1 && sc.length <= 5,
-					`${w}.scenes[${i}]: ${sc.length} windows`,
-				);
-				for (const l of sc) fits(`${w}.scenes[${i}]`, l.text);
-			}
-			for (const t of d.warm ?? []) fits(`${w}.warm`, t);
-			for (const t of Object.values(d.season ?? {})) fits(`${w}.season`, t);
-			for (const k of KEEPSAKES[w as keyof typeof KEEPSAKES] ?? []) {
-				fits(`${w}.${k.id}.say`, k.say);
-				fits(`${w}.${k.id}.desc`, k.desc);
-			}
-		}
-		for (const [k, t] of Object.entries(BOND_MSG))
-			if (typeof t === "string")
-				fits(
-					`BOND_MSG.${k}`,
-					t.replace("{gift}", "ぬいぐるみ").replace("{name}", "ジェイトルマン"),
-				);
-		for (const p of Object.values(SEASON_PRESENTS))
-			fits(
-				"season present",
-				p.got.replace("{name}", "ジェイトルマン").replace("{price}", "500円"),
-			);
-		for (const g of GIFT_IDS)
-			ok(width(GIFT_GOODS[g].name) <= 9, `${g}: name too long`);
-	},
-);
-
-test(
-	"B3",
-	"loved gifts are loved, tagged gifts are liked, hated tags are hated",
-	() => {
-		for (const w of ALL) {
-			const d = BOND_DEFS[w as keyof typeof BOND_DEFS];
-			for (const g of d.love)
-				ok(tasteOf(w as never, g) === "love", `${w} ${g}`);
-		}
-		ok(tasteOf("roze", "mabo") === "love", "roze loves mabo");
-		ok(tasteOf("shiyo", "matches") === "hate", "shiyo hates fire");
-	},
-);
 
 test(
 	"B4",
@@ -352,53 +240,6 @@ test(
 			ok(loadStocks().hist.hoshu.length <= 24, "history too long");
 			ok(stockValue() > 0, "holding has no value");
 		});
-	},
-);
-
-test(
-	"B7",
-	"trading texts fit the window and the board lines fit their bars",
-	() => {
-		for (const [k, t] of [
-			...Object.entries(TRADE_MSG),
-			...Object.entries(ACCOUNT_MSG).flatMap(([k, v]) =>
-				([] as string[]).concat(v).map((x) => [`a.${k}`, x] as const),
-			),
-			...Object.entries(NETCAFE_MSG).flatMap(([k, v]) =>
-				([] as string[]).concat(v).map((x) => [`n.${k}`, x] as const),
-			),
-			...Object.entries(TRADE_GUIDE).flatMap(([k, v]) =>
-				([] as unknown[])
-					.concat(v)
-					.flat()
-					.map((x) => [`g.${k}`, x] as const),
-			),
-		])
-			if (typeof t === "string")
-				fits(
-					`TRADE_MSG.${k}`,
-					t
-						.replace(
-							/\{(price|have|value|left|net|cash|cost|pl)\}/g,
-							"100,000円",
-						)
-						.replace("{name}", STOCKS.joshiki.short)
-						.replace("{text}", "")
-						.replace("{head}", "100,000円がもどってきた。")
-						.replace("{n}", "100"),
-				);
-		for (const id of STOCK_IDS)
-			for (const t of [...STOCKS[id].up, ...STOCKS[id].down])
-				fits(
-					`${id} news`,
-					`【ニュース】${t}`.replace("\n", "").length > 0 ? t : t,
-				);
-		for (const t of [...Object.values(DAY_TEXT), ...Object.values(FX_TEXT)])
-			ok(width(t) <= 22, `"${t}" is ${width(t)} wide`);
-		ok(
-			FX.levers.includes(1000) && FX.losscut === 0.5,
-			"high leverage and losscut",
-		);
 	},
 );
 

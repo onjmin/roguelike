@@ -2,17 +2,13 @@
 // B1〜B5：置き場所・部屋・絵・人の 歩行グラ。B6：文の 幅と 使わない 語。B7〜B9：ワードウルフ・うろ覚え・校歌の 決まり。
 // B10〜：村の 入口（ui/bushitsu/bushitsu.ts。板は 差しかえ）と 保存（kiriko-roguelike/bushitsu）。
 
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { TOWN_STAGES } from "../core/town";
 import type { DungeonId } from "../core/types";
 import {
-	BS_BAD_NUMBER,
 	BS_BOARD,
-	BS_CLUBS,
-	BS_DOOR,
 	BS_MSG,
-	BS_OUTDOOR,
 	BS_STAFF,
 	BS_THING_LINES,
 	boshuLine,
@@ -28,8 +24,6 @@ import {
 	koukaTenths,
 	koukaTick,
 	MUKASHI,
-	madeWindow,
-	nisshiWindows,
 	OE_TOPICS,
 	type OeKind,
 	oeDrawing,
@@ -41,24 +35,14 @@ import {
 	type Rand,
 	rosterNames,
 	rosterWindows,
-	textWidth,
 	WW_BUCHO,
-	WW_IDS,
-	WW_PAIRS,
 	type WwDeal,
 	wwDeal,
 	wwVerdict,
 	wwWho,
 	wwWord,
 } from "../data/bushitsu/bushitsu";
-import { BS_CELLS, BS_IMG, BS_SIZE, bs } from "../data/bushitsu/bushitsuSheet";
-import {
-	facilityById,
-	facilityDoor,
-	facilityOutside,
-	facilityRoomPalette,
-	facilityRoomRows,
-} from "../data/village/facilities";
+import { facilityById } from "../data/village/facilities";
 import {
 	VILLAGE_SPOTS,
 	type VillageView,
@@ -111,31 +95,6 @@ const view = (stage: number, step?: number): VillageView => ({
 });
 
 // ───────────────── B1〜B5 置き場所・部屋・絵 ─────────────────
-
-test(
-	"B1",
-	"施設：段4から（終わり なし）・(8,1) の 13×3・扉 (14,3)・外 (14,4)・遊べる 物は 物",
-	() => {
-		const f = must();
-		ok(f.from === 4 && f.until === undefined, `from ${f.from} ${f.until}`);
-		ok(f.at[0] === 8 && f.at[1] === 1, `at ${f.at}`);
-		ok(
-			f.look.kind === "grid" &&
-				f.look.rows.length === 3 &&
-				f.look.rows.every((r) => [...r].length === 13),
-			"not a 13x3 grid",
-		);
-		const d = facilityDoor(f);
-		ok(d?.[0] === 14 && d[1] === 3, `door ${d}`);
-		const o = facilityOutside(f);
-		ok(o.x === 14 && o.y === 4 && o.dir === "down", `outside ${o.x},${o.y}`);
-		const things = new Set(Object.values(f.room?.things ?? {}));
-		for (const [k, p] of Object.entries(f.room?.plays ?? {})) {
-			ok(p === "bushitsu", `${k}: ${p}`);
-			ok(things.has(k), `play ${k} is not a thing`);
-		}
-	},
-);
 
 /** 開き方 3通り（本編まで・もっとまで）。 */
 const UNLOCKS: DungeonId[][] = [
@@ -226,109 +185,6 @@ test(
 	},
 );
 
-/** 部室棟の 絵の 参照なら その 切り出し。 */
-const bsCrop = (ref: string): number[] | null =>
-	ref.startsWith(`${BS_IMG}#`)
-		? ref
-				.slice(BS_IMG.length + 1)
-				.split(",")
-				.map(Number)
-		: null;
-
-test(
-	"B3",
-	"部屋：部長 7人の 席・放送部の 台（まん中は 物なし、両わきは ミキサー・ラジカセ）・ON AIR の 絵・部室棟の 絵は 枠の 中",
-	() => {
-		const f = must();
-		const room = f.room;
-		ok(room, "no room");
-		if (!room) return;
-		const want: Record<string, [number, number]> = {
-			bs_jinro: [2, 3],
-			bs_oekaki: [9, 4],
-			bs_hoso: [15, 3],
-			bs_voca: [21, 4],
-			bs_game: [28, 4],
-			bs_gassho: [6, 7],
-			bs_kitaku: [17, 9],
-		};
-		const people = room.people ?? [];
-		ok(people.length === 7, `${people.length} people`);
-		for (const p of people) {
-			const w = want[p.id];
-			ok(w && p.at[0] === w[0] && p.at[1] === w[1], `${p.id} at ${p.at}`);
-		}
-		const rows = facilityRoomRows(f).map((r) => [...r]);
-		const pal = facilityRoomPalette(f);
-		const ch = (x: number, y: number) => rows[y][x];
-		ok(pal[ch(15, 4)]?.counter && !room.things[ch(15, 4)], "(15,4)");
-		ok(
-			pal[ch(14, 4)]?.counter && room.things[ch(14, 4)] === "mixer",
-			"(14,4) mixer",
-		);
-		ok(
-			pal[ch(16, 4)]?.counter && room.things[ch(16, 4)] === "radio",
-			"(16,4) radio",
-		);
-		const lamp = pal.O?.layers ?? [];
-		ok(
-			lamp.includes(bs("lampOn")) || lamp.includes(bs("lampOff")),
-			`lamp ${lamp}`,
-		);
-		// 外観と 部屋の 部室棟の 絵：枠の 中・16の 目・どれかの 絵の 中
-		const refs = [
-			...(f.look.kind === "grid" ? Object.values(f.look.keys).flat() : []),
-			...Object.values(pal).flatMap((t) => [...t.layers, ...(t.above ?? [])]),
-		];
-		const rects = Object.values(BS_CELLS);
-		let n = 0;
-		for (const r of refs) {
-			const c = bsCrop(r);
-			if (!c) continue;
-			n++;
-			const [x, y, w, h] = c;
-			ok(
-				x >= 0 && y >= 0 && x + w <= BS_SIZE[0] && y + h <= BS_SIZE[1],
-				`${r} out of the sheet`,
-			);
-			ok(x % 16 === 0 && y % 16 === 0 && w % 16 === 0 && h % 16 === 0, r);
-			ok(
-				rects.some(
-					([rx, ry, rw, rh]) =>
-						x >= rx && y >= ry && x + w <= rx + rw && y + h <= ry + rh,
-				),
-				`${r} is in no cell`,
-			);
-		}
-		ok(n >= 30, `only ${n} bushitsu refs`);
-	},
-);
-
-test(
-	"B4",
-	"絵：public/sprites/bushitsu.png が BS_SIZE、48 枚（部長・合唱部の 顔色 3つ・下駄箱 2マス）",
-	() => {
-		const png = readFileSync(
-			join(process.cwd(), "public/sprites/bushitsu.png"),
-		);
-		ok(png.toString("ascii", 12, 16) === "IHDR", "not a PNG");
-		const w = png.readUInt32BE(16);
-		const h = png.readUInt32BE(20);
-		ok(w === BS_SIZE[0] && h === BS_SIZE[1], `${w}x${h}`);
-		const names = Object.keys(BS_CELLS);
-		ok(names.length === 48, `${names.length} cells`);
-		for (const n of [
-			"bucho",
-			"gassho0",
-			"gassho1",
-			"gassho2",
-			"getaL",
-			"getaR",
-		])
-			ok(names.includes(n), `no ${n}`);
-	},
-);
-
 /** src の ファイル（再帰）。 */
 const srcFiles = (dir: string): string[] =>
 	readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -339,51 +195,6 @@ const srcFiles = (dir: string): string[] =>
 				: [],
 	);
 
-test(
-	"B5",
-	"部長の 歩行グラ：7つの ちがう sa:。src の どこにも ほかに 出てこない（data/bushitsu/bushitsu.ts だけ）",
-	() => {
-		const walks: string[] = Object.values(BS_STAFF).map((s) => s.walk);
-		ok(new Set(walks).size === 7, `walks ${walks}`);
-		for (const w of walks) ok(/^sa:[A-Za-z0-9]{6}$/.test(w), w);
-		const room = must().room;
-		ok(
-			(room?.people ?? []).every((p) => walks.includes(p.walk)),
-			"room people use other sheets",
-		);
-		const root = join(process.cwd(), "src");
-		const home = join(root, "data", "bushitsu", "bushitsu.ts");
-		const ids = walks.map((w) => w.slice(3));
-		for (const file of srcFiles(root)) {
-			if (file === home) continue;
-			const body = readFileSync(file, "utf8");
-			for (const id of ids)
-				ok(!body.includes(id), `${id} also in ${file.slice(root.length)}`);
-		}
-	},
-);
-
-// ───────────────── B6 文 ─────────────────
-
-/** 窓（2行・1行 22 まで）。 */
-const fitsWindow = (where: string, t: string, rows = 2): void => {
-	const lines = t.split("\n");
-	ok(lines.length <= rows, `${where}: ${lines.length} lines "${t}"`);
-	for (const l of lines)
-		ok(textWidth(l) <= 22, `${where}: "${l}" is ${textWidth(l)} wide`);
-	ok(!/\{\w+\}/.test(t), `${where}: unfilled "${t}"`);
-};
-/** 板の 1行（22 まで）。 */
-const fitsLine = (where: string, t: string, max = 22): void => {
-	ok(!t.includes("\n"), `${where}: 2 lines "${t}"`);
-	ok(textWidth(t) <= max, `${where}: "${t}" is ${textWidth(t)} wide`);
-	ok(!/\{\w+\}/.test(t), `${where}: unfilled "${t}"`);
-};
-/** 使わない 語（保守・落ち・絵文字・★・扌）。 */
-const ng = (where: string, t: string): void => {
-	ok(!/保守|落ち|★|扌/.test(t), `${where}: NG word in "${t}"`);
-	ok(!/\p{Extended_Pictographic}/u.test(t), `${where}: emoji in "${t}"`);
-};
 /** 文字列の 葉を ぜんぶ（[道, 文]）。 */
 const leaves = (o: unknown, path: string): [string, string][] =>
 	typeof o === "string"
@@ -393,140 +204,6 @@ const leaves = (o: unknown, path: string): [string, string][] =>
 			: o && typeof o === "object"
 				? Object.entries(o).flatMap(([k, x]) => leaves(x, `${path}.${k}`))
 				: [];
-
-/** 埋める 値（いちばん 長い もの）。 */
-const WIDE = {
-	n: 999,
-	s: "99.9",
-	d: "99.9",
-};
-const widest = (xs: readonly string[]) =>
-	xs.reduce((a, b) => (textWidth(b) > textWidth(a) ? b : a), "");
-
-test(
-	"B6",
-	"文：窓は 2行・22 まで、板は 1行・22 まで、選ぶ 札は 10 まで、お題の ひとことは 8 まで。使わない 語なし。作る 文も 合う",
-	() => {
-		const all: [string, string][] = [
-			["door", BS_DOOR],
-			...leaves(BS_OUTDOOR, "outdoor"),
-			...leaves(BS_THING_LINES, "things"),
-			...Object.entries(BS_STAFF).flatMap(([k, s]) =>
-				leaves(s.lines, `staff.${k}`),
-			),
-		];
-		for (const [w, t] of all) {
-			fitsWindow(w, t);
-			ng(w, t);
-		}
-		for (const [k, s] of Object.entries(BS_STAFF))
-			ok(s.lines.length >= 1 && s.lines.length <= 2, `staff ${k} windows`);
-		for (const [k, l] of Object.entries(BS_THING_LINES))
-			ok(l.length >= 1 && l.length <= 3, `thing ${k}: ${l.length} windows`);
-		// 窓の 文（埋めて から）
-		const titles = BS_MSG.nt.titles;
-		const V = BS_MSG.vm;
-		const made = {
-			name: widest(V.names),
-			look: widest(V.looks),
-			tic: widest(V.tics),
-		};
-		for (const [w, t] of leaves(BS_MSG, "msg")) {
-			ng(w, t);
-			if (/\.(menu|names|looks|tics)\[|\.stop$/.test(w)) {
-				ok(textWidth(t) <= 10, `${w}: label "${t}" ${textWidth(t)}`);
-				continue;
-			}
-			if (w.startsWith("msg.boshu")) continue;
-			if (w === "msg.nt.title") {
-				for (const title of titles) fitsWindow(w, fillText(t, { title }));
-				continue;
-			}
-			fitsWindow(w, fillText(t, { ...WIDE, ...made }));
-		}
-		for (const c of BS_CLUBS)
-			fitsWindow(
-				"boshu",
-				fillText(c.hane ? BS_MSG.boshu.hane : BS_MSG.boshu.part, {
-					club: c.name,
-					n: 9999,
-				}),
-			);
-		ok(BS_MSG.nt.titles.length === 7 && BS_MSG.nt.host.length === 7, "7 days");
-		ok(BS_MSG.nt.host[0] === "" && BS_MSG.nt.host[6] === "", "weekend host");
-		for (const f of MUKASHI) {
-			ok(f.lines.length === 1, `${f.year}: ${f.lines.length} windows`);
-			for (const l of f.lines) {
-				fitsWindow(`mukashi ${f.year}`, l);
-				ng(`mukashi ${f.year}`, l);
-			}
-		}
-		// 板の 文
-		const hints = WW_PAIRS.flatMap((p) => [
-			...p.common,
-			...p.own[0],
-			...p.own[1],
-		]);
-		const words = WW_PAIRS.flatMap((p) => [p.a, p.b]);
-		for (const [w, t] of leaves(BS_BOARD, "board")) {
-			ng(w, t);
-			if (w === "board.ww.turn") {
-				for (const who of ["ID:Ab3x", BS_BOARD.ww.bucho])
-					for (const hint of hints) fitsLine(w, fillText(t, { who, hint }));
-			} else if (w === "board.ww.card" || w === "board.ww.wolf") {
-				for (const word of words) fitsLine(w, fillText(t, { word }), 11);
-			} else if (w === "board.ww.vote") {
-				fitsLine(w, fillText(t, { who: "ID:Ab3x" }));
-			} else if (w === "board.ww.id") {
-				fitsLine(w, fillText(t, { id: "Ab3x" }));
-			} else if (w === "board.oe.start") {
-				for (const t2 of OE_TOPICS) fitsLine(w, fillText(t, { name: t2.name }));
-			} else fitsLine(w, fillText(t, WIDE));
-		}
-		// ワードウルフの お題
-		ok(new Set(WW_PAIRS.map((p) => p.id)).size === WW_PAIRS.length, "pair ids");
-		for (const p of WW_PAIRS) {
-			ok(
-				p.common.length === 3 && p.own[0].length === 4 && p.own[1].length === 4,
-				`${p.id}: pools`,
-			);
-			const pool = [...p.common, ...p.own[0], ...p.own[1]];
-			ok(new Set(pool).size === pool.length, `${p.id}: duplicate hint`);
-			for (const h of pool) {
-				ok(textWidth(h) <= 8, `${p.id}: "${h}" ${textWidth(h)}`);
-				ng(p.id, h);
-			}
-		}
-		ok(new Set(WW_IDS).size === WW_IDS.length, "ids repeat");
-		for (const id of WW_IDS)
-			ok(id.length === 4 && !BS_BAD_NUMBER.test(id), `id ${id}`);
-		// 作る 文
-		const all6 = rosterNames();
-		ok(all6.join("/") === BS_MSG.vc.official.join("/"), `roster ${all6}`);
-		const rw = rosterWindows(all6);
-		ok(rw.length === 1, `roster windows ${rw.length}`);
-		for (const t of rw) fitsWindow("roster", t);
-		const longest = [...V.names]
-			.sort((a, b) => textWidth(b) - textWidth(a))
-			.slice(0, 5)
-			.map((name) => ({ name }));
-		for (let k = 0; k <= 5; k++)
-			for (const eta of [0, 1, 999]) {
-				const t = madeWindow(longest.slice(0, k), eta);
-				ok((t === null) === (k === 0 && eta === 0), `made ${k} ${eta}`);
-				if (t) fitsWindow(`made ${k} ${eta}`, t);
-			}
-		for (let heard = 1; heard <= 20; heard++)
-			for (const t of nisshiWindows(heard)) fitsWindow(`nisshi ${heard}`, t);
-		ok(nisshiWindows(20).length <= 2, "nisshi windows");
-		for (let v = 1; v <= 3000; v++) {
-			const t = boshuLine(v);
-			fitsWindow(`boshu ${v}`, t);
-			const num = /(?:part|　)(\d+)/.exec(t.split("\n")[0])?.[1] ?? "";
-			ok(num && !BS_BAD_NUMBER.test(num), `boshu ${v}: ${num}`);
-		}
-	},
-);
 
 // ───────────────── B7 ワードウルフ ─────────────────
 

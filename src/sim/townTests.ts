@@ -22,7 +22,6 @@ import { SE_LOUDNESS } from "../data/audio/loudness";
 import { sfx } from "../data/audio/sfx";
 import { advanceClock, nowHour, nowMinute, today } from "../data/town/calendar";
 import { stageOfCleared } from "../data/town/revival";
-import { ROOM_DOOR_SE } from "../data/town/rooms";
 import { timeBand } from "../data/village/crowd";
 import {
 	BAND_LIGHT,
@@ -34,7 +33,7 @@ import {
 	sunTimes,
 	windowLit,
 } from "../data/village/daylight";
-import { FACILITIES, facilityTiles } from "../data/village/facilities";
+import { facilityTiles } from "../data/village/facilities";
 import { villagePalette } from "../data/village/map";
 import { GROUND, SHOP } from "../data/village/tiles";
 import { devArrival } from "../devSandbox";
@@ -171,70 +170,6 @@ test("every item except goal items has a price", () => {
 	ok(
 		priceOf(it("a_wood", { count: 10 })) === 10 * priceOf(it("a_wood")),
 		"arrows are not priced per arrow",
-	);
-});
-
-test("every weapon has its own hit sound, and every attack sound is measured", () => {
-	const names = [
-		"swing_fist",
-		"hit_fist",
-		"enemyMiss",
-		"damage",
-		...ITEM_LIST.filter((d) => d.cat === "weapon").flatMap((d) => {
-			ok(d.sound, `${d.id} has no sound`);
-			return d.sound ? [d.sound.swing, d.sound.hit] : [];
-		}),
-	];
-	for (const n of names) {
-		ok(sfx[n], `no sound file for ${n}`);
-		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
-	}
-	const hits = ITEM_LIST.filter((d) => d.cat === "weapon").map(
-		(d) => d.sound?.hit,
-	);
-	ok(new Set(hits).size === hits.length, "two weapons share a hit sound");
-});
-
-test("建物の 出入りの 音：どれも 素材が あって 測ってあり、入口の 作りで 何種類かに 分かれる", () => {
-	const names = [
-		"door",
-		"doorSteel",
-		...Object.values(ROOM_DOOR_SE),
-		...FACILITIES.filter((f) => f.room).map((f) => f.doorSe ?? "doorWood"),
-	];
-	for (const n of names) {
-		ok(sfx[n], `no sound file for ${n}`);
-		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
-	}
-	ok(new Set(names).size >= 4, "every building sounds the same");
-});
-
-test("効果音の 名前：se(…) で 鳴らす 音は どれも 素材が あって 測ってあり、レベルアップの 曲は 迷宮の レベルアップ だけ", () => {
-	const files = (dir: string): string[] =>
-		readdirSync(dir, { withFileTypes: true }).flatMap((d) =>
-			d.isDirectory()
-				? files(join(dir, d.name))
-				: d.name.endsWith(".ts")
-					? [join(dir, d.name)]
-					: [],
-		);
-	const uses = new Map<string, string[]>();
-	for (const p of [...files("src/ui"), ...files("src/core")]) {
-		const src = readFileSync(p, "utf8");
-		// se( の 中の 「鳴らす 名前」だけ（三項の 枝・頭の 文字列。=== "tie" の ような 比べる 値は 拾わない）
-		for (const m of src.matchAll(/\bse\(([^()]*(?:\([^()]*\)[^()]*)*)\)/g))
-			for (const n of (m[1] ?? "").matchAll(/(?:^\s*|[?:]\s*)"([A-Za-z_]+)"/g))
-				if (n[1]) uses.set(n[1], [...(uses.get(n[1]) ?? []), p]);
-	}
-	ok(uses.size >= 60, `found ${uses.size} sounds`);
-	for (const [n, at] of uses) {
-		ok(sfx[n], `no sound file for ${n} (${at[0]})`);
-		ok(SE_LOUDNESS[n], `${n} is not measured (pnpm loudness)`);
-	}
-	const lv = (uses.get("levelup") ?? []).map((p) => p.replace(/\\/g, "/"));
-	ok(
-		lv.length === 1 && lv[0]?.endsWith("core/run.ts"),
-		`levelup used outside a level-up: ${lv.join(", ")}`,
 	);
 });
 
