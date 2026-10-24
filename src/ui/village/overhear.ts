@@ -13,6 +13,7 @@ import {
 } from "../../data/village/overhear";
 import type { Actor } from "../../engine/field";
 import { TILE } from "../../engine/types";
+import { dialogueInk } from "../dialogueInk";
 
 /** キリコから これだけ（マス。たて・よこ・ななめの 大きい方）の 人だけ 話す。 */
 export const HEAR = 4;
@@ -44,7 +45,7 @@ export type OverhearHost = {
 	rng?: () => number;
 };
 
-type Line = { actor: Actor; text: string };
+type Line = { actor: Actor; text: string; color?: string };
 
 const isMobId = (id: string): id is MobId => id in MOB_MUTTERS;
 
@@ -119,8 +120,15 @@ export class Overhear {
 	}
 
 	private show(l: Line): void {
-		const chars = [...l.text.replace(/\n/g, "")].length;
-		this.shown = { ...l, t: this.time, ms: BASE_MS + chars * PER_CHAR_MS };
+		const ink = dialogueInk(l.text);
+		const chars = [...ink.text.replace(/\n/g, "")].length;
+		this.shown = {
+			...l,
+			text: ink.text,
+			color: ink.color,
+			t: this.time,
+			ms: BASE_MS + chars * PER_CHAR_MS,
+		};
 	}
 
 	/** 話して いる 人が まだ 地図に いて、キリコから 離れて いない。 */
@@ -220,8 +228,15 @@ export class Overhear {
 		g.fill();
 		g.stroke();
 		g.fillRect(tx - 2, y0 + bh - 1, 5, 2);
-		g.fillStyle = "#2a2a33";
+		g.strokeStyle = "#2a2a33";
+		g.lineWidth = 2;
 		lines.forEach((l, i) => {
+			if (s.color) {
+				g.strokeText(l, x0 + 3, y0 + 2 + i * 9);
+				g.fillStyle = s.color;
+			} else {
+				g.fillStyle = "#2a2a33";
+			}
 			g.fillText(l, x0 + 3, y0 + 2 + i * 9);
 		});
 		g.restore();

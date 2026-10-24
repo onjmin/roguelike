@@ -81,6 +81,7 @@ import { loadProgress } from "../../engine/save";
 import { sceneSlow } from "../../engine/sceneTime";
 import type { Screen } from "../../engine/screen";
 import { settings } from "../../engine/settings";
+import { dialogueInk } from "../dialogueInk";
 import {
 	clamp,
 	DIR_VEC,
@@ -2035,12 +2036,13 @@ export class Village {
 		opt: SayOptions = {},
 	): Promise<void> {
 		const c = who ? CAST[who] : undefined;
+		const ink = dialogueInk(text);
 		// おーぷんの 日替わり（2/22 猫の日・4/1 強制博多弁・10/31 トリック。data/town/openModes.ts）。話す 人の 窓だけ：
 		// 地の文・キリコ（sayKiriko）・入った ときの 場面（スレタイと >>1。2017年の 博多弁と 同じ）・
 		// 住人の はじめましてと 節目（rawModes。ui/village/villageMobs.ts）には かけない。名前欄は かえない
 		const mode =
 			!this.scene && (who || opt.name) && !modesHeld() ? openMode() : null;
-		const shown = mode ? modeText(text, mode) : text;
+		const shown = mode ? modeText(ink.text, mode) : ink.text;
 		// 声の ある 人（data/people/cast.ts の voice・MOB_VOICE）だけ 読み上げる（ボイスが ON のとき。rpg の Game.say と 同じ）
 		// 絵文字は 読み上げの 側で 落とす（engine/audio.ts）
 		// ツッコミ（hit の ある 行）は 叫ぶ（怒りの 声で 勢いよく）
@@ -2062,6 +2064,7 @@ export class Village {
 			name: opt.name ?? c?.label ?? c?.name,
 			color: opt.color ?? c?.color,
 			text: shown,
+			textColor: ink.color,
 			// 立ち絵の 頭の 横にも 手書き風の 記号（村に 立って いない 人でも）
 			emote: opt.emote,
 			autoMs: opt.auto,

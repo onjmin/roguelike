@@ -31,6 +31,7 @@ import type { SpeechStart } from "../engine/audio";
 import type { Emote } from "../engine/emote";
 import type { Input } from "../engine/input";
 import { el } from "./dom";
+import { dialogueInk } from "./dialogueInk";
 import { INK_CLASS, inkEmoteSvg } from "./emoteInk";
 
 type Side = "left" | "right";
@@ -255,6 +256,7 @@ const loadTrimmed = (src: string): Promise<Art | null> => {
 export type MessageParams = {
 	name?: string;
 	color?: string;
+	textColor?: string;
 	text: string;
 	portrait?: PortraitSpec | null;
 	/** 話す 人の 立ち絵の 頭の 横に 添える 感情の 記号（手書き風。ui/emoteInk.ts）。立ち絵が 無ければ 出さない。 */
@@ -490,10 +492,13 @@ export class MessageWindow {
 	show(p: MessageParams): Promise<void> {
 		this.win.classList.add("shown");
 		if (p.emote) this.onEmote?.(p.emote);
+		const ink = dialogueInk(p.text);
+		const text = ink.text;
 		this.nameEl.textContent = p.name ?? "";
 		this.nameEl.style.display = p.name ? "" : "none";
 		this.nameEl.style.setProperty("--char", p.color ?? "#fff");
 		this.win.classList.toggle("narration", !p.name);
+		this.textEl.style.color = p.textColor ?? ink.color ?? "";
 		if (p.portrait) {
 			const slot = this.pickSlot(p.portrait);
 			const other = slot === this.left ? this.right : this.left;
@@ -512,11 +517,11 @@ export class MessageWindow {
 			this.left.dim(true);
 			this.right.dim(true);
 		}
-		const chars = [...p.text];
+		const chars = [...text];
 		this.textEl.textContent = "";
 		this.nextEl.classList.remove("shown");
 		// 声にならない出だしの文字数と、それを出しきって間を置くまでの ms（最初の文字は声の頭と同時に出す）
-		const silent = [...(p.text.match(SILENT_LEAD)?.[0] ?? "")].length;
+		const silent = [...(text.match(SILENT_LEAD)?.[0] ?? "")].length;
 		const leadChars = silent < chars.length ? silent : 0;
 		const leadPer = Math.max(0, this.msPerChar());
 		let leadMs = 0;
@@ -562,7 +567,7 @@ export class MessageWindow {
 				done = true;
 				doneAt = performance.now();
 				window.clearTimeout(timer);
-				this.textEl.textContent = p.text;
+				this.textEl.textContent = text;
 				p.onDone?.();
 				// 鳴らしたばかりの効果音の本体が鳴り終わってから ▼ を出して送れるようにする
 				// （すぐ送ると次の効果音が畳みかけて重なる）
