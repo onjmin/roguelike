@@ -124,6 +124,26 @@ const pathStepVia = (
 	return dirOf(x - r.p.x, y - r.p.y);
 };
 
+/** from から to へ 8方向の直線上かつ障害物（壁や他キャラ）がないか。射線が通っていれば方向を返す。 */
+const clearLine = (r: Run, from: Pos, to: Pos, maxRange = 10): Dir8 | null => {
+	const dx = to.x - from.x;
+	const dy = to.y - from.y;
+	if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) return null;
+	const d = dirOf(dx, dy) as Dir8 | null;
+	if (d === null) return null;
+	const steps = Math.max(Math.abs(dx), Math.abs(dy));
+	if (steps === 0 || steps > maxRange) return null;
+	let cur = { x: from.x, y: from.y };
+	for (let i = 1; i < steps; i++) {
+		if (!r.cornerOk(cur, d)) return null;
+		cur = step(cur, d);
+		if (!isFloor(r.f.layout, cur.x, cur.y)) return null;
+		if (r.monsterAt(cur.x, cur.y) || r.isGuestAt(cur.x, cur.y)) return null;
+	}
+	if (!r.cornerOk(cur, d)) return null;
+	return d;
+};
+
 /** 未踏の境目（見たことのある床で、となりに見ていないマスがある所）のうち近いもの。 */
 const frontier = (r: Run): Pos | null => {
 	// 歩いて近い順（まっすぐの距離で選ぶと、左右に同じくらい遠い境目があるとき 行ったり来たりする）
@@ -358,25 +378,92 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		}
 		return { c: "attack", dir: invisibleAttacker.dir };
 	}
-	// 遠くの敵に矢を撃つ
+	// 遠くの敵に矢（ボール）を撃つ
 	const arrow = items.find((i) => defOf(i.kind).cat === "arrow");
 	if (arrow && !adjacent.length) {
 		for (const m of [...threats, ...fusedBombs]) {
-			const dx = m.x - p.x;
-			const dy = m.y - p.y;
-			if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) continue;
 			if (dist(m, p) < 2) continue;
 			if (m.fuse && dist(m, p) <= 2) continue;
-			const dir = dirOf(dx, dy) as Dir8;
-			return faceAnd(dir, { c: "throw", item: arrow.uid, dir });
+			const dir = clearLine(r, p, m);
+			if (dir !== null) {
+				return faceAnd(dir, { c: "throw", item: arrow.uid, dir });
+			}
 		}
 	}
-	// 食事
+
+	// 弱って逃げる敵（自演くん等）：ボール等で追撃・射線を通せる位置へ移動・追い詰めて倒す
+	const retreatingFoes = visible.filter(
+		(m) =>
+			!m.fuse &&
+			(m.retreating || (m.kind === "chimera" && m.hp <= m.maxHp * 0.5)),
+	);
+	if (retreatingFoes.length > 0 && hpRate >= 0.25) {
+		const foe = retreatingFoes.sort((a, b) => dist(a, p) - dist(b, p))[0];
+		const dToFoe = dirOf(foe.x - p.x, foe.y - p.y);
+		// となりにいるなら直接攻撃してとどめを刺す
+		if (
+			dist(foe, p) === 1 &&
+			dToFoe !== null &&
+			r.cornerOk(p, dToFoe as Dir8)
+		) {
+			return { c: "attack", dir: dToFoe as Dir8 };
+		}
+		// ボール（矢）を持っている場合：射線が通っていれば投げる
+		if (arrow) {
+			const directDir = clearLine(r, p, foe);
+			if (directDir !== null && dist(foe, p) >= 2) {
+				return faceAnd(directDir, {
+					c: "throw",
+					item: arrow.uid,
+					dir: directDir,
+				});
+			}
+			// まだ射線が通っていない場合：1歩動けば射線が通る位置（追撃出来る位置）を探して移動する
+			for (const d of DIRS8) {
+				const n = step(p, d);
+				if (
+					r.canStepTerrain(p, d) &&
+					r.cornerOk(p, d) &&
+					!r.monsterAt(n.x, n.y) &&
+					!r.isGuestAt(n.x, n.y) &&
+					!f.traps.some((t) => t.found && t.x === n.x && t.y === n.y)
+				) {
+					const lineDir = clearLine(r, n, foe);
+					if (lineDir !== null) {
+						return { c: "move", dir: d };
+					}
+				}
+			}
+		}
+		// ボールがないか射線が遠い場合：追い詰めて倒すために接近する
+		const chase = pathStep(r, foe, false);
+		if (chase !== null) {
+			return { c: "move", dir: chase };
+		}
+	}
+
+	// 価値の低いアイテム（チギュリパン等：食べるとちから・HPが下がる）を優先的に捨てる
+	const canDropNow =
+		!r.itemAt(p.x, p.y) &&
+		!r.onStairs() &&
+		!f.wards.includes(p.y * f.layout.w + p.x);
+	if (canDropNow && threats.length === 0) {
+		const moldy = items.find((i) => i.kind === "f_moldy");
+		if (moldy) return { c: "drop", item: moldy.uid };
+		const badHerb = items.find((i) => BAD_HERBS.has(i.kind) && known(i));
+		if (badHerb && (items.length >= 8 || hpRate > 0.5)) {
+			return { c: "drop", item: badHerb.uid };
+		}
+	}
+
+	// 食事（チギュリパンは極度の飢餓時かつ他がない場合のみ）
 	if (p.hunger < 12 * HUNGER_UNIT) {
 		const food =
 			items.find((i) => i.kind === "f_bread") ??
 			items.find((i) => i.kind === "f_large") ??
-			items.find((i) => i.kind === "f_moldy");
+			(p.hunger === 0 && p.hp > 15
+				? items.find((i) => i.kind === "f_moldy")
+				: undefined);
 		if (food) return { c: "use", item: food.uid };
 	}
 	// オート：2体 以上に 向かってこられたら、なぐられる 向きの 多い 所から 通路・入口へ 下がる。
@@ -599,7 +686,28 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		if (ring && visible.length === 0) return { c: "equip", item: ring.uid };
 	}
 	// 敵が見えていないときに 識別・強化
-	if (visible.length === 0) {
+	// HPに余裕があるとき（hpRate >= 0.65）：草や板（盾）等の未鑑定アイテムを出し惜しみせず使用・試着して識別する
+	if (
+		visible.length === 0 ||
+		(hpRate >= 0.65 && threats.length === 0 && !adjacent.length)
+	) {
+		// 未鑑定の草を飲む（HPに余裕があるときに積極的に試す）
+		if (hpRate >= 0.65) {
+			const unkHerb = items.find(
+				(i) => defOf(i.kind).cat === "herb" && !known(i),
+			);
+			if (unkHerb) return { c: "use", item: unkHerb.uid };
+		}
+
+		// 未鑑定の板（盾）を装備してみる（呪われていないか・補正値確認）
+		const curShield = r.shield();
+		if (!curShield?.cursed) {
+			const unkShield = items.find(
+				(i) => defOf(i.kind).cat === "shield" && !i.known,
+			);
+			if (unkShield) return { c: "equip", item: unkShield.uid };
+		}
+
 		const scroll = items.find(
 			(i) => defOf(i.kind).cat === "scroll" && !known(i) && readable(i),
 		);
@@ -613,12 +721,23 @@ const decide = (r: Run, opts: BotOpts): Command => {
 						? (items.find((i) => defOf(i.kind).cat === "staff") ??
 							items.find((i) => i !== scroll && defOf(i.kind).cat === "scroll"))
 						: scroll.kind === "s_bread"
-							? (items.find((i) => i.kind === "h_poison" && known(i)) ??
+							? (items.find((i) => i.kind === "f_moldy") ??
+								items.find((i) => i.kind === "h_poison" && known(i)) ??
 								items.find((i) => i !== scroll && !r.isEquipped(i)))
 							: items.find((i) => i !== scroll && !known(i));
 				if (target) return { c: "use", item: scroll.uid, target: target.uid };
 			} else return { c: "use", item: scroll.uid };
 		}
+
+		// 未鑑定の武器を試着
+		const curWeapon = r.weapon();
+		if (!curWeapon?.cursed) {
+			const unkWeapon = items.find(
+				(i) => defOf(i.kind).cat === "weapon" && !i.known,
+			);
+			if (unkWeapon) return { c: "equip", item: unkWeapon.uid };
+		}
+
 		for (const k of ["s_whet", "s_temper", "h_might", "h_growth"]) {
 			const it = items.find((i) => i.kind === k && known(i) && readable(i));
 			if (
@@ -628,12 +747,14 @@ const decide = (r: Run, opts: BotOpts): Command => {
 			)
 				return { c: "use", item: it.uid };
 		}
-		const junk = items.find((i) => BAD_HERBS.has(i.kind) && known(i));
+		const junk =
+			items.find((i) => i.kind === "f_moldy") ??
+			items.find((i) => BAD_HERBS.has(i.kind) && known(i));
 		const canDrop =
 			!r.itemAt(p.x, p.y) &&
 			!r.onStairs() &&
 			!f.wards.includes(p.y * f.layout.w + p.x);
-		if (junk && items.length >= 18 && canDrop)
+		if (junk && (items.length >= 10 || hpRate > 0.5) && canDrop)
 			return { c: "drop", item: junk.uid };
 	}
 	// 目的が boss の いちばん底：生きている ボス（ほかの 階や fetch では null）
@@ -646,7 +767,7 @@ const decide = (r: Run, opts: BotOpts): Command => {
 		.filter(
 			(m) =>
 				!m.fuse &&
-				!m.retreating &&
+				(!m.retreating || m.kind === "chimera") &&
 				!mdef(m).abilities.some((a) => a.k === "metal" || a.k === "shy") &&
 				!m.status.dormant &&
 				(m.status.sleep === 0 ||
@@ -716,8 +837,9 @@ const decide = (r: Run, opts: BotOpts): Command => {
 					// 「はりついていて拾えない」を くり返す）
 					!r.isWardItem(fi) &&
 					!(forgottenItems.get(f)?.has(fi.item.uid) ?? false) &&
-					// 捨てた（捨てる）はずの 正体のわかった悪い草は 拾いにいかない（拾う・捨てるを くり返さない）
+					// 捨てた（捨てる）はずの 正体のわかった悪い草・チギュリパンは 拾いにいかない（拾う・捨てるを くり返さない）
 					!(BAD_HERBS.has(fi.item.kind) && known(fi.item)) &&
+					!(fi.item.kind === "f_moldy") &&
 					!(
 						(defOf(fi.item.kind).cat === "weapon" &&
 							redundantGear(r, fi.item, "weapon")) ||
