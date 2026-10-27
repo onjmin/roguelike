@@ -5,6 +5,7 @@
 // - 途中の指紋（#…）が ぜんぶ合うか。記録を1つ抜くと、指紋で ずれがわかるか。
 // - コマンドの短い文字が、どの形でも 元にもどるか。
 
+import { decorAt } from "../core/data/decor";
 import { DUNGEONS } from "../core/data/dungeons";
 import { randomFloorPos, spawnMonster } from "../core/floor";
 import { type Dir8, step } from "../core/geom";
@@ -344,6 +345,20 @@ test("hidden board: 99 floors in zones, and the goal can go home by 帰還スレ
 	for (let i = 1; i < zones.length; i++) {
 		ok(zones[i].last > zones[i - 1].last, `zone ${i} is out of order`);
 		ok(zones[i].bgm !== zones[i - 1].bgm, `zone ${i} keeps the same music`);
+	}
+	// 置物も 曲と 同じ 区切りで 変わる（core/data/decor.ts）
+	for (let i = 0; i < zones.length; i++) {
+		const first = i ? zones[i - 1].last + 1 : 1;
+		const set = decorAt("hidden", first);
+		ok(
+			set === decorAt("hidden", zones[i].last),
+			`zone ${i} changes decor inside`,
+		);
+		if (i)
+			ok(
+				set !== decorAt("hidden", first - 1),
+				`zone ${i} keeps the same decor`,
+			);
 	}
 	// 帰還スレ：品を 持っていても 帰れる（ほかの 板では ひきとめられる）
 	for (const [d, clears] of [

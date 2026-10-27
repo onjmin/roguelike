@@ -197,6 +197,7 @@ export const BATH_HALL: PlaceMap = {
 export const DENCHI_PLANT_TOUR: PlaceMap = {
 	rows: [
 		"####################################",
+		"#..................................#",
 		"#........ZZZZZZ....................#",
 		"#........ZZZZZZ............NN.nn...#",
 		"#E.e.E...ZZZZZZ...E.e.E............#",
@@ -216,7 +217,7 @@ export const DENCHI_PLANT_TOUR: PlaceMap = {
 		e: one(b(5, 458, 1, 3), {
 			glow: { color: "255,190,80", period: 1400, phase: 700 },
 		}),
-		// 発電炉（2倍）
+		// 発電炉（2倍。6マスの 背丈なので 上に 1列 あけて 地図の 外へ はみ出さない）
 		Z: big({
 			ref: b(0, 458, 3, 3),
 			scale: 2,

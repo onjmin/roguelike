@@ -1,4 +1,4 @@
-// 板ごとの 装飾（ふつうの 階の 部屋に 散らばる、その 板に ゆかりの ある 物）。見た目だけで 通れる
+// 板ごとの 装飾（ふつうの 階の 部屋に 散らばる、その 板に ゆかりの ある 物。過去ログの底は 層ごと）。見た目だけで 通れる
 // （風呂板の 湯だまり＝DungeonDef.pools と 同じ。core/floor.ts の placeDecor・ui/dungeon/render.ts）。
 // 道具と まちがえない よう、置物は 部屋の 北の 壁ぎわ（真上が 壁の 床）に しか 置かず、床に 立てる 物は 2マス 以上
 // （縦に 2マス ぶんの 背丈か、横 2マス）に する。1マスの 小物は 壁の 面に かける（hang。テレビ・ちょうちん・きのこ）。
@@ -28,6 +28,16 @@ export type DecorSet = {
 	 * count は 1階の 数。風呂板の 湯だまりは DungeonDef.pools（湯気が 立つ）。
 	 */
 	liquid?: { pond: string; count: readonly [number, number] };
+};
+
+/** 層の ある 板（過去ログの底）の 装飾：この 階（last）までが 同じ 置物。層の 区切りは data/story/story.ts の zones と そろえる。 */
+export type ZonedDecor = { zones: readonly (DecorSet & { last: number })[] };
+
+/** その 階の 装飾（層の ある 板は 深さで 選ぶ）。 */
+export const decorAt = (id: DungeonId, depth: number): DecorSet | undefined => {
+	const d = BOARD_DECOR[id];
+	if (!d || !("zones" in d)) return d;
+	return d.zones.find((z) => depth <= z.last) ?? d.zones[d.zones.length - 1];
 };
 
 const cut = (img: string, c: number, r: number, w = 1, h = 1): string =>
@@ -68,7 +78,7 @@ const RED_LANTERN = b(2, 297);
 const FLOUR_SACKS = b(2, 495, 2, 2);
 const SKULLS = b(0, 189);
 
-export const BOARD_DECOR: Readonly<Record<DungeonId, DecorSet>> = {
+export const BOARD_DECOR: Readonly<Record<DungeonId, DecorSet | ZonedDecor>> = {
 	// パン板：パン屋の 裏方。れんがの 窯・麦の 束・小麦粉の 袋の 山。こぼれた はちみつ
 	shallow: {
 		count: [3, 6],
@@ -137,17 +147,171 @@ export const BOARD_DECOR: Readonly<Record<DungeonId, DecorSet>> = {
 		],
 		liquid: pond(""),
 	},
-	// 過去ログの底：1001 の 墓・ログの 書庫、壁に 十字と 骨。墨の たまり
+	// 過去ログの底：層（曲と 見た目が 変わる 区切り）ごとに 置物も 変わる
 	hidden: {
-		count: [3, 6],
-		kinds: [
-			wide(b(3, 133, 2, 2), undefined, 2),
-			stand(i(0, 15, 1, 2), undefined, 2),
-			stand(i(1, 14, 1, 2)),
-			hang(b(4, 13)),
-			hang(SKULLS),
+		zones: [
+			// 過去ログの浅瀬：掘りかけの 土の 山・木箱・丸太の 柱。浅い 水たまり
+			{
+				last: 5,
+				count: [3, 5],
+				kinds: [
+					wide(b(2, 191, 2, 2), undefined, 2),
+					wide(b(6, 126, 2, 3), 0.75),
+					stand(b(0, 129, 1, 3)),
+				],
+				liquid: pond(""),
+			},
+			// dat の石室：石の 柱と 石像、壁に 石板。墨の たまり
+			{
+				last: 10,
+				count: [3, 6],
+				kinds: [
+					stand(b(1, 129, 1, 3), undefined, 2),
+					stand(b(2, 129, 1, 3)),
+					stand(b(4, 129, 1, 2)),
+					hang(b(5, 88)),
+				],
+				liquid: pond("ink"),
+			},
+			// 埋もれた dat：土と 炭の 山、樽の 山、壁に 古い 貼り紙
+			{
+				last: 15,
+				count: [3, 6],
+				kinds: [
+					wide(b(2, 191, 2, 2), undefined, 2),
+					wide(b(4, 191, 2, 2)),
+					wide(b(4, 126, 2, 3), 0.75),
+					hang(b(2, 90), undefined, 2),
+					hang(b(3, 90)),
+				],
+			},
+			// 苔むしたスレ跡：若木と 生け垣、壁から きのこ。胞子の 沼
+			{
+				last: 20,
+				count: [4, 7],
+				kinds: [
+					stand(b(0, 606, 1, 2), undefined, 2),
+					wide(b(1, 600, 2, 1)),
+					hang(b(0, 363), undefined, 2),
+					hang(b(1, 363)),
+				],
+				liquid: pond("spore"),
+			},
+			// 崩れたまとめ：壊れた 本棚・食器棚・ピアノ、壁に 割れた 窓
+			{
+				last: 25,
+				count: [3, 6],
+				kinds: [
+					wide(b(5, 272, 2, 2), undefined, 2),
+					wide(b(0, 272, 2, 2)),
+					wide(b(5, 274, 2, 2)),
+					hang(b(4, 265)),
+					hang(b(5, 265)),
+				],
+			},
+			// 保守の墓場：墓石・折れた 柱・崩れた 石の 台、壁に 十字と 骨
+			{
+				last: 30,
+				count: [4, 7],
+				kinds: [
+					wide(b(3, 133, 2, 2), undefined, 3),
+					stand(b(3, 284, 1, 2)),
+					wide(b(6, 283, 2, 2)),
+					hang(b(7, 88)),
+					hang(SKULLS),
+				],
+			},
+			// 凍結された書庫：雪に 埋もれた 石板と 雪の 山・雪を かぶった 柱と 石像、壁に 氷の 結晶
+			{
+				last: 40,
+				count: [3, 6],
+				kinds: [
+					wide(b(6, 246, 2, 2), undefined, 2),
+					wide(b(6, 191, 2, 2)),
+					stand(b(3, 245, 1, 3), undefined, 2),
+					stand(b(5, 245, 1, 2)),
+					hang(b(0, 343)),
+				],
+			},
+			// 白紙の回廊：白い 柱が まばらに、壁に 白い 板
+			{
+				last: 50,
+				count: [1, 3],
+				kinds: [stand(b(2, 129, 1, 3), undefined, 2), hang(b(0, 88))],
+			},
+			// 文字化けの海：沈んだ 柱と 珊瑚、壁に 色の 崩れた 画面と 水晶。海水
+			{
+				last: 60,
+				count: [3, 6],
+				kinds: [
+					stand(b(3, 581, 1, 2), undefined, 2),
+					stand(b(3, 284, 1, 2)),
+					hang(b(7, 486), undefined, 2),
+					hang(b(1, 343)),
+				],
+				liquid: pond("sea", 2, 3),
+			},
+			// 規制の檻：鉄格子・鉄の 処女、壁に 鎖と 錠前
+			{
+				last: 70,
+				count: [3, 6],
+				kinds: [
+					wide(b(0, 368, 2, 3), 0.75, 2),
+					stand(b(0, 373, 1, 2)),
+					hang(b(2, 373, 1, 2), undefined, 2),
+					hang(b(3, 372)),
+				],
+			},
+			// 落ちた鯖：鯖の 棚・ボンベ、壁に 消えた 画面と 計器。漏れた 電解液
+			{
+				last: 80,
+				count: [3, 6],
+				kinds: [
+					stand(b(4, 193, 1, 2), undefined, 2),
+					stand(b(6, 193, 1, 2)),
+					stand(b(2, 482, 1, 2)),
+					hang(b(6, 486)),
+					hang(b(6, 485)),
+				],
+				liquid: pond("acid"),
+			},
+			// 焦げた回線：燃える 暖炉・溶けた 管・焦げた 柱と 炭の 山、壁に 赤い 弁
+			{
+				last: 90,
+				count: [3, 6],
+				kinds: [
+					wide(b(5, 340, 3, 3), 0.67),
+					stand(b(4, 458, 1, 3), undefined, 2),
+					stand(b(1, 281, 1, 3)),
+					wide(b(4, 191, 2, 2)),
+					hang(b(3, 479)),
+				],
+			},
+			// 炎上の底：かがり火・彼岸花・赤い 目の ガーゴイル、壁に 骨。血の池
+			{
+				last: 98,
+				count: [4, 7],
+				kinds: [
+					stand(b(3, 129, 1, 2), undefined, 2),
+					stand(b(0, 403, 1, 2), undefined, 2),
+					stand(b(1, 352, 1, 2)),
+					hang(SKULLS),
+				],
+				liquid: pond("blood"),
+			},
+			// 1001：金の 棺・1001 の 墓・金の 錫杖、壁に 金の 山
+			{
+				last: 99,
+				count: [3, 5],
+				kinds: [
+					stand(b(5, 623, 1, 2), undefined, 2),
+					stand(b(7, 623, 1, 2)),
+					wide(b(3, 133, 2, 2)),
+					stand(b(7, 352, 1, 2)),
+					hang(b(5, 189)),
+				],
+			},
 		],
-		liquid: pond("ink"),
 	},
 	// ボカロ作り避難所：ピアノ、壁に パソコンと エレキ・アコギ。ミク色の 水
 	vocalo: {

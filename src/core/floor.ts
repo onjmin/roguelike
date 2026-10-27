@@ -15,7 +15,7 @@ import {
 	INITIAL_MONSTERS,
 	trapCount,
 } from "./balance";
-import { BOARD_DECOR } from "./data/decor";
+import { decorAt } from "./data/decor";
 import type {
 	BossArena,
 	BossSpec,
@@ -367,7 +367,7 @@ const POOL_SHAPES: readonly [number, number][] = [
 	[5, 3],
 ];
 const placePools = (r: Run, f: Floor): void => {
-	const liquid = BOARD_DECOR[r.dungeon.id]?.liquid;
+	const liquid = decorAt(r.dungeon.id, f.depth)?.liquid;
 	const span = r.dungeon.pools ?? liquid?.count;
 	if (!span) return;
 	const rng = Rng.fromSeed(`${r.s.seed}:pools:${f.depth}`);
@@ -417,7 +417,7 @@ const placePools = (r: Run, f: Floor): void => {
  * 罠は よけない（装飾の ある マスが 安全と わからない ように）。乱数は 湯だまりと 同じく 階の 作りと 別。
  */
 const placeDecor = (r: Run, f: Floor): void => {
-	const set = BOARD_DECOR[r.dungeon.id];
+	const set = decorAt(r.dungeon.id, f.depth);
 	if (!set) return;
 	const rng = Rng.fromSeed(`${r.s.seed}:decor:${f.depth}`);
 	const l = f.layout;
